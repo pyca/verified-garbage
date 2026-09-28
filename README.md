@@ -406,7 +406,7 @@ yours to keep:
 
 <td>✅ SHA extensions</td>
 
-<td>❌</td>
+<td>✅</td>
 
 </tr>
 
