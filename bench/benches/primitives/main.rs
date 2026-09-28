@@ -207,7 +207,8 @@ pub(crate) fn hmac_group<O: AsRef<[u8]>>(
     target_arch = "x86_64",
     target_arch = "aarch64",
     target_arch = "arm",
-    target_arch = "x86"
+    target_arch = "x86",
+    all(target_arch = "powerpc64", target_endian = "little")
 ))]
 pub(crate) fn hmac_verify_group<H: verified_garbage::hmac::HmacHash>(
     c: &mut Criterion,
