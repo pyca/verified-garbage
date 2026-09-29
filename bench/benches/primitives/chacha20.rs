@@ -16,20 +16,6 @@ const SIZES: [usize; 9] = [5, 16, 64, 128, 480, 1024, 1025, 4097, 16384];
 
 pub const USES: &[&str] = &["chacha20"];
 
-#[cfg(not(any(
-    target_arch = "x86_64",
-    target_arch = "aarch64",
-    target_arch = "arm",
-    target_arch = "x86"
-)))]
-pub fn bench(_: &mut Criterion) {}
-
-#[cfg(any(
-    target_arch = "x86_64",
-    target_arch = "aarch64",
-    target_arch = "arm",
-    target_arch = "x86"
-))]
 pub fn bench(c: &mut Criterion) {
     use std::hint::black_box;
 
