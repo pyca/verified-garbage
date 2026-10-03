@@ -64,10 +64,6 @@ pub trait HashFunction: Clone {
 /// * `finalize(state, count: u64, out: *mut [u8; FINAL], scratch)` writes
 ///   the final hash value, whose first `OUTPUT` bytes are the digest.
 ///
-/// `scratch` is `none` for functions that keep their working space on their
-/// own stack and take no `scratch` argument (their callers here pass an empty
-/// array, which they drop).
-///
 /// `backends` names the enum of the implementations of `update` and
 /// `finalize` to choose from, each a variant: first the one for the
 /// target's baseline ISA, then any that need CPU features (their generated
@@ -79,27 +75,11 @@ pub trait HashFunction: Clone {
 /// length is kept exactly (`update` panics rather than let it reach 2⁶⁴
 /// bytes).
 macro_rules! streaming_hash {
-    // The number of words of working space `update` and `finalize` take.
-    (@len none) => {
-        0
-    };
-    (@len $scratch:literal) => {
-        $scratch
-    };
-    // A call of `f` with `args`, followed by the working space `s` if it
-    // takes any.
-    (@call none, $f:path, $s:expr, $($arg:expr),*) => {{
-        let _ = $s;
-        $f($($arg),*)
-    }};
-    (@call $scratch:literal, $f:path, $s:expr, $($arg:expr),*) => {
-        $f($($arg,)* $s)
-    };
     (
         $(#[$doc:meta])*
         $name:ident {
             state: $state:literal,
-            scratch: $scratch:tt,
+            scratch: $scratch:literal,
             block: $block:literal,
             output: $output:literal,
             final_hash: $final:literal,
@@ -148,17 +128,13 @@ macro_rules! streaming_hash {
                 count: u64,
                 data: *const u8,
                 len: usize,
-                scratch: &mut [u64; $crate::hashes::streaming_hash!(@len $scratch)],
+                scratch: &mut [u64; $scratch],
             ) {
                 // SAFETY: the caller's obligations.
                 unsafe {
                     match self {
-                        Self::$base => $crate::hashes::streaming_hash!(
-                            @call $scratch, $update, scratch, state, count, data, len
-                        ),
-                        $($(#[$attr])* Self::$variant => $crate::hashes::streaming_hash!(
-                            @call $scratch, $vupdate, scratch, state, count, data, len
-                        ),)*
+                        Self::$base => $update(state, count, data, len, scratch),
+                        $($(#[$attr])* Self::$variant => $vupdate(state, count, data, len, scratch),)*
                     }
                 }
             }
@@ -174,17 +150,13 @@ macro_rules! streaming_hash {
                 state: &mut [u8; $state],
                 count: u64,
                 out: &mut [u8; $final],
-                scratch: &mut [u64; $crate::hashes::streaming_hash!(@len $scratch)],
+                scratch: &mut [u64; $scratch],
             ) {
                 // SAFETY: the caller's obligations.
                 unsafe {
                     match self {
-                        Self::$base => $crate::hashes::streaming_hash!(
-                            @call $scratch, $finalize, scratch, state, count, out
-                        ),
-                        $($(#[$attr])* Self::$variant => $crate::hashes::streaming_hash!(
-                            @call $scratch, $vfinalize, scratch, state, count, out
-                        ),)*
+                        Self::$base => $finalize(state, count, out, scratch),
+                        $($(#[$attr])* Self::$variant => $vfinalize(state, count, out, scratch),)*
                     }
                 }
             }
@@ -245,7 +217,7 @@ macro_rules! streaming_hash {
                     .length
                     .checked_add(data.len() as u64)
                     .expect("message too long");
-                let mut scratch = [0u64; $crate::hashes::streaming_hash!(@len $scratch)];
+                let mut scratch = [0u64; $scratch];
                 // SAFETY: `self.state` is valid for reads and writes of its
                 // size, `data` for reads of `data.len()` bytes and `scratch`
                 // for reads and writes of its size; they are distinct
@@ -270,7 +242,7 @@ macro_rules! streaming_hash {
             /// Pads the message and returns its digest.
             pub fn finalize(mut self) -> [u8; $output] {
                 let mut out = [0; $final];
-                let mut scratch = [0u64; $crate::hashes::streaming_hash!(@len $scratch)];
+                let mut scratch = [0u64; $scratch];
                 // SAFETY: `self.state` is valid for reads and writes of its
                 // size, `out` for writes of its size and `scratch` for reads
                 // and writes of its size; they are distinct objects, so they

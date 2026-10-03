@@ -18,17 +18,39 @@
 
 use crate::arch::md5::{vg_md5_finalize, vg_md5_init, vg_md5_update};
 
+/// `vg_md5_update`, which keeps its working space on its own stack, taking
+/// the empty working space `streaming_hash!` passes.
+///
+/// # Safety
+///
+/// As for `vg_md5_update`.
+unsafe fn update(state: *mut [u8; 80], count: u64, data: *const u8, len: usize, _: *mut [u64; 0]) {
+    // SAFETY: the caller's obligations.
+    unsafe { vg_md5_update(state, count, data, len) }
+}
+
+/// `vg_md5_finalize`, which keeps its working space on its own stack, taking
+/// the empty working space `streaming_hash!` passes.
+///
+/// # Safety
+///
+/// As for `vg_md5_finalize`.
+unsafe fn finalize(state: *mut [u8; 80], count: u64, out: *mut [u8; 16], _: *mut [u64; 0]) {
+    // SAFETY: the caller's obligations.
+    unsafe { vg_md5_finalize(state, count, out) }
+}
+
 super::streaming_hash!(
     /// An incremental MD5 computation.
     Md5 {
         state: 80,
-        scratch: none,
+        scratch: 0,
         block: 64,
         output: 16,
         final_hash: 16,
         init: vg_md5_init,
         backends: Md5Backend {
-            Scalar => (vg_md5_update, vg_md5_finalize),
+            Scalar => (update, finalize),
         },
     }
 );
