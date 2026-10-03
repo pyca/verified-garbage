@@ -41,6 +41,7 @@ variable {s₀ : State} (hlo : 200 ≤ (E0 s₀).toNat)
 include hlo
 
 theorem sp1 : (pushed argRegs s₀).sp.toNat = (E0 s₀).toNat - 16 := by
+  have h : 200 ≤ s₀.sp.toNat := hlo
   rw [pushed_sp_toNat (by simp only [List.length_cons, List.length_nil]; omega)]; rfl
 
 theorem sp2 : (pushed savedRegs (pushed argRegs s₀)).sp.toNat = (E0 s₀).toNat - 56 := by
@@ -52,6 +53,7 @@ theorem entry_sp : (entry s₀).sp = E s₀ := by
   apply BitVec.eq_of_toNat_eq
   simp only [entry, allocated]
   rw [sub_toNat' (by rw [sp2 hlo]; omega), sp2 hlo, E_toNat hlo]
+  omega
 
 end
 
@@ -84,6 +86,7 @@ theorem frames_ok {s₀ : State} (hlo : 240 ≤ (E0 s₀).toNat) {Q : State → 
     (hQ : ∀ t u, Q t → u.mem = t.mem → Q u) :
     WP isa derive s₀ fun u => abiPreserved s₀ u ∧ Q u := by
   have hE := (E0 s₀).isLt
+  have e0 : (E0 s₀).toNat = s₀.sp.toNat := rfl
   have h1 := sp1 (s₀ := s₀) (by omega)
   have h2 := sp2 (s₀ := s₀) (by omega)
   unfold derive
@@ -91,70 +94,73 @@ theorem frames_ok {s₀ : State} (hlo : 240 ≤ (E0 s₀).toNat) {Q : State → 
     (by decide) ?_
   refine WP.frame (rs := savedRegs) (r := .r3) (by decide)
     (by rw [h1]; simp only [List.length_cons, List.length_nil]; omega) (by decide) ?_
-  refine WP.seq (WP.alloc (by decide) (by rw [h2]; omega) (hb.mono fun t ⟨d, w, q⟩ => ?_))
+  refine WP.seq (WP.alloc (by decide) (by rw [h2]; show 144 ≤ _; omega) (hb.mono fun t ⟨d, w, q⟩ => ?_))
   -- The restores.
   set S2 := pushed savedRegs (pushed argRegs s₀) with hS2
   have spS2 : (freed 144 t).sp = S2.sp := by
     simp only [freed, d.sp]
     apply BitVec.eq_of_toNat_eq
     rw [BitVec.toNat_add, E_toNat (by omega), h2, BitVec.toNat_ofNat]
-    simp only [Nat.reduceMod]; omega
-  have wS2 : (freed 144 t).wr = S2.wr := by simp only [freed, w, entry, allocated, List.tail_cons]
+    omega
+  have wS2 : (freed 144 t).wr = S2.wr := by simp only [freed, w, entry, allocated, List.tail_cons, hS2]
+  have S2sp : S2.sp.toNat = (E0 s₀).toNat - 56 := h2
   have hS2v : ∀ i (hi : i < 10), S2.mem.readW (State.addr (S2.sp + BitVec.ofNat 32 (4 * i))) 32 =
-      (pushed argRegs s₀).gpr savedRegs[i] := fun i hi => by
-    rw [hS2]
+      s₀.gpr savedRegs[i] := fun i hi => by
     have := VG.Proof.Argon2.Arm.storeWords_readW (pushed argRegs s₀).mem
       ((pushed argRegs s₀).sp - BitVec.ofNat 32 (4 * savedRegs.length))
       (savedRegs.map (pushed argRegs s₀).gpr) (by
         simp only [List.length_map, List.length_cons, List.length_nil]
         rw [sub_toNat' (by rw [h1]; omega), h1]; omega) (i := i) (by simpa using hi)
-    simpa [pushed] using this
+    rw [List.getElem_map] at this
+    exact this
   have inS2 : ∀ d, d + 4 ≤ 40 → InRegions ((freed 144 t).rd ++ (freed 144 t).wr)
       (State.addr ((freed 144 t).sp + BitVec.ofNat 32 d)) 4 := fun d hd => by
-    rw [wS2, spS2]
-    refine ⟨⟨State.addr S2.sp, 40⟩, List.mem_append_right _ (by simp [hS2, pushed]), ?_⟩
-    rw [addr_add (by rw [hS2, pushed_sp_toNat (by rw [h1]; simp only [List.length_cons, List.length_nil]; omega), h1];
-      simp only [List.length_cons, List.length_nil]; omega)]
-    exact Offset.contains_base _ hd (by omega)
-  rw [← List.append_nil restoreRegs]
+    have hw : ⟨State.addr S2.sp, 40⟩ ∈ S2.wr := by simp [hS2, pushed]
+    rw [wS2, spS2, addr_add (by rw [S2sp]; omega)]
+    exact ⟨⟨State.addr S2.sp, 40⟩, List.mem_append_right _ hw, Offset.contains_base _ hd (by omega)⟩
+  show WP isa (.block (Impl.Argon2.Arm.Derive.savedSlots.map fun p => Instr.ldrSp p.1 p.2)) (freed 144 t) _
+  rw [← List.append_nil (List.map _ _)]
   refine restoreSp_ok _ _ _ (by decide) (fun p hpm => ⟨?_, inS2 p.2 ?_⟩) fun u hu ho hm hrd hwr hsp => WP.block_nil ?_
   · simp only [Impl.Argon2.Arm.Derive.savedSlots, List.mem_cons, List.not_mem_nil, or_false] at hpm
     rcases hpm with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
   · simp only [Impl.Argon2.Arm.Derive.savedSlots, List.mem_cons, List.not_mem_nil, or_false] at hpm
     rcases hpm with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
   -- The values restored.
+  have key : ∀ j < 9, State.addr (S2.sp + BitVec.ofNat 32 (4 * (j + 1))) =
+      State.addr (E s₀ + BitVec.ofNat 32 (148 + 4 * j)) := fun j hj => by
+    congr 1
+    apply BitVec.eq_of_toNat_eq
+    rw [BitVec.toNat_add, BitVec.toNat_add, S2sp, E_toNat (by omega), BitVec.toNat_ofNat, BitVec.toNat_ofNat,
+      Nat.mod_eq_of_lt (a := 4 * (j + 1)) (by omega), Nat.mod_eq_of_lt (a := 148 + 4 * j) (by omega)]
+    omega
+  have tv : ∀ j (hj : j < 9), t.mem.readW (State.addr (S2.sp + BitVec.ofNat 32 (4 * (j + 1)))) 32 =
+      s₀.gpr (savedRegs[j + 1]?.getD .r0) := fun j hj => by
+    rw [key j hj]; exact d.saved j hj
   have hv : ∀ p ∈ Impl.Argon2.Arm.Derive.savedSlots, u.gpr p.1 = s₀.gpr p.1 := by
     intro p hpm
     rw [hu p hpm, spS2]
     have hm' : (freed 144 t).mem = t.mem := rfl
     rw [hm']
     simp only [Impl.Argon2.Arm.Derive.savedSlots, List.mem_cons, List.not_mem_nil, or_false] at hpm
-    have key : ∀ j < 9, State.addr (S2.sp + BitVec.ofNat 32 (4 * (j + 1))) =
-        State.addr (E s₀ + BitVec.ofNat 32 (148 + 4 * j)) := fun j hj => by
-      congr 1
-      apply BitVec.eq_of_toNat_eq
-      rw [BitVec.toNat_add, BitVec.toNat_add, hS2, pushed_sp_toNat (by rw [h1]; simp only [List.length_cons,
-        List.length_nil]; omega), h1, E_toNat (by omega), BitVec.toNat_ofNat, BitVec.toNat_ofNat]
-      simp only [List.length_cons, List.length_nil]
-      rw [Nat.mod_eq_of_lt (a := 4 * (j + 1)) (by omega), Nat.mod_eq_of_lt (a := 148 + 4 * j) (by omega)]
-      omega
     rcases hpm with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
-    · rw [show (4 : Nat) = 4 * (0 + 1) from rfl, key 0 (by decide)]; exact d.saved 0 (by decide)
-    · rw [show (8 : Nat) = 4 * (1 + 1) from rfl, key 1 (by decide)]; exact d.saved 1 (by decide)
-    · rw [show (12 : Nat) = 4 * (2 + 1) from rfl, key 2 (by decide)]; exact d.saved 2 (by decide)
-    · rw [show (16 : Nat) = 4 * (3 + 1) from rfl, key 3 (by decide)]; exact d.saved 3 (by decide)
-    · rw [show (20 : Nat) = 4 * (4 + 1) from rfl, key 4 (by decide)]; exact d.saved 4 (by decide)
-    · rw [show (24 : Nat) = 4 * (5 + 1) from rfl, key 5 (by decide)]; exact d.saved 5 (by decide)
-    · rw [show (28 : Nat) = 4 * (6 + 1) from rfl, key 6 (by decide)]; exact d.saved 6 (by decide)
-    · rw [show (32 : Nat) = 4 * (7 + 1) from rfl, key 7 (by decide)]; exact d.saved 7 (by decide)
-    · rw [show (36 : Nat) = 4 * (8 + 1) from rfl, key 8 (by decide)]; exact d.saved 8 (by decide)
-  refine ⟨⟨fun r hr => ?_, ?_⟩, hQ t _ q (by simp [popped, hm, freed])⟩
+    · exact tv 0 (by decide)
+    · exact tv 1 (by decide)
+    · exact tv 2 (by decide)
+    · exact tv 3 (by decide)
+    · exact tv 4 (by decide)
+    · exact tv 5 (by decide)
+    · exact tv 6 (by decide)
+    · exact tv 7 (by decide)
+    · exact tv 8 (by decide)
+  refine ⟨⟨fun r hr => ?_, ?_⟩, hQ t _ q (by rw [popped_mem, popped_mem, hm]; rfl)⟩
   · have hr0 : r ≠ .r0 := by rintro rfl; simp [preserved] at hr
     have hr3 : r ≠ .r3 := by rintro rfl; simp [preserved] at hr
     rw [popped_gpr hr0, popped_gpr hr3]
-    exact hv (r, _) (by
-      simp only [preserved, List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp [Impl.Argon2.Arm.Derive.savedSlots])
+    simp only [preserved, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+    exacts [hv (.r4, 4) (by decide), hv (.r5, 8) (by decide), hv (.r6, 12) (by decide), hv (.r7, 16) (by decide),
+      hv (.r8, 20) (by decide), hv (.r9, 24) (by decide), hv (.r10, 28) (by decide), hv (.r11, 32) (by decide),
+      hv (.lr, 36) (by decide)]
   · simp only [popped_sp, hsp, spS2, hS2, pushed_sp, List.length_cons, List.length_nil]
     rw [BitVec.sub_add_cancel, BitVec.sub_add_cancel]
 
