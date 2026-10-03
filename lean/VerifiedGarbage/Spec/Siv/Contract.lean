@@ -45,7 +45,8 @@ The functions check no length; the RFC limits the associated data to 126
 components (§7), which the caller counts. The synthetic IV travels in the
 first 16 bytes of `work`, which is also working space, so that fewer
 arguments are passed in memory. Each function's working space (`scratch` or
-`work`) has room for `vg_aes_ctr32`'s (2048 bytes) and 512 bytes more.
+`work`) has room for `vg_aes_ctr32`'s (2048 bytes) and 512 bytes more, and
+`encrypt`'s and `decrypt`'s 16 more, for S2V's state.
 
 Every contract takes the number of bytes of stack below the stack pointer
 that an implementation's calls and frames use (`stack`, see `Sig.contract`),
@@ -265,14 +266,15 @@ each slice `Sig.listed` gives, in order. -/
 def components (ptrBits : Nat) (m : Mem) (p : Addr) (n : Nat) : List (List Byte) :=
   (Sig.listed ptrBits m .u8 p n).map fun r => Aes.bytesAt m r.base r.len
 
-/-- `vg_aes_siv_encrypt(ctx: *const [u64; 64], rounds: usize, ads: *const [usize; 2], ads_count: usize, data: *mut u8, len: usize, work: *mut [u64; 320])`,
+/-- `vg_aes_siv_encrypt(ctx: *const [u64; 64], rounds: usize, ads: *const [usize; 2], ads_count: usize, data: *mut u8, len: usize, work: *mut [u64; 322])`,
 and `vg_aes_siv_decrypt` with the same parameters, returning a `u32`.
 `rounds` is public; `ads` lists the components of associated data; `work`
-is working space but for the synthetic IV. -/
+is working space but for the synthetic IV, with room for that of
+`seal` and `open` and S2V's state besides. -/
 def encryptSig : Sig where
   params := [("ctx", .array false .u64 64), ("rounds", .int .usize true),
     ("ads", .slices .u8 "ads_count"), ("data", .slice true .u8 "len"),
-    ("work", .array true .u64 320)]
+    ("work", .array true .u64 322)]
 
 /-- `vg_aes_siv_decrypt`'s signature: `vg_aes_siv_encrypt`'s, returning a `u32`. -/
 def decryptSig : Sig := { encryptSig with ret := some .u32 }
