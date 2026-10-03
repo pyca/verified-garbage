@@ -78,15 +78,15 @@ theorem encPre_ok (h : EPre s₀ C A P W D R N L) :
   refine ⟨_, by
     rw [encPre, show save .rax = Spill.saveCode .rax saved from rfl, runBlock_append, runBlock_append, run₀,
       Option.bind_some, hrun, Option.bind_some]
-    simp (config := {decide := true}) only [imm, runBlock_cons, runStep_some, runBlock_nil, at_, exec, readSrc, execAlu,
+    simp only [reduceCtorEq, imm, runBlock_cons, runStep_some, runBlock_nil, at_, exec, readSrc, execAlu,
       State.store64, State.ea, offset_nat, Option.map_some, Option.bind_some, gpr_setReg, gpr_arithFlags,
       mem_setReg, mem_arithFlags, wr_setReg, wr_arithFlags, ite_true, ite_false, w₁, w₂, w₃, w₄]
     rfl, ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, ?_, ?_, ?_, ?_, ?_⟩
-  all_goals try simp (config := {decide := true}) only [gpr_setReg, gpr_arithFlags, mem_setReg,
+  all_goals try simp only [reduceCtorEq, gpr_setReg, gpr_arithFlags, mem_setReg,
     ite_true, ite_false, h.rdi, h.rsi, h.rdx, h.rcx, h.r8, h.r9, h.hD, sx_ofNat (show dOff < 2 ^ 31 by decide)]
   · rfl
   · rfl
-  · simp (config := {decide := true}) only [encMem, saved, Spill.saveMem, gpr_setReg, ite_false]
+  · simp only [reduceCtorEq, encMem, saved, Spill.saveMem, gpr_setReg, ite_false]
 
 /-- The save writes the working space past its first 16 bytes (the IV
 `decrypt` is given). -/
@@ -135,17 +135,18 @@ theorem startPre_env (h : EPre s₀ C A P W D R N L) {s : State} (hr : Regs s₀
   have inD (d : Nat) (hd : d + 8 ≤ 16) : InRegions s.wr (D + BitVec.ofNat 64 d) 8 := by
     rw [hr.wr]; exact ⟨⟨D, 16⟩, h.dw, Offset.contains_base _ hd (by have := e.wD; omega)⟩
   refine ⟨_, by
-    simp (config := {decide := true}) only [startPre, zero16, zOff, csOff, imm, List.cons_append,
+    simp only [reduceCtorEq, startPre, zero16, zOff, csOff, imm, List.cons_append,
       List.nil_append, runBlock_cons, runStep_some, runBlock_nil, at_, exec, readSrc, readSrc32, execAlu,
       State.store64, State.ea, State.setReg32, offset_nat, Option.bind_some, Option.map_some, gpr_setReg,
       gpr_arithFlags, mem_setReg, rd_setReg, wr_setReg, ite_true, ite_false, rcx, rdx,
       e.inW hr.wr (d := 16) (n := 8) (by decide), e.inW hr.wr (d := 24) (n := 8) (by decide), inD 0 (by decide),
       inD 8 (by decide)]
     rfl, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
-  all_goals try simp (config := {decide := true}) only [gpr_setReg, gpr_arithFlags, mem_setReg, mem_arithFlags,
+  all_goals try simp only [reduceCtorEq, gpr_setReg, gpr_arithFlags, mem_setReg, mem_arithFlags,
     ite_true, ite_false, rcx, sx_ofNat (show 16 < 2 ^ 31 by decide), sx_ofNat (show 256 < 2 ^ 31 by decide)]
+  · rfl
   · intro r h₁ h₂ h₃ h₄; simp [h₁, h₂, h₃, h₄]
-  · rw [zero2, zero2, Offset.add_add, k0]
+  · simp only [zero2, Offset.add_add, k0]
   all_goals rfl
 
 /-- The arguments of `vg_cmac_aes_finalize` for S2V's first state: the
@@ -379,11 +380,11 @@ theorem adDesc_wp (h : EPre s₀ C A P W D R N L) {i : Nat} (hiN : i < N) {s : S
   have d₀ := hi.desc h (d := 16 * i) (by omega)
   have d₈ := hi.desc h (d := 16 * i + 8) (by omega)
   refine WP.of_runBlock ⟨_, by
-    simp (config := {decide := true}) only [runBlock_cons, runStep_some, runBlock_nil, at_, exec, readSrc,
+    simp only [reduceCtorEq, runBlock_cons, runStep_some, runBlock_nil, at_, exec, readSrc,
       State.load64, State.ea, offset_nat, Option.map_some, gpr_setReg, rd_setReg, wr_setReg, mem_setReg, ite_true,
       ite_false, hrax, Offset.add_add, Nat.add_zero, c₀, c₈]
     rfl, ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, ?_⟩
-  all_goals try simp (config := {decide := true}) only [gpr_setReg, ite_true, ite_false, hi.rbx, hi.rbp, hi.r12,
+  all_goals try simp only [reduceCtorEq, gpr_setReg, ite_true, ite_false, hi.rbx, hi.rbp, hi.r12,
     hi.r15, hi.rsp, comp, d₀, d₈]
   · exact BitVec.eq_of_toNat_eq (by rw [toNat_ofNat (BitVec.isLt _)])
   all_goals first | rfl | exact hi.rd | exact hi.wr
@@ -512,7 +513,7 @@ theorem adsHead_wp (h : EPre s₀ C A P W D R N L) {s : State} (hs : AInv s₀ C
         offset_nat, Option.map_some, Option.bind_some, hs.r15, rL, ite_true]
       rfl, ?_, ?_, ?_, ?_, ?_⟩
     · rw [zf_arithFlags]
-      simp (config := {decide := true}) only [gpr_setReg_self]
+      simp only [gpr_setReg_self]
       rw [hs.left, Nat.sub_zero, BitVec.and_self, Proof.CmacAes.Stream.X86_64.beq_zero_iff, toNat_ofNat hN]
     · intro r hr; simp [gpr_setReg, hr]
     all_goals rfl

@@ -50,7 +50,7 @@ theorem xorD_ok {s : State} (h12 : s.gpr .r12 = D) (h15 : s.gpr .r15 = W)
             (W + BitVec.ofNat 64 136) 64) ∧
       (∀ r, r ≠ .rax → s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   refine ⟨_, by
-    simp (config := {decide := true}) only [stOff, runBlock_cons, runStep_some, runBlock_nil, at_, exec,
+    simp only [reduceCtorEq, stOff, runBlock_cons, runStep_some, runBlock_nil, at_, exec,
       readSrc, execAlu, State.load64, State.store64, State.ea, offset_nat, k0, Option.bind_some, Option.map_some,
       gpr_setReg, gpr_arithFlags, mem_setReg, mem_arithFlags, rd_setReg, rd_arithFlags, wr_setReg, wr_arithFlags,
       ite_true, ite_false, h12, h15, w₀, w₁, r₀, r₁, q₀, q₁]
@@ -73,12 +73,12 @@ theorem adTail_ok {s : State} (h15 : s.gpr .r15 = W) (r₀ : InRegions (s.rd ++ 
           (W + BitVec.ofNat 64 120) 64 - 1 == 0) ∧
       (∀ r, r ≠ .rax → r ≠ .rbx → s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   refine ⟨_, by
-    simp (config := {decide := true}) only [ctxOff, adsOff, leftOff, tOff, imm, runBlock_cons, runStep_some,
+    simp only [reduceCtorEq, ctxOff, adsOff, leftOff, tOff, imm, runBlock_cons, runStep_some,
       runBlock_nil, at_, exec, readSrc, execAlu, State.load64, State.store64, State.ea, offset_nat,
       Option.bind_some, Option.map_some, gpr_setReg, gpr_arithFlags, mem_setReg, mem_arithFlags, rd_setReg,
       rd_arithFlags, wr_setReg, wr_arithFlags, ite_true, ite_false, h15, r₀, r₁, w₁, r₂, w₂]
     rfl, ?_, ?_, ?_, ?_, ?_, ?_⟩
-  · simp (config := {decide := true}) only [gpr_setReg, gpr_arithFlags, ite_true, ite_false]
+  · simp only [reduceCtorEq, gpr_setReg, gpr_arithFlags, ite_true, ite_false]
   · simp only [sx_ofNat (show 16 < 2 ^ 31 by decide),
       sx_ofNat (show 1 < 2 ^ 31 by decide)]
     rfl
