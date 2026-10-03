@@ -235,14 +235,16 @@ def addMod (o a b : Nat) : Prog isa :=
     (.seq subMod selectAcc)))
 
 /-- `[o] = [a] - [b] mod m` for `[a], [b] < m`: the difference into the
-accumulator, then `m` added under the mask of its borrow. -/
+accumulator (as `subMod`'s loop), then `m` added under the mask of its
+borrow. -/
 def subModArr (o a b : Nat) : List (Prog isa) := [
-  .block [.mov .rbx (.mem (hdr (sArr a))), .mov .r9 (.mem (hdr (sArr b))), .mov .r10 (.mem (hdr (sArr aN))),
-    .mov .r8 (.mem (hdr (sArr aAcc))), .mov .r12 (.mem (hdr sW)), .mov32 .rbp (.imm 0)],
-  wordLoop 0 [cfFromRbp, .mov .rax (.mem (ix .rbx .r14)), .alu .sbb .rax (.mem (ix .r9 .r14)),
-    .store (ix .r8 .r14) .rax, cfToRbp],
-  .block [.mov .r15 (.reg .rbp), .mov32 .rbp (.imm 0), .mov .rbx (.mem (hdr (sArr o)))],
-  wordLoop 0 [cfFromRbp, .mov .rax (.mem (ix .r10 .r14)), .alu .and .rax (.reg .r15),
+  .block [.mov .r8 (.mem (hdr (sArr a))), .mov .r10 (.mem (hdr (sArr b))), .mov .rsi (.mem (hdr (sArr aAcc))),
+    .mov .r12 (.mem (hdr sW)), .mov32 .rbp (.imm 0)],
+  wordLoop 0 [cfFromRbp, .mov .rax (.mem (ix .r8 .r14)), .alu .sbb .rax (.mem (ix .r10 .r14)),
+    .store (ix .rsi .r14) .rax, cfToRbp],
+  .block [.mov .r15 (.reg .rbp), .mov32 .rbp (.imm 0), .mov .r10 (.mem (hdr (sArr aN))),
+    .mov .r8 (.mem (hdr (sArr aAcc))), .mov .rbx (.mem (hdr (sArr o)))],
+  wordLoop 0 [.mov .rax (.mem (ix .r10 .r14)), .alu .and .rax (.reg .r15), cfFromRbp,
     .alu .adc .rax (.mem (ix .r8 .r14)), .store (ix .rbx .r14) .rax, cfToRbp]]
 
 /-- `[o] := [a]` over `w` words. -/
