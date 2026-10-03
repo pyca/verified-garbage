@@ -10,10 +10,12 @@ and `vg_cmac_triple_des_finalize(key = x0, state = x1, last = x2, last_len = x3,
 (`Impl/CmacTripleDes/X86_64.lean`). Each encrypts blocks with `block`
 (`AArch64/Round.lean`), inline: the block as a big-endian 64-bit integer in
 `x5`, the key schedule at `x14` and the scratch buffer at `x15`. They use
-only `x0`–`x17`, so they save nothing, and call nothing.
+only `x0`–`x17` and caller-saved vector registers, so they save nothing, and
+call nothing.
 
-The scratch buffer: slots 0–5 (bytes `[0, 48)`) are the block's, and slots
-6–8 are `init`'s three DES keys, slot 6 `finalize`'s last block `Mₙ`.
+The scratch buffer: slots 0–47 (bytes `[0, 384)`) are the block's spread
+round keys; slots 6–8 hold `init`'s three DES keys and slot 6 `finalize`'s
+last block `Mₙ` before the block runs.
 
 * `init` reads the three DES keys (the third is the first for a 16-byte
   key) to slots 6–8, writes their round keys (`roundKeys`, 128 bytes each)
