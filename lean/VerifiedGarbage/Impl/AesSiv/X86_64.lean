@@ -380,4 +380,74 @@ def «open» (c : Ctr32) (sfx : String) : Prog isa :=
         (.seq (.block compare)
           (.seq maskData (.block ([.mov .rax (.mem (at_ .r15 dbOff))] ++ restore))))))
 
+/-! ## `vg_aes_siv_encrypt` and `vg_aes_siv_decrypt`
+
+The whole of `SIV-ENCRYPT` and `SIV-DECRYPT`: S2V's state `D` is in the
+working space, at `W + 2560`, after the 2560 bytes `seal` and `open` use;
+the descriptor of the next component of associated data and the number left
+are at `W + 112` and `W + 120` while S2V absorbs them (`T`'s place, which
+`decrypt` fills only after). -/
+
+def adsOff : Nat := tOff
+def leftOff : Nat := tOff + 8
+def dOff : Nat := 2560
+
+/-- Saves the registers in the working space (whose address, the seventh
+argument, is on the stack above the return address) and keeps the
+arguments in them: the context in `rbx`, the rounds in `rbp`, `D` in `r12`,
+the data in `r13` (`r14` bytes) and the working space in `r15`; the data and
+its length also at `r15 + 208` and `r15 + 216`, and the descriptors of the
+components and their number at `r15 + 112` and `r15 + 120`. Then the
+arguments of `vg_aes_siv_s2v_start`'s code: the context, the rounds, `D`
+and the working space. -/
+def encPre : List Instr :=
+  [.mov .rax (.mem (at_ .rsp 8))] ++ save .rax ++
+  [.mov .rbx (.reg .rdi), .mov .rbp (.reg .rsi), .mov .r15 (.reg .rax), .mov .r12 (.reg .rax),
+   .alu .add .r12 (imm dOff), .mov .r13 (.reg .r8), .mov .r14 (.reg .r9),
+   .store (at_ .r15 dataOff) .r13, .store (at_ .r15 lenOff) .r14,
+   .store (at_ .r15 adsOff) .rdx, .store (at_ .r15 leftOff) .rcx,
+   .mov .rdx (.reg .r12), .mov .rcx (.reg .r15)]
+
+/-- The next component: its address in `r13` and its length in `r14`, from
+the descriptor `r15 + 112` points to. -/
+def adNext : List Instr :=
+  [.mov .rax (.mem (at_ .r15 adsOff)), .mov .r13 (.mem (at_ .rax 0)), .mov .r14 (.mem (at_ .rax 8))]
+
+/-- `D = dbl(D) XOR` the CMAC state, as in `vg_aes_siv_s2v_ad` (with the
+context kept at `r15 + 224` while `rbx` holds `D`); then the next
+descriptor, and one fewer left (ZF set when none is). -/
+def adStep : List Instr :=
+  [.store (at_ .r15 ctxOff) .rbx, .mov .rbx (.reg .r12)] ++ Impl.CmacAes.X86_64.dbl 0 0 ++
+  [.mov .rax (.mem (at_ .r12 0)), .alu .xor .rax (.mem (at_ .r15 stOff)), .store (at_ .r12 0) .rax,
+   .mov .rax (.mem (at_ .r12 8)), .alu .xor .rax (.mem (at_ .r15 (stOff + 8))),
+   .store (at_ .r12 8) .rax, .mov .rbx (.mem (at_ .r15 ctxOff)),
+   .mov .rax (.mem (at_ .r15 adsOff)), .alu .add .rax (imm 16), .store (at_ .r15 adsOff) .rax,
+   .mov .rax (.mem (at_ .r15 leftOff)), .alu .sub .rax (imm 1), .store (at_ .r15 leftOff) .rax]
+
+/-- S2V of the components of associated data, from `D`'s first state. -/
+def s2vAds (c : Ctr32) (sfx : String) : Prog isa :=
+  .seq (.block [.mov .rax (.mem (at_ .r15 leftOff)), .alu .test .rax (.reg .rax)])
+    (.ite .e (.block [])
+      (.loop (.seq (.block adNext) (.seq (cmacOf c sfx stOff) (.block adStep))) .ne))
+
+/-- The registers' saving, S2V's first state (`vg_aes_siv_s2v_start`'s
+code, from the arguments `encPre` leaves) and S2V of the associated data,
+then the data and its length back in `r13` and `r14`. -/
+def encS2v (c : Ctr32) (sfx : String) : Prog isa :=
+  .seq (.block (encPre ++ startPre))
+    (.seq (callFinalize c sfx)
+      (.seq (s2vAds c sfx) (.block [.mov .r13 (.mem (at_ .r15 dataOff)), .mov .r14 (.mem (at_ .r15 lenOff))])))
+
+def encrypt (c : Ctr32) (sfx : String) : Prog isa :=
+  .seq (encS2v c sfx)
+    (.seq (finish c sfx 0) (.seq (.block (counter 0)) (.seq (ctr c) (.block restore))))
+
+def decrypt (c : Ctr32) (sfx : String) : Prog isa :=
+  .seq (encS2v c sfx)
+    (.seq (.block (counter 0))
+      (.seq (ctr c)
+        (.seq (finish c sfx tOff)
+          (.seq (.block compare)
+            (.seq maskData (.block ([.mov .rax (.mem (at_ .r15 dbOff))] ++ restore)))))))
+
 end VG.Impl.AesSiv.X86_64
