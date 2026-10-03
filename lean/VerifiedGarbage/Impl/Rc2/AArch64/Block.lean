@@ -1,6 +1,13 @@
 import VerifiedGarbage.Impl.Rc2.AArch64.Lookup
 
-/-! # RC2 block encryption and decryption on baseline AArch64 -/
+/-! # RC2 block encryption and decryption on baseline AArch64
+
+The four words are kept zero-extended in `x19`–`x22`, and `x9` holds
+`0xffff` for masking them. A mix computes `a & b` and `c & ~a` (`bic`) from
+the neighbouring words in parallel, adds them and the key word, masks the
+sum and rotates it with two shifts: seven instructions in sequence from the
+word that the previous mix wrote.
+-/
 
 namespace VG.Impl.Rc2.AArch64
 
@@ -19,25 +26,26 @@ def unpackWord (i : Nat) : List Instr :=
     mask (wordReg i) 16
 
 def blockLoad : List Instr :=
-  [.ldr .x .x8 .x1 0] ++ (List.range 4).flatMap unpackWord
+  [imm .x9 65535, .ldr .x .x8 .x1 0] ++ (List.range 4).flatMap unpackWord
 
+/-- Rotate the (zero-extended) word in `r` left by `s` bits. -/
 def rotate16 (r : Reg) (s : Nat) : List Instr :=
-  [rr .x8 r, .lsr .x .x8 .x8 (16 - s), .ror .x r r (64 - s),
-   .logic .orr .x r r .x8] ++ mask r 16
+  [.lsl .x .x8 r s, .lsr .x r r (16 - s), .logic .orr .x r r .x8, .logic .and .x r r .x9]
 
+/-- `a & b` into `x6` and `c & ~a` into `x7` (`a`, `b`, `c` the words
+before `i`), and the key word `j` into `x4`. -/
 def mixInputs (j i : Nat) : List Instr :=
   [.logic .and .x .x6 (wordReg (i + 3)) (wordReg (i + 2)),
-   imm .x7 0, .sub .x .x7 .x7 (wordReg (i + 3)), .subImm .x .x7 .x7 1,
-   .logic .and .x .x7 .x7 (wordReg (i + 1)), .add .x .x6 .x6 .x7] ++ loadKey j
+   .bicRor .x .x7 (wordReg (i + 1)) (wordReg (i + 3)) 0] ++ loadKey j
 
 def addInputs (r : Reg) : List Instr :=
-  [.add .x r r .x4, .add .x r r .x6] ++ mask r 16
+  [.add .x r r .x4, .add .x r r .x6, .add .x r r .x7, .logic .and .x r r .x9]
 
 def subInputs (r : Reg) : List Instr :=
-  [.sub .x r r .x4, .sub .x r r .x6] ++ mask r 16
+  [.sub .x r r .x4, .sub .x r r .x6, .sub .x r r .x7, .logic .and .x r r .x9]
 
 def adjust (sub : Bool) (r : Reg) : List Instr :=
-  [if sub then .sub .x r r .x8 else .add .x r r .x8] ++ mask r 16
+  [if sub then .sub .x r r .x8 else .add .x r r .x8, .logic .and .x r r .x9]
 
 def mix (j i : Nat) : List Instr :=
   mixInputs j i ++ addInputs (wordReg i) ++ rotate16 (wordReg i) (Spec.Rc2.rotation i)
