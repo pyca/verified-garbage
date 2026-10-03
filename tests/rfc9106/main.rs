@@ -1,7 +1,12 @@
 //! Published RFC 9106 vectors, read from the unmodified RFC, and API boundaries.
 
 #![cfg(all(
-    any(target_arch = "x86_64", target_arch = "aarch64", target_arch = "x86"),
+    any(
+        target_arch = "x86_64",
+        target_arch = "aarch64",
+        target_arch = "x86",
+        target_arch = "arm"
+    ),
     feature = "alloc"
 ))]
 
