@@ -152,7 +152,7 @@ theorem codeCtx_of {s : State} (h : pubContract.pre s) : CodeCtx s := by
     wO, wN, wE, wI, wS, hk, hol, hil, hL1, hL2, hsl⟩ := h
   obtain ⟨hk1, hk2⟩ := hk
   unfold Spec.Rsa.scratchWords at hsl
-  have hs : Scr s (stackArg s 2) ((stackArg s 3).toNat * 8) := ⟨by rw [hwr]; simp, wS⟩
+  have hs : Scr s (stackArg s 2) ((stackArg s 3).toNat * 8) := Scr.of_mem (by rw [hwr]; simp) wS
   have hn := hs.nowrap
   refine ⟨hk1, hk2, hL1, hL2, by omega, hs,
     ⟨⟨stackArgAddr s 0, 32⟩, by rw [hrd]; simp, by simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega⟩,
