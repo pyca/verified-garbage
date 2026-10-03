@@ -52,15 +52,16 @@ theorem GArg.facts {o : Nat} (ho : 4096 ≤ o) (ho' : o + 1024 ≤ 16384) {p : B
     · rw [e]; exact Offset.disjoint _ hdo (by omega) (by omega)
     · rw [e]; exact Offset.disjoint_base _ hd (by omega)
 
-/-- A call of G from the body: `compress(r0, r1, r2, r3)`, to `scratch + o`. -/
-theorem ccall_ok {s : State} (h : Inv s₀ s) (h3 : s.gpr .r3 = scrP s₀) {o : Nat} (ho : 4096 ≤ o)
+/-- The regions G is given. -/
+abbrev cRd (s : State) : List Region := [⟨State.addr (s.gpr .r0), 1024⟩, ⟨State.addr (s.gpr .r1), 1024⟩]
+abbrev cWr (s₀ : State) (o : Nat) : List Region := [⟨scrB s₀ + BitVec.ofNat 64 o, 1024⟩, ⟨scrB s₀, 4096⟩]
+
+/-- What G needs, from the body: `compress(r0, r1, r2, r3)`, to `scratch + o`. -/
+theorem ccall_pre {s : State} (h : Inv s₀ s) (h3 : s.gpr .r3 = scrP s₀) {o : Nat} (ho : 4096 ≤ o)
     (ho' : o + 1024 ≤ 16384) (h2 : s.gpr .r2 = scrP s₀ + BitVec.ofNat 32 o) (hx : GArg s₀ o (s.gpr .r0))
-    (hy : GArg s₀ o (s.gpr .r1)) {Q : State → Prop}
-    (k : ∀ t, Inv s₀ t → (∀ q ∈ preserved, q ≠ .lr → t.gpr q = s.gpr q) →
-      Frame [⟨scrB s₀ + BitVec.ofNat 64 o, 1024⟩, ⟨scrB s₀, 4096⟩] s.mem t.mem →
-      blk t.mem (scrP s₀) o =
-        compress (blockAt s.mem (State.addr (s.gpr .r0))) (blockAt s.mem (State.addr (s.gpr .r1))) → Q t) :
-    WP isa Impl.Argon2.Arm.Derive.compressCall s Q := by
+    (hy : GArg s₀ o (s.gpr .r1)) :
+    compressArm.pre (s.callEntry.withRegions (cRd s) (cWr s₀ o)) ∧ Covers (cRd s ++ cWr s₀ o) (s.rd ++ s.wr) ∧
+      Covers (cWr s₀ o) s.wr := by
   have hs := hp.scr_fits
   obtain ⟨⟨RX, hRX, oX, bX, lX⟩, fX, X_out, X_scr⟩ := hx.facts hp ho ho'
   obtain ⟨⟨RY, hRY, oY, bY, lY⟩, fY, Y_out, Y_scr⟩ := hy.facts hp ho ho'
@@ -86,15 +87,25 @@ theorem ccall_ok {s : State} (h : Inv s₀ s) (h3 : s.gpr .r3 = scrP s₀) {o : 
       simp only [List.mem_singleton] at hq; subst hq; exact ⟨scrR s₀, scrW, 0, by simp, by simp⟩
   have O_W : Region.Disjoint ⟨scrB s₀ + BitVec.ofNat 64 o, 1024⟩ ⟨scrB s₀, 4096⟩ :=
     Offset.disjoint_base _ ho (by omega)
-  have pre : compressArm.pre (s.callEntry.withRegions
-      [⟨State.addr (s.gpr .r0), 1024⟩, ⟨State.addr (s.gpr .r1), 1024⟩]
-      [⟨scrB s₀ + BitVec.ofNat 64 o, 1024⟩, ⟨scrB s₀, 4096⟩]) := by
-    simp only [compressArm, State.withRegions_rd, State.withRegions_wr, State.withRegions_gpr,
+  refine ⟨?_, (Covers.pair cX cY).right.append_left (Covers.pair cO cW).right, Covers.pair cO cW⟩
+  · simp only [compressArm, State.withRegions_rd, State.withRegions_wr, State.withRegions_gpr,
       State.callEntry_gpr _ (show Reg.r0 ∉ linkRegs by decide), State.callEntry_gpr _ (show Reg.r1 ∉ linkRegs by decide),
       State.callEntry_gpr _ (show Reg.r2 ∉ linkRegs by decide), State.callEntry_gpr _ (show Reg.r3 ∉ linkRegs by decide),
       h2, h3, eO]
     refine ⟨trivial, trivial, O_W, X_out, X_scr, Y_out, Y_scr, fX, fY, by rw [add_nat (by omega)]; omega, by omega⟩
-  refine WP.call (k := compressArm) Proof.Argon2.Arm.compress_verified'.1 pre ((Covers.pair cX cY).right.append_left (Covers.pair cO cW).right) (Covers.pair cO cW)
+
+/-- A call of G from the body: `compress(r0, r1, r2, r3)`, to `scratch + o`. -/
+theorem ccall_ok {s : State} (h : Inv s₀ s) (h3 : s.gpr .r3 = scrP s₀) {o : Nat} (ho : 4096 ≤ o)
+    (ho' : o + 1024 ≤ 16384) (h2 : s.gpr .r2 = scrP s₀ + BitVec.ofNat 32 o) (hx : GArg s₀ o (s.gpr .r0))
+    (hy : GArg s₀ o (s.gpr .r1)) {Q : State → Prop}
+    (k : ∀ t, Inv s₀ t → (∀ q ∈ preserved, q ≠ .lr → t.gpr q = s.gpr q) →
+      Frame [⟨scrB s₀ + BitVec.ofNat 64 o, 1024⟩, ⟨scrB s₀, 4096⟩] s.mem t.mem →
+      blk t.mem (scrP s₀) o =
+        compress (blockAt s.mem (State.addr (s.gpr .r0))) (blockAt s.mem (State.addr (s.gpr .r1))) → Q t) :
+    WP isa Impl.Argon2.Arm.Derive.compressCall s Q := by
+  have hs := hp.scr_fits
+  obtain ⟨pre, cv, cw⟩ := ccall_pre hp h h3 ho ho' h2 hx hy
+  refine WP.call (k := compressArm) Proof.Argon2.Arm.compress_verified'.1 pre cv cw
     (fun t hrd hwr hsp hf hcs _ hpost => ?_) (by lit_decide)
   simp only [compressArm, State.withRegions_gpr, State.withRegions_mem, State.callEntry_mem,
     State.callEntry_gpr _ (show Reg.r0 ∉ linkRegs by decide), State.callEntry_gpr _ (show Reg.r1 ∉ linkRegs by decide),
