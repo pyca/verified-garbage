@@ -58,15 +58,15 @@ pub trait HashFunction: Clone {
 ///
 /// * `init(state: *mut [u8; STATE])` makes `state` represent the empty
 ///   message;
-/// * `update(state, count: u64, data: *const u8, len: usize)` absorbs `len`
-///   bytes into a state representing a message of `count` bytes;
-/// * `finalize(state, count: u64, out: *mut [u8; FINAL])` writes the final
-///   hash value, whose first `OUTPUT` bytes are the digest.
+/// * `update(state, count: u64, data: *const u8, len: usize, scratch: *mut [u64; SCRATCH])`
+///   absorbs `len` bytes into a state representing a message of `count`
+///   bytes;
+/// * `finalize(state, count: u64, out: *mut [u8; FINAL], scratch)` writes
+///   the final hash value, whose first `OUTPUT` bytes are the digest.
 ///
 /// `scratch` is `none` for functions that keep their working space on their
-/// own stack; otherwise it is the size of the working space `update` and
-/// `finalize` take as a last argument, `scratch: *mut [u64; SCRATCH]`, which
-/// each call is passed a fresh array for.
+/// own stack and take no `scratch` argument (their callers here pass an empty
+/// array, which they drop).
 ///
 /// `backends` names the enum of the implementations of `update` and
 /// `finalize` to choose from, each a variant: first the one for the
@@ -79,13 +79,21 @@ pub trait HashFunction: Clone {
 /// length is kept exactly (`update` panics rather than let it reach 2⁶⁴
 /// bytes).
 macro_rules! streaming_hash {
-    // A call of `f` with `args`, followed by working space of `scratch` words
-    // if it takes any.
-    (@call none, $f:path, $($arg:expr),*) => {
-        $f($($arg),*)
+    // The number of words of working space `update` and `finalize` take.
+    (@len none) => {
+        0
     };
-    (@call $scratch:literal, $f:path, $($arg:expr),*) => {
-        $f($($arg,)* &mut [0u64; $scratch])
+    (@len $scratch:literal) => {
+        $scratch
+    };
+    // A call of `f` with `args`, followed by the working space `s` if it
+    // takes any.
+    (@call none, $f:path, $s:expr, $($arg:expr),*) => {{
+        let _ = $s;
+        $f($($arg),*)
+    }};
+    (@call $scratch:literal, $f:path, $s:expr, $($arg:expr),*) => {
+        $f($($arg,)* $s)
     };
     (
         $(#[$doc:meta])*
@@ -140,17 +148,17 @@ macro_rules! streaming_hash {
                 count: u64,
                 data: *const u8,
                 len: usize,
+                scratch: &mut [u64; $crate::hashes::streaming_hash!(@len $scratch)],
             ) {
-                // SAFETY: the caller's obligations; any working space is a
-                // fresh array, a distinct object.
+                // SAFETY: the caller's obligations.
                 unsafe {
                     match self {
-                        Self::$base => {
-                            $crate::hashes::streaming_hash!(@call $scratch, $update, state, count, data, len)
-                        }
-                        $($(#[$attr])* Self::$variant => {
-                            $crate::hashes::streaming_hash!(@call $scratch, $vupdate, state, count, data, len)
-                        })*
+                        Self::$base => $crate::hashes::streaming_hash!(
+                            @call $scratch, $update, scratch, state, count, data, len
+                        ),
+                        $($(#[$attr])* Self::$variant => $crate::hashes::streaming_hash!(
+                            @call $scratch, $vupdate, scratch, state, count, data, len
+                        ),)*
                     }
                 }
             }
@@ -166,17 +174,17 @@ macro_rules! streaming_hash {
                 state: &mut [u8; $state],
                 count: u64,
                 out: &mut [u8; $final],
+                scratch: &mut [u64; $crate::hashes::streaming_hash!(@len $scratch)],
             ) {
-                // SAFETY: the caller's obligations; any working space is a
-                // fresh array, a distinct object.
+                // SAFETY: the caller's obligations.
                 unsafe {
                     match self {
-                        Self::$base => {
-                            $crate::hashes::streaming_hash!(@call $scratch, $finalize, state, count, out)
-                        }
-                        $($(#[$attr])* Self::$variant => {
-                            $crate::hashes::streaming_hash!(@call $scratch, $vfinalize, state, count, out)
-                        })*
+                        Self::$base => $crate::hashes::streaming_hash!(
+                            @call $scratch, $finalize, scratch, state, count, out
+                        ),
+                        $($(#[$attr])* Self::$variant => $crate::hashes::streaming_hash!(
+                            @call $scratch, $vfinalize, scratch, state, count, out
+                        ),)*
                     }
                 }
             }
@@ -237,17 +245,24 @@ macro_rules! streaming_hash {
                     .length
                     .checked_add(data.len() as u64)
                     .expect("message too long");
+                let mut scratch = [0u64; $crate::hashes::streaming_hash!(@len $scratch)];
                 // SAFETY: `self.state` is valid for reads and writes of its
-                // size and `data` for reads of `data.len()` bytes; they are
-                // distinct objects, so they do not overlap each other, the
-                // return address (on x86-64 and x86) or the arguments on the
-                // stack (on 32-bit ARM and x86), and do not wrap around the
-                // end of the address space. `self.length` is the length of
-                // the message `self.state` represents. `self.backend` was
+                // size, `data` for reads of `data.len()` bytes and `scratch`
+                // for reads and writes of its size; they are distinct
+                // objects, so they do not overlap each other, the return
+                // address (on x86-64 and x86) or the arguments on the stack
+                // (on 32-bit ARM and x86), and do not wrap around the end of
+                // the address space. `self.length` is the length of the
+                // message `self.state` represents. `self.backend` was
                 // selected for this CPU's features.
                 unsafe {
-                    self.backend
-                        .update(&mut self.state, self.length, data.as_ptr(), data.len())
+                    self.backend.update(
+                        &mut self.state,
+                        self.length,
+                        data.as_ptr(),
+                        data.len(),
+                        &mut scratch,
+                    )
                 };
                 self.length = length;
             }
@@ -255,15 +270,20 @@ macro_rules! streaming_hash {
             /// Pads the message and returns its digest.
             pub fn finalize(mut self) -> [u8; $output] {
                 let mut out = [0; $final];
+                let mut scratch = [0u64; $crate::hashes::streaming_hash!(@len $scratch)];
                 // SAFETY: `self.state` is valid for reads and writes of its
-                // size and `out` for writes of its size; they are distinct
-                // objects, so they do not overlap each other, the return
-                // address (on x86-64 and x86) or the arguments on the stack
-                // (on 32-bit ARM and x86), and do not wrap around the end of
-                // the address space. `self.length` is the exact length of the
-                // message `self.state` represents. `self.backend` was
-                // selected for this CPU's features.
-                unsafe { self.backend.finalize(&mut self.state, self.length, &mut out) };
+                // size, `out` for writes of its size and `scratch` for reads
+                // and writes of its size; they are distinct objects, so they
+                // do not overlap each other, the return address (on x86-64
+                // and x86) or the arguments on the stack (on 32-bit ARM and
+                // x86), and do not wrap around the end of the address space.
+                // `self.length` is the exact length of the message
+                // `self.state` represents. `self.backend` was selected for
+                // this CPU's features.
+                unsafe {
+                    self.backend
+                        .finalize(&mut self.state, self.length, &mut out, &mut scratch)
+                };
                 let mut digest = [0; $output];
                 digest.copy_from_slice(&out[..$output]);
                 digest
