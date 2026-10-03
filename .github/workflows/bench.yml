@@ -66,10 +66,11 @@ jobs:
       fail-fast: false
       matrix:
         include: ${{ fromJSON(needs.arches.outputs.matrix) }}
-    name: Compare with base (${{ matrix.arch }}${{ matrix.cpu-features && format(', VG_CPU_FEATURES={0}', matrix.cpu-features) || '' }})
+    name: Compare with base (${{ matrix.arch }}${{ matrix.cpu-features && format(', VG_CPU_FEATURES={0}', matrix.cpu-features) || '' }}${{ matrix.shard && format(', shard {0}', matrix.shard) || '' }})
     runs-on: ${{ matrix.os }}
-    # Running every benchmark (for a shared change, or by hand) takes about
-    # 14 minutes on the aarch64 runners and longer on the others.
+    # Running every benchmark took 25-30 minutes on every runner, so each
+    # configuration is split into shards of at most BENCHMARKS_PER_JOB
+    # benchmarks (ci/bench_arches.py), under about 20 minutes each.
     timeout-minutes: 30
     # With an empty image the job runs directly on the runner.
     container:
@@ -118,4 +119,5 @@ jobs:
       - name: Benchmark base and head
         env:
           MODULES: ${{ matrix.modules }}
-        run: python3 head/ci/bench_compare.py base head --modules "$MODULES" --summary "$GITHUB_STEP_SUMMARY"
+          SHARD: ${{ matrix.shard }}
+        run: python3 head/ci/bench_compare.py base head --modules "$MODULES" --shard "$SHARD" --summary "$GITHUB_STEP_SUMMARY"

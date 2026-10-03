@@ -52,6 +52,10 @@ src/cpu.rs), so that every implementation is measured. Each entry's
 `cpu-features` is its restriction, empty for none. With `--base REV`, edits
 consisting only of module/benchmark registrations select their dependencies.
 
+Each configuration is split into `shards` jobs, of at most
+`BENCHMARKS_PER_JOB` of the benchmarks it runs each (`shard` is `i/n`, empty
+for one): `bench_compare.py --shard` runs that share of them.
+
 When only some benchmarks run, a configuration runs only if it can choose
 other implementations of them than the configurations before it: one that
 allows the same of the feature sets they choose by is left out. A benchmark
@@ -117,6 +121,12 @@ CPU_FEATURES = {
     "aarch64": ["neon", "sha3", "none"],
     "x86": ["aes", "pclmulqdq,ssse3", "none"],
 }
+
+# The benchmarks (`BENCHES` entries of bench/benches/primitives/main.rs) one
+# job runs at most. Every runner takes about 1 s per benchmark id, so all 50
+# (247 ids) took 25-28 minutes per job on aarch64, ARMv7 and x86-64, and over
+# the 30-minute timeout on x86: 30 keeps a job under about 20 minutes.
+BENCHMARKS_PER_JOB = 30
 
 # Changes to this script choose benchmarks but are not measured by any:
 # `ci/test_check_benchmarks.py` tests it.
@@ -184,6 +194,16 @@ def bench_catalog(revision=None, root="."):
     catalog = {name: bench_uses(f"bench/benches/primitives/{name}.rs", revision, root)
                for name in names}
     return catalog if catalog and all(catalog.values()) else None
+
+
+def bench_count(modules, root="."):
+    """How many benchmarks run for `modules` (ALL: every registered one)."""
+    main = read("bench/benches/primitives/main.rs", None, root) or ""
+    names = set(re.findall(r"\(([a-z0-9_]+)::USES, \1::bench\)", main))
+    if modules is ALL:
+        return len(names)
+    catalog = bench_catalog(None, root) or {}
+    return sum(1 for uses in catalog.values() if uses & modules)
 
 
 def registrations(path, base):
@@ -414,7 +434,8 @@ def arches(changed, base=None):
                 needed[a] = ALL
     revisions = [base, None] if base else [None]
     return [p for a in PLATFORMS if a in needed
-            for p in platforms(a, needed[a], run_requirements(a, needed[a], catalogs, revisions))]
+            for p in platforms(a, needed[a], run_requirements(a, needed[a], catalogs, revisions),
+                               bench_count(needed[a]))]
 
 
 def cpu_item(lines, i):
@@ -504,9 +525,14 @@ def run_requirements(arch, modules, catalogs, revisions):
     return requirements(arch, uses, revisions)
 
 
-def platforms(arch, modules=ALL, reqs=None):
+def platforms(arch, modules=ALL, reqs=None, benchmarks=None):
     """The matrix entries of `arch`: one per CPU feature configuration, but
-    with `reqs`, only the first of those allowing the same of them."""
+    with `reqs`, only the first of those allowing the same of them; each in
+    as many shards as `benchmarks` (by default, every registered one)
+    needs."""
+    if benchmarks is None:
+        benchmarks = bench_count(ALL)
+    shards = max(1, -(-benchmarks // BENCHMARKS_PER_JOB))
     configurations = ["", *CPU_FEATURES.get(arch, [])]
     if reqs is not None:
         chosen = {}
@@ -522,8 +548,10 @@ def platforms(arch, modules=ALL, reqs=None):
             **PLATFORMS[arch],
             "cpu-features": features,
             "modules": " ".join(sorted(modules or ())),
+            "shard": f"{shard}/{shards}" if shards > 1 else "",
         }
         for features in configurations
+        for shard in range(1, shards + 1)
     ]
 
 
