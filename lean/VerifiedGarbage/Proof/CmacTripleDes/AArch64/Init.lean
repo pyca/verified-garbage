@@ -377,7 +377,7 @@ theorem init_wp {s₀ : State} (h0 : initAArch64.pre s₀) :
           show _ ∈ s₂.rd ++ s₂.wr
           rw [h₂.rd, h₂.wr, hp.rd, hp.wr]; simp, by rw [x14₃],
         by show 384 ≤ 400; decide, by show 400 < 2 ^ 64; decide⟩
-      scr := ⟨⟨Sc s₀, 640⟩, by show _ ∈ s₂.wr; rw [h₂.wr, hp.wr]; simp, by rw [x15₃], by show 48 ≤ 640; decide,
+      scr := ⟨⟨Sc s₀, 640⟩, by show _ ∈ s₂.wr; rw [h₂.wr, hp.wr]; simp, by rw [x15₃], by show 384 ≤ 640; decide,
         by show 640 < 2 ^ 64; decide⟩
       disj := by
         rw [x14₃, x15₃]
@@ -388,9 +388,9 @@ theorem init_wp {s₀ : State} (h0 : initAArch64.pre s₀) :
     apply Vector.ext
     intro n hn
     rw [← vgetD _ hn 0, ← vgetD _ hn 0, scheduleAt_getD _ _ hn, h₂.sched n (by omega)]
-  have xR₃ : xR s₃ = ⟨Sc s₀, 48⟩ := by rw [xR, x15₃]
-  have f₄ : Frame [⟨Sc s₀, 48⟩] s₂.mem s₄.mem := by rw [← xR₃]; exact same₄.frame
-  have outX : ∀ r ∈ [(⟨Sc s₀, 48⟩ : Region)], (⟨O s₀, 384⟩ : Region).Disjoint r := fun r hr => by
+  have xR₃ : xR s₃ = ⟨Sc s₀, 384⟩ := by rw [xR, x15₃]
+  have f₄ : Frame [⟨Sc s₀, 384⟩] s₂.mem s₄.mem := by rw [← xR₃]; exact same₄.frame
+  have outX : ∀ r ∈ [(⟨Sc s₀, 384⟩ : Region)], (⟨O s₀, 384⟩ : Region).Disjoint r := fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr
     exact (hp.out_scr.sub_left (Region.sub_prefix (by decide))).sub_right (Region.sub_prefix (by decide))
   have hsch₄ : Spec.TripleDes.scheduleAt s₄.mem (O s₀) = Spec.TripleDes.expandKey (keyB s₀) := by

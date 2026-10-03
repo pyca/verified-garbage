@@ -1,4 +1,4 @@
-import VerifiedGarbage.Proof.CmacTripleDes.AArch64.Round
+import VerifiedGarbage.Proof.CmacTripleDes.AArch64.Spread
 import VerifiedGarbage.Proof.CmacTripleDes.Block
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
@@ -6,18 +6,20 @@ import VerifiedGarbage.Proof.Framework.Offset
 /-!
 # TDEA on AArch64: the passes and the block
 
-As on x86-64 (`Proof/CmacTripleDes/X86_64/Block.lean`): `block` encrypts the
-64-bit block in `x5` with the key schedule at `x14` (`block_ok`): `IP` into
-`x12` and `x13`, three passes of sixteen rounds (`pass_ok`, the round keys
-`x0` bytes apart, the halves exchanged after each pass), and `IP⁻¹`. During
-the block, `x14` points to slot `kpos p j` of the key schedule before round
-`j` of pass `p`.
+`block` encrypts the 64-bit block in `x5` with the key schedule at `x14`
+(`block_ok`): it spreads the 48 round keys into the scratch buffer at `x15`
+(`spreadLoop_ok`), loads the tables and the constants and applies `IP`,
+leaving `L` and `R` spread in `x11` and `x12` (`setup_ok`), runs three passes
+of sixteen rounds (`pass_ok`, two rounds per iteration, the spread round
+keys from `x10`, moving down in the middle pass, the halves exchanged after
+the first two), and applies `IP⁻¹`. Only the scratch buffer's first 384
+bytes change.
 -/
 
 namespace VG.Proof.CmacTripleDes.AArch64
 
-open VG VG.AArch64 VG.AArch64.RegUpd VG.AArch64.Straight VG.Bitslice VG.Impl.CmacTripleDes
-  VG.Impl.CmacTripleDes.AArch64 VG.Proof.CmacTripleDes
+open VG VG.AArch64 VG.AArch64.RegUpd VG.AArch64.Straight VG.AArch64.Tbl VG.Bitslice VG.Impl.CmacTripleDes
+  VG.Impl.CmacTripleDes.AArch64 VG.Impl.Tbl.AArch64 VG.Proof.CmacTripleDes
 
 theorem ofNat_ne_zero {x : Nat} (hx : x < 2 ^ 64) : (BitVec.ofNat 64 x != 0) = !decide (x = 0) := by
   have : (BitVec.ofNat 64 x == 0) = decide (x = 0) := by
@@ -43,17 +45,18 @@ theorem eval_zero {s : State} {r : Reg} {x : Nat} (hx : x < 2 ^ 64) (h : s.gpr r
   rw [bne] at this
   cases hb : (BitVec.ofNat 64 x == 0) <;> rw [hb] at this <;> cases hd : decide (x = 0) <;> simp_all
 
-/-- What the block needs: the key schedule at `x14` readable, and the slots
-0–5 of the scratch buffer at `x15` writable, apart from it. -/
+
+/-- What the block needs: the key schedule at `x14` readable, and the first
+384 bytes of the scratch buffer at `x15` writable, apart from it. -/
 structure BlockPre (s : State) : Prop where
   sched : ∃ R ∈ s.rd ++ s.wr, R.base = s.gpr .x14 ∧ 384 ≤ R.len ∧ R.len < 2 ^ 64
-  scr : ∃ R ∈ s.wr, R.base = s.gpr .x15 ∧ 48 ≤ R.len ∧ R.len < 2 ^ 64
-  disj : Region.Disjoint ⟨s.gpr .x15, 48⟩ ⟨s.gpr .x14, 384⟩
+  scr : ∃ R ∈ s.wr, R.base = s.gpr .x15 ∧ 384 ≤ R.len ∧ R.len < 2 ^ 64
+  disj : Region.Disjoint ⟨s.gpr .x15, 384⟩ ⟨s.gpr .x14, 384⟩
 
-/-- The slots of the broadcast inputs. -/
-abbrev xR (s₀ : State) : Region := ⟨s₀.gpr .x15, 48⟩
+/-- The spread round keys' slots. -/
+abbrev xR (s₀ : State) : Region := ⟨s₀.gpr .x15, 384⟩
 
-/-- The registers of the functions that the block keeps (with `x15`). -/
+/-- The registers of the functions that the block keeps (with `x14` and `x15`). -/
 def outer : List Reg := [.x1, .x2, .x3, .x4]
 
 /-- What the block keeps. -/
@@ -70,47 +73,29 @@ theorem Same.refl (s : State) : Same s s := ⟨rfl, fun _ _ => rfl, rfl, rfl, rf
 /-- The key schedule. -/
 abbrev sch (s₀ : State) : Spec.TripleDes.Schedule := Spec.TripleDes.scheduleAt s₀.mem (s₀.gpr .x14)
 
-theorem wordAddr_zero (a : Addr) : wordAddr a 0 = a := by simp [wordAddr]
+/-- The spread round keys, in the scratch buffer. -/
+def Keys (s₀ : State) (m : Mem) (n : Nat) : Prop :=
+  ∀ i < n, m.readW (s₀.gpr .x15 + BitVec.ofNat 64 (8 * i)) 64 = spread ((sch s₀).getD i 0)
 
-theorem ok_at {s₀ s : State} (hp : BlockPre s₀) (h : Same s₀ s) {n : Nat} (hn : n < 48)
-    (hk : s.gpr .x14 = s₀.gpr .x14 + BitVec.ofNat 64 (8 * n)) : Ok rCfg s := by
-  obtain ⟨R, hR, hRb, hRl, hRw⟩ := hp.sched
+theorem BlockPre.slot {s₀ : State} (hp : BlockPre s₀) {s : State} (h : Same s₀ s) {d n : Nat}
+    (hd : d + n ≤ 384) : InRegions s.wr (s₀.gpr .x15 + BitVec.ofNat 64 d) n := by
   obtain ⟨X, hX, hXb, hXl, hXw⟩ := hp.scr
-  refine ⟨fun k hk' => ?_, fun k hk' => ?_, by decide, fun k hk' j hj => ?_⟩
-  · rw [h.wr]
-    exact ⟨X, hX, contains_word (off := 0) (by show s.gpr .x15 = _; rw [h.x15, ← hXb]; simp)
-      (by simp only [rCfg] at hk'; omega) hXl hXw⟩
-  · simp only [rCfg] at hk'
-    obtain rfl : k = 0 := by omega
-    rw [h.rd, h.wr]
-    exact ⟨R, hR, contains_word (off := 8 * n) (by show s.gpr .x14 = _; rw [hk, hRb]) (by omega) hRl hRw⟩
-  · simp only [rCfg] at hk' hj
-    obtain rfl : j = 0 := by omega
-    rw [show rCfg.base = .x15 from rfl, show rCfg.ext = .x14 from rfl, h.x15, hk, wordAddr_zero]
-    exact hp.disj.sep (slot_contains _ hk' (by decide)) (Offset.contains_base _ (by omega) (by omega))
+  rw [h.wr]
+  exact ⟨X, hX, by rw [← hXb]; exact Offset.contains_base _ (by omega) (by omega)⟩
 
-theorem key_at {s₀ s : State} (hp : BlockPre s₀) (h : Same s₀ s) {n : Nat} (hn : n < 48)
-    (hk : s.gpr .x14 = s₀.gpr .x14 + BitVec.ofNat 64 (8 * n)) : keyW s = (sch s₀).getD n 0 := by
-  rw [scheduleAt_getD _ _ hn, keyW, wordAddr_zero, hk]
-  refine h.frame.readW (r := ⟨s₀.gpr .x14 + BitVec.ofNat 64 (8 * n), 8⟩) (Region.contains_self _ _) ?_ (by decide)
-  intro r hr
-  simp only [List.mem_singleton] at hr; subst hr
-  exact (hp.disj.sub_right (Offset.sub_base _ (by omega))).symm
+theorem BlockPre.key {s₀ : State} (hp : BlockPre s₀) {s : State} (h : Same s₀ s) {d n : Nat}
+    (hd : d + n ≤ 384) : InRegions (s.rd ++ s.wr) (s₀.gpr .x14 + BitVec.ofNat 64 d) n := by
+  obtain ⟨R, hR, hRb, hRl, hRw⟩ := hp.sched
+  rw [h.rd, h.wr]
+  exact ⟨R, hR, by rw [← hRb]; exact Offset.contains_base _ (by omega) (by omega)⟩
 
-/-! ## The rounds of a pass -/
-
-theorem roundTail_ok (s : State) :
-    ∃ s', runBlock isa roundTail s = some s' ∧
-      s'.gpr .x14 = s.gpr .x14 + s.gpr .x0 ∧ s'.gpr .x16 = s.gpr .x16 - 1 ∧
-      (∀ r, r ≠ .x14 → r ≠ .x16 → s'.gpr r = s.gpr r) ∧
-      s'.sp = s.sp ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
-  refine ⟨_, by
-    rw [roundTail, runBlock_cons, exec_add, runStep_some, runBlock_cons, exec_subImm_x (by decide),
-      runStep_some, runBlock_nil], ?_⟩
-  refine ⟨?_, ?_, fun r h₁ h₂ => ?_, rfl, rfl, rfl, rfl⟩
-  · simp [gpr_write, State.read]
-  · simp [gpr_write, State.read]
-  · simp [gpr_write, h₁, h₂]
+/-- The key schedule is unchanged while only the scratch buffer changes. -/
+theorem sched_word {s₀ : State} (hp : BlockPre s₀) {m : Mem} (hf : Frame [xR s₀] s₀.mem m) {d : Nat}
+    (hd : d + 8 ≤ 384) :
+    m.readW (s₀.gpr .x14 + BitVec.ofNat 64 d) 64 = s₀.mem.readW (s₀.gpr .x14 + BitVec.ofNat 64 d) 64 :=
+  (hf.readW (r := ⟨s₀.gpr .x14 + BitVec.ofNat 64 d, 8⟩) (Region.contains_self _ _) (fun r hr => by
+    simp only [List.mem_singleton] at hr; subst hr
+    exact (hp.disj.sub_right (Offset.sub_base _ hd)).symm) (by decide))
 
 theorem ofNat_sub_one {k : Nat} (hk : 1 ≤ k) (hk' : k < 2 ^ 64) :
     BitVec.ofNat 64 k - 1 = BitVec.ofNat 64 (k - 1) := by
@@ -119,270 +104,330 @@ theorem ofNat_sub_one {k : Nat} (hk : 1 ≤ k) (hk' : k < 2 ^ 64) :
     BitVec.toNat_ofNat, BitVec.toNat_ofNat]
   omega
 
-/-- The key schedule's slot before round `j` of pass `p`. -/
-def kpos (p j : Nat) : Nat := if p % 2 = 1 then 16 * p + 15 - j else 16 * p + j
+/-! ## Memory -/
 
-/-- The distance from one round key to the next in pass `p`. -/
-def stride (p : Nat) : BitVec 64 := if p % 2 = 1 then BitVec.ofNat 64 (2 ^ 64 - 8) else BitVec.ofNat 64 8
+theorem vdword_read (m : Mem) (a : Addr) {h : Nat} (hh : h < 2) :
+    vdword (m.read a 16) h = m.readW (a + BitVec.ofNat 64 (8 * h)) 64 := by
+  apply BitVec.eq_of_getLsbD_eq; intro i hi
+  rw [getLsbD_vdword _ hi, getLsbD_read m 16 a _ (by omega), getLsbD_readW64 _ _ hi,
+    BitVec.add_assoc, ← BitVec.ofNat_add, show (64 * h + i) / 8 = 8 * h + i / 8 by omega,
+    show (64 * h + i) % 8 = i % 8 by omega]
 
-theorem kpos_succ_addr (a : Addr) {p j : Nat} (hp : p < 3) (hj : j < 16) :
-    a + BitVec.ofNat 64 (8 * kpos p j) + stride p = a + BitVec.ofNat 64 (8 * kpos p (j + 1)) := by
-  rw [BitVec.add_assoc, stride, kpos, kpos]
-  congr 1
-  split
-  · rename_i hodd
-    rw [← BitVec.ofNat_add]
-    apply BitVec.eq_of_toNat_eq
-    rw [BitVec.toNat_ofNat, BitVec.toNat_ofNat]
-    omega
-  · rw [← BitVec.ofNat_add]
-    congr 1
+theorem readW_write16 (m : Mem) (a : Addr) (v : BitVec 128) {h : Nat} (hh : h < 2) :
+    (m.write a 16 v).readW (a + BitVec.ofNat 64 (8 * h)) 64 = vdword v h := by
+  apply BitVec.eq_of_getLsbD_eq; intro i hi
+  rw [getLsbD_readW64 _ _ hi, getLsbD_vdword _ hi, BitVec.add_assoc, ← BitVec.ofNat_add, Mem.write,
+    Mem.sub_ofNat_toNat a (by omega), ite_eq_left (by omega)]
+  simp only [BitVec.getLsbD_extractLsb', show i % 8 < 8 by omega, decide_true, Bool.true_and]
+  congr 1; omega
 
-/-- After `j` rounds of pass `p`, from the halves `lr`. -/
-structure PInv (s₀ : State) (p : Nat) (lr : BitVec 32 × BitVec 32) (j : Nat) (s : State) : Prop where
-  same : Same s₀ s
-  x14 : s.gpr .x14 = s₀.gpr .x14 + BitVec.ofNat 64 (8 * kpos p j)
-  x0 : s.gpr .x0 = stride p
-  x17 : s.gpr .x17 = BitVec.ofNat 64 (3 - p)
-  x16 : s.gpr .x16 = BitVec.ofNat 64 (16 - j)
-  halves : ((s.gpr .x12).setWidth 32, (s.gpr .x13).setWidth 32) = rounds (passKeys (sch s₀) p) j lr
-
-theorem kpos_lt {p j : Nat} (hp : p < 3) (hj : j < 16) : kpos p j < 48 := by
-  simp only [kpos]; split <;> omega
-
-theorem passKeys_at (s₀ : State) {p j : Nat} (hj : j < 16) :
-    passKeys (sch s₀) p j = ((sch s₀).getD (kpos p j) 0).setWidth 48 := by
-  rw [passKeys_eq _ hj, kpos]
-  by_cases h : p % 2 = 1
-  · rw [ite_eq_left h, ite_eq_left h, show 16 * p + (15 - j) = 16 * p + 15 - j by omega]
-  · rw [ite_eq_right h, ite_eq_right h]
-
-theorem outer_kept {r : Reg} (h : r ∈ outer) : r ∈ kept := by
-  simp only [outer, kept, List.mem_cons, List.not_mem_nil, or_false] at h ⊢
-  rcases h with rfl | rfl | rfl | rfl <;> simp
-
-theorem outer_ne {r : Reg} (h : r ∈ outer) :
-    r ≠ .x0 ∧ r ≠ .x5 ∧ r ≠ .x12 ∧ r ≠ .x13 ∧ r ≠ .x14 ∧ r ≠ .x15 ∧ r ≠ .x16 ∧ r ≠ .x17 := by
-  simp only [outer, List.mem_cons, List.not_mem_nil, or_false] at h
-  rcases h with rfl | rfl | rfl | rfl <;> decide
-
-/-- One round of pass `p`. -/
-theorem roundStep_ok {s₀ : State} (hp : BlockPre s₀) {p : Nat} (hp3 : p < 3) {lr : BitVec 32 × BitVec 32}
-    {j : Nat} (hj : j < 16) {s : State} (h : PInv s₀ p lr j s) :
-    WP isa (.block (round ++ roundTail)) s (PInv s₀ p lr (j + 1)) := by
-  rw [WP.block_append_iff]
-  obtain ⟨s₁, h₁, e12, e13, rd₁, wr₁, sp₁, k₁, f₁⟩ := round_ok (ok_at hp h.same (kpos_lt hp3 hj) h.x14)
-  refine WP.of_runBlock ⟨s₁, h₁, WP.of_runBlock ?_⟩
-  obtain ⟨s₂, h₂, t14, t16, tk, tsp, tm, trd, twr⟩ := roundTail_ok s₁
-  have kk : ∀ r ∈ kept, s₁.gpr r = s.gpr r := k₁
-  refine ⟨s₂, h₂, ⟨⟨?_, fun r hr => ?_, ?_, ?_, ?_, ?_⟩, ?_, ?_, ?_, ?_, ?_⟩⟩
-  · rw [tk .x15 (by decide) (by decide), kk .x15 (by simp [kept]), h.same.x15]
-  · obtain ⟨-, -, -, -, h14, -, h16, -⟩ := outer_ne hr
-    rw [tk r h14 h16, kk r (outer_kept hr), h.same.keep r hr]
-  · rw [tsp, sp₁, h.same.sp]
-  · rw [trd, rd₁, h.same.rd]
-  · rw [twr, wr₁, h.same.wr]
-  · rw [tm]
-    have hr : slotRegion rCfg s = xR s₀ := by
-      simp only [slotRegion, xR]; rw [show rCfg.base = .x15 from rfl, h.same.x15]; rfl
-    rw [hr] at f₁
-    exact h.same.frame.trans f₁
-  · rw [t14, kk .x14 (by simp [kept]), kk .x0 (by simp [kept]), h.x14, h.x0, kpos_succ_addr _ hp3 hj]
-  · rw [tk .x0 (by decide) (by decide), kk .x0 (by simp [kept]), h.x0]
-  · rw [tk .x17 (by decide) (by decide), kk .x17 (by simp [kept]), h.x17]
-  · rw [t16, kk .x16 (by simp [kept]), h.x16, ofNat_sub_one (by omega) (by omega)]
-    congr 1
-  · rw [rounds_succ, ← h.halves, tk .x12 (by decide) (by decide), tk .x13 (by decide) (by decide), e12, e13,
-      key_at hp h.same (kpos_lt hp3 hj) h.x14, passKeys_at s₀ hj]
-
-theorem exec_sub' {s : State} {d n m : Reg} :
-    exec (.sub .x d n m) s = some (s.write .x d (s.gpr n - s.gpr m)) := by
-  simp [exec, State.read]
-
-theorem exec_movz_x {s : State} {d : Reg} {imm : BitVec 16} {hw : Nat} (h : hw < 4) :
-    exec (.movz .x d imm hw) s = some (s.write .x d (imm.setWidth 64 <<< (16 * hw))) := by
-  simp only [exec, Size.bits, show 16 * hw < 64 by omega, ite_true]
+/-! ## Spreading the round keys -/
 
 theorem exec_mov {s : State} {d n : Reg} : exec (mov d n) s = some (s.write .x d (s.gpr n)) := by
   rw [mov, exec_addImm_x (by decide)]
   simp [State.read]
 
-/-- Pass `p`: sixteen rounds from the halves `lr`. -/
-theorem pass_ok {s₀ : State} (hp : BlockPre s₀) {p : Nat} (hp3 : p < 3) {lr : BitVec 32 × BitVec 32}
-    {s : State} (h : Same s₀ s) (h14 : s.gpr .x14 = s₀.gpr .x14 + BitVec.ofNat 64 (8 * kpos p 0))
-    (h0 : s.gpr .x0 = stride p) (h17 : s.gpr .x17 = BitVec.ofNat 64 (3 - p))
-    (hlr : ((s.gpr .x12).setWidth 32, (s.gpr .x13).setWidth 32) = lr) :
-    WP isa pass s (PInv s₀ p lr 16) := by
-  refine WP.seq (WP.of_runBlock ⟨_, by rw [runBlock_cons, exec_movz_x (by decide), runStep_some, runBlock_nil], ?_⟩)
-  have g : ∀ r, r ≠ .x16 → (s.write .x .x16 ((16 : BitVec 16).setWidth 64 <<< (16 * 0))).gpr r = s.gpr r :=
-    fun r hr => gpr_write_of_ne _ _ _ hr
-  have hI : PInv s₀ p lr 0 (s.write .x .x16 ((16 : BitVec 16).setWidth 64 <<< (16 * 0))) :=
-    ⟨⟨by rw [g _ (by decide), h.x15], fun r hr => by rw [g _ (outer_ne hr).2.2.2.2.2.2.1, h.keep r hr],
-      h.sp, h.rd, h.wr, h.frame⟩, by rw [g _ (by decide), h14], by rw [g _ (by decide), h0],
-      by rw [g _ (by decide), h17], by rw [gpr_write_self]; decide,
-      by rw [g _ (by decide), g _ (by decide), hlr]; rfl⟩
-  refine WP.loop (M := isa) (body := .block (round ++ roundTail)) (c := .nonzero .x .x16) (Q := PInv s₀ p lr 16)
-    (fun (n : Nat) (t : State) => ∃ j, n = 16 - j ∧ j < 16 ∧ PInv s₀ p lr j t) ?_ 16 _ ⟨0, rfl, by decide, hI⟩
-  rintro n t ⟨j, rfl, hj, ht⟩
-  refine WP.mono (roundStep_ok hp hp3 hj ht) fun t' h' => ?_
-  have ev := eval_nonzero (r := .x16) (x := 16 - (j + 1)) (by omega) h'.x16
-  by_cases hz : j + 1 = 16
-  · left
-    refine ⟨by rw [ev]; simp [hz], ?_⟩
-    rwa [hz] at h'
-  · right
-    exact ⟨by rw [ev]; simp; omega, 16 - (j + 1), by omega, j + 1, rfl, by omega, h'⟩
+theorem exec_movz_x {s : State} {d : Reg} {imm : BitVec 16} {hw : Nat} (h : hw < 4) :
+    exec (.movz .x d imm hw) s = some (s.write .x d (imm.setWidth 64 <<< (16 * hw))) := by
+  simp only [exec, Size.bits, show 16 * hw < 64 by omega, ite_true]
 
-/-! ## The passes -/
+theorem exec_dupd (s : State) (d : VReg) (n : Reg) :
+    exec (.vop (.dup .d2 d n)) s = some (s.setV d (ofVDwords (s.gpr n) (s.gpr n))) := rfl
 
-theorem passTail_ok (s : State) :
-    ∃ s', runBlock isa passTail s = some s' ∧
-      s'.gpr .x14 = s.gpr .x14 + (BitVec.ofNat 64 128 - s.gpr .x0) ∧ s'.gpr .x0 = 0 - s.gpr .x0 ∧
-      s'.gpr .x12 = s.gpr .x13 ∧ s'.gpr .x13 = s.gpr .x12 ∧ s'.gpr .x17 = s.gpr .x17 - 1 ∧
-      (∀ r, r ∉ [Reg.x0, .x5, .x12, .x13, .x14, .x17] → s'.gpr r = s.gpr r) ∧
-      s'.sp = s.sp ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
-  refine ⟨_, by
-    rw [passTail, runBlock_cons, exec_movz_x (by decide), runStep_some, runBlock_cons, exec_sub', runStep_some,
-      runBlock_cons, exec_add, runStep_some, runBlock_cons, exec_movz_x (by decide), runStep_some,
-      runBlock_cons, exec_sub', runStep_some, runBlock_cons, exec_mov, runStep_some,
-      runBlock_cons, exec_mov, runStep_some, runBlock_cons, exec_mov, runStep_some,
-      runBlock_cons, exec_subImm_x (by decide), runStep_some, runBlock_nil], ?_⟩
-  refine ⟨?_, ?_, ?_, ?_, ?_, fun r hr => ?_, rfl, rfl, rfl, rfl⟩
-  · simp [gpr_write, State.read]
-  · simp [gpr_write, State.read]
-  · simp [gpr_write]
-  · simp [gpr_write]
-  · simp [gpr_write, State.read]
-  · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
-    simp [gpr_write, hr.1, hr.2.1, hr.2.2.1, hr.2.2.2.1, hr.2.2.2.2.1, hr.2.2.2.2.2]
-
-/-- After `p` passes, from the block `x`. -/
-structure OInv (s₀ : State) (x : BitVec 64) (p : Nat) (s : State) : Prop where
+/-- After `m` pairs of keys. -/
+structure SInv (s₀ : State) (m : Nat) (s : State) : Prop where
   same : Same s₀ s
-  x14 : s.gpr .x14 = s₀.gpr .x14 + BitVec.ofNat 64 (8 * kpos p 0)
-  x0 : s.gpr .x0 = stride p
-  x17 : s.gpr .x17 = BitVec.ofNat 64 (3 - p)
-  halves : ((s.gpr .x12).setWidth 32, (s.gpr .x13).setWidth 32) =
-    passes (sch s₀) p (split (Spec.TripleDes.permute Spec.TripleDes.ip x))
+  x5 : s.gpr .x5 = s₀.gpr .x5
+  x14 : s.gpr .x14 = s₀.gpr .x14
+  x6 : s.gpr .x6 = s₀.gpr .x14 + BitVec.ofNat 64 (16 * m)
+  x7 : s.gpr .x7 = s₀.gpr .x15 + BitVec.ofNat 64 (16 * m)
+  x16 : s.gpr .x16 = BitVec.ofNat 64 (24 - m)
+  g : s.v .v5 = ofVBytes gatherIndex
+  c63 : s.v .v6 = bc 63
+  off : s.v .v7 = ofVDwords offsets offsets
+  keys : Keys s₀ s.mem (2 * m)
 
-theorem kpos_tail_addr (a : Addr) {p : Nat} (hp : p < 3) :
-    a + BitVec.ofNat 64 (8 * kpos p 16) + (BitVec.ofNat 64 128 - stride p) =
-      a + BitVec.ofNat 64 (8 * kpos (p + 1) 0) := by
-  rw [BitVec.add_assoc]
-  congr 1
-  rcases (by omega : p = 0 ∨ p = 1 ∨ p = 2) with rfl | rfl | rfl <;> decide
+theorem spreadPre_eq : spreadPre = const128 .v5 (ofVBytes gatherIndex) ++
+    (([.movz .x .x6 63 0, .vop (.dup .b16 .v6 .x6)] : List Instr) ++ (const64 .x6 offsets ++
+      ([.vop (.dup .d2 .v7 .x6), mov .x6 .x14, mov .x7 .x15, .movz .x .x16 24 0] : List Instr))) := by
+  simp only [spreadPre, List.append_assoc]
 
-theorem stride_succ {p : Nat} (hp : p < 3) : 0 - stride p = stride (p + 1) := by
-  rcases (by omega : p = 0 ∨ p = 1 ∨ p = 2) with rfl | rfl | rfl <;> decide
-
-theorem outer_notMem {r : Reg} (h : r ∈ outer) : r ∉ [Reg.x0, .x5, .x12, .x13, .x14, .x17] := by
-  simp only [outer, List.mem_cons, List.not_mem_nil, or_false] at h
-  rcases h with rfl | rfl | rfl | rfl <;> decide
-
-/-- One pass and the exchange after it. -/
-theorem passBody_ok {s₀ : State} (hp : BlockPre s₀) {x : BitVec 64} {p : Nat} (hp3 : p < 3) {s : State}
-    (h : OInv s₀ x p s) :
-    WP isa (.seq pass (.block passTail)) s (OInv s₀ x (p + 1)) := by
-  refine WP.seq (WP.mono (pass_ok hp hp3 h.same h.x14 h.x0 h.x17 h.halves) fun s₁ h₁ => ?_)
-  obtain ⟨s₂, h₂, t14, t0, t12, t13, t17, tk, tsp, tm, trd, twr⟩ := passTail_ok s₁
-  refine WP.of_runBlock ⟨s₂, h₂, ⟨⟨?_, fun r hr => ?_, ?_, ?_, ?_, ?_⟩, ?_, ?_, ?_, ?_⟩⟩
-  · rw [tk .x15 (by decide), h₁.same.x15]
-  · rw [tk r (outer_notMem hr), h₁.same.keep r hr]
-  · rw [tsp, h₁.same.sp]
-  · rw [trd, h₁.same.rd]
-  · rw [twr, h₁.same.wr]
-  · rw [tm]; exact h₁.same.frame
-  · rw [t14, h₁.x14, h₁.x0, kpos_tail_addr _ hp3]
-  · rw [t0, h₁.x0, stride_succ hp3]
-  · rw [t17, h₁.x17, ofNat_sub_one (by omega) (by omega)]
-    congr 1
-  · rw [t12, t13, passes, ← h₁.halves]
+theorem spreadPre_ok (s₀ : State) : WP isa (.block spreadPre) s₀ (SInv s₀ 0) := by
+  rw [spreadPre_eq, WP.block_append_iff]
+  refine WP.mono (const128_ok s₀ .v5 _) fun a ⟨a5, av, ag, am, ard, awr, asp⟩ => ?_
+  rw [WP.block_append_iff]
+  let b := (a.write .x .x6 ((63 : BitVec 16).setWidth 64 <<< (16 * 0)))
+  let b' := b.setV .v6 (bc ((b.gpr .x6).setWidth 8))
+  refine WP.of_runBlock ⟨b', by
+    rw [runBlock_cons, exec_movz_x (by decide), runStep_some, runBlock_cons, exec_dupb, runStep_some,
+      runBlock_nil], ?_⟩
+  rw [WP.block_append_iff]
+  refine WP.mono (const64_ok b' .x6 offsets) fun c ⟨c6, cg, ce⟩ => ?_
+  let d₁ := c.setV .v7 (ofVDwords (c.gpr .x6) (c.gpr .x6))
+  let d₂ := d₁.write .x .x6 (d₁.gpr .x14)
+  let d₃ := d₂.write .x .x7 (d₂.gpr .x15)
+  let d₄ := d₃.write .x .x16 ((24 : BitVec 16).setWidth 64 <<< (16 * 0))
+  refine WP.of_runBlock ⟨d₄, by
+    rw [runBlock_cons, exec_dupd, runStep_some, runBlock_cons, exec_mov, runStep_some, runBlock_cons,
+      exec_mov, runStep_some, runBlock_cons, exec_movz_x (by decide), runStep_some, runBlock_nil], ?_⟩
+  have cv : c.v = b'.v := by rw [ce]
+  have cmem : c.mem = s₀.mem := by rw [ce]; exact am
+  have g14 : c.gpr .x14 = s₀.gpr .x14 := by
+    rw [cg .x14 (by decide)]; simp only [b', b, gpr_setV, gpr_write_of_ne _ _ _ (by decide : Reg.x14 ≠ .x6)]
+    exact ag .x14 (by decide) (by decide)
+  have g15 : c.gpr .x15 = s₀.gpr .x15 := by
+    rw [cg .x15 (by decide)]; simp only [b', b, gpr_setV, gpr_write_of_ne _ _ _ (by decide : Reg.x15 ≠ .x6)]
+    exact ag .x15 (by decide) (by decide)
+  have gout : ∀ r ∈ outer, c.gpr r = s₀.gpr r := by
+    intro r hr
+    have h6 : r ≠ .x6 := by simp only [outer, List.mem_cons, List.not_mem_nil, or_false] at hr; rcases hr with rfl | rfl | rfl | rfl <;> decide
+    have h7 : r ≠ .x7 := by simp only [outer, List.mem_cons, List.not_mem_nil, or_false] at hr; rcases hr with rfl | rfl | rfl | rfl <;> decide
+    rw [cg r h6]; simp only [b', b, gpr_setV, gpr_write_of_ne _ _ _ h6]; exact ag r h6 h7
+  refine ⟨⟨?_, fun r hr => ?_, ?_, ?_, ?_, ?_⟩, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, fun i hi => absurd hi (by omega)⟩
+  · simp only [d₄, d₃, d₂, d₁, gpr_write_of_ne _ _ _ (by decide : Reg.x15 ≠ .x16),
+      gpr_write_of_ne _ _ _ (by decide : Reg.x15 ≠ .x7), gpr_write_of_ne _ _ _ (by decide : Reg.x15 ≠ .x6),
+      gpr_setV, g15]
+  · have h6 : r ≠ .x6 := by simp only [outer, List.mem_cons, List.not_mem_nil, or_false] at hr; rcases hr with rfl | rfl | rfl | rfl <;> decide
+    have h7 : r ≠ .x7 := by simp only [outer, List.mem_cons, List.not_mem_nil, or_false] at hr; rcases hr with rfl | rfl | rfl | rfl <;> decide
+    have h16 : r ≠ .x16 := by simp only [outer, List.mem_cons, List.not_mem_nil, or_false] at hr; rcases hr with rfl | rfl | rfl | rfl <;> decide
+    simp only [d₄, d₃, d₂, d₁, gpr_write_of_ne _ _ _ h16, gpr_write_of_ne _ _ _ h7,
+      gpr_write_of_ne _ _ _ h6, gpr_setV, gout r hr]
+  · simp only [d₄, d₃, d₂, d₁, sp_write, sp_setV]; rw [ce]; simp only [b', b, sp_setV, sp_write, asp]
+  · simp only [d₄, d₃, d₂, d₁, rd_write, rd_setV]; rw [ce]; simp only [b', b, rd_setV, rd_write, ard]
+  · simp only [d₄, d₃, d₂, d₁, wr_write, wr_setV]; rw [ce]; simp only [b', b, wr_setV, wr_write, awr]
+  · simp only [d₄, d₃, d₂, d₁, mem_write, mem_setV, cmem]; exact Frame.refl _ _
+  · simp only [d₄, d₃, d₂, d₁, gpr_write_of_ne _ _ _ (by decide : Reg.x5 ≠ .x16),
+      gpr_write_of_ne _ _ _ (by decide : Reg.x5 ≠ .x7), gpr_write_of_ne _ _ _ (by decide : Reg.x5 ≠ .x6),
+      gpr_setV]
+    rw [cg .x5 (by decide)]; simp only [b', b, gpr_setV, gpr_write_of_ne _ _ _ (by decide : Reg.x5 ≠ .x6)]
+    exact ag .x5 (by decide) (by decide)
+  · simp only [d₄, d₃, d₂, d₁, gpr_write_of_ne _ _ _ (by decide : Reg.x14 ≠ .x16),
+      gpr_write_of_ne _ _ _ (by decide : Reg.x14 ≠ .x7), gpr_write_of_ne _ _ _ (by decide : Reg.x14 ≠ .x6),
+      gpr_setV, g14]
+  · simp only [d₄, d₃, d₂, d₁, gpr_write_of_ne _ _ _ (by decide : Reg.x6 ≠ .x16),
+      gpr_write_of_ne _ _ _ (by decide : Reg.x6 ≠ .x7), gpr_write_self, BitVec.setWidth_eq, gpr_setV, g14]
+    simp
+  · simp only [d₄, d₃, d₂, d₁, gpr_write_of_ne _ _ _ (by decide : Reg.x7 ≠ .x16), gpr_write_self,
+      BitVec.setWidth_eq, gpr_write_of_ne _ _ _ (by decide : Reg.x15 ≠ .x6), gpr_setV, g15]
+    simp
+  · simp only [d₄, gpr_write_self, BitVec.setWidth_eq]; decide
+  · simp only [d₄, d₃, d₂, d₁, v_write, v_setV_of_ne _ _ (by decide : VReg.v5 ≠ .v7), cv, b',
+      v_setV_of_ne _ _ (by decide : VReg.v5 ≠ .v6), b, v_write, a5]
+  · simp only [d₄, d₃, d₂, d₁, v_write, v_setV_of_ne _ _ (by decide : VReg.v6 ≠ .v7), cv, b',
+      v_setV_self, b, gpr_write_self, BitVec.setWidth_eq]
     rfl
+  · simp only [d₄, d₃, d₂, d₁, v_write, v_setV_self, c6]
 
-/-- The three passes. -/
-theorem passes_ok {s₀ : State} (hp : BlockPre s₀) {x : BitVec 64} {s : State} (h : OInv s₀ x 0 s) :
-    WP isa (.loop (.seq pass (.block passTail)) (.nonzero .x .x17)) s (OInv s₀ x 3) := by
-  refine WP.loop (M := isa) (body := .seq pass (.block passTail)) (c := .nonzero .x .x17) (Q := OInv s₀ x 3)
-    (fun (n : Nat) (t : State) => ∃ p, n = 3 - p ∧ p < 3 ∧ OInv s₀ x p t) ?_ 3 _ ⟨0, rfl, by decide, h⟩
-  rintro n t ⟨p, rfl, hp3, ht⟩
-  refine WP.mono (passBody_ok hp hp3 ht) fun t' h' => ?_
-  have ev := eval_nonzero (r := .x17) (x := 3 - (p + 1)) (by omega) h'.x17
-  by_cases hz : p + 1 = 3
+theorem spreadBody_eq : spreadBody = ([.ldrq .v0 .x6 0] : List Instr) ++ spreadV ++
+    ([.strq .v4 .x7 0, .addImm .x .x6 .x6 16, .addImm .x .x7 .x7 16, .subImm .x .x16 .x16 1] : List Instr) :=
+  rfl
+
+theorem exec_ldrq0 (s : State) (t : VReg) (n : Reg) (h : InRegions (s.rd ++ s.wr) (s.gpr n) 16) :
+    exec (.ldrq t n 0) s = some (s.setV t (s.mem.read (s.gpr n) 16)) := by
+  simp only [exec, addr, show 0 % 16 = 0 from rfl, show 0 < 4096 * 16 by decide, and_self, ite_true,
+    BitVec.add_zero, Option.bind_some, State.load, h, Option.map_some]
+
+theorem exec_strq0 (s : State) (t : VReg) (n : Reg) (h : InRegions s.wr (s.gpr n) 16) :
+    exec (.strq t n 0) s = some { s with mem := s.mem.write (s.gpr n) 16 (s.v t) } := by
+  simp only [exec, addr, show 0 % 16 = 0 from rfl, show 0 < 4096 * 16 by decide, and_self, ite_true,
+    BitVec.add_zero, Option.bind_some, State.store, h]
+
+theorem spreadStep_ok {s₀ : State} (hp : BlockPre s₀) {m : Nat} (hm : m < 24) {s : State}
+    (h : SInv s₀ m s) : WP isa (.block spreadBody) s (SInv s₀ (m + 1)) := by
+  rw [spreadBody_eq, WP.block_append_iff, WP.block_append_iff]
+  have rk : InRegions (s.rd ++ s.wr) (s.gpr .x6) 16 := by
+    rw [h.x6]; exact hp.key h.same (by omega)
+  let s₁ := s.setV .v0 (s.mem.read (s.gpr .x6) 16)
+  refine WP.of_runBlock ⟨s₁, by rw [runBlock_cons, exec_ldrq0 _ _ _ rk, runStep_some, runBlock_nil], ?_⟩
+  obtain ⟨s₂, h₂, v4₂, v₂, e₂⟩ := spreadV_ok s₁
+    (by simp only [s₁, v_setV_of_ne _ _ (by decide : VReg.v5 ≠ .v0), h.g])
+    (by simp only [s₁, v_setV_of_ne _ _ (by decide : VReg.v6 ≠ .v0), h.c63])
+    (by simp only [s₁, v_setV_of_ne _ _ (by decide : VReg.v7 ≠ .v0), h.off])
+  refine WP.of_runBlock ⟨s₂, h₂, ?_⟩
+  have g₂ : s₂.gpr = s.gpr := by rw [e₂]; rfl
+  have m₂ : s₂.mem = s.mem := by rw [e₂]; rfl
+  have wr₂ : s₂.wr = s.wr := by rw [e₂]; rfl
+  have rd₂ : s₂.rd = s.rd := by rw [e₂]; rfl
+  have sp₂ : s₂.sp = s.sp := by rw [e₂]; rfl
+  have ws : InRegions s₂.wr (s₂.gpr .x7) 16 := by
+    rw [wr₂, g₂, h.x7]; exact hp.slot h.same (by omega)
+  let V := s₂.v .v4
+  let s₃ : State := { s₂ with mem := s₂.mem.write (s₂.gpr .x7) 16 V }
+  let s₄ := s₃.write .x .x6 (s₃.read .x .x6 + BitVec.ofNat _ 16)
+  let s₅ := s₄.write .x .x7 (s₄.read .x .x7 + BitVec.ofNat _ 16)
+  let s₆ := s₅.write .x .x16 (s₅.read .x .x16 - BitVec.ofNat _ 1)
+  refine WP.of_runBlock ⟨s₆, by
+    rw [runBlock_cons, exec_strq0 _ _ _ ws, runStep_some, runBlock_cons, exec_addImm_x (by decide),
+      runStep_some, runBlock_cons, exec_addImm_x (by decide), runStep_some, runBlock_cons,
+      exec_subImm_x (by decide), runStep_some, runBlock_nil], ?_⟩
+  have g₆ : ∀ r, r ≠ .x6 → r ≠ .x7 → r ≠ .x16 → s₆.gpr r = s.gpr r := by
+    intro r h6 h7 h16
+    simp only [s₆, s₅, s₄, gpr_write_of_ne _ _ _ h16, gpr_write_of_ne _ _ _ h7, gpr_write_of_ne _ _ _ h6]
+    show s₂.gpr r = s.gpr r
+    rw [g₂]
+  have v₆ : s₆.v = s₂.v := rfl
+  have mem₆ : s₆.mem = s.mem.write (s₀.gpr .x15 + BitVec.ofNat 64 (16 * m)) 16 V := by
+    show s₂.mem.write (s₂.gpr .x7) 16 V = _
+    rw [m₂, g₂, h.x7]
+  have hK : ∀ hh < 2, vdword (s₁.v .v0) hh = (sch s₀).getD (2 * m + hh) 0 := by
+    intro hh hh2
+    rw [show s₁.v .v0 = s.mem.read (s.gpr .x6) 16 from v_setV_self _ _ _, vdword_read _ _ hh2, h.x6,
+      Offset.add_add, scheduleAt_getD _ _ (by omega),
+      show 16 * m + 8 * hh = 8 * (2 * m + hh) by omega]
+    exact sched_word hp h.same.frame (by omega)
+  have outer_ne : ∀ r ∈ outer, r ≠ .x6 ∧ r ≠ .x7 ∧ r ≠ .x16 := by
+    intro r hr; simp only [outer, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl <;> decide
+  refine ⟨⟨?_, fun r hr => ?_, ?_, ?_, ?_, ?_⟩, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · rw [g₆ _ (by decide) (by decide) (by decide), h.same.x15]
+  · obtain ⟨a, b, c⟩ := outer_ne r hr
+    rw [g₆ r a b c, h.same.keep r hr]
+  · show s₂.sp = _; rw [sp₂, h.same.sp]
+  · show s₂.rd = _; rw [rd₂, h.same.rd]
+  · show s₂.wr = _; rw [wr₂, h.same.wr]
+  · rw [mem₆]
+    exact h.same.frame.write (r := xR s₀) (by simp) _ (Offset.contains_base _ (by omega) (by omega))
+  · rw [g₆ _ (by decide) (by decide) (by decide), h.x5]
+  · rw [g₆ _ (by decide) (by decide) (by decide), h.x14]
+  · simp only [s₆, s₅, s₄, gpr_write_of_ne _ _ _ (by decide : Reg.x6 ≠ .x16),
+      gpr_write_of_ne _ _ _ (by decide : Reg.x6 ≠ .x7), gpr_write_self, State.read,
+      BitVec.setWidth_eq]
+    show s₂.gpr .x6 + _ = _
+    rw [g₂, h.x6, Offset.add_add, show 16 * m + 16 = 16 * (m + 1) by omega]
+  · simp only [s₆, s₅, gpr_write_of_ne _ _ _ (by decide : Reg.x7 ≠ .x16), gpr_write_self, State.read,
+      BitVec.setWidth_eq, s₄, gpr_write_of_ne _ _ _ (by decide : Reg.x7 ≠ .x6)]
+    show s₂.gpr .x7 + _ = _
+    rw [g₂, h.x7, Offset.add_add, show 16 * m + 16 = 16 * (m + 1) by omega]
+  · simp only [s₆, gpr_write_self, State.read, BitVec.setWidth_eq, s₅,
+      gpr_write_of_ne _ _ _ (by decide : Reg.x16 ≠ .x7), s₄, gpr_write_of_ne _ _ _ (by decide : Reg.x16 ≠ .x6)]
+    show s₂.gpr .x16 - _ = _
+    rw [g₂, h.x16]
+    apply BitVec.eq_of_toNat_eq
+    simp only [BitVec.toNat_sub, BitVec.toNat_ofNat, Size.bits]
+    omega
+  · rw [v₆, v₂ _ (by decide) (by decide) (by decide) (by decide)]
+    simp only [s₁, v_setV_of_ne _ _ (by decide : VReg.v5 ≠ .v0), h.g]
+  · rw [v₆, v₂ _ (by decide) (by decide) (by decide) (by decide)]
+    simp only [s₁, v_setV_of_ne _ _ (by decide : VReg.v6 ≠ .v0), h.c63]
+  · rw [v₆, v₂ _ (by decide) (by decide) (by decide) (by decide)]
+    simp only [s₁, v_setV_of_ne _ _ (by decide : VReg.v7 ≠ .v0), h.off]
+  · intro i hi
+    rw [mem₆]
+    by_cases hnew : 2 * m ≤ i
+    · have hh : i - 2 * m < 2 := by omega
+      rw [show s₀.gpr .x15 + BitVec.ofNat 64 (8 * i) =
+          s₀.gpr .x15 + BitVec.ofNat 64 (16 * m) + BitVec.ofNat 64 (8 * (i - 2 * m)) by
+          rw [Offset.add_add]; congr 2; omega,
+        readW_write16 _ _ _ hh]
+      show vdword (s₂.v .v4) _ = _
+      have hK' : vdword (s₁.v .v0) (i - 2 * m) = (sch s₀).getD i 0 := by
+        rw [hK _ hh, show 2 * m + (i - 2 * m) = i by omega]
+      rw [v4₂, ← hK']
+      rcases (by omega : i - 2 * m = 0 ∨ i - 2 * m = 1) with e | e <;> rw [e]
+      · rw [vdword_ofVDwords_0]
+      · rw [vdword_ofVDwords_1]
+    · have hsep : Mem.Sep (s₀.gpr .x15 + BitVec.ofNat 64 (8 * i)) 8
+          (s₀.gpr .x15 + BitVec.ofNat 64 (16 * m)) 16 :=
+        Offset.sep _ (by omega) (by omega) (by omega)
+      rw [Mem.readW, Mem.read_write_sep hsep (by decide)]
+      exact h.keys i (by omega)
+
+theorem spreadLoop_ok {s₀ : State} (hp : BlockPre s₀) {s : State} (h : SInv s₀ 0 s) :
+    WP isa (.loop (.block spreadBody) (.nonzero .x .x16)) s (SInv s₀ 24) := by
+  refine WP.loop (M := isa) (body := .block spreadBody) (c := .nonzero .x .x16) (Q := SInv s₀ 24)
+    (fun (n : Nat) (t : State) => ∃ m, n = 24 - m ∧ m < 24 ∧ SInv s₀ m t) ?_ 24 _ ⟨0, rfl, by decide, h⟩
+  rintro n t ⟨m, rfl, hm, ht⟩
+  refine WP.mono (spreadStep_ok hp hm ht) fun t' h' => ?_
+  have ev := eval_nonzero (r := .x16) (x := 24 - (m + 1)) (by omega) h'.x16
+  by_cases hz : m + 1 = 24
   · left
     refine ⟨by rw [ev]; simp [hz], ?_⟩
     rwa [hz] at h'
   · right
-    exact ⟨by rw [ev]; simp; omega, 3 - (p + 1), by omega, p + 1, rfl, by omega, h'⟩
+    exact ⟨by rw [ev]; simp; omega, 24 - (m + 1), by omega, m + 1, rfl, by omega, h'⟩
 
 /-! ## `IP` and `IP⁻¹` -/
 
-/-- `IP`'s high half into `x12`, its low half into `x13`, from `x5` (input word 0). -/
-def ipG12 (t : Nat) : List Nat := if t < 32 then [ipSrc (32 + t)] else []
-def ipG13 (t : Nat) : List Nat := if t < 32 then [ipSrc t] else []
+/-- No memory. -/
+theorem ipSrc_lt : ∀ j < 64, ipSrc j < 64 := by lit_decide
+
+theorem fpSrc_lt : ∀ j < 64, fpSrc j < 64 := by lit_decide
+
+/-- `IP`'s halves, rotated and spread, into `x11` and `x12`, from `x5` (input word 0). -/
+def ipG11 (p : Nat) : List Nat := if xBit p then [ipSrc (32 + (xSrc p + 32 - rot) % 32)] else []
+def ipG12 (p : Nat) : List Nat := if xBit p then [ipSrc ((xSrc p + 32 - rot) % 32)] else []
 
 theorem ip_check :
     check (lanes 64 6) oCfg (linExt 1) ipCode (linEnv [(.x5, 0)])
-      (linPost 6 [(.x12, ipG12), (.x13, ipG13)]) = true := by
+      (linPost 6 [(.x11, ipG11), (.x12, ipG12)]) = true := by
   lit_decide
 
-/-- `IP⁻¹(R ‖ L)` into `x5`, from `R` in `x12` (input word 0) and `L` in `x13` (input word 1). -/
-def fpG (j : Nat) : List Nat := if 32 ≤ fpSrc j then [fpSrc j - 32] else [64 + fpSrc j]
+/-- `IP⁻¹(R ‖ L)` into `x5`, from `R` spread in `x12` (input word 0) and `L`
+spread in `x11` (input word 1). -/
+def fpG (j : Nat) : List Nat :=
+  if 32 ≤ fpSrc j then [xPos ((fpSrc j - 32 + rot) % 32)] else [64 + xPos ((fpSrc j + rot) % 32)]
 
 theorem fp_check :
-    check (lanes 64 7) oCfg (linExt 2) fpCode (linEnv [(.x12, 0), (.x13, 1)]) (linPost 7 [(.x5, fpG)]) = true := by
+    check (lanes 64 7) oCfg (linExt 2) fpCode (linEnv [(.x12, 0), (.x11, 1)]) (linPost 7 [(.x5, fpG)]) = true := by
   lit_decide
 
-def blockKept : List Reg := [.x1, .x2, .x3, .x4, .x14, .x15]
+def blockKept : List Reg := [.x1, .x2, .x3, .x4, .x10, .x14, .x15]
 
 theorem ip_kept : blockKept.all (fun r => ipCode.all fun i => dstOf i != some r) = true := by lit_decide
 
 theorem fp_kept : blockKept.all (fun r => fpCode.all fun i => dstOf i != some r) = true := by lit_decide
 
-theorem ipSrc_lt : ∀ j < 64, ipSrc j < 64 := by lit_decide
+theorem ip_v : ipCode.all (fun i => vdstOf i == none) = true := by lit_decide
 
-theorem fpSrc_lt : ∀ j < 64, fpSrc j < 64 := by lit_decide
-
-theorem frame_oCfg {s : State} {m m' : Mem} (h : Frame [slotRegion oCfg s] m m') : m' = m := by
-  funext a
-  exact h a fun r hr => by
-    simp only [List.mem_singleton] at hr; subst hr; simp [slotRegion, oCfg, Region.Contains]
+theorem xPos_facts : ∀ e < 32, xPos e < 64 ∧ xBit (xPos e) = true ∧ xSrc (xPos e) = e := by decide
 
 theorem ip_ok (s : State) :
     ∃ s', runBlock isa ipCode s = some s' ∧
-      ((s'.gpr .x12).setWidth 32, (s'.gpr .x13).setWidth 32) =
-        split (Spec.TripleDes.permute Spec.TripleDes.ip (s.gpr .x5)) ∧
+      s'.gpr .x11 = spreadW (split (Spec.TripleDes.permute Spec.TripleDes.ip (s.gpr .x5))).1 ∧
+      s'.gpr .x12 = spreadW (split (Spec.TripleDes.permute Spec.TripleDes.ip (s.gpr .x5))).2 ∧
       s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp ∧ (∀ r ∈ blockKept, s'.gpr r = s.gpr r) ∧
-      s'.mem = s.mem := by
+      s'.mem = s.mem ∧ s'.v = s.v := by
   obtain ⟨s', hs', hout, hrd, hwr, hsp, hoth, hfr⟩ := linear_ok ip_check (oCfg_ok s) (fun _ => s.gpr .x5)
     (fun r i hri => by
       simp only [List.mem_cons, List.mem_nil_iff, Prod.mk.injEq, or_false] at hri
       obtain ⟨rfl, rfl⟩ := hri; exact ⟨by decide, rfl⟩)
     (fun j hj => absurd hj (by simp [oCfg]))
-  refine ⟨s', hs', ?_, hrd, hwr, hsp, fun r hr => hoth r (List.all_eq_true.mp ip_kept r hr), frame_oCfg hfr⟩
-  have h12 := hout .x12 ipG12 (by simp)
-  have h13 := hout .x13 ipG13 (by simp)
-  simp only [split, Prod.mk.injEq]
-  constructor <;> apply BitVec.eq_of_getLsbD_eq <;> intro t ht
-  · have hs := ipSrc_lt (32 + t) (by omega)
-    rw [BitVec.getLsbD_setWidth, decide_eq_true ht, Bool.true_and, h12 t (by omega), ipG12, ite_eq_left ht,
-      BitVec.getLsbD_setWidth, decide_eq_true ht, Bool.true_and, BitVec.getLsbD_ushiftRight,
-      Spec.TripleDes.permute, ← Spec.TripleDes.permute,
-      getLsbD_permute _ _ (by decide) (show 32 + t < 64 by omega)]
-    simp only [xorBits_cons, xorBits_nil, Bool.xor_false, bitOf, Nat.mod_eq_of_lt hs]
-    rfl
-  · have hs := ipSrc_lt t (by omega)
-    rw [BitVec.getLsbD_setWidth, decide_eq_true ht, Bool.true_and, h13 t (by omega), ipG13, ite_eq_left ht,
-      BitVec.getLsbD_setWidth, decide_eq_true ht, Bool.true_and,
-      getLsbD_permute _ _ (by decide) (show t < 64 by omega)]
-    simp only [xorBits_cons, xorBits_nil, Bool.xor_false, bitOf, Nat.mod_eq_of_lt hs]
-    rfl
+  refine ⟨s', hs', ?_, ?_, hrd, hwr, hsp, fun r hr => hoth r (List.all_eq_true.mp ip_kept r hr),
+    frame_oCfg hfr, runBlock_v ip_v hs'⟩
+  · apply BitVec.eq_of_getLsbD_eq; intro p hp
+    have hj := xSrc_rot_lt p hp
+    rw [hout .x11 ipG11 (by simp) p hp, getLsbD_spreadW _ hp, ipG11]
+    cases hx : xBit p
+    · simp
+    · have hs := ipSrc_lt (32 + (xSrc p + 32 - rot) % 32) (by omega)
+      simp only [ite_true, xorBits_cons, xorBits_nil, Bool.xor_false, bitOf, Nat.mod_eq_of_lt hs,
+        Bool.true_and, split, BitVec.getLsbD_setWidth, decide_eq_true hj,
+        BitVec.getLsbD_ushiftRight]
+      rw [getLsbD_permute _ _ (by decide) (show 32 + (xSrc p + 32 - rot) % 32 < 64 by omega)]
+      rfl
+  · apply BitVec.eq_of_getLsbD_eq; intro p hp
+    have hj := xSrc_rot_lt p hp
+    rw [hout .x12 ipG12 (by simp) p hp, getLsbD_spreadW _ hp, ipG12]
+    cases hx : xBit p
+    · simp
+    · have hs := ipSrc_lt ((xSrc p + 32 - rot) % 32) (by omega)
+      simp only [ite_true, xorBits_cons, xorBits_nil, Bool.xor_false, bitOf, Nat.mod_eq_of_lt hs,
+        Bool.true_and, split, BitVec.getLsbD_setWidth, decide_eq_true hj]
+      rw [getLsbD_permute _ _ (by decide) (show (xSrc p + 32 - rot) % 32 < 64 by omega)]
+      rfl
 
-theorem fp_ok (s : State) :
+theorem spreadW_xPos (w : BitVec 32) {k : Nat} (hk : k < 32) :
+    (spreadW w).getLsbD (xPos ((k + rot) % 32)) = w.getLsbD k := by
+  obtain ⟨h64, hx, hs⟩ := xPos_facts ((k + rot) % 32) (by omega)
+  rw [getLsbD_spreadW _ h64, hx, hs, Bool.true_and]
+  congr 1; simp only [rot]; omega
+
+theorem fp_ok (s : State) {l r : BitVec 32} (hl : s.gpr .x11 = spreadW l) (hr : s.gpr .x12 = spreadW r) :
     ∃ s', runBlock isa fpCode s = some s' ∧
-      s'.gpr .x5 = Spec.TripleDes.permute Spec.TripleDes.fp ((s.gpr .x12).setWidth 32 ++ (s.gpr .x13).setWidth 32) ∧
+      s'.gpr .x5 = Spec.TripleDes.permute Spec.TripleDes.fp (r ++ l) ∧
       s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp ∧ (∀ r ∈ blockKept, s'.gpr r = s.gpr r) ∧
       s'.mem = s.mem := by
-  let W : Nat → BitVec 64 := fun i => if i = 0 then s.gpr .x12 else s.gpr .x13
+  let W : Nat → BitVec 64 := fun i => if i = 0 then s.gpr .x12 else s.gpr .x11
   obtain ⟨s', hs', hout, hrd, hwr, hsp, hoth, hfr⟩ := linear_ok fp_check (oCfg_ok s) W
     (fun r i hri => by
       simp only [List.mem_cons, List.mem_nil_iff, Prod.mk.injEq, or_false] at hri
@@ -395,60 +440,302 @@ theorem fp_ok (s : State) :
   rw [hout .x5 fpG (by simp) j hj, getLsbD_permute _ _ (by decide) hj, BitVec.getLsbD_append,
     show 64 - Spec.TripleDes.fp.getD (64 - 1 - j) 1 = fpSrc j from rfl, fpG]
   by_cases h32 : 32 ≤ fpSrc j
-  · rw [ite_eq_left h32, ite_eq_right (by omega)]
+  · obtain ⟨h64, -, -⟩ := xPos_facts ((fpSrc j - 32 + rot) % 32) (by omega)
+    rw [ite_eq_left h32, ite_eq_right (by omega)]
+    simp only [xorBits_cons, xorBits_nil, Bool.xor_false, bitOf, Nat.div_eq_of_lt h64,
+      Nat.mod_eq_of_lt h64, W, ite_true, hr]
+    exact spreadW_xPos r (by omega)
+  · obtain ⟨h64, -, -⟩ := xPos_facts ((fpSrc j + rot) % 32) (by omega)
+    rw [ite_eq_right h32, ite_eq_left (by omega)]
     simp only [xorBits_cons, xorBits_nil, Bool.xor_false, bitOf,
-      Nat.div_eq_of_lt (show fpSrc j - 32 < 64 by omega), Nat.mod_eq_of_lt (show fpSrc j - 32 < 64 by omega),
-      BitVec.getLsbD_setWidth, show fpSrc j - 32 < 32 by omega, decide_true, Bool.true_and]
+      show (64 + xPos ((fpSrc j + rot) % 32)) / 64 = 1 by omega,
+      show (64 + xPos ((fpSrc j + rot) % 32)) % 64 = xPos ((fpSrc j + rot) % 32) by omega, W,
+      show (1 : Nat) ≠ 0 by decide, ite_false, hl]
+    exact spreadW_xPos l (by omega)
+
+/-! ## The setup -/
+
+/-- The key schedule's slot before round `j` of pass `p`. -/
+def kpos (p j : Nat) : Nat := if p % 2 = 1 then 16 * p + 15 - j else 16 * p + j
+
+theorem kpos_lt {p j : Nat} (hp : p < 3) (hj : j < 16) : kpos p j < 48 := by
+  simp only [kpos]; split <;> omega
+
+/-- Before pass `p`, from the block `x`. -/
+structure OInv (s₀ : State) (x : BitVec 64) (p : Nat) (s : State) : Prop where
+  same : Same s₀ s
+  x14 : s.gpr .x14 = s₀.gpr .x14
+  x10 : s.gpr .x10 = s₀.gpr .x15 + BitVec.ofNat 64 (8 * kpos p 0)
+  consts : Consts s
+  keys : Keys s₀ s.mem 48
+  l : s.gpr .x11 = spreadW (passes (sch s₀) p (split (Spec.TripleDes.permute Spec.TripleDes.ip x))).1
+  r : s.gpr .x12 = spreadW (passes (sch s₀) p (split (Spec.TripleDes.permute Spec.TripleDes.ip x))).2
+
+theorem quarterConsts_ok (s : State) :
+    ∃ s', runBlock isa quarterConsts s = some s' ∧ s'.v .v4 = bc 64 ∧ s'.v .v5 = bc 128 ∧
+      s'.v .v6 = bc 192 ∧ (∀ w, w ≠ .v4 → w ≠ .v5 → w ≠ .v6 → s'.v w = s.v w) ∧
+      (∀ r, r ≠ .x6 → s'.gpr r = s.gpr r) ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
+      s'.sp = s.sp := by
+  refine ⟨_, rfl, ?_, ?_, ?_, fun w h4 h5 h6 => ?_, fun r hr => ?_, rfl, rfl, rfl, rfl⟩
+  · simp only [v_setV_of_ne _ _ (by decide : VReg.v4 ≠ .v6), v_setV_of_ne _ _ (by decide : VReg.v4 ≠ .v5),
+      v_setV_self, gpr_write_self, v_write, BitVec.setWidth_eq]
     rfl
-  · rw [ite_eq_right h32, ite_eq_left (by omega)]
-    simp only [xorBits_cons, xorBits_nil, Bool.xor_false, bitOf,
-      show (64 + fpSrc j) / 64 = 1 by omega, show (64 + fpSrc j) % 64 = fpSrc j by omega,
-      BitVec.getLsbD_setWidth, show fpSrc j < 32 by omega, decide_true, Bool.true_and]
+  · simp only [v_setV_of_ne _ _ (by decide : VReg.v5 ≠ .v6), v_setV_self, gpr_write_self,
+      v_write, BitVec.setWidth_eq]
+    rfl
+  · simp only [v_setV_self, gpr_write_self, BitVec.setWidth_eq]
+    rfl
+  · simp only [v_setV_of_ne _ _ h6, v_setV_of_ne _ _ h5, v_setV_of_ne _ _ h4, v_write]
+  · simp only [gpr_setV, gpr_write_of_ne _ _ _ hr]
+
+theorem setup_eq : setup = loadTable sTable ++ (quarterConsts ++ (ipCode ++ ([mov .x10 .x15] : List Instr))) := by
+  simp only [setup, List.append_assoc]
+
+theorem setup_ok {s₀ : State} {s : State} (h : SInv s₀ 24 s) :
+    WP isa (.block setup) s (OInv s₀ (s₀.gpr .x5) 0) := by
+  rw [setup_eq, WP.block_append_iff]
+  refine WP.mono (loadTable_ok s sTable) fun a ⟨atab, av, ag, am, ard, awr, asp⟩ => ?_
+  rw [WP.block_append_iff]
+  obtain ⟨b, hb, b4, b5, b6, bv, bg, bm, brd, bwr, bsp⟩ := quarterConsts_ok a
+  refine WP.of_runBlock ⟨b, hb, ?_⟩
+  rw [WP.block_append_iff]
+  obtain ⟨c, hc, c11, c12, crd, cwr, csp, ck, cm, cv⟩ := ip_ok b
+  refine WP.of_runBlock ⟨c, hc, ?_⟩
+  refine WP.of_runBlock ⟨_, by rw [runBlock_cons, exec_mov, runStep_some, runBlock_nil], ?_⟩
+  have g : ∀ r, r ≠ .x6 → r ≠ .x7 → b.gpr r = s.gpr r := fun r h6 h7 => by rw [bg r h6, ag r h6 h7]
+  have hc' : Consts c := by
+    refine ⟨fun k hk => ?_, by rw [cv, b4], by rw [cv, b5], by rw [cv, b6]⟩
+    rw [cv, tbyte_congr' (fun t ht => ?_) k hk, atab k hk]
+    obtain ⟨-, -, -, -, h4, h5, h6, -⟩ := treg_ne8 t ht
+    exact bv _ h4 h5 h6
+  have x15c : c.gpr .x15 = s₀.gpr .x15 := by
+    rw [ck .x15 (by simp [blockKept]), g _ (by decide) (by decide), h.same.x15]
+  refine ⟨⟨?_, fun r hr => ?_, ?_, ?_, ?_, ?_⟩, ?_, ?_, hc'.congr (fun _ _ _ _ _ => rfl), ?_, ?_, ?_⟩
+  · rw [gpr_write_of_ne _ _ _ (by decide), x15c]
+  · have hk : r ∈ blockKept := by
+      simp only [outer, blockKept, List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
+      rcases hr with rfl | rfl | rfl | rfl <;> simp
+    have h6 : r ≠ .x6 ∧ r ≠ .x7 ∧ r ≠ .x10 := by
+      simp only [outer, List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl | rfl <;> decide
+    rw [gpr_write_of_ne _ _ _ h6.2.2, ck r hk, g r h6.1 h6.2.1, h.same.keep r hr]
+  · rw [sp_write, csp, bsp, asp, h.same.sp]
+  · rw [rd_write, crd, brd, ard, h.same.rd]
+  · rw [wr_write, cwr, bwr, awr, h.same.wr]
+  · rw [mem_write, cm, bm, am]; exact h.same.frame
+  · rw [gpr_write_of_ne _ _ _ (by decide), ck .x14 (by simp [blockKept]), g _ (by decide) (by decide),
+      h.x14]
+  · rw [gpr_write_self, BitVec.setWidth_eq, x15c]
+    simp [kpos]
+  · rw [mem_write, cm, bm, am]
+    exact h.keys
+  · rw [gpr_write_of_ne _ _ _ (by decide), c11, g _ (by decide) (by decide), h.x5]
+    rfl
+  · rw [gpr_write_of_ne _ _ _ (by decide), c12, g _ (by decide) (by decide), h.x5]
     rfl
 
-theorem blockKept_ne {r : Reg} (h : r ∈ outer) : r ∈ blockKept := by
-  simp only [outer, blockKept, List.mem_cons, List.not_mem_nil, or_false] at h ⊢
-  rcases h with rfl | rfl | rfl | rfl <;> simp
+/-! ## The passes -/
+
+/-- After `j` pairs of rounds of pass `p`, from the halves `lr`. -/
+structure PInv (s₀ : State) (p : Nat) (lr : BitVec 32 × BitVec 32) (j : Nat) (s : State) : Prop where
+  same : Same s₀ s
+  x14 : s.gpr .x14 = s₀.gpr .x14
+  x10 : s.gpr .x10 = s₀.gpr .x15 + BitVec.ofNat 64 (8 * kpos p (2 * j))
+  x16 : s.gpr .x16 = BitVec.ofNat 64 (8 - j)
+  consts : Consts s
+  keys : Keys s₀ s.mem 48
+  l : s.gpr .x11 = spreadW (rounds (passKeys (sch s₀) p) (2 * j) lr).1
+  r : s.gpr .x12 = spreadW (rounds (passKeys (sch s₀) p) (2 * j) lr).2
+
+/-- The pass moves down the keys. -/
+def downOf (p : Nat) : Bool := p % 2 == 1
+
+theorem kpos_step (a : Addr) {p i : Nat} (hp : p < 3) (hi : i < 16) :
+    (if downOf p then a + BitVec.ofNat 64 (8 * kpos p i) - 8 else a + BitVec.ofNat 64 (8 * kpos p i) + 8) =
+      a + BitVec.ofNat 64 (8 * kpos p (i + 1)) := by
+  simp only [downOf, kpos]
+  by_cases h : p % 2 = 1
+  · simp only [h, beq_self_eq_true, ite_true]
+    apply BitVec.eq_of_toNat_eq
+    simp only [BitVec.ofNat_eq_ofNat, BitVec.toNat_sub, BitVec.toNat_add, BitVec.toNat_ofNat]
+    omega
+  · simp only [h, ite_false, show (p % 2 == 1) = false by simp [h], Bool.false_eq_true]
+    apply BitVec.eq_of_toNat_eq
+    simp only [BitVec.ofNat_eq_ofNat, BitVec.toNat_add, BitVec.toNat_ofNat]
+    omega
+
+theorem passKeys_at (s₀ : State) {p j : Nat} (hj : j < 16) :
+    passKeys (sch s₀) p j = ((sch s₀).getD (kpos p j) 0).setWidth 48 := by
+  rw [passKeys_eq _ hj, kpos]
+  by_cases h : p % 2 = 1
+  · rw [ite_eq_left h, ite_eq_left h, show 16 * p + (15 - j) = 16 * p + 15 - j by omega]
+  · rw [ite_eq_right h, ite_eq_right h]
+
+theorem outer_ne {r : Reg} (h : r ∈ outer) :
+    r ≠ .x5 ∧ r ≠ .x10 ∧ r ≠ .x11 ∧ r ≠ .x12 ∧ r ≠ .x16 := by
+  simp only [outer, List.mem_cons, List.not_mem_nil, or_false] at h
+  rcases h with rfl | rfl | rfl | rfl <;> decide
+
+theorem pairBody_eq (down : Bool) :
+    (round .x11 .x12 down ++ round .x12 .x11 down ++ ([.subImm .x .x16 .x16 1] : List Instr)) =
+      round .x11 .x12 down ++ (round .x12 .x11 down ++ ([.subImm .x .x16 .x16 1] : List Instr)) := by
+  simp only [List.append_assoc]
+
+/-- Two rounds of pass `p`. -/
+theorem pairStep_ok {s₀ : State} (hp : BlockPre s₀) {p : Nat} (hp3 : p < 3) {lr : BitVec 32 × BitVec 32}
+    {j : Nat} (hj : j < 8) {s : State} (h : PInv s₀ p lr j s) :
+    WP isa (.block (round .x11 .x12 (downOf p) ++ round .x12 .x11 (downOf p) ++
+      ([.subImm .x .x16 .x16 1] : List Instr))) s (PInv s₀ p lr (j + 1)) := by
+  rw [pairBody_eq, WP.block_append_iff]
+  have slot : ∀ {t : State}, Same s₀ t → ∀ i < 48,
+      InRegions (t.rd ++ t.wr) (s₀.gpr .x15 + BitVec.ofNat 64 (8 * i)) 8 := by
+    intro t ht i hi
+    obtain ⟨R, hR, hc⟩ := hp.slot ht (d := 8 * i) (n := 8) (by omega)
+    exact ⟨R, List.mem_append_right _ hR, hc⟩
+  have k0 := kpos_lt hp3 (show 2 * j < 16 by omega)
+  have k1 := kpos_lt hp3 (show 2 * j + 1 < 16 by omega)
+  obtain ⟨s₁, h₁, a₁, x10₁, g₁, c₁, m₁, rd₁, wr₁, sp₁⟩ := round_ok (Or.inl ⟨rfl, rfl⟩) (downOf p)
+    h.consts (by rw [h.x10]; exact slot h.same _ k0) h.l h.r
+    (by rw [h.x10]; exact h.keys _ k0)
+  refine WP.of_runBlock ⟨s₁, h₁, ?_⟩
+  rw [WP.block_append_iff]
+  have same₁ : Same s₀ s₁ := ⟨by rw [g₁ .x15 (by simp), h.same.x15],
+    fun r hr => by rw [g₁ r (by simp only [outer, List.mem_cons, List.not_mem_nil, or_false] at hr ⊢; rcases hr with rfl | rfl | rfl | rfl <;> simp), h.same.keep r hr],
+    by rw [sp₁, h.same.sp], by rw [rd₁, h.same.rd], by rw [wr₁, h.same.wr], by rw [m₁]; exact h.same.frame⟩
+  have x10₁' : s₁.gpr .x10 = s₀.gpr .x15 + BitVec.ofNat 64 (8 * kpos p (2 * j + 1)) := by
+    rw [x10₁, h.x10, kpos_step _ hp3 (by omega)]
+  obtain ⟨s₂, h₂, a₂, x10₂, g₂, c₂, m₂, rd₂, wr₂, sp₂⟩ := round_ok (Or.inr ⟨rfl, rfl⟩) (downOf p)
+    c₁ (by rw [x10₁']; exact slot same₁ _ k1) (by rw [g₁ .x12 (by simp), h.r]) a₁
+    (by rw [x10₁', m₁]; exact h.keys _ k1)
+  refine WP.of_runBlock ⟨s₂, h₂, ?_⟩
+  refine WP.of_runBlock ⟨_, by rw [runBlock_cons, exec_subImm_x (by decide), runStep_some, runBlock_nil], ?_⟩
+  have hr₁ := rounds_succ (passKeys (sch s₀) p) (2 * j) lr
+  have hr₂ := rounds_succ (passKeys (sch s₀) p) (2 * j + 1) lr
+  refine ⟨⟨?_, fun r hr => ?_, ?_, ?_, ?_, ?_⟩, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · rw [gpr_write_of_ne _ _ _ (by decide), g₂ .x15 (by simp), same₁.x15]
+  · rw [gpr_write_of_ne _ _ _ (outer_ne hr).2.2.2.2, g₂ r (by
+      simp only [outer, List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
+      rcases hr with rfl | rfl | rfl | rfl <;> simp), same₁.keep r hr]
+  · rw [sp_write, sp₂, same₁.sp]
+  · rw [rd_write, rd₂, same₁.rd]
+  · rw [wr_write, wr₂, same₁.wr]
+  · rw [mem_write, m₂]; exact same₁.frame
+  · rw [gpr_write_of_ne _ _ _ (by decide), g₂ .x14 (by simp), g₁ .x14 (by simp), h.x14]
+  · rw [gpr_write_of_ne _ _ _ (by decide), x10₂, x10₁', kpos_step _ hp3 (by omega),
+      show 2 * (j + 1) = 2 * j + 1 + 1 by omega]
+  · rw [gpr_write_self, State.read, BitVec.setWidth_eq, BitVec.setWidth_eq, g₂ .x16 (by simp),
+      g₁ .x16 (by simp), h.x16]
+    apply BitVec.eq_of_toNat_eq
+    simp only [BitVec.toNat_sub, BitVec.toNat_ofNat, Size.bits]
+    omega
+  · exact c₂.congr fun _ _ _ _ _ => rfl
+  · rw [mem_write, m₂, m₁]; exact h.keys
+  · rw [gpr_write_of_ne _ _ _ (by decide), g₂ .x11 (by simp), a₁, show 2 * (j + 1) = 2 * j + 1 + 1 by omega,
+      hr₂, hr₁, passKeys_at s₀ (show 2 * j < 16 by omega)]
+  · rw [gpr_write_of_ne _ _ _ (by decide), a₂, show 2 * (j + 1) = 2 * j + 1 + 1 by omega, hr₂, hr₁,
+      passKeys_at s₀ (show 2 * j < 16 by omega), passKeys_at s₀ (show 2 * j + 1 < 16 by omega)]
+
+/-- Pass `p`: sixteen rounds from the halves `lr`. -/
+theorem pass_ok {s₀ : State} (hp : BlockPre s₀) {p : Nat} (hp3 : p < 3) {lr : BitVec 32 × BitVec 32}
+    {s : State} (h : Same s₀ s) (h14 : s.gpr .x14 = s₀.gpr .x14)
+    (h10 : s.gpr .x10 = s₀.gpr .x15 + BitVec.ofNat 64 (8 * kpos p 0)) (hc : Consts s)
+    (hk : Keys s₀ s.mem 48) (hl : s.gpr .x11 = spreadW lr.1) (hr : s.gpr .x12 = spreadW lr.2) :
+    WP isa (pass (downOf p)) s (PInv s₀ p lr 8) := by
+  refine WP.seq (WP.of_runBlock ⟨_, by rw [runBlock_cons, exec_movz_x (by decide), runStep_some, runBlock_nil], ?_⟩)
+  have g : ∀ r, r ≠ .x16 → (s.write .x .x16 ((8 : BitVec 16).setWidth 64 <<< (16 * 0))).gpr r = s.gpr r :=
+    fun r hr => gpr_write_of_ne _ _ _ hr
+  have hI : PInv s₀ p lr 0 (s.write .x .x16 ((8 : BitVec 16).setWidth 64 <<< (16 * 0))) :=
+    ⟨⟨by rw [g _ (by decide), h.x15], fun r hr => by rw [g _ (outer_ne hr).2.2.2.2, h.keep r hr],
+      h.sp, h.rd, h.wr, h.frame⟩, by rw [g _ (by decide), h14], by rw [g _ (by decide), h10],
+      by rw [gpr_write_self]; decide, hc.congr fun _ _ _ _ _ => rfl, hk,
+      by rw [g _ (by decide), hl]; rfl, by rw [g _ (by decide), hr]; rfl⟩
+  refine WP.loop (M := isa)
+    (body := .block (round .x11 .x12 (downOf p) ++ round .x12 .x11 (downOf p) ++ [.subImm .x .x16 .x16 1]))
+    (c := .nonzero .x .x16) (Q := PInv s₀ p lr 8)
+    (fun (n : Nat) (t : State) => ∃ j, n = 8 - j ∧ j < 8 ∧ PInv s₀ p lr j t) ?_ 8 _ ⟨0, rfl, by decide, hI⟩
+  rintro n t ⟨j, rfl, hj, ht⟩
+  refine WP.mono (pairStep_ok hp hp3 hj ht) fun t' h' => ?_
+  have ev := eval_nonzero (r := .x16) (x := 8 - (j + 1)) (by omega) h'.x16
+  by_cases hz : j + 1 = 8
+  · left
+    refine ⟨by rw [ev]; simp [hz], ?_⟩
+    rwa [hz] at h'
+  · right
+    exact ⟨by rw [ev]; simp; omega, 8 - (j + 1), by omega, j + 1, rfl, by omega, h'⟩
+
+theorem passTail_ok (s : State) (d : Nat) (hd : d < 4096) :
+    ∃ s', runBlock isa (passTail d) s = some s' ∧
+      s'.gpr .x10 = s.gpr .x10 + BitVec.ofNat 64 d ∧ s'.gpr .x11 = s.gpr .x12 ∧
+      s'.gpr .x12 = s.gpr .x11 ∧ (∀ r, r ≠ .x5 → r ≠ .x10 → r ≠ .x11 → r ≠ .x12 → s'.gpr r = s.gpr r) ∧
+      s'.v = s.v ∧ s'.sp = s.sp ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
+  let s₁ := s.write .x .x10 (s.read .x .x10 + BitVec.ofNat _ d)
+  let s₂ := s₁.write .x .x5 (s₁.gpr .x11)
+  let s₃ := s₂.write .x .x11 (s₂.gpr .x12)
+  let s₄ := s₃.write .x .x12 (s₃.gpr .x5)
+  refine ⟨s₄, by
+    rw [passTail, runBlock_cons, exec_addImm_x hd, runStep_some, runBlock_cons, exec_mov, runStep_some,
+      runBlock_cons, exec_mov, runStep_some, runBlock_cons, exec_mov, runStep_some, runBlock_nil],
+    ?_, ?_, ?_, fun r h5 h10 h11 h12 => ?_, rfl, rfl, rfl, rfl, rfl⟩
+  · simp only [s₄, s₃, s₂, s₁, gpr_write_of_ne _ _ _ (by decide : Reg.x10 ≠ .x12),
+      gpr_write_of_ne _ _ _ (by decide : Reg.x10 ≠ .x11), gpr_write_of_ne _ _ _ (by decide : Reg.x10 ≠ .x5),
+      gpr_write_self, State.read, BitVec.setWidth_eq]
+  · simp only [s₄, s₃, gpr_write_of_ne _ _ _ (by decide : Reg.x11 ≠ .x12), gpr_write_self,
+      BitVec.setWidth_eq, s₂, gpr_write_of_ne _ _ _ (by decide : Reg.x12 ≠ .x5), s₁,
+      gpr_write_of_ne _ _ _ (by decide : Reg.x12 ≠ .x10)]
+  · simp only [s₄, gpr_write_self, BitVec.setWidth_eq, s₃, gpr_write_of_ne _ _ _ (by decide : Reg.x5 ≠ .x11),
+      s₂, s₁, gpr_write_of_ne _ _ _ (by decide : Reg.x11 ≠ .x10)]
+  · simp only [s₄, s₃, s₂, s₁, gpr_write_of_ne _ _ _ h12, gpr_write_of_ne _ _ _ h11,
+      gpr_write_of_ne _ _ _ h5, gpr_write_of_ne _ _ _ h10]
+
+/-- One pass and the exchange after it (the first two passes). -/
+theorem passStep_ok {s₀ : State} (hp : BlockPre s₀) {x : BitVec 64} {p : Nat} (hp2 : p < 2) {s : State}
+    (h : OInv s₀ x p s) :
+    WP isa (.seq (pass (downOf p)) (.block (passTail (if p = 0 then 120 else 136)))) s (OInv s₀ x (p + 1)) := by
+  refine WP.seq (WP.mono (pass_ok hp (by omega) h.same h.x14 h.x10 h.consts h.keys h.l h.r) fun s₁ h₁ => ?_)
+  obtain ⟨s₂, h₂, t10, t11, t12, tk, tv, tsp, tm, trd, twr⟩ :=
+    passTail_ok s₁ (if p = 0 then 120 else 136) (by split <;> decide)
+  refine WP.of_runBlock ⟨s₂, h₂, ⟨⟨?_, fun r hr => ?_, ?_, ?_, ?_, ?_⟩, ?_, ?_, ?_, ?_, ?_, ?_⟩⟩
+  · rw [tk .x15 (by decide) (by decide) (by decide) (by decide), h₁.same.x15]
+  · obtain ⟨a, b, c, d, -⟩ := outer_ne hr
+    rw [tk r a b c d, h₁.same.keep r hr]
+  · rw [tsp, h₁.same.sp]
+  · rw [trd, h₁.same.rd]
+  · rw [twr, h₁.same.wr]
+  · rw [tm]; exact h₁.same.frame
+  · rw [tk .x14 (by decide) (by decide) (by decide) (by decide), h₁.x14]
+  · rw [t10, h₁.x10, Offset.add_add]
+    congr 2
+    rcases (by omega : p = 0 ∨ p = 1) with rfl | rfl <;> decide
+  · exact h₁.consts.congr fun _ _ _ _ _ => by rw [tv]
+  · rw [tm]; exact h₁.keys
+  · rw [t11, h₁.r, passes, swap]
+  · rw [t12, h₁.l, passes, swap]
 
 /-- TDEA encryption of the block in `x5` (as a 64-bit integer) with the key
 schedule at `x14`, into `x5`. -/
 theorem block_ok {s₀ : State} (hp : BlockPre s₀) :
     WP isa block s₀ fun s =>
       Same s₀ s ∧ s.gpr .x14 = s₀.gpr .x14 ∧ s.gpr .x5 = tdes (sch s₀) (s₀.gpr .x5) := by
-  obtain ⟨s₁, h₁, hal₁, rd₁, wr₁, sp₁, k₁, m₁⟩ := ip_ok s₀
-  refine WP.seq ?_
-  rw [WP.block_append_iff]
-  refine WP.of_runBlock ⟨s₁, h₁, WP.of_runBlock ⟨_, by
-    rw [runBlock_cons, exec_movz_x (by decide), runStep_some, runBlock_cons, exec_movz_x (by decide),
-      runStep_some, runBlock_nil], ?_⟩⟩
-  let s₂ := (s₁.write .x .x17 ((3 : BitVec 16).setWidth 64 <<< (16 * 0))).write .x .x0
-    ((8 : BitVec 16).setWidth 64 <<< (16 * 0))
-  have g : ∀ r, r ≠ .x17 → r ≠ .x0 → s₂.gpr r = s₁.gpr r := fun r h1 h2 => by
-    simp only [s₂, gpr_write, h1, h2, ite_false]
-  have hO : OInv s₀ (s₀.gpr .x5) 0 s₂ :=
-    ⟨⟨by rw [g _ (by decide) (by decide), k₁ _ (by decide)],
-      fun r hr => by
-        rw [g _ (outer_ne hr).2.2.2.2.2.2.2 (outer_ne hr).1, k₁ _ (blockKept_ne hr)],
-      by rw [← sp₁]; rfl, rd₁, wr₁,
-      by show Frame [xR s₀] s₀.mem s₁.mem; rw [m₁]; exact Frame.refl _ _⟩,
-      by rw [g _ (by decide) (by decide), k₁ _ (by decide)]; simp [kpos],
-      by simp only [s₂, gpr_write_self]; decide,
-      by simp only [s₂, gpr_write, ite_true]; decide,
-      by rw [g _ (by decide) (by decide), g _ (by decide) (by decide), hal₁]; rfl⟩
-  refine WP.seq (WP.mono (passes_ok hp hO) fun s₃ h₃ => ?_)
-  rw [WP.block_append_iff]
-  obtain ⟨s₅, h₅, ax₅, rd₅, wr₅, sp₅, k₅, m₅⟩ :=
-    fp_ok (s₃.write .x .x14 (s₃.read .x .x14 - BitVec.ofNat _ 504))
-  refine WP.of_runBlock ⟨_, by rw [runBlock_cons, exec_subImm_x (by decide), runStep_some, runBlock_nil],
-    WP.of_runBlock ⟨s₅, h₅, ⟨?_, fun r hr => ?_, ?_, ?_, ?_, ?_⟩, ?_, ?_⟩⟩
-  · rw [k₅ _ (by decide), gpr_write_of_ne _ _ _ (by decide), h₃.same.x15]
-  · rw [k₅ _ (blockKept_ne hr), gpr_write_of_ne _ _ _ (outer_ne hr).2.2.2.2.1, h₃.same.keep r hr]
-  · rw [sp₅]; exact h₃.same.sp
-  · rw [rd₅]; exact h₃.same.rd
-  · rw [wr₅]; exact h₃.same.wr
-  · rw [m₅]; exact h₃.same.frame
-  · rw [k₅ _ (by decide), gpr_write_self, State.read, BitVec.setWidth_eq, BitVec.setWidth_eq, h₃.x14,
-      show 8 * kpos 3 0 = 504 from rfl, BitVec.add_sub_cancel]
-  · rw [ax₅, gpr_write_of_ne _ _ _ (by decide), gpr_write_of_ne _ _ _ (by decide), tdes_eq, ← h₃.halves]
+  refine WP.seq (WP.mono (spreadPre_ok s₀) fun s₁ h₁ => ?_)
+  refine WP.seq (WP.mono (spreadLoop_ok hp h₁) fun s₂ h₂ => ?_)
+  refine WP.seq (WP.mono (setup_ok h₂) fun s₃ h₃ => ?_)
+  refine WP.seq (WP.mono (passStep_ok hp (p := 0) (by decide) h₃) fun s₄ h₄ => ?_)
+  refine WP.seq (WP.mono (passStep_ok hp (p := 1) (by decide) h₄) fun s₅ h₅ => ?_)
+  refine WP.seq (WP.mono (pass_ok hp (p := 2) (by decide) h₅.same h₅.x14 h₅.x10 h₅.consts h₅.keys
+    h₅.l h₅.r) fun s₆ h₆ => ?_)
+  obtain ⟨s₇, h₇, x5₇, rd₇, wr₇, sp₇, k₇, m₇⟩ := fp_ok s₆ h₆.l h₆.r
+  refine WP.of_runBlock ⟨s₇, h₇, ⟨⟨?_, fun r hr => ?_, ?_, ?_, ?_, ?_⟩, ?_, ?_⟩⟩
+  · rw [k₇ .x15 (by simp [blockKept]), h₆.same.x15]
+  · have hk : r ∈ blockKept := by
+      simp only [outer, blockKept, List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
+      rcases hr with rfl | rfl | rfl | rfl <;> simp
+    rw [k₇ r hk, h₆.same.keep r hr]
+  · rw [sp₇, h₆.same.sp]
+  · rw [rd₇, h₆.same.rd]
+  · rw [wr₇, h₆.same.wr]
+  · rw [m₇]; exact h₆.same.frame
+  · rw [k₇ .x14 (by simp [blockKept]), h₆.x14]
+  · rw [x5₇, tdes_eq]
+    rfl
 
 end VG.Proof.CmacTripleDes.AArch64
