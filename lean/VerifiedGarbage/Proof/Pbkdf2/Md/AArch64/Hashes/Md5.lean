@@ -28,9 +28,9 @@ def hash : Hash where
   compC := Impl.Md5.AArch64.compress
   initN := Spec.Md5.initApi.name
   initC := Impl.Md5.AArch64.Stream.init
-  updN := Spec.Md5.updateApi.name
+  updN := Spec.Md5.updateScratchApi.name
   updC := Impl.Md5.AArch64.Stream.update
-  finN := Spec.Md5.finalizeApi.name
+  finN := Spec.Md5.finalizeScratchApi.name
   finC := Impl.Md5.AArch64.Stream.finalize
   hmacInitN := Spec.Hmac.md5I.initApi.name
   hmacFinN := Spec.Hmac.md5I.finalizeApi.name

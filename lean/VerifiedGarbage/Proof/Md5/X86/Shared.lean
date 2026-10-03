@@ -4,6 +4,9 @@ import VerifiedGarbage.Proof.Md5.X86.Compress
 import VerifiedGarbage.Proof.Md5.X86.Stream.Init
 import VerifiedGarbage.Proof.Md5.X86.Stream.Md
 import VerifiedGarbage.Spec.Md5.Contract
+import VerifiedGarbage.Proof.Md5.X86.Lit
+import VerifiedGarbage.Proof.Md5.Scratch
+import VerifiedGarbage.Proof.Framework.X86.StackScratch
 
 /-!
 # MD5 on x86: the shared contracts
@@ -17,6 +20,11 @@ contract, under which it only reads them, is first widened to writable
 arguments (`Verified.narrowTo`, the same code running with the same trace
 and result), then moved to the shared one. `update` and `finalize` call the
 compression function, using the 20 bytes of stack below the return address.
+
+`update` and `finalize` keep their working space in a frame of their own:
+they are `updateScratch` and `finalizeScratch` (the shared contracts with
+the working space as an argument, which HMAC's and PBKDF2's code calls) run
+in a frame that allocates it (`Verified.stackScratch`).
 -/
 
 namespace VG.Proof.Md5.X86.Shared
@@ -101,23 +109,53 @@ theorem init :
       [Proof.Md5.X86.Stream.initSat, Proof.Md5.X86.Stream.initSatMem, X86.arg, X86.argAddr, Mem.readW,
         Mem.read] using Proof.Md5.X86.Stream.initSat)
 
-theorem updateWide_implies : updateWide.Implies (Spec.Md5.updateContract X86.abi 20) := by
-  contract_implies [Spec.Md5.updateContract, Spec.Md5.updateSig, updateWide,
+theorem updateWide_implies : updateWide.Implies (Spec.Md5.updateScratchContract X86.abi 20) := by
+  contract_implies [Spec.Md5.updateScratchContract, Spec.Md5.updateScratchSig, updateWide,
     Proof.Md5.updateX86, Proof.Md5.countX86, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
     [updateSat, Proof.Md5.X86.Stream.Update.sat, MdStream.X86.Update.sat, MdStream.X86.Update.sat₀,
       MdStream.X86.Update.satMem, X86.arg, X86.argAddr, Mem.readW, Mem.read] using updateSat
 
-theorem update :
-    Verified X86.target Impl.Md5.X86.Stream.update (Spec.Md5.updateContract X86.abi 20) :=
+theorem updateScratch :
+    Verified X86.target Impl.Md5.X86.Stream.update (Spec.Md5.updateScratchContract X86.abi 20) :=
   (updateWide_verified updateWide_implies.sat_left).of_implies updateWide_implies
 
-theorem finalize :
-    Verified X86.target Impl.Md5.X86.Stream.finalize (Spec.Md5.finalizeContract X86.abi 20) :=
+theorem finalizeScratch :
+    Verified X86.target Impl.Md5.X86.Stream.finalize (Spec.Md5.finalizeScratchContract X86.abi 20) :=
   Proof.Md5.X86.Stream.Finalize.finalize_verified.of_implies (by
-    contract_implies [Spec.Md5.finalizeContract, Spec.Md5.finalizeSig,
+    contract_implies [Spec.Md5.finalizeScratchContract, Spec.Md5.finalizeScratchSig,
       Proof.Md5.finalizeX86, Proof.Md5.countX86, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
       [Proof.Md5.X86.Stream.Finalize.sat, MdStream.X86.Finalize.sat, MdStream.X86.Finalize.sat₀,
         MdStream.X86.Finalize.satMem, Impl.Md5.X86.Stream.params, X86.arg, X86.argAddr, Mem.readW,
         Mem.read] using Proof.Md5.X86.Stream.Finalize.sat)
+
+/-- A state satisfying `update`'s precondition. -/
+def updateFrameSat : State :=
+  { MdStream.X86.Update.sat₀ with rd := [⟨0x2000, 0⟩], wr := [⟨0x1000, 80⟩, ⟨0x5004, 20⟩] }
+
+theorem update : Verified X86.target
+    (Impl.StackScratch.X86.withStackScratch 140 5 Impl.Md5.X86.Stream.update)
+    (Spec.Md5.updateContract X86.abi (20 + 140)) :=
+  X86.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 14) (stack := 20) (bytes := 140)
+    updateScratch (by decide) (by lit_decide) (by lit_decide)
+    (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.Md5.updatePost_local _)
+    (by implies_sat [Spec.Md5.updateContract, Spec.Md5.updateSig, X86.abi, X86.argSlots, X86.argVal,
+        X86.argBytes]
+      [updateFrameSat, MdStream.X86.Update.sat₀, MdStream.X86.Update.satMem, X86.arg, X86.argAddr,
+        Mem.readW, Mem.read] using updateFrameSat)
+
+/-- A state satisfying `finalize`'s precondition. -/
+def finalizeFrameSat : State :=
+  { MdStream.X86.Finalize.sat₀ with wr := [⟨0x1000, 80⟩, ⟨0x2000, 16⟩, ⟨0x5004, 16⟩] }
+
+theorem finalize : Verified X86.target
+    (Impl.StackScratch.X86.withStackScratch 136 4 Impl.Md5.X86.Stream.finalize)
+    (Spec.Md5.finalizeContract X86.abi (20 + 136)) :=
+  X86.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 14) (stack := 20) (bytes := 136)
+    finalizeScratch (by decide) (by lit_decide) (by lit_decide)
+    (fun _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.Md5.finalizePost_local _)
+    (by implies_sat [Spec.Md5.finalizeContract, Spec.Md5.finalizeSig, X86.abi, X86.argSlots,
+        X86.argVal, X86.argBytes]
+      [finalizeFrameSat, MdStream.X86.Finalize.sat₀, MdStream.X86.Finalize.satMem, X86.arg,
+        X86.argAddr, Mem.readW, Mem.read] using finalizeFrameSat)
 
 end VG.Proof.Md5.X86.Shared

@@ -28,7 +28,7 @@ def updateContract (stack : Nat) : Contract Arm.isa :=
 
 -- The contract with the scratch argument is `Sig.scratchContract` of the one
 -- without it.
-example : Spec.Md5.updateContract Arm.abi =
+example : Spec.Md5.updateScratchContract Arm.abi =
     Sig.scratchContract Arm.abi updateSig "scratch" .u64 14 (Curry.const (fun _ => True) _) updatePost
       true 0 := rfl
 
@@ -62,7 +62,7 @@ theorem update : Verified Arm.target
     (Impl.StackScratch.Arm.withStackScratch 128 2 Impl.Md5.Arm.Stream.update)
     (updateContract (0 + 128)) :=
   Arm.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 14) (stack := 0) (bytes := 128)
-    (m := 2) Proof.Md5.Arm.Shared.update (by decide) (by decide) (by decide) (by decide)
+    (m := 2) Proof.Md5.Arm.Shared.updateScratch (by decide) (by decide) (by decide) (by decide)
     (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) updatePost_local
     (by implies_sat [updateContract, updateSig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val,
         Arm.State.addr]

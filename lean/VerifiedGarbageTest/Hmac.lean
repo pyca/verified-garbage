@@ -206,10 +206,13 @@ example : Spec.Pbkdf2.pbkdf2Hmac Spec.Hmac.sha256S = Spec.Pbkdf2.pbkdf2HmacSha25
 /-! ## The instances -/
 
 open Spec.Hmac in
-/-- Each instance, with its Lean name and the `Api` of its hash's `update`. -/
+/-- Each instance, with its Lean name and the `Api` of the `update` its code
+calls: the hash's `update`, or, for a hash whose `update` keeps its working
+space in a frame of its own (MD5's), the same function with its working space
+as an argument (`_scratch`), which HMAC's code passes its own. -/
 def instances : List (Spec.Hmac.Instance × String × Api) :=
   [(sha256I, "sha256I", Spec.Sha256.updateApi), (sha224I, "sha224I", Spec.Sha256.updateApi),
-    (sha1I, "sha1I", Spec.Sha1.updateApi), (md5I, "md5I", Spec.Md5.updateApi),
+    (sha1I, "sha1I", Spec.Sha1.updateApi), (md5I, "md5I", Spec.Md5.updateScratchApi),
     (sha384I, "sha384I", Spec.Sha512.updateApi), (sha512I, "sha512I", Spec.Sha512.updateApi),
     (sha512_224I, "sha512_224I", Spec.Sha512.updateApi),
     (sha512_256I, "sha512_256I", Spec.Sha512.updateApi)]
@@ -224,7 +227,8 @@ def scratchWords (sig : Sig) : Option Nat :=
 run_cmd do
   for (I, lean, update) in instances do
     unless I.lean == lean do throwError "{lean} calls itself {I.lean}"
-    unless I.update == update.name do throwError "{lean}: `update` is {update.name}, not {I.update}"
+    unless I.update == update.name.replace "_scratch" "" do
+      throwError "{lean}: `update` is {update.name}, not {I.update}"
     let some w := scratchWords update.sig | throwError "{update.name} has no working space"
     unless w ≤ I.scratch do throwError "{lean}: {update.name} needs {w} words of working space"
   let names := instances.flatMap fun (I, _, _) =>
@@ -234,11 +238,12 @@ run_cmd do
 /-! ## `init` for a key of any length -/
 
 open Spec.Hmac in
-/-- Each instance, with the `Api` of its hash's `finalize`. -/
+/-- Each instance, with the `Api` of the `finalize` its code calls (as for
+`instances`). -/
 def finalizes : List (Spec.Hmac.Instance × Api) :=
   [(sha256I, Spec.Sha256.finalizeApi), (sha224I, Spec.Sha256.finalizeApi),
     (sha1I, Spec.Sha1.finalizeApi),
-    (md5I, Spec.Md5.finalizeApi), (sha384I, Spec.Sha512.finalizeApi),
+    (md5I, Spec.Md5.finalizeScratchApi), (sha384I, Spec.Sha512.finalizeApi),
     (sha512I, Spec.Sha512.finalizeApi), (sha512_224I, Spec.Sha512.finalizeApi),
     (sha512_256I, Spec.Sha512.finalizeApi)]
 
@@ -260,7 +265,7 @@ run_cmd do
       throwError "{a.name}: working space is not {I.scratch + I.S.stateBytes} words"
     let some w := scratchWords finalize.sig | throwError "{finalize.name} has no working space"
     unless w ≤ I.scratch do throwError "{I.lean}: {finalize.name} needs {w} words of working space"
-    unless finalize.name.replace "_finalize" "_update" == I.update do
+    unless (finalize.name.replace "_scratch" "").replace "_finalize" "_update" == I.update do
       throwError "{I.lean}: {finalize.name} is not the `finalize` of {I.update}"
 
 end VG.Test.Hmac
