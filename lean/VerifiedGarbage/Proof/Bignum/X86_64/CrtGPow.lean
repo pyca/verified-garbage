@@ -272,10 +272,9 @@ theorem gPow_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64}
     (hn : wv s.mem B (slot w aN) w = N)
     (hinv : ((word s.mem B (slot w aN)).toNat * minv.toNat + 1) % 2 ^ 64 = 0)
     (hodd : N % 2 = 1) (hN1 : 1 < N)
-    (_hr2 : wv s.mem B (slot w aR2) w < N)
     (hr2' : wv s.mem B (slot w aR2) w % N = 2 ^ (64 * w) * 2 ^ (64 * w) % N)
     (hone : wv s.mem B (slot w aOne) w = 1)
-    {sl : Nat} (_hsl : 16 ≤ sl) (hsl' : sl < 32) (_hsl1 : sl ≠ Crt.sD) (_hsl2 : sl ≠ sCnt)
+    {sl : Nat} (hsl' : sl < 32)
     {Bx : Addr} {wx : Nat} (hX : word s.mem B (8 * sl) = Bx)
     (hXw : word s.mem Bx (8 * sW) = BitVec.ofNat 64 wx)
     (hXr : InRegions (s.rd ++ s.wr) (off Bx (8 * sW)) 8) (hwx : 1 ≤ wx) (hwx' : wx ≤ w) :
