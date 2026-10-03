@@ -28,6 +28,9 @@ files changed:
     without one (e.g. `mlkem.rs`, a macro), those of the benchmarks that
     call it.
 
+A change to a file of `src/` only inside its tests (a top-level
+`#[cfg(test)] mod`, which no benchmark compiles) needs nothing.
+
 The benchmarks run those that use any of them, and all of them for a module
 none uses (e.g. `lib`, or the generated `src/asm/<arch>/mod.rs`). Any
 other shared change (e.g. executable code in benchmarks' `main.rs`, or a benchmark whose
@@ -61,8 +64,8 @@ other implementations of them than the configurations before it: one that
 allows the same of the feature sets they choose by is left out. A benchmark
 chooses by the features of each of its `USES` modules' generated variants
 (a `_FEATURES` constant of `src/asm/<arch>/<module>.rs`) and by each feature
-its architecture detects that their Rust code names in quotes (e.g.
-`chacha20`'s `"neon"`), at base and at head. A module whose Rust code reads `VG_CPU_FEATURES` itself (on
+its architecture detects that their Rust code, but its tests, names in quotes
+(e.g. `chacha20`'s `"neon"`), at base and at head. A module whose Rust code reads `VG_CPU_FEATURES` itself (on
 AArch64, SHA-3 uses FEAT_SHA3 only when it is named) depends on which of its
 features each configuration names. All benchmarks run every configuration.
 """
@@ -161,6 +164,10 @@ NAMES = re.compile(r"const NAMES: \[&str; \d+\] = \[([^\]]*)\];")
 # body, which names each feature in quotes or as a `let`.
 RUNTIME = re.compile(r"(#\[cfg\([^\n]*\)\])\nfn runtime\(\) -> u32 \{\n(.*?)\n\}\n", re.S)
 LET = re.compile(r"\blet ([a-z0-9_]+) =")
+# A top-level module only tests compile: from its `#[cfg(test)]` to the `}`
+# closing it, alone in column 0 as rustfmt writes it.
+TEST_MOD = re.compile(r"^#\[cfg\(test\)\]\n(?:#\[[^\n]*\]\n)*(?:pub(?:\([a-z]+\))? )?mod [a-z0-9_]+ \{\n.*?^\}$",
+                      re.M | re.S)
 # Code choosing by what `VG_CPU_FEATURES` names, not only by what it allows.
 OPT_IN = re.compile(r'var\("VG_CPU_FEATURES"\)')
 
@@ -205,6 +212,32 @@ def bench_count(modules, root="."):
         return len(names)
     catalog = bench_catalog(None, root) or {}
     return sum(1 for uses in catalog.values() if uses & modules)
+
+
+def test_lines(text):
+    """The (0-based) numbers of the lines of `text` in its test modules."""
+    lines = set()
+    for m in TEST_MOD.finditer(text):
+        first = text.count("\n", 0, m.start())
+        lines.update(range(first, first + m[0].count("\n") + 1))
+    return lines
+
+
+def without_tests(text):
+    """`text` without its test modules."""
+    return TEST_MOD.sub("", text)
+
+
+def tests_only(path, base):
+    """Whether `path` changed since `base` only inside its test modules."""
+    old, new = (read(path, base) if base else None), read(path)
+    if old is None or new is None or old == new:
+        return False
+    sides = [old.splitlines(), new.splitlines()]
+    tests = [test_lines(old), test_lines(new)]
+    matcher = difflib.SequenceMatcher(None, *sides, autojunk=False)
+    return all(set(range(i1, i2)) <= tests[0] and set(range(j1, j2)) <= tests[1]
+               for tag, i1, i2, j1, j2 in matcher.get_opcodes() if tag != "equal")
 
 
 def registrations(path, base):
@@ -332,7 +365,7 @@ def requirements(arch, modules, revisions):
             found = {frozenset(QUOTED.findall(lst)) for lst in FEATURES.findall(asm)}
             opt_in = False
             for path in sources(module):
-                text = read(path, revision) or ""
+                text = without_tests(read(path, revision) or "")
                 if arch_features:
                     found |= {frozenset([name]) for name in quoted.findall(text)}
                 opt_in |= bool(OPT_IN.search(text))
@@ -367,6 +400,8 @@ def arches(changed, base=None):
 
     for path in changed:
         asm, api, family = ASM.match(path), API.match(path), FAMILY.match(path)
+        if path.startswith("src/") and not asm and tests_only(path, base):
+            continue
         if path in ("src/lib.rs", "bench/benches/primitives/main.rs") or (asm and asm[2] == "mod"):
             names = registrations(path, base)
             for arch in ([asm[1]] if asm else PLATFORMS):
