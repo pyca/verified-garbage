@@ -261,6 +261,25 @@ class Selection(unittest.TestCase):
         # More shards than groups leaves some empty.
         self.assertEqual(bench_compare.shard_groups({'a': 1}, 2, 2), [])
 
+    def test_changes_to_tests_alone_need_nothing(self):
+        code = 'fn f() {}\n'
+        tests = '#[cfg(test)]\nmod tests {\n    #[test]\n    fn a() {}\n}\n'
+        self.base_files['src/chacha.rs'] = code + tests
+        # A test added, or a test module where there was none.
+        self.files['src/chacha.rs'] = code + tests.replace('fn a() {}', 'fn a() {}\n    fn b() {}')
+        self.assertEqual(self.rows(['src/chacha.rs']), [])
+        self.base_files['src/chacha.rs'] = code
+        self.files['src/chacha.rs'] = code + tests
+        self.assertEqual(self.rows(['src/chacha.rs']), [])
+        # Any change outside the tests counts.
+        self.files['src/chacha.rs'] = 'fn f() { g() }\n' + tests
+        self.assertEqual({r['modules'] for r in self.rows(['src/chacha.rs'])}, {'chacha'})
+
+    def test_features_named_in_tests_alone_choose_nothing(self):
+        self.files['src/chacha.rs'] = ('fn f() {}\n#[cfg(test)]\nmod tests {\n'
+                                       '    const F: Features = Features::of(&["neon"]);\n}\n')
+        self.assertEqual(self.configurations(self.rows(['src/chacha.rs']), 'aarch64'), [''])
+
     def test_registration_edits_only(self):
         def names(lines):
             with mock.patch.object(planner.subprocess, 'check_output', return_value=lines):
