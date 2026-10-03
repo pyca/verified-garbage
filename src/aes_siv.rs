@@ -144,18 +144,22 @@ impl AesSiv {
         Ok(k)
     }
 
-    /// The descriptors of the associated-data components `ads`, as
-    /// `vg_aes_siv_encrypt` and `vg_aes_siv_decrypt` take them: each its
-    /// address and its length.
-    fn descriptors(ads: &[&[u8]]) -> Result<[[usize; 2]; Self::MAX_COMPONENTS], Error> {
+    /// Writes the descriptors of the associated-data components `ads` to the
+    /// start of `descs`, as `vg_aes_siv_encrypt` and `vg_aes_siv_decrypt`
+    /// take them: each its address and its length. Only those `ads.len()`
+    /// entries are written (the rest stay uninitialized, and the functions
+    /// read only those), so a short list costs no more than its length.
+    fn descriptors(
+        ads: &[&[u8]],
+        descs: &mut [MaybeUninit<[usize; 2]>; Self::MAX_COMPONENTS],
+    ) -> Result<*const [usize; 2], Error> {
         if ads.len() > Self::MAX_COMPONENTS {
             return Err(Error::TooManyComponents);
         }
-        let mut descs = [[0; 2]; Self::MAX_COMPONENTS];
         for (d, s) in descs.iter_mut().zip(ads) {
-            *d = [s.as_ptr() as usize, s.len()];
+            d.write([s.as_ptr() as usize, s.len()]);
         }
-        Ok(descs)
+        Ok(descs.as_ptr().cast())
     }
 
     /// `SIV-ENCRYPT` (RFC 5297 §2.6): encrypts `data` in place, and returns
@@ -166,7 +170,8 @@ impl AesSiv {
     /// protocol that must hide repeated messages passes a nonce as the last
     /// component.
     pub fn encrypt_in_place(&self, ads: &[&[u8]], data: &mut [u8]) -> Result<Block, Error> {
-        let descs = Self::descriptors(ads)?;
+        let mut storage = [const { MaybeUninit::uninit() }; Self::MAX_COMPONENTS];
+        let descs = Self::descriptors(ads, &mut storage)?;
         let mut work = MaybeUninit::<[u64; WORK]>::uninit();
         let encrypt = instance!(
             self.backend,
@@ -176,12 +181,14 @@ impl AesSiv {
         );
         // SAFETY: `self.ctx` is the key context `vg_aes_siv_init` wrote for
         // `self.rounds` (10, 12 or 14) rounds (every implementation writes
-        // the same one), valid for reads of 512 bytes. `descs` is valid for
-        // reads of `16 * ads.len()` bytes, and lists the components of `ads`,
-        // each valid for reads of its length in bytes. `data` is valid for
+        // the same one), valid for reads of 512 bytes. `descs` points to
+        // `storage`, whose first `ads.len()` entries (`16 * ads.len()`
+        // bytes, all the function reads) `descriptors` initialized to list
+        // the components of `ads`, each valid for reads of its length in
+        // bytes. `data` is valid for
         // reads and writes of `data.len()` bytes and `work` for reads and
         // writes of 2576. `data` and `work` are unique borrows, so they
-        // overlap neither each other nor `self.ctx`, `descs` or a component;
+        // overlap neither each other nor `self.ctx`, `storage` or a component;
         // no buffer overlaps the arguments on the stack, the return address
         // or the stack below it, and none wraps around the end of the address
         // space. The CPU has the features of the implementation selected.
@@ -192,7 +199,7 @@ impl AesSiv {
             encrypt(
                 &self.ctx,
                 self.rounds,
-                descs.as_ptr(),
+                descs,
                 ads.len(),
                 data.as_mut_ptr(),
                 data.len(),
@@ -214,7 +221,8 @@ impl AesSiv {
         data: &mut [u8],
         tag: &[u8; 16],
     ) -> Result<(), Error> {
-        let descs = Self::descriptors(ads)?;
+        let mut storage = [const { MaybeUninit::uninit() }; Self::MAX_COMPONENTS];
+        let descs = Self::descriptors(ads, &mut storage)?;
         let mut work = MaybeUninit::<[u64; WORK]>::uninit();
         let decrypt = instance!(
             self.backend,
@@ -235,7 +243,7 @@ impl AesSiv {
             decrypt(
                 &self.ctx,
                 self.rounds,
-                descs.as_ptr(),
+                descs,
                 ads.len(),
                 data.as_mut_ptr(),
                 data.len(),
