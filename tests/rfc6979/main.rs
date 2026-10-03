@@ -106,15 +106,32 @@ fn verify(
     }
 }
 
-#[test]
-fn p256_sign() {
+/// The signatures with `hash`, whichever implementation of it this CPU runs
+/// (the tests' names select them for each CPU configuration CI tests).
+fn p256_sign(hash: &str) {
     let (_, x, _, signatures) = p256();
     let key = SigningKey::<P256>::from_bytes(&x);
-    for (hash, message, rs) in &signatures {
-        let signed = sign(&key.clone(), hash, message.as_bytes());
-        assert_eq!(signed, [Ok(*rs); 2], "{hash} {message}");
+    let mut signed = 0;
+    for (h, message, rs) in signatures.iter().filter(|(h, _, _)| *h == hash) {
+        assert_eq!(
+            sign(&key.clone(), h, message.as_bytes()),
+            [Ok(*rs); 2],
+            "{h} {message}"
+        );
+        signed += 1;
     }
+    assert_eq!(signed, 2);
     assert_eq!(format!("{key:?}"), "SigningKey { .. }");
+}
+
+#[test]
+fn p256_sha256() {
+    p256_sign("SHA-256");
+}
+
+#[test]
+fn p256_sha384() {
+    p256_sign("SHA-384");
 }
 
 /// The signatures verify with the public key, and not of another message,
