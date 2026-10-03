@@ -5,15 +5,14 @@
 //!
 //! The whole AEAD is verified assembly: `vg_aes_siv_init` (contract
 //! `VG.Spec.Siv.initContract`) writes the key context (the key schedule of
-//! `K1` and its CMAC subkeys, and the key schedule of `K2`),
-//! `vg_aes_siv_s2v_start` and `vg_aes_siv_s2v_ad` (`s2vStartContract`,
-//! `s2vAdContract`) run S2V over the associated data, and
-//! `vg_aes_siv_seal` and `vg_aes_siv_open` (`sealContract`, `openContract`)
-//! finish it with the plaintext and encrypt, or decrypt and finish it and
-//! compare, in constant time. `open` overwrites the data with zeros when the
-//! synthetic IV is wrong. This module checks the number of components
-//! (RFC 5297 §2.6 allows at most 126 besides the plaintext), which the
-//! assembly does not count, and holds the key context.
+//! `K1` and its CMAC subkeys, and the key schedule of `K2`), and
+//! `vg_aes_siv_encrypt` and `vg_aes_siv_decrypt` (`encryptContract`,
+//! `decryptContract`) are `SIV-ENCRYPT` and `SIV-DECRYPT` in one call each,
+//! S2V over the associated-data components included, in constant time.
+//! `decrypt` overwrites the data with zeros when the synthetic IV is wrong.
+//! This module checks the number of components (RFC 5297 §2.6 allows at most
+//! 126 besides the plaintext), which the assembly does not count, lists them
+//! for the assembly as `[address, length]` pairs, and holds the key context.
 //!
 //! The functions are emitted once for each implementation of AES they call
 //! (`vg_aes_expand_key` and `vg_aes_ctr32`, through the CMAC functions made
@@ -26,15 +25,11 @@
 
 use crate::aes::Backend;
 use crate::arch::aes_siv::{
-    VG_AES_SIV_INIT_AESNI_FEATURES, VG_AES_SIV_INIT_VAES_FEATURES, VG_AES_SIV_OPEN_AESNI_FEATURES,
-    VG_AES_SIV_OPEN_VAES_FEATURES, VG_AES_SIV_S2V_AD_AESNI_FEATURES,
-    VG_AES_SIV_S2V_AD_VAES_FEATURES, VG_AES_SIV_S2V_START_AESNI_FEATURES,
-    VG_AES_SIV_S2V_START_VAES_FEATURES, VG_AES_SIV_SEAL_AESNI_FEATURES,
-    VG_AES_SIV_SEAL_VAES_FEATURES, vg_aes_siv_init, vg_aes_siv_init_aesni, vg_aes_siv_init_vaes,
-    vg_aes_siv_open, vg_aes_siv_open_aesni, vg_aes_siv_open_vaes, vg_aes_siv_s2v_ad,
-    vg_aes_siv_s2v_ad_aesni, vg_aes_siv_s2v_ad_vaes, vg_aes_siv_s2v_start,
-    vg_aes_siv_s2v_start_aesni, vg_aes_siv_s2v_start_vaes, vg_aes_siv_seal, vg_aes_siv_seal_aesni,
-    vg_aes_siv_seal_vaes,
+    VG_AES_SIV_DECRYPT_AESNI_FEATURES, VG_AES_SIV_DECRYPT_VAES_FEATURES,
+    VG_AES_SIV_ENCRYPT_AESNI_FEATURES, VG_AES_SIV_ENCRYPT_VAES_FEATURES,
+    VG_AES_SIV_INIT_AESNI_FEATURES, VG_AES_SIV_INIT_VAES_FEATURES, vg_aes_siv_decrypt,
+    vg_aes_siv_decrypt_aesni, vg_aes_siv_decrypt_vaes, vg_aes_siv_encrypt, vg_aes_siv_encrypt_aesni,
+    vg_aes_siv_encrypt_vaes, vg_aes_siv_init, vg_aes_siv_init_aesni, vg_aes_siv_init_vaes,
 };
 use crate::cpu::{Features, detected};
 use crate::zeroize::zeroize;
@@ -43,8 +38,12 @@ use core::mem::MaybeUninit;
 /// A 16-byte block.
 type Block = [u8; 16];
 
-/// The working space of the functions, in 64-bit words.
-const WORK: usize = 320;
+/// The working space of `vg_aes_siv_init`, in 64-bit words.
+const SCRATCH: usize = 320;
+
+/// The working space of `vg_aes_siv_encrypt` and `vg_aes_siv_decrypt`, in
+/// 64-bit words: the synthetic IV in its first 16 bytes.
+const WORK: usize = 322;
 
 /// The instance of a function for `backend`.
 macro_rules! instance {
@@ -62,17 +61,13 @@ macro_rules! instance {
 fn select(f: Features) -> Backend {
     const VAES: Features = Features::all(&[
         VG_AES_SIV_INIT_VAES_FEATURES,
-        VG_AES_SIV_S2V_START_VAES_FEATURES,
-        VG_AES_SIV_S2V_AD_VAES_FEATURES,
-        VG_AES_SIV_SEAL_VAES_FEATURES,
-        VG_AES_SIV_OPEN_VAES_FEATURES,
+        VG_AES_SIV_ENCRYPT_VAES_FEATURES,
+        VG_AES_SIV_DECRYPT_VAES_FEATURES,
     ]);
     const AESNI: Features = Features::all(&[
         VG_AES_SIV_INIT_AESNI_FEATURES,
-        VG_AES_SIV_S2V_START_AESNI_FEATURES,
-        VG_AES_SIV_S2V_AD_AESNI_FEATURES,
-        VG_AES_SIV_SEAL_AESNI_FEATURES,
-        VG_AES_SIV_OPEN_AESNI_FEATURES,
+        VG_AES_SIV_ENCRYPT_AESNI_FEATURES,
+        VG_AES_SIV_DECRYPT_AESNI_FEATURES,
     ]);
     Backend::select_for(f, VAES, AESNI)
 }
@@ -135,7 +130,7 @@ impl AesSiv {
             vg_aes_siv_init_aesni,
             vg_aes_siv_init_vaes
         );
-        let mut scratch = MaybeUninit::<[u64; WORK]>::uninit();
+        let mut scratch = MaybeUninit::<[u64; SCRATCH]>::uninit();
         // SAFETY: `key` is valid for reads of `key.len()` bytes, which is 32,
         // 48 or 64; `k.ctx` and `scratch` are valid for reads and writes of
         // 512 and 2560 bytes. They are distinct objects, so no two overlap,
@@ -148,50 +143,18 @@ impl AesSiv {
         Ok(k)
     }
 
-    /// S2V of the associated data `ads` (RFC 5297 §2.4): the state `D` after
-    /// its components, which `seal` and `open` finish with the plaintext.
-    fn s2v(&self, ads: &[&[u8]], work: &mut MaybeUninit<[u64; WORK]>) -> Result<Block, Error> {
+    /// The descriptors of the associated-data components `ads`, as
+    /// `vg_aes_siv_encrypt` and `vg_aes_siv_decrypt` take them: each its
+    /// address and its length.
+    fn descriptors(ads: &[&[u8]]) -> Result<[[usize; 2]; Self::MAX_COMPONENTS], Error> {
         if ads.len() > Self::MAX_COMPONENTS {
             return Err(Error::TooManyComponents);
         }
-        let start = instance!(
-            self.backend,
-            vg_aes_siv_s2v_start,
-            vg_aes_siv_s2v_start_aesni,
-            vg_aes_siv_s2v_start_vaes
-        );
-        let ad = instance!(
-            self.backend,
-            vg_aes_siv_s2v_ad,
-            vg_aes_siv_s2v_ad_aesni,
-            vg_aes_siv_s2v_ad_vaes
-        );
-        let mut d = [0u8; 16];
-        // SAFETY: `self.ctx` is the key context `vg_aes_siv_init` wrote for
-        // `self.rounds` (10, 12 or 14) rounds (every implementation writes
-        // the same one), valid for reads of 512 bytes; `d` and `work` (a
-        // borrow of the caller's working space, whose contents the result
-        // does not depend on) are valid for reads and writes of 16 and 2560
-        // bytes. They are distinct objects, so no two overlap, nor do they
-        // overlap the return addresses on the stack or the stack below them,
-        // and none wraps around the end of the address space. The CPU has
-        // the features of the implementation selected.
-        unsafe { start(&self.ctx, self.rounds, &mut d, work.as_mut_ptr()) };
-        for s in ads {
-            // SAFETY: as for `start`, with the component `s` valid for reads
-            // of `s.len()` bytes, a borrow distinct from `d` and `work`.
-            unsafe {
-                ad(
-                    &self.ctx,
-                    self.rounds,
-                    &mut d,
-                    s.as_ptr(),
-                    s.len(),
-                    work.as_mut_ptr(),
-                )
-            };
+        let mut descs = [[0; 2]; Self::MAX_COMPONENTS];
+        for (d, s) in descs.iter_mut().zip(ads) {
+            *d = [s.as_ptr() as usize, s.len()];
         }
-        Ok(d)
+        Ok(descs)
     }
 
     /// `SIV-ENCRYPT` (RFC 5297 §2.6): encrypts `data` in place, and returns
@@ -202,29 +165,40 @@ impl AesSiv {
     /// protocol that must hide repeated messages passes a nonce as the last
     /// component.
     pub fn encrypt_in_place(&self, ads: &[&[u8]], data: &mut [u8]) -> Result<Block, Error> {
+        let descs = Self::descriptors(ads)?;
         let mut work = MaybeUninit::<[u64; WORK]>::uninit();
-        let d = self.s2v(ads, &mut work)?;
-        let seal = instance!(
+        let encrypt = instance!(
             self.backend,
-            vg_aes_siv_seal,
-            vg_aes_siv_seal_aesni,
-            vg_aes_siv_seal_vaes
+            vg_aes_siv_encrypt,
+            vg_aes_siv_encrypt_aesni,
+            vg_aes_siv_encrypt_vaes
         );
-        // SAFETY: as in `s2v`, with the S2V state `d` (a local) valid for
-        // reads of 16 bytes and `data` for reads and writes of `data.len()`
-        // bytes, a unique borrow distinct from the others. `work` is working
-        // space but for the synthetic IV written to its first 16 bytes.
+        // SAFETY: `self.ctx` is the key context `vg_aes_siv_init` wrote for
+        // `self.rounds` (10, 12 or 14) rounds (every implementation writes
+        // the same one), valid for reads of 512 bytes. `descs` is valid for
+        // reads of `16 * ads.len()` bytes, and lists the components of `ads`,
+        // each valid for reads of its length in bytes. `data` is valid for
+        // reads and writes of `data.len()` bytes and `work` for reads and
+        // writes of 2576. `data` and `work` are unique borrows, so they
+        // overlap neither each other nor `self.ctx`, `descs` or a component;
+        // no buffer overlaps the arguments on the stack, the return address
+        // or the stack below it, and none wraps around the end of the address
+        // space. The CPU has the features of the implementation selected.
+        // `work` is uninitialized: it is only working space but for the
+        // synthetic IV written to its first 16 bytes, and the contract's
+        // result does not depend on what it holds.
         unsafe {
-            seal(
+            encrypt(
                 &self.ctx,
                 self.rounds,
-                &d,
+                descs.as_ptr(),
+                ads.len(),
                 data.as_mut_ptr(),
                 data.len(),
                 work.as_mut_ptr(),
             )
         };
-        // SAFETY: `seal` wrote the synthetic IV to the first 16 bytes of
+        // SAFETY: `encrypt` wrote the synthetic IV to the first 16 bytes of
         // `work`.
         Ok(unsafe { first_block(&work) })
     }
@@ -239,16 +213,16 @@ impl AesSiv {
         data: &mut [u8],
         tag: &[u8; 16],
     ) -> Result<(), Error> {
+        let descs = Self::descriptors(ads)?;
         let mut work = MaybeUninit::<[u64; WORK]>::uninit();
-        let d = self.s2v(ads, &mut work)?;
-        let open = instance!(
+        let decrypt = instance!(
             self.backend,
-            vg_aes_siv_open,
-            vg_aes_siv_open_aesni,
-            vg_aes_siv_open_vaes
+            vg_aes_siv_decrypt,
+            vg_aes_siv_decrypt_aesni,
+            vg_aes_siv_decrypt_vaes
         );
         let w = work.as_mut_ptr().cast::<u64>();
-        // SAFETY: `work` is valid for writes of 320 words.
+        // SAFETY: `work` is valid for writes of 322 words.
         unsafe {
             w.write(u64::from_le_bytes(tag[..8].try_into().unwrap()));
             w.add(1)
@@ -257,17 +231,18 @@ impl AesSiv {
         // SAFETY: as in `encrypt_in_place`, with the received synthetic IV
         // in the first 16 bytes of `work`.
         let ok = unsafe {
-            open(
+            decrypt(
                 &self.ctx,
                 self.rounds,
-                &d,
+                descs.as_ptr(),
+                ads.len(),
                 data.as_mut_ptr(),
                 data.len(),
                 work.as_mut_ptr(),
             )
         };
-        // `open`'s contract leaves the plaintext in `data` if it returns 1,
-        // and zeros otherwise.
+        // `decrypt`'s contract leaves the plaintext in `data` if it returns
+        // 1, and zeros otherwise.
         if ok == 1 {
             Ok(())
         } else {
@@ -276,7 +251,7 @@ impl AesSiv {
     }
 }
 
-/// The first 16 bytes of `work`, where `seal` writes the synthetic IV.
+/// The first 16 bytes of `work`, where `encrypt` writes the synthetic IV.
 ///
 /// # Safety
 ///

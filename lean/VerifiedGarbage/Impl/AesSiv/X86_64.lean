@@ -4,11 +4,9 @@ import VerifiedGarbage.Impl.CmacAes.Stream.X86_64
 # AES-SIV: x86-64 implementation
 
 `vg_aes_siv_init(key = rdi, key_len = rsi, ctx = rdx, scratch = rcx)`,
-`vg_aes_siv_s2v_start(ctx = rdi, rounds = rsi, d = rdx, scratch = rcx)`,
-`vg_aes_siv_s2v_ad(ctx = rdi, rounds = rsi, d = rdx, data = rcx, len = r8, scratch = r9)`,
-`vg_aes_siv_seal(ctx = rdi, rounds = rsi, d = rdx, data = rcx, len = r8, work = r9)` and
-`vg_aes_siv_open` with the same arguments (see `VG.Spec.Siv.initContract` and the
-others), composed of calls of the verified `vg_aes_expand_key`,
+`vg_aes_siv_encrypt(ctx = rdi, rounds = rsi, ads = rdx, ads_count = rcx, data = r8, len = r9, work = [rsp + 8])`
+and `vg_aes_siv_decrypt` with the same arguments (see `VG.Spec.Siv.initContract`
+and the others), composed of calls of the verified `vg_aes_expand_key`,
 `vg_cmac_aes_subkeys`, `vg_cmac_aes_update`, `vg_cmac_aes_finalize` and
 `vg_aes_ctr32`. Like those, they are generic over the implementation of AES
 they call (`Ctr32`, the `ExpandKey` that goes with it, and `sfx`, the suffix
@@ -16,30 +14,32 @@ of the names of the CMAC functions made with it).
 
 The key context (`VG.Spec.Siv.KeyRepr`) is `K1`'s schedule (bytes 0–239), its
 CMAC subkeys (240–271) and `K2`'s schedule (272–511), so bytes 0–271 are
-`vg_cmac_aes_finalize`'s `key`. The working space (`scratch` or `work`, 2560
-bytes): `[0, 16)` the synthetic IV (`seal`, `open`), `[16, 32)` a zero
-block, `[32, 64)` the last bytes of S2V's last string (`tail`), `[64, 80)`
-the counter `Q + i`, `[80, 96)` a keystream block, `[96, 112)` the counter
-block passed to `vg_aes_ctr32`, `[112, 128)` the IV `open` computes,
-`[128, 144)` a CMAC state, `[144, 160)` `dbl(D)`, `[160, 208)` our caller's
-callee-saved registers, `[208, 232)` the data, its length and the key
-context, and `[256, 2432)` the working space of the functions called.
+`vg_cmac_aes_finalize`'s `key`. The working space (`scratch`, 2560 bytes, or
+`work`, 2576): `[0, 16)` the synthetic IV, `[16, 32)` a zero block,
+`[32, 64)` the last bytes of S2V's last string (`tail`), `[64, 80)` the
+counter `Q + i`, `[80, 96)` a keystream block, `[96, 112)` the counter block
+passed to `vg_aes_ctr32`, `[112, 128)` the next descriptor's address and how
+many are left while S2V absorbs the associated data, then the IV `decrypt`
+computes, `[128, 144)` a CMAC state, `[144, 160)` `dbl(D)`, `[160, 208)` our
+caller's callee-saved registers, `[208, 232)` the data, its length and the
+key context, `[256, 2432)` the working space of the functions called, and
+`[2560, 2576)` S2V's state `D`.
 
 * `init` expands `K1` into the context, derives its subkeys after it and
   expands `K2` after them.
-* `s2v_start` writes `AES-CMAC(K1, <zero>)` to `d` with `vg_cmac_aes_finalize`
-  of the zero block from a zero state.
-* `s2v_ad` computes `AES-CMAC(K1, S)` into the CMAC state with
-  `vg_cmac_aes_update` over the whole blocks of `S` but its last 1 to 16
-  bytes and `vg_cmac_aes_finalize` of those (`cmacOf`), then replaces `D`
-  with `dbl(D)` XOR it.
-* `seal` finishes S2V with the plaintext into the IV (`finish`), then
+* `encrypt` and `decrypt` start S2V with `D = AES-CMAC(K1, <zero>)`
+  (`vg_cmac_aes_finalize` of the zero block from a zero state), then, for
+  each component `S` of associated data, compute `AES-CMAC(K1, S)` into the
+  CMAC state with `vg_cmac_aes_update` over the whole blocks of `S` but its
+  last 1 to 16 bytes and `vg_cmac_aes_finalize` of those (`cmacOf`), and
+  replace `D` with `dbl(D)` XOR it.
+* `encrypt` then finishes S2V with the plaintext into the IV (`finish`) and
   encrypts the plaintext with CTR from the IV with two bits cleared (`ctr`):
   each block, `vg_aes_ctr32` on a zero block with the counter block `Q + i`
   gives the keystream, whose first `min(16, left)` bytes are XORed into the
   data, and the counter is incremented as a 128-bit big-endian integer.
-* `open` decrypts with CTR from the IV it is given, finishes S2V with the
-  plaintext into `[112, 128)`, compares the two IVs without a branch and
+* `decrypt` then decrypts with CTR from the IV it is given, finishes S2V with
+  the plaintext into `[112, 128)`, compares the two IVs without a branch and
   ANDs every byte of the data with the mask of the result.
 
 `finish`, for a string `P` of `L` bytes: if `L < 16`, the tail is
@@ -50,9 +50,9 @@ with `nb = ⌊(L − 1) / 16⌋` whole blocks before the last 1 to 16 bytes,
 the CMAC chains the `k` blocks of `P`, then the first `j` blocks of the
 tail, and finalizes the rest of the tail.
 
-Only the pointers, `rounds`, the key length and `len` can affect timing:
-the branches are on them, and so are the numbers of calls, bytes copied
-and blocks chained.
+Only the pointers, `rounds`, the key length, `ads_count`, `len` and where
+the components of associated data are can affect timing: the branches are on
+them, and so are the numbers of calls, bytes copied and blocks chained.
 -/
 
 namespace VG.Impl.AesSiv.X86_64
@@ -151,16 +151,14 @@ def init (e : ExpandKey) (c : Ctr32) (sfx : String) : Prog isa :=
         (.seq (.call ("vg_cmac_aes_subkeys" ++ sfx) (Impl.CmacAes.X86_64.subkeys c))
           (.seq (.block initMid₂) (.seq (.call e.name e.code) (.block initPost))))))
 
-/-! ## `vg_aes_siv_s2v_start` -/
+/-! ## S2V's first state -/
 
-/-- The zero block at `scratch + 16`, `D` zeroed, and the arguments of
+/-- The zero block at `work + 16`, `D` zeroed, and the arguments of
 `vg_cmac_aes_finalize(key = rdi, rounds = rsi, state = rdx, last = rcx, last_len = r8, scratch = r9)`
 for the zero block (the key and the rounds are ours). -/
 def startPre : List Instr :=
   zero16 .rcx zOff ++ [.store (at_ .rdx 0) .rax, .store (at_ .rdx 8) .rax,
     .mov .r9 (.reg .rcx), .alu .add .r9 (imm csOff), .alu .add .rcx (imm zOff), .mov32 .r8 (imm 16)]
-
-def s2vStart (c : Ctr32) (sfx : String) : Prog isa := .seq (.block startPre) (callFinalize c sfx)
 
 /-! ## The CMAC of a string -/
 
@@ -188,26 +186,6 @@ def cmacMid (st : Nat) : List Instr :=
 /-- `AES-CMAC(K1, S)` into the 16 bytes at `r15 + st`. -/
 def cmacOf (c : Ctr32) (sfx : String) (st : Nat) : Prog isa :=
   .seq (cmacPre st) (.seq (callUpdate c sfx) (.seq (.block (cmacMid st)) (callFinalize c sfx)))
-
-/-! ## `vg_aes_siv_s2v_ad` -/
-
-/-- Saves the registers and keeps the arguments in them: the context in
-`rbx`, the rounds in `rbp`, `d` in `r12`, the string in `r13` (`r14` bytes)
-and the working space in `r15`. -/
-def adPre : List Instr :=
-  save .r9 ++ [.mov .rbx (.reg .rdi), .mov .rbp (.reg .rsi), .mov .r12 (.reg .rdx),
-    .mov .r13 (.reg .rcx), .mov .r14 (.reg .r8), .mov .r15 (.reg .r9)]
-
-/-- `D = dbl(D) XOR` the CMAC state: `dbl` in place (with `rbx` holding `d`),
-then the XOR; the registers restored. -/
-def adPost : List Instr :=
-  [.mov .rbx (.reg .r12)] ++ Impl.CmacAes.X86_64.dbl 0 0 ++
-  [.mov .rax (.mem (at_ .r12 0)), .alu .xor .rax (.mem (at_ .r15 stOff)), .store (at_ .r12 0) .rax,
-   .mov .rax (.mem (at_ .r12 8)), .alu .xor .rax (.mem (at_ .r15 (stOff + 8))),
-   .store (at_ .r12 8) .rax] ++ restore
-
-def s2vAd (c : Ctr32) (sfx : String) : Prog isa :=
-  .seq (.block adPre) (.seq (cmacOf c sfx stOff) (.block adPost))
 
 /-! ## Finishing S2V -/
 
@@ -342,16 +320,7 @@ def ctr (c : Ctr32) : Prog isa :=
     (.seq (.ite .e (.block []) (.loop (ctrBody c) .ne))
       (.block [.mov .r13 (.mem (at_ .r15 dataOff)), .mov .r14 (.mem (at_ .r15 lenOff))]))
 
-/-! ## `vg_aes_siv_seal` and `vg_aes_siv_open` -/
-
-/-- Saves the registers and keeps the arguments in them, the data and its
-length also at `r15 + 208` and `r15 + 216`. -/
-def cryptPre : List Instr :=
-  adPre ++ [.store (at_ .r15 dataOff) .r13, .store (at_ .r15 lenOff) .r14]
-
-def «seal» (c : Ctr32) (sfx : String) : Prog isa :=
-  .seq (.block cryptPre)
-    (.seq (finish c sfx 0) (.seq (.block (counter 0)) (.seq (ctr c) (.block restore))))
+/-! ## Comparing the IVs and masking the data -/
 
 /-- `rax = 1` if the IVs at `r15` and `r15 + 112` are equal, else 0
 (`(¬a ∧ (a − 1)) >> 63` for `a` the OR of the XORs of their halves), saved at
@@ -373,18 +342,11 @@ def maskData : Prog isa :=
       (.loop (.block [.movzx8 .rax maskByte, .alu .and .rax (.reg .r11), .store8 maskByte .rax,
         .alu .add .r10 (imm 1), .alu .cmp .r10 (.reg .r14)]) .ne))
 
-def «open» (c : Ctr32) (sfx : String) : Prog isa :=
-  .seq (.block (cryptPre ++ counter 0))
-    (.seq (ctr c)
-      (.seq (finish c sfx tOff)
-        (.seq (.block compare)
-          (.seq maskData (.block ([.mov .rax (.mem (at_ .r15 dbOff))] ++ restore))))))
-
 /-! ## `vg_aes_siv_encrypt` and `vg_aes_siv_decrypt`
 
 The whole of `SIV-ENCRYPT` and `SIV-DECRYPT`: S2V's state `D` is in the
-working space, at `W + 2560`, after the 2560 bytes `seal` and `open` use;
-the descriptor of the next component of associated data and the number left
+working space, at `W + 2560`, after the 2560 bytes the rest uses; the
+descriptor of the next component of associated data and the number left
 are at `W + 112` and `W + 120` while S2V absorbs them (`T`'s place, which
 `decrypt` fills only after). -/
 
@@ -398,8 +360,8 @@ arguments in them: the context in `rbx`, the rounds in `rbp`, `D` in `r12`,
 the data in `r13` (`r14` bytes) and the working space in `r15`; the data and
 its length also at `r15 + 208` and `r15 + 216`, and the descriptors of the
 components and their number at `r15 + 112` and `r15 + 120`. Then the
-arguments of `vg_aes_siv_s2v_start`'s code: the context, the rounds, `D`
-and the working space. -/
+arguments of `startPre`: the context, the rounds, `D` and the working
+space. -/
 def encPre : List Instr :=
   [.mov .rax (.mem (at_ .rsp 8))] ++ save .rax ++
   [.mov .rbx (.reg .rdi), .mov .rbp (.reg .rsi), .mov .r15 (.reg .rax), .mov .r12 (.reg .rax),
@@ -413,8 +375,8 @@ the descriptor `r15 + 112` points to. -/
 def adNext : List Instr :=
   [.mov .rax (.mem (at_ .r15 adsOff)), .mov .r13 (.mem (at_ .rax 0)), .mov .r14 (.mem (at_ .rax 8))]
 
-/-- `D = dbl(D) XOR` the CMAC state, as in `vg_aes_siv_s2v_ad` (with the
-context kept at `r15 + 224` while `rbx` holds `D`); then the next
+/-- `D = dbl(D) XOR` the CMAC state (`dbl` in place, with the context kept
+at `r15 + 224` while `rbx` holds `D`); then the next
 descriptor, and one fewer left (ZF set when none is). -/
 def adStep : List Instr :=
   [.store (at_ .r15 ctxOff) .rbx, .mov .rbx (.reg .r12)] ++ Impl.CmacAes.X86_64.dbl 0 0 ++
@@ -430,8 +392,8 @@ def s2vAds (c : Ctr32) (sfx : String) : Prog isa :=
     (.ite .e (.block [])
       (.loop (.seq (.block adNext) (.seq (cmacOf c sfx stOff) (.block adStep))) .ne))
 
-/-- The registers' saving, S2V's first state (`vg_aes_siv_s2v_start`'s
-code, from the arguments `encPre` leaves) and S2V of the associated data,
+/-- The registers' saving, S2V's first state (from the arguments `encPre`
+leaves) and S2V of the associated data,
 then the data and its length back in `r13` and `r14`. -/
 def encS2v (c : Ctr32) (sfx : String) : Prog isa :=
   .seq (.block (encPre ++ startPre))

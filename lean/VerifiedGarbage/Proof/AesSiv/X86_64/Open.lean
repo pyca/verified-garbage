@@ -1,5 +1,16 @@
 import VerifiedGarbage.Proof.AesSiv.X86_64.Seal
 
+/-!
+# AES-SIV on x86-64: the end of `vg_aes_siv_decrypt`
+
+From S2V's state of the associated data on, `decrypt` sets the counter from
+the IV it is given (`counter_ok`), decrypts the data in place with CTR
+(`ctr_wp`), finishes S2V with the plaintext into `W + 112` (`finish_wp`),
+compares the two IVs without a branch (`compare_ok`), ANDs every byte of the
+data with the mask of the result (`maskData_wp`) and restores the registers
+(`openTail_wp`).
+-/
+
 namespace VG.Proof.AesSiv.X86_64
 
 open VG VG.X86_64 VG.X86_64.RegUpd VG.Impl.AesSiv.X86_64 VG.WriteBytes
