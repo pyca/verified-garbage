@@ -164,11 +164,11 @@ theorem rootPower_spec (base : BitVec 32) : ISpec base Impl.Ed25519.Arm.rootPowe
   exact h
 
 theorem invEnv_eval (e : Env) : invEnv e 15 = VG.Proof.X25519.invert (e 2) := by
-  simp (config := {decide := true}) only [invEnv, power250Env, opMul, opSqn, Function.update_apply]
+  simp only [↓reduceIte, invEnv, power250Env, opMul, opSqn, Function.update_apply]
   rfl
 
 theorem rootEnv_eval (e : Env) : rootEnv e 15 = VG.Proof.Ed25519.rootPower (e 2) := by
-  simp (config := {decide := true}) only [rootEnv, power250Env, opMul, opSqn, Function.update_apply]
+  simp only [↓reduceIte, rootEnv, power250Env, opMul, opSqn, Function.update_apply]
   rfl
 
 theorem invert_ok {s : State} {base : BitVec 32} (hs : Ctx base s) (hl : AllLim s.mem base) :

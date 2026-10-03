@@ -34,7 +34,7 @@ theorem streamInit_rel {s₀ s₀' : State} (h0 : streamInitArm.pre s₀) (h0' :
         obtain rfl : i = 0 := by omega
         exact q₅) (hw h0) (hw h0') fun r hr => ?_
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl | rfl <;> assumption) ⟨_, hA⟩
+      rcases hr with rfl | rfl | rfl | rfl <;> with_reducible assumption) ⟨_, hA⟩
     (fun s e => by rw [e]; exact si1_wp h0) (fun s e => by rw [e]; exact si1_wp h0')
   have hlt := (s₀.gpr .r2).isLt
   have b := rel_wp (F := SI1 s₀) (F' := SI1 s₀') (G := SI2 s₀) (G' := SI2 s₀')
@@ -81,7 +81,7 @@ theorem streamAad_rel {s₀ s₀' : State} (h0 : streamAadArm.pre s₀) (h0' : s
         · exact q₆
         · exact q₇) (hw h0) (hw h0') fun r hr => ?_
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl | rfl <;> assumption) ⟨_, hA⟩
+      rcases hr with rfl | rfl | rfl | rfl <;> with_reducible assumption) ⟨_, hA⟩
     (fun s e => by rw [e]; exact sa1_wp h0) (fun s e => by rw [e]; exact sa1_wp h0')
   have b := rel_wp (F := SA1 s₀) (F' := SA1 s₀') (G := fun s => ∃ x, SA2 s₀ x s) (G' := fun s => ∃ x, SA2 s₀' x s)
     (rel_of_ct (absorb_ct L (yo := 16) (.inr rfl) (D := arg s₀ 0) (n := (arg s₀ 1).toNat)

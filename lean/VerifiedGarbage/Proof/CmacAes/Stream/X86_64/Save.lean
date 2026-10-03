@@ -75,8 +75,8 @@ theorem save_ok (s : State) {S : Addr} (hS : s.gpr .r9 = S)
       hw 2200 (by decide) (by decide), hw 2208 (by decide) (by decide), hw 2216 (by decide) (by decide),
       ite_true, Option.map_some, execAlu, Option.bind_some]
     rfl, ?_⟩
-  simp (config := {decide := true}) only [gpr_setReg, gpr_arithFlags, zf_arithFlags, mem_setReg,
-    mem_arithFlags, rd_setReg, rd_arithFlags, wr_setReg, wr_arithFlags, ite_true, ite_false,
+  simp only [reduceCtorEq, ↓reduceIte, and_self, gpr_setReg, gpr_arithFlags, zf_arithFlags, mem_setReg,
+    mem_arithFlags, rd_setReg, rd_arithFlags, wr_setReg, wr_arithFlags, 
     BitVec.and_self, hS]
   refine ⟨trivial, trivial, trivial, trivial, trivial, trivial, trivial, trivial, ?_, trivial⟩
   simp only [absSavedMem, saved, sOff, List.foldl, Nat.reduceAdd]
@@ -92,12 +92,12 @@ theorem restore_ok (s : State) {B : Addr} (hb : s.gpr .r15 = B)
       s'.gpr .r15 = s.mem.readW (B + BitVec.ofNat 64 2216) 64 ∧
       s'.gpr .rsp = s.gpr .rsp ∧ s'.mem = s.mem := by
   refine ⟨_, by
-    simp (config := {decide := true}) only [restore, saved, sOff, List.map, runBlock_cons, runStep_some,
+    simp only [reduceCtorEq, ↓reduceIte, restore, saved, sOff, List.map, runBlock_cons, runStep_some,
       runBlock_nil, at_, exec, readSrc, State.load64, State.ea, offset_nat, gpr_setReg, mem_setReg,
-      rd_setReg, wr_setReg, ite_true, ite_false, Option.map_some, hb, Nat.reduceAdd,
+      rd_setReg, wr_setReg, Option.map_some, hb, Nat.reduceAdd,
       hr 2176 (by decide) (by decide), hr 2184 (by decide) (by decide), hr 2192 (by decide) (by decide),
       hr 2200 (by decide) (by decide), hr 2208 (by decide) (by decide), hr 2216 (by decide) (by decide)]
     rfl, ?_⟩
-  simp (config := {decide := true}) only [gpr_setReg, mem_setReg, ite_true, ite_false]
+  simp only [reduceCtorEq, ↓reduceIte, and_self, gpr_setReg, mem_setReg]
 
 end VG.Proof.CmacAes.Stream.X86_64

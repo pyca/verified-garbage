@@ -296,7 +296,7 @@ theorem f10_toNat (g : Nat → Byte) :
       ← Nat.mul_assoc, Nat.mul_div_cancel _ (Nat.two_pow_pos _)]
   have sr : ∀ (a : Byte) (k : Nat), (a.setWidth 32 >>> k).toNat = a.toNat / 2 ^ k := fun a k => by
     rw [BitVec.toNat_ushiftRight, setWidth32_toNat, Nat.shiftRight_eq_div_pow]
-  simp (config := {decide := true}) only [f10, ite_true, ite_false]
+  simp only [reduceCtorEq, ↓reduceIte, Nat.reduceEqDiff, f10]
   rw [BitVec.toNat_add, BitVec.toNat_add, BitVec.toNat_add, BitVec.toNat_add, sl _ 30 (by decide) (by decide),
     sl _ 28 (by decide) (by decide), sl _ 26 (by decide) (by decide), sr, sr, sr, setWidth32_toNat,
     BitVec.toNat_shiftLeft, setWidth32_toNat, Nat.shiftLeft_eq]
@@ -451,7 +451,7 @@ theorem verified : Verified Arm.target Impl.MlKem.Arm.decodeDecompress
     obtain ⟨-, h0, h1, h2, h3⟩ := h
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl <;> assumption
+    rcases hr with rfl | rfl | rfl | rfl <;> with_reducible assumption
   · refine ⟨satState, ?_⟩
     sig_sat_check [Spec.MlKem.decodeDecompressContract, Spec.MlKem.decodeDecompressSig, Arm.abi,
       Arm.argRegs, Arm.reduceClassify, Arm.Loc.val]

@@ -57,8 +57,8 @@ theorem ctr1_ok (b : XReg) (s : State) (h9 : b ≠ .xmm9) (h10 : b ≠ .xmm10) (
       s'.xmm b = XBinOp.eval .pshufb (s.xmm .xmm9) revMask ∧ s'.xmm .xmm9 = inc32 (s.xmm .xmm9) ∧
       XFrame [b, .xmm9] s s' := by
   apply WP.of_runBlock
-  simp (config := {decide := true}) only [runBlock_cons, runStep_some, runBlock_nil, exec, XOp.exec,
-    isa, State.setXmm, ite_true, ite_false, eval_movdqa, h9, Ne.symm h9, Ne.symm h10,
+  simp only [↓reduceIte, runBlock_cons, runStep_some, runBlock_nil, exec, XOp.exec,
+    isa, State.setXmm, eval_movdqa, h9, Ne.symm h9, Ne.symm h10,
     Ne.symm h11, hr, ho, paddd_one,
     Option.some.injEq, exists_eq_left']
   refine ⟨trivial, trivial, rfl, rfl, rfl, rfl, fun r hr => ?_⟩
@@ -130,8 +130,8 @@ theorem xor1_ok (b : XReg) (d : Nat) (s : State) (hb8 : b ≠ .xmm8)
       (∀ r, r ≠ b → r ≠ .xmm8 → s'.xmm r = s.xmm r) := by
   have hin' := inRegions_wr hin
   apply WP.of_runBlock
-  simp (config := {decide := true}) only [runBlock_cons, runStep_some, runBlock_nil, exec, XOp.exec,
-    isa, State.setXmm, State.load128, State.store128, ea_at, hin, hin', ite_true, ite_false, hb8,
+  simp only [↓reduceIte, runBlock_cons, runStep_some, runBlock_nil, exec, XOp.exec,
+    isa, State.setXmm, State.load128, State.store128, ea_at, hin, hin', hb8,
     Option.map_some, Option.some.injEq, exists_eq_left']
   exact ⟨trivial, trivial, trivial, trivial, fun r h1 h2 => by simp [h1, h2]⟩
 
@@ -504,7 +504,7 @@ theorem test_ok {s₀ : State} (hp : Pre s₀) {c : Nat} {s : State} (hI : Inv s
   have hn := nb_lt hp
   have hr8 := hI.r8
   apply WP.of_runBlock
-  simp (config := {decide := true}) only [runBlock_cons, runStep_some, runBlock_nil, exec, execAlu,
+  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, execAlu,
     readSrc, arithFlags, State.setFlags, isa, hr8, BitVec.and_self, Option.bind_some,
     Option.some.injEq, exists_eq_left']
   exact ⟨{ hI with }, by rw [beq_ofNat_zero (by omega)]⟩
@@ -614,7 +614,7 @@ theorem ctr32_ct : ConstantTime isa ctr32X86_64.pre ctr32X86_64.pub ctr32 := by
   intro s₁ s₂ _ _ ⟨h1, h2, h3, h4, h5, h6⟩
   refine Taint.agree_ofRegs fun r hr => ?_
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl <;> assumption
+  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption
 
 theorem ctr32_verified :
     Verified X86_64.target Impl.Aes.X86_64.AesNi.ctr32 (Spec.Gcm.ctr32Contract X86_64.abi) :=

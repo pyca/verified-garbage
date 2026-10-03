@@ -23,7 +23,7 @@ theorem const_ok (c : BitVec 128) (s : State) :
   have ldq : ∀ a b, XBinOp.eval .punpckldq a b =
       ofDwords (dword a 0) (dword b 0) (dword a 1) (dword b 1) := fun _ _ => rfl
   apply WP.of_runBlock
-  simp (config := {decide := true}) only [const, runBlock_cons, runStep_some, runBlock_nil,
+  simp only [Nat.reduceAdd, and_self, const, runBlock_cons, runStep_some, runBlock_nil,
     exec, readSrc, XOp.exec, isa, movd_value, ldq,
     dword_ofDwords_0, dword_ofDwords_1, punpcklqdq_eq,
     shift_last_value,
@@ -64,7 +64,7 @@ theorem roundOps_ok (n : Nat) (s : State) (v : HashValue) (q k : BitVec 128)
   generalize msg n = x at *
   simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or,
     List.nodup_nil, and_true] at hd
-  simp (config := {decide := true}) only [runBlock_cons, runStep_some, runBlock_nil, exec, XOp.exec,
+  simp only [and_self, runBlock_cons, runStep_some, runBlock_nil, exec, XOp.exec,
     isa, RegUpd.xmm_setXmm_self, RegUpd.xmm_setXmm_of_ne, RegUpd.gpr_setXmm, RegUpd.mem_setXmm,
     RegUpd.rd_setXmm, RegUpd.wr_setXmm, not_false_eq_true, reduceCtorEq, hd, h0, h1, h2, hq,
     Option.some.injEq, exists_eq_left']
@@ -89,7 +89,7 @@ theorem schedule_hi (n : Nat) (hn : 4 ≤ n) (s : State) (a b c d : BitVec 128)
   simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or,
     List.nodup_nil, and_true, List.reverse_cons, List.reverse_nil, List.nil_append,
     List.cons_append] at hd hd''
-  simp (config := {decide := true}) only [runBlock_cons, runStep_some, runBlock_nil, exec, XOp.exec,
+  simp only [and_self, runBlock_cons, runStep_some, runBlock_nil, exec, XOp.exec,
     isa, RegUpd.xmm_setXmm_self, RegUpd.xmm_setXmm_of_ne, RegUpd.gpr_setXmm, RegUpd.mem_setXmm,
     RegUpd.rd_setXmm, RegUpd.wr_setXmm, not_false_eq_true, hd, hd'', ha, hb, hc, hd',
     eval_movdqa, eval_sha256msg2,
@@ -113,10 +113,10 @@ theorem schedule_lo (n : Nat) (hn : n < 4) (s : State)
   generalize msg n = x₀ at *
   simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or,
     List.nodup_nil, and_true] at hd
-  simp (config := {decide := true}) only [runBlock_cons, runStep_some, runBlock_nil, exec, XOp.exec,
+  simp only [↓reduceIte, and_self, runBlock_cons, runStep_some, runBlock_nil, exec, XOp.exec,
     isa, RegUpd.xmm_setXmm_self, RegUpd.xmm_setXmm_of_ne, RegUpd.gpr_setXmm, RegUpd.mem_setXmm,
     RegUpd.rd_setXmm, RegUpd.wr_setXmm, not_false_eq_true, State.load128, ea_at, hin,
-    hmask, ite_true, hd, Option.map_some, Option.some.injEq, exists_eq_left']
+    hmask, hd, Option.map_some, Option.some.injEq, exists_eq_left']
   exact ⟨trivial, fun r h0 hx => by simp only [RegUpd.xmm_setXmm_of_ne, h0, hx, not_false_eq_true], trivial⟩
 
 theorem msg_ne (n k : Nat) (h₁ : k < n) (h₂ : n ≤ k + 3) : msg k ≠ msg n := by

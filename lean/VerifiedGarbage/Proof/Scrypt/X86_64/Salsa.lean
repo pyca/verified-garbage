@@ -124,7 +124,7 @@ theorem wp_cons {i : Instr} {is : List Instr} {s : State} {Q : State → Prop} {
 rounds: words 0–11 of `v` in their registers, words 12–15 in their slots. -/
 structure RI (p : Addr) (v : Vector Word 16) (s₀ s : State) : Prop where
   regs : ∀ k (hk : k < 12), s.gpr (wreg k) = (v[k]'(by omega)).setWidth 64
-  slots : ∀ k (hk : k < 16), 12 ≤ k → s.mem.readW (bufAt p (slotOff k)) 32 = v[k]
+  slots : ∀ k (hk : k < 16), 12 ≤ k → s.mem.readW (bufAt p (slotOff k)) 32 = (v[k]'(by omega))
   frame : Frame [slotR p] s₀.mem s.mem
   rd : s.rd = s₀.rd
   wr : s.wr = s₀.wr
@@ -144,7 +144,7 @@ theorem RI.upd_rax {p : Addr} {v : Vector Word 16} {s₀ s s' : State} (h : RI p
   rsp := (hu.other _ (by decide)).trans h.rsp
 
 theorem src_read {p : Addr} {v : Vector Word 16} {s₀ s : State} (h : RI p v s₀ s)
-    (hw : scR p ∈ s₀.wr) {k : Nat} (hk : k < 16) : readSrc32 s (src k) = some v[k] := by
+    (hw : scR p ∈ s₀.wr) {k : Nat} (hk : k < 16) : readSrc32 s (src k) = some (v[k]'(by omega)) := by
   unfold src
   split
   · rename_i hk12
@@ -167,11 +167,11 @@ theorem ite_neg' {α : Type} {c : Prop} [Decidable c] {a b : α} (h : ¬c) :
 def LSide (i j k n : Nat) : Bool :=
   decide (i < 16 ∧ j < 16 ∧ k < 16 ∧ 1 ≤ n ∧ n ≤ 31)
 
-/-- The first three instructions of a line: `eax = R(x[j] + x[k], n)`. -/
+/-- The first three instructions of a line: `eax = R((x[j]'(by omega)) + (x[k]'(by omega)), n)`. -/
 theorem sum_ok {p : Addr} {v : Vector Word 16} {s₀ s : State} (h : RI p v s₀ s)
     (hw : scR p ∈ s₀.wr) {i j k n : Nat} (hj : j < 16) (hk : k < 16) (h1 : 1 ≤ n) (h2 : n ≤ 31)
     {Q : State → Prop}
-    (hQ : ∀ s', RI p v s₀ s' → s'.gpr .rax = ((v[j] + v[k]).rotateLeft n).setWidth 64 →
+    (hQ : ∀ s', RI p v s₀ s' → s'.gpr .rax = (((v[j]'(by omega)) + (v[k]'(by omega))).rotateLeft n).setWidth 64 →
       WP isa (.block (if i < 12 then [.alu32 .xor (wreg i) (.reg .rax)]
         else [.alu32 .xor .rax (.mem (at_ .rsi (slotOff i))),
           .store32 (at_ .rsi (slotOff i)) .rax])) s' Q) :
@@ -212,7 +212,7 @@ theorem line_ok {i j k n : Nat} (hs : LSide i j k n = true) {p : Addr} {v : Vect
   · rename_i hi12
     have hin : InRegions (s₃.rd ++ s₃.wr) (bufAt p (slotOff i)) 4 :=
       in_sc (h₃.wr ▸ hw) (by simp only [slotOff]; omega)
-    have hr : readSrc32 s₃ (.mem (at_ .rsi (slotOff i))) = some v[i] := by
+    have hr : readSrc32 s₃ (.mem (at_ .rsi (slotOff i))) = some (v[i]'(by omega)) := by
       simp only [readSrc32, ea_at, h₃.rsi, State.load32, hin, ite_true]
       rw [h₃.slots i hi (by omega)]
     refine wp_cons (xor32_upd (d := .rax) hr) fun s₄ u₄ => ?_
@@ -469,11 +469,11 @@ theorem load_step {s₀ s₁ : State} (hp : Pre s₀) (hf₁ : Frame [scR (sp s�
 
 /-! ## Adding the input and storing the result -/
 
-/-- The finish invariant after `n` words: `b` holds `R[j] + V[j]` for the
-words `j < n` and still `V[j]` for the others. -/
+/-- The finish invariant after `n` words: `b` holds `(R[j]'(by omega)) + (V[j]'(by omega))` for the
+words `j < n` and still `(V[j]'(by omega))` for the others. -/
 structure FI (s₀ : State) (R : Vector Word 16) (sB : State) (n : Nat) (s : State) : Prop where
   out : ∀ j (hj : j < 16), s.mem.readW (bufAt (bp s₀) (4 * j)) 32 =
-    if j < n then R[j] + (V s₀)[j] else (V s₀)[j]
+    if j < n then (R[j]'(by omega)) + (V s₀)[j] else (V s₀)[j]
   regs : ∀ k (hk : k < 12), n ≤ k → s.gpr (wreg k) = (R[k]'(by omega)).setWidth 64
   frame : Frame [bR (bp s₀)] sB.mem s.mem
   rd : s.rd = s₀.rd
@@ -483,14 +483,14 @@ structure FI (s₀ : State) (R : Vector Word 16) (sB : State) (n : Nat) (s : Sta
   rsp : s.gpr .rsp = s₀.gpr .rsp
 
 theorem finish_step {s₀ : State} (hp : Pre s₀) {R : Vector Word 16} {sB : State}
-    (hsl : ∀ k (hk : k < 16), 12 ≤ k → sB.mem.readW (bufAt (sp s₀) (slotOff k)) 32 = R[k])
+    (hsl : ∀ k (hk : k < 16), 12 ≤ k → sB.mem.readW (bufAt (sp s₀) (slotOff k)) 32 = (R[k]'(by omega)))
     {n : Nat} (hn : n < 16) {s : State} (h : FI s₀ R sB n s) :
     WP isa (.block (finishWord n)) s (FI s₀ R sB (n + 1)) := by
   have hb : readSrc32 s (.mem (at_ .rdi (4 * n))) = some (V s₀)[n] := by
     rw [mem_read (by rw [h.rdi, h.rd, h.wr]; exact in_b hp.hb (by omega)), h.rdi, h.out n hn]
     simp
   /- After the new sum is stored, the invariant holds. -/
-  have fin : ∀ s' : State, s'.mem = s.mem.writeW (bufAt (bp s₀) (4 * n)) (R[n] + (V s₀)[n]) →
+  have fin : ∀ s' : State, s'.mem = s.mem.writeW (bufAt (bp s₀) (4 * n)) ((R[n]'(by omega)) + (V s₀)[n]) →
       (∀ k (hk : k < 12), n < k → s'.gpr (wreg k) = s.gpr (wreg k)) →
       s'.rd = s.rd → s'.wr = s.wr → s'.gpr .rsi = s.gpr .rsi → s'.gpr .rdi = s.gpr .rdi →
       s'.gpr .rsp = s.gpr .rsp → FI s₀ R sB (n + 1) s' := by
@@ -524,7 +524,7 @@ theorem finish_step {s₀ : State} (hp : Pre s₀) {R : Vector Word 16} {sB : St
     · intro k hk hkn
       exact u.other _ fun e => by have := wreg_inj k hk n hn12 e; omega
   · rename_i hn12
-    have hsl' : readSrc32 s (.mem (at_ .rsi (slotOff n))) = some R[n] := by
+    have hsl' : readSrc32 s (.mem (at_ .rsi (slotOff n))) = some (R[n]'(by omega)) := by
       rw [mem_read (by rw [h.rsi, h.rd, h.wr]; exact in_sc hp.hs (by simp only [slotOff]; omega)),
         h.rsi, read_sc hp h.frame (by simp only [slotOff]; omega) (by decide), hsl n hn (by omega)]
     refine wp_cons (mov32_upd (d := .rax) hsl') fun s₁ u₁ => ?_

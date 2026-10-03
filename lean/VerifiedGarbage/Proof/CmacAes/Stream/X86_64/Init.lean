@@ -119,8 +119,8 @@ theorem initMid_ok {s : State} {St S : Addr} {R : Nat} (hb : s.gpr .rbx = St) (h
     simp only [initMid, runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, execAlu,
       Option.bind_some, Option.map_some]
     rfl, ?_⟩
-  simp (config := {decide := true}) only [gpr_setReg, gpr_arithFlags, mem_setReg, mem_arithFlags,
-    rd_setReg, rd_arithFlags, wr_setReg, wr_arithFlags, ite_true, ite_false, hb, hp, h12, sx240]
+  simp only [reduceCtorEq, ↓reduceIte, Nat.reducePow, and_self, gpr_setReg, gpr_arithFlags, mem_setReg, mem_arithFlags,
+    rd_setReg, rd_arithFlags, wr_setReg, wr_arithFlags, hb, hp, h12, sx240]
   refine ⟨trivial, trivial, trivial, trivial, fun r hr => ?_, trivial⟩
   simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp
@@ -427,7 +427,7 @@ theorem init_rel (v : Ctr32Impl) {s₀ s₀' : State} (h0 : initX86_64.pre s₀)
       obtain ⟨rfl, rfl⟩ := h
       refine Taint.agree_ofRegs fun r hr => ?_
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl | rfl | rfl <;> assumption) hA).wp
+      rcases hr with rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption) hA).wp
     (F₁ := IMid₁ s₀ St Kp S KL) (F₂ := IMid₁ s₀' St Kp S KL) fun a b h => by
       obtain ⟨rfl, rfl⟩ := h; exact ⟨initPre_wp hp, initPre_wp hp'⟩
   have e := (ek_rel v (P := fun a b => IMid₁ s₀ St Kp S KL a ∧ IMid₁ s₀' St Kp S KL b)

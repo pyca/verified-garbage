@@ -1,5 +1,6 @@
 import VerifiedGarbage.Spec.Gcm.Contract
 import VerifiedGarbage.TCB.X86.Target
+import VerifiedGarbage.Proof.Framework.PowLit
 
 /-!
 # AES-GCM on x86: the contracts the proofs are written against

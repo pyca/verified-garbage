@@ -125,9 +125,9 @@ theorem copyStep_ok (s : State) {A B : Addr} (ha : s.gpr .x7 + BitVec.ofNat 64 0
       (∀ r, r ≠ .x6 → r ≠ .x7 → r ≠ .x8 → r ≠ .x9 → s'.gpr r = s.gpr r) ∧
       s'.sp = s.sp ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   refine ⟨_, by
-    simp (config := {decide := true}) only [copyBody, runBlock_cons, runStep_some, runBlock_nil,
+    simp only [reduceCtorEq, ↓reduceIte, Nat.reduceLT, Nat.reduceMul, Nat.reduceMod, and_self, copyBody, runBlock_cons, runStep_some, runBlock_nil,
       exec, addr, State.load, State.store, Size.bits, State.read, gpr_write, mem_write,
-      rd_write, wr_write, ite_true, ite_false, Option.bind_some, Option.map_some, BitVec.setWidth_eq,
+      rd_write, wr_write, Option.bind_some, Option.map_some, BitVec.setWidth_eq,
       ha, hb, r, w]
     rfl, ?_⟩
   refine ⟨?_, by simp [gpr_write], by simp [gpr_write], by simp [gpr_write],
@@ -217,7 +217,7 @@ theorem xor1_ok (s : State) (pb qb : Reg) (pd qd : Nat) {P Q : Addr}
     rw [runBlock_cons, exec_ldr_x hpd (by rw [hp]; exact rp), runStep_some, runBlock_cons, exec_ldr_x hqd rq',
       runStep_some, runBlock_cons, exec_logic, runStep_some, runBlock_nil], ?_⟩
   refine ⟨?_, fun r h₁ h₂ => ?_, rfl, rfl, rfl, rfl⟩
-  · simp (config := {decide := true}) only [s₁, State.read, gpr_write, mem_write, ite_true, ite_false,
+  · simp only [reduceCtorEq, ↓reduceIte, s₁, State.read, gpr_write, mem_write, 
       BitVec.setWidth_eq, hp, hq', hq]
   · simp [s₁, gpr_write, h₁, h₂]
 
@@ -227,9 +227,9 @@ theorem zero_ok (s : State) {C : Addr} (hc : s.gpr .x15 + BitVec.ofNat 64 48 = C
       (∀ r, r ≠ .x5 → r ≠ .x6 → r ≠ .x7 → r ≠ .x8 → s'.gpr r = s.gpr r) ∧
       s'.sp = s.sp ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   refine ⟨_, by
-    simp (config := {decide := true}) only [zero, mov, runBlock_cons, runStep_some, runBlock_nil,
+    simp only [reduceCtorEq, ↓reduceIte, Nat.reduceLT, Nat.reduceMul, Nat.reduceMod, and_self, zero, mov, runBlock_cons, runStep_some, runBlock_nil,
       exec, addr, State.store, Size.bytes, Size.bits, State.read, gpr_write, mem_write, wr_write,
-      ite_true, ite_false, Option.bind_some, BitVec.setWidth_eq, hc, wc]
+      Option.bind_some, BitVec.setWidth_eq, hc, wc]
     rfl, ?_⟩
   refine ⟨?_, by simp [gpr_write, ← hc], by simp [gpr_write], by simp [gpr_write],
     fun r h₁ h₂ h₃ h₄ => by simp [gpr_write, h₁, h₂, h₃, h₄], rfl, rfl, rfl⟩
@@ -245,9 +245,9 @@ theorem pad_ok (s : State) {B C K : Addr} (hb : s.gpr .x6 + BitVec.ofNat 64 0 = 
       (∀ r, r ≠ .x5 → r ≠ .x6 → r ≠ .x9 → s'.gpr r = s.gpr r) ∧
       s'.sp = s.sp ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   refine ⟨_, by
-    simp (config := {decide := true}) only [padK2, runBlock_cons, runStep_some, runBlock_nil, exec, addr,
+    simp only [reduceCtorEq, ↓reduceIte, Nat.reduceLT, Nat.reduceMul, Nat.reduceMod, and_self, padK2, runBlock_cons, runStep_some, runBlock_nil, exec, addr,
       State.store, State.load, Size.bits, Size.bytes, State.read, gpr_write, mem_write, rd_write, wr_write,
-      ite_true, ite_false, Option.bind_some, Option.map_some, BitVec.setWidth_eq, hb, hc, hk, w, rc, rk]
+      Option.bind_some, Option.map_some, BitVec.setWidth_eq, hb, hc, hk, w, rc, rk]
     rfl, ?_⟩
   refine ⟨?_, ?_, fun r h₁ h₂ h₃ => by simp [gpr_write, h₁, h₂, h₃], rfl, rfl, rfl⟩
   · simp only [mem_write, Mem.writeW, Nat.reduceDiv, Nat.reduceMul]

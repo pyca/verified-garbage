@@ -39,7 +39,7 @@ theorem twoPRegs_ok (s : State) :
 
 theorem twoPReg_val {t : State} (h0 : t.gpr .x0 = K2) (h2 : t.gpr .x2 = K4) (i : Nat) :
     t.gpr (twoPReg i) = twoPW i := by
-  simp only [twoPReg, twoPW]; split <;> assumption
+  simp only [twoPReg, twoPW]; split <;> with_reducible assumption
 
 /-- Load two words, from the working space. -/
 theorem ld2 {t : State} {base : Addr} (ht : Scr t base) {d e : Nat} (hd : d % 8 = 0) (hd' : d + 8 ≤ 8192)

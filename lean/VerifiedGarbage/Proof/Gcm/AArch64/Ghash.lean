@@ -24,8 +24,6 @@ What the instructions of a step (`Impl.Gcm.AArch64.step`) compute on the two
 halves of a 128-bit value, stated on the whole value, and the 128 steps.
 -/
 
-open VG.PowLit
-
 namespace VG.Proof.Gcm.AArch64
 
 open VG VG.AArch64 VG.Impl.Gcm.AArch64 VG.Proof.Gcm
@@ -252,8 +250,6 @@ section
 /-!
 # GHASH on AArch64: the whole function
 -/
-
-open VG.PowLit
 
 namespace VG.Proof.Gcm
 
@@ -606,7 +602,7 @@ theorem ghash_ct : ConstantTime isa Proof.Gcm.ghashAArch64.pre Proof.Gcm.ghashAA
   intro s₁ s₂ _ _ ⟨h1, h2, h3, h4, h5, hsp⟩
   refine ⟨hsp, fun r hr => ?_⟩
   simp only [VG.AArch64.Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl | rfl <;> assumption
+  rcases hr with rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption
 
 theorem ghash_verified :
     Verified AArch64.target Impl.Gcm.AArch64.ghash (Spec.Gcm.ghashContract AArch64.abi) :=

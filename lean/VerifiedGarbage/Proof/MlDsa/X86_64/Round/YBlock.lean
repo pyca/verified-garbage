@@ -43,7 +43,7 @@ theorem hbX_ok {g : Nat} (hg : g = g32 ∨ g = g88) (s : State) (hc : HbC g s) :
       List.flatMap_cons, List.flatMap_nil, List.append_nil]
     vrun [VG.X86_64.eval_movdqa]
     refine ⟨fun e he => ?_, by xonly⟩
-    simp (disch := first | decide | assumption) only [dword_pand, dword_psrad, dword_psubd, dword_psrld,
+    simp (disch := first | decide | with_reducible assumption) only [dword_pand, dword_psrad, dword_psubd, dword_psrld,
       dword_pslld, dword_paddd, hc.c8 e he, hc.c9 e he, hc.c10 e he, BitVec.toNat_ofNat]
     rfl
 
@@ -62,7 +62,7 @@ theorem lbX_ok {g : Nat} (hg : g = g32 ∨ g = g88) (s : State) (hc : HbC g s) (
       List.flatMap_nil, List.append_nil]
     vrun [VG.X86_64.eval_movdqa]
     refine ⟨fun e he => ?_, by xonly⟩
-    simp (disch := first | decide | assumption) only [dword_pand, dword_psrad, dword_psubd, dword_psrld,
+    simp (disch := first | decide | with_reducible assumption) only [dword_pand, dword_psrad, dword_psubd, dword_psrld,
       dword_pslld, dword_paddd, hc.c8 e he, hc.c9 e he, hc.c10 e he, BitVec.toNat_ofNat, hq, dword_qV he]
     rfl
 

@@ -18,8 +18,8 @@ theorem saveV_ok (s : State)
       u.mem.read (s.gpr .x3 + BitVec.ofNat 64 128) 16 = s.v .v8 ∧
       u.mem.read (s.gpr .x3 + BitVec.ofNat 64 144) 16 = s.v .v9 := by
   apply WP.of_runBlock
-  simp (config := {decide := true}) only [saveV,runBlock_cons,runBlock_nil,exec,addr,
-    ite_true,State.store,ho0,ho1,Option.bind_some,Option.some.injEq,exists_eq_left',isa,runStep_some]
+  simp only [↓reduceIte, Nat.reduceLT, Nat.reduceMul, Nat.reduceMod, and_self, saveV,runBlock_cons,runBlock_nil,exec,addr,
+    State.store,ho0,ho1,Option.bind_some,Option.some.injEq,exists_eq_left',isa,runStep_some]
   refine ⟨trivial,trivial,trivial,trivial,trivial,?_,?_,?_⟩
   · have h0 : (savedVR s).Contains (s.gpr .x3 + BitVec.ofNat 64 128) 16 := by
       simp only [Region.Contains,BitVec.sub_self]; decide

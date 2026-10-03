@@ -131,11 +131,11 @@ theorem chain_spec (b : Addr) : CS b invChain chainEnv := by
   exact h
 
 theorem chain_eval (v : Nat → Fe) : chainEnv v 14 = VG.Proof.X25519.invert (v 2) := by
-  simp (config := {decide := true}) only [chainEnv, cmul, csqn, Function.update_apply, ite_true, ite_false]
+  simp only [↓reduceIte, Nat.reduceEqDiff, chainEnv, cmul, csqn, Function.update_apply]
   rfl
 
 theorem chain_keep (v : Nat → Fe) : chainEnv v 1 = v 1 := by
-  simp (config := {decide := true}) only [chainEnv, cmul, csqn, Function.update_apply, ite_true, ite_false]
+  simp only [↓reduceIte, Nat.reduceEqDiff, chainEnv, cmul, csqn, Function.update_apply]
 
 def fbnds (n : Nat) : Option Nat := if n = 1 ∨ n = 14 then some 18 else none
 

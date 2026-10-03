@@ -101,7 +101,7 @@ theorem all_ct : RelCT isa (fun a b => a = σ₁ ∧ b = σ₂) rejBounded fun _
     ⟨by rw [h.1]; exact pro_ok hp₁, by rw [h.2]; exact pro_rb hp₂ h0.symm h1.symm h2.symm h3.symm rfl⟩) ?_
   · rw [h.1, h.2]
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl <;> assumption
+    rcases hr with rfl | rfl | rfl | rfl <;> with_reducible assumption
   refine RelCT.seq (sponge_ct hp₁ hp₂ hsp (rate := 136) (outlen := 544) (by decide) (by decide) (by decide)
     (by decide) (by taint_decide) (by taint_decide) (by taint_decide)) ?_
   refine RelCT.seq (sel_ct hp₁ hp₂ hη oks) ?_

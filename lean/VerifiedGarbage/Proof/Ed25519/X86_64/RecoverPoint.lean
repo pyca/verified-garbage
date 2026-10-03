@@ -52,7 +52,7 @@ theorem rootPower_spec {fld : Impl.Ed25519.X86_64.Arith} [EdArith fld] (base : A
   exact h
 
 theorem rootEnv_eval (e : VG.Proof.X25519.X86_64.Env) : rootEnv e 17 = VG.Proof.Ed25519.rootPower (e 4) := by
-  simp (config := {decide := true}) only [rootEnv, opMul, opSqn, Function.update_apply]
+  simp only [↓reduceIte, rootEnv, opMul, opSqn, Function.update_apply]
   rfl
 
 end VG.Proof.Ed25519.X86_64

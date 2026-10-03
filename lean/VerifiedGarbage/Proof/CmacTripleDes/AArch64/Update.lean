@@ -105,7 +105,7 @@ theorem chainIn_ok (s : State) {P Q : Addr} (hp : s.gpr .x1 = P) (hq : s.gpr .x2
       runStep_some, runBlock_cons, exec_logic, runStep_some, runBlock_cons, exec_rev, runStep_some, runBlock_nil],
     ?_⟩
   refine ⟨?_, fun r h₁ h₂ => ?_, rfl, rfl, rfl, rfl⟩
-  · simp (config := {decide := true}) only [s₁, State.read, gpr_write, mem_write, ite_true, ite_false,
+  · simp only [reduceCtorEq, ↓reduceIte, s₁, State.read, gpr_write, mem_write, 
       BitVec.setWidth_eq, rev64_eq, add_ofNat_zero, hp, hq]
   · simp [s₁, gpr_write, h₁, h₂]
 
@@ -127,7 +127,7 @@ theorem chainOut_ok (s : State) {P : Addr} (hp : s.gpr .x1 = P) (wp : InRegions 
   · simp [s₁, gpr_write, State.read]
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     simp [s₁, gpr_write, hr.1, hr.2.1, hr.2.2]
-  · simp (config := {decide := true}) only [s₁, mem_write, State.read, gpr_write, ite_true, ite_false,
+  · simp only [reduceCtorEq, ↓reduceIte, s₁, mem_write, State.read, gpr_write, 
       BitVec.setWidth_eq, rev64_eq, hp, add_ofNat_zero]
 
 /-! ## Regions -/

@@ -73,9 +73,9 @@ abbrev scR : Region := ⟨scA s₀, (rr s₀ + 2) * 128⟩
 abbrev argR : Region := ⟨stackArgAddr s₀ 0, 8⟩
 /-- The input. -/
 abbrev B : List Byte := bytesAt s₀.mem (bA s₀) (128 * rr s₀)
-/-- `V[i]`. -/
+/-- `(V[i]'(by omega))`. -/
 abbrev vAt (i : Nat) : Addr := vA s₀ + BitVec.ofNat 64 (128 * rr s₀ * i)
-/-- `V[i]`, as the pointer the code computes. -/
+/-- `(V[i]'(by omega))`, as the pointer the code computes. -/
 abbrev vAt32 (i : Nat) : BitVec 32 := vP s₀ + BitVec.ofNat 32 (128 * rr s₀ * i)
 /-- `T`. -/
 abbrev tP : Addr := scA s₀ + BitVec.ofNat 64 192
@@ -150,7 +150,7 @@ omit hp in
 theorem v_le {i : Nat} (hi : i < NN s₀) : 128 * rr s₀ * i + 128 * rr s₀ ≤ 128 * rr s₀ * NN s₀ := by
   rw [← Nat.mul_succ]; exact Nat.mul_le_mul_left _ hi
 
-/-- `V[i]` is in `v`. -/
+/-- `(V[i]'(by omega))` is in `v`. -/
 theorem vAt_sub {i : Nat} (hi : i < NN s₀) : Region.Sub ⟨vAt s₀ i, 128 * rr s₀⟩ (vR s₀) := by
   have := v_lt hp
   have := v_le hi
@@ -167,7 +167,7 @@ theorem vAt_disj {i k : Nat} (hi : i < NN s₀) (hk : k < NN s₀) (hik : i ≠ 
   · left; rw [← Nat.mul_succ]; exact Nat.mul_le_mul_left _ h
   · right; rw [← Nat.mul_succ]; exact Nat.mul_le_mul_left _ h
 
-/-- `V[i]` as an address. -/
+/-- `(V[i]'(by omega))` as an address. -/
 theorem vAt_addr {i : Nat} (hi : i < NN s₀) : State.addr (vAt32 s₀ i) = vAt s₀ i := by
   have := v_lt hp
   have := v_le hi
@@ -1029,7 +1029,7 @@ theorem vAt_in {i : Nat} (hi : i < NN s₀) : InRegions s₀.wr (vAt s₀ i) (12
   have lt := v_lt hp
   exact InRegions.of_mem (R := vR s₀) (by simp) (contains_off (by rw [e]; omega) (by omega))
 
-/-- `V[i]` and the parts of `scratch` we use. -/
+/-- `(V[i]'(by omega))` and the parts of `scratch` we use. -/
 theorem vAt_b {i : Nat} (hi : i < NN s₀) : Region.Disjoint ⟨vAt s₀ i, 128 * rr s₀⟩ (bR s₀) :=
   hp.b_v.symm.sub_left (vAt_sub hp hi)
 theorem vAt_s {i : Nat} (hi : i < NN s₀) : Region.Disjoint ⟨vAt s₀ i, 128 * rr s₀⟩ (scR s₀) :=
@@ -1045,7 +1045,7 @@ theorem call_frame {m m' : Mem} (hf : Frame [⟨bA s₀, 128 * rr s₀⟩, ⟨sc
     · exact ⟨bR s₀, by simp, b_sub'⟩
     · exact ⟨scR s₀, by simp, w_sub⟩
 
-/-- What a call writing `b` keeps: `V[k]`. -/
+/-- What a call writing `b` keeps: `(V[k]'(by omega))`. -/
 theorem call_keeps_v {m m' : Mem} (hf : Frame [⟨bA s₀, 128 * rr s₀⟩, ⟨scA s₀, 128⟩] m m')
     {k : Nat} (hk : k < NN s₀) :
     bytesAt m' (vAt s₀ k) (128 * rr s₀) = bytesAt m (vAt s₀ k) (128 * rr s₀) := by
@@ -1365,7 +1365,7 @@ theorem j_ok {s₀ : State} (hp : Pre s₀) {s : State} (h4 : s.gpr .r4 = bP s�
       ub.mem, ua.mem, jOf_eq hp]
   · rw [ue.other _ hr, ud.other _ hr, ub.other _ hr, ua.other _ hr]
 
-/-- The address of `V[j]`, as `mulLoop` computes it. -/
+/-- The address of `(V[j]'(by omega))`, as `mulLoop` computes it. -/
 theorem vAt_mul (s₀ : State) (j : Nat) :
     vP s₀ + BitVec.ofNat 32 (j * (128 * rr s₀)) = vAt32 s₀ j := by
   rw [Nat.mul_comm]
@@ -1529,7 +1529,7 @@ by `WP.callCalls`; then constant time, up to the indices `j`, as on AArch64
 Correctness determines our registers from the public arguments, so they agree
 between the calls, where the taint analysis proves each piece constant time;
 the calls are constant time by scryptBlockMix's own proof. In step 3, the
-address of `V[j]` depends on `j`, which the contract declares public: the two
+address of `(V[j]'(by omega))` depends on `j`, which the contract declares public: the two
 runs compute the same `j`, since both compute their indices in order
 (`Inv3.js`) and agree on the whole list.
 -/

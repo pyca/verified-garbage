@@ -47,9 +47,9 @@ theorem decomp_spec {d : Nat} (hd : d ∈ compressWidths) (is : List Instr) (s :
     rcases mem_compressWidths hd with rfl | rfl | rfl <;> refine ⟨by decide, by decide, ?_⟩ <;> omega
   rw [WP.block_append_iff]
   apply WP.of_runBlock
-  simp (config := {decide := true}) only [decompOp, runBlock_cons, runStep_some, runBlock_nil, exec,
+  simp only [reduceCtorEq, ↓reduceIte, Nat.reducePow, decompOp, runBlock_cons, runStep_some, runBlock_nil, exec,
     execAlu, execShift, execMul, readSrc, State.setReg, arithFlags, State.setFlags, Option.bind_some,
-    Option.map_some, ite_true, ite_false, Option.some.injEq, exists_eq_left', hd'.1, hd'.2.1, and_self]
+    Option.map_some, Option.some.injEq, exists_eq_left', hd'.1, hd'.2.1, and_self]
   refine k _ ⟨fun r hr => ?_, rfl, rfl, rfl⟩ ?_
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     simp [hr.1, hr.2]

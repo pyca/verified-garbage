@@ -103,7 +103,7 @@ theorem test_ok {s₀ : State} {s : State} (h : Q2 s₀ s) :
     WP isa (.block [.alu .test .r12 (.reg .r12)]) s fun s₁ => Q2 s₀ s₁ ∧ s₁.zf = some (decide (T s₀ = 0)) := by
   have hT64 : T s₀ < 64 := Nat.mod_lt _ (by decide)
   apply WP.of_runBlock
-  simp (config := {decide := true}) only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc,
+  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc,
     execAlu, arithFlags, State.setFlags, Option.bind_some, Option.some.injEq, exists_eq_left']
   refine ⟨⟨h.rbx, h.rbp, h.r12, h.keep, h.rd, h.wr, h.state, h.buf, h.saved, h.done, h.frame⟩, ?_⟩
   rw [BitVec.and_self, h.r12, ← Offset.ofNat_sub_ofNat_beq (x := T s₀) (y := 0) (by omega) (by omega)]

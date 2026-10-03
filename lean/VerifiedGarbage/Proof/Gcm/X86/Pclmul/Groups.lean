@@ -42,8 +42,8 @@ theorem zero_ok (s : State) :
       prod s' = Prod.zero ∧ Only [.xmm4, .xmm5, .xmm6] s s' := by
   apply WP.of_runBlock
   simp only [Impl.Gcm.X86.Pclmul.zero]
-  simp (config := {decide := true}) only [runBlock_cons, runStep_some, runBlock_nil, exec, XOp.exec,
-    isa, xmm_setXmm, ite_false, eval_pxor, BitVec.xor_self, Option.some.injEq,
+  simp only [reduceCtorEq, ↓reduceIte, runBlock_cons, runStep_some, runBlock_nil, exec, XOp.exec,
+    isa, xmm_setXmm, eval_pxor, BitVec.xor_self, Option.some.injEq,
     exists_eq_left']
   refine ⟨rfl, by simp only [gpr_setXmm], by simp only [mem_setXmm],
     by simp only [rd_setXmm], by simp only [wr_setXmm], fun r hr => ?_⟩
@@ -56,9 +56,9 @@ theorem acc_ok (s : State) :
       Only [.xmm4, .xmm5, .xmm6, .xmm7] s s' := by
   apply WP.of_runBlock
   simp only [Impl.Gcm.X86.Pclmul.acc]
-  simp (config := {decide := true}) only [runBlock_cons, runStep_some, runBlock_nil, exec,
+  simp only [reduceCtorEq, ↓reduceIte, runBlock_cons, runStep_some, runBlock_nil, exec,
     XOp.exec, isa, xmm_setXmm,
-    ite_true, ite_false, eval_pxor, eval_movdqa, Option.some.injEq, exists_eq_left']
+    eval_pxor, eval_movdqa, Option.some.injEq, exists_eq_left']
   refine ⟨?_, by simp only [gpr_setXmm], by simp only [mem_setXmm],
     by simp only [rd_setXmm], by simp only [wr_setXmm], fun r hr => ?_⟩
   · simp only [prod, Prod.acc, xmm_setXmm, ite_true, ite_false, reduceCtorEq]
@@ -71,9 +71,9 @@ theorem reduce_ok (s : State) (h1 : s.xmm .xmm1 = poly) :
   apply WP.of_runBlock
   simp only [Impl.Gcm.X86.Pclmul.reduce, Impl.Gcm.X86.Pclmul.fold,
     List.cons_append, List.nil_append]
-  simp (config := {decide := true}) only [runBlock_cons, runStep_some, runBlock_nil, exec,
+  simp only [reduceCtorEq, ↓reduceIte, runBlock_cons, runStep_some, runBlock_nil, exec,
     XOp.exec, isa, xmm_setXmm,
-    ite_true, ite_false, eval_pxor, eval_movdqa, h1, Option.some.injEq, exists_eq_left']
+    eval_pxor, eval_movdqa, h1, Option.some.injEq, exists_eq_left']
   refine ⟨?_, by simp only [gpr_setXmm], by simp only [mem_setXmm],
     by simp only [rd_setXmm], by simp only [wr_setXmm], fun r hr => ?_⟩
   · simp only [prod, psrldq8, pslldq8]; rfl

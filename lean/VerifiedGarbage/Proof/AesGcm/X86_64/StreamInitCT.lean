@@ -58,7 +58,7 @@ theorem streamInit_rel (v : GcmImpl) {s₀ s₀' : State} (hp : Proof.AesGcm.str
   refine fn_rel (Ctx := s₀.gpr .rdi) (St := s₀.gpr .rcx) (W := s₀.gpr .r8) (SP := s₀.gpr .rsp)
     [.rdi, .rsi, .rdx, .rcx, .r8, .rsp] (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl | rfl | rfl | rfl <;> assumption)
+      rcases hr with rfl | rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption)
     ⟨_, by taint_decide⟩ (streamInitEntry_ok hp) hE₂ ?_
   have a := RelCT.exists_ fun H₁ => RelCT.exists_ fun H₂ =>
     j0_rel v L (H₁ := H₁) (H₂ := H₂) (Np := s₀.gpr .rsi) (n := (s₀.gpr .rdx).toNat)

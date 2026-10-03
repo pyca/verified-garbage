@@ -316,7 +316,7 @@ theorem unpackT1_verified :
     obtain ⟨-, h0, h1⟩ := h
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl <;> assumption
+    rcases hr with rfl | rfl <;> with_reducible assumption
   · refine ⟨t1Sat, ?_⟩
     sig_apply_check
     · decide +kernel

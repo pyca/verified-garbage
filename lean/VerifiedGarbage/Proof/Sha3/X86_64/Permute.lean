@@ -706,7 +706,7 @@ theorem permute_ct : ConstantTime isa Proof.Sha3.permuteX86_64.pre Proof.Sha3.pe
   intro s₁ s₂ _ _ ⟨h1, h2⟩
   refine Taint.agree_ofRegs fun r hr => ?_
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl <;> assumption
+  rcases hr with rfl | rfl <;> with_reducible assumption
 
 theorem permute_verified :
     Verified X86_64.target Impl.Sha3.X86_64.permute (Spec.Sha3.permuteContract X86_64.abi) :=

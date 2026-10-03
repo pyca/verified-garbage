@@ -33,8 +33,8 @@ theorem next_ok (s : State) (n : Nat) (hn : n ≤ 4)
   have hi : n < 4096 := by omega
   have hb : 64*n < 4096 := by omega
   apply WP.of_runBlock
-  simp (config := {decide := true}) only [next,runBlock_cons,runBlock_nil,exec,
-    addr,Size.bytes,Size.bits,ite_true,ite_false,State.load,hin,State.read,RegUpd.gpr_write,
+  simp only [reduceCtorEq, ↓reduceIte, Nat.reduceLT, Nat.reduceLeDiff, Nat.reduceMul, Nat.reduceMod, and_self, next,runBlock_cons,runBlock_nil,exec,
+    addr,Size.bytes,Size.bits,State.load,hin,State.read,RegUpd.gpr_write,
     RegUpd.wr_write,RegUpd.mem_write,RegUpd.rd_write,RegUpd.sp_write,
     Option.bind_some,Option.map_some,isa,runStep_some,BitVec.setWidth_setWidth_of_le,
     BitVec.setWidth_eq,State.store,hout,hi,hb,Option.some.injEq,exists_eq_left']

@@ -31,12 +31,12 @@ theorem advance_ok {s₀ : State} (hp : CPre s₀) {c p n : Nat}
     rw [BitVec.add_assoc, ← BitVec.ofNat_add]
     exact congrArg (fun k => datP s₀ + BitVec.ofNat 32 k) (by omega)
   apply WP.of_runBlock
-  simp (config := {decide := true}) only [runBlock_cons, runStep_some, runBlock_nil,
+  simp only [reduceCtorEq, ↓reduceIte, Nat.reducePow, runBlock_cons, runStep_some, runBlock_nil,
     isa, exec, execAlu, readSrc, gpr_setReg, gpr_arithFlags, hI.esi, hI.edi,
-    ite_false, Option.bind_some, Option.some.injEq, exists_eq_left']
+    Option.bind_some, Option.some.injEq, exists_eq_left']
   refine ⟨{ hI with esi := ?_, edi := ?_ }, ?_⟩
-  · simp (config := {decide := true}) only [gpr_setReg, gpr_arithFlags,
-      ite_true, ite_false, hI.esi]
+  · simp only [reduceCtorEq, ↓reduceIte, gpr_setReg, gpr_arithFlags,
+      ]
     exact hadd
   · simp only [gpr_setReg_self]
     exact hsub

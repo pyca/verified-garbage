@@ -1,5 +1,6 @@
 import VerifiedGarbage.Spec.Md5
 import VerifiedGarbage.TCB.X86.Target
+import VerifiedGarbage.Proof.Framework.PowLit
 
 /-!
 # MD5: the x86 (32-bit) contract

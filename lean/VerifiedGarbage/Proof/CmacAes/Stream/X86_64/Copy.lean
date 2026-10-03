@@ -26,9 +26,9 @@ theorem copyStep_ok (s : State) {P C : Addr} {i L : Nat} (hc : s.gpr .r13 = P) (
   have ea₂ : s.gpr .rdx + s.gpr .r10 * BitVec.ofNat 64 1 + BitVec.ofInt 64 0 = C + BitVec.ofNat 64 i := by
     rw [hd, hi, BitVec.mul_one]; simp
   refine ⟨_, by
-    simp (config := {decide := true}) only [copyBody, srcByte, dstByte, runBlock_cons, runStep_some,
+    simp only [reduceCtorEq, ↓reduceIte, Nat.reducePow, BitVec.reduceSignExtend, copyBody, srcByte, dstByte, runBlock_cons, runStep_some,
       runBlock_nil, exec, readSrc, execAlu, State.load8, State.store8, State.ea, Option.bind_some,
-      Option.map_some, gpr_setReg, gpr_arithFlags, mem_setReg, rd_setReg, wr_setReg, ite_true, ite_false,
+      Option.map_some, gpr_setReg, gpr_arithFlags, mem_setReg, rd_setReg, wr_setReg, 
       ea₁, ea₂, r, w]
     rfl, ?_⟩
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_⟩

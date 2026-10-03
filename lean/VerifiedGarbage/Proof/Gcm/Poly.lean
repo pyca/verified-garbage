@@ -19,8 +19,6 @@ where `φ v` is the class of `gp v`. Blocks are determined by their classes
 (`φ_inj`), so implementations are proven correct by computing in `Q`.
 -/
 
-open VG.PowLit
-
 namespace VG.Proof.Gcm.Poly
 
 open Polynomial

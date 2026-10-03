@@ -33,9 +33,9 @@ theorem xor2_ok (s : State) (pb qb cb : Reg) (pd qd cd : Nat) {P Q C : Addr}
       s'.sp = s.sp ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   obtain ⟨h₁, h₂, h₃, h₄, h₅, h₆⟩ := hr
   refine ⟨_, by
-    simp (config := {decide := true}) only [xor2, runBlock_cons, runStep_some, runBlock_nil, exec, addr,
+    simp only [reduceCtorEq, ↓reduceIte, Nat.reduceMul, xor2, runBlock_cons, runStep_some, runBlock_nil, exec, addr,
       State.load, State.store, Size.bytes, Size.bits, State.read, gpr_write, mem_write, rd_write,
-      wr_write, ite_true, ite_false, Option.bind_some, Option.map_some, BitVec.setWidth_eq,
+      wr_write, Option.bind_some, Option.map_some, BitVec.setWidth_eq,
       h₁, h₂, h₃, h₄, h₅, h₆, hpd.1, hqd.1, hcd.1, Nat.add_mod_right,
       show pd < 32768 by omega, show qd < 32768 by omega, show cd < 32768 by omega, hpd.2, hqd.2, hcd.2,
       hp, hp8, hq, hq8, hc, hc8, rp, rp8, rq, rq8, wc, wc8, and_self]
@@ -101,9 +101,9 @@ theorem copyStep_ok (s : State) {A B : Addr} (ha : s.gpr .x7 + BitVec.ofNat 64 0
       (∀ r, r ≠ .x6 → r ≠ .x7 → r ≠ .x8 → r ≠ .x9 → s'.gpr r = s.gpr r) ∧
       s'.sp = s.sp ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   refine ⟨_, by
-    simp (config := {decide := true}) only [copyBody, runBlock_cons, runStep_some, runBlock_nil,
+    simp only [reduceCtorEq, ↓reduceIte, Nat.reduceLT, Nat.reduceMul, Nat.reduceMod, and_self, copyBody, runBlock_cons, runStep_some, runBlock_nil,
       exec, addr, State.load, State.store, Size.bits, State.read, gpr_write, mem_write,
-      rd_write, wr_write, ite_true, ite_false, Option.bind_some, Option.map_some, BitVec.setWidth_eq,
+      rd_write, wr_write, Option.bind_some, Option.map_some, BitVec.setWidth_eq,
       ha, hb, r, w]
     rfl, ?_⟩
   refine ⟨?_, by simp [gpr_write], by simp [gpr_write], by simp [gpr_write],
@@ -167,8 +167,8 @@ theorem pad_ok (s : State) {B : Addr} (hb : s.gpr .x6 + BitVec.ofNat 64 0 = B) (
       s'.mem = s.mem.writeW B (0x80 : Byte) ∧ (∀ r, r ≠ .x9 → s'.gpr r = s.gpr r) ∧
       s'.sp = s.sp ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   refine ⟨_, by
-    simp (config := {decide := true}) only [runBlock_cons, runStep_some, runBlock_nil, exec, addr,
-      State.store, Size.bits, State.read, gpr_write, wr_write, ite_true, ite_false, Option.bind_some,
+    simp only [reduceCtorEq, ↓reduceIte, Nat.reduceLT, Nat.reduceMul, Nat.reduceMod, and_self, runBlock_cons, runStep_some, runBlock_nil, exec, addr,
+      State.store, Size.bits, State.read, gpr_write, wr_write, Option.bind_some,
       hb, w]
     rfl, ?_⟩
   refine ⟨?_, fun r h => by simp [gpr_write, h], rfl, rfl, rfl⟩

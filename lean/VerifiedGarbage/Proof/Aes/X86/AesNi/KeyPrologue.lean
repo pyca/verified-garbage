@@ -61,8 +61,8 @@ theorem keyHead_ok (s₀ : State) (hp : EPre s₀) :
   rw [runBlock_cons, key_arg_exec hp h₀ (by decide), runStep_some,
     runBlock_cons, key_arg_exec hp h₁ (by decide), runStep_some,
     runBlock_cons, key_arg_exec hp h₂ (by decide), runStep_some]
-  simp (config := {decide := true}) only [runBlock_cons, exec, execAlu, readSrc,
-    gpr_setReg, Option.bind_some, ite_true, ite_false, runStep_some,
+  simp only [reduceCtorEq, ↓reduceIte, runBlock_cons, exec, execAlu, readSrc,
+    gpr_setReg, Option.bind_some, runStep_some,
     runBlock_nil, Option.some.injEq, exists_eq_left']
   refine ⟨⟨⟨?_, ?_, ?_, ?_⟩, ?_, ?_, ?_, ?_⟩, ?_⟩
   · simp only [gpr_arithFlags, gpr_setReg]; rfl

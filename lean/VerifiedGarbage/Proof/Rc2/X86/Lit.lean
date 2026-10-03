@@ -3,6 +3,8 @@ import VerifiedGarbage.Proof.Rc2.X86.KeyLit
 
 namespace VG.Impl.Rc2.X86
 
+materialize_value keyLookup
+
 materialize_code encryptBlock
 materialize_code decryptBlock
 

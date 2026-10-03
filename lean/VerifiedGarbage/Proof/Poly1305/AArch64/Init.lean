@@ -117,7 +117,7 @@ theorem init_ct : ConstantTime isa Proof.Poly1305.initAArch64.pre Proof.Poly1305
   intro s₁ s₂ _ _ ⟨h1, h2, hsp⟩
   refine ⟨hsp, fun r hr => ?_⟩
   simp only [VG.AArch64.Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl <;> assumption
+  rcases hr with rfl | rfl <;> with_reducible assumption
 
 theorem init_verified :
     Verified AArch64.target Impl.Poly1305.AArch64.init (Spec.Poly1305.initContract AArch64.abi) :=

@@ -241,7 +241,7 @@ theorem ct {k : Contract isa} (hpub : ∀ s₁ s₂, k.pub s₁ s₂ → s₁.gp
     obtain ⟨h0, h1⟩ := hpub s₁ s₂ hp
     refine Taint.agree_ofRegs fun r hr => ?_
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl <;> assumption) h
+    rcases hr with rfl | rfl <;> with_reducible assumption) h
 
 /-- The taint analysis, with the registers `rs` public. -/
 theorem ctRegs {k : Contract isa} (rs : List Reg)

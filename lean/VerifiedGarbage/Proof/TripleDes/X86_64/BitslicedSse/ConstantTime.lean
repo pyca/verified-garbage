@@ -15,14 +15,23 @@ namespace VG.Proof.TripleDes.X86_64.BitslicedSse
 open VG VG.X86_64
 open VG.Proof.TripleDes.X86_64.Bitsliced (ecbTaint)
 
+/-! The analyses, with the summaries of the 64-block code they end with. -/
+
+taint_summary encSum : taintS ecbTaint Impl.TripleDes.X86_64.BitsliceSse.encrypt
+  using Bitsliced.encSum
+taint_summary decSum : taintS ecbTaint Impl.TripleDes.X86_64.BitsliceSse.decrypt
+  using Bitsliced.decSum
+
 theorem encrypt_constantTime (pre : State → Prop) (pub : State → State → Prop)
     (hagree : ∀ s t, pre s → pre t → pub s t → X86_64.Taint.Agree ecbTaint s t) :
     ConstantTime isa pre pub Impl.TripleDes.X86_64.BitsliceSse.encrypt :=
-  VG.Taint.constantTime (A := taint) ecbTaint hagree (by taint_decide)
+  let ⟨_, h⟩ := VG.Taint.exists_check_of_sumOk encSum (by decide +kernel)
+  VG.Taint.constantTime (A := taintS) ecbTaint hagree h
 
 theorem decrypt_constantTime (pre : State → Prop) (pub : State → State → Prop)
     (hagree : ∀ s t, pre s → pre t → pub s t → X86_64.Taint.Agree ecbTaint s t) :
     ConstantTime isa pre pub Impl.TripleDes.X86_64.BitsliceSse.decrypt :=
-  VG.Taint.constantTime (A := taint) ecbTaint hagree (by taint_decide)
+  let ⟨_, h⟩ := VG.Taint.exists_check_of_sumOk decSum (by decide +kernel)
+  VG.Taint.constantTime (A := taintS) ecbTaint hagree h
 
 end VG.Proof.TripleDes.X86_64.BitslicedSse

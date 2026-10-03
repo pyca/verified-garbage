@@ -77,8 +77,8 @@ theorem fn_ok (r : Nat) (hr : r < 4) (b c d : Reg) (hb : b ≠ T0) (hc : c ≠ T
   simp only [T0, Ones] at hb hc hd h₄ ⊢
   apply WP.of_runBlock
   rcases (by omega : r = 0 ∨ r = 1 ∨ r = 2 ∨ r = 3) with rfl | rfl | rfl | rfl <;>
-  simp (config := {decide := true}) only [fn, T0, Ones, runBlock_cons, runStep_some,
-    runBlock_nil, exec_logic, isa, State.read, RegUpd.gpr_write, RegUpd.mem_write, RegUpd.rd_write, RegUpd.wr_write, Size.bits, ite_true, ite_false, hb, hc, hd,
+  simp only [↓reduceIte, Nat.reduceLeDiff, and_self, fn, T0, Ones, runBlock_cons, runStep_some,
+    runBlock_nil, exec_logic, isa, State.read, RegUpd.gpr_write, RegUpd.mem_write, RegUpd.rd_write, RegUpd.wr_write, Size.bits, hb, hc, hd,
     h₁, h₂, h₃, h₄, BitVec.setWidth_setWidth_of_le, BitVec.setWidth_eq,
     Option.some.injEq, exists_eq_left'] <;>
   refine ⟨?_, fun x hx => by simp [hx], trivial⟩
@@ -127,9 +127,9 @@ theorem tail_ok (a b : Reg) (k : Nat) (hk : k < 16) (T : Word) (n : Nat) (hn : n
   have hax' : Reg.x1 ≠ a := fun h => hax h.symm
   simp only [T0, T1] at h₃ ha₁ ha₁' hb₁' ⊢
   apply WP.of_runBlock
-  simp (config := {decide := true}) only [tailI, T0, T1, runBlock_cons, runStep_some,
+  simp only [↓reduceIte, Nat.reduceLeDiff, and_self, tailI, T0, T1, runBlock_cons, runStep_some,
     runBlock_nil, exec_add, exec_ldr_w ho, exec_movz_w, exec_movk_w, exec_ror_w hn, isa,
-    State.read, RegUpd.gpr_write, RegUpd.mem_write, RegUpd.rd_write, RegUpd.wr_write, Size.bits, ite_true, ite_false, ha₁, ha₁', hb₁', hba, hax',
+    State.read, RegUpd.gpr_write, RegUpd.mem_write, RegUpd.rd_write, RegUpd.wr_write, Size.bits, ha₁, hb₁', hba, hax',
     h₁, h₂, h₃, hx1, hin, hx, BitVec.setWidth_setWidth_of_le, BitVec.setWidth_eq,
     Option.some.injEq, exists_eq_left']
   exact ⟨by rw [movz_movk_w], fun r hr hr' => by simp [hr, hr'], trivial⟩

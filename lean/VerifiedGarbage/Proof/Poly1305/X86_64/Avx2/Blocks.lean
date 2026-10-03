@@ -385,7 +385,7 @@ theorem pro_ok {s₀ : State} (hp : APre s₀) (hbig : 32 ≤ nb s₀) {s : Stat
     refine LaneInv.of_qw (fun r k => (hq₇ r k)) ⟨Y₆, fun k hk i hi => by have := L.hb k hk i hi; omega, ?_⟩
     simp only [Nat.mul_zero, blks_zero, Poly1305.absorbAll_nil]
     rw [L.h 0 (by decide), L.h 1 (by decide), L.h 2 (by decide), L.h 3 (by decide), hN₅]
-    simp (config := {decide := true}) only [lanes, ite_true, ite_false, Nat.mul_zero, Nat.add_zero]
+    simp only [reduceCtorEq, ↓reduceIte, lanes, Nat.mul_zero, Nat.add_zero]
     exact Nat.ModEq.refl _
 
 /-! ## The loop -/
@@ -618,7 +618,7 @@ theorem blocksAvx2_ct : ConstantTime isa blocksAvx2X86_64.pre blocksAvx2X86_64.p
   intro s₁ s₂ _ _ ⟨⟨h1, h2, h3⟩, h4⟩
   refine Taint.agree_ofRegs fun r hr => ?_
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl <;> assumption
+  rcases hr with rfl | rfl | rfl | rfl <;> with_reducible assumption
 
 /-- A state satisfying the precondition (with no blocks). -/
 def sat : State where

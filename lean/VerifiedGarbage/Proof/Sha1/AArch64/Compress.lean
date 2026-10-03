@@ -85,9 +85,9 @@ theorem fcode_ok (g : Fn) (b c d : Reg) (s : State) (x y z : Word)
   simp only [T1, T2] at b1 c1 c2 d1 ⊢
   apply WP.of_runBlock
   cases g <;>
-  simp (config := {decide := true}) only [fcode, T1, T2, runBlock_cons, runStep_some,
+  simp only [reduceCtorEq, ↓reduceIte, Nat.reduceLeDiff, and_self, fcode, T1, T2, runBlock_cons, runStep_some,
     runBlock_nil, exec_logic, isa, State.read, RegUpd.gpr_write, RegUpd.mem_write, RegUpd.rd_write, RegUpd.wr_write, Size.bits,
-    ite_true, ite_false, b1, c1, d1, hb, hc, hd,
+    b1, c1, d1, hb, hc, hd,
     BitVec.setWidth_setWidth_of_le, BitVec.setWidth_eq, Option.some.injEq, exists_eq_left'] <;>
   refine ⟨rfl, fun r h1 h2 => by simp [h1, h2], ?_⟩ <;> trivial
 
@@ -182,10 +182,10 @@ theorem schedule_ok (t : Nat) (s : State) (M : Block) (bp scr : Addr)
     have hb := hblk ht
     have ho : 4 * t % 4 = 0 ∧ 4 * t < 16384 := by omega
     simp only [Impl.Sha1.AArch64.schedule, ht, ite_true, T0, T1, T2]
-    simp (config := {decide := true}) only [runBlock_cons, runStep_some,
+    simp only [reduceCtorEq, ↓reduceIte, Nat.reduceLeDiff, runBlock_cons, runStep_some,
       runBlock_nil, exec_ldr_w ho, exec_str_w (slot_ok _),
-      exec_rev32, isa, State.read, RegUpd.gpr_write, RegUpd.mem_write, RegUpd.rd_write, RegUpd.wr_write, Size.bits, hx1, hx3, hi, hout, ite_true,
-      ite_false, BitVec.setWidth_setWidth_of_le, BitVec.setWidth_eq, hb,
+      exec_rev32, isa, State.read, RegUpd.gpr_write, RegUpd.mem_write, RegUpd.rd_write, RegUpd.wr_write, Size.bits, hx1, hx3, hi, hout, 
+      BitVec.setWidth_setWidth_of_le, BitVec.setWidth_eq, hb,
       Option.some.injEq, exists_eq_left']
     refine ⟨trivial, trivial, trivial, trivial, fun r h0 _ _ => ?_⟩
     simp [h0]
@@ -199,10 +199,10 @@ theorem schedule_ok (t : Nat) (s : State) (M : Block) (bp scr : Addr)
     rw [show slot (t - 14) = slot (t + 2) by simp only [slot]; omega] at e14
     rw [show slot (t - 16) = slot t by simp only [slot]; omega] at e16
     simp only [Impl.Sha1.AArch64.schedule, ht, ite_false, T0, T1, T2]
-    simp (config := {decide := true}) only [runBlock_cons, runStep_some,
+    simp only [reduceCtorEq, ↓reduceIte, Nat.reduceLT, Nat.reduceLeDiff, runBlock_cons, runStep_some,
       runBlock_nil, exec_ldr_w (slot_ok _),
       exec_str_w (slot_ok _), exec_logic, exec_ror_w, isa, State.read,
-      RegUpd.gpr_write, RegUpd.mem_write, RegUpd.rd_write, RegUpd.wr_write, Size.bits, hx3, hin, hout, ite_true, ite_false, BitVec.setWidth_setWidth_of_le,
+      RegUpd.gpr_write, RegUpd.mem_write, RegUpd.rd_write, RegUpd.wr_write, Size.bits, hx3, hin, hout, BitVec.setWidth_setWidth_of_le,
       BitVec.setWidth_eq, e3, e8, e14, e16, Option.some.injEq, exists_eq_left']
     have hW := W_ge M (t := t) (by omega)
     rw [rotl1] at hW
