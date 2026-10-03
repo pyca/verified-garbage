@@ -217,17 +217,31 @@ theorem crtBitEnd_ok {t : State} {P : Addr} {wx : Nat} {minv : BitVec 64} {X Xc 
       ofNat64_pred hb1 (by omega), ofNat64_beq_zero (show b - 1 < 2 ^ 64 by omega)]) rfl)
     fun t' ⟨h, k⟩ => ⟨h.1, h.2, k⟩
 
-/-- One bit: `Y ≡ x^E R` becomes `x^(2E + bit) R`, for the bit at the top of
+/-- A Montgomery squaring of `Y ≡ y^F x^E R`: `y^(2F) x^(2E) R`. -/
+theorem mont_sq2 {Y Y' y x F E R m : Nat} (hR : Nat.Coprime R m) (hY : Y % m = y ^ F * x ^ E * R % m)
+    (h : Y' * R % m = Y * Y % m) : Y' % m = y ^ (2 * F) * x ^ (2 * E) * R % m := by
+  rw [VG.Proof.Bignum.mont_sq (x := y ^ F * x ^ E) (E := 1) hR (by rw [Nat.pow_one]; exact hY) h, Nat.mul_one,
+    Nat.mul_pow, ← Nat.pow_mul, ← Nat.pow_mul, Nat.mul_comm F 2, Nat.mul_comm E 2]
+
+/-- A Montgomery multiplication of `Y ≡ y^F x^E R` by `X ≡ x R`: `y^F x^(E+1) R`. -/
+theorem mont_mulx2 {Y Y' Xc y x F E R m : Nat} (hR : Nat.Coprime R m) (hY : Y % m = y ^ F * x ^ E * R % m)
+    (hX : Xc % m = x * R % m) (h : Y' * R % m = Y * Xc % m) : Y' % m = y ^ F * x ^ (E + 1) * R % m := by
+  apply VG.Proof.Bignum.mont_cancel hR
+  rw [h, Nat.mul_mod, hY, hX, ← Nat.mul_mod, Nat.pow_succ]
+  congr 1
+  ring
+
+/-- One bit: `Y ≡ y^F x^E R` becomes `x^(2E + bit) R`, for the bit at the top of
 the byte `V / 128 mod 2`; `V` doubles and the bit count `b` drops. -/
-theorem crtExpBit_ok (M : Mont) {t : State} {P : Addr} {wx : Nat} {minv : BitVec 64} {X Xc x E Y V b : Nat}
+theorem crtExpBit_ok (M : Mont) {t : State} {P : Addr} {wx : Nat} {minv : BitVec 64} {X Xc y F x E Y V b : Nat}
     (hc : CExpCtx t P wx minv X Xc) (hw : 2 ≤ wx) (hw' : wx < 2 ^ 30)
     (hR : Nat.Coprime (2 ^ (64 * wx)) X) (hXN : Xc < X) (hXc : Xc % X = x * 2 ^ (64 * wx) % X)
-    (hY : wv t.mem P (slot wx aY) wx = Y) (hYN : Y < X) (hYc : Y % X = x ^ E * 2 ^ (64 * wx) % X)
+    (hY : wv t.mem P (slot wx aY) wx = Y) (hYN : Y < X) (hYc : Y % X = y ^ F * x ^ E * 2 ^ (64 * wx) % X)
     (hV : word t.mem P (8 * Crt.sV) = BitVec.ofNat 64 V) (hV' : V < 2 ^ 62)
     (hb : word t.mem P (8 * Crt.sBit) = BitVec.ofNat 64 b) (hb1 : 1 ≤ b) (hb' : b < 2 ^ 31) :
     WP isa (seqs (Crt.expBit M.mm)) t fun t' => CExpCtx t' P wx minv X Xc ∧
       (∃ Y', wv t'.mem P (slot wx aY) wx = Y' ∧ Y' < X ∧
-        Y' % X = x ^ (2 * E + V / 128 % 2) * 2 ^ (64 * wx) % X) ∧
+        Y' % X = y ^ (2 * F) * x ^ (2 * E + V / 128 % 2) * 2 ^ (64 * wx) % X) ∧
       word t'.mem P (8 * Crt.sV) = BitVec.ofNat 64 (V + V) ∧
       word t'.mem P (8 * Crt.sBit) = BitVec.ofNat 64 (b - 1) ∧
       t'.zf = some (decide (b - 1 = 0)) ∧ Frm P (crtBitRanges wx) t.mem t'.mem ∧ Keep mmRegs t t' := by
@@ -244,8 +258,8 @@ theorem crtExpBit_ok (M : Mont) {t : State} {P : Addr} {wx : Nat} {minv : BitVec
   rw [hc.n, hY] at hm₁
   have f₁ : Frm P (crtBitRanges wx) t.mem t₁.mem := Frm.of_arrays ha₁ (by simp [crtBitRanges])
   have hc₁ := hc.of_bit f₁ k₁.2.2 (k₁.gpr (by decide))
-  have hY₁ : wv t₁.mem P (slot wx aY) wx % X = x ^ (2 * E) * 2 ^ (64 * wx) % X :=
-    VG.Proof.Bignum.mont_sq hR hYc hm₁
+  have hY₁ : wv t₁.mem P (slot wx aY) wx % X = y ^ (2 * F) * x ^ (2 * E) * 2 ^ (64 * wx) % X :=
+    mont_sq2 hR hYc hm₁
   -- `T := Y Xc`.
   refine WP.seq (WP.mono (M.mm_ok (o := Crt.aT) (a := aY) (b := Crt.aXc) hc₁.good (Nat.le_refl _) hw (by omega)
     (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) hc₁.inv
@@ -254,8 +268,8 @@ theorem crtExpBit_ok (M : Mont) {t : State} {P : Addr} {wx : Nat} {minv : BitVec
   rw [hc₁.n, hc₁.x] at hm₂
   have f₂ : Frm P (crtBitRanges wx) t₁.mem t₂.mem := Frm.of_arrays ha₂ (by simp [crtBitRanges])
   have hc₂ := hc₁.of_bit f₂ k₂.2.2 (k₂.gpr (by decide))
-  have hT₂ : wv t₂.mem P (slot wx Crt.aT) wx % X = x ^ (2 * E + 1) * 2 ^ (64 * wx) % X :=
-    VG.Proof.Bignum.mont_mulx hR hY₁ hXc hm₂
+  have hT₂ : wv t₂.mem P (slot wx Crt.aT) wx % X = y ^ (2 * F) * x ^ (2 * E + 1) * 2 ^ (64 * wx) % X :=
+    mont_mulx2 hR hY₁ hXc hm₂
   have hY₂ : wv t₂.mem P (slot wx aY) wx = wv t₁.mem P (slot wx aY) wx :=
     ha₂.wv_of_not_mem (by decide) (by decide) hn
   have hV₂ : word t₂.mem P (8 * Crt.sV) = BitVec.ofNat 64 V := by
@@ -307,24 +321,24 @@ theorem crtExpBit_ok (M : Mont) {t : State} {P : Addr} {wx : Nat} {minv : BitVec
 
 /-! ## The bits of a byte -/
 
-/-- After `j` bits of the byte `v` from `t₀`, where `Y ≡ x^E R`. -/
-structure CBitInv (t₀ : State) (P : Addr) (wx : Nat) (minv : BitVec 64) (X Xc x E v : Nat) (j : Nat)
+/-- After `j` bits of the byte `v` from `t₀`, where `Y ≡ y^F x^E R`. -/
+structure CBitInv (t₀ : State) (P : Addr) (wx : Nat) (minv : BitVec 64) (X Xc y F x E v : Nat) (j : Nat)
     (t : State) : Prop where
   ctx : CExpCtx t P wx minv X Xc
   y : ∃ Y, wv t.mem P (slot wx aY) wx = Y ∧ Y < X ∧
-    Y % X = x ^ (E * 2 ^ j + v / 2 ^ (8 - j)) * 2 ^ (64 * wx) % X
+    Y % X = y ^ (F * 2 ^ j) * x ^ (E * 2 ^ j + v / 2 ^ (8 - j)) * 2 ^ (64 * wx) % X
   v : word t.mem P (8 * Crt.sV) = BitVec.ofNat 64 (v * 2 ^ j)
   b : word t.mem P (8 * Crt.sBit) = BitVec.ofNat 64 (8 - j)
   frm : Frm P (crtBitRanges wx) t₀.mem t.mem
   keep : Keep mmRegs t₀ t
 
 /-- Bit `j` of the byte `v`. -/
-theorem crtBitStep_ok (M : Mont) {t s : State} {P : Addr} {wx : Nat} {minv : BitVec 64} {X Xc x E v : Nat}
+theorem crtBitStep_ok (M : Mont) {t s : State} {P : Addr} {wx : Nat} {minv : BitVec 64} {X Xc y F x E v : Nat}
     (hw : 2 ≤ wx) (hw' : wx < 2 ^ 30) (hR : Nat.Coprime (2 ^ (64 * wx)) X) (hXN : Xc < X)
     (hXc : Xc % X = x * 2 ^ (64 * wx) % X) (hv : v < 256) {j : Nat} (hj : j < 8)
-    (hI : CBitInv t P wx minv X Xc x E v j s) :
+    (hI : CBitInv t P wx minv X Xc y F x E v j s) :
     WP isa (seqs (Crt.expBit M.mm)) s fun s' => s'.zf = some (decide (j + 1 = 8)) ∧
-      CBitInv t P wx minv X Xc x E v (j + 1) s' := by
+      CBitInv t P wx minv X Xc y F x E v (j + 1) s' := by
   obtain ⟨Y, hY, hYN, hYc⟩ := hI.y
   have hp : 2 ^ j ≤ 2 ^ 7 := Nat.pow_le_pow_right (by decide) (by omega)
   refine WP.mono (crtExpBit_ok M hI.ctx hw hw' hR hXN hXc hY hYN hYc hI.v
@@ -335,25 +349,26 @@ theorem crtBitStep_ok (M : Mont) {t s : State} {P : Addr} {wx : Nat} {minv : Bit
   · rw [hYc', show 2 * (E * 2 ^ j + v / 2 ^ (8 - j)) + v * 2 ^ j / 128 % 2 =
       E * 2 ^ (j + 1) + v / 2 ^ (8 - (j + 1)) by
         rw [Nat.mul_add, Nat.add_assoc, bit_step (by omega), show 7 - j = 8 - (j + 1) by omega,
-          Nat.pow_succ, Nat.mul_comm 2 (E * 2 ^ j), Nat.mul_assoc]]
+          Nat.pow_succ, Nat.mul_comm 2 (E * 2 ^ j), Nat.mul_assoc],
+      show 2 * (F * 2 ^ j) = F * 2 ^ (j + 1) by rw [Nat.pow_succ, Nat.mul_comm 2 (F * 2 ^ j), Nat.mul_assoc]]
   · rw [hV', ← Nat.two_mul, Nat.pow_succ]; congr 1; rw [Nat.mul_comm, Nat.mul_assoc]
   · rw [hb']; congr 1
 
-/-- The eight bits of the byte `v`: `Y ≡ x^E R` becomes `x^(256 E + v) R`. -/
-theorem crtBits_ok (M : Mont) {t : State} {P : Addr} {wx : Nat} {minv : BitVec 64} {X Xc x E v : Nat}
+/-- The eight bits of the byte `v`: `Y ≡ y^F x^E R` becomes `y^(256 F) x^(256 E + v) R`. -/
+theorem crtBits_ok (M : Mont) {t : State} {P : Addr} {wx : Nat} {minv : BitVec 64} {X Xc y F x E v : Nat}
     (hw : 2 ≤ wx) (hw' : wx < 2 ^ 30) (hR : Nat.Coprime (2 ^ (64 * wx)) X) (hXN : Xc < X)
-    (hXc : Xc % X = x * 2 ^ (64 * wx) % X) (hv : v < 256) (h0 : CBitInv t P wx minv X Xc x E v 0 t) :
-    WP isa (.loop (seqs (Crt.expBit M.mm)) .ne) t (CBitInv t P wx minv X Xc x E v 8) :=
-  wp_upto (a := 0) (N := 8) (by decide) (CBitInv t P wx minv X Xc x E v)
+    (hXc : Xc % X = x * 2 ^ (64 * wx) % X) (hv : v < 256) (h0 : CBitInv t P wx minv X Xc y F x E v 0 t) :
+    WP isa (.loop (seqs (Crt.expBit M.mm)) .ne) t (CBitInv t P wx minv X Xc y F x E v 8) :=
+  wp_upto (a := 0) (N := 8) (by decide) (CBitInv t P wx minv X Xc y F x E v)
     (fun _ _ hj _ hI => crtBitStep_ok M hw hw' hR hXN hXc hv hj hI) (fun _ h => h) h0
 
 /-! ## The bytes of the exponent -/
 
 /-- After `i` bytes of the exponent (`L` bytes `eb` at `ep`) from `t₀`. -/
-structure CByteInv (t₀ : State) (P : Addr) (wx : Nat) (minv : BitVec 64) (X Xc x : Nat) (ep : Addr)
+structure CByteInv (t₀ : State) (P : Addr) (wx : Nat) (minv : BitVec 64) (X Xc y x : Nat) (ep : Addr)
     (L : Nat) (eb : List Byte) (i : Nat) (t : State) : Prop where
   ctx : CExpCtx t P wx minv X Xc
-  y : ∃ Y, wv t.mem P (slot wx aY) wx = Y ∧ Y < X ∧ Y % X = x ^ pre eb i * 2 ^ (64 * wx) % X
+  y : ∃ Y, wv t.mem P (slot wx aY) wx = Y ∧ Y < X ∧ Y % X = y ^ (256 ^ i) * x ^ pre eb i * 2 ^ (64 * wx) % X
   idx : word t.mem P (8 * Crt.sI) = BitVec.ofNat 64 i
   e : word t.mem P (8 * Crt.sExp) = ep
   len : word t.mem P (8 * Crt.sExpLen) = BitVec.ofNat 64 L
@@ -361,10 +376,10 @@ structure CByteInv (t₀ : State) (P : Addr) (wx : Nat) (minv : BitVec 64) (X Xc
   keep : Keep mmRegs t₀ t
 
 /-- The loads of the byte's address. -/
-theorem crtByteHead1_ok {t₀ t : State} {P : Addr} {wx : Nat} {minv : BitVec 64} {X Xc x : Nat} {ep : Addr}
-    {L : Nat} {eb : List Byte} {i : Nat} (hI : CByteInv t₀ P wx minv X Xc x ep L eb i t) :
+theorem crtByteHead1_ok {t₀ t : State} {P : Addr} {wx : Nat} {minv : BitVec 64} {X Xc y x : Nat} {ep : Addr}
+    {L : Nat} {eb : List Byte} {i : Nat} (hI : CByteInv t₀ P wx minv X Xc y x ep L eb i t) :
     WP isa (.block [.mov .rax (.mem (hdr Crt.sExp)), .mov .rcx (.mem (hdr Crt.sI))]) t fun t₁ =>
-      t₁.gpr .rax = ep ∧ t₁.gpr .rcx = BitVec.ofNat 64 i ∧ CByteInv t₀ P wx minv X Xc x ep L eb i t₁ := by
+      t₁.gpr .rax = ep ∧ t₁.gpr .rcx = BitVec.ofNat 64 i ∧ CByteInv t₀ P wx minv X Xc y x ep L eb i t₁ := by
   have hc := hI.ctx
   have hl : ∀ i < 32, InRegions (t.rd ++ t.wr) (off P (8 * i)) 8 := fun i hi =>
     hc.good.scr.ld (by have := hdr_lt_slot wx 8 hi; omega)
@@ -377,18 +392,18 @@ theorem crtByteHead1_ok {t₀ t : State} {P : Addr} {wx : Nat} {minv : BitVec 64
     hI.frm.trans hf, (hI.keep.trans k).mono (by decide)⟩
 
 /-- The byte into `sV`, and the bit count 8: the start of the bits. -/
-theorem crtByteHead2_ok {t₀ t : State} {P : Addr} {wx : Nat} {minv : BitVec 64} {X Xc x : Nat} {ep : Addr}
+theorem crtByteHead2_ok {t₀ t : State} {P : Addr} {wx : Nat} {minv : BitVec 64} {X Xc y x : Nat} {ep : Addr}
     {L : Nat} {eb : List Byte} {i : Nat} (hL : eb.length = L) (hi : i < L)
     (hrd : ∀ i < L, InRegions (t₀.rd ++ t₀.wr) (ep + BitVec.ofNat 64 i) 1)
     (hbytes : ∀ i (h : i < L), t₀.mem (ep + BitVec.ofNat 64 i) = eb[i]'(by omega))
     (hout : ∀ i < L, slot wx 8 ≤ ofs P (ep + BitVec.ofNat 64 i))
-    (hI : CByteInv t₀ P wx minv X Xc x ep L eb i t) (hax : t.gpr .rax = ep)
+    (hI : CByteInv t₀ P wx minv X Xc y x ep L eb i t) (hax : t.gpr .rax = ep)
     (hcx : t.gpr .rcx = BitVec.ofNat 64 i) :
     WP isa (.block [.movzx8 .rax { base := .rax, index := some .rcx }, .store (hdr Crt.sV) .rax,
       .mov32 .rax (.imm 8), .store (hdr Crt.sBit) .rax]) t fun t₁ =>
       t₁.mem = (t.mem.writeW (off P (8 * Crt.sV)) ((eb[i]'(by omega)).setWidth 64)).writeW
         (off P (8 * Crt.sBit)) (BitVec.setWidth 64 (8 : BitVec 32)) ∧ Keep [.rax] t t₁ ∧
-      CBitInv t₁ P wx minv X Xc x (pre eb i) (eb[i]'(by omega)).toNat 0 t₁ := by
+      CBitInv t₁ P wx minv X Xc y (256 ^ i) x (pre eb i) (eb[i]'(by omega)).toNat 0 t₁ := by
   have hc := hI.ctx
   have hn := hc.good.scr.nowrap
   have hs : ∀ i < 32, InRegions t.wr (off P (8 * i)) 8 := fun i hi =>
@@ -416,7 +431,8 @@ theorem crtByteHead2_ok {t₀ t : State} {P : Addr} {wx : Nat} {minv : BitVec 64
   refine ⟨hc₁, ⟨Y, ?_, hYN, ?_⟩, ?_, ?_, Frm.refl _ _ _, Keep.refl _ _⟩
   · rw [o2.wv (by have := hdr_lt_slot wx aY (show Crt.sBit < 32 by decide); omega) (by omega),
       o1.wv (by have := hdr_lt_slot wx aY (show Crt.sV < 32 by decide); omega) (by omega)]; exact hY
-  · rw [hYc, Nat.pow_zero, Nat.mul_one, Nat.sub_zero, Nat.div_eq_of_lt (show _ < 2 ^ 8 from hv), Nat.add_zero]
+  · rw [hYc, Nat.pow_zero, Nat.mul_one, Nat.mul_one, Nat.sub_zero, Nat.div_eq_of_lt (show _ < 2 ^ 8 from hv),
+      Nat.add_zero]
   · rw [o2.word (by decide) (by decide), word_writeW_self, setWidth_byte]
   · rw [hm₁, word_writeW_self]; rfl
 
@@ -428,21 +444,21 @@ theorem crtByteHead_eq : ([.mov .rax (.mem (hdr Crt.sExp)), .mov .rcx (.mem (hdr
       .store (hdr Crt.sBit) .rax] : List Instr) := rfl
 
 /-- One byte of the exponent: its eight bits, then the next byte. -/
-theorem crtByte_ok (M : Mont) {t₀ t : State} {P : Addr} {wx : Nat} {minv : BitVec 64} {X Xc x : Nat}
+theorem crtByte_ok (M : Mont) {t₀ t : State} {P : Addr} {wx : Nat} {minv : BitVec 64} {X Xc y x : Nat}
     {ep : Addr} {L : Nat} {eb : List Byte} {i : Nat} (hw : 2 ≤ wx) (hw' : wx < 2 ^ 30)
     (hR : Nat.Coprime (2 ^ (64 * wx)) X) (hXN : Xc < X) (hXc : Xc % X = x * 2 ^ (64 * wx) % X)
     (hL : eb.length = L) (hL' : L < 2 ^ 31) (hi : i < L)
     (hrd : ∀ i < L, InRegions (t₀.rd ++ t₀.wr) (ep + BitVec.ofNat 64 i) 1)
     (hbytes : ∀ i (h : i < L), t₀.mem (ep + BitVec.ofNat 64 i) = eb[i]'(by omega))
     (hout : ∀ i < L, slot wx 8 ≤ ofs P (ep + BitVec.ofNat 64 i))
-    (hI : CByteInv t₀ P wx minv X Xc x ep L eb i t) :
+    (hI : CByteInv t₀ P wx minv X Xc y x ep L eb i t) :
     WP isa (seqs [.block [.mov .rax (.mem (hdr Crt.sExp)), .mov .rcx (.mem (hdr Crt.sI)),
         .movzx8 .rax { base := .rax, index := some .rcx }, .store (hdr Crt.sV) .rax, .mov32 .rax (.imm 8),
         .store (hdr Crt.sBit) .rax],
       .loop (seqs (Crt.expBit M.mm)) .ne,
       .block [.mov .rax (.mem (hdr Crt.sI)), .alu .add .rax (.imm 1), .store (hdr Crt.sI) .rax,
         .alu .cmp .rax (.mem (hdr Crt.sExpLen))]]) t fun t' =>
-      t'.zf = some (decide (i + 1 = L)) ∧ CByteInv t₀ P wx minv X Xc x ep L eb (i + 1) t' := by
+      t'.zf = some (decide (i + 1 = L)) ∧ CByteInv t₀ P wx minv X Xc y x ep L eb (i + 1) t' := by
   have hn := hI.ctx.good.scr.nowrap
   simp only [seqs]
   rw [crtByteHead_eq]
@@ -480,7 +496,8 @@ theorem crtByte_ok (M : Mont) {t₀ t : State} {P : Addr} {wx : Nat} {minv : Bit
   have hY0 := slot_le (w := wx) (show aY < 8 by decide)
   refine ⟨hc₂.of_frm f' k'.2.2 (k'.gpr (by decide)), ⟨Y₂, ?_, hYN₂, ?_⟩, ?_, ?_, ?_, ?_, ?_⟩
   · rw [o'.wv (by have := hdr_lt_slot wx aY (show Crt.sI < 32 by decide); omega) (by omega)]; exact hY₂
-  · rw [hYc₂, pre_succ eb (by omega), Nat.pow_zero, Nat.div_one, Nat.mul_comm (pre eb i)]; rfl
+  · rw [hYc₂, pre_succ eb (by omega), Nat.pow_zero, Nat.div_one, Nat.mul_comm (pre eb i), Nat.pow_succ 256 i]
+    rfl
   · rw [hm', word_writeW_self]
   · rw [hm', hdrStore_hdr (i := Crt.sI) _ _ _ (by decide) (by decide) (by decide)]; exact he₂
   · rw [hm', hdrStore_hdr (i := Crt.sI) _ _ _ (by decide) (by decide) (by decide)]; exact hlen₂
@@ -527,11 +544,11 @@ theorem crtExpInit_ok {s : State} {B : Addr} {Z o w wx : Nat} {minv : BitVec 64}
       hst Crt.sExp (by decide), hln sl hsl, hW, hst Crt.sExpLen (by decide), hst Crt.sI (by decide)]) rfl)
     fun t ⟨hm, k⟩ => ⟨hm, k⟩
 
-/-- The exponentiation in a prime's workspace: `Y ≡ R` becomes `Y ≡ x^d R`
-modulo `X`, for the exponent `d` whose `L` bytes `eb` (most significant
+/-- The exponentiation in a prime's workspace: `Y ≡ y R` becomes
+`Y ≡ y^(2^(8 L)) x^d R` modulo `X`, for the exponent `d` whose `L` bytes `eb` (most significant
 first) are at `ep`, outside the working space, the pointer and length in
 the modulus' header slots `sp` and `sl`. -/
-theorem crtExpLoop_ok (M : Mont) {s : State} {B : Addr} {Z o w wx : Nat} {minv : BitVec 64} {X x : Nat}
+theorem crtExpLoop_ok (M : Mont) {s : State} {B : Addr} {Z o w wx : Nat} {minv : BitVec 64} {X x y : Nat}
     (hc : SubCtx s B Z o w wx minv) (hw2 : 2 ≤ wx) (hwx : wx ≤ w) (hw30 : w < 2 ^ 30)
     (hn : wv s.mem (off B o) (slot wx aN) wx = X)
     (hinv : ((word s.mem (off B o) (slot wx aN)).toNat * minv.toNat + 1) % 2 ^ 64 = 0)
@@ -539,13 +556,14 @@ theorem crtExpLoop_ok (M : Mont) {s : State} {B : Addr} {Z o w wx : Nat} {minv :
     (hxl : wv s.mem (off B o) (slot wx Crt.aXc) wx < X)
     (hxc : wv s.mem (off B o) (slot wx Crt.aXc) wx % X = x * 2 ^ (64 * wx) % X)
     (hyl : wv s.mem (off B o) (slot wx aY) wx < X)
-    (hyc : wv s.mem (off B o) (slot wx aY) wx % X = 2 ^ (64 * wx) % X)
+    (hyc : wv s.mem (off B o) (slot wx aY) wx % X = y * 2 ^ (64 * wx) % X)
     {sp sl : Nat} (hsp : sp < 32) (hsl : sl < 32) {ep : Addr} {eb : List Byte}
     (hep : word s.mem B (8 * sp) = ep) (hel : word s.mem B (8 * sl) = BitVec.ofNat 64 eb.length)
     (hL1 : 1 ≤ eb.length) (hL2 : eb.length ≤ 1024) (he : Src s B Z ep eb) :
     WP isa (seqs (Crt.expLoop M.mm sp sl)) s fun t => SubCtx t B Z o w wx minv ∧
       wv t.mem (off B o) (slot wx aY) wx < X ∧
-      wv t.mem (off B o) (slot wx aY) wx % X = x ^ Spec.Rsa.os2ip eb * 2 ^ (64 * wx) % X ∧
+      wv t.mem (off B o) (slot wx aY) wx % X =
+        y ^ (2 ^ (8 * eb.length)) * x ^ Spec.Rsa.os2ip eb * 2 ^ (64 * wx) % X ∧
       Frm (off B o) (crtExpRanges wx) s.mem t.mem ∧ Keep mmRegs s t := by
   have hPn := hc.good.scr.nowrap
   have hBn := hc.scr.nowrap
@@ -573,21 +591,42 @@ theorem crtExpLoop_ok (M : Mont) {s : State} {B : Addr} {Z o w wx : Nat} {minv :
       (Frm.of_outside o3 (by simp [crtExpRanges]))
   have hY0 := slot_le (w := wx) (show aY < 8 by decide)
   have hY1 := hdr_lt_slot wx aY (show 31 < 32 by decide)
-  have h₁ : CByteInv s (off B o) wx minv X (wv s.mem (off B o) (slot wx Crt.aXc) wx) x ep eb.length eb 0 t₁ := by
+  have h₁ : CByteInv s (off B o) wx minv X (wv s.mem (off B o) (slot wx Crt.aXc) wx) y x ep eb.length eb 0 t₁ := by
     refine ⟨hc₀.of_frm f₁ k₁.2.2 (k₁.gpr (by decide)), ⟨_, ?_, hyl, ?_⟩, ?_, ?_, ?_, f₁, k₁.mono (by decide)⟩
     · rw [o3.wv (by unfold Crt.sI sFn at *; omega) (by omega), o2.wv (by unfold Crt.sExpLen sFn at *; omega)
         (by omega), o1.wv (by unfold Crt.sExp sFn at *; omega) (by omega)]
-    · rw [hyc, pre_zero, Nat.pow_zero, Nat.one_mul]
+    · rw [hyc, pre_zero, Nat.pow_zero, Nat.pow_zero, Nat.pow_one, Nat.mul_one]
     · rw [hm₁, word_writeW_self]; rfl
     · rw [hm₁, hdrStore_hdr (i := Crt.sI) _ _ _ (by decide) (by decide) (by decide),
         hdrStore_hdr (i := Crt.sExpLen) _ _ _ (by decide) (by decide) (by decide), word_writeW_self]
     · rw [hm₁, hdrStore_hdr (i := Crt.sI) _ _ _ (by decide) (by decide) (by decide), word_writeW_self]
   refine wp_upto (a := 0) (N := eb.length) (by omega)
-    (CByteInv s (off B o) wx minv X (wv s.mem (off B o) (slot wx Crt.aXc) wx) x ep eb.length eb)
+    (CByteInv s (off B o) wx minv X (wv s.mem (off B o) (slot wx Crt.aXc) wx) y x ep eb.length eb)
     (fun i _ hi' t hI => crtByte_ok M hw2 (by omega) hR hxl hxc rfl (by omega) hi' he.rd he.val hout hI)
     (fun t hI => ?_) h₁
   obtain ⟨Y', h1, h2, h3⟩ := hI.y
   exact ⟨hc.of_frm hI.frm (crtExpRanges_ok wx) hI.keep.2.2 (hI.keep.gpr (by decide)), by rw [h1]; exact h2,
-    by rw [h1, h3, pre_len], hI.frm, hI.keep⟩
+    by rw [h1, h3, pre_len, show 2 ^ (8 * eb.length) = 256 ^ eb.length by rw [Nat.pow_mul]],
+    hI.frm, hI.keep⟩
+
+/-- `crtExpLoop_ok` from `Y ≡ R`: `Y ≡ x^d R`. -/
+theorem crtExpLoop_one_ok (M : Mont) {s : State} {B : Addr} {Z o w wx : Nat} {minv : BitVec 64} {X x : Nat}
+    (hc : SubCtx s B Z o w wx minv) (hw2 : 2 ≤ wx) (hwx : wx ≤ w) (hw30 : w < 2 ^ 30)
+    (hn : wv s.mem (off B o) (slot wx aN) wx = X)
+    (hinv : ((word s.mem (off B o) (slot wx aN)).toNat * minv.toNat + 1) % 2 ^ 64 = 0)
+    (hodd : X % 2 = 1)
+    (hxl : wv s.mem (off B o) (slot wx Crt.aXc) wx < X)
+    (hxc : wv s.mem (off B o) (slot wx Crt.aXc) wx % X = x * 2 ^ (64 * wx) % X)
+    (hyl : wv s.mem (off B o) (slot wx aY) wx < X)
+    (hyc : wv s.mem (off B o) (slot wx aY) wx % X = 2 ^ (64 * wx) % X)
+    {sp sl : Nat} (hsp : sp < 32) (hsl : sl < 32) {ep : Addr} {eb : List Byte}
+    (hep : word s.mem B (8 * sp) = ep) (hel : word s.mem B (8 * sl) = BitVec.ofNat 64 eb.length)
+    (hL1 : 1 ≤ eb.length) (hL2 : eb.length ≤ 1024) (he : Src s B Z ep eb) :
+    WP isa (seqs (Crt.expLoop M.mm sp sl)) s fun t => SubCtx t B Z o w wx minv ∧
+      wv t.mem (off B o) (slot wx aY) wx < X ∧
+      wv t.mem (off B o) (slot wx aY) wx % X = x ^ Spec.Rsa.os2ip eb * 2 ^ (64 * wx) % X ∧
+      Frm (off B o) (crtExpRanges wx) s.mem t.mem ∧ Keep mmRegs s t :=
+  WP.mono (crtExpLoop_ok M (y := 1) hc hw2 hwx hw30 hn hinv hodd hxl hxc hyl (by rw [hyc, Nat.one_mul]) hsp hsl
+    hep hel hL1 hL2 he) fun _ ⟨h1, h2, h3, h4, h5⟩ => ⟨h1, h2, by rw [h3, Nat.one_pow, Nat.one_mul], h4, h5⟩
 
 end VG.Proof.Bignum.X86_64
