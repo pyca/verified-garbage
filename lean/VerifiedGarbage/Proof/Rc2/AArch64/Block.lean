@@ -63,10 +63,9 @@ theorem block_correct (d : Spec.Rc2.Direction) (s : State) (hs : (blockContract 
   rw [WP.block_append_iff]
   apply WP.mono (blockLoad_ok s₁ dataRead₁)
   intro s₂ h₂
-  have read₂ : ∀ i < 128, InRegions (s₂.rd ++ s₂.wr) (s₂.gpr .x0 + BitVec.ofNat 64 i) 1 := by
-    intro i hi
+  have read₂ : InRegions (s₂.rd ++ s₂.wr) (s₂.gpr .x0) 128 := by
     rw [h₂.2.rd, h₂.2.wr, h₂.2.reg .x0 (by decide), h₁.gpr, h₁.rd, h₁.wr, hrd, hwr]
-    exact ⟨⟨s.gpr .x0, 128⟩, by simp, Offset.contains_base _ (by omega) (by omega)⟩
+    exact ⟨⟨s.gpr .x0, 128⟩, by simp, Region.contains_self _ _⟩
   rw [WP.block_append_iff]
   apply WP.mono (rounds_ok d s₂ _ h₂.1 read₂)
   intro s₃ h₃

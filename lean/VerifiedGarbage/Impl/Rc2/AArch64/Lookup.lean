@@ -1,15 +1,19 @@
 import VerifiedGarbage.Spec.Rc2
-import VerifiedGarbage.TCB.AArch64.Isa
+import VerifiedGarbage.Impl.Tbl.AArch64
 
-/-! # RC2 selection on baseline AArch64
+/-! # RC2 table lookups on AArch64
 
-Every candidate is visited in a fixed order. Secret indices are used only
-in arithmetic masks, never as addresses or branch conditions.
+Both lookups select from a table in the table registers with `tbl`
+(`Impl/Tbl/AArch64.lean`), so that no secret is ever an address or a branch
+condition: PITABLE is built from immediates in `v16`–`v31` at each lookup,
+and a schedule word is read from the 128-byte schedule at `x0` into
+`v16`–`v23`. Only caller-saved vector registers are written (`v0`–`v5`,
+`v16`–`v31`).
 -/
 
 namespace VG.Impl.Rc2.AArch64
 
-open VG.AArch64
+open VG.AArch64 VG.Impl.Tbl.AArch64
 
 def rr (dst src : Reg) : Instr := .addImm .x dst src 0
 def imm (dst : Reg) (n : Nat) : Instr := .movz .x dst (BitVec.ofNat 16 n) 0
@@ -18,31 +22,36 @@ def imm (dst : Reg) (n : Nat) : Instr := .movz .x dst (BitVec.ofNat 16 n) 0
 def mask (r : Reg) (n : Nat) : List Instr :=
   [.lsl .x r r (64 - n), .lsr .x r r (64 - n)]
 
-/-- Equality mask for byte `x8` and candidate `i`, returned in `x7`. -/
-def selectMask (i : Nat) : List Instr :=
-  [imm .x6 i, .logic .eor .x .x6 .x8 .x6, .subImm .x .x6 .x6 1,
-   .lsr .x .x6 .x6 63, imm .x7 0, .sub .x .x7 .x7 .x6]
-
-def piStep (i : Nat) : List Instr :=
-  selectMask i ++
-    ([imm .x6 (Spec.Rc2.piTable.getD i 0).toNat,
-      .logic .and .x .x7 .x7 .x6, .logic .orr .x .x3 .x3 .x7] : List Instr)
+/-- The index in `v0`, XORed with 64 into `v1`; with 128 and 192 into `v2`
+and `v3` if `full` (a table of 256 bytes rather than 128), through `x6` and
+`v4`, `v5`. -/
+def quarters (full : Bool) : List Instr :=
+  [imm .x6 64, .vop (.dup .b16 .v4 .x6), .vop (.logic .eor .v1 .v0 .v4)] ++
+  if full then
+    [imm .x6 128, .vop (.dup .b16 .v5 .x6), .vop (.logic .eor .v2 .v0 .v5),
+     .vop (.logic .eor .v3 .v1 .v5)]
+  else []
 
 /-- PITABLE of the low byte of `x8`, returned in `x8`. -/
 def piLookup : List Instr :=
-  mask .x8 8 ++ [imm .x3 0] ++ (List.range 256).flatMap piStep ++ [rr .x8 .x3]
+  loadTable (fun k => Spec.Rc2.piTable.getD k 0) ++ [.vop (.dup .b16 .v0 .x8)] ++ quarters true ++
+    select true ++
+    [.umov .w .x8 .v0 0] ++ mask .x8 8
 
 /-- Load schedule word `i` at `x0` into `x4`, using byte accesses. -/
 def loadKey (i : Nat) : List Instr :=
   [.ldrb .x4 .x0 (2 * i), .ldrb .x5 .x0 (2 * i + 1),
    .ror .x .x5 .x5 56, .logic .orr .x .x4 .x4 .x5]
 
-def keyStep (i : Nat) : List Instr :=
-  selectMask i ++ loadKey i ++
-    ([.logic .and .x .x4 .x4 .x7, .logic .orr .x .x3 .x3 .x4] : List Instr)
+/-- The schedule at `x0` into `v16`–`v23`. -/
+def loadSchedule : List Instr := (List.range 8).map fun r => .ldrq (treg r) .x0 (16 * r)
 
-/-- Select schedule word `x8 & 63`, returned in `x8`. -/
+/-- Select schedule word `j = x8 & 63`, returned in `x8`: its bytes `2 j` and
+`2 j + 1` are the indices of the low two lanes of each word of `v0`
+(`514 j + 256`, through `x3` and `x6`). -/
 def keyLookup : List Instr :=
-  mask .x8 6 ++ [imm .x3 0] ++ (List.range 64).flatMap keyStep ++ [rr .x8 .x3]
+  mask .x8 6 ++ loadSchedule ++
+  [imm .x3 514, imm .x6 256, .madd .x .x8 .x8 .x3 .x6, .vop (.dup .s4 .v0 .x8)] ++
+  quarters false ++ select false ++ [.umov .w .x8 .v0 0] ++ mask .x8 16
 
 end VG.Impl.Rc2.AArch64
