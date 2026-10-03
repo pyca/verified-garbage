@@ -1,5 +1,6 @@
 import VerifiedGarbage.Proof.Bignum.Math
 import Mathlib.Data.Int.ModEq
+import Mathlib.Data.Int.GCD
 
 /-!
 # Multiword arithmetic: the mathematics of RSA with the CRT
@@ -80,5 +81,11 @@ theorem crt_h {P R QI m₁ m₂ a b h : Nat} (hP : 0 < P) (hR : Nat.Coprime R P)
     rwa [Int.add_sub_cancel] at this
   rw [show ((m₁ : Int) - m₂) * QI % P = (d : Int) * QI % P from (hdZ.symm.mul_right _), hhd]
   norm_cast
+
+/-- Every residue is in Montgomery form: `a ≡ u R` for some `u`, `R`
+invertible modulo `X`. -/
+theorem exists_mont {R X : Nat} (hR : Nat.Coprime R X) (hX : X ≠ 0) (a : Nat) : ∃ u, a % X = u * R % X :=
+  let ⟨u, _, h⟩ := Nat.exists_mul_mod_eq_of_coprime a hR hX
+  ⟨u, by rw [Nat.mul_comm]; exact h.symm⟩
 
 end VG.Proof.Bignum
