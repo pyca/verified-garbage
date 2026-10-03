@@ -9,11 +9,11 @@ open VG VG.AArch64 VG.Impl.Rc2.AArch64
 theorem foldWords_ok (code : Nat → List Instr)
     (step : Spec.Rc2.Schedule → Nat → Spec.Rc2.State → Spec.Rc2.State) (is : List Nat)
     (correct : ∀ i ∈ is, ∀ (s : State) (v : Spec.Rc2.State), Words s v →
-      (∀ j < 128, InRegions (s.rd ++ s.wr) (s.gpr .x0 + BitVec.ofNat 64 j) 1) →
+      (InRegions (s.rd ++ s.wr) (s.gpr .x0) 128) →
       WP isa (.block (code i)) s (fun s' =>
         Words s' (step (Spec.Rc2.scheduleAt s.mem (s.gpr .x0)) i v) ∧ Keep roundWrites s s'))
     (s : State) (v : Spec.Rc2.State) (hv : Words s v)
-    (readable : ∀ j < 128, InRegions (s.rd ++ s.wr) (s.gpr .x0 + BitVec.ofNat 64 j) 1) :
+    (readable : InRegions (s.rd ++ s.wr) (s.gpr .x0) 128) :
     WP isa (.block (is.flatMap code)) s (fun s' =>
       Words s' (is.foldl (fun v i => step (Spec.Rc2.scheduleAt s.mem (s.gpr .x0)) i v) v) ∧
       Keep roundWrites s s') := by
@@ -26,8 +26,7 @@ theorem foldWords_ok (code : Nat → List Instr)
     apply WP.mono (correct i (by simp) s v hv readable)
     intro s₁ h₁
     have ptr₁ := h₁.2.reg .x0 (by decide)
-    have read₁ : ∀ j < 128,
-        InRegions (s₁.rd ++ s₁.wr) (s₁.gpr .x0 + BitVec.ofNat 64 j) 1 := by
+    have read₁ : InRegions (s₁.rd ++ s₁.wr) (s₁.gpr .x0) 128 := by
       rw [h₁.2.rd, h₁.2.wr, ptr₁]; exact readable
     apply WP.mono (ih (fun j hj => correct j (List.mem_cons_of_mem _ hj)) s₁ _ h₁.1 read₁)
     intro s₂ h₂
@@ -37,7 +36,7 @@ theorem foldWords_ok (code : Nat → List Instr)
 
 theorem mixRound_ok (s : State) (v : Spec.Rc2.State) (hv : Words s v)
     (j : Nat) (hj : j < 16)
-    (readable : ∀ k < 128, InRegions (s.rd ++ s.wr) (s.gpr .x0 + BitVec.ofNat 64 k) 1) :
+    (readable : InRegions (s.rd ++ s.wr) (s.gpr .x0) 128) :
     WP isa (.block ((List.range 4).flatMap (fun i => mix (4 * j + i) i))) s (fun s' =>
       Words s' (Spec.Rc2.mixRound (Spec.Rc2.scheduleAt s.mem (s.gpr .x0)) j v) ∧
       Keep roundWrites s s') := by
@@ -49,7 +48,7 @@ theorem mixRound_ok (s : State) (v : Spec.Rc2.State) (hv : Words s v)
 
 theorem reverseMixRound_ok (s : State) (v : Spec.Rc2.State) (hv : Words s v)
     (j : Nat) (hj : j < 16)
-    (readable : ∀ k < 128, InRegions (s.rd ++ s.wr) (s.gpr .x0 + BitVec.ofNat 64 k) 1) :
+    (readable : InRegions (s.rd ++ s.wr) (s.gpr .x0) 128) :
     WP isa (.block ([3, 2, 1, 0].flatMap (fun i => reverseMix (4 * j + i) i))) s (fun s' =>
       Words s' (Spec.Rc2.reverseMixRound (Spec.Rc2.scheduleAt s.mem (s.gpr .x0)) j v) ∧
       Keep roundWrites s s') := by
@@ -73,7 +72,7 @@ def order (d : Spec.Rc2.Direction) : List Nat :=
   | .decrypt => [3, 2, 1, 0]
 
 theorem mashRound_ok (d : Spec.Rc2.Direction) (s : State) (v : Spec.Rc2.State) (hv : Words s v)
-    (readable : ∀ k < 128, InRegions (s.rd ++ s.wr) (s.gpr .x0 + BitVec.ofNat 64 k) 1) :
+    (readable : InRegions (s.rd ++ s.wr) (s.gpr .x0) 128) :
     WP isa (.block ((order d).flatMap (mash d))) s (fun s' =>
       Words s' (mashRoundSpec d (Spec.Rc2.scheduleAt s.mem (s.gpr .x0)) v) ∧
       Keep roundWrites s s') := by
@@ -100,7 +99,7 @@ def roundSpec (d : Spec.Rc2.Direction) (k : Spec.Rc2.Schedule) (j : Nat)
 
 theorem round_ok (d : Spec.Rc2.Direction) (s : State) (v : Spec.Rc2.State) (hv : Words s v)
     (j : Nat) (hj : j < 16)
-    (readable : ∀ k < 128, InRegions (s.rd ++ s.wr) (s.gpr .x0 + BitVec.ofNat 64 k) 1) :
+    (readable : InRegions (s.rd ++ s.wr) (s.gpr .x0) 128) :
     WP isa (.block (round d j)) s (fun s' =>
       Words s' (roundSpec d (Spec.Rc2.scheduleAt s.mem (s.gpr .x0)) j v) ∧
       Keep roundWrites s s') := by
@@ -111,8 +110,7 @@ theorem round_ok (d : Spec.Rc2.Direction) (s : State) (v : Spec.Rc2.State) (hv :
     by_cases h : j = 4 ∨ j = 10
     · rw [ite_eq_left h]
       have ptr₁ := h₁.2.reg .x0 (by decide)
-      have read₁ : ∀ k < 128,
-          InRegions (s₁.rd ++ s₁.wr) (s₁.gpr .x0 + BitVec.ofNat 64 k) 1 := by
+      have read₁ : InRegions (s₁.rd ++ s₁.wr) (s₁.gpr .x0) 128 := by
         rw [h₁.2.rd, h₁.2.wr, ptr₁]; exact readable
       apply WP.mono (mashRound_ok d s₁ v₁ h₁.1 read₁)
       intro s₂ h₂
@@ -134,7 +132,7 @@ theorem round_ok (d : Spec.Rc2.Direction) (s : State) (v : Spec.Rc2.State) (hv :
     exact finish s₁ _ h₁
 
 theorem rounds_ok (d : Spec.Rc2.Direction) (s : State) (v : Spec.Rc2.State) (hv : Words s v)
-    (readable : ∀ k < 128, InRegions (s.rd ++ s.wr) (s.gpr .x0 + BitVec.ofNat 64 k) 1) :
+    (readable : InRegions (s.rd ++ s.wr) (s.gpr .x0) 128) :
     WP isa (.block ((List.range 16).flatMap (round d))) s (fun s' =>
       Words s' ((List.range 16).foldl (fun v j => roundSpec d
         (Spec.Rc2.scheduleAt s.mem (s.gpr .x0)) j v) v) ∧ Keep roundWrites s s') := by
