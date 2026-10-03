@@ -19,8 +19,14 @@ files changed:
     HMAC, list that hash in their `USES`);
   * `src/<family>/<hash>.rs`: `<family>_<hash>` (as in `src/asm/`), and
     `src/<family>/mod.rs`: every `<family>_<hash>`;
+  * a private module of the crate, `src/<helper>.rs` (`mod <helper>;` in
+    `src/lib.rs`, used by none of the benchmarks, e.g. `ct`): the modules
+    whose code names `crate::<helper>`;
+  * a module only tests compile (`#[cfg(test)] mod <name>;`): none;
   * `bench/benches/primitives/<name>.rs`, or its differential test
-    `bench/tests/<name>.rs`: the modules in its `USES`.
+    `bench/tests/<name>.rs`: the modules in its `USES`, or for a helper
+    without one (e.g. `mlkem.rs`, a macro), those of the benchmarks that
+    call it.
 
 The benchmarks run those that use any of them, and all of them for a module
 none uses (e.g. `lib`, or the generated `src/asm/<arch>/mod.rs`). Any
@@ -125,6 +131,8 @@ SHARED = re.compile(
 ASM = re.compile(r"src/asm/([a-z0-9_]+)/([a-z0-9_]+)\.rs$")
 API = re.compile(r"src/(?:hashes/)?([a-z0-9_]+)\.rs$")
 HASHES = "src/hashes/mod.rs"
+# A module declared in `src/lib.rs`: its attributes, and `pub` if it has it.
+LIB_MOD = re.compile(r"^((?:#\[[^\n]*\]\n)*)(pub(?:\([a-z]+\))? )?mod ([a-z0-9_]+);", re.M)
 FAMILY = re.compile(r"src/(?!asm/|hashes/)([a-z0-9_]+)/([a-z0-9_]+)\.rs$")
 # One algorithm's benchmark, and the modules it lists in its `USES`.
 BENCH = re.compile(r"bench/benches/primitives/(?!main\.rs$)([a-z0-9_]+)\.rs$")
@@ -212,23 +220,55 @@ def hashes(root="."):
             if (m := re.fullmatch(r"src/hashes/([a-z0-9_]+)\.rs", path)) and m[1] != "mod"}
 
 
+def lib_modules(revision=None, root="."):
+    """The modules `src/lib.rs` declares: for each, whether only tests
+    compile it, and whether it is public."""
+    return {m[3]: ("#[cfg(test)]" in m[1], bool(m[2]))
+            for m in LIB_MOD.finditer(read("src/lib.rs", revision, root) or "")}
+
+
+def test_only(module, base=None):
+    """Whether only tests compile `module` (at `base` too, if given), so no
+    benchmark can measure it."""
+    return all(lib_modules(r).get(module, (False,))[0] for r in ([base, None] if base else [None]))
+
+
 def users(family, known, root="."):
     """The modules whose Rust code (outside the family's) uses the family's
-    shared code; a file that is no module's names itself, which no
-    benchmark uses."""
+    shared code, or a private module of the crate; a file that is no
+    module's names itself, which no benchmark uses. Modules only tests
+    compile are left out."""
     names = set()
+    tests = {m for m, (test, _) in lib_modules(None, root).items() if test}
     for path in rust_files(root):
-        if path.startswith(("src/asm/", f"src/{family}/")) or not re.search(
-                rf"\bcrate::{family}::", read(path, None, root) or ""):
+        if path.startswith(("src/asm/", f"src/{family}/")) or path == f"src/{family}.rs" or not re.search(
+                rf"\b(?:crate|super)::{family}::", read(path, None, root) or ""):
             continue
         api, other = API.match(path), FAMILY.match(path)
-        if api:
-            names.add(api[1])
+        if path == HASHES:
+            names |= hashes(root)
+        elif api:
+            if api[1] not in tests:
+                names.add(api[1])
         elif other and other[2] == "mod":
             names |= members(other[1], known) or {path}
         else:
             names.add(f"{other[1]}_{other[2]}" if other else path)
     return names
+
+
+def helper_uses(name, catalog):
+    """The `USES` of the benchmarks that call the helper
+    `bench/benches/primitives/<name>.rs` (a module of `main.rs` without
+    `USES` of its own), or None if none does."""
+    text = read(f"bench/benches/primitives/{name}.rs")
+    if text is None or not catalog:
+        return None
+    macros = re.findall(r"macro_rules! ([a-z0-9_]+)", text)
+    calls = re.compile(r"\b(?:%s)" % "|".join([rf"{name}::", *(rf"{m}!" for m in macros)]))
+    uses = set().union(*(u for n, u in catalog.items()
+                         if n != name and calls.search(read(f"bench/benches/primitives/{n}.rs") or "")))
+    return uses or None
 
 
 def sources(module):
@@ -340,6 +380,17 @@ def arches(changed, base=None):
             for a in PLATFORMS:
                 for name in hashes():
                     need(a, name)
+        elif api and path == f"src/{api[1]}.rs" and test_only(api[1], base):
+            continue
+        elif (api and path == f"src/{api[1]}.rs" and api[1] not in known
+              and lib_modules().get(api[1], (False, True)) == (False, False)):
+            # A private helper: only the crate's own modules can use it.
+            names = users(api[1], known)
+            for a in PLATFORMS:
+                if not names:
+                    needed[a] = ALL
+                for name in names:
+                    need(a, name)
         elif api:
             for a in PLATFORMS:
                 need(a, api[1])
@@ -353,7 +404,8 @@ def arches(changed, base=None):
                 for name in names:
                     need(a, name)
         elif (bench := BENCH.match(path) or BENCH_TEST.match(path)) and (
-                uses := bench_uses(f"bench/benches/primitives/{bench[1]}.rs")):
+                uses := bench_uses(f"bench/benches/primitives/{bench[1]}.rs")
+                or helper_uses(bench[1], catalogs[-1])):
             for a in PLATFORMS:
                 for m in uses:
                     need(a, m)

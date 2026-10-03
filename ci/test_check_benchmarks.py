@@ -200,6 +200,40 @@ class Selection(unittest.TestCase):
         self.assertEqual(self.configurations(rows, 'aarch64'), ['', 'sha3'])
         self.assertEqual(self.configurations(rows, 'x86_64'), [''])
 
+    def test_test_only_modules_need_nothing(self):
+        self.files['src/lib.rs'] = '#[cfg(test)]\nmod argon2_tests;\npub mod argon2;\n'
+        self.assertEqual(self.rows(['src/argon2_tests.rs']), [])
+        # Unless the base compiled it outside tests too.
+        self.base_files['src/lib.rs'] = 'mod argon2_tests;\n'
+        self.assertEqual(len(self.rows(['src/argon2_tests.rs'])), self.full_matrix())
+
+    def test_private_helpers_select_the_modules_using_them(self):
+        self.files.update({
+            'src/lib.rs': 'mod ct;\npub mod argon2;\n#[cfg(test)]\nmod argon2_tests;\nmod unused;\n',
+            'src/ct.rs': 'pub(crate) fn eq() { crate::ct::eq() }',
+            'src/argon2.rs': 'use crate::ct::eq;',
+            # Every hash module, through the shared hash code; not a test.
+            'src/hashes/mod.rs': 'crate::ct::eq()',
+            'src/hashes/sha256.rs': '',
+            'src/argon2_tests.rs': 'crate::ct::eq()',
+            'src/unused.rs': '',
+        })
+        self.catalog['sha256'] = {'sha256'}
+        self.assertEqual({r['modules'] for r in self.rows(['src/ct.rs'])},
+                         {'argon2 keccak sha256'})
+        # One nothing uses runs every benchmark.
+        self.assertEqual(len(self.rows(['src/unused.rs'])), self.full_matrix())
+
+    def test_benchmark_helpers_select_their_callers_uses(self):
+        self.files['bench/benches/primitives/kem.rs'] = 'macro_rules! kem_bench { () => {} }'
+        # Called through a `use`, by the macro's name alone.
+        self.files['bench/benches/primitives/x448.rs'] = 'use super::*;\nkem_bench!();'
+        self.assertEqual({r['modules'] for r in self.rows(['bench/benches/primitives/kem.rs'])},
+                         {'x448'})
+        # One no benchmark calls runs every benchmark.
+        self.files['bench/benches/primitives/x448.rs'] = ''
+        self.assertEqual(len(self.rows(['bench/benches/primitives/kem.rs'])), self.full_matrix())
+
     def test_registration_edits_only(self):
         def names(lines):
             with mock.patch.object(planner.subprocess, 'check_output', return_value=lines):
