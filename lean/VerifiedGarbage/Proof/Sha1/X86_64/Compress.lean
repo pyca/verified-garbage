@@ -82,9 +82,9 @@ theorem fcode_ok (g : Fn) (b c d : Reg) (s : State) (x y z : Word)
   simp only [T1, T2] at b1 c1 c2 d1 ⊢
   apply WP.of_runBlock
   cases g <;>
-  simp (config := {decide := true}) only [fcode, T1, T2, runBlock_cons, runStep_some,
+  simp only [reduceCtorEq, ↓reduceIte, Nat.reduceLeDiff, and_self, fcode, T1, T2, runBlock_cons, runStep_some,
     runBlock_nil, exec, execAlu32, readSrc32, isa, State.setReg32, RegUpd.gpr_setReg, RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg, RegUpd.gpr_arithFlags, RegUpd.mem_arithFlags, RegUpd.rd_arithFlags, RegUpd.wr_arithFlags,
-    ite_true, ite_false, b1, c1, c2, d1, hb, hc, hd,
+    b1, c1, c2, d1, hb, hc, hd,
     BitVec.setWidth_setWidth_of_le, BitVec.setWidth_eq,
     Option.bind_some, Option.map_some, Option.some.injEq, exists_eq_left'] <;>
   refine ⟨rfl, fun r h1 h2 => by simp [h1, h2], ?_⟩ <;> trivial
@@ -103,9 +103,9 @@ theorem sum_ok (t : Nat) (a b e : Reg) (s : State) (x y z fv w : Word)
   have heb := hbe.symm
   simp only [T0, T1, T2] at e2 b2 hf hw ⊢
   apply WP.of_runBlock
-  simp (config := {decide := true}) only [sum, T0, T1, T2, runBlock_cons, runStep_some,
+  simp only [reduceCtorEq, ↓reduceIte, Nat.reduceLeDiff, Nat.reduceEqDiff, Nat.reducePow, and_self, sum, T0, T1, T2, runBlock_cons, runStep_some,
     runBlock_nil, exec, execAlu32, execShift32, readSrc32, isa, State.setReg32, RegUpd.gpr_setReg, RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg,
-    RegUpd.gpr_arithFlags, RegUpd.mem_arithFlags, RegUpd.rd_arithFlags, RegUpd.wr_arithFlags, RegUpd.gpr_setFlags, RegUpd.mem_setFlags, RegUpd.rd_setFlags, RegUpd.wr_setFlags, ite_true, ite_false, e2, b2, hbe, heb, ha, hb, he, hf, hw,
+    RegUpd.gpr_arithFlags, RegUpd.mem_arithFlags, RegUpd.rd_arithFlags, RegUpd.wr_arithFlags, RegUpd.gpr_setFlags, RegUpd.mem_setFlags, RegUpd.rd_setFlags, RegUpd.wr_setFlags, e2, b2, hbe, heb, ha, hb, he, hf, hw,
     BitVec.setWidth_setWidth_of_le, BitVec.setWidth_eq,
     Option.bind_some, Option.map_some, Option.some.injEq, exists_eq_left']
   exact ⟨trivial, trivial, fun r h1 h2 h3 => by simp [h1, h2, h3], trivial⟩
@@ -173,10 +173,10 @@ theorem schedule_ok (t : Nat) (s : State) (M : Block) (bp scr : Addr)
   · have hi := hbin ht
     have hb := hblk ht
     simp only [Impl.Sha1.X86_64.schedule, ht, ite_true, slot, at_, T0, T1, T2]
-    simp (config := {decide := true}) only [runBlock_cons, runStep_some,
+    simp only [reduceCtorEq, ↓reduceIte, Nat.reduceLeDiff, runBlock_cons, runStep_some,
       runBlock_nil, exec, readSrc32, isa, State.ea,
-      State.load32, State.store32, State.setReg32, RegUpd.gpr_setReg, RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg, hrsi, hrcx, hi, hout, ite_true,
-      ite_false, BitVec.setWidth_setWidth_of_le, BitVec.setWidth_eq, hb,
+      State.load32, State.store32, State.setReg32, RegUpd.gpr_setReg, RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg, hrsi, hrcx, hi, hout, 
+      BitVec.setWidth_setWidth_of_le, BitVec.setWidth_eq, hb,
       Option.map_some, Option.some.injEq, exists_eq_left']
     refine ⟨trivial, trivial, trivial, trivial, fun r h0 h1 h2 => ?_⟩
     simp [h0]
@@ -190,10 +190,10 @@ theorem schedule_ok (t : Nat) (s : State) (M : Block) (bp scr : Addr)
     rw [show (t - 14) % 16 = (t + 2) % 16 by omega] at e14
     rw [show (t - 16) % 16 = t % 16 by omega] at e16
     simp only [Impl.Sha1.X86_64.schedule, ht, ite_false, slot, at_, T0, T1, T2]
-    simp (config := {decide := true}) only [runBlock_cons, runStep_some,
+    simp only [reduceCtorEq, ↓reduceIte, Nat.reduceLeDiff, Nat.reduceEqDiff, and_self, runBlock_cons, runStep_some,
       runBlock_nil, exec, execAlu32, execShift32, readSrc32,
       isa, State.ea, State.load32, State.store32, State.setReg32, RegUpd.gpr_setReg, RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg, RegUpd.gpr_arithFlags, RegUpd.mem_arithFlags, RegUpd.rd_arithFlags, RegUpd.wr_arithFlags,
-      RegUpd.gpr_setFlags, RegUpd.mem_setFlags, RegUpd.rd_setFlags, RegUpd.wr_setFlags, hrcx, hin, hout, ite_true, ite_false, BitVec.setWidth_setWidth_of_le,
+      RegUpd.gpr_setFlags, RegUpd.mem_setFlags, RegUpd.rd_setFlags, RegUpd.wr_setFlags, hrcx, hin, hout, BitVec.setWidth_setWidth_of_le,
       BitVec.setWidth_eq, e3, e8, e14, e16,
       Option.bind_some, Option.map_some, Option.some.injEq, exists_eq_left']
     have hW := W_ge M (t := t) (by omega)

@@ -376,7 +376,7 @@ structure FCtx (V st : BitVec 32) (v : Work 32) (s₀ : State) : Prop where
   fitV : V.toNat + 512 ≤ 2 ^ 32
   wS : ∀ o, o + 4 ≤ 32 → InRegions s₀.wr (A st o) 4
   rV : ∀ o, o + 4 ≤ 512 → InRegions (s₀.rd ++ s₀.wr) (A V o) 4
-  c : ∀ k (hk : k < 4), s₀.mem.readW (A V (cOff (k + 8))) 32 = v[k + 8]
+  c : ∀ k (hk : k < 4), s₀.mem.readW (A V (cOff (k + 8))) 32 = v[k + 8]'(by omega)
   disj : Region.Disjoint ⟨State.addr st, 32⟩ ⟨State.addr V, 512⟩
 
 /-- The invariant of `fin`, from `s₀`, with the words `D` of the state done. -/
@@ -390,10 +390,10 @@ structure FI (V st : BitVec 32) (H : Nat → BitVec 32) (v : Work 32) (s₀ : St
   wr : s.wr = s₀.wr
   sp : s.sp = s₀.sp
   frame : Frame [⟨State.addr st, 32⟩] s₀.mem s.mem
-  lo : ∀ k (hk : k < 4), k ∉ D → s.gpr (wreg k) = v[k]
-  mid : ∀ k (hk : k < 4), s.gpr (wreg (k + 4)) = (v[k + 4] ^^^ v[k + 4 + 8]).rotateLeft 7
+  lo : ∀ k (hk : k < 4), k ∉ D → s.gpr (wreg k) = v[k]'(by omega)
+  mid : ∀ k (hk : k < 4), s.gpr (wreg (k + 4)) = (v[k + 4]'(by omega) ^^^ v[k + 4 + 8]'(by omega)).rotateLeft 7
   words : ∀ k (hk : k < 8), s.mem.readW (A st (4 * k)) 32 =
-    if k ∈ D then H k ^^^ (v[k] ^^^ v[k + 8]) else H k
+    if k ∈ D then H k ^^^ (v[k]'(by omega) ^^^ v[k + 8]'(by omega)) else H k
 
 theorem wreg_lo_ne : ∀ k < 8, wreg k ≠ .lr ∧ wreg k ≠ .r8 ∧ wreg k ≠ .r12 := by decide
 theorem wreg_lo_ne' : ∀ k < 4, wreg k ≠ .r9 ∧ wreg k ≠ .r10 := by decide
@@ -404,9 +404,9 @@ theorem FI.st_addr {V st : BitVec 32} {v : Work 32} {s₀ : State} (c : FCtx V s
 
 theorem FI.words_upd {V st : BitVec 32} {H : Nat → BitVec 32} {v : Work 32} {s₀ s : State} {D : List Nat}
     (c : FCtx V st v s₀) (h : FI V st H v s₀ D s) {j : Nat} (hj : j < 8) {m : Mem}
-    (hm : m = s.mem.writeW (State.addr (st + BitVec.ofNat 32 (4 * j))) (H j ^^^ (v[j] ^^^ v[j + 8]))) :
+    (hm : m = s.mem.writeW (State.addr (st + BitVec.ofNat 32 (4 * j))) (H j ^^^ (v[j]'(by omega) ^^^ v[j + 8]'(by omega)))) :
     ∀ k (hk : k < 8), m.readW (A st (4 * k)) 32 =
-      if k ∈ j :: D then H k ^^^ (v[k] ^^^ v[k + 8]) else H k := fun k hk => by
+      if k ∈ j :: D then H k ^^^ (v[k]'(by omega) ^^^ v[k + 8]'(by omega)) else H k := fun k hk => by
   subst hm
   show (s.mem.writeW _ _).readW (State.addr (st + BitVec.ofNat 32 (4 * k))) 32 = _
   by_cases e : k = j
@@ -431,7 +431,7 @@ theorem finHi_ok {V st : BitVec 32} {H : Nat → BitVec 32} {v : Work 32} {s₀ 
     fun s₁ u₁ => wp_eor (op2_ror (by decide)) fun s₂ u₂ => wp_str (by omega)
       (by rw [u₂.other _ (by decide), u₁.other _ (by decide), h.r8])
       (by rw [u₂.wr, u₁.wr, h.wr]; exact c.wS _ (by omega)) fun s₃ m₃ => WP.block_nil ?_
-  have hv : s₂.gpr .lr = H (k + 4) ^^^ (v[k + 4] ^^^ v[k + 4 + 8]) := by
+  have hv : s₂.gpr .lr = H (k + 4) ^^^ (v[k + 4]'(by omega) ^^^ v[k + 4 + 8]'(by omega)) := by
     rw [u₂.gpr, u₁.gpr, u₁.other _ nw.1, h.mid k hk, rotr_rotl _ (by decide)]
     have := h.words (k + 4) (by omega)
     simp only [hD, ↓reduceIte] at this
@@ -462,15 +462,15 @@ theorem finLo_ok {V st : BitVec 32} {H : Nat → BitVec 32} {v : Work 32} {s₀ 
       (by rw [u₄.other _ (by decide), u₃.other _ (by decide), u₂.other _ (Ne.symm nw.2.1), u₁.other _ (by decide),
         h.r8])
       (by rw [u₄.wr, u₃.wr, u₂.wr, u₁.wr, h.wr]; exact c.wS _ (by omega)) fun s₅ m₅ => WP.block_nil ?_
-  have hc : s.mem.readW (A V (cOff (k + 8))) 32 = v[k + 8] := by
+  have hc : s.mem.readW (A V (cOff (k + 8))) 32 = v[k + 8]'(by omega) := by
     rw [← c.c k hk, cOff_A c.fitV (by unfold cOff; omega)]
     exact h.frame.readW (Region.contains_self _ _) (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
       exact (c.disj.sub_right (Offset.sub_base _ (by unfold cOff; omega))).symm) (by decide)
-  have hw : s₃.gpr (wreg k) = v[k] ^^^ v[k + 8] := by
+  have hw : s₃.gpr (wreg k) = v[k]'(by omega) ^^^ v[k + 8]'(by omega) := by
     rw [u₃.other _ nw.1, u₂.gpr, u₁.other _ nw.1, h.lo k hk hD, u₁.gpr]
     exact congrArg _ hc
-  have hv : s₄.gpr .lr = H k ^^^ (v[k] ^^^ v[k + 8]) := by
+  have hv : s₄.gpr .lr = H k ^^^ (v[k]'(by omega) ^^^ v[k + 8]'(by omega)) := by
     rw [u₄.gpr, u₃.gpr, u₂.mem, u₁.mem, hw]
     have := h.words k (by omega)
     simp only [hD, ↓reduceIte] at this
@@ -496,7 +496,7 @@ theorem finLo_ok {V st : BitVec 32} {H : Nat → BitVec 32} {v : Work 32} {s₀ 
     rw [m₅.gpr, u₄.other _ nj.1, u₃.other _ nj.1, u₂.other _ ne, u₁.other _ nj.1, h.mid j hj]
 
 theorem finPre_ok {V st : BitVec 32} {v : Work 32} {s : State} (c : FCtx V st v s)
-    (hv : ∀ k (hk : k < 16), Holds V s k v[k]) (hV : s.gpr .r12 = V)
+    (hv : ∀ k (hk : k < 16), Holds V s k (v[k]'(by omega))) (hV : s.gpr .r12 = V)
     (hst : s.mem.readW (A V stOff) 32 = st) :
     WP isa (.block (finX 4 ++ finX 5 ++ finX 6 ++ finX 7 ++ ([.ldr .r8 Impl.Blake2.Arm.S.S stOff,
       .ldr .r9 Impl.Blake2.Arm.S.S blkOff, .ldr .r10 Impl.Blake2.Arm.S.S Impl.Blake2.Arm.S.nOff] : List Instr))) s
@@ -516,7 +516,7 @@ theorem finPre_ok {V st : BitVec 32} {v : Work 32} {s : State} (c : FCtx V st v 
     (by rw [u₆.rd, u₆.wr, u₅.rd, u₅.wr, rd₄, wr₄]; exact c.rV _ (by decide)) fun s₇ u₇ => WP.block_nil ?_
   have m₇ : s₇.mem = s.mem := by rw [u₇.mem, u₆.mem, u₅.mem, m₄]
   have mid : ∀ k (hk : k < 4), s.gpr (wreg (k + 4)) ^^^ (s.gpr (wreg (k + 4 + 8))).rotateRight 1 =
-      (v[k + 4] ^^^ v[k + 4 + 8]).rotateLeft 7 := fun k hk => by
+      (v[k + 4]'(by omega) ^^^ v[k + 4 + 8]'(by omega)).rotateLeft 7 := fun k hk => by
     rw [(holds_mid (by omega) (by omega)).mp (hv (k + 4) (by omega)),
       (holds_hi (by omega)).mp (hv (k + 4 + 8) (by omega)), rotl8_rotr1, rotl_xor]
   refine ⟨by rw [u₇.other _ (by decide), u₆.other _ (by decide), u₅.gpr, m₄]; exact hst,
@@ -542,14 +542,14 @@ theorem finPre_ok {V st : BitVec 32} {v : Work 32} {s : State} (c : FCtx V st v 
       exact e
 
 theorem fin_ok {V st : BitVec 32} {v : Work 32} {s : State} (c : FCtx V st v s)
-    (hv : ∀ k (hk : k < 16), Holds V s k v[k]) (hV : s.gpr .r12 = V)
+    (hv : ∀ k (hk : k < 16), Holds V s k (v[k]'(by omega))) (hV : s.gpr .r12 = V)
     (hst : s.mem.readW (A V stOff) 32 = st) :
     WP isa Impl.Blake2.Arm.S.fin s fun s' =>
       s'.gpr .r12 = V ∧ s'.gpr .r8 = st ∧ s'.gpr .r9 = s.mem.readW (A V blkOff) 32 ∧
       s'.gpr .r10 = s.mem.readW (A V Impl.Blake2.Arm.S.nOff) 32 ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp ∧
       Frame [⟨State.addr st, 32⟩] s.mem s'.mem ∧
       ∀ k (hk : k < 8), s'.mem.readW (A st (4 * k)) 32 =
-        s.mem.readW (A st (4 * k)) 32 ^^^ (v[k] ^^^ v[k + 8]) := by
+        s.mem.readW (A st (4 * k)) 32 ^^^ (v[k]'(by omega) ^^^ v[k + 8]'(by omega)) := by
   unfold Impl.Blake2.Arm.S.fin
   refine WP.seq (WP.mono (finPre_ok c hv hV hst) fun s₁ h₁ => ?_)
   refine WP.seq (WP.mono (finHi_ok (k := 0) c (by decide) (by decide) h₁) fun s₂ h₂ => ?_)

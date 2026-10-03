@@ -113,7 +113,7 @@ theorem keyWord_ok (s : State) (d o : Nat) (hd : d % 8 = 0 ∧ d < 32768) (ho : 
     rw [keyWord, runBlock_cons, exec_ldr_x hd r, runStep_some, runBlock_cons, exec_rev, runStep_some,
       runBlock_cons, exec_str_x ho w', runStep_some, runBlock_nil], ?_⟩
   refine ⟨?_, fun r hr => by simp [s₁, s₂, gpr_write, hr], rfl, rfl, rfl⟩
-  simp (config := {decide := true}) only [s₁, s₂, mem_write, State.read, gpr_write, ite_true, ite_false,
+  simp only [reduceCtorEq, ↓reduceIte, s₁, s₂, mem_write, State.read, gpr_write, 
     BitVec.setWidth_eq, rev64_eq]
 
 theorem initPre_wp {s₀ : State} (hp : IPre s₀) : WP isa initPre s₀ (KInv s₀ 0) := by

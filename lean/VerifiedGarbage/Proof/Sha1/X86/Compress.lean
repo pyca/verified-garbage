@@ -90,9 +90,9 @@ theorem fcode_ok (g : Fn) (b c d e : Reg) (s : State) (x y z u : Word)
   simp only [T] at b1 c1 d1 e1 ⊢
   apply WP.of_runBlock
   cases g <;>
-  simp (config := {decide := true}) only [fcode, T, runBlock_cons, runStep_some,
+  simp only [↓reduceIte, Nat.reducePow, and_self, fcode, T, runBlock_cons, runStep_some,
     runBlock_nil, exec, execAlu, readSrc, isa, RegUpd.gpr_setReg, RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg, RegUpd.gpr_arithFlags, RegUpd.mem_arithFlags, RegUpd.rd_arithFlags, RegUpd.wr_arithFlags,
-    ite_true, ite_false, b1, c1, d1, e1, hbe, hce, hde, hb, hc, hd, he,
+    b1, c1, d1, e1, hbe, hce, hde, hb, hc, hd, he,
     Option.bind_some, Option.map_some, Option.some.injEq, exists_eq_left'] <;>
   refine ⟨?_, fun r h1 h2 => by simp [h1, h2], trivial⟩
   · rfl
@@ -110,9 +110,9 @@ theorem sum_ok (t : Nat) (a b e : Reg) (s : State) (x y z : Word)
   have heb := hbe.symm
   simp only [T] at b1 e1 ⊢
   apply WP.of_runBlock
-  simp (config := {decide := true}) only [sum, T, runBlock_cons, runStep_some,
+  simp only [↓reduceIte, Nat.reduceLeDiff, Nat.reduceEqDiff, Nat.reducePow, and_self, sum, T, runBlock_cons, runStep_some,
     runBlock_nil, exec, execAlu, execShift, readSrc, isa, RegUpd.gpr_setReg, RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg, RegUpd.zf_setReg,
-    RegUpd.gpr_arithFlags, RegUpd.mem_arithFlags, RegUpd.rd_arithFlags, RegUpd.wr_arithFlags, RegUpd.zf_arithFlags, RegUpd.gpr_setFlags, RegUpd.mem_setFlags, RegUpd.rd_setFlags, RegUpd.wr_setFlags, ite_true, ite_false, b1, e1, hbe, heb, ha, hb, he,
+    RegUpd.gpr_arithFlags, RegUpd.mem_arithFlags, RegUpd.rd_arithFlags, RegUpd.wr_arithFlags, RegUpd.zf_arithFlags, RegUpd.gpr_setFlags, RegUpd.mem_setFlags, RegUpd.rd_setFlags, RegUpd.wr_setFlags, b1, e1, hbe, heb, ha, hb, he,
     Option.bind_some, Option.map_some, Option.some.injEq, exists_eq_left']
   exact ⟨trivial, trivial, fun r h1 h2 h3 => by simp [h1, h2, h3], trivial⟩
 
@@ -191,10 +191,10 @@ theorem schedule_ok (t : Nat) (s : State) (M : Block) (bp scr : BitVec 32)
   · have hi := hbin ht
     have hb := hblk ht
     simp only [Impl.Sha1.X86.schedule, ht, ite_true, slot, at_, T]
-    simp (config := {decide := true}) only [runBlock_cons, runStep_some,
+    simp only [reduceCtorEq, ↓reduceIte, runBlock_cons, runStep_some,
       runBlock_nil, exec, readSrc, isa, ea_mk,
-      State.load32, State.store32, RegUpd.gpr_setReg, RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg, RegUpd.zf_setReg, RegUpd.cf_setReg, hebp, hbpin, hbp, hi, hout, ite_true,
-      ite_false, hb, Option.map_some, Option.some.injEq, exists_eq_left']
+      State.load32, State.store32, RegUpd.gpr_setReg, RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg, RegUpd.zf_setReg, RegUpd.cf_setReg, hebp, hbpin, hbp, hi, hout, 
+      hb, Option.map_some, Option.some.injEq, exists_eq_left']
     refine ⟨trivial, trivial, trivial, trivial, fun r h0 => ?_⟩
     simp [h0]
   · have hw := hwin (by omega)
@@ -207,10 +207,10 @@ theorem schedule_ok (t : Nat) (s : State) (M : Block) (bp scr : BitVec 32)
     rw [show (t - 14) % 16 = (t + 2) % 16 by omega] at e14
     rw [show (t - 16) % 16 = t % 16 by omega] at e16
     simp only [Impl.Sha1.X86.schedule, ht, ite_false, slot, at_, T]
-    simp (config := {decide := true}) only [runBlock_cons, runStep_some,
+    simp only [reduceCtorEq, ↓reduceIte, Nat.reduceLeDiff, Nat.reduceEqDiff, and_self, runBlock_cons, runStep_some,
       runBlock_nil, exec, execAlu, execShift, readSrc,
       isa, ea_mk, State.load32, State.store32, RegUpd.gpr_setReg, RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg, RegUpd.zf_setReg, RegUpd.cf_setReg, RegUpd.gpr_arithFlags, RegUpd.mem_arithFlags, RegUpd.rd_arithFlags, RegUpd.wr_arithFlags, RegUpd.zf_arithFlags,
-      RegUpd.gpr_setFlags, RegUpd.mem_setFlags, RegUpd.rd_setFlags, RegUpd.wr_setFlags, hebp, hin, hout, ite_true, ite_false, e3, e8, e14, e16,
+      RegUpd.gpr_setFlags, RegUpd.mem_setFlags, RegUpd.rd_setFlags, RegUpd.wr_setFlags, hebp, hin, hout, e3, e8, e14, e16,
       Option.bind_some, Option.map_some, Option.some.injEq, exists_eq_left']
     have hW := W_ge M (t := t) (by omega)
     rw [rotl1] at hW
@@ -566,7 +566,7 @@ theorem stateAt_writeState {s₀ : State} (hp : Pre s₀) (m : Mem) (v : HashVal
   intro k hk
   simp only [writeState, stAddr]
   rcases (by omega : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 ∨ k = 4) with h | h | h | h | h <;> subst h <;>
-  simp (config := {decide := true}) (disch := decide) only [Mem.readW_writeW_self32, readW_writeW_st hp]
+  simp (disch := decide) only [Mem.readW_writeW_self32, readW_writeW_st hp]
 
 theorem frame_writeState {s₀ : State} (hp : Pre s₀) {m m' : Mem} (h : Frame [stR s₀] m m')
     (v : HashValue) : Frame [stR s₀] m (writeState s₀ m' v) := by
@@ -868,10 +868,10 @@ theorem linv_zero {s₀ : State} (hp : Pre s₀) {s₁ : State} (hebp : s₁.gpr
       (by simpa using hp.st_scr) (by decide), ← stateAt_get hp _ hk]
     rfl
   · rw [hm]; simp only [saveMem, bpOff]
-    simp (config := {decide := true}) (disch := decide) only [Mem.readW_writeW_self32, hrw]
+    simp (disch := decide) only [Mem.readW_writeW_self32, hrw]
     simp [blkAddr]
   · rw [hm]; simp only [saveMem, nOff]
-    simp (config := {decide := true}) (disch := decide) only [Mem.readW_writeW_self32]
+    simp (disch := decide) only [Mem.readW_writeW_self32]
     simp [nb]
 
 theorem restore_ok {s₀ : State} (hp : Pre s₀) {s : State} (hc : Common s₀ (nb s₀) s) :

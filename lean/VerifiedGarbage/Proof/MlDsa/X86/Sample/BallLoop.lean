@@ -122,10 +122,10 @@ theorem move_ok {s₀ : State} (hp : QPre s₀) {k : Nat} {s : State} (h : BI s�
       · rw [ifF e, ifF e]; exact h.poly jj hjj
     · rw [e10, Mem.readW_writeW_sep (coef_arg_sep hp hlt (by decide)) (by decide)]; exact h.hi
   apply WP.of_runBlock
-  simp (config := {decide := true}) only [bMove, argOp, at_, runBlock_cons, runStep_some, runBlock_nil, exec,
+  simp only [reduceCtorEq, ↓reduceIte, Nat.reduceAdd, Nat.reduceMul, Nat.reducePow, bMove, argOp, at_, runBlock_cons, runStep_some, runBlock_nil, exec,
     execAlu, readSrc, State.ea, State.load32, State.store32, State.setReg, arithFlags, State.setFlags,
     Option.map_some, Option.bind_some, hax, h.ebp, h.edi, quad_add _ _ _ rfl, eaj, eai, inj, ini, hvj, a₁, i₁,
-    rlo, ite_true, ite_false, Option.some.injEq, exists_eq_left']
+    rlo, Option.some.injEq, exists_eq_left']
   refine ⟨fin _ (by simp) (by simp) (by simp) (by simp) (by simp) (by simp) (by simp) rfl rfl rfl, ?_⟩
   simp only [eval, signBit_eq]
 
@@ -156,7 +156,7 @@ theorem sign_piece (k : Nat) :
     have hs : sg s₀ k = 1 := by
       rw [sg_eq]; simp only [Bool.not_eq_true'] at hb; rw [hb]; rfl
     apply WP.of_runBlock
-    simp (config := {decide := true}) only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc,
+    simp only [↓reduceIte, runBlock_cons, runStep_some, runBlock_nil, exec, readSrc,
       State.setReg, Option.map_some, Option.some.injEq, exists_eq_left']
     refine ⟨⟨⟨by simp [h.esp], h.rd, h.wr, h.frame⟩, h.out, by simp [h.esi], by simp [h.ecx], by simp [h.ebp],
       by simp [h.edi], by simp [h.eax], h.poly, h.lo, h.hi, by simp [h.ebx], h.lt, h.le⟩, ?_⟩
@@ -166,7 +166,7 @@ theorem sign_piece (k : Nat) :
     have hs : sg s₀ k = -1 := by
       rw [sg_eq]; simp only [Bool.not_eq_false'] at hb; rw [hb]; rfl
     apply WP.of_runBlock
-    simp (config := {decide := true}) only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc,
+    simp only [↓reduceIte, runBlock_cons, runStep_some, runBlock_nil, exec, readSrc,
       State.setReg, Option.map_some, Option.some.injEq, exists_eq_left']
     refine ⟨⟨⟨by simp [h.esp], h.rd, h.wr, h.frame⟩, h.out, by simp [h.esi], by simp [h.ecx], by simp [h.ebp],
       by simp [h.edi], by simp [h.eax], h.poly, h.lo, h.hi, by simp [h.ebx], h.lt, h.le⟩, ?_⟩
@@ -229,10 +229,10 @@ theorem shift_ok {s₀ : State} (hp : QPre s₀) {k : Nat} (hk : k < 264) {s : S
     · rw [e8, Mem.readW_writeW_sep (slots_sep hp) (by decide), Mem.readW_writeW_self32, et]
     · rw [e8, Mem.readW_writeW_self32, et]
   apply WP.of_runBlock
-  simp (config := {decide := true}) only [bShift, argOp, at_, runBlock_cons, runStep_some, runBlock_nil, exec,
+  simp only [reduceCtorEq, ↓reduceIte, Nat.reduceLeDiff, Nat.reduceAdd, Nat.reduceSub, Nat.reduceMul, Nat.reducePow, and_self, bShift, argOp, at_, runBlock_cons, runStep_some, runBlock_nil, exec,
     execAlu, execShift, readSrc, State.ea, State.load32, State.store32, State.setReg, arithFlags, State.setFlags,
     Option.map_some, Option.bind_some, h.eax, h.ebx, hdx, eaj, inj, a₁, a₂, i₂, w₁, w₂, rhi, signs_shift,
-    signs_shift_hi (G_lt s₀), ite_true, ite_false, Option.some.injEq, exists_eq_left']
+    signs_shift_hi (G_lt s₀), Option.some.injEq, exists_eq_left']
   exact fin _ (by simp) (by simp) (by simp) (by simp) (by simp) rfl rfl rfl
 
 /-! ## An iteration -/
@@ -286,9 +286,9 @@ theorem try_piece (k : Nat) (hk : k < 264) :
       have v0 := h.out (8 + k) (by omega)
       have hle : (S' s₀ k).2 ≤ 256 := st_le (L.Msg s₀) (τ s₀) k
       apply WP.of_runBlock
-      simp (config := {decide := true}) only [at_, runBlock_cons, runStep_some, runBlock_nil, exec, execAlu,
+      simp only [reduceCtorEq, ↓reduceIte, at_, runBlock_cons, runStep_some, runBlock_nil, exec, execAlu,
         readSrc, State.ea, State.load8, State.setReg, arithFlags, State.setFlags, Option.map_some,
-        Option.bind_some, h.esi, e0, i0, v0, ite_true, ite_false, Option.some.injEq, exists_eq_left']
+        Option.bind_some, h.esi, e0, i0, v0, Option.some.injEq, exists_eq_left']
       refine ⟨⟨⟨⟨by simp [h.esp], h.rd, h.wr, h.frame⟩, h.out, by simp [h.esi], by simp [h.ecx], by simp [h.ebp],
         by simp [h.edi], h.poly, h.lo, h.hi⟩, hlt, ?_⟩, ?_⟩
       · exact eq_ofNat_of_toNat (toNat_byte32 _)
@@ -317,7 +317,7 @@ theorem body_piece (k : Nat) (hk : k < 264) :
     refine ⟨⟨⟨h.esp, h.rd, h.wr, h.frame⟩, h.out, h.esi, h.ecx, h.ebp, h.edi, h.poly, h.lo, h.hi⟩, ?_⟩
     simp only [eval, h.edi, h256, toNat_ofNat32 (show (S' s₀ k).2 < 2 ^ 32 by omega)]
   · apply WP.of_runBlock
-    simp (config := {decide := true}) only [runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, readSrc,
+    simp only [reduceCtorEq, ↓reduceIte, Nat.reducePow, runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, readSrc,
       State.setReg, arithFlags, State.setFlags, Option.bind_some, Option.some.injEq, exists_eq_left']
     refine ⟨⟨⟨by simp [h.esp], h.rd, h.wr, h.frame⟩, h.out, ?_, ?_, by simp [h.ebp], by simp [h.edi], h.poly,
       h.lo, h.hi⟩, ?_⟩

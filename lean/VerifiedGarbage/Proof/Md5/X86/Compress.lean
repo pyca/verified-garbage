@@ -70,9 +70,9 @@ theorem fn_ok (r : Nat) (hr : r < 4) (b c d : Reg) (hb : b ≠ T0) (hc : c ≠ T
   simp only [T0] at hb hc hd ⊢
   apply WP.of_runBlock
   rcases (by omega : r = 0 ∨ r = 1 ∨ r = 2 ∨ r = 3) with rfl | rfl | rfl | rfl <;>
-  simp (config := {decide := true}) only [fn, T0, runBlock_cons, runStep_some,
+  simp only [↓reduceIte, and_self, fn, T0, runBlock_cons, runStep_some,
     runBlock_nil, exec, execAlu, readSrc,
-    isa, RegUpd.gpr_setReg, RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg, RegUpd.gpr_arithFlags, RegUpd.mem_arithFlags, RegUpd.rd_arithFlags, RegUpd.wr_arithFlags, ite_true, ite_false, hb, hc, hd,
+    isa, RegUpd.gpr_setReg, RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg, RegUpd.gpr_arithFlags, RegUpd.mem_arithFlags, RegUpd.rd_arithFlags, RegUpd.wr_arithFlags, hb, hc, hd,
     h₁, h₂, h₃, Option.bind_some, Option.map_some, Option.some.injEq, exists_eq_left'] <;>
   refine ⟨?_, fun x hx => by simp [hx], trivial⟩
   · rw [show roundFn 0 = F from rfl, F_eq]
@@ -106,9 +106,9 @@ theorem tail_ok (a b : Reg) (k : Nat) (T : Word) (n : Nat) (hn₁ : 1 ≤ n) (hn
   have hba : b ≠ a := fun h => hab h.symm
   simp only [T0] at h₃
   apply WP.of_runBlock
-  simp (config := {decide := true}) only [tailI, T0, runBlock_cons, runStep_some,
+  simp only [↓reduceIte, Nat.reducePow, tailI, T0, runBlock_cons, runStep_some,
     runBlock_nil, exec, execAlu, execShift, readSrc, ea_mk, State.load32, at_,
-    isa, RegUpd.gpr_setReg, RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg, RegUpd.zf_setReg, RegUpd.gpr_arithFlags, RegUpd.mem_arithFlags, RegUpd.rd_arithFlags, RegUpd.wr_arithFlags, RegUpd.zf_arithFlags, RegUpd.gpr_setFlags, RegUpd.mem_setFlags, RegUpd.rd_setFlags, RegUpd.wr_setFlags, ite_true, ite_false, hsi', hba,
+    isa, RegUpd.gpr_setReg, RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg, RegUpd.zf_setReg, RegUpd.gpr_arithFlags, RegUpd.mem_arithFlags, RegUpd.rd_arithFlags, RegUpd.wr_arithFlags, RegUpd.zf_arithFlags, RegUpd.gpr_setFlags, RegUpd.mem_setFlags, RegUpd.rd_setFlags, RegUpd.wr_setFlags, hsi', hba,
     hn₁, hn₂, and_self, h₁, h₂, h₃, hesi, hin, hx,
     Option.bind_some, Option.some.injEq, exists_eq_left']
   exact ⟨trivial, fun r hr => by simp [hr], trivial⟩
@@ -421,7 +421,7 @@ theorem stateAt_writeState {s₀ : State} (hp : Pre s₀) (m : Mem) (v : HashVal
   intro k hk
   simp only [writeState, stAddr]
   rcases (by omega : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3) with h | h | h | h <;> subst h <;>
-  simp (config := {decide := true}) (disch := decide) only [Mem.readW_writeW_self32,
+  simp (disch := decide) only [Mem.readW_writeW_self32,
     readW_writeW_st hp]
 
 theorem frame_writeState {s₀ : State} (hp : Pre s₀) {m m' : Mem} (h : Frame [stR s₀] m m')

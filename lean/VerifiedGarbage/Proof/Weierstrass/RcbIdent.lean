@@ -1,3 +1,4 @@
+import VerifiedGarbage.Proof.Framework.PowLit
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Ring
 import VerifiedGarbage.Proof.Weierstrass.Rcb

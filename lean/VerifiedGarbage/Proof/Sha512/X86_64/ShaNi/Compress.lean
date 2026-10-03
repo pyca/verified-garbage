@@ -50,11 +50,11 @@ theorem const2_ok (x : XReg) (hx : x ≠ .xmm11) (c₀ c₁ : Word) (s : State) 
       (∀ r, r ≠ .rax → s'.gpr r = s.gpr r) ∧
       s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   apply WP.of_runBlock
-  simp (config := {decide := true}) only [const2, runBlock_cons, runStep_some, runBlock_nil, exec,
+  simp only [reduceCtorEq, ↓reduceIte, Nat.reduceAdd, and_self, const2, runBlock_cons, runStep_some, runBlock_nil, exec,
     VOp.exec, isa, State.lane, RegUpd.xmm_setV, RegUpd.ymmHi_setV_128, RegUpd.gpr_setV,
     RegUpd.mem_setV, RegUpd.rd_setV, RegUpd.wr_setV, RegUpd.gpr_setReg_self, RegUpd.xmm_setReg,
     RegUpd.ymmHi_setReg, RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg, VBinOp.sse,
-    punpcklqdq_app, hx, ite_true, ite_false, Option.some.injEq, exists_eq_left']
+    punpcklqdq_app, hx, Option.some.injEq, exists_eq_left']
   refine ⟨trivial, trivial, fun r h0 h11 => ?_, fun r hr => ?_, trivial⟩
   · simp only [h0, h11, ite_false, and_self]
   · simp only [RegUpd.gpr_setV, RegUpd.gpr_setReg_of_ne _ _ hr]
@@ -174,11 +174,11 @@ theorem schedule_hi (n : Nat) (hn : 4 ≤ n) (s : State) (a₀ a₁ b₀ c₀ c�
   simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or,
     List.nodup_nil, and_true, List.reverse_cons, List.reverse_nil, List.nil_append,
     List.cons_append] at hd hd₂
-  simp (config := {decide := true}) only [runBlock_cons, runStep_some, runBlock_nil, exec,
+  simp only [reduceCtorEq, ↓reduceIte, Nat.reduceAdd, and_self, runBlock_cons, runStep_some, runBlock_nil, exec,
     VOp.exec, isa, perm2Lanes_21_0, perm2Lanes_21_1, State.lane, State.ymm, RegUpd.xmm_setV,
     RegUpd.ymmHi_setV_256, RegUpd.gpr_setV, RegUpd.mem_setV, RegUpd.rd_setV, RegUpd.wr_setV,
-    VBinOp.sse, hd, hd₂, ha, ha', hb, hc, hc', hd', hd'', split256, ite_true,
-    ite_false, Option.some.injEq, exists_eq_left']
+    VBinOp.sse, hd, hd₂, ha, ha', hb, hc, hc', hd', hd'', split256, 
+    Option.some.injEq, exists_eq_left']
   exact ⟨trivial, fun r h0 h7 => by simp only [h0, h7, ite_false, and_self], trivial⟩
 
 theorem schedule_lo (n : Nat) (hn : n < 4) (s : State)

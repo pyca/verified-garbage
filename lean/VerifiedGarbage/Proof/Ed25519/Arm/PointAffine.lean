@@ -12,7 +12,7 @@ theorem affine_eval (e : Env) :
     evalOps affineOps e 0 = e 0 * e 15 ∧ evalOps affineOps e 1 = e 1 * e 15 := ⟨rfl, rfl⟩
 
 theorem invEnv_xy (e : Env) : invEnv e 0 = e 0 ∧ invEnv e 1 = e 1 := by
-  simp (config := {decide := true}) only [invEnv, power250Env, opMul, opSqn, Function.update_apply]
+  simp only [↓reduceIte, invEnv, power250Env, opMul, opSqn, Function.update_apply]
   exact ⟨rfl, rfl⟩
 
 theorem pointAffine_ok {s : State} {base : BitVec 32} (hc : Ctx base s) (hl : AllLim s.mem base) :

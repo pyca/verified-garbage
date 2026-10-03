@@ -1,3 +1,4 @@
+import VerifiedGarbage.Proof.Framework.PowLit
 /-!
 # Square-and-multiply from the top bit
 

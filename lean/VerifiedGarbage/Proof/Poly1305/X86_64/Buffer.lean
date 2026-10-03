@@ -123,8 +123,6 @@ as a block, and a message with its last bytes buffered (`Buffered`) as its
 whole blocks and the rest.
 -/
 
-open VG.PowLit
-
 namespace VG.Proof.Poly1305.X86_64
 
 open VG VG.X86_64 VG.Impl.Poly1305.X86_64

@@ -1,5 +1,6 @@
 import VerifiedGarbage.Spec.Aes
 import VerifiedGarbage.Proof.Framework.Bitslice.Table
+import VerifiedGarbage.Proof.Framework.PowLit
 
 /-!
 # The specification's S-box, on all 256 inputs at once

@@ -22,7 +22,7 @@ theorem vector_permute_ct : ConstantTime isa VG.Proof.Sha3.permuteAArch64.pre
   intro s₁ s₂ _ _ ⟨h1, h2, hsp⟩
   refine ⟨⟨hsp, fun r hr => ?_⟩, ?_⟩
   · simp only [VectorTaint.ofRegs, Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl <;> assumption
+    rcases hr with rfl | rfl <;> with_reducible assumption
   · intro r hr
     simp [VectorTaint.ofRegs, RegSet.mem_ofList] at hr
 

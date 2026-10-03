@@ -85,9 +85,9 @@ theorem fcode_ok (g : Fn) (b c d : Reg) (s : State) (x y z : Word)
   simp only [T1, T2] at b1 c1 d1 ⊢
   apply WP.of_runBlock
   cases g <;>
-  simp (config := {decide := true}) only [fcode, T1, T2, runBlock_cons, runStep_some,
+  simp only [reduceCtorEq, ↓reduceIte, and_self, fcode, T1, T2, runBlock_cons, runStep_some,
     runBlock_nil, exec, Op2.eval, isa, RegUpd.gpr_setReg, RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg,
-    ite_true, ite_false, b1, c1, d1, hb, hc, hd,
+    b1, c1, d1, hb, hc, hd,
     Option.map_some, Option.some.injEq, exists_eq_left'] <;>
   refine ⟨rfl, fun r h1 h2 => by simp [h1, h2], ?_⟩ <;> trivial
 
@@ -108,9 +108,9 @@ theorem sum_ok (t : Nat) (a b e : Reg) (s : State) (x y z fv w : Word) (scr : Bi
   simp only [slotAddr] at hin hw
   simp only [T1, T2] at b1 b2 e1 e2 hf ⊢
   apply WP.of_runBlock
-  simp (config := {decide := true}) only [sum, T1, T2, runBlock_cons, runStep_some,
+  simp only [reduceCtorEq, ↓reduceIte, Nat.reduceLeDiff, Nat.reduceAdd, and_self, sum, T1, T2, runBlock_cons, runStep_some,
     runBlock_nil, exec, Op2.eval, isa, RegUpd.gpr_setReg, RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg, State.load32,
-    ite_true, ite_false, b1, b2, e1, e2, hbe, heb, ha, hb, he, hf, hr3, hin, hw, hs,
+    b1, b2, e2, hbe, heb, ha, hb, he, hf, hr3, hin, hw, hs,
     movw_movt, Option.map_some, Option.some.injEq, exists_eq_left']
   exact ⟨trivial, trivial, fun r h1 h2 h3 h4 => by simp [h1, h2, h3, h4], trivial⟩
 
@@ -177,9 +177,9 @@ theorem schedule_ok (t : Nat) (s : State) (M : Block) (bp scr : BitVec 32)
     have hb := hblk ht
     have ho : 4 * t < 4096 := by omega
     simp only [Impl.Sha1.Arm.schedule, ht, ite_true, T1, T2]
-    simp (config := {decide := true}) only [runBlock_cons, runStep_some,
+    simp only [reduceCtorEq, ↓reduceIte, runBlock_cons, runStep_some,
       runBlock_nil, exec, isa, RegUpd.gpr_setReg, RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg, State.load32,
-      State.store32, hr1, hr3, hi, hout, ho, hs, ite_true, ite_false, hb, Option.map_some,
+      State.store32, hr1, hr3, hi, hout, ho, hs, hb, Option.map_some,
       Option.some.injEq, exists_eq_left']
     refine ⟨trivial, trivial, trivial, fun r h1 _ => ?_⟩
     simp [h1]
@@ -193,9 +193,9 @@ theorem schedule_ok (t : Nat) (s : State) (M : Block) (bp scr : BitVec 32)
     rw [show slot (t - 14) = slot (t + 2) by simp only [slot]; omega] at e14
     rw [show slot (t - 16) = slot t by simp only [slot]; omega] at e16
     simp only [Impl.Sha1.Arm.schedule, ht, ite_false, T1, T2]
-    simp (config := {decide := true}) only [runBlock_cons, runStep_some,
+    simp only [reduceCtorEq, ↓reduceIte, Nat.reduceLeDiff, and_self, runBlock_cons, runStep_some,
       runBlock_nil, exec, Op2.eval, isa, RegUpd.gpr_setReg, RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg,
-      State.load32, State.store32, hr3, hin, hout, hs, ite_true, ite_false,
+      State.load32, State.store32, hr3, hin, hout, hs, 
       e3, e8, e14, e16, Option.map_some, Option.some.injEq, exists_eq_left']
     have hW := W_ge M (t := t) (by omega)
     rw [rotl1] at hW

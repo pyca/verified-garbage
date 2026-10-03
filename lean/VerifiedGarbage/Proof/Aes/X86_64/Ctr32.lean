@@ -662,7 +662,7 @@ theorem ctr32_ct : ConstantTime isa Proof.Aes.ctr32X86_64.pre Proof.Aes.ctr32X86
   intro s₁ s₂ _ _ ⟨h1, h2, h3, h4, h5, h6, _⟩
   refine Taint.agree_ofRegs fun r hr => ?_
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl <;> assumption
+  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption
 
 theorem ctr32_verified :
     Verified X86_64.target Impl.Aes.X86_64.ctr32 (Spec.Gcm.ctr32Contract X86_64.abi) :=

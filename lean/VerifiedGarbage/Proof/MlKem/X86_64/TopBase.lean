@@ -47,24 +47,24 @@ theorem Lay.of {rbs wbs : List (Reg × Nat)} {s : State} (small : ∀ b ∈ rbs 
 theorem fa2 {α : Type} {p : α → Prop} {a b : α} (ha : p a) (hb : p b) : ∀ x ∈ [a, b], p x := by
   intro x hx
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
-  rcases hx with rfl | rfl <;> assumption
+  rcases hx with rfl | rfl <;> with_reducible assumption
 
 theorem fa3 {α : Type} {p : α → Prop} {a b c : α} (ha : p a) (hb : p b) (hc : p c) : ∀ x ∈ [a, b, c], p x := by
   intro x hx
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
-  rcases hx with rfl | rfl | rfl <;> assumption
+  rcases hx with rfl | rfl | rfl <;> with_reducible assumption
 
 theorem fa4 {α : Type} {p : α → Prop} {a b c d : α} (ha : p a) (hb : p b) (hc : p c) (hd : p d) :
     ∀ x ∈ [a, b, c, d], p x := by
   intro x hx
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
-  rcases hx with rfl | rfl | rfl | rfl <;> assumption
+  rcases hx with rfl | rfl | rfl | rfl <;> with_reducible assumption
 
 theorem fa5 {α : Type} {p : α → Prop} {a b c d e : α} (ha : p a) (hb : p b) (hc : p c) (hd : p d) (he : p e) :
     ∀ x ∈ [a, b, c, d, e], p x := by
   intro x hx
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
-  rcases hx with rfl | rfl | rfl | rfl | rfl <;> assumption
+  rcases hx with rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption
 
 theorem pw4 {α : Type} {R : α → α → Prop} {a b c d : α} (hab : R a b) (hac : R a c) (had : R a d) (hbc : R b c)
     (hbd : R b d) (hcd : R c d) : [a, b, c, d].Pairwise R := by

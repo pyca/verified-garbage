@@ -24,7 +24,7 @@ theorem one_entry_agree {n : Nat} {rs : List Reg} (hrs : ∀ r ∈ rs, r = .r0 �
   subst e e'
   refine (ArgsKeep.refl n s).agree (ArgsKeep.refl n s') q₀
     h0.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.1 qa (one_hw h0) (one_hw h0') fun r hr => ?_
-  rcases hrs r hr with rfl | rfl | rfl | rfl <;> assumption
+  rcases hrs r hr with rfl | rfl | rfl | rfl <;> with_reducible assumption
 
 theorem seal_rel {s₀ s₀' : State} (h0 : sealArm.pre s₀) (h0' : sealArm.pre s₀') (hq : sealArm.pub s₀ s₀') :
     RelCT isa (fun a b => a = s₀ ∧ b = s₀') «seal» fun _ _ => True := by

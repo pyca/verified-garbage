@@ -92,9 +92,9 @@ theorem save_ok (s : State) {S : Addr} (hS : s.gpr .x5 = S)
       s'.sp = s.sp ∧ s'.mem = absSavedMem s S ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   rw [← hS] at hw ⊢
   refine ⟨_, by
-    simp (config := {decide := true}) only [save, saved, mov, List.map, List.cons_append,
+    simp only [reduceCtorEq, ↓reduceIte, Nat.reduceLT, Nat.reduceMul, Nat.reduceMod, and_self, save, saved, mov, List.map, List.cons_append,
       List.nil_append, runBlock_cons, runStep_some, runBlock_nil, exec, addr, State.store, Size.bytes,
-      Size.bits, State.read, gpr_write, ite_true, ite_false, Option.bind_some,
+      Size.bits, State.read, gpr_write, Option.bind_some,
       hw 2176 (by decide) (by decide), hw 2184 (by decide) (by decide), hw 2192 (by decide) (by decide),
       hw 2200 (by decide) (by decide), hw 2208 (by decide) (by decide), hw 2216 (by decide) (by decide),
       hw 2224 (by decide) (by decide)]
@@ -112,9 +112,9 @@ theorem restore_ok (s : State) {B : Addr} (hb : s.gpr .x23 = B)
         s'.gpr r = s.gpr r) ∧
       s'.sp = s.sp ∧ s'.mem = s.mem := by
   refine ⟨_, by
-    simp (config := {decide := true}) only [restore, saved, List.map, runBlock_cons, runStep_some,
+    simp only [reduceCtorEq, ↓reduceIte, Nat.reduceLT, Nat.reduceMul, Nat.reduceMod, and_self, restore, saved, List.map, runBlock_cons, runStep_some,
       runBlock_nil, exec, addr, State.load, Size.bytes, Size.bits, gpr_write, mem_write, rd_write,
-      wr_write, ite_true, ite_false, Option.bind_some, Option.map_some, hb,
+      wr_write, Option.bind_some, Option.map_some, hb,
       hr 2176 (by decide) (by decide), hr 2184 (by decide) (by decide), hr 2192 (by decide) (by decide),
       hr 2200 (by decide) (by decide), hr 2208 (by decide) (by decide), hr 2216 (by decide) (by decide),
       hr 2224 (by decide) (by decide)]
@@ -384,8 +384,8 @@ theorem rest_ok {s : State} {D : Addr} {a x n : Nat} (hn : 16 * n ≤ x)
       (∀ r ∈ preserved, r ≠ .x21 → r ≠ .x22 → s'.gpr r = s.gpr r) ∧
       s'.sp = s.sp ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   refine ⟨_, by
-    simp (config := {decide := true}) only [rest, mov, runBlock_cons, runStep_some, runBlock_nil, exec,
-      Size.bits, State.read, gpr_write, ite_true, ite_false, BitVec.setWidth_eq]
+    simp only [reduceCtorEq, ↓reduceIte, Nat.reduceLT, rest, mov, runBlock_cons, runStep_some, runBlock_nil, exec,
+      Size.bits, State.read, gpr_write, BitVec.setWidth_eq]
     rfl, ?_⟩
   have e : D + BitVec.ofNat 64 a + BitVec.ofNat 64 (16 * n) = D + BitVec.ofNat 64 (a + 16 * n) :=
     Offset.add_add _ _ _

@@ -206,7 +206,7 @@ theorem map_ct {op : List Instr} {G : Poly → Poly → Poly}
   intro s₁ s₂ _ _ ⟨h0, h1, hsp⟩
   refine ⟨hsp, fun r hr => ?_⟩
   simp only [Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl <;> assumption
+  rcases hr with rfl | rfl <;> with_reducible assumption
 
 /-! ## `add` and `sub` -/
 

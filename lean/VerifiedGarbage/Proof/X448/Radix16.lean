@@ -1,6 +1,7 @@
 import VerifiedGarbage.Proof.X448.Field
 import Batteries.Tactic.Init
 import Batteries.Logic
+import VerifiedGarbage.Proof.Framework.PowLit
 
 /-!
 # X448: radix-2¹⁶ arithmetic

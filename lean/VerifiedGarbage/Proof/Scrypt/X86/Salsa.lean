@@ -579,9 +579,7 @@ theorem sat_pre : Proof.Scrypt.salsaX86.pre satState := by
   have e : argAddr satState 0 = 0x4004 := by decide
   simp only [Proof.Scrypt.salsaX86, a0, a1, e]
   refine ⟨rfl, rfl, ?_, ?_, ?_, ?_, ?_, by decide, by decide, by decide⟩ <;>
-  · intro a h₁ h₂
-    simp only [Region.Contains, satState] at h₁ h₂
-    bv_omega
+  exact Region.disjoint_of_sep (by decide)
 
 /-! ## The shared contract -/
 

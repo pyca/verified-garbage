@@ -134,14 +134,14 @@ theorem rbVal_run {e : Nat} (he : e = 2 ∨ e = 4) (s : State) :
   have hqi : qImm = 8380417#32 := rfl
   apply WP.of_runBlock
   rcases he with rfl | rfl
-  · simp (config := {decide := true}) only [rbVal, Impl.MlDsa.X86.Sample.csub, etaSub, List.cons_append,
+  · simp only [reduceCtorEq, ↓reduceIte, Nat.reducePow, rbVal, Impl.MlDsa.X86.Sample.csub, etaSub, List.cons_append,
       List.nil_append, runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, readSrc, State.setReg,
-      arithFlags, State.setFlags, Option.bind_some, Option.map_some, BitVec.sub_self, hqi, ite_true, ite_false,
+      arithFlags, State.setFlags, Option.bind_some, Option.map_some, BitVec.sub_self, hqi, 
       Option.some.injEq, exists_eq_left']
     refine ⟨by simp [hbVal, etaV, csubV], trivial, trivial, trivial, fun r h1 h2 => by simp [h1, h2]⟩
-  · simp (config := {decide := true}) only [rbVal, etaSub, runBlock_cons, runStep_some, runBlock_nil, exec,
+  · simp only [reduceCtorEq, ↓reduceIte, Nat.reducePow, rbVal, etaSub, runBlock_cons, runStep_some, runBlock_nil, exec,
       execAlu, readSrc, State.setReg,
-      arithFlags, State.setFlags, Option.bind_some, Option.map_some, BitVec.sub_self, hqi, ite_true, ite_false,
+      arithFlags, State.setFlags, Option.bind_some, Option.map_some, BitVec.sub_self, hqi, 
       Option.some.injEq, exists_eq_left']
     refine ⟨by simp [hbVal, etaV], trivial, trivial, trivial, fun r h1 h2 => by simp [h1, h2]⟩
 
@@ -157,9 +157,9 @@ theorem store_ok {s₀ : State} (hp : BPre s₀) {t : Nat} {La : List Zq} (x : Z
     rw [ea_add (by simp only [L] at ha ⊢; omega)]; rfl
   have hin : InRegions s.wr (coeffAddr (L.aA s₀) La.length) 4 := hp.1.inA h.wr hl
   apply WP.of_runBlock
-  simp (config := {decide := true}) only [at_, runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, readSrc,
+  simp only [reduceCtorEq, ↓reduceIte, Nat.reducePow, at_, runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, readSrc,
     State.ea, State.store32, State.setReg, arithFlags, State.setFlags, Option.bind_some, h.edi, ea, hin,
-    hbx, ite_true, ite_false, Option.some.injEq, exists_eq_left']
+    hbx, Option.some.injEq, exists_eq_left']
   refine ⟨⟨⟨by simp [h.esp], h.rd, h.wr, h.frame.writeW (r := L.aR s₀) (by simp) _
     (coeff_contains _ hl)⟩, fun p hp' => ?_, by simp [h.esi], by simp [h.ebp],
     (by simp only [List.length_append, List.length_singleton]; omega), ?_, ?_, stored_snoc h.stored hl x⟩, by simp⟩
@@ -277,9 +277,9 @@ theorem load_ok {s₀ : State} (hp : BPre s₀) {t : Nat} (ht : t < 544) {s : St
   have v0 := h.out t ht
   have hl := h.len
   apply WP.of_runBlock
-  simp (config := {decide := true}) only [rbLoad, at_, runBlock_cons, runStep_some, runBlock_nil, exec,
+  simp only [reduceCtorEq, ↓reduceIte, rbLoad, at_, runBlock_cons, runStep_some, runBlock_nil, exec,
     execAlu, readSrc, State.ea, State.load8, State.setReg, arithFlags, State.setFlags,
-    Option.map_some, Option.bind_some, h.esi, e0, i0, v0, ite_true, ite_false, Option.some.injEq, exists_eq_left']
+    Option.map_some, Option.bind_some, h.esi, e0, i0, v0, Option.some.injEq, exists_eq_left']
   refine ⟨h.flags (by simp) (by simp) (by simp) (by simp) (by simp) rfl rfl rfl, ?_, ?_, ?_⟩
   · refine eq_ofNat_of_toNat ?_
     rw [show (15 : BitVec 32) = BitVec.ofNat 32 (2 ^ 4 - 1) from rfl, toNat_and_mask _ _ (by decide), toNat_byte32]
@@ -296,9 +296,9 @@ theorem hi_ok {s₀ : State} {t : Nat} {La : List Zq} {s : State} (h : Loop s₀
   have hv : s.gpr .eax >>> 4 = BitVec.ofNat 32 (hi s₀ t) := by
     rw [hax]; exact eq_ofNat_of_toNat (by rw [toNat_shr, toNat_ofNat32 (by omega)])
   apply WP.of_runBlock
-  simp (config := {decide := true}) only [rbHi, runBlock_cons, runStep_some, runBlock_nil, exec, execAlu,
+  simp only [reduceCtorEq, ↓reduceIte, Nat.reduceLeDiff, Nat.reduceEqDiff, Nat.reduceSub, and_self, rbHi, runBlock_cons, runStep_some, runBlock_nil, exec, execAlu,
     execShift, readSrc, State.setReg, arithFlags, State.setFlags, Option.map_some, Option.bind_some, hv,
-    ite_true, ite_false, Option.some.injEq, exists_eq_left']
+    Option.some.injEq, exists_eq_left']
   refine ⟨h.flags (by simp) (by simp) (by simp) (by simp) (by simp) rfl rfl rfl, by simp, by simp, ?_⟩
   simp only [eval, h.ecx, toNat_ofNat32 (show La.length < 2 ^ 32 by omega)]
   rfl
@@ -307,7 +307,7 @@ theorem end_ok {s₀ : State} {t : Nat} (ht : t < 544) {La : List Zq} {s : State
     WP isa (.block [.alu .add .esi (.imm 1), .alu .sub .ebp (.imm 1)]) s
       fun s' => Loop s₀ (t + 1) La s' ∧ eval .ne s' = some (decide (t + 1 < 544)) := by
   apply WP.of_runBlock
-  simp (config := {decide := true}) only [runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, readSrc,
+  simp only [reduceCtorEq, ↓reduceIte, Nat.reducePow, runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, readSrc,
     State.setReg, arithFlags, State.setFlags, Option.bind_some, Option.some.injEq, exists_eq_left']
   refine ⟨⟨⟨by simp [h.esp], h.rd, h.wr, h.frame⟩, h.out, ?_, ?_, h.len, by simp [h.edi], by simp [h.ecx],
     h.stored⟩, ?_⟩
@@ -388,9 +388,9 @@ theorem sel_piece : Piece BPre BPub (Out L) Sel
     have v₂ := h.args 2 (by decide)
     simp only [Nat.mul_one, Nat.reduceMul, Nat.reduceAdd] at a₁ a₂
     apply WP.of_runBlock
-    simp (config := {decide := true}) only [argOp, at_, runBlock_cons, runStep_some, runBlock_nil,
+    simp only [reduceCtorEq, ↓reduceIte, Nat.reduceAdd, Nat.reduceMul, argOp, at_, runBlock_cons, runStep_some, runBlock_nil,
       exec, execAlu, readSrc, State.ea, State.load32, State.setReg, arithFlags, State.setFlags, Option.map_some,
-      Option.bind_some, a₁, i₁, v₁, a₂, i₂, v₂, ite_true, ite_false, Option.some.injEq, exists_eq_left']
+      Option.bind_some, a₁, i₁, v₁, a₂, i₂, v₂, Option.some.injEq, exists_eq_left']
     refine ⟨⟨⟨⟨by simp [h.esp], h.rd, h.wr, h.frame⟩, h.args, by simp [h.esi]⟩, h.out⟩, by simp; rfl, ?_⟩
     simp only [eval, sub_beq_zero]
     rfl
@@ -404,7 +404,7 @@ theorem init_piece (e : Nat) (b : Bool) (hb : ∀ s₀, BPre s₀ → decide (η
   refine Piece.taint [] (fun s₀ s hp ⟨⟨h, hdi, _⟩, e⟩ => ?_) (fun _ _ _ _ _ _ _ _ _ r hr => absurd hr (by simp))
     (by taint_decide)
   apply WP.of_runBlock
-  simp (config := {decide := true}) only [runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, readSrc,
+  simp only [Nat.reducePow, runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, readSrc,
     State.setReg, arithFlags, State.setFlags, Option.bind_some, Option.map_some, Option.some.injEq,
     exists_eq_left']
   rw [LA_zero]

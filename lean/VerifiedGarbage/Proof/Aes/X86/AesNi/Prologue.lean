@@ -97,7 +97,7 @@ theorem loadArgs_ok {s₀ s : State} (hp : CPre s₀) (hs : Setup s₀ s)
   refine WP.block_nil ⟨⟨hs₅.setReg .edi (arg s₀ 4) (by decide), ?_, ?_, ?_, ?_, ?_, ?_⟩, rfl⟩
   all_goals
     dsimp only [s₆, s₅, s₄, s₃, s₂, s₁]
-    simp (config := {decide := true}) only [gpr_setReg, ite_true, ite_false]
+    simp only [reduceCtorEq, ↓reduceIte, gpr_setReg]
   exact hb
 
 

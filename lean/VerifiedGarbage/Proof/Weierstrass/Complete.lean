@@ -1,3 +1,4 @@
+import VerifiedGarbage.Proof.Framework.PowLit
 import VerifiedGarbage.Proof.Weierstrass.Affine
 import VerifiedGarbage.Proof.Weierstrass.Field
 

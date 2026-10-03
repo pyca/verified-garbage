@@ -68,13 +68,13 @@ theorem restore_ok (s : State) {B : Addr} (hb : s.gpr .r15 = B)
       s'.gpr .r15 = s.mem.readW (B + BitVec.ofNat 64 88) 64 ∧
       s'.gpr .rsp = s.gpr .rsp ∧ s'.mem = s.mem := by
   refine ⟨_, by
-    simp (config := {decide := true}) only [restore, saved, List.map, runBlock_cons, runStep_some,
+    simp only [reduceCtorEq, ↓reduceIte, restore, saved, List.map, runBlock_cons, runStep_some,
       runBlock_nil, at_, exec, readSrc, State.load64, State.ea, offset_nat, gpr_setReg, mem_setReg,
-      rd_setReg, wr_setReg, ite_true, ite_false, Option.map_some, hb,
+      rd_setReg, wr_setReg, Option.map_some, hb,
       hr 48 (by decide) (by decide), hr 56 (by decide) (by decide), hr 64 (by decide) (by decide),
       hr 72 (by decide) (by decide), hr 80 (by decide) (by decide), hr 88 (by decide) (by decide)]
     rfl, ?_⟩
-  simp (config := {decide := true}) only [gpr_setReg, mem_setReg, ite_true, ite_false]
+  simp only [reduceCtorEq, ↓reduceIte, and_self, gpr_setReg, mem_setReg]
 
 /-- The registers restored from slots that have not changed since they
 were saved, the stack pointer kept: `gprPreserved`. -/

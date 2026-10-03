@@ -17,8 +17,6 @@ the sum is carried and stored modulo `2¹²⁸` in `out` (`tag_ok`). Until then
 `scratch` change.
 -/
 
-open VG.PowLit
-
 namespace VG.Proof.Poly1305.Arm.Fin
 
 open VG VG.Arm VG.Impl.Poly1305.Arm VG.Proof.Poly1305.Arm
@@ -748,7 +746,7 @@ theorem agreef {s₁ s₂ : State} (h₁ : Proof.Poly1305.finalizeArm.pre s₁) 
   refine ⟨⟨fun r hr => ?_, fun h => nomatch h⟩, fun _ => ?_, wff h₁, wff h₂,
     fun _ h => (List.not_mem_nil h).elim, fun _ h => (List.not_mem_nil h).elim, fun _ => psp, fun k hk => ?_⟩
   · simp only [τf, RegSet.mem_ofList, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl <;> assumption
+    rcases hr with rfl | rfl | rfl <;> with_reducible assumption
   · rw [hp₁.wr, hp₂.wr]; simp only [stR, oR, oA, oP, scrR, sc, p0, a0, a1]
   · simp only [τf] at hk
     rw [argByte_eq hp₁.sp_fit hk, argByte_eq hp₂.sp_fit hk, Mem.readW_byte s₁.mem _ (Nat.mod_lt _ (by decide)),

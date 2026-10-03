@@ -412,7 +412,7 @@ theorem init_rel {s₀ s₀' : State} (h0 : initArm.pre s₀) (h0' : initArm.pre
       subst e e'
       refine Taint.agree_ofRegs fun r hr => ?_
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl | rfl <;> assumption) ⟨_, hA⟩
+      rcases hr with rfl | rfl | rfl | rfl <;> with_reducible assumption) ⟨_, hA⟩
     (fun s e => by rw [e]; exact initPre_wp hp) (fun s e => by rw [e]; exact initPre_wp hp')
   have e := rel_wp (F := IMid₁ s₀ St Kp S KL) (F' := IMid₁ s₀' St Kp S KL) (G := IAfter s₀ St S KL)
     (G' := IAfter s₀' St S KL) (ek_rel fun _ _ h => ⟨h.1.args, h.2.args⟩) (fun _ h => ek_after h)

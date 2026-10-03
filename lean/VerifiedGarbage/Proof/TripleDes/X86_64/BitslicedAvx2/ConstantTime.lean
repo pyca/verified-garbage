@@ -1,5 +1,5 @@
 import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedAvx2.Lit
-import VerifiedGarbage.Proof.TripleDes.X86_64.Bitsliced.ConstantTime
+import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedSse.ConstantTime
 
 /-!
 # Constant time
@@ -15,14 +15,23 @@ namespace VG.Proof.TripleDes.X86_64.BitslicedAvx2
 open VG VG.X86_64
 open VG.Proof.TripleDes.X86_64.Bitsliced (ecbTaint)
 
+/-! The analyses, with the summaries of the narrower code they end with. -/
+
+taint_summary encSum : taintS ecbTaint Impl.TripleDes.X86_64.BitsliceAvx2.encrypt
+  using BitslicedSse.encSum
+taint_summary decSum : taintS ecbTaint Impl.TripleDes.X86_64.BitsliceAvx2.decrypt
+  using BitslicedSse.decSum
+
 theorem encrypt_constantTime (pre : State → Prop) (pub : State → State → Prop)
     (hagree : ∀ s t, pre s → pre t → pub s t → X86_64.Taint.Agree ecbTaint s t) :
     ConstantTime isa pre pub Impl.TripleDes.X86_64.BitsliceAvx2.encrypt :=
-  VG.Taint.constantTime (A := taint) ecbTaint hagree (by taint_decide)
+  let ⟨_, h⟩ := VG.Taint.exists_check_of_sumOk encSum (by decide +kernel)
+  VG.Taint.constantTime (A := taintS) ecbTaint hagree h
 
 theorem decrypt_constantTime (pre : State → Prop) (pub : State → State → Prop)
     (hagree : ∀ s t, pre s → pre t → pub s t → X86_64.Taint.Agree ecbTaint s t) :
     ConstantTime isa pre pub Impl.TripleDes.X86_64.BitsliceAvx2.decrypt :=
-  VG.Taint.constantTime (A := taint) ecbTaint hagree (by taint_decide)
+  let ⟨_, h⟩ := VG.Taint.exists_check_of_sumOk decSum (by decide +kernel)
+  VG.Taint.constantTime (A := taintS) ecbTaint hagree h
 
 end VG.Proof.TripleDes.X86_64.BitslicedAvx2

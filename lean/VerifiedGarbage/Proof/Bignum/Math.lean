@@ -1,3 +1,4 @@
+import VerifiedGarbage.Proof.Framework.PowLit
 import Mathlib.Tactic.Ring
 import Mathlib.Data.Nat.ModEq
 import VerifiedGarbage.Spec.Rsa

@@ -84,10 +84,10 @@ theorem hintInit_piece (reqA : Bool) : Piece (HPre reqA) HPub (fun s₀ s => s =
     have s32 : Mem.Sep (argAddr s₀ 2) 4 (argAddr s₀ 3) 4 := by
       have := hp.sp'; intro x h₁ h₂; simp only [argAddr, E0] at this h₁ h₂; bv_omega
     apply WP.of_runBlock
-    simp (config := {decide := true}) only [hintInit, at_, runBlock_cons, runStep_some, runBlock_nil,
+    simp only [reduceCtorEq, ↓reduceIte, Nat.reducePow, hintInit, at_, runBlock_cons, runStep_some, runBlock_nil,
       exec, execAlu, readSrc, State.ea, State.load32, State.store32, State.setReg, arithFlags, State.setFlags,
-      Option.map_some, Option.bind_some, a₀, a₁, a₂, a₃, i₀, i₁, i₂, i₃, v₀, v₁, v₂, v₃, w₂, ite_true,
-      ite_false, Option.some.injEq, exists_eq_left']
+      Option.map_some, Option.bind_some, a₀, a₁, a₂, a₃, i₀, i₁, i₂, i₃, v₀, v₁, v₂, v₃, w₂, 
+      Option.some.injEq, exists_eq_left']
     refine ⟨by simp, rfl, rfl, (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (arg_contains (by omega)
       hp.sp'), Mem.readW_writeW_self32 _ _ _, by simp, by simp, by simp, by simp, by rw [sub_beq_zero']⟩
   · simp only [List.mem_singleton] at hr

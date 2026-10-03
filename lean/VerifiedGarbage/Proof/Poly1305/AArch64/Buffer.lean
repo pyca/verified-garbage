@@ -141,8 +141,6 @@ Bytes stored into the buffer (bytes 56–71 of the state), which leave the
 coefficients alone, and absorbing the buffer as a block.
 -/
 
-open VG.PowLit
-
 namespace VG.Proof.Poly1305.AArch64
 
 open VG VG.AArch64 VG.Impl.Poly1305.AArch64

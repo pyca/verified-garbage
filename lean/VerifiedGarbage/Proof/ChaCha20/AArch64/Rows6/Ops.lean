@@ -149,7 +149,7 @@ theorem op_ok_for (sve : Bool) (op : Op) {vs : Nat → Rows} {s : State} (h : Ho
         simp only [runBlock_cons, runBlock_nil, exec, VOp.eval, isa, runStep_some, hr, and_self,
           ite_true, Option.map_some, Option.some.injEq, exists_eq_left']
         refine ⟨fun k j hj => ?_, ⟨⟨rfl, rfl, rfl, rfl, rfl⟩,
-          by simp (config := {decide := true}) only [RegUpd.v_setV, Ne.symm (vreg_ne30 d), ite_false]⟩⟩
+          by simp only [↓reduceIte, RegUpd.v_setV, Ne.symm (vreg_ne30 d)]⟩⟩
         simp only [RegUpd.v_setV, step, get_set, vreg_inj]
         split
         · rw [vword_map2 _ _ _ hj, h d j hj, h b j hj, ror_sub _ h0 hn]

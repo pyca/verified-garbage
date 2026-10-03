@@ -72,12 +72,12 @@ theorem finEntry_ok {s : State} {Ctx St W SP : Addr} (hCtx : s.gpr .rdi = Ctx) (
   refine WP.block_append (WP.of_runBlock ⟨s₁, run₁, WP.of_runBlock ⟨s₂, run₂, ?_⟩⟩)
   refine ⟨⟨h13, h14, h15, hsp, hperm.of_eq (hrd₂.trans hrd₁) (hwr₂.trans hwr₁)⟩, ⟨?_, hR⟩, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · rw [hm₂]
-    simp (disch := first | decide | assumption) only [Mem.readW_writeW_self64, Mem.readW_writeW_sep]
+    simp (disch := first | decide | with_reducible assumption) only [Mem.readW_writeW_self64, Mem.readW_writeW_sep]
     exact BitVec.eq_of_toNat_eq (by simp)
   · rw [hm₂]
-    simp (disch := first | decide | assumption) only [Mem.readW_writeW_self64, Mem.readW_writeW_sep]
+    simp (disch := first | decide | with_reducible assumption) only [Mem.readW_writeW_self64, Mem.readW_writeW_sep]
   · rw [hm₂]
-    simp (disch := first | decide | assumption) only [Mem.readW_writeW_self64, Mem.readW_writeW_sep]
+    simp (disch := first | decide | with_reducible assumption) only [Mem.readW_writeW_self64, Mem.readW_writeW_sep]
   · refine hsv₁.frame f₂ fun r hr => ?_
     simp only [List.mem_singleton] at hr; subst hr
     exact Offset.disjoint _ (.inl (by decide)) (by omega) (by omega)

@@ -43,7 +43,7 @@ theorem lastSwap_ok {x : BitVec 32} {k : Nat} {x1 : Fe} {s₀ s : State} (h : LI
 
 theorem runI_X2 (V : Nat → Fe) : runI invSteps V X2 = V X2 := by
   simp only [runI, invSteps, IStep.run, X86.run, opOut, opVal, Function.update_apply, T0, T1, T2, T3, X2]
-  simp (config := {decide := true}) only [ite_false]
+  simp only [↓reduceIte, Nat.reduceEqDiff]
 
 /-- The inversion. -/
 theorem invert_ok {x : BitVec 32} {k : Nat} {s₀ s : State} (h : Base x k s₀ s) :

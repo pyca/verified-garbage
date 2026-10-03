@@ -13,12 +13,12 @@ theorem reduceOr_ok (s : State) :
       s'.xmm .xmm1 = reduceValue (s.xmm .xmm1) ∧
       KeepX [] [.xmm1, .xmm3] s s' := by
   refine ⟨_, by
-    simp (config := {decide := true}) only [Sse2.reduceOr, List.flatMap_cons,
+    simp only [reduceCtorEq, not_false_eq_true, Sse2.reduceOr, List.flatMap_cons,
       List.flatMap_nil, List.cons_append, List.nil_append, runBlock_cons,
       runStep_some, runBlock_nil, exec, XOp.exec, xmm_setXmm_self, xmm_setXmm_of_ne]
     rfl, ?_⟩
   constructor
-  · simp (config := {decide := true}) only [xmm_setXmm_self,
+  · simp only [xmm_setXmm_self,
       XBinOp.eval, XShiftOp.eval]
     rfl
   · constructor

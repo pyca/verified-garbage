@@ -91,7 +91,7 @@ theorem save_ok (s : State) (b : Reg) {W : Addr} (hb : s.gpr b = W) (hw : Covers
   · intro p hp
     simp only [saved, List.mem_cons, List.not_mem_nil, or_false] at hp
     rcases hp with rfl | rfl | rfl | rfl | rfl | rfl <;>
-      simp (disch := first | decide | assumption) only [hb, Mem.readW_writeW_self64, Mem.readW_writeW_sep]
+      simp (disch := first | decide | with_reducible assumption) only [hb, Mem.readW_writeW_self64, Mem.readW_writeW_sep]
   · have c : ∀ d, 128 ≤ d → d + 8 ≤ 176 → (savedR W).Contains (W + BitVec.ofNat 64 d) (64 / 8) :=
       fun d h₁ h₂ => Offset.contains _ h₁ (by omega) (by omega)
     simp only [hb]

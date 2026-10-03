@@ -153,7 +153,7 @@ theorem invSteps_valid : ∀ st ∈ invSteps, st.valid = true := by decide
 
 theorem runI_invert (V : Nat → Fe) : runI invSteps V T1 = VG.Proof.X25519.invert (V Z2) := by
   simp only [runI, invSteps, IStep.run, X86.run, opOut, opVal, Function.update_apply, T0, T1, T2, T3, Z2]
-  simp (config := {decide := true}) only [ite_true, ite_false]
+  simp only [↓reduceIte, Nat.reduceEqDiff]
   rfl
 
 end VG.Proof.X25519.X86

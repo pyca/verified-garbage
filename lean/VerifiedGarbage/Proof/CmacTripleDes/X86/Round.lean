@@ -406,8 +406,8 @@ theorem round_ok {s : State} (hok : Ok rCfg s) :
     rw [R₆ j hj, oGR, ite_eq_left hj, BitVec.getLsbD_xor, getLsbD_roundFunction _ _ hj, xorBits_cons,
       xorBits_cons, xorBits_nil, Bool.xor_false]
     have hL : bitOf (oW s₅) (64 + j) = (slotW s slotL).getLsbD j := by
-      simp (config := {decide := true}) only [bitOf, oW, show (64 + j) / 32 = 2 by omega,
-        show (64 + j) % 32 = j by omega, ite_true, ite_false]
+      simp only [reduceCtorEq, ↓reduceIte, Nat.reduceEqDiff, bitOf, oW, show (64 + j) / 32 = 2 by omega,
+        show (64 + j) % 32 = j by omega]
       rw [slotLR slotL (by decide) (by decide)]
     rw [hL, Bool.xor_comm]
     congr 1
@@ -421,9 +421,9 @@ theorem round_ok {s : State} (hok : Ok rCfg s) :
       have hbit : bitOf (oW s₅) (sAtom (pSrc j)) =
           (slotW s₅ 14).getLsbD (6 * (pSrc j / 4) + off (boxOf 0 (pSrc j / 4)) b) := by
         rw [hpos]
-        simp (config := {decide := true}) only [bitOf, oW,
+        simp only [↓reduceIte, bitOf, oW,
           Nat.div_eq_of_lt (show 6 * (pSrc j / 4) + off (boxOf 0 (pSrc j / 4)) b < 32 by omega),
-          Nat.mod_eq_of_lt (show 6 * (pSrc j / 4) + off (boxOf 0 (pSrc j / 4)) b < 32 by omega), ite_true]
+          Nat.mod_eq_of_lt (show 6 * (pSrc j / 4) + off (boxOf 0 (pSrc j / 4)) b < 32 by omega)]
       rw [hbit, slot14, y₂ _ hh b hb', boxIn_eq hx (by decide) hh ho, hi]
       simp only [hbe]
     · -- Half 1, in slot 15.
@@ -435,10 +435,10 @@ theorem round_ok {s : State} (hok : Ok rCfg s) :
       have hbit : bitOf (oW s₅) (sAtom (pSrc j)) =
           (slotW s₅ 15).getLsbD (6 * (pSrc j / 4 % 4) + off (boxOf 1 (pSrc j / 4 % 4)) b) := by
         rw [hpos]
-        simp (config := {decide := true}) only [bitOf, oW,
+        simp only [reduceCtorEq, ↓reduceIte, bitOf, oW,
           show (32 + (6 * (pSrc j / 4 % 4) + off (boxOf 1 (pSrc j / 4 % 4)) b)) / 32 = 1 by omega,
           show (32 + (6 * (pSrc j / 4 % 4) + off (boxOf 1 (pSrc j / 4 % 4)) b)) % 32 =
-            6 * (pSrc j / 4 % 4) + off (boxOf 1 (pSrc j / 4 % 4)) b by omega, ite_true, ite_false]
+            6 * (pSrc j / 4 % 4) + off (boxOf 1 (pSrc j / 4 % 4)) b by omega]
       rw [hbit, slot15, y₄ _ hm b hb', box₄, boxIn_eq hx (by decide) hm ho, hi]
       simp only [hbe]
   · rw [rd₆, rd₅]; exact rd₁

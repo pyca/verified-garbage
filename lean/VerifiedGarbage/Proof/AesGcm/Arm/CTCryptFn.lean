@@ -70,7 +70,7 @@ theorem streamEncrypt_rel {s₀ s₀' : State} (h0 : streamCryptPre s₀) (h0' :
       refine (ArgsKeep.refl 7 s).agree (ArgsKeep.refl 7 s') q₀ spf qa (sc_hw h0) (sc_hw h0')
         fun r hr => ?_
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl <;> assumption) ⟨_, by taint_decide⟩
+      rcases hr with rfl | rfl | rfl <;> with_reducible assumption) ⟨_, by taint_decide⟩
     (fun s e => by rw [e]; exact e1 h0) (fun s e => by rw [e]; exact e1 h0')
   let G₂ : State → Prop := fun s => TA s₀ (s₀.gpr .r0) (s₀.gpr .r2) (arg s₀ 6) s₀.sp s
   let G₂' : State → Prop := fun s => TA s₀' (s₀.gpr .r0) (s₀.gpr .r2) (arg s₀ 6) s₀.sp s
@@ -132,7 +132,7 @@ theorem streamDecrypt_rel {s₀ s₀' : State} (h0 : streamCryptPre s₀) (h0' :
       subst e e'
       refine (ArgsKeep.refl 7 s).agree (ArgsKeep.refl 7 s') q₀ spf qa (sc_hw h0) (sc_hw h0') fun r hr => ?_
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl <;> assumption) ⟨_, by taint_decide⟩
+      rcases hr with rfl | rfl | rfl <;> with_reducible assumption) ⟨_, by taint_decide⟩
     (fun s e => by rw [e]; exact e1 h0 rfl rfl rfl rfl rfl)
     (fun s e => by rw [e]; exact e1 h0' q₀.symm (qa 6 (by decide)).symm q₁.symm q₂.symm q₃.symm)
   have c := textAbsorb_rel L spf q₀ qa (sc_hw h0) (sc_hw h0') (hin h0) (hin h0')
