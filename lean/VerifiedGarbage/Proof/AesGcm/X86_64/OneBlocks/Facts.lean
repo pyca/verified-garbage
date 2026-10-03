@@ -33,7 +33,7 @@ theorem oneFrame_B {W D SP : Addr} {n k : Nat} (hk : k ≤ n) {m m' : Mem}
     · exact ⟨below SP 24, by simp, below_sub (by decide) (by decide)⟩
 
 theorem obFrame_B {W D SP : Addr} {n : Nat} {m m' : Mem}
-    (h : Frame (⟨W + BitVec.ofNat 64 192, 24⟩ :: obFrame W SP D (n / 16)) m m') : Frame (oneFrameB W D SP n) m m' :=
+    (h : Frame (⟨W + BitVec.ofNat 64 192, 24⟩ :: obFrame (W + BitVec.ofNat 64 16) W SP D (n / 16)) m m') : Frame (oneFrameB W D SP n) m m' :=
   h.sub fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl
@@ -90,7 +90,7 @@ theorem ctx_oneFrameB {D : Addr} {n : Nat} (hC : (⟨Ctx, 256⟩ : Region).Disjo
 /-- The parts of the state `seal` and `open` keep through `oneBlocks`. -/
 theorem st_obFrame {D : Addr} {n d k : Nat} (h : (d + k ≤ 16) ∨ (32 ≤ d ∧ d + k ≤ 48) ∨ (64 ≤ d ∧ d + k ≤ 80))
     (hD : (⟨D, n⟩ : Region).Disjoint ⟨W, 2560⟩) (t_w : (below SP 24).Disjoint ⟨W, 2560⟩) :
-    ∀ r ∈ (⟨W + BitVec.ofNat 64 192, 24⟩ :: obFrame W SP D (n / 16)),
+    ∀ r ∈ (⟨W + BitVec.ofNat 64 192, 24⟩ :: obFrame (W + BitVec.ofNat 64 16) W SP D (n / 16)),
       (⟨W + BitVec.ofNat 64 16 + BitVec.ofNat 64 d, k⟩ : Region).Disjoint r := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr

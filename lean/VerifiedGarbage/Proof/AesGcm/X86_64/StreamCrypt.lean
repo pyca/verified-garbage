@@ -1,12 +1,11 @@
-import VerifiedGarbage.Proof.AesGcm.X86_64.TextAbsorb
+import VerifiedGarbage.Proof.AesGcm.X86_64.OneBlocks.Facts
 
 /-!
-# AES-GCM on x86-64: `vg_aes_gcm_stream_encrypt` and `vg_aes_gcm_stream_decrypt`
+# AES-GCM on x86-64: the entry of `vg_aes_gcm_stream_encrypt` and `_decrypt`
 
 Untrusted: everything here is checked by Lean. The entry keeps the public
-arguments in `W` (`cryptEntry_ok`); `encrypt` then runs counter mode over the
-data (`crypt`) and absorbs the ciphertext it wrote (`textAbsorb`), and
-`decrypt` absorbs the ciphertext first.
+arguments in `W` (`cryptEntry_ok`), and what the precondition gives
+(`CryptCtx`); `streamText` follows (`StreamText.lean`).
 -/
 
 set_option linter.unusedSimpArgs false
@@ -177,13 +176,24 @@ structure CryptCtx (s : State) (Ctx St W SP D : Addr) (n : Nat) : Prop where
   rW : (⟨SP, 8⟩ : Region).Disjoint ⟨W, 2560⟩
   dE : (⟨D, n⟩ : Region).Disjoint ⟨W, 2560⟩
   rounds : (s.gpr .rsi).toNat = 10 ∨ (s.gpr .rsi).toNat = 12 ∨ (s.gpr .rsi).toNat = 14
+  /-- The stack of the call of `vg_aes_gcm_encrypt_blocks` or `_decrypt_blocks`. -/
+  t_c : (below SP 24).Disjoint ⟨Ctx, 256⟩
+  t_s : (below SP 24).Disjoint ⟨St, 80⟩
+  t_w : (below SP 24).Disjoint ⟨W, 2560⟩
+  t_d : (below SP 24).Disjoint ⟨D, n⟩
+  sp24 : 24 ≤ SP.toNat
 
 theorem CryptCtx.of {s : State} (hp : Proof.AesGcm.streamCryptPre s) :
     CryptCtx s (s.gpr .rdi) (s.gpr .rdx) (stackArg s 1) (s.gpr .rsp) (s.gpr .r9) (stackArg s 0).toNat := by
-  simp only [Proof.AesGcm.streamCryptPre, Proof.AesGcm.stk, Proof.AesGcm.ret, Proof.AesGcm.args,
+  simp only [Proof.AesGcm.streamCryptPre, Proof.AesGcm.stk24, Proof.AesGcm.ret, Proof.AesGcm.args,
     Proof.AesGcm.arg, Proof.AesGcm.rounds] at hp
-  obtain ⟨hrd, hwr, d_cs, d_cd, d_cw, d_sd, d_sw, d_sa, d_dw, d_da, d_wa, r_s, r_d, r_w, k_c, k_s, k_d, k_w,
-    wc, ws, wd, ww, wsp, hR⟩ := hp
+  obtain ⟨hrd, hwr, d_cs, d_cd, d_cw, d_sd, d_sw, d_sa, d_dw, d_da, d_wa, r_s, r_d, r_w, t_c, t_s, t_d, t_w,
+    wc, ws, wd, ww, sp24, wsp, hR⟩ := hp
+  have b8 : Region.Sub (below (s.gpr .rsp) 8) (below (s.gpr .rsp) 24) := below_sub (by decide) (by decide)
+  have k_c := t_c.sub_left b8
+  have k_s := t_s.sub_left b8
+  have k_d := t_d.sub_left b8
+  have k_w := t_w.sub_left b8
   have hA : stackArgAddr s 0 = s.gpr .rsp + BitVec.ofNat 64 8 := by simp [stackArgAddr]
   rw [hA] at hrd d_sa d_da d_wa
   have L : Lay (s.gpr .rdi) (s.gpr .rdx) (stackArg s 1) (s.gpr .rsp) := Lay.of wc ws ww d_cs d_cw d_sw k_c k_s k_w
@@ -191,7 +201,7 @@ theorem CryptCtx.of {s : State} (hp : Proof.AesGcm.streamCryptPre s) :
     rw [hrd]
     exact covers_of_mem (List.mem_append_left _ (List.mem_cons_of_mem _ (List.mem_singleton_self _)))
   refine ⟨L, ⟨?_, ?_, ?_⟩, ww, ⟨?_, ?_⟩, d_wa.symm, ⟨⟨?_, by have := (stackArg s 0).isLt; omega, wd, d_sd.symm, d_dw,
-    k_d⟩, ?_, d_cd⟩, r_d, r_s, r_w, d_dw, hR⟩
+    k_d⟩, ?_, d_cd⟩, r_d, r_s, r_w, d_dw, hR, t_c, t_s, t_w, t_d, sp24⟩
   · rw [hrd]; exact covers_of_mem (List.mem_append_left _ (List.mem_cons_self ..))
   · rw [hwr]; exact covers_of_mem (List.mem_cons_self ..)
   · rw [hwr]; exact covers_of_mem (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_self ..)))
@@ -200,183 +210,5 @@ theorem CryptCtx.of {s : State} (hp : Proof.AesGcm.streamCryptPre s) :
     rwa [add_ofNat_assoc] at this
   · rw [hwr]; exact covers_left (covers_of_mem (List.mem_cons_of_mem _ (List.mem_cons_self ..)))
   · rw [hwr]; exact covers_of_mem (List.mem_cons_of_mem _ (List.mem_cons_self ..))
-
-end VG.Proof.AesGcm.X86_64
-
-namespace VG.Proof.AesGcm.X86_64
-
-open VG VG.X86_64 VG.X86_64.RegUpd VG.Impl.AesGcm.X86_64 VG.WriteBytes
-open VG.Spec.Aes (bytesAt)
-open VG.Spec.Gcm (Block blockAt StreamRepr ctxH ctxCiph ghashInput gctr inc32)
-open VG.Proof.Gcm (Absorbed Ctr xorKs)
-
-section
-variable {Ctx St W SP D : Addr} {n : Nat}
-
-/-- The parts of the state, apart from the regions the entry, `crypt` and `textAbsorb` write. -/
-theorem st_disj {s : State} (C : CryptCtx s Ctx St W SP D n) {d k : Nat} (hk : d + k ≤ 80) :
-    (∀ r ∈ [entryR W], (⟨St + BitVec.ofNat 64 d, k⟩ : Region).Disjoint r) ∧
-    (d + k ≤ 48 → ∀ r ∈ crFrame St W SP D n, (⟨St + BitVec.ofNat 64 d, k⟩ : Region).Disjoint r) ∧
-    ((d + k ≤ 16 ∨ 48 ≤ d) → ∀ r ∈ taFrame St W SP, (⟨St + BitVec.ofNat 64 d, k⟩ : Region).Disjoint r) := by
-  have L := C.lay
-  refine ⟨fun r hr => ?_, fun h r hr => ?_, fun h r hr => ?_⟩
-  · simp only [List.mem_singleton] at hr; subst hr; exact L.st_w hk (.inr ⟨by decide, by decide⟩)
-  · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl
-    · exact (C.data.ok.st.sub_right (Lay.stSub hk)).symm
-    · exact L.st_st (.inl (by omega)) hk (by decide)
-    · exact L.st_w hk (.inr ⟨by decide, by decide⟩)
-    · exact (L.stk_st hk).symm
-  · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl
-    · exact L.st_st (by omega) hk (by decide)
-    · exact L.st_w hk (.inr ⟨by decide, by decide⟩)
-    · exact L.st_w hk (.inr ⟨by decide, by decide⟩)
-    · exact (L.stk_st hk).symm
-
-end
-
-/-- One run of `vg_aes_gcm_stream_encrypt`, for the message the state represents. -/
-theorem streamEncrypt_run (v : GcmImpl) {s : State} (hp : Proof.AesGcm.streamEncryptX86_64.pre s)
-    {iv a p : List Byte} (hA : s.gpr .rcx = BitVec.ofNat 64 a.length) (hT : (s.gpr .r8).toNat = p.length) :
-    WP isa (streamEncrypt v.callees) s fun s' => gprPreserved s s' ∧
-      let ciph := ctxCiph s.mem (s.gpr .rdi) (s.gpr .rsi).toNat
-      let h := ctxH s.mem (s.gpr .rdi)
-      (StreamRepr s.mem (s.gpr .rdx) ciph h iv a (gctr ciph (inc32 (Spec.Gcm.j0 h iv)) p) →
-        let c := gctr ciph (inc32 (Spec.Gcm.j0 h iv)) (p ++ bytesAt s.mem (s.gpr .r9) (stackArg s 0).toNat)
-        StreamRepr s'.mem (s.gpr .rdx) ciph h iv a c ∧
-          bytesAt s'.mem (s.gpr .r9) (stackArg s 0).toNat = c.drop p.length) := by
-  have C := CryptCtx.of hp
-  have hR := C.rounds
-  generalize hCtx : s.gpr .rdi = Ctx at *
-  generalize hSt : s.gpr .rdx = St at *
-  generalize hW : stackArg s 1 = W at *
-  generalize hSP : s.gpr .rsp = SP at *
-  generalize hD : s.gpr .r9 = D at *
-  generalize hn : (stackArg s 0).toNat = n at *
-  have L := C.lay
-  generalize hR' : (s.gpr .rsi).toNat = R at *
-  generalize hH : ctxH s.mem Ctx = H
-  generalize hciph : ctxCiph s.mem Ctx R = ciph
-  generalize hicb : inc32 (Spec.Gcm.j0 H iv) = icb
-  refine WP.seq (WP.mono (cryptEntry_ok hCtx hSt hD hSP hW hn C.perm C.ww C.args C.dA (by rw [hR']; exact hR))
-    fun s₁ E => ?_)
-  have hRo : RoundsAt s₁.mem W R := hR' ▸ E.rounds
-  have hcr : CrIn Ctx St W SP R icb p.length D n s₁ :=
-    ⟨E.env, E.r12, E.rbp, by rw [E.rbx, hT], C.data.of_eq E.rd E.wr, hRo⟩
-  refine WP.seq (WP.mono (WP.with_rdwr (crypt_ok v L hcr)) fun s₂ ⟨co, hrd₂, hwr₂⟩ => ?_)
-  have kc : ∀ d, 176 ≤ d → d + 8 ≤ 512 → ∀ r ∈ crFrame St W SP D n, (⟨W + BitVec.ofNat 64 d, 8⟩ : Region).Disjoint r := by
-    intro d h₁ h₂ r hr
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl
-    · exact (C.dE.sub_right (Lay.wSub (by omega))).symm
-    · exact (L.st_w (by decide) (.inr ⟨by omega, by omega⟩)).symm
-    · exact L.w_w (.inl (by omega)) (by omega) (by decide)
-    · exact (L.stk_w (by omega)).symm
-  have rd₂ : ∀ d, 176 ≤ d → d + 8 ≤ 512 → s₂.mem.readW (W + BitVec.ofNat 64 d) 64 = s₁.mem.readW (W + BitVec.ofNat 64 d) 64 :=
-    fun d h₁ h₂ => co.frame.readW (r := ⟨W + BitVec.ofNat 64 d, 8⟩) (Region.contains_self _ _) (kc d h₁ h₂) (by decide)
-  have dCE : ∀ r ∈ [entryR W], (⟨Ctx, 256⟩ : Region).Disjoint r := by
-    intro r hr; simp only [List.mem_singleton] at hr; subst hr; exact L.cw'.sub_right (Lay.wSub (by decide))
-  have hH₂ : blockAt s₂.mem (Ctx + BitVec.ofNat 64 240) = H := by
-    rw [blockAt_frame co.frame (fun r hr => (ctx_crFrame L C.data r hr).sub_left (Lay.ctxSub (by decide))),
-      blockAt_frame E.frame (fun r hr => (dCE r hr).sub_left (Lay.ctxSub (by decide))), ← hH, ctxH_eq]
-  have hta : TaIn Ctx St W SP H (s.gpr .rcx) (s.gpr .r8) D n s₂ :=
-    ⟨co.env, hH₂, by rw [rd₂ 184 (by decide) (by decide)]; exact E.alen, by rw [rd₂ 192 (by decide) (by decide)]; exact E.tlen,
-      by rw [rd₂ 200 (by decide) (by decide)]; exact E.dat, by rw [rd₂ 208 (by decide) (by decide)]; exact E.len,
-      (C.data.of_eq (hrd₂.trans E.rd) (hwr₂.trans E.wr)).ok⟩
-  refine WP.seq (WP.mono (textAbsorb_ok v L hta hA (c := gctr ciph icb p) (by rw [hT, Proof.Gcm.length_gctr]))
-    fun s₃ ⟨he₃, f₃, hab⟩ => ?_)
-  have dSa : ∀ r ∈ taFrame St W SP, (savedR W).Disjoint r := by
-    intro r hr
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl
-    · exact (L.st_w (by decide) (.inr ⟨by decide, by decide⟩)).symm
-    · exact L.w_w (.inr (by decide)) (by decide) (by decide)
-    · exact L.w_w (.inl (by decide)) (by decide) (by decide)
-    · exact (L.stk_w (by decide)).symm
-  have hsv₃ : SavedAt s₃.mem W s := (E.saved.frame co.frame (saved_crFrame L (C.data.of_eq E.rd E.wr))).frame f₃ dSa
-  have hret : s₃.mem.readW SP 64 = s.mem.readW SP 64 := by
-    rw [ret_kept f₃ (fun r hr => ?_), ret_kept co.frame (fun r hr => ?_), ret_kept E.frame (fun r hr => ?_)]
-    · simp only [List.mem_singleton] at hr; subst hr; exact C.rW.sub_right (Lay.wSub (by decide))
-    · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl | rfl
-      · exact C.rD
-      · exact C.rS.sub_right (Lay.stSub (by decide))
-      · exact C.rW.sub_right (Lay.wSub (by decide))
-      · exact ret_below SP
-    · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl | rfl
-      · exact C.rS.sub_right (Lay.stSub (by decide))
-      · exact C.rW.sub_right (Lay.wSub (by decide))
-      · exact C.rW.sub_right (Lay.wSub (by decide))
-      · exact ret_below SP
-  refine WP.mono (exit_ok he₃.r15 (by rw [he₃.rsp, hSP]) (covers_left he₃.perm.w) hsv₃ (by rw [hSP, hret]))
-    fun s' ⟨hg, hm, _⟩ => ⟨hg, fun hsr => ?_⟩
-  dsimp only at hsr ⊢
-  rw [hicb] at hsr ⊢
-  rw [Proof.Gcm.streamRepr_iff, ofNat_lit, ofNat_lit, ofNat_lit, ofNat_lit] at hsr ⊢
-  obtain ⟨hj, habs, hctr⟩ := hsr
-  rw [hicb] at hctr
-  rw [Proof.Gcm.length_gctr] at hctr
-  have dD : ∀ r ∈ [entryR W], (⟨D, n⟩ : Region).Disjoint r := by
-    intro r hr; simp only [List.mem_singleton] at hr; subst hr; exact C.dE.sub_right (Lay.wSub (by decide))
-  have hd₁ : bytesAt s₁.mem D n = bytesAt s.mem D n := bytesAt_frame E.frame dD (by have := C.data.ok.lt; omega)
-  have hc₁ : ciphOf s₁.mem Ctx R = ciph := by rw [ciph_frame E.frame dCE hR, ← hciph]; rfl
-  have hctr₁ : Ctr s₁.mem (St + BitVec.ofNat 64 48) (St + BitVec.ofNat 64 64) (ciphOf s₁.mem Ctx R) icb p.length := by
-    rw [hc₁]
-    exact hctr.congr (blockAt_frame E.frame (st_disj C (d := 48) (k := 16) (by decide)).1)
-      (blockAt_frame E.frame (st_disj C (d := 64) (k := 16) (by decide)).1)
-  have habs₂ : Absorbed s₂.mem (St + BitVec.ofNat 64 16) (St + BitVec.ofNat 64 32) H (ghashInput a (gctr ciph icb p)) := by
-    have hl := Nat.mod_lt (ghashInput a (gctr ciph icb p)).length (show 16 > 0 by decide)
-    refine (habs.congr (blockAt_frame E.frame (st_disj C (d := 16) (k := 16) (by decide)).1)
-      (bytesAt_frame E.frame (st_disj C (d := 32) (k := _ % 16) (by omega)).1 (by omega))).congr
-      (blockAt_frame co.frame ((st_disj C (d := 16) (k := 16) (by decide)).2.1 (by decide)))
-      (bytesAt_frame co.frame ((st_disj C (d := 32) (k := _ % 16) (by omega)).2.1 (by omega)) (by omega))
-  have hout := co.out hctr₁
-  rw [hd₁, hc₁] at hout
-  have hd : gctr ciph icb (p ++ bytesAt s.mem D n) = gctr ciph icb p ++ bytesAt s₂.mem D n := by
-    rw [Proof.Gcm.gctr_append, hout]
-  have dDa : ∀ r ∈ taFrame St W SP, (⟨D, n⟩ : Region).Disjoint r := by
-    intro r hr
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl
-    · exact C.data.ok.st.sub_right (Lay.stSub (by decide))
-    · exact C.dE.sub_right (Lay.wSub (by decide))
-    · exact C.dE.sub_right (Lay.wSub (by decide))
-    · exact C.data.ok.stk.symm
-  refine ⟨⟨?_, ?_, ?_⟩, ?_⟩
-  · rw [hm, ← hj]
-    simpa using (blockAt_frame f₃ ((st_disj C (d := 0) (k := 16) (by decide)).2.2 (.inl (by decide)))).trans
-      ((blockAt_frame co.frame ((st_disj C (d := 0) (k := 16) (by decide)).2.1 (by decide))).trans
-      (blockAt_frame E.frame (st_disj C (d := 0) (k := 16) (by decide)).1))
-  · rw [hm, hd]; exact hab habs₂
-  · rw [hm, hicb, Proof.Gcm.length_gctr, List.length_append, length_bytesAt]
-    have := co.ctr hctr₁
-    rw [hc₁] at this
-    exact this.congr (blockAt_frame f₃ ((st_disj C (d := 48) (k := 16) (by decide)).2.2 (.inr (by decide))))
-      (blockAt_frame f₃ ((st_disj C (d := 64) (k := 16) (by decide)).2.2 (.inr (by decide))))
-  · rw [hm, hd, List.drop_left' (Proof.Gcm.length_gctr _ _ _), bytesAt_frame f₃ dDa
-      (by have := C.data.ok.lt; omega)]
-
-end VG.Proof.AesGcm.X86_64
-
-namespace VG.Proof.AesGcm.X86_64
-
-open VG VG.X86_64 VG.X86_64.RegUpd VG.Impl.AesGcm.X86_64 VG.WriteBytes
-open VG.Spec.Aes (bytesAt)
-open VG.Spec.Gcm (Block blockAt StreamRepr ctxH ctxCiph ghashInput gctr inc32)
-open VG.Proof.Gcm (Absorbed Ctr xorKs)
-
-/-- `vg_aes_gcm_stream_encrypt`. -/
-theorem streamEncrypt_wp (v : GcmImpl) {s : State} (hp : Proof.AesGcm.streamEncryptX86_64.pre s) :
-    WP isa (streamEncrypt v.callees) s fun s' => gprPreserved s s' ∧ Proof.AesGcm.streamEncryptX86_64.post s s' := by
-  have h := WP.forall_det
-    (P := fun i : List Byte × List Byte × List Byte =>
-      s.gpr .rcx = BitVec.ofNat 64 i.2.1.length ∧ (s.gpr .r8).toNat = i.2.2.length)
-    (R := gprPreserved s)
-    (WP.mono (streamEncrypt_run v hp (iv := []) (a := List.replicate (s.gpr .rcx).toNat 0)
-      (p := List.replicate (s.gpr .r8).toNat 0) (by simp) (by simp)) fun _ h => h.1)
-    fun i hi => WP.mono (streamEncrypt_run v hp (iv := i.1) hi.1 hi.2) fun _ h => h.2
-  exact WP.mono h fun s' ⟨hg, hq⟩ => ⟨hg, fun iv a p hr hA hT => hq (iv, a, p) ⟨hA, hT⟩ hr⟩
 
 end VG.Proof.AesGcm.X86_64
