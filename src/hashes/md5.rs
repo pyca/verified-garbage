@@ -22,7 +22,7 @@ super::streaming_hash!(
     /// An incremental MD5 computation.
     Md5 {
         state: 80,
-        scratch: 14,
+        scratch: none,
         block: 64,
         output: 16,
         final_hash: 16,

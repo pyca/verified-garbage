@@ -30,8 +30,8 @@ def hash : Hash where
   compC := Impl.Md5.X86_64.compress
   initN := Spec.Md5.initApi.name
   initC := Impl.Md5.X86_64.Stream.init
-  updN := Spec.Md5.updateApi.name
-  finN := Spec.Md5.finalizeApi.name
+  updN := Spec.Md5.updateScratchApi.name
+  finN := Spec.Md5.finalizeScratchApi.name
   hmacInitN := Spec.Hmac.md5I.initApi.name
   hmacFinN := Spec.Hmac.md5I.finalizeApi.name
   iterN := Spec.Hmac.md5I.iterateApi.name
