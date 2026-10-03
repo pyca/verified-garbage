@@ -33,9 +33,9 @@ theorem advance_ok (s : State) :
       s'.zf = some (s.gpr .eax - 1 == 0) ∧ Env s s' ∧
       s'.gpr .ecx = s.gpr .ecx ∧ s'.xmm = s.xmm := by
   apply WP.of_runBlock
-  simp (config := {decide := true}) only [runBlock_cons, runStep_some, runBlock_nil,
+  simp only [reduceCtorEq, ↓reduceIte, Nat.reducePow, runBlock_cons, runStep_some, runBlock_nil,
     exec, execAlu, readSrc, Option.bind_some, gpr_setReg, gpr_arithFlags,
-    ite_true, ite_false, Option.some.injEq, exists_eq_left']
+    Option.some.injEq, exists_eq_left']
   refine ⟨True.intro, True.intro, rfl, ?_, True.intro, rfl⟩
   exact (((Env.refl s).arithFlags _ _ _).setReg .edx _ (by decide)).arithFlags _ _ _ |>.setReg .eax _ (by decide)
 

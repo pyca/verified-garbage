@@ -101,9 +101,9 @@ theorem init_piece :
     have v₁ := P0_arg hp.sp (n := 2) (i := 1) (by omega) fit hp.stk_a
     simp only [Nat.mul_zero, Nat.add_zero, Nat.mul_one, Nat.reduceAdd] at a₀ a₁
     apply WP.of_runBlock
-    simp (config := {decide := true}) only [enc12Init, at_, runBlock_cons, runStep_some, runBlock_nil,
+    simp only [reduceCtorEq, ↓reduceIte, enc12Init, at_, runBlock_cons, runStep_some, runBlock_nil,
       exec, readSrc, State.ea, State.load32, State.setReg, Option.map_some, a₀, a₁, i₀, i₁, v₀, v₁,
-      ite_true, ite_false, Option.some.injEq, exists_eq_left']
+      Option.some.injEq, exists_eq_left']
     exact ⟨by simp, rfl, rfl, by simp, by simp, by simp, Frame.refl _ _, fun j hj => absurd hj (by omega)⟩
   · simp only [List.mem_singleton] at hr
     subst hr
@@ -137,10 +137,10 @@ theorem step {s₀ : State} (hp : Pre s₀) {k : Nat} (hk : k < 128) {s : State}
   have w2 := outO 2 (by omega)
   simp only [Nat.add_zero] at w0
   apply WP.of_runBlock
-  simp (config := {decide := true}) only [enc12Body, at_, runBlock_cons, runStep_some, runBlock_nil,
+  simp only [reduceCtorEq, ↓reduceIte, Nat.reduceLeDiff, Nat.reduceEqDiff, Nat.reduceSub, Nat.reducePow, and_self, enc12Body, at_, runBlock_cons, runStep_some, runBlock_nil,
     exec, execAlu, execShift, readSrc, State.ea, State.load32, State.store8, State.setReg, arithFlags,
     State.setFlags, Reg8.reg, Option.map_some, Option.bind_some, h.esi, h.edi, e0, e1, o0, o1, o2,
-    i0, i1, w0, w1, w2, ite_true, ite_false, Option.some.injEq, exists_eq_left']
+    i0, i1, w0, w1, w2, Option.some.injEq, exists_eq_left']
   have ha := hp.f_red (2 * k) (by show 2 * k < 256; omega)
   have hb := hp.f_red (2 * k + 1) (by show 2 * k + 1 < 256; omega)
   rw [← coeffAt_eq, ← coeffAt_eq, hp.f_keep h.frame (by omega), hp.f_keep h.frame (by omega)]

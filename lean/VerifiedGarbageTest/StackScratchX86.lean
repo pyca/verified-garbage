@@ -27,7 +27,7 @@ def updateContract (stack : Nat) : Contract X86.isa :=
 
 -- The contract with the scratch argument is `Sig.scratchContract` of the one
 -- without it.
-example : Spec.Md5.updateContract X86.abi 20 =
+example : Spec.Md5.updateScratchContract X86.abi 20 =
     Sig.scratchContract X86.abi updateSig "scratch" .u64 14 (Curry.const (fun _ => True) _) updatePost
       true 20 := rfl
 
@@ -60,7 +60,7 @@ theorem update : Verified X86.target
     (Impl.StackScratch.X86.withStackScratch 140 5 Impl.Md5.X86.Stream.update)
     (updateContract (20 + 140)) :=
   X86.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 14) (stack := 20) (bytes := 140)
-    Proof.Md5.X86.Shared.update (by decide) (by lit_decide) (by lit_decide)
+    Proof.Md5.X86.Shared.updateScratch (by decide) (by lit_decide) (by lit_decide)
     (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) updatePost_local
     (by implies_sat [updateContract, updateSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
       [sat, Proof.MdStream.X86.Update.sat₀, Proof.MdStream.X86.Update.satMem, X86.arg, X86.argAddr,

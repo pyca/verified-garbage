@@ -1,4 +1,5 @@
 import VerifiedGarbage.Spec.X25519
+import VerifiedGarbage.Proof.Framework.PowLit
 
 /-!
 # X25519: the inversion `z^(p-2)` as an addition chain

@@ -25,25 +25,59 @@ theorem rotation_bounds (i : Nat) : 1 ≤ Spec.Rc2.rotation i ∧ Spec.Rc2.rotat
   have h : ∀ j < 4, 1 ≤ Spec.Rc2.rotation j ∧ Spec.Rc2.rotation j < 16 := by decide
   simpa only [Spec.Rc2.rotation, Nat.mod_mod] using h (i % 4) (Nat.mod_lt _ (by decide))
 
-theorem rotate16_ok (s : State) (r : Reg) (hr : r ≠ .x8)
+theorem wordReg_ne9 (i : Nat) : wordReg i ≠ .x9 := by
+  have h : ∀ j < 4, wordReg j ≠ .x9 := by decide
+  simpa only [wordReg, Nat.mod_mod] using h (i % 4) (Nat.mod_lt _ (by decide))
+
+/-- A zero-extended word rotated left by two shifts and a mask. -/
+theorem rotWord (x : BitVec 16) (n : Nat) (hn : 1 ≤ n) (hn' : n < 16) :
+    ((x.setWidth 64 >>> (16 - n)) ||| (x.setWidth 64 <<< n)) &&& 65535 =
+      (x.rotateLeft n).setWidth 64 := by
+  rw [maskWord]
+  apply congrArg (BitVec.setWidth 64)
+  apply BitVec.eq_of_getLsbD_eq
+  intro j hj
+  simp only [BitVec.getLsbD_setWidth, BitVec.getLsbD_or, BitVec.getLsbD_ushiftRight,
+    BitVec.getLsbD_shiftLeft, BitVec.getLsbD_rotateLeft, Nat.mod_eq_of_lt hn']
+  by_cases h : j < n
+  · simp (disch := omega) [h, hj, show j + (16 - n) < 64 by omega, Nat.add_comm]
+  · simp (disch := omega) [h, hj, show j < 64 by omega, show j - n < 64 by omega,
+      show 16 - n + j < 64 by omega, BitVec.getLsbD_of_ge]
+
+theorem mixWord2 (x k a b c : BitVec 16) :
+    (x.setWidth 64 + k.setWidth 64 + (a.setWidth 64 &&& b.setWidth 64) +
+      (c.setWidth 64 &&& ~~~(a.setWidth 64))) &&& 65535 =
+      (x + k + (a &&& b) + (~~~a &&& c)).setWidth 64 := by
+  rw [maskWord]
+  apply congrArg (BitVec.setWidth 64)
+  simp [BitVec.setWidth_add, BitVec.setWidth_not, BitVec.and_comm]
+
+theorem reverseMixWord2 (x k a b c : BitVec 16) :
+    (x.setWidth 64 - k.setWidth 64 - (a.setWidth 64 &&& b.setWidth 64) -
+      (c.setWidth 64 &&& ~~~(a.setWidth 64))) &&& 65535 =
+      (x - k - (a &&& b) - (~~~a &&& c)).setWidth 64 := by
+  rw [maskWord]
+  apply congrArg (BitVec.setWidth 64)
+  simp [BitVec.sub_eq_add_neg, BitVec.setWidth_add, BitVec.setWidth_neg_of_le,
+    BitVec.setWidth_not, BitVec.and_comm]
+
+theorem rotate16_ok (s : State) (r : Reg) (hr : r ≠ .x8) (hr9 : r ≠ .x9)
+    (hm : s.gpr .x9 = 65535)
     (x : BitVec 16) (hx : s.gpr r = x.setWidth 64)
     (n : Nat) (hn : 1 ≤ n) (hn' : n < 16) :
     ∃ s', runBlock isa (rotate16 r n) s = some s' ∧
       s'.gpr r = (x.rotateLeft n).setWidth 64 ∧ Keep [r, .x8] s s' := by
-  have hleft : 64 - n < 64 := by omega
+  have hleft : n < 64 := by omega
   have hright : 16 - n < 64 := by omega
   refine ⟨_, by
-    simp only [rotate16, mask, rr, List.cons_append, List.nil_append, runBlock_cons, runStep_some, runBlock_nil, exec, State.read, BitVec.setWidth_eq, hleft, hright, show 48 < 64 by decide, show 0 < 4096 by decide, ite_true, hr, Ne.symm hr,
-       gpr_write, BitVec.setWidth_eq,
-      ite_false]
+    simp only [rotate16, runBlock_cons, runStep_some,
+      runBlock_nil, exec, State.read, BitVec.setWidth_eq, hleft, hright, ite_true]
     rfl, ?_⟩
   constructor
-  · simp only [gpr_write, BitVec.setWidth_eq, ite_true,
-      hr, ite_false]
+  · simp only [gpr_write, BitVec.setWidth_eq, ite_true, hr, Ne.symm hr, Ne.symm hr9, ite_false,
+      show (Reg.x9 = Reg.x8) = False by decide, hm]
     rw [hx]
-    simp only [BitVec.add_zero]
-    rw [maskBits _ 16 (by decide), ← maskWord]
-    exact rotateWord x n hn hn'
+    exact rotWord x n hn hn'
   · constructor
     · intro r' hr'
       simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr'
@@ -52,11 +86,15 @@ theorem rotate16_ok (s : State) (r : Reg) (hr : r ≠ .x8)
     · simp only [rd_write]
     · simp only [wr_write]
 
+theorem rotateRight_zero64 (x : BitVec 64) : x.rotateRight 0 = x := by
+  apply BitVec.eq_of_getLsbD_eq; intro i hi
+  simp [hi]
+
 theorem mixInputs_ok (s : State) (i j : Nat) (hj : j < 64)
     (readable : InRegions (s.rd ++ s.wr) (s.gpr .x0) 128) :
     ∃ s', runBlock isa (mixInputs j i) s = some s' ∧
-      s'.gpr .x6 = (s.gpr (wordReg (i + 3)) &&& s.gpr (wordReg (i + 2))) +
-        (~~~(s.gpr (wordReg (i + 3))) &&& s.gpr (wordReg (i + 1))) ∧
+      s'.gpr .x6 = s.gpr (wordReg (i + 3)) &&& s.gpr (wordReg (i + 2)) ∧
+      s'.gpr .x7 = s.gpr (wordReg (i + 1)) &&& ~~~(s.gpr (wordReg (i + 3))) ∧
       s'.gpr .x4 = ((Spec.Rc2.scheduleAt s.mem (s.gpr .x0)).getD j 0).setWidth 64 ∧
       Keep [.x4, .x5, .x6, .x7] s s' := by
   have h₁ := wordReg_separate (i + 1)
@@ -67,22 +105,18 @@ theorem mixInputs_ok (s : State) (i j : Nat) (hj : j < 64)
   have loOff : 2 * j < 4096 := by omega
   have hiOff : 2 * j + 1 < 4096 := by omega
   refine ⟨_, by
-    simp (config := {decide := true}) only [mixInputs, loadKey, imm,
+    simp (config := {decide := true}) only [mixInputs, loadKey,
       List.cons_append, List.nil_append, runBlock_cons, runStep_some, runBlock_nil,
       exec, State.read, addr, State.load, Mem.read, Nat.mod_one, Nat.mul_one,
       Option.bind_some, Option.map_some,
        gpr_write, BitVec.setWidth_eq,
       mem_write, rd_write,
       wr_write, loOff, hiOff, lo, hi, ite_true, ite_false,
-      h₁.2.2.2.2.2.2.2.1, h₁.2.2.2.2.2.2.2.2,
-      h₃.2.2.2.2.2.2.2.1, h₃.2.2.2.2.2.2.2.2]
+      h₁.2.2.2.2.2.2.2.1, h₃.2.2.2.2.2.2.2.1]
     rfl, ?_⟩
-  refine ⟨?_, ?_, ?_⟩
-  · simp only [gpr_write, BitVec.setWidth_eq, reduceCtorEq, ite_true,
-      ite_false]
-    simp only [Nat.mul_zero, BitVec.shiftLeft_zero, BitVec.setWidth_zero]
-    have comp (x : BitVec 64) : 0#64 - x - 1#64 = ~~~x := by bv_omega
-    rw [comp]
+  refine ⟨?_, ?_, ?_, ?_⟩
+  · simp only [gpr_write, BitVec.setWidth_eq, reduceCtorEq, ite_true, ite_false]
+  · simp only [gpr_write, BitVec.setWidth_eq, reduceCtorEq, ite_true, ite_false, rotateRight_zero64]
   · simp only [gpr_write, BitVec.setWidth_eq, reduceCtorEq, ite_true, ite_false]
     change (((0#0 ++ s.mem (s.gpr .x0 + BitVec.ofNat 64 (2 * j))).setWidth 32).setWidth 64 |||
       (((0#0 ++ s.mem (s.gpr .x0 + BitVec.ofNat 64 (2 * j + 1))).setWidth 32).setWidth 64).rotateRight 56) = _
@@ -99,7 +133,7 @@ theorem mixInputs_ok (s : State) (i j : Nat) (hj : j < 64)
 
 /-- Current RC2 words in the four dedicated registers. -/
 def Words (s : State) (v : Spec.Rc2.State) : Prop :=
-  ∀ i < 4, s.gpr (wordReg i) = (v.getD i 0).setWidth 64
+  (∀ i < 4, s.gpr (wordReg i) = (v.getD i 0).setWidth 64) ∧ s.gpr .x9 = 65535
 
 def temps : List Reg := [.x8, .x3, .x4, .x5, .x6, .x7]
 def roundWrites : List Reg := temps ++ [.x19, .x20, .x21, .x22]
@@ -122,20 +156,20 @@ theorem Words.update {s s' : State} {v : Spec.Rc2.State} (h : Words s v)
     (i : Nat) (hi : i < 4) (x : BitVec 16)
     (out : s'.gpr (wordReg i) = x.setWidth 64)
     (keep : Keep (wordReg i :: temps) s s') : Words s' (v.set! i x) := by
-  intro j hj
+  refine ⟨fun j hj => ?_, (keep.reg .x9 (by simp [temps, Ne.symm (wordReg_ne9 i)])).trans h.2⟩
   by_cases he : j = i
   · subst j
     simpa [Vector.getD, hi] using out
   · have hr : wordReg j ∉ wordReg i :: temps := by
       simp only [List.mem_cons, not_or]
       exact ⟨fun e => he ((wordReg_injective j hj i hi).mp e), wordReg_not_temps j⟩
-    rw [keep.reg _ hr, h j hj]
+    rw [keep.reg _ hr, h.1 j hj]
     rw [vector_getD _ j hj, vector_getD _ j hj, Vector.getElem_set!_ne hj (Ne.symm he)]
 
 theorem Words.preserve {s s' : State} {v : Spec.Rc2.State} (h : Words s v)
-    (keep : Keep temps s s') : Words s' v := by
-  intro i hi
-  exact (keep.reg _ (wordReg_not_temps i)).trans (h i hi)
+    (keep : Keep temps s s') : Words s' v :=
+  ⟨fun i hi => (keep.reg _ (wordReg_not_temps i)).trans (h.1 i hi),
+    (keep.reg .x9 (by simp [temps])).trans h.2⟩
 
 theorem Keep.round {s s' : State} {i : Nat}
     (h : Keep (wordReg i :: temps) s s') : Keep roundWrites s s' :=
@@ -147,17 +181,18 @@ theorem Keep.round {s s' : State} {i : Nat}
     · exact List.mem_append_left _ hm)
 
 
-theorem addInputs_ok (s : State) (r : Reg) (h6 : r ≠ .x6) :
+theorem addInputs_ok (s : State) (r : Reg) (h6 : r ≠ .x6) (h7 : r ≠ .x7)
+    (h9 : r ≠ .x9) (hm : s.gpr .x9 = 65535) :
     ∃ s', runBlock isa (addInputs r) s = some s' ∧
-      s'.gpr r = (s.gpr r + s.gpr .x4 + s.gpr .x6) &&& 65535 ∧ Keep [r] s s' := by
+      s'.gpr r = (s.gpr r + s.gpr .x4 + s.gpr .x6 + s.gpr .x7) &&& 65535 ∧ Keep [r] s s' := by
   refine ⟨_, by
-    simp (config := {decide := true}) only [addInputs, mask, List.cons_append, List.nil_append,
+    simp (config := {decide := true}) only [addInputs,
       runBlock_cons, runStep_some, runBlock_nil, exec, State.read,
-      gpr_write, BitVec.setWidth_eq, Ne.symm h6, ite_true, ite_false]
+      gpr_write, BitVec.setWidth_eq, Ne.symm h6, Ne.symm h7, Ne.symm h9, ite_true,
+      ite_false]
     rfl, ?_⟩
   constructor
-  · simp only [gpr_write_self, BitVec.setWidth_eq]
-    rw [maskBits _ 16 (by decide), maskWord]
+  · simp only [gpr_write_self, BitVec.setWidth_eq, hm]
   · constructor
     · intro r' hr
       simp only [List.mem_singleton] at hr
@@ -166,17 +201,18 @@ theorem addInputs_ok (s : State) (r : Reg) (h6 : r ≠ .x6) :
     · rfl
     · rfl
 
-theorem subInputs_ok (s : State) (r : Reg) (h6 : r ≠ .x6) :
+theorem subInputs_ok (s : State) (r : Reg) (h6 : r ≠ .x6) (h7 : r ≠ .x7)
+    (h9 : r ≠ .x9) (hm : s.gpr .x9 = 65535) :
     ∃ s', runBlock isa (subInputs r) s = some s' ∧
-      s'.gpr r = (s.gpr r - s.gpr .x4 - s.gpr .x6) &&& 65535 ∧ Keep [r] s s' := by
+      s'.gpr r = (s.gpr r - s.gpr .x4 - s.gpr .x6 - s.gpr .x7) &&& 65535 ∧ Keep [r] s s' := by
   refine ⟨_, by
-    simp (config := {decide := true}) only [subInputs, mask, List.cons_append, List.nil_append,
+    simp (config := {decide := true}) only [subInputs,
       runBlock_cons, runStep_some, runBlock_nil, exec, State.read,
-      gpr_write, BitVec.setWidth_eq, Ne.symm h6, ite_true, ite_false]
+      gpr_write, BitVec.setWidth_eq, Ne.symm h6, Ne.symm h7, Ne.symm h9, ite_true,
+      ite_false]
     rfl, ?_⟩
   constructor
-  · simp only [gpr_write_self, BitVec.setWidth_eq]
-    rw [maskBits _ 16 (by decide), maskWord]
+  · simp only [gpr_write_self, BitVec.setWidth_eq, hm]
   · constructor
     · intro r' hr
       simp only [List.mem_singleton] at hr
@@ -184,6 +220,7 @@ theorem subInputs_ok (s : State) (r : Reg) (h6 : r ≠ .x6) :
     · rfl
     · rfl
     · rfl
+
 theorem mix_ok (s : State) (v : Spec.Rc2.State) (hv : Words s v)
     (i j : Nat) (hi : i < 4) (hj : j < 64)
     (readable : InRegions (s.rd ++ s.wr) (s.gpr .x0) 128) :
@@ -191,28 +228,32 @@ theorem mix_ok (s : State) (v : Spec.Rc2.State) (hv : Words s v)
       Words s' (Spec.Rc2.mix (Spec.Rc2.scheduleAt s.mem (s.gpr .x0)) j i v) ∧
       Keep (wordReg i :: temps) s s') := by
   rw [mix, List.append_assoc, WP.block_append_iff]
-  obtain ⟨s₁, run₁, composite₁, key₁, keep₁⟩ := mixInputs_ok s i j hj readable
+  obtain ⟨s₁, run₁, and₁, bic₁, key₁, keep₁⟩ := mixInputs_ok s i j hj readable
   refine WP.of_runBlock ⟨s₁, run₁, ?_⟩
   rw [WP.block_append_iff]
   have sep := wordReg_separate i
+  have hm₁ : s₁.gpr .x9 = 65535 := (keep₁.reg .x9 (by decide)).trans hv.2
   obtain ⟨s₂, run₂, out₂, keep₂⟩ := addInputs_ok s₁ (wordReg i)
-    sep.2.2.2.2.2.2.2.1
+    sep.2.2.2.2.2.2.2.1 sep.2.2.2.2.2.2.2.2 (wordReg_ne9 i) hm₁
   refine WP.of_runBlock ⟨s₂, run₂, ?_⟩
   let x := v.getD i 0 + (Spec.Rc2.scheduleAt s.mem (s.gpr .x0)).getD j 0 +
     (v.getD ((i + 3) % 4) 0 &&& v.getD ((i + 2) % 4) 0) +
     (~~~(v.getD ((i + 3) % 4) 0) &&& v.getD ((i + 1) % 4) 0)
   have wordmod (j : Nat) : wordReg j = wordReg (j % 4) := by simp [wordReg]
   have value₂ : s₂.gpr (wordReg i) = x.setWidth 64 := by
-    rw [out₂, key₁, composite₁, keep₁.reg (wordReg i) (by
+    rw [out₂, key₁, and₁, bic₁, keep₁.reg (wordReg i) (by
       simp only [List.mem_cons, List.not_mem_nil, or_false, not_or]
       exact ⟨sep.2.2.2.2.2.1, sep.2.2.2.2.2.2.1,
-        sep.2.2.2.2.2.2.2.1, sep.2.2.2.2.2.2.2.2⟩), hv i hi,
+        sep.2.2.2.2.2.2.2.1, sep.2.2.2.2.2.2.2.2⟩), hv.1 i hi,
       wordmod (i + 3), wordmod (i + 2), wordmod (i + 1),
-      hv _ (Nat.mod_lt _ (by decide)), hv _ (Nat.mod_lt _ (by decide)),
-      hv _ (Nat.mod_lt _ (by decide))]
-    exact mixWord _ _ _ _ _
+      hv.1 _ (Nat.mod_lt _ (by decide)), hv.1 _ (Nat.mod_lt _ (by decide)),
+      hv.1 _ (Nat.mod_lt _ (by decide))]
+    exact mixWord2 _ _ _ _ _
   have hn := rotation_bounds i
-  obtain ⟨s₃, run₃, out₃, keep₃⟩ := rotate16_ok s₂ (wordReg i) sep.1 x value₂ _ hn.1 hn.2
+  have hm₂ : s₂.gpr .x9 = 65535 :=
+    (keep₂.reg .x9 (by simp [Ne.symm (wordReg_ne9 i)])).trans hm₁
+  obtain ⟨s₃, run₃, out₃, keep₃⟩ := rotate16_ok s₂ (wordReg i) sep.1 (wordReg_ne9 i) hm₂ x value₂ _
+    hn.1 hn.2
   refine WP.of_runBlock ⟨s₃, run₃, ?_⟩
   have k₁ : Keep (wordReg i :: temps) s s₁ := keep₁.weaken (by
     intro r hr
@@ -271,8 +312,8 @@ theorem reverseMix_ok (s : State) (v : Spec.Rc2.State) (hv : Words s v)
   rw [reverseMix, List.append_assoc, WP.block_append_iff]
   have sep := wordReg_separate i
   have hn := rotation_bounds i
-  obtain ⟨s₁, run₁, out₁, keep₁⟩ := rotate16_ok s (wordReg i) sep.1 (v.getD i 0)
-    (hv i hi) (16 - Spec.Rc2.rotation i) (by omega) (by omega)
+  obtain ⟨s₁, run₁, out₁, keep₁⟩ := rotate16_ok s (wordReg i) sep.1 (wordReg_ne9 i) hv.2 (v.getD i 0)
+    (hv.1 i hi) (16 - Spec.Rc2.rotation i) (by omega) (by omega)
   rw [rotateLeft_reverse _ _ hn.1 hn.2] at out₁
   refine WP.of_runBlock ⟨s₁, run₁, ?_⟩
   rw [WP.block_append_iff]
@@ -281,9 +322,13 @@ theorem reverseMix_ok (s : State) (v : Spec.Rc2.State) (hv : Words s v)
     exact ⟨Ne.symm sep.2.2.2.1, by decide⟩)
   have read₁ : InRegions (s₁.rd ++ s₁.wr) (s₁.gpr .x0) 128 := by
     rw [keep₁.rd, keep₁.wr, ptr₁]; exact readable
-  obtain ⟨s₂, run₂, composite₂, key₂, keep₂⟩ := mixInputs_ok s₁ i j hj read₁
+  have hm₁ : s₁.gpr .x9 = 65535 :=
+    (keep₁.reg .x9 (by simp [Ne.symm (wordReg_ne9 i)])).trans hv.2
+  obtain ⟨s₂, run₂, and₂, bic₂, key₂, keep₂⟩ := mixInputs_ok s₁ i j hj read₁
   refine WP.of_runBlock ⟨s₂, run₂, ?_⟩
-  obtain ⟨s₃, run₃, out₃, keep₃⟩ := subInputs_ok s₂ (wordReg i) sep.2.2.2.2.2.2.2.1
+  have hm₂ : s₂.gpr .x9 = 65535 := (keep₂.reg .x9 (by decide)).trans hm₁
+  obtain ⟨s₃, run₃, out₃, keep₃⟩ := subInputs_ok s₂ (wordReg i)
+    sep.2.2.2.2.2.2.2.1 sep.2.2.2.2.2.2.2.2 (wordReg_ne9 i) hm₂
   refine WP.of_runBlock ⟨s₃, run₃, ?_⟩
   have other (d : Nat) (hd : 1 ≤ d) (hd' : d < 4) :
       s₁.gpr (wordReg (i + d)) = (v.getD ((i + d) % 4) 0).setWidth 64 := by
@@ -291,7 +336,7 @@ theorem reverseMix_ok (s : State) (v : Spec.Rc2.State) (hv : Words s v)
       simp only [List.mem_cons, List.not_mem_nil, or_false, not_or]
       exact ⟨wordReg_offset_ne i hi d hd hd', (wordReg_separate _).1⟩),
       wordReg_mod (i + d)]
-    exact hv _ (Nat.mod_lt _ (by decide))
+    exact hv.1 _ (Nat.mod_lt _ (by decide))
   have keptWord := keep₂.reg (wordReg i) (by
     simp only [List.mem_cons, List.not_mem_nil, or_false, not_or]
     exact ⟨sep.2.2.2.2.2.1, sep.2.2.2.2.2.2.1,
@@ -301,27 +346,27 @@ theorem reverseMix_ok (s : State) (v : Spec.Rc2.State) (hv : Words s v)
         (Spec.Rc2.scheduleAt s.mem (s.gpr .x0)).getD j 0 -
         (v.getD ((i + 3) % 4) 0 &&& v.getD ((i + 2) % 4) 0) -
         (~~~(v.getD ((i + 3) % 4) 0) &&& v.getD ((i + 1) % 4) 0)).setWidth 64 := by
-    rw [out₃, keptWord, out₁, key₂, composite₂, keep₁.mem, ptr₁,
+    rw [out₃, keptWord, out₁, key₂, and₂, bic₂, keep₁.mem, ptr₁,
       other 3 (by decide) (by decide), other 2 (by decide) (by decide),
       other 1 (by decide) (by decide)]
-    exact reverseMixWord _ _ _ _ _
+    exact reverseMixWord2 _ _ _ _ _
   have keep := ((keep_rotate keep₁).trans (keep_inputs keep₂ i)).trans (keep_word keep₃)
   exact ⟨hv.update i hi _ value₃ keep, keep⟩
 
-theorem adjust_ok (s : State) (r : Reg) (sub : Bool) :
+theorem adjust_ok (s : State) (r : Reg) (sub : Bool) (h9 : r ≠ .x9)
+    (hm : s.gpr .x9 = 65535) :
     ∃ s', runBlock isa (adjust sub r) s = some s' ∧
       s'.gpr r = (if sub then s.gpr r - s.gpr .x8 else s.gpr r + s.gpr .x8) &&& 65535 ∧
       Keep [r] s s' := by
   cases sub <;> refine ⟨_, by
-    simp (config := {decide := true}) only [adjust, mask, List.cons_append, List.nil_append,
+    simp (config := {decide := true}) only [adjust,
       ite_false, ite_true, runBlock_cons, runStep_some,
       runBlock_nil, exec, State.read, gpr_write, BitVec.setWidth_eq]
     rfl, ?_⟩
   all_goals
     constructor
     · simp only [gpr_write_self, BitVec.setWidth_eq, Bool.false_eq_true,
-        ite_false, ite_true]
-      rw [maskBits _ 16 (by decide), maskWord]
+        ite_false, ite_true, Ne.symm h9, hm]
     · constructor
       · intro r' hr
         simp only [List.mem_singleton] at hr
@@ -371,10 +416,11 @@ theorem mash_ok (direction : Spec.Rc2.Direction) (s : State)
   have out₂ : s₂.gpr .x8 = key.setWidth 64 := by
     rw [h₂.1, keep₁.mem, ptr₁]
     change (k.getD (((s.gpr (wordReg (i + 3))).setWidth 6).toNat) 0).setWidth 64 = _
-    rw [wordReg_mod (i + 3), hv _ (Nat.mod_lt _ (by decide)), indexWord]
+    rw [wordReg_mod (i + 3), hv.1 _ (Nat.mod_lt _ (by decide)), indexWord]
   have keep₂ : Keep temps s₁ s₂ := h₂.2
-  have value₂ := ((hv.preserve keep₁).preserve keep₂) i hi
+  have value₂ := ((hv.preserve keep₁).preserve keep₂).1 i hi
   obtain ⟨s₃, run₃, out₃, keep₃⟩ := adjust_ok s₂ (wordReg i) (direction == .decrypt)
+    (wordReg_ne9 i) ((hv.preserve keep₁).preserve keep₂).2
   refine WP.of_runBlock ⟨s₃, run₃, ?_⟩
   have keep : Keep (wordReg i :: temps) s s₃ :=
     ((keep₁.trans keep₂).weaken (fun _ hr => List.mem_cons_of_mem _ hr)).trans (keep_word keep₃)

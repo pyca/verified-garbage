@@ -51,7 +51,7 @@ theorem pro_piece {p : Params} (hF : PFacts p) {S : Nat} :
     obtain ⟨esp, _, e0, e1, e2, e3⟩ := kgPub_eq pub
     refine ⟨esp, fun r hr => ?_⟩
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl <;> assumption
+    rcases hr with rfl | rfl | rfl | rfl <;> with_reducible assumption
 
 /-! ## The seeds -/
 

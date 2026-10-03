@@ -22,8 +22,6 @@ Untrusted: everything here is checked by Lean. What the instructions of
 * `hInv` computes `H · x⁻¹` (`x_φ_hInv`).
 -/
 
-open VG.PowLit
-
 namespace VG.Proof.Gcm.X86.Pclmul
 
 open Polynomial

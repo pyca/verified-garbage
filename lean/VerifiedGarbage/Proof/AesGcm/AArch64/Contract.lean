@@ -1,5 +1,6 @@
 import VerifiedGarbage.Spec.Gcm.Contract
 import VerifiedGarbage.TCB.AArch64.Target
+import VerifiedGarbage.Proof.Framework.PowLit
 
 /-!
 # AES-GCM on AArch64: the contracts the proofs are written against

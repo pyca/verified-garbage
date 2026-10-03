@@ -1,4 +1,4 @@
-import VerifiedGarbage.Impl.Rc2.AArch64.Block
+import VerifiedGarbage.Impl.Rc2.AArch64.CbcVec
 
 /-! # RC2-CBC on baseline AArch64
 
@@ -52,6 +52,17 @@ def cbc (d : Spec.Rc2.Direction) : Prog isa :=
 
 def encrypt : Prog isa := cbc .encrypt
 
-def decrypt : Prog isa := cbc .decrypt
+/-- Decryption: groups of eight blocks in the vector registers
+(`Impl/Rc2/AArch64/CbcVec.lean`), then the blocks left one at a time. -/
+def decrypt : Prog isa :=
+  .seq (.block (save ++ setup))
+    (.seq (.seq Vec.phase (.ite (.zero .x .x24) (.block []) (.loop (body .decrypt) (.nonzero .x .x24))))
+      (.block restore))
+
+/-- The function for direction `d`. -/
+def code (d : Spec.Rc2.Direction) : Prog isa :=
+  match d with
+  | .encrypt => encrypt
+  | .decrypt => decrypt
 
 end VG.Impl.Rc2.AArch64.Cbc

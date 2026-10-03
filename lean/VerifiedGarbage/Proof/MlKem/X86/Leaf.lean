@@ -93,8 +93,8 @@ theorem restore_run (s : State)
   have h0 := h 0 (by omega)
   simp only [Nat.reduceMul] at h8 h4 h0
   apply WP.of_runBlock
-  simp (config := {decide := true}) only [restore, at_, runBlock_cons, runStep_some, runBlock_nil, exec,
-    readSrc, State.ea, State.load32, State.setReg, Option.map_some, h8, h4, h0, ite_true, ite_false,
+  simp only [reduceCtorEq, ↓reduceIte, restore, at_, runBlock_cons, runStep_some, runBlock_nil, exec,
+    readSrc, State.ea, State.load32, State.setReg, Option.map_some, h8, h4, h0, 
     Option.some.injEq, exists_eq_left']
   rfl
 

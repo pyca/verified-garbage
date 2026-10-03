@@ -130,7 +130,7 @@ theorem pad_ct : ConstantTime isa Proof.Sha3.padX86_64.pre Proof.Sha3.padX86_64.
   intro s₁ s₂ _ _ ⟨h1, h2, h3, h4, h5⟩
   refine Taint.agree_ofRegs fun r hr => ?_
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl | rfl <;> assumption
+  rcases hr with rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption
 
 theorem pad_verified :
     Verified X86_64.target Impl.Sha3.X86_64.Stream.pad (Spec.Sha3.padContract X86_64.abi 8) :=

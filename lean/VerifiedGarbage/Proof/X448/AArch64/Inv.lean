@@ -79,7 +79,7 @@ theorem invert_spec (base : Addr) : ISpec base Impl.X448.AArch64.invert invEnv :
   exact h
 
 theorem invEnv_eval (e : Env) : invEnv e 21 = Proof.X448.invert (e 2) := by
-  simp (config := {decide := true}) only [invEnv, applyOps, FieldOp.apply, opMul, opCopy, opSqn,
+  simp only [↓reduceIte, invEnv, applyOps, FieldOp.apply, opMul, opCopy, opSqn,
     Function.update_apply]
   rfl
 

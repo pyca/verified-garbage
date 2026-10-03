@@ -150,9 +150,9 @@ theorem addInputs_ok (s : State) (r : Reg) (h6 : r ≠ .r10) :
     ∃ s', runBlock isa (addInputs r) s = some s' ∧
       s'.gpr r = (s.gpr r + s.gpr .r8 + s.gpr .r10) &&& 65535 ∧ Keep [r] s s' := by
   refine ⟨_, by
-    simp (config := {decide := true}) only [addInputs, mask, List.cons_append, List.nil_append,
+    simp only [↓reduceIte, Nat.reduceLeDiff, Nat.reduceSub, and_self, addInputs, mask, List.cons_append, List.nil_append,
       runBlock_cons, runStep_some, runBlock_nil, exec, Op2.eval, Option.map_some,
-      gpr_setReg, Ne.symm h6, ite_true, ite_false]
+      gpr_setReg, Ne.symm h6]
     rfl, ?_⟩
   constructor
   · simp only [gpr_setReg_self]
@@ -318,8 +318,8 @@ theorem adjust_ok (s : State) (r : Reg) (sub : Bool) :
       s'.gpr r = (if sub then s.gpr r - s.gpr .r12 else s.gpr r + s.gpr .r12) &&& 65535 ∧
       Keep [r] s s' := by
   cases sub <;> refine ⟨_, by
-    simp (config := {decide := true}) only [adjust, mask, List.cons_append, List.nil_append,
-      ite_false, ite_true, runBlock_cons, runStep_some,
+    simp only [reduceCtorEq, ↓reduceIte, Nat.reduceLeDiff, Nat.reduceSub, and_self, adjust, mask, List.cons_append, List.nil_append,
+      runBlock_cons, runStep_some,
       runBlock_nil, exec, Op2.eval, Option.map_some, gpr_setReg]
     rfl, ?_⟩
   all_goals

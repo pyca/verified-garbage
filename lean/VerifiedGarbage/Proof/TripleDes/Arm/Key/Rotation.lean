@@ -40,8 +40,8 @@ theorem lowTest_ok (s : State) (j : Nat) (hj : j < 16)
     ∃ s', runBlock isa [.mov .r4 (.shifted .r9 .lsr 1), .cmp .r4 (.imm 0)] s = some s' ∧
       isa.eval .eq s' = some (decide (j < 2)) ∧ Keep [.r4] s s' := by
   refine ⟨_, by
-    simp (config := {decide := true}) only [runBlock_cons, runStep_some, runBlock_nil,
-      exec, Op2.eval, Option.map_some, gpr_setReg, ite_true]
+    simp only [↓reduceIte, Nat.reduceLeDiff, and_self, runBlock_cons, runStep_some, 
+      exec, Op2.eval, Option.map_some, gpr_setReg]
     rfl, ?_, ?_⟩
   · change some (((s.gpr .r9 >>> 1) - 0) == 0) = _
     have hz : (s.gpr .r9 >>> 1) - (0 : BitVec 32) = s.gpr .r9 >>> 1 := by bv_omega

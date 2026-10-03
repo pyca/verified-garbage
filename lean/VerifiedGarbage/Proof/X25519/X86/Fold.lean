@@ -28,8 +28,8 @@ structure MulUpd (s s' : State) (r : Reg) : Prop where
 theorem wp_mul {is : List Instr} {s : State} {Q : State → Prop} {r : Reg}
     (k : ∀ s', MulUpd s s' r → WP isa (.block is) s' Q) : WP isa (.block (.mul r :: is)) s Q := by
   refine Wp.cons (s' := execMul r s) rfl (k _ ⟨?_, ?_, fun q h₁ h₂ => ?_, rfl, rfl, rfl⟩)
-  · simp (config := {decide := true}) only [execMul, v, RegUpd.gpr_setReg, RegUpd.gpr_setFlags,
-      ite_false, ite_true, BitVec.toNat_ofNat]
+  · simp only [reduceCtorEq, ↓reduceIte, Nat.reducePow, execMul, v, RegUpd.gpr_setReg, 
+      BitVec.toNat_ofNat]
   · simp only [execMul, v, RegUpd.gpr_setReg, RegUpd.gpr_setFlags, BitVec.toNat_ofNat, ite_true]
     have := Nat.mul_lt_mul_of_lt_of_lt (s.gpr .eax).isLt (s.gpr r).isLt
     exact Nat.mod_eq_of_lt (by rw [Nat.div_lt_iff_lt_mul (Nat.two_pow_pos _)]; omega_using [this])

@@ -471,7 +471,7 @@ theorem agree₀ {s₁ s₂ : State} (h₁ : APre s₁) (h₂ : APre s₂) (hpub
   refine ⟨⟨fun r hr => ?_, fun h => nomatch h⟩, fun _ => ?_, wf₀ h₁, wf₀ h₂,
     fun _ h => (List.not_mem_nil h).elim, fun _ h => (List.not_mem_nil h).elim, fun _ => psp, fun k hk => ?_⟩
   · simp only [τ₀, RegSet.mem_ofList, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl <;> assumption
+    rcases hr with rfl | rfl | rfl | rfl <;> with_reducible assumption
   · rw [h₁.wr, h₂.wr]
     simp only [ctxR, dR, cx, dp, cP, dP, L, p0, p3, a0]
   · simp only [τ₀] at hk

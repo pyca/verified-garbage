@@ -1,4 +1,5 @@
 import VerifiedGarbage.Spec.X25519
+import VerifiedGarbage.Proof.Framework.PowLit
 
 /-!
 # X25519: field elements as natural numbers

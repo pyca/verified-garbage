@@ -27,7 +27,7 @@ theorem loadLast_ok (s : State) (r : Fin 4)
       Same s u := by
   have ha : (16 * r.val) % 16 = 0 ∧ 16 * r.val < 4096 * 16 := by omega
   apply WP.of_runBlock
-  simp (config := {decide := true}) only [runBlock_cons,runBlock_nil,exec,addr,ha,and_self,ite_true,
+  simp only [↓reduceIte, Nat.reduceMul, runBlock_cons,runBlock_nil,exec,addr,ha,and_self,
     State.load,hi,Option.bind_some,Option.map_some,isa,runStep_some,Option.some.injEq,
     exists_eq_left',RegUpd.v_setV_self]
   exact ⟨trivial,rfl,rfl,rfl,rfl,rfl⟩

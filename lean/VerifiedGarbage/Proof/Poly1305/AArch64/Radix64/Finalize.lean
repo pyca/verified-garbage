@@ -12,8 +12,6 @@ import VerifiedGarbage.Proof.Framework.Omega
 # Poly1305 on AArch64: `finalize`
 -/
 
-open VG.PowLit
-
 namespace VG.Proof.Poly1305.AArch64.Radix64
 
 open VG VG.AArch64 VG.Proof.Poly1305.AArch64
@@ -294,7 +292,7 @@ theorem storeTag_ok (s : State) (hout : (⟨s.gpr .x3, 16⟩ : Region) ∈ s.wr)
   have o8 : InRegions s.wr (off (s.gpr .x3) 8) 8 := ⟨_, hout, contains_off (by decide) (by decide)⟩
   simp only [off] at o0 o8
   apply WP.of_runBlock
-  simp (config := {decide := true}) only [storeTag, runBlock_cons, runStep_some, runBlock_nil,
+  simp only [storeTag, runBlock_cons, runStep_some, runBlock_nil,
     exec_str_x (show 0 % 8 = 0 ∧ 0 < 32768 by decide) o0, exec_str_x (show 8 % 8 = 0 ∧ 8 < 32768 by decide),
     o8, Option.some.injEq, exists_eq_left']
   refine ⟨?_, ?_, ?_⟩
@@ -419,7 +417,7 @@ theorem finalize_ct : ConstantTime isa Proof.Poly1305.finalizeAArch64.pre
   intro s₁ s₂ _ _ ⟨h1, h2, h3, hsp⟩
   refine ⟨hsp, fun r hr => ?_⟩
   simp only [VG.AArch64.Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl <;> assumption
+  rcases hr with rfl | rfl | rfl <;> with_reducible assumption
 
 theorem finalize_verified :
     Verified AArch64.target Impl.Poly1305.AArch64.Radix64.finalize (Spec.Poly1305.finalizeContract

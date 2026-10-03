@@ -2,7 +2,7 @@ import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Steps
 
 namespace VG.Proof.Poly1305.AArch64.Radix64
 open VG VG.AArch64 VG.AArch64.RegUpd VG.Impl.Poly1305.AArch64.Radix64
-open VG.Proof.Poly1305.Limbs64 VG.PowLit
+open VG.Proof.Poly1305.Limbs64
 open VG.Spec.Poly1305 (P)
 
 theorem select_zero (x y : BitVec 64) : x ^^^ ((y ^^^ x) &&& ((0 : BitVec 64) - 0)) = x := by

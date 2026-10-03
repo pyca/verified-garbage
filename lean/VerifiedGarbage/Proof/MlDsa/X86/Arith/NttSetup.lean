@@ -95,9 +95,9 @@ theorem setup_piece (T : List Nat) (z : Nat) {hh : Taint.Hint VG.X86.Taint.T}
       rw [f₁.readW (Region.contains_self _ _) hsa (by decide), h.mem]
       exact P0_arg hp.sp (n := 2) (i := 0) (by omega) fit (by simpa [← hp.stk_eq'] using hp.stk_a)
     apply WP.of_runBlock
-    simp (config := {decide := true}) only [runBlock_cons, runStep_some, runBlock_nil, exec, execAlu,
+    simp only [reduceCtorEq, ↓reduceIte, Nat.reducePow, runBlock_cons, runStep_some, runBlock_nil, exec, execAlu,
       readSrc, State.ea, at_, State.load32, State.store32, State.setReg, arithFlags, State.setFlags,
-      Option.map_some, Option.bind_some, a20, a24, in0, in1, v0, ite_true, ite_false, Option.some.injEq,
+      Option.map_some, Option.bind_some, a20, a24, in0, in1, v0, Option.some.injEq,
       exists_eq_left']
     have hs1 : Frame [polyRegion (sA s₀)] (P0 s₀).mem s₁.mem := h.mem ▸ f₁
     refine ⟨by simp [esp₁], rd₁, wr₁, by simp [eax₁], ?_, ?_, ?_, ?_, ?_⟩

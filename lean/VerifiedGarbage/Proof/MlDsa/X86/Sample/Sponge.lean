@@ -175,9 +175,9 @@ theorem zstep {s₀ : State} (hp : Pre L s₀) {k : Nat} (hk : k < 50) {s : Stat
   have fr : Frame [L.sR s₀] s.mem (s.mem.writeW (L.sA s₀ + BitVec.ofNat 64 (4 * k)) (0 : BitVec 32)) :=
     (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (contains_at (by omega) hs)
   apply WP.of_runBlock
-  simp (config := {decide := true}) only [zeroBody, at_, runBlock_cons, runStep_some, runBlock_nil, exec,
+  simp only [reduceCtorEq, ↓reduceIte, Nat.reducePow, zeroBody, at_, runBlock_cons, runStep_some, runBlock_nil, exec,
     execAlu, readSrc, State.ea, State.store32, State.setReg, arithFlags, State.setFlags,
-    Option.bind_some, h.ebx, ea, hin, ite_true, ite_false, Option.some.injEq, exists_eq_left']
+    Option.bind_some, h.ebx, ea, hin, Option.some.injEq, exists_eq_left']
   refine ⟨⟨⟨⟨by simp [h.esp], h.rd, h.wr, ?_⟩, ?_, by simp [h.esi]⟩, ?_, ?_, by simp [h.eax], ?_⟩, ?_⟩
   · exact h.frame.writeW (r := L.sR s₀) (by simp) _ (contains_at (by omega) hs)
   · rw [h.eax]
@@ -230,16 +230,16 @@ theorem absArgs_piece (hL : L.Ok) : Piece (Pre L) (PubP L) (Z L)
     cases hm : L.mlen with
     | some k =>
       rw [hm] at e
-      simp (config := {decide := true}) only [absArgs, Lay.lenSrc, hm, argOp, at_, runBlock_cons, runStep_some,
+      simp only [reduceCtorEq, ↓reduceIte, Nat.reduceAdd, Nat.reduceMul, Nat.reducePow, absArgs, Lay.lenSrc, hm, argOp, at_, runBlock_cons, runStep_some,
         runBlock_nil, exec, execAlu, readSrc, State.ea, State.load32, State.setReg, arithFlags, State.setFlags,
-        Option.map_some, Option.bind_some, a₀, i₀, v₀, ite_true, ite_false, Option.some.injEq, exists_eq_left']
+        Option.map_some, Option.bind_some, a₀, i₀, v₀, Option.some.injEq, exists_eq_left']
       exact ⟨⟨⟨⟨by simp [h.esp], h.rd, h.wr, h.frame⟩, h.args, by simp [h.esi]⟩, h.st⟩,
         ⟨by simp [h.esi], rfl, rfl, rfl, by simp [e], by simp [h.esi]⟩⟩
     | none =>
       rw [hm] at e
-      simp (config := {decide := true}) only [absArgs, Lay.lenSrc, hm, argOp, at_, runBlock_cons, runStep_some,
+      simp only [reduceCtorEq, ↓reduceIte, Nat.reduceAdd, Nat.reduceMul, Nat.reducePow, absArgs, Lay.lenSrc, hm, argOp, at_, runBlock_cons, runStep_some,
         runBlock_nil, exec, execAlu, readSrc, State.ea, State.load32, State.setReg, arithFlags, State.setFlags,
-        Option.map_some, Option.bind_some, a₀, i₀, v₀, a₁, i₁, v₁, ite_true, ite_false, Option.some.injEq,
+        Option.map_some, Option.bind_some, a₀, i₀, v₀, a₁, i₁, v₁, Option.some.injEq,
         exists_eq_left']
       exact ⟨⟨⟨⟨by simp [h.esp], h.rd, h.wr, h.frame⟩, h.args, by simp [h.esi]⟩, h.st⟩,
         ⟨by simp [h.esi], rfl, rfl, rfl, by simp [e], by simp [h.esi]⟩⟩
@@ -302,16 +302,16 @@ theorem padArgs_piece (hL : L.Ok) : Piece (Pre L) (PubP L) (A1 L)
     cases hm : L.mlen with
     | some k =>
       rw [hm] at e
-      simp (config := {decide := true}) only [padArgs, Lay.lenSrc, hm, runBlock_cons, runStep_some,
+      simp only [reduceCtorEq, ↓reduceIte, Nat.reducePow, padArgs, Lay.lenSrc, hm, runBlock_cons, runStep_some,
         runBlock_nil, exec, execAlu, readSrc, State.setReg, arithFlags, State.setFlags,
-        Option.map_some, Option.bind_some, ite_true, ite_false, Option.some.injEq, exists_eq_left']
+        Option.map_some, Option.bind_some, Option.some.injEq, exists_eq_left']
       exact ⟨⟨⟨⟨by simp [h.esp], h.rd, h.wr, h.frame⟩, h.args, by simp [h.esi]⟩, h.st⟩,
         ⟨by simp [h.esi], rfl, by simp [e], rfl, by simp [h.esi]⟩⟩
     | none =>
       rw [hm] at e
-      simp (config := {decide := true}) only [padArgs, Lay.lenSrc, hm, argOp, at_, runBlock_cons, runStep_some,
+      simp only [reduceCtorEq, ↓reduceIte, Nat.reduceAdd, Nat.reduceMul, Nat.reducePow, padArgs, Lay.lenSrc, hm, argOp, at_, runBlock_cons, runStep_some,
         runBlock_nil, exec, execAlu, readSrc, State.ea, State.load32, State.setReg, arithFlags, State.setFlags,
-        Option.map_some, Option.bind_some, a₁, i₁, v₁, ite_true, ite_false, Option.some.injEq,
+        Option.map_some, Option.bind_some, a₁, i₁, v₁, Option.some.injEq,
         exists_eq_left']
       exact ⟨⟨⟨⟨by simp [h.esp], h.rd, h.wr, h.frame⟩, h.args, by simp [h.esi]⟩, h.st⟩,
         ⟨by simp [h.esi], rfl, by simp [e], rfl, by simp [h.esi]⟩⟩
@@ -346,9 +346,9 @@ theorem sqArgs_piece (hL : L.Ok) : Piece (Pre L) (PubP L) (A2 L)
   obtain ⟨_, ht⟩ := hL.tSqz
   refine Piece.taint [] (fun s₀ s hp h => ?_) (fun _ _ _ _ _ _ _ _ _ r hr => absurd hr (by simp)) ht
   apply WP.of_runBlock
-  simp (config := {decide := true}) only [sqzArgs, runBlock_cons, runStep_some,
+  simp only [reduceCtorEq, ↓reduceIte, Nat.reducePow, sqzArgs, runBlock_cons, runStep_some,
     runBlock_nil, exec, execAlu, readSrc, State.setReg, arithFlags, State.setFlags,
-    Option.map_some, Option.bind_some, ite_true, ite_false, Option.some.injEq, exists_eq_left']
+    Option.map_some, Option.bind_some, Option.some.injEq, exists_eq_left']
   exact ⟨⟨⟨⟨by simp [h.esp], h.rd, h.wr, h.frame⟩, h.args, by simp [h.esi]⟩, h.st⟩,
     ⟨by simp [h.esi], rfl, rfl, by simp [h.esi], rfl, by simp [h.esi]⟩⟩
 

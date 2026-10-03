@@ -93,9 +93,9 @@ theorem fn_ok (r : Nat) (hr : r < 4) (a b c d : Reg) (ha : a ≠ T0) (hb : b ≠
   simp only [T0] at ha hb hc hd ⊢
   apply WP.of_runBlock
   rcases (by omega : r = 0 ∨ r = 1 ∨ r = 2 ∨ r = 3) with rfl | rfl | rfl | rfl <;>
-  simp (config := {decide := true}) only [fn, T0, runBlock_cons, runStep_some,
+  simp only [↓reduceIte, Nat.reduceLeDiff, Nat.reducePow, and_self, fn, T0, runBlock_cons, runStep_some,
     runBlock_nil, exec, execAlu32, readSrc32,
-    isa, State.setReg32, RegUpd.gpr_setReg, RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg, RegUpd.gpr_arithFlags, RegUpd.mem_arithFlags, RegUpd.rd_arithFlags, RegUpd.wr_arithFlags, ite_true, ite_false, ha, hb, hc, hd,
+    isa, State.setReg32, RegUpd.gpr_setReg, RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg, RegUpd.gpr_arithFlags, RegUpd.mem_arithFlags, RegUpd.rd_arithFlags, RegUpd.wr_arithFlags, ha, hb, hc, hd,
     hba, hda, h₀, h₁, h₂, h₃, BitVec.setWidth_setWidth_of_le, BitVec.setWidth_eq,
     Option.bind_some, Option.map_some, Option.some.injEq, exists_eq_left'] <;>
   refine ⟨?_, fun x hx hx' => by simp [hx, hx'], trivial⟩
@@ -130,9 +130,9 @@ theorem head_ok (a : Reg) (k : Nat) (T : Word)
       s'.gpr a = (va + x + T).setWidth 64 ∧
       (∀ r, r ≠ a → s'.gpr r = s.gpr r) ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   apply WP.of_runBlock
-  simp (config := {decide := true}) only [headI, runBlock_cons, runStep_some,
+  simp only [↓reduceIte, Nat.reduceLeDiff, Nat.reducePow, and_self, headI, runBlock_cons, runStep_some,
     runBlock_nil, exec, execAlu32, readSrc32, State.ea, State.load32, at_,
-    isa, State.setReg32, RegUpd.gpr_setReg, RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg, RegUpd.gpr_arithFlags, RegUpd.mem_arithFlags, RegUpd.rd_arithFlags, RegUpd.wr_arithFlags, ite_true,
+    isa, State.setReg32, RegUpd.gpr_setReg, RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg, RegUpd.gpr_arithFlags, RegUpd.mem_arithFlags, RegUpd.rd_arithFlags, RegUpd.wr_arithFlags, 
     h₁, hrsi, hin, hx, BitVec.setWidth_setWidth_of_le, BitVec.setWidth_eq,
     Option.bind_some, Option.some.injEq, exists_eq_left']
   exact ⟨trivial, fun r hr => by simp [hr], trivial⟩
@@ -144,9 +144,9 @@ theorem tail_ok (a b : Reg) (n : Nat) (hn₁ : 1 ≤ n) (hn₂ : n ≤ 31) (hab 
       (∀ r, r ≠ a → s'.gpr r = s.gpr r) ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   have hba : b ≠ a := fun h => hab h.symm
   apply WP.of_runBlock
-  simp (config := {decide := true}) only [tailI, runBlock_cons, runStep_some,
+  simp only [↓reduceIte, Nat.reduceLeDiff, Nat.reducePow, tailI, runBlock_cons, runStep_some,
     runBlock_nil, exec, execAlu32, execShift32, readSrc32,
-    isa, State.setReg32, RegUpd.gpr_setReg, RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg, RegUpd.gpr_arithFlags, RegUpd.mem_arithFlags, RegUpd.rd_arithFlags, RegUpd.wr_arithFlags, RegUpd.gpr_setFlags, RegUpd.mem_setFlags, RegUpd.rd_setFlags, RegUpd.wr_setFlags, ite_true, ite_false, hba,
+    isa, State.setReg32, RegUpd.gpr_setReg, RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg, RegUpd.gpr_arithFlags, RegUpd.mem_arithFlags, RegUpd.rd_arithFlags, RegUpd.wr_arithFlags, RegUpd.gpr_setFlags, RegUpd.mem_setFlags, RegUpd.rd_setFlags, RegUpd.wr_setFlags, hba,
     hn₁, hn₂, and_self, h₁, h₂, BitVec.setWidth_setWidth_of_le, BitVec.setWidth_eq,
     Option.bind_some, Option.some.injEq, exists_eq_left']
   exact ⟨trivial, fun r hr => by simp [hr], trivial⟩

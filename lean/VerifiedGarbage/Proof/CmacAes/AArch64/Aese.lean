@@ -321,7 +321,7 @@ theorem ct : ConstantTime isa updateAArch64.pre updateAArch64.pub update := by
   intro s₁ s₂ _ _ ⟨h1, h2, h3, h4, h5, h6, hsp⟩
   refine ⟨hsp, fun r hr => ?_⟩
   simp only [VG.AArch64.Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl <;> assumption
+  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption
 
 theorem verified : Verified AArch64.target update (Spec.Cmac.aesUpdateContract AArch64.abi) :=
   Verified.of_correct correct ct (by

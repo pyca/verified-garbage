@@ -18,8 +18,6 @@ section
 # ChaCha20-Poly1305 on ARMv7: the entry state, regions and invariant
 -/
 
-open VG.PowLit
-
 namespace VG.Proof.ChaCha20Poly1305
 
 open Spec.ChaCha20Poly1305
@@ -340,8 +338,6 @@ memory only within the regions it may write; the frame around
 `vg_poly1305_finalize` also stores its stack arguments below the stack
 pointer.
 -/
-
-open VG.PowLit
 
 namespace VG.Proof.ChaCha20Poly1305.Arm
 
@@ -675,8 +671,6 @@ section
 Saving the registers, moving the arguments, copying words of the context, the
 ChaCha20 state for counter 0, the one-time key and the Poly1305 state for it.
 -/
-
-open VG.PowLit
 
 namespace VG.Proof.ChaCha20Poly1305.Arm
 
@@ -1209,8 +1203,6 @@ end
 and zeros to a multiple of 16: `msg ++ x ++ pad16 x`.
 -/
 
-open VG.PowLit
-
 namespace VG.Proof.ChaCha20Poly1305.Arm
 
 open VG VG.Arm VG.Impl.ChaCha20Poly1305.Arm
@@ -1707,8 +1699,6 @@ end VG.Proof.ChaCha20Poly1305.Arm
 The encryption, the lengths block, the arguments of `vg_poly1305_finalize` and
 the tag, copying and comparing tags, and restoring the registers.
 -/
-
-open VG.PowLit
 
 namespace VG.Proof.ChaCha20Poly1305.Arm
 

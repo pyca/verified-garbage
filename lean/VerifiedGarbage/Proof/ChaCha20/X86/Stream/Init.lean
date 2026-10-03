@@ -514,7 +514,7 @@ theorem keyStores_ok {s : State} {ST : BitVec 32} (hp : SPre s ST) :
   have e16 := hp.ea (d := 16) (by decide); have e32 := hp.ea (d := 32) (by decide)
   have o16 := hp.w 16 16 (by decide); have o32 := hp.w 32 16 (by decide)
   apply WP.of_runBlock
-  simp (config := {decide := true}) only [keyStores, runBlock_cons, runStep_some, runBlock_nil, exec,
+  simp only [and_self, keyStores, runBlock_cons, runStep_some, runBlock_nil, exec,
     State.ea, at_, State.store128, hp.eax, e16, e32, o16, o32, Option.some.injEq, exists_eq_left', ite_true]
   exact ⟨rfl, trivial⟩
 

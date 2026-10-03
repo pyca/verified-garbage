@@ -1,5 +1,6 @@
 import VerifiedGarbage.Proof.Framework.AArch64.VectorTaint
 import VerifiedGarbage.Proof.Framework.TaintSum
+import VerifiedGarbage.Proof.Framework.RegSetOrder
 
 /-!
 # The AArch64 taint analyses are monotone
@@ -12,130 +13,6 @@ With more registers public on entry, every step of `AArch64.taint` and
 
 namespace VG
 
-namespace RegSet
-
-variable {R : Type} [RegIdx R]
-
-omit [RegIdx R] in
-theorem subset_iff {a b : RegSet R} :
-    a.subset b = true ↔ ∀ i, a.bits.testBit i = true → b.bits.testBit i = true := by
-  rw [subset_eq, beq_iff_eq]
-  constructor
-  · intro h i hi
-    rw [← h, Nat.testBit_and, Bool.and_eq_true] at hi
-    exact hi.2
-  · intro h
-    apply Nat.eq_of_testBit_eq
-    intro i
-    rw [Nat.testBit_and]
-    cases ha : a.bits.testBit i
-    · rfl
-    · rw [h i ha]; rfl
-
-omit [RegIdx R] in
-theorem subset_refl (a : RegSet R) : a.subset a = true := subset_iff.mpr fun _ h => h
-
-omit [RegIdx R] in
-theorem subset_trans {a b c : RegSet R} (h₁ : a.subset b = true) (h₂ : b.subset c = true) :
-    a.subset c = true :=
-  subset_iff.mpr fun i h => subset_iff.mp h₂ i (subset_iff.mp h₁ i h)
-
-omit [RegIdx R] in
-theorem empty_subset (a : RegSet R) : (empty : RegSet R).subset a = true :=
-  subset_iff.mpr fun i h => by simp [empty] at h
-
-theorem insert_mono {a b : RegSet R} (h : a.subset b = true) (r : R) :
-    (a.insert r).subset (b.insert r) = true := by
-  refine subset_iff.mpr fun i hi => ?_
-  rw [insert_bits, Nat.testBit_or, Bool.or_eq_true] at hi ⊢
-  exact hi.imp (subset_iff.mp h i) id
-
-theorem erase_mono {a b : RegSet R} (h : a.subset b = true) (r : R) :
-    (a.erase r).subset (b.erase r) = true := by
-  refine subset_iff.mpr fun i hi => ?_
-  rw [erase_bits, Nat.testBit_xor, Nat.testBit_and] at hi ⊢
-  cases ha : a.bits.testBit i <;> cases hr : (bit r).testBit i <;> simp_all [subset_iff.mp h i]
-
-theorem erase_subset (a : RegSet R) (r : R) : (a.erase r).subset a = true := by
-  refine subset_iff.mpr fun i hi => ?_
-  rw [erase_bits, Nat.testBit_xor, Nat.testBit_and] at hi
-  cases ha : a.bits.testBit i <;> simp_all
-
-theorem subset_insert (a : RegSet R) (r : R) : a.subset (a.insert r) = true := by
-  refine subset_iff.mpr fun i hi => ?_
-  rw [insert_bits, Nat.testBit_or, hi, Bool.true_or]
-
-omit [RegIdx R] in
-theorem inter_mono {a b c d : RegSet R} (h₁ : a.subset c = true) (h₂ : b.subset d = true) :
-    (a.inter b).subset (c.inter d) = true := by
-  refine subset_iff.mpr fun i hi => ?_
-  rw [inter_bits, Nat.testBit_and, Bool.and_eq_true] at hi ⊢
-  exact ⟨subset_iff.mp h₁ i hi.1, subset_iff.mp h₂ i hi.2⟩
-
-theorem mem_mono {a b : RegSet R} (h : a.subset b = true) {r : R} (hr : a.mem r = true) :
-    b.mem r = true := mem_of_subset h hr
-
-/-- The union of two sets. -/
-def union (a b : RegSet R) : RegSet R := ⟨Nat.lor a.bits b.bits⟩
-
-omit [RegIdx R] in
-theorem subset_union_left (a b : RegSet R) : a.subset (a.union b) = true :=
-  subset_iff.mpr fun i h => by
-    show (a.bits ||| b.bits).testBit i = true
-    rw [Nat.testBit_or, h, Bool.true_or]
-
-omit [RegIdx R] in
-theorem subset_union_right (a b : RegSet R) : b.subset (a.union b) = true :=
-  subset_iff.mpr fun i h => by
-    show (a.bits ||| b.bits).testBit i = true
-    rw [Nat.testBit_or, h, Bool.or_true]
-
-omit [RegIdx R] in
-theorem union_subset {a b c : RegSet R} (ha : a.subset c = true) (hb : b.subset c = true) :
-    (a.union b).subset c = true :=
-  subset_iff.mpr fun i h => by
-    have h : (a.bits ||| b.bits).testBit i = true := h
-    rw [Nat.testBit_or, Bool.or_eq_true] at h
-    exact h.elim (subset_iff.mp ha i) (subset_iff.mp hb i)
-
-omit [RegIdx R] in
-theorem inter_subset_left (a b : RegSet R) : (a.inter b).subset a = true :=
-  subset_iff.mpr fun i h => by
-    rw [inter_bits, Nat.testBit_and, Bool.and_eq_true] at h; exact h.1
-
-omit [RegIdx R] in
-theorem inter_subset_right (a b : RegSet R) : (a.inter b).subset b = true :=
-  subset_iff.mpr fun i h => by
-    rw [inter_bits, Nat.testBit_and, Bool.and_eq_true] at h; exact h.2
-
-omit [RegIdx R] in
-theorem subset_inter {a b c : RegSet R} (hb : a.subset b = true) (hc : a.subset c = true) :
-    a.subset (b.inter c) = true :=
-  subset_iff.mpr fun i h => by
-    rw [inter_bits, Nat.testBit_and, subset_iff.mp hb i h, subset_iff.mp hc i h]; rfl
-
-omit [RegIdx R] in
-theorem subset_of_bits_zero {a : RegSet R} (h : a.bits = 0) (b : RegSet R) :
-    a.subset b = true :=
-  subset_iff.mpr fun i hi => by rw [h, Nat.zero_testBit] at hi; cases hi
-
-/-- `Φ` stays a subset of `σ` with `d` changed, if `d` is not in `F ⊇ Φ`. -/
-theorem subset_insert_of {Φ σ : RegSet R} (hΦ : Φ.subset σ = true)
-    (d : R) : Φ.subset (σ.insert d) = true :=
-  subset_trans hΦ (subset_insert σ d)
-
-theorem subset_erase_of {Φ F σ : RegSet R} (hΦF : Φ.subset F = true) (hΦ : Φ.subset σ = true)
-    {d : R} (hd : F.mem d = false) : Φ.subset (σ.erase d) = true := by
-  refine subset_iff.mpr fun i hi => ?_
-  rw [erase_bits, Nat.testBit_xor, Nat.testBit_and, subset_iff.mp hΦ i hi, testBit_bit]
-  have hF := subset_iff.mp hΦF i hi
-  have hne : RegIdx.idx d ≠ i := by
-    intro e
-    have : F.mem d = true := (mem_iff (s := F) (r := d)).mpr (e ▸ hF)
-    rw [hd] at this; cases this
-  simp [hne]
-
-end RegSet
 
 namespace AArch64.Taint
 
@@ -170,23 +47,24 @@ theorem step_mono {τ σ τ' : T} (i : Instr) (h : τ.subset σ = true) (hs : st
        cases hs
        exact ⟨_, by simp only [pub_mono h hn, ↓reduceIte]; rfl, (by first | exact set_mono h _ id | exact h)⟩)
 
-instance : VG.Taint.Mono AArch64.taint where
-  le_refl := RegSet.subset_refl
-  le_trans := RegSet.subset_trans
-  step i h hs := step_mono i h hs
-  condPub c h hc := by cases c <;> exact pub_mono h hc
-  meet h₁ h₂ := RegSet.inter_mono h₁ h₂
-  call h hs := by
-    cases hs
-    exact ⟨_, rfl, RegSet.erase_mono (RegSet.erase_mono (RegSet.erase_mono h _) _) _⟩
-  ret h hs := by cases hs; exact ⟨_, rfl, h⟩
-  push i h hs := by
-    cases i <;> simp only [AArch64.taint, push, reduceCtorEq] at hs ⊢ <;> cases hs <;>
-      exact ⟨_, rfl, h⟩
-  pop i h hs := by
-    cases i <;> simp only [AArch64.taint, pop, reduceCtorEq] at hs ⊢ <;> cases hs
-    · exact ⟨_, rfl, RegSet.erase_mono h _⟩
-    · exact ⟨_, rfl, h⟩
+theorem condPub_mono {τ σ : T} (c : Cond) (h : τ.subset σ = true)
+    (hc : AArch64.taint.condPub τ c = true) : AArch64.taint.condPub σ c = true := by
+  cases c <;> exact pub_mono h hc
+
+theorem call_mono {τ σ τ' : T} (h : τ.subset σ = true) (hs : AArch64.taint.call τ = some τ') :
+    ∃ σ', AArch64.taint.call σ = some σ' ∧ τ'.subset σ' = true := by
+  cases hs
+  exact ⟨_, rfl, RegSet.erase_mono (RegSet.erase_mono (RegSet.erase_mono h _) _) _⟩
+
+theorem push_mono {τ σ τ' : T} (i : Instr) (h : τ.subset σ = true) (hs : Taint.push τ i = some τ') :
+    ∃ σ', Taint.push σ i = some σ' ∧ τ'.subset σ' = true := by
+  cases i <;> simp only [push, reduceCtorEq] at hs ⊢ <;> cases hs <;> exact ⟨_, rfl, h⟩
+
+theorem pop_mono {τ σ τ' : T} (i : Instr) (h : τ.subset σ = true) (hs : Taint.pop τ i = some τ') :
+    ∃ σ', Taint.pop σ i = some σ' ∧ τ'.subset σ' = true := by
+  cases i <;> simp only [pop, reduceCtorEq] at hs ⊢ <;> cases hs
+  · exact ⟨_, rfl, RegSet.erase_mono h _⟩
+  · exact ⟨_, rfl, h⟩
 
 /-- The general-purpose register an instruction writes, if any. -/
 def gprDst : Instr → Option Reg
@@ -267,38 +145,7 @@ theorem step_mono {τ σ τ' : T} (i : Instr) (h : taint.le τ σ = true) (hs : 
     exact ⟨_, rfl, le_iff.mpr ⟨Taint.set_mono h.1 d (RegSet.mem_mono h.2), h.2⟩⟩
   | _ => exact ordinary hs
 
-instance : VG.Taint.Mono taint where
-  le_refl τ := le_iff.mpr ⟨RegSet.subset_refl _, RegSet.subset_refl _⟩
-  le_trans {_ _ _} h₁ h₂ :=
-    le_iff.mpr ⟨RegSet.subset_trans (le_iff.mp h₁).1 (le_iff.mp h₂).1,
-      RegSet.subset_trans (le_iff.mp h₁).2 (le_iff.mp h₂).2⟩
-  step i h hs := step_mono i h hs
-  condPub c h hc := VG.Taint.Mono.condPub (A := AArch64.taint) c (le_iff.mp h).1 hc
-  meet {_ _ _ _} h₁ h₂ :=
-    le_iff.mpr ⟨RegSet.inter_mono (le_iff.mp h₁).1 (le_iff.mp h₂).1,
-      RegSet.inter_mono (le_iff.mp h₁).2 (le_iff.mp h₂).2⟩
-  call {τ σ τ'} h hs := by
-    have hs : (AArch64.taint.call τ.1).map (fun g => (g, τ.2)) = some τ' := hs
-    obtain ⟨g, hg, rfl⟩ := Option.map_eq_some_iff.mp hs
-    obtain ⟨g', hg', hle⟩ := VG.Taint.Mono.call (A := AArch64.taint) (le_iff.mp h).1 hg
-    refine ⟨(g', σ.2), ?_, le_iff.mpr ⟨hle, (le_iff.mp h).2⟩⟩
-    show (AArch64.taint.call σ.1).map (fun g => (g, σ.2)) = _
-    rw [hg']; rfl
-  ret h hs := by cases hs; exact ⟨_, rfl, h⟩
-  push {τ σ τ'} i h hs := by
-    have hs : (Taint.push τ.1 i).map (fun g => (g, τ.2)) = some τ' := hs
-    obtain ⟨g, hg, rfl⟩ := Option.map_eq_some_iff.mp hs
-    obtain ⟨g', hg', hle⟩ := VG.Taint.Mono.push (A := AArch64.taint) i (le_iff.mp h).1 hg
-    refine ⟨(g', σ.2), ?_, le_iff.mpr ⟨hle, (le_iff.mp h).2⟩⟩
-    show (Taint.push σ.1 i).map (fun g => (g, σ.2)) = _
-    rw [show Taint.push σ.1 i = some g' from hg']; rfl
-  pop {τ σ τ'} i h hs := by
-    have hs : (Taint.pop τ.1 i).map (fun g => (g, τ.2)) = some τ' := hs
-    obtain ⟨g, hg, rfl⟩ := Option.map_eq_some_iff.mp hs
-    obtain ⟨g', hg', hle⟩ := VG.Taint.Mono.pop (A := AArch64.taint) i (le_iff.mp h).1 hg
-    refine ⟨(g', σ.2), ?_, le_iff.mpr ⟨hle, (le_iff.mp h).2⟩⟩
-    show (Taint.pop σ.1 i).map (fun g => (g, σ.2)) = _
-    rw [show Taint.pop σ.1 i = some g' from hg']; rfl
+theorem le_refl (τ : T) : taint.le τ τ = true := le_iff.mpr ⟨RegSet.subset_refl _, RegSet.subset_refl _⟩
 
 /-- An instruction keeps what is public of `F`, a set of general-purpose
 registers it does not write (and no vector register). -/
@@ -343,18 +190,56 @@ theorem step_keeps {F Φ σ σ' : T} (i : Instr) (hk : keeps F i = true) (hΦF :
 def keepsCall (F : T) : Bool :=
   F.2.bits == 0 && !F.1.mem .x16 && !F.1.mem .x17 && !F.1.mem .x30
 
-instance : VG.Taint.Frame taint where
+instance : VG.Taint.LeFrame taint where
+  le_right {_ b} _ := le_refl b
+  le_trans {_ _ _} h₁ h₂ :=
+    le_iff.mpr ⟨RegSet.subset_trans (le_iff.mp h₁).1 (le_iff.mp h₂).1,
+      RegSet.subset_trans (le_iff.mp h₁).2 (le_iff.mp h₂).2⟩
+  step i h hs := step_mono i h hs
+  condPub c h hc := Taint.condPub_mono c (le_iff.mp h).1 hc
+  meet {_ _ _ _} h₁ h₂ :=
+    le_iff.mpr ⟨RegSet.inter_mono (le_iff.mp h₁).1 (le_iff.mp h₂).1,
+      RegSet.inter_mono (le_iff.mp h₁).2 (le_iff.mp h₂).2⟩
+  call {τ σ τ'} h hs := by
+    have hs : (AArch64.taint.call τ.1).map (fun g => (g, τ.2)) = some τ' := hs
+    obtain ⟨g, hg, rfl⟩ := Option.map_eq_some_iff.mp hs
+    obtain ⟨g', hg', hle⟩ := Taint.call_mono (le_iff.mp h).1 hg
+    refine ⟨(g', σ.2), ?_, le_iff.mpr ⟨hle, (le_iff.mp h).2⟩⟩
+    show (AArch64.taint.call σ.1).map (fun g => (g, σ.2)) = _
+    rw [hg']; rfl
+  ret h hs := by cases hs; exact ⟨_, rfl, h⟩
+  push {τ σ τ'} i h hs := by
+    have hs : (Taint.push τ.1 i).map (fun g => (g, τ.2)) = some τ' := hs
+    obtain ⟨g, hg, rfl⟩ := Option.map_eq_some_iff.mp hs
+    obtain ⟨g', hg', hle⟩ := Taint.push_mono i (le_iff.mp h).1 hg
+    refine ⟨(g', σ.2), ?_, le_iff.mpr ⟨hle, (le_iff.mp h).2⟩⟩
+    show (Taint.push σ.1 i).map (fun g => (g, σ.2)) = _
+    rw [show Taint.push σ.1 i = some g' from hg']; rfl
+  pop {τ σ τ'} i h hs := by
+    have hs : (Taint.pop τ.1 i).map (fun g => (g, τ.2)) = some τ' := hs
+    obtain ⟨g, hg, rfl⟩ := Option.map_eq_some_iff.mp hs
+    obtain ⟨g', hg', hle⟩ := Taint.pop_mono i (le_iff.mp h).1 hg
+    refine ⟨(g', σ.2), ?_, le_iff.mpr ⟨hle, (le_iff.mp h).2⟩⟩
+    show (Taint.pop σ.1 i).map (fun g => (g, σ.2)) = _
+    rw [show Taint.pop σ.1 i = some g' from hg']; rfl
   join a b := (a.1.union b.1, a.2.union b.2)
   bot := (RegSet.empty, RegSet.empty)
-  le_join_left a b := le_iff.mpr ⟨RegSet.subset_union_left _ _, RegSet.subset_union_left _ _⟩
-  le_join_right a b := le_iff.mpr ⟨RegSet.subset_union_right _ _, RegSet.subset_union_right _ _⟩
-  join_le ha hb := le_iff.mpr ⟨RegSet.union_subset (le_iff.mp ha).1 (le_iff.mp hb).1,
-    RegSet.union_subset (le_iff.mp ha).2 (le_iff.mp hb).2⟩
-  meet_le_left a b := le_iff.mpr ⟨RegSet.inter_subset_left _ _, RegSet.inter_subset_left _ _⟩
-  meet_le_right a b := le_iff.mpr ⟨RegSet.inter_subset_right _ _, RegSet.inter_subset_right _ _⟩
+  join_lub {a b _} ha hb :=
+    ⟨le_iff.mpr ⟨RegSet.subset_union_left _ _, RegSet.subset_union_left _ _⟩,
+      le_iff.mpr ⟨RegSet.subset_union_right _ _, RegSet.subset_union_right _ _⟩,
+      le_iff.mpr ⟨RegSet.union_subset (le_iff.mp ha).1 (le_iff.mp hb).1,
+        RegSet.union_subset (le_iff.mp ha).2 (le_iff.mp hb).2⟩⟩
+  frameOf := taint.meet
+  frame_le_left _ _ := le_iff.mpr ⟨RegSet.inter_subset_left _ _, RegSet.inter_subset_left _ _⟩
+  frame_le_right _ _ _ := le_iff.mpr ⟨RegSet.inter_subset_right _ _, RegSet.inter_subset_right _ _⟩
+  frame_mono F h := le_iff.mpr ⟨RegSet.inter_mono (le_iff.mp h).1 (RegSet.subset_refl _),
+    RegSet.inter_mono (le_iff.mp h).2 (RegSet.subset_refl _)⟩
+  le_frame hb hc := le_iff.mpr ⟨RegSet.subset_inter (le_iff.mp hb).1 (le_iff.mp hc).1,
+    RegSet.subset_inter (le_iff.mp hb).2 (le_iff.mp hc).2⟩
   le_meet hb hc := le_iff.mpr ⟨RegSet.subset_inter (le_iff.mp hb).1 (le_iff.mp hc).1,
     RegSet.subset_inter (le_iff.mp hb).2 (le_iff.mp hc).2⟩
-  bot_le a := le_iff.mpr ⟨RegSet.empty_subset _, RegSet.empty_subset _⟩
+  bot_le _ := le_iff.mpr ⟨RegSet.empty_subset _, RegSet.empty_subset _⟩
+  bot_valid := le_refl _
   keeps := keeps
   keepsCall := keepsCall
   keeps_bot i := by

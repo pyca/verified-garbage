@@ -1,5 +1,6 @@
 import VerifiedGarbage.Spec.Sha3
 import VerifiedGarbage.Impl.Sha3.Tables
+import VerifiedGarbage.Proof.Framework.PowLit
 
 /-!
 # SHA-3: lemmas about the specification

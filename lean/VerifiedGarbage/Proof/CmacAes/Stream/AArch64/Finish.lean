@@ -82,9 +82,9 @@ theorem finishPre_ok {s₀ : State} {St O S : Addr} {R : Nat} (hp : HPre s₀ St
   have inS (d : Nat) (hd : d + 8 ≤ 2304) : InRegions s₀.wr (S + BitVec.ofNat 64 d) 8 := by
     rw [hp.wr]; exact ⟨⟨S, 2304⟩, by simp, Offset.contains_base _ hd (by have := hp.wS; omega)⟩
   refine ⟨_, by
-    simp (config := {decide := true}) only [finishPre, mov, runBlock_cons, runStep_some, runBlock_nil,
+    simp only [reduceCtorEq, ↓reduceIte, Nat.reduceLT, Nat.reduceMul, Nat.reduceMod, and_self, finishPre, mov, runBlock_cons, runStep_some, runBlock_nil,
       exec, addr, State.load, State.store, Size.bytes, Size.bits, State.read, gpr_write, mem_write,
-      rd_write, wr_write, ite_true, ite_false, Option.bind_some, Option.map_some, BitVec.setWidth_eq,
+      rd_write, wr_write, Option.bind_some, Option.map_some, BitVec.setWidth_eq,
       hp.x0, hp.x3, hp.x4, inSt 272 (by decide), inSt 280 (by decide), inO 0 (by decide),
       inO 8 (by decide), inS 2176 (by decide), inS 2184 (by decide)]
     rfl, ?_⟩
@@ -169,11 +169,11 @@ theorem lastLen_ok (s : State) {c : BitVec 64} (h4 : s.gpr .x4 = c) (hc : c ≠ 
       (∀ r, r ≠ .x4 → r ≠ .x9 → s'.gpr r = s.gpr r) ∧ s'.sp = s.sp ∧ s'.mem = s.mem ∧
       s'.rd = s.rd ∧ s'.wr = s.wr := by
   refine ⟨_, by
-    simp (config := {decide := true}) only [runBlock_cons, runStep_some, runBlock_nil, exec, Size.bits,
-      State.read, gpr_write, ite_true, ite_false, BitVec.setWidth_eq]
+    simp only [reduceCtorEq, ↓reduceIte, Nat.reduceLT, Nat.reduceMul, runBlock_cons, runStep_some, runBlock_nil, exec, Size.bits,
+      State.read, gpr_write, BitVec.setWidth_eq]
     rfl, ?_⟩
   refine ⟨?_, fun r h₁ h₂ => by simp [gpr_write, h₁, h₂], rfl, rfl, rfl, rfl⟩
-  simp only [gpr_write, ite_true, BitVec.setWidth_eq, mz15, h4]
+  simp only [gpr_write, ite_true, BitVec.setWidth_eq, h4]
   exact held_bv c hc
 
 theorem finPre_wp {s₀ : State} {St O S : Addr} {R : Nat} (hp : HPre s₀ St O S R) :
@@ -211,8 +211,8 @@ theorem finishPost_ok (s : State) {B : Addr} (hb : s.gpr .x19 = B)
       s'.gpr .x19 = s.mem.readW (B + BitVec.ofNat 64 2176) 64 ∧
       (∀ r, r ≠ .x19 → r ≠ .x30 → s'.gpr r = s.gpr r) ∧ s'.sp = s.sp ∧ s'.mem = s.mem := by
   refine ⟨_, by
-    simp (config := {decide := true}) only [finishPost, runBlock_cons, runStep_some, runBlock_nil, exec,
-      addr, State.load, Size.bytes, Size.bits, gpr_write, mem_write, rd_write, wr_write, ite_true, ite_false,
+    simp only [reduceCtorEq, ↓reduceIte, Nat.reduceLT, Nat.reduceMul, Nat.reduceMod, and_self, finishPost, runBlock_cons, runStep_some, runBlock_nil, exec,
+      addr, State.load, Size.bytes, Size.bits, gpr_write, mem_write, rd_write, wr_write, 
       Option.bind_some, Option.map_some, hb, r₁, r₂]
     rfl, ?_⟩
   refine ⟨by simp [gpr_write, Mem.readW], by simp [gpr_write, Mem.readW],
@@ -309,7 +309,7 @@ theorem finish_rel (v : Ctr32Impl) {s₀ s₀' : State} (h0 : finishAArch64.pre 
       obtain ⟨rfl, rfl⟩ := h
       refine agree_of q5 fun r hr => ?_
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl | rfl | rfl <;> assumption) hA).wp
+      rcases hr with rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption) hA).wp
     (F₁ := HMid s₀ _ _ _ _) (F₂ := HMid s₀' _ _ _ _) fun a b h => by
       obtain ⟨rfl, rfl⟩ := h; exact ⟨finPre_wp hp, finPre_wp hp'⟩
   have c := (fin_rel v ("vg_cmac_aes_finalize" ++ v.suffix) (P := fun s₁ s₂ =>

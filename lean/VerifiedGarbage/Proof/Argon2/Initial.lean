@@ -1,4 +1,5 @@
 import VerifiedGarbage.Proof.Argon2.HPrime
+import VerifiedGarbage.Proof.Framework.PowLit
 
 /-! # H₀ as a sequence of BLAKE2b streaming inputs -/
 

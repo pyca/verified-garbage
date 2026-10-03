@@ -1,3 +1,4 @@
+import VerifiedGarbage.Proof.Framework.PowLit
 import Mathlib.FieldTheory.Finite.Basic
 import Mathlib.Tactic.LinearCombination
 import VerifiedGarbage.Spec.Weierstrass

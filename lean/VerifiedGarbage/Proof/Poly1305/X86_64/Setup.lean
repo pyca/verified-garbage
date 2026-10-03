@@ -25,8 +25,6 @@ q`. The products are named (`h0 * r0`, …) so that `omega` treats them as
 atoms.
 -/
 
-open VG.PowLit
-
 namespace VG.Proof.Poly1305.X86_64
 
 open VG.Proof.Poly1305.Limbs64
@@ -45,8 +43,6 @@ end
 Each lemma runs a few instructions symbolically and states their effect on the
 numbers in the registers.
 -/
-
-open VG.PowLit
 
 namespace VG.Proof.Poly1305.X86_64
 
@@ -68,7 +64,7 @@ theorem mulTo_ok {lo hi a b : Reg} (s : State) (hb : b ≠ .rax) (hlo : lo ≠ .
   simp only [mulTo, runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, execMul, State.setReg,
     State.setFlags, Option.map_some, Option.some.injEq, exists_eq_left']
   refine ⟨?_, fun r hr => ?_, rfl, rfl, rfl⟩
-  · simp (config := {decide := true}) only [ite_true, hlh, hlo.symm, ite_false, hb]
+  · simp only [ite_true, hlh, hlo.symm, ite_false, hb]
     exact toNat_mul_lo _ _
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     simp only [hr.2.1, ite_true, hr.1, hr.2.2.2, hr.2.2.1, ite_false]
@@ -216,8 +212,6 @@ section
 /-!
 # Poly1305 on x86-64: absorbing a block
 -/
-
-open VG.PowLit
 
 namespace VG.Proof.Poly1305.X86_64
 
@@ -393,8 +387,6 @@ section
 # Poly1305 on x86-64: the final reduction
 -/
 
-open VG.PowLit
-
 namespace VG.Proof.Poly1305.X86_64
 
 open VG.Proof.Poly1305.Limbs64
@@ -518,8 +510,6 @@ section
 /-!
 # Poly1305 on x86-64: the state in memory, and loading the key
 -/
-
-open VG.PowLit
 
 namespace VG.Proof.Poly1305.X86_64
 
@@ -662,8 +652,6 @@ end
 /-!
 # Poly1305 on x86-64: saving registers, loading the key and the accumulator
 -/
-
-open VG.PowLit
 
 namespace VG.Proof.Poly1305
 

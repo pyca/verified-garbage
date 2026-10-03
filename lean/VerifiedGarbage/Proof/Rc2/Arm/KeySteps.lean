@@ -135,10 +135,10 @@ theorem storeByte_ok (s : State)
     ∃ s', runBlock isa storeKey s = some s' ∧ s'.gpr .r0 = s.gpr .r0 ∧
       Keep [.lr] {s with mem := s.mem.writeW (State.addr (s.gpr .r6 + s.gpr .r0)) ((s.gpr .r12).setWidth 8)} s' := by
   refine ⟨_, by
-    simp (config := {decide := true}) only [storeKey, runBlock_cons, runStep_some,
+    simp only [reduceCtorEq, ↓reduceIte, Nat.reduceLT, storeKey, runBlock_cons, runStep_some,
       runBlock_nil, exec, Op2.eval, Option.map_some, State.store8,
       BitVec.add_zero, gpr_setReg,
-      mem_setReg, rd_setReg, wr_setReg, writable, ite_true, ite_false]
+      mem_setReg, rd_setReg, wr_setReg, writable]
     rfl, ?_⟩
   constructor
   · rfl

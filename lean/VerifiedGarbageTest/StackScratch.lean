@@ -25,7 +25,7 @@ def updateContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
 
 -- The contract with the scratch argument is `Sig.scratchContract` of the one
 -- without it.
-example : Spec.Md5.updateContract X86_64.abi 8 =
+example : Spec.Md5.updateScratchContract X86_64.abi 8 =
     Sig.scratchContract X86_64.abi updateSig "scratch" .u64 14 (Curry.const (fun _ => True) _)
       (fun state count data len m m' _ =>
         ∀ msg, Spec.Md5.Repr m state msg → count = BitVec.ofNat 64 msg.length →
@@ -35,7 +35,7 @@ theorem update_x86_64 : Verified X86_64.target
     (Impl.StackScratch.X86_64.withStackScratch 128 .r8 Impl.Md5.X86_64.Stream.update)
     (updateContract X86_64.abi (8 + 128)) :=
   X86_64.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 14) (stack := 8) (bytes := 128)
-    Proof.Md5.X86_64.Shared.update (by decide) (by decide) (by decide)
+    Proof.Md5.X86_64.Shared.updateScratch (by decide) (by decide) (by decide)
     (Code.all_of_allInstrs (by lit_decide)) (by lit_decide)
     (X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
 
@@ -43,7 +43,7 @@ theorem update_aarch64 : Verified AArch64.target
     (Impl.StackScratch.AArch64.withStackScratch 112 .x4 Impl.Md5.AArch64.Stream.update)
     (updateContract AArch64.abi (16 + 112)) :=
   AArch64.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 14) (stack := 16) (bytes := 112)
-    Proof.Md5.AArch64.Shared.update (by decide) (by decide)
+    Proof.Md5.AArch64.Shared.updateScratch (by decide) (by decide)
     (AArch64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
 
 #guard (Impl.StackScratch.X86_64.withStackScratch 128 .r8 Impl.Md5.X86_64.Stream.update).all

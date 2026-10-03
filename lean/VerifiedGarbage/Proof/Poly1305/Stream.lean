@@ -9,8 +9,6 @@ Counters, bytes written to memory, and a message with its last bytes buffered
 (`Buffered`) as its whole blocks and the rest.
 -/
 
-open VG.PowLit
-
 namespace VG.Proof.Poly1305
 
 open VG.Spec.Poly1305 (bytesAt Repr Buffered)

@@ -1,3 +1,4 @@
+import VerifiedGarbage.Proof.Framework.PowLit
 import Mathlib.Algebra.Field.Basic
 import Mathlib.Algebra.GroupWithZero.Basic
 import Mathlib.Algebra.Group.Defs

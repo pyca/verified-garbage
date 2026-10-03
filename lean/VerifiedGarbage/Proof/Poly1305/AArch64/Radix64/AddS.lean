@@ -2,7 +2,7 @@ import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Setup
 
 namespace VG.Proof.Poly1305.AArch64.Radix64
 open VG VG.AArch64 VG.Impl.Poly1305.AArch64.Radix64
-open VG.Proof.Poly1305.AArch64 VG.Proof.Poly1305.Limbs64 VG.PowLit
+open VG.Proof.Poly1305.AArch64 VG.Proof.Poly1305.Limbs64
 
 theorem add_adc_mod (a b c d : BitVec 64) :
     (a + b).toNat + 2 ^ 64 *

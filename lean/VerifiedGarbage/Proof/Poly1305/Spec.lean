@@ -10,8 +10,6 @@ little-endian numbers of byte strings in memory, the accumulator of a message
 extended by whole blocks or a last block, and the tag.
 -/
 
-open VG.PowLit
-
 namespace VG.Proof.Poly1305
 
 open VG.Spec.Poly1305

@@ -1,5 +1,6 @@
 import VerifiedGarbage.Proof.Scrypt.BlockMix
 import VerifiedGarbage.Spec.Scrypt.Contract
+import VerifiedGarbage.Proof.Framework.PowLit
 
 /-!
 # scryptROMix: facts about the specification

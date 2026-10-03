@@ -1,3 +1,4 @@
+import VerifiedGarbage.Proof.Framework.PowLit
 import Mathlib.AlgebraicGeometry.EllipticCurve.Affine.Formula
 import Mathlib.Tactic.LinearCombination
 import VerifiedGarbage.Proof.Weierstrass.RcbIdent

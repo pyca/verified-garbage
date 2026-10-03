@@ -1,5 +1,6 @@
 import VerifiedGarbage.Spec.Pbkdf2.Generic
 import VerifiedGarbage.TCB.X86.Target
+import VerifiedGarbage.Proof.Framework.PowLit
 
 /-!
 # HMAC and PBKDF2-HMAC over any streaming hash function: the x86 contracts

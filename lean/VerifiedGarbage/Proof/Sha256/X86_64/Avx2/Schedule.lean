@@ -371,9 +371,9 @@ theorem schedule_ok (i : Nat) (s : State) (a b c d a' b' c' d' : BitVec 128)
   simp only [t0, t1, t2, t3, mBA, mDC, mBswap, tmp, List.nodup_cons, List.mem_cons, List.not_mem_nil,
     or_false, not_or, List.nodup_nil, and_true, List.reverse_cons, List.reverse_nil, List.nil_append,
     List.cons_append] at hn hn' hBA hBA' hDC hDC' ⊢
-  simp (config := {decide := true}) only [runBlock_cons, runStep_some, runBlock_nil, exec, VOp.exec,
+  simp only [reduceCtorEq, ↓reduceIte, Nat.reduceAdd, and_self, runBlock_cons, runStep_some, runBlock_nil, exec, VOp.exec,
     isa, RegUpd.xmm_setV, RegUpd.ymmHi_setV_256, RegUpd.gpr_setV, RegUpd.mem_setV,
-    RegUpd.rd_setV, RegUpd.wr_setV, State.lane, State.ymm, State.store256, ea_at, hout, ite_true, ite_false, hn, hn',
+    RegUpd.rd_setV, RegUpd.wr_setV, State.lane, State.ymm, State.store256, ea_at, hout, hn, hn',
     ha, hb, hc, hd, ha', hb', hc', hd', hBA, hBA', hDC, hDC', Option.some.injEq, exists_eq_left']
   refine ⟨rfl, rfl, fun r h0 h1 h2 h3 h4 => by simp [h0, h1, h2, h3, h4], trivial, rfl, trivial⟩
 

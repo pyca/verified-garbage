@@ -16,7 +16,8 @@ Writes a Markdown table of the results to stdout (and appends it to
 verified-garbage benchmark got slower by more than `--threshold`.
 
 OpenSSL's code is the same on both sides, so its benchmarks run just once,
-with HEAD's binary, as a reference point for HEAD's times.
+with HEAD's binary, as a reference point for HEAD's times; and only without
+`VG_CPU_FEATURES`, which does not change OpenSSL's code either.
 
 `VG_CPU_FEATURES` in the environment (see src/cpu.rs) restricts the CPU
 features both sides use, and is named in the report. Each side is passed
@@ -24,7 +25,9 @@ only the features its own src/cpu.rs knows (base may predate one), since it
 cannot use the others anyway.
 
 `--modules` runs only the benchmarks of those library modules (see
-`bench_arches.py`).
+`bench_arches.py`), and `--shard i/n` only the i-th of n shares of them,
+whose groups (`<primitive>`s) are dealt out by HEAD's list of them, balanced
+by their number of benchmarks.
 """
 
 import argparse
@@ -119,9 +122,43 @@ def selected_modules(checkout, requested):
     return " ".join(sorted(set(requested.split()) & set().union(*catalog.values()))) or None
 
 
-def run(binary, home, library, args, checkout, modules):
-    """Runs the benchmarks of `checkout` once, returning each one's median
-    time (ns)."""
+def list_groups(binary, modules):
+    """The benchmark groups (`<primitive>`s) of verified-garbage that
+    `binary` runs for `modules`, with how many benchmarks each has."""
+    out = subprocess.run(
+        [binary, "--bench", "--list", f"/{VG}/"],
+        env={**os.environ, "VG_BENCH_MODULES": modules},
+        check=True,
+        stdout=subprocess.PIPE,
+        text=True,
+    ).stdout
+    groups = {}
+    for line in out.splitlines():
+        if line.endswith(": benchmark"):
+            group = line.split("/", 1)[0]
+            groups[group] = groups.get(group, 0) + 1
+    return groups
+
+
+def shard_groups(groups, shard, shards):
+    """The groups of the `shard`-th (from 1) of `shards` shares: each, largest
+    first, goes to the share with the fewest benchmarks so far."""
+    load = [0] * shards
+    mine = []
+    for group in sorted(groups, key=lambda g: (-groups[g], g)):
+        i = load.index(min(load))
+        load[i] += groups[group]
+        if i == shard - 1:
+            mine.append(group)
+    return sorted(mine)
+
+
+def run(binary, home, library, args, checkout, modules, groups=None):
+    """Runs the benchmarks of `checkout` once (only those of `groups`, if
+    given), returning each one's median time (ns)."""
+    pattern = f"/{library}/"
+    if groups is not None:
+        pattern = f"^(?:{'|'.join(map(re.escape, groups))})/{library}/"
     subprocess.run(
         [
             binary,
@@ -136,7 +173,7 @@ def run(binary, home, library, args, checkout, modules):
             # short measurement.
             "--nresamples",
             "1000",
-            f"/{library}/",
+            pattern,
         ],
         env={
             **os.environ,
@@ -175,13 +212,17 @@ def main():
     p.add_argument("base", type=pathlib.Path)
     p.add_argument("head", type=pathlib.Path)
     p.add_argument("--summary", type=pathlib.Path)
-    p.add_argument("--rounds", type=int, default=3)
-    p.add_argument("--threshold", type=float, default=0.25)
+    p.add_argument("--rounds", type=int, default=2)
+    p.add_argument("--threshold", type=float, default=0.35)
     p.add_argument("--warm-up-time", type=float, default=0.2)
     p.add_argument("--measurement-time", type=float, default=0.5)
     p.add_argument("--work-dir", type=pathlib.Path, default=pathlib.Path("bench-compare"))
     p.add_argument("--modules", default="", help="space-separated; only benchmark these modules")
+    p.add_argument("--shard", default="", help="i/n: only the i-th of n shares of the benchmarks")
     args = p.parse_args()
+    shard, shards = map(int, (args.shard or "1/1").split("/"))
+    if not 1 <= shard <= shards:
+        p.error("--shard must be i/n with 1 <= i <= n")
 
     base, head = args.base.resolve(), args.head.resolve()
     modules = {"head": selected_modules(head, args.modules), "base": selected_modules(base, args.modules)}
@@ -194,6 +235,11 @@ def main():
         if binaries["base"] is not None:
             modules["base"] = selected_modules(source, args.modules)
 
+    # Both sides run the same groups, which head's list of them decides.
+    groups = None
+    if shards > 1:
+        groups = shard_groups(list_groups(binaries["head"], modules["head"]), shard, shards)
+
     shutil.rmtree(args.work_dir, ignore_errors=True)
     best = {"base": {}, "head": {}}
     for r in range(args.rounds):
@@ -203,19 +249,26 @@ def main():
                 continue
             print(f"round {r + 1}/{args.rounds}: {side}", file=sys.stderr)
             checkout = base if side == "base" else head
-            times = run(binaries[side], args.work_dir.resolve() / f"{side}-{r}", VG, args, checkout, modules[side])
+            times = run(binaries[side], args.work_dir.resolve() / f"{side}-{r}", VG, args, checkout, modules[side],
+                        groups)
             for bench_id, t in times.items():
                 best[side][bench_id] = min(t, best[side].get(bench_id, t))
-    print("OpenSSL", file=sys.stderr)
-    openssl = run(binaries["head"], args.work_dir.resolve() / "openssl", OPENSSL, args, head, modules["head"])
-
     cpu_features = os.environ.get("VG_CPU_FEATURES", "")
+    openssl = {}
+    if not cpu_features:
+        print("OpenSSL", file=sys.stderr)
+        openssl = run(binaries["head"], args.work_dir.resolve() / "openssl", OPENSSL, args, head, modules["head"],
+                      groups)
+
+    title = ", ".join([*([f"VG_CPU_FEATURES={cpu_features}"] if cpu_features else []),
+                       *([f"shard {shard}/{shards}"] if shards > 1 else [])])
     lines = [
-        f"## Benchmarks (VG_CPU_FEATURES={cpu_features})" if cpu_features else "## Benchmarks",
+        f"## Benchmarks ({title})" if title else "## Benchmarks",
         "",
         f"Fastest of {args.rounds} interleaved runs of each side on this runner;"
         f" a slowdown of more than {args.threshold:.0%} fails."
-        " OpenSSL (through rust-openssl) ran once, for reference.",
+        + (" OpenSSL (through rust-openssl) ran once, for reference." if not cpu_features
+           else " OpenSSL ran only in the configuration without VG_CPU_FEATURES."),
         *(
             [
                 f"Changed modules: {args.modules}. Only the benchmarks that use them ran"

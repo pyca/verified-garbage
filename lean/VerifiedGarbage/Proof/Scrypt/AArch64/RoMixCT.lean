@@ -67,7 +67,7 @@ abbrev scR : Region := ⟨sc s₀, (rr s₀ + 2) * 128⟩
 abbrev stkR : Region := below s₀.sp 16
 /-- The input. -/
 abbrev B : List Byte := bytesAt s₀.mem (bP s₀) (128 * rr s₀)
-/-- `V[i]`. -/
+/-- `(V[i]'(by omega))`. -/
 abbrev vAt (i : Nat) : Addr := vP s₀ + BitVec.ofNat 64 (128 * rr s₀ * i)
 /-- `T`. -/
 abbrev tP : Addr := sc s₀ + BitVec.ofNat 64 192
@@ -136,7 +136,7 @@ omit hp in
 theorem v_le {i : Nat} (hi : i < NN s₀) : 128 * rr s₀ * i + 128 * rr s₀ ≤ 128 * rr s₀ * NN s₀ := by
   rw [← Nat.mul_succ]; exact Nat.mul_le_mul_left _ hi
 
-/-- `V[i]` is in `v`. -/
+/-- `(V[i]'(by omega))` is in `v`. -/
 theorem vAt_sub {i : Nat} (hi : i < NN s₀) : Region.Sub ⟨vAt s₀ i, 128 * rr s₀⟩ (vR s₀) := by
   have := v_lt hp
   have := v_le hi
@@ -789,7 +789,7 @@ theorem vAt_in {i : Nat} (hi : i < NN s₀) : InRegions s₀.wr (vAt s₀ i) (12
   have lt := v_lt hp
   exact InRegions.of_mem (R := vR s₀) (by simp) (contains_off (by rw [e]; omega) (by omega))
 
-/-- `V[i]` and the parts of `scratch` and the stack we use. -/
+/-- `(V[i]'(by omega))` and the parts of `scratch` and the stack we use. -/
 theorem vAt_b {i : Nat} (hi : i < NN s₀) : Region.Disjoint ⟨vAt s₀ i, 128 * rr s₀⟩ (bR s₀) :=
   hp.b_v.symm.sub_left (vAt_sub hp hi)
 theorem vAt_s {i : Nat} (hi : i < NN s₀) : Region.Disjoint ⟨vAt s₀ i, 128 * rr s₀⟩ (scR s₀) :=
@@ -808,7 +808,7 @@ theorem call_frame {m m' : Mem} (hf : Frame [⟨bP s₀, 128 * rr s₀⟩, ⟨sc
     · exact ⟨scR s₀, by simp, w_sub⟩
     · exact ⟨stkR s₀, by simp, fun _ h => h⟩
 
-/-- What a call writing `b` keeps: `V[k]`. -/
+/-- What a call writing `b` keeps: `(V[k]'(by omega))`. -/
 theorem call_keeps_v {m m' : Mem} (hf : Frame [⟨bP s₀, 128 * rr s₀⟩, ⟨sc s₀, 128⟩, stkR s₀] m m')
     {k : Nat} (hk : k < NN s₀) :
     bytesAt m' (vAt s₀ k) (128 * rr s₀) = bytesAt m (vAt s₀ k) (128 * rr s₀) := by
@@ -1118,7 +1118,7 @@ theorem j_ok {s₀ : State} (hp : Pre s₀) {s : State} (h19 : s.gpr .x19 = bP s
       ub.mem, ua.mem, jOf_eq hp]
   · rw [ue.other _ hr, ud.other _ hr, ub.other _ hr, ua.other _ hr]
 
-/-- The address of `V[j]`. -/
+/-- The address of `(V[j]'(by omega))`. -/
 theorem vAt_madd (s₀ : State) (j : Nat) :
     vP s₀ + BitVec.ofNat 64 j * BitVec.ofNat 64 (128 * rr s₀) = vAt s₀ j := by
   rw [← BitVec.ofNat_mul, Nat.mul_comm]
@@ -1238,7 +1238,7 @@ by `WP.callF`; then constant time, up to the indices `j`, as on x86-64
 (`X86_64/RoMixCT.lean`): we relate two runs (`RelCT`). Correctness determines
 our registers from the public arguments, so they agree between the calls,
 where the taint analysis proves each piece constant time; the calls are
-constant time by scryptBlockMix's own proof. In step 3, the address of `V[j]`
+constant time by scryptBlockMix's own proof. In step 3, the address of `(V[j]'(by omega))`
 depends on `j`, which the contract declares public: the two runs compute the
 same `j`, since both compute their indices in order (`Inv3.js`) and agree on
 the whole list.
@@ -1789,7 +1789,7 @@ theorem roMix_correct (s : State) (hs : Proof.Scrypt.roMixAArch64.pre s) :
     ∃ t s', Exec isa Impl.Scrypt.AArch64.roMix s t s' ∧ abiPreserved s s' ∧
       Proof.Scrypt.roMixAArch64.post s s' := by
   obtain ⟨t, s', he, hk, hsp, hpost⟩ := correct blockMixSpec (pre_of hs)
-  refine ⟨t, s', he, ⟨fun r hr => ?_, hsp, Exec.preservedV he (by decide +kernel)⟩, hpost⟩
+  refine ⟨t, s', he, ⟨fun r hr => ?_, hsp, Exec.preservedV he (by lit_decide)⟩, hpost⟩
   rcases preserved_cases r hr with h | h
   · obtain ⟨p, hp, rfl⟩ := List.mem_map.mp h
     exact hk p hp

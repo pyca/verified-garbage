@@ -85,10 +85,10 @@ theorem mredRaw_spec {r : Reg} (h1 : r ≠ .eax) (h2 : r ≠ .edx) (is : List In
   have h1' : Reg.eax ≠ r := fun e => h1 e.symm
   rw [WP.block_append_iff]
   apply WP.of_runBlock
-  simp (config := {decide := true}) only [mredRaw, runBlock_cons,
+  simp only [reduceCtorEq, ↓reduceIte, Nat.reducePow, mredRaw, runBlock_cons,
     runStep_some, runBlock_nil, exec, execAlu, execMul, readSrc, State.setReg, arithFlags, State.setFlags,
-    Option.bind_some, Option.map_some, ite_true, ite_false, Option.some.injEq, exists_eq_left', h1, h2,
-    h2', h1']
+    Option.bind_some, Option.map_some, Option.some.injEq, exists_eq_left', h1, h2,
+    h1']
   refine k _ ⟨fun q hq => ?_, rfl, rfl, rfl⟩ ?_
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hq
     simp [hq.1, hq.2.1, hq.2.2]
@@ -104,8 +104,8 @@ theorem csubQ_spec {r t : Reg} (h : r ≠ t) (is : List Instr) (s : State) (P : 
   have h' : t ≠ r := fun e => h e.symm
   rw [WP.block_append_iff]
   apply WP.of_runBlock
-  simp (config := {decide := true}) only [csubQ, runBlock_cons, runStep_some, runBlock_nil, exec, execAlu,
-    readSrc, State.setReg, arithFlags, State.setFlags, Option.bind_some, Option.map_some, ite_true, ite_false,
+  simp only [↓reduceIte, Nat.reducePow, csubQ, runBlock_cons, runStep_some, runBlock_nil, exec, execAlu,
+    readSrc, State.setReg, arithFlags, State.setFlags, Option.bind_some, Option.map_some, 
     Option.some.injEq, exists_eq_left', h, h']
   refine k _ ⟨fun x hx => ?_, rfl, rfl, rfl⟩ ?_
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hx

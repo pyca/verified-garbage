@@ -2,7 +2,7 @@ import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Steps
 
 namespace VG.Proof.Poly1305.AArch64.Radix64
 open VG VG.AArch64 VG.Impl.Poly1305.AArch64.Radix64
-open VG.Proof.Poly1305.Limbs64 VG.PowLit
+open VG.Proof.Poly1305.Limbs64
 open VG.Spec.Poly1305 (P)
 
 abbrev absorbRegs : List Reg := [.x4, .x5, .x6, .x9, .x10, .x11, .x12, .x13, .x14, .x15]

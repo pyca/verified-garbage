@@ -29,7 +29,7 @@ theorem x25519Adx_ct : ConstantTime isa Proof.X25519.x25519X86_64.pre
   intro s₁ s₂ _ _ ⟨_, h1, h2, h3, h4⟩
   refine Taint.agree_ofRegs fun r hr => ?_
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl <;> assumption
+  rcases hr with rfl | rfl | rfl | rfl <;> with_reducible assumption
 
 theorem x25519Adx_verified :
     Verified X86_64.target Impl.X25519.X86_64.x25519Adx (Spec.X25519.x25519Contract X86_64.abi) :=

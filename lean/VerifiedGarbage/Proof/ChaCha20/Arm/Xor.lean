@@ -736,7 +736,7 @@ theorem agree₀ {s₁ s₂ : State} (h₁ : Proof.ChaCha20.xorArm.pre s₁)
     fun _ h => (List.not_mem_nil h).elim, fun _ h => (List.not_mem_nil h).elim,
     fun h => absurd h (by decide), fun k hk => absurd hk (by simp [τ₀])⟩
   · simp only [τ₀, RegSet.mem_ofList, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl <;> assumption
+    rcases hr with rfl | rfl | rfl | rfl <;> with_reducible assumption
   · rw [hp₁.wr, hp₂.wr]; simp only [stRg, dRg, bRg, stA, dA, bA, stP, dP, bP, L, p0, p1, p2, p3]
 
 /-- A state satisfying the precondition (with no data). -/

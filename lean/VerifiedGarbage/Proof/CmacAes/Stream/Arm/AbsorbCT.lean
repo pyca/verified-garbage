@@ -56,7 +56,7 @@ theorem absorb_rel {s₀ s₀' : State} (h0 : absorbArm.pre s₀) (h0' : absorbA
       subst e e'
       refine agree_argTaint (fun r hr => ?_) q1 wf wf' (argMem_of (j := 3) q1 hp.spf fun i hi => ?_)
       · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-        rcases hr with rfl | rfl | rfl | rfl <;> assumption
+        rcases hr with rfl | rfl | rfl | rfl <;> with_reducible assumption
       · rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2) with rfl | rfl | rfl
         · exact q6
         · exact q7

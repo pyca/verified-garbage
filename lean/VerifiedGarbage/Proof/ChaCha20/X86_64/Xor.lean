@@ -194,16 +194,16 @@ theorem prologue_ok {s₀ : State} (hp : XPre s₀) :
   · have := saved_bound p hp'
     exact ⟨_, hp.w_b, Offset.contains_base _ (by omega) (by lit_omega)⟩
   apply WP.of_runBlock
-  simp (config := {decide := true}) only [runBlock_cons, runStep_some, runBlock_nil, exec,
-    readSrc, execAlu, arithFlags, State.setReg, State.setFlags, ite_true,
-    ite_false, Option.map_some, Option.bind_some, Option.some.injEq, exists_eq_left']
+  simp only [reduceCtorEq, ↓reduceIte, runBlock_cons, runStep_some, runBlock_nil, exec,
+    readSrc, execAlu, arithFlags, State.setReg, State.setFlags, 
+    Option.map_some, Option.bind_some, Option.some.injEq, exists_eq_left']
   have hf : Frame [bR s₀] s₀.mem (Spill.saveMem s₀.mem (bp s₀) s₀.gpr saved) :=
     Spill.saveMem_frame_base _ _ _ _ (fun p hp => by have := saved_bound p hp; omega) (by decide)
-  refine ⟨⟨by simp (config := {decide := true}), by simp (config := {decide := true}) [P],
-    by simp (config := {decide := true}) [P], by simp (config := {decide := true}), fun r hr => ?_, rfl,
+  refine ⟨⟨by simp, by simp [P],
+    by simp [P], by simp, fun r hr => ?_, rfl,
     rfl, ?_, fun k hk => ?_, ?_, hf.mono (by simp)⟩, ?_⟩
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl <;> simp (config := {decide := true})
+    rcases hr with rfl | rfl | rfl | rfl <;> simp
   · rw [stateAt_frame hf (by simpa using hp.st_b), ctr_zero]
   · simp only [P, Nat.mul_zero, Nat.zero_min, Nat.not_lt_zero, ite_false]
     exact hf.bytes (R := dR s₀) (by simpa using hp.d_b) (Nat.le_of_lt (s₀.gpr .rdx).isLt) hk
@@ -306,7 +306,7 @@ theorem call_ok {s₀ : State} (hp : XPre s₀) {j : Nat} {s : State} (h : OInv 
         ∀ r ∈ [b256 s₀] ++ [stackR s₀], R.Disjoint r := by
       intro R h₁ h₂ r hr
       simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl <;> assumption
+      rcases hr with rfl | rfl <;> with_reducible assumption
     have hst : stateAt s₂.mem (st s₀) = stateAt s₁.mem (st s₀) :=
       stateAt_frame hf (hd _ (hp.st_b.sub_right (b256_sub s₀)) hp.stk_st.symm)
     refine ⟨⟨by rw [g .rbx (by simp [calleeSaved]) (by decide), h.rbx],
@@ -725,7 +725,7 @@ theorem agree₀ {s₁ s₂ : State} (h₁ : Proof.ChaCha20.xorX86_64.pre s₁)
   refine ⟨⟨fun r hr => ?_, fun h => by cases h⟩, fun _ => ?_, wf _ h₁, wf _ h₂, ?_, ?_,
     X86_64.Taint.noLo⟩
   · simp only [τ₀, RegSet.mem_ofList, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl | rfl <;> assumption
+    rcases hr with rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption
   · rw [h₁.2.1, h₂.2.1, p1, p2, p3, p4]
   · intro sl h; simp [τ₀] at h
   · intro sl h; simp [τ₀] at h

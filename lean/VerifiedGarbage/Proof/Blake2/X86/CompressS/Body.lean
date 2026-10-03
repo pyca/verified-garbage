@@ -1,5 +1,460 @@
-import VerifiedGarbage.Proof.Blake2.X86.CompressS.Pre
 import VerifiedGarbage.Proof.Blake2.X86.Stream.Common
+import VerifiedGarbage.Proof.Blake2.X86.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86.Spill
+import VerifiedGarbage.Proof.Framework.X86.Wp
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.MdStream.X86.Common
+import VerifiedGarbage.Proof.Blake2.Spec
+import VerifiedGarbage.Impl.Blake2.X86.CompressS
+
+section
+
+/-!
+# BLAKE2s on x86 (32-bit): the rounds
+
+`g_ok` executes `G` symbolically once, for any words of the work vector (in
+`scratch`, at `esi`) and of the block (at `edi`); `round_ok` and `rounds_ok`
+compose it into the rounds of `F`. `Holds` says that the work vector is in
+`scratch`, `Msg` that the block is at `edi`.
+-/
+
+namespace VG.Proof.Blake2.X86.CompressS
+
+open VG VG.X86 VG.X86.Wp
+open VG.Spec.Blake2 (Work Block G sigmaAt)
+open VG.Proof.Blake2 (mix G_get)
+open VG.Impl.Blake2.X86 (at_)
+open VG.Impl.Blake2.X86.CompressS
+open VG.Proof.MdStream.X86 (contains_addr readW_writeW_addr)
+
+/-- The work vector `v` is at `B`: word `k` at `[B + 4k]`. -/
+def Holds (B : BitVec 32) (v : Work 32) (m : Mem) : Prop :=
+  ∀ k (hk : k < 16), m.readW (addr B (vOff k)) 32 = v[k]
+
+/-- The block `M` is at `K`: word `j` at `[K + 4j]`. -/
+def Msg (K : BitVec 32) (M : Block 32) (m : Mem) : Prop :=
+  ∀ j : Fin 16, m.readW (addr K (4 * j.val)) 32 = M j
+
+/-- The work vector's 64 bytes. -/
+abbrev workR (B : BitVec 32) : Region := ⟨B.setWidth 64, 64⟩
+
+/-- What the rounds need of the regions `rd`, `wr`: the work vector (at `B`)
+is writable and does not wrap around the address space, and the block (at
+`K`) is readable and apart from it. -/
+structure Ctx (B K : BitVec 32) (rs ws : List Region) : Prop where
+  fit : B.toNat + 64 ≤ 2 ^ 32
+  wr : ∀ k < 16, InRegions ws (addr B (vOff k)) 4
+  rd : ∀ j < 16, InRegions (rs ++ ws) (addr K (4 * j)) 4
+  sep : ∀ k < 16, ∀ j < 16, Mem.Sep (addr K (4 * j)) 4 (addr B (vOff k)) 4
+
+theorem mem_rd {rd wr : List Region} {a : Addr} {n : Nat} (h : InRegions wr a n) :
+    InRegions (rd ++ wr) a n :=
+  let ⟨r, hr, hc⟩ := h
+  ⟨r, List.mem_append_right _ hr, hc⟩
+
+/-- The memory after `G` on the words `a, b, c, d` stores `r` in them. -/
+def gMem (m : Mem) (B : BitVec 32) (a b c d : Nat)
+    (r : BitVec 32 × BitVec 32 × BitVec 32 × BitVec 32) : Mem :=
+  (((m.writeW (addr B (vOff a)) r.1).writeW (addr B (vOff b)) r.2.1).writeW (addr B (vOff c))
+    r.2.2.1).writeW (addr B (vOff d)) r.2.2.2
+
+/-! ## `G`, executed once -/
+
+theorem g_ok {B K : BitVec 32} {s : State} (hc : Ctx B K s.rd s.wr) (hb : s.gpr .esi = B)
+    (hk : s.gpr .edi = K) {a b c d j k : Nat} (ha : a < 16) (hb' : b < 16) (hc' : c < 16)
+    (hd : d < 16) (hj : j < 16) (hk' : k < 16) :
+    WP isa (.block (g a b c d j k)) s fun s' =>
+      s'.gpr .esi = B ∧ s'.gpr .edi = K ∧ s'.gpr .esp = s.gpr .esp ∧ s'.gpr .ebp = s.gpr .ebp ∧
+      s'.rd = s.rd ∧ s'.wr = s.wr ∧
+      s'.mem = gMem s.mem B a b c d (mix Spec.Blake2.s (s.mem.readW (addr B (vOff a)) 32)
+        (s.mem.readW (addr B (vOff b)) 32) (s.mem.readW (addr B (vOff c)) 32)
+        (s.mem.readW (addr B (vOff d)) 32) (s.mem.readW (addr K (4 * j)) 32)
+        (s.mem.readW (addr K (4 * k)) 32)) := by
+  have ra := mem_rd (rd := s.rd) (hc.wr a ha)
+  have rb := mem_rd (rd := s.rd) (hc.wr b hb')
+  have rc := mem_rd (rd := s.rd) (hc.wr c hc')
+  have rd := mem_rd (rd := s.rd) (hc.wr d hd)
+  have wa := hc.wr a ha
+  have wb := hc.wr b hb'
+  have wc := hc.wr c hc'
+  have wd := hc.wr d hd
+  have mj := hc.rd j hj
+  have mk := hc.rd k hk'
+  apply WP.of_runBlock
+  simp only [reduceCtorEq, ↓reduceIte, Nat.reduceLeDiff, Nat.reduceEqDiff, Nat.reducePow, and_self, g, at_, runBlock_cons, runStep_some, runBlock_nil, exec,
+    execAlu, execShift, readSrc, ea_mk, State.load32, State.store32, RegUpd.gpr_setReg,
+    RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg, RegUpd.gpr_arithFlags,
+    RegUpd.mem_arithFlags, RegUpd.rd_arithFlags, RegUpd.wr_arithFlags, RegUpd.gpr_setFlags,
+    RegUpd.mem_setFlags, RegUpd.rd_setFlags, RegUpd.wr_setFlags, hb, hk, ra, rb, rc, rd, wa, wb,
+    wc, wd, mj, mk, Option.map_some, Option.bind_some, Option.some.injEq,
+    exists_eq_left']
+  exact ⟨trivial, trivial, trivial, trivial, trivial, trivial, rfl⟩
+
+/-! ## The work vector and the block after `G` -/
+
+section
+variable {B : BitVec 32} (hfit : B.toNat + 64 ≤ 2 ^ 32)
+include hfit
+
+theorem rw_slot (m : Mem) (x : BitVec 32) {i k : Nat} (hi : i < 16) (hk : k < 16) :
+    (m.writeW (addr B (vOff i)) x).readW (addr B (vOff k)) 32 =
+      if i = k then x else m.readW (addr B (vOff k)) 32 := by
+  by_cases h : i = k
+  · subst h; simp only [Mem.readW_writeW_self32, ite_true]
+  · simp only [h, ite_false]
+    exact readW_writeW_addr m x (by simp only [vOff]; omega) (by simp only [vOff]; omega)
+      (by simp only [vOff]; omega)
+
+theorem holds_G {v : Work 32} {m : Mem} (hv : Holds B v m) {a b c d : Fin 16} (hab : a.1 ≠ b.1)
+    (hac : a.1 ≠ c.1) (had : a.1 ≠ d.1) (hbc : b.1 ≠ c.1) (hbd : b.1 ≠ d.1) (hcd : c.1 ≠ d.1)
+    (x y : BitVec 32) :
+    Holds B (G Spec.Blake2.s v a b c d x y)
+      (gMem m B a b c d (mix Spec.Blake2.s v[a] v[b] v[c] v[d] x y)) := by
+  intro k hk
+  rw [G_get _ v hab hac had hbc hbd hcd x y k hk]
+  simp only [gMem, rw_slot hfit _ _ d.isLt hk, rw_slot hfit _ _ c.isLt hk, rw_slot hfit _ _ b.isLt hk,
+    rw_slot hfit _ _ a.isLt hk, hv k hk]
+  by_cases ed : (d : Nat) = k <;> by_cases ec : (c : Nat) = k <;> by_cases eb : (b : Nat) = k <;>
+    by_cases ea : (a : Nat) = k <;> simp only [ed, ec, eb, ea, ite_true, ite_false] <;> omega
+
+theorem frame_gMem (m : Mem) {a b c d : Nat} (ha : a < 16) (hb : b < 16) (hc : c < 16) (hd : d < 16)
+    (r : BitVec 32 × BitVec 32 × BitVec 32 × BitVec 32) : Frame [workR B] m (gMem m B a b c d r) := by
+  have ct : ∀ i < 16, (workR B).Contains (addr B (vOff i)) (32 / 8) := fun i hi =>
+    contains_addr (by simp only [vOff]; omega) (by decide) hfit
+  have hm := List.mem_singleton_self (workR B)
+  exact ((((Frame.refl _ _).writeW hm _ (ct a ha)).writeW hm _ (ct b hb)).writeW hm _ (ct c hc)).writeW
+    hm _ (ct d hd)
+
+end
+
+theorem msg_gMem {B K : BitVec 32} {rs ws : List Region} (hc : Ctx B K rs ws) {M : Block 32} {m : Mem}
+    (h : Msg K M m) {a b c d : Nat} (ha : a < 16) (hb : b < 16) (hc' : c < 16) (hd : d < 16)
+    (r : BitVec 32 × BitVec 32 × BitVec 32 × BitVec 32) : Msg K M (gMem m B a b c d r) := by
+  intro j
+  simp only [gMem]
+  rw [Mem.readW_writeW_sep (hc.sep d hd j j.isLt) (by decide),
+    Mem.readW_writeW_sep (hc.sep c hc' j j.isLt) (by decide),
+    Mem.readW_writeW_sep (hc.sep b hb j j.isLt) (by decide),
+    Mem.readW_writeW_sep (hc.sep a ha j j.isLt) (by decide)]
+  exact h j
+
+/-! ## The rounds -/
+
+/-- During the rounds of block `M` (at `K`), from `s₀`: the work vector is
+`v`, and only it has changed. -/
+structure RS (B K : BitVec 32) (M : Block 32) (s₀ : State) (v : Work 32) (s : State) : Prop where
+  esi : s.gpr .esi = B
+  edi : s.gpr .edi = K
+  esp : s.gpr .esp = s₀.gpr .esp
+  ebp : s.gpr .ebp = s₀.gpr .ebp
+  rd : s.rd = s₀.rd
+  wr : s.wr = s₀.wr
+  holds : Holds B v s.mem
+  msg : Msg K M s.mem
+  frame : Frame [workR B] s₀.mem s.mem
+
+section
+variable {B K : BitVec 32} {M : Block 32} {s₀ : State} (hc : Ctx B K s₀.rd s₀.wr)
+include hc
+
+theorem gAt_ok {v : Work 32} {s : State} (h : RS B K M s₀ v s) (r i : Nat) (a b c d : Fin 16)
+    (hab : a.1 ≠ b.1) (hac : a.1 ≠ c.1) (had : a.1 ≠ d.1) (hbc : b.1 ≠ c.1) (hbd : b.1 ≠ d.1)
+    (hcd : c.1 ≠ d.1) :
+    WP isa (gAt r i a b c d) s
+      (RS B K M s₀ (G Spec.Blake2.s v a b c d (M (sigmaAt r (2 * i))) (M (sigmaAt r (2 * i + 1))))) := by
+  have hc' : Ctx B K s.rd s.wr := by rw [h.rd, h.wr]; exact hc
+  refine WP.mono (g_ok hc' h.esi h.edi a.isLt b.isLt c.isLt d.isLt (sigmaAt r (2 * i)).isLt
+    (sigmaAt r (2 * i + 1)).isLt) fun s' ⟨e1, e2, e3, e4, e5, e6, e7⟩ => ?_
+  rw [h.holds a a.isLt, h.holds b b.isLt, h.holds c c.isLt, h.holds d d.isLt, h.msg, h.msg] at e7
+  refine ⟨e1, e2, e3.trans h.esp, e4.trans h.ebp, e5.trans h.rd, e6.trans h.wr, ?_, ?_, ?_⟩
+  · rw [e7]; exact holds_G hc.fit h.holds hab hac had hbc hbd hcd _ _
+  · rw [e7]; exact msg_gMem hc h.msg a.isLt b.isLt c.isLt d.isLt _
+  · rw [e7]; exact h.frame.trans (frame_gMem hc.fit _ a.isLt b.isLt c.isLt d.isLt _)
+
+theorem round_ok {v : Work 32} {s : State} (h : RS B K M s₀ v s) (r : Nat) :
+    WP isa (round r) s (RS B K M s₀ (Spec.Blake2.round Spec.Blake2.s M v r)) := by
+  refine WP.seq (WP.mono (gAt_ok hc h r 0 0 4 8 12 (by decide) (by decide) (by decide) (by decide)
+    (by decide) (by decide)) fun s₁ h₁ => ?_)
+  refine WP.seq (WP.mono (gAt_ok hc h₁ r 1 1 5 9 13 (by decide) (by decide) (by decide) (by decide)
+    (by decide) (by decide)) fun s₂ h₂ => ?_)
+  refine WP.seq (WP.mono (gAt_ok hc h₂ r 2 2 6 10 14 (by decide) (by decide) (by decide) (by decide)
+    (by decide) (by decide)) fun s₃ h₃ => ?_)
+  refine WP.seq (WP.mono (gAt_ok hc h₃ r 3 3 7 11 15 (by decide) (by decide) (by decide) (by decide)
+    (by decide) (by decide)) fun s₄ h₄ => ?_)
+  refine WP.seq (WP.mono (gAt_ok hc h₄ r 4 0 5 10 15 (by decide) (by decide) (by decide) (by decide)
+    (by decide) (by decide)) fun s₅ h₅ => ?_)
+  refine WP.seq (WP.mono (gAt_ok hc h₅ r 5 1 6 11 12 (by decide) (by decide) (by decide) (by decide)
+    (by decide) (by decide)) fun s₆ h₆ => ?_)
+  refine WP.seq (WP.mono (gAt_ok hc h₆ r 6 2 7 8 13 (by decide) (by decide) (by decide) (by decide)
+    (by decide) (by decide)) fun s₇ h₇ => ?_)
+  exact WP.mono (gAt_ok hc h₇ r 7 3 4 9 14 (by decide) (by decide) (by decide) (by decide)
+    (by decide) (by decide)) fun s₈ h₈ => h₈
+
+theorem rounds_ok {v : Work 32} {s : State} (h : RS B K M s₀ v s) (n : Nat) :
+    WP isa (rounds n) s (RS B K M s₀ ((List.range n).foldl (Spec.Blake2.round Spec.Blake2.s M) v)) := by
+  induction n with
+  | zero => exact WP.block_nil h
+  | succ n ih =>
+    refine WP.seq (WP.mono ih fun s' h' => ?_)
+    rw [List.range_succ, List.foldl_append, List.foldl_cons, List.foldl_nil]
+    exact round_ok hc h' n
+
+end
+
+end VG.Proof.Blake2.X86.CompressS
+
+end
+
+section
+
+/-!
+# BLAKE2s on x86 (32-bit): the compression function's precondition
+
+`Pre` unpacks the precondition of `compressX86 Spec.Blake2.s`; its lemmas
+locate the words the code reads and writes. Also `V0` and `F_eq`: `F` in the
+order of the code.
+-/
+
+namespace VG.Proof.Blake2.X86.CompressS
+
+open VG VG.X86 VG.X86.Wp
+open VG.Spec.Blake2 (Work Block HashValue blockBytes stateAt blockAt compressBlocks)
+open VG.Impl.Blake2.X86.CompressS
+open VG.Proof.MdStream.X86 (contains_addr readW_writeW_addr)
+
+/-! ## The compression function, in the order of the code -/
+
+/-- The work vector before the rounds (RFC 7693 §3.2). -/
+def V0 (h : HashValue 32) (t : Nat) (f : Bool) : Work 32 :=
+  let v : Work 32 := h ++ Spec.Blake2.s.IV
+  let v := v.set 12 (v[12] ^^^ BitVec.ofNat 32 t)
+  let v := v.set 13 (v[13] ^^^ BitVec.ofNat 32 (t / 2 ^ 32))
+  if f then v.set 14 (v[14] ^^^ BitVec.allOnes 32) else v
+
+theorem F_eq (h : HashValue 32) (m : Block 32) (t : Nat) (f : Bool) :
+    Spec.Blake2.F Spec.Blake2.s h m t f = Vector.ofFn fun i : Fin 8 =>
+      h[i] ^^^ ((List.range 10).foldl (Spec.Blake2.round Spec.Blake2.s m) (V0 h t f))[i] ^^^
+        ((List.range 10).foldl (Spec.Blake2.round Spec.Blake2.s m) (V0 h t f))[i.val + 8] := rfl
+
+/-- The final block flag as a word. -/
+def flagW (f : Bool) : BitVec 32 := if f then BitVec.allOnes 32 else 0
+
+theorem V0_get (h : HashValue 32) (t : Nat) (f : Bool) (k : Nat) (hk : k < 16) : (V0 h t f)[k] =
+    if hk8 : k < 8 then h[k] else if k = 12 then Spec.Blake2.s.IV[4] ^^^ BitVec.ofNat 32 t
+    else if k = 13 then Spec.Blake2.s.IV[5] ^^^ BitVec.ofNat 32 (t / 2 ^ 32)
+    else if k = 14 then Spec.Blake2.s.IV[6] ^^^ flagW f else Spec.Blake2.s.IV[k - 8]'(by omega) := by
+  have base : ((h ++ Spec.Blake2.s.IV : Work 32))[k] =
+      if hk8 : k < 8 then h[k] else Spec.Blake2.s.IV[k - 8]'(by omega) := by
+    simp only [Vector.getElem_append]
+  have e12 : (h ++ Spec.Blake2.s.IV : Work 32)[12] = Spec.Blake2.s.IV[4] := by
+    simp only [Vector.getElem_append]; rfl
+  have e13 : (h ++ Spec.Blake2.s.IV : Work 32)[13] = Spec.Blake2.s.IV[5] := by
+    simp only [Vector.getElem_append]; rfl
+  have e14 : (h ++ Spec.Blake2.s.IV : Work 32)[14] = Spec.Blake2.s.IV[6] := by
+    simp only [Vector.getElem_append]; rfl
+  by_cases k14 : k = 14
+  · subst k14; cases f <;> simp [V0, flagW, e14]
+  by_cases k13 : k = 13
+  · subst k13; cases f <;> simp [V0, e13]
+  by_cases k12 : k = 12
+  · subst k12; cases f <;> simp [V0, e12]
+  have n14 : ¬14 = k := Ne.symm k14
+  have n13 : ¬13 = k := Ne.symm k13
+  have n12 : ¬12 = k := Ne.symm k12
+  cases f <;> simp only [V0, Vector.getElem_set, n14, n13, n12, k14, k13, k12, ite_false, base,
+    Bool.false_eq_true, ite_true]
+
+/-! ## The precondition -/
+
+section
+variable (s₀ : State)
+
+abbrev esp₀ : BitVec 32 := s₀.gpr .esp
+abbrev st : BitVec 32 := arg s₀ 0
+abbrev bp : BitVec 32 := arg s₀ 1
+abbrev nb : Nat := (arg s₀ 2).toNat
+abbrev t₀ : Nat := (arg s₀ 4 ++ arg s₀ 3).toNat
+abbrev fl : Bool := arg s₀ 5 != 0
+abbrev scr : BitVec 32 := arg s₀ 6
+abbrev stR : Region := ⟨(st s₀).setWidth 64, 32⟩
+abbrev blR : Region := ⟨(bp s₀).setWidth 64, 64 * nb s₀⟩
+abbrev scrR : Region := ⟨(scr s₀).setWidth 64, 512⟩
+abbrev argR : Region := ⟨argAddr s₀ 0, 28⟩
+abbrev retR : Region := ⟨(esp₀ s₀).setWidth 64, 4⟩
+abbrev H₀ : HashValue 32 := stateAt 32 s₀.mem ((st s₀).setWidth 64)
+
+/-- Where block `i` starts. -/
+abbrev blkAddr (i : Nat) : BitVec 32 := bp s₀ + BitVec.ofNat 32 (64 * i)
+
+/-- Block `i`, as `compressBlocks` reads it. -/
+abbrev blk (i : Nat) : Block 32 :=
+  blockAt 32 s₀.mem ((bp s₀).setWidth 64 + BitVec.ofNat 64 (blockBytes 32 * i))
+
+end
+
+structure Pre (s₀ : State) : Prop where
+  rd : s₀.rd = [blR s₀, argR s₀]
+  wr : s₀.wr = [stR s₀, scrR s₀]
+  st_scr : (stR s₀).Disjoint (scrR s₀)
+  blk_st : (blR s₀).Disjoint (stR s₀)
+  blk_scr : (blR s₀).Disjoint (scrR s₀)
+  arg_st : (argR s₀).Disjoint (stR s₀)
+  arg_scr : (argR s₀).Disjoint (scrR s₀)
+  ret_st : (retR s₀).Disjoint (stR s₀)
+  ret_scr : (retR s₀).Disjoint (scrR s₀)
+  st_fits : (st s₀).toNat + 32 ≤ 2 ^ 32
+  blk_fits : (bp s₀).toNat + 64 * nb s₀ ≤ 2 ^ 32
+  scr_fits : (scr s₀).toNat + 512 ≤ 2 ^ 32
+  esp_fits : (esp₀ s₀).toNat + 32 ≤ 2 ^ 32
+
+theorem pre_of (s₀ : State) (h : (Proof.Blake2.compressX86 Spec.Blake2.s).pre s₀) : Pre s₀ := by
+  obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13⟩ := h
+  exact ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13⟩
+
+/-- The callee-saved registers are saved in `scratch`. -/
+abbrev Saved (s₀ : State) (m : Mem) : Prop := Spill.Saved m (addr (scr s₀)) s₀.gpr saved
+
+theorem saved_fits : Spill.Fits 92 saved := by decide
+
+theorem saved_bound : ∀ p ∈ saved, 80 ≤ p.2 ∧ p.2 + 4 ≤ 92 := by decide
+
+namespace Pre
+variable {s₀ : State} (h : Pre s₀)
+include h
+
+theorem in_st {s : State} (hw : s.wr = s₀.wr) {d : Nat} (hd : d + 4 ≤ 32) :
+    InRegions s.wr (addr (st s₀) d) 4 :=
+  ⟨stR s₀, by simp [hw, h.wr], contains_addr hd (by omega) h.st_fits⟩
+
+theorem in_scr {s : State} (hw : s.wr = s₀.wr) {d : Nat} (hd : d + 4 ≤ 512) :
+    InRegions s.wr (addr (scr s₀) d) 4 :=
+  ⟨scrR s₀, by simp [hw, h.wr], contains_addr hd (by omega) h.scr_fits⟩
+
+theorem argAddr_eq {d : Nat} (hd : d < 32) :
+    addr (esp₀ s₀) d = (esp₀ s₀).setWidth 64 + BitVec.ofNat 64 d :=
+  addr_eq (by have := h.esp_fits; omega)
+
+theorem arg_contains {d : Nat} (hd : 4 ≤ d) (hd' : d + 4 ≤ 32) :
+    (argR s₀).Contains (addr (esp₀ s₀) d) 4 := by
+  show (⟨addr (esp₀ s₀) 4, 28⟩ : Region).Contains _ _
+  rw [h.argAddr_eq (by omega), h.argAddr_eq (by omega)]
+  exact Offset.contains _ hd (by omega) (by omega)
+
+theorem in_arg {s : State} (hrd : s.rd = s₀.rd) {d : Nat} (hd : 4 ≤ d) (hd' : d + 4 ≤ 32) :
+    InRegions (s.rd ++ s.wr) (addr (esp₀ s₀) d) 4 :=
+  ⟨argR s₀, by simp [hrd, h.rd], h.arg_contains hd hd'⟩
+
+theorem arg_sub {i : Nat} (hi : i < 7) : Region.Sub ⟨argAddr s₀ i, 4⟩ (argR s₀) := by
+  show Region.Sub ⟨addr (esp₀ s₀) (4 + 4 * i), 4⟩ ⟨addr (esp₀ s₀) 4, 28⟩
+  rw [h.argAddr_eq (by omega), h.argAddr_eq (by omega)]
+  exact Offset.sub _ (by omega) (by omega)
+
+/-- The arguments are unchanged while only the state and `scratch` are written. -/
+theorem arg_frame {m : Mem} (hf : Frame [stR s₀, scrR s₀] s₀.mem m) {i : Nat} (hi : i < 7) :
+    m.readW (addr (esp₀ s₀) (4 + 4 * i)) 32 = arg s₀ i := by
+  refine (hf.readW (r := ⟨argAddr s₀ i, 4⟩) (Region.contains_self _ _) ?_ (by decide))
+  simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]
+  exact ⟨h.arg_st.sub_left (h.arg_sub hi), h.arg_scr.sub_left (h.arg_sub hi)⟩
+
+theorem blk_toNat {i : Nat} (hi : i < nb s₀) : (blkAddr s₀ i).toNat = (bp s₀).toNat + 64 * i := by
+  have := h.blk_fits
+  simp only [blkAddr, BitVec.toNat_add, BitVec.toNat_ofNat]
+  rw [Nat.mod_eq_of_lt (a := 64 * i) (by omega), Nat.mod_eq_of_lt (by omega)]
+
+theorem blk_word {i : Nat} (hi : i < nb s₀) {o : Nat} (ho : o + 4 ≤ 64) :
+    addr (blkAddr s₀ i) o = (bp s₀).setWidth 64 + BitVec.ofNat 64 (64 * i + o) := by
+  rw [show addr (blkAddr s₀ i) o = addr (bp s₀) (64 * i + o) by
+    simp only [addr, blkAddr, BitVec.add_assoc, BitVec.ofNat_add]]
+  exact addr_eq (by have := h.blk_fits; have : i + 1 ≤ nb s₀ := hi; omega)
+
+theorem blk_contains {i : Nat} (hi : i < nb s₀) {o : Nat} (ho : o + 4 ≤ 64) :
+    (blR s₀).Contains (addr (blkAddr s₀ i) o) 4 := by
+  rw [h.blk_word hi ho]
+  have := h.blk_fits
+  exact Offset.contains_base _ (by have : i + 1 ≤ nb s₀ := hi; omega) (by omega)
+
+theorem scr_contains {d : Nat} (hd : d + 4 ≤ 512) : (scrR s₀).Contains (addr (scr s₀) d) 4 :=
+  contains_addr hd (by omega) h.scr_fits
+
+theorem st_contains {d : Nat} (hd : d + 4 ≤ 32) : (stR s₀).Contains (addr (st s₀) d) 4 :=
+  contains_addr hd (by omega) h.st_fits
+
+/-- What the rounds of block `i` need. -/
+theorem ctx {i : Nat} (hi : i < nb s₀) : Ctx (scr s₀) (blkAddr s₀ i) s₀.rd s₀.wr where
+  fit := by have := h.scr_fits; omega
+  wr k hk := h.in_scr rfl (by simp only [vOff]; omega)
+  rd j hj := ⟨blR s₀, by simp [h.rd], h.blk_contains hi (by omega)⟩
+  sep k hk j hj := h.blk_scr.sep (h.blk_contains hi (by omega)) (h.scr_contains (by simp only [vOff]; omega))
+
+/-- Block `i`, while only the state and `scratch` are written. -/
+theorem msg {i : Nat} (hi : i < nb s₀) {m : Mem} (hf : Frame [stR s₀, scrR s₀] s₀.mem m) :
+    Msg (blkAddr s₀ i) (blk s₀ i) m := by
+  intro j
+  have hj := j.isLt
+  rw [hf.readW (r := blR s₀) (h.blk_contains hi (by omega)) (by
+      simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]
+      exact ⟨h.blk_st, h.blk_scr⟩) (by decide),
+    h.blk_word hi (by omega)]
+  have e := Proof.Blake2.blockAt_word (w := 32) s₀.mem
+    ((bp s₀).setWidth 64 + BitVec.ofNat 64 (blockBytes 32 * i)) j.1 hj
+  rw [show blk s₀ i j = blk s₀ i ⟨j.1, hj⟩ from rfl, blk, e, BitVec.add_assoc, BitVec.ofNat_add_ofNat]
+  rfl
+
+/-- Word `k` of the state. -/
+theorem stateAt_get (m : Mem) {k : Nat} (hk : k < 8) :
+    (stateAt 32 m ((st s₀).setWidth 64))[k] = m.readW (addr (st s₀) (4 * k)) 32 := by
+  simp only [stateAt, Vector.getElem_ofFn]
+  rw [addr_eq (by have := h.st_fits; omega)]
+
+theorem stateAt_ext {m : Mem} {H : HashValue 32}
+    (hH : ∀ k (hk : k < 8), m.readW (addr (st s₀) (4 * k)) 32 = H[k]) :
+    stateAt 32 m ((st s₀).setWidth 64) = H := by
+  ext k hk
+  rw [h.stateAt_get m hk, hH k hk]
+
+/-- `scratch` beyond the work vector is unchanged while only the work vector,
+or the state, is written. -/
+theorem high_frame {m m' : Mem} (hf : Frame [workR (scr s₀)] m m' ∨ Frame [stR s₀] m m') {d : Nat}
+    (hd : 64 ≤ d) (hd' : d + 4 ≤ 512) :
+    m'.readW (addr (scr s₀) d) 32 = m.readW (addr (scr s₀) d) 32 := by
+  have hc : (⟨addr (scr s₀) d, 4⟩ : Region).Contains (addr (scr s₀) d) (32 / 8) :=
+    Region.contains_self _ _
+  have := h.scr_fits
+  rcases hf with hf | hf
+  · refine hf.readW hc ?_ (by decide)
+    simp only [List.mem_singleton, forall_eq]
+    rw [addr_eq (by omega)]
+    exact Offset.disjoint_base _ hd (by omega)
+  · refine hf.readW hc ?_ (by decide)
+    simp only [List.mem_singleton, forall_eq]
+    refine Region.Disjoint.sub_left h.st_scr.symm ?_
+    rw [addr_eq (by omega)]
+    exact Offset.sub_base _ (by omega)
+
+/-- The state is unchanged while only the work vector is written. -/
+theorem st_frame {m m' : Mem} (hf : Frame [workR (scr s₀)] m m') {d : Nat} (hd : d + 4 ≤ 32) :
+    m'.readW (addr (st s₀) d) 32 = m.readW (addr (st s₀) d) 32 := by
+  refine hf.readW (r := stR s₀) (h.st_contains hd) ?_ (by decide)
+  simp only [List.mem_singleton, forall_eq]
+  exact h.st_scr.sub_right (Region.sub_prefix (by omega))
+
+/-- The work vector is unchanged while only the state is written. -/
+theorem work_frame {m m' : Mem} (hf : Frame [stR s₀] m m') {d : Nat} (hd : d + 4 ≤ 512) :
+    m'.readW (addr (scr s₀) d) 32 = m.readW (addr (scr s₀) d) 32 := by
+  refine hf.readW (r := scrR s₀) (h.scr_contains hd) ?_ (by decide)
+  simp only [List.mem_singleton, forall_eq]
+  exact h.st_scr.symm
+
+theorem saved_frame {m m' : Mem} (hs : Saved s₀ m)
+    (hf : Frame [workR (scr s₀)] m m' ∨ Frame [stR s₀] m m') : Saved s₀ m' :=
+  hs.of_readW fun p hp => have hb := saved_bound p hp; h.high_frame hf (by omega) (by omega)
+
+end Pre
+
+end VG.Proof.Blake2.X86.CompressS
+
+end
 
 /-!
 # BLAKE2s on x86 (32-bit): one block
@@ -162,11 +617,11 @@ theorem ivs_ok {s : State} (hesi : s.gpr .esi = scr s₀) (hwr : s.wr = s₀.wr)
       (m.writeW (addr (scr s₀) (vOff k)) v).readW (addr (scr s₀) d) 32 = m.readW (addr (scr s₀) d) 32 :=
     fun m v k d h1 h2 h3 => rw_hi fV m v h1 h2 h3
   apply WP.of_runBlock
-  simp (config := {decide := true}) only [ivs, at_, runBlock_cons, runStep_some,
+  simp only [reduceCtorEq, ↓reduceIte, ivs, at_, runBlock_cons, runStep_some,
     runBlock_nil, exec, execAlu, readSrc, ea_mk, State.load32, State.store32, RegUpd.gpr_setReg,
     RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg, RegUpd.gpr_arithFlags,
     RegUpd.mem_arithFlags, RegUpd.rd_arithFlags, RegUpd.wr_arithFlags, hesi, w8, w9, w10, w11, w12,
-    w13, w14, w15, r64, r68, r72, ite_true, ite_false, Option.map_some, Option.bind_some,
+    w13, w14, w15, r64, r68, r72, Option.map_some, Option.bind_some,
     Option.some.injEq, exists_eq_left']
   refine ⟨trivial, trivial, trivial, trivial, trivial, trivial, ?_⟩
   simp (disch := decide) only [hh]
@@ -263,12 +718,12 @@ theorem advance_ok {s : State} (hesi : s.gpr .esi = scr s₀) (hwr : s.wr = s₀
   have w68 := hw thiOff (by decide)
   have w76 := hw nOff (by decide)
   apply WP.of_runBlock
-  simp (config := {decide := true}) only [advance, at_, runBlock_cons, runStep_some,
+  simp only [reduceCtorEq, ↓reduceIte, Nat.reducePow, advance, at_, runBlock_cons, runStep_some,
     runBlock_nil, exec, execAlu, readSrc, ea_mk, State.load32, State.store32, RegUpd.gpr_setReg,
     RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg, RegUpd.gpr_arithFlags,
     RegUpd.mem_arithFlags, RegUpd.rd_arithFlags, RegUpd.wr_arithFlags, RegUpd.cf_setReg,
     RegUpd.cf_arithFlags, RegUpd.zf_setReg, RegUpd.zf_arithFlags, hesi, r64, r68, r76, w64, w68, w76,
-    ite_true, ite_false, Option.map_some, Option.bind_some, Option.some.injEq, exists_eq_left']
+    Option.map_some, Option.bind_some, Option.some.injEq, exists_eq_left']
   refine ⟨trivial, trivial, trivial, trivial, trivial, trivial, ?_, ?_⟩
   · simp (disch := decide) only [rw_scr fV]
   · simp (disch := decide) only [rw_scr fV]
@@ -291,7 +746,7 @@ theorem holds_v0 {B : BitVec 32} (hfit : B.toNat + 512 ≤ 2 ^ 32) {m : Mem} {H 
   · simp only [show ¬ 15 = k by omega, show ¬ 14 = k by omega, show ¬ 13 = k by omega,
       show ¬ 12 = k by omega, show ¬ 11 = k by omega, show ¬ 10 = k by omega, show ¬ 9 = k by omega,
       show ¬ 8 = k by omega, ite_false, h8, dite_true, hH k h8]
-  all_goals simp (config := {decide := true}) only [ite_true, ite_false, dite_false]
+  all_goals simp only [↓reduceIte, ↓reduceDIte, Nat.reduceLT, Nat.reduceEqDiff, Nat.reduceSub, Nat.reducePow]
   all_goals rfl
 
 theorem frame_ivMem {B : BitVec 32} (hfit : B.toNat + 64 ≤ 2 ^ 32) (m : Mem) :

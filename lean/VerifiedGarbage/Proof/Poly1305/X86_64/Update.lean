@@ -14,8 +14,6 @@ The contract `update` is proven against, and its code up to the call of
 call.
 -/
 
-open VG.PowLit
-
 namespace VG.Proof.Poly1305
 
 open Spec.Poly1305 (bytesAt Buffered)
@@ -422,7 +420,7 @@ theorem stash_ok (s : State) (hw : sR (s.gpr .rdi) ∈ s.wr) :
   have o0 := o 72 (by decide); have o1 := o 80 (by decide); have o2 := o 88 (by decide)
   simp only [off] at o0 o1 o2
   apply WP.of_runBlock
-  simp (config := {decide := true}) only [runBlock_cons, runStep_some, runBlock_nil, exec, ea_at,
+  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, ea_at,
     State.store64, o0, o1, o2, ite_true, Option.some.injEq, exists_eq_left']
   exact ⟨trivial, trivial, trivial, rfl⟩
 

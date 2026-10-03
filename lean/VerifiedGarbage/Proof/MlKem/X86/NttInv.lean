@@ -144,9 +144,9 @@ theorem scale_step {s₀ : State} (hp : Pre s₀) {G : Poly} {t : Nat} (ht : t <
   have wr₂ : s₂.wr = s.wr := o₂.wr
   have bx₂ : s₂.gpr .ebx = BitVec.ofNat 32 (a * 3303 % q) := eq_ofNat_of_toNat v₂
   apply WP.of_runBlock
-  simp (config := {decide := true}) only [runBlock_cons, runStep_some, runBlock_nil, exec, execAlu,
+  simp only [reduceCtorEq, ↓reduceIte, Nat.reducePow, runBlock_cons, runStep_some, runBlock_nil, exec, execAlu,
     readSrc, State.ea, at_, State.store32, State.setReg, arithFlags, State.setFlags, Option.bind_some,
-    esi₂, ecx₂, m₂, wr₂, bx₂, ea, inF, ite_true, ite_false, Option.some.injEq, exists_eq_left']
+    esi₂, ecx₂, m₂, wr₂, bx₂, ea, inF, Option.some.injEq, exists_eq_left']
   have hv : BitVec.ofNat 32 (a * 3303 % q) = BitVec.ofNat 32 ((G[t]! * 3303).val) := by
     rw [← ea', scaled_get _ _ ht', ite_eq_right (Nat.lt_irrefl t), val_mul]
     rfl

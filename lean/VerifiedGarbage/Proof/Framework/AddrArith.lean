@@ -1,4 +1,5 @@
 import VerifiedGarbage.TCB.Mem
+import VerifiedGarbage.Proof.Framework.PowLit
 
 /-!
 # Address arithmetic without `bv_omega`

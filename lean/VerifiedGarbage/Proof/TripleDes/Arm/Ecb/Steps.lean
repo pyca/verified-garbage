@@ -16,9 +16,9 @@ theorem advance_ok (s : State) :
       s'.gpr .r1 = s.gpr .r1 + 8 ∧ s'.gpr .r3 = s.gpr .r3 - 1 ∧
       zeroCount s' = some ((s.gpr .r3 - 1) == 0) ∧ Keep [.r1, .r3] s s' := by
   refine ⟨_, by
-    simp (config := {decide := true}) only [Impl.TripleDes.Arm.Ecb.advance,
-      runBlock_cons, runStep_some, runBlock_nil, exec, Op2.eval, ite_true, Option.map_some,
-      gpr_setReg, ite_false]
+    simp only [Impl.TripleDes.Arm.Ecb.advance,
+      runBlock_cons, exec, Op2.eval, 
+      ]
     rfl, ?_, ?_, ?_, ?_⟩
   · simp only [gpr_subFlags, gpr_setReg, reduceCtorEq, ite_false, ite_true]
   · simp only [gpr_subFlags, gpr_setReg, reduceCtorEq, ite_false, ite_true]

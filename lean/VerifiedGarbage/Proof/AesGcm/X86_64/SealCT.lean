@@ -35,7 +35,7 @@ theorem one_pub {k : Nat} {s₀ s₀' : State} (hq : Proof.AesGcm.onePub k s₀ 
   obtain ⟨q₁, q₂, q₃, q₄, q₅, q₆, q₇, -⟩ := hq
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> assumption
+  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption
 
 theorem oneIn_pub {k : Nat} (hk : 3 ≤ k) {s₀ s₀' : State} (hq : Proof.AesGcm.onePub k s₀ s₀') {s : State}
     (h : OneIn s₀' k s) : OneIn s₀ k s := by
