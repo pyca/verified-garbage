@@ -124,7 +124,7 @@ theorem replace_core (s : State) (idx ii : Byte) (h : TableEnv s idx)
   have h1 : WP isa (.block [.dp .eor .r7 .r7 (.reg .r11), .mov .r8 (imm 0)]) t' fun u =>
       u.gpr .r7 = (b ^^^ v).setWidth 32 ∧ u.gpr .r8 = 0 ∧ u.mem = s.mem := by
     have t'7 : t'.gpr .r7 = b.setWidth 32 := (t'k.gpr (by decide)).trans t7
-    arun [t'7, t'11, t'm, tm]
+    arun [t'7, t'11, t'm, tm, BitVec.ofNat_eq_ofNat]
     rw [xor_byte32]
   refine WP.mono (WP.keep [.r7, .r8] h1 (by decide)) fun u ⟨⟨u7, u8, um⟩, uk⟩ => ?_
   have k₁ : Keep [.r7, .r8, .r9, .r11] s u := ((tk.trans t'k).trans uk).mono (by decide)

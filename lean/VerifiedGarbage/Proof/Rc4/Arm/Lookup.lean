@@ -132,7 +132,7 @@ theorem lookup_core (s : State) (idx : Byte) (h : TableEnv s idx) :
   simp only [lookup, List.append_assoc]
   rw [WP.block_append_iff]
   have h0 : WP isa (.block [.mov .r8 (imm 0)]) s (GInv s idx 0) := by
-    arun [GInv, gather, Nat.not_lt_zero]
+    arun [GInv, gather, Nat.not_lt_zero, BitVec.ofNat_eq_ofNat]
   refine WP.mono h0 fun t ht => ?_
   rw [WP.block_append_iff]
   refine WP.mono (gather_steps s idx h.idx h.ones h.fit h.read 64 (by decide) t ht)
@@ -143,7 +143,8 @@ theorem lookup_core (s : State) (idx : Byte) (h : TableEnv s idx) :
     rw [u8]; unfold gather; rw [ite_eq_left (by omega)]
   rw [WP.block_append_iff]
   have h1 : WP isa (.block [.mov .r7 (imm 0)]) u (PInv s q (idx.toNat % 4) 0) := by
-    arun [PInv, pick, hq, u6, u10, um, Nat.mul_zero, BitVec.ushiftRight_zero, Nat.not_lt_zero]
+    arun [PInv, pick, hq, u6, u10, um, Nat.mul_zero, BitVec.ushiftRight_zero, Nat.not_lt_zero,
+      BitVec.ofNat_eq_ofNat]
   refine WP.mono h1 fun v hv => ?_
   rw [WP.block_append_iff]
   refine WP.mono (pick_steps s idx q h.idx h.ones 4 (by decide) v hv) fun w hw => ?_

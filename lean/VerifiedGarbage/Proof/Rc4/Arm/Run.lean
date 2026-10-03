@@ -83,21 +83,23 @@ theorem mem_store (s : State) (m : Mem) : (withMem s m).mem = m := rfl
 theorem z_store (s : State) (m : Mem) : (withMem s m).z = s.z := rfl
 theorem c_store (s : State) (m : Mem) : (withMem s m).c = s.c := rfl
 
-/-- An immediate below 256 is encodable (no rotation). -/
-theorem encodable_lt {n : Nat} (h : n < 256) : encodable (BitVec.ofNat 32 n) = true := by
-  unfold encodable
-  refine List.any_eq_true.mpr ⟨0, List.mem_range.mpr (by decide), ?_⟩
-  have h0 : (BitVec.ofNat 32 n).rotateLeft (2 * 0) = BitVec.ofNat 32 n := by
-    rw [BitVec.rotateLeft_def]
-    simp only [Nat.mul_zero, Nat.zero_mod, BitVec.shiftLeft_zero, Nat.sub_zero,
-      BitVec.ushiftRight_eq_zero (Nat.le_refl 32), BitVec.or_zero]
-  rw [h0, decide_eq_true_eq, BitVec.toNat_ofNat]
-  omega
-
 /-- The carry `adc` adds, as a number (rewritten before the flag inside it,
 so that the `if` never depends on a rewritten instance). -/
 theorem ite_carry (b : Bool) : (if b = true then (1 : BitVec 32) else 0) = BitVec.ofNat 32 b.toNat := by
   cases b <;> rfl
+
+/-- An immediate below 256 is encodable (rotation 0); closes the encoding
+checks of the literal operands in `arun`. -/
+theorem encodable_of_lt {v : BitVec 32} (h : v.toNat < 256) : encodable v = true :=
+  List.any_eq_true.2 ⟨0, by simp, by
+    have h0 : v.rotateLeft (2 * 0) = v := by ext i; simp
+    simpa only [h0, decide_eq_true_eq] using h⟩
+
+theorem encodable_lt {n : Nat} (h : n < 256) : encodable (BitVec.ofNat 32 n) = true :=
+  encodable_of_lt (by rw [BitVec.toNat_ofNat]; omega)
+
+/-- 256, the one immediate of the code that needs a rotation. -/
+theorem encodable_256 : encodable (256#32) = true := by decide
 
 /-- Runs a block of the RC4 code. -/
 syntax "arun" (" [" Lean.Parser.Tactic.simpLemma,* "]")? : tactic
@@ -106,11 +108,13 @@ macro_rules
   | `(tactic| arun [$ls,*]) => `(tactic| (
       apply WP.of_runBlock
       set_option linter.unusedSimpArgs false in
-      simp (config := {decide := true}) only [runBlock_cons, runStep_some, runBlock_nil, exec,
+      simp (disch := decide) only [runBlock_cons, runStep_some, runBlock_nil, exec,
+        encodable_of_lt, encodable_256,
         Op2.eval, imm, gpr_setReg, mem_setReg, rd_setReg, wr_setReg, sp_setReg, z_setReg, c_setReg,
         gpr_subFlags, mem_subFlags, rd_subFlags, wr_subFlags, sp_subFlags, z_subFlags, c_subFlags,
         State.load32, store32_eq, State.load8, store8_eq, sp_store, gpr_store, rd_store, wr_store,
-        mem_store, z_store, c_store, ↓ite_carry, ite_true, ite_false, reduceCtorEq, Option.map_some,
+        mem_store, z_store, c_store, ↓ite_carry, ite_true, ite_false, ↓reduceIte, reduceCtorEq,
+        Nat.reduceLT, Nat.reduceLeDiff, Nat.reduceEqDiff, and_self, Option.map_some,
         Option.some.injEq, exists_eq_left', List.cons_append, List.nil_append, and_true, true_and,
         $ls,*]))
 

@@ -224,7 +224,7 @@ theorem init_ok (s : State) (hs : initC.pre s) :
     obtain ⟨hrd, hwr, h⟩ := hs
     refine ⟨?_, ?_, ?_⟩ <;> simp only [htk.2.1, htk.2.2.1, htk.gpr (r := .r0) (by decide),
       htk.gpr (r := .r1) (by decide), htk.gpr (r := .r2) (by decide),
-      htk.gpr (r := .r3) (by decide)] <;> assumption
+      htk.gpr (r := .r3) (by decide)] <;> with_reducible assumption
   have hreg (r : Reg) (hr : r ≠ .r12) : t.gpr r = s.gpr r := htk.gpr (by simpa using hr)
   refine WP.ite (!t.z) rfl (fun hn => ?_) (fun hy => ?_)
   · have hn' : ¬ (1 ≤ (s.gpr .r1).toNat ∧ (s.gpr .r1).toNat ≤ 256) := by
