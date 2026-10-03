@@ -139,7 +139,7 @@ theorem arrays_pdAll {B : Addr} {w : Nat} {m m' : Mem} (h : Arrays B w [aAcc, aT
 /-- `X := input R` leaks the same in runs with the same public data. -/
 theorem pdMm_ct : RelCT isa (Two DA) (M.mm aXm aX aR2) (Two DB) := by
   refine two_post (two_map DPub.L (fun _ _ ⟨_, σ, g, so, _⟩ => ⟨so.good, g.1.z⟩)
-    (M.ct (by unfold MmUse; decide))) ?_
+    (M.ctL (by unfold MmUse; decide))) ?_
   rintro q t ⟨xb, σ, g, so, hR⟩
   have hk1 := g.1.k1
   have hk2 := g.1.k2
