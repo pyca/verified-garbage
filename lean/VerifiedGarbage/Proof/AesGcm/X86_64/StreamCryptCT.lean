@@ -399,6 +399,29 @@ theorem streamText_rel (enc : Bool) (hP : P₀ < 2 ^ 64) :
       hm ▸ h.2.2.2⟩
   have c := rel_both (rel_envT (F := G₂) [] (fun _ h => h.1.env) (fun _ _ _ _ _ h => by cases h)
     ⟨_, by taint_decide⟩) g₃ g₃
+  -- Fewer than 256 bytes, or more.
+  have g₃s : ∀ s, G₃ s → WP isa (.block streamSmall) s fun s' => G₃ s' ∧ s'.cf = some (decide (n < 256)) :=
+    fun s h => by
+      obtain ⟨hs, h12, hbp, hbx, hdat, hlen, htl⟩ := h
+      have hlt := (let ⟨_, _, _, _, _, _, I⟩ := hs; I.data.ok.lt : n < 2 ^ 64)
+      obtain ⟨s', run, hcf, hg, hm, hrd, hwr⟩ := small_ok s hbp hlt
+      exact WP.of_runBlock ⟨s', run, ⟨hs.regs (fun r hr => by
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl | rfl | rfl <;> exact hg _ (by decide)) hm hrd hwr,
+        by rw [hg .r12 (by decide)]; exact h12, by rw [hg .rbp (by decide)]; exact hbp,
+        by rw [hg .rbx (by decide)]; exact hbx, hm ▸ hdat, hm ▸ hlen, hm ▸ htl⟩, hcf⟩
+  have cs := rel_both (rel_envT (F := G₃) [.rbp] (fun _ h => h.1.env) (fun _ _ h₁ h₂ r hr => by
+    simp only [List.mem_singleton] at hr; subst hr; rw [h₁.2.2.1, h₂.2.2.1]) ⟨_, by taint_decide⟩) g₃s g₃s
+  have pp : ∀ s, G₃ s → PartPre Ctx St W SP R P₀ enc D n 0 n s := fun s h =>
+    ⟨h.1, by omega, by simp [h.2.1], h.2.2.1, by rw [h.2.2.2.1, Nat.add_zero], by rw [h.2.2.2.2.1]; simp,
+      h.2.2.2.2.2.1, by rw [h.2.2.2.2.2.2, Nat.add_zero]⟩
+  have gsm : ∀ s, PartPre Ctx St W SP R P₀ enc D n 0 n s →
+      WP isa (if enc then .seq (crypt v.callees) (.seq (.block streamLoad) (absorb v.callees 16))
+        else .seq (absorb v.callees 16) (.seq (.block streamLoad) (crypt v.callees))) s (Env Ctx St W SP) :=
+    fun s h => WP.mono (si_part v enc h) fun _ h' => h'.1.env
+  have sm := (rel_both (part_rel v L enc (j := 0) (k := n)) gsm gsm).mono (P' := fun (s₁ s₂ : State) =>
+    ((G₃ s₁ ∧ s₁.cf = some (decide (n < 256))) ∧ (G₃ s₂ ∧ s₂.cf = some (decide (n < 256)))) ∧
+      isa.eval .b s₁ = some true) (fun _ _ h => ⟨pp _ h.1.1.1, pp _ h.1.2.1⟩) fun _ _ h => h
   -- The head's length.
   let G₄ : State → Prop := fun s => PartPre Ctx St W SP R P₀ enc D n 0 k s ∧
     s.mem.readW (W + BitVec.ofNat 64 216) 64 = BitVec.ofNat 64 n
@@ -481,8 +504,11 @@ theorem streamText_rel (enc : Bool) (hP : P₀ < 2 ^ 64) :
   simp only [streamText]
   refine RelCT.seq a (rel_ite_e (fun _ _ h => by rw [h.1.2, h.2.2])
     (RelCT.block_nil fun _ _ h => ⟨h.1.1.1.env, h.1.2.1.env⟩) ?_)
-  refine rel_reassoc2 ((RelCT.seq b (RelCT.seq c (RelCT.seq d (RelCT.seq e (RelCT.seq f
-    (RelCT.seq g (RelCT.seq i j))))))).mono
+  have big := (RelCT.seq d (RelCT.seq e (RelCT.seq f (RelCT.seq g (RelCT.seq i j))))).mono
+    (P' := fun (s₁ s₂ : State) => ((G₃ s₁ ∧ s₁.cf = some (decide (n < 256))) ∧ (G₃ s₂ ∧ s₂.cf = some (decide (n < 256)))) ∧
+      isa.eval .b s₁ = some false) (fun _ _ h => ⟨h.1.1.1, h.1.2.1⟩) fun _ _ h => h
+  refine rel_reassoc2 ((RelCT.seq b (RelCT.seq c (RelCT.seq cs
+    (RelCT.ite (fun _ _ h => by show _ = _; exact h.1.2.trans h.2.2.symm) sm big)))).mono
     (fun _ _ h => ⟨⟨h.1.1, h.2⟩, ⟨h.1.2, by rw [h.1.2.2, ← h.1.1.2, h.2]⟩⟩) fun _ _ h => h)
 
 end

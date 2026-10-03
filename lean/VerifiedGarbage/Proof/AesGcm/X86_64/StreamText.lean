@@ -310,6 +310,17 @@ theorem load_env {s s' : State}
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl <;> exact hg _ (by decide) (by decide) (by decide)
 
+/-- Whether there are fewer than 256 bytes. -/
+theorem small_ok (s : State) {n : Nat} (hbp : s.gpr .rbp = BitVec.ofNat 64 n) (hn : n < 2 ^ 64) :
+    ∃ s', runBlock isa streamSmall s = some s' ∧ s'.cf = some (decide (n < 256)) ∧
+      (∀ r, r ≠ .rcx → s'.gpr r = s.gpr r) ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
+  unfold streamSmall
+  refine ⟨_, by xrun [], ?_, ?_, ?_, ?_, ?_⟩
+  · simp only [cf_arithFlags, gpr_setReg, ite_true, hbp, setWidth_imm, toNat_ofNat_of_lt hn,
+      toNat_ofNat_of_lt (show 256 < 2 ^ 64 by decide), show (256 : Nat) % 2 ^ 32 = 256 from rfl]
+  · intro r hr; simp [gpr_setReg, gpr_arithFlags, hr]
+  all_goals rfl
+
 /-- The length of the head. -/
 def headLen (P n : Nat) : Nat := if P % 16 = 0 then 0 else min (16 - P % 16) n
 
@@ -1058,22 +1069,54 @@ theorem streamText_ok (K : SCtx Ctx St W SP R H D n m₀) (enc : Bool) {s : Stat
   have sl₃ : ∀ d, 176 ≤ d → d + 8 ≤ 240 →
       s₃.mem.readW (W + BitVec.ofNat 64 d) 64 = s.mem.readW (W + BitVec.ofNat 64 d) 64 := fun d h₁ h₂ => by
     rw [hm₃, sl₂ d h₁ h₂, sl₁]
-  refine WP.seq (WP.mono (sHead_ok I₃.env hlt hbx₃ hbp₃) fun s₄ ⟨hbp₄, hg₄, hl₄, ha₄, f₄, hrd₄, hwr₄⟩ => ?_)
+  -- The end, from `SInv` over all the data.
+  have fin : ∀ s', SInv Hyp Ctx St W SP R H icb (a ++ zeros (padLen a.length) ++ c₀) c₀.length enc D n m₀ n s' →
+      Env Ctx St W SP s' ∧ Frame (stFrame St W SP D n) m₀ s'.mem ∧
+      (Hyp → Absorbed s'.mem (St + BitVec.ofNat 64 16) (St + BitVec.ofNat 64 32) H
+          (ghashInput a (c₀ ++ ctext enc (ciphOf m₀ Ctx R) icb c₀.length (bytesAt m₀ D n))) ∧
+        Ctr s'.mem (St + BitVec.ofNat 64 48) (St + BitVec.ofNat 64 64) (ciphOf m₀ Ctx R) icb (c₀.length + n) ∧
+        bytesAt s'.mem D n = xorKs (ciphOf m₀ Ctx R) icb c₀.length (bytesAt m₀ D n)) := fun s' I => by
+    refine ⟨I.env, I.frame, fun hy => ⟨?_, I.ctr hy, I.out hy⟩⟩
+    have hne : c₀ ++ ctext enc (ciphOf m₀ Ctx R) icb c₀.length (bytesAt m₀ D n) ≠ [] := fun e => h0 (by
+      have := congrArg List.length e
+      rw [List.length_append, length_ctext, length_bytesAt, List.length_nil] at this
+      omega)
+    rw [Proof.Gcm.ghashInput_of_ne hne, ← List.append_assoc]
+    exact I.abs hy
+  -- Fewer than 256 bytes: all of them at once.
+  obtain ⟨s₃', run₃', hcf, hg', hm', hrd', hwr'⟩ := small_ok s₃ hbp₃ hlt
+  refine WP.seq (WP.of_runBlock ⟨s₃', run₃', ?_⟩)
+  have I₃' := I₃.regs (fun r hr => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl <;> exact hg' _ (by decide)) hm' hrd' hwr'
+  have h12₃' : s₃'.gpr .r12 = D := by rw [hg' .r12 (by decide)]; exact h12₃
+  have hbp₃' : s₃'.gpr .rbp = BitVec.ofNat 64 n := by rw [hg' .rbp (by decide)]; exact hbp₃
+  have hbx₃' : s₃'.gpr .rbx = BitVec.ofNat 64 (c₀.length % 16) := by rw [hg' .rbx (by decide)]; exact hbx₃
+  have sl₃' : ∀ d, 176 ≤ d → d + 8 ≤ 240 →
+      s₃'.mem.readW (W + BitVec.ofNat 64 d) 64 = s.mem.readW (W + BitVec.ofNat 64 d) 64 := fun d h₁ h₂ => by
+    rw [hm']; exact sl₃ d h₁ h₂
+  refine WP.ite (decide (n < 256)) (eval_b hcf) (fun _ => ?_) (fun _ => ?_)
+  · refine WP.mono (part_ok v K enc I₃' hx (j := 0) (k := n) (by omega) (by simp [h12₃']) hbp₃'
+      (by rw [hbx₃', Nat.add_zero]) (by rw [sl₃' 200 (by decide) (by decide), hdat]; simp)
+      (by rw [sl₃' 208 (by decide) (by decide), hlen]) (by rw [sl₃' 192 (by decide) (by decide), htl, Nat.add_zero]))
+      fun s' ⟨I, _⟩ => fin s' (by rw [Nat.zero_add] at I; exact I)
+  -- The head.
+  refine WP.seq (WP.mono (sHead_ok I₃'.env hlt hbx₃' hbp₃') fun s₄ ⟨hbp₄, hg₄, hl₄, ha₄, f₄, hrd₄, hwr₄⟩ => ?_)
   generalize hk : headLen c₀.length n = k at hbp₄ hl₄
   have hkn : k ≤ n := hk ▸ headLen_le c₀.length n
   have hkw := headLen_whole c₀.length n
   rw [hk] at hkw
-  have g₄ : ∀ r ∈ [Reg.r13, .r14, .r15, .rsp], s₄.gpr r = s₃.gpr r := fun r hr => by
+  have g₄ : ∀ r ∈ [Reg.r13, .r14, .r15, .rsp], s₄.gpr r = s₃'.gpr r := fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl <;> exact hg₄ _ (by decide) (by decide)
-  have I₄ := I₃.slots K g₄ hrd₄ hwr₄ (by decide) (by decide) f₄
+  have I₄ := I₃'.slots K g₄ hrd₄ hwr₄ (by decide) (by decide) f₄
   have sl₄ : ∀ d, 176 ≤ d → d + 8 ≤ 208 →
       s₄.mem.readW (W + BitVec.ofNat 64 d) 64 = s.mem.readW (W + BitVec.ofNat 64 d) 64 := fun d h₁ h₂ => by
     rw [f₄.readW (r := ⟨W + BitVec.ofNat 64 d, 8⟩) (Region.contains_self _ _) (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact K.lay.w_w (.inl (by omega)) (by omega) (by decide)) (by decide), sl₃ d h₁ (by omega)]
-  refine WP.seq (WP.mono (part_ok v K enc I₄ hx (j := 0) (k := k) (by omega) (by simp [hg₄ .r12 (by decide) (by decide), h12₃])
-    hbp₄ (by rw [hg₄ .rbx (by decide) (by decide), hbx₃, Nat.add_zero]) (by rw [sl₄ 200 (by decide) (by decide), hdat]; simp) hl₄
+      exact K.lay.w_w (.inl (by omega)) (by omega) (by decide)) (by decide), sl₃' d h₁ (by omega)]
+  refine WP.seq (WP.mono (part_ok v K enc I₄ hx (j := 0) (k := k) (by omega) (by simp [hg₄ .r12 (by decide) (by decide), h12₃'])
+    hbp₄ (by rw [hg₄ .rbx (by decide) (by decide), hbx₃', Nat.add_zero]) (by rw [sl₄ 200 (by decide) (by decide), hdat]; simp) hl₄
     (by rw [sl₄ 192 (by decide) (by decide), htl, Nat.add_zero])) fun s₅ ⟨I₅, sl₅⟩ => ?_)
   -- Past the head.
   refine WP.seq (WP.mono (next_ok I₅.env (D := D) (P := c₀.length) hkn hlt (by rw [sl₅ 208 (by decide) (by decide), hl₄])
@@ -1097,13 +1140,7 @@ theorem streamText_ok (K : SCtx Ctx St W SP R H D n m₀) (enc : Bool) {s : Stat
     (by rw [hm₈]; exact d₇) (by rw [hm₈]; exact l₇) (by rw [hm₈]; exact t₇)) fun s' ⟨I, _⟩ => ?_
   have hn : j₂ + (n - k) % 16 = n := by omega
   rw [hn] at I
-  refine ⟨I.env, I.frame, fun hy => ⟨?_, I.ctr hy, I.out hy⟩⟩
-  have hne : c₀ ++ ctext enc (ciphOf m₀ Ctx R) icb c₀.length (bytesAt m₀ D n) ≠ [] := fun e => h0 (by
-    have := congrArg List.length e
-    rw [List.length_append, length_ctext, length_bytesAt, List.length_nil] at this
-    omega)
-  rw [Proof.Gcm.ghashInput_of_ne hne, ← List.append_assoc]
-  exact I.abs hy
+  exact fin s' I
 
 end
 
