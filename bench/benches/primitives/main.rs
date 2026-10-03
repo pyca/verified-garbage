@@ -28,6 +28,7 @@ mod cmac_triple_des;
 mod ecdh_p256;
 mod ecdsa_p256;
 mod ed25519;
+mod ed448;
 mod hmac_md5;
 mod hmac_sha1;
 mod hmac_sha224;
@@ -288,6 +289,7 @@ const BENCHES: &[Bench] = &[
     (x25519::USES, x25519::bench),
     (x448::USES, x448::bench),
     (ed25519::USES, ed25519::bench),
+    (ed448::USES, ed448::bench),
     (ecdsa_p256::USES, ecdsa_p256::bench),
     (ecdh_p256::USES, ecdh_p256::bench),
 ];
