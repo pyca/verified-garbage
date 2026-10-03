@@ -1,10 +1,13 @@
 import VerifiedGarbage.TCB.X86_64.Target
 import VerifiedGarbage.Proof.Ed448.X86_64.Verify.Verified
+import VerifiedGarbage.Proof.Ed448.X86_64.VerifyVerified
 
 /-!
 # Ed448 verification on x86-64
 
-The signature and documentation come from the reviewed Ed448 API.
+The signature and documentation come from the reviewed Ed448 API. The proof
+of `vg_ed448_verify_equation` is passed to the caller's here, so that only
+this file imports it.
 -/
 
 namespace VG.Artifacts.Ed448Verify.X86_64
@@ -23,7 +26,8 @@ def artifacts : List Artifact := [
     code := Impl.Ed448.X86_64.Verify.verify
     contract := Spec.Ed448.verifyContract X86_64.abi 272
     stack := 272
-    verified := Proof.Ed448.X86_64.Verify.verify_verified
+    verified := Proof.Ed448.X86_64.Verify.verify_verified Proof.Ed448.X86_64.verifyEquation_ok
+      Proof.Ed448.X86_64.verifyEquation_ct
     spSafe := Code.all_of_allInstrs (by lit_decide) }]
 
 end VG.Artifacts.Ed448Verify.X86_64
