@@ -181,7 +181,8 @@ theorem cmacMid_ok (h : Env s₀ C D P W R L) {s : State} (hr : Regs s₀ C D P 
 state at `W + 128`. -/
 structure CPost (s₀ : State) (C D P W : Addr) (R L : Nat) (s s' : State) : Prop where
   regs : Regs s₀ C D P W R L s'
-  frame : Frame [⟨W, 160⟩, ⟨W + BitVec.ofNat 64 256, 2176⟩, below (s₀.gpr .rsp) 16] s.mem s'.mem
+  frame : Frame [⟨W + BitVec.ofNat 64 128, 32⟩, ⟨W + BitVec.ofNat 64 256, 2176⟩, below (s₀.gpr .rsp) 16] s.mem
+    s'.mem
   out : Spec.Aes.bytesAt s'.mem (W + BitVec.ofNat 64 128) 16 =
     Spec.Siv.ctxMac s.mem C R (Spec.Aes.bytesAt s.mem P L)
 
@@ -211,28 +212,30 @@ theorem cmacOf_wp (v : Ctr32Impl) (h : Env s₀ C D P W R L) {s : State} (hr : R
   have f₄ : Frame [⟨W + BitVec.ofNat 64 128, 16⟩, ⟨W + BitVec.ofNat 64 256, 2176⟩, below (s₀.gpr .rsp) 16]
       s₃.mem s₄.mem := by rw [← hr₃.rsp]; exact h₄.frame
   -- What the code before the update writes.
-  have f₁ : Frame [⟨W, 160⟩] s.mem s₁.mem := by
-    have c₀ := Offset.contains_base W (d := 128) (n := 8) (k := 160) (by decide) (by decide)
-    have c₁ : (⟨W, 160⟩ : Region).Contains (W + BitVec.ofNat 64 128 + BitVec.ofNat 64 8) 8 := by
-      rw [Offset.add_add]; exact Offset.contains_base W (d := 136) (n := 8) (k := 160) (by decide) (by decide)
-    have c₂ := Offset.contains_base W (d := 144) (n := 8) (k := 160) (by decide) (by decide)
+  have f₁ : Frame [⟨W + BitVec.ofNat 64 128, 32⟩] s.mem s₁.mem := by
+    have c₀ := Offset.contains W (d := 128) (e := 128) (n := 8) (k := 32) (by decide) (by decide) (by decide)
+    have c₁ : (⟨W + BitVec.ofNat 64 128, 32⟩ : Region).Contains (W + BitVec.ofNat 64 128 + BitVec.ofNat 64 8) 8 := by
+      rw [Offset.add_add]; exact Offset.contains W (d := 136) (e := 128) (n := 8) (k := 32) (by decide) (by decide)
+        (by decide)
+    have c₂ := Offset.contains W (d := 144) (e := 128) (n := 8) (k := 32) (by decide) (by decide) (by decide)
     rw [m₁, zero2]
     exact (((Frame.refl _ _).writeW (List.mem_singleton_self _) _ c₀).writeW
       (List.mem_singleton_self _) _ c₁).writeW (List.mem_singleton_self _) _ c₂
   have sub3 (r : Region) (hr : r ∈ [(⟨W + BitVec.ofNat 64 128, 16⟩ : Region), ⟨W + BitVec.ofNat 64 256, 2176⟩,
-      below (s₀.gpr .rsp) 16]) : ∃ r' ∈ [(⟨W, 160⟩ : Region), ⟨W + BitVec.ofNat 64 256, 2176⟩,
+      below (s₀.gpr .rsp) 16]) : ∃ r' ∈ [(⟨W + BitVec.ofNat 64 128, 32⟩ : Region), ⟨W + BitVec.ofNat 64 256, 2176⟩,
       below (s₀.gpr .rsp) 16], Region.Sub r r' := by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
-    · exact ⟨⟨W, 160⟩, by simp, Offset.sub_base W (by decide)⟩
+    · exact ⟨_, List.mem_cons_self, Region.sub_prefix (by decide)⟩
     · exact ⟨_, by simp, fun _ h => h⟩
     · exact ⟨_, by simp, fun _ h => h⟩
-  have frame : Frame [⟨W, 160⟩, ⟨W + BitVec.ofNat 64 256, 2176⟩, below (s₀.gpr .rsp) 16] s.mem s₄.mem :=
+  have frame : Frame [⟨W + BitVec.ofNat 64 128, 32⟩, ⟨W + BitVec.ofNat 64 256, 2176⟩, below (s₀.gpr .rsp) 16]
+      s.mem s₄.mem :=
     ((f₁.sub fun r hr => ⟨r, by simp_all, fun _ h => h⟩).trans (f₂.sub sub3)).trans
       (by rw [← m₃]; exact f₄.sub sub3)
   refine ⟨hr₃.keep h₄.saved h₄.rd h₄.wr, frame, ?_⟩
   -- The bytes the calls read are those at the start.
-  have dRead {Q : Addr} {n : Nat} (hd : ∀ r ∈ [(⟨W, 160⟩ : Region), ⟨W + BitVec.ofNat 64 256, 2176⟩,
+  have dRead {Q : Addr} {n : Nat} (hd : ∀ r ∈ [(⟨W + BitVec.ofNat 64 128, 32⟩ : Region), ⟨W + BitVec.ofNat 64 256, 2176⟩,
       below (s₀.gpr .rsp) 16], (⟨Q, n⟩ : Region).Disjoint r) (hn : n ≤ 2 ^ 64) :
       Spec.Aes.bytesAt s₁.mem Q n = Spec.Aes.bytesAt s.mem Q n ∧
         Spec.Aes.bytesAt s₃.mem Q n = Spec.Aes.bytesAt s.mem Q n := by
@@ -244,13 +247,13 @@ theorem cmacOf_wp (v : Ctr32Impl) (h : Env s₀ C D P W R L) {s : State} (hr : R
   have dC {d n : Nat} (hd : d + n ≤ 512) := dRead (Q := C + BitVec.ofNat 64 d) (n := n) (fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
-    · exact (h.c_w.sub_left (h.sC hd)).sub_right (Region.sub_prefix (by decide))
+    · exact (h.c_w.sub_left (h.sC hd)).sub_right (h.sW (by decide))
     · exact (h.c_w.sub_left (h.sC hd)).sub_right (h.sW (by decide))
     · exact (h.stk_c.sub_right (h.sC hd)).symm) (by omega)
   have dP {d n : Nat} (hd : d + n ≤ L) := dRead (Q := P + BitVec.ofNat 64 d) (n := n) (fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
-    · exact (h.p_w.sub_left (h.sP hd)).sub_right (Region.sub_prefix (by decide))
+    · exact (h.p_w.sub_left (h.sP hd)).sub_right (h.sW (by decide))
     · exact (h.p_w.sub_left (h.sP hd)).sub_right (h.sW (by decide))
     · exact (h.stk_p.sub_right (h.sP hd)).symm) (by omega)
   have sch := dC (d := 0) (n := 16 * (R + 1)) (by omega)
