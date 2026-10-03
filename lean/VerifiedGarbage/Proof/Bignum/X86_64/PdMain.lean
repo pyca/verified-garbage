@@ -353,7 +353,7 @@ theorem pdRest_ok {s : State} {B : Addr} {Z k : Nat} {op ep ip : Addr} {L : Nat}
   rw [pdRest_eq]
   refine wp_seqs_append (by simp [pdIn]) (by simp [pdExp])
     (WP.mono (pdSetup_ok h) fun t₂ ⟨minv, so, f₂, k₂, hR₂⟩ => ?_)
-  refine wp_seqs_append (by simp [pdExp]) (by simp [outSteps]) ?_
+  refine wp_seqs_append (by simp [pdExp]) (by simp [outSteps, outStepsArr]) ?_
   unfold pdExp
   -- `X = input R`.
   refine WP.seq (WP.mono (mmN_ok M (o := aXm) (a := aX) (b := aR2) so.good hZ hw (by omega) (by decide) (by decide)

@@ -281,7 +281,7 @@ theorem main_ct : RelCT isa (Two MRel) main fun _ _ => True := by
   rw [main_eq]
   refine RelCT.seqs_append (by simp [loadSteps]) (by simp [r2Steps]) (RelCT.seq mainA_ct ?_)
   refine RelCT.seqs_append (by simp [r2Steps]) (by simp [expSteps]) (RelCT.seq mainB_ct ?_)
-  refine RelCT.seqs_append (by simp [expSteps]) (by simp [outSteps]) (RelCT.seq mainC_ct ?_)
+  refine RelCT.seqs_append (by simp [expSteps]) (by simp [outSteps, outStepsArr]) (RelCT.seq mainC_ct ?_)
   refine out_ct.mono (fun _ _ h => two_bind (fun p t₁ t₂ h₁ h₂ => ?_) h) fun _ _ h => h
   obtain ⟨σ₁, xb₁, mi₁, u₁, v₁, hm₁, hv, so₁, f₁, k₁, f₁', k₁', hg₁, f₁'', k₁''⟩ := h₁
   obtain ⟨σ₂, xb₂, mi₂, u₂, v₂, hm₂, -, so₂, f₂, k₂, f₂', k₂', hg₂, f₂'', k₂''⟩ := h₂

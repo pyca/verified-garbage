@@ -233,7 +233,7 @@ theorem dd_oPre {q : DPub × BitVec 64} {t : State} (h : DD q t) : OPre ⟨DPub.
 theorem pdRest_ct : RelCT isa (Two DRel) (Precomputed.rest M.mm) fun _ _ => True := by
   rw [pdRest_eq]
   refine RelCT.seqs_append (by simp [pdIn]) (by simp [pdExp]) (RelCT.seq pdSetup_ct ?_)
-  refine RelCT.seqs_append (by simp [pdExp]) (by simp [outSteps]) (RelCT.seq (R := Two DD) ?_ ?_)
+  refine RelCT.seqs_append (by simp [pdExp]) (by simp [outSteps, outStepsArr]) (RelCT.seq (R := Two DD) ?_ ?_)
   · exact RelCT.seq pdMm_ct (RelCT.seq pdExp_ct pdFinish_ct)
   · exact two_map (fun q => (⟨DPub.L q, q.1.k, q.1.op⟩ : OPub)) (fun _ _ h => dd_oPre h) out_ct
 
