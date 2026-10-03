@@ -145,54 +145,43 @@ theorem maskData_wp (s : State) {P : Addr} {L : Nat} {c : Bool} (hL : L < 2 ^ 64
     refine ⟨by simp [eval, hz, he], L - (j + 1), by omega, j + 1, rfl, by omega, by rw [r10', succ_ofNat], hmem, gg,
       by rw [rd', rd], by rw [wr', wr]⟩
 
-/-! ## The whole function -/
+/-! ## From S2V's state on -/
 
-/-- The save writes only the slots, at `W + 160` to `W + 224`. -/
-theorem cryptMem_frame' : Frame [⟨W + BitVec.ofNat 64 160, 64⟩] s₀.mem (cryptMem s₀ P W L) :=
-  ((Spill.saveMem_frame _ _ _ _ fun p hp => Offset.contains W (saved_ge p hp) (by have := saved_le p hp; omega)
-      (by decide)).writeW (List.mem_singleton_self _) _ (Offset.contains W (by decide) (by decide) (by decide))).writeW
-    (List.mem_singleton_self _) _ (Offset.contains W (by decide) (by decide) (by decide))
-
-theorem open_wp (v : Ctr32Impl) {s₀ : State} (h0 : openX86_64.pre s₀) :
-    WP isa («open» v.callee v.suffix) s₀ fun s' => gprPreserved s₀ s' ∧ openX86_64.post s₀ s' := by
-  have h := Env.ofCrypt h0
-  have ha := ArgRegs.ofCrypt h0
-  have hcp := cryptPre_cp h0
-  have hPw := cryptPre_pw h0
-  show WP isa _ s₀ fun s' => gprPreserved s₀ s' ∧
-    match Spec.Siv.openWith (Spec.Siv.ctxMac s₀.mem (s₀.gpr .rdi) (s₀.gpr .rsi).toNat)
-        (Spec.Siv.ctxCiph s₀.mem (s₀.gpr .rdi) (s₀.gpr .rsi).toNat) (Spec.Aes.bytesAt s₀.mem (s₀.gpr .rdx) 16)
-        (Spec.Aes.bytesAt s₀.mem (s₀.gpr .r9) 16) (Spec.Aes.bytesAt s₀.mem (s₀.gpr .rcx) (s₀.gpr .r8).toNat) with
-    | some pt => (s'.gpr .rax).setWidth 32 = 1 ∧ Spec.Aes.bytesAt s'.mem (s₀.gpr .rcx) (s₀.gpr .r8).toNat = pt
-    | none => (s'.gpr .rax).setWidth 32 = 0 ∧
-        Spec.Aes.bytesAt s'.mem (s₀.gpr .rcx) (s₀.gpr .r8).toNat = Spec.Siv.zeros (s₀.gpr .r8).toNat
-  generalize s₀.gpr .rdi = C at h ha hcp ⊢
-  generalize s₀.gpr .rdx = D at h ha ⊢
-  generalize s₀.gpr .rcx = P at h ha hcp hPw ⊢
-  generalize s₀.gpr .r9 = W at h ha ⊢
-  generalize (s₀.gpr .rsi).toNat = R at h ha ⊢
-  generalize (s₀.gpr .r8).toNat = L at h ha hcp hPw ⊢
+/-- `decrypt` from S2V's state of the associated data at `D` on: the counter
+from the IV at `W` (`counter_ok`), CTR over the data in place (`ctr_wp`),
+S2V's end with the plaintext into `W + 112` (`finish_wp`), the comparison of
+the IVs (`compare_ok`), the mask of the data (`maskData_wp`) and the restore. -/
+theorem openTail_wp (v : Ctr32Impl) (h : Env s₀ C D P W R L) (hcp : (⟨C, 512⟩ : Region).Disjoint ⟨P, L⟩)
+    (hPw : (⟨P, L⟩ : Region) ∈ s₀.wr) {s : State} (hs : SPre s₀ C D P W R L s) {g : Reg → BitVec 64}
+    (hsv : Spill.Saved s.mem W g saved) :
+    WP isa (.seq (.block (counter 0)) (.seq (ctr v.callee) (.seq (finish v.callee v.suffix tOff)
+        (.seq (.block Impl.AesSiv.X86_64.compare)
+          (.seq maskData (.block ([.mov .rax (.mem (at_ .r15 dbOff))] ++ restore))))))) s
+      fun s' => (∀ r ∈ saved.map Prod.fst, s'.gpr r = g r) ∧ s'.gpr .rsp = s₀.gpr .rsp ∧
+        Frame (endRegions W P L (s₀.gpr .rsp)) s.mem s'.mem ∧
+        match Spec.Siv.openWith (Spec.Siv.ctxMac s.mem C R) (Spec.Siv.ctxCiph s.mem C R)
+            (Spec.Aes.bytesAt s.mem D 16) (Spec.Aes.bytesAt s.mem W 16) (Spec.Aes.bytesAt s.mem P L) with
+        | some pt => (s'.gpr .rax).setWidth 32 = 1 ∧ Spec.Aes.bytesAt s'.mem P L = pt
+        | none => (s'.gpr .rax).setWidth 32 = 0 ∧ Spec.Aes.bytesAt s'.mem P L = Spec.Siv.zeros L := by
   have hRb : 16 * (R + 1) ≤ 240 := by rcases h.rounds with h | h | h <;> omega
   have hL : L ≤ 2 ^ 64 := by have := h.lt; omega
-  -- The save and the counter.
-  obtain ⟨s₁', run₁', hr₁', m₁'⟩ := cryptPre_ok h ha
-  obtain ⟨s₁, run₁, m₁, g₁, rd₁, wr₁⟩ := counter_ok h hr₁'.r15 hr₁'.rd hr₁'.wr
-  have hr₁ : Regs s₀ C D P W R L s₁ := hr₁'.keep (fun r hr => g₁ r (by rintro rfl; revert hr; decide)
+  -- The counter.
+  obtain ⟨s₁, run₁, m₁, g₁, rd₁, wr₁⟩ := counter_ok h hs.regs.r15 hs.regs.rd hs.regs.wr
+  have hr₁ : Regs s₀ C D P W R L s₁ := hs.regs.keep (fun r hr => g₁ r (by rintro rfl; revert hr; decide)
     (by rintro rfl; revert hr; decide)) rd₁ wr₁
-  have f₁ : Frame [⟨W, 2560⟩] s₀.mem s₁'.mem := m₁' ▸ cryptMem_frame h
-  have fc : Frame (cntRegions W) s₁'.mem s₁.mem := m₁ ▸ counter_frame _ _ _ _
-  refine WP.seq (WP.of_runBlock ⟨s₁, by rw [runBlock_append, run₁', Option.bind_some, run₁], ?_⟩)
+  have fc : Frame (cntRegions W) s.mem s₁.mem := m₁ ▸ counter_frame _ _ _ _
+  refine WP.seq (WP.of_runBlock ⟨s₁, run₁, ?_⟩)
   have hslot {d : Nat} (hd : 208 ≤ d) (hd' : d + 8 ≤ 224) :
-      s₁.mem.readW (W + BitVec.ofNat 64 d) 64 = s₁'.mem.readW (W + BitVec.ofNat 64 d) 64 :=
+      s₁.mem.readW (W + BitVec.ofNat 64 d) 64 = s.mem.readW (W + BitVec.ofNat 64 d) 64 :=
     fc.readW (Region.contains_self _ _) (cnt_dis (by omega) (by omega)) (by decide)
   have h208 : s₁.mem.readW (W + BitVec.ofNat 64 dataOff) 64 = P := by
-    rw [hslot (by decide) (by decide), m₁', cryptMem_data]
+    rw [hslot (by decide) (by decide), hs.d208]
   have h216 : s₁.mem.readW (W + BitVec.ofNat 64 lenOff) 64 = BitVec.ofNat 64 L := by
-    rw [hslot (by decide) (by decide), m₁', cryptMem_len]
+    rw [hslot (by decide) (by decide), hs.d216]
   have hcnt : ∃ hi lo : BitVec 64, s₁.mem.readW (W + BitVec.ofNat 64 cntOff) 64 = bswap64 hi ∧
       s₁.mem.readW (W + BitVec.ofNat 64 (cntOff + 8)) 64 = bswap64 lo ∧
-      (hi ++ lo : BitVec 128) = Spec.Gcm.ofBytes (Spec.Siv.counter (Spec.Aes.bytesAt s₁'.mem W 16)) := by
-    rw [m₁]; exact counter_cnt s₁'.mem W
+      (hi ++ lo : BitVec 128) = Spec.Gcm.ofBytes (Spec.Siv.counter (Spec.Aes.bytesAt s.mem W 16)) := by
+    rw [m₁]; exact counter_cnt s.mem W
   -- CTR.
   refine WP.seq (WP.mono (ctr_wp v h hcp hPw hr₁ hcnt h208 h216) fun s₂ h₂ => ?_)
   have f₂ := h₂.frame
@@ -225,10 +214,10 @@ theorem open_wp (v : Ctr32Impl) {s₀ : State} (h0 : openX86_64.pre s₀) :
     have r := h.inRW hr₅.rd hr₅.wr (d := dbOff) (n := 8) (by decide)
     simp only [runBlock_cons, runStep_some, runBlock_nil, at_, exec, readSrc, State.load64, State.ea, offset_nat,
       Option.map_some, hr₅.r15, r, ite_true, r144]
-  have hsv : Spill.Saved (s₅.setReg .rax (s₄.gpr .rax)).mem W s₀.gpr saved := by
+  have hsv₅ : Spill.Saved (s₅.setReg .rax (s₄.gpr .rax)).mem W g saved := by
     have hb (p : Reg × Nat) (hp : p ∈ saved) : 160 ≤ p.2 ∧ p.2 + 8 ≤ 208 := ⟨saved_ge p hp, saved_le p hp⟩
     rw [mem_setReg]
-    refine (((((m₁' ▸ cryptMem_saved).frame fc fun p hp => ?_).frame f₂ fun p hp => ?_).frame f₃ fun p hp => ?_).frame
+    refine ((((hsv.frame fc fun p hp => ?_).frame f₂ fun p hp => ?_).frame f₃ fun p hp => ?_).frame
       f₄ fun p hp => ?_).frame f₅ fun p hp => ?_
     · have := hb p hp; exact cnt_dis (by omega) (by omega)
     · have := hb p hp; exact ctr_dis h (by omega) (by omega)
@@ -242,62 +231,56 @@ theorem open_wp (v : Ctr32Impl) {s₀ : State} (h0 : openX86_64.pre s₀) :
   rw [show [.mov .rax (.mem (at_ .r15 dbOff))] ++ restore =
     ([.mov .rax (.mem (at_ .r15 dbOff))] : List Instr) ++ restoreCode .r15 saved from rfl]
   refine WP.block_append (WP.of_runBlock ⟨_, run₆, ?_⟩)
-  refine WP.mono (Spill.restore_ok .r15 saved s₀.gpr _ (by decide) (fun p hp => by
+  refine WP.mono (Spill.restore_ok .r15 saved g _ (by decide) (fun p hp => by
       rw [gpr_setReg_of_ne _ _ (by decide), hr₅.r15, rd_setReg, wr_setReg, hr₅.rd, hr₅.wr]
       exact h.inRW rfl rfl (by have := saved_le p hp; omega))
-    (by rw [gpr_setReg_of_ne _ _ (by decide), hr₅.r15]; exact hsv)) fun s₇ ⟨h₇a, h₇b, m₇, _, _⟩ => ?_
+    (by rw [gpr_setReg_of_ne _ _ (by decide), hr₅.r15]; exact hsv₅)) fun s₇ ⟨h₇a, h₇b, m₇, _, _⟩ => ?_
   have rax₇ : s₇.gpr .rax = s₄.gpr .rax := by rw [h₇b _ (by decide), gpr_setReg_self]
   have mem₇ : s₇.mem = s₅.mem := by rw [m₇, mem_setReg]
-  -- The IV, the plaintext and S2V's end, from the arguments.
-  have hV : Spec.Aes.bytesAt s₃.mem W 16 = Spec.Aes.bytesAt s₀.mem W 16 := by
+  -- The IV, the plaintext and S2V's end.
+  have hV : Spec.Aes.bytesAt s₃.mem W 16 = Spec.Aes.bytesAt s.mem W 16 := by
     have d₃ := fin_dis h (out := tOff) (d := 0) (n := 16) (by decide) (by decide) (by decide) (by decide)
       (by decide) (by decide) (by decide)
     have d₂ := ctr_dis h (d := 0) (n := 16) (by decide) (by decide)
     have dc := cnt_dis (W := W) (d := 0) (n := 16) (by decide) (by decide)
     rw [k0] at d₃ d₂ dc
-    rw [bytesAt_frame f₃ d₃ (by decide), bytesAt_frame f₂ d₂ (by decide), bytesAt_frame fc dc (by decide), m₁',
-      bytesAt_frame cryptMem_frame' (one_out (Offset.disjoint_base W (d := 160) (n := 64) (k := 16) (by decide)
-        (by decide)).symm) (by decide)]
-  have hq : Spec.Aes.bytesAt s₁'.mem W 16 = Spec.Aes.bytesAt s₀.mem W 16 := by
-    rw [m₁', bytesAt_frame cryptMem_frame' (one_out (Offset.disjoint_base W (d := 160) (n := 64) (k := 16) (by decide)
-        (by decide)).symm) (by decide)]
-  have hp : Spec.Aes.bytesAt s₂.mem P L = Spec.Siv.ctr (Spec.Siv.ctxCiph s₀.mem C R)
-      (Spec.Siv.counter (Spec.Aes.bytesAt s₀.mem W 16)) (Spec.Aes.bytesAt s₀.mem P L) := by
-    rw [h₂.data, hq, ctxCiph_frame fc (cnt_out h.c_w) hRb, ctxCiph_frame f₁ (one_out h.c_w) hRb,
-      bytesAt_frame fc (cnt_out h.p_w) hL, bytesAt_frame f₁ (one_out h.p_w) hL]
+    rw [bytesAt_frame f₃ d₃ (by decide), bytesAt_frame f₂ d₂ (by decide), bytesAt_frame fc dc (by decide)]
+  have hp : Spec.Aes.bytesAt s₂.mem P L = Spec.Siv.ctr (Spec.Siv.ctxCiph s.mem C R)
+      (Spec.Siv.counter (Spec.Aes.bytesAt s.mem W 16)) (Spec.Aes.bytesAt s.mem P L) := by
+    rw [h₂.data, ctxCiph_frame fc (cnt_out h.c_w) hRb, bytesAt_frame fc (cnt_out h.p_w) hL]
   have hT : Spec.Aes.bytesAt s₃.mem (W + BitVec.ofNat 64 tOff) 16 =
-      Spec.Siv.s2vFinish (Spec.Siv.ctxMac s₀.mem C R) (Spec.Aes.bytesAt s₀.mem D 16)
-        (Spec.Siv.ctr (Spec.Siv.ctxCiph s₀.mem C R) (Spec.Siv.counter (Spec.Aes.bytesAt s₀.mem W 16))
-          (Spec.Aes.bytesAt s₀.mem P L)) := by
+      Spec.Siv.s2vFinish (Spec.Siv.ctxMac s.mem C R) (Spec.Aes.bytesAt s.mem D 16)
+        (Spec.Siv.ctr (Spec.Siv.ctxCiph s.mem C R) (Spec.Siv.counter (Spec.Aes.bytesAt s.mem W 16))
+          (Spec.Aes.bytesAt s.mem P L)) := by
     rw [h₃.out, hp, ctxMac_frame f₂ (ctr_out hcp h.c_w h.stk_c) hRb, ctxMac_frame fc (cnt_out h.c_w) hRb,
-      ctxMac_frame f₁ (one_out h.c_w) hRb, bytesAt_frame f₂ (ctr_out h.d_p h.d_w h.stk_d) (by decide),
-      bytesAt_frame fc (cnt_out h.d_w) (by decide), bytesAt_frame f₁ (one_out h.d_w) (by decide)]
+      bytesAt_frame f₂ (ctr_out h.d_p h.d_w h.stk_d) (by decide), bytesAt_frame fc (cnt_out h.d_w) (by decide)]
   have hd : Spec.Aes.bytesAt s₇.mem P L = if Spec.Aes.bytesAt s₃.mem W 16 =
       Spec.Aes.bytesAt s₃.mem (W + BitVec.ofNat 64 tOff) 16 then
-        Spec.Siv.ctr (Spec.Siv.ctxCiph s₀.mem C R) (Spec.Siv.counter (Spec.Aes.bytesAt s₀.mem W 16))
-          (Spec.Aes.bytesAt s₀.mem P L) else Spec.Siv.zeros L := by
+        Spec.Siv.ctr (Spec.Siv.ctxCiph s.mem C R) (Spec.Siv.counter (Spec.Aes.bytesAt s.mem W 16))
+          (Spec.Aes.bytesAt s.mem P L) else Spec.Siv.zeros L := by
     have hl := length_mask s₄.mem P (decide (Spec.Aes.bytesAt s₃.mem W 16 =
       Spec.Aes.bytesAt s₃.mem (W + BitVec.ofNat 64 tOff) 16)) L
     have hw := VG.Proof.CmacAes.Stream.X86_64.bytesAt_writeBytes_self s₄.mem P (by rw [hl]; exact h.lt)
     rw [hl] at hw
     rw [mem₇, h₅.mem, hw, bytesAt_frame f₄ (one_out dP144) hL, bytesAt_frame f₃ (fin_out (by decide) h.p_w h.stk_p) hL, hp]
     simp only [decide_eq_true_eq]
-  refine ⟨⟨fun r hr => ?_, ?_⟩, ?_⟩
-  · by_cases hsp : r = .rsp
-    · subst hsp; rw [h₇b _ (by decide), gpr_setReg_of_ne _ _ (by decide), hr₅.rsp]
-    · exact h₇a r (saved_all r hr hsp)
-  · have c := Region.contains_self (s₀.gpr .rsp) 8
-    have hw := h.ret_w
-    have hb := Offset.base_disjoint_below (s₀.gpr .rsp) (n := 16) (k := 8) (by decide)
-    rw [mem₇, f₅.readW c (one_out h.ret_p) (by decide),
-      f₄.readW c (one_out (hw.sub_right (h.sW (by decide)))) (by decide),
-      f₃.readW c (fin_out (by decide) hw hb.symm) (by decide), f₂.readW c (ctr_out h.ret_p hw hb.symm) (by decide),
-      fc.readW c (cnt_out hw) (by decide), f₁.readW c (one_out hw) (by decide)]
+  have f₄' : Frame (endRegions W P L (s₀.gpr .rsp)) s₃.mem s₄.mem :=
+    f₄.sub fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr
+      exact ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, h.sW (by decide)⟩
+  have f₅' : Frame (endRegions W P L (s₀.gpr .rsp)) s₄.mem s₅.mem :=
+    f₅.sub fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr
+      exact ⟨_, List.mem_cons_self, fun _ h => h⟩
+  refine ⟨h₇a, by rw [h₇b _ (by decide), gpr_setReg_of_ne _ _ (by decide), hr₅.rsp], ?_, ?_⟩
+  · rw [mem₇]
+    exact ((((fc.sub (cnt_sub h)).trans (f₂.sub (ctr_sub h))).trans (f₃.sub (fin_sub h (by decide)))).trans
+      f₄').trans f₅'
   · rw [rax₇, rax₄, hd, hV, hT]
     simp only [Spec.Siv.openWith]
-    by_cases hc : Spec.Siv.s2vFinish (Spec.Siv.ctxMac s₀.mem C R) (Spec.Aes.bytesAt s₀.mem D 16)
-        (Spec.Siv.ctr (Spec.Siv.ctxCiph s₀.mem C R) (Spec.Siv.counter (Spec.Aes.bytesAt s₀.mem W 16))
-          (Spec.Aes.bytesAt s₀.mem P L)) = Spec.Aes.bytesAt s₀.mem W 16
+    by_cases hc : Spec.Siv.s2vFinish (Spec.Siv.ctxMac s.mem C R) (Spec.Aes.bytesAt s.mem D 16)
+        (Spec.Siv.ctr (Spec.Siv.ctxCiph s.mem C R) (Spec.Siv.counter (Spec.Aes.bytesAt s.mem W 16))
+          (Spec.Aes.bytesAt s.mem P L)) = Spec.Aes.bytesAt s.mem W 16
     · rw [ite_eq_left hc, ite_eq_left hc.symm, ite_eq_left hc.symm]
       exact ⟨rfl, rfl⟩
     · rw [ite_eq_right hc, ite_eq_right (Ne.symm hc), ite_eq_right (Ne.symm hc)]
