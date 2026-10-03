@@ -9,7 +9,7 @@ relational proof (`RelCT`) often wants to split it elsewhere, e.g. to check
 everything before a call with the taint analysis at once (`RelCT.taint`) and
 relate the call by its callee's contract (`RelCT.callWith`): `RelCT.assoc`
 regroups `a; (b; c)` as `(a; b); c`, which runs the same and leaks the same
-trace; `WP.assoc` does the same for the correctness proofs, and `WP.ite_true`
+trace, and `RelCT.block_append` splits a block in two; `WP.assoc` does the same for the correctness proofs, and `WP.ite_true`
 and `WP.ite_false` take the branch a relational proof is in.
 -/
 
@@ -31,6 +31,21 @@ theorem RelCT.assoc {P Q : M.State → M.State → Prop} {a b c : Prog M}
           obtain ⟨ht, hq⟩ := h _ _ _ _ _ _ hp (.seq (.seq a₁ b₁) c₁) (.seq (.seq a₂ b₂) c₂)
           simp only [List.append_assoc] at ht
           exact ⟨ht, hq⟩
+
+/-- A block, as its two parts in sequence: it runs the same and leaks the
+same trace. -/
+theorem RelCT.block_append {P Q : M.State → M.State → Prop} {l₁ l₂ : List M.Instr}
+    (h : RelCT M P (.seq (.block l₁) (.block l₂)) Q) : RelCT M P (.block (l₁ ++ l₂)) Q := by
+  intro s₁ s₂ t₁ t₂ s₁' s₂' hp e₁ e₂
+  rw [Exec.block_iff, execBlock_append] at e₁ e₂
+  obtain ⟨⟨a₁, u₁⟩, ha₁, hb₁⟩ := Option.bind_eq_some_iff.mp e₁
+  obtain ⟨⟨b₁, w₁⟩, hc₁, he₁⟩ := Option.map_eq_some_iff.mp hb₁
+  obtain ⟨⟨a₂, u₂⟩, ha₂, hb₂⟩ := Option.bind_eq_some_iff.mp e₂
+  obtain ⟨⟨b₂, w₂⟩, hc₂, he₂⟩ := Option.map_eq_some_iff.mp hb₂
+  simp only [Prod.mk.injEq] at he₁ he₂
+  obtain ⟨rfl, rfl⟩ := he₁
+  obtain ⟨rfl, rfl⟩ := he₂
+  exact h _ _ _ _ _ _ hp (.seq (.block ha₁) (.block hc₁)) (.seq (.block ha₂) (.block hc₂))
 
 /-- An empty block. -/
 theorem RelCT.block_nil {P Q : M.State → M.State → Prop} (h : ∀ x y, P x y → Q x y) :

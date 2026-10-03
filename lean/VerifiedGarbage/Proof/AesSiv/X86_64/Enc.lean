@@ -234,6 +234,7 @@ theorem EPre.start_dis (h : EPre s₀ C A P W D R N L) {d : Nat} (hd : 32 ≤ d)
 `vg_cmac_aes_finalize` of the zero block from a zero state. -/
 theorem start_wp (v : Ctr32Impl) (h : EPre s₀ C A P W D R N L) :
     WP isa (.block (encPre ++ startPre)) s₀ fun s =>
+      FArgs s C D (W + BitVec.ofNat 64 16) (W + BitVec.ofNat 64 256) 16 R ∧ s.gpr .rsp = s₀.gpr .rsp ∧
       WP isa (callFinalize v.callee v.suffix) s (AInv s₀ C A P W D R N L 0) := by
   have e := h.env
   have hRb : 16 * (R + 1) ≤ 240 := by rcases e.rounds with h | h | h <;> omega
@@ -246,7 +247,7 @@ theorem start_wp (v : Ctr32Impl) (h : EPre s₀ C A P W D R N L) :
   have hf := h.fargsD hr₂.rd hr₂.wr hr₂.rsp (by rw [g₂ _ (by decide) (by decide) (by decide) (by decide), rdi₁])
     (by rw [g₂ _ (by decide) (by decide) (by decide) (by decide), rsi₁])
     (by rw [g₂ _ (by decide) (by decide) (by decide) (by decide), rdx₁]) rcx₂ r8₂ r9₂
-  refine WP.of_runBlock ⟨s₂, by rw [runBlock_append, run₁, Option.bind_some, run₂], ?_⟩
+  refine WP.of_runBlock ⟨s₂, by rw [runBlock_append, run₁, Option.bind_some, run₂], hf, hr₂.rsp, ?_⟩
   refine WP.mono (finr_call v _ hf) fun s₃ h₃ => ?_
   have hr₃ := hr₂.keep h₃.saved h₃.rd h₃.wr
   -- What S2V's start writes.
@@ -349,22 +350,38 @@ theorem AInv.desc (h : EPre s₀ C A P W D R N L) {i : Nat} {s : State} (hi : AI
     · exact h.desc_d
     · exact h.stk_desc.symm) (by decide)
 
-theorem adNext_ok (h : EPre s₀ C A P W D R N L) {i : Nat} (hiN : i < N) {s : State}
-    (hi : AInv s₀ C A P W D R N L i s) :
-    ∃ s', runBlock isa adNext s = some s' ∧ Regs s₀ C D (comp s₀.mem A i).base W R (comp s₀.mem A i).len s' ∧
-      s'.mem = s.mem := by
-  have e := h.env
-  have rA := e.inRW hi.rd hi.wr (d := adsOff) (n := 8) (by decide)
+theorem AInv.keep {i : Nat} {s s' : State} (hi : AInv s₀ C A P W D R N L i s)
+    (hg : ∀ r, r ≠ .rax → s'.gpr r = s.gpr r) (hm : s'.mem = s.mem) (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr) :
+    AInv s₀ C A P W D R N L i s' :=
+  ⟨by rw [hg _ (by decide), hi.rbx], by rw [hg _ (by decide), hi.rbp], by rw [hg _ (by decide), hi.r12],
+    by rw [hg _ (by decide), hi.r15], by rw [hg _ (by decide), hi.rsp], by rw [hrd, hi.rd], by rw [hwr, hi.wr], hi.le,
+    hm ▸ hi.ads, hm ▸ hi.left, hm ▸ hi.d208, hm ▸ hi.d216, hm ▸ hi.saved, hm ▸ hi.frame, hm ▸ hi.acc⟩
+
+/-- The address of the next descriptor. -/
+theorem adLoad_wp (h : EPre s₀ C A P W D R N L) {i : Nat} {s : State} (hi : AInv s₀ C A P W D R N L i s) :
+    WP isa (.block [.mov .rax (.mem (at_ .r15 adsOff))]) s fun s' => AInv s₀ C A P W D R N L i s' ∧
+      s'.gpr .rax = A + BitVec.ofNat 64 (16 * i) ∧ s'.mem = s.mem := by
+  have rA := h.env.inRW hi.rd hi.wr (d := adsOff) (n := 8) (by decide)
+  refine WP.of_runBlock ⟨s.setReg .rax (A + BitVec.ofNat 64 (16 * i)), by
+    simp only [runBlock_cons, runStep_some, runBlock_nil, at_, exec, readSrc, State.load64, State.ea, offset_nat,
+      Option.map_some, hi.r15, rA, ite_true, hi.ads], ?_, gpr_setReg_self _ _ _, mem_setReg _ _ _⟩
+  exact hi.keep (fun r hr => gpr_setReg_of_ne _ _ hr) (mem_setReg _ _ _) (rd_setReg _ _ _) (wr_setReg _ _ _)
+
+/-- The component's address and length from its descriptor. -/
+theorem adDesc_wp (h : EPre s₀ C A P W D R N L) {i : Nat} (hiN : i < N) {s : State}
+    (hi : AInv s₀ C A P W D R N L i s) (hrax : s.gpr .rax = A + BitVec.ofNat 64 (16 * i)) :
+    WP isa (.block [.mov .r13 (.mem (at_ .rax 0)), .mov .r14 (.mem (at_ .rax 8))]) s fun s' =>
+      Regs s₀ C D (comp s₀.mem A i).base W R (comp s₀.mem A i).len s' ∧ s'.mem = s.mem := by
   have c₀ : InRegions (s.rd ++ s.wr) (A + BitVec.ofNat 64 (16 * i)) 8 := by
     rw [hi.rd, hi.wr]; exact ⟨_, h.descIn, Offset.contains_base A (by omega) (by have := h.wA; omega)⟩
   have c₈ : InRegions (s.rd ++ s.wr) (A + BitVec.ofNat 64 (16 * i + 8)) 8 := by
     rw [hi.rd, hi.wr]; exact ⟨_, h.descIn, Offset.contains_base A (by omega) (by have := h.wA; omega)⟩
   have d₀ := hi.desc h (d := 16 * i) (by omega)
   have d₈ := hi.desc h (d := 16 * i + 8) (by omega)
-  refine ⟨_, by
-    simp (config := {decide := true}) only [adNext, runBlock_cons, runStep_some, runBlock_nil, at_, exec,
-      readSrc, State.load64, State.ea, offset_nat, Option.map_some, gpr_setReg, mem_setReg, rd_setReg, wr_setReg,
-      ite_true, ite_false, hi.r15, rA, hi.ads, Offset.add_add, Nat.add_zero, c₀, c₈]
+  refine WP.of_runBlock ⟨_, by
+    simp (config := {decide := true}) only [runBlock_cons, runStep_some, runBlock_nil, at_, exec, readSrc,
+      State.load64, State.ea, offset_nat, Option.map_some, gpr_setReg, rd_setReg, wr_setReg, mem_setReg, ite_true,
+      ite_false, hrax, Offset.add_add, Nat.add_zero, c₀, c₈]
     rfl, ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, ?_⟩
   all_goals try simp (config := {decide := true}) only [gpr_setReg, ite_true, ite_false, hi.rbx, hi.rbp, hi.r12,
     hi.r15, hi.rsp, comp, d₀, d₈]
@@ -380,9 +397,13 @@ theorem adBody_wp (v : Ctr32Impl) (h : EPre s₀ C A P W D R N L) {i : Nat} (hiN
   have e := h.env
   have hN := h.N_lt
   have hRb : 16 * (R + 1) ≤ 240 := by rcases e.rounds with h | h | h <;> omega
-  obtain ⟨s₁, run₁, hr₁, m₁⟩ := adNext_ok h hiN hi
   have hQ := h.comps _ (comp_mem s₀.mem A hiN)
-  refine WP.seq (WP.of_runBlock ⟨s₁, run₁, ?_⟩)
+  rw [show adNext = [.mov .rax (.mem (at_ .r15 adsOff))] ++
+    [.mov .r13 (.mem (at_ .rax 0)), .mov .r14 (.mem (at_ .rax 8))] from rfl]
+  refine WP.seq (WP.block_append (WP.mono (adLoad_wp h hi) fun s₀' ⟨hi₀, rax₀, m₀⟩ =>
+    WP.mono (adDesc_wp h hiN hi₀ rax₀) fun s₁ h₁ => ?_))
+  obtain ⟨hr₁, m₁'⟩ := h₁
+  have m₁ : s₁.mem = s.mem := by rw [m₁', m₀]
   refine WP.seq (WP.mono (cmacOf_wp v hQ hr₁) fun s₂ h₂ => ?_)
   have hr₂ := h₂.regs
   refine WP.mono (adStep_wp hr₂.r12 hr₂.r15 (by rw [hr₂.wr]; exact h.dw) (by rw [hr₂.wr]; exact e.workIn) e.d_w e.wD
@@ -477,16 +498,10 @@ theorem adBody_wp (v : Ctr32Impl) (h : EPre s₀ C A P W D R N L) {i : Nat} (hiN
   · rw [z₃, hl₂, one, Offset.ofNat_sub_ofNat_beq (by omega) (by decide)]
     exact congrArg some (decide_eq_decide.mpr (by omega))
 
-theorem AInv.keep {i : Nat} {s s' : State} (hi : AInv s₀ C A P W D R N L i s)
-    (hg : ∀ r, r ≠ .rax → s'.gpr r = s.gpr r) (hm : s'.mem = s.mem) (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr) :
-    AInv s₀ C A P W D R N L i s' :=
-  ⟨by rw [hg _ (by decide), hi.rbx], by rw [hg _ (by decide), hi.rbp], by rw [hg _ (by decide), hi.r12],
-    by rw [hg _ (by decide), hi.r15], by rw [hg _ (by decide), hi.rsp], by rw [hrd, hi.rd], by rw [hwr, hi.wr], hi.le,
-    hm ▸ hi.ads, hm ▸ hi.left, hm ▸ hi.d208, hm ▸ hi.d216, hm ▸ hi.saved, hm ▸ hi.frame, hm ▸ hi.acc⟩
-
-/-- S2V over all the components, if there are any. -/
-theorem ads_wp (v : Ctr32Impl) (h : EPre s₀ C A P W D R N L) {s : State} (hs : AInv s₀ C A P W D R N L 0 s) :
-    WP isa (s2vAds v.callee v.suffix) s (AInv s₀ C A P W D R N L N) := by
+/-- Whether there are any components: ZF is set if not. -/
+theorem adsHead_wp (h : EPre s₀ C A P W D R N L) {s : State} (hs : AInv s₀ C A P W D R N L 0 s) :
+    WP isa (.block [.mov .rax (.mem (at_ .r15 leftOff)), .alu .test .rax (.reg .rax)]) s fun s₁ =>
+      AInv s₀ C A P W D R N L 0 s₁ ∧ s₁.zf = some (decide (N = 0)) := by
   have hN := h.N_lt
   have rL := h.env.inRW hs.rd hs.wr (d := leftOff) (n := 8) (by decide)
   obtain ⟨s₁, run₁, zf₁, g₁, m₁, rd₁, wr₁⟩ : ∃ s₁, runBlock isa [.mov .rax (.mem (at_ .r15 leftOff)),
@@ -501,8 +516,12 @@ theorem ads_wp (v : Ctr32Impl) (h : EPre s₀ C A P W D R N L) {s : State} (hs :
       rw [hs.left, Nat.sub_zero, BitVec.and_self, Proof.CmacAes.Stream.X86_64.beq_zero_iff, toNat_ofNat hN]
     · intro r hr; simp [gpr_setReg, hr]
     all_goals rfl
-  have hs₁ := hs.keep g₁ m₁ rd₁ wr₁
-  refine WP.seq (WP.of_runBlock ⟨s₁, run₁, ?_⟩)
+  exact WP.of_runBlock ⟨s₁, run₁, hs.keep g₁ m₁ rd₁ wr₁, zf₁⟩
+
+/-- S2V over all the components, if there are any. -/
+theorem ads_wp (v : Ctr32Impl) (h : EPre s₀ C A P W D R N L) {s : State} (hs : AInv s₀ C A P W D R N L 0 s) :
+    WP isa (s2vAds v.callee v.suffix) s (AInv s₀ C A P W D R N L N) := by
+  refine WP.seq (WP.mono (adsHead_wp h hs) fun s₁ ⟨hs₁, zf₁⟩ => ?_)
   refine WP.ite (decide (N = 0)) zf₁ (fun hb => WP.block_nil ?_) (fun hb => ?_)
   · have hN0 : N = 0 := of_decide_eq_true hb
     rw [hN0] at hs₁ ⊢; exact hs₁
@@ -525,20 +544,25 @@ structure SDone (s₀ : State) (C A P W D : Addr) (R N L : Nat) (s : State) : Pr
   acc : Spec.Aes.bytesAt s.mem D 16 =
     Spec.Siv.s2vAcc (Spec.Siv.ctxMac s₀.mem C R) (Spec.Siv.components 64 s₀.mem A N)
 
-theorem encS2v_wp (v : Ctr32Impl) (h : EPre s₀ C A P W D R N L) :
-    WP isa (encS2v v.callee v.suffix) s₀ (SDone s₀ C A P W D R N L) := by
-  refine WP.seq (WP.mono (start_wp v h) fun s₀' h₀ => WP.seq (WP.mono h₀ fun s₁ h₁ => ?_))
-  refine WP.seq (WP.mono (ads_wp v h h₁) fun s₂ h₂ => ?_)
-  obtain ⟨s₃, run₃, r13, r14, g₃, m₃, rd₃, wr₃⟩ := ctrEnd_ok h.env h₂.r15 h₂.rd h₂.wr h₂.d208 h₂.d216
-  refine WP.of_runBlock ⟨s₃, run₃, ⟨⟨?_, ?_, ?_, r13, r14, ?_, ?_, by rw [rd₃, h₂.rd], by rw [wr₃, h₂.wr]⟩,
-    m₃ ▸ h₂.d208, m₃ ▸ h₂.d216⟩, m₃ ▸ h₂.saved, m₃ ▸ h₂.frame, ?_⟩
-  · rw [g₃ _ (by decide) (by decide), h₂.rbx]
-  · rw [g₃ _ (by decide) (by decide), h₂.rbp]
-  · rw [g₃ _ (by decide) (by decide), h₂.r12]
-  · rw [g₃ _ (by decide) (by decide), h₂.r15]
-  · rw [g₃ _ (by decide) (by decide), h₂.rsp]
+/-- The data and its length back in their registers. -/
+theorem adsEnd_wp (h : EPre s₀ C A P W D R N L) {s : State} (hs : AInv s₀ C A P W D R N L N s) :
+    WP isa (.block [.mov .r13 (.mem (at_ .r15 dataOff)), .mov .r14 (.mem (at_ .r15 lenOff))]) s
+      (SDone s₀ C A P W D R N L) := by
+  obtain ⟨s₃, run₃, r13, r14, g₃, m₃, rd₃, wr₃⟩ := ctrEnd_ok h.env hs.r15 hs.rd hs.wr hs.d208 hs.d216
+  refine WP.of_runBlock ⟨s₃, run₃, ⟨⟨?_, ?_, ?_, r13, r14, ?_, ?_, by rw [rd₃, hs.rd], by rw [wr₃, hs.wr]⟩,
+    m₃ ▸ hs.d208, m₃ ▸ hs.d216⟩, m₃ ▸ hs.saved, m₃ ▸ hs.frame, ?_⟩
+  · rw [g₃ _ (by decide) (by decide), hs.rbx]
+  · rw [g₃ _ (by decide) (by decide), hs.rbp]
+  · rw [g₃ _ (by decide) (by decide), hs.r12]
+  · rw [g₃ _ (by decide) (by decide), hs.r15]
+  · rw [g₃ _ (by decide) (by decide), hs.rsp]
   · have hl : (Spec.Siv.components 64 s₀.mem A N).length = N := by simp [Spec.Siv.components, Sig.listed]
-    rw [m₃, h₂.acc, List.take_of_length_le (Nat.le_of_eq hl)]
+    rw [m₃, hs.acc, List.take_of_length_le (Nat.le_of_eq hl)]
+
+theorem encS2v_wp (v : Ctr32Impl) (h : EPre s₀ C A P W D R N L) :
+    WP isa (encS2v v.callee v.suffix) s₀ (SDone s₀ C A P W D R N L) :=
+  WP.seq (WP.mono (start_wp v h) fun _ h₀ => WP.seq (WP.mono h₀.2.2 fun _ h₁ =>
+    WP.seq (WP.mono (ads_wp v h h₁) fun _ h₂ => adsEnd_wp h h₂)))
 
 /-! ## The whole functions -/
 
