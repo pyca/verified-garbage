@@ -53,8 +53,7 @@ theorem rotate16_ok (s : State) (r : Reg) (hr : r ≠ .x8)
     · simp only [wr_write]
 
 theorem mixInputs_ok (s : State) (i j : Nat) (hj : j < 64)
-    (readable : ∀ k < 128,
-      InRegions (s.rd ++ s.wr) (s.gpr .x0 + BitVec.ofNat 64 k) 1) :
+    (readable : InRegions (s.rd ++ s.wr) (s.gpr .x0) 128) :
     ∃ s', runBlock isa (mixInputs j i) s = some s' ∧
       s'.gpr .x6 = (s.gpr (wordReg (i + 3)) &&& s.gpr (wordReg (i + 2))) +
         (~~~(s.gpr (wordReg (i + 3))) &&& s.gpr (wordReg (i + 1))) ∧
@@ -63,8 +62,8 @@ theorem mixInputs_ok (s : State) (i j : Nat) (hj : j < 64)
   have h₁ := wordReg_separate (i + 1)
   have h₂ := wordReg_separate (i + 2)
   have h₃ := wordReg_separate (i + 3)
-  have lo := readable (2 * j) (by omega)
-  have hi := readable (2 * j + 1) (by omega)
+  have lo := CallLay.inRegions_sub readable (off := 2 * j) (l := 1) (by omega) (by decide)
+  have hi := CallLay.inRegions_sub readable (off := 2 * j + 1) (l := 1) (by omega) (by decide)
   have loOff : 2 * j < 4096 := by omega
   have hiOff : 2 * j + 1 < 4096 := by omega
   refine ⟨_, by
@@ -187,8 +186,7 @@ theorem subInputs_ok (s : State) (r : Reg) (h6 : r ≠ .x6) :
     · rfl
 theorem mix_ok (s : State) (v : Spec.Rc2.State) (hv : Words s v)
     (i j : Nat) (hi : i < 4) (hj : j < 64)
-    (readable : ∀ k < 128,
-      InRegions (s.rd ++ s.wr) (s.gpr .x0 + BitVec.ofNat 64 k) 1) :
+    (readable : InRegions (s.rd ++ s.wr) (s.gpr .x0) 128) :
     WP isa (.block (mix j i)) s (fun s' =>
       Words s' (Spec.Rc2.mix (Spec.Rc2.scheduleAt s.mem (s.gpr .x0)) j i v) ∧
       Keep (wordReg i :: temps) s s') := by
@@ -266,8 +264,7 @@ theorem keep_word {i : Nat} {s s' : State} (h : Keep [wordReg i] s s') :
 
 theorem reverseMix_ok (s : State) (v : Spec.Rc2.State) (hv : Words s v)
     (i j : Nat) (hi : i < 4) (hj : j < 64)
-    (readable : ∀ k < 128,
-      InRegions (s.rd ++ s.wr) (s.gpr .x0 + BitVec.ofNat 64 k) 1) :
+    (readable : InRegions (s.rd ++ s.wr) (s.gpr .x0) 128) :
     WP isa (.block (reverseMix j i)) s (fun s' =>
       Words s' (Spec.Rc2.reverseMix (Spec.Rc2.scheduleAt s.mem (s.gpr .x0)) j i v) ∧
       Keep (wordReg i :: temps) s s') := by
@@ -282,8 +279,7 @@ theorem reverseMix_ok (s : State) (v : Spec.Rc2.State) (hv : Words s v)
   have ptr₁ : s₁.gpr .x0 = s.gpr .x0 := keep₁.reg _ (by
     simp only [List.mem_cons, List.not_mem_nil, or_false, not_or]
     exact ⟨Ne.symm sep.2.2.2.1, by decide⟩)
-  have read₁ : ∀ k < 128,
-      InRegions (s₁.rd ++ s₁.wr) (s₁.gpr .x0 + BitVec.ofNat 64 k) 1 := by
+  have read₁ : InRegions (s₁.rd ++ s₁.wr) (s₁.gpr .x0) 128 := by
     rw [keep₁.rd, keep₁.wr, ptr₁]; exact readable
   obtain ⟨s₂, run₂, composite₂, key₂, keep₂⟩ := mixInputs_ok s₁ i j hj read₁
   refine WP.of_runBlock ⟨s₂, run₂, ?_⟩
@@ -348,8 +344,7 @@ def mashSpec (direction : Spec.Rc2.Direction) (k : Spec.Rc2.Schedule)
 
 theorem mash_ok (direction : Spec.Rc2.Direction) (s : State)
     (v : Spec.Rc2.State) (hv : Words s v) (i : Nat) (hi : i < 4)
-    (readable : ∀ k < 128,
-      InRegions (s.rd ++ s.wr) (s.gpr .x0 + BitVec.ofNat 64 k) 1) :
+    (readable : InRegions (s.rd ++ s.wr) (s.gpr .x0) 128) :
     WP isa (.block (mash direction i)) s (fun s' =>
       Words s' (mashSpec direction (Spec.Rc2.scheduleAt s.mem (s.gpr .x0)) i v) ∧
       Keep (wordReg i :: temps) s s') := by
@@ -367,8 +362,7 @@ theorem mash_ok (direction : Spec.Rc2.Direction) (s : State)
     · exact rd_write _ _ _ _
     · exact wr_write _ _ _ _
   have ptr₁ := keep₁.reg .x0 (by decide)
-  have read₁ : ∀ k < 128,
-      InRegions (s₁.rd ++ s₁.wr) (s₁.gpr .x0 + BitVec.ofNat 64 k) 1 := by
+  have read₁ : InRegions (s₁.rd ++ s₁.wr) (s₁.gpr .x0) 128 := by
     rw [keep₁.rd, keep₁.wr, ptr₁]; exact readable
   apply WP.mono (keyLookup_ok s₁ read₁)
   intro s₂ h₂
