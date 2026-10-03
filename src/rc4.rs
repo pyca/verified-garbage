@@ -5,12 +5,17 @@
 //! are the verified primitives (`VG.Spec.Rc4.initContract` and
 //! `VG.Spec.Rc4.applyContract`). Secret indices never address memory: on
 //! AArch64 the permutation stays in sixteen AdvSIMD registers for a whole
-//! call, read with `tbl`/`tbx` and written with `cmeq`/`bit`; on x86-64 and
-//! x86 the primitives scan it at fixed addresses with masked quadwords and
-//! doublewords. Only pointers, lengths and the stream position modulo 256
-//! may affect the leakage trace.
+//! call, read with `tbl`/`tbx` and written with `cmeq`/`bit`; on x86-64, x86
+//! and 32-bit Arm the primitives scan it at fixed addresses with masked
+//! quadwords (x86-64) and 32-bit words. Only pointers, lengths and the stream
+//! position modulo 256 may affect the leakage trace.
 
-#![cfg(any(target_arch = "x86_64", target_arch = "aarch64", target_arch = "x86"))]
+#![cfg(any(
+    target_arch = "x86_64",
+    target_arch = "aarch64",
+    target_arch = "arm",
+    target_arch = "x86"
+))]
 
 use core::mem::MaybeUninit;
 

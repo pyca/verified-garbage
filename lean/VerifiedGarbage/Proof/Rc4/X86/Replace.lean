@@ -8,29 +8,6 @@ open VG.Proof.MlDsa.X86.Pack (Keep WP.keep writesOnly addr_of_fit)
 
 /-! ## Moving the difference to the byte's lane -/
 
-/-- The difference `c`, once lanes `3, …, jj` are visited: shifted to lane `L`
-by the lanes visited below it. -/
-def spread (c : Byte) (L jj : Nat) : BitVec 32 :=
-  if jj ≤ L then (c.setWidth 32) <<< (8 * (L - jj)) else 0
-
-theorem zero_xor' (x : BitVec 32) : (0 : BitVec 32) ^^^ x = x := BitVec.zero_xor
-theorem or_zero' (x : BitVec 32) : x ||| (0 : BitVec 32) = x := BitVec.or_zero
-theorem zero_or' (x : BitVec 32) : (0 : BitVec 32) ||| x = x := BitVec.zero_or
-theorem rot_zero : (0 : BitVec 32).rotateRight 24 = 0 := by decide
-
-theorem spread_succ (c : Byte) {L j : Nat} (hL : L < 4) :
-    (spread c L (j + 1)).rotateRight 24 ||| (if L = j then c.setWidth 32 else 0) =
-      spread c L j := by
-  unfold spread
-  by_cases h1 : j + 1 ≤ L
-  · rw [ite_eq_left h1, rot_byte32 c (by omega), ite_eq_right (show ¬ L = j by omega),
-      or_zero', ite_eq_left (show j ≤ L by omega), show L - (j + 1) + 1 = L - j by omega]
-  · rw [ite_eq_right h1, rot_zero, zero_or']
-    by_cases h2 : L = j
-    · rw [ite_eq_left h2, ite_eq_left (show j ≤ L by omega), h2, Nat.sub_self, Nat.mul_zero,
-        BitVec.shiftLeft_zero]
-    · rw [ite_eq_right h2, ite_eq_right (show ¬ j ≤ L by omega)]
-
 theorem spread_step (s : State) (idx c : Byte) {j : Nat} (hj : j < 4)
     (hbp : s.gpr .ebp = idx.setWidth 32) (hax : s.gpr .eax = c.setWidth 32)
     (hcx : s.gpr .ecx = spread c (idx.toNat % 4) (j + 1)) :
@@ -62,28 +39,6 @@ theorem spread_steps (s₀ : State) (idx c : Byte) (hbp : s₀.gpr .ebp = idx.se
 theorem lanesDown_eq : lanesDown = (List.range 4).reverse := rfl
 
 /-! ## Storing back every doubleword -/
-
-/-- The memory once doublewords `0, …, k - 1` are stored back, XORed with `d`
-where they hold byte `n`. -/
-def scatter (m : Mem) (p : Addr) (n : Nat) (d : BitVec 32) (k : Nat) : Mem :=
-  if n / 4 < k then
-    m.writeW (p + BitVec.ofNat 64 (4 * (n / 4)))
-      (m.readW (p + BitVec.ofNat 64 (4 * (n / 4))) 32 ^^^ d)
-  else m
-
-theorem scatter_succ (m : Mem) (p : Addr) (n : Nat) (d : BitVec 32) (k : Nat) :
-    (scatter m p n d k).writeW (p + BitVec.ofNat 64 (4 * k))
-      ((if n / 4 = k then d else 0) ^^^
-        (scatter m p n d k).readW (p + BitVec.ofNat 64 (4 * k)) 32) = scatter m p n d (k + 1) := by
-  unfold scatter
-  by_cases h0 : n / 4 < k
-  · rw [ite_eq_left h0, ite_eq_right (show ¬ n / 4 = k by omega), zero_xor', writeW_readW32,
-      ite_eq_left (show n / 4 < k + 1 by omega)]
-  · rw [ite_eq_right h0]
-    by_cases h1 : n / 4 = k
-    · rw [ite_eq_left h1, ite_eq_left (show n / 4 < k + 1 by omega), BitVec.xor_comm, h1]
-    · rw [ite_eq_right h1, zero_xor', writeW_readW32,
-        ite_eq_right (show ¬ n / 4 < k + 1 by omega)]
 
 theorem scatter_step (s : State) (idx : Byte) {k : Nat} (hk : k < 64)
     (hbp : s.gpr .ebp = idx.setWidth 32)
@@ -128,9 +83,6 @@ theorem scatter_steps (s₀ : State) (idx : Byte) (d : BitVec 32)
     rw [um, tm, tcx, tdi, row_addr hfit (by omega), scatter_succ]
 
 /-! ## The replacement -/
-
-theorem xor_byte32 (a b : Byte) : a.setWidth 32 ^^^ b.setWidth 32 = (a ^^^ b).setWidth 32 := by
-  rw [BitVec.setWidth_xor]
 
 /-- The address `loadI` reads: byte `i` of the table at `P`. -/
 theorem idx_addr {P : BitVec 32} (hP : P.toNat + 256 ≤ 2 ^ 32) (i : Byte) :
