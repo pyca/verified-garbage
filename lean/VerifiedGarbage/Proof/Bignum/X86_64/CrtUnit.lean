@@ -48,6 +48,7 @@ structure NVals (t : State) (B : Addr) (w : Nat) (minv : BitVec 64) (N : Nat) : 
   n : wv t.mem B (slot w Public.aN) w = N
   inv : ((word t.mem B (slot w Public.aN)).toNat * minv.toNat + 1) % 2 ^ 64 = 0
   r2 : wv t.mem B (slot w Public.aR2) w % N = 2 ^ (64 * w) * 2 ^ (64 * w) % N
+  r2lt : wv t.mem B (slot w Public.aR2) w < N
   one : wv t.mem B (slot w Public.aOne) w = 1
 
 theorem XVals.of_below {s t : State} {B : Addr} {o wx : Nat} {mx : BitVec 64} {X : Nat}

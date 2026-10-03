@@ -81,6 +81,7 @@ theorem NVals.of_frm {s t : State} {B : Addr} {w : Nat} {minv : BitVec 64} {N o 
   exact ⟨by rw [hf.wv_eq (fun r h' => rN r h') (by omega)]; exact h.n,
     by rw [hf.word_eq (fun r h' => by have := rN r h'; omega) (by omega)]; exact h.inv,
     by rw [hf.wv_eq (fun r h' => rR r h') (by omega)]; exact h.r2,
+    by rw [hf.wv_eq (fun r h' => rR r h') (by omega)]; exact h.r2lt,
     by rw [hf.wv_eq (fun r h' => rO r h') (by omega)]; exact h.one⟩
 
 /-- `q`'s phase: `m_q = c^dQ mod q` into `q`'s `Y`, if `q` divides `N` and
