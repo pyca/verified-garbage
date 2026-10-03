@@ -190,6 +190,16 @@ class Selection(unittest.TestCase):
         self.assertEqual({r['modules'] for r in self.rows(['bench/tests/argon2.rs'])}, {'argon2'})
         self.assertEqual({r['modules'] for r in self.rows(['src/nofamily/mod.rs'])}, {''})
 
+    def test_shared_hash_code_selects_every_hash(self):
+        # `hmac_sha256`'s benchmark follows through its `USES` of `sha256`.
+        self.files['src/hashes/sha256.rs'] = ''
+        self.files['src/hashes/mod.rs'] = ''
+        self.catalog['sha256'] = {'sha256'}
+        rows = self.rows(['src/hashes/mod.rs'])
+        self.assertEqual({r['modules'] for r in rows}, {'keccak sha256'})
+        self.assertEqual(self.configurations(rows, 'aarch64'), ['', 'sha3'])
+        self.assertEqual(self.configurations(rows, 'x86_64'), [''])
+
     def test_registration_edits_only(self):
         def names(lines):
             with mock.patch.object(planner.subprocess, 'check_output', return_value=lines):

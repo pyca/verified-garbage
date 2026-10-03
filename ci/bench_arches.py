@@ -13,7 +13,10 @@ Each platform's `modules` narrows its benchmarks to the modules whose own
 files changed:
 
   * `src/asm/<arch>/<module>.rs`: `<module>`, on that architecture;
-  * `src/<module>.rs` or `src/hashes/<module>.rs`: `<module>`;
+  * `src/<module>.rs` or `src/hashes/<module>.rs`: `<module>`, and
+    `src/hashes/mod.rs` (`streaming_hash!`, `HashFunction`): every hash
+    module in `src/hashes/` (benchmarks of code built on a hash, such as
+    HMAC, list that hash in their `USES`);
   * `src/<family>/<hash>.rs`: `<family>_<hash>` (as in `src/asm/`), and
     `src/<family>/mod.rs`: every `<family>_<hash>`;
   * `bench/benches/primitives/<name>.rs`, or its differential test
@@ -121,6 +124,7 @@ SHARED = re.compile(
 # on every one.
 ASM = re.compile(r"src/asm/([a-z0-9_]+)/([a-z0-9_]+)\.rs$")
 API = re.compile(r"src/(?:hashes/)?([a-z0-9_]+)\.rs$")
+HASHES = "src/hashes/mod.rs"
 FAMILY = re.compile(r"src/(?!asm/|hashes/)([a-z0-9_]+)/([a-z0-9_]+)\.rs$")
 # One algorithm's benchmark, and the modules it lists in its `USES`.
 BENCH = re.compile(r"bench/benches/primitives/(?!main\.rs$)([a-z0-9_]+)\.rs$")
@@ -200,6 +204,12 @@ def members(family, known):
 
 def rust_files(root="."):
     return sorted(p.relative_to(root).as_posix() for p in pathlib.Path(root, "src").glob("**/*.rs"))
+
+
+def hashes(root="."):
+    """The hash modules: the files of `src/hashes/` but its `mod.rs`."""
+    return {m[1] for path in rust_files(root)
+            if (m := re.fullmatch(r"src/hashes/([a-z0-9_]+)\.rs", path)) and m[1] != "mod"}
 
 
 def users(family, known, root="."):
@@ -326,6 +336,10 @@ def arches(changed, base=None):
                     need(a, module)
         elif asm and asm[1] in PLATFORMS:
             need(asm[1], asm[2])
+        elif path == HASHES:
+            for a in PLATFORMS:
+                for name in hashes():
+                    need(a, name)
         elif api:
             for a in PLATFORMS:
                 need(a, api[1])
