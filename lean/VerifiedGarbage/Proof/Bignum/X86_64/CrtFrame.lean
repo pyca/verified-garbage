@@ -1,4 +1,5 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.MontMul
+import VerifiedGarbage.Proof.Bignum.X86_64.Mont
+import VerifiedGarbage.Impl.Rsa.X86_64.Crt
 
 /-!
 # Multiword arithmetic on x86-64: workspaces within a working space
@@ -11,7 +12,7 @@ lemmas restate it at `B`, with the ranges moved by `o` (`Frm.rebase`).
 
 namespace VG.Proof.Bignum.X86_64
 
-open VG VG.X86_64 VG.Impl.Bignum.X86_64
+open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Rsa.X86_64.Crt
 
 /-- The offset from `off B o` of an address at offset `d ≥ o` from `B`, or
 an offset at least `2^64 - o` for one below `o`. -/
@@ -69,5 +70,63 @@ theorem wv_off (m : Mem) (B : Addr) (o d k : Nat) : wv m (off B o) d k = wv m B 
   induction k with
   | zero => rfl
   | succ k ih => rw [wv, wv, ih, word_off, Nat.add_assoc]
+
+/-- Below `off B o`: a change within `L` bytes of `off B o` keeps the
+words at offsets below `o` from `B`. -/
+theorem Frm.word_below {B : Addr} {o L : Nat} {rs : List (Nat × Nat)} {m m' : Mem} (h : Frm (off B o) rs m m')
+    (hr : ∀ r ∈ rs, r.1 + r.2 ≤ L) (hL : o + L ≤ 2 ^ 64) (ho : o < 2 ^ 64) {d : Nat} (hd : d + 8 ≤ o) :
+    word m' B d = word m B d :=
+  (Mem.readW_congr fun i hi => (h _ fun r hr' => by
+    have := hr r hr'
+    rcases ofs_rebase B (off B d + BitVec.ofNat 64 i) ho with ⟨h1, _⟩ | ⟨_, h2⟩
+    · rw [ofs_off B (by omega)] at h1; omega
+    · omega).symm).symm
+
+theorem Frm.wv_below {B : Addr} {o L : Nat} {rs : List (Nat × Nat)} {m m' : Mem} (h : Frm (off B o) rs m m')
+    (hr : ∀ r ∈ rs, r.1 + r.2 ≤ L) (hL : o + L ≤ 2 ^ 64) (ho : o < 2 ^ 64) {d k : Nat} (hd : d + 8 * k ≤ o) :
+    wv m' B d k = wv m B d k :=
+  wv_congr fun i hi => h.word_below hr hL ho (by omega)
+
+/-! ## A prime's workspace -/
+
+open VG.Impl.Bignum.X86_64.Public in
+/-- A prime's workspace at `off B o` (`wx` words), its base in `rdi`,
+after the modulus' at `B` (`w` words) in the working space, its header
+linking back to `B`. -/
+structure SubCtx (t : State) (B : Addr) (Z o w wx : Nat) (minv : BitVec 64) : Prop where
+  scr : Scr t B Z
+  rdi : t.gpr .rdi = off B o
+  hdr : Hdr t.mem (off B o) wx minv
+  link : word t.mem (off B o) (8 * sLink) = B
+  nw : word t.mem B (8 * sW) = BitVec.ofNat 64 w
+  narr : ∀ j < 8, word t.mem B (8 * sArr j) = off B (slot w j)
+  lo : slot w 8 ≤ o
+  hi : o + slot wx 8 ≤ Z
+
+theorem SubCtx.good {t : State} {B : Addr} {Z o w wx : Nat} {minv : BitVec 64} (h : SubCtx t B Z o w wx minv) :
+    Good t (off B o) (slot wx 8) wx minv :=
+  ⟨h.scr.sub h.hi (by unfold slot hdrBytes; omega), h.rdi, h.hdr⟩
+
+/-- What changes within the arrays and the functions' own slots of the
+prime's workspace (but its link) keeps it. -/
+theorem SubCtx.of_frm {s t : State} {B : Addr} {Z o w wx : Nat} {minv : BitVec 64} {rs : List (Nat × Nat)}
+    (h : SubCtx s B Z o w wx minv) (hf : Frm (off B o) rs s.mem t.mem)
+    (hr : ∀ r ∈ rs, 8 * 17 ≤ r.1 ∧ r.1 + r.2 ≤ slot wx 8) (hwr : t.wr = s.wr)
+    (hdi : t.gpr .rdi = s.gpr .rdi) : SubCtx t B Z o w wx minv := by
+  have hn := h.scr.nowrap
+  have hi := h.hi
+  have hL : o + slot wx 8 ≤ 2 ^ 64 := by omega
+  have hr' : ∀ r ∈ rs, r.1 + r.2 ≤ slot wx 8 := fun r hr' => (hr r hr').2
+  have hh : ∀ i < 17, word t.mem (off B o) (8 * i) = word s.mem (off B o) (8 * i) := fun i hi' =>
+    hf.word_eq (fun r hr' => Or.inl (by have := hr r hr'; omega))
+      (by have : 8 * 32 ≤ slot wx 8 := by unfold slot hdrBytes; omega
+          omega)
+  have hb : ∀ i < 32, word t.mem B (8 * i) = word s.mem B (8 * i) := fun i hi' =>
+    hf.word_below hr' hL (by unfold slot hdrBytes at hL; omega) (by have := hdr_lt_slot w 8 hi'; have := h.lo; omega)
+  exact ⟨h.scr.congr hwr, hdi.trans h.rdi,
+    ⟨(hh _ (by decide)).trans h.hdr.hw, (hh _ (by decide)).trans h.hdr.hminv,
+      fun j hj => (hh _ (by unfold sArr; omega)).trans (h.hdr.harr j hj)⟩,
+    (hh _ (by decide)).trans h.link, (hb _ (by decide)).trans h.nw,
+    fun j hj => (hb _ (by unfold sArr; omega)).trans (h.narr j hj), h.lo, h.hi⟩
 
 end VG.Proof.Bignum.X86_64
