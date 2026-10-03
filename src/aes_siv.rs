@@ -28,8 +28,9 @@ use crate::arch::aes_siv::{
     VG_AES_SIV_DECRYPT_AESNI_FEATURES, VG_AES_SIV_DECRYPT_VAES_FEATURES,
     VG_AES_SIV_ENCRYPT_AESNI_FEATURES, VG_AES_SIV_ENCRYPT_VAES_FEATURES,
     VG_AES_SIV_INIT_AESNI_FEATURES, VG_AES_SIV_INIT_VAES_FEATURES, vg_aes_siv_decrypt,
-    vg_aes_siv_decrypt_aesni, vg_aes_siv_decrypt_vaes, vg_aes_siv_encrypt, vg_aes_siv_encrypt_aesni,
-    vg_aes_siv_encrypt_vaes, vg_aes_siv_init, vg_aes_siv_init_aesni, vg_aes_siv_init_vaes,
+    vg_aes_siv_decrypt_aesni, vg_aes_siv_decrypt_vaes, vg_aes_siv_encrypt,
+    vg_aes_siv_encrypt_aesni, vg_aes_siv_encrypt_vaes, vg_aes_siv_init, vg_aes_siv_init_aesni,
+    vg_aes_siv_init_vaes,
 };
 use crate::cpu::{Features, detected};
 use crate::zeroize::zeroize;

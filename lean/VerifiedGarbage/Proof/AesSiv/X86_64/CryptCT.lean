@@ -70,13 +70,13 @@ theorem openTail_rel (v : Ctr32Impl) {s₀' : State} (h : Env s₀ C D P W R L) 
     RelCT isa (fun a b => SPre s₀ C D P W R L a ∧ SPre s₀' C D P W R L b)
       (.seq (.block (counter 0)) (.seq (ctr v.callee) (.seq (finish v.callee v.suffix tOff)
         (.seq (.block Impl.AesSiv.X86_64.compare)
-          (.seq maskData (.block ([.mov .rax (.mem (at_ .r15 dbOff))] ++ restore)))))))
+          (.seq maskData (.block (([.mov .rax (.mem (at_ .r15 dbOff))] : List Instr) ++ restore)))))))
       fun _ _ => True := by
   obtain ⟨_, hA⟩ : ∃ hc, (taint.check (Taint.ofRegs [.rbx, .rbp, .r12, .r13, .r14, .r15, .rsp])
       (.block (counter 0)) hc).isSome = true := ⟨_, by taint_decide⟩
   obtain ⟨_, hB⟩ : ∃ hc, (taint.check (Taint.ofRegs [.rbx, .rbp, .r12, .r13, .r14, .r15, .rsp])
       (.seq (.block Impl.AesSiv.X86_64.compare)
-        (.seq maskData (.block ([.mov .rax (.mem (at_ .r15 dbOff))] ++ restore)))) hc).isSome = true :=
+        (.seq maskData (.block (([.mov .rax (.mem (at_ .r15 dbOff))] : List Instr) ++ restore)))) hc).isSome = true :=
     ⟨_, by taint_decide⟩
   have c := (RelCT.taint (A := taint) (P := fun a b => SPre s₀ C D P W R L a ∧ SPre s₀' C D P W R L b) _
     (fun a b hab => regs_agree q1 hab.1.regs hab.2.regs) hA).wp

@@ -167,7 +167,7 @@ theorem openTail_wp (v : Ctr32Impl) (h : Env s₀ C D P W R L) (hcp : (⟨C, 512
     (hsv : Spill.Saved s.mem W g saved) :
     WP isa (.seq (.block (counter 0)) (.seq (ctr v.callee) (.seq (finish v.callee v.suffix tOff)
         (.seq (.block Impl.AesSiv.X86_64.compare)
-          (.seq maskData (.block ([.mov .rax (.mem (at_ .r15 dbOff))] ++ restore))))))) s
+          (.seq maskData (.block (([.mov .rax (.mem (at_ .r15 dbOff))] : List Instr) ++ restore))))))) s
       fun s' => (∀ r ∈ saved.map Prod.fst, s'.gpr r = g r) ∧ s'.gpr .rsp = s₀.gpr .rsp ∧
         Frame (endRegions W P L (s₀.gpr .rsp)) s.mem s'.mem ∧
         match Spec.Siv.openWith (Spec.Siv.ctxMac s.mem C R) (Spec.Siv.ctxCiph s.mem C R)
