@@ -22,7 +22,7 @@ open VG.WriteBytes (writeBytes)
 /-! ## The CBC call -/
 
 theorem cbc_correct' (d : Spec.Rc2.Direction) (s : State) (hs : (Cbc.contract d).pre s) :
-    ∃ t s', Exec isa (Impl.Rc2.AArch64.Cbc.cbc d) s t s' ∧ abiPreserved s s' ∧
+    ∃ t s', Exec isa (Impl.Rc2.AArch64.Cbc.code d) s t s' ∧ abiPreserved s s' ∧
       (Cbc.contract d).post s s' := by
   cases d
   · exact Cbc.encrypt_correct s hs
@@ -30,9 +30,9 @@ theorem cbc_correct' (d : Spec.Rc2.Direction) (s : State) (hs : (Cbc.contract d)
 
 theorem cbcCall_eq (d : Spec.Rc2.Direction) : cbcCall d =
     .call (match d with | .encrypt => "vg_rc2_cbc_encrypt" | .decrypt => "vg_rc2_cbc_decrypt")
-      (Impl.Rc2.AArch64.Cbc.cbc d) := by cases d <;> rfl
+      (Impl.Rc2.AArch64.Cbc.code d) := by cases d <;> rfl
 
-theorem cbc_noFrames (d : Spec.Rc2.Direction) : (Impl.Rc2.AArch64.Cbc.cbc d).noFrames = true := by
+theorem cbc_noFrames (d : Spec.Rc2.Direction) : (Impl.Rc2.AArch64.Cbc.code d).noFrames = true := by
   cases d
   · change Impl.Rc2.AArch64.Cbc.encrypt.noFrames = true; lit_decide
   · change Impl.Rc2.AArch64.Cbc.decrypt.noFrames = true; lit_decide
