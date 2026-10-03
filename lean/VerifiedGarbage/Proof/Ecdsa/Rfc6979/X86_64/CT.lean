@@ -291,7 +291,7 @@ theorem rekey_ct {Φ : Lay P.I.hashLen → Mem → State → Prop} : RelCT isa (
 theorem core_ct {i : Nat} :
     RelCT isa (Two P fun L m₀ u => P₁ P L m₀ i u ∧ Args L u) (.call (cfgOf P).coreN (cfgOf P).coreC)
       fun _ _ => True :=
-  RelCT.callEx Proof.Ecdsa.X86_64.sign_x86 Proof.Ecdsa.X86_64.sign_ct
+  RelCT.callEx P.coreX P.coreCT
     fun _ _ ⟨⟨L, _, _, _, _⟩, hL, _, c₁, c₂, ⟨_, a₁⟩, ⟨_, a₂⟩⟩ =>
     ⟨coreRd L, coreWr L, coreRd L, coreWr L, core_pre hL P.len32 c₁ a₁.rdi a₁.rsi a₁.rdx a₁.rcx a₁.r8,
       core_pre hL P.len32 c₂ a₂.rdi a₂.rsi a₂.rdx a₂.rcx a₂.r8,

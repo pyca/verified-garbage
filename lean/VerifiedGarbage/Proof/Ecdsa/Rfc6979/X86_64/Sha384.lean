@@ -1,4 +1,5 @@
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Verified
+import VerifiedGarbage.Proof.Ecdsa.X86_64.Verified
 import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Hashes.Sha512
 import VerifiedGarbage.Spec.Ecdsa.Rfc6979.P256Sha384
 
@@ -58,6 +59,8 @@ def pack (v : Compress) : RfcHash where
   hS := Nat.le_of_ble_eq_true rfl
   hW := Nat.le_of_ble_eq_true rfl
   hWb := Nat.le_of_ble_eq_true rfl
+  coreX := Proof.Ecdsa.X86_64.sign_x86
+  coreCT := Proof.Ecdsa.X86_64.sign_ct
   updSp := show (Proof.Pbkdf2.Md.X86_64.Sha512.coreH 48).updC.allInstrs _ = true by decide +kernel
 
 theorem sign_verified (v : Compress) :

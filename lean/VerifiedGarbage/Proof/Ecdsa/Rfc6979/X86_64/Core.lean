@@ -1,5 +1,5 @@
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Blocks
-import VerifiedGarbage.Proof.Ecdsa.X86_64.Verified
+import VerifiedGarbage.Proof.Ecdsa.X86_64.Lit
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Bytes
 
 /-!
@@ -98,7 +98,7 @@ theorem core_ok (hL : L.Ok) (hn : 32 ≤ dn) {t : State} (hc : Ctx L g m₀ t) (
     rw [core_depth, hc.rsp]
     show (⟨L.B + BitVec.ofNat 64 24 - BitVec.ofNat 64 8, 8⟩ : Region) = _
     congr 1; bv_omega
-  refine WP.call (k := Proof.Ecdsa.X86_64.signX86_64) Proof.Ecdsa.X86_64.sign_x86 core_nosp
+  refine WP.call (k := Proof.Ecdsa.X86_64.signX86_64) P.coreX core_nosp
     (by rw [core_depth]; decide) (core_pre hL hn hc hdi hsi hdx hcx h8)
     (core_covers hn hc) (core_coversW hc) fun t' hrd hwr hcs hf _ ⟨s₂, hm, hg₂, hpost⟩ => ?_
   rw [hsp] at hf
