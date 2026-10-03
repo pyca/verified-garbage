@@ -236,7 +236,12 @@ class Selection(unittest.TestCase):
 
     def test_shards_follow_the_number_of_benchmarks(self):
         shards = lambda n: [r['shard'] for r in planner.platforms('arm', benchmarks=n)]
-        per_job = planner.BENCHMARKS_PER_JOB
+        with mock.patch.object(planner, 'BENCHMARKS_PER_JOB', None):
+            self.assertEqual(shards(1000), [''])
+        per_job = 30
+        patch = mock.patch.object(planner, 'BENCHMARKS_PER_JOB', per_job)
+        patch.start()
+        self.addCleanup(patch.stop)
         self.assertEqual(shards(0), [''])
         self.assertEqual(shards(per_job), [''])
         self.assertEqual(shards(per_job + 1), ['1/2', '2/2'])

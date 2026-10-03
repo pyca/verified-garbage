@@ -212,7 +212,7 @@ def main():
     p.add_argument("base", type=pathlib.Path)
     p.add_argument("head", type=pathlib.Path)
     p.add_argument("--summary", type=pathlib.Path)
-    p.add_argument("--rounds", type=int, default=3)
+    p.add_argument("--rounds", type=int, default=2)
     p.add_argument("--threshold", type=float, default=0.35)
     p.add_argument("--warm-up-time", type=float, default=0.2)
     p.add_argument("--measurement-time", type=float, default=0.5)

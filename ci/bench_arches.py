@@ -52,9 +52,9 @@ src/cpu.rs), so that every implementation is measured. Each entry's
 `cpu-features` is its restriction, empty for none. With `--base REV`, edits
 consisting only of module/benchmark registrations select their dependencies.
 
-Each configuration is split into `shards` jobs, of at most
-`BENCHMARKS_PER_JOB` of the benchmarks it runs each (`shard` is `i/n`, empty
-for one): `bench_compare.py --shard` runs that share of them.
+With a `BENCHMARKS_PER_JOB`, each configuration is split into jobs of at most
+that many of the benchmarks it runs (`shard` is `i/n`, empty for one):
+`bench_compare.py --shard` runs that share of them.
 
 When only some benchmarks run, a configuration runs only if it can choose
 other implementations of them than the configurations before it: one that
@@ -123,10 +123,11 @@ CPU_FEATURES = {
 }
 
 # The benchmarks (`BENCHES` entries of bench/benches/primitives/main.rs) one
-# job runs at most. Every runner takes about 1 s per benchmark id, so all 50
-# (247 ids) took 25-28 minutes per job on aarch64, ARMv7 and x86-64, and over
-# the 30-minute timeout on x86: 30 keeps a job under about 20 minutes.
-BENCHMARKS_PER_JOB = 30
+# job runs at most, or None for one job per configuration. Every runner takes
+# about 1 s per benchmark id per pass; with 2 rounds (bench_compare.py), all
+# 51 fit in one job on every runner, and each shard would add a job per
+# configuration (with its own builds), so none is split for now.
+BENCHMARKS_PER_JOB = None
 
 # Changes to this script choose benchmarks but are not measured by any:
 # `ci/test_check_benchmarks.py` tests it.
@@ -532,7 +533,7 @@ def platforms(arch, modules=ALL, reqs=None, benchmarks=None):
     needs."""
     if benchmarks is None:
         benchmarks = bench_count(ALL)
-    shards = max(1, -(-benchmarks // BENCHMARKS_PER_JOB))
+    shards = max(1, -(-benchmarks // BENCHMARKS_PER_JOB)) if BENCHMARKS_PER_JOB else 1
     configurations = ["", *CPU_FEATURES.get(arch, [])]
     if reqs is not None:
         chosen = {}
