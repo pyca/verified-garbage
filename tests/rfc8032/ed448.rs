@@ -156,11 +156,7 @@ fn message_boundaries_and_unaligned_inputs() {
             let message = &storage.0[1..1 + len];
             assert_eq!(message.as_ptr() as usize % 8, 1);
             let signature = key.sign_with_context(context, message).unwrap();
-            assert_eq!(
-                key.sign_with_context(context, message),
-                Ok(signature),
-                "context length {context_len}, message length {len}"
-            );
+            assert_eq!(key.sign_with_context(context, message), Ok(signature));
             let mut signature_storage = Aligned([0u8; 115]);
             signature_storage.0[1..].copy_from_slice(&signature);
             let signature = &signature_storage.0[1..];
