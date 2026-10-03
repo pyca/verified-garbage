@@ -425,7 +425,7 @@ theorem finalize_wp {s₀ : State} (h0 : finalizeAArch64.pre s₀) :
     { sched := ⟨⟨W, 400⟩, by rw [rd₂, wr₂, h₁.rd, hp.rd]; simp, by rw [g₂ _ (by decide) (by decide), h₁.x14],
         by show 384 ≤ 400; decide, by show 400 < 2 ^ 64; decide⟩
       scr := ⟨⟨S, 640⟩, by rw [wr₂, h₁.wr, hp.wr]; simp, by rw [g₂ _ (by decide) (by decide), h₁.x15],
-        by show 48 ≤ 640; decide, by show 640 < 2 ^ 64; decide⟩
+        by show 384 ≤ 640; decide, by show 640 < 2 ^ 64; decide⟩
       disj := by
         rw [g₂ _ (by decide) (by decide), g₂ _ (by decide) (by decide), h₁.x14, h₁.x15]
         exact (hp.key_scr.symm.sub_left (Region.sub_prefix (by decide))).sub_right
