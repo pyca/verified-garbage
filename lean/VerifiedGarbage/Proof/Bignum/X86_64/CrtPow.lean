@@ -45,6 +45,7 @@ theorem powPhase_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv mx : Bit
       fun t => SubCtx t B Z o w wx mx ∧ XVals t B o wx mx X ∧
         wv t.mem (off B o) (slot wx Public.aY) wx < X ∧
         (X ∣ N → wv t.mem (off B o) (slot wx Public.aY) wx % X = C ^ Spec.Rsa.os2ip eb * 2 ^ (64 * wx) % X) ∧
+        word t.mem (off B o) (8 * sMaskX) = word s.mem (off B o) (8 * sMaskX) ∧
         Frm B [xRange o wx] s.mem t.mem ∧ Keep (mmRegs ++ [.rdi]) s t := by
   have hs := hg.scr
   have hn := hs.nowrap
@@ -94,10 +95,19 @@ theorem powPhase_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv mx : Bit
   refine WP.mono (crtExpLoop_ok M hc₂ hwx2 hwx (by omega) hX₂.n hX₂.inv hXodd hlt₂ hxc
     (by rw [hY₂]; exact hyl) hyc' hsd hsln (by rw [hb₂ _ (by omega)]; exact hep)
     (by rw [hb₂ _ (by omega)]; exact hel) hL1 hL2 hsrc₂) fun t ⟨hc, hlt, hv, f₃, k₃⟩ => ?_
-  refine ⟨hc, hX₂.of_exp f₃ (by have := hc₂.good.scr.nowrap; omega), hlt, fun hd => ?_, ?_,
+  refine ⟨hc, hX₂.of_exp f₃ (by have := hc₂.good.scr.nowrap; omega), hlt, fun hd => ?_, ?_, ?_,
     ((k₁.trans k₂).trans k₃).mono (by decide)⟩
   · obtain ⟨rfl, rfl⟩ := hval hd
     rw [hv, Nat.one_pow, Nat.one_mul]
+  · rw [f₃.word_eq (fun r hr => by
+      simp only [crtExpRanges, crtBitRanges, List.mem_cons, List.not_mem_nil, or_false] at hr
+      have := hdr_lt_slot wx Public.aAcc (show 31 < 32 by decide)
+      have := hdr_lt_slot wx Public.aTmp (show 31 < 32 by decide)
+      have := hdr_lt_slot wx Public.aY (show 31 < 32 by decide)
+      have := hdr_lt_slot wx aT (show 31 < 32 by decide)
+      rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
+        simp only [sMaskX, Crt.sExp, Crt.sExpLen, Crt.sI, Crt.sV, Crt.sBit, sFn] <;> omega)
+      (by unfold sMaskX sFn; omega), f₂.word_eq (sMaskX_redc wx) (by unfold sMaskX sFn; omega), hm₁]
   · rw [← hm₁]
     exact fx₂.trans (f₃.to_x (crtExpRanges_ok wx) hoL (List.mem_singleton_self _))
 

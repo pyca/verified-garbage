@@ -134,7 +134,7 @@ theorem qPhase_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv mx : BitVe
   -- `R_q mod q`.
   refine wp_seqs_append (by simp [unitSteps]) (by simp) ?_
   refine WP.mono (unitPhase_ok M hg hw hw28 hlo hhi hwx2 hwx (by decide) (by decide) (by decide) hslv hws hN
-    hodd hN1 hX hX1 hXodd) fun s₁ ⟨hg₁, hws₁, hX₁, hlt₁, hG₁, hlq₁, hyq₁, f₁, k₁⟩ => ?_
+    hodd hN1 hX hX1 hXodd) fun s₁ ⟨hg₁, hws₁, hX₁, hlt₁, hG₁, hlq₁, hyq₁, _, f₁, k₁⟩ => ?_
   have hN₁ := hN.of_frm f₁ hlo hz (by omega)
   have hXm₁ : wv s₁.mem B (slot w Public.aXm) w = wv s.mem B (slot w Public.aXm) w :=
     f₁.gx_wv hlo hz (by decide) (by decide) (by decide) (by decide)
@@ -191,7 +191,7 @@ theorem qPhase_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv mx : BitVe
     hX1 hXodd hcg (by rw [hYq₂]; exact hlq₁) (fun hd => by rw [hYq₂]; exact hyq₁ hd) (sd := sDq) (slen := sQlen)
     (by decide) (by decide) (by rw [hb₂ _ (by decide) (by decide) (by decide)]; exact hep)
     (by rw [hb₂ _ (by decide) (by decide) (by decide)]; exact hel) hL1 hL2 (he.congrK i02 (k₁.trans k₂)))
-    fun s₃ ⟨hc₃, hX₃, hlt₃, hv₃, fx₃, k₃⟩ => ?_
+    fun s₃ ⟨hc₃, hX₃, hlt₃, hv₃, _, fx₃, k₃⟩ => ?_
   -- `m_q = (c^dQ R_q) R_q⁻¹`.
   have hz₃ : (off B o).toNat + slot wx 8 ≤ 2 ^ 64 := by have := hc₃.good.scr.nowrap; omega
   refine WP.seq (WP.mono (M.mm_ok (o := Public.aY) (a := Public.aY) (b := Public.aOne) hc₃.good (Nat.le_refl _)

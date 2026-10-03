@@ -43,6 +43,16 @@ theorem Frm.x_below {B : Addr} {o wx : Nat} {m m' : Mem} (h : Frm B [xRange o wx
     (hd : d + 8 ≤ o) (ho : o < 2 ^ 64) : word m' B d = word m B d :=
   h.word_eq (fun r hr => by rw [List.mem_singleton.mp hr]; simp only [xRange]; omega) (by omega)
 
+theorem sMaskX_redc (wx : Nat) : ∀ r ∈ redcRanges wx, 8 * sMaskX + 8 ≤ r.1 ∨ r.1 + r.2 ≤ 8 * sMaskX := by
+  intro r hr
+  simp only [redcRanges, List.mem_cons, List.not_mem_nil, or_false] at hr
+  have := hdr_lt_slot wx Public.aAcc (show 31 < 32 by decide)
+  have := hdr_lt_slot wx Public.aTmp (show 31 < 32 by decide)
+  have := hdr_lt_slot wx aXc (show 31 < 32 by decide)
+  have := hdr_lt_slot wx aChunk (show 31 < 32 by decide)
+  have := hdr_lt_slot wx aT (show 31 < 32 by decide)
+  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp only [sMaskX, sSrc, sRem, sFn] <;> omega
+
 /-- The modulus `N` in its workspace, `-N⁻¹`, `R² mod N` and the number 1. -/
 structure NVals (t : State) (B : Addr) (w : Nat) (minv : BitVec 64) (N : Nat) : Prop where
   n : wv t.mem B (slot w Public.aN) w = N
@@ -90,6 +100,7 @@ theorem unitPhase_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv mx : Bi
       wv t.mem B (slot w Public.aY) w % N = 2 ^ (64 * wx * (nChunks w wx + 1)) % N ∧
       wv t.mem (off B o) (slot wx Public.aY) wx < X ∧
       (X ∣ N → wv t.mem (off B o) (slot wx Public.aY) wx % X = 2 ^ (64 * wx) % X) ∧
+      word t.mem (off B o) (8 * sMaskX) = word s.mem (off B o) (8 * sMaskX) ∧
       Frm B (gRanges w ++ [xRange o wx]) s.mem t.mem ∧ Keep mmRegs s t := by
   have hs := hg.scr
   have hn := hs.nowrap
@@ -168,7 +179,8 @@ theorem unitPhase_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv mx : Bi
       wv s₂.mem B (slot w Public.aY) w % X := by
     rw [← Nat.pow_mul]; exact hv₃
   have hYn : wv s₂.mem B (slot w Public.aY) w = wv s₁.mem B (slot w Public.aY) w := by rw [hm₂]
-  refine ⟨⟨hs.congr kall.2.2, hdi, ?_⟩, ?_, ?_, ?_, ?_, by rw [hY]; exact hlt₃, fun hdvd => ?_, ?_, ⟨fun r hr => ?_, kall.2⟩⟩
+  refine ⟨⟨hs.congr kall.2.2, hdi, ?_⟩, ?_, ?_, ?_, ?_, by rw [hY]; exact hlt₃, fun hdvd => ?_, ?_, ?_,
+    ⟨fun r hr => ?_, kall.2⟩⟩
   · have hH := hg₁.hdr
     exact ⟨(hb _ (by unfold sW; omega)).trans (by rw [hm₂]; exact hH.hw),
       (hb _ (by unfold sMinv; omega)).trans (by rw [hm₂]; exact hH.hminv),
@@ -185,6 +197,10 @@ theorem unitPhase_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv mx : Bi
       rw [hYn, ← Nat.mod_mod_of_dvd _ hdvd, hG₁, Nat.mod_mod_of_dvd _ hdvd, Nat.one_mul, ← Nat.pow_mul]
     have := VG.Proof.Bignum.redc_cancel hR (hXc.trans e)
     rwa [Nat.one_mul] at this
+  · have := hdr_lt_slot wx Public.aY (show sMaskX < 32 by decide)
+    rw [hm, ho₄.word (Or.inl (by omega)) (by unfold sMaskX sFn; omega),
+      f₃.word_eq (sMaskX_redc wx) (by unfold sMaskX sFn; omega), hm₂]
+    exact hxw₁ _ (by decide)
   · have f₁' : Frm B (gRanges w) s.mem s₂.mem := by rw [hm₂]; exact f₁
     exact f₁'.append f34
   · by_cases h : r = .rdi
