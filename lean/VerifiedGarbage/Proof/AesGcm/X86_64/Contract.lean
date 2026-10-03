@@ -102,10 +102,10 @@ def streamCryptPre (s : State) : Prop :=
     st.Disjoint data ∧ st.Disjoint scr ∧ st.Disjoint (args s 2) ∧ data.Disjoint scr ∧
     data.Disjoint (args s 2) ∧ scr.Disjoint (args s 2) ∧
     (ret s).Disjoint st ∧ (ret s).Disjoint data ∧ (ret s).Disjoint scr ∧
-    (stk s).Disjoint ctx ∧ (stk s).Disjoint st ∧ (stk s).Disjoint data ∧ (stk s).Disjoint scr ∧
+    (stk24 s).Disjoint ctx ∧ (stk24 s).Disjoint st ∧ (stk24 s).Disjoint data ∧ (stk24 s).Disjoint scr ∧
     (s.gpr .rdi).toNat + 256 ≤ 2 ^ 64 ∧ (s.gpr .rdx).toNat + 80 ≤ 2 ^ 64 ∧
     (s.gpr .r9).toNat + (arg s 0).toNat ≤ 2 ^ 64 ∧ (arg s 1).toNat + 2560 ≤ 2 ^ 64 ∧
-    (s.gpr .rsp).toNat + 24 ≤ 2 ^ 64 ∧ rounds s
+    24 ≤ (s.gpr .rsp).toNat ∧ (s.gpr .rsp).toNat + 24 ≤ 2 ^ 64 ∧ rounds s
 
 def streamCryptPub (s₁ s₂ : State) : Prop :=
   s₁.gpr .rdi = s₂.gpr .rdi ∧ s₁.gpr .rsi = s₂.gpr .rsi ∧ s₁.gpr .rdx = s₂.gpr .rdx ∧

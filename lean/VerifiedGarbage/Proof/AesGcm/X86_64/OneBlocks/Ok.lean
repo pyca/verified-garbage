@@ -64,10 +64,10 @@ theorem w192_eqs {R : Nat} {D : Addr} {n : Nat} {s : State} (h : ObPre Ctx W SP 
 the length is kept to the end, given the call's frame (`hframe`). -/
 theorem oneBlocks_core (f : Fn) {R : Nat} {D : Addr} {n : Nat} {s : State} (h : ObPre Ctx W SP R D n s)
     {Out : State → State → Prop}
-    (hframe : ∀ s₂, ObIn Ctx W SP R D n (n / 16) s₂ →
+    (hframe : ∀ s₂, ObIn Ctx (W + BitVec.ofNat 64 16) W SP R D n (n / 16) s₂ →
       WP isa (.frame (.push [.rax]) (.call f.name f.code) (.pop .rax 1)) s₂ fun s₄ =>
         (∀ r ∈ calleeSaved, s₄.gpr r = s₂.gpr r) ∧ s₄.rd = s₂.rd ∧ s₄.wr = s₂.wr ∧
-        Frame (obFrame W SP D (n / 16)) s₂.mem s₄.mem ∧ Out s₂ s₄)
+        Frame (obFrame (W + BitVec.ofNat 64 16) W SP D (n / 16)) s₂.mem s₄.mem ∧ Out s₂ s₄)
     (h0 : n / 16 = 0 → ∀ s₁, s₁.mem = s.mem.writeW (W + BitVec.ofNat 64 192) (BitVec.ofNat 64 n) → Out s s₁)
     (hout : ∀ s₂ s₄ s₅, s₂.mem = s.mem.writeW (W + BitVec.ofNat 64 192) (BitVec.ofNat 64 n) → Out s₂ s₄ →
       Frame [⟨W + BitVec.ofNat 64 200, 16⟩] s₄.mem s₅.mem → Out s s₅) :
@@ -80,7 +80,7 @@ theorem oneBlocks_core (f : Fn) {R : Nat} {D : Addr} {n : Nat} {s : State} (h : 
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl <;> exact g₁ _ (by decide)) rd₁ wr₁
   have t₁ : s₁.mem.readW (W + BitVec.ofNat 64 192) 64 = BitVec.ofNat 64 n := by rw [m₁, Mem.readW_writeW_self64]
-  have hf₁ : Frame (⟨W + BitVec.ofNat 64 192, 24⟩ :: obFrame W SP D (n / 16)) s.mem s₁.mem := by
+  have hf₁ : Frame (⟨W + BitVec.ofNat 64 192, 24⟩ :: obFrame (W + BitVec.ofNat 64 16) W SP D (n / 16)) s.mem s₁.mem := by
     rw [m₁]; exact f192.mono fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact List.mem_cons_self ..
   refine WP.ite (decide (n / 16 = 0)) (by simp only [eval, z₁]) (fun hz => ?_) (fun hz => ?_)
   · simp only [decide_eq_true_eq] at hz
@@ -95,8 +95,8 @@ theorem oneBlocks_core (f : Fn) {R : Nat} {D : Addr} {n : Nat} {s : State} (h : 
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl <;> exact g₂ _ (by decide) (by decide) (by decide) (by decide)
         (by decide) (by decide) (by decide)) rd₂ wr₂
-    have obi : ObIn Ctx W SP R D n (n / 16) s₂ := ⟨he₂, h.data.of_eq (rd₂.trans rd₁) (wr₂.trans wr₁),
-      by omega, h.t_c, h.t_w, h.t_d, h.sp24, a1, a2, a3, a4, a5, by rw [a6, r₁], a7, h.rounds.2⟩
+    have obi : ObIn Ctx (W + BitVec.ofNat 64 16) W SP R D n (n / 16) s₂ := ⟨he₂, h.data.of_eq (rd₂.trans rd₁) (wr₂.trans wr₁),
+      by omega, h.t_c, h.t_w, h.t_d, h.sp24, a1, a2, a3, a4, a5, by rw [a6, r₁], a7, h.rounds.2, h.t_w.sub_right (Lay.wSub (by decide))⟩
     refine WP.seq (WP.mono (hframe s₂ obi) fun s₄ ⟨cs₄, rd₄, wr₄, fr₄, o₄⟩ => ?_)
     have he₄ : Env Ctx (W + BitVec.ofNat 64 16) W SP s₄ := he₂.keep (fun r hr => cs₄ r (by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
