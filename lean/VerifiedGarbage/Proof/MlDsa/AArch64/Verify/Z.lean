@@ -100,7 +100,7 @@ theorem pro_vpiece {p : Params} (hF : VFacts p) {S : Nat} :
     obtain ⟨esp, _, _, _, e0, e1, e2, e3⟩ := vPub_eq pub
     refine ⟨esp, fun r hr => ?_⟩
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl <;> assumption
+    rcases hr with rfl | rfl | rfl | rfl <;> with_reducible assumption
 
 /-! ## The hint -/
 

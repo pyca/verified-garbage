@@ -738,7 +738,7 @@ theorem blockMix_correct (s : State) (hs : Proof.Scrypt.blockMixAArch64.pre s) :
       Proof.Scrypt.blockMixAArch64.post s s' := by
   obtain ⟨t, s', he, h⟩ :=
     BlockMix.correct salsaSpec main_fdepth (pre_of hs).1 (pre_of hs).2
-  exact ⟨t, s', he, ⟨h.1.1, h.1.2, Exec.preservedV he (by decide +kernel)⟩, h.2⟩
+  exact ⟨t, s', he, ⟨h.1.1, h.1.2, Exec.preservedV he (by lit_decide)⟩, h.2⟩
 
 theorem blockMix_ct : ConstantTime isa Proof.Scrypt.blockMixAArch64.pre
     Proof.Scrypt.blockMixAArch64.pub Impl.Scrypt.AArch64.blockMix := by

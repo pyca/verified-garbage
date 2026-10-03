@@ -22,8 +22,6 @@ section
 # ChaCha20-Poly1305 on x86 (32-bit): the entry state, regions and invariant
 -/
 
-open VG.PowLit
-
 namespace VG.Proof.ChaCha20Poly1305
 
 open Spec.ChaCha20Poly1305
@@ -357,7 +355,7 @@ theorem ptr_ok (d r : Reg) (k : Nat) (s : State) :
       s'.gpr d = s.gpr r + BitVec.ofNat 32 k ∧ (∀ q, q ≠ d → s'.gpr q = s.gpr q) ∧ s'.rd = s.rd ∧
       s'.wr = s.wr ∧ s'.mem = s.mem := by
   apply WP.of_runBlock
-  simp (config := {decide := true}) only [ptr, runBlock_cons, runStep_some, runBlock_nil, exec, readSrc,
+  simp only [and_self, ptr, runBlock_cons, runStep_some, runBlock_nil, exec, readSrc,
     execAlu, arithFlags, State.setReg, State.setFlags, Option.map_some, Option.bind_some,
     Option.some.injEq, exists_eq_left', ite_true]
   exact ⟨trivial, fun q hq => by simp [hq], trivial⟩
@@ -383,8 +381,6 @@ from its proof of `Verified` (`WP.callWith`): what it needs of the state it is
 called from (`CallPre`, which the constant-time proof uses too), and what
 holds when it returns.
 -/
-
-open VG.PowLit
 
 namespace VG.Proof.ChaCha20Poly1305.X86
 
@@ -893,8 +889,6 @@ bytes whose address and length are the stack arguments at `esp + p` and `esp +
 n`, and zeros to a multiple of 16: `msg ++ x ++ pad16 x`. Each stage is stated
 separately, for the constant-time proof.
 -/
-
-open VG.PowLit
 
 namespace VG.Proof.ChaCha20Poly1305.X86
 
@@ -1800,8 +1794,6 @@ end
 The lengths block, the encryption, the tag, comparing tags, and restoring the
 registers.
 -/
-
-open VG.PowLit
 
 namespace VG.Proof.ChaCha20Poly1305.X86
 

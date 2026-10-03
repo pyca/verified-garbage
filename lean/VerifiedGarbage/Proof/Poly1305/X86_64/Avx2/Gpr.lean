@@ -59,8 +59,8 @@ theorem consts_ok (s : State) :
       s'.gpr .r8 = 0x3ffffff ∧ s'.gpr .r9 = 0x1000000 ∧
       (∀ r, r ≠ .r8 → r ≠ .r9 → s'.gpr r = s.gpr r) ∧ s'.mem = s.mem ∧ VKeep s s' := by
   apply WP.of_runBlock
-  simp (config := {decide := true}) only [consts, runBlock_cons, runStep_some, runBlock_nil, exec,
-    readSrc32, State.setReg32, State.setReg, ite_true, ite_false, Option.map_some, Option.some.injEq,
+  simp only [consts, runBlock_cons, runStep_some, runBlock_nil, exec,
+    readSrc32, State.setReg32, State.setReg, ite_true, Option.map_some, Option.some.injEq,
     exists_eq_left']
   refine ⟨?_, ?_, fun r h₁ h₂ => by simp [h₁, h₂], ?_, ?_, ?_, ?_, ?_, ?_⟩ <;> trivial
 
@@ -154,8 +154,8 @@ theorem consts2_ok (s : State) :
       s'.gpr .rax = 5 ∧ s'.gpr .r10 = 0x7ffffff ∧
       (∀ r, r ≠ .rax → r ≠ .r10 → s'.gpr r = s.gpr r) ∧ s'.mem = s.mem ∧ VKeep s s' := by
   apply WP.of_runBlock
-  simp (config := {decide := true}) only [consts2, runBlock_cons, runStep_some, runBlock_nil, exec,
-    readSrc32, State.setReg32, State.setReg, ite_true, ite_false, Option.map_some, Option.some.injEq,
+  simp only [consts2, runBlock_cons, runStep_some, runBlock_nil, exec,
+    readSrc32, State.setReg32, State.setReg, ite_true, Option.map_some, Option.some.injEq,
     exists_eq_left']
   finish_gpr
 
@@ -177,8 +177,8 @@ theorem fin3_ok (s : State) :
       (∀ r, r ≠ .rsi → r ≠ .rdx → s'.gpr r = s.gpr r) ∧ s'.mem = s.mem ∧ s'.mxcsr = s.mxcsr ∧
       s'.rd = s.rd ∧ s'.wr = s.wr := by
   apply WP.of_runBlock
-  simp (config := {decide := true}) only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc,
-    execAlu, arithFlags, State.setReg, State.setFlags, VOp.exec, ite_true, ite_false,
+  simp only [and_self, runBlock_cons, runStep_some, runBlock_nil, exec, readSrc,
+    execAlu, arithFlags, State.setReg, State.setFlags, VOp.exec, ite_true, 
     Option.bind_some, Option.some.injEq, exists_eq_left', se3, se64]
   finish_gpr
 

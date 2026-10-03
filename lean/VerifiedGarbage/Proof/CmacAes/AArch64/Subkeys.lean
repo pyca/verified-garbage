@@ -161,8 +161,8 @@ theorem restore3_ok (s : State) {B : Addr} (hb : s.gpr .x20 = B)
       s'.gpr .x30 = s.mem.readW (B + BitVec.ofNat 64 2080) 64 ∧
       (∀ r, r ≠ .x19 → r ≠ .x20 → r ≠ .x30 → s'.gpr r = s.gpr r) ∧ s'.sp = s.sp ∧ s'.mem = s.mem := by
   refine ⟨_, by
-    simp (config := {decide := true}) only [runBlock_cons, runStep_some, runBlock_nil, exec, addr,
-      State.load, Size.bytes, Size.bits, gpr_write, mem_write, rd_write, wr_write, ite_true, ite_false,
+    simp only [reduceCtorEq, ↓reduceIte, Nat.reduceLT, Nat.reduceMul, Nat.reduceMod, and_self, runBlock_cons, runStep_some, runBlock_nil, exec, addr,
+      State.load, Size.bytes, Size.bits, gpr_write, mem_write, rd_write, wr_write, 
       Option.bind_some, Option.map_some, hb, r₁, r₂, r₃]
     rfl, ?_⟩
   refine ⟨by simp [gpr_write, Mem.readW], by simp [gpr_write, Mem.readW], by simp [gpr_write, Mem.readW],

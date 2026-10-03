@@ -18,8 +18,6 @@ data are copied into the buffer (`rest_ok`). Throughout (`UC`), only the
 state's working space, the buffer, the accumulator and `scratch` change.
 -/
 
-open VG.PowLit
-
 namespace VG.Proof.Poly1305.Arm.Update
 
 open VG VG.Arm VG.Impl.Poly1305.Arm VG.Proof.Poly1305.Arm
@@ -879,7 +877,7 @@ theorem agreeu {s₁ s₂ : State} (h₁ : Proof.Poly1305.updateArm.pre s₁) (h
   refine ⟨⟨fun r hr => ?_, fun h => nomatch h⟩, fun _ => ?_, wfu h₁, wfu h₂,
     fun _ h => (List.not_mem_nil h).elim, fun _ h => (List.not_mem_nil h).elim, fun _ => psp, fun k hk => ?_⟩
   · simp only [τu, RegSet.mem_ofList, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl <;> assumption
+    rcases hr with rfl | rfl | rfl <;> with_reducible assumption
   · rw [hp₁.wr, hp₂.wr]; simp only [stR, scrR, sc, p0, a2]
   · simp only [τu] at hk
     rw [argByte_eq hp₁.sp_fit hk, argByte_eq hp₂.sp_fit hk, Mem.readW_byte s₁.mem _ (Nat.mod_lt _ (by decide)),

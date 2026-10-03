@@ -366,9 +366,9 @@ theorem zstep {s₀ : State} (hp : Pre s₀) {k : Nat} (hk : k < 50) {s : State}
     rw [eS, BitVec.add_assoc, ← BitVec.ofNat_add, h.wr, P0_wr, hp.wr]
     exact ⟨sR s₀, by simp, contains_at (by omega) hs⟩
   apply WP.of_runBlock
-  simp (config := {decide := true}) only [zeroBody, at_, runBlock_cons, runStep_some, runBlock_nil, exec,
+  simp only [reduceCtorEq, ↓reduceIte, Nat.reducePow, zeroBody, at_, runBlock_cons, runStep_some, runBlock_nil, exec,
     execAlu, readSrc, State.ea, State.store32, State.setReg, arithFlags, State.setFlags,
-    Option.bind_some, h.ebx, ea, hin, ite_true, ite_false, Option.some.injEq, exists_eq_left']
+    Option.bind_some, h.ebx, ea, hin, Option.some.injEq, exists_eq_left']
   refine ⟨⟨⟨⟨by simp [h.esp], h.rd, h.wr, ?_⟩, by simp [h.esi]⟩, ?_, ?_, by simp [h.eax], ?_⟩, ?_⟩
   · refine h.frame.writeW (r := sR s₀) (by simp) _ ?_
     rw [eS, BitVec.add_assoc, ← BitVec.ofNat_add]; exact contains_at (by omega) hs

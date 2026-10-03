@@ -44,9 +44,9 @@ theorem ks_shift (S : CState) {len t k : Nat} (hk : k < len) (ht : 320 * t ≤ k
       stateAt u.mem (s.gpr .x0) = ctr (stateAt s.mem (s.gpr .x0)) 5 ∧
       Frame [⟨s.gpr .x0,64⟩] s.mem u.mem ∧ u.rd = s.rd ∧ u.wr = s.wr ∧ u.sp = s.sp := by
   apply WP.of_runBlock
-  simp (config := {decide := true}) only [next,counter,check,ite_false,
+  simp only [reduceCtorEq, ↓reduceIte, Nat.reduceLT, Nat.reduceLeDiff, Nat.reduceMul, Nat.reduceMod, and_self, next,counter,check,
     List.cons_append,List.nil_append,runBlock_cons,runBlock_nil,exec,
-    addr,Size.bytes,Size.bits,ite_true,State.load,hin,State.read,RegUpd.gpr_write,
+    addr,Size.bytes,Size.bits,State.load,hin,State.read,RegUpd.gpr_write,
     RegUpd.wr_write,RegUpd.mem_write,RegUpd.rd_write,RegUpd.sp_write,
     Option.bind_some,Option.map_some,isa,runStep_some,BitVec.setWidth_setWidth_of_le,
     BitVec.setWidth_eq,State.store,hout,Option.some.injEq,exists_eq_left']

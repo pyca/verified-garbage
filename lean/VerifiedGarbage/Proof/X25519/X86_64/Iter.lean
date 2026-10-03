@@ -209,7 +209,7 @@ theorem stepEnv_eval (e : Env) (st : Spec.X25519.Ladder) (k : Nat) (u : Spec.X25
     stepEnv (decide (st.swap ^^^ bit k t = 1)) e 5 = (Spec.X25519.ladderStep k u st t).x3 ∧
     stepEnv (decide (st.swap ^^^ bit k t = 1)) e 6 = (Spec.X25519.ladderStep k u st t).z3 := by
   rw [ladderStep_eq]
-  simp (config := {decide := true}) only [stepEnv, opMul, opAdd, opSub, opA24, opSwap,
+  simp only [↓reduceIte, stepEnv, opMul, opAdd, opSub, opA24, opSwap,
     Function.update_apply, cswap_fst, cswap_snd, h2, h3, h4, h5, h6]
   exact ⟨rfl, rfl, rfl, rfl, rfl⟩
 

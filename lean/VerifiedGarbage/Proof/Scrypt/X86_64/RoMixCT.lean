@@ -156,7 +156,7 @@ abbrev retR : Region := ⟨s₀.gpr .rsp, 8⟩
 abbrev stkR : Region := below (s₀.gpr .rsp) 16
 /-- The input. -/
 abbrev B : List Byte := bytesAt s₀.mem (bP s₀) (128 * rr s₀)
-/-- `V[i]`. -/
+/-- `(V[i]'(by omega))`. -/
 abbrev vAt (i : Nat) : Addr := vP s₀ + BitVec.ofNat 64 (128 * rr s₀ * i)
 /-- `T`. -/
 abbrev tP : Addr := sc s₀ + BitVec.ofNat 64 192
@@ -219,7 +219,7 @@ theorem r_lt : 128 * rr s₀ < 2 ^ 64 := by
   have : 128 * rr s₀ ≤ 128 * rr s₀ * NN s₀ := Nat.le_mul_of_pos_right _ (by omega)
   omega
 
-/-- `V[i]` is in `v`. -/
+/-- `(V[i]'(by omega))` is in `v`. -/
 theorem vAt_sub {i : Nat} (hi : i < NN s₀) : Region.Sub ⟨vAt s₀ i, 128 * rr s₀⟩ (vR s₀) := by
   have := v_lt hp
   have e : vl s₀ * 128 = 128 * rr s₀ * NN s₀ := by rw [hp.vl_eq]; simp only [Nat.mul_comm, Nat.mul_left_comm]
@@ -660,7 +660,7 @@ theorem vAt_in {i : Nat} (hi : i < NN s₀) : InRegions s₀.wr (vAt s₀ i) (12
   exact Memory.InRegions.of_mem (R := vR s₀) (by simp)
     (Memory.contains_off (by rw [e]; omega) (by omega))
 
-/-- `V[i]` and the parts of `scratch` and the stack we use. -/
+/-- `(V[i]'(by omega))` and the parts of `scratch` and the stack we use. -/
 theorem vAt_b {i : Nat} (hi : i < NN s₀) : Region.Disjoint ⟨vAt s₀ i, 128 * rr s₀⟩ (bR s₀) :=
   hp.b_v.symm.sub_left (vAt_sub hp hi)
 theorem vAt_s {i : Nat} (hi : i < NN s₀) : Region.Disjoint ⟨vAt s₀ i, 128 * rr s₀⟩ (scR s₀) :=
@@ -679,7 +679,7 @@ theorem call_frame {m m' : Mem} (hf : Frame [⟨bP s₀, 128 * rr s₀⟩, ⟨sc
     · exact ⟨scR s₀, by simp, w_sub⟩
     · exact ⟨stkR s₀, by simp, fun _ h => h⟩
 
-/-- What a call writing `b` keeps: `V[k]`. -/
+/-- What a call writing `b` keeps: `(V[k]'(by omega))`. -/
 theorem call_keeps_v {m m' : Mem} (hf : Frame [⟨bP s₀, 128 * rr s₀⟩, ⟨sc s₀, 128⟩, stkR s₀] m m')
     {k : Nat} (hk : k < NN s₀) :
     bytesAt m' (vAt s₀ k) (128 * rr s₀) = bytesAt m (vAt s₀ k) (128 * rr s₀) := by
@@ -1133,7 +1133,7 @@ As for scryptBlockMix (`BlockMixCT.lean`), we relate two runs (`RelCT`):
 correctness determines our registers from the public arguments, so they
 agree between the calls, where the taint analysis proves each block
 constant time; the calls are constant time by scryptBlockMix's own proof.
-In step 3, the address of `V[j]` and the branches of the multiplication
+In step 3, the address of `(V[j]'(by omega))` and the branches of the multiplication
 depend on `j`, which the contract declares public: the two runs compute the
 same `j`, since both compute their indices in order (`Inv3.js`) and agree on
 the whole list.

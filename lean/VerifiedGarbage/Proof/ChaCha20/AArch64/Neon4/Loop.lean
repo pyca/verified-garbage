@@ -52,8 +52,8 @@ theorem next_ok (s : State) (hlen : 256 ≤ (s.gpr .x2).toNat)
       stateAt s'.mem (s.gpr .x0) = ctr (stateAt s.mem (s.gpr .x0)) 4 ∧
       Frame [⟨s.gpr .x0, 64⟩] s.mem s'.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp := by
   apply WP.of_runBlock
-  simp (config := {decide := true}) only [next, runBlock_cons, runBlock_nil, exec,
-    addr, Size.bytes, Size.bits, ite_true, ite_false, State.load, hin, State.read, RegUpd.gpr_write, RegUpd.wr_write, RegUpd.mem_write, RegUpd.rd_write, RegUpd.sp_write,
+  simp only [reduceCtorEq, ↓reduceIte, Nat.reduceLT, Nat.reduceLeDiff, Nat.reduceMul, Nat.reduceMod, and_self, next, runBlock_cons, runBlock_nil, exec,
+    addr, Size.bytes, Size.bits, State.load, hin, State.read, RegUpd.gpr_write, RegUpd.wr_write, RegUpd.mem_write, RegUpd.rd_write, RegUpd.sp_write,
     Option.bind_some, Option.map_some, isa, runStep_some, BitVec.setWidth_setWidth_of_le,
     BitVec.setWidth_eq, State.store, hout, Option.some.injEq, exists_eq_left']
   refine ⟨rfl, rfl, ?_, ?_, ?_, ?_, trivial⟩
@@ -180,8 +180,8 @@ theorem init_ok (s : State) :
     WP isa (.block [.lsr .x .x5 .x2 8]) s fun s' =>
       LInv s 0 s' ∧ s'.gpr .x5 = BitVec.ofNat 64 (L s / 256) := by
   apply WP.of_runBlock
-  simp (config := {decide := true}) only [runBlock_cons, runBlock_nil, exec, State.read,
-    Size.bits, ite_true, Option.some.injEq, isa, runStep_some, exists_eq_left']
+  simp only [↓reduceIte, Nat.reduceLT, runBlock_cons, runBlock_nil, exec, State.read,
+    Size.bits, Option.some.injEq, isa, runStep_some, exists_eq_left']
   refine ⟨⟨?_, ?_, ?_, ?_, by omega, ?_, rfl, rfl, rfl, ?_, ?_, Frame.refl _ _⟩, ?_⟩
   · exact RegUpd.gpr_write_of_ne _ _ _ (by decide)
   · simp only [RegUpd.gpr_write, show Reg.x1 ≠ .x5 by decide, ite_false]

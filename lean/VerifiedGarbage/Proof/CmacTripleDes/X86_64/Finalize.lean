@@ -106,9 +106,9 @@ theorem copyStep_ok (s : State) {P C : Addr} {i L : Nat} (hd : s.gpr .rdx = P)
     rw [hi, BitVec.mul_one, ← h15, BitVec.add_assoc, BitVec.add_assoc, BitVec.add_comm (BitVec.ofNat 64 i)]
     rfl
   refine ⟨_, by
-    simp (config := {decide := true}) only [copyBody, lastByte, padByte, runBlock_cons, runStep_some,
+    simp only [reduceCtorEq, ↓reduceIte, Nat.reducePow, BitVec.reduceSignExtend, copyBody, lastByte, padByte, runBlock_cons, runStep_some,
       runBlock_nil, exec, readSrc, execAlu, State.load8, State.store8, State.ea, Option.bind_some,
-      Option.map_some, gpr_setReg, gpr_arithFlags, mem_setReg, rd_setReg, wr_setReg, ite_true, ite_false,
+      Option.map_some, gpr_setReg, gpr_arithFlags, mem_setReg, rd_setReg, wr_setReg, 
       ea₁, ea₂, r, w]
     rfl, ?_⟩
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_⟩
@@ -209,9 +209,9 @@ theorem xor1_ok (s : State) (pb qb : Reg) (pd qd : Nat) {P Q : Addr}
       s'.gpr .rax = s.mem.readW P 64 ^^^ s.mem.readW Q 64 ∧ (∀ r, r ≠ .rax → s'.gpr r = s.gpr r) ∧
       s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   refine ⟨_, by
-    simp (config := {decide := true}) only [runBlock_cons, runStep_some, runBlock_nil, at_, exec, readSrc,
+    simp only [↓reduceIte, runBlock_cons, runStep_some, runBlock_nil, at_, exec, readSrc,
       execAlu, State.load64, State.ea, offset_nat, Option.bind_some, Option.map_some, gpr_setReg,
-      mem_setReg, rd_setReg, wr_setReg, hq', ite_true, ite_false, hp, hq, rp, rq]
+      mem_setReg, rd_setReg, wr_setReg, hq', hp, hq, rp, rq]
     rfl, ?_⟩
   refine ⟨?_, fun r hr => ?_, rfl, rfl, rfl⟩
   · simp [gpr_setReg]
@@ -223,9 +223,9 @@ theorem zero_ok (s : State) {C : Addr} {L : Nat} (hc : s.gpr .r15 + BitVec.ofNat
       s'.mem = s.mem.writeW C (BitVec.setWidth 64 (0 : BitVec 32)) ∧
       (∀ r, r ≠ .rax → s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   refine ⟨_, by
-    simp (config := {decide := true}) only [zero, runBlock_cons, runStep_some, runBlock_nil, at_, exec,
+    simp only [reduceCtorEq, ↓reduceIte, zero, runBlock_cons, runStep_some, runBlock_nil, at_, exec,
       readSrc, readSrc32, execAlu, State.store64, State.ea, State.setReg32, offset_nat, Option.bind_some,
-      Option.map_some, gpr_setReg, mem_setReg, rd_setReg, wr_setReg, ite_true, ite_false, hc, wc]
+      Option.map_some, gpr_setReg, mem_setReg, rd_setReg, wr_setReg, hc, wc]
     rfl, ?_⟩
   refine ⟨?_, rfl, ?_, rfl, rfl⟩
   · rw [zf_arithFlags]

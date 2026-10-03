@@ -205,8 +205,8 @@ theorem rounds4_ok (n : Nat) (s : State) (a x q : BitVec 128)
   generalize (if n = 0 then XBinOp.paddd else XBinOp.sha1nexte) = op
   simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or,
     List.nodup_nil, and_true] at hd
-  simp (config := {decide := true}) only [runBlock_cons, runStep_some, runBlock_nil, exec, XOp.exec,
-    isa, State.setXmm, ite_true, ite_false, hd, h0, h1, hq, eval_movdqa,
+  simp only [reduceCtorEq, ↓reduceIte, and_self, runBlock_cons, runStep_some, runBlock_nil, exec, XOp.exec,
+    isa, State.setXmm, hd, h0, h1, hq, eval_movdqa,
     Option.some.injEq, exists_eq_left']
   exact ⟨trivial, trivial, fun r h0 h1 h2 => by simp [h0, h1, h2], trivial⟩
 
@@ -228,8 +228,8 @@ theorem schedule_hi (n : Nat) (hn : 4 ≤ n) (s : State) (a b c d : BitVec 128)
   simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or,
     List.nodup_nil, and_true, List.reverse_cons, List.reverse_nil, List.nil_append,
     List.cons_append] at hd hd''
-  simp (config := {decide := true}) only [runBlock_cons, runStep_some, runBlock_nil, exec, XOp.exec,
-    isa, State.setXmm, ite_true, ite_false, hd'', ha, hb, hc, hd',
+  simp only [↓reduceIte, and_self, runBlock_cons, runStep_some, runBlock_nil, exec, XOp.exec,
+    isa, State.setXmm, hd'', ha, hb, hc, hd',
     Option.some.injEq, exists_eq_left']
   exact ⟨rfl, fun r h0 => by simp [h0], trivial⟩
 
@@ -248,8 +248,8 @@ theorem schedule_lo (n : Nat) (hn : n < 4) (s : State)
   simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or,
     List.nodup_nil, and_true, List.reverse_cons, List.reverse_nil, List.nil_append,
     List.cons_append] at hd hd''
-  simp (config := {decide := true}) only [runBlock_cons, runStep_some, runBlock_nil, exec, XOp.exec,
-    isa, State.setXmm, State.load128, ea_at, hin, ite_true, ite_false, hd'',
+  simp only [↓reduceIte, and_self, runBlock_cons, runStep_some, runBlock_nil, exec, XOp.exec,
+    isa, State.setXmm, State.load128, ea_at, hin, hd'',
     Option.map_some, Option.some.injEq, exists_eq_left']
   exact ⟨trivial, fun r h0 => by simp [h0], trivial⟩
 

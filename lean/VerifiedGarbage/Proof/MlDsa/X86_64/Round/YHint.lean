@@ -74,7 +74,7 @@ theorem mhTail_ok (s : State) (h11 : Bc (s.xmm .xmm11) (BitVec.ofNat 32 63)) :
   simp only [mhTail, xmov, xb]
   vrun [VG.X86_64.eval_movdqa]
   refine ⟨fun e he => ?_, by xonly⟩
-  simp (disch := first | decide | assumption) only [dword_pxor, dword_paddd, dword_psrld, dword_pslld, h11 e he]
+  simp (disch := first | decide | with_reducible assumption) only [dword_pxor, dword_paddd, dword_psrld, dword_pslld, h11 e he]
   exact ⟨rfl, rfl⟩
 
 theorem mhX_ok {g : Nat} (hg : g = g32 ∨ g = g88) (s : State) (hc : HbC g s) (hq : s.xmm .xmm15 = qV)

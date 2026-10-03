@@ -129,17 +129,17 @@ theorem coef_ok {c : Nat} (hc : emOk c) {s₀ : State} (hp : Pre L s₀) {g k : 
   apply WP.of_runBlock
   by_cases hs0 : c * k % 8 = 0
   · rw [hs0, BitVec.ushiftRight_zero] at hv
-    simp (config := {decide := true}) only [emCoef, hs0, ite_true, List.nil_append, List.cons_append,
+    simp only [reduceCtorEq, ↓reduceIte, Nat.reducePow, emCoef, hs0, List.nil_append, List.cons_append,
       at_, runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, readSrc, State.ea, State.load32,
       State.store32, State.setReg, arithFlags, State.setFlags, Option.map_some, Option.bind_some, h.esi, h.edi,
-      eld, ild, est, ist, hw, hv, ite_true, ite_false, Option.some.injEq, exists_eq_left']
+      eld, ild, est, ist, hw, hv, Option.some.injEq, exists_eq_left']
     exact fin _ (by simp) (by simp) (by simp) (by simp) rfl rfl rfl
   · have h1 : 1 ≤ c * k % 8 := by omega
     have h2 : c * k % 8 ≤ 31 := by omega
-    simp (config := {decide := true}) only [emCoef, hs0, ite_false, List.nil_append, List.cons_append,
+    simp only [reduceCtorEq, ↓reduceIte, Nat.reducePow, emCoef, hs0, List.nil_append, List.cons_append,
       at_, runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, execShift, readSrc, State.ea, State.load32,
       State.store32, State.setReg, arithFlags, State.setFlags, Option.map_some, Option.bind_some, h.esi, h.edi,
-      eld, ild, est, ist, hw, hv, h1, h2, and_self, ite_true, ite_false, Option.some.injEq, exists_eq_left']
+      eld, ild, est, ist, hw, hv, h1, h2, and_self, Option.some.injEq, exists_eq_left']
     exact fin _ (by simp) (by simp) (by simp) (by simp) rfl rfl rfl
 
 /-- A group of 4 coefficients, and the pointers and counter advanced. -/
@@ -199,9 +199,9 @@ theorem sel_piece : Piece EPre (PubP L) (Out L) Sel
     have v₂ := h.args 2 (by decide)
     simp only [Nat.mul_one, Nat.reduceMul, Nat.reduceAdd] at a₁ a₂
     apply WP.of_runBlock
-    simp (config := {decide := true}) only [argOp, at_, runBlock_cons, runStep_some, runBlock_nil,
+    simp only [reduceCtorEq, ↓reduceIte, Nat.reduceAdd, Nat.reduceMul, argOp, at_, runBlock_cons, runStep_some, runBlock_nil,
       exec, execAlu, readSrc, State.ea, State.load32, State.setReg, arithFlags, State.setFlags, Option.map_some,
-      Option.bind_some, a₁, i₁, v₁, a₂, i₂, v₂, ite_true, ite_false, Option.some.injEq, exists_eq_left']
+      Option.bind_some, a₁, i₁, v₁, a₂, i₂, v₂, Option.some.injEq, exists_eq_left']
     refine ⟨⟨⟨⟨by simp [h.esp], h.rd, h.wr, h.frame⟩, h.args, by simp [h.esi]⟩, h.out⟩, by simp; rfl, ?_⟩
     simp only [eval, sub_beq_zero]
     rfl
@@ -215,7 +215,7 @@ theorem init_piece (c : Nat) (b : Bool) (hb : ∀ s₀, decide (γ s₀ = 2 ^ 17
   refine Piece.taint [] (fun s₀ s hp ⟨⟨h, hdi, _⟩, e⟩ => ?_) (fun _ _ _ _ _ _ _ _ _ r hr => absurd hr (by simp))
     (by taint_decide)
   apply WP.of_runBlock
-  simp (config := {decide := true}) only [runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, readSrc,
+  simp only [Nat.reducePow, runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, readSrc,
     State.setReg, arithFlags, State.setFlags, Option.bind_some, Option.map_some, Option.some.injEq,
     exists_eq_left']
   exact ⟨⟨by simp [h.esp], h.rd, h.wr, h.frame⟩, h.out, by simp [h.esi], by simp [hdi], by simp,

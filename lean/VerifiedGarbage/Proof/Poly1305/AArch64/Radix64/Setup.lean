@@ -5,7 +5,7 @@ import VerifiedGarbage.Proof.Poly1305.AArch64.Blocks
 namespace VG.Proof.Poly1305.AArch64.Radix64
 
 open VG VG.AArch64 VG.Impl.Poly1305.AArch64.Radix64
-open VG.Proof.Poly1305.AArch64 VG.PowLit
+open VG.Proof.Poly1305.AArch64
 open VG.Spec.Poly1305 (P)
 
 def Keys (R : Nat) (s : State) : Prop :=

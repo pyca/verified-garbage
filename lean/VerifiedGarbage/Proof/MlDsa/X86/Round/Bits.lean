@@ -142,9 +142,9 @@ theorem init_piece : Piece BitsPre BitsPub (fun s₀ s => s = P0 s₀) BS1 (.blo
     obtain ⟨a₂, i₂, v₂⟩ := arg_P0 (i := 2) (by omega) hp.sp hp.sp' hin hp.stk_a
     simp only [Nat.mul_zero, Nat.add_zero, Nat.mul_one, Nat.reduceAdd, Nat.reduceMul] at a₀ a₁ a₂
     apply WP.of_runBlock
-    simp (config := {decide := true}) only [bitsInit, at_, runBlock_cons, runStep_some, runBlock_nil,
+    simp only [reduceCtorEq, ↓reduceIte, bitsInit, at_, runBlock_cons, runStep_some, runBlock_nil,
       exec, execAlu, readSrc, State.ea, State.load32, State.setReg, arithFlags, State.setFlags, Option.map_some,
-      Option.bind_some, a₀, a₁, a₂, i₀, i₁, i₂, v₀, v₁, v₂, ite_true, ite_false, Option.some.injEq,
+      Option.bind_some, a₀, a₁, a₂, i₀, i₁, i₂, v₀, v₁, v₂, Option.some.injEq,
       exists_eq_left']
     exact ⟨by simp, rfl, rfl, rfl, by simp, by simp, by rw [sub_beq_zero']⟩
   · simp only [List.mem_singleton] at hr

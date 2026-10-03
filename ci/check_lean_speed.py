@@ -24,6 +24,22 @@ without building. Exits non-zero on violations.
     directly or not): every module that reaches it pays about 1.5e9 more
     instructions to import (a quarter of a typical module's build), and its
     simp lemmas slow `simp` down.
+  * A module of `Proof/`, `Artifacts/`, `Generic/` or `Variants/` with a
+    numeral exponent (`x ^ 32`) imports `Proof/Framework/PowLit.lean`
+    (directly or through another module), whose macro elaborates it as
+    `x ^ (32 : Nat)`: without it, the exponents' default instances take time
+    quadratic in their number.
+  * No `simp (config := {decide := true})` (or `+decide`): `simp` then runs
+    `decide` on every proposition it visits, which on symbolic states and
+    bit vectors costs seconds per block. Reduce the closed facts with
+    simprocs (`reduceCtorEq`, `↓reduceIte`, `Nat.reduceLT`, `Nat.reduceEqDiff`,
+    `and_self`, ...) or discharge side conditions with `(disch := decide)`.
+    `DECIDE_SIMP_ALLOWED` counts the uses that remain.
+  * No bare `assumption` after `<;>` or as an alternative of `first | …`: it
+    tries every hypothesis at default transparency, unfolding states and
+    regions before each failed match (seconds in a large context). Use
+    `with_reducible assumption` or name the hypothesis.
+    `BARE_ASSUMPTION_ALLOWED` counts the uses that remain.
 """
 
 import pathlib
@@ -67,6 +83,19 @@ HEAVY_HUBS_ALLOWED = {
     "VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Theta",
     "VerifiedGarbage.Proof.MlKem.X86_64.VMul",
 }
+DECIDE_CONFIG = re.compile(r"\bdecide\s*:=\s*true\b")
+DECIDE_FLAG = re.compile(r"\b(?:simp|simp_all|simpa|dsimp)\b[^\n]*?\+decide\b")
+BARE_ASSUMPTION = re.compile(r"(?:<;>|\|)\s*(?:try\s+)?assumption\b")
+# Uses that remain, per file: replacing them broke the proof (`decide`
+# evaluated a closed fact no simproc reduces, e.g. a definition applied to
+# literals, or the goal's shape changed) or timed out, or (for
+# `assumption`) the hypothesis matches only up to unfolding. Lower a count
+# when you remove a use; never raise one or add a file.
+from lean_speed_allowed import DECIDE_SIMP_ALLOWED, BARE_ASSUMPTION_ALLOWED  # noqa: E402
+
+POW_LIT = "VerifiedGarbage.Proof.Framework.PowLit"
+POW_PREFIXES = tuple(f"VerifiedGarbage.{d}." for d in ("Proof", "Artifacts", "Generic", "Variants"))
+NUM_EXP = re.compile(r"\^\s*[0-9]+(?![0-9.])")
 LIB = re.compile(r"^\[\[lean_lib\]\]\n(.*?)(?=^\[\[|\Z)", re.M | re.S)
 
 
@@ -158,19 +187,58 @@ def heavy_hubs(imports: dict[str, list[str]]) -> list[tuple[str, list[str], int]
     return out
 
 
+def imports_pow_lit(module: str, imports: dict[str, list[str]], memo: dict[str, bool]) -> bool:
+    """Whether `module` imports `PowLit`, directly or through other modules."""
+    if module not in memo:
+        memo[module] = False
+        memo[module] = any(i == POW_LIT or imports_pow_lit(i, imports, memo) for i in imports.get(module, []))
+    return memo[module]
+
+
 def main() -> int:
     errors = []
     imports: dict[str, list[str]] = {}
     paths: dict[str, pathlib.Path] = {}
     globs = precompiled_globs((LEAN / "lakefile.toml").read_text())
     sources = [f for f in LEAN.rglob("*.lean") if ".lake" not in f.parts]
+    texts = {f: f.read_text() for f in sources}
+    lean_prefix = len(str(LEAN)) + 1
+    keys = {f: str(f)[lean_prefix:] for f in sources}
+    modules = {f: keys[f][: -len(".lean")].replace("/", ".") for f in sources}
+    for f, text in texts.items():
+        imports[modules[f]] = IMPORT.findall(text)
+    pow_memo: dict[str, bool] = {}
     for f in sorted(sources):
-        text = f.read_text()
-        rel = f.relative_to(ROOT)
-        module = ".".join(f.relative_to(LEAN).with_suffix("").parts)
-        imports[module] = IMPORT.findall(text)
+        text = texts[f]
+        rel = pathlib.Path("lean") / keys[f]
+        module = modules[f]
         paths[module] = rel
-        code = strip_comments(text) if "tauto" in text else ""
+        code = strip_comments(text) if any(k in text for k in ("^", "tauto", "decide", "assumption")) else ""
+        if "^" in code and module.startswith(POW_PREFIXES) and module != POW_LIT:
+            m = NUM_EXP.search(code)
+            if m and not imports_pow_lit(module, imports, pow_memo):
+                errors.append(
+                    f"{rel}:{line_of(code, m.start())}: numeral exponent in a module that does not import "
+                    f"{POW_LIT}; import it (or a module that does)"
+                )
+        key = keys[f]
+        decide_uses = []
+        if "decide" in code:
+            decide_uses = list(DECIDE_CONFIG.finditer(code))
+            if "+decide" in code:
+                decide_uses += DECIDE_FLAG.finditer(code)
+        assumption_uses = list(BARE_ASSUMPTION.finditer(code)) if "assumption" in code else []
+        for found, allowed, what in (
+            (decide_uses, DECIDE_SIMP_ALLOWED, "`decide := true` in simp; reduce closed facts with simprocs"),
+            (assumption_uses, BARE_ASSUMPTION_ALLOWED,
+             "bare `assumption` after `<;>` or in `first`; use `with_reducible assumption`"),
+        ):
+            n = allowed.get(key, 0)
+            if len(found) > n:
+                for m in found:
+                    errors.append(f"{rel}:{line_of(code, m.start())}: {what} ({len(found)} uses, {n} allowed)")
+            elif len(found) < n:
+                errors.append(f"{rel}: {len(found)} uses of {what.split(';')[0]}, fewer than the {n} allowed; lower the count")
         for m in TAUTO.finditer(code):
             errors.append(f"{rel}:{line_of(code, m.start())}: `tauto` runs interpreted; use `grind`, `simp` or `decide`")
         if uncompiled_meta(module, text, globs):
@@ -178,12 +246,12 @@ def main() -> int:
                 f"{rel}: defines meta code and imports only Lean core and precompiled modules; "
                 "add it to `NativeTactics` in lean/lakefile.toml so that it runs compiled"
             )
-        for m in SET_LIMIT.finditer(text):
+        for m in (SET_LIMIT.finditer(text) if any(k in text for k in ("maxHeartbeats", "maxRecDepth", "synthInstance.max")) else ()):
             errors.append(f"{rel}:{line_of(text, m.start())}: changes a resource limit; make the proof faster instead")
-        for m in BIG_IMPORT.finditer(text):
+        for m in (BIG_IMPORT.finditer(text) if "import Mathlib" in text else ()):
             errors.append(f"{rel}:{line_of(text, m.start())}: imports {m.group(1)}; import the modules you use")
         if module.startswith("VerifiedGarbage.Proof."):
-            for i in unascribed_lists(text):
+            for i in (unascribed_lists(text) if "++" in text else ()):
                 errors.append(
                     f"{rel}:{line_of(text, i)}: instruction list next to `++` in a theorem statement; "
                     "ascribe it: `([.op …] : List Instr)`"

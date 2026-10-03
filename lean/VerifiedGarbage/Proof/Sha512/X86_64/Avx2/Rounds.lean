@@ -105,12 +105,12 @@ theorem round_ok (j t : Nat) (s : State) (v : HashValue) (w : Word)
   simp only [T, List.nodup_cons, List.mem_cons, List.not_mem_nil, List.reverse_cons,
     List.reverse_nil, List.nil_append, List.cons_append, or_false, not_or,
     List.nodup_nil, and_true] at hd hd' ⊢
-  simp (config := {decide := true}) only [runBlock_cons, runStep_some,
+  simp only [↓reduceIte, Nat.reduceLeDiff, Nat.reducePow, runBlock_cons, runStep_some,
     runBlock_nil, exec, execAlu, execRorx, execAndn, readSrc, State.ea,
     isa, State.load64, RegUpd.gpr_setReg, RegUpd.mem_setReg, RegUpd.rd_setReg,
     RegUpd.wr_setReg, RegUpd.xmm_setReg, RegUpd.ymmHi_setReg, arithFlags, RegUpd.gpr_setFlags,
     RegUpd.mem_setFlags, RegUpd.rd_setFlags, RegUpd.wr_setFlags, RegUpd.xmm_setFlags,
-    RegUpd.ymmHi_setFlags, ite_true, ite_false,
+    RegUpd.ymmHi_setFlags, 
     hd, hd', h0, h1, h2, h3, h4, h5, h6, h7, hc, hin, hw, and_self, Option.bind_some,
     Option.map_some, Option.some.injEq, exists_eq_left']
   refine ⟨?_, trivial, trivial, trivial, fun r hr => ?_, trivial⟩

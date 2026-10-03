@@ -8,8 +8,6 @@ the data (`BlocksImpl`), copying the rest into the buffer, restoring the
 registers, and the whole function.
 -/
 
-open VG.PowLit
-
 namespace VG.Proof.Poly1305.X86_64
 
 open VG VG.X86_64 VG.Impl.Poly1305.X86_64

@@ -12,7 +12,7 @@ result as numbers, and the registers it writes (`Keeps`).
 namespace VG.Proof.ChaCha20Poly1305.AArch64.Poly
 
 open VG VG.AArch64 VG.AArch64.RegUpd VG.Impl.ChaCha20Poly1305.AArch64.Poly
-open VG.Proof.Poly1305.Limbs64 VG.PowLit
+open VG.Proof.Poly1305.Limbs64
 open VG.Proof.Poly1305.AArch64.Radix64 (Keeps Keeps.gpr' Keeps.trans Keeps.mono ofNat_bool
   mul_words word)
 open VG.Spec.Poly1305 (P)

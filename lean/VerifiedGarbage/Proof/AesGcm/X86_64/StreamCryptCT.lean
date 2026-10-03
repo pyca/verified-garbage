@@ -118,7 +118,7 @@ theorem stream_pub {s₀ s₀' : State} (hq : Proof.AesGcm.streamCryptPub s₀ s
   obtain ⟨q₁, q₂, q₃, q₄, q₅, q₆, q₇, -⟩ := hq
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> assumption
+  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption
 
 theorem streamEncrypt_rel (v : GcmImpl) {s₀ s₀' : State} (hp : Proof.AesGcm.streamEncryptX86_64.pre s₀)
     (hp' : Proof.AesGcm.streamEncryptX86_64.pre s₀') (hq : Proof.AesGcm.streamEncryptX86_64.pub s₀ s₀') :

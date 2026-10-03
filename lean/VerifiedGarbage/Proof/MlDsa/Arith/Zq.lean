@@ -1,4 +1,5 @@
 import VerifiedGarbage.Spec.MlDsa
+import VerifiedGarbage.Proof.Framework.PowLit
 
 /-!
 # ML-DSA: arithmetic modulo `q`, for every target

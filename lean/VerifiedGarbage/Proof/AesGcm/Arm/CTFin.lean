@@ -160,7 +160,7 @@ theorem fin_entry_agree {n : Nat} {s₀ s₀' : State} (h0 : finPre n s₀) (h0'
   refine (ArgsKeep.refl n s).agree (ArgsKeep.refl n s') q₀ h0.2.2.2.2.2.2.2.2.2.2.2.2.2.2.1 qa (fin_hw h0) (fin_hw h0')
     fun r hr => ?_
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl <;> assumption
+  rcases hr with rfl | rfl | rfl <;> with_reducible assumption
 
 theorem streamFinish_rel {s₀ s₀' : State} (h0 : streamFinishArm.pre s₀) (h0' : streamFinishArm.pre s₀')
     (hq : streamFinishArm.pub s₀ s₀') :

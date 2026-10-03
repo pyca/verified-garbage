@@ -26,7 +26,7 @@ theorem wreg_eq (a b : Fin 16) : wreg a = wreg b ↔ a = b := by
 theorem scalar_op (op : Op) (hv : Valid op) {v : CState} {s : State} (h : C v s) :
     WP isa (.block (scalarCode op)) s fun u => RI (step v op) s u ∧ u.v = s.v ∧ u.sp = s.sp := by
   have hh (k : Fin 16) : s.read .w (wreg k) = v[k] := by
-    simp (config := {decide := true}) only [State.read, Size.bits, h k.val k.isLt, BitVec.setWidth_setWidth_of_le, BitVec.setWidth_eq, Fin.getElem_fin]
+    simp only [Nat.reduceLeDiff, State.read, Size.bits, h k.val k.isLt, BitVec.setWidth_setWidth_of_le, BitVec.setWidth_eq, Fin.getElem_fin]
   have keep (r : Reg) (hr : ¬ VG.Proof.ChaCha20.AArch64.Words r) (d : Fin 16) : r ≠ wreg d := by
     intro e; exact hr ⟨d.val,d.isLt,e⟩
   cases op with
@@ -46,10 +46,10 @@ theorem scalar_op (op : Op) (hv : Valid op) {v : CState} {s : State} (h : C v s)
   | xorRol d a b n =>
     have hn : 32 - n.val < 32 := by change 0 < n.val at hv; omega
     apply WP.of_runBlock
-    simp (config := {decide := true}) only [scalarCode, runBlock_cons, runBlock_nil, exec_logic, exec_ror_w hn, isa,
+    simp only [↓reduceIte, Nat.reduceLeDiff, and_self, scalarCode, runBlock_cons, runBlock_nil, exec_logic, exec_ror_w hn, isa,
       runStep_some, Option.some.injEq, exists_eq_left',
       State.read, State.write, Size.bits, h a.val a.isLt, h b.val b.isLt,
-      ite_true, BitVec.setWidth_setWidth_of_le, BitVec.setWidth_eq]
+      BitVec.setWidth_setWidth_of_le, BitVec.setWidth_eq]
     refine ⟨⟨?_,rfl,rfl,rfl,?_⟩, trivial⟩
     · intro k hk
       have he := wreg_eq (⟨k,hk⟩ : Fin 16) d

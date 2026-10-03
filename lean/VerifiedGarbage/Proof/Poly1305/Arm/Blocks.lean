@@ -15,8 +15,6 @@ what they leave unchanged: the key, the saved registers, the limbs of `r` and
 the stored accumulator.
 -/
 
-open VG.PowLit
-
 namespace VG.Proof.Poly1305.Arm
 
 open VG VG.Arm VG.Impl.Poly1305.Arm
@@ -155,8 +153,6 @@ columns are reduced and stored as the accumulator (`epilogue_ok`). Between
 blocks (`Common`), the columns are congruent modulo `p` to the accumulator of
 the blocks so far.
 -/
-
-open VG.PowLit
 
 namespace VG.Proof.Poly1305.Arm
 
@@ -616,7 +612,7 @@ theorem agreeb {s₁ s₂ : State} (h₁ : Proof.Poly1305.blocksArm.pre s₁) (h
     fun _ h => (List.not_mem_nil h).elim, fun _ h => (List.not_mem_nil h).elim, fun h => absurd h (by decide),
     fun k hk => absurd hk (Nat.not_lt_zero k)⟩
   · simp only [τb, RegSet.mem_ofList, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl <;> assumption
+    rcases hr with rfl | rfl | rfl <;> with_reducible assumption
   · rw [(BPre.of s₁ h₁).wr, (BPre.of s₂ h₂).wr, p0]
 
 /-- A state satisfying the precondition (with no blocks). -/

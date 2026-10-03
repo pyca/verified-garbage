@@ -61,9 +61,9 @@ theorem copyStep_ok (s : State) {P C : Addr} {i L : Nat} (hc : s.gpr .rcx = P)
     rw [hi, BitVec.mul_one, ← h9, BitVec.add_assoc, BitVec.add_assoc, BitVec.add_comm (BitVec.ofNat 64 i)]
     rfl
   refine ⟨_, by
-    simp (config := {decide := true}) only [copyBody, lastByte, padByte, runBlock_cons, runStep_some,
+    simp only [reduceCtorEq, ↓reduceIte, Nat.reducePow, BitVec.reduceSignExtend, copyBody, lastByte, padByte, runBlock_cons, runStep_some,
       runBlock_nil, exec, readSrc, execAlu, State.load8, State.store8, State.ea, Option.bind_some,
-      Option.map_some, gpr_setReg, gpr_arithFlags, mem_setReg, rd_setReg, wr_setReg, ite_true, ite_false,
+      Option.map_some, gpr_setReg, gpr_arithFlags, mem_setReg, rd_setReg, wr_setReg, 
       ea₁, ea₂, r, w]
     rfl, ?_⟩
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_⟩
@@ -146,10 +146,10 @@ theorem xor2_ok (s : State) (pb qb cb : Reg) (pd qd cd : Nat) {P Q C : Addr}
       s'.mem = xor2Mem s.mem C P Q ∧ (∀ r, r ≠ .rax → s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   obtain ⟨h₁, h₂, h₃⟩ := hrax
   refine ⟨_, by
-    simp (config := {decide := true}) only [runBlock_cons, runStep_some, runBlock_nil, at_, exec, readSrc,
+    simp only [↓reduceIte, runBlock_cons, runStep_some, runBlock_nil, at_, exec, readSrc,
       execAlu, State.load64, State.store64, State.ea, offset_nat, Option.bind_some, Option.map_some,
       gpr_setReg, gpr_arithFlags, mem_setReg, mem_arithFlags, rd_setReg, rd_arithFlags, wr_setReg, wr_arithFlags,
-      h₁, h₂, h₃, ite_true, ite_false, hp, hp8, hq, hq8, hc, hc8, rp, rp8, rq, rq8, wc, wc8]
+      h₁, h₂, h₃, hp, hp8, hq, hq8, hc, hc8, rp, rp8, rq, rq8, wc, wc8]
     rfl, ?_⟩
   refine ⟨rfl, ?_, rfl, rfl⟩
   intro r hr; simp [gpr_setReg, hr]
@@ -176,9 +176,9 @@ theorem zero_ok (s : State) {C : Addr} {L : Nat} (hc : s.gpr .r9 + BitVec.ofNat 
     ∃ s', runBlock isa zero s = some s' ∧ s'.zf = some (decide (L = 0)) ∧ s'.mem = zero2 s.mem C ∧
       (∀ r, r ≠ .rax → s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   refine ⟨_, by
-    simp (config := {decide := true}) only [zero, cOff, runBlock_cons, runStep_some, runBlock_nil, at_, exec,
+    simp only [reduceCtorEq, ↓reduceIte, Nat.reduceAdd, zero, cOff, runBlock_cons, runStep_some, runBlock_nil, at_, exec,
       readSrc, readSrc32, execAlu, State.store64, State.ea, State.setReg32, offset_nat, Option.bind_some,
-      Option.map_some, gpr_setReg, mem_setReg, rd_setReg, wr_setReg, ite_true, ite_false, hc, hc8, wc, wc8]
+      Option.map_some, gpr_setReg, mem_setReg, rd_setReg, wr_setReg, hc, hc8, wc, wc8]
     rfl, ?_⟩
   refine ⟨?_, rfl, ?_, rfl, rfl⟩
   · rw [zf_arithFlags]
@@ -209,9 +209,9 @@ theorem args_ok (s : State) {D : Addr} (hd : s.gpr .rdx = D)
       s'.gpr .rcx = D ∧ s'.gpr .rdx = s.gpr .r9 + BitVec.ofNat 64 2048 ∧ s'.gpr .r8 = 1 ∧
       (∀ r, r ≠ .rax → r ≠ .rcx → r ≠ .rdx → r ≠ .r8 → s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   refine ⟨_, by
-    simp (config := {decide := true}) only [cOff, runBlock_cons, runStep_some, runBlock_nil, at_, exec,
+    simp only [reduceCtorEq, ↓reduceIte, Nat.reducePow, BitVec.reduceSignExtend, cOff, runBlock_cons, runStep_some, runBlock_nil, at_, exec,
       readSrc, readSrc32, execAlu, State.store64, State.ea, State.setReg32, offset_nat, Option.bind_some,
-      Option.map_some, gpr_setReg, mem_setReg, rd_setReg, wr_setReg, ite_true, ite_false, hd, wd, wd8]
+      Option.map_some, gpr_setReg, mem_setReg, rd_setReg, wr_setReg, hd, wd, wd8]
     rfl, ?_⟩
   refine ⟨rfl, ?_, ?_, ?_, ?_, rfl, rfl⟩
   · simp [gpr_setReg]

@@ -8,8 +8,6 @@ import VerifiedGarbage.Proof.Framework.Omega
 # Poly1305 on x86-64: `finalize`
 -/
 
-open VG.PowLit
-
 open VG.Proof.Poly1305.Limbs64
 
 namespace VG.Proof.Poly1305.X86_64
@@ -510,7 +508,7 @@ theorem finalize_ct : ConstantTime isa Proof.Poly1305.finalizeX86_64.pre
   intro s₁ s₂ _ _ ⟨h1, h2, h3⟩
   refine Taint.agree_ofRegs fun r hr => ?_
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl <;> assumption
+  rcases hr with rfl | rfl | rfl <;> with_reducible assumption
 
 theorem finalize_verified :
     Verified X86_64.target Impl.Poly1305.X86_64.finalize (Spec.Poly1305.finalizeContract X86_64.abi)

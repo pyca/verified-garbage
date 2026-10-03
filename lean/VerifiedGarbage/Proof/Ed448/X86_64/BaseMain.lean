@@ -1,13 +1,13 @@
 import VerifiedGarbage.Proof.Ed448.X86_64.BaseBits
 import VerifiedGarbage.Proof.Ed448.X86_64.BaseEncode
 import VerifiedGarbage.Proof.X448.X86_64.Main
+import VerifiedGarbage.Proof.Ed448.X86_64.BaseLocal
 
 /-!
 # Ed448 base-point multiplication on x86-64: the whole function
 
-The contract the proof is written against (the facts of
-`Spec.Ed448.scalarBaseContract` it uses, stated for x86-64), and the
-correctness of `vg_ed448_scalar_base` against it: the scalar's bits, the
+The correctness of `vg_ed448_scalar_base` against the contract the proof is
+written against (`scalarBaseLocal`, `BaseLocal.lean`): the scalar's bits, the
 loop (`R` ends as a representative of `[k]B`), the inversion of `Z` and the
 encoding, every write in the working space but the result's, so the scalar
 is read unchanged, the callee-saved registers are restored from the working
@@ -21,19 +21,6 @@ open VG.Proof.X448.X86_64 (Scr Index Env E FieldOk word off Outside ofs Saved cl
   word_writeW_self invert_ok setRbx_ok E_outside contains_sc ofs_off')
 open VG.Impl.X448.X86_64 (BITS slot)
 open VG.Spec.Ed448 (bytesAt decodeLE)
-
-/-- `vg_ed448_scalar_base(out = rdi, scalar = rsi, scratch = rdx)`. -/
-def scalarBaseLocal : Contract isa where
-  pre s :=
-    s.rd = [⟨s.gpr .rsi, 57⟩] ∧ s.wr = [⟨s.gpr .rdi, 57⟩, ⟨s.gpr .rdx, 8192⟩] ∧
-    (⟨s.gpr .rsi, 57⟩ : Region).Disjoint ⟨s.gpr .rdx, 8192⟩ ∧
-    (⟨s.gpr .rsp, 8⟩ : Region).Disjoint ⟨s.gpr .rdi, 57⟩ ∧
-    (⟨s.gpr .rsp, 8⟩ : Region).Disjoint ⟨s.gpr .rdx, 8192⟩ ∧
-    (⟨s.gpr .rdi, 57⟩ : Region).Disjoint ⟨s.gpr .rdx, 8192⟩ ∧
-    (s.gpr .rdx).toNat + 8192 ≤ 2 ^ 64
-  post s t := bytesAt t.mem (s.gpr .rdi) 57 = Spec.Ed448.scalarBase (bytesAt s.mem (s.gpr .rsi) 57)
-  pub s t := s.gpr .rsp = t.gpr .rsp ∧ s.gpr .rdi = t.gpr .rdi ∧
-    s.gpr .rsi = t.gpr .rsi ∧ s.gpr .rdx = t.gpr .rdx
 
 theorem bytesAt_getD (m : Mem) (p : Addr) {n i : Nat} (hi : i < n) :
     (bytesAt m p n).getD i 0 = m (p + BitVec.ofNat 64 i) := by
