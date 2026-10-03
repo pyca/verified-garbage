@@ -194,12 +194,21 @@ theorem sha384_satP : ∃ s, (Spec.Hmac.sha384I.pbkdf2Contract X86_64.abi 24).pr
 
 theorem sha384_coreOK : CoreOK (coreH 48) := coreOK 48 (Or.inr (Or.inr (Or.inl rfl)))
 
-/-- SHA-384 with the implementation `v` of the compression function. -/
+/-- SHA-384's functions, with the implementation `v` of the compression function. -/
+abbrev sha384H (v : Compress) : Hash := hash Spec.Hmac.sha384I 48 Spec.Sha512.init384Api.name H0_384 v
+
+theorem sha384K (v : Compress) : Callees (sha384H v) := callees (Or.inl rfl) v
+
+/-- What the proofs know of SHA-384's functions. -/
+def sha384OK (v : Compress) : HashOK (sha384H v) :=
+  ok sha384_coreOK (sha384K v) rfl (fun _ => rfl) rfl rfl rfl (Or.inr (Or.inr (Or.inl rfl))) rfl
+
+/-- SHA-384 with the implementation `v` of the compression function, which it
+carries for the functions built on SHA-384 alone (`MdHash.sha384`). -/
 def sha384 (v : Compress) (stream : List StreamFn := []) : MdHash :=
-  have C : CoreOK (core (hash Spec.Hmac.sha384I 48 Spec.Sha512.init384Api.name H0_384 v)) := sha384_coreOK
-  have K : Callees (hash Spec.Hmac.sha384I 48 Spec.Sha512.init384Api.name H0_384 v) := callees (Or.inl rfl) v
-  MdHash.of (ok C K rfl (fun _ => rfl) rfl rfl rfl (Or.inr (Or.inr (Or.inl rfl))) rfl) C K rfl rfl
-    sha384_satI sha384_satF sha384_satT sha384_satP v.suffix v.features stream
+  { MdHash.of (sha384OK v) sha384_coreOK (sha384K v) rfl rfl
+      sha384_satI sha384_satF sha384_satT sha384_satP v.suffix v.features stream with
+    sha384 := some v }
 
 /-! ## SHA-512 -/
 

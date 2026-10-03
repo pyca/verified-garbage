@@ -5,13 +5,15 @@
 //! (another hash, `r` and `s` exchanged or out of range) and keys that are
 //! not valid public keys, or are not the signer's.
 //!
-//! `verify_sha256_prehashed` verifies a signature of any 32-byte hash, as
+//! `verify_prehashed::<Sha256>` verifies a signature of any 32-byte hash, as
 //! its contract says: the leftmost 32 bytes of a longer hash, or a shorter
-//! one padded on the left with zeros (FIPS 186-5 §6.4.2), as here.
+//! one padded on the left with zeros (FIPS 186-5 §6.4.2), as here. The
+//! SHA-256 and SHA-384 vectors are also verified of their messages, with
+//! `verify::<Sha256>` and `verify::<Sha384>`.
 
 #![cfg(target_arch = "x86_64")]
 
-use verified_garbage::ecdsa::{Error, P256, VerifyingKey};
+use verified_garbage::ecdsa::{Error, P256, SignatureHash, VerifyingKey};
 use verified_garbage::hashes::sha1::Sha1;
 use verified_garbage::hashes::sha224::Sha224;
 use verified_garbage::hashes::sha256::Sha256;
@@ -23,9 +25,9 @@ use super::unhex;
 const N: &str = "ffffffff00000000ffffffffffffffffbce6faada7179e84f3b9cac2fc632551";
 const P: &str = "ffffffff00000001000000000000000000000000ffffffffffffffffffffffff";
 
-/// Each vector: the key, the hash argument, the signature, and whether it
-/// is valid.
-type Vector = ([u8; 65], [u8; 32], [u8; 64], bool);
+/// Each vector: the key, the hash argument, the signature, whether it is
+/// valid, the hash function's name and the message.
+type Vector = ([u8; 65], [u8; 32], [u8; 64], bool, &'static str, Vec<u8>);
 
 /// A hash function, as a `Vec`.
 type Hash = fn(&[u8]) -> Vec<u8>;
@@ -72,7 +74,15 @@ fn vectors() -> Vec<Vector> {
             let mut rs = [0; 64];
             rs[..32].copy_from_slice(&unhex(v[3].1));
             rs[32..].copy_from_slice(&unhex(v[4].1));
-            out.push((q, digest(hash, &unhex(v[0].1)), rs, v[5].1.starts_with('P')));
+            let msg = unhex(v[0].1);
+            out.push((
+                q,
+                digest(hash, &msg),
+                rs,
+                v[5].1.starts_with('P'),
+                hash,
+                msg,
+            ));
         }
     }
     assert_eq!(out.len(), 75);
@@ -94,8 +104,8 @@ fn add(x: &[u8], y: &[u8]) -> [u8; 32] {
 #[test]
 fn ecdsa_p256_sigver() {
     let (mut valid, mut invalid) = (0, 0);
-    for (q, d, rs, ok) in vectors() {
-        let result = VerifyingKey::<P256>::from_bytes(&q).verify_sha256_prehashed(&d, &rs);
+    for (q, d, rs, ok, _, _) in vectors() {
+        let result = VerifyingKey::<P256>::from_bytes(&q).verify_prehashed::<Sha256>(&d, &rs);
         if ok {
             assert_eq!(result, Ok(()));
             valid += 1;
@@ -114,7 +124,7 @@ fn ecdsa_p256_sigver() {
 #[test]
 fn ecdsa_p256_sigver_invalid() {
     let (n, p) = (unhex(N), unhex(P));
-    for (q, d, rs, ok) in vectors() {
+    for (q, d, rs, ok, _, _) in vectors() {
         if !ok {
             continue;
         }
@@ -153,8 +163,41 @@ fn ecdsa_p256_sigver_invalid() {
         neg[33..].copy_from_slice(&add(&p, &add(&not_y, &one)));
         bad.push((neg, d, rs));
         for (k, d, rs) in bad {
-            let result = VerifyingKey::<P256>::from_bytes(&k).verify_sha256_prehashed(&d, &rs);
+            let result = VerifyingKey::<P256>::from_bytes(&k).verify_prehashed::<Sha256>(&d, &rs);
             assert_eq!(result, Err(Error::InvalidSignature));
         }
     }
+}
+
+/// `H`'s verification of `rs` of `msg` with `q`.
+fn verify_with<H: SignatureHash<P256>>(
+    q: &[u8; 65],
+    msg: &[u8],
+    rs: &[u8; 64],
+) -> Result<(), Error> {
+    VerifyingKey::<P256>::from_bytes(q).verify::<H>(msg, rs)
+}
+
+/// The SHA-256 and SHA-384 vectors, of their messages: each valid
+/// signature verifies, and no other.
+#[test]
+fn ecdsa_p256_sigver_messages() {
+    let mut checked = 0;
+    for (q, _, rs, ok, hash, msg) in vectors() {
+        let result = match hash {
+            "SHA-256" => verify_with::<Sha256>(&q, &msg, &rs),
+            "SHA-384" => verify_with::<Sha384>(&q, &msg, &rs),
+            _ => continue,
+        };
+        assert_eq!(
+            result,
+            if ok {
+                Ok(())
+            } else {
+                Err(Error::InvalidSignature)
+            }
+        );
+        checked += 1;
+    }
+    assert_eq!(checked, 30);
 }
