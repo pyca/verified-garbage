@@ -25,8 +25,6 @@ it returns. A call stores nothing in memory, so the callee changes memory only
 within the regions it may write.
 -/
 
-open VG.PowLit
-
 namespace VG.Proof.ChaCha20Poly1305.AArch64
 
 open VG VG.AArch64
@@ -224,8 +222,6 @@ end
 /-!
 # ChaCha20-Poly1305 on AArch64: the entry state, regions and invariant
 -/
-
-open VG.PowLit
 
 namespace VG.Proof.ChaCha20Poly1305
 
@@ -855,8 +851,6 @@ end
 to a multiple of 16: `msg ++ x ++ pad16 x`.
 -/
 
-open VG.PowLit
-
 namespace VG.Proof.ChaCha20Poly1305.AArch64
 
 open VG VG.AArch64 VG.Impl.ChaCha20Poly1305.AArch64
@@ -1292,8 +1286,6 @@ end VG.Proof.ChaCha20Poly1305.AArch64
 The lengths block, the encryption, absorbing the lengths, the tag, comparing
 tags, and restoring the registers.
 -/
-
-open VG.PowLit
 
 namespace VG.Proof.ChaCha20Poly1305.AArch64
 

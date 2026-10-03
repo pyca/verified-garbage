@@ -146,21 +146,21 @@ theorem coeff5_ok {k : Nat} (hk : 4 * k < 4096) (h0 : s.gpr .r0 = x)
     WP isa (.block (ceCoeff 5 k)) s fun s' => Keeps s s' ∧ s'.mem = s.mem ∧
       s'.gpr .r1 = cmpV4 m5 (s.mem.readW (State.addr (x + BitVec.ofNat 32 (4 * k))) 32) &&& 31 := by
   run_block [ceCoeff, compressAt4, cmpV4, m5, h0, i0, hk]
-  exact ⟨⟨rfl, rfl, rfl, by simp (config := {decide := true}) [preserved], rfl, rfl, rfl⟩, trivial⟩
+  exact ⟨⟨rfl, rfl, rfl, by simp [preserved], rfl, rfl, rfl⟩, trivial⟩
 
 theorem coeff11_ok {k : Nat} (hk : 4 * k < 4096) (h0 : s.gpr .r0 = x)
     (i0 : InRegions (s.rd ++ s.wr) (State.addr (x + BitVec.ofNat 32 (4 * k))) 4) :
     WP isa (.block (ceCoeff 11 k)) s fun s' => Keeps s s' ∧ s'.mem = s.mem ∧
       s'.gpr .r1 = cmpV4 m11 (s.mem.readW (State.addr (x + BitVec.ofNat 32 (4 * k))) 32) := by
   run_block [ceCoeff, compressAt4, cmpV4, m11, h0, i0, hk]
-  exact ⟨⟨rfl, rfl, rfl, by simp (config := {decide := true}) [preserved], rfl, rfl, rfl⟩, trivial⟩
+  exact ⟨⟨rfl, rfl, rfl, by simp [preserved], rfl, rfl, rfl⟩, trivial⟩
 
 theorem head0_ok {j : Nat} (hj : j < 4096) (h2 : s.gpr .r2 = y)
     (o : InRegions s.wr (State.addr (y + BitVec.ofNat 32 j)) 1) :
     WP isa (.block (ceHead j 0)) s fun s' => Keeps s s' ∧ s'.gpr .r1 = s.gpr .r1 ∧
       s'.mem = s.mem.writeW (State.addr (y + BitVec.ofNat 32 j)) ((s.gpr .r1).setWidth 8) := by
   run_block [ceHead, h2, o, hj]
-  exact ⟨⟨rfl, rfl, rfl, by simp (config := {decide := true}) [preserved], rfl, rfl, rfl⟩, trivial⟩
+  exact ⟨⟨rfl, rfl, rfl, by simp [preserved], rfl, rfl, rfl⟩, trivial⟩
 
 theorem headT_ok {j t : Nat} (hj : j < 4096) (ht : 1 ≤ t ∧ t ≤ 31) (h2 : s.gpr .r2 = y)
     (i : InRegions (s.rd ++ s.wr) (State.addr (y + BitVec.ofNat 32 j)) 1)
@@ -172,7 +172,7 @@ theorem headT_ok {j t : Nat} (hj : j < 4096) (ht : 1 ≤ t ∧ t ≤ 31) (h2 : s
   unfold ceHead
   simp only [h0, ↓reduceIte]
   run_block [h2, i, o, hj, ht, addB]
-  exact ⟨⟨rfl, rfl, rfl, by simp (config := {decide := true}) [preserved], rfl, rfl, rfl⟩, trivial⟩
+  exact ⟨⟨rfl, rfl, rfl, by simp [preserved], rfl, rfl, rfl⟩, trivial⟩
 
 theorem next_ok {j t i : Nat} (hj : j + 1 + i < 4096)
     (hsh : 1 ≤ (if i = 0 then 8 - t else 8) ∧ (if i = 0 then 8 - t else 8) ≤ 31) (h2 : s.gpr .r2 = y)
@@ -182,7 +182,7 @@ theorem next_ok {j t i : Nat} (hj : j + 1 + i < 4096)
       s'.mem = s.mem.writeW (State.addr (y + BitVec.ofNat 32 (j + 1 + i)))
         ((s.gpr .r1 >>> (if i = 0 then 8 - t else 8)).setWidth 8) := by
   run_block [ceNext, h2, o, hj, hsh]
-  exact ⟨⟨rfl, rfl, rfl, by simp (config := {decide := true}) [preserved], rfl, rfl, rfl⟩, trivial⟩
+  exact ⟨⟨rfl, rfl, rfl, by simp [preserved], rfl, rfl, rfl⟩, trivial⟩
 
 end
 
@@ -576,7 +576,7 @@ theorem verified : Verified Arm.target compressEncode1024 (Spec.MlKem1024.compre
     obtain ⟨-, h0, h1, h2, h3⟩ := h
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl <;> assumption
+    rcases hr with rfl | rfl | rfl | rfl <;> with_reducible assumption
   · refine ⟨satState, ?_⟩
     sig_apply_check
     · decide +kernel

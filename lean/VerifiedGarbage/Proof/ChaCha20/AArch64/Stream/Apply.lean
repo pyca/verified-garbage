@@ -535,7 +535,7 @@ theorem copyMem_copy (m : Mem) (p : Addr) (c : BitVec 32) :
     simp only [copyMem8]
     obtain rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl :
       k = 24 ∨ k = 25 ∨ k = 26 ∨ k = 27 ∨ k = 28 ∨ k = 29 ∨ k = 30 ∨ k = 31 := by omega
-    all_goals simp (config := {decide := true}) only [Nat.reduceMul, Nat.reduceSub, Mem.readW_writeW_self64,
+    all_goals simp only [Nat.reduceLT, Nat.reduceLeDiff, Nat.reduceAdd, Nat.reducePow, or_false, Nat.reduceMul, Nat.reduceSub, Mem.readW_writeW_self64,
       readW64_ofNat, BitVec.add_zero]
   have hm : ∀ k, 0 ≤ k → k < 8 → m.readW (p + BitVec.ofNat 64 (8 * k)) 64 = m.readW (p + BitVec.ofNat 64 (8 * k)) 64 :=
     fun _ _ _ => rfl
@@ -638,12 +638,12 @@ theorem blocks_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp : APre
       ∀ r ∈ [cpR s₀, blR s₀, wkR s₀], R.Disjoint r := by
     intro R h₁ h₂ h₃ r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl <;> assumption
+    rcases hr with rfl | rfl | rfl <;> with_reducible assumption
   have nc : ∀ R : Region, R.Disjoint ⟨st s₀, 64⟩ → R.Disjoint ⟨st s₀ + BitVec.ofNat 64 192, 64⟩ →
       ∀ r ∈ [⟨st s₀, 64⟩, ⟨st s₀ + BitVec.ofNat 64 192, 64⟩], R.Disjoint r := by
     intro R h₁ h₂ r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl <;> assumption
+    rcases hr with rfl | rfl <;> with_reducible assumption
   have fc := copyMem_frame s.mem (st s₀) (BitVec.ofNat 32 (NB s₀))
   rw [← m₁] at fc
   have stS : Region.Sub ⟨st s₀, 64⟩ (stR s₀) := prefix_sub _ (by omega)

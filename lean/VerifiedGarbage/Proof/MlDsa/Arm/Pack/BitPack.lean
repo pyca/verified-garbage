@@ -183,7 +183,7 @@ theorem bitPack_ct :
     (fun a b h => by rw [h.1, h.2]; exact hsp) (fun a b h r hr => by
       rw [h.1, h.2]
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl | rfl <;> assumption) _ _ _ _ _ _ ⟨rfl, rfl⟩ e₁ e₂).1
+      rcases hr with rfl | rfl | rfl | rfl <;> with_reducible assumption) _ _ _ _ _ _ ⟨rfl, rfl⟩ e₁ e₂).1
 
 /-! ## `Verified` -/
 

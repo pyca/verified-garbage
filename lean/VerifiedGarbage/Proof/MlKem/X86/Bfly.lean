@@ -85,10 +85,10 @@ theorem bfly_spec {s : State} {p : Addr} {G : Poly} {j len : Nat} {zA : Addr} {z
   · rw [State.ea, at_]; exact h.ea_d ▸ inRd h.in_d
   · simp only [State.ea, at_, State.setReg, show Reg.ebp ≠ Reg.eax by decide, ite_false, h.ea_z]
     exact h.in_z
-  · simp (config := {decide := true}) only [State.setReg, execMul_eax, ite_true, ite_false, State.ea,
+  · simp only [reduceCtorEq, ↓reduceIte, State.setReg, execMul_eax, State.ea,
       at_, h.ea_d, h.ea_z, hb, h.z_v]
     rw [hb', hz', toNat_ofNat32 hbz]
-  · simp (config := {decide := true}) only [State.setReg, execMul_eax, ite_true, ite_false, State.ea,
+  · simp only [reduceCtorEq, ↓reduceIte, State.setReg, execMul_eax, State.ea,
       at_, h.ea_d, h.ea_z, hb, h.z_v]
     rw [hb', hz', toNat_ofNat32 hbz]
   have g₂ : ∀ r, r ≠ .eax → r ≠ .edx → r ≠ .ebx → s₂.gpr r = s.gpr r := fun r h1 h2 h3 => by
@@ -112,10 +112,10 @@ theorem bfly_spec {s : State} {p : Addr} {G : Poly} {j len : Nat} {zA : Addr} {z
   have ea_i := h.ea_i
   have ea_d := h.ea_d
   apply WP.of_runBlock
-  simp (config := {decide := true}) only [csub, List.cons_append, List.nil_append, runBlock_cons,
+  simp only [reduceCtorEq, ↓reduceIte, Nat.reducePow, csub, List.cons_append, List.nil_append, runBlock_cons,
     runStep_some, runBlock_nil, exec, execAlu, readSrc, State.ea, at_, State.load32, State.store32,
     State.setReg, arithFlags, State.setFlags, Option.bind_some, Option.map_some, esi₂, edi₂, ecx₂, m₂,
-    rd₂, wr₂, bx₂, ea_i, ea_d, inI, inD, inI', hrw, ha, ite_true, ite_false, Option.some.injEq,
+    rd₂, wr₂, bx₂, ea_i, ea_d, inI, inD, inI', hrw, ha, Option.some.injEq,
     exists_eq_left']
   have lt := Nat.mod_lt (b * z) (show q > 0 by rw [q_eq]; decide)
   rw [q_eq] at lt

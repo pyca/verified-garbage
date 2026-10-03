@@ -104,7 +104,7 @@ theorem simpleBitPack_verified :
     obtain ⟨-, h0, h1, h2, h3⟩ := h
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl <;> assumption
+    rcases hr with rfl | rfl | rfl | rfl <;> with_reducible assumption
   · refine ⟨sbpSat, ?_⟩
     sig_apply_check
     · decide +kernel

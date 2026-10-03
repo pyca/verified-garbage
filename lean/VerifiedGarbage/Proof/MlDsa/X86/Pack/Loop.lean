@@ -210,7 +210,7 @@ theorem packLoop_piece (hld : LdOk ld F) (hs : Shape d c nb) (iP oP : State → 
     xrun
     refine ⟨⟨?_, h.rd, h.wr, ?_, ?_, ?_, by rw [setReg_mem, h.mem]; exact Frame.refl _ _,
       fun k hk => absurd hk (by omega)⟩, hx⟩ <;>
-    simp (config := { decide := true }) only [setReg_gpr, ite_true, ite_false, h.esp, h.esi, h.edi,
+    simp only [reduceCtorEq, ↓reduceIte, setReg_gpr, h.esp, h.esi, h.edi,
       Nat.mul_zero, BitVec.add_zero, Nat.sub_zero]
   case regs =>
     obtain ⟨e₀, e₁, e₂⟩ := hpub _ _ h₀ h₀' hq
@@ -344,7 +344,7 @@ theorem unpackLoop_piece (hfin : FinOk fin d W) (hs : Shape d c nb) (iP oP : Sta
     xrun
     refine ⟨⟨?_, h.rd, h.wr, ?_, ?_, ?_, by rw [setReg_mem, h.mem]; exact Frame.refl _ _,
       fun k hk => absurd hk (by omega)⟩, hx⟩ <;>
-    simp (config := { decide := true }) only [setReg_gpr, ite_true, ite_false, h.esp, h.esi, h.edi,
+    simp only [reduceCtorEq, ↓reduceIte, setReg_gpr, h.esp, h.esi, h.edi,
       Nat.mul_zero, BitVec.add_zero, Nat.sub_zero]
   case regs =>
     obtain ⟨e₀, e₁, e₂⟩ := hpub _ _ h₀ h₀' hq

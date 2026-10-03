@@ -103,7 +103,7 @@ theorem head_ok {j t : Nat} (hj : j < 4096) (ht : t < 8) (h0 : s.gpr .r0 = x)
   · subst h
     simp only [↓reduceIte]
     run_block [h0, i0, hj]
-    refine ⟨⟨rfl, rfl, rfl, by simp (config := {decide := true}) [preserved], rfl, rfl, rfl, rfl⟩, ?_⟩
+    refine ⟨⟨rfl, rfl, rfl, by simp [preserved], rfl, rfl, rfl, rfl⟩, ?_⟩
     rw [Nat.pow_zero, Nat.div_one]
     apply BitVec.eq_of_toNat_eq
     rw [setWidth32_toNat, BitVec.toNat_ofNat,
@@ -111,7 +111,7 @@ theorem head_ok {j t : Nat} (hj : j < 4096) (ht : t < 8) (h0 : s.gpr .r0 = x)
   · simp only [h, ↓reduceIte]
     have hsh : 1 ≤ t ∧ t ≤ 31 := by omega
     run_block [h0, i0, hj, hsh]
-    refine ⟨⟨rfl, rfl, rfl, by simp (config := {decide := true}) [preserved], rfl, rfl, rfl, rfl⟩, ?_⟩
+    refine ⟨⟨rfl, rfl, rfl, by simp [preserved], rfl, rfl, rfl, rfl⟩, ?_⟩
     apply BitVec.eq_of_toNat_eq
     have := (s.mem (State.addr (x + BitVec.ofNat 32 j))).isLt
     rw [BitVec.toNat_ushiftRight, setWidth32_toNat, Nat.shiftRight_eq_div_pow, BitVec.toNat_ofNat,
@@ -123,7 +123,7 @@ theorem next_ok {j t i : Nat} (hj : j + 1 + i < 4096) (hsh : 1 ≤ 8 * (i + 1) -
       Keeps s s' ∧ s'.gpr .r2 = s.gpr .r2 +
         ((s.mem (State.addr (x + BitVec.ofNat 32 (j + 1 + i)))).setWidth 32 <<< (8 * (i + 1) - t)) := by
   run_block [ddNext, h0, i1, hj, hsh]
-  exact ⟨⟨rfl, rfl, rfl, by simp (config := {decide := true}) [preserved], rfl, rfl, rfl, rfl⟩, trivial⟩
+  exact ⟨⟨rfl, rfl, rfl, by simp [preserved], rfl, rfl, rfl, rfl⟩, trivial⟩
 
 end
 
@@ -161,7 +161,7 @@ theorem mask_ok {s : State} {d V : Nat} (hd : d = 5 ∨ d = 11) (hV : V < 2 ^ 32
       List Instr)) s fun s' => Keeps s s' ∧ s'.gpr .r2 = BitVec.ofNat 32 (V % 2 ^ d) := by
   have hsh : 1 ≤ 32 - d ∧ 32 - d ≤ 31 := by omega
   run_block [h2, hsh]
-  exact ⟨⟨rfl, rfl, rfl, by simp (config := {decide := true}) [preserved], rfl, rfl, rfl, rfl⟩, mask_eq hd hV⟩
+  exact ⟨⟨rfl, rfl, rfl, by simp [preserved], rfl, rfl, rfl, rfl⟩, mask_eq hd hV⟩
 
 theorem store_ok {s : State} {d off : Nat} {y a : BitVec 32} (he : encodable (BitVec.ofNat 32 (2 ^ (d - 1))) = true)
     (hsh : 1 ≤ d ∧ d ≤ 31) (hoff : off < 4096) (h2 : s.gpr .r2 = y) (h3 : s.gpr .r3 = a)
@@ -496,7 +496,7 @@ theorem verified : Verified Arm.target decodeDecompress1024
     obtain ⟨-, h0, h1, h2, h3⟩ := h
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl <;> assumption
+    rcases hr with rfl | rfl | rfl | rfl <;> with_reducible assumption
   · refine ⟨satState, ?_⟩
     sig_sat_check [Spec.MlKem1024.decodeDecompressContract, Spec.MlKem1024.decodeDecompressSig, Arm.abi,
       Arm.argRegs, Arm.reduceClassify, Arm.Loc.val]

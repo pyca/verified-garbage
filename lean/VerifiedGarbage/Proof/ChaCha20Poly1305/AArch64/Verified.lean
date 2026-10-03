@@ -24,7 +24,7 @@ theorem agree₀ {s₁ s₂ : State} (hpub : pubAArch64 s₁ s₂) : VG.AArch64.
   obtain ⟨p0, p1, p2, p3, p4, hsp⟩ := hpub
   refine ⟨hsp, fun r hr => ?_⟩
   simp only [τ₀, VG.AArch64.Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl | rfl <;> assumption
+  rcases hr with rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption
 
 /-- A state satisfying the precondition (with no additional data and no
 data). -/

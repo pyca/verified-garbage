@@ -161,9 +161,9 @@ def Permutation.scalar : Permutation where
   noFrames := permute_noFrames
   absorbOverrideOk := by intro code h; cases h
   absorbOverrideDepth := by intro code h; cases h
-  absorbTaint := Taint.exists_check_of_sumOk_call ScalarSums.absorb (Taint.Mono.le_refl _) rfl
-  padTaint := Taint.exists_check_of_sumOk_call ScalarSums.pad (Taint.Mono.le_refl _) rfl
-  squeezeTaint := Taint.exists_check_of_sumOk_call ScalarSums.squeeze (Taint.Mono.le_refl _) rfl
+  absorbTaint := Taint.exists_check_of_sumOk_call ScalarSums.absorb (VG.AArch64.VectorTaint.le_refl _) rfl
+  padTaint := Taint.exists_check_of_sumOk_call ScalarSums.pad (VG.AArch64.VectorTaint.le_refl _) rfl
+  squeezeTaint := Taint.exists_check_of_sumOk_call ScalarSums.squeeze (VG.AArch64.VectorTaint.le_refl _) rfl
   sampleFullTaint := by sponge_taint_decide ScalarSums
   sampleFastTaint := by sponge_taint_decide ScalarSums
   mldsaNttTaint := by sponge_taint_decide ScalarSums

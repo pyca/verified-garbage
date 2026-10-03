@@ -39,7 +39,7 @@ theorem streamFinish_rel (v : GcmImpl) {s₀ s₀' : State} (hp : Proof.AesGcm.s
   refine fn_rel (Ctx := s₀.gpr .rdi) (St := s₀.gpr .rdx) (W := s₀.gpr .r9) (SP := s₀.gpr .rsp)
     [.rdi, .rsi, .rdx, .rcx, .r8, .r9, .rsp] (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> assumption)
+      rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption)
     ⟨_, by taint_decide⟩ (finEntry_fin hp) hE₂ ?_
   have hw : ∀ s, FinS (s₀.gpr .rdi) (s₀.gpr .rdx) (s₀.gpr .r9) (s₀.gpr .rsp) (s₀.gpr .rsi).toNat (s₀.gpr .rcx)
       (s₀.gpr .r8) s → WP isa (finTag v.callees 0) s (Env (s₀.gpr .rdi) (s₀.gpr .rdx) (s₀.gpr .r9) (s₀.gpr .rsp)) :=

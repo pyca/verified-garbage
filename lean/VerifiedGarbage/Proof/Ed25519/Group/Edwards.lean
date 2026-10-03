@@ -3,6 +3,7 @@ import Mathlib.Algebra.GroupWithZero.Basic
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.Ring
+import VerifiedGarbage.Proof.Framework.PowLit
 
 /-!
 # The group law of a complete twisted Edwards curve with `a = -1`

@@ -1,3 +1,4 @@
+import VerifiedGarbage.Proof.Framework.PowLit
 import VerifiedGarbage.Proof.Blake2.X86.CompressB.G
 import VerifiedGarbage.Proof.Argon2.Spec
 import VerifiedGarbage.Impl.Argon2.X86.Compress

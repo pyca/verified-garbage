@@ -117,8 +117,8 @@ theorem init_piece : Piece (Pre p) Pub (fun s₀ s => s = P0 s₀) (Inv p · 0) 
     have v₀ := P0_arg hp.sp (n := 1) (i := 0) (by omega) fit hp.stk_a
     simp only [Nat.mul_zero, Nat.add_zero] at a₀
     apply WP.of_runBlock
-    simp (config := {decide := true}) only [ekInitN, at_, runBlock_cons, runStep_some, runBlock_nil,
-      exec, readSrc, State.ea, State.load32, State.setReg, Option.map_some, a₀, i₀, v₀, ite_true,
+    simp only [↓reduceIte, ekInitN, at_, runBlock_cons, runStep_some, runBlock_nil,
+      exec, readSrc, State.ea, State.load32, State.setReg, Option.map_some, a₀, i₀, v₀, 
       Option.some.injEq, exists_eq_left']
     refine ⟨by simp, rfl, rfl, rfl, by simp, by simp, ?_⟩
     simp only [ite_true, mask]
@@ -148,10 +148,10 @@ theorem step {s₀ : State} (hp : Pre p s₀) {t : Nat} (ht : t < 128 * p.k) {s 
   have v2 := v 2 (by omega)
   simp only [Nat.add_zero] at e0 i0 v0
   apply WP.of_runBlock
-  simp (config := {decide := true}) only [ekBody, at_, runBlock_cons, runStep_some, runBlock_nil, exec,
+  simp only [reduceCtorEq, ↓reduceIte, Nat.reduceLeDiff, Nat.reduceEqDiff, Nat.reduceSub, Nat.reducePow, and_self, ekBody, at_, runBlock_cons, runStep_some, runBlock_nil, exec,
     execAlu, execShift, readSrc, State.ea, State.load8, State.setReg, arithFlags, State.setFlags,
-    Option.map_some, Option.bind_some, h.esi, e0, e1, e2, i0, i1, i2, v0, v1, v2, sbb_mask, ite_true,
-    ite_false, Option.some.injEq, exists_eq_left']
+    Option.map_some, Option.bind_some, h.esi, e0, e1, e2, i0, i1, i2, v0, v1, v2, sbb_mask, 
+    Option.some.injEq, exists_eq_left']
   have x0 : (BitVec.setWidth 32 ((K p s₀).getD (3 * t) 0) +
       (BitVec.setWidth 32 ((K p s₀).getD (3 * t + 1) 0) &&& 15).rotateRight 24).toNat = field0 (K p s₀) t := by
     have l0 := ((K p s₀).getD (3 * t) 0).isLt

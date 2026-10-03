@@ -1,6 +1,7 @@
 import VerifiedGarbage.Impl.CmacTripleDes.Arm
 import VerifiedGarbage.Spec.Cmac.TripleDesContract
 import VerifiedGarbage.TCB.Arm.Target
+import VerifiedGarbage.Proof.Framework.PowLit
 
 /-!
 # TDEA-CMAC on ARMv7: the contracts the proofs are written against

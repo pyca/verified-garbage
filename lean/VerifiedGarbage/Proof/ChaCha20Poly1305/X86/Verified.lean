@@ -14,8 +14,6 @@ section
 `seal` and `open`, from their parts.
 -/
 
-open VG.PowLit
-
 namespace VG.Proof.ChaCha20Poly1305.X86
 
 open VG VG.X86 VG.Impl.ChaCha20Poly1305.X86
@@ -398,7 +396,7 @@ theorem prologue_rel :
       subst hx hy
       rcases hr with rfl | rfl
       · simp only [State.setReg, ite_true]; exact hq.cx.symm
-      · simp (config := {decide := true}) only [State.setReg, ite_false]; exact hq.esp.symm) (by taint_decide))
+      · simp only [reduceCtorEq, ↓reduceIte, State.setReg]; exact hq.esp.symm) (by taint_decide))
       fun x y ⟨hx, hy⟩ => by subst hx hy; exact ⟨pro2_ok ha, pro2_ok hb⟩) ?_
   refine RelCT.seq (R := fun x y => Pro3 a x ∧ Pro3 b y)
     (RelCT.post (block_rel ha hb hq) fun x y ⟨hx, hy⟩ => ⟨pro3_ok ha hx, pro3_ok hb hy⟩) ?_

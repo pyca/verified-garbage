@@ -102,13 +102,13 @@ theorem prologue_ok (s : State)
     rw [g₁, wr₁]; exact hw
   refine ⟨_, by
     rw [updPre, runBlock_append, h₁, Option.bind_some]
-    simp (config := {decide := true}) only [runBlock_cons, runStep_some, runBlock_nil, at_, exec, readSrc,
+    simp only [reduceCtorEq, ↓reduceIte, runBlock_cons, runStep_some, runBlock_nil, at_, exec, readSrc,
       State.store64, State.ea, offset_nat, execAlu, Option.bind_some, Option.map_some, gpr_setReg,
-      mem_setReg, rd_setReg, wr_setReg, ite_true, ite_false,
+      mem_setReg, rd_setReg, wr_setReg, 
       hw' 96 (by decide) (by decide), hw' 104 (by decide) (by decide)]
     rfl, ?_⟩
-  simp (config := {decide := true}) only [gpr_setReg, gpr_arithFlags, zf_arithFlags, 
-    mem_arithFlags, rd_arithFlags, wr_arithFlags, ite_true, ite_false,
+  simp only [reduceCtorEq, ↓reduceIte, and_self, gpr_setReg, gpr_arithFlags, zf_arithFlags, 
+    mem_arithFlags, rd_arithFlags, wr_arithFlags, 
     BitVec.and_self, g₁, m₁, rd₁, wr₁]
 
 theorem chainIn_ok (s : State) {P Q : Addr} (hp : s.gpr .rbp = P)
@@ -120,10 +120,10 @@ theorem chainIn_ok (s : State) {P Q : Addr} (hp : s.gpr .rbp = P)
       (∀ r, r ≠ .rax → r ≠ .rcx → s'.gpr r = s.gpr r) ∧
       s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   refine ⟨_, by
-    simp (config := {decide := true}) only [chainIn, runBlock_cons, runStep_some, runBlock_nil, at_, exec,
+    simp only [reduceCtorEq, ↓reduceIte, chainIn, runBlock_cons, runStep_some, runBlock_nil, at_, exec,
       readSrc, State.load64, State.ea, offset_nat, execAlu, Option.bind_some, Option.map_some,
-      gpr_setReg, gpr_arithFlags, mem_setReg, rd_setReg, wr_setReg,
-      ite_true, ite_false, hp, hq, BitVec.add_zero, r96, rp, rq]
+      gpr_setReg, mem_setReg, rd_setReg, wr_setReg,
+      hp, hq, BitVec.add_zero, r96, rp, rq]
     rfl, ?_⟩
   refine ⟨?_, fun r h₁ h₂ => ?_, rfl, rfl, rfl⟩
   · simp [gpr_setReg, bswap64_eq]

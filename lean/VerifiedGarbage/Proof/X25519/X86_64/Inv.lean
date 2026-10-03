@@ -216,7 +216,7 @@ theorem invert_spec (base : Addr) : ISpec base (Impl.X25519.X86_64.invert fld) i
   exact h
 
 theorem invEnv_eval (e : Env) : invEnv e 17 = VG.Proof.X25519.invert (e 4) := by
-  simp (config := {decide := true}) only [invEnv, opMul, opSqn, Function.update_apply]
+  simp only [↓reduceIte, invEnv, opMul, opSqn, Function.update_apply]
   rfl
 
 include hf in

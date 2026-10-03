@@ -59,8 +59,8 @@ theorem qr_ok (s : State) (va vb vc vd : Word)
       s'.gpr .esi = s.gpr .esi ∧ s'.gpr .edi = s.gpr .edi ∧ s'.gpr .esp = s.gpr .esp ∧
       s'.gpr .ebp = s.gpr .ebp ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   apply WP.of_runBlock
-  simp (config := {decide := true}) only [qr, runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, execShift, readSrc,
-    State.setReg, arithFlags, State.setFlags, ha, hb, hc, hd, ite_true, ite_false,
+  simp only [reduceCtorEq, ↓reduceIte, Nat.reduceLeDiff, Nat.reduceEqDiff, Nat.reducePow, and_self, qr, runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, execShift, readSrc,
+    State.setReg, arithFlags, State.setFlags, ha, hb, hc, hd, 
     Option.bind_some, Option.some.injEq, exists_eq_left']
   and_intros
   all_goals simp only [quarterRound_eq]
@@ -83,8 +83,8 @@ theorem quarter_ok {x y z w : Nat} (hx : x < 16) (hy : y < 16) (hz : z < 16) (hw
   rw [WP.block_append_iff, WP.block_append_iff]
   -- The loads.
   apply WP.of_runBlock
-  simp (config := {decide := true}) only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, State.setReg, State.ea,
-    at_, State.load32, ex, ey, ez, ew, ix, iy, iz, iw, ite_true, ite_false, Option.map_some,
+  simp only [reduceCtorEq, ↓reduceIte, runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, State.setReg, State.ea,
+    at_, State.load32, ex, ey, ez, ew, ix, iy, iz, iw, Option.map_some,
     Option.some.injEq, exists_eq_left']
   refine WP.mono (qr_ok _ (v[x]'hx) (v[y]'hy) (v[z]'hz) (v[w]'hw) (by simp [h x hx]) (by simp [h y hy])
     (by simp [h z hz]) (by simp [h w hw])) fun s₁ ⟨ha, hb, hc, hd,
@@ -92,8 +92,8 @@ theorem quarter_ok {x y z w : Nat} (hx : x < 16) (hy : y < 16) (hz : z < 16) (hw
   simp only [ite_false, reduceCtorEq] at hesi hedi hesp hebp
   -- The stores.
   apply WP.of_runBlock
-  simp (config := {decide := true}) only [runBlock_cons, runStep_some, runBlock_nil, exec, State.ea, State.store32, hesi,
-    ex, ey, ez, ew, hrd, hwr, hm, ox, oy, oz, ow, ite_true, Option.some.injEq,
+  simp only [↓reduceIte, runBlock_cons, runStep_some, runBlock_nil, exec, State.ea, State.store32, hesi,
+    ex, ey, ez, ew, hrd, hwr, hm, ox, oy, oz, ow, Option.some.injEq,
     exists_eq_left', ha, hb, hc, hd]
   refine ⟨fun k hk => ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   rotate_left 2
@@ -411,8 +411,8 @@ theorem copy_step {s₀ s₁ : State} (hp : Pre s₀) (hesi : s₁.gpr .esi = bp
   have oB : InRegions s.wr (wordAddr (BA s₀) n) 4 := by rw [hc.wr]; exact hp.out_buf (by lit_omega)
   have hv := hp.read_st hc.fb hn
   apply WP.of_runBlock
-  simp (config := {decide := true}) only [copyWord, runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, State.setReg,
-    State.ea, at_, State.load32, State.store32, hsi, hdi, eS, eB, iS, oB, hv, ite_true, ite_false,
+  simp only [reduceCtorEq, ↓reduceIte, copyWord, runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, State.setReg,
+    State.ea, at_, State.load32, State.store32, hsi, hdi, eS, eB, iS, oB, hv, 
     Option.map_some, Option.some.injEq, exists_eq_left']
   refine ⟨fun r hr => by simp [hr, hc.keep r hr], hc.rd, hc.wr,
     hc.fb.writeW (List.mem_singleton_self _) _ (contains_off (by lit_omega) (by lit_omega)),
@@ -450,9 +450,9 @@ theorem add_step {s₀ sB : State} (hp : Pre s₀) (hesi : sB.gpr .esi = bp s₀
   have hr := ha.out n hn
   simp only [Nat.lt_irrefl, ite_false] at hr
   apply WP.of_runBlock
-  simp (config := {decide := true}) only [addWord, runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, readSrc,
+  simp only [reduceCtorEq, ↓reduceIte, Nat.reducePow, addWord, runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, readSrc,
     State.setReg, arithFlags, State.setFlags, State.ea, at_, State.load32, State.store32, hsi, hdi,
-    eS, eB, iS, iB, oB, hv, hr, ite_true, ite_false, Option.map_some,
+    eS, eB, iS, iB, oB, hv, hr, Option.map_some,
     Option.bind_some, Option.some.injEq, exists_eq_left']
   refine ⟨fun j hj => ?_, fun r hr => by simp [hr, ha.keep r hr], ha.rd, ha.wr,
     ha.fb.writeW (List.mem_singleton_self _) _ (contains_off (by lit_omega) (by lit_omega)),

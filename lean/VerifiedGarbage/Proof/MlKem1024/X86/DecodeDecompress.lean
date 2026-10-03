@@ -202,7 +202,7 @@ theorem D.cross {s₀ s : State} (hp : Pre s₀) {d b t k : Nat} (hd : dN s₀ =
 theorem next_spec {s₀ s : State} {b t : Nat} (ht : t < 32) (h : D s₀ b t 8 s) :
     WP isa (.block (nextG b 32)) s fun s' => D s₀ b (t + 1) 0 s' ∧ eval .ne s' = some (decide (t + 1 < 32)) := by
   apply WP.of_runBlock
-  simp (config := {decide := true}) only [nextG, runBlock_cons, runStep_some, runBlock_nil, exec, execAlu,
+  simp only [reduceCtorEq, ↓reduceIte, Nat.reducePow, nextG, runBlock_cons, runStep_some, runBlock_nil, exec, execAlu,
     readSrc, State.setReg, arithFlags, State.setFlags, Option.bind_some, Option.some.injEq, exists_eq_left']
   refine ⟨⟨by simp [h.esp], h.rd, h.wr, ?_, ?_, ?_, h.frame, fun j hj => h.coef j (by rw [Nat.mul_succ] at hj; omega)⟩,
     ?_⟩
@@ -372,9 +372,9 @@ theorem init_piece : Piece Pre Pub (fun s₀ s => s = P0 s₀) Init (.block ddIn
     have v₃ := P0_arg hp.sp (n := 4) (i := 3) (by omega) fit hp.stk_a
     simp only [Nat.mul_zero, Nat.add_zero, Nat.reduceMul, Nat.reduceAdd] at a₀ a₂ a₃
     apply WP.of_runBlock
-    simp (config := {decide := true}) only [ddInit5, at_, runBlock_cons, runStep_some, runBlock_nil,
+    simp only [reduceCtorEq, ↓reduceIte, ddInit5, at_, runBlock_cons, runStep_some, runBlock_nil,
       exec, execAlu, readSrc, State.ea, State.load32, State.setReg, arithFlags, State.setFlags,
-      Option.map_some, Option.bind_some, a₀, a₂, a₃, i₀, i₂, i₃, v₀, v₂, v₃, ite_true, ite_false,
+      Option.map_some, Option.bind_some, a₀, a₂, a₃, i₀, i₂, i₃, v₀, v₂, v₃, 
       Option.some.injEq, exists_eq_left']
     refine ⟨by simp, rfl, rfl, rfl, by simp, by simp, ?_⟩
     simp only [eval, sub_beq_zero]

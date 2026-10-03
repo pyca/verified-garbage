@@ -19,17 +19,17 @@ sponge_taint_summaries Sha3Sums callee
 theorem absorbTaint : ∃ h, (VectorTaint.taint.check (VectorTaint.ofRegs [.x0, .x1, .x2, .x3, .x4, .x5])
     (Impl.Sha3.AArch64.Stream.absorbWith callee) h).isSome = true :=
   -- From the summary of a call of it.
-  Taint.exists_check_of_sumOk_call Sha3Sums.absorb (Taint.Mono.le_refl _) rfl
+  Taint.exists_check_of_sumOk_call Sha3Sums.absorb (VG.AArch64.VectorTaint.le_refl _) rfl
 
 theorem padTaint : ∃ h, (VectorTaint.taint.check (VectorTaint.ofRegs [.x0, .x1, .x2, .x4])
     (Impl.Sha3.AArch64.Stream.padWith callee) h).isSome = true :=
   -- From the summary of a call of it.
-  Taint.exists_check_of_sumOk_call Sha3Sums.pad (Taint.Mono.le_refl _) rfl
+  Taint.exists_check_of_sumOk_call Sha3Sums.pad (VG.AArch64.VectorTaint.le_refl _) rfl
 
 theorem squeezeTaint : ∃ h, (VectorTaint.taint.check (VectorTaint.ofRegs [.x0, .x1, .x2, .x3, .x4, .x5])
     (Impl.Sha3.AArch64.Stream.squeezeWith callee) h).isSome = true :=
   -- From the summary of a call of it.
-  Taint.exists_check_of_sumOk_call Sha3Sums.squeeze (Taint.Mono.le_refl _) rfl
+  Taint.exists_check_of_sumOk_call Sha3Sums.squeeze (VG.AArch64.VectorTaint.le_refl _) rfl
 
 theorem sampleFullTaint : ∃ h, (VectorTaint.taint.check (VectorTaint.ofRegs [.x0, .x1, .x2])
     (Impl.MlKem.AArch64.sampleSqueezeWith callee) h).isSome = true :=

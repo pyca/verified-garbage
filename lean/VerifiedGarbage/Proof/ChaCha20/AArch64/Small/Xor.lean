@@ -125,8 +125,8 @@ theorem check_ok (s : State) (b : Nat) (hb : b < 64) :
     WP isa (.block [.lsr .x .x5 .x2 b]) s fun a =>
       CheckKeep s a ∧ a.gpr .x5=BitVec.ofNat 64 (L s / 2^b) := by
   apply WP.of_runBlock
-  simp (config := {decide := true}) only [runBlock_cons,runBlock_nil,exec,State.read,
-    Size.bits,hb,ite_true,Option.some.injEq,isa,runStep_some,exists_eq_left']
+  simp only [↓reduceIte, runBlock_cons,runBlock_nil,exec,State.read,
+    Size.bits,hb,Option.some.injEq,isa,runStep_some,exists_eq_left']
   refine ⟨⟨?_,rfl,rfl,rfl,rfl⟩,?_⟩
   · intro r hr; exact RegUpd.gpr_write_of_ne _ _ _ hr
   · rw [RegUpd.gpr_write_self,BitVec.setWidth_eq]
@@ -145,8 +145,8 @@ theorem check3_ok (s : State) (hl : L s < 256) :
     WP isa (.block [.lsr .x .x5 .x2 6,.subImm .x .x5 .x5 3,.lsr .x .x5 .x5 63]) s fun a =>
       CheckKeep s a ∧ a.gpr .x5=BitVec.ofNat 64 (if L s < 192 then 1 else 0) := by
   apply WP.of_runBlock
-  simp (config := {decide := true}) only [runBlock_cons,runBlock_nil,exec,State.read,
-    Size.bits,ite_true,Option.some.injEq,isa,runStep_some,exists_eq_left',
+  simp only [↓reduceIte, Nat.reduceLT, runBlock_cons,runBlock_nil,exec,State.read,
+    Size.bits,Option.some.injEq,isa,runStep_some,exists_eq_left',
     RegUpd.gpr_write_self]
   refine ⟨⟨?_,rfl,rfl,rfl,rfl⟩,?_⟩
   · intro r hr;simp only [RegUpd.gpr_write,hr,ite_false]

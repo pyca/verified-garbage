@@ -14,8 +14,6 @@ are saved in and restored from `scratch` (`saveScr_ok`, `restoreScr_ok`), and
 bytes are copied into the buffer, bytes 56–71 of the state (`copy_ok`).
 -/
 
-open VG.PowLit
-
 namespace VG.Proof.Poly1305.Arm
 
 open VG VG.Arm VG.Impl.Poly1305.Arm

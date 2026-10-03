@@ -104,9 +104,9 @@ theorem init_piece :
     have v₁ := P0_arg hp.sp (n := 2) (i := 1) (by omega) fit hp.stk_a
     simp only [Nat.mul_zero, Nat.add_zero, Nat.mul_one, Nat.reduceAdd] at a₀ a₁
     apply WP.of_runBlock
-    simp (config := {decide := true}) only [dec12Init, enc12Init, at_, runBlock_cons, runStep_some,
+    simp only [reduceCtorEq, ↓reduceIte, dec12Init, enc12Init, at_, runBlock_cons, runStep_some,
       runBlock_nil, exec, readSrc, State.ea, State.load32, State.setReg, Option.map_some, a₀, a₁, i₀,
-      i₁, v₀, v₁, ite_true, ite_false, Option.some.injEq, exists_eq_left']
+      i₁, v₀, v₁, Option.some.injEq, exists_eq_left']
     exact ⟨by simp, rfl, rfl, by simp, by simp, by simp, Frame.refl _ _, fun j hj => absurd hj (by omega)⟩
   · simp only [List.mem_singleton] at hr
     subst hr
@@ -137,10 +137,10 @@ theorem step {s₀ : State} (hp : Pre s₀) {k : Nat} (hk : k < 128) {s : State}
   have w1 := outF (2 * k + 1) (by omega)
   simp only [Nat.add_zero] at i0
   apply WP.of_runBlock
-  simp (config := {decide := true}) only [dec12Body, csub, at_, runBlock_cons, runStep_some,
+  simp only [reduceCtorEq, ↓reduceIte, Nat.reduceLeDiff, Nat.reduceEqDiff, Nat.reduceSub, Nat.reducePow, and_self, dec12Body, csub, at_, runBlock_cons, runStep_some,
     runBlock_nil, exec, execAlu, execShift, readSrc, State.ea, State.load8, State.store32, State.setReg,
     arithFlags, State.setFlags, Option.map_some, Option.bind_some, h.esi, h.edi, e0, e1, e2, o0, o1,
-    i0, i1, i2, w0, w1, ite_true, ite_false, Option.some.injEq, exists_eq_left', List.cons_append,
+    i0, i1, i2, w0, w1, Option.some.injEq, exists_eq_left', List.cons_append,
     List.nil_append]
   rw [hp.b_keep h.frame (by omega), hp.b_keep h.frame (by omega), hp.b_keep h.frame (by omega)]
   have hB : (B s₀).length = 384 := bytesAt_length _ _ _

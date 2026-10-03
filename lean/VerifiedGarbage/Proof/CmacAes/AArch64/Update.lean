@@ -23,9 +23,9 @@ theorem prologue_ok (s : State)
       (∀ r, r ≠ .x19 → r ≠ .x20 → r ≠ .x21 → r ≠ .x22 → r ≠ .x23 → r ≠ .x24 → s'.gpr r = s.gpr r) ∧
       s'.sp = s.sp ∧ s'.mem = savedMem s ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   refine ⟨_, by
-    simp (config := {decide := true}) only [save, setup, saved, mov, List.map, List.cons_append,
+    simp only [reduceCtorEq, ↓reduceIte, Nat.reduceLT, Nat.reduceMul, Nat.reduceMod, and_self, save, setup, saved, mov, List.map, List.cons_append,
       List.nil_append, runBlock_cons, runStep_some, runBlock_nil, exec, addr, State.store, Size.bytes,
-      Size.bits, State.read, gpr_write, ite_true, ite_false, Option.bind_some,
+      Size.bits, State.read, gpr_write, Option.bind_some,
       hw 2064 (by decide) (by decide), hw 2072 (by decide) (by decide), hw 2080 (by decide) (by decide),
       hw 2088 (by decide) (by decide), hw 2096 (by decide) (by decide), hw 2104 (by decide) (by decide),
       hw 2112 (by decide) (by decide)]

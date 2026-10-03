@@ -77,8 +77,8 @@ theorem read_saved (m : Mem) (p : Addr) (a b c : BitVec 64) (j : Fin 3) :
     rw [h.x3]; exact h.saved 2
   unfold leave
   apply WP.of_runBlock
-  simp (config := {decide := true}) only [runBlock_cons,runBlock_nil,exec,addr,Size.bytes,Size.bits,
-    ite_true,ite_false,State.load,hi 256 (by decide),hi 264 (by decide),hi 272 (by decide),
+  simp only [reduceCtorEq, ↓reduceIte, Nat.reduceLT, Nat.reduceMul, Nat.reduceMod, and_self, runBlock_cons,runBlock_nil,exec,addr,Size.bytes,Size.bits,
+    State.load,hi 256 (by decide),hi 264 (by decide),hi 272 (by decide),
     RegUpd.gpr_write,BitVec.setWidth_eq,RegUpd.rd_write,RegUpd.wr_write,RegUpd.mem_write,
     Option.bind_some,Option.map_some,isa,runStep_some,Option.some.injEq,exists_eq_left',
     hm₀,hm₁,hm₂]

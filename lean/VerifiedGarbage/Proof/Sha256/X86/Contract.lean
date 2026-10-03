@@ -1,5 +1,6 @@
 import VerifiedGarbage.Spec.Sha256
 import VerifiedGarbage.TCB.X86.Target
+import VerifiedGarbage.Proof.Framework.PowLit
 
 /-!
 # SHA-256: the x86 (32-bit) contract

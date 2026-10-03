@@ -143,10 +143,10 @@ theorem scale_step {s₀ : State} (hp : Pre s₀) {k : Nat} (hk : k < 256) {s : 
     rw [v₂, mont_mulR, val_mul]; rfl
   have out : InRegions s₂.wr (coeffAddr (fA s₀) k) 4 := hp.in_f wr₂ hk
   apply WP.of_runBlock
-  simp (config := {decide := true}) only [runBlock_cons, runStep_some, runBlock_nil, exec, execAlu,
+  simp only [reduceCtorEq, ↓reduceIte, Nat.reducePow, runBlock_cons, runStep_some, runBlock_nil, exec, execAlu,
     readSrc, State.ea, at_, State.store32, State.setReg, arithFlags, State.setFlags, esi₂, h.esi,
-    ea_ptr hp.f_fit hk, out, ite_true,
-    ite_false, Option.bind_some, Option.some.injEq, exists_eq_left']
+    ea_ptr hp.f_fit hk, out, 
+    Option.bind_some, Option.some.injEq, exists_eq_left']
   refine ⟨⟨by simp [g₂, h.esp], rd₂, wr₂, ?_, ?_, ?_, fun i hi => ?_⟩, ?_⟩
   · simp only [ite_true, ite_false, show Reg.esi ≠ Reg.ecx by decide]
     exact ptr_next _ _ 4

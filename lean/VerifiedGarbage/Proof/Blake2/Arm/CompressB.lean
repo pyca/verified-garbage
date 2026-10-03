@@ -1,10 +1,28 @@
 import VerifiedGarbage.Proof.Blake2.Arm.BlockB
 import VerifiedGarbage.Proof.Blake2.Arm.Contract
-import VerifiedGarbage.Proof.Blake2.Arm.LitB
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Spec.Blake2.Contract
+import VerifiedGarbage.Proof.Framework.Arm.Lit
+import VerifiedGarbage.Impl.Blake2.Arm.CompressB
+
+section
+
+/-!
+# BLAKE2b on ARMv7: the code as a literal
+
+The code of the compression function as a literal (`materialize_code`,
+`Proof/Framework/Lit.lean`).
+-/
+
+namespace VG
+
+materialize_code Impl.Blake2.Arm.B.compress
+
+end VG
+
+end
 
 /-!
 # BLAKE2b compression function on ARMv7: the whole function
@@ -36,7 +54,7 @@ theorem stateAt_get {st : BitVec 32} (hfit : st.toNat + 64 ≤ 2 ^ 32) (m : Mem)
       Offset.add_ofNat_add_ofNat _ _ 4]
 
 theorem stateAt_ext {st : BitVec 32} (hfit : st.toNat + 64 ≤ 2 ^ 32) {m : Mem} {H : HashValue 64}
-    (h : ∀ k (hk : k < 8), rd64 m st (8 * k) = H[k]) : Spec.Blake2.stateAt 64 m (State.addr st) = H := by
+    (h : ∀ k (hk : k < 8), rd64 m st (8 * k) = (H[k]'(by omega))) : Spec.Blake2.stateAt 64 m (State.addr st) = H := by
   ext k hk
   rw [stateAt_get hfit m hk, h k hk]
 
@@ -240,7 +258,7 @@ theorem advance_ok {s : State} {scr : BitVec 32} {N : Nat} (h3 : s.gpr .r3 = scr
     RegUpd.gpr_setReg, RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg, RegUpd.c_setReg,
     RegUpd.z_setReg, RegUpd.sp_setReg, h3, i168.1, i168.2, i176.1, o168.1, o168.2, o176.1,
     ite_true, ite_false, Option.map_some, Option.some.injEq, exists_eq_left']
-  rw [← hl, ← hh, hhi]
+  simp only [← hl, ← hh, hhi]
   simp only [decide_eq_true_eq, show (128 : BitVec 32).toNat = 128 from rfl]
   refine ⟨trivial, trivial, trivial, fun r hr => ?_, ?_⟩
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
@@ -428,7 +446,7 @@ theorem body_ok {s₀ : State} (hp : Pre s₀) {i : Nat} (hi : i < nb s₀) {s :
     with hH
   set M := Spec.Blake2.blockAt 64 s₀.mem (State.addr (blkAddr s₀ i)) with hM
   have hb := ctr_bound (s₀ := s₀) (Nat.le_of_lt hi)
-  have hHk : ∀ k (hk : k < 8), rd64 s.mem (stp s₀) (8 * k) = H[k] := fun k hk => by
+  have hHk : ∀ k (hk : k < 8), rd64 s.mem (stp s₀) (8 * k) = (H[k]'(by omega)) := fun k hk => by
     rw [← stateAt_get fitS _ hk, hL.state]
   -- Initialize the work vector.
   have hT : ∀ k < 8, rd64 s.mem (scp s₀) (tweak k) = tweakV N (fl s₀) k := fun k hk => by

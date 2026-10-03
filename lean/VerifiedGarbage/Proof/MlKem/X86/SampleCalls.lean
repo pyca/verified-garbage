@@ -30,9 +30,9 @@ theorem absArgs_piece : Piece Pre Pub Z (fun s₀ s => Z s₀ s ∧ AbsArgs s (S
     have v₀ := h.argw hp (i := 0) (by omega)
     simp only [Nat.mul_zero, Nat.add_zero] at a₀
     apply WP.of_runBlock
-    simp (config := {decide := true}) only [smpAbsorbArgs, smpSt, smpWk, at_, runBlock_cons, runStep_some,
+    simp only [reduceCtorEq, ↓reduceIte, Nat.reducePow, smpAbsorbArgs, smpSt, smpWk, at_, runBlock_cons, runStep_some,
       runBlock_nil, exec, execAlu, readSrc, State.ea, State.load32, State.setReg, arithFlags, State.setFlags,
-      Option.map_some, Option.bind_some, a₀, i₀, v₀, ite_true, ite_false, Option.some.injEq, exists_eq_left']
+      Option.map_some, Option.bind_some, a₀, i₀, v₀, Option.some.injEq, exists_eq_left']
     exact ⟨⟨⟨⟨by simp [h.esp], h.rd, h.wr, h.frame⟩, by simp [h.esi]⟩, h.st⟩,
       ⟨by simp [h.esi], rfl, rfl, rfl, rfl, by simp [h.esi]⟩⟩
   · simp only [List.mem_singleton] at hr
@@ -67,9 +67,9 @@ theorem padArgs_piece : Piece Pre Pub A1 (fun s₀ s => A1 s₀ s ∧ PadArgs s 
   refine Piece.taint [] (fun s₀ s hp h => ?_) (fun _ _ _ _ _ _ _ _ _ r hr => absurd hr (by simp))
     (by taint_decide)
   apply WP.of_runBlock
-  simp (config := {decide := true}) only [smpPadArgs, smpSt, smpWk, runBlock_cons, runStep_some,
+  simp only [reduceCtorEq, ↓reduceIte, Nat.reducePow, smpPadArgs, smpSt, smpWk, runBlock_cons, runStep_some,
     runBlock_nil, exec, execAlu, readSrc, State.setReg, arithFlags, State.setFlags,
-    Option.map_some, Option.bind_some, ite_true, ite_false, Option.some.injEq, exists_eq_left']
+    Option.map_some, Option.bind_some, Option.some.injEq, exists_eq_left']
   exact ⟨⟨⟨⟨by simp [h.esp], h.rd, h.wr, h.frame⟩, by simp [h.esi]⟩, h.st⟩,
     ⟨by simp [h.esi], rfl, rfl, rfl, by simp [h.esi]⟩⟩
 
@@ -94,9 +94,9 @@ theorem sqArgs_piece : Piece Pre Pub A2 (fun s₀ s => A2 s₀ s ∧ AbsArgs s (
   refine Piece.taint [] (fun s₀ s hp h => ?_) (fun _ _ _ _ _ _ _ _ _ r hr => absurd hr (by simp))
     (by taint_decide)
   apply WP.of_runBlock
-  simp (config := {decide := true}) only [smpSqueezeArgs, smpSt, smpWk, runBlock_cons, runStep_some,
+  simp only [reduceCtorEq, ↓reduceIte, Nat.reducePow, smpSqueezeArgs, smpSt, smpWk, runBlock_cons, runStep_some,
     runBlock_nil, exec, execAlu, readSrc, State.setReg, arithFlags, State.setFlags,
-    Option.map_some, Option.bind_some, ite_true, ite_false, Option.some.injEq, exists_eq_left']
+    Option.map_some, Option.bind_some, Option.some.injEq, exists_eq_left']
   exact ⟨⟨⟨⟨by simp [h.esp], h.rd, h.wr, h.frame⟩, by simp [h.esi]⟩, h.st⟩,
     ⟨by simp [h.esi], rfl, rfl, by simp [h.esi], rfl, by simp [h.esi]⟩⟩
 

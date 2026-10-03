@@ -115,10 +115,10 @@ theorem cryptEntry_ok {s : State} {Ctx St W SP D : Addr} {n : Nat} (hCtx : s.gpr
     · simp [gpr_setReg, hrdx, hSt]
     · simp [gpr_setReg, hrdi, hCtx]
     · simp [gpr_setReg, hr9, hD]
-    · simp (disch := first | decide | assumption) [gpr_setReg, mem_setReg, Mem.readW_writeW_sep, hn₁]
+    · simp (disch := first | decide | with_reducible assumption) [gpr_setReg, mem_setReg, Mem.readW_writeW_sep, hn₁]
     · simp only [gpr_setReg, gpr_arithFlags, ite_true, ite_false, reduceCtorEq, hr8, hand]
     · simp [gpr_setReg, gpr_arithFlags, hsp₁]
-    · simp (disch := first | decide | assumption) [gpr_setReg, mem_setReg, mem_arithFlags, Mem.readW_writeW_sep,
+    · simp (disch := first | decide | with_reducible assumption) [gpr_setReg, mem_setReg, mem_arithFlags, Mem.readW_writeW_sep,
         hn₁, hrsi, hrcx, hr8, hr9, hD]
     all_goals rfl
   refine WP.block_append (WP.block_append (WP.of_runBlock ⟨s₀, run₀, WP.of_runBlock ⟨s₁, run₁,
@@ -139,7 +139,7 @@ theorem cryptEntry_ok {s : State} {Ctx St W SP D : Addr} {n : Nat} (hCtx : s.gpr
     intro d v h
     rw [hm₂]
     rcases h with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;>
-      simp (disch := first | decide | assumption) only [Mem.readW_writeW_self64, Mem.readW_writeW_sep]
+      simp (disch := first | decide | with_reducible assumption) only [Mem.readW_writeW_self64, Mem.readW_writeW_sep]
   refine ⟨⟨h13, h14, h15, hsp, hperm.of_eq hrd' hwr'⟩, ⟨?_, hR⟩, rd 184 _ (.inr (.inl ⟨rfl, rfl⟩)),
     rd 192 _ (.inr (.inr (.inl ⟨rfl, rfl⟩))), rd 200 _ (.inr (.inr (.inr (.inl ⟨rfl, rfl⟩)))),
     rd 208 _ (.inr (.inr (.inr (.inr ⟨rfl, rfl⟩)))), h12, hbp, hbx, ?_, ?_, hrd', hwr'⟩

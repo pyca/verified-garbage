@@ -51,7 +51,7 @@ theorem rounds4_ok (n : Nat) (s : State) (v : HashValue) (q : BitVec 128)
   generalize msg n = x at *
   simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or,
     List.nodup_nil, and_true] at hd
-  simp (config := {decide := true}) only [runBlock_cons, runStep_some, runBlock_nil, exec, XOp.exec,
+  simp only [Nat.reduceAdd, and_self, runBlock_cons, runStep_some, runBlock_nil, exec, XOp.exec,
     isa, RegUpd.xmm_setXmm_self, RegUpd.xmm_setXmm_of_ne, RegUpd.gpr_setXmm, RegUpd.mem_setXmm,
     RegUpd.rd_setXmm, RegUpd.wr_setXmm, RegUpd.gpr_setReg_self,
     RegUpd.xmm_setReg, RegUpd.mem_setReg,
@@ -79,7 +79,7 @@ theorem schedule_hi (n : Nat) (hn : 4 ≤ n) (s : State) (a b c d : BitVec 128)
   simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or,
     List.nodup_nil, and_true, List.reverse_cons, List.reverse_nil, List.nil_append,
     List.cons_append] at hd hd''
-  simp (config := {decide := true}) only [runBlock_cons, runStep_some, runBlock_nil, exec, XOp.exec,
+  simp only [and_self, runBlock_cons, runStep_some, runBlock_nil, exec, XOp.exec,
     isa, RegUpd.xmm_setXmm_self, RegUpd.xmm_setXmm_of_ne, RegUpd.gpr_setXmm, RegUpd.mem_setXmm,
     RegUpd.rd_setXmm, RegUpd.wr_setXmm, not_false_eq_true, hd, hd'', ha, hb, hc, hd',
     eval_movdqa, eval_sha256msg2,
@@ -102,10 +102,10 @@ theorem schedule_lo (n : Nat) (hn : n < 4) (s : State)
   simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or,
     List.nodup_nil, and_true, List.reverse_cons, List.reverse_nil, List.nil_append,
     List.cons_append] at hd hd''
-  simp (config := {decide := true}) only [runBlock_cons, runStep_some, runBlock_nil, exec, XOp.exec,
+  simp only [↓reduceIte, and_self, runBlock_cons, runStep_some, runBlock_nil, exec, XOp.exec,
     isa, RegUpd.xmm_setXmm_self, RegUpd.xmm_setXmm_of_ne, RegUpd.gpr_setXmm, RegUpd.mem_setXmm,
     RegUpd.rd_setXmm, RegUpd.wr_setXmm, not_false_eq_true, State.load128, ea_at, hin,
-    ite_true, hd'',
+    hd'',
     Option.map_some, Option.some.injEq, exists_eq_left']
   exact ⟨trivial, fun r h0 => by simp only [RegUpd.xmm_setXmm_of_ne, h0, not_false_eq_true], trivial⟩
 
@@ -275,9 +275,9 @@ theorem load_ok (s : State)
       s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   apply WP.of_runBlock
   simp only [load, const, List.cons_append, List.nil_append]
-  simp (config := {decide := true}) only [runBlock_cons, runStep_some, runBlock_nil, exec, XOp.exec,
+  simp only [reduceCtorEq, ↓reduceIte, Nat.reduceAdd, and_self, runBlock_cons, runStep_some, runBlock_nil, exec, XOp.exec,
     execAlu, readSrc, arithFlags, State.setFlags,
-    isa, State.setXmm, State.setReg, State.load128, ea_at, hlo, hhi, ite_true, ite_false, movq_const,
+    isa, State.setXmm, State.setReg, State.load128, ea_at, hlo, hhi, movq_const,
     eval_movdqa, Option.map_some, Option.bind_some, Option.some.injEq, exists_eq_left']
   refine ⟨?_, ?_, trivial, trivial, fun r hr => by simp [hr], trivial⟩ <;>
   simp only [punpcklqdq_eq, punpckhqdq_eq, shufDwords_b1, dword_ofDwords_0, dword_ofDwords_1,

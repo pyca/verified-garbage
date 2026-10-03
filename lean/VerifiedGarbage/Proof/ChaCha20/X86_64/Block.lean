@@ -36,11 +36,11 @@ theorem qr_ok {a b c d : Reg} (hab : a ≠ b) (hac : a ≠ c) (had : a ≠ d) (h
       (∀ r, r ≠ a → r ≠ b → r ≠ c → r ≠ d → s'.gpr r = s.gpr r) ∧
       s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   apply WP.of_runBlock
-  simp (config := {decide := true}) only [qr, runBlock_cons, runStep_some,
+  simp only [↓reduceIte, Nat.reduceLeDiff, Nat.reduceEqDiff, Nat.reducePow, and_self, and_true, qr, runBlock_cons, runStep_some,
     runBlock_nil, exec, execAlu32, execShift32, readSrc32,
     isa, State.setReg32, State.setReg, arithFlags, State.setFlags, ha, hb, hc, hd,
     hab, hac, had, hbc, hbd, hcd, hab.symm, hac.symm, had.symm, hbc.symm, hbd.symm, hcd.symm,
-    ite_true, ite_false, BitVec.setWidth_setWidth_of_le, BitVec.setWidth_eq,
+    BitVec.setWidth_setWidth_of_le, BitVec.setWidth_eq,
     Option.bind_some, Option.some.injEq, exists_eq_left']
   and_intros
   all_goals first
@@ -234,17 +234,17 @@ theorem swap_step {p : Bool} {buf : Addr} {v : CState} {s₀ s : State} (h : RI 
   have hf₁ := h.frame
   cases p
   · apply WP.of_runBlock
-    simp (config := {decide := true}) only [Nat.reduceAdd, runBlock_cons, runStep_some, runBlock_nil,
+    simp only [reduceCtorEq, ↓reduceIte, Bool.not_false, Nat.reduceAdd, runBlock_cons, runStep_some, runBlock_nil,
       exec, readSrc32, isa, ea_at, State.load32, State.store32, State.setReg32, State.setReg, i10, i11, o8,
-      o9, hrsi, ite_true, ite_false, Option.map_some, Option.some.injEq, exists_eq_left']
+      o9, hrsi, Option.map_some, Option.some.injEq, exists_eq_left']
     refine ⟨holds_swap (.inl ⟨rfl, rfl, rfl⟩) h.holds, ?_, h.rd, h.wr, by simp [h.rsi], by simp [h.rsp]⟩
     exact (hf₁.writeW (List.mem_singleton_self _) _
       (slotR_contains buf (d := 128) (by lit_omega) (by lit_omega))).writeW
       (List.mem_singleton_self _) _ (slotR_contains buf (d := 132) (by lit_omega) (by lit_omega))
   · apply WP.of_runBlock
-    simp (config := {decide := true}) only [Nat.reduceAdd, runBlock_cons, runStep_some, runBlock_nil,
+    simp only [reduceCtorEq, ↓reduceIte, Bool.not_true, Nat.reduceAdd, runBlock_cons, runStep_some, runBlock_nil,
       exec, readSrc32, isa, ea_at, State.load32, State.store32, State.setReg32, State.setReg, i8, i9, o10,
-      o11, hrsi, ite_true, ite_false, Option.map_some, Option.some.injEq, exists_eq_left']
+      o11, hrsi, Option.map_some, Option.some.injEq, exists_eq_left']
     refine ⟨holds_swap (.inr ⟨rfl, rfl, rfl⟩) h.holds, ?_, h.rd, h.wr, by simp [h.rsi], by simp [h.rsp]⟩
     exact (hf₁.writeW (List.mem_singleton_self _) _
       (slotR_contains buf (d := 136) (by lit_omega) (by lit_omega))).writeW
@@ -339,13 +339,13 @@ theorem copyWord_ok {k : Nat} (hk : k < 16) {s : State} {st buf : Addr} (hrdi : 
   apply WP.of_runBlock
   by_cases h : k = 10 ∨ k = 11
   · have o₂ := out_buf hw (d := slotOff k) (n := 4) (by simp only [slotOff]; omega)
-    simp (config := {decide := true}) only [copyWord, h, ite_true, ite_false, List.cons_append,
+    simp only [reduceCtorEq, ↓reduceIte, Nat.reduceLeDiff, and_self, copyWord, h, List.cons_append,
       List.nil_append, runBlock_cons, runStep_some, runBlock_nil,
           exec, readSrc32, isa, ea_at, State.load32, State.store32,
       State.setReg32, State.setReg, hrdi, hin, hrsi, o₁, o₂, BitVec.setWidth_setWidth_of_le,
       BitVec.setWidth_eq, Option.map_some, Option.some.injEq, exists_eq_left']
     exact ⟨trivial, fun r hr => by simp [hr], trivial⟩
-  · simp (config := {decide := true}) only [copyWord, h, ite_true, ite_false, List.append_nil,
+  · simp only [reduceCtorEq, ↓reduceIte, Nat.reduceLeDiff, and_self, copyWord, h, List.append_nil,
       runBlock_cons, runStep_some, runBlock_nil, exec, readSrc32,
           isa, ea_at, State.load32, State.store32, State.setReg32,
       State.setReg, hrdi, hin, hrsi, o₁, BitVec.setWidth_setWidth_of_le, BitVec.setWidth_eq,
@@ -516,10 +516,10 @@ theorem store_step {p : Addr} {R : CState} {sB : State} (hw : bufR p ∈ sB.wr) 
     · have hin : inReg false n = false := by rcases h with rfl | rfl <;> rfl
       simp only [hin, Bool.false_eq_true, ite_false] at hr
       have i := in_buf (rs := s.rd) hw' (d := slotOff n) (n := 4) (by simp only [slotOff]; omega)
-      simp (config := {decide := true}) only [storeWord, h, ite_true, runBlock_cons,
+      simp only [reduceCtorEq, ↓reduceIte, Nat.reduceLeDiff, storeWord, h, runBlock_cons,
         runStep_some, runBlock_nil, exec, readSrc32,
         isa, ea_at, State.load32, State.store32, State.setReg32, State.setReg, hrsi, i, o,
-        ite_false, BitVec.setWidth_setWidth_of_le, BitVec.setWidth_eq,
+        BitVec.setWidth_setWidth_of_le, BitVec.setWidth_eq,
         Option.map_some, Option.some.injEq, exists_eq_left']
       simp only [slotAddr] at hr
       refine key _ (by simp only [hr]) (fun j hj hnj _ => ?_) (by simp) (by simp) rfl rfl
@@ -527,9 +527,9 @@ theorem store_step {p : Addr} {R : CState} {sB : State} (hw : bufR p ∈ sB.wr) 
     · have hin : inReg false n = true := by
         simp only [inReg]; split <;> simp_all
       simp only [hin, ite_true] at hr
-      simp (config := {decide := true}) only [storeWord, h, ite_false, runBlock_cons,
+      simp only [↓reduceIte, Nat.reduceLeDiff, storeWord, h, runBlock_cons,
         runStep_some, runBlock_nil, exec, isa, ea_at,
-        State.store32, hrsi, o, ite_true, hr, BitVec.setWidth_setWidth_of_le, BitVec.setWidth_eq,
+        State.store32, hrsi, o, hr, BitVec.setWidth_setWidth_of_le, BitVec.setWidth_eq,
         Option.some.injEq, exists_eq_left']
       exact key _ rfl (fun _ _ _ _ => rfl) rfl rfl rfl rfl
   intro s' hm hg hrsi' hrsp' hrd hwr
@@ -575,10 +575,10 @@ theorem add_step {p : Addr} {R v : CState} {sB : State} (hw : bufR p ∈ sB.wr) 
   have hi := hs.inw n hn
   have hrsi := hs.rsi
   apply WP.of_runBlock
-  simp (config := {decide := true}) only [addWord, runBlock_cons,
+  simp only [reduceCtorEq, ↓reduceIte, Nat.reduceLeDiff, Nat.reducePow, addWord, runBlock_cons,
     runStep_some, runBlock_nil, exec, execAlu32, readSrc32, isa, ea_at,
     State.load32, State.store32, State.setReg32, State.setReg, arithFlags, State.setFlags, hrsi, o,
-    io, ii, ho, hi, ite_true, ite_false, BitVec.setWidth_setWidth_of_le, BitVec.setWidth_eq,
+    io, ii, ho, hi, BitVec.setWidth_setWidth_of_le, BitVec.setWidth_eq,
     Option.bind_some, Option.map_some, Option.some.injEq, exists_eq_left']
   refine ⟨fun j hj => ?_, fun j hj => ?_, hs.frame.writeW (List.mem_singleton_self _) _ cout,
     by simpa using hs.rsi, by simpa using hs.rsp, hs.rd, hs.wr⟩
@@ -807,7 +807,7 @@ theorem block_ct : ConstantTime isa Proof.ChaCha20.blockX86_64.pre Proof.ChaCha2
   intro s₁ s₂ _ _ ⟨h1, h2⟩
   refine Taint.agree_ofRegs fun r hr => ?_
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl <;> assumption
+  rcases hr with rfl | rfl <;> with_reducible assumption
 
 theorem block_verified :
     Verified X86_64.target Impl.ChaCha20.X86_64.block (Spec.ChaCha20.blockContract X86_64.abi) :=

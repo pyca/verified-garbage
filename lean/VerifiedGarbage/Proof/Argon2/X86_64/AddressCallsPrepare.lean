@@ -151,8 +151,8 @@ structure Words (p : Params) (pass lane slice counter : Nat) (s : State) : Prop 
 theorem input_spec (p : Params) (pass lane slice counter : Nat) (s : State)
     (h : Words p pass lane slice counter s) :
     input s = Proof.Argon2.addressInput p pass lane slice counter := by
-  simp (config := {decide := true}) only [input, value, frameOffset,
-    ite_true, ite_false, h.passWord, h.laneWord, h.sliceWord, h.blocksWord,
+  simp only [reduceCtorEq, ↓reduceIte, Nat.reduceEqDiff, input, value, frameOffset,
+    h.passWord, h.laneWord, h.sliceWord, h.blocksWord,
     h.passesWord, h.variantWord, h.counterWord, Proof.Argon2.addressInput]
 
 theorem code_spec_ok (p : Params) (pass lane slice counter : Nat) (s : State)

@@ -10,8 +10,8 @@ theorem roundCounterInit_ok (s : State) :
     WP isa (.block [.movz .x .x4 10 0]) s fun u =>
       u.gpr .x4 = 10 ∧ u.v = s.v ∧ LoadSame s u := by
   apply WP.of_runBlock
-  simp (config := {decide := true}) only [runBlock_cons, runBlock_nil, exec,
-    Size.bits, ite_true, isa, runStep_some, Option.some.injEq, exists_eq_left']
+  simp only [↓reduceIte, Nat.reduceLT, Nat.reduceMul, runBlock_cons, runBlock_nil, exec,
+    Size.bits, isa, runStep_some, Option.some.injEq, exists_eq_left']
   exact ⟨RegUpd.gpr_write_self .., rfl,
     ⟨fun r hr => RegUpd.gpr_write_of_ne _ _ _ hr, rfl, rfl, rfl, rfl⟩⟩
 
@@ -20,8 +20,8 @@ theorem roundCounterDec_ok (s : State) {n : Nat} (hn : 0 < n ∧ n ≤ 10)
     WP isa (.block [.subImm .x .x4 .x4 1]) s fun u =>
       u.gpr .x4 = BitVec.ofNat 64 (n - 1) ∧ u.v = s.v ∧ LoadSame s u := by
   apply WP.of_runBlock
-  simp (config := {decide := true}) only [runBlock_cons, runBlock_nil, exec,
-    State.read, Size.bits, ite_true, isa, runStep_some, Option.some.injEq, exists_eq_left']
+  simp only [↓reduceIte, Nat.reduceLT, runBlock_cons, runBlock_nil, exec,
+    State.read, Size.bits, isa, runStep_some, Option.some.injEq, exists_eq_left']
   refine ⟨?_, rfl, ⟨fun r hr => RegUpd.gpr_write_of_ne _ _ _ hr, rfl, rfl, rfl, rfl⟩⟩
   rw [RegUpd.gpr_write_self, BitVec.setWidth_eq, hc]
   exact Offset.ofNat_sub_ofNat (by omega)

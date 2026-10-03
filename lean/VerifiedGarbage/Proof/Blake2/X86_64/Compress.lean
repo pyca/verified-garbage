@@ -73,7 +73,7 @@ theorem g_ok {P : Params w} (hP : Ok P) {a b c d : Reg} (hab : a ≠ b) (hac : a
   obtain ⟨hw, ⟨r1, r1'⟩, ⟨r2, r2'⟩, ⟨r3, r3'⟩, ⟨r4, r4'⟩⟩ := hP
   rcases hw with rfl | rfl
   · apply WP.of_runBlock
-    simp (config := {decide := true}) only [g, Impl.Blake2.X86_64.add, Impl.Blake2.X86_64.xor, ror, ite_true, runBlock_cons, runStep_some,
+    simp only [↓reduceIte, Nat.reducePow, g, Impl.Blake2.X86_64.add, Impl.Blake2.X86_64.xor, ror, runBlock_cons, runStep_some,
       runBlock_nil, exec, execAlu, execShift, readSrc, State.load64, ea_at, isa,
       RegUpd.gpr_setReg, RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg,
       RegUpd.gpr_arithFlags, RegUpd.mem_arithFlags, RegUpd.rd_arithFlags, RegUpd.wr_arithFlags,
@@ -81,12 +81,12 @@ theorem g_ok {P : Params w} (hP : Ok P) {a b c d : Reg} (hab : a ≠ b) (hac : a
       ha, hb, hc, hd, hx, hy, h9, hij, hik,
       hab, hac, had, hbc, hbd, hcd, hab.symm, hac.symm, had.symm, hbc.symm, hbd.symm, hcd.symm,
       ha9.symm, hb9.symm, hc9.symm, hd9.symm, r1, r2, r3, r4, Nat.le_of_lt_succ r1', Nat.le_of_lt_succ r2', Nat.le_of_lt_succ r3', Nat.le_of_lt_succ r4',
-      and_self, ite_false, BitVec.setWidth_eq,
+      and_self, BitVec.setWidth_eq,
       Option.bind_some, Option.some.injEq, exists_eq_left']
     exact ⟨rfl, rfl, rfl, rfl, fun r h1 h2 h3 h4 => by simp only [h1, h2, h3, h4, ite_false], trivial⟩
   · apply WP.of_runBlock
-    simp (config := {decide := true}) only [g, Impl.Blake2.X86_64.add, Impl.Blake2.X86_64.xor, ror,
-      ite_false, runBlock_cons, runStep_some,
+    simp only [↓reduceIte, Nat.reduceEqDiff, Nat.reducePow, g, Impl.Blake2.X86_64.add, Impl.Blake2.X86_64.xor, ror,
+      runBlock_cons, runStep_some,
       runBlock_nil, exec, execAlu32, execShift32, readSrc32, State.load32, ea_at, isa, State.setReg32,
       RegUpd.gpr_setReg, RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg,
       RegUpd.gpr_arithFlags, RegUpd.mem_arithFlags, RegUpd.rd_arithFlags, RegUpd.wr_arithFlags,
@@ -95,7 +95,7 @@ theorem g_ok {P : Params w} (hP : Ok P) {a b c d : Reg} (hab : a ≠ b) (hac : a
       hab, hac, had, hbc, hbd, hcd, hab.symm, hac.symm, had.symm, hbc.symm, hbd.symm, hcd.symm,
       ha9.symm, hb9.symm, hc9.symm, hd9.symm, r1, r2, r3, r4, Nat.le_of_lt_succ r1',
       Nat.le_of_lt_succ r2', Nat.le_of_lt_succ r3', Nat.le_of_lt_succ r4',
-      and_self, ite_true, RegUpd.setWidth_setWidth_32,
+      and_self, RegUpd.setWidth_setWidth_32,
       Option.bind_some, Option.some.injEq, exists_eq_left']
     exact ⟨rfl, rfl, rfl, rfl, fun r h1 h2 h3 h4 => by simp only [h1, h2, h3, h4, ite_false], trivial⟩
 
@@ -140,8 +140,8 @@ def inReg (h k : Nat) : Bool := if 8 ≤ k ∧ k ≤ 11 then k == h else true
 
 /-- The work vector `v` is in the registers and slots, with third-row word `h` in `r14`. -/
 def Holds (scr : Addr) (h : Nat) (v : Work w) (s : State) : Prop :=
-  ∀ k (hk : k < 16), if inReg h k then s.gpr (wreg k) = v[k].setWidth 64
-    else s.mem.readW (slot scr k) w = v[k]
+  ∀ k (hk : k < 16), if inReg h k then s.gpr (wreg k) = (v[k]'(by omega)).setWidth 64
+    else s.mem.readW (slot scr k) w = (v[k]'(by omega))
 
 theorem wreg_ne (k : Nat) : wreg k ≠ .r9 ∧ wreg k ≠ .rdi ∧ wreg k ≠ .rsp := by
   unfold wreg; split <;> decide
@@ -175,7 +175,7 @@ theorem G_step {P : Params w} (hP : Ok P) {h : Nat} {a b c d : Fin 16}
   have ga := hH a a.2; have gb := hH b b.2; have gc := hH c c.2; have gd := hH d d.2
   simp only [ia, ib, ic, id, ite_true] at ga gb gc gd
   refine WP.mono (g_ok hP rab rac rad rbc rbd rcd (wreg_ne a).1 (wreg_ne b).1 (wreg_ne c).1
-    (wreg_ne d).1 h9 (hin j) (hin k) v[a] v[b] v[c] v[d] (m j) (m k) ga gb gc gd (hm j) (hm k))
+    (wreg_ne d).1 h9 (hin j) (hin k) (v[a]'(by omega)) (v[b]'(by omega)) (v[c]'(by omega)) (v[d]'(by omega)) (m j) (m k) ga gb gc gd (hm j) (hm k))
     fun s' ⟨ha, hb, hc, hd, hr, hmem, hrd, hwr⟩ => ⟨fun q hq => ?_, hmem, hrd, hwr,
       hr _ (wreg_ne a).1.symm (wreg_ne b).1.symm (wreg_ne c).1.symm (wreg_ne d).1.symm,
       hr _ (wreg_ne a).2.1.symm (wreg_ne b).2.1.symm (wreg_ne c).2.1.symm (wreg_ne d).2.1.symm,
@@ -213,13 +213,13 @@ theorem swap_ok (hw : w = 64 ∨ w = 32) {i j : Nat} {s : State} {scr : Addr}
       (∀ r, r ≠ .r14 → s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   rcases hw with rfl | rfl
   · apply WP.of_runBlock
-    simp (config := {decide := true}) only [st, ld, ite_true, runBlock_cons, runStep_some,
+    simp only [↓reduceIte, and_self, st, ld, runBlock_cons, runStep_some,
       runBlock_nil, exec, readSrc, State.load64, State.store64, ea_at, isa,
       RegUpd.gpr_setReg, RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg,
       hx, h9, hi, hj, BitVec.setWidth_eq, Option.map_some, Option.some.injEq, exists_eq_left']
     exact ⟨trivial, trivial, fun r h => by simp only [h, ite_false], trivial⟩
   · apply WP.of_runBlock
-    simp (config := {decide := true}) only [st, ld, ite_false, ite_true, runBlock_cons, runStep_some,
+    simp only [↓reduceIte, Nat.reduceEqDiff, and_self, st, ld, runBlock_cons, runStep_some,
       runBlock_nil, exec, readSrc32, State.load32, State.store32, ea_at, isa, State.setReg32,
       RegUpd.gpr_setReg, RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg,
       hx, h9, hi, hj, RegUpd.setWidth_setWidth_32, Option.map_some, Option.some.injEq,
@@ -273,15 +273,15 @@ theorem swap_stepR (hw : w = 64 ∨ w = 32) {i j : Nat} (hi : 8 ≤ i ∧ i ≤ 
     (hR : RI scr m i v s₀ s) : WP isa (swap (w := w) i j) s (RI scr m j v s₀) := by
   have hw8 : w / 8 ≤ 8 := by rcases hw with rfl | rfl <;> decide
   have hi16 : i < 16 := by omega
-  have hx : s.gpr .r14 = v[i].setWidth 64 := by
+  have hx : s.gpr .r14 = (v[i]'(by omega)).setWidth 64 := by
     have := hR.holds i hi16
     simp only [inReg, hi, and_self, ite_true, beq_self_eq_true] at this
     rwa [wreg_third i hi16 hi.1 hi.2] at this
   have hsc' : scR scr ∈ s.wr := hR.wr ▸ hsc
-  refine WP.mono (swap_ok hw hR.r9 v[i] hx (out_sc hsc' (by simp only [vOff]; omega))
+  refine WP.mono (swap_ok hw hR.r9 (v[i]'(by omega)) hx (out_sc hsc' (by simp only [vOff]; omega))
     (in_sc hsc' (by simp only [vOff]; omega))) fun s' ⟨hm, h14, hr, hrd, hwr⟩ => ?_
   have sep : ∀ k, 8 ≤ k → k ≤ 11 → k ≠ i →
-      (s.mem.writeW (slot scr i) v[i]).readW (slot scr k) w = s.mem.readW (slot scr k) w :=
+      (s.mem.writeW (slot scr i) (v[i]'(by omega))).readW (slot scr k) w = s.mem.readW (slot scr k) w :=
     fun k h1 h2 h3 => readW_writeW_off _ _ _ (by simp only [vOff]; omega)
       (by simp only [vOff]; omega) (by simp only [vOff]; omega) hw8
   refine ⟨fun k hk => ?_, ?_, fun q => ?_, hrd.trans hR.rd, hwr.trans hR.wr,
@@ -422,7 +422,7 @@ def V0 (P : Params w) (h : Spec.Blake2.HashValue w) (t : Nat) (f : Bool) : Work 
 
 theorem F_eq (P : Params w) (h : Spec.Blake2.HashValue w) (m : Block w) (t : Nat) (f : Bool) :
     Spec.Blake2.F P h m t f = Vector.ofFn fun i : Fin 8 =>
-      h[i] ^^^ ((List.range P.r).foldl (Spec.Blake2.round P m) (V0 P h t f))[i] ^^^
+      (h[i]'(by omega)) ^^^ ((List.range P.r).foldl (Spec.Blake2.round P m) (V0 P h t f))[i] ^^^
         ((List.range P.r).foldl (Spec.Blake2.round P m) (V0 P h t f))[i.val + 8] := rfl
 
 /-- The final block flag as a word. -/
@@ -430,10 +430,10 @@ def flagW (w : Nat) (f : Bool) : BitVec w := if f then BitVec.allOnes w else 0
 
 theorem V0_get (P : Params w) (h : Spec.Blake2.HashValue w) (t : Nat) (f : Bool) (k : Nat)
     (hk : k < 16) : (V0 P h t f)[k] =
-      if hk8 : k < 8 then h[k] else if k = 12 then P.IV[4] ^^^ BitVec.ofNat w t
+      if hk8 : k < 8 then (h[k]'(by omega)) else if k = 12 then P.IV[4] ^^^ BitVec.ofNat w t
       else if k = 13 then P.IV[5] ^^^ BitVec.ofNat w (t / 2 ^ w)
       else if k = 14 then P.IV[6] ^^^ flagW w f else P.IV[k - 8]'(by omega) := by
-  have base : ((h ++ P.IV : Work w))[k] = if hk8 : k < 8 then h[k] else P.IV[k - 8]'(by omega) := by
+  have base : ((h ++ P.IV : Work w))[k] = if hk8 : k < 8 then (h[k]'(by omega)) else P.IV[k - 8]'(by omega) := by
     simp only [Vector.getElem_append]
   have e12 : (h ++ P.IV : Work w)[12] = P.IV[4] := by simp only [Vector.getElem_append]; rfl
   have e13 : (h ++ P.IV : Work w)[13] = P.IV[5] := by simp only [Vector.getElem_append]; rfl
@@ -851,7 +851,7 @@ theorem keep_st {m m' : Mem} {n : Nat} (hf : Frame [⟨scA s₀, n⟩] m m') (hn
 
 end Pre
 
-/-! ## Finishing: `h[i] ^= v[i] ^ v[i + 8]` -/
+/-! ## Finishing: `(h[i]'(by omega)) ^= (v[i]'(by omega)) ^ (v[i + 8]'(by omega))` -/
 
 theorem finish_eq : finish (w := w) = (List.range 8).flatMap fun i =>
     [Impl.Blake2.X86_64.xor w (wreg i) (.mem (at_ .r9 (vOff (i + 8)))),
@@ -868,7 +868,7 @@ structure FI (w : Nat) (s₀ s₁ : State) (vR : Work w) (n : Nat) (s : State) :
   wr : s.wr = s₁.wr
   frame : Frame [stR w s₀] s₁.mem s.mem
   st : ∀ j (hj : j < 8), s.mem.readW (off (stA s₀) (ws w * j)) w =
-    if j < n then vR[j] ^^^ vR[j + 8] ^^^ s₁.mem.readW (off (stA s₀) (ws w * j)) w
+    if j < n then (vR[j]'(by omega)) ^^^ (vR[j + 8]'(by omega)) ^^^ s₁.mem.readW (off (stA s₀) (ws w * j)) w
     else s₁.mem.readW (off (stA s₀) (ws w * j)) w
 
 theorem wreg_inj : ∀ j < 8, ∀ k < 8, wreg j = wreg k → j = k := by decide
@@ -880,8 +880,8 @@ theorem setWidth_setWidth' (hw : w = 64 ∨ w = 32) (x : BitVec w) : (x.setWidth
 
 theorem finish_step (hw : w = 64 ∨ w = 32) {s₀ : State} (hp : Pre w s₀) {s₁ : State}
     {vR : Work w} (h9 : s₁.gpr .r9 = scA s₀) (hdi : s₁.gpr .rdi = stA s₀) (hrd : s₁.rd = s₀.rd)
-    (hwr : s₁.wr = s₀.wr) (hv : ∀ j (hj : j < 8), s₁.gpr (wreg j) = vR[j].setWidth 64)
-    (hs : ∀ j (hj : j < 8), s₁.mem.readW (slot (scA s₀) (j + 8)) w = vR[j + 8]) (n : Nat)
+    (hwr : s₁.wr = s₀.wr) (hv : ∀ j (hj : j < 8), s₁.gpr (wreg j) = (vR[j]'(by omega)).setWidth 64)
+    (hs : ∀ j (hj : j < 8), s₁.mem.readW (slot (scA s₀) (j + 8)) w = (vR[j + 8]'(by omega))) (n : Nat)
     (hn : n < 8) (s : State) (hf : FI w s₀ s₁ vR n s) :
     WP isa (.block [Impl.Blake2.X86_64.xor w (wreg n) (.mem (at_ .r9 (vOff (n + 8)))),
       Impl.Blake2.X86_64.xor w (wreg n) (.mem (at_ .rdi (ws w * n))),
@@ -892,9 +892,9 @@ theorem finish_step (hw : w = 64 ∨ w = 32) {s₀ : State} (hp : Pre w s₀) {s
   refine WP.mono (xorStore_ok hw (wreg_ne n).2.1 (hf.r9.trans h9) (hf.rdi.trans hdi)
     (in_sc hsc hsl) (by rw [hf.rd, hf.wr, hrd, hwr]; exact hp.in_st hw hn)
     (by rw [hf.wr, hwr]; exact hp.out_st hw hn)) fun s' ⟨hm, hg, hrd', hwr'⟩ => ?_
-  have ea : (s.gpr (wreg n)).setWidth w = vR[n] := by
+  have ea : (s.gpr (wreg n)).setWidth w = (vR[n]'(by omega)) := by
     rw [hf.gpr n (Nat.le_refl _) hn, hv n hn, setWidth_setWidth' hw]
-  have eb : s.mem.readW (off (scA s₀) (vOff (n + 8))) w = vR[n + 8] := by
+  have eb : s.mem.readW (off (scA s₀) (vOff (n + 8))) w = (vR[n + 8]'(by omega)) := by
     rw [hf.frame.readW (Region.contains_self _ _) (by simpa using hp.sc_st hsl) (by omega)]
     exact hs n hn
   have ec := hf.st n hn
@@ -921,8 +921,8 @@ theorem finish_step (hw : w = 64 ∨ w = 32) {s₀ : State} (hp : Pre w s₀) {s
 
 theorem finish_ok (hw : w = 64 ∨ w = 32) {s₀ : State} (hp : Pre w s₀) {s₁ : State}
     {vR : Work w} (h9 : s₁.gpr .r9 = scA s₀) (hdi : s₁.gpr .rdi = stA s₀) (hrd : s₁.rd = s₀.rd)
-    (hwr : s₁.wr = s₀.wr) (hv : ∀ j (hj : j < 8), s₁.gpr (wreg j) = vR[j].setWidth 64)
-    (hs : ∀ j (hj : j < 8), s₁.mem.readW (slot (scA s₀) (j + 8)) w = vR[j + 8]) :
+    (hwr : s₁.wr = s₀.wr) (hv : ∀ j (hj : j < 8), s₁.gpr (wreg j) = (vR[j]'(by omega)).setWidth 64)
+    (hs : ∀ j (hj : j < 8), s₁.mem.readW (slot (scA s₀) (j + 8)) w = (vR[j + 8]'(by omega))) :
     WP isa (.block (finish (w := w))) s₁ (FI w s₀ s₁ vR 8) := by
   rw [finish_eq]
   refine wp_range_flatMap (M := isa) (FI w s₀ s₁ vR) (fun k s hk h => finish_step hw hp h9 hdi hrd hwr hv hs k hk s h)
@@ -975,7 +975,7 @@ theorem readW_flag (hw : w = 64 ∨ w = 32) {m : Mem} {a : Addr} {f : Bool}
 /-! ## The work vector after `init` -/
 
 theorem holds_init {P : Params w} {s : State} {scr : Addr} {H : Spec.Blake2.HashValue w} {T : Nat}
-    {f : Bool} (hst : ∀ k (hk : k < 8), s.gpr (wreg k) = H[k].setWidth 64)
+    {f : Bool} (hst : ∀ k (hk : k < 8), s.gpr (wreg k) = (H[k]'(by omega)).setWidth 64)
     (h8 : s.mem.readW (slot scr 8) w = P.IV[0]) (h10 : s.mem.readW (slot scr 10) w = P.IV[2])
     (h11 : s.mem.readW (slot scr 11) w = P.IV[3]) (h14 : s.gpr .r14 = P.IV[1].setWidth 64)
     (h10r : s.gpr .r10 = (P.IV[4] ^^^ BitVec.ofNat w T).setWidth 64)
@@ -1168,21 +1168,21 @@ theorem body_ok {P : Params w} (hP : Ok P) {s₀ : State} (hp : Pre w s₀) {i :
   generalize hvR : (List.range P.r).foldl (Spec.Blake2.round P (blk w s₀ i))
     (V0 P (Spec.Blake2.stateAt w s.mem (stA s₀)) (t₀ s₀ + i * Spec.Blake2.blockBytes w)
       (fl s₀)) = vR at hR'
-  have hreg : ∀ k (hk : k < 16), inReg 9 k = true → sc.gpr (wreg k) = vR[k].setWidth 64 :=
+  have hreg : ∀ k (hk : k < 16), inReg 9 k = true → sc.gpr (wreg k) = (vR[k]'(by omega)).setWidth 64 :=
     fun k hk h => by have := hR'.holds k hk; simp only [h, ite_true] at this; exact this
   have hmem : ∀ k (hk : k < 16), inReg 9 k = false →
-      sc.mem.readW (slot (scA s₀) k) w = vR[k] :=
+      sc.mem.readW (slot (scA s₀) k) w = (vR[k]'(by omega)) :=
     fun k hk h => by
       have := hR'.holds k hk; simp only [h, Bool.false_eq_true, ite_false] at this; exact this
   have ssep : ∀ {j k : Nat} (m : Mem) (v : BitVec w), j < 16 → k < 16 → j ≠ k →
       (m.writeW (slot (scA s₀) k) v).readW (slot (scA s₀) j) w = m.readW (slot (scA s₀) j) w :=
     fun m v hj hk hjk => readW_writeW_off _ _ _ (by simp only [vOff]; omega)
       (by simp only [vOff]; omega) (by simp only [vOff]; omega) hw8
-  have hv : ∀ j (hj : j < 8), sd.gpr (wreg j) = vR[j].setWidth 64 := fun j hj => by
+  have hv : ∀ j (hj : j < 8), sd.gpr (wreg j) = (vR[j]'(by omega)).setWidth 64 := fun j hj => by
     have h3 : ¬(8 ≤ j ∧ j ≤ 11) := by omega
     rw [gd]; exact hreg j (by omega) (by simp only [inReg, h3, ite_false])
-  have hs : ∀ j (hj : j < 8), sd.mem.readW (slot (scA s₀) (j + 8)) w = vR[j + 8] := by
-    have e : ∀ k (hk : k < 16), inReg 9 k = true → (sc.gpr (wreg k)).setWidth w = vR[k] :=
+  have hs : ∀ j (hj : j < 8), sd.mem.readW (slot (scA s₀) (j + 8)) w = (vR[j + 8]'(by omega)) := by
+    have e : ∀ k (hk : k < 16), inReg 9 k = true → (sc.gpr (wreg k)).setWidth w = (vR[k]'(by omega)) :=
       fun k hk h => (congrArg (BitVec.setWidth w) (hreg k hk h)).trans (setWidth_setWidth' hw _)
     have e9 : (sc.gpr .r14).setWidth w = vR[9] := e 9 (by decide) (by decide)
     have e12 : (sc.gpr .r10).setWidth w = vR[12] := e 12 (by decide) (by decide)

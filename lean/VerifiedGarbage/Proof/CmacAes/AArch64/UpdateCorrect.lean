@@ -74,9 +74,9 @@ theorem restore_ok (s : State) {B : Addr} (hb : s.gpr .x24 = B)
         s'.gpr r = s.gpr r) ∧
       s'.sp = s.sp ∧ s'.mem = s.mem := by
   refine ⟨_, by
-    simp (config := {decide := true}) only [restore, saved, List.map, runBlock_cons, runStep_some,
+    simp only [reduceCtorEq, ↓reduceIte, Nat.reduceLT, Nat.reduceMul, Nat.reduceMod, and_self, restore, saved, List.map, runBlock_cons, runStep_some,
       runBlock_nil, exec, addr, State.load, Size.bytes, Size.bits, gpr_write, mem_write, rd_write,
-      wr_write, ite_true, ite_false, Option.bind_some, Option.map_some, hb,
+      wr_write, Option.bind_some, Option.map_some, hb,
       hr 2064 (by decide) (by decide), hr 2072 (by decide) (by decide), hr 2080 (by decide) (by decide),
       hr 2088 (by decide) (by decide), hr 2096 (by decide) (by decide), hr 2104 (by decide) (by decide),
       hr 2112 (by decide) (by decide)]

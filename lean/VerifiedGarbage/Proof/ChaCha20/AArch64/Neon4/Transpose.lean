@@ -79,9 +79,9 @@ theorem transposePrep_ok (s : State) (r : Fin 4) :
   have hn2 := fun k => (vreg_scratch k).2.2.1
   have hn3 := fun k => (vreg_scratch k).2.2.2
   apply WP.of_runBlock
-  simp (config := {decide := true}) only [transposePrep, runBlock_cons, runBlock_nil,
+  simp only [↓reduceIte, transposePrep, runBlock_cons, runBlock_nil,
     exec, VOp.eval, isa, runStep_some, Option.map_some, Option.some.injEq,
-    exists_eq_left', RegUpd.v_setV, hn0, hn1, hn2, ite_false]
+    exists_eq_left', RegUpd.v_setV, hn0, hn1, hn2]
   refine ⟨?_, ?_, ?_, ?_, ?_, rfl, rfl, rfl, rfl, rfl⟩
   · simp only [RegUpd.v_setV]; rfl
   · simp only [RegUpd.v_setV]; rfl
