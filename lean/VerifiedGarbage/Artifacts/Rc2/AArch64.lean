@@ -64,7 +64,8 @@ def artifacts : List Artifact := [
   { Spec.Rc2.expandKeyApi with
     target := AArch64.target
     doc := Spec.Rc2.expandKeyApi.doc
-      (notes := ["Baseline AArch64. PITABLE selection scans all 256 candidates in a fixed order."])
+      (notes := ["Baseline AArch64. Each PITABLE lookup builds the table in `v16`–`v31` from \
+        immediates and selects from it with four `tbl`s."])
     code := Impl.Rc2.AArch64.expandKey
     contract := Spec.Rc2.expandKeyContract AArch64.abi
     stack := 0
@@ -73,7 +74,8 @@ def artifacts : List Artifact := [
   { Spec.Rc2.encryptBlockApi with
     target := AArch64.target
     doc := Spec.Rc2.encryptBlockApi.doc
-      (notes := ["Baseline AArch64. Mashing scans all 64 schedule words in a fixed order."])
+      (notes := ["Baseline AArch64. Mashing loads the schedule into `v16`–`v23` and selects a word \
+        from it with two `tbl`s."])
     code := Impl.Rc2.AArch64.encryptBlock
     contract := Spec.Rc2.encryptBlockContract AArch64.abi
     stack := 0
@@ -82,7 +84,8 @@ def artifacts : List Artifact := [
   { Spec.Rc2.decryptBlockApi with
     target := AArch64.target
     doc := Spec.Rc2.decryptBlockApi.doc
-      (notes := ["Baseline AArch64. Reverse mashing scans all 64 schedule words in a fixed order."])
+      (notes := ["Baseline AArch64. Reverse mashing loads the schedule into `v16`–`v23` and \
+        selects a word from it with two `tbl`s."])
     code := Impl.Rc2.AArch64.decryptBlock
     contract := Spec.Rc2.decryptBlockContract AArch64.abi
     stack := 0
