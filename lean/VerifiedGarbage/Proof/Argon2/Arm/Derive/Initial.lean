@@ -39,7 +39,7 @@ theorem Prm.of_lw {s₀ s t : State} (pr : Prm s₀ s)
 /-- The parameters are kept when the locals at the offsets of `prmOk` are. -/
 theorem prm_offs : ∀ d ∈ [Impl.Argon2.Arm.Derive.divisorOff, Impl.Argon2.Arm.Derive.segLenOff,
     Impl.Argon2.Arm.Derive.laneLenOff, Impl.Argon2.Arm.Derive.strideOff],
-    d + 4 ≤ 144 ∧ 64 ≤ d ∧ (d + 4 ≤ countLoOff ∨ countHiOff + 4 ≤ d) := by decide
+    d + 4 ≤ 144 ∧ 72 ≤ d ∧ (d + 4 ≤ countLoOff ∨ countHiOff + 4 ≤ d) := by decide
 
 section
 variable {s₀ : State} (hp : DPre s₀)
@@ -626,7 +626,7 @@ theorem fiCopy_ok {s : State} {dg : List Byte} (h : Inv s₀ s ∧ Prm s₀ s �
   obtain ⟨i₃, pr₃, b₃, dg₃⟩ := h
   refine (copy_ok hp i₃ b₃ 16 (Nat.le_refl _)).mono fun t ⟨it, _, wt, _, lt⟩ =>
     ⟨it, Prm.of_lw pr₃ fun d hd => ?_, ?_⟩
-  · rw [lt d (by have := (prm_offs d hd).1; omega) (prm_offs d hd).2.1]
+  · rw [lt d (by have := (prm_offs d hd).1; omega) (by have := (prm_offs d hd).2.1; omega)]
   · rw [← dg₃]
     refine bytes_of_words (k := 16) fun j hj => ?_
     have := wt j hj
