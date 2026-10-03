@@ -315,7 +315,9 @@ jobs:
       - run: python3 ci/algorithms_table.py --check
       - run: python3 ci/check_arch_gates.py
       - run: python3 ci/check_variants.py
-      - run: python3 ci/check_cpu_feature_runs.py
+      # `rust-cpu-features` sets it per line of a CPU's `runs`, inline.
+      - name: Only rust-cpu-features sets VG_CPU_FEATURES
+        run: "! grep -nE '^ *VG_CPU_FEATURES:' .github/workflows/ci.yml"
       - run: python3 -m unittest discover -s ci -p 'test_check_*.py'
       - run: python3 ci/check_mcdt.py
 
@@ -495,7 +497,7 @@ jobs:
   # Ed25519's combinations of SHA-512 and field multiplication, is chosen
   # somewhere; the coverage, merged with the rest, checks that every one
   # was. These are the only runs that set `VG_CPU_FEATURES`, and a CPU runs
-  # each value of it once (ci/check_cpu_feature_runs.py checks both), so
+  # each value of it once (the lint job and the loop below check both), so
   # that no run repeats another's.
   rust-cpu-features:
     strategy:
@@ -550,20 +552,15 @@ jobs:
               - | sha384 sha512 ed25519 message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
               avx,avx2,sha512 | ed25519 message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
           # Ice Lake server: AVX512_IFMA and AVX512VL, for vg_x25519_ifma
-          # and Ed25519's IFMA variants; and VAES and VPCLMULQDQ, for
+          # and Ed25519's IFMA variants; VAES and VPCLMULQDQ, for
           # vg_aes_ctr32_vaes, vg_ghash_vpclmul and the AES-GCM and AES-CMAC
-          # instances calling them.
+          # instances calling them; and AES-GCM's instances with VAES or
+          # VPCLMULQDQ alone or paired with the other's 128-bit instruction,
+          # which no chip has without the other.
           - chip: icx
             runs: |
               - | x25519 ed25519 message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs aes_gcm cmac cpu
               avx,avx2,bmi2,adx,avx512ifma,avx512vl | ed25519 message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
-          # Ice Lake server: AES-GCM's instances with VAES or VPCLMULQDQ alone
-          # or paired with the other's 128-bit instruction, which no chip has
-          # without the other. A job of their own, to keep icx's two in
-          # parallel under SDE.
-          - chip: icx
-            part: AES-GCM
-            runs: |
               aes,avx,avx2,ssse3,vaes | aes_gcm cpu
               avx,avx2,pclmulqdq,ssse3,vpclmulqdq | aes_gcm cpu
               aes,avx,avx2,pclmulqdq,ssse3,vaes | aes_gcm cpu
@@ -584,7 +581,7 @@ jobs:
               neon | chacha20
               sha3 | sha3 shake mlkem mldsa
               none | chacha20 sha3 shake mlkem mldsa
-    name: Rust (${{ matrix.os && format('native, {0}', matrix.os) || matrix.chip == 'native' && 'native' || format('sde -{0}', matrix.chip) }}${{ matrix.arch && format(', {0}', matrix.arch) || '' }}${{ matrix.part && format(', {0}', matrix.part) || '' }})
+    name: Rust (${{ matrix.os && format('native, {0}', matrix.os) || matrix.chip == 'native' && 'native' || format('sde -{0}', matrix.chip) }}${{ matrix.arch && format(', {0}', matrix.arch) || '' }})
     runs-on: ${{ matrix.os || 'ubuntu-latest' }}
     container:
       image: ${{ matrix.container.image || '' }}
@@ -651,9 +648,12 @@ jobs:
         shell: bash
         run: |
           failed=()
+          declare -A seen
           while IFS='|' read -r -u 3 features tests; do
             features=$(echo $features) tests=$(echo $tests)
             [ -n "$tests" ] || continue
+            [ -z "${seen[$features]}" ] || { echo "::error::VG_CPU_FEATURES=$features twice: put its tests on one line"; exit 1; }
+            seen[$features]=1
             [ "$features" = - ] && features=
             filter=$tests
             [ "$tests" = all ] && filter=

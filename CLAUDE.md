@@ -388,7 +388,6 @@ python3 ci/check_lean_speed.py
 python3 ci/check_vectors.py
 python3 ci/check_arch_gates.py
 python3 ci/check_variants.py
-python3 ci/check_cpu_feature_runs.py
 python3 ci/check_mcdt.py
 cargo fmt --check && cargo clippy --all-targets -- -D warnings
 WYCHEPROOF_ROOT=/path/to/wycheproof cargo test
@@ -404,11 +403,10 @@ extensions' code very slowly, so the chips that have them run only the
 tests that need them); and benchmarks each with
 `VG_CPU_FEATURES` (`CPU_FEATURES` in `ci/bench_arches.py`). A configuration
 to test is a line of a CPU's `runs` in `rust-cpu-features`
-(`<VG_CPU_FEATURES> | <tests>`), never a step or job of its own: that is
-the only place CI sets `VG_CPU_FEATURES`, and each CPU has one line per
-value of it, so a run never repeats another (`ci/check_cpu_feature_runs.py`
-checks both); add tests to a CPU's line for those features. To test the
-baseline ISA's implementations:
+(`<VG_CPU_FEATURES> | <tests>`), never a step or job of its own, and
+each CPU has one line per value of `VG_CPU_FEATURES` (CI checks both), so
+a run never repeats another: add tests to a CPU's line for those features.
+To test the baseline ISA's implementations:
 
 ```sh
 VG_CPU_FEATURES=none WYCHEPROOF_ROOT=/path/to/wycheproof cargo test --features cpu-features-env
