@@ -113,11 +113,8 @@ fn p256_sign(hash: &str) {
     let key = SigningKey::<P256>::from_bytes(&x);
     let mut signed = 0;
     for (h, message, rs) in signatures.iter().filter(|(h, _, _)| *h == hash) {
-        assert_eq!(
-            sign(&key.clone(), h, message.as_bytes()),
-            [Ok(*rs); 2],
-            "{h} {message}"
-        );
+        let results = sign(&key.clone(), h, message.as_bytes());
+        assert_eq!(results, [Ok(*rs); 2], "{h} {message}");
         signed += 1;
     }
     assert_eq!(signed, 2);
