@@ -7,9 +7,10 @@ import VerifiedGarbage.Impl.Argon2.Arm.Derive
 /-!
 # Argon2 on ARMv7: the contract of the derivation's proof
 
-`deriveArm`: `vg_argon2`'s contract with its fourteen stack arguments only
-read (`Spec.Argon2.deriveContract`, which lets the code write them, is
-reached by narrowing), its precondition a structure (`DPre`). The derivation
+`deriveArm`: `vg_argon2`'s contract, its fourteen stack arguments only read
+(as `Spec.Argon2.deriveContract` has them on ARMv7, whose calling convention
+keeps them read-only), its precondition a structure (`DPre`;
+`Derive/Verified.lean` reaches the shared contract). The derivation
 uses the 240 bytes of stack below the stack pointer: 16 for its register
 arguments, 40 for the saved registers, 144 for the locals, and 40 for a call
 of `vg_argon2_hprime` (its stack argument, padding, and H′'s own 32 bytes).
