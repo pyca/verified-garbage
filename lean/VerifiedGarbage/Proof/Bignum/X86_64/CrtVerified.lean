@@ -4,14 +4,14 @@ import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTQ
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTP
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTRedc
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTExp
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTSetupChk
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTSetup
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtImplies
 
 /-!
 # `vg_rsa_private_crt` on x86-64: verified against the shared contract
 
 `main`'s parts are constant time (`setup_ct`, `checks_ct`, the phases from
-`G`, `redc` and the exponentiation, `finish_ct`), so the function is
+`G`, `redc` and the exponentiation, `crtFinish_ct`), so the function is
 (`crtCode_constantTime`); with correctness (`crtCode_correct`) and the
 contract on the registers and the stack (`crt_implies`), `Crt.code` is
 verified (`crt_verified`).
@@ -28,7 +28,7 @@ theorem crtCode_constantTime (M : Mont) : ConstantTime isa crtContract.pre crtCo
       (pow_ct M (redc_ct_Y M) (expLoop_ct_Q M) (by taint_decide)))
     (pPhase_ct M (unit_ct M (gPow_ct_P M) (redc_ct_Y M) (by taint_decide))
       (pow_ct M (redc_ct_Y M) (expLoop_ct_P M) (by taint_decide)) (redc_ct_X M) loadArr_ct_pI)
-    finish_ct
+    crtFinish_ct
 
 /-- `vg_rsa_private_crt` with Montgomery multiplication `M`, given that its
 code never loads MXCSR (which the registration file evaluates). -/

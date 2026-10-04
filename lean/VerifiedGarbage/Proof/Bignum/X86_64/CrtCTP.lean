@@ -4,7 +4,7 @@ import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTPH
 # RSA with the CRT on x86-64: constant time, `p`'s phase
 
 `pPhase` is constant time (`pPhase_ct`) given its pieces' claims: before
-each piece, a predicate (`O0` … `O4`, then `hSteps`' `H0`) carries the
+each piece, a predicate (`PO0` … `PO4`, then `hSteps`' `H0`) carries the
 piece's hypotheses and what correctness gives after it; `o0_of` proves the
 first from `PPre`, as `pPhase_ok` runs the pieces.
 -/
@@ -30,26 +30,26 @@ abbrev PPhasePub.pw (p : PPhasePub) : BPub := ⟨⟨p.ph.B, p.ph.Z, p.ph.o, p.ph
 abbrev PPhasePub.h (p : PPhasePub) : HPub := ⟨p.ph.B, p.ph.Z, p.ph.w, p.ph.o, p.ph.wx, p.qp, p.ph.len⟩
 
 /-- Before the way back to the modulus' workspace. -/
-def O4 (M : Mont) (p : PPhasePub) (s : State) : Prop :=
+def PO4 (M : Mont) (p : PPhasePub) (s : State) : Prop :=
   s.gpr .rdi = off p.ph.B p.ph.o ∧ WP isa (.block [leave]) s (H0 M p.h)
 
 /-- Before the exponentiation. -/
-def O3 (M : Mont) (p : PPhasePub) (s : State) : Prop :=
-  PwPre sWsP sDp sPlen p.pw s ∧ WP isa (seqs (powSteps M.mm sWsP sDp sPlen)) s (O4 M p)
+def PO3 (M : Mont) (p : PPhasePub) (s : State) : Prop :=
+  PwPre sWsP sDp sPlen p.pw s ∧ WP isa (seqs (powSteps M.mm sWsP sDp sPlen)) s (PO4 M p)
 
 /-- Before `c G mod N`. -/
-def O2 (M : Mont) (p : PPhasePub) (s : State) : Prop :=
-  GoodW p.nw s ∧ WP isa (M.mm Public.aY Public.aXm Public.aY) s (O3 M p)
+def PO2 (M : Mont) (p : PPhasePub) (s : State) : Prop :=
+  GoodW p.nw s ∧ WP isa (M.mm Public.aY Public.aXm Public.aY) s (PO3 M p)
 
 /-- Before `m_q G mod N`. -/
-def O1 (M : Mont) (p : PPhasePub) (s : State) : Prop :=
-  Mq0 M p.mq s ∧ WP isa (seqs (mqSteps M.mm)) s (O2 M p)
+def PO1 (M : Mont) (p : PPhasePub) (s : State) : Prop :=
+  Mq0 M p.mq s ∧ WP isa (seqs (mqSteps M.mm)) s (PO2 M p)
 
 /-- Before `pPhase`. -/
-def O0 (M : Mont) (p : PPhasePub) (s : State) : Prop :=
-  UPre sWsP p.u s ∧ WP isa (seqs (unitSteps M.mm sWsP)) s (O1 M p)
+def PO0 (M : Mont) (p : PPhasePub) (s : State) : Prop :=
+  UPre sWsP p.u s ∧ WP isa (seqs (unitSteps M.mm sWsP)) s (PO1 M p)
 
-/-- From before the exponentiation: `O3`, as `pPhase_ok` runs the rest. -/
+/-- From before the exponentiation: `PO3`, as `pPhase_ok` runs the rest. -/
 theorem o3_of (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv mx : BitVec 64}
     {N X C o wx oq wq : Nat} {ep qp : Addr} {eb qib : List Byte} {c : Bool}
     (hg : Good s B Z w minv) (hw28 : w < 2 ^ 28) (hlo : slot w 8 ≤ o) (hhi : o + slot wx 8 ≤ Z)
@@ -63,7 +63,7 @@ theorem o3_of (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv mx : BitVec 64
     (hmask : word s.mem (off B o) (8 * sMaskX) = mask c)
     (hqp : word s.mem B (8 * sQinv) = qp) (hql : qib.length = eb.length) (hqs : Src s B Z qp qib)
     (hqw : (qib.length + 7) / 8 ≤ wx) (hqi : c = true → Spec.Rsa.os2ip qib < X) :
-    O3 M ⟨⟨B, Z, w, minv, N, o, wx, ep, eb.length⟩, oq, wq, qp⟩ s := by
+    PO3 M ⟨⟨B, Z, w, minv, N, o, wx, ep, eb.length⟩, oq, wq, qp⟩ s := by
   have hs := hg.scr
   have hn := hs.nowrap
   have h8 := hdr_lt_slot w 8 (show 31 < 32 by decide)
@@ -103,8 +103,8 @@ theorem o3_of (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv mx : BitVec 64
   rw [hql] at this
   exact this
 
-/-- `pPhase_ok`'s hypotheses give `O0`. -/
-theorem o0_of (M : Mont) {p : PPhasePub} {s : State} (h : PPre p s) : O0 M p s := by
+/-- `pPhase_ok`'s hypotheses give `PO0`. -/
+theorem o0_of (M : Mont) {p : PPhasePub} {s : State} (h : PPre p s) : PO0 M p s := by
   obtain ⟨⟨B, Z, w, minv, N, o, wx, ep, len⟩, oq, wq, qp⟩ := p
   dsimp only [PPre] at h
   obtain ⟨mx, mq, X, C, eb, qib, c, hg, hw, hw28, hlo, hhi, hqhi, hwx2, hwx, hwq, hwq', hslv, hws, hslq, hwsq, hN,

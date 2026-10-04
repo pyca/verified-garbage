@@ -139,6 +139,9 @@ structure XPub where
   w : Nat
   wx : Nat
 
+/-- A prime's workspace, as Montgomery multiplication sees it. -/
+abbrev XPub.ws (p : XPub) : Ws := ⟨off p.B p.o, slot p.wx 8, p.wx⟩
+
 /-- `redc_ok`'s hypotheses. -/
 def RPre (j : Nat) (p : XPub) (s : State) : Prop :=
   ∃ (minv : BitVec 64) (X : Nat), SubCtx s p.B p.Z p.o p.w p.wx minv ∧ XVals s p.B p.o p.wx minv X ∧

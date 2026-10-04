@@ -42,9 +42,6 @@ def CBitSel (p : XPub) (t : State) : Prop :=
     t.gpr .rsi = off (off p.B p.o) (slot p.wx Public.aY) ∧
     t.gpr .rbx = off (off p.B p.o) (slot p.wx Public.aY) ∧ 2 ≤ p.wx ∧ p.wx < 2 ^ 30
 
-/-- The prime's workspace, as `Mont.ct` sees it. -/
-abbrev XPub.ws (p : XPub) : Ws := ⟨off p.B p.o, slot p.wx 8, p.wx⟩
-
 theorem CBitQ.goodW {p : XPub} {t : State} (h : CBitQ p t) : GoodW p.ws t :=
   let ⟨minv, _, _, _, hc, _⟩ := h; ⟨minv, hc.good, Nat.le_refl _⟩
 

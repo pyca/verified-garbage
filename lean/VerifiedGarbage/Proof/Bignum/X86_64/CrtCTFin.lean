@@ -6,7 +6,7 @@ import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTMain
 
 `finish` sums `m_q + q h` into the modulus' accumulators (`finishSum`), whose
 parts keep the header and the primes' workspaces (`FA`), and stores it masked
-(`outArr_ct`): `finish_ct`.
+(`outArr_ct`): `crtFinish_ct`.
 -/
 
 namespace VG.Proof.Bignum.X86_64
@@ -164,7 +164,7 @@ theorem finSum_out {p : CrtPub} {t₂ : State} (h : Stage R5 p t₂) :
     by rw [hb₃ _ (by decide)]; exact hr.msk, fun j hj => by rw [k03.2.2]; exact h.out j hj, h.outSep⟩
 
 /-- `finish` leaks the same in runs that agree on the public data. -/
-theorem finish_ct : RelCT isa (Two (Stage R5)) (seqs Crt.finish) fun _ _ => True := by
+theorem crtFinish_ct : RelCT isa (Two (Stage R5)) (seqs Crt.finish) fun _ _ => True := by
   rw [finish_out]
   refine RelCT.seqs_append (by simp [finishSum, Crt.zeroAccs]) (by simp [outStepsArr])
     (RelCT.seq (R := Two OPreW) ?_ (outArr_ct (j := Public.aAcc) (by decide) (by taint_decide)))

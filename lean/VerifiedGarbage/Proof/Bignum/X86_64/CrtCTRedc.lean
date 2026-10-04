@@ -181,9 +181,6 @@ theorem addMod_ct : RelCT isa (Two AmPre) (addMod aXc aXc aT) fun _ _ => True :=
 
 /-! ## The loop's body -/
 
-/-- The prime's workspace. -/
-abbrev XPub.ws (p : XPub) : Ws := ⟨off p.B p.o, slot p.wx 8, p.wx⟩
-
 /-- The sizes. -/
 def XF (p : XPub) : Prop := 2 ≤ p.wx ∧ p.wx ≤ p.w ∧ p.w < 2 ^ 30
 
