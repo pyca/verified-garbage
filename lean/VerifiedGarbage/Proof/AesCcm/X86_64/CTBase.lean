@@ -138,4 +138,28 @@ theorem rel_assoc3 {P Q : State → State → Prop} {a b c d : Prog isa}
 theorem rel_assoc {P Q : State → State → Prop} {a b c : Prog isa}
     (h : RelCT isa P (.seq (.seq a b) c) Q) : RelCT isa P (.seq a (.seq b c)) Q := RelCT.assoc h
 
+/-- One run with the public arguments. -/
+structure One (K W SP : Addr) (R : Nat) (N A D : Addr) (nl al n tl : Nat) (s : State) : Prop where
+  env : Env K W SP s
+  sl : Slots W R N A D nl al n tl s.mem
+  wr : s.wr = [⟨D, n⟩, ⟨W, 2560⟩]
+
+theorem Both.of {K W SP : Addr} {R : Nat} {N A D : Addr} {nl al n tl : Nat} {rs : List Reg} {s₁ s₂ : State}
+    (o₁ : One K W SP R N A D nl al n tl s₁) (o₂ : One K W SP R N A D nl al n tl s₂)
+    (h : ∀ r ∈ rs, s₁.gpr r = s₂.gpr r) : Both K W SP R N A D nl al n tl rs s₁ s₂ :=
+  ⟨o₁.env, o₂.env, o₁.sl, o₂.sl, o₁.wr, o₂.wr, h⟩
+
+theorem Both.one₁ {K W SP : Addr} {R : Nat} {N A D : Addr} {nl al n tl : Nat} {rs : List Reg} {s₁ s₂ : State}
+    (h : Both K W SP R N A D nl al n tl rs s₁ s₂) : One K W SP R N A D nl al n tl s₁ := ⟨h.e₁, h.sl₁, h.wr₁⟩
+
+theorem Both.one₂ {K W SP : Addr} {R : Nat} {N A D : Addr} {nl al n tl : Nat} {rs : List Reg} {s₁ s₂ : State}
+    (h : Both K W SP R N A D nl al n tl rs s₁ s₂) : One K W SP R N A D nl al n tl s₂ := ⟨h.e₂, h.sl₂, h.wr₂⟩
+
+/-- Registers with the same value in both runs agree. -/
+theorem agree_of {s₁ s₂ : State} {l : List (Reg × BitVec 64)} (h₁ : ∀ p ∈ l, s₁.gpr p.1 = p.2)
+    (h₂ : ∀ p ∈ l, s₂.gpr p.1 = p.2) : ∀ r ∈ l.map Prod.fst, s₁.gpr r = s₂.gpr r := by
+  intro r hr
+  obtain ⟨p, hp, rfl⟩ := List.mem_map.mp hr
+  rw [h₁ p hp, h₂ p hp]
+
 end VG.Proof.AesCcm.X86_64
