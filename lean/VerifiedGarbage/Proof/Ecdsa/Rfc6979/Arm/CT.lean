@@ -441,7 +441,8 @@ def Entered (P : RfcHash) (a b : State) : Prop :=
 
 theorem prologue_tail : ∃ hc, (VG.Taint.check taint (τr [.r0, .r1, .r2, .r3, .r12])
     (.block (Impl.Ecdsa.Rfc6979.Arm.saved.map (fun p => Instr.str p.1 .r12 p.2) ++
-      [.mov .r4 (.reg .r0), .mov .r5 (.reg .r1), .mov .r6 (.reg .r2), .mov .r11 (.reg .r3), .mov .r8 (.reg .r12)]))
+      ([.mov .r4 (.reg .r0), .mov .r5 (.reg .r1), .mov .r6 (.reg .r2), .mov .r11 (.reg .r3),
+        .mov .r8 (.reg .r12)] : List Instr)))
     hc).isSome = true := ⟨_, by taint_decide⟩
 
 /-- The prologue reads `sp`, which agrees, and then addresses the frame through `r12`. -/
