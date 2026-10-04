@@ -19,47 +19,47 @@ namespace VG.Proof.AesGcm.X86_64
 open VG VG.X86_64 VG.Impl.AesGcm.X86_64
 
 section
-variable (v : GcmImpl) (stitch : Bool)
+variable (v : GcmImpl) (st : Option StitchImpl)
 
 theorem encryptBlocks_mx :
-    (Blocks.encrypt v.callees.ctr v.callees.gh stitch).allInstrs (fun i => !loadsMxcsr i) = true := by
-  cases stitch <;>
+    (Blocks.encrypt v.callees.ctr v.callees.gh (st.map (·.enc))).allInstrs (fun i => !loadsMxcsr i) = true := by
+  have hh := StitchImpl.head_mxcsr st fun i => i.encP
   simp only [Blocks.encrypt, Blocks.blocks, Blocks.tail, Blocks.ctrCall, Blocks.ghCall, Code.allInstrs,
-    GcmImpl.callees, v.ctr.mxcsr, v.gh.mxcsr, Bool.true_and, Bool.and_true, Bool.false_eq_true, ite_false,
-    ite_true] <;> decide +kernel
+    GcmImpl.callees, hh, v.ctr.mxcsr, v.gh.mxcsr, Bool.true_and, Bool.and_true, Bool.false_eq_true, ite_false,
+    ite_true]; decide +kernel
 
 theorem decryptBlocks_mx :
-    (Blocks.decrypt v.callees.ctr v.callees.gh stitch).allInstrs (fun i => !loadsMxcsr i) = true := by
-  cases stitch <;>
+    (Blocks.decrypt v.callees.ctr v.callees.gh (st.map (·.dec))).allInstrs (fun i => !loadsMxcsr i) = true := by
+  have hh := StitchImpl.head_mxcsr st fun i => i.decP
   simp only [Blocks.decrypt, Blocks.blocks, Blocks.tail, Blocks.ctrCall, Blocks.ghCall, Code.allInstrs,
-    GcmImpl.callees, v.ctr.mxcsr, v.gh.mxcsr, Bool.true_and, Bool.and_true, Bool.false_eq_true, ite_false,
-    ite_true] <;> decide +kernel
+    GcmImpl.callees, hh, v.ctr.mxcsr, v.gh.mxcsr, Bool.true_and, Bool.and_true, Bool.false_eq_true, ite_false,
+    ite_true]; decide +kernel
 
 theorem encryptBlocks_spSafe :
-    (Blocks.encrypt v.callees.ctr v.callees.gh stitch).all (fun i => !X86_64.isa.writesSp i) = true := by
-  cases stitch <;>
+    (Blocks.encrypt v.callees.ctr v.callees.gh (st.map (·.enc))).all (fun i => !X86_64.isa.writesSp i) = true := by
+  have hh := StitchImpl.head_spSafe st fun i => i.encP
   simp only [Blocks.encrypt, Blocks.blocks, Blocks.tail, Blocks.ctrCall, Blocks.ghCall, Code.all,
-    GcmImpl.callees, v.ctr.spSafe, v.gh.spSafe, Bool.true_and, Bool.and_true, Bool.false_eq_true, ite_false,
-    ite_true] <;> decide +kernel
+    GcmImpl.callees, hh, v.ctr.spSafe, v.gh.spSafe, Bool.true_and, Bool.and_true, Bool.false_eq_true, ite_false,
+    ite_true]; decide +kernel
 
 theorem decryptBlocks_spSafe :
-    (Blocks.decrypt v.callees.ctr v.callees.gh stitch).all (fun i => !X86_64.isa.writesSp i) = true := by
-  cases stitch <;>
+    (Blocks.decrypt v.callees.ctr v.callees.gh (st.map (·.dec))).all (fun i => !X86_64.isa.writesSp i) = true := by
+  have hh := StitchImpl.head_spSafe st fun i => i.decP
   simp only [Blocks.decrypt, Blocks.blocks, Blocks.tail, Blocks.ctrCall, Blocks.ghCall, Code.all,
-    GcmImpl.callees, v.ctr.spSafe, v.gh.spSafe, Bool.true_and, Bool.and_true, Bool.false_eq_true, ite_false,
-    ite_true] <;> decide +kernel
+    GcmImpl.callees, hh, v.ctr.spSafe, v.gh.spSafe, Bool.true_and, Bool.and_true, Bool.false_eq_true, ite_false,
+    ite_true]; decide +kernel
 
-theorem encryptBlocks_correct (hS : stitch = true → Gcm.X86_64.Stitch.StitchOk) (s : State) (hs : Proof.AesGcm.encryptBlocksX86_64.pre s) :
-    ∃ t s', Exec isa (Blocks.encrypt v.callees.ctr v.callees.gh stitch) s t s' ∧ abiPreserved s s' ∧
+theorem encryptBlocks_correct (s : State) (hs : Proof.AesGcm.encryptBlocksX86_64.pre s) :
+    ∃ t s', Exec isa (Blocks.encrypt v.callees.ctr v.callees.gh (st.map (·.enc))) s t s' ∧ abiPreserved s s' ∧
       Proof.AesGcm.encryptBlocksX86_64.post s s' := by
-  obtain ⟨t, s', he, hg, hp⟩ := Blocks.encrypt_wp v stitch hS hs
-  exact ⟨t, s', he, abiPreserved_of_exec (encryptBlocks_mx v stitch) he hg, hp⟩
+  obtain ⟨t, s', he, hg, hp⟩ := Blocks.encrypt_wp v st hs
+  exact ⟨t, s', he, abiPreserved_of_exec (encryptBlocks_mx v st) he hg, hp⟩
 
-theorem decryptBlocks_correct (hS : stitch = true → Gcm.X86_64.Stitch.StitchOk) (s : State) (hs : Proof.AesGcm.decryptBlocksX86_64.pre s) :
-    ∃ t s', Exec isa (Blocks.decrypt v.callees.ctr v.callees.gh stitch) s t s' ∧ abiPreserved s s' ∧
+theorem decryptBlocks_correct (s : State) (hs : Proof.AesGcm.decryptBlocksX86_64.pre s) :
+    ∃ t s', Exec isa (Blocks.decrypt v.callees.ctr v.callees.gh (st.map (·.dec))) s t s' ∧ abiPreserved s s' ∧
       Proof.AesGcm.decryptBlocksX86_64.post s s' := by
-  obtain ⟨t, s', he, hg, hp⟩ := Blocks.decrypt_wp v stitch hS hs
-  exact ⟨t, s', he, abiPreserved_of_exec (decryptBlocks_mx v stitch) he hg, hp⟩
+  obtain ⟨t, s', he, hg, hp⟩ := Blocks.decrypt_wp v st hs
+  exact ⟨t, s', he, abiPreserved_of_exec (decryptBlocks_mx v st) he hg, hp⟩
 
 end
 
@@ -76,19 +76,19 @@ def blocksSat : State where
   rd := [⟨0x1000, 256⟩, ⟨0x8008, 8⟩]
   wr := [⟨0x2000, 16⟩, ⟨0x3000, 16⟩, ⟨0x4000, 0⟩, ⟨0, 2112⟩]
 
-theorem encryptBlocks_verified (v : GcmImpl) (stitch : Bool) (hS : stitch = true → Gcm.X86_64.Stitch.StitchOk) :
-    Verified X86_64.target (Blocks.encrypt v.callees.ctr v.callees.gh stitch)
+theorem encryptBlocks_verified (v : GcmImpl) (st : Option StitchImpl) :
+    Verified X86_64.target (Blocks.encrypt v.callees.ctr v.callees.gh (st.map (·.enc)))
       (Spec.Gcm.encryptBlocksContract X86_64.abi 8) :=
-  Verified.of_correct (encryptBlocks_correct v stitch hS) (Blocks.encrypt_ct v stitch hS) (by
+  Verified.of_correct (encryptBlocks_correct v st) (Blocks.encrypt_ct v st) (by
     sig_implies [Spec.Gcm.encryptBlocksContract, Spec.Gcm.cryptBlocksSig, Proof.AesGcm.encryptBlocksX86_64,
       Proof.AesGcm.blocksPre, Proof.AesGcm.blocksPub, X86_64.abi, Proof.AesGcm.arg, Proof.AesGcm.args,
       Proof.AesGcm.stk, Proof.AesGcm.ret, Proof.AesGcm.rounds, X86_64.stackArg, X86_64.stackArgAddr,
       List.getD, List.range, List.range.loop, VG.X86_64.below, X86_64.argRegs] [blocksSat] using blocksSat)
 
-theorem decryptBlocks_verified (v : GcmImpl) (stitch : Bool) (hS : stitch = true → Gcm.X86_64.Stitch.StitchOk) :
-    Verified X86_64.target (Blocks.decrypt v.callees.ctr v.callees.gh stitch)
+theorem decryptBlocks_verified (v : GcmImpl) (st : Option StitchImpl) :
+    Verified X86_64.target (Blocks.decrypt v.callees.ctr v.callees.gh (st.map (·.dec)))
       (Spec.Gcm.decryptBlocksContract X86_64.abi 8) :=
-  Verified.of_correct (decryptBlocks_correct v stitch hS) (Blocks.decrypt_ct v stitch hS) (by
+  Verified.of_correct (decryptBlocks_correct v st) (Blocks.decrypt_ct v st) (by
     sig_implies [Spec.Gcm.decryptBlocksContract, Spec.Gcm.cryptBlocksSig, Proof.AesGcm.decryptBlocksX86_64,
       Proof.AesGcm.blocksPre, Proof.AesGcm.blocksPub, X86_64.abi, Proof.AesGcm.arg, Proof.AesGcm.args,
       Proof.AesGcm.stk, Proof.AesGcm.ret, Proof.AesGcm.rounds, X86_64.stackArg, X86_64.stackArgAddr,

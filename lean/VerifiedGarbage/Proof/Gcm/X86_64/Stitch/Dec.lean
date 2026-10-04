@@ -214,6 +214,6 @@ theorem dec_ok {s₀ : State} (hp : SPre s₀) : WP isa dec s₀ (DPost s₀) :=
     fun s₂ ⟨e, he, hI₂⟩ => dfinal_ok hp he hI₂)
 
 /-- Both interleaved loops meet their contracts. -/
-theorem stitch_ok : StitchOk := ⟨fun _ hp => enc_ok hp, fun _ hp => dec_ok hp⟩
+theorem stitch_ok : StitchOk Impl.Gcm.X86_64.Stitch.enc Impl.Gcm.X86_64.Stitch.dec := ⟨fun _ hp => enc_ok hp, fun _ hp => dec_ok hp⟩
 
 end VG.Proof.Gcm.X86_64.Stitch

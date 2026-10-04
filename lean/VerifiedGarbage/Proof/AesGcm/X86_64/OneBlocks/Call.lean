@@ -136,33 +136,35 @@ theorem nosp_of_all {c : Prog isa} (h : c.allInstrs (fun i => !Taint.clobbers i 
   nosp_of (by rw [← Code.allInstrs_eq]; exact h)
 
 section
-variable (v : GcmImpl) (stitch : Bool)
+variable (v : GcmImpl) (st : Option StitchImpl)
 
-theorem encryptBlocks_nosp : NoSp (Blocks.encrypt v.callees.ctr v.callees.gh stitch) := by
+theorem encryptBlocks_nosp : NoSp (Blocks.encrypt v.callees.ctr v.callees.gh (st.map (·.enc))) := by
   have hc := ctr_nosp_all v.ctr
   have hg := gh_nosp_all v.gh
   refine nosp_of_all ?_
-  cases stitch <;>
+  have hh := StitchImpl.head_nosp st fun i => i.encP
   simp only [Blocks.encrypt, Blocks.blocks, Blocks.tail, Blocks.ctrCall, Blocks.ghCall, Code.allInstrs,
-    GcmImpl.callees, hc, hg, Bool.true_and, Bool.and_true, Bool.false_eq_true, ite_false,
-    ite_true] <;> decide +kernel
+    GcmImpl.callees, hh, hc, hg, Bool.true_and, Bool.and_true, Bool.false_eq_true, ite_false,
+    ite_true]; decide +kernel
 
-theorem decryptBlocks_nosp : NoSp (Blocks.decrypt v.callees.ctr v.callees.gh stitch) := by
+theorem decryptBlocks_nosp : NoSp (Blocks.decrypt v.callees.ctr v.callees.gh (st.map (·.dec))) := by
   have hc := ctr_nosp_all v.ctr
   have hg := gh_nosp_all v.gh
   refine nosp_of_all ?_
-  cases stitch <;>
+  have hh := StitchImpl.head_nosp st fun i => i.decP
   simp only [Blocks.decrypt, Blocks.blocks, Blocks.tail, Blocks.ctrCall, Blocks.ghCall, Code.allInstrs,
-    GcmImpl.callees, hc, hg, Bool.true_and, Bool.and_true, Bool.false_eq_true, ite_false,
-    ite_true] <;> decide +kernel
+    GcmImpl.callees, hh, hc, hg, Bool.true_and, Bool.and_true, Bool.false_eq_true, ite_false,
+    ite_true]; decide +kernel
 
-theorem encryptBlocks_depth : (Blocks.encrypt v.callees.ctr v.callees.gh stitch).depth = 1 := by
-  cases stitch <;> simp only [Blocks.encrypt, Blocks.blocks, Blocks.tail, Blocks.ctrCall, Blocks.ghCall,
-    Code.depth, GcmImpl.callees, v.ctr.depth, v.gh.depth, Bool.false_eq_true, ite_false, ite_true] <;> decide
+theorem encryptBlocks_depth : (Blocks.encrypt v.callees.ctr v.callees.gh (st.map (·.enc))).depth = 1 := by
+  have hh := StitchImpl.head_depth st fun i => i.encP
+  simp only [Blocks.encrypt, Blocks.blocks, Blocks.tail, Blocks.ctrCall, Blocks.ghCall,
+    Code.depth, GcmImpl.callees, hh, v.ctr.depth, v.gh.depth, Bool.false_eq_true, ite_false, ite_true]; decide
 
-theorem decryptBlocks_depth : (Blocks.decrypt v.callees.ctr v.callees.gh stitch).depth = 1 := by
-  cases stitch <;> simp only [Blocks.decrypt, Blocks.blocks, Blocks.tail, Blocks.ctrCall, Blocks.ghCall,
-    Code.depth, GcmImpl.callees, v.ctr.depth, v.gh.depth, Bool.false_eq_true, ite_false, ite_true] <;> decide
+theorem decryptBlocks_depth : (Blocks.decrypt v.callees.ctr v.callees.gh (st.map (·.dec))).depth = 1 := by
+  have hh := StitchImpl.head_depth st fun i => i.decP
+  simp only [Blocks.decrypt, Blocks.blocks, Blocks.tail, Blocks.ctrCall, Blocks.ghCall,
+    Code.depth, GcmImpl.callees, hh, v.ctr.depth, v.gh.depth, Bool.false_eq_true, ite_false, ite_true]; decide
 
 end
 
@@ -211,7 +213,7 @@ theorem blkE_call (v : GcmImpl) {s : State} {K C Y D S : Addr} {R q : Nat} (h : 
     rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by have := h.w_d; omega)
   have hR : (BitVec.ofNat 64 R).toNat = R := by
     rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by rcases h.rounds with h | h | h <;> omega)
-  refine WP.call (k := Proof.AesGcm.encryptBlocksX86_64) (encryptBlocks_correct v v.stitch v.stitchOk)
+  refine WP.call (k := Proof.AesGcm.encryptBlocksX86_64) (encryptBlocks_correct v v.stitch)
     (encryptBlocks_nosp v v.stitch) (by rw [encryptBlocks_depth]; decide)
     (rd := BlkCall.rd s K) (wr := BlkCall.wr C Y D S q) h.pre h.reads h.writes ?_
   intro s' hrd hwr hcs hf _ ⟨s₂, hm₂, _, hpost⟩
@@ -236,7 +238,7 @@ theorem blkD_call (v : GcmImpl) {s : State} {K C Y D S : Addr} {R q : Nat} (h : 
     rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by have := h.w_d; omega)
   have hR : (BitVec.ofNat 64 R).toNat = R := by
     rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by rcases h.rounds with h | h | h <;> omega)
-  refine WP.call (k := Proof.AesGcm.decryptBlocksX86_64) (decryptBlocks_correct v v.stitch v.stitchOk)
+  refine WP.call (k := Proof.AesGcm.decryptBlocksX86_64) (decryptBlocks_correct v v.stitch)
     (decryptBlocks_nosp v v.stitch) (by rw [decryptBlocks_depth]; decide)
     (rd := BlkCall.rd s K) (wr := BlkCall.wr C Y D S q) h.pre h.reads h.writes ?_
   intro s' hrd hwr hcs hf _ ⟨s₂, hm₂, _, hpost⟩
@@ -268,8 +270,8 @@ theorem blkE_rel (v : GcmImpl) {P : State → State → Prop}
     (h : ∀ s₁ s₂, P s₁ s₂ → ∃ K C Y D S : Addr, ∃ R q : Nat,
       BlkCall s₁ K C Y D S R q ∧ BlkCall s₂ K C Y D S R q ∧ s₁.gpr .rsp = s₂.gpr .rsp) :
     RelCT isa P (.call v.callees.enc.name v.callees.enc.code) fun _ _ => True := by
-  refine RelCT.callEx (k := Proof.AesGcm.encryptBlocksX86_64) (encryptBlocks_correct v v.stitch v.stitchOk)
-    (Blocks.encrypt_ct v v.stitch v.stitchOk) fun s₁ s₂ hp => ?_
+  refine RelCT.callEx (k := Proof.AesGcm.encryptBlocksX86_64) (encryptBlocks_correct v v.stitch)
+    (Blocks.encrypt_ct v v.stitch) fun s₁ s₂ hp => ?_
   obtain ⟨K, C, Y, D, S, R, q, h₁, h₂, hsp⟩ := h s₁ s₂ hp
   exact ⟨_, _, _, _, h₁.pre, h₂.pre, blk_pub h₁ h₂ hsp, h₁.reads, h₁.writes, h₂.reads, h₂.writes, hsp⟩
 
@@ -277,8 +279,8 @@ theorem blkD_rel (v : GcmImpl) {P : State → State → Prop}
     (h : ∀ s₁ s₂, P s₁ s₂ → ∃ K C Y D S : Addr, ∃ R q : Nat,
       BlkCall s₁ K C Y D S R q ∧ BlkCall s₂ K C Y D S R q ∧ s₁.gpr .rsp = s₂.gpr .rsp) :
     RelCT isa P (.call v.callees.dec.name v.callees.dec.code) fun _ _ => True := by
-  refine RelCT.callEx (k := Proof.AesGcm.decryptBlocksX86_64) (decryptBlocks_correct v v.stitch v.stitchOk)
-    (Blocks.decrypt_ct v v.stitch v.stitchOk) fun s₁ s₂ hp => ?_
+  refine RelCT.callEx (k := Proof.AesGcm.decryptBlocksX86_64) (decryptBlocks_correct v v.stitch)
+    (Blocks.decrypt_ct v v.stitch) fun s₁ s₂ hp => ?_
   obtain ⟨K, C, Y, D, S, R, q, h₁, h₂, hsp⟩ := h s₁ s₂ hp
   exact ⟨_, _, _, _, h₁.pre, h₂.pre, blk_pub h₁ h₂ hsp, h₁.reads, h₁.writes, h₂.reads, h₂.writes, hsp⟩
 

@@ -45,7 +45,7 @@ def note (v : GcmImpl) : String :=
 
 /-- How an instance of `vg_aes_gcm_encrypt_blocks` or `_decrypt_blocks` works. -/
 def blocksNote (v : GcmImpl) : String :=
-  if v.stitch then
+  if v.stitch.isSome then
     "This implementation interleaves the AES rounds of 16 blocks at a time with GHASH's \
       multiplications of the 16 blocks before them, from the powers of the hash subkey it \
       computes in `scratch`, and handles the rest with `" ++ v.ctr.callee.name ++ "` and `" ++
@@ -61,7 +61,7 @@ def artifacts (v : GcmImpl) : List Artifact := [
     code := v.callees.enc.code
     contract := Spec.Gcm.encryptBlocksContract X86_64.abi 8
     stack := 8
-    verified := encryptBlocks_verified v v.stitch v.stitchOk
+    verified := encryptBlocks_verified v v.stitch
     spSafe := encryptBlocks_spSafe v v.stitch
     features := v.features },
   { Spec.Gcm.decryptBlocksApi with
@@ -71,7 +71,7 @@ def artifacts (v : GcmImpl) : List Artifact := [
     code := v.callees.dec.code
     contract := Spec.Gcm.decryptBlocksContract X86_64.abi 8
     stack := 8
-    verified := decryptBlocks_verified v v.stitch v.stitchOk
+    verified := decryptBlocks_verified v v.stitch
     spSafe := decryptBlocks_spSafe v v.stitch
     features := v.features },
   { Spec.Gcm.initApi with

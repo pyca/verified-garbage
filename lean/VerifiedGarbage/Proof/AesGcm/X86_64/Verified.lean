@@ -23,7 +23,8 @@ namespace VG.Proof.AesGcm.X86_64
 
 /-- The CPU features of the functions calling `vg_aes_ctr32` and `vg_ghash`
 (here, not in `Callee.lean`, to keep `List.dedup`'s imports out of the proofs). -/
-def GcmImpl.features (v : GcmImpl) : List String := (v.ctr.features ++ v.gh.features).dedup
+def GcmImpl.features (v : GcmImpl) : List String :=
+  (v.ctr.features ++ v.gh.features ++ (v.stitch.map (·.features)).getD []).dedup
 
 open VG VG.X86_64 VG.Impl.AesGcm.X86_64
 

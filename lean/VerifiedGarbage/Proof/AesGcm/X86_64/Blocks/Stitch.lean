@@ -229,9 +229,9 @@ theorem stitch_ok {piece : Prog isa} {Post : State → State → Prop} {ys : Nat
       hpost s₃ s₄ h9 ga gc g11 rd₃' wr₃' hk₃ hf₃ hP
 
 /-- Encryption: the blocks hashed are those written. -/
-theorem stitchE_ok (hS : Gcm.X86_64.Stitch.StitchOk) {s₁ : State} (h11 : s₁.gpr .r11 = S s) (hg : ∀ r, r ≠ .r11 → s₁.gpr r = s.gpr r)
+theorem stitchE_ok {enc dec : Prog isa} (hS : Gcm.X86_64.Stitch.StitchOk enc dec) {s₁ : State} (h11 : s₁.gpr .r11 = S s) (hg : ∀ r, r ≠ .r11 → s₁.gpr r = s.gpr r)
     (hk : Kept s 0 s₁.mem) (hf : Frame [kR' s] s.mem s₁.mem) (hrd : s₁.rd = s.rd) (hwr : s₁.wr = s.wr) :
-    WP isa (stitchPart Impl.Gcm.X86_64.Stitch.enc) s₁
+    WP isa (stitchPart enc) s₁
       (Mid s (n s - n s % 16) 0
         (ctr32 (ciph s) (cb s) (blocksAt s.mem (D s) (n s - n s % 16)))) :=
   stitch_ok hp (ys := fun q => ctr32 (ciph s) (cb s) (blocksAt s.mem (D s) q)) rfl
@@ -249,9 +249,9 @@ theorem stitchE_ok (hS : Gcm.X86_64.Stitch.StitchOk) {s₁ : State} (h11 : s₁.
     h11 hg hk hf hrd hwr
 
 /-- Decryption: the blocks hashed are those read. -/
-theorem stitchD_ok (hS : Gcm.X86_64.Stitch.StitchOk) {s₁ : State} (h11 : s₁.gpr .r11 = S s) (hg : ∀ r, r ≠ .r11 → s₁.gpr r = s.gpr r)
+theorem stitchD_ok {enc dec : Prog isa} (hS : Gcm.X86_64.Stitch.StitchOk enc dec) {s₁ : State} (h11 : s₁.gpr .r11 = S s) (hg : ∀ r, r ≠ .r11 → s₁.gpr r = s.gpr r)
     (hk : Kept s 0 s₁.mem) (hf : Frame [kR' s] s.mem s₁.mem) (hrd : s₁.rd = s.rd) (hwr : s₁.wr = s.wr) :
-    WP isa (stitchPart Impl.Gcm.X86_64.Stitch.dec) s₁
+    WP isa (stitchPart dec) s₁
       (Mid s (n s - n s % 16) 0
         (blocksAt s.mem (D s) (n s - n s % 16))) :=
   stitch_ok hp (ys := fun q => blocksAt s.mem (D s) q) rfl
