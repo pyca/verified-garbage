@@ -5,7 +5,7 @@ import VerifiedGarbage.Proof.AesGcm.Arm.Compare
 # AES-GCM-SIV on ARMv7: comparing the tags and masking the data
 
 Untrusted: everything here is checked by Lean. `cmp` sets `r0` to 1 if the
-tags at `W` and `W + 240` are equal and 0 if not, without a branch, as
+tags at `W` and `W + 176` are equal and 0 if not, without a branch, as
 AES-GCM's `cmpTail` does (`Proof.AesGcm.Arm.cmp_value`) (`cmp_ok`); `mask`
 ANDs every byte of the data with `0 − r0`: it keeps the data if `r0` is 1
 and zeroes it if `r0` is 0 (`mask_ok`).
@@ -25,16 +25,16 @@ open VG.Proof.AesGcm.Arm (add_ofNat_assoc add_ofNat_zero eval_eq' eval_ne' z_cmp
 theorem cmp_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t) :
     ∃ t' : State, runBlock isa cmp t = some t' ∧
       t'.gpr .r0 = (if bytesAt t.mem (State.addr p.W) 16 =
-        bytesAt t.mem (State.addr p.W + BitVec.ofNat 64 240) 16 then 1 else 0) ∧
+        bytesAt t.mem (State.addr p.W + BitVec.ofNat 64 176) 16 then 1 else 0) ∧
       Others [.r0, .r1, .r2] t t' ∧ t'.mem = t.mem ∧ t'.sp = t.sp ∧ t'.rd = t.rd ∧ t'.wr = t.wr := by
-  have r₀ : InRegions (t.rd ++ t.wr) (State.addr p.W) 4 := by simpa using E.perm.wR (show 0 + 4 ≤ 4096 by decide)
-  have r₁ := E.perm.wR (show 4 + 4 ≤ 4096 by decide)
-  have r₂ := E.perm.wR (show 8 + 4 ≤ 4096 by decide)
-  have r₃ := E.perm.wR (show 12 + 4 ≤ 4096 by decide)
-  have q₀ := E.perm.wR (show 240 + 4 ≤ 4096 by decide)
-  have q₁ := E.perm.wR (show 244 + 4 ≤ 4096 by decide)
-  have q₂ := E.perm.wR (show 248 + 4 ≤ 4096 by decide)
-  have q₃ := E.perm.wR (show 252 + 4 ≤ 4096 by decide)
+  have r₀ : InRegions (t.rd ++ t.wr) (State.addr p.W) 4 := by simpa using E.perm.wR (show 0 + 4 ≤ 3760 by decide)
+  have r₁ := E.perm.wR (show 4 + 4 ≤ 3760 by decide)
+  have r₂ := E.perm.wR (show 8 + 4 ≤ 3760 by decide)
+  have r₃ := E.perm.wR (show 12 + 4 ≤ 3760 by decide)
+  have q₀ := E.perm.wR (show 176 + 4 ≤ 3760 by decide)
+  have q₁ := E.perm.wR (show 180 + 4 ≤ 3760 by decide)
+  have q₂ := E.perm.wR (show 184 + 4 ≤ 3760 by decide)
+  have q₃ := E.perm.wR (show 188 + 4 ≤ 3760 by decide)
   refine ⟨_, by simp only [cmp, xorW]; srun [E.r11, add_ofNat_zero, L.wA, r₀, r₁, r₂, r₃, q₀, q₁, q₂, q₃], ?_,
     by others_tac, by rfl, by rfl, by rfl, by rfl⟩
   simp only [gpr_setReg, ite_true, ite_false, reduceCtorEq]

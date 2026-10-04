@@ -77,7 +77,7 @@ theorem chunkB_rel (v : GcmImpl) {p : Prm} (L : Lay p) {τ₁ τ₂ : State} (E�
 
 /-- `absorb`, in two runs with the same public arguments, pointer and count. -/
 theorem absorb_rel (v : GcmImpl) {p : Prm} (L : Lay p) {τ₁ τ₂ : State} (E₁ : Env p τ₁) (E₂ : Env p τ₂)
-    {Q : Addr} {m : Nat} (hm : m < 2 ^ 64) (hw : Q.toNat + m ≤ 2 ^ 64) (hd : (⟨Q, m⟩ : Region).Disjoint ⟨p.W, 4096⟩)
+    {Q : Addr} {m : Nat} (hm : m < 2 ^ 64) (hw : Q.toNat + m ≤ 2 ^ 64) (hd : (⟨Q, m⟩ : Region).Disjoint ⟨p.W, 3808⟩)
     (hc₁ : Covers [⟨Q, m⟩] (τ₁.rd ++ τ₁.wr)) (hc₂ : Covers [⟨Q, m⟩] (τ₂.rd ++ τ₂.wr))
     (a27 : τ₁.gpr .x27 = Q) (b27 : τ₂.gpr .x27 = Q) (a28 : τ₁.gpr .x28 = BitVec.ofNat 64 m)
     (b28 : τ₂.gpr .x28 = BitVec.ofNat 64 m) :
@@ -110,7 +110,7 @@ theorem absorb_rel (v : GcmImpl) {p : Prm} (L : Lay p) {τ₁ τ₂ : State} (E�
   refine rel_ite (eval_zero x28₁ (by omega)) (eval_zero x28₂ (by omega))
     (fun _ => RelCT.block_nil fun _ _ _ => trivial) (fun hf => ?_)
   have h0 : m % 16 ≠ 0 := by simpa using hf
-  have dT : (⟨Q + BitVec.ofNat 64 (16 * (m / 16)), m % 16⟩ : Region).Disjoint ⟨p.W, 4096⟩ :=
+  have dT : (⟨Q + BitVec.ofNat 64 (16 * (m / 16)), m % 16⟩ : Region).Disjoint ⟨p.W, 3808⟩ :=
     hd.sub_left (Offset.sub_base Q (by omega))
   have hs₁ := (hQ₁'.slice (a := 16 * (m / 16)) (k := m % 16) (by omega)).of_eq A₁.rd A₁.wr
   have hs₂ := (hQ₂'.slice (a := 16 * (m / 16)) (k := m % 16) (by omega)).of_eq A₂.rd A₂.wr
@@ -167,8 +167,8 @@ theorem polyval_rel (v : GcmImpl) {p : Prm} (L : Lay p) {σ₁ σ₂ : State} (E
     rel_env F₁.env F₂.env [] (by simp) tagIn_check
   have wL : ∀ {d : State}, Env p d → WP isa (.block lensBlock) d fun t =>
       Env p t ∧ t.gpr .x27 = p.W + BitVec.ofNat 64 224 ∧ t.gpr .x28 = BitVec.ofNat 64 16 := fun E => by
-    have w₀ := E.perm.wW (show 224 + 8 ≤ 4096 by decide)
-    have w₈ := E.perm.wW (show 232 + 8 ≤ 4096 by decide)
+    have w₀ := E.perm.wW (show 224 + 8 ≤ 3808 by decide)
+    have w₈ := E.perm.wW (show 232 + 8 ≤ 3808 by decide)
     refine WP.run ⟨_, by simp only [lensBlock]; grun [E.x19, E.x24, E.x26, w₀, w₈], rfl⟩ fun t ht => ?_
     subst ht
     refine ⟨E.keep (fun q hq => by

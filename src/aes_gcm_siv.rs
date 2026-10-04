@@ -44,10 +44,6 @@ use crate::cpu::detected;
 use crate::zeroize::zeroize;
 use core::mem::MaybeUninit;
 
-/// The working space of `vg_aes_gcm_siv_seal` and `vg_aes_gcm_siv_open`, in
-/// 64-bit words: the tag in its first 16 bytes.
-const WORK: usize = 512;
-
 /// The longest plaintext and additional data, in bytes (§6: `P_MAX` and
 /// `A_MAX`, `2^36`).
 const MAX_LEN: u64 = 1 << 36;
@@ -153,18 +149,17 @@ impl AesGcmSiv {
                 vg_aes_gcm_siv_seal_vaes_vpclmul_avx512],
             avx: [vg_aes_gcm_siv_seal_aesni_pclmul_avx],
             aarch64: [vg_aes_gcm_siv_seal_aes]);
-        let mut work = MaybeUninit::<[u64; WORK]>::uninit();
+        let mut tag = [0u8; 16];
         // SAFETY: `self.schedule` is the key schedule `vg_aes_expand_key`
         // wrote for `self.rounds` (10 or 14) rounds, valid for reads of 240
         // bytes. `nonce` (12 bytes) and `aad` are valid for reads of their
         // lengths, `data` for reads and writes of `data.len()` bytes, and
-        // `work` for reads and writes of 4096. `data` and `work` are unique
+        // `tag` for reads and writes of 16. `data` and `tag` are unique
         // borrows, so they overlap neither each other nor the other buffers;
         // no buffer overlaps the arguments on the stack, the return address
         // or the stack below it, and none wraps around the end of the address
         // space. The CPU has the features of the implementation selected
-        // (see `features_cover_instances`). `work` is uninitialized: it is
-        // only working space but for the tag written to its first 16 bytes.
+        // (see `features_cover_instances`).
         unsafe {
             seal(
                 &self.schedule,
@@ -174,11 +169,10 @@ impl AesGcmSiv {
                 aad.len(),
                 data.as_mut_ptr(),
                 data.len(),
-                work.as_mut_ptr(),
+                &mut tag,
             )
         };
-        // SAFETY: `seal` wrote the tag to the first 16 bytes of `work`.
-        Ok(unsafe { first_block(&work) })
+        Ok(tag)
     }
 
     /// Decryption (§5): if `tag` authenticates the ciphertext in `data`,
@@ -199,16 +193,9 @@ impl AesGcmSiv {
                 vg_aes_gcm_siv_open_vaes_vpclmul_avx512],
             avx: [vg_aes_gcm_siv_open_aesni_pclmul_avx],
             aarch64: [vg_aes_gcm_siv_open_aes]);
-        let mut work = MaybeUninit::<[u64; WORK]>::uninit();
-        let w = work.as_mut_ptr().cast::<u64>();
-        // SAFETY: `work` is valid for writes of 512 words.
-        unsafe {
-            w.write(u64::from_le_bytes(tag[..8].try_into().unwrap()));
-            w.add(1)
-                .write(u64::from_le_bytes(tag[8..].try_into().unwrap()));
-        }
-        // SAFETY: as in `encrypt_in_place`, with the received tag in the
-        // first 16 bytes of `work`.
+        // SAFETY: as in `encrypt_in_place`, with the received tag `tag`
+        // valid for reads of 16 bytes, which `data`, a unique borrow, does not
+        // overlap.
         let ok = unsafe {
             open(
                 &self.schedule,
@@ -218,7 +205,7 @@ impl AesGcmSiv {
                 aad.len(),
                 data.as_mut_ptr(),
                 data.len(),
-                work.as_mut_ptr(),
+                tag,
             )
         };
         // `open`'s contract leaves the plaintext in `data` if it returns 1,
@@ -229,22 +216,6 @@ impl AesGcmSiv {
             Err(Error::TagMismatch)
         }
     }
-}
-
-/// The first 16 bytes of `work`, where `seal` writes the tag.
-///
-/// # Safety
-///
-/// They must have been written.
-unsafe fn first_block(work: &MaybeUninit<[u64; WORK]>) -> [u8; 16] {
-    let w = work.as_ptr().cast::<u64>();
-    let mut b = [0u8; 16];
-    // SAFETY: the first two words are initialized (the caller's guarantee).
-    unsafe {
-        b[..8].copy_from_slice(&w.read().to_le_bytes());
-        b[8..].copy_from_slice(&w.add(1).read().to_le_bytes());
-    }
-    b
 }
 
 #[cfg(test)]
