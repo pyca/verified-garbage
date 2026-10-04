@@ -251,7 +251,9 @@ mod tests {
     use super::{AesGcmSiv, Error, MAX_LEN, check};
     use crate::aes_gcm::{Backend, instance};
     #[cfg(target_arch = "aarch64")]
-    use crate::arch::aes_gcm_siv::{VG_AES_GCM_SIV_OPEN_AES_FEATURES, VG_AES_GCM_SIV_SEAL_AES_FEATURES};
+    use crate::arch::aes_gcm_siv::{
+        VG_AES_GCM_SIV_OPEN_AES_FEATURES, VG_AES_GCM_SIV_SEAL_AES_FEATURES,
+    };
     #[cfg(target_arch = "x86_64")]
     use crate::arch::aes_gcm_siv::{
         VG_AES_GCM_SIV_OPEN_AESNI_FEATURES, VG_AES_GCM_SIV_OPEN_AESNI_PCLMUL_AVX_FEATURES,
