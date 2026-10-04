@@ -186,11 +186,11 @@ theorem tbl_apart_tbl {j j' t : Nat} (hjj : j ≠ j') (ht : t < 64 * c.n) :
 theorem modP_of (hc : CfgOk c) {base : Addr} {m : Mem} (h : wordsVal m base (c.sl MP) c.n = c.C.p) :
     ModOk c.MP' size c.C.p m base :=
   ⟨hc.n0, hc.n7, sl_le c hc.n7 (by decide), sl_le c hc.n7 (by decide), sl_apart c (by decide), h,
-    hc.minv_p⟩
+    hc.minv_p, rfl⟩
 
 theorem modN_of (hc : CfgOk c) {base : Addr} {m : Mem} (h : wordsVal m base (c.sl MN) c.n = c.C.n) :
     ModOk c.MN' size c.C.n m base :=
   ⟨hc.n0, hc.n7, sl_le c hc.n7 (by decide), sl_le c hc.n7 (by decide), sl_apart c (by decide), h,
-    hc.minv_n⟩
+    hc.minv_n, rfl⟩
 
 end VG.Proof.Ecdsa.Arm
