@@ -88,7 +88,7 @@ theorem const64_ok (s : State) (r : Reg) (v : BitVec 64) :
 
 /-- `x1 = t₀ m' mod 2⁶⁴`, with `m'` in `x6`. -/
 theorem uBlock_ok (s : State) (t0 : Reg) (h6 : t0 ≠ .x6) (minv : BitVec 64) :
-    WP isa (.block (const64 .x6 minv ++ [.mul .x .x1 t0 .x6])) s
+    WP isa (.block (const64 .x6 minv ++ ([.mul .x .x1 t0 .x6] : List Instr))) s
       fun s' => (s'.gpr .x1).toNat = (s.gpr t0).toNat * minv.toNat % 2 ^ 64 ∧
         Keeps [.x1, .x6] s s' := by
   rw [WP.block_append_iff]
