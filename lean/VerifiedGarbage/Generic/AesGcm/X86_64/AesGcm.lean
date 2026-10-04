@@ -153,7 +153,7 @@ def artifacts (v : GcmImpl) : List Artifact := [
     stack := 8
     verified := streamFinish_verified v
     spSafe := streamFinish_spSafe v
-    features := v.features },
+    features := v.calleeFeatures },
   { Spec.Gcm.streamVerifyApi with
     name := Spec.Gcm.streamVerifyApi.name ++ v.suffix
     target := X86_64.target
@@ -163,6 +163,6 @@ def artifacts (v : GcmImpl) : List Artifact := [
     stack := 8
     verified := streamVerify_verified v
     spSafe := streamVerify_spSafe v
-    features := v.features }]
+    features := v.calleeFeatures }]
 
 end VG.Generic.AesGcm.X86_64.AesGcm

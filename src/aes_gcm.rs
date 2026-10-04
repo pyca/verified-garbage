@@ -85,27 +85,31 @@ use crate::arch::gcm::{
 };
 #[cfg(target_arch = "x86_64")]
 use crate::arch::gcm::{
-    VG_AES_GCM_SEAL_AESNI_PCLMUL_AVX_FEATURES, vg_aes_gcm_init_aesni_pclmul_avx, vg_aes_gcm_open_aesni_pclmul_avx, vg_aes_gcm_seal_aesni_pclmul_avx, vg_aes_gcm_stream_aad_aesni_pclmul_avx, vg_aes_gcm_stream_decrypt_aesni_pclmul_avx, vg_aes_gcm_stream_encrypt_aesni_pclmul_avx, vg_aes_gcm_stream_finish_aesni_pclmul_avx, vg_aes_gcm_stream_init_aesni_pclmul_avx, vg_aes_gcm_stream_verify_aesni_pclmul_avx,
-    VG_AES_GCM_SEAL_AESNI_VPCLMUL_FEATURES, VG_AES_GCM_SEAL_VAES_FEATURES,
-    VG_AES_GCM_SEAL_VAES_PCLMUL_FEATURES, VG_AES_GCM_SEAL_VAES_VPCLMUL_FEATURES,
-    VG_AES_GCM_SEAL_VPCLMUL_FEATURES, vg_aes_gcm_init_aesni_vpclmul, vg_aes_gcm_init_vaes,
+    VG_AES_GCM_SEAL_AESNI_PCLMUL_AVX_FEATURES, VG_AES_GCM_SEAL_AESNI_VPCLMUL_FEATURES,
+    VG_AES_GCM_SEAL_VAES_FEATURES, VG_AES_GCM_SEAL_VAES_PCLMUL_FEATURES,
+    VG_AES_GCM_SEAL_VAES_VPCLMUL_FEATURES, VG_AES_GCM_SEAL_VPCLMUL_FEATURES,
+    vg_aes_gcm_init_aesni_pclmul_avx, vg_aes_gcm_init_aesni_vpclmul, vg_aes_gcm_init_vaes,
     vg_aes_gcm_init_vaes_pclmul, vg_aes_gcm_init_vaes_vpclmul, vg_aes_gcm_init_vpclmul,
-    vg_aes_gcm_open_aesni_vpclmul, vg_aes_gcm_open_vaes, vg_aes_gcm_open_vaes_pclmul,
-    vg_aes_gcm_open_vaes_vpclmul, vg_aes_gcm_open_vpclmul, vg_aes_gcm_seal_aesni_vpclmul,
-    vg_aes_gcm_seal_vaes, vg_aes_gcm_seal_vaes_pclmul, vg_aes_gcm_seal_vaes_vpclmul,
-    vg_aes_gcm_seal_vpclmul, vg_aes_gcm_stream_aad_aesni_vpclmul, vg_aes_gcm_stream_aad_vaes,
-    vg_aes_gcm_stream_aad_vaes_pclmul, vg_aes_gcm_stream_aad_vaes_vpclmul,
-    vg_aes_gcm_stream_aad_vpclmul, vg_aes_gcm_stream_decrypt_aesni_vpclmul,
+    vg_aes_gcm_open_aesni_pclmul_avx, vg_aes_gcm_open_aesni_vpclmul, vg_aes_gcm_open_vaes,
+    vg_aes_gcm_open_vaes_pclmul, vg_aes_gcm_open_vaes_vpclmul, vg_aes_gcm_open_vpclmul,
+    vg_aes_gcm_seal_aesni_pclmul_avx, vg_aes_gcm_seal_aesni_vpclmul, vg_aes_gcm_seal_vaes,
+    vg_aes_gcm_seal_vaes_pclmul, vg_aes_gcm_seal_vaes_vpclmul, vg_aes_gcm_seal_vpclmul,
+    vg_aes_gcm_stream_aad_aesni_pclmul_avx, vg_aes_gcm_stream_aad_aesni_vpclmul,
+    vg_aes_gcm_stream_aad_vaes, vg_aes_gcm_stream_aad_vaes_pclmul,
+    vg_aes_gcm_stream_aad_vaes_vpclmul, vg_aes_gcm_stream_aad_vpclmul,
+    vg_aes_gcm_stream_decrypt_aesni_pclmul_avx, vg_aes_gcm_stream_decrypt_aesni_vpclmul,
     vg_aes_gcm_stream_decrypt_vaes, vg_aes_gcm_stream_decrypt_vaes_pclmul,
     vg_aes_gcm_stream_decrypt_vaes_vpclmul, vg_aes_gcm_stream_decrypt_vpclmul,
-    vg_aes_gcm_stream_encrypt_aesni_vpclmul, vg_aes_gcm_stream_encrypt_vaes,
-    vg_aes_gcm_stream_encrypt_vaes_pclmul, vg_aes_gcm_stream_encrypt_vaes_vpclmul,
-    vg_aes_gcm_stream_encrypt_vpclmul, vg_aes_gcm_stream_finish_aesni_vpclmul,
+    vg_aes_gcm_stream_encrypt_aesni_pclmul_avx, vg_aes_gcm_stream_encrypt_aesni_vpclmul,
+    vg_aes_gcm_stream_encrypt_vaes, vg_aes_gcm_stream_encrypt_vaes_pclmul,
+    vg_aes_gcm_stream_encrypt_vaes_vpclmul, vg_aes_gcm_stream_encrypt_vpclmul,
+    vg_aes_gcm_stream_finish_aesni_pclmul_avx, vg_aes_gcm_stream_finish_aesni_vpclmul,
     vg_aes_gcm_stream_finish_vaes, vg_aes_gcm_stream_finish_vaes_pclmul,
     vg_aes_gcm_stream_finish_vaes_vpclmul, vg_aes_gcm_stream_finish_vpclmul,
-    vg_aes_gcm_stream_init_aesni_vpclmul, vg_aes_gcm_stream_init_vaes,
-    vg_aes_gcm_stream_init_vaes_pclmul, vg_aes_gcm_stream_init_vaes_vpclmul,
-    vg_aes_gcm_stream_init_vpclmul, vg_aes_gcm_stream_verify_aesni_vpclmul,
+    vg_aes_gcm_stream_init_aesni_pclmul_avx, vg_aes_gcm_stream_init_aesni_vpclmul,
+    vg_aes_gcm_stream_init_vaes, vg_aes_gcm_stream_init_vaes_pclmul,
+    vg_aes_gcm_stream_init_vaes_vpclmul, vg_aes_gcm_stream_init_vpclmul,
+    vg_aes_gcm_stream_verify_aesni_pclmul_avx, vg_aes_gcm_stream_verify_aesni_vpclmul,
     vg_aes_gcm_stream_verify_vaes, vg_aes_gcm_stream_verify_vaes_pclmul,
     vg_aes_gcm_stream_verify_vaes_vpclmul, vg_aes_gcm_stream_verify_vpclmul,
 };
@@ -893,7 +897,10 @@ mod tests {
                 f(&["aes", "avx", "pclmulqdq", "ssse3", "vaes", "vpclmulqdq"]),
                 Backend::AesNiPclmulAvx
             );
-            assert_eq!(f(&["aes", "avx", "pclmulqdq", "ssse3"]), Backend::AesNiPclmulAvx);
+            assert_eq!(
+                f(&["aes", "avx", "pclmulqdq", "ssse3"]),
+                Backend::AesNiPclmulAvx
+            );
             assert_eq!(f(&["aes", "avx", "ssse3"]), Backend::AesNi);
         }
         #[cfg(target_arch = "x86")]
@@ -1175,6 +1182,50 @@ mod tests {
                 assert_eq!(&buf[..], &ct[..]);
                 k.decrypt_in_place(&nonce, &aad, buf, &tag).unwrap();
                 assert_eq!(buf, &msg[..len]);
+            }
+        }
+    }
+
+    /// Every implementation the CPU can run encrypts and decrypts long
+    /// messages (whole groups of 16 blocks, which some implementations
+    /// interleave, and the blocks left) as the baseline one does, one-shot
+    /// and streaming.
+    #[test]
+    fn backends_agree() {
+        let msg: [u8; 1300] = core::array::from_fn(|i| (i * 13 + 1) as u8);
+        let aad = [9u8; 7];
+        let nonce = [2u8; 12];
+        for key_len in [16, 24, 32] {
+            let k = AesGcm::new(&[0x5a; 32][..key_len]).unwrap();
+            let base = AesGcm {
+                backend: Backend::Scalar,
+                ..k.clone()
+            };
+            for &(b, need) in Backend::ALL {
+                if !detected().contains(need) {
+                    continue;
+                }
+                let k = AesGcm {
+                    backend: b,
+                    ..k.clone()
+                };
+                for len in [256, 300, 512, 1024, 1300] {
+                    let mut want = msg;
+                    let want_tag = base
+                        .encrypt_in_place(&nonce, &aad, &mut want[..len])
+                        .unwrap();
+                    let mut ct = msg;
+                    let tag = k.encrypt_in_place(&nonce, &aad, &mut ct[..len]).unwrap();
+                    assert_eq!((&ct[..len], tag), (&want[..len], want_tag), "{b:?}");
+                    let mut e = k.encryptor(&nonce).unwrap();
+                    e.update_aad(&aad).unwrap();
+                    let mut s = msg;
+                    e.update(&mut s[..len]).unwrap();
+                    assert_eq!((&s[..len], e.finalize()), (&want[..len], want_tag), "{b:?}");
+                    k.decrypt_in_place(&nonce, &aad, &mut ct[..len], &tag)
+                        .unwrap();
+                    assert_eq!(&ct[..len], &msg[..len], "{b:?}");
+                }
             }
         }
     }
