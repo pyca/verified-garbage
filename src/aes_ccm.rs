@@ -25,7 +25,7 @@
 //! `vg_cmac_aes_update` for the CBC-MAC), which have the same contracts: on
 //! x86-64, CPUs with AES-NI and SSSE3 run the `_aesni` instances, and CPUs
 //! with VAES and AVX2 too the `_vaes` ones (`crate::aes::Backend`); on x86,
-//! CPUs with AES-NI and SSSE3 run the `_aesni` instances. On
+//! CPUs with AES-NI run the `_aesni` instances. On
 //! AArch64, CPUs with the AES extension run the `_aes` instances, whose
 //! CBC-MAC is `vg_cmac_aes_update_aes` (calling `vg_aes_ctr32_aes` on one
 //! block at a time), or, when the associated data and the payload are longer
