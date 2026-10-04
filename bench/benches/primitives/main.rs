@@ -16,6 +16,7 @@ use openssl::hash::{MessageDigest, hash};
 use openssl::pkey::PKey;
 use openssl::sign::Signer;
 
+mod aes_ccm;
 mod aes_gcm;
 mod aes_siv;
 mod argon2;
@@ -241,6 +242,7 @@ pub(crate) fn pbkdf2_group(
 type Bench = (&'static [&'static str], fn(&mut Criterion));
 
 const BENCHES: &[Bench] = &[
+    (aes_ccm::USES, aes_ccm::bench),
     (aes_gcm::USES, aes_gcm::bench),
     (aes_siv::USES, aes_siv::bench),
     (blake2b::USES, blake2b::bench),
