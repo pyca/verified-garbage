@@ -43,7 +43,9 @@ theorem implies :
           AArch64.abi, AArch64.argRegs, satState, below] [satState 32] using satState 32 }
 
 /-- SHA-256, with the implementation `v` of its compression function. -/
-def pack (hL : Weierstrass.Law Spec.P256.curve) (v : Compress) : RfcHash where
+def pack (hL : Weierstrass.Law Spec.P256.curve)
+    (hT : Weierstrass.CombOk Spec.P256.curve 64 Impl.P256.p256Comb Impl.P256.p256CombStart) (v : Compress) :
+    RfcHash where
   I := Spec.Ecdsa.Rfc6979.P256Sha256.inst
   H := Proof.Pbkdf2.Md.AArch64.Sha256.hash v
   ok := Proof.Pbkdf2.Md.AArch64.Sha256.ok v
@@ -58,12 +60,13 @@ def pack (hL : Weierstrass.Law Spec.P256.curve) (v : Compress) : RfcHash where
   hS := Nat.le_of_ble_eq_true rfl
   hW := Nat.le_of_ble_eq_true rfl
   hWb := Nat.le_of_ble_eq_true rfl
-  coreX := Proof.Ecdsa.AArch64.sign_a64 hL
+  coreX := Proof.Ecdsa.AArch64.sign_a64 hL hT
   coreCT := Proof.Ecdsa.AArch64.sign_ct
 
-theorem sign_verified (hL : Weierstrass.Law Spec.P256.curve) (v : Compress) :
-    Verified AArch64.target (cfgOf (pack hL v)).sign
+theorem sign_verified (hL : Weierstrass.Law Spec.P256.curve)
+    (hT : Weierstrass.CombOk Spec.P256.curve 64 Impl.P256.p256Comb Impl.P256.p256CombStart) (v : Compress) :
+    Verified AArch64.target (cfgOf (pack hL hT v)).sign
       (Spec.Ecdsa.Rfc6979.P256Sha256.inst.signContract AArch64.abi 240) :=
-  AArch64.sign_verified (pack hL v) implies
+  AArch64.sign_verified (pack hL hT v) implies
 
 end VG.Proof.Ecdsa.Rfc6979.AArch64.Sha256
