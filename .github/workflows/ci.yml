@@ -666,12 +666,22 @@ jobs:
         env:
           CHIP: ${{ matrix.chip }}
       # Only the tests of what depends on CPU features, once per line of
-      # `runs`, each in a log group of its own; every line runs, and the step
-      # fails at the end, naming the lines that failed.
+      # `runs`. The lines run at the same time, as many as the runner has
+      # cores: each `cargo test` starts every test binary, under SDE a second
+      # or more each on one core, whether or not its filter selects any test,
+      # so that one line at a time left the other cores idle. (Cargo holds the
+      # build directory's lock only while building, which the first command
+      # does for all of them; the coverage files are named by process.) Each
+      # line's output is printed afterwards in a log group of its own; every
+      # line runs, and the step fails at the end, naming the lines that
+      # failed.
       - name: Test the implementations
         shell: bash
         run: |
-          failed=()
+          cargo test --locked --features cpu-features-env --no-run
+          logs=$RUNNER_TEMP/runs
+          mkdir -p "$logs"
+          names=()
           declare -A seen
           while IFS='|' read -r -u 3 features tests; do
             features=$(echo $features) tests=$(echo $tests)
@@ -681,11 +691,24 @@ jobs:
             [ "$features" = - ] && features=
             filter=$tests
             [ "$tests" = all ] && filter=
-            echo "::group::VG_CPU_FEATURES=$features: $tests"
-            VG_CPU_FEATURES=$features cargo test --locked --features cpu-features-env -- $filter \
-              || failed+=("VG_CPU_FEATURES=$features: $tests")
-            echo "::endgroup::"
+            while [ "$(jobs -rp | wc -l)" -ge "$(nproc)" ]; do wait -n || true; done
+            log=$logs/${#names[@]}
+            (
+              status=0
+              VG_CPU_FEATURES=$features cargo test --locked --features cpu-features-env -- $filter \
+                > "$log" 2>&1 || status=$?
+              echo "$status" > "$log.status"
+            ) &
+            names+=("VG_CPU_FEATURES=$features: $tests")
           done 3<<< "$RUNS"
+          wait
+          failed=()
+          for i in "${!names[@]}"; do
+            echo "::group::${names[$i]}"
+            cat "$logs/$i"
+            echo "::endgroup::"
+            [ "$(cat "$logs/$i.status")" = 0 ] || failed+=("${names[$i]}")
+          done
           for f in "${failed[@]}"; do echo "::error::Failed with $f"; done
           [ ${#failed[@]} -eq 0 ]
         env:
