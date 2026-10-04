@@ -41,12 +41,12 @@ theorem powPhase_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv mx : Bit
     (hsd : sd < 32) (hsln : slen < 32) (hep : word s.mem B (8 * sd) = ep)
     (hel : word s.mem B (8 * slen) = BitVec.ofNat 64 eb.length) (hL1 : 1 ≤ eb.length) (hL2 : eb.length ≤ 1024)
     (he : Src s B Z ep eb) :
-    WP isa (seqs ([.block [.mov .rdi (.mem (hdr sl))]] ++ redc M.mm Public.aY ++ Crt.expLoop M.mm sd slen)) s
+    WP isa (seqs (([.block [.mov .rdi (.mem (hdr sl))]] : List (Prog isa)) ++ redc M.mm Public.aY ++ Crt.expLoop M.mm sd slen)) s
       fun t => SubCtx t B Z o w wx mx ∧ XVals t B o wx mx X ∧
         wv t.mem (off B o) (slot wx Public.aY) wx < X ∧
         (X ∣ N → wv t.mem (off B o) (slot wx Public.aY) wx % X = C ^ Spec.Rsa.os2ip eb * 2 ^ (64 * wx) % X) ∧
         word t.mem (off B o) (8 * sMaskX) = word s.mem (off B o) (8 * sMaskX) ∧
-        Frm B [xRange o wx] s.mem t.mem ∧ Keep (mmRegs ++ [.rdi]) s t := by
+        Frm B [xRange o wx] s.mem t.mem ∧ Keep (mmRegs ++ ([.rdi] : List Reg)) s t := by
   have hs := hg.scr
   have hn := hs.nowrap
   have h8 := hdr_lt_slot w 8 (show 31 < 32 by decide)

@@ -18,7 +18,8 @@ theorem redc_step {X R A A' T c L k : Nat} (h1 : A' * R % X = A % X) (h2 : T * R
     (hA : A * R ^ k % X = L % X) : (A' + T) % X * R ^ (k + 1) % X = (L + c * R ^ k) % X := by
   have e1 : (A' + T) % X * R ^ (k + 1) ≡ (A' * R + T * R) * R ^ k [MOD X] := by
     have := (Nat.mod_modEq (A' + T) X).mul_right (R ^ (k + 1))
-    rwa [show (A' + T) * R ^ (k + 1) = (A' * R + T * R) * R ^ k by rw [Nat.pow_succ]; ring] at this
+    rwa [show (A' + T) * R ^ (k + 1) = (A' * R + T * R) * R ^ k by
+      rw [Nat.pow_succ, ← Nat.add_mul, Nat.mul_assoc, Nat.mul_comm (R ^ k) R]] at this
   have e2 : (A' * R + T * R) * R ^ k ≡ (A + c) * R ^ k [MOD X] :=
     (Nat.ModEq.add h1 h2).mul_right _
   have e3 : (A + c) * R ^ k ≡ L + c * R ^ k [MOD X] := by

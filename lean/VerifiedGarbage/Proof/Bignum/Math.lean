@@ -1,9 +1,5 @@
 import VerifiedGarbage.Proof.Framework.PowLit
-import Mathlib.Tactic.Ring
-import Mathlib.Data.Nat.ModEq
 import VerifiedGarbage.Spec.Rsa
-import Mathlib.Tactic.NormNum
-import Mathlib.Tactic.Positivity
 
 /-!
 # Multiword arithmetic: the mathematics
@@ -39,9 +35,14 @@ theorem hensel_step_int (a x : Int) (j : Nat) (h : (a * x - 1) % (2 ^ j : Int) =
   obtain ⟨k, hk⟩ := Int.dvd_of_emod_eq_zero h
   apply Int.emod_eq_zero_of_dvd
   refine ⟨-(k * k), ?_⟩
-  have : a * (x * (2 - a * x)) - 1 = -((a * x - 1) * (a * x - 1)) := by ring
-  rw [this, hk, two_mul, pow_add]
-  ring
+  have : a * (x * (2 - a * x)) - 1 = -((a * x - 1) * (a * x - 1)) := by grind
+  rw [this, hk, Nat.two_mul, Int.pow_add]
+  generalize (2 : Int) ^ j = P
+  grind
+
+/-- `2^i ∣ 2^j` for `i ≤ j`, on integers. -/
+private theorem pow2_dvd {i j : Nat} (hij : i ≤ j) : (2 ^ i : Int) ∣ 2 ^ j :=
+  ⟨2 ^ (j - i), by rw [← Int.pow_add, Nat.add_sub_cancel' hij]⟩
 
 /-- A step of Newton's iteration computed modulo `2⁶⁴`: if `a x ≡ 1 (mod 2^j)`
 and `x' ≡ x (2 - a x) (mod 2⁶⁴)` with `2 j ≤ 64`, then `a x' ≡ 1 (mod 2^(2j))`. -/
@@ -49,16 +50,16 @@ theorem newton_step {a x x' : Int} {j : Nat} (hj : 2 * j ≤ 64) (h : (a * x - 1
     (hx : (x' - x * (2 - a * x)) % (2 ^ 64 : Int) = 0) : (a * x' - 1) % (2 ^ (2 * j) : Int) = 0 := by
   have h1 := Int.dvd_of_emod_eq_zero (hensel_step_int a x j h)
   have h2 : (2 ^ (2 * j) : Int) ∣ x' - x * (2 - a * x) :=
-    (pow_dvd_pow 2 hj).trans (Int.dvd_of_emod_eq_zero hx)
+    Int.dvd_trans (pow2_dvd hj) (Int.dvd_of_emod_eq_zero hx)
   apply Int.emod_eq_zero_of_dvd
-  have : a * x' - 1 = a * (x' - x * (2 - a * x)) + (a * (x * (2 - a * x)) - 1) := by ring
+  have : a * x' - 1 = a * (x' - x * (2 - a * x)) + (a * (x * (2 - a * x)) - 1) := by grind
   rw [this]
-  exact dvd_add (h2.mul_left a) h1
+  exact Int.dvd_add (Int.dvd_trans h2 (Int.dvd_mul_left a _)) h1
 
 /-- Weakening a congruence modulo a power of two. -/
 theorem emod_pow_weaken {y : Int} {i j : Nat} (hij : i ≤ j) (h : y % (2 ^ j : Int) = 0) :
     y % (2 ^ i : Int) = 0 :=
-  Int.emod_eq_zero_of_dvd ((pow_dvd_pow 2 hij).trans (Int.dvd_of_emod_eq_zero h))
+  Int.emod_eq_zero_of_dvd (Int.dvd_trans (pow2_dvd hij) (Int.dvd_of_emod_eq_zero h))
 
 /-! ## A round of Montgomery multiplication -/
 
@@ -70,14 +71,15 @@ theorem round_sum_lt {T a b u m : Nat} (hT : T < 2 * m) (ha : a < 2 ^ 64) (hb : 
   have h2 : u * m ≤ (2 ^ 64 - 1) * m := Nat.mul_le_mul_right _ (by omega)
   have h3 : (2 ^ 64 - 1) * b ≤ (2 ^ 64 - 1) * m := Nat.mul_le_mul_left _ (by omega)
   rw [Nat.sub_mul, Nat.one_mul] at h1 h2 h3
-  have : 2 ^ 65 * m = 2 * 2 ^ 64 * m := by norm_num
+  have : 2 ^ 65 * m = 2 * 2 ^ 64 * m := by rw [show (2 : Nat) ^ 65 = 2 * 2 ^ 64 by decide]
   omega
 
 /-- A round keeps the accumulator below `2m`. -/
 theorem round_lt {T T' a b u m : Nat} (h : 2 ^ 64 * T' = T + a * b + u * m) (hT : T < 2 * m)
     (ha : a < 2 ^ 64) (hb : b < m) (hu : u < 2 ^ 64) : T' < 2 * m := by
   have := round_sum_lt hT ha hb hu
-  rw [← h, show 2 ^ 65 * m = 2 ^ 64 * (2 * m) by ring] at this
+  rw [← h, show 2 ^ 65 * m = 2 ^ 64 * (2 * m) by
+    rw [show (2 : Nat) ^ 65 = 2 ^ 64 * 2 by decide, Nat.mul_assoc]] at this
   exact Nat.lt_of_mul_lt_mul_left this
 
 /-- The accumulator after a round, times `2⁶⁴`, modulo `m`. -/
@@ -89,10 +91,8 @@ theorem round_mod {T T' a b u m : Nat} (h : 2 ^ 64 * T' = T + a * b + u * m) :
 theorem round_step {P T T' a b u m A : Nat} (h : 2 ^ 64 * T' = T + a * b + u * m)
     (hI : P * T % m = A * b % m) : P * 2 ^ 64 * T' % m = (A + P * a) * b % m := by
   have e : P * 2 ^ 64 * T' = P * T + P * a * b + P * u * m := by
-    rw [Nat.mul_assoc, h]; ring
-  rw [e, Nat.add_mul_mod_self_right, Nat.add_mod, hI, ← Nat.add_mod]
-  congr 1
-  ring
+    rw [Nat.mul_assoc, h, Nat.mul_add, Nat.mul_add, Nat.mul_assoc P a, Nat.mul_assoc P u]
+  rw [e, Nat.add_mul_mod_self_right, Nat.add_mod, hI, ← Nat.add_mod, Nat.add_mul]
 
 /-! ## The conditional subtraction -/
 
@@ -115,7 +115,7 @@ theorem csub_result {Tl Tw Tw1 D m R c : Nat} (hm : m < R) (hD : D < R) (hc : c 
     · exact h
     · have : R * 2 ^ 64 ≤ R * (Tw + 2 ^ 64 * Tw1) := Nat.mul_le_mul_left _ (by
         have := Nat.mul_le_mul_left (2 ^ 64) h; omega)
-      have : R * 2 ^ 64 ≥ 2 * R := by rw [Nat.mul_comm]; exact Nat.mul_le_mul_right _ (by norm_num)
+      have : R * 2 ^ 64 ≥ 2 * R := by rw [Nat.mul_comm]; exact Nat.mul_le_mul_right _ (by decide)
       omega
   subst h1
   simp only [Nat.mul_zero, Nat.add_zero] at hT ⊢
@@ -160,9 +160,9 @@ theorem bytes_mod_step (X b r : Nat) (hb : b < 256) :
   have h1 : 256 * X + b = (256 * (X % 256 ^ r) + b) + 256 * 256 ^ r * (X / 256 ^ r) := by
     have := Nat.mod_add_div X (256 ^ r)
     calc 256 * X + b = 256 * (X % 256 ^ r + 256 ^ r * (X / 256 ^ r)) + b := by rw [this]
-      _ = _ := by ring
+      _ = _ := by rw [Nat.mul_add, ← Nat.mul_assoc]; omega
   rw [h1, Nat.add_mul_mod_self_left, Nat.mod_eq_of_lt]
-  have := Nat.mod_lt X (show 0 < 256 ^ r by positivity)
+  have := Nat.mod_lt X (show 0 < 256 ^ r from Nat.pow_pos (by decide))
   have : 256 * (X % 256 ^ r) + 256 ≤ 256 * 256 ^ r := by
     rw [← Nat.mul_succ]; exact Nat.mul_le_mul_left _ this
   omega
@@ -172,7 +172,7 @@ theorem bytes_div_step (X b n : Nat) (hb : b < 256) : (256 * X + b) / 256 ^ (n +
   rw [Nat.pow_succ, Nat.mul_comm (256 ^ n) 256, ← Nat.div_div_eq_div_mul,
     show (256 * X + b) / 256 = X by omega]
 
-theorem pow256_8 : (256 : Nat) ^ 8 = 2 ^ 64 := by norm_num
+theorem pow256_8 : (256 : Nat) ^ 8 = 2 ^ 64 := by decide
 
 /-! ## Montgomery form -/
 
@@ -181,12 +181,21 @@ theorem coprime_pow2 {m : Nat} (hm : m % 2 = 1) (k : Nat) : Nat.Coprime (2 ^ k) 
   Nat.Coprime.pow_left k (by show Nat.gcd 2 m = 1; rw [Nat.gcd_rec, hm]; rfl)
 
 /-- Cancelling `R` from `o R ≡ c R (mod m)`, `R` invertible modulo `m`. -/
-theorem mont_cancel {o c R m : Nat} (hR : Nat.Coprime R m) (h : o * R % m = c * R % m) : o % m = c % m :=
-  Nat.ModEq.cancel_right_of_coprime hR.symm h
+theorem mont_cancel {o c R m : Nat} (hR : Nat.Coprime R m) (h : o * R % m = c * R % m) : o % m = c % m := by
+  -- For `c ≤ o`: `m ∣ (o - c) R`, so `m ∣ o - c`.
+  have key : ∀ {o c : Nat}, c ≤ o → o * R % m = c * R % m → o % m = c % m := by
+    intro o c hco h
+    have hd : m ∣ (o - c) * R := by
+      rw [Nat.sub_mul]; exact Nat.dvd_of_mod_eq_zero (Nat.sub_mod_eq_zero_of_mod_eq h)
+    obtain ⟨q, hq⟩ := hR.symm.dvd_of_dvd_mul_right hd
+    rw [show o = c + m * q by omega, Nat.add_mul_mod_self_left]
+  rcases Nat.le_total c o with hco | hoc
+  · exact key hco h
+  · exact (key hoc h.symm).symm
 
 /-- `Spec.Rsa.powMod` is the power modulo `m`. -/
 theorem powMod_eq (a e m : Nat) : Spec.Rsa.powMod a e m = a ^ e % m := by
-  induction e using Nat.strong_induction_on with
+  induction e using Nat.strongRecOn with
   | _ e ih =>
     rw [Spec.Rsa.powMod]
     split
@@ -199,10 +208,10 @@ theorem powMod_eq (a e m : Nat) : Spec.Rsa.powMod a e m = a ^ e % m := by
       split
       · rename_i h2
         rw [this, h2, Nat.pow_zero, Nat.mul_one]
-        exact (Nat.mod_modEq _ m).mul (Nat.mod_modEq _ m)
+        exact (Nat.mul_mod _ _ _).symm
       · rename_i h2
-        rw [this, show e % 2 = 1 by omega, Nat.pow_one]
-        exact ((Nat.mod_modEq _ m).trans ((Nat.mod_modEq _ m).mul (Nat.mod_modEq _ m))).mul_right a
+        rw [this, show e % 2 = 1 by omega, Nat.pow_one, ← Nat.mod_mul_mod (a ^ (e / 2) * a ^ (e / 2)),
+          Nat.mul_mod (a ^ (e / 2)) (a ^ (e / 2))]
 
 /-! ## Exponentiation in Montgomery form -/
 
@@ -212,7 +221,8 @@ theorem mont_sq {Y Y' x E R m : Nat} (hR : Nat.Coprime R m) (hY : Y % m = x ^ E 
   apply mont_cancel hR
   rw [h, Nat.mul_mod, hY, ← Nat.mul_mod]
   congr 1
-  rw [show 2 * E = E + E by omega, Nat.pow_add]; ring
+  rw [show 2 * E = E + E by omega, Nat.pow_add, Nat.mul_mul_mul_comm]
+  simp only [Nat.mul_assoc]
 
 /-- A Montgomery multiplication of `Y ≡ x^E R` by `X ≡ x R`: `x^(E+1) R`. -/
 theorem mont_mulx {Y Y' X x E R m : Nat} (hR : Nat.Coprime R m) (hY : Y % m = x ^ E * R % m)
@@ -220,6 +230,6 @@ theorem mont_mulx {Y Y' X x E R m : Nat} (hR : Nat.Coprime R m) (hY : Y % m = x 
   apply mont_cancel hR
   rw [h, Nat.mul_mod, hY, hX, ← Nat.mul_mod]
   congr 1
-  rw [Nat.pow_succ]; ring
+  rw [Nat.pow_succ, Nat.mul_right_comm, ← Nat.mul_assoc (x ^ E) x R]
 
 end VG.Proof.Bignum

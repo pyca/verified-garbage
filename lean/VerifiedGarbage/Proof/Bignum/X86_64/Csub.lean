@@ -98,8 +98,7 @@ theorem subStep_ok {s₀ : State} {B : Addr} {Z w eA eN eT : Nat}
   · rw [hm', hm, wv_writeW_top _ _ _ _ _ (by omega)]
     simp only [wv]
     rw [pow64_succ]
-    zify at hr hval ⊢
-    linear_combination hval + (2 ^ (64 * j) : ℤ) * hr
+    grind
 
 /-- `subMod`: `D = T - m` over `w` words into the array at `rsi`, its borrow
 `c`, and `rbp` the mask of `T_w < c` for the word `w` of `T` (that is, of

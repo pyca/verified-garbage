@@ -229,7 +229,7 @@ theorem mont_mulx2 {Y Y' Xc y x F E R m : Nat} (hR : Nat.Coprime R m) (hY : Y % 
   apply VG.Proof.Bignum.mont_cancel hR
   rw [h, Nat.mul_mod, hY, hX, ← Nat.mul_mod, Nat.pow_succ]
   congr 1
-  ring
+  grind
 
 /-- One bit: `Y ≡ y^F x^E R` becomes `x^(2E + bit) R`, for the bit at the top of
 the byte `V / 128 mod 2`; `V` doubles and the bit count `b` drops. -/

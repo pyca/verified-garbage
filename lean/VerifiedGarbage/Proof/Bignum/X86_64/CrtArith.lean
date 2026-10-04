@@ -67,8 +67,7 @@ theorem addStep_ok {s₀ : State} {B : Addr} {Z w eA ea eb : Nat}
   · rw [hm', hm, wv_writeW_top _ _ _ _ _ (by omega)]
     simp only [wv]
     rw [pow64_succ]
-    zify at hr hval ⊢
-    linear_combination hval + (2 ^ (64 * j) : ℤ) * hr
+    grind
 
 /-- `[o] := [a] + [b] mod m`, for `[a], [b] < m = [aN]`. -/
 theorem addMod_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hs : Scr s B Z)
@@ -82,7 +81,7 @@ theorem addMod_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hs : Sc
         wv s.mem B (slot w Public.aN) w ∧
       Arrays B w [Public.aAcc, Public.aTmp, o] s.mem t.mem ∧ Keep mmRegs s t := by
   have hn := hs.nowrap
-  have sl : ∀ j < 8, slot w j + 8 * (w + 2) ≤ Z := fun j hj => (slot_le hj).trans hZ
+  have sl : ∀ j < 8, slot w j + 8 * (w + 2) ≤ Z := fun j hj => Nat.le_trans (slot_le hj) hZ
   have sp : ∀ {j k}, j ≠ k → slot w j + 8 * (w + 2) ≤ slot w k ∨ slot w k + 8 * (w + 2) ≤ slot w j :=
     fun h => slot_sep h
   have hl : ∀ i < 32, InRegions (s.rd ++ s.wr) (off B (8 * i)) 8 := fun i hi =>
@@ -209,8 +208,8 @@ theorem maStep_ok {s₀ : State} {B : Addr} {Z w eo eN eA : Nat} {c : Bool}
     (hw : w < 2 ^ 32) (ho : eo + 8 * w ≤ Z) (hN : eN + 8 * w ≤ Z) (hA : eA + 8 * w ≤ Z)
     (sN : eN + 8 * w ≤ eo ∨ eo + 8 * w ≤ eN) (sA : eA + 8 * w ≤ eo ∨ eo + 8 * w ≤ eA)
     {j : Nat} (hj : j < w) {t : State} (hI : MaInv s₀ B Z eo eN eA c j t) :
-    WP isa (.block ([.mov .rax (.mem (ix .r10 .r14)), .alu .and .rax (.reg .r15), cfFromRbp,
-        .alu .adc .rax (.mem (ix .r8 .r14)), .store (ix .rbx .r14) .rax, cfToRbp] ++
+    WP isa (.block (([.mov .rax (.mem (ix .r10 .r14)), .alu .and .rax (.reg .r15), cfFromRbp,
+        .alu .adc .rax (.mem (ix .r8 .r14)), .store (ix .rbx .r14) .rax, cfToRbp] : List Instr) ++
         ([.alu .add .r14 (.imm 1), .alu .cmp .r14 (.reg .r12)] : List Instr))) t
       fun t' => t'.zf = some (decide (j + 1 = w)) ∧ MaInv s₀ B Z eo eN eA c (j + 1) t' := by
   have hn := hI.scr.nowrap
@@ -248,11 +247,9 @@ theorem maStep_ok {s₀ : State} {B : Addr} {Z w eo eN eA : Nat} {c : Bool}
     rw [pow64_succ]
     cases c
     · simp only [ite_false, Bool.false_eq_true] at hr hval ⊢
-      zify at hr hval ⊢
-      linear_combination hval + (2 ^ (64 * j) : ℤ) * hr
+      grind
     · simp only [ite_true] at hr hval ⊢
-      zify at hr hval ⊢
-      linear_combination hval + (2 ^ (64 * j) : ℤ) * hr
+      grind
 
 /-- `[o] := [a] - [b] mod m`, for `[a], [b] < m = [aN]`. -/
 theorem subModArr_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hs : Scr s B Z)
@@ -266,7 +263,7 @@ theorem subModArr_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hs :
         wv s.mem B (slot w b) w) % wv s.mem B (slot w Public.aN) w ∧
       Arrays B w [Public.aAcc, o] s.mem t.mem ∧ Keep mmRegs s t := by
   have hn := hs.nowrap
-  have sl : ∀ j < 8, slot w j + 8 * (w + 2) ≤ Z := fun j hj => (slot_le hj).trans hZ
+  have sl : ∀ j < 8, slot w j + 8 * (w + 2) ≤ Z := fun j hj => Nat.le_trans (slot_le hj) hZ
   have sp : ∀ {j k}, j ≠ k → slot w j + 8 * (w + 2) ≤ slot w k ∨ slot w k + 8 * (w + 2) ≤ slot w j :=
     fun h => slot_sep h
   have hl : ∀ i < 32, InRegions (s.rd ++ s.wr) (off B (8 * i)) 8 := fun i hi =>

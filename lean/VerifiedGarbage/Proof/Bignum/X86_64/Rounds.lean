@@ -1,6 +1,5 @@
 import VerifiedGarbage.Proof.Bignum.X86_64.Reduce
 import VerifiedGarbage.Proof.Bignum.Math
-import Mathlib.Tactic.NormNum
 
 /-!
 # Multiword arithmetic on x86-64: the rounds of a Montgomery multiplication
@@ -126,9 +125,9 @@ theorem round_ok {s : State} {B : Addr} {Z w eA eb eN ea i : Nat} (hs : Scr s B 
       rw [this]
       rw [Nat.sub_mul, Nat.one_mul] at hbB hu'
       have : 4 * 2 ^ (64 * w) ≤ 2 ^ 128 * 2 ^ (64 * w) - 2 ^ 66 * 2 ^ (64 * w) := by
-        rw [← Nat.sub_mul]; exact Nat.mul_le_mul_right _ (by norm_num)
+        rw [← Nat.sub_mul]; exact Nat.mul_le_mul_right _ (by decide)
       omega)) fun t ⟨hv, ho, k₃⟩ => ?_
-  refine ⟨⟨(word s₂.mem B eA).toNat * (s₂.gpr .r15).toNat % 2 ^ 64, Nat.mod_lt _ (by norm_num), ?_⟩,
+  refine ⟨⟨(word s₂.mem B eA).toNat * (s₂.gpr .r15).toNat % 2 ^ 64, Nat.mod_lt _ (by decide), ?_⟩,
     ho₂.trans ho, (k12.trans k₃).mono (by decide)⟩
   rw [hv, hv₂, hNeq]
 

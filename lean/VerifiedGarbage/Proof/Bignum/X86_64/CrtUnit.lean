@@ -93,8 +93,8 @@ theorem unitPhase_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv mx : Bi
     (hsl2 : sl ≠ Public.sCnt) (hslv : word s.mem B (8 * sl) = off B o) (hws : WsAt s.mem B o wx mx)
     (hN : NVals s B w minv N) (hodd : N % 2 = 1) (hN1 : 1 < N) (hX : XVals s B o wx mx X) (hX1 : 1 < X)
     (hXodd : X % 2 = 1) :
-    WP isa (seqs (Crt.gPow M.mm sl ++ [.block [.mov .rdi (.mem (hdr sl))]] ++ redc M.mm Public.aY ++
-        copyArr Public.aY aXc ++ [.block [leave]])) s fun t =>
+    WP isa (seqs (Crt.gPow M.mm sl ++ ([.block [.mov .rdi (.mem (hdr sl))]] : List (Prog isa)) ++
+        redc M.mm Public.aY ++ copyArr Public.aY aXc ++ ([.block [leave]] : List (Prog isa)))) s fun t =>
       Good t B Z w minv ∧ WsAt t.mem B o wx mx ∧ XVals t B o wx mx X ∧
       wv t.mem B (slot w Public.aY) w < N ∧
       wv t.mem B (slot w Public.aY) w % N = 2 ^ (64 * wx * (nChunks w wx + 1)) % N ∧

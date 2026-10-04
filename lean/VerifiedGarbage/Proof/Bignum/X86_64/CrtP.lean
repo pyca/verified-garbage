@@ -27,7 +27,7 @@ def hSteps (mul : Nat → Nat → Nat → Prog isa) : List (Prog isa) :=
 
 theorem pPhase_eq (mul : Nat → Nat → Nat → Prog isa) : pPhase mul =
     unitSteps mul sWsP ++ (mqSteps mul ++ ([mul Public.aY Public.aXm Public.aY] ++
-      (powSteps mul sWsP sDp sPlen ++ ([.block [leave]] ++ hSteps mul)))) := by
+      (powSteps mul sWsP sDp sPlen ++ (([.block [leave]] : List (Prog isa)) ++ hSteps mul)))) := by
   simp only [pPhase, unitSteps, powSteps, mqSteps, hSteps, enterP, List.append_assoc, List.cons_append,
     List.nil_append]
 

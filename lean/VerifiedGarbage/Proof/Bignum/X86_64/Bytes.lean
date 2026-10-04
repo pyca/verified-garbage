@@ -126,9 +126,9 @@ theorem loadStep_ok {s₀ : State} {B : Addr} {Z ed k w : Nat} {src : Addr} {bs 
   have hr7 : (8 - (k - i) % 8) % 8 ≤ 7 := by omega
   have hax : (t.gpr .rax).toNat < 2 ^ 56 := by
     rw [hI.rax]
-    have : 256 ^ ((8 - (k - i) % 8) % 8) ≤ 256 ^ 7 := Nat.pow_le_pow_right (by norm_num) hr7
+    have : 256 ^ ((8 - (k - i) % 8) % 8) ≤ 256 ^ 7 := Nat.pow_le_pow_right (by decide) hr7
     have := Nat.mod_lt (pre bs i) (show 0 < 256 ^ ((8 - (k - i) % 8) % 8) by positivity)
-    have : (256 : Nat) ^ 7 = 2 ^ 56 := by norm_num
+    have : (256 : Nat) ^ 7 = 2 ^ 56 := by decide
     omega
   have hb : t.mem (src + BitVec.ofNat 64 i) = bs[i]'(by omega) := by
     rw [hI.out _ (hsep i hi)]; exact hbytes i hi
@@ -140,7 +140,7 @@ theorem loadStep_ok {s₀ : State} {B : Addr} {Z ed k w : Nat} {src : Addr} {bs 
   -- The new partial word.
   have hax₁' : (t₁.gpr .rax).toNat = pre bs (i + 1) % 256 ^ ((8 - (k - i) % 8) % 8 + 1) := by
     rw [hax₁, hI.rax, hpre, VG.Proof.Bignum.bytes_mod_step _ _ _ (bs[i]'(by omega)).isLt]
-    ring
+    grind
   have hs₁ := hI.scr.congr k₁.2.2
   have tbx₁ : t₁.gpr .rbx = off B ed := (k₁.gpr (by decide)).trans tbx
   -- The old words, one byte on.
@@ -239,7 +239,7 @@ theorem loadBE_ok {s : State} {B : Addr} {Z ed k w : Nat} {src : Addr} {bs : Lis
     have := pre_lt bs (Nat.le_refl _)
     rw [pre_len, hk] at this
     have : (256 : Nat) ^ k ≤ 2 ^ (64 * w) := by
-      rw [← pow256]; exact Nat.pow_le_pow_right (by norm_num) (by omega)
+      rw [← pow256]; exact Nat.pow_le_pow_right (by decide) (by omega)
     omega
 
 end VG.Proof.Bignum.X86_64

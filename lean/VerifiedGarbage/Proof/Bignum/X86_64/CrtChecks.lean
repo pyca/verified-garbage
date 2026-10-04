@@ -34,7 +34,7 @@ theorem zeroArr_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hg : G
       t.gpr .r12 = BitVec.ofNat 64 w ∧ t.mem = s.mem)
     (by xrun [State.ea, hdr, hg.rdi, hdrOff, hl (sArr j) (by unfold sArr; omega), hl sW (by decide),
       hg.hdr.harr j hj, hg.hdr.hw]) rfl) fun s₁ ⟨⟨h8, h12, hm₁⟩, k₁⟩ => ?_)
-  refine WP.mono (zeroAccLoop_ok (hg.scr.congr k₁.2.2) h8 h12 hw hw' ((slot_le hj).trans hZ))
+  refine WP.mono (zeroAccLoop_ok (hg.scr.congr k₁.2.2) h8 h12 hw hw' (Nat.le_trans (slot_le hj) hZ))
     fun t ⟨hv, ho, k⟩ => ⟨hv, by rw [hm₁] at ho; exact ho, (k₁.trans k).mono (by decide)⟩
 
 /-- `[o] := [a]` over `w` words. -/
@@ -45,8 +45,8 @@ theorem copyArr_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hg : G
   have hn := hg.scr.nowrap
   have hl : ∀ i < 32, InRegions (s.rd ++ s.wr) (off B (8 * i)) 8 := fun i hi =>
     hg.scr.ld (by have := hdr_lt_slot w 8 hi; omega)
-  have so := (slot_le (w := w) ho).trans hZ
-  have sa := (slot_le (w := w) ha).trans hZ
+  have so := Nat.le_trans (slot_le (w := w) ho) hZ
+  have sa := Nat.le_trans (slot_le (w := w) ha) hZ
   have sp := slot_sep (w := w) hoa
   unfold Crt.copyArr
   simp only [seqs]
@@ -111,7 +111,7 @@ theorem maskArr_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hg : G
   have hn := hg.scr.nowrap
   have hl : ∀ i < 32, InRegions (s.rd ++ s.wr) (off B (8 * i)) 8 := fun i hi =>
     hg.scr.ld (by have := hdr_lt_slot w 8 hi; omega)
-  have sj := (slot_le (w := w) hj).trans hZ
+  have sj := Nat.le_trans (slot_le (w := w) hj) hZ
   unfold Crt.maskArr
   simp only [seqs]
   refine WP.seq (WP.mono (WP.keep [.r15, .r12, .rbx] (Q := fun t => t.gpr .r15 = mask c ∧
@@ -256,8 +256,8 @@ theorem eqCheck_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hg : G
   have hl : ∀ i < 32, InRegions (s.rd ++ s.wr) (off B (8 * i)) 8 := fun i hi =>
     hg.scr.ld (by have := hdr_lt_slot w 8 hi; omega)
   have hA : slot w aAcc + 16 * (w + 2) ≤ Z := by
-    have := (slot_le (w := w) (show aTmp < 8 by decide)).trans hZ; simp only [slot, aTmp, aAcc] at this ⊢; omega
-  have hN := (slot_le (w := w) (show aN < 8 by decide)).trans hZ
+    have := Nat.le_trans (slot_le (w := w) (show aTmp < 8 by decide)) hZ; simp only [slot, aTmp, aAcc] at this ⊢; omega
+  have hN := Nat.le_trans (slot_le (w := w) (show aN < 8 by decide)) hZ
   have hS := hdr_lt_slot w aN (show sMask < 32 by decide)
   unfold Crt.eqCheck
   simp only [seqs]

@@ -154,7 +154,7 @@ theorem wv_top2 (m : Mem) (B : Addr) (d w : Nat) :
     wv m B d (w + 2) = wv m B d w + 2 ^ (64 * w) *
       ((word m B (d + 8 * w)).toNat + 2 ^ 64 * (word m B (d + 8 * w + 8)).toNat) := by
   rw [show w + 2 = w + 1 + 1 from rfl, wv, wv, pow64_succ, show d + 8 * (w + 1) = d + 8 * w + 8 by omega]
-  ring
+  grind
 
 /-- Montgomery multiplication: `[o] = [a] [b] R⁻¹ mod m` for `m = [mo]`, if
 `[b] < m` and `-m⁻¹` is right. -/
@@ -171,7 +171,7 @@ theorem montMul_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hs : S
         wv s.mem B (slot w a) w * wv s.mem B (slot w b) w % wv s.mem B (slot w mo) w ∧
       Arrays B w [acc, tmp, o] s.mem t.mem ∧ Keep mmRegs s t := by
   have hn := hs.nowrap
-  have sl : ∀ j < 8, slot w j + 8 * (w + 2) ≤ Z := fun j hj => (slot_le hj).trans hZ
+  have sl : ∀ j < 8, slot w j + 8 * (w + 2) ≤ Z := fun j hj => Nat.le_trans (slot_le hj) hZ
   have sp : ∀ {j k}, j ≠ k → slot w j + 8 * (w + 2) ≤ slot w k ∨ slot w k + 8 * (w + 2) ≤ slot w j :=
     fun h => slot_sep h
   have hN0 : 0 < wv s.mem B (slot w mo) w := by omega
