@@ -271,7 +271,7 @@ theorem subA : ∀ r ∈ [(⟨scr σ, 200⟩ : Region), ⟨at' σ 200, 640⟩], 
   rcases hr with rfl | rfl
   exacts [Region.sub_prefix (by omega), low_sub hp (by omega)]
 
-theorem callB_ok {s : State} (h : I1 σ s) : WP isa (.call "vg_keccak_absorb" Impl.Sha3.X86_64.Stream.absorb) s (I2 σ) := by
+theorem callB_ok {s : State} (h : I1 σ s) : WP isa (.call "vg_keccak_absorb_scratch" Impl.Sha3.X86_64.Stream.absorb) s (I2 σ) := by
   refine absorb_call h.args (covA hp h.env).1 (covA hp h.env).2 fun s' hrd hwr hcs hf hr _ =>
     ⟨Env.call hp h.env (subA hp) hrd hwr hcs hf, ?_⟩
   have := hr [] (Proof.MlKem.repr_nil h.zero) rfl
@@ -304,7 +304,7 @@ theorem covP {s : State} (he : Env σ s) :
   ⟨fun a n h => (covA hp he).1 a n (by simp only [List.nil_append] at h; exact
     ⟨_, List.mem_append_right _ h.choose_spec.1, h.choose_spec.2⟩), (covA hp he).2⟩
 
-theorem callD_ok {s : State} (h : I3 σ s) : WP isa (.call "vg_keccak_pad" Impl.Sha3.X86_64.Stream.pad) s (I4 σ) := by
+theorem callD_ok {s : State} (h : I3 σ s) : WP isa (.call "vg_keccak_pad_scratch" Impl.Sha3.X86_64.Stream.pad) s (I4 σ) := by
   refine pad_call h.args (covP hp h.env).1 (covP hp h.env).2 fun s' hrd hwr hcs hf hst =>
     ⟨Env.call hp h.env (subA hp) hrd hwr hcs hf, ?_⟩
   rw [hst (B σ) h.repr (by rw [bytesAt_length]), h.rcx]
@@ -356,7 +356,7 @@ theorem subS {len : Nat} (hl : len ≤ 840) : ∀ r ∈ [(⟨scr σ, 200⟩ : Re
   exacts [Region.sub_prefix (by omega), low_sub hp (by omega), low_sub hp (by omega)]
 
 theorem callF_ok {len : Nat} (hl : len ≤ 840) {s : State} (h : I5 σ len s) :
-    WP isa (.call "vg_keccak_squeeze" Impl.Sha3.X86_64.Stream.squeeze) s (I6 σ len) := by
+    WP isa (.call "vg_keccak_squeeze_scratch" Impl.Sha3.X86_64.Stream.squeeze) s (I6 σ len) := by
   refine squeeze_call h.args (covS hp h.env hl).1 (covS hp h.env hl).2 fun s' hrd hwr hcs hf ho =>
     ⟨Env.call hp h.env (subS hp hl) hrd hwr hcs hf, ?_⟩
   rw [ho, h.st, xof_eq]

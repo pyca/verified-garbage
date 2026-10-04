@@ -109,15 +109,15 @@ def zeroSt : Prog isa :=
 
 /-- Absorb `len` bytes at `src`, at the position `pos` of the block. -/
 def kabs (src len pos : Arg) : Prog isa :=
-  callA "vg_keccak_absorb" Impl.Sha3.X86_64.Stream.absorb [aSt, .imm 136, pos, src, len, aKs]
+  callA "vg_keccak_absorb_scratch" Impl.Sha3.X86_64.Stream.absorb [aSt, .imm 136, pos, src, len, aKs]
 
 /-- Pad at the position `pos`, with the suffix of SHAKE. -/
 def kpad (pos : Arg) : Prog isa :=
-  callA "vg_keccak_pad" Impl.Sha3.X86_64.Stream.pad [aSt, .imm 136, pos, .imm 0x1f, aKs]
+  callA "vg_keccak_pad_scratch" Impl.Sha3.X86_64.Stream.pad [aSt, .imm 136, pos, .imm 0x1f, aKs]
 
 /-- Squeeze 114 bytes from position 0 into the frame. -/
 def ksqz : Prog isa :=
-  callA "vg_keccak_squeeze" Impl.Sha3.X86_64.Stream.squeeze [aSt, .imm 136, .imm 0, .sp fH, .imm 114, aKs]
+  callA "vg_keccak_squeeze_scratch" Impl.Sha3.X86_64.Stream.squeeze [aSt, .imm 136, .imm 0, .sp fH, .imm 114, aKs]
 
 /-- `H(dom4(0, context) ‖ R ‖ A ‖ M)` into the frame at `fH`. -/
 def hash : Prog isa :=

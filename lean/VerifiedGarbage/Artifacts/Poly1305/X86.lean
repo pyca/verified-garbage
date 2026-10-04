@@ -4,6 +4,7 @@ import VerifiedGarbage.Proof.Poly1305.X86.Init
 import VerifiedGarbage.Proof.Poly1305.X86.Update
 import VerifiedGarbage.Proof.Poly1305.X86.Finalize
 import VerifiedGarbage.Proof.Poly1305.X86.Lit
+import VerifiedGarbage.Proof.Poly1305.X86.Frame
 
 /-! # Poly1305 (RFC 8439 §2.5) on x86 -/
 
@@ -27,15 +28,24 @@ def artifacts : List Artifact := [
   { Spec.Poly1305.updateApi with
     target := X86.target
     doc := Spec.Poly1305.updateApi.doc
-    code := Impl.Poly1305.X86.update
-    contract := Spec.Poly1305.updateContract X86.abi
-    verified := Proof.Poly1305.X86.update_verified
+    code := Impl.StackScratch.X86.withStackScratch 156 5 Impl.Poly1305.X86.update
+    contract := Spec.Poly1305.updateContract X86.abi 156
+    stack := 156
+    verified := Proof.Poly1305.X86.update_framed
     spSafe := Code.all_of_allInstrs (by lit_decide) },
   { Spec.Poly1305.finalizeApi with
     target := X86.target
     doc := Spec.Poly1305.finalizeApi.doc
+    code := Impl.StackScratch.X86.withStackScratch 152 4 Impl.Poly1305.X86.finalize
+    contract := Spec.Poly1305.finalizeContract X86.abi 152
+    stack := 152
+    verified := Proof.Poly1305.X86.finalize_framed
+    spSafe := Code.all_of_allInstrs (by lit_decide) },
+  { Spec.Poly1305.finalizeScratchApi with
+    target := X86.target
+    doc := Spec.Poly1305.finalizeScratchApi.doc
     code := Impl.Poly1305.X86.finalize
-    contract := Spec.Poly1305.finalizeContract X86.abi
+    contract := Spec.Poly1305.finalizeScratchContract X86.abi
     verified := Proof.Poly1305.X86.finalize_verified
     spSafe := Code.all_of_allInstrs (by lit_decide) }]
 

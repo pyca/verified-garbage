@@ -387,7 +387,7 @@ structure J2 (rate : Nat) (P : Sp) (σ s : State) : Prop where
   x0 : (s.gpr .x0).toNat = P.len % rate
 
 theorem call1With_ok (v : Proof.Sha3.AArch64.Permutation) {rate : Nat} (hr : rate ∈ rates) {s : State} (h : J1 rate P σ s) :
-    WP isa (.call ("vg_keccak_absorb" ++ v.callee.suffix) (Impl.Sha3.AArch64.Stream.absorbWith v.callee)) s (J2 rate P σ) := by
+    WP isa (.call ("vg_keccak_absorb_scratch" ++ v.callee.suffix) (Impl.Sha3.AArch64.Stream.absorbWith v.callee)) s (J2 rate P σ) := by
   have hsp := h.env.sp
   refine absorb_callWith v (st := P.scr) (sc := P.at' 200) h.x0 h.x1 h.x2 h.x3 h.x4 h.x5 hr
     (rate_pos hr)
@@ -445,7 +445,7 @@ structure J4 (rate : Nat) (P : Sp) (σ s : State) : Prop where
   st : stateAt s.mem P.scr = padded rate shakeSuffix (P.msg σ)
 
 theorem call2With_ok (v : Proof.Sha3.AArch64.Permutation) {rate : Nat} (hr : rate ∈ rates) {s : State} (h : J3 rate P σ s) :
-    WP isa (.call ("vg_keccak_pad" ++ v.callee.suffix) (Impl.Sha3.AArch64.Stream.padWith v.callee)) s (J4 rate P σ) := by
+    WP isa (.call ("vg_keccak_pad_scratch" ++ v.callee.suffix) (Impl.Sha3.AArch64.Stream.padWith v.callee)) s (J4 rate P σ) := by
   have hsp := h.env.sp
   have cw : Covers [⟨P.scr, 200⟩, ⟨P.at' 200, 640⟩] s.wr := cov_scr hp h.env.wr fun r hr => by
     rcases mem2 hr with rfl | rfl
@@ -503,7 +503,7 @@ structure J6 (rate outlen : Nat) (P : Sp) (σ s : State) : Prop where
 
 theorem call3With_ok (v : Proof.Sha3.AArch64.Permutation) {rate outlen : Nat} (hr : rate ∈ rates) (ho : 840 + outlen ≤ 2016) {s : State}
     (h : J5 rate outlen P σ s) :
-    WP isa (.call ("vg_keccak_squeeze" ++ v.callee.suffix) (Impl.Sha3.AArch64.Stream.squeezeWith v.callee)) s (J6 rate outlen P σ) := by
+    WP isa (.call ("vg_keccak_squeeze_scratch" ++ v.callee.suffix) (Impl.Sha3.AArch64.Stream.squeezeWith v.callee)) s (J6 rate outlen P σ) := by
   have hsp := h.env.sp
   have cw : Covers [⟨P.scr, 200⟩, ⟨P.at' 840, outlen⟩, ⟨P.at' 200, 640⟩] s.wr :=
     cov_scr hp h.env.wr fun r hr => by

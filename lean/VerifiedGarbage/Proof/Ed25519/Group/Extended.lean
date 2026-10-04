@@ -427,14 +427,15 @@ private theorem d_val : (Spec.Ed25519.d : Fe).val =
     37095705934669439343138083508754565189542113879843219016388785533085940283555 := by
   decide +kernel
 
-private theorem d_pow : Pratt.powMod P 256 37095705934669439343138083508754565189542113879843219016388785533085940283555
-    ((P - 1) / 2) = P - 1 := by decide +kernel
+private theorem d_pow : 37095705934669439343138083508754565189542113879843219016388785533085940283555 ^
+    ((P - 1) / 2) % P = P - 1 := by
+  rw [← Pratt.powMod_eq P (by decide) 256 _ _ (by decide)]; decide +kernel
 
 theorem dZ_pow : dZ ^ ((P - 1) / 2) = -1 := by
   have h : dZ = ((37095705934669439343138083508754565189542113879843219016388785533085940283555 : Nat) :
       ZMod P) := by
     rw [← d_val]; exact (ZMod.natCast_zmod_val _).symm
-  rw [h, ← Pratt.powMod_cast P 256 _ _ (by decide), d_pow, Nat.cast_sub (by decide),
+  rw [h, ← Nat.cast_pow, ← ZMod.natCast_mod, d_pow, Nat.cast_sub (by decide),
     ZMod.natCast_self, Nat.cast_one, zero_sub]
 
 theorem sqrtM1_sq : Spec.Ed25519.sqrtM1 * Spec.Ed25519.sqrtM1 = 0 - 1 := by decide +kernel

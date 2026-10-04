@@ -32,25 +32,25 @@ theorem permute :
       [Proof.Sha3.Arm.satState] using Proof.Sha3.Arm.satState)
 
 theorem absorb :
-    Verified Arm.target Impl.Sha3.Arm.Stream.absorb (Spec.Sha3.absorbContract Arm.abi) :=
+    Verified Arm.target Impl.Sha3.Arm.Stream.absorb (Spec.Sha3.absorbScratchContract Arm.abi) :=
   Proof.Sha3.Arm.Stream.Absorb.absorb_verified.of_implies (by
-    contract_implies [Spec.Sha3.absorbContract, Spec.Sha3.absorbSig, Proof.Sha3.absorbArm,
+    contract_implies [Spec.Sha3.absorbScratchContract, Spec.Sha3.absorbScratchSig, Spec.Sha3.absorbPre, Spec.Sha3.absorbPost, Proof.Sha3.absorbArm,
       Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr, setWidth_append32]
       [Proof.Sha3.Arm.Stream.Absorb.sat, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read]
       using Proof.Sha3.Arm.Stream.Absorb.sat)
 
 theorem pad :
-    Verified Arm.target Impl.Sha3.Arm.Stream.pad (Spec.Sha3.padContract Arm.abi) :=
+    Verified Arm.target Impl.Sha3.Arm.Stream.pad (Spec.Sha3.padScratchContract Arm.abi) :=
   Proof.Sha3.Arm.Stream.Pad.pad_verified.of_implies (by
-    contract_implies [Spec.Sha3.padContract, Spec.Sha3.padSig, Proof.Sha3.padArm,
+    contract_implies [Spec.Sha3.padScratchContract, Spec.Sha3.padScratchSig, Spec.Sha3.padPre, Spec.Sha3.padPost, Proof.Sha3.padArm,
       Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
       [Proof.Sha3.Arm.Stream.Pad.sat, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read]
       using Proof.Sha3.Arm.Stream.Pad.sat)
 
 theorem squeeze :
-    Verified Arm.target Impl.Sha3.Arm.Stream.squeeze (Spec.Sha3.squeezeContract Arm.abi) :=
+    Verified Arm.target Impl.Sha3.Arm.Stream.squeeze (Spec.Sha3.squeezeScratchContract Arm.abi) :=
   Proof.Sha3.Arm.Stream.Squeeze.squeeze_verified.of_implies (by
-    contract_implies [Spec.Sha3.squeezeContract, Spec.Sha3.squeezeSig, Proof.Sha3.squeezeArm,
+    contract_implies [Spec.Sha3.squeezeScratchContract, Spec.Sha3.squeezeScratchSig, Spec.Sha3.squeezePre, Spec.Sha3.squeezePost, Proof.Sha3.squeezeArm,
       Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr, setWidth_append32]
       [Proof.Sha3.Arm.Stream.Squeeze.sat, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read]
       using Proof.Sha3.Arm.Stream.Squeeze.sat)

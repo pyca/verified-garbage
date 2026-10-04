@@ -4,6 +4,7 @@ import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Spec.Poly1305.Contract
 import VerifiedGarbage.Proof.Framework.PowLit
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Poly1305.Scratch
 
 /-!
 # Poly1305 on 32-bit ARM: `update`
@@ -911,9 +912,9 @@ theorem update_ct : ConstantTime isa Proof.Poly1305.updateArm.pre Proof.Poly1305
       taint_decide)
 
 theorem update_verified :
-    Verified Arm.target Impl.Poly1305.Arm.update (Spec.Poly1305.updateContract Arm.abi) :=
+    Verified Arm.target Impl.Poly1305.Arm.update (Proof.Poly1305.updateScratchContract Arm.abi) :=
   Verified.of_correct update_ok update_ct (by
-    sig_implies [Spec.Poly1305.updateContract, Spec.Poly1305.updateSig, Proof.Poly1305.updateArm,
+    sig_implies [Proof.Poly1305.updateScratchContract, Proof.Poly1305.updateScratchSig, Spec.Poly1305.updatePost, Proof.Poly1305.updateArm,
       Proof.Poly1305.countArm, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val,
       Arm.State.addr] [Proof.Poly1305.Arm.Update.updateSat, Arm.stackArg, Arm.stackArgAddr,
       Mem.readW, Mem.read] using Proof.Poly1305.Arm.Update.updateSat)

@@ -33,25 +33,25 @@ theorem permute :
       using Proof.Sha3.X86.satState)
 
 theorem absorb :
-    Verified X86.target Impl.Sha3.X86.Stream.absorb (Spec.Sha3.absorbContract X86.abi 12) :=
+    Verified X86.target Impl.Sha3.X86.Stream.absorb (Spec.Sha3.absorbScratchContract X86.abi 12) :=
   Proof.Sha3.X86.Stream.Absorb.absorb_verified.of_implies (by
-    contract_implies [Spec.Sha3.absorbContract, Spec.Sha3.absorbSig, Proof.Sha3.absorbX86,
+    contract_implies [Spec.Sha3.absorbScratchContract, Spec.Sha3.absorbScratchSig, Spec.Sha3.absorbPre, Spec.Sha3.absorbPost, Proof.Sha3.absorbX86,
       X86.abi, X86.argSlots, X86.argVal, X86.argBytes, setWidth_append32]
       [Proof.Sha3.X86.Stream.Absorb.sat, Proof.Sha3.X86.Stream.Absorb.satMem, X86.arg, X86.argAddr,
       Mem.readW, Mem.read] using Proof.Sha3.X86.Stream.Absorb.sat)
 
 theorem pad :
-    Verified X86.target Impl.Sha3.X86.Stream.pad (Spec.Sha3.padContract X86.abi 12) :=
+    Verified X86.target Impl.Sha3.X86.Stream.pad (Spec.Sha3.padScratchContract X86.abi 12) :=
   Proof.Sha3.X86.Stream.Pad.pad_verified.of_implies (by
-    contract_implies [Spec.Sha3.padContract, Spec.Sha3.padSig, Proof.Sha3.padX86,
+    contract_implies [Spec.Sha3.padScratchContract, Spec.Sha3.padScratchSig, Spec.Sha3.padPre, Spec.Sha3.padPost, Proof.Sha3.padX86,
       X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
       [Proof.Sha3.X86.Stream.Pad.sat, Proof.Sha3.X86.Stream.Pad.satMem, X86.arg, X86.argAddr,
       Mem.readW, Mem.read] using Proof.Sha3.X86.Stream.Pad.sat)
 
 theorem squeeze :
-    Verified X86.target Impl.Sha3.X86.Stream.squeeze (Spec.Sha3.squeezeContract X86.abi 12) :=
+    Verified X86.target Impl.Sha3.X86.Stream.squeeze (Spec.Sha3.squeezeScratchContract X86.abi 12) :=
   Proof.Sha3.X86.Stream.Squeeze.squeeze_verified.of_implies (by
-    contract_implies [Spec.Sha3.squeezeContract, Spec.Sha3.squeezeSig, Proof.Sha3.squeezeX86,
+    contract_implies [Spec.Sha3.squeezeScratchContract, Spec.Sha3.squeezeScratchSig, Spec.Sha3.squeezePre, Spec.Sha3.squeezePost, Proof.Sha3.squeezeX86,
       X86.abi, X86.argSlots, X86.argVal, X86.argBytes, setWidth_append32]
       [Proof.Sha3.X86.Stream.Squeeze.sat, Proof.Sha3.X86.Stream.Squeeze.satMem, X86.arg, X86.argAddr,
       Mem.readW, Mem.read] using Proof.Sha3.X86.Stream.Squeeze.sat)

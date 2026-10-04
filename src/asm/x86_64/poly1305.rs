@@ -1618,13 +1618,139 @@ pub(crate) unsafe extern "sysv64" fn vg_poly1305_blocks_avx512(state: *mut [u64;
 ///
 /// * `state` must be valid for reads and writes of 128 bytes.
 /// * `out` must be valid for reads and writes of 16 bytes.
+/// * The contents of `state` on return are unspecified.
+/// * `state` and `out` must not overlap each other (distinct Rust objects never do).
+/// * Neither `state` nor `out` may overlap the return address on the stack or the 136 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_poly1305_finalize(state: *mut [u64; 16], count: u64, out: *mut [u8; 16]) {
+    core::arch::naked_asm!(
+        "lea rsp, [rsp-136]",
+        "mov rcx, rsp",
+        "add rcx, 8",
+        "mov rcx, rdx",
+        "mov rdx, rsi",
+        "and rdx, 15",
+        "mov QWORD PTR [rdi+72], rbx",
+        "mov QWORD PTR [rdi+80], rbp",
+        "mov QWORD PTR [rdi+88], r12",
+        "mov QWORD PTR [rdi+96], r13",
+        "mov QWORD PTR [rdi+104], r14",
+        "mov QWORD PTR [rdi+112], r15",
+        "movabs rax, 1152921487695413247",
+        "mov r8, QWORD PTR [rdi+24]",
+        "and r8, rax",
+        "movabs rax, 1152921487695413244",
+        "mov r9, QWORD PTR [rdi+32]",
+        "and r9, rax",
+        "mov r10, r9",
+        "shr r10, 2",
+        "add r10, r9",
+        "mov r11, QWORD PTR [rdi]",
+        "mov rbx, QWORD PTR [rdi+8]",
+        "mov rbp, QWORD PTR [rdi+16]",
+        "test rdx, rdx",
+        "je 20f",
+        "mov eax, 0",
+        "mov r12, rdx",
+        "22:",
+        "mov BYTE PTR [rdi+r12*1+56], al",
+        "add r12, 1",
+        "cmp r12, 16",
+        "jne 22b",
+        "mov eax, 1",
+        "mov BYTE PTR [rdi+rdx*1+56], al",
+        "add r11, QWORD PTR [rdi+56]",
+        "adc rbx, QWORD PTR [rdi+64]",
+        "adc rbp, 0",
+        "mov rax, r11",
+        "mul r8",
+        "mov r12, rax",
+        "mov r13, rdx",
+        "mov rax, rbx",
+        "mul r10",
+        "add r12, rax",
+        "adc r13, rdx",
+        "mov rax, r11",
+        "mul r9",
+        "mov r14, rax",
+        "mov r15, rdx",
+        "mov rax, rbx",
+        "mul r8",
+        "add r14, rax",
+        "adc r15, rdx",
+        "mov rax, rbp",
+        "mul r10",
+        "add r14, rax",
+        "adc r15, rdx",
+        "mov rax, rbp",
+        "mul r8",
+        "add r14, r13",
+        "adc r15, rax",
+        "mov r11, r12",
+        "mov rbx, r14",
+        "mov rbp, r15",
+        "and rbp, 3",
+        "mov rax, r15",
+        "sub rax, rbp",
+        "shr r15, 2",
+        "add rax, r15",
+        "add r11, rax",
+        "adc rbx, 0",
+        "adc rbp, 0",
+        "jmp 21f",
+        "20:",
+        "21:",
+        "mov rax, r11",
+        "add rax, 5",
+        "mov rdx, rbx",
+        "adc rdx, 0",
+        "mov r12, rbp",
+        "adc r12, 0",
+        "mov r13, r12",
+        "shr r13, 2",
+        "mov r14d, 0",
+        "sub r14, r13",
+        "and r12, 3",
+        "xor rax, r11",
+        "and rax, r14",
+        "xor r11, rax",
+        "xor rdx, rbx",
+        "and rdx, r14",
+        "xor rbx, rdx",
+        "xor r12, rbp",
+        "and r12, r14",
+        "xor rbp, r12",
+        "add r11, QWORD PTR [rdi+40]",
+        "adc rbx, QWORD PTR [rdi+48]",
+        "mov QWORD PTR [rcx], r11",
+        "mov QWORD PTR [rcx+8], rbx",
+        "mov rbx, QWORD PTR [rdi+72]",
+        "mov rbp, QWORD PTR [rdi+80]",
+        "mov r12, QWORD PTR [rdi+88]",
+        "mov r13, QWORD PTR [rdi+96]",
+        "mov r14, QWORD PTR [rdi+104]",
+        "mov r15, QWORD PTR [rdi+112]",
+        "lea rsp, [rsp+136]",
+        "ret",
+        ".p2align 6",
+    )
+}
+
+/// `vg_poly1305_finalize`, with its working space in `*scratch`.
+///
+/// Contract: `VG.Spec.Poly1305.finalizeScratchContract`. Constant time: only the pointers and `count` may affect timing, not the state.
+///
+/// # Safety
+///
+/// * `state` must be valid for reads and writes of 128 bytes.
+/// * `out` must be valid for reads and writes of 16 bytes.
 /// * `scratch` must be valid for reads and writes of 128 bytes.
 /// * The contents of `state` on return are unspecified.
 /// * The contents of `scratch` on return are unspecified.
 /// * `state`, `out` and `scratch` must not overlap each other (distinct Rust objects never do).
 /// * None of `state`, `out` and `scratch` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_poly1305_finalize(state: *mut [u64; 16], count: u64, out: *mut [u8; 16], scratch: *mut [u64; 16]) {
+pub(crate) unsafe extern "sysv64" fn vg_poly1305_finalize_scratch(state: *mut [u64; 16], count: u64, out: *mut [u8; 16], scratch: *mut [u64; 16]) {
     core::arch::naked_asm!(
         "mov rcx, rdx",
         "mov rdx, rsi",
@@ -1741,20 +1867,21 @@ pub(crate) const VG_POLY1305_UPDATE_AVX2_FEATURES: crate::cpu::Features = crate:
 ///
 /// Contract: `VG.Spec.Poly1305.updateContract`. The streaming state is the accumulator, the key and the message's last bytes that do not fill a block (`VG.Spec.Poly1305.Buffered`). Constant time: only the pointers, `count` and `len` may affect timing, not the state or the data.
 ///
-/// This implementation absorbs the whole blocks of the data with `vg_poly1305_blocks_avx2`, and saves its caller's callee-saved registers in `scratch`.
+/// This implementation absorbs the whole blocks of the data with `vg_poly1305_blocks_avx2`, and saves its caller's callee-saved registers in its working space.
 ///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 128 bytes.
 /// * `data` must be valid for reads of `len` bytes.
-/// * `scratch` must be valid for reads and writes of 128 bytes.
-/// * The contents of `scratch` on return are unspecified.
-/// * `state` and `scratch` must not overlap each other or `data` (distinct Rust objects never do).
-/// * None of `state`, `data` and `scratch` may overlap the return address on the stack or the 24 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `state` must not overlap `data` (distinct Rust objects never do).
+/// * Neither `state` nor `data` may overlap the return address on the stack or the 160 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx` and `avx2` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_poly1305_update_avx2(state: *mut [u64; 16], count: u64, data: *const u8, len: usize, scratch: *mut [u64; 16]) {
+pub(crate) unsafe extern "sysv64" fn vg_poly1305_update_avx2(state: *mut [u64; 16], count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
+        "lea rsp, [rsp-136]",
+        "mov r8, rsp",
+        "add r8, 8",
         "mov QWORD PTR [r8], rbx",
         "mov QWORD PTR [r8+8], rbp",
         "mov QWORD PTR [r8+16], r12",
@@ -1912,6 +2039,7 @@ pub(crate) unsafe extern "sysv64" fn vg_poly1305_update_avx2(state: *mut [u64; 1
         "mov r13, QWORD PTR [r15+24]",
         "mov r14, QWORD PTR [r15+32]",
         "mov r15, QWORD PTR [r15+40]",
+        "lea rsp, [rsp+136]",
         "ret",
         ".p2align 6",
         vg_poly1305_blocks_avx2 = sym super::poly1305::vg_poly1305_blocks_avx2,
@@ -1925,20 +2053,21 @@ pub(crate) const VG_POLY1305_UPDATE_AVX512_FEATURES: crate::cpu::Features = crat
 ///
 /// Contract: `VG.Spec.Poly1305.updateContract`. The streaming state is the accumulator, the key and the message's last bytes that do not fill a block (`VG.Spec.Poly1305.Buffered`). Constant time: only the pointers, `count` and `len` may affect timing, not the state or the data.
 ///
-/// This implementation absorbs the whole blocks of the data with `vg_poly1305_blocks_avx512`, and saves its caller's callee-saved registers in `scratch`.
+/// This implementation absorbs the whole blocks of the data with `vg_poly1305_blocks_avx512`, and saves its caller's callee-saved registers in its working space.
 ///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 128 bytes.
 /// * `data` must be valid for reads of `len` bytes.
-/// * `scratch` must be valid for reads and writes of 128 bytes.
-/// * The contents of `scratch` on return are unspecified.
-/// * `state` and `scratch` must not overlap each other or `data` (distinct Rust objects never do).
-/// * None of `state`, `data` and `scratch` may overlap the return address on the stack or the 24 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `state` must not overlap `data` (distinct Rust objects never do).
+/// * Neither `state` nor `data` may overlap the return address on the stack or the 160 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx512f` and `avx2` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_poly1305_update_avx512(state: *mut [u64; 16], count: u64, data: *const u8, len: usize, scratch: *mut [u64; 16]) {
+pub(crate) unsafe extern "sysv64" fn vg_poly1305_update_avx512(state: *mut [u64; 16], count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
+        "lea rsp, [rsp-136]",
+        "mov r8, rsp",
+        "add r8, 8",
         "mov QWORD PTR [r8], rbx",
         "mov QWORD PTR [r8+8], rbp",
         "mov QWORD PTR [r8+16], r12",
@@ -2096,6 +2225,7 @@ pub(crate) unsafe extern "sysv64" fn vg_poly1305_update_avx512(state: *mut [u64;
         "mov r13, QWORD PTR [r15+24]",
         "mov r14, QWORD PTR [r15+32]",
         "mov r15, QWORD PTR [r15+40]",
+        "lea rsp, [rsp+136]",
         "ret",
         ".p2align 6",
         vg_poly1305_blocks_avx512 = sym super::poly1305::vg_poly1305_blocks_avx512,
@@ -2106,19 +2236,20 @@ pub(crate) unsafe extern "sysv64" fn vg_poly1305_update_avx512(state: *mut [u64;
 ///
 /// Contract: `VG.Spec.Poly1305.updateContract`. The streaming state is the accumulator, the key and the message's last bytes that do not fill a block (`VG.Spec.Poly1305.Buffered`). Constant time: only the pointers, `count` and `len` may affect timing, not the state or the data.
 ///
-/// This implementation absorbs the whole blocks of the data with `vg_poly1305_blocks`, and saves its caller's callee-saved registers in `scratch`.
+/// This implementation absorbs the whole blocks of the data with `vg_poly1305_blocks`, and saves its caller's callee-saved registers in its working space.
 ///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 128 bytes.
 /// * `data` must be valid for reads of `len` bytes.
-/// * `scratch` must be valid for reads and writes of 128 bytes.
-/// * The contents of `scratch` on return are unspecified.
-/// * `state` and `scratch` must not overlap each other or `data` (distinct Rust objects never do).
-/// * None of `state`, `data` and `scratch` may overlap the return address on the stack or the 24 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `state` must not overlap `data` (distinct Rust objects never do).
+/// * Neither `state` nor `data` may overlap the return address on the stack or the 160 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_poly1305_update(state: *mut [u64; 16], count: u64, data: *const u8, len: usize, scratch: *mut [u64; 16]) {
+pub(crate) unsafe extern "sysv64" fn vg_poly1305_update(state: *mut [u64; 16], count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
+        "lea rsp, [rsp-136]",
+        "mov r8, rsp",
+        "add r8, 8",
         "mov QWORD PTR [r8], rbx",
         "mov QWORD PTR [r8+8], rbp",
         "mov QWORD PTR [r8+16], r12",
@@ -2276,6 +2407,7 @@ pub(crate) unsafe extern "sysv64" fn vg_poly1305_update(state: *mut [u64; 16], c
         "mov r13, QWORD PTR [r15+24]",
         "mov r14, QWORD PTR [r15+32]",
         "mov r15, QWORD PTR [r15+40]",
+        "lea rsp, [rsp+136]",
         "ret",
         ".p2align 6",
         vg_poly1305_blocks = sym super::poly1305::vg_poly1305_blocks,

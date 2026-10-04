@@ -253,7 +253,7 @@ theorem blocks_call (b : Impl.Poly1305.X86_64.Blocks) : WP isa (.call b.name b.c
 
 end
 
-/-! ## `vg_poly1305_finalize` -/
+/-! ## `vg_poly1305_finalize_scratch` -/
 
 theorem finalize_call {s : State} {P O : Addr} (hrdi : s.gpr .rdi = P) (hrsi : s.gpr .rsi = 0)
     (hrdx : s.gpr .rdx = O) (hPO : (⟨P, 128⟩ : Region).Disjoint ⟨O, 16⟩)
@@ -263,7 +263,7 @@ theorem finalize_call {s : State} {P O : Addr} (hrdi : s.gpr .rdi = P) (hrsi : s
     (hQ : ∀ s', s'.rd = s.rd → s'.wr = s.wr → (∀ r ∈ calleeSaved, s'.gpr r = s.gpr r) →
       Frame [⟨P, 128⟩, ⟨O, 16⟩, below (s.gpr .rsp) 8] s.mem s'.mem → s'.gpr .rdi = P → s'.gpr .rcx = O →
       (∀ key msg, Repr s.mem P key msg → bytesAt s'.mem O 16 = mac key msg) → Q s') :
-    WP isa (.call "vg_poly1305_finalize" Impl.Poly1305.X86_64.finalize) s Q := by
+    WP isa (.call "vg_poly1305_finalize_scratch" Impl.Poly1305.X86_64.finalize) s Q := by
   have k1 : ∀ i ∈ instrs Impl.Poly1305.X86_64.finalize, Taint.clobbers i .rdi = false :=
     keeps_of finalize_keeps fun _ h => and_left h
   have k3 : ∀ i ∈ instrs Impl.Poly1305.X86_64.finalize, Taint.clobbers i .rsp = false :=
@@ -1913,7 +1913,7 @@ theorem fptrs_ok (k : Nat) (hk : k < 2 ^ 31) (s : State) :
 
 theorem finalizeTo_eq (out : Nat) : finalizeTo out =
     .seq (.block (ptr .rdi .r15 448 ++ ([.mov32 .rsi (.imm 0)] : List Instr) ++ ptr .rdx .r15 out))
-      (.call "vg_poly1305_finalize" Impl.Poly1305.X86_64.finalize) := rfl
+      (.call "vg_poly1305_finalize_scratch" Impl.Poly1305.X86_64.finalize) := rfl
 
 /-- The tag written to `ctx[out, out + 16)`. -/
 theorem finalizeTo_ok {s₀ : State} (hp : APre s₀) {s : State} (h : Inv s₀ s) {out : Nat}
@@ -2335,7 +2335,7 @@ taint_summary blocksSmallAvx512 : taintS (τB false) (.call avx512.name avx512.c
 end
 
 taint_summary finalizeSum : taintS (τB false)
-  (.call "vg_poly1305_finalize" Impl.Poly1305.X86_64.finalize)
+  (.call "vg_poly1305_finalize_scratch" Impl.Poly1305.X86_64.finalize)
 
 /-- The code around the call of `vg_chacha20_xor`, for each implementation of
 `vg_poly1305_blocks`, with the summaries. -/

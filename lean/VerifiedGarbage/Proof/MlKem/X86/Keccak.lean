@@ -442,7 +442,7 @@ theorem absorb_piece (E S D W : State → BitVec 32) (rate pos len : Nat) (hr : 
       Frame [reg32 (S s₀) 200, reg32 (W s₀) 640, below (E s₀) 40] s.mem s'.mem →
       (∀ msg, Repr s.mem ((S s₀).setWidth 64) rate msg → pos = msg.length % rate →
         Repr s'.mem ((S s₀).setWidth 64) rate (msg ++ bytesAt s.mem ((D s₀).setWidth 64) len)) → B s₀ s') :
-    Piece Pre Pub A B (Impl.MlKem.X86.callWith rs6 "vg_keccak_absorb" Impl.Sha3.X86.Stream.absorb) := by
+    Piece Pre Pub A B (Impl.MlKem.X86.callWith rs6 "vg_keccak_absorb_scratch" Impl.Sha3.X86.Stream.absorb) := by
   refine Piece.callWith Proof.Sha3.X86.Stream.Absorb.absorb_verified.1
     Proof.Sha3.X86.Stream.Absorb.absorb_verified.2.1 absorb_nosp (by decide) (by decide)
     (fun s₀ => [reg32 (D s₀) len]) (fun s₀ => [reg32 (S s₀) 200, reg32 (W s₀) 640, below (E s₀) 24])
@@ -482,7 +482,7 @@ theorem pad_piece (E S W : State → BitVec 32) (rate pos sfx : Nat) (hr : rate 
       (∀ msg, Repr s.mem ((S s₀).setWidth 64) rate msg → pos = msg.length % rate →
         stateAt s'.mem ((S s₀).setWidth 64) = absorb rate (pad rate ((BitVec.ofNat 32 sfx).setWidth 8) msg)) →
       B s₀ s') :
-    Piece Pre Pub A B (Impl.MlKem.X86.callWith rs5 "vg_keccak_pad" Impl.Sha3.X86.Stream.pad) := by
+    Piece Pre Pub A B (Impl.MlKem.X86.callWith rs5 "vg_keccak_pad_scratch" Impl.Sha3.X86.Stream.pad) := by
   refine Piece.callWith Proof.Sha3.X86.Stream.Pad.pad_verified.1
     Proof.Sha3.X86.Stream.Pad.pad_verified.2.1 pad_nosp (by decide) (by decide)
     (fun _ => []) (fun s₀ => [reg32 (S s₀) 200, reg32 (W s₀) 640, below (E s₀) 20])
@@ -523,7 +523,7 @@ theorem squeeze_piece (E S O W : State → BitVec 32) (rate pos len : Nat) (hr :
       bytesAt s'.mem ((O s₀).setWidth 64) len = squeezeFrom rate (stateAt s.mem ((S s₀).setWidth 64)) pos len →
       (∃ pos' ≤ rate, ∀ d, squeezeFrom rate (stateAt s'.mem ((S s₀).setWidth 64)) pos' d =
         squeezeFrom rate (stateAt s.mem ((S s₀).setWidth 64)) (pos + len) d) → B s₀ s') :
-    Piece Pre Pub A B (Impl.MlKem.X86.callWith rs6 "vg_keccak_squeeze" Impl.Sha3.X86.Stream.squeeze) := by
+    Piece Pre Pub A B (Impl.MlKem.X86.callWith rs6 "vg_keccak_squeeze_scratch" Impl.Sha3.X86.Stream.squeeze) := by
   refine Piece.callWith Proof.Sha3.X86.Stream.Squeeze.squeeze_verified.1
     Proof.Sha3.X86.Stream.Squeeze.squeeze_verified.2.1 squeeze_nosp (by decide) (by decide)
     (fun _ => []) (fun s₀ => [reg32 (S s₀) 200, reg32 (O s₀) len, reg32 (W s₀) 640, below (E s₀) 24])
