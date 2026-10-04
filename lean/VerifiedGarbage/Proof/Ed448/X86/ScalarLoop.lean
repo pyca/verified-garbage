@@ -104,7 +104,7 @@ theorem readBytes_ok {s : State} {base : Addr} (hs : Scr s base) {p : BitVec 32}
         Nat.shiftLeft_eq, BitVec.toNat_ofNat]
       omega
     have hw : (word s8.mem base W) = s7.gpr .eax := by
-      rw [u8.mem, word, Mem.readW_writeW_self32]
+      rw [u8.mem, Proof.X448.X86.word, Mem.readW_writeW_self32]
     rw [hw, value]
     have h0 := (s.mem (p.setWidth 64 + BitVec.ofNat 64 n)).isLt
     have h1 := (s.mem (p.setWidth 64 + BitVec.ofNat 64 (n + 1))).isLt
@@ -222,7 +222,7 @@ theorem readLimb_ok {s : State} {base : Addr} (hs : Scr s base) {j : Nat} (hj : 
   · rw [u5.mem, u4.mem, u3.mem, u2.mem, u1.mem]
     exact writeW_outside _ _ _ (by simp only [W]; omega)
   · rw [u5.gpr, u4.other .ebp (by decide), u3.other .ebp (by decide), u2.other .ebp (by decide), e1]
-  · rw [u5.mem, word, Mem.readW_writeW_self32, u4.gpr, u3.mem, u2.mem, u1.mem]
+  · rw [u5.mem, Proof.X448.X86.word, Mem.readW_writeW_self32, u4.gpr, u3.mem, u2.mem, u1.mem]
 
 /-- After the steps from the top limb down to limb `j`. -/
 structure LimbInv (base : Addr) (s0 : State) (j : Nat) (s : State) : Prop where
