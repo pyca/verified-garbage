@@ -36,7 +36,7 @@ theorem copies_ok {B : Addr} :
         s'.gpr = s.gpr ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.mxcsr = s.mxcsr
   | [], s, _, _, _, _ => WP.block_nil ⟨rfl, rfl, rfl, rfl, rfl⟩
   | (a, o) :: rest, s, hB, hs, hl, hsep => by
-    have hD : D = 3872 := rfl
+    have hD : D = 3712 := rfl
     have ho := hl (a, o) (List.mem_cons_self ..)
     have hn := hs.nowrap
     rw [copyCode, List.flatMap_cons, List.cons_append, List.cons_append, List.nil_append, WP.block_cons_iff]
@@ -92,7 +92,7 @@ theorem copy160_ok {s : State} {B : Addr} {o a : Nat} (hB : s.gpr .rbx = B) (hs 
     WP isa (.block (VG.Impl.Rsa.X86_64.CrtIfma.copy160 o a)) s fun s' =>
       (∀ p < 2, ∀ l < 20, limb s'.mem B (D * p + o) l = limb s.mem B (D * p + a) l) ∧
       Out2 B o 160 s.mem s'.mem ∧ s'.gpr = s.gpr ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.mxcsr = s.mxcsr := by
-  have hD : D = 3872 := rfl
+  have hD : D = 3712 := rfl
   rw [copy160_eq]
   refine WP.mono (copies_ok _ s hB hs (fun x hx => ?_) (fun x hx y hy => ?_))
     fun s' ⟨hm, hg, hrd, hwr, hx⟩ => ⟨fun p hp l hl => ?_, ?_, hg, hrd, hwr, hx⟩
@@ -199,7 +199,7 @@ theorem tabIter_ok {s₀ t : State} {B : Addr} {M k x : Nat → Nat} {Q : Prop} 
       (.seq VG.Impl.Rsa.X86_64.CrtIfma.ammCore
         (.block [.alu .add .r13 (.imm 160), .alu .cmp .r13 (.imm (BitVec.ofNat 32 (oTab + 2560)))]))) t
       fun t' => TabInv s₀ B M k x Q (i + 1) t' ∧ t'.zf = some (decide (i + 1 = 16)) := by
-  have hD : D = 3872 := rfl
+  have hD : D = 3712 := rfl
   refine WP.seq (WP.mono (tabHead_ok (by omega) hi' h.rbx h.r13) fun t₁ ⟨h8, h9, h11, k₁, me₁, x₁, y₁, mx₁⟩ => ?_)
   have rbx₁ : t₁.gpr .rbx = B := by rw [k₁.gpr (by decide)]; exact h.rbx
   have hg : ∀ p < 2, Good t₁.mem B M (oTab + 160 * (i - 1)) p := fun p hp => by
@@ -280,7 +280,7 @@ theorem tabBuild_ok {s : State} {B : Addr} {M k x : Nat → Nat} {Q : Prop} (hB 
     (vy : Q → ∀ p < 2, val52 s.mem B (D * p + oY) % M p = x p ^ 0 * 2 ^ (52 * 20) % M p)
     (vx : Q → ∀ p < 2, val52 s.mem B (D * p + oX) % M p = x p ^ 1 * 2 ^ (52 * 20) % M p) :
     WP isa (VG.Impl.Bignum.X86_64.seqs VG.Impl.Rsa.X86_64.CrtIfma.tabBuild) s (TabInv s B M k x Q 16) := by
-  have hD : D = 3872 := rfl
+  have hD : D = 3712 := rfl
   refine WP.seq ?_
   rw [List.append_assoc, WP.block_append_iff]
   refine WP.mono (copy160_ok hB hs (by decide) (by decide)

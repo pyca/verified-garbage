@@ -68,7 +68,7 @@ theorem ofs_rebase' (B x : Addr) {o : Nat} (ho : o < 2 ^ 64) :
 /-- A frame at `B + o` as one at `B`. -/
 theorem Out2.rebase {B : Addr} {o n : Nat} {m m' : Mem} (h : Out2 (off B o) 0 n m m') (hn : o + D + n ≤ 2 ^ 64) :
     Out2 B o n m m' := fun x hx => h x fun p hp => by
-  have hD : D = 3872 := rfl
+  have hD : D = 3712 := rfl
   have hDp : D * p ≤ D := by rcases (by omega : p = 0 ∨ p = 1) with rfl | rfl <;> simp
   rcases ofs_rebase' B x (o := o) (by omega) with ⟨h1, h2⟩ | ⟨h1, h2⟩
   · rcases hx p hp with h3 | h3 <;> omega
@@ -94,7 +94,7 @@ theorem ammCoreSpec_ok {s : State} {B : Addr} {o a b : Nat} {k : Nat → Nat}
       Out2 B o 160 s.mem s'.mem ∧
       (∀ r, r ≠ .rax → r ≠ .rcx → r ≠ .rdx → r ≠ .rsi → r ≠ .r9 → r ≠ .r10 → r ≠ .r12 → s'.gpr r = s.gpr r) ∧
       s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.mxcsr = s.mxcsr := by
-  have hD : D = 3872 := rfl
+  have hD : D = 3712 := rfl
   -- the operands, as functions of the limb index
   let A : Nat → Nat → Nat := fun p => limb s.mem B (D * p + a)
   let Bl : Nat → Nat → Nat := fun p => limb s.mem B (D * p + b)
@@ -178,7 +178,7 @@ theorem amm_ok {s : State} {B : Addr} {o a b : Nat} {k : Nat → Nat}
       (∀ r, r ≠ .rax → r ≠ .rcx → r ≠ .rdx → r ≠ .rsi → r ≠ .r8 → r ≠ .r9 → r ≠ .r10 → r ≠ .r11 → r ≠ .r12 →
         s'.gpr r = s.gpr r) ∧
       s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.mxcsr = s.mxcsr := by
-  have hD : D = 3872 := rfl
+  have hD : D = 3712 := rfl
   refine WP.seq ?_
   refine setOff (by omega) fun s₁ u₁ => setOff (by omega) fun s₂ u₂ =>
     setOff (by omega) fun s₃ u₃ => WP.block_nil ?_

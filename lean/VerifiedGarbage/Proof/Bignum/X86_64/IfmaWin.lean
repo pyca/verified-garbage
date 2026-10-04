@@ -178,7 +178,7 @@ theorem rotV_ok {s : State} {B : Addr} {p : Nat} (hp : p < 2) (hB : s.gpr .rbx =
         .store (VG.Impl.Rsa.X86_64.CrtIfma.at_ .rbx (D * p + oV)) .rax]) s fun s' =>
       s'.mem = s.mem.writeW (off B (D * p + oV)) ((word s.mem B (D * p + oV)).rotateRight 60) ∧
       VG.Proof.MlKem.X86_64.Keep [.rax] s s' ∧ s'.mxcsr = s.mxcsr := by
-  have hDp : D * p ≤ 3872 := by rcases D_mul hp with h | h <;> omega
+  have hDp : D * p ≤ 3712 := by rcases D_mul hp with h | h <;> omega
   have hd : D * p + oV + 8 ≤ 2 * D := by simp only [oV, D] at hDp ⊢; omega
   have hld : InRegions (s.rd ++ s.wr) (B + BitVec.ofNat 64 (D * p + oV)) 8 :=
     let ⟨_, h, c⟩ := hs.region hd (by decide); ⟨_, List.mem_append_right _ h, c⟩
@@ -223,7 +223,7 @@ theorem sel2_ok {s : State} {B : Addr} {M k x : Nat → Nat} {Q : Prop} {E : Nat
         (∀ p < 2, word s'.mem B (D * p + oV) = word s.mem B (D * p + oV)) ∧ Out2 B oS 160 s.mem s'.mem ∧
         (∀ r, r ≠ .rax → r ≠ .rcx → r ≠ .rdx → r ≠ .r8 → s'.gpr r = s.gpr r) ∧
         s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.mxcsr = s.mxcsr := by
-  have hD : D = 3872 := rfl
+  have hD : D = 3712 := rfl
   have hn := hs.nowrap
   refine wp_seqs_app (by simp [VG.Impl.Rsa.X86_64.CrtIfma.select]) (by simp [VG.Impl.Rsa.X86_64.CrtIfma.select])
     (WP.mono (select_ok (p := 0) (by decide) hB hs) fun s₁ ⟨l₁, o₁, g₁, rd₁, wr₁, x₁⟩ => ?_)
@@ -282,7 +282,7 @@ theorem window_ok {s : State} {B : Addr} {M k x : Nat → Nat} {Q : Prop} {E : N
       (∀ r, r ≠ .rax → r ≠ .rcx → r ≠ .rdx → r ≠ .rsi → r ≠ .r8 → r ≠ .r9 → r ≠ .r10 → r ≠ .r11 → r ≠ .r12 →
         r ≠ .r15 → s'.gpr r = s.gpr r) ∧
       s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.mxcsr = s.mxcsr := by
-  have hD : D = 3872 := rfl
+  have hD : D = 3712 := rfl
   have hn := hs.nowrap
   rw [window_eq]
   refine wp_seqs_app (by simp) (by simp) (WP.mono (sqLoop_ok hB hs hR h) fun s₁ i₁ => ?_)

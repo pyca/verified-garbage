@@ -126,7 +126,7 @@ theorem read_stores (m : Mem) (B : Addr) (s : State) {p k t : Nat} (hp : p < 2) 
     word (wrList m B (accStores.map fun x => (x.1, s.ymm x.2))) B (D * p + 32 * k + 8 * t) =
       qw s (xr (regOf p k 0)) t := by
   rw [← qword256_ymm s _ ht, ← acc_xr p hp k hk]
-  have hD : D = 3872 := rfl
+  have hD : D = 3712 := rfl
   refine word_wrList_unique B ht (by rw [hD]; omega) _ m ?_ (fun x hx => ?_) (fun x hx he => ?_)
   · simp only [accStores, List.map_flatMap, List.map_map, List.mem_flatMap, List.mem_range, List.mem_map,
       Function.comp_def]
@@ -258,7 +258,7 @@ theorem limb_ok {B : Addr} {L : Nat → Nat → Nat} {m₀ : Mem} {s : State} {j
     WP isa (.block (limbCode j)) s fun s' => CarryInv B L m₀ s' (j + 1) ∧
       (∀ r, r ≠ .rax → r ≠ .rcx → r ≠ .rdx → r ≠ .rsi → s'.gpr r = s.gpr r) ∧
       s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.mxcsr = s.mxcsr := by
-  have hD : D = 3872 := rfl
+  have hD : D = 3712 := rfl
   have ho := off_lt j hj
   have c0 := carryIn_lt (L := L 0) (n := j) fun l hl => hL 0 (by decide) l (by omega)
   have c1 := carryIn_lt (L := L 1) (n := j) fun l hl => hL 1 (by decide) l (by omega)
@@ -457,7 +457,7 @@ theorem ammCore_ok {s : State} {B : Addr} {a m : Nat → Nat → Nat} {k : Nat �
       Out2 B 0 160 s.mem s'.mem ∧
       (∀ r, r ≠ .rax → r ≠ .rcx → r ≠ .rdx → r ≠ .rsi → r ≠ .r9 → r ≠ .r10 → r ≠ .r12 → s'.gpr r = s.gpr r) ∧
       s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.mxcsr = s.mxcsr := by
-  have hD : D = 3872 := rfl
+  have hD : D = 3712 := rfl
   refine WP.seq ?_
   rw [List.cons_append, WP.block_cons_iff]
   refine ⟨s.setReg .r10 (s.gpr .rbx), rfl, ?_⟩

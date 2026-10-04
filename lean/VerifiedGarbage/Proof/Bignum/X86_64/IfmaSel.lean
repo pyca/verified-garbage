@@ -311,9 +311,9 @@ theorem select_ok {s : State} {B : Addr} {p : Nat} (hp : p < 2) (hB : s.gpr .rbx
       Outside B (D * p + oS) 160 s.mem s'.mem ∧
       (∀ r, r ≠ .rax → r ≠ .rcx → r ≠ .rdx → r ≠ .r8 → s'.gpr r = s.gpr r) ∧
       s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.mxcsr = s.mxcsr := by
-  have hD : D = 3872 := rfl
+  have hD : D = 3712 := rfl
   have hn := hs.nowrap
-  have hDp : D * p ≤ 3872 := by rw [hD]; omega
+  have hDp : D * p ≤ 3712 := by rw [hD]; omega
   have rdS : ∀ d n, 0 < n → d + n ≤ 2 * D → InRegions (s.rd ++ s.wr) (off B d) n := fun d n hn hd =>
     let ⟨_, h, c⟩ := hs.region hd hn; ⟨_, List.mem_append_right _ h, c⟩
   let v := nib s.mem B p

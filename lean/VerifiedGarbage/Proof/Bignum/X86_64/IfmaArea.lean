@@ -31,14 +31,14 @@ structure Good (m : Mem) (B : Addr) (M : Nat → Nat) (c p : Nat) : Prop where
   lt : ∀ j < 20, limb m B (D * p + c) j < 2 ^ 52
   v : val52 m B (D * p + c) < 2 * M p
 
-theorem D_mul {p : Nat} (hp : p < 2) : D * p = 0 ∨ D * p = 3872 := by
+theorem D_mul {p : Nat} (hp : p < 2) : D * p = 0 ∨ D * p = 3712 := by
   rcases (by omega : p = 0 ∨ p = 1) with rfl | rfl <;> simp [D]
 
 /-- A word of a region outside the windows. -/
 theorem Out2.word_at {B : Addr} {o n : Nat} {m m' : Mem} (h : Out2 B o n m m') {p c : Nat} (hp : p < 2)
     (hc : c + 8 ≤ o ∨ o + n ≤ c) (hcD : c + 8 ≤ D) (hoD : o + n ≤ D) :
     word m' B (D * p + c) = word m B (D * p + c) := by
-  have hD : D = 3872 := rfl
+  have hD : D = 3712 := rfl
   refine (Mem.readW_congr fun i hi => (h _ fun p' hp' => ?_).symm).symm
   rw [ofs_off B (by rcases D_mul hp with h | h <;> omega)]
   have : i < 8 := hi

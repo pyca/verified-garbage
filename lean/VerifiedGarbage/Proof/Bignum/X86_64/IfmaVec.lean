@@ -108,7 +108,7 @@ theorem OutE.word_at {B : Addr} {m m' : Mem} (h : OutE B m m') {p c : Nat} (hp :
     (hY : c + 8 ≤ oY ∨ oY + 160 ≤ c) (hS : c + 8 ≤ oS ∨ oS + 160 ≤ c) (hV : c + 8 ≤ oV ∨ oV + 8 ≤ c)
     (hT : c + 8 ≤ oTab ∨ oTab + 2560 ≤ c) (hcD : c + 8 ≤ D) :
     word m' B (D * p + c) = word m B (D * p + c) := by
-  have hD : D = 3872 := rfl
+  have hD : D = 3712 := rfl
   refine (Mem.readW_congr fun i hi => (h _ fun p' hp' => ?_).symm).symm
   rw [ofs_off B (by rcases D_mul hp with h | h <;> omega)]
   have : i < 8 := hi
@@ -129,7 +129,7 @@ theorem pow_split {a b c : Nat} (h : a + b = c + c) : 2 ^ a * 2 ^ b = 2 ^ c * 2 
 
 theorem Out2.toOutside {B : Addr} {o n : Nat} {m m' : Mem} (h : Out2 B o n m m') (hon : o + n ≤ D) :
     Outside B 0 (2 * D) m m' := fun a ha => h a fun p hp => by
-  have hD : D = 3872 := rfl
+  have hD : D = 3712 := rfl
   rcases ha with ha | ha
   · omega
   · have : D * p ≤ D := by rcases D_mul hp with h | h <;> omega
@@ -137,7 +137,7 @@ theorem Out2.toOutside {B : Addr} {o n : Nat} {m m' : Mem} (h : Out2 B o n m m')
 
 theorem OutE.toOutside {B : Addr} {m m' : Mem} (h : OutE B m m') : Outside B 0 (2 * D) m m' :=
   fun a ha => h a fun p hp => by
-    have hD : D = 3872 := rfl
+    have hD : D = 3712 := rfl
     rcases ha with ha | ha
     · omega
     · have : D * p ≤ D := by rcases D_mul hp with h | h <;> omega
@@ -147,7 +147,7 @@ theorem OutE.toOutside {B : Addr} {m m' : Mem} (h : OutE B m m') : Outside B 0 (
 theorem Out2.byte {B : Addr} {o n : Nat} {m m' : Mem} (h : Out2 B o n m m') {p i : Nat} (hp : p < 2)
     (hi : i < 128) (ho : o + n ≤ oE ∨ oE + 128 ≤ o) (hoD : o + n ≤ D) :
     m' (off B (D * p + oE + i)) = m (off B (D * p + oE + i)) := by
-  have hD : D = 3872 := rfl
+  have hD : D = 3712 := rfl
   refine h _ fun p' hp' => ?_
   rw [ofs_off0 B (by rcases D_mul hp with h | h <;> simp only [oE] at * <;> omega)]
   rcases D_mul hp with h1 | h1 <;> rcases D_mul hp' with h2 | h2 <;> simp only [oE] at * <;> omega
@@ -179,7 +179,7 @@ theorem vecBody_ok {s : State} {B : Addr} {M k x : Nat → Nat} {Q : Prop} (hB :
       (∀ r, r ≠ .rax → r ≠ .rcx → r ≠ .rdx → r ≠ .rsi → r ≠ .r8 → r ≠ .r9 → r ≠ .r10 → r ≠ .r11 → r ≠ .r12 →
         r ≠ .r13 → r ≠ .r14 → r ≠ .r15 → s'.gpr r = s.gpr r) ∧
       s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.mxcsr = s.mxcsr := by
-  have hD : D = 3872 := rfl
+  have hD : D = 3712 := rfl
   have e2 : 2 ^ 1024 * 2 ^ 1056 = 2 ^ (52 * 20) * 2 ^ (52 * 20) := by
     simp only [← Nat.pow_add, Nat.reduceAdd, Nat.reduceMul]
   refine wp_seqs_app (by simp) (by simp) (wp_seqs_app (by simp) (by simp [VG.Impl.Rsa.X86_64.CrtIfma.expLoop,
@@ -315,7 +315,7 @@ theorem vec_ok {s : State} {B : Addr} {M k x : Nat → Nat} {Q : Prop} (hB : s.g
       (∀ r, r ≠ .rax → r ≠ .rcx → r ≠ .rdx → r ≠ .rsi → r ≠ .r8 → r ≠ .r9 → r ≠ .r10 → r ≠ .r11 → r ≠ .r12 →
         r ≠ .r13 → r ≠ .r14 → r ≠ .r15 → s'.gpr r = s.gpr r) ∧
       s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.mxcsr = s.mxcsr &&& 0xFFFF := by
-  have hD : D = 3872 := rfl
+  have hD : D = 3712 := rfl
   have hn := hs.nowrap
   refine WP.seq (WP.mono (mxSave_ok hB hs) fun s₁ ⟨m₁, k₁, x₁⟩ => ?_)
   have hB₁ : s₁.gpr .rbx = B := by rw [k₁.gpr (by decide)]; exact hB

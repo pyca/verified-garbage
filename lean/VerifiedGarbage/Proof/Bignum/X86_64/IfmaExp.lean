@@ -53,7 +53,7 @@ theorem ldV_ok {s : State} {B : Addr} {p i : Nat} (hp : p < 2) (hi : i < 128) (h
         .shift .ror .rax 8, .store (VG.Impl.Rsa.X86_64.CrtIfma.at_ .rbx (D * p + oV)) .rax]) s fun s' =>
       s'.mem = s.mem.writeW (off B (D * p + oV)) (BitVec.ofNat 64 (ebyte s.mem B p i * 2 ^ 56)) ∧
       VG.Proof.MlKem.X86_64.Keep [.rax] s s' ∧ s'.mxcsr = s.mxcsr := by
-  have hDp : D * p ≤ 3872 := by rcases D_mul hp with h | h <;> omega
+  have hDp : D * p ≤ 3712 := by rcases D_mul hp with h | h <;> omega
   have e : B + BitVec.ofNat 64 i + BitVec.ofNat 64 (D * p + oE) = off B (D * p + oE + i) := by
     rw [BitVec.add_assoc, ← BitVec.ofNat_add, Nat.add_comm i]
   have hld : InRegions (s.rd ++ s.wr) (B + BitVec.ofNat 64 i + BitVec.ofNat 64 (D * p + oE)) 1 := by
@@ -174,7 +174,7 @@ theorem ofs_off0 (B : Addr) {d : Nat} (h : d < 2 ^ 64) : ofs B (off B d) = d := 
 /-- The exponents' bytes outside `Y`, `S` and `V`. -/
 theorem OutW.byte {B : Addr} {m m' : Mem} (h : OutW B m m') {p i : Nat} (hp : p < 2) (hi : i < 128) :
     m' (off B (D * p + oE + i)) = m (off B (D * p + oE + i)) := by
-  have hDp : D * p ≤ 3872 := by rcases D_mul hp with h | h <;> omega
+  have hDp : D * p ≤ 3712 := by rcases D_mul hp with h | h <;> omega
   refine h _ fun p' hp' => ?_
   rw [ofs_off0 B (by simp only [oE] at *; omega)]
   rcases D_mul hp with h1 | h1 <;> rcases D_mul hp' with h2 | h2 <;>
@@ -245,7 +245,7 @@ theorem byteIter_ok {t₀ t : State} {B : Addr} {M k x : Nat → Nat} {Q : Prop}
   refine WP.mono (ldV_ok (p := 0) (by decide) hi hBt h.r13 hst) fun t₁ ⟨m₁, k₁, x₁⟩ => ?_
   refine WP.mono (ldV_ok (p := 1) (by decide) hi (by rw [k₁.gpr (by decide)]; exact hBt)
     (by rw [k₁.gpr (by decide)]; exact h.r13) (hst.congr k₁.2.2)) fun t₂ ⟨m₂, k₂, x₂⟩ => ?_
-  have hD : D = 3872 := rfl
+  have hD : D = 3712 := rfl
   have o₁ : Outside B (D * 0 + oV) 8 t.mem t₁.mem := by rw [m₁]; exact writeW_outside _ B _ (by simp only [oV]; omega)
   have o₂ : Outside B (D * 1 + oV) 8 t₁.mem t₂.mem := by rw [m₂]; exact writeW_outside _ B _ (by simp only [oV]; omega)
   have fV : Out2 B oV 8 t.mem t₂.mem :=
@@ -354,7 +354,7 @@ theorem expLoop_ok {s : State} {B : Addr} {M k x : Nat → Nat} {Q : Prop} (hB :
       (∀ r, r ≠ .rax → r ≠ .rcx → r ≠ .rdx → r ≠ .rsi → r ≠ .r8 → r ≠ .r9 → r ≠ .r10 → r ≠ .r11 → r ≠ .r12 →
         r ≠ .r13 → r ≠ .r14 → r ≠ .r15 → s'.gpr r = s.gpr r) ∧
       s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.mxcsr = s.mxcsr := by
-  have hD : D = 3872 := rfl
+  have hD : D = 3712 := rfl
   refine wp_seqs_app (by simp [VG.Impl.Rsa.X86_64.CrtIfma.tabBuild]) (by simp)
     (WP.mono (tabBuild_ok hB hs ar hR gy gx vy vx) fun s₁ t₁ => ?_)
   refine WP.seq ?_
@@ -380,7 +380,7 @@ theorem expLoop_ok {s : State} {B : Addr} {M k x : Nat → Nat} {Q : Prop} (hB :
   have hev : ∀ p < 2, ev u.mem B p 128 = ev s.mem B p 128 := fun p hp => by
     rw [mu]
     refine ev_congr 128 fun i hi => t₁.frame _ fun p' hp' => ?_
-    have hDp : D * p ≤ 3872 := by rcases D_mul hp with h | h <;> omega
+    have hDp : D * p ≤ 3712 := by rcases D_mul hp with h | h <;> omega
     rw [ofs_off0 B (by have := hs.nowrap; simp only [oE] at *; omega)]
     rcases D_mul hp with h1 | h1 <;> rcases D_mul hp' with h2 | h2 <;> simp only [oTab, oE] at * <;> omega
   refine ⟨b'.st.congrE hev, ?_, fun r r1 r2 r3 r4 r5 r6 r7 r8 r9 r10 r11 r12 => ?_, ?_, ?_, ?_⟩

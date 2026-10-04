@@ -41,8 +41,8 @@ open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Bignum.X86_64.Public VG.Impl.Rsa
 /-! ## Layout -/
 
 /-- In a prime's region: the modulus, `k₀` in each quadword, `Y`, the base
-`X`, the selected entry, the table, the padded exponent, `2¹⁰⁵⁶ mod X`, 1,
-the bytes of the exponent being read. -/
+`X`, the selected entry, the table, the padded exponent, `2¹⁰⁵⁶ mod X`,
+the bytes of the exponent being read, the last multiplier. -/
 def oM : Nat := 0
 def oK0 : Nat := 160
 def oY : Nat := 192
@@ -51,12 +51,11 @@ def oS : Nat := 512
 def oTab : Nat := 672
 def oE : Nat := 3232
 def oK1 : Nat := 3360
-def oOne : Nat := 3520
-def oV : Nat := 3680
+def oV : Nat := 3520
 /-- The last multiplier: 1 for `q`, `R mod p` for `p`. -/
-def oFin : Nat := 3712
+def oFin : Nat := 3552
 /-- `q`'s region from `p`'s. -/
-def D : Nat := 3872
+def D : Nat := 3712
 /-- The caller's MXCSR (its bits 15:0) and `0x1FBF`, after both regions. -/
 def oMx : Nat := 2 * D
 /-- The size of the area. -/
@@ -186,7 +185,7 @@ def arr52 (p j o : Nat) : List Instr :=
     .alu .add .r11 (.imm (BitVec.ofNat 32 (D * p + o))), .movImm64 .r12 mask52] ++ to52
 
 /-- A prime's region (`p` 0 or 1): the modulus, `k₀`, `2¹⁰⁵⁶ mod X`, `x R`
-as `X`, `R` as `Y` (both still with `R = 2¹⁰²⁴`), 1, the last multiplier, the padded exponent
+as `X`, `R` as `Y` (both still with `R = 2¹⁰²⁴`), the last multiplier, the padded exponent
 (pointer and length in `n`'s slots `slotPtr`, `slotLen`). -/
 def region (p slotPtr slotLen : Nat) : List (Prog isa) :=
   k1 ++ [.block (arr52 p aN oM ++ arr52 p aT oK1 ++ arr52 p aXc oX ++ arr52 p aY oY ++
@@ -194,11 +193,9 @@ def region (p slotPtr slotLen : Nat) : List (Prog isa) :=
     [.mov .r11 (.mem (hdr sIfma)), .alu .add .r11 (.imm (BitVec.ofNat 32 (D * p))),
       .mov .rax (.mem (hdr sMinv)), .alu .and .rax (.reg .r12)] ++
     (List.range 4).map (fun l => .store (at_ .r11 (oK0 + 8 * l)) .rax) ++
-    [.mov32 .rax (.imm 0)] ++ (List.range 20).map (fun j => .store (at_ .r11 (oOne + off j)) .rax) ++
-    (List.range 16).map (fun l => .store (at_ .r11 (oE + 8 * l)) .rax) ++
-    (if p = 0 then [] else (List.range 20).map (fun j => .store (at_ .r11 (oFin + off j)) .rax)) ++
-    [.mov32 .rax (.imm 1), .store (at_ .r11 oOne) .rax] ++
-    (if p = 0 then [] else [.store (at_ .r11 oFin) .rax]) ++
+    [.mov32 .rax (.imm 0)] ++ (List.range 16).map (fun l => .store (at_ .r11 (oE + 8 * l)) .rax) ++
+    (if p = 0 then [] else (List.range 20).map (fun j => .store (at_ .r11 (oFin + off j)) .rax) ++
+      [.mov32 .rax (.imm 1), .store (at_ .r11 oFin) .rax]) ++
     [
       .mov .rax (.mem (hdr sLink)), .mov .rsi (.mem (ws .rax slotPtr)), .mov .rcx (.mem (ws .rax slotLen)),
       .alu .add .r11 (.imm (BitVec.ofNat 32 (oE + 128))), .alu .sub .r11 (.reg .rcx)]),
