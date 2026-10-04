@@ -5,7 +5,8 @@ import VerifiedGarbage.TCB.Code
 
 **Trusted.** Register, memory and flag definitions of the 32-bit x86 model,
 with legacy SSE's eight 128-bit XMM registers (Intel SDM Vol. 1 §10.2.1),
-all caller-saved in the System V i386 ABI.
+all caller-saved in the System V i386 ABI, and the eight 64-bit MMX
+registers (SDM Vol. 1 §9.2.2).
 -/
 
 namespace VG.X86
@@ -19,6 +20,12 @@ inductive XReg
   | xmm0 | xmm1 | xmm2 | xmm3 | xmm4 | xmm5 | xmm6 | xmm7
   deriving DecidableEq, Repr, Inhabited
 
+/-- The eight MMX registers (SDM Vol. 1 §9.2.2), which alias the
+significands of the x87 data registers. -/
+inductive MReg
+  | mm0 | mm1 | mm2 | mm3 | mm4 | mm5 | mm6 | mm7
+  deriving DecidableEq, Repr, Inhabited
+
 structure State where
   gpr : Reg → BitVec 32
   cf : Option Bool
@@ -27,6 +34,11 @@ structure State where
   of : Option Bool
   /-- The 128 bits of each legacy SSE register; no VEX or EVEX instructions are modelled. -/
   xmm : XReg → BitVec 128 := fun _ => 0
+  /-- The 64 bits of each MMX register. -/
+  mm : MReg → BitVec 64 := fun _ => 0
+  /-- Whether the code is inside an MMX frame (`Instr.mmxEnter` … `emms`,
+  see `TCB/X86/Isa.lean`): the x87 registers hold MMX values. -/
+  mmx : Bool := false
   mem : Mem
   /-- Regions the code may read (in addition to `wr`). -/
   rd : List Region
@@ -75,8 +87,19 @@ def load128 (s : State) (a : Addr) : Option (BitVec 128) :=
 def store128 (s : State) (a : Addr) (v : BitVec 128) : Option State :=
   if InRegions s.wr a 16 then some { s with mem := s.mem.writeW a v } else none
 
+/-- SDM Vol. 2, MOVQ: an 8-byte load, faulting outside readable regions. -/
+def load64 (s : State) (a : Addr) : Option (BitVec 64) :=
+  if InRegions (s.rd ++ s.wr) a 8 then some (s.mem.readW a 64) else none
+
+/-- SDM Vol. 2, MOVQ: an 8-byte store, faulting outside writable regions. -/
+def store64 (s : State) (a : Addr) (v : BitVec 64) : Option State :=
+  if InRegions s.wr a 8 then some { s with mem := s.mem.writeW a v } else none
+
 def setXmm (s : State) (r : XReg) (v : BitVec 128) : State :=
   { s with xmm := fun r' => if r' = r then v else s.xmm r' }
+
+def setMm (s : State) (r : MReg) (v : BitVec 64) : State :=
+  { s with mm := fun r' => if r' = r then v else s.mm r' }
 
 /-- Set CF, OF, ZF and SF. -/
 def setFlags (s : State) (cf of zf sf : Option Bool) : State :=

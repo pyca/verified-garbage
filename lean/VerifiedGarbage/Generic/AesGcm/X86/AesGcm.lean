@@ -21,9 +21,10 @@ against the contract.
 Each function calls `vg_aes_ctr32` (six stack arguments) or `vg_ghash`
 (five) in a frame of its own, so uses 28 bytes of stack with the return
 address (24 for `stream_init` and `stream_aad`, which call only
-`vg_ghash`). `init`, `stream_init` and `stream_aad` also keep their working
-space in a frame of their own, which copies their arguments passed on the
-stack: 2580, 2584 and 2592 bytes.
+`vg_ghash`). `init`, `stream_init`, `stream_aad`, `stream_encrypt` and
+`stream_decrypt` also keep their working space in a frame of their own,
+which copies their arguments passed on the stack: 2580, 2584, 2592 and (for
+the last two) 2604 bytes.
 -/
 
 namespace VG.Generic.AesGcm.X86.AesGcm
@@ -72,21 +73,21 @@ def artifactsOf (v : GcmImpl) : List Artifact := [
     name := Spec.Gcm.streamEncryptApi.name ++ v.suffix
     target := X86.target
     doc := Spec.Gcm.streamEncryptApi.doc (notes := [callNote v])
-    code := Impl.AesGcm.X86.streamEncrypt v.callees
-    contract := Spec.Gcm.streamEncryptContract X86.abi 28
-    stack := 28
-    verified := streamEncrypt_verified (vg := v)
-    spSafe := streamEncrypt_spSafe v
+    code := Impl.StackScratch.X86.withStackScratch 2604 9 (Impl.AesGcm.X86.streamEncrypt v.callees)
+    contract := Spec.Gcm.streamEncryptContract X86.abi 2632
+    stack := 2632
+    verified := streamEncrypt_framed v
+    spSafe := withStackScratch_spSafe (by decide) (streamEncrypt_spSafe v)
     features := v.features },
   { Spec.Gcm.streamDecryptApi with
     name := Spec.Gcm.streamDecryptApi.name ++ v.suffix
     target := X86.target
     doc := Spec.Gcm.streamDecryptApi.doc (notes := [callNote v])
-    code := Impl.AesGcm.X86.streamDecrypt v.callees
-    contract := Spec.Gcm.streamDecryptContract X86.abi 28
-    stack := 28
-    verified := streamDecrypt_verified (vg := v)
-    spSafe := streamDecrypt_spSafe v
+    code := Impl.StackScratch.X86.withStackScratch 2604 9 (Impl.AesGcm.X86.streamDecrypt v.callees)
+    contract := Spec.Gcm.streamDecryptContract X86.abi 2632
+    stack := 2632
+    verified := streamDecrypt_framed v
+    spSafe := withStackScratch_spSafe (by decide) (streamDecrypt_spSafe v)
     features := v.features },
   { Spec.Gcm.streamFinishApi with
     name := Spec.Gcm.streamFinishApi.name ++ v.suffix

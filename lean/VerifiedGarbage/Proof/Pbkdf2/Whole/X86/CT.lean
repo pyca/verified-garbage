@@ -481,8 +481,8 @@ theorem verifiedN (hF : FnsOK F) (hc : Checks F) (hsat : ∃ s, (pbkN hF.hH.SH (
 /-- `pbkdf2` is verified against the shared contract, given the taint checks
 and a state satisfying the shared contract. -/
 theorem verified (hF : FnsOK F) (hc : Checks F) {S : Spec.Hmac.StreamingHash} {W : Nat} (hS : hF.hH.SH = S)
-    (hW : F.W + F.H.S = W) (hsat : ∃ s, (Spec.Pbkdf2.pbkdf2Contract S W X86.abi 76).pre s) :
-    Verified X86.target F.pbkdf2 (Spec.Pbkdf2.pbkdf2Contract S W X86.abi 76) := by
+    (hW : F.W + F.H.S = W) (hsat : ∃ s, (Spec.Pbkdf2.pbkdf2ScratchContract S W X86.abi 76).pre s) :
+    Verified X86.target F.pbkdf2 (Spec.Pbkdf2.pbkdf2ScratchContract S W X86.abi 76) := by
   subst hS hW
   have imp := pbkImp hF.hH.SH (F.W + F.H.S) hsat
   have gsat : ∃ s, (pbkG hF.hH.SH (F.W + F.H.S)).pre s := hsat.elim fun s h => ⟨s, imp.pre s h⟩
@@ -506,5 +506,21 @@ def pbkSat (W : Nat) : State where
   mem := pbkMem
   rd := [⟨0x1000, 0⟩, ⟨0x1100, 0⟩]
   wr := [⟨0x1200, 0⟩, ⟨0x2000, W * 8⟩, ⟨0x8004, 32⟩]
+
+/-! ## Hash functions with a backend for each implementation of their compression function
+
+The code differs between backends only in the functions it calls, so its
+taint checks are evaluated once, on the code without them (`shapeOf`), for
+every backend (`Sha256.lean`, `Sha1.lean`). -/
+
+/-- `F` without the names and code of the functions it calls: the code
+between the calls depends on nothing else. -/
+def shapeOf (F : Fns) : Fns :=
+  ⟨⟨F.H.B, F.H.S, F.H.D, F.H.F, F.H.W, "", .block [], "", .block [], "", .block []⟩, F.W, "", .block [], "",
+    .block [], "", .block []⟩
+
+theorem checks_of_shape {F : Fns} (h : Checks (shapeOf F)) : Checks F :=
+  ⟨h.pro, h.cmp, h.hk1, h.hk3, h.hk5, h.hk7, h.short, h.su1, h.su3, h.su4, h.init, h.b1, h.b2, h.b4, h.b6, h.b7,
+    h.tail, h.restore⟩
 
 end VG.Proof.Pbkdf2.Whole.X86

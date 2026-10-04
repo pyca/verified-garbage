@@ -8,45 +8,30 @@ import VerifiedGarbage.Proof.Ed448.X86_64.BaseLocal
 
 The correctness of `vg_ed448_scalar_base` against the contract the proof is
 written against (`scalarBaseLocal`, `BaseLocal.lean`): the scalar's bits, the
-loop (`R` ends as a representative of `[k]B`), the inversion of `Z` and the
-encoding, every write in the working space but the result's, so the scalar
-is read unchanged, the callee-saved registers are restored from the working
-space, and the return address is kept.
+loop (`R` ends as the reference ladder's point, which encodes `[k]B` by
+`BaseLadderOk`), the inversion of `Z` and the encoding, every write in the
+working space but the result's, so the scalar is read unchanged, the
+callee-saved registers are restored from the working space, and the return
+address is kept.
 -/
 
 namespace VG.Proof.Ed448.X86_64
 
-open VG VG.X86_64 VG.Impl.Ed448.X86_64 VG.Proof.Ed448 VG.Proof.EdwardsLaw
+open VG VG.X86_64 VG.Impl.Ed448.X86_64 VG.Proof.Ed448
 open VG.Proof.X448.X86_64 (Scr Index Env E FieldOk word off Outside ofs Saved clob writeW_outside
   word_writeW_self invert_ok setRbx_ok E_outside contains_sc ofs_off')
 open VG.Impl.X448.X86_64 (BITS slot)
 open VG.Spec.Ed448 (bytesAt decodeLE)
 
-theorem bytesAt_getD (m : Mem) (p : Addr) {n i : Nat} (hi : i < n) :
-    (bytesAt m p n).getD i 0 = m (p + BitVec.ofNat 64 i) := by
-  rw [bytesAt_eq]
-  simp [Spec.X25519.bytesAt, List.getD_eq_getElem?_getD, hi]
-
-/-- Bit `t` of the scalar is bit `t % 8` of its byte `t / 8`. -/
-theorem scalar_bit (m : Mem) (p : Addr) {t : Nat} (ht : t < 456) :
-    ((m (p + BitVec.ofNat 64 (t / 8))).toNat >>> (t % 8)) &&& 1 =
-      (decodeLE (bytesAt m p 57) >>> t) &&& 1 := by
-  rw [decodeLE_eq, Proof.X25519.leNum_bit, bytesAt_getD m p (by omega)]
-
-theorem scalar_shift (m : Mem) (p : Addr) : decodeLE (bytesAt m p 57) >>> 456 = 0 :=
-  decodeLE_shift_456 _ (by rw [bytesAt_eq]; simp [Spec.X25519.bytesAt])
-
 /-- The result's bytes: those of `y = Y/Z` and the sign of `x = X/Z`, for
-`(X : Y : Z)` representing `[k]B`. -/
-theorem encode_result {X Y Z : Spec.X448.Fe} {k : Nat}
-    (h : Rep ⟨X, Y, Z⟩ (k • baseAff)) :
+`(X : Y : Z)` the ladder's point of a scalar of 57 bytes. -/
+theorem encode_result (hL : BaseLadderOk) {X Y Z : Spec.X448.Fe} {m : Mem} {p : Addr}
+    (h : (⟨X, Y, Z⟩ : Spec.Ed448.Point) = ladder (decodeLE (bytesAt m p 57)) 456) :
     Proof.X25519.leBytes 56 (Y * Proof.X448.invert Z).val ++
       [BitVec.ofNat 8 (128 * ((X * Proof.X448.invert Z).val % 2))] =
-      Spec.Ed448.encodePoint (Spec.Ed448.pointMul k Spec.Ed448.basePoint) := by
-  rw [encodePoint_rep (pointMul_rep k basePoint_rep), ← encodePoint_rep h]
-  unfold Spec.Ed448.encodePoint
-  dsimp only [-Nat.reducePow]
-  rw [Proof.X448.invert_eq, encodeLE_57 _ _ (Nat.lt_trans (Fin.isLt _) (by decide +kernel))]
+      Spec.Ed448.scalarBase (bytesAt m p 57) := by
+  rw [Spec.Ed448.scalarBase, ← hL _ (decodeLE_below (by rw [bytesAt_eq]; simp [Spec.X25519.bytesAt])),
+    ← h, encodePoint_code]
 
 /-- The output's address into `r15`, the working space into `rdi`. -/
 theorem movOut_ok (s : State) :
@@ -76,7 +61,7 @@ theorem stashOut_ok {s : State} {base : Addr} (hb : s.gpr .rdi = base)
 variable {fld : Impl.X448.X86_64.Field} (hf : FieldOk fld)
 
 include hf in
-theorem scalarBase_correct {s : State} (hp : scalarBaseLocal.pre s) :
+theorem scalarBase_correct (hL : BaseLadderOk) {s : State} (hp : scalarBaseLocal.pre s) :
     WP isa (scalarBaseWith fld) s fun t => gprPreserved s t ∧ scalarBaseLocal.post s t := by
   obtain ⟨hr, hw, hd, hro, hrs, hos, hn⟩ := hp
   obtain ⟨base, hbase⟩ : ∃ b, s.gpr .rdx = b := ⟨_, rfl⟩
@@ -152,13 +137,10 @@ theorem scalarBase_correct {s : State} (hp : scalarBaseLocal.pre s) :
   have e₅ : ∀ i : Index, E s₅.mem base i = E s₃.mem base i := fun i => by rw [m₅, e₄]
   have I₅ : MInv base K s₅ 456 s₅ := by
     refine ⟨hs₅, rbx₅, fun _ _ => rfl, rfl, rfl, Outside.refl _ _ _ _, ?_, ?_, ?_⟩
-    · show Proof.Ed448.X86_64.pt (E s₅.mem base) 8 9 10 = _
-      simp only [Proof.Ed448.X86_64.pt, e₅]; exact q₃
+    · show Proof.Ed448.pt (E s₅.mem base) 8 9 10 = _
+      simp only [Proof.Ed448.pt, e₅]; exact q₃
     · rw [e₅]; exact d₃
-    · rw [scalar_shift, zero_nsmul]
-      have : Proof.Ed448.X86_64.pt (E s₅.mem base) 0 1 2 = Spec.Ed448.identity := by
-        simp only [Proof.Ed448.X86_64.pt, e₅]; exact p₃
-      rw [this]; exact identity_rep
+    · simp only [Proof.Ed448.pt, e₅, Nat.sub_self]; exact p₃
   refine WP.mono (loop_ok hf hbits 456 s₅ (by decide) (by decide) I₅) fun s₆ I₆ => ?_
   -- The inversion of `Z`.
   apply WP.seq
@@ -198,8 +180,8 @@ theorem scalarBase_correct {s : State} (hp : scalarBaseLocal.pre s) :
       · exact hro) (by decide)
   · show bytesAt t.mem (s.gpr .rdi) 57 = _
     have r₆ := I₆.rep
-    rw [Nat.shiftRight_zero] at r₆
-    rw [bt, e₇, E_outside o₇ 0 (by decide), E_outside o₇ 1 (by decide), Spec.Ed448.scalarBase]
-    exact encode_result r₆
+    rw [Nat.sub_zero] at r₆
+    rw [bt, e₇, E_outside o₇ 0 (by decide), E_outside o₇ 1 (by decide)]
+    exact encode_result hL r₆
 
 end VG.Proof.Ed448.X86_64

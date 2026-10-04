@@ -771,8 +771,8 @@ section
 # scrypt on 32-bit ARM: PBKDF2-HMAC-SHA256 as a callee
 
 As on AArch64 (`Proof/Scrypt/AArch64/Whole/Pbkdf2.lean`):
-`vg_pbkdf2_hmac_sha256` is verified against the shared contract
-`VG.Spec.Hmac.sha256I.pbkdf2Contract`; its caller works with the same contract
+`vg_pbkdf2_hmac_sha256_scratch` is verified against the shared contract
+`VG.Spec.Hmac.sha256I.pbkdf2ScratchContract`; its caller works with the same contract
 spelt out (`pbkA`): `pbk_correct` and `pbk_ct` are its correctness and
 constant time under `pbkA`, from its `Verified` proof.
 -/
@@ -811,9 +811,9 @@ def pbkA : Contract isa where
     stackArg s₁ 2 = stackArg s₂ 2 ∧ stackArg s₁ 3 = stackArg s₂ 3
 
 theorem pbk_pre {s : State} (h : pbkA.pre s) :
-    (Spec.Hmac.sha256I.pbkdf2Contract Arm.abi 24).pre s := by
-  simp only [Spec.Hmac.Instance.pbkdf2Contract, Spec.Hmac.Instance.pbkdf2Scratch]
-  sig_pre [Spec.Pbkdf2.pbkdf2Contract, Spec.Pbkdf2.pbkdf2Sig, Spec.Hmac.sha256I, Spec.Hmac.sha256S,
+    (Spec.Hmac.sha256I.pbkdf2ScratchContract Arm.abi 24).pre s := by
+  simp only [Spec.Hmac.Instance.pbkdf2ScratchContract, Spec.Hmac.Instance.pbkdf2Scratch]
+  sig_pre [Spec.Pbkdf2.pbkdf2ScratchContract, Spec.Pbkdf2.pbkdf2ScratchSig, Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post, Spec.Hmac.sha256I, Spec.Hmac.sha256S,
     Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val]
   simp only [pbkA, State.addr] at h
   sig_split h
@@ -824,21 +824,21 @@ theorem pbk_pre {s : State} (h : pbkA.pre s) :
     | with_reducible exact Region.Disjoint.symm ‹_›
     | omega
 
-theorem pbk_post {s s' : State} (h : (Spec.Hmac.sha256I.pbkdf2Contract Arm.abi 24).post s s') :
+theorem pbk_post {s s' : State} (h : (Spec.Hmac.sha256I.pbkdf2ScratchContract Arm.abi 24).post s s') :
     pbkA.post s s' := by
-  simp only [Spec.Hmac.Instance.pbkdf2Contract, Spec.Hmac.Instance.pbkdf2Scratch] at h
-  sig_post [Spec.Pbkdf2.pbkdf2Contract, Spec.Pbkdf2.pbkdf2Sig, Spec.Hmac.sha256I, Spec.Hmac.sha256S,
+  simp only [Spec.Hmac.Instance.pbkdf2ScratchContract, Spec.Hmac.Instance.pbkdf2Scratch] at h
+  sig_post [Spec.Pbkdf2.pbkdf2ScratchContract, Spec.Pbkdf2.pbkdf2ScratchSig, Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post, Spec.Hmac.sha256I, Spec.Hmac.sha256S,
     Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val] at h
   exact h
 
 theorem pbk_pub {s₁ s₂ : State} (h : pbkA.pub s₁ s₂) :
-    (Spec.Hmac.sha256I.pbkdf2Contract Arm.abi 24).pub s₁ s₂ := by
-  simp only [Spec.Hmac.Instance.pbkdf2Contract, Spec.Hmac.Instance.pbkdf2Scratch]
-  sig_pub [Spec.Pbkdf2.pbkdf2Contract, Spec.Pbkdf2.pbkdf2Sig, Spec.Hmac.sha256I, Spec.Hmac.sha256S,
+    (Spec.Hmac.sha256I.pbkdf2ScratchContract Arm.abi 24).pub s₁ s₂ := by
+  simp only [Spec.Hmac.Instance.pbkdf2ScratchContract, Spec.Hmac.Instance.pbkdf2Scratch]
+  sig_pub [Spec.Pbkdf2.pbkdf2ScratchContract, Spec.Pbkdf2.pbkdf2ScratchSig, Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post, Spec.Hmac.sha256I, Spec.Hmac.sha256S,
     Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val]
   exact h
 
-variable {pbk : Prog isa} (hv : Verified Arm.target pbk (Spec.Hmac.sha256I.pbkdf2Contract Arm.abi 24))
+variable {pbk : Prog isa} (hv : Verified Arm.target pbk (Spec.Hmac.sha256I.pbkdf2ScratchContract Arm.abi 24))
 include hv
 
 theorem pbk_correct (s : State) (h : pbkA.pre s) :
@@ -857,7 +857,7 @@ end
 # scrypt on 32-bit ARM: the calls
 
 Each call passes its stack arguments in a frame of its own: four words for
-`vg_pbkdf2_hmac_sha256` (`frame4_ok`, as `frame2_ok` of PBKDF2's proof, whose
+`vg_pbkdf2_hmac_sha256_scratch` (`frame4_ok`, as `frame2_ok` of PBKDF2's proof, whose
 callee uses at most 24 bytes below it), two for `vg_scrypt_romix`
 (`frame2_ok`). What such a call does from `Ctx` and its arguments (`PbkArgs`,
 `RomixArgs`): it keeps `Ctx`, and changes memory only in what it writes and
@@ -1137,7 +1137,7 @@ theorem pbk_apart (hL : L.Ok) {salt sl out ol : BitVec 32} (hr : PbkRegions L sa
   · exact ⟨(stk_args hL).symm, (stk_sv hL).symm⟩
 
 theorem pbk_call {pbk : Prog isa}
-    (hv : Verified Arm.target pbk (Spec.Hmac.sha256I.pbkdf2Contract Arm.abi 24))
+    (hv : Verified Arm.target pbk (Spec.Hmac.sha256I.pbkdf2ScratchContract Arm.abi 24))
     (hst : armStack pbk ≤ 24) (name : String) (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t)
     {salt sl out ol : BitVec 32} (ha : PbkArgs L salt sl out ol t) (hr : PbkRegions L salt sl out ol) :
     WP isa (pbkCall name pbk) t fun t' => Ctx L g m₀ t' ∧ t'.gpr .r4 = t.gpr .r4 ∧

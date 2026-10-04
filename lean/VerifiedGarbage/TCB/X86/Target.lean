@@ -21,7 +21,9 @@ it: it must not be built with `-Zregparm` (nor Clang's `-mregparm` for code
 calling it through the C ABI).
 
 Not modelled: the direction flag (no modelled instruction changes it; it is
-clear on entry and exit), x87 state and MXCSR (never modified), and memory
+clear on entry and exit), x87 state other than the MMX registers (which only
+MMX frames use, ending with `emms`, so the x87 stack is empty on exit when
+it was on entry: see `TCB/X86/Isa.lean`), MXCSR (never modified), and memory
 below `esp` (never granted to a function).
 -/
 

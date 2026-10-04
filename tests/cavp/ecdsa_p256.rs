@@ -11,7 +11,7 @@
 //! SHA-256 and SHA-384 vectors are also verified of their messages, with
 //! `verify::<Sha256>` and `verify::<Sha384>`.
 
-#![cfg(target_arch = "x86_64")]
+#![cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
 
 use verified_garbage::ecdsa::{Error, P256, SignatureHash, VerifyingKey};
 use verified_garbage::hashes::sha1::Sha1;

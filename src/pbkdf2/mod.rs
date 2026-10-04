@@ -129,7 +129,6 @@ macro_rules! whole_pbkdf2 {
             $(, $(#[$attr:meta])* $variant:ident if [$($req:path),*] => $vpbkdf2:path)*
             $(,)?
         },
-        scratch: $scratch:literal,
         output: $output:literal $(,)?
     ) => {
         // The CPU features of each implementation, which `tests` checks.
@@ -150,16 +149,13 @@ macro_rules! whole_pbkdf2 {
                     $backend::$base => $pbkdf2,
                     $($(#[$attr])* $backend::$variant => $vpbkdf2,)*
                 };
-                let mut scratch = [0u64; $scratch];
                 // SAFETY: `iterations` is positive and `out.len()` at most
                 // (2³² − 1) times the digest size; `password` and `salt` are
-                // valid for reads of their lengths, `out` for reads and
-                // writes of its length and `scratch` for reads and writes of
-                // its size; `out` and `scratch` are distinct objects from
-                // each other and the others (`password` and `salt` are only
-                // read), so none of them overlaps another written one or the
-                // call's stack frame, and, as Rust objects, none wraps
-                // around the address space. `pbkdf2` needs no CPU feature
+                // valid for reads of their lengths and `out` for reads and
+                // writes of its length; `out` is a distinct object from the
+                // others (`password` and `salt` are only read), so it
+                // overlaps neither of them nor the call's stack frame, and,
+                // as Rust objects, none wraps around the address space. `pbkdf2` needs no CPU feature
                 // that the implementation was not selected for
                 // (`tests::backend_features`).
                 unsafe {
@@ -171,7 +167,6 @@ macro_rules! whole_pbkdf2 {
                         iterations.get(),
                         out.as_mut_ptr(),
                         out.len(),
-                        &mut scratch,
                     )
                 };
             }

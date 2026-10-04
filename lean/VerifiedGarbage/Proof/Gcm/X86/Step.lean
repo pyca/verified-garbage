@@ -532,10 +532,10 @@ theorem nextWord_ok {w : Nat} (hw : w < 4) {s : State} (hi : Inner x h B sB w 32
 
 /-- A word of `X`: 32 steps. -/
 theorem word_ok {w : Nat} (hw : w < 4) {s : State} (hi : Inner x h B sB w 0 s) :
-    WP isa word s fun s' => (s'.zf = some false ∧ w + 1 < 4 ∧ Inner x h B sB (w + 1) 0 s') ∨
+    WP isa Impl.Gcm.X86.word s fun s' => (s'.zf = some false ∧ w + 1 < 4 ∧ Inner x h B sB (w + 1) 0 s') ∨
       (s'.zf = some true ∧ MDone x h B sB s') := by
   have fit := hi.fit
-  unfold word
+  unfold Impl.Gcm.X86.word
   refine WP.seq ?_
   refine wp_movi fun s₁ u₁ => wp_stm (B := B) (by rw [u₁.other _ (by decide)]; exact hi.edi)
     (by rw [u₁.wr, hi.wr]; exact in_reg hi.scr fit (by simp only [scOff]; omega) (by decide))

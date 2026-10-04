@@ -131,10 +131,10 @@ theorem core_finC_depth (h : (core H).finC.depth ≤ 1) : H.finC.depth ≤ 1 := 
 
 end
 
-/-! ## How much stack HMAC uses
+/-! ## How much stack HMAC and PBKDF2 use
 
-HMAC's own code has no frames: the stack it uses is the return addresses of
-the calls it nests, with callees that use none. -/
+HMAC's and PBKDF2's own code has no frames: the stack it uses is the return
+addresses of the calls it nests, with callees that use none. -/
 
 section
 variable {H : Hash} (hc : H.compC.x86_64Depth = 0) (hi : H.initC.x86_64Depth = 0)
@@ -143,6 +143,17 @@ include hc hi
 theorem core_hmacInit_xdepth (h : (core H).hmacInit.x86_64Depth ≤ 16) : H.hmacInit.x86_64Depth ≤ 16 := by
   simp only [Hash.hmacInit, Hash.initKeys, Hash.stream, Impl.Pbkdf2.Md.X86_64.Stream.callInit,
     Impl.MdStream.X86_64.compressAt, Impl.MdStream.X86_64.compressWith,
+    core, Code.x86_64Depth, hc, hi] at h ⊢
+  exact h
+
+theorem core_pbkdf2_xdepth (h : (core H).pbkdf2.x86_64Depth ≤ 24) : H.pbkdf2.x86_64Depth ≤ 24 := by
+  simp only [Hash.pbkdf2, Hash.key, Hash.hashKey, Hash.setup, Hash.block, Hash.outLen, Hash.outLoop,
+    Hash.hmacInit, Hash.initKeys, Hash.hmacFin, Hash.iterate, Impl.Pbkdf2.X86_64.iterate, Impl.Pbkdf2.X86_64.body,
+    Impl.Pbkdf2.X86_64.compressBlock, Hash.updC, Hash.finC, Hash.stream,
+    Impl.Pbkdf2.Md.X86_64.Stream.callInit, Impl.Pbkdf2.Md.X86_64.Stream.callFin,
+    Impl.MdStream.X86_64.update, Impl.MdStream.X86_64.updateBody, Impl.MdStream.X86_64.updateTail,
+    Impl.MdStream.X86_64.compressN, Impl.MdStream.X86_64.compressAt, Impl.MdStream.X86_64.compressWith,
+    Impl.MdStream.X86_64.finalize, Impl.MdStream.X86_64.finalizeBody,
     core, Code.x86_64Depth, hc, hi] at h ⊢
   exact h
 
@@ -190,6 +201,8 @@ structure CoreOK (C : Hash) : Prop where
   /-- The stack HMAC's functions use, without that of their callees. -/
   hinitXD : C.hmacInit.x86_64Depth ≤ 16
   hfinXD : C.hmacFin.x86_64Depth ≤ 16
+  /-- The stack `pbkdf2` uses, without that of its callees' callees. -/
+  pbkXD : C.pbkdf2.x86_64Depth ≤ 24
   iterMx : C.iterate.allInstrs (fun i => !loadsMxcsr i) = true
   iterSp : C.iterate.allInstrs (fun i => !isa.writesSp i) = true
   iterNs : C.iterate.allInstrs (fun i => !Taint.clobbers i .rsp) = true
@@ -232,6 +245,7 @@ theorem updD : H.updC.depth ≤ 1 := core_updC_depth K.cD C.updD
 theorem finD : H.finC.depth ≤ 1 := core_finC_depth K.cD C.finD
 theorem hmacInitXD : H.hmacInit.x86_64Depth ≤ 16 := core_hmacInit_xdepth K.cXD K.iXD C.hinitXD
 theorem hmacFinXD : H.hmacFin.x86_64Depth ≤ 16 := core_hmacFin_xdepth K.cXD C.hfinXD
+theorem pbkdf2XD : H.pbkdf2.x86_64Depth ≤ 24 := core_pbkdf2_xdepth K.cXD K.iXD C.pbkXD
 
 end Callees
 
@@ -252,6 +266,12 @@ def pbkSat (sc : Nat) : State where
   mem _ := 0
   rd := [⟨0x10000, 0⟩, ⟨0x20000, 0⟩, ⟨0x90008, 16⟩]
   wr := [⟨0x30000, 0⟩, ⟨0, sc * 8⟩]
+
+/-- A state satisfying the precondition of `pbkdf2` with its working space on
+the stack: `pbkSat` without the working space, and with `out_len` its only
+stack argument. -/
+def pbkFrameSat : State :=
+  { pbkSat 0 with rd := [⟨0x10000, 0⟩, ⟨0x20000, 0⟩, ⟨0x90008, 8⟩], wr := [⟨0x30000, 0⟩] }
 
 section
 variable {H : Hash} (hH : HashOK H) (C : CoreOK (core H)) (K : Callees H)
@@ -293,8 +313,8 @@ theorem pbkdf2_verified
     (hsI : ∃ s, (Spec.Hmac.initScratchContract hH.SH H.W X86_64.abi 16).pre s)
     (hsF : ∃ s, (Spec.Hmac.finalizeScratchContract hH.SH H.W X86_64.abi 16).pre s)
     (hsT : ∃ s, (Spec.Pbkdf2.iterateContract hH.SH H.W X86_64.abi 8).pre s)
-    (hsat : ∃ s, (Spec.Pbkdf2.pbkdf2Contract hH.SH (H.W + H.S) X86_64.abi 24).pre s) :
-    Verified X86_64.target H.pbkdf2 (Spec.Pbkdf2.pbkdf2Contract hH.SH (H.W + H.S) X86_64.abi 24) :=
+    (hsat : ∃ s, (Spec.Pbkdf2.pbkdf2ScratchContract hH.SH (H.W + H.S) X86_64.abi 24).pre s) :
+    Verified X86_64.target H.pbkdf2 (Spec.Pbkdf2.pbkdf2ScratchContract hH.SH (H.W + H.S) X86_64.abi 24) :=
   (Pbk.verified hH hH.psizes (Pbk.Checks.of_core C.pbk)
     (hmacInit_ok hH C K hsI) (nosp_of (core_hmacInit K.cNs K.iNs C.hinitNs)) (core_hmacInit_depth K.cD K.iD C.hinitD)
     (hmacFin_ok hH C K hsF) (nosp_of (core_hmacFin K.cNs C.hfinNs)) (core_hmacFin_depth K.cD C.hfinD)

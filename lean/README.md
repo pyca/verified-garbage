@@ -44,7 +44,9 @@ VerifiedGarbage/
   Generic/        Callers proven for any variant of an interface, emitted once per
                   variant: `Generic/<Iface>/<Target>/<Alg>.lean`; callers of several
                   interfaces, once per combination of their variants:
-                  `Generic/<Iface₁>/<Iface₂>/<Target>/<Alg>.lean`
+                  `Generic/<Iface₁>/<Iface₂>/<Target>/<Alg>.lean`, each instance
+                  named by `Emit.qualifiedName` (a tag and the suffix of each
+                  interface's non-baseline variant: `vg_argon2_blake2b_avx2_g_avx512`)
   Artifacts.lean  An empty list, which the emitter still reads; add nothing to it
 VerifiedGarbageTest/  Golden tests for the (unverified) printers and calling conventions
 Emit.lean       Renders every artifact into `../src/asm/` (see `TCB/Emit.lean`)

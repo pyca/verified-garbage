@@ -44,12 +44,6 @@ def sha256OKF (v : Backend) : FnsOK v.F where
   hBS := show 64 ≤ 96 by decide
   fits := show 20 + 2 * 32 + 32 ≤ 4 * 96 by decide
 
-/-- `F` without the names and code of the functions it calls: the code
-between the calls depends on nothing else. -/
-def shapeOf (F : Fns) : Fns :=
-  ⟨⟨F.H.B, F.H.S, F.H.D, F.H.F, F.H.W, "", .block [], "", .block [], "", .block []⟩, F.W, "", .block [], "",
-    .block [], "", .block []⟩
-
 /-- The sizes of `Backend.F`, which are all the taint checks depend on:
 `shapeOf` of every backend's `Backend.F`, written out, so that the kernel
 reduces each side to it field by field rather than comparing the backends'
@@ -80,20 +74,16 @@ theorem sha256Shape_checks : Checks sha256Shape := by
     restore := ⟨?_, ?_⟩ }
   taint_decide_all
 
-theorem checks_of_shape {F : Fns} (h : Checks (shapeOf F)) : Checks F :=
-  ⟨h.pro, h.cmp, h.hk1, h.hk3, h.hk5, h.hk7, h.short, h.su1, h.su3, h.su4, h.init, h.b1, h.b2, h.b4, h.b6, h.b7,
-    h.tail, h.restore⟩
-
 theorem sha256_checks (v : Backend) : Checks v.F := checks_of_shape (F := v.F) sha256Shape_checks
 
-theorem sha256_sat : ∃ s, (Spec.Hmac.sha256I.pbkdf2Contract X86.abi 76).pre s := by
-  sig_implies_sat [Spec.Hmac.Instance.pbkdf2Contract, Spec.Pbkdf2.pbkdf2Contract, Spec.Pbkdf2.pbkdf2Sig,
+theorem sha256_sat : ∃ s, (Spec.Hmac.sha256I.pbkdf2ScratchContract X86.abi 76).pre s := by
+  sig_implies_sat [Spec.Hmac.Instance.pbkdf2ScratchContract, Spec.Pbkdf2.pbkdf2ScratchContract, Spec.Pbkdf2.pbkdf2ScratchSig, Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post,
     Spec.Hmac.Instance.pbkdf2Scratch, Spec.Hmac.sha256I, Spec.Hmac.sha256S, Spec.Hmac.sha256, X86.abi,
     X86.argSlots, X86.argVal, X86.argBytes] [pbkSat, pbkMem] using pbkSat 200
 
 /-- `pbkdf2` for SHA-256 with the backend `v`, verified. -/
 theorem sha256_verified (v : Backend) :
-    Verified X86.target v.F.pbkdf2 (Spec.Hmac.sha256I.pbkdf2Contract X86.abi 76) :=
+    Verified X86.target v.F.pbkdf2 (Spec.Hmac.sha256I.pbkdf2ScratchContract X86.abi 76) :=
   verified (sha256OKF v) (sha256_checks v) rfl rfl sha256_sat
 
 end VG.Proof.Pbkdf2.Whole.X86

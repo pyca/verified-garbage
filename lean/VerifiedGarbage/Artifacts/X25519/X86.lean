@@ -12,7 +12,8 @@ def artifacts : List Artifact := [
     target := X86.target
     doc := Spec.X25519.x25519Api.doc (notes := ["The function saves its caller's callee-saved \
       registers in `scratch`. Field elements are eight 32-bit words, multiplied by product scanning \
-      and reduced with `2^256 = 38` (mod p); the inversion is ref10's addition chain."])
+      (squared with each product of distinct words doubled) and reduced with `2^256 = 38` (mod p); \
+      the inversion is ref10's addition chain."])
     code := Impl.X25519.X86.x25519
     contract := Spec.X25519.x25519Contract X86.abi
     verified := Proof.X25519.X86.x25519_verified

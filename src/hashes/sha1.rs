@@ -9,7 +9,7 @@
 //! message absorbed so far (`VG.Spec.Sha1.Repr`: the hash value of its whole
 //! blocks, and its remaining bytes), and pad it and output the digest.
 //!
-//! On x86-64, CPUs with the SHA extensions (and SSSE3) run
+//! On x86 and x86-64, CPUs with the SHA extensions (and SSSE3) run
 //! `vg_sha1_update_shani` and `vg_sha1_finalize_shani` instead, which have
 //! the same contracts and call `vg_sha1_compress_shani`. On AArch64, the
 //! `sha2` feature group enables the `_sha2` variants using SHA1C/P/M/H and
@@ -27,7 +27,7 @@ use crate::arch::sha1::{
     VG_SHA1_FINALIZE_SHA2_FEATURES, VG_SHA1_UPDATE_SHA2_FEATURES, vg_sha1_finalize_sha2,
     vg_sha1_update_sha2,
 };
-#[cfg(target_arch = "x86_64")]
+#[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
 use crate::arch::sha1::{
     VG_SHA1_FINALIZE_SHANI_FEATURES, VG_SHA1_UPDATE_SHANI_FEATURES, vg_sha1_finalize_shani,
     vg_sha1_update_shani,
@@ -47,7 +47,7 @@ super::streaming_hash!(
             #[cfg(target_arch = "aarch64")]
             Sha2 if [VG_SHA1_UPDATE_SHA2_FEATURES, VG_SHA1_FINALIZE_SHA2_FEATURES] =>
                 (vg_sha1_update_sha2, vg_sha1_finalize_sha2),
-            #[cfg(target_arch = "x86_64")]
+            #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
             ShaNi if [VG_SHA1_UPDATE_SHANI_FEATURES, VG_SHA1_FINALIZE_SHANI_FEATURES] =>
                 (vg_sha1_update_shani, vg_sha1_finalize_shani),
         },
@@ -86,7 +86,7 @@ mod tests {
     fn select() {
         for bits in 0..(1 << crate::cpu::NAMES.len()) {
             let backend = Sha1Backend::select(Features(bits));
-            #[cfg(target_arch = "x86_64")]
+            #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
             assert_eq!(backend == Sha1Backend::ShaNi, bits & 0b11 == 0b11);
             #[cfg(target_arch = "aarch64")]
             {
@@ -97,7 +97,7 @@ mod tests {
                 };
                 assert_eq!(backend, expected, "{bits:#b}");
             }
-            #[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
+            #[cfg(not(any(target_arch = "x86", target_arch = "x86_64", target_arch = "aarch64")))]
             assert_eq!(backend, Sha1Backend::Scalar);
         }
         assert_eq!(Sha1::new().backend, Sha1Backend::select(detected()));

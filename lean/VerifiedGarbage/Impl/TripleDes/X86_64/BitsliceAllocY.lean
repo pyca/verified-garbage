@@ -46,9 +46,15 @@ def slotOf (a : Alloc) (v : Nat) : Option Nat := (a.slots.find? (·.2 == v)).map
 
 def usesVar (v : Nat) (g : Gate) : Bool := g.a == v || (g.op != .not && g.b == v)
 
+/-- The variables the gates read (`usesVar`), as a set of bits, which the
+kernel builds once for each gate's `rest` rather than comparing variables
+for each query. -/
+def readSet (rest : List Gate) : Nat :=
+  rest.foldl (fun t g => if g.op != .not then t ||| 2 ^ g.a ||| 2 ^ g.b else t ||| 2 ^ g.a) 0
+
 /-- Whether the variable is used by a later gate or is an output. -/
 def live (rest : List Gate) (outs : List Nat) (v : Nat) : Bool :=
-  outs.contains v || rest.any (usesVar v)
+  outs.contains v || (readSet rest).testBit v
 
 /-- How many gates until the variable's next use. -/
 def nextUse (rest : List Gate) (outs : List Nat) (v : Nat) : Nat :=

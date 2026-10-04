@@ -4,6 +4,7 @@ import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Sha512.X86.Compress
 import VerifiedGarbage.Impl.Sha512.X86.Stream
 import VerifiedGarbage.Proof.Sha512.X86.Lit
+import VerifiedGarbage.Proof.Framework.X86.SseTaint
 
 /-!
 # Streaming SHA-512 on x86 (32-bit): `update`
@@ -32,7 +33,7 @@ namespace Update
 
 theorem update_verified : Verified X86.target Impl.Sha512.X86.Stream.update Proof.Sha512.updateX86 :=
   MdStream.X86.Update.verified (name := "vg_sha512_compress") dims callee
-    (VG.Taint.constantTime (A := taint) (MdStream.X86.Update.τ₀ params 272)
+    (VG.Taint.constantTime (A := sseTaint) (MdStream.X86.Update.τ₀ params 272)
       (fun _ _ h₁ h₂ hp => MdStream.X86.Update.agree₀ dims h₁ h₂ hp) (by taint_decide))
 
 /-- A state satisfying `update`'s precondition. -/

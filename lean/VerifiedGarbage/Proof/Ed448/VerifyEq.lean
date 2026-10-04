@@ -16,16 +16,6 @@ open Spec.X448 (Fe P)
 open Spec.Ed448 (Point)
 open EdwardsLaw
 
-theorem verifyEquation_none {pk sig ch : List Byte}
-    (h : Spec.Ed448.decodePoint pk = none ∨ Spec.Ed448.decodePoint (sig.take 57) = none) :
-    Spec.Ed448.verifyEquation pk sig ch = false := by
-  unfold Spec.Ed448.verifyEquation
-  split
-  · rfl
-  · rcases h with h | h
-    · simp only [h]
-    · rw [h]; cases Spec.Ed448.decodePoint pk <;> rfl
-
 theorem four_smul {a : EPoint dZ} : (a + a) + (a + a) = 4 • a := by
   rw [show (4 : Nat) = 1 + 1 + 1 + 1 from rfl, add_nsmul, add_nsmul, add_nsmul, one_nsmul]
   abel

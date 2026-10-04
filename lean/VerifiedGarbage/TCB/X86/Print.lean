@@ -44,6 +44,31 @@ def XReg.name : XReg → String
 
 def MemOp.str128 (m : MemOp) : String := s!"XMMWORD PTR {m.addr}"
 
+def MemOp.str64 (m : MemOp) : String := s!"QWORD PTR {m.addr}"
+
+def MReg.name : MReg → String
+  | .mm0 => "mm0" | .mm1 => "mm1" | .mm2 => "mm2" | .mm3 => "mm3"
+  | .mm4 => "mm4" | .mm5 => "mm5" | .mm6 => "mm6" | .mm7 => "mm7"
+
+def MSrc.str : MSrc → String
+  | .reg r => r.name
+  | .mem m => m.str64
+
+def MBinOp.name : MBinOp → String
+  | .paddq => "paddq" | .pxor => "pxor" | .por => "por" | .pand => "pand" | .pandn => "pandn"
+
+def MShiftOp.name : MShiftOp → String
+  | .psllq => "psllq" | .psrlq => "psrlq"
+
+def MOp.asm : MOp → String
+  | .bin op d s => s!"{op.name} {d.name}, {s.str}"
+  | .shift op d n => s!"{op.name} {d.name}, {n.toNat}"
+  | .movq d s => s!"movq {d.name}, {s.str}"
+  | .punpckldq d r => s!"punpckldq {d.name}, {r.name}"
+  | .movd d r => s!"movd {d.name}, {r.name}"
+  | .movq2dq d r => s!"movq2dq {d.name}, {r.name}"
+  | .movdq2q d r => s!"movdq2q {d.name}, {r.name}"
+
 def XBinOp.name : XBinOp → String
   | .movdqa => "movdqa" | .paddd => "paddd" | .pxor => "pxor" | .por => "por"
   | .pand => "pand" | .pandn => "pandn"
@@ -51,6 +76,8 @@ def XBinOp.name : XBinOp → String
   | .punpcklqdq => "punpcklqdq" | .punpckhqdq => "punpckhqdq"
   | .pshufb => "pshufb" | .sha256msg1 => "sha256msg1" | .sha256msg2 => "sha256msg2"
   | .aesenc => "aesenc" | .aesenclast => "aesenclast"
+  | .paddq => "paddq" | .sha1msg1 => "sha1msg1" | .sha1msg2 => "sha1msg2"
+  | .sha1nexte => "sha1nexte"
 
 def XShiftOp.name : XShiftOp → String
   | .pslld => "pslld" | .psrld => "psrld" | .psllq => "psllq" | .psrlq => "psrlq"
@@ -60,8 +87,11 @@ def XOp.asm : XOp → String
   | .bin op d r => s!"{op.name} {d.name}, {r.name}"
   | .shift op d n => s!"{op.name} {d.name}, {n.toNat}"
   | .pshufd d r o => s!"pshufd {d.name}, {r.name}, {o.toNat}"
+  | .pshuflw d r o => s!"pshuflw {d.name}, {r.name}, {o.toNat}"
+  | .pshufhw d r o => s!"pshufhw {d.name}, {r.name}, {o.toNat}"
   | .palignr d r n => s!"palignr {d.name}, {r.name}, {n.toNat}"
   | .sha256rnds2 d r => s!"sha256rnds2 {d.name}, {r.name}, xmm0"
+  | .sha1rnds4 d r n => s!"sha1rnds4 {d.name}, {r.name}, {n.toNat}"
   | .movd d r => s!"movd {d.name}, {r.name}"
   | .aeskeygenassist d r n => s!"aeskeygenassist {d.name}, {r.name}, {n.toNat}"
   | .pclmulqdq d r n => s!"pclmulqdq {d.name}, {r.name}, {n.toNat}"
@@ -81,7 +111,14 @@ def Instr.asm : Instr → List String
   | .mul r => [s!"mul {r.name}"]
   | .movdquLoad d m => [s!"movdqu {d.name}, {m.str128}"]
   | .movdquStore m r => [s!"movdqu {m.str128}, {r.name}"]
+  | .movqLoad d m => [s!"movq {d.name}, {m.str64}"]
+  | .movqStore m r => [s!"movq {m.str64}, {r.name}"]
   | .xop op => [op.asm]
+  | .mop op => [op.asm]
+  | .mmxStore m r => [s!"movq {m.str64}, {r.name}"]
+  -- The push of an MMX frame is no instruction.
+  | .mmxEnter => []
+  | .emms => ["emms"]
 
 def Cond.name : Cond → String
   | .e => "e" | .ne => "ne" | .b => "b" | .ae => "ae"

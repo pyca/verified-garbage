@@ -66,7 +66,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅</td>
+<td>✅ AVX2</td>
 
 <td>✅</td>
 
@@ -120,7 +120,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅</td>
+<td>✅ SHA extensions</td>
 
 </tr>
 
@@ -318,7 +318,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅</td>
+<td>✅ SHA extensions</td>
 
 </tr>
 
@@ -564,7 +564,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>❌</td>
+<td>✅ AES-NI, VAES, PCLMULQDQ, VPCLMULQDQ, AVX2</td>
 
 <td>❌</td>
 
@@ -736,7 +736,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅</td>
+<td>✅ SHA extensions</td>
 
 </tr>
 
@@ -1038,7 +1038,7 @@ yours to keep:
 
 <td>✅ SHA extensions, SHA512, AVX2, BMI1, BMI2</td>
 
-<td>❌</td>
+<td>✅ SHA extensions</td>
 
 <td>❌</td>
 

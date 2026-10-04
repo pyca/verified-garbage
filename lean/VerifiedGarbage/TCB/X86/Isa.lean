@@ -1,4 +1,5 @@
 import VerifiedGarbage.TCB.X86.Sse
+import VerifiedGarbage.TCB.X86.Mmx
 
 /-!
 # x86 (32-bit) machine model
@@ -59,6 +60,29 @@ Modelling choices:
   flags or memory. `bytes` is positive, a multiple of 4 and less than 4096,
   as for the frames of the x86-64 and AArch64 models: less than a page, so
   that the allocation does not move `esp` past a guard page below the stack.
+* MMX (`TCB/X86/Mmx.lean`): the eight 64-bit MMX registers alias the x87
+  data registers, and every MMX instruction but EMMS makes the x87 tag word
+  all valid (SDM Vol. 1 §9.5.1). The System V i386 ABI requires the x87
+  stack to be empty on entry, on return and at a call ("The CPU shall be in
+  x87 mode upon entry to a function. Therefore, every function that uses the
+  MMX registers is required to issue an emms or femms instruction after
+  using MMX registers, before returning or calling another function.",
+  Intel386 psABI, "Registers"). So MMX instructions run only inside an *MMX
+  frame*, `frame mmxEnter body emms` (see `TCB/Code.lean`), and fault
+  outside one: a stack frame of no bytes, whose push `mmxEnter` emits no
+  instruction and enters MMX mode (`State.mmx`; MMX frames do not nest),
+  and whose pop is `emms` (SDM
+  Vol. 2, "EMMS": `x87FPUTagWord := FFFFH`), which leaves it, with `esp`
+  and the writable regions as the push left them. So every MMX instruction
+  is followed by an `emms` before the function returns, and the x87 stack
+  is empty then whenever it was on entry. A call inside an MMX frame is not
+  excluded: the functions this code calls are its own (`call` names a
+  function emitted with it), which touch the x87 registers only in MMX
+  frames of their own, and those fault inside one (frames do not nest), so
+  no execution has a callee use them while its caller's MMX values are
+  live. No modelled instruction reads or writes the x87 registers
+  otherwise; the MMX registers are caller-saved (the x87 registers are
+  scratch registers in the ABI), and their values on entry are unknown.
 -/
 
 namespace VG.X86
@@ -119,8 +143,25 @@ inductive Instr
   | movdquLoad (dst : XReg) (src : MemOp)
   /-- Legacy SSE2 unaligned 128-bit store (F3 0F 7F /r). -/
   | movdquStore (dst : MemOp) (src : XReg)
+  /-- `movq xmm, QWORD PTR [m]` (F3 0F 7E /r): a 64-bit load into the low
+  quadword, zeroing the high one. -/
+  | movqLoad (dst : XReg) (src : MemOp)
+  /-- `movq QWORD PTR [m], xmm` (66 0F D6 /r): a 64-bit store of the low
+  quadword. -/
+  | movqStore (dst : MemOp) (src : XReg)
   /-- A legacy SSE instruction that writes only an XMM register. -/
   | xop (op : XOp)
+  /-- An MMX instruction that writes only an MMX or XMM register
+  (`TCB/X86/Mmx.lean`); it faults outside an MMX frame. -/
+  | mop (op : MOp)
+  /-- `movq QWORD PTR [m], mm` (NP 0F 7F /r): a 64-bit store; it faults
+  outside an MMX frame. -/
+  | mmxStore (dst : MemOp) (src : MReg)
+  /-- The push of an MMX frame: no instruction; enters the frame (see
+  `push`). -/
+  | mmxEnter
+  /-- `emms` (NP 0F 77): the pop of an MMX frame (see `pop`). -/
+  | emms
   deriving DecidableEq, Repr
 
 /-- Branch conditions (`jcc` suffixes). -/
@@ -223,7 +264,11 @@ def execMul (src : Reg) (s : State) : State :=
 /-- Semantics of an instruction. The byte forms: SDM Vol. 2, "MOVZX":
 `DEST := ZeroExtend(SRC)`, and "MOV": `DEST := SRC`, where the source of a
 byte store is the low byte of `eax`, `ecx`, `edx` or `ebx` (AL, CL, DL, BL;
-SDM Vol. 1 §3.4.1.1). Neither affects the flags. -/
+SDM Vol. 1 §3.4.1.1). Neither affects the flags. The quadword moves: SDM
+Vol. 2, "MOVQ—Move Quadword", `MOVQ xmm1, m64` (F3 0F 7E /r): `DEST[63:0] :=
+SRC[63:0]; DEST[127:64] := 0000000000000000H`, and `MOVQ m64, xmm1` (66 0F
+D6 /r): `DEST[63:0] := SRC[63:0]`; neither affects the flags, and a 64-bit
+memory operand of a legacy SSE instruction needs no alignment. -/
 def exec : Instr → State → Option State
   | .mov d src, s => (readSrc s src).map fun v => s.setReg d v
   | .store m r, s => s.store32 (s.ea m) (s.gpr r)
@@ -235,9 +280,13 @@ def exec : Instr → State → Option State
   | .mul r, s => some (execMul r s)
   | .movdquLoad d m, s => (s.load128 (s.ea m)).map fun v => s.setXmm d v
   | .movdquStore m r, s => s.store128 (s.ea m) (s.xmm r)
+  | .movqLoad d m, s => (s.load64 (s.ea m)).map fun v => s.setXmm d ((0 : BitVec 64) ++ v)
+  | .movqStore m r, s => s.store64 (s.ea m) ((s.xmm r).extractLsb' 0 64)
   | .xop op, s => some (op.exec s)
+  | .mop op, s => op.exec s
+  | .mmxStore m r, s => if s.mmx then s.store64 (s.ea m) (s.mm r) else none
   -- Only the push and pop of a frame (`push`, `pop`).
-  | .push _, _ | .pop .., _ | .alloc _, _ | .free _, _ => none
+  | .push _, _ | .pop .., _ | .alloc _, _ | .free _, _ | .mmxEnter, _ | .emms, _ => none
 
 def addrs : Instr → State → List Addr
   | .mov _ src, s => srcAddrs s src
@@ -248,7 +297,11 @@ def addrs : Instr → State → List Addr
   | .movzx8 _ m, s => [s.ea m]
   | .store8 m _, s => [s.ea m]
   | .mul _, _ | .xop _, _ => []
+  | .mop op, s => op.addrs s
+  | .mmxStore m _, s => [s.ea m]
+  | .mmxEnter, _ | .emms, _ => []
   | .movdquLoad _ m, s | .movdquStore m _, s => [s.ea m]
+  | .movqLoad _ m, s | .movqStore m _, s => [s.ea m]
   | .push rs, s => (List.range rs.length).map fun i =>
     (s.gpr .esp - BitVec.ofNat 32 (4 * (i + 1))).setWidth 64
   | .pop _ k, s => (List.range k).map fun i =>
@@ -313,8 +366,14 @@ of `wr`, which it does not write: they hold what memory held there, as the
 bytes a call or a push stores below `esp` before it does (and a contract
 says nothing of them: they are in the stack below the caller's stack
 pointer, `Abi.reserved`). Faults unless `0 < bytes < 4096` and `bytes` is a
-multiple of 4, or if the frame would wrap around the address space. -/
+multiple of 4, or if the frame would wrap around the address space.
+
+Or the push of an MMX frame (`mmxEnter`, no instruction): a frame of no
+bytes (the empty region at `esp`, at the head of `wr`; `esp` and memory
+unchanged), which enters MMX mode (`State.mmx`), faulting inside one. -/
 def push : Instr → State → Option State
+  | .mmxEnter, s =>
+    if s.mmx then none else some { s with mmx := true, wr := ⟨(s.gpr .esp).setWidth 64, 0⟩ :: s.wr }
   | .alloc bytes, s =>
     if 0 < bytes ∧ bytes < 4096 ∧ bytes % 4 = 0 ∧ bytes ≤ (s.gpr .esp).toNat then
       let sp := s.gpr .esp - BitVec.ofNat 32 bytes
@@ -336,8 +395,19 @@ region at their head, has `4 * k` bytes; it removes the frame.
 Or `lea esp, [esp + bytes]` (`free`, "LEA" as for `alloc`), with the same
 conditions on `bytes` as `alloc` and on `esp` and the writable regions as
 `pop`, the frame having `bytes` bytes; it changes neither memory nor any
-other register. -/
+other register.
+
+Or `emms`, the pop of an MMX frame: SDM Vol. 2, "EMMS": `x87FPUTagWord :=
+FFFFH` (the x87 stack empty); "Flags Affected: None". It leaves the frame,
+faulting unless the code is in one and `esp` and the writable regions are
+those the push left (`s₁`) with the empty frame at their head, which it
+removes; it changes no register or memory. -/
 def pop : Instr → State → State → Option State
+  | .emms, s₁, s₂ =>
+    if s₂.mmx ∧ s₂.gpr .esp = s₁.gpr .esp ∧ s₂.wr = s₁.wr ∧
+        s₁.wr.head? = some ⟨(s₁.gpr .esp).setWidth 64, 0⟩ then
+      some { s₂ with mmx := false, wr := s₂.wr.tail }
+    else none
   | .free bytes, s₁, s₂ =>
     if 0 < bytes ∧ bytes < 4096 ∧ bytes % 4 = 0 ∧ s₂.gpr .esp = s₁.gpr .esp ∧ s₂.wr = s₁.wr ∧
         s₁.wr.head? = some ⟨(s₁.gpr .esp).setWidth 64, bytes⟩ then
@@ -356,16 +426,20 @@ a frame also moves `esp`, as the push does): `mul` writes two, `eax` and
 def Instr.dst : Instr → Option Reg
   | .mov d _ | .alu _ d _ | .shift _ d _ | .bswap d | .movzx8 d _ | .pop d _ => some d
   | .store .. | .store8 .. | .push _ | .mul _ | .movdquLoad .. | .movdquStore .. | .xop _
+  | .movqLoad .. | .movqStore .. | .mop _ | .mmxStore .. | .mmxEnter | .emms
   | .alloc _ | .free _ => none
 
 /-- Intel SDM Vol. 2's "CPUID Feature Flag" column: PSHUFB/PALIGNR need
-SSSE3, SHA256MSG1/MSG2/RNDS2 need SHA, AESENC/AESENCLAST/AESKEYGENASSIST
-need AES, and PCLMULQDQ needs PCLMULQDQ. The remaining legacy instructions
-are SSE2, already in this target's i686 baseline. -/
+SSSE3, SHA256MSG1/MSG2/RNDS2 and SHA1MSG1/MSG2/NEXTE/RNDS4 need SHA,
+AESENC/AESENCLAST/AESKEYGENASSIST need AES, and PCLMULQDQ needs PCLMULQDQ.
+The remaining legacy instructions (among them PADDQ, PSHUFLW, PSHUFHW and
+MOVQ) are SSE2, and the MMX instructions MMX or SSE2, all already in this
+target's i686 baseline. -/
 def Instr.requires : Instr → List String
   | .xop (.bin .pshufb ..) | .xop (.palignr ..) => ["ssse3"]
   | .xop (.bin .sha256msg1 ..) | .xop (.bin .sha256msg2 ..)
-    | .xop (.sha256rnds2 ..) => ["sha"]
+    | .xop (.sha256rnds2 ..) | .xop (.bin .sha1msg1 ..) | .xop (.bin .sha1msg2 ..)
+    | .xop (.bin .sha1nexte ..) | .xop (.sha1rnds4 ..) => ["sha"]
   | .xop (.bin .aesenc ..) | .xop (.bin .aesenclast ..)
     | .xop (.aeskeygenassist ..) => ["aes"]
   | .xop (.pclmulqdq ..) => ["pclmulqdq"]

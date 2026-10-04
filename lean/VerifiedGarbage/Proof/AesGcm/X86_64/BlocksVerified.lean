@@ -49,6 +49,20 @@ theorem decryptBlocks_spSafe :
     GcmImpl.callees, hh, v.ctr.spSafe, v.gh.spSafe, Bool.true_and, Bool.and_true, Bool.false_eq_true, ite_false,
     ite_true]; decide +kernel
 
+theorem encryptBlocks_xdepth :
+    (Blocks.encrypt v.callees.ctr v.callees.gh (st.map (·.enc))).x86_64Depth ≤ 8 := by
+  have hh := StitchImpl.head_xdepth st fun i => i.encP
+  simp only [Blocks.encrypt, Blocks.blocks, Blocks.tail, Blocks.ctrCall, Blocks.ghCall, Code.x86_64Depth,
+    GcmImpl.callees, hh, v.ctr.noStack, v.gh.noStack, Nat.max_le]
+  decide +kernel
+
+theorem decryptBlocks_xdepth :
+    (Blocks.decrypt v.callees.ctr v.callees.gh (st.map (·.dec))).x86_64Depth ≤ 8 := by
+  have hh := StitchImpl.head_xdepth st fun i => i.decP
+  simp only [Blocks.decrypt, Blocks.blocks, Blocks.tail, Blocks.ctrCall, Blocks.ghCall, Code.x86_64Depth,
+    GcmImpl.callees, hh, v.ctr.noStack, v.gh.noStack, Nat.max_le]
+  decide +kernel
+
 theorem encryptBlocks_correct (s : State) (hs : Proof.AesGcm.encryptBlocksX86_64.pre s) :
     ∃ t s', Exec isa (Blocks.encrypt v.callees.ctr v.callees.gh (st.map (·.enc))) s t s' ∧ abiPreserved s s' ∧
       Proof.AesGcm.encryptBlocksX86_64.post s s' := by
