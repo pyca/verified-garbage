@@ -105,9 +105,9 @@ def ctrArgs : List Instr :=
 /-- `little_endian_uint32(rbx) ‖ nonce` at `W + ccO`, and a zero block at
 `W + bO`. -/
 def deriveBlock : List Instr :=
-  [.store32 (at_ .r15 ccO) .rbx, .mov .rax (.mem (at_ .r15 nonceO)), .mov32 .rcx (.mem (at_ .rax 0)),
-    .store32 (at_ .r15 (ccO + 4)) .rcx, .mov32 .rcx (.mem (at_ .rax 4)), .store32 (at_ .r15 (ccO + 8)) .rcx,
-    .mov32 .rcx (.mem (at_ .rax 8)), .store32 (at_ .r15 (ccO + 12)) .rcx] ++ zero16 bO
+  [.mov .rax (.mem (at_ .r15 nonceO)), .mov32 .rcx (.mem (at_ .rax 0)), .mov32 .rdx (.mem (at_ .rax 4)),
+    .mov32 .r8 (.mem (at_ .rax 8)), .store32 (at_ .r15 ccO) .rbx, .store32 (at_ .r15 (ccO + 4)) .rcx,
+    .store32 (at_ .r15 (ccO + 8)) .rdx, .store32 (at_ .r15 (ccO + 12)) .r8] ++ zero16 bO
 
 /-- The message keys, 8 bytes per block, from `W + akO`. -/
 def derive : Prog isa :=
