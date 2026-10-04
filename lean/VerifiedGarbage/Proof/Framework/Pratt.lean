@@ -10,10 +10,10 @@ factors of `p - 1` (with multiplicity), each proven prime in turn. The kernel
 evaluates the modular powers with `powMod`, a binary exponentiation on `Nat`
 (`decide +kernel`).
 
-This imports `Mathlib.NumberTheory.LucasPrimality`, so only modules few others
-import may import it (`ci/check_lean_speed.py`): the curves' prime proofs.
-Ed25519's, in `Proof/Ed25519/Group/Extended.lean`, which much of the build
-imports, keeps its own copy.
+This imports `Mathlib.NumberTheory.LucasPrimality`; the curves' prime proofs
+import it (Ed25519's and Ed448's in the bridges from their specifications to
+the Edwards group, which much of the build imports: it is on
+`ci/check_lean_speed.py`'s allow-list for that).
 -/
 
 namespace VG.Proof.Pratt
