@@ -1,3 +1,4 @@
+import Mathlib.Tactic.Ring
 import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.Bound
 import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Mul
 import VerifiedGarbage.Proof.Poly1305.Limbs26

@@ -426,7 +426,7 @@ yours to keep:
 
 <td>✅ AVX-512F, AVX2</td>
 
-<td>✅</td>
+<td>✅ NEON, four blocks at a time, on Apple's cores</td>
 
 <td>✅</td>
 
