@@ -12,6 +12,14 @@ The same structure as the x86-64 implementation:
   `(a, b, c, d)` is in `var t k`.
 * Each word `X[k]` is loaded from the block (a little-endian 32-bit load)
   when it is added, so there is no message schedule to keep.
+* Each operation is scheduled for latency: `b` is the word the previous
+  operation computed, so everything that does not depend on it is computed
+  first. `a + X[k] + T[t+1]` is added before the auxiliary function, and so
+  are the terms of the auxiliary functions that do not depend on `b`: `G`
+  is added as `(¬d ∧ c) + (d ∧ b)` (the two terms have no bit in common),
+  and `F` and `H` start with `c ⊕ d`. On the path from one operation's `b`
+  to the next's are two instructions of `F` and `I` and one of `G` and
+  `H`, then the addition into `a`, the rotation and the addition of `b`.
 * The model has no `bic`/`orn`/`mvn`, so `¬d` is `d ⊕ 0xffffffff`, with the
   constant in `w14`, set at the start of each block.
 * Only caller-saved registers are used (`x0`–`x15`), so nothing is saved,
@@ -31,7 +39,7 @@ def work : List Reg := [.x4, .x5, .x6, .x7]
 /-- The register holding word `k` (`a = 0, …, d = 3`) at the start of operation `t`. -/
 def var (t k : Nat) : Reg := work.getD ((k + 4 - t % 4) % 4) .x4
 
-/-- Temporaries: `T0` holds the auxiliary function's value, `T1` the word
+/-- Temporaries: `T0` holds the auxiliary function's terms, `T1` the word
 `X[k]` and then the constant `T[t+1]`. -/
 def T0 : Reg := .x12
 def T1 : Reg := .x13
@@ -39,32 +47,32 @@ def T1 : Reg := .x13
 /-- The register holding `0xffffffff`. -/
 def Ones : Reg := .x14
 
-/-- `T0 := fn(b, c, d)`, the auxiliary function of round `r`, as
-`F = ((c ⊕ d) ∧ b) ⊕ d`, `G = ((b ⊕ c) ∧ d) ⊕ c`, `H = (b ⊕ c) ⊕ d` and
-`I = ((d ⊕ 0xffffffff) ∨ b) ⊕ c`. -/
-def fn (r : Nat) (b c d : Reg) : List Instr :=
+/-- `a := a + fn(b, c, d)`, the auxiliary function of round `r`, using `T0`:
+`F = ((c ⊕ d) ∧ b) ⊕ d`, `G = ((d ⊕ 0xffffffff) ∧ c) + (d ∧ b)`,
+`H = (c ⊕ d) ⊕ b` and `I = ((d ⊕ 0xffffffff) ∨ b) ⊕ c`, each with the
+instructions not depending on `b` first. -/
+def fn (r : Nat) (a b c d : Reg) : List Instr :=
   match r with
-  | 0 => [.logic .eor .w T0 c d, .logic .and .w T0 T0 b, .logic .eor .w T0 T0 d]
-  | 1 => [.logic .eor .w T0 b c, .logic .and .w T0 T0 d, .logic .eor .w T0 T0 c]
-  | 2 => [.logic .eor .w T0 b c, .logic .eor .w T0 T0 d]
-  | _ => [.logic .eor .w T0 d Ones, .logic .orr .w T0 T0 b, .logic .eor .w T0 T0 c]
+  | 0 => [.logic .eor .w T0 c d, .logic .and .w T0 T0 b, .logic .eor .w T0 T0 d, .add .w a a T0]
+  | 1 => [.logic .eor .w T0 d Ones, .logic .and .w T0 T0 c, .add .w a a T0,
+      .logic .and .w T0 d b, .add .w a a T0]
+  | 2 => [.logic .eor .w T0 c d, .logic .eor .w T0 T0 b, .add .w a a T0]
+  | _ => [.logic .eor .w T0 d Ones, .logic .orr .w T0 T0 b, .logic .eor .w T0 T0 c, .add .w a a T0]
 
 /-- The rotation amount `s` of operation `t`. -/
 def rot (t : Nat) : Nat := (ss.getD (t / 16) []).getD (t % 4) 0
 
-/-- Operation `t`: `a := b + ((a + fn(b,c,d) + X[k] + T[t+1]) <<< s)`, the
-rotation as a right rotation by `32 - s`. The additions are in the order of
-the specification. -/
+/-- Operation `t`: `a := b + ((a + X[k] + T[t+1] + fn(b,c,d)) <<< s)`, the
+rotation as a right rotation by `32 - s`. -/
 def step (t : Nat) : List Instr :=
   let a := var t 0; let b := var t 1; let c := var t 2; let d := var t 3
-  fn (t / 16) b c d ++ [
-    .add .w a a T0,
-    .ldr .w T1 .x1 (4 * ks.getD t 0),
+  [.ldr .w T1 .x1 (4 * ks.getD t 0),
     .add .w a a T1,
     .movz .w T1 ((Ts.getD t 0).extractLsb' 0 16) 0,
     .movk .w T1 ((Ts.getD t 0).extractLsb' 16 16) 1,
-    .add .w a a T1,
-    .ror .w a a (32 - rot t),
+    .add .w a a T1] ++
+  fn (t / 16) a b c d ++
+  [.ror .w a a (32 - rot t),
     .add .w a a b]
 
 /-- Operations `0 … n-1`. -/
