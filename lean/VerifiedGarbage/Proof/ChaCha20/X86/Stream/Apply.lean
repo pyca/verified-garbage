@@ -13,8 +13,9 @@ namespace VG.Proof.ChaCha20.X86.Stream
 
 open VG VG.X86 VG.Impl.ChaCha20.X86.Stream
 open VG.Impl.ChaCha20.X86 (at_)
-open VG.Proof.ChaCha20.X86 (contains_off)
-open VG.Proof.ChaCha20.X86.Xor (toNat_ofNat_lt32 ptr_add)
+open VG.Impl.ChaCha20.X86.Xor (xorBytes)
+open VG.Proof.ChaCha20.X86 (contains_off XorImpl)
+open VG.Proof.ChaCha20.X86.Bytes (toNat_ofNat_lt32 ptr_add BPre BPost xorBytes_ok ofNat32_beq_zero)
 open VG.Spec.ChaCha20 (keyAt restAt leftAt bytesAt stateAt serialize block)
 
 /-! ## The check -/
@@ -293,7 +294,7 @@ theorem startLoads_ok {s₀ : State} (hp : APre s₀) {s : State} (h : Q0 s₀ s
   · dsimp only
     rw [hf.bytes (R := dR s₀) (by simpa using hp.st_d.symm) (show L s₀ ≤ 2 ^ 64 by have := L_lt s₀; omega) hk]
     simp
-  · simp only [Proof.ChaCha20.X86.Xor.toNat_ofNat_lt32 hO]
+  · simp only [Proof.ChaCha20.X86.Bytes.toNat_ofNat_lt32 hO]
 
 theorem start_ok {s₀ : State} (hp : APre s₀) (hle : L s₀ ≤ N s₀) {s : State} (h : Q0 s₀ s) :
     WP isa (.block start) s fun s' => R1 s₀ (L s₀) s' ∧ s'.cf = some (decide (O s₀ < L s₀)) := by
@@ -406,7 +407,7 @@ theorem rest1_ok {s₀ : State} (hp : APre s₀) {s₂ : State} (h₂ : R1 s₀ 
   simp (config := {decide := true}) only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc,
     execAlu, arithFlags, State.setReg, State.setFlags, Option.map_some, Option.bind_some,
     Option.some.injEq, exists_eq_left', ite_true, hebp, and_mask,
-    Proof.ChaCha20.X86.Xor.toNat_ofNat_lt32 (show L s₀ - H s₀ < 2 ^ 32 by omega)]
+    Proof.ChaCha20.X86.Bytes.toNat_ofNat_lt32 (show L s₀ - H s₀ < 2 ^ 32 by omega)]
   have hnb : (L s₀ - H s₀) / 64 * 64 = 64 * NB s₀ := by simp only [NB, blocksOf, H]; omega
   rw [hnb]
   have hk4 : ∀ r, r ≠ .eax → r ≠ .ecx → r ≠ .edx → r ≠ .esi → s₄.gpr r = s₃.gpr r := h₄.keep
@@ -568,12 +569,12 @@ theorem nb_zero_ok {s₀ : State} {s : State} (h : Q1 s₀ s) (h0 : 64 * NB s₀
     by rw [h.mid.state, show NB s₀ = 0 by omega, ctr_zero], fun i hi => h.mid.keep _ (by omega), h.mid.saved,
     by rw [h0, Nat.add_zero]; exact h.done, h.frame.mono (by simp)⟩
 
-theorem part2_eq : part2 = .ite .e (.block [])
-    (.seq (.block blocksArgs) (.seq callXor (.block [.alu .add .esi (.reg .edi), .alu .sub .ebp (.reg .edi)]))) := rfl
+theorem part2_eq (v : Impl.ChaCha20.X86.Callee) : part2 v = .ite .e (.block [])
+    (.seq (.block blocksArgs) (.seq (callXor v) (.block [.alu .add .esi (.reg .edi), .alu .sub .ebp (.reg .edi)]))) := rfl
 
 set_option simprocs false in
-theorem blocks_ok {s₀ : State} (hp : APre s₀) {s : State} (h : Q1 s₀ s) (hnb : 0 < NB s₀) :
-    WP isa (.seq (.block blocksArgs) (.seq callXor (.block [.alu .add .esi (.reg .edi), .alu .sub .ebp (.reg .edi)])))
+theorem blocks_ok (v : XorImpl) {s₀ : State} (hp : APre s₀) {s : State} (h : Q1 s₀ s) (hnb : 0 < NB s₀) :
+    WP isa (.seq (.block blocksArgs) (.seq (callXor v.callee) (.block [.alu .add .esi (.reg .edi), .alu .sub .ebp (.reg .edi)])))
       s (Q2 s₀) := by
   have hL := L_lt s₀
   have hH := H_le s₀
@@ -581,7 +582,7 @@ theorem blocks_ok {s₀ : State} (hp : APre s₀) {s : State} (h : Q1 s₀ s) (h
   have hT := T_eq s₀
   have hd := hp.d_fit
   refine WP.seq (WP.mono (args_exec hp h) fun s₁ ⟨m₁, a₁⟩ => ?_)
-  refine WP.seq (xor_call hp ⟨a₁.esp, a₁.rd, a₁.wr⟩ hnb a₁.edx a₁.esi a₁.ecx a₁.eax fun s₂ at₂ cs₂ f₂ x₂ => ?_)
+  refine WP.seq (xor_call v hp ⟨a₁.esp, a₁.rd, a₁.wr⟩ hnb a₁.edx a₁.esi a₁.ecx a₁.eax fun s₂ at₂ cs₂ f₂ x₂ => ?_)
   have g : ∀ r ∈ [Reg.ebx, .esi, .edi, .ebp, .esp], s₂.gpr r = s₁.gpr r :=
     fun r hr => cs₂ r (by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -675,11 +676,12 @@ theorem blocks_ok {s₀ : State} (hp : APre s₀) {s : State} (h : Q1 s₀ s) (h
       · exact ⟨stR s₀, by simp, wkR_sub s₀⟩
       · exact ⟨stkR s₀, by simp, fun _ h => h⟩
 
-theorem part2_ok {s₀ : State} (hp : APre s₀) {s : State} (h : Q1 s₀ s) : WP isa part2 s (Q2 s₀) := by
+theorem part2_ok (v : XorImpl) {s₀ : State} (hp : APre s₀) {s : State} (h : Q1 s₀ s) :
+    WP isa (part2 v.callee) s (Q2 s₀) := by
   rw [part2_eq]
   refine WP.ite (decide (64 * NB s₀ = 0)) (by show eval .e s = _; simp only [eval, h.zf])
     (fun h0 => WP.block_nil (M := isa) (nb_zero_ok h (by simpa using h0)))
-    (fun h0 => blocks_ok hp h (by simp at h0; omega))
+    (fun h0 => blocks_ok v hp h (by simp at h0; omega))
 
 /-! ## The last bytes -/
 
@@ -958,10 +960,11 @@ theorem finish_ok {s₀ : State} (hp : APre s₀) (hle : L s₀ ≤ N s₀) {s :
       rw [byte_writeW_ofNat _ _ _ (by omega) (by omega) (by omega),
         byte_writeW_ofNat _ _ _ (by omega) (by omega) (by omega), h.buf i hi]
 
-theorem apply_eq : apply = .seq (.block [.mov .eax (.mem (at_ .esp 4))]) (.seq (.block check)
-    (.ite .b (.block [.mov .eax (.imm 0)]) (.seq part1 (.seq part2 (.seq part3 (.block finish)))))) := rfl
+theorem apply_eq (v : Impl.ChaCha20.X86.Callee) : apply v = .seq (.block [.mov .eax (.mem (at_ .esp 4))])
+    (.seq (.block check)
+    (.ite .b (.block [.mov .eax (.imm 0)]) (.seq part1 (.seq (part2 v) (.seq part3 (.block finish)))))) := rfl
 
-theorem apply_correct {s₀ : State} (hp : APre s₀) : WP isa apply s₀ (Final s₀) := by
+theorem apply_correct (v : XorImpl) {s₀ : State} (hp : APre s₀) : WP isa (apply v.callee) s₀ (Final s₀) := by
   rw [apply_eq]
   refine WP.seq (WP.mono (load_ok hp) fun s₁ e₁ => ?_)
   subst e₁
@@ -969,7 +972,7 @@ theorem apply_correct {s₀ : State} (hp : APre s₀) : WP isa apply s₀ (Final
   refine WP.ite (decide (N s₀ < L s₀)) (by show eval .b s = _; simp only [eval, h.cf])
     (fun hlt => fail_ok (by simpa using hlt) h) (fun hge => ?_)
   have hle : L s₀ ≤ N s₀ := by simp at hge; omega
-  exact WP.seq (WP.mono (part1_ok hp hle h) fun s₁ h₁ => WP.seq (WP.mono (part2_ok hp h₁) fun s₂ h₂ =>
+  exact WP.seq (WP.mono (part1_ok hp hle h) fun s₁ h₁ => WP.seq (WP.mono (part2_ok v hp h₁) fun s₂ h₂ =>
     WP.seq (WP.mono (part3_ok hp h₂) fun s₃ h₃ => finish_ok hp hle h₃)))
 
 end VG.Proof.ChaCha20.X86.Stream

@@ -100,15 +100,16 @@ theorem ladWk (hc : CfgOk c) : LadWk c.ladderCfg size c.wk where
   tmp := sl_below_wk c (i := TMP) (by decide)
   bits := bitsAt_below_wk c (j := 0) (by decide)
 
-theorem powLay_of (hc : CfgOk c) {jm : Nat} (hjm : jm ∉ [ACC, PT, TMP]) (minv : BitVec 64)
+theorem powLay_of (hc : CfgOk c) {jm : Nat} (hjm : jm ∉ [ACC, PT, TMP])
+    (minv : BitVec 64) {red : Red}
     {base one j : Nat} (hj : j < 3) (hb : base ∉ [ACC, PT, TMP]) (hb45 : base < 45) (ho : one ≠ ACC)
     (ho45 : one < 45) :
-    PowLay ⟨⟨c.n, c.sl jm, c.sl TMP, minv⟩, c.sl ACC, c.sl PT, c.sl base, c.sl one, bitsAt c.n j,
+    PowLay ⟨⟨c.n, c.sl jm, c.sl TMP, minv, red⟩, c.sl ACC, c.sl PT, c.sl base, c.sl one, bitsAt c.n j,
       64 * c.n⟩ size := by
   have hn := hc.n0
   have h7 := hc.n7
   have hw : ∀ i, i ∉ [ACC, PT, TMP] →
-      ∀ w ∈ powW ⟨⟨c.n, c.sl jm, c.sl TMP, minv⟩, c.sl ACC, c.sl PT, c.sl base, c.sl one,
+      ∀ w ∈ powW ⟨⟨c.n, c.sl jm, c.sl TMP, minv, red⟩, c.sl ACC, c.sl PT, c.sl base, c.sl one,
         bitsAt c.n j, 64 * c.n⟩, c.sl i + 8 * c.n ≤ w.1 ∨ w.1 + w.2 ≤ c.sl i := by
     intro i hi w hw
     simp only [powW, List.mem_cons, List.not_mem_nil, or_false] at hw
@@ -133,9 +134,10 @@ theorem powLayN (hc : CfgOk c) : PowLay c.powN size :=
   powLay_of hc (jm := MN) (by decide) _ (j := 2) (by decide) (base := KM) (by decide) (by decide)
     (one := ONEN) (by decide) (by decide)
 
-theorem powWk_of (hc : CfgOk c) {jm : Nat} (hjm : jm < 45) (minv : BitVec 64) {base one j : Nat}
+theorem powWk_of (hc : CfgOk c) {jm : Nat} (hjm : jm < 45) (minv : BitVec 64) {red : Red}
+    {base one j : Nat}
     (hj : j < 3) (hb45 : base < 45) :
-    PowWk ⟨⟨c.n, c.sl jm, c.sl TMP, minv⟩, c.sl ACC, c.sl PT, c.sl base, c.sl one, bitsAt c.n j,
+    PowWk ⟨⟨c.n, c.sl jm, c.sl TMP, minv, red⟩, c.sl ACC, c.sl PT, c.sl base, c.sl one, bitsAt c.n j,
       64 * c.n⟩ size c.wk :=
   ⟨wk_le c hc.n7 rfl, sl_below_wk c (by decide), sl_below_wk c (by decide), sl_below_wk c hb45,
     sl_below_wk c hjm, sl_below_wk c (by decide), bitsAt_below_wk c hj, sl_apart c (by decide)⟩

@@ -21,6 +21,7 @@ inductive XBinOp
   | punpckldq | punpckhdq | punpcklqdq | punpckhqdq
   | pshufb | sha256msg1 | sha256msg2 | aesenc | aesenclast
   | paddq | sha1msg1 | sha1msg2 | sha1nexte
+  | aesdec | aesdeclast | aesimc
   deriving DecidableEq, Repr
 
 inductive XShiftOp | pslld | psrld | psllq | psrlq | pslldq | psrldq
@@ -180,7 +181,15 @@ def aesSbox (b : BitVec 8) : BitVec 8 :=
   ofBits8 fun i => b.getLsbD i ^^ b.getLsbD ((i + 4) % 8) ^^ b.getLsbD ((i + 5) % 8) ^^
     b.getLsbD ((i + 6) % 8) ^^ b.getLsbD ((i + 7) % 8) ^^ c.getLsbD i
 
-/-- FIPS 197 §5.1.1 `SUBBYTES`: `f` applied to every byte. -/
+/-- FIPS 197 §5.3.2, the inverse S-box: the inverse of the affine
+transformation, `b'ᵢ = b₍ᵢ₊₂₎ mod 8 ⊕ b₍ᵢ₊₅₎ mod 8 ⊕ b₍ᵢ₊₇₎ mod 8 ⊕ dᵢ` with
+`d = {05}`, then `b ↦ b⁻¹`. -/
+def aesInvSbox (b : BitVec 8) : BitVec 8 :=
+  let d : BitVec 8 := 0x05
+  aesInv (ofBits8 fun i =>
+    b.getLsbD ((i + 2) % 8) ^^ b.getLsbD ((i + 5) % 8) ^^ b.getLsbD ((i + 7) % 8) ^^ d.getLsbD i)
+
+/-- FIPS 197 §5.1.1 `SUBBYTES` and §5.3.2 `INVSUBBYTES`: `f` applied to every byte. -/
 def aesMapBytes (f : BitVec 8 → BitVec 8) (x : BitVec 128) : BitVec 128 :=
   ofBytes fun i => f (byte x i)
 
@@ -188,7 +197,12 @@ def aesMapBytes (f : BitVec 8 → BitVec 8) (x : BitVec 128) : BitVec 128 :=
 def aesShiftRows (x : BitVec 128) : BitVec 128 :=
   ofBytes fun i => byte x (i % 4 + 4 * ((i / 4 + i % 4) % 4))
 
-/-- FIPS 197 §5.1.3 `MIXCOLUMNS` (with `m = [{02}, {03}, {01}, {01}]`):
+/-- FIPS 197 §5.3.1 `INVSHIFTROWS`: `s'[r, c] = s[r, (c − r) mod 4]`. -/
+def aesInvShiftRows (x : BitVec 128) : BitVec 128 :=
+  ofBytes fun i => byte x (i % 4 + 4 * ((i / 4 + 4 - i % 4) % 4))
+
+/-- FIPS 197 §5.1.3 `MIXCOLUMNS` (with `m = [{02}, {03}, {01}, {01}]`) and
+§5.3.3 `INVMIXCOLUMNS` (with `m = [{0e}, {0b}, {0d}, {09}]`):
 `s'[r, c] = m₀ • s[r, c] ⊕ m₁ • s[r + 1, c] ⊕ m₂ • s[r + 2, c] ⊕ m₃ • s[r + 3, c]`,
 rows modulo 4. -/
 def aesMixWith (m₀ m₁ m₂ m₃ : BitVec 8) (x : BitVec 128) : BitVec 128 :=
@@ -197,6 +211,8 @@ def aesMixWith (m₀ m₁ m₂ m₃ : BitVec 8) (x : BitVec 128) : BitVec 128 :=
     aesMul m₀ (a 0) ^^^ aesMul m₁ (a 1) ^^^ aesMul m₂ (a 2) ^^^ aesMul m₃ (a 3)
 
 def aesMixColumns : BitVec 128 → BitVec 128 := aesMixWith 0x02 0x03 0x01 0x01
+
+def aesInvMixColumns : BitVec 128 → BitVec 128 := aesMixWith 0x0e 0x0b 0x0d 0x09
 
 /-- The carry-less product of two quadwords. SDM Vol. 2, "PCLMULQDQ", defines
 bit `i` of the product as `TEMP1[0] AND TEMP2[i]` XOR … XOR `TEMP1[j] AND
@@ -220,7 +236,12 @@ DEST[63:32] := W4 XOR W2; DEST[31:0] := W5 XOR W3`. SHA1MSG2: see
 SRC2[127:96] + TMP; DEST[95:64] := SRC2[95:64]; DEST[63:32] := SRC2[63:32];
 DEST[31:0] := SRC2[31:0]`.
 AESENC applies ShiftRows, SubBytes, MixColumns, then XORs the round key;
-AESENCLAST omits MixColumns (AESENC/AESENCLAST Operation pseudocode). -/
+AESENCLAST omits MixColumns (AESENC/AESENCLAST Operation pseudocode).
+AESDEC: `STATE := SRC1; RoundKey := SRC2; STATE := InvShiftRows(STATE);
+STATE := InvSubBytes(STATE); STATE := InvMixColumns(STATE); DEST[127:0] :=
+STATE XOR RoundKey`; AESDECLAST: as AESDEC, without `InvMixColumns`; AESIMC:
+`DEST[127:0] := InvMixColumns(SRC)` (AESDEC/AESDECLAST/AESIMC Operation
+pseudocode; `SRC1` is the destination, `SRC2` the source). -/
 def XBinOp.eval : XBinOp → BitVec 128 → BitVec 128 → BitVec 128
   | .movdqa, _, b => b
   | .paddd, a, b =>
@@ -250,6 +271,9 @@ def XBinOp.eval : XBinOp → BitVec 128 → BitVec 128 → BitVec 128
   | .sha1msg2, a, b => sha1Msg2 a b
   | .sha1nexte, a, b =>
     ofDwords (dword b 0) (dword b 1) (dword b 2) (dword b 3 + (dword a 3).rotateLeft 30)
+  | .aesdec, a, b => aesInvMixColumns (aesMapBytes aesInvSbox (aesInvShiftRows a)) ^^^ b
+  | .aesdeclast, a, b => aesMapBytes aesInvSbox (aesInvShiftRows a) ^^^ b
+  | .aesimc, _, b => aesInvMixColumns b
 /-- SDM Vol. 2 PSLLD/PSRLD/PSLLQ/PSRLQ: each element shifts logically,
 becoming zero for counts greater than its width minus one. PSLLDQ/PSRLDQ
 shift the whole register by bytes, becoming zero for counts at least 16.

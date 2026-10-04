@@ -10,8 +10,9 @@ import VerifiedGarbage.Proof.Poly1305.X86.Init
 import VerifiedGarbage.Proof.Poly1305.X86.Blocks
 import VerifiedGarbage.Proof.Poly1305.X86.Finalize
 import VerifiedGarbage.Proof.Poly1305.Stream
-import VerifiedGarbage.Proof.ChaCha20.X86.Xor
-import VerifiedGarbage.Proof.ChaCha20Poly1305.X86.Lit
+import VerifiedGarbage.Proof.ChaCha20.X86.Variant
+import VerifiedGarbage.Proof.ChaCha20.X86.Lit
+import VerifiedGarbage.Proof.Poly1305.X86.Lit
 import VerifiedGarbage.Proof.Framework.Offset
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Omega
@@ -83,6 +84,7 @@ end VG.Proof.ChaCha20Poly1305
 namespace VG.Proof.ChaCha20Poly1305.X86
 
 open VG VG.X86 VG.Impl.ChaCha20Poly1305.X86
+open VG.Proof.ChaCha20.X86 (XorImpl)
 open VG.Impl.ChaCha20.X86 (at_)
 open VG.Proof.ChaCha20.X86 (contains_off toNat_ofNat_lt)
 open VG.Spec.Poly1305 (Repr bytesAt mac)
@@ -385,6 +387,7 @@ holds when it returns.
 namespace VG.Proof.ChaCha20Poly1305.X86
 
 open VG VG.X86 VG.Impl.ChaCha20Poly1305.X86
+open VG.Proof.ChaCha20.X86 (XorImpl)
 open VG.Proof.ChaCha20.X86 (contains_off toNat_ofNat_lt)
 open VG.Spec.Poly1305 (Repr bytesAt mac)
 open VG.Spec.ChaCha20 (stateAt keystream)
@@ -392,13 +395,11 @@ open VG.Spec.ChaCha20 (stateAt keystream)
 /-! ## The callees -/
 
 theorem block_nosp : NoSp Impl.ChaCha20.X86.block := NoSp.of_all (by lit_decide)
-theorem xor_nosp : NoSp Impl.ChaCha20.X86.Xor.xor := NoSp.of_all (by lit_decide)
 theorem init_nosp : NoSp Impl.Poly1305.X86.init := NoSp.of_all (by lit_decide)
 theorem blocks_nosp : NoSp Impl.Poly1305.X86.blocks := NoSp.of_all (by lit_decide)
 theorem finalize_nosp : NoSp Impl.Poly1305.X86.finalize := NoSp.of_all (by lit_decide)
 
 theorem block_stack : stackUse Impl.ChaCha20.X86.block = 0 := by lit_decide
-theorem xor_stack : stackUse Impl.ChaCha20.X86.Xor.xor = 12 := by lit_decide
 theorem init_stack : stackUse Impl.Poly1305.X86.init = 0 := by lit_decide
 theorem blocks_stack : stackUse Impl.Poly1305.X86.blocks = 0 := by lit_decide
 theorem finalize_stack : stackUse Impl.Poly1305.X86.finalize = 0 := by lit_decide
@@ -742,7 +743,7 @@ theorem xor_pre {s₀ s : State} (hp : APre s₀) (h : At s₀ s) (heax : s.gpr 
     · exact within (ctxR s₀) (by simp) 128 rfl (by show 128 + 320 ≤ 1024; omega)
     · exact within (below (E s₀) 16) (by simp) 0 (by simp) (by simp)
 
-theorem xor_call {s₀ s : State} (hp : APre s₀) (h : At s₀ s) (heax : s.gpr .eax = C32 s₀ 64)
+theorem xor_call (v : XorImpl) {s₀ s : State} (hp : APre s₀) (h : At s₀ s) (heax : s.gpr .eax = C32 s₀ 64)
     (hecx : s.gpr .ecx = DP s₀) (hedx : s.gpr .edx = LN s₀) (hesi : s.gpr .esi = C32 s₀ 128)
     {Q : State → Prop}
     (hQ : ∀ s', At s₀ s' → (∀ r ∈ calleeSaved, s'.gpr r = s.gpr r) →
@@ -750,14 +751,14 @@ theorem xor_call {s₀ s : State} (hp : APre s₀) (h : At s₀ s) (heax : s.gpr
       Spec.ChaCha20.bytesAt s'.mem (dp s₀) (L s₀) =
         List.zipWith (· ^^^ ·) (Spec.ChaCha20.bytesAt s.mem (dp s₀) (L s₀))
           (keystream (stateAt s.mem (cx s₀ + BitVec.ofNat 64 64)) (L s₀)) → Q s') :
-    WP isa (callWith [.esi, .edx, .ecx, .eax] "vg_chacha20_xor" Impl.ChaCha20.X86.Xor.xor) s Q := by
+    WP isa (callWith [.esi, .edx, .ecx, .eax] v.callee.name v.callee.code) s Q := by
   have hk : [Reg.esi, .edx, .ecx, .eax].length ≤ 5 := by decide
   have fit := h.fit hp hk
   have e := hp.sp_lo
-  refine WP.callWith Proof.ChaCha20.X86.Xor.xor_correct xor_nosp (by simp) (by decide)
-    (by rw [xor_stack, h.esp]; simp only [List.length_cons, List.length_nil]; omega)
+  refine WP.callWith v.ok v.nosp (by simp) (by decide)
+    (by rw [v.stack, h.esp]; simp only [List.length_cons, List.length_nil]; omega)
     (xor_pre hp h heax hecx hedx hesi) fun s' rd' wr' cs' f' ⟨s₂, m₂, post⟩ => ?_
-  rw [xor_stack, h.esp] at f'
+  rw [v.stack, h.esp] at f'
   refine hQ s' (h.ret rd' wr' cs') cs' (f'.sub fun r hr => ?_) ?_
   · simp only [wrXor, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false,
       List.length_cons, List.length_nil] at hr
@@ -893,6 +894,7 @@ separately, for the constant-time proof.
 namespace VG.Proof.ChaCha20Poly1305.X86
 
 open VG VG.X86 VG.Impl.ChaCha20Poly1305.X86
+open VG.Proof.ChaCha20.X86 (XorImpl)
 open VG.Impl.ChaCha20.X86 (at_)
 open VG.Proof.ChaCha20.X86 (contains_off toNat_ofNat_lt)
 open VG.Proof.Poly1305.X86 (wp_movm wp_store wp_movzx8 wp_store8 wp_addx wp_subx wp_movi wp_mov wp_andx
@@ -1468,6 +1470,7 @@ the constant-time proof.
 namespace VG.Proof.ChaCha20Poly1305.X86
 
 open VG VG.X86 VG.Impl.ChaCha20Poly1305.X86
+open VG.Proof.ChaCha20.X86 (XorImpl)
 open VG.Impl.ChaCha20.X86 (at_)
 open VG.Proof.ChaCha20.X86 (contains_off toNat_ofNat_lt readW_writeW_off)
 open VG.Spec.Poly1305 (Repr bytesAt mac)
@@ -1798,6 +1801,7 @@ registers.
 namespace VG.Proof.ChaCha20Poly1305.X86
 
 open VG VG.X86 VG.Impl.ChaCha20Poly1305.X86
+open VG.Proof.ChaCha20.X86 (XorImpl)
 open VG.Impl.ChaCha20.X86 (at_)
 open VG.Proof.ChaCha20.X86 (contains_off toNat_ofNat_lt readW_writeW_off)
 open VG.Proof.Poly1305.X86 (wp_movm wp_store wp_movi wp_mov Upd Mupd leNum_bytesAt_4)
@@ -1943,18 +1947,18 @@ theorem crA_ok {s₀ : State} (hp : APre s₀) {s : State} (h : Inv s₀ s) :
   · rw [g₆ _ (by decide), u₅.other _ (by decide), u₄.gpr, m₃]; exact inv₂.arg hp (by lit_omega)
   · rw [g₆ _ (by decide), u₅.gpr, u₄.mem, m₃]; exact inv₂.arg hp (by lit_omega)
 
-theorem crypt_eq : crypt =
+theorem crypt_eq (v : Impl.ChaCha20.X86.Callee) : crypt v =
     .seq (.block (([.mov .eax (.imm 1), .store (at_ .edi 112) .eax] : List Instr) ++ ptr .eax .edi 64 ++
       ([.mov .ecx (.mem (at_ .esp 16)), .mov .edx (.mem (at_ .esp 20))] : List Instr) ++ ptr .esi .edi 128))
-    (callWith [.esi, .edx, .ecx, .eax] "vg_chacha20_xor" Impl.ChaCha20.X86.Xor.xor) := rfl
+    (callWith [.esi, .edx, .ecx, .eax] v.name v.code) := rfl
 
-theorem crB_ok {s₀ : State} (hp : APre s₀) {s : State} (h : CrA s₀ s) :
-    WP isa (callWith [.esi, .edx, .ecx, .eax] "vg_chacha20_xor" Impl.ChaCha20.X86.Xor.xor) s fun s' =>
+theorem crB_ok (v : XorImpl) {s₀ : State} (hp : APre s₀) {s : State} (h : CrA s₀ s) :
+    WP isa (callWith [.esi, .edx, .ecx, .eax] v.callee.name v.callee.code) s fun s' =>
       Inv s₀ s' ∧ Frame [sub s₀ 64 384, dR s₀, stkR s₀] s.mem s'.mem ∧
       Spec.ChaCha20.bytesAt s'.mem (dp s₀) (L s₀) =
         List.zipWith (· ^^^ ·) (Spec.ChaCha20.bytesAt s.mem (dp s₀) (L s₀))
           (keystream (stateAt s.mem (cx s₀ + BitVec.ofNat 64 64)) (L s₀)) :=
-  xor_call hp h.inv.at h.eax h.ecx h.edx h.esi fun s' at' cs' f' x' =>
+  xor_call v hp h.inv.at h.eax h.ecx h.edx h.esi fun s' at' cs' f' x' =>
     ⟨h.inv.step (cs' .edi (by simp [calleeSaved])) (by rw [at'.esp, h.inv.esp]) (by rw [at'.rd, h.inv.rd])
       (by rw [at'.wr, h.inv.wr]) f'
       (fun r hr => by
@@ -1974,13 +1978,13 @@ theorem length_encrypt (key nonce m : List Byte) : (Spec.ChaCha20.encrypt key 1 
   rw [encrypt_eq, List.length_zipWith, VG.Proof.ChaCha20.length_keystream, Nat.min_self]
 
 /-- The data encrypted (or decrypted) from block counter 1. -/
-theorem crypt_ok {s₀ : State} (hp : APre s₀) {s : State} (h : Inv s₀ s) :
-    WP isa crypt s fun s' => Inv s₀ s' ∧ Frame [sub s₀ 64 384, dR s₀, stkR s₀] s.mem s'.mem ∧
+theorem crypt_ok (v : XorImpl) {s₀ : State} (hp : APre s₀) {s : State} (h : Inv s₀ s) :
+    WP isa (crypt v.callee) s fun s' => Inv s₀ s' ∧ Frame [sub s₀ 64 384, dR s₀, stkR s₀] s.mem s'.mem ∧
       (stateAt s.mem (cx s₀ + BitVec.ofNat 64 64) = Spec.ChaCha20.initState (K s₀) 0 (N s₀) →
         bytesAt s'.mem (dp s₀) (L s₀) = Spec.ChaCha20.encrypt (K s₀) 1 (N s₀) (bytesAt s.mem (dp s₀) (L s₀))) := by
   rw [crypt_eq]
   refine WP.seq (WP.mono (crA_ok hp h) fun s₁ ⟨h₁, m₁⟩ => ?_)
-  refine WP.mono (crB_ok hp h₁) fun s₂ ⟨i₂, f₂, x₂⟩ => ⟨i₂, ?_, fun hst => ?_⟩
+  refine WP.mono (crB_ok v hp h₁) fun s₂ ⟨i₂, f₂, x₂⟩ => ⟨i₂, ?_, fun hst => ?_⟩
   · refine (?_ : Frame [sub s₀ 64 384, dR s₀, stkR s₀] s.mem s₁.mem).trans f₂
     rw [m₁]
     exact (Frame.refl _ _).writeW (List.mem_cons_self ..) _ (contains_sub s₀ (by lit_omega) (by lit_omega) (by lit_omega))

@@ -3,18 +3,18 @@
 //! `vg_ecdsa_p256_sign`), public keys (`vg_ec_p256_public_key`), and
 //! verification (`vg_ecdsa_p256_verify`).
 
-#![cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
+#![cfg(any(target_arch = "x86_64", target_arch = "x86", target_arch = "aarch64"))]
 
 use super::{Error, P256, SignatureHash, SigningKey, sealed};
 use crate::arch::ec_p256::vg_ec_p256_public_key;
 use crate::arch::ecdsa_p256::vg_ecdsa_p256_verify;
 use crate::arch::ecdsa_p256_sha256::vg_ecdsa_p256_sha256_sign;
+#[cfg(target_arch = "x86_64")]
+use crate::arch::ecdsa_p256_sha256::vg_ecdsa_p256_sha256_sign_avx2;
 #[cfg(target_arch = "aarch64")]
 use crate::arch::ecdsa_p256_sha256::vg_ecdsa_p256_sha256_sign_sha2;
-#[cfg(target_arch = "x86_64")]
-use crate::arch::ecdsa_p256_sha256::{
-    vg_ecdsa_p256_sha256_sign_avx2, vg_ecdsa_p256_sha256_sign_shani,
-};
+#[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+use crate::arch::ecdsa_p256_sha256::vg_ecdsa_p256_sha256_sign_shani;
 use crate::arch::ecdsa_p256_sha384::vg_ecdsa_p256_sha384_sign;
 #[cfg(target_arch = "aarch64")]
 use crate::arch::ecdsa_p256_sha384::vg_ecdsa_p256_sha384_sign_sha3;
@@ -60,7 +60,7 @@ type SignFn<const N: usize> = unsafe extern "sysv64" fn(
     *mut [u64; 1024],
 ) -> u32;
 /// A verified `vg_ecdsa_p256_<hash>_sign`, for a hash of `N` bytes.
-#[cfg(target_arch = "aarch64")]
+#[cfg(any(target_arch = "x86", target_arch = "aarch64"))]
 type SignFn<const N: usize> =
     unsafe extern "C" fn(*mut [u8; 64], *const [u8; 32], *const [u8; N], *mut [u64; 1024]) -> u32;
 
@@ -114,7 +114,7 @@ impl sealed::Functions<P256> for Sha256 {
             Sha256Backend::Scalar => vg_ecdsa_p256_sha256_sign,
             #[cfg(target_arch = "aarch64")]
             Sha256Backend::Sha2 => vg_ecdsa_p256_sha256_sign_sha2,
-            #[cfg(target_arch = "x86_64")]
+            #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
             Sha256Backend::ShaNi => vg_ecdsa_p256_sha256_sign_shani,
             #[cfg(target_arch = "x86_64")]
             Sha256Backend::Avx2 => vg_ecdsa_p256_sha256_sign_avx2,

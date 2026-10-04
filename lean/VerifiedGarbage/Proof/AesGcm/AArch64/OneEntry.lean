@@ -3,8 +3,8 @@ import VerifiedGarbage.Proof.AesGcm.AArch64.StreamVerify
 /-!
 # AES-GCM on AArch64: the entry of `seal` and `open`
 
-Untrusted: everything here is checked by Lean. `work` comes from the stack;
-the entry saves our caller's registers there, keeps the arguments it needs
+Untrusted: everything here is checked by Lean. `work` comes from the stack
+(`ldrSp_ok`); the entry saves our caller's registers there, keeps the arguments it needs
 later at `W + 216` (`oneEntry_ok`, `OneE`), and puts the state at
 `W + 16` (`oneLay`).
 -/
@@ -69,11 +69,23 @@ theorem entryMem_slot (m : Mem) (W : Addr) (g : Reg → BitVec 64) :
     | rw [Mem.readW_writeW_self64]
     | rw [readW_writeW_other _ _ _ (by decide) (by decide) (by decide)])
 
-/-- After the entry. -/
-theorem oneEntry_ok {s : State} {Ctx W : Addr} (hW : stackArg s 0 = W)
-    (hsp : InRegions (s.rd ++ s.wr) (s.sp + BitVec.ofNat 64 0) 8) (hCtx : s.gpr .x0 = Ctx)
+/-- The load of a stack argument, at `sp + k`. -/
+theorem ldrSp_ok {s : State} {t : Reg} {k : Nat} {V : BitVec 64} (hk : k % 8 = 0 ∧ k < 32768)
+    (hV : s.mem.readW (s.sp + BitVec.ofNat 64 k) 64 = V)
+    (hsp : InRegions (s.rd ++ s.wr) (s.sp + BitVec.ofNat 64 k) 8) :
+    ∃ s', runBlock isa [.ldrSp t k] s = some s' ∧ s'.gpr t = V ∧ (∀ r, r ≠ t → s'.gpr r = s.gpr r) ∧
+      s'.sp = s.sp ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
+  refine ⟨_, by arun [hsp, hk], ?_⟩
+  refine ⟨?_, fun r hr => by simp [gpr_write, hr], rfl, rfl, rfl, rfl⟩
+  rw [← hV]
+  simp [gpr_write, Mem.readW]
+
+/-- After the entry, with `work` at `sp + k`. -/
+theorem oneEntry_ok {s : State} {Ctx W : Addr} {k : Nat} (hk : k % 8 = 0 ∧ k < 32768)
+    (hW : s.mem.readW (s.sp + BitVec.ofNat 64 k) 64 = W)
+    (hsp : InRegions (s.rd ++ s.wr) (s.sp + BitVec.ofNat 64 k) 8) (hCtx : s.gpr .x0 = Ctx)
     (hperm : Perm Ctx (W + BitVec.ofNat 64 16) W s) :
-    WP isa (.block oneEntry) s fun s' => Env Ctx (W + BitVec.ofNat 64 16) W s.sp s' ∧
+    WP isa (.block (oneEntry k)) s fun s' => Env Ctx (W + BitVec.ofNat 64 16) W s.sp s' ∧
       s'.gpr .x22 = s.gpr .x1 ∧ s'.gpr .x23 = s.gpr .x2 ∧ s'.gpr .x24 = s.gpr .x3 ∧
       s'.gpr .x26 = s.gpr .x3 ∧ s'.gpr .x27 = 0 ∧
       s'.mem.readW (W + BitVec.ofNat 64 216) 64 = s.gpr .x4 ∧
@@ -81,13 +93,7 @@ theorem oneEntry_ok {s : State} {Ctx W : Addr} (hW : stackArg s 0 = W)
       s'.mem.readW (W + BitVec.ofNat 64 232) 64 = s.gpr .x6 ∧
       s'.mem.readW (W + BitVec.ofNat 64 240) 64 = s.gpr .x7 ∧
       Frame [entryR W] s.mem s'.mem ∧ SavedAt s'.mem W s ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
-  obtain ⟨s₀, run₀, x9₀, g₀, sp₀, m₀, rd₀, wr₀⟩ : ∃ s₀, runBlock isa [.ldrSp .x9 0] s = some s₀ ∧
-      s₀.gpr .x9 = W ∧ (∀ r, r ≠ .x9 → s₀.gpr r = s.gpr r) ∧ s₀.sp = s.sp ∧ s₀.mem = s.mem ∧
-      s₀.rd = s.rd ∧ s₀.wr = s.wr := by
-    refine ⟨_, by arun [hsp], ?_⟩
-    refine ⟨?_, fun r hr => by simp [gpr_write, hr], rfl, rfl, rfl, rfl⟩
-    rw [← hW]
-    simp [gpr_write, stackArg, stackArgAddr, Mem.readW]
+  obtain ⟨s₀, run₀, x9₀, g₀, sp₀, m₀, rd₀, wr₀⟩ := ldrSp_ok (t := .x9) hk hW hsp
   have hperm₀ : Perm Ctx (W + BitVec.ofNat 64 16) W s₀ := hperm.of_eq rd₀ wr₀
   obtain ⟨s₁, run₁, g₁, sp₁, rd₁, wr₁, m₁⟩ := save_ok s₀ .x9 x9₀ hperm₀.w
   have w (d : Nat) (h : d + 8 ≤ 2560) := in_off hperm₀.w h (by decide)

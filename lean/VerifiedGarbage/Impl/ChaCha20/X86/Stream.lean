@@ -1,4 +1,4 @@
-import VerifiedGarbage.Impl.ChaCha20.X86.Xor
+import VerifiedGarbage.Impl.ChaCha20.X86.Callee
 
 /-!
 # Streaming ChaCha20: x86 (32-bit) implementation
@@ -49,7 +49,7 @@ namespace VG.Impl.ChaCha20.X86.Stream
 
 open VG.X86
 open VG.Impl.ChaCha20.X86 (at_ block)
-open VG.Impl.ChaCha20.X86.Xor (xorLoop)
+open VG.Impl.ChaCha20.X86.Xor (xorLoop xorBytes)
 
 /-- `r + k` into `d`. -/
 def ptr (d r : Reg) (k : Nat) : List Instr := [.mov d (.reg r), .alu .add d (.imm (BitVec.ofNat 32 k))]
@@ -94,10 +94,6 @@ def start : List Instr :=
    .mov .eax (.mem (at_ .ebx 128)), .alu .and .eax (.imm 63), .mov .ecx (.reg .ebp),
    .alu .cmp .eax (.reg .ebp)]
 
-/-- XORs the `ecx` bytes at `edx` into the data (`esi`), advancing both. -/
-def xorBytes : Prog isa :=
-  .seq (.block [.alu .test .ecx (.reg .ecx)]) (.ite .e (.block []) xorLoop)
-
 /-- Everything up to the whole blocks: the bytes left in the buffered block,
 `ecx = min(eax, len)` of them, from `ebx + 128 - eax`, counted off `ebp`;
 then `ecx` = the bytes of the whole blocks that follow (`ebp` rounded down
@@ -118,12 +114,12 @@ def blocksArgs : List Instr :=
    .mov .eax (.reg .ecx), .shift .shr .eax 6, .alu .add .eax (.mem (at_ .ebx 48)), .store (at_ .ebx 48) .eax,
    .mov .edi (.reg .ecx)] ++ ptr .eax .ebx 256 ++ ptr .edx .ebx 192
 
-/-- `vg_chacha20_xor(state + 192, data, ecx, state + 256)`. -/
-def callXor : Prog isa := .frame (.push [.eax, .ecx, .esi, .edx]) (.call "vg_chacha20_xor" Xor.xor) (.pop .eax 4)
+/-- `vg_chacha20_xor(state + 192, data, ecx, state + 256)`, or the implementation `v` of it. -/
+def callXor (v : Callee) : Prog isa := .frame (.push [.eax, .ecx, .esi, .edx]) (.call v.name v.code) (.pop .eax 4)
 
-def part2 : Prog isa :=
+def part2 (v : Callee) : Prog isa :=
   .ite .e (.block [])
-    (.seq (.block blocksArgs) (.seq callXor (.block [.alu .add .esi (.reg .edi), .alu .sub .ebp (.reg .edi)])))
+    (.seq (.block blocksArgs) (.seq (callXor v) (.block [.alu .add .esi (.reg .edi), .alu .sub .ebp (.reg .edi)])))
 
 /-- `vg_chacha20_block(state, state + 64)`. -/
 def callBlock : Prog isa := .frame (.push [.eax, .ebx]) (.call "vg_chacha20_block" block) (.pop .eax 2)
@@ -147,9 +143,9 @@ def finish : List Instr :=
    .store (at_ .ebx 132) .eax, .mov .esi (.mem (at_ .ebx 580)), .mov .edi (.mem (at_ .ebx 584)),
    .mov .ebp (.mem (at_ .ebx 588)), .mov .ebx (.mem (at_ .ebx 576)), .mov .eax (.imm 1)]
 
-def apply : Prog isa :=
+def apply (v : Callee) : Prog isa :=
   .seq (.block [.mov .eax (.mem (at_ .esp 4))]) (.seq (.block check)
   (.ite .b (.block [.mov .eax (.imm 0)])
-    (.seq part1 (.seq part2 (.seq part3 (.block finish))))))
+    (.seq part1 (.seq (part2 v) (.seq part3 (.block finish))))))
 
 end VG.Impl.ChaCha20.X86.Stream

@@ -84,19 +84,24 @@ def checkLtP (a : Nat) : List Instr := ltP c a ++ [.mov .edx (.reg .eax)] ++ c.a
 /-- `[a] = 0`: the flag `&=` its mask (the complement of `nonzero`'s). -/
 def checkZero (a : Nat) : List Instr := c.nonzero a ++ [.alu .xor .edx (.imm (-1))] ++ c.andFlag
 
-/-- The peer's first byte is `04`: the flag `&=` its mask, through `ebx`
-(`peer`) and `edx` (all ones iff `byte ^ 4 = 0`, the borrow of `- 1`). -/
-def checkLead : List Instr :=
-  [.mov .ebx (.mem (Cfg.argOp 2)), .movzx8 .edx (at_ .ebx 0), .alu .xor .edx (.imm 4),
+/-- The first byte of the key that argument `i` points to is `04`: the flag
+`&=` its mask, through `ebx` (the key) and `edx` (all ones iff
+`byte ^ 4 = 0`, the borrow of `- 1`). -/
+def checkLeadAt (i : Nat) : List Instr :=
+  [.mov .ebx (.mem (Cfg.argOp i)), .movzx8 .edx (at_ .ebx 0), .alu .xor .edx (.imm 4),
     .alu .sub .edx (.imm 1), .alu .sbb .edx (.reg .edx)] ++ c.andFlag
 
-/-- The constants, the peer's `x` and `y` (through `ebx`, from `peer + 1`),
-and the checks of its first byte, `x` and `y`. -/
-def peer : List Instr :=
+/-- The constants, the `x` and `y` of the key that argument `i` points to
+(through `ebx`, from its byte 1), and the checks of its first byte, `x` and
+`y` (also signature verification's, with its key). -/
+def peerAt (i : Nat) : List Instr :=
   (consts c).flatMap (fun (i, x) => setConst c.n (c.sl i) x) ++
-  [.mov .ebx (.mem (Cfg.argOp 2)), .alu .add .ebx (.imm 1)] ++ loadBE c.n (c.sl E) .ebx ++
+  [.mov .ebx (.mem (Cfg.argOp i)), .alu .add .ebx (.imm 1)] ++ loadBE c.n (c.sl E) .ebx ++
   [.alu .add .ebx (.imm (BitVec.ofNat 32 (8 * c.n)))] ++ loadBE c.n (c.sl QY) .ebx ++
-  checkLead c ++ checkLtP c (c.sl E) ++ checkLtP c (c.sl QY)
+  checkLeadAt c i ++ checkLtP c (c.sl E) ++ checkLtP c (c.sl QY)
+
+/-- The peer's key: `peerAt` its argument. -/
+def peer : List Instr := peerAt c 2
 
 /-- `y² - (x³ + a x + b)`, from `x R` and `y R`, to `W1`. -/
 def curveOps : List FOp :=

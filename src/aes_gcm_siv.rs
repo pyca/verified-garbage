@@ -13,23 +13,31 @@
 //! The functions are emitted once for each combination of the
 //! implementations of AES (`vg_aes_ctr32`, `vg_aes_expand_key`) and of GHASH
 //! (`vg_ghash`, with which POLYVAL is computed) that AES-GCM has, and are
-//! chosen as AES-GCM's are (`crate::aes_gcm`'s backends). Only x86-64 has an
-//! implementation so far.
+//! chosen as AES-GCM's are (`crate::aes_gcm`'s backends). x86-64 and AArch64
+//! have implementations so far.
 
-#![cfg(target_arch = "x86_64")]
+#![cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
 
 use crate::aes_gcm::{Backend, instance, select};
-use crate::arch::aes::{vg_aes_expand_key, vg_aes_expand_key_aesni};
+use crate::arch::aes::vg_aes_expand_key;
+#[cfg(target_arch = "aarch64")]
+use crate::arch::aes::vg_aes_expand_key_aes;
+#[cfg(target_arch = "x86_64")]
+use crate::arch::aes::vg_aes_expand_key_aesni;
+use crate::arch::aes_gcm_siv::{vg_aes_gcm_siv_open, vg_aes_gcm_siv_seal};
+#[cfg(target_arch = "aarch64")]
+use crate::arch::aes_gcm_siv::{vg_aes_gcm_siv_open_aes, vg_aes_gcm_siv_seal_aes};
+#[cfg(target_arch = "x86_64")]
 use crate::arch::aes_gcm_siv::{
-    vg_aes_gcm_siv_open, vg_aes_gcm_siv_open_aesni, vg_aes_gcm_siv_open_aesni_pclmul,
+    vg_aes_gcm_siv_open_aesni, vg_aes_gcm_siv_open_aesni_pclmul,
     vg_aes_gcm_siv_open_aesni_pclmul_avx, vg_aes_gcm_siv_open_aesni_vpclmul,
     vg_aes_gcm_siv_open_pclmul, vg_aes_gcm_siv_open_vaes, vg_aes_gcm_siv_open_vaes_pclmul,
     vg_aes_gcm_siv_open_vaes_vpclmul, vg_aes_gcm_siv_open_vaes_vpclmul_avx512,
-    vg_aes_gcm_siv_open_vpclmul, vg_aes_gcm_siv_seal, vg_aes_gcm_siv_seal_aesni,
-    vg_aes_gcm_siv_seal_aesni_pclmul, vg_aes_gcm_siv_seal_aesni_pclmul_avx,
-    vg_aes_gcm_siv_seal_aesni_vpclmul, vg_aes_gcm_siv_seal_pclmul, vg_aes_gcm_siv_seal_vaes,
-    vg_aes_gcm_siv_seal_vaes_pclmul, vg_aes_gcm_siv_seal_vaes_vpclmul,
-    vg_aes_gcm_siv_seal_vaes_vpclmul_avx512, vg_aes_gcm_siv_seal_vpclmul,
+    vg_aes_gcm_siv_open_vpclmul, vg_aes_gcm_siv_seal_aesni, vg_aes_gcm_siv_seal_aesni_pclmul,
+    vg_aes_gcm_siv_seal_aesni_pclmul_avx, vg_aes_gcm_siv_seal_aesni_vpclmul,
+    vg_aes_gcm_siv_seal_pclmul, vg_aes_gcm_siv_seal_vaes, vg_aes_gcm_siv_seal_vaes_pclmul,
+    vg_aes_gcm_siv_seal_vaes_vpclmul, vg_aes_gcm_siv_seal_vaes_vpclmul_avx512,
+    vg_aes_gcm_siv_seal_vpclmul,
 };
 use crate::cpu::detected;
 use crate::zeroize::zeroize;
@@ -98,13 +106,14 @@ impl AesGcmSiv {
             rounds: key.len() / 4 + 6,
             backend: select(detected()),
         };
-        // The instances with AES-NI or VAES call `vg_aes_expand_key_aesni`.
+        // The instances with AES-NI or VAES call `vg_aes_expand_key_aesni`,
+        // those with the AArch64 AES instructions `vg_aes_expand_key_aes`.
         let expand = instance!(k.backend, vg_aes_expand_key,
             x86_64: [vg_aes_expand_key_aesni, vg_aes_expand_key, vg_aes_expand_key_aesni],
             vaes: [vg_aes_expand_key_aesni, vg_aes_expand_key, vg_aes_expand_key_aesni,
                 vg_aes_expand_key_aesni, vg_aes_expand_key_aesni, vg_aes_expand_key_aesni],
             avx: [vg_aes_expand_key_aesni],
-            aarch64: [vg_aes_expand_key]);
+            aarch64: [vg_aes_expand_key_aes]);
         let mut scratch = MaybeUninit::<[u64; 64]>::uninit();
         // SAFETY: `key` is valid for reads of `key.len()` bytes, which is 16
         // or 32; `k.schedule` and `scratch` are valid for reads and writes of
@@ -142,7 +151,7 @@ impl AesGcmSiv {
                 vg_aes_gcm_siv_seal_aesni_vpclmul, vg_aes_gcm_siv_seal_vaes_vpclmul,
                 vg_aes_gcm_siv_seal_vaes_vpclmul_avx512],
             avx: [vg_aes_gcm_siv_seal_aesni_pclmul_avx],
-            aarch64: [vg_aes_gcm_siv_seal]);
+            aarch64: [vg_aes_gcm_siv_seal_aes]);
         let mut work = MaybeUninit::<[u64; WORK]>::uninit();
         // SAFETY: `self.schedule` is the key schedule `vg_aes_expand_key`
         // wrote for `self.rounds` (10 or 14) rounds, valid for reads of 240
@@ -188,7 +197,7 @@ impl AesGcmSiv {
                 vg_aes_gcm_siv_open_aesni_vpclmul, vg_aes_gcm_siv_open_vaes_vpclmul,
                 vg_aes_gcm_siv_open_vaes_vpclmul_avx512],
             avx: [vg_aes_gcm_siv_open_aesni_pclmul_avx],
-            aarch64: [vg_aes_gcm_siv_open]);
+            aarch64: [vg_aes_gcm_siv_open_aes]);
         let mut work = MaybeUninit::<[u64; WORK]>::uninit();
         let w = work.as_mut_ptr().cast::<u64>();
         // SAFETY: `work` is valid for writes of 512 words.
@@ -241,6 +250,11 @@ unsafe fn first_block(work: &MaybeUninit<[u64; WORK]>) -> [u8; 16] {
 mod tests {
     use super::{AesGcmSiv, Error, MAX_LEN, check};
     use crate::aes_gcm::{Backend, instance};
+    #[cfg(target_arch = "aarch64")]
+    use crate::arch::aes_gcm_siv::{
+        VG_AES_GCM_SIV_OPEN_AES_FEATURES, VG_AES_GCM_SIV_SEAL_AES_FEATURES,
+    };
+    #[cfg(target_arch = "x86_64")]
     use crate::arch::aes_gcm_siv::{
         VG_AES_GCM_SIV_OPEN_AESNI_FEATURES, VG_AES_GCM_SIV_OPEN_AESNI_PCLMUL_AVX_FEATURES,
         VG_AES_GCM_SIV_OPEN_AESNI_PCLMUL_FEATURES, VG_AES_GCM_SIV_OPEN_AESNI_VPCLMUL_FEATURES,
@@ -267,14 +281,14 @@ mod tests {
                     VG_AES_GCM_SIV_SEAL_AESNI_VPCLMUL_FEATURES, VG_AES_GCM_SIV_SEAL_VAES_VPCLMUL_FEATURES,
                     VG_AES_GCM_SIV_SEAL_VAES_VPCLMUL_AVX512_FEATURES],
                 avx: [VG_AES_GCM_SIV_SEAL_AESNI_PCLMUL_AVX_FEATURES],
-                aarch64: [NONE]);
+                aarch64: [VG_AES_GCM_SIV_SEAL_AES_FEATURES]);
             let open = instance!(b, NONE,
                 x86_64: [VG_AES_GCM_SIV_OPEN_AESNI_FEATURES, VG_AES_GCM_SIV_OPEN_PCLMUL_FEATURES, VG_AES_GCM_SIV_OPEN_AESNI_PCLMUL_FEATURES],
                 vaes: [VG_AES_GCM_SIV_OPEN_VAES_FEATURES, VG_AES_GCM_SIV_OPEN_VPCLMUL_FEATURES, VG_AES_GCM_SIV_OPEN_VAES_PCLMUL_FEATURES,
                     VG_AES_GCM_SIV_OPEN_AESNI_VPCLMUL_FEATURES, VG_AES_GCM_SIV_OPEN_VAES_VPCLMUL_FEATURES,
                     VG_AES_GCM_SIV_OPEN_VAES_VPCLMUL_AVX512_FEATURES],
                 avx: [VG_AES_GCM_SIV_OPEN_AESNI_PCLMUL_AVX_FEATURES],
-                aarch64: [NONE]);
+                aarch64: [VG_AES_GCM_SIV_OPEN_AES_FEATURES]);
             assert!(need.contains(seal) && need.contains(open), "{b:?}");
         }
     }
