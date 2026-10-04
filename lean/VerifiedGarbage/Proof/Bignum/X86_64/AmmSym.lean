@@ -183,7 +183,7 @@ theorem SRel.set {σ : Sym} {s₀ s : State} (h : SRel σ s₀ s) {d : XReg} {t 
 
 /-- The bytes the code may load: `lim b` bytes from each base `b`. -/
 def Ctx (lim : Reg → Nat) (s₀ : State) : Prop :=
-  ∀ b d n, d + n ≤ lim b → InRegions (s₀.rd ++ s₀.wr) (s₀.gpr b + BitVec.ofNat 64 d) n
+  ∀ b d n, 0 < n → d + n ≤ lim b → InRegions (s₀.rd ++ s₀.wr) (s₀.gpr b + BitVec.ofNat 64 d) n
 
 theorem baseOff_ok {m : MemOp} {b : Reg} {o : Nat} (h : baseOff m = some (b, o)) (s : State) :
     s.ea m = s.gpr b + BitVec.ofNat 64 o := by
@@ -265,7 +265,7 @@ theorem sstep_ok {lim : Reg → Nat} {s₀ : State} (hc : Ctx lim s₀) {σ σ' 
     cases e
     have ea : s.ea m = s₀.gpr b + BitVec.ofNat 64 d := by rw [baseOff_ok hbo, h.gpr hlt.1]
     have hin : InRegions (s.rd ++ s.wr) (s₀.gpr b + BitVec.ofNat 64 d) 8 := by
-      rw [h.rd, h.wr]; exact hc b d 8 hlt.2
+      rw [h.rd, h.wr]; exact hc b d 8 (by decide) hlt.2
     refine ⟨s.setReg .rax (s.mem.readW (s₀.gpr b + BitVec.ofNat 64 d) 64), ?_, ?_⟩
     · simp only [exec, readSrc, State.load64, ea, hin, ite_true, Option.map_some]
     · refine ⟨fun r k hk => h.reg r k hk, ?_, ?_⟩
@@ -279,7 +279,7 @@ theorem sstep_ok {lim : Reg → Nat} {s₀ : State} (hc : Ctx lim s₀) {σ σ' 
     cases e
     have ea : s.ea m = s₀.gpr b + BitVec.ofNat 64 o := by rw [baseOff_ok hbo, h.gpr hlt.1]
     have hin : InRegions (s.rd ++ s.wr) (s₀.gpr b + BitVec.ofNat 64 o) 32 := by
-      rw [h.rd, h.wr]; exact hc b o 32 hlt.2
+      rw [h.rd, h.wr]; exact hc b o 32 (by decide) hlt.2
     let v := s.mem.readW (s₀.gpr b + BitVec.ofNat 64 o) 256
     refine ⟨s.setV .l256 d (madd52 hh (s.lane d 0) (s.lane a 0) (v.extractLsb' 0 128))
       (madd52 hh (s.lane d 1) (s.lane a 1) (v.extractLsb' 128 128)),
