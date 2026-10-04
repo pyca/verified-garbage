@@ -609,10 +609,10 @@ theorem absorb_ct (v : Permutation) : ConstantTime isa Proof.Sha3.absorbAArch64.
     (fun _ _ _ _ hp => agree₀ hp) hhint
 
 theorem absorb_verified (v : Permutation) :
-    Verified AArch64.target (Impl.Sha3.AArch64.Stream.absorbWith v.callee) (Spec.Sha3.absorbContract AArch64.abi
+    Verified AArch64.target (Impl.Sha3.AArch64.Stream.absorbWith v.callee) (Spec.Sha3.absorbScratchContract AArch64.abi
       16) :=
   Verified.of_correct (absorb_correct v) (absorb_ct v) (by
-    sig_implies [Spec.Sha3.absorbContract, Spec.Sha3.absorbSig, Proof.Sha3.absorbAArch64,
+    sig_implies [Spec.Sha3.absorbScratchContract, Spec.Sha3.absorbScratchSig, Spec.Sha3.absorbPre, Spec.Sha3.absorbPost, Proof.Sha3.absorbAArch64,
       AArch64.abi, AArch64.argRegs] [Proof.Sha3.AArch64.Stream.Absorb.sat] using
       Proof.Sha3.AArch64.Stream.Absorb.sat)
 

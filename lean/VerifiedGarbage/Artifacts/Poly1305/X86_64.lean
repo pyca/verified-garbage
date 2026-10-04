@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.Poly1305.X86_64.Init
 import VerifiedGarbage.Proof.Poly1305.X86_64.Lit
 import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Blocks
 import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.Blocks
+import VerifiedGarbage.Proof.Poly1305.X86_64.Frame
 
 /-!
 # Poly1305 (RFC 8439 §2.5) on x86-64
@@ -62,8 +63,16 @@ def artifacts : List Artifact := [
   { Spec.Poly1305.finalizeApi with
     target := X86_64.target
     doc := Spec.Poly1305.finalizeApi.doc
+    code := Impl.StackScratch.X86_64.withStackScratch 136 .rcx Impl.Poly1305.X86_64.finalize
+    contract := Spec.Poly1305.finalizeContract X86_64.abi 136
+    stack := 136
+    verified := Proof.Poly1305.X86_64.finalize_framed
+    spSafe := Code.all_of_allInstrs (by lit_decide) },
+  { Spec.Poly1305.finalizeScratchApi with
+    target := X86_64.target
+    doc := Spec.Poly1305.finalizeScratchApi.doc
     code := Impl.Poly1305.X86_64.finalize
-    contract := Spec.Poly1305.finalizeContract X86_64.abi
+    contract := Spec.Poly1305.finalizeScratchContract X86_64.abi
     verified := Proof.Poly1305.X86_64.finalize_verified
     spSafe := Code.all_of_allInstrs (by lit_decide) }]
 

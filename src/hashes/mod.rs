@@ -58,10 +58,10 @@ pub trait HashFunction: Clone {
 ///
 /// * `init(state: *mut [u8; STATE])` makes `state` represent the empty
 ///   message;
-/// * `update(state, count: u64, data: *const u8, len: usize, scratch: *mut [u64; SCRATCH])`
+/// * `update(state, count: u64, data: *const u8, len: usize)`
 ///   absorbs `len` bytes into a state representing a message of `count`
 ///   bytes;
-/// * `finalize(state, count: u64, out: *mut [u8; FINAL], scratch)` writes
+/// * `finalize(state, count: u64, out: *mut [u8; FINAL])` writes
 ///   the final hash value, whose first `OUTPUT` bytes are the digest.
 ///
 /// `backends` names the enum of the implementations of `update` and
@@ -79,7 +79,6 @@ macro_rules! streaming_hash {
         $(#[$doc:meta])*
         $name:ident {
             state: $state:literal,
-            scratch: $scratch:literal,
             block: $block:literal,
             output: $output:literal,
             final_hash: $final:literal,
@@ -128,13 +127,12 @@ macro_rules! streaming_hash {
                 count: u64,
                 data: *const u8,
                 len: usize,
-                scratch: &mut [u64; $scratch],
             ) {
                 // SAFETY: the caller's obligations.
                 unsafe {
                     match self {
-                        Self::$base => $update(state, count, data, len, scratch),
-                        $($(#[$attr])* Self::$variant => $vupdate(state, count, data, len, scratch),)*
+                        Self::$base => $update(state, count, data, len),
+                        $($(#[$attr])* Self::$variant => $vupdate(state, count, data, len),)*
                     }
                 }
             }
@@ -150,13 +148,12 @@ macro_rules! streaming_hash {
                 state: &mut [u8; $state],
                 count: u64,
                 out: &mut [u8; $final],
-                scratch: &mut [u64; $scratch],
             ) {
                 // SAFETY: the caller's obligations.
                 unsafe {
                     match self {
-                        Self::$base => $finalize(state, count, out, scratch),
-                        $($(#[$attr])* Self::$variant => $vfinalize(state, count, out, scratch),)*
+                        Self::$base => $finalize(state, count, out),
+                        $($(#[$attr])* Self::$variant => $vfinalize(state, count, out),)*
                     }
                 }
             }
@@ -217,11 +214,9 @@ macro_rules! streaming_hash {
                     .length
                     .checked_add(data.len() as u64)
                     .expect("message too long");
-                let mut scratch = [0u64; $scratch];
                 // SAFETY: `self.state` is valid for reads and writes of its
-                // size, `data` for reads of `data.len()` bytes and `scratch`
-                // for reads and writes of its size; they are distinct
-                // objects, so they do not overlap each other, the return
+                // size and `data` for reads of `data.len()` bytes; they are
+                // distinct objects, so they do not overlap each other, the return
                 // address (on x86-64 and x86) or the arguments on the stack
                 // (on 32-bit ARM and x86), and do not wrap around the end of
                 // the address space. `self.length` is the length of the
@@ -233,7 +228,6 @@ macro_rules! streaming_hash {
                         self.length,
                         data.as_ptr(),
                         data.len(),
-                        &mut scratch,
                     )
                 };
                 self.length = length;
@@ -242,10 +236,9 @@ macro_rules! streaming_hash {
             /// Pads the message and returns its digest.
             pub fn finalize(mut self) -> [u8; $output] {
                 let mut out = [0; $final];
-                let mut scratch = [0u64; $scratch];
                 // SAFETY: `self.state` is valid for reads and writes of its
-                // size, `out` for writes of its size and `scratch` for reads
-                // and writes of its size; they are distinct objects, so they
+                // size and `out` for writes of its size; they are distinct
+                // objects, so they
                 // do not overlap each other, the return address (on x86-64
                 // and x86) or the arguments on the stack (on 32-bit ARM and
                 // x86), and do not wrap around the end of the address space.
@@ -254,7 +247,7 @@ macro_rules! streaming_hash {
                 // this CPU's features.
                 unsafe {
                     self.backend
-                        .finalize(&mut self.state, self.length, &mut out, &mut scratch)
+                        .finalize(&mut self.state, self.length, &mut out)
                 };
                 let mut digest = [0; $output];
                 digest.copy_from_slice(&out[..$output]);

@@ -548,7 +548,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>❌</td>
+<td>✅ AES-NI, VAES, AVX2</td>
 
 <td>❌</td>
 
@@ -946,6 +946,22 @@ yours to keep:
 
 <tr>
 
+<td>ECDH P-384</td>
+
+<td>✅</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+</tr>
+
+<tr>
+
 <td>X25519</td>
 
 <td>✅</td>
@@ -1023,6 +1039,22 @@ yours to keep:
 <td>✅ SHA extensions, SHA512, AVX2, BMI1, BMI2</td>
 
 <td>✅ SHA extensions, SHA extensions</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+</tr>
+
+<tr>
+
+<td>ECDSA P-384</td>
+
+<td>✅</td>
+
+<td>❌</td>
+
+<td>❌</td>
 
 <td>❌</td>
 

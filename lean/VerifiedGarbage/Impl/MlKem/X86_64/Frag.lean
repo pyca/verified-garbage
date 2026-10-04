@@ -78,19 +78,19 @@ def kzero : List Instr := .mov32 .rax (.imm 0) :: zeroSt .rbx 0
 def kabs (src : Ptr) (len rate pos : Nat) : Prog isa :=
   .seq (.block (lea .rdi (sc 0) ++ [.mov32 .rsi (.imm (BitVec.ofNat 32 rate)), .mov32 .rdx (.imm (BitVec.ofNat 32 pos))] ++
       lea .rcx src ++ [.mov32 .r8 (.imm (BitVec.ofNat 32 len))] ++ lea .r9 (sc 200)))
-    (.call "vg_keccak_absorb" Impl.Sha3.X86_64.Stream.absorb)
+    (.call "vg_keccak_absorb_scratch" Impl.Sha3.X86_64.Stream.absorb)
 
 /-- Pad, at position `pos`, with the suffix `suffix`. -/
 def kpad (rate pos suffix : Nat) : Prog isa :=
   .seq (.block (lea .rdi (sc 0) ++ [.mov32 .rsi (.imm (BitVec.ofNat 32 rate)), .mov32 .rdx (.imm (BitVec.ofNat 32 pos)),
       .mov32 .rcx (.imm (BitVec.ofNat 32 suffix))] ++ lea .r8 (sc 200)))
-    (.call "vg_keccak_pad" Impl.Sha3.X86_64.Stream.pad)
+    (.call "vg_keccak_pad_scratch" Impl.Sha3.X86_64.Stream.pad)
 
 /-- Squeeze `len` bytes from position 0 to `dst`. -/
 def ksqz (rate : Nat) (dst : Ptr) (len : Nat) : Prog isa :=
   .seq (.block (lea .rdi (sc 0) ++ [.mov32 .rsi (.imm (BitVec.ofNat 32 rate)), .mov32 .rdx (.imm 0)] ++
       lea .rcx dst ++ [.mov32 .r8 (.imm (BitVec.ofNat 32 len))] ++ lea .r9 (sc 200)))
-    (.call "vg_keccak_squeeze" Impl.Sha3.X86_64.Stream.squeeze)
+    (.call "vg_keccak_squeeze_scratch" Impl.Sha3.X86_64.Stream.squeeze)
 
 /-- Absorb the pieces `ps`, from position `pos` of the block. -/
 def absAll (rate : Nat) : List (Ptr × Nat) → Nat → Prog isa

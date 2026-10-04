@@ -305,7 +305,7 @@ theorem nil_regs {P : State → State → Prop} : ∀ x y, P x y → ∀ r ∈ (
   fun _ _ _ _ h => absurd h List.not_mem_nil
 
 theorem absorb_ct' : RelCT isa (Rel2 sampleK.pre sampleK.pub I1)
-    (.call "vg_keccak_absorb" Impl.Sha3.X86_64.Stream.absorb) (Rel2 sampleK.pre sampleK.pub I2) :=
+    (.call "vg_keccak_absorb_scratch" Impl.Sha3.X86_64.Stream.absorb) (Rel2 sampleK.pre sampleK.pub I2) :=
   relInv (fun σ s hp h => callB_ok hp h) (RelCT.callEx Proof.Sha3.X86_64.Stream.Absorb.absorb_correct
     Proof.Sha3.X86_64.Stream.Absorb.absorb_ct fun s₁ s₂ ⟨σ₁, σ₂, p₁, p₂, hq, h₁, h₂⟩ => by
       refine ⟨_, _, _, _, absorb_pre h₁.args, absorb_pre h₂.args, ?_, (covA p₁ h₁.env).1, (covA p₁ h₁.env).2,
@@ -318,7 +318,7 @@ theorem absorb_ct' : RelCT isa (Rel2 sampleK.pre sampleK.pub I1)
         h₁.args.r9, h₂.args.r9, pub_scr hq, pub_at hq, pub_sd hq, (regs_pub hq h₁.env h₂.env).2, and_self])
 
 theorem pad_ct' : RelCT isa (Rel2 sampleK.pre sampleK.pub I3)
-    (.call "vg_keccak_pad" Impl.Sha3.X86_64.Stream.pad) (Rel2 sampleK.pre sampleK.pub I4) :=
+    (.call "vg_keccak_pad_scratch" Impl.Sha3.X86_64.Stream.pad) (Rel2 sampleK.pre sampleK.pub I4) :=
   relInv (fun σ s hp h => callD_ok hp h) (RelCT.callEx Proof.Sha3.X86_64.Stream.Pad.pad_correct
     Proof.Sha3.X86_64.Stream.Pad.pad_ct fun s₁ s₂ ⟨σ₁, σ₂, p₁, p₂, hq, h₁, h₂⟩ => by
       refine ⟨_, _, _, _, pad_pre h₁.args, pad_pre h₂.args, ?_, (covP p₁ h₁.env).1, (covP p₁ h₁.env).2,
@@ -330,7 +330,7 @@ theorem pad_ct' : RelCT isa (Rel2 sampleK.pre sampleK.pub I3)
         (regs_pub hq h₁.env h₂.env).2, and_self])
 
 theorem squeeze_ct' {len : Nat} (hl : len ≤ 840) : RelCT isa (Rel2 sampleK.pre sampleK.pub fun σ s => I5 σ len s)
-    (.call "vg_keccak_squeeze" Impl.Sha3.X86_64.Stream.squeeze) (Rel2 sampleK.pre sampleK.pub fun σ s => I6 σ len s) :=
+    (.call "vg_keccak_squeeze_scratch" Impl.Sha3.X86_64.Stream.squeeze) (Rel2 sampleK.pre sampleK.pub fun σ s => I6 σ len s) :=
   relInv (fun σ s hp h => callF_ok hp hl h) (RelCT.callEx Proof.Sha3.X86_64.Stream.Squeeze.squeeze_correct
     Proof.Sha3.X86_64.Stream.Squeeze.squeeze_ct fun s₁ s₂ ⟨σ₁, σ₂, p₁, p₂, hq, h₁, h₂⟩ => by
       refine ⟨_, _, _, _, squeeze_pre h₁.args, squeeze_pre h₂.args, ?_, (covS p₁ h₁.env hl).1,

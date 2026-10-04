@@ -308,7 +308,7 @@ theorem repr_nil {mem : Mem} {p : Addr} {rate : Nat} (h : stateAt mem p = Spec.S
   rw [Proof.Sha3.rep_nil, h]
 
 theorem call1_ok {rate : Nat} {s : State} (h : J1 rate P σ s) :
-    WP isa (.call "vg_keccak_absorb" Impl.Sha3.X86_64.Stream.absorb) s (J2 rate P σ) := by
+    WP isa (.call "vg_keccak_absorb_scratch" Impl.Sha3.X86_64.Stream.absorb) s (J2 rate P σ) := by
   refine absorb_call h.args (covA hp h.env).1 (covA hp h.env).2 fun s' hrd hwr hcs hf hr hax =>
     ⟨Env.call hp h.env subA hrd hwr hcs hf, ?_, ?_⟩
   · have := hr [] (repr_nil h.zero) rfl
@@ -349,7 +349,7 @@ theorem covP {s : State} (he : Env P σ s) :
     ⟨_, List.mem_append_right _ h.choose_spec.1, h.choose_spec.2⟩), (covA hp he).2⟩
 
 theorem call2_ok {rate : Nat} {s : State} (h : J3 rate P σ s) :
-    WP isa (.call "vg_keccak_pad" Impl.Sha3.X86_64.Stream.pad) s (J4 rate P σ) := by
+    WP isa (.call "vg_keccak_pad_scratch" Impl.Sha3.X86_64.Stream.pad) s (J4 rate P σ) := by
   obtain ⟨he, hrep, hargs, hcx⟩ := h
   refine pad_call hargs (covP hp he).1 (covP hp he).2 fun s' hrd hwr hcs hf hst =>
     ⟨Env.call hp he subA hrd hwr hcs hf, ?_⟩
@@ -394,7 +394,7 @@ theorem covS {outlen : Nat} (ho : 840 + outlen ≤ 2024) {s : State} (he : Env P
     exacts [⟨0, (add_ofNat_zero _).symm, by simp⟩, ⟨840, rfl, by simp; omega⟩, ⟨200, rfl, by simp⟩]
 
 theorem call3_ok {rate outlen : Nat} (ho : 840 + outlen ≤ 2024) {s : State} (h : J5 rate outlen P σ s) :
-    WP isa (.call "vg_keccak_squeeze" Impl.Sha3.X86_64.Stream.squeeze) s (J6 rate outlen P σ) := by
+    WP isa (.call "vg_keccak_squeeze_scratch" Impl.Sha3.X86_64.Stream.squeeze) s (J6 rate outlen P σ) := by
   obtain ⟨h, hargs⟩ := h
   have cov := covS hp ho h.env
   have sub : ∀ r ∈ [(⟨P.scr, 200⟩ : Region), ⟨P.at' 840, outlen⟩, ⟨P.at' 200, 640⟩],

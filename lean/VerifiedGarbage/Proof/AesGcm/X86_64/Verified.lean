@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.AesGcm.X86_64.StreamCryptCT
 import VerifiedGarbage.Proof.AesGcm.X86_64.StreamVerifyCT
 import VerifiedGarbage.Proof.AesGcm.X86_64.OpenCT
 import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.AesGcm.Scratch
 
 /-!
 # AES-GCM on x86-64: `Verified`
@@ -205,9 +206,9 @@ def initSat : State where
   wr := [⟨0x2000, 256⟩, ⟨0x3000, 2560⟩]
 
 theorem init_verified (v : GcmImpl) :
-    Verified X86_64.target (init v.callees) (Spec.Gcm.initContract X86_64.abi 8) :=
+    Verified X86_64.target (init v.callees) (Proof.AesGcm.initScratchContract X86_64.abi 8) :=
   Verified.of_correct (init_correct v) (init_ct v) (by
-    sig_implies [Spec.Gcm.initContract, Spec.Gcm.initSig, Proof.AesGcm.initX86_64, X86_64.abi, Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.stk,
+    sig_implies [Proof.AesGcm.initScratchContract, Proof.AesGcm.initScratchSig, Spec.Gcm.initPre, Spec.Gcm.initPost, Proof.AesGcm.initX86_64, X86_64.abi, Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.stk,
       Proof.AesGcm.ret, Proof.AesGcm.rounds, X86_64.stackArg, X86_64.stackArgAddr,
       List.getD, List.range, List.range.loop, VG.X86_64.below,
       X86_64.argRegs] [initSat] using initSat)
@@ -225,9 +226,9 @@ def siSat : State where
   wr := [⟨0x3000, 80⟩, ⟨0x4000, 2560⟩]
 
 theorem streamInit_verified (v : GcmImpl) :
-    Verified X86_64.target (streamInit v.callees) (Spec.Gcm.streamInitContract X86_64.abi 8) :=
+    Verified X86_64.target (streamInit v.callees) (Proof.AesGcm.streamInitScratchContract X86_64.abi 8) :=
   Verified.of_correct (streamInit_correct v) (streamInit_ct v) (by
-    sig_implies [Spec.Gcm.streamInitContract, Spec.Gcm.streamInitSig, Proof.AesGcm.streamInitX86_64, X86_64.abi, Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.stk,
+    sig_implies [Proof.AesGcm.streamInitScratchContract, Proof.AesGcm.streamInitScratchSig, Spec.Gcm.streamInitPost, Proof.AesGcm.streamInitX86_64, X86_64.abi, Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.stk,
       Proof.AesGcm.ret, Proof.AesGcm.rounds, X86_64.stackArg, X86_64.stackArgAddr,
       List.getD, List.range, List.range.loop, VG.X86_64.below,
       X86_64.argRegs] [siSat] using siSat)
@@ -245,9 +246,9 @@ def saSat : State where
   wr := [⟨0x3000, 80⟩, ⟨0x4000, 2560⟩]
 
 theorem streamAad_verified (v : GcmImpl) :
-    Verified X86_64.target (streamAad v.callees) (Spec.Gcm.streamAadContract X86_64.abi 8) :=
+    Verified X86_64.target (streamAad v.callees) (Proof.AesGcm.streamAadScratchContract X86_64.abi 8) :=
   Verified.of_correct (streamAad_correct v) (streamAad_ct v) (by
-    sig_implies [Spec.Gcm.streamAadContract, Spec.Gcm.streamAadSig, Proof.AesGcm.streamAadX86_64, X86_64.abi, Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.stk,
+    sig_implies [Proof.AesGcm.streamAadScratchContract, Proof.AesGcm.streamAadScratchSig, Spec.Gcm.streamAadPost, Proof.AesGcm.streamAadX86_64, X86_64.abi, Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.stk,
       Proof.AesGcm.ret, Proof.AesGcm.rounds, X86_64.stackArg, X86_64.stackArgAddr,
       List.getD, List.range, List.range.loop, VG.X86_64.below,
       X86_64.argRegs] [saSat] using saSat)

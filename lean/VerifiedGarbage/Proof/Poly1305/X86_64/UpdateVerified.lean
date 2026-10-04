@@ -1,6 +1,7 @@
 import VerifiedGarbage.Proof.Poly1305.X86_64.UpdateCall
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+import VerifiedGarbage.Proof.Poly1305.Scratch
 
 /-!
 # Poly1305 on x86-64: `update`, constant time and `Verified`
@@ -154,21 +155,21 @@ def updateSat : State where
   wr := [⟨0x1000, 128⟩, ⟨0x5000, 128⟩]
 
 theorem update_verified (v : BlocksImpl) :
-    Verified X86_64.target (update v.name v.code) (Spec.Poly1305.updateContract X86_64.abi 24) :=
+    Verified X86_64.target (update v.name v.code) (Proof.Poly1305.updateScratchContract X86_64.abi 24) :=
   Verified.of_correct (update_ok v) (update_ct v)
     { pre := by
-        sig_implies_pre [Spec.Poly1305.updateContract, Spec.Poly1305.updateSig,
+        sig_implies_pre [Proof.Poly1305.updateScratchContract, Proof.Poly1305.updateScratchSig, Spec.Poly1305.updatePost,
           Proof.Poly1305.updateX86_64, X86_64.abi, X86_64.argRegs]
       post := by
         intro s s' _ h
-        sig_eval [Spec.Poly1305.updateContract, Spec.Poly1305.updateSig, X86_64.abi, X86_64.argRegs]
+        sig_eval [Proof.Poly1305.updateScratchContract, Proof.Poly1305.updateScratchSig, Spec.Poly1305.updatePost, X86_64.abi, X86_64.argRegs]
         intro key msg hb hc
         exact h key msg hb (count_mod hc)
       pub := by
-        sig_implies_pub [Spec.Poly1305.updateContract, Spec.Poly1305.updateSig,
+        sig_implies_pub [Proof.Poly1305.updateScratchContract, Proof.Poly1305.updateScratchSig, Spec.Poly1305.updatePost,
           Proof.Poly1305.updateX86_64, X86_64.abi, X86_64.argRegs]
       sat := by
-        sig_implies_sat [Spec.Poly1305.updateContract, Spec.Poly1305.updateSig, X86_64.abi,
+        sig_implies_sat [Proof.Poly1305.updateScratchContract, Proof.Poly1305.updateScratchSig, Spec.Poly1305.updatePost, X86_64.abi,
           X86_64.argRegs, Proof.Poly1305.X86_64.updateSat]
           [Proof.Poly1305.X86_64.updateSat] using Proof.Poly1305.X86_64.updateSat }
 
