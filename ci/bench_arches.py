@@ -105,9 +105,11 @@ PLATFORMS = {
 # `_aesni_pclmul_avx` and the instances with VAES or VPCLMULQDQ alone or
 # paired with the other's 128-bit instruction, which a runner with both never
 # chooses, and with both in 256-bit registers alone, which a runner with
-# AVX512BW never chooses; on AArch64, ChaCha20's `_neon` instances,
-# which the SVE2 runner never chooses; no runner has the SHA512 extension,
-# whose variants only ci.yml tests, under SDE).
+# AVX512BW never chooses; Argon2 with G's AVX-512 code and BLAKE2b's
+# baseline code, which a runner with AVX2 never chooses; on AArch64,
+# ChaCha20's `_neon` instances, which the SVE2 runner never chooses; no
+# runner has the SHA512 extension, whose variants only ci.yml tests, under
+# SDE).
 CPU_FEATURES = {
     "x86_64": [
         "avx,avx2,bmi1,bmi2,adx",
@@ -123,6 +125,7 @@ CPU_FEATURES = {
         "aes,avx,avx2,pclmulqdq,ssse3,vaes",
         "aes,avx,avx2,pclmulqdq,ssse3,vpclmulqdq",
         "aes,avx,avx2,pclmulqdq,ssse3,vaes,vpclmulqdq",
+        "avx,avx512f",
         "none",
     ],
     "aarch64": ["neon", "sha3", "none"],
