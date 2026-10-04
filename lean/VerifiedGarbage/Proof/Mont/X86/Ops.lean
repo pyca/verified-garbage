@@ -135,4 +135,157 @@ theorem mul_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M 
       show 64 * M.n = 32 * N by omega, ← O₂.val32 (d := a) (by omega) (by omega),
       ← O₂.val32 (d := b) (by omega) (by omega), Nat.mod_mul_mod, Nat.mul_comm, hU, Nat.add_mul_mod_self_right]
 
+/-- `[o] = [a] + [b] mod m`. -/
+theorem add_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M : Mod} {m : Nat}
+    (hM : ModOk M size m s.mem base) {acc o a b : Nat} (hL : OpLay M size acc o a b)
+    (hAB : wordsVal s.mem base a M.n + wordsVal s.mem base b M.n < 2 * m) :
+    WP isa (.block (add M acc o a b)) s fun s' => OpKeep M base acc o s s' ∧
+      wordsVal s'.mem base o M.n = (wordsVal s.mem base a M.n + wordsVal s.mem base b M.n) % m := by
+  have hn := hs.nowrap
+  obtain ⟨N, hNw⟩ : ∃ N, words M = N := ⟨_, rfl⟩
+  have hN2 : N = 2 * M.n := hNw ▸ rfl
+  have hacc : accLen M = 4 * (2 * N + 1) := by rw [accLen, hNw]
+  have := hL.acc_le; have := hL.o_le; have := hL.a_le; have := hL.b_le; have := hL.acc_o; have := hL.acc_a
+  have := hL.acc_b; have := hL.acc_mo; have := hL.acc_tmp; have := hL.o_tmp
+  have := hM.mo; have := hM.tmp; have := hM.sep; have := hM.n0
+  obtain ⟨k, hk⟩ : ∃ k, N = k + 1 := ⟨N - 1, by omega⟩
+  simp only [add, chain_eq, hNw, hk, List.append_assoc, List.cons_append, List.nil_append]
+  refine WP.block_append (WP.mono (chainAdd_ok hs (acc := acc) (a := a) (b := b) k (by omega) (by omega)
+    (by omega) (by omega) (by omega)) fun s₁ ⟨O₁, ⟨c, hc, V₁⟩, K₁⟩ => ?_)
+  have hs₁ := hs.of_keeps K₁ (by decide)
+  refine wp_movS rfl fun s₂ u₂ cf₂ => ?_
+  refine wp_adcS rfl (by rw [cf₂]; exact hc) fun s₃ u₃ _ => ?_
+  have k₃ : Keeps [.eax] s s₃ := (K₁.widen u₂.keeps).widen u₃.keeps
+  have hs₃ := hs.of_keeps k₃ (by decide)
+  refine wp_storeS (hs₃.ea (d := acc + 4 * (k + 1)) (by omega))
+    (hs₃.write (d := acc + 4 * (k + 1)) (n := 4) (by omega)) fun s₄ m₄ => ?_
+  have hs₄ := hs₃.of_keeps (m₄.keeps []) (by decide)
+  have O₄ : Outside base acc (4 * (k + 1) + 4) s.mem s₄.mem := by
+    rw [m₄.mem, u₃.mem, u₂.mem]
+    exact (O₁.mono (Nat.le_refl _) (by omega)).trans
+      ((writeW32_outside _ _ _ (by omega)).mono (by omega) (by omega))
+  have hsum : val32 s₄.mem base acc (k + 1 + 1) =
+      wordsVal s.mem base a M.n + wordsVal s.mem base b M.n := by
+    rw [val32_succ, m₄.mem, u₃.mem, u₂.mem, (writeW32_outside _ _ _ (by omega)).val32 (by omega) (by omega),
+      w32_write_self, u₃.gpr, u₂.gpr, wordsVal_eq_val32, wordsVal_eq_val32, ← hN2, hk, ← V₁]
+    have : ((0 : BitVec 32) + 0 + (BitVec.ofBool c).setWidth 32).toNat = c.toNat := by cases c <;> rfl
+    rw [this]
+  have hm₄ : val32 s₄.mem base M.mo (k + 1) = m := by
+    rw [O₄.val32 (by omega) (by omega), ← hk, hN2, ← wordsVal_eq_val32]; exact hM.val
+  refine WP.mono (csub_ok hs₄ (hNw.trans hk) (src := acc) (o := o) (by omega) (by omega) (by omega) (by omega)
+    (by omega) (by omega) (by omega) (by omega) (by omega) hm₄ (by rw [hsum]; exact hAB))
+    fun u ⟨O, V, K⟩ => ⟨?_, ?_⟩
+  · refine OpKeep.of (((k₃.mono (rs' := clob) (by decide)).widen (m₄.keeps [])).widen K) (by decide) ?_
+    have O₄' : Outside base acc (accLen M) s.mem s₄.mem := O₄.mono (Nat.le_refl _) (by omega)
+    refine (Outs.of_outside O₄' (by simp)).trans ?_
+    rw [show 4 * (k + 1) = 8 * M.n by omega] at O
+    exact O.mono (by simp)
+  · rw [wordsVal_eq_val32, ← hN2, hk, V, hsum]
+
+/-- The first `k` words of `masked`. -/
+def maskK (mo tmp k : Nat) : List Instr :=
+  (List.range k).flatMap fun j =>
+    [.mov .edx (.mem (sc (mo + 4 * j))), .alu .and .edx (.reg .eax), .store (sc (tmp + 4 * j)) .edx]
+
+theorem masked_eq (M : Mod) : masked M = maskK M.mo M.tmp (words M) := rfl
+
+theorem maskK_succ (mo tmp k : Nat) : maskK mo tmp (k + 1) = maskK mo tmp k ++
+    [.mov .edx (.mem (sc (mo + 4 * k))), .alu .and .edx (.reg .eax), .store (sc (tmp + 4 * k)) .edx] := by
+  simp only [maskK, List.range_succ, List.flatMap_append, List.flatMap_cons, List.flatMap_nil, List.append_nil]
+
+/-- `[tmp] = [mo]` if `c`, else zero, under the mask `eax`. -/
+theorem masked_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {mo tmp : Nat} (c : Bool)
+    (hm : s.gpr .eax = if c then BitVec.allOnes 32 else 0) :
+    ∀ k, mo + 4 * k ≤ size → tmp + 4 * k ≤ size → (tmp + 4 * k ≤ mo ∨ mo + 4 * k ≤ tmp) →
+    WP isa (.block (maskK mo tmp k)) s fun u =>
+      Outside base tmp (4 * k) s.mem u.mem ∧
+      val32 u.mem base tmp k = (if c then val32 s.mem base mo k else 0) ∧ Keeps [.edx] s u
+  | 0, _, _, _ => WP.block_nil ⟨VG.Proof.Mont.Outside.refl _ _ _ _, by cases c <;> rfl, Keeps.refl _ _⟩
+  | k + 1, hmo, htmp, hsep => by
+    have hn := hs.nowrap
+    rw [maskK_succ]
+    refine WP.block_append (WP.mono (masked_ok hs c hm k (by omega) (by omega) (by omega))
+      fun s₁ ⟨O₁, V₁, K₁⟩ => ?_)
+    have hs₁ := hs.of_keeps K₁ (by decide)
+    refine wp_movS (readSrc_sc hs₁ (d := mo + 4 * k) (by omega)) fun s₂ u₂ _ => ?_
+    refine wp_logicS (.inl rfl) rfl fun s₃ u₃ => ?_
+    have k₃ : Keeps [.edx] s s₃ := (K₁.widen u₂.keeps).widen u₃.keeps
+    have hs₃ := hs.of_keeps k₃ (by decide)
+    refine wp_storeS (hs₃.ea (d := tmp + 4 * k) (by omega)) (hs₃.write (d := tmp + 4 * k) (n := 4) (by omega))
+      fun s₄ m₄ => WP.block_nil ⟨?_, ?_, k₃.trans (m₄.keeps _)⟩
+    · rw [m₄.mem, u₃.mem, u₂.mem]
+      exact (O₁.mono (Nat.le_refl _) (by omega)).trans
+        ((writeW32_outside _ _ _ (by omega)).mono (by omega) (by omega))
+    · have heax : s₂.gpr .eax = s.gpr .eax := by rw [u₂.other _ (by decide), K₁.1 _ (by decide)]
+      have hw : w32 s₁.mem base (mo + 4 * k) = w32 s.mem base (mo + 4 * k) := O₁.w32 (by omega) (by omega)
+      rw [val32_succ, m₄.mem, u₃.mem, u₂.mem, (writeW32_outside _ _ _ (by omega)).val32 (by omega) (by omega),
+        w32_write_self, V₁, u₃.gpr, u₂.gpr, heax, hm]
+      cases c
+      · simp only [Bool.false_eq_true, ite_false]
+        rw [show (0 : BitVec 32) = 0#32 from rfl, BitVec.and_zero]; rfl
+      · simp only [ite_true, BitVec.and_allOnes, val32_succ]
+        rw [← hw]
+
+/-- `sbb eax, eax`: the mask of the borrow. -/
+theorem borrow_mask (x : BitVec 32) (c : Bool) :
+    x - x - (BitVec.ofBool c).setWidth 32 = if c then BitVec.allOnes 32 else 0 := by
+  rw [BitVec.sub_self]
+  cases c <;> decide
+
+theorem sub_arith {A B m X acc o : Nat} {c c' : Bool} (hA : A < m) (hB : B < m)
+    (hacc : acc < X) (ho : o < X) (h1 : acc + B = A + X * c.toNat)
+    (h2 : o + X * c'.toNat = acc + (if c then m else 0)) : o = (A + m - B) % m := by
+  rcases Nat.lt_or_ge A B with h | h
+  · rw [Nat.mod_eq_of_lt (by omega)]
+    cases c <;> cases c' <;> simp only [Bool.toNat_false, Bool.toNat_true, ite_true, Bool.false_eq_true,
+      ite_false, Nat.mul_zero, Nat.mul_one, Nat.add_zero] at h1 h2 <;> omega
+  · rw [Nat.mod_eq_sub_mod (by omega), Nat.mod_eq_of_lt (by omega)]
+    cases c <;> cases c' <;> simp only [Bool.toNat_false, Bool.toNat_true, ite_true, Bool.false_eq_true,
+      ite_false, Nat.mul_zero, Nat.mul_one, Nat.add_zero] at h1 h2 <;> omega
+
+/-- `[o] = [a] - [b] mod m`. -/
+theorem sub_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M : Mod} {m : Nat}
+    (hM : ModOk M size m s.mem base) {acc o a b : Nat} (hL : OpLay M size acc o a b)
+    (hA : wordsVal s.mem base a M.n < m) (hB : wordsVal s.mem base b M.n < m) :
+    WP isa (.block (sub M acc o a b)) s fun s' => OpKeep M base acc o s s' ∧
+      wordsVal s'.mem base o M.n = (wordsVal s.mem base a M.n + m - wordsVal s.mem base b M.n) % m := by
+  have hn := hs.nowrap
+  obtain ⟨N, hNw⟩ : ∃ N, words M = N := ⟨_, rfl⟩
+  have hN2 : N = 2 * M.n := hNw ▸ rfl
+  have hacc : accLen M = 4 * (2 * N + 1) := by rw [accLen, hNw]
+  have := hL.acc_le; have := hL.o_le; have := hL.a_le; have := hL.b_le; have := hL.acc_o; have := hL.acc_a
+  have := hL.acc_b; have := hL.acc_mo; have := hL.acc_tmp; have := hL.o_tmp
+  have := hM.mo; have := hM.tmp; have := hM.sep; have := hM.n0
+  obtain ⟨k, hk⟩ : ∃ k, N = k + 1 := ⟨N - 1, by omega⟩
+  simp only [sub, chain_eq, masked_eq, hNw, hk, List.append_assoc, List.cons_append, List.nil_append]
+  refine WP.block_append (WP.mono (chainSub_ok hs (acc := acc) (a := a) (b := b) k (by omega) (by omega)
+    (by omega) (by omega) (by omega)) fun s₁ ⟨O₁, ⟨c, hc, V₁⟩, K₁⟩ => ?_)
+  have hs₁ := hs.of_keeps K₁ (by decide)
+  refine wp_sbbS rfl hc fun s₂ u₂ _ => ?_
+  have k₂ : Keeps [.eax, .edx] s s₂ := (K₁.mono (by decide)).widen u₂.keeps
+  have hs₂ := hs.of_keeps k₂ (by decide)
+  have mask : s₂.gpr .eax = if c then BitVec.allOnes 32 else 0 := by rw [u₂.gpr, borrow_mask]
+  refine WP.block_append (WP.mono (masked_ok hs₂ c mask (k + 1) (mo := M.mo) (tmp := M.tmp) (by omega)
+    (by omega) (by omega)) fun s₃ ⟨O₃, V₃, K₃⟩ => ?_)
+  have k₃ : Keeps [.eax, .edx] s s₃ := k₂.widen K₃
+  have hs₃ := hs.of_keeps k₃ (by decide)
+  refine WP.mono (chainAdd_ok hs₃ (acc := o) (a := acc) (b := M.tmp) k (by omega) (by omega)
+    (by omega) (by omega) (by omega)) fun u ⟨O, ⟨c', _, V⟩, K⟩ => ⟨?_, ?_⟩
+  · refine OpKeep.of (k₃.widen K) (by decide) ?_
+    have O₁' : Outside base acc (accLen M) s.mem s₁.mem := O₁.mono (Nat.le_refl _) (by omega)
+    rw [u₂.mem] at O₃
+    rw [show 4 * (k + 1) = 8 * M.n by omega] at O₃ O
+    exact ((Outs.of_outside O₁' (by simp)).trans (Outs.of_outside O₃ (by simp))).trans
+      (Outs.of_outside O (by simp))
+  · have hacc₃ : val32 s₃.mem base acc (k + 1) = val32 s₁.mem base acc (k + 1) := by
+      rw [O₃.val32 (by omega) (by omega), u₂.mem]
+    have hmo : val32 s₁.mem base M.mo (k + 1) = m := by
+      rw [O₁.val32 (by omega) (by omega), ← hk, hN2, ← wordsVal_eq_val32]; exact hM.val
+    rw [hacc₃, V₃, u₂.mem, hmo] at V
+    have e : 2 * M.n = k + 1 := by omega
+    have hA' : val32 s.mem base a (k + 1) < m := by rw [← e, ← wordsVal_eq_val32]; exact hA
+    have hB' : val32 s.mem base b (k + 1) < m := by rw [← e, ← wordsVal_eq_val32]; exact hB
+    rw [wordsVal_eq_val32, wordsVal_eq_val32, wordsVal_eq_val32, e]
+    exact sub_arith hA' hB' (val32_lt _ _ _ _) (val32_lt _ _ _ _) V₁ V
+
 end VG.Proof.Mont.X86
