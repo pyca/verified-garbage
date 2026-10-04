@@ -1022,7 +1022,7 @@ yours to keep:
 
 <td>✅ SHA extensions, SHA512, AVX2, BMI1, BMI2</td>
 
-<td>❌</td>
+<td>✅ SHA extensions, SHA extensions</td>
 
 <td>❌</td>
 
