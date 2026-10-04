@@ -453,4 +453,77 @@ theorem resI_ok {t : State} {B : Addr} {Z w op oq a : Nat} {minv mp mq mk : BitV
   · rw [k₄.2.2, k₃.2.2, k₂.2.2, k₁.2.2]
   · exact (((k₁.trans k₂).trans k₃).trans k₄).mono (by simp [mmRegs])
 
+/-! ## `ifma` -/
+
+theorem ifma_eq : CrtIfma.ifma = (([.block (([.mov .rdx (.mem (hdr sWsQ))] : List Instr) ++ wsEndT ++
+      ([.mov .rdx (.mem (hdr sWsP)), .store (ws .rdx sIfma) .rax, .mov .rdx (.mem (hdr sWsQ)),
+        .store (ws .rdx sIfma) .rax, enterP] : List Instr))] : List (Prog isa)) ++ (CrtIfma.region 0 sDp sPlen ++
+      (([.block [leave, enterQ]] : List (Prog isa)) ++ CrtIfma.region 1 sDq sQlen))) ++
+    (([.block [.mov .rbx (.mem (hdr sIfma))], CrtIfma.vec] : List (Prog isa)) ++
+      (CrtIfma.result 1 ++ (([.block [leave, enterP]] : List (Prog isa)) ++
+        (CrtIfma.result 0 ++ ([.block [leave]] : List (Prog isa)))))) := by
+  simp only [CrtIfma.ifma, List.append_assoc, List.cons_append, List.nil_append]
+
+theorem ifmaA_mx : (seqs ((([.block (([.mov .rdx (.mem (hdr sWsQ))] : List Instr) ++ wsEndT ++
+      ([.mov .rdx (.mem (hdr sWsP)), .store (ws .rdx sIfma) .rax, .mov .rdx (.mem (hdr sWsQ)),
+        .store (ws .rdx sIfma) .rax, enterP] : List Instr))] : List (Prog isa)) ++ (CrtIfma.region 0 sDp sPlen ++
+      (([.block [leave, enterQ]] : List (Prog isa)) ++ CrtIfma.region 1 sDq sQlen))))).allInstrs
+      (fun i => !loadsMxcsr i) = true := by
+  decide +kernel
+
+theorem resI_mx : (seqs (CrtIfma.result 1 ++ (([.block [leave, enterP]] : List (Prog isa)) ++
+      (CrtIfma.result 0 ++ ([.block [leave]] : List (Prog isa)))))).allInstrs (fun i => !loadsMxcsr i) = true := by
+  decide +kernel
+
+/-- `ifma`: `q`'s result `C^dq mod q` in its `aY`, `p`'s `C^dp R_p` in its. -/
+theorem ifma_ok {s : State} {B : Addr} {Z w op oq a wp : Nat} {minv mp mq mk : BitVec 64} {P Q C : Nat}
+    {ep eq : Addr} {ebp ebq : List Byte} {K : Prop} (hs : Scr s B Z) (hdi : s.gpr .rdi = B)
+    (h : IPre s.mem B w op oq minv mp mq mk P Q ep eq ebp.length ebq.length) (hlo : slot w 8 ≤ op)
+    (hpq : op + slot 16 8 + tabBytes 16 ≤ oq) (ha : a = oq + slot 16 8 + tabBytes 16) (haZ : a + 2 * D + 8 ≤ Z)
+    (hwp : wp = 16) (hPo : P % 2 = 1) (hQo : Q % 2 = 1)
+    (hYp : wv s.mem (off B op) (slot 16 Public.aY) 16 < P) (hYq : wv s.mem (off B oq) (slot 16 Public.aY) 16 < Q)
+    (hXp : wv s.mem (off B op) (slot 16 aXc) 16 < P) (hXq : wv s.mem (off B oq) (slot 16 aXc) 16 < Q)
+    (vxp : K → wv s.mem (off B op) (slot 16 aXc) 16 % P = C * 2 ^ (64 * wp) % P)
+    (vxq : K → wv s.mem (off B oq) (slot 16 aXc) 16 % Q = C * 2 ^ (64 * wp) % Q)
+    (vyp : K → wv s.mem (off B op) (slot 16 Public.aY) 16 % P = 2 ^ (64 * wp) % P)
+    (vyq : K → wv s.mem (off B oq) (slot 16 Public.aY) 16 % Q = 2 ^ (64 * wp) % Q)
+    (hep : Src s B Z ep ebp) (heq : Src s B Z eq ebq) (hLp1 : 1 ≤ ebp.length) (hLp2 : ebp.length ≤ 128)
+    (hLq1 : 1 ≤ ebq.length) (hLq2 : ebq.length ≤ 128) :
+    WP isa (seqs CrtIfma.ifma) s fun t =>
+      IMem t.mem B w op oq a minv mp mq mk P Q ep eq ebp.length ebq.length ∧
+      wv t.mem (off B oq) (slot 16 Public.aY) 16 < Q ∧
+      (K → wv t.mem (off B oq) (slot 16 Public.aY) 16 = C ^ Spec.Rsa.os2ip ebq % Q) ∧
+      wv t.mem (off B op) (slot 16 Public.aY) 16 < P ∧
+      (K → wv t.mem (off B op) (slot 16 Public.aY) 16 % P = C ^ Spec.Rsa.os2ip ebp * 2 ^ (64 * wp) % P) ∧
+      Frm B ([(op + 8 * sIfma, 8), (oq + 8 * sIfma, 8)] ++ ifmaR op oq a) s.mem t.mem ∧ t.gpr .rdi = B ∧
+      Keep mmRegs s t ∧ t.mxcsr = s.mxcsr &&& 0xFFFF := by
+  have hT : tabBytes 16 = 2304 := rfl
+  have hD : D = 3712 := rfl
+  have h16 := hdr_lt_slot 16 8 (show 31 < 32 by decide)
+  rw [ifma_eq]
+  refine wp_seqs_append (by simp) (by simp) (WP.mono_mx ifmaA_mx (ifmaA_ok hs hdi h hlo hpq ha haZ hYp hYq hep heq
+    hLp1 hLp2 hLq1 hLq2) fun u ⟨mu, rp, rq, fu, wu, rdu, du, ku⟩ mxu => ?_)
+  refine wp_seqs_append (by simp) (by simp [CrtIfma.result]) (WP.mono (vecI_ok (K := K) (hs.congr wu) du mu haZ
+    (by omega) rp rq hwp hPo hQo hYp hYq hXp hXq vxp vxq vyp vyq hLp2 hLq2)
+    fun v ⟨⟨gp, vp⟩, ⟨gq, vq⟩, ov, dv, rdv, wrv, mxv, kv⟩ => ?_)
+  have fv : Frm B (ifmaR op oq a) u.mem v.mem :=
+    (Frm.of_outside_off ov (by have := hs.nowrap; omega) (by have := hs.nowrap; omega)).widen fun r hr =>
+      ⟨(a, 2 * D + 8), List.mem_append_right _ (List.mem_singleton_self _),
+        by rw [List.mem_singleton.mp hr]; simp only; omega⟩
+  have mv := mu.of_frm fv hlo hpq (by omega) (by have := hs.nowrap; omega)
+  refine WP.mono_mx resI_mx (resI_ok ((hs.congr wu).congr wrv) (dv.trans du) mv hlo hpq (by omega) haZ gp gq)
+    fun t ⟨mt, vqt, vpt, ft, dt, rdt, wrt, kt⟩ mxt => ?_
+  have hQ0 : 0 < Q := by omega
+  have hP0 : 0 < P := by omega
+  refine ⟨mt, by rw [vqt]; exact Nat.mod_lt _ hQ0, fun hK => by rw [vqt, vq hK, Nat.mul_one],
+    by rw [vpt]; exact Nat.mod_lt _ hP0,
+    fun hK => by rw [vpt, Nat.mod_mod, vp hK, Nat.mul_mod, vyp hK, ← Nat.mul_mod],
+    (fu.trans (fv.mono fun r hr => List.mem_append_right _ hr)).trans (ft.mono fun r hr => List.mem_append_right _ hr),
+    dt, ⟨fun r hr => ?_, by rw [rdt, rdv, rdu], by rw [wrt, wrv, wu]⟩, by rw [mxt, mxv, mxu]⟩
+  by_cases hrd : r = .rdi
+  · subst hrd; rw [dt, hdi]
+  · have hr' : r ∉ mmRegs ++ ([.rdi] : List Reg) := fun h =>
+      (List.mem_append.mp h).elim hr fun h' => hrd (List.mem_singleton.mp h')
+    rw [kt.gpr hr', kv.gpr hr, ku.gpr hr']
+
 end VG.Proof.Bignum.X86_64
