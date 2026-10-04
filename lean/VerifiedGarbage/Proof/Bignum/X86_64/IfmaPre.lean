@@ -286,7 +286,7 @@ theorem gRanges_lt (w : Nat) : ∀ r ∈ gRanges w, 8 * 22 ≤ r.1 ∧ r.1 + r.2
 
 /-- `n`'s header words but `sD` and `sCnt` are kept by a change within `gRanges` and above. -/
 theorem gRanges_hdr {m m' : Mem} {B : Addr} {w : Nat} {rs : List (Nat × Nat)}
-    (hf : Frm B (gRanges w ++ rs) m m') (hr : ∀ r ∈ rs, slot w 8 ≤ r.1) {i : Nat} (hi : i < 32) (h1 : i ≠ Crt.sD)
+    (hf : Frm B (gRanges w ++ rs) m m') (hr : ∀ r ∈ rs, hdrBytes ≤ r.1) {i : Nat} (hi : i < 32) (h1 : i ≠ Crt.sD)
     (h2 : i ≠ Public.sCnt) (hz : 8 * i + 8 ≤ 2 ^ 64) : word m' B (8 * i) = word m B (8 * i) :=
   hf.word_eq (fun r hr' => by
     rcases List.mem_append.mp hr' with hr' | hr'
@@ -302,11 +302,12 @@ theorem gRanges_hdr {m m' : Mem} {B : Addr} {w : Nat} {rs : List (Nat × Nat)}
         unfold Crt.sD sFn at h1 ⊢; omega
       · show 8 * i + 8 ≤ 8 * Public.sCnt ∨ 8 * Public.sCnt + 8 ≤ 8 * i
         unfold Public.sCnt sFn at h2 ⊢; omega
-    · exact Or.inl (by have := hr r hr'; have := hdr_lt_slot w 8 hi; omega)) hz
+    · exact Or.inl (by have := hr r hr'; unfold hdrBytes at this; omega)) hz
 
 /-- An array of `n` but `aAcc`, `aTmp`, `aY` is kept by a change within `gRanges` and above. -/
 theorem gRanges_arr {m m' : Mem} {B : Addr} {w : Nat} {rs : List (Nat × Nat)}
-    (hf : Frm B (gRanges w ++ rs) m m') (hr : ∀ r ∈ rs, slot w 8 ≤ r.1) {j : Nat} (hj : j < 8)
+    {j : Nat} (hf : Frm B (gRanges w ++ rs) m m') (hr : ∀ r ∈ rs, slot w j + 8 * w ≤ r.1 ∨ r.1 + r.2 ≤ slot w j)
+    (hj : j < 8)
     (h1 : j ≠ Public.aAcc) (h2 : j ≠ Public.aTmp) (h3 : j ≠ Public.aY) (hz : slot w 8 ≤ 2 ^ 64) :
     wv m' B (slot w j) w = wv m B (slot w j) w := by
   have := slot_le (w := w) hj
@@ -319,7 +320,7 @@ theorem gRanges_arr {m m' : Mem} {B : Addr} {w : Nat} {rs : List (Nat × Nat)}
       have := hdr_lt_slot w j (show Crt.sD < 32 by decide)
       have := hdr_lt_slot w j (show Public.sCnt < 32 by decide)
       rcases hr' with rfl | rfl | rfl | rfl | rfl <;> simp only [Crt.sD, Public.sCnt, sFn] at * <;> omega
-    · exact Or.inl (by have := hr r hr'; omega)) (by omega)
+    · exact hr r hr') (by omega)
 
 /-- `pre`'s start: `G` into `n`'s `aY` and `aX`. -/
 theorem preA_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv mq : BitVec 64} {N oq wq : Nat}
@@ -401,8 +402,8 @@ theorem preB_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv mp : BitVec 
     fun t ⟨hg', hwsp', hP', hpy, hpyv, hpx, hpxv, hN', f', k'⟩ =>
       ⟨hg', hN', hwsp', hP', hpy, hpyv, hpx, hpxv, ?_, (fo₁.mono fun r hr => List.mem_append_left _ hr).trans f',
         k₁.trans k' |>.mono (by simp [mmRegs])⟩
-  rw [gRanges_arr f' (fun r hr => by rw [List.mem_singleton.mp hr]; simp only [xRange]; omega) (by decide)
-    (by decide) (by decide) (by decide) (by omega)]
+  rw [gRanges_arr f' (fun r hr => by rw [List.mem_singleton.mp hr]; exact .inl (by simp only [xRange]; omega))
+    (by decide) (by decide) (by decide) (by decide) (by omega)]
   exact ho₁.wv (by omega) (by omega)
 
 end VG.Proof.Bignum.X86_64
