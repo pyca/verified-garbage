@@ -1,7 +1,7 @@
 import VerifiedGarbage.Proof.Rc2.Arm.Block
 import VerifiedGarbage.Proof.Rc2.Arm.Key
 import VerifiedGarbage.Proof.Rc2.Arm.Cbc.Verified
-import VerifiedGarbage.Proof.Rc2.Arm.Stream.Verified
+import VerifiedGarbage.Proof.Rc2.Arm.Stream.Frame
 
 /-! # RC2 artifacts on baseline ARMv7 -/
 
@@ -12,31 +12,31 @@ def artifacts : List Artifact := [
     target := Arm.target
     doc := Spec.Rc2.cbcInitApi.doc (notes := ["Baseline ARMv7, copying the IV and calling the verified \
       key expansion."])
-    code := Impl.Rc2.Arm.Stream.init
-    contract := Spec.Rc2.cbcInitContract Arm.abi 8
-    stack := 8
+    code := Impl.StackScratch.Arm.withStackScratchWiped 592 2 144 Impl.Rc2.Arm.Stream.init
+    contract := Spec.Rc2.cbcInitContract Arm.abi 600
+    stack := 600
     ofSig := ⟨_, _, _, by unfold Spec.Rc2.cbcInitContract; rfl⟩
-    verified := Proof.Rc2.Arm.Stream.init_verified
+    verified := Proof.Rc2.Arm.Stream.init_framed
     spSafe := Code.all_of_forall (fun _ => rfl) _ },
   { Spec.Rc2.cbcEncryptUpdateApi with
     target := Arm.target
     doc := Spec.Rc2.cbcEncryptUpdateApi.doc (notes := ["Baseline ARMv7, copying bytes one at a time and \
       calling the verified RC2-CBC encryption."])
-    code := Impl.Rc2.Arm.Stream.encryptUpdate
-    contract := Spec.Rc2.cbcEncryptUpdateContract Arm.abi 8
-    stack := 8
+    code := Impl.StackScratch.Arm.withStackScratchWiped 592 2 144 Impl.Rc2.Arm.Stream.encryptUpdate
+    contract := Spec.Rc2.cbcEncryptUpdateContract Arm.abi 600
+    stack := 600
     ofSig := ⟨_, _, _, by unfold Spec.Rc2.cbcEncryptUpdateContract Spec.Rc2.cbcUpdateContract; rfl⟩
-    verified := Proof.Rc2.Arm.Stream.encryptUpdate_verified
+    verified := Proof.Rc2.Arm.Stream.encryptUpdate_framed
     spSafe := Code.all_of_forall (fun _ => rfl) _ },
   { Spec.Rc2.cbcDecryptUpdateApi with
     target := Arm.target
     doc := Spec.Rc2.cbcDecryptUpdateApi.doc (notes := ["Baseline ARMv7, copying bytes one at a time and \
       calling the verified RC2-CBC decryption."])
-    code := Impl.Rc2.Arm.Stream.decryptUpdate
-    contract := Spec.Rc2.cbcDecryptUpdateContract Arm.abi 8
-    stack := 8
+    code := Impl.StackScratch.Arm.withStackScratchWiped 592 2 144 Impl.Rc2.Arm.Stream.decryptUpdate
+    contract := Spec.Rc2.cbcDecryptUpdateContract Arm.abi 600
+    stack := 600
     ofSig := ⟨_, _, _, by unfold Spec.Rc2.cbcDecryptUpdateContract Spec.Rc2.cbcUpdateContract; rfl⟩
-    verified := Proof.Rc2.Arm.Stream.decryptUpdate_verified
+    verified := Proof.Rc2.Arm.Stream.decryptUpdate_framed
     spSafe := Code.all_of_forall (fun _ => rfl) _ },
   { Spec.Rc2.cbcEncryptApi with
     target := Arm.target

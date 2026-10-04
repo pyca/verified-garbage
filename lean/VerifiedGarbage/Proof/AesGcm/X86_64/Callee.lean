@@ -433,21 +433,12 @@ def callees : Callees :=
 end GcmImpl
 
 /-- The implementations of `vg_ghash`, by name, as the variants of `AesGcm`
-choose them (`GcmVariant`). `GhashName.impl`, in `GhashImpls.lean`, gives
+choose them (`GcmVariant`, `Variant.lean`). `GhashName.impl`, in `GhashImpls.lean`, gives
 their `GhashImpl`s, whose proofs import the algebra of `Proof/Gcm/Poly.lean`,
 which the variants then need not import. -/
 inductive GhashName where
   | scalar
   | pclmul
   | vpclmul
-
-/-- A variant of `AesGcm` (see `TCB/Emit.lean`): a `GcmImpl` with its
-implementation of `vg_ghash` named (`GhashName`), which `GcmVariant.impl`
-(`GhashImpls.lean`) resolves. -/
-structure GcmVariant where
-  ctr : Ctr32Impl
-  key : KeyImpl
-  gh : GhashName
-  stitch : Option StitchImpl := none
 
 end VG.Proof.AesGcm.X86_64

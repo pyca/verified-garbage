@@ -167,10 +167,16 @@ theorem satT : ∃ s, (Spec.Hmac.sha224I.iterateContract AArch64.abi).pre s := b
     Spec.Pbkdf2.iterateSig, Spec.Hmac.sha224S, Spec.Hmac.sha224, AArch64.abi, AArch64.argRegs]
     using Pbkdf2.AArch64.iterSat 96 28 104
 
-theorem satP : ∃ s, (Spec.Hmac.sha224I.pbkdf2Contract AArch64.abi 16).pre s := by
-  inst_sat [Spec.Hmac.Instance.pbkdf2Contract, Spec.Hmac.Instance.pbkdf2Scratch, Spec.Hmac.sha224I,
-    Spec.Pbkdf2.pbkdf2Contract, Spec.Pbkdf2.pbkdf2Sig, Spec.Hmac.sha224S, Spec.Hmac.sha224, AArch64.abi,
+theorem satP : ∃ s, (Spec.Hmac.sha224I.pbkdf2ScratchContract AArch64.abi 16).pre s := by
+  inst_sat [Spec.Hmac.Instance.pbkdf2ScratchContract, Spec.Hmac.Instance.pbkdf2Scratch, Spec.Hmac.sha224I,
+    Spec.Pbkdf2.pbkdf2ScratchContract, Spec.Pbkdf2.pbkdf2ScratchSig, Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post, Spec.Hmac.sha224S, Spec.Hmac.sha224, AArch64.abi,
     AArch64.argRegs] using pbkSat 200
+
+theorem satPF :
+    ∃ s, (Spec.Hmac.sha224I.pbkdf2Contract AArch64.abi (16 + pbkdf2Frame Spec.Hmac.sha224I)).pre s := by
+  inst_sat [Spec.Hmac.Instance.pbkdf2Contract, pbkdf2Frame, Spec.Hmac.Instance.pbkdf2Scratch, Spec.Hmac.sha224I,
+    Spec.Pbkdf2.pbkdf2Contract, Spec.Pbkdf2.pbkdf2Sig, Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post, Spec.Hmac.sha224S, Spec.Hmac.sha224, AArch64.abi,
+    AArch64.argRegs, pbkFrameSat, pbkSat] using pbkFrameSat
 
 /-- SHA-224 with the implementation `v` of SHA-256's compression function.
 Its streaming `update` and `finalize` are SHA-256's, which SHA-256's variant
@@ -183,6 +189,7 @@ def variant : MdHash :=
     (by
       unfold Spec.Hmac.Instance.finalizeContract Spec.Hmac.finalizeContract
       exact AArch64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
+    (by decide) satPF
     v.suffix v.features
 
 end VG.Proof.Pbkdf2.Md.AArch64.Sha224

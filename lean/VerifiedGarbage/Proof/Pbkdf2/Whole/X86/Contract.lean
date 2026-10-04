@@ -5,7 +5,7 @@ import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Calls
 # PBKDF2-HMAC on x86 (32-bit), the whole derivation: the contract
 
 `pbkG` is the contract the proof of `pbkdf2` is written against:
-`VG.Spec.Pbkdf2.pbkdf2Contract` with 76 bytes of stack, with its facts spelt
+`VG.Spec.Pbkdf2.pbkdf2ScratchContract` with 76 bytes of stack, with its facts spelt
 out, which it implies for any streaming hash function and scratch space
 (`pbkImp`). Every argument is on the stack (cdecl): `password`,
 `password_len`, `salt`, `salt_len`, `c`, `out`, `out_len`, `scratch`.
@@ -78,12 +78,12 @@ theorem setWidth_inj32 {a b : BitVec 32} (h : (a.setWidth 64).setWidth 32 = (b.s
 
 /-- `pbkG` implies the shared contract for any hash function and scratch
 space, given that the shared contract is satisfiable. -/
-theorem pbkImp (h : ∃ s, (Spec.Pbkdf2.pbkdf2Contract S W X86.abi 76).pre s) :
-    (pbkG S W).Implies (Spec.Pbkdf2.pbkdf2Contract S W X86.abi 76) := by
+theorem pbkImp (h : ∃ s, (Spec.Pbkdf2.pbkdf2ScratchContract S W X86.abi 76).pre s) :
+    (pbkG S W).Implies (Spec.Pbkdf2.pbkdf2ScratchContract S W X86.abi 76) := by
   exact
     { pre := by
         intro s h
-        sig_pre [Spec.Pbkdf2.pbkdf2Contract, Spec.Pbkdf2.pbkdf2Sig, X86.abi] at h
+        sig_pre [Spec.Pbkdf2.pbkdf2ScratchContract, Spec.Pbkdf2.pbkdf2ScratchSig, Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post, X86.abi] at h
         simp only [argVal32, setWidth32_64, toNat_setWidth64,
           show argBytes [32, 32, 32, 32, 32, 32, 32, 32] = 32 from rfl] at h
         obtain ⟨h0, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, h15, h16, h17, h18, h19, h20,
@@ -92,12 +92,12 @@ theorem pbkImp (h : ∃ s, (Spec.Pbkdf2.pbkdf2Contract S W X86.abi 76).pre s) :
           h21, h22, h23, h24, h25, h26, h27, h28⟩
       post := by
         rintro s s' - h
-        sig_post [Spec.Pbkdf2.pbkdf2Contract, Spec.Pbkdf2.pbkdf2Sig, X86.abi]
+        sig_post [Spec.Pbkdf2.pbkdf2ScratchContract, Spec.Pbkdf2.pbkdf2ScratchSig, Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post, X86.abi]
         simp only [argVal32, setWidth32_64]
         exact h
       pub := by
         rintro s₁ s₂ - - h
-        sig_pub [Spec.Pbkdf2.pbkdf2Contract, Spec.Pbkdf2.pbkdf2Sig, X86.abi] at h
+        sig_pub [Spec.Pbkdf2.pbkdf2ScratchContract, Spec.Pbkdf2.pbkdf2ScratchSig, Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post, X86.abi] at h
         simp only [argVal32] at h
         obtain ⟨e, a0, a1, a2, a3, a4, a5, a6, a7⟩ := h
         refine ⟨e, fun i hi => ?_⟩

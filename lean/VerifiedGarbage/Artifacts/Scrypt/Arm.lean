@@ -10,7 +10,7 @@ import VerifiedGarbage.Proof.Scrypt.Arm.Whole.Verified
 /-!
 # scrypt (RFC 7914): Salsa20/8, scryptBlockMix, scryptROMix and scrypt on 32-bit ARM
 
-`vg_scrypt` calls `vg_pbkdf2_hmac_sha256` (registered in
+`vg_scrypt` calls `vg_pbkdf2_hmac_sha256_scratch` (registered in
 `Artifacts/Pbkdf2Sha256/Arm.lean`), the one implementation of PBKDF2-HMAC-SHA256
 on this target, and `vg_scrypt_romix`. Its `stack` is the 40 bytes the frame
 of PBKDF2's stack arguments and PBKDF2's own frames use.
@@ -44,12 +44,12 @@ def artifacts : List Artifact := [
     spSafe := Code.all_of_forall (fun _ => rfl) _ },
   { Spec.Scrypt.scryptApi with
     target := Arm.target
-    doc := Spec.Scrypt.scryptApi.doc (notes := ["Derives both keys with `vg_pbkdf2_hmac_sha256` and runs \
+    doc := Spec.Scrypt.scryptApi.doc (notes := ["Derives both keys with `vg_pbkdf2_hmac_sha256_scratch` and runs \
       scryptROMix on each block with `vg_scrypt_romix`, using the start of `scratch` as the working \
       space of each. The function has no stack frame of its own: the caller's `r4`–`r11` and the return \
       address are saved in the last of the `r + 16` chunks of `scratch`, which neither callee uses; each \
       call's stack arguments are pushed in a frame of their own."])
-    code := Impl.Scrypt.Arm.scrypt Spec.Hmac.sha256I.pbkdf2Api.name Proof.Scrypt.Arm.Whole.pbkC
+    code := Impl.Scrypt.Arm.scrypt Spec.Hmac.sha256I.pbkdf2ScratchApi.name Proof.Scrypt.Arm.Whole.pbkC
     contract := Spec.Scrypt.scryptContract Arm.abi 40
     stack := 40
     verified := Proof.Scrypt.Arm.Whole.scrypt_verified

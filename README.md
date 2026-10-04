@@ -426,7 +426,7 @@ yours to keep:
 
 <td>✅ AVX-512F, AVX2</td>
 
-<td>✅</td>
+<td>✅ NEON, four blocks at a time, on Apple's cores</td>
 
 <td>✅</td>
 
@@ -666,7 +666,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅ AVX2</td>
+<td>✅ AVX-512F, AVX2</td>
 
 <td>✅</td>
 
@@ -682,7 +682,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅ AVX2</td>
+<td>✅ AVX-512F, AVX2</td>
 
 <td>✅</td>
 
@@ -698,7 +698,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅ AVX2</td>
+<td>✅ AVX-512F, AVX2</td>
 
 <td>✅</td>
 
@@ -936,6 +936,22 @@ yours to keep:
 
 <td>✅</td>
 
+<td>✅</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+</tr>
+
+<tr>
+
+<td>ECDH P-384</td>
+
+<td>✅</td>
+
+<td>❌</td>
+
 <td>❌</td>
 
 <td>❌</td>
@@ -1021,6 +1037,22 @@ yours to keep:
 <td>✅</td>
 
 <td>✅ SHA extensions, SHA512, AVX2, BMI1, BMI2</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+</tr>
+
+<tr>
+
+<td>ECDSA P-384</td>
+
+<td>✅</td>
+
+<td>❌</td>
 
 <td>❌</td>
 

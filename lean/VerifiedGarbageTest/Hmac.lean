@@ -196,7 +196,8 @@ run_cmd do
       (sha256I.finalizeApi, "vg_hmac_sha256_finalize", "hmac_sha256"),
       (sha256I.initScratchApi, "vg_hmac_sha256_init_scratch", "hmac_sha256"),
       (sha256I.finalizeScratchApi, "vg_hmac_sha256_finalize_scratch", "hmac_sha256"),
-      (sha256I.iterateApi, "vg_pbkdf2_hmac_sha256_iterate", "pbkdf2_sha256")] do
+      (sha256I.iterateApi, "vg_pbkdf2_hmac_sha256_iterate", "pbkdf2_sha256"),
+      (sha256I.pbkdf2ScratchApi, "vg_pbkdf2_hmac_sha256_scratch", "pbkdf2_sha256")] do
     unless a.name == n && a.module == m do
       throwError "{a.module}::{a.name} is not {m}::{n}"
   unless sha256I.pbkdf2Api.name == "vg_pbkdf2_hmac_sha256" &&
@@ -238,7 +239,7 @@ run_cmd do
     unless w ≤ I.scratch do throwError "{lean}: {update.name} needs {w} words of working space"
   let names := instances.flatMap fun (I, _, _) =>
     [I.initApi.name, I.finalizeApi.name, I.initScratchApi.name, I.finalizeScratchApi.name,
-      I.iterateApi.name, I.pbkdf2Api.name]
+      I.iterateApi.name, I.pbkdf2Api.name, I.pbkdf2ScratchApi.name]
   unless names.eraseDups.length == names.length do throwError "duplicate names: {names}"
 
 /-! ## `init` for a key of any length -/

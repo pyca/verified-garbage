@@ -5,7 +5,7 @@
 
 #![cfg(target_arch = "x86_64")]
 
-use super::{Curve, Error, SignatureHash, SigningKey, sealed};
+use super::{Error, P256, SignatureHash, SigningKey, sealed};
 use crate::arch::ec_p256::vg_ec_p256_public_key;
 use crate::arch::ecdsa_p256::vg_ecdsa_p256_verify;
 use crate::arch::ecdsa_p256_sha256::{
@@ -17,18 +17,6 @@ use crate::arch::ecdsa_p256_sha384::{
 use crate::hashes::sha256::{Sha256, Sha256Backend};
 use crate::hashes::sha384::{Sha384, Sha384Backend};
 use crate::zeroize::zeroize;
-
-/// The curve P-256 (FIPS 186-5's secp256r1; SP 800-186 §3.2.1.3).
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum P256 {}
-
-impl sealed::Sealed for P256 {}
-
-impl Curve for P256 {
-    type PrivateKey = [u8; 32];
-    type PublicKey = [u8; 65];
-    type Signature = [u8; 64];
-}
 
 impl SigningKey<P256> {
     /// The public key `Q = dG`, in the uncompressed form of SEC 1 §2.3.3:

@@ -3,7 +3,7 @@ import VerifiedGarbage.Proof.Rc2.X86.Block
 import VerifiedGarbage.Proof.Rc2.X86.Key
 import VerifiedGarbage.Proof.Rc2.X86.Cbc.Verified
 import VerifiedGarbage.Proof.Rc2.X86.Stream.Lit
-import VerifiedGarbage.Proof.Rc2.X86.Stream.Verified
+import VerifiedGarbage.Proof.Rc2.X86.Stream.Frame
 
 /-! # RC2 artifacts on baseline x86 -/
 
@@ -14,31 +14,31 @@ def artifacts : List Artifact := [
     target := X86.target
     doc := Spec.Rc2.cbcInitApi.doc (notes := ["Baseline x86: copies the IV and calls the verified \
       RC2 key expansion, saving `ebx` and `esi` in the scratch space beyond its own."])
-    code := Impl.Rc2.X86.Stream.init
-    contract := Spec.Rc2.cbcInitContract X86.abi 24
-    stack := 24
+    code := Impl.StackScratch.X86.withStackScratchWiped 608 6 144 Impl.Rc2.X86.Stream.init
+    contract := Spec.Rc2.cbcInitContract X86.abi 632
+    stack := 632
     ofSig := ⟨_, _, _, by unfold Spec.Rc2.cbcInitContract; rfl⟩
-    verified := Proof.Rc2.X86.Stream.init_verified
+    verified := Proof.Rc2.X86.Stream.init_framed
     spSafe := Code.all_of_allInstrs (by lit_decide) },
   { Spec.Rc2.cbcEncryptUpdateApi with
     target := X86.target
     doc := Spec.Rc2.cbcEncryptUpdateApi.doc (notes := ["Baseline x86: copies bytes one at a time and \
       calls the verified RC2-CBC encryption on the output in place."])
-    code := Impl.Rc2.X86.Stream.encryptUpdate
-    contract := Spec.Rc2.cbcEncryptUpdateContract X86.abi 40
-    stack := 40
+    code := Impl.StackScratch.X86.withStackScratchWiped 608 6 144 Impl.Rc2.X86.Stream.encryptUpdate
+    contract := Spec.Rc2.cbcEncryptUpdateContract X86.abi 648
+    stack := 648
     ofSig := ⟨_, _, _, by unfold Spec.Rc2.cbcEncryptUpdateContract Spec.Rc2.cbcUpdateContract; rfl⟩
-    verified := Proof.Rc2.X86.Stream.encryptUpdate_verified
+    verified := Proof.Rc2.X86.Stream.encryptUpdate_framed
     spSafe := Code.all_of_allInstrs (by lit_decide) },
   { Spec.Rc2.cbcDecryptUpdateApi with
     target := X86.target
     doc := Spec.Rc2.cbcDecryptUpdateApi.doc (notes := ["Baseline x86: copies bytes one at a time and \
       calls the verified RC2-CBC decryption on the output in place."])
-    code := Impl.Rc2.X86.Stream.decryptUpdate
-    contract := Spec.Rc2.cbcDecryptUpdateContract X86.abi 40
-    stack := 40
+    code := Impl.StackScratch.X86.withStackScratchWiped 608 6 144 Impl.Rc2.X86.Stream.decryptUpdate
+    contract := Spec.Rc2.cbcDecryptUpdateContract X86.abi 648
+    stack := 648
     ofSig := ⟨_, _, _, by unfold Spec.Rc2.cbcDecryptUpdateContract Spec.Rc2.cbcUpdateContract; rfl⟩
-    verified := Proof.Rc2.X86.Stream.decryptUpdate_verified
+    verified := Proof.Rc2.X86.Stream.decryptUpdate_framed
     spSafe := Code.all_of_allInstrs (by lit_decide) },
   { Spec.Rc2.cbcEncryptApi with
     target := X86.target

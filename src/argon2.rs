@@ -31,7 +31,10 @@ use core::fmt;
 
 use crate::arch::argon2::vg_argon2;
 #[cfg(target_arch = "x86_64")]
-use crate::arch::argon2::{VG_ARGON2_COMPRESS_AVX2_FEATURES, vg_argon2_avx2};
+use crate::arch::argon2::{
+    VG_ARGON2_COMPRESS_AVX2_FEATURES, VG_ARGON2_COMPRESS_AVX512_FEATURES, vg_argon2_avx2,
+    vg_argon2_avx512,
+};
 use crate::cpu::Features;
 use crate::hashes::blake2b::Blake2bBackend;
 
@@ -46,13 +49,19 @@ pub(crate) enum CompressBackend {
     /// registers.
     #[cfg(target_arch = "x86_64")]
     Avx2,
+    /// AVX-512: two rows (or two columns) of G's permutations in each of
+    /// four 512-bit registers.
+    #[cfg(target_arch = "x86_64")]
+    Avx512,
 }
 
 impl CompressBackend {
     /// The best implementation a CPU with the features `f` can run.
     #[cfg(target_arch = "x86_64")]
     pub(crate) fn select(f: Features) -> CompressBackend {
-        if f.contains(VG_ARGON2_COMPRESS_AVX2_FEATURES) {
+        if f.contains(VG_ARGON2_COMPRESS_AVX512_FEATURES) {
+            CompressBackend::Avx512
+        } else if f.contains(VG_ARGON2_COMPRESS_AVX2_FEATURES) {
             CompressBackend::Avx2
         } else {
             CompressBackend::Scalar
@@ -340,6 +349,8 @@ impl<'a> Derivation<'a> {
             (Blake2bBackend::Scalar, CompressBackend::Scalar) => vg_argon2,
             #[cfg(target_arch = "x86_64")]
             (Blake2bBackend::Scalar, CompressBackend::Avx2) => vg_argon2_avx2,
+            #[cfg(target_arch = "x86_64")]
+            (Blake2bBackend::Scalar, CompressBackend::Avx512) => vg_argon2_avx512,
         };
         // SAFETY: `Derivation::new` validated the costs and the lengths of
         // the inputs and `out`, which establishes every numeric precondition
@@ -421,11 +432,23 @@ mod tests {
     fn select() {
         #[cfg(target_arch = "x86_64")]
         {
-            use crate::arch::argon2::VG_ARGON2_AVX2_FEATURES;
+            use crate::arch::argon2::{VG_ARGON2_AVX2_FEATURES, VG_ARGON2_AVX512_FEATURES};
             assert_eq!(VG_ARGON2_AVX2_FEATURES, VG_ARGON2_COMPRESS_AVX2_FEATURES);
+            assert_eq!(
+                VG_ARGON2_AVX512_FEATURES,
+                VG_ARGON2_COMPRESS_AVX512_FEATURES
+            );
             assert_eq!(
                 CompressBackend::select(VG_ARGON2_COMPRESS_AVX2_FEATURES),
                 CompressBackend::Avx2
+            );
+            assert_eq!(
+                CompressBackend::select(VG_ARGON2_COMPRESS_AVX512_FEATURES),
+                CompressBackend::Avx512
+            );
+            assert_eq!(
+                CompressBackend::select(Features::of(&["avx", "avx2", "avx512f"])),
+                CompressBackend::Avx512
             );
             assert_eq!(
                 CompressBackend::select(Features::of(&["avx"])),

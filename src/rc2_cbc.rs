@@ -52,9 +52,8 @@ impl<const DECRYPT: bool> Cbc<DECRYPT> {
             ctx: [0; 144],
             pending_len: 0,
         };
-        let mut scratch = [0u64; 72];
-        // SAFETY: the key, IV, context and scratch are valid, separate
-        // objects of the lengths passed; the primitive checks the lengths.
+        // SAFETY: the key, IV and context are valid, separate objects of the
+        // lengths passed; the primitive checks the lengths.
         let code = unsafe {
             vg_rc2_cbc_init(
                 key.as_ptr(),
@@ -63,10 +62,8 @@ impl<const DECRYPT: bool> Cbc<DECRYPT> {
                 iv.as_ptr(),
                 iv.len(),
                 &mut ctx.ctx,
-                &mut scratch,
             )
         };
-        zeroize(&mut scratch);
         match code {
             0 => Ok(ctx),
             1 => Err(Error::InvalidKeyLength),
@@ -91,7 +88,6 @@ impl<const DECRYPT: bool> Cbc<DECRYPT> {
         // (`output_len` saturates) is too long for any `output`.
         let written = self.output_len(input.len());
         let output = output.get_mut(..written).ok_or(Error::OutputTooSmall)?;
-        let mut scratch = [0u64; 72];
         let update = if DECRYPT {
             vg_rc2_cbc_decrypt_update
         } else {
@@ -99,8 +95,8 @@ impl<const DECRYPT: bool> Cbc<DECRYPT> {
         };
         // SAFETY: the context holds `pending_len` (less than 8) pending
         // bytes; `output` is exactly `(pending_len + input.len()) / 8 * 8`
-        // bytes long, as the contract requires; the context, input, output
-        // and scratch are valid for their lengths and are separate objects
+        // bytes long, as the contract requires; the context, input and
+        // output are valid for their lengths and are separate objects
         // (`input` and `output` are distinct borrows, so they do not
         // overlap).
         unsafe {
@@ -111,10 +107,8 @@ impl<const DECRYPT: bool> Cbc<DECRYPT> {
                 input.len(),
                 output.as_mut_ptr(),
                 output.len(),
-                &mut scratch,
             );
         }
-        zeroize(&mut scratch);
         self.pending_len = (self.pending_len + input.len() % 8) % 8;
         Ok(written)
     }

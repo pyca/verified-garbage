@@ -5,7 +5,7 @@ import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Calls
 # HMAC and PBKDF2-HMAC over any Merkle–Damgård hash function on AArch64: the shared contracts
 
 `pbkG` is the contract the proof of `pbkdf2` is written against:
-`VG.Spec.Pbkdf2.pbkdf2Contract` with its facts spelt out, which it implies for
+`VG.Spec.Pbkdf2.pbkdf2ScratchContract` with its facts spelt out, which it implies for
 any streaming hash function and scratch space (`generic_implies`). Every
 argument is in a register, and the functions `pbkdf2` calls may use the 16
 bytes below the stack pointer. Likewise HMAC's `initG` and `finG`
@@ -50,10 +50,10 @@ def pbkG : Contract isa where
 
 /-- `pbkG` implies the shared contract for any hash function and scratch space
 (`generic_implies`), given that the shared contract is satisfiable. -/
-theorem pbkImp (h : ∃ s, (Spec.Pbkdf2.pbkdf2Contract S W AArch64.abi 16).pre s) :
-    (pbkG S W).Implies (Spec.Pbkdf2.pbkdf2Contract S W AArch64.abi 16) := by
+theorem pbkImp (h : ∃ s, (Spec.Pbkdf2.pbkdf2ScratchContract S W AArch64.abi 16).pre s) :
+    (pbkG S W).Implies (Spec.Pbkdf2.pbkdf2ScratchContract S W AArch64.abi 16) := by
   generic_implies [
-    Spec.Pbkdf2.pbkdf2Contract, Spec.Pbkdf2.pbkdf2Sig, pbkG, stk, AArch64.abi, AArch64.argRegs] using h
+    Spec.Pbkdf2.pbkdf2ScratchContract, Spec.Pbkdf2.pbkdf2ScratchSig, Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post, pbkG, stk, AArch64.abi, AArch64.argRegs] using h
 
 /-! ## HMAC's `init` and `finalize` -/
 

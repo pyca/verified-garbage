@@ -98,6 +98,10 @@ def pbkSat (sc : Nat) : State where
   rd := [⟨0x10000, 0⟩, ⟨0x20000, 0⟩]
   wr := [⟨0x30000, 0⟩, ⟨0x40000, sc * 8⟩]
 
+/-- A state satisfying the precondition of `pbkdf2` with its working space on
+the stack: `pbkSat` without the working space. -/
+def pbkFrameSat : State := { pbkSat 0 with wr := [⟨0x30000, 0⟩] }
+
 section
 variable {H : Hash} (hH : HashOK H) (C : CoreOK (core H))
 include hH C
@@ -135,8 +139,8 @@ theorem pbkdf2_verified
     (hsI : ∃ s, (Spec.Hmac.initScratchContract hH.SH H.W AArch64.abi 16).pre s)
     (hsF : ∃ s, (Spec.Hmac.finalizeScratchContract hH.SH H.W AArch64.abi 16).pre s)
     (hsT : ∃ s, (Spec.Pbkdf2.iterateContract hH.SH H.W AArch64.abi).pre s)
-    (hsat : ∃ s, (Spec.Pbkdf2.pbkdf2Contract hH.SH (H.W + H.S) AArch64.abi 16).pre s) :
-    Verified AArch64.target H.pbkdf2 (Spec.Pbkdf2.pbkdf2Contract hH.SH (H.W + H.S) AArch64.abi 16) :=
+    (hsat : ∃ s, (Spec.Pbkdf2.pbkdf2ScratchContract hH.SH (H.W + H.S) AArch64.abi 16).pre s) :
+    Verified AArch64.target H.pbkdf2 (Spec.Pbkdf2.pbkdf2ScratchContract hH.SH (H.W + H.S) AArch64.abi 16) :=
   (Pbk.verified hH (Pbk.Checks.of_core C.pbk)
     (hmacInit_ok hH C hsI) (hmacInit_fdepth hH.stream.initDepth hH.comp.noFrames)
     (hmacFin_ok hH C hsF) (hmacFin_fdepth hH.stream.finDepth hH.comp.noFrames)

@@ -121,8 +121,8 @@ structure Pre (F : Fns) (s₀ : State) : Prop where
   olD : ol s₀ ≤ (2 ^ 32 - 1) * F.H.D
 
 theorem pre_of (hF : FnsOK F) {s₀ : State}
-    (h : (Spec.Pbkdf2.pbkdf2Contract hF.hH.SH (F.W + F.H.S) Arm.abi 24).pre s₀) : Pre F s₀ := by
-  sig_pre [Spec.Pbkdf2.pbkdf2Contract, Spec.Pbkdf2.pbkdf2Sig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
+    (h : (Spec.Pbkdf2.pbkdf2ScratchContract hF.hH.SH (F.W + F.H.S) Arm.abi 24).pre s₀) : Pre F s₀ := by
+  sig_pre [Spec.Pbkdf2.pbkdf2ScratchContract, Spec.Pbkdf2.pbkdf2ScratchSig, Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post, Arm.abi, Arm.argRegs, Arm.reduceClassify,
     Arm.Loc.val] at h
   obtain ⟨h0, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, h15, h16, h17, h18, h19, h20,
     h21⟩ := h

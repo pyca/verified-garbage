@@ -1,7 +1,7 @@
 import VerifiedGarbage.Proof.Rc2.AArch64.Block
 import VerifiedGarbage.Proof.Rc2.AArch64.Key
 import VerifiedGarbage.Proof.Rc2.AArch64.Cbc.Verified
-import VerifiedGarbage.Proof.Rc2.AArch64.Stream.Verified
+import VerifiedGarbage.Proof.Rc2.AArch64.Stream.Frame
 
 /-! # RC2 artifacts on baseline AArch64 -/
 
@@ -13,33 +13,33 @@ def artifacts : List Artifact := [
     doc := Spec.Rc2.cbcInitApi.doc
       (notes := ["Baseline AArch64: copies the IV and calls the verified key expansion, saving the \
         link register in a 16-byte stack frame."])
-    code := Impl.Rc2.AArch64.Stream.init
-    contract := Spec.Rc2.cbcInitContract AArch64.abi 16
-    stack := 16
+    code := Impl.StackScratch.AArch64.withStackScratchWiped 576 .x6 72 Impl.Rc2.AArch64.Stream.init
+    contract := Spec.Rc2.cbcInitContract AArch64.abi 592
+    stack := 592
     ofSig := ⟨_, _, _, by unfold Spec.Rc2.cbcInitContract; rfl⟩
-    verified := Proof.Rc2.AArch64.Stream.init_verified
+    verified := Proof.Rc2.AArch64.Stream.init_framed
     spSafe := Code.all_of_forall (fun _ => rfl) _ },
   { Spec.Rc2.cbcEncryptUpdateApi with
     target := AArch64.target
     doc := Spec.Rc2.cbcEncryptUpdateApi.doc
       (notes := ["Baseline AArch64: copies bytes one at a time and calls the verified CBC \
         encryption on the complete blocks, saving the link register in a 16-byte stack frame."])
-    code := Impl.Rc2.AArch64.Stream.encryptUpdate
-    contract := Spec.Rc2.cbcEncryptUpdateContract AArch64.abi 16
-    stack := 16
+    code := Impl.StackScratch.AArch64.withStackScratchWiped 576 .x6 72 Impl.Rc2.AArch64.Stream.encryptUpdate
+    contract := Spec.Rc2.cbcEncryptUpdateContract AArch64.abi 592
+    stack := 592
     ofSig := ⟨_, _, _, by unfold Spec.Rc2.cbcEncryptUpdateContract Spec.Rc2.cbcUpdateContract; rfl⟩
-    verified := Proof.Rc2.AArch64.Stream.encryptUpdate_verified
+    verified := Proof.Rc2.AArch64.Stream.encryptUpdate_framed
     spSafe := Code.all_of_forall (fun _ => rfl) _ },
   { Spec.Rc2.cbcDecryptUpdateApi with
     target := AArch64.target
     doc := Spec.Rc2.cbcDecryptUpdateApi.doc
       (notes := ["Baseline AArch64: copies bytes one at a time and calls the verified CBC \
         decryption on the complete blocks, saving the link register in a 16-byte stack frame."])
-    code := Impl.Rc2.AArch64.Stream.decryptUpdate
-    contract := Spec.Rc2.cbcDecryptUpdateContract AArch64.abi 16
-    stack := 16
+    code := Impl.StackScratch.AArch64.withStackScratchWiped 576 .x6 72 Impl.Rc2.AArch64.Stream.decryptUpdate
+    contract := Spec.Rc2.cbcDecryptUpdateContract AArch64.abi 592
+    stack := 592
     ofSig := ⟨_, _, _, by unfold Spec.Rc2.cbcDecryptUpdateContract Spec.Rc2.cbcUpdateContract; rfl⟩
-    verified := Proof.Rc2.AArch64.Stream.decryptUpdate_verified
+    verified := Proof.Rc2.AArch64.Stream.decryptUpdate_framed
     spSafe := Code.all_of_forall (fun _ => rfl) _ },
   { Spec.Rc2.cbcEncryptApi with
     target := AArch64.target
