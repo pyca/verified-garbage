@@ -291,4 +291,83 @@ theorem ifmaA_ok {s : State} {B : Addr} {Z w op oq a : Nat} {minv mp mq mk : Bit
     · rw [List.mem_singleton.mp hr]; exact .inl (by simp only; omega)
   · rw [k₄.2.1, k₁₃.2.1]
 
+/-! ## `ifma`'s second half: the vector code and the results -/
+
+/-- `p`'s value for prime 0, `q`'s for prime 1. -/
+def two {α : Type} (x y : α) (p : Nat) : α := if p = 0 then x else y
+
+/-- The vector code, from `q`'s workspace: the base of the area into `rbx`. -/
+theorem vecI_ok {t : State} {B : Addr} {Z w op oq a wp : Nat} {minv mp mq mk : BitVec 64} {P Q C : Nat}
+    {ep eq : Addr} {ebp ebq : List Byte} {K : Prop} {Yp Xcp Yq Xcq : Nat} (hs : Scr t B Z)
+    (hdi : t.gpr .rdi = off B oq) (hm : IMem t.mem B w op oq a minv mp mq mk P Q ep eq ebp.length ebq.length)
+    (haZ : a + 2 * D + 8 ≤ Z) (hqa : oq + slot 16 8 ≤ a)
+    (rp : RegOut t.mem (off B a) 0 P (2 ^ 32 * Yp % P) Xcp Yp Yp (mp &&& mask52) ebp)
+    (rq : RegOut t.mem (off B a) 1 Q (2 ^ 32 * Yq % Q) Xcq Yq 1 (mq &&& mask52) ebq)
+    (hwp : wp = 16) (hPo : P % 2 = 1) (hQo : Q % 2 = 1) (hYp : Yp < P) (hYq : Yq < Q) (hXp : Xcp < P)
+    (hXq : Xcq < Q) (vxp : K → Xcp % P = C * 2 ^ (64 * wp) % P) (vxq : K → Xcq % Q = C * 2 ^ (64 * wp) % Q)
+    (vyp : K → Yp % P = 2 ^ (64 * wp) % P) (vyq : K → Yq % Q = 2 ^ (64 * wp) % Q)
+    (hLp : ebp.length ≤ 128) (hLq : ebq.length ≤ 128) :
+    WP isa (seqs [.block [.mov .rbx (.mem (hdr sIfma))], CrtIfma.vec]) t fun t' =>
+      (AmmSym.Good t'.mem (off B a) (two P Q) oY 0 ∧
+        (K → AmmSym.val52 t'.mem (off B a) (D * 0 + oY) % P = C ^ Spec.Rsa.os2ip ebp * Yp % P)) ∧
+      (AmmSym.Good t'.mem (off B a) (two P Q) oY 1 ∧
+        (K → AmmSym.val52 t'.mem (off B a) (D * 1 + oY) % Q = C ^ Spec.Rsa.os2ip ebq * 1 % Q)) ∧
+      Outside (off B a) 0 (2 * D + 8) t.mem t'.mem ∧ t'.gpr .rdi = t.gpr .rdi ∧
+      t'.rd = t.rd ∧ t'.wr = t.wr ∧ t'.mxcsr = t.mxcsr &&& 0xFFFF ∧ Keep mmRegs t t' := by
+  have hn := hs.nowrap
+  have hD : D = 3712 := rfl
+  have h01 : ∀ p, p < 2 → p = 0 ∨ p = 1 := fun p hp => by omega
+  have h16 := hdr_lt_slot 16 8 (show 31 < 32 by decide)
+  simp only [seqs]
+  refine WP.seq (WP.mono (WP.keep [.rbx] (Q := fun u => u.gpr .rbx = off B a ∧ u.mem = t.mem ∧ u.mxcsr = t.mxcsr) (by
+    have hl : InRegions (t.rd ++ t.wr) (off (off B oq) (8 * sIfma)) 8 := by
+      rw [off_off]; exact hs.ld (by unfold sIfma sFn; omega)
+    xrun [State.ea, hdr, hdi, hdrOff, hl, hm.qia]; and_intros; all_goals rfl) rfl) fun u ⟨⟨bx, me, mx⟩, k⟩ => ?_)
+  have hmP := VG.Proof.Bignum.X86_64.wv_lt t.mem (off B op) (slot 16 Public.aN) 16
+  have hmQ := VG.Proof.Bignum.X86_64.wv_lt t.mem (off B oq) (slot 16 Public.aN) 16
+  rw [hm.pn, ← hwp] at hmP
+  rw [hm.qn, ← hwp] at hmQ
+  refine WP.mono (AmmSym.vecR_ok (M := two P Q) (K1 := two (2 ^ 32 * Yp % P) (2 ^ 32 * Yq % Q))
+    (Xc := two Xcp Xcq) (Y := two Yp Yq) (Fin := two Yp 1) (x := fun _ => C) (mi := two mp mq) (Q := K)
+    (w := wp) (R := 2 ^ (64 * wp)) hwp rfl bx ((hs.congr k.2.2).sub (by omega) (by omega))
+    (fun p hp => by rcases h01 p hp with rfl | rfl <;> rw [me] <;> [exact rp.n; exact rq.n])
+    (fun p hp => by rcases h01 p hp with rfl | rfl <;> rw [me] <;> [exact rp.k1; exact rq.k1])
+    (fun p hp => by rcases h01 p hp with rfl | rfl <;> rw [me] <;> [exact rp.x; exact rq.x])
+    (fun p hp => by rcases h01 p hp with rfl | rfl <;> rw [me] <;> [exact rp.y; exact rq.y])
+    (fun p hp => by rcases h01 p hp with rfl | rfl <;> rw [me] <;> [exact rp.fin; exact rq.fin])
+    (fun p hp => by rcases h01 p hp with rfl | rfl <;> rw [me] <;> [exact rp.k0; exact rq.k0])
+    (fun p hp => by
+      rcases h01 p hp with rfl | rfl
+      · show (P % 2 ^ 64 * mp.toNat + 1) % 2 ^ 64 = 0
+        rw [← hm.pn, VG.Proof.Bignum.X86_64.wv_mod64 _ _ _ (by decide)]; exact hm.pinv
+      · show (Q % 2 ^ 64 * mq.toNat + 1) % 2 ^ 64 = 0
+        rw [← hm.qn, VG.Proof.Bignum.X86_64.wv_mod64 _ _ _ (by decide)]; exact hm.qinv)
+    (fun p hp => by rcases h01 p hp with rfl | rfl <;> [exact hmP; exact hmQ])
+    (fun p hp => by rcases h01 p hp with rfl | rfl <;> [exact hPo; exact hQo])
+    (fun p hp => by rcases h01 p hp with rfl | rfl <;> [exact Nat.mod_lt _ (by omega); exact Nat.mod_lt _ (by omega)])
+    (fun p hp => by rcases h01 p hp with rfl | rfl <;> [exact hXp; exact hXq])
+    (fun p hp => by rcases h01 p hp with rfl | rfl <;> [exact hYp; exact hYq])
+    (fun p hp => by rcases h01 p hp with rfl | rfl <;> [show Yp < 2 * P; show 1 < 2 * Q] <;> omega)
+    (fun hK p hp => by rcases h01 p hp with rfl | rfl <;> [exact vxp hK; exact vxq hK])
+    (fun hK p hp => by rcases h01 p hp with rfl | rfl <;> [exact vyp hK; exact vyq hK])
+    (fun hK p hp => by
+      rcases h01 p hp with rfl | rfl
+      · show 2 ^ 32 * Yp % P % P = 2 ^ 32 * 2 ^ (64 * wp) % P
+        rw [Nat.mod_mod, Nat.mul_mod, vyp hK, ← Nat.mul_mod]
+      · show 2 ^ 32 * Yq % Q % Q = 2 ^ 32 * 2 ^ (64 * wp) % Q
+        rw [Nat.mod_mod, Nat.mul_mod, vyq hK, ← Nat.mul_mod]))
+    fun t' ⟨hy, ho, hr, hrd, hwr, hmx⟩ => ?_
+  have evp : AmmSym.ev u.mem (off B a) 0 128 = Spec.Rsa.os2ip ebp := ev_padE hLp (by rw [me]; exact rp.e)
+  have evq : AmmSym.ev u.mem (off B a) 1 128 = Spec.Rsa.os2ip ebq := ev_padE hLq (by rw [me]; exact rq.e)
+  refine ⟨⟨(hy 0 (by decide)).1, fun hK => ?_⟩, ⟨(hy 1 (by decide)).1, fun hK => ?_⟩, by rw [← me]; exact ho,
+    by rw [hr _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
+      (by decide) (by decide) (by decide) (by decide), k.gpr (by decide)], by rw [hrd, k.2.1],
+    by rw [hwr, k.2.2], by rw [hmx, mx], ⟨fun r hrm => ?_, by rw [hrd, k.2.1], by rw [hwr, k.2.2]⟩⟩
+  · rw [← evp]; exact (hy 0 (by decide)).2 hK
+  · rw [← evq]; exact (hy 1 (by decide)).2 hK
+  · have hn : ∀ r', r' ∈ mmRegs → r ≠ r' := fun r' h' h => hrm (h ▸ h')
+    rw [hr r (hn _ (by decide)) (hn _ (by decide)) (hn _ (by decide)) (hn _ (by decide)) (hn _ (by decide))
+      (hn _ (by decide)) (hn _ (by decide)) (hn _ (by decide)) (hn _ (by decide)) (hn _ (by decide))
+      (hn _ (by decide)) (hn _ (by decide)), k.gpr (fun h => hn .rbx (by decide) (List.mem_singleton.mp h))]
+
 end VG.Proof.Bignum.X86_64
