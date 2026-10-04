@@ -1,5 +1,6 @@
 import VerifiedGarbage.TCB.AArch64.Target
 import VerifiedGarbage.Proof.AesGcm.AArch64.Verified
+import VerifiedGarbage.Proof.AesGcm.AArch64.GhashImpls
 
 /-!
 # AES-GCM (NIST SP 800-38D) on AArch64
@@ -32,7 +33,8 @@ def note (v : GcmImpl) : String :=
   "This implementation encrypts with `" ++ v.ctr.callee.name ++ "` (and expands keys with `" ++
     v.key.fn.name ++ "`) and hashes with `" ++ v.gh.fn.name ++ "`."
 
-def artifacts (v : GcmImpl) : List Artifact := [
+/-- The artifacts calling the implementations `v`. -/
+def artifactsOf (v : GcmImpl) : List Artifact := [
   { Spec.Gcm.initApi with
     name := Spec.Gcm.initApi.name ++ v.suffix
     target := AArch64.target
@@ -114,5 +116,8 @@ def artifacts (v : GcmImpl) : List Artifact := [
     verified := streamVerify_verified v
     spSafe := Code.all_of_forall (fun _ => rfl) _
     features := v.features }]
+
+/-- The artifacts of a variant, from the implementations it names. -/
+def artifacts (v : GcmVariant) : List Artifact := artifactsOf v.impl
 
 end VG.Generic.AesGcm.AArch64.AesGcm

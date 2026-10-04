@@ -8,6 +8,6 @@ A variant of `AesGcm` on x86 (see `TCB/Emit.lean`): the baseline ISA: `vg_aes_ct
 
 namespace VG.Variants.AesGcm.X86.Scalar
 
-def variant : Proof.AesGcm.X86.GcmImpl := ⟨.scalar, .scalar⟩
+def variant : Proof.AesGcm.X86.GcmVariant := ⟨.scalar, .scalar⟩
 
 end VG.Variants.AesGcm.X86.Scalar

@@ -89,6 +89,10 @@ theorem Frm.wv_below {B : Addr} {o L : Nat} {rs : List (Nat × Nat)} {m m' : Mem
 
 /-! ## A prime's workspace -/
 
+/-- The size of the window's table after a prime's arrays: 16 entries of
+`8 (w_X + 2)` bytes. -/
+def tabBytes (wx : Nat) : Nat := 16 * (8 * (wx + 2))
+
 open VG.Impl.Bignum.X86_64.Public in
 /-- A prime's workspace at `off B o` (`wx` words), its base in `rdi`,
 after the modulus' at `B` (`w` words) in the working space, its header
@@ -101,22 +105,27 @@ structure SubCtx (t : State) (B : Addr) (Z o w wx : Nat) (minv : BitVec 64) : Pr
   nw : word t.mem B (8 * sW) = BitVec.ofNat 64 w
   narr : ∀ j < 8, word t.mem B (8 * sArr j) = off B (slot w j)
   lo : slot w 8 ≤ o
-  hi : o + slot wx 8 ≤ Z
+  hi : o + slot wx 8 + tabBytes wx ≤ Z
 
 theorem SubCtx.good {t : State} {B : Addr} {Z o w wx : Nat} {minv : BitVec 64} (h : SubCtx t B Z o w wx minv) :
     Good t (off B o) (slot wx 8) wx minv :=
-  ⟨h.scr.sub h.hi (by unfold slot hdrBytes; omega), h.rdi, h.hdr⟩
+  ⟨h.scr.sub (by have := h.hi; omega) (by unfold slot hdrBytes; omega), h.rdi, h.hdr⟩
+
+/-- The prime's workspace with its table. -/
+theorem SubCtx.scrT {t : State} {B : Addr} {Z o w wx : Nat} {minv : BitVec 64} (h : SubCtx t B Z o w wx minv) :
+    Scr t (off B o) (slot wx 8 + tabBytes wx) :=
+  h.scr.sub (by have := h.hi; omega) (by unfold slot hdrBytes; omega)
 
 /-- What changes within the arrays and the functions' own slots of the
 prime's workspace (but its link) keeps it. -/
-theorem SubCtx.of_frm {s t : State} {B : Addr} {Z o w wx : Nat} {minv : BitVec 64} {rs : List (Nat × Nat)}
+theorem SubCtx.of_frmT {s t : State} {B : Addr} {Z o w wx : Nat} {minv : BitVec 64} {rs : List (Nat × Nat)}
     (h : SubCtx s B Z o w wx minv) (hf : Frm (off B o) rs s.mem t.mem)
-    (hr : ∀ r ∈ rs, 8 * 17 ≤ r.1 ∧ r.1 + r.2 ≤ slot wx 8) (hwr : t.wr = s.wr)
+    (hr : ∀ r ∈ rs, 8 * 17 ≤ r.1 ∧ r.1 + r.2 ≤ slot wx 8 + tabBytes wx) (hwr : t.wr = s.wr)
     (hdi : t.gpr .rdi = s.gpr .rdi) : SubCtx t B Z o w wx minv := by
   have hn := h.scr.nowrap
   have hi := h.hi
-  have hL : o + slot wx 8 ≤ 2 ^ 64 := by omega
-  have hr' : ∀ r ∈ rs, r.1 + r.2 ≤ slot wx 8 := fun r hr' => (hr r hr').2
+  have hL : o + (slot wx 8 + tabBytes wx) ≤ 2 ^ 64 := by omega
+  have hr' : ∀ r ∈ rs, r.1 + r.2 ≤ slot wx 8 + tabBytes wx := fun r hr' => (hr r hr').2
   have hh : ∀ i < 17, word t.mem (off B o) (8 * i) = word s.mem (off B o) (8 * i) := fun i hi' =>
     hf.word_eq (fun r hr' => Or.inl (by have := hr r hr'; omega))
       (by have : 8 * 32 ≤ slot wx 8 := by unfold slot hdrBytes; omega
@@ -128,5 +137,11 @@ theorem SubCtx.of_frm {s t : State} {B : Addr} {Z o w wx : Nat} {minv : BitVec 6
       fun j hj => (hh _ (by unfold sArr; omega)).trans (h.hdr.harr j hj)⟩,
     (hh _ (by decide)).trans h.link, (hb _ (by decide)).trans h.nw,
     fun j hj => (hb _ (by unfold sArr; omega)).trans (h.narr j hj), h.lo, h.hi⟩
+
+theorem SubCtx.of_frm {s t : State} {B : Addr} {Z o w wx : Nat} {minv : BitVec 64} {rs : List (Nat × Nat)}
+    (h : SubCtx s B Z o w wx minv) (hf : Frm (off B o) rs s.mem t.mem)
+    (hr : ∀ r ∈ rs, 8 * 17 ≤ r.1 ∧ r.1 + r.2 ≤ slot wx 8) (hwr : t.wr = s.wr)
+    (hdi : t.gpr .rdi = s.gpr .rdi) : SubCtx t B Z o w wx minv :=
+  h.of_frmT hf (fun r hr' => ⟨(hr r hr').1, by have := (hr r hr').2; omega⟩) hwr hdi
 
 end VG.Proof.Bignum.X86_64
