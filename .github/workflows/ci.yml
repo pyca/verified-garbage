@@ -527,12 +527,13 @@ jobs:
             # AES-GCM's instances for AES's or GHASH's extension alone, which
             # no runner or chip has without the other; AES-NI's and
             # PCLMULQDQ's together, without AVX and with it (and AES-CMAC's
-            # AES-NI functions), which a runner with VAES and VPCLMULQDQ never
-            # chooses; and VAES's and VPCLMULQDQ's 256-bit ones, which a
-            # runner with AVX512BW too never chooses.
+            # AES-NI functions, and AES-OCB's through `Backend::AesNi`), which
+            # a runner with VAES and VPCLMULQDQ never chooses; and VAES's and
+            # VPCLMULQDQ's 256-bit ones, which a runner with AVX512BW too
+            # never chooses.
             runs: |
-              - | sha1 sha224 sha256 sha384 sha512 blake2 aes_gcm cmac chacha20 triple_des_ecb poly1305 mlkem mldsa scrypt argon2 rfc9106 x25519 x448 ed25519 rsa message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
-              aes,ssse3 | aes_gcm cmac cpu
+              - | sha1 sha224 sha256 sha384 sha512 blake2 aes_gcm aes_ocb cmac chacha20 triple_des_ecb poly1305 mlkem mldsa scrypt argon2 rfc9106 x25519 x448 ed25519 rsa message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
+              aes,ssse3 | aes_gcm aes_ocb cmac cpu
               pclmulqdq,ssse3 | aes_gcm cpu
               aes,pclmulqdq,ssse3 | aes_gcm cpu
               aes,avx,pclmulqdq,ssse3 | aes_gcm cpu
@@ -571,7 +572,7 @@ jobs:
           - chip: p4p
             arch: x86_64
             runs: |
-              - | sha1 sha224 sha256 sha384 sha512 blake2 aes_gcm cmac chacha20 triple_des_ecb poly1305 mlkem mldsa scrypt argon2 rfc9106 x25519 x448 ed25519 rsa message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
+              - | sha1 sha224 sha256 sha384 sha512 blake2 aes_gcm aes_ocb cmac chacha20 triple_des_ecb poly1305 mlkem mldsa scrypt argon2 rfc9106 x25519 x448 ed25519 rsa message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
           # Arrow Lake: the SHA512 extension, which no runner has.
           - chip: arl
             runs: |
