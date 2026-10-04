@@ -414,4 +414,47 @@ theorem w64_ok {s : State} {C D' : Addr} {w : Nat} (hC : s.gpr .r11 = C) (h8 : s
       show t.gpr r = s.gpr r
       rw [k.gpr hr, g₀ _ (fun h => hr (by simp [h]))], k.2.1, k.2.2⟩
 
+
+/-- The twenty limbs below `2⁵²` at `r11 = C` into seventeen words at `r8 = D'`. -/
+theorem to64_ok {s : State} {C D' : Addr} (hC : s.gpr .r11 = C) (h8 : s.gpr .r8 = D')
+    (hrd : ∀ j < 20, InRegions (s.rd ++ s.wr) (C + BitVec.ofNat 64 (VG.Impl.Rsa.X86_64.CrtIfma.off j)) 8)
+    (hwr : ∀ w < 17, InRegions s.wr (D' + BitVec.ofNat 64 (8 * w)) 8)
+    (hL : ∀ j < 20, (word s.mem C (VG.Impl.Rsa.X86_64.CrtIfma.off j)).toNat < 2 ^ 52)
+    (hsep : ∀ m m' : Mem, Outside D' 0 136 m m' → ∀ j < 20,
+      word m' C (VG.Impl.Rsa.X86_64.CrtIfma.off j) = word m C (VG.Impl.Rsa.X86_64.CrtIfma.off j)) :
+    WP isa (.block VG.Impl.Rsa.X86_64.CrtIfma.to64) s fun s' =>
+      (∀ w < 17, word s'.mem D' (8 * w) =
+        BitVec.ofNat 64 (lval (fun j => (limbsAt s.mem C j).toNat) 20 / 2 ^ (64 * w) % 2 ^ 64)) ∧
+      Outside D' 0 136 s.mem s'.mem ∧ VG.Proof.MlKem.X86_64.Keep [.rax, .rcx, .rbp] s s' ∧ s'.mxcsr = s.mxcsr := by
+  rw [to64_eq]
+  suffices h : ∀ n ≤ 17, WP isa (.block ((List.range n).flatMap w64)) s fun s' =>
+      (∀ w < n, word s'.mem D' (8 * w) =
+        BitVec.ofNat 64 (lval (fun j => (limbsAt s.mem C j).toNat) 20 / 2 ^ (64 * w) % 2 ^ 64)) ∧
+      Outside D' 0 136 s.mem s'.mem ∧ VG.Proof.MlKem.X86_64.Keep [.rax, .rcx, .rbp] s s' ∧ s'.mxcsr = s.mxcsr from
+    h 17 (Nat.le_refl _)
+  intro n
+  induction n with
+  | zero => intro _; exact WP.block_nil ⟨fun _ h => absurd h (by omega), Outside.refl _ _ _ _,
+      VG.Proof.MlKem.X86_64.Keep.refl _ _, rfl⟩
+  | succ n ih =>
+    intro hn
+    rw [List.range_succ, List.flatMap_append, List.flatMap_singleton, WP.block_append_iff]
+    refine WP.mono (ih (by omega)) fun t ⟨v, o, k, x⟩ => ?_
+    have hlim : ∀ j, limbsAt t.mem C j = limbsAt s.mem C j := fun j => by
+      unfold limbsAt; split
+      · exact hsep _ _ o j (by assumption)
+      · rfl
+    refine WP.mono (w64_ok (w := n) ((k.gpr (by decide)).trans hC) ((k.gpr (by decide)).trans h8)
+      (fun j hj => by rw [k.2.1, k.2.2]; exact hrd j hj) (by rw [k.2.2]; exact hwr n (by omega))
+      (fun j hj => by rw [hsep _ _ o j hj]; exact hL j hj))
+      fun t' ⟨m', k', x'⟩ => ⟨fun w hw => ?_, ?_, (k.trans k').mono (by simp), x'.trans x⟩
+    · simp only [hlim] at m'
+      rw [m']
+      rcases Nat.lt_or_eq_of_le (Nat.le_of_lt_succ hw) with hw | rfl
+      · rw [(writeW_outside _ D' _ (by omega)).word (by omega) (by omega)]
+        exact v w hw
+      · exact VG.Proof.Bignum.X86_64.word_writeW_self _ _ _ _
+    · rw [m']
+      exact o.trans ((writeW_outside _ D' _ (by omega)).mono (by omega) (by omega))
+
 end VG.Proof.Bignum.X86_64.AmmSym
