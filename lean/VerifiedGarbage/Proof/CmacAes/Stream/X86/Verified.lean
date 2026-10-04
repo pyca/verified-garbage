@@ -4,6 +4,7 @@ import VerifiedGarbage.Proof.CmacAes.Stream.X86.Finish
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Spec.Cmac.Contract
 import VerifiedGarbage.Proof.CmacAes.Stream.X86.Absorb
+import VerifiedGarbage.Proof.CmacAes.Stream.Scratch
 
 section
 
@@ -124,7 +125,7 @@ def initSat : State where
   rd := [⟨0x3000, 16⟩, ⟨0x8004, 16⟩]
   wr := [⟨0x1000, 304⟩, ⟨0x4000, 2304⟩]
 
-theorem init_verified : Verified X86.target (init v.expand v.callee v.suffix) (Spec.Cmac.aesInitContract X86.abi 48) :=
+theorem init_verified : Verified X86.target (init v.expand v.callee v.suffix) (initScratchContract X86.abi 48) :=
   Verified.of_correct (fun _ hs => (init_wp v) hs) (init_ct v) (by
     have a0 : arg initSat 0 = 0x1000 := by decide
     have a1 : arg initSat 1 = 0x3000 := by decide
@@ -132,7 +133,7 @@ theorem init_verified : Verified X86.target (init v.expand v.callee v.suffix) (S
     have a3 : arg initSat 3 = 0x4000 := by decide
     have e : argAddr initSat 0 = 0x8004 := by decide
     have esp : initSat.gpr .esp = 0x8000 := rfl
-    sig_implies [Spec.Cmac.aesInitContract, Spec.Cmac.aesInitSig, X86.abi, X86.argSlots,
+    sig_implies [initScratchContract, initScratchSig, Spec.Cmac.aesInitPre, Spec.Cmac.aesInitPost, X86.abi, X86.argSlots,
       X86.argVal, X86.argBytes, initX86] [a0, a1, a2, a3, e, esp] using initSat)
 
 /-- A state satisfying `vg_cmac_aes_absorb`'s precondition: the state at
@@ -149,7 +150,7 @@ def absorbSat : State where
   rd := [⟨0x3000, 0⟩, ⟨0x8004, 28⟩]
   wr := [⟨0x1000, 304⟩, ⟨0x4000, 2304⟩]
 
-theorem absorb_verified : Verified X86.target (absorb v.callee v.suffix) (Spec.Cmac.aesAbsorbContract X86.abi 56) :=
+theorem absorb_verified : Verified X86.target (absorb v.callee v.suffix) (absorbScratchContract X86.abi 56) :=
   Verified.of_correct (fun _ hs => (absorb_wp v) hs) (absorb_ct v) (by
     have a0 : arg absorbSat 0 = 0x1000 := by decide
     have a1 : arg absorbSat 1 = 10 := by decide
@@ -160,7 +161,7 @@ theorem absorb_verified : Verified X86.target (absorb v.callee v.suffix) (Spec.C
     have a6 : arg absorbSat 6 = 0x4000 := by decide
     have e : argAddr absorbSat 0 = 0x8004 := by decide
     have esp : absorbSat.gpr .esp = 0x8000 := rfl
-    sig_implies [Spec.Cmac.aesAbsorbContract, Spec.Cmac.aesAbsorbSig, X86.abi, X86.argSlots,
+    sig_implies [absorbScratchContract, absorbScratchSig, Spec.Cmac.aesAbsorbPre, Spec.Cmac.aesAbsorbPost, X86.abi, X86.argSlots,
       X86.argVal, X86.argBytes, absorbX86, countX86] [a0, a1, a2, a3, a4, a5, a6, e, esp] using absorbSat)
 
 /-- A state satisfying `vg_cmac_aes_finish`'s precondition: the state at
@@ -177,7 +178,7 @@ def finishSat : State where
   rd := [⟨0x8004, 24⟩]
   wr := [⟨0x1000, 304⟩, ⟨0x2000, 16⟩, ⟨0x4000, 2304⟩]
 
-theorem finish_verified : Verified X86.target (finish v.callee v.suffix) (Spec.Cmac.aesFinishContract X86.abi 56) :=
+theorem finish_verified : Verified X86.target (finish v.callee v.suffix) (finishScratchContract X86.abi 56) :=
   Verified.of_correct (fun _ hs => (finish_wp v) hs) (finish_ct v) (by
     have a0 : arg finishSat 0 = 0x1000 := by decide
     have a1 : arg finishSat 1 = 10 := by decide
@@ -187,7 +188,7 @@ theorem finish_verified : Verified X86.target (finish v.callee v.suffix) (Spec.C
     have a5 : arg finishSat 5 = 0x4000 := by decide
     have e : argAddr finishSat 0 = 0x8004 := by decide
     have esp : finishSat.gpr .esp = 0x8000 := rfl
-    sig_implies [Spec.Cmac.aesFinishContract, Spec.Cmac.aesFinishSig, X86.abi, X86.argSlots,
+    sig_implies [finishScratchContract, finishScratchSig, Spec.Cmac.aesFinishPre, Spec.Cmac.aesFinishPost, X86.abi, X86.argSlots,
       X86.argVal, X86.argBytes, finishX86, countX86] [a0, a1, a2, a3, a4, a5, e, esp] using finishSat)
 
 end VG.Proof.CmacAes.Stream.X86

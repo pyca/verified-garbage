@@ -6,6 +6,8 @@ import VerifiedGarbage.Impl.Argon2.X86_64.DependentWord
 
 namespace VG.Impl.Argon2.X86_64.RandomSource
 
+variable [Compressor]
+
 open VG.X86_64
 
 def test : List Instr := [.alu .cmp .r10 (.imm 0)]

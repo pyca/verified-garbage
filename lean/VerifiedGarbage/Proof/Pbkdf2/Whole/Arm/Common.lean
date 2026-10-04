@@ -32,8 +32,8 @@ structure FnsOK (F : Fns) where
   Wi : Nat
   Wf : Nat
   Wt : Nat
-  hi : Sound F.hiC (Spec.Hmac.initContract hH.SH Wi Arm.abi 16)
-  hf : Sound F.hfC (Spec.Hmac.finalizeContract hH.SH Wf Arm.abi 16)
+  hi : Sound F.hiC (Spec.Hmac.initScratchContract hH.SH Wi Arm.abi 16)
+  hf : Sound F.hfC (Spec.Hmac.finalizeScratchContract hH.SH Wf Arm.abi 16)
   it : Sound F.itC (Spec.Pbkdf2.iterateContract hH.SH Wt Arm.abi 16)
   hiSt : armStack F.hiC ≤ 16
   hfSt : armStack F.hfC ≤ 16

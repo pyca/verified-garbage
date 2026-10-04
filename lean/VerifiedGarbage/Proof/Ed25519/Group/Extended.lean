@@ -1,7 +1,7 @@
-import Mathlib.NumberTheory.LucasPrimality
+import VerifiedGarbage.Proof.Framework.Pratt
 import Mathlib.Tactic.NormNum.Prime
 import VerifiedGarbage.Spec.X25519
-import VerifiedGarbage.Proof.Ed25519.Group.Edwards
+import VerifiedGarbage.Proof.Edwards.Group
 import Mathlib.Algebra.Group.Defs
 import Mathlib.Algebra.Group.Basic
 import VerifiedGarbage.Spec.Ed25519
@@ -15,81 +15,13 @@ section
 /-!
 # `2^255 - 19` is prime
 
-A Pratt certificate: for each prime `p` of the tree, a witness `a` of order `p -
-1` modulo `p` and the prime factors of `p - 1` (with multiplicity), checked by
-Lucas's theorem (`lucas_primality`). The kernel evaluates the modular powers
-with `powMod`, a binary exponentiation on `Nat`. Factors below `2^16` are
-prime by `norm_num`.
+A Pratt certificate (`Proof/Framework/Pratt.lean`), one theorem per prime of
+the tree. Factors below `2^16` are prime by `norm_num`.
 -/
 
 namespace VG.Proof.Ed25519
 
-/-- `b^e % m` for `e < 2^n`, by binary exponentiation. -/
-def powMod (m : Nat) : Nat → Nat → Nat → Nat
-  | 0, _, _ => 1
-  | n + 1, b, e => if e = 0 then 1 else
-      if e % 2 = 0 then powMod m n (b * b % m) (e / 2) else b * powMod m n (b * b % m) (e / 2) % m
-
-theorem powMod_cast (m : Nat) (n b e : Nat) (he : e < 2 ^ n) :
-    (powMod m n b e : ZMod m) = (b : ZMod m) ^ e := by
-  induction n generalizing b e with
-  | zero =>
-    have : e = 0 := by simpa using he
-    subst this; simp [powMod]
-  | succ n ih =>
-    by_cases h0 : e = 0
-    · subst h0; simp [powMod]
-    have he2 : e / 2 < 2 ^ n := by rw [Nat.pow_succ] at he; omega
-    have hb : ((b * b % m : Nat) : ZMod m) = (b : ZMod m) ^ 2 := by
-      rw [ZMod.natCast_mod, Nat.cast_mul, sq]
-    have hsplit : (b : ZMod m) ^ e = ((b : ZMod m) ^ 2) ^ (e / 2) * (b : ZMod m) ^ (e % 2) := by
-      rw [← pow_mul, ← pow_add]; congr 1; omega
-    by_cases h2 : e % 2 = 0
-    · simp only [powMod, h0, h2, ite_false, ite_true]
-      rw [ih _ _ he2, hb, hsplit, h2, pow_zero, mul_one]
-    · simp only [powMod, h0, h2, ite_false]
-      have h1 : e % 2 = 1 := by omega
-      rw [ZMod.natCast_mod, Nat.cast_mul, ih _ _ he2, hb, hsplit, h1, pow_one, mul_comm]
-
-theorem prime_of_dvd_prod {q : Nat} (hq : q.Prime) {fs : List Nat} (hfs : ∀ f ∈ fs, f.Prime)
-    (h : q ∣ fs.prod) : q ∈ fs := by
-  induction fs with
-  | nil => exact absurd (Nat.eq_one_of_dvd_one (by simpa using h)) hq.ne_one
-  | cons f fs ih =>
-    rw [List.prod_cons] at h
-    rcases (Nat.Prime.dvd_mul hq).mp h with h | h
-    · rw [(Nat.prime_dvd_prime_iff_eq hq (hfs f (by simp))).mp h]; simp
-    · exact List.mem_cons_of_mem _ (ih (fun g hg => hfs g (List.mem_cons_of_mem _ hg)) h)
-
-theorem powMod_lt (m n b e : Nat) (hm : 0 < m) : powMod m n b e < m ∨ powMod m n b e = 1 := by
-  induction n generalizing b e with
-  | zero => right; rfl
-  | succ n ih =>
-    simp only [powMod]
-    split_ifs
-    · right; rfl
-    · exact ih _ _
-    · left; exact Nat.mod_lt _ hm
-
-/-- Lucas's test, with the prime factors of `p - 1` listed (with multiplicity)
-and every power computed by `powMod` with `n`-bit exponents. -/
-theorem prime_of_cert (p a n : Nat) (fs : List Nat) (hp : 2 ≤ p) (hn : p - 1 < 2 ^ n)
-    (hfs : ∀ f ∈ fs, f.Prime) (hprod : fs.prod = p - 1)
-    (ha : powMod p n a (p - 1) = 1)
-    (hq : ∀ f ∈ fs, powMod p n a ((p - 1) / f) ≠ 1) : p.Prime := by
-  have h1 : ((1 : Nat) : ZMod p) = 1 := Nat.cast_one
-  refine lucas_primality p (a : ZMod p) ?_ ?_
-  · rw [← powMod_cast p n a _ hn, ha, h1]
-  · intro q hq' hd
-    have hm := prime_of_dvd_prod hq' hfs (hprod ▸ hd)
-    rw [← powMod_cast p n a _ (lt_of_le_of_lt (Nat.div_le_self _ _) hn)]
-    intro he
-    have hlt := powMod_lt p n a ((p - 1) / q) (by omega)
-    rcases hlt with hlt | hlt
-    · have := (ZMod.natCast_eq_natCast_iff' _ _ p).mp (he.trans h1.symm)
-      rw [Nat.mod_eq_of_lt hlt, Nat.mod_eq_of_lt (by omega)] at this
-      exact hq q hm this
-    · exact hq q hm hlt
+open VG.Proof.Pratt
 
 theorem prime_569003 : Nat.Prime 569003 := by
   refine prime_of_cert 569003 2 20 [2, 7, 97, 419] (by decide) (by decide +kernel) ?_
@@ -276,12 +208,119 @@ section
 # The points of a complete twisted Edwards curve form a commutative group
 
 `EPoint d` is the type of affine points; its addition is the Edwards law of
-`Edwards.lean`, its zero `(0, 1)` and its negation `(-x, y)`.
+RFC 8032 §5.1.4 (below, by the twist), its zero `(0, 1)` and its negation `(-x, y)`.
 -/
 
 namespace VG.Proof.Ed25519.Edwards
 
+/-! ## The twisted curve, as the untwisted one
+
+Ed25519's curve `-x² + y² = 1 + d x² y²` (`a = -1`) is the curve
+`x² + y² = 1 - d x² y²` of `Proof/Edwards/Group.lean` (`a = 1`, with `-d`) through
+`(x, y) ↦ (s x, y)` for `s² = -1`, which takes RFC 8032 §5.1.4's addition to
+§5.2.4's (`addX_twist`, `addY_twist`). So the group law's facts (completeness,
+closure, associativity) are those of the untwisted law, carried back. -/
+
 variable {F : Type*} [Field F]
+
+/-- The curve `-x² + y² = 1 + d x² y²`. -/
+def OnCurve (d x y : F) : Prop := -x ^ 2 + y ^ 2 = 1 + d * x ^ 2 * y ^ 2
+
+/-- What makes the addition law complete. -/
+structure Params (d : F) : Prop where
+  two : (2 : F) ≠ 0
+  sqrtm1 : ∃ s : F, s ^ 2 = -1
+  nonsq : ∀ r : F, r ^ 2 ≠ d
+
+/-- The affine addition law (RFC 8032 §5.1.4, divided out). -/
+def addX (d x1 y1 x2 y2 : F) : F := (x1 * y2 + y1 * x2) / (1 + d * x1 * x2 * y1 * y2)
+
+def addY (d x1 y1 x2 y2 : F) : F := (y1 * y2 + x1 * x2) / (1 - d * x1 * x2 * y1 * y2)
+
+section
+variable {d s x y x1 y1 x2 y2 : F} (hs : s ^ 2 = -1)
+include hs
+
+theorem s_ne_zero : s ≠ 0 := by
+  rintro rfl
+  have : (1 : F) = 0 := by linear_combination hs
+  exact one_ne_zero this
+
+theorem onCurve_twist : OnCurve d x y ↔ VG.Proof.EdwardsLaw.OnCurve (-d) (s * x) y := by
+  unfold OnCurve VG.Proof.EdwardsLaw.OnCurve
+  exact ⟨fun h => by linear_combination h + (x ^ 2 + d * x ^ 2 * y ^ 2) * hs,
+    fun h => by linear_combination h - (x ^ 2 + d * x ^ 2 * y ^ 2) * hs⟩
+
+theorem params_twist (hP : Params d) : VG.Proof.EdwardsLaw.Params (-d) := by
+  refine ⟨hP.two, fun r hr => hP.nonsq (r / s) ?_⟩
+  rw [div_pow, hr, hs, neg_div_neg_eq, div_one]
+
+theorem addX_twist :
+    VG.Proof.EdwardsLaw.addX (-d) (s * x1) y1 (s * x2) y2 = s * addX d x1 y1 x2 y2 := by
+  have e : 1 + -d * (s * x1) * (s * x2) * y1 * y2 = 1 + d * x1 * x2 * y1 * y2 := by
+    linear_combination (-d * x1 * x2 * y1 * y2) * hs
+  simp only [VG.Proof.EdwardsLaw.addX, addX, e]
+  ring
+
+theorem addY_twist :
+    VG.Proof.EdwardsLaw.addY (-d) (s * x1) y1 (s * x2) y2 = addY d x1 y1 x2 y2 := by
+  have e1 : y1 * y2 - s * x1 * (s * x2) = y1 * y2 + x1 * x2 := by
+    linear_combination (-x1 * x2) * hs
+  have e2 : 1 - -d * (s * x1) * (s * x2) * y1 * y2 = 1 - d * x1 * x2 * y1 * y2 := by
+    linear_combination (d * x1 * x2 * y1 * y2) * hs
+  simp only [VG.Proof.EdwardsLaw.addY, addY, e1, e2]
+
+end
+
+section
+variable {d x1 y1 x2 y2 x3 y3 : F}
+
+theorem den_add_ne (hP : Params d) (h1 : OnCurve d x1 y1) (h2 : OnCurve d x2 y2) :
+    1 + d * x1 * x2 * y1 * y2 ≠ 0 := by
+  obtain ⟨s, hs⟩ := hP.sqrtm1
+  have := VG.Proof.EdwardsLaw.den_add_ne (params_twist hs hP) ((onCurve_twist hs).1 h1)
+    ((onCurve_twist hs).1 h2)
+  rwa [show 1 + -d * (s * x1) * (s * x2) * y1 * y2 = 1 + d * x1 * x2 * y1 * y2 by
+    linear_combination (-d * x1 * x2 * y1 * y2) * hs] at this
+
+theorem den_sub_ne (hP : Params d) (h1 : OnCurve d x1 y1) (h2 : OnCurve d x2 y2) :
+    1 - d * x1 * x2 * y1 * y2 ≠ 0 := by
+  obtain ⟨s, hs⟩ := hP.sqrtm1
+  have := VG.Proof.EdwardsLaw.den_sub_ne (params_twist hs hP) ((onCurve_twist hs).1 h1)
+    ((onCurve_twist hs).1 h2)
+  rwa [show 1 - -d * (s * x1) * (s * x2) * y1 * y2 = 1 - d * x1 * x2 * y1 * y2 by
+    linear_combination (d * x1 * x2 * y1 * y2) * hs] at this
+
+theorem onCurve_add (hP : Params d) (h1 : OnCurve d x1 y1) (h2 : OnCurve d x2 y2) :
+    OnCurve d (addX d x1 y1 x2 y2) (addY d x1 y1 x2 y2) := by
+  obtain ⟨s, hs⟩ := hP.sqrtm1
+  have := VG.Proof.EdwardsLaw.onCurve_add (params_twist hs hP) ((onCurve_twist hs).1 h1)
+    ((onCurve_twist hs).1 h2)
+  rw [addX_twist hs, addY_twist hs] at this
+  exact (onCurve_twist hs).2 this
+
+theorem add_assoc_x (hP : Params d) (h1 : OnCurve d x1 y1) (h2 : OnCurve d x2 y2)
+    (h3 : OnCurve d x3 y3) :
+    addX d (addX d x1 y1 x2 y2) (addY d x1 y1 x2 y2) x3 y3 =
+      addX d x1 y1 (addX d x2 y2 x3 y3) (addY d x2 y2 x3 y3) := by
+  obtain ⟨s, hs⟩ := hP.sqrtm1
+  have := VG.Proof.EdwardsLaw.add_assoc_x (params_twist hs hP) ((onCurve_twist hs).1 h1)
+    ((onCurve_twist hs).1 h2) ((onCurve_twist hs).1 h3)
+  rw [addX_twist hs, addY_twist hs, addX_twist hs, addY_twist hs, addX_twist hs,
+    addX_twist hs] at this
+  exact mul_left_cancel₀ (s_ne_zero hs) this
+
+theorem add_assoc_y (hP : Params d) (h1 : OnCurve d x1 y1) (h2 : OnCurve d x2 y2)
+    (h3 : OnCurve d x3 y3) :
+    addY d (addX d x1 y1 x2 y2) (addY d x1 y1 x2 y2) x3 y3 =
+      addY d x1 y1 (addX d x2 y2 x3 y3) (addY d x2 y2 x3 y3) := by
+  obtain ⟨s, hs⟩ := hP.sqrtm1
+  have := VG.Proof.EdwardsLaw.add_assoc_y (params_twist hs hP) ((onCurve_twist hs).1 h1)
+    ((onCurve_twist hs).1 h2) ((onCurve_twist hs).1 h3)
+  rwa [addX_twist hs, addY_twist hs, addX_twist hs, addY_twist hs, addY_twist hs,
+    addY_twist hs] at this
+
+end
 
 /-- An affine point of the curve. -/
 @[ext]
@@ -388,15 +427,15 @@ private theorem d_val : (Spec.Ed25519.d : Fe).val =
     37095705934669439343138083508754565189542113879843219016388785533085940283555 := by
   decide +kernel
 
-private theorem d_pow : powMod P 256 37095705934669439343138083508754565189542113879843219016388785533085940283555
+private theorem d_pow : Pratt.powMod P 256 37095705934669439343138083508754565189542113879843219016388785533085940283555
     ((P - 1) / 2) = P - 1 := by decide +kernel
 
 theorem dZ_pow : dZ ^ ((P - 1) / 2) = -1 := by
   have h : dZ = ((37095705934669439343138083508754565189542113879843219016388785533085940283555 : Nat) :
       ZMod P) := by
     rw [← d_val]; exact (ZMod.natCast_zmod_val _).symm
-  rw [h, ← powMod_cast P 256 _ _ (by decide), d_pow, Nat.cast_sub (by decide), ZMod.natCast_self,
-    Nat.cast_one, zero_sub]
+  rw [h, ← Pratt.powMod_cast P 256 _ _ (by decide), d_pow, Nat.cast_sub (by decide),
+    ZMod.natCast_self, Nat.cast_one, zero_sub]
 
 theorem sqrtM1_sq : Spec.Ed25519.sqrtM1 * Spec.Ed25519.sqrtM1 = 0 - 1 := by decide +kernel
 

@@ -10,7 +10,7 @@ words at `b` to or from registers, with the carry or borrow out in `CF`.
 
 namespace VG.Proof.Mont.X86_64
 
-open VG VG.X86_64 VG.Impl.Mont.X86_64
+open VG VG.X86_64 VG.Impl.Mont.X86_64 VG.Impl.Mont
 open VG.Proof.X25519.X86_64 (Keeps Keeps.trans Keeps.mono add_carry adc_carry sub_borrow sbb_borrow)
 
 theorem loads_ok {size : Nat} : ∀ (ts : List Reg) {s : State} {base : Addr} {a : Nat},

@@ -44,13 +44,13 @@ structure Done (s t : State) (p : Params) (pass lane slice index : Nat) (state :
   rd : t.rd = s.rd
   wr : t.wr = s.wr
   frame : Frame (writes s) s.mem t.mem
-  mxcsr : t.mxcsr = s.mxcsr
+  mxcsr : ctl t.mxcsr = ctl s.mxcsr
 
 theorem Ready.index_nat {p : Params} {pass lane slice index old : Nat} {s : State}
     (h : Ready p pass lane slice index old s) : (s.gpr .r15).toNat = index := by
   rw [h.filling.position.index, ReferenceMap.word_nat index h.filling.bounds.index_bound64]
 
-theorem independent_ok (s : State) (p : Params) (pass lane slice index old : Nat)
+theorem independent_ok [CompressImpl] (s : State) (p : Params) (pass lane slice index old : Nat)
     (h : Ready p pass lane slice index old s) (state : FillState)
     (represented : Proof.Argon2.Represents s.mem (FillKernel.matrix s) p.blocks state.memory)
     (mode : independent p pass slice = true) :
@@ -80,14 +80,14 @@ theorem dependent_ok (s : State) (p : Params) (pass lane slice index old : Nat)
     WP isa Impl.Argon2.X86_64.DependentWord.code s (Done s · p pass lane slice index state) := by
   refine (DependentWord.state_ok s p pass lane slice index h.filling state represented mode).mono ?_
   rintro t ⟨random, _, matrix, keeps⟩
-  refine ⟨random, ⟨old, h.of_keeps keeps⟩, matrix, ?_, keeps.rd, keeps.wr, ?_, keeps.mxcsr⟩
+  refine ⟨random, ⟨old, h.of_keeps keeps⟩, matrix, ?_, keeps.rd, keeps.wr, ?_, ctl_eq_of keeps.mxcsr⟩
   · intro r hr
     apply keeps.regs
     simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
   · rw [keeps.mem]; exact Frame.refl _ _
 
-theorem code_ok (s : State) (p : Params) (pass lane slice index old : Nat)
+theorem code_ok [CompressImpl] (s : State) (p : Params) (pass lane slice index old : Nat)
     (h : Ready p pass lane slice index old s) (state : FillState)
     (represented : Proof.Argon2.Represents s.mem (FillKernel.matrix s) p.blocks state.memory) :
     WP isa Impl.Argon2.X86_64.RandomSource.code s (Done s · p pass lane slice index state) := by
@@ -102,7 +102,7 @@ theorem code_ok (s : State) (p : Params) (pass lane slice index old : Nat)
   have finish {t : State} (done : Done a t p pass lane slice index state) :
       Done s t p pass lane slice index state := by
     refine ⟨done.random, done.ready, done.represented, ?_, done.rd.trans keeps.rd,
-      done.wr.trans keeps.wr, ?_, done.mxcsr.trans keeps.mxcsr⟩
+      done.wr.trans keeps.wr, ?_, done.mxcsr.trans (ctl_eq_of keeps.mxcsr)⟩
     · intro r hr
       have ne : r ∉ ReferenceMap.changed := by
         simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr

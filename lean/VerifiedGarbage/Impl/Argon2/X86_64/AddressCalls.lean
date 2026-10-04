@@ -1,6 +1,6 @@
 import VerifiedGarbage.Impl.Argon2.X86_64.AddressHeader
 import VerifiedGarbage.Impl.Argon2.X86_64.ClearBlock
-import VerifiedGarbage.Spec.Argon2.Contract
+import VerifiedGarbage.Impl.Argon2.X86_64.Compressor
 
 /-! Independent-address generation in the shared 16 KiB scratch allocation.
 G uses `[0,4096)`, temporary output `[4096,5120)`, input `[5120,6144)`,
@@ -11,7 +11,9 @@ reloads the scratch pointer from frame offset 248 after a compression call.
 namespace VG.Impl.Argon2.X86_64.AddressCalls
 
 open VG.X86_64
-open VG.Impl.Argon2.X86_64 (at_)
+open VG.Impl.Argon2.X86_64 (at_ Compressor)
+
+variable [Compressor]
 
 def pointer (offset : Nat) : List Instr := [
   .mov .rdi (.mem (at_ .rbp 248)), .alu .add .rdi (.imm (BitVec.ofNat 32 offset))]
@@ -23,7 +25,7 @@ def args (x y out : Nat) : List Instr := [
   .mov .rdx (.reg .rcx), .alu .add .rdx (.imm (BitVec.ofNat 32 out))]
 
 def stage (x y out : Nat) : Prog isa := .seq (.block (args x y out))
-  (.call Spec.Argon2.compressApi.name VG.Impl.Argon2.X86_64.compress)
+  (.call Compressor.name Compressor.code)
 
 def calls : Prog isa := .seq (stage 7168 5120 4096) (stage 7168 4096 6144)
 

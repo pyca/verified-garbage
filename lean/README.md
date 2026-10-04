@@ -42,10 +42,13 @@ VerifiedGarbage/
   Variants/       Implementations of an interface that generic callers call: one
                   file per implementation, `Variants/<Iface>/<Target>/<Name>.lean`
   Generic/        Callers proven for any variant of an interface, emitted once per
-                  variant: `Generic/<Iface>/<Target>/<Alg>.lean`
+                  variant: `Generic/<Iface>/<Target>/<Alg>.lean`; callers of several
+                  interfaces, once per combination of their variants:
+                  `Generic/<Iface₁>/<Iface₂>/<Target>/<Alg>.lean`
   Artifacts.lean  An empty list, which the emitter still reads; add nothing to it
 VerifiedGarbageTest/  Golden tests for the (unverified) printers and calling conventions
 Emit.lean       Renders every artifact into `../src/asm/` (see `TCB/Emit.lean`)
+EmitOne.lean    The same, for the registration files named, while iterating
 ```
 
 `ci/check_lean_imports.py` enforces the import discipline between these
@@ -141,4 +144,5 @@ lake exe cache get                  # download prebuilt Mathlib
 lake build                          # check every proof, run the axiom audit and golden tests
 lake env lean --run Emit.lean       # regenerate ../src/asm
 lake env lean --run Emit.lean --check
+lake env lean --run EmitOne.lean [--check] Rc2.AArch64   # one registration file
 ```

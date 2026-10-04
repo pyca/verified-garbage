@@ -3,6 +3,7 @@ import VerifiedGarbage.Proof.Bignum.X86_64.PubVerified
 import VerifiedGarbage.Proof.Bignum.X86_64.PcVerified
 import VerifiedGarbage.Proof.Bignum.X86_64.PdVerified
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxCT
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtVerified
 
 /-! # RSA (RFC 8017) on x86-64 -/
 
@@ -61,6 +62,33 @@ def artifacts : List Artifact := [
     code := Impl.Rsa.X86_64.Precomputed.code Proof.Bignum.X86_64.Mont.adx.mm
     contract := Spec.Rsa.publicPrecomputedContract X86_64.abi
     verified := Proof.Bignum.X86_64.precomputed_verified _ (by decide +kernel)
+    features := ["bmi2", "adx"]
+    spSafe := Code.all_of_allInstrs (by decide +kernel) },
+  { Spec.Rsa.privateCrtApi with
+    target := X86_64.target
+    doc := Spec.Rsa.privateCrtApi.doc
+      (notes := ["Baseline x86-64: the checks (`n` as `vg_rsa_public_precompute` checks it, the input \
+        below `n`, `p q = n` by a product of the two, `qInv < p`) give a mask; the primes are \
+        replaced by 3 under a clear mask, so that the arithmetic is the same whatever the key, and \
+        the result is stored masked. Each prime has its own working space, with its own \
+        Montgomery multiplication (`vg_rsa_public`'s); the input is reduced modulo it by \
+        Montgomery reduction of chunks of its size, and the exponents are scanned left to right \
+        over all their bits by a fixed window of 4 bits: four squares and a multiplication by the \
+        window's power of the input, from a table of all 16 after the prime's working space, read \
+        by a masked selection from every entry."])
+    code := Impl.Rsa.X86_64.Crt.code Proof.Bignum.X86_64.Mont.base.mm
+    contract := Spec.Rsa.privateCrtContract X86_64.abi
+    verified := Proof.Bignum.X86_64.crt_verified _ (by decide +kernel)
+    spSafe := Code.all_of_allInstrs (by decide +kernel) },
+  { Spec.Rsa.privateCrtApi with
+    target := X86_64.target
+    name := Spec.Rsa.privateCrtApi.name ++ "_adx"
+    doc := Spec.Rsa.privateCrtApi.doc
+      (notes := ["`vg_rsa_private_crt`'s code, with `vg_rsa_public_precomputed_adx`'s Montgomery \
+        multiplication."])
+    code := Impl.Rsa.X86_64.Crt.code Proof.Bignum.X86_64.Mont.adx.mm
+    contract := Spec.Rsa.privateCrtContract X86_64.abi
+    verified := Proof.Bignum.X86_64.crt_verified _ (by decide +kernel)
     features := ["bmi2", "adx"]
     spSafe := Code.all_of_allInstrs (by decide +kernel) }]
 

@@ -4,6 +4,7 @@ import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Spec.Cmac.Contract
 import VerifiedGarbage.Proof.CmacAes.Stream.Arm.AbsorbCorrect
 import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
+import VerifiedGarbage.Proof.CmacAes.Stream.Scratch
 
 section
 
@@ -137,9 +138,9 @@ def initSat : State where
   rd := [⟨0x3000, 16⟩]
   wr := [⟨0x1000, 304⟩, ⟨0x4000, 2304⟩]
 
-theorem init_verified : Verified Arm.target init (Spec.Cmac.aesInitContract Arm.abi 8) :=
+theorem init_verified : Verified Arm.target init (initScratchContract Arm.abi 8) :=
   Verified.of_correct (fun _ hs => init_wp hs) init_ct (by
-    sig_implies [Spec.Cmac.aesInitContract, Spec.Cmac.aesInitSig, initArm, Arm.abi, Arm.argRegs,
+    sig_implies [initScratchContract, initScratchSig, Spec.Cmac.aesInitPre, Spec.Cmac.aesInitPost, initArm, Arm.abi, Arm.argRegs,
       Arm.reduceClassify, Arm.Loc.val, Arm.State.addr] [initSat] using initSat)
 
 /-- A state satisfying `vg_cmac_aes_absorb`'s precondition (with no data):
@@ -157,9 +158,9 @@ def absorbSat : State where
   rd := [⟨0x3000, 0⟩, ⟨0x8000, 12⟩]
   wr := [⟨0x1000, 304⟩, ⟨0x4000, 2304⟩]
 
-theorem absorb_verified : Verified Arm.target absorb (Spec.Cmac.aesAbsorbContract Arm.abi 16) :=
+theorem absorb_verified : Verified Arm.target absorb (absorbScratchContract Arm.abi 16) :=
   Verified.of_correct (fun _ hs => absorb_wp hs) absorb_ct (by
-    sig_implies [Spec.Cmac.aesAbsorbContract, Spec.Cmac.aesAbsorbSig, absorbArm, countArm, Arm.abi, Arm.argRegs,
+    sig_implies [absorbScratchContract, absorbScratchSig, Spec.Cmac.aesAbsorbPre, Spec.Cmac.aesAbsorbPost, absorbArm, countArm, Arm.abi, Arm.argRegs,
       Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
       [absorbSat, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read] using absorbSat)
 
@@ -178,9 +179,9 @@ def finishSat : State where
   rd := [⟨0x8000, 8⟩]
   wr := [⟨0x1000, 304⟩, ⟨0x2000, 16⟩, ⟨0x4000, 2304⟩]
 
-theorem finish_verified : Verified Arm.target finish (Spec.Cmac.aesFinishContract Arm.abi 16) :=
+theorem finish_verified : Verified Arm.target finish (finishScratchContract Arm.abi 16) :=
   Verified.of_correct (fun _ hs => finish_wp hs) finish_ct (by
-    sig_implies [Spec.Cmac.aesFinishContract, Spec.Cmac.aesFinishSig, finishArm, countArm, Arm.abi, Arm.argRegs,
+    sig_implies [finishScratchContract, finishScratchSig, Spec.Cmac.aesFinishPre, Spec.Cmac.aesFinishPost, finishArm, countArm, Arm.abi, Arm.argRegs,
       Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
       [finishSat, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read] using finishSat)
 

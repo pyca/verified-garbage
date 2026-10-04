@@ -95,7 +95,7 @@ DECIDE_SIMP_ALLOWED = {
     "VerifiedGarbage/Proof/Gcm/AArch64/Ghash.lean": 10,
     "VerifiedGarbage/Proof/Gcm/Arm/Step.lean": 3,
     "VerifiedGarbage/Proof/Gcm/X86_64/Ghash.lean": 10,
-    "VerifiedGarbage/Proof/Gcm/X86_64/Pclmul/Ghash.lean": 9,
+    "VerifiedGarbage/Proof/Gcm/X86_64/Pclmul/Ghash.lean": 6,
     "VerifiedGarbage/Proof/Md5/AArch64/Compress.lean": 4,
     "VerifiedGarbage/Proof/Md5/Arm/Compress.lean": 5,
     "VerifiedGarbage/Proof/Md5/StateMem.lean": 1,

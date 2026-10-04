@@ -1,3 +1,4 @@
+import VerifiedGarbage.Proof.Weierstrass.Layout
 import VerifiedGarbage.Proof.Weierstrass.X86_64.Loop
 import VerifiedGarbage.Proof.Weierstrass.X86_64.Unch
 import VerifiedGarbage.Proof.Weierstrass.X86_64.Copy
@@ -15,37 +16,11 @@ that product if the exponent's bit is set (`powBody_ok`).
 
 namespace VG.Proof.Weierstrass.X86_64
 
-open VG VG.X86_64 VG.Impl.Mont.X86_64 VG.Impl.Weierstrass.X86_64 VG.Proof.Mont.X86_64
+open VG VG.X86_64 VG.Impl.Mont.X86_64 VG.Impl.Mont VG.Impl.Weierstrass.X86_64 VG.Impl.Weierstrass VG.Proof.Mont.X86_64 VG.Proof.Mont
 open VG.Proof.X25519.X86_64 (Keeps Keeps.trans Keeps.mono)
-
-/-- What a power writes: the accumulator, the temporary and the modulus's
-temporary area. -/
-def powW (P : PowCfg) : List (Nat × Nat) :=
-  [(P.acc, 8 * P.M.n), (P.tmp, 8 * P.M.n), (P.M.tmp, 8 * P.M.n)]
-
-/-- Where a power's slots and table are: in the working space, and what it
-reads apart from what it writes. -/
-structure PowLay (P : PowCfg) (size : Nat) : Prop where
-  acc : P.acc + 8 * P.M.n ≤ size
-  tmp : P.tmp + 8 * P.M.n ≤ size
-  base : P.base + 8 * P.M.n ≤ size
-  one : P.one + 8 * P.M.n ≤ size
-  bits : P.bits + P.nbits ≤ size
-  nbits : 1 ≤ P.nbits ∧ P.nbits < 2 ^ 31
-  acc_tmp : P.acc + 8 * P.M.n ≤ P.tmp ∨ P.tmp + 8 * P.M.n ≤ P.acc
-  acc_mtmp : P.acc + 8 * P.M.n ≤ P.M.tmp ∨ P.M.tmp + 8 * P.M.n ≤ P.acc
-  acc_one : P.acc + 8 * P.M.n ≤ P.one ∨ P.one + 8 * P.M.n ≤ P.acc
-  base_w : ∀ w ∈ powW P, P.base + 8 * P.M.n ≤ w.1 ∨ w.1 + w.2 ≤ P.base
-  bits_w : ∀ w ∈ powW P, P.bits + P.nbits ≤ w.1 ∨ w.1 + w.2 ≤ P.bits
-  mo_w : ∀ w ∈ powW P, P.M.mo + 8 * P.M.n ≤ w.1 ∨ w.1 + w.2 ≤ P.M.mo
 
 /-- The registers a power changes. -/
 def powClob (n : Nat) : List Reg := .rbx :: clob n
-
-theorem toM_one {m R : Nat} [NeZero m] (hR : UnitMod m R) : toM m R (R % m) = 1 := by
-  unfold toM
-  rw [ofNat_mod]
-  exact mul_rinv hR
 
 theorem mov32Rbx_ok (s : State) {j : Nat} (hj : j < 2 ^ 31) :
     WP isa (.block [.mov32 .rbx (.imm (BitVec.ofNat 32 j))]) s fun s' =>
@@ -211,7 +186,7 @@ theorem pow_ok {P : PowCfg} {base : Addr} {size m e : Nat} [NeZero m] (hL : PowL
   rw [WP.block_append_iff]
   refine WP.mono (copy_ok P.M.n hs hL.acc hL.one (by have := hL.acc_one; omega))
     fun s₁ ⟨e₁, k₁, O₁⟩ => ?_
-  refine WP.mono (mov32Rbx_ok s₁ hnb.2) fun s₂ ⟨b₂, k₂⟩ => ?_
+  refine WP.mono (mov32Rbx_ok s₁ (by omega)) fun s₂ ⟨b₂, k₂⟩ => ?_
   refine countLoop_ok (Inv := fun j s' => PowInv P base size m e s s' j) (n := P.nbits)
     (fun j s' h1 h2 hi => powBody_ok hL hm hM hB hbits h1 h2 hi)
     (fun s' hi => ⟨hi.keep, hi.unch, hi.lt, by rw [hi.val, Nat.shiftRight_zero]⟩) hnb.1 ?_

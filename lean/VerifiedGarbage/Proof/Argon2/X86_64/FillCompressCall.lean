@@ -1,4 +1,5 @@
 import VerifiedGarbage.Proof.Argon2.X86_64.Compress
+import VerifiedGarbage.Proof.Argon2.X86_64.CompressImpl
 import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 
 /-! Invoke the verified compression primitive with narrowed permissions,
@@ -29,14 +30,6 @@ structure Called (s t : State) : Prop where
   wr : t.wr = s.wr
   frame : Frame [⟨s.gpr .rdx, 1024⟩, ⟨s.gpr .rcx, 4096⟩, below (s.gpr .rsp) 8] s.mem t.mem
 
-theorem noSp : NoSp Impl.Argon2.X86_64.compress := by
-  have h : Impl.Argon2.X86_64.compress.allInstrs (fun i => !Taint.clobbers i .rsp) = true :=
-    by lit_decide
-  rw [Code.allInstrs_eq, List.all_eq_true] at h
-  intro i hi
-  simpa only [Bool.not_eq_true'] using h i hi
-
-theorem depth : Impl.Argon2.X86_64.compress.depth = 0 := by lit_decide
 
 theorem call_hyps (s : State) (h : CallReady s) :
     compressLocal.pre (s.callEntry.withRegions [⟨s.gpr .rdi, 1024⟩, ⟨s.gpr .rsi, 1024⟩]
@@ -82,12 +75,13 @@ theorem callEntry_block (s : State) (p : Addr)
   rw [← blockAt_get s.callEntry.mem p ⟨i, hi⟩, ← blockAt_get s.mem p ⟨i, hi⟩] at read
   exact read
 
-theorem call_ok (name : String) (s : State) (h : CallReady s) :
-    WP isa (.call name Impl.Argon2.X86_64.compress) s (Called s) := by
+theorem call_ok [CompressImpl] (s : State) (h : CallReady s) :
+    WP isa (.call Impl.Argon2.X86_64.Compressor.name Impl.Argon2.X86_64.Compressor.code) s
+      (fun t => Called s t ∧ ctl t.mxcsr = ctl s.mxcsr) := by
   obtain ⟨pre, cover, writes⟩ := call_hyps s h
-  refine WP.call (k := compressLocal) compress_correct noSp (by rw [depth]; decide)
-    pre cover writes ?_
-  intro t rd wr regs frame _ ⟨u, memU, regsU, result⟩
+  refine WP.call_mx (k := compressLocal) CompressImpl.correct CompressImpl.noSp
+    (by rw [CompressImpl.depth]; decide) pre cover writes ?_
+  intro t rd wr regs frame _ ⟨u, memU, regsU, result⟩ mx
   change Spec.Argon2.blockAt u.mem (s.callEntry.gpr .rdx) = Spec.Argon2.compress
     (Spec.Argon2.blockAt s.callEntry.mem (s.callEntry.gpr .rdi))
     (Spec.Argon2.blockAt s.callEntry.mem (s.callEntry.gpr .rsi)) at result
@@ -95,7 +89,7 @@ theorem call_ok (name : String) (s : State) (h : CallReady s) :
     State.callEntry_gpr _ (by decide : Reg.rdi ≠ .rsp),
     State.callEntry_gpr _ (by decide : Reg.rsi ≠ .rsp), memU,
     callEntry_block s _ h.stackLeft, callEntry_block s _ h.stackRight] at result
-  rw [depth] at frame
-  exact ⟨result, regs, rd, wr, frame⟩
+  rw [CompressImpl.depth] at frame
+  exact ⟨⟨result, regs, rd, wr, frame⟩, mx⟩
 
 end VG.Proof.Argon2.X86_64.FillCompress

@@ -29,22 +29,24 @@ included, is an `Instance`, and a new one needs nothing else.
 target implements, takes a key of at most a block, and leaves FIPS 198-1
 §4's step 2 (hashing a longer key) to its caller. `initAnyKeyContract`
 (`Instance.initAnyKeyApi`), which no target implements yet, takes a key of
-any length, and does all of steps 1–3 (`blockKey`): with the same signature
-but for more working space (`Instance.initAnyKeyScratch`), in which an
-implementation hashes a long key with the verified streaming functions of
-`H`. A target registers an implementation of `vg_hmac_<hash>_init` against
-one of them, never two; `initContract` is removed once every target
-implements `initAnyKeyContract`.
+any length, and does all of steps 1–3 (`blockKey`): with the same signature,
+an implementation hashes a long key with the verified streaming functions of
+`H` in more working space (`Instance.initAnyKeyScratch`). A target registers
+an implementation of `vg_hmac_<hash>_init` against one of them, never two;
+`initContract` is removed once every target implements `initAnyKeyContract`.
 
 `A` is the target's calling convention. The signatures fix where the
 arguments are, the memory each function may access, disjointness, and that
 the pointers and lengths are public (see `TCB/Sig.lean`); the contracts add
-the rest. `scratch` is the number of 64-bit words of working space, which
-depends on the implementation (it holds the working space of the functions
-it calls); `stack` is the number of bytes of stack below the stack pointer
-that an implementation's calls use (see `Sig.contract`). The functions may
-overwrite their arguments passed in memory, where the calling convention
-allows it (`writeArgs`), to pass arguments to the functions they call.
+the rest. `stack` is the number of bytes of stack below the stack pointer
+that an implementation's calls and frames use (see `Sig.contract`): `init`
+and `finalize` keep their working space there. `init_scratch` and
+`finalize_scratch` are the same functions with their working space passed in
+`scratch` (`Instance.scratch` 64-bit words, which hold the working space of
+the functions they call), for functions that call them with theirs (PBKDF2's,
+ECDSA's). The functions may overwrite their arguments passed in memory, where
+the calling convention allows it (`writeArgs`), to pass arguments to the
+functions they call.
 -/
 
 namespace VG.Spec.Hmac
@@ -90,41 +92,62 @@ def sha512_256S : StreamingHash := ⟨sha512_256, 192, 32, Sha512.Repr Sha512.H0
 
 variable (S : StreamingHash) (scratch : Nat)
 
-/-- `vg_hmac_<hash>_init(inner: *mut [u8; S], outer: *mut [u8; S], key: *const u8, key_len: usize, scratch: *mut [u64; W])`,
-with `S` the size of the streaming state. `scratch` is working space. -/
+/-- `vg_hmac_<hash>_init(inner: *mut [u8; S], outer: *mut [u8; S], key: *const u8, key_len: usize)`,
+with `S` the size of the streaming state. -/
 def initSig : Sig where
+  params := [("inner", .array true .u8 S.stateBytes), ("outer", .array true .u8 S.stateBytes),
+    ("key", .slice false .u8 "key_len")]
+
+/-- `vg_hmac_<hash>_init_scratch(inner: *mut [u8; S], outer: *mut [u8; S], key: *const u8, key_len: usize, scratch: *mut [u64; W])`:
+`init` with its working space passed in `scratch`, for functions that call
+it with theirs (PBKDF2's, ECDSA's). -/
+def initScratchSig : Sig where
   params := [("inner", .array true .u8 S.stateBytes), ("outer", .array true .u8 S.stateBytes),
     ("key", .slice false .u8 "key_len"), ("scratch", .array true .u64 scratch)]
 
-/-- For a key of at most the block size of `H`: makes the streaming state at
-`inner` represent `K₀ ⊕ ipad` and the one at `outer` represent `K₀ ⊕ opad`,
-for the key `K₀` made of the `key_len` bytes at `key`. The key is secret. -/
+/-- `init`'s precondition, for a key of at most the block size of `H`. -/
+def initPre (pb : Nat) : Curry ((initSig S).words pb) (Mem → Prop) :=
+  fun _inner _outer _key keyLen _ => keyLen.toNat ≤ S.H.blockSize
+
+/-- Makes the streaming state at `inner` represent `K₀ ⊕ ipad` and the one at
+`outer` represent `K₀ ⊕ opad`, for the key `K₀` made from the `key_len` bytes
+at `key` by FIPS 198-1 §4's steps 1–3 (`blockKey`). -/
+def initPost (pb : Nat) : (initSig S).Post pb := fun inner outer key keyLen m m' _ =>
+  let k0 := blockKey S.H (bytesAt m key keyLen.toNat)
+  S.Repr m' inner (xorPad k0 ipad) ∧ S.Repr m' outer (xorPad k0 opad)
+
+/-- For a key of at most the block size of `H`: `initPost`. The key is
+secret. -/
 def initContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  (initSig S scratch).contract A
-    (pre := fun _inner _outer _key keyLen _scratch _ => keyLen.toNat ≤ S.H.blockSize)
-    (post := fun inner outer key keyLen _scratch m m' _ =>
-      let k0 := blockKey S.H (bytesAt m key keyLen.toNat)
-      S.Repr m' inner (xorPad k0 ipad) ∧ S.Repr m' outer (xorPad k0 opad))
+  (initSig S).contract A (pre := initPre S A.ptrBits) (post := initPost S A.ptrBits)
+    (writeArgs := true) (stack := stack)
+
+/-- `initContract`, whatever `scratch` is. -/
+def initScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
+  (initScratchSig S scratch).contract A
+    (pre := fun inner outer key keyLen _scratch => initPre S A.ptrBits inner outer key keyLen)
+    (post := fun inner outer key keyLen _scratch => initPost S A.ptrBits inner outer key keyLen)
     (writeArgs := true)
     (stack := stack)
 
-/-- For a key of any length: makes the streaming state at `inner` represent
-`K₀ ⊕ ipad` and the one at `outer` represent `K₀ ⊕ opad`, for the key `K₀`
-made from the `key_len` bytes at `key` by FIPS 198-1 §4's steps 1–3
-(`blockKey`: hashed with `H` if longer than the block size of `H`, then
-padded with zeros to the block size). The key is secret. -/
+/-- For a key of any length: `initPost`, for the key `K₀` made from the
+`key_len` bytes at `key` by FIPS 198-1 §4's steps 1–3 (`blockKey`: hashed
+with `H` if longer than the block size of `H`, then padded with zeros to the
+block size). The key is secret. -/
 def initAnyKeyContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  (initSig S scratch).contract A
-    (post := fun inner outer key keyLen _scratch m m' _ =>
-      let k0 := blockKey S.H (bytesAt m key keyLen.toNat)
-      S.Repr m' inner (xorPad k0 ipad) ∧ S.Repr m' outer (xorPad k0 opad))
-    (writeArgs := true)
-    (stack := stack)
+  (initSig S).contract A (post := initPost S A.ptrBits) (writeArgs := true) (stack := stack)
 
-/-- `vg_hmac_<hash>_finalize(inner: *mut [u8; S], outer: *const [u8; S], count: u64, out: *mut [u8; D], scratch: *mut [u64; W])`,
+/-- `vg_hmac_<hash>_finalize(inner: *mut [u8; S], outer: *const [u8; S], count: u64, out: *mut [u8; D])`,
 with `S` the size of the streaming state and `D` that of the digest. `count`
-is public; `inner` is left unspecified, and `scratch` is working space. -/
+is public; `inner` is left unspecified. -/
 def finalizeSig : Sig where
+  params := [("inner", .array true .u8 S.stateBytes), ("outer", .array false .u8 S.stateBytes),
+    ("count", .int .u64 true), ("out", .array true .u8 S.digestBytes)]
+
+/-- `vg_hmac_<hash>_finalize_scratch(inner: *mut [u8; S], outer: *const [u8; S], count: u64, out: *mut [u8; D], scratch: *mut [u64; W])`:
+`finalize` with its working space passed in `scratch`, for functions that
+call it with theirs (PBKDF2's, ECDSA's). -/
+def finalizeScratchSig : Sig where
   params := [("inner", .array true .u8 S.stateBytes), ("outer", .array false .u8 S.stateBytes),
     ("count", .int .u64 true), ("out", .array true .u8 S.digestBytes),
     ("scratch", .array true .u64 scratch)]
@@ -132,14 +155,21 @@ def finalizeSig : Sig where
 /-- If, for a key `K₀` of the block size of `H` and a text of fewer than
 2⁶⁴ bytes with the key, the streaming state at `inner` represents
 `(K₀ ⊕ ipad) ‖ text`, of `count` bytes (modulo 2⁶⁴), and the one at `outer`
-represents `K₀ ⊕ opad`, writes the HMAC of the text under `K₀` to `out`. The
-states are secret. -/
+represents `K₀ ⊕ opad`, writes the HMAC of the text under `K₀` to `out`. -/
+def finalizePost (pb : Nat) : (finalizeSig S).Post pb := fun inner outer count out m m' _ =>
+  ∀ k0 text, k0.length = S.H.blockSize → k0.length + text.length < 2 ^ 64 →
+    S.Repr m inner (xorPad k0 ipad ++ text) →
+    count = BitVec.ofNat 64 (S.H.blockSize + text.length) → S.Repr m outer (xorPad k0 opad) →
+    bytesAt m' out S.digestBytes = hmacBlockKey S.H k0 text
+
+/-- `finalizePost`. The states are secret. -/
 def finalizeContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  (finalizeSig S scratch).contract A (post := fun inner outer count out _scratch m m' _ =>
-    ∀ k0 text, k0.length = S.H.blockSize → k0.length + text.length < 2 ^ 64 →
-      S.Repr m inner (xorPad k0 ipad ++ text) →
-      count = BitVec.ofNat 64 (S.H.blockSize + text.length) → S.Repr m outer (xorPad k0 opad) →
-      bytesAt m' out S.digestBytes = hmacBlockKey S.H k0 text)
+  (finalizeSig S).contract A (post := finalizePost S A.ptrBits) (writeArgs := true) (stack := stack)
+
+/-- `finalizeContract`, whatever `scratch` is. -/
+def finalizeScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
+  (finalizeScratchSig S scratch).contract A
+    (post := fun inner outer count out _scratch => finalizePost S A.ptrBits inner outer count out)
     (writeArgs := true)
     (stack := stack)
 
@@ -204,17 +234,25 @@ variable (I : Instance)
 
 /-- The contract of `vg_hmac_<hash>_init`: `VG.Spec.Hmac.initContract`. -/
 def initContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  Hmac.initContract I.S I.scratch A stack
+  Hmac.initContract I.S A stack
+
+/-- The contract of `vg_hmac_<hash>_init_scratch`: `VG.Spec.Hmac.initScratchContract`. -/
+def initScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
+  Hmac.initScratchContract I.S I.scratch A stack
 
 /-- The contract of `vg_hmac_<hash>_finalize`: `VG.Spec.Hmac.finalizeContract`. -/
 def finalizeContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  Hmac.finalizeContract I.S I.scratch A stack
+  Hmac.finalizeContract I.S A stack
+
+/-- The contract of `vg_hmac_<hash>_finalize_scratch`: `VG.Spec.Hmac.finalizeScratchContract`. -/
+def finalizeScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
+  Hmac.finalizeScratchContract I.S I.scratch A stack
 
 /-- `vg_hmac_<hash>_init` on every target. -/
 def initApi : Api where
   module := s!"hmac_{I.rust}"
   name := s!"vg_hmac_{I.rust}_init"
-  sig := initSig I.S I.scratch
+  sig := initSig I.S
   writeArgs := true
   contracts := some fun A stack => I.initContract A stack
   summary := s!"Starts an HMAC-{I.alg} computation with a key of at most {I.S.H.blockSize} bytes: \
@@ -225,31 +263,44 @@ def initApi : Api where
     with `vg_hmac_{I.rust}_finalize`.\n\n\
     Contract: `VG.Spec.Hmac.Instance.initContract` of `VG.Spec.Hmac.{I.lean}`. Constant time: \
     only the pointers and `key_len` may affect timing, not the key."
+  safety := [s!"`key_len` must be at most {I.S.H.blockSize}."]
+
+/-- `vg_hmac_<hash>_init_scratch` on every target. -/
+def initScratchApi : Api where
+  module := s!"hmac_{I.rust}"
+  name := s!"vg_hmac_{I.rust}_init_scratch"
+  sig := initScratchSig I.S I.scratch
+  writeArgs := true
+  contracts := some fun A stack => I.initScratchContract A stack
+  summary := s!"`vg_hmac_{I.rust}_init`, with its working space in `*scratch`.\n\n\
+    Contract: `VG.Spec.Hmac.Instance.initScratchContract` of `VG.Spec.Hmac.{I.lean}`. Constant \
+    time: only the pointers and `key_len` may affect timing, not the key."
   safety := [
     s!"`key_len` must be at most {I.S.H.blockSize}.",
     "The contents of `scratch` on return are unspecified."]
 
 /-- The number of 64-bit words of working space of `vg_hmac_<hash>_init`
-for a key of any length (`initAnyKeyContract`): that of the HMAC functions
-(`scratch`, which holds the working space of `H`'s `update` and `finalize`),
-then a word for each byte of the streaming state, for hashing a key longer
-than a block (a streaming state and the digest), for the padded keys and for
-spills. It is the working space of `vg_pbkdf2_hmac_<hash>`
-(`Instance.pbkdf2Scratch`), which hashes a long password likewise. -/
+for a key of any length (`initAnyKeyContract`), which an implementation keeps
+on its stack: that of the HMAC functions (`scratch`, which holds the working
+space of `H`'s `update` and `finalize`), then a word for each byte of the
+streaming state, for hashing a key longer than a block (a streaming state
+and the digest), for the padded keys and for spills. It is the working space
+of `vg_pbkdf2_hmac_<hash>` (`Instance.pbkdf2Scratch`), which hashes a long
+password likewise. -/
 def initAnyKeyScratch : Nat := I.scratch + I.S.stateBytes
 
 /-- The contract of `vg_hmac_<hash>_init` for a key of any length:
 `VG.Spec.Hmac.initAnyKeyContract`. -/
 def initAnyKeyContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  Hmac.initAnyKeyContract I.S I.initAnyKeyScratch A stack
+  Hmac.initAnyKeyContract I.S A stack
 
 /-- `vg_hmac_<hash>_init` for a key of any length, on every target. It has
-the Rust name of `initApi`, which it replaces: the two are never registered
-on the same target. -/
+the Rust name and signature of `initApi`, which it replaces: the two are
+never registered on the same target. -/
 def initAnyKeyApi : Api where
   module := s!"hmac_{I.rust}"
   name := s!"vg_hmac_{I.rust}_init"
-  sig := initSig I.S I.initAnyKeyScratch
+  sig := initSig I.S
   writeArgs := true
   contracts := some fun A stack => I.initAnyKeyContract A stack
   summary := s!"Starts an HMAC-{I.alg} computation with a key of any length: makes the {I.alg} \
@@ -260,13 +311,13 @@ def initAnyKeyApi : Api where
     {I.S.H.blockSize}), and the MAC computed with `vg_hmac_{I.rust}_finalize`.\n\n\
     Contract: `VG.Spec.Hmac.Instance.initAnyKeyContract` of `VG.Spec.Hmac.{I.lean}`. Constant \
     time: only the pointers and `key_len` may affect timing, not the key."
-  safety := ["The contents of `scratch` on return are unspecified."]
+  safety := []
 
 /-- `vg_hmac_<hash>_finalize` on every target. -/
 def finalizeApi : Api where
   module := s!"hmac_{I.rust}"
   name := s!"vg_hmac_{I.rust}_finalize"
-  sig := finalizeSig I.S I.scratch
+  sig := finalizeSig I.S
   writeArgs := true
   contracts := some fun A stack => I.finalizeContract A stack
   summary := s!"Finishes an HMAC-{I.alg} computation: if, for a {I.S.H.blockSize}-byte key `K₀` \
@@ -275,6 +326,18 @@ def finalizeApi : Api where
     writes the HMAC-{I.alg} of the text under `K₀` ({I.S.digestBytes} bytes) to `*out`.\n\n\
     Contract: `VG.Spec.Hmac.Instance.finalizeContract` of `VG.Spec.Hmac.{I.lean}`. Constant \
     time: only the pointers and `count` may affect timing, not the states."
+  safety := ["The contents of `inner` on return are unspecified."]
+
+/-- `vg_hmac_<hash>_finalize_scratch` on every target. -/
+def finalizeScratchApi : Api where
+  module := s!"hmac_{I.rust}"
+  name := s!"vg_hmac_{I.rust}_finalize_scratch"
+  sig := finalizeScratchSig I.S I.scratch
+  writeArgs := true
+  contracts := some fun A stack => I.finalizeScratchContract A stack
+  summary := s!"`vg_hmac_{I.rust}_finalize`, with its working space in `*scratch`.\n\n\
+    Contract: `VG.Spec.Hmac.Instance.finalizeScratchContract` of `VG.Spec.Hmac.{I.lean}`. \
+    Constant time: only the pointers and `count` may affect timing, not the states."
   safety := [
     "The contents of `inner` on return are unspecified.",
     "The contents of `scratch` on return are unspecified."]

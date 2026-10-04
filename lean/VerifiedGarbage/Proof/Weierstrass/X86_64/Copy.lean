@@ -16,7 +16,7 @@ the selections), and keeps the regions.
 
 namespace VG.Proof.Weierstrass.X86_64
 
-open VG VG.X86_64 VG.Impl.Mont.X86_64 VG.Impl.Weierstrass.X86_64 VG.Proof.Mont.X86_64
+open VG VG.X86_64 VG.Impl.Mont.X86_64 VG.Impl.Mont VG.Impl.Weierstrass.X86_64 VG.Impl.Weierstrass VG.Proof.Mont.X86_64 VG.Proof.Mont
 
 /-- `[o] = [a]`, for `o` at or below `a` or apart from it. -/
 theorem copy_ok {size : Nat} : ∀ (n : Nat) {s : State} {base : Addr} {o a : Nat},
@@ -46,17 +46,6 @@ theorem copy_ok {size : Nat} : ∀ (n : Nat) {s : State} {base : Addr} {o a : Na
       fun s₂ ⟨e₂, k₂, O₂⟩ => ?_
     refine ⟨?_, k₁.trans k₂, fun x hx => by rw [O₂ x (by omega), O₁ x (by omega)]⟩
     rw [wordsVal, O₂.word (by omega) (by omega), m₁, word_writeW_self, e₂, e₁, wordsVal]
-
-/-- The word a selection stores. -/
-theorem sel_word (c : Bool) (x y : BitVec 64) :
-    x ^^^ ((y ^^^ x) &&& (if c then BitVec.allOnes 64 else 0)) = if c then y else x := by
-  apply BitVec.eq_of_getLsbD_eq
-  intro i hi
-  have z : ∀ {w} j, (0 : BitVec w).getLsbD j = false := fun _ => BitVec.getLsbD_zero
-  cases c <;> cases hx : x.getLsbD i <;> cases hy : y.getLsbD i <;>
-    simp only [Bool.false_eq_true, ite_false, ite_true, BitVec.getLsbD_xor, BitVec.getLsbD_and,
-      BitVec.getLsbD_allOnes, z, hi, decide_true, hx, hy, Bool.and_false, Bool.and_true, Bool.xor_false,
-      Bool.xor_true, Bool.not_false, Bool.not_true]
 
 /-- `[o] = [b]` if the mask `rcx` is all ones (`c`), `[a]` if it is zero; `o`
 at or below `a` and `b`, or apart from them. -/

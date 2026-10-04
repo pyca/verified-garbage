@@ -141,7 +141,7 @@ theorem hash_frame {s t : State} {p : Params} (h : InitFill.Ready p s) (done : I
   · exact ⟨below (s.gpr .rsp) 24, by simp [InitFill.writes], below_sub (by decide) (by decide)⟩
   · exact ⟨⟨s.gpr .rbp, 72⟩, by simp [InitFill.writes], Region.sub_prefix (by decide)⟩
 
-theorem code_ok (v : Proof.Blake2.X86_64.Backend) (name : String) (s : State) (p : Params) (h : Ready p s) :
+theorem code_ok [CompressImpl] (v : Proof.Blake2.X86_64.Backend) (name : String) (s : State) (p : Params) (h : Ready p s) :
     WP isa (Impl.Argon2.X86_64.InitialBody.code name (HPrime.hash v)) s (Done s · p) := by
   unfold Impl.Argon2.X86_64.InitialBody.code
   refine WP.seq ((Initial.initialHash_ok v s h.hashSpace h.inputs p h.header).mono ?_)

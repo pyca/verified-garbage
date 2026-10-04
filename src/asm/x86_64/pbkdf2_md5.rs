@@ -203,7 +203,7 @@ pub(crate) unsafe extern "sysv64" fn vg_pbkdf2_hmac_md5(password: *const u8, pas
         "mov rsi, r15",
         "add rsi, 528",
         "mov r8, r15",
-        "call {vg_hmac_md5_init}",
+        "call {vg_hmac_md5_init_scratch}",
         "mov r14d, 0",
         "22:",
         "movzx eax, BYTE PTR [r15+r14*1+448]",
@@ -253,7 +253,7 @@ pub(crate) unsafe extern "sysv64" fn vg_pbkdf2_hmac_md5(password: *const u8, pas
         "mov rcx, r15",
         "add rcx, 768",
         "mov r8, r15",
-        "call {vg_hmac_md5_finalize}",
+        "call {vg_hmac_md5_finalize_scratch}",
         "mov r14d, 0",
         "27:",
         "movzx eax, BYTE PTR [r15+r14*1+768]",
@@ -302,8 +302,8 @@ pub(crate) unsafe extern "sysv64" fn vg_pbkdf2_hmac_md5(password: *const u8, pas
         vg_md5_init = sym super::md5::vg_md5_init,
         vg_md5_update_scratch = sym super::md5::vg_md5_update_scratch,
         vg_md5_finalize_scratch = sym super::md5::vg_md5_finalize_scratch,
-        vg_hmac_md5_init = sym super::hmac_md5::vg_hmac_md5_init,
-        vg_hmac_md5_finalize = sym super::hmac_md5::vg_hmac_md5_finalize,
+        vg_hmac_md5_init_scratch = sym super::hmac_md5::vg_hmac_md5_init_scratch,
+        vg_hmac_md5_finalize_scratch = sym super::hmac_md5::vg_hmac_md5_finalize_scratch,
         vg_pbkdf2_hmac_md5_iterate = sym super::pbkdf2_md5::vg_pbkdf2_hmac_md5_iterate,
     )
 }

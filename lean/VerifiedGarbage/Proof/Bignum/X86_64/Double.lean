@@ -72,8 +72,7 @@ theorem dblStep_ok {s₀ : State} {B : Addr} {Z w eA eo : Nat}
   · rw [hm', hm, wv_writeW_top _ _ _ _ _ (by omega)]
     simp only [wv]
     rw [pow64_succ]
-    zify at hr hval ⊢
-    linear_combination hval + (2 ^ (64 * j) : ℤ) * hr
+    grind
 
 /-- `[o] := 2 [o] mod m`, for `[o] < m = [mo]`. -/
 theorem double_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hs : Scr s B Z)
@@ -85,7 +84,7 @@ theorem double_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hs : Sc
       wv t.mem B (slot w o) w = 2 * wv s.mem B (slot w o) w % wv s.mem B (slot w mo) w ∧
       Arrays B w [acc, tmp, o] s.mem t.mem ∧ Keep mmRegs s t := by
   have hn := hs.nowrap
-  have sl : ∀ j < 8, slot w j + 8 * (w + 2) ≤ Z := fun j hj => (slot_le hj).trans hZ
+  have sl : ∀ j < 8, slot w j + 8 * (w + 2) ≤ Z := fun j hj => Nat.le_trans (slot_le hj) hZ
   have sp : ∀ {j k}, j ≠ k → slot w j + 8 * (w + 2) ≤ slot w k ∨ slot w k + 8 * (w + 2) ≤ slot w j :=
     fun h => slot_sep h
   have hl : ∀ i < 32, InRegions (s.rd ++ s.wr) (off B (8 * i)) 8 := fun i hi =>

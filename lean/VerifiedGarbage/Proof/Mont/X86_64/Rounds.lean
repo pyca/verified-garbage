@@ -9,7 +9,7 @@ From a cleared accumulator (`zeros_ok`), `k` rounds leave `T_k < 2m` with
 
 namespace VG.Proof.Mont.X86_64
 
-open VG VG.X86_64 VG.Impl.Mont.X86_64
+open VG VG.X86_64 VG.Impl.Mont.X86_64 VG.Impl.Mont
 open VG.Proof.X25519.X86_64 (Keeps Keeps.trans Keeps.mono)
 
 theorem wordsVal_succ_top (m : Mem) (base : Addr) (d k : Nat) :

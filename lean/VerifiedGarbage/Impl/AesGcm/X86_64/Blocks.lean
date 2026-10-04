@@ -1,5 +1,4 @@
 import VerifiedGarbage.Impl.AesGcm.X86_64
-import VerifiedGarbage.Impl.Gcm.X86_64.Stitch
 
 /-!
 # AES-GCM on whole blocks: x86-64 implementation
@@ -10,11 +9,11 @@ scratch = [rsp + 8])`, generic over the implementations of `vg_aes_ctr32` and
 `vg_ghash` they call, as the other functions of AES-GCM.
 
 The entry keeps the arguments in `scratch` (`ctx`, `rounds`, `counter`, `y`,
-`data` and `n` at `scratch` … `scratch + 40`). With `stitch` (VAES and
-VPCLMULQDQ), the first `16 ⌊n / 16⌋` blocks, if any, are encrypted and hashed
-in one pass (`Gcm.X86_64.Stitch`, with the powers of `H` at `scratch + 64`),
-and the arguments kept become those of the rest. The rest (all the blocks,
-without `stitch`) is then encrypted with `vg_aes_ctr32` and hashed with
+`data` and `n` at `scratch` … `scratch + 40`). With a `piece` (loops that
+interleave counter mode and GHASH, such as `Gcm.X86_64.Stitch`), the first
+`16 ⌊n / 16⌋` blocks, if any, are encrypted and hashed in one pass by it
+(with `scratch + 64` for its working space), and the arguments kept become
+those of the rest. The rest (all the blocks, without a `piece`) is then encrypted with `vg_aes_ctr32` and hashed with
 `vg_ghash` (hashed first when decrypting), each called with `scratch + 64`,
 reloading the arguments from `scratch` after each call.
 -/
@@ -75,15 +74,18 @@ def tail (first second : Prog isa) : Prog isa :=
 def ctrCall : Prog isa := .seq (.block ctrArgs) (.call ctr.name ctr.code)
 def ghCall : Prog isa := .seq (.block ghArgs) (.call gh.name gh.code)
 
-/-- The first blocks by `piece` (with `stitch`), then the rest. -/
-def blocks (stitch : Bool) (piece : Prog isa) (first second : Prog isa) : Prog isa :=
-  .seq (.block entry)
-    (.seq (if stitch then .seq (stitchPart piece) (.block rest) else .block []) (tail first second))
+/-- The first blocks by `piece`, if any, then the rest. -/
+def head : Option (Prog isa) → Prog isa
+  | some piece => .seq (stitchPart piece) (.block rest)
+  | none => .block []
 
-/-- `vg_aes_gcm_encrypt_blocks`. -/
-def encrypt (stitch : Bool) : Prog isa := blocks stitch Gcm.X86_64.Stitch.enc (ctrCall ctr) (ghCall gh)
+def blocks (piece : Option (Prog isa)) (first second : Prog isa) : Prog isa :=
+  .seq (.block entry) (.seq (head piece) (tail first second))
 
-/-- `vg_aes_gcm_decrypt_blocks`. -/
-def decrypt (stitch : Bool) : Prog isa := blocks stitch Gcm.X86_64.Stitch.dec (ghCall gh) (ctrCall ctr)
+/-- `vg_aes_gcm_encrypt_blocks`, with the encrypting `piece`, if any. -/
+def encrypt (piece : Option (Prog isa)) : Prog isa := blocks piece (ctrCall ctr) (ghCall gh)
+
+/-- `vg_aes_gcm_decrypt_blocks`, with the decrypting `piece`, if any. -/
+def decrypt (piece : Option (Prog isa)) : Prog isa := blocks piece (ghCall gh) (ctrCall ctr)
 
 end VG.Impl.AesGcm.X86_64.Blocks

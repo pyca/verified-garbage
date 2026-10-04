@@ -5,6 +5,8 @@ import VerifiedGarbage.Impl.Argon2.X86_64.InitFill
 
 namespace VG.Impl.Argon2.X86_64.InitialBody
 
+variable [Compressor]
+
 open VG VG.X86_64
 
 def code (name : String) (hash : HPrime.Hash) : Prog isa :=

@@ -7,6 +7,8 @@ first filled index is two. Only public counters control regeneration.
 
 namespace VG.Impl.Argon2.X86_64.AddressCache
 
+variable [Compressor]
+
 open VG.X86_64
 open VG.Impl.Argon2.X86_64 (at_)
 

@@ -663,7 +663,7 @@ structure NextRelated (p : Params) (pass lane slice : Nat) (leftState rightState
   leftMatrix : Proof.Argon2.Represents s.mem (FillKernel.matrix s) p.blocks leftState.memory
   rightMatrix : Proof.Argon2.Represents t.mem (FillKernel.matrix t) p.blocks rightState.memory
 
-theorem body_rel (p : Params) (pass lane slice : Nat) (leftState rightState : FillState) :
+theorem body_rel [CompressImpl] (p : Params) (pass lane slice : Nat) (leftState rightState : FillState) :
     RelCT isa (SegmentSetup.Related p pass lane slice leftState rightState) body
       (fun s t => s.cf = t.cf ∧ (lane + 1 < p.lanes → NextRelated p pass (lane + 1) slice
         (Proof.Argon2.segment p pass lane slice 0 p.segmentLen leftState)
@@ -713,7 +713,7 @@ structure Related (p : Params) (pass lane slice count : Nat) (leftState rightSta
   indices : (Proof.Argon2.lanes p pass slice lane count leftState).indices =
     (Proof.Argon2.lanes p pass slice lane count rightState).indices
 
-theorem loop_rel (p : Params) (pass lane slice count : Nat) (leftState rightState : FillState)
+theorem loop_rel [CompressImpl] (p : Params) (pass lane slice count : Nat) (leftState rightState : FillState)
     (positive : 0 < count) (endLane : lane + count = p.lanes) :
     RelCT isa (Related p pass lane slice count leftState rightState) Impl.Argon2.X86_64.FillLanes.loop (fun _ _ => True) := by
   let I := fun n s t => ∃ (lane : Nat) (leftState rightState : FillState),
@@ -792,7 +792,7 @@ theorem setup_public_rel (p : Params) (pass slice : Nat) (leftState rightState :
   · unfold FillKernel.matrix; rw [ha.keeps.mem, ha.keeps.regs .rbp (by decide)]; exact hp.leftMatrix
   · unfold FillKernel.matrix; rw [hb.keeps.mem, hb.keeps.regs .rbp (by decide)]; exact hp.rightMatrix
 
-theorem code_rel (p : Params) (pass slice : Nat) (leftState rightState : FillState) :
+theorem code_rel [CompressImpl] (p : Params) (pass slice : Nat) (leftState rightState : FillState) :
     RelCT isa (Related p pass slice leftState rightState) Impl.Argon2.X86_64.FillSlice.code (fun _ _ => True) := by
   intro s t ts tt a b hp ea eb
   cases ea with
@@ -827,7 +827,7 @@ structure NextRelated (p : Params) (pass slice : Nat) (leftState rightState : Fi
   leftMatrix : Proof.Argon2.Represents s.mem (FillKernel.matrix s) p.blocks leftState.memory
   rightMatrix : Proof.Argon2.Represents t.mem (FillKernel.matrix t) p.blocks rightState.memory
 
-theorem body_rel (p : Params) (pass slice : Nat) (leftState rightState : FillState) :
+theorem body_rel [CompressImpl] (p : Params) (pass slice : Nat) (leftState rightState : FillState) :
     RelCT isa (FillSlice.Related p pass slice leftState rightState) body
       (fun s t => s.cf = t.cf ∧ (slice + 1 < 4 → NextRelated p pass (slice + 1)
         (Proof.Argon2.lanes p pass slice 0 p.lanes leftState) (Proof.Argon2.lanes p pass slice 0 p.lanes rightState) s t)) := by
@@ -866,7 +866,7 @@ structure Related (p : Params) (pass slice count : Nat) (leftState rightState : 
   indices : (Proof.Argon2.slices p pass slice count leftState).indices =
     (Proof.Argon2.slices p pass slice count rightState).indices
 
-theorem loop_rel (p : Params) (pass slice count : Nat) (leftState rightState : FillState)
+theorem loop_rel [CompressImpl] (p : Params) (pass slice count : Nat) (leftState rightState : FillState)
     (positive : 0 < count) (endSlice : slice + count = 4) :
     RelCT isa (Related p pass slice count leftState rightState) Impl.Argon2.X86_64.FillSlices.loop (fun _ _ => True) := by
   let I := fun n s t => ∃ (slice : Nat) (leftState rightState : FillState),
@@ -899,7 +899,7 @@ theorem loop_rel (p : Params) (pass slice count : Nat) (leftState rightState : F
   exact (RelCT.loop I steps count).mono
     (fun _ _ h => ⟨slice, leftState, rightState, endSlice, positive, h⟩) (fun _ _ h => h)
 
-theorem pass_rel (p : Params) (pass : Nat) (leftState rightState : FillState) :
+theorem pass_rel [CompressImpl] (p : Params) (pass : Nat) (leftState rightState : FillState) :
     RelCT isa (fun s t => NextRelated p pass 0 leftState rightState s t ∧
       (fillPass p leftState pass).indices = (fillPass p rightState pass).indices)
       Impl.Argon2.X86_64.FillSlices.loop (fun _ _ => True) := by
@@ -959,7 +959,7 @@ theorem setup_public_rel (p : Params) (pass : Nat) (leftState rightState : FillS
   · unfold FillKernel.matrix; rw [ha.keeps.mem, ha.keeps.regs .rbp (by decide)]; exact hp.leftMatrix
   · unfold FillKernel.matrix; rw [hb.keeps.mem, hb.keeps.regs .rbp (by decide)]; exact hp.rightMatrix
 
-theorem code_rel (p : Params) (pass : Nat) (leftState rightState : FillState) :
+theorem code_rel [CompressImpl] (p : Params) (pass : Nat) (leftState rightState : FillState) :
     RelCT isa (Related p pass leftState rightState) Impl.Argon2.X86_64.FillIteration.code (fun _ _ => True) :=
   (setup_public_rel p pass leftState rightState).seq (FillSlices.pass_rel p pass leftState rightState)
 
@@ -987,7 +987,7 @@ structure NextRelated (p : Params) (pass : Nat) (leftState rightState : FillStat
   leftMatrix : Proof.Argon2.Represents s.mem (FillKernel.matrix s) p.blocks leftState.memory
   rightMatrix : Proof.Argon2.Represents t.mem (FillKernel.matrix t) p.blocks rightState.memory
 
-theorem body_rel (p : Params) (pass : Nat) (leftState rightState : FillState) :
+theorem body_rel [CompressImpl] (p : Params) (pass : Nat) (leftState rightState : FillState) :
     RelCT isa (fun s t => NextRelated p pass leftState rightState s t ∧
       (fillPass p leftState pass).indices = (fillPass p rightState pass).indices) body
       (fun s t => s.cf = t.cf ∧ (pass + 1 < p.passes → NextRelated p (pass + 1)
@@ -1041,7 +1041,7 @@ structure Related (p : Params) (pass count : Nat) (leftState rightState : FillSt
   indices : (Proof.Argon2.iterations p pass count leftState).indices =
     (Proof.Argon2.iterations p pass count rightState).indices
 
-theorem loop_rel (p : Params) (pass count : Nat) (leftState rightState : FillState)
+theorem loop_rel [CompressImpl] (p : Params) (pass count : Nat) (leftState rightState : FillState)
     (positive : 0 < count) (endPass : pass + count = p.passes) :
     RelCT isa (Related p pass count leftState rightState) Impl.Argon2.X86_64.FillIterations.loop (fun _ _ => True) := by
   let I := fun n s t => ∃ (pass : Nat) (leftState rightState : FillState),
@@ -1097,7 +1097,7 @@ structure Related (p : Params) (leftState rightState : FillState) (s t : State) 
   indices : (Proof.Argon2.iterations p 0 p.passes leftState).indices =
     (Proof.Argon2.iterations p 0 p.passes rightState).indices
 
-theorem code_rel (v : Proof.Blake2.X86_64.Backend) (name : String) (p : Params)
+theorem code_rel [CompressImpl] (v : Proof.Blake2.X86_64.Backend) (name : String) (p : Params)
     (leftState rightState : FillState) :
     RelCT isa (Related p leftState rightState) (Impl.Argon2.X86_64.FillFinish.code name (HPrime.hash v))
       (fun _ _ => True) := by
@@ -1156,7 +1156,7 @@ structure Related (p : Params) (s t : State) : Prop where
   indices : (Proof.Argon2.iterations p 0 p.passes (initial p s)).indices =
     (Proof.Argon2.iterations p 0 p.passes (initial p t)).indices
 
-theorem code_rel (v : Proof.Blake2.X86_64.Backend) (name : String) (p : Params) :
+theorem code_rel [CompressImpl] (v : Proof.Blake2.X86_64.Backend) (name : String) (p : Params) :
     RelCT isa (Related p) (Impl.Argon2.X86_64.InitFill.code name (HPrime.hash v)) (fun _ _ => True) := by
   intro s t ts tt a b hp ea eb
   have params := hp.left.environment.parameters
@@ -1249,7 +1249,7 @@ structure Related (p : Params) (s t : State) : Prop where
   indices : (Proof.Argon2.iterations p 0 p.passes (initial p s)).indices =
     (Proof.Argon2.iterations p 0 p.passes (initial p t)).indices
 
-theorem code_rel (v : Proof.Blake2.X86_64.Backend) (name : String) (p : Params) :
+theorem code_rel [CompressImpl] (v : Proof.Blake2.X86_64.Backend) (name : String) (p : Params) :
     RelCT isa (Related p) (Impl.Argon2.X86_64.InitialBody.code name (HPrime.hash v)) (fun _ _ => True) := by
   have hashed := ((Initial.code_rel v).mono (P' := Related p) (fun _ _ h => h.hashing)
     (fun _ _ h => h)).wpDep (fun s t h =>
@@ -1308,7 +1308,7 @@ theorem ReviewedRelated.related {p : Params} {s t : State} (h : ReviewedRelated 
   rw [Proof.Argon2.iterations_fill, Proof.Argon2.iterations_fill]
   exact indices
 
-theorem reviewed_rel (v : Proof.Blake2.X86_64.Backend) (name : String) (p : Params) :
+theorem reviewed_rel [CompressImpl] (v : Proof.Blake2.X86_64.Backend) (name : String) (p : Params) :
     RelCT isa (ReviewedRelated p) (Impl.Argon2.X86_64.InitialBody.code name (HPrime.hash v)) (fun _ _ => True) :=
   (code_rel v name p).mono (fun _ _ h => h.related) (fun _ _ h => h)
 

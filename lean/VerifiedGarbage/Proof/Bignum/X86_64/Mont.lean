@@ -146,8 +146,28 @@ structure Lay where
 /-- The working space and its header, for `montMul`. -/
 def GoodL (L : Lay) (s : State) : Prop := Good s L.B L.Z L.w L.minv ∧ slot L.w 8 ≤ L.Z
 
+/-- The working space and its size, without `-m⁻¹`: what `montMul`'s
+timing depends on, so that runs with different (secret) moduli agree. -/
+structure Ws where
+  B : Addr
+  Z : Nat
+  w : Nat
+
+/-- The working space and its header, for some `-m⁻¹`. -/
+def GoodW (L : Ws) (s : State) : Prop := ∃ minv, Good s L.B L.Z L.w minv ∧ slot L.w 8 ≤ L.Z
+
+/-- The working space of a layout. -/
+abbrev Lay.ws (L : Lay) : Ws := ⟨L.B, L.Z, L.w⟩
+
+theorem GoodL.goodW {L : Lay} {s : State} (h : GoodL L s) : GoodW L.ws s := ⟨L.minv, h⟩
+
+/-- A multiplication constant time for any `-m⁻¹` is for a fixed one. -/
+theorem RelCT.ofW {c : Prog isa} (h : RelCT isa (Two GoodW) c fun _ _ => True) :
+    RelCT isa (Two GoodL) c fun _ _ => True :=
+  two_map Lay.ws (fun _ _ h => h.goodW) h
+
 /-- After `bases`: the bases, `w` and `-m⁻¹` in registers. -/
-def BasesL (mo acc tmp o a b : Nat) (L : Lay) (t : State) : Prop :=
+def BasesL (mo acc tmp o a b : Nat) (L : Ws) (t : State) : Prop :=
   t.gpr .rbx = off L.B (slot L.w o) ∧ t.gpr .r11 = off L.B (slot L.w a) ∧ t.gpr .r9 = off L.B (slot L.w b) ∧
   t.gpr .r10 = off L.B (slot L.w mo) ∧ t.gpr .r8 = off L.B (slot L.w acc) ∧
   t.gpr .r12 = BitVec.ofNat 64 L.w ∧ t.gpr .rsi = off L.B (slot L.w tmp)
@@ -172,6 +192,11 @@ theorem pins_good : Pins GoodL [.rdi] := by
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   subst hr; rw [h₁.1.rdi, h₂.1.rdi]
 
+theorem pins_goodW : Pins GoodW [.rdi] := by
+  intro L s₁ s₂ ⟨_, h₁, _⟩ ⟨_, h₂, _⟩ r hr
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  subst hr; rw [h₁.rdi, h₂.rdi]
+
 /-- What `montMul` does after its bases, checked by the taint analysis. -/
 theorem mmTail_ct (mo acc tmp o a b : Nat) : RelCT isa (Two (BasesL mo acc tmp o a b)) (.seq zeroAccLoop (.seq rounds (.seq subMod selectAcc)))
     fun _ _ => True :=
@@ -179,30 +204,43 @@ theorem mmTail_ct (mo acc tmp o a b : Nat) : RelCT isa (Two (BasesL mo acc tmp o
 
 /-- `montMul` is constant time, given that the taint analysis checks its
 `bases` from `rdi`. -/
+theorem montMul_ctW {mo acc tmp o a b : Nat} (hmo : mo < 8) (hacc : acc < 8) (htmp : tmp < 8) (ho : o < 8)
+    (ha : a < 8) (hb : b < 8) {hc : VG.Taint.Hint VG.X86_64.Taint.T}
+    (h : (taint.check (Taint.ofRegs [.rdi]) (.block (bases o a b mo acc tmp)) hc).isSome = true) :
+    RelCT isa (Two GoodW) (montMul mo acc tmp o a b) fun _ _ => True := by
+  unfold montMul
+  refine RelCT.seq (two_piece (Ψ := BasesL mo acc tmp o a b) _ pins_goodW h fun L s ⟨_, hs, hZ⟩ => ?_)
+    (mmTail_ct mo acc tmp o a b)
+  exact WP.mono (bases_ok hs.scr hs.rdi hs.hdr hZ ho ha hb hmo hacc htmp)
+    fun t ⟨h1, h2, h3, h4, h5, h6, _, h8, _⟩ => ⟨h1, h2, h3, h4, h5, h6, h8⟩
+
 theorem montMul_ct {mo acc tmp o a b : Nat} (hmo : mo < 8) (hacc : acc < 8) (htmp : tmp < 8) (ho : o < 8)
     (ha : a < 8) (hb : b < 8) {hc : VG.Taint.Hint VG.X86_64.Taint.T}
     (h : (taint.check (Taint.ofRegs [.rdi]) (.block (bases o a b mo acc tmp)) hc).isSome = true) :
-    RelCT isa (Two GoodL) (montMul mo acc tmp o a b) fun _ _ => True := by
-  unfold montMul
-  refine RelCT.seq (two_piece (Ψ := BasesL mo acc tmp o a b) _ pins_good h fun L s hs => ?_) (mmTail_ct mo acc tmp o a b)
-  exact WP.mono (bases_ok hs.1.scr hs.1.rdi hs.1.hdr hs.2 ho ha hb hmo hacc htmp)
-    fun t ⟨h1, h2, h3, h4, h5, h6, _, h8, _⟩ => ⟨h1, h2, h3, h4, h5, h6, h8⟩
+    RelCT isa (Two GoodL) (montMul mo acc tmp o a b) fun _ _ => True :=
+  RelCT.ofW (montMul_ctW hmo hacc htmp ho ha hb h)
 
 /-! ## Implementations of Montgomery multiplication -/
 
 open VG.Impl.Bignum.X86_64.Public in
-/-- The multiplications RSA makes, `[o] = [a] [b] R⁻¹ mod m`. -/
+/-- The multiplications RSA makes, `[o] = [a] [b] R⁻¹ mod m`: those of
+`vg_rsa_public`, then the others of `vg_rsa_private_crt` (whose prime
+workspaces name arrays 1, 4 and 5 differently: its chunk, `x` and `T`; the
+last builds the exponentiation's table, `T := T x`). -/
 def MmUse (o a b : Nat) : Prop :=
   (o = aR2 ∧ a = aR2 ∧ b = aR2) ∨ (o = aY ∧ a = aY ∧ b = aY) ∨ (o = aY ∧ a = aY ∧ b = aXm) ∨
-  (o = aY ∧ a = aR2 ∧ b = aOne) ∨ (o = aXm ∧ a = aX ∧ b = aR2) ∨ (o = aY ∧ a = aY ∧ b = aOne)
+  (o = aY ∧ a = aR2 ∧ b = aOne) ∨ (o = aXm ∧ a = aX ∧ b = aR2) ∨ (o = aY ∧ a = aY ∧ b = aOne) ∨
+  (o = aR2 ∧ a = aR2 ∧ b = aOne) ∨ (o = aXm ∧ a = aX ∧ b = aOne) ∨ (o = aXm ∧ a = aY ∧ b = aR2) ∨
+  (o = aY ∧ a = aXm ∧ b = aY) ∨ (o = aX ∧ a = aX ∧ b = aR2) ∨ (o = aX ∧ a = aX ∧ b = aY) ∨
+  (o = aY ∧ a = aXm ∧ b = aX) ∨ (o = aXm ∧ a = aXm ∧ b = aR2)
 
 open VG.Impl.Bignum.X86_64.Public in
 /-- An implementation `mm o a b` of Montgomery multiplication in the working
 space of `vg_rsa_public` (with `m` in array `aN` and working arrays `aAcc`
 and `aTmp`), what RSA's proofs need of it: `[o] = [a] [b] R⁻¹ mod m`
 changing only `aAcc`, `aTmp` and `o`, and constant time for each
-multiplication RSA makes. The baseline `montMul` (`Mont.base`), or one for
-other CPU features. -/
+multiplication RSA makes, whatever the modulus. The baseline `montMul`
+(`Mont.base`), or one for other CPU features. -/
 structure Mont where
   mm : Nat → Nat → Nat → Prog isa
   ok : ∀ {t : State} {B : Addr} {Z w : Nat} {minv : BitVec 64}, Good t B Z w minv → slot w 8 ≤ Z → 2 ≤ w →
@@ -214,9 +252,13 @@ structure Mont where
       wv t'.mem B (slot w o) w * 2 ^ (64 * w) % wv t.mem B (slot w aN) w =
         wv t.mem B (slot w a) w * wv t.mem B (slot w b) w % wv t.mem B (slot w aN) w ∧
       Arrays B w [aAcc, aTmp, o] t.mem t'.mem ∧ Keep mmRegs t t'
-  ct : ∀ {o a b : Nat}, MmUse o a b → RelCT isa (Two GoodL) (mm o a b) fun _ _ => True
+  ct : ∀ {o a b : Nat}, MmUse o a b → RelCT isa (Two GoodW) (mm o a b) fun _ _ => True
 
 open VG.Impl.Bignum.X86_64.Public
+
+/-- `M.mm o a b` is constant time for a fixed modulus. -/
+theorem Mont.ctL (M : Mont) {o a b : Nat} (h : MmUse o a b) : RelCT isa (Two GoodL) (M.mm o a b) fun _ _ => True :=
+  RelCT.ofW (M.ct h)
 
 /-- `M.mm o a b`, for arrays that are not `aAcc` or `aTmp`. -/
 theorem Mont.mm_ok (M : Mont) {t : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hg : Good t B Z w minv)
@@ -234,8 +276,8 @@ theorem Mont.mm_ok (M : Mont) {t : State} {B : Addr} {Z w : Nat} {minv : BitVec 
 
 theorem mm_ct {o a b : Nat} (ho : o < 8) (ha : a < 8) (hb : b < 8) {hc : VG.Taint.Hint VG.X86_64.Taint.T}
     (h : (taint.check (Taint.ofRegs [.rdi]) (.block (bases o a b aN aAcc aTmp)) hc).isSome = true) :
-    RelCT isa (Two GoodL) (mm o a b) fun _ _ => True :=
-  montMul_ct (by decide) (by decide) (by decide) ho ha hb h
+    RelCT isa (Two GoodW) (mm o a b) fun _ _ => True :=
+  montMul_ctW (by decide) (by decide) (by decide) ho ha hb h
 
 /-- The baseline: `montMul` with `m`, the accumulator and the temporary of
 `vg_rsa_public` (`mm`). -/
@@ -249,7 +291,8 @@ def Mont.base : Mont where
   ct := by
     intro o a b h
     rcases h with ⟨rfl, rfl, rfl⟩ | ⟨rfl, rfl, rfl⟩ | ⟨rfl, rfl, rfl⟩ | ⟨rfl, rfl, rfl⟩ | ⟨rfl, rfl, rfl⟩ |
-      ⟨rfl, rfl, rfl⟩ <;>
+      ⟨rfl, rfl, rfl⟩ | ⟨rfl, rfl, rfl⟩ | ⟨rfl, rfl, rfl⟩ | ⟨rfl, rfl, rfl⟩ | ⟨rfl, rfl, rfl⟩ | ⟨rfl, rfl, rfl⟩ |
+      ⟨rfl, rfl, rfl⟩ | ⟨rfl, rfl, rfl⟩ | ⟨rfl, rfl, rfl⟩ <;>
     exact mm_ct (by decide) (by decide) (by decide) (by taint_decide)
 
 end VG.Proof.Bignum.X86_64

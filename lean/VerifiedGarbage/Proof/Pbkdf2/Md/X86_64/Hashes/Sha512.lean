@@ -46,8 +46,8 @@ def hash (I : Spec.Hmac.Instance) (D : Nat) (initN : String) (iv : Spec.Sha512.H
   initC := Impl.Sha512.X86_64.Stream.init iv
   updN := Spec.Sha512.updateScratchApi.name ++ v.suffix
   finN := Spec.Sha512.finalizeScratchApi.name ++ v.suffix
-  hmacInitN := I.initApi.name ++ v.suffix
-  hmacFinN := I.finalizeApi.name ++ v.suffix
+  hmacInitN := I.initScratchApi.name ++ v.suffix
+  hmacFinN := I.finalizeScratchApi.name ++ v.suffix
   iterN := I.iterateApi.name ++ v.suffix
 
 /-- A member of the family without the functions it calls, the same for
@@ -80,6 +80,8 @@ theorem coreOK (D : Nat) (hD : D = 28 ∨ D = 32 ∨ D = 48 ∨ D = 64) : CoreOK
       hfinSp := ?_
       hfinNs := ?_
       hfinD := ?_
+      hinitXD := ?_
+      hfinXD := ?_
       iterMx := ?_
       iterSp := ?_
       iterNs := ?_
@@ -110,6 +112,8 @@ theorem callees {I : Spec.Hmac.Instance} {D : Nat} {initN : String} {iv : Spec.S
   iSp := by simp only [hash]; rcases hiv with rfl | rfl | rfl | rfl <;> decide +kernel
   iNs := by simp only [hash]; rcases hiv with rfl | rfl | rfl | rfl <;> decide +kernel
   iD := by simp only [hash]; rcases hiv with rfl | rfl | rfl | rfl <;> decide +kernel
+  cXD := v.noStack
+  iXD := by simp only [hash]; rcases hiv with rfl | rfl | rfl | rfl <;> decide +kernel
 
 /-- `HashOK` for the member of instance `I`, whose specification is the
 family's from `iv`, with its digest the first `D` bytes. -/
@@ -190,13 +194,13 @@ def stream (v : Compress) : List StreamFn := [
 
 /-! ## SHA-384 -/
 
-theorem sha384_satI : ∃ s, (Spec.Hmac.sha384I.initContract X86_64.abi 16).pre s := by
-  inst_sat [Spec.Hmac.Instance.initContract, Spec.Hmac.sha384I, Spec.Hmac.initContract, Spec.Hmac.initSig,
+theorem sha384_satI : ∃ s, (Spec.Hmac.sha384I.initScratchContract X86_64.abi 16).pre s := by
+  inst_sat [Spec.Hmac.Instance.initScratchContract, Spec.Hmac.sha384I, Spec.Hmac.initScratchContract, Spec.Hmac.initScratchSig, Spec.Hmac.initPre, Spec.Hmac.initPost,
     Spec.Hmac.sha384S, Spec.Hmac.sha384, X86_64.abi, X86_64.argRegs] using initSat 192 234
 
-theorem sha384_satF : ∃ s, (Spec.Hmac.sha384I.finalizeContract X86_64.abi 16).pre s := by
-  inst_sat [Spec.Hmac.Instance.finalizeContract, Spec.Hmac.sha384I, Spec.Hmac.finalizeContract,
-    Spec.Hmac.finalizeSig, Spec.Hmac.sha384S, Spec.Hmac.sha384, X86_64.abi, X86_64.argRegs] using finSat 192 48 234
+theorem sha384_satF : ∃ s, (Spec.Hmac.sha384I.finalizeScratchContract X86_64.abi 16).pre s := by
+  inst_sat [Spec.Hmac.Instance.finalizeScratchContract, Spec.Hmac.sha384I, Spec.Hmac.finalizeScratchContract,
+    Spec.Hmac.finalizeScratchSig, Spec.Hmac.finalizePost, Spec.Hmac.sha384S, Spec.Hmac.sha384, X86_64.abi, X86_64.argRegs] using finSat 192 48 234
 
 theorem sha384_satT : ∃ s, (Spec.Hmac.sha384I.iterateContract X86_64.abi 8).pre s := by
   inst_sat [Spec.Hmac.Instance.iterateContract, Spec.Hmac.sha384I, Spec.Pbkdf2.iterateContract,
@@ -210,22 +214,39 @@ theorem sha384_satP : ∃ s, (Spec.Hmac.sha384I.pbkdf2Contract X86_64.abi 24).pr
 
 theorem sha384_coreOK : CoreOK (coreH 48) := coreOK 48 (Or.inr (Or.inr (Or.inl rfl)))
 
-/-- SHA-384 with the implementation `v` of the compression function. -/
+/-- SHA-384's functions, with the implementation `v` of the compression function. -/
+abbrev sha384H (v : Compress) : Hash := hash Spec.Hmac.sha384I 48 Spec.Sha512.init384Api.name H0_384 v
+
+theorem sha384K (v : Compress) : Callees (sha384H v) := callees (Or.inl rfl) v
+
+/-- What the proofs know of SHA-384's functions. -/
+def sha384OK (v : Compress) : HashOK (sha384H v) :=
+  ok sha384_coreOK (sha384K v) rfl (fun _ => rfl) rfl rfl rfl (Or.inr (Or.inr (Or.inl rfl))) rfl
+
+/-- SHA-384 with the implementation `v` of the compression function, which it
+carries for the functions built on SHA-384 alone (`MdHash.sha384`). -/
 def sha384 (v : Compress) (stream : List StreamFn := []) : MdHash :=
-  have C : CoreOK (core (hash Spec.Hmac.sha384I 48 Spec.Sha512.init384Api.name H0_384 v)) := sha384_coreOK
-  have K : Callees (hash Spec.Hmac.sha384I 48 Spec.Sha512.init384Api.name H0_384 v) := callees (Or.inl rfl) v
-  MdHash.of (ok C K rfl (fun _ => rfl) rfl rfl rfl (Or.inr (Or.inr (Or.inl rfl))) rfl) C K rfl rfl
-    sha384_satI sha384_satF sha384_satT sha384_satP v.suffix v.features stream
+  { MdHash.of (sha384OK v) sha384_coreOK (sha384K v) rfl rfl
+      sha384_satI sha384_satF sha384_satT sha384_satP (by decide)
+      (by
+        unfold Spec.Hmac.Instance.initContract Spec.Hmac.initContract
+        exact X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (Nat.le_of_ble_eq_true rfl))
+      (by
+        unfold Spec.Hmac.Instance.finalizeContract Spec.Hmac.finalizeContract
+        exact X86_64.sat_regs (by decide) (by decide) (by decide +kernel)
+          (by rw [Curry.apply_const]; trivial))
+      v.suffix v.features stream with
+    sha384 := some v }
 
 /-! ## SHA-512 -/
 
-theorem sha512_satI : ∃ s, (Spec.Hmac.sha512I.initContract X86_64.abi 16).pre s := by
-  inst_sat [Spec.Hmac.Instance.initContract, Spec.Hmac.sha512I, Spec.Hmac.initContract, Spec.Hmac.initSig,
+theorem sha512_satI : ∃ s, (Spec.Hmac.sha512I.initScratchContract X86_64.abi 16).pre s := by
+  inst_sat [Spec.Hmac.Instance.initScratchContract, Spec.Hmac.sha512I, Spec.Hmac.initScratchContract, Spec.Hmac.initScratchSig, Spec.Hmac.initPre, Spec.Hmac.initPost,
     Spec.Hmac.sha512S, Spec.Hmac.sha512, X86_64.abi, X86_64.argRegs] using initSat 192 234
 
-theorem sha512_satF : ∃ s, (Spec.Hmac.sha512I.finalizeContract X86_64.abi 16).pre s := by
-  inst_sat [Spec.Hmac.Instance.finalizeContract, Spec.Hmac.sha512I, Spec.Hmac.finalizeContract,
-    Spec.Hmac.finalizeSig, Spec.Hmac.sha512S, Spec.Hmac.sha512, X86_64.abi, X86_64.argRegs] using finSat 192 64 234
+theorem sha512_satF : ∃ s, (Spec.Hmac.sha512I.finalizeScratchContract X86_64.abi 16).pre s := by
+  inst_sat [Spec.Hmac.Instance.finalizeScratchContract, Spec.Hmac.sha512I, Spec.Hmac.finalizeScratchContract,
+    Spec.Hmac.finalizeScratchSig, Spec.Hmac.finalizePost, Spec.Hmac.sha512S, Spec.Hmac.sha512, X86_64.abi, X86_64.argRegs] using finSat 192 64 234
 
 theorem sha512_satT : ∃ s, (Spec.Hmac.sha512I.iterateContract X86_64.abi 8).pre s := by
   inst_sat [Spec.Hmac.Instance.iterateContract, Spec.Hmac.sha512I, Spec.Pbkdf2.iterateContract,
@@ -245,18 +266,25 @@ def sha512 (v : Compress) (stream : List StreamFn := []) : MdHash :=
   have C : CoreOK (core (hash Spec.Hmac.sha512I 64 Spec.Sha512.init512Api.name H0_512 v)) := sha512_coreOK
   have K : Callees (hash Spec.Hmac.sha512I 64 Spec.Sha512.init512Api.name H0_512 v) := callees (Or.inr (Or.inl rfl)) v
   { MdHash.of (ok C K rfl (fun _ => (List.take_of_length_le (Nat.le_of_eq (Proof.Sha512.md.digest_length _))).symm) rfl rfl rfl (Or.inr (Or.inr (Or.inr rfl))) rfl) C K rfl rfl
-      sha512_satI sha512_satF sha512_satT sha512_satP v.suffix v.features stream with
+      sha512_satI sha512_satF sha512_satT sha512_satP (by decide)
+    (by
+      unfold Spec.Hmac.Instance.initContract Spec.Hmac.initContract
+      exact X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (Nat.le_of_ble_eq_true rfl))
+    (by
+      unfold Spec.Hmac.Instance.finalizeContract Spec.Hmac.finalizeContract
+      exact X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
+    v.suffix v.features stream with
     sha512 := some v }
 
 /-! ## SHA-512/224 -/
 
-theorem sha512_224_satI : ∃ s, (Spec.Hmac.sha512_224I.initContract X86_64.abi 16).pre s := by
-  inst_sat [Spec.Hmac.Instance.initContract, Spec.Hmac.sha512_224I, Spec.Hmac.initContract, Spec.Hmac.initSig,
+theorem sha512_224_satI : ∃ s, (Spec.Hmac.sha512_224I.initScratchContract X86_64.abi 16).pre s := by
+  inst_sat [Spec.Hmac.Instance.initScratchContract, Spec.Hmac.sha512_224I, Spec.Hmac.initScratchContract, Spec.Hmac.initScratchSig, Spec.Hmac.initPre, Spec.Hmac.initPost,
     Spec.Hmac.sha512_224S, Spec.Hmac.sha512_224, X86_64.abi, X86_64.argRegs] using initSat 192 234
 
-theorem sha512_224_satF : ∃ s, (Spec.Hmac.sha512_224I.finalizeContract X86_64.abi 16).pre s := by
-  inst_sat [Spec.Hmac.Instance.finalizeContract, Spec.Hmac.sha512_224I, Spec.Hmac.finalizeContract,
-    Spec.Hmac.finalizeSig, Spec.Hmac.sha512_224S, Spec.Hmac.sha512_224, X86_64.abi, X86_64.argRegs] using finSat 192 28 234
+theorem sha512_224_satF : ∃ s, (Spec.Hmac.sha512_224I.finalizeScratchContract X86_64.abi 16).pre s := by
+  inst_sat [Spec.Hmac.Instance.finalizeScratchContract, Spec.Hmac.sha512_224I, Spec.Hmac.finalizeScratchContract,
+    Spec.Hmac.finalizeScratchSig, Spec.Hmac.finalizePost, Spec.Hmac.sha512_224S, Spec.Hmac.sha512_224, X86_64.abi, X86_64.argRegs] using finSat 192 28 234
 
 theorem sha512_224_satT : ∃ s, (Spec.Hmac.sha512_224I.iterateContract X86_64.abi 8).pre s := by
   inst_sat [Spec.Hmac.Instance.iterateContract, Spec.Hmac.sha512_224I, Spec.Pbkdf2.iterateContract,
@@ -275,17 +303,24 @@ def sha512_224 (v : Compress) (stream : List StreamFn := []) : MdHash :=
   have C : CoreOK (core (hash Spec.Hmac.sha512_224I 28 Spec.Sha512.init512_224Api.name H0_512_224 v)) := sha512_224_coreOK
   have K : Callees (hash Spec.Hmac.sha512_224I 28 Spec.Sha512.init512_224Api.name H0_512_224 v) := callees (Or.inr (Or.inr (Or.inl rfl))) v
   MdHash.of (ok C K rfl (fun _ => rfl) rfl rfl rfl (Or.inl rfl) rfl) C K rfl rfl
-    sha512_224_satI sha512_224_satF sha512_224_satT sha512_224_satP v.suffix v.features stream
+    sha512_224_satI sha512_224_satF sha512_224_satT sha512_224_satP (by decide)
+    (by
+      unfold Spec.Hmac.Instance.initContract Spec.Hmac.initContract
+      exact X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (Nat.le_of_ble_eq_true rfl))
+    (by
+      unfold Spec.Hmac.Instance.finalizeContract Spec.Hmac.finalizeContract
+      exact X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
+    v.suffix v.features stream
 
 /-! ## SHA-512/256 -/
 
-theorem sha512_256_satI : ∃ s, (Spec.Hmac.sha512_256I.initContract X86_64.abi 16).pre s := by
-  inst_sat [Spec.Hmac.Instance.initContract, Spec.Hmac.sha512_256I, Spec.Hmac.initContract, Spec.Hmac.initSig,
+theorem sha512_256_satI : ∃ s, (Spec.Hmac.sha512_256I.initScratchContract X86_64.abi 16).pre s := by
+  inst_sat [Spec.Hmac.Instance.initScratchContract, Spec.Hmac.sha512_256I, Spec.Hmac.initScratchContract, Spec.Hmac.initScratchSig, Spec.Hmac.initPre, Spec.Hmac.initPost,
     Spec.Hmac.sha512_256S, Spec.Hmac.sha512_256, X86_64.abi, X86_64.argRegs] using initSat 192 234
 
-theorem sha512_256_satF : ∃ s, (Spec.Hmac.sha512_256I.finalizeContract X86_64.abi 16).pre s := by
-  inst_sat [Spec.Hmac.Instance.finalizeContract, Spec.Hmac.sha512_256I, Spec.Hmac.finalizeContract,
-    Spec.Hmac.finalizeSig, Spec.Hmac.sha512_256S, Spec.Hmac.sha512_256, X86_64.abi, X86_64.argRegs] using finSat 192 32 234
+theorem sha512_256_satF : ∃ s, (Spec.Hmac.sha512_256I.finalizeScratchContract X86_64.abi 16).pre s := by
+  inst_sat [Spec.Hmac.Instance.finalizeScratchContract, Spec.Hmac.sha512_256I, Spec.Hmac.finalizeScratchContract,
+    Spec.Hmac.finalizeScratchSig, Spec.Hmac.finalizePost, Spec.Hmac.sha512_256S, Spec.Hmac.sha512_256, X86_64.abi, X86_64.argRegs] using finSat 192 32 234
 
 theorem sha512_256_satT : ∃ s, (Spec.Hmac.sha512_256I.iterateContract X86_64.abi 8).pre s := by
   inst_sat [Spec.Hmac.Instance.iterateContract, Spec.Hmac.sha512_256I, Spec.Pbkdf2.iterateContract,
@@ -304,6 +339,13 @@ def sha512_256 (v : Compress) (stream : List StreamFn := []) : MdHash :=
   have C : CoreOK (core (hash Spec.Hmac.sha512_256I 32 Spec.Sha512.init512_256Api.name H0_512_256 v)) := sha512_256_coreOK
   have K : Callees (hash Spec.Hmac.sha512_256I 32 Spec.Sha512.init512_256Api.name H0_512_256 v) := callees (Or.inr (Or.inr (Or.inr rfl))) v
   MdHash.of (ok C K rfl (fun _ => rfl) rfl rfl rfl (Or.inr (Or.inl rfl)) rfl) C K rfl rfl
-    sha512_256_satI sha512_256_satF sha512_256_satT sha512_256_satP v.suffix v.features stream
+    sha512_256_satI sha512_256_satF sha512_256_satT sha512_256_satP (by decide)
+    (by
+      unfold Spec.Hmac.Instance.initContract Spec.Hmac.initContract
+      exact X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (Nat.le_of_ble_eq_true rfl))
+    (by
+      unfold Spec.Hmac.Instance.finalizeContract Spec.Hmac.finalizeContract
+      exact X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
+    v.suffix v.features stream
 
 end VG.Proof.Pbkdf2.Md.X86_64.Sha512

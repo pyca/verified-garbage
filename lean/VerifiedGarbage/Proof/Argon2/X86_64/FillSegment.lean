@@ -21,7 +21,7 @@ structure Finished (s t : State) (p : Params) (pass lane slice : Nat) (state : F
   rd : t.rd = s.rd
   wr : t.wr = s.wr
   frame : Frame (FillBlock.writes s p) s.mem t.mem
-  mxcsr : t.mxcsr = s.mxcsr
+  mxcsr : ctl t.mxcsr = ctl s.mxcsr
 
 theorem Done.finished {s t : State} {p : Params} {pass lane slice index : Nat} {state : FillState}
     (h : Done s t p pass lane slice index state) (last : index + 1 = p.segmentLen) :
@@ -42,7 +42,7 @@ theorem Finished.prepend {s a t : State} {p : Params} {pass lane slice index : N
       first.regs .rbp (by simp [calleeSaved]) (by decide)] at frame
     exact first.frame.trans frame
 
-theorem loop_ok (count : Nat) (s : State) (p : Params) (pass lane slice index old : Nat)
+theorem loop_ok [CompressImpl] (count : Nat) (s : State) (p : Params) (pass lane slice index old : Nat)
     (h : RandomSource.Ready p pass lane slice index old s) (state : FillState)
     (represented : Proof.Argon2.Represents s.mem (FillKernel.matrix s) p.blocks state.memory)
     (positive : 0 < count) (endIndex : index + count = p.segmentLen) :

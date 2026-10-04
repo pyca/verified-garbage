@@ -345,34 +345,99 @@ theorem key_rel (k : KeyImpl) {P : State → State → Prop}
 
 /-! ## The implementations, together -/
 
+/-- What `Blocks.stitchPart` needs of the loops `code` it runs, besides
+their contract: no write of `mxcsr` or `rsp`, no calls, and constant time,
+from the registers it keeps public. -/
+structure Piece (code : Prog isa) : Prop where
+  mxcsr : code.allInstrs (fun i => !loadsMxcsr i) = true
+  spSafe : code.all (fun i => !X86_64.isa.writesSp i) = true
+  nosp : code.allInstrs (fun i => !Taint.clobbers i .rsp) = true
+  depth : code.depth = 0
+  ct : ∃ hc, ((taint.check (Taint.ofRegs [.r11, .rdi, .rsi, .rdx, .rcx, .r8, .r9, .rsp])
+    (Blocks.stitchPart code) hc).map fun τ' => (RegSet.ofList [Reg.rsp]).subset τ'.regs &&
+      (!false || τ'.flags)) = some true
+
+/-- Loops that interleave counter mode and GHASH on groups of 16 blocks, for
+`vg_aes_gcm_encrypt_blocks` and `_decrypt_blocks` (`Gcm.X86_64.Stitch.SPre`).
+Their proof is supplied only by the instances that use them (it imports the
+algebra of `Proof/Gcm/Poly.lean`). -/
+structure StitchImpl where
+  /-- What the names of the instances using them end with, after the
+  callees' suffixes. -/
+  suffix : String
+  /-- The CPU features they need beyond the callees'. -/
+  features : List String
+  enc : Prog isa
+  dec : Prog isa
+  ok : Gcm.X86_64.Stitch.StitchOk enc dec
+  encP : Piece enc
+  decP : Piece dec
+
+namespace StitchImpl
+
+variable (st : Option StitchImpl) {f : StitchImpl → Prog isa} (hf : ∀ i, Piece (f i))
+include hf
+
+theorem head_mxcsr : (Blocks.head (st.map f)).allInstrs (fun i => !loadsMxcsr i) = true := by
+  rcases st with _ | i <;>
+  simp only [Option.map, Blocks.head, Blocks.stitchPart, Code.allInstrs, (hf _).mxcsr] <;> decide
+
+theorem head_spSafe : (Blocks.head (st.map f)).all (fun i => !X86_64.isa.writesSp i) = true := by
+  rcases st with _ | i <;>
+  simp only [Option.map, Blocks.head, Blocks.stitchPart, Code.all, (hf _).spSafe] <;> decide
+
+theorem head_nosp : (Blocks.head (st.map f)).allInstrs (fun i => !Taint.clobbers i .rsp) = true := by
+  rcases st with _ | i <;>
+  simp only [Option.map, Blocks.head, Blocks.stitchPart, Code.allInstrs, (hf _).nosp] <;> decide
+
+theorem head_depth : (Blocks.head (st.map f)).depth = 0 := by
+  rcases st with _ | i <;>
+  simp only [Option.map, Blocks.head, Blocks.stitchPart, Code.depth, (hf _).depth] <;> decide
+
+end StitchImpl
+
 /-- What an AES-GCM function calls: an implementation of `vg_aes_ctr32`, the
 `vg_aes_expand_key` for the same CPUs, and one of `vg_ghash`. -/
 structure GcmImpl where
   ctr : Ctr32Impl
   key : KeyImpl
   gh : GhashImpl
-  /-- Whether `vg_aes_gcm_encrypt_blocks` and `_decrypt_blocks` interleave
-  counter mode and GHASH with VAES and VPCLMULQDQ (`Gcm.X86_64.Stitch`), for
-  `vg_aes_ctr32_vaes` and `vg_ghash_vpclmul`. -/
-  stitch : Bool := false
-  /-- The interleaved loops' proof, which only an instance that uses them
-  supplies (it imports the algebra of `Proof/Gcm/Poly.lean`). -/
-  stitchOk : stitch = true → Gcm.X86_64.Stitch.StitchOk
+  /-- The loops with which `vg_aes_gcm_encrypt_blocks` and `_decrypt_blocks`
+  interleave counter mode and GHASH, if any. -/
+  stitch : Option StitchImpl := none
 
 namespace GcmImpl
 
 variable (v : GcmImpl)
 
 /-- What the names of the functions calling `vg_ghash` end with. -/
-def suffix : String := v.ctr.suffix ++ v.gh.suffix
+def suffix : String := v.ctr.suffix ++ v.gh.suffix ++ (v.stitch.map (·.suffix)).getD ""
 
 def callees : Callees :=
   ⟨⟨v.ctr.callee.name, v.ctr.callee.code⟩, v.key.fn, v.gh.fn,
     ⟨Spec.Gcm.encryptBlocksApi.name ++ v.suffix,
-      Impl.AesGcm.X86_64.Blocks.encrypt ⟨v.ctr.callee.name, v.ctr.callee.code⟩ v.gh.fn v.stitch⟩,
+      Impl.AesGcm.X86_64.Blocks.encrypt ⟨v.ctr.callee.name, v.ctr.callee.code⟩ v.gh.fn (v.stitch.map (·.enc))⟩,
     ⟨Spec.Gcm.decryptBlocksApi.name ++ v.suffix,
-      Impl.AesGcm.X86_64.Blocks.decrypt ⟨v.ctr.callee.name, v.ctr.callee.code⟩ v.gh.fn v.stitch⟩⟩
+      Impl.AesGcm.X86_64.Blocks.decrypt ⟨v.ctr.callee.name, v.ctr.callee.code⟩ v.gh.fn (v.stitch.map (·.dec))⟩⟩
 
 end GcmImpl
+
+/-- The implementations of `vg_ghash`, by name, as the variants of `AesGcm`
+choose them (`GcmVariant`). `GhashName.impl`, in `GhashImpls.lean`, gives
+their `GhashImpl`s, whose proofs import the algebra of `Proof/Gcm/Poly.lean`,
+which the variants then need not import. -/
+inductive GhashName where
+  | scalar
+  | pclmul
+  | vpclmul
+
+/-- A variant of `AesGcm` (see `TCB/Emit.lean`): a `GcmImpl` with its
+implementation of `vg_ghash` named (`GhashName`), which `GcmVariant.impl`
+(`GhashImpls.lean`) resolves. -/
+structure GcmVariant where
+  ctr : Ctr32Impl
+  key : KeyImpl
+  gh : GhashName
+  stitch : Option StitchImpl := none
 
 end VG.Proof.AesGcm.X86_64

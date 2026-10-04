@@ -27,9 +27,9 @@ by the names they are registered with. -/
 def fnsOf (I : Spec.Hmac.Instance) (M : Impl.Pbkdf2.Md.Arm.Hash) : Fns where
   H := M.st
   W := I.scratch
-  hiN := I.initApi.name
+  hiN := I.initScratchApi.name
   hiC := M.hmacInit
-  hfN := I.finalizeApi.name
+  hfN := I.finalizeScratchApi.name
   hfC := M.hmacFin
   itN := I.iterateApi.name
   itC := M.iterate

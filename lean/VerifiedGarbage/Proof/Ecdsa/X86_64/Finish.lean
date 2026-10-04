@@ -11,14 +11,14 @@ numbers and the saved registers (`Outside.unch_far`).
 
 namespace VG.Proof.Ecdsa.X86_64
 
-open VG VG.X86_64 VG.Impl.Mont.X86_64 VG.Impl.Weierstrass.X86_64 VG.Impl.Ecdsa.X86_64
-open VG.Proof.Mont.X86_64 VG.Proof.Weierstrass.X86_64 VG.Proof.Weierstrass Spec.Weierstrass
+open VG VG.X86_64 VG.Impl.Mont.X86_64 VG.Impl.Mont VG.Impl.Weierstrass.X86_64 VG.Impl.Weierstrass VG.Impl.Ecdsa.X86_64
+open VG.Proof.Mont.X86_64 VG.Proof.Mont VG.Proof.Weierstrass.X86_64 VG.Proof.Weierstrass Spec.Weierstrass
 open VG.Proof.X25519.X86_64 (Keeps)
 
 variable {c : Cfg}
 
 /-- Bytes that changed only in a region apart from the working space. -/
-theorem _root_.VG.Proof.Mont.X86_64.Outside.unch_far {q base : Addr} {len : Nat} {m m' : Mem}
+theorem _root_.VG.Proof.Mont.Outside.unch_far {q base : Addr} {len : Nat} {m m' : Mem}
     (h : Outside q 0 len m m') (hd : Region.Disjoint ⟨base, size⟩ ⟨q, len⟩) :
     Unch base [(size, 2 ^ 64)] m m' := by
   intro x hx

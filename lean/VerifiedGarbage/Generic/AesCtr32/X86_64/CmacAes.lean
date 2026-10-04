@@ -1,6 +1,7 @@
 import VerifiedGarbage.TCB.X86_64.Target
 import VerifiedGarbage.Proof.CmacAes.X86_64.Verified
 import VerifiedGarbage.Proof.CmacAes.Stream.X86_64.Verified
+import VerifiedGarbage.Proof.CmacAes.Stream.X86_64.Frame
 
 /-!
 # AES-CMAC (NIST SP 800-38B) on x86-64
@@ -15,6 +16,10 @@ return address of the call of `vg_aes_ctr32`, which makes no calls. The
 streaming functions (`init`, `absorb`, `finish`) call those, so their stack
 is 16 bytes; `init` also calls the implementation of `vg_aes_expand_key`
 that goes with `v`.
+
+The streaming functions keep their working space in a frame of their own
+on the stack (`Proof/CmacAes/Stream/X86_64/Frame.lean`): their `stack` is that
+frame and the stack their code uses below it.
 -/
 
 namespace VG.Generic.AesCtr32.X86_64.CmacAes
@@ -66,31 +71,34 @@ def artifacts (v : Proof.Aes.X86_64.Ctr32Impl) : List Artifact := [
     target := X86_64.target
     doc := Spec.Cmac.aesInitApi.doc (notes := [streamNote v,
       "It expands the key with `" ++ v.expand.name ++ "`."])
-    code := Impl.CmacAes.Stream.X86_64.init v.expand v.callee v.suffix
-    contract := Spec.Cmac.aesInitContract X86_64.abi 16
-    stack := 16
-    verified := Proof.CmacAes.Stream.X86_64.init_verified v
-    spSafe := Proof.CmacAes.Stream.X86_64.init_spSafe v
+    code := Impl.StackScratch.X86_64.withStackScratch 2312 .rcx
+      (Impl.CmacAes.Stream.X86_64.init v.expand v.callee v.suffix)
+    contract := Spec.Cmac.aesInitContract X86_64.abi 2328
+    stack := 2328
+    verified := Proof.CmacAes.Stream.X86_64.init_framed v
+    spSafe := X86_64.withStackScratch_spSafe (by decide) (Proof.CmacAes.Stream.X86_64.init_spSafe v)
     features := v.features },
   { Spec.Cmac.aesAbsorbApi with
     name := Spec.Cmac.aesAbsorbApi.name ++ v.suffix
     target := X86_64.target
     doc := Spec.Cmac.aesAbsorbApi.doc (notes := [streamNote v])
-    code := Impl.CmacAes.Stream.X86_64.absorb v.callee v.suffix
-    contract := Spec.Cmac.aesAbsorbContract X86_64.abi 16
-    stack := 16
-    verified := Proof.CmacAes.Stream.X86_64.absorb_verified v
-    spSafe := Proof.CmacAes.Stream.X86_64.absorb_spSafe v
+    code := Impl.StackScratch.X86_64.withStackScratch 2312 .r9
+      (Impl.CmacAes.Stream.X86_64.absorb v.callee v.suffix)
+    contract := Spec.Cmac.aesAbsorbContract X86_64.abi 2328
+    stack := 2328
+    verified := Proof.CmacAes.Stream.X86_64.absorb_framed v
+    spSafe := X86_64.withStackScratch_spSafe (by decide) (Proof.CmacAes.Stream.X86_64.absorb_spSafe v)
     features := v.features },
   { Spec.Cmac.aesFinishApi with
     name := Spec.Cmac.aesFinishApi.name ++ v.suffix
     target := X86_64.target
     doc := Spec.Cmac.aesFinishApi.doc (notes := [streamNote v])
-    code := Impl.CmacAes.Stream.X86_64.finish v.callee v.suffix
-    contract := Spec.Cmac.aesFinishContract X86_64.abi 16
-    stack := 16
-    verified := Proof.CmacAes.Stream.X86_64.finish_verified v
-    spSafe := Proof.CmacAes.Stream.X86_64.finish_spSafe v
+    code := Impl.StackScratch.X86_64.withStackScratch 2312 .r8
+      (Impl.CmacAes.Stream.X86_64.finish v.callee v.suffix)
+    contract := Spec.Cmac.aesFinishContract X86_64.abi 2328
+    stack := 2328
+    verified := Proof.CmacAes.Stream.X86_64.finish_framed v
+    spSafe := X86_64.withStackScratch_spSafe (by decide) (Proof.CmacAes.Stream.X86_64.finish_spSafe v)
     features := v.features }]
 
 end VG.Generic.AesCtr32.X86_64.CmacAes

@@ -12,14 +12,14 @@
 ///
 /// * `key` must be valid for reads of `key_len` bytes.
 /// * `out` must be valid for reads and writes of 400 bytes.
-/// * `scratch` must be valid for reads and writes of 640 bytes.
 /// * `key_len` must be 16 or 24.
-/// * The contents of `scratch` on return are unspecified.
-/// * `out` and `scratch` must not overlap each other or `key` (distinct Rust objects never do).
-/// * None of `key`, `out` and `scratch` may wrap around the end of the address space (no Rust object does).
+/// * `out` must not overlap `key` (distinct Rust objects never do).
+/// * Neither `key` nor `out` may overlap the 640 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_cmac_triple_des_init(key: *const u8, key_len: usize, out: *mut [u8; 400], scratch: *mut [u64; 80]) {
+pub(crate) unsafe extern "C" fn vg_cmac_triple_des_init(key: *const u8, key_len: usize, out: *mut [u8; 400]) {
     core::arch::naked_asm!(
+        "sub sp, sp, #640",
+        "add x3, sp, #0",
         "add x15, x3, #0",
         "ldr x5, [x0, #0]",
         "rev x5, x5",
@@ -4210,6 +4210,7 @@ pub(crate) unsafe extern "C" fn vg_cmac_triple_des_init(key: *const u8, key_len:
         "eor x5, x5, x7",
         "rev x6, x5",
         "str x6, [x2, #8]",
+        "add sp, sp, #640",
         "ret",
     )
 }
@@ -4225,13 +4226,13 @@ pub(crate) unsafe extern "C" fn vg_cmac_triple_des_init(key: *const u8, key_len:
 /// * `schedule` must be valid for reads of 384 bytes.
 /// * `state` must be valid for reads and writes of 8 bytes.
 /// * `data` must be valid for reads of `8 * n` bytes.
-/// * `scratch` must be valid for reads and writes of 640 bytes.
-/// * The contents of `scratch` on return are unspecified.
-/// * `state` and `scratch` must not overlap each other, `schedule` or `data` (distinct Rust objects never do).
-/// * None of `schedule`, `state`, `data` and `scratch` may wrap around the end of the address space (no Rust object does).
+/// * `state` must not overlap `schedule` or `data` (distinct Rust objects never do).
+/// * None of `schedule`, `state` and `data` may overlap the 640 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_cmac_triple_des_update(schedule: *const [u8; 384], state: *mut [u8; 8], data: *const [u8; 8], n: usize, scratch: *mut [u64; 80]) {
+pub(crate) unsafe extern "C" fn vg_cmac_triple_des_update(schedule: *const [u8; 384], state: *mut [u8; 8], data: *const [u8; 8], n: usize) {
     core::arch::naked_asm!(
+        "sub sp, sp, #640",
+        "add x4, sp, #0",
         "add x14, x0, #0",
         "add x15, x4, #0",
         "cbz x3, 20f",
@@ -5609,6 +5610,7 @@ pub(crate) unsafe extern "C" fn vg_cmac_triple_des_update(schedule: *const [u8; 
         "b 21f",
         "20:",
         "21:",
+        "add sp, sp, #640",
         "ret",
     )
 }
@@ -5624,14 +5626,14 @@ pub(crate) unsafe extern "C" fn vg_cmac_triple_des_update(schedule: *const [u8; 
 /// * `key` must be valid for reads of 400 bytes.
 /// * `state` must be valid for reads and writes of 8 bytes.
 /// * `last` must be valid for reads of `last_len` bytes.
-/// * `scratch` must be valid for reads and writes of 640 bytes.
 /// * `last_len` must be at most 8.
-/// * The contents of `scratch` on return are unspecified.
-/// * `state` and `scratch` must not overlap each other, `key` or `last` (distinct Rust objects never do).
-/// * None of `key`, `state`, `last` and `scratch` may wrap around the end of the address space (no Rust object does).
+/// * `state` must not overlap `key` or `last` (distinct Rust objects never do).
+/// * None of `key`, `state` and `last` may overlap the 640 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_cmac_triple_des_finalize(key: *const [u8; 400], state: *mut [u8; 8], last: *const u8, last_len: usize, scratch: *mut [u64; 80]) {
+pub(crate) unsafe extern "C" fn vg_cmac_triple_des_finalize(key: *const [u8; 400], state: *mut [u8; 8], last: *const u8, last_len: usize) {
     core::arch::naked_asm!(
+        "sub sp, sp, #640",
+        "add x4, sp, #0",
         "add x14, x0, #0",
         "add x15, x4, #0",
         "sub x9, x3, #8",
@@ -7029,6 +7031,7 @@ pub(crate) unsafe extern "C" fn vg_cmac_triple_des_finalize(key: *const [u8; 400
         "eor x5, x5, x6",
         "rev x5, x5",
         "str x5, [x1, #0]",
+        "add sp, sp, #640",
         "ret",
     )
 }

@@ -14,7 +14,7 @@ namespace VG.Proof.Ed448
 
 open Spec.X448 (Fe P)
 open Spec.Ed448 (Point)
-open Edwards
+open EdwardsLaw
 
 theorem verifyEquation_none {pk sig ch : List Byte}
     (h : Spec.Ed448.decodePoint pk = none ∨ Spec.Ed448.decodePoint (sig.take 57) = none) :

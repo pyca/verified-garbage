@@ -142,9 +142,9 @@ structure Done (s t : State) (p : Params) (pass lane slice index : Nat) (state :
   rd : t.rd = s.rd
   wr : t.wr = s.wr
   frame : Frame (writes s p) s.mem t.mem
-  mxcsr : t.mxcsr = s.mxcsr
+  mxcsr : ctl t.mxcsr = ctl s.mxcsr
 
-theorem code_ok (s : State) (p : Params) (pass lane slice index old : Nat)
+theorem code_ok [CompressImpl] (s : State) (p : Params) (pass lane slice index old : Nat)
     (h : RandomSource.Ready p pass lane slice index old s) (state : FillState)
     (represented : Proof.Argon2.Represents s.mem (FillKernel.matrix s) p.blocks state.memory) :
     WP isa Impl.Argon2.X86_64.FillBlock.code s (Done s · p pass lane slice index state) := by

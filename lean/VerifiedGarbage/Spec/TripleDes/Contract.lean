@@ -8,8 +8,10 @@ import VerifiedGarbage.TCB.Artifact
 and public pointers/lengths. Key bytes, round keys and data are secret.
 The schedule has 48 little-endian 64-bit slots (384 bytes), in encryption
 order for K1, K2 and K3. Expansion zero-extends each 48-bit round key.
-Scratch contents are unspecified on return. `stack` accounts for frames
-and calls; ECB permits writes to ABI argument areas to call block primitives.
+The block functions' scratch contents are unspecified on return; key
+expansion and ECB keep their working space on the stack. `stack` accounts
+for frames and calls; ECB permits writes to ABI argument areas to call block
+primitives.
 
 The Rust wrapper will buffer partial blocks, reject invalid key lengths
 before key expansion, and reject incomplete input at finalization. It will
@@ -19,14 +21,16 @@ not add or remove padding. Empty ECB input is supported.
 namespace VG.Spec.TripleDes
 
 def expandKeySig : Sig where
-  params := [("key", .slice false .u8 "key_len"), ("schedule", .array true .u8 384),
-    ("scratch", .array true .u64 64)]
+  params := [("key", .slice false .u8 "key_len"), ("schedule", .array true .u8 384)]
+
+def expandKeyPre (pb : Nat) : Curry (expandKeySig.words pb) (Mem → Prop) :=
+  fun _key keyLen _schedule _ => validKey keyLen.toNat
+
+def expandKeyPost (pb : Nat) : expandKeySig.Post pb := fun key keyLen schedule m m' _ =>
+  scheduleAt m' schedule = expandKey (bytesAt m key keyLen.toNat)
 
 def expandKeyContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  expandKeySig.contract A
-    (pre := fun _key keyLen _schedule _scratch _ => validKey keyLen.toNat)
-    (post := fun key keyLen schedule _scratch m m' _ =>
-      scheduleAt m' schedule = expandKey (bytesAt m key keyLen.toNat))
+  expandKeySig.contract A (pre := expandKeyPre A.ptrBits) (post := expandKeyPost A.ptrBits)
     (stack := stack)
 
 def expandKeyApi : Api where
@@ -40,7 +44,7 @@ def expandKeyApi : Api where
     Parity bits are ignored and weak or repeated component keys are accepted.\n\n\
     Contract: `VG.Spec.TripleDes.expandKeyContract`. Constant time: only pointers and \
     `key_len` may affect timing, not key bytes."
-  safety := ["`key_len` must be 16 or 24.", "The contents of `scratch` on return are unspecified."]
+  safety := ["`key_len` must be 16 or 24."]
 
 def blockSig : Sig where
   params := [("schedule", .array false .u8 384), ("data", .array true .u8 8),
@@ -83,15 +87,13 @@ def decryptBlockApi : Api where
   safety := ["The contents of `scratch` on return are unspecified."]
 
 def ecbSig : Sig where
-  params := [("schedule", .array false .u8 384), ("data", .slice true (.array .u8 8) "n"),
-    ("scratch", .array true .u64 128)]
+  params := [("schedule", .array false .u8 384), ("data", .slice true (.array .u8 8) "n")]
+
+def ecbPost (direction : Direction) (pb : Nat) : ecbSig.Post pb := fun schedule data n m m' _ =>
+  blocksAt m' data n.toNat = ecb (scheduleAt m schedule) direction (blocksAt m data n.toNat)
 
 def ecbContract {M : ISA} (A : Abi M) (direction : Direction) (stack : Nat := 0) : Contract M :=
-  ecbSig.contract A
-    (post := fun schedule data n _scratch m m' _ =>
-      blocksAt m' data n.toNat = ecb (scheduleAt m schedule) direction (blocksAt m data n.toNat))
-    (writeArgs := true)
-    (stack := stack)
+  ecbSig.contract A (post := ecbPost direction A.ptrBits) (writeArgs := true) (stack := stack)
 
 def ecbEncryptContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
   ecbContract A .encrypt stack
@@ -107,7 +109,7 @@ def ecbEncryptApi : Api where
     No padding is added or removed. For `n = 0`, no data is transformed.\n\n\
     Contract: `VG.Spec.TripleDes.ecbEncryptContract`. Constant time: only pointers and `n` \
     may affect timing, not the schedule or data."
-  safety := ["The contents of `scratch` on return are unspecified."]
+  safety := []
 
 def ecbDecryptContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
   ecbContract A .decrypt stack
@@ -123,6 +125,6 @@ def ecbDecryptApi : Api where
     No padding is added or removed. For `n = 0`, no data is transformed.\n\n\
     Contract: `VG.Spec.TripleDes.ecbDecryptContract`. Constant time: only pointers and `n` \
     may affect timing, not the schedule or data."
-  safety := ["The contents of `scratch` on return are unspecified."]
+  safety := []
 
 end VG.Spec.TripleDes

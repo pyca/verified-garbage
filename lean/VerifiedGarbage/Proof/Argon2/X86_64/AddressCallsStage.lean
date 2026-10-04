@@ -181,16 +181,17 @@ theorem ready_of_frame {s t : State} (h : Ready s) (out : Nat) (ho : out + 1024 
   · rw [bp, sp]; exact h.frameStack
   · rw [sp, work']; exact h.stackWork
 
-theorem stage_ok (s : State) (h : Ready s) (x y out : Nat)
+theorem stage_ok [CompressImpl] (s : State) (h : Ready s) (x y out : Nat)
     (hx : 4096 ≤ x) (hy : 4096 ≤ y) (ho : 4096 ≤ out)
     (bx : x + 1024 ≤ 8192) (by_ : y + 1024 ≤ 8192) (bo : out + 1024 ≤ 8192) :
-    WP isa (stage x y out) s (StageDone s · x y out) := by
+    WP isa (stage x y out) s fun t => StageDone s t x y out ∧ ctl t.mxcsr = ctl s.mxcsr := by
   unfold stage
-  refine WP.seq ((args_nat_ok s h x y out (by omega) (by omega) (by omega)).mono ?_)
-  intro a args
+  refine WP.seq ((WP.with_mx (by rfl) (args_nat_ok s h x y out (by omega) (by omega)
+    (by omega))).mono ?_)
+  rintro a ⟨args, mx1⟩
   have callReady := args_call_ready s a h x y out hx hy ho bx by_ bo args
-  refine (FillCompress.call_ok _ a callReady).mono ?_
-  intro t called
+  refine (FillCompress.call_ok a callReady).mono ?_
+  rintro t ⟨called, mx2⟩
   have regs : ∀ r ∈ calleeSaved, t.gpr r = s.gpr r :=
     fun r hr => (called.regs r hr).trans (args.callee r hr)
   have rd := called.rd.trans args.keeps.rd
@@ -200,7 +201,7 @@ theorem stage_ok (s : State) (h : Ready s) (x y out : Nat)
     rw [args.output, args.scratch, args.callee .rsp (by simp [calleeSaved]), args.keeps.mem] at hf
     exact hf
   obtain ⟨ready, work'⟩ := ready_of_frame h out bo regs rd wr frame
-  refine ⟨?_, ready, work', regs, rd, wr, frame⟩
+  refine ⟨⟨?_, ready, work', regs, rd, wr, frame⟩, by rw [mx2, mx1]⟩
   have result := called.result
   rw [args.output, args.left, args.right, args.keeps.mem] at result
   exact result

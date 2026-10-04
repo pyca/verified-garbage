@@ -1,6 +1,7 @@
 import VerifiedGarbage.Proof.Argon2.X86_64.DeriveAbi
 import VerifiedGarbage.Proof.Argon2.X86_64.DeriveFrame
 import VerifiedGarbage.Proof.Argon2.X86_64.DeriveLit
+import VerifiedGarbage.Proof.Argon2.X86_64.CompressImpl
 import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Correct
 import VerifiedGarbage.Proof.Argon2.X86_64.InitialLit
 import VerifiedGarbage.Proof.Argon2.X86_64.MemoryInitLit
@@ -62,14 +63,30 @@ theorem frame_spSafe (body : Prog isa) (rs : List Reg) (h : body.all property = 
     rw [Bool.not_eq_true', beq_eq_false_iff_ne]
     exact fun eq => safe r (List.mem_cons_self ..) (Option.some.inj eq)
 
-theorem code_spSafe (v : Proof.Blake2.X86_64.Backend) (name : String) :
+/-- The filling passes, whose calls of G are `CompressImpl.spSafe`. -/
+theorem fill_spSafe [CompressImpl] : Impl.Argon2.X86_64.FillIterations.loop.all property = true := by
+  simp only [Impl.Argon2.X86_64.FillIterations.loop, Impl.Argon2.X86_64.FillIterations.body,
+    Impl.Argon2.X86_64.FillIteration.code, Impl.Argon2.X86_64.FillSlices.loop,
+    Impl.Argon2.X86_64.FillSlices.body, Impl.Argon2.X86_64.FillSlice.code,
+    Impl.Argon2.X86_64.FillLanes.loop, Impl.Argon2.X86_64.FillLanes.body,
+    Impl.Argon2.X86_64.SegmentSetup.code, Impl.Argon2.X86_64.FillSegment.loop,
+    Impl.Argon2.X86_64.FillSegment.body, Impl.Argon2.X86_64.FillBlock.code,
+    Impl.Argon2.X86_64.RandomSource.code, Impl.Argon2.X86_64.AddressCache.code,
+    Impl.Argon2.X86_64.AddressCache.select, Impl.Argon2.X86_64.AddressCalls.code,
+    Impl.Argon2.X86_64.AddressCalls.calls, Impl.Argon2.X86_64.AddressCalls.stage,
+    Impl.Argon2.X86_64.FillKernel.code, Impl.Argon2.X86_64.FillCompress.code,
+    Impl.Argon2.X86_64.FillCompress.operation, Code.all]
+  rw [compressor_spSafe]
+  lit_decide
+
+theorem code_spSafe [CompressImpl] (v : Proof.Blake2.X86_64.Backend) (name : String) :
     (Impl.Argon2.X86_64.Derive.code name (HPrime.hash v)).all property = true := by
   unfold Impl.Argon2.X86_64.Derive.code
   apply frame_spSafe (safe := by decide)
   simp only [Impl.Argon2.X86_64.Derive.body, Impl.Argon2.X86_64.InitialBody.code,
     Impl.Argon2.X86_64.InitFill.code, Impl.Argon2.X86_64.FillFinish.code,
     Impl.Argon2.X86_64.Finish.code, Impl.Argon2.X86_64.FinalOutput.code, Code.all]
-  rw [initial_spSafe v, memory_spSafe v name, HPrime.spSafe v]
+  rw [initial_spSafe v, memory_spSafe v name, HPrime.spSafe v, fill_spSafe]
   lit_decide
 
 end VG.Proof.Argon2.X86_64.Derive
@@ -243,7 +260,7 @@ theorem parameters_ready {s t : State} {p : Params}
     (keeps : Divide.Keeps Parameters.changed s t) : InitialBody.Ready p t :=
   h.of_state (parameters_frame p keeps) length
 
-theorem parameters_body_ok (v : Proof.Blake2.X86_64.Backend) (name : String)
+theorem parameters_body_ok [CompressImpl] (v : Proof.Blake2.X86_64.Backend) (name : String)
     (s : State) (p : Params) (parameters : Parameters.Ready p s)
     (body : InitialBody.Ready p (dimensionState s p)) :
     WP isa (.seq Impl.Argon2.X86_64.Parameters.code
@@ -651,7 +668,7 @@ theorem private_body_ready {s t : State} (h : AbiEnvironment s)
   · rw [← Proof.Argon2.blocks_lanes (abiParams s) h.valid.1]; exact words.blocks
   · exact RegUpd.gpr_setReg_self ..
 
-theorem private_pipeline_ok (v : Proof.Blake2.X86_64.Backend) (name : String)
+theorem private_pipeline_ok [CompressImpl] (v : Proof.Blake2.X86_64.Backend) (name : String)
     (s t : State) (h : AbiEnvironment s) (prepared : PrivatePrepared (prologueState s) t) :
     WP isa (.seq Impl.Argon2.X86_64.Parameters.code
       (Impl.Argon2.X86_64.InitialBody.code name (HPrime.hash v))) t (InitialBody.Done t · (abiParams s)) :=
@@ -872,7 +889,7 @@ theorem private_body_frame {s t u : State} (h : AbiEnvironment s)
     · exact ⟨below ((prologueState s).gpr .rsp) 24, by simp [bodyWrites], fun _ h => h⟩
     · exact ⟨⟨(prologueState s).gpr .rsp, 272⟩, by simp [bodyWrites], Region.sub_prefix (by decide)⟩
 
-theorem body_ok (v : Proof.Blake2.X86_64.Backend) (name : String) (s : State) (h : AbiEnvironment s) :
+theorem body_ok [CompressImpl] (v : Proof.Blake2.X86_64.Backend) (name : String) (s : State) (h : AbiEnvironment s) :
     WP isa (Impl.Argon2.X86_64.Derive.body name (HPrime.hash v)) (prologueState s) (BodyDone s) := by
   unfold Impl.Argon2.X86_64.Derive.body
   refine WP.seq ((prologue_prepare s h).mono ?_)
@@ -975,7 +992,7 @@ theorem return_post {s t : State} (done : BodyDone s t) :
     X86_64.argRegs, X86_64.stackArg, X86_64.stackArgAddr, List.range, List.range.loop]
   exact post
 
-theorem code_wp (v : Proof.Blake2.X86_64.Backend) (name : String) (s : State)
+theorem code_wp [CompressImpl] (v : Proof.Blake2.X86_64.Backend) (name : String) (s : State)
     (pre : (Spec.Argon2.deriveContract X86_64.abi 344).pre s) :
     WP isa (Impl.Argon2.X86_64.Derive.code name (HPrime.hash v)) s fun t =>
       (Spec.Argon2.deriveContract X86_64.abi 344).post s t ∧
@@ -1061,7 +1078,7 @@ structure ParametersRelated (p : Params) (s t : State) : Prop where
   right : Parameters.Ready p t
   body : InitialBody.ReviewedRelated p (dimensionState s p) (dimensionState t p)
 
-theorem parameters_body_rel (v : Proof.Blake2.X86_64.Backend) (name : String) (p : Params) :
+theorem parameters_body_rel [CompressImpl] (v : Proof.Blake2.X86_64.Backend) (name : String) (p : Params) :
     RelCT isa (ParametersRelated p)
       (.seq Impl.Argon2.X86_64.Parameters.code
         (Impl.Argon2.X86_64.InitialBody.code name (HPrime.hash v))) (fun _ _ => True) := by
@@ -1216,20 +1233,44 @@ theorem memory_mxcsr (v : Proof.Blake2.X86_64.Backend) (name : String) :
   rw [HPrime.code_mxcsr v]
   lit_decide
 
-theorem frame_mxcsr (body : Prog isa) (rs : List Reg) (h : body.allInstrs property = true) :
-    (Impl.Argon2.X86_64.Derive.frame body rs).allInstrs property = true := by
+theorem frame_ctlC (body : Prog isa) (rs : List Reg) (h : ctlC body = true) :
+    ctlC (Impl.Argon2.X86_64.Derive.frame body rs) = true := by
   induction rs with
-  | nil => simpa [Impl.Argon2.X86_64.Derive.frame, Code.allInstrs, loadsMxcsr] using h
-  | cons r rs ih => simpa [Impl.Argon2.X86_64.Derive.frame, Code.allInstrs, loadsMxcsr] using ih
+  | nil => simpa [Impl.Argon2.X86_64.Derive.frame, ctlC, loadsMxcsr] using h
+  | cons r rs ih => simpa [Impl.Argon2.X86_64.Derive.frame, ctlC, loadsMxcsr] using ih
 
-theorem code_mxcsr (v : Proof.Blake2.X86_64.Backend) (name : String) :
-    (Impl.Argon2.X86_64.Derive.code name (HPrime.hash v)).allInstrs property = true := by
+theorem finish_mxcsr (v : Proof.Blake2.X86_64.Backend) (name : String) :
+    (Impl.Argon2.X86_64.Finish.code name (HPrime.hash v)).allInstrs property = true := by
+  simp only [Impl.Argon2.X86_64.Finish.code, Impl.Argon2.X86_64.FinalOutput.code, Code.allInstrs]
+  rw [HPrime.code_mxcsr v]
+  lit_decide
+
+/-- The filling passes keep MXCSR's control bits: their calls of G do
+(`CompressImpl.ctl`), and they never load MXCSR themselves. -/
+theorem fill_ctlC [CompressImpl] : ctlC Impl.Argon2.X86_64.FillIterations.loop = true := by
+  simp only [Impl.Argon2.X86_64.FillIterations.loop, Impl.Argon2.X86_64.FillIterations.body,
+    Impl.Argon2.X86_64.FillIteration.code, Impl.Argon2.X86_64.FillSlices.loop,
+    Impl.Argon2.X86_64.FillSlices.body, Impl.Argon2.X86_64.FillSlice.code,
+    Impl.Argon2.X86_64.FillLanes.loop, Impl.Argon2.X86_64.FillLanes.body,
+    Impl.Argon2.X86_64.SegmentSetup.code, Impl.Argon2.X86_64.FillSegment.loop,
+    Impl.Argon2.X86_64.FillSegment.body, Impl.Argon2.X86_64.FillBlock.code,
+    Impl.Argon2.X86_64.RandomSource.code, Impl.Argon2.X86_64.AddressCache.code,
+    Impl.Argon2.X86_64.AddressCache.select, Impl.Argon2.X86_64.AddressCalls.code,
+    Impl.Argon2.X86_64.AddressCalls.calls, Impl.Argon2.X86_64.AddressCalls.stage,
+    Impl.Argon2.X86_64.FillKernel.code, Impl.Argon2.X86_64.FillCompress.code,
+    Impl.Argon2.X86_64.FillCompress.operation, ctlC]
+  rw [compressor_ctl]
+  lit_decide
+
+theorem code_ctl [CompressImpl] (v : Proof.Blake2.X86_64.Backend) (name : String) :
+    ctlOk (Impl.Argon2.X86_64.Derive.code name (HPrime.hash v)) = true := by
+  apply ctlOk_of_ctlC
   unfold Impl.Argon2.X86_64.Derive.code
-  apply frame_mxcsr
+  apply frame_ctlC
   simp only [Impl.Argon2.X86_64.Derive.body, Impl.Argon2.X86_64.InitialBody.code,
-    Impl.Argon2.X86_64.InitFill.code, Impl.Argon2.X86_64.FillFinish.code,
-    Impl.Argon2.X86_64.Finish.code, Impl.Argon2.X86_64.FinalOutput.code, Code.allInstrs]
-  rw [initial_mxcsr v, memory_mxcsr v name, HPrime.code_mxcsr v]
+    Impl.Argon2.X86_64.InitFill.code, Impl.Argon2.X86_64.FillFinish.code, ctlC]
+  rw [ctlC_of_allInstrs (initial_mxcsr v), ctlC_of_allInstrs (memory_mxcsr v name),
+    ctlC_of_allInstrs (finish_mxcsr v name), fill_ctlC]
   lit_decide
 
 end VG.Proof.Argon2.X86_64.Derive
@@ -1270,12 +1311,12 @@ namespace VG.Proof.Argon2.X86_64.Derive
 
 open VG VG.X86_64
 
-theorem code_correct (v : Proof.Blake2.X86_64.Backend) (name : String) (s : State)
+theorem code_correct [CompressImpl] (v : Proof.Blake2.X86_64.Backend) (name : String) (s : State)
     (pre : (Spec.Argon2.deriveContract X86_64.abi 344).pre s) :
     ∃ tr t, Exec isa (Impl.Argon2.X86_64.Derive.code name (HPrime.hash v)) s tr t ∧
       abiPreserved s t ∧ (Spec.Argon2.deriveContract X86_64.abi 344).post s t := by
   obtain ⟨tr, t, run, post, regs, frame⟩ := code_wp v name s pre
-  refine ⟨tr, t, run, abiPreserved_of_exec (code_mxcsr v name) run ⟨regs, ?_⟩, post⟩
+  refine ⟨tr, t, run, abiPreserved_of_ctl (code_ctl v name) run ⟨regs, ?_⟩, post⟩
   have h := abi_environment s pre
   apply frame.readW (r := ⟨s.gpr .rsp, 8⟩) (Region.contains_self _ _) ?_ (by decide)
   intro r hr
@@ -1341,7 +1382,7 @@ def AbiRelated (s t : State) : Prop := AbiEnvironment s ∧ AbiEnvironment t ∧
 
 def PrologueRelated (a b : State) : Prop := ∃ s t, AbiRelated s t ∧ a = prologueState s ∧ b = prologueState t
 
-theorem body_rel (v : Proof.Blake2.X86_64.Backend) (name : String) :
+theorem body_rel [CompressImpl] (v : Proof.Blake2.X86_64.Backend) (name : String) :
     RelCT isa PrologueRelated (Impl.Argon2.X86_64.Derive.body name (HPrime.hash v)) (fun _ _ => True) := by
   have preparation := (prepare_rel.mono (P' := PrologueRelated) (by
       rintro a b ⟨s, t, h, rfl, rfl⟩
@@ -1359,7 +1400,7 @@ theorem body_rel (v : Proof.Blake2.X86_64.Backend) (name : String) :
   have right : PrivatePrepared (prologueState t) b := prepared₂
   exact ⟨abiParams s, private_parameters_related h.1 h.2.1 h.2.2 left right⟩
 
-theorem code_ct (v : Proof.Blake2.X86_64.Backend) (name : String) :
+theorem code_ct [CompressImpl] (v : Proof.Blake2.X86_64.Backend) (name : String) :
     ConstantTime isa (Spec.Argon2.deriveContract X86_64.abi 344).pre
       (Spec.Argon2.deriveContract X86_64.abi 344).pub
       (Impl.Argon2.X86_64.Derive.code name (HPrime.hash v)) := by
@@ -1378,7 +1419,7 @@ namespace VG.Proof.Argon2.X86_64.Derive
 
 open VG VG.X86_64
 
-theorem verified (v : Proof.Blake2.X86_64.Backend) (name : String) :
+theorem verified [CompressImpl] (v : Proof.Blake2.X86_64.Backend) (name : String) :
     Verified X86_64.target (Impl.Argon2.X86_64.Derive.code name (HPrime.hash v))
       (Spec.Argon2.deriveContract X86_64.abi 344) :=
   ⟨code_correct v name, code_ct v name, contract_sat⟩

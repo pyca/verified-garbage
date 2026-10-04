@@ -39,9 +39,6 @@ use core::mem::MaybeUninit;
 /// A 16-byte block.
 type Block = [u8; 16];
 
-/// The working space of `vg_aes_siv_init`, in 64-bit words.
-const SCRATCH: usize = 320;
-
 /// The working space of `vg_aes_siv_encrypt` and `vg_aes_siv_decrypt`, in
 /// 64-bit words: the synthetic IV in its first 16 bytes.
 const WORK: usize = 322;
@@ -131,16 +128,13 @@ impl AesSiv {
             vg_aes_siv_init_aesni,
             vg_aes_siv_init_vaes
         );
-        let mut scratch = MaybeUninit::<[u64; SCRATCH]>::uninit();
         // SAFETY: `key` is valid for reads of `key.len()` bytes, which is 32,
-        // 48 or 64; `k.ctx` and `scratch` are valid for reads and writes of
-        // 512 and 2560 bytes. They are distinct objects, so no two overlap,
-        // nor do they overlap the return addresses on the stack or the stack
-        // below them, and none wraps around the end of the address space.
-        // The CPU has the features of the implementation selected. `scratch`
-        // is uninitialized: it is only working space, and the contract's
-        // result does not depend on what it holds.
-        unsafe { init(key.as_ptr(), key.len(), &mut k.ctx, scratch.as_mut_ptr()) };
+        // 48 or 64, and `k.ctx` for reads and writes of 512 bytes. They are
+        // distinct objects, so they do not overlap each other, the return
+        // addresses on the stack or the stack below them, and neither wraps
+        // around the end of the address space. The CPU has the features of
+        // the implementation selected.
+        unsafe { init(key.as_ptr(), key.len(), &mut k.ctx) };
         Ok(k)
     }
 

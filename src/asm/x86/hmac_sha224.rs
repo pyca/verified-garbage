@@ -13,13 +13,344 @@
 /// * `inner` must be valid for reads and writes of 96 bytes.
 /// * `outer` must be valid for reads and writes of 96 bytes.
 /// * `key` must be valid for reads of `key_len` bytes.
+/// * `key_len` must be at most 64.
+/// * `inner` and `outer` must not overlap each other or `key` (distinct Rust objects never do).
+/// * None of `inner`, `outer` and `key` may overlap the arguments on the stack, overlap the return address on the stack or the 904 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_hmac_sha224_init(inner: *mut [u8; 96], outer: *mut [u8; 96], key: *const u8, key_len: usize) {
+    core::arch::naked_asm!(
+        "lea esp, [esp-856]",
+        "mov eax, DWORD PTR [esp+860]",
+        "mov DWORD PTR [esp+4], eax",
+        "mov eax, DWORD PTR [esp+864]",
+        "mov DWORD PTR [esp+8], eax",
+        "mov eax, DWORD PTR [esp+868]",
+        "mov DWORD PTR [esp+12], eax",
+        "mov eax, DWORD PTR [esp+872]",
+        "mov DWORD PTR [esp+16], eax",
+        "mov eax, esp",
+        "add eax, 24",
+        "mov DWORD PTR [esp+20], eax",
+        "mov eax, DWORD PTR [esp+20]",
+        "mov DWORD PTR [eax+160], ebx",
+        "mov DWORD PTR [eax+164], esi",
+        "mov DWORD PTR [eax+168], edi",
+        "mov DWORD PTR [eax+172], ebp",
+        "mov ebp, eax",
+        "mov ebx, DWORD PTR [esp+4]",
+        "mov esi, DWORD PTR [esp+8]",
+        "push ebx",
+        "call {vg_sha224_init}",
+        "pop eax",
+        "push esi",
+        "call {vg_sha224_init}",
+        "pop eax",
+        "mov ecx, 909522486",
+        "mov DWORD PTR [ebx+32], ecx",
+        "mov DWORD PTR [ebx+36], ecx",
+        "mov DWORD PTR [ebx+40], ecx",
+        "mov DWORD PTR [ebx+44], ecx",
+        "mov DWORD PTR [ebx+48], ecx",
+        "mov DWORD PTR [ebx+52], ecx",
+        "mov DWORD PTR [ebx+56], ecx",
+        "mov DWORD PTR [ebx+60], ecx",
+        "mov DWORD PTR [ebx+64], ecx",
+        "mov DWORD PTR [ebx+68], ecx",
+        "mov DWORD PTR [ebx+72], ecx",
+        "mov DWORD PTR [ebx+76], ecx",
+        "mov DWORD PTR [ebx+80], ecx",
+        "mov DWORD PTR [ebx+84], ecx",
+        "mov DWORD PTR [ebx+88], ecx",
+        "mov DWORD PTR [ebx+92], ecx",
+        "mov edi, DWORD PTR [esp+12]",
+        "mov ecx, DWORD PTR [esp+16]",
+        "mov edx, ebx",
+        "add edx, 32",
+        "test ecx, ecx",
+        "je 20f",
+        "22:",
+        "movzx eax, BYTE PTR [edi]",
+        "xor eax, 54",
+        "mov BYTE PTR [edx], al",
+        "add edi, 1",
+        "add edx, 1",
+        "sub ecx, 1",
+        "jne 22b",
+        "jmp 21f",
+        "20:",
+        "21:",
+        "mov eax, DWORD PTR [ebx+32]",
+        "xor eax, 1785358954",
+        "mov DWORD PTR [esi+32], eax",
+        "mov eax, DWORD PTR [ebx+36]",
+        "xor eax, 1785358954",
+        "mov DWORD PTR [esi+36], eax",
+        "mov eax, DWORD PTR [ebx+40]",
+        "xor eax, 1785358954",
+        "mov DWORD PTR [esi+40], eax",
+        "mov eax, DWORD PTR [ebx+44]",
+        "xor eax, 1785358954",
+        "mov DWORD PTR [esi+44], eax",
+        "mov eax, DWORD PTR [ebx+48]",
+        "xor eax, 1785358954",
+        "mov DWORD PTR [esi+48], eax",
+        "mov eax, DWORD PTR [ebx+52]",
+        "xor eax, 1785358954",
+        "mov DWORD PTR [esi+52], eax",
+        "mov eax, DWORD PTR [ebx+56]",
+        "xor eax, 1785358954",
+        "mov DWORD PTR [esi+56], eax",
+        "mov eax, DWORD PTR [ebx+60]",
+        "xor eax, 1785358954",
+        "mov DWORD PTR [esi+60], eax",
+        "mov eax, DWORD PTR [ebx+64]",
+        "xor eax, 1785358954",
+        "mov DWORD PTR [esi+64], eax",
+        "mov eax, DWORD PTR [ebx+68]",
+        "xor eax, 1785358954",
+        "mov DWORD PTR [esi+68], eax",
+        "mov eax, DWORD PTR [ebx+72]",
+        "xor eax, 1785358954",
+        "mov DWORD PTR [esi+72], eax",
+        "mov eax, DWORD PTR [ebx+76]",
+        "xor eax, 1785358954",
+        "mov DWORD PTR [esi+76], eax",
+        "mov eax, DWORD PTR [ebx+80]",
+        "xor eax, 1785358954",
+        "mov DWORD PTR [esi+80], eax",
+        "mov eax, DWORD PTR [ebx+84]",
+        "xor eax, 1785358954",
+        "mov DWORD PTR [esi+84], eax",
+        "mov eax, DWORD PTR [ebx+88]",
+        "xor eax, 1785358954",
+        "mov DWORD PTR [esi+88], eax",
+        "mov eax, DWORD PTR [ebx+92]",
+        "xor eax, 1785358954",
+        "mov DWORD PTR [esi+92], eax",
+        "mov eax, ebx",
+        "add eax, 32",
+        "mov ecx, 1",
+        "push ebp",
+        "push ecx",
+        "push eax",
+        "push ebx",
+        "call {vg_sha256_compress}",
+        "pop eax",
+        "pop eax",
+        "pop eax",
+        "pop eax",
+        "mov ebx, esi",
+        "mov eax, ebx",
+        "add eax, 32",
+        "mov ecx, 1",
+        "push ebp",
+        "push ecx",
+        "push eax",
+        "push ebx",
+        "call {vg_sha256_compress}",
+        "pop eax",
+        "pop eax",
+        "pop eax",
+        "pop eax",
+        "mov eax, ebp",
+        "mov ebx, DWORD PTR [eax+160]",
+        "mov esi, DWORD PTR [eax+164]",
+        "mov edi, DWORD PTR [eax+168]",
+        "mov ebp, DWORD PTR [eax+172]",
+        "lea esp, [esp+856]",
+        "ret",
+        ".p2align 6",
+        vg_sha224_init = sym super::sha256::vg_sha224_init,
+        vg_sha256_compress = sym super::sha256::vg_sha256_compress,
+    )
+}
+
+/// Finishes an HMAC-SHA-224 computation: if, for a 64-byte key `K₀` and a text of fewer than 2⁶⁴ − 64 bytes, the SHA-224 streaming state `*inner` represents `(K₀ ⊕ ipad) ‖ text`, of `count` bytes, and `*outer` represents `K₀ ⊕ opad`, writes the HMAC-SHA-224 of the text under `K₀` (28 bytes) to `*out`.
+///
+/// Contract: `VG.Spec.Hmac.Instance.finalizeContract` of `VG.Spec.Hmac.sha224I`. Constant time: only the pointers and `count` may affect timing, not the states.
+///
+/// The function may overwrite the arguments on the stack, as the calling convention lets it.
+///
+/// # Safety
+///
+/// * `inner` must be valid for reads and writes of 96 bytes.
+/// * `outer` must be valid for reads of 96 bytes.
+/// * `out` must be valid for reads and writes of 28 bytes.
+/// * The contents of `inner` on return are unspecified.
+/// * `inner` and `out` must not overlap each other or `outer` (distinct Rust objects never do).
+/// * None of `inner`, `outer` and `out` may overlap the arguments on the stack, overlap the return address on the stack or the 908 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_hmac_sha224_finalize(inner: *mut [u8; 96], outer: *const [u8; 96], count: u64, out: *mut [u8; 28]) {
+    core::arch::naked_asm!(
+        "lea esp, [esp-860]",
+        "mov eax, DWORD PTR [esp+864]",
+        "mov DWORD PTR [esp+4], eax",
+        "mov eax, DWORD PTR [esp+868]",
+        "mov DWORD PTR [esp+8], eax",
+        "mov eax, DWORD PTR [esp+872]",
+        "mov DWORD PTR [esp+12], eax",
+        "mov eax, DWORD PTR [esp+876]",
+        "mov DWORD PTR [esp+16], eax",
+        "mov eax, DWORD PTR [esp+880]",
+        "mov DWORD PTR [esp+20], eax",
+        "mov eax, esp",
+        "add eax, 28",
+        "mov DWORD PTR [esp+24], eax",
+        "mov eax, DWORD PTR [esp+24]",
+        "mov DWORD PTR [eax+160], ebx",
+        "mov DWORD PTR [eax+164], esi",
+        "mov DWORD PTR [eax+168], edi",
+        "mov DWORD PTR [eax+172], ebp",
+        "mov ebp, eax",
+        "mov ebx, DWORD PTR [esp+4]",
+        "mov esi, DWORD PTR [esp+8]",
+        "mov edi, DWORD PTR [esp+20]",
+        "mov eax, DWORD PTR [esp+12]",
+        "mov ecx, DWORD PTR [esp+16]",
+        "mov edx, ebp",
+        "add edx, 176",
+        "push ebp",
+        "push edx",
+        "push ecx",
+        "push eax",
+        "push ebx",
+        "call {vg_sha256_finalize_scratch}",
+        "pop eax",
+        "pop eax",
+        "pop eax",
+        "pop eax",
+        "pop eax",
+        "mov ecx, DWORD PTR [esi]",
+        "mov DWORD PTR [ebx], ecx",
+        "mov ecx, DWORD PTR [esi+4]",
+        "mov DWORD PTR [ebx+4], ecx",
+        "mov ecx, DWORD PTR [esi+8]",
+        "mov DWORD PTR [ebx+8], ecx",
+        "mov ecx, DWORD PTR [esi+12]",
+        "mov DWORD PTR [ebx+12], ecx",
+        "mov ecx, DWORD PTR [esi+16]",
+        "mov DWORD PTR [ebx+16], ecx",
+        "mov ecx, DWORD PTR [esi+20]",
+        "mov DWORD PTR [ebx+20], ecx",
+        "mov ecx, DWORD PTR [esi+24]",
+        "mov DWORD PTR [ebx+24], ecx",
+        "mov ecx, DWORD PTR [esi+28]",
+        "mov DWORD PTR [ebx+28], ecx",
+        "mov ecx, DWORD PTR [ebp+176]",
+        "mov DWORD PTR [ebx+32], ecx",
+        "mov ecx, DWORD PTR [ebp+180]",
+        "mov DWORD PTR [ebx+36], ecx",
+        "mov ecx, DWORD PTR [ebp+184]",
+        "mov DWORD PTR [ebx+40], ecx",
+        "mov ecx, DWORD PTR [ebp+188]",
+        "mov DWORD PTR [ebx+44], ecx",
+        "mov ecx, DWORD PTR [ebp+192]",
+        "mov DWORD PTR [ebx+48], ecx",
+        "mov ecx, DWORD PTR [ebp+196]",
+        "mov DWORD PTR [ebx+52], ecx",
+        "mov ecx, DWORD PTR [ebp+200]",
+        "mov DWORD PTR [ebx+56], ecx",
+        "mov ecx, 128",
+        "mov DWORD PTR [ebx+60], ecx",
+        "mov ecx, 0",
+        "mov DWORD PTR [ebx+64], ecx",
+        "mov ecx, 0",
+        "mov DWORD PTR [ebx+68], ecx",
+        "mov ecx, 0",
+        "mov DWORD PTR [ebx+72], ecx",
+        "mov ecx, 0",
+        "mov DWORD PTR [ebx+76], ecx",
+        "mov ecx, 0",
+        "mov DWORD PTR [ebx+80], ecx",
+        "mov ecx, 0",
+        "mov DWORD PTR [ebx+84], ecx",
+        "mov ecx, 0",
+        "mov DWORD PTR [ebx+88], ecx",
+        "mov ecx, -536739840",
+        "mov DWORD PTR [ebx+92], ecx",
+        "mov eax, ebx",
+        "add eax, 32",
+        "mov ecx, 1",
+        "push ebp",
+        "push ecx",
+        "push eax",
+        "push ebx",
+        "call {vg_sha256_compress}",
+        "pop eax",
+        "pop eax",
+        "pop eax",
+        "pop eax",
+        "mov eax, ebx",
+        "add eax, 32",
+        "mov ecx, DWORD PTR [ebx]",
+        "bswap ecx",
+        "mov DWORD PTR [eax], ecx",
+        "mov ecx, DWORD PTR [ebx+4]",
+        "bswap ecx",
+        "mov DWORD PTR [eax+4], ecx",
+        "mov ecx, DWORD PTR [ebx+8]",
+        "bswap ecx",
+        "mov DWORD PTR [eax+8], ecx",
+        "mov ecx, DWORD PTR [ebx+12]",
+        "bswap ecx",
+        "mov DWORD PTR [eax+12], ecx",
+        "mov ecx, DWORD PTR [ebx+16]",
+        "bswap ecx",
+        "mov DWORD PTR [eax+16], ecx",
+        "mov ecx, DWORD PTR [ebx+20]",
+        "bswap ecx",
+        "mov DWORD PTR [eax+20], ecx",
+        "mov ecx, DWORD PTR [ebx+24]",
+        "bswap ecx",
+        "mov DWORD PTR [eax+24], ecx",
+        "mov ecx, DWORD PTR [ebx+28]",
+        "bswap ecx",
+        "mov DWORD PTR [eax+28], ecx",
+        "mov ecx, DWORD PTR [ebx+32]",
+        "mov DWORD PTR [edi], ecx",
+        "mov ecx, DWORD PTR [ebx+36]",
+        "mov DWORD PTR [edi+4], ecx",
+        "mov ecx, DWORD PTR [ebx+40]",
+        "mov DWORD PTR [edi+8], ecx",
+        "mov ecx, DWORD PTR [ebx+44]",
+        "mov DWORD PTR [edi+12], ecx",
+        "mov ecx, DWORD PTR [ebx+48]",
+        "mov DWORD PTR [edi+16], ecx",
+        "mov ecx, DWORD PTR [ebx+52]",
+        "mov DWORD PTR [edi+20], ecx",
+        "mov ecx, DWORD PTR [ebx+56]",
+        "mov DWORD PTR [edi+24], ecx",
+        "mov eax, ebp",
+        "mov ebx, DWORD PTR [eax+160]",
+        "mov esi, DWORD PTR [eax+164]",
+        "mov edi, DWORD PTR [eax+168]",
+        "mov ebp, DWORD PTR [eax+172]",
+        "lea esp, [esp+860]",
+        "ret",
+        ".p2align 6",
+        vg_sha256_finalize_scratch = sym super::sha256::vg_sha256_finalize_scratch,
+        vg_sha256_compress = sym super::sha256::vg_sha256_compress,
+    )
+}
+
+/// `vg_hmac_sha224_init`, with its working space in `*scratch`.
+///
+/// Contract: `VG.Spec.Hmac.Instance.initScratchContract` of `VG.Spec.Hmac.sha224I`. Constant time: only the pointers and `key_len` may affect timing, not the key.
+///
+/// The function may overwrite the arguments on the stack, as the calling convention lets it.
+///
+/// # Safety
+///
+/// * `inner` must be valid for reads and writes of 96 bytes.
+/// * `outer` must be valid for reads and writes of 96 bytes.
+/// * `key` must be valid for reads of `key_len` bytes.
 /// * `scratch` must be valid for reads and writes of 832 bytes.
 /// * `key_len` must be at most 64.
 /// * The contents of `scratch` on return are unspecified.
 /// * `inner`, `outer` and `scratch` must not overlap each other or `key` (distinct Rust objects never do).
 /// * None of `inner`, `outer`, `key` and `scratch` may overlap the arguments on the stack, overlap the return address on the stack or the 48 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_hmac_sha224_init(inner: *mut [u8; 96], outer: *mut [u8; 96], key: *const u8, key_len: usize, scratch: *mut [u64; 104]) {
+pub(crate) unsafe extern "C" fn vg_hmac_sha224_init_scratch(inner: *mut [u8; 96], outer: *mut [u8; 96], key: *const u8, key_len: usize, scratch: *mut [u64; 104]) {
     core::arch::naked_asm!(
         "mov eax, DWORD PTR [esp+20]",
         "mov DWORD PTR [eax+160], ebx",
@@ -154,9 +485,9 @@ pub(crate) unsafe extern "C" fn vg_hmac_sha224_init(inner: *mut [u8; 96], outer:
     )
 }
 
-/// Finishes an HMAC-SHA-224 computation: if, for a 64-byte key `K₀` and a text of fewer than 2⁶⁴ − 64 bytes, the SHA-224 streaming state `*inner` represents `(K₀ ⊕ ipad) ‖ text`, of `count` bytes, and `*outer` represents `K₀ ⊕ opad`, writes the HMAC-SHA-224 of the text under `K₀` (28 bytes) to `*out`.
+/// `vg_hmac_sha224_finalize`, with its working space in `*scratch`.
 ///
-/// Contract: `VG.Spec.Hmac.Instance.finalizeContract` of `VG.Spec.Hmac.sha224I`. Constant time: only the pointers and `count` may affect timing, not the states.
+/// Contract: `VG.Spec.Hmac.Instance.finalizeScratchContract` of `VG.Spec.Hmac.sha224I`. Constant time: only the pointers and `count` may affect timing, not the states.
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -171,7 +502,7 @@ pub(crate) unsafe extern "C" fn vg_hmac_sha224_init(inner: *mut [u8; 96], outer:
 /// * `inner`, `out` and `scratch` must not overlap each other or `outer` (distinct Rust objects never do).
 /// * None of `inner`, `outer`, `out` and `scratch` may overlap the arguments on the stack, overlap the return address on the stack or the 48 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_hmac_sha224_finalize(inner: *mut [u8; 96], outer: *const [u8; 96], count: u64, out: *mut [u8; 28], scratch: *mut [u64; 104]) {
+pub(crate) unsafe extern "C" fn vg_hmac_sha224_finalize_scratch(inner: *mut [u8; 96], outer: *const [u8; 96], count: u64, out: *mut [u8; 28], scratch: *mut [u64; 104]) {
     core::arch::naked_asm!(
         "mov eax, DWORD PTR [esp+24]",
         "mov DWORD PTR [eax+160], ebx",
@@ -323,6 +654,345 @@ pub(crate) const VG_HMAC_SHA224_INIT_SHANI_FEATURES: crate::cpu::Features = crat
 /// * `inner` must be valid for reads and writes of 96 bytes.
 /// * `outer` must be valid for reads and writes of 96 bytes.
 /// * `key` must be valid for reads of `key_len` bytes.
+/// * `key_len` must be at most 64.
+/// * `inner` and `outer` must not overlap each other or `key` (distinct Rust objects never do).
+/// * None of `inner`, `outer` and `key` may overlap the arguments on the stack, overlap the return address on the stack or the 904 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `sha` and `ssse3` target features.
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_hmac_sha224_init_shani(inner: *mut [u8; 96], outer: *mut [u8; 96], key: *const u8, key_len: usize) {
+    core::arch::naked_asm!(
+        "lea esp, [esp-856]",
+        "mov eax, DWORD PTR [esp+860]",
+        "mov DWORD PTR [esp+4], eax",
+        "mov eax, DWORD PTR [esp+864]",
+        "mov DWORD PTR [esp+8], eax",
+        "mov eax, DWORD PTR [esp+868]",
+        "mov DWORD PTR [esp+12], eax",
+        "mov eax, DWORD PTR [esp+872]",
+        "mov DWORD PTR [esp+16], eax",
+        "mov eax, esp",
+        "add eax, 24",
+        "mov DWORD PTR [esp+20], eax",
+        "mov eax, DWORD PTR [esp+20]",
+        "mov DWORD PTR [eax+160], ebx",
+        "mov DWORD PTR [eax+164], esi",
+        "mov DWORD PTR [eax+168], edi",
+        "mov DWORD PTR [eax+172], ebp",
+        "mov ebp, eax",
+        "mov ebx, DWORD PTR [esp+4]",
+        "mov esi, DWORD PTR [esp+8]",
+        "push ebx",
+        "call {vg_sha224_init}",
+        "pop eax",
+        "push esi",
+        "call {vg_sha224_init}",
+        "pop eax",
+        "mov ecx, 909522486",
+        "mov DWORD PTR [ebx+32], ecx",
+        "mov DWORD PTR [ebx+36], ecx",
+        "mov DWORD PTR [ebx+40], ecx",
+        "mov DWORD PTR [ebx+44], ecx",
+        "mov DWORD PTR [ebx+48], ecx",
+        "mov DWORD PTR [ebx+52], ecx",
+        "mov DWORD PTR [ebx+56], ecx",
+        "mov DWORD PTR [ebx+60], ecx",
+        "mov DWORD PTR [ebx+64], ecx",
+        "mov DWORD PTR [ebx+68], ecx",
+        "mov DWORD PTR [ebx+72], ecx",
+        "mov DWORD PTR [ebx+76], ecx",
+        "mov DWORD PTR [ebx+80], ecx",
+        "mov DWORD PTR [ebx+84], ecx",
+        "mov DWORD PTR [ebx+88], ecx",
+        "mov DWORD PTR [ebx+92], ecx",
+        "mov edi, DWORD PTR [esp+12]",
+        "mov ecx, DWORD PTR [esp+16]",
+        "mov edx, ebx",
+        "add edx, 32",
+        "test ecx, ecx",
+        "je 20f",
+        "22:",
+        "movzx eax, BYTE PTR [edi]",
+        "xor eax, 54",
+        "mov BYTE PTR [edx], al",
+        "add edi, 1",
+        "add edx, 1",
+        "sub ecx, 1",
+        "jne 22b",
+        "jmp 21f",
+        "20:",
+        "21:",
+        "mov eax, DWORD PTR [ebx+32]",
+        "xor eax, 1785358954",
+        "mov DWORD PTR [esi+32], eax",
+        "mov eax, DWORD PTR [ebx+36]",
+        "xor eax, 1785358954",
+        "mov DWORD PTR [esi+36], eax",
+        "mov eax, DWORD PTR [ebx+40]",
+        "xor eax, 1785358954",
+        "mov DWORD PTR [esi+40], eax",
+        "mov eax, DWORD PTR [ebx+44]",
+        "xor eax, 1785358954",
+        "mov DWORD PTR [esi+44], eax",
+        "mov eax, DWORD PTR [ebx+48]",
+        "xor eax, 1785358954",
+        "mov DWORD PTR [esi+48], eax",
+        "mov eax, DWORD PTR [ebx+52]",
+        "xor eax, 1785358954",
+        "mov DWORD PTR [esi+52], eax",
+        "mov eax, DWORD PTR [ebx+56]",
+        "xor eax, 1785358954",
+        "mov DWORD PTR [esi+56], eax",
+        "mov eax, DWORD PTR [ebx+60]",
+        "xor eax, 1785358954",
+        "mov DWORD PTR [esi+60], eax",
+        "mov eax, DWORD PTR [ebx+64]",
+        "xor eax, 1785358954",
+        "mov DWORD PTR [esi+64], eax",
+        "mov eax, DWORD PTR [ebx+68]",
+        "xor eax, 1785358954",
+        "mov DWORD PTR [esi+68], eax",
+        "mov eax, DWORD PTR [ebx+72]",
+        "xor eax, 1785358954",
+        "mov DWORD PTR [esi+72], eax",
+        "mov eax, DWORD PTR [ebx+76]",
+        "xor eax, 1785358954",
+        "mov DWORD PTR [esi+76], eax",
+        "mov eax, DWORD PTR [ebx+80]",
+        "xor eax, 1785358954",
+        "mov DWORD PTR [esi+80], eax",
+        "mov eax, DWORD PTR [ebx+84]",
+        "xor eax, 1785358954",
+        "mov DWORD PTR [esi+84], eax",
+        "mov eax, DWORD PTR [ebx+88]",
+        "xor eax, 1785358954",
+        "mov DWORD PTR [esi+88], eax",
+        "mov eax, DWORD PTR [ebx+92]",
+        "xor eax, 1785358954",
+        "mov DWORD PTR [esi+92], eax",
+        "mov eax, ebx",
+        "add eax, 32",
+        "mov ecx, 1",
+        "push ebp",
+        "push ecx",
+        "push eax",
+        "push ebx",
+        "call {vg_sha256_compress_shani}",
+        "pop eax",
+        "pop eax",
+        "pop eax",
+        "pop eax",
+        "mov ebx, esi",
+        "mov eax, ebx",
+        "add eax, 32",
+        "mov ecx, 1",
+        "push ebp",
+        "push ecx",
+        "push eax",
+        "push ebx",
+        "call {vg_sha256_compress_shani}",
+        "pop eax",
+        "pop eax",
+        "pop eax",
+        "pop eax",
+        "mov eax, ebp",
+        "mov ebx, DWORD PTR [eax+160]",
+        "mov esi, DWORD PTR [eax+164]",
+        "mov edi, DWORD PTR [eax+168]",
+        "mov ebp, DWORD PTR [eax+172]",
+        "lea esp, [esp+856]",
+        "ret",
+        ".p2align 6",
+        vg_sha224_init = sym super::sha256::vg_sha224_init,
+        vg_sha256_compress_shani = sym super::sha256::vg_sha256_compress_shani,
+    )
+}
+
+/// The CPU features `vg_hmac_sha224_finalize_shani` requires (`Artifact.features`).
+pub(crate) const VG_HMAC_SHA224_FINALIZE_SHANI_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["sha", "ssse3"]);
+
+/// Finishes an HMAC-SHA-224 computation: if, for a 64-byte key `K₀` and a text of fewer than 2⁶⁴ − 64 bytes, the SHA-224 streaming state `*inner` represents `(K₀ ⊕ ipad) ‖ text`, of `count` bytes, and `*outer` represents `K₀ ⊕ opad`, writes the HMAC-SHA-224 of the text under `K₀` (28 bytes) to `*out`.
+///
+/// Contract: `VG.Spec.Hmac.Instance.finalizeContract` of `VG.Spec.Hmac.sha224I`. Constant time: only the pointers and `count` may affect timing, not the states.
+///
+/// The function may overwrite the arguments on the stack, as the calling convention lets it.
+///
+/// # Safety
+///
+/// * `inner` must be valid for reads and writes of 96 bytes.
+/// * `outer` must be valid for reads of 96 bytes.
+/// * `out` must be valid for reads and writes of 28 bytes.
+/// * The contents of `inner` on return are unspecified.
+/// * `inner` and `out` must not overlap each other or `outer` (distinct Rust objects never do).
+/// * None of `inner`, `outer` and `out` may overlap the arguments on the stack, overlap the return address on the stack or the 908 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `sha` and `ssse3` target features.
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_hmac_sha224_finalize_shani(inner: *mut [u8; 96], outer: *const [u8; 96], count: u64, out: *mut [u8; 28]) {
+    core::arch::naked_asm!(
+        "lea esp, [esp-860]",
+        "mov eax, DWORD PTR [esp+864]",
+        "mov DWORD PTR [esp+4], eax",
+        "mov eax, DWORD PTR [esp+868]",
+        "mov DWORD PTR [esp+8], eax",
+        "mov eax, DWORD PTR [esp+872]",
+        "mov DWORD PTR [esp+12], eax",
+        "mov eax, DWORD PTR [esp+876]",
+        "mov DWORD PTR [esp+16], eax",
+        "mov eax, DWORD PTR [esp+880]",
+        "mov DWORD PTR [esp+20], eax",
+        "mov eax, esp",
+        "add eax, 28",
+        "mov DWORD PTR [esp+24], eax",
+        "mov eax, DWORD PTR [esp+24]",
+        "mov DWORD PTR [eax+160], ebx",
+        "mov DWORD PTR [eax+164], esi",
+        "mov DWORD PTR [eax+168], edi",
+        "mov DWORD PTR [eax+172], ebp",
+        "mov ebp, eax",
+        "mov ebx, DWORD PTR [esp+4]",
+        "mov esi, DWORD PTR [esp+8]",
+        "mov edi, DWORD PTR [esp+20]",
+        "mov eax, DWORD PTR [esp+12]",
+        "mov ecx, DWORD PTR [esp+16]",
+        "mov edx, ebp",
+        "add edx, 176",
+        "push ebp",
+        "push edx",
+        "push ecx",
+        "push eax",
+        "push ebx",
+        "call {vg_sha256_finalize_scratch_shani}",
+        "pop eax",
+        "pop eax",
+        "pop eax",
+        "pop eax",
+        "pop eax",
+        "mov ecx, DWORD PTR [esi]",
+        "mov DWORD PTR [ebx], ecx",
+        "mov ecx, DWORD PTR [esi+4]",
+        "mov DWORD PTR [ebx+4], ecx",
+        "mov ecx, DWORD PTR [esi+8]",
+        "mov DWORD PTR [ebx+8], ecx",
+        "mov ecx, DWORD PTR [esi+12]",
+        "mov DWORD PTR [ebx+12], ecx",
+        "mov ecx, DWORD PTR [esi+16]",
+        "mov DWORD PTR [ebx+16], ecx",
+        "mov ecx, DWORD PTR [esi+20]",
+        "mov DWORD PTR [ebx+20], ecx",
+        "mov ecx, DWORD PTR [esi+24]",
+        "mov DWORD PTR [ebx+24], ecx",
+        "mov ecx, DWORD PTR [esi+28]",
+        "mov DWORD PTR [ebx+28], ecx",
+        "mov ecx, DWORD PTR [ebp+176]",
+        "mov DWORD PTR [ebx+32], ecx",
+        "mov ecx, DWORD PTR [ebp+180]",
+        "mov DWORD PTR [ebx+36], ecx",
+        "mov ecx, DWORD PTR [ebp+184]",
+        "mov DWORD PTR [ebx+40], ecx",
+        "mov ecx, DWORD PTR [ebp+188]",
+        "mov DWORD PTR [ebx+44], ecx",
+        "mov ecx, DWORD PTR [ebp+192]",
+        "mov DWORD PTR [ebx+48], ecx",
+        "mov ecx, DWORD PTR [ebp+196]",
+        "mov DWORD PTR [ebx+52], ecx",
+        "mov ecx, DWORD PTR [ebp+200]",
+        "mov DWORD PTR [ebx+56], ecx",
+        "mov ecx, 128",
+        "mov DWORD PTR [ebx+60], ecx",
+        "mov ecx, 0",
+        "mov DWORD PTR [ebx+64], ecx",
+        "mov ecx, 0",
+        "mov DWORD PTR [ebx+68], ecx",
+        "mov ecx, 0",
+        "mov DWORD PTR [ebx+72], ecx",
+        "mov ecx, 0",
+        "mov DWORD PTR [ebx+76], ecx",
+        "mov ecx, 0",
+        "mov DWORD PTR [ebx+80], ecx",
+        "mov ecx, 0",
+        "mov DWORD PTR [ebx+84], ecx",
+        "mov ecx, 0",
+        "mov DWORD PTR [ebx+88], ecx",
+        "mov ecx, -536739840",
+        "mov DWORD PTR [ebx+92], ecx",
+        "mov eax, ebx",
+        "add eax, 32",
+        "mov ecx, 1",
+        "push ebp",
+        "push ecx",
+        "push eax",
+        "push ebx",
+        "call {vg_sha256_compress_shani}",
+        "pop eax",
+        "pop eax",
+        "pop eax",
+        "pop eax",
+        "mov eax, ebx",
+        "add eax, 32",
+        "mov ecx, DWORD PTR [ebx]",
+        "bswap ecx",
+        "mov DWORD PTR [eax], ecx",
+        "mov ecx, DWORD PTR [ebx+4]",
+        "bswap ecx",
+        "mov DWORD PTR [eax+4], ecx",
+        "mov ecx, DWORD PTR [ebx+8]",
+        "bswap ecx",
+        "mov DWORD PTR [eax+8], ecx",
+        "mov ecx, DWORD PTR [ebx+12]",
+        "bswap ecx",
+        "mov DWORD PTR [eax+12], ecx",
+        "mov ecx, DWORD PTR [ebx+16]",
+        "bswap ecx",
+        "mov DWORD PTR [eax+16], ecx",
+        "mov ecx, DWORD PTR [ebx+20]",
+        "bswap ecx",
+        "mov DWORD PTR [eax+20], ecx",
+        "mov ecx, DWORD PTR [ebx+24]",
+        "bswap ecx",
+        "mov DWORD PTR [eax+24], ecx",
+        "mov ecx, DWORD PTR [ebx+28]",
+        "bswap ecx",
+        "mov DWORD PTR [eax+28], ecx",
+        "mov ecx, DWORD PTR [ebx+32]",
+        "mov DWORD PTR [edi], ecx",
+        "mov ecx, DWORD PTR [ebx+36]",
+        "mov DWORD PTR [edi+4], ecx",
+        "mov ecx, DWORD PTR [ebx+40]",
+        "mov DWORD PTR [edi+8], ecx",
+        "mov ecx, DWORD PTR [ebx+44]",
+        "mov DWORD PTR [edi+12], ecx",
+        "mov ecx, DWORD PTR [ebx+48]",
+        "mov DWORD PTR [edi+16], ecx",
+        "mov ecx, DWORD PTR [ebx+52]",
+        "mov DWORD PTR [edi+20], ecx",
+        "mov ecx, DWORD PTR [ebx+56]",
+        "mov DWORD PTR [edi+24], ecx",
+        "mov eax, ebp",
+        "mov ebx, DWORD PTR [eax+160]",
+        "mov esi, DWORD PTR [eax+164]",
+        "mov edi, DWORD PTR [eax+168]",
+        "mov ebp, DWORD PTR [eax+172]",
+        "lea esp, [esp+860]",
+        "ret",
+        ".p2align 6",
+        vg_sha256_finalize_scratch_shani = sym super::sha256::vg_sha256_finalize_scratch_shani,
+        vg_sha256_compress_shani = sym super::sha256::vg_sha256_compress_shani,
+    )
+}
+
+/// The CPU features `vg_hmac_sha224_init_scratch_shani` requires (`Artifact.features`).
+pub(crate) const VG_HMAC_SHA224_INIT_SCRATCH_SHANI_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["sha", "ssse3"]);
+
+/// `vg_hmac_sha224_init`, with its working space in `*scratch`.
+///
+/// Contract: `VG.Spec.Hmac.Instance.initScratchContract` of `VG.Spec.Hmac.sha224I`. Constant time: only the pointers and `key_len` may affect timing, not the key.
+///
+/// The function may overwrite the arguments on the stack, as the calling convention lets it.
+///
+/// # Safety
+///
+/// * `inner` must be valid for reads and writes of 96 bytes.
+/// * `outer` must be valid for reads and writes of 96 bytes.
+/// * `key` must be valid for reads of `key_len` bytes.
 /// * `scratch` must be valid for reads and writes of 832 bytes.
 /// * `key_len` must be at most 64.
 /// * The contents of `scratch` on return are unspecified.
@@ -330,7 +1000,7 @@ pub(crate) const VG_HMAC_SHA224_INIT_SHANI_FEATURES: crate::cpu::Features = crat
 /// * None of `inner`, `outer`, `key` and `scratch` may overlap the arguments on the stack, overlap the return address on the stack or the 48 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha` and `ssse3` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_hmac_sha224_init_shani(inner: *mut [u8; 96], outer: *mut [u8; 96], key: *const u8, key_len: usize, scratch: *mut [u64; 104]) {
+pub(crate) unsafe extern "C" fn vg_hmac_sha224_init_scratch_shani(inner: *mut [u8; 96], outer: *mut [u8; 96], key: *const u8, key_len: usize, scratch: *mut [u64; 104]) {
     core::arch::naked_asm!(
         "mov eax, DWORD PTR [esp+20]",
         "mov DWORD PTR [eax+160], ebx",
@@ -465,12 +1135,12 @@ pub(crate) unsafe extern "C" fn vg_hmac_sha224_init_shani(inner: *mut [u8; 96], 
     )
 }
 
-/// The CPU features `vg_hmac_sha224_finalize_shani` requires (`Artifact.features`).
-pub(crate) const VG_HMAC_SHA224_FINALIZE_SHANI_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["sha", "ssse3"]);
+/// The CPU features `vg_hmac_sha224_finalize_scratch_shani` requires (`Artifact.features`).
+pub(crate) const VG_HMAC_SHA224_FINALIZE_SCRATCH_SHANI_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["sha", "ssse3"]);
 
-/// Finishes an HMAC-SHA-224 computation: if, for a 64-byte key `K₀` and a text of fewer than 2⁶⁴ − 64 bytes, the SHA-224 streaming state `*inner` represents `(K₀ ⊕ ipad) ‖ text`, of `count` bytes, and `*outer` represents `K₀ ⊕ opad`, writes the HMAC-SHA-224 of the text under `K₀` (28 bytes) to `*out`.
+/// `vg_hmac_sha224_finalize`, with its working space in `*scratch`.
 ///
-/// Contract: `VG.Spec.Hmac.Instance.finalizeContract` of `VG.Spec.Hmac.sha224I`. Constant time: only the pointers and `count` may affect timing, not the states.
+/// Contract: `VG.Spec.Hmac.Instance.finalizeScratchContract` of `VG.Spec.Hmac.sha224I`. Constant time: only the pointers and `count` may affect timing, not the states.
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -486,7 +1156,7 @@ pub(crate) const VG_HMAC_SHA224_FINALIZE_SHANI_FEATURES: crate::cpu::Features = 
 /// * None of `inner`, `outer`, `out` and `scratch` may overlap the arguments on the stack, overlap the return address on the stack or the 48 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha` and `ssse3` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_hmac_sha224_finalize_shani(inner: *mut [u8; 96], outer: *const [u8; 96], count: u64, out: *mut [u8; 28], scratch: *mut [u64; 104]) {
+pub(crate) unsafe extern "C" fn vg_hmac_sha224_finalize_scratch_shani(inner: *mut [u8; 96], outer: *const [u8; 96], count: u64, out: *mut [u8; 28], scratch: *mut [u64; 104]) {
     core::arch::naked_asm!(
         "mov eax, DWORD PTR [esp+24]",
         "mov DWORD PTR [eax+160], ebx",

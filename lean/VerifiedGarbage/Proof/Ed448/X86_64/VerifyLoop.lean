@@ -13,7 +13,7 @@ loop's invariant (`VInv`): `Q` represents `[S >> n]B + [k >> n](-A)`.
 
 namespace VG.Proof.Ed448.X86_64
 
-open VG VG.X86_64 VG.Impl.Ed448.X86_64 VG.Proof.Ed448 VG.Proof.Ed448.Edwards
+open VG VG.X86_64 VG.Impl.Ed448.X86_64 VG.Proof.Ed448 VG.Proof.EdwardsLaw
 open VG.Proof.X448.X86_64 (Scr Index Env E Keep FieldOk off contains_sc mask cswapE opSwap clob Outside)
 open VG.Impl.X448.X86_64 (BITS slot cswap)
 
