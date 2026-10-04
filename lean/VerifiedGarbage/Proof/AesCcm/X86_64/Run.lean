@@ -1,4 +1,5 @@
 import VerifiedGarbage.Proof.AesCcm.X86_64.Bytes
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
 
 /-!
 # AES-CCM on x86-64: running straight-line blocks
@@ -50,6 +51,10 @@ theorem and_self_beq {a : Nat} (ha : a < 2 ^ 64) : (BitVec.ofNat 64 a &&& BitVec
 theorem seq_assoc {a b c : Prog isa} {s : State} {Q : State → Prop} (h : WP isa (.seq (.seq a b) c) s Q) :
     WP isa (.seq a (.seq b c)) s Q :=
   WP.seq (WP.mono (WP.seq_iff.mp (WP.seq_iff.mp h)) fun _ h => WP.seq h)
+
+theorem seq_assoc3 {a b c d : Prog isa} {s : State} {Q : State → Prop}
+    (h : WP isa (.seq (.seq a (.seq b c)) d) s Q) : WP isa (.seq a (.seq b (.seq c d))) s Q :=
+  WP.seq (WP.mono (WP.seq_iff.mp (WP.assoc h)) fun _ h => WP.assoc h)
 
 theorem runBlock_append (a b : List Instr) (s : State) :
     runBlock isa (a ++ b) s = (runBlock isa a s).bind (runBlock isa b) := by
