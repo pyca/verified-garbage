@@ -323,8 +323,8 @@ theorem body8_ok {c : Nat} (hc : c + 8 ≤ nb s₀) {s : State} (hI : Inv KP F s
   have hrdx := hI₁.rdx
   have hrcx := hI₁.rcx
   apply WP.of_runBlock
-  simp (config := {decide := true}) only [runBlock_cons, runStep_some, runBlock_nil, exec, execAlu,
-    readSrc, arithFlags, State.setFlags, isa, State.setReg, ite_true, ite_false, e128, e8, hrdx, hrcx,
+  simp only [reduceCtorEq, ↓reduceIte, runBlock_cons, runStep_some, runBlock_nil, exec, execAlu,
+    readSrc, arithFlags, State.setFlags, isa, State.setReg, e128, e8, hrdx, hrcx,
     Option.bind_some, Option.some.injEq, exists_eq_left']
   have hsub : BitVec.ofNat 64 (nb s₀ - c) - 8 = BitVec.ofNat 64 (nb s₀ - (c + 8)) := by
     have := (s₀.gpr .rcx).isLt; bv_omega
@@ -332,7 +332,7 @@ theorem body8_ok {c : Nat} (hc : c + 8 ≤ nb s₀) {s : State} (hI : Inv KP F s
     kp := hst _ _ hI₁.kp (fun r h1 h2 => by simp [h1, h2]) rfl rfl (Frame.refl _ _)
     gpr := fun r h1 h2 h3 => by simp [h1, h2, hI₁.gpr r h1 h2 h3]
     r10 := by simp [hI₁.r10]
-    rdx := by simp (config := {decide := true}) only [bAddr, ite_false, ite_true]; bv_omega
+    rdx := by simp only [reduceCtorEq, ↓reduceIte, bAddr]; bv_omega
     rcx := by simp only [ite_true, reduceCtorEq, ite_false]; exact hsub }, ?_⟩
   simp only [hsub, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show nb s₀ - (c + 8) < 2 ^ 64 by omega),
     show (8 : BitVec 64).toNat = 8 from rfl]
@@ -348,8 +348,8 @@ theorem body1_ok {c : Nat} (hc : c < nb s₀) {s : State} (hI : Inv KP F s₀ c 
   have hrdx := hI₁.rdx
   have hrcx := hI₁.rcx
   apply WP.of_runBlock
-  simp (config := {decide := true}) only [runBlock_cons, runStep_some, runBlock_nil, exec, execAlu,
-    readSrc, arithFlags, State.setFlags, isa, State.setReg, ite_false, e16, e1, hrdx, hrcx,
+  simp only [reduceCtorEq, ↓reduceIte, runBlock_cons, runStep_some, runBlock_nil, exec, execAlu,
+    readSrc, arithFlags, State.setFlags, isa, State.setReg, e16, e1, hrdx, hrcx,
     Option.bind_some, Option.some.injEq, exists_eq_left']
   have hsub : BitVec.ofNat 64 (nb s₀ - c) - 1 = BitVec.ofNat 64 (nb s₀ - (c + 1)) := by
     have := (s₀.gpr .rcx).isLt; bv_omega
@@ -357,7 +357,7 @@ theorem body1_ok {c : Nat} (hc : c < nb s₀) {s : State} (hI : Inv KP F s₀ c 
     kp := hst _ _ hI₁.kp (fun r h1 h2 => by simp [h1, h2]) rfl rfl (Frame.refl _ _)
     gpr := fun r h1 h2 h3 => by simp [h1, h2, hI₁.gpr r h1 h2 h3]
     r10 := by simp [hI₁.r10]
-    rdx := by simp (config := {decide := true}) only [bAddr, ite_false, ite_true]; bv_omega
+    rdx := by simp only [reduceCtorEq, ↓reduceIte, bAddr]; bv_omega
     rcx := by simp only [ite_true, reduceCtorEq, ite_false]; exact hsub }, ?_⟩
   rw [hsub, beq_ofNat_zero' (by omega)]
 
@@ -421,8 +421,8 @@ theorem blocksLoad_ok (s : State) :
       (∀ r, s'.xmm r = s.xmm r) ∧ s'.cf = some (decide ((s.gpr .rcx).toNat < 8)) := by
   have e8 : BitVec.signExtend 64 (8 : BitVec 32) = 8 := by decide
   apply WP.of_runBlock
-  simp (config := {decide := true}) only [blocksLoad, runBlock_cons, runStep_some, runBlock_nil, exec,
-    execAlu, readSrc, arithFlags, State.setFlags, isa, State.setReg, ite_true, ite_false, e8,
+  simp only [reduceCtorEq, ↓reduceIte, blocksLoad, runBlock_cons, runStep_some, runBlock_nil, exec,
+    execAlu, readSrc, arithFlags, State.setFlags, isa, State.setReg, e8,
     Option.map_some, Option.bind_some, Option.some.injEq, exists_eq_left']
   refine ⟨by bv_omega, fun r h => by simp [h], trivial, trivial, trivial, fun _ => trivial, ?_⟩
   simp

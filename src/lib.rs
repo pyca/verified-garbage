@@ -114,6 +114,9 @@ pub mod x448;
 mod zeroize;
 
 #[cfg(test)]
+mod aes_blocks_tests;
+
+#[cfg(test)]
 mod argon2_compress_tests;
 
 #[cfg(test)]

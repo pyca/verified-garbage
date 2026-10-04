@@ -4,6 +4,8 @@ import VerifiedGarbage.Proof.Aes.X86_64.ExpandKey
 import VerifiedGarbage.Proof.Aes.X86_64.AesNi.Ctr32
 import VerifiedGarbage.Proof.Aes.X86_64.AesNi.ExpandKey
 import VerifiedGarbage.Proof.Aes.X86_64.Vaes.Ctr32
+import VerifiedGarbage.Proof.Aes.X86_64.Blocks
+import VerifiedGarbage.Proof.Aes.X86_64.AesNi.Blocks
 
 /-! # AES on x86-64 -/
 
@@ -58,6 +60,47 @@ def artifacts : List Artifact := [
     contract := Spec.Gcm.ctr32Contract X86_64.abi
     verified := Proof.Aes.X86_64.Vaes.ctr32_verified
     features := ["aes", "avx", "avx2", "ssse3", "vaes"]
-    spSafe := Code.all_of_allInstrs (by lit_decide) }]
+    spSafe := Code.all_of_allInstrs (by lit_decide) },
+  { Spec.Aes.encryptBlocksApi with
+    target := X86_64.target
+    doc := Spec.Aes.encryptBlocksApi.doc
+      (notes := ["Constant-time bitsliced AES, four blocks at a time, in the style of BearSSL's \
+        `aes_ct64` (Thomas Pornin, MIT licence)."])
+    code := Impl.Aes.X86_64.encryptBlocks
+    contract := Spec.Aes.encryptBlocksContract X86_64.abi
+    verified := Proof.Aes.X86_64.encryptBlocks_verified
+    spSafe := Code.all_of_allInstrs (by decide +kernel) },
+  { Spec.Aes.decryptBlocksApi with
+    target := X86_64.target
+    doc := Spec.Aes.decryptBlocksApi.doc
+      (notes := ["Constant-time bitsliced AES, four blocks at a time, in the style of BearSSL's \
+        `aes_ct64` (Thomas Pornin, MIT licence): the inverse S-box is the forward one between \
+        two inverse affine maps."])
+    code := Impl.Aes.X86_64.decryptBlocks
+    contract := Spec.Aes.decryptBlocksContract X86_64.abi
+    verified := Proof.Aes.X86_64.decryptBlocks_verified
+    spSafe := Code.all_of_allInstrs (by decide +kernel) },
+  { Spec.Aes.encryptBlocksApi with
+    name := "vg_aes_encrypt_blocks_aesni"
+    target := X86_64.target
+    doc := Spec.Aes.encryptBlocksApi.doc
+      (notes := ["Uses AES-NI: eight blocks at a time, then one at a time."])
+    code := Impl.Aes.X86_64.AesNi.encryptBlocks
+    contract := Spec.Aes.encryptBlocksContract X86_64.abi
+    verified := Proof.Aes.X86_64.AesNi.encryptBlocks_verified
+    features := ["aes"]
+    spSafe := Code.all_of_allInstrs (by decide +kernel) },
+  { Spec.Aes.decryptBlocksApi with
+    name := "vg_aes_decrypt_blocks_aesni"
+    target := X86_64.target
+    doc := Spec.Aes.decryptBlocksApi.doc
+      (notes := ["Uses AES-NI: eight blocks at a time, then one at a time, with the Equivalent \
+        Inverse Cipher (FIPS 197 §5.3.5): the middle round keys go through AESIMC into the \
+        working space first."])
+    code := Impl.Aes.X86_64.AesNi.decryptBlocks
+    contract := Spec.Aes.decryptBlocksContract X86_64.abi
+    verified := Proof.Aes.X86_64.AesNi.decryptBlocks_verified
+    features := ["aes"]
+    spSafe := Code.all_of_allInstrs (by decide +kernel) }]
 
 end VG.Artifacts.Aes.X86_64
