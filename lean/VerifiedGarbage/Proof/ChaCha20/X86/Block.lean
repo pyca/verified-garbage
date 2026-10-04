@@ -1,18 +1,18 @@
 import VerifiedGarbage.Proof.Framework.X86.Exec
-import VerifiedGarbage.Proof.Framework.X86.Spill
-import VerifiedGarbage.Proof.ChaCha20.Spec
-import VerifiedGarbage.Impl.ChaCha20.X86
-import VerifiedGarbage.Proof.Framework.X86.Taint
-import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.Framework.X86.SseTaint
+import VerifiedGarbage.Proof.ChaCha20.X86.Quad
+import VerifiedGarbage.Proof.Framework.X86.Wp
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Spec.ChaCha20.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
 
-section
-
 /-!
-# ChaCha20 block function on x86 (32-bit): the rounds
+# ChaCha20 block function on x86 (32-bit), with SSE2: the rounds
+
+Doubleword `i` of `xmm r` holds word `4 r + i` of the state. A quarter round
+on each doubleword (`vqr`) is the column round; with the rows rotated
+(`diag`), it is the diagonal round.
 -/
 
 namespace VG.Proof.ChaCha20.X86
@@ -20,164 +20,155 @@ namespace VG.Proof.ChaCha20.X86
 open VG VG.X86 VG.Impl.ChaCha20.X86 VG.Proof.ChaCha20
 open VG.Spec.ChaCha20 (Word quarterRound qround innerBlock)
 
-/-- The address of word `k` of `buf`, relative to its 64-bit address `B`. -/
-abbrev wordAddr (B : Addr) (k : Nat) : Addr := B + BitVec.ofNat 64 (4 * k)
+/-! ## The column and diagonal rounds, a column or diagonal at a time -/
 
-/-- The state `v` is in `buf[0..64)`. -/
-def Holds (B : Addr) (v : CState) (m : Mem) : Prop :=
-  ∀ k (hk : k < 16), m.readW (wordAddr B k) 32 = v[k]
+/-- The column round. -/
+abbrev colRound (v : CState) : CState :=
+  qround (qround (qround (qround v 0 4 8 12) 1 5 9 13) 2 6 10 14) 3 7 11 15
 
-theorem word_sep (B : Addr) {j k : Nat} (hj : j < 16) (hk : k < 16) (h : j ≠ k) :
-    Mem.Sep (wordAddr B j) 4 (wordAddr B k) 4 := Offset.sep B (by lit_omega) (by lit_omega) (by lit_omega)
+/-- The diagonal round. -/
+abbrev diagRound (v : CState) : CState :=
+  qround (qround (qround (qround v 0 5 10 15) 1 6 11 12) 2 7 8 13) 3 4 9 14
 
-theorem readW_writeW_word (m : Mem) (B : Addr) (v : Word) {j k : Nat} (hj : j < 16) (hk : k < 16)
-    (h : j ≠ k) : (m.writeW (wordAddr B k) v).readW (wordAddr B j) 32 = m.readW (wordAddr B j) 32 :=
-  Mem.readW_writeW_sep (word_sep B hj hk h) (by decide)
+theorem fin16_val (n : Nat) : ((no_index (OfNat.ofNat n) : Fin 16) : Nat) = n % 16 := rfl
 
-theorem toNat_ofNat_lt {n : Nat} (h : n < 2 ^ 64) : (BitVec.ofNat 64 n).toNat = n := by
-  rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt h
+theorem innerBlock_eq (v : CState) : innerBlock v = diagRound (colRound v) := rfl
 
-/-- The working state, `buf[0..64)`. -/
-abbrev workR (B : Addr) : Region := ⟨B, 64⟩
+/-- Column `i` of the column round is the quarter round on column `i`. -/
+theorem col_get (v : CState) {i : Nat} (hi : i < 4) :
+    (colRound v)[i] = (quarterRound v[i] v[4 + i] v[8 + i] v[12 + i]).1 ∧
+    (colRound v)[4 + i] = (quarterRound v[i] v[4 + i] v[8 + i] v[12 + i]).2.1 ∧
+    (colRound v)[8 + i] = (quarterRound v[i] v[4 + i] v[8 + i] v[12 + i]).2.2.1 ∧
+    (colRound v)[12 + i] = (quarterRound v[i] v[4 + i] v[8 + i] v[12 + i]).2.2.2 := by
+  rcases cases4 hi with rfl | rfl | rfl | rfl <;>
+    simp only [qround_get, Fin.getElem_fin, fin16_val, Nat.reduceMod, Nat.reduceAdd,
+      Nat.reduceEqDiff, ↓reduceIte, and_self]
 
-theorem word_in_work (B : Addr) {k : Nat} (hk : k < 16) : (workR B).Contains (wordAddr B k) 4 := Offset.contains_base B (by lit_omega) (by lit_omega)
+/-- Diagonal `i` of the diagonal round is the quarter round on diagonal `i`. -/
+theorem diag_get (v : CState) {i : Nat} (hi : i < 4) :
+    (diagRound v)[i] =
+      (quarterRound v[i] v[4 + (i + 1) % 4] v[8 + (i + 2) % 4] v[12 + (i + 3) % 4]).1 ∧
+    (diagRound v)[4 + (i + 1) % 4] =
+      (quarterRound v[i] v[4 + (i + 1) % 4] v[8 + (i + 2) % 4] v[12 + (i + 3) % 4]).2.1 ∧
+    (diagRound v)[8 + (i + 2) % 4] =
+      (quarterRound v[i] v[4 + (i + 1) % 4] v[8 + (i + 2) % 4] v[12 + (i + 3) % 4]).2.2.1 ∧
+    (diagRound v)[12 + (i + 3) % 4] =
+      (quarterRound v[i] v[4 + (i + 1) % 4] v[8 + (i + 2) % 4] v[12 + (i + 3) % 4]).2.2.2 := by
+  rcases cases4 hi with rfl | rfl | rfl | rfl <;>
+    simp only [qround_get, Fin.getElem_fin, fin16_val, Nat.reduceMod, Nat.reduceAdd,
+      Nat.reduceEqDiff, ↓reduceIte, and_self]
 
-/-- What the rounds need of the machine state: `esi` points to `buf`, whose
-working state is readable and writable. -/
-structure Ctx (B : Addr) (s : State) : Prop where
-  ea : ∀ k < 16, addr (s.gpr .esi) (4 * k) = wordAddr B k
-  inw : ∀ k < 16, InRegions (s.rd ++ s.wr) (wordAddr B k) 4
-  outw : ∀ k < 16, InRegions s.wr (wordAddr B k) 4
+/-! ## The rows in the registers -/
 
-/-! ## One quarter round -/
+/-- The state `v` is in `xmm0, …, xmm3`: word `4 r + i` in doubleword `i` of `xmm r`. -/
+structure Rows (v : CState) (s : State) : Prop where
+  r0 : ∀ i (hi : i < 4), dw s .xmm0 i = v[i]
+  r1 : ∀ i (hi : i < 4), dw s .xmm1 i = v[4 + i]
+  r2 : ∀ i (hi : i < 4), dw s .xmm2 i = v[8 + i]
+  r3 : ∀ i (hi : i < 4), dw s .xmm3 i = v[12 + i]
 
-theorem qr_ok (s : State) (va vb vc vd : Word)
-    (ha : s.gpr .eax = va) (hb : s.gpr .ebx = vb) (hc : s.gpr .ecx = vc) (hd : s.gpr .edx = vd) :
-    WP isa (.block qr) s fun s' =>
-      s'.gpr .eax = (quarterRound va vb vc vd).1 ∧ s'.gpr .ebx = (quarterRound va vb vc vd).2.1 ∧
-      s'.gpr .ecx = (quarterRound va vb vc vd).2.2.1 ∧ s'.gpr .edx = (quarterRound va vb vc vd).2.2.2 ∧
-      s'.gpr .esi = s.gpr .esi ∧ s'.gpr .edi = s.gpr .edi ∧ s'.gpr .esp = s.gpr .esp ∧
-      s'.gpr .ebp = s.gpr .ebp ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
+theorem shuf39 (x : BitVec 128) {i : Nat} (hi : i < 4) :
+    dword (shufDwords x 0x39) i = dword x ((i + 1) % 4) := by
+  rw [dword_shufDwords _ _ hi]; rcases cases4 hi with rfl | rfl | rfl | rfl <;> rfl
+theorem shuf4e (x : BitVec 128) {i : Nat} (hi : i < 4) :
+    dword (shufDwords x 0x4e) i = dword x ((i + 2) % 4) := by
+  rw [dword_shufDwords _ _ hi]; rcases cases4 hi with rfl | rfl | rfl | rfl <;> rfl
+theorem shuf93 (x : BitVec 128) {i : Nat} (hi : i < 4) :
+    dword (shufDwords x 0x93) i = dword x ((i + 3) % 4) := by
+  rw [dword_shufDwords _ _ hi]; rcases cases4 hi with rfl | rfl | rfl | rfl <;> rfl
+
+/-- `xmm1, xmm2, xmm3` rotated by `a, b, c` doublewords by three `pshufd`. -/
+theorem shufs_ok (o₁ o₂ o₃ : BitVec 8) {a b c : Nat}
+    (h₁ : ∀ x i, i < 4 → dword (shufDwords x o₁) i = dword x ((i + a) % 4))
+    (h₂ : ∀ x i, i < 4 → dword (shufDwords x o₂) i = dword x ((i + b) % 4))
+    (h₃ : ∀ x i, i < 4 → dword (shufDwords x o₃) i = dword x ((i + c) % 4)) (s : State) :
+    WP isa (.block [.xop (.pshufd .xmm1 .xmm1 o₁), .xop (.pshufd .xmm2 .xmm2 o₂),
+      .xop (.pshufd .xmm3 .xmm3 o₃)]) s fun s' =>
+      (∀ i, i < 4 → dw s' .xmm0 i = dw s .xmm0 i) ∧
+      (∀ i, i < 4 → dw s' .xmm1 i = dw s .xmm1 ((i + a) % 4)) ∧
+      (∀ i, i < 4 → dw s' .xmm2 i = dw s .xmm2 ((i + b) % 4)) ∧
+      (∀ i, i < 4 → dw s' .xmm3 i = dw s .xmm3 ((i + c) % 4)) ∧
+      s'.gpr = s.gpr ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   apply WP.of_runBlock
-  simp only [reduceCtorEq, ↓reduceIte, Nat.reduceLeDiff, Nat.reduceEqDiff, Nat.reducePow, and_self, qr, runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, execShift, readSrc,
-    State.setReg, arithFlags, State.setFlags, ha, hb, hc, hd, 
-    Option.bind_some, Option.some.injEq, exists_eq_left']
-  and_intros
-  all_goals simp only [quarterRound_eq]
+  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, XOp.exec, RegUpd.gpr_setXmm,
+    RegUpd.mem_setXmm, RegUpd.rd_setXmm, RegUpd.wr_setXmm, Option.some.injEq, exists_eq_left']
+  refine ⟨fun i _ => ?_, fun i hi => ?_, fun i hi => ?_, fun i hi => ?_, trivial, trivial, trivial,
+    trivial⟩ <;>
+    simp only [dw, RegUpd.xmm_setXmm_self, RegUpd.xmm_setXmm_of_ne, reduceCtorEq, not_false_eq_true]
+  · exact h₁ _ i hi
+  · exact h₂ _ i hi
+  · exact h₃ _ i hi
 
-theorem quarter_ok {x y z w : Nat} (hx : x < 16) (hy : y < 16) (hz : z < 16) (hw : w < 16)
-    (hd : [x, y, z, w].Nodup) {B : Addr} {v : CState} {s : State} (hctx : Ctx B s)
-    (h : Holds B v s.mem) :
-    WP isa (quarter x y z w) s fun s' =>
-      Holds B (qround v ⟨x, hx⟩ ⟨y, hy⟩ ⟨z, hz⟩ ⟨w, hw⟩) s'.mem ∧ Frame [workR B] s.mem s'.mem ∧
-      s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.gpr .esi = s.gpr .esi ∧ s'.gpr .edi = s.gpr .edi ∧
-      s'.gpr .esp = s.gpr .esp ∧ s'.gpr .ebp = s.gpr .ebp := by
-  have nd : (x ≠ y ∧ x ≠ z ∧ x ≠ w) ∧ (y ≠ z ∧ y ≠ w) ∧ z ≠ w := by simpa using hd
-  obtain ⟨⟨nxy, nxz, nxw⟩, ⟨nyz, nyw⟩, nzw⟩ := nd
-  have ex := hctx.ea x hx; have ey := hctx.ea y hy; have ez := hctx.ea z hz; have ew := hctx.ea w hw
-  have ix := hctx.inw x hx; have iy := hctx.inw y hy; have iz := hctx.inw z hz; have iw := hctx.inw w hw
-  have ox := hctx.outw x hx; have oy := hctx.outw y hy; have oz := hctx.outw z hz
-  have ow := hctx.outw w hw
-  simp only [addr] at ex ey ez ew
-  unfold quarter
-  rw [WP.block_append_iff, WP.block_append_iff]
-  -- The loads.
-  apply WP.of_runBlock
-  simp only [reduceCtorEq, ↓reduceIte, runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, State.setReg, State.ea,
-    at_, State.load32, ex, ey, ez, ew, ix, iy, iz, iw, Option.map_some,
-    Option.some.injEq, exists_eq_left']
-  refine WP.mono (qr_ok _ (v[x]'hx) (v[y]'hy) (v[z]'hz) (v[w]'hw) (by simp [h x hx]) (by simp [h y hy])
-    (by simp [h z hz]) (by simp [h w hw])) fun s₁ ⟨ha, hb, hc, hd,
-    hesi, hedi, hesp, hebp, hm, hrd, hwr⟩ => ?_
-  simp only [ite_false, reduceCtorEq] at hesi hedi hesp hebp
-  -- The stores.
-  apply WP.of_runBlock
-  simp only [↓reduceIte, runBlock_cons, runStep_some, runBlock_nil, exec, State.ea, State.store32, hesi,
-    ex, ey, ez, ew, hrd, hwr, hm, ox, oy, oz, ow, Option.some.injEq,
-    exists_eq_left', ha, hb, hc, hd]
-  refine ⟨fun k hk => ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
-  rotate_left 2
-  all_goals try first | trivial | exact hedi | exact hesp | exact hebp
-  · rw [qround_get _ _ _ _ _ k hk]
-    simp only
-    have g : ∀ j (hj : j < 16), s.mem.readW (wordAddr B j) 32 = v[j] := h
-    by_cases e4 : w = k
-    · subst e4; simp only [ite_true]
-      rw [Mem.readW_writeW_self32]; rfl
-    by_cases e3 : z = k
-    · subst e3; simp only [ite_true, e4, ite_false]
-      rw [readW_writeW_word _ _ _ hz hw nzw, Mem.readW_writeW_self32]; rfl
-    by_cases e2 : y = k
-    · subst e2; simp only [ite_true, e4, e3, ite_false]
-      rw [readW_writeW_word _ _ _ hy hw nyw, readW_writeW_word _ _ _ hy hz nyz,
-        Mem.readW_writeW_self32]; rfl
-    by_cases e1 : x = k
-    · subst e1; simp only [ite_true, e4, e3, e2, ite_false]
-      rw [readW_writeW_word _ _ _ hx hw nxw, readW_writeW_word _ _ _ hx hz nxz,
-        readW_writeW_word _ _ _ hx hy nxy, Mem.readW_writeW_self32]; rfl
-    simp only [e4, e3, e2, e1, ite_false]
-    rw [readW_writeW_word _ _ _ hk hw (Ne.symm e4), readW_writeW_word _ _ _ hk hz (Ne.symm e3),
-      readW_writeW_word _ _ _ hk hy (Ne.symm e2), readW_writeW_word _ _ _ hk hx (Ne.symm e1)]
-    exact g k hk
-  · exact ((((Frame.refl _ _).writeW (List.mem_singleton_self _) _ (word_in_work B hx)).writeW
-      (List.mem_singleton_self _) _ (word_in_work B hy)).writeW (List.mem_singleton_self _) _
-      (word_in_work B hz)).writeW (List.mem_singleton_self _) _ (word_in_work B hw)
+theorem diag_eq : diag = [.xop (.pshufd .xmm1 .xmm1 0x39), .xop (.pshufd .xmm2 .xmm2 0x4e),
+    .xop (.pshufd .xmm3 .xmm3 0x93)] := rfl
+theorem undiag_eq : undiag = [.xop (.pshufd .xmm1 .xmm1 0x93), .xop (.pshufd .xmm2 .xmm2 0x4e),
+    .xop (.pshufd .xmm3 .xmm3 0x39)] := rfl
 
-/-! ## Double rounds -/
+theorem vqr_rows {v : CState} {s : State} (h : Rows v s) :
+    WP isa (.block vqr) s fun s' => Rows (colRound v) s' ∧
+      s'.gpr = s.gpr ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr :=
+  WP.mono (vqr_ok s) fun _ ⟨q, _, g, m, r, w⟩ => by
+    refine ⟨⟨fun i hi => ?_, fun i hi => ?_, fun i hi => ?_, fun i hi => ?_⟩, g, m, r, w⟩ <;>
+    obtain ⟨a, b, c, d⟩ := q i hi <;>
+    rw [h.r0 i hi, h.r1 i hi, h.r2 i hi, h.r3 i hi] at a b c d
+    · rw [a, (col_get v hi).1]
+    · rw [b, (col_get v hi).2.1]
+    · rw [c, (col_get v hi).2.2.1]
+    · rw [d, (col_get v hi).2.2.2]
 
-/-- The rounds invariant, relative to the state `s₀` at the start of the rounds. -/
-structure RI (B : Addr) (v : CState) (s₀ s : State) : Prop where
-  holds : Holds B v s.mem
-  frame : Frame [workR B] s₀.mem s.mem
-  rd : s.rd = s₀.rd
-  wr : s.wr = s₀.wr
-  esi : s.gpr .esi = s₀.gpr .esi
-  edi : s.gpr .edi = s₀.gpr .edi
-  esp : s.gpr .esp = s₀.gpr .esp
-  ebp : s.gpr .ebp = s₀.gpr .ebp
-
-theorem RI.ctx {B : Addr} {v : CState} {s₀ s : State} (h : RI B v s₀ s) (hc : Ctx B s₀) :
-    Ctx B s :=
-  ⟨fun k hk => by rw [h.esi]; exact hc.ea k hk, fun k hk => by rw [h.rd, h.wr]; exact hc.inw k hk,
-    fun k hk => by rw [h.wr]; exact hc.outw k hk⟩
-
-theorem quarter_step {x y z w : Nat} (hx : x < 16) (hy : y < 16) (hz : z < 16) (hw : w < 16)
-    (hd : [x, y, z, w].Nodup) {B : Addr} {v : CState} {s₀ s : State} (hctx : Ctx B s₀)
-    (h : RI B v s₀ s) :
-    WP isa (quarter x y z w) s (RI B (qround v ⟨x, hx⟩ ⟨y, hy⟩ ⟨z, hz⟩ ⟨w, hw⟩) s₀) :=
-  WP.mono (quarter_ok hx hy hz hw hd (h.ctx hctx) h.holds)
-    fun _ ⟨hh, hf, hrd, hwr, hesi, hedi, hesp, hebp⟩ =>
-      ⟨hh, h.frame.trans hf, hrd.trans h.rd, hwr.trans h.wr, hesi.trans h.esi, hedi.trans h.edi,
-        hesp.trans h.esp, hebp.trans h.ebp⟩
-
-theorem doubleRound_ok {B : Addr} {v : CState} {s₀ s : State} (hctx : Ctx B s₀)
-    (h : RI B v s₀ s) : WP isa doubleRound s (RI B (innerBlock v) s₀) := by
+theorem doubleRound_ok {v : CState} {s : State} (h : Rows v s) :
+    WP isa doubleRound s fun s' => Rows (innerBlock v) s' ∧
+      s'.gpr = s.gpr ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   unfold doubleRound
-  refine WP.seq (WP.mono (quarter_step (x := 0) (y := 4) (z := 8) (w := 12) (by decide) (by decide)
-    (by decide) (by decide) (by decide) hctx h) fun _ h1 => ?_)
-  refine WP.seq (WP.mono (quarter_step (x := 1) (y := 5) (z := 9) (w := 13) (by decide) (by decide)
-    (by decide) (by decide) (by decide) hctx h1) fun _ h2 => ?_)
-  refine WP.seq (WP.mono (quarter_step (x := 2) (y := 6) (z := 10) (w := 14) (by decide) (by decide)
-    (by decide) (by decide) (by decide) hctx h2) fun _ h3 => ?_)
-  refine WP.seq (WP.mono (quarter_step (x := 3) (y := 7) (z := 11) (w := 15) (by decide) (by decide)
-    (by decide) (by decide) (by decide) hctx h3) fun _ h4 => ?_)
-  refine WP.seq (WP.mono (quarter_step (x := 0) (y := 5) (z := 10) (w := 15) (by decide) (by decide)
-    (by decide) (by decide) (by decide) hctx h4) fun _ h5 => ?_)
-  refine WP.seq (WP.mono (quarter_step (x := 1) (y := 6) (z := 11) (w := 12) (by decide) (by decide)
-    (by decide) (by decide) (by decide) hctx h5) fun _ h6 => ?_)
-  refine WP.seq (WP.mono (quarter_step (x := 2) (y := 7) (z := 8) (w := 13) (by decide) (by decide)
-    (by decide) (by decide) (by decide) hctx h6) fun _ h7 => ?_)
-  exact quarter_step (x := 3) (y := 4) (z := 9) (w := 14) (by decide) (by decide) (by decide)
-    (by decide) (by decide) hctx h7
+  rw [WP.block_append_iff]
+  refine WP.mono (vqr_rows h) fun s₁ ⟨h₁, g₁, m₁, r₁, w₁⟩ => ?_
+  rw [WP.block_append_iff, diag_eq]
+  refine WP.mono (shufs_ok 0x39 0x4e 0x93 (a := 1) (b := 2) (c := 3) (fun x i hi => shuf39 x hi)
+    (fun x i hi => shuf4e x hi) (fun x i hi => shuf93 x hi) s₁)
+    fun s₂ ⟨d0, d1, d2, d3, g₂, m₂, r₂, w₂⟩ => ?_
+  rw [WP.block_append_iff]
+  refine WP.mono (vqr_ok s₂) fun s₃ ⟨q, _, g₃, m₃, r₃, w₃⟩ => ?_
+  rw [undiag_eq]
+  refine WP.mono (shufs_ok 0x93 0x4e 0x39 (a := 3) (b := 2) (c := 1) (fun x i hi => shuf93 x hi)
+    (fun x i hi => shuf4e x hi) (fun x i hi => shuf39 x hi) s₃)
+    fun s₄ ⟨u0, u1, u2, u3, g₄, m₄, r₄, w₄⟩ => ?_
+  rw [innerBlock_eq]
+  -- Lane `i` of the second quarter round: diagonal `i`.
+  have lane : ∀ i (hi : i < 4),
+      dw s₂ .xmm0 i = (colRound v)[i] ∧ dw s₂ .xmm1 i = (colRound v)[4 + (i + 1) % 4] ∧
+      dw s₂ .xmm2 i = (colRound v)[8 + (i + 2) % 4] ∧ dw s₂ .xmm3 i = (colRound v)[12 + (i + 3) % 4] :=
+    fun i hi => ⟨(d0 i hi).trans (h₁.r0 i hi), (d1 i hi).trans (h₁.r1 _ (Nat.mod_lt _ (by decide))),
+      (d2 i hi).trans (h₁.r2 _ (Nat.mod_lt _ (by decide))),
+      (d3 i hi).trans (h₁.r3 _ (Nat.mod_lt _ (by decide)))⟩
+  have hq : ∀ i (hi : i < 4),
+      dw s₃ .xmm0 i = (diagRound (colRound v))[i] ∧
+      dw s₃ .xmm1 i = (diagRound (colRound v))[4 + (i + 1) % 4] ∧
+      dw s₃ .xmm2 i = (diagRound (colRound v))[8 + (i + 2) % 4] ∧
+      dw s₃ .xmm3 i = (diagRound (colRound v))[12 + (i + 3) % 4] := fun i hi => by
+    obtain ⟨a, b, c, d⟩ := q i hi
+    obtain ⟨l0, l1, l2, l3⟩ := lane i hi
+    obtain ⟨e0, e1, e2, e3⟩ := diag_get (colRound v) hi
+    rw [l0, l1, l2, l3] at a b c d
+    exact ⟨a.trans e0.symm, b.trans e1.symm, c.trans e2.symm, d.trans e3.symm⟩
+  refine ⟨⟨fun i hi => ?_, fun i hi => ?_, fun i hi => ?_, fun i hi => ?_⟩,
+    by rw [g₄, g₃, g₂, g₁], by rw [m₄, m₃, m₂, m₁], by rw [r₄, r₃, r₂, r₁], by rw [w₄, w₃, w₂, w₁]⟩
+  · rw [u0 i hi]; exact (hq i hi).1
+  · rw [u1 i hi, (hq _ (Nat.mod_lt _ (by decide))).2.1]
+    exact getElem_congr_idx (by omega)
+  · rw [u2 i hi, (hq _ (Nat.mod_lt _ (by decide))).2.2.1]
+    exact getElem_congr_idx (by omega)
+  · rw [u3 i hi, (hq _ (Nat.mod_lt _ (by decide))).2.2.2]
+    exact getElem_congr_idx (by omega)
 
-theorem rounds_ok {B : Addr} {v : CState} {s₀ : State} (hctx : Ctx B s₀) (h : Holds B v s₀.mem) :
-    ∀ n, WP isa (rounds n) s₀ (RI B (Nat.repeat innerBlock n v) s₀)
-  | 0 => WP.block_nil ⟨h, Frame.refl _ _, rfl, rfl, rfl, rfl, rfl, rfl⟩
-  | n + 1 => WP.seq (WP.mono (rounds_ok hctx h n) fun _ h' => doubleRound_ok hctx h')
+theorem rounds_ok {v : CState} {s₀ : State} (h : Rows v s₀) :
+    ∀ n, WP isa (rounds n) s₀ fun s => Rows (Nat.repeat innerBlock n v) s ∧
+      s.gpr = s₀.gpr ∧ s.mem = s₀.mem ∧ s.rd = s₀.rd ∧ s.wr = s₀.wr
+  | 0 => WP.block_nil ⟨h, rfl, rfl, rfl, rfl⟩
+  | n + 1 => WP.seq (WP.mono (rounds_ok h n) fun _ ⟨h₁, g₁, m₁, r₁, w₁⟩ =>
+      WP.mono (doubleRound_ok h₁) fun _ ⟨h₂, g₂, m₂, r₂, w₂⟩ =>
+        ⟨h₂, g₂.trans g₁, m₂.trans m₁, r₂.trans r₁, w₂.trans w₁⟩)
 
 end VG.Proof.ChaCha20.X86
-
-end
 
 /-!
 # ChaCha20 block function on x86 (32-bit): the whole function
@@ -318,14 +309,9 @@ theorem read_st {m : Mem} (hf : Frame [bufR s₀] s₀.mem m) {k : Nat} (hk : k 
 
 end Pre
 
-theorem workR_sub (B : Addr) : Region.Sub (workR B) ⟨B, 256⟩ := Region.sub_prefix (by lit_omega)
 
-theorem frame_buf {s₀ : State} {m m' : Mem} (hf : Frame [workR (BA s₀)] m m') :
-    Frame [bufR s₀] m m' :=
-  hf.sub fun r hr => ⟨bufR s₀, List.mem_singleton_self _, by
-    simp only [List.mem_singleton] at hr; subst hr; exact workR_sub _⟩
-
-/-! ## Saving the callee-saved registers, and loading the pointers -/
+theorem toNat_ofNat_lt {n : Nat} (h : n < 2 ^ 64) : (BitVec.ofNat 64 n).toNat = n := by
+  rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt h
 
 theorem readW_writeW_off (m : Mem) (p : Addr) (v : Word) {d e : Nat} (hd : d < 2 ^ 32)
     (he : e < 2 ^ 32) (h : d + 4 ≤ e ∨ e + 4 ≤ d) :
@@ -333,213 +319,148 @@ theorem readW_writeW_off (m : Mem) (p : Addr) (v : Word) {d e : Nat} (hd : d < 2
       m.readW (p + BitVec.ofNat 64 d) 32 :=
   Mem.readW_writeW_sep (Offset.sep p h (by lit_omega) (by lit_omega)) (by decide)
 
-/-- The callee-saved registers `ebx, esi, edi` and their slots in `buf`. -/
-def blockSaved : Spill.Slots := [(.ebx, 64), (.esi, 68), (.edi, 72)]
+/-- The result, `buf[0..64)`. -/
+abbrev workR (B : Addr) : Region := ⟨B, 64⟩
 
-theorem blockSaved_fits : Spill.Fits 76 blockSaved := by decide
+/-! ## Loading the state -/
 
-theorem blockSaved_addr {s₀ : State} (hp : Pre s₀) : ∀ p ∈ blockSaved, addr (bp s₀) p.2 = BA s₀ + BitVec.ofNat 64 p.2 :=
-  fun p h => hp.eaB (by have := blockSaved_fits.1 p h; lit_omega)
-
-/-- The memory after the prologue's stores. -/
-abbrev saveMem (s₀ : State) : Mem := Spill.saveMem s₀.mem (BA s₀ + BitVec.ofNat 64 ·) s₀.gpr blockSaved
-
-/-- The callee-saved registers `ebx, esi, edi` are saved in `buf`. -/
-abbrev Saved (s₀ : State) (m : Mem) : Prop := Spill.Saved m (BA s₀ + BitVec.ofNat 64 ·) s₀.gpr blockSaved
-
-theorem saveMem_saved (s₀ : State) : Saved s₀ (saveMem s₀) :=
-  Spill.saveMem_saved_ofNat _ _ _ blockSaved_fits (by decide)
-
-theorem saveMem_frame (s₀ : State) : Frame [bufR s₀] s₀.mem (saveMem s₀) :=
-  Spill.saveMem_frame List.mem_cons_self _ _ _ _ fun p h =>
-    have := blockSaved_fits.1 p h; contains_off (by lit_omega) (by lit_omega)
-
-/-- The saved registers survive writes to the working state. -/
-theorem saved_frame {s₀ : State} {m m' : Mem} (h : Saved s₀ m) (hf : Frame [workR (BA s₀)] m m') :
-    Saved s₀ m' :=
-  h.of_frame hf (R := ⟨BA s₀ + BitVec.ofNat 64 64, 12⟩)
-    (fun p hp => by
-      have := blockSaved_fits.1 p hp
-      have : 64 ≤ p.2 := by revert p hp; decide
-      exact Offset.contains _ this (by lit_omega) (by lit_omega))
-    (by simp only [List.mem_singleton, forall_eq]; exact Offset.disjoint_base _ (by decide) (by lit_omega))
-
-theorem save_ok {s₀ : State} (hp : Pre s₀) :
-    WP isa (.block save) s₀ fun s₁ =>
-      (∀ r, r ≠ .eax → r ≠ .ecx → r ≠ .esi → r ≠ .edi → s₁.gpr r = s₀.gpr r) ∧
-      s₁.gpr .esi = bp s₀ ∧ s₁.gpr .edi = st s₀ ∧ s₁.rd = s₀.rd ∧ s₁.wr = s₀.wr ∧
-      s₁.mem = saveMem s₀ := by
-  rw [show save = .mov .eax (.mem (at_ .esp 8)) :: .mov .ecx (.mem (at_ .esp 4)) :: (Spill.saveCode .eax blockSaved ++
-    ([.mov .esi (.reg .eax), .mov .edi (.reg .ecx)] : List Instr)) from rfl]
-  refine Wp.wp_ldm rfl (hp.in_arg (i := 1) (by lit_omega)) fun s₁ u₁ => ?_
-  refine Wp.wp_ldm (by rw [u₁.other _ (by decide)]) (by rw [u₁.rd, u₁.wr]; exact hp.in_arg (i := 0) (by lit_omega))
+theorem load_ok {s₀ : State} (hp : Pre s₀) :
+    WP isa (.block load) s₀ fun s =>
+      Rows (V s₀) s ∧ s.gpr .eax = st s₀ ∧ s.gpr .ecx = bp s₀ ∧
+      (∀ r, r ≠ .eax → r ≠ .ecx → s.gpr r = s₀.gpr r) ∧ s.mem = s₀.mem ∧ s.rd = s₀.rd ∧
+      s.wr = s₀.wr := by
+  unfold load
+  refine Wp.wp_ldm rfl (hp.in_arg (i := 0) (by decide)) fun s₁ u₁ => ?_
+  refine Wp.wp_ldm (by rw [u₁.other _ (by decide)]) (by rw [u₁.rd, u₁.wr]; exact hp.in_arg (i := 1) (by decide))
     fun s₂ u₂ => ?_
-  have hB : s₂.gpr .eax = bp s₀ := by rw [u₂.other _ (by decide), u₁.gpr]; rfl
-  refine Spill.save_ok blockSaved (fun p h => by
-      rw [hB, u₂.wr, u₁.wr, blockSaved_addr hp p h]; exact hp.out_buf (by have := blockSaved_fits.1 p h; lit_omega))
-    fun s₃ u₃ => Wp.wp_mov fun s₄ u₄ => Wp.wp_mov fun s₅ u₅ => WP.block_nil ⟨fun r h1 h2 h3 h4 => ?_, ?_, ?_,
-      by rw [u₅.rd, u₄.rd, u₃.rd, u₂.rd, u₁.rd], by rw [u₅.wr, u₄.wr, u₃.wr, u₂.wr, u₁.wr], ?_⟩
-  · rw [u₅.other _ h4, u₄.other _ h3, u₃.gpr, u₂.other _ h2, u₁.other _ h1]
-  · rw [u₅.other _ (by decide), u₄.gpr, u₃.gpr, hB]
-  · rw [u₅.gpr, u₄.other _ (by decide), u₃.gpr, u₂.gpr, u₁.mem]; rfl
-  · rw [u₅.mem, u₄.mem, u₃.mem, hB, u₂.mem, u₁.mem]
-    exact Spill.saveMem_congr _ _ (blockSaved_addr hp) fun p h => by
-      have : p.1 ≠ .ecx ∧ p.1 ≠ .eax := by revert p h; decide
-      rw [u₂.other _ this.1, u₁.other _ this.2]
-
-/-! ## Copying the state -/
-
-/-- The copy invariant after `n` words, relative to the state `s₁` after the prologue. -/
-structure CI (s₀ s₁ : State) (n : Nat) (s : State) : Prop where
-  keep : ∀ r, r ≠ .eax → s.gpr r = s₁.gpr r
-  rd : s.rd = s₀.rd
-  wr : s.wr = s₀.wr
-  fb : Frame [bufR s₀] s₀.mem s.mem
-  fw : Frame [workR (BA s₀)] s₁.mem s.mem
-  copied : ∀ j (hj : j < 16), j < n → s.mem.readW (wordAddr (BA s₀) j) 32 = (V s₀)[j]
-
-theorem copy_step {s₀ s₁ : State} (hp : Pre s₀) (hesi : s₁.gpr .esi = bp s₀)
-    (hedi : s₁.gpr .edi = st s₀) {n : Nat} (hn : n < 16) {s : State} (hc : CI s₀ s₁ n s) :
-    WP isa (.block (copyWord n)) s (CI s₀ s₁ (n + 1)) := by
-  have hsi : s.gpr .esi = bp s₀ := (hc.keep _ (by decide)).trans hesi
-  have hdi : s.gpr .edi = st s₀ := (hc.keep _ (by decide)).trans hedi
-  have eS : (st s₀ + BitVec.ofNat 32 (4 * n)).setWidth 64 = SA s₀ + BitVec.ofNat 64 (4 * n) :=
-    hp.eaS (by lit_omega)
-  have eB : (bp s₀ + BitVec.ofNat 32 (4 * n)).setWidth 64 = wordAddr (BA s₀) n := hp.eaB (by lit_omega)
-  have iS : InRegions (s.rd ++ s.wr) (SA s₀ + BitVec.ofNat 64 (4 * n)) 4 := by
-    rw [hc.rd, hc.wr]; exact hp.in_st hn _
-  have oB : InRegions s.wr (wordAddr (BA s₀) n) 4 := by rw [hc.wr]; exact hp.out_buf (by lit_omega)
-  have hv := hp.read_st hc.fb hn
+  have heax : s₂.gpr .eax = st s₀ := by rw [u₂.other _ (by decide), u₁.gpr]; rfl
+  have e : ∀ d, d < 64 → s₂.ea (at_ .eax d) = SA s₀ + BitVec.ofNat 64 d := fun d hd => by
+    show addr (s₂.gpr .eax) d = _; rw [heax]; exact hp.eaS hd
+  have i : ∀ d, d + 16 ≤ 64 → InRegions (s₂.rd ++ s₂.wr) (SA s₀ + BitVec.ofNat 64 d) 16 := fun d hd => by
+    rw [u₂.rd, u₂.wr, u₁.rd, u₁.wr]
+    exact ⟨stR s₀, by simp [hp.rd], contains_off hd (by lit_omega)⟩
   apply WP.of_runBlock
-  simp only [reduceCtorEq, ↓reduceIte, copyWord, runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, State.setReg,
-    State.ea, at_, State.load32, State.store32, hsi, hdi, eS, eB, iS, oB, hv, 
-    Option.map_some, Option.some.injEq, exists_eq_left']
-  refine ⟨fun r hr => by simp [hr, hc.keep r hr], hc.rd, hc.wr,
-    hc.fb.writeW (List.mem_singleton_self _) _ (contains_off (by lit_omega) (by lit_omega)),
-    hc.fw.writeW (List.mem_singleton_self _) _ (word_in_work _ hn), fun j hj hjn => ?_⟩
-  rcases Nat.lt_succ_iff_lt_or_eq.mp hjn with hjn | rfl
-  · rw [readW_writeW_word _ _ _ hj hn (by lit_omega)]; exact hc.copied j hj hjn
-  · exact Mem.readW_writeW_self32 _ _ _
+  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, State.load128, Quad.ea_setXmm,
+    e 0 (by decide), e 16 (by decide), e 32 (by decide), e 48 (by decide), i 0 (by decide),
+    i 16 (by decide), i 32 (by decide), i 48 (by decide), ite_true, RegUpd.mem_setXmm,
+    RegUpd.rd_setXmm, RegUpd.wr_setXmm, RegUpd.gpr_setXmm, Option.map_some, Option.some.injEq,
+    exists_eq_left']
+  have hm : s₂.mem = s₀.mem := by rw [u₂.mem, u₁.mem]
+  refine ⟨⟨fun i hi => ?_, fun i hi => ?_, fun i hi => ?_, fun i hi => ?_⟩, heax,
+    by rw [u₂.gpr, u₁.mem]; rfl, fun r h₁ h₂ => by rw [u₂.other r h₂, u₁.other r h₁], hm,
+    by rw [u₂.rd, u₁.rd], by rw [u₂.wr, u₁.wr]⟩ <;>
+    simp only [dw, RegUpd.xmm_setXmm_self, RegUpd.xmm_setXmm_of_ne, reduceCtorEq, not_false_eq_true]
+  · have := Quad.row_lane s₀.mem (SA s₀) (r := 0) (by decide) hi
+    simp only [Nat.mul_zero, Nat.zero_add] at this
+    rw [hm]; exact this
+  · rw [hm]; exact Quad.row_lane s₀.mem (SA s₀) (r := 1) (by decide) hi
+  · rw [hm]; exact Quad.row_lane s₀.mem (SA s₀) (r := 2) (by decide) hi
+  · rw [hm]; exact Quad.row_lane s₀.mem (SA s₀) (r := 3) (by decide) hi
 
-/-! ## Adding the input state -/
+/-! ## Adding the input state and storing the result -/
 
-/-- The add invariant after `n` words, relative to the state `sB` after the rounds. -/
-structure AI (s₀ sB : State) (n : Nat) (s : State) : Prop where
-  out : ∀ j (hj : j < 16), s.mem.readW (wordAddr (BA s₀) j) 32 =
-    if j < n then (Rs s₀)[j] + (V s₀)[j] else (Rs s₀)[j]
-  keep : ∀ r, r ≠ .eax → s.gpr r = sB.gpr r
-  rd : s.rd = s₀.rd
-  wr : s.wr = s₀.wr
-  fb : Frame [bufR s₀] s₀.mem s.mem
-  fw : Frame [workR (BA s₀)] sB.mem s.mem
-
-theorem add_step {s₀ sB : State} (hp : Pre s₀) (hesi : sB.gpr .esi = bp s₀)
-    (hedi : sB.gpr .edi = st s₀) {n : Nat} (hn : n < 16) {s : State} (ha : AI s₀ sB n s) :
-    WP isa (.block (addWord n)) s (AI s₀ sB (n + 1)) := by
-  have hsi : s.gpr .esi = bp s₀ := (ha.keep _ (by decide)).trans hesi
-  have hdi : s.gpr .edi = st s₀ := (ha.keep _ (by decide)).trans hedi
-  have eS : (st s₀ + BitVec.ofNat 32 (4 * n)).setWidth 64 = SA s₀ + BitVec.ofNat 64 (4 * n) :=
-    hp.eaS (by lit_omega)
-  have eB : (bp s₀ + BitVec.ofNat 32 (4 * n)).setWidth 64 = wordAddr (BA s₀) n := hp.eaB (by lit_omega)
-  have iS : InRegions (s.rd ++ s.wr) (SA s₀ + BitVec.ofNat 64 (4 * n)) 4 := by
-    rw [ha.rd, ha.wr]; exact hp.in_st hn _
-  have iB : InRegions (s.rd ++ s.wr) (wordAddr (BA s₀) n) 4 := by
-    rw [ha.wr]; exact hp.in_buf (by lit_omega) _
-  have oB : InRegions s.wr (wordAddr (BA s₀) n) 4 := by rw [ha.wr]; exact hp.out_buf (by lit_omega)
-  have hv := hp.read_st ha.fb hn
-  have hr := ha.out n hn
-  simp only [Nat.lt_irrefl, ite_false] at hr
+theorem addRow_ok {s₀ : State} (hp : Pre s₀) {x : XReg} (hx : x ≠ .xmm4) {r : Nat} (hr : r < 4)
+    {s : State} (heax : s.gpr .eax = st s₀) (hecx : s.gpr .ecx = bp s₀) (hrd : s.rd = s₀.rd)
+    (hwr : s.wr = s₀.wr) (hf : Frame [workR (BA s₀)] s₀.mem s.mem) :
+    WP isa (.block (addRow x r)) s fun s' =>
+      (∀ i (hi : i < 4), s'.mem.readW (BA s₀ + BitVec.ofNat 64 (16 * r + 4 * i)) 32 =
+        dw s x i + (V s₀)[4 * r + i]) ∧
+      (∀ d, d + 4 ≤ 64 → d + 4 ≤ 16 * r ∨ 16 * r + 16 ≤ d →
+        s'.mem.readW (BA s₀ + BitVec.ofNat 64 d) 32 = s.mem.readW (BA s₀ + BitVec.ofNat 64 d) 32) ∧
+      Frame [workR (BA s₀)] s.mem s'.mem ∧ (∀ y, y ≠ x → y ≠ .xmm4 → s'.xmm y = s.xmm y) ∧
+      s'.gpr = s.gpr ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
+  have eS : s.ea (at_ .eax (16 * r)) = SA s₀ + BitVec.ofNat 64 (16 * r) := by
+    show addr (s.gpr .eax) _ = _; rw [heax]; exact hp.eaS (d := 16 * r) (by omega)
+  have eB : s.ea (at_ .ecx (16 * r)) = BA s₀ + BitVec.ofNat 64 (16 * r) := by
+    show addr (s.gpr .ecx) _ = _; rw [hecx]; exact hp.eaB (d := 16 * r) (by omega)
+  have iS : InRegions (s.rd ++ s.wr) (SA s₀ + BitVec.ofNat 64 (16 * r)) 16 := by
+    rw [hrd, hwr]; exact ⟨stR s₀, by simp [hp.rd], contains_off (by omega) (by lit_omega)⟩
+  have oB : InRegions s.wr (BA s₀ + BitVec.ofNat 64 (16 * r)) 16 := by
+    rw [hwr]; exact hp.out_buf (by omega)
+  have hS : s.mem.readW (SA s₀ + BitVec.ofNat 64 (16 * r)) 128 =
+      s₀.mem.readW (SA s₀ + BitVec.ofNat 64 (16 * r)) 128 :=
+    hf.readW (r := stR s₀) (contains_off (by omega) (by lit_omega))
+      (by simpa using hp.buf_st.symm.sub_right (Region.sub_prefix (by decide))) (by decide)
   apply WP.of_runBlock
-  simp only [reduceCtorEq, ↓reduceIte, Nat.reducePow, addWord, runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, readSrc,
-    State.setReg, arithFlags, State.setFlags, State.ea, at_, State.load32, State.store32, hsi, hdi,
-    eS, eB, iS, iB, oB, hv, hr, Option.map_some,
-    Option.bind_some, Option.some.injEq, exists_eq_left']
-  refine ⟨fun j hj => ?_, fun r hr => by simp [hr, ha.keep r hr], ha.rd, ha.wr,
-    ha.fb.writeW (List.mem_singleton_self _) _ (contains_off (by lit_omega) (by lit_omega)),
-    ha.fw.writeW (List.mem_singleton_self _) _ (word_in_work _ hn)⟩
-  by_cases hjn : j = n
-  · subst hjn; simp [Mem.readW_writeW_self32]
-  · rw [readW_writeW_word _ _ _ hj hn hjn, ha.out j hj]
-    split <;> split <;> first | omega | rfl
+  simp only [addRow, xb, runBlock_cons, runStep_some, runBlock_nil, exec, XOp.exec, State.load128,
+    State.store128, Quad.ea_setXmm, eS, eB, iS, RegUpd.wr_setXmm, oB, ite_true, RegUpd.mem_setXmm,
+    RegUpd.rd_setXmm, RegUpd.gpr_setXmm, Option.map_some, Option.some.injEq, exists_eq_left']
+  refine ⟨fun i hi => ?_, fun d hd hd' => ?_, (Frame.refl _ _).writeW (List.mem_singleton_self _) _
+    (contains_off (by omega) (by lit_omega)), fun y h₁ h₂ => ?_, trivial, trivial, trivial⟩
+  · rw [Quad.lane_write_self _ _ _ _ hi, RegUpd.xmm_setXmm_self, dword_paddd _ _ hi,
+      RegUpd.xmm_setXmm_of_ne _ _ hx, RegUpd.xmm_setXmm_self, hS, Quad.row_lane _ _ hr hi]
+  · exact Quad.lane_write_other _ _ _ (by omega) (by omega) hd'
+  · rw [RegUpd.xmm_setXmm_of_ne _ _ h₁, RegUpd.xmm_setXmm_of_ne _ _ h₂]
 
-/-! ## Restoring the callee-saved registers -/
-
-theorem restore_ok {s₀ : State} (hp : Pre s₀) {s : State} (hs : Saved s₀ s.mem)
-    (hesi : s.gpr .esi = bp s₀) (hwr : s.wr = s₀.wr) :
-    WP isa (.block restore) s fun s' =>
-      s'.mem = s.mem ∧ s'.gpr .ebx = s₀.gpr .ebx ∧ s'.gpr .esi = s₀.gpr .esi ∧
-      s'.gpr .edi = s₀.gpr .edi ∧ ∀ r, r ≠ .eax → r ≠ .ebx → r ≠ .esi → r ≠ .edi → s'.gpr r = s.gpr r := by
-  rw [show restore = .mov .eax (.reg .esi) :: (Spill.restoreCode .eax blockSaved ++ []) from rfl]
-  refine Wp.wp_mov fun s₁ u₁ => ?_
-  have hB : s₁.gpr .eax = bp s₀ := by rw [u₁.gpr, hesi]
-  refine Spill.restore_ok blockSaved (by decide)
-    (fun p h => by
-      rw [hB, u₁.rd, u₁.wr, hwr, blockSaved_addr hp p h]; exact hp.in_buf (by have := blockSaved_fits.1 p h; lit_omega) _)
-    (by rw [hB, u₁.mem]; exact hs.congr (fun p h => (blockSaved_addr hp p h).symm) fun _ _ => rfl)
-    fun s' r' => WP.block_nil ⟨by rw [r'.mem, u₁.mem], r'.gpr (.ebx, 64) (by decide),
-      r'.gpr (.esi, 68) (by decide), r'.gpr (.edi, 72) (by decide), fun r h1 h2 h3 h4 => ?_⟩
-  rw [r'.other r (by simp [blockSaved, h2, h3, h4]), u₁.other _ h1]
+theorem finish_eq : finish = addRow .xmm0 0 ++ (addRow .xmm1 1 ++ (addRow .xmm2 2 ++ addRow .xmm3 3)) := by
+  simp only [finish, List.append_assoc]
 
 /-! ## The whole function -/
 
-theorem finish_split : finish ++ restore = (List.range 16).flatMap addWord ++ restore := rfl
-
-theorem block_post {p : Addr} {m : Mem} {R v : CState}
-    (h : ∀ j (hj : j < 16), m.readW (wordAddr p j) 32 = R[j] + v[j]) :
-    stateAt m p = Vector.zipWith (· + ·) R v := by
-  apply Vector.ext
-  intro j hj
-  simp only [stateAt, Vector.getElem_ofFn, Vector.getElem_zipWith]
-  exact h j hj
-
 theorem correct {s₀ : State} (hp : Pre s₀) :
     WP isa block s₀ fun s' => abiPreserved s₀ s' ∧ Proof.ChaCha20.blockX86.post s₀ s' := by
-  refine WP.seq ?_
+  refine WP.seq (WP.mono (load_ok hp) fun s₁ ⟨h₁, ea₁, ec₁, k₁, m₁, r₁, w₁⟩ => ?_)
+  refine WP.seq (WP.mono (rounds_ok h₁ 10) fun s₂ ⟨h₂, g₂, m₂, r₂, w₂⟩ => ?_)
+  have f₂ : Frame [workR (BA s₀)] s₀.mem s₂.mem := by rw [m₂, m₁]; exact Frame.refl _ _
+  have ga : ∀ (t : State), t.gpr = s₂.gpr → t.gpr .eax = st s₀ ∧ t.gpr .ecx = bp s₀ := fun t g =>
+    ⟨by rw [g, g₂, ea₁], by rw [g, g₂, ec₁]⟩
+  rw [finish_eq, WP.block_append_iff]
+  refine WP.mono (addRow_ok hp (x := .xmm0) (by decide) (r := 0) (by decide) (ga s₂ rfl).1 (ga s₂ rfl).2
+    (by rw [r₂, r₁]) (by rw [w₂, w₁]) f₂) fun s₃ ⟨a₃, o₃, f₃, x₃, g₃, r₃, w₃⟩ => ?_
   rw [WP.block_append_iff]
-  refine WP.mono (save_ok hp) fun s₁ ⟨hk₁, hesi₁, hedi₁, hrd₁, hwr₁, hm₁⟩ => ?_
-  have hc₀ : CI s₀ s₁ 0 s₁ :=
-    ⟨fun _ _ => rfl, hrd₁, hwr₁, hm₁ ▸ saveMem_frame s₀, Frame.refl _ _,
-      fun _ _ h => absurd h (by lit_omega)⟩
-  refine WP.mono (wp_range_flatMap (M := isa) (CI s₀ s₁)
-    (fun k s hk hc => copy_step hp hesi₁ hedi₁ hk hc) 16 (Nat.le_refl _) s₁ hc₀) fun s₂ hc => ?_
-  have hsi₂ : s₂.gpr .esi = bp s₀ := (hc.keep _ (by decide)).trans hesi₁
-  have hdi₂ : s₂.gpr .edi = st s₀ := (hc.keep _ (by decide)).trans hedi₁
-  have hctx : Ctx (BA s₀) s₂ :=
-    ⟨fun k hk => by rw [hsi₂]; exact hp.eaB (by lit_omega),
-      fun k hk => by rw [hc.wr]; exact hp.in_buf (by lit_omega) _,
-      fun k hk => by rw [hc.wr]; exact hp.out_buf (by lit_omega)⟩
-  refine WP.seq (WP.mono (rounds_ok hctx (fun k hk => hc.copied k hk hk) 10) fun s₃ hR => ?_)
-  rw [finish_split, WP.block_append_iff]
-  have ha₀ : AI s₀ s₃ 0 s₃ :=
-    ⟨fun j hj => by simp only [Nat.not_lt_zero, ite_false]; exact hR.holds j hj, fun _ _ => rfl,
-      hR.rd.trans hc.rd, hR.wr.trans hc.wr, hc.fb.trans (frame_buf hR.frame), Frame.refl _ _⟩
-  refine WP.mono (wp_range_flatMap (M := isa) (AI s₀ s₃)
-    (fun k s hk ha => add_step hp (hR.esi.trans hsi₂) (hR.edi.trans hdi₂) hk ha) 16 (Nat.le_refl _) s₃ ha₀)
-    fun s₄ hA => ?_
-  have hwork : Frame [workR (BA s₀)] s₁.mem s₄.mem := (hc.fw.trans hR.frame).trans hA.fw
-  have hsaved : Saved s₀ s₄.mem := saved_frame (hm₁ ▸ saveMem_saved s₀) hwork
-  have hsi₄ : s₄.gpr .esi = bp s₀ := (hA.keep _ (by decide)).trans (hR.esi.trans hsi₂)
-  refine WP.mono (restore_ok hp hsaved hsi₄ hA.wr) fun s' ⟨hm', hbx, hsi, hdi, hk'⟩ => ?_
-  have hesp : s'.gpr .esp = s₀.gpr .esp := by
-    rw [hk' _ (by decide) (by decide) (by decide) (by decide), hA.keep _ (by decide), hR.esp,
-      hc.keep _ (by decide), hk₁ _ (by decide) (by decide) (by decide) (by decide)]
-  have hebp : s'.gpr .ebp = s₀.gpr .ebp := by
-    rw [hk' _ (by decide) (by decide) (by decide) (by decide), hA.keep _ (by decide), hR.ebp,
-      hc.keep _ (by decide), hk₁ _ (by decide) (by decide) (by decide) (by decide)]
+  refine WP.mono (addRow_ok hp (x := .xmm1) (by decide) (r := 1) (by decide) (ga s₃ g₃).1 (ga s₃ g₃).2
+    (by rw [r₃, r₂, r₁]) (by rw [w₃, w₂, w₁]) (f₂.trans f₃)) fun s₄ ⟨a₄, o₄, f₄, x₄, g₄, r₄, w₄⟩ => ?_
+  rw [WP.block_append_iff]
+  refine WP.mono (addRow_ok hp (x := .xmm2) (by decide) (r := 2) (by decide) (ga s₄ (g₄.trans g₃)).1
+    (ga s₄ (g₄.trans g₃)).2 (by rw [r₄, r₃, r₂, r₁]) (by rw [w₄, w₃, w₂, w₁]) ((f₂.trans f₃).trans f₄))
+    fun s₅ ⟨a₅, o₅, f₅, x₅, g₅, r₅, w₅⟩ => ?_
+  refine WP.mono (addRow_ok hp (x := .xmm3) (by decide) (r := 3) (by decide)
+    (ga s₅ ((g₅.trans g₄).trans g₃)).1 (ga s₅ ((g₅.trans g₄).trans g₃)).2 (by rw [r₅, r₄, r₃, r₂, r₁])
+    (by rw [w₅, w₄, w₃, w₂, w₁]) (((f₂.trans f₃).trans f₄).trans f₅))
+    fun s₆ ⟨a₆, o₆, f₆, _, g₆, _, _⟩ => ?_
+  have hF : Frame [workR (BA s₀)] s₀.mem s₆.mem := (((f₂.trans f₃).trans f₄).trans f₅).trans f₆
+  have hg : s₆.gpr = s₂.gpr := ((g₆.trans g₅).trans g₄).trans g₃
   refine ⟨⟨fun r hr => ?_, ?_⟩, ?_⟩
   · simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl | rfl
-    · exact hbx
-    · exact hsi
-    · exact hdi
-    · exact hebp
-    · exact hesp
-  · rw [hm']
-    refine hA.fb.readW (r := retR s₀) (Region.contains_self _ _) ?_ (by decide)
-    simpa using hp.ret_buf
-  · show stateAt s'.mem (BA s₀) = Spec.ChaCha20.block (V s₀)
-    rw [hm']
-    exact block_post fun j hj => by simpa [hj] using hA.out j hj
+    rw [hg, g₂, k₁ r (by rcases hr with rfl | rfl | rfl | rfl | rfl <;> decide)
+      (by rcases hr with rfl | rfl | rfl | rfl | rfl <;> decide)]
+  · refine hF.readW (r := retR s₀) (Region.contains_self _ _) ?_ (by decide)
+    simpa using hp.ret_buf.sub_right (Region.sub_prefix (by decide))
+  · show stateAt s₆.mem (BA s₀) = Spec.ChaCha20.block (V s₀)
+    apply Vector.ext
+    intro k hk
+    rw [show (stateAt s₆.mem (BA s₀))[k] = s₆.mem.readW (BA s₀ + BitVec.ofNat 64 (4 * k)) 32 by
+      simp only [stateAt, Vector.getElem_ofFn], Spec.ChaCha20.block, Vector.getElem_zipWith]
+    have x₂ : ∀ y, y ≠ .xmm0 → y ≠ .xmm1 → y ≠ .xmm2 → y ≠ .xmm4 → s₅.xmm y = s₂.xmm y :=
+      fun y h0 h1 h2 h4 => by rw [x₅ y h2 h4, x₄ y h1 h4, x₃ y h0 h4]
+    rcases (by omega : k < 4 ∨ (4 ≤ k ∧ k < 8) ∨ (8 ≤ k ∧ k < 12) ∨ 12 ≤ k) with h | h | h | h
+    · have a := a₃ k h
+      simp only [Nat.mul_zero, Nat.zero_add] at a
+      rw [show 4 * k = 0 + 4 * k by omega, o₆ _ (by omega) (by omega), o₅ _ (by omega) (by omega),
+        o₄ _ (by omega) (by omega), Nat.zero_add, a, h₂.r0 k h]
+    · obtain ⟨i, hi, rfl⟩ : ∃ i, i < 4 ∧ k = 4 + i := ⟨k - 4, by omega, by omega⟩
+      have a := a₄ i hi
+      simp only [Nat.reduceMul] at a
+      rw [show 4 * (4 + i) = 16 + 4 * i by omega, o₆ _ (by omega) (by omega),
+        o₅ _ (by omega) (by omega), a, show dw s₃ .xmm1 i = dw s₂ .xmm1 i by
+          simp only [dw]; rw [x₃ _ (by decide) (by decide)], h₂.r1 i hi]
+    · obtain ⟨i, hi, rfl⟩ : ∃ i, i < 4 ∧ k = 8 + i := ⟨k - 8, by omega, by omega⟩
+      have a := a₅ i hi
+      simp only [Nat.reduceMul] at a
+      rw [show 4 * (8 + i) = 32 + 4 * i by omega, o₆ _ (by omega) (by omega), a,
+        show dw s₄ .xmm2 i = dw s₂ .xmm2 i by
+          simp only [dw]; rw [x₄ _ (by decide) (by decide), x₃ _ (by decide) (by decide)],
+        h₂.r2 i hi]
+    · obtain ⟨i, hi, rfl⟩ : ∃ i, i < 4 ∧ k = 12 + i := ⟨k - 12, by omega, by omega⟩
+      have a := a₆ i hi
+      simp only [Nat.reduceMul] at a
+      rw [show 4 * (12 + i) = 48 + 4 * i by omega, a,
+        show dw s₅ .xmm3 i = dw s₂ .xmm3 i by
+          simp only [dw]; rw [x₂ _ (by decide) (by decide) (by decide) (by decide)],
+        h₂.r3 i hi]
+
+/-! ## A state satisfying the precondition, and constant time -/
+
 
 /-- Memory whose two argument slots (at `0x4004`) hold `0x1000` and `0x2000`. -/
 def satMem : Mem := fun a =>
@@ -598,7 +519,7 @@ theorem block_correct (s : State) (hs : Proof.ChaCha20.blockX86.pre s) :
   correct (pre_of s hs)
 
 theorem block_ct : ConstantTime isa Proof.ChaCha20.blockX86.pre Proof.ChaCha20.blockX86.pub block :=
-  VG.Taint.constantTime (A := taint) τ₀ (fun _ _ h₁ h₂ hpub => agree₀ h₁ h₂ hpub) (by taint_decide)
+  VG.Taint.constantTime (A := sseTaint) τ₀ (fun _ _ h₁ h₂ hpub => agree₀ h₁ h₂ hpub) (by taint_decide)
 
 theorem block_verified :
     Verified X86.target Impl.ChaCha20.X86.block (Spec.ChaCha20.blockContract X86.abi) :=
