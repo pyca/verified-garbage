@@ -1,4 +1,5 @@
-import VerifiedGarbage.Proof.Weierstrass.X86_64.Env
+import VerifiedGarbage.Proof.Weierstrass.Env
+import VerifiedGarbage.Impl.Weierstrass.X86_64
 import VerifiedGarbage.Proof.Mont.X86_64.Ops
 
 /-!
@@ -7,10 +8,10 @@ import VerifiedGarbage.Proof.Mont.X86_64.Ops
 `fprog M ops` runs the field operations `ops` on slots of the working space
 (`fprog_ok`), one by one with `mul_ok`, `add_ok` and `sub_ok`: on slots that
 are apart from each other, from the modulus and from the temporary area
-(`Lay`), what the slots stand for (`toM`) follows `runOps ops`, the program
+(`Proof.Mont.Lay`), what the slots stand for (`toM`) follows `runOps ops`, the program
 on environments (`Inv`). A slot is read only once it holds a number below
 `m`: either it did at the start (`V`) or an earlier operation wrote it
-(`readsOk`). Only the registers `clob n`, the slots written and the temporary
+(`Proof.Weierstrass.readsOk`). Only the registers `clob n`, the slots written and the temporary
 area change (`ProgKeep`).
 
 The complete addition `rcb` is such a program, and computes `rcbAdd`
@@ -19,44 +20,7 @@ The complete addition `rcb` is such a program, and computes `rcbAdd`
 
 namespace VG.Proof.Weierstrass.X86_64
 
-open VG VG.X86_64 VG.Impl.Mont.X86_64 VG.Impl.Weierstrass.X86_64 VG.Proof.Mont.X86_64
-
-/-- The slots `Sl` (offsets of `n`-word numbers in a working space of `size`
-bytes): any two are the same or apart, and each is apart from the modulus
-and from the temporary area. -/
-structure Lay (M : Mod) (size : Nat) (Sl : Nat → Prop) : Prop where
-  le : ∀ x, Sl x → x + 8 * M.n ≤ size
-  apart : ∀ x y, Sl x → Sl y → x ≠ y → x + 8 * M.n ≤ y ∨ y + 8 * M.n ≤ x
-  mo : ∀ x, Sl x → x + 8 * M.n ≤ M.mo ∨ M.mo + 8 * M.n ≤ x
-  tmp : ∀ x, Sl x → x + 8 * M.n ≤ M.tmp ∨ M.tmp + 8 * M.n ≤ x
-
-/-- Slots on a grid: `d + 8 n i` for `lo ≤ i < hi`, with the modulus and the
-temporary area on the grid below `lo`. -/
-theorem Lay.grid {M : Mod} {size d lo hi imo itmp : Nat} (hmo : M.mo = d + 8 * M.n * imo)
-    (htmp : M.tmp = d + 8 * M.n * itmp) (himo : imo < lo) (hitmp : itmp < lo)
-    (hsize : d + 8 * M.n * hi ≤ size) :
-    Lay M size fun x => ∃ i, lo ≤ i ∧ i < hi ∧ x = d + 8 * M.n * i := by
-  have apart : ∀ i j, i ≠ j → d + 8 * M.n * i + 8 * M.n ≤ d + 8 * M.n * j ∨
-      d + 8 * M.n * j + 8 * M.n ≤ d + 8 * M.n * i := by
-    intro i j hij
-    rcases Nat.lt_or_gt_of_ne hij with h | h
-    · have := Nat.mul_le_mul_left (8 * M.n) h
-      rw [Nat.mul_succ] at this
-      omega
-    · have := Nat.mul_le_mul_left (8 * M.n) h
-      rw [Nat.mul_succ] at this
-      omega
-  refine ⟨?_, ?_, ?_, ?_⟩
-  · rintro x ⟨i, -, hi', rfl⟩
-    have := Nat.mul_le_mul_left (8 * M.n) hi'
-    rw [Nat.mul_succ] at this
-    omega
-  · rintro x y ⟨i, -, -, rfl⟩ ⟨j, -, -, rfl⟩ hxy
-    exact apart i j fun h => hxy (h ▸ rfl)
-  · rintro x ⟨i, hi, -, rfl⟩
-    rw [hmo]; exact apart i imo (by omega)
-  · rintro x ⟨i, hi, -, rfl⟩
-    rw [htmp]; exact apart i itmp (by omega)
+open VG VG.X86_64 VG.Impl.Mont.X86_64 VG.Impl.Mont VG.Impl.Weierstrass.X86_64 VG.Impl.Weierstrass VG.Proof.Mont.X86_64 VG.Proof.Mont
 
 /-- The state holds the environment `E` in Montgomery's form in the slots
 `V`, below `m`, with the modulus in place. -/
@@ -162,7 +126,7 @@ theorem fop_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat → P
     (hm : UnitMod m (2 ^ (64 * M.n))) {V : List Nat} {E : Nat → Fin m} {s : State}
     (hI : Inv M base size m Sl V E s) {op : FOp} (hS : ∀ x ∈ op.out :: op.ins, Sl x)
     (hR : ∀ x ∈ op.ins, x ∈ V) :
-    WP isa (.block (op.code M)) s fun s' =>
+    WP isa (.block (opCode M op)) s fun s' =>
       OpKeep M base op.out s s' ∧ Inv M base size m Sl (op.out :: V) (op.run E) s' := by
   cases op with
   | mul o a b =>
@@ -190,49 +154,8 @@ theorem fop_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat → P
     · rw [heq]; exact Nat.mod_lt _ (by omega)
     · rw [heq, toM_sub (by omega), hI.val a hR.1, hI.val b hR.2]
 
-/-- `ops` read only slots of `V` or written by an earlier operation. -/
-def readsOk : List FOp → List Nat → Bool
-  | [], _ => true
-  | op :: ops, V => op.ins.all (fun x => decide (x ∈ V)) && readsOk ops (op.out :: V)
-
-/-- The slots holding a value after `ops`: `V` and those `ops` write. -/
-def validAfter : List FOp → List Nat → List Nat
-  | [], V => V
-  | op :: ops, V => validAfter ops (op.out :: V)
-
-theorem mem_validAfter {x : Nat} :
-    ∀ (ops : List FOp) (V : List Nat), x ∈ validAfter ops V ↔ x ∈ V ∨ x ∈ ops.map FOp.out
-  | [], V => by simp [validAfter]
-  | op :: ops, V => by
-    rw [validAfter, mem_validAfter ops, List.map_cons, List.mem_cons, List.mem_cons]
-    grind
-
-theorem readsOk_mono : ∀ {ops : List FOp} {V V' : List Nat}, readsOk ops V = true →
-    (∀ x ∈ V, x ∈ V') → readsOk ops V' = true
-  | [], _, _, _, _ => rfl
-  | op :: ops, V, V', h, hV => by
-    simp only [readsOk, Bool.and_eq_true, List.all_eq_true, decide_eq_true_eq] at h ⊢
-    refine ⟨fun x hx => hV x (h.1 x hx), readsOk_mono h.2 fun x hx => ?_⟩
-    rcases List.mem_cons.mp hx with rfl | hx
-    · exact List.mem_cons_self ..
-    · exact List.mem_cons_of_mem _ (hV x hx)
-
-theorem readsOk_rename (σ : Nat → Nat) : ∀ {ops : List FOp} {V : List Nat}, readsOk ops V = true →
-    readsOk (ops.map (FOp.rename σ)) (V.map σ) = true
-  | [], _, _ => rfl
-  | op :: ops, V, h => by
-    simp only [readsOk, Bool.and_eq_true, List.all_eq_true, decide_eq_true_eq] at h
-    have h₂ := readsOk_rename σ h.2
-    have hout : (op.rename σ).out = σ op.out := by cases op <;> rfl
-    have hins : ∀ x ∈ (op.rename σ).ins, ∃ y ∈ op.ins, σ y = x := by
-      cases op <;> simp [FOp.rename, FOp.ins]
-    simp only [List.map_cons, readsOk, Bool.and_eq_true, List.all_eq_true, decide_eq_true_eq]
-    refine ⟨fun x hx => ?_, by rw [hout]; exact h₂⟩
-    obtain ⟨y, hy, rfl⟩ := hins x hx
-    exact List.mem_map_of_mem (h.1 y hy)
-
 theorem fprog_cons (M : Mod) (op : FOp) (ops : List FOp) :
-    fprog M (op :: ops) = op.code M ++ fprog M ops := rfl
+    fprog M (op :: ops) = opCode M op ++ fprog M ops := rfl
 
 /-- A field program. -/
 theorem fprog_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat → Prop} (hL : Lay M size Sl)
@@ -255,8 +178,6 @@ theorem fprog_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat →
       k₁.mem x (hx _ (List.mem_cons_self ..)) ht]
 
 /-! ## The complete addition -/
-
-theorem rcbN_reads : readsOk rcbN [9, 10, 11, 12, 13, 14, 15, 16] = true := by decide
 
 /-- `o = p + q` by `rcb`, on slots of `Sl` that are apart (`RcbApart`; `p` may
 be `q`), from a state holding `E`, in particular `p`, `q`, `a` and `3b`

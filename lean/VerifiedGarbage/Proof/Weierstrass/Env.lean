@@ -1,4 +1,4 @@
-import VerifiedGarbage.Impl.Weierstrass.X86_64
+import VerifiedGarbage.Impl.Weierstrass.Slots
 import VerifiedGarbage.Proof.Weierstrass.Rcb
 import Mathlib.Logic.Function.Basic
 
@@ -6,13 +6,14 @@ import Mathlib.Logic.Function.Basic
 # Field programs on slots, as functions on environments
 
 A slot holding `x` stands for `x R⁻¹ mod m` (`toM`, Montgomery's form,
-`R = 2^(64 n)`), an element of `Fin m`, and the results of `mul_ok`, `add_ok`
-and `sub_ok` stand for the product, sum and difference of what their
-operands stand for (`toM_mul`, `toM_add`, `toM_sub`). A field operation is
-then a function on environments, the values of all slots (`FOp.run`), and the
-complete addition `rcb` computes `rcbAdd` of its inputs' values (`rcb_run`):
-for any slots, as long as the slots it writes (`rcbW`) are distinct and none
-is one it only reads (`rcbR`).
+`R = 2^(64 n)`), an element of `Fin m`, and the results of each target's
+Montgomery multiplication, addition and subtraction stand for the product,
+sum and difference of what their operands stand for (`toM_mul`, `toM_add`,
+`toM_sub`). A field operation is then a function on environments, the
+values of all slots (`FOp.run`), and the complete addition `rcb` computes
+`rcbAdd` of its inputs' values (`rcb_run`): for any slots, as long as the
+slots it writes (`rcbW`) are distinct and none is one it only reads
+(`rcbR`). A program reads a slot only once it holds a value (`readsOk`).
 
 Everything here is over `Fin m` and Lean's core rings
 (`Lean.Grind.CommRing`), without Mathlib's algebra: the proofs of the code
@@ -20,7 +21,7 @@ need none of it, and only the proofs of the group law
 (`Proof/Weierstrass/Complete.lean`) import it.
 -/
 
-namespace VG.Impl.Weierstrass.X86_64
+namespace VG.Impl.Weierstrass
 
 /-- The slot an operation writes. -/
 def FOp.out : FOp → Nat
@@ -43,11 +44,11 @@ def FOp.run {F : Type _} [Lean.Grind.CommRing F] : FOp → (Nat → F) → Nat �
   | .add o a b, e => Function.update e o (e a + e b)
   | .sub o a b, e => Function.update e o (e a - e b)
 
-end VG.Impl.Weierstrass.X86_64
+end VG.Impl.Weierstrass
 
-namespace VG.Proof.Weierstrass.X86_64
+namespace VG.Proof.Weierstrass
 
-open VG.Impl.Weierstrass.X86_64
+open VG.Impl.Weierstrass
 
 /-! ## Arithmetic modulo `m` -/
 
@@ -285,4 +286,92 @@ theorem runOps_of_not_out {F : Type _} [Lean.Grind.CommRing F] {x : Nat} :
     have hx : x ≠ op.out := fun hx => h op (List.mem_cons_self ..) hx.symm
     cases op <;> exact Function.update_of_ne hx _ _
 
-end VG.Proof.Weierstrass.X86_64
+/-- `ops` read only slots of `V` or written by an earlier operation. -/
+def readsOk : List FOp → List Nat → Bool
+  | [], _ => true
+  | op :: ops, V => op.ins.all (fun x => decide (x ∈ V)) && readsOk ops (op.out :: V)
+
+/-- The slots holding a value after `ops`: `V` and those `ops` write. -/
+def validAfter : List FOp → List Nat → List Nat
+  | [], V => V
+  | op :: ops, V => validAfter ops (op.out :: V)
+
+theorem mem_validAfter {x : Nat} :
+    ∀ (ops : List FOp) (V : List Nat), x ∈ validAfter ops V ↔ x ∈ V ∨ x ∈ ops.map FOp.out
+  | [], V => by simp [validAfter]
+  | op :: ops, V => by
+    rw [validAfter, mem_validAfter ops, List.map_cons, List.mem_cons, List.mem_cons]
+    grind
+
+theorem readsOk_mono : ∀ {ops : List FOp} {V V' : List Nat}, readsOk ops V = true →
+    (∀ x ∈ V, x ∈ V') → readsOk ops V' = true
+  | [], _, _, _, _ => rfl
+  | op :: ops, V, V', h, hV => by
+    simp only [readsOk, Bool.and_eq_true, List.all_eq_true, decide_eq_true_eq] at h ⊢
+    refine ⟨fun x hx => hV x (h.1 x hx), readsOk_mono h.2 fun x hx => ?_⟩
+    rcases List.mem_cons.mp hx with rfl | hx
+    · exact List.mem_cons_self ..
+    · exact List.mem_cons_of_mem _ (hV x hx)
+
+theorem readsOk_rename (σ : Nat → Nat) : ∀ {ops : List FOp} {V : List Nat}, readsOk ops V = true →
+    readsOk (ops.map (FOp.rename σ)) (V.map σ) = true
+  | [], _, _ => rfl
+  | op :: ops, V, h => by
+    simp only [readsOk, Bool.and_eq_true, List.all_eq_true, decide_eq_true_eq] at h
+    have h₂ := readsOk_rename σ h.2
+    have hout : (op.rename σ).out = σ op.out := by cases op <;> rfl
+    have hins : ∀ x ∈ (op.rename σ).ins, ∃ y ∈ op.ins, σ y = x := by
+      cases op <;> simp [FOp.rename, FOp.ins]
+    simp only [List.map_cons, readsOk, Bool.and_eq_true, List.all_eq_true, decide_eq_true_eq]
+    refine ⟨fun x hx => ?_, by rw [hout]; exact h₂⟩
+    obtain ⟨y, hy, rfl⟩ := hins x hx
+    exact List.mem_map_of_mem (h.1 y hy)
+
+theorem rcbN_reads : readsOk rcbN [9, 10, 11, 12, 13, 14, 15, 16] = true := by decide
+
+/-- A multiplication by `1` leaves Montgomery's form. -/
+theorem toM_one_mul {m R r A : Nat} [NeZero m] (hR : UnitMod m R) (h : r * R % m = A * 1 % m) :
+    Fin.ofNat m r = toM m R A := by
+  have h' : Fin.ofNat m r * Fin.ofNat m R = Fin.ofNat m A := by
+    rw [← ofNat_mul', ofNat_eq_ofNat, h, Nat.mul_one]
+  have hu := mul_rinv hR
+  unfold toM
+  grind
+
+/-- A multiplication by `R² mod m` enters Montgomery's form. -/
+theorem toM_r2 {m R r A : Nat} [NeZero m] (hR : UnitMod m R) (h : r * R % m = A * (R * R % m) % m) :
+    toM m R r = Fin.ofNat m A := by
+  have h' : Fin.ofNat m r * Fin.ofNat m R = Fin.ofNat m A * (Fin.ofNat m R * Fin.ofNat m R) := by
+    rw [← ofNat_mul', ← ofNat_mul', ← ofNat_mul', ofNat_eq_ofNat, h, Nat.mul_mod, Nat.mod_mod,
+      ← Nat.mul_mod]
+  have hu := mul_rinv hR
+  unfold toM
+  grind
+
+/-- What `x R mod m` stands for. -/
+theorem toM_mont {m R x : Nat} [NeZero m] (hR : UnitMod m R) : toM m R (x * R % m) = Fin.ofNat m x := by
+  unfold toM
+  rw [ofNat_mod, ofNat_mul', Lean.Grind.Semiring.mul_assoc, mul_rinv hR, Lean.Grind.Semiring.mul_one]
+
+/-- A number below `m` stands for zero only if it is zero. -/
+theorem toM_eq_zero_iff {m R x : Nat} [NeZero m] (hR : UnitMod m R) (hx : x < m) :
+    toM m R x = 0 ↔ x = 0 := by
+  unfold toM
+  constructor
+  · intro h
+    have hu := mul_rinv hR
+    have h' : Fin.ofNat m x = 0 := by grind
+    have := congrArg Fin.val h'
+    rwa [Fin.val_ofNat, Nat.mod_eq_of_lt hx] at this
+  · rintro rfl
+    exact Lean.Grind.Semiring.zero_mul _
+
+theorem toM_one {m R : Nat} [NeZero m] (hR : UnitMod m R) : toM m R (R % m) = 1 := by
+  unfold toM
+  rw [ofNat_mod]
+  exact mul_rinv hR
+
+theorem toM_zero (m R : Nat) [NeZero m] : toM m R 0 = 0 :=
+  Lean.Grind.Semiring.zero_mul _
+
+end VG.Proof.Weierstrass

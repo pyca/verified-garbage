@@ -12,7 +12,7 @@ the two top words (`carryUp`), and the computation of `u = t₀ m' mod 2⁶⁴`.
 
 namespace VG.Proof.Mont.X86_64
 
-open VG VG.X86_64 VG.Impl.Mont.X86_64
+open VG VG.X86_64 VG.Impl.Mont.X86_64 VG.Impl.Mont
 open VG.Proof.X25519.X86_64 (Keeps Keeps.trans Keeps.mono se0 add_carry adc_carry toNat_ofBool)
 
 theorem movRcx_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {d : Nat}

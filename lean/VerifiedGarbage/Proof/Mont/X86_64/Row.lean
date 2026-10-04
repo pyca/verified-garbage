@@ -11,7 +11,7 @@ words, from X25519's multiply-accumulate step.
 
 namespace VG.Proof.Mont.X86_64
 
-open VG VG.X86_64 VG.Impl.Mont.X86_64
+open VG VG.X86_64 VG.Impl.Mont.X86_64 VG.Impl.Mont
 open VG.Proof.X25519.X86_64 (Keeps Keeps.trans Keeps.mono mulStep_ok)
 
 /-- Registers the arithmetic can use for words: distinct, and none of `rax`,

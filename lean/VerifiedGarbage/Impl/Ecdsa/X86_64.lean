@@ -29,7 +29,7 @@ flag, and only the pointers may affect timing.
 
 namespace VG.Impl.Ecdsa.X86_64
 
-open VG.X86_64 VG.Impl.Mont.X86_64 VG.Impl.Weierstrass.X86_64
+open VG.X86_64 VG.Impl.Mont.X86_64 VG.Impl.Mont VG.Impl.Weierstrass.X86_64 VG.Impl.Weierstrass
 
 /-- `-m⁻¹ mod 2⁶⁴`, for odd `m`, by Newton's iteration. -/
 def minv (m : Nat) : Nat :=

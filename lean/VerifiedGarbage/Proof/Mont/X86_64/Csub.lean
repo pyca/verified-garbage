@@ -11,7 +11,7 @@ temporary area (`diffs`), its borrow becomes a mask (`rax`, all ones if
 
 namespace VG.Proof.Mont.X86_64
 
-open VG VG.X86_64 VG.Impl.Mont.X86_64
+open VG VG.X86_64 VG.Impl.Mont.X86_64 VG.Impl.Mont
 open VG.Proof.X25519.X86_64 (Keeps Keeps.trans Keeps.mono se0 sub_borrow sbb_borrow toNat_ofBool)
 
 /-- The registers but `rs` and the regions are unchanged (memory may change). -/

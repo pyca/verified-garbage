@@ -33,7 +33,7 @@ timing, although the contract would let every input affect it.
 
 namespace VG.Impl.Ecdsa.Verify.X86_64
 
-open VG.X86_64 VG.Impl.Mont.X86_64 VG.Impl.Weierstrass.X86_64 VG.Impl.Ecdsa.X86_64
+open VG.X86_64 VG.Impl.Mont.X86_64 VG.Impl.Mont VG.Impl.Weierstrass.X86_64 VG.Impl.Weierstrass VG.Impl.Ecdsa.X86_64
 
 /-! Slots of the signature's layout, as verification uses them, after ECDH's
 checks of the key: `K` holds `r`, `D` the hash and `PT` `s` (until the

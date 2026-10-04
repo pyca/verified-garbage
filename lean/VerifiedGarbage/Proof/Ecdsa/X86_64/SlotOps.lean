@@ -12,8 +12,8 @@ a multiplication by `1` or by `R² mod m` (`toM_one_mul`, `toM_r2`).
 
 namespace VG.Proof.Ecdsa.X86_64
 
-open VG VG.X86_64 VG.Impl.Mont.X86_64 VG.Impl.Weierstrass.X86_64 VG.Impl.Ecdsa.X86_64
-open VG.Proof.Mont.X86_64 VG.Proof.Weierstrass.X86_64 VG.Proof.Weierstrass Spec.Weierstrass
+open VG VG.X86_64 VG.Impl.Mont.X86_64 VG.Impl.Mont VG.Impl.Weierstrass.X86_64 VG.Impl.Weierstrass VG.Impl.Ecdsa.X86_64
+open VG.Proof.Mont.X86_64 VG.Proof.Mont VG.Proof.Weierstrass.X86_64 VG.Proof.Weierstrass Spec.Weierstrass
 
 variable {c : Cfg}
 
@@ -37,7 +37,7 @@ theorem sv_keep {M : Mod} (hMn : M.n = c.n) (hMt : M.tmp = c.sl TMP) (h7 : c.n <
   · rw [hMn, hMt]; exact sl_apart c hit
 
 /-- The modulus in slot `j` survives an operation writing another slot. -/
-theorem _root_.VG.Proof.Mont.X86_64.ModOk.keep {M M' : Mod} {m : Nat} {base : Addr} {s s' : State}
+theorem _root_.VG.Proof.Mont.ModOk.keep {M M' : Mod} {m : Nat} {base : Addr} {s s' : State}
     (hM : ModOk M size m s.mem base) {j : Nat} (hj : j < 45) (hmo : M.mo = c.sl j) (hMn : M.n = c.n)
     (hM'n : M'.n = c.n) (hM't : M'.tmp = c.sl TMP) (h7 : c.n < 7) (hn : base.toNat + size ≤ 2 ^ 64)
     {o : Nat} (h : OpKeep M' base (c.sl o) s s') (hjo : j ≠ o) (hjt : j ≠ TMP) :
@@ -68,42 +68,5 @@ theorem slAdd_ok {M : Mod} {m : Nat} (hMn : M.n = c.n) (h7 : c.n < 7) {base : Ad
     (by rw [hMn]; exact sl_le c h7 ha) (by rw [hMn]; exact sl_le c h7 hb) (by rw [hMn]; exact hAB)
   rw [hMn] at this
   exact this
-
-/-- A multiplication by `1` leaves Montgomery's form. -/
-theorem toM_one_mul {m R r A : Nat} [NeZero m] (hR : UnitMod m R) (h : r * R % m = A * 1 % m) :
-    Fin.ofNat m r = toM m R A := by
-  have h' : Fin.ofNat m r * Fin.ofNat m R = Fin.ofNat m A := by
-    rw [← ofNat_mul', ofNat_eq_ofNat, h, Nat.mul_one]
-  have hu := mul_rinv hR
-  unfold toM
-  grind
-
-/-- A multiplication by `R² mod m` enters Montgomery's form. -/
-theorem toM_r2 {m R r A : Nat} [NeZero m] (hR : UnitMod m R) (h : r * R % m = A * (R * R % m) % m) :
-    toM m R r = Fin.ofNat m A := by
-  have h' : Fin.ofNat m r * Fin.ofNat m R = Fin.ofNat m A * (Fin.ofNat m R * Fin.ofNat m R) := by
-    rw [← ofNat_mul', ← ofNat_mul', ← ofNat_mul', ofNat_eq_ofNat, h, Nat.mul_mod, Nat.mod_mod,
-      ← Nat.mul_mod]
-  have hu := mul_rinv hR
-  unfold toM
-  grind
-
-/-- What `x R mod m` stands for. -/
-theorem toM_mont {m R x : Nat} [NeZero m] (hR : UnitMod m R) : toM m R (x * R % m) = Fin.ofNat m x := by
-  unfold toM
-  rw [ofNat_mod, ofNat_mul', Lean.Grind.Semiring.mul_assoc, mul_rinv hR, Lean.Grind.Semiring.mul_one]
-
-/-- A number below `m` stands for zero only if it is zero. -/
-theorem toM_eq_zero_iff {m R x : Nat} [NeZero m] (hR : UnitMod m R) (hx : x < m) :
-    toM m R x = 0 ↔ x = 0 := by
-  unfold toM
-  constructor
-  · intro h
-    have hu := mul_rinv hR
-    have h' : Fin.ofNat m x = 0 := by grind
-    have := congrArg Fin.val h'
-    rwa [Fin.val_ofNat, Nat.mod_eq_of_lt hx] at this
-  · rintro rfl
-    exact Lean.Grind.Semiring.zero_mul _
 
 end VG.Proof.Ecdsa.X86_64
