@@ -1,12 +1,12 @@
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Arm.Contract
-import VerifiedGarbage.Spec.Rc4.Contract
+import VerifiedGarbage.Proof.Rc4.Scratch
 
 /-!
 # RC4 on ARMv7: the contracts the proofs use
 
-`Spec.Rc4.initContract` and `Spec.Rc4.applyContract` spelled out for ARMv7:
-every argument is in a register, and no stack is used.
+`Proof.Rc4.initScratchContract` and `Proof.Rc4.applyScratchContract` spelled
+out for ARMv7: every argument is in a register, and no stack is used.
 -/
 
 namespace VG.Proof.Rc4.Arm

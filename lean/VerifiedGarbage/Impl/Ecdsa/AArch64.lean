@@ -1,4 +1,5 @@
 import VerifiedGarbage.Impl.Weierstrass.AArch64.Window
+import VerifiedGarbage.Impl.Weierstrass.AArch64.Chain
 import VerifiedGarbage.Spec.Weierstrass
 
 /-!
@@ -101,6 +102,8 @@ slots). -/
 def WK : Nat := 69
 def WB : Nat := 71
 def WT : Nat := 87
+/-- The powers' tables (nine slots). -/
+def CT : Nat := 69
 
 /-- A curve as the code has it: `n` words, its parameters, and the fixed-base
 comb's tables for `G` (`tbl[j][k - 1]` is `[k 16^j]G`, affine, for `j < 16 n`
@@ -180,8 +183,10 @@ def winPrep (k : Nat) : Prog isa :=
   .seq (.block (WinCfg.addConst c.n k c.winK (WinCfg.offset (16 * c.n + 1))))
     (bits c.winK c.winBits (8 * (c.n + 1)))
 
-def powP : PowCfg := ⟨c.MP', c.sl ACC, c.sl PT, c.sl RZ, c.sl ONEP, bitsAt c.n 1, 64 * c.n⟩
-def powN : PowCfg := ⟨c.MN', c.sl ACC, c.sl PT, c.sl KM, c.sl ONEN, bitsAt c.n 2, 64 * c.n⟩
+/-- `Z^(p-2)` and `k^(n-2)` into `ACC`, by sliding windows, their tables at
+slots `CT …` (the window method's, which no power overlaps in time). -/
+def powP : Weierstrass.ChainCfg := .ofExp c.MP' (c.sl ACC) (c.sl RZ) (c.sl CT) (c.C.p - 2)
+def powN : Weierstrass.ChainCfg := .ofExp c.MN' (c.sl ACC) (c.sl KM) (c.sl CT) (c.C.n - 2)
 
 /-- The callee-saved registers the code uses, and where they are saved. -/
 def saved : List (Reg × Nat) := [(.x19, 0), (.x20, 8)]
@@ -263,9 +268,9 @@ def sign : Prog isa :=
   .seq (bits (c.sl EXPP) (bitsAt c.n 1) (8 * c.n)) <|
   .seq (bits (c.sl EXPN) (bitsAt c.n 2) (8 * c.n)) <|
   .seq (CombCfg.comb c.combCfg) <|
-  .seq (pow c.powP) <|
+  .seq (ChainCfg.pow c.powP) <|
   .seq c.middle <|
-  .seq (pow c.powN) c.scalar
+  .seq (ChainCfg.pow c.powN) c.scalar
 
 end Cfg
 

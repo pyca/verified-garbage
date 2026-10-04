@@ -4,8 +4,9 @@ import VerifiedGarbage.Proof.Ecdsa.AArch64.SlotOps
 # ECDSA on AArch64: where the powers' slots are
 
 The slots of `c.powP` and `c.powN` are numbered slots `c.sl i` for distinct
-`i`, so they are apart as `pow_ok` needs (`powLayP`, `powLayN`): each fact is
-one about the numbers `i`, which `decide` checks.
+`i`, and their table is past them (`CT`), so they are apart as `chainPow_ok`
+needs (`chainLayP`, `chainLayN`): each fact is one about the numbers `i`,
+which `decide` checks.
 -/
 
 namespace VG.Proof.Ecdsa.AArch64
@@ -64,48 +65,55 @@ theorem rcbApart_of (hn : 0 < c.n) {S : RcbSlots} {p q o : Pt} {lw lr : List Nat
     (hd : ∀ i ∈ lr, i ∉ lw) : RcbApart S p q o :=
   ⟨hw ▸ map_sl_nodup hn hnd, by rw [hw, hr]; exact map_sl_disj hn hd⟩
 
-theorem powLay_of (hc : CfgOk c) {jm : Nat} (hjm : jm ∉ [ACC, PT, TMP])
-    (minv : BitVec 64) {red : Red}
-    {base one j : Nat} (hj : j < 3) (hb : base ∉ [ACC, PT, TMP]) (hb45 : base < 45) (ho : one ≠ ACC)
-    (ho45 : one < 45) :
-    PowLay ⟨⟨c.n, c.sl jm, c.sl TMP, minv, red⟩, c.sl ACC, c.sl PT, c.sl base, c.sl one, bitsAt c.n j,
-      64 * c.n⟩ size := by
-  have hn := hc.n0
+/-- The powers' table is in the working space, past the other slots. -/
+theorem ct_le (c : Cfg) (h7 : c.n < 7) : c.sl CT + 9 * (8 * c.n) ≤ size := by
+  rw [sl_eq]; unfold CT
+  have : 8 * c.n * 69 ≤ 8 * 6 * 69 := Nat.mul_le_mul_right _ (by omega)
+  show _ ≤ 8192
+  omega
+
+/-- A power by a chain with its result in `ACC`, its base in slot `b` and its
+table at `CT`. -/
+theorem chainLay_of (hc : CfgOk c) {P : ChainCfg} (hn : P.M.n = c.n) (hacc : P.acc = c.sl ACC)
+    (htbl : P.tbl = c.sl CT) {b jm : Nat} (hb : P.base = c.sl b) (hmo : P.M.mo = c.sl jm)
+    (htmp : P.M.tmp = c.sl TMP) (hA : ModA P.M) (hb45 : b < 45) (hbs : b ∉ [ACC, TMP, jm])
+    (hjm : jm < 45 ∧ jm ∉ [ACC, TMP]) : ChainLay P size := by
+  have h0 := hc.n0
   have h7 := hc.n7
-  have hw : ∀ i, i ∉ [ACC, PT, TMP] →
-      ∀ w ∈ powW ⟨⟨c.n, c.sl jm, c.sl TMP, minv, red⟩, c.sl ACC, c.sl PT, c.sl base, c.sl one,
-        bitsAt c.n j, 64 * c.n⟩, c.sl i + 8 * c.n ≤ w.1 ∨ w.1 + w.2 ≤ c.sl i := by
-    intro i hi w hw
-    simp only [powW, List.mem_cons, List.not_mem_nil, or_false] at hw
-    simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hi
+  have lt : ∀ {i}, i < 45 → c.sl i + 8 * c.n ≤ c.sl CT := fun hi => sl_lt c (by unfold CT; omega)
+  simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hbs hjm
+  refine ⟨by omega, ?_, ?_, ?_, ?_, ?_, ?_, hA, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;>
+    simp only [hn, hacc, htbl, hb, hmo, htmp]
+  · exact sl_le c h7 (by decide)
+  · exact sl_le c h7 hb45
+  · exact ct_le c h7
+  · exact sl_mod8 c _
+  · exact sl_mod8 c _
+  · exact sl_mod8 c _
+  · exact sl_apart c (Ne.symm hbs.1)
+  · exact Or.inl (lt (by decide))
+  · exact Or.inl (lt hb45)
+  · exact sl_apart c (by decide)
+  · exact sl_apart c hbs.2.1
+  · exact Or.inr (lt (by decide))
+  · intro w hw
+    simp only [chainW, hn, hacc, htbl, htmp, List.mem_cons, List.not_mem_nil, or_false] at hw
     rcases hw with rfl | rfl | rfl
-    · exact sl_apart c hi.1
-    · exact sl_apart c hi.2.1
-    · exact sl_apart c hi.2.2
-  refine ⟨sl_le c h7 (by decide), sl_le c h7 (by decide), sl_le c h7 hb45, sl_le c h7 ho45,
-    by have := bitsAt_le c h7 hj; show bitsAt c.n j + 64 * c.n ≤ 8192; omega, ⟨show 1 ≤ 64 * c.n by omega, show 64 * c.n < 2 ^ 16 by omega⟩,
-    sl_apart c (by decide), sl_apart c (by decide), sl_apart c (Ne.symm ho), hw base hb, ?_,
-    hw jm hjm⟩
-  intro w hw'
-  simp only [powW, List.mem_cons, List.not_mem_nil, or_false] at hw'
-  rcases hw' with rfl | rfl | rfl <;> exact Or.inr (sl_below_bits c (by decide) j 0)
+    · exact sl_apart c hjm.2.1
+    · exact Or.inl (lt hjm.1)
+    · exact sl_apart c hjm.2.2
+  · exact sl_apart c hbs.2.2
 
-theorem powLayP (hc : CfgOk c) : PowLay c.powP size :=
-  powLay_of hc (jm := MP) (by decide) _ (j := 1) (by decide) (base := RZ) (by decide) (by decide)
-    (one := ONEP) (by decide) (by decide)
+theorem chainLayP (hc : CfgOk c) : ChainLay c.powP size :=
+  chainLay_of hc rfl rfl rfl (b := RZ) (jm := MP) rfl rfl rfl (MP'_A c) (by decide) (by decide)
+    (by decide)
 
-theorem powLayN (hc : CfgOk c) : PowLay c.powN size :=
-  powLay_of hc (jm := MN) (by decide) _ (j := 2) (by decide) (base := KM) (by decide) (by decide)
-    (one := ONEN) (by decide) (by decide)
+theorem chainLayN (hc : CfgOk c) : ChainLay c.powN size :=
+  chainLay_of hc rfl rfl rfl (b := KM) (jm := MN) rfl rfl rfl (MN'_A c) (by decide) (by decide)
+    (by decide)
 
-/-! ## Alignment -/
+theorem chainOkP (hc : CfgOk c) : ChainOk c.powP (c.C.p - 2) := ChainOk.of_check hc.chain_p
 
-theorem powAP (c : Cfg) (h0 : 0 < c.n) (h7 : c.n < 7) : PowA c.powP :=
-  ⟨sl_mod8 c ACC, sl_mod8 c PT, sl_mod8 c RZ, sl_mod8 c ONEP, MP'_A c,
-    by have := bitsAt_le c h7 (j := 1) (by decide); show bitsAt c.n 1 < 4096; omega⟩
-
-theorem powAN (c : Cfg) (h0 : 0 < c.n) (h7 : c.n < 7) : PowA c.powN :=
-  ⟨sl_mod8 c ACC, sl_mod8 c PT, sl_mod8 c KM, sl_mod8 c ONEN, MN'_A c,
-    by have := bitsAt_le c h7 (j := 2) (by decide); show bitsAt c.n 2 < 4096; omega⟩
+theorem chainOkN (hc : CfgOk c) : ChainOk c.powN (c.C.n - 2) := ChainOk.of_check hc.chain_n
 
 end VG.Proof.Ecdsa.AArch64
