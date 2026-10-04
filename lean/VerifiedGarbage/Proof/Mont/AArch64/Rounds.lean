@@ -46,7 +46,7 @@ theorem acc_regs_lt : ∀ n < 7, ∀ r ∈ acc n,
 theorem rounds_ok {M : Mod} (hn : M.n < 7) {a b m size : Nat}
     (ha : a + 8 * M.n ≤ size) (hb : b + 8 * M.n ≤ size) (hmo : M.mo + 8 * M.n ≤ size)
     (ha8 : a % 8 = 0) (hb8 : b % 8 = 0) (hmo8 : M.mo % 8 = 0)
-    (hinv : (m * M.minv.toNat + 1) % 2 ^ 64 = 0) (hred : M.red.ok M.n m = true) :
+    (hinv : (m * M.minv.toNat + 1) % 2 ^ 64 = 0) (hok : M.ok m = true) :
     ∀ k ≤ M.n, ∀ {s : State} {base : Addr}, Scr s base size → s.gpr .x7 = 0 →
       wordsVal s.mem base M.mo M.n = m → BRegs s base b M.n → ConstOk M s →
       wordsVal s.mem base b M.n < m → regsVal s (wins M.n 0) = 0 →
@@ -54,13 +54,13 @@ theorem rounds_ok {M : Mod} (hn : M.n < 7) {a b m size : Nat}
         (∃ U, 2 ^ (64 * k) * regsVal s' (wins M.n k) =
           wordsVal s.mem base a k * wordsVal s.mem base b M.n + U * m) ∧
         regsVal s' (wins M.n k) < 2 * m ∧
-        Keeps (.x1 :: .x2 :: .x3 :: acc M.n) s s'
+        Keeps (.x1 :: .x2 :: .x3 :: acc M.n) s s' ∧ (k = 0 → regsVal s' (wins M.n 0) = 0)
   | 0, _, s, _, _, _, _, _, _, hB, h0 => WP.block_nil ⟨⟨0, by simp [h0, wordsVal]⟩, by rw [h0]; omega,
-      fun _ _ => rfl, rfl, rfl, rfl, rfl⟩
+      ⟨fun _ _ => rfl, rfl, rfl, rfl, rfl⟩, fun _ => h0⟩
   | k + 1, hk, s, base, hs, hz, hm, hBR, h6, hB, h0 => by
     rw [List.range_succ, List.flatMap_append, List.flatMap_singleton, WP.block_append_iff]
-    refine WP.mono (rounds_ok hn ha hb hmo ha8 hb8 hmo8 hinv hred k (by omega) hs hz hm hBR h6 hB h0)
-      fun s₁ ⟨⟨U, eU⟩, hT, k₁⟩ => ?_
+    refine WP.mono (rounds_ok hn ha hb hmo ha8 hb8 hmo8 hinv hok k (by omega) hs hz hm hBR h6 hB h0)
+      fun s₁ ⟨⟨U, eU⟩, hT, k₁, hz0⟩ => ?_
     have hmem : s₁.mem = s.mem := k₁.mem
     have hacc := acc_regs_lt _ hn
     have nk : ∀ r ∈ [Reg.x0, .x4, .x5, .x6, .x7, .x16, .x17],
@@ -79,9 +79,9 @@ theorem rounds_ok {M : Mod} (hn : M.n < 7) {a b m size : Nat}
       rcases bRegs_regs r hr with rfl | rfl | rfl | rfl <;> simp))
     have h6₁ : ConstOk M s₁ := h6.keep (k₁.gpr .x6 (nk .x6 (by simp)))
     refine WP.mono (round_ok hs₁ hn (i := k) (by omega) hb hmo ha8 hb8 hmo8 hz₁ (by rw [hmem, hm])
-      hinv hred hBR₁ h6₁ (by rw [hmem]; exact hB) hT) fun s₂ ⟨⟨u, eu⟩, hT₂, k₂⟩ => ?_
+      hinv hok hBR₁ h6₁ (by rw [hmem]; exact hB) hT (fun hk0 => hz0 hk0)) fun s₂ ⟨⟨u, eu⟩, hT₂, k₂⟩ => ?_
     rw [hmem] at eu
-    refine ⟨⟨U + 2 ^ (64 * k) * u, ?_⟩, hT₂, k₁.trans (k₂.mono fun q hq => ?_)⟩
+    refine ⟨⟨U + 2 ^ (64 * k) * u, ?_⟩, hT₂, k₁.trans (k₂.mono fun q hq => ?_), fun h => absurd h (by omega)⟩
     · calc 2 ^ (64 * (k + 1)) * regsVal s₂ (wins M.n (k + 1))
           = 2 ^ (64 * k) * (2 ^ 64 * regsVal s₂ (wins M.n (k + 1))) := by
             rw [Nat.mul_succ, Nat.pow_add, Nat.mul_assoc]

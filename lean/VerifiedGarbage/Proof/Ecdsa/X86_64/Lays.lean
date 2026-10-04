@@ -96,12 +96,12 @@ theorem powLay_of (hc : CfgOk c) {jm : Nat} (hjm : jm ∉ [ACC, PT, TMP])
     (minv : BitVec 64) {red : Red}
     {base one j : Nat} (hj : j < 3) (hb : base ∉ [ACC, PT, TMP]) (hb45 : base < 45) (ho : one ≠ ACC)
     (ho45 : one < 45) :
-    PowLay ⟨⟨c.n, c.sl jm, c.sl TMP, minv, red⟩, c.sl ACC, c.sl PT, c.sl base, c.sl one, bitsAt c.n j,
+    PowLay ⟨⟨c.n, c.sl jm, c.sl TMP, minv, red, false⟩, c.sl ACC, c.sl PT, c.sl base, c.sl one, bitsAt c.n j,
       64 * c.n⟩ size := by
   have hn := hc.n0
   have h7 := hc.n7
   have hw : ∀ i, i ∉ [ACC, PT, TMP] →
-      ∀ w ∈ powW ⟨⟨c.n, c.sl jm, c.sl TMP, minv, red⟩, c.sl ACC, c.sl PT, c.sl base, c.sl one,
+      ∀ w ∈ powW ⟨⟨c.n, c.sl jm, c.sl TMP, minv, red, false⟩, c.sl ACC, c.sl PT, c.sl base, c.sl one,
         bitsAt c.n j, 64 * c.n⟩, c.sl i + 8 * c.n ≤ w.1 ∨ w.1 + w.2 ≤ c.sl i := by
     intro i hi w hw
     simp only [powW, List.mem_cons, List.not_mem_nil, or_false] at hw

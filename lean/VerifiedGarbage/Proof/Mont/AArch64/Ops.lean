@@ -212,7 +212,7 @@ theorem mul_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M 
   rw [WP.block_append_iff]
   refine WP.mono (rounds_ok h7 ha hb hM.mo ha8 hb8 hA.mo hM.inv hM.red M.n (Nat.le_refl _) hs₁ z₁
     (by rw [hmem₁]; exact hM.val) hBR₁ h6₁ (by rw [hmem₁]; exact hB) h0)
-    fun s₂ ⟨⟨U, eU⟩, hT, k₂⟩ => ?_
+    fun s₂ ⟨⟨U, eU⟩, hT, k₂, _⟩ => ?_
   have nk : ∀ r ∈ [Reg.x0, .x7], r ∉ Reg.x1 :: Reg.x2 :: Reg.x3 :: acc M.n := by
     intro r hr h
     by_cases hr' : r ∈ acc M.n
