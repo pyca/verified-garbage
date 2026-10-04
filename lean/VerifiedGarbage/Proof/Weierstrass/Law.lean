@@ -13,9 +13,10 @@ the complete addition `rcbAdd` maps representatives of two points of the
 curve to a representative of their sum (`add`), and so an iteration of the
 ladder keeps a representative of `[k >>> j]P` (`step`); multiples of a
 point of the curve are on the curve; and a representative's affine
-coordinates are `X / Z` and `Y / Z`, with the inverse by Fermat. Its proof,
-`Good.law` (`LadderStep.lean`), is in `ZMod C.p` with Mathlib's algebra and
-elliptic curves, which only a curve's own facts (e.g. `Proof/P256/Curve.lean`)
+coordinates are `X / Z` and `Y / Z`, with the inverse by Fermat; and the
+points of the curve form an abelian group (`GroupRep`, in Lean's core
+`IntModule`), so sums of points may be rearranged. Its proof, `Good.law`
+(`Group.lean`), is in `ZMod C.p` with Mathlib's algebra and elliptic curves, which only a curve's own facts (e.g. `Proof/P256/Curve.lean`)
 import: the proofs of the code take `Law C` as a hypothesis, and only the
 registration files supply it, so none of them loads that algebra.
 -/
@@ -34,6 +35,20 @@ addition takes them. -/
 abbrev rcbAddC (C : Curve) (X1 Y1 Z1 X2 Y2 Z2 : Fe C) : Fe C × Fe C × Fe C :=
   rcbAdd (Fin.ofNat C.p C.a) (Fin.ofNat C.p (3 * C.b)) X1 Y1 Z1 X2 Y2 Z2
 
+/-- The reflection `(x, -y)` of a point, and `O`'s. -/
+def negPt {C : Curve} : Point C → Point C
+  | .infinity => .infinity
+  | .affine x y => .affine x (-y)
+
+/-- The group law in an abelian group (a module over `Int`, in Lean's core): a
+map from the points of the curve to it, additive, injective, taking multiples
+to multiples and the reflection to the negation. -/
+structure GroupRep (C : Curve) (A : Type) [Lean.Grind.IntModule A] (f : Point C → A) : Prop where
+  add : ∀ {P Q : Point C}, onCurve C P = true → onCurve C Q = true → f (add P Q) = f P + f Q
+  mul : ∀ {P : Point C}, onCurve C P = true → ∀ k : Nat, f (mul k P) = (k : Int) • f P
+  neg : ∀ {P : Point C}, onCurve C P = true → f (negPt P) = -f P
+  inj : ∀ {P Q : Point C}, onCurve C P = true → onCurve C Q = true → f P = f Q → P = Q
+
 /-- What the proofs of the code need of the group law of `C`. -/
 structure Law (C : Curve) : Prop where
   one_ne_zero : (1 : Fe C) ≠ 0
@@ -41,6 +56,9 @@ structure Law (C : Curve) : Prop where
   add : ∀ {P Q : Point C}, onCurve C P = true → onCurve C Q = true →
     ∀ {X1 Y1 Z1 X2 Y2 Z2 X3 Y3 Z3 : Fe C}, Rep C X1 Y1 Z1 P → Rep C X2 Y2 Z2 Q →
       rcbAddC C X1 Y1 Z1 X2 Y2 Z2 = (X3, Y3, Z3) → Rep C X3 Y3 Z3 (Spec.Weierstrass.add P Q)
+  /-- Sums of points of the curve are on the curve. -/
+  onCurve_add : ∀ {P Q : Point C}, onCurve C P = true → onCurve C Q = true →
+    onCurve C (Spec.Weierstrass.add P Q) = true
   /-- Multiples of a point of the curve are on the curve. -/
   onCurve_mul : ∀ {P : Point C}, onCurve C P = true → ∀ k, onCurve C (mul k P) = true
   /-- An iteration of the ladder: from a representative of `[k >>> (j + 1)]P`,
@@ -54,6 +72,9 @@ structure Law (C : Curve) : Prop where
   /-- The affine `x` of a representative: `X / Z`, with the inverse by Fermat. -/
   x_eq : ∀ {X Y Z x y : Fe C}, Rep C X Y Z (.affine x y) → x = X * Z ^ (C.p - 2)
   y_eq : ∀ {X Y Z x y : Fe C}, Rep C X Y Z (.affine x y) → y = Y * Z ^ (C.p - 2)
+  /-- The points of the curve form an abelian group, the specification's
+  addition its addition (`GroupRep`). -/
+  group : ∃ (A : Type) (_ : Lean.Grind.IntModule A) (f : Point C → A), GroupRep C A f
 
 variable {C : Curve}
 

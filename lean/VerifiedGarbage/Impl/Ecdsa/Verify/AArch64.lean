@@ -21,7 +21,7 @@ on x86-64 (`Impl/Ecdsa/Verify/X86_64.lean`):
 3. the masks of `r` and `s` in `[1, n-1]` into the flag, and
    `w = s^(n-2)`, in Montgomery form modulo `n`;
 4. `u = e w` and `v = r w` modulo `n`, out of Montgomery's form;
-5. `[u]G` by the signature's ladder (from the table of `u`'s bits), saved
+5. `[u]G` by the signature's comb (from the table of `u`'s bits), saved
    to `U`, and `R` reset to `O`; then `[v]Q` by ECDH's ladder (from the
    table of `v`'s bits) and `[u]G + [v]Q` by the complete addition, into
    `R`;
@@ -115,7 +115,8 @@ def final : Prog isa :=
 
 /-- `[u]G + [v]Q`, into `R`, from the tables of bits of `u` and `v`. -/
 def points : Prog isa :=
-  .seq (bits (c.sl U) (bitsAt c.n 0) (8 * c.n)) <| .seq (ladder c.ladderCfg) <| .seq (.block (save c)) <|
+  .seq (bits (c.sl U) (bitsAt c.n 0) (8 * c.n)) <| .seq (CombCfg.comb c.combCfg) <|
+  .seq (.block (save c)) <|
   .seq (bits (c.sl V) (bitsAt c.n 0) (8 * c.n)) <| .seq (ladder (Impl.Ecdh.AArch64.Cfg.ladderQ c)) (sum c)
 
 /-- Everything after the checks of the key. -/

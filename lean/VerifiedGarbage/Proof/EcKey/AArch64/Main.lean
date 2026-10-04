@@ -408,7 +408,8 @@ theorem args_ok (s : State) :
 
 /-- `vg_ec_<curve>_public_key` computes the specification's public key and
 restores the callee-saved registers. -/
-theorem publicKey_ok (hc : CfgOk c) (hC : Law c.C) {s₀ : State} (hp : PkPre c s₀) :
+theorem publicKey_ok (hc : CfgOk c) (hC : Law c.C) (hT : CombOk c.C (16 * c.n) c.tbl c.start)
+    {s₀ : State} (hp : PkPre c s₀) :
     WP isa (Impl.EcKey.AArch64.Cfg.publicKey c) s₀ fun s' =>
       (∀ r ∈ Cfg.saved.map Prod.fst, s'.gpr r = s₀.gpr r) ∧ PkPost c s₀ s' := by
   have h0 := hc.n0
@@ -438,8 +439,8 @@ theorem publicKey_ok (hc : CfgOk c) (hC : Law c.C) {s₀ : State} (hp : PkPre c 
     · have := hp.out_fit; omega
     · exact hp.sc_fit
   have hb : sN.gpr .x4 = s₀.gpr .x2 := by rw [g, x4₁]
-  obtain ⟨t, s₂N, ex, S₂⟩ := stage₁ hc (hpN.setup hc.n7) (rest := .seq (ladder c.ladderCfg) (.seq (pow c.powP) (.block [])))
-    (Q := St₂ c sN (sN.gpr .x4)) fun _ S₁ => stage₂ hc hC S₁ fun _ S₂ => WP.block_nil S₂
+  obtain ⟨t, s₂N, ex, S₂⟩ := stage₁ hc (hpN.setup hc.n7) (rest := .seq (CombCfg.comb c.combCfg) (.seq (pow c.powP) (.block [])))
+    (Q := St₂ c sN (sN.gpr .x4)) fun _ S₁ => stage₂ hc hC hT S₁ fun _ S₂ => WP.block_nil S₂
   rw [hb] at S₂
   -- The same run, with the public key's regions.
   have hrd₁ : s₁.rd = [⟨s₀.gpr .x1, 8 * c.n⟩] := by rw [k₁.rd, hp.rd]
