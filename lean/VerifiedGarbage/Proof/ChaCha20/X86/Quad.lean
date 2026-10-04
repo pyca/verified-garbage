@@ -176,6 +176,26 @@ theorem RI.congr {buf : Addr} {L L' : Loc} {vs : Nat → CState} {s₀ s : State
     (he : ∀ j, j < 16 → L j = L' j) (h : RI buf L vs s₀ s) : RI buf L' vs s₀ s :=
   ⟨h.holds.congr he, h.frame, h.gpr, h.rd, h.wr⟩
 
+/-- `buf[288, 320)`, where a quarter round may keep constants. -/
+abbrev kR (buf : Addr) : Region := ⟨buf + BitVec.ofNat 64 288, 32⟩
+
+/-- What the four-block code needs of its quarter round `k.qr`: that it
+computes the quarter round given what `k.init` leaves in `buf[288, 320)`
+(`Inv`), which only writes there undo. -/
+structure KernelOk (k : Kernel) where
+  Inv : Addr → Mem → Prop
+  inv_frame : ∀ {buf : Addr} {m m' : Mem} {rs : List Region}, Inv buf m → Frame rs m m' →
+    (∀ r ∈ rs, (kR buf).Disjoint r) → Inv buf m'
+  qr_ok : ∀ {buf : Addr} {a b c d : XReg}, a ≠ b → a ≠ c → a ≠ d → b ≠ c → b ≠ d → c ≠ d →
+    a ≠ .xmm7 → b ≠ .xmm7 → c ≠ .xmm7 → d ≠ .xmm7 → ∀ s : State,
+    (∀ e, e < 320 → s.ea (at_ .edi e) = buf + BitVec.ofNat 64 e) → bufR buf ∈ s.wr → Inv buf s.mem →
+    WP isa (.block (k.qr a b c d)) s (QrPost a b c d s)
+  init_ok : ∀ {buf : Addr} (s : State), (∀ e, e < 320 → s.ea (at_ .edi e) = buf + BitVec.ofNat 64 e) →
+    bufR buf ∈ s.wr → WP isa (.block k.init) s fun s' => Inv buf s'.mem ∧ Frame [kR buf] s.mem s'.mem ∧
+      (∀ r, r ≠ .eax → s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧ s'.wr = s.wr
+
+theorem kR_slots (buf : Addr) : (kR buf).Disjoint (slotsR buf) := Offset.disjoint_base _ (by decide) (by decide)
+
 section
 variable {buf : Addr} {s₀ : State} (hb : ∀ d, d < 320 → s₀.ea (at_ .edi d) = buf + BitVec.ofNat 64 d)
   (hwb : bufR buf ∈ s₀.wr)
@@ -246,15 +266,17 @@ theorem stores_ok {vs : Nat → CState} : ∀ (ps : List (Nat × XReg)) (L : Loc
     rw [List.map_cons, ← List.singleton_append, WP.block_append_iff]
     exact WP.mono (st_ok hb hwb hk hs h) fun s₁ h₁ => stores_ok ps _ s₁ hok h₁
 
-omit hb hwb in
-theorem quad_ok {L : Loc} {q : QStep} {x y z w : Nat} (hx : x < 16) (hy : y < 16) (hz : z < 16)
+theorem quad_ok {k : Kernel} (K : KernelOk k) (hinv : K.Inv buf s₀.mem) {L : Loc} {q : QStep}
+    {x y z w : Nat} (hx : x < 16) (hy : y < 16) (hz : z < 16)
     (hw : w < 16) (hok : quadOk L q x y z w = true) {vs : Nat → CState} {s : State}
     (h : RI buf L vs s₀ s) :
-    WP isa (.block (vqr q.a q.b q.c q.d)) s
+    WP isa (.block (k.qr q.a q.b q.c q.d)) s
       (RI buf L (fun l => qround (vs l) ⟨x, hx⟩ ⟨y, hy⟩ ⟨z, hz⟩ ⟨w, hw⟩) s₀) := by
   simp only [quadOk, decide_eq_true_eq] at hok
   obtain ⟨hLa, hLb, hLc, hLd, hab, hac, had, hbc, hbd, hcd, ha7, hb7, hc7, hd7, h7, ho⟩ := hok
-  refine WP.mono (vqr_ok hab hac had hbc hbd hcd ha7 hb7 hc7 hd7 s)
+  refine WP.mono (K.qr_ok hab hac had hbc hbd hcd ha7 hb7 hc7 hd7 s
+      (fun e he => (ea_gpr h.gpr _).trans (hb e he)) (h.wr ▸ hwb)
+      (K.inv_frame hinv h.frame (by simpa using kR_slots buf)))
     fun s' ⟨hv, hx', hg, hm, hr, hwr⟩ => ⟨fun k hk l hl => ?_, hm ▸ h.frame, hg.trans h.gpr,
       hr.trans h.rd, hwr.trans h.wr⟩
   obtain ⟨ea, eb, ec, ed⟩ := hv l hl
@@ -287,16 +309,17 @@ theorem quad_ok {L : Loc} {q : QStep} {x y z w : Nat} (hx : x < 16) (hy : y < 16
     rw [val_some hL, val_some hL, hx' r (fun e => na (by rw [hL, e])) (fun e => nb (by rw [hL, e]))
       (fun e => nc (by rw [hL, e])) (fun e => nd (by rw [hL, e])) (fun e => h7 k hk (by rw [hL, e]))]
 
-theorem step_ok {L : Loc} {q : QStep} {x y z w : Nat} (hx : x < 16) (hy : y < 16) (hz : z < 16)
+theorem step_ok {k : Kernel} (K : KernelOk k) (hinv : K.Inv buf s₀.mem) {L : Loc} {q : QStep}
+    {x y z w : Nat} (hx : x < 16) (hy : y < 16) (hz : z < 16)
     (hw : w < 16) (hok : stepOk L q x y z w = true) {vs : Nat → CState} {s : State}
     (h : RI buf L vs s₀ s) :
-    WP isa (.block q.code) s
+    WP isa (.block (q.code k)) s
       (RI buf (stepLoc L q) (fun l => qround (vs l) ⟨x, hx⟩ ⟨y, hy⟩ ⟨z, hz⟩ ⟨w, hw⟩) s₀) := by
   simp only [stepOk, Bool.and_eq_true] at hok
   obtain ⟨⟨h₁, h₂⟩, h₃⟩ := hok
   rw [QStep.code, WP.block_append_iff, WP.block_append_iff]
   exact WP.mono (loads_ok hb hwb _ _ s h₁ h) fun s₁ r₁ =>
-    WP.mono (quad_ok hx hy hz hw h₂ r₁) fun s₂ r₂ => stores_ok hb hwb _ _ s₂ h₃ r₂
+    WP.mono (quad_ok hb hwb K hinv hx hy hz hw h₂ r₁) fun s₂ r₂ => stores_ok hb hwb _ _ s₂ h₃ r₂
 
 end
 
@@ -326,41 +349,44 @@ variable {buf : Addr} {s₀ : State} (hb : ∀ d, d < 320 → s₀.ea (at_ .edi 
   (hwb : bufR buf ∈ s₀.wr)
 include hb hwb
 
-theorem doubleRound4_ok {vs : Nat → CState} {s : State} (h : RI buf loc₀ vs s₀ s) :
-    WP isa doubleRound4 s (RI buf loc₀ (fun l => innerBlock (vs l)) s₀) := by
+theorem doubleRound4_ok {k : Kernel} (K : KernelOk k) (hinv : K.Inv buf s₀.mem) {vs : Nat → CState}
+    {s : State} (h : RI buf loc₀ vs s₀ s) :
+    WP isa (doubleRound4 k) s (RI buf loc₀ (fun l => innerBlock (vs l)) s₀) := by
   unfold doubleRound4
-  refine WP.seq (WP.mono (step_ok hb hwb (L := locs 0) (q := qs 0) (x := 0) (y := 4) (z := 8) (w := 12)
+  refine WP.seq (WP.mono (step_ok hb hwb K hinv (L := locs 0) (q := qs 0) (x := 0) (y := 4) (z := 8) (w := 12)
     (by decide) (by decide) (by decide) (by decide) (by decide) h) fun _ h1 => ?_)
-  refine WP.seq (WP.mono (step_ok hb hwb (L := locs 1) (q := qs 1) (x := 1) (y := 5) (z := 9) (w := 13)
+  refine WP.seq (WP.mono (step_ok hb hwb K hinv (L := locs 1) (q := qs 1) (x := 1) (y := 5) (z := 9) (w := 13)
     (by decide) (by decide) (by decide) (by decide) (by decide) h1) fun _ h2 => ?_)
-  refine WP.seq (WP.mono (step_ok hb hwb (L := locs 2) (q := qs 2) (x := 2) (y := 6) (z := 10) (w := 14)
+  refine WP.seq (WP.mono (step_ok hb hwb K hinv (L := locs 2) (q := qs 2) (x := 2) (y := 6) (z := 10) (w := 14)
     (by decide) (by decide) (by decide) (by decide) (by decide) h2) fun _ h3 => ?_)
-  refine WP.seq (WP.mono (step_ok hb hwb (L := locs 3) (q := qs 3) (x := 3) (y := 7) (z := 11) (w := 15)
+  refine WP.seq (WP.mono (step_ok hb hwb K hinv (L := locs 3) (q := qs 3) (x := 3) (y := 7) (z := 11) (w := 15)
     (by decide) (by decide) (by decide) (by decide) (by decide) h3) fun _ h4 => ?_)
-  refine WP.seq (WP.mono (step_ok hb hwb (L := locs 4) (q := qs 4) (x := 0) (y := 5) (z := 10) (w := 15)
+  refine WP.seq (WP.mono (step_ok hb hwb K hinv (L := locs 4) (q := qs 4) (x := 0) (y := 5) (z := 10) (w := 15)
     (by decide) (by decide) (by decide) (by decide) (by decide) h4) fun _ h5 => ?_)
-  refine WP.seq (WP.mono (step_ok hb hwb (L := locs 5) (q := qs 5) (x := 1) (y := 6) (z := 11) (w := 12)
+  refine WP.seq (WP.mono (step_ok hb hwb K hinv (L := locs 5) (q := qs 5) (x := 1) (y := 6) (z := 11) (w := 12)
     (by decide) (by decide) (by decide) (by decide) (by decide) h5) fun _ h6 => ?_)
-  refine WP.seq (WP.mono (step_ok hb hwb (L := locs 6) (q := qs 6) (x := 2) (y := 7) (z := 8) (w := 13)
+  refine WP.seq (WP.mono (step_ok hb hwb K hinv (L := locs 6) (q := qs 6) (x := 2) (y := 7) (z := 8) (w := 13)
     (by decide) (by decide) (by decide) (by decide) (by decide) h6) fun _ h7 => ?_)
-  exact WP.mono (step_ok hb hwb (L := locs 7) (q := qs 7) (x := 3) (y := 4) (z := 9) (w := 14)
+  exact WP.mono (step_ok hb hwb K hinv (L := locs 7) (q := qs 7) (x := 3) (y := 4) (z := 9) (w := 14)
     (by decide) (by decide) (by decide) (by decide) (by decide) h7) fun _ h8 => h8.congr locs_8
 
-theorem rounds4_ok {vs : Nat → CState} {s : State} (h : RI buf loc₀ vs s₀ s) :
-    ∀ n, WP isa (rounds4 n) s (RI buf loc₀ (fun l => Nat.repeat innerBlock n (vs l)) s₀)
+theorem rounds4_ok {k : Kernel} (K : KernelOk k) (hinv : K.Inv buf s₀.mem) {vs : Nat → CState}
+    {s : State} (h : RI buf loc₀ vs s₀ s) :
+    ∀ n, WP isa (rounds4 k n) s (RI buf loc₀ (fun l => Nat.repeat innerBlock n (vs l)) s₀)
   | 0 => WP.block_nil h
-  | n + 1 => WP.seq (WP.mono (rounds4_ok h n) fun _ h' => doubleRound4_ok hb hwb h')
+  | n + 1 => WP.seq (WP.mono (rounds4_ok K hinv h n) fun _ h' => doubleRound4_ok hb hwb K hinv h')
 
 omit hb hwb in
 theorem enter_eq : cached.map (fun p => ld p.2 p.1) = enter.map fun p => ld p.1 p.2 := rfl
 
-theorem rounds_ok {vs : Nat → CState} (h : Holds4 buf vs s₀.mem) :
-    WP isa rounds10 s₀ (RI4 buf (fun l => Nat.repeat innerBlock 10 (vs l)) s₀) := by
+theorem rounds_ok {k : Kernel} (K : KernelOk k) (hinv : K.Inv buf s₀.mem) {vs : Nat → CState}
+    (h : Holds4 buf vs s₀.mem) :
+    WP isa (rounds10 k) s₀ (RI4 buf (fun l => Nat.repeat innerBlock 10 (vs l)) s₀) := by
   unfold rounds10
   rw [enter_eq]
   refine WP.seq (WP.mono (loads_ok hb hwb (vs := vs) enter (fun _ => none) s₀ (by decide)
     ⟨h, Frame.refl _ _, rfl, rfl, rfl⟩) fun s₁ h₁ => ?_)
-  refine WP.seq (WP.mono (rounds4_ok hb hwb h₁ 10) fun s₂ h₂ => ?_)
+  refine WP.seq (WP.mono (rounds4_ok hb hwb K hinv h₁ 10) fun s₂ h₂ => ?_)
   exact WP.mono (stores_ok hb hwb cached loc₀ s₂ (by decide) h₂) fun _ h₃ => h₃.congr (by decide)
 
 end

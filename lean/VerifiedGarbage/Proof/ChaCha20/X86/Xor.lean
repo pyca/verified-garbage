@@ -9,6 +9,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.ChaCha20.X86.Lit
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.ChaCha20.X86.Bytes
+import VerifiedGarbage.Proof.ChaCha20.X86.Kernels
 
 /-!
 # ChaCha20 keystream XOR on x86 (32-bit)
@@ -256,8 +257,7 @@ theorem load_ok {s₀ : State} (hp : XPre s₀) {s₁ : State}
     (hg : s₁.gpr = (s₀.setReg .eax (BP s₀)).gpr) (hm : s₁.mem = saveMem s₀) (hr : s₁.rd = s₀.rd)
     (hw : s₁.wr = s₀.wr) :
     WP isa (.block [.mov .edi (.reg .eax), .mov .ebx (.mem (at_ .esp 4)),
-      .mov .esi (.mem (at_ .esp 8)), .mov .ebp (.mem (at_ .esp 12)), .alu .cmp .ebp (.imm 65)]) s₁
-      fun s => OInv s₀ 0 s ∧ s.cf = some (decide (L s₀ < 65)) := by
+      .mov .esi (.mem (at_ .esp 8)), .mov .ebp (.mem (at_ .esp 12))]) s₁ (OInv s₀ 0) := by
   have i₀ : InRegions (s₁.rd ++ s₁.wr) ((s₀.gpr .esp + BitVec.ofNat 32 4).setWidth 64) 4 :=
     hr ▸ hw ▸ hp.in_arg (i := 0) (by lit_omega)
   have i₁ : InRegions (s₁.rd ++ s₁.wr) ((s₀.gpr .esp + BitVec.ofNat 32 8).setWidth 64) 4 :=
@@ -274,24 +274,22 @@ theorem load_ok {s₀ : State} (hp : XPre s₀) {s₁ : State}
   have geax : s₁.gpr .eax = BP s₀ := by rw [hg]; rfl
   apply WP.of_runBlock
   simp (config := {decide := true}) only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc,
-    State.ea, at_, State.load32, execAlu, arithFlags, State.setReg, State.setFlags, gesp, geax, hm,
-    i₀, i₁, i₂, v₀, v₁, v₂, ite_true, ite_false, Option.map_some, Option.bind_some,
+    State.ea, at_, State.load32, State.setReg, gesp, geax, hm,
+    i₀, i₁, i₂, v₀, v₁, v₂, ite_true, ite_false, Option.map_some,
     Option.some.injEq, exists_eq_left']
   have hf := saveMem_frame hp
-  refine ⟨⟨by simp (config := {decide := true}), by simp (config := {decide := true}) [P],
+  refine ⟨by simp (config := {decide := true}), by simp (config := {decide := true}) [P],
     by simp (config := {decide := true}), by simp (config := {decide := true}) [P],
     by simp (config := {decide := true}) [hg, State.setReg], hr, hw, ?_, fun k hk => ?_,
-    saveMem_saved s₀, hf.mono (by simp)⟩, ?_⟩
+    saveMem_saved s₀, hf.mono (by simp)⟩
   · intro _; rw [stateAt_frame hf (by simpa using hp.st_b), ctr_zero]
   · simp only [P, Nat.mul_zero, Nat.zero_min, Nat.not_lt_zero, ite_false]
     exact hf.bytes (R := dR s₀) (by simpa using hp.d_b) (show L s₀ ≤ 2 ^ 64 by have := L_lt s₀; omega) hk
-  · rfl
 
 theorem prologue_ok {s₀ : State} (hp : XPre s₀) :
-    WP isa (.block prologue) (s₀.setReg .eax (BP s₀)) fun s =>
-      OInv s₀ 0 s ∧ s.cf = some (decide (L s₀ < 65)) := by
+    WP isa (.block prologue) (s₀.setReg .eax (BP s₀)) (OInv s₀ 0) := by
   rw [show prologue = save ++ [.mov .edi (.reg .eax), .mov .ebx (.mem (at_ .esp 4)),
-      .mov .esi (.mem (at_ .esp 8)), .mov .ebp (.mem (at_ .esp 12)), .alu .cmp .ebp (.imm 65)]
+      .mov .esi (.mem (at_ .esp 8)), .mov .ebp (.mem (at_ .esp 12))]
     from rfl, WP.block_append_iff]
   exact WP.mono (save_ok hp) fun s₁ ⟨hg, hm, hr, hw⟩ => load_ok hp hg hm hr hw
 
@@ -692,9 +690,23 @@ structure Q4 (s₀ : State) (j : Nat) (s s' : State) : Prop where
   frame : Frame [slotsR (bp s₀), ctrR (bp s₀), dW (win s₀ j) (Wn s₀ j), Quad.stashR (bp s₀)] s.mem s'.mem
   st : stateAt s'.mem (st s₀) = stateAt s.mem (st s₀)
 
-theorem quad4_ok {s₀ : State} (hp : XPre s₀) {j : Nat} (hj : P s₀ j + 65 ≤ L s₀) {s : State}
-    (h : OInv s₀ j s) {K : Prog isa} {Q : State → Prop} (hk : ∀ s₃, Q4 s₀ j s s₃ → WP isa K s₃ Q) :
-    WP isa (.seq (.block setup4) (.seq rounds10 (.seq finish4 K))) s Q := by
+theorem kR_sub (s₀ : State) : Region.Sub (Quad.kR (bp s₀)) (bR s₀) := Offset.sub_base _ (by decide)
+
+/-- What the four blocks write is outside `buf[288, 320)`. -/
+theorem kR_qR {s₀ : State} (hp : XPre s₀) (j : Nat) : ∀ r ∈ qR s₀ j, (Quad.kR (bp s₀)).Disjoint r := by
+  intro r hr
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl | rfl | rfl
+  · exact Quad.kR_slots _
+  · exact Offset.disjoint _ (by simp only [ctrOff]; omega) (by decide) (by decide)
+  · exact (hp.d_b.symm.sub_left (kR_sub s₀)).sub_right (dW_sub s₀ j)
+  · exact Offset.disjoint_base _ (by decide) (by decide)
+  · exact hp.st_b.symm.sub_left (kR_sub s₀)
+
+theorem quad4_ok {k : Kernel} (Kk : Quad.KernelOk k) {s₀ : State} (hp : XPre s₀) {j : Nat}
+    (hj : P s₀ j + 65 ≤ L s₀) {s : State} (h : OInv s₀ j s) (hinv : Kk.Inv (bp s₀) s.mem)
+    {C : Prog isa} {Q : State → Prop} (hk : ∀ s₃, Q4 s₀ j s s₃ → WP isa C s₃ Q) :
+    WP isa (.seq (.block setup4) (.seq (rounds10 k) (.seq finish4 C))) s Q := by
   have hL := L_lt s₀
   have hc := ctx_of hp h.ebx h.edi h.wr
   have sl_st : (stR s₀).Disjoint (slotsR (bp s₀)) := hp.st_b.sub_right (slots_sub s₀)
@@ -706,7 +718,11 @@ theorem quad4_ok {s₀ : State} (hp : XPre s₀) {j : Nat} (hj : P s₀ j + 65 �
   have hc₁ : Quad.Ctx (st s₀) (bp s₀) s₁ := ctx_of hp (by rw [h₁.keep _ (by decide), h.ebx])
     (by rw [h₁.keep _ (by decide), h.edi]) (by rw [h₁.wr, h.wr])
   -- The rounds.
-  refine WP.seq (WP.mono (Quad.rounds_ok hc₁.eaB hc₁.wb h₁.holds) fun s₂ h₂ => ?_)
+  refine WP.seq (WP.mono (Quad.rounds_ok hc₁.eaB hc₁.wb Kk (Kk.inv_frame hinv h₁.frame (fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · exact kR_qR hp j _ (by simp)
+      · exact kR_qR hp j _ (by simp))) h₁.holds) fun s₂ h₂ => ?_)
   have hc₂ : Quad.Ctx (st s₀) (bp s₀) s₂ := hc₁.of h₂.gpr h₂.wr
   have hg₂ : ∀ r, r ≠ .eax → s₂.gpr r = s.gpr r := fun r hr => by rw [h₂.gpr, h₁.keep r hr]
   have hd₂ : Quad.DCtx (win s₀ j) (Wn s₀ j) s₂ := dctx_of hp (by rw [hg₂ _ (by decide), h.esi])
@@ -765,7 +781,7 @@ theorem Q4.outside {s₀ : State} (hp : XPre s₀) {j : Nat} {s s₃ : State} (h
 /-- More than 256 bytes left: the counter advanced by 4, and the data by 256 bytes. -/
 theorem next_ok {s₀ : State} (hp : XPre s₀) {j : Nat} (hj : P s₀ j + 257 ≤ L s₀) {s s₃ : State}
     (h : OInv s₀ j s) (h₃ : Q4 s₀ j s s₃) :
-    WP isa (.block next4) s₃ (OInv s₀ (j + 4)) := by
+    WP isa (.block next4) s₃ fun s' => OInv s₀ (j + 4) s' ∧ Frame [stR s₀] s₃.mem s'.mem := by
   have hL := L_lt s₀
   have hPj : P s₀ j = 64 * j := by simp only [P] at *; omega
   have hP4 : P s₀ (j + 4) = P s₀ j + 256 := by simp only [P] at *; omega
@@ -795,12 +811,12 @@ theorem next_ok {s₀ : State} (hp : XPre s₀) {j : Nat} (hj : P s₀ j + 257 �
   have fW : Frame [stR s₀] s₃.mem s₈.mem := by
     rw [hm]; exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (contains_ofNat (by decide) (by decide))
   have hf : Frame (qR s₀ j) s.mem s₈.mem := (h₃.frame.mono (by simp)).trans (fW.mono (by simp))
-  refine ⟨by rw [hg _ (by decide) (by decide) (by decide), h.ebx], ?_,
+  refine ⟨⟨by rw [hg _ (by decide) (by decide) (by decide), h.ebx], ?_,
     by rw [hg _ (by decide) (by decide) (by decide), h.edi], ?_,
     by rw [hg _ (by decide) (by decide) (by decide), h.esp],
     by rw [u₈.rd, u₇.rd, u₆.rd, u₅.rd, u₄.rd, h₃.rd, h.rd],
     by rw [u₈.wr, u₇.wr, u₆.wr, u₅.wr, u₄.wr, h₃.wr, h.wr], fun _ => ?_, fun k hk => ?_,
-    h.saved.frame hf (qR_saved hp j), h.frame.trans (hf.sub (qR_frame s₀ j))⟩
+    h.saved.frame hf (qR_saved hp j), h.frame.trans (hf.sub (qR_frame s₀ j))⟩, fW⟩
   · rw [u₈.other _ (by decide), u₇.gpr, u₆.gpr, u₅.other _ (by decide), u₄.other _ (by decide),
       h₃.keep _ (by decide), h.esi, show (256 : BitVec 32) = BitVec.ofNat 32 256 from rfl, Offset.add_add, hP4]
   · rw [u₈.gpr, u₇.other _ (by decide), u₆.gpr, u₅.other _ (by decide), u₄.other _ (by decide),
@@ -826,7 +842,7 @@ theorem next_ok {s₀ : State} (hp : XPre s₀) {j : Nat} (hj : P s₀ j + 257 �
 with the keystream in `buf[0, 16)`, and no bytes left. -/
 theorem last_ok {s₀ : State} (hp : XPre s₀) {j : Nat} (hj : P s₀ j + 65 ≤ L s₀) (hle : L s₀ ≤ P s₀ j + 256)
     {s s₃ : State} (h : OInv s₀ j s) (h₃ : Q4 s₀ j s s₃) :
-    WP isa last s₃ (OInv s₀ (j + 4)) := by
+    WP isa last s₃ fun s' => OInv s₀ (j + 4) s' ∧ Frame [dR s₀] s₃.mem s'.mem := by
   have hL := L_lt s₀
   have hd := hp.d_fit
   have hb := hp.b_fit
@@ -890,7 +906,7 @@ theorem last_ok {s₀ : State} (hp : XPre s₀) {j : Nat} (hj : P s₀ j + 65 �
     (h₃.frame.sub fun r hr => qR_frame s₀ j r (by
       simp only [qR, List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
       rcases hr with rfl | rfl | rfl | rfl <;> simp)).trans (hm₁ ▸ hf'.mono (by simp))
-  refine ⟨by rw [hg _ (by decide) (by decide) (by decide) (by decide) (by decide), h.ebx], ?_,
+  refine ⟨⟨by rw [hg _ (by decide) (by decide) (by decide) (by decide) (by decide), h.ebx], ?_,
     by rw [hg _ (by decide) (by decide) (by decide) (by decide) (by decide), h.edi], ?_,
     by rw [hg _ (by decide) (by decide) (by decide) (by decide) (by decide), h.esp],
     by rw [h'.rd, hrd₁, hp.rd], by rw [h'.wr, hwr₁], fun hlt => absurd hlt (by omega), fun k hk => ?_,
@@ -898,7 +914,7 @@ theorem last_ok {s₀ : State} (hp : XPre s₀) {j : Nat} (hj : P s₀ j + 65 �
       simp only [qR, List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
       rcases hr with rfl | rfl | rfl | rfl <;> simp))).frame (hm₁ ▸ hf') (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr; exact hp.d_b.symm.sub_left (savR_sub s₀)),
-    h.frame.trans hf⟩
+    h.frame.trans hf⟩, by rw [← hm₁]; exact hf'⟩
   · rw [h'.esi, BitVec.add_assoc, BitVec.ofNat_add_ofNat, hP4]
     congr 2; omega
   · rw [h'.keep _ (by decide) (by decide) (by decide) (by decide), hebp₁, hP4, Nat.sub_self]; rfl
@@ -950,22 +966,31 @@ theorem OInv.of {s₀ : State} {j : Nat} {s s' : State} (h : OInv s₀ j s) (hg 
 
 /-! ## Four blocks: the loop body -/
 
-theorem body4_ok {s₀ : State} (hp : XPre s₀) {j : Nat} (hj : P s₀ j + 65 ≤ L s₀) {s : State}
-    (h : OInv s₀ j s) :
-    WP isa body4 s fun s' => OInv s₀ (j + 4) s' ∧ s'.cf = some (decide (L s₀ - P s₀ (j + 4) < 65)) := by
+theorem body4_ok {k : Kernel} (Kk : Quad.KernelOk k) {s₀ : State} (hp : XPre s₀) {j : Nat}
+    (hj : P s₀ j + 65 ≤ L s₀) {s : State} (h : OInv s₀ j s) (hinv : Kk.Inv (bp s₀) s.mem) :
+    WP isa (body4 k) s fun s' => (OInv s₀ (j + 4) s' ∧ Kk.Inv (bp s₀) s'.mem) ∧
+      s'.cf = some (decide (L s₀ - P s₀ (j + 4) < 65)) := by
   have hL := L_lt s₀
   unfold body4
-  refine quad4_ok hp hj h fun s₃ h₃ => ?_
+  refine quad4_ok Kk hp hj h hinv fun s₃ h₃ => ?_
+  have hinv₃ : Kk.Inv (bp s₀) s₃.mem := Kk.inv_frame hinv h₃.frame fun r hr => kR_qR hp j r (by
+    simp only [qR, List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
+    rcases hr with rfl | rfl | rfl | rfl <;> simp)
   refine WP.seq (WP.mono (Bytes.cmpi_ok s₃ .ebp 257) fun s₄ ⟨g₄, m₄, _, r₄, w₄, c₄⟩ => ?_)
   have hebp : s₃.gpr .ebp = BitVec.ofNat 32 (L s₀ - P s₀ j) := by rw [h₃.keep _ (by decide), h.ebp]
   rw [hebp, toNat_ofNat_lt32 (by omega), show (257 : BitVec 32).toNat = 257 from rfl] at c₄
   have h₄ := h₃.of g₄ m₄ r₄ w₄
-  refine WP.seq (WP.mono (Q := OInv s₀ (j + 4))
+  have hinv₄ : Kk.Inv (bp s₀) s₄.mem := m₄ ▸ hinv₃
+  refine WP.seq (WP.mono (Q := fun s₅ : State => OInv s₀ (j + 4) s₅ ∧ Kk.Inv (bp s₀) s₅.mem)
     (WP.ite (decide (L s₀ - P s₀ j < 257)) (by show eval .b s₄ = _; simp only [eval, c₄])
-      (fun hlt => last_ok hp hj (by simp only [decide_eq_true_eq] at hlt; omega) h h₄)
-      (fun hge => next_ok hp (by simp only [decide_eq_false_iff_not] at hge; omega) h h₄))
-    fun s₅ h₅ => ?_)
-  refine Wp.wp_cmpi fun s₆ u₆ hcf _ => WP.block_nil ⟨h₅.of u₆.gpr u₆.mem u₆.rd u₆.wr, ?_⟩
+      (fun hlt => WP.mono (last_ok hp hj (by simp only [decide_eq_true_eq] at hlt; omega) h h₄)
+        fun s₅ ⟨h₅, f₅⟩ => ⟨h₅, Kk.inv_frame hinv₄ f₅ (fun r hr => by
+          simp only [List.mem_singleton] at hr; subst hr; exact hp.d_b.symm.sub_left (kR_sub s₀))⟩)
+      (fun hge => WP.mono (next_ok hp (by simp only [decide_eq_false_iff_not] at hge; omega) h h₄)
+        fun s₅ ⟨h₅, f₅⟩ => ⟨h₅, Kk.inv_frame hinv₄ f₅ (fun r hr => by
+          simp only [List.mem_singleton] at hr; subst hr; exact hp.st_b.symm.sub_left (kR_sub s₀))⟩))
+    fun s₅ ⟨h₅, i₅⟩ => ?_)
+  refine Wp.wp_cmpi fun s₆ u₆ hcf _ => WP.block_nil ⟨⟨h₅.of u₆.gpr u₆.mem u₆.rd u₆.wr, u₆.mem ▸ i₅⟩, ?_⟩
   rw [hcf, h₅.ebp, toNat_ofNat_lt32 (by omega)]; rfl
 
 /-! ## The last bytes -/
@@ -1074,26 +1099,52 @@ theorem epilogue_ok {s₀ : State} (hp : XPre s₀) {s : State} (h : Done s₀ s
 
 /-! ## The whole function -/
 
-theorem xor_eq : Impl.ChaCha20.X86.Xor.xor =
-    .seq (.block [.mov .eax (.mem (at_ .esp 16))]) (.seq (.block prologue)
-    (.seq (.ite .b (.block []) (.loop body4 .ae))
+theorem xor_eq (k : Kernel) : xorWith k =
+    .seq (.block [.mov .eax (.mem (at_ .esp 16))]) (.seq (.block prologue) (.seq (.block k.init)
+    (.seq (.block [.alu .cmp .ebp (.imm 65)])
+    (.seq (.ite .b (.block []) (.loop (body4 k) .ae))
     (.seq (.block [.alu .test .ebp (.reg .ebp)])
-    (.seq (.ite .e (.block []) tail) (.block (.mov .eax (.reg .edi) :: restore)))))) := rfl
+    (.seq (.ite .e (.block []) tail) (.block (.mov .eax (.reg .edi) :: restore)))))))) := rfl
 
-theorem loop4_ok {s₀ : State} (hp : XPre s₀) {s : State} (h : OInv s₀ 0 s) (hL : 65 ≤ L s₀) :
-    WP isa (.loop body4 .ae) s fun s' => ∃ j, L s₀ - P s₀ j < 65 ∧ OInv s₀ j s' := by
+/-- The quarter round's constants stored in `buf[288, 320)`. -/
+theorem init_ok {k : Kernel} (Kk : Quad.KernelOk k) {s₀ : State} (hp : XPre s₀) {s : State}
+    (h : OInv s₀ 0 s) : WP isa (.block k.init) s fun s' => OInv s₀ 0 s' ∧ Kk.Inv (bp s₀) s'.mem := by
+  have hL := L_lt s₀
+  have hc := ctx_of hp h.ebx h.edi h.wr
+  refine WP.mono (Kk.init_ok s hc.eaB hc.wb) fun s' ⟨hi, hf, hg, hr, hw⟩ => ⟨⟨by rw [hg _ (by decide), h.ebx],
+    by rw [hg _ (by decide), h.esi], by rw [hg _ (by decide), h.edi], by rw [hg _ (by decide), h.ebp],
+    by rw [hg _ (by decide), h.esp], by rw [hr, h.rd], by rw [hw, h.wr], fun hl => ?_, fun k hk => ?_,
+    h.saved.frame hf (by simpa using (Offset.disjoint (bp s₀) (d := 256) (n := 16) (e := 288) (k := 32)
+      (by omega) (by decide) (by decide))),
+    h.frame.trans (hf.sub fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr; exact ⟨bR s₀, by simp, kR_sub s₀⟩)⟩, hi⟩
+  · rw [stateAt_frame hf (by simpa using hp.st_b.sub_right (kR_sub s₀)), h.cnt hl]
+  · rw [hf.bytes (R := dR s₀) (by simpa using hp.d_b.sub_right (kR_sub s₀)) (show L s₀ ≤ 2 ^ 64 by omega) hk,
+      h.data k hk]
+
+theorem cmp65_ok {s₀ : State} {s : State} (h : OInv s₀ 0 s) {I : Mem → Prop} (hi : I s.mem) :
+    WP isa (.block [.alu .cmp .ebp (.imm 65)]) s fun s' =>
+      (OInv s₀ 0 s' ∧ I s'.mem) ∧ s'.cf = some (decide (L s₀ < 65)) := by
+  have hL := L_lt s₀
+  refine Wp.wp_cmpi fun s' u hcf _ => WP.block_nil ⟨⟨h.of u.gpr u.mem u.rd u.wr, u.mem ▸ hi⟩, ?_⟩
+  rw [hcf, h.ebp, toNat_ofNat_lt32 (by simp only [P]; omega)]
+  simp [P]
+
+theorem loop4_ok {k : Kernel} (Kk : Quad.KernelOk k) {s₀ : State} (hp : XPre s₀) {s : State}
+    (h : OInv s₀ 0 s) (hinv : Kk.Inv (bp s₀) s.mem) (hL : 65 ≤ L s₀) :
+    WP isa (.loop (body4 k) .ae) s fun s' => ∃ j, L s₀ - P s₀ j < 65 ∧ OInv s₀ j s' := by
   let Inv : Nat → State → Prop := fun n s =>
-    ∃ j, n = L s₀ - P s₀ j ∧ P s₀ j + 65 ≤ L s₀ ∧ OInv s₀ j s
-  have hstep : ∀ n s, Inv n s → WP isa body4 s (fun s' =>
+    ∃ j, n = L s₀ - P s₀ j ∧ P s₀ j + 65 ≤ L s₀ ∧ OInv s₀ j s ∧ Kk.Inv (bp s₀) s.mem
+  have hstep : ∀ n s, Inv n s → WP isa (body4 k) s (fun s' =>
       (eval .ae s' = some false ∧ ∃ j, L s₀ - P s₀ j < 65 ∧ OInv s₀ j s') ∨
       (eval .ae s' = some true ∧ ∃ n' < n, Inv n' s')) := by
-    rintro n s ⟨j, rfl, hj, hI⟩
-    refine WP.mono (body4_ok hp hj hI) fun s' ⟨h', hc'⟩ => ?_
+    rintro n s ⟨j, rfl, hj, hI, hi⟩
+    refine WP.mono (body4_ok Kk hp hj hI hi) fun s' ⟨⟨h', hi'⟩, hc'⟩ => ?_
     have hP : P s₀ j < P s₀ (j + 4) := by simp only [P] at *; omega
     by_cases hl : L s₀ - P s₀ (j + 4) < 65
     · exact .inl ⟨by simp [eval, hc', hl], j + 4, hl, h'⟩
-    · exact .inr ⟨by simp [eval, hc', hl], L s₀ - P s₀ (j + 4), by omega, j + 4, rfl, by omega, h'⟩
-  exact WP.loop (M := isa) Inv hstep (L s₀ - P s₀ 0) s ⟨0, rfl, by simp [P]; omega, h⟩
+    · exact .inr ⟨by simp [eval, hc', hl], L s₀ - P s₀ (j + 4), by omega, j + 4, rfl, by omega, h', hi'⟩
+  exact WP.loop (M := isa) Inv hstep (L s₀ - P s₀ 0) s ⟨0, rfl, by simp [P]; omega, h, hinv⟩
 
 theorem test_ok {s₀ : State} {j : Nat} {s : State} (h : OInv s₀ j s) :
     WP isa (.block [.alu .test .ebp (.reg .ebp)]) s fun s' =>
@@ -1102,20 +1153,22 @@ theorem test_ok {s₀ : State} {j : Nat} {s : State} (h : OInv s₀ j s) :
   refine Wp.wp_test fun s' u hz => WP.block_nil ⟨h.of u.gpr u.mem u.rd u.wr, ?_⟩
   rw [hz, h.ebp, BitVec.and_self, Wp.ofNat_beq_zero (by omega)]
 
-theorem correct {s₀ : State} (hp : XPre s₀) :
-    WP isa Impl.ChaCha20.X86.Xor.xor s₀ fun s' =>
+theorem correct {k : Kernel} (Kk : Quad.KernelOk k) {s₀ : State} (hp : XPre s₀) :
+    WP isa (xorWith k) s₀ fun s' =>
       (abiPreserved s₀ s' ∧ Proof.ChaCha20.xorX86.post s₀ s') ∧ s'.gpr .eax = BP s₀ := by
   rw [xor_eq]
   refine WP.seq (WP.mono (load_buf_ok hp) fun s e => ?_)
   subst e
-  refine WP.seq (WP.mono (prologue_ok hp) fun s₁ ⟨h₁, hc⟩ => ?_)
+  refine WP.seq (WP.mono (prologue_ok hp) fun s₀' h₀ => ?_)
+  refine WP.seq (WP.mono (init_ok Kk hp h₀) fun s₀'' ⟨h₀', i₀⟩ => ?_)
+  refine WP.seq (WP.mono (cmp65_ok h₀' i₀) fun s₁ ⟨⟨h₁, i₁⟩, hc⟩ => ?_)
   refine WP.seq (WP.mono (Q := fun s => ∃ j, L s₀ - P s₀ j < 65 ∧ OInv s₀ j s) ?_
     fun s₂ ⟨j, hj, h₂⟩ => ?_)
   · refine WP.ite (decide (L s₀ < 65)) (by simp [eval, hc]) (fun h => ?_) (fun h => ?_)
     · simp only [decide_eq_true_eq] at h
       exact WP.block_nil (M := isa) ⟨0, by simp [P]; omega, h₁⟩
     · simp only [decide_eq_false_iff_not] at h
-      exact loop4_ok hp h₁ (by omega)
+      exact loop4_ok Kk hp h₁ i₁ (by omega)
   refine WP.seq (WP.mono (test_ok h₂) fun s₃ ⟨h₃, hz⟩ => ?_)
   refine WP.seq (WP.mono (Q := Done s₀) ?_ fun s₄ h₄ => epilogue_ok hp h₄)
   have hle := P_le s₀ j
@@ -1130,7 +1183,14 @@ recomputes pointers from it. -/
 theorem xor_eax (s : State) (hs : Proof.ChaCha20.xorX86.pre s) :
     ∃ t s', Exec isa Impl.ChaCha20.X86.Xor.xor s t s' ∧ abiPreserved s s' ∧
       (Proof.ChaCha20.xorX86.post s s' ∧ s'.gpr .eax = arg s 3) := by
-  obtain ⟨t, s', he, ⟨h, hr⟩⟩ := correct (XPre.of s hs)
+  obtain ⟨t, s', he, ⟨h, hr⟩⟩ := correct Kernels.sse2Ok (XPre.of s hs)
+  exact ⟨t, s', he, h.1, h.2, hr⟩
+
+/-- `vg_chacha20_xor_ssse3` returns with `eax` holding `buf`. -/
+theorem xorSsse3_eax (s : State) (hs : Proof.ChaCha20.xorX86.pre s) :
+    ∃ t s', Exec isa Impl.ChaCha20.X86.Xor.xorSsse3 s t s' ∧ abiPreserved s s' ∧
+      (Proof.ChaCha20.xorX86.post s s' ∧ s'.gpr .eax = arg s 3) := by
+  obtain ⟨t, s', he, ⟨h, hr⟩⟩ := correct Kernels.ssse3Ok (XPre.of s hs)
   exact ⟨t, s', he, h.1, h.2, hr⟩
 
 /-! ## Constant time
@@ -1249,23 +1309,37 @@ def sat : State where
 theorem xor_correct (s : State) (hs : Proof.ChaCha20.xorX86.pre s) :
     ∃ t s', Exec isa Impl.ChaCha20.X86.Xor.xor s t s' ∧ abiPreserved s s' ∧
       Proof.ChaCha20.xorX86.post s s' :=
-  (correct (XPre.of s hs)).imp fun _ ⟨s', he, h, _⟩ => ⟨s', he, h⟩
+  (xor_eax s hs).imp fun _ ⟨s', he, h, hp, _⟩ => ⟨s', he, h, hp⟩
+
+theorem xorSsse3_correct (s : State) (hs : Proof.ChaCha20.xorX86.pre s) :
+    ∃ t s', Exec isa Impl.ChaCha20.X86.Xor.xorSsse3 s t s' ∧ abiPreserved s s' ∧
+      Proof.ChaCha20.xorX86.post s s' :=
+  (xorSsse3_eax s hs).imp fun _ ⟨s', he, h, hp, _⟩ => ⟨s', he, h, hp⟩
 
 theorem xor_ct : ConstantTime isa Proof.ChaCha20.xorX86.pre Proof.ChaCha20.xorX86.pub
     Impl.ChaCha20.X86.Xor.xor :=
   VG.Taint.constantTime (A := sseTaint) τ₀ (fun _ _ h₁ h₂ hp => agree₀ h₁ h₂ hp) (by taint_decide)
 
+theorem xorSsse3_ct : ConstantTime isa Proof.ChaCha20.xorX86.pre Proof.ChaCha20.xorX86.pub
+    Impl.ChaCha20.X86.Xor.xorSsse3 :=
+  VG.Taint.constantTime (A := sseTaint) τ₀ (fun _ _ h₁ h₂ hp => agree₀ h₁ h₂ hp) (by taint_decide)
+
+theorem xorX86_implies : Proof.ChaCha20.xorX86.Implies (Spec.ChaCha20.xorContract X86.abi 12) := by
+  have a0 : arg sat 0 = 0x1000 := by decide
+  have a1 : arg sat 1 = 0x2000 := by decide
+  have a2 : arg sat 2 = 0 := by decide
+  have a3 : arg sat 3 = 0x3000 := by decide
+  have e : argAddr sat 0 = 0x5004 := by decide
+  have esp : sat.gpr .esp = 0x5000 := rfl
+  sig_implies [Spec.ChaCha20.xorContract, Spec.ChaCha20.xorSig, X86.abi, X86.argSlots,
+    X86.argVal, X86.argBytes, Proof.ChaCha20.xorX86] [a0, a1, a2, a3, e, esp] using sat
+
 theorem xor_verified :
     Verified X86.target Impl.ChaCha20.X86.Xor.xor (Spec.ChaCha20.xorContract X86.abi 12) :=
-  Verified.of_correct xor_correct xor_ct
-    (by
-      have a0 : arg sat 0 = 0x1000 := by decide
-      have a1 : arg sat 1 = 0x2000 := by decide
-      have a2 : arg sat 2 = 0 := by decide
-      have a3 : arg sat 3 = 0x3000 := by decide
-      have e : argAddr sat 0 = 0x5004 := by decide
-      have esp : sat.gpr .esp = 0x5000 := rfl
-      sig_implies [Spec.ChaCha20.xorContract, Spec.ChaCha20.xorSig, X86.abi, X86.argSlots,
-        X86.argVal, X86.argBytes, Proof.ChaCha20.xorX86] [a0, a1, a2, a3, e, esp] using sat)
+  Verified.of_correct xor_correct xor_ct xorX86_implies
+
+theorem xorSsse3_verified :
+    Verified X86.target Impl.ChaCha20.X86.Xor.xorSsse3 (Spec.ChaCha20.xorContract X86.abi 12) :=
+  Verified.of_correct xorSsse3_correct xorSsse3_ct xorX86_implies
 
 end VG.Proof.ChaCha20.X86.Xor

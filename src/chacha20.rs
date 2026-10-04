@@ -25,6 +25,10 @@
 //! has the same contract and XORs sixteen blocks at a time
 //! (`vg_chacha20_xor_avx512`), and other CPUs with AVX2 run
 //! `vg_chacha20_apply_avx2`, which XORs eight (`vg_chacha20_xor_avx2`).
+//! On x86, `vg_chacha20_xor` XORs four blocks at a time with SSE2, and
+//! CPUs with SSSE3 run `vg_chacha20_apply_ssse3`, which XORs them with
+//! `vg_chacha20_xor_ssse3`: the same code with the rotations by 16 and 8
+//! bits `pshufb`.
 //! On AArch64, CPUs with AdvSIMD (the baseline) run `vg_chacha20_apply_neon`,
 //! which XORs whole blocks with `vg_chacha20_xor_neon`: eight independent
 //! blocks at a time, six in AdvSIMD lanes and two in the integer registers,
@@ -47,6 +51,8 @@ use crate::arch::chacha20::{
     VG_CHACHA20_APPLY_AVX2_FEATURES, VG_CHACHA20_APPLY_AVX512_FEATURES, vg_chacha20_apply_avx2,
     vg_chacha20_apply_avx512,
 };
+#[cfg(target_arch = "x86")]
+use crate::arch::chacha20::{VG_CHACHA20_APPLY_SSSE3_FEATURES, vg_chacha20_apply_ssse3};
 #[cfg(target_arch = "aarch64")]
 use crate::arch::chacha20::{
     VG_CHACHA20_APPLY_SVE2_FEATURES, vg_chacha20_apply_neon, vg_chacha20_apply_sve2,
@@ -77,6 +83,9 @@ pub(crate) enum Backend {
     /// AVX-512F, sixteen blocks at a time.
     #[cfg(target_arch = "x86_64")]
     Avx512,
+    /// SSSE3: the SSE2 code with the rotations by 16 and 8 bits `pshufb`.
+    #[cfg(target_arch = "x86")]
+    Ssse3,
 }
 
 impl Backend {
@@ -122,9 +131,19 @@ impl Backend {
         }
     }
 
+    /// The best implementation a CPU with the features `f` can run.
+    #[cfg(target_arch = "x86")]
+    pub(crate) fn select(f: Features) -> Backend {
+        if f.contains(VG_CHACHA20_APPLY_SSSE3_FEATURES) {
+            Backend::Ssse3
+        } else {
+            Backend::Scalar
+        }
+    }
+
     /// The best implementation a CPU with the features `f` can run: there
     /// is only one here.
-    #[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
+    #[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64", target_arch = "x86")))]
     pub(crate) fn select(_: Features) -> Backend {
         Backend::Scalar
     }
@@ -206,6 +225,8 @@ impl ChaCha20 {
             Backend::Avx2 => vg_chacha20_apply_avx2,
             #[cfg(target_arch = "x86_64")]
             Backend::Avx512 => vg_chacha20_apply_avx512,
+            #[cfg(target_arch = "x86")]
+            Backend::Ssse3 => vg_chacha20_apply_ssse3,
         };
         // SAFETY: `state` is valid for reads and writes of 768 bytes (the
         // bytes `apply` reads before writing them are those `init` and
@@ -448,6 +469,16 @@ mod tests {
                 Backend::Avx512
             );
             assert_eq!(Backend::select(Features::of(&["avx"])), Backend::Scalar);
+        }
+        #[cfg(target_arch = "x86")]
+        {
+            use crate::arch::chacha20::VG_CHACHA20_APPLY_SSSE3_FEATURES;
+            use crate::cpu::Features;
+            assert_eq!(
+                Backend::select(VG_CHACHA20_APPLY_SSSE3_FEATURES),
+                Backend::Ssse3
+            );
+            assert_eq!(Backend::select(Features::of(&[])), Backend::Scalar);
         }
     }
 }
