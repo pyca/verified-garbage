@@ -240,7 +240,7 @@ def step (τ : T) : Instr → Option T
   | .vmovdquStore .l128 m _ => storeStep τ m 16 false
   | .vmovdquStore .l256 m _ => storeStep τ m 32 false
   | .zop _ => some τ
-  | .vmovdqu32Load _ m | .vbroadcasti32x4 _ m | .zbcst _ _ _ m =>
+  | .vmovdqu32Load _ m | .vbroadcasti32x4 _ m | .zbcst _ _ _ m | .vpmadd52Load _ _ _ m =>
     if memPub τ m then some τ else none
   | .vmovdqu32Store m _ => storeStep τ m 64 false
   -- MXCSR is not tracked either: nothing moves it into a general-purpose
@@ -711,7 +711,8 @@ def dstOf : Instr → Option Reg
   | .movImm64 d _ | .adcx d _ | .adox d _ | .vpmovmskb _ d _ => some d
   | .store .. | .store32 .. | .store8 .. | .movdquLoad .. | .movdquStore .. | .xop _ | .vop _
   | .vmovdquLoad .. | .vmovdquStore .. | .vbroadcasti128 .. | .zop _ | .vmovdqu32Load ..
-  | .vmovdqu32Store .. | .vbroadcasti32x4 .. | .zbcst .. | .stmxcsr _ | .ldmxcsr _ | .lfence
+  | .vmovdqu32Store .. | .vbroadcasti32x4 .. | .zbcst .. | .vpmadd52Load .. | .stmxcsr _ | .ldmxcsr _
+  | .lfence
   | .mul _ | .mulx .. | .push _ | .pop .. | .alloc _ | .free _ => none
 
 /-- An SSE instruction on registers changes only the SSE registers. -/
@@ -1123,6 +1124,13 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
     obtain ⟨v₁, -, rfl⟩ := e₁; obtain ⟨v₂, -, rfl⟩ := e₂
     exact ⟨by simp [addrs, ha.ea hok], ha.withVec _ _ _ _ _ _⟩
   | zbcst op d a m =>
+    simp only [step] at hs
+    split at hs <;> [skip; cases hs]
+    rename_i hok; cases hs
+    simp only [exec, Option.map_eq_some_iff] at e₁ e₂
+    obtain ⟨v₁, -, rfl⟩ := e₁; obtain ⟨v₂, -, rfl⟩ := e₂
+    exact ⟨by simp [addrs, ha.ea hok], ha.withVec _ _ _ _ _ _⟩
+  | vpmadd52Load hi d a m =>
     simp only [step] at hs
     split at hs <;> [skip; cases hs]
     rename_i hok; cases hs
@@ -1612,7 +1620,7 @@ def stepK (τ : T) : Instr → Option T
   | .vmovdquStore .l128 m _ => storeStepK τ m 16 false
   | .vmovdquStore .l256 m _ => storeStepK τ m 32 false
   | .zop _ => some τ
-  | .vmovdqu32Load _ m | .vbroadcasti32x4 _ m | .zbcst _ _ _ m =>
+  | .vmovdqu32Load _ m | .vbroadcasti32x4 _ m | .zbcst _ _ _ m | .vpmadd52Load _ _ _ m =>
     bif memPub τ m then some τ else none
   | .vmovdqu32Store m _ => storeStepK τ m 64 false
   | .stmxcsr m => storeStepK τ m 4 false
@@ -1821,7 +1829,7 @@ def stepKD (τ : T) : Instr → Option T
   | .vmovdquStore .l128 m _ => storeStepK τ m 16 false
   | .vmovdquStore .l256 m _ => storeStepK τ m 32 false
   | .zop _ => some τ
-  | .vmovdqu32Load _ m | .vbroadcasti32x4 _ m | .zbcst _ _ _ m =>
+  | .vmovdqu32Load _ m | .vbroadcasti32x4 _ m | .zbcst _ _ _ m | .vpmadd52Load _ _ _ m =>
     bif memPub τ m then some τ else none
   | .vmovdqu32Store m _ => storeStepK τ m 64 false
   | .stmxcsr m => storeStepK τ m 4 false

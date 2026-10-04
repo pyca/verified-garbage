@@ -235,6 +235,35 @@ def M : BitVec 256 := s.mem.readW 0x100 256
 #guard (exec (.vmovdquStore .l256 { base := .rdi, disp := 0x101 } .xmm0) s).isNone
 #guard (exec (.vmovdquStore .l128 { base := .rdi, disp := 0x111 } .xmm0) s).isNone
 
+/-! `vpmadd52luq` and `vpmadd52huq` with a `YMMWORD PTR` second source
+(`vpmadd52Load`), run as the printed instructions in inline assembly on a
+Sapphire Rapids (or later) Xeon, with `M` in memory: into the all-ones
+`ymm5`, into `ymm0` (which holds `A`, the first source, too), and the high
+form with its destination also its first source. -/
+
+/-- `d` after `vpmadd52{l,h}uq d, a, YMMWORD PTR [rdi+disp]`. -/
+def madd (hi : Bool) (d a : XReg) (disp : Int := 0) : Option (BitVec 256) :=
+  (exec (.vpmadd52Load hi d a { base := .rdi, disp := disp }) s).map (·.ymm d)
+
+#guard M == 0x1201f0dfcebdac9b8a7968574635241302f1e0cfbead9c8b7a69584736251403#256
+#guard madd false .xmm5 .xmm0 == some 0x000aa848cc327ba7000834f4971c84cf0008a618750c72ec000858329335d62f#256
+#guard madd true .xmm5 .xmm0 == some 0x0001b8409ac6c4920003e88f07516d59000162bb4713cd2d00076f30b031fa4c#256
+#guard madd false .xmm0 .xmm0 == some 0x0f28d585178ce520879edaa95aef66c089b47407762fb854fee512cb098a0840#256
+#guard madd true .xmm0 .xmm0 == some 0x0f1fe57ce6212e0b879a8e43cb244f4a89ad30aa48371295fee429c926862c5d#256
+-- The same as the register form with `M` in a register.
+#guard madd true .xmm5 .xmm0 ==
+  some (((VOp.vpmadd52huq .l256 .xmm5 .xmm0 .xmm6).exec
+    { s with xmm := fun r => if r = .xmm6 then M.extractLsb' 0 128 else s.xmm r,
+             ymmHi := fun r => if r = .xmm6 then M.extractLsb' 128 128 else s.ymmHi r }).ymm .xmm5)
+-- All 32 bytes must be readable.
+#guard (madd false .xmm5 .xmm0 1).isNone
+#guard (madd true .xmm5 .xmm0 (-1)).isNone
+-- Bits 511:256 of the destination are zeroed (as on the hardware, from all
+-- ones), and nothing else changes.
+#guard (exec (.vpmadd52Load false .xmm5 .xmm0 { base := .rdi }) { s with zmmHi := fun _ => -1 }).map
+  (fun t => (t.zmmHi .xmm5, t.zmmHi .xmm0, t.ymm .xmm0, t.gpr .rdi, t.mem.readW 0x100 256, t.cf)) ==
+  some (0, -1, A, 0x100, M, none)
+
 /-! ## Printing -/
 
 #guard printer.instr (.vop (.vbin .vpaddd .l256 .xmm1 .xmm2 .xmm15)) == ["vpaddd ymm1, ymm2, ymm15"]
@@ -282,6 +311,12 @@ def M : BitVec 256 := s.mem.readW 0x100 256
   ["vmovdqu YMMWORD PTR [rsi+rcx*8], ymm15"]
 #guard printer.instr (.vbroadcasti128 .xmm1 { base := .rdx }) ==
   ["vbroadcasti128 ymm1, XMMWORD PTR [rdx]"]
+#guard printer.instr (.vpmadd52Load false .xmm1 .xmm15 { base := .rsi, disp := 96 }) ==
+  ["vpmadd52luq ymm1, ymm15, YMMWORD PTR [rsi+96]"]
+#guard printer.instr (.vpmadd52Load true .xmm14 .xmm2 { base := .r8, index := some .rcx, scale := 8 }) ==
+  ["vpmadd52huq ymm14, ymm2, YMMWORD PTR [r8+rcx*8]"]
+#guard Instr.memOps (.vpmadd52Load true .xmm0 .xmm1 { base := .rdi, disp := 32 }) ==
+  [{ base := .rdi, disp := 32 }]
 
 /-! ## Required features -/
 
@@ -294,6 +329,9 @@ def M : BitVec 256 := s.mem.readW 0x100 256
 #guard isa.requires (.vop (.vbin .vpsubq .l256 .xmm0 .xmm1 .xmm2)) == ["avx2"]
 #guard isa.requires (.vop (.vpmadd52luq .l256 .xmm0 .xmm1 .xmm2)) == ["avx512ifma", "avx512vl"]
 #guard isa.requires (.vop (.vpmadd52huq .l128 .xmm0 .xmm1 .xmm2)) == ["avx512ifma", "avx512vl"]
+#guard isa.requires (.vpmadd52Load false .xmm0 .xmm1 { base := .rdi }) == ["avx512ifma", "avx512vl"]
+#guard isa.requires (.vpmadd52Load true .xmm0 .xmm1 { base := .rdi }) == ["avx512ifma", "avx512vl"]
+#guard !isa.writesSp (.vpmadd52Load true .xmm0 .xmm1 { base := .rsp })
 #guard isa.requires (.vop (.vprold .l128 .xmm0 .xmm1 7)) == ["avx512f", "avx512vl"]
 #guard isa.requires (.vop (.vprold .l256 .xmm0 .xmm1 7)) == ["avx512f", "avx512vl"]
 #guard isa.requires (.vop (.vpternlogd .l128 .xmm0 .xmm1 .xmm2 0)) == ["avx512f", "avx512vl"]
