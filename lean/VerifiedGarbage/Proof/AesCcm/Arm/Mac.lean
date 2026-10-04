@@ -67,16 +67,7 @@ theorem mac_ok {s₀ s : State} {nl : Nat} (he : Env k w sp R (14 - nl) s) (hk :
   have hk₁ := hk.mac hsp₀ hy16 M₁.frame (by rw [M₁.env.sp, he.sp]) M₁.rd M₁.wr
   refine WP.seq (WP.mono (aad_ok L M₁.env hR hy hk₁ eA eal hal (hA.of_eq M₁.rd M₁.wr)) fun s₂ M₂ => ?_)
   have hk₂ := hk₁.mac hsp₀ hy16 M₂.frame (by rw [M₂.env.sp, M₁.env.sp]) M₂.rd M₂.wr
-  obtain ⟨i2, v2⟩ := hk₂.at 2 (by decide) (show 4 * 2 = 8 from rfl)
-  obtain ⟨i3, v3⟩ := hk₂.at 3 (by decide) (show 4 * 3 = 12 from rfl)
-  obtain ⟨s₃, run₃, h4₃, h5₃, g₃, k₃⟩ : ∃ s₃, runBlock isa [.ldrSp .r4 8, .ldrSp .r5 12] s₂ = some s₃ ∧
-      s₃.gpr .r4 = D ∧ s₃.gpr .r5 = BitVec.ofNat 32 n ∧
-      (∀ r, r ≠ .r4 → r ≠ .r5 → s₃.gpr r = s₂.gpr r) ∧ Keeps s₂ s₃ := by
-    refine ⟨_, by arun [i2, v2, i3, v3], ?_, ?_, ?_, ?_⟩
-    · simp [gpr_setReg, v2, eD]
-    · simp [gpr_setReg, v3, en]
-    · intro r a b; simp [gpr_setReg, a, b]
-    · exact ⟨rfl, rfl, rfl, rfl⟩
+  obtain ⟨s₃, run₃, h4₃, h5₃, g₃, k₃⟩ := dataLd_ok hk₂ eD en
   refine WP.seq (WP.of_runBlock ⟨s₃, run₃, ?_⟩)
   have he₃ := M₂.env.keep (fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr

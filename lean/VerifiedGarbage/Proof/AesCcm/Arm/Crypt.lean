@@ -431,16 +431,7 @@ theorem ctr_ok {s₀ s : State} (he : Env k w sp R q1 s) (hk : Stk w s₀ s) (hR
       Frame (ctrR w sp D n) s.mem s'.mem ∧
       bytesAt s'.mem (State.addr D) n =
         xorFrom (Spec.Ccm.ctxCiph s.mem (State.addr k) R) nonce 1 (bytesAt s.mem (State.addr D) n) := by
-  obtain ⟨i2, v2⟩ := hk.at 2 (by decide) (show 4 * 2 = 8 from rfl)
-  obtain ⟨i3, v3⟩ := hk.at 3 (by decide) (show 4 * 3 = 12 from rfl)
-  obtain ⟨s₁, run₁, h4₁, h5₁, g₁, k₁⟩ : ∃ s₁, runBlock isa [.ldrSp .r4 8, .ldrSp .r5 12] s = some s₁ ∧
-      s₁.gpr .r4 = D ∧ s₁.gpr .r5 = BitVec.ofNat 32 n ∧
-      (∀ r, r ≠ .r4 → r ≠ .r5 → s₁.gpr r = s.gpr r) ∧ Keeps s s₁ := by
-    refine ⟨_, by arun [i2, v2, i3, v3], ?_, ?_, ?_, ?_⟩
-    · simp [gpr_setReg, v2, eD]
-    · simp [gpr_setReg, v3, en]
-    · intro r a b; simp [gpr_setReg, a, b]
-    · exact ⟨rfl, rfl, rfl, rfl⟩
+  obtain ⟨s₁, run₁, h4₁, h5₁, g₁, k₁⟩ := dataLd_ok hk eD en
   refine WP.seq (WP.of_runBlock ⟨s₁, run₁, ?_⟩)
   have he₁ := he.keep (fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr

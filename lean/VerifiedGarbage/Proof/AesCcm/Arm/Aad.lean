@@ -235,6 +235,37 @@ theorem aadHead_ok {s : State} (he : Env k w sp R q1 s) (hR : R = 10 ∨ R = 12 
   · rw [o₅, hY₄, hB₄, ctxCiph_frame fB (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact L.k_w' (by decide)) hRb]
 
+omit L in
+/-- `r4` and `r5` the associated data and its length, and `Z` for none. -/
+theorem aadLd_ok {s₀ s : State} (hk : Stk w s₀ s) {A : BitVec 32} {al : Nat} (eA : stackArg s₀ 0 = A)
+    (eal : stackArg s₀ 1 = BitVec.ofNat 32 al) (hal : al < 2 ^ 32) :
+    ∃ s₁, runBlock isa [.ldrSp .r4 0, .ldrSp .r5 4, .cmp .r5 (imm 0)] s = some s₁ ∧ s₁.gpr .r4 = A ∧
+      s₁.gpr .r5 = BitVec.ofNat 32 al ∧ s₁.z = decide (al = 0) ∧
+      (∀ r, r ≠ .r4 → r ≠ .r5 → s₁.gpr r = s.gpr r) ∧ Keeps s s₁ := by
+  obtain ⟨i0, v0⟩ := hk.at 0 (by decide) (show 4 * 0 = 0 from rfl)
+  obtain ⟨i1, v1⟩ := hk.at 1 (by decide) (show 4 * 1 = 4 from rfl)
+  refine ⟨_, by arun [i0, v0, i1, v1], ?_, ?_, ?_, ?_, ?_⟩
+  · simp [gpr_setReg, v0, eA]
+  · simp [gpr_setReg, v1, eal]
+  · simp only [z_subFlags, gpr_setReg, gpr_subFlags, ite_true, ite_false, reduceCtorEq, v1, eal, imm]
+    rw [z_cmp hal (by decide)]
+  · intro r a b; simp [gpr_setReg, a, b]
+  · exact ⟨rfl, rfl, rfl, rfl⟩
+
+omit L in
+/-- `r4` and `r5` the data and its length. -/
+theorem dataLd_ok {s₀ s : State} (hk : Stk w s₀ s) {D : BitVec 32} {n : Nat} (eD : stackArg s₀ 2 = D)
+    (en : stackArg s₀ 3 = BitVec.ofNat 32 n) :
+    ∃ s₁, runBlock isa [.ldrSp .r4 8, .ldrSp .r5 12] s = some s₁ ∧ s₁.gpr .r4 = D ∧
+      s₁.gpr .r5 = BitVec.ofNat 32 n ∧ (∀ r, r ≠ .r4 → r ≠ .r5 → s₁.gpr r = s.gpr r) ∧ Keeps s s₁ := by
+  obtain ⟨i2, v2⟩ := hk.at 2 (by decide) (show 4 * 2 = 8 from rfl)
+  obtain ⟨i3, v3⟩ := hk.at 3 (by decide) (show 4 * 3 = 12 from rfl)
+  refine ⟨_, by arun [i2, v2, i3, v3], ?_, ?_, ?_, ?_⟩
+  · simp [gpr_setReg, v2, eD]
+  · simp [gpr_setReg, v3, en]
+  · intro r a b; simp [gpr_setReg, a, b]
+  · exact ⟨rfl, rfl, rfl, rfl⟩
+
 /-- The associated data, formatted and chained. -/
 theorem aad_ok {s₀ s : State} (he : Env k w sp R q1 s) (hR : R = 10 ∨ R = 12 ∨ R = 14) {y : Nat}
     (hy : y = 0 ∨ y = 112) (hk : Stk w s₀ s) {A : BitVec 32} {al : Nat} (eA : stackArg s₀ 0 = A)
@@ -242,18 +273,7 @@ theorem aad_ok {s₀ s : State} (he : Env k w sp R q1 s) (hR : R = 10 ∨ R = 12
     WP isa (aad y) s (MacStep k w sp R q1 s y
       (Spec.Cmac.chain (Spec.Ccm.ctxCiph s.mem (State.addr k) R) (bytesAt s.mem (State.addr w + BitVec.ofNat 64 y) 16)
         (adataBlocks (bytesAt s.mem (State.addr A) al)))) := by
-  obtain ⟨i0, v0⟩ := hk.at 0 (by decide) (show 4 * 0 = 0 from rfl)
-  obtain ⟨i1, v1⟩ := hk.at 1 (by decide) (show 4 * 1 = 4 from rfl)
-  obtain ⟨s₁, run₁, h4₁, h5₁, hz, g₁, k₁⟩ : ∃ s₁, runBlock isa [.ldrSp .r4 0, .ldrSp .r5 4, .cmp .r5 (imm 0)] s =
-      some s₁ ∧ s₁.gpr .r4 = A ∧ s₁.gpr .r5 = BitVec.ofNat 32 al ∧ s₁.z = decide (al = 0) ∧
-      (∀ r, r ≠ .r4 → r ≠ .r5 → s₁.gpr r = s.gpr r) ∧ Keeps s s₁ := by
-    refine ⟨_, by arun [i0, v0, i1, v1], ?_, ?_, ?_, ?_, ?_⟩
-    · simp [gpr_setReg, v0, eA]
-    · simp [gpr_setReg, v1, eal]
-    · simp only [z_subFlags, gpr_setReg, gpr_subFlags, ite_true, ite_false, reduceCtorEq, v1, eal, imm]
-      rw [z_cmp hal (by decide)]
-    · intro r a b; simp [gpr_setReg, a, b]
-    · exact ⟨rfl, rfl, rfl, rfl⟩
+  obtain ⟨s₁, run₁, h4₁, h5₁, hz, g₁, k₁⟩ := aadLd_ok hk eA eal hal
   refine WP.seq (WP.of_runBlock ⟨s₁, run₁, ?_⟩)
   have he₁ := he.keep (fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
