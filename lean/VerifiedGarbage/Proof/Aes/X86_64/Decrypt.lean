@@ -113,23 +113,6 @@ theorem invMixColumns_ok {s : State} (hok : Ok linCfg s) :
 
 /-! ## The rounds -/
 
-/-- Middle round `j` of the specification's inverse cipher (with round key
-`R − 1 − j`). -/
-def irnd (R : Nat) (w : List Byte) (j : Nat) (x : Spec.Aes.State) : Spec.Aes.State :=
-  invMixColumns (addRoundKey (invSubBytes (invShiftRows x)) (roundKey w (R - 1 - j)))
-
-/-- The first `m` middle rounds, as `invCipher` folds them. -/
-def invMid (R : Nat) (w : List Byte) (m : Nat) (x : Spec.Aes.State) : Spec.Aes.State :=
-  (List.range m).foldl (fun s j => irnd R w j s) x
-
-theorem invMid_succ (R : Nat) (w : List Byte) (m : Nat) (x : Spec.Aes.State) :
-    invMid R w (m + 1) x = irnd R w m (invMid R w m x) := by
-  simp [invMid, List.range_succ, List.foldl_append]
-
-theorem invCipher_eq (R : Nat) (w : List Byte) (x : Spec.Aes.State) :
-    invCipher R w x = addRoundKey (invSubBytes (invShiftRows (invMid R w (R - 1)
-      (addRoundKey x (roundKey w R))))) (roundKey w 0) := rfl
-
 theorem kp_back (K : Addr) {m : Nat} (hm : 0 < m) :
     K + BitVec.ofNat 64 (64 * m) - (64 : BitVec 32).signExtend 64 = K + BitVec.ofNat 64 (64 * (m - 1)) := by
   rw [show (64 : BitVec 32).signExtend 64 = BitVec.ofNat 64 64 by decide,

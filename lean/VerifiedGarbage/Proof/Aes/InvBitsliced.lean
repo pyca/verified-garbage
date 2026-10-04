@@ -133,6 +133,56 @@ theorem bs_invMixColumns {Q Q' : Nat → BitVec 64} {S : Nat → State}
   rw [mul0e_bit _ hj, mul0b_bit _ hj, mul0d_bit _ hj, mul09_bit _ hj]
   simp only [Bool.xor_assoc, Nat.add_zero]
 
+theorem bitsXor_xor (a b : Byte) (ts : List Nat) :
+    bitsXor (a ^^^ b) ts = (bitsXor a ts ^^ bitsXor b ts) := by
+  induction ts with
+  | nil => rfl
+  | cons t ts ih =>
+    simp only [bitsXor, List.foldr_cons, BitVec.getLsbD_xor] at ih ⊢
+    rw [ih]
+    cases a.getLsbD t <;> cases b.getLsbD t <;> simp
+
+/-- Multiplication by each coefficient of InvMixColumns distributes over XOR. -/
+theorem mul_xor {c : Nat} (hc : c = 0x0e ∨ c = 0x0b ∨ c = 0x0d ∨ c = 0x09) (a b : Byte) :
+    mul (BitVec.ofNat 8 c) (a ^^^ b) = mul (BitVec.ofNat 8 c) a ^^^ mul (BitVec.ofNat 8 c) b :=
+  byte_ext fun j hj => by
+    rw [BitVec.getLsbD_xor, mul_bit hc _ hj, mul_bit hc _ hj, mul_bit hc _ hj, bitsXor_xor]
+
+/-- A round key as a state. -/
+def rkState (rk : List Byte) : State := Vector.ofFn fun i => rk.getD i.1 0
+
+/-- InvMixColumns is linear: of a state XOR a round key, it is the XOR of
+theirs (FIPS 197 §5.3.5). -/
+theorem invMixColumns_addRoundKey (x : State) (rk : List Byte) {i : Nat} (hi : i < 16) :
+    (invMixColumns (addRoundKey x rk)).getD i 0 =
+      (invMixColumns x).getD i 0 ^^^ (invMixColumns (rkState rk)).getD i 0 := by
+  have hr : ∀ k, (i % 4 + k) % 4 + 4 * (i / 4) < 16 := fun k => by omega
+  simp only [invMixColumns, getD_eq _ hi, Vector.getElem_ofFn, addRoundKey, rkState,
+    getD_eq _ (hr _)]
+  rw [show (0x0e : Byte) = BitVec.ofNat 8 0x0e from rfl, show (0x0b : Byte) = BitVec.ofNat 8 0x0b from rfl,
+    show (0x0d : Byte) = BitVec.ofNat 8 0x0d from rfl, show (0x09 : Byte) = BitVec.ofNat 8 0x09 from rfl,
+    mul_xor (by decide), mul_xor (by decide), mul_xor (by decide), mul_xor (by decide)]
+  ac_rfl
+
+/-! ## The inverse cipher's rounds -/
+
+/-- Middle round `j` of the specification's inverse cipher (with round key
+`R − 1 − j`). -/
+def irnd (R : Nat) (w : List Byte) (j : Nat) (x : Spec.Aes.State) : Spec.Aes.State :=
+  invMixColumns (addRoundKey (invSubBytes (invShiftRows x)) (roundKey w (R - 1 - j)))
+
+/-- The first `m` middle rounds, as `invCipher` folds them. -/
+def invMid (R : Nat) (w : List Byte) (m : Nat) (x : Spec.Aes.State) : Spec.Aes.State :=
+  (List.range m).foldl (fun s j => irnd R w j s) x
+
+theorem invMid_succ (R : Nat) (w : List Byte) (m : Nat) (x : Spec.Aes.State) :
+    invMid R w (m + 1) x = irnd R w m (invMid R w m x) := by
+  simp [invMid, List.range_succ, List.foldl_append]
+
+theorem invCipher_eq (R : Nat) (w : List Byte) (x : Spec.Aes.State) :
+    invCipher R w x = addRoundKey (invSubBytes (invShiftRows (invMid R w (R - 1)
+      (addRoundKey x (roundKey w R))))) (roundKey w 0) := rfl
+
 /-! ## As atoms -/
 
 def invSrG (j p : Nat) : List Nat := [64 * j + invSrSrc p]
