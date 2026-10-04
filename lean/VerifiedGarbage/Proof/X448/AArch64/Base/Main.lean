@@ -95,13 +95,13 @@ theorem correct {sE : State} (hp : Pre sE) :
   have hs5 : Scr s5 base := hs4.of_keeps k5.regs (by decide)
   simp only [List.cons_append]
   rw [← List.singleton_append, WP.block_append_iff]
-  refine WP.mono (ldOut_ok hs5) fun s6 ⟨x16, m6, k6⟩ => ?_
+  refine WP.mono (VG.Proof.X448.AArch64.moveOutput_ok s5) fun s6 ⟨x16, m6, k6⟩ => ?_
   have hs6 : Scr s6 base := hs5.of_keeps k6 (by decide)
   -- The working space outside the slots and the products' working space, from `s1` on.
   have o15 : Outside2 base 64 2816 ACC 1152 s1.mem s5.mem := (f3.mem.trans k4.mem).trans k5.mem
   have o16 : Outside2 base 64 2816 ACC 1152 s1.mem s6.mem := by rw [m6]; exact o15
   have out6 : s6.gpr .x1 = sE.gpr .x0 := by
-    rw [x16, o15.word (Or.inl (by decide)) (Or.inl (by decide)) (by decide)]; exact R.out
+    rw [x16, k5.regs.1 _ (by decide), k4.regs.1 _ (by decide), f3.out, R.out]
   have wr6 : s6.wr = sE.wr := by rw [k6.2.2, k5.regs.2.2, k4.regs.2.2, f3.wr, R.wr]
   have hw6 : ∀ j < 56, InRegions s6.wr (off (sE.gpr .x0) j) 1 := fun j hj =>
     ⟨⟨sE.gpr .x0, 56⟩, by rw [wr6, hp.wr]; simp, Offset.contains_base _ (by omega) (by omega)⟩

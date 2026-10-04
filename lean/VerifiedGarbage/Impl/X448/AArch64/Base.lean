@@ -34,7 +34,8 @@ Then `X448(k, 5) = Y² / X²` (`Y` and `X` of `[k] B`): the squares go to the
 ladder's `X2` and `Z2`, inverted and multiplied as the ladder's result is
 (`Fast.invert`, `finish`).
 
-The digits are secret: their entries are selected in constant time. Their
+The output pointer stays in `x20`, which no field operation writes. The
+digits are secret: their entries are selected in constant time. Their
 masks (all ones exactly for `|d| = m`, `m = 1 … 8`) and the bit of `|d| = 0`
 stay in registers (`oddRegs`, `x5`; `evenRegs`, `x0`) while each candidate
 word is built from immediates and ORed in under each mask. The loop's
@@ -66,8 +67,6 @@ def EY : Nat := slot 9
 slot is one of the ladder's 22 (`Proof/X448/AArch64/Weak/Env.lean`). -/
 def t (i : Nat) : Nat := slot (10 + i)
 def ZERO : Nat := slot 19
-/-- Where the output pointer is kept. -/
-def OUT : Nat := 24
 
 /-! ## Point arithmetic -/
 
@@ -116,7 +115,7 @@ def constSlot (o : Nat) (v : Spec.X448.Fe) : List Instr :=
 
 /-- The registers holding the masks of the odd digit's magnitudes `1 … 8` (not `x12`,
 which holds `2²⁸ - 1` for the vector products). -/
-def oddRegs : List Reg := [.x10, .x11, .x13, .x14, .x15, .x16, .x17, .x20]
+def oddRegs : List Reg := [.x10, .x11, .x13, .x14, .x15, .x16, .x17, .x4]
 
 /-- The registers holding the masks of the even digit's magnitudes `1 … 8`. -/
 def evenRegs : List Reg := [.x21, .x22, .x23, .x24, .x25, .x26, .x27, .x28]
@@ -193,12 +192,12 @@ def step : Prog isa :=
     negate EX BITS (t 0) ++ addAffine BX BY BZ EX EY ++
     [.addImm .x .x19 .x19 1, .subImm .x .x9 .x19 56])
 
-/-- Save the registers, keep the output pointer, set `x12` to `2²⁸ - 1` and every slot to
+/-- Save the registers, keep the output pointer in `x20`, set `x12` to `2²⁸ - 1` and every slot to
 zero, expand the clamped scalar's bits, and start both accumulators at `[G] B` and the
 counter at 0. -/
 def setup : Prog isa :=
   .seq (.block ([.addImm .x .x3 .x2 0, .movz .x .x12 0xffff 0, .movk .x .x12 0x0fff 1,
-    st .x19 0, st .x20 8, st .x0 OUT] ++ save ++ Fast.vsave ++ [.movz .x .x4 0 0] ++
+    st .x19 0, st .x20 8, .addImm .x .x20 .x0 0] ++ save ++ Fast.vsave ++ [.movz .x .x4 0 0] ++
     (List.range 352).map (fun i => st .x4 (slot 0 + 8 * i)))) <|
   .seq AArch64.bits <|
   .block (constSlot AX baseG.1 ++ constSlot AY baseG.2 ++ constSlot AZ 1 ++
@@ -216,7 +215,7 @@ frozen and packed to the output, and the registers restored. -/
 def finish : Prog isa :=
   .seq (.block (codeOf [.mul X2 AY AY, .mul Z2 AX AX])) <|
   .seq Fast.invert <|
-  .block (ld .x1 OUT :: Fast.fmul X2 X2 T7 ++ Curve448.AArch64.toLegacy X2 ++
+  .block (.addImm .x .x1 .x20 0 :: Fast.fmul X2 X2 T7 ++ Curve448.AArch64.toLegacy X2 ++
     AArch64.freeze ++ (List.range 8).flatMap AArch64.packPair ++ [ld .x19 0, ld .x20 8] ++
     restore ++ Fast.vrestore)
 

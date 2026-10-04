@@ -140,7 +140,7 @@ private theorem last_fact : ∀ a < 9,
 theorem masksOdd_ok (s : State) {a : Nat} (ha : a < 9) (hx : s.gpr .x2 = BitVec.ofNat 64 a) :
     WP isa (.block (masks oddRegs .x5)) s fun t =>
       (∀ m, 1 ≤ m → m ≤ 8 → t.gpr (oddReg m) = mask (decide (a = m))) ∧ t.gpr .x5 = zeroBit a ∧
-      Keeps [.x5, .x10, .x11, .x13, .x14, .x15, .x16, .x17, .x20] s t ∧ t.mem = s.mem := by
+      Keeps [.x5, .x10, .x11, .x13, .x14, .x15, .x16, .x17, .x4] s t ∧ t.mem = s.mem := by
   have l := less_fact a ha
   apply WP.of_runBlock
   simp only [masks, oddRegs, oddReg, List.range, List.range.loop,
@@ -193,7 +193,7 @@ theorem masksEven_ok (s : State) {a : Nat} (ha : a < 9) (hx : s.gpr .x2 = BitVec
 
 /-- The registers `digits` writes. -/
 def digitRegs : List Reg :=
-  [.x8, .x2, .x9, .x1, .x5, .x10, .x11, .x13, .x14, .x15, .x16, .x17, .x20,
+  [.x8, .x2, .x9, .x1, .x5, .x10, .x11, .x13, .x14, .x15, .x16, .x17, .x4,
     .x0, .x21, .x22, .x23, .x24, .x25, .x26, .x27, .x28]
 
 /-- What `digits` leaves for step `j`'s two digits of the scalar `k`. -/

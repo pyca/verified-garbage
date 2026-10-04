@@ -94,6 +94,7 @@ structure StepInv (s₀ : State) (base : Addr) (k j : Nat) (s : State) : Prop wh
   odd : Rep (pt (EV s.mem base) 0 1 2) (((baseGVal : ℤ) + oddSumZ k j) • baseAff)
   even : Rep (pt (EV s.mem base) 3 4 5) (((baseGVal : ℤ) + evenSumZ k j) • baseAff)
   lr : s.gpr .x30 = s₀.gpr .x30
+  out : s.gpr .x20 = s₀.gpr .x20
   rd : s.rd = s₀.rd
   wr : s.wr = s₀.wr
   mem : Outside2 base 64 2816 ACC 1152 s₀.mem s.mem
@@ -161,7 +162,7 @@ theorem acc_step (G : ℤ) (S : ℤ) (n j : Nat) :
 theorem step_ok {s₀ s : State} {base : Addr} {k j : Nat} (h : StepInv s₀ base k j s) (hj : j < 56) :
     WP isa VG.Impl.X448.AArch64.Base.step s fun t =>
       (t.gpr .x9 != 0) = decide (j + 1 ≠ 56) ∧ StepInv s₀ base k (j + 1) t := by
-  obtain ⟨_, hs, hb, hz, hc, hbits, hodd, heven, hlr, hrd, hwr, hmem⟩ := h
+  obtain ⟨_, hs, hb, hz, hc, hbits, hodd, heven, hlr, hout, hrd, hwr, hmem⟩ := h
   have no := nib_lt k (2 * j + 1)
   have ne := nib_lt k (2 * j)
   rw [step_eq]
@@ -268,7 +269,7 @@ theorem step_ok {s₀ s : State} {base : Addr} {k j : Nat} (h : StepInv s₀ bas
   have p7B : pt (EV t7.mem base) 3 4 5 = pt (EV t6.mem base) 3 4 5 := by simp only [pt, m7]
   refine ⟨by omega, hs7, by rw [m7]; exact b6, by rw [m7]; exact z6, c7,
     by rw [m7]; exact Bits.of_fkeep hs5 (Bits.of_fkeep hs4 (Bits.of_fkeep hs3 (Bits.of_fkeep hs2 bits2 k3) k4) k5) k6,
-    ?_, ?_, ?_, ?_, ?_, ?_⟩
+    ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · rw [p7A, pA]
     have := addPt_rep hodd (baseEntry_ok j (nib k (2 * j + 1)) hj no)
     rw [acc_step] at this
@@ -280,6 +281,9 @@ theorem step_ok {s₀ s : State} {base : Addr} {k j : Nat} (h : StepInv s₀ bas
   · rw [k7.1 .x30 (by decide), k6.regs.1 .x30 (by decide), k5.regs.1 .x30 (by decide),
       k4.regs.1 .x30 (by decide), k3.regs.1 .x30 (by decide), h2.2.2.1 .x30 (by decide),
       d1.keeps.1 .x30 (by decide)]; exact hlr
+  · rw [k7.1 .x20 (by decide), k6.regs.1 .x20 (by decide), k5.regs.1 .x20 (by decide),
+      k4.regs.1 .x20 (by decide), k3.regs.1 .x20 (by decide), h2.2.2.1 .x20 (by decide),
+      d1.keeps.1 .x20 (by decide)]; exact hout
   · rw [k7.2.1, k6.regs.2.1, k5.regs.2.1, k4.regs.2.1, k3.regs.2.1, h2.2.2.2.1, d1.keeps.2.1]; exact hrd
   · rw [k7.2.2, k6.regs.2.2, k5.regs.2.2, k4.regs.2.2, k3.regs.2.2, h2.2.2.2.2, d1.keeps.2.2]; exact hwr
   · rw [m7]

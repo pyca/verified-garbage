@@ -32,19 +32,4 @@ theorem squares_ok {s : State} {base : Addr} (hs : Scr s base) (hb : BEnv s.mem 
   rw [e2, e1]
   rfl
 
-theorem ldOut_ok {s : State} {base : Addr} (hs : Scr s base) :
-    WP isa (.block [ld .x1 OUT]) s fun t =>
-      t.gpr .x1 = word s.mem base OUT ∧ t.mem = s.mem ∧ Keeps [.x1] s t := by
-  have hr := hs.read (d := OUT) (n := 8) (by decide)
-  have enc : OUT % 8 = 0 ∧ OUT < 4096 * 8 := by decide
-  apply WP.of_runBlock
-  simp only [ld, runBlock_cons, runStep_some, runBlock_nil, exec, addr, Size.bytes,
-    State.load, enc, and_self, BitVec.setWidth_eq,
-    hs.x3, hr, RegUpd.gpr_write, RegUpd.mem_write,
-    ite_true, Option.map_some, Option.bind_some,
-    VG.Proof.X448.AArch64.read8_eq, Option.some.injEq, exists_eq_left']
-  refine ⟨trivial, trivial, (fun r hr => ?_), rfl, rfl⟩
-  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  simp only [RegUpd.gpr_write, hr, ite_false]
-
 end VG.Proof.X448.AArch64.Base

@@ -29,12 +29,13 @@ structure Frame (s₀ : State) (base : Addr) (s : State) : Prop where
   env : BEnv s.mem base
   zero : ∀ w < 8, limbs s.mem base (slot (19 : Index).val) w = 0
   lr : s.gpr .x30 = s₀.gpr .x30
+  out : s.gpr .x20 = s₀.gpr .x20
   rd : s.rd = s₀.rd
   wr : s.wr = s₀.wr
   mem : Outside2 base 64 2816 ACC 1152 s₀.mem s.mem
 
 theorem StepInv.frame {s₀ s : State} {base : Addr} {k j : Nat} (h : StepInv s₀ base k j s) :
-    Frame s₀ base s := ⟨h.scr, h.env, h.zero, h.lr, h.rd, h.wr, h.mem⟩
+    Frame s₀ base s := ⟨h.scr, h.env, h.zero, h.lr, h.out, h.rd, h.wr, h.mem⟩
 
 /-- A complete addition, from `Frame`, with the points in slots `x1 y1 z1` and `x2 y2 z2`. -/
 theorem addFrame_ok {s₀ s : State} {base : Addr} (h : Frame s₀ base s) (x1 y1 z1 x2 y2 z2 : Index)
@@ -45,13 +46,14 @@ theorem addFrame_ok {s₀ s : State} {base : Addr} (h : Frame s₀ base s) (x1 y
       Frame s₀ base t ∧ Same base (temps ++ [x1, y1, z1]) s.mem t.mem ∧
       EV t.mem base = genEnv x1 y1 z1 x2 y2 z2 (EV s.mem base) ∧ t.gpr .x19 = s.gpr .x19 := by
   refine block_codeOf (WP.mono (addOps_ok x1 y1 z1 x2 y2 z2 hx1 hy1 hz1 hx2 hy2 hz2 hxy hzx hzy h.scr h.env
-    (zero_env h.zero).2) fun t ⟨tk, tb, ts, _, _, _, te⟩ => ⟨⟨tk.scr h.scr, tb, fun w hw => ?_, ?_, ?_, ?_, ?_⟩,
+    (zero_env h.zero).2) fun t ⟨tk, tb, ts, _, _, _, te⟩ => ⟨⟨tk.scr h.scr, tb, fun w hw => ?_, ?_, ?_, ?_, ?_, ?_⟩,
       ts, te, tk.regs.1 _ (by decide)⟩)
   · have : (19 : Index) ∉ temps ++ [x1, y1, z1] := by
       simp only [temps, List.mem_append, List.mem_cons, List.not_mem_nil, or_false, not_or]
       refine ⟨by decide, fun h => ?_, fun h => ?_, fun h => ?_⟩ <;> (subst h; simp at *)
     rw [ts 19 this w hw]; exact h.zero w hw
   · rw [tk.regs.1 _ (by decide)]; exact h.lr
+  · rw [tk.regs.1 _ (by decide)]; exact h.out
   · rw [tk.regs.2.1]; exact h.rd
   · rw [tk.regs.2.2]; exact h.wr
   · exact h.mem.trans tk.mem
@@ -74,7 +76,7 @@ theorem dbl_ok {s₀ s : State} {base : Addr} {v w : ℤ} {m : Nat} (hm : 1 ≤ 
     (by rw [tc, h.counter]; congr 1; omega)) fun u ⟨uc, ug, um, urd, uwr, uz⟩ => ⟨⟨?_, uc, ?_, ?_⟩, uz⟩
   · exact ⟨tf.scr.of_keeps (rs := [.x19]) ⟨fun r hr => ug r (by simpa using hr), urd, uwr⟩ (by decide),
       by rw [um]; exact tf.env, by rw [um]; exact tf.zero, by rw [ug _ (by decide)]; exact tf.lr,
-      by rw [urd]; exact tf.rd, by rw [uwr]; exact tf.wr, by rw [um]; exact tf.mem⟩
+      by rw [ug _ (by decide)]; exact tf.out, by rw [urd]; exact tf.rd, by rw [uwr]; exact tf.wr, by rw [um]; exact tf.mem⟩
   · have hz := (zero_env h.frame.zero).1
     rw [um, te, genEnv_dbl, hz, genPt_eq]
     have := addPt_rep h.a h.a
@@ -101,7 +103,8 @@ theorem combine_ok {s₀ s : State} {base : Addr} {k : Nat} (hk : k < 256 ^ 56) 
     fun s1 ⟨c1, g1, m1, rd1, wr1⟩ => ?_)
   have f1 : Frame s₀ base s1 :=
     ⟨h.scr.of_keeps (rs := [.x19]) ⟨fun r hr => g1 r (by simpa using hr), rd1, wr1⟩ (by decide), by rw [m1]; exact h.env,
-      by rw [m1]; exact h.zero, by rw [g1 _ (by decide)]; exact h.lr, by rw [rd1]; exact h.rd,
+      by rw [m1]; exact h.zero, by rw [g1 _ (by decide)]; exact h.lr, by rw [g1 _ (by decide)]; exact h.out,
+      by rw [rd1]; exact h.rd,
       by rw [wr1]; exact h.wr, by rw [m1]; exact h.mem⟩
   have d1 : DInv s₀ base v w 4 s1 :=
     ⟨f1, c1, by rw [m1]; simpa using h.odd, by rw [m1]; exact h.even⟩
