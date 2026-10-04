@@ -53,7 +53,7 @@ theorem kvN_ok (hL : L.Ok) {u : State} (hc : Ctx L g m₀ u) {a b : BitVec 64} (
     simp only [runBlock_cons, runStep_some, runBlock_nil, exec, State.store64, ea_stk, hg, hc.rsp,
       Offset.add_add, fV, fK, Nat.zero_add, show 24 + (64 + 8 * k) = 88 + 8 * k by omega, hwr, w₁, w₂, ite_true,
       Option.some.injEq, exists_eq_left', ha, hb]
-    have sep : ∀ x y, x + 8 ≤ y ∨ y + 8 ≤ x → x + 8 ≤ 224 → y + 8 ≤ 224 →
+    have sep : ∀ x y, x + 8 ≤ y ∨ y + 8 ≤ x → x + 8 ≤ 240 → y + 8 ≤ 240 →
         Mem.Sep (L.B + BitVec.ofNat 64 x) (64 / 8) (L.B + BitVec.ofNat 64 y) (64 / 8) :=
       fun x y h h₁ h₂ => Offset.sep _ h (by omega) (by omega)
     refine ⟨hrd, trivial, trivial, hf.trans ((((Frame.refl _ _).writeW (List.mem_singleton_self _) _
@@ -110,12 +110,12 @@ theorem initKV_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) :
 /-! ## The number of candidates -/
 
 /-- The number of candidates left, in the frame. -/
-abbrev cnt {dn : Nat} (L : Lay dn) (m : Mem) : BitVec 64 := m.readW (L.B + BitVec.ofNat 64 184) 64
+abbrev cnt {dn : Nat} (L : Lay dn) (m : Mem) : BitVec 64 := m.readW (L.B + BitVec.ofNat 64 200) 64
 
 theorem initCnt_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) :
     WP isa (.block (cfgOf P).initCnt) t fun t' => Ctx L g m₀ t' ∧
-      Frame [⟨L.B + BitVec.ofNat 64 184, 8⟩] t.mem t'.mem ∧ cnt L t'.mem = BitVec.ofNat 64 8 := by
-  have w := hc.inFrW (d := 184) (n := 8) (by omega) (by omega)
+      Frame [⟨L.B + BitVec.ofNat 64 200, 8⟩] t.mem t'.mem ∧ cnt L t'.mem = BitVec.ofNat 64 8 := by
+  have w := hc.inFrW (d := 200) (n := 8) (by omega) (by omega)
   refine Ctx.of_keep hL hc ?_ (by rfl) fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr; exact safe_low L (by omega)
   apply WP.of_runBlock
@@ -131,10 +131,10 @@ theorem initCnt_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) :
 theorem coreArgs_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) :
     WP isa (.block Cfg.coreArgs) t fun t' => Ctx L g m₀ t' ∧ t'.mem = t.mem ∧ t'.gpr .rdi = L.out ∧
       t'.gpr .rsi = L.d ∧ t'.gpr .rdx = L.dg ∧ t'.gpr .rcx = L.B + BitVec.ofNat 64 88 ∧ t'.gpr .r8 = L.scr := by
-  have p0 := hc.inFr (d := 216) (by omega) (by omega)
-  have p1 := hc.inFr (d := 208) (by omega) (by omega)
-  have p2 := hc.inFr (d := 200) (by omega) (by omega)
-  have p3 := hc.inFr (d := 192) (by omega) (by omega)
+  have p0 := hc.inFr (d := 232) (by omega) (by omega)
+  have p1 := hc.inFr (d := 224) (by omega) (by omega)
+  have p2 := hc.inFr (d := 216) (by omega) (by omega)
+  have p3 := hc.inFr (d := 208) (by omega) (by omega)
   apply WP.of_runBlock
   simp only [Cfg.coreArgs, Cfg.fr, fOut, fD, fDigest, fV, fScratch, List.cons_append, List.nil_append,
     runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, readSrc, State.load64, ea_stk, RegUpd.gpr_setReg,
@@ -174,11 +174,11 @@ theorem goOn_flag (a : BitVec 32) (c : BitVec 64) (x : BitVec 64) :
 /-- One candidate fewer; `ZF` is clear iff the signature failed and candidates are left. -/
 theorem goOn_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) :
     WP isa (.block Cfg.goOn) t fun t' => Ctx L g m₀ t' ∧
-      Frame [⟨L.B + BitVec.ofNat 64 184, 8⟩] t.mem t'.mem ∧ cnt L t'.mem = cnt L t.mem - 1 ∧
+      Frame [⟨L.B + BitVec.ofNat 64 200, 8⟩] t.mem t'.mem ∧ cnt L t'.mem = cnt L t.mem - 1 ∧
       t'.gpr .rax = t.gpr .rax ∧
       t'.zf = some (!decide ((t.gpr .rax).setWidth 32 = 0 ∧ cnt L t.mem - 1 ≠ 0)) := by
-  have r := hc.inFr (d := 184) (by omega) (by omega)
-  have w := hc.inFrW (d := 184) (n := 8) (by omega) (by omega)
+  have r := hc.inFr (d := 200) (by omega) (by omega)
+  have w := hc.inFrW (d := 200) (n := 8) (by omega) (by omega)
   refine Ctx.of_keep hL hc ?_ (by rfl) fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr; exact safe_low L (by omega)
   apply WP.of_runBlock
@@ -212,9 +212,9 @@ theorem stop_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) :
 
 /-! ## Wiping the frame -/
 
-theorem zeroN_ok {u : State} (hc : Ctx L g m₀ u) : ∀ k ≤ 20,
+theorem zeroN_ok {u : State} (hc : Ctx L g m₀ u) : ∀ k ≤ 22,
     WP isa (.block ((List.range k).map fun j => .store (stk (8 * j)) .rcx)) u fun u' =>
-      u'.rd = u.rd ∧ u'.wr = u.wr ∧ u'.gpr = u.gpr ∧ Frame [⟨L.B + BitVec.ofNat 64 24, 160⟩] u.mem u'.mem
+      u'.rd = u.rd ∧ u'.wr = u.wr ∧ u'.gpr = u.gpr ∧ Frame [⟨L.B + BitVec.ofNat 64 24, 176⟩] u.mem u'.mem
   | 0, _ => WP.of_runBlock ⟨u, rfl, rfl, rfl, rfl, Frame.refl _ _⟩
   | k + 1, hk => by
     rw [List.range_succ, List.map_append, List.map_singleton, WP.block_append_iff]
@@ -229,9 +229,9 @@ theorem zeroN_ok {u : State} (hc : Ctx L g m₀ u) : ∀ k ≤ 20,
 /-- `K`, `V`, `h` and the count cleared, keeping `rax`. -/
 theorem wipe_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) :
     WP isa (.block Cfg.wipe) t fun t' => Ctx L g m₀ t' ∧ t'.gpr .rax = t.gpr .rax ∧
-      Frame [⟨L.B + BitVec.ofNat 64 24, 160⟩] t.mem t'.mem := by
+      Frame [⟨L.B + BitVec.ofNat 64 24, 176⟩] t.mem t'.mem := by
   have h := Ctx.of_keep (Q := fun t' => t'.gpr .rax = t.gpr .rax) hL hc (is := Cfg.wipe)
-    (ws := [⟨L.B + BitVec.ofNat 64 24, 160⟩]) ?_ (by rfl) fun r hr => by
+    (ws := [⟨L.B + BitVec.ofNat 64 24, 176⟩]) ?_ (by rfl) fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact safe_low L (by omega)
   · exact WP.mono h fun _ ⟨hc', hf, ha⟩ => ⟨hc', ha, hf⟩
   rw [Cfg.wipe, WP.block_append_iff]
@@ -242,7 +242,7 @@ theorem wipe_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) :
       Option.bind_some, RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, reduceCtorEq, ite_false,
       Option.some.injEq, exists_eq_left']
     exact ⟨hc.regs hL rfl rfl rfl (by cs_tac), by triv, by triv, by triv, by triv⟩
-  exact WP.mono h₁ fun u ⟨hcu, hrd, hwr, hm, ha⟩ => WP.mono (zeroN_ok hcu 20 (by omega))
+  exact WP.mono h₁ fun u ⟨hcu, hrd, hwr, hm, ha⟩ => WP.mono (zeroN_ok hcu 22 (by omega))
     fun u' ⟨hrd', hwr', hg, hf⟩ => ⟨hrd'.trans hrd, hwr'.trans hwr, hm ▸ hf, by rw [hg, ha]⟩
 
 end VG.Proof.Ecdsa.Rfc6979.X86_64

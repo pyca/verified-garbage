@@ -2,6 +2,7 @@ import VerifiedGarbage.Proof.Framework.PowLit
 import Mathlib.FieldTheory.Finite.Basic
 import Mathlib.Tactic.LinearCombination
 import VerifiedGarbage.Spec.Weierstrass
+import VerifiedGarbage.Proof.Weierstrass.Complete
 
 /-!
 # Certificates that a cubic has no root modulo a prime
@@ -111,5 +112,16 @@ theorem noTwoTorsion_of_cert (C : Curve) [Fact C.p.Prime] (A B n : Nat)
   have hB' : (B : ZMod C.p) + C.b = 0 := by
     rw [← Nat.cast_add, ← ZMod.natCast_mod, hB, Nat.cast_zero]
   exact noRoot_of_cert C.p A B n hn g v hg hv x (by linear_combination hx - x * hA' - hB')
+
+/-- A curve over a prime field above 3 with a certificate that it has no
+point of order 2 is `Good`. Stated for any curve, so that a curve whose
+field is too large for the elaborator to compute with (as `ZMod p` needs
+when its instances are compared) is checked by the kernel alone. -/
+theorem Good.of_cert (C : Spec.Weierstrass.Curve) (hp : C.p.Prime) (h3 : 3 < C.p) (A B n : Nat)
+    (hA : (A + C.a) % C.p = 0) (hB : (B + C.b) % C.p = 0) (hn : C.p < 2 ^ n) (g v : Tri)
+    (hg : powT C.p A B n (0, 1, 0) C.p = g)
+    (hv : mulT C.p A B v (g.1, (g.2.1 + C.p - 1) % C.p, g.2.2) = (1, 0, 0)) : Good C :=
+  haveI : Fact C.p.Prime := ⟨hp⟩
+  ⟨hp, h3, noTwoTorsion_of_cert C A B n hA hB hn g v hg hv⟩
 
 end VG.Proof.Weierstrass

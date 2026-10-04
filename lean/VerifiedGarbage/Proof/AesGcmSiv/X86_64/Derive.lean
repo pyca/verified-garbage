@@ -29,7 +29,7 @@ theorem derArgs_ok {K W SP : Addr} {t : State} (E : Env K W SP t) {R : Nat} {N A
           (t.mem.readW N 32) (t.mem.readW (N + BitVec.ofNat 64 4) 32) (t.mem.readW (N + BitVec.ofNat 64 8) 32)).writeW
           (W + BitVec.ofNat 64 128) (0 : BitVec 64)).writeW (W + BitVec.ofNat 64 136) (0 : BitVec 64) ∧
       t₁.gpr .rdi = K ∧ t₁.gpr .rsi = BitVec.ofNat 64 R ∧ t₁.gpr .rdx = W + BitVec.ofNat 64 112 ∧
-      t₁.gpr .rcx = W + BitVec.ofNat 64 128 ∧ t₁.gpr .r8 = BitVec.ofNat 64 1 ∧ t₁.gpr .r9 = W + BitVec.ofNat 64 2048 ∧
+      t₁.gpr .rcx = W + BitVec.ofNat 64 128 ∧ t₁.gpr .r8 = BitVec.ofNat 64 1 ∧ t₁.gpr .r9 = W + BitVec.ofNat 64 1768 ∧
       (∀ r ∈ [Reg.rbx, .rbp, .r12, .r13, .r15, .rsp], t₁.gpr r = t.gpr r) ∧ t₁.rd = t.rd ∧ t₁.wr = t.wr := by
   have h15 := E.r15
   have rN := S.nonce
@@ -38,14 +38,14 @@ theorem derArgs_ok {K W SP : Addr} {t : State} (E : Env K W SP t) {R : Nat} {N A
   have n₄ := in_off (d := 4) (n := 4) hN.rd (by decide) (by decide)
   have n₈ := in_off (d := 8) (n := 4) hN.rd (by decide) (by decide)
   simp only [BitVec.add_zero] at n₀
-  have rS := E.perm.wR (show 280 + 8 ≤ 4096 by decide)
-  have rR' := E.perm.wR (show 272 + 8 ≤ 4096 by decide)
-  have w₁ := E.perm.wW (show 112 + 4 ≤ 4096 by decide)
-  have w₂ := E.perm.wW (show 116 + 4 ≤ 4096 by decide)
-  have w₃ := E.perm.wW (show 120 + 4 ≤ 4096 by decide)
-  have w₄ := E.perm.wW (show 124 + 4 ≤ 4096 by decide)
-  have w₅ := E.perm.wW (show 128 + 8 ≤ 4096 by decide)
-  have w₆ := E.perm.wW (show 136 + 8 ≤ 4096 by decide)
+  have rS := E.perm.wR (show 208 + 8 ≤ 3816 by decide)
+  have rR' := E.perm.wR (show 200 + 8 ≤ 3816 by decide)
+  have w₁ := E.perm.wW (show 112 + 4 ≤ 3816 by decide)
+  have w₂ := E.perm.wW (show 116 + 4 ≤ 3816 by decide)
+  have w₃ := E.perm.wW (show 120 + 4 ≤ 3816 by decide)
+  have w₄ := E.perm.wW (show 124 + 4 ≤ 3816 by decide)
+  have w₅ := E.perm.wW (show 128 + 8 ≤ 3816 by decide)
+  have w₆ := E.perm.wW (show 136 + 8 ≤ 3816 by decide)
   refine ⟨_, by srun [deriveBlock, zero16, ctrArgs, h15, rN, rR, n₀, n₄, n₈, rS, rR', w₁, w₂, w₃, w₄, w₅, w₆, hbx], ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   rotate_left
   · simp only [gpr_setReg, gpr_arithFlags, ite_true, ite_false, reduceCtorEq, E.r13]
@@ -65,7 +65,7 @@ theorem derArgs_ok {K W SP : Addr} {t : State} (E : Env K W SP t) {R : Nat} {N A
   rfl
 
 /-- The counter block of a step: `little_endian_uint32(i) ‖ nonce`. -/
-theorem derBlock_bytes {W : Addr} (_hw : W.toNat + 4096 ≤ 2 ^ 64) (m : Mem) (N : Addr) (i : Nat) :
+theorem derBlock_bytes {W : Addr} (_hw : W.toNat + 3816 ≤ 2 ^ 64) (m : Mem) (N : Addr) (i : Nat) :
     bytesAt (((Proof.Cmac.store4 m (W + BitVec.ofNat 64 112) ((BitVec.ofNat 64 i).setWidth 32)
           (m.readW N 32) (m.readW (N + BitVec.ofNat 64 4) 32) (m.readW (N + BitVec.ofNat 64 8) 32)).writeW
           (W + BitVec.ofNat 64 128) (0 : BitVec 64)).writeW (W + BitVec.ofNat 64 136) (0 : BitVec 64))
@@ -93,7 +93,7 @@ theorem derZero_block {W : Addr} (X : Mem) :
 
 /-- What `derive` writes. -/
 abbrev derR (W SP : Addr) : List Region :=
-  [⟨W + BitVec.ofNat 64 16, 48⟩, ⟨W + BitVec.ofNat 64 112, 32⟩, ⟨W + BitVec.ofNat 64 2048, 2048⟩, below SP 8]
+  [⟨W + BitVec.ofNat 64 16, 48⟩, ⟨W + BitVec.ofNat 64 112, 32⟩, ⟨W + BitVec.ofNat 64 1768, 2048⟩, below SP 8]
 
 theorem derR_mut (W SP D : Addr) (n : Nat) : ∀ r ∈ derR W SP, ∃ r' ∈ mutR W SP D n, Region.Sub r r' := by
   intro r hr
@@ -132,7 +132,7 @@ theorem derPost_ok {K W SP : Addr} {t : State} (E : Env K W SP t) {i cnt : Nat} 
       t'.gpr .r12 = W + BitVec.ofNat 64 (16 + 8 * (i + 1)) ∧ t'.zf = some (decide (i + 1 = cnt)) ∧
       (∀ r ∈ [Reg.r13, .r15, .rsp], t'.gpr r = t.gpr r) ∧ t'.rd = t.rd ∧ t'.wr = t.wr := by
   have h15 := E.r15
-  have rb := E.perm.wR (show 128 + 8 ≤ 4096 by decide)
+  have rb := E.perm.wR (show 128 + 8 ≤ 3816 by decide)
   have wo := E.perm.wW (d := 16 + 8 * i) (n := 8) (by omega)
   refine ⟨_, by srun [derPost, h15, h12, rb, wo], ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · simp only [mem_setReg, mem_arithFlags]
@@ -171,7 +171,7 @@ theorem ciph_derR {K W SP : Addr} (L : Lay K W SP) {R : Nat} (hR : R = 10 ∨ R 
 /-- A step of `derive`. -/
 theorem derStep_ok (v : GcmImpl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} (hR : R = 10 ∨ R = 14)
     {N A D : Addr} {al n : Nat} {σ : State} (S : Slots W R N A D al n σ.mem) (hN : Buf K W SP σ N 12)
-    (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 4096⟩) {cnt i : Nat} (hc : cnt ≤ 6) (hi : i < cnt) {t : State}
+    (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 3816⟩) {cnt i : Nat} (hc : cnt ≤ 6) (hi : i < cnt) {t : State}
     (I : DInv K W SP σ R N cnt i t) :
     WP isa (.seq (.block (deriveBlock ++ ([.mov .rdi (.reg .r13)] : List Instr) ++ ctrArgs ++ ptr .rcx .r15 bO))
       (.seq (callCtr v.callees) (.block derPost))) t fun t' =>
@@ -184,7 +184,7 @@ theorem derStep_ok (v : GcmImpl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} (hR 
   have E₁ : Env K W SP t₁ := I.env.keep (fun r hr => hg₁ r (by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr ⊢; rcases hr with rfl | rfl | rfl <;> simp))
     hrd₁ hwr₁
-  have cc : CtrCall t₁ K (W + BitVec.ofNat 64 112) (W + BitVec.ofNat 64 128) (W + BitVec.ofNat 64 2048) R 1 :=
+  have cc : CtrCall t₁ K (W + BitVec.ofNat 64 112) (W + BitVec.ofNat 64 128) (W + BitVec.ofNat 64 1768) R 1 :=
     cargs L E₁ hR (keyK L E₁.perm) (c := 112) (by decide) (srcW L E₁.perm (t := 128) (k := 16 * 1) (by decide))
       (L.w_w (.inr (by decide)) (by decide) (by decide)) (L.k_w' (by decide)) (E₁.perm.wC (by decide))
       rdi rsi rdx rcx r8 r9
@@ -230,7 +230,7 @@ theorem derStep_ok (v : GcmImpl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} (hR 
   · -- The bytes.
     have fc := P.frame
     rw [E₁.rsp] at fc
-    have dW : ∀ {d k : Nat}, d + k ≤ 4096 → 16 + 8 * i ≤ d →
+    have dW : ∀ {d k : Nat}, d + k ≤ 3816 → 16 + 8 * i ≤ d →
         (⟨W + BitVec.ofNat 64 16, 8 * i⟩ : Region).Disjoint ⟨W + BitVec.ofNat 64 d, k⟩ :=
       fun h₁ h₂ => L.w_w (.inl (by omega)) (by omega) h₁
     have keep : bytesAt t₃.mem (W + BitVec.ofNat 64 16) (8 * i) = bytesAt t.mem (W + BitVec.ofNat 64 16) (8 * i) := by
@@ -282,7 +282,7 @@ theorem derInit_ok {K W SP : Addr} {σ : State} (E : Env K W SP σ) {R : Nat} (h
       (DInv K W SP σ R N (R / 2 - 1) 0) := by
   have h15 := E.r15
   have rR := S.rounds
-  have rr := E.perm.wR (show 272 + 8 ≤ 4096 by decide)
+  have rr := E.perm.wR (show 200 + 8 ≤ 3816 by decide)
   obtain ⟨t, run, hm, bx, bp, h12, hg, hrd, hwr⟩ : ∃ t : State, runBlock isa ([.mov32 .rbx (imm 0)] ++ ptr .r12 .r15 akO ++
       [.mov .rbp (.mem (at_ .r15 roundsO)), .shift .shr .rbp 1, .alu .sub .rbp (imm 1)]) σ = some t ∧
       t.mem = σ.mem ∧ t.gpr .rbx = BitVec.ofNat 64 0 ∧ t.gpr .rbp = BitVec.ofNat 64 (R / 2 - 1) ∧
@@ -303,7 +303,7 @@ theorem derInit_ok {K W SP : Addr} {σ : State} (E : Env K W SP σ) {R : Nat} (h
 /-- `derive`: the halves of `derive_keys` at `W + 16`. -/
 theorem derive_ok (v : GcmImpl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} (hR : R = 10 ∨ R = 14)
     {N A D : Addr} {al n : Nat} {σ : State} (E : Env K W SP σ) (S : Slots W R N A D al n σ.mem)
-    (hN : Buf K W SP σ N 12) (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 4096⟩) :
+    (hN : Buf K W SP σ N 12) (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 3816⟩) :
     WP isa (derive v.callees) σ (DInv K W SP σ R N (R / 2 - 1) (R / 2 - 1)) := by
   have hc : R / 2 - 1 ≤ 6 := by omega
   refine WP.seq (WP.mono (derInit_ok E hR S) fun t I₀ => ?_)

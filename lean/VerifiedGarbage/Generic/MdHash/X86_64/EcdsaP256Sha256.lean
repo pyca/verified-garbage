@@ -12,7 +12,7 @@ is emitted for every SHA-256 variant carried by `MdHash.sha256`, named with
 its suffix (e.g. `vg_ecdsa_p256_sha256_sign_shani`), and needs its CPU
 features. Other hash functions emit no artifact here.
 
-The stack is 224 bytes: a 200-byte frame, and the 24 bytes below it that the
+The stack is 240 bytes: a 216-byte frame, and the 24 bytes below it that the
 calls use (`vg_ecdsa_p256_sign` only its return address).
 -/
 
@@ -28,10 +28,11 @@ def artifacts (v : Proof.Pbkdf2.Md.X86_64.MdHash) : List Artifact :=
     { Spec.Ecdsa.Rfc6979.P256Sha256.signApi with
       name := Spec.Ecdsa.Rfc6979.P256Sha256.signApi.name ++ c.suffix
       target := X86_64.target
-      doc := Spec.Ecdsa.Rfc6979.P256Sha256.signApi.doc (notes := [signNotes (cfgOf (pack Proof.P256.law c)).H])
+      doc := Spec.Ecdsa.Rfc6979.P256Sha256.signApi.doc
+        (notes := [signNotes (cfgOf (pack Proof.P256.law c)).H 32 Spec.Ecdsa.P256.signApi.name])
       code := (cfgOf (pack Proof.P256.law c)).sign
-      contract := Spec.Ecdsa.Rfc6979.P256Sha256.inst.signContract X86_64.abi 224
-      stack := 224
+      contract := Spec.Ecdsa.Rfc6979.P256Sha256.inst.signContract X86_64.abi 240
+      stack := 240
       verified := sign_verified Proof.P256.law c
       spSafe := sign_spSafe (pack Proof.P256.law c)
       features := c.features }]

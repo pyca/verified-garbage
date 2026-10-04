@@ -3,8 +3,7 @@ description: >
   After `lean-setup`, fetches the prebuilt files of the modules the proofs
   import from Mathlib's cache if `lean-setup` did not restore them, checks
   that all of them are built, and saves them for later runs. It runs Lake
-  in `lean/`, so a job runs it once nothing else writes there (after any
-  background restore of `lean/.lake/build`).
+  in `lean/`, so `lean-prepare` runs it last.
 
 inputs:
   mods:

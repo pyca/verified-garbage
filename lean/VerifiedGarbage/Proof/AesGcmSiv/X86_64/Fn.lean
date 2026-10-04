@@ -27,13 +27,13 @@ theorem mutW_mut (W SP D : Addr) (n : Nat) : ∀ r ∈ mutW W SP, ∃ r' ∈ mut
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl <;> simp, fun _ h => h⟩
 
-/-- `⟨W + d, k⟩` within `[0, 160)` of `W`. -/
-theorem sub_wA {W SP : Addr} {d k : Nat} (h : d + k ≤ 160) :
+/-- `⟨W + d, k⟩` within `[0, 144)` of `W`. -/
+theorem sub_wA {W SP : Addr} {d k : Nat} (h : d + k ≤ 144) :
     ∃ r' ∈ mutW W SP, Region.Sub ⟨W + BitVec.ofNat 64 d, k⟩ r' :=
   ⟨wA W, by simp, Offset.sub_base W h⟩
 
-/-- `⟨W + d, k⟩` within `[512, 4096)` of `W`. -/
-theorem sub_wC {W SP : Addr} {d k : Nat} (h₁ : 512 ≤ d) (h₂ : d + k ≤ 4096) :
+/-- `⟨W + d, k⟩` within `[248, 3816)` of `W`. -/
+theorem sub_wC {W SP : Addr} {d k : Nat} (h₁ : 248 ≤ d) (h₂ : d + k ≤ 3816) :
     ∃ r' ∈ mutW W SP, Region.Sub ⟨W + BitVec.ofNat 64 d, k⟩ r' :=
   ⟨wC W, by simp, Offset.sub W h₁ (by omega)⟩
 
@@ -50,12 +50,12 @@ theorem buf_mutW {K W SP : Addr} {s : State} {P : Addr} {len : Nat} (hP : Buf K 
     · exact hP.stk.symm) (by have := hP.lt; omega)
 
 theorem mutW_frame {K W SP : Addr} (L : Lay K W SP) {d k : Nat}
-    (hd : 160 ≤ d ∧ d + k ≤ 208 ∨ 216 ≤ d ∧ d + k ≤ 512) :
+    (hd : 144 ≤ d ∧ d + k ≤ 192 ∨ 200 ≤ d ∧ d + k ≤ 248) :
     ∀ r ∈ mutW W SP, (⟨W + BitVec.ofNat 64 d, k⟩ : Region).Disjoint r := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl
-  · simpa using L.w_w (a := d) (n := k) (d := 0) (k := 160) (.inr (by omega)) (by omega) (by decide)
+  · simpa using L.w_w (a := d) (n := k) (d := 0) (k := 144) (.inr (by omega)) (by omega) (by decide)
   · rcases hd with hd | hd
     · exact L.w_w (.inl (by omega)) (by omega) (by decide)
     · exact L.w_w (.inr (by omega)) (by omega) (by decide)
@@ -82,7 +82,7 @@ structure KeysPost (K W SP : Addr) (R : Nat) (N : Addr) (σ t : State) : Prop wh
   frame : Frame (keyR W SP) σ.mem t.mem
   auth : (Spec.GcmSiv.deriveKeys (Spec.GcmSiv.ctxCiph σ.mem K R) (Spec.GcmSiv.keyLen R) (bytesAt σ.mem N 12)).1 =
     bytesAt t.mem (W + BitVec.ofNat 64 16) 16
-  ciph : Spec.GcmSiv.ctxCiph t.mem (W + BitVec.ofNat 64 512) R = Spec.GcmSiv.aes
+  ciph : Spec.GcmSiv.ctxCiph t.mem (W + BitVec.ofNat 64 248) R = Spec.GcmSiv.aes
     (Spec.GcmSiv.deriveKeys (Spec.GcmSiv.ctxCiph σ.mem K R) (Spec.GcmSiv.keyLen R) (bytesAt σ.mem N 12)).2
   hkey : Spec.Gcm.blockAt t.mem (W + BitVec.ofNat 64 64) =
     GcmSiv.Polyval.mulXG (Spec.GcmSiv.ofBytes (bytesAt t.mem (W + BitVec.ofNat 64 16) 16))
@@ -90,7 +90,7 @@ structure KeysPost (K W SP : Addr) (R : Nat) (N : Addr) (σ t : State) : Prop wh
 
 theorem keys_ok (v : GcmImpl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} (hR : R = 10 ∨ R = 14)
     {N A D : Addr} {al n : Nat} {σ : State} (E : Env K W SP σ) (S : Slots W R N A D al n σ.mem)
-    (hN : Buf K W SP σ N 12) (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 4096⟩) :
+    (hN : Buf K W SP σ N 12) (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 3816⟩) :
     WP isa (keys v.callees) σ (KeysPost K W SP R N σ) := by
   refine WP.seq (WP.mono (derive_ok v L hR E S hN hDW) fun t₂ I => ?_)
   have f₂ : Frame (keyR W SP) σ.mem t₂.mem := I.frame.sub fun r hr => by
@@ -111,7 +111,7 @@ theorem keys_ok (v : GcmImpl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} (hR : R
     · exact ⟨wC W, by simp, Offset.sub W (by decide) (by decide)⟩
     · exact ⟨wC W, by simp, Offset.sub W (by decide) (by decide)⟩
     · exact ⟨_, by simp, fun _ h => h⟩
-  have dA : ∀ q ∈ [(⟨W + BitVec.ofNat 64 512, 240⟩ : Region), ⟨W + BitVec.ofNat 64 2048, 512⟩, below SP 8],
+  have dA : ∀ q ∈ [(⟨W + BitVec.ofNat 64 248, 240⟩ : Region), ⟨W + BitVec.ofNat 64 1768, 512⟩, below SP 8],
       (⟨W + BitVec.ofNat 64 16, 16⟩ : Region).Disjoint q := fun q hq => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
     rcases hq with rfl | rfl | rfl

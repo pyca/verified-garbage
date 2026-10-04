@@ -23,6 +23,21 @@ import VerifiedGarbage.TCB.Mem
 A private key in another format is brought to the CRT format once, when it
 is loaded, rather than at every operation.
 
+Beside these, what BoringSSL (`crypto/fipsmodule/rsa/`) checks, which the
+operations will check instead of the above:
+
+* `publicOpChecked`: `publicOp` with BoringSSL's limits on the public key
+  (`rsa_check_public_key`): `exponentValid` (`e` odd, from 3 to 33 bits) as
+  well as `modulusValid`.
+* `privateChecked`: `privateCrt` given the public exponent `e` too, which
+  releases the result `m` only if `m^e mod n` is the input, and is otherwise
+  an internal error (`Outcome.fault`): BoringSSL's
+  `rsa_default_private_transform`, which checks every result so that a
+  fault in the computation (Boneh, DeMillo and Lipton, 1997) does not
+  release a value that reveals the key.
+* `checkKey`: BoringSSL's `RSA_check_key` of a private key
+  `(n, e, d, p, q, dP, dQ, qInv)`.
+
 Integers are naturals, converted from and to octet strings by OS2IP and
 I2OSP (§4), most significant octet first. The modulus `n` is given as its
 `k` octets, and so are the input and the output of the operations, and the
@@ -234,5 +249,95 @@ def primesKey (nB eB dB : List Byte) : Option (List Byte × List Byte) × Nat :=
     | (some (p, q), tries) => (some (i2osp p nB.length, i2osp q nB.length), tries)
     | (none, tries) => (none, tries)
   else (none, 0)
+
+/-! ## BoringSSL's checks
+
+What BoringSSL checks of RSA keys and results, in
+`crypto/fipsmodule/rsa/rsa_impl.cc.inc` (`rsa_check_public_key`,
+`rsa_default_private_transform`) and `crypto/fipsmodule/rsa/rsa.cc.inc`
+(`RSA_check_key`). BoringSSL allows moduli of up to 16384 bits; the modulus
+here is still `modulusValid`'s, up to 8192. -/
+
+/-- A public exponent BoringSSL's `rsa_check_public_key` accepts: odd and of
+2 to 33 bits (`kMaxExponentBits`), so from 3 to `2^33 - 1`. -/
+def exponentValid (e : Nat) : Bool :=
+  e % 2 == 1 && 3 ≤ e && e < 2 ^ 33
+
+/-- RSAEP and RSAVP1 (`publicOp`) of the input `xB` with the public key
+`(nB, eB)`, which BoringSSL's `rsa_check_public_key` must accept: `some`
+result, or `none` if the modulus or the exponent is not valid
+(`modulusValid`, `exponentValid`) or the input is not below the modulus. -/
+def publicOpChecked (nB eB xB : List Byte) : Option (List Byte) :=
+  if exponentValid (os2ip eB) then publicOp nB eB xB else none
+
+/-- The outcome of `privateChecked`. -/
+inductive Outcome where
+  /-- The result, `k` octets. -/
+  | ok (y : List Byte)
+  /-- The key or the input is refused. -/
+  | invalid
+  /-- The internal error: the result `m` failed the check `m^e mod n = c`. -/
+  | fault
+  deriving DecidableEq
+
+/-- RSADP and RSASP1 with the private key `(p, q, dP, dQ, qInv)` (step 2.b,
+`decryptCrt`), checked against the public exponent `e`, as BoringSSL's
+`rsa_default_private_transform` checks it: `some (some m)` if
+`m^e mod n = c` for the result `m`, `some none` (an internal error) if not,
+and `none` if `decryptCrt` refuses the key or the input. -/
+def decryptChecked (n e p q dP dQ qInv c : Nat) : Option (Option Nat) :=
+  (decryptCrt n p q dP dQ qInv c).map fun m => if powMod m e n = c then some m else none
+
+/-- RSADP and RSASP1 of the input `xB` with the private key
+`(p, q, dP, dQ, qInv)` of the modulus `nB` and the public exponent `eB`,
+checked as BoringSSL's `rsa_default_private_transform` checks it:
+
+* `invalid` if the modulus or the exponent is not valid (BoringSSL's
+  `rsa_check_public_key`, which `freeze_private_key` runs), the input is not
+  below the modulus, `p q ≠ n`, or `qInv ≥ p` (`decryptCrt`);
+* otherwise, for the result `m` of step 2.b (`decryptCrt`), `ok` with `m`
+  as `k` octets if `m^e mod n` is the input, and `fault` if not: the result
+  is never released unless it passes the check. -/
+def privateChecked (nB eB xB pB qB dPB dQB qInvB : List Byte) : Outcome :=
+  let n := os2ip nB
+  let e := os2ip eB
+  if modulusValid n nB.length ∧ exponentValid e then
+    match decryptChecked n e (os2ip pB) (os2ip qB) (os2ip dPB) (os2ip dQB) (os2ip qInvB)
+      (os2ip xB) with
+    | some (some m) => .ok (i2osp m nB.length)
+    | some none => .fault
+    | none => .invalid
+  else .invalid
+
+/-- BoringSSL's `RSA_check_key` of the private key
+`(n, e, d, p, q, dP, dQ, qInv)` (with all of them given), for a modulus of
+`k` octets:
+
+* `rsa_check_public_key`: the modulus and the exponent are valid
+  (`modulusValid`, `exponentValid`);
+* `d < n`;
+* `p < n`, `q < n` and `p q = n`;
+* `d e ≡ 1 (mod p - 1)` and `d e ≡ 1 (mod q - 1)`;
+* `check_mod_inverse` of `dP`, `dQ` and `qInv`: `dP < p - 1` and
+  `e dP ≡ 1 (mod p - 1)`; `dQ < q - 1` and `e dQ ≡ 1 (mod q - 1)`;
+  `qInv < p` and `q qInv ≡ 1 (mod p)`.
+
+`RSA_check_key` does not check that `p` and `q` are prime, and neither does
+this. -/
+def keyValid (k n e d p q dP dQ qInv : Nat) : Bool :=
+  modulusValid n k && exponentValid e &&
+  d < n &&
+  p < n && q < n && p * q == n &&
+  d * e % (p - 1) == 1 && d * e % (q - 1) == 1 &&
+  dP < p - 1 && e * dP % (p - 1) == 1 &&
+  dQ < q - 1 && e * dQ % (q - 1) == 1 &&
+  qInv < p && q * qInv % p == 1
+
+/-- `keyValid` of the private key `(nB, eB, dB, pB, qB, dPB, dQB, qInvB)`,
+the modulus of `k = nB.length` octets. The private exponent is checked as
+given; the private-key operations do not use it. -/
+def checkKey (nB eB dB pB qB dPB dQB qInvB : List Byte) : Bool :=
+  keyValid nB.length (os2ip nB) (os2ip eB) (os2ip dB) (os2ip pB) (os2ip qB) (os2ip dPB)
+    (os2ip dQB) (os2ip qInvB)
 
 end VG.Spec.Rsa

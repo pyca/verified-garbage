@@ -6,7 +6,7 @@ import VerifiedGarbage.Proof.Gcm.X86_64.Bits
 # AES-GCM-SIV on x86-64: the encryption key's schedule and GHASH's key
 
 Untrusted: everything here is checked by Lean. `expand` writes the schedule
-of the encryption key at `W + 512` (`expand_ok`), and `hkey` GHASH's key,
+of the encryption key at `W + 248` (`expand_ok`), and `hkey` GHASH's key,
 `H · x` for the authentication key `H` (POLYVAL's field element), in
 GHASH's order at `W + 64`, and zeroes its accumulator (`hkey_ok`): the
 shift of `hi ++ lo` by one bit to the right, and `R` added when the bit
@@ -120,12 +120,12 @@ theorem hkey_ok {K W SP : Addr} {t : State} (E : Env K W SP t) :
       Frame [⟨W + BitVec.ofNat 64 64, 32⟩] t.mem t'.mem ∧
       (∀ r ∈ [Reg.rbx, .rbp, .r12, .r13, .r14, .r15, .rsp], t'.gpr r = t.gpr r) ∧ t'.rd = t.rd ∧ t'.wr = t.wr := by
   have h15 := E.r15
-  have r₁ := E.perm.wR (show 16 + 8 ≤ 4096 by decide)
-  have r₂ := E.perm.wR (show 24 + 8 ≤ 4096 by decide)
-  have w₁ := E.perm.wW (show 64 + 8 ≤ 4096 by decide)
-  have w₂ := E.perm.wW (show 72 + 8 ≤ 4096 by decide)
-  have w₃ := E.perm.wW (show 80 + 8 ≤ 4096 by decide)
-  have w₄ := E.perm.wW (show 88 + 8 ≤ 4096 by decide)
+  have r₁ := E.perm.wR (show 16 + 8 ≤ 3816 by decide)
+  have r₂ := E.perm.wR (show 24 + 8 ≤ 3816 by decide)
+  have w₁ := E.perm.wW (show 64 + 8 ≤ 3816 by decide)
+  have w₂ := E.perm.wW (show 72 + 8 ≤ 3816 by decide)
+  have w₃ := E.perm.wW (show 80 + 8 ≤ 3816 by decide)
+  have w₄ := E.perm.wW (show 88 + 8 ≤ 3816 by decide)
   refine ⟨_, by srun [hkey, zero16, h15, r₁, r₂, w₁, w₂, w₃, w₄], ?_, ?_, ?_, ?_, ?_, ?_⟩
   · simp only [mem_setReg, mem_arithFlags, mem_setFlags, gpr_setReg, gpr_arithFlags, gpr_setFlags, ite_true,
       ite_false, reduceCtorEq]
@@ -143,14 +143,14 @@ theorem hkey_ok {K W SP : Addr} {t : State} (E : Env K W SP t) :
       simp only [gpr_setReg, gpr_arithFlags, gpr_setFlags, ite_true, ite_false, reduceCtorEq]
   all_goals rfl
 
-/-- What `expand` leaves: the schedule of the encryption key at `W + 512`. -/
+/-- What `expand` leaves: the schedule of the encryption key at `W + 248`. -/
 structure ExpPost (K W SP : Addr) (R : Nat) (t t' : State) : Prop where
   env : Env K W SP t'
   rd : t'.rd = t.rd
   wr : t'.wr = t.wr
   saved : ∀ r ∈ calleeSaved, t'.gpr r = t.gpr r
-  frame : Frame [⟨W + BitVec.ofNat 64 512, 240⟩, ⟨W + BitVec.ofNat 64 2048, 512⟩, below SP 8] t.mem t'.mem
-  ciph : Spec.GcmSiv.ctxCiph t'.mem (W + BitVec.ofNat 64 512) R =
+  frame : Frame [⟨W + BitVec.ofNat 64 248, 240⟩, ⟨W + BitVec.ofNat 64 1768, 512⟩, below SP 8] t.mem t'.mem
+  ciph : Spec.GcmSiv.ctxCiph t'.mem (W + BitVec.ofNat 64 248) R =
     Spec.GcmSiv.aes (bytesAt t.mem (W + BitVec.ofNat 64 32) (Spec.GcmSiv.keyLen R))
 
 /-- The arguments of `expand`'s call. -/
@@ -160,12 +160,12 @@ theorem expArgs_ok {K W SP : Addr} {R : Nat} (hR : R = 10 ∨ R = 14) {N A D : A
       (ptr .rdi .r15 ekO ++ ([.mov .rsi (.mem (at_ .r15 roundsO)), .alu .sub .rsi (imm 6), .alu .add .rsi (.reg .rsi),
         .alu .add .rsi (.reg .rsi)] : List Instr) ++ ptr .rdx .r15 skO ++ ptr .rcx .r15 scrO) t = some t₁ ∧
       t₁.mem = t.mem ∧ t₁.gpr .rdi = W + BitVec.ofNat 64 32 ∧
-      t₁.gpr .rsi = BitVec.ofNat 64 (Spec.GcmSiv.keyLen R) ∧ t₁.gpr .rdx = W + BitVec.ofNat 64 512 ∧
-      t₁.gpr .rcx = W + BitVec.ofNat 64 2048 ∧ (∀ r ∈ calleeSaved, t₁.gpr r = t.gpr r) ∧
+      t₁.gpr .rsi = BitVec.ofNat 64 (Spec.GcmSiv.keyLen R) ∧ t₁.gpr .rdx = W + BitVec.ofNat 64 248 ∧
+      t₁.gpr .rcx = W + BitVec.ofNat 64 1768 ∧ (∀ r ∈ calleeSaved, t₁.gpr r = t.gpr r) ∧
       t₁.rd = t.rd ∧ t₁.wr = t.wr := by
   have h15 := E.r15
   have rR := S.rounds
-  have rr := E.perm.wR (show 272 + 8 ≤ 4096 by decide)
+  have rr := E.perm.wR (show 200 + 8 ≤ 3816 by decide)
   refine ⟨_, by srun [h15, rR, rr], ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · rfl
   · simp only [gpr_setReg, gpr_arithFlags, ite_true, ite_false, reduceCtorEq, h15]
@@ -184,7 +184,7 @@ theorem expand_ok (v : GcmImpl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} (hR :
     WP isa (expand v.callees) t (ExpPost K W SP R t) := by
   have h15 := E.r15
   have rR := S.rounds
-  have rr := E.perm.wR (show 272 + 8 ≤ 4096 by decide)
+  have rr := E.perm.wR (show 200 + 8 ≤ 3816 by decide)
   have hl : Spec.GcmSiv.keyLen R = 16 ∨ Spec.GcmSiv.keyLen R = 32 := by unfold Spec.GcmSiv.keyLen; omega
   obtain ⟨t₁, run₁, hm₁, rdi, rsi, rdx, rcx, hg₁, hrd₁, hwr₁⟩ := expArgs_ok hR E S
   have E₁ : Env K W SP t₁ := E.of_saved hg₁ hrd₁ hwr₁

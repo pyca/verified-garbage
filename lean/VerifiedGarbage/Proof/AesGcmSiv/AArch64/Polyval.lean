@@ -77,11 +77,11 @@ structure TailPre (p : Prm) (P : Addr) (r : Nat) (t t₃ : State) : Prop where
 /-- `absTailPre`: the last `r` (1 to 15) bytes at `P`, padded with zeros. -/
 theorem absTailPre_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t) {P : Addr} {r : Nat}
     (hr1 : 1 ≤ r) (hr : r < 16) (hc : Covers [⟨P, r⟩] (t.rd ++ t.wr))
-    (hd : (⟨P, r⟩ : Region).Disjoint ⟨p.W, 4096⟩) (h27 : t.gpr .x27 = P) (h28 : t.gpr .x28 = BitVec.ofNat 64 r) :
+    (hd : (⟨P, r⟩ : Region).Disjoint ⟨p.W, 3808⟩) (h27 : t.gpr .x27 = P) (h28 : t.gpr .x28 = BitVec.ofNat 64 r) :
     WP isa absTailPre t (TailPre p P r t) := by
   have hw := L.ww
-  have w₀ := E.perm.wW (show 224 + 8 ≤ 4096 by decide)
-  have w₈ := E.perm.wW (show 232 + 8 ≤ 4096 by decide)
+  have w₀ := E.perm.wW (show 224 + 8 ≤ 3808 by decide)
+  have w₈ := E.perm.wW (show 232 + 8 ≤ 3808 by decide)
   -- The block zeroed, and the copy's arguments.
   obtain ⟨t₁, run₁, hm₁, x11₁, x12₁, x13₁, ho₁, sp₁, rd₁, wr₁⟩ : ∃ t₁ : State,
       runBlock isa (zero16 bO ++ [Impl.AesGcm.AArch64.ptr .x11 .x19 bO, Impl.AesGcm.AArch64.mov .x12 .x27,
@@ -100,9 +100,9 @@ theorem absTailPre_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t) {P : Addr}
     simp only [envRegs, List.mem_cons, List.not_mem_nil, or_false] at hq ⊢
     rcases hq with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide)) sp₁ rd₁ wr₁
   have dB : (⟨P, r⟩ : Region).Disjoint ⟨p.W + BitVec.ofNat 64 224, r⟩ :=
-    (hd.sub_right (Lay.wSub (show 224 + 16 ≤ 4096 by decide))).sub_right (Region.sub_prefix (by omega))
+    (hd.sub_right (Lay.wSub (show 224 + 16 ≤ 3808 by decide))).sub_right (Region.sub_prefix (by omega))
   have lp : LoopPre t₁ P (p.W + BitVec.ofNat 64 224) r :=
-    ⟨by omega, by rw [rd₁, wr₁]; exact hc, Proof.AesGcm.AArch64.covers_prefix (E₁.perm.wC (show 224 + 16 ≤ 4096 by decide))
+    ⟨by omega, by rw [rd₁, wr₁]; exact hc, Proof.AesGcm.AArch64.covers_prefix (E₁.perm.wC (show 224 + 16 ≤ 3808 by decide))
       (by omega), dB⟩
   refine WP.seq (WP.mono (copyLoop_ok t₁ x12₁ x11₁ x13₁ (by omega) lp) fun t₂ ⟨hm₂, _, _, ho₂, sp₂, rd₂, wr₂⟩ => ?_)
   have E₂ : Env p t₂ := E₁.keep (fun q hq => ho₂ q (by
@@ -136,7 +136,7 @@ theorem absTailPre_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t) {P : Addr}
 /-- `absTail`: the last `r` (1 to 15) bytes at `P`, padded with zeros, absorbed. -/
 theorem absTail_ok (v : GcmImpl) {p : Prm} (L : Lay p) {t : State} (E : Env p t) {P : Addr} {r : Nat}
     (hr1 : 1 ≤ r) (hr : r < 16) (hc : Covers [⟨P, r⟩] (t.rd ++ t.wr))
-    (hd : (⟨P, r⟩ : Region).Disjoint ⟨p.W, 4096⟩) (h27 : t.gpr .x27 = P) (h28 : t.gpr .x28 = BitVec.ofNat 64 r) :
+    (hd : (⟨P, r⟩ : Region).Disjoint ⟨p.W, 3808⟩) (h27 : t.gpr .x27 = P) (h28 : t.gpr .x28 = BitVec.ofNat 64 r) :
     WP isa (absTail v.callees) t
       (AbsPost p [Spec.GcmSiv.ofBytes (bytesAt t.mem P r ++ Spec.GcmSiv.zeros (16 - r))] t) := by
   have hw := L.ww
@@ -189,7 +189,7 @@ theorem absHead_ok {t : State} {m : Nat} (hm : m < 2 ^ 64) (h28 : t.gpr .x28 = B
 
 theorem absorb_ok (v : GcmImpl) {p : Prm} (L : Lay p) {t : State} (E : Env p t) {Q : Addr} {m : Nat}
     (hc : Covers [⟨Q, m⟩] (t.rd ++ t.wr)) (hm : m < 2 ^ 64) (hw : Q.toNat + m ≤ 2 ^ 64)
-    (hd : (⟨Q, m⟩ : Region).Disjoint ⟨p.W, 4096⟩) (h27 : t.gpr .x27 = Q) (h28 : t.gpr .x28 = BitVec.ofNat 64 m) :
+    (hd : (⟨Q, m⟩ : Region).Disjoint ⟨p.W, 3808⟩) (h27 : t.gpr .x27 = Q) (h28 : t.gpr .x28 = BitVec.ofNat 64 m) :
     WP isa (absorb v.callees) t (AbsPost p (Spec.GcmSiv.elems (Spec.GcmSiv.pad16 (bytesAt t.mem Q m))) t) := by
   have hQ : Src p t Q m := Src.ofW L hc hm hw hd
   refine WP.seq (WP.mono (absHead_ok hm h28) fun t₁ ⟨x9₁, ho₁, m₁, sp₁, rd₁, wr₁⟩ => ?_)
@@ -208,7 +208,7 @@ theorem absorb_ok (v : GcmImpl) {p : Prm} (L : Lay p) {t : State} (E : Env p t) 
   · have h0 : m % 16 ≠ 0 := by simpa using hf
     simp only [h0, ite_false]
     have hs := hQ.slice (a := 16 * (m / 16)) (k := m % 16) (by omega)
-    have dT : (⟨Q + BitVec.ofNat 64 (16 * (m / 16)), m % 16⟩ : Region).Disjoint ⟨p.W, 4096⟩ :=
+    have dT : (⟨Q + BitVec.ofNat 64 (16 * (m / 16)), m % 16⟩ : Region).Disjoint ⟨p.W, 3808⟩ :=
       hd.sub_left (Offset.sub_base Q (by omega))
     refine WP.mono (absTail_ok v L P₂'.env (by omega) (by omega) (by rw [P₂'.rd, P₂'.wr]; exact hs.rd) dT x27₂ x28₂)
       fun t₃ T => ?_
@@ -226,8 +226,8 @@ theorem le64_word (x : Nat) : Spec.GcmSiv.le64 x = Proof.Cmac.le8 (BitVec.ofNat 
 theorem lens_ok (v : GcmImpl) {p : Prm} (L : Lay p) {t : State} (E : Env p t) :
     WP isa (lens v.callees) t (AbsPost p
       [Spec.GcmSiv.ofBytes (Spec.GcmSiv.le64 (8 * p.al) ++ Spec.GcmSiv.le64 (8 * p.n))] t) := by
-  have w₀ := E.perm.wW (show 224 + 8 ≤ 4096 by decide)
-  have w₈ := E.perm.wW (show 232 + 8 ≤ 4096 by decide)
+  have w₀ := E.perm.wW (show 224 + 8 ≤ 3808 by decide)
+  have w₈ := E.perm.wW (show 232 + 8 ≤ 3808 by decide)
   obtain ⟨t₁, run₁, hm₁, x27₁, x28₁, ho₁, sp₁, rd₁, wr₁⟩ : ∃ t₁ : State, runBlock isa lensBlock t = some t₁ ∧
       t₁.mem = (t.mem.writeW (p.W + BitVec.ofNat 64 224) (BitVec.ofNat 64 (8 * p.al))).writeW
         (p.W + BitVec.ofNat 64 224 + BitVec.ofNat 64 8) (BitVec.ofNat 64 (8 * p.n)) ∧
@@ -281,10 +281,10 @@ theorem tagInMem_frame (m : Mem) (W N : Addr) : Frame [⟨W + BitVec.ofNat 64 96
 theorem tagIn_ok {p : Prm} {t : State} (E : Env p t) :
     ∃ t' : State, runBlock isa tagIn t = some t' ∧ t'.mem = tagInMem t.mem p.W p.N ∧
       Others [.x9, .x10, .x11] t t' ∧ t'.sp = t.sp ∧ t'.rd = t.rd ∧ t'.wr = t.wr := by
-  have r₀ := E.perm.wR (show 80 + 8 ≤ 4096 by decide)
-  have r₈ := E.perm.wR (show 88 + 8 ≤ 4096 by decide)
-  have w₀ := E.perm.wW (show 96 + 8 ≤ 4096 by decide)
-  have w₈ := E.perm.wW (show 104 + 8 ≤ 4096 by decide)
+  have r₀ := E.perm.wR (show 80 + 8 ≤ 3808 by decide)
+  have r₈ := E.perm.wR (show 88 + 8 ≤ 3808 by decide)
+  have w₀ := E.perm.wW (show 96 + 8 ≤ 3808 by decide)
+  have w₈ := E.perm.wW (show 104 + 8 ≤ 3808 by decide)
   have n₀ : InRegions (t.rd ++ t.wr) p.N 8 := by simpa using E.perm.nR (d := 0) (k := 8) (by decide)
   have n₈ := E.perm.nR (d := 8) (k := 4) (by decide)
   refine ⟨_, by simp only [tagIn]; grun [E.x19, E.x20, BitVec.add_zero, r₀, r₈, w₀, w₈, n₀, n₈], ?_,
