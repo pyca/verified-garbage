@@ -114,9 +114,9 @@ def select : List Instr :=
 /-- `x` and `y` into Montgomery's form, the check that the point is on the
 curve, and the point the ladder multiplies. -/
 def validate : Prog isa :=
-  progs ([Mont.X86.mul c.MP' c.wk (c.sl QXM) (c.sl E) (c.sl R2P),
-    Mont.X86.mul c.MP' c.wk (c.sl QYM) (c.sl QY) (c.sl R2P)] ++
-    (curveOps c).map (opCode c.MP' c.wk) ++ [.block (checkZero c (c.sl W1) ++ select c)])
+  .seq (Mont.X86.mul c.MP' c.wk (c.sl QXM) (c.sl E) (c.sl R2P)) <|
+  .seq (Mont.X86.mul c.MP' c.wk (c.sl QYM) (c.sl QY) (c.sl R2P)) <|
+  .seq (fprog c.MP' c.wk (curveOps c)) (.block (checkZero c (c.sl W1) ++ select c))
 
 /-- The ladder of the signature, from the point at `PX`, `PY`, `ONEP`. -/
 def ladderQ : LadderCfg := { c.ladderCfg with G := c.pt PX PY ONEP }
