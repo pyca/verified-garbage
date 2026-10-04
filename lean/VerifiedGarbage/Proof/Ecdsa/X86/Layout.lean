@@ -111,6 +111,25 @@ theorem arg_sub {s : State} (hfit : (s.gpr .esp).toNat + 24 ≤ 2 ^ 32) {i : Nat
   rw [e0, ei]
   exact Offset.sub_base _ (show 4 * i + 4 ≤ 20 by omega)
 
+/-- Argument `i` of `k`'s slot is in the slots of the `k` arguments. -/
+theorem arg_subN {s : State} {k i : Nat} (hfit : (s.gpr .esp).toNat + 4 + 4 * k ≤ 2 ^ 32) (hi : i < k) :
+    Region.Sub ⟨argAddr s i, 4⟩ ⟨argAddr s 0, 4 * k⟩ := by
+  have e0 : argAddr s 0 = (s.gpr .esp).setWidth 64 + BitVec.ofNat 64 4 := by
+    rw [argAddr_eq, addr_eq (by omega)]
+  have ei : argAddr s i = (s.gpr .esp).setWidth 64 + BitVec.ofNat 64 4 + BitVec.ofNat 64 (4 * i) := by
+    rw [argAddr_eq, addr_eq (by omega), Offset.add_add]
+  rw [e0, ei]
+  exact Offset.sub_base _ (show 4 * i + 4 ≤ 4 * k by omega)
+
+theorem arg_containsN {s : State} {k i : Nat} (hfit : (s.gpr .esp).toNat + 4 + 4 * k ≤ 2 ^ 32) (hi : i < k) :
+    Region.Contains ⟨argAddr s 0, 4 * k⟩ (argAddr s i) 4 := by
+  have e0 : argAddr s 0 = (s.gpr .esp).setWidth 64 + BitVec.ofNat 64 4 := by
+    rw [argAddr_eq, addr_eq (by omega)]
+  have ei : argAddr s i = (s.gpr .esp).setWidth 64 + BitVec.ofNat 64 4 + BitVec.ofNat 64 (4 * i) := by
+    rw [argAddr_eq, addr_eq (by omega), Offset.add_add]
+  rw [e0, ei]
+  exact Offset.contains_base _ (show 4 * i + 4 ≤ 4 * k by omega) (by omega)
+
 /-- What `setupWith A` needs of its arguments: the working space writable,
 the slots of the arguments `A` names and `k`, `d` and the hash readable,
 apart from it, and nothing wrapping around `2³²`. -/
