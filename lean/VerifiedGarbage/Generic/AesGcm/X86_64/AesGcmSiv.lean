@@ -14,10 +14,9 @@ They do not call AES-GCM's interleaved loops, so the instances of
 combinations differing only in those are the same code under other names,
 which keeps every instance of a combination callable together.
 
-The stack is 8 bytes for each: the return address of a call of one of the
-three, which make no calls; `seal` and `open` also read their seventh
-argument, the working space's address, from the stack above their return
-address.
+Each keeps its working space in a frame of 3848 bytes on the stack
+(`Proof/AesGcmSiv/X86_64/Verified.lean`), below which its calls use 8 bytes:
+the return address of a call of one of the three, which make no calls.
 -/
 
 namespace VG.Generic.AesGcm.X86_64.AesGcmSiv
@@ -36,22 +35,22 @@ def artifactsOf (v : GcmImpl) : List Artifact := [
     name := Spec.GcmSiv.sealApi.name ++ v.suffix
     target := X86_64.target
     doc := Spec.GcmSiv.sealApi.doc (notes := [note v])
-    code := Impl.AesGcmSiv.X86_64.«seal» v.callees
-    contract := Spec.GcmSiv.sealContract X86_64.abi 8
-    stack := 8
-    verified := seal_verified v
-    spSafe := seal_spSafe v
+    code := Impl.StackScratch.X86_64.withStackArgScratch 3848 2 (Impl.AesGcmSiv.X86_64.«seal» v.callees)
+    contract := Spec.GcmSiv.sealContract X86_64.abi 3856
+    stack := 3856
+    verified := seal_framed v
+    spSafe := X86_64.withStackArgScratch_spSafe (seal_spSafe v)
     features := features v },
   { Spec.GcmSiv.openApi with
     name := Spec.GcmSiv.openApi.name ++ v.suffix
     target := X86_64.target
     doc := Spec.GcmSiv.openApi.doc (notes := [note v,
       "It compares the tags and overwrites the data with zeros without a branch on the result."])
-    code := Impl.AesGcmSiv.X86_64.«open» v.callees
-    contract := Spec.GcmSiv.openContract X86_64.abi 8
-    stack := 8
-    verified := open_verified v
-    spSafe := open_spSafe v
+    code := Impl.StackScratch.X86_64.withStackArgScratch 3848 2 (Impl.AesGcmSiv.X86_64.«open» v.callees)
+    contract := Spec.GcmSiv.openContract X86_64.abi 3856
+    stack := 3856
+    verified := open_framed v
+    spSafe := X86_64.withStackArgScratch_spSafe (open_spSafe v)
     features := features v }]
 
 /-- The artifacts of a variant, from the implementations it names. -/

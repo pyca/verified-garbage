@@ -3,8 +3,10 @@ import VerifiedGarbage.Impl.AesGcm.AArch64
 /-!
 # AES-GCM-SIV: AArch64 implementation
 
-`vg_aes_gcm_siv_seal` and `vg_aes_gcm_siv_open` (`Spec/GcmSiv/Contract.lean`),
-composed of calls of the verified `vg_aes_ctr32`, `vg_aes_expand_key` and
+`vg_aes_gcm_siv_seal(schedule = x0, rounds = x1, nonce = x2, aad = x3, aad_len = x4, data = x5, len = x6, tag = x7, work = [sp])`
+and `vg_aes_gcm_siv_open` with the same arguments (`Spec/GcmSiv/Contract.lean`),
+with the working space `work` as a last argument, which a frame on the stack
+allocates (`Impl.StackScratch.AArch64.withStackArgScratch`), composed of calls of the verified `vg_aes_ctr32`, `vg_aes_expand_key` and
 `vg_ghash`, and generic over their implementations as AES-GCM is
 (`Impl.AesGcm.AArch64.Callees`).
 
@@ -16,7 +18,7 @@ composed of calls of the verified `vg_aes_ctr32`, `vg_aes_expand_key` and
   by `vg_aes_expand_key`, for the same number of rounds (`expand`).
 * POLYVAL (§3) is GHASH on the same bits (`Proof.GcmSiv.Polyval`) with the
   key `H · x` (`hkey`), on blocks in the other byte order: up to 64 blocks
-  at a time are copied to `W + 768` with their bytes reversed before
+  at a time are copied to `W + 480` with their bytes reversed before
   `vg_ghash` absorbs them (`chunk`). The last bytes of a string, padded
   with zeros, and the lengths block are put in the block at `W + 224` and
   absorbed the same way (`absorb`, `lens`); the result is read back
@@ -28,20 +30,22 @@ composed of calls of the verified `vg_aes_ctr32`, `vg_aes_expand_key` and
   copy of the counter block, which is then incremented (`cryptBlock`); the
   last bytes are XORed with a keystream block computed as a tag is
   (`cryptTail`).
-* `open` decrypts first, computes the tag of the plaintext at `W + 240` and
-  compares it with the received one without a branch (`cmp`), then ANDs
-  every byte of the data with `0 − ok` (`mask`).
+* `seal` copies the tag from `W` to `tag` at the end (`tagOut`); `open`
+  copies the received tag from `tag` to `W` first (`recv`), decrypts,
+  computes the tag of the plaintext at `W + 224` and compares the two without
+  a branch (`cmp`), then ANDs every byte of the data with `0 − ok` (`mask`).
 
-## The working space `W` (4096 bytes)
+## The working space `W` (3808 bytes)
 
-* `[0, 16)`: the tag; `[16, 32)`: the authentication key; `[32, 64)`: the
-  encryption key; `[64, 80)`: GHASH's key; `[80, 96)`: its accumulator;
-  `[96, 112)`: the counter block (or the tag input); `[112, 128)`: a copy of
-  it for a call; `[128, 216)`: our caller's `x19`–`x28` and our return
-  address `x30` (as AES-GCM saves them); `[224, 240)`: a block; `[240, 256)`:
-  the tag `open` computes;
-* `[512, 752)`: the encryption key's schedule; `[768, 1792)`: the reversed
-  blocks; `[1792, 2048)`: `vg_ghash`'s working space; `[2048, 4096)`:
+* `[0, 16)`: the tag (the one `seal` computes, or the received one);
+  `[16, 32)`: the authentication key; `[32, 64)`: the encryption key;
+  `[64, 80)`: GHASH's key; `[80, 96)`: its accumulator; `[96, 112)`: the
+  counter block (or the tag input); `[112, 128)`: a copy of it for a call;
+  `[128, 216)`: our caller's `x19`–`x28` and our return address `x30` (as
+  AES-GCM saves them); `[216, 224)`: `tag`'s address; `[224, 240)`: a block
+  (and the tag `open` computes);
+* `[240, 480)`: the encryption key's schedule; `[480, 1504)`: the reversed
+  blocks; `[1504, 1760)`: `vg_ghash`'s working space; `[1760, 3808)`:
   `vg_aes_ctr32`'s, and `vg_aes_expand_key`'s at its start.
 
 ## Registers
@@ -70,12 +74,12 @@ def hO : Nat := 64
 def yO : Nat := 80
 def cbO : Nat := 96
 def ccO : Nat := 112
+def tagPO : Nat := 216
 def bO : Nat := 224
-def t2O : Nat := 240
-def skO : Nat := 512
-def revO : Nat := 768
-def ghO : Nat := 1792
-def scrO : Nat := 2048
+def skO : Nat := 240
+def revO : Nat := 480
+def ghO : Nat := 1504
+def scrO : Nat := 1760
 
 variable (c : Callees)
 
@@ -117,11 +121,11 @@ def derive : Prog isa :=
     (.loop (.seq (.block deriveBlock) (.seq (callCtr c) (.block derivePost))) (.nonzero .x .x10))
 
 /-- The arguments of `vg_aes_expand_key`: the encryption key, whose length
-is `4 (rounds − 6)`, its schedule at `W + 512` and the working space. -/
+is `4 (rounds − 6)`, its schedule at `W + 240` and the working space. -/
 def expandArgs : List Instr :=
   [ptr .x0 .x19 ekO, .subImm .x .x1 .x22 6, .lsl .x .x1 .x1 2, ptr .x2 .x19 skO, ptr .x3 .x19 scrO]
 
-/-- The encryption key's schedule at `W + 512`. -/
+/-- The encryption key's schedule at `W + 240`. -/
 def expand : Prog isa := .seq (.block expandArgs) (callKey c)
 
 /-- GHASH's key, `H · x` for the authentication key `H` (as a little-endian
@@ -160,7 +164,7 @@ def chunkArgs : List Instr :=
     [ptr .x2 .x19 revO, mov .x3 .x10]
 
 /-- Up to 64 of the whole blocks of the `x28` bytes at `x27` reversed at
-`W + 768`, `x27` and `x28` past them, and the arguments of `vg_ghash`. -/
+`W + 480`, `x27` and `x28` past them, and the arguments of `vg_ghash`. -/
 def chunkPre : Prog isa :=
   .seq chunkLen
   (.seq (.block [mov .x11 .x27, ptr .x14 .x19 revO, mov .x15 .x10])
@@ -249,12 +253,12 @@ def crypt : Prog isa :=
 
 /-! ## Comparing tags and masking -/
 
-/-- `x27 = 1` if the tags at `W` and `W + 240` are equal, 0 if not, without
+/-- `x27 = 1` if the tags at `W` and `W + 224` are equal, 0 if not, without
 a branch: the carry of adding all ones to their difference is 0 only when it
 is zero. -/
 def cmp : List Instr :=
-  [.ldr .x .x9 .x19 tagO, .ldr .x .x10 .x19 t2O, .logic .eor .x .x9 .x9 .x10,
-    .ldr .x .x10 .x19 (tagO + 8), .ldr .x .x11 .x19 (t2O + 8), .logic .eor .x .x10 .x10 .x11,
+  [.ldr .x .x9 .x19 tagO, .ldr .x .x10 .x19 bO, .logic .eor .x .x9 .x9 .x10,
+    .ldr .x .x10 .x19 (tagO + 8), .ldr .x .x11 .x19 (bO + 8), .logic .eor .x .x10 .x10 .x11,
     .logic .orr .x .x9 .x9 .x10, imm .x11 0, .subImm .x .x12 .x11 1, .adds .x .x9 .x9 .x12,
     .adcs .x .x10 .x11 .x11, imm .x27 1, .sub .x .x27 .x27 .x10]
 
@@ -268,19 +272,30 @@ def mask : Prog isa :=
 /-! ## The functions -/
 
 /-- `(schedule = x0, rounds = x1, nonce = x2, aad = x3, aad_len = x4, data = x5,
-len = x6, work = x7)`: our caller's registers saved in `W`, and the arguments
-kept in `x19`–`x26`. -/
+len = x6, tag = x7, work = [sp])`: our caller's registers saved in `W`, the
+arguments kept in `x19`–`x26`, and `tag` at `W + 216`. -/
 def entry : List Instr :=
-  save .x7 ++ [mov .x19 .x7, mov .x20 .x2, mov .x21 .x0, mov .x22 .x1, mov .x23 .x3, mov .x24 .x4,
-    mov .x25 .x5, mov .x26 .x6]
+  [.ldrSp .x9 0] ++ save .x9 ++ [mov .x19 .x9, mov .x20 .x2, mov .x21 .x0, mov .x22 .x1, mov .x23 .x3,
+    mov .x24 .x4, mov .x25 .x5, mov .x26 .x6, .str .x .x7 .x19 tagPO]
+
+/-- The received tag copied from `tag` to `W`. -/
+def recv : List Instr :=
+  [.ldr .x .x9 .x19 tagPO, .ldr .x .x10 .x9 0, .str .x .x10 .x19 tagO, .ldr .x .x10 .x9 8,
+    .str .x .x10 .x19 (tagO + 8)]
+
+/-- The tag copied from `W` to `tag`. -/
+def tagOut : List Instr :=
+  [.ldr .x .x9 .x19 tagPO, .ldr .x .x10 .x19 tagO, .str .x .x10 .x9 0, .ldr .x .x10 .x19 (tagO + 8),
+    .str .x .x10 .x9 8]
 
 /-- `vg_aes_gcm_siv_seal`. -/
 def «seal» : Prog isa :=
-  .seq (.block entry) (.seq (keys c) (.seq (polyval c) (.seq (tag c tagO) (.seq (crypt c) (.block restore)))))
+  .seq (.block entry) (.seq (keys c) (.seq (polyval c) (.seq (tag c tagO) (.seq (crypt c)
+    (.block (tagOut ++ restore))))))
 
 /-- `vg_aes_gcm_siv_open`. -/
 def «open» : Prog isa :=
-  .seq (.block entry) (.seq (keys c) (.seq (crypt c) (.seq (polyval c) (.seq (tag c t2O)
-    (.seq (.block cmp) (.seq mask (.block ([mov .x0 .x27] ++ restore))))))))
+  .seq (.block entry) (.seq (.block recv) (.seq (keys c) (.seq (crypt c) (.seq (polyval c) (.seq (tag c bO)
+    (.seq (.block cmp) (.seq mask (.block ([mov .x0 .x27] ++ restore)))))))))
 
 end VG.Impl.AesGcmSiv.AArch64

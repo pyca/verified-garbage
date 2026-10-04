@@ -21,17 +21,17 @@ open VG.Proof.AesGcm.Arm (CtrCall ctr_call eval_eq' eval_ne' arg args argAddr_ze
 
 /-! ## The tag -/
 
-theorem tagA_check {o : Nat} (ho : o = 0 ∨ o = 224 ∨ o = 240) : ∃ h, (VG.Taint.check VG.Arm.taint
+theorem tagA_check {o : Nat} (ho : o = 0 ∨ o = 176) : ∃ h, (VG.Taint.check VG.Arm.taint
     (VG.Arm.Taint.ofRegs (pubRegs [])) (.block (copy16 cbO ccO ++ Impl.AesGcm.Arm.zero16 o ++ ctrArgs ++
       ([Impl.AesGcm.Arm.addI .r3 .r11 o] : List Instr))) h).isSome = true := by
-  rcases ho with rfl | rfl | rfl <;> exact ⟨_, by taint_decide⟩
+  rcases ho with rfl | rfl <;> exact ⟨_, by taint_decide⟩
 
 /-- `tag o`, in two runs with the same public arguments. -/
 theorem tag_rel {p : Prm} (L : Lay p) {τ₁ τ₂ : State} (E₁ : Env p τ₁) (E₂ : Env p τ₂) {o : Nat}
-    (ho : o = 0 ∨ o = 224 ∨ o = 240) : RelCT isa (Eq2 τ₁ τ₂) (tag o) TT := by
+    (ho : o = 0 ∨ o = 176) : RelCT isa (Eq2 τ₁ τ₂) (tag o) TT := by
   have w : ∀ {τ : State}, Env p τ → WP isa (.block (copy16 cbO ccO ++ Impl.AesGcm.Arm.zero16 o ++ ctrArgs ++
-      ([Impl.AesGcm.Arm.addI .r3 .r11 o] : List Instr))) τ fun t₁ => CtrCall t₁ (p.W + BitVec.ofNat 32 512)
-        (p.W + BitVec.ofNat 32 112) (p.W + BitVec.ofNat 32 o) (p.W + BitVec.ofNat 32 2048) p.R 1 ∧ Env p t₁ :=
+      ([Impl.AesGcm.Arm.addI .r3 .r11 o] : List Instr))) τ fun t₁ => CtrCall t₁ (p.W + BitVec.ofNat 32 192)
+        (p.W + BitVec.ofNat 32 112) (p.W + BitVec.ofNat 32 o) (p.W + BitVec.ofNat 32 1712) p.R 1 ∧ Env p t₁ :=
     fun E => by
       obtain ⟨t₁, run₁, -, r0, r1, r2, r3, r12, lr, ho₁, sp₁, rd₁, wr₁⟩ := tagArgs_ok L E ho
       have E' : Env p t₁ := E.of_others ho₁ sp₁ rd₁ wr₁
@@ -61,14 +61,14 @@ theorem cryptBlock_rel {p : Prm} (L : Lay p) {τ₁ τ₂ : State} {j : Nat} (hj
     (B₁ : BL p j τ₁) (B₂ : BL p j τ₂) : RelCT isa (Eq2 τ₁ τ₂) cryptBlock TT := by
   have w : ∀ {τ : State}, BL p j τ →
       WP isa (.block (copy16 cbO ccO ++ ctrArgs ++ ([.mov .r3 (.reg .r4)] : List Instr))) τ fun t₁ =>
-        CtrCall t₁ (p.W + BitVec.ofNat 32 512) (p.W + BitVec.ofNat 32 112) (p.D + BitVec.ofNat 32 (16 * j))
-          (p.W + BitVec.ofNat 32 2048) p.R 1 ∧ BL p j t₁ := fun B => by
+        CtrCall t₁ (p.W + BitVec.ofNat 32 192) (p.W + BitVec.ofNat 32 112) (p.D + BitVec.ofNat 32 (16 * j))
+          (p.W + BitVec.ofNat 32 1712) p.R 1 ∧ BL p j t₁ := fun B => by
     obtain ⟨t₁, run₁, -, r0, r1, r2, r3, r12, lr, ho₁, sp₁, rd₁, wr₁⟩ := blkArgs_ok L B.env B.r4
     have E' : Env p t₁ := B.env.of_others ho₁ sp₁ rd₁ wr₁
     exact WP.of_runBlock ⟨t₁, run₁, blkCall L E' hj r0 r1 r2 r3 r12 lr, E', by rw [ho₁ _ (by decide), B.r4],
       by rw [ho₁ _ (by decide), B.r5]⟩
-  have wc : ∀ {t : State}, (CtrCall t (p.W + BitVec.ofNat 32 512) (p.W + BitVec.ofNat 32 112)
-      (p.D + BitVec.ofNat 32 (16 * j)) (p.W + BitVec.ofNat 32 2048) p.R 1 ∧ BL p j t) →
+  have wc : ∀ {t : State}, (CtrCall t (p.W + BitVec.ofNat 32 192) (p.W + BitVec.ofNat 32 112)
+      (p.D + BitVec.ofNat 32 (16 * j)) (p.W + BitVec.ofNat 32 1712) p.R 1 ∧ BL p j t) →
       WP isa Impl.AesGcm.Arm.ctrFrame t (BL p j) := fun ⟨cc, B⟩ =>
     WP.mono (ctr_call cc) fun _ P => ⟨B.env.of_saved P.saved P.sp P.rd P.wr,
       by rw [P.saved _ (by decide) (by decide), B.r4], by rw [P.saved _ (by decide) (by decide), B.r5]⟩
@@ -154,18 +154,21 @@ theorem crypt_rel {p : Prm} (L : Lay p) {σ₁ σ₂ : State} (R₁ : PR p σ₁
   refine rel_seq (rel_env C₁.env C₂.env [.r4, .r5] (by simp [C₁.r4, C₂.r4, C₁.r5, C₂.r5]) crypt5_check)
     (wC C₁ r5₁) (wC C₂ r5₂) fun c₁ c₂ ⟨D₁, cz₁⟩ ⟨D₂, cz₂⟩ => ?_
   refine rel_ite (eval_eq' cz₁) (eval_eq' cz₂) (fun _ => rel_skip) (fun _ => ?_)
-  refine rel_seq (tag_rel L D₁.env D₂.env (o := 224) (by decide)) (tag_ok L D₁.env (o := 224) (by decide))
-    (tag_ok L D₂.env (o := 224) (by decide)) fun z₁ z₂ T₁ T₂ => ?_
+  refine rel_seq (tag_rel L D₁.env D₂.env (o := 176) (by decide)) (tag_ok L D₁.env (o := 176) (by decide))
+    (tag_ok L D₂.env (o := 176) (by decide)) fun z₁ z₂ T₁ T₂ => ?_
   exact rel_env T₁.env T₂.env [.r4, .r5] (by simp [T₁.r4, T₂.r4, T₁.r5, T₂.r5, D₁.r4, D₂.r4, D₁.r5, D₂.r5])
     cryptTailRest_check
 
 /-! ## The functions -/
 
-theorem entry_check : ∃ h, (VG.Taint.check VG.Arm.taint (argTaint [.r0, .r1, .r2, .r3] 16) (.block entry) h).isSome
+theorem entry_check : ∃ h, (VG.Taint.check VG.Arm.taint (argTaint [.r0, .r1, .r2, .r3] 20) (.block entry) h).isSome
     = true := ⟨_, by taint_decide⟩
 
-theorem restore_check : ∃ h, (VG.Taint.check VG.Arm.taint (VG.Arm.Taint.ofRegs (pubRegs []))
-    (.block Impl.AesGcm.Arm.restore) h).isSome = true := ⟨_, by taint_decide⟩
+theorem sealEnd_check : ∃ h, (VG.Taint.check VG.Arm.taint (argTaint (pubRegs []) 16)
+    (.block (tagOut ++ Impl.AesGcm.Arm.restore)) h).isSome = true := ⟨_, by taint_decide⟩
+
+theorem recv_check : ∃ h, (VG.Taint.check VG.Arm.taint (argTaint (pubRegs []) 16) (.block recv) h).isSome = true :=
+  ⟨_, by taint_decide⟩
 
 theorem openEnd_check : ∃ h, (VG.Taint.check VG.Arm.taint (argTaint (pubRegs []) 12)
     (.seq (.block cmp) (.seq mask (.block Impl.AesGcm.Arm.restore))) h).isSome = true := ⟨_, by taint_decide⟩
@@ -173,29 +176,30 @@ theorem openEnd_check : ∃ h, (VG.Taint.check VG.Arm.taint (argTaint (pubRegs [
 /-- The public arguments of two states with the same public data. -/
 theorem prmOf_eq {σ₁ σ₂ : State} (h : onePub σ₁ σ₂) : prmOf σ₁ = prmOf σ₂ := by
   obtain ⟨hsp, h0, h1, h2, h3, ha⟩ := h
-  simp only [prmOf, h0, h1, h2, h3, hsp, ha 0 (by decide), ha 1 (by decide), ha 2 (by decide), ha 3 (by decide)]
+  simp only [prmOf, h0, h1, h2, h3, hsp, ha 0 (by decide), ha 1 (by decide), ha 2 (by decide), ha 3 (by decide),
+    ha 4 (by decide)]
 
 /-- The entry, in two runs with the same public arguments. -/
-theorem entry_rel {σ₁ σ₂ : State} (h₁ : onePre σ₁) (h₂ : onePre σ₂) (h : onePub σ₁ σ₂) :
-    RelCT isa (Eq2 σ₁ σ₂) (.block entry) TT := by
-  have hw : ∀ {σ : State}, onePre σ → σ.sp.toNat + 16 ≤ 2 ^ 32 ∧
-      ∀ r ∈ σ.wr, Region.Disjoint ⟨State.addr σ.sp, 16⟩ r := fun h =>
-    ⟨(lay_of h).spf, (perm_of h).argw⟩
+theorem entry_rel {σ₁ σ₂ : State} (L₁ : Lay (prmOf σ₁)) (P₁ : Perm (prmOf σ₁) σ₁) (L₂ : Lay (prmOf σ₂))
+    (P₂ : Perm (prmOf σ₂) σ₂) (h : onePub σ₁ σ₂) : RelCT isa (Eq2 σ₁ σ₂) (.block entry) TT := by
+  have hw : ∀ {σ : State}, Lay (prmOf σ) → Perm (prmOf σ) σ → σ.sp.toNat + 20 ≤ 2 ^ 32 ∧
+      ∀ r ∈ σ.wr, Region.Disjoint ⟨State.addr σ.sp, 20⟩ r := fun L P => ⟨L.spf, P.argw⟩
   obtain ⟨hsp, h0, h1, h2, h3, ha⟩ := h
-  exact rel_arg _ 16 (by simp [h0, h1, h2, h3]) hsp (hw h₁) (hw h₂)
-    (argMem_of (j := 4) hsp (lay_of h₁).spf fun i hi => ha i hi) entry_check
+  exact rel_arg _ 20 (by simp [h0, h1, h2, h3]) hsp (hw L₁ P₁) (hw L₂ P₂)
+    (argMem_of (j := 5) hsp L₁.spf fun i hi => ha i hi) entry_check
 
 /-- After the entry, what a run keeps. -/
-theorem PR.entry {s s₁ : State} (h : onePre s) (En : Entered s s₁) : PR (prmOf s) s₁ :=
-  ⟨En.env, (args_of s).frame (lay_of h) En.frame (by disj_tac (lay_of h))⟩
+theorem PR.entry {s s₁ : State} (L : Lay (prmOf s)) (En : Entered s s₁) : PR (prmOf s) s₁ :=
+  ⟨En.env, (args_of s).frame L En.frame (by disj_tac L)⟩
 
 theorem seal_ct : ConstantTime isa sealArm.pre sealArm.pub «seal» := by
   refine ct_of fun σ₁ σ₂ h₁ h₂ hp => ?_
-  have L := lay_of h₁
+  obtain ⟨L, P₁, -⟩ := args_of_seal h₁
+  obtain ⟨L₂, P₂, -⟩ := args_of_seal h₂
   have e := prmOf_eq hp
-  refine rel_seq (entry_rel h₁ h₂ hp) (entry_ok h₁) (entry_ok h₂) fun τ₁ τ₂ En₁ En₂ => ?_
-  have R₁ := PR.entry h₁ En₁
-  have R₂ := PR.entry h₂ En₂
+  refine rel_seq (entry_rel L P₁ L₂ P₂ hp) (entry_ok L P₁) (entry_ok L₂ P₂) fun τ₁ τ₂ En₁ En₂ => ?_
+  have R₁ := PR.entry L En₁
+  have R₂ := PR.entry L₂ En₂
   rw [← e] at R₂
   refine rel_seq (keys_rel L R₁.env R₂.env) (keys_ok L R₁.env) (keys_ok L R₂.env) fun a₁ a₂ K₁ K₂ => ?_
   have S₁ : PR (prmOf σ₁) a₁ := ⟨K₁.env, R₁.args.frame L K₁.frame (by disj_tac L)⟩
@@ -209,16 +213,25 @@ theorem seal_ct : ConstantTime isa sealArm.pre sealArm.pub «seal» := by
   have V₁ : PR (prmOf σ₁) c₁ := ⟨T₁.env, U₁.args.frame L T₁.frame (by disj_tac L)⟩
   have V₂ : PR (prmOf σ₁) c₂ := ⟨T₂.env, U₂.args.frame L T₂.frame (by disj_tac L)⟩
   exact rel_seq (crypt_rel L V₁ V₂) (crypt_ok L V₁.env V₁.args) (crypt_ok L V₂.env V₂.args)
-    fun d₁ d₂ C₁ C₂ => rel_env C₁.env C₂.env [] (by simp) restore_check
+    fun d₁ d₂ C₁ C₂ => rel_envArg16 L C₁.env C₂.env (V₁.args.frame L C₁.frame (by disj_tac L))
+      (V₂.args.frame L C₂.frame (by disj_tac L)) [] (by simp) sealEnd_check
 
 theorem open_ct : ConstantTime isa openArm.pre openArm.pub «open» := by
   refine ct_of fun σ₁ σ₂ h₁ h₂ hp => ?_
-  have L := lay_of h₁
+  obtain ⟨L, P₁⟩ := args_of_open h₁
+  obtain ⟨L₂, P₂⟩ := args_of_open h₂
   have e := prmOf_eq hp
-  refine rel_seq (entry_rel h₁ h₂ hp) (entry_ok h₁) (entry_ok h₂) fun τ₁ τ₂ En₁ En₂ => ?_
-  have R₁ := PR.entry h₁ En₁
-  have R₂ := PR.entry h₂ En₂
-  rw [← e] at R₂
+  refine rel_seq (entry_rel L P₁ L₂ P₂ hp) (entry_ok L P₁) (entry_ok L₂ P₂) fun τ₁ τ₂ En₁ En₂ => ?_
+  have R₀₁ := PR.entry L En₁
+  have R₀₂ := PR.entry L₂ En₂
+  rw [← e] at R₀₂
+  have wr : ∀ {τ : State}, PR (prmOf σ₁) τ → WP isa (.block recv) τ (PR (prmOf σ₁)) := fun {τ} R => by
+    obtain ⟨t, run, fR, -, ho, sp, rd, wr⟩ := recv_ok L R.env R.args
+    have fR' : Frame [⟨State.addr (prmOf σ₁).W + BitVec.ofNat 64 0, 16⟩] τ.mem t.mem := by
+      rw [BitVec.add_zero]; exact fR
+    exact WP.of_runBlock ⟨t, run, R.env.of_others ho sp rd wr, R.args.frame L fR' (by disj_tac L)⟩
+  refine rel_seq (rel_envArg16 L R₀₁.env R₀₂.env R₀₁.args R₀₂.args [] (by simp) recv_check) (wr R₀₁) (wr R₀₂)
+    fun ρ₁ ρ₂ R₁ R₂ => ?_
   refine rel_seq (keys_rel L R₁.env R₂.env) (keys_ok L R₁.env) (keys_ok L R₂.env) fun a₁ a₂ K₁ K₂ => ?_
   have S₁ : PR (prmOf σ₁) a₁ := ⟨K₁.env, R₁.args.frame L K₁.frame (by disj_tac L)⟩
   have S₂ : PR (prmOf σ₁) a₂ := ⟨K₂.env, R₂.args.frame L K₂.frame (by disj_tac L)⟩
@@ -239,8 +252,8 @@ theorem open_ct : ConstantTime isa openArm.pre openArm.pub «open» := by
     (polyval_ok L U₂.env U₂.args (hG K₂ C₂).1 (hG K₂ C₂).2) fun c₁ c₂ P₁ P₂ => ?_
   have V₁ : PR (prmOf σ₁) c₁ := ⟨P₁.env, U₁.args.frame L P₁.frame (by disj_tac L)⟩
   have V₂ : PR (prmOf σ₁) c₂ := ⟨P₂.env, U₂.args.frame L P₂.frame (by disj_tac L)⟩
-  refine rel_seq (tag_rel L V₁.env V₂.env (o := 240) (by decide)) (tag_ok L V₁.env (o := 240) (by decide))
-    (tag_ok L V₂.env (o := 240) (by decide)) fun d₁ d₂ T₁ T₂ => ?_
+  refine rel_seq (tag_rel L V₁.env V₂.env (o := 176) (by decide)) (tag_ok L V₁.env (o := 176) (by decide))
+    (tag_ok L V₂.env (o := 176) (by decide)) fun d₁ d₂ T₁ T₂ => ?_
   exact rel_envArg L T₁.env T₂.env (V₁.args.frame L T₁.frame (by disj_tac L))
     (V₂.args.frame L T₂.frame (by disj_tac L)) [] (by simp) openEnd_check
 

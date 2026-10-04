@@ -6,7 +6,7 @@ import VerifiedGarbage.Proof.Gcm.AArch64.Ghash
 # AES-GCM-SIV on AArch64: the encryption key's schedule and GHASH's key
 
 Untrusted: everything here is checked by Lean. `expand` writes the schedule
-of the encryption key at `W + 512` (`expand_ok`), and `hkey` GHASH's key,
+of the encryption key at `W + 240` (`expand_ok`), and `hkey` GHASH's key,
 `H · x` for the authentication key `H` (POLYVAL's field element), in
 GHASH's order at `W + 64`, and zeroes its accumulator (`hkey_ok`).
 `keys_ok`: the three together.
@@ -24,11 +24,11 @@ open VG.Proof.AesGcm.AArch64 (KeyCall KeyPost key_call GcmImpl covers_cons cover
 
 /-! ## `expand` -/
 
-/-- What `expand` leaves: the schedule of the encryption key at `W + 512`. -/
+/-- What `expand` leaves: the schedule of the encryption key at `W + 240`. -/
 structure ExpPost (p : Prm) (t t' : State) : Prop where
   env : Env p t'
-  frame : Frame [⟨p.W + BitVec.ofNat 64 512, 240⟩, ⟨p.W + BitVec.ofNat 64 2048, 512⟩] t.mem t'.mem
-  ciph : Spec.GcmSiv.ctxCiph t'.mem (p.W + BitVec.ofNat 64 512) p.R =
+  frame : Frame [⟨p.W + BitVec.ofNat 64 240, 240⟩, ⟨p.W + BitVec.ofNat 64 1760, 512⟩] t.mem t'.mem
+  ciph : Spec.GcmSiv.ctxCiph t'.mem (p.W + BitVec.ofNat 64 240) p.R =
     Spec.GcmSiv.aes (bytesAt t.mem (p.W + BitVec.ofNat 64 32) (Spec.GcmSiv.keyLen p.R))
 
 theorem keyLen_lsl {R : Nat} (hR : R = 10 ∨ R = 14) :
@@ -39,7 +39,7 @@ theorem keyLen_lsl {R : Nat} (hR : R = 10 ∨ R = 14) :
 /-- The arguments of `expand`'s call. -/
 theorem expArgs_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t) :
     ∃ t₁ : State, runBlock isa expandArgs t = some t₁ ∧
-      KeyCall t₁ (p.W + BitVec.ofNat 64 32) (p.W + BitVec.ofNat 64 512) (p.W + BitVec.ofNat 64 2048)
+      KeyCall t₁ (p.W + BitVec.ofNat 64 32) (p.W + BitVec.ofNat 64 240) (p.W + BitVec.ofNat 64 1760)
         (Spec.GcmSiv.keyLen p.R) ∧ Env p t₁ ∧ t₁.mem = t.mem := by
   have hl : Spec.GcmSiv.keyLen p.R = 16 ∨ Spec.GcmSiv.keyLen p.R = 32 := by
     unfold Spec.GcmSiv.keyLen; rcases L.rounds with h | h <;> rw [h] <;> decide
@@ -127,12 +127,12 @@ theorem hkeyMem_acc (m : Mem) (W : Addr) : Spec.Gcm.blockAt (hkeyMem m W) (W + B
 theorem hkey_ok {p : Prm} {t : State} (E : Env p t) :
     ∃ t' : State, runBlock isa hkey t = some t' ∧ t'.mem = hkeyMem t.mem p.W ∧
       Others [.x9, .x10, .x11, .x12, .x13] t t' ∧ t'.sp = t.sp ∧ t'.rd = t.rd ∧ t'.wr = t.wr := by
-  have r₁ := E.perm.wR (show 16 + 8 ≤ 4096 by decide)
-  have r₂ := E.perm.wR (show 24 + 8 ≤ 4096 by decide)
-  have w₁ := E.perm.wW (show 64 + 8 ≤ 4096 by decide)
-  have w₂ := E.perm.wW (show 72 + 8 ≤ 4096 by decide)
-  have w₃ := E.perm.wW (show 80 + 8 ≤ 4096 by decide)
-  have w₄ := E.perm.wW (show 88 + 8 ≤ 4096 by decide)
+  have r₁ := E.perm.wR (show 16 + 8 ≤ 3808 by decide)
+  have r₂ := E.perm.wR (show 24 + 8 ≤ 3808 by decide)
+  have w₁ := E.perm.wW (show 64 + 8 ≤ 3808 by decide)
+  have w₂ := E.perm.wW (show 72 + 8 ≤ 3808 by decide)
+  have w₃ := E.perm.wW (show 80 + 8 ≤ 3808 by decide)
+  have w₄ := E.perm.wW (show 88 + 8 ≤ 3808 by decide)
   refine ⟨_, by simp only [hkey, zero16]; grun [E.x19, r₁, r₂, w₁, w₂, w₃, w₄], ?_, ?_, ?_, ?_, ?_⟩
   · simp only [mem_write, gpr_write, ite_true, ite_false, reduceCtorEq, hkeyMem, Mem.writeW, BitVec.setWidth_eq,
       read8_readW]
@@ -145,7 +145,7 @@ theorem hkey_ok {p : Prm} {t : State} (E : Env p t) :
 /-- What `keys` writes: the keys, GHASH's key and accumulator, the blocks
 the calls use, the encryption key's schedule and the working spaces. -/
 abbrev keyR (W : Addr) : List Region :=
-  [⟨W + BitVec.ofNat 64 16, 112⟩, ⟨W + BitVec.ofNat 64 224, 16⟩, ⟨W + BitVec.ofNat 64 512, 3584⟩]
+  [⟨W + BitVec.ofNat 64 16, 112⟩, ⟨W + BitVec.ofNat 64 224, 16⟩, ⟨W + BitVec.ofNat 64 240, 3568⟩]
 
 /-- What `keys` leaves, from `σ`. -/
 structure KeysPost (p : Prm) (σ t : State) : Prop where
@@ -153,7 +153,7 @@ structure KeysPost (p : Prm) (σ t : State) : Prop where
   frame : Frame (keyR p.W) σ.mem t.mem
   auth : (Spec.GcmSiv.deriveKeys (Spec.GcmSiv.ctxCiph σ.mem p.K p.R) (Spec.GcmSiv.keyLen p.R)
     (bytesAt σ.mem p.N 12)).1 = bytesAt t.mem (p.W + BitVec.ofNat 64 16) 16
-  ciph : Spec.GcmSiv.ctxCiph t.mem (p.W + BitVec.ofNat 64 512) p.R = Spec.GcmSiv.aes
+  ciph : Spec.GcmSiv.ctxCiph t.mem (p.W + BitVec.ofNat 64 240) p.R = Spec.GcmSiv.aes
     (Spec.GcmSiv.deriveKeys (Spec.GcmSiv.ctxCiph σ.mem p.K p.R) (Spec.GcmSiv.keyLen p.R) (bytesAt σ.mem p.N 12)).2
   hkey : Spec.Gcm.blockAt t.mem (p.W + BitVec.ofNat 64 64) =
     hkeyOf (Spec.GcmSiv.ofBytes (bytesAt t.mem (p.W + BitVec.ofNat 64 16) 16))
@@ -165,7 +165,7 @@ theorem keys_ok (v : GcmImpl) {p : Prm} (L : Lay p) {σ : State} (E : Env p σ) 
   refine WP.seq (WP.mono (derive_ok v L E) fun t₂ I => ?_)
   have k0 : (⟨p.W + BitVec.ofNat 64 16, 112⟩ : Region) ∈ keyR p.W := List.mem_cons_self
   have k1 : (⟨p.W + BitVec.ofNat 64 224, 16⟩ : Region) ∈ keyR p.W := List.mem_cons_of_mem _ List.mem_cons_self
-  have k2 : (⟨p.W + BitVec.ofNat 64 512, 3584⟩ : Region) ∈ keyR p.W :=
+  have k2 : (⟨p.W + BitVec.ofNat 64 240, 3568⟩ : Region) ∈ keyR p.W :=
     List.mem_cons_of_mem _ (List.mem_cons_of_mem _ List.mem_cons_self)
   have f₂ : Frame (keyR p.W) σ.mem t₂.mem := I.frame.sub fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -176,8 +176,8 @@ theorem keys_ok (v : GcmImpl) {p : Prm} (L : Lay p) {σ : State} (E : Env p σ) 
     · exact ⟨_, k2, Offset.sub p.W (by decide) (by decide)⟩
   refine WP.seq (WP.mono (expand_ok v L I.env) fun t₃ X => ?_)
   obtain ⟨t₄, run₄, hm₄, ho₄, sp₄, rd₄, wr₄⟩ := hkey_ok X.env
-  have dK : ∀ {d k : Nat}, d + k ≤ 64 → 16 ≤ d → ∀ r ∈ [(⟨p.W + BitVec.ofNat 64 512, 240⟩ : Region),
-      ⟨p.W + BitVec.ofNat 64 2048, 512⟩], (⟨p.W + BitVec.ofNat 64 d, k⟩ : Region).Disjoint r := fun h₁ h₂ r hr => by
+  have dK : ∀ {d k : Nat}, d + k ≤ 64 → 16 ≤ d → ∀ r ∈ [(⟨p.W + BitVec.ofNat 64 240, 240⟩ : Region),
+      ⟨p.W + BitVec.ofNat 64 1760, 512⟩], (⟨p.W + BitVec.ofNat 64 d, k⟩ : Region).Disjoint r := fun h₁ h₂ r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl <;> exact L.w_w (.inl (by omega)) (by omega) (by decide)
   have f₃ : Frame (keyR p.W) t₂.mem t₃.mem := X.frame.sub fun r hr => by
@@ -191,7 +191,7 @@ theorem keys_ok (v : GcmImpl) {p : Prm} (L : Lay p) {σ : State} (E : Env p σ) 
       (⟨p.W + BitVec.ofNat 64 d, k⟩ : Region).Disjoint r := fun h r hr => by
     simp only [List.mem_singleton] at hr; subst hr; exact L.w_w (.inl h) (by omega) (by decide)
   have dH' : ∀ r ∈ [(⟨p.W + BitVec.ofNat 64 64, 32⟩ : Region)],
-      (⟨p.W + BitVec.ofNat 64 512, 240⟩ : Region).Disjoint r := fun r hr => by
+      (⟨p.W + BitVec.ofNat 64 240, 240⟩ : Region).Disjoint r := fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr; exact L.w_w (.inr (by decide)) (by decide) (by decide)
   have keys := I.keys L
   have a₃ : bytesAt t₃.mem (p.W + BitVec.ofNat 64 16) 16 = bytesAt t₂.mem (p.W + BitVec.ofNat 64 16) 16 :=

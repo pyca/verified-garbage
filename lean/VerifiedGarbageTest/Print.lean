@@ -16,7 +16,11 @@ namespace VG.Test
 
 /-- The lines of a printed function, a call shown as `<call name>`. -/
 def text (ls : List Line) : List String :=
-  ls.map fun | .text s => s | .call n => s!"<call {n}>"
+  ls.map fun
+    | .text s => s
+    | .call n => s!"<call {n}>"
+    | .sym s .page n => s!"{s}<page {n}>"
+    | .sym s .pageOff n => s!"{s}<pageoff {n}>"
 
 open X86_64
 
@@ -360,6 +364,11 @@ instructions. -/
 #guard text (AArch64.printer.function
     (.frame (.push .x30) (.call "vg_f" (.block [])) (.pop .x30) : Prog AArch64.isa)) == [
   "str x30, [sp, #-16]!", "<call vg_f>", "ldr x30, [sp], #16", "ret"]
+
+-- The address of a static (AArch64): its page and the offset in the page, in the
+-- syntax of the object format (`TCB/Rust.lean`).
+#guard text (AArch64.printer.function (.block [.adrSym .x16 "VG_TABLE"] : Prog AArch64.isa)) == [
+  "adrp x16, <page VG_TABLE>", "add x16, x16, <pageoff VG_TABLE>", "ret"]
 
 -- Pass two arguments on the stack, inside a frame saving `lr` (ARMv7). A pop
 -- loads the lowest word of its frame.

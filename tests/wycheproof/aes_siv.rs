@@ -8,7 +8,12 @@
 //! its ciphertext and IV, and decrypt back; an invalid one (a modified IV)
 //! must be rejected, with the data overwritten by zeros.
 
-#![cfg(any(target_arch = "x86_64", target_arch = "aarch64", target_arch = "arm"))]
+#![cfg(any(
+    target_arch = "x86",
+    target_arch = "x86_64",
+    target_arch = "aarch64",
+    target_arch = "arm"
+))]
 
 use serde::Deserialize;
 use verified_garbage::aes_siv::{AesSiv, Error};

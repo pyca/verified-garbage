@@ -5,7 +5,7 @@ CI restores the last build `main` saved, and Lake rebuilds only the modules
 whose sources changed since, and the modules importing them. The build is
 limited mostly by throughput, so the modules to rebuild are split into
 shards that build in parallel on separate runners, as many as the work
-needs: none when one would do (the final job builds it), up to `MAX_SHARDS`
+needs: none when one would do (the `lean` job builds it), up to `MAX_SHARDS`
 when everything changed.
 
 `main` saves a manifest next to its build: the hash of every module's source,
@@ -29,7 +29,8 @@ that only adds a module to a library or removes one (the lakefile's `globs`
 and `roots`): that rebuilds just the modules it moves (and, through their
 imports, what imports them). Every module is in exactly one shard (the first
 that builds it), so the shards' outputs together are the whole build. A plan
-is only an estimate: whatever the shards leave unbuilt, the final job builds.
+is only an estimate: whatever the shards leave unbuilt, the job that
+assembles their outputs (the last shard to finish, normally) builds.
 
   lean_shards.py plan MANIFEST PLAN     write the plan for the sources (with
                                         the manifest's build, which may be
@@ -76,9 +77,7 @@ MODULE_LISTS = ("globs", "roots")
 # A shard per this much estimated build time (in seconds of `lake build`'s
 # times, which a runner's build runs about five of at once), up to
 # `MAX_SHARDS`. Never just one: a single shard builds nothing in parallel,
-# and the final job, which waits for it, would set up a runner again (about
-# a minute: the toolchain, Mathlib and this project's build) to build
-# nothing, so the final job builds that much itself.
+# so the `lean` job builds that much itself.
 WORK_PER_SHARD = 800.0
 MAX_SHARDS = 16
 # How many modules a runner's build runs at once (about five, as above): a

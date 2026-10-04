@@ -16,9 +16,10 @@ the contract; these artifacts are made from each function's `Api` (in
 `Spec/`, reviewed with the contract), and this file adds only notes on the
 implementation.
 
-The functions' calls (`bl`) keep the return address in `x30`, which they
-save in the working space, with our caller's registers; every argument is in
-a register, so no stack is used.
+Each keeps its working space in a frame of 3824 bytes on the stack
+(`Proof/AesGcmSiv/AArch64/Verified.lean`); their calls (`bl`) keep the return
+address in `x30`, which they save in the working space, with our caller's
+registers, so no other stack is used.
 -/
 
 namespace VG.Generic.AesGcm.AArch64.AesGcmSiv
@@ -37,9 +38,10 @@ def artifactsOf (v : GcmImpl) : List Artifact := [
     name := Spec.GcmSiv.sealApi.name ++ v.suffix
     target := AArch64.target
     doc := Spec.GcmSiv.sealApi.doc (notes := [note v])
-    code := Impl.AesGcmSiv.AArch64.«seal» v.callees
-    contract := Spec.GcmSiv.sealContract AArch64.abi
-    verified := seal_verified v
+    code := Impl.StackScratch.AArch64.withStackArgScratch 3824 0 (Impl.AesGcmSiv.AArch64.«seal» v.callees)
+    contract := Spec.GcmSiv.sealContract AArch64.abi 3824
+    stack := 3824
+    verified := seal_framed v
     spSafe := Code.all_of_forall (fun _ => rfl) _
     features := v.features },
   { Spec.GcmSiv.openApi with
@@ -47,9 +49,10 @@ def artifactsOf (v : GcmImpl) : List Artifact := [
     target := AArch64.target
     doc := Spec.GcmSiv.openApi.doc (notes := [note v,
       "It compares the tags and overwrites the data with zeros without a branch on the result."])
-    code := Impl.AesGcmSiv.AArch64.«open» v.callees
-    contract := Spec.GcmSiv.openContract AArch64.abi
-    verified := open_verified v
+    code := Impl.StackScratch.AArch64.withStackArgScratch 3824 0 (Impl.AesGcmSiv.AArch64.«open» v.callees)
+    contract := Spec.GcmSiv.openContract AArch64.abi 3824
+    stack := 3824
+    verified := open_framed v
     spSafe := Code.all_of_forall (fun _ => rfl) _
     features := v.features }]
 

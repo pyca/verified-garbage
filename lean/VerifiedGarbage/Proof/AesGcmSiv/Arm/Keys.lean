@@ -6,7 +6,7 @@ import VerifiedGarbage.Proof.Gcm.Arm.Ghash
 # AES-GCM-SIV on ARMv7: the encryption key's schedule and GHASH's key
 
 Untrusted: everything here is checked by Lean. `expand` writes the schedule
-of the encryption key at `W + 512` (`expand_ok`), and `hkey` GHASH's key,
+of the encryption key at `W + 192` (`expand_ok`), and `hkey` GHASH's key,
 `H · x` for the authentication key `H` (POLYVAL's field element), in
 GHASH's order at `W + 64`, and zeroes its accumulator (`hkey_ok`).
 `keys_ok`: the three together.
@@ -45,12 +45,12 @@ theorem blockAt_store4 (m : Mem) (p : Addr) (a b c d : BitVec 32) :
 
 /-! ## `expand` -/
 
-/-- What `expand` leaves: the schedule of the encryption key at `W + 512`. -/
+/-- What `expand` leaves: the schedule of the encryption key at `W + 192`. -/
 structure ExpPost (p : Prm) (t t' : State) : Prop where
   env : Env p t'
-  frame : Frame [⟨State.addr p.W + BitVec.ofNat 64 512, 240⟩, ⟨State.addr p.W + BitVec.ofNat 64 2048, 512⟩]
+  frame : Frame [⟨State.addr p.W + BitVec.ofNat 64 192, 240⟩, ⟨State.addr p.W + BitVec.ofNat 64 1712, 512⟩]
     t.mem t'.mem
-  ciph : Spec.GcmSiv.ctxCiph t'.mem (State.addr p.W + BitVec.ofNat 64 512) p.R =
+  ciph : Spec.GcmSiv.ctxCiph t'.mem (State.addr p.W + BitVec.ofNat 64 192) p.R =
     Spec.GcmSiv.aes (bytesAt t.mem (State.addr p.W + BitVec.ofNat 64 32) (Spec.GcmSiv.keyLen p.R))
 
 theorem keyLen_lsl {R : Nat} (hR : R = 10 ∨ R = 14) :
@@ -61,7 +61,7 @@ theorem keyLen_lsl {R : Nat} (hR : R = 10 ∨ R = 14) :
 /-- The arguments of `expand`'s call. -/
 theorem expArgs_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t) :
     ∃ t₁ : State, runBlock isa expandArgs t = some t₁ ∧
-      KeyCall t₁ (p.W + BitVec.ofNat 32 32) (p.W + BitVec.ofNat 32 512) (p.W + BitVec.ofNat 32 2048)
+      KeyCall t₁ (p.W + BitVec.ofNat 32 32) (p.W + BitVec.ofNat 32 192) (p.W + BitVec.ofNat 32 1712)
         (Spec.GcmSiv.keyLen p.R) ∧ Env p t₁ ∧ t₁.mem = t.mem := by
   have hl : Spec.GcmSiv.keyLen p.R = 16 ∨ Spec.GcmSiv.keyLen p.R = 32 := by
     unfold Spec.GcmSiv.keyLen; rcases L.rounds with h | h <;> rw [h] <;> decide
@@ -94,8 +94,8 @@ theorem expand_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t) : WP isa expan
   refine WP.mono (key_call kc) fun t₂ P => ?_
   have fr := P.frame
   have out := P.out
-  simp only [L.wA (show 32 < 4096 by decide), L.wA (show 512 < 4096 by decide),
-    L.wA (show 2048 < 4096 by decide)] at fr out
+  simp only [L.wA (show 32 < 3760 by decide), L.wA (show 192 < 3760 by decide),
+    L.wA (show 1712 < 3760 by decide)] at fr out
   refine ⟨E₁.of_saved P.saved P.sp P.rd P.wr, by rw [← hm₁]; exact fr, ?_⟩
   have hr : Spec.Aes.rounds (Spec.GcmSiv.keyLen p.R / 4) = p.R := by
     unfold Spec.Aes.rounds Spec.GcmSiv.keyLen; rcases L.rounds with h | h <;> rw [h]
@@ -144,18 +144,18 @@ theorem hkeyMem_acc (m : Mem) (W : Addr) : Spec.Gcm.blockAt (hkeyMem m W) (W + B
 theorem hkey_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t) :
     ∃ t' : State, runBlock isa hkey t = some t' ∧ t'.mem = hkeyMem t.mem (State.addr p.W) ∧
       Others [.r0, .r1, .r2, .r3, .r12, .lr] t t' ∧ t'.sp = t.sp ∧ t'.rd = t.rd ∧ t'.wr = t.wr := by
-  have r₀ := E.perm.wR (show 16 + 4 ≤ 4096 by decide)
-  have r₁ := E.perm.wR (show 20 + 4 ≤ 4096 by decide)
-  have r₂ := E.perm.wR (show 24 + 4 ≤ 4096 by decide)
-  have r₃ := E.perm.wR (show 28 + 4 ≤ 4096 by decide)
-  have w₀ := E.perm.wW (show 64 + 4 ≤ 4096 by decide)
-  have w₁ := E.perm.wW (show 68 + 4 ≤ 4096 by decide)
-  have w₂ := E.perm.wW (show 72 + 4 ≤ 4096 by decide)
-  have w₃ := E.perm.wW (show 76 + 4 ≤ 4096 by decide)
-  have w₄ := E.perm.wW (show 80 + 4 ≤ 4096 by decide)
-  have w₅ := E.perm.wW (show 84 + 4 ≤ 4096 by decide)
-  have w₆ := E.perm.wW (show 88 + 4 ≤ 4096 by decide)
-  have w₇ := E.perm.wW (show 92 + 4 ≤ 4096 by decide)
+  have r₀ := E.perm.wR (show 16 + 4 ≤ 3760 by decide)
+  have r₁ := E.perm.wR (show 20 + 4 ≤ 3760 by decide)
+  have r₂ := E.perm.wR (show 24 + 4 ≤ 3760 by decide)
+  have r₃ := E.perm.wR (show 28 + 4 ≤ 3760 by decide)
+  have w₀ := E.perm.wW (show 64 + 4 ≤ 3760 by decide)
+  have w₁ := E.perm.wW (show 68 + 4 ≤ 3760 by decide)
+  have w₂ := E.perm.wW (show 72 + 4 ≤ 3760 by decide)
+  have w₃ := E.perm.wW (show 76 + 4 ≤ 3760 by decide)
+  have w₄ := E.perm.wW (show 80 + 4 ≤ 3760 by decide)
+  have w₅ := E.perm.wW (show 84 + 4 ≤ 3760 by decide)
+  have w₆ := E.perm.wW (show 88 + 4 ≤ 3760 by decide)
+  have w₇ := E.perm.wW (show 92 + 4 ≤ 3760 by decide)
   refine ⟨_, by simp only [hkey, Impl.AesGcm.Arm.zero16]; srun [E.r11, L.wA, r₀, r₁, r₂, r₃, w₀, w₁, w₂, w₃, w₄,
     w₅, w₆, w₇], ?_, by others_tac, by rfl, by rfl, by rfl⟩
   simp only [mem_setReg, mem_store, gpr_setReg, ite_true, ite_false, reduceCtorEq, hkeyMem, Proof.Cmac.zero4,
@@ -168,7 +168,7 @@ theorem hkey_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t) :
 the calls use, the encryption key's schedule, the working spaces and the
 stack below `SP`. -/
 abbrev keyR (W : Addr) (SP : BitVec 32) : List Region :=
-  [⟨W + BitVec.ofNat 64 16, 112⟩, ⟨W + BitVec.ofNat 64 224, 16⟩, ⟨W + BitVec.ofNat 64 512, 3584⟩, below SP]
+  [⟨W + BitVec.ofNat 64 16, 112⟩, ⟨W + BitVec.ofNat 64 176, 16⟩, ⟨W + BitVec.ofNat 64 192, 3568⟩, below SP]
 
 /-- What `keys` leaves, from `σ`. -/
 structure KeysPost (p : Prm) (σ t : State) : Prop where
@@ -176,7 +176,7 @@ structure KeysPost (p : Prm) (σ t : State) : Prop where
   frame : Frame (keyR (State.addr p.W) p.SP) σ.mem t.mem
   auth : (Spec.GcmSiv.deriveKeys (Spec.GcmSiv.ctxCiph σ.mem (State.addr p.K) p.R) (Spec.GcmSiv.keyLen p.R)
     (bytesAt σ.mem (State.addr p.N) 12)).1 = bytesAt t.mem (State.addr p.W + BitVec.ofNat 64 16) 16
-  ciph : Spec.GcmSiv.ctxCiph t.mem (State.addr p.W + BitVec.ofNat 64 512) p.R = Spec.GcmSiv.aes
+  ciph : Spec.GcmSiv.ctxCiph t.mem (State.addr p.W + BitVec.ofNat 64 192) p.R = Spec.GcmSiv.aes
     (Spec.GcmSiv.deriveKeys (Spec.GcmSiv.ctxCiph σ.mem (State.addr p.K) p.R) (Spec.GcmSiv.keyLen p.R)
       (bytesAt σ.mem (State.addr p.N) 12)).2
   hkey : Spec.Gcm.blockAt t.mem (State.addr p.W + BitVec.ofNat 64 64) =
@@ -187,9 +187,9 @@ theorem keys_ok {p : Prm} (L : Lay p) {σ : State} (E : Env p σ) : WP isa keys 
   have hR := L.rounds
   refine WP.seq (WP.mono (derive_ok L E) fun t₂ I => ?_)
   have k0 : (⟨State.addr p.W + BitVec.ofNat 64 16, 112⟩ : Region) ∈ keyR (State.addr p.W) p.SP := List.mem_cons_self
-  have k1 : (⟨State.addr p.W + BitVec.ofNat 64 224, 16⟩ : Region) ∈ keyR (State.addr p.W) p.SP :=
+  have k1 : (⟨State.addr p.W + BitVec.ofNat 64 176, 16⟩ : Region) ∈ keyR (State.addr p.W) p.SP :=
     List.mem_cons_of_mem _ List.mem_cons_self
-  have k2 : (⟨State.addr p.W + BitVec.ofNat 64 512, 3584⟩ : Region) ∈ keyR (State.addr p.W) p.SP :=
+  have k2 : (⟨State.addr p.W + BitVec.ofNat 64 192, 3568⟩ : Region) ∈ keyR (State.addr p.W) p.SP :=
     List.mem_cons_of_mem _ (List.mem_cons_of_mem _ List.mem_cons_self)
   have k3 : below p.SP ∈ keyR (State.addr p.W) p.SP := by simp
   have f₂ : Frame (keyR (State.addr p.W) p.SP) σ.mem t₂.mem := I.frame.sub fun r hr => by
@@ -202,8 +202,8 @@ theorem keys_ok {p : Prm} (L : Lay p) {σ : State} (E : Env p σ) : WP isa keys 
     · exact ⟨_, k3, fun _ h => h⟩
   refine WP.seq (WP.mono (expand_ok L I.env) fun t₃ X => ?_)
   obtain ⟨t₄, run₄, hm₄, ho₄, sp₄, rd₄, wr₄⟩ := hkey_ok L X.env
-  have dK : ∀ {d k : Nat}, d + k ≤ 64 → 16 ≤ d → ∀ r ∈ [(⟨State.addr p.W + BitVec.ofNat 64 512, 240⟩ : Region),
-      ⟨State.addr p.W + BitVec.ofNat 64 2048, 512⟩],
+  have dK : ∀ {d k : Nat}, d + k ≤ 64 → 16 ≤ d → ∀ r ∈ [(⟨State.addr p.W + BitVec.ofNat 64 192, 240⟩ : Region),
+      ⟨State.addr p.W + BitVec.ofNat 64 1712, 512⟩],
       (⟨State.addr p.W + BitVec.ofNat 64 d, k⟩ : Region).Disjoint r := fun h₁ h₂ r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl <;> exact L.w_w (.inl (by omega)) (by omega) (by decide)
@@ -218,7 +218,7 @@ theorem keys_ok {p : Prm} (L : Lay p) {σ : State} (E : Env p σ) : WP isa keys 
       (⟨State.addr p.W + BitVec.ofNat 64 d, k⟩ : Region).Disjoint r := fun h r hr => by
     simp only [List.mem_singleton] at hr; subst hr; exact L.w_w (.inl h) (by omega) (by decide)
   have dH' : ∀ r ∈ [(⟨State.addr p.W + BitVec.ofNat 64 64, 32⟩ : Region)],
-      (⟨State.addr p.W + BitVec.ofNat 64 512, 240⟩ : Region).Disjoint r := fun r hr => by
+      (⟨State.addr p.W + BitVec.ofNat 64 192, 240⟩ : Region).Disjoint r := fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr; exact L.w_w (.inr (by decide)) (by decide) (by decide)
   have keys := I.keys L
   have a₃ : bytesAt t₃.mem (State.addr p.W + BitVec.ofNat 64 16) 16 =
