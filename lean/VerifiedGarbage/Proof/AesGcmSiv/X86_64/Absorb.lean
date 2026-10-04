@@ -513,4 +513,96 @@ theorem tail_ok (v : GcmImpl) {K W SP : Addr} (L : Lay K W SP) {t : State} (E : 
     show Spec.Gcm.blocksAt t₃.mem (W + BitVec.ofNat 64 768) 1 = [Spec.Gcm.blockAt t₃.mem (W + BitVec.ofNat 64 768)] by
       simp [Spec.Gcm.blocksAt], hb₃]
 
+theorem AbsPost.trans {K W SP : Addr} (L : Lay K W SP) {xs ys : List Spec.GcmSiv.Elem} {t t₁ t₂ : State}
+    (h₁ : AbsPost K W SP xs t t₁) (h₂ : AbsPost K W SP ys t₁ t₂) : AbsPost K W SP (xs ++ ys) t t₂ := by
+  refine ⟨h₂.env, h₂.rd.trans h₁.rd, h₂.wr.trans h₁.wr, h₁.frame.trans h₂.frame, ?_⟩
+  rw [h₂.out, h₁.out, Proof.AesGcm.X86_64.blockAt_frame h₁.frame (w_absR L (.inl (by decide))),
+    Proof.Gcm.ghashFrom_append]
+
+/-- The field elements of `n` bytes at `Q`, padded. -/
+theorem elems_pad16_bytesAt (m : Mem) (Q : Addr) (n : Nat) :
+    Spec.GcmSiv.elems (Spec.GcmSiv.pad16 (bytesAt m Q n)) = elemsAt m Q (n / 16) ++
+      if n % 16 = 0 then [] else
+        [Spec.GcmSiv.ofBytes (bytesAt m (Q + BitVec.ofNat 64 (16 * (n / 16))) (n % 16) ++ Spec.GcmSiv.zeros (16 - n % 16))] := by
+  have hs := Proof.AesGcm.X86_64.bytesAt_add m Q (16 * (n / 16)) (n % 16)
+  rw [show 16 * (n / 16) + n % 16 = n by omega] at hs
+  have hl := Proof.AesGcm.X86_64.length_bytesAt m Q (16 * (n / 16))
+  rw [GcmSiv.elems_pad16, Proof.AesGcm.X86_64.length_bytesAt, hs, List.take_left' hl, List.drop_left' hl,
+    GcmSiv.elems_bytesAt]
+
+theorem AbsPost.of_eq {K W SP : Addr} {xs : List Spec.GcmSiv.Elem} {t t₁ t₂ : State}
+    (h : AbsPost K W SP xs t₁ t₂) (hm : t₁.mem = t.mem) (hrd : t₁.rd = t.rd) (hwr : t₁.wr = t.wr) :
+    AbsPost K W SP xs t t₂ :=
+  ⟨h.env, h.rd.trans hrd, h.wr.trans hwr, hm ▸ h.frame, by rw [h.out, hm]⟩
+
+theorem absorb_ok (v : GcmImpl) {K W SP : Addr} (L : Lay K W SP) {t : State} (E : Env K W SP t)
+    {Q : Addr} {n : Nat} (hQ : Buf K W SP t Q n) (h12 : t.gpr .r12 = Q) (hbp : t.gpr .rbp = BitVec.ofNat 64 n) :
+    WP isa (absorb v.callees) t
+      (AbsPost K W SP (Spec.GcmSiv.elems (Spec.GcmSiv.pad16 (bytesAt t.mem Q n))) t) := by
+  have hn := hQ.lt
+  have hand := Proof.AesGcm.X86_64.and15 (BitVec.ofNat 64 n)
+  rw [toNat_ofNat_of_lt hn, Proof.AesGcm.X86_64.imm_eq (by decide)] at hand
+  obtain ⟨t₁, run₁, hbx₁, hbp₁, hzf₁, hg₁, hm₁, hrd₁, hwr₁⟩ : ∃ t₁ : State,
+      runBlock isa [.mov .rbx (.reg .rbp), .shift .shr .rbx 4, .alu .and .rbp (imm 15), .alu .test .rbx (.reg .rbx)] t =
+        some t₁ ∧
+      t₁.gpr .rbx = BitVec.ofNat 64 (n / 16) ∧ t₁.gpr .rbp = BitVec.ofNat 64 (n % 16) ∧
+      t₁.zf = some (decide (n / 16 = 0)) ∧ (∀ r, r ≠ .rbx → r ≠ .rbp → t₁.gpr r = t.gpr r) ∧ t₁.mem = t.mem ∧
+      t₁.rd = t.rd ∧ t₁.wr = t.wr := by
+    refine ⟨_, by srun [], ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+    · simp only [gpr_setReg, gpr_arithFlags, gpr_setFlags, ite_true, ite_false, reduceCtorEq, hbp,
+        Proof.AesGcm.X86_64.shr4 _ hn]
+    · simp only [gpr_setReg, gpr_arithFlags, gpr_setFlags, ite_true, ite_false, reduceCtorEq, hbp, hand]
+    · simp only [zf_setReg, zf_arithFlags, gpr_setReg, gpr_arithFlags, gpr_setFlags, ite_true, ite_false,
+        reduceCtorEq, hbp, Proof.AesGcm.X86_64.shr4 _ hn]
+      rw [Proof.AesGcm.X86_64.and_self_beq (by omega)]
+    · intro r h₁ h₂; simp only [gpr_setReg, gpr_arithFlags, gpr_setFlags, h₁, h₂, ite_false]
+    all_goals rfl
+  refine WP.seq (WP.of_runBlock ⟨t₁, run₁, ?_⟩)
+  have E₁ : Env K W SP t₁ := E.keep (fun r hr => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl <;> exact hg₁ _ (by decide) (by decide)) hrd₁ hwr₁
+  have hQ₁ := hQ.of_eq hrd₁ hwr₁
+  have h12₁ : t₁.gpr .r12 = Q := by rw [hg₁ _ (by decide) (by decide), h12]
+  -- The whole blocks.
+  have hmid : WP isa (.ite .e (.block []) (.loop (absorbChunk v.callees) .ne)) t₁ fun t₂ =>
+      AbsPost K W SP (elemsAt t.mem Q (n / 16)) t₁ t₂ ∧ t₂.gpr .r12 = Q + BitVec.ofNat 64 (16 * (n / 16)) ∧
+      t₂.gpr .rbp = BitVec.ofNat 64 (n % 16) := by
+    refine WP.ite (decide (n / 16 = 0)) (eval_e hzf₁) (fun ht => ?_) (fun hf => ?_)
+    · have h0 : n / 16 = 0 := by simpa using ht
+      refine WP.block_nil ⟨⟨E₁, rfl, rfl, Frame.refl _ _, by simp [h0, elemsAt, Proof.Gcm.ghashFrom_nil]⟩,
+        by rw [h12₁, h0, Nat.mul_zero, BitVec.add_zero], hbp₁⟩
+    · have h0 : n / 16 ≠ 0 := by simpa using hf
+      refine WP.mono (chunks_ok v L E₁ (by omega) (hQ₁.take (by omega)) h12₁ hbx₁) fun t₂ ⟨P, r12, rbp⟩ => ?_
+      rw [hm₁] at P
+      exact ⟨P, r12, rbp.trans hbp₁⟩
+  refine WP.seq (WP.mono hmid fun t₂ ⟨P₂, r12₂, rbp₂⟩ => ?_)
+  have P₂' := P₂.of_eq hm₁ hrd₁ hwr₁
+  obtain ⟨t₃, run₃, hzf₃, hg₃, hm₃, hrd₃, hwr₃⟩ : ∃ t₃ : State, runBlock isa [.alu .test .rbp (.reg .rbp)] t₂ = some t₃ ∧
+      t₃.zf = some (decide (n % 16 = 0)) ∧ (∀ r, t₃.gpr r = t₂.gpr r) ∧ t₃.mem = t₂.mem ∧ t₃.rd = t₂.rd ∧
+      t₃.wr = t₂.wr := by
+    refine ⟨_, by srun [], ?_, ?_, ?_, ?_, ?_⟩
+    · simp only [zf_arithFlags, rbp₂]
+      rw [Proof.AesGcm.X86_64.and_self_beq (by omega)]
+    · intro r; rfl
+    all_goals rfl
+  refine WP.seq (WP.of_runBlock ⟨t₃, run₃, ?_⟩)
+  have P₃ : AbsPost K W SP (elemsAt t.mem Q (n / 16)) t t₃ :=
+    ⟨P₂'.env.keep (fun r _ => hg₃ r) hrd₃ hwr₃, hrd₃.trans P₂'.rd, hwr₃.trans P₂'.wr, hm₃ ▸ P₂'.frame,
+      by rw [hm₃, P₂'.out]⟩
+  rw [elems_pad16_bytesAt]
+  refine WP.ite (decide (n % 16 = 0)) (eval_e hzf₃) (fun ht => ?_) (fun hf => ?_)
+  · have h0 : n % 16 = 0 := by simpa using ht
+    simp only [h0, ite_true, List.append_nil]
+    exact WP.block_nil P₃
+  · have h0 : n % 16 ≠ 0 := by simpa using hf
+    simp only [h0, ite_false]
+    have hP : Buf K W SP t₃ (Q + BitVec.ofNat 64 (16 * (n / 16))) (n % 16) :=
+      (hQ.slice (by omega)).of_eq P₃.rd P₃.wr
+    refine WP.mono (tail_ok v L P₃.env (by omega) (by omega) hP (by rw [hg₃, r12₂]) (by rw [hg₃, rbp₂]))
+      fun t₄ T => ?_
+    have e := Proof.AesGcm.X86_64.bytesAt_frame P₃.frame (buf_absR (hQ.slice (a := 16 * (n / 16)) (k := n % 16)
+      (by omega))) (by omega)
+    rw [e] at T
+    exact P₃.trans L T
+
 end VG.Proof.AesGcmSiv.X86_64

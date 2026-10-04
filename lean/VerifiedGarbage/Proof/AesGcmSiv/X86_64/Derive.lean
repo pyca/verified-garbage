@@ -277,8 +277,8 @@ theorem shr1 (n : Nat) (hn : n < 2 ^ 64) : BitVec.ofNat 64 n >>> 1 = BitVec.ofNa
 `rounds / 2 − 1`. -/
 theorem derInit_ok {K W SP : Addr} {σ : State} (E : Env K W SP σ) {R : Nat} (hR : R = 10 ∨ R = 14)
     {N A D : Addr} {al n : Nat} (S : Slots W R N A D al n σ.mem) :
-    WP isa (.block ([.mov32 .rbx (imm 0)] ++ ptr .r12 .r15 akO ++
-      [.mov .rbp (.mem (at_ .r15 roundsO)), .shift .shr .rbp 1, .alu .sub .rbp (imm 1)])) σ
+    WP isa (.block (([.mov32 .rbx (imm 0)] : List Instr) ++ ptr .r12 .r15 akO ++
+      ([.mov .rbp (.mem (at_ .r15 roundsO)), .shift .shr .rbp 1, .alu .sub .rbp (imm 1)] : List Instr))) σ
       (DInv K W SP σ R N (R / 2 - 1) 0) := by
   have h15 := E.r15
   have rR := S.rounds
