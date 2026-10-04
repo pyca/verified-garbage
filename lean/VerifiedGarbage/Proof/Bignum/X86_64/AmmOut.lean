@@ -65,18 +65,18 @@ theorem word_wrList_hit (B : Addr) (m : Mem) (l₁ l₂ : List (Nat × BitVec 25
 
 /-! ## The stores -/
 
-/-- 32-byte stores of registers at `r11` plus offsets. -/
-def storeCode (l : List (Nat × XReg)) : List Instr :=
-  l.map fun x => .vmovdquStore .l256 (VG.Impl.Rsa.X86_64.CrtIfma.at_ .r11 x.1) x.2
+/-- 32-byte stores of registers at `b` plus offsets. -/
+def storeCode (b : Reg) (l : List (Nat × XReg)) : List Instr :=
+  l.map fun x => .vmovdquStore .l256 (VG.Impl.Rsa.X86_64.CrtIfma.at_ b x.1) x.2
 
-theorem stores_gen {B : Addr} :
-    ∀ (l : List (Nat × XReg)) (s : State), s.gpr .r11 = B →
+theorem stores_gen {B : Addr} {b : Reg} :
+    ∀ (l : List (Nat × XReg)) (s : State), s.gpr b = B →
       (∀ x ∈ l, InRegions s.wr (off B x.1) 32) →
-      WP isa (.block (storeCode l)) s fun s' => s' = { s with mem := wrList s.mem B (l.map fun x => (x.1, s.ymm x.2)) }
+      WP isa (.block (storeCode b l)) s fun s' => s' = { s with mem := wrList s.mem B (l.map fun x => (x.1, s.ymm x.2)) }
   | [], s, _, _ => WP.block_nil rfl
   | (e, r) :: rest, s, hB, hw => by
     rw [storeCode, List.map_cons, WP.block_cons_iff]
-    have ea : s.ea (VG.Impl.Rsa.X86_64.CrtIfma.at_ .r11 e) = off B e := by
+    have ea : s.ea (VG.Impl.Rsa.X86_64.CrtIfma.at_ b e) = off B e := by
       simp only [State.ea, VG.Impl.Rsa.X86_64.CrtIfma.at_, hB, off]
       exact congrArg _ (BitVec.ofInt_natCast ..)
     refine ⟨{ s with mem := s.mem.writeW (off B e) (s.ymm r) }, ?_, ?_⟩
@@ -92,7 +92,7 @@ def accStores : List (Nat × XReg) :=
 theorem accStores_code :
     ((List.range 2).flatMap fun p => (List.range 5).map fun k =>
       (Instr.vmovdquStore .l256 (VG.Impl.Rsa.X86_64.CrtIfma.at_ .r11 (D * p + 32 * k))
-        (VG.Impl.Rsa.X86_64.CrtIfma.acc p k 0))) = storeCode accStores := by
+        (VG.Impl.Rsa.X86_64.CrtIfma.acc p k 0))) = storeCode .r11 accStores := by
   decide
 
 /-- The word at `e + 8 t` after writes of which only `(e, v)` touch it. -/

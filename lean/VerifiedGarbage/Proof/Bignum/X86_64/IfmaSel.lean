@@ -240,4 +240,160 @@ theorem selIter_ok {t₀ t : State} {base : Addr} {v i : Nat} (hv : v < 16) (hi 
       · simp only [hlt, show v < i + 1 by omega, ite_true]
       · simp only [hlt, show ¬ v < i + 1 by omega, ite_false]
 
+
+/-- The loop over the sixteen entries, from entry `16 - n`. -/
+theorem selLoop_ok {t₀ : State} {base : Addr} {v : Nat} (hv : v < 16) (hd : t₀.gpr .rdx = BitVec.ofNat 64 v)
+    (hin : ∀ i < 16, ∀ k < 5, InRegions (t₀.rd ++ t₀.wr) (base + BitVec.ofNat 64 (160 * i + 32 * k)) 32) :
+    ∀ n t, 1 ≤ n → n ≤ 16 → SelInv t₀ base v (16 - n) t →
+      WP isa (.loop (.block selBody) .ne) t (SelInv t₀ base v 16) := by
+  intro n t h1 h16 hI
+  refine WP.loop (M := isa) (body := .block selBody) (c := .ne) (Q := SelInv t₀ base v 16)
+    (fun n t => 1 ≤ n ∧ n ≤ 16 ∧ SelInv t₀ base v (16 - n) t) ?_ n t ⟨h1, h16, hI⟩
+  intro n t ⟨h1, h16, hI⟩
+  refine WP.mono (selIter_ok hv (by omega) hd hin hI) fun t' ⟨hI', hz⟩ => ?_
+  simp only [eval, hz, Option.map_some]
+  rcases Nat.eq_or_lt_of_le h1 with rfl | hn
+  · exact .inl ⟨by simp, hI'⟩
+  · refine .inr ⟨by simp only [decide_eq_false (show ¬ (16 - n + 1 = 16) by omega), Bool.not_false], n - 1,
+      by omega, by omega, by omega, by rw [show 16 - (n - 1) = 16 - n + 1 by omega]; exact hI'⟩
+
+
+/-- The zeroing of the five accumulators. -/
+def zeros5 : List Instr :=
+  (List.range 5).map fun r => .vop (.vbin .vpxor .l256 (VG.Impl.Rsa.X86_64.CrtIfma.xr r)
+    (VG.Impl.Rsa.X86_64.CrtIfma.xr r) (VG.Impl.Rsa.X86_64.CrtIfma.xr r))
+
+def checkZeros5 : Bool :=
+  match Sym.init.run (fun _ => 0) zeros5 with
+  | some σ => (List.range 5).all fun r => decide (σ.reg r = .zero)
+  | none => false
+
+theorem checkZeros5_ok : checkZeros5 = true := by decide +kernel
+
+theorem zeros5_ok {s : State} :
+    WP isa (.block zeros5) s fun s' =>
+      (∀ r < 5, ∀ t < 4, qw s' (VG.Impl.Rsa.X86_64.CrtIfma.xr r) t = 0) ∧ Keeps s s' := by
+  have h := checkZeros5_ok
+  unfold checkZeros5 at h
+  split at h
+  · rename_i σ hσ
+    simp only [List.all_eq_true, List.mem_range, decide_eq_true_eq] at h
+    refine WP.mono (run_ok (fun b d n hn hd => absurd hd (by omega)) hσ) fun s' hs => ⟨fun r hr t ht => ?_,
+      ⟨fun r hr => hs.gpr hr, hs.mem, hs.rd, hs.wr, hs.mxcsr, hs.flags⟩⟩
+    · rw [xr_eq r (by omega), hs.reg _ t ht, xi_xr r (by omega), h r hr]; rfl
+  · cases h
+
+theorem shr60 (w : BitVec 64) : w >>> 60 = BitVec.ofNat 64 (w.toNat / 2 ^ 60) := by
+  apply BitVec.eq_of_toNat_eq
+  rw [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow,
+    Nat.mod_eq_of_lt (by have := w.isLt; omega)]
+
+/-- Writes of 32 bytes within `[o, o + n)` leave the rest. -/
+theorem wrList_outside' (B : Addr) {o n : Nat} (hn : o + n ≤ 2 ^ 63) :
+    ∀ (l : List (Nat × BitVec 256)) (m : Mem), (∀ x ∈ l, o ≤ x.1 ∧ x.1 + 32 ≤ o + n) →
+      Outside B o n m (wrList m B l)
+  | [], m, _ => Outside.refl B o n m
+  | (e, v) :: rest, m, h => by
+    have he := h (e, v) (List.mem_cons_self ..)
+    exact ((writeW256_outside m B v (by omega)).mono he.1 (by omega)).trans
+      (wrList_outside' B hn rest _ fun x hx => h x (List.mem_cons_of_mem _ hx))
+
+/-- The nibble `select` reads: the top 4 bits of the quadword at `oV`. -/
+def nib (m : Mem) (B : Addr) (p : Nat) : Nat := (word m B (D * p + oV)).toNat / 2 ^ 60
+
+theorem nib_lt (m : Mem) (B : Addr) (p : Nat) : nib m B p < 16 := by
+  unfold nib; have := (word m B (D * p + oV)).isLt; omega
+
+/-- `[S] := T_v` for prime `p`. -/
+theorem select_ok {s : State} {B : Addr} {p : Nat} (hp : p < 2) (hB : s.gpr .rbx = B) (hs : Scr s B (2 * D)) :
+    WP isa (VG.Impl.Bignum.X86_64.seqs (VG.Impl.Rsa.X86_64.CrtIfma.select p)) s fun s' =>
+      (∀ l < 20, limb s'.mem B (D * p + oS) l = limb s.mem B (D * p + oTab + 160 * nib s.mem B p) l) ∧
+      Outside B (D * p + oS) 160 s.mem s'.mem ∧
+      (∀ r, r ≠ .rax → r ≠ .rcx → r ≠ .rdx → r ≠ .r8 → s'.gpr r = s.gpr r) ∧
+      s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.mxcsr = s.mxcsr := by
+  have hD : D = 3872 := rfl
+  have hn := hs.nowrap
+  have hDp : D * p ≤ 3872 := by rw [hD]; omega
+  have rdS : ∀ d n, 0 < n → d + n ≤ 2 * D → InRegions (s.rd ++ s.wr) (off B d) n := fun d n hn hd =>
+    let ⟨_, h, c⟩ := hs.region hd hn; ⟨_, List.mem_append_right _ h, c⟩
+  let v := nib s.mem B p
+  have hv : v < 16 := nib_lt _ _ _
+  let base := off B (D * p + oTab)
+  refine WP.seq ?_
+  rw [List.append_assoc]
+  refine setOff (c := D * p + oTab) (by simp only [oTab]; omega) fun s₁ u₁ => ?_
+  rw [hB] at u₁
+  change WP isa (.block (([.mov .rdx (.mem (VG.Impl.Rsa.X86_64.CrtIfma.at_ .rbx (D * p + oV))), .shift .shr .rdx 60,
+    .mov32 .rcx (.imm 0)] : List Instr) ++ zeros5)) s₁ _
+  rw [WP.block_append_iff]
+  have rbx₁ : s₁.gpr .rbx = B := by rw [u₁.other _ (by decide), hB]
+  refine WP.mono (VG.Proof.MlKem.X86_64.WP.keep [.rdx, .rcx] (Q := fun t => t.gpr .rdx = BitVec.ofNat 64 v ∧
+      t.gpr .rcx = BitVec.ofNat 64 0 ∧ t.mem = s.mem ∧ t.xmm = s₁.xmm ∧ t.ymmHi = s₁.ymmHi ∧ t.mxcsr = s.mxcsr) (by
+    have hld : InRegions (s₁.rd ++ s₁.wr) (B + BitVec.ofNat 64 (D * p + oV)) 8 := by
+      rw [u₁.rd, u₁.wr]; exact rdS _ 8 (by decide) (by simp only [VG.Impl.Rsa.X86_64.CrtIfma.oV]; omega)
+    xrun [ea_r rbx₁, hld, u₁.mem, shr60]
+    and_intros
+    any_goals rfl
+    · exact u₁.mxcsr) rfl) fun s₂ ⟨⟨dx₂, cx₂, me₂, x₂, y₂, mx₂⟩, k₂⟩ => ?_
+  refine WP.mono zeros5_ok fun s₃ ⟨z₃, k₃⟩ => ?_
+  have hin : ∀ i < 16, ∀ k < 5, InRegions (s₃.rd ++ s₃.wr) (base + BitVec.ofNat 64 (160 * i + 32 * k)) 32 :=
+    fun i hi k hk => by
+      rw [k₃.rd, k₃.wr, k₂.2.1, k₂.2.2, u₁.rd, u₁.wr, off_add]
+      exact rdS _ 32 (by decide) (by simp only [oTab]; omega)
+  have dx₃ : s₃.gpr .rdx = BitVec.ofNat 64 v := by rw [k₃.gpr _ (by decide)]; exact dx₂
+  have i₀ : SelInv s₃ base v (16 - 16) s₃ := ⟨by
+      rw [k₃.gpr _ (by decide), k₂.gpr (by decide), u₁.self]; exact (BitVec.add_zero _).symm,
+    by rw [k₃.gpr _ (by decide)]; exact cx₂, fun _ _ _ _ => rfl, rfl, rfl, rfl, rfl,
+    fun k hk j hj => by rw [z₃ k hk j hj]; simp⟩
+  refine WP.seq (WP.mono (selLoop_ok hv dx₃ hin 16 s₃ (by decide) (Nat.le_refl _) i₀) fun s₄ h₄ => ?_)
+  let L : List (Nat × XReg) := (List.range 5).map fun k => (D * p + oS + 32 * k, VG.Impl.Rsa.X86_64.CrtIfma.xr k)
+  have rbx₄ : s₄.gpr .rbx = B := by
+    rw [h₄.gpr _ (by decide) (by decide) (by decide), k₃.gpr _ (by decide), k₂.gpr (by decide), rbx₁]
+  have wr₄ : s₄.wr = s.wr := by rw [h₄.wr, k₃.wr, k₂.2.2, u₁.wr]
+  have rd₄ : s₄.rd = s.rd := by rw [h₄.rd, k₃.rd, k₂.2.1, u₁.rd]
+  have me₄ : s₄.mem = s.mem := by rw [h₄.mem, k₃.mem, me₂]
+  change WP isa (.block (storeCode .rbx L)) s₄ _
+  have hL : ∀ x ∈ L, D * p + oS ≤ x.1 ∧ x.1 + 32 ≤ D * p + oS + 160 := fun x hx => by
+    obtain ⟨k, hk, rfl⟩ := List.mem_map.1 hx
+    rw [List.mem_range] at hk; dsimp only; omega
+  refine WP.mono (stores_gen L s₄ rbx₄ fun x hx => by
+    have := hL x hx
+    rw [wr₄]; exact let ⟨_, h, c⟩ := hs.region (d := x.1) (n := 32) (by simp only [oS] at this ⊢; omega) (by decide);
+      ⟨_, h, c⟩) fun s' hs' => ?_
+  subst hs'
+  refine ⟨fun l hl => ?_, ?_, fun r r1 r2 r3 r4 => ?_, rd₄, wr₄, ?_⟩
+  · have hk : l % 5 < 5 := Nat.mod_lt _ (by decide)
+    have ht : l / 5 < 4 := by omega
+    have e := word_wrList_unique B (e := D * p + oS + 32 * (l % 5)) (t := l / 5)
+      (v := s₄.ymm (VG.Impl.Rsa.X86_64.CrtIfma.xr (l % 5))) ht (by simp only [oS]; omega)
+      (L.map fun x => (x.1, s₄.ymm x.2)) s₄.mem
+      (List.mem_map.2 ⟨(D * p + oS + 32 * (l % 5), VG.Impl.Rsa.X86_64.CrtIfma.xr (l % 5)),
+        List.mem_map.2 ⟨l % 5, List.mem_range.2 hk, rfl⟩, rfl⟩)
+      (fun x hx => by
+        obtain ⟨y, hy, rfl⟩ := List.mem_map.1 hx
+        obtain ⟨k, hk', rfl⟩ := List.mem_map.1 hy
+        rw [List.mem_range] at hk'; dsimp only; simp only [oS]; omega)
+      (fun x hx he => by
+        obtain ⟨y, hy, rfl⟩ := List.mem_map.1 hx
+        obtain ⟨k, hk', rfl⟩ := List.mem_map.1 hy
+        rw [List.mem_range] at hk'; dsimp only at he ⊢
+        rw [show k = l % 5 by omega])
+    have q := h₄.acc (l % 5) hk (l / 5) ht
+    rw [← qword256_ymm s₄ _ ht] at q
+    simp only [hv, ite_true] at q
+    show (word (wrList s₄.mem B _) B (D * p + oS + VG.Impl.Rsa.X86_64.CrtIfma.off l)).toNat = _
+    rw [off_lim l, ← Nat.add_assoc, e]
+    refine congrArg BitVec.toNat (q.trans ?_)
+    rw [k₃.mem, me₂, off_add]
+    exact congrArg (fun d => s.mem.readW (off B d) 64) (by rw [off_lim l]; omega)
+  · have o := wrList_outside' B (o := D * p + oS) (n := 160) (by simp only [oS]; omega)
+      (L.map fun x => (x.1, s₄.ymm x.2)) s₄.mem fun x hx => by
+        obtain ⟨y, hy, rfl⟩ := List.mem_map.1 hx
+        exact hL y hy
+    exact fun x hx => (o x hx).trans (congrFun me₄ x)
+  · show s₄.gpr r = _
+    rw [h₄.gpr _ r1 r2 r4, k₃.gpr _ r1, k₂.gpr (by simp [r2, r3]), u₁.other _ r4]
+  · show s₄.mxcsr = _
+    rw [h₄.mxcsr, k₃.mxcsr, mx₂]
+
 end VG.Proof.Bignum.X86_64.AmmSym
