@@ -1,8 +1,13 @@
 import VerifiedGarbage.Proof.CmacTripleDes.X86.Contract
 import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.CmacTripleDes.Scratch
 
 /-!
 # TDEA-CMAC on x86: the shared contracts imply ours
+
+The shared contracts with the working space as an argument
+(`Proof/CmacTripleDes/Scratch.lean`), which `Frame.lean` moves to the
+shared contracts of `Spec/Cmac/TripleDesContract.lean`.
 
 Untrusted: everything here is checked by Lean.
 -/
@@ -25,14 +30,15 @@ def initSat : State where
   rd := [⟨0x1000, 16⟩, ⟨0x8004, 16⟩]
   wr := [⟨0x2000, 400⟩, ⟨0x4000, 640⟩]
 
-theorem init_implies : initX86.Implies (Spec.Cmac.tdesInitContract X86.abi 0) := by
+theorem init_implies : initX86.Implies (initScratchContract X86.abi 0) := by
   have a0 : arg initSat 0 = 0x1000 := by decide
   have a1 : arg initSat 1 = 16 := by decide
   have a2 : arg initSat 2 = 0x2000 := by decide
   have a3 : arg initSat 3 = 0x4000 := by decide
   have e : argAddr initSat 0 = 0x8004 := by decide
   have esp : initSat.gpr .esp = 0x8000 := rfl
-  sig_implies [Spec.Cmac.tdesInitContract, Spec.Cmac.tdesInitSig, X86.abi, X86.argSlots,
+  sig_implies [initScratchContract, initScratchSig, Spec.Cmac.tdesInitPre, Spec.Cmac.tdesInitPost,
+    X86.abi, X86.argSlots,
     X86.argVal, X86.argBytes, initX86] [a0, a1, a2, a3, e, esp] using initSat
 
 /-- A state satisfying `vg_cmac_triple_des_finalize`'s precondition: the key
@@ -49,7 +55,7 @@ def finSat : State where
   rd := [⟨0x1000, 400⟩, ⟨0x3000, 0⟩, ⟨0x8004, 20⟩]
   wr := [⟨0x2000, 8⟩, ⟨0x4000, 640⟩]
 
-theorem finalize_implies : finalizeX86.Implies (Spec.Cmac.tdesFinalizeContract X86.abi 0) := by
+theorem finalize_implies : finalizeX86.Implies (finalizeScratchContract X86.abi 0) := by
   have a0 : arg finSat 0 = 0x1000 := by decide
   have a1 : arg finSat 1 = 0x2000 := by decide
   have a2 : arg finSat 2 = 0x3000 := by decide
@@ -57,14 +63,15 @@ theorem finalize_implies : finalizeX86.Implies (Spec.Cmac.tdesFinalizeContract X
   have a4 : arg finSat 4 = 0x4000 := by decide
   have e : argAddr finSat 0 = 0x8004 := by decide
   have esp : finSat.gpr .esp = 0x8000 := rfl
-  sig_implies [Spec.Cmac.tdesFinalizeContract, Spec.Cmac.tdesFinalizeSig, X86.abi, X86.argSlots,
+  sig_implies [finalizeScratchContract, finalizeScratchSig, Spec.Cmac.tdesFinalizePre,
+    Spec.Cmac.tdesFinalizePost, X86.abi, X86.argSlots,
     X86.argVal, X86.argBytes, finalizeX86] [a0, a1, a2, a3, a4, e, esp] using finSat
 
 /-- A state satisfying `vg_cmac_triple_des_update`'s precondition: as
 `finSat`, with no blocks. -/
 def updSat : State := { finSat with rd := [⟨0x1000, 384⟩, ⟨0x3000, 0⟩, ⟨0x8004, 20⟩] }
 
-theorem update_implies : updateX86.Implies (Spec.Cmac.tdesUpdateContract X86.abi 0) := by
+theorem update_implies : updateX86.Implies (updateScratchContract X86.abi 0) := by
   have a0 : arg updSat 0 = 0x1000 := by decide
   have a1 : arg updSat 1 = 0x2000 := by decide
   have a2 : arg updSat 2 = 0x3000 := by decide
@@ -72,7 +79,8 @@ theorem update_implies : updateX86.Implies (Spec.Cmac.tdesUpdateContract X86.abi
   have a4 : arg updSat 4 = 0x4000 := by decide
   have e : argAddr updSat 0 = 0x8004 := by decide
   have esp : updSat.gpr .esp = 0x8000 := rfl
-  sig_implies [Spec.Cmac.tdesUpdateContract, Spec.Cmac.tdesUpdateSig, X86.abi, X86.argSlots,
+  sig_implies [updateScratchContract, updateScratchSig, Spec.Cmac.tdesUpdatePost, X86.abi,
+    X86.argSlots,
     X86.argVal, X86.argBytes, updateX86] [a0, a1, a2, a3, a4, e, esp] using updSat
 
 end VG.Proof.CmacTripleDes.X86

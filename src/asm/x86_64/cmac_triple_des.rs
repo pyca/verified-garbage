@@ -12,14 +12,15 @@
 ///
 /// * `key` must be valid for reads of `key_len` bytes.
 /// * `out` must be valid for reads and writes of 400 bytes.
-/// * `scratch` must be valid for reads and writes of 640 bytes.
 /// * `key_len` must be 16 or 24.
-/// * The contents of `scratch` on return are unspecified.
-/// * `out` and `scratch` must not overlap each other or `key` (distinct Rust objects never do).
-/// * None of `key`, `out` and `scratch` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
+/// * `out` must not overlap `key` (distinct Rust objects never do).
+/// * Neither `key` nor `out` may overlap the return address on the stack or the 648 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_cmac_triple_des_init(key: *const u8, key_len: usize, out: *mut [u8; 400], scratch: *mut [u64; 80]) {
+pub(crate) unsafe extern "sysv64" fn vg_cmac_triple_des_init(key: *const u8, key_len: usize, out: *mut [u8; 400]) {
     core::arch::naked_asm!(
+        "lea rsp, [rsp-648]",
+        "mov rcx, rsp",
+        "add rcx, 8",
         "mov QWORD PTR [rcx+48], rbx",
         "mov QWORD PTR [rcx+56], rbp",
         "mov QWORD PTR [rcx+64], r12",
@@ -3925,6 +3926,7 @@ pub(crate) unsafe extern "sysv64" fn vg_cmac_triple_des_init(key: *const u8, key
         "mov r13, QWORD PTR [r15+72]",
         "mov r14, QWORD PTR [r15+80]",
         "mov r15, QWORD PTR [r15+88]",
+        "lea rsp, [rsp+648]",
         "ret",
         ".p2align 6",
     )
@@ -3941,13 +3943,14 @@ pub(crate) unsafe extern "sysv64" fn vg_cmac_triple_des_init(key: *const u8, key
 /// * `schedule` must be valid for reads of 384 bytes.
 /// * `state` must be valid for reads and writes of 8 bytes.
 /// * `data` must be valid for reads of `8 * n` bytes.
-/// * `scratch` must be valid for reads and writes of 640 bytes.
-/// * The contents of `scratch` on return are unspecified.
-/// * `state` and `scratch` must not overlap each other, `schedule` or `data` (distinct Rust objects never do).
-/// * None of `schedule`, `state`, `data` and `scratch` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
+/// * `state` must not overlap `schedule` or `data` (distinct Rust objects never do).
+/// * None of `schedule`, `state` and `data` may overlap the return address on the stack or the 648 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_cmac_triple_des_update(schedule: *const [u8; 384], state: *mut [u8; 8], data: *const [u8; 8], n: usize, scratch: *mut [u64; 80]) {
+pub(crate) unsafe extern "sysv64" fn vg_cmac_triple_des_update(schedule: *const [u8; 384], state: *mut [u8; 8], data: *const [u8; 8], n: usize) {
     core::arch::naked_asm!(
+        "lea rsp, [rsp-648]",
+        "mov r8, rsp",
+        "add r8, 8",
         "mov QWORD PTR [r8+48], rbx",
         "mov QWORD PTR [r8+56], rbp",
         "mov QWORD PTR [r8+64], r12",
@@ -4924,6 +4927,7 @@ pub(crate) unsafe extern "sysv64" fn vg_cmac_triple_des_update(schedule: *const 
         "mov r13, QWORD PTR [r15+72]",
         "mov r14, QWORD PTR [r15+80]",
         "mov r15, QWORD PTR [r15+88]",
+        "lea rsp, [rsp+648]",
         "ret",
         ".p2align 6",
     )
@@ -4940,14 +4944,15 @@ pub(crate) unsafe extern "sysv64" fn vg_cmac_triple_des_update(schedule: *const 
 /// * `key` must be valid for reads of 400 bytes.
 /// * `state` must be valid for reads and writes of 8 bytes.
 /// * `last` must be valid for reads of `last_len` bytes.
-/// * `scratch` must be valid for reads and writes of 640 bytes.
 /// * `last_len` must be at most 8.
-/// * The contents of `scratch` on return are unspecified.
-/// * `state` and `scratch` must not overlap each other, `key` or `last` (distinct Rust objects never do).
-/// * None of `key`, `state`, `last` and `scratch` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
+/// * `state` must not overlap `key` or `last` (distinct Rust objects never do).
+/// * None of `key`, `state` and `last` may overlap the return address on the stack or the 648 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_cmac_triple_des_finalize(key: *const [u8; 400], state: *mut [u8; 8], last: *const u8, last_len: usize, scratch: *mut [u64; 80]) {
+pub(crate) unsafe extern "sysv64" fn vg_cmac_triple_des_finalize(key: *const [u8; 400], state: *mut [u8; 8], last: *const u8, last_len: usize) {
     core::arch::naked_asm!(
+        "lea rsp, [rsp-648]",
+        "mov r8, rsp",
+        "add r8, 8",
         "mov QWORD PTR [r8+48], rbx",
         "mov QWORD PTR [r8+56], rbp",
         "mov QWORD PTR [r8+64], r12",
@@ -5932,6 +5937,7 @@ pub(crate) unsafe extern "sysv64" fn vg_cmac_triple_des_finalize(key: *const [u8
         "mov r13, QWORD PTR [r15+72]",
         "mov r14, QWORD PTR [r15+80]",
         "mov r15, QWORD PTR [r15+88]",
+        "lea rsp, [rsp+648]",
         "ret",
         ".p2align 6",
     )

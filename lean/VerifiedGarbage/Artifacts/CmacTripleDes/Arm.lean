@@ -1,5 +1,5 @@
 import VerifiedGarbage.TCB.Arm.Target
-import VerifiedGarbage.Proof.CmacTripleDes.Arm.Verified
+import VerifiedGarbage.Proof.CmacTripleDes.Arm.Frame
 
 /-!
 # TDEA-CMAC (3DES-CMAC, NIST SP 800-38B) on ARMv7
@@ -13,8 +13,10 @@ implementation. The emitter adds the `# Safety` items that depend on the
 target (`Sig.layoutDoc`), from `stack` and `writeArgs`, which `ofSig` checks
 against the contract.
 
-The functions call nothing and use no stack: they save our caller's
-registers in the scratch buffer, and the return address stays in `lr`.
+The functions call nothing. They keep their working space in a frame of
+their own on the stack (`Proof/CmacTripleDes/Arm/Frame.lean`): they save our
+caller's registers in the working space, and the return address stays in
+`lr`.
 -/
 
 namespace VG.Artifacts.CmacTripleDes.Arm
@@ -31,23 +33,26 @@ def artifacts : List Artifact := [
   { Spec.Cmac.tdesInitApi with
     target := Arm.target
     doc := Spec.Cmac.tdesInitApi.doc (notes := [desNote])
-    code := Impl.CmacTripleDes.Arm.init
-    contract := Spec.Cmac.tdesInitContract Arm.abi 0
-    verified := init_verified
+    code := Impl.StackScratch.Arm.withRegScratch 640 .r3 Impl.CmacTripleDes.Arm.init
+    contract := Spec.Cmac.tdesInitContract Arm.abi 640
+    stack := 640
+    verified := init_framed
     spSafe := Code.all_of_forall (fun _ => rfl) _ },
   { Spec.Cmac.tdesUpdateApi with
     target := Arm.target
     doc := Spec.Cmac.tdesUpdateApi.doc (notes := [desNote])
-    code := Impl.CmacTripleDes.Arm.update
-    contract := Spec.Cmac.tdesUpdateContract Arm.abi 0
-    verified := update_verified
+    code := Impl.StackScratch.Arm.withStackScratch 648 0 Impl.CmacTripleDes.Arm.update
+    contract := Spec.Cmac.tdesUpdateContract Arm.abi 648
+    stack := 648
+    verified := update_framed
     spSafe := Code.all_of_forall (fun _ => rfl) _ },
   { Spec.Cmac.tdesFinalizeApi with
     target := Arm.target
     doc := Spec.Cmac.tdesFinalizeApi.doc (notes := [desNote])
-    code := Impl.CmacTripleDes.Arm.finalize
-    contract := Spec.Cmac.tdesFinalizeContract Arm.abi 0
-    verified := finalize_verified
+    code := Impl.StackScratch.Arm.withStackScratch 648 0 Impl.CmacTripleDes.Arm.finalize
+    contract := Spec.Cmac.tdesFinalizeContract Arm.abi 648
+    stack := 648
+    verified := finalize_framed
     spSafe := Code.all_of_forall (fun _ => rfl) _ }]
 
 end VG.Artifacts.CmacTripleDes.Arm

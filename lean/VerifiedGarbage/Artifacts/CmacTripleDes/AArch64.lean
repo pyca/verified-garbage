@@ -1,10 +1,12 @@
 import VerifiedGarbage.TCB.AArch64.Target
-import VerifiedGarbage.Proof.CmacTripleDes.AArch64.Verified
+import VerifiedGarbage.Proof.CmacTripleDes.AArch64.Frame
 
 /-!
 # TDEA-CMAC (3DES-CMAC, NIST SP 800-38B) on AArch64
 
-The functions call nothing and use no stack: the return address stays in `x30`.
+The functions call nothing: the return address stays in `x30`. They keep
+their working space in a frame of their own on the stack
+(`Proof/CmacTripleDes/AArch64/Frame.lean`).
 -/
 
 namespace VG.Artifacts.CmacTripleDes.AArch64
@@ -22,23 +24,26 @@ def artifacts : List Artifact := [
   { Spec.Cmac.tdesInitApi with
     target := AArch64.target
     doc := Spec.Cmac.tdesInitApi.doc (notes := [desNote])
-    code := Impl.CmacTripleDes.AArch64.init
-    contract := Spec.Cmac.tdesInitContract AArch64.abi 0
-    verified := init_verified
+    code := Impl.StackScratch.AArch64.withStackScratch 640 .x3 Impl.CmacTripleDes.AArch64.init
+    contract := Spec.Cmac.tdesInitContract AArch64.abi 640
+    stack := 640
+    verified := init_framed
     spSafe := Code.all_of_forall (fun _ => rfl) _ },
   { Spec.Cmac.tdesUpdateApi with
     target := AArch64.target
     doc := Spec.Cmac.tdesUpdateApi.doc (notes := [desNote])
-    code := Impl.CmacTripleDes.AArch64.update
-    contract := Spec.Cmac.tdesUpdateContract AArch64.abi 0
-    verified := update_verified
+    code := Impl.StackScratch.AArch64.withStackScratch 640 .x4 Impl.CmacTripleDes.AArch64.update
+    contract := Spec.Cmac.tdesUpdateContract AArch64.abi 640
+    stack := 640
+    verified := update_framed
     spSafe := Code.all_of_forall (fun _ => rfl) _ },
   { Spec.Cmac.tdesFinalizeApi with
     target := AArch64.target
     doc := Spec.Cmac.tdesFinalizeApi.doc (notes := [desNote])
-    code := Impl.CmacTripleDes.AArch64.finalize
-    contract := Spec.Cmac.tdesFinalizeContract AArch64.abi 0
-    verified := finalize_verified
+    code := Impl.StackScratch.AArch64.withStackScratch 640 .x4 Impl.CmacTripleDes.AArch64.finalize
+    contract := Spec.Cmac.tdesFinalizeContract AArch64.abi 640
+    stack := 640
+    verified := finalize_framed
     spSafe := Code.all_of_forall (fun _ => rfl) _ }]
 
 end VG.Artifacts.CmacTripleDes.AArch64
