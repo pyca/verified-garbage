@@ -397,15 +397,23 @@ pub(crate) const VG_CMAC_AES_INIT_AESNI_FEATURES: crate::cpu::Features = crate::
 ///
 /// * `state` must be valid for reads and writes of 304 bytes.
 /// * `key` must be valid for reads of `key_len` bytes.
-/// * `scratch` must be valid for reads and writes of 2304 bytes.
 /// * `key_len` must be 16, 24 or 32.
-/// * The contents of `scratch` on return are unspecified.
-/// * `state` and `scratch` must not overlap each other, `key` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `state`, `key` and `scratch` may overlap the return address on the stack or the 48 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `state` must not overlap `key` or the arguments on the stack (distinct Rust objects never do).
+/// * Neither `state` nor `key` may overlap the return address on the stack or the 2372 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` target feature.
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_cmac_aes_init_aesni(state: *mut [u64; 38], key: *const u8, key_len: usize, scratch: *mut [u64; 288]) {
+pub(crate) unsafe extern "C" fn vg_cmac_aes_init_aesni(state: *mut [u64; 38], key: *const u8, key_len: usize) {
     core::arch::naked_asm!(
+        "lea esp, [esp-2324]",
+        "mov eax, DWORD PTR [esp+2328]",
+        "mov DWORD PTR [esp+4], eax",
+        "mov eax, DWORD PTR [esp+2332]",
+        "mov DWORD PTR [esp+8], eax",
+        "mov eax, DWORD PTR [esp+2336]",
+        "mov DWORD PTR [esp+12], eax",
+        "mov eax, esp",
+        "add eax, 20",
+        "mov DWORD PTR [esp+16], eax",
         "mov eax, DWORD PTR [esp+16]",
         "mov DWORD PTR [eax+2176], ebx",
         "mov DWORD PTR [eax+2180], esi",
@@ -451,6 +459,7 @@ pub(crate) unsafe extern "C" fn vg_cmac_aes_init_aesni(state: *mut [u64; 38], ke
         "mov esi, DWORD PTR [eax+2180]",
         "mov edi, DWORD PTR [eax+2184]",
         "mov ebp, DWORD PTR [eax+2188]",
+        "lea esp, [esp+2324]",
         "ret",
         ".p2align 6",
         vg_aes_expand_key_aesni = sym super::aes::vg_aes_expand_key_aesni,
@@ -471,15 +480,29 @@ pub(crate) const VG_CMAC_AES_ABSORB_AESNI_FEATURES: crate::cpu::Features = crate
 ///
 /// * `state` must be valid for reads and writes of 304 bytes.
 /// * `data` must be valid for reads of `len` bytes.
-/// * `scratch` must be valid for reads and writes of 2304 bytes.
 /// * `rounds` must be 10, 12 or 14.
-/// * The contents of `scratch` on return are unspecified.
-/// * `state` and `scratch` must not overlap each other, `data` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `state`, `data` and `scratch` may overlap the return address on the stack or the 56 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `state` must not overlap `data` or the arguments on the stack (distinct Rust objects never do).
+/// * Neither `state` nor `data` may overlap the return address on the stack or the 2392 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` target feature.
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_cmac_aes_absorb_aesni(state: *mut [u64; 38], rounds: usize, count: u64, data: *const u8, len: usize, scratch: *mut [u64; 288]) {
+pub(crate) unsafe extern "C" fn vg_cmac_aes_absorb_aesni(state: *mut [u64; 38], rounds: usize, count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
+        "lea esp, [esp-2336]",
+        "mov eax, DWORD PTR [esp+2340]",
+        "mov DWORD PTR [esp+4], eax",
+        "mov eax, DWORD PTR [esp+2344]",
+        "mov DWORD PTR [esp+8], eax",
+        "mov eax, DWORD PTR [esp+2348]",
+        "mov DWORD PTR [esp+12], eax",
+        "mov eax, DWORD PTR [esp+2352]",
+        "mov DWORD PTR [esp+16], eax",
+        "mov eax, DWORD PTR [esp+2356]",
+        "mov DWORD PTR [esp+20], eax",
+        "mov eax, DWORD PTR [esp+2360]",
+        "mov DWORD PTR [esp+24], eax",
+        "mov eax, esp",
+        "add eax, 32",
+        "mov DWORD PTR [esp+28], eax",
         "mov eax, DWORD PTR [esp+28]",
         "mov DWORD PTR [eax+2176], ebx",
         "mov DWORD PTR [eax+2180], esi",
@@ -609,6 +632,7 @@ pub(crate) unsafe extern "C" fn vg_cmac_aes_absorb_aesni(state: *mut [u64; 38], 
         "mov esi, DWORD PTR [eax+2180]",
         "mov edi, DWORD PTR [eax+2184]",
         "mov ebp, DWORD PTR [eax+2188]",
+        "lea esp, [esp+2336]",
         "ret",
         ".p2align 6",
         vg_cmac_aes_update_aesni = sym super::cmac_aes::vg_cmac_aes_update_aesni,
@@ -628,16 +652,28 @@ pub(crate) const VG_CMAC_AES_FINISH_AESNI_FEATURES: crate::cpu::Features = crate
 ///
 /// * `state` must be valid for reads and writes of 304 bytes.
 /// * `out` must be valid for reads and writes of 16 bytes.
-/// * `scratch` must be valid for reads and writes of 2304 bytes.
 /// * `rounds` must be 10, 12 or 14.
 /// * The contents of `state` on return are unspecified.
-/// * The contents of `scratch` on return are unspecified.
-/// * `state`, `out` and `scratch` must not overlap each other or the arguments on the stack (distinct Rust objects never do).
-/// * None of `state`, `out` and `scratch` may overlap the return address on the stack or the 56 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `state` and `out` must not overlap each other or the arguments on the stack (distinct Rust objects never do).
+/// * Neither `state` nor `out` may overlap the return address on the stack or the 2388 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` target feature.
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_cmac_aes_finish_aesni(state: *mut [u64; 38], rounds: usize, count: u64, out: *mut [u8; 16], scratch: *mut [u64; 288]) {
+pub(crate) unsafe extern "C" fn vg_cmac_aes_finish_aesni(state: *mut [u64; 38], rounds: usize, count: u64, out: *mut [u8; 16]) {
     core::arch::naked_asm!(
+        "lea esp, [esp-2332]",
+        "mov eax, DWORD PTR [esp+2336]",
+        "mov DWORD PTR [esp+4], eax",
+        "mov eax, DWORD PTR [esp+2340]",
+        "mov DWORD PTR [esp+8], eax",
+        "mov eax, DWORD PTR [esp+2344]",
+        "mov DWORD PTR [esp+12], eax",
+        "mov eax, DWORD PTR [esp+2348]",
+        "mov DWORD PTR [esp+16], eax",
+        "mov eax, DWORD PTR [esp+2352]",
+        "mov DWORD PTR [esp+20], eax",
+        "mov eax, esp",
+        "add eax, 28",
+        "mov DWORD PTR [esp+24], eax",
         "mov eax, DWORD PTR [esp+24]",
         "mov DWORD PTR [eax+2176], ebx",
         "mov DWORD PTR [eax+2180], esi",
@@ -693,6 +729,7 @@ pub(crate) unsafe extern "C" fn vg_cmac_aes_finish_aesni(state: *mut [u64; 38], 
         "mov esi, DWORD PTR [eax+2180]",
         "mov edi, DWORD PTR [eax+2184]",
         "mov ebp, DWORD PTR [eax+2188]",
+        "lea esp, [esp+2332]",
         "ret",
         ".p2align 6",
         vg_cmac_aes_finalize_aesni = sym super::cmac_aes::vg_cmac_aes_finalize_aesni,
@@ -1079,14 +1116,22 @@ pub(crate) unsafe extern "C" fn vg_cmac_aes_finalize(key: *const [u8; 272], roun
 ///
 /// * `state` must be valid for reads and writes of 304 bytes.
 /// * `key` must be valid for reads of `key_len` bytes.
-/// * `scratch` must be valid for reads and writes of 2304 bytes.
 /// * `key_len` must be 16, 24 or 32.
-/// * The contents of `scratch` on return are unspecified.
-/// * `state` and `scratch` must not overlap each other, `key` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `state`, `key` and `scratch` may overlap the return address on the stack or the 48 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `state` must not overlap `key` or the arguments on the stack (distinct Rust objects never do).
+/// * Neither `state` nor `key` may overlap the return address on the stack or the 2372 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_cmac_aes_init(state: *mut [u64; 38], key: *const u8, key_len: usize, scratch: *mut [u64; 288]) {
+pub(crate) unsafe extern "C" fn vg_cmac_aes_init(state: *mut [u64; 38], key: *const u8, key_len: usize) {
     core::arch::naked_asm!(
+        "lea esp, [esp-2324]",
+        "mov eax, DWORD PTR [esp+2328]",
+        "mov DWORD PTR [esp+4], eax",
+        "mov eax, DWORD PTR [esp+2332]",
+        "mov DWORD PTR [esp+8], eax",
+        "mov eax, DWORD PTR [esp+2336]",
+        "mov DWORD PTR [esp+12], eax",
+        "mov eax, esp",
+        "add eax, 20",
+        "mov DWORD PTR [esp+16], eax",
         "mov eax, DWORD PTR [esp+16]",
         "mov DWORD PTR [eax+2176], ebx",
         "mov DWORD PTR [eax+2180], esi",
@@ -1132,6 +1177,7 @@ pub(crate) unsafe extern "C" fn vg_cmac_aes_init(state: *mut [u64; 38], key: *co
         "mov esi, DWORD PTR [eax+2180]",
         "mov edi, DWORD PTR [eax+2184]",
         "mov ebp, DWORD PTR [eax+2188]",
+        "lea esp, [esp+2324]",
         "ret",
         ".p2align 6",
         vg_aes_expand_key = sym super::aes::vg_aes_expand_key,
@@ -1149,14 +1195,28 @@ pub(crate) unsafe extern "C" fn vg_cmac_aes_init(state: *mut [u64; 38], key: *co
 ///
 /// * `state` must be valid for reads and writes of 304 bytes.
 /// * `data` must be valid for reads of `len` bytes.
-/// * `scratch` must be valid for reads and writes of 2304 bytes.
 /// * `rounds` must be 10, 12 or 14.
-/// * The contents of `scratch` on return are unspecified.
-/// * `state` and `scratch` must not overlap each other, `data` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `state`, `data` and `scratch` may overlap the return address on the stack or the 56 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `state` must not overlap `data` or the arguments on the stack (distinct Rust objects never do).
+/// * Neither `state` nor `data` may overlap the return address on the stack or the 2392 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_cmac_aes_absorb(state: *mut [u64; 38], rounds: usize, count: u64, data: *const u8, len: usize, scratch: *mut [u64; 288]) {
+pub(crate) unsafe extern "C" fn vg_cmac_aes_absorb(state: *mut [u64; 38], rounds: usize, count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
+        "lea esp, [esp-2336]",
+        "mov eax, DWORD PTR [esp+2340]",
+        "mov DWORD PTR [esp+4], eax",
+        "mov eax, DWORD PTR [esp+2344]",
+        "mov DWORD PTR [esp+8], eax",
+        "mov eax, DWORD PTR [esp+2348]",
+        "mov DWORD PTR [esp+12], eax",
+        "mov eax, DWORD PTR [esp+2352]",
+        "mov DWORD PTR [esp+16], eax",
+        "mov eax, DWORD PTR [esp+2356]",
+        "mov DWORD PTR [esp+20], eax",
+        "mov eax, DWORD PTR [esp+2360]",
+        "mov DWORD PTR [esp+24], eax",
+        "mov eax, esp",
+        "add eax, 32",
+        "mov DWORD PTR [esp+28], eax",
         "mov eax, DWORD PTR [esp+28]",
         "mov DWORD PTR [eax+2176], ebx",
         "mov DWORD PTR [eax+2180], esi",
@@ -1286,6 +1346,7 @@ pub(crate) unsafe extern "C" fn vg_cmac_aes_absorb(state: *mut [u64; 38], rounds
         "mov esi, DWORD PTR [eax+2180]",
         "mov edi, DWORD PTR [eax+2184]",
         "mov ebp, DWORD PTR [eax+2188]",
+        "lea esp, [esp+2336]",
         "ret",
         ".p2align 6",
         vg_cmac_aes_update = sym super::cmac_aes::vg_cmac_aes_update,
@@ -1302,15 +1363,27 @@ pub(crate) unsafe extern "C" fn vg_cmac_aes_absorb(state: *mut [u64; 38], rounds
 ///
 /// * `state` must be valid for reads and writes of 304 bytes.
 /// * `out` must be valid for reads and writes of 16 bytes.
-/// * `scratch` must be valid for reads and writes of 2304 bytes.
 /// * `rounds` must be 10, 12 or 14.
 /// * The contents of `state` on return are unspecified.
-/// * The contents of `scratch` on return are unspecified.
-/// * `state`, `out` and `scratch` must not overlap each other or the arguments on the stack (distinct Rust objects never do).
-/// * None of `state`, `out` and `scratch` may overlap the return address on the stack or the 56 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `state` and `out` must not overlap each other or the arguments on the stack (distinct Rust objects never do).
+/// * Neither `state` nor `out` may overlap the return address on the stack or the 2388 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_cmac_aes_finish(state: *mut [u64; 38], rounds: usize, count: u64, out: *mut [u8; 16], scratch: *mut [u64; 288]) {
+pub(crate) unsafe extern "C" fn vg_cmac_aes_finish(state: *mut [u64; 38], rounds: usize, count: u64, out: *mut [u8; 16]) {
     core::arch::naked_asm!(
+        "lea esp, [esp-2332]",
+        "mov eax, DWORD PTR [esp+2336]",
+        "mov DWORD PTR [esp+4], eax",
+        "mov eax, DWORD PTR [esp+2340]",
+        "mov DWORD PTR [esp+8], eax",
+        "mov eax, DWORD PTR [esp+2344]",
+        "mov DWORD PTR [esp+12], eax",
+        "mov eax, DWORD PTR [esp+2348]",
+        "mov DWORD PTR [esp+16], eax",
+        "mov eax, DWORD PTR [esp+2352]",
+        "mov DWORD PTR [esp+20], eax",
+        "mov eax, esp",
+        "add eax, 28",
+        "mov DWORD PTR [esp+24], eax",
         "mov eax, DWORD PTR [esp+24]",
         "mov DWORD PTR [eax+2176], ebx",
         "mov DWORD PTR [eax+2180], esi",
@@ -1366,6 +1439,7 @@ pub(crate) unsafe extern "C" fn vg_cmac_aes_finish(state: *mut [u64; 38], rounds
         "mov esi, DWORD PTR [eax+2180]",
         "mov edi, DWORD PTR [eax+2184]",
         "mov ebp, DWORD PTR [eax+2188]",
+        "lea esp, [esp+2332]",
         "ret",
         ".p2align 6",
         vg_cmac_aes_finalize = sym super::cmac_aes::vg_cmac_aes_finalize,

@@ -5,6 +5,7 @@ import VerifiedGarbage.Proof.Aes.X86_64.ExpandKey
 import VerifiedGarbage.Proof.Aes.X86_64.AesNi.ExpandKey
 import VerifiedGarbage.Impl.Aes.X86_64.Callee
 import VerifiedGarbage.Proof.Framework.X86_64.Call
+import VerifiedGarbage.Proof.Framework.X86_64.Depth
 
 /-!
 # Implementations of `vg_aes_ctr32` on x86-64
@@ -38,6 +39,8 @@ structure Ctr32Impl where
   /-- It never loads MXCSR. -/
   mxcsr : callee.code.allInstrs (fun i => !loadsMxcsr i) = true
   spSafe : callee.code.all (fun i => !isa.writesSp i) = true
+  /-- It uses no stack. -/
+  noStack : callee.code.x86_64Depth = 0 := by lit_decide
   /-- What the names of its callers' instances end with (e.g. `_aesni`;
   nothing for the baseline implementation). -/
   suffix : String
@@ -53,6 +56,7 @@ structure Ctr32Impl where
   expandNosp : NoSp expand.code
   expandMxcsr : expand.code.allInstrs (fun i => !loadsMxcsr i) = true
   expandSpSafe : expand.code.all (fun i => !isa.writesSp i) = true
+  expandNoStack : expand.code.x86_64Depth = 0 := by lit_decide
 
 namespace Ctr32Impl
 
