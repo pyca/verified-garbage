@@ -64,4 +64,67 @@ theorem deriveKeys_eq {ciph : Spec.GcmSiv.Cipher} (h : ∀ x, (ciph x).length = 
   rw [e, List.take_left' hl, List.drop_left' hl]
   rfl
 
+/-! ## Blocks as two 64-bit words -/
+
+theorem leNat_append (xs ys : List Byte) :
+    Spec.GcmSiv.leNat (xs ++ ys) = Spec.GcmSiv.leNat xs + 256 ^ xs.length * Spec.GcmSiv.leNat ys := by
+  induction xs with
+  | nil => simp [Spec.GcmSiv.leNat]
+  | cons x xs ih =>
+    simp only [Spec.GcmSiv.leNat, List.cons_append, List.foldr_cons, List.length_cons] at ih ⊢
+    rw [ih, Nat.pow_succ, Nat.mul_add, ← Nat.mul_assoc, Nat.mul_comm 256 (256 ^ xs.length), Nat.add_assoc]
+
+theorem leNat_le8 (a : BitVec 64) : Spec.GcmSiv.leNat (Proof.Cmac.le8 a) = a.toNat := by
+  have h := a.isLt
+  simp only [Spec.GcmSiv.leNat, Proof.Cmac.le8, List.range_succ, List.range_zero, List.nil_append,
+    List.map_append, List.map_cons, List.map_nil, List.cons_append, List.foldr_cons, List.foldr_nil,
+    BitVec.extractLsb'_toNat, Nat.shiftRight_eq_div_pow]
+  omega
+
+/-- POLYVAL's field element of a block stored as two little-endian words. -/
+theorem ofBytes_le8 (a b : BitVec 64) : Spec.GcmSiv.ofBytes (Proof.Cmac.le8 a ++ Proof.Cmac.le8 b) = b ++ a := by
+  apply BitVec.eq_of_toNat_eq
+  rw [Spec.GcmSiv.ofBytes, BitVec.toNat_ofNat, leNat_append, leNat_le8, leNat_le8, Proof.Cmac.length_le8,
+    BitVec.toNat_append, ← Nat.shiftLeft_add_eq_or_of_lt a.isLt, Nat.shiftLeft_eq]
+  have := a.isLt; have := b.isLt
+  rw [Nat.mod_eq_of_lt (by omega)]
+  omega
+
+/-- POLYVAL's field element of 16 bytes in memory: two little-endian loads. -/
+theorem ofBytes_bytesAt (m : Mem) (p : Addr) :
+    Spec.GcmSiv.ofBytes (Spec.Aes.bytesAt m p 16) = m.readW (p + BitVec.ofNat 64 8) 64 ++ m.readW p 64 := by
+  rw [Proof.Cmac.bytesAt_split, ← Proof.Cmac.le8_readW, ← Proof.Cmac.le8_readW, ofBytes_le8]
+
+/-- The bytes of a field element made of two words. -/
+theorem toBytes_append (a b : BitVec 64) : Spec.GcmSiv.toBytes (b ++ a) = Proof.Cmac.le8 a ++ Proof.Cmac.le8 b := by
+  apply List.ext_getElem (by simp [Spec.GcmSiv.toBytes, Proof.Cmac.le8])
+  intro i h₁ h₂
+  have hi : i < 16 := by simpa [Spec.GcmSiv.toBytes] using h₁
+  simp only [Spec.GcmSiv.toBytes, List.getElem_map, List.getElem_range]
+  by_cases h8 : i < 8
+  · rw [List.getElem_append_left (by simpa [Proof.Cmac.le8] using h8)]
+    simp only [Proof.Cmac.le8, List.getElem_map, List.getElem_range]
+    apply BitVec.eq_of_getLsbD_eq; intro j hj
+    simp only [BitVec.getLsbD_extractLsb', hj, decide_true, Bool.true_and, BitVec.getLsbD_append,
+      show 8 * i + j < 64 by omega, ↓reduceIte]
+  · rw [List.getElem_append_right (by simpa [Proof.Cmac.le8] using h8)]
+    simp only [Proof.Cmac.le8, List.getElem_map, List.getElem_range, Proof.Cmac.length_le8]
+    apply BitVec.eq_of_getLsbD_eq; intro j hj
+    simp only [BitVec.getLsbD_extractLsb', hj, decide_true, Bool.true_and, BitVec.getLsbD_append,
+      show ¬ (8 * i + j < 64) by omega, ↓reduceIte]
+    congr 1
+    simp only [List.length_map, List.length_range]
+    omega
+
+/-- `little_endian_uint64(x)`: the bytes of the word `x`. -/
+theorem le64_le8 (x : Nat) : Spec.GcmSiv.le64 x = Proof.Cmac.le8 (BitVec.ofNat 64 x) := by
+  apply List.ext_getElem (by simp [Proof.Cmac.le8, Spec.GcmSiv.le64])
+  intro j h₁ _
+  have hj : j < 8 := by simpa [Spec.GcmSiv.le64] using h₁
+  simp only [Proof.Cmac.le8, Spec.GcmSiv.le64, List.getElem_map, List.getElem_range]
+  apply BitVec.eq_of_toNat_eq
+  simp only [BitVec.extractLsb'_toNat, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow]
+  rcases (by omega : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 ∨ j = 6 ∨ j = 7) with
+    rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp <;> omega
+
 end VG.Proof.GcmSiv
