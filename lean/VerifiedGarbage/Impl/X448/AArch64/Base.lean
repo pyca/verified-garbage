@@ -197,8 +197,8 @@ def step : Prog isa :=
 zero, expand the clamped scalar's bits, and start both accumulators at `[G] B` and the
 counter at 0. -/
 def setup : Prog isa :=
-  .seq (.block ([.addImm .x .x3 .x2 0, st .x19 0, st .x20 8, st .x0 OUT] ++ save ++
-    Fast.vsave ++ [.movz .x .x12 0xffff 0, .movk .x .x12 0x0fff 1, .movz .x .x4 0 0] ++
+  .seq (.block ([.addImm .x .x3 .x2 0, .movz .x .x12 0xffff 0, .movk .x .x12 0x0fff 1,
+    st .x19 0, st .x20 8, st .x0 OUT] ++ save ++ Fast.vsave ++ [.movz .x .x4 0 0] ++
     (List.range 352).map (fun i => st .x4 (slot 0 + 8 * i)))) <|
   .seq AArch64.bits <|
   .block (constSlot AX baseG.1 ++ constSlot AY baseG.2 ++ constSlot AZ 1 ++
