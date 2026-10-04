@@ -101,14 +101,14 @@ end
 theorem lead_iff (b : BitVec 8) : (b.setWidth 32 ^^^ 4 : BitVec 32).toNat < (1 : BitVec 32).toNat ↔ b = 4 := by
   revert b; decide
 
-/-- `checkLead`: the flag `&=` the mask of the byte at `peer` being `04`. -/
+/-- `checkLeadAt i`: the flag `&=` the mask of the byte at the key argument `i` points to being `04`. -/
 theorem checkLead_ok (c : Cfg) {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {q32 : BitVec 32}
-    (hq : readSrc s (.mem (Cfg.argOp 2)) = some q32) (hin : InRegions (s.rd ++ s.wr) (q32.setWidth 64) 1)
+    {i : Nat} (hq : readSrc s (.mem (Cfg.argOp i)) = some q32) (hin : InRegions (s.rd ++ s.wr) (q32.setWidth 64) 1)
     (hf : c.sl FLAG + 4 ≤ size) :
-    WP isa (.block (Impl.Ecdh.X86.Cfg.checkLead c)) s fun s' =>
+    WP isa (.block (Impl.Ecdh.X86.Cfg.checkLeadAt c i)) s fun s' =>
       flagW c base s' = flagW c base s &&& mask32 (s.mem (q32.setWidth 64) = 4) ∧
       Keeps [.eax, .ebx, .edx] s s' ∧ Outside base (c.sl FLAG) 4 s.mem s'.mem := by
-  rw [Impl.Ecdh.X86.Cfg.checkLead]
+  rw [Impl.Ecdh.X86.Cfg.checkLeadAt]
   simp only [List.cons_append, List.nil_append]
   refine wp_movS hq fun s₁ u₁ _ => ?_
   refine wp_movzx8S (a := q32.setWidth 64)
@@ -128,8 +128,8 @@ theorem checkLead_ok (c : Cfg) {s : State} {base : Addr} {size : Nat} (hs : Scr 
 /-!
 ## Reading the peer's key
 
-`peer` stores `R² mod p` and `b R mod p`, reads the peer's `x` and `y` into
-their slots (through `ebx`, from `peer + 1`), and ands into the flag the
+`peerAt i` stores `R² mod p` and `b R mod p`, reads the `x` and `y` of the
+key argument `i` points to into their slots (through `ebx`, from its byte 1), and ands into the flag the
 masks of the peer's first byte being `04`, `x < p` and `y < p`
 (`peer_ok`). It writes only those slots and the flag, in the working space,
 which the peer's key is apart from.
@@ -139,13 +139,13 @@ variable {c : Cfg}
 
 open VG.Impl.Ecdh.X86 (QY R2P BP)
 
-theorem peer_eq (c : Cfg) : Impl.Ecdh.X86.Cfg.peer c =
+theorem peer_eq (c : Cfg) (i : Nat) : Impl.Ecdh.X86.Cfg.peerAt c i =
     setConst c.n (c.sl R2P) (c.R * c.R % c.C.p) ++ (setConst c.n (c.sl BP) (c.mont c.C.b) ++
-    (([.mov .ebx (.mem (Cfg.argOp 2)), .alu .add .ebx (.imm 1)] : List Instr) ++
+    (([.mov .ebx (.mem (Cfg.argOp i)), .alu .add .ebx (.imm 1)] : List Instr) ++
     (loadBE c.n (c.sl E) .ebx ++ (([.alu .add .ebx (.imm (BitVec.ofNat 32 (8 * c.n)))] : List Instr) ++
-    (loadBE c.n (c.sl QY) .ebx ++ (Impl.Ecdh.X86.Cfg.checkLead c ++
+    (loadBE c.n (c.sl QY) .ebx ++ (Impl.Ecdh.X86.Cfg.checkLeadAt c i ++
     (Impl.Ecdh.X86.Cfg.checkLtP c (c.sl E) ++ Impl.Ecdh.X86.Cfg.checkLtP c (c.sl QY)))))))) := by
-  simp only [Impl.Ecdh.X86.Cfg.peer, Impl.Ecdh.X86.Cfg.consts, List.flatMap_cons, List.flatMap_nil,
+  simp only [Impl.Ecdh.X86.Cfg.peerAt, Impl.Ecdh.X86.Cfg.consts, List.flatMap_cons, List.flatMap_nil,
     List.append_nil, List.append_assoc]
 
 /-- A slot apart from the one an operation wrote keeps its number. -/
@@ -155,16 +155,16 @@ theorem sv_out {base : Addr} {m m' : Mem} {j : Nat} (h : Outside base (c.sl j) (
   have := sl_le c h7 hi
   exact h.wordsVal (sl_apart c hij) (by omega)
 
-/-- The constants, the peer's `x` and `y`, and the checks of its first byte,
-`x` and `y`. `hq` reads `peer` in any state that changed only the working
+/-- The constants, the key's `x` and `y`, and the checks of its first byte,
+`x` and `y`. `hq` reads the key's pointer in any state that changed only the working
 space since `s`. -/
 theorem peer_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size) {q32 : BitVec 32}
-    (hq : ∀ t : State, t.gpr .esp = s.gpr .esp → t.rd ++ t.wr = s.rd ++ s.wr →
-      Outside base 0 size s.mem t.mem → readSrc t (.mem (Cfg.argOp 2)) = some q32)
+    {i : Nat} (hq : ∀ t : State, t.gpr .esp = s.gpr .esp → t.rd ++ t.wr = s.rd ++ s.wr →
+      Outside base 0 size s.mem t.mem → readSrc t (.mem (Cfg.argOp i)) = some q32)
     (hqfit : q32.toNat + (1 + 16 * c.n) ≤ 2 ^ 32)
     (hin : (⟨q32.setWidth 64, 1 + 16 * c.n⟩ : Region) ∈ s.rd ++ s.wr)
     (hd : Region.Disjoint ⟨q32.setWidth 64, 1 + 16 * c.n⟩ ⟨base, size⟩) (hmp : sv c base s MP = c.C.p) :
-    WP isa (.block (Impl.Ecdh.X86.Cfg.peer c)) s fun s' =>
+    WP isa (.block (Impl.Ecdh.X86.Cfg.peerAt c i)) s fun s' =>
       Scr s' base size ∧ Keeps [.eax, .ebx, .edx] s s' ∧
       Unch base (slW c [R2P, BP, E, QY] ++ [(c.sl FLAG, 4)]) s.mem s'.mem ∧
       sv c base s' R2P = c.R * c.R % c.C.p ∧ sv c base s' BP = c.mont c.C.b ∧
