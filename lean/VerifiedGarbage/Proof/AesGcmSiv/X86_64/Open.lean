@@ -248,10 +248,10 @@ theorem open_wp' (v : GcmImpl) {s : State} {K W SP N A D : Addr} {R al n : Nat}
     refine Or.elim (Classical.em (Spec.GcmSiv.aes dk.2 (Spec.GcmSiv.tagInput dk.1 (bytesAt s.mem N 12)
       (Spec.GcmSiv.ctr (Spec.GcmSiv.aes dk.2) (Spec.GcmSiv.initialCounter (bytesAt s.mem W 16)) (bytesAt s.mem D n))
       (bytesAt s.mem A al)) = bytesAt s.mem W 16)) (fun hc => ?_) (fun hc => ?_)
-    · refine openPost_some (by rw [ite_cond_eq_true _ _ (eq_true hc)]) ?_ ?_
+    · refine openPost_some (by rw [ite_eq_left_of_eq_true _ _ (eq_true hc)]) ?_ ?_
       · rw [ax']; simp only [hc, ↓reduceIte]; decide
       · rw [hm₉, hm₈, md]; simp only [hc, ↓reduceIte]
-    · refine openPost_none (by rw [ite_cond_eq_false _ _ (eq_false hc)]) ?_ ?_
+    · refine openPost_none (by rw [ite_eq_right_of_eq_false _ _ (eq_false hc)]) ?_ ?_
       · rw [ax']; simp only [hc, ↓reduceIte]; decide
       · rw [hm₉, hm₈, md]; simp only [hc, ↓reduceIte]
 
