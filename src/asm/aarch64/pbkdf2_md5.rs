@@ -145,14 +145,14 @@ pub(crate) unsafe extern "C" fn vg_pbkdf2_hmac_md5_iterate(key: *const [u8; 160]
 /// * `password` must be valid for reads of `password_len` bytes.
 /// * `salt` must be valid for reads of `salt_len` bytes.
 /// * `out` must be valid for reads and writes of `out_len` bytes.
-/// * `scratch` must be valid for reads and writes of 1024 bytes.
 /// * `c` must be positive, and `out_len` at most `(2^32 - 1) * 16`.
-/// * The contents of `scratch` on return are unspecified.
-/// * `out` and `scratch` must not overlap each other, `password` or `salt` (distinct Rust objects never do).
-/// * None of `password`, `salt`, `out` and `scratch` may overlap the 16 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * `out` must not overlap `password` or `salt` (distinct Rust objects never do).
+/// * None of `password`, `salt` and `out` may overlap the 1040 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_pbkdf2_hmac_md5(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, c: u32, out: *mut u8, out_len: usize, scratch: *mut [u64; 128]) {
+pub(crate) unsafe extern "C" fn vg_pbkdf2_hmac_md5(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, c: u32, out: *mut u8, out_len: usize) {
     core::arch::naked_asm!(
+        "sub sp, sp, #1024",
+        "add x7, sp, #0",
         "add x10, x4, #0",
         "add x4, x7, #0",
         "str x19, [x4, #384]",
@@ -355,6 +355,7 @@ pub(crate) unsafe extern "C" fn vg_pbkdf2_hmac_md5(password: *const u8, password
         "ldr x24, [x23, #416]",
         "ldr x30, [x23, #424]",
         "ldr x23, [x23, #432]",
+        "add sp, sp, #1024",
         "ret",
         vg_md5_init = sym super::md5::vg_md5_init,
         vg_md5_update_scratch = sym super::md5::vg_md5_update_scratch,

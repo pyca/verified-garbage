@@ -9,8 +9,8 @@ section
 /-!
 # scrypt on x86-64: PBKDF2-HMAC-SHA256 as a callee
 
-`vg_pbkdf2_hmac_sha256` (any implementation of it) is verified against the
-shared contract `VG.Spec.Hmac.sha256I.pbkdf2Contract`; its caller works with
+`vg_pbkdf2_hmac_sha256_scratch` (any implementation of it) is verified against the
+shared contract `VG.Spec.Hmac.sha256I.pbkdf2ScratchContract`; its caller works with
 the same contract spelt out (`pbkG`, the contract its proof is written
 against): `pbk_correct` and `pbk_ct` are its correctness and constant time
 under `pbkG`, from its `Verified` proof.
@@ -27,11 +27,11 @@ abbrev pbkK : Contract isa := pbkG Spec.Hmac.sha256S 200
 theorem map_range2 {α : Type} (f : Nat → α) : List.map f (List.range 2) = [f 0, f 1] := rfl
 
 theorem pbk_pre {s : State} (h : pbkK.pre s) :
-    (Spec.Hmac.sha256I.pbkdf2Contract X86_64.abi 24).pre s := by
-  simp only [Spec.Hmac.Instance.pbkdf2Contract, Spec.Hmac.Instance.pbkdf2Scratch]
-  sig_pre [Spec.Pbkdf2.pbkdf2Contract, Spec.Pbkdf2.pbkdf2Sig, Spec.Hmac.sha256I, Spec.Hmac.sha256S,
+    (Spec.Hmac.sha256I.pbkdf2ScratchContract X86_64.abi 24).pre s := by
+  simp only [Spec.Hmac.Instance.pbkdf2ScratchContract, Spec.Hmac.Instance.pbkdf2Scratch]
+  sig_pre [Spec.Pbkdf2.pbkdf2ScratchContract, Spec.Pbkdf2.pbkdf2ScratchSig, Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post, Spec.Hmac.sha256I, Spec.Hmac.sha256S,
     X86_64.abi, X86_64.argRegs, map_range2, List.append_eq]
-  sig_pre [Spec.Pbkdf2.pbkdf2Contract, Spec.Pbkdf2.pbkdf2Sig, Spec.Hmac.sha256I, Spec.Hmac.sha256S,
+  sig_pre [Spec.Pbkdf2.pbkdf2ScratchContract, Spec.Pbkdf2.pbkdf2ScratchSig, Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post, Spec.Hmac.sha256I, Spec.Hmac.sha256S,
     X86_64.abi, X86_64.argRegs, map_range2, List.append_eq]
   simp only [pbkK, pbkG, Spec.Hmac.sha256S] at h
   sig_split h
@@ -41,23 +41,23 @@ theorem pbk_pre {s : State} (h : pbkK.pre s) :
     | with_reducible exact Region.Disjoint.symm ‹_›
     | omega
 
-theorem pbk_post {s s' : State} (h : (Spec.Hmac.sha256I.pbkdf2Contract X86_64.abi 24).post s s') :
+theorem pbk_post {s s' : State} (h : (Spec.Hmac.sha256I.pbkdf2ScratchContract X86_64.abi 24).post s s') :
     pbkK.post s s' := by
-  simp only [Spec.Hmac.Instance.pbkdf2Contract, Spec.Hmac.Instance.pbkdf2Scratch] at h
-  sig_post [Spec.Pbkdf2.pbkdf2Contract, Spec.Pbkdf2.pbkdf2Sig, Spec.Hmac.sha256I, Spec.Hmac.sha256S,
+  simp only [Spec.Hmac.Instance.pbkdf2ScratchContract, Spec.Hmac.Instance.pbkdf2Scratch] at h
+  sig_post [Spec.Pbkdf2.pbkdf2ScratchContract, Spec.Pbkdf2.pbkdf2ScratchSig, Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post, Spec.Hmac.sha256I, Spec.Hmac.sha256S,
     X86_64.abi, X86_64.argRegs, map_range2, List.append_eq] at h
   exact h
 
 theorem pbk_pub {s₁ s₂ : State} (h : pbkK.pub s₁ s₂) :
-    (Spec.Hmac.sha256I.pbkdf2Contract X86_64.abi 24).pub s₁ s₂ := by
-  simp only [Spec.Hmac.Instance.pbkdf2Contract, Spec.Hmac.Instance.pbkdf2Scratch]
-  sig_pub [Spec.Pbkdf2.pbkdf2Contract, Spec.Pbkdf2.pbkdf2Sig, Spec.Hmac.sha256I, Spec.Hmac.sha256S,
+    (Spec.Hmac.sha256I.pbkdf2ScratchContract X86_64.abi 24).pub s₁ s₂ := by
+  simp only [Spec.Hmac.Instance.pbkdf2ScratchContract, Spec.Hmac.Instance.pbkdf2Scratch]
+  sig_pub [Spec.Pbkdf2.pbkdf2ScratchContract, Spec.Pbkdf2.pbkdf2ScratchSig, Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post, Spec.Hmac.sha256I, Spec.Hmac.sha256S,
     X86_64.abi, X86_64.argRegs, map_range2, List.append_eq]
   simp only [List.getD_cons_succ, List.getD_cons_zero]
   obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9⟩ := h
   exact ⟨h9, h1, h2, h3, h4, h5, h6, h7, h8⟩
 
-variable {pbk : Prog isa} (hv : Verified X86_64.target pbk (Spec.Hmac.sha256I.pbkdf2Contract X86_64.abi 24))
+variable {pbk : Prog isa} (hv : Verified X86_64.target pbk (Spec.Hmac.sha256I.pbkdf2ScratchContract X86_64.abi 24))
 include hv
 
 theorem pbk_correct (s : State) (h : pbkK.pre s) :
@@ -75,7 +75,7 @@ end
 /-!
 # scrypt on x86-64: the calls
 
-What a call of `vg_pbkdf2_hmac_sha256` (`pbk_call`) and of `vg_scrypt_romix`
+What a call of `vg_pbkdf2_hmac_sha256_scratch` (`pbk_call`) and of `vg_scrypt_romix`
 (`romix_call`) from the frame does, from their arguments (`PbkArgs`,
 `RomixArgs`): each keeps `Ctx`, and changes memory only in what it writes and
 the stack below the frame. `pbk_pre` and `romix_pre` are their preconditions,
@@ -250,7 +250,7 @@ theorem pbk_wsub (hL : L.Ok) {salt : Addr} {sl : BitVec 64} {out : Addr} {ol : B
   · exact hr.ow
   · exact hL.scr_in
 
-theorem pbk_call (hv : Verified X86_64.target pbk (Spec.Hmac.sha256I.pbkdf2Contract X86_64.abi 24))
+theorem pbk_call (hv : Verified X86_64.target pbk (Spec.Hmac.sha256I.pbkdf2ScratchContract X86_64.abi 24))
     (hsp : NoSp pbk) (hd : pbk.depth ≤ 3) (name : String) (hL : L.Ok) {t : State}
     (hc : Ctx L g m₀ t) {salt : Addr} {sl : BitVec 64} {out : Addr} {ol : BitVec 64}
     (ha : PbkArgs L salt sl out ol t) (hr : PbkRegions L salt sl out ol) :

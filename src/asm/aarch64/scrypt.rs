@@ -690,11 +690,11 @@ pub(crate) unsafe extern "C" fn vg_scrypt_romix(b: *mut [u8; 128], r: usize, v: 
     )
 }
 
-/// scrypt (RFC 7914 §6) with block size parameter `r`, cost parameter `N = vlen / r` and parallelization parameter `p = blen / r`: writes the `out_len`-byte key derived from the `password_len` bytes at `password` and the `salt_len` bytes at `salt` to `out`. Calls `vg_pbkdf2_hmac_sha256` for its two PBKDF2-HMAC-SHA256 steps and `vg_scrypt_romix` for each of the `p` blocks.
+/// scrypt (RFC 7914 §6) with block size parameter `r`, cost parameter `N = vlen / r` and parallelization parameter `p = blen / r`: writes the `out_len`-byte key derived from the `password_len` bytes at `password` and the `salt_len` bytes at `salt` to `out`. Calls `vg_pbkdf2_hmac_sha256_scratch` for its two PBKDF2-HMAC-SHA256 steps and `vg_scrypt_romix` for each of the `p` blocks.
 ///
 /// Contract: `VG.Spec.Scrypt.scryptContract`. Not constant time in the indices: timing may depend on the pointers, the lengths, `r`, `N`, `p` and the indices `j` of step 3 of each scryptROMix, which are derived from the password and the salt and so leak information about them (as in every scrypt that indexes `V` directly), but on nothing else.
 ///
-/// Derives both keys with `vg_pbkdf2_hmac_sha256` and runs scryptROMix on each block with `vg_scrypt_romix`, using the start of `scratch` as the working space of each. The return address is saved in a 16-byte stack frame, and the password, its length, `r`, `b`, `blen`, `v` and the next block in a 64-byte one below it; the calls use the 16 bytes below that.
+/// Derives both keys with `vg_pbkdf2_hmac_sha256_scratch` and runs scryptROMix on each block with `vg_scrypt_romix`, using the start of `scratch` as the working space of each. The return address is saved in a 16-byte stack frame, and the password, its length, `r`, `b`, `blen`, `v` and the next block in a 64-byte one below it; the calls use the 16 bytes below that.
 ///
 /// # Safety
 ///
@@ -723,7 +723,7 @@ pub(crate) unsafe extern "C" fn vg_scrypt(password: *const u8, password_len: usi
         "movz x4, #1, lsl #0",
         "lsl x6, x6, #7",
         "ldr x7, [sp, #88]",
-        "bl {vg_pbkdf2_hmac_sha256}",
+        "bl {vg_pbkdf2_hmac_sha256_scratch}",
         "ldr x9, [sp, #32]",
         "add x15, sp, #0",
         "str x9, [x15, #0]",
@@ -756,11 +756,11 @@ pub(crate) unsafe extern "C" fn vg_scrypt(password: *const u8, password_len: usi
         "ldr x5, [sp, #104]",
         "ldr x6, [sp, #112]",
         "ldr x7, [sp, #88]",
-        "bl {vg_pbkdf2_hmac_sha256}",
+        "bl {vg_pbkdf2_hmac_sha256_scratch}",
         "add sp, sp, #64",
         "ldr x30, [sp], #16",
         "ret",
-        vg_pbkdf2_hmac_sha256 = sym super::pbkdf2_sha256::vg_pbkdf2_hmac_sha256,
+        vg_pbkdf2_hmac_sha256_scratch = sym super::pbkdf2_sha256::vg_pbkdf2_hmac_sha256_scratch,
         vg_scrypt_romix = sym super::scrypt::vg_scrypt_romix,
     )
 }
@@ -768,11 +768,11 @@ pub(crate) unsafe extern "C" fn vg_scrypt(password: *const u8, password_len: usi
 /// The CPU features `vg_scrypt_sha2` requires (`Artifact.features`).
 pub(crate) const VG_SCRYPT_SHA2_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["sha2"]);
 
-/// scrypt (RFC 7914 §6) with block size parameter `r`, cost parameter `N = vlen / r` and parallelization parameter `p = blen / r`: writes the `out_len`-byte key derived from the `password_len` bytes at `password` and the `salt_len` bytes at `salt` to `out`. Calls `vg_pbkdf2_hmac_sha256` for its two PBKDF2-HMAC-SHA256 steps and `vg_scrypt_romix` for each of the `p` blocks.
+/// scrypt (RFC 7914 §6) with block size parameter `r`, cost parameter `N = vlen / r` and parallelization parameter `p = blen / r`: writes the `out_len`-byte key derived from the `password_len` bytes at `password` and the `salt_len` bytes at `salt` to `out`. Calls `vg_pbkdf2_hmac_sha256_scratch` for its two PBKDF2-HMAC-SHA256 steps and `vg_scrypt_romix` for each of the `p` blocks.
 ///
 /// Contract: `VG.Spec.Scrypt.scryptContract`. Not constant time in the indices: timing may depend on the pointers, the lengths, `r`, `N`, `p` and the indices `j` of step 3 of each scryptROMix, which are derived from the password and the salt and so leak information about them (as in every scrypt that indexes `V` directly), but on nothing else.
 ///
-/// Derives both keys with `vg_pbkdf2_hmac_sha256_sha2` and runs scryptROMix on each block with `vg_scrypt_romix`, using the start of `scratch` as the working space of each. The return address is saved in a 16-byte stack frame, and the password, its length, `r`, `b`, `blen`, `v` and the next block in a 64-byte one below it; the calls use the 16 bytes below that.
+/// Derives both keys with `vg_pbkdf2_hmac_sha256_scratch_sha2` and runs scryptROMix on each block with `vg_scrypt_romix`, using the start of `scratch` as the working space of each. The return address is saved in a 16-byte stack frame, and the password, its length, `r`, `b`, `blen`, `v` and the next block in a 64-byte one below it; the calls use the 16 bytes below that.
 ///
 /// # Safety
 ///
@@ -803,7 +803,7 @@ pub(crate) unsafe extern "C" fn vg_scrypt_sha2(password: *const u8, password_len
         "movz x4, #1, lsl #0",
         "lsl x6, x6, #7",
         "ldr x7, [sp, #88]",
-        "bl {vg_pbkdf2_hmac_sha256_sha2}",
+        "bl {vg_pbkdf2_hmac_sha256_scratch_sha2}",
         "ldr x9, [sp, #32]",
         "add x15, sp, #0",
         "str x9, [x15, #0]",
@@ -836,12 +836,12 @@ pub(crate) unsafe extern "C" fn vg_scrypt_sha2(password: *const u8, password_len
         "ldr x5, [sp, #104]",
         "ldr x6, [sp, #112]",
         "ldr x7, [sp, #88]",
-        "bl {vg_pbkdf2_hmac_sha256_sha2}",
+        "bl {vg_pbkdf2_hmac_sha256_scratch_sha2}",
         "add sp, sp, #64",
         "ldr x30, [sp], #16",
         "ret",
         ".arch_extension nosha2",
-        vg_pbkdf2_hmac_sha256_sha2 = sym super::pbkdf2_sha256::vg_pbkdf2_hmac_sha256_sha2,
+        vg_pbkdf2_hmac_sha256_scratch_sha2 = sym super::pbkdf2_sha256::vg_pbkdf2_hmac_sha256_scratch_sha2,
         vg_scrypt_romix = sym super::scrypt::vg_scrypt_romix,
     )
 }

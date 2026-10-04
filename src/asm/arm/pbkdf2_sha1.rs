@@ -171,14 +171,24 @@ pub(crate) unsafe extern "C" fn vg_pbkdf2_hmac_sha1_iterate(key: *const [u8; 168
 /// * `password` must be valid for reads of `password_len` bytes.
 /// * `salt` must be valid for reads of `salt_len` bytes.
 /// * `out` must be valid for reads and writes of `out_len` bytes.
-/// * `scratch` must be valid for reads and writes of 1120 bytes.
 /// * `c` must be positive, and `out_len` at most `(2^32 - 1) * 20`.
-/// * The contents of `scratch` on return are unspecified.
-/// * `out` and `scratch` must not overlap each other, `password`, `salt` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `password`, `salt`, `out` and `scratch` may overlap the 24 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * `out` must not overlap `password`, `salt` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `password`, `salt` and `out` may overlap the 1176 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_pbkdf2_hmac_sha1(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, c: u32, out: *mut u8, out_len: usize, scratch: *mut [u64; 140]) {
+pub(crate) unsafe extern "C" fn vg_pbkdf2_hmac_sha1(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, c: u32, out: *mut u8, out_len: usize) {
     core::arch::naked_asm!(
+        "sub sp, sp, #1152",
+        "add r12, sp, #0",
+        "str lr, [r12, #16]",
+        "ldr lr, [sp, #1152]",
+        "str lr, [r12, #0]",
+        "ldr lr, [sp, #1156]",
+        "str lr, [r12, #4]",
+        "ldr lr, [sp, #1160]",
+        "str lr, [r12, #8]",
+        "add lr, sp, #20",
+        "str lr, [r12, #12]",
+        "ldr lr, [sp, #16]",
         "ldr r12, [sp, #12]",
         "str r4, [r12, #448]",
         "str r5, [r12, #452]",
@@ -363,6 +373,7 @@ pub(crate) unsafe extern "C" fn vg_pbkdf2_hmac_sha1(password: *const u8, passwor
         "ldr r10, [r11, #472]",
         "ldr lr, [r11, #476]",
         "ldr r11, [r11, #480]",
+        "add sp, sp, #1152",
         "bx lr",
         vg_sha1_init = sym super::sha1::vg_sha1_init,
         vg_sha1_update_scratch = sym super::sha1::vg_sha1_update_scratch,

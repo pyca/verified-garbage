@@ -74,6 +74,7 @@ theorem coreOK : CoreOK coreH := by
     hfinD := ?_
     hinitXD := ?_
     hfinXD := ?_
+    pbkXD := ?_
     iterMx := ?_
     iterSp := ?_
     iterNs := ?_
@@ -156,10 +157,16 @@ theorem satT : ∃ s, (Spec.Hmac.sha1I.iterateContract X86_64.abi 8).pre s := by
   inst_sat [Spec.Hmac.Instance.iterateContract, Spec.Hmac.sha1I, Spec.Pbkdf2.iterateContract,
     Spec.Pbkdf2.iterateSig, Spec.Hmac.sha1S, Spec.Hmac.sha1, X86_64.abi, X86_64.argRegs] using Pbkdf2.X86_64.iterSat 84 20 56
 
-theorem satP : ∃ s, (Spec.Hmac.sha1I.pbkdf2Contract X86_64.abi 24).pre s := by
-  inst_sat [Spec.Hmac.Instance.pbkdf2Contract, Spec.Hmac.Instance.pbkdf2Scratch, Spec.Hmac.sha1I,
-    Spec.Pbkdf2.pbkdf2Contract, Spec.Pbkdf2.pbkdf2Sig, Spec.Hmac.sha1S, Spec.Hmac.sha1, X86_64.abi,
+theorem satP : ∃ s, (Spec.Hmac.sha1I.pbkdf2ScratchContract X86_64.abi 24).pre s := by
+  inst_sat [Spec.Hmac.Instance.pbkdf2ScratchContract, Spec.Hmac.Instance.pbkdf2Scratch, Spec.Hmac.sha1I,
+    Spec.Pbkdf2.pbkdf2ScratchContract, Spec.Pbkdf2.pbkdf2ScratchSig, Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post, Spec.Hmac.sha1S, Spec.Hmac.sha1, X86_64.abi,
     X86_64.argRegs] using pbkSat 140
+
+theorem satPF :
+    ∃ s, (Spec.Hmac.sha1I.pbkdf2Contract X86_64.abi (24 + pbkdf2Frame Spec.Hmac.sha1I)).pre s := by
+  inst_sat [Spec.Hmac.Instance.pbkdf2Contract, pbkdf2Frame, Spec.Hmac.Instance.pbkdf2Scratch, Spec.Hmac.sha1I,
+    Spec.Pbkdf2.pbkdf2Contract, Spec.Pbkdf2.pbkdf2Sig, Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post, Spec.Hmac.sha1S, Spec.Hmac.sha1, X86_64.abi,
+    X86_64.argRegs, pbkFrameSat, pbkSat] using pbkFrameSat
 
 /-- The streaming `update` and `finalize` made with `v`, which keep their
 working space in a frame of their own, and `update_scratch` and
@@ -201,6 +208,7 @@ def variant : MdHash :=
     (by
       unfold Spec.Hmac.Instance.finalizeContract Spec.Hmac.finalizeContract
       exact X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
+    (by decide) satPF
     v.suffix v.features (stream v)
 
 end VG.Proof.Pbkdf2.Md.X86_64.Sha1

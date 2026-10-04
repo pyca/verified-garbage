@@ -9,7 +9,7 @@ five on the stack, computes scrypt (RFC 7914 §6) with `N = vlen / r` and
 `p = blen / r`, as on x86-64 (`Impl/Scrypt/X86_64/Scrypt.lean`):
 
 1. `B = PBKDF2-HMAC-SHA256 (P, S, 1, 128 blen)` into `b`, by a call of
-   `vg_pbkdf2_hmac_sha256` (or the implementation `pbk` of it given);
+   `vg_pbkdf2_hmac_sha256_scratch` (or the implementation `pbk` of it given);
 2. `vg_scrypt_romix` on each of the `p` blocks of `128 r` bytes of `b`, with
    `v` as `V` and the start of `scratch` (`r + 2` chunks) as its working space;
 3. `PBKDF2-HMAC-SHA256 (P, B, 1, out_len)` into `out`, by another call.

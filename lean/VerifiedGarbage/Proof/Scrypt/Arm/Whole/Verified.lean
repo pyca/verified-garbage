@@ -120,7 +120,7 @@ theorem entry_E {s : State} (h : Proof.Scrypt.scryptArm.pre s) : E (lay s) s.gpr
 /-! ## Step 1 -/
 
 section
-variable {pbk : Prog isa} (hv : Verified Arm.target pbk (Spec.Hmac.sha256I.pbkdf2Contract Arm.abi 24))
+variable {pbk : Prog isa} (hv : Verified Arm.target pbk (Spec.Hmac.sha256I.pbkdf2ScratchContract Arm.abi 24))
   (hst : armStack pbk ≤ 24) (name : String)
 include hv hst
 
@@ -240,7 +240,7 @@ theorem loop_ok (hL : L.Ok) {t : State} (h : Inv L g m₀ 0 t) : WP isa romixLoo
 /-! ## Step 3 -/
 
 section
-variable {pbk : Prog isa} (hv : Verified Arm.target pbk (Spec.Hmac.sha256I.pbkdf2Contract Arm.abi 24))
+variable {pbk : Prog isa} (hv : Verified Arm.target pbk (Spec.Hmac.sha256I.pbkdf2ScratchContract Arm.abi 24))
   (hst : armStack pbk ≤ 24) (name : String)
 include hv hst
 
@@ -299,7 +299,7 @@ theorem body_post (hL : L.Ok) {m : Mem} {out : List Byte}
     rw [X_of hL h1 hk, Whole.chunk_bytesAt _ _ (blk_le' hL hk)]
 
 section
-variable {pbk : Prog isa} (hv : Verified Arm.target pbk (Spec.Hmac.sha256I.pbkdf2Contract Arm.abi 24))
+variable {pbk : Prog isa} (hv : Verified Arm.target pbk (Spec.Hmac.sha256I.pbkdf2ScratchContract Arm.abi 24))
   (hst : armStack pbk ≤ 24) (name : String)
 include hv hst
 
@@ -652,7 +652,7 @@ theorem restore_ct : RelCT isa (Two (C fun _ _ _ => True)) (.block restore) fun 
     fun _ _ _ => trivial
 
 section
-variable {pbk : Prog isa} (hv : Verified Arm.target pbk (Spec.Hmac.sha256I.pbkdf2Contract Arm.abi 24))
+variable {pbk : Prog isa} (hv : Verified Arm.target pbk (Spec.Hmac.sha256I.pbkdf2ScratchContract Arm.abi 24))
   (hst : armStack pbk ≤ 24) (name : String)
 include hv hst
 
@@ -697,7 +697,7 @@ end
 `vg_scrypt`, calling any implementation of PBKDF2-HMAC-SHA256 verified against
 its shared contract whose frames use at most 24 bytes of stack, is verified
 against `Spec.Scrypt.scryptContract` for the 40 bytes of stack its calls use
-(`scrypt_verified_of`); and so is the one calling `vg_pbkdf2_hmac_sha256`
+(`scrypt_verified_of`); and so is the one calling `vg_pbkdf2_hmac_sha256_scratch`
 (`scrypt_verified`).
 -/
 
@@ -762,7 +762,7 @@ theorem scrypt_implies :
           using satState }
 
 section
-variable {pbk : Prog isa} (hv : Verified Arm.target pbk (Spec.Hmac.sha256I.pbkdf2Contract Arm.abi 24))
+variable {pbk : Prog isa} (hv : Verified Arm.target pbk (Spec.Hmac.sha256I.pbkdf2ScratchContract Arm.abi 24))
   (hst : armStack pbk ≤ 24) (name : String)
 include hv hst
 
@@ -775,7 +775,7 @@ theorem scrypt_verified_of :
 
 end
 
-/-! ## With `vg_pbkdf2_hmac_sha256` -/
+/-! ## With `vg_pbkdf2_hmac_sha256_scratch` -/
 
 theorem armStack_zero {c : Prog isa} (h : c.noFrames = true) : armStack c = 0 := by
   induction c <;> simp_all [Code.noFrames, armStack]
@@ -791,7 +791,7 @@ theorem pbkdf2_stack {F : Impl.Pbkdf2.Whole.Arm.Fns} (hi : F.H.initC.noFrames = 
     List.length_cons, List.length_nil, Nat.max_le]
   omega
 
-/-- The code of `vg_pbkdf2_hmac_sha256`. -/
+/-- The code of `vg_pbkdf2_hmac_sha256_scratch`. -/
 abbrev pbkC : Prog isa := Proof.Pbkdf2.Whole.Arm.sha256F.pbkdf2
 
 theorem pbk_stack : armStack pbkC ≤ 24 :=
@@ -801,7 +801,7 @@ theorem pbk_stack : armStack pbkC ≤ 24 :=
 
 /-- `vg_scrypt`. -/
 theorem scrypt_verified :
-    Verified Arm.target (scrypt Spec.Hmac.sha256I.pbkdf2Api.name pbkC) (Spec.Scrypt.scryptContract Arm.abi 40) :=
+    Verified Arm.target (scrypt Spec.Hmac.sha256I.pbkdf2ScratchApi.name pbkC) (Spec.Scrypt.scryptContract Arm.abi 40) :=
   scrypt_verified_of Proof.Pbkdf2.Whole.Arm.sha256 pbk_stack _
 
 end VG.Proof.Scrypt.Arm.Whole
