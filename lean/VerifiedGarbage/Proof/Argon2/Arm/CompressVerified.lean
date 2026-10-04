@@ -45,7 +45,7 @@ theorem agree₀ {s₁ s₂ : State} (h₁ : compressArm.pre s₁) (h₂ : compr
     fun sl h => by simp [τ₀] at h, fun _ h => (List.not_mem_nil h).elim,
     fun h => absurd h (Nat.lt_irrefl 0), fun _ h => absurd h (Nat.not_lt_zero _)⟩
   · simp only [τ₀, RegSet.mem_ofList, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl <;> assumption
+    rcases hr with rfl | rfl | rfl | rfl <;> with_reducible assumption
   · rw [hp₁.wr, hp₂.wr]; simp only [outR, scrR, op, scr, p2, p3]
 
 theorem compress_ct : ConstantTime isa compressArm.pre compressArm.pub Impl.Argon2.Arm.compress :=

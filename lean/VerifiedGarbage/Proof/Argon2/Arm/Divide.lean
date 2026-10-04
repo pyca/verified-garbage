@@ -49,7 +49,7 @@ theorem Keep.trans {s t u : State} (h : Keep s t) (h' : Keep t u) : Keep s u :=
 
 theorem Keep.of_upd {s t : State} {d : Reg} {v : BitVec 32} (u : Upd s t d v)
     (hd : d = .r0 ∨ d = .r1 ∨ d = .r3) : Keep s t :=
-  ⟨fun r a b c => u.other r (by rcases hd with rfl | rfl | rfl <;> assumption), u.mem, u.rd, u.wr, u.sp⟩
+  ⟨fun r a b c => u.other r (by rcases hd with rfl | rfl | rfl <;> with_reducible assumption), u.mem, u.rd, u.wr, u.sp⟩
 
 /-- The numbers after `k` bits of `n`. -/
 def Stage (n D k : Nat) (s : State) : Prop :=

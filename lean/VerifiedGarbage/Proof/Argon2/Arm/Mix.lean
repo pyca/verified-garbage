@@ -1,4 +1,5 @@
-import VerifiedGarbage.Proof.Blake2.Arm.RoundsB
+import VerifiedGarbage.Proof.Blake2.Arm.BlockB
+import VerifiedGarbage.Proof.Framework.PowLit
 import VerifiedGarbage.Proof.Argon2.Spec
 import VerifiedGarbage.Impl.Argon2.Arm.Compress
 
@@ -8,7 +9,7 @@ import VerifiedGarbage.Impl.Argon2.Arm.Compress
 `mulHi_ok`: the high half of a 32 × 32-bit product, from four products of
 16-bit halves (`VG.Impl.Argon2.Arm.mulHi`); `addMul_ok`: `addMul` on a pair of
 registers; and `wp_gb`: GB on four words of `scratch` (at `r3`), computed in
-registers as BLAKE2b's `G` is (`Proof/Blake2/Arm/RoundsB.lean`), leaves the
+registers as BLAKE2b's `G` is (`Proof/Blake2/Arm/BlockB.lean`), leaves the
 memory `gbMem`, with the words of `Proof.Argon2.mix` stored.
 -/
 
