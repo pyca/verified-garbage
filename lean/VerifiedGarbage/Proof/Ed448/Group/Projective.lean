@@ -1,5 +1,5 @@
 import VerifiedGarbage.Proof.Edwards.Group
-import VerifiedGarbage.Proof.Framework.Pratt
+import VerifiedGarbage.Proof.Framework.PrattZMod
 import Mathlib.Tactic.NormNum.Prime
 import VerifiedGarbage.Spec.X448
 import VerifiedGarbage.Spec.Ed448
