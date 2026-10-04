@@ -1,8 +1,5 @@
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxBlock
 import VerifiedGarbage.Proof.Bignum.X86_64.MontMul
-import Mathlib.Tactic.LinearCombination
-import Mathlib.Tactic.Zify
-import Mathlib.Tactic.Ring
 
 /-!
 # Multiword arithmetic on x86-64: a row of the BMI2/ADX multiplication
@@ -57,8 +54,7 @@ theorem blkStep_ok {s₀ t : State} {B : Addr} {Z e eb eN w k : Nat} (hs : Scr s
   · have hval := hI.val
     rw [show 4 * (k + 1) = 4 * k + 4 by omega, wv_add, wv_add s₀.mem B e, wv_add s₀.mem B eb, wv_add s₀.mem B eN, rL,
       show 64 * (4 * k + 4) = 64 * (4 * k) + 256 by omega, Nat.pow_add]
-    zify at hv hval ⊢
-    linear_combination hval + 2 ^ (64 * (4 * k)) * hv
+    grind
 
 /-- The blocks: from `r14 = 0` and the carries 0, `X b + U m` added to the
 window's `w` low words, with the carries out. -/
@@ -321,7 +317,7 @@ theorem row_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hs : Scr s
   have hR : 2 ^ (64 * w) * ((word s.mem B (e + 8 * w)).toNat + 2 ^ 64 * (word s.mem B (e + 8 * w + 8)).toNat +
       (s₃.gpr .rcx).toNat + (s₃.gpr .rbp).toNat) + wv s₃.mem B e w =
       wv s.mem B e (w + 2) + X.toNat * wv s.mem B (slot w b) w + U.toNat * wv s.mem B (slot w aN) w := by
-    rw [h2]; zify at hval ⊢; linear_combination hval
+    rw [h2]; grind
   -- The carries into words `w` and `w + 1`.
   have hs₃ := hI.scr
   have k123 := k12.trans k3
@@ -355,7 +351,7 @@ theorem row_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hs : Scr s
       (writeW_outside _ B hi' (d := e + 8 * w + 8) (by omega)).word (Or.inl (Nat.le_refl _)) (by omega),
       word_writeW_self, (writeW_outside _ B hi' (d := e + 8 * w + 8) (by omega)).wv (Or.inl (by omega)) (by omega),
       (writeW_outside _ B lo (d := e + 8 * w) (by omega)).wv (Or.inl (Nat.le_refl _)) (by omega), hlh, ← hR]
-    ring
+    grind
   rw [← hmt] at hV
   -- The low word is zero, and the word above the window too.
   have hlow : wv t.mem B e (w + 2) % 2 ^ 64 = 0 := by
@@ -373,7 +369,7 @@ theorem row_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hs : Scr s
     rw [show (word s.mem B e).toNat + 2 ^ 64 * A' + X.toNat * ((word s.mem B (slot w b)).toNat + 2 ^ 64 * B') +
         U.toNat * ((word s.mem B (slot w aN)).toNat + 2 ^ 64 * N') =
         (word s.mem B e).toNat + X.toNat * (word s.mem B (slot w b)).toNat +
-          U.toNat * (word s.mem B (slot w aN)).toNat + 2 ^ 64 * (A' + X.toNat * B' + U.toNat * N') by ring,
+          U.toNat * (word s.mem B (slot w aN)).toNat + 2 ^ 64 * (A' + X.toNat * B' + U.toNat * N') by grind,
       Nat.add_mul_mod_self_left, this]
   have htop' : word t.mem B (e + 8 * (w + 2)) = 0 := (ot.word (by omega) (by omega)).trans htop
   have d3 := wv_low t.mem B e (w + 2)

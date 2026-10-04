@@ -549,11 +549,12 @@ jobs:
               none | all
               aes | aes_gcm cpu
               pclmulqdq,ssse3 | aes_gcm cpu
-          # AVX-512F, BMI2 and ADX; and BMI2 and ADX without AVX-512F.
+          # AVX-512F, BMI2 and ADX (and RSA's ADX functions, whichever the
+          # runner chooses); and BMI2 and ADX without AVX-512F.
           - chip: skx
             arch: x86_64
             runs: |
-              - | sha1 sha224 sha256 sha384 sha512 aes_gcm cmac chacha20 triple_des_ecb poly1305 mlkem mldsa scrypt x25519 x448 ed25519 message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
+              - | sha1 sha224 sha256 sha384 sha512 aes_gcm cmac chacha20 triple_des_ecb poly1305 mlkem mldsa scrypt x25519 x448 ed25519 rsa message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
               bmi2,adx | ed25519 message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
           # AVX2, but not AVX-512F or ADX; AES-NI and PCLMULQDQ with AVX, but
           # not VAES or VPCLMULQDQ.
@@ -571,17 +572,17 @@ jobs:
             runs: |
               - | sha384 sha512 ed25519 message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
               avx,avx2,sha512 | ed25519 message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
-          # Ice Lake server: AVX512_IFMA and AVX512VL, for vg_x25519_ifma
-          # and Ed25519's IFMA variants; VAES, VPCLMULQDQ and AVX512BW, for
-          # vg_aes_ctr32_vaes, vg_ghash_vpclmul and the AES-GCM and AES-CMAC
-          # instances calling them (AES-GCM's with its 512-bit loops); and
-          # AES-GCM's instances with VAES or VPCLMULQDQ alone or paired with
-          # the other's 128-bit instruction, which no chip has without the
-          # other, and with both in 256-bit registers alone, which a chip
-          # with AVX512BW never chooses.
+          # Ice Lake server: AVX512_IFMA and AVX512VL, for vg_x25519_ifma,
+          # Ed25519's IFMA variants and vg_rsa_private_crt_ifma; VAES,
+          # VPCLMULQDQ and AVX512BW, for vg_aes_ctr32_vaes, vg_ghash_vpclmul
+          # and the AES-GCM and AES-CMAC instances calling them (AES-GCM's
+          # with its 512-bit loops); and AES-GCM's instances with VAES or
+          # VPCLMULQDQ alone or paired with the other's 128-bit instruction,
+          # which no chip has without the other, and with both in 256-bit
+          # registers alone, which a chip with AVX512BW never chooses.
           - chip: icx
             runs: |
-              - | x25519 ed25519 message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs aes_gcm cmac cpu
+              - | x25519 ed25519 rsa message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs aes_gcm cmac cpu
               avx,avx2,bmi2,adx,avx512ifma,avx512vl | ed25519 message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
               aes,avx,avx2,ssse3,vaes | aes_gcm cpu
               avx,avx2,pclmulqdq,ssse3,vpclmulqdq | aes_gcm cpu
