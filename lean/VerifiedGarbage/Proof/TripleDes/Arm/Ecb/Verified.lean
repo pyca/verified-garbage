@@ -1,4 +1,5 @@
 import VerifiedGarbage.Proof.TripleDes.Arm.Ecb.Correct
+import VerifiedGarbage.Proof.TripleDes.Scratch
 
 namespace VG.Proof.TripleDes.Arm.Ecb
 
@@ -36,17 +37,17 @@ theorem publicRegs_four (s₁ s₂ : State) : PublicRegs [.r0, .r1, .r2, .r3] s�
   simp [PublicRegs]
 
 theorem encrypt_verified : Verified target Impl.TripleDes.Arm.Ecb.encrypt
-    (Spec.TripleDes.ecbEncryptContract abi 0) := by
+    (Proof.TripleDes.ecbEncryptScratchContract abi 0) := by
   refine Verified.of_correct encrypt_correct
     (ecbEncrypt_constantTime _) ?_
-  sig_implies [Spec.TripleDes.ecbEncryptContract, Spec.TripleDes.ecbContract,
-    Spec.TripleDes.ecbSig, abi, argRegs, Arm.reduceClassify, Arm.Loc.val, State.addr, contract, publicRegs_four] [satState] using satState
+  sig_implies [Proof.TripleDes.ecbEncryptScratchContract, Proof.TripleDes.ecbScratchContract,
+    Proof.TripleDes.ecbScratchSig, Spec.TripleDes.ecbPost, abi, argRegs, Arm.reduceClassify, Arm.Loc.val, State.addr, contract, publicRegs_four] [satState] using satState
 
 theorem decrypt_verified : Verified target Impl.TripleDes.Arm.Ecb.decrypt
-    (Spec.TripleDes.ecbDecryptContract abi 0) := by
+    (Proof.TripleDes.ecbDecryptScratchContract abi 0) := by
   refine Verified.of_correct decrypt_correct
     (ecbDecrypt_constantTime _) ?_
-  sig_implies [Spec.TripleDes.ecbDecryptContract, Spec.TripleDes.ecbContract,
-    Spec.TripleDes.ecbSig, abi, argRegs, Arm.reduceClassify, Arm.Loc.val, State.addr, contract, publicRegs_four] [satState] using satState
+  sig_implies [Proof.TripleDes.ecbDecryptScratchContract, Proof.TripleDes.ecbScratchContract,
+    Proof.TripleDes.ecbScratchSig, Spec.TripleDes.ecbPost, abi, argRegs, Arm.reduceClassify, Arm.Loc.val, State.addr, contract, publicRegs_four] [satState] using satState
 
 end VG.Proof.TripleDes.Arm.Ecb
