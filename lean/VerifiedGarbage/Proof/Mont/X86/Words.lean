@@ -170,4 +170,33 @@ theorem _root_.VG.Proof.Mont.Outside.val32 {base : Addr} {o n : Nat} {m m' : Mem
     val32 m' base d k = val32 m base d k :=
   val32_congr fun j hj => h.w32 (by omega) (by omega)
 
+/-! ## Memory outside several ranges -/
+
+/-- `m'` agrees with `m` but on the bytes at the ranges of offsets `rs`
+(`(offset, length)`). -/
+def Outs (base : Addr) (rs : List (Nat × Nat)) (m m' : Mem) : Prop :=
+  ∀ x, (∀ r ∈ rs, ofs base x < r.1 ∨ r.1 + r.2 ≤ ofs base x) → m' x = m x
+
+theorem Outs.refl (base : Addr) (rs : List (Nat × Nat)) (m : Mem) : Outs base rs m m := fun _ _ => rfl
+
+theorem Outs.trans {base : Addr} {rs : List (Nat × Nat)} {m₁ m₂ m₃ : Mem} (h₁ : Outs base rs m₁ m₂)
+    (h₂ : Outs base rs m₂ m₃) : Outs base rs m₁ m₃ :=
+  fun x hx => (h₂ x hx).trans (h₁ x hx)
+
+theorem Outs.mono {base : Addr} {rs rs' : List (Nat × Nat)} {m m' : Mem} (h : Outs base rs m m')
+    (hr : ∀ r ∈ rs, r ∈ rs' := by decide) : Outs base rs' m m' :=
+  fun x hx => h x fun r h' => hx r (hr r h')
+
+theorem Outs.of_outside {base : Addr} {o n : Nat} {rs : List (Nat × Nat)} {m m' : Mem}
+    (h : Outside base o n m m') (hr : (o, n) ∈ rs) : Outs base rs m m' :=
+  fun x hx => h x (hx _ hr)
+
+/-- A number apart from every range that changed. -/
+theorem Outs.val32 {base : Addr} {rs : List (Nat × Nat)} {m m' : Mem} (h : Outs base rs m m')
+    {d k : Nat} (hd : ∀ r ∈ rs, d + 4 * k ≤ r.1 ∨ r.1 + r.2 ≤ d) (hd' : d + 4 * k ≤ 2 ^ 64) :
+    val32 m' base d k = val32 m base d k :=
+  val32_congr fun j hj => congrArg BitVec.toNat (Mem.readW_congr fun i hi => h _ fun r hr => by
+    have := hd r hr
+    rw [ofs_off base (by omega)]; omega)
+
 end VG.Proof.Mont.X86
