@@ -22,18 +22,6 @@ open VG.Spec.Gcm (Block blockAt ghashFrom mul inc32)
 
 /-! ## `GHASH` over the groups -/
 
-theorem ghash_append16 (h y : Block) (f : Nat → Block) (g : Nat) :
-    ghashFrom h y ((List.range (16 * (g + 1))).map f) =
-      ghashFrom h (ghashFrom h y ((List.range (16 * g)).map f)) ((List.range 16).map fun i => f (16 * g + i)) := by
-  rw [show 16 * (g + 1) = 16 * g + 16 by omega, List.range_add, List.map_append, List.map_map]
-  simp only [ghashFrom, List.foldl_append]
-  rfl
-
-theorem ghash16 (h y : Block) (X : Nat → Block) :
-    ghashFrom h y ((List.range 16).map X) = mul (mul (mul (mul (mul (mul (mul (mul (mul (mul (mul (mul (mul (mul (mul (mul ((y ^^^ X 0)) h ^^^ X 1) h ^^^ X 2) h ^^^ X 3) h ^^^ X 4) h ^^^ X 5) h ^^^ X 6) h ^^^ X 7) h ^^^ X 8) h ^^^ X 9) h ^^^ X 10) h ^^^ X 11) h ^^^ X 12) h ^^^ X 13) h ^^^ X 14) h ^^^ X 15) h := by
-  simp only [ghashFrom, List.range_succ, List.range_zero, List.nil_append, List.map_append, List.map_cons,
-    List.map_nil, List.foldl_append, List.foldl_cons, List.foldl_nil]
-
 /-- `Y` after a body: `GHASH` continued over its sixteen blocks. -/
 theorem yNew_eq (H : Block) (X : Nat → Block) (P : Nat → Nat → Block) (yl : Nat → Block) (ord : Nat → Nat)
     (hfin : reduce (accN ord X P yl 0 8) ^^^ reduce (accN ord X P yl 1 8) = mul (mul (mul (mul (mul (mul (mul (mul (mul (mul (mul (mul (mul (mul (mul (mul ((yl 0 ^^^ X 0)) H ^^^ X 1) H ^^^ X 2) H ^^^ X 3) H ^^^ X 4) H ^^^ X 5) H ^^^ X 6) H ^^^ X 7) H ^^^ X 8) H ^^^ X 9) H ^^^ X 10) H ^^^ X 11) H ^^^ X 12) H ^^^ X 13) H ^^^ X 14) H ^^^ X 15) H) :
@@ -93,22 +81,6 @@ structure EInv (s₀ : State) (e : Nat) (s : State) : Prop where
   m1 : ∀ l < 2, s.lane .xmm1 l = poly
   y : s.lane .xmm2 0 = ghashFrom (hk s₀) (y₀ s₀) ((List.range (16 * (e - 1))).map (ctb s₀))
   y1 : s.lane .xmm2 1 = 0
-
-/-- The end of a body: `add rdx, 256`, `sub r9, 16`, `cmp r9, 32`. -/
-theorem nextE_ok (s : State) :
-    WP isa (.block [.alu .add .rdx (.imm 256), .alu .sub .r9 (.imm 16), .alu .cmp .r9 (.imm 32)]) s
-      fun s' => s'.gpr .rdx = s.gpr .rdx + 256 ∧ s'.gpr .r9 = s.gpr .r9 - 16 ∧
-        s'.cf = some (decide ((s.gpr .r9 - 16).toNat < 32)) ∧
-        (∀ r, r ≠ .rdx → r ≠ .r9 → s'.gpr r = s.gpr r) ∧ (∀ r l, s'.lane r l = s.lane r l) ∧
-        s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
-  have e256 : BitVec.signExtend 64 (256 : BitVec 32) = 256 := by decide
-  have e16 : BitVec.signExtend 64 (16 : BitVec 32) = 16 := by decide
-  have e32 : BitVec.signExtend 64 (32 : BitVec 32) = 32 := by decide
-  apply WP.of_runBlock
-  simp only [reduceCtorEq, ↓reduceIte, runBlock_cons, runStep_some, runBlock_nil, exec, execAlu,
-    readSrc, arithFlags, State.setFlags, isa, State.setReg, e256, e16, e32,
-    Option.bind_some, Option.some.injEq, exists_eq_left', and_self]
-  exact ⟨trivial, trivial, rfl, fun r h1 h2 => by simp only [h2, ↓reduceIte, h1], fun _ _ => rfl, trivial⟩
 
 theorem body_ok {s₀ : State} (hp : SPre s₀) {e : Nat} (he : 16 * (e + 1) ≤ nb s₀) {s : State}
     (hI : EInv s₀ e s) :
