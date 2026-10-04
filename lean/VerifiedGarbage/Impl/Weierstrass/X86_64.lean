@@ -1,4 +1,5 @@
 import VerifiedGarbage.Impl.Mont.X86_64
+import VerifiedGarbage.Impl.Weierstrass.Slots
 
 /-!
 # Short Weierstrass curves on x86-64: points, scalar multiplication, powers
@@ -9,9 +10,8 @@ elements are in Montgomery form (`x R mod p`, `R = 2^(64 n)`) in slots of
 the working space; a point is three slots, projective coordinates
 `(X : Y : Z)`.
 
-* `rcb`: the sum of two points by the complete formulas of Renes, Costello
-  and Batina (Algorithm 1, any `a`), in their 40 steps, as field operations
-  on slots (`FOp`); the curve's `a` and `3b` are slots too.
+* `fprog`: field operations on slots (`FOp`, `Impl/Weierstrass/Slots.lean`),
+  such as the complete addition `rcb`, one after the other.
 * `ladder`: `[k]G` by double-and-add from the top bit, 256 times (or as many
   bits as the table has): `D = R + R`, `S = D + G` and `R = D` or `S` by a
   mask of the bit, so every iteration does the same.
@@ -26,21 +26,16 @@ constant, or plus a counter: nothing but `rdi` may affect timing.
 
 namespace VG.Impl.Weierstrass.X86_64
 
-open VG.X86_64 VG.Impl.Mont.X86_64
+open VG.X86_64 VG.Impl.Mont.X86_64 VG.Impl.Mont
 
-/-- A field operation on slots (byte offsets of the working space). -/
-inductive FOp
-  | mul (o a b : Nat)
-  | add (o a b : Nat)
-  | sub (o a b : Nat)
-
-def FOp.code (M : Mod) : FOp → List Instr
+/-- The code of a field operation. -/
+def opCode (M : Mod) : FOp → List Instr
   | .mul o a b => Mont.X86_64.mul M o a b
   | .add o a b => Mont.X86_64.add M o a b
   | .sub o a b => Mont.X86_64.sub M o a b
 
 /-- A straight-line sequence of field operations. -/
-def fprog (M : Mod) (ops : List FOp) : List Instr := ops.flatMap (FOp.code M)
+def fprog (M : Mod) (ops : List FOp) : List Instr := ops.flatMap (opCode M)
 
 /-- Straight-line code as a sequence of blocks (the same instructions as their
 concatenation; the kernel handles many short blocks better than one long one). -/
@@ -50,44 +45,7 @@ def blocks : List (List Instr) → Prog isa
   | b :: bs => .seq (.block b) (blocks bs)
 
 /-- `fprog`, a block per operation. -/
-def fprogB (M : Mod) (ops : List FOp) : Prog isa := blocks (ops.map (FOp.code M))
-
-/-- A point: the slots of its three coordinates. -/
-structure Pt where
-  x : Nat
-  y : Nat
-  z : Nat
-
-/-- The slots the complete addition uses: the curve's `a` and `3b`, and six
-temporaries. -/
-structure RcbSlots where
-  a : Nat
-  b3 : Nat
-  t0 : Nat
-  t1 : Nat
-  t2 : Nat
-  t3 : Nat
-  t4 : Nat
-  t5 : Nat
-
-/-- `o = p + q` (Algorithm 1 of Renes, Costello and Batina, in its stated
-order; `o`'s slots are written as temporaries too, so they must be apart
-from `p`'s and `q`'s). -/
-def rcb (S : RcbSlots) (p q o : Pt) : List FOp :=
-  [.mul S.t0 p.x q.x, .mul S.t1 p.y q.y, .mul S.t2 p.z q.z,
-    .add S.t3 p.x p.y, .add S.t4 q.x q.y, .mul S.t3 S.t3 S.t4,
-    .add S.t4 S.t0 S.t1, .sub S.t3 S.t3 S.t4, .add S.t4 p.x p.z,
-    .add S.t5 q.x q.z, .mul S.t4 S.t4 S.t5, .add S.t5 S.t0 S.t2,
-    .sub S.t4 S.t4 S.t5, .add S.t5 p.y p.z, .add o.x q.y q.z,
-    .mul S.t5 S.t5 o.x, .add o.x S.t1 S.t2, .sub S.t5 S.t5 o.x,
-    .mul o.z S.a S.t4, .mul o.x S.b3 S.t2, .add o.z o.x o.z,
-    .sub o.x S.t1 o.z, .add o.z S.t1 o.z, .mul o.y o.x o.z,
-    .add S.t1 S.t0 S.t0, .add S.t1 S.t1 S.t0, .mul S.t2 S.a S.t2,
-    .mul S.t4 S.b3 S.t4, .add S.t1 S.t1 S.t2, .sub S.t2 S.t0 S.t2,
-    .mul S.t2 S.a S.t2, .add S.t4 S.t4 S.t2, .mul S.t0 S.t1 S.t4,
-    .add o.y o.y S.t0, .mul S.t0 S.t5 S.t4, .mul o.x S.t3 o.x,
-    .sub o.x o.x S.t0, .mul S.t0 S.t3 S.t1, .mul o.z S.t5 o.z,
-    .add o.z o.z S.t0]
+def fprogB (M : Mod) (ops : List FOp) : Prog isa := blocks (ops.map (opCode M))
 
 /-- `[o] = [a]` if the mask `rcx` is zero, `[b]` if it is all ones, `n`
 words, through `rax` and `rdx`. -/
@@ -113,19 +71,6 @@ def tbl (d : Nat) : MemOp := { base := .rdi, index := some .rbx, disp := d }
 def bitMask (d : Nat) : List Instr :=
   [.movzx8 .rax (tbl d), .mov32 .rcx (.imm 0), .alu .sub .rcx (.reg .rax)]
 
-/-- What scalar multiplication needs: the field, the slots of `G` and of the
-points, the slots of the complete addition, and the table of the scalar's
-bits (byte `t` is bit `t`), with `nbits` bits. -/
-structure LadderCfg where
-  M : Mod
-  S : RcbSlots
-  G : Pt
-  R : Pt
-  D : Pt
-  T : Pt
-  bits : Nat
-  nbits : Nat
-
 /-- One iteration of the ladder, for the bit `t = rbx - 1`: `D = R + R`,
 `T = D + G`, then `R = T` if bit `t` is set, else `D`. -/
 def ladderBody (L : LadderCfg) : Prog isa :=
@@ -137,18 +82,6 @@ def ladderBody (L : LadderCfg) : Prog isa :=
 caller (the point at infinity). -/
 def ladder (L : LadderCfg) : Prog isa :=
   .seq (.block [.mov32 .rbx (.imm (BitVec.ofNat 32 L.nbits))]) (.loop (ladderBody L) .ne)
-
-/-- What a power needs: the modulus, the slots of the accumulator, of a
-temporary, of the base and of `R mod m` (Montgomery's one), and the table of
-the exponent's bits, with `nbits` bits. -/
-structure PowCfg where
-  M : Mod
-  acc : Nat
-  tmp : Nat
-  base : Nat
-  one : Nat
-  bits : Nat
-  nbits : Nat
 
 /-- One iteration: `acc = acc²`, `tmp = acc · base`, and `acc = tmp` if the
 exponent's bit `rbx - 1` is set. -/

@@ -16,8 +16,8 @@ zero (`checkZero_ok`).
 
 namespace VG.Proof.Ecdh.X86_64
 
-open VG VG.X86_64 VG.Impl.Mont.X86_64 VG.Impl.Weierstrass.X86_64 VG.Impl.Ecdsa.X86_64
-open VG.Proof.Mont.X86_64 VG.Proof.Weierstrass.X86_64 VG.Proof.Weierstrass
+open VG VG.X86_64 VG.Impl.Mont.X86_64 VG.Impl.Mont VG.Impl.Weierstrass.X86_64 VG.Impl.Weierstrass VG.Impl.Ecdsa.X86_64
+open VG.Proof.Mont.X86_64 VG.Proof.Mont VG.Proof.Weierstrass.X86_64 VG.Proof.Weierstrass
 open VG.Proof.Ecdsa.X86_64
 open VG.Proof.X25519.X86_64 (Keeps)
 
@@ -196,8 +196,8 @@ in the working space, which the peer's key is apart from.
 
 namespace VG.Proof.Ecdh.X86_64
 
-open VG VG.X86_64 VG.Impl.Mont.X86_64 VG.Impl.Weierstrass.X86_64 VG.Impl.Ecdsa.X86_64
-open VG.Proof.Mont.X86_64 VG.Proof.Weierstrass.X86_64 VG.Proof.Weierstrass Spec.Weierstrass
+open VG VG.X86_64 VG.Impl.Mont.X86_64 VG.Impl.Mont VG.Impl.Weierstrass.X86_64 VG.Impl.Weierstrass VG.Impl.Ecdsa.X86_64
+open VG.Proof.Mont.X86_64 VG.Proof.Mont VG.Proof.Weierstrass.X86_64 VG.Proof.Weierstrass Spec.Weierstrass
 open VG.Proof.Ecdsa.X86_64
 open VG.Proof.X25519.X86_64 (Keeps)
 open VG.Impl.Ecdh.X86_64 (QY R2P BP)

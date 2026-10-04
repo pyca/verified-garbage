@@ -12,22 +12,11 @@ temporary area (`OpKeep`).
 
 namespace VG.Proof.Mont.X86_64
 
-open VG VG.X86_64 VG.Impl.Mont.X86_64
+open VG VG.X86_64 VG.Impl.Mont.X86_64 VG.Impl.Mont
 open VG.Proof.X25519.X86_64 (Keeps Keeps.trans Keeps.mono)
 
 /-- The registers the operations change. -/
 def clob (n : Nat) : List Reg := .rax :: .rcx :: .rdx :: .rbp :: acc n
-
-/-- The modulus `m`: its `n` words at `M.mo`, the temporary area at `M.tmp`,
-in the working space and apart, and `M.minv = -m⁻¹ mod 2⁶⁴`. -/
-structure ModOk (M : Mod) (size m : Nat) (mem : Mem) (base : Addr) : Prop where
-  n0 : 0 < M.n
-  n7 : M.n < 7
-  mo : M.mo + 8 * M.n ≤ size
-  tmp : M.tmp + 8 * M.n ≤ size
-  sep : M.mo + 8 * M.n ≤ M.tmp ∨ M.tmp + 8 * M.n ≤ M.mo
-  val : wordsVal mem base M.mo M.n = m
-  inv : (m * M.minv.toNat + 1) % 2 ^ 64 = 0
 
 /-- What an operation writing `[o]` keeps: the registers but `clob`, the
 regions, and the memory but `[o]` and the temporary area. -/

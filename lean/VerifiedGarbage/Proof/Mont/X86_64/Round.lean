@@ -11,7 +11,7 @@ becomes `(T + a_i B + u m) / 2⁶⁴ < 2m` for some `u`, with the low word of
 
 namespace VG.Proof.Mont.X86_64
 
-open VG VG.X86_64 VG.Impl.Mont.X86_64
+open VG VG.X86_64 VG.Impl.Mont.X86_64 VG.Impl.Mont
 open VG.Proof.X25519.X86_64 (Keeps Keeps.trans Keeps.mono)
 
 /-! ## The window -/

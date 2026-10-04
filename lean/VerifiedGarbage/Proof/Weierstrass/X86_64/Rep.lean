@@ -12,7 +12,7 @@ curve's.
 
 namespace VG.Proof.Weierstrass.X86_64
 
-open VG VG.X86_64 VG.Impl.Weierstrass.X86_64 Spec.Weierstrass
+open VG VG.X86_64 VG.Impl.Weierstrass.X86_64 VG.Impl.Weierstrass Spec.Weierstrass
 
 theorem step_rep {L : LadderCfg} {C : Curve} {base : Addr} {s : State} {k : Nat} {P : Point C}
     (hC : Good C) (hP : onCurve C P = true)

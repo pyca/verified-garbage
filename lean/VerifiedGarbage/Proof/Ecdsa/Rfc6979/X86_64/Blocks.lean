@@ -30,7 +30,7 @@ theorem bytesAt_of_readW (m : Mem) (q : Addr) (w : BitVec 64) {k : Nat}
   simp only [Spec.Sha256.bytesAt]
   refine List.map_congr_left fun i hi => ?_
   have hi := List.mem_range.mp hi
-  rw [show i = 8 * (i / 8) + i % 8 by omega, Proof.Weierstrass.X86_64.byte_word m q (i / 8) (Nat.mod_lt _ (by decide)),
+  rw [show i = 8 * (i / 8) + i % 8 by omega, Proof.Weierstrass.byte_word m q (i / 8) (Nat.mod_lt _ (by decide)),
     h _ (by omega)]
   congr 2; omega
 

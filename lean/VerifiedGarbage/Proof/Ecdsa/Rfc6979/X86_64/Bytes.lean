@@ -13,7 +13,7 @@ least 32 bytes, which take its leftmost 32 (`hashToInt_take`, `bits2octets_eq`).
 
 namespace VG.Proof.Ecdsa.Rfc6979.X86_64
 
-open VG VG.X86_64 VG.Proof.Weierstrass.X86_64
+open VG VG.X86_64 VG.Proof.Weierstrass.X86_64 VG.Proof.Weierstrass
 
 /-- The bytes at an address, whichever specification names them. -/
 theorem ecdsa_bytesAt : Spec.Ecdsa.bytesAt = Spec.Sha256.bytesAt := rfl

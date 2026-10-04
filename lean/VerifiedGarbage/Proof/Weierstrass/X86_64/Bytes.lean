@@ -11,7 +11,7 @@ a word at a time, each byte-reversed (`bswap`), from the last.
 
 namespace VG.Proof.Weierstrass.X86_64
 
-open VG VG.X86_64 VG.Impl.Mont.X86_64 VG.Impl.Weierstrass.X86_64 VG.Proof.Mont.X86_64
+open VG VG.X86_64 VG.Impl.Mont.X86_64 VG.Impl.Mont VG.Impl.Weierstrass.X86_64 VG.Impl.Weierstrass VG.Proof.Mont.X86_64 VG.Proof.Mont
 
 theorem ea_disp (s : State) (r : Reg) (e : Nat) :
     s.ea { base := r, disp := (e : Int) } = s.gpr r + BitVec.ofNat 64 e := by

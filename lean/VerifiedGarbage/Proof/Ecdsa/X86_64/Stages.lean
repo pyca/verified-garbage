@@ -12,8 +12,8 @@ proofs of the results (`Main.lean`) import.
 
 namespace VG.Proof.Ecdsa.X86_64
 
-open VG VG.X86_64 VG.Impl.Mont.X86_64 VG.Impl.Weierstrass.X86_64 VG.Impl.Ecdsa.X86_64
-open VG.Proof.Mont.X86_64 VG.Proof.Weierstrass.X86_64 VG.Proof.Weierstrass Spec.Weierstrass
+open VG VG.X86_64 VG.Impl.Mont.X86_64 VG.Impl.Mont VG.Impl.Weierstrass.X86_64 VG.Impl.Weierstrass VG.Impl.Ecdsa.X86_64
+open VG.Proof.Mont.X86_64 VG.Proof.Mont VG.Proof.Weierstrass.X86_64 VG.Proof.Weierstrass Spec.Weierstrass
 open VG.Proof.X25519.X86_64 (Keeps)
 
 variable {c : Cfg}
@@ -128,9 +128,6 @@ theorem stage₁ (hc : CfgOk c) {s₀ : State} (hp : SetupPre c s₀) {rest : Pr
 
 theorem toM_cmont (hc : CfgOk c) (x : Nat) : toM c.C.p (2 ^ (64 * c.n)) (c.mont x) = Fin.ofNat c.C.p x :=
   toM_mont (unitMod_pow_two hc.p_odd _)
-
-theorem toM_zero (m R : Nat) [NeZero m] : toM m R 0 = 0 :=
-  Lean.Grind.Semiring.zero_mul _
 
 theorem mul_zero_pt (P : Point c.C) : Spec.Weierstrass.mul 0 P = .infinity := by
   rw [Spec.Weierstrass.mul]; simp
