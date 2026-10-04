@@ -86,6 +86,28 @@ theorem pow256_le_wk (len : Nat) : 256 ^ len ≤ 2 ^ (64 * ((len + 7) / 8)) := b
 theorem pow256_le_w {len k : Nat} (h : len < k) : 256 ^ len ≤ 2 ^ (64 * wk k) := by
   rw [pow256_eq]; exact Nat.pow_le_pow_right (by decide) (by unfold wk; omega)
 
+/-- `head`: the working space, the mask all ones, and `CvS` from the
+memory on entry to `main`. -/
+theorem cvHeadS_ok {I : CvIn} {s : State} (h : CvPre I s) :
+    WP isa (.block head) s fun t => CvS I s.mem t ∧ mword t.mem I.B = mask true := by
+  have L := h.L
+  have hZ := L.z
+  refine WP.mono (cvHead_ok h.scr h.rdi L.k1 L.k2 hZ h.args.k) fun s₁ ⟨hw₁, hm₁, f₁, k₁⟩ => ⟨?_, hm₁⟩
+  have eW : sW = 6 := rfl
+  have eA : sArr 0 = 8 := rfl
+  have eS : sStride = 28 := rfl
+  have eM : Impl.Bignum.X86_64.Public.sMask = 22 := rfl
+  have k1 := L.k1
+  have hi₁ : InScr I.B I.Z s.mem s₁.mem := InScr.of_frm f₁ (fun r hr => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl <;> dsimp only <;> omega)
+  exact ⟨hw₁, h.args.congr fun i hi => f₁.word_eq (fun r hr => by
+      unfold argSlot at hi
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl | rfl <;> dsimp only <;> omega) (by unfold argSlot at hi; omega),
+    h.n.congrK hi₁ k₁, h.p.congrK hi₁ k₁, h.q.congrK hi₁ k₁, h.d.congrK hi₁ k₁, hi₁, k₁.2.2.trans h.wr,
+    (k₁.gpr (by decide)).trans h.rsp⟩
+
 /-- `main`, from a valid modulus. -/
 theorem cvMain_ok {I : CvIn} {s : State} (h : CvPre I s) (hv : Spec.Rsa.modulusValid I.N I.k = true) :
     WP isa main s fun t => ∃ X : Nat, (I.ok = true → Spec.Rsa.inverse I.Q I.P = some X) ∧
@@ -110,23 +132,10 @@ theorem cvMain_ok {I : CvIn} {s : State} (h : CvPre I s) (hv : Spec.Rsa.modulusV
   have hQl : I.Q < 256 ^ I.ql := by have := os2ip_lt I.qb; rw [L.qbl] at this; exact this
   have hPw := pow256_le_w (k := I.k) L.pl2
   have hQw := pow256_le_w (k := I.k) L.ql2
+  have eM : Impl.Bignum.X86_64.Public.sMask = 22 := rfl
   rw [main_eq]
   -- The head.
-  refine wp_seqs_append (by simp) (by simp [loadA]) (WP.mono (cvHead_ok h.scr h.rdi k1 k2 hZ h.args.k)
-    fun s₁ ⟨hw₁, hm₁, f₁, k₁⟩ => ?_)
-  have eW : sW = 6 := rfl
-  have eA : sArr 0 = 8 := rfl
-  have eS : sStride = 28 := rfl
-  have eM : Impl.Bignum.X86_64.Public.sMask = 22 := rfl
-  have hi₁ : InScr I.B I.Z s.mem s₁.mem := InScr.of_frm f₁ (fun r hr => by
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl <;> dsimp only <;> omega)
-  have h₁ : CvS I s.mem s₁ := ⟨hw₁, h.args.congr fun i hi => f₁.word_eq (fun r hr => by
-      unfold argSlot at hi
-      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl | rfl <;> dsimp only <;> omega) (by unfold argSlot at hi; omega),
-    h.n.congrK hi₁ k₁, h.p.congrK hi₁ k₁, h.q.congrK hi₁ k₁, h.d.congrK hi₁ k₁, hi₁, k₁.2.2.trans h.wr,
-    (k₁.gpr (by decide)).trans h.rsp⟩
+  refine wp_seqs_append (by simp) (by simp [loadA]) (WP.mono (cvHeadS_ok h) fun s₁ ⟨h₁, hm₁⟩ => ?_)
   -- The loads.
   refine wp_seqs_append (by simp [loadA]) (by simp [pqCheck]) (WP.mono (cvLoads_ok h₁ L)
     fun s₂ ⟨h₂, m₂, vN, vP, vQ, vD⟩ => ?_)
