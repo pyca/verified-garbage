@@ -43,8 +43,8 @@ def hash (I : Spec.Hmac.Instance) (D : Nat) (initN : String) (iv : Spec.Sha512.H
   compC := v.callee.code
   initN := initN
   initC := Impl.Sha512.X86_64.Stream.init iv
-  updN := Spec.Sha512.updateApi.name ++ v.suffix
-  finN := Spec.Sha512.finalizeApi.name ++ v.suffix
+  updN := Spec.Sha512.updateScratchApi.name ++ v.suffix
+  finN := Spec.Sha512.finalizeScratchApi.name ++ v.suffix
   hmacInitN := I.initApi.name ++ v.suffix
   hmacFinN := I.finalizeApi.name ++ v.suffix
   iterN := I.iterateApi.name ++ v.suffix
@@ -157,19 +157,35 @@ def ok {I : Spec.Hmac.Instance} {D : Nat} {initN : String} {iv : Spec.Sha512.Has
   finDepth := Callees.finD K C
 
 /-- The streaming `update` and `finalize` made with `v`, which the family
-shares. -/
+shares and which keep their working space in a frame of their own, and
+`update_scratch` and `finalize_scratch`, which HMAC's, PBKDF2's and
+Ed25519's code calls with theirs. -/
 def stream (v : Compress) : List StreamFn := [
   { api := Spec.Sha512.updateApi
-    code := Impl.Sha512.X86_64.Stream.update v.callee
-    contract := Spec.Sha512.updateContract X86_64.abi 8
-    stack := 8
-    verified := Proof.Sha512.X86_64.Shared.update v.ok v.mxcsr
-    spSafe := Proof.Sha512.X86_64.Shared.update_spSafe v.spSafe },
+    code := Impl.StackScratch.X86_64.withStackScratch 1384 .r8 (Impl.Sha512.X86_64.Stream.update v.callee)
+    contract := Spec.Sha512.updateContract X86_64.abi (8 + 1384)
+    stack := 8 + 1384
+    verified := Proof.Sha512.X86_64.Shared.update v.ok v.mxcsr v.spSafe v.noStack
+    spSafe := X86_64.withStackScratch_spSafe (by decide)
+      (Proof.Sha512.X86_64.Shared.update_spSafe v.spSafe) },
   { api := Spec.Sha512.finalizeApi
-    code := Impl.Sha512.X86_64.Stream.finalize v.callee
-    contract := Spec.Sha512.finalizeContract X86_64.abi 8
+    code := Impl.StackScratch.X86_64.withStackScratch 1384 .rcx (Impl.Sha512.X86_64.Stream.finalize v.callee)
+    contract := Spec.Sha512.finalizeContract X86_64.abi (8 + 1384)
+    stack := 8 + 1384
+    verified := Proof.Sha512.X86_64.Shared.finalize v.ok v.mxcsr v.spSafe v.noStack
+    spSafe := X86_64.withStackScratch_spSafe (by decide)
+      (Proof.Sha512.X86_64.Shared.finalize_spSafe v.spSafe) },
+  { api := Spec.Sha512.updateScratchApi
+    code := Impl.Sha512.X86_64.Stream.update v.callee
+    contract := Spec.Sha512.updateScratchContract X86_64.abi 8
     stack := 8
-    verified := Proof.Sha512.X86_64.Shared.finalize v.ok v.mxcsr
+    verified := Proof.Sha512.X86_64.Shared.updateScratch v.ok v.mxcsr
+    spSafe := Proof.Sha512.X86_64.Shared.update_spSafe v.spSafe },
+  { api := Spec.Sha512.finalizeScratchApi
+    code := Impl.Sha512.X86_64.Stream.finalize v.callee
+    contract := Spec.Sha512.finalizeScratchContract X86_64.abi 8
+    stack := 8
+    verified := Proof.Sha512.X86_64.Shared.finalizeScratch v.ok v.mxcsr
     spSafe := Proof.Sha512.X86_64.Shared.finalize_spSafe v.spSafe }]
 
 /-! ## SHA-384 -/

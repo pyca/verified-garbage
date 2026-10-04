@@ -227,7 +227,7 @@ theorem body_ct (v : Compress) :
   have u₁ : RelCT isa (Two fun _ _ => True) (.block pkUpdateArgs) (Two UpdArgs) :=
     two_blk [.rsp] rspOnly (by taint_decide) fun _ _ _ _ _ _ hc _ =>
       WP.mono (updArgs_ok hc) fun _ ⟨hc', _, ha⟩ => ⟨hc', ha⟩
-  have u₂ := two_callP (n := Spec.Sha512.updateApi.name ++ v.suffix) (Φ := UpdArgs)
+  have u₂ := two_callP (n := Spec.Sha512.updateScratchApi.name ++ v.suffix) (Φ := UpdArgs)
     (upd_verified v).1 (upd_verified v).2.1 (upd_nosp v) (upd_depth v) updRd updWr
     (fun _ _ _ _ _ hL hc ha => upd_pre hL hc ha)
     (fun L t₁ t₂ _ _ _ _ _ _ c₁ c₂ a₁ a₂ => by
@@ -240,7 +240,7 @@ theorem body_ct (v : Compress) :
   have f₁ : RelCT isa (Two fun _ _ => True) (.block pkFinalizeArgs) (Two FinArgs) :=
     two_blk [.rsp] rspOnly (by taint_decide) fun _ _ _ _ _ _ hc _ =>
       WP.mono (finArgs_ok hc) fun _ ⟨hc', _, ha⟩ => ⟨hc', ha⟩
-  have f₂ := two_callP (n := Spec.Sha512.finalizeApi.name ++ v.suffix) (Φ := FinArgs)
+  have f₂ := two_callP (n := Spec.Sha512.finalizeScratchApi.name ++ v.suffix) (Φ := FinArgs)
     (fin_verified v).1 (fin_verified v).2.1 (fin_nosp v) (fin_depth v) (fun _ => finRd) finWr
     (fun _ _ _ _ _ hL hc ha => fin_pre hL hc ha)
     (fun L t₁ t₂ _ _ _ _ _ _ c₁ c₂ a₁ a₂ => by

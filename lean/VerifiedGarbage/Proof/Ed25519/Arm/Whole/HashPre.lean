@@ -54,7 +54,7 @@ theorem update_call (hc : Ctx E g m₀ rd wr t)
     (h0 : t.gpr .r0 = scr) (hdata : stackArg t 0 = p) (hlen : stackArg t 1 = len)
     (hcount : Proof.Sha512.countArm t = BitVec.ofNat 64 prev.length)
     (hr : Spec.Sha512.Repr Spec.Sha512.H0_512 t.mem (State.addr scr) prev) :
-    WP isa (.call Spec.Sha512.updateApi.name update) t fun u =>
+    WP isa (.call Spec.Sha512.updateScratchApi.name update) t fun u =>
       Ctx E g m₀ rd wr u ∧ Frame wr' t.mem u.mem ∧
       Spec.Sha512.Repr Spec.Sha512.H0_512 u.mem (State.addr scr)
         (prev ++ Spec.Ed25519.bytesAt t.mem (State.addr p) len.toNat) := by
@@ -81,7 +81,7 @@ theorem finalize_call (hc : Ctx E g m₀ rd wr t)
     (h0 : t.gpr .r0 = scr) (hout : stackArg t 0 = out)
     (hcount : Proof.Sha512.countArm t = BitVec.ofNat 64 msg.length)
     (hr : Spec.Sha512.Repr Spec.Sha512.H0_512 t.mem (State.addr scr) msg) (hlen : msg.length < 2^64) :
-    WP isa (.call Spec.Sha512.finalizeApi.name finalize) t fun u =>
+    WP isa (.call Spec.Sha512.finalizeScratchApi.name finalize) t fun u =>
       Ctx E g m₀ rd wr u ∧ Frame wr' t.mem u.mem ∧
       Spec.Ed25519.bytesAt u.mem (State.addr out) 64 = Spec.Sha512.finalHash Spec.Sha512.H0_512 msg := by
   refine call_ok hc Proof.Sha512.Arm.Stream.Finalize.finalize_verified.1 finalize_noFrames hp hcov hw

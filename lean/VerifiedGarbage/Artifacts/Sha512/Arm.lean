@@ -44,16 +44,32 @@ def artifacts : List Artifact := [
   { Spec.Sha512.updateApi with
     target := Arm.target
     doc := Spec.Sha512.updateApi.doc
-    code := Impl.Sha512.Arm.Stream.update
-    contract := Spec.Sha512.updateContract Arm.abi
+    code := Impl.StackScratch.Arm.withStackScratch 1392 2 Impl.Sha512.Arm.Stream.update
+    contract := Spec.Sha512.updateContract Arm.abi 1392
+    stack := 1392
     verified := Proof.Sha512.Arm.Shared.update
     spSafe := Code.all_of_forall (fun _ => rfl) _ },
   { Spec.Sha512.finalizeApi with
     target := Arm.target
     doc := Spec.Sha512.finalizeApi.doc
-    code := Impl.Sha512.Arm.Stream.finalize
-    contract := Spec.Sha512.finalizeContract Arm.abi
+    code := Impl.StackScratch.Arm.withStackScratch 1392 1 Impl.Sha512.Arm.Stream.finalize
+    contract := Spec.Sha512.finalizeContract Arm.abi 1392
+    stack := 1392
     verified := Proof.Sha512.Arm.Shared.finalize
+    spSafe := Code.all_of_forall (fun _ => rfl) _ },
+  { Spec.Sha512.updateScratchApi with
+    target := Arm.target
+    doc := Spec.Sha512.updateScratchApi.doc
+    code := Impl.Sha512.Arm.Stream.update
+    contract := Spec.Sha512.updateScratchContract Arm.abi
+    verified := Proof.Sha512.Arm.Shared.updateScratch
+    spSafe := Code.all_of_forall (fun _ => rfl) _ },
+  { Spec.Sha512.finalizeScratchApi with
+    target := Arm.target
+    doc := Spec.Sha512.finalizeScratchApi.doc
+    code := Impl.Sha512.Arm.Stream.finalize
+    contract := Spec.Sha512.finalizeScratchContract Arm.abi
+    verified := Proof.Sha512.Arm.Shared.finalizeScratch
     spSafe := Code.all_of_forall (fun _ => rfl) _ }]
 
 end VG.Artifacts.Sha512.Arm

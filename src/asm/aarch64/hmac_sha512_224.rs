@@ -237,7 +237,7 @@ pub(crate) unsafe extern "C" fn vg_hmac_sha512_224_finalize(inner: *mut [u8; 192
         "add x1, x2, #0",
         "add x2, x23, #744",
         "add x3, x23, #0",
-        "bl {vg_sha512_finalize}",
+        "bl {vg_sha512_finalize_scratch}",
         "ldr w9, [x20, #0]",
         "str w9, [x19, #0]",
         "ldr w9, [x20, #4]",
@@ -370,7 +370,7 @@ pub(crate) unsafe extern "C" fn vg_hmac_sha512_224_finalize(inner: *mut [u8; 192
         "ldr x30, [x23, #728]",
         "ldr x23, [x23, #736]",
         "ret",
-        vg_sha512_finalize = sym super::sha512::vg_sha512_finalize,
+        vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch,
         vg_sha512_compress = sym super::sha512::vg_sha512_compress,
     )
 }
@@ -621,7 +621,7 @@ pub(crate) unsafe extern "C" fn vg_hmac_sha512_224_finalize_sha3(inner: *mut [u8
         "add x1, x2, #0",
         "add x2, x23, #744",
         "add x3, x23, #0",
-        "bl {vg_sha512_finalize_sha3}",
+        "bl {vg_sha512_finalize_scratch_sha3}",
         "ldr w9, [x20, #0]",
         "str w9, [x19, #0]",
         "ldr w9, [x20, #4]",
@@ -755,7 +755,7 @@ pub(crate) unsafe extern "C" fn vg_hmac_sha512_224_finalize_sha3(inner: *mut [u8
         "ldr x23, [x23, #736]",
         "ret",
         ".arch_extension nosha3",
-        vg_sha512_finalize_sha3 = sym super::sha512::vg_sha512_finalize_sha3,
+        vg_sha512_finalize_scratch_sha3 = sym super::sha512::vg_sha512_finalize_scratch_sha3,
         vg_sha512_compress_sha3 = sym super::sha512::vg_sha512_compress_sha3,
     )
 }
