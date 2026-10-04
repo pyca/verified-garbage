@@ -10,6 +10,7 @@ import VerifiedGarbage.Proof.Md5.Arm.Stream.Md
 import VerifiedGarbage.Proof.Sha1.Arm.Lit
 import VerifiedGarbage.Proof.Sha512.Arm.Lit
 import VerifiedGarbage.Proof.Sha512.Arm.Shared
+import VerifiedGarbage.Proof.Framework.TaintBatch
 
 /-!
 # HMAC and PBKDF2-HMAC over Merkle–Damgård hash functions on ARMv7: the instances
@@ -260,12 +261,14 @@ theorem iterImp (S : Spec.Hmac.StreamingHash) (W : Nat) (h : ∃ s, (Spec.Pbkdf2
 
 /-! ## SHA-1 -/
 
-theorem sha1_iterChecks : Iterate.Checks sha1Md :=
-  ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩,
-    ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩
+theorem sha1_iterChecks : Iterate.Checks sha1Md := by
+  refine ⟨⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩,
+    ⟨?_, ?_⟩, ⟨?_, ?_⟩⟩
+  taint_decide_all
 
-theorem sha1_finChecks : Fin.Checks sha1Md :=
-  ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩
+theorem sha1_finChecks : Fin.Checks sha1Md := by
+  refine ⟨⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩⟩
+  taint_decide_all
 
 theorem sha1_iterImp : (iterG Spec.Hmac.sha1S 56).Implies (Spec.Hmac.sha1I.iterateContract Arm.abi 16) :=
   iterImp Spec.Hmac.sha1S 56 (by
@@ -275,11 +278,11 @@ theorem sha1_iterImp : (iterG Spec.Hmac.sha1S 56).Implies (Spec.Hmac.sha1I.itera
 theorem sha1_iterate : Verified Arm.target sha1Md.iterate (Spec.Hmac.sha1I.iterateContract Arm.abi 16) :=
   (Iterate.verified sha1MdOK sha1_iterChecks (by decide) sha1_iterImp.sat_left).of_implies sha1_iterImp
 
-theorem sha1_initChecks : HmacInit.Checks sha1Md :=
-  ⟨⟨_, by taint_decide⟩, by
-    simp only [List.mem_cons, List.not_mem_nil, or_false]
-    rintro st (rfl | rfl) <;> exact ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩,
-    ⟨_, by taint_decide⟩⟩
+theorem sha1_initChecks : HmacInit.Checks sha1Md := by
+  refine ⟨⟨?_, ?_⟩,
+    List.forall_mem_cons.mpr ⟨⟨?_, ?_⟩, List.forall_mem_cons.mpr ⟨⟨?_, ?_⟩, List.forall_mem_nil _⟩⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩,
+    ⟨?_, ?_⟩⟩
+  taint_decide_all
 
 theorem sha1_initImp : (initG Spec.Hmac.sha1S 56).Implies (Spec.Hmac.sha1I.initContract Arm.abi 16) :=
   initImp Spec.Hmac.sha1S 56 (by
@@ -300,12 +303,14 @@ theorem sha1_finalize : Verified Arm.target sha1Md.hmacFin (Spec.Hmac.sha1I.fina
 
 /-! ## MD5 -/
 
-theorem md5_iterChecks : Iterate.Checks md5Md :=
-  ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩,
-    ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩
+theorem md5_iterChecks : Iterate.Checks md5Md := by
+  refine ⟨⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩,
+    ⟨?_, ?_⟩, ⟨?_, ?_⟩⟩
+  taint_decide_all
 
-theorem md5_finChecks : Fin.Checks md5Md :=
-  ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩
+theorem md5_finChecks : Fin.Checks md5Md := by
+  refine ⟨⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩⟩
+  taint_decide_all
 
 theorem md5_iterImp : (iterG Spec.Hmac.md5S 48).Implies (Spec.Hmac.md5I.iterateContract Arm.abi 16) :=
   iterImp Spec.Hmac.md5S 48 (by
@@ -315,11 +320,11 @@ theorem md5_iterImp : (iterG Spec.Hmac.md5S 48).Implies (Spec.Hmac.md5I.iterateC
 theorem md5_iterate : Verified Arm.target md5Md.iterate (Spec.Hmac.md5I.iterateContract Arm.abi 16) :=
   (Iterate.verified md5MdOK md5_iterChecks (by decide) md5_iterImp.sat_left).of_implies md5_iterImp
 
-theorem md5_initChecks : HmacInit.Checks md5Md :=
-  ⟨⟨_, by taint_decide⟩, by
-    simp only [List.mem_cons, List.not_mem_nil, or_false]
-    rintro st (rfl | rfl) <;> exact ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩,
-    ⟨_, by taint_decide⟩⟩
+theorem md5_initChecks : HmacInit.Checks md5Md := by
+  refine ⟨⟨?_, ?_⟩,
+    List.forall_mem_cons.mpr ⟨⟨?_, ?_⟩, List.forall_mem_cons.mpr ⟨⟨?_, ?_⟩, List.forall_mem_nil _⟩⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩,
+    ⟨?_, ?_⟩⟩
+  taint_decide_all
 
 theorem md5_initImp : (initG Spec.Hmac.md5S 48).Implies (Spec.Hmac.md5I.initContract Arm.abi 16) :=
   initImp Spec.Hmac.md5S 48 (by
@@ -340,12 +345,14 @@ theorem md5_finalize : Verified Arm.target md5Md.hmacFin (Spec.Hmac.md5I.finaliz
 
 /-! ## SHA-384 -/
 
-theorem sha384_iterChecks : Iterate.Checks sha384Md :=
-  ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩,
-    ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩
+theorem sha384_iterChecks : Iterate.Checks sha384Md := by
+  refine ⟨⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩,
+    ⟨?_, ?_⟩, ⟨?_, ?_⟩⟩
+  taint_decide_all
 
-theorem sha384_finChecks : Fin.Checks sha384Md :=
-  ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩
+theorem sha384_finChecks : Fin.Checks sha384Md := by
+  refine ⟨⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩⟩
+  taint_decide_all
 
 theorem sha384_iterImp : (iterG Spec.Hmac.sha384S 234).Implies (Spec.Hmac.sha384I.iterateContract Arm.abi 16) :=
   iterImp Spec.Hmac.sha384S 234 (by
@@ -355,11 +362,11 @@ theorem sha384_iterImp : (iterG Spec.Hmac.sha384S 234).Implies (Spec.Hmac.sha384
 theorem sha384_iterate : Verified Arm.target sha384Md.iterate (Spec.Hmac.sha384I.iterateContract Arm.abi 16) :=
   (Iterate.verified sha384MdOK sha384_iterChecks (by decide) sha384_iterImp.sat_left).of_implies sha384_iterImp
 
-theorem sha384_initChecks : HmacInit.Checks sha384Md :=
-  ⟨⟨_, by taint_decide⟩, by
-    simp only [List.mem_cons, List.not_mem_nil, or_false]
-    rintro st (rfl | rfl) <;> exact ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩,
-    ⟨_, by taint_decide⟩⟩
+theorem sha384_initChecks : HmacInit.Checks sha384Md := by
+  refine ⟨⟨?_, ?_⟩,
+    List.forall_mem_cons.mpr ⟨⟨?_, ?_⟩, List.forall_mem_cons.mpr ⟨⟨?_, ?_⟩, List.forall_mem_nil _⟩⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩,
+    ⟨?_, ?_⟩⟩
+  taint_decide_all
 
 theorem sha384_initImp : (initG Spec.Hmac.sha384S 234).Implies (Spec.Hmac.sha384I.initContract Arm.abi 16) :=
   initImp Spec.Hmac.sha384S 234 (by
@@ -380,12 +387,14 @@ theorem sha384_finalize : Verified Arm.target sha384Md.hmacFin (Spec.Hmac.sha384
 
 /-! ## SHA-512 -/
 
-theorem sha512_iterChecks : Iterate.Checks sha512Md' :=
-  ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩,
-    ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩
+theorem sha512_iterChecks : Iterate.Checks sha512Md' := by
+  refine ⟨⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩,
+    ⟨?_, ?_⟩, ⟨?_, ?_⟩⟩
+  taint_decide_all
 
-theorem sha512_finChecks : Fin.Checks sha512Md' :=
-  ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩
+theorem sha512_finChecks : Fin.Checks sha512Md' := by
+  refine ⟨⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩⟩
+  taint_decide_all
 
 theorem sha512_iterImp : (iterG Spec.Hmac.sha512S 234).Implies (Spec.Hmac.sha512I.iterateContract Arm.abi 16) :=
   iterImp Spec.Hmac.sha512S 234 (by
@@ -395,11 +404,11 @@ theorem sha512_iterImp : (iterG Spec.Hmac.sha512S 234).Implies (Spec.Hmac.sha512
 theorem sha512_iterate : Verified Arm.target sha512Md'.iterate (Spec.Hmac.sha512I.iterateContract Arm.abi 16) :=
   (Iterate.verified sha512MdOK' sha512_iterChecks (by decide) sha512_iterImp.sat_left).of_implies sha512_iterImp
 
-theorem sha512_initChecks : HmacInit.Checks sha512Md' :=
-  ⟨⟨_, by taint_decide⟩, by
-    simp only [List.mem_cons, List.not_mem_nil, or_false]
-    rintro st (rfl | rfl) <;> exact ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩,
-    ⟨_, by taint_decide⟩⟩
+theorem sha512_initChecks : HmacInit.Checks sha512Md' := by
+  refine ⟨⟨?_, ?_⟩,
+    List.forall_mem_cons.mpr ⟨⟨?_, ?_⟩, List.forall_mem_cons.mpr ⟨⟨?_, ?_⟩, List.forall_mem_nil _⟩⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩,
+    ⟨?_, ?_⟩⟩
+  taint_decide_all
 
 theorem sha512_initImp : (initG Spec.Hmac.sha512S 234).Implies (Spec.Hmac.sha512I.initContract Arm.abi 16) :=
   initImp Spec.Hmac.sha512S 234 (by
@@ -420,12 +429,14 @@ theorem sha512_finalize : Verified Arm.target sha512Md'.hmacFin (Spec.Hmac.sha51
 
 /-! ## SHA-512/224 -/
 
-theorem sha512_224_iterChecks : Iterate.Checks sha512_224Md :=
-  ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩,
-    ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩
+theorem sha512_224_iterChecks : Iterate.Checks sha512_224Md := by
+  refine ⟨⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩,
+    ⟨?_, ?_⟩, ⟨?_, ?_⟩⟩
+  taint_decide_all
 
-theorem sha512_224_finChecks : Fin.Checks sha512_224Md :=
-  ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩
+theorem sha512_224_finChecks : Fin.Checks sha512_224Md := by
+  refine ⟨⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩⟩
+  taint_decide_all
 
 theorem sha512_224_iterImp : (iterG Spec.Hmac.sha512_224S 234).Implies (Spec.Hmac.sha512_224I.iterateContract Arm.abi 16) :=
   iterImp Spec.Hmac.sha512_224S 234 (by
@@ -435,11 +446,11 @@ theorem sha512_224_iterImp : (iterG Spec.Hmac.sha512_224S 234).Implies (Spec.Hma
 theorem sha512_224_iterate : Verified Arm.target sha512_224Md.iterate (Spec.Hmac.sha512_224I.iterateContract Arm.abi 16) :=
   (Iterate.verified sha512_224MdOK sha512_224_iterChecks (by decide) sha512_224_iterImp.sat_left).of_implies sha512_224_iterImp
 
-theorem sha512_224_initChecks : HmacInit.Checks sha512_224Md :=
-  ⟨⟨_, by taint_decide⟩, by
-    simp only [List.mem_cons, List.not_mem_nil, or_false]
-    rintro st (rfl | rfl) <;> exact ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩,
-    ⟨_, by taint_decide⟩⟩
+theorem sha512_224_initChecks : HmacInit.Checks sha512_224Md := by
+  refine ⟨⟨?_, ?_⟩,
+    List.forall_mem_cons.mpr ⟨⟨?_, ?_⟩, List.forall_mem_cons.mpr ⟨⟨?_, ?_⟩, List.forall_mem_nil _⟩⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩,
+    ⟨?_, ?_⟩⟩
+  taint_decide_all
 
 theorem sha512_224_initImp : (initG Spec.Hmac.sha512_224S 234).Implies (Spec.Hmac.sha512_224I.initContract Arm.abi 16) :=
   initImp Spec.Hmac.sha512_224S 234 (by
@@ -460,12 +471,14 @@ theorem sha512_224_finalize : Verified Arm.target sha512_224Md.hmacFin (Spec.Hma
 
 /-! ## SHA-512/256 -/
 
-theorem sha512_256_iterChecks : Iterate.Checks sha512_256Md :=
-  ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩,
-    ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩
+theorem sha512_256_iterChecks : Iterate.Checks sha512_256Md := by
+  refine ⟨⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩,
+    ⟨?_, ?_⟩, ⟨?_, ?_⟩⟩
+  taint_decide_all
 
-theorem sha512_256_finChecks : Fin.Checks sha512_256Md :=
-  ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩
+theorem sha512_256_finChecks : Fin.Checks sha512_256Md := by
+  refine ⟨⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩⟩
+  taint_decide_all
 
 theorem sha512_256_iterImp : (iterG Spec.Hmac.sha512_256S 234).Implies (Spec.Hmac.sha512_256I.iterateContract Arm.abi 16) :=
   iterImp Spec.Hmac.sha512_256S 234 (by
@@ -475,11 +488,11 @@ theorem sha512_256_iterImp : (iterG Spec.Hmac.sha512_256S 234).Implies (Spec.Hma
 theorem sha512_256_iterate : Verified Arm.target sha512_256Md.iterate (Spec.Hmac.sha512_256I.iterateContract Arm.abi 16) :=
   (Iterate.verified sha512_256MdOK sha512_256_iterChecks (by decide) sha512_256_iterImp.sat_left).of_implies sha512_256_iterImp
 
-theorem sha512_256_initChecks : HmacInit.Checks sha512_256Md :=
-  ⟨⟨_, by taint_decide⟩, by
-    simp only [List.mem_cons, List.not_mem_nil, or_false]
-    rintro st (rfl | rfl) <;> exact ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩,
-    ⟨_, by taint_decide⟩⟩
+theorem sha512_256_initChecks : HmacInit.Checks sha512_256Md := by
+  refine ⟨⟨?_, ?_⟩,
+    List.forall_mem_cons.mpr ⟨⟨?_, ?_⟩, List.forall_mem_cons.mpr ⟨⟨?_, ?_⟩, List.forall_mem_nil _⟩⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩,
+    ⟨?_, ?_⟩⟩
+  taint_decide_all
 
 theorem sha512_256_initImp : (initG Spec.Hmac.sha512_256S 234).Implies (Spec.Hmac.sha512_256I.initContract Arm.abi 16) :=
   initImp Spec.Hmac.sha512_256S 234 (by

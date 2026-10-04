@@ -121,15 +121,14 @@ theorem setupList_ok (ks : List (Fin 16)) {s₀ s : State} {done : List (Fin 16)
     exact (ih h').mono fun _ ⟨hw, hs⟩ => ⟨fun l hl j hj => hw l (by simpa [List.mem_append,
       List.mem_cons, or_assoc, or_left_comm, or_comm] using hl) j hj, hs⟩
 
-set_option simprocs false in
 theorem setupTable_ok (s : State) :
     WP isa (.block setupTable) s fun s' =>
       s'.v .v30 = rol8Table ∧ (∀ r, r ≠ .v30 → s'.v r = s.v r) ∧ LoadSame s s' := by
   apply WP.of_runBlock
-  simp (config := {decide := true}) only [setupTable, runBlock_cons, runBlock_nil, isa,
+  simp only [setupTable, runBlock_cons, runBlock_nil, isa,
     runStep_some, exec, State.read, Size.bits, BitVec.setWidth_eq, VOp.eval,
-    RegUpd.gpr_write, RegUpd.v_write, RegUpd.gpr_setV, RegUpd.v_setV,
-    ite_true, Option.map_some, Option.some.injEq, exists_eq_left']
+    RegUpd.gpr_write, RegUpd.v_write, RegUpd.v_setV,
+    Option.map_some, Option.some.injEq, exists_eq_left', ↓reduceIte, Nat.reduceMul, Nat.reduceLT]
   refine ⟨?_, fun r hr => ?_, fun r hr => ?_, rfl, rfl, rfl, rfl⟩
   · trivial
   · simp only [hr, ite_false]

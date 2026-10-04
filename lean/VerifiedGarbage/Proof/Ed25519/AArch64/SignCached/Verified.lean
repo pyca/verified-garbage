@@ -18,7 +18,7 @@ theorem body_depth (v : Whole.Backend) : (body v.code v.suffix).aarch64Depth ≤
   have hb := Whole.depth_zero_of_noFrames base_noFrames
   have hm := Whole.depth_zero_of_noFrames mul_noFrames
   simp only [body, secretCode, nonceCode, challengeCode, hashSeed, hashNonce, hashChallenge,
-    init, update, finalize, reduce, Impl.Ed25519.AArch64.Whole.callWith, Code.aarch64Depth,
+    init, update, finalize, reduce, Impl.Ed25519.AArch64.Whole.callWith, Code.aarch64Depth, Nat.max_le,
     Impl.Sha512.AArch64.Stream.init, hr, hb, hm]
   omega
 

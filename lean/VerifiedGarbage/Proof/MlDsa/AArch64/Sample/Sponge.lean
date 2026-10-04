@@ -358,7 +358,7 @@ theorem blk1_ok {rate : Nat} (hr : rate < 2 ^ 16) {s : State} (h : J0 P σ s) :
   refine wp_movz fun s₁ h₁ e₁ => ?_
   rw [List.append_eq, WP.block_append_iff]
   have e1 := h.env.keep h₁.keep h₁.mem
-  refine WP.mono (WP.preservedV (zst_ok hp 25 (by decide) (by rw [e₁]; rfl) e1.x25 e1.wr) (hc := by decide +kernel))
+  refine WP.mono (WP.preservedV (zst_ok hp 25 (by decide) (by rw [e₁]; rfl) e1.x25 e1.wr) (hc := by lit_decide))
     fun s₂ ⟨⟨g₂, r₂, w₂, p₂, z₂, f₂⟩, vc₂⟩ => ?_
   have e2 : Env P σ s₂ := ⟨by rw [r₂, e1.rd], by rw [w₂, e1.wr], by rw [p₂, e1.sp], by rw [g₂, e1.x25],
     by rw [g₂, e1.x26], by rw [g₂, e1.x27], fun r hr a b c d => by rw [g₂, e1.cs r hr a b c d],

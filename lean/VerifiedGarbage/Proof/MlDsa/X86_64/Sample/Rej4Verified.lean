@@ -43,7 +43,7 @@ theorem r4_post {s s' : State} (h : r4K.post s s') :
     rw [rejNTT_some (hs k hk), (hp k hk (hs k hk)).2]
   · rw [ite_eq_right hall] at hr
     refine ⟨fun h1 => absurd (hr.symm.trans h1) (by decide), .inr ⟨hr, ?_⟩⟩
-    simp only [List.all_eq_true, List.mem_range, not_forall, beq_iff_eq] at hall
+    simp only [List.all_eq_true, List.mem_range, Classical.not_forall, beq_iff_eq] at hall
     obtain ⟨k, hk, hk'⟩ := hall
     exact ⟨k, hk, rejNTT_none (B := 1008) (by decide) (by decide) hk'⟩
 

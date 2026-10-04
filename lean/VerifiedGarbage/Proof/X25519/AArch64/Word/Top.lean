@@ -58,5 +58,5 @@ theorem correct {s₀ : State} (hp : localContract.pre s₀) :
 theorem x25519_ok (s : State) (hs : localContract.pre s) :
     ∃ tr t, Exec isa VG.Impl.X25519.AArch64.Word.x25519 s tr t ∧ abiPreserved s t ∧ localContract.post s t := by
   obtain ⟨tr,t,he,hg,hp⟩ := correct hs
-  exact ⟨tr,t,he,⟨hg,Exec.sp he,Exec.preservedV he⟩,hp⟩
+  exact ⟨tr,t,he,⟨hg,Exec.sp he,Exec.preservedV he (by lit_decide)⟩,hp⟩
 end VG.Proof.X25519.AArch64.Word

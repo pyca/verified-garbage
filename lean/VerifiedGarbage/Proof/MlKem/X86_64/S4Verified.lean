@@ -44,7 +44,7 @@ theorem sample4_post {s s' : State} (h : sample4K.post s s') :
       exact ⟨Spec.MlKem.minIterations, by rw [e, (hp k hk f e).2]⟩
   · rw [ite_eq_right hall] at hr
     refine ⟨fun h1 => absurd (hr.symm.trans h1) (by decide), .inr ⟨hr, ?_⟩⟩
-    simp only [List.all_eq_true, List.mem_range, not_forall] at hall
+    simp only [List.all_eq_true, List.mem_range, Classical.not_forall] at hall
     obtain ⟨k, hk, hk'⟩ := hall
     exact ⟨k, hk, Option.not_isSome_iff_eq_none.mp hk'⟩
 
