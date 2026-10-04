@@ -98,32 +98,41 @@ structure S2vOut (C W SP A D : BitVec 32) (R N n : Nat) (s s' : State) : Prop wh
   acc : bytesAt s'.mem (w64 W + BitVec.ofNat 64 dOff) 16 =
     Spec.Siv.s2vAcc (Spec.Siv.ctxMac s.mem (w64 C) R) (Spec.Siv.components 32 s.mem (w64 A) N)
 
-theorem encS2v_ok (v : Ctr32Impl) {C W SP A D : BitVec 32} {R N n : Nat} {s : State}
-    (h : EPre C W SP A D R N n s) :
-    WP isa (encS2v v.callee v.suffix) s (S2vOut C W SP A D R N n s) := by
+/-- The entry's memory, as `Kept` (the slots are the arguments). -/
+theorem kept_of_entered {C W SP A D : BitVec 32} {R N n : Nat} {s s₁ : State} (h : EPre C W SP A D R N n s)
+    (en : Entered s W s₁) : Kept s C W SP R D n [] s₁ ∧ slotv s₁.mem W adsO = A ∧
+      slotv s₁.mem W leftO = BitVec.ofNat 32 N := by
+  have sl := en.slots
+  simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] at sl
+  obtain ⟨c₁, r₁, a₁, l₁, d₁, n₁⟩ := sl
+  refine ⟨{ env := ⟨en.ebp, by rw [en.esp, h.sp], h.perm.of_eq en.rd en.wr⟩
+            rd := en.rd
+            wr := en.wr
+            slots := ⟨c₁.trans h.a0, r₁.trans h.a1, d₁.trans h.a4, n₁.trans h.a5⟩
+            saved := en.saved
+            big := en.frame.sub fun r hr => by
+              simp only [List.mem_singleton] at hr; subst hr
+              exact ⟨⟨w64 W + BitVec.ofNat 64 16, 2560⟩, by simp, Offset.sub _ (by decide) (by decide)⟩ },
+    a₁.trans h.a2, l₁.trans h.a3⟩
+
+theorem entry_wp {C W SP A D : BitVec 32} {R N n : Nat} {s : State} (h : EPre C W SP A D R N n s) :
+    WP isa sivEntry s (Entered s W) := by
   have L := h.ads.lay
-  have hR := h.ads.rounds
   have wW : Covers [⟨w64 W, 2560⟩] s.wr := fun a m ⟨r, hr, hc⟩ => by
     simp only [List.mem_singleton] at hr; subst hr
     exact h.perm.w a m ⟨_, List.mem_singleton_self _, by simp only [Region.Contains] at hc ⊢; omega⟩
   have aw : (argsR (s.gpr .esp) 7).Disjoint ⟨w64 W, 2560⟩ := by
     rw [h.sp]; exact h.aw.sub_right (Region.sub_prefix (by decide))
-  refine WP.seq (WP.mono (entry_ok (s := s) (W := W) h.a6 wW (by rw [h.sp]; exact h.rA) aw
-    (by rw [h.sp]; exact h.fa) (by have := L.fw; omega)) fun s₁ en => ?_)
-  have sl := en.slots
-  simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] at sl
-  obtain ⟨c₁, r₁, a₁, l₁, d₁, n₁⟩ := sl
-  have K₁ : Kept s C W SP R D n [] s₁ :=
-    { env := ⟨en.ebp, by rw [en.esp, h.sp], h.perm.of_eq en.rd en.wr⟩
-      rd := en.rd
-      wr := en.wr
-      slots := ⟨c₁.trans h.a0, r₁.trans h.a1, d₁.trans h.a4, n₁.trans h.a5⟩
-      saved := en.saved
-      big := en.frame.sub fun r hr => by
-        simp only [List.mem_singleton] at hr; subst hr
-        exact ⟨⟨w64 W + BitVec.ofNat 64 16, 2560⟩, by simp, Offset.sub _ (by decide) (by decide)⟩ }
-  refine WP.seq (WP.mono (start_ok v L hR K₁) fun s₂ ⟨K₂, f₂, st₂⟩ => ?_)
-  -- The descriptors' slots, after `start`.
+  exact entry_ok (s := s) (W := W) h.a6 wW (by rw [h.sp]; exact h.rA) aw (by rw [h.sp]; exact h.fa)
+    (by have := L.fw; omega)
+
+/-- S2V's first state, after the entry. -/
+theorem start_wp (v : Ctr32Impl) {C W SP A D : BitVec 32} {R N n : Nat} {s s₁ : State}
+    (h : EPre C W SP A D R N n s) (en : Entered s W s₁) :
+    WP isa (start v.callee v.suffix) s₁ (AInv s C W SP A R N D n 0) := by
+  have L := h.ads.lay
+  obtain ⟨K₁, a₁, l₁⟩ := kept_of_entered h en
+  refine WP.mono (start_ok v L h.ads.rounds K₁) fun s₂ ⟨K₂, f₂, st₂⟩ => ?_
   have k₂ : ∀ o, 176 ≤ o → o + 4 ≤ 200 → slotv s₂.mem W o = slotv s₁.mem W o := fun o h₁ h₂ =>
     f₂.readW (r := ⟨w64 W + BitVec.ofNat 64 o, 4⟩) (Region.contains_self _ _) (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -131,15 +140,29 @@ theorem encS2v_ok (v : Ctr32Impl) {C W SP A D : BitVec 32} {R N n : Nat} {s : St
       · exact Lay.w_w (.inr (by omega)) (by omega) (by decide)
       · exact Lay.w_w (.inl (by omega)) (by omega) (by decide)
       · exact (L.stk_w' (by omega)).symm) (by decide)
-  have I₀ : AInv s C W SP A R N D n 0 s₂ :=
-    ⟨K₂, Nat.zero_le _, by rw [k₂ _ (by decide) (by decide), a₁, h.a2, Nat.mul_zero]; exact (BitVec.add_zero _).symm,
-      by rw [k₂ _ (by decide) (by decide), l₁, h.a3, Nat.sub_zero], by rw [List.take_zero]; exact st₂⟩
-  refine WP.seq (WP.mono (s2vAds_ok v h.ads I₀) fun s₃ I => ?_)
+  exact ⟨K₂, Nat.zero_le _, by rw [k₂ _ (by decide) (by decide), a₁, Nat.mul_zero]; exact (BitVec.add_zero _).symm,
+    by rw [k₂ _ (by decide) (by decide), l₁, Nat.sub_zero], by rw [List.take_zero]; exact st₂⟩
+
+/-- The data as S2V's last string, after S2V of the associated data. -/
+theorem s2vEnd_ok {C W SP A D : BitVec 32} {R N n : Nat} {s s₃ : State} (h : EPre C W SP A D R N n s)
+    (I : AInv s C W SP A R N D n N s₃) :
+    ∃ s₄, runBlock isa [.mov .eax (slot dataO), .store (at_ .ebp strO) .eax, .mov .eax (slot lenO),
+      .store (at_ .ebp slenO) .eax] s₃ = some s₄ ∧ S2vOut C W SP A D R N n s s₄ := by
+  have L := h.ads.lay
   obtain ⟨s₄, run₄, P₄, K₄, f₄⟩ := dataStr_pre L I.kept (by simp) (h.data.buf.of_eq I.kept.rd I.kept.wr) h.n32
-  refine WP.of_runBlock ⟨s₄, run₄, P₄, K₄, ?_⟩
+  refine ⟨s₄, run₄, P₄, K₄, ?_⟩
   rw [Proof.AesGcm.X86.bytesAt_frame f₄ (fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr; exact Lay.w_w (.inr (by decide)) (by decide) (by decide))
     (by decide), I.acc, components_take_all]
+
+theorem encS2v_ok (v : Ctr32Impl) {C W SP A D : BitVec 32} {R N n : Nat} {s : State}
+    (h : EPre C W SP A D R N n s) :
+    WP isa (encS2v v.callee v.suffix) s (S2vOut C W SP A D R N n s) := by
+  refine WP.seq (WP.mono (entry_wp h) fun s₁ en => ?_)
+  refine WP.seq (WP.mono (start_wp v h en) fun s₂ I₀ => ?_)
+  refine WP.seq (WP.mono (s2vAds_ok v h.ads I₀) fun s₃ I => ?_)
+  obtain ⟨s₄, run₄, O⟩ := s2vEnd_ok h I
+  exact WP.of_runBlock ⟨s₄, run₄, O⟩
 
 /-! ## `vg_aes_siv_encrypt` -/
 
