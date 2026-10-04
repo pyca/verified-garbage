@@ -56,7 +56,7 @@ theorem ctrWholeArgs_ok {s₁ : State} (he₁ : Env k w sp R q1 s₁) (hR : R = 
     (hc0₁ : bytesAt s₁.mem (State.addr w + BitVec.ofNat 64 48) 16 = Spec.Ccm.ctrBlock nonce 0)
     {D : BitVec 32} {n : Nat} (hD : Dat k w sp s₁ D n) (h4₁ : s₁.gpr .r4 = D)
     (h12₁ : s₁.gpr .r12 = BitVec.ofNat 32 (n / 16)) :
-    ∃ s₄, runBlock isa ([.mov .r0 (imm 1)] ++ ctrAt ++ ctrArgs ++ [.mov .r3 (.reg .r4)]) s₁ = some s₄ ∧
+    ∃ s₄, runBlock isa (([.mov .r0 (imm 1)] : List Instr) ++ ctrAt ++ ctrArgs ++ ([.mov .r3 (.reg .r4)] : List Instr)) s₁ = some s₄ ∧
       CtrCall s₄ k (w + BitVec.ofNat 32 64) D (w + BitVec.ofNat 32 384) R (n / 16) ∧ Env k w sp R q1 s₄ ∧
       (∀ r, r ≠ .r0 → r ≠ .r1 → r ≠ .r2 → r ≠ .r3 → r ≠ .lr → s₄.gpr r = s₁.gpr r) ∧
       s₄.rd = s₁.rd ∧ s₄.wr = s₁.wr ∧ s₄.sp = s₁.sp ∧
@@ -191,8 +191,8 @@ theorem ctrTailArgs_ok {s₁ : State} (he₁ : Env k w sp R q1 s₁) (hR : R = 1
     {nonce : List Byte} (h7 : 7 ≤ nonce.length) (h13 : nonce.length ≤ 13)
     (hc0₁ : bytesAt s₁.mem (State.addr w + BitVec.ofNat 64 48) 16 = Spec.Ccm.ctrBlock nonce 0)
     {n : Nat} (hn : n < 256 ^ (15 - nonce.length)) (hn4 : n < 2 ^ 32) (h5₁ : s₁.gpr .r5 = BitVec.ofNat 32 n) :
-    ∃ s₅, runBlock isa (zero16 ksO ++ [.mov .r0 (.shifted .r5 .lsr 4), addI .r0 .r0 1] ++ ctrAt ++ ctrArgs ++
-        [addI .r3 .r11 ksO, .mov .r12 (imm 1)]) s₁ = some s₅ ∧
+    ∃ s₅, runBlock isa (zero16 ksO ++ ([.mov .r0 (.shifted .r5 .lsr 4), addI .r0 .r0 1] : List Instr) ++ ctrAt ++
+        ctrArgs ++ ([addI .r3 .r11 ksO, .mov .r12 (imm 1)] : List Instr)) s₁ = some s₅ ∧
       CtrCall s₅ k (w + BitVec.ofNat 32 64) (w + BitVec.ofNat 32 80) (w + BitVec.ofNat 32 384) R 1 ∧
       Env k w sp R q1 s₅ ∧
       (∀ r, r ≠ .r0 → r ≠ .r1 → r ≠ .r2 → r ≠ .r3 → r ≠ .r12 → r ≠ .lr → s₅.gpr r = s₁.gpr r) ∧

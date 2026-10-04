@@ -75,7 +75,7 @@ numbers of calls, bytes copied and blocks chained.
 namespace VG.Impl.AesCcm.Arm
 
 open VG.Arm
-open VG.Impl.AesGcm.Arm (imm addI save restore ctrFrame copyLoop xorLoop zero16 uO recv cmp)
+open VG.Impl.AesGcm.Arm (imm addI save restore ctrFrame copyLoop xorLoop zero16 uO rO cmp)
 
 /-! ## The working space -/
 
@@ -224,6 +224,13 @@ def ctrTail : Prog isa :=
 /-- The data XORed with the keystream from `Ctr₁` (§6.1 steps 5–8, §6.2
 steps 3–5). -/
 def ctr : Prog isa := .seq (.block [.ldrSp .r4 8, .ldrSp .r5 12]) (.seq ctrWhole ctrTail)
+
+/-! ## Comparing the tags -/
+
+/-- The `r6` bytes of the received tag (at `W`), padded with zeros at
+`W + 256`. -/
+def recv : Prog isa :=
+  .seq (.block (zero16 rO ++ [.mov .r1 (.reg .r11), addI .r2 .r11 rO, .mov .r3 (.reg .r6)])) copyLoop
 
 /-! ## Masking the data -/
 

@@ -187,7 +187,7 @@ theorem split15_ok {s : State} {len : Nat} (hl : len < 2 ^ 32) (h5 : s.gpr .r5 =
 theorem absArgs_ok {s : State} (he : Env k w sp R q1 s) (hR : R = 10 ∨ R = 12 ∨ R = 14) {y : Nat}
     (hy : y = 0 ∨ y = 112) {P : BitVec 32} {nb : Nat} (hq : Buf w sp s P (16 * nb)) (hn : 16 * nb < 2 ^ 32)
     (h4 : s.gpr .r4 = P) (h12 : s.gpr .r12 = BitVec.ofNat 32 nb) :
-    ∃ s₂, runBlock isa (updArgs y ++ [.mov .r3 (.reg .r4)]) s = some s₂ ∧
+    ∃ s₂, runBlock isa (updArgs y ++ ([.mov .r3 (.reg .r4)] : List Instr)) s = some s₂ ∧
       UArgs s₂ k (w + BitVec.ofNat 32 y) P (w + BitVec.ofNat 32 384) R nb ∧ Env k w sp R q1 s₂ ∧
       (∀ r, r ≠ .r0 → r ≠ .r1 → r ≠ .r2 → r ≠ .r3 → r ≠ .lr → s₂.gpr r = s.gpr r) ∧ Keeps s s₂ := by
   obtain ⟨s₂, run₂, a0, a1, a2, a3, alr, g₂, k₂⟩ : ∃ s₂, runBlock isa (updArgs y ++ [.mov .r3 (.reg .r4)]) s =
@@ -255,8 +255,8 @@ at `P` into it. -/
 theorem tailPre_ok {s₁ : State} (he₁ : Env k w sp R q1 s₁) {P : BitVec 32} {len : Nat}
     (hP : len ≠ 0 → Buf w sp s₁ P len) (hl : len < 2 ^ 32) (h0 : len % 16 ≠ 0) (h4₁ : s₁.gpr .r4 = P)
     (h5₁ : s₁.gpr .r5 = BitVec.ofNat 32 len) (h6₁ : s₁.gpr .r6 = BitVec.ofNat 32 (len % 16)) :
-    ∃ s₃, runBlock isa (zero16 bO ++ [.dp .sub .r1 .r5 (.reg .r6), .dp .add .r1 .r1 (.reg .r4),
-        addI .r2 .r11 bO, .mov .r3 (.reg .r6)]) s₁ = some s₃ ∧
+    ∃ s₃, runBlock isa (zero16 bO ++ ([.dp .sub .r1 .r5 (.reg .r6), .dp .add .r1 .r1 (.reg .r4),
+        addI .r2 .r11 bO, .mov .r3 (.reg .r6)] : List Instr)) s₁ = some s₃ ∧
       s₃.mem = Proof.Cmac.store4 s₁.mem (State.addr w + BitVec.ofNat 64 32) 0 0 0 0 ∧
       LoopPre s₃ (P + BitVec.ofNat 32 (16 * (len / 16))) (w + BitVec.ofNat 32 32) (len % 16) ∧
       Env k w sp R q1 s₃ ∧ (∀ r, r ≠ .r0 → r ≠ .r1 → r ≠ .r2 → r ≠ .r3 → s₃.gpr r = s₁.gpr r) ∧

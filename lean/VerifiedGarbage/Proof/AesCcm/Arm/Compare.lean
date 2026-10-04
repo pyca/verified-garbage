@@ -147,7 +147,7 @@ theorem cmpTail_ok {s : State} (he : Env k w sp R q1 s) :
 /-- `recv`: the received tag (`r6` bytes at `W`), padded with zeros at `W + 256`. -/
 theorem recv_ok {s : State} (he : Env k w sp R q1 s) {tl : Nat} (h6 : s.gpr .r6 = BitVec.ofNat 32 tl)
     (h1 : 1 ≤ tl) (h16 : tl ≤ 16) :
-    WP isa recv s fun s' => bytesAt s'.mem (State.addr w + BitVec.ofNat 64 256) 16 =
+    WP isa Impl.AesCcm.Arm.recv s fun s' => bytesAt s'.mem (State.addr w + BitVec.ofNat 64 256) 16 =
         bytesAt s.mem (State.addr w) tl ++ zeros (16 - tl) ∧
       Frame [⟨State.addr w + BitVec.ofNat 64 256, 16⟩] s.mem s'.mem ∧
       (∀ r, r ≠ .r0 → r ≠ .r1 → r ≠ .r2 → r ≠ .r3 → r ≠ .r12 → s'.gpr r = s.gpr r) ∧

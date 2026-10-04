@@ -1,5 +1,6 @@
 import VerifiedGarbage.Spec.Ccm.Contract
 import VerifiedGarbage.TCB.Arm.Target
+import VerifiedGarbage.Proof.Framework.PowLit
 
 /-!
 # AES-CCM on ARMv7: the contracts the proofs are written against
