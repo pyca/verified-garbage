@@ -43,6 +43,13 @@ theorem blocksAt_frame {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {p :
     blocksAt m' p n = blocksAt m p n := by
   rw [Proof.Gcm.blocksAt_eq, Proof.Gcm.blocksAt_eq, bytesAt_frame hf hd hn]
 
+/-- The cipher of a key schedule outside a frame's regions. -/
+theorem ctxCiph_frame {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {K : Addr}
+    (hd : ∀ r ∈ rs, (⟨K, 240⟩ : Region).Disjoint r) {R : Nat} (hR : 16 * (R + 1) ≤ 240) :
+    Spec.Ccm.ctxCiph m' K R = Spec.Ccm.ctxCiph m K R := by
+  unfold Spec.Ccm.ctxCiph
+  rw [bytesAt_frame hf (fun r hr => (hd r hr).sub_left (Region.sub_prefix hR)) (by omega)]
+
 /-- The return address a call stores. -/
 theorem callEntry_frame (s : State) : Frame [below (s.gpr .rsp) 8] s.mem s.callEntry.mem := by
   rw [State.callEntry_mem]

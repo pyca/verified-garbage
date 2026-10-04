@@ -34,6 +34,19 @@ theorem add_ofNat_assoc (p : Addr) (a b : Nat) :
     p + BitVec.ofNat 64 a + BitVec.ofNat 64 b = p + BitVec.ofNat 64 (a + b) := by
   rw [BitVec.add_assoc, ofNat_add_ofNat]
 
+theorem eval_e {s : State} {b : Bool} (h : s.zf = some b) : isa.eval .e s = some b := h
+theorem eval_ne {s : State} {b : Bool} (h : s.zf = some b) : isa.eval .ne s = some !b := by
+  show s.zf.map _ = _; rw [h]; rfl
+theorem eval_b {s : State} {b : Bool} (h : s.cf = some b) : isa.eval .b s = some b := h
+
+theorem and_self_beq {a : Nat} (ha : a < 2 ^ 64) : (BitVec.ofNat 64 a &&& BitVec.ofNat 64 a == 0) = decide (a = 0) := by
+  rw [BitVec.and_self]
+  by_cases h : a = 0
+  · subst h; rfl
+  · have : BitVec.ofNat 64 a ≠ 0 := fun e => h (by
+      have := congrArg BitVec.toNat e; rwa [toNat_ofNat_of_lt ha] at this)
+    rw [beq_eq_false_iff_ne.mpr this]; simp [h]
+
 theorem runBlock_append (a b : List Instr) (s : State) :
     runBlock isa (a ++ b) s = (runBlock isa a s).bind (runBlock isa b) := by
   induction a generalizing s with
