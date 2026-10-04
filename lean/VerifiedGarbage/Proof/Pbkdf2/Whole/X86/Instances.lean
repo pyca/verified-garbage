@@ -17,64 +17,7 @@ namespace VG.Proof.Pbkdf2.Whole.X86
 
 open VG.X86
 open VG.Impl.Pbkdf2.Whole.X86 (Fns)
-open VG.Proof.Pbkdf2.Stream.X86 (nosp_of sha1OK md5OK sha384OK sha512OK sha512_224OK sha512_256OK)
-
-/-! ## SHA-1 -/
-
-theorem sha1_checks : Checks sha1F := by
-  refine {
-    pro := ⟨?_, ?_⟩
-    cmp := ⟨?_, ?_⟩
-    hk1 := ⟨?_, ?_⟩
-    hk3 := ⟨?_, ?_⟩
-    hk5 := ⟨?_, ?_⟩
-    hk7 := ⟨?_, ?_⟩
-    short := ⟨?_, ?_⟩
-    su1 := ⟨?_, ?_⟩
-    su3 := ⟨?_, ?_⟩
-    su4 := ⟨?_, ?_⟩
-    init := ⟨?_, ?_⟩
-    b1 := ⟨?_, ?_⟩
-    b2 := ⟨?_, ?_⟩
-    b4 := ⟨?_, ?_⟩
-    b6 := ⟨?_, ?_⟩
-    b7 := ⟨?_, ?_⟩
-    tail := ⟨?_, ?_⟩
-    restore := ⟨?_, ?_⟩ }
-  taint_decide_all
-
-def sha1OKF : FnsOK sha1F := by
-  refine {
-    hH := sha1OK
-    Wi := 56
-    Wf := 56
-    Wt := 56
-    hi := .of_verified Proof.Pbkdf2.Md.X86.Instances.sha1_init
-    hf := .of_verified Proof.Pbkdf2.Md.X86.Instances.sha1_finalize
-    it := .of_verified Proof.Pbkdf2.Md.X86.Instances.sha1_iterate
-    hiSp := nosp_of ?_
-    hfSp := nosp_of ?_
-    itSp := nosp_of ?_
-    hiSU := ?_
-    hfSU := ?_
-    itSU := ?_
-    hWi := by decide
-    hWf := by decide
-    hWt := by decide
-    hWH := by decide
-    hW := by decide
-    hDB := by decide
-    hBS := by decide
-    fits := by decide }
-  taint_decide_all
-
-theorem sha1_sat : ∃ s, (Spec.Hmac.sha1I.pbkdf2ScratchContract X86.abi 76).pre s := by
-  sig_implies_sat [Spec.Hmac.Instance.pbkdf2ScratchContract, Spec.Pbkdf2.pbkdf2ScratchContract, Spec.Pbkdf2.pbkdf2ScratchSig, Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post,
-    Spec.Hmac.Instance.pbkdf2Scratch, Spec.Hmac.sha1I, Spec.Hmac.sha1S, Spec.Hmac.sha1, X86.abi,
-    X86.argSlots, X86.argVal, X86.argBytes] [pbkSat, pbkMem] using pbkSat 140
-
-theorem sha1 : Verified X86.target sha1F.pbkdf2 (Spec.Hmac.sha1I.pbkdf2ScratchContract X86.abi 76) :=
-  verified sha1OKF sha1_checks rfl rfl sha1_sat
+open VG.Proof.Pbkdf2.Stream.X86 (nosp_of md5OK sha384OK sha512OK sha512_224OK sha512_256OK)
 
 /-! ## MD5 -/
 

@@ -24,7 +24,11 @@ compression function, using the 20 bytes of stack below the return address.
 `update` and `finalize` keep their working space in a frame of their own:
 they are `updateScratch` and `finalizeScratch` (the shared contracts with
 the working space as an argument, which HMAC's and PBKDF2's code calls) run
-in a frame that allocates it (`Verified.stackScratch`).
+in a frame that allocates it (`update_frame`, `finalize_frame`). Each is
+stated for any code verified against the per-target contract (`compress_of`,
+`updateScratch_of`, `finalizeScratch_of`), so that the functions made with
+every implementation of the compression function
+(`Proof/Sha1/X86/Variants/`) are moved to the shared contracts the same way.
 -/
 
 namespace VG.Proof.Sha1.X86.Shared
@@ -56,9 +60,9 @@ macro "narrow" loc:(Lean.Parser.Tactic.location)? : tactic =>
     State.withRegions_gpr, State.withRegions_mem, State.withRegions_rd, State.withRegions_wr] $(loc)?)
 
 /-- `update` only reads its arguments. -/
-theorem updateWide_verified (hsat : ∃ s, updateWide.pre s) :
-    Verified X86.target Impl.Sha1.X86.Stream.update updateWide :=
-  Verified.narrowTo Proof.Sha1.X86.Stream.Update.update_verified
+theorem updateWide_of {code : Prog isa} (hv : Verified X86.target code Proof.Sha1.updateX86)
+    (hsat : ∃ s, updateWide.pre s) : Verified X86.target code updateWide :=
+  Verified.narrowTo hv
     (fun s => [⟨(arg s 3).setWidth 64, (arg s 4).toNat⟩, ⟨argAddr s 0, 24⟩])
     (fun s => [⟨(arg s 0).setWidth 64, 84⟩, ⟨(arg s 5).setWidth 64, 160⟩])
     (fun _ h => by
@@ -93,13 +97,21 @@ def updateSat : State :=
   { Proof.Sha1.X86.Stream.Update.sat with
     rd := [⟨0x2000, 0⟩], wr := [⟨0x1000, 84⟩, ⟨0x3000, 160⟩, ⟨0x5004, 24⟩] }
 
+theorem compress_implies : Proof.Sha1.compressX86.Implies (Spec.Sha1.compressContract X86.abi) := by
+  contract_implies [Spec.Sha1.compressContract, Spec.Sha1.compressSig, Proof.Sha1.compressX86,
+    X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
+    [Proof.Sha1.X86.satState, Proof.Sha1.X86.satMem, X86.arg, X86.argAddr, Mem.readW, Mem.read]
+    using Proof.Sha1.X86.satState
+
+/-- Any implementation of the compression function verified against the
+per-target contract is verified against the shared one. -/
+theorem compress_of {code : Prog isa} (hv : Verified X86.target code Proof.Sha1.compressX86) :
+    Verified X86.target code (Spec.Sha1.compressContract X86.abi) :=
+  hv.of_implies compress_implies
+
 theorem compress :
     Verified X86.target Impl.Sha1.X86.compress (Spec.Sha1.compressContract X86.abi) :=
-  Proof.Sha1.X86.compress_verified.of_implies (by
-    contract_implies [Spec.Sha1.compressContract, Spec.Sha1.compressSig, Proof.Sha1.compressX86,
-      X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
-      [Proof.Sha1.X86.satState, Proof.Sha1.X86.satMem, X86.arg, X86.argAddr, Mem.readW, Mem.read]
-      using Proof.Sha1.X86.satState)
+  compress_of Proof.Sha1.X86.compress_verified
 
 theorem init :
     Verified X86.target Impl.Sha1.X86.Stream.init (Spec.Sha1.initContract X86.abi) :=
@@ -115,28 +127,47 @@ theorem updateWide_implies : updateWide.Implies (Spec.Sha1.updateScratchContract
     [updateSat, Proof.Sha1.X86.Stream.Update.sat, MdStream.X86.Update.sat, MdStream.X86.Update.sat₀,
       MdStream.X86.Update.satMem, X86.arg, X86.argAddr, Mem.readW, Mem.read] using updateSat
 
+/-- Any `update` verified against the per-target contract is verified
+against the shared one. -/
+theorem updateScratch_of {code : Prog isa} (hv : Verified X86.target code Proof.Sha1.updateX86) :
+    Verified X86.target code (Spec.Sha1.updateScratchContract X86.abi 20) :=
+  (updateWide_of hv updateWide_implies.sat_left).of_implies updateWide_implies
+
 theorem updateScratch :
     Verified X86.target Impl.Sha1.X86.Stream.update (Spec.Sha1.updateScratchContract X86.abi 20) :=
-  (updateWide_verified updateWide_implies.sat_left).of_implies updateWide_implies
+  updateScratch_of Proof.Sha1.X86.Stream.Update.update_verified
+
+theorem finalizeScratch_implies :
+    Proof.Sha1.finalizeX86.Implies (Spec.Sha1.finalizeScratchContract X86.abi 20) := by
+  contract_implies [Spec.Sha1.finalizeScratchContract, Spec.Sha1.finalizeScratchSig,
+    Proof.Sha1.finalizeX86, Proof.Sha1.countX86, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
+    [Proof.Sha1.X86.Stream.Finalize.sat, MdStream.X86.Finalize.sat, MdStream.X86.Finalize.sat₀,
+      MdStream.X86.Finalize.satMem, Impl.Sha1.X86.Stream.params, X86.arg, X86.argAddr, Mem.readW,
+      Mem.read] using Proof.Sha1.X86.Stream.Finalize.sat
+
+/-- Any `finalize` verified against the per-target contract is verified
+against the shared one. -/
+theorem finalizeScratch_of {code : Prog isa} (hv : Verified X86.target code Proof.Sha1.finalizeX86) :
+    Verified X86.target code (Spec.Sha1.finalizeScratchContract X86.abi 20) :=
+  hv.of_implies finalizeScratch_implies
 
 theorem finalizeScratch :
     Verified X86.target Impl.Sha1.X86.Stream.finalize (Spec.Sha1.finalizeScratchContract X86.abi 20) :=
-  Proof.Sha1.X86.Stream.Finalize.finalize_verified.of_implies (by
-    contract_implies [Spec.Sha1.finalizeScratchContract, Spec.Sha1.finalizeScratchSig,
-      Proof.Sha1.finalizeX86, Proof.Sha1.countX86, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
-      [Proof.Sha1.X86.Stream.Finalize.sat, MdStream.X86.Finalize.sat, MdStream.X86.Finalize.sat₀,
-        MdStream.X86.Finalize.satMem, Impl.Sha1.X86.Stream.params, X86.arg, X86.argAddr, Mem.readW,
-        Mem.read] using Proof.Sha1.X86.Stream.Finalize.sat)
+  finalizeScratch_of Proof.Sha1.X86.Stream.Finalize.finalize_verified
 
 /-- A state satisfying `update`'s precondition. -/
 def updateFrameSat : State :=
   { MdStream.X86.Update.sat₀ with rd := [⟨0x2000, 0⟩], wr := [⟨0x1000, 84⟩, ⟨0x5004, 20⟩] }
 
-theorem update : Verified X86.target
-    (Impl.StackScratch.X86.withStackScratch 188 5 Impl.Sha1.X86.Stream.update)
-    (Spec.Sha1.updateContract X86.abi (20 + 188)) :=
+/-- `update`: an `update_scratch` with its working space in a frame of its
+own. -/
+theorem update_frame {code : Prog isa}
+    (h : Verified X86.target code (Spec.Sha1.updateScratchContract X86.abi 20))
+    (hsp : code.allInstrs (fun i => !Taint.clobbers i .esp) = true) (hd : stackUse code ≤ 20) :
+    Verified X86.target (Impl.StackScratch.X86.withStackScratch 188 5 code)
+      (Spec.Sha1.updateContract X86.abi (20 + 188)) :=
   X86.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 20) (stack := 20) (bytes := 188)
-    updateScratch (by decide) (by lit_decide) (by lit_decide)
+    h (by decide) hsp hd
     (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.Sha1.updatePost_local _)
     (by implies_sat [Spec.Sha1.updateContract, Spec.Sha1.updateSig, X86.abi, X86.argSlots, X86.argVal,
         X86.argBytes]
@@ -147,15 +178,29 @@ theorem update : Verified X86.target
 def finalizeFrameSat : State :=
   { MdStream.X86.Finalize.sat₀ with wr := [⟨0x1000, 84⟩, ⟨0x2000, 20⟩, ⟨0x5004, 16⟩] }
 
-theorem finalize : Verified X86.target
-    (Impl.StackScratch.X86.withStackScratch 184 4 Impl.Sha1.X86.Stream.finalize)
-    (Spec.Sha1.finalizeContract X86.abi (20 + 184)) :=
+/-- `finalize`: a `finalize_scratch` with its working space in a frame of its
+own. -/
+theorem finalize_frame {code : Prog isa}
+    (h : Verified X86.target code (Spec.Sha1.finalizeScratchContract X86.abi 20))
+    (hsp : code.allInstrs (fun i => !Taint.clobbers i .esp) = true) (hd : stackUse code ≤ 20) :
+    Verified X86.target (Impl.StackScratch.X86.withStackScratch 184 4 code)
+      (Spec.Sha1.finalizeContract X86.abi (20 + 184)) :=
   X86.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 20) (stack := 20) (bytes := 184)
-    finalizeScratch (by decide) (by lit_decide) (by lit_decide)
+    h (by decide) hsp hd
     (fun _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.Sha1.finalizePost_local _)
     (by implies_sat [Spec.Sha1.finalizeContract, Spec.Sha1.finalizeSig, X86.abi, X86.argSlots,
         X86.argVal, X86.argBytes]
       [finalizeFrameSat, MdStream.X86.Finalize.sat₀, MdStream.X86.Finalize.satMem, X86.arg,
         X86.argAddr, Mem.readW, Mem.read] using finalizeFrameSat)
+
+theorem update : Verified X86.target
+    (Impl.StackScratch.X86.withStackScratch 188 5 Impl.Sha1.X86.Stream.update)
+    (Spec.Sha1.updateContract X86.abi (20 + 188)) :=
+  update_frame updateScratch (by lit_decide) (by lit_decide)
+
+theorem finalize : Verified X86.target
+    (Impl.StackScratch.X86.withStackScratch 184 4 Impl.Sha1.X86.Stream.finalize)
+    (Spec.Sha1.finalizeContract X86.abi (20 + 184)) :=
+  finalize_frame finalizeScratch (by lit_decide) (by lit_decide)
 
 end VG.Proof.Sha1.X86.Shared

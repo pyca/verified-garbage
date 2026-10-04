@@ -7,7 +7,7 @@
 //! every streaming hash function, calling SHA-1's verified functions.
 //!
 //! They follow the implementation of SHA-1 that `Sha1` runs on this CPU: on
-//! x86-64 with the SHA extensions, `vg_hmac_sha1_init_shani` and
+//! x86 and x86-64 with the SHA extensions, `vg_hmac_sha1_init_shani` and
 //! `vg_hmac_sha1_finalize_shani`, the same verified code calling
 //! `vg_sha1_update_shani`, `vg_sha1_finalize_shani` and
 //! `vg_sha1_compress_shani`, with the same contracts.
@@ -26,7 +26,7 @@ use crate::arch::hmac_sha1::{
     VG_HMAC_SHA1_FINALIZE_SHA2_FEATURES, VG_HMAC_SHA1_INIT_SHA2_FEATURES,
     vg_hmac_sha1_finalize_sha2, vg_hmac_sha1_init_sha2,
 };
-#[cfg(target_arch = "x86_64")]
+#[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
 use crate::arch::hmac_sha1::{
     VG_HMAC_SHA1_FINALIZE_SHANI_FEATURES, VG_HMAC_SHA1_INIT_SHANI_FEATURES,
     vg_hmac_sha1_finalize_shani, vg_hmac_sha1_init_shani,
@@ -40,7 +40,7 @@ super::streaming_hmac!(
         #[cfg(target_arch = "aarch64")]
         Sha2 if [VG_HMAC_SHA1_INIT_SHA2_FEATURES, VG_HMAC_SHA1_FINALIZE_SHA2_FEATURES] =>
             (vg_hmac_sha1_init_sha2, vg_hmac_sha1_finalize_sha2),
-        #[cfg(target_arch = "x86_64")]
+        #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
         ShaNi if [VG_HMAC_SHA1_INIT_SHANI_FEATURES, VG_HMAC_SHA1_FINALIZE_SHANI_FEATURES] =>
             (vg_hmac_sha1_init_shani, vg_hmac_sha1_finalize_shani),
     },
