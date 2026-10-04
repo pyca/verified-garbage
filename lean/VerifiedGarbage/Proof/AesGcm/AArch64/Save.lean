@@ -48,7 +48,7 @@ theorem readW_writeW_other (m : Mem) (b : Addr) {d e : Nat} (v : BitVec 64) (h :
 
 /-- Each slot holds the register saved there. -/
 theorem savedMem_slot (m : Mem) (W : Addr) (g : Reg → BitVec 64) : SavedAt (savedMem m W g) W ⟨g, 0, false,
-    fun _ => 0, m, [], [], fun _ => 0⟩ := by
+    fun _ => 0, m, [], [], fun _ => 0, fun _ => 0⟩ := by
   intro p h
   simp only [saved, List.mem_cons, List.not_mem_nil, or_false] at h
   simp only [savedMem, saved, List.foldl]

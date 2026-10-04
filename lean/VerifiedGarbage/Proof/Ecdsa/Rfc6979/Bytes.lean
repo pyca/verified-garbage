@@ -77,6 +77,53 @@ theorem toBytes_ofBytes : ∀ (l : List Byte), Spec.Weierstrass.toBytes l.length
     rw [BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow, Nat.add_comm, Nat.add_mul_div_right _ _ (Nat.two_pow_pos _),
       Nat.div_eq_of_lt hl, Nat.zero_add, Nat.mod_eq_of_lt hb]
 
+/-! ## For a curve whose `n` has `8 Q` bits -/
+
+/-- A hash of at least `Q` bytes is the number of its leftmost `Q`, for a
+curve whose `n` has `8 Q` bits. -/
+theorem hashToInt_takeQ {C : Spec.Weierstrass.Curve} {Q : Nat} (hq : Spec.Ecdsa.nBits C = 8 * Q)
+    {h : List Byte} (hl : Q ≤ h.length) :
+    Spec.Ecdsa.hashToInt C h = Spec.Weierstrass.ofBytes (h.take Q) := by
+  have hd : (h.drop Q).length = h.length - Q := List.length_drop
+  have key : Spec.Weierstrass.ofBytes h =
+      Spec.Weierstrass.ofBytes (h.take Q) * 2 ^ (8 * (h.length - Q)) + Spec.Weierstrass.ofBytes (h.drop Q) := by
+    conv => lhs; rw [← List.take_append_drop Q h]
+    rw [ofBytes_append, hd, pow256]
+  rw [Spec.Ecdsa.hashToInt, hq]
+  by_cases hQ : h.length = Q
+  · rw [show h.take Q = h from List.take_of_length_le (by omega), hQ]; simp
+  · simp only [show ¬ 8 * h.length ≤ 8 * Q by omega, ite_false]
+    rw [key, show 8 * h.length - 8 * Q = 8 * (h.length - Q) by omega, Nat.shiftRight_eq_div_pow,
+      Nat.add_comm, Nat.add_mul_div_right _ _ (Nat.two_pow_pos _),
+      Nat.div_eq_of_lt (by have := ofBytes_lt (h.drop Q); rwa [hd] at this), Nat.zero_add]
+
+theorem rlenQ {C : Spec.Weierstrass.Curve} {Q : Nat} (hq : Spec.Ecdsa.nBits C = 8 * Q) :
+    Spec.Ecdsa.Rfc6979.rlen C = Q := by
+  rw [Spec.Ecdsa.Rfc6979.rlen, hq]; omega
+
+theorem bits2octets_eqQ {C : Spec.Weierstrass.Curve} {Q : Nat} (hq : Spec.Ecdsa.nBits C = 8 * Q)
+    {h : List Byte} (hl : Q ≤ h.length) :
+    Spec.Ecdsa.Rfc6979.bits2octets C h =
+      Spec.Weierstrass.toBytes Q (Spec.Weierstrass.ofBytes (h.take Q) % C.n) := by
+  rw [Spec.Ecdsa.Rfc6979.bits2octets, Spec.Ecdsa.Rfc6979.int2octets, Spec.Ecdsa.Rfc6979.bits2int, rlenQ hq,
+    hashToInt_takeQ hq hl]
+
+/-- A number below `2^K < 2N` modulo `N`: itself if subtracting `N` borrows,
+the difference `D` if not. -/
+theorem mod_mathK (X N D K : Nat) (c : Bool) (hsum : D + N = X + 2 ^ K * c.toNat) (hD : D < 2 ^ K)
+    (hX : X < 2 ^ K) (hN : 2 ^ K < 2 * N) : (if c then X else D) = X % N := by
+  cases c
+  · simp only [Bool.toNat_false, Nat.mul_zero, Nat.add_zero] at hsum
+    simp only [Bool.false_eq_true, ite_false]
+    have hge : N ≤ X := by omega
+    have hlt : X - N < N := by omega
+    rw [Nat.mod_eq_sub_mod hge, Nat.mod_eq_of_lt hlt]
+    omega
+  · simp only [Bool.toNat_true, Nat.mul_one] at hsum
+    simp only [ite_true]
+    have hlt : X < N := by omega
+    rw [Nat.mod_eq_of_lt hlt]
+
 /-! ## At P-256 -/
 
 theorem nBits_p256 : Spec.Ecdsa.nBits Spec.P256.curve = 256 := by

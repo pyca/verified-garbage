@@ -36,7 +36,7 @@ theorem initFramed {I : Spec.Hmac.Instance} {c : Prog isa} {bytes : Nat}
     (n := I.scratch) (pre := Spec.Hmac.initPre I.S Arm.abi.ptrBits)
     (post := Spec.Hmac.initPost I.S Arm.abi.ptrBits) (wa := true) (stack := 16) (m := 0) h
     rfl rfl rfl hb
-    (Hmac.initPre_local I.S _) (Hmac.initPost_local I.S _) hsat rfl
+    (Hmac.initPre_local I.S _) (Hmac.initPost_local I.S _) hsat
 
 theorem finFramed {I : Spec.Hmac.Instance} {c : Prog isa} {bytes : Nat}
     (h : Verified Arm.target c (I.finalizeScratchContract Arm.abi 16))
@@ -50,7 +50,7 @@ theorem finFramed {I : Spec.Hmac.Instance} {c : Prog isa} {bytes : Nat}
     (stack := 16) (m := 1) h
     rfl rfl rfl hb
     (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial)
-    (Hmac.finalizePost_local I.S _ hR hS) hsat rfl
+    (Hmac.finalizePost_local I.S _ hR hS) hsat
 
 /-- A state satisfying `init`'s precondition without the working space, with
 states of `S` bytes (and a one-byte key). -/

@@ -5,7 +5,7 @@ import VerifiedGarbage.Proof.AesGcmSiv.Arm.Absorb
 
 Untrusted: everything here is checked by Lean. `absorb` absorbs a string
 padded with zeros (`absorb_ok`): its whole blocks by chunks, its last bytes
-copied over a zero block at `W + 224` and absorbed as one more chunk
+copied over a zero block at `W + 176` and absorbed as one more chunk
 (`absTail_ok`); `lensBlock` puts the lengths block there for one more
 (`lens_ok`), from the stack arguments `aad_len` and `len`; `tagIn` turns
 POLYVAL's result into the tag input (`tagIn_ok`). `polyval_ok`: the tag
@@ -44,8 +44,8 @@ theorem pad_bytes (m : Mem) (c : Addr) (xs : List Byte) (hx : xs.length < 16) :
   rw [this, Nat.add_sub_cancel_left]
   simp [Spec.Cmac.zeros, Spec.GcmSiv.zeros, List.drop_replicate]
 
-/-- The block at `W + 224` as a chunk's source. -/
-theorem srcB {p : Prm} (L : Lay p) {s : State} (P : Perm p s) : Src p s (p.W + BitVec.ofNat 32 224) 16 := by
+/-- The block at `W + 176` as a chunk's source. -/
+theorem srcB {p : Prm} (L : Lay p) {s : State} (P : Perm p s) : Src p s (p.W + BitVec.ofNat 32 176) 16 := by
   have ww := L.ww
   refine ⟨?_, by rw [L.wN (by decide)]; omega, ?_, ?_, ?_⟩ <;> rw [L.wA (by decide)]
   · exact P.wCR (by decide)
@@ -53,43 +53,43 @@ theorem srcB {p : Prm} (L : Lay p) {s : State} (P : Perm p s) : Src p s (p.W + B
   · exact L.w_w (.inl (by decide)) (by decide) (by decide)
   · exact L.bw' (by decide)
 
-/-- One chunk of the 16 bytes at `W + 224`: their field element absorbed. -/
+/-- One chunk of the 16 bytes at `W + 176`: their field element absorbed. -/
 theorem chunkB_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t)
-    (h4 : t.gpr .r4 = p.W + BitVec.ofNat 32 224) (h5 : t.gpr .r5 = BitVec.ofNat 32 16) :
+    (h4 : t.gpr .r4 = p.W + BitVec.ofNat 32 176) (h5 : t.gpr .r5 = BitVec.ofNat 32 16) :
     WP isa chunk t (Absorbed p (absR (State.addr p.W) p.SP)
-      [Spec.GcmSiv.ofBytes (bytesAt t.mem (State.addr p.W + BitVec.ofNat 64 224) 16)] t) :=
+      [Spec.GcmSiv.ofBytes (bytesAt t.mem (State.addr p.W + BitVec.ofNat 64 176) 16)] t) :=
   WP.mono (chunk_ok L E (m := 16) (by decide) (by decide) (srcB L E.perm) h4 h5) fun t' C => by
     have A := Absorbed.of_chunk C
-    simpa [elemsAt, L.wA (show 224 < 4096 by decide)] using A
+    simpa [elemsAt, L.wA (show 176 < 3760 by decide)] using A
 
-/-- What `absTailPre` leaves: the last bytes, padded, at `W + 224`, as the
+/-- What `absTailPre` leaves: the last bytes, padded, at `W + 176`, as the
 bytes to absorb. -/
 structure TailPre (p : Prm) (P : Addr) (r : Nat) (t t₃ : State) : Prop where
   env : Env p t₃
   rd : t₃.rd = t.rd
   wr : t₃.wr = t.wr
-  r4 : t₃.gpr .r4 = p.W + BitVec.ofNat 32 224
+  r4 : t₃.gpr .r4 = p.W + BitVec.ofNat 32 176
   r5 : t₃.gpr .r5 = BitVec.ofNat 32 16
-  frame : Frame [⟨State.addr p.W + BitVec.ofNat 64 224, 16⟩] t.mem t₃.mem
-  bytes : bytesAt t₃.mem (State.addr p.W + BitVec.ofNat 64 224) 16 = bytesAt t.mem P r ++ Spec.GcmSiv.zeros (16 - r)
+  frame : Frame [⟨State.addr p.W + BitVec.ofNat 64 176, 16⟩] t.mem t₃.mem
+  bytes : bytesAt t₃.mem (State.addr p.W + BitVec.ofNat 64 176) 16 = bytesAt t.mem P r ++ Spec.GcmSiv.zeros (16 - r)
 
 /-- `absTailPre`: the last `r` (1 to 15) bytes at `P`, padded with zeros. -/
 theorem absTailPre_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t) {P : BitVec 32} {r : Nat}
     (hr1 : 1 ≤ r) (hr : r < 16) (hc : Covers [⟨State.addr P, r⟩] (t.rd ++ t.wr)) (hf : P.toNat + r ≤ 2 ^ 32)
-    (hd : (⟨State.addr P, r⟩ : Region).Disjoint ⟨State.addr p.W, 4096⟩) (h4 : t.gpr .r4 = P)
+    (hd : (⟨State.addr P, r⟩ : Region).Disjoint ⟨State.addr p.W, 3760⟩) (h4 : t.gpr .r4 = P)
     (h5 : t.gpr .r5 = BitVec.ofNat 32 r) :
     WP isa absTailPre t (TailPre p (State.addr P) r t) := by
   have hw := L.ww
-  have w₀ := E.perm.wW (show 224 + 4 ≤ 4096 by decide)
-  have w₁ := E.perm.wW (show 228 + 4 ≤ 4096 by decide)
-  have w₂ := E.perm.wW (show 232 + 4 ≤ 4096 by decide)
-  have w₃ := E.perm.wW (show 236 + 4 ≤ 4096 by decide)
+  have w₀ := E.perm.wW (show 176 + 4 ≤ 3760 by decide)
+  have w₁ := E.perm.wW (show 180 + 4 ≤ 3760 by decide)
+  have w₂ := E.perm.wW (show 184 + 4 ≤ 3760 by decide)
+  have w₃ := E.perm.wW (show 188 + 4 ≤ 3760 by decide)
   -- The block zeroed, and the copy's arguments.
   obtain ⟨t₁, run₁, hm₁, r1₁, r2₁, r3₁, ho₁, sp₁, rd₁, wr₁⟩ : ∃ t₁ : State,
       runBlock isa (Impl.AesGcm.Arm.zero16 bO ++ ([.mov .r1 (.reg .r4), Impl.AesGcm.Arm.addI .r2 .r11 bO,
         .mov .r3 (.reg .r5)] : List Instr)) t = some t₁ ∧
-      t₁.mem = Proof.Cmac.zero4 t.mem (State.addr p.W + BitVec.ofNat 64 224) ∧ t₁.gpr .r1 = P ∧
-      t₁.gpr .r2 = p.W + BitVec.ofNat 32 224 ∧ t₁.gpr .r3 = BitVec.ofNat 32 r ∧ Others [.r0, .r1, .r2, .r3] t t₁ ∧
+      t₁.mem = Proof.Cmac.zero4 t.mem (State.addr p.W + BitVec.ofNat 64 176) ∧ t₁.gpr .r1 = P ∧
+      t₁.gpr .r2 = p.W + BitVec.ofNat 32 176 ∧ t₁.gpr .r3 = BitVec.ofNat 32 r ∧ Others [.r0, .r1, .r2, .r3] t t₁ ∧
       t₁.sp = t.sp ∧ t₁.rd = t.rd ∧ t₁.wr = t.wr := by
     refine ⟨_, by simp only [Impl.AesGcm.Arm.zero16]; srun [E.r11, L.wA, w₀, w₁, w₂, w₃], ?_, ?_, ?_, ?_,
       by others_tac, by rfl, by rfl, by rfl⟩
@@ -100,12 +100,12 @@ theorem absTailPre_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t) {P : BitVe
   unfold absTailPre
   refine WP.seq (WP.of_runBlock ⟨t₁, run₁, ?_⟩)
   have E₁ : Env p t₁ := E.of_others ho₁ sp₁ rd₁ wr₁
-  have dB : (⟨State.addr P, r⟩ : Region).Disjoint ⟨State.addr (p.W + BitVec.ofNat 32 224), r⟩ := by
+  have dB : (⟨State.addr P, r⟩ : Region).Disjoint ⟨State.addr (p.W + BitVec.ofNat 32 176), r⟩ := by
     rw [L.wA (by decide)]
-    exact (hd.sub_right (Lay.wSub (show 224 + 16 ≤ 4096 by decide))).sub_right (Region.sub_prefix (by omega))
-  have lp : LoopPre t₁ P (p.W + BitVec.ofNat 32 224) r :=
+    exact (hd.sub_right (Lay.wSub (show 176 + 16 ≤ 3760 by decide))).sub_right (Region.sub_prefix (by omega))
+  have lp : LoopPre t₁ P (p.W + BitVec.ofNat 32 176) r :=
     ⟨r1₁, r2₁, r3₁, by omega, by omega, hf, by rw [L.wN (by decide)]; omega, by rw [rd₁, wr₁]; exact hc,
-      by rw [L.wA (by decide)]; exact covers_prefix (E₁.perm.wC (show 224 + 16 ≤ 4096 by decide)) (by omega), dB⟩
+      by rw [L.wA (by decide)]; exact covers_prefix (E₁.perm.wC (show 176 + 16 ≤ 3760 by decide)) (by omega), dB⟩
   refine WP.seq (WP.mono (copyLoop_ok t₁ lp) fun t₂ ⟨hm₂, O⟩ => ?_)
   have E₂ : Env p t₂ := E₁.keep (fun q hq => O.other q (by
     simp only [envRegs, List.mem_cons, List.not_mem_nil, or_false] at hq
@@ -126,11 +126,11 @@ theorem absTailPre_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t) {P : BitVe
       (fun q hq => by
         simp only [List.mem_singleton] at hq; subst hq; exact hd.sub_right (Lay.wSub (by decide)))
       (by omega)
-  have hb₂ : bytesAt t₂.mem (State.addr p.W + BitVec.ofNat 64 224) 16 =
+  have hb₂ : bytesAt t₂.mem (State.addr p.W + BitVec.ofNat 64 176) 16 =
       bytesAt t.mem (State.addr P) r ++ Spec.GcmSiv.zeros (16 - r) := by
     have hl := length_bytesAt t.mem (State.addr P) r
     rw [hm₂, hd₁, hm₁, pad_bytes _ _ _ (by omega), hl]
-  have f₂ : Frame [⟨State.addr p.W + BitVec.ofNat 64 224, 16⟩] t.mem t₂.mem := by
+  have f₂ : Frame [⟨State.addr p.W + BitVec.ofNat 64 176, 16⟩] t.mem t₂.mem := by
     rw [hm₂, hm₁]
     exact (Proof.Cmac.frame_store4 _ _ _ _ _).trans
       ((Proof.AesGcm.Arm.writeBytes_frame' _ (length_bytesAt _ _ _)).sub fun q hq => by
@@ -148,7 +148,7 @@ theorem absTailPre_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t) {P : BitVe
 /-- `absTail`: the last `r` (1 to 15) bytes at `P`, padded with zeros, absorbed. -/
 theorem absTail_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t) {P : BitVec 32} {r : Nat}
     (hr1 : 1 ≤ r) (hr : r < 16) (hc : Covers [⟨State.addr P, r⟩] (t.rd ++ t.wr)) (hf : P.toNat + r ≤ 2 ^ 32)
-    (hd : (⟨State.addr P, r⟩ : Region).Disjoint ⟨State.addr p.W, 4096⟩) (h4 : t.gpr .r4 = P)
+    (hd : (⟨State.addr P, r⟩ : Region).Disjoint ⟨State.addr p.W, 3760⟩) (h4 : t.gpr .r4 = P)
     (h5 : t.gpr .r5 = BitVec.ofNat 32 r) :
     WP isa absTail t
       (AbsPost p [Spec.GcmSiv.ofBytes (bytesAt t.mem (State.addr P) r ++ Spec.GcmSiv.zeros (16 - r))] t) := by
@@ -156,7 +156,7 @@ theorem absTail_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t) {P : BitVec 3
   refine WP.seq (WP.mono (absTailPre_ok L E hr1 hr hc hf hd h4 h5) fun t₃ T => ?_)
   refine WP.mono (chunkB_ok L T.env T.r4 T.r5) fun t₄ C => ?_
   rw [T.bytes] at C
-  have dHY : ∀ q ∈ [(⟨State.addr p.W + BitVec.ofNat 64 224, 16⟩ : Region)], ∀ d, d + 16 ≤ 224 →
+  have dHY : ∀ q ∈ [(⟨State.addr p.W + BitVec.ofNat 64 176, 16⟩ : Region)], ∀ d, d + 16 ≤ 176 →
       (⟨State.addr p.W + BitVec.ofNat 64 d, 16⟩ : Region).Disjoint q := fun q hq d hd => by
     simp only [List.mem_singleton] at hq; subst hq; exact L.w_w (.inl hd) (by omega) (by decide)
   refine ⟨C.env, by rw [C.rd, T.rd], by rw [C.wr, T.wr],
@@ -194,7 +194,7 @@ theorem absMid_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t) {Q : BitVec 32
     exact chunks_ok L E hm (by omega) (hQ.take (by omega)) h4 h5
 
 theorem absorb_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t) {Q : BitVec 32} {m : Nat} (hm : m < 2 ^ 32)
-    (hQ : Src p t Q m) (hd : (⟨State.addr Q, m⟩ : Region).Disjoint ⟨State.addr p.W, 4096⟩) (h4 : t.gpr .r4 = Q)
+    (hQ : Src p t Q m) (hd : (⟨State.addr Q, m⟩ : Region).Disjoint ⟨State.addr p.W, 3760⟩) (h4 : t.gpr .r4 = Q)
     (h5 : t.gpr .r5 = BitVec.ofNat 32 m) :
     WP isa absorb t (AbsPost p (Spec.GcmSiv.elems (Spec.GcmSiv.pad16 (bytesAt t.mem (State.addr Q) m))) t) := by
   obtain ⟨t₁, run₁, z₁, ho₁, m₁, sp₁, rd₁, wr₁⟩ := wholeLeft_ok hm h5
@@ -223,7 +223,7 @@ theorem absorb_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t) {Q : BitVec 32
     have hs := hQ.slice (a := 16 * (m / 16)) (k := m % 16) (by omega) (by omega)
     have ea := hQ.addr (j := 16 * (m / 16)) (by omega)
     have dT : (⟨State.addr (Q + BitVec.ofNat 32 (16 * (m / 16))), m % 16⟩ : Region).Disjoint
-        ⟨State.addr p.W, 4096⟩ := by
+        ⟨State.addr p.W, 3760⟩ := by
       rw [ea]; exact hd.sub_left (Offset.sub_base _ (by omega))
     refine WP.mono (absTail_ok L P₃.env (by omega) (by omega) (by rw [P₃.rd, P₃.wr]; exact hs.rd) hs.wrap dT
       (by rw [ho₃ _ (by simp), r4₂]) (by rw [ho₃ _ (by simp), r5₂])) fun t₄ T => ?_
@@ -253,16 +253,16 @@ theorem absorbR_args {p : Prm} (L : Lay p) : ∀ r ∈ absorbR (State.addr p.W) 
 theorem lens_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t) (A : Args p t.mem) :
     WP isa lens t (AbsPost p
       [Spec.GcmSiv.ofBytes (Spec.GcmSiv.le64 (8 * p.al) ++ Spec.GcmSiv.le64 (8 * p.n))] t) := by
-  have w₀ := E.perm.wW (show 224 + 4 ≤ 4096 by decide)
-  have w₁ := E.perm.wW (show 228 + 4 ≤ 4096 by decide)
-  have w₂ := E.perm.wW (show 232 + 4 ≤ 4096 by decide)
-  have w₃ := E.perm.wW (show 236 + 4 ≤ 4096 by decide)
+  have w₀ := E.perm.wW (show 176 + 4 ≤ 3760 by decide)
+  have w₁ := E.perm.wW (show 180 + 4 ≤ 3760 by decide)
+  have w₂ := E.perm.wW (show 184 + 4 ≤ 3760 by decide)
+  have w₃ := E.perm.wW (show 188 + 4 ≤ 3760 by decide)
   have a₀ := E.perm.argR' L (k := 0) (by decide)
   have a₈ := E.perm.argR' L (k := 8) (by decide)
   obtain ⟨t₁, run₁, hm₁, r4₁, r5₁, ho₁, sp₁, rd₁, wr₁⟩ : ∃ t₁ : State, runBlock isa lensBlock t = some t₁ ∧
-      t₁.mem = Proof.Cmac.store4 t.mem (State.addr p.W + BitVec.ofNat 64 224) (BitVec.ofNat 32 p.al <<< 3)
+      t₁.mem = Proof.Cmac.store4 t.mem (State.addr p.W + BitVec.ofNat 64 176) (BitVec.ofNat 32 p.al <<< 3)
         (BitVec.ofNat 32 p.al >>> 29) (BitVec.ofNat 32 p.n <<< 3) (BitVec.ofNat 32 p.n >>> 29) ∧
-      t₁.gpr .r4 = p.W + BitVec.ofNat 32 224 ∧ t₁.gpr .r5 = BitVec.ofNat 32 16 ∧
+      t₁.gpr .r4 = p.W + BitVec.ofNat 32 176 ∧ t₁.gpr .r5 = BitVec.ofNat 32 16 ∧
       Others [.r0, .r1, .r2, .r4, .r5] t t₁ ∧ t₁.sp = t.sp ∧ t₁.rd = t.rd ∧ t₁.wr = t.wr := by
     refine ⟨_, by simp only [lensBlock]; srun [E.r11, E.sp, L.wA, a₀, a₈, A.a0, A.a8, w₀, w₁, w₂, w₃], ?_, ?_, ?_,
       by others_tac, by rfl, by rfl, by rfl⟩
@@ -272,10 +272,10 @@ theorem lens_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t) (A : Args p t.me
     · simp [gpr_setReg]
   refine WP.seq (WP.of_runBlock ⟨t₁, run₁, ?_⟩)
   have E₁ : Env p t₁ := E.of_others ho₁ sp₁ rd₁ wr₁
-  have f₁ : Frame [⟨State.addr p.W + BitVec.ofNat 64 224, 16⟩] t.mem t₁.mem := by
+  have f₁ : Frame [⟨State.addr p.W + BitVec.ofNat 64 176, 16⟩] t.mem t₁.mem := by
     rw [hm₁]; exact Proof.Cmac.frame_store4 _ _ _ _ _
   refine WP.mono (chunkB_ok L E₁ r4₁ r5₁) fun t₂ C => ?_
-  have hb : bytesAt t₁.mem (State.addr p.W + BitVec.ofNat 64 224) 16 =
+  have hb : bytesAt t₁.mem (State.addr p.W + BitVec.ofNat 64 176) 16 =
       Spec.GcmSiv.le64 (8 * p.al) ++ Spec.GcmSiv.le64 (8 * p.n) := by
     have ea := GcmSiv.Words32.le64_words (BitVec.ofNat 32 p.al)
     have en := GcmSiv.Words32.le64_words (BitVec.ofNat 32 p.n)
@@ -283,7 +283,7 @@ theorem lens_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t) (A : Args p t.me
     rw [toNat32 L.n_lt] at en
     rw [hm₁, Proof.Cmac.bytesAt_store4, ea, en, List.append_assoc]
   rw [hb] at C
-  have dHY : ∀ d, d + 16 ≤ 224 → ∀ q ∈ [(⟨State.addr p.W + BitVec.ofNat 64 224, 16⟩ : Region)],
+  have dHY : ∀ d, d + 16 ≤ 176 → ∀ q ∈ [(⟨State.addr p.W + BitVec.ofNat 64 176, 16⟩ : Region)],
       (⟨State.addr p.W + BitVec.ofNat 64 d, 16⟩ : Region).Disjoint q := fun d hd q hq => by
     simp only [List.mem_singleton] at hq; subst hq; exact L.w_w (.inl hd) (by omega) (by decide)
   refine ⟨C.env, by rw [C.rd, rd₁], by rw [C.wr, wr₁],
@@ -319,14 +319,14 @@ theorem tagInMem_frame (m : Mem) (W N : Addr) : Frame [⟨W + BitVec.ofNat 64 96
 theorem tagIn_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t) :
     ∃ t' : State, runBlock isa tagIn t = some t' ∧ t'.mem = tagInMem t.mem (State.addr p.W) (State.addr p.N) ∧
       Others [.r0, .r1, .r2, .r3, .r12] t t' ∧ t'.sp = t.sp ∧ t'.rd = t.rd ∧ t'.wr = t.wr := by
-  have r₀ := E.perm.wR (show 80 + 4 ≤ 4096 by decide)
-  have r₁ := E.perm.wR (show 84 + 4 ≤ 4096 by decide)
-  have r₂ := E.perm.wR (show 88 + 4 ≤ 4096 by decide)
-  have r₃ := E.perm.wR (show 92 + 4 ≤ 4096 by decide)
-  have w₀ := E.perm.wW (show 96 + 4 ≤ 4096 by decide)
-  have w₁ := E.perm.wW (show 100 + 4 ≤ 4096 by decide)
-  have w₂ := E.perm.wW (show 104 + 4 ≤ 4096 by decide)
-  have w₃ := E.perm.wW (show 108 + 4 ≤ 4096 by decide)
+  have r₀ := E.perm.wR (show 80 + 4 ≤ 3760 by decide)
+  have r₁ := E.perm.wR (show 84 + 4 ≤ 3760 by decide)
+  have r₂ := E.perm.wR (show 88 + 4 ≤ 3760 by decide)
+  have r₃ := E.perm.wR (show 92 + 4 ≤ 3760 by decide)
+  have w₀ := E.perm.wW (show 96 + 4 ≤ 3760 by decide)
+  have w₁ := E.perm.wW (show 100 + 4 ≤ 3760 by decide)
+  have w₂ := E.perm.wW (show 104 + 4 ≤ 3760 by decide)
+  have w₃ := E.perm.wW (show 108 + 4 ≤ 3760 by decide)
   have n₀ : InRegions (t.rd ++ t.wr) (State.addr p.N) 4 := by simpa using E.perm.nR (d := 0) (k := 4) (by decide)
   have n₄ := E.perm.nR (d := 4) (k := 4) (by decide)
   have n₈ := E.perm.nR (d := 8) (k := 4) (by decide)

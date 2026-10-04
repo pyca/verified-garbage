@@ -18,7 +18,8 @@
 //! (`vg_aes_expand_key` and `vg_aes_ctr32`, through the CMAC functions made
 //! with them, and directly for CTR), which have the same contracts: on
 //! x86-64, CPUs with AES-NI and SSSE3 run the `_aesni` instances, and CPUs
-//! with VAES and AVX2 too the `_vaes` ones (`crate::aes::Backend`). On
+//! with VAES and AVX2 too the `_vaes` ones (`crate::aes::Backend`); on x86,
+//! CPUs with AES-NI run the `_aesni` instances. On
 //! AArch64, CPUs with the AES extension run `vg_aes_siv_init_aes`, and
 //! `vg_aes_siv_encrypt` and `vg_aes_siv_decrypt` follow the implementations
 //! of `vg_cmac_aes_update` too, as AES-CMAC does (`crate::cmac::aes`): when
@@ -28,7 +29,12 @@
 //! `_aes` ones (`chains_long`). On ARMv7 there is one implementation of
 //! AES, and so one instance of each function.
 
-#![cfg(any(target_arch = "x86_64", target_arch = "aarch64", target_arch = "arm"))]
+#![cfg(any(
+    target_arch = "x86",
+    target_arch = "x86_64",
+    target_arch = "aarch64",
+    target_arch = "arm"
+))]
 
 use crate::aes::Backend;
 #[cfg(target_arch = "aarch64")]
@@ -45,6 +51,12 @@ use crate::arch::aes_siv::{
     VG_AES_SIV_INIT_AESNI_FEATURES, VG_AES_SIV_INIT_VAES_FEATURES, vg_aes_siv_decrypt_aesni,
     vg_aes_siv_decrypt_vaes, vg_aes_siv_encrypt_aesni, vg_aes_siv_encrypt_vaes,
     vg_aes_siv_init_aesni, vg_aes_siv_init_vaes,
+};
+#[cfg(target_arch = "x86")]
+use crate::arch::aes_siv::{
+    VG_AES_SIV_DECRYPT_AESNI_FEATURES, VG_AES_SIV_ENCRYPT_AESNI_FEATURES,
+    VG_AES_SIV_INIT_AESNI_FEATURES, vg_aes_siv_decrypt_aesni, vg_aes_siv_encrypt_aesni,
+    vg_aes_siv_init_aesni,
 };
 use crate::arch::aes_siv::{vg_aes_siv_decrypt, vg_aes_siv_encrypt, vg_aes_siv_init};
 use crate::cpu::{Features, detected};
@@ -67,7 +79,7 @@ macro_rules! instance {
      aarch64: [$aes:ident, $aes_cbc:ident]) => {
         match $backend {
             Backend::Scalar => $scalar,
-            #[cfg(target_arch = "x86_64")]
+            #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
             Backend::AesNi => $aesni,
             #[cfg(target_arch = "x86_64")]
             Backend::Vaes => $vaes,
@@ -125,6 +137,18 @@ fn select(f: Features) -> Backend {
         VG_AES_SIV_DECRYPT_AESNI_FEATURES,
     ]);
     Backend::select_for(f, VAES, AESNI)
+}
+
+/// The best implementation of AES a CPU with the features `f` can run, with
+/// the AES-SIV functions for it.
+#[cfg(target_arch = "x86")]
+fn select(f: Features) -> Backend {
+    const AESNI: Features = Features::all(&[
+        VG_AES_SIV_INIT_AESNI_FEATURES,
+        VG_AES_SIV_ENCRYPT_AESNI_FEATURES,
+        VG_AES_SIV_DECRYPT_AESNI_FEATURES,
+    ]);
+    Backend::select_for(f, AESNI)
 }
 
 /// The only implementation of AES on ARMv7, with the AES-SIV functions for
@@ -196,7 +220,7 @@ impl AesSiv {
         // SAFETY: `key` is valid for reads of `key.len()` bytes, which is 32,
         // 48 or 64, and `k.ctx` for reads and writes of 512 bytes. They are
         // distinct objects, so they do not overlap each other, the return
-        // addresses on the stack (on x86-64) or the stack below them that
+        // addresses on the stack (on x86 and x86-64) or the stack below them that
         // the function uses, and neither wraps around the end of the address
         // space. The CPU has the features of the implementation selected.
         unsafe { init(key.as_ptr(), key.len(), &mut k.ctx) };
@@ -250,7 +274,7 @@ impl AesSiv {
         // writes of 2576. `data` and `work` are unique borrows, so they
         // overlap neither each other nor `self.ctx`, `storage` or a component;
         // no buffer overlaps the arguments on the stack or the return address
-        // (on x86-64) or the stack below it that the function uses, and none
+        // (on x86 and x86-64) or the stack below it that the function uses, and none
         // wraps around the end of the address space. The CPU has the
         // features of the implementation selected.
         // `work` is uninitialized: it is only working space but for the

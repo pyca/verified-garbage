@@ -6,7 +6,7 @@ import VerifiedGarbage.Proof.Gcm.Stream
 
 Untrusted: everything here is checked by Lean. POLYVAL is GHASH with the
 key `H · x` on the same bits (`Proof.GcmSiv.Polyval`): `revLoop` copies up
-to 64 blocks to `W + 768` with the bytes of each reversed, so that GHASH
+to 64 blocks to `W + 432` with the bytes of each reversed, so that GHASH
 reads each copy as POLYVAL reads the original (`revLoop_ok`), and `vg_ghash`
 absorbs them (`chunk_ok`); chunks follow each other until fewer than 16
 bytes are left (`chunks_ok`).
@@ -89,7 +89,7 @@ structure Src (p : Prm) (s : State) (Q : BitVec 32) (k : Nat) : Prop where
   rd : Covers [⟨State.addr Q, k⟩] (s.rd ++ s.wr)
   wrap : Q.toNat + k ≤ 2 ^ 32
   y : (⟨State.addr Q, k⟩ : Region).Disjoint ⟨State.addr p.W + BitVec.ofNat 64 80, 16⟩
-  rev : (⟨State.addr Q, k⟩ : Region).Disjoint ⟨State.addr p.W + BitVec.ofNat 64 768, 1280⟩
+  rev : (⟨State.addr Q, k⟩ : Region).Disjoint ⟨State.addr p.W + BitVec.ofNat 64 432, 1280⟩
   stk : (below p.SP).Disjoint ⟨State.addr Q, k⟩
 
 namespace Src
@@ -133,22 +133,22 @@ end Src
 /-- What `revLoop` leaves after `j` blocks, from `t₀`. -/
 structure RInv (p : Prm) (Q : BitVec 32) (c j : Nat) (t₀ t : State) : Prop where
   r4 : t.gpr .r4 = Q + BitVec.ofNat 32 (16 * j)
-  r2 : t.gpr .r2 = p.W + BitVec.ofNat 32 (768 + 16 * j)
+  r2 : t.gpr .r2 = p.W + BitVec.ofNat 32 (432 + 16 * j)
   r3 : t.gpr .r3 = BitVec.ofNat 32 (c - j)
-  frame : Frame [⟨State.addr p.W + BitVec.ofNat 64 768, 16 * c⟩] t₀.mem t.mem
-  out : Spec.Gcm.blocksAt t.mem (State.addr p.W + BitVec.ofNat 64 768) j = elemsAt t₀.mem (State.addr Q) j
+  frame : Frame [⟨State.addr p.W + BitVec.ofNat 64 432, 16 * c⟩] t₀.mem t.mem
+  out : Spec.Gcm.blocksAt t.mem (State.addr p.W + BitVec.ofNat 64 432) j = elemsAt t₀.mem (State.addr Q) j
   others : Others revRegs t₀ t
   sp : t.sp = t₀.sp
   rd : t.rd = t₀.rd
   wr : t.wr = t₀.wr
 
-/-- `revLoop`: `c` blocks at `Q` copied to `W + 768`, each reversed, so that
+/-- `revLoop`: `c` blocks at `Q` copied to `W + 432`, each reversed, so that
 GHASH reads POLYVAL's field elements of them. -/
 theorem revLoop_ok {p : Prm} (L : Lay p) {t₀ : State} (E : Env p t₀) {Q : BitVec 32} {c : Nat}
     (hc1 : 1 ≤ c) (hc : c ≤ 64) (hQ : Src p t₀ Q (16 * c)) (h4 : t₀.gpr .r4 = Q)
-    (h2 : t₀.gpr .r2 = p.W + BitVec.ofNat 32 768) (h3 : t₀.gpr .r3 = BitVec.ofNat 32 c) :
-    WP isa revLoop t₀ fun t => Frame [⟨State.addr p.W + BitVec.ofNat 64 768, 16 * c⟩] t₀.mem t.mem ∧
-      Spec.Gcm.blocksAt t.mem (State.addr p.W + BitVec.ofNat 64 768) c = elemsAt t₀.mem (State.addr Q) c ∧
+    (h2 : t₀.gpr .r2 = p.W + BitVec.ofNat 32 432) (h3 : t₀.gpr .r3 = BitVec.ofNat 32 c) :
+    WP isa revLoop t₀ fun t => Frame [⟨State.addr p.W + BitVec.ofNat 64 432, 16 * c⟩] t₀.mem t.mem ∧
+      Spec.Gcm.blocksAt t.mem (State.addr p.W + BitVec.ofNat 64 432) c = elemsAt t₀.mem (State.addr Q) c ∧
       t.gpr .r4 = Q + BitVec.ofNat 32 (16 * c) ∧
       Others revRegs t₀ t ∧ t.sp = t₀.sp ∧ t.rd = t₀.rd ∧ t.wr = t₀.wr := by
   have hw := L.ww
@@ -163,12 +163,12 @@ theorem revLoop_ok {p : Prm} (L : Lay p) {t₀ : State} (E : Env p t₀) {Q : Bi
   have hS : ∀ o, o < 16 → State.addr (Q + BitVec.ofNat 32 (16 * j) + BitVec.ofNat 32 o) =
       State.addr (Q + BitVec.ofNat 32 (16 * j)) + BitVec.ofNat 64 o := fun o ho => by
     rw [add32_ofNat_assoc, hQ.addr (by omega), eS, add_ofNat_assoc]
-  have hP : ∀ o, o < 16 → State.addr (p.W + BitVec.ofNat 32 (768 + 16 * j) + BitVec.ofNat 32 o) =
-      State.addr (p.W + BitVec.ofNat 32 (768 + 16 * j)) + BitVec.ofNat 64 o := fun o ho => by
+  have hP : ∀ o, o < 16 → State.addr (p.W + BitVec.ofNat 32 (432 + 16 * j) + BitVec.ofNat 32 o) =
+      State.addr (p.W + BitVec.ofNat 32 (432 + 16 * j)) + BitVec.ofNat 64 o := fun o ho => by
     rw [add32_ofNat_assoc, L.wA (by omega), L.wA (by omega), add_ofNat_assoc]
   have hr : Covers [⟨State.addr (Q + BitVec.ofNat 32 (16 * j)), 16⟩] (t.rd ++ t.wr) := by
     rw [I.rd, I.wr, eS]; exact covers_off hQ.rd (by omega) hQ.lt
-  have hwr : Covers [⟨State.addr (p.W + BitVec.ofNat 32 (768 + 16 * j)), 16⟩] t.wr := by
+  have hwr : Covers [⟨State.addr (p.W + BitVec.ofNat 32 (432 + 16 * j)), 16⟩] t.wr := by
     rw [I.wr, L.wA (by omega)]; exact E.perm.wC (by omega)
   obtain ⟨t', run', hm', r4', r2', r3', z', ho', sp', rd', wr'⟩ :=
     revStep_ok (j := c - j - 1) (by omega) hS hP I.r4 I.r2 (by rw [I.r3]; congr 1; omega) hr hwr
@@ -181,7 +181,7 @@ theorem revLoop_ok {p : Prm} (L : Lay p) {t₀ : State} (E : Env p t₀) {Q : Bi
       simp only [List.mem_singleton] at hr; subst hr
       exact (hQ.rev.sub_left (Offset.sub_base _ (by omega))).sub_right (Offset.sub _ (by omega) (by omega)))
       (by decide)
-  have fr : Frame [⟨State.addr p.W + BitVec.ofNat 64 (768 + 16 * j), 16⟩] t.mem t'.mem := by
+  have fr : Frame [⟨State.addr p.W + BitVec.ofNat 64 (432 + 16 * j), 16⟩] t.mem t'.mem := by
     rw [hm', revMem]; exact Proof.Cmac.frame_store4 _ _ _ _ _
   have I' : RInv p Q c (j + 1) t₀ t' := by
     refine ⟨by rw [r4', add32_ofNat_assoc, Nat.mul_succ], by rw [r2', add32_ofNat_assoc, Nat.mul_succ, Nat.add_assoc],
@@ -209,7 +209,7 @@ theorem revLoop_ok {p : Prm} (L : Lay p) {t₀ : State} (E : Env p t₀) {Q : Bi
 /-- What a chunk writes: GHASH's accumulator, the reversed blocks,
 `vg_ghash`'s working space and the stack below `SP`. -/
 abbrev absR (W : Addr) (SP : BitVec 32) : List Region :=
-  [⟨W + BitVec.ofNat 64 80, 16⟩, ⟨W + BitVec.ofNat 64 768, 1280⟩, below SP]
+  [⟨W + BitVec.ofNat 64 80, 16⟩, ⟨W + BitVec.ofNat 64 432, 1280⟩, below SP]
 
 /-- What a chunk leaves, from `t`, after absorbing `k` blocks of the `m`
 bytes at `Q`. -/
@@ -254,18 +254,18 @@ theorem chunkLen_ok {t : State} {m : Nat} (hm : m < 2 ^ 32) (h5 : t.gpr .r5 = Bi
       congr 1; omega
     · simp only [List.mem_singleton] at hr; simp only [gpr_setReg, hr, ite_false]; exact ho₁ r (by simpa using hr)
 
-/-- A chunk up to its call: up to 64 blocks reversed at `W + 768`, the
+/-- A chunk up to its call: up to 64 blocks reversed at `W + 432`, the
 pointer and the count past them, and the arguments of `vg_ghash`. -/
 structure ChunkPre (p : Prm) (Q : BitVec 32) (m k : Nat) (t t₅ : State) : Prop where
-  call : GhCall t₅ (p.W + BitVec.ofNat 32 64) (p.W + BitVec.ofNat 32 80) (p.W + BitVec.ofNat 32 768)
-    (p.W + BitVec.ofNat 32 1792) k
+  call : GhCall t₅ (p.W + BitVec.ofNat 32 64) (p.W + BitVec.ofNat 32 80) (p.W + BitVec.ofNat 32 432)
+    (p.W + BitVec.ofNat 32 1456) k
   env : Env p t₅
   rd : t₅.rd = t.rd
   wr : t₅.wr = t.wr
   r4 : t₅.gpr .r4 = Q + BitVec.ofNat 32 (16 * k)
   r5 : t₅.gpr .r5 = BitVec.ofNat 32 (m - 16 * k)
-  frame : Frame [⟨State.addr p.W + BitVec.ofNat 64 768, 16 * k⟩] t.mem t₅.mem
-  out : Spec.Gcm.blocksAt t₅.mem (State.addr p.W + BitVec.ofNat 64 768) k = elemsAt t.mem (State.addr Q) k
+  frame : Frame [⟨State.addr p.W + BitVec.ofNat 64 432, 16 * k⟩] t.mem t₅.mem
+  out : Spec.Gcm.blocksAt t₅.mem (State.addr p.W + BitVec.ofNat 64 432) k = elemsAt t.mem (State.addr Q) k
 
 /-- The pieces of a chunk before its call. -/
 theorem chunkPre_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t) {Q : BitVec 32} {m : Nat} (hm : m < 2 ^ 32)
@@ -275,7 +275,7 @@ theorem chunkPre_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t) {Q : BitVec 
   refine WP.seq (WP.mono (chunkLen_ok hm h5) fun t₁ ⟨r6₁, ho₁, m₁, sp₁, rd₁, wr₁⟩ => ?_)
   obtain ⟨t₂, run₂, r2₂, r3₂, ho₂, m₂, sp₂, rd₂, wr₂⟩ : ∃ t₂, runBlock isa
       [Impl.AesGcm.Arm.addI .r2 .r11 revO, .mov .r3 (.reg .r6)] t₁ = some t₂ ∧
-      t₂.gpr .r2 = p.W + BitVec.ofNat 32 768 ∧ t₂.gpr .r3 = BitVec.ofNat 32 (min (m / 16) 64) ∧
+      t₂.gpr .r2 = p.W + BitVec.ofNat 32 432 ∧ t₂.gpr .r3 = BitVec.ofNat 32 (min (m / 16) 64) ∧
       Others [.r2, .r3] t₁ t₂ ∧ t₂.mem = t₁.mem ∧ t₂.sp = t₁.sp ∧ t₂.rd = t₁.rd ∧ t₂.wr = t₁.wr := by
     refine ⟨_, by srun [], ?_, ?_, by others_tac, by rfl, by rfl, by rfl, by rfl⟩
     · simp [gpr_setReg, ho₁ .r11 (by decide), E.r11]
@@ -359,12 +359,12 @@ theorem chunk_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t) {Q : BitVec 32}
     rw [P.saved _ (by decide) (by decide), Pr.r5]
   have fr := P.frame
   have out₆ := P.out
-  simp only [L.wA (show 64 < 4096 by decide), L.wA (show 80 < 4096 by decide),
-    L.wA (show 768 < 4096 by decide), L.wA (show 1792 < 4096 by decide), Pr.env.sp] at fr out₆
-  have dH : ∀ r ∈ [(⟨State.addr p.W + BitVec.ofNat 64 768, 16 * min (m / 16) 64⟩ : Region)],
+  simp only [L.wA (show 64 < 3760 by decide), L.wA (show 80 < 3760 by decide),
+    L.wA (show 432 < 3760 by decide), L.wA (show 1456 < 3760 by decide), Pr.env.sp] at fr out₆
+  have dH : ∀ r ∈ [(⟨State.addr p.W + BitVec.ofNat 64 432, 16 * min (m / 16) 64⟩ : Region)],
       (⟨State.addr p.W + BitVec.ofNat 64 64, 16⟩ : Region).Disjoint r := fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr; exact L.w_w (.inl (by omega)) (by decide) (by omega)
-  have dY : ∀ r ∈ [(⟨State.addr p.W + BitVec.ofNat 64 768, 16 * min (m / 16) 64⟩ : Region)],
+  have dY : ∀ r ∈ [(⟨State.addr p.W + BitVec.ofNat 64 432, 16 * min (m / 16) 64⟩ : Region)],
       (⟨State.addr p.W + BitVec.ofNat 64 80, 16⟩ : Region).Disjoint r := fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr; exact L.w_w (.inl (by omega)) (by decide) (by omega)
   rw [Proof.AesGcm.Arm.blockAt_frame Pr.frame dH, Proof.AesGcm.Arm.blockAt_frame Pr.frame dY, Pr.out] at out₆
@@ -395,8 +395,8 @@ theorem elemsAt_frame {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {Q : 
   unfold elemsAt
   rw [← GcmSiv.elems_bytesAt, ← GcmSiv.elems_bytesAt, Proof.AesGcm.Arm.bytesAt_frame hf hd hk]
 
-/-- What absorbing writes: what a chunk writes, and the block at `W + 224`. -/
-abbrev absorbR (W : Addr) (SP : BitVec 32) : List Region := ⟨W + BitVec.ofNat 64 224, 16⟩ :: absR W SP
+/-- What absorbing writes: what a chunk writes, and the block at `W + 176`. -/
+abbrev absorbR (W : Addr) (SP : BitVec 32) : List Region := ⟨W + BitVec.ofNat 64 176, 16⟩ :: absR W SP
 
 /-- What absorbing leaves, from `t`, having absorbed the elements `xs` and
 written only `rs`. -/
@@ -424,7 +424,7 @@ theorem absorbR_H {p : Prm} (L : Lay p) :
   · exact (L.bw' (by decide)).symm
 
 /-- A buffer apart from `W` and the stack below `SP` misses what absorbing writes. -/
-theorem absorbR_buf {p : Prm} {P : Addr} {k : Nat} (hd : (⟨P, k⟩ : Region).Disjoint ⟨State.addr p.W, 4096⟩)
+theorem absorbR_buf {p : Prm} {P : Addr} {k : Nat} (hd : (⟨P, k⟩ : Region).Disjoint ⟨State.addr p.W, 3760⟩)
     (hb : (below p.SP).Disjoint ⟨P, k⟩) : ∀ r ∈ absorbR (State.addr p.W) p.SP, (⟨P, k⟩ : Region).Disjoint r := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr

@@ -23,14 +23,14 @@ structure DC (p : Prm) (i : Nat) (t : State) : Prop where
 
 theorem derA_wp {p : Prm} (L : Lay p) {i : Nat} {t : State} (h : DC p i t) :
     WP isa (.block deriveBlock) t fun t₁ =>
-      CtrCall t₁ p.K (p.W + BitVec.ofNat 32 112) (p.W + BitVec.ofNat 32 224) (p.W + BitVec.ofNat 32 2048) p.R 1 ∧
+      CtrCall t₁ p.K (p.W + BitVec.ofNat 32 112) (p.W + BitVec.ofNat 32 176) (p.W + BitVec.ofNat 32 1712) p.R 1 ∧
         DC p i t₁ := by
   obtain ⟨t₁, run₁, -, r0, r1, r2, r3, r12, lr, ho₁, sp₁, rd₁, wr₁⟩ := derArgs_ok L h.env h.r4
   have E₁ : Env p t₁ := h.env.of_others ho₁ sp₁ rd₁ wr₁
   exact WP.of_runBlock ⟨t₁, run₁, derCall L E₁ r0 r1 r2 r3 r12 lr, E₁, by rw [ho₁ _ (by decide), h.r4]⟩
 
 theorem derC_wp {p : Prm} {i : Nat} {t : State}
-    (h : CtrCall t p.K (p.W + BitVec.ofNat 32 112) (p.W + BitVec.ofNat 32 224) (p.W + BitVec.ofNat 32 2048) p.R 1 ∧
+    (h : CtrCall t p.K (p.W + BitVec.ofNat 32 112) (p.W + BitVec.ofNat 32 176) (p.W + BitVec.ofNat 32 1712) p.R 1 ∧
       DC p i t) :
     WP isa Impl.AesGcm.Arm.ctrFrame t (DC p i) :=
   WP.mono (ctr_call h.1) fun _ P =>
@@ -89,7 +89,7 @@ theorem keys_rel {p : Prm} (L : Lay p) {σ₁ σ₂ : State} (E₁ : Env p σ₁
     RelCT isa (Eq2 σ₁ σ₂) keys TT := by
   refine rel_seq (derive_rel L E₁ E₂) (derive_ok L E₁) (derive_ok L E₂) fun τ₁ τ₂ D₁ D₂ => ?_
   have wA : ∀ {τ : State}, Env p τ → WP isa (.block expandArgs) τ fun t₁ =>
-      KeyCall t₁ (p.W + BitVec.ofNat 32 32) (p.W + BitVec.ofNat 32 512) (p.W + BitVec.ofNat 32 2048)
+      KeyCall t₁ (p.W + BitVec.ofNat 32 32) (p.W + BitVec.ofNat 32 192) (p.W + BitVec.ofNat 32 1712)
         (Spec.GcmSiv.keyLen p.R) ∧ Env p t₁ := fun E => by
     obtain ⟨t₁, run₁, kc, E', -⟩ := expArgs_ok L E
     exact WP.of_runBlock ⟨t₁, run₁, kc, E'⟩

@@ -73,6 +73,11 @@ theorem Verified.stackScratchWiped {c : Prog isa}
     Verified target (withStackScratchWiped bytes m words c)
       (sig.contract abi pre post wa (stack + bytes)) := by
   obtain ⟨hcor, hct, -⟩ := h
+  have hpreL : ∀ vs m₁ m₂, vs.length = (sig.words abi.ptrBits).length →
+      (∀ b ∈ Sig.bufs sig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+      (∀ r ∈ Sig.lists abi.ptrBits m₁ sig.params vs, ∀ a, r.Contains a 1 → m₁ a = m₂ a) →
+      Curry.apply (sig.words abi.ptrBits) pre vs m₁ → Curry.apply (sig.words abi.ptrBits) pre vs m₂ :=
+    fun vs m₁ m₂ hl hb _ => hpre vs m₁ m₂ hl hb
   have hlen := armArgs_length sig
   obtain ⟨hb1, hb2, hb3, hb4, hb5, hb6⟩ := hb
   have hsb : ∀ s, (sig.contract abi pre post wa (stack + bytes)).pre s → stack + bytes ≤ s.sp.toNat :=
@@ -108,8 +113,8 @@ theorem Verified.stackScratchWiped {c : Prog isa}
       abiPreserved s (popState bytes s s₄) ∧ (popState bytes s s₄).mem = s₄.mem ∧
       (popState bytes s s₄).gpr .r0 = s₃.gpr .r0 ∧ (popState bytes s s₄).gpr .r1 = s₃.gpr .r1 := by
     intro s hs
-    obtain ⟨t, s₃, he, ha, hq⟩ := hcor _ (narrow_pre hcl hN hloc ⟨hb1, hb2, hb3, hb4, hb5, hb6⟩ hpre hs hl)
-    obtain ⟨hsp₂, -, -, -⟩ := narrow_facts (nm := nm) hcl hN hloc ⟨hb1, hb2, hb3, hb4, hb5, hb6⟩ hs hl
+    obtain ⟨t, s₃, he, ha, hq⟩ := hcor _ (narrow_pre hcl hN hloc ⟨hb1, hb2, hb3, hb4, hb5, hb6⟩ hpreL hs)
+    obtain ⟨hsp₂, -, -, -⟩ := narrow_facts (nm := nm) hcl hN hloc ⟨hb1, hb2, hb3, hb4, hb5, hb6⟩ hs
     have hsp₃ : s₃.sp = s.sp - BitVec.ofNat 32 bytes := ha.2.trans hsp₂
     have hwr₃ : s₃.wr = (narrow sig e n bytes m s).wr := (Exec.rdwr he).2.1
     have h0 := hsb s hs
@@ -132,7 +137,7 @@ theorem Verified.stackScratchWiped {c : Prog isa}
       simp only [State.setReg, h12, h2, ↓reduceIte]
       exact ha.1 q hq
     obtain ⟨hex, habi, hm, hg⟩ :=
-      withStackScratch_run hcl hN hloc ⟨hb1, hb2, hb3, hb4, hb5, hb6⟩ hs he' ha' hl
+      withStackScratch_run hcl hN hloc ⟨hb1, hb2, hb3, hb4, hb5, hb6⟩ hs he' ha'
     refine ⟨t, s₃, _, he, hq, hfr, hsp₃, hex, habi, hm, ?_, ?_⟩
     · rw [hg]; simp [State.setReg]
     · rw [hg]; simp [State.setReg]
@@ -143,13 +148,13 @@ theorem Verified.stackScratchWiped {c : Prog isa}
     have hq' := (post_arm (sig := sig.withScratch nm e n)
       (pre := Curry.withScratch abi.ptrBits nm e n sig.params pre)
       (post := Curry.withScratch abi.ptrBits nm e n sig.params post)).mp hq
-    obtain ⟨-, -, hargs, -⟩ := narrow_facts (nm := nm) hcl hN hloc ⟨hb1, hb2, hb3, hb4, hb5, hb6⟩ hs hl
+    obtain ⟨-, -, hargs, -⟩ := narrow_facts (nm := nm) hcl hN hloc ⟨hb1, hb2, hb3, hb4, hb5, hb6⟩ hs
     rw [hargs] at hq'
     rw [hm, hr0, hr1]
     have h₃ := Eq.mp (congrFun (congrFun (congrFun (Curry.apply_withScratch abi.ptrBits nm e n
       sig.params post _ _ (hlen s)) _) s₃.mem) _) hq'
     have h₄ := hpost _ _ _ _ _ (hlen s)
-      (narrow_agree hcl hN hloc ⟨hb1, hb2, hb3, hb4, hb5, hb6⟩ hs hl) h₃
+      (narrow_agree hcl hN hloc ⟨hb1, hb2, hb3, hb4, hb5, hb6⟩ hs) h₃
     refine hpostOut _ _ _ _ _ (hlen s) (fun b hb' a ha' => ?_) h₄
     exact (hfr a fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
@@ -157,9 +162,9 @@ theorem Verified.stackScratchWiped {c : Prog isa}
   · obtain ⟨u₁, _, _, f₁, _, _, p₁, x₁, _⟩ := hrun s₁ h₁
     obtain ⟨u₂, _, _, f₂, _, _, p₂, x₂, _⟩ := hrun s₂ h₂
     rw [(Exec.det e₁ x₁).1, (Exec.det e₂ x₂).1, p₁, p₂, ((pub_arm hl).mp hp).1,
-      hct _ _ _ _ _ _ (narrow_pre hcl hN hloc ⟨hb1, hb2, hb3, hb4, hb5, hb6⟩ hpre h₁ hl)
-        (narrow_pre hcl hN hloc ⟨hb1, hb2, hb3, hb4, hb5, hb6⟩ hpre h₂ hl)
-        (narrow_pub hcl hN hloc ⟨hb1, hb2, hb3, hb4, hb5, hb6⟩ h₁ h₂ hp hl) f₁ f₂]
+      hct _ _ _ _ _ _ (narrow_pre hcl hN hloc ⟨hb1, hb2, hb3, hb4, hb5, hb6⟩ hpreL h₁)
+        (narrow_pre hcl hN hloc ⟨hb1, hb2, hb3, hb4, hb5, hb6⟩ hpreL h₂)
+        (narrow_pub hcl hN hloc ⟨hb1, hb2, hb3, hb4, hb5, hb6⟩ h₁ h₂ hp) f₁ f₂]
 
 end
 

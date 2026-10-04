@@ -21,10 +21,10 @@ open VG.Proof.AesGcm.X86_64 (GcmImpl CtrCall ctr_rel ctr_call)
 /-! ## The tag -/
 
 theorem tagCall_wp {K W SP : Addr} (L : Lay K W SP) {R : Nat} (hR : R = 10 ∨ R = 14) {N A D : Addr} {al n : Nat}
-    {t : State} (O : One K W SP R N A D al n t) {o : Nat} (ho : o = 0 ∨ o = 128 ∨ o = 144) :
+    {t : State} (O : One K W SP R N A D al n t) {o : Nat} (ho : o = 0 ∨ o = 128) :
     WP isa (.block (copy16 cmO ccO ++ zero16 o ++ ptr .rdi .r15 skO ++ ctrArgs ++ ptr .rcx .r15 o)) t fun t₁ =>
-      CtrCall t₁ (W + BitVec.ofNat 64 512) (W + BitVec.ofNat 64 112) (W + BitVec.ofNat 64 o)
-        (W + BitVec.ofNat 64 2048) R 1 ∧ t₁.gpr .rsp = SP := by
+      CtrCall t₁ (W + BitVec.ofNat 64 248) (W + BitVec.ofNat 64 112) (W + BitVec.ofNat 64 o)
+        (W + BitVec.ofNat 64 1768) R 1 ∧ t₁.gpr .rsp = SP := by
   obtain ⟨t₁, run₁, -, rdi, rsi, rdx, rcx, r8, r9, hg₁, hrd₁, hwr₁⟩ := tagArgs_ok L O.env O.sl ho
   have E₁ : Env K W SP t₁ := O.env.of_saved hg₁ hrd₁ hwr₁
   have dO : (⟨W + BitVec.ofNat 64 o, 16⟩ : Region).Disjoint ⟨W + BitVec.ofNat 64 112, 16⟩ :=
@@ -33,22 +33,22 @@ theorem tagCall_wp {K W SP : Addr} (L : Lay K W SP) {R : Nat} (hR : R = 10 ∨ R
     (srcW L E₁.perm (t := o) (k := 16 * 1) (by omega)) dO (L.w_w (.inr (by omega)) (by decide) (by omega))
     (E₁.perm.wC (by omega)) rdi rsi rdx rcx r8 r9, E₁.rsp⟩
 
-theorem tagArgs_check {o : Nat} (ho : o = 0 ∨ o = 128 ∨ o = 144) :
+theorem tagArgs_check {o : Nat} (ho : o = 0 ∨ o = 128) :
     ∃ hc, (taint.check (sivT []) (.block (copy16 cmO ccO ++ zero16 o ++ ptr .rdi .r15 skO ++ ctrArgs ++
       ptr .rcx .r15 o)) hc).isSome = true := by
-  rcases ho with rfl | rfl | rfl <;> exact ⟨_, by taint_decide⟩
+  rcases ho with rfl | rfl <;> exact ⟨_, by taint_decide⟩
 
 /-- `tag o`, in two runs with the same public arguments. -/
 theorem tag_rel (v : GcmImpl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} (hR : R = 10 ∨ R = 14) {N A D : Addr}
-    {al n : Nat} (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 4096⟩) (hn : n ≤ 2 ^ 64) {o : Nat}
-    (ho : o = 0 ∨ o = 128 ∨ o = 144) {P : State → State → Prop}
+    {al n : Nat} (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 3816⟩) (hn : n ≤ 2 ^ 64) {o : Nat}
+    (ho : o = 0 ∨ o = 128) {P : State → State → Prop}
     (hP : ∀ t₁ t₂, P t₁ t₂ → Both K W SP R N A D al n [] t₁ t₂) :
     RelCT isa P (tag v.callees o) fun _ _ => True := by
   have a := (rel_taintC [] hDW hn hP (tagArgs_check ho)).wp
-    (F₁ := fun (t₁ : State) => CtrCall t₁ (W + BitVec.ofNat 64 512) (W + BitVec.ofNat 64 112) (W + BitVec.ofNat 64 o)
-        (W + BitVec.ofNat 64 2048) R 1 ∧ t₁.gpr .rsp = SP)
-    (F₂ := fun (t₁ : State) => CtrCall t₁ (W + BitVec.ofNat 64 512) (W + BitVec.ofNat 64 112) (W + BitVec.ofNat 64 o)
-        (W + BitVec.ofNat 64 2048) R 1 ∧ t₁.gpr .rsp = SP)
+    (F₁ := fun (t₁ : State) => CtrCall t₁ (W + BitVec.ofNat 64 248) (W + BitVec.ofNat 64 112) (W + BitVec.ofNat 64 o)
+        (W + BitVec.ofNat 64 1768) R 1 ∧ t₁.gpr .rsp = SP)
+    (F₂ := fun (t₁ : State) => CtrCall t₁ (W + BitVec.ofNat 64 248) (W + BitVec.ofNat 64 112) (W + BitVec.ofNat 64 o)
+        (W + BitVec.ofNat 64 1768) R 1 ∧ t₁.gpr .rsp = SP)
     fun t₁ t₂ h => ⟨tagCall_wp L hR (hP _ _ h).o₁ ho, tagCall_wp L hR (hP _ _ h).o₂ ho⟩
   exact RelCT.seq a (ctr_rel v.ctr fun t₁ t₂ h => ⟨_, _, _, _, _, _, h.2.1.1, h.2.2.1, by rw [h.2.1.2, h.2.2.2]⟩)
 
@@ -63,8 +63,8 @@ theorem blkEnd_ok {K W SP : Addr} {t : State} (E : Env K W SP t) {D : Addr} {b j
       t'.gpr .rbx = BitVec.ofNat 64 (b - (j + 1)) ∧ t'.zf = some (decide (b - (j + 1) = 0)) ∧
       (∀ r ∈ [Reg.r13, .r15, .rsp, .rbp], t'.gpr r = t.gpr r) ∧ t'.rd = t.rd ∧ t'.wr = t.wr := by
   have h15 := E.r15
-  have c₀ := E.perm.wR (show 96 + 4 ≤ 4096 by decide)
-  have c₁ := E.perm.wW (show 96 + 4 ≤ 4096 by decide)
+  have c₀ := E.perm.wR (show 96 + 4 ≤ 3816 by decide)
+  have c₁ := E.perm.wW (show 96 + 4 ≤ 3816 by decide)
   refine ⟨_, by srun [h15, c₀, c₁, h12, hbx], ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   all_goals simp only [gpr_arithFlags, gpr_setReg, mem_arithFlags, mem_setReg, rd_arithFlags, rd_setReg,
     wr_arithFlags, wr_setReg, zf_arithFlags, zf_setReg, ite_true, ite_false, reduceCtorEq]
@@ -96,8 +96,8 @@ theorem CInv.agree {K W SP : Addr} {R : Nat} {N A D : Addr} {al n b : Nat} {j : 
 
 /-- A block, after its arguments: the call's, and the run's. -/
 def BlkArgs (K W SP : Addr) (R : Nat) (N A D : Addr) (al n b : Nat) (j : Nat) (t : State) : Prop :=
-  CtrCall t (W + BitVec.ofNat 64 512) (W + BitVec.ofNat 64 112) (D + BitVec.ofNat 64 (16 * j))
-    (W + BitVec.ofNat 64 2048) R 1 ∧ t.gpr .rsp = SP ∧ CInv K W SP R N A D al n b j t
+  CtrCall t (W + BitVec.ofNat 64 248) (W + BitVec.ofNat 64 112) (D + BitVec.ofNat 64 (16 * j))
+    (W + BitVec.ofNat 64 1768) R 1 ∧ t.gpr .rsp = SP ∧ CInv K W SP R N A D al n b j t
 
 theorem blkArgs_wp {K W SP : Addr} (L : Lay K W SP) {R : Nat} (hR : R = 10 ∨ R = 14) {N A D : Addr} {al n b : Nat}
     (hb : 16 * b ≤ n) {j : Nat} (hj : j < b) {t : State} (I : CInv K W SP R N A D al n b j t) :
@@ -110,7 +110,7 @@ theorem blkArgs_wp {K W SP : Addr} (L : Lay K W SP) {R : Nat} (hR : R = 10 ∨ R
   have hQ : Buf K W SP t₁ (D + BitVec.ofNat 64 (16 * j)) (16 * 1) := hD₁.slice (by omega)
   have hDw : Covers [⟨D, n⟩] t₁.wr := by rw [hwr₁, I.one.wr]; exact Proof.AesGcm.X86_64.covers_of_mem (by simp)
   refine WP.of_runBlock ⟨t₁, run₁, cargs L E₁ hR (keyS L E₁.perm) (c := 112) (by decide) (srcBuf hQ)
-    (hQ.w.sub_right (Lay.wSub (by decide))) (hQ.w.sub_right (Lay.wSub (show 512 + 240 ≤ 4096 by decide))).symm
+    (hQ.w.sub_right (Lay.wSub (by decide))) (hQ.w.sub_right (Lay.wSub (show 248 + 240 ≤ 3816 by decide))).symm
     (Proof.AesGcm.X86_64.covers_off hDw (by omega) hn) rdi rsi rdx rcx r8 r9, E₁.rsp,
     ⟨⟨E₁, by rw [hm₁]; exact I.one.sl.of_frame (Proof.Cmac.frame_store2 _ _ _) (fun q hq => by
         simp only [List.mem_singleton] at hq; subst hq; exact L.w_w (.inr (by decide)) (by decide) (by decide)),
@@ -158,7 +158,7 @@ theorem blkEnd_check : ∃ hc, (taint.check (sivT [.r12, .rbx, .rbp])
 
 /-- A block of counter mode, in two runs before the same block. -/
 theorem blk_rel (v : GcmImpl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} (hR : R = 10 ∨ R = 14) {N A D : Addr}
-    {al n b : Nat} (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 4096⟩) (hn : n ≤ 2 ^ 64) (hb : 16 * b ≤ n) {j : Nat}
+    {al n b : Nat} (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 3816⟩) (hn : n ≤ 2 ^ 64) (hb : 16 * b ≤ n) {j : Nat}
     (hj : j < b) :
     RelCT isa (fun t₁ t₂ => CInv K W SP R N A D al n b j t₁ ∧ CInv K W SP R N A D al n b j t₂) (cryptBlock v.callees)
       fun t₁ t₂ => (CInv K W SP R N A D al n b (j + 1) t₁ ∧ t₁.zf = some (decide (b - (j + 1) = 0))) ∧
@@ -181,7 +181,7 @@ theorem blk_rel (v : GcmImpl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} (hR : R
 
 /-- The whole blocks of counter mode, in two runs. -/
 theorem blks_rel (v : GcmImpl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} (hR : R = 10 ∨ R = 14) {N A D : Addr}
-    {al n b : Nat} (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 4096⟩) (hn : n ≤ 2 ^ 64) (hb : 16 * b ≤ n) (hb1 : 1 ≤ b) :
+    {al n b : Nat} (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 3816⟩) (hn : n ≤ 2 ^ 64) (hb : 16 * b ≤ n) (hb1 : 1 ≤ b) :
     RelCT isa (fun t₁ t₂ => CInv K W SP R N A D al n b 0 t₁ ∧ CInv K W SP R N A D al n b 0 t₂)
       (.loop (cryptBlock v.callees) .ne)
       fun t₁ t₂ => CInv K W SP R N A D al n b b t₁ ∧ CInv K W SP R N A D al n b b t₂ := by
@@ -226,7 +226,7 @@ theorem tag_cinv (v : GcmImpl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} (hR : 
 
 /-- The last bytes, in two runs. -/
 theorem tail_rel (v : GcmImpl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} (hR : R = 10 ∨ R = 14) {N A D : Addr}
-    {al n b j : Nat} (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 4096⟩) (hn : n ≤ 2 ^ 64) :
+    {al n b j : Nat} (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 3816⟩) (hn : n ≤ 2 ^ 64) :
     RelCT isa (fun t₁ t₂ => CInv K W SP R N A D al n b j t₁ ∧ CInv K W SP R N A D al n b j t₂) (cryptTail v.callees)
       fun _ _ => True := by
   refine RelCT.assoc ?_
@@ -278,7 +278,7 @@ theorem test_cinv {K W SP : Addr} {R : Nat} {N A D : Addr} {al n b j : Nat} {t :
 
 /-- `crypt`, in two runs with the same public arguments. -/
 theorem crypt_rel (v : GcmImpl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} (hR : R = 10 ∨ R = 14) {N A D : Addr}
-    {al n : Nat} (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 4096⟩) (hn : n ≤ 2 ^ 64) {P : State → State → Prop}
+    {al n : Nat} (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 3816⟩) (hn : n ≤ 2 ^ 64) {P : State → State → Prop}
     (hP : ∀ t₁ t₂, P t₁ t₂ → (One K W SP R N A D al n t₁ ∧ Buf K W SP t₁ D n) ∧
       (One K W SP R N A D al n t₂ ∧ Buf K W SP t₂ D n)) :
     RelCT isa P (crypt v.callees) fun _ _ => True := by

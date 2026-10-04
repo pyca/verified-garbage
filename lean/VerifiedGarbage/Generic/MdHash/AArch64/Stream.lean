@@ -26,6 +26,7 @@ def artifacts (v : Proof.Pbkdf2.Md.AArch64.MdHash) : List Artifact := v.stream.m
     contract := f.contract
     stack := f.stack
     verified := f.verified
+    consts := []
     ofSig := f.ofSig
     ofApi := f.ofApi
     spSafe := f.spSafe

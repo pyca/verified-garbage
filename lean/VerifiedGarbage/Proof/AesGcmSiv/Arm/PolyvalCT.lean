@@ -70,9 +70,9 @@ theorem absCmp_check : ∃ h, (VG.Taint.check VG.Arm.taint (VG.Arm.Taint.ofRegs 
 theorem absTailPre_check : ∃ h, (VG.Taint.check VG.Arm.taint (VG.Arm.Taint.ofRegs (pubRegs [.r4, .r5])) absTailPre
     h).isSome = true := ⟨_, by taint_decide⟩
 
-/-- `chunk` on the block at `W + 224`. -/
+/-- `chunk` on the block at `W + 176`. -/
 theorem chunkB_rel {p : Prm} (L : Lay p) {τ₁ τ₂ : State} (E₁ : Env p τ₁) (E₂ : Env p τ₂)
-    (a4 : τ₁.gpr .r4 = p.W + BitVec.ofNat 32 224) (b4 : τ₂.gpr .r4 = p.W + BitVec.ofNat 32 224)
+    (a4 : τ₁.gpr .r4 = p.W + BitVec.ofNat 32 176) (b4 : τ₂.gpr .r4 = p.W + BitVec.ofNat 32 176)
     (a5 : τ₁.gpr .r5 = BitVec.ofNat 32 16) (b5 : τ₂.gpr .r5 = BitVec.ofNat 32 16) :
     RelCT isa (Eq2 τ₁ τ₂) chunk TT :=
   chunk_rel L E₁ E₂ (m := 16) (by decide) (by decide) (srcB L E₁.perm) (srcB L E₂.perm) a4 b4 a5 b5
@@ -89,7 +89,7 @@ theorem cmp5_ok {t : State} {r : Nat} (hr : r < 2 ^ 32) (h5 : t.gpr .r5 = BitVec
 
 /-- `absorb`, in two runs with the same public arguments, pointer and count. -/
 theorem absorb_rel {p : Prm} (L : Lay p) {τ₁ τ₂ : State} (E₁ : Env p τ₁) (E₂ : Env p τ₂)
-    {Q : BitVec 32} {m : Nat} (hm : m < 2 ^ 32) (hd : (⟨State.addr Q, m⟩ : Region).Disjoint ⟨State.addr p.W, 4096⟩)
+    {Q : BitVec 32} {m : Nat} (hm : m < 2 ^ 32) (hd : (⟨State.addr Q, m⟩ : Region).Disjoint ⟨State.addr p.W, 3760⟩)
     (hQ₁ : Src p τ₁ Q m) (hQ₂ : Src p τ₂ Q m)
     (a4 : τ₁.gpr .r4 = Q) (b4 : τ₂.gpr .r4 = Q) (a5 : τ₁.gpr .r5 = BitVec.ofNat 32 m)
     (b5 : τ₂.gpr .r5 = BitVec.ofNat 32 m) :
@@ -125,7 +125,7 @@ theorem absorb_rel {p : Prm} (L : Lay p) {τ₁ τ₂ : State} (E₁ : Env p τ�
   have h0 : m % 16 ≠ 0 := by simpa using hf
   have ea := hQ₁.addr (j := 16 * (m / 16)) (by omega)
   have dT : (⟨State.addr (Q + BitVec.ofNat 32 (16 * (m / 16))), m % 16⟩ : Region).Disjoint
-      ⟨State.addr p.W, 4096⟩ := by
+      ⟨State.addr p.W, 3760⟩ := by
     rw [ea]; exact hd.sub_left (Offset.sub_base _ (by omega))
   have hs₁ := ((hQ₁'.slice (a := 16 * (m / 16)) (k := m % 16) (by omega) (by omega)).of_eq A₁.rd A₁.wr).of_eq crd₁ cwr₁
   have hs₂ := ((hQ₂'.slice (a := 16 * (m / 16)) (k := m % 16) (by omega) (by omega)).of_eq A₂.rd A₂.wr).of_eq crd₂ cwr₂
@@ -198,11 +198,11 @@ theorem polyval_rel {p : Prm} (L : Lay p) {σ₁ σ₂ : State} (R₁ : PR p σ�
   refine rel_seq (c₁ := lens) ?_ (lens_ok L M₁.env M₁.args) (lens_ok L M₂.env M₂.args) fun e₁ e₂ F₁ F₂ =>
     rel_env F₁.env F₂.env [] (by simp) tagIn_check
   have wL : ∀ {d : State}, PR p d → WP isa (.block lensBlock) d fun t =>
-      Env p t ∧ t.gpr .r4 = p.W + BitVec.ofNat 32 224 ∧ t.gpr .r5 = BitVec.ofNat 32 16 := fun R => by
-    have w₀ := R.env.perm.wW (show 224 + 4 ≤ 4096 by decide)
-    have w₁ := R.env.perm.wW (show 228 + 4 ≤ 4096 by decide)
-    have w₂ := R.env.perm.wW (show 232 + 4 ≤ 4096 by decide)
-    have w₃ := R.env.perm.wW (show 236 + 4 ≤ 4096 by decide)
+      Env p t ∧ t.gpr .r4 = p.W + BitVec.ofNat 32 176 ∧ t.gpr .r5 = BitVec.ofNat 32 16 := fun R => by
+    have w₀ := R.env.perm.wW (show 176 + 4 ≤ 3760 by decide)
+    have w₁ := R.env.perm.wW (show 180 + 4 ≤ 3760 by decide)
+    have w₂ := R.env.perm.wW (show 184 + 4 ≤ 3760 by decide)
+    have w₃ := R.env.perm.wW (show 188 + 4 ≤ 3760 by decide)
     have a₀ := R.env.perm.argR' L (k := 0) (by decide)
     have a₈ := R.env.perm.argR' L (k := 8) (by decide)
     refine Proof.AesGcm.Arm.WP.run ⟨_, by simp only [lensBlock]; srun [R.env.r11, R.env.sp, L.wA, a₀, a₈,
