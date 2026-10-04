@@ -32,7 +32,7 @@ abbrev winQ (c : Cfg) : WinCfg := c.winCfg PX PY
 /-- The indices of the table's slots. -/
 def tblI : List Nat := (List.range 24).map (WT + ·)
 
-def roI : List Nat := [AP, B3P, ZERO, PX, PY, ONEP]
+def roI : List Nat := [AP, BM, ZERO, PX, PY, ONEP]
 def otherI : List Nat := [RX, RY, RZ, TX, TY, TZ, PT, T0, T1, T2, T3, T4, T5, DX, DY, DZ]
 
 theorem winTblSlots_eq (c : Cfg) : winTblSlots (winQ c) = tblI.map c.sl := by
@@ -270,11 +270,11 @@ theorem winMul_ok (hc : CfgOk c) (hC : Law c.C) {base : Addr} {s : State} (hs : 
   have hF : WinFixed (winQ c) c.C base s₂ P (wordsVal s.mem base (c.sl ks) c.n + 8 * geom (16 * c.n + 1)) := by
     refine ⟨?_, ?_, fun x hx => ?_, F₂.zero, ?_, fun t ht => ?_⟩
     · show toM _ _ (wordsVal s₂.mem _ (c.sl AP) c.n) = _; rw [F₂.ap]; exact toM_cmont hc _
-    · show toM _ _ (wordsVal s₂.mem _ (c.sl B3P) c.n) = _; rw [F₂.b3p]; exact toM_cmont hc _
+    · show toM _ _ (wordsVal s₂.mem _ (c.sl BM) c.n) = _; rw [F₂.bm]; exact toM_cmont hc _
     · simp only [winRo, List.mem_cons, List.not_mem_nil, or_false] at hx
       rcases hx with rfl | rfl | rfl | rfl | rfl | rfl
       · exact lt_of_eq_of_lt F₂.ap (hmont _)
-      · exact lt_of_eq_of_lt F₂.b3p (hmont _)
+      · exact lt_of_eq_of_lt F₂.bm (hmont _)
       · exact lt_of_eq_of_lt F₂.zero (by omega)
       · exact lt_of_eq_of_lt (e₂ (i := PX) (by decide)) hpx
       · exact lt_of_eq_of_lt (e₂ (i := PY) (by decide)) hpy
@@ -284,7 +284,7 @@ theorem winMul_ok (hc : CfgOk c) (hC : Law c.C) {base : Addr} {s : State} (hs : 
       rw [tv (by decide), tv (by decide), tv (by decide)]; exact hrep
     · rw [hJ] at ht
       exact b₂ t (by omega)
-  refine WP.seq (WP.mono (window_ok (winLayQ hc) (winAQ c) hpR hC hP hc.p_lt (hmont 1)
+  refine WP.seq (WP.mono (window_ok (winLayQ hc) (winAQ c) hpR hC hc.am3 hP hc.p_lt (hmont 1)
     (show toM c.C.p (2 ^ (64 * c.n)) (c.mont 1) = 1 by rw [toM_cmont hc]; rfl) hs₂ hM₂ hF
     (by rw [hJ]; exact hrec) (Nat.le_add_left _ _)) fun s₃ ⟨K₃, U₃, M₃, L₃, R₃⟩ => h s₃ ?_)
   rw [winW_eq] at U₃

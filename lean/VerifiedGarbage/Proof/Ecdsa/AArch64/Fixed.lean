@@ -27,7 +27,7 @@ structure Fixed (c : Cfg) (base : Addr) (g : Reg → BitVec 64) (m : Mem) : Prop
   one : wordsVal m base (c.sl ONE) c.n = 1
   onep : wordsVal m base (c.sl ONEP) c.n = 2 ^ (64 * c.n) % c.C.p
   ap : wordsVal m base (c.sl AP) c.n = c.mont c.C.a
-  b3p : wordsVal m base (c.sl B3P) c.n = c.mont (3 * c.C.b)
+  bm : wordsVal m base (c.sl BM) c.n = c.mont c.C.b
   gx : wordsVal m base (c.sl GX) c.n = c.mont c.C.gx
   gy : wordsVal m base (c.sl GY) c.n = c.mont c.C.gy
   r2n : wordsVal m base (c.sl R2N) c.n = 2 ^ (64 * c.n) * 2 ^ (64 * c.n) % c.C.n
@@ -88,7 +88,7 @@ theorem Fixed.unch {base : Addr} {g : Reg → BitVec 64} {m m' : Mem} (h : Fixed
   refine ⟨(e MP (by decide) (by decide)).trans h.mp, (e MN (by decide) (by decide)).trans h.mn,
     (e ZERO (by decide) (by decide)).trans h.zero, (e ONE (by decide) (by decide)).trans h.one,
     (e ONEP (by decide) (by decide)).trans h.onep, (e AP (by decide) (by decide)).trans h.ap,
-    (e B3P (by decide) (by decide)).trans h.b3p, (e GX (by decide) (by decide)).trans h.gx,
+    (e BM (by decide) (by decide)).trans h.bm, (e GX (by decide) (by decide)).trans h.gx,
     (e GY (by decide) (by decide)).trans h.gy, (e R2N (by decide) (by decide)).trans h.r2n,
     (e ONEN (by decide) (by decide)).trans h.onen, fun p hp => ?_⟩
   have := setupSaved_lt p hp

@@ -10,7 +10,8 @@ give the digits `d_j = k'_j - 8 ∈ [-8, 7]` with `k = Σ_j d_j 16^j`. The
 table `[m]P` for `m = 1 … 8` is built in the working space (`build`: `P`,
 then seven complete additions); then, from `R = O`, for `j = J - 1` down
 to `0`, `R = 16 R + [d_j]P`: four doublings, the entry of `|d_j|` selected in
-constant time and negated for a negative digit, and a complete addition.
+constant time and negated for a negative digit, and a complete addition. The
+formulas are those for `a = -3` (`dbl3`, `rcb3`, with `b` in `S.b3`).
 
 The digits are secret: every entry's every word is loaded and masked
 (`selectWord`), the masks of the magnitudes as for the comb (`digit`), and
@@ -39,7 +40,7 @@ def addConst (n src dst c : Nat) : List Instr :=
 /-- `[m + 1]P = [m]P + P` for `m = 1 … i`. -/
 def adds : Nat → Prog isa
   | 0 => .block []
-  | i + 1 => .seq (adds i) (fprogB K.M (rcb K.S (K.tblPt (i + 1)) (K.tblPt 1) (K.tblPt (i + 2))))
+  | i + 1 => .seq (adds i) (fprogB K.M (rcb3 K.S (K.tblPt (i + 1)) (K.tblPt 1) (K.tblPt (i + 2))))
 
 /-- The table: `[1]P = P`, then `[m + 1]P = [m]P + P`. -/
 def build : Prog isa := .seq (.block (copyPt K.M.n (K.tblPt 1) K.P)) (adds K 7)
@@ -64,14 +65,14 @@ def select : List Instr :=
   (List.range K.M.n).flatMap (selectWord K 2 K.E.z)
 
 /-- `R = R + R`, through `D`. -/
-def double : Prog isa := .seq (fprogB K.M (rcb K.S K.R K.R K.D)) (.block (copyPt K.M.n K.R K.D))
+def double : Prog isa := .seq (fprogB K.M (dbl3 K.S K.R K.D)) (.block (copyPt K.M.n K.R K.D))
 
 /-- Iteration `j = x19 - 1`: `R = 16 R + [d_j]P`. -/
 def step : Prog isa :=
   .seq (.block [decCounter]) <|
   .seq (double K) <| .seq (double K) <| .seq (double K) <| .seq (double K) <|
   .seq (.block (digit K.bits ++ select K ++ negY K.M K.neg K.zero K.E.y K.bits)) <|
-  .seq (fprogB K.M (rcb K.S K.R K.E K.D)) <|
+  .seq (fprogB K.M (rcb3 K.S K.R K.E K.D)) <|
   .block (copyPt K.M.n K.R K.D)
 
 /-- `R = O` and the counter. -/

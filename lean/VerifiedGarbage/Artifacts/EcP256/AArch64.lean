@@ -21,7 +21,8 @@ def artifacts : List Artifact := [
       digits `d_j - 8` from `-8` to `7`, `[d]G = [8 Σ 16^j]G + Σ [(d_j - 8) 16^j]G` from 64 \
       constant tables of `[m 16^j]G` (`m = 1 … 8`), each entry selected in constant time from \
       immediates by masks of the digit's magnitude and negated by a mask of its sign, and added by \
-      the complete addition formulas of Renes, Costello and Batina; and `Z⁻¹` is Fermat's, by \
+      the complete addition formulas of Renes, Costello and Batina for `a = -3` (Algorithm 4); and \
+      `Z⁻¹` is Fermat's, by \
       a chain of sliding 4-bit windows over `p - 2`, fixed by the code. The result (or zeros) is selected by a \
       mask of `d ∈ [1, n-1]` and `Z ≠ 0`, so the time depends only on the pointers."])
     code := Impl.EcKey.AArch64.publicKeyP256
