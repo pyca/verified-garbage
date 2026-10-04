@@ -538,8 +538,9 @@ mod tests {
         let mut n2 = n.clone();
         n2[10] ^= 1;
         assert_eq!(new(&n2, &p, &q, &[1], &[1], &[0]), bad);
-        let even = mul(&p, &[2]);
-        assert_eq!(new(&even[1..], &p, &q, &[1], &[1], &[0]), bad);
+        let mut even = n.clone();
+        *even.last_mut().unwrap() ^= 1;
+        assert_eq!(new(&even, &p, &q, &[1], &[1], &[0]), bad);
         let key = PrivateKey::from_crt(&n, &p, &q, &[1], &[1], &[0]).unwrap();
         let mut out = [0; 64];
         assert_eq!(
