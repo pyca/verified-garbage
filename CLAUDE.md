@@ -391,10 +391,20 @@ builds only it and what it imports, and after that only what changed:
 lake build +VerifiedGarbage.Proof.Md5.X86_64.Compress
 ```
 
-To check the artifact, build its registration file
-(`+VerifiedGarbage.Artifacts.<Alg>.<Target>`). The axiom and
-compiler-override audits, and generic callers applied to each variant, run
-only in the emitter, so they wait for the full checks below.
+To check the artifact and regenerate its code, run `EmitOne.lean` on its
+registration file: it builds only that file and what it imports, runs the
+emitter's audits on its artifacts, and writes (or, with `--check`, compares)
+only its files under `src/asm/`, in seconds once the proofs are built:
+
+```sh
+lake env lean --run EmitOne.lean Md5.X86_64
+lake env lean --run EmitOne.lean --check Md5.X86_64
+```
+
+Name a generic group (`<Iface>.<Target>`, e.g. `Sha256Compress.AArch64`) to
+emit its generic callers for each variant. It refuses a file that is new or
+that other registration files also emit into; the full emitter handles
+those, and the checks below still run everything before pushing.
 
 ## Checks to run before pushing
 
