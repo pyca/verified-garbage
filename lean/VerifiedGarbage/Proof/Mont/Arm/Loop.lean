@@ -90,7 +90,7 @@ theorem digitRow_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size
     WP isa (.block (digitRow M acc b h)) s fun u =>
       u.gpr .r0 = u.gpr .r12 + BitVec.ofNat 32 (4 * (i + 1)) ∧
       Outside base w (4 * (D + 2)) s.mem u.mem ∧ Digs u.mem base (w + 4) (D + 2) ∧
-      (∃ q, 2 ^ 16 * dval u.mem base (w + 4) (D + 2) =
+      (∃ q, q < 2 ^ 16 ∧ 2 ^ 16 * dval u.mem base (w + 4) (D + 2) =
         dval s.mem base w (D + 2) + hdig (s.gpr .r8).toNat h * val32 s.mem base b W + q * m) ∧
       Rest [.r0, .r2, .r3, .r5, .r7] s u := by
   have hn := hs.nowrap
@@ -180,7 +180,7 @@ theorem digitRow_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size
   have htop' : w32 s₇.mem base (w + 4 * (2 * W + 2)) = 0 := by
     rw [O₇.w32 (by omega) (by omega), O₂.w32 (by omega) (by omega)]; exact htop
   have hsh := dval_shift hz htop'
-  refine ⟨?_, ?_, ?_, ⟨q, ?_⟩, ?_⟩
+  refine ⟨?_, ?_, ?_, ⟨q, hq16, ?_⟩, ?_⟩
   · rw [u₈.gpr, dpVal, u₈.other _ (by decide), K₇.gpr _ (by decide), K₇.gpr _ (by decide), hp₆]
     exact ptr_succ _ _
   · rw [m₈, ← u₁.mem]
@@ -193,5 +193,158 @@ theorem digitRow_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size
   · rw [m₈, hsh, V₇, ← hT1, ← u₁.mem]
   · exact ((((K₁.trans (K₂.mono (by simp))).trans K₆).trans (K₇.mono (by simp))).mono
       (ws' := [.r0, .r2, .r3, .r5, .r7]) (by simp)).trans (u₈.rest (by simp))
+
+/-! ## The loop -/
+
+/-- The offsets of a multiplication: `[a]`, `[b]` and the modulus (`W`
+words) in the working space and apart from the accumulator (`2D + 2 = 4W + 2`
+digits at `acc`). -/
+structure MulLay (W size acc a b mo : Nat) : Prop where
+  acc_le : acc + 4 * (4 * W + 2) ≤ size
+  a_le : a + 4 * W ≤ size
+  b_le : b + 4 * W ≤ size
+  mo_le : mo + 4 * W ≤ size
+  sa : a + 4 * W ≤ acc ∨ acc + 4 * (4 * W + 2) ≤ a
+  sb : b + 4 * W ≤ acc ∨ acc + 4 * (4 * W + 2) ≤ b
+  smo : mo + 4 * W ≤ acc ∨ acc + 4 * (4 * W + 2) ≤ mo
+
+/-- The invariant of the loop, before the iteration for word `k` of `[a]`:
+the window of `D + 2` digits at `acc + 8k` holds `T < 2m` with
+`2^(32 k) T ≡ A B`, for the low `2k` digits `A` of `[a]`; the digits above
+it are zero; `r0`, `r1` point to the window and to word `k`, and `r9` counts
+the words left. -/
+structure LoopInv (base : Addr) (W acc a b m k : Nat) (s t : State) : Prop where
+  r0 : t.gpr .r0 = t.gpr .r12 + BitVec.ofNat 32 (4 * (2 * k))
+  r1 : t.gpr .r1 = t.gpr .r12 + BitVec.ofNat 32 (4 * k)
+  r9 : t.gpr .r9 = BitVec.ofNat 32 (W - k)
+  r6 : t.gpr .r6 = VG.Proof.X25519.Arm.mask16
+  out : Outside base acc (4 * (4 * W + 2)) s.mem t.mem
+  rest : Rest clob s t
+  digs : Digs t.mem base (acc + 4 * (2 * k)) (2 * W + 2)
+  zeros : ∀ l, 2 * k + 2 * W + 2 ≤ l → l < 4 * W + 2 → w32 t.mem base (acc + 4 * l) = 0
+  lt : dval t.mem base (acc + 4 * (2 * k)) (2 * W + 2) < 2 * m
+  cong : ∃ U, 2 ^ (32 * k) * dval t.mem base (acc + 4 * (2 * k)) (2 * W + 2) =
+    pval s.mem base a (2 * k) * val32 s.mem base b W + U * m
+
+/-- The count of the loop, one less. -/
+theorem cnt_dec {W k : Nat} (hk : k < W) (hW : W < 2 ^ 32) :
+    BitVec.ofNat 32 (W - k) - 1 = BitVec.ofNat 32 (W - (k + 1)) := by
+  have h1 : (1 : BitVec 32).toNat = 1 := rfl
+  apply BitVec.eq_of_toNat_eq
+  rw [BitVec.toNat_sub_of_le (by rw [BitVec.le_def, h1, BitVec.toNat_ofNat]; omega), h1, BitVec.toNat_ofNat,
+    BitVec.toNat_ofNat]
+  omega
+
+/-- The congruence of the loop, two digits on. -/
+theorem cong_step {P T T' T'' A B m U u0 u1 q0 q1 : Nat} (h0 : P * T = A * B + U * m)
+    (h1 : 2 ^ 16 * T' = T + u0 * B + q0 * m) (h2 : 2 ^ 16 * T'' = T' + u1 * B + q1 * m) :
+    P * 2 ^ 32 * T'' = (A + u0 * P + u1 * (P * 2 ^ 16)) * B + (U + q0 * P + q1 * (P * 2 ^ 16)) * m := by
+  have e1 : P * 2 ^ 32 * T'' = P * (2 ^ 16 * T') + P * 2 ^ 16 * (u1 * B + q1 * m) := by
+    rw [show P * 2 ^ 32 * T'' = P * 2 ^ 16 * (2 ^ 16 * T'') by grind, h2]; grind
+  have e2 : P * (2 ^ 16 * T') = A * B + U * m + P * u0 * B + P * q0 * m := by
+    rw [h1, Nat.mul_add, Nat.mul_add, h0]; grind
+  rw [e1, e2]; grind
+
+/-- An iteration of the loop: the rows of the two digits of word `k`. -/
+theorem row_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M : Mod} {W acc a b m k : Nat}
+    (hW : words M = W) (hD : digits M = 2 * W) (hL : MulLay W size acc a b M.mo) (hk : k < W)
+    (hW32 : W < 2 ^ 31)
+    (hm : val32 s.mem base M.mo W = m) (hinv : (m * (minv16 M).toNat + 1) % 2 ^ 16 = 0)
+    (hB : val32 s.mem base b W < m) {t : State} (I : LoopInv base W acc a b m k s t) :
+    WP isa (.block (row M acc a b)) t fun u =>
+      LoopInv base W acc a b m (k + 1) s u ∧ u.z = decide (k + 1 = W) := by
+  have hn := hs.nowrap
+  obtain ⟨acc_le, a_le, b_le, mo_le, sa, sb, smo⟩ := hL
+  have ht := hs.of_rest I.rest (by decide)
+  have hmt : val32 t.mem base M.mo W = m := by rw [I.out.val32 (by omega) (by omega), hm]
+  have hbt : val32 t.mem base b W = val32 s.mem base b W := I.out.val32 (by omega) (by omega)
+  have hat : w32 t.mem base (a + 4 * k) = w32 s.mem base (a + 4 * k) := I.out.w32 (by omega) (by omega)
+  simp only [row, List.cons_append, List.nil_append, List.append_assoc]
+  refine wp_ldr (hs.off_lt (by omega)) (ht.ea_at I.r1 (d := a) (by omega)) (ht.read (by omega)) fun t₁ u₁ => ?_
+  have K₁ : Rest clob t t₁ := u₁.rest (by simp [clob])
+  have ht₁ := ht.of_rest K₁ (by decide)
+  have r8₁ : (t₁.gpr .r8).toNat = w32 s.mem base (a + 4 * k) := by
+    rw [u₁.gpr, ← hat, show 4 * k + a = a + 4 * k by omega]
+  have m₁ : t₁.mem = t.mem := u₁.mem
+  have L₀ : RowLay W size (acc + 4 * (2 * k)) b M.mo := ⟨b_le, mo_le, by omega, by omega, by omega⟩
+  refine VG.Proof.X25519.Arm.WP.append (digitRow_ok ht₁ hW hD rfl L₀ (h := 0) (i := 2 * k) (by decide)
+    (by rw [u₁.other _ (by decide)]; exact I.r6) (by rw [u₁.other _ (by decide), u₁.other _ (by decide)]; exact I.r0)
+    (by omega) (by rw [m₁, hmt]) hinv (by rw [m₁, hbt]; exact hB) (by rw [m₁]; exact I.digs) (by rw [m₁]; exact I.lt)
+    (by rw [m₁, show acc + 4 * (2 * k) + 4 * (2 * W + 2) = acc + 4 * (2 * k + 2 * W + 2) by omega];
+        exact I.zeros _ (Nat.le_refl _) (by omega))) fun t₂ ⟨p₂, O₂, D₂, ⟨q₀, hq₀, V₂⟩, K₂⟩ => ?_
+  have K₁₂ : Rest clob t t₂ := K₁.trans (K₂.mono (by simp [clob]))
+  have ht₂ := ht.of_rest K₁₂ (by decide)
+  rw [m₁] at O₂ V₂
+  have hmt₂ : val32 t₂.mem base M.mo W = m := by rw [O₂.val32 (by omega) (by omega), hmt]
+  have hbt₂ : val32 t₂.mem base b W = val32 s.mem base b W := by rw [O₂.val32 (by omega) (by omega), hbt]
+  rw [r8₁, hbt] at V₂
+  have hU0 := hdig_lt (w32 s.mem base (a + 4 * k)) 0
+  have hT' : dval t₂.mem base (acc + 4 * (2 * k) + 4) (2 * W + 2) < 2 * m := by
+    have := row_lt I.lt hU0 hB hq₀
+    omega
+  have L₁ : RowLay W size (acc + 4 * (2 * k) + 4) b M.mo := ⟨b_le, mo_le, by omega, by omega, by omega⟩
+  have r8₂ : t₂.gpr .r8 = t₁.gpr .r8 := K₂.gpr _ (by decide)
+  refine VG.Proof.X25519.Arm.WP.append (digitRow_ok ht₂ hW hD rfl L₁ (h := 1) (i := 2 * k + 1) (by decide)
+    (by rw [K₂.gpr _ (by decide), u₁.other _ (by decide)]; exact I.r6) p₂ (by omega) hmt₂ hinv
+    (by rw [hbt₂]; exact hB) D₂ hT'
+    (by rw [O₂.w32 (by omega) (by omega), show acc + 4 * (2 * k) + 4 + 4 * (2 * W + 2) =
+        acc + 4 * (2 * k + 2 * W + 3) by omega]; exact I.zeros _ (by omega) (by omega)))
+    fun t₃ ⟨p₃, O₃, D₃, ⟨q₁, hq₁, V₃⟩, K₃⟩ => ?_
+  rw [r8₂, r8₁, hbt₂] at V₃
+  refine wp_dp (op2_imm (by decide)) fun t₄ u₄ => ?_
+  refine wp_subs (op2_imm (by decide)) fun t₅ u₅ z₅ => WP.block_nil ?_
+  have m₅ : t₅.mem = t₃.mem := by rw [u₅.mem, u₄.mem]
+  have r9₄ : t₄.gpr .r9 = BitVec.ofNat 32 (W - k) := by
+    rw [u₄.other _ (by decide), K₃.gpr _ (by decide), K₂.gpr _ (by decide), u₁.other _ (by decide)]; exact I.r9
+  have hU1 := hdig_lt (w32 s.mem base (a + 4 * k)) 1
+  have hT'' : dval t₃.mem base (acc + 4 * (2 * k) + 4 + 4) (2 * W + 2) < 2 * m := by
+    have := row_lt hT' hU1 hB hq₁
+    omega
+  have e8 : acc + 4 * (2 * (k + 1)) = acc + 4 * (2 * k) + 4 + 4 := by omega
+  refine ⟨⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, ?_⟩
+  · rw [u₅.other _ (by decide), u₄.other _ (by decide), u₅.other _ (by decide), u₄.other _ (by decide), p₃]
+    congr 2
+  · rw [u₅.other _ (by decide), u₄.gpr, dpVal, u₅.other _ (by decide), u₄.other _ (by decide),
+      K₃.gpr _ (by decide), K₃.gpr _ (by decide), K₂.gpr _ (by decide), K₂.gpr _ (by decide), u₁.other _ (by decide),
+      u₁.other _ (by decide), I.r1]
+    exact ptr_succ _ _
+  · rw [u₅.gpr, r9₄]; exact cnt_dec hk (by omega)
+  · rw [u₅.other _ (by decide), u₄.other _ (by decide), K₃.gpr _ (by decide), K₂.gpr _ (by decide),
+      u₁.other _ (by decide)]; exact I.r6
+  · rw [m₅]
+    exact I.out.trans ((O₂.mono (by omega) (by omega)).trans (O₃.mono (by omega) (by omega)))
+  · exact (I.rest.trans K₁₂).trans ((K₃.mono (by simp [clob])).trans
+      ((u₄.rest (by simp [clob])).trans (u₅.rest (by simp [clob]))))
+  · rw [m₅, e8]; exact D₃
+  · intro l hl1 hl2
+    rw [m₅, O₃.w32 (by omega) (by omega), O₂.w32 (by omega) (by omega)]
+    exact I.zeros l (by omega) hl2
+  · rw [m₅, e8]; exact hT''
+  · obtain ⟨U, hU⟩ := I.cong
+    refine ⟨U + q₀ * 2 ^ (32 * k) + q₁ * (2 ^ (32 * k) * 2 ^ 16), ?_⟩
+    have hc := cong_step hU V₂ V₃
+    rw [m₅, e8, show 32 * (k + 1) = 32 * k + 32 by omega, Nat.pow_add,
+      show 2 * (k + 1) = 2 * k + 1 + 1 by omega, pval, pval, hc]
+    simp only [pdig, show (2 * k + 1) / 2 = k by omega, show (2 * k) / 2 = k by omega,
+      show (2 * k + 1) % 2 = 1 by omega, show (2 * k) % 2 = 0 by omega,
+      show 16 * (2 * k + 1) = 32 * k + 16 by omega, show 16 * (2 * k) = 32 * k by omega, Nat.pow_add]
+  · rw [z₅, r9₄, cnt_dec hk (by omega), VG.Proof.X25519.Arm.ofNat_beq_zero (by omega)]
+    simp only [decide_eq_decide]
+    omega
+
+/-- The loop of `mul`: from the invariant at word 0 to the invariant at `W`. -/
+theorem loop_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M : Mod} {W acc a b m : Nat}
+    (hW : words M = W) (hD : digits M = 2 * W) (hL : MulLay W size acc a b M.mo) (hW0 : 0 < W) (hW32 : W < 2 ^ 31)
+    (hm : val32 s.mem base M.mo W = m) (hinv : (m * (minv16 M).toNat + 1) % 2 ^ 16 = 0)
+    (hB : val32 s.mem base b W < m) {t : State} (h0 : LoopInv base W acc a b m 0 s t) :
+    WP isa (.loop (.block (row M acc a b)) .ne) t fun u => LoopInv base W acc a b m W s u := by
+  refine WP.loop (M := isa)
+    (fun n t' => ∃ k, n = W - k ∧ k < W ∧ LoopInv base W acc a b m k s t') ?_ W t ⟨0, rfl, hW0, h0⟩
+  rintro n t' ⟨k, rfl, hk, I⟩
+  refine WP.mono (row_ok hs hW hD hL hk hW32 hm hinv hB I) fun u ⟨I', hz⟩ => ?_
+  by_cases hk1 : k + 1 = W
+  · exact .inl ⟨by rw [VG.Proof.X25519.Arm.eval_ne, hz, decide_eq_true hk1]; rfl, hk1 ▸ I'⟩
+  · exact .inr ⟨by rw [VG.Proof.X25519.Arm.eval_ne, hz, decide_eq_false hk1]; rfl, W - (k + 1), by omega,
+      k + 1, rfl, by omega, I'⟩
 
 end VG.Proof.Mont.Arm
