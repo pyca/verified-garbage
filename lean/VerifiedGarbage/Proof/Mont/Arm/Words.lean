@@ -120,4 +120,55 @@ theorem pval_words (m : Mem) (base : Addr) (d : Nat) : ∀ k, pval m base d (2 *
 
 theorem hdig_lt (w h : Nat) : hdig w h < 2 ^ 16 := Nat.mod_lt _ (by decide)
 
+theorem dval_append (m : Mem) (base : Addr) (d j : Nat) : ∀ k,
+    dval m base d (j + k) = dval m base d j + 2 ^ (16 * j) * dval m base (d + 4 * j) k
+  | 0 => by simp only [dval, Nat.add_zero, Nat.mul_zero]
+  | k + 1 => by
+    rw [← Nat.add_assoc, dval, dval_append m base d j k, dval, show d + 4 * (j + k) = d + 4 * j + 4 * k by omega,
+      show 16 * (j + k) = 16 * j + 16 * k by omega, Nat.pow_add, Nat.mul_add, Nat.add_assoc]
+    grind
+
+theorem dval_congr {m m' : Mem} {base : Addr} {d : Nat} :
+    ∀ {k : Nat}, (∀ j < k, w32 m' base (d + 4 * j) = w32 m base (d + 4 * j)) → dval m' base d k = dval m base d k
+  | 0, _ => rfl
+  | k + 1, h => by rw [dval, dval, dval_congr fun j hj => h j (by omega), h k (by omega)]
+
+theorem _root_.VG.Proof.Mont.Outside.dval {base : Addr} {o n : Nat} {m m' : Mem} (h : Outside base o n m m')
+    {d k : Nat} (hd : d + 4 * k ≤ o ∨ o + n ≤ d) (hd' : d + 4 * k ≤ 2 ^ 64) :
+    dval m' base d k = dval m base d k :=
+  dval_congr fun j hj => h.w32 (by omega) (by omega)
+
+theorem _root_.VG.Proof.Mont.Outside.digs {base : Addr} {o n : Nat} {m m' : Mem} (h : Outside base o n m m')
+    {d k : Nat} (hd : d + 4 * k ≤ o ∨ o + n ≤ d) (hd' : d + 4 * k ≤ 2 ^ 64) (hs : Digs m base d k) :
+    Digs m' base d k := fun j hj => by rw [h.w32 (by omega) (by omega)]; exact hs j hj
+
+theorem _root_.VG.Proof.Mont.Outside.pdig {base : Addr} {o n : Nat} {m m' : Mem} (h : Outside base o n m m')
+    {d j : Nat} (hd : d + 4 * (j / 2) + 4 ≤ o ∨ o + n ≤ d + 4 * (j / 2)) (hd' : d + 4 * (j / 2) + 4 ≤ 2 ^ 64) :
+    pdig m' base d j = pdig m base d j := by
+  show hdig (w32 m' base (d + 4 * (j / 2))) (j % 2) = hdig (w32 m base (d + 4 * (j / 2))) (j % 2)
+  rw [h.w32 (by omega) (by omega)]
+
+theorem _root_.VG.Proof.Mont.Outside.pval {base : Addr} {o n : Nat} {m m' : Mem} (h : Outside base o n m m')
+    {d W : Nat} (hd : d + 4 * W ≤ o ∨ o + n ≤ d) (hd' : d + 4 * W ≤ 2 ^ 64) :
+    ∀ {k : Nat}, k ≤ 2 * W → pval m' base d k = pval m base d k
+  | 0, _ => rfl
+  | k + 1, hk => by
+    rw [VG.Proof.Mont.Arm.pval, VG.Proof.Mont.Arm.pval, h.pval hd hd' (by omega), h.pdig (by omega) (by omega)]
+
+theorem Digs.mono {m : Mem} {base : Addr} {d k k' : Nat} (h : Digs m base d k) (hk : k' ≤ k) : Digs m base d k' :=
+  fun j hj => h j (by omega)
+
+theorem Digs.shift {m : Mem} {base : Addr} {d j k : Nat} (h : Digs m base d (j + k)) : Digs m base (d + 4 * j) k :=
+  fun l hl => by rw [show d + 4 * j + 4 * l = d + 4 * (j + l) by omega]; exact h _ (by omega)
+
+theorem pval_lt (m : Mem) (base : Addr) (d : Nat) : ∀ k, pval m base d k < 2 ^ (16 * k)
+  | 0 => by simp [pval]
+  | k + 1 => by
+    have ih := pval_lt m base d k
+    have hd : pdig m base d k < 2 ^ 16 := hdig_lt _ _
+    rw [pval, pow16_succ]
+    have : pdig m base d k * 2 ^ (16 * k) ≤ (2 ^ 16 - 1) * 2 ^ (16 * k) := Nat.mul_le_mul_right _ (by omega)
+    rw [Nat.sub_mul, Nat.one_mul] at this
+    omega
+
 end VG.Proof.Mont.Arm
