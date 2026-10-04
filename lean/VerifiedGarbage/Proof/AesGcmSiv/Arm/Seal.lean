@@ -44,17 +44,23 @@ where
   covers_prefix {p : Addr} {k n : Nat} {rs : List Region} (h : Covers [⟨p, k⟩] rs) (hn : n ≤ k) :
       Covers [⟨p, n⟩] rs := Proof.AesGcm.Arm.covers_prefix h hn
 
+/-- A run, which keeps the permissions. -/
+theorem WP.rdwr {c : Prog isa} {s : State} {Q : State → Prop} (h : WP isa c s Q) :
+    WP isa c s fun s' => Q s' ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
+  obtain ⟨t, s', e, hq⟩ := h
+  exact ⟨t, s', e, hq, (Exec.rdwr e).1, (Exec.rdwr e).2.1⟩
+
 /-- `vg_aes_gcm_siv_seal`. -/
-theorem seal_wp (hti : TagInputEq) {s : State} (h : onePre s) :
+theorem seal_wp (hti : TagInputEq) {s : State} (h : sealPre s) :
     WP isa «seal» s fun s' => abiPreserved s s' ∧ sealArm.post s s' := by
-  have L := lay_of h
+  obtain ⟨L, P, hTw⟩ := args_of_seal h
   have hRb := L.rounds_le
   have hn := L.n_lt
   have A₀ := args_of s
-  refine WP.seq (WP.mono (entry_ok h) fun s₁ En => ?_)
+  refine WP.seq (WP.mono (WP.rdwr (entry_ok L P)) fun s₁ ⟨En, _, w₁⟩ => ?_)
   have A₁ : Args (prmOf s) s₁.mem := A₀.frame L En.frame (by disj_tac L)
   -- The keys.
-  refine WP.seq (WP.mono (keys_ok L En.env) fun s₂ Ky => ?_)
+  refine WP.seq (WP.mono (WP.rdwr (keys_ok L En.env)) fun s₂ ⟨Ky, _, w₂⟩ => ?_)
   have A₂ : Args (prmOf s) s₂.mem := A₁.frame L Ky.frame (by disj_tac L)
   -- POLYVAL and the tag input.
   refine WP.seq (WP.mono (polyval_ok L Ky.env A₂ Ky.hkey Ky.acc) fun s₃ Po => ?_)
@@ -64,16 +70,23 @@ theorem seal_wp (hti : TagInputEq) {s : State} (h : onePre s) :
   have A₄ : Args (prmOf s) s₄.mem := A₃.frame L Tg.frame (by disj_tac L)
   -- Counter mode.
   refine WP.seq (WP.mono (crypt_ok L Tg.env A₄) fun s₅ Cr => ?_)
-  -- `restore`.
-  have sv₅ : SavedAt s₅.mem (prmOf s).W s :=
-    ((((En.saved.frame Ky.frame (by disj_tac L)).frame Po.frame (by disj_tac L)).frame Tg.frame (by disj_tac L)).frame
-      Cr.frame (by disj_tac L))
-  refine WP.mono (exit_ok L Cr.env rfl sv₅) fun s' ⟨ga, hm, _⟩ => ⟨ga, ?_⟩
+  have A₅ : Args (prmOf s) s₅.mem := A₄.frame L Cr.frame (by disj_tac L)
+  -- The copy of the tag, and `restore`.
+  have w₅ : s₅.wr = s.wr := by rw [Cr.wr, Tg.wr, Po.wr, w₂, w₁]
+  obtain ⟨s₆, run₆, fT, hT₆, ho₆, sp₆, rd₆, wr₆⟩ := tagOut_ok L Cr.env A₅ (by rw [w₅]; exact hTw)
+  have E₆ : Env (prmOf s) s₆ := Cr.env.of_others ho₆ sp₆ rd₆ wr₆
+  have sv₆ : SavedAt s₆.mem (prmOf s).W s :=
+    (((((En.saved.frame Ky.frame (by disj_tac L)).frame Po.frame (by disj_tac L)).frame Tg.frame
+      (by disj_tac L)).frame Cr.frame (by disj_tac L))).frame fT fun r hr => by
+        simp only [List.mem_singleton] at hr; subst hr
+        exact (L.t_w' (show 128 + 36 ≤ 3760 by decide)).symm
+  refine WP.block_append (WP.of_runBlock ⟨s₆, run₆, ?_⟩)
+  refine WP.mono (exit_ok L E₆ rfl sv₆) fun s' ⟨ga, hm, _⟩ => ⟨ga, ?_⟩
   show Spec.GcmSiv.encryptWith (Spec.GcmSiv.ctxCiph s.mem (State.addr (prmOf s).K) (prmOf s).R)
       (Spec.GcmSiv.keyLen (prmOf s).R) (bytesAt s.mem (State.addr (prmOf s).N) 12)
       (bytesAt s.mem (State.addr (prmOf s).D) (prmOf s).n) (bytesAt s.mem (State.addr (prmOf s).A) (prmOf s).al) =
-    (bytesAt s'.mem (State.addr (prmOf s).D) (prmOf s).n, bytesAt s'.mem (State.addr (prmOf s).W) 16)
-  rw [hm]
+    (bytesAt s'.mem (State.addr (prmOf s).D) (prmOf s).n, bytesAt s'.mem (State.addr (prmOf s).T) 16)
+  rw [hm, hT₆, bytesAt_keep fT (by disj_tac L) (by omega)]
   -- What the pieces read.
   have hK₁ : Spec.GcmSiv.ctxCiph s₁.mem (State.addr (prmOf s).K) (prmOf s).R =
       Spec.GcmSiv.ctxCiph s.mem (State.addr (prmOf s).K) (prmOf s).R :=
@@ -89,11 +102,11 @@ theorem seal_wp (hti : TagInputEq) {s : State} (h : onePre s) :
     rw [bytesAt_keep Ky.frame (by disj_tac L) (by omega), bytesAt_keep En.frame (by disj_tac L) (by omega)]
   have d₄ : bytesAt s₄.mem (State.addr (prmOf s).D) (prmOf s).n = bytesAt s.mem (State.addr (prmOf s).D) (prmOf s).n := by
     rw [bytesAt_keep Tg.frame (by disj_tac L) (by omega), bytesAt_keep Po.frame (by disj_tac L) (by omega), d₂]
-  have key₃ : Spec.GcmSiv.ctxCiph s₃.mem (State.addr (prmOf s).W + BitVec.ofNat 64 512) (prmOf s).R =
-      Spec.GcmSiv.ctxCiph s₂.mem (State.addr (prmOf s).W + BitVec.ofNat 64 512) (prmOf s).R :=
+  have key₃ : Spec.GcmSiv.ctxCiph s₃.mem (State.addr (prmOf s).W + BitVec.ofNat 64 192) (prmOf s).R =
+      Spec.GcmSiv.ctxCiph s₂.mem (State.addr (prmOf s).W + BitVec.ofNat 64 192) (prmOf s).R :=
     ciph_keep Po.frame (by disj_tac L) hRb
-  have key₄ : Spec.GcmSiv.ctxCiph s₄.mem (State.addr (prmOf s).W + BitVec.ofNat 64 512) (prmOf s).R =
-      Spec.GcmSiv.ctxCiph s₂.mem (State.addr (prmOf s).W + BitVec.ofNat 64 512) (prmOf s).R := by
+  have key₄ : Spec.GcmSiv.ctxCiph s₄.mem (State.addr (prmOf s).W + BitVec.ofNat 64 192) (prmOf s).R =
+      Spec.GcmSiv.ctxCiph s₂.mem (State.addr (prmOf s).W + BitVec.ofNat 64 192) (prmOf s).R := by
     rw [ciph_keep Tg.frame (by disj_tac L) hRb, key₃]
   have t₅ : bytesAt s₅.mem (State.addr (prmOf s).W + BitVec.ofNat 64 0) 16 =
       bytesAt s₄.mem (State.addr (prmOf s).W + BitVec.ofNat 64 0) 16 :=

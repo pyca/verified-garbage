@@ -5,6 +5,38 @@
 //! whose machine code has been proven correct, memory safe and constant time
 //! against its contract.
 
+/// The page of a `static`'s address, in the assembler syntax of the object format.
+#[cfg(target_vendor = "apple")]
+#[allow(unused_macros)]
+macro_rules! vg_sym_page {
+    ($s:literal) => {
+        concat!($s, "@PAGE")
+    };
+}
+#[cfg(not(target_vendor = "apple"))]
+#[allow(unused_macros)]
+macro_rules! vg_sym_page {
+    ($s:literal) => {
+        $s
+    };
+}
+
+/// The offset of a `static`'s address in its page, in the assembler syntax of the object format.
+#[cfg(target_vendor = "apple")]
+#[allow(unused_macros)]
+macro_rules! vg_sym_pageoff {
+    ($s:literal) => {
+        concat!($s, "@PAGEOFF")
+    };
+}
+#[cfg(not(target_vendor = "apple"))]
+#[allow(unused_macros)]
+macro_rules! vg_sym_pageoff {
+    ($s:literal) => {
+        concat!(":lo12:", $s)
+    };
+}
+
 #[cfg(all(target_arch = "aarch64", target_endian = "little", target_pointer_width = "64", target_feature = "neon"))]
 #[rustfmt::skip]
 pub(crate) mod aarch64;

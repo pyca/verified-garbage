@@ -18,16 +18,16 @@ open VG.Spec.Aes (bytesAt)
 
 /-- The taint: the registers `rs`, `r13`, `r15` and `rsp` public, `r15` the
 base of the working space (the second writable region) and the slots of the
-public arguments `[272, 320)` public. -/
+public arguments `[200, 248)` public. -/
 def sivT (rs : List Reg) : X86_64.Taint.T :=
-  { regs := .ofList (rs ++ [.r13, .r15, .rsp]), flags := false, lens := [0, 4096], bases := [(.r15, 1, 0)],
-    slots := [(1, 272, 48)] }
+  { regs := .ofList (rs ++ [.r13, .r15, .rsp]), flags := false, lens := [0, 3816], bases := [(.r15, 1, 0)],
+    slots := [(1, 200, 48)] }
 
 /-- One run with the public arguments. -/
 structure One (K W SP : Addr) (R : Nat) (N A D : Addr) (al n : Nat) (s : State) : Prop where
   env : Env K W SP s
   sl : Slots W R N A D al n s.mem
-  wr : s.wr = [⟨D, n⟩, ⟨W, 4096⟩]
+  wr : s.wr = [⟨D, n⟩, ⟨W, 3816⟩]
 
 /-- Two runs with the same public arguments, agreeing on the registers `rs`. -/
 structure Both (K W SP : Addr) (R : Nat) (N A D : Addr) (al n : Nat) (rs : List Reg) (s₁ s₂ : State) :
@@ -44,9 +44,9 @@ theorem word_byte {m₁ m₂ : Mem} {a : Addr} {v : BitVec 64} (h₁ : m₁.read
   simpa only [Proof.Cmac.getD_bytesAt _ _ hj] using this
 
 theorem both_agree {K W SP : Addr} {R : Nat} {N A D : Addr} {al n : Nat} {rs : List Reg} {s₁ s₂ : State}
-    (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 4096⟩) (hn : n ≤ 2 ^ 64)
+    (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 3816⟩) (hn : n ≤ 2 ^ 64)
     (h : Both K W SP R N A D al n rs s₁ s₂) : X86_64.Taint.Agree (sivT rs) s₁ s₂ := by
-  have wf : ∀ {s : State}, Env K W SP s → s.wr = [⟨D, n⟩, ⟨W, 4096⟩] → X86_64.Taint.Wf (sivT rs) s := fun E hw => by
+  have wf : ∀ {s : State}, Env K W SP s → s.wr = [⟨D, n⟩, ⟨W, 3816⟩] → X86_64.Taint.Wf (sivT rs) s := fun E hw => by
     refine ⟨fun _ => ⟨?_, ?_, ?_⟩, fun p hp => ?_⟩
     · rw [hw]; exact .cons (Nat.zero_le _) (.cons (Nat.le_refl _) .nil)
     · rw [hw]; exact List.pairwise_pair.mpr hDW
@@ -54,7 +54,7 @@ theorem both_agree {K W SP : Addr} {R : Nat} {N A D : Addr} {al n : Nat} {rs : L
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
       · exact hn
-      · show 4096 ≤ 2 ^ 64; decide
+      · show 3816 ≤ 2 ^ 64; decide
     · simp only [sivT, List.mem_singleton] at hp; subst hp
       simp only [X86_64.Taint.region, hw, List.getD_cons_succ, List.getD_cons_zero]
       rw [E.r15, BitVec.add_zero]
@@ -68,7 +68,7 @@ theorem both_agree {K W SP : Addr} {R : Nat} {N A D : Addr} {al n : Nat} {rs : L
       · rw [h.o₁.env.r15, h.o₂.env.r15]
       · rw [h.o₁.env.rsp, h.o₂.env.rsp]
   · simp only [sivT, List.mem_singleton] at hsl; subst hsl; simp [sivT]
-  · have hb : ∀ s : State, s.wr = [⟨D, n⟩, ⟨W, 4096⟩] → X86_64.Taint.byteAddr s 1 k = W + BitVec.ofNat 64 k :=
+  · have hb : ∀ s : State, s.wr = [⟨D, n⟩, ⟨W, 3816⟩] → X86_64.Taint.byteAddr s 1 k = W + BitVec.ofNat 64 k :=
       fun s hw => by
         simp only [X86_64.Taint.byteAddr, X86_64.Taint.region, hw, List.getD_cons_succ, List.getD_cons_zero]
     have hw : ∀ d, k = d + (k - d) → W + BitVec.ofNat 64 k = W + BitVec.ofNat 64 d + BitVec.ofNat 64 (k - d) :=
@@ -78,7 +78,7 @@ theorem both_agree {K W SP : Addr} {R : Nat} {N A D : Addr} {al n : Nat} {rs : L
     simp only at hk₁ hk₂
     have S₁ := h.o₁.sl
     have S₂ := h.o₂.sl
-    have key : ∀ d, d ∈ [272, 280, 288, 296, 304, 312] → d ≤ k → k < d + 8 →
+    have key : ∀ d, d ∈ [200, 208, 216, 224, 232, 240] → d ≤ k → k < d + 8 →
         s₁.mem (W + BitVec.ofNat 64 k) = s₂.mem (W + BitVec.ofNat 64 k) := fun d hd h₁ h₂ => by
       rw [hw d (by omega)]
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hd
@@ -89,14 +89,14 @@ theorem both_agree {K W SP : Addr} {R : Nat} {N A D : Addr} {al n : Nat} {rs : L
       · exact word_byte S₁.alen S₂.alen (by omega)
       · exact word_byte S₁.data S₂.data (by omega)
       · exact word_byte S₁.len S₂.len (by omega)
-    have hq : (k - 272) / 8 = 0 ∨ (k - 272) / 8 = 1 ∨ (k - 272) / 8 = 2 ∨ (k - 272) / 8 = 3 ∨
-        (k - 272) / 8 = 4 ∨ (k - 272) / 8 = 5 := by omega
-    exact key (272 + 8 * ((k - 272) / 8)) (by
+    have hq : (k - 200) / 8 = 0 ∨ (k - 200) / 8 = 1 ∨ (k - 200) / 8 = 2 ∨ (k - 200) / 8 = 3 ∨
+        (k - 200) / 8 = 4 ∨ (k - 200) / 8 = 5 := by omega
+    exact key (200 + 8 * ((k - 200) / 8)) (by
       rcases hq with h | h | h | h | h | h <;> rw [h] <;> decide) (by omega) (by omega)
 
 /-- Code the taint analysis checks from `sivT rs`. -/
 theorem rel_taintC {K W SP : Addr} {R : Nat} {N A D : Addr} {al n : Nat} {P : State → State → Prop}
-    {c : Prog isa} (rs : List Reg) (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 4096⟩) (hn : n ≤ 2 ^ 64)
+    {c : Prog isa} (rs : List Reg) (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 3816⟩) (hn : n ≤ 2 ^ 64)
     (hP : ∀ s₁ s₂, P s₁ s₂ → Both K W SP R N A D al n rs s₁ s₂)
     (hc : ∃ hc, (taint.check (sivT rs) c hc).isSome = true) : RelCT isa P c fun _ _ => True := by
   obtain ⟨_, hc⟩ := hc
@@ -104,7 +104,7 @@ theorem rel_taintC {K W SP : Addr} {R : Nat} {N A D : Addr} {al n : Nat} {P : St
 
 /-- Code the taint analysis checks from `sivT rs`, leaving the flags public. -/
 theorem rel_flagsC {K W SP : Addr} {R : Nat} {N A D : Addr} {al n : Nat} {P : State → State → Prop}
-    {c : Prog isa} (rs : List Reg) (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 4096⟩) (hn : n ≤ 2 ^ 64)
+    {c : Prog isa} (rs : List Reg) (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 3816⟩) (hn : n ≤ 2 ^ 64)
     (hP : ∀ s₁ s₂, P s₁ s₂ → Both K W SP R N A D al n rs s₁ s₂)
     (hc : ∃ hc, ((taint.check (sivT rs) c hc).map (·.flags)) = some true) :
     RelCT isa P c fun s₁ s₂ => s₁.cf = s₂.cf ∧ s₁.zf = s₂.zf := by

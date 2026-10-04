@@ -5,7 +5,7 @@ import VerifiedGarbage.Proof.AesGcm.AArch64.Cmp
 # AES-GCM-SIV on AArch64: comparing the tags and masking (`cmp`, `mask`)
 
 Untrusted: everything here is checked by Lean. `cmp` leaves in `x27`
-whether the received tag at `W` equals the computed one at `W + 240`,
+whether the received tag at `W` equals the computed one at `W + 224`,
 without a branch (`cmp_ok`); `mask` ANDs every byte of the data with
 `0 − x27`, leaving it if the tags are equal and zeroing it if not
 (`mask_ok`).
@@ -29,17 +29,17 @@ theorem ok_val (d : BitVec 64) :
 
 theorem cmp_ok {p : Prm} {t : State} (E : Env p t) :
     ∃ t' : State, runBlock isa cmp t = some t' ∧
-      t'.gpr .x27 = BitVec.ofNat 64 (if bytesAt t.mem p.W 16 = bytesAt t.mem (p.W + BitVec.ofNat 64 240) 16
+      t'.gpr .x27 = BitVec.ofNat 64 (if bytesAt t.mem p.W 16 = bytesAt t.mem (p.W + BitVec.ofNat 64 224) 16
         then 1 else 0) ∧
       Others [.x9, .x10, .x11, .x12, .x27] t t' ∧ t'.mem = t.mem ∧ t'.sp = t.sp ∧ t'.rd = t.rd ∧ t'.wr = t.wr := by
-  have r₀ : InRegions (t.rd ++ t.wr) p.W 8 := by simpa using E.perm.wR (show 0 + 8 ≤ 4096 by decide)
-  have r₈ := E.perm.wR (show 8 + 8 ≤ 4096 by decide)
-  have u₀ := E.perm.wR (show 240 + 8 ≤ 4096 by decide)
-  have u₈ := E.perm.wR (show 248 + 8 ≤ 4096 by decide)
+  have r₀ : InRegions (t.rd ++ t.wr) p.W 8 := by simpa using E.perm.wR (show 0 + 8 ≤ 3808 by decide)
+  have r₈ := E.perm.wR (show 8 + 8 ≤ 3808 by decide)
+  have u₀ := E.perm.wR (show 224 + 8 ≤ 3808 by decide)
+  have u₈ := E.perm.wR (show 232 + 8 ≤ 3808 by decide)
   refine ⟨_, by simp only [cmp]; grun [E.x19, BitVec.add_zero, r₀, r₈, u₀, u₈, gpr_addWithCarry, c_addWithCarry,
     mem_addWithCarry, rd_addWithCarry, wr_addWithCarry, sp_addWithCarry, c_write], ?_,
     fun r hr => ?_, (by rfl), (by rfl), (by rfl), (by rfl)⟩
-  · have key := Proof.AesGcm.AArch64.words_eq t.mem p.W (p.W + BitVec.ofNat 64 240)
+  · have key := Proof.AesGcm.AArch64.words_eq t.mem p.W (p.W + BitVec.ofNat 64 224)
     rw [add_ofNat_assoc] at key
     simp only [gpr_addWithCarry, gpr_write, Mem.readW, BitVec.setWidth_eq, ite_true, ite_false, reduceCtorEq,
       Size.bits, Nat.reduceAdd, show (BitVec.setWidth 64 0#16 <<< (16 * 0) : BitVec 64) = 0 from rfl, Nat.reduceDiv,
