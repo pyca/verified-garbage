@@ -12,7 +12,7 @@
 
 use crate::arch::argon2::vg_argon2_compress;
 #[cfg(target_arch = "x86_64")]
-use crate::arch::argon2::vg_argon2_compress_avx2;
+use crate::arch::argon2::{vg_argon2_compress_avx2, vg_argon2_compress_avx512};
 use crate::argon2::CompressBackend;
 
 #[repr(C)]
@@ -46,6 +46,8 @@ fn compress(x: &[u64; 128], y: &[u64; 128], fill: u64) -> [u64; 128] {
         CompressBackend::Scalar => vg_argon2_compress,
         #[cfg(target_arch = "x86_64")]
         CompressBackend::Avx2 => vg_argon2_compress_avx2,
+        #[cfg(target_arch = "x86_64")]
+        CompressBackend::Avx512 => vg_argon2_compress_avx512,
     };
     // SAFETY: correctly sized, separate allocations meet the emitted
     // contract, and the CPU has the features of the implementation selected.

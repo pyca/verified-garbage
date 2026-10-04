@@ -549,11 +549,12 @@ jobs:
               none | all
               aes | aes_gcm cpu
               pclmulqdq,ssse3 | aes_gcm cpu
-          # AVX-512F, BMI2 and ADX; and BMI2 and ADX without AVX-512F.
+          # AVX-512F (with Argon2's vg_argon2_compress_avx512), BMI2 and ADX;
+          # and BMI2 and ADX without AVX-512F.
           - chip: skx
             arch: x86_64
             runs: |
-              - | sha1 sha224 sha256 sha384 sha512 aes_gcm cmac chacha20 triple_des_ecb poly1305 mlkem mldsa scrypt x25519 x448 ed25519 message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
+              - | sha1 sha224 sha256 sha384 sha512 aes_gcm cmac chacha20 triple_des_ecb poly1305 mlkem mldsa scrypt argon2 rfc9106 x25519 x448 ed25519 message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
               bmi2,adx | ed25519 message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
           # AVX2, but not AVX-512F or ADX; AES-NI and PCLMULQDQ with AVX, but
           # not VAES or VPCLMULQDQ.
