@@ -131,7 +131,7 @@ structure PassInv (K W SP D : Addr) (m : Nat) (O0 l : Block) (X : Nat → Block)
 
 theorem pass_step {K W SP D : Addr} (L : Lay K W SP) {m : Nat} {O0 l : Block} {X : Nat → Block}
     {fB : Block → Block → Block} {fC : Block → Block → Block → Block} {ckF : Nat → Block} {body : List Instr}
-    (hB : BodyOk W body fB fC) (hckF : ∀ i, ckF (i + 1) = fC (ckF i) (X i) (offAt O0 l (i + 1)))
+    (hB : BodyOk W body fB fC) (hckF : ∀ i < m, ckF (i + 1) = fC (ckF i) (X i) (offAt O0 l (i + 1)))
     {t₀ : State} (hD : DBuf K W SP t₀ D (16 * m)) (hm : m < 2 ^ 59) {t : State} {i : Nat} (hi : i < m)
     (P : PassInv K W SP D m O0 l X fB ckF t₀ t i) :
     WP isa (.seq nextOffset (.block (body ++ nextBlock))) t fun t' =>
@@ -226,7 +226,7 @@ theorem pass_step {K W SP D : Addr} (L : Lay K W SP) {m : Nat} {O0 l : Block} {X
       · exact (hBi.w.sub_right (Lay.wSub (W := W) (d := 16) (n := 16) (by decide))).symm
       · exact L.w_w (.inl (by decide)) (by decide) (by decide)), ofs₂]
   · simp only [mem_setReg, mem_arithFlags]
-    rw [ck₃, ck₂, Bi₂, ofs₂, hckF]
+    rw [ck₃, ck₂, Bi₂, ofs₂, hckF i hi]
   · simp only [mem_setReg, mem_arithFlags]
     by_cases hki : k = i
     · subst hki
@@ -254,7 +254,7 @@ theorem pass_step {K W SP D : Addr} (L : Lay K W SP) {m : Nat} {O0 l : Block} {X
 
 theorem pass_ok {K W SP D : Addr} (L : Lay K W SP) {m : Nat} {O0 l : Block} {X : Nat → Block}
     {fB : Block → Block → Block} {fC : Block → Block → Block → Block} {ckF : Nat → Block} {body : List Instr}
-    (hB : BodyOk W body fB fC) (hckF : ∀ i, ckF (i + 1) = fC (ckF i) (X i) (offAt O0 l (i + 1)))
+    (hB : BodyOk W body fB fC) (hckF : ∀ i < m, ckF (i + 1) = fC (ckF i) (X i) (offAt O0 l (i + 1)))
     {t₀ : State} (hD : DBuf K W SP t₀ D (16 * m)) (hm0 : 0 < m) (hm : m < 2 ^ 59) {t : State}
     (P : PassInv K W SP D m O0 l X fB ckF t₀ t 0) :
     WP isa (pass body) t (fun t' => PassInv K W SP D m O0 l X fB ckF t₀ t' m) := by
