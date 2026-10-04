@@ -292,7 +292,8 @@ macro_rules
            first | with_reducible assumption | with_reducible exact Region.Disjoint.symm ‹_›)
         | simp only [*, List.mem_cons, List.mem_singleton, true_or, or_true]))
 
-/-- Proves `∀ s s', k'.pre s → k.post s s' → k'.post s s'` (see `sig_implies`). -/
+/-- Proves `∀ s s', k'.pre s → k.post s s' → k'.post s s'` (see `sig_implies`), or
+`… → (P → k'.post s s')` for a postcondition guarded by a fact `P`. -/
 syntax "sig_implies_post " "[" Lean.Parser.Tactic.simpLemma,* "]" : tactic
 macro_rules
   | `(tactic| sig_implies_post [$ls,*]) => `(tactic| (
@@ -300,7 +301,8 @@ macro_rules
       sig_post [$ls,*]
       sig_reduce [$ls,*] at h
       sig_simp [$ls,*] [] at h
-      exact h))
+      -- A postcondition may restate a hypothesis of the precondition.
+      first | exact h | exact fun _ => h))
 
 /-- Proves `∀ s₁ s₂, k'.pre s₁ → k'.pre s₂ → k'.pub s₁ s₂ → k.pub s₁ s₂` (see
 `sig_implies`). -/

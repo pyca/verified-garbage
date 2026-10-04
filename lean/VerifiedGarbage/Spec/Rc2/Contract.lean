@@ -38,10 +38,11 @@ them. `finalize` has no primitive: `finalize` of a context is
 `pending_len = 0`, a public length the caller holds. Unpadded CBC emits
 nothing at finalization, and nothing secret is involved.
 
-`init` and the updates take a `scratch` buffer of working space, with room
+`init` and the updates keep their working space on the stack, with room
 for that of the primitive each calls (`vg_rc2_expand_key`'s, or the CBC
 functions', `[u64; 64]`) and 64 bytes more for what an implementation keeps
-across that call. They may overwrite their arguments passed in memory,
+across that call, and zero it before returning. They may overwrite their
+arguments passed in memory,
 where the calling convention allows it (`writeArgs`), to pass arguments to
 the primitive they call.
 -/
@@ -189,12 +190,11 @@ def Error.code : Error → Nat
   | .incompleteBlock => 4
 
 /-- `vg_rc2_cbc_init(key: *const u8, key_len: usize, effective_bits: usize,
-iv: *const u8, iv_len: usize, ctx: *mut [u8; 144], scratch: *mut [u64; 72]) -> u32`.
-`effective_bits` is public; `scratch` is working space. -/
+iv: *const u8, iv_len: usize, ctx: *mut [u8; 144]) -> u32`.
+`effective_bits` is public. -/
 def cbcInitSig : Sig where
   params := [("key", .slice false .u8 "key_len"), ("effective_bits", .int .usize true),
-    ("iv", .slice false .u8 "iv_len"), ("ctx", .array true .u8 144),
-    ("scratch", .array true .u64 72)]
+    ("iv", .slice false .u8 "iv_len"), ("ctx", .array true .u8 144)]
   ret := some .u32
 
 /-- For any lengths: if `initWithEffectiveBits` of the `key_len` bytes at
@@ -202,15 +202,15 @@ def cbcInitSig : Sig where
 having written its context to `ctx` (`contextAt`, with no pending bytes, for
 either direction: the direction is not stored); otherwise returns the code of
 its error, and the contents of `ctx` are unspecified. -/
+def cbcInitPost (pb : Nat) : cbcInitSig.Post pb := fun key keyLen effectiveBits iv ivLen ctx m m' r =>
+  ∀ direction, match initWithEffectiveBits (bytesAt m key keyLen.toNat)
+      (bytesAt m iv ivLen.toNat) direction effectiveBits.toNat with
+    | .ok c => r = 0 ∧ contextAt m' ctx direction 0 = c
+    | .error e => r.toNat = e.code
+
+/-- `cbcInitPost`. -/
 def cbcInitContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  cbcInitSig.contract A
-    (post := fun key keyLen effectiveBits iv ivLen ctx _scratch m m' r =>
-      ∀ direction, match initWithEffectiveBits (bytesAt m key keyLen.toNat)
-          (bytesAt m iv ivLen.toNat) direction effectiveBits.toNat with
-        | .ok c => r = 0 ∧ contextAt m' ctx direction 0 = c
-        | .error e => r.toNat = e.code)
-    (writeArgs := true)
-    (stack := stack)
+  cbcInitSig.contract A (post := cbcInitPost A.ptrBits) (writeArgs := true) (stack := stack)
 
 def cbcInitApi : Api where
   module := "rc2"
@@ -230,36 +230,40 @@ def cbcInitApi : Api where
     Contract: `VG.Spec.Rc2.cbcInitContract`. Constant time: only the pointers, `key_len`, \
     `effective_bits` and `iv_len` may affect timing, not the key or the IV."
   safety := [
-    "If the function returns nonzero, the contents of `ctx` on return are unspecified.",
-    "The contents of `scratch` on return are unspecified."]
+    "If the function returns nonzero, the contents of `ctx` on return are unspecified."]
 
 /-- The update functions:
 `(ctx: *mut [u8; 144], pending_len: usize, data: *const u8, len: usize,
-out: *mut u8, out_len: usize, scratch: *mut [u64; 72])`. `pending_len` is
-public; `scratch` is working space. `out` is a separate buffer: the output
-is longer than `data` when pending bytes complete a block, so it cannot be
-`data` in place, and like every writable buffer it overlaps no other. -/
+out: *mut u8, out_len: usize)`. `pending_len` is public. `out` is a separate
+buffer: the output is longer than `data` when pending bytes complete a block,
+so it cannot be `data` in place, and like every writable buffer it overlaps
+no other. -/
 def cbcUpdateSig : Sig where
   params := [("ctx", .array true .u8 144), ("pending_len", .int .usize true),
-    ("data", .slice false .u8 "len"), ("out", .slice true .u8 "out_len"),
-    ("scratch", .array true .u64 72)]
+    ("data", .slice false .u8 "len"), ("out", .slice true .u8 "out_len")]
 
 /-- For `pending_len < 8` and `out_len = (pending_len + len) / 8 * 8`: if
 `ctx` holds the context `c` with `pending_len` pending bytes
 (`contextAt`), then `update c` of the `len` bytes at `data` writes its
 output, the `out_len` bytes of all complete blocks, to `out`, and leaves at
 `ctx` its next context, with `(pending_len + len) % 8` pending bytes. -/
+def cbcUpdatePre (pb : Nat) : Curry (cbcUpdateSig.words pb) (Mem → Prop) :=
+  fun _ctx pendingLen _data len _out outLen _ =>
+    pendingLen.toNat < 8 ∧ outLen.toNat = (pendingLen.toNat + len.toNat) / 8 * 8
+
+/-- The postcondition, which also states `pending_len < 8` (the
+precondition's), so that it reads only the context's 144 bytes. -/
+def cbcUpdatePost (direction : Direction) (pb : Nat) : cbcUpdateSig.Post pb :=
+  fun ctx pendingLen data len out outLen m m' _ => pendingLen.toNat < 8 →
+    let result := update (contextAt m ctx direction pendingLen.toNat) (bytesAt m data len.toNat)
+    contextAt m' ctx direction ((pendingLen.toNat + len.toNat) % 8) = result.1 ∧
+      bytesAt m' out outLen.toNat = result.2
+
+/-- `cbcUpdatePre` and `cbcUpdatePost`. -/
 def cbcUpdateContract {M : ISA} (A : Abi M) (direction : Direction) (stack : Nat := 0) :
     Contract M :=
-  cbcUpdateSig.contract A
-    (pre := fun _ctx pendingLen _data len _out outLen _scratch _ =>
-      pendingLen.toNat < 8 ∧ outLen.toNat = (pendingLen.toNat + len.toNat) / 8 * 8)
-    (post := fun ctx pendingLen data len out outLen _scratch m m' _ =>
-      let result := update (contextAt m ctx direction pendingLen.toNat) (bytesAt m data len.toNat)
-      contextAt m' ctx direction ((pendingLen.toNat + len.toNat) % 8) = result.1 ∧
-        bytesAt m' out outLen.toNat = result.2)
-    (writeArgs := true)
-    (stack := stack)
+  cbcUpdateSig.contract A (pre := cbcUpdatePre A.ptrBits) (post := cbcUpdatePost direction A.ptrBits)
+    (writeArgs := true) (stack := stack)
 
 def cbcEncryptUpdateContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
   cbcUpdateContract A .encrypt stack
@@ -270,8 +274,7 @@ def cbcDecryptUpdateContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract
 /-- The `# Safety` items the update functions share. -/
 def cbcUpdateSafety : List String := [
   "`pending_len` must be less than 8.",
-  "`out_len` must be `(pending_len + len) / 8 * 8`.",
-  "The contents of `scratch` on return are unspecified."]
+  "`out_len` must be `(pending_len + len) / 8 * 8`."]
 
 def cbcEncryptUpdateApi : Api where
   module := "rc2"
