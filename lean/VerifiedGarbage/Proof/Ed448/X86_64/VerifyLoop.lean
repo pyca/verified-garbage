@@ -1,4 +1,6 @@
-import VerifiedGarbage.Proof.Ed448.X86_64.VerifyField
+import VerifiedGarbage.Proof.Ed448.VerifyFormulas
+import VerifiedGarbage.Proof.Ed448.X86_64.BaseField
+import VerifiedGarbage.Impl.Ed448.X86_64.VerifyEquation
 import VerifiedGarbage.Proof.Ed448.X86_64.BaseLoop
 
 /-!
@@ -13,7 +15,7 @@ bits above `n` (`Proof.Ed448.vladder`).
 
 namespace VG.Proof.Ed448.X86_64
 
-open VG VG.X86_64 VG.Impl.Ed448.X86_64 VG.Proof.Ed448
+open VG VG.X86_64 VG.Impl.Ed448 VG.Impl.Ed448.X86_64 VG.Proof.Ed448
 open VG.Proof.X448.X86_64 (Scr Index Env E Keep FieldOk off contains_sc mask cswapE opSwap clob Outside)
 open VG.Impl.X448.X86_64 (BITS slot cswap)
 
