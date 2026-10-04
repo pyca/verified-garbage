@@ -1,4 +1,4 @@
-import VerifiedGarbage.Impl.Pbkdf2.Md.X86
+import VerifiedGarbage.Impl.Pbkdf2.Whole.X86
 
 /-!
 # Deterministic ECDSA (RFC 6979) on x86 (32-bit)
@@ -78,11 +78,10 @@ def saved : List (Reg × Nat) := [(.ebx, fSave), (.esi, fSave + 4), (.edi, fSave
 
 /-- What the code needs of a curve and a hash function. -/
 structure Cfg where
-  /-- The hash function's code, and the names of its HMAC `init` and
-  `finalize` with their working space as an argument. -/
-  H : Impl.Pbkdf2.Md.X86.Hash
-  hiN : String
-  hfN : String
+  /-- The hash function's streaming `update`, and HMAC's `init` and
+  `finalize` with their working space as an argument (the functions
+  PBKDF2's code calls). -/
+  F : Impl.Pbkdf2.Whole.X86.Fns
   /-- The order of the curve's base point. -/
   n : Nat
   /-- The most candidates to try. -/
@@ -131,15 +130,15 @@ def hmacArgs₃ (B len dst : Nat) : List Instr :=
 address `dataA` sets `edx` to: HMAC's `init` with the key `K`, `update` on
 the inner state, and `finalize`. -/
 def hmac (dataA : List Instr) (len dst : Nat) : Prog isa :=
-  .seq (.block (hmacArgs₁ c.H.D))
-  (.seq (.frame (.push [.ebp, .ecx, .edx, .esi, .edi]) (.call c.hiN c.H.hmacInit) (.pop .eax 5))
-  (.seq (.block (hmacArgs₂ c.H.B dataA len))
-  (.seq (.frame (.push [.ebp, .ecx, .edx, .eax, .esi, .edi]) (.call c.H.st.updN c.H.st.updC) (.pop .eax 6))
-  (.seq (.block (hmacArgs₃ c.H.B len dst))
-    (.frame (.push [.ebp, .edi, .ecx, .eax, .esi, .edx]) (.call c.hfN c.H.hmacFin) (.pop .eax 6))))))
+  .seq (.block (hmacArgs₁ c.F.H.D))
+  (.seq (.frame (.push [.ebp, .ecx, .edx, .esi, .edi]) (.call c.F.hiN c.F.hiC) (.pop .eax 5))
+  (.seq (.block (hmacArgs₂ c.F.H.B dataA len))
+  (.seq (.frame (.push [.ebp, .ecx, .edx, .eax, .esi, .edi]) (.call c.F.H.updN c.F.H.updC) (.pop .eax 6))
+  (.seq (.block (hmacArgs₃ c.F.H.B len dst))
+    (.frame (.push [.ebp, .edi, .ecx, .eax, .esi, .edx]) (.call c.F.hfN c.F.hfC) (.pop .eax 6))))))
 
 /-- `V = HMAC_K(V)`. -/
-def hmacV : Prog isa := c.hmac (fr .edx fV) c.H.D fV
+def hmacV : Prog isa := c.hmac (fr .edx fV) c.F.H.D fV
 
 /-- The `4 k` bytes at `[src + so]` to `[dst + d]`, a word at a time through `eax`. -/
 def copyN (k : Nat) (src : Reg) (so : Nat) (dst : Reg) (d : Nat) : List Instr :=
@@ -161,12 +160,12 @@ def msg (D b : Nat) (full : Bool) : List Instr :=
 
 /-- `K = HMAC_K(V ‖ b ‖ d ‖ h)`, then `V = HMAC_K(V)` (steps d–e, f–g). -/
 def rekeyFull (b : Nat) : Prog isa :=
-  .seq (.block msgPtrs) (.seq (.block (msg c.H.D b true))
-    (.seq (c.hmac (scr .edx sMsg) (c.H.D + 65) fK) c.hmacV))
+  .seq (.block msgPtrs) (.seq (.block (msg c.F.H.D b true))
+    (.seq (c.hmac (scr .edx sMsg) (c.F.H.D + 65) fK) c.hmacV))
 
 /-- `K = HMAC_K(V ‖ 0x00)`, then `V = HMAC_K(V)` (step h.3). -/
 def rekey : Prog isa :=
-  .seq (.block msgPtrs) (.seq (.block (msg c.H.D 0 false)) (.seq (c.hmac (scr .edx sMsg) (c.H.D + 1) fK) c.hmacV))
+  .seq (.block msgPtrs) (.seq (.block (msg c.F.H.D 0 false)) (.seq (c.hmac (scr .edx sMsg) (c.F.H.D + 1) fK) c.hmacV))
 
 /-- The 32-bit words of `n`, least significant first. -/
 def nWord (j : Nat) : BitVec 32 := BitVec.ofNat 32 (c.n >>> (32 * j))

@@ -238,6 +238,10 @@ structure Ctx {dn : Nat} (L : Lay dn) (g : Reg → BitVec 32) (m₀ : Mem) (t : 
   wr : t.wr = [L.FR, L.OUT, L.SCR]
   esp : t.gpr .esp = L.F
   saved : ∀ p ∈ Impl.Ecdsa.Rfc6979.X86.saved, t.mem.readW (L.B + BitVec.ofNat 64 (76 + p.2)) 32 = g p.1
+  pOut : t.mem.readW (L.B + BitVec.ofNat 64 260) 32 = L.a0
+  pD : t.mem.readW (L.B + BitVec.ofNat 64 264) 32 = L.a1
+  pDg : t.mem.readW (L.B + BitVec.ofNat 64 268) 32 = L.a2
+  pScr : t.mem.readW (L.B + BitVec.ofNat 64 272) 32 = L.a3
   frame : Frame [L.OUT, L.SCR, L.STK] m₀ t.mem
 
 theorem Safe.sub_frame {dn : Nat} {L : Lay dn} {r : Region} (h : Safe L r) :
@@ -256,12 +260,18 @@ variable {dn : Nat} {L : Lay dn} {g : Reg → BitVec 32} {m₀ : Mem} {t t' : St
 /-- Code that keeps the permissions and `esp`, and writes only safe regions. -/
 theorem keep (hL : L.Ok) (hc : Ctx L g m₀ t) (hrd : t'.rd = t.rd) (hwr : t'.wr = t.wr)
     (hsp : t'.gpr .esp = t.gpr .esp) {ws : List Region} (hf : Frame ws t.mem t'.mem) (hs : ∀ r ∈ ws, Safe L r) :
-    Ctx L g m₀ t' :=
-  ⟨hrd.trans hc.rd, hwr.trans hc.wr, hsp.trans hc.esp, fun p hp => by
+    Ctx L g m₀ t' := by
+  have nB := hL.nB
+  have keep : ∀ d, 240 ≤ d → d + 4 ≤ 276 →
+      t'.mem.readW (L.B + BitVec.ofNat 64 d) 32 = t.mem.readW (L.B + BitVec.ofNat 64 d) 32 :=
+    fun d h₁ h₂ => hf.readW (r := ⟨L.B + BitVec.ofNat 64 240, 36⟩)
+      (Offset.contains _ h₁ (by omega) (by omega)) (fun r hr => hL.top_safe (hs r hr)) (by decide)
+  exact ⟨hrd.trans hc.rd, hwr.trans hc.wr, hsp.trans hc.esp, fun p hp => by
     have := saved_off p hp
-    rw [hf.readW (r := ⟨L.B + BitVec.ofNat 64 240, 36⟩)
-      (Offset.contains _ (by omega) (by omega) (by omega)) (fun r hr => hL.top_safe (hs r hr)) (by decide)]
-    exact hc.saved p hp,
+    rw [keep _ (by omega) (by omega)]
+    exact hc.saved p hp, (keep 260 (by omega) (by omega)).trans hc.pOut,
+    (keep 264 (by omega) (by omega)).trans hc.pD, (keep 268 (by omega) (by omega)).trans hc.pDg,
+    (keep 272 (by omega) (by omega)).trans hc.pScr,
     hc.frame.trans (hf.sub fun r hr => (hs r hr).sub_frame)⟩
 
 /-- Code that writes only registers but `esp`. -/
@@ -290,17 +300,6 @@ theorem dg_byte (hL : L.Ok) (hc : Ctx L g m₀ t) {i : Nat} (hi : i < dn) :
     · exact hL.og.symm
     · exact hL.gc
     · exact hL.kg.symm) (by show dn ≤ 2 ^ 64; have := hL.ng; omega) hi
-
-/-- Our arguments, as on entry. -/
-theorem argW (hL : L.Ok) (hc : Ctx L g m₀ t) {i : Nat} (hi : i < 4) :
-    t.mem.readW (L.B + BitVec.ofNat 64 (260 + 4 * i)) 32 = m₀.readW (L.B + BitVec.ofNat 64 (260 + 4 * i)) 32 := by
-  have nB := hL.nB
-  refine hc.frame.readW (r := L.ARGS) (Offset.contains _ (by omega) (by omega) (by omega)) (fun r hr => ?_) (by decide)
-  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl
-  · exact hL.ao
-  · exact hL.ac
-  · exact Offset.disjoint_base _ (by omega) (by omega)
 
 theorem inFr (hc : Ctx L g m₀ t) {d : Nat} (h₁ : 76 ≤ d) (h₂ : d + 4 ≤ 256) (hL : L.Ok) :
     InRegions (t.rd ++ t.wr) (L.B + BitVec.ofNat 64 d) 4 :=
@@ -426,7 +425,7 @@ theorem save_ok {I : Spec.Ecdsa.Rfc6979.Instance} {s : State} (h : (rfcX86 I).pr
     (by rw [u₂.wr, u₁.wr]; exact hw 172 (by omega)) fun s₃ u₃ => ?_
   refine wp_stm (B := (lay I.hashLen s).F) (by rw [u₃.gpr, u₂.gpr, u₁.gpr, hesp])
     (by rw [u₃.wr, u₂.wr, u₁.wr]; exact hw 176 (by omega)) fun s₄ u₄ => hQ s₄ ?_ fun r hr => ?_
-  · have sep : ∀ x y, x + 4 ≤ y ∨ y + 4 ≤ x → x + 4 ≤ 256 → y + 4 ≤ 256 →
+  · have sep : ∀ x y, x + 4 ≤ y ∨ y + 4 ≤ x → x + 4 ≤ 276 → y + 4 ≤ 276 →
         Mem.Sep ((lay I.hashLen s).B + BitVec.ofNat 64 x) (32 / 8) ((lay I.hashLen s).B + BitVec.ofNat 64 y) (32 / 8) :=
       fun x y h h₁ h₂ => Offset.sep _ h (by omega) (by omega)
     have a : ∀ o, o < 200 → addr (lay I.hashLen s).F o = (lay I.hashLen s).B + BitVec.ofNat 64 (76 + o) :=
@@ -439,12 +438,25 @@ theorem save_ok {I : Spec.Ecdsa.Rfc6979.Instance} {s : State} (h : (rfcX86 I).pr
       rw [a 164 (by omega), a 168 (by omega), a 172 (by omega), a 176 (by omega),
         hg .ebx (by decide), hg .esi (by decide), hg .edi (by decide), hg .ebp (by decide)]
       rfl
+    have pa : ∀ i, i < 4 → s₄.mem.readW ((lay I.hashLen s).B + BitVec.ofNat 64 (260 + 4 * i)) 32 = arg s i :=
+      fun i hi => by
+        rw [m₄, Mem.readW_writeW_sep (sep _ 252 (by omega) (by omega) (by omega)) (by decide),
+          Mem.readW_writeW_sep (sep _ 248 (by omega) (by omega) (by omega)) (by decide),
+          Mem.readW_writeW_sep (sep _ 244 (by omega) (by omega) (by omega)) (by decide),
+          Mem.readW_writeW_sep (sep _ 240 (by omega) (by omega) (by omega)) (by decide)]
+        show _ = s.mem.readW (argAddr s i) 32
+        congr 1
+        show _ = addr (s.gpr .esp) (4 + 4 * i)
+        rw [addr_eq (by have := h.2.1; omega), hL.B_eq, show 260 + 4 * i = 256 + (4 + 4 * i) by omega,
+          ← Offset.add_add, BitVec.sub_add_cancel]
+        rfl
     have ct : ∀ x, 240 ≤ x → x + 4 ≤ 256 →
         (lay I.hashLen s).STK.Contains ((lay I.hashLen s).B + BitVec.ofNat 64 x) (32 / 8) :=
       fun x h₁ h₂ => Offset.contains_base _ (by omega) (by omega)
     refine ⟨by rw [u₄.rd, u₃.rd, u₂.rd, u₁.rd]; show s.rd = _; rw [h.2.2.1, lay_ARGS h.1 h.2.1]; rfl,
       by rw [u₄.wr, u₃.wr, u₂.wr, u₁.wr, entered_wr h, h.2.2.2.1]; rfl, by
-        rw [u₄.gpr, u₃.gpr, u₂.gpr, u₁.gpr]; exact hesp, fun p hp => ?_, ?_⟩
+        rw [u₄.gpr, u₃.gpr, u₂.gpr, u₁.gpr]; exact hesp, fun p hp => ?_, pa 0 (by omega), pa 1 (by omega),
+        pa 2 (by omega), pa 3 (by omega), ?_⟩
     · simp only [Impl.Ecdsa.Rfc6979.X86.saved, Impl.Ecdsa.Rfc6979.X86.fSave, List.mem_cons, List.not_mem_nil,
         or_false] at hp
       rw [m₄]
