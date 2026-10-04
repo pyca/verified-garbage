@@ -15,7 +15,8 @@ is the same for a function whose buffer argument is passed in a register `r`
 passes in `r`. `withRegScratchWiped bytes r words c` is `withRegScratch`, but
 zeroes the first `words` words of the buffer after its code (`wipe`), for a
 function whose working space may hold secrets that its caller would
-otherwise wipe.
+otherwise wipe; `withStackScratchWiped bytes m words c` is the same for
+`withStackScratch` (`wipeAt`, from the buffer's offset).
 -/
 
 namespace VG.Impl.StackScratch.Arm
@@ -54,5 +55,15 @@ def wipe (words : Nat) : List Instr := .addSp .r12 0 :: .mov .r2 (.imm 0) :: wip
 code. -/
 def withRegScratchWiped (bytes : Nat) (r : Reg) (words : Nat) (c : Prog isa) : Prog isa :=
   withRegScratch bytes r (.seq c (.block (wipe words)))
+
+/-- Zeroes the `words` words at `sp + off`, through `r12` (their address) and
+`r2` (zero). -/
+def wipeAt (off words : Nat) : List Instr :=
+  .addSp .r12 off :: .mov .r2 (.imm 0) :: wipeStores words
+
+/-- `withStackScratch`, zeroing the first `words` words of the buffer (at
+`sp + 4m + 8`) after the code. -/
+def withStackScratchWiped (bytes m words : Nat) (c : Prog isa) : Prog isa :=
+  withStackScratch bytes m (.seq c (.block (wipeAt (4 * m + 8) words)))
 
 end VG.Impl.StackScratch.Arm
