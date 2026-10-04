@@ -32,21 +32,6 @@ structure DInv (s₀ : State) (e : Nat) (s : State) : Prop where
   y : s.lane .xmm2 0 = ghashFrom (hk s₀) (y₀ s₀) ((List.range (16 * e)).map (blk s₀))
   y1 : s.lane .xmm2 1 = 0
 
-/-- The end of a decryption body: `add rdx, 256`, `sub r9, 16`, `cmp r9, 16`. -/
-theorem nextD_ok (s : State) :
-    WP isa (.block [.alu .add .rdx (.imm 256), .alu .sub .r9 (.imm 16), .alu .cmp .r9 (.imm 16)]) s
-      fun s' => s'.gpr .rdx = s.gpr .rdx + 256 ∧ s'.gpr .r9 = s.gpr .r9 - 16 ∧
-        s'.cf = some (decide ((s.gpr .r9 - 16).toNat < 16)) ∧
-        (∀ r, r ≠ .rdx → r ≠ .r9 → s'.gpr r = s.gpr r) ∧ (∀ r l, s'.lane r l = s.lane r l) ∧
-        s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
-  have e256 : BitVec.signExtend 64 (256 : BitVec 32) = 256 := by decide
-  have e16 : BitVec.signExtend 64 (16 : BitVec 32) = 16 := by decide
-  apply WP.of_runBlock
-  simp only [reduceCtorEq, ↓reduceIte, runBlock_cons, runStep_some, runBlock_nil, exec, execAlu,
-    readSrc, arithFlags, State.setFlags, isa, State.setReg, e256, e16,
-    Option.bind_some, Option.some.injEq, exists_eq_left', and_self]
-  exact ⟨trivial, trivial, rfl, fun r h1 h2 => by simp only [h2, ↓reduceIte, h1], fun _ _ => rfl, trivial⟩
-
 /-- Which blocks of the group the GHASH loads to come still read: in the first
 batch, all until its loads are done, then those the second batch reads. -/
 abbrev loA (j : Nat) : Nat := if j < 5 then 0 else 8

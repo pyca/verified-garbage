@@ -44,25 +44,45 @@ def const (x : XReg) (c : BitVec 128) : List Instr :=
    .movImm64 .rax (c.extractLsb' 64 64), .vop (.vmovq .xmm13 .rax),
    .vop (.vbin .vpunpcklqdq .l128 x x .xmm13)]
 
-/-- A round key into both lanes of `k`, then `op b, b, k` for each block
-register `b`. -/
-def keyOpK (k : XReg) (regs : List XReg) (op : VBinOp) (a : MemOp) : List Instr :=
-  .vbroadcasti128 k a :: regs.map fun b => .vop (.vbin op .l256 b b k)
+/-- A round key into `k`: both lanes (`vbroadcasti128`) for `VEX.256`, the
+lower one (`vmovdqu`, clearing the upper) for `VEX.128`. -/
+def keyLd : VLen → XReg → MemOp → Instr
+  | .l128, k, a => .vmovdquLoad .l128 k a
+  | .l256, k, a => .vbroadcasti128 k a
+
+/-- A round key into `k`, then `op b, b, k` for each block register `b`,
+on registers of length `len`. -/
+def keyOpL (len : VLen) (k : XReg) (regs : List XReg) (op : VBinOp) (a : MemOp) : List Instr :=
+  keyLd len k a :: regs.map fun b => .vop (.vbin op len b b k)
 
 /-- Round `j` (`1 ≤ j < Nr`) of each block, the round key in `k`. -/
-def roundK (k : XReg) (regs : List XReg) (j : Nat) : List Instr := keyOpK k regs .vaesenc (at_ .rdi (16 * j))
+def roundL (len : VLen) (k : XReg) (regs : List XReg) (j : Nat) : List Instr :=
+  keyOpL len k regs .vaesenc (at_ .rdi (16 * j))
+
+/-- AES of each lane of each block register (both for `VEX.256`, the lower
+for `VEX.128`), with `rounds` (10, 12 or 14) in `rsi`, the key schedule at
+`rdi`, and its last round key at `r10`, the round keys in `k`, and the
+instructions `g j` after round `j`. -/
+def aesL (len : VLen) (k : XReg) (regs : List XReg) (g : Nat → List Instr := fun _ => []) : Prog isa :=
+  .seq (.block (keyOpL len k regs .vpxor (at_ .rdi 0) ++
+      (List.range 9).flatMap (fun j => roundL len k regs (j + 1) ++ g (j + 1)) ++ [.alu .cmp .rsi (.imm 10)]))
+    (.seq
+      (.ite .e (.block [])
+        (.seq (.block (roundL len k regs 10 ++ roundL len k regs 11 ++ [.alu .cmp .rsi (.imm 12)]))
+          (.ite .e (.block []) (.block (roundL len k regs 12 ++ roundL len k regs 13)))))
+      (.block (keyOpL len k regs .vaesenclast (at_ .r10 0))))
+
+/-- A round key into both lanes of `k`, then `op b, b, k` for each block
+register `b`. -/
+def keyOpK (k : XReg) (regs : List XReg) (op : VBinOp) (a : MemOp) : List Instr := keyOpL .l256 k regs op a
+
+/-- Round `j` (`1 ≤ j < Nr`) of each block, the round key in `k`. -/
+def roundK (k : XReg) (regs : List XReg) (j : Nat) : List Instr := roundL .l256 k regs j
 
 /-- AES of both lanes of each block register, with `rounds` (10, 12 or 14) in
 `rsi`, the key schedule at `rdi`, and its last round key at `r10`, the round
 keys in `k`, and the instructions `g j` after round `j`. -/
-def aesK (k : XReg) (regs : List XReg) (g : Nat → List Instr := fun _ => []) : Prog isa :=
-  .seq (.block (keyOpK k regs .vpxor (at_ .rdi 0) ++
-      (List.range 9).flatMap (fun j => roundK k regs (j + 1) ++ g (j + 1)) ++ [.alu .cmp .rsi (.imm 10)]))
-    (.seq
-      (.ite .e (.block [])
-        (.seq (.block (roundK k regs 10 ++ roundK k regs 11 ++ [.alu .cmp .rsi (.imm 12)]))
-          (.ite .e (.block []) (.block (roundK k regs 12 ++ roundK k regs 13)))))
-      (.block (keyOpK k regs .vaesenclast (at_ .r10 0))))
+def aesK (k : XReg) (regs : List XReg) (g : Nat → List Instr := fun _ => []) : Prog isa := aesL .l256 k regs g
 
 /-- The counter blocks: each block register gets the two counters (`c`),
 byte-reversed with the mask in `m`, and both counters advance by two (`i`). -/

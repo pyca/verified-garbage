@@ -1,4 +1,5 @@
 import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Base
+import VerifiedGarbage.Proof.Gcm.X86_64.Vpclmul.Ghash
 
 /-!
 # Interleaved counter mode and GHASH: the GHASH loads

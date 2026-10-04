@@ -32,12 +32,6 @@ structure Ready (s₀ s : State) : Prop where
 
 theorem pregs_get : ∀ k (h : k < pregs.length), pregs[k] = preg16 k := by decide
 
-/-- A block disjoint from a region written is kept. -/
-theorem blockAt_writeW_sep' {m : Mem} {p : Addr} {R : Region} {w : Nat} {v : BitVec w}
-    (hd : Region.Disjoint ⟨p, 16⟩ R) (hw : w / 8 = R.len) : blockAt (m.writeW R.base v) p = blockAt m p := by
-  rw [VG.Proof.Gcm.X86_64.blockAt_eq, VG.Proof.Gcm.X86_64.blockAt_eq,
-    Mem.readW_writeW_sep (hd.sep (Region.contains_self _ _) (by rw [hw]; exact Region.contains_self _ _)) (by decide)]
-
 /-- A block outside the working space is kept by writes to it. -/
 theorem blockAt_outP {s₀ : State} {m m' : Mem} {p : Addr} (hf : Frame [pR s₀] m m')
     (hd : Region.Disjoint ⟨p, 16⟩ (pR s₀)) : blockAt m' p = blockAt m p :=
@@ -170,34 +164,7 @@ theorem ghRun_ok {s₀ : State} {a : Addr} {X : Nat → Block} {P : Nat → Nat 
         rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
     exact WP.mono (ghStep hk (Nat.zero_le _) hE₁ p₁ y₁) fun s' ⟨hE', p', y', f'⟩ => ⟨hE', p', y', f₁.trans f'⟩
 
-/-- `vpshufb x, x', ymm0` and a 16-byte store of `x` to `[b]`. -/
-theorem store16_ok (x x' : XReg) (b : Reg) (s : State) (h0 : s.lane .xmm0 0 = revMask)
-    (hin : InRegions s.wr (s.gpr b) 16) :
-    WP isa (.block [.vop (.vbin .vpshufb .l128 x x' .xmm0), .vmovdquStore .l128 (VG.Impl.Gcm.X86_64.Pclmul.at_ b 0) x])
-      s fun s' => s'.mem = s.mem.writeW (s.gpr b) (XBinOp.eval .pshufb (s.lane x' 0) revMask) ∧ s'.gpr = s.gpr ∧
-        s'.rd = s.rd ∧ s'.wr = s.wr ∧ (∀ r, r ≠ x → ∀ l < 2, s'.lane r l = s.lane r l) := by
-  have hin' : InRegions s.wr (s.gpr b + BitVec.ofInt 64 ((0 : Nat) : Int)) 16 := by
-    rw [BitVec.ofInt_natCast, BitVec.add_zero]; exact hin
-  simp only [State.lane] at h0
-  apply WP.of_runBlock
-  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, VOp.exec, isa, State.setV, State.store128_eq,
-    VG.Proof.Gcm.X86_64.Pclmul.ea_at, VBinOp.sse, State.lane, ite_true, hin', h0, Option.some.injEq,
-    exists_eq_left']
-  refine ⟨by rw [BitVec.ofInt_natCast, BitVec.add_zero]; simp, rfl, rfl, rfl, fun r hr l hl => ?_⟩
-  rcases (by omega : l = 0 ∨ l = 1) with rfl | rfl <;> simp [hr]
-
 /-! ## The whole encryption -/
-
-/-- The blocks of the data, after all of them are encrypted. -/
-theorem blocks_ctr32 {s₀ : State} {m : Mem} (hb : ∀ k < nb s₀, blockAt m (bAddr s₀ k) = ctb s₀ k) :
-    blocksAt m (dp s₀) (nb s₀) = Spec.Gcm.ctr32 (ciph s₀) (cb s₀) (blocksAt s₀.mem (dp s₀) (nb s₀)) := by
-  apply List.ext_getElem
-  · simp [blocksAt, Spec.Gcm.ctr32, Spec.Gcm.keystream]
-  · intro k h₁ h₂
-    have hk : k < nb s₀ := by simpa [blocksAt] using h₁
-    simp only [blocksAt, Spec.Gcm.ctr32, Spec.Gcm.keystream, List.getElem_map, List.getElem_range,
-      List.getElem_zipWith, List.length_map, List.length_range]
-    exact hb k hk
 
 theorem final_ok {s₀ : State} (hp : SPre s₀) {e : Nat} (he : nb s₀ = 16 * e) {s : State} (hI : EInv s₀ e s) :
     WP isa (.block (storeCtr ++ lastG ++ storeY)) s (EPost s₀) := by
