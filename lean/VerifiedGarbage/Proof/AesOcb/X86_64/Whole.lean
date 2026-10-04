@@ -72,7 +72,7 @@ theorem whole_ok {f : Nat → List Byte → Spec.Aes.State → Spec.Aes.State} {
     {pre post : List Instr} {fC1 fC2 : Block → Block → Block → Block} {ckF1 ckF2 : Nat → Block}
     (hB1 : ∀ {W}, BodyOk W pre (fun b o => b ^^^ o) fC1) (hB2 : ∀ {W}, BodyOk W post (fun b o => b ^^^ o) fC2)
     {K W SP : Addr} (L : Lay K W SP) {t : State} (E : Env K W SP t) {R : Nat} (hR : R = 10 ∨ R = 12 ∨ R = 14)
-    {D : Addr} {n m : Nat} (hD : DBuf K W SP t D n) (hmn : 16 * m ≤ n) (hm0 : 0 < m) (hm : m < 2 ^ 59)
+    {D : Addr} {n m : Nat} (hD : DBuf K W SP t D n) (hmn : 16 * m ≤ n) (hm0 : 0 < m) (hm : m < 2 ^ 60)
     {O0 l : Block} (hdata : t.mem.readW (W + BitVec.ofNat 64 dataO) 64 = D) (h13 : t.gpr .r13 = BitVec.ofNat 64 m)
     (hrnd : t.mem.readW (W + BitVec.ofNat 64 232) 64 = BitVec.ofNat 64 R)
     (hofs : blockAtMem t.mem (W + BitVec.ofNat 64 ofsO) = O0) (ho0 : blockAtMem t.mem (W + BitVec.ofNat 64 o0O) = O0)
