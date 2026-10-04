@@ -2,6 +2,7 @@ import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2.Xor
 import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.Xor
 import VerifiedGarbage.Impl.ChaCha20.X86_64.Callee
 import VerifiedGarbage.Impl.Poly1305.X86_64.Callee
+import VerifiedGarbage.Proof.Framework.X86_64.Depth
 
 /-!
 # Implementations of `vg_chacha20_xor` on x86-64
@@ -11,7 +12,8 @@ that its proof holds for every implementation: each is a variant of the
 interface `ChaCha20Xor` on x86-64 (`Variants/ChaCha20Xor/X86_64/`), and each
 caller (in `Generic/ChaCha20Xor/X86_64/`) is emitted once for each of them
 (see `TCB/Emit.lean`). Callers leave room for 16 bytes of stack below its
-return address (`stack_le`), and for two levels of calls (`depth_le`).
+return address (`stack_le`), and for two levels of calls (`depth_le`), which
+take at most those 16 bytes (`xdepth`).
 
 An implementation also names the implementation of `vg_poly1305_blocks` for
 the same CPUs (`poly`), which ChaCha20-Poly1305's instance for it calls: so
@@ -30,6 +32,8 @@ structure XorImpl where
   stack : Nat
   stack_le : stack ≤ 16
   depth_le : callee.code.depth ≤ 2
+  /-- Its calls take at most 16 bytes of stack below its return address. -/
+  xdepth : callee.code.x86_64Depth ≤ 16
   /-- It is correct, and returns with `rsi` pointing at `buf`. -/
   ok : ∀ s, (xorStack stack).pre s →
     ∃ t s', Exec isa callee.code s t s' ∧ abiPreserved s s' ∧ (xorStack stack).post s s'
@@ -65,6 +69,7 @@ def scalar : XorImpl where
   stack := 8
   stack_le := by decide
   depth_le := by decide +kernel
+  xdepth := by decide +kernel
   ok := scalar_ok
   ct := scalar_ct
   nosp := Avx2.xor_nosp
@@ -92,6 +97,7 @@ def avx2 : XorImpl where
   stack := 16
   stack_le := by decide
   depth_le := by decide +kernel
+  xdepth := by decide +kernel
   ok := avx2_ok
   ct := avx2_ct
   nosp := avx2_nosp
@@ -119,6 +125,7 @@ def avx512 : XorImpl where
   stack := 16
   stack_le := by decide
   depth_le := by decide +kernel
+  xdepth := by decide +kernel
   ok := avx512_ok
   ct := avx512_ct
   nosp := avx512_nosp

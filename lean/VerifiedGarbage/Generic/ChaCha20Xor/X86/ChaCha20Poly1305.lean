@@ -15,7 +15,11 @@ from there, and this file adds only notes on the implementation. The emitter
 adds the `# Safety` items that depend on the target (`Sig.layoutDoc`), from
 `stack` and `writeArgs`, which `ofSig` checks against the contract.
 
-The stack is 32 bytes for every implementation.
+The code uses 32 bytes of stack for every implementation. Each function
+keeps its working space (704 bytes, `work`) in a frame of 740 bytes on the
+stack (`withStackScratchWiped`, with a copy of the seven other arguments),
+zeroed after the code, as it holds the one-time Poly1305 key and keystream:
+772 bytes in all.
 -/
 
 namespace VG.Generic.ChaCha20Xor.X86.ChaCha20Poly1305
@@ -29,21 +33,23 @@ def artifacts (v : Proof.ChaCha20.X86.XorImpl) : List Artifact := [
     name := Spec.ChaCha20Poly1305.sealApi.name ++ v.suffix
     target := X86.target
     doc := Spec.ChaCha20Poly1305.sealApi.doc (notes := [xorNote v])
-    code := Impl.ChaCha20Poly1305.X86.«seal» v.callee
-    contract := Spec.ChaCha20Poly1305.sealContract X86.abi 32
-    stack := 32
-    verified := Proof.ChaCha20Poly1305.X86.seal_verified v
-    spSafe := Proof.ChaCha20Poly1305.X86.seal_spSafe v
+    code := Impl.StackScratch.X86.withStackScratchWiped 740 7 176 (Impl.ChaCha20Poly1305.X86.«seal» v.callee)
+    contract := Spec.ChaCha20Poly1305.sealContract X86.abi 772
+    stack := 772
+    verified := Proof.ChaCha20Poly1305.X86.seal_framed v
+    spSafe := Proof.ChaCha20Poly1305.X86.withStackScratchWiped_spSafe (by decide +kernel)
+      (Proof.ChaCha20Poly1305.X86.seal_spSafe v)
     features := v.features },
   { Spec.ChaCha20Poly1305.openApi with
     name := Spec.ChaCha20Poly1305.openApi.name ++ v.suffix
     target := X86.target
     doc := Spec.ChaCha20Poly1305.openApi.doc (notes := [xorNote v])
-    code := Impl.ChaCha20Poly1305.X86.«open» v.callee
-    contract := Spec.ChaCha20Poly1305.openContract X86.abi 32
-    stack := 32
-    verified := Proof.ChaCha20Poly1305.X86.open_verified v
-    spSafe := Proof.ChaCha20Poly1305.X86.open_spSafe v
+    code := Impl.StackScratch.X86.withStackScratchWiped 740 7 176 (Impl.ChaCha20Poly1305.X86.«open» v.callee)
+    contract := Spec.ChaCha20Poly1305.openContract X86.abi 772
+    stack := 772
+    verified := Proof.ChaCha20Poly1305.X86.open_framed v
+    spSafe := Proof.ChaCha20Poly1305.X86.withStackScratchWiped_spSafe (by decide +kernel)
+      (Proof.ChaCha20Poly1305.X86.open_spSafe v)
     features := v.features }]
 
 end VG.Generic.ChaCha20Xor.X86.ChaCha20Poly1305
