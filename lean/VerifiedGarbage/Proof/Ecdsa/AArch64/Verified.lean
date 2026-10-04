@@ -1,19 +1,19 @@
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Main
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Contract
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Lit
-import VerifiedGarbage.Proof.P256.Curve
+import VerifiedGarbage.Proof.P256.Point
 import VerifiedGarbage.Proof.Framework.AArch64.Taint
 import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 
 /-!
 # ECDSA over P-256 on AArch64: `Verified`
 
-P-256 is a curve the proof supports (`p256_ok`, and `Proof.P256.good` for its
-group law), so `sign_ok` gives the contract's postcondition; `x19` and `x20`
-are restored, and no instruction writes the other callee-saved registers,
-`sp` or a SIMD register (`abiPreserved`). Constant time by taint tracking:
-the only branches are on loop counters, and every address is an argument
-plus a constant or a counter.
+P-256 is a curve the proof supports (`p256_ok`, and `Law` for its group law,
+which the registration file supplies: `Proof.P256.law`), so `sign_ok` gives
+the contract's postcondition; `x19` and `x20` are restored, and no instruction
+writes the other callee-saved registers, `sp` or a SIMD register
+(`abiPreserved`). Constant time by taint tracking: the only branches are on
+loop counters, and every address is an argument plus a constant or a counter.
 -/
 
 namespace VG.Proof.Ecdsa.AArch64
@@ -61,9 +61,9 @@ theorem untouched_ok : ∀ i ∈ instrs signP256, ∀ r ∈ untouched, dstOf i �
   simp only [Option.all_some, Bool.not_eq_true', List.contains_eq_mem, decide_eq_false_iff_not] at this
   exact this hr
 
-theorem sign_a64 (s : State) (hs : signAArch64.pre s) :
+theorem sign_a64 (hL : Weierstrass.Law Spec.P256.curve) (s : State) (hs : signAArch64.pre s) :
     ∃ t s', Exec isa signP256 s t s' ∧ abiPreserved s s' ∧ signAArch64.post s s' := by
-  obtain ⟨t, s', he, hsv, hpost⟩ := sign_ok p256_ok Proof.P256.good (pre_of hs)
+  obtain ⟨t, s', he, hsv, hpost⟩ := sign_ok p256_ok hL (pre_of hs)
   refine ⟨t, s', he, ⟨fun r hr => ?_, Exec.sp he, Exec.preservedV he (by lit_decide)⟩, hpost⟩
   by_cases hu : r ∈ untouched
   · exact Exec.gpr (fun i hi => untouched_ok i hi r hu) he
@@ -83,8 +83,8 @@ theorem sign_ct : ConstantTime isa signAArch64.pre signAArch64.pub signP256 :=
       · exact h3
       · exact h4⟩) (by taint_decide)
 
-theorem sign_verified :
+theorem sign_verified (hL : Weierstrass.Law Spec.P256.curve) :
     Verified AArch64.target signP256 (Spec.Ecdsa.P256.inst.signContract AArch64.abi) :=
-  Verified.of_correct sign_a64 sign_ct implies
+  Verified.of_correct (sign_a64 hL) sign_ct implies
 
 end VG.Proof.Ecdsa.AArch64
