@@ -20,6 +20,7 @@ namespace VG.Proof.Ed448.AArch64.PublicKey
 
 open VG VG.AArch64 VG.Impl.Ed448.AArch64.PublicKey
 open VG.Impl.Ed25519.AArch64.Whole (Value setup callWith)
+open VG.Impl.Ed448.AArch64.Whole (zeroStores)
 
 abbrev Two (L : Lay) (g₁ g₂ : Reg → Addr) (v₁ v₂ : VReg → BitVec 128) (m₁ m₂ : Mem)
     (P : State → Prop) (a b : State) := (Ctx L g₁ v₁ m₁ a ∧ P a) ∧ (Ctx L g₂ v₂ m₂ b ∧ P b)

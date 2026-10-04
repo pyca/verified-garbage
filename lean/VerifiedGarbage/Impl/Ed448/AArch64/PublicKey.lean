@@ -3,6 +3,7 @@ import VerifiedGarbage.Impl.Sha3.AArch64.Stream
 import VerifiedGarbage.Impl.Ed25519.AArch64.Whole.Entry
 import VerifiedGarbage.Impl.Ed25519.AArch64.Whole.Setup
 import VerifiedGarbage.Impl.Ed25519.AArch64.Whole.Wipe
+import VerifiedGarbage.Impl.Ed448.AArch64.Whole
 
 /-!
 # Ed448 public-key derivation on AArch64
@@ -26,7 +27,8 @@ bytes) and the sponge functions' working space (640 bytes, at 256).
 namespace VG.Impl.Ed448.AArch64.PublicKey
 
 open VG.AArch64
-open VG.Impl.Ed25519.AArch64.Whole (setup callWith zeroWord zeroWords wrap)
+open VG.Impl.Ed25519.AArch64.Whole (setup callWith zeroWords wrap)
+open VG.Impl.Ed448.AArch64.Whole (zeroStores)
 
 /-- Where the hash is, in the frame, and the sponge functions' working space, in `scratch`. -/
 def hashAt : Nat := 128
@@ -34,10 +36,6 @@ def keccakScratch : Nat := 256
 
 /-- `x15 = scratch`. -/
 def zeroArgs : List Instr := setup [(.x15, .caller 2 0)]
-
-/-- `x14 = 0`, and the 25 words of the Keccak state at `x15` zeroed (in a block of their own:
-their address is a pointer read from the frame). -/
-def zeroStores : List Instr := .movz .x .x14 0 0 :: (List.range 25).map fun k => .str .x .x14 .x15 (8 * k)
 
 /-- `absorb(state = scratch, rate = 136, pos = 0, data = seed, len = 57, scratch + 256)`. -/
 def absorbArgs : List Instr := setup
@@ -64,25 +62,8 @@ def hash (c : Impl.Sha3.AArch64.Callee) : Prog isa :=
   .seq (callWith padArgs ("vg_keccak_pad" ++ c.suffix) (Impl.Sha3.AArch64.Stream.padWith c))
     (callWith squeezeArgs ("vg_keccak_squeeze" ++ c.suffix) (Impl.Sha3.AArch64.Stream.squeezeWith c))
 
-/-- Bits 0–1 of `x9` cleared. -/
-def pruneLow : List Instr :=
-  [.movz .x .x10 0xfffc 0, .movk .x .x10 0xffff 1, .movk .x .x10 0xffff 2,
-    .movk .x .x10 0xffff 3, .logic .and .x .x9 .x9 .x10]
-
-/-- Bit 63 of `x9` set. -/
-def pruneHigh : List Instr := [.movz .x .x10 0x8000 3, .logic .orr .x .x9 .x9 .x10]
-
-/-- Word `k` of the hash, pruned, to word `k` of the scalar. -/
-def pruneWord (k : Nat) : List Instr :=
-  [.ldrSp .x9 (hashAt + 8 * k)] ++
-    (if k = 0 then pruneLow else if k = 6 then pruneHigh else []) ++
-    [.addSp .x15 (8 * k), .str .x .x9 .x15 0]
-
-/-- Pruning (`Spec.Ed448.prune`): the first seven words of the hash, bits 0–1
-cleared and bit 447 (the top of word 6) set, and an eighth word 0, whose low
-byte is the 57th. -/
-def prune : List Instr :=
-  (List.range 7).flatMap pruneWord ++ zeroWord 7
+/-- Pruning (`Spec.Ed448.prune`): the hash, pruned, as the scalar at the bottom of the frame. -/
+def prune : List Instr := Impl.Ed448.AArch64.Whole.pruneAt hashAt 0
 
 /-- The scalar and the hash in the frame, cleared. -/
 def wipe : List Instr := zeroWords 0 32
