@@ -19,17 +19,11 @@ open VG.Impl.AesGcm.X86_64 (at_ imm ptr)
 open VG.Spec.Aes (bytesAt)
 open VG.Proof.AesGcm.X86_64 (GcmImpl GhCall GhPost gh_call ofNat_add_ofNat in_off toNat_ofNat_of_lt)
 
-theorem lens_ok (v : GcmImpl) {K W SP : Addr} (L : Lay K W SP) {t : State} (E : Env K W SP t) {al n : Nat}
+/-- The arguments of `lens`'s call. -/
+theorem lensArgs_ok {K W SP : Addr} {t : State} (E : Env K W SP t) {al n : Nat}
     (hal : t.mem.readW (W + BitVec.ofNat 64 296) 64 = BitVec.ofNat 64 al)
     (hn : t.mem.readW (W + BitVec.ofNat 64 312) 64 = BitVec.ofNat 64 n) (hal' : al < 2 ^ 64) (hn' : n < 2 ^ 64) :
-    WP isa (lens v.callees) t
-      (AbsPost K W SP [Spec.GcmSiv.ofBytes (Spec.GcmSiv.le64 (8 * al) ++ Spec.GcmSiv.le64 (8 * n))] t) := by
-  have h15 := E.r15
-  have r₁ := E.perm.wR (show 312 + 8 ≤ 4096 by decide)
-  have r₂ := E.perm.wR (show 296 + 8 ≤ 4096 by decide)
-  have w₀ := E.perm.wW (show 128 + 8 ≤ 4096 by decide)
-  have w₈ := E.perm.wW (show 136 + 8 ≤ 4096 by decide)
-  obtain ⟨t₁, run₁, hm₁, rdi₁, rsi₁, r8₁, rdx₁, rcx₁, hg₁, hrd₁, hwr₁⟩ : ∃ t₁ : State,
+    ∃ t₁ : State,
       runBlock isa (([.mov .rax (.mem (at_ .r15 lenO)), .alu .add .rax (.reg .rax), .alu .add .rax (.reg .rax),
         .alu .add .rax (.reg .rax), .bswap .rax, .store (at_ .r15 bO) .rax,
         .mov .rax (.mem (at_ .r15 alenO)), .alu .add .rax (.reg .rax),
@@ -41,18 +35,30 @@ theorem lens_ok (v : GcmImpl) {K W SP : Addr} (L : Lay K W SP) {t : State} (E : 
       t₁.gpr .r8 = W + BitVec.ofNat 64 1792 ∧ t₁.gpr .rdx = W + BitVec.ofNat 64 128 ∧
       t₁.gpr .rcx = BitVec.ofNat 64 1 ∧ (∀ r ∈ calleeSaved, t₁.gpr r = t.gpr r) ∧
       t₁.rd = t.rd ∧ t₁.wr = t.wr := by
-    refine ⟨_, by srun [ghArgs, h15, r₁, r₂, w₀, w₈, hal, hn], ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
-    · simp only [mem_setReg, mem_arithFlags, add_ofNat_assoc, Proof.AesGcm.X86_64.times8_val,
-        toNat_ofNat_of_lt hal', toNat_ofNat_of_lt hn']
-    · simp only [gpr_arithFlags, gpr_setReg, ite_true, ite_false, reduceCtorEq, h15]
-    · simp only [gpr_arithFlags, gpr_setReg, ite_true, ite_false, reduceCtorEq, h15]
-    · simp only [gpr_arithFlags, gpr_setReg, ite_true, ite_false, reduceCtorEq, h15]
-    · simp only [gpr_arithFlags, gpr_setReg, ite_true, ite_false, reduceCtorEq, h15]
-    · simp only [gpr_arithFlags, gpr_setReg, ite_true, ite_false, reduceCtorEq]
-    · intro r hr; simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
-        simp only [gpr_arithFlags, gpr_setReg, ite_true, ite_false, reduceCtorEq]
-    all_goals rfl
+  have h15 := E.r15
+  have r₁ := E.perm.wR (show 312 + 8 ≤ 4096 by decide)
+  have r₂ := E.perm.wR (show 296 + 8 ≤ 4096 by decide)
+  have w₀ := E.perm.wW (show 128 + 8 ≤ 4096 by decide)
+  have w₈ := E.perm.wW (show 136 + 8 ≤ 4096 by decide)
+  refine ⟨_, by srun [ghArgs, h15, r₁, r₂, w₀, w₈, hal, hn], ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · simp only [mem_setReg, mem_arithFlags, add_ofNat_assoc, Proof.AesGcm.X86_64.times8_val,
+      toNat_ofNat_of_lt hal', toNat_ofNat_of_lt hn']
+  · simp only [gpr_arithFlags, gpr_setReg, ite_true, ite_false, reduceCtorEq, h15]
+  · simp only [gpr_arithFlags, gpr_setReg, ite_true, ite_false, reduceCtorEq, h15]
+  · simp only [gpr_arithFlags, gpr_setReg, ite_true, ite_false, reduceCtorEq, h15]
+  · simp only [gpr_arithFlags, gpr_setReg, ite_true, ite_false, reduceCtorEq, h15]
+  · simp only [gpr_arithFlags, gpr_setReg, ite_true, ite_false, reduceCtorEq]
+  · intro r hr; simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
+      simp only [gpr_arithFlags, gpr_setReg, ite_true, ite_false, reduceCtorEq]
+  all_goals rfl
+
+theorem lens_ok (v : GcmImpl) {K W SP : Addr} (L : Lay K W SP) {t : State} (E : Env K W SP t) {al n : Nat}
+    (hal : t.mem.readW (W + BitVec.ofNat 64 296) 64 = BitVec.ofNat 64 al)
+    (hn : t.mem.readW (W + BitVec.ofNat 64 312) 64 = BitVec.ofNat 64 n) (hal' : al < 2 ^ 64) (hn' : n < 2 ^ 64) :
+    WP isa (lens v.callees) t
+      (AbsPost K W SP [Spec.GcmSiv.ofBytes (Spec.GcmSiv.le64 (8 * al) ++ Spec.GcmSiv.le64 (8 * n))] t) := by
+  obtain ⟨t₁, run₁, hm₁, rdi₁, rsi₁, r8₁, rdx₁, rcx₁, hg₁, hrd₁, hwr₁⟩ := lensArgs_ok E hal hn hal' hn'
   have E₁ : Env K W SP t₁ := E.of_saved hg₁ hrd₁ hwr₁
   have fB : Frame [⟨W + BitVec.ofNat 64 128, 16⟩] t.mem t₁.mem := by
     rw [hm₁]
