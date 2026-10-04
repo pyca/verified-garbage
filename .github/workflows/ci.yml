@@ -21,12 +21,17 @@ env:
   RUSTFLAGS: -D warnings
 
 jobs:
-  # The Lean build is split into shards that build in parallel (see
-  # ci/lean_shards.py).
-  lean-plan:
-    name: Plan the Lean build
+  # Plans the Lean build: when it needs shards (see ci/lean_shards.py), it
+  # stops there, and they build in parallel; otherwise (or when a push to
+  # main reuses the merge queue's outputs) it builds on this runner, rather
+  # than queue for another.
+  lean:
+    name: "Lean: plan and build"
+    # More independent files, with two compiler threads per file (lakefile.toml).
+    env:
+      LEAN_NUM_THREADS: "6"
     runs-on: ubuntu-latest
-    # To find the merge queue's run of this commit.
+    # To find the merge queue's run of this commit, and download its outputs.
     permissions:
       actions: read
       contents: read
@@ -42,8 +47,8 @@ jobs:
       # GitHub moves main to exactly the commit its merge queue tested, with
       # this workflow, restoring only main's caches (and its own new
       # branch's, which start empty): that run's Lean outputs are what a push
-      # to main would build. So the push reuses them (see `lean`) instead of
-      # running the shards, if that run succeeded and they're still there.
+      # to main would build. So the push reuses them instead of running the
+      # shards, if that run succeeded and they're still there.
       # Never a pull request's run: only the merge queue's branches for main.
       - id: reuse
         if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
@@ -84,6 +89,60 @@ jobs:
           path: ${{ runner.temp }}/lean-plan.json
           retention-days: 1
           if-no-files-found: error
+      # The rest builds here: with shards, it is skipped, so that they start
+      # as soon as the plan is done.
+      - name: Decide whether to build here
+        id: here
+        env:
+          COUNT: ${{ steps.plan.outputs.count }}
+          REUSE: ${{ steps.reuse.outputs.run-id }}
+        run: |
+          if [ "$COUNT" = 0 ] || [ -n "$REUSE" ]; then
+            echo "build=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "$COUNT shards build the proofs."
+          fi
+      # It runs in the background while `lean-setup`, which runs no Lake
+      # command, installs Lean and restores Mathlib.
+      - name: Restore this project's build
+        id: lean-build
+        if: ${{ steps.here.outputs.build == 'true' }}
+        background: true
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: lean/.lake/build
+          key: lean-build-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('lean/lean-toolchain', 'lean/lake-manifest.json') }}-${{ hashFiles('lean/lakefile.toml', 'lean/*.lean', 'lean/VerifiedGarbage/**', 'lean/VerifiedGarbageTest/**') }}
+          restore-keys: |
+            ${{ steps.plan.outputs.build-key }}
+            lean-build-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('lean/lean-toolchain', 'lean/lake-manifest.json') }}-
+      - uses: ./.github/actions/lean-setup
+        id: lean-setup
+        if: ${{ steps.here.outputs.build == 'true' }}
+      - wait: [lean-build]
+      # Lake, only once nothing else writes to `lean/.lake`.
+      - uses: ./.github/actions/lean-mathlib
+        if: ${{ steps.here.outputs.build == 'true' }}
+        with:
+          mods: ${{ steps.lean-setup.outputs.mods }}
+          cache-hit: ${{ steps.lean-setup.outputs.cache-hit }}
+          cache-key: ${{ steps.lean-setup.outputs.cache-key }}
+      # On a push to main, the merge queue run's outputs of this commit: its
+      # shards' and its final ones (`lean-build-final-*`, extracted last).
+      # Lake rebuilds whatever doesn't match the sources.
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        if: ${{ steps.here.outputs.build == 'true' && steps.reuse.outputs.run-id != '' }}
+        with:
+          pattern: lean-build-*
+          merge-multiple: true
+          path: ${{ runner.temp }}/lean-build
+          run-id: ${{ steps.reuse.outputs.run-id }}
+          github-token: ${{ github.token }}
+      - uses: ./.github/actions/lean-assemble
+        if: ${{ steps.here.outputs.build == 'true' }}
+        with:
+          id: lean
+          cache-hit: ${{ steps.lean-build.outputs.cache-hit }}
+          cache-key: ${{ steps.lean-build.outputs.cache-primary-key }}
 
   # Each shard uploads its outputs, then lists the run's artifacts; one that
   # finds every shard's assembles them (`lean-assemble`), on the runner it
@@ -99,20 +158,20 @@ jobs:
     # More independent files, with two compiler threads per file (lakefile.toml).
     env:
       LEAN_NUM_THREADS: "6"
-    needs: lean-plan
+    needs: lean
     # To list the run's artifacts.
     permissions:
       actions: read
       contents: read
-    if: ${{ needs.lean-plan.outputs.count != '0' && needs.lean-plan.outputs.reuse == '' }}
+    if: ${{ needs.lean.outputs.count != '0' && needs.lean.outputs.reuse == '' }}
     strategy:
       fail-fast: false
       matrix:
-        shard: ${{ fromJSON(needs.lean-plan.outputs.shards) }}
+        shard: ${{ fromJSON(needs.lean.outputs.shards) }}
     # No expressions: GitHub does not evaluate them in the name of a skipped
     # job, and shows them as written. It adds the shard to each running
-    # job's name itself ("Lean proof shard (3)").
-    name: Lean proof shard
+    # job's name itself ("Lean: shard (3)").
+    name: "Lean: shard"
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -133,7 +192,7 @@ jobs:
           path: lean/.lake/build
           key: lean-build-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('lean/lean-toolchain', 'lean/lake-manifest.json') }}-${{ hashFiles('lean/lakefile.toml', 'lean/*.lean', 'lean/VerifiedGarbage/**', 'lean/VerifiedGarbageTest/**') }}
           restore-keys: |
-            ${{ needs.lean-plan.outputs.build-key }}
+            ${{ needs.lean.outputs.build-key }}
             lean-build-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('lean/lean-toolchain', 'lean/lake-manifest.json') }}-
       - uses: ./.github/actions/lean-setup
         id: lean-setup
@@ -185,7 +244,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
-          SHARDS: ${{ needs.lean-plan.outputs.shards }}
+          SHARDS: ${{ needs.lean.outputs.shards }}
         run: |
           # An error here only leaves the assembly to another job.
           names=$(gh api --paginate "repos/$GH_REPO/actions/runs/$GITHUB_RUN_ID/artifacts?per_page=100" \
@@ -224,66 +283,8 @@ jobs:
           retention-days: 1
           if-no-files-found: error
 
-  # The build when there are no shards, or when a push to main reuses the
-  # merge queue's outputs (see `lean-plan`); otherwise a shard assembles it.
-  lean:
-    env:
-      LEAN_NUM_THREADS: "6"
-    name: Lean proofs
-    needs: lean-plan
-    if: ${{ needs.lean-plan.outputs.count == '0' || needs.lean-plan.outputs.reuse != '' }}
-    runs-on: ubuntu-latest
-    # To download the merge queue run's outputs.
-    permissions:
-      actions: read
-      contents: read
-    defaults:
-      run:
-        working-directory: lean
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      # It runs in the background while `lean-setup`, which runs no Lake
-      # command, installs Lean and restores Mathlib.
-      - name: Restore this project's build
-        id: lean-build
-        background: true
-        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: lean/.lake/build
-          key: lean-build-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('lean/lean-toolchain', 'lean/lake-manifest.json') }}-${{ hashFiles('lean/lakefile.toml', 'lean/*.lean', 'lean/VerifiedGarbage/**', 'lean/VerifiedGarbageTest/**') }}
-          restore-keys: |
-            ${{ needs.lean-plan.outputs.build-key }}
-            lean-build-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('lean/lean-toolchain', 'lean/lake-manifest.json') }}-
-      - uses: ./.github/actions/lean-setup
-        id: lean-setup
-      - wait: [lean-build]
-      # Lake, only once nothing else writes to `lean/.lake`.
-      - uses: ./.github/actions/lean-mathlib
-        with:
-          mods: ${{ steps.lean-setup.outputs.mods }}
-          cache-hit: ${{ steps.lean-setup.outputs.cache-hit }}
-          cache-key: ${{ steps.lean-setup.outputs.cache-key }}
-      # On a push to main, the merge queue run's outputs of this commit (see
-      # `lean-plan`): its shards' and its final ones (`lean-build-final-*`,
-      # extracted last). Lake rebuilds whatever doesn't match the sources.
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
-        if: ${{ needs.lean-plan.outputs.reuse != '' }}
-        with:
-          pattern: lean-build-*
-          merge-multiple: true
-          path: ${{ runner.temp }}/lean-build
-          run-id: ${{ needs.lean-plan.outputs.reuse }}
-          github-token: ${{ github.token }}
-      - uses: ./.github/actions/lean-assemble
-        with:
-          id: lean
-          cache-hit: ${{ steps.lean-build.outputs.cache-hit }}
-          cache-key: ${{ steps.lean-build.outputs.cache-primary-key }}
-
   lean-imports:
-    name: Lean import discipline
+    name: Static checks
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -678,6 +679,7 @@ jobs:
           if-no-files-found: error
 
   coverage:
+    name: Rust coverage
     needs: [rust, rust-cpu-features]
     runs-on: ubuntu-latest
     steps:
@@ -720,7 +722,7 @@ jobs:
   # `lean-shard`), and assembles it itself if none did.
   all-green:
     if: ${{ always() }}
-    needs: [lean-plan, lean-shard, lean, lean-imports, vectors, rust, rust-thumb, rust-cpu-features, coverage]
+    needs: [lean, lean-shard, lean-imports, vectors, rust, rust-thumb, rust-cpu-features, coverage]
     runs-on: ubuntu-latest
     # To list the run's artifacts.
     permissions:
@@ -733,21 +735,21 @@ jobs:
         id: check
         env:
           RESULTS: >-
-            ${{ needs.lean-plan.result }} ${{ needs.lean-imports.result }} ${{ needs.vectors.result }}
+            ${{ needs.lean.result }} ${{ needs.lean-imports.result }} ${{ needs.vectors.result }}
             ${{ needs.rust.result }} ${{ needs.rust-thumb.result }} ${{ needs.rust-cpu-features.result }}
             ${{ needs.coverage.result }}
-          # Exactly one of them runs: the shards, or `lean` without them.
-          LEAN: ${{ needs.lean-shard.result }}/${{ needs.lean.result }}
+          # Skipped when `lean` built the proofs itself.
+          SHARDS: ${{ needs.lean-shard.result }}
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
         run: |
-          echo "$RESULTS $LEAN"
+          echo "$RESULTS $SHARDS"
           for r in $RESULTS; do
             [ "$r" = success ] || exit 1
           done
-          case "$LEAN" in
-            skipped/success) ;;
-            success/skipped)
+          case "$SHARDS" in
+            skipped) ;;
+            success)
               if gh api --paginate "repos/$GH_REPO/actions/runs/$GITHUB_RUN_ID/artifacts?per_page=100" \
                   --jq '.artifacts[].name' | grep -q '^lean-assembled-'; then
                 echo "A shard assembled the build."
@@ -757,7 +759,7 @@ jobs:
               fi ;;
             *) exit 1 ;;
           esac
-      # What `lean` does, after the shards.
+      # What `lean` does without shards, after them.
       - if: ${{ steps.check.outputs.assemble == 'true' }}
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -770,7 +772,7 @@ jobs:
           path: lean/.lake/build
           key: lean-build-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('lean/lean-toolchain', 'lean/lake-manifest.json') }}-${{ hashFiles('lean/lakefile.toml', 'lean/*.lean', 'lean/VerifiedGarbage/**', 'lean/VerifiedGarbageTest/**') }}
           restore-keys: |
-            ${{ needs.lean-plan.outputs.build-key }}
+            ${{ needs.lean.outputs.build-key }}
             lean-build-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('lean/lean-toolchain', 'lean/lake-manifest.json') }}-
       - uses: ./.github/actions/lean-setup
         id: lean-setup
