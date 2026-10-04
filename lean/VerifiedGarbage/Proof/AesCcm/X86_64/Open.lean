@@ -22,19 +22,16 @@ open VG.Spec.Aes (bytesAt)
 open VG.Spec.Ccm (zeros)
 open VG.Proof.Aes.X86_64 (Ctr32Impl)
 
-/-- From the encrypted MAC at `W + 96` on: the comparison, the mask and the
-restore. -/
-theorem openTail_ok {K W SP : Addr} (L : Lay K W SP) {s : State} (E : Env K W SP s) {R : Nat} {N A D : Addr}
-    {nl al n tl : Nat} (S : Slots W R N A D nl al n tl s.mem) (hD : Buf K W SP s D n) (hDw : Covers [⟨D, n⟩] s.wr)
-    (ht1 : 1 ≤ tl) (ht16 : tl ≤ 16) {g : Reg → BitVec 64} (sv : Saved s.mem W g) :
+/-- The comparison of the encrypted MAC at `W + 96` with the received tag at
+`W`, and `ok` stored at `W + 224`. -/
+theorem openCmp_ok {K W SP : Addr} (L : Lay K W SP) {s : State} (E : Env K W SP s) {R : Nat} {N A D : Addr}
+    {nl al n tl : Nat} (S : Slots W R N A D nl al n tl s.mem) (ht1 : 1 ≤ tl) (ht16 : tl ≤ 16) :
     WP isa (.seq (.block [.mov .rbx (.mem (at_ .r15 tlO))]) (.seq recv (.seq (cmp uO)
-      (.seq (.block [.store (at_ .r15 okO) .rax]) (.seq mask (.block ([.mov .rax (.mem (at_ .r15 okO))] ++
-        restore))))))) s fun s' =>
-      (∀ p ∈ saved, s'.gpr p.1 = g p.1) ∧ s'.gpr .rsp = SP ∧
-      s'.gpr .rax = (if bytesAt s.mem (W + BitVec.ofNat 64 96) tl = bytesAt s.mem W tl then 1 else 0) ∧
-      bytesAt s'.mem D n =
-        (if bytesAt s.mem (W + BitVec.ofNat 64 96) tl = bytesAt s.mem W tl then bytesAt s.mem D n else zeros n) ∧
-      Frame [⟨W + BitVec.ofNat 64 224, 8⟩, ⟨W + BitVec.ofNat 64 240, 32⟩, ⟨D, n⟩] s.mem s'.mem := by
+      (.block [.store (at_ .r15 okO) .rax])))) s fun s₄ =>
+      Env K W SP s₄ ∧ s₄.rd = s.rd ∧ s₄.wr = s.wr ∧
+      Frame [⟨W + BitVec.ofNat 64 224, 8⟩, ⟨W + BitVec.ofNat 64 240, 32⟩] s.mem s₄.mem ∧
+      s₄.mem.readW (W + BitVec.ofNat 64 224) 64 =
+        if bytesAt s.mem (W + BitVec.ofNat 64 96) tl = bytesAt s.mem W tl then 1 else 0 := by
   have h15 := E.r15
   have rt := E.perm.wR (show 208 + 8 ≤ 2560 by decide)
   have htl := S.tl
@@ -59,7 +56,6 @@ theorem openTail_ok {K W SP : Addr} (L : Lay K W SP) {s : State} (E : Env K W SP
       s₄.mem = s₃.mem.writeW (W + BitVec.ofNat 64 224) (s₃.gpr .rax) ∧ s₄.gpr = s₃.gpr ∧ s₄.rd = s₃.rd ∧
       s₄.wr = s₃.wr := by
     refine ⟨_, by crun [h15₃, wo], ?_, ?_, ?_, ?_⟩ <;> rfl
-  refine WP.seq (WP.of_runBlock ⟨s₄, run₄, ?_⟩)
   have E₄ : Env K W SP s₄ := E₃.keep (fun r _ => by rw [hg₄]) hrd₄ hwr₄
   have f₄ : Frame [⟨W + BitVec.ofNat 64 224, 8⟩] s₃.mem s₄.mem := by
     rw [hm₄]; exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
@@ -70,23 +66,39 @@ theorem openTail_ok {K W SP : Addr} (L : Lay K W SP) {s : State} (E : Env K W SP
     · exact ⟨⟨W + BitVec.ofNat 64 240, 32⟩, by simp, Offset.sub W (by decide) (by decide)⟩
     · exact ⟨⟨W + BitVec.ofNat 64 240, 32⟩, by simp, Region.sub_prefix (by decide)⟩
     · exact ⟨_, by simp, fun _ h => h⟩
+  have rd₀₄ : s₄.rd = s.rd := by rw [hrd₄, rd₃, rd₂, hrd₁]
+  have wr₀₄ : s₄.wr = s.wr := by rw [hwr₄, wr₃, wr₂, hwr₁]
+  have hV : bytesAt s₂.mem (W + BitVec.ofNat 64 96) tl = bytesAt s.mem (W + BitVec.ofNat 64 96) tl := by
+    rw [bytesAt_frame f₂ (fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr; exact L.w_w (.inl (by omega)) (by omega) (by decide))
+      (by omega), hm₁]
+  rw [hV, hm₁] at hax₃
+  refine WP.of_runBlock ⟨s₄, run₄, E₄, rd₀₄, wr₀₄, f₀₄w, ?_⟩
+  rw [hm₄, Mem.readW_writeW_self64, hax₃]
+
+/-- From the encrypted MAC at `W + 96` on: the comparison, the mask and the
+restore. -/
+theorem openTail_ok {K W SP : Addr} (L : Lay K W SP) {s : State} (E : Env K W SP s) {R : Nat} {N A D : Addr}
+    {nl al n tl : Nat} (S : Slots W R N A D nl al n tl s.mem) (hD : Buf K W SP s D n) (hDw : Covers [⟨D, n⟩] s.wr)
+    (ht1 : 1 ≤ tl) (ht16 : tl ≤ 16) {g : Reg → BitVec 64} (sv : Saved s.mem W g) :
+    WP isa (.seq (.block [.mov .rbx (.mem (at_ .r15 tlO))]) (.seq recv (.seq (cmp uO)
+      (.seq (.block [.store (at_ .r15 okO) .rax]) (.seq mask (.block ([.mov .rax (.mem (at_ .r15 okO))] ++
+        restore))))))) s fun s' =>
+      (∀ p ∈ saved, s'.gpr p.1 = g p.1) ∧ s'.gpr .rsp = SP ∧
+      s'.gpr .rax = (if bytesAt s.mem (W + BitVec.ofNat 64 96) tl = bytesAt s.mem W tl then 1 else 0) ∧
+      bytesAt s'.mem D n =
+        (if bytesAt s.mem (W + BitVec.ofNat 64 96) tl = bytesAt s.mem W tl then bytesAt s.mem D n else zeros n) ∧
+      Frame [⟨W + BitVec.ofNat 64 224, 8⟩, ⟨W + BitVec.ofNat 64 240, 32⟩, ⟨D, n⟩] s.mem s'.mem := by
+  refine seq_assoc4 (WP.seq (WP.mono (openCmp_ok L E S ht1 ht16) fun s₄ ⟨E₄, rd₀₄, wr₀₄, f₀₄w, hok'⟩ => ?_))
   have f₀₄ : Frame (mutR W SP D n) s.mem s₄.mem := f₀₄w.sub fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · exact ⟨wK W, by simp, Offset.sub W (by decide) (by decide)⟩
     · exact ⟨wC W, by simp, Offset.sub W (by decide) (by decide)⟩
   have S₄ := slots_mut L hD.w f₀₄ S
-  have rd₀₄ : s₄.rd = s.rd := by rw [hrd₄, rd₃, rd₂, hrd₁]
-  have wr₀₄ : s₄.wr = s.wr := by rw [hwr₄, wr₃, wr₂, hwr₁]
-  -- What was compared.
-  have hV : bytesAt s₂.mem (W + BitVec.ofNat 64 96) tl = bytesAt s.mem (W + BitVec.ofNat 64 96) tl := by
-    rw [bytesAt_frame f₂ (fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact L.w_w (.inl (by omega)) (by omega) (by decide))
-      (by omega), hm₁]
-  rw [hV, hm₁] at hax₃
   obtain ⟨c, hc⟩ : ∃ c, c = decide (bytesAt s.mem (W + BitVec.ofNat 64 96) tl = bytesAt s.mem W tl) := ⟨_, rfl⟩
   have hok : s₄.mem.readW (W + BitVec.ofNat 64 224) 64 = if c then 1 else 0 := by
-    rw [hm₄, Mem.readW_writeW_self64, hax₃, hc]; simp only [decide_eq_true_eq]
+    rw [hok', hc]; simp only [decide_eq_true_eq]
   refine WP.seq (WP.mono (mask_ok E₄ S₄ (hD.of_eq rd₀₄ wr₀₄) (by rw [wr₀₄]; exact hDw) hok)
     fun s₅ ⟨E₅, rd₅, wr₅, hm₅⟩ => ?_)
   -- `ok` in `rax`, and the registers back.
