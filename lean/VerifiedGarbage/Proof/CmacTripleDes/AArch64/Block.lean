@@ -379,6 +379,11 @@ theorem ip_kept : blockKept.all (fun r => ipCode.all fun i => dstOf i != some r)
 
 theorem fp_kept : blockKept.all (fun r => fpCode.all fun i => dstOf i != some r) = true := by lit_decide
 
+theorem fp_v : fpCode.all (fun i => vdstOf i == none) = true := by lit_decide
+
+theorem fp_masks : maskConsts.all (fun p => fpCode.all fun i => dstOf i != some p.1) = true := by
+  lit_decide
+
 theorem ip_v : ipCode.all (fun i => vdstOf i == none) = true := by lit_decide
 
 theorem ip_masks : maskConsts.all (fun p => ipCode.all fun i => dstOf i != some p.1) = true := by
@@ -431,14 +436,15 @@ theorem fp_ok (s : State) {l r : BitVec 32} (hl : s.gpr .x11 = spreadW l) (hr : 
     ∃ s', runBlock isa fpCode s = some s' ∧
       s'.gpr .x5 = Spec.TripleDes.permute Spec.TripleDes.fp (r ++ l) ∧
       s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp ∧ (∀ r ∈ blockKept, s'.gpr r = s.gpr r) ∧
-      s'.mem = s.mem := by
+      s'.mem = s.mem ∧ s'.v = s.v ∧ (∀ p ∈ maskConsts, s'.gpr p.1 = s.gpr p.1) := by
   let W : Nat → BitVec 64 := fun i => if i = 0 then s.gpr .x12 else s.gpr .x11
   obtain ⟨s', hs', hout, hrd, hwr, hsp, hoth, hfr⟩ := linear_ok fp_check (oCfg_ok s) W
     (fun r i hri => by
       simp only [List.mem_cons, List.mem_nil_iff, Prod.mk.injEq, or_false] at hri
       rcases hri with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;> exact ⟨by decide, rfl⟩)
     (fun j hj => absurd hj (by simp [oCfg]))
-  refine ⟨s', hs', ?_, hrd, hwr, hsp, fun r hr => hoth r (List.all_eq_true.mp fp_kept r hr), frame_oCfg hfr⟩
+  refine ⟨s', hs', ?_, hrd, hwr, hsp, fun r hr => hoth r (List.all_eq_true.mp fp_kept r hr), frame_oCfg hfr,
+    runBlock_v fp_v hs', fun p hp => hoth p.1 (List.all_eq_true.mp fp_masks p hp)⟩
   apply BitVec.eq_of_getLsbD_eq
   intro j hj
   have hs := fpSrc_lt j hj
@@ -521,71 +527,82 @@ theorem maskSet_ok (s : State) :
     simpa using this
   · rw [List.all_eq_true.mp maskSet_keeps r hr] at h; cases h
 
-theorem setup_eq : setup = loadTable sTable ++ (quarterConsts ++ (maskSet ++
-    (ipCode ++ ([mov .x10 .x15] : List Instr)))) := by
-  simp only [setup, List.append_assoc]
+/-- After the setup shared by the blocks of one call: the tables, constants,
+masks and spread keys, and the block `x5` as it was. -/
+structure TInv (s₀ s : State) : Prop where
+  same : Same s₀ s
+  x5 : s.gpr .x5 = s₀.gpr .x5
+  x14 : s.gpr .x14 = s₀.gpr .x14
+  consts : Consts s
+  masks : Masks s
+  keys : Keys s₀ s.mem 48
 
-theorem setup_ok {s₀ : State} {s : State} (h : SInv s₀ 24 s) :
-    WP isa (.block setup) s (OInv s₀ (s₀.gpr .x5) 0) := by
-  rw [setup_eq, WP.block_append_iff]
+theorem tables_eq : tables = loadTable sTable ++ (quarterConsts ++ maskSet) := by
+  simp only [tables, List.append_assoc]
+
+theorem tables_ok {s₀ : State} {s : State} (h : SInv s₀ 24 s) :
+    WP isa (.block tables) s (TInv s₀) := by
+  rw [tables_eq, WP.block_append_iff]
   refine WP.mono (loadTable_ok s sTable) fun a ⟨atab, av, ag, am, ard, awr, asp⟩ => ?_
   rw [WP.block_append_iff]
   obtain ⟨b₀, hb, b4, b5, b6, bv₀, bg₀, bm₀, brd₀, bwr₀, bsp₀⟩ := quarterConsts_ok a
   refine WP.of_runBlock ⟨b₀, hb, ?_⟩
-  rw [WP.block_append_iff]
   obtain ⟨b, hbm, bmask, bk, bvv, bm₁, brd₁, bwr₁, bsp₁⟩ := maskSet_ok b₀
   refine WP.of_runBlock ⟨b, hbm, ?_⟩
-  rw [WP.block_append_iff]
   have bv : ∀ w, w ≠ .v4 → w ≠ .v5 → w ≠ .v6 → b.v w = a.v w := fun w h4 h5 h6 => by
     rw [bvv]; exact bv₀ w h4 h5 h6
-  have bg : ∀ r ∈ maskKept, r ≠ .x6 → b.gpr r = a.gpr r := fun r hr h6 => by
-    rw [bk r hr]; exact bg₀ r h6
-  have bm : b.mem = a.mem := by rw [bm₁, bm₀]
-  have brd : b.rd = a.rd := by rw [brd₁, brd₀]
-  have bwr : b.wr = a.wr := by rw [bwr₁, bwr₀]
-  have bsp : b.sp = a.sp := by rw [bsp₁, bsp₀]
-  replace b4 : b.v .v4 = bc 64 := by rw [bvv]; exact b4
-  replace b5 : b.v .v5 = bc 128 := by rw [bvv]; exact b5
-  replace b6 : b.v .v6 = bc 192 := by rw [bvv]; exact b6
-  obtain ⟨c, hc, c11, c12, crd, cwr, csp, ck, cm, cv, cmask⟩ := ip_ok b
-  refine WP.of_runBlock ⟨c, hc, ?_⟩
-  refine WP.of_runBlock ⟨_, by rw [runBlock_cons, exec_mov, runStep_some, runBlock_nil], ?_⟩
   have g : ∀ r ∈ maskKept, r ≠ .x6 → r ≠ .x7 → b.gpr r = s.gpr r := fun r hr h6 h7 => by
-    rw [bg r hr h6, ag r h6 h7]
-  have hc' : Consts c := by
-    refine ⟨fun k hk => ?_, by rw [cv, b4], by rw [cv, b5], by rw [cv, b6]⟩
-    rw [cv, tbyte_congr' (fun t ht => ?_) k hk, atab k hk]
-    obtain ⟨-, -, -, -, h4, h5, h6, -⟩ := treg_ne8 t ht
-    exact bv _ h4 h5 h6
-  have x15c : c.gpr .x15 = s₀.gpr .x15 := by
-    rw [ck .x15 (by simp [blockKept]), g _ (by simp [maskKept]) (by decide) (by decide), h.same.x15]
-  refine ⟨⟨?_, fun r hr => ?_, ?_, ?_, ?_, ?_⟩, ?_, ?_, hc'.congr (fun _ _ _ _ _ => rfl), ?_, ?_, ?_, ?_⟩
-  · rw [gpr_write_of_ne _ _ _ (by decide), x15c]
-  · have hk : r ∈ blockKept := by
-      simp only [outer, blockKept, List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
-      rcases hr with rfl | rfl | rfl | rfl <;> simp
-    have h6 : r ≠ .x6 ∧ r ≠ .x7 ∧ r ≠ .x10 := by
-      simp only [outer, List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl | rfl <;> decide
-    have hm : r ∈ maskKept := by
+    rw [bk r hr, bg₀ r h6, ag r h6 h7]
+  have bm : b.mem = s.mem := by rw [bm₁, bm₀, am]
+  refine ⟨⟨?_, fun r hr => ?_, ?_, ?_, ?_, ?_⟩, ?_, ?_, ⟨fun k hk => ?_, ?_, ?_, ?_⟩, bmask, ?_⟩
+  · rw [g _ (by simp [maskKept]) (by decide) (by decide), h.same.x15]
+  · have hm : r ∈ maskKept ∧ r ≠ .x6 ∧ r ≠ .x7 := by
       simp only [outer, maskKept, List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
       rcases hr with rfl | rfl | rfl | rfl <;> simp
-    rw [gpr_write_of_ne _ _ _ h6.2.2, ck r hk, g r hm h6.1 h6.2.1, h.same.keep r hr]
-  · rw [sp_write, csp, bsp, asp, h.same.sp]
-  · rw [rd_write, crd, brd, ard, h.same.rd]
-  · rw [wr_write, cwr, bwr, awr, h.same.wr]
-  · rw [mem_write, cm, bm, am]; exact h.same.frame
-  · rw [gpr_write_of_ne _ _ _ (by decide), ck .x14 (by simp [blockKept]), g _ (by simp [maskKept]) (by decide) (by decide),
-      h.x14]
+    rw [g r hm.1 hm.2.1 hm.2.2, h.same.keep r hr]
+  · rw [bsp₁, bsp₀, asp, h.same.sp]
+  · rw [brd₁, brd₀, ard, h.same.rd]
+  · rw [bwr₁, bwr₀, awr, h.same.wr]
+  · rw [bm]; exact h.same.frame
+  · rw [g _ (by simp [maskKept]) (by decide) (by decide), h.x5]
+  · rw [g _ (by simp [maskKept]) (by decide) (by decide), h.x14]
+  · rw [tbyte_congr' (fun t ht => ?_) k hk, atab k hk]
+    obtain ⟨-, -, -, -, h4, h5, h6, -⟩ := treg_ne8 t ht
+    exact bv _ h4 h5 h6
+  · rw [bvv]; exact b4
+  · rw [bvv]; exact b5
+  · rw [bvv]; exact b6
+  · rw [bm]; exact h.keys
+
+/-- `IP`, and `x10` to the first spread key: before the first pass. -/
+theorem encStart_ok {s₀ : State} {s : State} (h : TInv s₀ s) :
+    WP isa (.block (ipCode ++ ([mov .x10 .x15] : List Instr))) s (OInv s₀ (s₀.gpr .x5) 0) := by
+  rw [WP.block_append_iff]
+  obtain ⟨c, hc, c11, c12, crd, cwr, csp, ck, cm, cv, cmask⟩ := ip_ok s
+  refine WP.of_runBlock ⟨c, hc, ?_⟩
+  refine WP.of_runBlock ⟨_, by rw [runBlock_cons, exec_mov, runStep_some, runBlock_nil], ?_⟩
+  have x15c : c.gpr .x15 = s₀.gpr .x15 := by rw [ck .x15 (by simp [blockKept]), h.same.x15]
+  refine ⟨⟨?_, fun r hr => ?_, ?_, ?_, ?_, ?_⟩, ?_, ?_, h.consts.congr (fun w _ _ _ _ => by rw [v_write, cv]),
+    ?_, ?_, ?_, ?_⟩
+  · rw [gpr_write_of_ne _ _ _ (by decide), x15c]
+  · have hk : r ∈ blockKept ∧ r ≠ .x10 := by
+      simp only [outer, blockKept, List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
+      rcases hr with rfl | rfl | rfl | rfl <;> simp
+    rw [gpr_write_of_ne _ _ _ hk.2, ck r hk.1, h.same.keep r hr]
+  · rw [sp_write, csp, h.same.sp]
+  · rw [rd_write, crd, h.same.rd]
+  · rw [wr_write, cwr, h.same.wr]
+  · rw [mem_write, cm]; exact h.same.frame
+  · rw [gpr_write_of_ne _ _ _ (by decide), ck .x14 (by simp [blockKept]), h.x14]
   · rw [gpr_write_self, BitVec.setWidth_eq, x15c]
     simp [kpos]
-  · exact bmask.congr fun p hp => by
+  · exact h.masks.congr fun p hp => by
       rw [gpr_write_of_ne _ _ _ (maskRegs_ne p hp).2.1, cmask p hp]
-  · rw [mem_write, cm, bm, am]
+  · rw [mem_write, cm]
     exact h.keys
-  · rw [gpr_write_of_ne _ _ _ (by decide), c11, g _ (by simp [maskKept]) (by decide) (by decide), h.x5]
+  · rw [gpr_write_of_ne _ _ _ (by decide), c11, h.x5]
     rfl
-  · rw [gpr_write_of_ne _ _ _ (by decide), c12, g _ (by simp [maskKept]) (by decide) (by decide), h.x5]
+  · rw [gpr_write_of_ne _ _ _ (by decide), c12, h.x5]
     rfl
 
 /-! ## The passes -/
@@ -771,20 +788,28 @@ theorem passStep_ok {s₀ : State} (hp : BlockPre s₀) {x : BitVec 64} {p : Nat
   · rw [t11, h₁.r, passes, swap]
   · rw [t12, h₁.l, passes, swap]
 
-/-- TDEA encryption of the block in `x5` (as a 64-bit integer) with the key
-schedule at `x14`, into `x5`, but for the callee-saved registers. -/
-theorem blockCore_ok {s₀ : State} (hp : BlockPre s₀) :
-    WP isa blockCore s₀ fun s =>
-      Same s₀ s ∧ s.gpr .x14 = s₀.gpr .x14 ∧ s.gpr .x5 = tdes (sch s₀) (s₀.gpr .x5) := by
+/-- The setup the blocks of one call share, but for the saves. -/
+theorem prepCore_ok {s₀ : State} (hp : BlockPre s₀) :
+    WP isa (.seq (.block spreadPre) (.seq (.loop (.block spreadBody) (.nonzero .x .x16))
+      (.block tables))) s₀ (TInv s₀) := by
   refine WP.seq (WP.mono (spreadPre_ok s₀) fun s₁ h₁ => ?_)
   refine WP.seq (WP.mono (spreadLoop_ok hp h₁) fun s₂ h₂ => ?_)
-  refine WP.seq (WP.mono (setup_ok h₂) fun s₃ h₃ => ?_)
+  exact tables_ok h₂
+
+/-- TDEA encryption of the block in `x5` (as a 64-bit integer) with the key
+schedule at `x14` (spread at `x15`), into `x5`. -/
+theorem enc_ok {s₀ : State} (hp : BlockPre s₀) {s : State} (h : TInv s₀ s) :
+    WP isa enc s fun s' =>
+      Same s₀ s' ∧ s'.gpr .x14 = s₀.gpr .x14 ∧ s'.gpr .x5 = tdes (sch s₀) (s₀.gpr .x5) ∧
+      Consts s' ∧ Masks s' ∧ Keys s₀ s'.mem 48 := by
+  refine WP.seq (WP.mono (encStart_ok h) fun s₃ h₃ => ?_)
   refine WP.seq (WP.mono (passStep_ok hp (p := 0) (by decide) h₃) fun s₄ h₄ => ?_)
   refine WP.seq (WP.mono (passStep_ok hp (p := 1) (by decide) h₄) fun s₅ h₅ => ?_)
   refine WP.seq (WP.mono (pass_ok hp (p := 2) (by decide) h₅.same h₅.x14 h₅.x10 h₅.consts h₅.masks h₅.keys
     h₅.l h₅.r) fun s₆ h₆ => ?_)
-  obtain ⟨s₇, h₇, x5₇, rd₇, wr₇, sp₇, k₇, m₇⟩ := fp_ok s₆ h₆.l h₆.r
-  refine WP.of_runBlock ⟨s₇, h₇, ⟨⟨?_, fun r hr => ?_, ?_, ?_, ?_, ?_⟩, ?_, ?_⟩⟩
+  obtain ⟨s₇, h₇, x5₇, rd₇, wr₇, sp₇, k₇, m₇, v₇, mk₇⟩ := fp_ok s₆ h₆.l h₆.r
+  refine WP.of_runBlock ⟨s₇, h₇, ⟨⟨?_, fun r hr => ?_, ?_, ?_, ?_, ?_⟩, ?_, ?_,
+    h₆.consts.congr (fun w _ _ _ _ => by rw [v₇]), h₆.masks.congr mk₇, by rw [m₇]; exact h₆.keys⟩⟩
   · rw [k₇ .x15 (by simp [blockKept]), h₆.same.x15]
   · have hk : r ∈ blockKept := by
       simp only [outer, blockKept, List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
@@ -842,17 +867,23 @@ structure SameB (s₀ s : State) : Prop where
   wr : s.wr = s₀.wr
   frame : Frame [⟨s₀.gpr .x15, 456⟩] s₀.mem s.mem
 
-/-- TDEA encryption of the block in `x5` (as a 64-bit integer) with the key
-schedule at `x14`, into `x5`. -/
-theorem block_ok {s₀ : State} (hp : BlockPre s₀) :
-    WP isa block s₀ fun s =>
-      SameB s₀ s ∧ s.gpr .x14 = s₀.gpr .x14 ∧ s.gpr .x5 = tdes (sch s₀) (s₀.gpr .x5) ∧
-      ∀ i < 9, s.gpr (savedReg i) = s₀.gpr (savedReg i) := by
-  obtain ⟨hl, ho, hf, hr, h15, h14, h5, hout⟩ := saveSlots_facts
+/-- After `prep`: the setup the blocks share, with the callee-saved
+registers saved. -/
+structure PrepPost (s₀ s : State) : Prop where
+  same : SameB s₀ s
+  x5 : s.gpr .x5 = s₀.gpr .x5
+  x14 : s.gpr .x14 = s₀.gpr .x14
+  consts : Consts s
+  masks : Masks s
+  keys : Keys s₀ s.mem 48
+  slots : Spill.Saved (s₀.gpr .x15) s₀.gpr saveSlots s.mem
+
+theorem prep_ok {s₀ : State} (hp : BlockPre s₀) : WP isa prep s₀ (PrepPost s₀) := by
+  obtain ⟨hl, ho, hf, -, -, -, -, -⟩ := saveSlots_facts
   obtain ⟨X, hX, hXb, hXl, hXw⟩ := hp.scr
   have slotIn : ∀ p ∈ saveSlots, X.Contains ((s₀.gpr .x15) + BitVec.ofNat 64 p.2) 8 := fun p hp' => by
     rw [← hXb]; exact Offset.contains_base _ (by have := hl p hp'; omega) (by have := hl p hp'; omega)
-  rw [block, save_eq]
+  rw [prep, save_eq]
   apply WP.seq
   refine WP.mono (Spill.save_wp ho fun p hp' => ⟨X, hX, slotIn p hp'⟩) fun s₁ st => ?_
   have saveF : Frame [⟨(s₀.gpr .x15) + BitVec.ofNat 64 384, 72⟩] s₀.mem s₁.mem := by
@@ -865,34 +896,85 @@ theorem block_ok {s₀ : State} (hp : BlockPre s₀) :
     exact scheduleAt_frame saveF fun r hr' => by
       simp only [List.mem_singleton] at hr'; subst hr'
       exact (hp.disj.sub_left (Offset.sub_base _ (by decide))).symm
-  apply WP.seq
-  refine WP.mono (blockCore_ok bp₁) fun s₂ ⟨same₂, x14₂, x5₂⟩ => ?_
-  have x15₂ : s₂.gpr .x15 = (s₀.gpr .x15) := by rw [same₂.x15, st.gpr]
+  refine WP.mono (prepCore_ok bp₁) fun s₂ h₂ => ?_
   have sv : Spill.Saved (s₀.gpr .x15) s₀.gpr saveSlots s₂.mem := by
     have h := Spill.saveMem_saved hf s₀.mem (s₀.gpr .x15) s₀.gpr
     rw [← st.mem] at h
-    refine h.frame_in hl same₂.frame fun r hr' => ?_
+    refine h.frame_in hl h₂.same.frame fun r hr' => ?_
     simp only [List.mem_singleton] at hr'; subst hr'
     simp only [xR, st.gpr]
     exact Offset.disjoint_base _ (by decide) (by decide)
-  rw [restore_eq]
-  refine WP.mono (Spill.restore_wp x15₂ ho hr (fun p hp' => ?_) sv) fun s₃ h₃ => ?_
-  · rw [same₂.rd, same₂.wr, st.rd, st.wr]
-    exact ⟨X, List.mem_append_right _ hX, slotIn p hp'⟩
-  refine ⟨⟨?_, fun r hr' => ?_, ?_, ?_, ?_, ?_⟩, ?_, ?_, fun i hi => ?_⟩
-  · rw [h₃.other _ h15, x15₂]
-  · rw [h₃.other _ (hout r hr'), same₂.keep r hr', st.gpr]
-  · rw [h₃.sp, same₂.sp, st.sp]
-  · rw [h₃.rd, same₂.rd, st.rd]
-  · rw [h₃.wr, same₂.wr, st.wr]
-  · rw [h₃.mem]
-    refine (saveF.sub fun r hr' => ?_).trans (same₂.frame.sub fun r hr' => ?_)
+  refine ⟨⟨?_, fun r hr => ?_, ?_, ?_, ?_, ?_⟩, ?_, ?_, h₂.consts, h₂.masks, fun i hi => ?_, sv⟩
+  · rw [h₂.same.x15, st.gpr]
+  · rw [h₂.same.keep r hr, st.gpr]
+  · rw [h₂.same.sp, st.sp]
+  · rw [h₂.same.rd, st.rd]
+  · rw [h₂.same.wr, st.wr]
+  · refine (saveF.sub fun r hr' => ?_).trans (h₂.same.frame.sub fun r hr' => ?_)
     · simp only [List.mem_singleton] at hr'; subst hr'
       exact ⟨_, List.mem_singleton_self _, Offset.sub_base _ (by decide)⟩
     · simp only [List.mem_singleton] at hr'; subst hr'
       exact ⟨_, List.mem_singleton_self _, by simp only [xR, st.gpr]; exact Region.sub_prefix (by decide)⟩
-  · rw [h₃.other _ h14, x14₂, st.gpr]
-  · rw [h₃.other _ h5, x5₂, sch₁, st.gpr]
+  · rw [h₂.x5, st.gpr]
+  · rw [h₂.x14, st.gpr]
+  · have := h₂.keys i hi
+    simp only [sch₁, st.gpr] at this
+    exact this
+
+/-- The callee-saved registers restored. -/
+theorem restore_ok' {s₀ s : State} (hp : BlockPre s₀) (h15 : s.gpr .x15 = s₀.gpr .x15)
+    (hrd : s.rd = s₀.rd) (hwr : s.wr = s₀.wr)
+    (hs : Spill.Saved (s₀.gpr .x15) s₀.gpr saveSlots s.mem) :
+    WP isa (.block blockRestore) s (Spill.Restored s₀.gpr saveSlots s) := by
+  obtain ⟨hl, ho, -, hr, -, -, -, -⟩ := saveSlots_facts
+  obtain ⟨X, hX, hXb, hXl, hXw⟩ := hp.scr
+  have slotIn : ∀ p ∈ saveSlots, X.Contains ((s₀.gpr .x15) + BitVec.ofNat 64 p.2) 8 := fun p hp' => by
+    rw [← hXb]; exact Offset.contains_base _ (by have := hl p hp'; omega) (by have := hl p hp'; omega)
+  rw [restore_eq]
+  refine Spill.restore_wp h15 ho hr (fun p hp' => ?_) hs
+  rw [hrd, hwr]
+  exact ⟨X, List.mem_append_right _ hX, slotIn p hp'⟩
+
+/-- TDEA encryption of the block in `x5` (as a 64-bit integer) with the key
+schedule at `x14`, into `x5`. -/
+theorem block_ok {s₀ : State} (hp : BlockPre s₀) :
+    WP isa block s₀ fun s =>
+      SameB s₀ s ∧ s.gpr .x14 = s₀.gpr .x14 ∧ s.gpr .x5 = tdes (sch s₀) (s₀.gpr .x5) ∧
+      ∀ i < 9, s.gpr (savedReg i) = s₀.gpr (savedReg i) := by
+  obtain ⟨-, -, -, -, h15, h14, h5, hout⟩ := saveSlots_facts
+  rw [block]
+  apply WP.seq
+  refine WP.mono (prep_ok hp) fun s₁ h₁ => ?_
+  have bp₁ : BlockPre s₁ :=
+    ⟨by rw [h₁.same.rd, h₁.same.wr, h₁.x14]; exact hp.sched,
+      by rw [h₁.same.wr, h₁.same.x15]; exact hp.scr, by rw [h₁.x14, h₁.same.x15]; exact hp.disj⟩
+  have sch₁ : sch s₁ = sch s₀ := by
+    simp only [sch, h₁.x14]
+    exact scheduleAt_frame h₁.same.frame fun r hr' => by
+      simp only [List.mem_singleton] at hr'; subst hr'
+      exact hp.disj.symm
+  have t₁ : TInv s₁ s₁ := ⟨Same.refl _, rfl, rfl, h₁.consts, h₁.masks, fun i hi => by
+    rw [h₁.same.x15, sch₁]; exact h₁.keys i hi⟩
+  apply WP.seq
+  refine WP.mono (enc_ok bp₁ t₁) fun s₂ ⟨same₂, x14₂, x5₂, _, _, _⟩ => ?_
+  refine WP.mono (restore_ok' hp (by rw [same₂.x15, h₁.same.x15]) (by rw [same₂.rd, h₁.same.rd])
+    (by rw [same₂.wr, h₁.same.wr]) (h₁.slots.frame_in (lo := 384) (n := 72)
+      (saveSlots_facts.1) same₂.frame fun r hr' => by
+        simp only [List.mem_singleton] at hr'; subst hr'
+        simp only [xR, h₁.same.x15]
+        exact Offset.disjoint_base _ (by decide) (by decide))) fun s₃ h₃ => ?_
+  refine ⟨⟨?_, fun r hr' => ?_, ?_, ?_, ?_, ?_⟩, ?_, ?_, fun i hi => ?_⟩
+  · rw [h₃.other _ h15, same₂.x15, h₁.same.x15]
+  · rw [h₃.other _ (hout r hr'), same₂.keep r hr', h₁.same.keep r hr']
+  · rw [h₃.sp, same₂.sp, h₁.same.sp]
+  · rw [h₃.rd, same₂.rd, h₁.same.rd]
+  · rw [h₃.wr, same₂.wr, h₁.same.wr]
+  · rw [h₃.mem]
+    refine h₁.same.frame.trans (same₂.frame.sub fun r hr' => ?_)
+    simp only [List.mem_singleton] at hr'; subst hr'
+    exact ⟨_, List.mem_singleton_self _, by simp only [xR, h₁.same.x15]; exact Region.sub_prefix (by decide)⟩
+  · rw [h₃.other _ h14, x14₂, h₁.x14]
+  · rw [h₃.other _ h5, x5₂, sch₁, h₁.x5]
   · exact h₃.gpr_of (.inl (List.mem_map.mpr ⟨_, mem_saveSlots hi, rfl⟩))
 
 end VG.Proof.CmacTripleDes.AArch64

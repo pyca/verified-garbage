@@ -24,7 +24,8 @@ the block runs.
   (`L`) and doubles it twice, as a 64-bit integer: shifted left by one bit,
   and XORed with `0x1b` masked by the bit shifted out.
 * `update` keeps the state pointer in `x1`, the data pointer in `x2` and the
-  blocks left in `x3`; each block, `x5` is `C ⊕ Mᵢ`.
+  blocks left in `x3`; it runs `prep` once, then each block `enc` on
+  `x5 = C ⊕ Mᵢ`.
 * `finalize` forms `Mₙ` in `x5`: `Mₙ* ⊕ K1` for a complete block, else `Mₙ*`
   copied a byte at a time onto zeros in slot 6 (through advancing pointers:
   the model has no register-offset addressing), `0x80` after it, and XORed
@@ -78,11 +79,14 @@ def chainIn : List Instr :=
 def chainOut : List Instr :=
   [.rev .x5 .x5, .str .x .x5 .x1 0, .addImm .x .x2 .x2 8, .subImm .x .x3 .x3 1]
 
-def updBody : Prog isa := .seq (.block chainIn) (.seq block (.block chainOut))
+def updBody : Prog isa := .seq (.block chainIn) (.seq enc (.block chainOut))
 
+/-- The round keys, tables, constants and masks are set up once (`prep`)
+for all the blocks. -/
 def update : Prog isa :=
   .seq (.block [mov .x14 .x0, mov .x15 .x4])
-    (.ite (.zero .x .x3) (.block []) (.loop updBody (.nonzero .x .x3)))
+    (.ite (.zero .x .x3) (.block [])
+      (.seq prep (.seq (.loop updBody (.nonzero .x .x3)) (.block blockRestore))))
 
 /-! ## `vg_cmac_triple_des_finalize` -/
 

@@ -6,7 +6,7 @@
 ///
 /// Contract: `VG.Spec.Cmac.tdesInitContract`. Constant time: only the pointers and `key_len` may affect timing, not the key, the key schedule or the subkeys.
 ///
-/// This implementation looks up DES's S-boxes with AdvSIMD `tbl` in tables held in the vector registers (two boxes to a 64-byte table), which takes a time independent of the index, and computes its bit permutations as rotations and masks; the halves are kept rotated and spread so that the expansion is a byte layout, and the round keys are spread once per block.
+/// This implementation looks up DES's S-boxes with AdvSIMD `tbl` in tables held in the vector registers (two boxes to a 64-byte table), which takes a time independent of the index, and computes its bit permutations as rotations and masks; the halves are kept rotated and spread so that the expansion is a byte layout, and the round keys are spread once per call (before all the blocks of an update).
 ///
 /// # Safety
 ///
@@ -4062,7 +4062,7 @@ pub(crate) unsafe extern "C" fn vg_cmac_triple_des_init(key: *const u8, key_len:
 ///
 /// Contract: `VG.Spec.Cmac.tdesUpdateContract`. Constant time: only the pointers and `n` may affect timing, not the key schedule, the chaining value or the data.
 ///
-/// This implementation looks up DES's S-boxes with AdvSIMD `tbl` in tables held in the vector registers (two boxes to a 64-byte table), which takes a time independent of the index, and computes its bit permutations as rotations and masks; the halves are kept rotated and spread so that the expansion is a byte layout, and the round keys are spread once per block.
+/// This implementation looks up DES's S-boxes with AdvSIMD `tbl` in tables held in the vector registers (two boxes to a 64-byte table), which takes a time independent of the index, and computes its bit permutations as rotations and masks; the halves are kept rotated and spread so that the expansion is a byte layout, and the round keys are spread once per call (before all the blocks of an update).
 ///
 /// # Safety
 ///
@@ -4079,11 +4079,6 @@ pub(crate) unsafe extern "C" fn vg_cmac_triple_des_update(schedule: *const [u8; 
         "add x14, x0, #0",
         "add x15, x4, #0",
         "cbz x3, 20f",
-        "22:",
-        "ldr x5, [x1, #0]",
-        "ldr x6, [x2, #0]",
-        "eor x5, x5, x6",
-        "rev x5, x5",
         "str x19, [x15, #384]",
         "str x20, [x15, #392]",
         "str x21, [x15, #400]",
@@ -4113,7 +4108,7 @@ pub(crate) unsafe extern "C" fn vg_cmac_triple_des_update(schedule: *const [u8; 
         "add x6, x14, #0",
         "add x7, x15, #0",
         "movz x16, #24, lsl #0",
-        "23:",
+        "22:",
         "ldr q0, [x6, #0]",
         "ushr v1.2d, v0.2d, #2",
         "ushr v2.2d, v0.2d, #4",
@@ -4125,7 +4120,7 @@ pub(crate) unsafe extern "C" fn vg_cmac_triple_des_update(schedule: *const [u8; 
         "add x6, x6, #16",
         "add x7, x7, #16",
         "sub x16, x16, #1",
-        "cbnz x16, 23b",
+        "cbnz x16, 22b",
         "movz x6, #43207, lsl #0",
         "movk x6, #32516, lsl #16",
         "movk x6, #5620, lsl #32",
@@ -4327,6 +4322,11 @@ pub(crate) unsafe extern "C" fn vg_cmac_triple_des_update(schedule: *const [u8; 
         "movz x8, #8, lsl #0",
         "movk x8, #8194, lsl #32",
         "movk x8, #16, lsl #48",
+        "23:",
+        "ldr x5, [x1, #0]",
+        "ldr x6, [x2, #0]",
+        "eor x5, x5, x6",
+        "rev x5, x5",
         "movz x7, #16, lsl #0",
         "movk x7, #4, lsl #48",
         "and x11, x5, x7",
@@ -5279,6 +5279,11 @@ pub(crate) unsafe extern "C" fn vg_cmac_triple_des_update(schedule: *const [u8; 
         "ror x6, x11, #63",
         "and x6, x6, x7",
         "eor x5, x5, x6",
+        "rev x5, x5",
+        "str x5, [x1, #0]",
+        "add x2, x2, #8",
+        "sub x3, x3, #1",
+        "cbnz x3, 23b",
         "ldr x19, [x15, #384]",
         "ldr x20, [x15, #392]",
         "ldr x21, [x15, #400]",
@@ -5288,11 +5293,6 @@ pub(crate) unsafe extern "C" fn vg_cmac_triple_des_update(schedule: *const [u8; 
         "ldr x25, [x15, #432]",
         "ldr x26, [x15, #440]",
         "ldr x27, [x15, #448]",
-        "rev x5, x5",
-        "str x5, [x1, #0]",
-        "add x2, x2, #8",
-        "sub x3, x3, #1",
-        "cbnz x3, 22b",
         "b 21f",
         "20:",
         "21:",
@@ -5305,7 +5305,7 @@ pub(crate) unsafe extern "C" fn vg_cmac_triple_des_update(schedule: *const [u8; 
 ///
 /// Contract: `VG.Spec.Cmac.tdesFinalizeContract`. Constant time: only the pointers and `last_len` may affect timing, not the key schedule, the subkeys, the chaining value or the data.
 ///
-/// This implementation looks up DES's S-boxes with AdvSIMD `tbl` in tables held in the vector registers (two boxes to a 64-byte table), which takes a time independent of the index, and computes its bit permutations as rotations and masks; the halves are kept rotated and spread so that the expansion is a byte layout, and the round keys are spread once per block.
+/// This implementation looks up DES's S-boxes with AdvSIMD `tbl` in tables held in the vector registers (two boxes to a 64-byte table), which takes a time independent of the index, and computes its bit permutations as rotations and masks; the halves are kept rotated and spread so that the expansion is a byte layout, and the round keys are spread once per call (before all the blocks of an update).
 ///
 /// # Safety
 ///

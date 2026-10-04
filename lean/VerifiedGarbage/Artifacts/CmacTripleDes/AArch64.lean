@@ -18,7 +18,7 @@ def desNote : String :=
   "This implementation looks up DES's S-boxes with AdvSIMD `tbl` in tables held in the vector \
   registers (two boxes to a 64-byte table), which takes a time independent of the index, and \
   computes its bit permutations as rotations and masks; the halves are kept rotated and spread \
-  so that the expansion is a byte layout, and the round keys are spread once per block."
+  so that the expansion is a byte layout, and the round keys are spread once per call (before all the blocks of an update)."
 
 def artifacts : List Artifact := [
   { Spec.Cmac.tdesInitApi with

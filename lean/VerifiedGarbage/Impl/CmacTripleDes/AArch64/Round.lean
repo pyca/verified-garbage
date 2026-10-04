@@ -24,13 +24,15 @@ permutation `P`, and the initial and final permutations into `IP` and
 `IP⁻¹`.
 
 `block` (TDEA encryption of the block in `x5`, with the key schedule at
-`x14` and the scratch buffer at `x15`) first spreads the 48 round keys into
+`x14` and the scratch buffer at `x15`; `prep`, `enc` and the restore, which
+`update` runs once around its blocks) first spreads the 48 round keys into
 the scratch buffer (`spreadBody`, two at a time, by a `tbl` from four
 shifted copies of them), loads the tables, the constants and the masks, and
 then runs the three passes from the spread keys. It uses `x0`, `x5`–`x13`,
 `x16` and `x17`, the caller-saved vector registers `v0`–`v7` and
-`v16`–`v31`, and `x19`–`x27`, which it saves in the scratch buffer after the
-spread keys (bytes 384–455) and restores (`blockSave`, `blockRestore`).
+`v16`–`v31`, and `x19`–`x27`, which `prep` saves in the scratch buffer after
+the spread keys (bytes 384–455) and the end restores (`blockSave`,
+`blockRestore`).
 -/
 
 namespace VG.Impl.CmacTripleDes.AArch64
@@ -231,18 +233,8 @@ def spreadBody : List Instr :=
    .vop (.logic .and .v4 .v4 .v6), .vop (.logic .eor .v4 .v4 .v7), .strq .v4 .x7 0,
    .addImm .x .x6 .x6 16, .addImm .x .x7 .x7 16, .subImm .x .x16 .x16 1]
 
-/-- The tables, the quarters' constants, the masks, `IP`, and `x10` to the
-first spread key. -/
-def setup : List Instr :=
-  Tbl.AArch64.loadTable sTable ++ quarterConsts ++ maskSet ++ ipCode ++ [mov .x10 .x15]
-
-/-- TDEA encryption (`E_K3(D_K2(E_K1(x)))`) of the block `x` in `x5` (as a
-64-bit integer), into `x5`, with the key schedule at `x14`: the passes share
-one `IP` and one `IP⁻¹`, which cancel between them. -/
-def blockCore : Prog isa :=
-  .seq (.block spreadPre) (.seq (.loop (.block spreadBody) (.nonzero .x .x16))
-    (.seq (.block setup) (.seq (.seq (pass false) (.block (passTail 120)))
-      (.seq (.seq (pass true) (.block (passTail 136))) (.seq (pass false) (.block fpCode))))))
+/-- The tables, the quarters' constants and the masks. -/
+def tables : List Instr := Tbl.AArch64.loadTable sTable ++ quarterConsts ++ maskSet
 
 /-- The callee-saved registers that hold masks. -/
 def savedReg (i : Nat) : Reg := [Reg.x19, .x20, .x21, .x22, .x23, .x24, .x25, .x26, .x27].getD i .x19
@@ -252,8 +244,23 @@ def blockSave : List Instr := (List.range 9).map fun i => .str .x (savedReg i) .
 
 def blockRestore : List Instr := (List.range 9).map fun i => .ldr .x (savedReg i) .x15 (384 + 8 * i)
 
-/-- TDEA encryption, keeping the callee-saved registers that hold masks. -/
-def block : Prog isa := .seq (.block blockSave) (.seq blockCore (.block blockRestore))
+/-- What the blocks of one call share, before them: the callee-saved
+registers saved, the round keys of the schedule at `x14` spread into the
+scratch buffer at `x15`, and the tables, constants and masks loaded. -/
+def prep : Prog isa :=
+  .seq (.block blockSave) (.seq (.block spreadPre)
+    (.seq (.loop (.block spreadBody) (.nonzero .x .x16)) (.block tables)))
+
+/-- TDEA encryption (`E_K3(D_K2(E_K1(x)))`) of the block `x` in `x5` (as a
+64-bit integer), into `x5`, after `prep`: `IP`, `x10` to the first spread
+key, and the passes, which share one `IP` and one `IP⁻¹`, which cancel
+between them. -/
+def enc : Prog isa :=
+  .seq (.block (ipCode ++ [mov .x10 .x15])) (.seq (.seq (pass false) (.block (passTail 120)))
+    (.seq (.seq (pass true) (.block (passTail 136))) (.seq (pass false) (.block fpCode))))
+
+/-- TDEA encryption of one block, keeping the callee-saved registers. -/
+def block : Prog isa := .seq prep (.seq enc (.block blockRestore))
 
 /-! ## The key schedule -/
 
