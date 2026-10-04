@@ -487,4 +487,15 @@ theorem wv_to64 {m : Mem} {D' : Addr} {V : Nat} (hV : V < 2 ^ (52 * 20))
   generalize 2 ^ (64 * 17) = b at h2 ⊢
   exact Nat.mod_eq_of_lt (by omega)
 
+/-- `wv_to64` for a value below twice a number of sixteen words. -/
+theorem wv_to64_lt {m m₀ : Mem} {D' A : Addr} {d V : Nat} (hV : V < 2 * wv m₀ A d 16)
+    (h : ∀ w < 17, word m D' (8 * w) = BitVec.ofNat 64 (V / 2 ^ (64 * w) % 2 ^ 64)) : wv m D' 0 17 = V := by
+  have h3 : ∀ k a, a < 2 ^ k → 2 * a ≤ 2 ^ (k + 1) := fun k a h => by rw [Nat.pow_succ]; omega
+  have h4 := h3 _ _ (VG.Proof.Bignum.X86_64.wv_lt m₀ A d 16)
+  have h2 := pow2_le (a := 64 * 16 + 1) (b := 52 * 20) (by decide)
+  refine wv_to64 ?_ h
+  generalize 2 ^ (64 * 16 + 1) = c at h4 h2
+  generalize 2 ^ (52 * 20) = b at h2 ⊢
+  omega
+
 end VG.Proof.Bignum.X86_64.AmmSym
