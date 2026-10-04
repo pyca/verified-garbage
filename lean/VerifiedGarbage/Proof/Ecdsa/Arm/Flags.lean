@@ -35,7 +35,7 @@ abbrev flagW (c : Cfg) (base : Addr) (s : State) : BitVec 32 := s.mem.readW (off
 /-- One `or` of `nonzero`. -/
 def orStep (a j : Nat) : List Instr := [.ldr .r4 wb (a + 4 * (j + 1)), .dp .orr .r5 .r5 (.reg .r4)]
 
-theorem nonzero_eq (c : Cfg) (a : Nat) : c.nonzero a = [.ldr .r5 wb a] ++
+theorem nonzero_eq (c : Cfg) (a : Nat) : c.nonzero a = ([.ldr .r5 wb a] : List Instr) ++
     (List.range (2 * c.n - 1)).flatMap (orStep a) ++
     ([.mov .r4 (.imm 0), .dp .sub .r4 .r4 (.reg .r5), .dp .orr .r4 .r4 (.reg .r5),
       .mov .r4 (.shifted .r4 .lsr 31), .mov .r5 (.imm 0), .dp .sub .r5 .r5 (.reg .r4)] : List Instr) :=
