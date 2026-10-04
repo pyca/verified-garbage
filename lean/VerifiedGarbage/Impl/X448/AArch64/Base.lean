@@ -25,11 +25,10 @@ below `Ib` and give limbs below `Mb`; sums and differences take reduced
 operands. So an addition computes `x₁y₂ + y₁x₂` with two products (not as
 `(x₁ + y₁)(x₂ + y₂) - x₁x₂ - y₁y₂`), and `b ∓ d·c·e` with `small`
 (`a + 39081 e`, `d = -39081`) of `c·e` and of its negation: one square and ten
-products (`addOps`). Each step's two additions are independent, so they run
-together (`addBoth`): five of each one's products are pairs of AdvSIMD
-multiplications (`Impl/Curve448/AArch64/Neon.lean`), each interleaved with
-scalar products of the other, as the ladder's steps are. The function saves
-`v8`–`v15`.
+products (`addOps`). Adding an affine entry (`addAffine`), eight of them are
+four pairs of AdvSIMD multiplications (`Impl/Curve448/AArch64/Neon.lean`), each
+interleaved with independent scalar operations, as the ladder's steps are. The
+function saves `v8`–`v15`.
 
 Then `X448(k, 5) = Y² / X²` (`Y` and `X` of `[k] B`): the squares go to the
 ladder's `X2` and `Z2`, inverted and multiplied as the ladder's result is
@@ -63,12 +62,10 @@ def OX : Nat := slot 6
 def OY : Nat := slot 7
 def EX : Nat := slot 8
 def EY : Nat := slot 9
-/-- The odd addition's temporaries (slots 10–22), and zero. -/
+/-- The additions' temporaries (slots 10–18), and zero (slot 19): with slots 20–21, every
+slot is one of the ladder's 22 (`Proof/X448/AArch64/Weak/Env.lean`). -/
 def t (i : Nat) : Nat := slot (10 + i)
-def ZERO : Nat := slot 23
-/-- The even addition's temporaries, past the vector working space and `v8`–`v15`
-(slots 38–50). -/
-def u (i : Nat) : Nat := slot (38 + i)
+def ZERO : Nat := slot 19
 /-- Where the output pointer is kept. -/
 def OUT : Nat := 24
 
@@ -76,36 +73,30 @@ def OUT : Nat := 24
 
 /-- `(X₁ : Y₁ : Z₁) + (X₂ : Y₂ : Z₂)` into `(X₁, Y₁, Z₁)`, by RFC 8032 §5.2.4's
 complete law (`d = -39081`): `a = Z₁Z₂`, `b = a²`, `c = X₁X₂`, `e = Y₁Y₂`,
-`f = b - d·c·e`, `g = b + d·c·e`, `k = X₁Y₂ + Y₁X₂`, and `(a·f·k, a·g·(e - c), f·g)`,
-with temporaries `w`. -/
-def addOps (w : Nat → Nat) (x1 y1 z1 x2 y2 z2 : Nat) : List Fast.Op :=
-  [.mul (w 0) z1 z2, .mul (w 1) (w 0) (w 0), .mul (w 2) x1 x2, .mul (w 3) y1 y2,
-   .mul (w 4) (w 2) (w 3), .small (w 5) (w 1) (w 4), .sub (w 4) ZERO (w 4),
-   .small (w 1) (w 1) (w 4), .mul (w 4) x1 y2, .mul (w 6) y1 x2,
-   .addSub (w 4) (w 6) (w 4) (w 6), .addSub (w 2) (w 3) (w 3) (w 2),
-   .mul (w 2) (w 0) (w 5), .mul x1 (w 2) (w 4), .mul (w 6) (w 0) (w 1), .mul y1 (w 6) (w 3),
-   .mul z1 (w 5) (w 1)]
+`f = b - d·c·e`, `g = b + d·c·e`, `k = X₁Y₂ + Y₁X₂`, and `(a·f·k, a·g·(e - c), f·g)`.
+No operation's output is one of its operands, but `small`'s first. -/
+def addOps (x1 y1 z1 x2 y2 z2 : Nat) : List Fast.Op :=
+  [.mul (t 0) z1 z2, .mul (t 1) (t 0) (t 0), .mul (t 2) x1 x2, .mul (t 3) y1 y2,
+   .mul (t 4) (t 2) (t 3), .small (t 5) (t 1) (t 4), .sub (t 6) ZERO (t 4),
+   .small (t 1) (t 1) (t 6), .mul (t 4) x1 y2, .mul (t 6) y1 x2,
+   .addSub (t 7) (t 8) (t 4) (t 6), .addSub (t 4) (t 6) (t 3) (t 2),
+   .mul (t 2) (t 0) (t 5), .mul x1 (t 2) (t 7), .mul (t 3) (t 0) (t 1), .mul y1 (t 3) (t 6),
+   .mul z1 (t 5) (t 1)]
 
-/-- Both of a step's additions of affine points (`Z₂ = 1`, so `a = Z₁`): the selected
-entries to the accumulators, the odd one with temporaries `t`, the even one with `u`. In
-each part a pair of products in AdvSIMD (`Neon.mul2`) is interleaved with scalar
-operations independent of it. -/
-def addBoth : List Instr :=
-  Fast.weave (codeOf [.mul (t 1) AZ AZ, .mul (t 2) AX OX, .mul (t 3) AY OY,
-      .mul (t 4) (t 2) (t 3), .small (t 5) (t 1) (t 4), .sub (t 7) ZERO (t 4),
-      .small (t 8) (t 1) (t 7)])
-    (Curve448.AArch64.Neon.mul2 (u 2) BX EX (u 3) BY EY) ++
-  Fast.weave (codeOf [.mul (u 1) BZ BZ, .mul (u 4) (u 2) (u 3),
-      .small (u 5) (u 1) (u 4), .sub (u 7) ZERO (u 4), .small (u 8) (u 1) (u 7)])
-    (Curve448.AArch64.Neon.mul2 (t 9) AX OY (t 10) AY OX) ++
-  Fast.weave (codeOf [.mul (u 9) BX EY, .mul (u 10) BY EX, .addSub (u 9) (u 10) (u 9) (u 10),
-      .addSub (u 2) (u 3) (u 3) (u 2), .addSub (t 9) (t 10) (t 9) (t 10),
-      .addSub (t 2) (t 3) (t 3) (t 2)])
-    (Curve448.AArch64.Neon.mul2 (t 11) AZ (t 5) (t 12) AZ (t 8)) ++
-  Fast.weave (codeOf [.mul (u 11) BZ (u 5), .mul (u 12) BZ (u 8), .mul BZ (u 5) (u 8)])
-    (Curve448.AArch64.Neon.mul2 AX (t 11) (t 9) AY (t 12) (t 3)) ++
-  Fast.weave (codeOf [.mul AZ (t 5) (t 8)])
-    (Curve448.AArch64.Neon.mul2 BX (u 11) (u 9) BY (u 12) (u 3))
+/-- `(X : Y : Z) + (x, y)` into `(X, Y, Z)`: `addOps` with `Z₂ = 1`, so `a = Z`, its
+pairs of independent products in AdvSIMD (`Neon.mul2`), each interleaved with scalar
+operations independent of it, as the ladder's steps are; `Z` is `f·g` through `t 8`. -/
+def addAffine (x1 y1 z1 x2 y2 : Nat) : List Instr :=
+  Fast.weave (codeOf [.mul (t 0) z1 z1])
+    (Curve448.AArch64.Neon.mul2 (t 1) x1 x2 (t 2) y1 y2) ++
+  Fast.weave (codeOf [.mul (t 3) (t 1) (t 2), .small (t 4) (t 0) (t 3), .sub (t 5) ZERO (t 3),
+      .small (t 0) (t 0) (t 5)])
+    (Curve448.AArch64.Neon.mul2 (t 6) x1 y2 (t 7) y1 x2) ++
+  codeOf [.addSub (t 3) (t 5) (t 6) (t 7), .addSub (t 6) (t 7) (t 2) (t 1)] ++
+  Fast.weave (codeOf [.mul (t 8) (t 4) (t 0)])
+    (Curve448.AArch64.Neon.mul2 (t 1) z1 (t 4) (t 2) z1 (t 0)) ++
+  Fast.weave (codeOf [.copy z1 (t 8)])
+    (Curve448.AArch64.Neon.mul2 x1 (t 1) (t 3) y1 (t 2) (t 7))
 
 /-! ## Constants -/
 
@@ -198,25 +189,27 @@ to their accumulators. `x9` is nonzero while another step follows. -/
 def step : Prog isa :=
   .seq (.block digits) <|
   .seq (selectFrom (List.range 56)) <|
-  .block (negate OX (BITS + 4) (t 1) ++ negate EX BITS (u 1) ++ addBoth ++
+  .block (negate OX (BITS + 4) (t 0) ++ addAffine AX AY AZ OX OY ++
+    negate EX BITS (t 0) ++ addAffine BX BY BZ EX EY ++
     [.addImm .x .x19 .x19 1, .subImm .x .x9 .x19 56])
 
-/-- Save the registers, keep the output pointer, expand the clamped scalar's bits, and
-start both accumulators at `[G] B` and the counter at 0. -/
+/-- Save the registers, keep the output pointer, set `x12` to `2²⁸ - 1` and every slot to
+zero, expand the clamped scalar's bits, and start both accumulators at `[G] B` and the
+counter at 0. -/
 def setup : Prog isa :=
   .seq (.block ([.addImm .x .x3 .x2 0, st .x19 0, st .x20 8, st .x0 OUT] ++ save ++
-    Fast.vsave)) <|
+    Fast.vsave ++ [.movz .x .x12 0xffff 0, .movk .x .x12 0x0fff 1, .movz .x .x4 0 0] ++
+    (List.range 352).map (fun i => st .x4 (slot 0 + 8 * i)))) <|
   .seq AArch64.bits <|
-  .block ([.movz .x .x12 0xffff 0, .movk .x .x12 0x0fff 1] ++ constSlot ZERO 0 ++
-    constSlot AX baseG.1 ++ constSlot AY baseG.2 ++ constSlot AZ 1 ++
+  .block (constSlot AX baseG.1 ++ constSlot AY baseG.2 ++ constSlot AZ 1 ++
     constSlot BX baseG.1 ++ constSlot BY baseG.2 ++ constSlot BZ 1 ++ [.movz .x .x19 0 0])
 
 /-- `A := 16 A + B`. -/
 def combine : Prog isa :=
   .seq (.block [.movz .x .x19 4 0]) <|
-  .seq (.loop (.block (codeOf (addOps t AX AY AZ AX AY AZ) ++ [.subImm .x .x19 .x19 1]))
+  .seq (.loop (.block (codeOf (addOps AX AY AZ AX AY AZ) ++ [.subImm .x .x19 .x19 1]))
     (.nonzero .x .x19)) <|
-  .block (codeOf (addOps t AX AY AZ BX BY BZ))
+  .block (codeOf (addOps AX AY AZ BX BY BZ))
 
 /-- `Y²` to `X2` and `X²` to `Z2`, as the ladder leaves `x₂` and `z₂`, then `Y² / X²`,
 frozen and packed to the output, and the registers restored. -/
