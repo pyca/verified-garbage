@@ -25,20 +25,6 @@ theorem sel_mask (x d : BitVec 64) (y : BitVec 64) (c : Bool) :
     rw [this, BitVec.and_allOnes, BitVec.xor_assoc, BitVec.xor_self, BitVec.xor_zero]
     simp
 
-theorem mod_math (X N D : Nat) (c : Bool) (hsum : D + N = X + 2 ^ 256 * c.toNat) (hD : D < 2 ^ 256)
-    (hX : X < 2 ^ 256) (hN : 2 ^ 255 ≤ N) : (if c then X else D) = X % N := by
-  cases c
-  · simp only [Bool.toNat_false, Nat.mul_zero, Nat.add_zero] at hsum
-    simp only [Bool.false_eq_true, ite_false]
-    have hge : N ≤ X := by omega
-    have hlt : X - N < N := by omega
-    rw [Nat.mod_eq_sub_mod hge, Nat.mod_eq_of_lt hlt]
-    omega
-  · simp only [Bool.toNat_true, Nat.mul_one] at hsum
-    simp only [ite_true]
-    have hlt : X < N := by omega
-    rw [Nat.mod_eq_of_lt hlt]
-
 theorem reduce_math (x0 x1 x2 x3 n0 n1 n2 n3 : BitVec 64) {c1 c2 c3 c4 : Bool}
     (h1 : c1 = decide (x0.toNat < n0.toNat)) (h2 : c2 = decide (x1.toNat < n1.toNat + c1.toNat))
     (h3 : c3 = decide (x2.toNat < n2.toNat + c2.toNat)) (h4 : c4 = decide (x3.toNat < n3.toNat + c3.toNat))

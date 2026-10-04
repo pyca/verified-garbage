@@ -200,53 +200,6 @@ theorem loop_ct :
     ⟨hL.pp_pos, Nat.le_refl _, by rw [Nat.sub_self]; exact b₁⟩,
     ⟨hL.pp_pos, Nat.le_refl _, by rw [Nat.sub_self]; exact b₂⟩⟩) fun _ _ h => h
 
-/-! ## The frames -/
-
-/-- A frame saving a register leaks only `sp`. -/
-theorem frame_ct {r r' : Reg} {body : Prog isa} {P R : State → State → Prop}
-    (hsp : ∀ a b, P a b → a.sp = b.sp)
-    (hb : RelCT isa (fun a b => ∃ s t, P s t ∧ a = pushed r s ∧ b = pushed r t) body R) :
-    RelCT isa P (.frame (.push r) body (.pop r')) fun _ _ => True := by
-  intro s t ts tt s' t' hp es et
-  have push_eq : ∀ {a b : State}, isa.push (.push r) a = some b → b = pushed r a := by
-    intro a b h
-    simp only [isa, push] at h
-    split at h <;> cases h
-    rfl
-  cases es with
-  | frame ps bs qs =>
-    cases et with
-    | frame pt bt qt =>
-      have ea := push_eq ps
-      have eb := push_eq pt
-      subst ea eb
-      obtain ⟨rfl, _⟩ := hb _ _ _ _ _ _ ⟨s, t, hp, rfl, rfl⟩ bs bt
-      have sp₁ := (Exec.rdwr bs).2.2
-      have sp₂ := (Exec.rdwr bt).2.2
-      have he := hsp s t hp
-      refine ⟨?_, trivial⟩
-      simp only [addrs, sp₁, sp₂, pushed, he]
-
-/-- Allocating and freeing a buffer leaks nothing. -/
-theorem alloc_ct {bytes : Nat} {body : Prog isa} {P R : State → State → Prop}
-    (hb : RelCT isa (fun a b => ∃ s t, P s t ∧ a = allocated bytes s ∧ b = allocated bytes t) body R) :
-    RelCT isa P (.frame (.alloc bytes) body (.free bytes)) fun _ _ => True := by
-  intro s t ts tt s' t' hp es et
-  have alloc_eq : ∀ {a b : State}, isa.push (.alloc bytes) a = some b → b = allocated bytes a := by
-    intro a b h
-    simp only [isa, push] at h
-    split at h <;> cases h
-    rfl
-  cases es with
-  | frame ps bs qs =>
-    cases et with
-    | frame pt bt qt =>
-      have ea := alloc_eq ps
-      have eb := alloc_eq pt
-      subst ea eb
-      obtain ⟨rfl, _⟩ := hb _ _ _ _ _ _ ⟨s, t, hp, rfl, rfl⟩ bs bt
-      exact ⟨rfl, trivial⟩
-
 /-! ## The whole function -/
 
 /-- Two calls whose public data agree, in the inner frame. -/
@@ -315,8 +268,8 @@ theorem rest_ct : RelCT isa (Two fun L _ t => Entry L t)
 
 theorem scrypt_ct :
     ConstantTime isa Proof.Scrypt.scryptAArch64.pre Proof.Scrypt.scryptAArch64.pub (scrypt name pbk) := by
-  refine RelCT.constantTime (frame_ct (fun _ _ h => h.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.1)
-    (alloc_ct (R := fun _ _ => True) ?_))
+  refine RelCT.constantTime (RelCT.pushFrame (fun _ _ h => h.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.1)
+    (RelCT.alloc (R := fun _ _ => True) ?_))
   refine (save_ct.seq (rest_ct hv hd name)).mono ?_ fun _ _ _ => trivial
   rintro _ _ ⟨_, _, ⟨s₁, s₂, ⟨h₁, h₂, hp⟩, rfl, rfl⟩, rfl, rfl⟩
   exact ⟨s₁, s₂, h₁, h₂, hp, rfl, rfl⟩
