@@ -75,6 +75,14 @@ def load128 (s : State) (a : Addr) : Option (BitVec 128) :=
 def store128 (s : State) (a : Addr) (v : BitVec 128) : Option State :=
   if InRegions s.wr a 16 then some { s with mem := s.mem.writeW a v } else none
 
+/-- SDM Vol. 2, MOVQ: an 8-byte load, faulting outside readable regions. -/
+def load64 (s : State) (a : Addr) : Option (BitVec 64) :=
+  if InRegions (s.rd ++ s.wr) a 8 then some (s.mem.readW a 64) else none
+
+/-- SDM Vol. 2, MOVQ: an 8-byte store, faulting outside writable regions. -/
+def store64 (s : State) (a : Addr) (v : BitVec 64) : Option State :=
+  if InRegions s.wr a 8 then some { s with mem := s.mem.writeW a v } else none
+
 def setXmm (s : State) (r : XReg) (v : BitVec 128) : State :=
   { s with xmm := fun r' => if r' = r then v else s.xmm r' }
 

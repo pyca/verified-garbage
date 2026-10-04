@@ -7,7 +7,11 @@ These instruction-level inputs and expected results are reused from
 `VerifiedGarbageTest/X86_64Sse.lean`, where they were cross-checked with
 native intrinsics. The legacy 128-bit SDM operations are identical in
 32-bit and 64-bit modes; register availability and MOVD differ, tested
-here separately. These are ISA transcription tests, not new primitive
+here separately. The results of `pshuflw` and `pshufhw`, which the
+x86-64 model does not have, were computed with the native intrinsics
+`_mm_shufflelo_epi16` and `_mm_shufflehi_epi16`, and those of the SHA-1
+instructions, `paddq` and `movq` re-checked with theirs (`_mm_sha1rnds4_epu32`,
+`_mm_add_epi64`, `_mm_loadl_epi64`, …). These are ISA transcription tests, not new primitive
 known-answer vectors. Tests cover aliasing, byte/lane order, oversized
 immediates, memory permissions, instruction printing and CPU requirements.
 -/
@@ -51,6 +55,10 @@ def bin (op : XBinOp) : BitVec 128 := ((XOp.bin op .xmm0 .xmm1).exec s).xmm .xmm
 #guard bin .pandn == 0x76543210800000000123456700204468#128
 #guard bin .aesenc == 0xd8908bc5e4ae3f56c95bfb9bd0b4a271#128
 #guard bin .aesenclast == 0x8379dc203b20bd85479d91b9b512a2b2#128
+#guard bin .paddq == 0x89abcdee812345677edcba9788888888#128
+#guard bin .sha1msg1 == 0x777777777777777701234567f6543210#128
+#guard bin .sha1msg2 == 0x13579bdefdb97530d9d1d9c1ca07539c#128
+#guard bin .sha1nexte == 0xe26af37a800000007fffffff12345678#128
 
 
 /-- `xmm1` after `op xmm1, xmm0`. -/
@@ -58,6 +66,27 @@ def binRev (op : XBinOp) : BitVec 128 := ((XOp.bin op .xmm1 .xmm0).exec s).xmm .
 
 #guard binRev .sha256msg1 == 0x22a233b29fffffff91001fff21343677#128
 #guard binRev .sha256msg2 == 0x246c964d5082e17c1f685f12dc537edc#128
+#guard binRev .sha1msg1 == 0x8000000092345678f65432101317131f#128
+#guard binRev .sha1msg2 == 0xfdb97531fdb9753013579bdedf1a4693#128
+#guard binRev .sha1nexte == 0x89abcdee01234567fedcba9876543210#128
+-- `paddq` carries within each quadword only.
+#guard ((XOp.bin .paddq .xmm0 .xmm1).exec
+  { s with xmm := fun r => if r = .xmm0 then 0x0000000000000001ffffffffffffffff#128
+    else if r = .xmm1 then 1 else 0 }).xmm .xmm0 == 0x00000000000000010000000000000000#128
+
+/-- `xmm0` after `sha1rnds4 xmm0, xmm1, func`. -/
+def rnds4 (func : BitVec 8) : BitVec 128 := ((XOp.sha1rnds4 .xmm0 .xmm1 func).exec s).xmm .xmm0
+
+#guard rnds4 0 == 0x88770e5dc3c269cb8450348841941a66#128
+#guard rnds4 1 == 0x9befbfa2892a787537172cf90b7fdde0#128
+#guard rnds4 2 == 0xd1c194575e2df2612adb99130eba6b37#128
+#guard rnds4 3 == 0x6469319c14f404b96a4014316262136d#128
+-- Only bits 1:0 of the immediate select.
+#guard rnds4 0xfe == 0xd1c194575e2df2612adb99130eba6b37#128
+#guard rnds4 0x7d == 0x9befbfa2892a787537172cf90b7fdde0#128
+-- `sha1rnds4 xmm1, xmm0, func`.
+#guard ((XOp.sha1rnds4 .xmm1 .xmm0 0).exec s).xmm .xmm1 == 0x9e417aea157c80fa968b755dfd98a77f#128
+#guard ((XOp.sha1rnds4 .xmm1 .xmm0 3).exec s).xmm .xmm1 == 0xea04c596079626d86e4061c7d0768e52#128
 
 -- `pshufb xmm0, xmm2` reverses the bytes of each doubleword.
 #guard ((XOp.bin .pshufb .xmm0 .xmm2).exec s).xmm .xmm0 ==
@@ -129,6 +158,21 @@ def shuf (order : BitVec 8) : BitVec 128 := ((XOp.pshufd .xmm1 .xmm0 order).exec
 #guard shuf 0x93 == 0x01234567fedcba987654321089abcdef#128
 #guard shuf 0x00 == 0x76543210765432107654321076543210#128
 
+/-- `xmm1` after `pshuflw xmm1, xmm0, order`. -/
+def shufLo (order : BitVec 8) : BitVec 128 := ((XOp.pshuflw .xmm1 .xmm0 order).exec s).xmm .xmm1
+/-- `xmm1` after `pshufhw xmm1, xmm0, order`. -/
+def shufHi (order : BitVec 8) : BitVec 128 := ((XOp.pshufhw .xmm1 .xmm0 order).exec s).xmm .xmm1
+
+#guard shufLo 0x1b == 0x89abcdef0123456732107654ba98fedc#128
+#guard shufLo 0x93 == 0x89abcdef01234567ba9876543210fedc#128
+#guard shufLo 0x00 == 0x89abcdef012345673210321032103210#128
+#guard shufHi 0x1b == 0x45670123cdef89abfedcba9876543210#128
+#guard shufHi 0x93 == 0xcdef0123456789abfedcba9876543210#128
+#guard shufHi 0xff == 0x89ab89ab89ab89abfedcba9876543210#128
+-- Both with `0xb1` rotate each doubleword by 16 bits.
+#guard ((XOp.pshufhw .xmm0 .xmm0 0xb1).exec ((XOp.pshuflw .xmm0 .xmm0 0xb1).exec s)).xmm .xmm0 ==
+  0xcdef89ab45670123ba98fedc32107654#128
+
 -- Only the destination changes.
 #guard ((XOp.bin .paddd .xmm0 .xmm1).exec s).xmm .xmm1 == b
 #guard ((XOp.pshufd .xmm1 .xmm0 0x1b).exec s).xmm .xmm0 == a
@@ -141,6 +185,21 @@ def shuf (order : BitVec 8) : BitVec 128 := ((XOp.pshufd .xmm1 .xmm0 order).exec
 #guard ((exec (.movdquStore { base := .edi, disp := 0x100 } .xmm0) s).map
   (·.mem.readW 0x200 128)) == some a
 #guard (exec (.movdquStore { base := .edi, disp := 0x101 } .xmm0) s).isNone
+
+-- `movq`: the low 8 bytes, little-endian, zeroing the high quadword on a
+-- load; within the permitted regions only.
+#guard ((exec (.movqLoad .xmm0 { base := .edi }) s).map (·.xmm .xmm0)) ==
+  some 0x00000000000000007a69584736251403#128
+#guard ((exec (.movqLoad .xmm7 { base := .edi, disp := 8 }) s).map (·.xmm .xmm7)) ==
+  some 0x000000000000000002f1e0cfbead9c8b#128
+#guard (exec (.movqLoad .xmm0 { base := .edi, disp := 9 }) s).isNone
+#guard (exec (.movqStore { base := .edi } .xmm0) s).isNone
+#guard ((exec (.movqStore { base := .edi, disp := 0x108 } .xmm0) s).map
+  (·.mem.readW 0x208 64)) == some 0xfedcba9876543210#64
+-- A `movq` store writes only 8 bytes.
+#guard ((exec (.movqStore { base := .edi, disp := 0x100 } .xmm0) s).map
+  (·.mem.readW 0x208 64)) == some (s.mem.readW 0x208 64)
+#guard (exec (.movqStore { base := .edi, disp := 0x109 } .xmm0) s).isNone
 
 
 -- MOVD r32 zeroes the other 96 bits, including when the destination was nonzero.
@@ -185,6 +244,16 @@ def shuf (order : BitVec 8) : BitVec 128 := ((XOp.pshufd .xmm1 .xmm0 order).exec
 #guard printer.instr (.xop (.shift .psrldq .xmm2 4)) == ["psrldq xmm2, 4"]
 
 #guard printer.instr (.xop (.movd .xmm7 .esi)) == ["movd xmm7, esi"]
+#guard printer.instr (.xop (.bin .paddq .xmm4 .xmm5)) == ["paddq xmm4, xmm5"]
+#guard printer.instr (.xop (.bin .sha1msg1 .xmm1 .xmm2)) == ["sha1msg1 xmm1, xmm2"]
+#guard printer.instr (.xop (.bin .sha1msg2 .xmm3 .xmm4)) == ["sha1msg2 xmm3, xmm4"]
+#guard printer.instr (.xop (.bin .sha1nexte .xmm5 .xmm6)) == ["sha1nexte xmm5, xmm6"]
+#guard printer.instr (.xop (.sha1rnds4 .xmm7 .xmm0 3)) == ["sha1rnds4 xmm7, xmm0, 3"]
+#guard printer.instr (.xop (.pshuflw .xmm1 .xmm2 0xb1)) == ["pshuflw xmm1, xmm2, 177"]
+#guard printer.instr (.xop (.pshufhw .xmm3 .xmm4 0x1b)) == ["pshufhw xmm3, xmm4, 27"]
+#guard printer.instr (.movqLoad .xmm6 { base := .esi, disp := 8 }) ==
+  ["movq xmm6, QWORD PTR [esi+8]"]
+#guard printer.instr (.movqStore { base := .edi } .xmm6) == ["movq QWORD PTR [edi], xmm6"]
 #guard printer.instr (.movdquLoad .xmm7 { base := .edi, disp := 16 }) ==
   ["movdqu xmm7, XMMWORD PTR [edi+16]"]
 #guard printer.instr (.movdquStore { base := .esp, disp := 4 } .xmm7) ==
@@ -198,6 +267,15 @@ def shuf (order : BitVec 8) : BitVec 128 := ((XOp.pshufd .xmm1 .xmm0 order).exec
 #guard isa.requires (.xop (.bin .aesenclast .xmm1 .xmm2)) == ["aes"]
 #guard isa.requires (.xop (.aeskeygenassist .xmm1 .xmm2 1)) == ["aes"]
 #guard isa.requires (.xop (.pclmulqdq .xmm1 .xmm2 0)) == ["pclmulqdq"]
+#guard [XBinOp.sha1msg1, .sha1msg2, .sha1nexte].all fun op =>
+  isa.requires (.xop (.bin op .xmm1 .xmm2)) == ["sha"]
+#guard isa.requires (.xop (.sha1rnds4 .xmm1 .xmm2 0)) == ["sha"]
+-- SSE2: the baseline.
+#guard isa.requires (.xop (.bin .paddq .xmm1 .xmm2)) == []
+#guard isa.requires (.xop (.pshuflw .xmm1 .xmm2 0)) == []
+#guard isa.requires (.xop (.pshufhw .xmm1 .xmm2 0)) == []
+#guard isa.requires (.movqLoad .xmm1 { base := .esi }) == []
+#guard isa.requires (.movqStore { base := .esi } .xmm1) == []
 #guard isa.requires (.xop (.movd .xmm1 .eax)) == []
 #guard isa.requires (.xop (.pshufd .xmm1 .xmm2 0xff)) == []
 #guard isa.requires (.movdquLoad .xmm1 { base := .esp }) == []
