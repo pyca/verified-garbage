@@ -37,6 +37,7 @@ structure CvP where
   nb : List Byte
   W : List Region
   sp : Addr
+  deriving Inhabited
 
 /-- The public part of the inputs. -/
 def CvIn.pub (I : CvIn) : CvP :=

@@ -5,6 +5,7 @@ import VerifiedGarbage.Proof.Bignum.X86_64.PdVerified
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxCT
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtVerified
 import VerifiedGarbage.Proof.Bignum.X86_64.IfmaVerified
+import VerifiedGarbage.Proof.Rsa.X86_64.CvVerified
 
 /-! # RSA (RFC 8017) on x86-64 -/
 
@@ -108,6 +109,19 @@ def artifacts : List Artifact := [
     verified := Proof.Bignum.X86_64.ifma_verified _ (by decide +kernel) (by decide +kernel) (by decide +kernel)
       (by decide +kernel)
     features := ["avx", "avx2", "avx512ifma", "avx512vl", "bmi2", "adx"]
+    spSafe := Code.all_of_allInstrs (by decide +kernel) },
+  { Spec.Rsa.crtValuesApi with
+    target := X86_64.target
+    doc := Spec.Rsa.crtValuesApi.doc
+      (notes := ["Baseline x86-64: `n` is checked as `vg_rsa_public_precompute` checks it; then the \
+        checks (`p q = n`, as `n mod p = 0`, `n / p = q` and `p` odd, and `gcd(q, p) = 1`) give a \
+        mask, the arithmetic is the same whatever the key, and the results are stored masked. The \
+        remainders and quotients are computed by bit-serial division, `64 w` steps for `w`-word \
+        numbers, and `qInv` by `128 w` steps of the binary extended Euclidean algorithm modulo `p`, \
+        each step's swaps and subtractions under masks."])
+    code := Impl.Rsa.X86_64.Keys.CrtValues.code
+    contract := Spec.Rsa.crtValuesContract X86_64.abi
+    verified := Proof.Rsa.X86_64.cv_verified (by decide +kernel)
     spSafe := Code.all_of_allInstrs (by decide +kernel) }]
 
 end VG.Artifacts.Rsa.X86_64
