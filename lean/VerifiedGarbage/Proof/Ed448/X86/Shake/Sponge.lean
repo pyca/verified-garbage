@@ -493,7 +493,7 @@ theorem slot_arg (hc : Whole.Ctx E g m₀ ins outs t) {j : Nat} (hj : j < 6) {v 
 the third the position the previous call returned. -/
 theorem nsetup_ok (hc : Whole.Ctx E g m₀ ins outs t) (ha : Args E n val m₀) {vs : List Value}
     (hn : vs.length ≤ 6) (hv : ∀ v ∈ vs, Whole.valid n v) {pos : Nat} (hpos : t.gpr .eax = BitVec.ofNat 32 pos) :
-    WP isa (.block (.mov .edx (.reg .eax) :: setup 0 vs ++ [.store (at_ 8) .edx])) t fun w =>
+    WP isa (.block (.mov .edx (.reg .eax) :: setup 0 vs ++ ([.store (at_ 8) .edx] : List Instr))) t fun w =>
       Whole.Ctx E g m₀ ins outs w ∧ Frame [⟨E.setWidth 64, 24⟩] t.mem w.mem ∧
       Whole.slots E w 2 = BitVec.ofNat 32 pos ∧
       ∀ j (hj : j < vs.length), j ≠ 2 → Whole.slots E w j = argVal E val (vs[j]'hj) := by
