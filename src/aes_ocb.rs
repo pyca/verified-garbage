@@ -29,7 +29,6 @@
 #![cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
 
 use crate::aes::Backend;
-use crate::arch::aes_ocb::{vg_aes_ocb_init, vg_aes_ocb_open, vg_aes_ocb_seal};
 #[cfg(target_arch = "aarch64")]
 use crate::arch::aes_ocb::{
     VG_AES_OCB_INIT_AES_FEATURES, VG_AES_OCB_OPEN_AES_FEATURES, VG_AES_OCB_SEAL_AES_FEATURES,
@@ -40,6 +39,7 @@ use crate::arch::aes_ocb::{
     VG_AES_OCB_INIT_AESNI_FEATURES, VG_AES_OCB_OPEN_AESNI_FEATURES, VG_AES_OCB_SEAL_AESNI_FEATURES,
     vg_aes_ocb_init_aesni, vg_aes_ocb_open_aesni, vg_aes_ocb_seal_aesni,
 };
+use crate::arch::aes_ocb::{vg_aes_ocb_init, vg_aes_ocb_open, vg_aes_ocb_seal};
 use crate::cpu::{Features, detected};
 use crate::zeroize::zeroize;
 use core::mem::MaybeUninit;
@@ -145,7 +145,12 @@ impl AesOcb {
             rounds: key.len() / 4 + 6,
             backend: select(detected()),
         };
-        let init = instance!(k.backend, vg_aes_ocb_init, vg_aes_ocb_init_aesni, vg_aes_ocb_init_aes);
+        let init = instance!(
+            k.backend,
+            vg_aes_ocb_init,
+            vg_aes_ocb_init_aesni,
+            vg_aes_ocb_init_aes
+        );
         let mut scratch = MaybeUninit::<[u64; WORK]>::uninit();
         // SAFETY: `key` is valid for reads of `key.len()` bytes, which is 16,
         // 24 or 32; `k.ctx` and `scratch` are valid for reads and writes of
@@ -174,7 +179,12 @@ impl AesOcb {
     ) -> Result<[u8; T], Error> {
         assert_tag_length!(T);
         check(nonce)?;
-        let seal = instance!(self.backend, vg_aes_ocb_seal, vg_aes_ocb_seal_aesni, vg_aes_ocb_seal_aes);
+        let seal = instance!(
+            self.backend,
+            vg_aes_ocb_seal,
+            vg_aes_ocb_seal_aesni,
+            vg_aes_ocb_seal_aes
+        );
         let mut work = MaybeUninit::<[u64; WORK]>::uninit();
         // SAFETY: `self.ctx` is the key context `vg_aes_ocb_init` wrote for
         // `self.rounds` (10, 12 or 14) rounds, valid for reads of 256 bytes.
@@ -225,7 +235,12 @@ impl AesOcb {
     ) -> Result<(), Error> {
         assert_tag_length!(T);
         check(nonce)?;
-        let open = instance!(self.backend, vg_aes_ocb_open, vg_aes_ocb_open_aesni, vg_aes_ocb_open_aes);
+        let open = instance!(
+            self.backend,
+            vg_aes_ocb_open,
+            vg_aes_ocb_open_aesni,
+            vg_aes_ocb_open_aes
+        );
         let mut work = MaybeUninit::<[u64; WORK]>::uninit();
         let mut t = [0u8; 16];
         t[..T].copy_from_slice(tag);
