@@ -147,7 +147,12 @@ instructions in an ISA model) go in their own PR before either.
    takes a variant of each, in path order: the emitter applies it to every
    combination (e.g. Argon2's x86-64 derivation,
    `Generic/Blake2b/Argon2Compress/X86_64/Argon2.lean`, calling BLAKE2b's
-   streaming functions and Argon2's `G`). Never list the
+   streaming functions and Argon2's `G`). Its instances are named by
+   `Emit.qualifiedName`: the function's name, then a tag and the suffix of
+   each interface whose variant is not the baseline, in path order
+   (`vg_argon2_blake2b_avx2_g_avx512`; `vg_argon2` for the baseline),
+   since variants of different interfaces may share a suffix; callers of one
+   interface append the suffix alone. Never list the
    implementations in the caller: a new implementation is a new variant
    file, and its callers follow.
 5. Regenerate `src/asm/`, build the public Rust API on top of the primitive,

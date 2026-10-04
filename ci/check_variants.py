@@ -17,6 +17,12 @@ with the same Rust signature (`_shani`, `_avx2`, …).
   multiplication: `vg_ed25519_verify_avx2_adx` is the variant both of
   `vg_ed25519_verify_avx2` for `vg_ed25519_verify_equation_adx` and of
   `vg_ed25519_verify_adx` for `vg_sha512_update_avx2`).
+  A caller generic over several interfaces qualifies each suffix with a tag
+  for its interface (`Emit.qualifiedName` in `lean/VerifiedGarbage/TCB/Emit.lean`),
+  since two interfaces may have variants with the same suffix: its variant
+  for `f_<s>` may add `<tag>_<s>` instead (`vg_argon2_g_avx512`, the
+  variant of `vg_argon2` for `vg_argon2_compress_avx512`), and one of its
+  variants adding a part ending in `_<s>` must call `f_<s>`.
 * **Every variant is used.** Each variant is called by another generated
   function or used by the Rust code of the crate (`src/`, outside
   `src/asm/`): the generated modules allow dead code, so a variant the Rust
@@ -76,6 +82,16 @@ def chain(var, name):
     return root, suffixes + [suffix]
 
 
+def qualified_extension(sufs, suffixes, suffix):
+    """Whether the suffixes `sufs` are `suffixes` and one more, `<tag>_<suffix>`."""
+    rest = list(sufs)
+    for s in suffixes:
+        if s not in rest:
+            return False
+        rest.remove(s)
+    return len(rest) == 1 and rest[0].endswith("_" + suffix)
+
+
 def check(targets, rust):
     errors = []
     for target, fns in sorted(targets.items()):
@@ -96,17 +112,28 @@ def check(targets, rust):
                         continue  # a variant calling its baseline
                     if suffix in suffixes:
                         continue  # already the variant
+                    variant = f"{callee}_{suffix}"
                     want = composed.get((root, tuple(sorted(suffixes + [suffix]))))
                     if want is None:
-                        want = f"{caller}_{suffix}"
-                        errors.append(
-                            f"{target}: {caller} calls {callee}, which has the variant "
-                            f"{callee}_{suffix}, but there is no {want} (with the same "
-                            f"signature) calling it: make {caller} generic over the "
-                            f"implementations of {callee} (see CLAUDE.md)"
-                        )
-                    elif f"{callee}_{suffix}" not in fns[want][1]:
-                        errors.append(f"{target}: {want} does not call {callee}_{suffix}")
+                        # The variants adding the suffix qualified by a tag.
+                        tagged = [
+                            name
+                            for (r, sufs), name in sorted(composed.items())
+                            if r == root and qualified_extension(sufs, suffixes, suffix)
+                        ]
+                        if not tagged:
+                            errors.append(
+                                f"{target}: {caller} calls {callee}, which has the variant "
+                                f"{variant}, but there is no {caller}_{suffix} (with the same "
+                                f"signature) calling it: make {caller} generic over the "
+                                f"implementations of {callee} (see CLAUDE.md)"
+                            )
+                        elif not any(variant in fns[name][1] for name in tagged):
+                            errors.append(
+                                f"{target}: none of {', '.join(tagged)} calls {variant}"
+                            )
+                    elif variant not in fns[want][1]:
+                        errors.append(f"{target}: {want} does not call {variant}")
         called = set().union(*(c for _, c in fns.values())) if fns else set()
         for name in sorted(var):
             if name not in called and not re.search(rf"\b{name}\b", rust):

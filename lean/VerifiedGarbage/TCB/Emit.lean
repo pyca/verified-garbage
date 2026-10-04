@@ -34,6 +34,12 @@ both a hash's compression function and a block function, each with its own
 implementations) is generic over all of them: its file is
 `VerifiedGarbage/Generic/<Iface₁>/…/<Ifaceₙ>/<Target>/<Alg>.lean`, and its
 `artifacts` takes a variant of each interface on `<Target>`, in that order.
+Variants of different interfaces may have the same suffix (e.g. `_avx2`), so
+the instances of such a caller are named by `qualifiedName`: its name, then
+for each interface whose variant has a non-empty suffix, in that order, a tag
+for the interface and the suffix (`vg_argon2_blake2b_avx2_g_avx512`;
+the instance of the baseline variants keeps the plain name, `vg_argon2`).
+Callers of one interface append the suffix alone (`vg_sha256_update_shani`).
 
 The artifacts emitted include each generic function applied to each variant
 of its interface and target (each combination of a variant of each of its
@@ -143,6 +149,17 @@ def genericGroups (dir : FilePath) : IO (List (List String × List String)) := d
       | some _ => groups.map fun (h, ms) => if h == g then (h, ms ++ [m]) else (h, ms)
       | none => groups ++ [(g, [m])]
   return groups.mergeSort fun a b => ".".intercalate a.1 ≤ ".".intercalate b.1
+
+/-- The name of an instance of a generic function of several interfaces
+(see above): `base`, then `_<tag><suffix>` for each `(tag, suffix)` of
+`parts` (one per interface, in order) whose suffix is not empty. Suffixes
+start with `_`, so `qualifiedName "vg_argon2" [("blake2b", "_avx2"),
+("g", "")]` is `vg_argon2_blake2b_avx2`. Two variants with the same
+suffix in different interfaces give different names, as long as the tags
+differ. -/
+def qualifiedName (base : String) (parts : List (String × String)) : String :=
+  base ++ String.join (parts.map fun (tag, suffix) =>
+    if suffix.isEmpty then "" else "_" ++ tag ++ suffix)
 
 /-- The name of the variable bound to a variant of the `i`th interface of a
 generic function: `v`, then `v2`, `v3`, …. -/

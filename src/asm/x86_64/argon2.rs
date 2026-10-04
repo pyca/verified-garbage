@@ -8434,8 +8434,8 @@ pub(crate) unsafe extern "sysv64" fn vg_argon2_hprime(input: *const u8, input_le
     )
 }
 
-/// The CPU features `vg_argon2_avx2` requires (`Artifact.features`).
-pub(crate) const VG_ARGON2_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2"]);
+/// The CPU features `vg_argon2_g_avx2` requires (`Artifact.features`).
+pub(crate) const VG_ARGON2_G_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2"]);
 
 /// Argon2 version 1.3 (RFC 9106): derives `out_len` bytes at `out` from the password, salt, optional secret and associated data. `kind` selects Argon2d (0), Argon2i (1) or Argon2id (2). Performs the entire derivation: H₀, H′, initialization, all memory-filling passes, the final lane XOR and H′ of that block.
 ///
@@ -8462,7 +8462,7 @@ pub(crate) const VG_ARGON2_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Fea
 /// * None of `password`, `salt`, `secret`, `associated_data`, `memory`, `scratch` and `out` may overlap the return address on the stack or the 344 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx` and `avx2` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_argon2_avx2(kind: u32, password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, iterations: u32, memory_cost: u32, lanes: u32, threads: u32, secret: *const u8, secret_len: usize, associated_data: *const u8, ad_len: usize, memory: *mut [u64; 128], blocks: usize, scratch: *mut [u64; 2048], out: *mut u8, out_len: usize) {
+pub(crate) unsafe extern "sysv64" fn vg_argon2_g_avx2(kind: u32, password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, iterations: u32, memory_cost: u32, lanes: u32, threads: u32, secret: *const u8, secret_len: usize, associated_data: *const u8, ad_len: usize, memory: *mut [u64; 128], blocks: usize, scratch: *mut [u64; 2048], out: *mut u8, out_len: usize) {
     core::arch::naked_asm!(
         "push rbx",
         "push rbp",
@@ -11293,8 +11293,8 @@ pub(crate) unsafe extern "sysv64" fn vg_argon2_avx2(kind: u32, password: *const 
     )
 }
 
-/// The CPU features `vg_argon2_avx512` requires (`Artifact.features`).
-pub(crate) const VG_ARGON2_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx512f"]);
+/// The CPU features `vg_argon2_g_avx512` requires (`Artifact.features`).
+pub(crate) const VG_ARGON2_G_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx512f"]);
 
 /// Argon2 version 1.3 (RFC 9106): derives `out_len` bytes at `out` from the password, salt, optional secret and associated data. `kind` selects Argon2d (0), Argon2i (1) or Argon2id (2). Performs the entire derivation: H₀, H′, initialization, all memory-filling passes, the final lane XOR and H′ of that block.
 ///
@@ -11321,7 +11321,7 @@ pub(crate) const VG_ARGON2_AVX512_FEATURES: crate::cpu::Features = crate::cpu::F
 /// * None of `password`, `salt`, `secret`, `associated_data`, `memory`, `scratch` and `out` may overlap the return address on the stack or the 344 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx` and `avx512f` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_argon2_avx512(kind: u32, password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, iterations: u32, memory_cost: u32, lanes: u32, threads: u32, secret: *const u8, secret_len: usize, associated_data: *const u8, ad_len: usize, memory: *mut [u64; 128], blocks: usize, scratch: *mut [u64; 2048], out: *mut u8, out_len: usize) {
+pub(crate) unsafe extern "sysv64" fn vg_argon2_g_avx512(kind: u32, password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, iterations: u32, memory_cost: u32, lanes: u32, threads: u32, secret: *const u8, secret_len: usize, associated_data: *const u8, ad_len: usize, memory: *mut [u64; 128], blocks: usize, scratch: *mut [u64; 2048], out: *mut u8, out_len: usize) {
     core::arch::naked_asm!(
         "push rbx",
         "push rbp",
