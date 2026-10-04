@@ -213,7 +213,7 @@ theorem cryptBlock_ok (v : GcmImpl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} (
 
 /-- The slots, after code that writes only parts of `W` apart from them, the
 stack below `SP` and a buffer apart from `W`. -/
-theorem Slots.of_frame {K W SP : Addr} (L : Lay K W SP) {R : Nat} {N A D : Addr} {al n : Nat} {m m' : Mem}
+theorem Slots.of_frame {W : Addr} {R : Nat} {N A D : Addr} {al n : Nat} {m m' : Mem}
     {rs : List Region} (S : Slots W R N A D al n m) (hf : Frame rs m m')
     (hd : ∀ r ∈ rs, (⟨W + BitVec.ofNat 64 272, 48⟩ : Region).Disjoint r) : Slots W R N A D al n m' := by
   have k (d : Nat) (hd' : 272 ≤ d ∧ d + 8 ≤ 320) :
@@ -272,7 +272,7 @@ theorem blocks_ok (v : GcmImpl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} (hR :
   rintro m t' ⟨j, rfl, hj, P, hbx'⟩
   have hc' : Spec.GcmSiv.ctxCiph t'.mem (W + BitVec.ofNat 64 512) R = ciph := by
     rw [ctxCiph_frame P.frame (key_cryR L hD) (by rcases hR with h | h <;> subst h <;> decide), hc]
-  refine WP.mono (cryptBlock_ok v L hR P.env (S.of_frame L P.frame (slots_cryR L hD)) (hD.of_eq P.rd P.wr)
+  refine WP.mono (cryptBlock_ok v L hR P.env (S.of_frame P.frame (slots_cryR L hD)) (hD.of_eq P.rd P.wr)
     (by rw [P.wr]; exact hDw) hxl hb hj P.r12 hbx' P.ctr P.data hc') fun t'' Q => ?_
   have P' : BlocksPost K W SP D n ciph icb x (j + 1) t t'' :=
     ⟨Q.env, Q.rd.trans P.rd, Q.wr.trans P.wr, Q.rbp.trans P.rbp, Q.r12, Q.ctr, Q.data, P.frame.trans Q.frame⟩
@@ -446,7 +446,7 @@ theorem crypt_ok (v : GcmImpl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} (hR : 
   have E₁ : Env K W SP t₁ := E.keep (fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl <;> exact hg₁ _ (by decide) (by decide) (by decide) (by decide)) hrd₁ hwr₁
-  have S₁ := S.of_frame L f₁ (fun q hq => by
+  have S₁ := S.of_frame f₁ (fun q hq => by
     simp only [List.mem_singleton] at hq; subst hq; exact L.w_w (.inr (by decide)) (by decide) (by decide))
   have fC : ∀ q ∈ [(⟨W + BitVec.ofNat 64 96, 16⟩ : Region)], ∃ q' ∈ cryR W SP D n, Region.Sub q q' := fun q hq => by
     simp only [List.mem_singleton] at hq; subst hq
@@ -487,7 +487,7 @@ theorem crypt_ok (v : GcmImpl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} (hR : 
     have hc₃ : Spec.GcmSiv.ctxCiph t₃.mem (W + BitVec.ofNat 64 512) R =
         Spec.GcmSiv.ctxCiph t.mem (W + BitVec.ofNat 64 512) R := by
       rw [ctxCiph_frame F₃ (key_cryR L hD) (by rcases hR with h | h <;> subst h <;> decide), hc₁]
-    refine WP.mono (cryptTail_ok v L hR E₃ (S₁.of_frame L F₃ (slots_cryR L hD))
+    refine WP.mono (cryptTail_ok v L hR E₃ (S₁.of_frame F₃ (slots_cryR L hD))
       (hD.of_eq (by rw [hrd₃, B.rd, hrd₁]) (by rw [hwr₃, B.wr, hwr₁])) (by rw [hwr₃, B.wr, hwr₁]; exact hDw) hxl
       (b := n / 16) (r := n % 16) (by omega) (by omega) (by omega) (by rw [hg₃, B.r12]) (by rw [hg₃, hbp₂])
       (by rw [hm₃]; exact B.ctr) (by rw [hm₃]; exact B.data) hc₃) fun t₄ T => ?_
