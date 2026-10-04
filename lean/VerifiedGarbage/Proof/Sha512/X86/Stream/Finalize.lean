@@ -119,7 +119,7 @@ namespace Finalize
 
 theorem finalize_verified : Verified X86.target Impl.Sha512.X86.Stream.finalize Proof.Sha512.finalizeX86 :=
   MdStream.X86.Finalize.verified_ro (name := "vg_sha512_compress") dims shape callee
-    (VG.Taint.constantTime (A := taint) (MdStream.X86.Finalize.τ₀ params 272)
+    (VG.Taint.constantTime (A := sseTaint) (MdStream.X86.Finalize.τ₀ params 272)
       (fun _ _ h₁ h₂ hp => MdStream.X86.Finalize.agree₀ dims h₁ h₂ hp) (by taint_decide))
 
 /-- A state satisfying `finalize`'s precondition. -/
