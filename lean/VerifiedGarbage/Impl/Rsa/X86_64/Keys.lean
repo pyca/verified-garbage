@@ -103,68 +103,101 @@ def orBody : List Instr := [.mov .rax (.mem (ix .rbx .r14)), .alu .or .rbp (.reg
 
 /-! ## Division -/
 
-/-- One step of the division: `([r], [q]) := 2 ([r], [q])`, then
-`[t] := [r] - [d]` over `w + 1` words, `[r] := [t]` and `[q] += 1` if it
-does not borrow; and the step counter `r13` against `r11`. -/
-def divStep (iQ iR iD iT : Nat) : Prog isa := seqs [
+/-- `([r], [q]) := 2 ([r], [q])`, `[r]` over `w + 1` words (`r12` left at
+`w + 1`). -/
+def divShiftP (iQ iR : Nat) : List (Prog isa) := [
   .block ([.mov32 .rbp (.imm 0)] ++ base iQ .rbx),
   wordLoop 0 shlBody,
   .block (base iR .rbx ++ [.alu .add .r12 (.imm 1)]),
-  wordLoop 0 shlBody,
+  wordLoop 0 shlBody]
+
+/-- `[t] := [r] - [d]` over `w + 1` words, then `[r] := [t]` if it does not
+borrow, `rbp` the mask of the borrow. -/
+def divSubP (iR iD iT : Nat) : List (Prog isa) := [
   .block ([.alu .sub .r12 (.imm 1), .mov32 .rbp (.imm 0)] ++ base iR .r8 ++ base iD .r10 ++ base iT .rsi),
   wordLoop 0 subBody,
   .block [.mov .rax (.mem (ix .r8 .r12)), cfFromRbp, .alu .sbb .rax (.imm 0), .store (ix .rsi .r12) .rax, cfToRbp,
     .alu .add .r12 (.imm 1)],
-  wordLoop 0 selBody,
-  .block ([.alu .sub .r12 (.imm 1), .mov .rax (.reg .rbp), .alu .add .rax (.imm 1)] ++ base iQ .rbx ++
+  wordLoop 0 selBody]
+
+/-- `[q] += 1` if it did not borrow, `r12 := w`, and the step counter `r13`
+against `r11`. -/
+def divBitP (iQ : Nat) : List Instr :=
+  [.alu .sub .r12 (.imm 1), .mov .rax (.reg .rbp), .alu .add .rax (.imm 1)] ++ base iQ .rbx ++
     [.mov .rdx (.mem (at0 .rbx)), .alu .add .rdx (.reg .rax), .store (at0 .rbx) .rdx,
-      .alu .add .r13 (.imm 1), .alu .cmp .r13 (.reg .r11)])]
+      .alu .add .r13 (.imm 1), .alu .cmp .r13 (.reg .r11)]
+
+/-- One step of the division. -/
+def divStep (iQ iR iD iT : Nat) : Prog isa := seqs (divShiftP iQ iR ++ (divSubP iR iD iT ++ [.block (divBitP iQ)]))
+
+/-- `w` and the stride, `r8 := [r]`, `r11 := 64 w`, `r13 := 0`. -/
+def divInit (iR : Nat) : List Instr :=
+  ws ++ base iR .r8 ++ [.mov .r11 (.reg .r12)] ++ List.replicate 6 (.alu .add .r11 (.reg .r11)) ++
+    [.mov32 .r13 (.imm 0)]
 
 /-- `[r] := [q] mod [d]` and `[q] := [q] / [d]`, `[t]` working space:
 `64 w` steps. -/
-def divmod (iQ iR iD iT : Nat) : Prog isa := seqs [
-  .block (ws ++ base iR .r8 ++ [.mov .r11 (.reg .r12)] ++ List.replicate 6 (.alu .add .r11 (.reg .r11)) ++
-    [.mov32 .r13 (.imm 0)]),
-  zeroAccLoop,
-  .loop (divStep iQ iR iD iT) .ne]
+def divmod (iQ iR iD iT : Nat) : Prog isa :=
+  seqs [.block (divInit iR), zeroAccLoop, .loop (divStep iQ iR iD iT) .ne]
 
 /-! ## The binary extended Euclidean algorithm -/
 
-/-- One step of `inverse`, and the step counter `r13` against `r11`. -/
-def invStep (iU iV iX₁ iX₂ iM iT : Nat) : Prog isa := seqs [
-  -- The mask of `u` odd into `sMo`, and the mask of `u < v` into `rbp`.
+/-- The mask of `u` odd into `sMo`, the mask of `u < v` into `rbp`, and the
+swaps of `(u, v)` and `(x₁, x₂)` under both. -/
+def invSwapP (iU iV iX₁ iX₂ : Nat) : List (Prog isa) := [
   .block (base iU .rbx ++ [.mov .rax (.mem (at0 .rbx)), .alu .and .rax (.imm 1), .mov32 .rdx (.imm 0),
     .alu .sub .rdx (.reg .rax), .store (hdr sMo) .rdx] ++ base iV .r10 ++ [.mov32 .rbp (.imm 0)]),
   wordLoop 0 [cfFromRbp, .mov .rax (.mem (ix .rbx .r14)), .alu .sbb .rax (.mem (ix .r10 .r14)), cfToRbp],
-  -- The swaps, under both.
   .block [.mov .r15 (.reg .rbp), .alu .and .r15 (.mem (hdr sMo))],
   wordLoop 0 cswapBody,
   .block (base iX₁ .rbx ++ base iX₂ .r10),
-  wordLoop 0 cswapBody,
-  -- `u -= v` and `x₁ -= x₂ (mod m)`, if `u` is odd.
+  wordLoop 0 cswapBody]
+
+/-- `u -= v`, if `u` is odd. -/
+def invSubUP (iU iV : Nat) : List (Prog isa) := [
   .block ([.mov .r15 (.mem (hdr sMo)), .mov32 .rbp (.imm 0)] ++ base iU .r8 ++ base iV .r10 ++ base iU .rsi),
-  wordLoop 0 subMBody,
+  wordLoop 0 subMBody]
+
+/-- `x₁ -= x₂ (mod m)`, if `u` is odd (the mask in `r15`). -/
+def invSubXP (iX₁ iX₂ iM iT : Nat) : List (Prog isa) := [
   .block ([.mov32 .rbp (.imm 0)] ++ base iX₁ .r8 ++ base iX₂ .r10 ++ base iT .rsi),
   wordLoop 0 subMBody,
   .block ([.mov .r15 (.reg .rbp), .mov32 .rbp (.imm 0)] ++ base iT .r8 ++ base iM .r10 ++ base iX₁ .rbx),
-  wordLoop 0 addMBody,
-  -- `u /= 2`.
-  .block (base iU .r8 ++ base iU .rsi),
-  wordLoop 0 shrBody,
-  -- `x₁ := x₁ / 2 (mod m)`: `t := x₁ + m` if `x₁` is odd (`w + 1` words), then `x₁ := t / 2`.
+  wordLoop 0 addMBody]
+
+/-- `u -= v` and `x₁ -= x₂ (mod m)`, if `u` is odd. -/
+def invSubP (iU iV iX₁ iX₂ iM iT : Nat) : List (Prog isa) := invSubUP iU iV ++ invSubXP iX₁ iX₂ iM iT
+
+/-- `u /= 2`. -/
+def invHalfUP (iU : Nat) : List (Prog isa) := [.block (base iU .r8 ++ base iU .rsi), wordLoop 0 shrBody]
+
+/-- `x₁ := x₁ / 2 (mod m)`: `t := x₁ + m` if `x₁` is odd (`w + 1` words),
+then `x₁ := t / 2`. -/
+def invHalfXP (iX₁ iM iT : Nat) : List (Prog isa) := [
   .block (base iX₁ .r8 ++ [.mov .rax (.mem (at0 .r8)), .alu .and .rax (.imm 1), .mov32 .r15 (.imm 0),
     .alu .sub .r15 (.reg .rax), .mov32 .rbp (.imm 0)] ++ base iM .r10 ++ base iT .rbx),
   wordLoop 0 addMBody,
   .block ([.mov32 .rax (.imm 0), cfFromRbp, .alu .adc .rax (.imm 0), .store (ix .rbx .r12) .rax] ++ base iT .r8 ++
     base iX₁ .rsi),
-  wordLoop 0 shrBody,
-  .block [.alu .add .r13 (.imm 1), .alu .cmp .r13 (.reg .r11)]]
+  wordLoop 0 shrBody]
+
+/-- `u /= 2` and `x₁ := x₁ / 2 (mod m)`. -/
+def invHalfP (iU iX₁ iM iT : Nat) : List (Prog isa) := invHalfUP iU ++ invHalfXP iX₁ iM iT
+
+/-- The step counter `r13` against `r11`. -/
+def countP : List Instr := [.alu .add .r13 (.imm 1), .alu .cmp .r13 (.reg .r11)]
+
+/-- One step of `inverse`. -/
+def invStep (iU iV iX₁ iX₂ iM iT : Nat) : Prog isa :=
+  seqs (invSwapP iU iV iX₁ iX₂ ++ (invSubP iU iV iX₁ iX₂ iM iT ++ (invHalfP iU iX₁ iM iT ++ [.block countP])))
+
+/-- `w` and the stride, `r11 := 128 w`, `r13 := 0`. -/
+def invInit : List Instr :=
+  ws ++ [.mov .r11 (.reg .r12)] ++ List.replicate 7 (.alu .add .r11 (.reg .r11)) ++ [.mov32 .r13 (.imm 0)]
 
 /-- `128 w` steps of the binary extended Euclidean algorithm. -/
 def inverse (iU iV iX₁ iX₂ iM iT : Nat) : Prog isa :=
-  .seq (.block (ws ++ [.mov .r11 (.reg .r12)] ++ List.replicate 7 (.alu .add .r11 (.reg .r11)) ++
-      [.mov32 .r13 (.imm 0)]))
-    (.loop (invStep iU iV iX₁ iX₂ iM iT) .ne)
+  .seq (.block invInit) (.loop (invStep iU iV iX₁ iX₂ iM iT) .ne)
 
 /-! ## Bytes -/
 

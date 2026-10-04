@@ -40,8 +40,7 @@ theorem two_mul_div {Q K : Nat} (hK : 1 ≤ K) : 2 * Q / 2 ^ K = Q / 2 ^ (K - 1)
 theorem divShift_ok {s : State} {B : Addr} {Z w : Nat} {iQ iR : Nat} (hs : Scr s B Z) (hdi : s.gpr .rdi = B)
     (h12 : s.gpr .r12 = BitVec.ofNat 64 w) (h9 : s.gpr .r9 = BitVec.ofNat 64 (8 * (w + 2)))
     (hw1 : 1 ≤ w) (hw : w < 2 ^ 24) (hZ : slot w 16 ≤ Z) (hQ : iQ < 16) (hR : iR < 16) (hQR : iQ ≠ iR) :
-    WP isa (seqs [.block ([.mov32 .rbp (.imm 0)] ++ base iQ .rbx), wordLoop 0 shlBody,
-        .block (base iR .rbx ++ [.alu .add .r12 (.imm 1)]), wordLoop 0 shlBody]) s fun t =>
+    WP isa (seqs (divShiftP iQ iR)) s fun t =>
       t.gpr .r12 = BitVec.ofNat 64 (w + 1) ∧
       wv t.mem B (slot w iQ) w = 2 * wv s.mem B (slot w iQ) w % 2 ^ (64 * w) ∧
       (wv s.mem B (slot w iR) (w + 1) < 2 ^ (64 * w) →
@@ -52,7 +51,7 @@ theorem divShift_ok {s : State} {B : Addr} {Z w : Nat} {iQ iR : Nat} (hs : Scr s
   have sQ := Nat.le_trans (slot_lt (w := w) hQ) hZ
   have sR := Nat.le_trans (slot_lt (w := w) hR) hZ
   have sp := slot_sep (w := w) hQR
-  simp only [seqs]
+  simp only [divShiftP, seqs]
   -- `rbp := 0` and `rbx := Q`.
   refine WP.seq (WP.block_append_iff.mpr (WP.mono (WP.keep [.rbp] (Q := fun t => t.gpr .rbp = mask false ∧
     t.mem = s.mem) (by xrun) rfl)
@@ -138,11 +137,7 @@ theorem divSub_ok {s : State} {B : Addr} {Z w : Nat} {iR iD iT : Nat} (hs : Scr 
     (h12 : s.gpr .r12 = BitVec.ofNat 64 (w + 1)) (h9 : s.gpr .r9 = BitVec.ofNat 64 (8 * (w + 2)))
     (hw1 : 1 ≤ w) (hw : w < 2 ^ 24) (hZ : slot w 16 ≤ Z) (hR : iR < 16) (hD : iD < 16) (hT : iT < 16)
     (dRD : iR ≠ iD) (dRT : iR ≠ iT) (dDT : iD ≠ iT) :
-    WP isa (seqs [.block ([.alu .sub .r12 (.imm 1), .mov32 .rbp (.imm 0)] ++ base iR .r8 ++ base iD .r10 ++
-        base iT .rsi), wordLoop 0 subBody,
-      .block [.mov .rax (.mem (ix .r8 .r12)), cfFromRbp, .alu .sbb .rax (.imm 0), .store (ix .rsi .r12) .rax, cfToRbp,
-        .alu .add .r12 (.imm 1)],
-      wordLoop 0 selBody]) s fun t =>
+    WP isa (seqs (divSubP iR iD iT)) s fun t =>
       t.gpr .r12 = BitVec.ofNat 64 (w + 1) ∧
       t.gpr .rbp = mask (decide (wv s.mem B (slot w iR) (w + 1) < wv s.mem B (slot w iD) w)) ∧
       wv t.mem B (slot w iR) (w + 1) = (if wv s.mem B (slot w iR) (w + 1) < wv s.mem B (slot w iD) w then
@@ -155,7 +150,7 @@ theorem divSub_ok {s : State} {B : Addr} {Z w : Nat} {iR iD iT : Nat} (hs : Scr 
   have pRD := slot_sep (w := w) dRD
   have pRT := slot_sep (w := w) dRT
   have pDT := slot_sep (w := w) dDT
-  simp only [seqs, List.append_assoc]
+  simp only [divSubP, seqs, List.append_assoc]
   -- `r12 := w`, `rbp := 0`, the bases.
   refine WP.seq (WP.block_append_iff.mpr (WP.mono (WP.keep [.r12, .rbp] (Q := fun t => t.gpr .r12 = BitVec.ofNat 64 w ∧
       t.gpr .rbp = mask false ∧ t.mem = s.mem) (by xrun [h12, ofNat_succ_sub_one]) rfl)
@@ -234,16 +229,14 @@ theorem divBit_ok {s : State} {B : Addr} {Z w k : Nat} {iQ : Nat} {b : Bool} (hs
     (h13 : s.gpr .r13 = BitVec.ofNat 64 k) (h11 : s.gpr .r11 = BitVec.ofNat 64 (64 * w))
     (hw1 : 1 ≤ w) (hw : w < 2 ^ 24) (hk : k < 64 * w) (hZ : slot w 16 ≤ Z) (hQ : iQ < 16)
     (hev : (word s.mem B (slot w iQ)).toNat % 2 = 0) :
-    WP isa (.block ([.alu .sub .r12 (.imm 1), .mov .rax (.reg .rbp), .alu .add .rax (.imm 1)] ++ base iQ .rbx ++
-      [.mov .rdx (.mem (at0 .rbx)), .alu .add .rdx (.reg .rax), .store (at0 .rbx) .rdx,
-        .alu .add .r13 (.imm 1), .alu .cmp .r13 (.reg .r11)])) s fun t =>
+    WP isa (.block (divBitP iQ)) s fun t =>
       t.zf = some (decide (k + 1 = 64 * w)) ∧ t.gpr .r13 = BitVec.ofNat 64 (k + 1) ∧
       t.gpr .r12 = BitVec.ofNat 64 w ∧
       wv t.mem B (slot w iQ) w = wv s.mem B (slot w iQ) w + (if b then 0 else 1) ∧
       Frm B [ar w iQ] s.mem t.mem ∧ Keep [.rax, .rbx, .rdx, .r12, .r13] s t := by
   have hn := hs.nowrap
   have sQ := Nat.le_trans (slot_lt (w := w) hQ) hZ
-  rw [WP.block_append_iff, WP.block_append_iff]
+  rw [divBitP, WP.block_append_iff, WP.block_append_iff]
   refine WP.mono (WP.keep [.r12, .rax] (Q := fun t => t.gpr .r12 = BitVec.ofNat 64 w ∧
       (t.gpr .rax).toNat = (if b then 0 else 1) ∧ t.mem = s.mem) (by
       xrun [h12, hbp, ofNat_succ_sub_one]
@@ -274,18 +267,6 @@ theorem divBit_ok {s : State} {B : Addr} {Z w k : Nat} {iQ : Nat} {b : Bool} (hs
     dsimp only at a
     rw [mt, writeW_outside s₂.mem B _ (by omega) x (by omega), m₂, m₁]
 
-theorem divStep_seqs (iQ iR iD iT : Nat) : VG.Impl.Rsa.X86_64.Keys.divStep iQ iR iD iT =
-    seqs ([.block ([.mov32 .rbp (.imm 0)] ++ base iQ .rbx), wordLoop 0 shlBody,
-        .block (base iR .rbx ++ [.alu .add .r12 (.imm 1)]), wordLoop 0 shlBody] ++
-      ([.block ([.alu .sub .r12 (.imm 1), .mov32 .rbp (.imm 0)] ++ base iR .r8 ++ base iD .r10 ++ base iT .rsi),
-        wordLoop 0 subBody,
-        .block [.mov .rax (.mem (ix .r8 .r12)), cfFromRbp, .alu .sbb .rax (.imm 0), .store (ix .rsi .r12) .rax,
-          cfToRbp, .alu .add .r12 (.imm 1)],
-        wordLoop 0 selBody] ++
-      [.block ([.alu .sub .r12 (.imm 1), .mov .rax (.reg .rbp), .alu .add .rax (.imm 1)] ++ base iQ .rbx ++
-        [.mov .rdx (.mem (at0 .rbx)), .alu .add .rdx (.reg .rax), .store (at0 .rbx) .rdx,
-          .alu .add .r13 (.imm 1), .alu .cmp .r13 (.reg .r11)])])) := rfl
-
 /-- The registers `divStep` and `inverse`'s step may change. -/
 def stepRegs : List Reg := [.rax, .rbx, .rdx, .rsi, .rbp, .r8, .r10, .r12, .r13, .r14, .r15]
 
@@ -314,10 +295,10 @@ theorem divStepCode_ok {s : State} {B : Addr} {Z w k : Nat} {iQ iR iD iT : Nat} 
   have pQT := slot_sep (w := w) dQT
   have pRD := slot_sep (w := w) dRD
   have pRT := slot_sep (w := w) dRT
-  rw [divStep_seqs]
-  refine wp_seqs_append (by simp) (by simp) (WP.mono (divShift_ok hs hdi h12 h9 hw1 hw hZ hQ hR dQR)
+  rw [VG.Impl.Rsa.X86_64.Keys.divStep]
+  refine wp_seqs_append (by simp [divShiftP]) (by simp) (WP.mono (divShift_ok hs hdi h12 h9 hw1 hw hZ hQ hR dQR)
     fun s₁ ⟨h12₁, hQ₁, hR₁, f₁, k₁⟩ => ?_)
-  refine wp_seqs_append (by simp) (by simp) (WP.mono (divSub_ok (hs.congr k₁.2.2) ((k₁.gpr (by decide)).trans hdi)
+  refine wp_seqs_append (by simp [divSubP]) (by simp) (WP.mono (divSub_ok (hs.congr k₁.2.2) ((k₁.gpr (by decide)).trans hdi)
     h12₁ ((k₁.gpr (by decide)).trans h9) hw1 hw hZ hR hD hT dRD dRT (by omega)) fun s₂ ⟨h12₂, hbp₂, hR₂, f₂, k₂⟩ => ?_)
   have k12 := k₁.trans k₂
   have hD₁ : wv s₁.mem B (slot w iD) w = wv s.mem B (slot w iD) w :=
@@ -338,8 +319,8 @@ theorem divStepCode_ok {s : State} {B : Addr} {Z w k : Nat} {iQ iR iD iT : Nat} 
     have b := hx (ar w iR) (by simp)
     have c := hx (ar w iT) (by simp)
     rw [f₃ x (by simpa using a), f₂ x (by simp only [List.mem_cons, List.not_mem_nil, or_false]; rintro r (rfl | rfl)
-      <;> assumption), f₁ x (by simp only [List.mem_cons, List.not_mem_nil, or_false]; rintro r (rfl | rfl)
-      <;> assumption)]
+      <;> with_reducible assumption), f₁ x (by simp only [List.mem_cons, List.not_mem_nil, or_false]; rintro r (rfl | rfl)
+      <;> with_reducible assumption)]
   · have hRlt : wv s.mem B (slot w iR) (w + 1) < 2 ^ (64 * w) := Nat.lt_trans hlt (wv_lt _ _ _ _)
     have hR₁' := hR₁ hRlt
     have hRt : wv t.mem B (slot w iR) (w + 1) = wv s₂.mem B (slot w iR) (w + 1) :=
@@ -393,13 +374,12 @@ theorem divmod_ok {s : State} {B : Addr} {Z w : Nat} {iQ iR iD iT : Nat} (hs : S
   unfold divmod
   simp only [seqs]
   -- The registers.
-  have e₁ : WP isa (.block (ws ++ base iR .r8 ++ [.mov .r11 (.reg .r12)] ++
-      List.replicate 6 (.alu .add .r11 (.reg .r11)) ++ [.mov32 .r13 (.imm 0)])) s fun (t : State) =>
+  have e₁ : WP isa (.block (divInit iR)) s fun (t : State) =>
       t.gpr .rdi = B ∧ t.gpr .r12 = BitVec.ofNat 64 w ∧
       t.gpr .r9 = BitVec.ofNat 64 (8 * (w + 2)) ∧ t.gpr .r8 = off B (slot w iR) ∧
       t.gpr .r11 = BitVec.ofNat 64 (64 * w) ∧ t.gpr .r13 = BitVec.ofNat 64 0 ∧ t.mem = s.mem ∧
       Keep [.r12, .r9, .r8, .r11, .r13] s t := by
-    rw [WP.block_append_iff, WP.block_append_iff, WP.block_append_iff, WP.block_append_iff]
+    rw [divInit, WP.block_append_iff, WP.block_append_iff, WP.block_append_iff, WP.block_append_iff]
     refine WP.mono (ws_ok hs hdi h256 hW hS) fun s₁ ⟨h12, h9, m₁, k₁⟩ => ?_
     refine WP.mono (base_ok iR (r := .r8) (by decide) ((k₁.gpr (by decide)).trans hdi) h9) fun s₂ ⟨h8, m₂, k₂⟩ => ?_
     have k12 := k₁.trans k₂
