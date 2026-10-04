@@ -231,8 +231,8 @@ macro_rules! instance {
         }
     };
 }
-// `aes_gcm_siv` (only on x86-64 so far) chooses its instances with it too.
-#[cfg(target_arch = "x86_64")]
+// `aes_gcm_siv` (on x86-64 and AArch64 so far) chooses its instances with it too.
+#[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
 pub(crate) use instance;
 
 /// The features of the baseline ISA: none.
