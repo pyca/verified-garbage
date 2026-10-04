@@ -251,4 +251,82 @@ theorem tabIter_ok {s₀ t : State} {B : Addr} {M k x : Nat → Nat} {Q : Prop} 
   · rw [k₃.2.2, wr₂, k₁.2.2, h.wr]
   · rw [mx₃, x₂, mx₁, h.mxcsr]
 
+
+/-- The loop of `tabBuild`, from entry `16 - n`. -/
+theorem tabLoop_ok {s₀ : State} {B : Addr} {M k x : Nat → Nat} {Q : Prop}
+    (hR : ∀ p < 2, Nat.Coprime (2 ^ (52 * 20)) (M p)) :
+    ∀ n t, 1 ≤ n → n ≤ 14 → TabInv s₀ B M k x Q (16 - n) t →
+      WP isa (.loop (.seq (.block [.mov .r8 (.reg .rbx), .alu .add .r8 (.reg .r13), .alu .sub .r8 (.imm 160),
+        .mov .r9 (.reg .rbx), .alu .add .r9 (.imm (BitVec.ofNat 32 oX)), .mov .r11 (.reg .rbx),
+        .alu .add .r11 (.reg .r13)])
+      (.seq VG.Impl.Rsa.X86_64.CrtIfma.ammCore
+        (.block [.alu .add .r13 (.imm 160), .alu .cmp .r13 (.imm (BitVec.ofNat 32 (oTab + 2560)))]))) .ne) t
+        (TabInv s₀ B M k x Q 16) := by
+  intro n t h1 h14 hI
+  refine WP.loop (M := isa) (c := .ne) (Q := TabInv s₀ B M k x Q 16)
+    (fun n t => 1 ≤ n ∧ n ≤ 14 ∧ TabInv s₀ B M k x Q (16 - n) t) ?_ n t ⟨h1, h14, hI⟩
+  intro n t ⟨h1, h14, hI⟩
+  refine WP.mono (tabIter_ok (i := 16 - n) (by omega) (by omega) hR hI) fun t' ⟨hI', hz⟩ => ?_
+  simp only [eval, hz, Option.map_some]
+  rcases Nat.eq_or_lt_of_le h1 with rfl | hn
+  · exact .inl ⟨by simp, hI'⟩
+  · refine .inr ⟨by simp only [decide_eq_false (show ¬ (16 - n + 1 = 16) by omega), Bool.not_false], n - 1,
+      by omega, by omega, by omega, by rw [show 16 - (n - 1) = 16 - n + 1 by omega]; exact hI'⟩
+
+/-- The table: `T_i ≡ x^i 2¹⁰⁴⁰` from `Y ≡ 2¹⁰⁴⁰` and `X ≡ x 2¹⁰⁴⁰`. -/
+theorem tabBuild_ok {s : State} {B : Addr} {M k x : Nat → Nat} {Q : Prop} (hB : s.gpr .rbx = B)
+    (hs : Scr s B (2 * D)) (ar : Ar s.mem B M k) (hR : ∀ p < 2, Nat.Coprime (2 ^ (52 * 20)) (M p))
+    (gy : ∀ p < 2, Good s.mem B M oY p) (gx : ∀ p < 2, Good s.mem B M oX p)
+    (vy : Q → ∀ p < 2, val52 s.mem B (D * p + oY) % M p = x p ^ 0 * 2 ^ (52 * 20) % M p)
+    (vx : Q → ∀ p < 2, val52 s.mem B (D * p + oX) % M p = x p ^ 1 * 2 ^ (52 * 20) % M p) :
+    WP isa (VG.Impl.Bignum.X86_64.seqs VG.Impl.Rsa.X86_64.CrtIfma.tabBuild) s (TabInv s B M k x Q 16) := by
+  have hD : D = 3872 := rfl
+  refine WP.seq ?_
+  rw [List.append_assoc, WP.block_append_iff]
+  refine WP.mono (copy160_ok hB hs (by decide) (by decide)
+    (.inl (by decide))) fun s₁ ⟨l₁, f₁, g₁, rd₁, wr₁, x₁⟩ => ?_
+  rw [WP.block_append_iff]
+  have hB₁ : s₁.gpr .rbx = B := by rw [g₁]; exact hB
+  refine WP.mono (copy160_ok hB₁ (hs.congr wr₁) (by decide) (by decide)
+    (.inl (by decide))) fun s₂ ⟨l₂, f₂, g₂, rd₂, wr₂, x₂⟩ => ?_
+  rw [WP.block_cons_iff]
+  refine ⟨s₂.setReg32 .r13 (BitVec.ofNat 32 (oTab + 320)), rfl, WP.block_nil ?_⟩
+  have g₃ : ∀ r, r ≠ .r13 → (s₂.setReg32 .r13 (BitVec.ofNat 32 (oTab + 320))).gpr r = s.gpr r := fun r hr => by
+    rw [State.setReg32, RegUpd.gpr_setReg_of_ne _ _ hr, g₂, g₁]
+  have hoD : oTab + 160 ≤ D := by decide
+  have hoD' : oTab + 160 + 160 ≤ D := by decide
+  -- the numbers after the copies
+  have gx₁ : ∀ p < 2, Good s₁.mem B M oX p := fun p hp => (gx p hp).of_out2 hp f₁ (.inl (by decide)) (by decide) hoD
+  have vx₁ : ∀ p < 2, val52 s₁.mem B (D * p + oX) = val52 s.mem B (D * p + oX) := fun p hp =>
+    f₁.val hp (.inl (by decide)) (by decide) hoD
+  have gx₂ : ∀ p < 2, Good s₂.mem B M oX p := fun p hp =>
+    (gx₁ p hp).of_out2 hp f₂ (.inl (by decide)) (by decide) hoD'
+  have vx₂ : ∀ p < 2, val52 s₂.mem B (D * p + oX) = val52 s.mem B (D * p + oX) := fun p hp => by
+    rw [f₂.val hp (.inl (by decide)) (by decide) hoD', vx₁ p hp]
+  have g0 : ∀ p < 2, Good s₂.mem B M oTab p := fun p hp =>
+    ((gy p hp).of_limbs (l₁ p hp)).of_out2 hp f₂ (.inl (by decide)) (by decide) hoD'
+  have v0 : ∀ p < 2, val52 s₂.mem B (D * p + oTab) = val52 s.mem B (D * p + oY) := fun p hp => by
+    rw [f₂.val hp (.inl (by decide)) (by decide) hoD', val52_of_limbs (l₁ p hp)]
+  have g1 : ∀ p < 2, Good s₂.mem B M (oTab + 160) p := fun p hp => (gx₁ p hp).of_limbs (l₂ p hp)
+  have v1 : ∀ p < 2, val52 s₂.mem B (D * p + (oTab + 160)) = val52 s.mem B (D * p + oX) := fun p hp => by
+    rw [val52_of_limbs (l₂ p hp), vx₁ p hp]
+  generalize ht₃ : s₂.setReg32 .r13 (BitVec.ofNat 32 (oTab + 320)) = t₃ at g₃
+  have e₃ : t₃.mem = s₂.mem ∧ t₃.rd = s₂.rd ∧ t₃.wr = s₂.wr ∧ t₃.mxcsr = s₂.mxcsr := by
+    rw [← ht₃]; exact ⟨rfl, rfl, rfl, rfl⟩
+  have r13₃ : t₃.gpr .r13 = BitVec.ofNat 64 (oTab + 160 * 2) := by
+    rw [← ht₃, State.setReg32, RegUpd.gpr_setReg_self]; decide
+  refine tabLoop_ok hR 14 _ (by decide) (Nat.le_refl _) ⟨?_, r13₃, hs.congr (by rw [e₃.2.2.1, wr₂, wr₁]),
+    ?_, fun j hj p hp => ?_, ?_, ?_, ?_, fun r _ _ _ _ _ _ _ _ _ r13 => g₃ r r13, by rw [e₃.2.1, rd₂, rd₁],
+    by rw [e₃.2.2.1, wr₂, wr₁], by rw [e₃.2.2.2, x₂, x₁]⟩
+  · exact (g₃ .rbx (by decide)).trans hB
+  · rw [e₃.1]; exact (ar.of_out2 f₁ (by decide) hoD).of_out2 f₂ (by decide) hoD'
+  · rw [e₃.1]
+    rcases (by omega : j = 0 ∨ j = 1) with rfl | rfl
+    · rw [Nat.mul_zero, Nat.add_zero]
+      exact ⟨g0 p hp, fun hq => by rw [v0 p hp]; exact vy hq p hp⟩
+    · rw [Nat.mul_one]
+      exact ⟨g1 p hp, fun hq => by rw [v1 p hp]; exact vx hq p hp⟩
+  · rw [e₃.1]; exact gx₂
+  · intro hq p hp; rw [e₃.1, vx₂ p hp]; exact vx hq p hp
+  · rw [e₃.1]; exact (f₁.mono (by decide) (by decide)).trans (f₂.mono (by decide) (by decide))
 end VG.Proof.Bignum.X86_64.AmmSym
