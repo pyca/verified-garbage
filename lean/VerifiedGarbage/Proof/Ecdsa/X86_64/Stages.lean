@@ -23,11 +23,11 @@ abbrev kv (c : Cfg) (s₀ : State) : Nat := ofBytes (Spec.Ecdsa.bytesAt s₀.mem
 abbrev dv (c : Cfg) (s₀ : State) : Nat := ofBytes (Spec.Ecdsa.bytesAt s₀.mem (s₀.gpr .rsi) (8 * c.n))
 abbrev ev (c : Cfg) (s₀ : State) : Nat := ofBytes (Spec.Ecdsa.bytesAt s₀.mem (s₀.gpr .rdx) (8 * c.n))
 
-/-- What the stages keep: the working space, `out` in `r14`, the regions,
+/-- What the stages keep: the working space, `out` in `rsi`, the regions,
 the constants and the saved registers. -/
 structure Keep (c : Cfg) (s₀ : State) (base : Addr) (s : State) : Prop where
   scr : Scr s base size
-  r14 : s.gpr .r14 = s₀.gpr .rdi
+  rsi : s.gpr .rsi = s₀.gpr .rdi
   wr : s.wr = s₀.wr
   fixed : Fixed c base s₀.gpr s.mem
 
@@ -43,7 +43,7 @@ structure St₁ (c : Cfg) (s₀ : State) (base : Addr) (s : State) : Prop extend
   t₀ : ∀ t < 64 * c.n, s.mem (off base (bitsAt c.n 0 + t)) = if (kv c s₀).testBit t then 1 else 0
   t₁ : ∀ t < 64 * c.n, s.mem (off base (bitsAt c.n 1 + t)) = if (c.C.p - 2).testBit t then 1 else 0
   t₂ : ∀ t < 64 * c.n, s.mem (off base (bitsAt c.n 2 + t)) = if (c.C.n - 2).testBit t then 1 else 0
-  gpr : ∀ r, r ∉ [.rax, .rdi, .r14, .rdx, .rbx] → s.gpr r = s₀.gpr r
+  gpr : ∀ r, r ∉ [.rax, .rdi, .r14, .rsi, .rdx, .rbx] → s.gpr r = s₀.gpr r
   unch : Unch base [(0, size)] s₀.mem s.mem
   rd : s.rd = s₀.rd
 
@@ -98,7 +98,7 @@ theorem stage₁ (hc : CfgOk c) {s₀ : State} (hp : SetupPre c s₀) {rest : Pr
     by rw [v₄ (by decide)]; exact hc' (RY, c.mont 1) (by simp [Cfg.consts]),
     by rw [v₄ (by decide)]; exact hc' (RZ, 0) (by simp [Cfg.consts]), ?_, ?_, ?_, ?_, ?_, ?_,
     by rw [k₄.rd, k₃.rd, k₂.rd, P.keep.rd]⟩
-  · rw [k₄.gpr _ (by decide), k₃.gpr _ (by decide), k₂.gpr _ (by decide), P.r14]
+  · rw [k₄.gpr _ (by decide), k₃.gpr _ (by decide), k₂.gpr _ (by decide), P.rsi]
   · exact (fx.unch h7 hn (fixedOk_tbl 0) u₂ |>.unch h7 hn (fixedOk_tbl 1) u₃).unch h7 hn (fixedOk_tbl 2) u₄
   · have hF := sl_le c h7 (i := FLAG) (by decide)
     have ap : ∀ j, ∀ w ∈ [(bitsAt c.n j, 64 * c.n)], c.sl FLAG + 8 ≤ w.1 ∨ w.1 + w.2 ≤ c.sl FLAG :=
@@ -117,8 +117,9 @@ theorem stage₁ (hc : CfgOk c) {s₀ : State} (hp : SetupPre c s₀) {rest : Pr
     rw [b₄ t ht, hn2, ← v₃ (by decide)]
   · intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
-    rw [k₄.gpr r (by simp [hr.1, hr.2.2.2.1, hr.2.2.2.2]), k₃.gpr r (by simp [hr.1, hr.2.2.2.1, hr.2.2.2.2]),
-      k₂.gpr r (by simp [hr.1, hr.2.2.2.1, hr.2.2.2.2]), P.keep.gpr r (by simp [hr.1, hr.2.1, hr.2.2.1])]
+    rw [k₄.gpr r (by simp [hr.1, hr.2.2.2.2.1, hr.2.2.2.2.2]),
+      k₃.gpr r (by simp [hr.1, hr.2.2.2.2.1, hr.2.2.2.2.2]), k₂.gpr r (by simp [hr.1, hr.2.2.2.2.1, hr.2.2.2.2.2]),
+      P.keep.gpr r (by simp [hr.1, hr.2.1, hr.2.2.1, hr.2.2.2.1])]
   · intro x hx
     have hx' : size ≤ ofs (s₀.gpr .r8) x := by have := hx _ (List.mem_singleton_self _); omega
     rw [O₄ x (Or.inr (by have := bitsAt_le c h7 (j := 2) (by decide); omega)),

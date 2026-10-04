@@ -55,8 +55,8 @@ def upToPow : Prog isa :=
 callee-saved registers restored. -/
 def finish : List Instr :=
   [.mov .rcx (.mem (sc (c.sl FLAG))), .mov32 .rax (.imm 4), .alu .and .rax (.reg .rcx),
-    .store8 { base := .r14, disp := 0 } .rax] ++
-  storeBE c.n .r14 1 (c.sl X) ++ storeBE c.n .r14 (1 + 8 * c.n) (c.sl Y) ++
+    .store8 { base := .rsi, disp := 0 } .rax] ++
+  storeBE c.n .rsi 1 (c.sl X) ++ storeBE c.n .rsi (1 + 8 * c.n) (c.sl Y) ++
   [.mov .rax (.reg .rcx), .alu .and .rax (.imm 1)] ++
   Impl.Ecdsa.X86_64.Cfg.saved.map (fun (r, d) => .mov r (.mem (sc d)))
 

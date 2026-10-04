@@ -4,11 +4,12 @@ import VerifiedGarbage.Proof.Ecdsa.X86_64.Layout
 # ECDSA on x86-64: the setup
 
 `Cfg.setup` saves the callee-saved registers at the start of the working
-space (`setupSaves_ok`), keeps `out` in `r14` and moves the working space's
+space (`setupSaves_ok`), moves `out` to `r14` and the working space's
 base to `rdi` (`setupMovs_ok`), reads `k`, `d` and the hash big-endian into
 their slots (`setupLoad_ok`, once each), stores the constants
-(`setupConsts_ok`, by induction on the list) and sets the flag to all ones:
-`setup_ok`, the state `SetupPost` describes.
+(`setupConsts_ok`, by induction on the list), sets the flag to all ones and
+keeps `out` in `rsi` (`setupOut_ok`): `setup_ok`, the state `SetupPost`
+describes.
 -/
 
 namespace VG.Proof.Ecdsa.X86_64
@@ -50,6 +51,18 @@ theorem setupMovs_ok (s : State) :
   refine ⟨trivial, trivial, ⟨fun r hr => ?_, rfl, rfl⟩, rfl⟩
   simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
   simp only [RegUpd.gpr_setReg, hr.1, hr.2, ite_false]
+
+/-! ## `out` to `rsi` -/
+
+theorem setupOut_ok (s : State) :
+    WP isa (.block ([.mov .rsi (.reg .r14)] : List Instr)) s fun s' =>
+      s'.gpr .rsi = s.gpr .r14 ∧ KeepRegs [.rsi] s s' ∧ s'.mem = s.mem := by
+  apply WP.of_runBlock
+  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, RegUpd.gpr_setReg,
+    ite_true, Option.map_some, Option.some.injEq, exists_eq_left']
+  refine ⟨trivial, ⟨fun r hr => ?_, rfl, rfl⟩, rfl⟩
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  simp only [RegUpd.gpr_setReg, hr, ite_false]
 
 /-! ## Reading `k`, `d` and the hash -/
 
@@ -163,7 +176,7 @@ theorem setup_eq (c : Cfg) : c.setup = Spill.saveCode .r8 Cfg.saved ++
     (([.mov .r14 (.reg .rdi), .mov .rdi (.reg .r8)] : List Instr) ++
     (loadBE c.n (c.sl K) .rcx ++ (loadBE c.n (c.sl D) .rsi ++ (loadBE c.n (c.sl E) .rdx ++
     (c.consts.flatMap (fun (i, x) => setConst c.n (c.sl i) x) ++
-    setConst 1 (c.sl FLAG) (2 ^ 64 - 1)))))) := by
+    (setConst 1 (c.sl FLAG) (2 ^ 64 - 1) ++ ([.mov .rsi (.reg .r14)] : List Instr))))))) := by
   simp only [Cfg.setup, List.append_assoc]; rfl
 
 theorem setup_ok {c : Cfg} (hc : CfgOk c) {s : State} (hp : SetupPre c s) :
@@ -222,34 +235,41 @@ theorem setup_ok {c : Cfg} (hc : CfgOk c) {s : State} (hp : SetupPre c s) :
     exact ⟨this, by omega⟩
   have hsl0 : c.sl 0 = 64 := by rw [sl_eq]; omega
   -- the flag
-  refine WP.mono (setupFlag_ok hc hs₆) fun s' ⟨f', k', O'⟩ => ?_
-  have K₃ : KeepRegs [.rax] s₂ s' := ((((k₃.trans k₄).trans k₅).trans k₆).trans k')
+  rw [WP.block_append_iff]
+  refine WP.mono (setupFlag_ok hc hs₆) fun s₇ ⟨f₇, k₇, O'⟩ => ?_
+  -- `out` to `rsi`
+  refine WP.mono (setupOut_ok s₇) fun s' ⟨rsi', k', m'⟩ => ?_
+  have K₇ : KeepRegs [.rax] s₂ s₇ := ((((k₃.trans k₄).trans k₅).trans k₆).trans k₇)
+  have hs₇ := hs₆.of_keepRegs k₇ (by decide)
+  have K₃ : KeepRegs [.rax] s₂ s₇ := K₇
   -- Everything after the movs writes only in `[64, size)`.
-  have Ol : Outside (s.gpr .r8) 64 (size - 64) s₂.mem s'.mem :=
+  have Ol : Outside (s.gpr .r8) 64 (size - 64) s₂.mem s₇.mem :=
     ((((O₃.mono (by omega) (by omega)).trans (O₄.mono (by omega) (by omega))).trans
       (O₅.mono (by omega) (by omega))).trans (O₆.mono (by omega) (by omega))).trans
       (O'.mono (by omega) (by omega))
-  refine ⟨hs₆.of_keepRegs k' (by decide), ?_, ?_, ?_, ?_, ?_, ?_, ?_, fun ix hix => ?_, f'⟩
-  · rw [K₃.gpr _ (by decide), r14₂, g₁]
-  · refine ⟨fun r hr => ?_, by rw [K₃.rd, k₂.rd, rd₁], by rw [K₃.wr, k₂.wr, wr₁]⟩
+  refine ⟨hs₇.of_keepRegs k' (by decide), ?_, ?_, ?_, ?_, ?_, ?_, ?_, fun ix hix => ?_, ?_⟩
+  · rw [rsi', K₃.gpr _ (by decide), r14₂, g₁]
+  · refine ⟨fun r hr => ?_, by rw [k'.rd, K₃.rd, k₂.rd, rd₁], by rw [k'.wr, K₃.wr, k₂.wr, wr₁]⟩
     simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
-    rw [K₃.gpr r (by simp [hr.1]), G₂ r hr.2.2 hr.2.1]
-  · exact (O₂.trans (Ol.mono (Nat.zero_le _) (by omega))).unch
+    rw [k'.gpr r (by simp [hr.2.2.2]), K₃.gpr r (by simp [hr.1]), G₂ r hr.2.2.1 hr.2.1]
+  · rw [m']; exact (O₂.trans (Ol.mono (Nat.zero_le _) (by omega))).unch
   · intro rd hrd
     have := setupSaved_lt rd hrd
+    rw [m']
     exact (Ol.word (d := rd.2) (by omega) (by omega)).trans
       ((congrArg (fun m => Mem.readW m _ 64) m₂).trans (sv₁ rd hrd))
   · show wordsVal s'.mem _ _ _ = _
-    rw [O'.wordsVal (by omega) (by omega), O₆.wordsVal (by omega) (by omega),
+    rw [m', O'.wordsVal (by omega) (by omega), O₆.wordsVal (by omega) (by omega),
       O₅.wordsVal (by omega) (by omega), O₄.wordsVal (by omega) (by omega), e₃]
   · show wordsVal s'.mem _ _ _ = _
-    rw [O'.wordsVal (by omega) (by omega), O₆.wordsVal (by omega) (by omega),
+    rw [m', O'.wordsVal (by omega) (by omega), O₆.wordsVal (by omega) (by omega),
       O₅.wordsVal (by omega) (by omega), e₄]
   · show wordsVal s'.mem _ _ _ = _
-    rw [O'.wordsVal (by omega) (by omega), O₆.wordsVal (by omega) (by omega), e₅]
+    rw [m', O'.wordsVal (by omega) (by omega), O₆.wordsVal (by omega) (by omega), e₅]
   · have := sl_lt c (consts_bounds hc ix hix).1
     have := sl_le c hc.n7 (i := 17) (by decide)
     show wordsVal s'.mem _ _ _ = _
-    rw [O'.wordsVal (by omega) (by omega), e₆ ix hix]
+    rw [m', O'.wordsVal (by omega) (by omega), e₆ ix hix]
+  · rw [m']; exact f₇
 
 end VG.Proof.Ecdsa.X86_64
