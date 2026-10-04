@@ -1,6 +1,6 @@
 //! All Ed448 verification cases in Wycheproof's ed448_test.json.
 
-#![cfg(target_arch = "x86_64")]
+#![cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
 
 use serde::Deserialize;
 use verified_garbage::ed448::{Error, VerifyingKey};
