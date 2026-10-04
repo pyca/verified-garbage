@@ -149,4 +149,25 @@ theorem w32_write_self (m : Mem) (base : Addr) (o : Nat) (v : BitVec 32) :
     w32 (m.writeW (off base o) v) base o = v.toNat := by
   rw [w32, Mem.readW_writeW_self32]
 
+/-- A 32-bit store changes only its 4 bytes. -/
+theorem writeW32_outside (m : Mem) (base : Addr) {d : Nat} (v : BitVec 32) (h : d + 4 ≤ 2 ^ 64) :
+    Outside base d 4 m (m.writeW (off base d) v) := by
+  intro x hx
+  simp only [Mem.writeW]
+  apply Mem.write_apply
+  rw [Offset.lt_iff x base (by omega)]
+  simp only [ofs] at hx
+  omega
+
+/-- A word at an offset outside the bytes that changed. -/
+theorem _root_.VG.Proof.Mont.Outside.w32 {base : Addr} {o n : Nat} {m m' : Mem}
+    (h : Outside base o n m m') {d : Nat} (hd : d + 4 ≤ o ∨ o + n ≤ d) (hd' : d + 4 ≤ 2 ^ 64) :
+    w32 m' base d = w32 m base d :=
+  congrArg BitVec.toNat (Mem.readW_congr fun i hi => h _ (by rw [ofs_off base (by omega)]; omega))
+
+theorem _root_.VG.Proof.Mont.Outside.val32 {base : Addr} {o n : Nat} {m m' : Mem} (h : Outside base o n m m')
+    {d k : Nat} (hd : d + 4 * k ≤ o ∨ o + n ≤ d) (hd' : d + 4 * k ≤ 2 ^ 64) :
+    val32 m' base d k = val32 m base d k :=
+  val32_congr fun j hj => h.w32 (by omega) (by omega)
+
 end VG.Proof.Mont.X86
