@@ -78,8 +78,8 @@ theorem tailSetup_ok {K W SP : Addr} {t : State} (E : Env K W SP t) {R : Nat} {n
     (h7 : 7 ≤ nonce.length) (h13 : nonce.length ≤ 13)
     (hc0 : bytesAt t.mem (W + BitVec.ofNat 64 48) 16 = Spec.Ccm.ctrBlock nonce 0)
     (hj : j < 256 ^ (15 - nonce.length)) (h14 : t.gpr .r14 = BitVec.ofNat 64 j) :
-    ∃ t', runBlock isa ([.mov .rsi (.mem (at_ .r15 roundsO)), .mov .rax (.reg .r14)] ++ ctrAt ++ zero16 ksO ++
-        [.mov .rdi (.reg .r13)] ++ ptr .rdx .r15 c1O ++ ptr .rcx .r15 ksO ++ [.mov32 .r8 (imm 1)] ++
+    ∃ t', runBlock isa (([.mov .rsi (.mem (at_ .r15 roundsO)), .mov .rax (.reg .r14)] : List Instr) ++ ctrAt ++ zero16 ksO ++
+        ([.mov .rdi (.reg .r13)] : List Instr) ++ ptr .rdx .r15 c1O ++ ptr .rcx .r15 ksO ++ ([.mov32 .r8 (imm 1)] : List Instr) ++
         ptr .r9 .r15 scrO) t = some t' ∧
       Frame [⟨W + BitVec.ofNat 64 64, 32⟩] t.mem t'.mem ∧
       bytesAt t'.mem (W + BitVec.ofNat 64 64) 16 = Spec.Ccm.ctrBlock nonce j ∧
@@ -161,11 +161,11 @@ theorem tail_ok (v : Ctr32Impl) {K W SP : Addr} {s : State} {R : Nat} {nonce : L
     (C : CtrCtx K W SP s R nonce D n) {t t₀ : State} (I : CtrInv K W SP s R nonce D n (n / 16) t)
     (hm₀ : t₀.mem = t.mem) (hg₀ : ∀ r, r ≠ .rbp → t₀.gpr r = t.gpr r)
     (hbp : t₀.gpr .rbp = BitVec.ofNat 64 (n % 16)) (hrd₀ : t₀.rd = t.rd) (hwr₀ : t₀.wr = t.wr) (h0 : n % 16 ≠ 0) :
-    WP isa (.seq (.block ([.mov .rsi (.mem (at_ .r15 roundsO)), .mov .rax (.reg .r14)] ++ ctrAt ++ zero16 ksO ++
-          [.mov .rdi (.reg .r13)] ++ ptr .rdx .r15 c1O ++ ptr .rcx .r15 ksO ++
-          [.mov32 .r8 (imm 1)] ++ ptr .r9 .r15 scrO))
+    WP isa (.seq (.block (([.mov .rsi (.mem (at_ .r15 roundsO)), .mov .rax (.reg .r14)] : List Instr) ++ ctrAt ++ zero16 ksO ++
+          ([.mov .rdi (.reg .r13)] : List Instr) ++ ptr .rdx .r15 c1O ++ ptr .rcx .r15 ksO ++
+          ([.mov32 .r8 (imm 1)] : List Instr) ++ ptr .r9 .r15 scrO))
       (.seq (callCtr v.callee)
-        (.seq (.block ([.mov .rdi (.reg .r12)] ++ ptr .rsi .r15 ksO ++ [.mov .rcx (.reg .rbp)])) xorLoop))) t₀
+        (.seq (.block (([.mov .rdi (.reg .r12)] : List Instr) ++ ptr .rsi .r15 ksO ++ ([.mov .rcx (.reg .rbp)] : List Instr))) xorLoop))) t₀
       fun t' => Env K W SP t' ∧ t'.rd = s.rd ∧ t'.wr = s.wr ∧ Frame (ctrR W SP D n) s.mem t'.mem ∧
         bytesAt t'.mem D n = xorFrom (Spec.Ccm.ctxCiph s.mem K R) nonce 1 (bytesAt s.mem D n) := by
   have L := C.lay

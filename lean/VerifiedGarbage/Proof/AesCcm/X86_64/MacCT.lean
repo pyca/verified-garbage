@@ -31,7 +31,7 @@ open VG.WriteBytes
 theorem updArgsBlk_ok {K W SP : Addr} (L : Lay K W SP) {s : State} (E : Env K W SP s) {R : Nat}
     (hR : R = 10 ∨ R = 12 ∨ R = 14) (hRo : s.mem.readW (W + BitVec.ofNat 64 232) 64 = BitVec.ofNat 64 R)
     {y : Nat} (hy : y = 0 ∨ y = 96) :
-    WP isa (.block (updArgs y ++ ptr .rcx .r15 bO ++ [.mov32 .r8 (imm 1)])) s fun s₁ =>
+    WP isa (.block (updArgs y ++ ptr .rcx .r15 bO ++ ([.mov32 .r8 (imm 1)] : List Instr))) s fun s₁ =>
       UArgs s₁ K (W + BitVec.ofNat 64 y) (W + BitVec.ofNat 64 32) (W + BitVec.ofNat 64 384) R 1 ∧
       s₁.gpr .rsp = SP := by
   have h15 := E.r15
@@ -64,7 +64,7 @@ theorem updArgsBlk_ok {K W SP : Addr} (L : Lay K W SP) {s : State} (E : Env K W 
   exact WP.of_runBlock ⟨s₁, run₁, uargs L E₁ hR (by omega) hq hqy (by decide) hdi hsi hdx hcx hr8 hr9, E₁.rsp⟩
 
 theorem updArgs_check {y : Nat} (hy : y = 0 ∨ y = 96) :
-    ∃ hc, (taint.check (ccmT []) (.block (updArgs y ++ ptr .rcx .r15 bO ++ [.mov32 .r8 (imm 1)])) hc).isSome = true := by
+    ∃ hc, (taint.check (ccmT []) (.block (updArgs y ++ ptr .rcx .r15 bO ++ ([.mov32 .r8 (imm 1)] : List Instr))) hc).isSome = true := by
   rcases hy with rfl | rfl <;> exact ⟨_, by taint_decide⟩
 
 /-- `updBlock y` in two runs. -/
@@ -95,9 +95,9 @@ theorem b0Pre_check {y : Nat} (hy : y = 0 ∨ y = 96) :
         .alu .sub .rcx (.mem (at_ .r15 nlenO)), .alu .add .rax (.reg .rcx), .mov .rcx (.mem (at_ .r15 alenO)),
         .alu .test .rcx (.reg .rcx)])
       (.seq (.ite .e (.block []) (.block [.alu .add .rax (imm 64)]))
-      (.block ([.mov .rcx (.mem (at_ .r15 c0O)), .mov .rdx (.mem (at_ .r15 (c0O + 8))),
+      (.block (([.mov .rcx (.mem (at_ .r15 c0O)), .mov .rdx (.mem (at_ .r15 (c0O + 8))),
         .mov .rsi (.mem (at_ .r15 lenO)), .store (at_ .r15 bO) .rcx, .store8 (at_ .r15 bO) .rax, .bswap .rsi,
-        .alu .or .rsi (.reg .rdx), .store (at_ .r15 (bO + 8)) .rsi] ++ zero16 y)))) hc).isSome = true := by
+        .alu .or .rsi (.reg .rdx), .store (at_ .r15 (bO + 8)) .rsi] : List Instr) ++ zero16 y)))) hc).isSome = true := by
   rcases hy with rfl | rfl <;> exact ⟨_, by taint_decide⟩
 
 /-- Both runs, after a frame within what the pieces write. -/
@@ -163,7 +163,7 @@ theorem absorbWArgs_ok {K W SP : Addr} (L : Lay K W SP) {s : State} (E : Env K W
     (hR : R = 10 ∨ R = 12 ∨ R = 14) (hRo : s.mem.readW (W + BitVec.ofNat 64 232) 64 = BitVec.ofNat 64 R)
     {y : Nat} (hy : y = 0 ∨ y = 96) {P : Addr} {len : Nat} (hP : Buf K W SP s P len)
     (h12 : s.gpr .r12 = P) (h8 : s.gpr .r8 = BitVec.ofNat 64 (len / 16)) :
-    WP isa (.block (updArgs y ++ [.mov .rcx (.reg .r12)])) s fun s₂ =>
+    WP isa (.block (updArgs y ++ ([.mov .rcx (.reg .r12)] : List Instr))) s fun s₂ =>
       UArgs s₂ K (W + BitVec.ofNat 64 y) P (W + BitVec.ofNat 64 384) R (len / 16) ∧ s₂.gpr .rsp = SP := by
   have hl := hP.lt
   have h15 := E.r15
@@ -208,7 +208,7 @@ theorem absorbT1_ok {s : State} {len : Nat} (hbp : s.gpr .rbp = BitVec.ofNat 64 
 theorem absorbT2_ok {K W SP : Addr} {s : State} (E : Env K W SP s) {P : Addr} {len : Nat}
     (hP : Buf K W SP s P len) (h12 : s.gpr .r12 = P) (hbp : s.gpr .rbp = BitVec.ofNat 64 len)
     (hcx : s.gpr .rcx = BitVec.ofNat 64 (len % 16)) (h0 : len % 16 ≠ 0) :
-    WP isa (.seq (.block (zero16 bO ++ [.mov .rsi (.reg .rbp), .alu .sub .rsi (.reg .rcx), .alu .add .rsi (.reg .r12)] ++
+    WP isa (.seq (.block (zero16 bO ++ ([.mov .rsi (.reg .rbp), .alu .sub .rsi (.reg .rcx), .alu .add .rsi (.reg .r12)] : List Instr) ++
         ptr .rdi .r15 bO)) copyLoop) s fun s' =>
       Env K W SP s' ∧ Frame [⟨W + BitVec.ofNat 64 32, 16⟩] s.mem s'.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   have hl := hP.lt
@@ -265,7 +265,7 @@ theorem absW1_check : ∃ hc, ((taint.check (ccmT [.r12, .rbp])
   ⟨_, by taint_decide⟩
 
 theorem absWArgs_check {y : Nat} (hy : y = 0 ∨ y = 96) :
-    ∃ hc, (taint.check (ccmT [.r12, .r8]) (.block (updArgs y ++ [.mov .rcx (.reg .r12)])) hc).isSome = true := by
+    ∃ hc, (taint.check (ccmT [.r12, .r8]) (.block (updArgs y ++ ([.mov .rcx (.reg .r12)] : List Instr))) hc).isSome = true := by
   rcases hy with rfl | rfl <;> exact ⟨_, by taint_decide⟩
 
 /-- The whole blocks, in two runs. -/
@@ -275,7 +275,7 @@ theorem absorbWhole_rel (v : Ctr32Impl) {K W SP : Addr} (L : Lay K W SP) {R : Na
     (hQ : ∀ s₁ s₂, Q s₁ s₂ → One K W SP R N A D nl al n tl s₁ ∧ One K W SP R N A D nl al n tl s₂ ∧
       AbsPre K W SP P len s₁ ∧ AbsPre K W SP P len s₂) :
     RelCT isa Q (.seq (.block [.mov .r8 (.reg .rbp), .shift .shr .r8 4, .alu .test .r8 (.reg .r8)])
-      (.ite .e (.block []) (.seq (.block (updArgs y ++ [.mov .rcx (.reg .r12)])) (callUpdate v.callee v.suffix))))
+      (.ite .e (.block []) (.seq (.block (updArgs y ++ ([.mov .rcx (.reg .r12)] : List Instr))) (callUpdate v.callee v.suffix))))
       fun _ _ => True := by
   have r₁ := (rel_flagsC [.r12, .rbp] hDW hn (fun s₁ s₂ (h : Q s₁ s₂) => by
     obtain ⟨o₁, o₂, a₁, a₂⟩ := hQ _ _ h
@@ -338,7 +338,7 @@ theorem absT1_check : ∃ hc, ((taint.check (ccmT [.r12, .rbp])
       some true := ⟨_, by taint_decide⟩
 
 theorem absT2_check : ∃ hc, (taint.check (ccmT [.rcx, .r12, .rbp])
-    (.seq (.block (zero16 bO ++ [.mov .rsi (.reg .rbp), .alu .sub .rsi (.reg .rcx), .alu .add .rsi (.reg .r12)] ++
+    (.seq (.block (zero16 bO ++ ([.mov .rsi (.reg .rbp), .alu .sub .rsi (.reg .rcx), .alu .add .rsi (.reg .r12)] : List Instr) ++
       ptr .rdi .r15 bO)) copyLoop) hc).isSome = true := ⟨_, by taint_decide⟩
 
 /-- The last bytes, in two runs. -/
@@ -349,7 +349,7 @@ theorem absorbTail_rel (v : Ctr32Impl) {K W SP : Addr} (L : Lay K W SP) {R : Nat
       AbsPre K W SP P len s₁ ∧ AbsPre K W SP P len s₂) :
     RelCT isa Q (.seq (.block [.mov .rcx (.reg .rbp), .alu .and .rcx (imm 15), .alu .test .rcx (.reg .rcx)])
         (.ite .e (.block [])
-          (.seq (.block (zero16 bO ++ [.mov .rsi (.reg .rbp), .alu .sub .rsi (.reg .rcx), .alu .add .rsi (.reg .r12)] ++
+          (.seq (.block (zero16 bO ++ ([.mov .rsi (.reg .rbp), .alu .sub .rsi (.reg .rcx), .alu .add .rsi (.reg .r12)] : List Instr) ++
               ptr .rdi .r15 bO))
             (.seq copyLoop (updBlock v.callee v.suffix y)))))
       fun _ _ => True := by
@@ -664,8 +664,8 @@ theorem mac_rel (v : Ctr32Impl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} {N A 
   exact ⟨keep o₁ m₁ g₁ rd₁ wr₁, keep o₂ m₂ g₂ rd₂ wr₂, ⟨d₁.of_eq rd₁ wr₁, h12₁, hbp₁⟩, ⟨d₂.of_eq rd₂ wr₂, h12₂, hbp₂⟩⟩
 
 theorem tagArgs_check {y : Nat} (hy : y = 0 ∨ y = 96) : ∃ hc, (taint.check (ccmT [])
-    (.block ([.mov .rsi (.mem (at_ .r15 roundsO)), .mov32 .rax (imm 0)] ++ ctrAt ++ [.mov .rdi (.reg .r13)] ++
-      ptr .rdx .r15 c1O ++ ptr .rcx .r15 y ++ [.mov32 .r8 (imm 1)] ++ ptr .r9 .r15 scrO)) hc).isSome = true := by
+    (.block (([.mov .rsi (.mem (at_ .r15 roundsO)), .mov32 .rax (imm 0)] : List Instr) ++ ctrAt ++ ([.mov .rdi (.reg .r13)] : List Instr) ++
+      ptr .rdx .r15 c1O ++ ptr .rcx .r15 y ++ ([.mov32 .r8 (imm 1)] : List Instr) ++ ptr .r9 .r15 scrO)) hc).isSome = true := by
   rcases hy with rfl | rfl <;> exact ⟨_, by taint_decide⟩
 
 /-- The tag, in two runs. -/

@@ -70,8 +70,8 @@ theorem chunkPre_ok {K W SP : Addr} {s : State} {R : Nat} {nonce : List Byte} {D
     WP isa (.seq (.block [.mov32 .r8 (.reg .r14), .movImm64 .rcx 0x100000000, .alu .sub .rcx (.reg .r8),
         .mov .r8 (.reg .rbx), .alu .cmp .rbx (.reg .rcx)])
       (.seq (.ite .b (.block []) (.block [.mov .r8 (.reg .rcx)]))
-      (.block ([.mov .rsi (.mem (at_ .r15 roundsO)), .mov .rax (.reg .r14)] ++ ctrAt ++
-        [.store (at_ .r15 kO) .r8, .mov .rdi (.reg .r13)] ++ ptr .rdx .r15 c1O ++ [.mov .rcx (.reg .r12)] ++
+      (.block (([.mov .rsi (.mem (at_ .r15 roundsO)), .mov .rax (.reg .r14)] : List Instr) ++ ctrAt ++
+        ([.store (at_ .r15 kO) .r8, .mov .rdi (.reg .r13)] : List Instr) ++ ptr .rdx .r15 c1O ++ ([.mov .rcx (.reg .r12)] : List Instr) ++
         ptr .r9 .r15 scrO)))) t fun t₅ =>
       CtrCall t₅ K (W + BitVec.ofNat 64 64) (D + BitVec.ofNat 64 (16 * b)) (W + BitVec.ofNat 64 384) R
         (chunkK n b) ∧ Env K W SP t₅ ∧ t₅.mem.readW (W + BitVec.ofNat 64 216) 64 = BitVec.ofNat 64 (chunkK n b) ∧
@@ -100,8 +100,8 @@ theorem chunkPre_check : ∃ hc, (taint.check (ccmT [.rbx, .r12, .r14])
     (.seq (.block [.mov32 .r8 (.reg .r14), .movImm64 .rcx 0x100000000, .alu .sub .rcx (.reg .r8),
         .mov .r8 (.reg .rbx), .alu .cmp .rbx (.reg .rcx)])
       (.seq (.ite .b (.block []) (.block [.mov .r8 (.reg .rcx)]))
-      (.block ([.mov .rsi (.mem (at_ .r15 roundsO)), .mov .rax (.reg .r14)] ++ ctrAt ++
-        [.store (at_ .r15 kO) .r8, .mov .rdi (.reg .r13)] ++ ptr .rdx .r15 c1O ++ [.mov .rcx (.reg .r12)] ++
+      (.block (([.mov .rsi (.mem (at_ .r15 roundsO)), .mov .rax (.reg .r14)] : List Instr) ++ ctrAt ++
+        ([.store (at_ .r15 kO) .r8, .mov .rdi (.reg .r13)] : List Instr) ++ ptr .rdx .r15 c1O ++ ([.mov .rcx (.reg .r12)] : List Instr) ++
         ptr .r9 .r15 scrO)))) hc).isSome = true := ⟨_, by taint_decide⟩
 
 theorem chunkEnd_check : ∃ hc, ((taint.check (ccmTk [.rbx, .r12, .r14])
@@ -134,8 +134,8 @@ theorem chunkArgs_ok {K W SP : Addr} {σ : State} {R : Nat} {nonce : List Byte} 
     WP isa (.seq (.block [.mov32 .r8 (.reg .r14), .movImm64 .rcx 0x100000000, .alu .sub .rcx (.reg .r8),
         .mov .r8 (.reg .rbx), .alu .cmp .rbx (.reg .rcx)])
       (.seq (.ite .b (.block []) (.block [.mov .r8 (.reg .rcx)]))
-      (.block ([.mov .rsi (.mem (at_ .r15 roundsO)), .mov .rax (.reg .r14)] ++ ctrAt ++
-        [.store (at_ .r15 kO) .r8, .mov .rdi (.reg .r13)] ++ ptr .rdx .r15 c1O ++ [.mov .rcx (.reg .r12)] ++
+      (.block (([.mov .rsi (.mem (at_ .r15 roundsO)), .mov .rax (.reg .r14)] : List Instr) ++ ctrAt ++
+        ([.store (at_ .r15 kO) .r8, .mov .rdi (.reg .r13)] : List Instr) ++ ptr .rdx .r15 c1O ++ ([.mov .rcx (.reg .r12)] : List Instr) ++
         ptr .r9 .r15 scrO)))) t (ChunkArgs K W SP R D n b σ) :=
   WP.mono (chunkPre_ok C I hb) fun _ ⟨cc, E, k, g, rd, wr, f⟩ =>
     ⟨cc, E, k, by rw [g _ (by simp), I.rbx], by rw [g _ (by simp), I.r12], by rw [g _ (by simp), I.r14],
@@ -227,9 +227,9 @@ def TailCalled (K W SP : Addr) (D : Addr) (n : Nat) (σ t : State) : Prop :=
 
 theorem tailArgs_ok {K W SP : Addr} {σ : State} {R : Nat} {nonce : List Byte} {D : Addr} {n : Nat}
     (C : CtrCtx K W SP σ R nonce D n) {t₀ : State} (h : TailIn K W SP R nonce D n σ t₀) (h0 : n % 16 ≠ 0) :
-    WP isa (.block ([.mov .rsi (.mem (at_ .r15 roundsO)), .mov .rax (.reg .r14)] ++ ctrAt ++ zero16 ksO ++
-      [.mov .rdi (.reg .r13)] ++ ptr .rdx .r15 c1O ++ ptr .rcx .r15 ksO ++
-      [.mov32 .r8 (imm 1)] ++ ptr .r9 .r15 scrO)) t₀ (TailArgs K W SP R D n σ) := by
+    WP isa (.block (([.mov .rsi (.mem (at_ .r15 roundsO)), .mov .rax (.reg .r14)] : List Instr) ++ ctrAt ++ zero16 ksO ++
+      ([.mov .rdi (.reg .r13)] : List Instr) ++ ptr .rdx .r15 c1O ++ ptr .rcx .r15 ksO ++
+      ([.mov32 .r8 (imm 1)] : List Instr) ++ ptr .r9 .r15 scrO)) t₀ (TailArgs K W SP R D n σ) := by
   obtain ⟨t, I, hm₀, hg₀, hbp, hrd₀, hwr₀⟩ := h
   have L := C.lay
   have E₀ : Env K W SP t₀ := I.env.keep (fun r hr => hg₀ r (by
@@ -268,12 +268,12 @@ theorem tailCalled_ok (v : Ctr32Impl) {K W SP : Addr} {R : Nat} {D : Addr} {n : 
     · exact ⟨below SP 16, by simp, below8_sub SP⟩)
 
 theorem tailArgs_check : ∃ hc, (taint.check (ccmT [.r12, .r14, .rbp])
-    (.block ([.mov .rsi (.mem (at_ .r15 roundsO)), .mov .rax (.reg .r14)] ++ ctrAt ++ zero16 ksO ++
-      [.mov .rdi (.reg .r13)] ++ ptr .rdx .r15 c1O ++ ptr .rcx .r15 ksO ++
-      [.mov32 .r8 (imm 1)] ++ ptr .r9 .r15 scrO)) hc).isSome = true := ⟨_, by taint_decide⟩
+    (.block (([.mov .rsi (.mem (at_ .r15 roundsO)), .mov .rax (.reg .r14)] : List Instr) ++ ctrAt ++ zero16 ksO ++
+      ([.mov .rdi (.reg .r13)] : List Instr) ++ ptr .rdx .r15 c1O ++ ptr .rcx .r15 ksO ++
+      ([.mov32 .r8 (imm 1)] : List Instr) ++ ptr .r9 .r15 scrO)) hc).isSome = true := ⟨_, by taint_decide⟩
 
 theorem tailEnd_check : ∃ hc, (taint.check (ccmT [.r12, .rbp])
-    (.seq (.block ([.mov .rdi (.reg .r12)] ++ ptr .rsi .r15 ksO ++ [.mov .rcx (.reg .rbp)])) xorLoop) hc).isSome =
+    (.seq (.block (([.mov .rdi (.reg .r12)] : List Instr) ++ ptr .rsi .r15 ksO ++ ([.mov .rcx (.reg .rbp)] : List Instr))) xorLoop) hc).isSome =
       true := ⟨_, by taint_decide⟩
 
 /-- The last bytes, in two runs. -/
@@ -281,11 +281,11 @@ theorem tail_rel (v : Ctr32Impl) {K W SP : Addr} {R : Nat} {N A D : Addr} {nl al
     {nonce₁ nonce₂ : List Byte} (C₁ : CtrCtx K W SP σ₁ R nonce₁ D n) (C₂ : CtrCtx K W SP σ₂ R nonce₂ D n)
     (O₁ : One K W SP R N A D nl al n tl σ₁) (O₂ : One K W SP R N A D nl al n tl σ₂) (h0 : n % 16 ≠ 0) :
     RelCT isa (fun t₁ t₂ => TailIn K W SP R nonce₁ D n σ₁ t₁ ∧ TailIn K W SP R nonce₂ D n σ₂ t₂)
-      (.seq (.block ([.mov .rsi (.mem (at_ .r15 roundsO)), .mov .rax (.reg .r14)] ++ ctrAt ++ zero16 ksO ++
-          [.mov .rdi (.reg .r13)] ++ ptr .rdx .r15 c1O ++ ptr .rcx .r15 ksO ++
-          [.mov32 .r8 (imm 1)] ++ ptr .r9 .r15 scrO))
+      (.seq (.block (([.mov .rsi (.mem (at_ .r15 roundsO)), .mov .rax (.reg .r14)] : List Instr) ++ ctrAt ++ zero16 ksO ++
+          ([.mov .rdi (.reg .r13)] : List Instr) ++ ptr .rdx .r15 c1O ++ ptr .rcx .r15 ksO ++
+          ([.mov32 .r8 (imm 1)] : List Instr) ++ ptr .r9 .r15 scrO))
         (.seq (callCtr v.callee)
-          (.seq (.block ([.mov .rdi (.reg .r12)] ++ ptr .rsi .r15 ksO ++ [.mov .rcx (.reg .rbp)])) xorLoop)))
+          (.seq (.block (([.mov .rdi (.reg .r12)] : List Instr) ++ ptr .rsi .r15 ksO ++ ([.mov .rcx (.reg .rbp)] : List Instr))) xorLoop)))
       fun _ _ => True := by
   have L := C₁.lay
   have hDW := C₁.buf.w

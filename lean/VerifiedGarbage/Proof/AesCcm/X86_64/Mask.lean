@@ -38,12 +38,7 @@ theorem maskStep_ok (s : State) {P : Addr} {j L : Nat} {c : Bool} (h12 : s.gpr .
       (∀ r, r ≠ .rax → r ≠ .r10 → s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   have ea : s.gpr .r12 + s.gpr .r10 * BitVec.ofNat 64 1 + BitVec.ofInt 64 0 = P + BitVec.ofNat 64 j := by
     rw [h12, h10, BitVec.mul_one]; simp
-  refine ⟨_, by
-    simp (config := {decide := true}) only [maskByte, imm, runBlock_cons, runStep_some, runBlock_nil, exec,
-      readSrc, execAlu, State.load8, State.store8, State.ea, Option.bind_some, Option.map_some, gpr_setReg,
-      gpr_arithFlags, mem_setReg, mem_arithFlags, rd_setReg, rd_arithFlags, wr_setReg, wr_arithFlags, ite_true,
-      ite_false, ea, rq, wq]
-    rfl, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  refine ⟨_, by crun [maskByte, ea, rq, wq], ?_, ?_, ?_, ?_, ?_, ?_⟩
   · simp only [mem_setReg, mem_arithFlags, h11, mask_byte]
   · simp [gpr_setReg, h10]
   · simp [h10, hbp]

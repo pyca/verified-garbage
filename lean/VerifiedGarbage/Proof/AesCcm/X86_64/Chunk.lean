@@ -156,8 +156,8 @@ theorem setup_ok {K W SP : Addr} {s : State} {R : Nat} {nonce : List Byte} {D : 
     (C : CtrCtx K W SP s R nonce D n) {b k : Nat} {t t₂ : State} (I : CtrInv K W SP s R nonce D n b t)
     (hb : b < n / 16) (hm₂ : t₂.mem = t.mem) (hr8₂ : t₂.gpr .r8 = BitVec.ofNat 64 k)
     (hg₂ : ∀ r, r ≠ .r8 → r ≠ .rcx → t₂.gpr r = t.gpr r) (hrd₂ : t₂.rd = t.rd) (hwr₂ : t₂.wr = t.wr) :
-    ∃ t₅, runBlock isa ([.mov .rsi (.mem (at_ .r15 roundsO)), .mov .rax (.reg .r14)] ++ ctrAt ++
-        [.store (at_ .r15 kO) .r8, .mov .rdi (.reg .r13)] ++ ptr .rdx .r15 c1O ++ [.mov .rcx (.reg .r12)] ++
+    ∃ t₅, runBlock isa (([.mov .rsi (.mem (at_ .r15 roundsO)), .mov .rax (.reg .r14)] : List Instr) ++ ctrAt ++
+        ([.store (at_ .r15 kO) .r8, .mov .rdi (.reg .r13)] : List Instr) ++ ptr .rdx .r15 c1O ++ ([.mov .rcx (.reg .r12)] : List Instr) ++
         ptr .r9 .r15 scrO) t₂ = some t₅ ∧
       Frame [⟨W + BitVec.ofNat 64 64, 16⟩, ⟨W + BitVec.ofNat 64 216, 8⟩] t.mem t₅.mem ∧
       bytesAt t₅.mem (W + BitVec.ofNat 64 64) 16 = Spec.Ccm.ctrBlock nonce (1 + b) ∧

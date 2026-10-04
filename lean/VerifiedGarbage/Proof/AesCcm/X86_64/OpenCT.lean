@@ -49,7 +49,7 @@ theorem openBody_rel (v : Ctr32Impl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} 
     RelCT isa P (.seq ctrs (.seq (ctr v.callee) (.seq (mac v.callee v.suffix uO) (.seq (tag v.callee uO)
       (.seq (.block [.mov .rbx (.mem (at_ .r15 tlO))]) (.seq recv (.seq (cmp uO)
       (.seq (.block [.store (at_ .r15 okO) .rax]) (.seq mask
-        (.block ([.mov .rax (.mem (at_ .r15 okO))] ++ restore))))))))))) fun _ _ => True := by
+        (.block (([.mov .rax (.mem (at_ .r15 okO))] : List Instr) ++ restore))))))))))) fun _ _ => True := by
   have hy : uO = 0 ∨ uO = 96 := .inr rfl
   have r₁ := (rel_taintC [] hDW hn (fun s₁ s₂ h => by
       obtain ⟨⟨o₁, -⟩, ⟨o₂, -⟩⟩ := hP _ _ h; exact Both.of o₁ o₂ fun _ h => nomatch h) ctrs_check).wp

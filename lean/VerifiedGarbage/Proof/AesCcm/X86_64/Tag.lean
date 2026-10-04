@@ -23,8 +23,8 @@ theorem tagArgs_ok {K W SP : Addr} {s : State} (L : Lay K W SP) (E : Env K W SP 
     (hR : R = 10 ∨ R = 12 ∨ R = 14) (hRo : s.mem.readW (W + BitVec.ofNat 64 232) 64 = BitVec.ofNat 64 R)
     {nonce : List Byte} (h7 : 7 ≤ nonce.length) (h13 : nonce.length ≤ 13)
     (hc0 : bytesAt s.mem (W + BitVec.ofNat 64 48) 16 = Spec.Ccm.ctrBlock nonce 0) {y : Nat} (hy : y = 0 ∨ y = 96) :
-    WP isa (.block ([.mov .rsi (.mem (at_ .r15 roundsO)), .mov32 .rax (imm 0)] ++ ctrAt ++ [.mov .rdi (.reg .r13)] ++
-      ptr .rdx .r15 c1O ++ ptr .rcx .r15 y ++ [.mov32 .r8 (imm 1)] ++ ptr .r9 .r15 scrO)) s fun s₃ =>
+    WP isa (.block (([.mov .rsi (.mem (at_ .r15 roundsO)), .mov32 .rax (imm 0)] : List Instr) ++ ctrAt ++ ([.mov .rdi (.reg .r13)] : List Instr) ++
+      ptr .rdx .r15 c1O ++ ptr .rcx .r15 y ++ ([.mov32 .r8 (imm 1)] : List Instr) ++ ptr .r9 .r15 scrO)) s fun s₃ =>
       Env K W SP s₃ ∧ CtrCall s₃ K (W + BitVec.ofNat 64 64) (W + BitVec.ofNat 64 y) (W + BitVec.ofNat 64 384) R 1 ∧
       (∀ r ∈ [Reg.rbx, .rbp, .r12, .r14], s₃.gpr r = s.gpr r) ∧ s₃.rd = s.rd ∧ s₃.wr = s.wr ∧
       Frame [⟨W + BitVec.ofNat 64 64, 16⟩] s.mem s₃.mem ∧
