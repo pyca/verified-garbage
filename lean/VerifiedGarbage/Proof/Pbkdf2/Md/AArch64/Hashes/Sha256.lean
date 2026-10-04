@@ -31,9 +31,9 @@ def hash (v : Compress) : Hash where
   compC := v.code
   initN := Spec.Sha256.initApi.name
   initC := Impl.Sha256.AArch64.Stream.init
-  updN := Spec.Sha256.updateApi.name ++ v.suffix
+  updN := Spec.Sha256.updateScratchApi.name ++ v.suffix
   updC := v.update
-  finN := Spec.Sha256.finalizeApi.name ++ v.suffix
+  finN := Spec.Sha256.finalizeScratchApi.name ++ v.suffix
   finC := v.finalize
   hmacInitN := Spec.Hmac.sha256I.initApi.name ++ v.suffix
   hmacFinN := Spec.Hmac.sha256I.finalizeApi.name ++ v.suffix
@@ -165,20 +165,34 @@ theorem satP : ∃ s, (Spec.Hmac.sha256I.pbkdf2Contract AArch64.abi 16).pre s :=
     Spec.Pbkdf2.pbkdf2Contract, Spec.Pbkdf2.pbkdf2Sig, Spec.Hmac.sha256S, Spec.Hmac.sha256, AArch64.abi,
     AArch64.argRegs] using pbkSat 200
 
-/-- The streaming `update` and `finalize` made with `v`, which
+/-- The streaming `update` and `finalize` made with `v`, which keep their
+working space in a frame of their own, and `update_scratch` and
+`finalize_scratch`, which HMAC's and PBKDF2's code calls with theirs, which
 `Generic/MdHash/AArch64/Stream.lean` emits. -/
 def stream : List StreamFn := [
   { api := Spec.Sha256.updateApi
-    code := v.update
-    contract := Spec.Sha256.updateContract AArch64.abi 16
-    stack := 16
+    code := Impl.StackScratch.AArch64.withStackScratch 608 .x4 v.update
+    contract := Spec.Sha256.updateContract AArch64.abi (16 + 608)
+    stack := 16 + 608
     verified := Proof.Sha256.AArch64.Shared.update_of v.update_verified
     spSafe := Code.all_of_forall (fun _ => rfl) _ },
   { api := Spec.Sha256.finalizeApi
-    code := v.finalize
-    contract := Spec.Sha256.finalizeContract AArch64.abi 16
-    stack := 16
+    code := Impl.StackScratch.AArch64.withStackScratch 608 .x3 v.finalize
+    contract := Spec.Sha256.finalizeContract AArch64.abi (16 + 608)
+    stack := 16 + 608
     verified := Proof.Sha256.AArch64.Shared.finalize_of v.finalize_verified
+    spSafe := Code.all_of_forall (fun _ => rfl) _ },
+  { api := Spec.Sha256.updateScratchApi
+    code := v.update
+    contract := Spec.Sha256.updateScratchContract AArch64.abi 16
+    stack := 16
+    verified := Proof.Sha256.AArch64.Shared.updateScratch_of v.update_verified
+    spSafe := Code.all_of_forall (fun _ => rfl) _ },
+  { api := Spec.Sha256.finalizeScratchApi
+    code := v.finalize
+    contract := Spec.Sha256.finalizeScratchContract AArch64.abi 16
+    stack := 16
+    verified := Proof.Sha256.AArch64.Shared.finalizeScratch_of v.finalize_verified
     spSafe := Code.all_of_forall (fun _ => rfl) _ }]
 
 /-- Every construction follows the registered compression backend. -/

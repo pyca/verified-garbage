@@ -269,8 +269,8 @@ theorem kstep_exec (d s : XReg) (sel r : BitVec 8) (off : Nat) (st : State) (hd3
       st'.gpr = st.gpr ∧ st'.rd = st.rd ∧ st'.wr = st.wr ∧
       ∀ x, x ≠ d → x ≠ .xmm3 → x ≠ .xmm4 → st'.xmm x = st.xmm x := by
   apply WP.of_runBlock
-  simp (config := {decide := true}) only [kstep, runBlock_cons, runStep_some, runBlock_nil, exec,
-    XOp.exec, isa, State.setXmm, State.store128, ea_at, hw, ite_true, ite_false, hd3, hd4, Ne.symm hd3, Ne.symm hd4,
+  simp only [reduceCtorEq, ↓reduceIte, kstep, runBlock_cons, runStep_some, runBlock_nil, exec,
+    XOp.exec, isa, State.setXmm, State.store128, ea_at, hw, hd3, hd4, Ne.symm hd3, Ne.symm hd4,
     Option.some.injEq, exists_eq_left', eval_movdqa, pslldq4, eval_pxor']
   exact ⟨rfl, rfl, trivial, trivial, trivial, fun x h1 h2 h3 => by simp only [h1, h2, h3, ite_false]⟩
 
@@ -283,8 +283,8 @@ theorem kstepB6_exec (off : Nat) (st : State)
       st'.gpr = st.gpr ∧ st'.rd = st.rd ∧ st'.wr = st.wr ∧
       ∀ x, x ≠ .xmm2 → x ≠ .xmm3 → x ≠ .xmm4 → st'.xmm x = st.xmm x := by
   apply WP.of_runBlock
-  simp (config := {decide := true}) only [kstepB6, runBlock_cons, runStep_some, runBlock_nil, exec,
-    XOp.exec, isa, State.setXmm, State.store128, ea_at, hw, ite_true, ite_false,
+  simp only [reduceCtorEq, ↓reduceIte, kstepB6, runBlock_cons, runStep_some, runBlock_nil, exec,
+    XOp.exec, isa, State.setXmm, State.store128, ea_at, hw, 
     Option.some.injEq, exists_eq_left', eval_movdqa, pslldq4, eval_pxor']
   exact ⟨rfl, rfl, trivial, trivial, trivial, fun x h1 h2 h3 => by simp only [h1, h2, h3, ite_false]⟩
 
@@ -518,9 +518,9 @@ theorem expand128_ok {s₀ : State} (hp : Pre s₀) (hl : len s₀ = 16) {st : S
   refine WP.mono (Q := Inv128 s₀ 0) ?_ fun st₁ h₁ => WP.mono
     (wp_range_flatMap (Inv128 s₀) (fun k st hk h => ?_) 10 (Nat.le_refl _) st₁ h₁) fun _ h => h.1
   · apply WP.of_runBlock
-    simp (config := {decide := true}) only [runBlock_cons, runStep_some, runBlock_nil, exec, isa,
+    simp only [↓reduceIte, runBlock_cons, runStep_some, runBlock_nil, exec, isa,
       State.setXmm, State.load128, State.store128, ea_at, hf.gpr, hf.rd, hf.wr, hf.mem, hin, hw,
-      ite_true, Option.map_some, Option.some.injEq, exists_eq_left']
+      Option.map_some, Option.some.injEq, exists_eq_left']
     have hv : ∀ j < 4, dword (s₀.mem.readW (s₀.gpr .rdi + BitVec.ofInt 64 ((0 : Nat) : Int)) 128) j =
         W s₀.mem (kp s₀) 4 (0 + j) := fun j hj => by
       rw [dword_key _ _ 0 j (0 + j) hj (by omega), W_lt (by omega)]
@@ -708,7 +708,7 @@ theorem expandKey_ct : ConstantTime isa expandKeyX86_64.pre expandKeyX86_64.pub 
   intro s₁ s₂ _ _ ⟨h1, h2, h3, h4⟩
   refine Taint.agree_ofRegs fun r hr => ?_
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl <;> assumption
+  rcases hr with rfl | rfl | rfl | rfl <;> with_reducible assumption
 
 theorem expandKey_verified :
     Verified X86_64.target Impl.Aes.X86_64.AesNi.expandKey (Spec.Aes.expandKeyContract X86_64.abi) :=

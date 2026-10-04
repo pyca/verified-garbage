@@ -48,7 +48,7 @@ theorem finalize_rel {s₀ s₀' : State} (h0 : finalizeArm.pre s₀) (h0' : fin
       refine agree_argTaint (fun r hr => ?_) q₀ (wfA hp) (wfA hp')
         (argMem_of (j := 2) q₀ hp.sp_fit fun i hi => ?_)
       · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-        rcases hr with rfl | rfl | rfl | rfl <;> assumption
+        rcases hr with rfl | rfl | rfl | rfl <;> with_reducible assumption
       · rcases (by omega : i = 0 ∨ i = 1) with rfl | rfl
         · exact q₅
         · exact q₆) ⟨_, hA⟩

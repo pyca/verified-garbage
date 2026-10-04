@@ -188,9 +188,9 @@ theorem step14 {s₀ : State} (hp : Pre s₀) {d k N : Nat} (hd : dN s₀ = d) (
   have ecx₂ := g .ecx (by decide)
   have esp₂ := g .esp (by decide)
   apply WP.of_runBlock
-  simp (config := {decide := true}) only [runBlock_cons, runStep_some, runBlock_nil, exec, execAlu,
+  simp only [reduceCtorEq, ↓reduceIte, Nat.reducePow, runBlock_cons, runStep_some, runBlock_nil, exec, execAlu,
     readSrc, State.setReg, arithFlags, State.setFlags, Option.bind_some, esi₂, edi₂, ecx₂, h.esi, h.edi,
-    h.ecx, ite_false, Option.some.injEq, exists_eq_left']
+    h.ecx, Option.some.injEq, exists_eq_left']
   refine ⟨⟨by simp [esp₂, h.esp], o.rd.trans h.rd, o.wr.trans h.wr, ?_, ?_, ?_, ?_, ?_⟩, ?_⟩
   · simp only [show Reg.esi ≠ Reg.ecx by decide, show Reg.esi ≠ Reg.edi by decide, ite_false, ite_true]
     rw [show (1 : BitVec 32) = BitVec.ofNat 32 1 from rfl, add_ofNat_add]; congr 2
@@ -219,9 +219,9 @@ theorem byteStep_spec (j : Nat) (is : List Instr) (s : State) (P : State → Pro
     WP isa (.block (byteStep j ++ is)) s P := by
   rw [WP.block_append_iff]
   apply WP.of_runBlock
-  simp (config := {decide := true}) only [byteStep, runBlock_cons, runStep_some, runBlock_nil, exec, execAlu,
+  simp only [reduceCtorEq, ↓reduceIte, Nat.reduceLeDiff, Nat.reduceEqDiff, Nat.reducePow, and_self, byteStep, runBlock_cons, runStep_some, runBlock_nil, exec, execAlu,
     execShift, readSrc, State.load8, State.setReg, arithFlags, State.setFlags, Option.bind_some,
-    Option.map_some, hin, hx, ite_true, ite_false, Option.some.injEq, exists_eq_left']
+    Option.map_some, hin, hx, Option.some.injEq, exists_eq_left']
   refine k _ ⟨fun r hr => ?_, rfl, rfl, rfl⟩ ?_
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     simp [hr.1, hr.2]
@@ -331,9 +331,9 @@ theorem step10 {s₀ : State} (hp : Pre s₀) (hd : dN s₀ = 10) {t : Nat} (ht 
       hp.b_keep fr₅ (by omega), eb4]
   rw [WP.block_append_iff]
   apply WP.of_runBlock
-  simp (config := {decide := true}) only [runBlock_cons, runStep_some, runBlock_nil, exec, execAlu,
+  simp only [reduceCtorEq, ↓reduceIte, Nat.reduceLeDiff, Nat.reduceEqDiff, Nat.reduceSub, Nat.reducePow, and_self, runBlock_cons, runStep_some, runBlock_nil, exec, execAlu,
     execShift, readSrc, State.ea, at_, State.load8, State.setReg, arithFlags, State.setFlags,
-    Option.bind_some, Option.map_some, esi₅, in4', v4', bx₅, ite_true, ite_false, Option.some.injEq,
+    Option.bind_some, Option.map_some, esi₅, in4', v4', bx₅, Option.some.injEq,
     exists_eq_left']
   have hw : (s₄.gpr .ebx).toNat = b0.toNat + 256 * b1.toNat + 65536 * b2.toNat + 16777216 * b3.toNat := by
     rw [w₄]; omega
@@ -357,9 +357,9 @@ theorem step10 {s₀ : State} (hp : Pre s₀) (hd : dN s₀ = 10) {t : Nat} (ht 
   obtain ⟨ed3, out3⟩ := coef_at hp h (j := 3) (by omega)
   have ed3' : (s.gpr .edi + BitVec.ofNat 32 12).setWidth 64 = coeffAddr (fA s₀) (4 * t + 3) := ed3
   apply WP.of_runBlock
-  simp (config := {decide := true}) only [runBlock_cons, runStep_some, runBlock_nil, exec, execAlu,
+  simp only [reduceCtorEq, ↓reduceIte, Nat.reducePow, runBlock_cons, runStep_some, runBlock_nil, exec, execAlu,
     readSrc, State.ea, State.store32, State.setReg, arithFlags, State.setFlags, Option.bind_some,
-    esi₆, edi₆, ecx₆, m₆, wr₆, ed3', out3, ite_true, ite_false, Option.some.injEq, exists_eq_left']
+    esi₆, edi₆, ecx₆, m₆, wr₆, ed3', out3, Option.some.injEq, exists_eq_left']
   have c3 : s₆.gpr .eax = V s₀ (4 * t + 3) := by
     rw [eq_ofNat_of_toNat v₆, V, hd, v3', dv_eq hdm hy]
   refine ⟨⟨by simp [esp₆, h.esp], rd₆.trans h.rd, h.wr, ?_, ?_, ?_, ?_, ?_⟩, ?_⟩

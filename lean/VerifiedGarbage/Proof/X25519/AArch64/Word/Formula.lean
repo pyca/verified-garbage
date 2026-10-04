@@ -19,7 +19,7 @@ theorem formula_ok (e : Env) (k : Nat) (x1 : Fe) (st : Ladder) (t : Nat)
   unfold Good
   rw [e0, e2, ez2, e3, ez3, ec, ladderStep_eq]
   by_cases hswap : st.swap ^^^ bit k t = 1 <;>
-    simp (config := {decide := true}) [core, swapped,
+    simp [core, swapped,
       Spec.X25519.cswap, hswap, h0, h1, h2, h3, h4, hc, Fin.mul_comm]
 
 end VG.Proof.X25519.AArch64.Word

@@ -48,16 +48,16 @@ def V0 (h : HashValue 64) (t : Nat) (f : Bool) : Work 64 :=
 
 theorem F_eq (h : HashValue 64) (m : Block 64) (t : Nat) (f : Bool) :
     Spec.Blake2.F Spec.Blake2.b h m t f = Vector.ofFn fun i : Fin 8 =>
-      h[i] ^^^ ((List.range 12).foldl (Spec.Blake2.round Spec.Blake2.b m) (V0 h t f))[i] ^^^
+      (h[i]'(by omega)) ^^^ ((List.range 12).foldl (Spec.Blake2.round Spec.Blake2.b m) (V0 h t f))[i] ^^^
         ((List.range 12).foldl (Spec.Blake2.round Spec.Blake2.b m) (V0 h t f))[i.val + 8] := rfl
 
 theorem V0_get (h : HashValue 64) (t : Nat) (f : Bool) (k : Nat) (hk : k < 16) :
     (V0 h t f)[k] =
-      if hk8 : k < 8 then h[k] else if k = 12 then Spec.Blake2.b.IV[4] ^^^ BitVec.ofNat 64 t
+      if hk8 : k < 8 then (h[k]'(by omega)) else if k = 12 then Spec.Blake2.b.IV[4] ^^^ BitVec.ofNat 64 t
       else if k = 13 then Spec.Blake2.b.IV[5] ^^^ BitVec.ofNat 64 (t / 2 ^ 64)
       else if k = 14 then Spec.Blake2.b.IV[6] ^^^ flagW f else Spec.Blake2.b.IV[k - 8]'(by omega) := by
   have base : ((h ++ Spec.Blake2.b.IV : Work 64))[k] =
-      if hk8 : k < 8 then h[k] else Spec.Blake2.b.IV[k - 8]'(by omega) := by
+      if hk8 : k < 8 then (h[k]'(by omega)) else Spec.Blake2.b.IV[k - 8]'(by omega) := by
     simp only [Vector.getElem_append]
   have e12 : (h ++ Spec.Blake2.b.IV : Work 64)[12] = Spec.Blake2.b.IV[4] := by
     simp only [Vector.getElem_append]; rfl
@@ -253,9 +253,15 @@ theorem stage1_ok {s₀ : State} (hp : Pre s₀) {i : Nat} (hi : i < nb s₀) {s
         stateAt_rd64 fS _ hk8]
       exact rd64_frame F₂ (by simpa using hp.st_scr.sub_right (Region.sub_prefix (by omega))) fS
         (by omega)
-    · have : k = 8 ∨ k = 9 ∨ k = 10 ∨ k = 11 ∨ k = 12 ∨ k = 13 ∨ k = 14 ∨ k = 15 := by omega
-      rcases this with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
-      simp (disch := decide) only [m₁₂, m₁₁, m₁₀, m₉, m₈, m₇, m₆, m₅, r₅, r₆, tl₄, th₄, fl₄,
+    · -- The eight words at once, so that `simp` shares its work on the writes.
+      have hk' : k ∈ ([8, 9, 10, 11, 12, 13, 14, 15] : List Nat) := by
+        simp only [List.mem_cons, List.not_mem_nil, or_false]; omega
+      revert hk hk8
+      revert hk'
+      revert k
+      simp (disch := decide) only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
+        forall_eq, not_false_eq_true, imp_self, and_self,
+        m₁₂, m₁₁, m₁₀, m₉, m₈, m₇, m₆, m₅, r₅, r₆, tl₄, th₄, fl₄,
         dite_false, ite_true, ite_false, Nat.reduceSub, Nat.lt_irrefl, Nat.reduceLT,
         Nat.reduceEqDiff]
   have hmsg : Msg (scr s₀) (blk s₀ i) s₁₂.mem := fun j => by

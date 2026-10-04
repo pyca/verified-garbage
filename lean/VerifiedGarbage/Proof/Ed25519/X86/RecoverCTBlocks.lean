@@ -1,6 +1,7 @@
 import VerifiedGarbage.Proof.Ed25519.X86.RecoverCTLit
 import VerifiedGarbage.Proof.Ed25519.X86.PointCTSupport
 import VerifiedGarbage.Proof.Ed25519.X86.RecoverPoint
+import VerifiedGarbage.Proof.Ed25519.X86.PointCTBlocks
 
 /-! Fixed-trace arithmetic blocks used in point recovery. -/
 
@@ -16,7 +17,9 @@ theorem edi_agree {base : BitVec 32} {s t : State} (hs : s.gpr .edi = base) (ht 
 
 theorem recoverCandidate_ct (base : BitVec 32) :
     RelCT isa (fun s t => s.gpr .edi = base ∧ t.gpr .edi = base) recoverCandidate (fun _ _ => True) := by
-  apply VG.RelCT.taint (A := taint) (regsTaint [.edi]) _ (by taint_decide)
+  obtain ⟨_, hc⟩ : ∃ h, (taint.check (regsTaint [.edi]) recoverCandidate h).isSome = true := by
+    taint_decide_sum [power250Sum, sqT1]
+  apply VG.RelCT.taint (A := taint) (regsTaint [.edi]) _ hc
   exact fun _ _ h => edi_agree h.1 h.2
 
 theorem parityBlock_ct (base : BitVec 32) :

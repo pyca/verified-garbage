@@ -9,52 +9,12 @@ namespace VG.Proof.Rc4.X86
 open VG VG.X86 VG.Impl.Rc4.X86 VG.Spec.Rc4 VG.Proof.Rc4
 open VG.Proof.MlDsa.X86.Pack (Keep WP.keep writesOnly addr_of_fit)
 
-theorem writeW_byte8 (m : Mem) (a : Addr) (v : Byte) : m.writeW a v = m.write a 1 v := by
-  change m.write a 1 (v.setWidth 8) = _
-  rw [BitVec.setWidth_eq]
-
-theorem low_byte32 (b : Byte) : (b.setWidth 32).setWidth 8 = b := by
-  rw [BitVec.setWidth_setWidth_of_le _ (by decide), BitVec.setWidth_eq]
-
-theorem ofNat_low32 (r : Nat) : (BitVec.ofNat 32 r).setWidth 8 = BitVec.ofNat 8 r := by
-  apply BitVec.eq_of_toNat_eq
-  simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
-  omega
-
-theorem mask255_32 (x : BitVec 32) : x &&& BitVec.ofNat 32 255 = (x.setWidth 8).setWidth 32 := by
-  apply BitVec.eq_of_toNat_eq
-  simp only [BitVec.toNat_and, BitVec.toNat_setWidth, BitVec.toNat_ofNat]
-  rw [show (255 % 2 ^ 32 : Nat) = 2 ^ 8 - 1 from rfl, Nat.and_two_pow_sub_one_eq_mod]
-  omega
-
-theorem byte_add32 (a b : Byte) :
-    a.setWidth 32 + b.setWidth 32 &&& BitVec.ofNat 32 255 = (a + b).setWidth 32 := by
-  rw [mask255_32]
-  congr 1
-  apply BitVec.eq_of_toNat_eq
-  simp only [BitVec.toNat_setWidth, BitVec.toNat_add]
-  omega
-
-theorem byte_add3_32 (j a k : Byte) :
-    j.setWidth 32 + a.setWidth 32 + k.setWidth 32 &&& BitVec.ofNat 32 255 =
-      (j + a + k).setWidth 32 := by
-  rw [mask255_32]
-  congr 1
-  apply BitVec.eq_of_toNat_eq
-  simp only [BitVec.toNat_setWidth, BitVec.toNat_add]
-  omega
-
 theorem and_mask32 (x : BitVec 32) (p : Bool) :
     x &&& (0#32 - (BitVec.ofBool p).setWidth 32) = if p then x else 0 := by
   rw [borrow_mask32]
   cases p
   · exact BitVec.and_zero
   · exact BitVec.and_allOnes
-
-/-- A word outside the table is unchanged by writes within the table. -/
-theorem table_frame_readW {p a : Addr} {m m' : Mem} (h : TableFrame p m m')
-    (hs : Mem.Sep a 4 p 256) : m'.readW a 32 = m.readW a 32 :=
-  Mem.readW_congr fun i hi => h _ (hs _ (by rw [Mem.sub_ofNat_toNat a (by omega)]; exact hi))
 
 /-! ## The identity permutation -/
 
@@ -245,25 +205,6 @@ theorem key_addr {K : BitVec 32} {Lk : BitVec 32} (hfit : K.toNat + Lk.toNat ≤
   unfold addr
   rw [BitVec.add_zero]
   exact VG.Proof.MlKem.X86.ea_off (by omega)
-
-/-- The key offset after `r`, advanced: back to 0 at the key length. -/
-theorem key_next32 (r len : Nat) (hl : 0 < len) (hlen : len ≤ 256) :
-    (if (BitVec.ofNat 32 (r % len) + 1#32).toNat < len then BitVec.ofNat 32 (r % len) + 1#32
-      else 0#32) = BitVec.ofNat 32 ((r + 1) % len) := by
-  have hb := Nat.mod_lt r hl
-  have ht : (BitVec.ofNat 32 (r % len) + 1#32).toNat = r % len + 1 := by
-    rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show r % len < 2 ^ 32 by omega)]
-    change (r % len + 1) % 2 ^ 32 = _
-    omega
-  rw [ht]
-  have ha : (r + 1) % len = (r % len + 1) % len := by
-    simp only [Nat.add_mod, Nat.mod_mod]
-  by_cases h : r % len + 1 < len
-  · rw [ite_eq_left h]
-    apply BitVec.eq_of_toNat_eq
-    rw [ht, BitVec.toNat_ofNat, ha, Nat.mod_eq_of_lt h,
-      Nat.mod_eq_of_lt (show r % len + 1 < 2 ^ 32 by omega)]
-  · rw [ite_eq_right h, ha, show r % len + 1 = len by omega, Nat.mod_self]
 
 theorem schedule_inv_step (s₀ s : State) (K Lk : BitVec 32) {r : Nat} (hr : r < 256)
     (hpre : SchedulePre s₀ K Lk) (h : ScheduleInv s₀ K Lk r s) :

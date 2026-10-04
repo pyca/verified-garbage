@@ -77,8 +77,8 @@ theorem roundTail_ok (s : State) :
       s'.zf = some ((s.gpr .r11 - 1) == 0) ∧ (∀ r, r ≠ .r14 → r ≠ .r11 → s'.gpr r = s.gpr r) ∧
       s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   refine ⟨_, by
-    simp (config := {decide := true}) only [roundTail, runBlock_cons, runStep_some, runBlock_nil, exec,
-      execAlu, readSrc, Option.bind_some, gpr_setReg, gpr_arithFlags, ite_false]
+    simp only [reduceCtorEq, ↓reduceIte, Nat.reducePow, BitVec.reduceSignExtend, roundTail, runBlock_cons, runStep_some, runBlock_nil, exec,
+      execAlu, readSrc, Option.bind_some, gpr_setReg, gpr_arithFlags]
     rfl, ?_⟩
   refine ⟨?_, ?_, ?_, ?_, rfl, rfl, rfl⟩
   · simp [gpr_setReg]
@@ -204,9 +204,9 @@ theorem passTail_ok (s : State) :
       (∀ r, r ∉ [Reg.rax, .rbx, .r10, .r12, .r13, .r14] → s'.gpr r = s.gpr r) ∧
       s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   refine ⟨_, by
-    simp (config := {decide := true}) only [passTail, runBlock_cons, runStep_some, runBlock_nil, exec,
+    simp only [reduceCtorEq, ↓reduceIte, Nat.reducePow, BitVec.reduceSignExtend, passTail, runBlock_cons, runStep_some, runBlock_nil, exec,
       execAlu, readSrc, readSrc32, Option.bind_some, Option.map_some, gpr_setReg, gpr_arithFlags,
-      State.setReg32, ite_false, ite_true]
+      State.setReg32]
     rfl, ?_⟩
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, rfl, rfl, rfl⟩
   · simp [gpr_setReg]

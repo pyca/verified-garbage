@@ -6,11 +6,6 @@ namespace VG.Proof.Rc4.X86
 open VG VG.X86 VG.Impl.Rc4.X86 VG.Spec.Rc4 VG.Proof.Rc4
 open VG.Proof.MlDsa.X86.Pack (Keep WP.keep writesOnly addr_of_fit)
 
-theorem byte_inc32 (i : Byte) :
-    i.setWidth 32 + BitVec.ofNat 32 1 &&& BitVec.ofNat 32 255 = (i + 1#8).setWidth 32 := by
-  have h := byte_add32 i 1#8
-  rwa [show (1#8).setWidth 32 = BitVec.ofNat 32 1 from rfl] at h
-
 theorem apply_before (s : State) (i j : Byte)
     (hsi : s.gpr .esi = i.setWidth 32) (hbp : s.gpr .ebp = j.setWidth 32)
     (hfit : (s.gpr .edi).toNat + 256 ≤ 2 ^ 32)
@@ -60,9 +55,6 @@ theorem apply_middle (s : State) (ii a b jj : Byte) (Sc : BitVec 32)
         t.gpr .ebp = (b + a).setWidth 32) [.eax, .ecx, .edx, .ebp] ?_ (by decide +kernel))
     fun t ⟨h, hk⟩ => ⟨h.1, h.2, hk⟩
   rrun [hsi, hax, hdx, hbp, he, hw, writeW_byte8, low_byte32, hr16, hv16, h16, hw16, byte_add32]
-
-theorem low_xor32 (a b : Byte) : (a.setWidth 32 ^^^ b.setWidth 32).setWidth 8 = a ^^^ b := by
-  rw [xor_byte32, low_byte32]
 
 theorem apply_after (s : State) (k : Byte) (Sc D L : BitVec 32) (n : Nat)
     (hax : s.gpr .eax = k.setWidth 32) (hbx : s.gpr .ebx = BitVec.ofNat 32 n)
@@ -136,19 +128,8 @@ structure StepEnv (s : State) (P D L Sc : BitVec 32) : Prop where
   sTD : Mem.Sep (P.setWidth 64) 256 (D.setWidth 64) L.toNat
   sSD : Mem.Sep (Sc.setWidth 64 + BitVec.ofNat 64 16) 4 (D.setWidth 64) L.toNat
 
-/-- A word apart from two byte writes. -/
-theorem readW_write2 {m : Mem} {a q₁ q₂ : Addr} {v₁ v₂ : Byte} (h₁ : Mem.Sep a 4 q₁ 1)
-    (h₂ : Mem.Sep a 4 q₂ 1) : ((m.write q₁ 1 v₁).write q₂ 1 v₂).readW a 32 = m.readW a 32 := by
-  simp only [Mem.readW, Nat.reduceDiv]
-  rw [Mem.read_write_sep h₂ (by decide), Mem.read_write_sep h₁ (by decide)]
-
 theorem readW_writeW_sep4 {m : Mem} {a q : Addr} {v : BitVec 32} (h : Mem.Sep a 4 q 4) :
     (m.writeW q v).readW a 32 = m.readW a 32 := Mem.readW_writeW_sep h (by decide)
-
-theorem readW_write1 {m : Mem} {a q : Addr} {v : Byte} (h : Mem.Sep a 4 q 1) :
-    (m.write q 1 v).readW a 32 = m.readW a 32 := by
-  simp only [Mem.readW, Nat.reduceDiv]
-  rw [Mem.read_write_sep h (by decide)]
 
 /-- One iteration, with the writes expressed against the original memory.
 Both swap operands are read before either write, including for a self-swap. -/

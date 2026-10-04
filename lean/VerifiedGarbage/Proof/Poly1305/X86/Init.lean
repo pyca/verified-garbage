@@ -8,8 +8,6 @@ import VerifiedGarbage.Proof.Framework.Omega
 # Poly1305 on x86 (32-bit): `init`
 -/
 
-open VG.PowLit
-
 namespace VG.Proof.Poly1305.X86
 
 open VG VG.X86 VG.Impl.Poly1305.X86

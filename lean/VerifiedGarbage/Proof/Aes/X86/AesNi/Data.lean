@@ -38,10 +38,10 @@ theorem xor1_ok (b : XReg) (d : Nat) (s : State) (hb : b ≠ .xmm7)
       (∀ r, r ≠ b → r ≠ .xmm7 → s'.xmm r = s.xmm r) := by
   have hin' := inRegions_wr hin
   apply WP.of_runBlock
-  simp (config := {decide := true}) only [runBlock_cons, runStep_some, runBlock_nil,
+  simp only [↓reduceIte, runBlock_cons, runStep_some, runBlock_nil,
     exec, XOp.exec, isa, State.load128, State.store128, ea_setXmm,
     gpr_setXmm, mem_setXmm, rd_setXmm, wr_setXmm, xmm_setXmm,
-    hin, hin', ite_true, ite_false, hb,
+    hin, hin', hb,
     Option.map_some, Option.some.injEq, exists_eq_left']
   refine ⟨?_, ?_, ?_, ?_, ?_⟩
   · trivial

@@ -89,13 +89,13 @@ theorem initA_ok (s : State)
     rw [g₁, rd₁, wr₁]; exact r8
   refine ⟨_, by
     rw [List.append_assoc, List.append_assoc, List.append_assoc, runBlock_append, h₁, Option.bind_some]
-    simp (config := {decide := true}) only [keyWord, List.cons_append, List.nil_append, runBlock_cons,
+    simp only [reduceCtorEq, ↓reduceIte, Nat.reduceMul, BitVec.reduceSignExtend, keyWord, List.cons_append, List.nil_append, runBlock_cons,
       runStep_some, runBlock_nil, at_, exec, readSrc, execAlu, State.load64, State.store64, State.ea, offset_nat,
-      Option.bind_some, Option.map_some, gpr_setReg, mem_setReg, rd_setReg, wr_setReg, ite_true, ite_false,
+      Option.bind_some, Option.map_some, gpr_setReg, mem_setReg, rd_setReg, wr_setReg, 
       hw' 96 (by decide) (by decide), hw' 104 (by decide) (by decide), r0', r8']
     rfl, ?_⟩
-  simp (config := {decide := true}) only [gpr_setReg, gpr_arithFlags, zf_arithFlags, 
-    mem_arithFlags, rd_arithFlags, wr_arithFlags, ite_true, ite_false, g₁, m₁, rd₁, wr₁,
+  simp only [reduceCtorEq, ↓reduceIte, BitVec.reduceSignExtend, gpr_setReg, gpr_arithFlags, zf_arithFlags, 
+    mem_arithFlags, rd_arithFlags, wr_arithFlags, g₁, m₁, rd₁, wr₁,
     BitVec.add_zero, and_self]
 
 theorem loadKey_ok (s : State) (d : Nat) (r : InRegions (s.rd ++ s.wr) (s.gpr .rdi + BitVec.ofNat 64 d) 8) :
@@ -115,9 +115,9 @@ theorem initC_ok (s : State) (w : InRegions s.wr (s.gpr .r15 + BitVec.ofNat 64 1
       s'.gpr .rbx = s.gpr .r15 + BitVec.ofNat 64 96 ∧ s'.gpr .r10 = BitVec.ofNat 64 3 ∧
       (∀ r, r ∉ [Reg.rax, .rbx, .r10] → s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   refine ⟨_, by
-    simp (config := {decide := true}) only [runBlock_cons, runStep_some, runBlock_nil, at_, exec, readSrc,
+    simp only [reduceCtorEq, ↓reduceIte, Nat.reducePow, BitVec.reduceSignExtend, runBlock_cons, runStep_some, runBlock_nil, at_, exec, readSrc,
       readSrc32, execAlu, State.store64, State.ea, State.setReg32, offset_nat, Option.bind_some, Option.map_some,
-      gpr_setReg, rd_setReg, wr_setReg, ite_true, ite_false, w]
+      gpr_setReg, rd_setReg, wr_setReg, w]
     rfl, ?_⟩
   refine ⟨by simp [mem_setReg, mem_arithFlags, bswap64_eq], by simp [gpr_setReg],
     by simp [gpr_setReg], fun r hr => ?_, rfl, rfl⟩
@@ -253,8 +253,8 @@ theorem keysTail_ok (s : State) :
       s'.gpr .r10 = s.gpr .r10 - 1 ∧ s'.zf = some ((s.gpr .r10 - 1) == 0) ∧
       (∀ r, r ∉ [Reg.rbp, .rbx, .r10] → s'.gpr r = s.gpr r) ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   refine ⟨_, by
-    simp (config := {decide := true}) only [runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, readSrc,
-      Option.bind_some, gpr_setReg, gpr_arithFlags, ite_false]
+    simp only [reduceCtorEq, ↓reduceIte, Nat.reducePow, BitVec.reduceSignExtend, runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, readSrc,
+      Option.bind_some, gpr_setReg, gpr_arithFlags]
     rfl, ?_⟩
   refine ⟨?_, ?_, ?_, ?_, fun r hr => ?_, rfl, rfl, rfl⟩
   · simp [gpr_setReg]

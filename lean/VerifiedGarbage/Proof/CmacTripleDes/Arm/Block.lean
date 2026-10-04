@@ -92,8 +92,8 @@ theorem roundTail_ok (s : State) :
       (∀ r, r ≠ .r9 → r ≠ .r11 → s'.gpr r = s.gpr r) ∧
       s'.sp = s.sp ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   refine ⟨_, by
-    simp (config := {decide := true}) only [roundTail, runBlock_cons, runStep_some, runBlock_nil, exec,
-      Op2.eval, Option.map_some, ite_true]
+    simp only [roundTail, runBlock_cons, runStep_some, exec,
+      Op2.eval, Option.map_some]
     rfl, ?_⟩
   refine ⟨?_, ?_, ?_, fun r h₁ h₂ => ?_, rfl, rfl, rfl, rfl⟩
   · simp [State.setReg, subFlags]
@@ -187,8 +187,8 @@ theorem pass_ok {s₀ : State} (hp : BlockPre s₀) {p : Nat} (hp3 : p < 3) {lr 
     (hh : (s.gpr .r7, s.gpr .r8) = lr) :
     WP isa pass s (PInv s₀ p lr 16) := by
   refine WP.seq (WP.of_runBlock ⟨_, by
-    simp (config := {decide := true}) only [runBlock_cons, runStep_some, runBlock_nil, exec, Op2.eval,
-      Option.map_some, ite_true]
+    simp only [runBlock_cons, exec, Op2.eval,
+      ]
     rfl, ?_⟩)
   have g : ∀ r, r ≠ .r11 → (s.setReg .r11 16).gpr r = s.gpr r := fun r hr => gpr_setReg_of_ne _ _ hr
   have hI : PInv s₀ p lr 0 (s.setReg .r11 16) :=
@@ -216,8 +216,8 @@ theorem passTail_ok (s : State) :
       (∀ r, r ∉ [Reg.r0, .r7, .r8, .r9, .r12, .lr] → s'.gpr r = s.gpr r) ∧
       s'.sp = s.sp ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   refine ⟨_, by
-    simp (config := {decide := true}) only [passTail, mov, runBlock_cons, runStep_some, runBlock_nil, exec,
-      Op2.eval, Option.map_some, ite_true]
+    simp only [passTail, mov, runBlock_cons, exec,
+      Op2.eval]
     rfl, ?_⟩
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_, fun r hr => ?_, rfl, rfl, rfl, rfl⟩
   · simp [State.setReg, subFlags]

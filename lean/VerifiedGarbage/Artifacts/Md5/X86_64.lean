@@ -23,18 +23,34 @@ def artifacts : List Artifact := [
   { Spec.Md5.updateApi with
     target := X86_64.target
     doc := Spec.Md5.updateApi.doc
-    code := Impl.Md5.X86_64.Stream.update
-    contract := Spec.Md5.updateContract X86_64.abi 8
-    stack := 8
+    code := Impl.StackScratch.X86_64.withStackScratch 120 .r8 Impl.Md5.X86_64.Stream.update
+    contract := Spec.Md5.updateContract X86_64.abi (8 + 120)
+    stack := 8 + 120
     verified := Proof.Md5.X86_64.Shared.update
     spSafe := Code.all_of_allInstrs (by lit_decide) },
   { Spec.Md5.finalizeApi with
     target := X86_64.target
     doc := Spec.Md5.finalizeApi.doc
-    code := Impl.Md5.X86_64.Stream.finalize
-    contract := Spec.Md5.finalizeContract X86_64.abi 8
-    stack := 8
+    code := Impl.StackScratch.X86_64.withStackScratch 120 .rcx Impl.Md5.X86_64.Stream.finalize
+    contract := Spec.Md5.finalizeContract X86_64.abi (8 + 120)
+    stack := 8 + 120
     verified := Proof.Md5.X86_64.Shared.finalize
+    spSafe := Code.all_of_allInstrs (by lit_decide) },
+  { Spec.Md5.updateScratchApi with
+    target := X86_64.target
+    doc := Spec.Md5.updateScratchApi.doc
+    code := Impl.Md5.X86_64.Stream.update
+    contract := Spec.Md5.updateScratchContract X86_64.abi 8
+    stack := 8
+    verified := Proof.Md5.X86_64.Shared.updateScratch
+    spSafe := Code.all_of_allInstrs (by lit_decide) },
+  { Spec.Md5.finalizeScratchApi with
+    target := X86_64.target
+    doc := Spec.Md5.finalizeScratchApi.doc
+    code := Impl.Md5.X86_64.Stream.finalize
+    contract := Spec.Md5.finalizeScratchContract X86_64.abi 8
+    stack := 8
+    verified := Proof.Md5.X86_64.Shared.finalizeScratch
     spSafe := Code.all_of_allInstrs (by lit_decide) }]
 
 end VG.Artifacts.Md5.X86_64

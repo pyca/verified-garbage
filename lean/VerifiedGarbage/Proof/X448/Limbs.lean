@@ -1,5 +1,6 @@
 import VerifiedGarbage.Proof.X448.Field
 import Batteries.Tactic.Init
+import VerifiedGarbage.Proof.Framework.PowLit
 
 /-!
 # X448: radix-2²⁸ arithmetic
@@ -121,7 +122,7 @@ theorem folded_val (f : Nat → Nat) :
   rw [valN_add]
   congr 1
   simp only [valN, half]
-  simp (config := {decide := true}) only [ite_true, ite_false, Nat.mul_zero, Nat.add_zero,
+  simp only [reduceCtorEq, ↓reduceIte, Nat.reduceEqDiff, or_true, or_false, Nat.mul_zero, Nat.add_zero,
     Nat.zero_add, Nat.pow_zero, Nat.one_mul]
   grind
 

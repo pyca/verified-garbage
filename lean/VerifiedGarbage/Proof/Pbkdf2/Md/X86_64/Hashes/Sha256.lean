@@ -35,8 +35,8 @@ def hash (v : Compress) : Hash where
   compC := v.callee.code
   initN := Spec.Sha256.initApi.name
   initC := Impl.Sha256.X86_64.Stream.init
-  updN := Spec.Sha256.updateApi.name ++ v.suffix
-  finN := Spec.Sha256.finalizeApi.name ++ v.suffix
+  updN := Spec.Sha256.updateScratchApi.name ++ v.suffix
+  finN := Spec.Sha256.finalizeScratchApi.name ++ v.suffix
   hmacInitN := Spec.Hmac.sha256I.initApi.name ++ v.suffix
   hmacFinN := Spec.Hmac.sha256I.finalizeApi.name ++ v.suffix
   iterN := Spec.Hmac.sha256I.iterateApi.name ++ v.suffix
@@ -157,19 +157,36 @@ theorem satP : ∃ s, (Spec.Hmac.sha256I.pbkdf2Contract X86_64.abi 24).pre s := 
     Spec.Pbkdf2.pbkdf2Contract, Spec.Pbkdf2.pbkdf2Sig, Spec.Hmac.sha256S, Spec.Hmac.sha256, X86_64.abi,
     X86_64.argRegs] using pbkSat 200
 
-/-- The streaming `update` and `finalize` made with `v`. -/
+/-- The streaming `update` and `finalize` made with `v`, which keep their
+working space in a frame of their own, and `update_scratch` and
+`finalize_scratch`, which HMAC's, PBKDF2's and ECDSA's code calls with
+theirs. -/
 def stream : List StreamFn := [
   { api := Spec.Sha256.updateApi
-    code := Impl.Sha256.X86_64.Stream.update v.callee
-    contract := Spec.Sha256.updateContract X86_64.abi 8
-    stack := 8
-    verified := Proof.Sha256.X86_64.Shared.update v.ok v.mxcsr
-    spSafe := Proof.Sha256.X86_64.Shared.update_spSafe v.spSafe },
+    code := Impl.StackScratch.X86_64.withStackScratch 616 .r8 (Impl.Sha256.X86_64.Stream.update v.callee)
+    contract := Spec.Sha256.updateContract X86_64.abi (8 + 616)
+    stack := 8 + 616
+    verified := Proof.Sha256.X86_64.Shared.update v.ok v.mxcsr v.spSafe v.noStack
+    spSafe := X86_64.withStackScratch_spSafe (by decide)
+      (Proof.Sha256.X86_64.Shared.update_spSafe v.spSafe) },
   { api := Spec.Sha256.finalizeApi
-    code := Impl.Sha256.X86_64.Stream.finalize v.callee
-    contract := Spec.Sha256.finalizeContract X86_64.abi 8
+    code := Impl.StackScratch.X86_64.withStackScratch 616 .rcx (Impl.Sha256.X86_64.Stream.finalize v.callee)
+    contract := Spec.Sha256.finalizeContract X86_64.abi (8 + 616)
+    stack := 8 + 616
+    verified := Proof.Sha256.X86_64.Shared.finalize v.ok v.mxcsr v.spSafe v.noStack
+    spSafe := X86_64.withStackScratch_spSafe (by decide)
+      (Proof.Sha256.X86_64.Shared.finalize_spSafe v.spSafe) },
+  { api := Spec.Sha256.updateScratchApi
+    code := Impl.Sha256.X86_64.Stream.update v.callee
+    contract := Spec.Sha256.updateScratchContract X86_64.abi 8
     stack := 8
-    verified := Proof.Sha256.X86_64.Shared.finalize v.ok v.mxcsr
+    verified := Proof.Sha256.X86_64.Shared.updateScratch v.ok v.mxcsr
+    spSafe := Proof.Sha256.X86_64.Shared.update_spSafe v.spSafe },
+  { api := Spec.Sha256.finalizeScratchApi
+    code := Impl.Sha256.X86_64.Stream.finalize v.callee
+    contract := Spec.Sha256.finalizeScratchContract X86_64.abi 8
+    stack := 8
+    verified := Proof.Sha256.X86_64.Shared.finalizeScratch v.ok v.mxcsr
     spSafe := Proof.Sha256.X86_64.Shared.finalize_spSafe v.spSafe }]
 
 /-- SHA-256 with the implementation `v` of its compression function, which it

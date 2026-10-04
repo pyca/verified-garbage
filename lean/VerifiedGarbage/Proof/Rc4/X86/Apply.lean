@@ -6,19 +6,6 @@ namespace VG.Proof.Rc4.X86
 open VG VG.X86 VG.Impl.Rc4.X86 VG.Spec.Rc4 VG.Proof.Rc4
 open VG.Proof.MlDsa.X86.Pack (Keep WP.keep writesOnly addr_of_fit)
 
-/-- The context is unchanged by writes outside its 258 bytes. -/
-theorem contextAt_frame {rs : List Region} {m m' : Mem} {p : Addr} (hf : Frame rs m m')
-    (hd : ∀ r ∈ rs, Region.Disjoint ⟨p, 258⟩ r) : contextAt m' p = contextAt m p := by
-  have e (i : Nat) (hi : i < 258) : m' (p + BitVec.ofNat 64 i) = m (p + BitVec.ofNat 64 i) :=
-    hf.bytes (R := ⟨p, 258⟩) hd (show (258 : Nat) ≤ 2 ^ 64 by decide) hi
-  apply context_ext
-  · apply Vector.ext
-    intro k hk
-    simp only [contextAt, Vector.getElem_ofFn]
-    exact e k (by omega)
-  · exact e 256 (by decide)
-  · exact e 257 (by decide)
-
 theorem apply_entry (s : State) {P D L Sc : BitVec 32} (hp : ApplyPre s P D L Sc) :
     WP isa (.block entry) s fun a => a.mem = s.mem ∧ Keep [.eax, .ecx, .edx] s a ∧
       a.gpr .eax = (contextAt s.mem (P.setWidth 64)).i.setWidth 32 ∧

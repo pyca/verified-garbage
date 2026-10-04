@@ -69,10 +69,10 @@ theorem piStep_ok (s : State) (x : Byte) (hx : s.gpr .rax = x.setWidth 64)
         (if x.toNat = i then (Spec.Rc2.piTable.getD i 0).setWidth 64 else 0) ∧
       Keep [.rcx, .r10, .r11] s s' := by
   refine ⟨_, by
-    simp (config := {decide := true}) only [piStep, selectMask, rr, List.cons_append,
+    simp only [reduceCtorEq, ↓reduceIte, BitVec.reduceSignExtend, piStep, selectMask, rr, List.cons_append,
       List.nil_append, runBlock_cons, runStep_some, runBlock_nil, exec, execAlu,
       readSrc, Option.bind_some, Option.map_some, gpr_setReg, gpr_arithFlags, cf_setReg, cf_arithFlags,
-      ite_true, ite_false]
+      ]
     rfl, ?_⟩
   have he : x = BitVec.ofNat 8 i ↔ x.toNat = i := by
     constructor
@@ -190,12 +190,12 @@ theorem keyStep_ok (s : State) (x : Byte) (hx : s.gpr .rax = x.setWidth 64)
           else 0) ∧
       Keep [.rcx, .r8, .r9, .r10, .r11] s s' := by
   refine ⟨_, by
-    simp (config := {decide := true}) only [keyStep, selectMask, loadKey, rr, memOp,
+    simp only [reduceCtorEq, ↓reduceIte, Nat.reduceLeDiff, Nat.reduceEqDiff, and_self, BitVec.reduceSignExtend, keyStep, selectMask, loadKey, rr, memOp,
       List.cons_append, List.nil_append, runBlock_cons, runStep_some, runBlock_nil,
       exec, execAlu, execShift, readSrc, State.load8, State.ea, offset_nat,
       Option.bind_some, Option.map_some, gpr_setReg, gpr_arithFlags, cf_setReg, cf_arithFlags, gpr_setFlags,
       mem_setReg, mem_arithFlags, rd_setReg, rd_arithFlags,
-      wr_setReg, wr_arithFlags, hlo, hhi, ite_true, ite_false]
+      wr_setReg, wr_arithFlags, hlo, hhi]
     rfl, ?_⟩
   have he : x = BitVec.ofNat 8 i ↔ x.toNat = i := by
     constructor

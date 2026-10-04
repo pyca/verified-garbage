@@ -646,9 +646,7 @@ theorem sat_pre : Proof.Scrypt.roMixX86.pre sat := by
   simp only [Proof.Scrypt.roMixX86, a0, a1, a2, a3, a4, a5, e]
   refine ⟨rfl, rfl, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, by decide, by decide, by decide,
     by decide, by decide, by decide, by decide, ⟨0, rfl⟩, by decide⟩ <;>
-  · intro a h₁ h₂
-    simp only [Region.Contains, sat] at h₁ h₂
-    bv_omega
+  exact Region.disjoint_of_sep (by decide)
 
 /-! ## The shared contract -/
 

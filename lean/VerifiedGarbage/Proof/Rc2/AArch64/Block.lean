@@ -63,14 +63,13 @@ theorem block_correct (d : Spec.Rc2.Direction) (s : State) (hs : (blockContract 
   rw [WP.block_append_iff]
   apply WP.mono (blockLoad_ok s₁ dataRead₁)
   intro s₂ h₂
-  have read₂ : ∀ i < 128, InRegions (s₂.rd ++ s₂.wr) (s₂.gpr .x0 + BitVec.ofNat 64 i) 1 := by
-    intro i hi
+  have read₂ : InRegions (s₂.rd ++ s₂.wr) (s₂.gpr .x0) 128 := by
     rw [h₂.2.rd, h₂.2.wr, h₂.2.reg .x0 (by decide), h₁.gpr, h₁.rd, h₁.wr, hrd, hwr]
-    exact ⟨⟨s.gpr .x0, 128⟩, by simp, Offset.contains_base _ (by omega) (by omega)⟩
+    exact ⟨⟨s.gpr .x0, 128⟩, by simp, Region.contains_self _ _⟩
   rw [WP.block_append_iff]
   apply WP.mono (rounds_ok d s₂ _ h₂.1 read₂)
   intro s₃ h₃
-  have keep₂₃ := h₂.2.trans h₃.2
+  have keep₂₃ := h₂.2.trans (h₃.2.weaken (fun _ hr => List.mem_cons_of_mem _ hr))
   have ptr₃ : s₃.gpr .x1 = s.gpr .x1 := (keep₂₃.reg .x1 (by decide)).trans (congrFun h₁.gpr .x1)
   have writable₃ : InRegions s₃.wr (s₃.gpr .x1) 8 := by
     rw [keep₂₃.wr, h₁.wr, hwr, ptr₃]
@@ -86,7 +85,7 @@ theorem block_correct (d : Spec.Rc2.Direction) (s : State) (hs : (blockContract 
   have mem₄ : s₄.mem = s₁.mem.writeW (s.gpr .x1) (pack v) := by rw [h₄.1, keep₂₃.mem, ptr₃]
   have rd₄ : s₄.rd = s.rd := h₄.2.2.1.trans (keep₂₃.rd.trans h₁.rd)
   have wr₄ : s₄.wr = s.wr := h₄.2.2.2.trans (keep₂₃.wr.trans h₁.wr)
-  have regs₄ (r : Reg) (hr : r ∉ roundWrites) : s₄.gpr r = s.gpr r := by
+  have regs₄ (r : Reg) (hr : r ∉ .x9 :: roundWrites) : s₄.gpr r = s.gpr r := by
     rw [h₄.2.1 r (by
       intro hm
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hm
@@ -118,7 +117,7 @@ theorem block_correct (d : Spec.Rc2.Direction) (s : State) (hs : (blockContract 
     · exact h₅.gpr_of (.inl (by rwa [Spill.slots_fst]))
     · rw [h₅.other _ (by rwa [Spill.slots_fst])]
       have covered : ∀ r ∈ preserved,
-          r ∈ (List.range 4).map wordReg ∨ r ∉ roundWrites := by decide
+          r ∈ (List.range 4).map wordReg ∨ r ∉ .x9 :: roundWrites := by decide
       exact regs₄ r ((covered r hr).resolve_left hm)
   · change Spec.Rc2.blockAt s₅.mem (s.gpr .x1) = _
     rw [finalMem, blockAt_write64, cipher_rounds]

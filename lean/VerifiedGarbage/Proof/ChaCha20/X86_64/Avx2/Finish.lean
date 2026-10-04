@@ -63,15 +63,15 @@ theorem qr_ok {a b c d : XReg} (hab : a ≠ b) (hac : a ≠ c) (had : a ≠ d) (
     VOp.exec_rd, VOp.exec_wr, State.load256, hm.rd8, ite_true, Option.map_some, Option.some.injEq,
     exists_eq_left']
   refine ⟨fun l i hi => ?_, fun r l h₁ h₂ h₃ h₄ h₅ => ?_, ?_, ?_, ?_, ?_⟩
-  · simp (config := {decide := true}) only [vw, lane_vbin256, lane_vshift256, State.lane_setV256,
+  · simp only [↓reduceIte, vw, lane_vbin256, lane_vshift256, State.lane_setV256,
       VBinOp.sse, hab, hac, had, hbc, hbd, hcd, hab.symm, hac.symm, had.symm, hbc.symm, hbd.symm,
-      hcd.symm, ha, hb, hc, hd, ha.symm, hb.symm, hc.symm, hd.symm, ha'.symm, hd'.symm, hm.lo8, hm.hi8, hm.m16, ite_self,
-      ite_true, ite_false]
+      hcd.symm, ha, hb, hc, hd, hb.symm, ha'.symm, hd'.symm, hm.lo8, hm.hi8, hm.m16, ite_self,
+      ]
     simp only [dword_paddd _ _ hi, dword_pxor, dword_por, psrld_20 _ hi, pslld_12 _ hi,
       psrld_25 _ hi, pslld_7 _ hi, dword_pshufb_rot16 _ hi, dword_pshufb_rot8 _ hi, rot12, rot7,
       quarterRound, and_self]
-  · simp (config := {decide := true}) only [lane_vbin256, lane_vshift256, State.lane_setV256, h₁,
-      h₂, h₃, h₄, h₅, ite_false]
+  · simp only [↓reduceIte, lane_vbin256, lane_vshift256, State.lane_setV256, h₁,
+      h₂, h₃, h₄, h₅]
   all_goals simp
 
 /-! ## Addresses in `buf` -/

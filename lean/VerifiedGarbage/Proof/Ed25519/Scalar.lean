@@ -1,4 +1,5 @@
 import VerifiedGarbage.Spec.Ed25519
+import VerifiedGarbage.Proof.Framework.PowLit
 
 /-!
 # Ed25519 scalar arithmetic: binary reduction

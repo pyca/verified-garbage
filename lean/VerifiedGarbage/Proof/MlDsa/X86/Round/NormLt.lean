@@ -168,9 +168,9 @@ theorem nl_piece : Piece NPre NPub (fun s₀ s => s = s₀)
       obtain ⟨a₁, i₁, v₁⟩ := arg_P0 (i := 1) (by omega) hp.sp hp.sp' hin hp.stk_a
       simp only [Nat.mul_zero, Nat.add_zero, Nat.mul_one, Nat.reduceAdd] at a₀ a₁
       apply WP.of_runBlock
-      simp (config := {decide := true}) only [nlInit, at_, runBlock_cons, runStep_some, runBlock_nil,
+      simp only [reduceCtorEq, ↓reduceIte, nlInit, at_, runBlock_cons, runStep_some, runBlock_nil,
         exec, readSrc, State.ea, State.load32, State.setReg, Option.map_some, a₀, a₁, i₀, i₁, v₀, v₁,
-        ite_true, ite_false, Option.some.injEq, exists_eq_left']
+        Option.some.injEq, exists_eq_left']
       exact ⟨by simp, rfl, rfl, rfl, by simp, by simp, by simp⟩
     · simp only [List.mem_singleton] at hr
       subst hr

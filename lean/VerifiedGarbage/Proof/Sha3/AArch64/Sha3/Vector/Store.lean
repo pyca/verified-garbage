@@ -73,14 +73,14 @@ theorem store_ok (s₀ : VG.AArch64.State) (A : Spec.Sha3.State) (hA : Lanes s�
   refine (storePairs_ok s₀ hout).mono fun s hs => ?_
   unfold storeLast
   refine WP.cons (exec_umov_low s .x17 .v24) (WP.cons (exec_str_x (by decide) ?_) (wp_nil ?_))
-  · simpa (config := {decide := true}) only [RegUpd.gpr_write,RegUpd.wr_write,ite_false,
+  · simpa only [reduceCtorEq, ↓reduceIte, ↓reduceDIte, Nat.reduceLT, Nat.reduceGT, Nat.reduceLeDiff, Nat.reduceEqDiff, Nat.reduceAdd, Nat.reduceSub, Nat.reduceMul, Nat.reduceDiv, Nat.reduceMod, Nat.reducePow, BitVec.reduceEq, ite_true, not_false_eq_true, not_true_eq_false, Bool.not_true, Bool.not_false, and_self, false_implies, implies_true, Nat.reduceBEq, Nat.reduceBNe, decide_true, decide_false, BitVec.reduceSignExtend, RegUpd.gpr_write,RegUpd.wr_write,ite_false,
       hs.keep.ptr.wr,hs.keep.ptr.x0] using hlast
   · refine ⟨?_,?_,?_⟩
-    · constructor <;> simp (config := {decide := true}) only [RegUpd.gpr_write,ite_false,
+    · constructor <;> simp only [reduceCtorEq, ↓reduceIte, RegUpd.gpr_write,
         RegUpd.rd_write,RegUpd.wr_write,RegUpd.sp_write,
         hs.keep.ptr.x0,hs.keep.ptr.x1,hs.keep.ptr.rd,hs.keep.ptr.wr,hs.keep.ptr.sp]
     · change Frame _ _ ((s.write .x .x17 _).mem.writeW _ ((s.write .x .x17 _).gpr .x17))
-      simp (config := {decide := true}) only [RegUpd.mem_write,RegUpd.gpr_write,ite_true,ite_false,
+      simp only [reduceCtorEq, ↓reduceIte, RegUpd.mem_write,RegUpd.gpr_write,
         Size.bits,BitVec.setWidth_eq,hs.keep.ptr.x0]
       change Frame [⟨s₀.gpr .x0,200⟩] s₀.mem
         (s.mem.writeW (laneAddr (s₀.gpr .x0) 24) (low s (vreg 24)))
@@ -88,8 +88,8 @@ theorem store_ok (s₀ : VG.AArch64.State) (A : Spec.Sha3.State) (hA : Lanes s�
         (lane_contains (s₀.gpr .x0) (by decide : 24 < 25))
     · apply Vector.ext
       intro j hj
-      simp (config := {decide := true}) only [Spec.Sha3.stateAt,Vector.getElem_ofFn,
-        RegUpd.mem_write,RegUpd.gpr_write,ite_true,ite_false,Size.bits,BitVec.setWidth_eq,hs.keep.ptr.x0]
+      simp only [reduceCtorEq, ↓reduceIte, Spec.Sha3.stateAt,Vector.getElem_ofFn,
+        RegUpd.mem_write,RegUpd.gpr_write,Size.bits,BitVec.setWidth_eq,hs.keep.ptr.x0]
       change (s.mem.writeW (laneAddr (s₀.gpr .x0) 24) (low s (vreg 24))).readW _ 64 = A[j]
       by_cases he : j = 24
       · subst j

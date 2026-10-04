@@ -164,9 +164,9 @@ theorem xorSt_ok (s : State) {St : Addr} (hb : s.gpr .rbp = St) (r : InRegions (
       s'.gpr .rax = byteRev64 (s.gpr .rax ^^^ s.mem.readW St 64) ∧ (∀ r, r ≠ .rax → s'.gpr r = s.gpr r) ∧
       s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   refine ⟨_, by
-    simp (config := {decide := true}) only [runBlock_cons, runStep_some, runBlock_nil, at_, exec, readSrc,
+    simp only [↓reduceIte, runBlock_cons, runStep_some, runBlock_nil, at_, exec, readSrc,
       execAlu, State.load64, State.ea, offset_nat, Option.bind_some, hb, BitVec.add_zero, r,
-      ite_true]
+      ]
     rfl, ?_⟩
   refine ⟨?_, fun r hr => ?_, rfl, rfl, rfl⟩
   · simp [gpr_setReg, bswap64_eq]
@@ -177,8 +177,8 @@ theorem storeSt_ok (s : State) {St : Addr} (hb : s.gpr .rbp = St) (w : InRegions
       s'.mem = s.mem.writeW St (byteRev64 (s.gpr .rax)) ∧ (∀ r, r ≠ .rax → s'.gpr r = s.gpr r) ∧
       s'.rd = s.rd ∧ s'.wr = s.wr := by
   refine ⟨_, by
-    simp (config := {decide := true}) only [runBlock_cons, runStep_some, runBlock_nil, at_, exec,
-      State.store64, State.ea, offset_nat, gpr_setReg, rd_setReg, wr_setReg, ite_true, ite_false, hb,
+    simp only [reduceCtorEq, ↓reduceIte, runBlock_cons, runStep_some, runBlock_nil, at_, exec,
+      State.store64, State.ea, offset_nat, gpr_setReg, rd_setReg, wr_setReg, hb,
       BitVec.add_zero, w]
     rfl, ?_⟩
   refine ⟨by simp [mem_setReg, bswap64_eq], fun r hr => ?_, rfl, rfl⟩

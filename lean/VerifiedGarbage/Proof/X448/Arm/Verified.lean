@@ -42,7 +42,7 @@ theorem x448_ct : ConstantTime isa Proof.X448.x448Arm.pre Proof.X448.x448Arm.pub
   apply Taint.agree_ofRegs
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl <;> assumption
+  rcases hr with rfl | rfl | rfl | rfl <;> with_reducible assumption
 
 theorem x448_verified :
     Verified Arm.target Impl.X448.Arm.x448 (Spec.X448.x448Contract Arm.abi) :=

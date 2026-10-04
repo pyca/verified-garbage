@@ -296,9 +296,22 @@ Avoid these patterns (each has cost tens of seconds in one proof):
   first, for literal indices; for any other index give the bound, `xs[i]'h`.
 * **Satisfiability witnesses:** the regions of a concrete witness state are
   disjoint by `Region.disjoint_of_sep (by decide)`, not `bv_omega`.
+* **`decide := true` in `simp`:** `simp (config := {decide := true})` runs
+  `decide` on every proposition it visits, seconds per block on symbolic
+  states. Reduce closed facts with simprocs (`reduceCtorEq`, `↓reduceIte`,
+  `Nat.reduceLT`, `Nat.reduceEqDiff`, `and_self`, …) and discharge side
+  conditions with `(disch := decide)`; `ci/check_lean_speed.py` counts the
+  uses that remain.
 * **`assumption` among facts about states:** `assumption` tries every
   hypothesis at default transparency, unfolding states and registers before
-  each failed match; use `with_reducible assumption`, or name the hypothesis.
+  each failed match; use `with_reducible assumption`, or name the hypothesis
+  (`ci/check_lean_speed.py` rejects a bare `assumption` after `<;>` or in
+  `first`).
+* **Numeral exponents:** `2 ^ 64` elaborates in time quadratic in the number
+  of numeral exponents in a statement; `Proof/Framework/PowLit.lean`'s macro
+  elaborates it as `2 ^ (64 : Nat)` (the same term). A module with numeral
+  exponents imports it, directly or through `Framework/GetElem.lean`
+  (`ci/check_lean_speed.py` checks it).
 * **Failing unfolding:** `rfl`, `trivial`, `congr 1`, `exact` and `simpa` on
   goals about symbolic memory or hash values can unfold definitions (down
   to `BitVec` internals) for seconds before failing or succeeding. Close
@@ -401,8 +414,12 @@ chooses differently on a CPU that has those features: the runner's, or one
 Intel SDE presents (`rust-cpu-features` in `ci.yml`; SDE runs the SHA
 extensions' code very slowly, so the chips that have them run only the
 tests that need them); and benchmarks each with
-`VG_CPU_FEATURES` (`CPU_FEATURES` in `ci/bench_arches.py`). To test the
-baseline ISA's implementations:
+`VG_CPU_FEATURES` (`CPU_FEATURES` in `ci/bench_arches.py`). A configuration
+to test is a line of a CPU's `runs` in `rust-cpu-features`
+(`<VG_CPU_FEATURES> | <tests>`), never a step or job of its own, and
+each CPU has one line per value of `VG_CPU_FEATURES` (CI checks both), so
+a run never repeats another: add tests to a CPU's line for those features.
+To test the baseline ISA's implementations:
 
 ```sh
 VG_CPU_FEATURES=none WYCHEPROOF_ROOT=/path/to/wycheproof cargo test --features cpu-features-env

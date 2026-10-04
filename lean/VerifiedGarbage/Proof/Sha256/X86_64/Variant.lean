@@ -1,4 +1,5 @@
 import VerifiedGarbage.Proof.Sha256.X86_64.Stream.Common
+import VerifiedGarbage.Proof.Framework.X86_64.Depth
 
 /-!
 # Implementations of the SHA-256 compression function on x86-64
@@ -25,6 +26,9 @@ structure Compress where
   mxcsr : callee.code.allInstrs (fun i => !loadsMxcsr i) = true
   /-- It never writes the stack pointer. -/
   spSafe : callee.code.all (fun i => !isa.writesSp i) = true
+  /-- It uses no stack, so that the streaming functions calling it can keep
+  their working space in a frame of their own (`Verified.stackScratch`). -/
+  noStack : callee.code.x86_64Depth = 0 := by lit_decide
   /-- What the names of its callers' instances end with (e.g. `_shani`;
   nothing for the baseline implementation). -/
   suffix : String

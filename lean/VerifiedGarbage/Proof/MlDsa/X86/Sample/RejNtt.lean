@@ -115,9 +115,9 @@ theorem linit_piece : Piece (Pre L) Pub (Out L) (fun s₀ s => Loop s₀ 0 (LA (
     have v₁ := h.args 1 (by decide)
     simp only [Nat.mul_one, Nat.reduceAdd] at a₁
     apply WP.of_runBlock
-    simp (config := {decide := true}) only [rnInit, argOp, at_, runBlock_cons, runStep_some, runBlock_nil,
+    simp only [reduceCtorEq, ↓reduceIte, Nat.reduceAdd, Nat.reduceMul, Nat.reducePow, rnInit, argOp, at_, runBlock_cons, runStep_some, runBlock_nil,
       exec, execAlu, readSrc, State.ea, State.load32, State.setReg, arithFlags, State.setFlags, Option.map_some,
-      Option.bind_some, a₁, i₁, v₁, ite_true, ite_false, Option.some.injEq, exists_eq_left']
+      Option.bind_some, a₁, i₁, v₁, Option.some.injEq, exists_eq_left']
     rw [LA_zero]
     refine ⟨⟨by simp [h.esp], h.rd, h.wr, h.frame⟩, fun p hp' => ?_, by simp [h.esi], rfl,
       by simp, by simp; rfl, by simp, stored_nil _ _⟩
@@ -147,10 +147,10 @@ theorem load_ok {s₀ : State} (hp : Pre L s₀) {t : Nat} (ht : t < 336) {s : S
   have v2 := h.out (3 * t + 2) (by omega)
   simp only [Nat.add_zero] at e0 i0 v0
   apply WP.of_runBlock
-  simp (config := {decide := true}) only [rnLoad, at_, runBlock_cons, runStep_some, runBlock_nil, exec,
+  simp only [reduceCtorEq, ↓reduceIte, Nat.reduceLeDiff, Nat.reduceEqDiff, Nat.reducePow, and_self, rnLoad, at_, runBlock_cons, runStep_some, runBlock_nil, exec,
     execAlu, execShift, readSrc, State.ea, State.load8, State.setReg, arithFlags, State.setFlags,
-    Option.map_some, Option.bind_some, h.esi, e0, e1, e2, i0, i1, i2, v0, v1, v2, ite_true,
-    ite_false, Option.some.injEq, exists_eq_left']
+    Option.map_some, Option.bind_some, h.esi, e0, e1, e2, i0, i1, i2, v0, v1, v2, 
+    Option.some.injEq, exists_eq_left']
   have hz : (BitVec.setWidth 32 (xb (L.Msg s₀) (3 * t)) +
       (BitVec.setWidth 32 (xb (L.Msg s₀) (3 * t + 1))).rotateRight 24 +
       (BitVec.setWidth 32 (xb (L.Msg s₀) (3 * t + 2)) &&& 127).rotateRight 16).toNat = z (L.Msg s₀) t := by
@@ -201,9 +201,9 @@ theorem store_ok {s₀ : State} (hp : Pre L s₀) {t : Nat} {La : List Zq} {v : 
   have fa : Frame [L.aR s₀] s.mem (s.mem.writeW (coeffAddr (L.aA s₀) La.length) (BitVec.ofNat 32 v)) :=
     (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (coeff_contains _ hl)
   apply WP.of_runBlock
-  simp (config := {decide := true}) only [at_, runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, readSrc,
+  simp only [reduceCtorEq, ↓reduceIte, Nat.reducePow, at_, runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, readSrc,
     State.ea, State.store32, State.setReg, arithFlags, State.setFlags, Option.bind_some, h.edi, ea, hin,
-    hrv, ite_true, ite_false, Option.some.injEq, exists_eq_left']
+    hrv, Option.some.injEq, exists_eq_left']
   refine ⟨⟨by simp [h.esp], h.rd, h.wr, h.frame.writeW (r := L.aR s₀) (by simp) _
     (coeff_contains _ hl)⟩, fun p hp' => ?_, by simp [h.esi], by simp [h.ebp],
     (by simp only [List.length_append, List.length_singleton]; omega), ?_, ?_, ?_⟩
@@ -264,7 +264,7 @@ theorem end_ok {s₀ : State} {t : Nat} (ht : t < 336) {La : List Zq} {s : State
     WP isa (.block [.alu .add .esi (.imm 3), .alu .sub .ebp (.imm 1)]) s
       fun s' => Loop s₀ (t + 1) La s' ∧ eval .ne s' = some (decide (t + 1 < 336)) := by
   apply WP.of_runBlock
-  simp (config := {decide := true}) only [runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, readSrc,
+  simp only [reduceCtorEq, ↓reduceIte, Nat.reducePow, runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, readSrc,
     State.setReg, arithFlags, State.setFlags, Option.bind_some, Option.some.injEq, exists_eq_left']
   refine ⟨⟨⟨by simp [h.esp], h.rd, h.wr, h.frame⟩, h.out, ?_, ?_, h.len, by simp [h.edi], by simp [h.ecx],
     h.stored⟩, ?_⟩

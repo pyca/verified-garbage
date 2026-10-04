@@ -11,8 +11,6 @@ absorbing it as a block, and what `update` and `finalize` share: the number of
 bytes buffered, from `count`.
 -/
 
-open VG.PowLit
-
 namespace VG.Proof.Poly1305.X86
 
 open VG VG.X86 VG.Impl.Poly1305.X86

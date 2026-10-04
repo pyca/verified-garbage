@@ -65,7 +65,7 @@ theorem copyStep_ok (s : State) {S D : Addr} {i n : Nat} (hs : s.gpr .rsi = S) (
   have e₁ := ea_idx s .rsi hs hi
   have e₂ := ea_idx s .rdi hd hi
   refine ⟨_, by
-    simp (config := {decide := true}) only [copyBody, srcB, dstB, imm, runBlock_cons, runStep_some,
+    simp only [reduceCtorEq, ↓reduceIte, ↓reduceDIte, Nat.reduceLT, Nat.reduceGT, Nat.reduceLeDiff, Nat.reduceEqDiff, Nat.reduceAdd, Nat.reduceSub, Nat.reduceMul, Nat.reduceDiv, Nat.reduceMod, Nat.reducePow, BitVec.reduceEq, not_false_eq_true, not_true_eq_false, Bool.not_true, Bool.not_false, and_self, false_implies, implies_true, Nat.reduceBEq, Nat.reduceBNe, decide_true, decide_false, BitVec.reduceSignExtend, copyBody, srcB, dstB, imm, runBlock_cons, runStep_some,
       runBlock_nil, exec, readSrc, execAlu, State.load8, State.store8, State.ea, Option.bind_some,
       Option.map_some, gpr_setReg, gpr_arithFlags, mem_setReg, rd_setReg, wr_setReg, ite_true, ite_false,
       e₁, e₂, r, w]
@@ -146,7 +146,7 @@ theorem xorStep_ok (s : State) {S D : Addr} {i n : Nat} (hs : s.gpr .rsi = S) (h
   have wr' : InRegions (s.rd ++ s.wr) (D + BitVec.ofNat 64 i) 1 := by
     obtain ⟨x, hx, hc⟩ := w; exact ⟨x, List.mem_append_right _ hx, hc⟩
   refine ⟨_, by
-    simp (config := {decide := true}) only [xorBody, srcB, dstB, imm, runBlock_cons, runStep_some,
+    simp only [reduceCtorEq, ↓reduceIte, ↓reduceDIte, Nat.reduceLT, Nat.reduceGT, Nat.reduceLeDiff, Nat.reduceEqDiff, Nat.reduceAdd, Nat.reduceSub, Nat.reduceMul, Nat.reduceDiv, Nat.reduceMod, Nat.reducePow, BitVec.reduceEq, not_false_eq_true, not_true_eq_false, Bool.not_true, Bool.not_false, and_self, false_implies, implies_true, Nat.reduceBEq, Nat.reduceBNe, decide_true, decide_false, BitVec.reduceSignExtend, xorBody, srcB, dstB, imm, runBlock_cons, runStep_some,
       runBlock_nil, exec, readSrc, execAlu, State.load8, State.store8, State.ea, Option.bind_some,
       Option.map_some, gpr_setReg, gpr_arithFlags, mem_setReg, mem_arithFlags, rd_setReg, rd_arithFlags,
       wr_setReg, wr_arithFlags, ite_true, ite_false, e₁, e₂, r, w, wr']

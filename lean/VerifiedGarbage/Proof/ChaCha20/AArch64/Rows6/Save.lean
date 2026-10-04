@@ -19,8 +19,8 @@ theorem save_ok (s : State) (hp : XPre s) :
     rw [hp.wr]
     exact ⟨bR s,by simp,Offset.contains_base _ hd (by omega)⟩
   apply WP.of_runBlock
-  simp (config := {decide := true}) only [save,runBlock_cons,runBlock_nil,exec,addr,
-    ite_true,State.store,ho 256 (by decide),ho 272 (by decide),
+  simp only [↓reduceIte, Nat.reduceLT, Nat.reduceMul, Nat.reduceMod, and_self, save,runBlock_cons,runBlock_nil,exec,addr,
+    State.store,ho 256 (by decide),ho 272 (by decide),
     Option.bind_some,Option.some.injEq,exists_eq_left',isa,runStep_some]
   refine ⟨trivial,trivial,trivial,trivial,trivial,?_,?_,?_⟩
   · exact ((Frame.refl _ _).write (List.mem_cons_self ..) _

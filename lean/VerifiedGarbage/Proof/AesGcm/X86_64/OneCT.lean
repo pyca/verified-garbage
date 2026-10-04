@@ -1,5 +1,6 @@
 import VerifiedGarbage.Proof.AesGcm.X86_64.Seal
-import VerifiedGarbage.Proof.AesGcm.X86_64.StreamCryptCT
+import VerifiedGarbage.Proof.AesGcm.X86_64.FinTagCT
+import VerifiedGarbage.Proof.AesGcm.X86_64.CryptCT
 
 /-!
 # AES-GCM on x86-64: the pieces of `seal` and `open` in two runs

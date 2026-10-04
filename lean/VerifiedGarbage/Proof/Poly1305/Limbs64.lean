@@ -9,7 +9,6 @@ Target-independent bounds, modular reduction and word-carry identities for
 three-word accumulators and two-word clamped keys.
 -/
 
-open VG.PowLit
 namespace VG.Proof.Poly1305.Limbs64
 open VG.Spec.Poly1305 (P)
 

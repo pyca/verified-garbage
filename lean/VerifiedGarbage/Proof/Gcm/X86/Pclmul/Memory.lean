@@ -31,8 +31,8 @@ theorem ldrev_ok (r : XReg) (b : Reg) (d : Nat) (s : State) (hr : r ≠ .xmm0)
     WP isa (.block [.movdquLoad r (at_ b d), .xop (.bin .pshufb r .xmm0)]) s fun s' =>
       s'.xmm r = Spec.Gcm.blockAt s.mem (s.ea (at_ b d)) ∧ Only [r] s s' := by
   apply WP.of_runBlock
-  simp (config := {decide := true}) only [runBlock_cons, runStep_some, runBlock_nil,
-    exec, isa, XOp.exec, State.load128, hin, ite_true, ite_false, xmm_setXmm, Ne.symm hr,
+  simp only [↓reduceIte, runBlock_cons, runStep_some, runBlock_nil,
+    exec, isa, XOp.exec, State.load128, hin, xmm_setXmm, Ne.symm hr,
     h0, Option.map_some, Option.some.injEq, exists_eq_left']
   refine ⟨?_, by simp only [gpr_setXmm], by simp only [mem_setXmm],
     by simp only [rd_setXmm], by simp only [wr_setXmm], fun a ha => ?_⟩

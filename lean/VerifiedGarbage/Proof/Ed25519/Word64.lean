@@ -1,4 +1,5 @@
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.PowLit
 
 /-! Target-independent unsigned word arithmetic for the Ed25519 ports. -/
 namespace VG.Proof.Ed25519.Word64

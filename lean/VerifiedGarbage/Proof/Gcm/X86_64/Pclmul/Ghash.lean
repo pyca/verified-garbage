@@ -34,8 +34,6 @@ What the instructions of `Impl.Gcm.X86_64.Pclmul` compute, in the ring `Q` of
 * `hInv` computes `H · x⁻¹` (`x_φ_hInv`).
 -/
 
-open VG.PowLit
-
 namespace VG.Proof.Gcm.X86_64.Pclmul
 
 open Polynomial
@@ -371,8 +369,8 @@ theorem zero_ok (s : State) :
       prod s' = Prod.zero ∧ Only [.xmm8, .xmm9, .xmm10] s s' := by
   apply WP.of_runBlock
   simp only [Impl.Gcm.X86_64.Pclmul.zero]
-  simp (config := {decide := true}) only [runBlock_cons, runStep_some, runBlock_nil, exec, XOp.exec,
-    isa, State.setXmm, ite_false, eval_pxor, BitVec.xor_self, Option.some.injEq,
+  simp only [reduceCtorEq, ↓reduceIte, runBlock_cons, runStep_some, runBlock_nil, exec, XOp.exec,
+    isa, State.setXmm, eval_pxor, BitVec.xor_self, Option.some.injEq,
     exists_eq_left']
   refine ⟨rfl, fun r _ => rfl, rfl, rfl, rfl, fun r hr => ?_⟩
   simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
@@ -384,8 +382,8 @@ theorem acc_ok (a b : XReg) (s : State) (ha8 : a ≠ .xmm8) (ha9 : a ≠ .xmm9) 
       prod s' = (prod s).acc (s.xmm a) (s.xmm b) ∧ Only [.xmm8, .xmm9, .xmm10, .xmm11] s s' := by
   apply WP.of_runBlock
   simp only [Impl.Gcm.X86_64.Pclmul.acc]
-  simp (config := {decide := true}) only [runBlock_cons, runStep_some, runBlock_nil, exec, XOp.exec,
-    isa, State.setXmm, ite_true, ite_false, eval_pxor, eval_movdqa, ha8, ha9, ha10, ha11, hb8, hb9,
+  simp only [reduceCtorEq, ↓reduceIte, runBlock_cons, runStep_some, runBlock_nil, exec, XOp.exec,
+    isa, State.setXmm, eval_pxor, eval_movdqa, ha8, ha9, ha10, ha11, hb8, hb9,
     hb10, hb11, Option.some.injEq, exists_eq_left']
   refine ⟨?_, fun r _ => rfl, rfl, rfl, rfl, fun r hr => ?_⟩
   · simp only [prod, Prod.acc, ite_true, ite_false, reduceCtorEq]
@@ -399,8 +397,8 @@ theorem reduce_ok (d : XReg) (s : State) (hd8 : d ≠ .xmm8) (hd9 : d ≠ .xmm9)
   apply WP.of_runBlock
   simp only [Impl.Gcm.X86_64.Pclmul.reduce, Impl.Gcm.X86_64.Pclmul.fold, List.cons_append,
     List.nil_append]
-  simp (config := {decide := true}) only [runBlock_cons, runStep_some, runBlock_nil, exec, XOp.exec,
-    isa, State.setXmm, ite_true, ite_false, eval_pxor, eval_movdqa, hd8, hd9, hd10, hd11, h1,
+  simp only [reduceCtorEq, ↓reduceIte, runBlock_cons, runStep_some, runBlock_nil, exec, XOp.exec,
+    isa, State.setXmm, eval_pxor, eval_movdqa, hd8, hd9, hd10, hd11, h1,
     Ne.symm hd8,
     Option.some.injEq, exists_eq_left']
   refine ⟨?_, fun r _ => rfl, rfl, rfl, rfl, fun r hr => ?_⟩
@@ -491,8 +489,6 @@ The registers `xmm3`–`xmm6` hold `Tₖ` with `x · Tₖ = Hᵏ` (`k = 1 … 4`
 that `mul(a, Tₖ) = a · Hᵏ`, and `xmm2` holds `Y` after `i` blocks, as a
 block; the memory is not written until the epilogue stores `Y`.
 -/
-
-open VG.PowLit
 
 namespace VG.Proof.Gcm.X86_64.Pclmul
 
@@ -1027,7 +1023,7 @@ theorem ghash_ct : ConstantTime isa ghashX86_64.pre ghashX86_64.pub Impl.Gcm.X86
   intro s₁ s₂ _ _ ⟨h1, h2, h3, h4, h5⟩
   refine Taint.agree_ofRegs fun r hr => ?_
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl | rfl <;> assumption
+  rcases hr with rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption
 
 theorem ghash_verified :
     Verified X86_64.target Impl.Gcm.X86_64.Pclmul.ghash (Spec.Gcm.ghashContract X86_64.abi) :=

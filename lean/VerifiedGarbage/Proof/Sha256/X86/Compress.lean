@@ -529,7 +529,7 @@ theorem vars_writeVars {scr : BitVec 32} (h : scr.toNat + 112 ≤ 2 ^ 32) (m : M
   rw [vars0]
   simp only [writeVars]
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;>
-  simp (config := {decide := true}) (disch := decide) only [Mem.readW_writeW_self32, hrw]
+  simp (disch := decide) only [Mem.readW_writeW_self32, hrw]
 
 theorem frame_writeVars {scr : BitVec 32} (h : scr.toNat + 112 ≤ 2 ^ 32) (m : Mem) (v : HashValue) :
     Frame [workRegion scr] m (writeVars scr m v) := by
@@ -548,9 +548,9 @@ theorem ld_ok (k : Nat) {s : State} {p q : BitVec 32} (heax : s.gpr .eax = p)
       s'.mem = s.mem.writeW (addr q (64 + 4 * k)) (s.mem.readW (addr p (4 * k)) 32) ∧
       (∀ r, r ≠ .ebx → s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   apply WP.of_runBlock
-  simp (config := {decide := true}) only [ld, runBlock_cons, runBlock_nil, runStep_some, exec,
-    readSrc, ea_mk, State.setReg, State.load32, State.store32, heax, hesi, hi, ho, ite_true,
-    ite_false, Option.map_some, Option.some.injEq, exists_eq_left']
+  simp only [reduceCtorEq, ↓reduceIte, and_self, ld, runBlock_cons, runBlock_nil, runStep_some, exec,
+    readSrc, ea_mk, State.setReg, State.load32, State.store32, heax, hesi, hi, ho, 
+    Option.map_some, Option.some.injEq, exists_eq_left']
   exact ⟨trivial, fun r hr => by simp [hr], trivial⟩
 
 /-- The working variables at `q` after loading words `0 … j-1` of the hash value at `p`. -/
@@ -597,8 +597,8 @@ theorem load_ok {s₀ : State} (hp : Pre s₀) {s : State} (hesp : s.gpr .esp = 
       s₁.gpr .eax = st s₀ ∧ (∀ r, r ≠ .eax → s₁.gpr r = s.gpr r) ∧ s₁.mem = s.mem ∧
       s₁.rd = s.rd ∧ s₁.wr = s.wr := by
     apply WP.of_runBlock
-    simp (config := {decide := true}) only [runBlock_cons, runBlock_nil, runStep_some, exec,
-      readSrc, ea_mk, State.setReg, State.load32, hesp, ia, harg, ite_true, Option.map_some,
+    simp only [↓reduceIte, and_self, runBlock_cons, runBlock_nil, runStep_some, exec,
+      readSrc, ea_mk, State.setReg, State.load32, hesp, ia, harg, Option.map_some,
       Option.some.injEq, exists_eq_left']
     exact ⟨trivial, fun r hr => by simp [hr], trivial⟩
   rw [load_eq, WP.block_append_iff]
@@ -627,7 +627,7 @@ theorem stateAt_writeState {s₀ : State} (hp : Pre s₀) (m : Mem) (v : HashVal
   intro k hk
   simp only [writeState, stAddr]
   rcases (by omega : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 ∨ k = 4 ∨ k = 5 ∨ k = 6 ∨ k = 7) with h | h | h | h | h | h | h | h <;> subst h <;>
-  simp (config := {decide := true}) (disch := decide) only [Nat.reduceMul, Mem.readW_writeW_self32,
+  simp (disch := decide) only [Nat.reduceMul, Mem.readW_writeW_self32,
     readW_writeW_st hp]
 
 theorem frame_writeState {s₀ : State} (hp : Pre s₀) {m m' : Mem} (h : Frame [stR s₀] m m')
@@ -648,9 +648,9 @@ theorem upd_ok (k : Nat) {s : State} {p q : BitVec 32} (heax : s.gpr .eax = p)
         (s.mem.readW (addr q (64 + 4 * k)) 32 + s.mem.readW (addr p (4 * k)) 32) ∧
       (∀ r, r ≠ .ebx → s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   apply WP.of_runBlock
-  simp (config := {decide := true}) only [upd, runBlock_cons, runBlock_nil, runStep_some, exec,
+  simp only [reduceCtorEq, ↓reduceIte, Nat.reducePow, and_self, upd, runBlock_cons, runBlock_nil, runStep_some, exec,
     execAlu, readSrc, ea_mk, State.setReg, arithFlags, State.setFlags, State.load32, State.store32,
-    heax, hesi, hv, hh, ho, ite_true, ite_false, Option.map_some, Option.bind_some,
+    heax, hesi, hv, hh, ho, Option.map_some, Option.bind_some,
     Option.some.injEq, exists_eq_left']
   exact ⟨trivial, fun r hr => by simp [hr], trivial⟩
 

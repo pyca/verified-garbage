@@ -175,9 +175,9 @@ theorem leave_mem (s : State)
     (hi : ∀ d n, d + n ≤ 320 → InRegions (s.rd ++ s.wr) (s.gpr .x3 + BitVec.ofNat 64 d) n) :
     WP isa (.block VG.Impl.ChaCha20.AArch64.Mixed8.leave) s fun u => u.mem = s.mem := by
   apply WP.of_runBlock
-  simp (config := {decide := true}) only [VG.Impl.ChaCha20.AArch64.Mixed8.leave,
+  simp only [reduceCtorEq, ↓reduceIte, Nat.reduceLT, Nat.reduceMul, Nat.reduceMod, and_self, VG.Impl.ChaCha20.AArch64.Mixed8.leave,
     VG.Impl.ChaCha20.AArch64.Mixed5.leave, List.cons_append, List.nil_append, runBlock_cons,
-    runBlock_nil, exec, addr, Size.bytes, Size.bits, ite_true, ite_false, State.load,
+    runBlock_nil, exec, addr, Size.bytes, Size.bits, State.load,
     hi 128 16 (by decide), hi 144 16 (by decide), hi 256 8 (by decide), hi 264 8 (by decide),
     hi 272 8 (by decide), RegUpd.gpr_write, BitVec.setWidth_eq, RegUpd.rd_write, RegUpd.wr_write,
     RegUpd.mem_write, State.setV, Option.bind_some, Option.map_some, isa, runStep_some,

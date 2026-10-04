@@ -1,4 +1,5 @@
 import VerifiedGarbage.Spec.MlDsa.Poly
+import VerifiedGarbage.Proof.Framework.PowLit
 
 /-!
 # ML-DSA: `Decompose` and `Power2Round` by multiplications and shifts, for every target

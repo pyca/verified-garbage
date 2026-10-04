@@ -38,9 +38,9 @@ theorem const_ok (r : XReg) (c : BitVec 128) (s : State) (hr : r ≠ .xmm5) :
   simp only [Impl.Gcm.X86.Pclmul.const, List.range_succ, List.range_zero,
     List.flatMap_cons, List.flatMap_nil, List.append_nil,
     List.cons_append, List.nil_append]
-  simp (config := {decide := true}) only [runBlock_cons, runStep_some, runBlock_nil,
+  simp only [↓reduceIte, Nat.reduceAdd, Nat.reduceSub, Nat.reduceMul, runBlock_cons, runStep_some, runBlock_nil,
     exec, isa, readSrc, XOp.exec, gpr_setReg, xmm_setReg, xmm_setXmm,
-    ite_true, ite_false, hr, Ne.symm hr, Option.map_some, Option.some.injEq,
+    hr, Option.map_some, Option.some.injEq,
     exists_eq_left', XShiftOp.eval, XBinOp.eval]
   refine ⟨?_, fun a ha => ?_, ?_, ?_, ?_, fun a ha => ?_⟩
   · exact assembled_eq c
@@ -65,9 +65,9 @@ theorem hInv_ok (s : State) :
     fun s₁ ⟨hc, hf⟩ => ?_
   have h7 : s₁.xmm .xmm7 = s.xmm .xmm7 := hf.xmm _ (by decide)
   apply WP.of_runBlock
-  simp (config := {decide := true}) only [runBlock_cons, runStep_some, runBlock_nil,
+  simp only [reduceCtorEq, ↓reduceIte, Nat.reduceAdd, runBlock_cons, runStep_some, runBlock_nil,
     exec, isa, readSrc, XOp.exec, gpr_setReg, xmm_setReg, xmm_setXmm,
-    ite_true, ite_false, Option.map_some, Option.some.injEq, exists_eq_left',
+    Option.map_some, Option.some.injEq, exists_eq_left',
     hc, h7, eval_movdqa, eval_pxor, unpack_ones]
   refine ⟨?_, fun a ha => ?_, ?_, ?_, ?_, fun a ha => ?_⟩
   · change x * φ ((XShiftOp.eval .psllq (s.xmm .xmm7) 1 |||

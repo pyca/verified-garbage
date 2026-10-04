@@ -40,7 +40,7 @@ theorem x448_ct : ConstantTime isa Proof.X448.x448AArch64.pre Proof.X448.x448AAr
   intro s₁ s₂ _ _ ⟨h1, h2, h3, h4, hsp⟩
   refine ⟨hsp, fun r hr => ?_⟩
   simp only [Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl <;> assumption
+  rcases hr with rfl | rfl | rfl | rfl <;> with_reducible assumption
 
 theorem x448_verified :
     Verified AArch64.target Impl.X448.AArch64.Fast.x448 (Spec.X448.x448Contract AArch64.abi) :=

@@ -12,8 +12,8 @@ theorem saveArgs_ok (s : State) : WP isa (.block saveArgs) s fun u =>
     (∀ r, r ≠ .x19 → r ≠ .x26 → u.gpr r = s.gpr r) ∧
     u.mem = s.mem ∧ u.rd = s.rd ∧ u.wr = s.wr ∧ u.v = s.v ∧ u.sp = s.sp := by
   apply WP.of_runBlock
-  simp (config := {decide := true}) only [saveArgs,runBlock_cons,runBlock_nil,exec,
-    State.read,Size.bits,ite_true,isa,runStep_some,RegUpd.gpr_write,
+  simp only [reduceCtorEq, ↓reduceIte, Nat.reduceLT, saveArgs,runBlock_cons,runBlock_nil,exec,
+    State.read,Size.bits,isa,runStep_some,RegUpd.gpr_write,
     BitVec.setWidth_eq,BitVec.add_zero,Option.some.injEq,exists_eq_left']
   exact ⟨⟨rfl,rfl⟩,fun r h21 h22 => by simp only [h21,h22,ite_false],rfl,rfl,rfl,rfl,rfl⟩
 

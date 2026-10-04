@@ -1,5 +1,4 @@
 import VerifiedGarbage.Proof.AesGcm.X86_64.StreamVerify
-import VerifiedGarbage.Proof.AesGcm.X86_64.StreamCrypt
 
 /-!
 # AES-GCM on x86-64: what `seal` and `open` share
@@ -212,7 +211,7 @@ theorem oneEntry_ok {s : State} {k : Nat} (hk : 3 ≤ k) {Ctx W SP Np A D : Addr
     · simp [gpr_setReg, gpr_arithFlags, hrdx]
     · simp [gpr_setReg, gpr_arithFlags, hrcx]
     · simp [gpr_setReg, gpr_arithFlags, hsp₁]
-    · simp (disch := first | decide | assumption) [gpr_setReg, mem_setReg, mem_arithFlags, gpr_arithFlags,
+    · simp (disch := first | decide | with_reducible assumption) [gpr_setReg, mem_setReg, mem_arithFlags, gpr_arithFlags,
         Mem.readW_writeW_sep, hD₁, hn₁, hrsi, hr8, hr9, hA]
     all_goals rfl
   rw [e]
@@ -234,7 +233,7 @@ theorem oneEntry_ok {s : State} {k : Nat} (hk : 3 ≤ k) {Ctx W SP Np A D : Addr
     intro d v h
     rw [hm₂]
     rcases h with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;>
-      simp (disch := first | decide | assumption) only [Mem.readW_writeW_self64,
+      simp (disch := first | decide | with_reducible assumption) only [Mem.readW_writeW_self64,
         Mem.readW_writeW_sep]
   refine ⟨⟨h13, h14, h15, hsp, C.perm.of_eq hrd' hwr'⟩, ⟨?_, C.rounds⟩, rd 232 _ (.inr (.inl ⟨rfl, rfl⟩)),
     rd 184 _ (.inr (.inr (.inl ⟨rfl, rfl⟩))), rd 200 _ (.inr (.inr (.inr (.inl ⟨rfl, rfl⟩)))),

@@ -84,9 +84,9 @@ theorem initPre_ok {s₀ : State} {St Kp S : Addr} {KL : Nat} (hp : IPre s₀ St
     rw [hp.wr]; exact ⟨⟨S, 2304⟩, by simp, Offset.contains_base _ hd (by have := hp.wS; omega)⟩
   have hKL : s₀.gpr .x2 = BitVec.ofNat 64 KL := ofNat_toNat_eq hp.x2
   refine ⟨_, by
-    simp (config := {decide := true}) only [initPre, initSaved, mov, List.map, List.cons_append,
+    simp only [reduceCtorEq, ↓reduceIte, Nat.reduceLT, Nat.reduceMul, Nat.reduceMod, and_self, initPre, initSaved, mov, List.map, List.cons_append,
       List.nil_append, runBlock_cons, runStep_some, runBlock_nil, exec, addr, State.store, Size.bytes,
-      Size.bits, State.read, gpr_write, ite_true, ite_false, Option.bind_some,
+      Size.bits, State.read, gpr_write, Option.bind_some,
       BitVec.setWidth_eq, hp.x3, inS 2176 (by decide), inS 2184 (by decide), inS 2192 (by decide),
       inS 2200 (by decide)]
     rfl, ?_⟩
@@ -142,8 +142,8 @@ theorem initMid_ok {s : State} {St S : Addr} {R : Nat} (h19 : s.gpr .x19 = St) (
       s'.gpr .x2 = St + BitVec.ofNat 64 240 ∧ s'.gpr .x3 = S ∧
       (∀ r ∈ preserved, s'.gpr r = s.gpr r) ∧ s'.sp = s.sp ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   refine ⟨_, by
-    simp (config := {decide := true}) only [initMid, mov, runBlock_cons, runStep_some, runBlock_nil, exec,
-      Size.bits, State.read, gpr_write, ite_true, ite_false, BitVec.setWidth_eq]
+    simp only [reduceCtorEq, ↓reduceIte, Nat.reduceLT, initMid, mov, runBlock_cons, runStep_some, runBlock_nil, exec,
+      Size.bits, State.read, gpr_write, BitVec.setWidth_eq]
     rfl, ?_⟩
   refine ⟨by simp [gpr_write, h19], by simp [gpr_write, h21], by simp [gpr_write, h19],
     by simp [gpr_write, h20], fun r hr => ?_, rfl, rfl, rfl, rfl⟩
@@ -171,9 +171,9 @@ theorem initPost_ok {s : State} {St S : Addr} (h19 : s.gpr .x19 = St) (h20 : s.g
       (∀ r, r ≠ .x19 → r ≠ .x20 → r ≠ .x21 → r ≠ .x30 → r ≠ .x9 → s'.gpr r = s.gpr r) ∧
       s'.sp = s.sp ∧ s'.mem = zeroCv s.mem St := by
   refine ⟨_, by
-    simp (config := {decide := true}) only [initPost, runBlock_cons, runStep_some, runBlock_nil, exec,
+    simp only [reduceCtorEq, ↓reduceIte, Nat.reduceLT, Nat.reduceMul, Nat.reduceMod, and_self, initPost, runBlock_cons, runStep_some, runBlock_nil, exec,
       addr, State.load, State.store, Size.bytes, Size.bits, State.read, gpr_write, mem_write, rd_write,
-      wr_write, ite_true, ite_false, Option.bind_some, Option.map_some, BitVec.setWidth_eq, h19, h20,
+      wr_write, Option.bind_some, Option.map_some, BitVec.setWidth_eq, h19, h20,
       w₁, w₂, r₁, r₂, r₃, r₄]
     rfl, ?_⟩
   refine ⟨?_, ?_, ?_, ?_, fun r a b c d f => by simp [gpr_write, a, b, c, d, f], rfl, ?_⟩
@@ -379,7 +379,7 @@ theorem init_rel (v : Ctr32Impl) {s₀ s₀' : State} (h0 : initAArch64.pre s₀
       obtain ⟨rfl, rfl⟩ := h
       refine agree_of q4 fun r hr => ?_
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl | rfl <;> assumption) hA).wp
+      rcases hr with rfl | rfl | rfl | rfl <;> with_reducible assumption) hA).wp
     (F₁ := IMid₁ s₀ St Kp S KL) (F₂ := IMid₁ s₀' St Kp S KL) fun a b h => by
       obtain ⟨rfl, rfl⟩ := h; exact ⟨initPre_wp hp, initPre_wp hp'⟩
   have e := (ek_rel v (P := fun a b => IMid₁ s₀ St Kp S KL a ∧ IMid₁ s₀' St Kp S KL b)
