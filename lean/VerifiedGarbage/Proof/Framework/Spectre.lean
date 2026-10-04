@@ -503,6 +503,16 @@ theorem specConstantTime (hs : SpecSound A S) {Pre : M.State → Prop}
   intro s₁ s₂ D n t₁ t₂ o₁ o₂ h₁ h₂ hp e₁ e₂
   obtain ⟨τ', hc⟩ := Option.isSome_iff_exists.mp h
   exact (specCheck_sound hs hc (hpub _ _ h₁ h₂ hp) e₁ e₂).1
+/-- The same, for runs entered while already misspeculating (e.g. a
+function called on a mispredicted path) and from any states agreeing on what
+`τ` says is public, without a precondition. -/
+theorem specConstantTime_any (hs : SpecSound A S) {c : Prog M} (τ : A.T) {hc : Hint A.T}
+    (h : (A.check τ c hc).isSome = true) {s₁ s₂ : M.State} (ha : A.Agree τ s₁ s₂)
+    {ms : Bool} {D : List Bool} {n : Nat} {t₁ t₂ : List SLeak} {o₁ o₂ : SOut M}
+    (e₁ : SExec S c s₁ ms D n t₁ o₁) (e₂ : SExec S c s₂ ms D n t₂ o₂) : t₁ = t₂ := by
+  obtain ⟨τ', hc⟩ := Option.isSome_iff_exists.mp h
+  exact (specCheck_sound hs hc ha e₁ e₂).1
+
 end Taint
 
 end VG
