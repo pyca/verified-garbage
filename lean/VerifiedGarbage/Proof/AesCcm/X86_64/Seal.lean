@@ -19,6 +19,21 @@ open VG VG.X86_64 VG.X86_64.RegUpd VG.Impl.AesCcm.X86_64
 open VG.Spec.Aes (bytesAt)
 open VG.Proof.Aes.X86_64 (Ctr32Impl)
 
+/-- What `mac y` and `tag y` write. -/
+abbrev tagR (W SP : Addr) (y : Nat) : List Region :=
+  [⟨W + BitVec.ofNat 64 32, 16⟩, ⟨W + BitVec.ofNat 64 64, 16⟩, ⟨W + BitVec.ofNat 64 y, 16⟩,
+    ⟨W + BitVec.ofNat 64 384, 2176⟩, below SP 16]
+
+theorem tagR_wR (W SP : Addr) {y : Nat} (hy : y + 16 ≤ 112) : ∀ r ∈ tagR W SP y, ∃ r' ∈ wR W SP, Region.Sub r r' := by
+  intro r hr
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl | rfl | rfl
+  · exact ⟨wA W, by simp, Offset.sub_base W (by decide)⟩
+  · exact ⟨wA W, by simp, Offset.sub_base W (by decide)⟩
+  · exact ⟨wA W, by simp, Offset.sub_base W hy⟩
+  · exact ⟨wC W, by simp, Offset.sub W (by decide) (by decide)⟩
+  · exact ⟨_, by simp, fun _ h => h⟩
+
 /-- The MAC of the payload at `D`, encrypted with `CIPH_K(Ctr₀)`, at `W + y`. -/
 theorem macTag_ok (v : Ctr32Impl) {K W SP : Addr} {s : State} (L : Lay K W SP) (E : Env K W SP s) {R : Nat}
     {N A D : Addr} {nl al n tl : Nat} (S : Slots W R N A D nl al n tl s.mem) (hR : R = 10 ∨ R = 12 ∨ R = 14)
@@ -26,7 +41,7 @@ theorem macTag_ok (v : Ctr32Impl) {K W SP : Addr} {s : State} (L : Lay K W SP) (
     (ht4 : 4 ≤ tl) (ht16 : tl ≤ 16) (hte : tl % 2 = 0) (hn : n < 256 ^ (15 - nl))
     (hc0 : bytesAt s.mem (W + BitVec.ofNat 64 48) 16 = Spec.Ccm.ctrBlock nonce 0) {y : Nat} (hy : y = 0 ∨ y = 96)
     (hA : Buf K W SP s A al) (hD : Buf K W SP s D n) {k : Prog isa} {Q : State → Prop}
-    (hk : ∀ s', Env K W SP s' → s'.rd = s.rd → s'.wr = s.wr → Frame (wR W SP) s.mem s'.mem →
+    (hk : ∀ s', Env K W SP s' → s'.rd = s.rd → s'.wr = s.wr → Frame (tagR W SP y) s.mem s'.mem →
       bytesAt s'.mem (W + BitVec.ofNat 64 48) 16 = Spec.Ccm.ctrBlock nonce 0 →
       bytesAt s'.mem (W + BitVec.ofNat 64 y) 16 = xorFrom (Spec.Ccm.ctxCiph s.mem K R) nonce 0
         (Spec.Cmac.chain (Spec.Ccm.ctxCiph s.mem K R) (Spec.Cmac.zeros 16)
@@ -35,13 +50,9 @@ theorem macTag_ok (v : Ctr32Impl) {K W SP : Addr} {s : State} (L : Lay K W SP) (
   have hy16 : y + 16 ≤ 112 := by omega
   have hRb : 16 * (R + 1) ≤ 240 := by rcases hR with h | h | h <;> subst h <;> decide
   refine WP.seq (WP.mono (mac_ok v L E S hR hnl h7 h13 ht4 ht16 hte hn hc0 hy hA hD) fun s₁ M => ?_)
-  have fy : Frame (wR W SP) s.mem s₁.mem := M.frame.sub fun r hr => by
+  have fy : Frame (tagR W SP y) s.mem s₁.mem := M.frame.sub fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl
-    · exact ⟨wA W, by simp, Offset.sub_base W hy16⟩
-    · exact ⟨wA W, by simp, Offset.sub_base W (by decide)⟩
-    · exact ⟨wC W, by simp, Offset.sub W (by decide) (by decide)⟩
-    · exact ⟨_, by simp, fun _ h => h⟩
+    rcases hr with rfl | rfl | rfl | rfl <;> exact ⟨_, by simp, fun _ h => h⟩
   have hRo₁ : s₁.mem.readW (W + BitVec.ofNat 64 232) 64 = BitVec.ofNat 64 R := by
     rw [rounds_kept L hy M.frame]; exact S.rounds
   have hc₁ : bytesAt s₁.mem (W + BitVec.ofNat 64 48) 16 = Spec.Ccm.ctrBlock nonce 0 := by
@@ -58,11 +69,7 @@ theorem macTag_ok (v : Ctr32Impl) {K W SP : Addr} {s : State} (L : Lay K W SP) (
     fun s₂ ⟨E₂, _, rd₂, wr₂, f₂, h₂⟩ => ?_)
   refine hk s₂ E₂ (by rw [rd₂, M.rd]) (by rw [wr₂, M.wr]) (fy.trans (f₂.sub fun r hr => ?_)) ?_ ?_
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl
-    · exact ⟨wA W, by simp, Offset.sub_base W (by decide)⟩
-    · exact ⟨wA W, by simp, Offset.sub_base W hy16⟩
-    · exact ⟨wC W, by simp, Offset.sub W (by decide) (by decide)⟩
-    · exact ⟨_, by simp, fun _ h => h⟩
+    rcases hr with rfl | rfl | rfl | rfl <;> exact ⟨_, by simp, fun _ h => h⟩
   · rw [bytesAt_frame f₂ (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl
@@ -131,7 +138,7 @@ theorem seal_wp' (v : Ctr32Impl) {s : State} {K W SP N A D : Addr} {R nl al n tl
   refine macTag_ok v L E₂ S₂ Ar.rounds (length_bytesAt _ _ _) Ar.h7 Ar.h13 Ar.t4 Ar.t16 Ar.te Ar.hn c₂ (y := 0)
     (.inl rfl) (Ar.aad.of_eq (rd₂.trans rd₁) (wr₂.trans wr₁)) (Ar.data.of_eq (rd₂.trans rd₁) (wr₂.trans wr₁))
     fun s₃ E₃ rd₃ wr₃ f₃ c₃ h₃ => ?_
-  have f₁₃ : Frame (wR W SP) s₁.mem s₃.mem := f₂'.trans f₃
+  have f₁₃ : Frame (wR W SP) s₁.mem s₃.mem := f₂'.trans (f₃.sub (tagR_wR W SP (by decide)))
   have S₃ := slots_mut L Ar.data.w (f₁₃.sub (wR_mut W SP D n)) S₁
   -- Counter mode.
   have C₃ : CtrCtx K W SP s₃ R (bytesAt s.mem N nl) D n :=

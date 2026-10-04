@@ -284,4 +284,18 @@ theorem xorFrom_zeros {ciph : Ccm.Cipher} (hc : BlockCipher ciph) (nonce : List 
       simp only [Ccm.zeros, List.getD_eq_getElem?_getD, List.getElem?_replicate, hi, ↓reduceIte, Option.getD_some]]
   exact BitVec.zero_xor
 
+/-- Encrypting a MAC twice gives it back. -/
+theorem cryptTag_cryptTag {ciph : Ccm.Cipher} (hc : BlockCipher ciph) {t : Nat} (ht : t ≤ 16) (nonce : List Byte)
+    {x : List Byte} (hx : x.length = t) : Ccm.cryptTag ciph t nonce (Ccm.cryptTag ciph t nonce x) = x := by
+  have hl := hc (Ccm.ctrBlock nonce 0)
+  apply List.ext_getElem (by simp [Ccm.cryptTag, Ccm.xor, hx, hl]; omega)
+  intro i h₁ h₂
+  simp only [Ccm.cryptTag, Ccm.xor, List.getElem_zipWith, List.getElem_take]
+  rw [BitVec.xor_assoc, BitVec.xor_self, BitVec.xor_zero]
+
+theorem cryptTag_eq_iff {ciph : Ccm.Cipher} (hc : BlockCipher ciph) {t : Nat} (ht : t ≤ 16) (nonce : List Byte)
+    {x y : List Byte} (hx : x.length = t) (hy : y.length = t) :
+    Ccm.cryptTag ciph t nonce x = y ↔ x = Ccm.cryptTag ciph t nonce y :=
+  ⟨fun h => by rw [← h, cryptTag_cryptTag hc ht nonce hx], fun h => by rw [h, cryptTag_cryptTag hc ht nonce hy]⟩
+
 end VG.Proof.AesCcm
