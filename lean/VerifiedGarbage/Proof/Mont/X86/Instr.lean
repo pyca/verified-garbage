@@ -140,4 +140,21 @@ theorem readSrc_at {s : State} {base : Addr} {size : Nat} (hs : Scr s base size)
   show s.load32 (s.ea (at_ .ebp d)) = _
   rw [hs.ea_at hp (by omega), State.load32, ite_eq_left_iff.mpr fun h => absurd (hs.read hd) h]
 
+theorem _root_.VG.X86.Wp.Upd.keeps {s t : State} {d : Reg} {v : BitVec 32} (h : Upd s t d v) : Keeps [d] s t :=
+  ⟨fun r hr => h.other r (by simpa using hr), h.rd, h.wr⟩
+
+theorem MulUpd.keeps {s t : State} {r : Reg} (h : MulUpd s t r) : Keeps [.eax, .edx] s t :=
+  ⟨fun q hq => h.other q (by simp_all) (by simp_all), h.rd, h.wr⟩
+
+theorem _root_.VG.X86.Wp.Mupd.keeps {s t : State} {m : Mem} (h : Mupd s t m) (rs : List Reg) : Keeps rs s t :=
+  ⟨fun r _ => by rw [h.gpr], h.rd, h.wr⟩
+
+theorem _root_.VG.X86.Wp.Fupd.keeps {s t : State} (h : Fupd s t) (rs : List Reg) : Keeps rs s t :=
+  ⟨fun r _ => by rw [h.gpr], h.rd, h.wr⟩
+
+/-- `Keeps` of a list of registers, widened to a larger one and composed. -/
+theorem Keeps.widen {rs rs' : List Reg} {s₁ s₂ s₃ : State} (h₁ : Keeps rs' s₁ s₂) (h₂ : Keeps rs s₂ s₃)
+    (hs : ∀ r ∈ rs, r ∈ rs' := by decide) : Keeps rs' s₁ s₃ :=
+  h₁.trans (h₂.mono hs)
+
 end VG.Proof.Mont.X86
