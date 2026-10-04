@@ -119,6 +119,12 @@ inductive Instr
   | movdquLoad (dst : XReg) (src : MemOp)
   /-- Legacy SSE2 unaligned 128-bit store (F3 0F 7F /r). -/
   | movdquStore (dst : MemOp) (src : XReg)
+  /-- `movq xmm, QWORD PTR [m]` (F3 0F 7E /r): a 64-bit load into the low
+  quadword, zeroing the high one. -/
+  | movqLoad (dst : XReg) (src : MemOp)
+  /-- `movq QWORD PTR [m], xmm` (66 0F D6 /r): a 64-bit store of the low
+  quadword. -/
+  | movqStore (dst : MemOp) (src : XReg)
   /-- A legacy SSE instruction that writes only an XMM register. -/
   | xop (op : XOp)
   deriving DecidableEq, Repr
@@ -223,7 +229,11 @@ def execMul (src : Reg) (s : State) : State :=
 /-- Semantics of an instruction. The byte forms: SDM Vol. 2, "MOVZX":
 `DEST := ZeroExtend(SRC)`, and "MOV": `DEST := SRC`, where the source of a
 byte store is the low byte of `eax`, `ecx`, `edx` or `ebx` (AL, CL, DL, BL;
-SDM Vol. 1 §3.4.1.1). Neither affects the flags. -/
+SDM Vol. 1 §3.4.1.1). Neither affects the flags. The quadword moves: SDM
+Vol. 2, "MOVQ—Move Quadword", `MOVQ xmm1, m64` (F3 0F 7E /r): `DEST[63:0] :=
+SRC[63:0]; DEST[127:64] := 0000000000000000H`, and `MOVQ m64, xmm1` (66 0F
+D6 /r): `DEST[63:0] := SRC[63:0]`; neither affects the flags, and a 64-bit
+memory operand of a legacy SSE instruction needs no alignment. -/
 def exec : Instr → State → Option State
   | .mov d src, s => (readSrc s src).map fun v => s.setReg d v
   | .store m r, s => s.store32 (s.ea m) (s.gpr r)
@@ -235,6 +245,8 @@ def exec : Instr → State → Option State
   | .mul r, s => some (execMul r s)
   | .movdquLoad d m, s => (s.load128 (s.ea m)).map fun v => s.setXmm d v
   | .movdquStore m r, s => s.store128 (s.ea m) (s.xmm r)
+  | .movqLoad d m, s => (s.load64 (s.ea m)).map fun v => s.setXmm d ((0 : BitVec 64) ++ v)
+  | .movqStore m r, s => s.store64 (s.ea m) ((s.xmm r).extractLsb' 0 64)
   | .xop op, s => some (op.exec s)
   -- Only the push and pop of a frame (`push`, `pop`).
   | .push _, _ | .pop .., _ | .alloc _, _ | .free _, _ => none
@@ -249,6 +261,7 @@ def addrs : Instr → State → List Addr
   | .store8 m _, s => [s.ea m]
   | .mul _, _ | .xop _, _ => []
   | .movdquLoad _ m, s | .movdquStore m _, s => [s.ea m]
+  | .movqLoad _ m, s | .movqStore m _, s => [s.ea m]
   | .push rs, s => (List.range rs.length).map fun i =>
     (s.gpr .esp - BitVec.ofNat 32 (4 * (i + 1))).setWidth 64
   | .pop _ k, s => (List.range k).map fun i =>
@@ -356,16 +369,19 @@ a frame also moves `esp`, as the push does): `mul` writes two, `eax` and
 def Instr.dst : Instr → Option Reg
   | .mov d _ | .alu _ d _ | .shift _ d _ | .bswap d | .movzx8 d _ | .pop d _ => some d
   | .store .. | .store8 .. | .push _ | .mul _ | .movdquLoad .. | .movdquStore .. | .xop _
+  | .movqLoad .. | .movqStore ..
   | .alloc _ | .free _ => none
 
 /-- Intel SDM Vol. 2's "CPUID Feature Flag" column: PSHUFB/PALIGNR need
-SSSE3, SHA256MSG1/MSG2/RNDS2 need SHA, AESENC/AESENCLAST/AESKEYGENASSIST
-need AES, and PCLMULQDQ needs PCLMULQDQ. The remaining legacy instructions
-are SSE2, already in this target's i686 baseline. -/
+SSSE3, SHA256MSG1/MSG2/RNDS2 and SHA1MSG1/MSG2/NEXTE/RNDS4 need SHA,
+AESENC/AESENCLAST/AESKEYGENASSIST need AES, and PCLMULQDQ needs PCLMULQDQ.
+The remaining legacy instructions (among them PADDQ, PSHUFLW, PSHUFHW and
+MOVQ) are SSE2, already in this target's i686 baseline. -/
 def Instr.requires : Instr → List String
   | .xop (.bin .pshufb ..) | .xop (.palignr ..) => ["ssse3"]
   | .xop (.bin .sha256msg1 ..) | .xop (.bin .sha256msg2 ..)
-    | .xop (.sha256rnds2 ..) => ["sha"]
+    | .xop (.sha256rnds2 ..) | .xop (.bin .sha1msg1 ..) | .xop (.bin .sha1msg2 ..)
+    | .xop (.bin .sha1nexte ..) | .xop (.sha1rnds4 ..) => ["sha"]
   | .xop (.bin .aesenc ..) | .xop (.bin .aesenclast ..)
     | .xop (.aeskeygenassist ..) => ["aes"]
   | .xop (.pclmulqdq ..) => ["pclmulqdq"]
