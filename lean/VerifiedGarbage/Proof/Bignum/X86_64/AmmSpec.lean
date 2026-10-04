@@ -50,6 +50,30 @@ theorem setOff {s : State} {r : Reg} {c : Nat} {rest : List Instr} {Q : State �
 theorem off_lim (j : Nat) : VG.Impl.Rsa.X86_64.CrtIfma.off j = 32 * (j % 5) + 8 * (j / 5) := by
   unfold VG.Impl.Rsa.X86_64.CrtIfma.off; omega
 
+theorem ofs_rebase' (B x : Addr) {o : Nat} (ho : o < 2 ^ 64) :
+    (o ≤ ofs B x ∧ ofs (off B o) x = ofs B x - o) ∨ (ofs B x < o ∧ 2 ^ 64 - o ≤ ofs (off B o) x) := by
+  simp only [ofs, off]
+  rw [Offset.toNat_sub_add x B ho]
+  have := (x - B).isLt
+  by_cases h : o ≤ (x - B).toNat
+  · left
+    refine ⟨h, ?_⟩
+    rw [show 2 ^ 64 - o + (x - B).toNat = (x - B).toNat - o + 2 ^ 64 by omega, Nat.add_mod_right,
+      Nat.mod_eq_of_lt (by omega)]
+  · right
+    refine ⟨by omega, ?_⟩
+    rw [Nat.mod_eq_of_lt (by omega)]
+    omega
+
+/-- A frame at `B + o` as one at `B`. -/
+theorem Out2.rebase {B : Addr} {o n : Nat} {m m' : Mem} (h : Out2 (off B o) 0 n m m') (hn : o + D + n ≤ 2 ^ 64) :
+    Out2 B o n m m' := fun x hx => h x fun p hp => by
+  have hD : D = 3872 := rfl
+  have hDp : D * p ≤ D := by rcases (by omega : p = 0 ∨ p = 1) with rfl | rfl <;> simp
+  rcases ofs_rebase' B x (o := o) (by omega) with ⟨h1, h2⟩ | ⟨h1, h2⟩
+  · rcases hx p hp with h3 | h3 <;> omega
+  · omega
+
 /-- `[o] := [a] [b] / 2¹⁰⁴⁰` for both primes. -/
 theorem amm_ok {s : State} {B : Addr} {o a b : Nat} {k : Nat → Nat}
     (hB : s.gpr .rbx = B) (hs : Scr s B (2 * D))
@@ -66,7 +90,7 @@ theorem amm_ok {s : State} {B : Addr} {o a b : Nat} {k : Nat → Nat}
       val52 s'.mem B (D * p + o) < 2 * val52 s.mem B (D * p + oM) ∧
       val52 s'.mem B (D * p + o) * 2 ^ (52 * 20) % val52 s.mem B (D * p + oM) =
         val52 s.mem B (D * p + a) * val52 s.mem B (D * p + b) % val52 s.mem B (D * p + oM)) ∧
-      Outside (off B o) 0 (D + 160) s.mem s'.mem ∧
+      Out2 B o 160 s.mem s'.mem ∧
       (∀ r, r ≠ .rax → r ≠ .rcx → r ≠ .rdx → r ≠ .rsi → r ≠ .r8 → r ≠ .r9 → r ≠ .r10 → r ≠ .r11 → r ≠ .r12 →
         s'.gpr r = s.gpr r) ∧
       s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.mxcsr = s.mxcsr := by
@@ -117,7 +141,7 @@ theorem amm_ok {s : State} {B : Addr} {o a b : Nat} {k : Nat → Nat}
       exact rdS _ n hn (by rw [show lim .r10 = D + 192 from rfl] at hd; omega)
   have hs₃ : Scr s₃ (off B o) (D + 160) := (hs.sub (by omega) (by omega)).congr wr₃
   refine WP.mono (ammCore_ok e u₃.self hs₃) fun s' ⟨hw, hdx, hsi, hf, hg, hrd, hwr, hx⟩ => ?_
-  refine ⟨fun p hp => ?_, by rw [← m₃]; exact hf, fun r h1 h2 h3 h4 h5 h6 h7 h8 h9 => ?_,
+  refine ⟨fun p hp => ?_, by rw [← m₃]; exact hf.rebase (by omega), fun r h1 h2 h3 h4 h5 h6 h7 h8 h9 => ?_,
     hrd.trans rd₃, hwr.trans wr₃, by rw [hx, u₃.mxcsr, u₂.mxcsr, u₁.mxcsr]⟩
   · have hl : ∀ j < 20, limb s'.mem B (D * p + o) j = carried (lm A M k Bl p 20) j := fun j hj => by
       have := hw p hp j hj

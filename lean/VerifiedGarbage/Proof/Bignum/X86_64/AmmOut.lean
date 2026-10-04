@@ -144,6 +144,31 @@ theorem read_stores (m : Mem) (B : Addr) (s : State) {p k t : Nat} (hp : p < 2) 
     obtain ⟨rfl, rfl⟩ := this
     rfl
 
+/-! ## Frames of both regions -/
+
+/-- `m'` agrees with `m` but on the bytes at offsets `[D p + o, D p + o + n)` of `B`, for `p < 2`. -/
+def Out2 (B : Addr) (o n : Nat) (m m' : Mem) : Prop :=
+  ∀ x, (∀ p < 2, ofs B x < D * p + o ∨ D * p + o + n ≤ ofs B x) → m' x = m x
+
+theorem Out2.refl (B : Addr) (o n : Nat) (m : Mem) : Out2 B o n m m := fun _ _ => rfl
+
+theorem Out2.trans {B : Addr} {o n : Nat} {m₁ m₂ m₃ : Mem} (h₁ : Out2 B o n m₁ m₂) (h₂ : Out2 B o n m₂ m₃) :
+    Out2 B o n m₁ m₃ := fun x hx => (h₂ x hx).trans (h₁ x hx)
+
+theorem Out2.of_outside {B : Addr} {o n p : Nat} {m m' : Mem} (hp : p < 2) (h : Outside B (D * p + o) n m m') :
+    Out2 B o n m m' := fun x hx => h x (hx p hp)
+
+/-- Writes of 32 bytes within the windows. -/
+theorem wrList_out2 (B : Addr) {o n : Nat} (hn : D + o + n ≤ 2 ^ 63) :
+    ∀ (l : List (Nat × BitVec 256)) (m : Mem), (∀ x ∈ l, ∃ p < 2, D * p + o ≤ x.1 ∧ x.1 + 32 ≤ D * p + o + n) →
+      Out2 B o n m (wrList m B l)
+  | [], m, _ => Out2.refl B o n m
+  | (e, v) :: rest, m, h => by
+    obtain ⟨p, hp, h1, h2⟩ := h (e, v) (List.mem_cons_self ..)
+    have hDp : D * p ≤ D := by rcases (by omega : p = 0 ∨ p = 1) with rfl | rfl <;> simp
+    exact (Out2.of_outside hp ((writeW256_outside m B v (by omega)).mono h1 (by omega))).trans
+      (wrList_out2 B hn rest _ fun x hx => h x (List.mem_cons_of_mem _ hx))
+
 /-! ## The carries -/
 
 open VG.Impl.Rsa.X86_64.CrtIfma (at_) in
@@ -215,7 +240,7 @@ structure CarryInv (B : Addr) (L : Nat → Nat → Nat) (m₀ : Mem) (s : State)
   rsi : s.gpr .rsi = BitVec.ofNat 64 (carryIn (L 1) j)
   words : ∀ p < 2, ∀ l < 20,
     word s.mem B (D * p + VG.Impl.Rsa.X86_64.CrtIfma.off l) = BitVec.ofNat 64 (if l < j then carried (L p) l else L p l)
-  frame : Outside B 0 (D + 160) m₀ s.mem
+  frame : Out2 B 0 160 m₀ s.mem
 
 theorem ea_at {s : State} {B : Addr} (h : s.gpr .r11 = B) (d : Nat) :
     s.ea (VG.Impl.Rsa.X86_64.CrtIfma.at_ .r11 d) = off B d := by
@@ -355,8 +380,9 @@ theorem limb_ok {B : Addr} {L : Nat → Nat → Nat} {m₀ : Mem} {s : State} {j
         · simp only [hlt, show l < j + 1 by omega, ite_true]
         · simp only [hlt, show ¬ l < j + 1 by omega, ite_false]
   · rw [u10.mem, m9, u8.mem, u7.mem, u6.mem, mem₅]
-    exact (h.frame.trans ((writeW_outside _ B _ (by omega)).mono (by omega) (by omega))).trans
-      ((writeW_outside _ B _ (by omega)).mono (by omega) (by omega))
+    exact (h.frame.trans (Out2.of_outside (p := 0) (by decide)
+      ((writeW_outside _ B _ (by omega)).mono (by omega) (by omega)))).trans
+      (Out2.of_outside (p := 1) (by decide) ((writeW_outside _ B _ (by omega)).mono (by omega) (by omega)))
   · intro r h1 h2 h3 h4
     rw [u10.other _ h4, congrFun g9, u8.other _ h2, u7.other _ h2, u6.other _ h4, u5.other _ h3, congrFun g4,
       u3.other _ h1, u2.other _ h1, u1.other _ h3]
@@ -414,6 +440,8 @@ theorem wrList_outside (B : Addr) {n : Nat} (hn : n ≤ 2 ^ 63) :
     exact ((writeW256_outside m B v (by omega)).mono (by omega) (by omega)).trans
       (wrList_outside B hn rest _ fun x hx => h x (List.mem_cons_of_mem _ hx))
 
+theorem accStores_win : ∀ x ∈ accStores, ∃ p < 2, D * p + 0 ≤ x.1 ∧ x.1 + 32 ≤ D * p + 0 + 160 := by decide
+
 theorem accStores_lt : ∀ x ∈ accStores, x.1 + 32 ≤ D + 160 := by decide
 
 /-- `ammCore` from the operands `a` (at `r8`), `b` (at `r9`) and the modulus `m`
@@ -426,7 +454,7 @@ theorem ammCore_ok {s : State} {B : Addr} {a m : Nat → Nat → Nat} {k : Nat �
         BitVec.ofNat 64 (carried (lm a m k bl p 20) l)) ∧
       s'.gpr .rdx = BitVec.ofNat 64 (carryIn (lm a m k bl 0 20) 20) ∧
       s'.gpr .rsi = BitVec.ofNat 64 (carryIn (lm a m k bl 1 20) 20) ∧
-      Outside B 0 (D + 160) s.mem s'.mem ∧
+      Out2 B 0 160 s.mem s'.mem ∧
       (∀ r, r ≠ .rax → r ≠ .rcx → r ≠ .rdx → r ≠ .rsi → r ≠ .r9 → r ≠ .r10 → r ≠ .r12 → s'.gpr r = s.gpr r) ∧
       s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.mxcsr = s.mxcsr := by
   have hD : D = 3872 := rfl
@@ -468,12 +496,12 @@ theorem ammCore_ok {s : State} {B : Addr} {a m : Nat → Nat → Nat} {k : Nat �
   refine ⟨fun p hp l hl => by rw [h.words p hp l hl]; simp only [hl, ite_true], h.rdx, h.rsi, ?_, fun r r1 r2 r3 r4 r5 r6 r7 => ?_,
     by rw [rd, RegUpd.rd_setReg, i₂.rd]; rfl, by rw [wr, RegUpd.wr_setReg, wr₂],
     by rw [x, RegUpd.mxcsr_setReg, x₂, k₁.mxcsr]; rfl⟩
-  · have o := wrList_outside B (n := D + 160) (by omega) (accStores.map fun x => (x.1, s₂.ymm x.2)) s₂.mem
+  · have o := wrList_out2 B (o := 0) (n := 160) (by omega) (accStores.map fun x => (x.1, s₂.ymm x.2)) s₂.mem
       fun x hx => by
         obtain ⟨y, hy, rfl⟩ := List.mem_map.1 hx
-        exact accStores_lt y hy
-    have hf : Outside B 0 (D + 160) (wrList s₂.mem B (accStores.map fun x => (x.1, s₂.ymm x.2))) s'.mem := h.frame
-    have o' : Outside B 0 (D + 160) s.mem (wrList s₂.mem B (accStores.map fun x => (x.1, s₂.ymm x.2))) :=
+        exact accStores_win y hy
+    have hf : Out2 B 0 160 (wrList s₂.mem B (accStores.map fun x => (x.1, s₂.ymm x.2))) s'.mem := h.frame
+    have o' : Out2 B 0 160 s.mem (wrList s₂.mem B (accStores.map fun x => (x.1, s₂.ymm x.2))) :=
       fun x hx => (o x hx).trans (congrFun m₂ x)
     exact o'.trans hf
   · rw [g r r1 r2 r3 r4, RegUpd.gpr_setReg_of_ne _ _ r7, g₂ r r1 r2 r5, g₁ r r1 r2, RegUpd.gpr_setReg_of_ne _ _ r6]
