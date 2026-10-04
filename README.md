@@ -116,7 +116,7 @@ yours to keep:
 
 <td>✅ SHA extensions</td>
 
-<td>✅ SHA extensions</td>
+<td>✅ SHA extensions; round constants and the state kept in registers across blocks</td>
 
 <td>✅</td>
 

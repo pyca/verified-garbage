@@ -3,3 +3,4 @@ family = "Hashes"
 specs = ["Sha1"]
 modules = ["src/hashes/sha1.rs"]
 asm = ["sha1"]
+optimized = { aarch64 = "round constants and the state kept in registers across blocks" }
