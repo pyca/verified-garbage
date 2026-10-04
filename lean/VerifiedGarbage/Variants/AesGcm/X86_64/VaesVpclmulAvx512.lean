@@ -1,4 +1,4 @@
-import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Loop
+import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Ok
 import VerifiedGarbage.Proof.AesGcm.X86_64.Callee
 
 /-!

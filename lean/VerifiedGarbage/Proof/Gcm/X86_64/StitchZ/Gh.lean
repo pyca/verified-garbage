@@ -12,7 +12,9 @@ their products to each lane's (`WP.zlanes` of `Vpclmul.ldacc_ok`, the SSE
 code of each lane). `fin_ok`: `StitchZ.fin` adds lanes 2 and 3 of the
 products to lanes 0 and 1 (`fold_ok`), reduces both and adds them into `Y`
 (`Vpclmul.reduce_lanes`, `combine_ok`). The four lanes' products, so added
-and reduced, are `GHASH` over the sixteen blocks (`finZ`).
+and reduced, are `GHASH` over the sixteen blocks for the powers the setup
+stores (`FinOk`), which needs the field: `StitchZ/Ok.lean` proves it
+(`finZ`).
 
 `GEnv`, `ghStep`, `QG` and `gq_ok` are `Stitch`'s, with four lanes, one
 batch per group and the reduction after round 5.
@@ -20,9 +22,9 @@ batch per group and the reduction after round 5.
 
 namespace VG.Proof.Gcm.X86_64.StitchZ
 
-open VG VG.X86_64 VG.Proof.Gcm.Poly
-open VG.Proof.Gcm.X86_64.Stitch (SPre nb nr kp pp cb dp dR pR bAddr blk ctb ciph sch hk y₀ ite_t ite_f zero_xor_b)
-open VG.Proof.Gcm.X86_64.Pclmul (Prod reduce φ_reduce prod)
+open VG VG.X86_64
+open VG.Proof.Gcm.X86_64.Stitch (SPre nb nr kp pp cb dp dR pR bAddr blk ctb ciph sch hk y₀ ite_t ite_f)
+open VG.Proof.Gcm.X86_64.Pclmul (Prod reduce prod)
 open VG.Impl.Gcm.X86_64.Pclmul (poly at_)
 open VG.Proof.Gcm.X86_64.Vpclmul (ldacc ldacc_ok reduce_lanes)
 open VG.Impl.Gcm.X86_64.Stitch (aregs)
@@ -30,7 +32,7 @@ open VG.Impl.Gcm.X86_64.StitchZ (ghLoad acc ord foldLanes fin gq)
 open VG.Proof.Aes.X86_64.AesNi (Keys)
 open VG.Proof.Gcm.X86_64.Pclmul (ea_at)
 open VG.Proof.Aes.X86_64.VaesZ (load512_lane)
-open VG.Spec.Gcm (Block blockAt mul)
+open VG.Spec.Gcm (Block blockAt ghashFrom)
 
 /-! ## A load -/
 
@@ -181,51 +183,11 @@ and 1, reduced and added. -/
 abbrev yNew (X : Nat → Block) (P : Nat → Nat → Block) (yl : Nat → Block) : Block :=
   reduce ((accN X P yl 0 4).xor (accN X P yl 2 4)) ^^^ reduce ((accN X P yl 1 4).xor (accN X P yl 3 4))
 
-theorem val_xor (p q : Prod) : (p.xor q).val = p.val + q.val := by
-  simp only [Prod.val, Prod.xor, φ_xor]; ring
-
-/-- Sixteen blocks, in `Q`, the products in the lanes and order of a group. -/
-theorem step16Z (H Y X₀ X₁ X₂ X₃ X₄ X₅ X₆ X₇ X₈ X₉ X₁₀ X₁₁ X₁₂ X₁₃ X₁₄ X₁₅ T₁ T₂ T₃ T₄ T₅ T₆ T₇ T₈ T₉ T₁₀ T₁₁ T₁₂ T₁₃ T₁₄ T₁₅ T₁₆ : Block)
-    (h₁ : x * φ T₁ = φ H) (h₂ : x * φ T₂ = φ H ^ 2) (h₃ : x * φ T₃ = φ H ^ 3) (h₄ : x * φ T₄ = φ H ^ 4) (h₅ : x * φ T₅ = φ H ^ 5) (h₆ : x * φ T₆ = φ H ^ 6) (h₇ : x * φ T₇ = φ H ^ 7) (h₈ : x * φ T₈ = φ H ^ 8) (h₉ : x * φ T₉ = φ H ^ 9) (h₁₀ : x * φ T₁₀ = φ H ^ 10) (h₁₁ : x * φ T₁₁ = φ H ^ 11) (h₁₂ : x * φ T₁₂ = φ H ^ 12) (h₁₃ : x * φ T₁₃ = φ H ^ 13) (h₁₄ : x * φ T₁₄ = φ H ^ 14) (h₁₅ : x * φ T₁₅ = φ H ^ 15) (h₁₆ : x * φ T₁₆ = φ H ^ 16) :
-    reduce (((((Prod.zero.acc X₄ T₁₂).acc X₈ T₈).acc X₁₂ T₄).acc (Y ^^^ X₀) T₁₆).xor
-        ((((Prod.zero.acc X₆ T₁₀).acc X₁₀ T₆).acc X₁₄ T₂).acc X₂ T₁₄)) ^^^
-      reduce (((((Prod.zero.acc X₅ T₁₁).acc X₉ T₇).acc X₁₃ T₃).acc X₁ T₁₅).xor
-        ((((Prod.zero.acc X₇ T₉).acc X₁₁ T₅).acc X₁₅ T₁).acc X₃ T₁₃)) =
-      mul (mul (mul (mul (mul (mul (mul (mul (mul (mul (mul (mul (mul (mul (mul (mul ((Y ^^^ X₀)) H ^^^ X₁) H ^^^ X₂) H ^^^ X₃) H ^^^ X₄) H ^^^ X₅) H ^^^ X₆) H ^^^ X₇) H ^^^ X₈) H ^^^ X₉) H ^^^ X₁₀) H ^^^ X₁₁) H ^^^ X₁₂) H ^^^ X₁₃) H ^^^ X₁₄) H ^^^ X₁₅) H := by
-  apply φ_inj
-  simp only [φ_xor, φ_reduce, val_xor, Prod.val_acc, Prod.val_zero, φ_mul]
-  linear_combination (φ Y + φ X₀) * h₁₆ + φ X₁ * h₁₅ + φ X₂ * h₁₄ + φ X₃ * h₁₃ + φ X₄ * h₁₂ + φ X₅ * h₁₁ + φ X₆ * h₁₀ + φ X₇ * h₉ + φ X₈ * h₈ + φ X₉ * h₇ + φ X₁₀ * h₆ + φ X₁₁ * h₅ + φ X₁₂ * h₄ + φ X₁₃ * h₃ + φ X₁₄ * h₂ + φ X₁₅ * h₁
-
-/-- The four lanes' products of a group, added and reduced: `GHASH` over the
-sixteen blocks. -/
-theorem finZ (H : Block) (X : Nat → Block) (P : Nat → Nat → Block) (yl : Nat → Block)
-    (hy : ∀ l, 1 ≤ l → l < 4 → yl l = 0)
-    (hP : ∀ k < 4, ∀ l < 4, x * φ (P k l) = φ H ^ (16 - 4 * k - l)) :
-    yNew X P yl =
-      mul (mul (mul (mul (mul (mul (mul (mul (mul (mul (mul (mul (mul (mul (mul (mul ((yl 0 ^^^ X 0)) H ^^^ X 1) H ^^^ X 2) H ^^^ X 3) H ^^^ X 4) H ^^^ X 5) H ^^^ X 6) H ^^^ X 7) H ^^^ X 8) H ^^^ X 9) H ^^^ X 10) H ^^^ X 11) H ^^^ X 12) H ^^^ X 13) H ^^^ X 14) H ^^^ X 15) H := by
-  have h₁ := hP 3 (by decide) 3 (by decide)
-  rw [show 16 - 4 * 3 - 3 = 1 from rfl, pow_one] at h₁
-  have h₂ := hP 3 (by decide) 2 (by decide)
-  have h₃ := hP 3 (by decide) 1 (by decide)
-  have h₄ := hP 3 (by decide) 0 (by decide)
-  have h₅ := hP 2 (by decide) 3 (by decide)
-  have h₆ := hP 2 (by decide) 2 (by decide)
-  have h₇ := hP 2 (by decide) 1 (by decide)
-  have h₈ := hP 2 (by decide) 0 (by decide)
-  have h₉ := hP 1 (by decide) 3 (by decide)
-  have h₁₀ := hP 1 (by decide) 2 (by decide)
-  have h₁₁ := hP 1 (by decide) 1 (by decide)
-  have h₁₂ := hP 1 (by decide) 0 (by decide)
-  have h₁₃ := hP 0 (by decide) 3 (by decide)
-  have h₁₄ := hP 0 (by decide) 2 (by decide)
-  have h₁₅ := hP 0 (by decide) 1 (by decide)
-  have h₁₆ := hP 0 (by decide) 0 (by decide)
-  simp only [Nat.reduceMul, Nat.reduceSub] at h₂ h₃ h₄ h₅ h₆ h₇ h₈ h₉ h₁₀ h₁₁ h₁₂ h₁₃ h₁₄ h₁₅ h₁₆
-  simp only [yNew, accN, List.range_succ, List.range_zero, List.nil_append, List.foldl_append, List.foldl_cons,
-    List.foldl_nil, ord, inp, hy 1 (by decide) (by decide), hy 2 (by decide) (by decide),
-    hy 3 (by decide) (by decide), ↓reduceIte, Nat.reduceEqDiff, Nat.reduceMul, Nat.reduceAdd, Nat.mul_zero,
-    Nat.zero_add, Nat.add_zero, zero_xor_b]
-  exact step16Z _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ h₁ h₂ h₃ h₄ h₅ h₆ h₇ h₈ h₉ h₁₀ h₁₁ h₁₂ h₁₃ h₁₄ h₁₅ h₁₆
+/-- What the four lanes' products of a group add up to, for the powers `P`
+(`P k l` in lane `l` of the `k`-th load): `GHASH` over its sixteen blocks, from
+`Y` in lane 0 (`StitchZ/Ok.lean` proves it of the powers the setup stores). -/
+def FinOk (H : Block) (P : Nat → Nat → Block) : Prop :=
+  ∀ X yl, (∀ l, 1 ≤ l → l < 4 → yl l = 0) → yNew X P yl = ghashFrom H (yl 0) ((List.range 16).map X)
 
 /-! ## Hashing a group between the rounds -/
 
