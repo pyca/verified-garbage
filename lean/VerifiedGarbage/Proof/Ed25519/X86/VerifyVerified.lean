@@ -216,7 +216,9 @@ theorem pointTableWrite_ct {s₀ t₀ : State} (h : VerifyCTFacts s₀ t₀) (o 
   all_goals exact fun _ _ hp => regsTaint_agree (fun r hr => (List.mem_singleton.mp hr) ▸
     (hp.1.edi.trans ((h.args 3 (by decide)).trans hp.2.edi.symm)))
 
-theorem verifyStoreR_ct {s₀ t₀ : State} (h : VerifyCTFacts s₀ t₀) (a r : Spec.Ed25519.Point) :
+theorem verifyStoreR_ct {s₀ t₀ : State} (h : VerifyCTFacts s₀ t₀) (a r : Spec.Ed25519.Point)
+    {Aa Ra : Edwards.EPoint VG.Proof.Ed25519.dZ} (hA : VG.Proof.Ed25519.Rep a Aa)
+    (hR : VG.Proof.Ed25519.Rep r Ra) :
     RelCT isa (fun s t => (DecodeRCTPre s₀ a s ∧ point (env s.mem (arg s₀ 3)) 0 1 2 3 = r) ∧
       (DecodeRCTPre t₀ a t ∧ point (env t.mem (arg s₀ 3)) 0 1 2 3 = r))
       (.seq (.block (pointTableWrite 7808)) verifyEquationPoints) (fun _ _ => True) := by
@@ -233,9 +235,10 @@ theorem verifyStoreR_ct {s₀ t₀ : State} (h : VerifyCTFacts s₀ t₀) (a r :
     exact (tablePoint_frame hu.scratch.fit ft (by decide) (by decide) (Or.inl (by decide))).trans hs.2
   have hh := hc.wp (fun s t hp => ⟨hw s₀ s (verify_pre h.left) hp.1.1 hp.1.2,
     hw t₀ t (verify_pre h.right) hp.2.1 ((h.args 3 (by decide)) ▸ hp.2.2)⟩)
-  exact VG.RelCT.seq (hh.mono (fun _ _ h => h) (fun _ _ h => h.2)) (verifyEquationPoints_ct h a r)
+  exact VG.RelCT.seq (hh.mono (fun _ _ h => h) (fun _ _ h => h.2)) (verifyEquationPoints_ct h a r hA hR)
 
-theorem verifyDecodeR_ct {s₀ t₀ : State} (h : VerifyCTFacts s₀ t₀) (a : Spec.Ed25519.Point) :
+theorem verifyDecodeR_ct {s₀ t₀ : State} (h : VerifyCTFacts s₀ t₀) (a : Spec.Ed25519.Point)
+    {Aa : Edwards.EPoint VG.Proof.Ed25519.dZ} (hA : VG.Proof.Ed25519.Rep a Aa) :
     RelCT isa (fun s t => DecodeRCTPre s₀ a s ∧ DecodeRCTPre t₀ a t) verifyDecodeR (fun _ _ => True) := by
   have ps := verify_pre h.left
   have pt := verify_pre h.right
@@ -263,10 +266,12 @@ theorem verifyDecodeR_ct {s₀ t₀ : State} (h : VerifyCTFacts s₀ t₀) (a : 
     exact ⟨hp.1.test k, by rw [k.mem]; exact hp.2⟩
   · intro s t k hp
     exact ⟨hp.1.test k, by rw [k.mem]; exact hp.2⟩
-  · intro r _
-    exact verifyStoreR_ct h a r
+  · intro r hr
+    obtain ⟨Ra, hRa⟩ := VG.Proof.Ed25519.decodePoint_rep hr
+    exact verifyStoreR_ct h a r hA hRa
 
-theorem verifyStoreA_ct {s₀ t₀ : State} (h : VerifyCTFacts s₀ t₀) (a : Spec.Ed25519.Point) :
+theorem verifyStoreA_ct {s₀ t₀ : State} (h : VerifyCTFacts s₀ t₀) (a : Spec.Ed25519.Point)
+    {Aa : Edwards.EPoint VG.Proof.Ed25519.dZ} (hA : VG.Proof.Ed25519.Rep a Aa) :
     RelCT isa (fun s t => (Saved s₀ (arg s₀ 3) s ∧ point (env s.mem (arg s₀ 3)) 0 1 2 3 = a) ∧
       (Saved t₀ (arg t₀ 3) t ∧ point (env t.mem (arg s₀ 3)) 0 1 2 3 = a))
       (.seq (.block (pointTableWrite 7680)) verifyDecodeR) (fun _ _ => True) := by
@@ -282,7 +287,7 @@ theorem verifyStoreA_ct {s₀ t₀ : State} (h : VerifyCTFacts s₀ t₀) (a : S
     exact ⟨hs.of_offset hu.scratch.fit kt ft (by decide) (by decide) (by decide), pt.trans ha⟩
   have hh := hc.wp (fun s t hp => ⟨hw s₀ s (verify_pre h.left) hp.1.1 hp.1.2,
     hw t₀ t (verify_pre h.right) hp.2.1 ((h.args 3 (by decide)) ▸ hp.2.2)⟩)
-  exact VG.RelCT.seq (hh.mono (fun _ _ h => h) (fun _ _ h => h.2)) (verifyDecodeR_ct h a)
+  exact VG.RelCT.seq (hh.mono (fun _ _ h => h) (fun _ _ h => h.2)) (verifyDecodeR_ct h a hA)
 
 theorem verifyDecodeA_ct {s₀ t₀ : State} (h : VerifyCTFacts s₀ t₀) :
     RelCT isa (VerifySaved s₀ t₀) verifyDecodeA (fun _ _ => True) := by
@@ -302,7 +307,9 @@ theorem verifyDecodeA_ct {s₀ t₀ : State} (h : VerifyCTFacts s₀ t₀) :
       (h.args 3 (by decide)).symm h.inputA.symm) ht.2.2
   · intro s t k hp; exact hp.test k
   · intro s t k hp; exact hp.test k
-  · intro a _; exact verifyStoreA_ct h a
+  · intro a ha
+    obtain ⟨Aa, hAa⟩ := VG.Proof.Ed25519.decodePoint_rep ha
+    exact verifyStoreA_ct h a hAa
 
 end VG.Proof.Ed25519.X86
 end

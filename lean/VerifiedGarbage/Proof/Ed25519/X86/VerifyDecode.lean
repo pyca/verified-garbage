@@ -1,6 +1,7 @@
 import VerifiedGarbage.Proof.Ed25519.X86.VerifyDecodeInput
 import VerifiedGarbage.Proof.Ed25519.X86.VerifyPoints
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Ed25519.Group.Decode
 
 namespace VG.Proof.Ed25519.X86
 open VG VG.X86 VG.Impl.Ed25519.X86
@@ -15,7 +16,8 @@ def decodeRResult (s : State) (a : Spec.Ed25519.Point) : Bool :=
 def decodeResult (s : State) : Bool :=
   match inputPoint s 0 with | none => false | some a => decodeRResult s a
 
-theorem verifyDecodeR_ok {s₀ s : State} (hp : VerifyPre s₀) (hs : Saved s₀ (arg s₀ 3) s) :
+theorem verifyDecodeR_ok {s₀ s : State} (hp : VerifyPre s₀) (hs : Saved s₀ (arg s₀ 3) s)
+    (hA : ∃ Aa, Rep (tablePoint s.mem (arg s₀ 3) 7680) Aa) :
     WP isa verifyDecodeR s fun t => Saved s₀ (arg s₀ 3) t ∧
       t.gpr .eax = signWord (decodeRResult s₀ (tablePoint s.mem (arg s₀ 3) 7680)) := by
   apply WP.assoc
@@ -33,10 +35,13 @@ theorem verifyDecodeR_ok {s₀ s : State} (hp : VerifyPre s₀) (hs : Saved s₀
     refine WP.seq (WP.mono (pointTableWrite_ok (hb.ctx hp.scratch.fit hp.scratch.wr) 7808 (by decide) (by decide))
       fun c ⟨kc, fc, pc⟩ => ?_)
     have hc := hb.of_offset hp.scratch.fit kc fc (by decide) (by decide) (by decide)
-    refine WP.mono (verifyEquationPoints_ok hp hc) fun t ⟨ht, vt⟩ => ?_
     have ca : tablePoint c.mem (arg s₀ 3) 7680 = tablePoint s.mem (arg s₀ 3) 7680 := by
       rw [tablePoint_frame hp.scratch.fit fc (by decide) (by decide) (Or.inl (by decide)), mb,
         tablePoint_frame hp.scratch.fit fa (by decide) (by decide) (Or.inr (by decide))]
+    obtain ⟨Aa, hAa⟩ := hA
+    obtain ⟨Ra, hRa⟩ := decodePoint_rep hr
+    refine WP.mono (verifyEquationPoints_ok hp hc (by rw [ca]; exact hAa) (by rw [pc, pb]; exact hRa))
+      fun t ⟨ht, vt⟩ => ?_
     refine ⟨ht, ?_⟩
     rw [vt, pc, pb, ca]
     simp only [decodeRResult, hr, equationResult]
@@ -57,7 +62,7 @@ theorem verifyDecodeA_ok {s₀ s : State} (hp : VerifyPre s₀) (hs : Saved s₀
     refine WP.seq (WP.mono (pointTableWrite_ok (hb.ctx hp.scratch.fit hp.scratch.wr) 7680 (by decide) (by decide))
       fun c ⟨kc, fc, pc⟩ => ?_)
     have hc := hb.of_offset hp.scratch.fit kc fc (by decide) (by decide) (by decide)
-    refine WP.mono (verifyDecodeR_ok hp hc) fun t ⟨ht, vt⟩ => ?_
+    refine WP.mono (verifyDecodeR_ok hp hc (by rw [pc, pb]; exact decodePoint_rep hr)) fun t ⟨ht, vt⟩ => ?_
     exact ⟨ht, by rw [vt, pc, pb]; simp only [decodeResult, hr]⟩
 
 end VG.Proof.Ed25519.X86
