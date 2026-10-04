@@ -1,5 +1,5 @@
 import VerifiedGarbage.Proof.Sha3.AArch64.Variant
-import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.VectorPermute
+import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Unrolled
 import VerifiedGarbage.Proof.Framework.AArch64.VectorTaint
 
 namespace VG.Proof.Sha3.AArch64.Scalar.VectorSlots
@@ -8,7 +8,7 @@ open VG VG.AArch64
 
 def callee : Impl.Sha3.AArch64.Callee where
   name := "vg_keccak_f1600"
-  code := Impl.Sha3.AArch64.Scalar.vectorPermute
+  code := Impl.Sha3.AArch64.Scalar.unrolledPermute
   suffix := ""
   absorbOverride := none
 
@@ -131,8 +131,8 @@ theorem mldsaSignCommitTaint : ∀ p : Spec.MlDsa.Params,
 def backend : Permutation where
   callee := callee
   features := []
-  ok := VG.Proof.Sha3.AArch64.Scalar.vector_permute_correct
-  noFrames := VG.Proof.Sha3.AArch64.Scalar.vector_permute_noFrames
+  ok := VG.Proof.Sha3.AArch64.Scalar.unrolled_permute_correct
+  noFrames := VG.Proof.Sha3.AArch64.Scalar.unrolled_permute_noFrames
   absorbOverrideOk := by intro code h; cases h
   absorbOverrideDepth := by intro code h; cases h
   absorbTaint := absorbTaint

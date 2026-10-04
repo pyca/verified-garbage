@@ -164,7 +164,7 @@ yours to keep:
 
 <td>✅ lane complementing</td>
 
-<td>✅ SHA extensions</td>
+<td>✅ SHA extensions; rounds unrolled, round constants as immediates</td>
 
 <td>✅</td>
 
