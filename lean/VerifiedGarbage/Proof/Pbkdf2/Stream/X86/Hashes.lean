@@ -3,8 +3,6 @@ import VerifiedGarbage.Proof.Hmac.Generic.Common
 import VerifiedGarbage.Proof.Sha512.X86.Stream.Init
 import VerifiedGarbage.Proof.Sha512.X86.Stream.Update
 import VerifiedGarbage.Proof.Sha512.X86.Stream.Finalize
-import VerifiedGarbage.Proof.Sha1.X86.Stream.Init
-import VerifiedGarbage.Proof.Sha1.X86.Stream.Md
 import VerifiedGarbage.Proof.Md5.X86.Stream.Init
 import VerifiedGarbage.Proof.Md5.X86.Stream.Md
 import VerifiedGarbage.Proof.Framework.TaintBatch
@@ -12,21 +10,21 @@ import VerifiedGarbage.Proof.Framework.TaintBatch
 /-!
 # HMAC over any streaming hash function on x86 (32-bit): the hash functions
 
-`HashOK` for SHA-1, MD5 and the SHA-512 family, from their own proofs, as on
+`HashOK` for MD5 and the SHA-512 family, from their own proofs, as on
 the other targets (`Proof/Pbkdf2/Stream/Arm/Hashes.lean`). Their contracts are
 `initK`, `updK` and `finK` at their sizes, but for the SHA-512 family's
 `update` and `finalize`, which hold from any initial hash value, and whose
 `finalize` only reads its arguments (`finKr`). Another hash function with
 streaming functions verified on x86 is one more `HashOK` here, and a
-registration file for each of its functions. SHA-256's, for each of its
-backends, are in `Sha256.lean`.
+registration file for each of its functions. SHA-256's and SHA-1's, for
+each of their backends, are in `Sha256.lean` and `Sha1.lean`.
 -/
 
 namespace VG.Proof.Pbkdf2.Stream.X86
 
 open VG.X86
 open VG.Impl.Pbkdf2.Stream.X86 (Hash)
-open VG.Proof.Hmac.Generic.Common (sha1_repr md5_repr sha512_repr finalHash_length)
+open VG.Proof.Hmac.Generic.Common (md5_repr sha512_repr finalHash_length)
 
 /-- No instruction of `c` writes `esp`, from a check that runs in the kernel. -/
 theorem nosp_of {c : Prog isa} (h : c.allInstrs (fun i => !Taint.clobbers i .esp) = true) : NoSp c :=
@@ -71,46 +69,6 @@ theorem finK_of_finKr {c : Prog isa} {S Wb F D : Nat} {R : Mem → Addr → List
     · exact ⟨_, List.mem_cons_self, 0, by simp, by simp⟩
     · exact ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, 0, by simp, by simp⟩
     · exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_of_mem _ List.mem_cons_self), 0, by simp, by simp⟩
-
-/-! ## SHA-1 -/
-
-def sha1H : Hash := ⟨64, 84, 20, 20, 20, "vg_sha1_init", Impl.Sha1.X86.Stream.init,
-  "vg_sha1_update_scratch", Impl.Sha1.X86.Stream.update, "vg_sha1_finalize_scratch", Impl.Sha1.X86.Stream.finalize⟩
-
-def sha1OK : HashOK sha1H := by
-  refine {
-    SH := Spec.Hmac.sha1S
-    Wb := 160
-    hS := rfl
-    hD := rfl
-    hB := rfl
-    hDF := by decide
-    hF := by decide
-    hD0 := by decide
-    hS0 := by decide
-    hSB := by decide
-    hB0 := by decide
-    hBB := by decide
-    hWb := by decide
-    hW := by decide
-    repr := sha1_repr
-    init := Proof.Sha1.X86.Stream.init_verified
-    upd := Proof.Sha1.X86.Stream.Update.update_verified
-    fin := Proof.Sha1.X86.Stream.Finalize.finalize_verified.of_implies
-      { pre := fun _ h => h
-        post := fun s s' _ h m hr _ hc => by
-          show List.take 20 (Spec.Sha1.bytesAt s'.mem _ 20) = _
-          rw [List.take_of_length_le (by simp [Spec.Sha1.bytesAt])]
-          exact h m hr hc
-        pub := fun _ _ _ _ h => h
-        sat := Proof.Sha1.X86.Stream.Finalize.finalize_verified.2.2 }
-    initSp := nosp_of ?_
-    updSp := nosp_of ?_
-    finSp := nosp_of ?_
-    initSU := ?_
-    updSU := ?_
-    finSU := ?_ }
-  taint_decide_all
 
 /-! ## MD5 -/
 

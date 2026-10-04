@@ -44,12 +44,6 @@ def sha256OKF (v : Backend) : FnsOK v.F where
   hBS := show 64 ≤ 96 by decide
   fits := show 20 + 2 * 32 + 32 ≤ 4 * 96 by decide
 
-/-- `F` without the names and code of the functions it calls: the code
-between the calls depends on nothing else. -/
-def shapeOf (F : Fns) : Fns :=
-  ⟨⟨F.H.B, F.H.S, F.H.D, F.H.F, F.H.W, "", .block [], "", .block [], "", .block []⟩, F.W, "", .block [], "",
-    .block [], "", .block []⟩
-
 /-- The sizes of `Backend.F`, which are all the taint checks depend on:
 `shapeOf` of every backend's `Backend.F`, written out, so that the kernel
 reduces each side to it field by field rather than comparing the backends'
@@ -79,10 +73,6 @@ theorem sha256Shape_checks : Checks sha256Shape := by
     tail := ⟨?_, ?_⟩
     restore := ⟨?_, ?_⟩ }
   taint_decide_all
-
-theorem checks_of_shape {F : Fns} (h : Checks (shapeOf F)) : Checks F :=
-  ⟨h.pro, h.cmp, h.hk1, h.hk3, h.hk5, h.hk7, h.short, h.su1, h.su3, h.su4, h.init, h.b1, h.b2, h.b4, h.b6, h.b7,
-    h.tail, h.restore⟩
 
 theorem sha256_checks (v : Backend) : Checks v.F := checks_of_shape (F := v.F) sha256Shape_checks
 

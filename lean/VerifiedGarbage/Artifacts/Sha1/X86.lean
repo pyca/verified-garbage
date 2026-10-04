@@ -1,56 +1,23 @@
 import VerifiedGarbage.TCB.X86.Target
 import VerifiedGarbage.Proof.Sha1.X86.Shared
 
-/-! # SHA-1 (FIPS 180-4) on x86 -/
+/-!
+# SHA-1 (FIPS 180-4) on x86
+
+`init`. The compression function, and the streaming `update` and `finalize`
+made with it, are registered for each of its implementations
+(`Variants/Sha1/X86/`, `Generic/Sha1/X86/Stream.lean`).
+-/
 
 namespace VG.Artifacts.Sha1.X86
 
 def artifacts : List Artifact := [
-  { Spec.Sha1.compressApi with
-    target := X86.target
-    doc := Spec.Sha1.compressApi.doc
-    code := Impl.Sha1.X86.compress
-    contract := Spec.Sha1.compressContract X86.abi
-    verified := Proof.Sha1.X86.Shared.compress
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
   { Spec.Sha1.initApi with
     target := X86.target
     doc := Spec.Sha1.initApi.doc
     code := Impl.Sha1.X86.Stream.init
     contract := Spec.Sha1.initContract X86.abi
     verified := Proof.Sha1.X86.Shared.init
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { Spec.Sha1.updateApi with
-    target := X86.target
-    doc := Spec.Sha1.updateApi.doc
-    code := Impl.StackScratch.X86.withStackScratch 188 5 Impl.Sha1.X86.Stream.update
-    contract := Spec.Sha1.updateContract X86.abi (20 + 188)
-    stack := 20 + 188
-    verified := Proof.Sha1.X86.Shared.update
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { Spec.Sha1.finalizeApi with
-    target := X86.target
-    doc := Spec.Sha1.finalizeApi.doc
-    code := Impl.StackScratch.X86.withStackScratch 184 4 Impl.Sha1.X86.Stream.finalize
-    contract := Spec.Sha1.finalizeContract X86.abi (20 + 184)
-    stack := 20 + 184
-    verified := Proof.Sha1.X86.Shared.finalize
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { Spec.Sha1.updateScratchApi with
-    target := X86.target
-    doc := Spec.Sha1.updateScratchApi.doc
-    code := Impl.Sha1.X86.Stream.update
-    contract := Spec.Sha1.updateScratchContract X86.abi 20
-    stack := 20
-    verified := Proof.Sha1.X86.Shared.updateScratch
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { Spec.Sha1.finalizeScratchApi with
-    target := X86.target
-    doc := Spec.Sha1.finalizeScratchApi.doc
-    code := Impl.Sha1.X86.Stream.finalize
-    contract := Spec.Sha1.finalizeScratchContract X86.abi 20
-    stack := 20
-    verified := Proof.Sha1.X86.Shared.finalizeScratch
     spSafe := Code.all_of_allInstrs (by lit_decide) }]
 
 end VG.Artifacts.Sha1.X86

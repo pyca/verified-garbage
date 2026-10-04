@@ -164,63 +164,6 @@ theorem md5_initImp : (initW Spec.Hmac.md5S 48).Implies (Spec.Hmac.md5I.initScra
 theorem md5_init : Verified X86.target md5M.hmacInit (Spec.Hmac.md5I.initScratchContract X86.abi 48) :=
   (HmacInit.verifiedW md5Ok md5_initChecks (by decide) md5_initImp.sat_left).of_implies md5_initImp
 
-/-! ## SHA-1 -/
-
-theorem sha1_iterChecks : Iterate.Checks sha1M := by
-  refine {
-    pro := ⟨?_, ?_⟩
-    load := ⟨?_, ?_⟩
-    mid := ⟨?_, ?_⟩
-    tail := ⟨?_, ?_⟩
-    restore := ⟨?_, ?_⟩ }
-  taint_decide_all
-
-theorem sha1_finChecks : HmacFin.Checks sha1M := by
-  refine {
-    pro := ⟨?_, ?_⟩
-    fin1 := ⟨?_, ?_⟩
-    mid := ⟨?_, ?_⟩
-    out := ⟨?_, ?_⟩ }
-  taint_decide_all
-
-theorem sha1_iterImp : (iterW Spec.Hmac.sha1S 56).Implies (Spec.Hmac.sha1I.iterateContract X86.abi 48) := by
-  obtain ⟨a0, a1, a2, a3, a4, e, esp⟩ := iterSat_args 84 20 56
-  sig_implies [Spec.Hmac.Instance.iterateContract, Spec.Pbkdf2.iterateContract, Spec.Pbkdf2.iterateSig,
-    Spec.Hmac.sha1I, Spec.Hmac.sha1S, Spec.Hmac.sha1, iterW, iterG, X86.abi, X86.argSlots, X86.argVal,
-    X86.argBytes]
-    [a0, a1, a2, a3, a4, e, esp, iterSat] using iterSat 84 20 56
-
-theorem sha1_finImp : (finW Spec.Hmac.sha1S 56).Implies (Spec.Hmac.sha1I.finalizeScratchContract X86.abi 48) := by
-  obtain ⟨a0, a1, a2, a3, a4, a5, e, esp⟩ := finSat_args 84 20 56
-  sig_implies [Spec.Hmac.Instance.finalizeScratchContract, Spec.Hmac.finalizeScratchContract, Spec.Hmac.finalizeScratchSig, Spec.Hmac.finalizePost,
-    Spec.Hmac.sha1I, Spec.Hmac.sha1S, Spec.Hmac.sha1, finW, finG, countF, X86.abi, X86.argSlots,
-    X86.argVal, X86.argBytes]
-    [a0, a1, a2, a3, a4, a5, e, esp, finSat] using finSat 84 20 56
-
-theorem sha1_iterate : Verified X86.target sha1M.iterate (Spec.Hmac.sha1I.iterateContract X86.abi 48) :=
-  (Iterate.verifiedW sha1Ok sha1_iterChecks (by decide) sha1_iterImp.sat_left).of_implies sha1_iterImp
-
-theorem sha1_finalize : Verified X86.target sha1M.hmacFin (Spec.Hmac.sha1I.finalizeScratchContract X86.abi 48) :=
-  (HmacFin.verifiedW sha1Ok sha1_finChecks (by decide) sha1_finImp.sat_left).of_implies sha1_finImp
-
-theorem sha1_initChecks : HmacInit.Checks sha1M := by
-  refine {
-    pro := ⟨?_, ?_⟩
-    blocks := ⟨?_, ?_⟩
-    toOuter := ⟨?_, ?_⟩
-    restore := ⟨?_, ?_⟩ }
-  taint_decide_all
-
-theorem sha1_initImp : (initW Spec.Hmac.sha1S 56).Implies (Spec.Hmac.sha1I.initScratchContract X86.abi 48) := by
-  obtain ⟨a0, a1, a2, a3, a4, e, esp⟩ := initSat_args 84 56
-  sig_implies [Spec.Hmac.Instance.initScratchContract, Spec.Hmac.initScratchContract, Spec.Hmac.initScratchSig, Spec.Hmac.initPre, Spec.Hmac.initPost,
-    Spec.Hmac.sha1I, Spec.Hmac.sha1S, Spec.Hmac.sha1, initW, initG, X86.abi, X86.argSlots, X86.argVal,
-    X86.argBytes]
-    [a0, a1, a2, a3, a4, e, esp, initSat] using initSat 84 56
-
-theorem sha1_init : Verified X86.target sha1M.hmacInit (Spec.Hmac.sha1I.initScratchContract X86.abi 48) :=
-  (HmacInit.verifiedW sha1Ok sha1_initChecks (by decide) sha1_initImp.sat_left).of_implies sha1_initImp
-
 /-! ## SHA-384 -/
 
 theorem sha384_iterChecks : Iterate.Checks sha384M := by
@@ -448,5 +391,39 @@ theorem sha512_256_initImp : (initW Spec.Hmac.sha512_256S 234).Implies (Spec.Hma
 
 theorem sha512_256_init : Verified X86.target sha512_256M.hmacInit (Spec.Hmac.sha512_256I.initScratchContract X86.abi 48) :=
   (HmacInit.verifiedW sha512_256Ok sha512_256_initChecks (by decide) sha512_256_initImp.sat_left).of_implies sha512_256_initImp
+
+end VG.Proof.Pbkdf2.Md.X86.Instances
+
+/-! ## Hash functions with a backend for each implementation of their compression function
+
+Their code differs between backends only in the functions it calls, so its
+taint checks are evaluated once, on the code without them (`shapeOf`), for
+every backend (`Sha256.lean`, `Sha1.lean`). -/
+
+namespace VG.Proof.Pbkdf2.Md.X86
+
+open VG.Impl.Pbkdf2.Md.X86 (Hash)
+
+/-- `H` without the names and code of the functions it calls: the code
+between the calls depends on nothing else. -/
+def shapeOf (H : Hash) : Hash :=
+  ⟨⟨H.st.B, H.st.S, H.st.D, H.st.F, H.st.W, "", .block [], "", .block [], "", .block []⟩, H.N, H.L, H.be, H.so,
+    "", .block [], H.out⟩
+
+end VG.Proof.Pbkdf2.Md.X86
+
+namespace VG.Proof.Pbkdf2.Md.X86.Instances
+
+open VG.Proof.Pbkdf2.Md.X86
+open VG.Impl.Pbkdf2.Md.X86 (Hash)
+
+theorem iterChecks_of_shape {H : Hash} (h : Iterate.Checks (shapeOf H)) : Iterate.Checks H :=
+  ⟨h.pro, h.load, h.mid, h.tail, h.restore⟩
+
+theorem initChecks_of_shape {H : Hash} (h : HmacInit.Checks (shapeOf H)) : HmacInit.Checks H :=
+  ⟨h.pro, h.blocks, h.toOuter, h.restore⟩
+
+theorem finChecks_of_shape {H : Hash} (h : HmacFin.Checks (shapeOf H)) : HmacFin.Checks H :=
+  ⟨h.pro, h.fin1, h.mid, h.out⟩
 
 end VG.Proof.Pbkdf2.Md.X86.Instances

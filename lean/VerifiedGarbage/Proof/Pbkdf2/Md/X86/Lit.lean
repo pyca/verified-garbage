@@ -16,9 +16,6 @@ namespace VG.Proof.Pbkdf2.Md.X86
 materialize_code md5MInit := md5M.hmacInit
 materialize_code md5MFinalize := md5M.hmacFin
 materialize_code md5MIterate := md5M.iterate
-materialize_code sha1MInit := sha1M.hmacInit
-materialize_code sha1MFinalize := sha1M.hmacFin
-materialize_code sha1MIterate := sha1M.iterate
 materialize_code sha384MInit := sha384M.hmacInit
 materialize_code sha384MFinalize := sha384M.hmacFin
 materialize_code sha384MIterate := sha384M.iterate
