@@ -59,6 +59,9 @@ def Instr.asm : Instr → List String
   | .mtlr r => [s!"mtlr {r.name}"]
   | .push r => ["stdu %r1, -48(%r1)", s!"std {r.name}, 32(%r1)"]
   | .pop r => [s!"ld {r.name}, 32(%r1)", "addi %r1, %r1, 48"]
+  | .alloc bytes => [s!"stdu %r1, -{bytes}(%r1)"]
+  | .free bytes => [s!"addi %r1, %r1, {bytes}"]
+  | .addSp d imm => [s!"addi {d.name}, %r1, {imm}"]
 
 /-- The comparison with zero of a condition. -/
 def Cond.cmp : Cond → String

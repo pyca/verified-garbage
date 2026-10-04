@@ -164,4 +164,36 @@ def ppcPush : Option PPC64LE.State := PPC64LE.push (.push .r0) ppc
 -- Neither is an instruction of a block.
 #guard (PPC64LE.exec (.push .r0) ppc).isNone && (PPC64LE.exec (.pop .r0) ppc).isNone
 
+def ppcAlloc : Option PPC64LE.State := PPC64LE.push (.alloc 112) ppc
+
+-- `stdu r1, -112(r1)` stores the back chain at the new `sp`; the 80 bytes above the 32-byte
+-- header become a writable region at the head of `wr`, unwritten.
+#guard (ppcAlloc.map fun s => (s.sp, s.mem.read 0xf90 8, s.mem.read 0xfb0 80 == 0,
+    s.wr.map (·.base), s.wr.map (·.len))) ==
+  some (0xf90, 0x1000, true, [0xfb0, 0x8000], [80, 8])
+-- `addi r9, r1, 32` points at that region.
+#guard (ppcAlloc.bind fun s => (PPC64LE.exec (.addSp .r9 32) s).map (·.gpr .r9)) == some 0xfb0
+#guard (PPC64LE.exec (.addSp .r9 32768) ppc).isNone
+
+-- `addi r1, r1, 112` moves `sp` back and removes the region, changing no register.
+#guard (ppcAlloc.bind fun s₁ => (PPC64LE.pop (.free 112) s₁ s₁).map fun s =>
+    (s.sp, s.gpr .r0, s.wr.map (·.base))) == some (0x1000, 0x1122334455667788, [0x8000])
+-- It faults unless the frame has the size released and `sp` and the regions are those the
+-- push left.
+#guard (ppcAlloc.bind fun s₁ => PPC64LE.pop (.free 96) s₁ s₁).isNone
+#guard (ppcAlloc.bind fun s₁ => PPC64LE.pop (.free 112) s₁ { s₁ with sp := s₁.sp + 16 }).isNone
+#guard (ppcAlloc.bind fun s₁ => PPC64LE.pop (.free 112) s₁ { s₁ with wr := s₁.wr.tail }).isNone
+-- A `push` frame has the shape of an `alloc 48` frame, so `free 48` releases it too, as on
+-- hardware (`addi r1, r1, 48`), without reloading the register.
+#guard (ppcPush.bind fun s₁ => (PPC64LE.pop (.free 48) s₁ s₁).map fun s =>
+    (s.sp, s.gpr .r9, s.wr.map (·.base))) == some (0x1000, 0, [0x8000])
+-- The allocation faults unless its size is a multiple of 16 above 32 and below 4096, or if
+-- it would wrap around the address space.
+#guard (PPC64LE.push (.alloc 32) ppc).isNone && (PPC64LE.push (.alloc 120) ppc).isNone
+#guard (PPC64LE.push (.alloc 4096) { ppc with sp := 0x8000 }).isNone
+#guard (PPC64LE.push (.alloc 4080) { ppc with sp := 0x8000 }).isSome
+#guard (PPC64LE.push (.alloc 112) { ppc with sp := 96 }).isNone
+-- Neither is an instruction of a block.
+#guard (PPC64LE.exec (.alloc 112) ppc).isNone && (PPC64LE.exec (.free 112) ppc).isNone
+
 end VG.Test.Frames
