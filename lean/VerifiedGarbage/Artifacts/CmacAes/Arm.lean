@@ -1,6 +1,6 @@
 import VerifiedGarbage.TCB.Arm.Target
 import VerifiedGarbage.Proof.CmacAes.Arm.Verified
-import VerifiedGarbage.Proof.CmacAes.Stream.Arm.Verified
+import VerifiedGarbage.Proof.CmacAes.Stream.Arm.Frame
 
 /-!
 # AES-CMAC (NIST SP 800-38B) on ARMv7
@@ -11,6 +11,10 @@ arguments, so uses 8 bytes of stack. The streaming functions call those:
 stack), so uses 8 bytes; `absorb` and `finish` call `vg_cmac_aes_update`
 and `vg_cmac_aes_finalize` in a frame that pushes their two stack arguments,
 so use 16.
+
+The streaming functions keep their working space in a frame of their own
+on the stack (`Proof/CmacAes/Stream/Arm/Frame.lean`): their `stack` is that
+frame and the stack their code uses below it.
 -/
 
 namespace VG.Artifacts.CmacAes.Arm
@@ -50,28 +54,28 @@ def artifacts : List Artifact := [
     doc := Spec.Cmac.aesInitApi.doc (notes := [
       "This implementation expands the key with `vg_aes_expand_key` and derives the subkeys with \
         `vg_cmac_aes_subkeys`."])
-    code := Impl.CmacAes.Stream.Arm.init
-    contract := Spec.Cmac.aesInitContract Arm.abi 8
-    stack := 8
-    verified := Proof.CmacAes.Stream.Arm.init_verified
+    code := Impl.StackScratch.Arm.withRegScratch 2304 .r3 Impl.CmacAes.Stream.Arm.init
+    contract := Spec.Cmac.aesInitContract Arm.abi 2312
+    stack := 2312
+    verified := Proof.CmacAes.Stream.Arm.init_framed
     spSafe := Code.all_of_forall (fun _ => rfl) _ },
   { Spec.Cmac.aesAbsorbApi with
     target := Arm.target
     doc := Spec.Cmac.aesAbsorbApi.doc (notes := [
       "This implementation chains the blocks with `vg_cmac_aes_update`."])
-    code := Impl.CmacAes.Stream.Arm.absorb
-    contract := Spec.Cmac.aesAbsorbContract Arm.abi 16
-    stack := 16
-    verified := Proof.CmacAes.Stream.Arm.absorb_verified
+    code := Impl.StackScratch.Arm.withStackScratch 2320 2 Impl.CmacAes.Stream.Arm.absorb
+    contract := Spec.Cmac.aesAbsorbContract Arm.abi 2336
+    stack := 2336
+    verified := Proof.CmacAes.Stream.Arm.absorb_framed
     spSafe := Code.all_of_forall (fun _ => rfl) _ },
   { Spec.Cmac.aesFinishApi with
     target := Arm.target
     doc := Spec.Cmac.aesFinishApi.doc (notes := [
       "This implementation computes the MAC with `vg_cmac_aes_finalize`."])
-    code := Impl.CmacAes.Stream.Arm.finish
-    contract := Spec.Cmac.aesFinishContract Arm.abi 16
-    stack := 16
-    verified := Proof.CmacAes.Stream.Arm.finish_verified
+    code := Impl.StackScratch.Arm.withStackScratch 2320 1 Impl.CmacAes.Stream.Arm.finish
+    contract := Spec.Cmac.aesFinishContract Arm.abi 2336
+    stack := 2336
+    verified := Proof.CmacAes.Stream.Arm.finish_framed
     spSafe := Code.all_of_forall (fun _ => rfl) _ }]
 
 end VG.Artifacts.CmacAes.Arm

@@ -53,13 +53,9 @@ use crate::arch::cmac_aes::{
 use crate::arch::cmac_aes::{vg_cmac_aes_absorb, vg_cmac_aes_finish, vg_cmac_aes_init};
 use crate::cpu::{Features, detected};
 use crate::zeroize::zeroize;
-use core::mem::MaybeUninit;
 
 /// The streaming state, in 64-bit words.
 const STATE: usize = 38;
-
-/// The working space of the streaming functions, in 64-bit words.
-const SCRATCH: usize = 288;
 
 /// The best implementation of AES a CPU with the features `f` can run, with
 /// the CMAC functions for it.
@@ -152,7 +148,6 @@ impl AesCmac {
             count: 0,
             backend: select(detected()),
         };
-        let mut scratch = MaybeUninit::<[u64; SCRATCH]>::uninit();
         let f = match c.backend {
             Backend::Scalar => vg_cmac_aes_init,
             #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
@@ -163,16 +158,13 @@ impl AesCmac {
             Backend::Aes => vg_cmac_aes_init_aes,
         };
         // SAFETY: `c.state` is valid for reads and writes of 304 bytes,
-        // `key` for reads of `key.len()` bytes, which is 16, 24 or 32, and
-        // `scratch` for reads and writes of 2304 bytes. `c.state` and
-        // `scratch` are locals and `key` a borrow, so none overlaps another,
-        // the return address (on x86-64 and x86), the arguments on the stack
-        // (on 32-bit ARM and x86) or the stack below them that the calls
-        // use, and none wraps around the end of the address space. The CPU
-        // has the features of the implementation selected. `scratch` is
-        // uninitialized: it is only working space, and the contract's result
-        // does not depend on what it holds.
-        unsafe { f(&mut c.state, key.as_ptr(), key.len(), scratch.as_mut_ptr()) };
+        // and `key` for reads of `key.len()` bytes, which is 16, 24 or 32.
+        // `c.state` is a local and `key` a borrow, so neither overlaps the
+        // other, the return address (on x86-64 and x86), the arguments on the
+        // stack (on 32-bit ARM and x86) or the stack below them that the
+        // function uses, and neither wraps around the end of the address
+        // space. The CPU has the features of the implementation selected.
+        unsafe { f(&mut c.state, key.as_ptr(), key.len()) };
         Ok(c)
     }
 
@@ -186,7 +178,6 @@ impl AesCmac {
             .count
             .checked_add(data.len() as u64)
             .expect("message too long");
-        let mut scratch = MaybeUninit::<[u64; SCRATCH]>::uninit();
         let f = match self.backend {
             Backend::Scalar => vg_cmac_aes_absorb,
             #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
@@ -202,14 +193,12 @@ impl AesCmac {
                 }
             }
         };
-        // SAFETY: `self.state` is valid for reads and writes of 304 bytes,
-        // `data` for reads of `data.len()` bytes and `scratch`
-        // (uninitialized working space, as in `new`) for reads and writes of
-        // 2304 bytes. `self.state` is a mutable borrow, `data` a borrow and
-        // `scratch` a local, so none overlaps another, the return address
-        // (on x86-64 and x86), the arguments on the stack (on 32-bit ARM and
-        // x86) or the stack below them that the calls use, and none wraps
-        // around the end of the address space. `self.rounds` is 10, 12 or
+        // SAFETY: `self.state` is valid for reads and writes of 304 bytes
+        // and `data` for reads of `data.len()` bytes. `self.state` is a
+        // mutable borrow and `data` a borrow, so neither overlaps the other,
+        // the return address (on x86-64 and x86), the arguments on the stack
+        // (on 32-bit ARM and x86) or the stack below them that the function
+        // uses, and neither wraps around the end of the address space. `self.rounds` is 10, 12 or
         // 14, that of the key `new` was given. The state represents a
         // message of `self.count` bytes, which with `data` is shorter than
         // 2⁶⁴ bytes, as the contract's postcondition requires. The CPU has
@@ -221,7 +210,6 @@ impl AesCmac {
                 self.count,
                 data.as_ptr(),
                 data.len(),
-                scratch.as_mut_ptr(),
             )
         };
         self.count = count;
@@ -230,7 +218,6 @@ impl AesCmac {
     /// Returns the MAC of everything absorbed.
     pub fn finalize(mut self) -> [u8; 16] {
         let mut mac = [0; 16];
-        let mut scratch = MaybeUninit::<[u64; SCRATCH]>::uninit();
         let f = match self.backend {
             Backend::Scalar => vg_cmac_aes_finish,
             #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
@@ -240,26 +227,17 @@ impl AesCmac {
             #[cfg(target_arch = "aarch64")]
             Backend::Aes => vg_cmac_aes_finish_aes,
         };
-        // SAFETY: `self.state` is valid for reads and writes of 304 bytes,
-        // `mac` for writes of 16 and `scratch` (uninitialized working space,
-        // as in `new`) for reads and writes of 2304. `self.state` is owned
-        // and `mac` and `scratch` are locals, so none overlaps another, the
-        // return address (on x86-64 and x86), the arguments on the stack (on
-        // 32-bit ARM and x86) or the stack below them that the calls use,
-        // and none wraps around the end of the address space. `self.rounds`
+        // SAFETY: `self.state` is valid for reads and writes of 304 bytes
+        // and `mac` for writes of 16. `self.state` is owned and `mac` a
+        // local, so neither overlaps the other, the return address (on x86-64
+        // and x86), the arguments on the stack (on 32-bit ARM and x86) or the
+        // stack below them that the function uses, and neither wraps around
+        // the end of the address space. `self.rounds`
         // is 10, 12 or 14, that of the key `new` was given, and the state
         // represents a message of `self.count` bytes, as the contract's
         // postcondition requires. The CPU has the features of the
         // implementation selected.
-        unsafe {
-            f(
-                &mut self.state,
-                self.rounds,
-                self.count,
-                &mut mac,
-                scratch.as_mut_ptr(),
-            )
-        };
+        unsafe { f(&mut self.state, self.rounds, self.count, &mut mac) };
         mac
     }
 

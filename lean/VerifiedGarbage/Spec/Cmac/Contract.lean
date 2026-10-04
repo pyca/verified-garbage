@@ -54,12 +54,12 @@ would look like the empty one.
 
 The caller truncates the MAC and compares MACs (§6.3).
 
-Each takes a `scratch` buffer of working space, sized for the target that
-needs the most (the first three: room for `vg_aes_ctr32`'s working space
-and 128 bytes more; the streaming functions: room for theirs and 128 bytes
-more), and the number of bytes of stack below the stack pointer that an
-implementation's calls and frames use (`stack`, see `Sig.contract`), 0 for
-one that uses none.
+The first three take a `scratch` buffer of working space, sized for the
+target that needs the most (room for `vg_aes_ctr32`'s working space and 128
+bytes more). Each takes the number of bytes of stack below the stack pointer
+that an implementation's calls and frames use (`stack`, see `Sig.contract`),
+0 for one that uses none; the streaming functions keep their working space
+there.
 -/
 
 namespace VG.Spec.Cmac
@@ -186,20 +186,23 @@ def aesFinalizeApi : Api where
 
 /-! ## Streaming AES-CMAC -/
 
-/-- `vg_cmac_aes_init(state: *mut [u64; 38], key: *const u8, key_len: usize, scratch: *mut [u64; 288])`.
-`scratch` is working space. -/
+/-- `vg_cmac_aes_init(state: *mut [u64; 38], key: *const u8, key_len: usize)`. -/
 def aesInitSig : Sig where
-  params := [("state", .array true .u64 38), ("key", .slice false .u8 "key_len"),
-    ("scratch", .array true .u64 288)]
+  params := [("state", .array true .u64 38), ("key", .slice false .u8 "key_len")]
 
-/-- For a key of 16, 24 or 32 bytes at `key`: makes the state at `state`
-represent the empty message under that key. The key is secret. -/
+/-- `init`'s precondition: a key of 16, 24 or 32 bytes. -/
+def aesInitPre (pb : Nat) : Curry (aesInitSig.words pb) (Mem → Prop) :=
+  fun _state _key keyLen _ => keyLen.toNat = 16 ∨ keyLen.toNat = 24 ∨ keyLen.toNat = 32
+
+/-- Makes the state at `state` represent the empty message under the key at
+`key`. -/
+def aesInitPost (pb : Nat) : aesInitSig.Post pb := fun state key keyLen m m' _ =>
+  Repr m' state (Aes.bytesAt m key keyLen.toNat) []
+
+/-- For a key of 16, 24 or 32 bytes at `key`: `aesInitPost`. The key is
+secret. -/
 def aesInitContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  aesInitSig.contract A
-    (pre := fun _state _key keyLen _scratch _ =>
-      keyLen.toNat = 16 ∨ keyLen.toNat = 24 ∨ keyLen.toNat = 32)
-    (post := fun state key keyLen _scratch m m' _ =>
-      Repr m' state (Aes.bytesAt m key keyLen.toNat) [])
+  aesInitSig.contract A (pre := aesInitPre A.ptrBits) (post := aesInitPost A.ptrBits)
     (stack := stack)
 
 /-- `vg_cmac_aes_init` on every target. -/
@@ -216,30 +219,32 @@ def aesInitApi : Api where
     and `vg_cmac_aes_finish`, passing them `key_len / 4 + 6` as `rounds`.\n\n\
     Contract: `VG.Spec.Cmac.aesInitContract`. Constant time: only the pointers and `key_len` may \
     affect timing, not the key."
-  safety := [
-    "`key_len` must be 16, 24 or 32.",
-    "The contents of `scratch` on return are unspecified."]
+  safety := ["`key_len` must be 16, 24 or 32."]
 
-/-- `vg_cmac_aes_absorb(state: *mut [u64; 38], rounds: usize, count: u64, data: *const u8, len: usize, scratch: *mut [u64; 288])`.
-`rounds` and `count` are public; `scratch` is working space. -/
+/-- `vg_cmac_aes_absorb(state: *mut [u64; 38], rounds: usize, count: u64, data: *const u8, len: usize)`.
+`rounds` and `count` are public. -/
 def aesAbsorbSig : Sig where
   params := [("state", .array true .u64 38), ("rounds", .int .usize true),
-    ("count", .int .u64 true), ("data", .slice false .u8 "len"),
-    ("scratch", .array true .u64 288)]
+    ("count", .int .u64 true), ("data", .slice false .u8 "len")]
 
-/-- For `rounds` of 10, 12 or 14: if the state at `state` represents a
-message `msg` of `count` bytes under a key of `Nr = rounds` rounds, and
-`msg` followed by the `len` bytes at `data` is shorter than 2⁶⁴ bytes, then
-afterwards it represents `msg` followed by those bytes, under the same key.
-The state and the data are secret. -/
+/-- `absorb`'s precondition: `rounds` of 10, 12 or 14. -/
+def aesAbsorbPre (pb : Nat) : Curry (aesAbsorbSig.words pb) (Mem → Prop) :=
+  fun _state rounds _count _data _len _ =>
+    rounds.toNat = 10 ∨ rounds.toNat = 12 ∨ rounds.toNat = 14
+
+/-- If the state at `state` represents a message `msg` of `count` bytes under
+a key of `Nr = rounds` rounds, and `msg` followed by the `len` bytes at
+`data` is shorter than 2⁶⁴ bytes, then afterwards it represents `msg`
+followed by those bytes, under the same key. -/
+def aesAbsorbPost (pb : Nat) : aesAbsorbSig.Post pb := fun state rounds count data len m m' _ =>
+  ∀ key msg, Repr m state key msg → rounds.toNat = Aes.rounds (key.length / 4) →
+    count = BitVec.ofNat 64 msg.length → msg.length + len.toNat < 2 ^ 64 →
+    Repr m' state key (msg ++ Aes.bytesAt m data len.toNat)
+
+/-- For `rounds` of 10, 12 or 14: `aesAbsorbPost`. The state and the data
+are secret. -/
 def aesAbsorbContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  aesAbsorbSig.contract A
-    (pre := fun _state rounds _count _data _len _scratch _ =>
-      rounds.toNat = 10 ∨ rounds.toNat = 12 ∨ rounds.toNat = 14)
-    (post := fun state rounds count data len _scratch m m' _ =>
-      ∀ key msg, Repr m state key msg → rounds.toNat = Aes.rounds (key.length / 4) →
-        count = BitVec.ofNat 64 msg.length → msg.length + len.toNat < 2 ^ 64 →
-        Repr m' state key (msg ++ Aes.bytesAt m data len.toNat))
+  aesAbsorbSig.contract A (pre := aesAbsorbPre A.ptrBits) (post := aesAbsorbPost A.ptrBits)
     (stack := stack)
 
 /-- `vg_cmac_aes_absorb` on every target. -/
@@ -256,30 +261,30 @@ def aesAbsorbApi : Api where
     which it holds back in the state, since only `vg_cmac_aes_finish` knows they are the last.\n\n\
     Contract: `VG.Spec.Cmac.aesAbsorbContract`. Constant time: only the pointers, `rounds`, \
     `count` and `len` may affect timing, not the state or the data."
-  safety := [
-    "`rounds` must be 10, 12 or 14.",
-    "The contents of `scratch` on return are unspecified."]
+  safety := ["`rounds` must be 10, 12 or 14."]
 
-/-- `vg_cmac_aes_finish(state: *mut [u64; 38], rounds: usize, count: u64, out: *mut [u8; 16], scratch: *mut [u64; 288])`.
-`rounds` and `count` are public; `state` is left unspecified, and `scratch`
-is working space. -/
+/-- `vg_cmac_aes_finish(state: *mut [u64; 38], rounds: usize, count: u64, out: *mut [u8; 16])`.
+`rounds` and `count` are public; `state` is left unspecified. -/
 def aesFinishSig : Sig where
   params := [("state", .array true .u64 38), ("rounds", .int .usize true),
-    ("count", .int .u64 true), ("out", .array true .u8 16),
-    ("scratch", .array true .u64 288)]
+    ("count", .int .u64 true), ("out", .array true .u8 16)]
 
-/-- For `rounds` of 10, 12 or 14: if the state at `state` represents a
-message `msg` of `count` bytes, shorter than 2⁶⁴ bytes, under a key `key`
-of `Nr = rounds` rounds, writes the AES-CMAC of `msg` under `key` (§6.2,
-with `Tlen = 128`) to `out`. The state is secret. -/
+/-- `finish`'s precondition: `rounds` of 10, 12 or 14. -/
+def aesFinishPre (pb : Nat) : Curry (aesFinishSig.words pb) (Mem → Prop) :=
+  fun _state rounds _count _out _ =>
+    rounds.toNat = 10 ∨ rounds.toNat = 12 ∨ rounds.toNat = 14
+
+/-- If the state at `state` represents a message `msg` of `count` bytes,
+shorter than 2⁶⁴ bytes, under a key `key` of `Nr = rounds` rounds, writes
+the AES-CMAC of `msg` under `key` (§6.2, with `Tlen = 128`) to `out`. -/
+def aesFinishPost (pb : Nat) : aesFinishSig.Post pb := fun state rounds count out m m' _ =>
+  ∀ key msg, Repr m state key msg → rounds.toNat = Aes.rounds (key.length / 4) →
+    count = BitVec.ofNat 64 msg.length → msg.length < 2 ^ 64 →
+    Aes.bytesAt m' out 16 = aesCmac key 16 msg
+
+/-- For `rounds` of 10, 12 or 14: `aesFinishPost`. The state is secret. -/
 def aesFinishContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  aesFinishSig.contract A
-    (pre := fun _state rounds _count _out _scratch _ =>
-      rounds.toNat = 10 ∨ rounds.toNat = 12 ∨ rounds.toNat = 14)
-    (post := fun state rounds count out _scratch m m' _ =>
-      ∀ key msg, Repr m state key msg → rounds.toNat = Aes.rounds (key.length / 4) →
-        count = BitVec.ofNat 64 msg.length → msg.length < 2 ^ 64 →
-        Aes.bytesAt m' out 16 = aesCmac key 16 msg)
+  aesFinishSig.contract A (pre := aesFinishPre A.ptrBits) (post := aesFinishPost A.ptrBits)
     (stack := stack)
 
 /-- `vg_cmac_aes_finish` on every target. -/
@@ -299,7 +304,6 @@ def aesFinishApi : Api where
     `count` may affect timing, not the state."
   safety := [
     "`rounds` must be 10, 12 or 14.",
-    "The contents of `state` on return are unspecified.",
-    "The contents of `scratch` on return are unspecified."]
+    "The contents of `state` on return are unspecified."]
 
 end VG.Spec.Cmac
