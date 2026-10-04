@@ -45,7 +45,9 @@
 //! run, instead of AES-NI's or PCLMULQDQ's, the `_vaes` or `_vpclmul`
 //! instances (with `vg_aes_ctr32_vaes` and `vg_ghash_vpclmul`, sixteen and
 //! eight blocks at a time in 256-bit registers), or those of the pairs
-//! (`_vaes_vpclmul`, `_vaes_pclmul`, `_aesni_vpclmul`); likewise on x86, where
+//! (`_vaes_vpclmul`, `_vaes_pclmul`, `_aesni_vpclmul`), and CPUs with VAES,
+//! VPCLMULQDQ, AVX512F and AVX512BW the `_vaes_vpclmul_avx512` ones, whose
+//! interleaved counter mode and GHASH work in 512-bit registers; likewise on x86, where
 //! AES-NI needs no SSSE3 (and the 256-bit instances are not built); on AArch64, CPUs with the AES and PMULL extensions (which Rust's
 //! `aes` feature stands for together) run the `_aes` ones (with
 //! `vg_aes_ctr32_aes` and `vg_ghash_aes`).
@@ -104,6 +106,14 @@ use crate::arch::gcm::{
     vg_aes_gcm_stream_verify_vaes, vg_aes_gcm_stream_verify_vaes_pclmul,
     vg_aes_gcm_stream_verify_vaes_vpclmul, vg_aes_gcm_stream_verify_vpclmul,
 };
+#[cfg(target_arch = "x86_64")]
+use crate::arch::gcm::{
+    VG_AES_GCM_SEAL_VAES_VPCLMUL_AVX512_FEATURES, vg_aes_gcm_init_vaes_vpclmul_avx512,
+    vg_aes_gcm_open_vaes_vpclmul_avx512, vg_aes_gcm_seal_vaes_vpclmul_avx512,
+    vg_aes_gcm_stream_aad_vaes_vpclmul_avx512, vg_aes_gcm_stream_decrypt_vaes_vpclmul_avx512,
+    vg_aes_gcm_stream_encrypt_vaes_vpclmul_avx512, vg_aes_gcm_stream_finish_vaes_vpclmul_avx512,
+    vg_aes_gcm_stream_init_vaes_vpclmul_avx512, vg_aes_gcm_stream_verify_vaes_vpclmul_avx512,
+};
 use crate::arch::gcm::{
     vg_aes_gcm_init, vg_aes_gcm_open, vg_aes_gcm_seal, vg_aes_gcm_stream_aad,
     vg_aes_gcm_stream_decrypt, vg_aes_gcm_stream_encrypt, vg_aes_gcm_stream_finish,
@@ -157,6 +167,11 @@ enum Backend {
     /// VAES and VPCLMULQDQ: the `_vaes_vpclmul` instances.
     #[cfg(target_arch = "x86_64")]
     VaesVpclmul,
+    /// VAES and VPCLMULQDQ, with counter mode and GHASH interleaved in
+    /// 512-bit registers (AVX512F and AVX512BW): the `_vaes_vpclmul_avx512`
+    /// instances.
+    #[cfg(target_arch = "x86_64")]
+    VaesVpclmulAvx512,
     /// The AES instructions for AES and PMULL for GHASH (Rust's `aes`
     /// feature stands for both): the `_aes` instances.
     #[cfg(target_arch = "aarch64")]
@@ -171,7 +186,7 @@ macro_rules! instance {
     ($backend:expr, $scalar:ident,
      x86_64: [$aesni:ident, $pclmul:ident, $aesni_pclmul:ident],
      vaes: [$vaes:ident, $vpclmul:ident, $vaes_pclmul:ident, $aesni_vpclmul:ident,
-        $vaes_vpclmul:ident],
+        $vaes_vpclmul:ident, $vaes_vpclmul_avx512:ident],
      aarch64: [$aes:ident]) => {
         match $backend {
             Backend::Scalar => $scalar,
@@ -191,6 +206,8 @@ macro_rules! instance {
             Backend::AesNiVpclmul => $aesni_vpclmul,
             #[cfg(target_arch = "x86_64")]
             Backend::VaesVpclmul => $vaes_vpclmul,
+            #[cfg(target_arch = "x86_64")]
+            Backend::VaesVpclmulAvx512 => $vaes_vpclmul_avx512,
             #[cfg(target_arch = "aarch64")]
             Backend::Aes => $aes,
         }
@@ -204,6 +221,11 @@ impl Backend {
     /// Every implementation, best first, with the features it needs
     /// (computed at compile time, so that choosing one compares bit sets).
     const ALL: &[(Backend, Features)] = &[
+        #[cfg(target_arch = "x86_64")]
+        (
+            Backend::VaesVpclmulAvx512,
+            Backend::VaesVpclmulAvx512.features(),
+        ),
         #[cfg(target_arch = "x86_64")]
         (Backend::VaesVpclmul, Backend::VaesVpclmul.features()),
         #[cfg(target_arch = "x86_64")]
@@ -233,7 +255,7 @@ impl Backend {
                 VG_AES_GCM_SEAL_AESNI_PCLMUL_FEATURES],
             vaes: [VG_AES_GCM_SEAL_VAES_FEATURES, VG_AES_GCM_SEAL_VPCLMUL_FEATURES,
                 VG_AES_GCM_SEAL_VAES_PCLMUL_FEATURES, VG_AES_GCM_SEAL_AESNI_VPCLMUL_FEATURES,
-                VG_AES_GCM_SEAL_VAES_VPCLMUL_FEATURES],
+                VG_AES_GCM_SEAL_VAES_VPCLMUL_FEATURES, VG_AES_GCM_SEAL_VAES_VPCLMUL_AVX512_FEATURES],
             aarch64: [VG_AES_GCM_SEAL_AES_FEATURES])
     }
 }
@@ -365,7 +387,8 @@ impl AesGcm {
         let init = instance!(k.backend, vg_aes_gcm_init,
             x86_64: [vg_aes_gcm_init_aesni, vg_aes_gcm_init_pclmul, vg_aes_gcm_init_aesni_pclmul],
             vaes: [vg_aes_gcm_init_vaes, vg_aes_gcm_init_vpclmul, vg_aes_gcm_init_vaes_pclmul,
-                vg_aes_gcm_init_aesni_vpclmul, vg_aes_gcm_init_vaes_vpclmul],
+                vg_aes_gcm_init_aesni_vpclmul, vg_aes_gcm_init_vaes_vpclmul,
+                vg_aes_gcm_init_vaes_vpclmul_avx512],
             aarch64: [vg_aes_gcm_init_aes]);
         let mut scratch = MaybeUninit::<[u64; 320]>::uninit();
         // SAFETY: `key` is valid for reads of `key.len()` bytes, which is 16,
@@ -400,7 +423,8 @@ impl AesGcm {
         let seal = instance!(self.backend, vg_aes_gcm_seal,
             x86_64: [vg_aes_gcm_seal_aesni, vg_aes_gcm_seal_pclmul, vg_aes_gcm_seal_aesni_pclmul],
             vaes: [vg_aes_gcm_seal_vaes, vg_aes_gcm_seal_vpclmul, vg_aes_gcm_seal_vaes_pclmul,
-                vg_aes_gcm_seal_aesni_vpclmul, vg_aes_gcm_seal_vaes_vpclmul],
+                vg_aes_gcm_seal_aesni_vpclmul, vg_aes_gcm_seal_vaes_vpclmul,
+                vg_aes_gcm_seal_vaes_vpclmul_avx512],
             aarch64: [vg_aes_gcm_seal_aes]);
         let mut work = MaybeUninit::<[u64; 320]>::uninit();
         // SAFETY: `self.ctx` is the key context `vg_aes_gcm_init` wrote for
@@ -477,7 +501,8 @@ impl AesGcm {
         let open = instance!(self.backend, vg_aes_gcm_open,
             x86_64: [vg_aes_gcm_open_aesni, vg_aes_gcm_open_pclmul, vg_aes_gcm_open_aesni_pclmul],
             vaes: [vg_aes_gcm_open_vaes, vg_aes_gcm_open_vpclmul, vg_aes_gcm_open_vaes_pclmul,
-                vg_aes_gcm_open_aesni_vpclmul, vg_aes_gcm_open_vaes_vpclmul],
+                vg_aes_gcm_open_aesni_vpclmul, vg_aes_gcm_open_vaes_vpclmul,
+                vg_aes_gcm_open_vaes_vpclmul_avx512],
             aarch64: [vg_aes_gcm_open_aes]);
         let mut work = MaybeUninit::<[u64; 320]>::uninit();
         put_tag(&mut work, tag);
@@ -563,7 +588,8 @@ impl<'a, const DECRYPT: bool> Stream<'a, DECRYPT> {
                 vg_aes_gcm_stream_init_aesni_pclmul],
             vaes: [vg_aes_gcm_stream_init_vaes, vg_aes_gcm_stream_init_vpclmul,
                 vg_aes_gcm_stream_init_vaes_pclmul, vg_aes_gcm_stream_init_aesni_vpclmul,
-                vg_aes_gcm_stream_init_vaes_vpclmul],
+                vg_aes_gcm_stream_init_vaes_vpclmul,
+                vg_aes_gcm_stream_init_vaes_vpclmul_avx512],
             aarch64: [vg_aes_gcm_stream_init_aes]);
         let mut scratch = MaybeUninit::<[u64; 320]>::uninit();
         // SAFETY: `key.ctx` is a key context (as in
@@ -598,7 +624,8 @@ impl<'a, const DECRYPT: bool> Stream<'a, DECRYPT> {
                 vg_aes_gcm_stream_aad_aesni_pclmul],
             vaes: [vg_aes_gcm_stream_aad_vaes, vg_aes_gcm_stream_aad_vpclmul,
                 vg_aes_gcm_stream_aad_vaes_pclmul, vg_aes_gcm_stream_aad_aesni_vpclmul,
-                vg_aes_gcm_stream_aad_vaes_vpclmul],
+                vg_aes_gcm_stream_aad_vaes_vpclmul,
+                vg_aes_gcm_stream_aad_vaes_vpclmul_avx512],
             aarch64: [vg_aes_gcm_stream_aad_aes]);
         let mut scratch = MaybeUninit::<[u64; 320]>::uninit();
         // SAFETY: as in `new`; `self.state` represents a message with
@@ -629,7 +656,8 @@ impl<'a, const DECRYPT: bool> Stream<'a, DECRYPT> {
                     vg_aes_gcm_stream_decrypt_aesni_pclmul],
                 vaes: [vg_aes_gcm_stream_decrypt_vaes, vg_aes_gcm_stream_decrypt_vpclmul,
                     vg_aes_gcm_stream_decrypt_vaes_pclmul, vg_aes_gcm_stream_decrypt_aesni_vpclmul,
-                    vg_aes_gcm_stream_decrypt_vaes_vpclmul],
+                    vg_aes_gcm_stream_decrypt_vaes_vpclmul,
+                vg_aes_gcm_stream_decrypt_vaes_vpclmul_avx512],
                 aarch64: [vg_aes_gcm_stream_decrypt_aes])
         } else {
             instance!(self.key.backend, vg_aes_gcm_stream_encrypt,
@@ -637,7 +665,8 @@ impl<'a, const DECRYPT: bool> Stream<'a, DECRYPT> {
                     vg_aes_gcm_stream_encrypt_aesni_pclmul],
                 vaes: [vg_aes_gcm_stream_encrypt_vaes, vg_aes_gcm_stream_encrypt_vpclmul,
                     vg_aes_gcm_stream_encrypt_vaes_pclmul, vg_aes_gcm_stream_encrypt_aesni_vpclmul,
-                    vg_aes_gcm_stream_encrypt_vaes_vpclmul],
+                    vg_aes_gcm_stream_encrypt_vaes_vpclmul,
+                vg_aes_gcm_stream_encrypt_vaes_vpclmul_avx512],
                 aarch64: [vg_aes_gcm_stream_encrypt_aes])
         };
         let mut scratch = MaybeUninit::<[u64; 320]>::uninit();
@@ -670,7 +699,8 @@ impl Stream<'_, false> {
                 vg_aes_gcm_stream_finish_aesni_pclmul],
             vaes: [vg_aes_gcm_stream_finish_vaes, vg_aes_gcm_stream_finish_vpclmul,
                 vg_aes_gcm_stream_finish_vaes_pclmul, vg_aes_gcm_stream_finish_aesni_vpclmul,
-                vg_aes_gcm_stream_finish_vaes_vpclmul],
+                vg_aes_gcm_stream_finish_vaes_vpclmul,
+                vg_aes_gcm_stream_finish_vaes_vpclmul_avx512],
             aarch64: [vg_aes_gcm_stream_finish_aes]);
         let mut work = MaybeUninit::<[u64; 320]>::uninit();
         // SAFETY: as in `update`, with `work` (a local: working space, but
@@ -703,7 +733,8 @@ impl Stream<'_, true> {
                 vg_aes_gcm_stream_verify_aesni_pclmul],
             vaes: [vg_aes_gcm_stream_verify_vaes, vg_aes_gcm_stream_verify_vpclmul,
                 vg_aes_gcm_stream_verify_vaes_pclmul, vg_aes_gcm_stream_verify_aesni_vpclmul,
-                vg_aes_gcm_stream_verify_vaes_vpclmul],
+                vg_aes_gcm_stream_verify_vaes_vpclmul,
+                vg_aes_gcm_stream_verify_vaes_vpclmul_avx512],
             aarch64: [vg_aes_gcm_stream_verify_aes]);
         let mut work = MaybeUninit::<[u64; 320]>::uninit();
         put_tag(&mut work, tag);
@@ -852,6 +883,10 @@ mod tests {
                 "vpclmulqdq",
             ];
             assert_eq!(f(&all), Backend::VaesVpclmul);
+            // The 512-bit loops need AVX512F and AVX512BW too.
+            let avx512 = [&all[..], &["avx512f", "avx512bw"]].concat();
+            assert_eq!(f(&avx512), Backend::VaesVpclmulAvx512);
+            assert_eq!(f(&[&all[..], &["avx512f"]].concat()), Backend::VaesVpclmul);
             assert_eq!(f(&all[..6]), Backend::VaesPclmul);
             assert_eq!(
                 f(&["aes", "avx", "avx2", "pclmulqdq", "ssse3", "vpclmulqdq"]),
@@ -980,7 +1015,7 @@ mod tests {
                     assert!(seal.contains(*other));
                 }
             }
-            let groups: [(Features, &[Features]); 5] = [
+            let groups: [(Features, &[Features]); 6] = [
                 (
                     VG_AES_GCM_SEAL_VAES_FEATURES,
                     &[
@@ -1041,6 +1076,19 @@ mod tests {
                         VG_AES_GCM_STREAM_DECRYPT_VAES_VPCLMUL_FEATURES,
                         VG_AES_GCM_STREAM_FINISH_VAES_VPCLMUL_FEATURES,
                         VG_AES_GCM_STREAM_VERIFY_VAES_VPCLMUL_FEATURES,
+                    ][..],
+                ),
+                (
+                    VG_AES_GCM_SEAL_VAES_VPCLMUL_AVX512_FEATURES,
+                    &[
+                        VG_AES_GCM_INIT_VAES_VPCLMUL_AVX512_FEATURES,
+                        VG_AES_GCM_OPEN_VAES_VPCLMUL_AVX512_FEATURES,
+                        VG_AES_GCM_STREAM_INIT_VAES_VPCLMUL_AVX512_FEATURES,
+                        VG_AES_GCM_STREAM_AAD_VAES_VPCLMUL_AVX512_FEATURES,
+                        VG_AES_GCM_STREAM_ENCRYPT_VAES_VPCLMUL_AVX512_FEATURES,
+                        VG_AES_GCM_STREAM_DECRYPT_VAES_VPCLMUL_AVX512_FEATURES,
+                        VG_AES_GCM_STREAM_FINISH_VAES_VPCLMUL_AVX512_FEATURES,
+                        VG_AES_GCM_STREAM_VERIFY_VAES_VPCLMUL_AVX512_FEATURES,
                     ][..],
                 ),
             ];
