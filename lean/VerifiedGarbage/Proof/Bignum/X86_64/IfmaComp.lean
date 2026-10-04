@@ -370,4 +370,87 @@ theorem vecI_ok {t : State} {B : Addr} {Z w op oq a wp : Nat} {minv mp mq mk : B
       (hn _ (by decide)) (hn _ (by decide)) (hn _ (by decide)) (hn _ (by decide)) (hn _ (by decide))
       (hn _ (by decide)) (hn _ (by decide)), k.gpr (fun h => hn .rbx (by decide) (List.mem_singleton.mp h))]
 
+/-- Back to `n`'s workspace. -/
+theorem leaveB_ok {u : State} {B : Addr} {Z o : Nat} (hs : Scr u B Z) (hdi : u.gpr .rdi = off B o)
+    (hlk : word u.mem (off B o) (8 * sLink) = B) (ho : o + 8 * 32 ≤ Z) :
+    WP isa (.block [leave]) u fun u' => u'.gpr .rdi = B ∧ u'.mem = u.mem ∧ Keep [.rdi] u u' := by
+  have hl : InRegions (u.rd ++ u.wr) (off (off B o) (8 * sLink)) 8 := by
+    rw [off_off]; exact hs.ld (by unfold sLink sFn; omega)
+  refine WP.mono (WP.keep [.rdi] (Q := fun u' => u'.gpr .rdi = B ∧ u'.mem = u.mem) (by
+    xrun [leave, State.ea, hdr, hdi, hdrOff, hl, hlk]) rfl) fun u' ⟨⟨a, b⟩, k⟩ => ⟨a, b, k⟩
+
+/-- A region's `Y` after changes below the area. -/
+theorem goodY_below {m m' : Mem} {B : Addr} {a p : Nat} {M : Nat → Nat} {rs : List (Nat × Nat)}
+    (g : AmmSym.Good m (off B a) M oY p) (hf : Frm B rs m m') (hr : ∀ r ∈ rs, r.1 + r.2 ≤ a) (hp : p < 2)
+    (hz : a + 2 * D ≤ 2 ^ 64) :
+    AmmSym.Good m' (off B a) M oY p ∧ AmmSym.val52 m' (off B a) (D * p + oY) = AmmSym.val52 m (off B a) (D * p + oY) := by
+  have hD : D = 3712 := rfl
+  have hDp : D * p ≤ 3712 := by rcases AmmSym.D_mul hp with h | h <;> omega
+  have hl : ∀ l < 20, AmmSym.limb m' (off B a) (D * p + oY) l = AmmSym.limb m (off B a) (D * p + oY) l :=
+    fun l hl => by
+      have := off_lt160 hl
+      have : oY = 192 := rfl
+      simp only [AmmSym.limb]
+      rw [word_off, word_off, hf.word_eq (fun r hr' => .inr (by have := hr r hr'; omega)) (by omega)]
+  exact ⟨g.of_limbs (c := oY) hl, AmmSym.val52_of_limbs hl⟩
+
+theorem resSh_lt (o : Nat) : ∀ r ∈ shiftRanges o resRanges, o + 8 * 32 ≤ r.1 ∧ r.1 + r.2 ≤ o + slot 16 8 := by
+  have hs : ∀ j, slot 16 j = 256 + j * 144 := fun j => by unfold slot hdrBytes; omega
+  simp only [shiftRanges, resRanges, List.map_cons, List.map_nil, List.mem_cons, List.not_mem_nil, or_false, hs,
+    Public.aAcc, Public.aTmp, Public.aY]
+  rintro _ (rfl | rfl | rfl) <;> simp only <;> omega
+
+theorem resSh_ifmaR (op oq a : Nat) {o : Nat} (ho : o = op ∨ o = oq) :
+    ∀ r ∈ shiftRanges o resRanges, r ∈ ifmaR op oq a := fun r hr => by
+  simp only [ifmaR, shiftRanges, List.map_append, List.mem_append] at hr ⊢
+  rcases ho with rfl | rfl
+  · exact .inl (.inl (.inr hr))
+  · exact .inl (.inr (.inr hr))
+
+/-- The results, from `q`'s workspace: `aY := Y mod X` in both, then back to `n`'s. -/
+theorem resI_ok {t : State} {B : Addr} {Z w op oq a : Nat} {minv mp mq mk : BitVec 64} {P Q : Nat}
+    {ep eq : Addr} {lp lq : Nat} (hs : Scr t B Z) (hdi : t.gpr .rdi = off B oq)
+    (hm : IMem t.mem B w op oq a minv mp mq mk P Q ep eq lp lq) (hlo : slot w 8 ≤ op)
+    (hpq : op + slot 16 8 + tabBytes 16 ≤ oq) (hqa : oq + slot 16 8 + tabBytes 16 ≤ a) (haZ : a + 2 * D + 8 ≤ Z)
+    (gp : AmmSym.Good t.mem (off B a) (two P Q) oY 0) (gq : AmmSym.Good t.mem (off B a) (two P Q) oY 1) :
+    WP isa (seqs (CrtIfma.result 1 ++ (([.block [leave, enterP]] : List (Prog isa)) ++
+      (CrtIfma.result 0 ++ ([.block [leave]] : List (Prog isa)))))) t fun t' =>
+      IMem t'.mem B w op oq a minv mp mq mk P Q ep eq lp lq ∧
+      wv t'.mem (off B oq) (slot 16 Public.aY) 16 = AmmSym.val52 t.mem (off B a) (D * 1 + oY) % Q ∧
+      wv t'.mem (off B op) (slot 16 Public.aY) 16 = AmmSym.val52 t.mem (off B a) (D * 0 + oY) % P ∧
+      Frm B (ifmaR op oq a) t.mem t'.mem ∧ t'.gpr .rdi = B ∧ t'.rd = t.rd ∧ t'.wr = t.wr ∧
+      Keep (mmRegs ++ ([.rdi] : List Reg)) t t' := by
+  have hn := hs.nowrap
+  have hT : tabBytes 16 = 2304 := rfl
+  have hD : D = 3712 := rfl
+  have h16 := hdr_lt_slot 16 8 (show 31 < 32 by decide)
+  have lY := slot_le (w := 16) (show Public.aY < 8 by decide)
+  have hY0 := hdr_lt_slot 16 Public.aY (show 31 < 32 by decide)
+  -- `q`'s result.
+  refine wp_seqs_append (by simp [CrtIfma.result]) (by simp) (WP.mono (result_ok (p := 1) hs hdi hm.qws.hdr hm.qia
+    (by omega) haZ (by decide) hm.qn gq.lt gq.v) fun t₁ ⟨vq, f₁, d₁, k₁⟩ => ?_)
+  have m₁ := hm.of_frm (f₁.mono (resSh_ifmaR op oq a (.inr rfl))) hlo hpq hqa (by omega)
+  have hs₁ := hs.congr k₁.2.2
+  -- To `p`'s workspace.
+  refine wp_seqs_append (by simp) (by simp [CrtIfma.result]) (WP.mono (swapWs_ok (o' := op) hs₁ (d₁.trans hdi)
+    m₁.qws.link m₁.wsP (by decide) (by omega)) fun t₂ ⟨d₂, me₂, k₂⟩ => ?_)
+  rw [← me₂] at m₁ vq
+  have gp₂ := goodY_below gp (show Frm B _ t.mem t₂.mem by rw [me₂]; exact f₁) (fun r hr => by have := resSh_lt oq r hr; omega)
+    (by decide) (by omega)
+  have hs₂ := hs₁.congr k₂.2.2
+  -- `p`'s result.
+  refine wp_seqs_append (by simp [CrtIfma.result]) (by simp) (WP.mono (result_ok (p := 0) hs₂ d₂ m₁.pws.hdr m₁.pia
+    (by omega) haZ (by decide) m₁.pn gp₂.1.lt gp₂.1.v) fun t₃ ⟨vp, f₃, d₃, k₃⟩ => ?_)
+  have m₃ := m₁.of_frm (f₃.mono (resSh_ifmaR op oq a (.inl rfl))) hlo hpq hqa (by omega)
+  -- Back to `n`'s workspace.
+  refine WP.mono (leaveB_ok (hs₂.congr k₃.2.2) (d₃.trans d₂) m₃.pws.link (by omega)) fun t' ⟨d₄, me₄, k₄⟩ => ?_
+  rw [← me₄] at m₃ vp
+  refine ⟨m₃, ?_, by rw [vp, gp₂.2], ?_, d₄, ?_, ?_, ?_⟩
+  · rw [← vq, me₄, wv_off, wv_off, f₃.wv_eq (fun r hr => .inr (by have := resSh_lt op r hr; omega)) (by omega)]
+  · rw [me₄]
+    exact ((f₁.mono (resSh_ifmaR op oq a (.inr rfl))).trans (show Frm B _ t₁.mem t₃.mem by rw [← me₂]; exact f₃.mono (resSh_ifmaR op oq a (.inl rfl))))
+  · rw [k₄.2.1, k₃.2.1, k₂.2.1, k₁.2.1]
+  · rw [k₄.2.2, k₃.2.2, k₂.2.2, k₁.2.2]
+  · exact (((k₁.trans k₂).trans k₃).trans k₄).mono (by simp [mmRegs])
+
 end VG.Proof.Bignum.X86_64
