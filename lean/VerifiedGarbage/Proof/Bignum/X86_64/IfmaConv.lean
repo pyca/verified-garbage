@@ -457,4 +457,34 @@ theorem to64_ok {s : State} {C D' : Addr} (hC : s.gpr .r11 = C) (h8 : s.gpr .r8 
     · rw [m']
       exact o.trans ((writeW_outside _ D' _ (by omega)).mono (by omega) (by omega))
 
+
+/-! ## The numbers -/
+
+theorem lval_limbN (N : Nat) : ∀ n, lval (limbN N) n = N % 2 ^ (52 * n)
+  | 0 => by rw [lval_zero]; simp [Nat.mod_one]
+  | n + 1 => by
+    rw [lval_succ, lval_limbN N n, limbN, Nat.mul_succ, Nat.pow_add, Nat.mod_mul, Nat.mul_comm (N / _ % _)]
+
+theorem limbN_lt (N j : Nat) : limbN N j < 2 ^ 52 := Nat.mod_lt _ (by decide)
+
+theorem pow2_le {a b : Nat} (h : a ≤ b) : 2 ^ a ≤ 2 ^ b := Nat.pow_le_pow_right (by decide) h
+
+/-- The value of the limbs `to52` writes: the number, below `2¹⁰²⁴`. -/
+theorem val_to52 {m : Mem} {A : Addr} : lval (limbN (wv m A 0 16)) 20 = wv m A 0 16 := by
+  have h1 := VG.Proof.Bignum.X86_64.wv_lt m A 0 16
+  have h2 := pow2_le (a := 64 * 16) (b := 52 * 20) (by decide)
+  rw [lval_limbN]
+  generalize 2 ^ (64 * 16) = a at h1 h2
+  generalize 2 ^ (52 * 20) = b at h2 ⊢
+  exact Nat.mod_eq_of_lt (by omega)
+
+/-- The words `to64` writes: the number of limbs below `2¹⁰⁴⁰`. -/
+theorem wv_to64 {m : Mem} {D' : Addr} {V : Nat} (hV : V < 2 ^ (52 * 20))
+    (h : ∀ w < 17, word m D' (8 * w) = BitVec.ofNat 64 (V / 2 ^ (64 * w) % 2 ^ 64)) : wv m D' 0 17 = V := by
+  have h2 := pow2_le (a := 52 * 20) (b := 64 * 17) (by decide)
+  rw [wv_digits 17 h]
+  generalize 2 ^ (52 * 20) = a at hV h2
+  generalize 2 ^ (64 * 17) = b at h2 ⊢
+  exact Nat.mod_eq_of_lt (by omega)
+
 end VG.Proof.Bignum.X86_64.AmmSym
