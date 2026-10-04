@@ -255,4 +255,28 @@ theorem qPhase_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv mx : BitVe
     · subst h; rw [hdi, hg.rdi]
     · exact kall.1 r (by simp only [mmRegs, List.mem_cons, List.mem_append] at hr ⊢; simp_all)
 
+/-- A change to arrays of a prime's workspace but `X` and 1. -/
+theorem SubCtx.of_arrays {s t : State} {B : Addr} {Z o w wx : Nat} {mx : BitVec 64} {X : Nat} {js : List Nat}
+    (hc : SubCtx s B Z o w wx mx) (hv : XVals s B o wx mx X) (ha : Arrays (off B o) wx js s.mem t.mem)
+    (hjs : ∀ j ∈ js, j < 8 ∧ j ≠ Public.aN ∧ j ≠ Public.aOne) (hwr : t.wr = s.wr)
+    (hdi : t.gpr .rdi = s.gpr .rdi) (hwx : 1 ≤ wx) :
+    SubCtx t B Z o w wx mx ∧ XVals t B o wx mx X ∧ Frm B [xRange o wx] s.mem t.mem := by
+  have hz : (off B o).toNat + slot wx 8 ≤ 2 ^ 64 := by have := hc.good.scr.nowrap; omega
+  have hf : Frm (off B o) (js.map fun j => (slot wx j, 8 * (wx + 2))) s.mem t.mem :=
+    Frm.of_arrays ha fun j hj => List.mem_map.mpr ⟨j, hj, rfl⟩
+  have hr : ∀ r ∈ js.map fun j => (slot wx j, 8 * (wx + 2)), 8 * 17 ≤ r.1 ∧ r.1 + r.2 ≤ slot wx 8 := by
+    intro r hr
+    obtain ⟨j, hj, rfl⟩ := List.mem_map.mp hr
+    have := slot_le (w := wx) (hjs j hj).1
+    have := hdr_lt_slot wx j (show 31 < 32 by decide)
+    simp only; omega
+  have hnN : Public.aN ∉ js := fun h => (hjs _ h).2.1 rfl
+  have hnO : Public.aOne ∉ js := fun h => (hjs _ h).2.2 rfl
+  refine ⟨hc.of_frm hf hr hwr hdi, ⟨?_, ?_, ?_⟩, hf.to_x hr (by have := hc.hi; have := hc.scr.nowrap; omega)
+    (List.mem_singleton_self _)⟩
+  · rw [ha.wv_of_not_mem (by decide) hnN hz]; exact hv.n
+  · rw [ha.word0_of_not_mem (by decide) hnN hz hwx]; exact hv.inv
+  · rw [ha.wv_of_not_mem (by decide) hnO hz]; exact hv.one
+
+
 end VG.Proof.Bignum.X86_64

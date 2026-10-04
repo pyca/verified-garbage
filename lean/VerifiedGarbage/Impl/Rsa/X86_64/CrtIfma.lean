@@ -295,15 +295,17 @@ def result (p : Nat) : List (Prog isa) :=
 
 /-! ## The phases -/
 
-/-- `q`'s and `p`'s bases (`x R_X mod X` in `aXc`, `R_X mod X` in `aY`).
-Both primes have 16 words, so `G = 2^E mod n` is the same for both: it is
-computed once, kept in `n`'s `aX` (for `p`'s, and for after the
-exponentiations). -/
+/-- A prime's bases, in its workspace (`rdi := [sl]`), from `n`'s `R_n² mod
+n` and `c R_n mod n` (`R_n = R_X²`, as `n` has twice the prime's words):
+`aY := R_X² mod X` (`redc`, which multiplies by `R_X⁻²`), `aXc := c mod X`,
+then `aXc := c R_X mod X` (through `aT`) and `aY := R_X mod X`. -/
+def prep (mul : Nat → Nat → Nat → Prog isa) (sl : Nat) : List (Prog isa) :=
+  [.block [.mov .rdi (.mem (hdr sl))]] ++ redc mul aR2 ++ copyArr aY aXc ++ redc mul aXm ++ [mul aT aY aXc] ++
+    copyArr aXc aT ++ [mul aY aY aOne, .block [leave]]
+
+/-- `q`'s and `p`'s bases (`x R_X mod X` in `aXc`, `R_X mod X` in `aY`). -/
 def pre (mul : Nat → Nat → Nat → Prog isa) : List (Prog isa) :=
-  gPow mul sWsQ ++ copyArr aX aY ++ [.block [enterQ]] ++ redc mul aY ++ copyArr aY aXc ++
-    [.block [leave], mul aY aXm aY, .block [enterQ]] ++ redc mul aY ++ [.block [leave]] ++
-  copyArr aY aX ++ [.block [enterP]] ++ redc mul aY ++ copyArr aY aXc ++
-    [.block [leave], mul aY aXm aY, .block [enterP]] ++ redc mul aY ++ [.block [leave]]
+  prep mul sWsQ ++ prep mul sWsP
 
 /-- The IFMA area after `q`'s workspace, its base into both prime
 workspaces; the regions; the vector code; the results. -/
@@ -314,12 +316,14 @@ def ifma : List (Prog isa) :=
   [.block [.mov .rbx (.mem (hdr sIfma))], vec] ++
   result 1 ++ [.block [leave, enterP]] ++ result 0 ++ [.block [leave]]
 
-/-- `p`'s phase after its exponentiation, as `pPhase`: `m_q R_p`, `h`. -/
+/-- `p`'s phase after its exponentiation: `aXc := R_p² mod p` as in `prep`,
+`m_q` (`q`'s `aY`, of as many words) into `aChunk` and `aXc := m_q R_p mod
+p` (through `aChunk`); then `h = (m_p - m_q) qInv mod p` into `aY`, as `pPhase` computes it. -/
 def post (mul : Nat → Nat → Nat → Prog isa) : List (Prog isa) :=
-  copyArr aY aX ++ [zeroArr aX,
-    .block [.mov .rax (.mem (hdr sWsQ)), .mov .rsi (.mem (ws .rax (sArr aY))), .mov .r12 (.mem (ws .rax sW)),
-      .mov .rbx (.mem (hdr (sArr aX)))],
-    copyWords, mul aX aX aR2, mul aX aX aY, .block [enterP]] ++ redc mul aX ++
+  [.block [enterP]] ++ redc mul aR2 ++
+  [.block [.mov .rax (.mem (hdr sLink)), .mov .rax (.mem (ws .rax sWsQ)), .mov .rsi (.mem (ws .rax (sArr aY))),
+      .mov .r12 (.mem (hdr sW)), .mov .rbx (.mem (hdr (sArr aChunk)))],
+    copyWords, mul aChunk aChunk aXc] ++ copyArr aXc aChunk ++
   subModArr aT aY aXc ++ loadArr aChunk sQinv sPlen ++ maskArr aChunk ++ [mul aY aT aChunk, .block [leave]]
 
 /-- Whether `n` has 32 words and `p` and `q` 16 (`(len + 7) / 8` of their

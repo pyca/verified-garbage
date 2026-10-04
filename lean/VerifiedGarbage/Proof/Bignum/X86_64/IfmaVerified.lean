@@ -32,7 +32,7 @@ theorem ifmaCode_constantTime (M : Mont)
       (pow_ct M (redc_ct_Y M) (expLoop_ct_Q M) (by taint_decide)))
     (pPhase_ct M (unit_ct M (gPow_ct_P M) (redc_ct_Y M) (by taint_decide))
       (pow_ct M (redc_ct_Y M) (expLoop_ct_P M) (by taint_decide)) (redc_ct_X M) loadArr_ct_pI)
-    crtFinish_ct (gPow_ct_Q M) (redc_ct_Y M) (redc_ct_X M) loadArr_ct_pI hpost
+    crtFinish_ct (redc_ct_R2 M) (redc_ct_Xm M) loadArr_ct_pI hpost
 
 /-- `vg_rsa_private_crt_ifma` with Montgomery multiplication `M`, given that
 its code but the vector code never loads MXCSR (which the registration file
