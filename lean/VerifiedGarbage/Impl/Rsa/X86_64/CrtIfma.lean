@@ -280,13 +280,15 @@ def result (p : Nat) : List (Prog isa) :=
 
 /-! ## The phases -/
 
-/-- `q`'s and `p`'s bases (`x R_X mod X` in `aXc`, `R_X mod X` in `aY`), with
-`G_p` kept in `n`'s `aX` for after the exponentiations. -/
+/-- `q`'s and `p`'s bases (`x R_X mod X` in `aXc`, `R_X mod X` in `aY`).
+Both primes have 16 words, so `G = 2^E mod n` is the same for both: it is
+computed once, kept in `n`'s `aX` (for `p`'s, and for after the
+exponentiations). -/
 def pre (mul : Nat → Nat → Nat → Prog isa) : List (Prog isa) :=
-  gPow mul sWsQ ++ [.block [enterQ]] ++ redc mul aY ++ copyArr aY aXc ++ [.block [leave], mul aY aXm aY,
-    .block [enterQ]] ++ redc mul aY ++ [.block [leave]] ++
-  gPow mul sWsP ++ [.block [enterP]] ++ redc mul aY ++ copyArr aY aXc ++ [.block [leave]] ++
-  copyArr aX aY ++ [mul aY aXm aY, .block [enterP]] ++ redc mul aY ++ [.block [leave]]
+  gPow mul sWsQ ++ copyArr aX aY ++ [.block [enterQ]] ++ redc mul aY ++ copyArr aY aXc ++
+    [.block [leave], mul aY aXm aY, .block [enterQ]] ++ redc mul aY ++ [.block [leave]] ++
+  copyArr aY aX ++ [.block [enterP]] ++ redc mul aY ++ copyArr aY aXc ++
+    [.block [leave], mul aY aXm aY, .block [enterP]] ++ redc mul aY ++ [.block [leave]]
 
 /-- The IFMA area after `q`'s workspace, its base into both prime
 workspaces; the regions; the vector code; the results. -/
