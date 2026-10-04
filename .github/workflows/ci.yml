@@ -539,9 +539,10 @@ jobs:
               aes,avx,pclmulqdq,ssse3 | aes_gcm cpu
               aes,avx,avx2,pclmulqdq,ssse3,vaes,vpclmulqdq | aes_gcm cpu
           # x86 feature dispatch, natively in a 32-bit userspace, with the
-          # runner's features and every test with the baseline
-          # implementations; and AES-GCM's instances for AES's or GHASH's
-          # extension alone, as on x86-64.
+          # runner's features (ChaCha20's and ChaCha20-Poly1305's SSSE3
+          # instances) and every test with the baseline implementations; and
+          # AES-GCM's instances for AES's or GHASH's extension alone, as on
+          # x86-64.
           - chip: native
             arch: x86
             container:

@@ -2,7 +2,7 @@ import VerifiedGarbage.TCB.X86.Target
 import VerifiedGarbage.Proof.ChaCha20.X86.Xor
 import VerifiedGarbage.Impl.ChaCha20.X86.Xor
 import VerifiedGarbage.Proof.ChaCha20.X86.Lit
-import VerifiedGarbage.Proof.ChaCha20.X86.Stream.ApplyCT
+import VerifiedGarbage.Proof.ChaCha20.X86.Stream.Init
 
 /-! # The ChaCha20 block function (RFC 8439) on x86 -/
 
@@ -27,6 +27,17 @@ def artifacts : List Artifact := [
     stack := 12
     verified := Proof.ChaCha20.X86.Xor.xor_verified
     spSafe := Code.all_of_allInstrs (by lit_decide) },
+  { Spec.ChaCha20.xorApi with
+    name := "vg_chacha20_xor_ssse3"
+    target := X86.target
+    doc := Spec.ChaCha20.xorApi.doc (notes := ["Uses SSSE3: as `vg_chacha20_xor`, but rotates by 16 \
+      and 8 bits with `pshufb` (its controls stored in `buf`)."])
+    code := Impl.ChaCha20.X86.Xor.xorSsse3
+    contract := Spec.ChaCha20.xorContract X86.abi 12
+    stack := 12
+    verified := Proof.ChaCha20.X86.Xor.xorSsse3_verified
+    features := ["ssse3"]
+    spSafe := Code.all_of_allInstrs (by lit_decide) },
   { Spec.ChaCha20.initApi with
     target := X86.target
     doc := Spec.ChaCha20.initApi.doc
@@ -40,14 +51,6 @@ def artifacts : List Artifact := [
     code := Impl.ChaCha20.X86.Stream.setNonce
     contract := Spec.ChaCha20.setNonceContract X86.abi
     verified := Proof.ChaCha20.X86.Stream.setNonce_verified
-    spSafe := Code.all_of_allInstrs (by decide +kernel) },
-  { Spec.ChaCha20.applyApi with
-    target := X86.target
-    doc := Spec.ChaCha20.applyApi.doc
-    code := Impl.ChaCha20.X86.Stream.apply
-    contract := Spec.ChaCha20.applyContract X86.abi 32
-    stack := 32
-    verified := Proof.ChaCha20.X86.Stream.apply_verified
-    spSafe := Code.all_of_allInstrs (by lit_decide) }]
+    spSafe := Code.all_of_allInstrs (by decide +kernel) } ]
 
 end VG.Artifacts.ChaCha20.X86

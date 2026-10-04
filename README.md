@@ -484,7 +484,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅</td>
+<td>✅ SSE2, SSSE3</td>
 
 </tr>
 
