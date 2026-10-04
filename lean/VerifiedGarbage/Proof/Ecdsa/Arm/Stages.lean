@@ -51,6 +51,8 @@ structure St₁ (c : Cfg) (A : Args) (s₀ : State) (base : Addr) (s : State) : 
   t₀ : ∀ t < 64 * c.n, s.mem (off base (bitsAt c.n 0 + t)) = if (kv c A s₀).testBit t then 1 else 0
   t₁ : ∀ t < 64 * c.n, s.mem (off base (bitsAt c.n 1 + t)) = if (c.C.p - 2).testBit t then 1 else 0
   t₂ : ∀ t < 64 * c.n, s.mem (off base (bitsAt c.n 2 + t)) = if (c.C.n - 2).testBit t then 1 else 0
+  /-- The argument registers, which the setup and the tables leave. -/
+  args : ∀ r ∈ [Reg.r0, .r1, .r2, .r3], s.gpr r = s₀.gpr r
 
 /-- The setup, then the three tables. -/
 theorem stage₁ (hc : CfgOk c) {s₀ : State} (hp : SetupPre c A s₀) {rest : Prog isa} {Q : State → Prop}
@@ -102,12 +104,13 @@ theorem stage₁ (hc : CfgOk c) {s₀ : State} (hp : SetupPre c A s₀) {rest : 
   have hn2 : c.C.n - 2 = sv c (scBase A s₀) s₁ EXPN := (hc' (EXPN, c.C.n - 2) (by simp [Cfg.consts])).symm
   have K₂₄ : Rest work s₁ s₄ :=
     (k₂.mono (by decide)).trans ((k₃.mono (by decide)).trans (k₄.mono (by decide)))
+  have A₂₄ : Rest [.r4, .r5, .r7, .r11] s₁ s₄ := k₂.trans (k₃.trans k₄)
   refine ⟨⟨hs₃.of_rest k₄ (by decide), (P.keep.mono (by decide)).trans (K₂₄.mono (by simp)),
     by rw [K₂₄.gpr _ (by decide), P.lr], ?_, ?_⟩,
     by rw [v₄ (by decide), P.k], by rw [v₄ (by decide), P.d], by rw [v₄ (by decide), P.e],
     by rw [v₄ (by decide)]; exact hc' (RX, 0) (by simp [Cfg.consts]),
     by rw [v₄ (by decide)]; exact hc' (RY, c.mont 1) (by simp [Cfg.consts]),
-    by rw [v₄ (by decide)]; exact hc' (RZ, 0) (by simp [Cfg.consts]), ?_, ?_, ?_, ?_⟩
+    by rw [v₄ (by decide)]; exact hc' (RZ, 0) (by simp [Cfg.consts]), ?_, ?_, ?_, ?_, ?_⟩
   · exact (fx.unch h7 hn (fixedOk_tbl 0) u₂ |>.unch h7 hn (fixedOk_tbl 1) u₃).unch h7 hn (fixedOk_tbl 2) u₄
   · intro x hx
     have hx' : size ≤ ofs (scBase A s₀) x := by have := hx _ (List.mem_singleton_self _); omega
@@ -131,6 +134,10 @@ theorem stage₁ (hc : CfgOk c) {s₀ : State} (hp : SetupPre c A s₀) {rest : 
       ← v₂ (by decide)]
   · intro t ht
     rw [b₄ t ht, hn2, ← v₃ (by decide)]
+  · intro r hr
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rw [A₂₄.gpr r (by rcases hr with rfl | rfl | rfl | rfl <;> decide),
+      P.keep.gpr r (by rcases hr with rfl | rfl | rfl | rfl <;> decide)]
 
 theorem toM_cmont (hc : CfgOk c) (x : Nat) : toM c.C.p (2 ^ (64 * c.n)) (c.mont x) = Fin.ofNat c.C.p x :=
   toM_mont (unitMod_pow_two hc.p_odd _)

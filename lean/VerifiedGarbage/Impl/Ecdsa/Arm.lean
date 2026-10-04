@@ -201,13 +201,16 @@ def ltDigit (j : Nat) : List Instr :=
   [half .r4 .r7 (j % 2), half .r5 .r8 (j % 2), .dp .add .r4 .r4 (.reg .r6), .dp .sub .r4 .r4 (.reg .r5),
     .dp .add .r4 .r4 (.reg .r3), .mov .r3 (.shifted .r4 .lsr 16)]
 
-/-- The mask `r5` of `[a] < n` (all ones if it is): the carry out of
-`[a] - n` digit by digit is 0 if it borrowed. -/
-def ltN (a : Nat) : List Instr :=
+/-- The mask `r5` of `[a] < [m]` (all ones if it is): the carry out of
+`[a] - [m]` digit by digit is 0 if it borrowed. -/
+def ltM (m a : Nat) : List Instr :=
   [mask16, .mov .r3 (.imm 1)] ++
   ((List.range (2 * c.n)).flatMap fun k =>
-    [.ldr .r7 wb (a + 4 * k), .ldr .r8 wb (c.sl MN + 4 * k)] ++ ltDigit (2 * k) ++ ltDigit (2 * k + 1)) ++
+    [.ldr .r7 wb (a + 4 * k), .ldr .r8 wb (m + 4 * k)] ++ ltDigit (2 * k) ++ ltDigit (2 * k + 1)) ++
   [.dp .sub .r5 .r3 (.imm 1)]
+
+/-- The mask `r5` of `[a] < n`. -/
+def ltN (a : Nat) : List Instr := c.ltM (c.sl MN) a
 
 /-- The flag `&=` the mask `r5`, through `r4`. -/
 def andFlag : List Instr :=
