@@ -230,4 +230,48 @@ theorem xorFrom_tail {ciph : Ccm.Cipher} (nonce : List Byte) (j : Nat) {d : List
       List.getElem?_eq_getElem (show i < (ciph (Ccm.ctrBlock nonce j)).length by omega)]
   · exact .inr (by omega)
 
+/-- The first `t` bytes of a block XORed with CCM's keystream from `Ctr₀`:
+the first `t` bytes of the block encrypted as a MAC (§6.1 step 8). -/
+theorem take_xorFrom_zero {ciph : Ccm.Cipher} (hc : BlockCipher ciph) (nonce : List Byte) {Y : List Byte}
+    (hY : Y.length = 16) {t : Nat} (ht : t ≤ 16) :
+    (xorFrom ciph nonce 0 Y).take t = Ccm.cryptTag ciph t nonce (Y.take t) := by
+  have hl := hc (Ccm.ctrBlock nonce 0)
+  refine Gcm.list_ext (by simp [length_xorFrom, Ccm.cryptTag, Ccm.xor, hY, hl]) fun i hi => ?_
+  simp only [List.length_take, length_xorFrom, hY] at hi
+  rw [List.getD_eq_getElem?_getD, List.getElem?_take_of_lt (by omega), ← List.getD_eq_getElem?_getD,
+    getD_xorFrom _ _ _ _ (by omega), ksb, Nat.div_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega), Nat.add_zero]
+  simp only [Ccm.cryptTag, Ccm.xor, List.getD_eq_getElem?_getD, List.getElem?_zipWith, List.getElem?_take_of_lt
+    (show i < t by omega), List.getElem?_eq_getElem (show i < Y.length by omega),
+    List.getElem?_eq_getElem (show i < (ciph (Ccm.ctrBlock nonce 0)).length by omega), Option.getD_some]
+
+/-! ## `vg_aes_ctr32` on memory -/
+
+/-- What `vg_aes_ctr32` writes over the `nb` blocks at `D`, as bytes: the
+keystream from its counter block XORed in. -/
+theorem ctr32_bytes {m m' : Mem} {C D : Addr} {G : Gcm.Block → Gcm.Block} {nb : Nat}
+    (hd : Gcm.blocksAt m' D nb = Gcm.ctr32 G (Gcm.blockAt m C) (Gcm.blocksAt m D nb)) :
+    Aes.bytesAt m' D (16 * nb) = Gcm.xorKs G (Gcm.blockAt m C) 0 (Aes.bytesAt m D (16 * nb)) := by
+  refine Gcm.list_ext (by simp [Gcm.length_xorKs, Cmac.bytesAt_length]) fun k hk => ?_
+  simp only [Cmac.bytesAt_length] at hk
+  rw [Gcm.getD_xorKs _ _ _ _ (by rw [Cmac.bytesAt_length]; exact hk), Gcm.getD_bytesAt' _ _ hk,
+    Gcm.getD_bytesAt' _ _ hk]
+  have hq : k / 16 < nb := by omega
+  have e₁ := congrArg (fun L => L.getD (k / 16) 0) hd
+  rw [Gcm.ctr32_getD _ _ _ (by rw [Gcm.length_blocksAt]; exact hq), Gcm.blocksAt_getD _ _ _ hq,
+    Gcm.blocksAt_getD _ _ _ hq] at e₁
+  have ea : D + BitVec.ofNat 64 k = D + BitVec.ofNat 64 (16 * (k / 16)) + BitVec.ofNat 64 (k % 16) := by
+    rw [BitVec.add_assoc, ← BitVec.ofNat_add]; congr 2; omega
+  rw [ea, Gcm.bytes_toBytes_blockAt m' _ (by omega), Gcm.bytes_toBytes_blockAt m _ (by omega), e₁,
+    Proof.Aes.toBytes_xor _ _ (by omega), Gcm.ksByte, Nat.zero_add]
+
+/-- `vg_aes_ctr32` from `Ctrⱼ` over `k` blocks whose counters do not wrap
+around: CCM's keystream from `Ctrⱼ`. -/
+theorem ctr32_ccm {m m' : Mem} {K C D : Addr} {R : Nat} {nonce : List Byte} (hn : nonce.length ≤ 15) {j k : Nat}
+    (hinc : ∀ i < k, Nat.repeat Gcm.inc32 i (Gcm.blockAt m C) = Gcm.ofBytes (Ccm.ctrBlock nonce (j + i)))
+    (hd : Gcm.blocksAt m' D k =
+      Gcm.ctr32 (Gcm.aesWith R (Aes.bytesAt m K (16 * (R + 1)))) (Gcm.blockAt m C) (Gcm.blocksAt m D k)) :
+    Aes.bytesAt m' D (16 * k) = xorFrom (Ccm.ctxCiph m K R) nonce j (Aes.bytesAt m D (16 * k)) := by
+  rw [ctr32_bytes hd]
+  exact xorKs_eq (fun c hc => Cmac.aesWith_bytes _ _ hc) hn hinc (by rw [Cmac.bytesAt_length])
+
 end VG.Proof.AesCcm
