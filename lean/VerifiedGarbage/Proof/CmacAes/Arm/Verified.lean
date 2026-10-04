@@ -79,7 +79,10 @@ section
 
 Before the call, the counter block holds `Mₙ ⊕ C`, for the last block `Mₙ` of
 §6.2 step 4 and the chaining value `C` at `state`, and the state is zeroed;
-the call leaves `CIPH_K(C ⊕ Mₙ)` there, the MAC (`Cmac.macFull_split`).
+the call leaves `CIPH_K(C ⊕ Mₙ)` there (`finalize_raw_wp`, whatever the
+32 bytes after the key schedule hold, as AES-SIV's key context needs), and
+that is the MAC when they are the subkeys of its cipher (`finalize_wp`,
+`Cmac.macFull_split`).
 -/
 
 namespace VG.Proof.CmacAes.Arm
@@ -222,8 +225,17 @@ theorem finPre_wp {s₀ : State} (hp : FPre s₀) : WP isa finPre s₀ (FMid s�
 
 /-! ## The whole function -/
 
-theorem finalize_wp {s₀ : State} (h0 : finalizeArm.pre s₀) :
-    WP isa finalize s₀ fun s' => abiPreserved s₀ s' ∧ finalizeArm.post s₀ s' := by
+/-- What `vg_cmac_aes_finalize` leaves in the state, from the subkeys after
+the key schedule, whatever they are. -/
+def finalizeRaw (s₀ s' : State) : Prop :=
+  Spec.Aes.bytesAt s'.mem (State.addr (St s₀)) 16 =
+    ciph s₀ (Spec.Cmac.xor (mn s₀) (Spec.Aes.bytesAt s₀.mem (State.addr (St s₀)) 16))
+
+/-- `finalizeArm` with `finalizeRaw` as its postcondition. -/
+def finalizeRawArm : Contract isa := { finalizeArm with post := finalizeRaw }
+
+theorem finalize_raw_wp {s₀ : State} (h0 : finalizeArm.pre s₀) :
+    WP isa finalize s₀ fun s' => abiPreserved s₀ s' ∧ finalizeRaw s₀ s' := by
   have hp := FPre.of h0
   have hR := hp.rounds
   have hRb : 16 * (R s₀ + 1) ≤ 240 := by rcases hR with h | h | h <;> omega
@@ -289,14 +301,20 @@ theorem finalize_wp {s₀ : State} (h0 : finalizeArm.pre s₀) :
     by_cases hlr : r = .lr
     · subst hlr; rw [u₄.other _ (by decide), ld₃ (.lr, 2072) (by simp), r5₂, slot .lr 2072 (by decide)]
     rw [u₄.other _ h5, ho₃ _ (by simp [h4, hlr]), h₂.saved r hr hlr, h₁.keep r hr h4 h5 hlr]
-  · intro hk msg hm hne hst
-    have hk' : Spec.Aes.bytesAt s₀.mem (State.addr (W s₀) + BitVec.ofNat 64 240) 32 =
-        (Spec.Cmac.subkeys (ciph s₀) 16).1 ++ (Spec.Cmac.subkeys (ciph s₀) 16).2 := hk
-    obtain ⟨e1, e2⟩ := Proof.Cmac.k1k2 (Proof.Cmac.subkeys_aes_length _ _) hk'
-    show Spec.Aes.bytesAt s₄.mem (State.addr (St s₀)) 16 = _
-    rw [u₄.mem, m₃, h₂.out, sch, cA, h₁.blk, mn, e1, e2, hst,
-      Proof.Cmac.macFull_split _ hm (by rw [Proof.Cmac.bytesAt_length]; exact hp.len)
-        (by rw [Proof.Cmac.bytesAt_length]; exact hne), Proof.Cmac.xor_comm]
+  · show Spec.Aes.bytesAt s₄.mem (State.addr (St s₀)) 16 = _
+    rw [u₄.mem, m₃, h₂.out, sch, cA, h₁.blk]
+
+theorem finalize_wp {s₀ : State} (h0 : finalizeArm.pre s₀) :
+    WP isa finalize s₀ fun s' => abiPreserved s₀ s' ∧ finalizeArm.post s₀ s' := by
+  have hp := FPre.of h0
+  refine WP.mono (finalize_raw_wp h0) fun s' ⟨ab, raw⟩ => ⟨ab, fun hk msg hm hne hst => ?_⟩
+  have hk' : Spec.Aes.bytesAt s₀.mem (State.addr (W s₀) + BitVec.ofNat 64 240) 32 =
+      (Spec.Cmac.subkeys (ciph s₀) 16).1 ++ (Spec.Cmac.subkeys (ciph s₀) 16).2 := hk
+  obtain ⟨e1, e2⟩ := Proof.Cmac.k1k2 (Proof.Cmac.subkeys_aes_length _ _) hk'
+  show Spec.Aes.bytesAt s'.mem (State.addr (St s₀)) 16 = _
+  rw [raw, mn, e1, e2, hst,
+    Proof.Cmac.macFull_split _ hm (by rw [Proof.Cmac.bytesAt_length]; exact hp.len)
+      (by rw [Proof.Cmac.bytesAt_length]; exact hne), Proof.Cmac.xor_comm]
 
 end VG.Proof.CmacAes.Arm
 

@@ -14,16 +14,16 @@ namespace VG
 materialize_code Impl.ChaCha20Poly1305.AArch64.seal
 materialize_code Impl.ChaCha20Poly1305.AArch64.open
 materialize_code ChaCha20Poly1305.AArch64.sealScalar :=
-  Impl.ChaCha20Poly1305.AArch64.sealCode .scalar false
+  Impl.ChaCha20Poly1305.AArch64.sealMainCode .scalar false
 materialize_code ChaCha20Poly1305.AArch64.openScalar :=
-  Impl.ChaCha20Poly1305.AArch64.openCode .scalar false
+  Impl.ChaCha20Poly1305.AArch64.openMainCode .scalar false
 materialize_code ChaCha20Poly1305.AArch64.sealNeon :=
-  Impl.ChaCha20Poly1305.AArch64.sealCode .neon true
+  Impl.ChaCha20Poly1305.AArch64.sealMainCode .neon true
 materialize_code ChaCha20Poly1305.AArch64.openNeon :=
-  Impl.ChaCha20Poly1305.AArch64.openCode .neon true
+  Impl.ChaCha20Poly1305.AArch64.openMainCode .neon true
 materialize_code ChaCha20Poly1305.AArch64.sealSve2 :=
-  Impl.ChaCha20Poly1305.AArch64.sealCode .sve2 true
+  Impl.ChaCha20Poly1305.AArch64.sealMainCode .sve2 true
 materialize_code ChaCha20Poly1305.AArch64.openSve2 :=
-  Impl.ChaCha20Poly1305.AArch64.openCode .sve2 true
+  Impl.ChaCha20Poly1305.AArch64.openMainCode .sve2 true
 
 end VG

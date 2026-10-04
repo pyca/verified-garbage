@@ -101,7 +101,8 @@ theorem agree₀ {s₁ s₂ : State} (h₁ : verifyX86.pre s₁) (h₂ : verifyX
     · exact congrArg _ a3
 
 theorem verify_ct : ConstantTime isa verifyX86.pre verifyX86.pub verifyP256 :=
-  VG.Taint.constantTime (A := taint) τ₀ (fun _ _ h₁ h₂ hp => agree₀ h₁ h₂ hp) (by taint_decide)
+  VG.Taint.constantTime (A := taint) τ₀ (fun _ _ h₁ h₂ hp => agree₀ h₁ h₂ hp)
+    (by taint_decide_weak VG.Proof.Ecdsa.X86.weak)
 
 /-- The contract with the regions the shared one gives: the arguments'
 slots writable rather than readable. -/

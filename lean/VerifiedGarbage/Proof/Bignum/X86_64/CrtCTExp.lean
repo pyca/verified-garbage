@@ -83,7 +83,7 @@ theorem selBody_ct : RelCT isa (Two fun (q : XPub × Nat) s => q.2 < 16 ∧ SelI
     have hT0 := slot_le (w := q.1.wx) (show Crt.aT < 8 by decide)
     have hE := ent_le q.1.wx hj
     have hTE := slot_sep (w := q.1.wx) (show Crt.aT ≠ 8 + q.2 by unfold Crt.aT; omega)
-    exact WP.mono (selectAcc_self_ok hs h8 hsi hbx h12 hbp (by omega) (by omega) (by omega) (by omega)
+    exact WP.mono (sseSelect_ok hs h8 hbx h12 hbp (by omega) (by omega) (by omega) (by omega)
       (by omega)) fun t ⟨_, _, k⟩ => (k.gpr (by decide)).trans hdi
   -- The next entry, and the index.
   exact rdi_ct (fun q : XPub × Nat => off q.1.B q.1.o) (fun _ _ h => h) (by taint_decide)

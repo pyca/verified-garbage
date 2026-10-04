@@ -29,11 +29,12 @@ working space too, at `M.mo`; `M.minv` is `-m⁻¹ mod 2⁶⁴`. With
   subtraction (`csubR`) or addition of `m`.
 * `csubR`: a number below `2m` in `n` registers and a top word (0 or 1)
   reduced below `m`: the difference with `m` is computed into the registers
-  `dRegs n`, free at that point, and then selected with a mask if it did not
+  `dRegs n`, free at that point, and then selected by `csel` if it did not
   borrow.
 
 A product is `mul` and `umulh` (or shifts), the carries are `adds`, `adcs`
-and `adc` (with `x7 = 0`), every selection is a mask, and every address is `x0` plus
+and `adc` (with `x7 = 0`), every selection is a mask or a `csel` on the carry,
+and every address is `x0` plus
 a constant: nothing but `x0` may affect timing. The operations use the
 registers `x1`–`x7`, `x16`, `x17` and `acc n` (`x8`–`x13` for `n = 4`), and
 write only `[o]` (their frames allow `[M.tmp]` too).
@@ -74,21 +75,20 @@ def diffsR (first : Bool) : List Reg → List Reg → Nat → List Instr
     [ld .x2 mo, if first then .subs .x d t .x2 else .sbcs .x d t .x2] ++ diffsR false ts ds (mo + 8)
   | _, _, _ => []
 
-/-- `ts = ds` where the mask `x17` is zero, word by word, through `x2`. -/
+/-- `ts = ds` where the carry is set (the difference did not borrow), word by
+word. -/
 def selectsR : List Reg → List Reg → List Instr
-  | t :: ts, d :: ds => [.logic .eor .x .x2 t d, .logic .and .x .x2 .x2 .x17,
-      .logic .eor .x t d .x2] ++ selectsR ts ds
+  | t :: ts, d :: ds => .csel .x t d t :: selectsR ts ds
   | _, _ => []
 
 /-- The registers free for the difference when a sum or product is reduced. -/
 def dRegs (n : Nat) : List Reg := [.x1, .x3, .x4, .x5, .x6, .x16].take n
 
 /-- `ts` (and the top word `top`), below `2m`, reduced modulo `m`, in
-registers: the difference with `m` into `dRegs n`; `x17` is all ones if it
-borrowed, and selects the difference where it is zero. -/
+registers: the difference with `m` into `dRegs n`, and selected where it did
+not borrow (the carry is set). -/
 def csubR (M : Mod) (ts : List Reg) (top : Reg) : List Instr :=
-  diffsR true ts (dRegs M.n) M.mo ++ [.sbcs .x .x2 top .x7, .sbc .x .x17 .x7 .x7] ++
-    selectsR ts (dRegs M.n)
+  diffsR true ts (dRegs M.n) M.mo ++ [.sbcs .x .x2 top .x7] ++ selectsR ts (dRegs M.n)
 
 /-- `[o] = ts`. -/
 def stores : List Reg → Nat → List Instr

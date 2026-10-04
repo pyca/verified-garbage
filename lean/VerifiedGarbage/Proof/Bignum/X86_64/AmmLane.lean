@@ -115,13 +115,26 @@ theorem uT_eval (h : StepIn s i L a m k b) {p : Nat} (hp : p < 2) (t : Nat) :
     show (0 : BitVec 64) = BitVec.ofNat 64 0 from rfl, mad_lo (by omega), Nat.zero_add, lo_comm]
   rfl
 
-theorem a2T_eval (h : StepIn s i L a m k b) {p kk t : Nat} (hp : p < 2) (hk : kk < 5) (ht : t < 4) :
-    (a2T p kk i).eval s t = BitVec.ofNat 64 (low (ops a m k p) (L p) (b p) (kk + 5 * t)) := by
-  have hl := h.lt p hp (kk + 5 * t) (by omega)
-  have := lo_lt (a p (kk + 5 * t)) (b p)
-  simp only [a2T, A.eval]
-  rw [a1T_eval h hp hk ht, uT_eval h hp, h.inm p hp kk hk t ht, mad_lo (by omega)]
+theorem a2T_eval0 (h : StepIn s i L a m k b) {p t : Nat} (hp : p < 2) (ht : t < 4) :
+    (a2T p 0 i).eval s t = BitVec.ofNat 64 (low (ops a m k p) (L p) (b p) (0 + 5 * t)) := by
+  have hl := h.lt p hp (0 + 5 * t) (by omega)
+  have := lo_lt (a p (0 + 5 * t)) (b p)
+  simp only [a2T, a1hT, ite_true, A.eval]
+  rw [a1T_eval h hp (by decide) ht, uT_eval h hp, h.inm p hp 0 (by decide) t ht, mad_lo (by omega)]
   simp only [low, ops]
+
+/-- Role `kk + 1` after the low halves: plus the high halves of role `kk` of `a b`. -/
+theorem a2T_evalS (h : StepIn s i L a m k b) {p kk t : Nat} (hp : p < 2) (hk : kk + 1 < 5) (ht : t < 4) :
+    (a2T p (kk + 1) i).eval s t =
+      BitVec.ofNat 64 (low (ops a m k p) (L p) (b p) (kk + 1 + 5 * t) + hi (a p (kk + 5 * t)) (b p)) := by
+  have hl := h.lt p hp (kk + 1 + 5 * t) (by omega)
+  have := lo_lt (a p (kk + 1 + 5 * t)) (b p)
+  have := hi_lt (a p (kk + 5 * t)) (b p)
+  have := lo_lt (m p (kk + 1 + 5 * t)) (stepU (ops a m k p) (L p) (b p))
+  simp only [a2T, a1hT, Nat.add_one_ne_zero, ite_false, Nat.add_sub_cancel, A.eval]
+  rw [a1T_eval h hp hk ht, bT_eval h hp, h.ina p hp kk (by omega) t ht, mad_hi (by omega), uT_eval h hp,
+    h.inm p hp (kk + 1) hk t ht, mad_lo (by omega)]
+  exact congrArg (BitVec.ofNat 64) (by simp only [low, ops]; omega)
 
 theorem low_lt (h : StepIn s i L a m k b) {p j : Nat} (hp : p < 2) (hj : j < 20) :
     low (ops a m k p) (L p) (b p) j < 2 ^ 61 + 2 ^ 53 := by
@@ -149,7 +162,7 @@ theorem cT_eval (h : StepIn s i L a m k b) {p t : Nat} (hp : p < 2) (ht : t < 4)
   simp only [cT, A.eval]
   rw [show (VG.Proof.Poly1305.X86_64.Avx2.xr 14) = .xmm14 from rfl, h.z t ht]
   rcases VG.X86_64.cases4 ht with rfl | rfl | rfl | rfl
-  · rw [a2T_eval h hp (by decide) (by decide), show (0 : Nat) + 5 * 0 = 0 from rfl, shr_ofNat (by omega),
+  · rw [a2T_eval0 h hp (by decide), show (0 : Nat) + 5 * 0 = 0 from rfl, shr_ofNat (by omega),
       show Nat.testBit 3 (2 * 0) = true by decide, show Nat.testBit 3 (2 * 0 + 1) = true by decide, pick2_tt]
     rfl
   · rw [show Nat.testBit 3 (2 * 1) = false by decide, show Nat.testBit 3 (2 * 1 + 1) = false by decide, pick2_ff]
@@ -159,39 +172,43 @@ theorem cT_eval (h : StepIn s i L a m k b) {p t : Nat} (hp : p < 2) (ht : t < 4)
   · rw [show Nat.testBit 3 (2 * 3) = false by decide, show Nat.testBit 3 (2 * 3 + 1) = false by decide, pick2_ff]
     rfl
 
+/-- Role `kk` after the shift: for `kk < 4`, with the high halves of role `kk` of `a b`. -/
 theorem nT_eval (h : StepIn s i L a m k b) {p kk t : Nat} (hp : p < 2) (hk : kk < 5) (ht : t < 4) :
-    (nT p kk i).eval s t = BitVec.ofNat 64 (shifted (low (ops a m k p) (L p) (b p)) (kk + 5 * t)) := by
-  unfold nT
-  split
-  · rename_i h4
-    subst h4
-    simp only [A.eval]
+    (nT p kk i).eval s t = BitVec.ofNat 64 (shifted (low (ops a m k p) (L p) (b p)) (kk + 5 * t) +
+      if kk = 4 then 0 else hi (a p (kk + 5 * t)) (b p)) := by
+  by_cases h4 : kk = 4
+  · subst h4
+    simp only [nT, ite_true, A.eval, Nat.add_zero]
     rw [show (VG.Proof.Poly1305.X86_64.Avx2.xr 14) = .xmm14 from rfl, h.z t ht]
     rcases VG.X86_64.cases4 ht with rfl | rfl | rfl | rfl
     · rw [show Nat.testBit 192 (2 * 0) = false by decide, show Nat.testBit 192 (2 * 0 + 1) = false by decide,
-        pick2_ff, show sel4 57 0 = 1 from rfl, a2T_eval h hp (by decide) (by decide)]; rfl
+        pick2_ff, show sel4 57 0 = 1 from rfl, a2T_eval0 h hp (by decide)]; rfl
     · rw [show Nat.testBit 192 (2 * 1) = false by decide, show Nat.testBit 192 (2 * 1 + 1) = false by decide,
-        pick2_ff, show sel4 57 1 = 2 from rfl, a2T_eval h hp (by decide) (by decide)]; rfl
+        pick2_ff, show sel4 57 1 = 2 from rfl, a2T_eval0 h hp (by decide)]; rfl
     · rw [show Nat.testBit 192 (2 * 2) = false by decide, show Nat.testBit 192 (2 * 2 + 1) = false by decide,
-        pick2_ff, show sel4 57 2 = 3 from rfl, a2T_eval h hp (by decide) (by decide)]; rfl
+        pick2_ff, show sel4 57 2 = 3 from rfl, a2T_eval0 h hp (by decide)]; rfl
     · rw [show Nat.testBit 192 (2 * 3) = true by decide, show Nat.testBit 192 (2 * 3 + 1) = true by decide,
         pick2_tt]; rfl
-  · split
-    · rename_i _ h0
-      subst h0
+  · simp only [nT, h4, ite_false]
+    by_cases h0 : kk = 0
+    · subst h0
+      simp only [ite_true]
       simp only [A.eval]
-      rw [a2T_eval h hp (by decide) ht, cT_eval h hp ht]
-      have h1 := low_lt h hp (j := 1 + 5 * t) (by omega)
+      rw [a2T_evalS (kk := 0) h hp (by decide) ht, cT_eval h hp ht]
+      have h1 := low_lt h hp (j := 0 + 1 + 5 * t) (by omega)
       have h2 := low_lt h hp (j := 0) (by decide)
+      have := hi_lt (a p (0 + 5 * t)) (b p)
       have hc : low (ops a m k p) (L p) (b p) 0 / 2 ^ 52 < 2 ^ 10 := Nat.div_lt_of_lt_mul (by omega)
       rw [add_ofNat (by split <;> omega)]
-      simp only [shifted, show 0 + 5 * t < 19 by omega, ite_true, show 0 + 5 * t + 1 = 1 + 5 * t by omega]
-      congr 2
-      rcases VG.X86_64.cases4 ht with rfl | rfl | rfl | rfl <;> simp
-    · rename_i h4 h0
-      rw [a2T_eval h hp (by omega) ht]
-      simp only [shifted, show kk + 5 * t < 19 by omega, ite_true, show kk + 1 + 5 * t = kk + 5 * t + 1 by omega,
-        show kk + 5 * t ≠ 0 by omega, ite_false, Nat.add_zero]
+      simp only [shifted, show 0 + 5 * t < 19 by omega, ite_true, show 0 + 5 * t + 1 = 0 + 1 + 5 * t by omega]
+      refine congrArg (BitVec.ofNat 64) ?_
+      rcases VG.X86_64.cases4 ht with rfl | rfl | rfl | rfl <;> simp <;> omega
+    · simp only [h0, ite_false]
+      obtain ⟨kk', rfl⟩ : ∃ kk', kk = kk' + 1 := ⟨kk - 1, by omega⟩
+      rw [show kk' + 1 + 1 = (kk' + 1) + 1 from rfl, a2T_evalS h hp (by omega) ht]
+      simp only [shifted, show kk' + 1 + 5 * t < 19 by omega, ite_true,
+        show kk' + 1 + 1 + 5 * t = kk' + 1 + 5 * t + 1 by omega, show kk' + 1 + 5 * t ≠ 0 by omega, ite_false,
+        Nat.add_zero]
 
 theorem hT_eval (h : StepIn s i L a m k b) {p kk t : Nat} (hp : p < 2) (hk : kk < 5) (ht : t < 4) :
     (hT p kk i).eval s t = BitVec.ofNat 64 (step (ops a m k p) (L p) (b p) (kk + 5 * t)) := by
@@ -204,10 +221,23 @@ theorem hT_eval (h : StepIn s i L a m k b) {p kk t : Nat} (hp : p < 2) (hk : kk 
       split <;> omega
     · omega
   have := hi_lt (a p (kk + 5 * t)) (b p)
-  simp only [hT, A.eval]
-  rw [nT_eval h hp hk ht, bT_eval h hp, h.ina p hp kk hk t ht, mad_hi (by omega), uT_eval h hp,
-    h.inm p hp kk hk t ht, mad_hi (by omega)]
-  rfl
+  have := hi_lt (m p (kk + 5 * t)) (stepU (ops a m k p) (L p) (b p))
+  by_cases h4 : kk = 4
+  · subst h4
+    simp only [hT, ite_true, A.eval]
+    have ha : s.mem.readW (s.gpr .r8 + BitVec.ofNat 64 (D * p + 128 + 8 * t)) 64 =
+        BitVec.ofNat 64 (a p (4 + 5 * t)) := h.ina p hp 4 hk t ht
+    have hm : s.mem.readW (s.gpr .r10 + BitVec.ofNat 64 (D * p + oM + 128 + 8 * t)) 64 =
+        BitVec.ofNat 64 (m p (4 + 5 * t)) := h.inm p hp 4 hk t ht
+    rw [nT_eval h hp hk ht]
+    simp only [↓reduceIte, Nat.add_zero]
+    rw [bT_eval h hp, ha, mad_hi (by omega), uT_eval h hp, hm, mad_hi (by omega)]
+    rfl
+  · simp only [hT, h4, ite_false, A.eval]
+    rw [nT_eval h hp hk ht]
+    simp only [h4, ite_false]
+    rw [uT_eval h hp, h.inm p hp kk hk t ht, mad_hi (by omega)]
+    rfl
 
 end
 

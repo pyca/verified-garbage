@@ -127,8 +127,10 @@ def spongeSumCmds (ns c : String) (base : Option String) :
 /-- The commands of `sponge_taint_summaries ns callee saving`, for a
 permutation that writes the callee-saved registers (restoring them): no
 summary keeps anything, so each function has a summary for each set of
-callee-saved registers public at some call (the larger first). -/
-def spongeSumSavingCmds (ns c : String) : List String := Id.run do
+callee-saved registers public at some call (the larger first). The
+summaries `permUsing` (e.g. of the permutation's rounds) are used in those of
+the permutation. -/
+def spongeSumSavingCmds (ns c : String) (permUsing : List String := []) : List String := Id.run do
   let perm := s!"(.call {c}.name {c}.code)"
   let fn (f n : String) :=
     s!"(.call (\"vg_keccak_{f}_scratch\" ++ {c}.suffix) (Impl.Sha3.AArch64.Stream.{n}With {c}))"
@@ -142,8 +144,9 @@ def spongeSumSavingCmds (ns c : String) : List String := Id.run do
   let absorbs := [("absorb23", ".x23, .x25, .x26, .x27, .x28"),
     ("absorb24", ".x24, .x25, .x26, .x27, .x28"), ("absorb28", ".x25, .x26, .x27, .x28"),
     ("absorb27", ".x25, .x26, .x27"), ("absorb24_26", ".x24, .x25, .x26")]
+  let permUsingS := if permUsing.isEmpty then "" else " using " ++ " ".intercalate permUsing
   return (perms.map fun (n, rs) =>
-      s!"taint_summary {ns}.{n} : VectorTaint.taint {ofRegs rs} {perm}") ++
+      s!"taint_summary {ns}.{n} : VectorTaint.taint {ofRegs rs} {perm}{permUsingS}") ++
     (absorbs.map fun (n, rs) =>
       s!"taint_summary {ns}.{n} : VectorTaint.taint {ofRegs (args ++ ", " ++ rs)} " ++
         s!"{fn "absorb" "absorb"} using {usingS}") ++
@@ -161,13 +164,20 @@ summaries of the permutation `callee` and of the sponge's functions over it
 that of absorb, and takes the others from `base` (for a callee that differs
 from `base`'s only in its absorb); `sponge_taint_summaries ns callee saving`
 those of a permutation that writes (and restores) the callee-saved
-registers (`spongeSumSavingCmds`). -/
-syntax "sponge_taint_summaries " ident ident (" from " ident)? (&" saving")? : command
+registers (`spongeSumSavingCmds`), and `… saving using l₁ …` proves those
+of the permutation with the summaries `lᵢ` (e.g. of its rounds, so that the
+summaries of the permutation for each set of callee-saved registers do not
+each analyse them again). -/
+syntax "sponge_taint_summaries " ident ident (" from " ident)? (&" saving")?
+  (" using " ident+)? : command
 
 elab_rules : command
-  | `(sponge_taint_summaries $ns $callee $[from $base]? $[saving%$sv]?) => do
+  | `(sponge_taint_summaries $ns $callee $[from $base]? $[saving%$sv]? $[using $ls*]?) => do
+    let permUsing := (ls.getD #[]).toList.map (·.getId.toString)
+    unless permUsing.isEmpty || sv.isSome do
+      throwError "sponge_taint_summaries: `using` needs `saving`"
     let (cmds, aliases) := if sv.isSome then
-        (spongeSumSavingCmds ns.getId.toString callee.getId.toString, [])
+        (spongeSumSavingCmds ns.getId.toString callee.getId.toString permUsing, [])
       else spongeSumCmds ns.getId.toString callee.getId.toString (base.map (·.getId.toString))
     for cmd in cmds do
       match Parser.runParserCategory (← getEnv) `command cmd with

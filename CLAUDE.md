@@ -279,6 +279,13 @@ Avoid these patterns (each has cost tens of seconds in one proof):
   `Proof/Framework/TaintSum.lean`) rather than analysing its body in every
   caller's `taint_decide`; this needs a `Taint.Frame` instance for the ISA's
   taint domain (so far `AArch64.VectorTaint`, `Framework/AArch64/TaintMono.lean`).
+  A summary pays when declarations or modules share it: within one
+  `taint_decide`, the kernel already analyses identical code from the same
+  taint once, so splitting one check into summaries makes it slower. Give a
+  summary the smallest taint its callers need (public slots that are never
+  read back as addresses cost the kernel at every store). Code that differs
+  only in immediates (table selections) has the same taint: check one copy
+  (`Proof/Framework/AArch64/TaintErase.lean`, `constantTime_eraseImm_of_eq`).
 * **Tactics run compiled:** a module defining tactics, elaborators,
   simprocs or `MetaM` functions that imports only Lean core and precompiled
   modules goes in `NativeTactics` (lakefile); the interpreter runs it an
@@ -343,7 +350,12 @@ Avoid these patterns (each has cost tens of seconds in one proof):
   `compress H (blockAt m p) = compress H (parseBlock f)` or
   `bytesAt m p n ++ [0x80] = xs ++ [0x80]`, use
   `refine congrArg (compress _) ?_` or `refine congrArg (· ++ [0x80]) ?_`,
-  not `congr 1`, which first tries to unify both sides.
+  not `congr 1`, which first tries to unify both sides. A lemma proved
+  `:= rfl` is one `simp` uses by definitional unfolding, which the kernel
+  then repeats; where a profile shows that (e.g. `exec` of an instruction,
+  `Proof/Blake2/X86_64/Avx/Round.lean`), prove it `:= (rfl)`. Keep the
+  framework's `RegUpd` lemmas `rfl`: as propositional rewrites they measured
+  slower.
 * **Unfolding recursive definitions:** `simp`/`dsimp` unfolding a recursive
   definition that uses a recursive call's result twice (`let r := f …;
   (… r.1, r.2)`) duplicates the call at every level. Evaluate it in one

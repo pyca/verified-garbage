@@ -51,7 +51,7 @@ def nttChk (p : Params) : Bool :=
     keepB (vB p) [(pZ i, 1024), (sc oSS, 1024)] pC 1024) &&
   ipChk (vB p) (vW p) pC && keepC p [(pC, 1024), (sc oSS, 1024)] 100
 
-theorem nttChk_all : ∀ p ∈ params, nttChk p = true := by decide
+theorem nttChk_all : ∀ p ∈ params, nttChk p = true := by decide +kernel
 
 theorem nttZ_ok {P : Prims} (C : PrimsOk P) {p : Params} (hp : p ∈ params) {σ : State} (hv : VPre p σ)
     {h : List (Vector Bool n)} {A' : Nat → Nat → Poly} {Q : Prop} [Decidable Q] {cH : Poly}
@@ -115,7 +115,7 @@ def rowChk (p : Params) (r : Nat) : Bool :=
     keepB (vB p) [(pT, 1024), (sc oSS, 1024), (pT2, 1024)] pW 1024 && decide (1 ≤ p.ℓ) &&
     decide (w1Max p = (q - 1) / (2 * p.γ₂) - 1)
 
-theorem rowChk_all : ∀ p ∈ params, ∀ r < p.k, rowChk p r = true := by decide
+theorem rowChk_all : ∀ p ∈ params, ∀ r < p.k, rowChk p r = true := by decide +kernel
 
 theorem hintRow_pa (s : State) (r : Nat) : pa s (pH r) = pa s (pH 0) + BitVec.ofNat 64 (1024 * r) := by
   simp only [pa, oP]
@@ -390,7 +390,7 @@ def compChk (p : Params) : Bool :=
     tChk p [(sc 0, 200), (sc 200, 640), (sc oCT, p.ctildeLen)] && inB (vB p) (sc oCT) p.ctildeLen &&
     inB (vB p) (.r13, 0) p.ctildeLen && decide (0 < p.ctildeLen) && decide (p.ctildeLen ≤ p.sigLen)
 
-theorem compChk_all : ∀ p ∈ params, compChk p = true := by decide
+theorem compChk_all : ∀ p ∈ params, compChk p = true := by decide +kernel
 
 /-- `w′₁` of the signature, encoded. -/
 abbrev w1Enc (p : Params) (σ : State) (h : List (Vector Bool n)) (A' : Nat → Nat → Poly) (cH : Poly) :

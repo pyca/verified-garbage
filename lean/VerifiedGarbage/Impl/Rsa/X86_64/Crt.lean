@@ -332,6 +332,16 @@ def tabBuild (mul : Nat → Nat → Nat → Prog isa) : List (Prog isa) :=
     .loop (seqs ([mul aT aT aXc, nextEnt] ++ toEnt aT ++
       [.block [.mov .rax (.mem (hdr sBit)), .alu .sub .rax (.imm 1), .store (hdr sBit) .rax]])) .ne]
 
+/-- `[rbx] := rbp ? [r8] : [rbx]` over the words below `2 ⌈w / 2⌉` (`r12 =
+w`), two at a time with SSE2: the mask in both quadwords of `xmm0`, and each
+pair `T ^ ((T ^ E) & mask)`. -/
+def sseSelect : Prog isa :=
+  .seq (.block [.xop (.movq .xmm0 .rbp), .xop (.bin .punpcklqdq .xmm0 .xmm0), .mov .r13 (.reg .r12),
+      .alu .add .r13 (.imm 1), .shift .shr .r13 1, .alu .add .r13 (.reg .r13), .mov32 .r14 (.imm 0)])
+    (.loop (.block [.movdquLoad .xmm1 (ix .r8 .r14), .movdquLoad .xmm2 (ix .rbx .r14), .xop (.bin .pxor .xmm1 .xmm2),
+      .xop (.bin .pand .xmm1 .xmm0), .xop (.bin .pxor .xmm2 .xmm1), .movdquStore (ix .rbx .r14) .xmm2,
+      .alu .add .r14 (.imm 2), .alu .cmp .r14 (.reg .r13)]) .ne)
+
 /-- `[aT] := T_v`, `v` in `sNib`: for each entry `j`, `[aT] := T_j` under the
 mask of `j = v`. -/
 def tabSelect : List (Prog isa) :=
@@ -340,7 +350,7 @@ def tabSelect : List (Prog isa) :=
       .block [.mov .rax (.mem (hdr sJ)), .alu .xor .rax (.mem (hdr sNib)), .alu .cmp .rax (.imm 1),
         .alu .sbb .rbp (.reg .rbp), .mov .r12 (.mem (hdr sW)), .mov .r8 (.mem (hdr sEnt)),
         .mov .rsi (.mem (hdr (sArr aT))), .mov .rbx (.mem (hdr (sArr aT)))],
-      selectAcc,
+      sseSelect,
       nextEnt,
       .block [.mov .rax (.mem (hdr sJ)), .alu .add .rax (.imm 1), .store (hdr sJ) .rax, .alu .cmp .rax (.imm 16)]]) .ne]
 

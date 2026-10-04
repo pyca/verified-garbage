@@ -41,7 +41,7 @@ def hintChk (p : Params) : Bool :=
     tChk p [(pH 0, 256 * p.k * 4)] && decide (HuPar (p.ω + p.k) p.ω (256 * p.k)) &&
     decide (oHint p + (p.ω + p.k) ≤ p.sigLen)
 
-theorem hintChk_all : ∀ p ∈ params, hintChk p = true := by decide
+theorem hintChk_all : ∀ p ∈ params, hintChk p = true := by decide +kernel
 
 theorem hint_ok {P : Prims} (C : PrimsOk P) {p : Params} (hp : p ∈ params) {σ s : State} (hv : VPre p σ)
     (h : T p σ s) : WP isa (hint P p) s (S1 p σ) := by
@@ -92,7 +92,7 @@ def zChk (p : Params) (i : Nat) : Bool :=
     (List.range i).all (fun i' => keepB (vB p) [(pZ i, 1024)] (pZ i') 1024) && nlChk (vB p) (pZ i) &&
     decide (p.γ₁ - p.β < 2 ^ 31)
 
-theorem zChk_all : ∀ p ∈ params, ∀ i < p.ℓ, zChk p i = true := by decide
+theorem zChk_all : ∀ p ∈ params, ∀ i < p.ℓ, zChk p i = true := by decide +kernel
 
 theorem zOne_ok {P : Prims} (C : PrimsOk P) {p : Params} (hp : p ∈ params) {σ : State} (hv : VPre p σ)
     {h : List (Vector Bool n)} {i : Nat} (hi : i < p.ℓ) {s : State} (hs : S2 p h i σ s) :

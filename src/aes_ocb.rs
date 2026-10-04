@@ -42,11 +42,6 @@ use crate::arch::aes_ocb::{
 use crate::arch::aes_ocb::{vg_aes_ocb_init, vg_aes_ocb_open, vg_aes_ocb_seal};
 use crate::cpu::{Features, detected};
 use crate::zeroize::zeroize;
-use core::mem::MaybeUninit;
-
-/// The working space of the functions, in 64-bit words: for `seal` and
-/// `open`, the tag in its first bytes.
-const WORK: usize = 320;
 
 /// The instance of a function for `backend`: the scalar one, x86-64's for
 /// AES-NI, or AArch64's for the AES instructions.
@@ -151,15 +146,13 @@ impl AesOcb {
             vg_aes_ocb_init_aesni,
             vg_aes_ocb_init_aes
         );
-        let mut scratch = MaybeUninit::<[u64; WORK]>::uninit();
         // SAFETY: `key` is valid for reads of `key.len()` bytes, which is 16,
-        // 24 or 32; `k.ctx` and `scratch` are valid for reads and writes of
-        // 256 and 2560 bytes. They are distinct objects, so no two overlap,
-        // nor do they overlap the return address on the stack or the stack
-        // below it, and none wraps around the end of the address space. The
-        // CPU has the features of the implementation selected. `scratch` is
-        // uninitialized: it is only working space.
-        unsafe { init(key.as_ptr(), key.len(), &mut k.ctx, scratch.as_mut_ptr()) };
+        // 24 or 32; `k.ctx` is valid for reads and writes of 256 bytes. They
+        // are distinct objects, so they do not overlap, nor do they overlap
+        // the return address on the stack or the stack below it, and neither
+        // wraps around the end of the address space. The CPU has the features
+        // of the implementation selected.
+        unsafe { init(key.as_ptr(), key.len(), &mut k.ctx) };
         Ok(k)
     }
 
@@ -185,19 +178,17 @@ impl AesOcb {
             vg_aes_ocb_seal_aesni,
             vg_aes_ocb_seal_aes
         );
-        let mut work = MaybeUninit::<[u64; WORK]>::uninit();
+        let mut tag = [0u8; T];
         // SAFETY: `self.ctx` is the key context `vg_aes_ocb_init` wrote for
         // `self.rounds` (10, 12 or 14) rounds, valid for reads of 256 bytes.
         // `nonce` (1 to 15 bytes, `check`) and `aad` are valid for reads of
         // their lengths, `data` for reads and writes of `data.len()` bytes,
-        // and `work` for reads and writes of 2560. `T` is 1 to 16
-        // (`assert_tag_length`). `data` and `work` are unique borrows, so
-        // they overlap neither each other nor the other buffers; no buffer
+        // and `tag` for reads and writes of `T` bytes, 1 to 16
+        // (`assert_tag_length`). `data` and `tag` are unique borrows, so they
+        // overlap neither each other nor the other buffers; no buffer
         // overlaps the arguments on the stack, the return address or the
         // stack below it, and none wraps around the end of the address
         // space. The CPU has the features of the implementation selected.
-        // `work` is uninitialized: it is only working space but for the tag
-        // written to its first `T` bytes.
         unsafe {
             seal(
                 &self.ctx,
@@ -208,15 +199,10 @@ impl AesOcb {
                 aad.len(),
                 data.as_mut_ptr(),
                 data.len(),
-                work.as_mut_ptr(),
+                tag.as_mut_ptr(),
                 T,
             )
         };
-        // SAFETY: `seal` wrote the tag to the first `T` (at most 16) bytes
-        // of `work`, and so the first 16 bytes.
-        let b = unsafe { first_block(&work) };
-        let mut tag = [0u8; T];
-        tag.copy_from_slice(&b[..T]);
         Ok(tag)
     }
 
@@ -241,18 +227,9 @@ impl AesOcb {
             vg_aes_ocb_open_aesni,
             vg_aes_ocb_open_aes
         );
-        let mut work = MaybeUninit::<[u64; WORK]>::uninit();
-        let mut t = [0u8; 16];
-        t[..T].copy_from_slice(tag);
-        let w = work.as_mut_ptr().cast::<u64>();
-        // SAFETY: `work` is valid for writes of 320 words.
-        unsafe {
-            w.write(u64::from_le_bytes(t[..8].try_into().unwrap()));
-            w.add(1)
-                .write(u64::from_le_bytes(t[8..].try_into().unwrap()));
-        }
-        // SAFETY: as in `encrypt_in_place`, with the received tag in the
-        // first `T` bytes of `work`.
+        // SAFETY: as in `encrypt_in_place`, with the received tag `tag`
+        // valid for reads of `T` bytes; `tag` is a shared borrow, which
+        // `data`, a unique one, does not overlap.
         let ok = unsafe {
             open(
                 &self.ctx,
@@ -263,7 +240,7 @@ impl AesOcb {
                 aad.len(),
                 data.as_mut_ptr(),
                 data.len(),
-                work.as_mut_ptr(),
+                tag.as_ptr(),
                 T,
             )
         };
@@ -275,22 +252,6 @@ impl AesOcb {
             Err(Error::TagMismatch)
         }
     }
-}
-
-/// The first 16 bytes of `work`, where `seal` writes the tag.
-///
-/// # Safety
-///
-/// They must have been written.
-unsafe fn first_block(work: &MaybeUninit<[u64; WORK]>) -> [u8; 16] {
-    let w = work.as_ptr().cast::<u64>();
-    let mut b = [0u8; 16];
-    // SAFETY: the first two words are initialized (the caller's guarantee).
-    unsafe {
-        b[..8].copy_from_slice(&w.read().to_le_bytes());
-        b[8..].copy_from_slice(&w.add(1).read().to_le_bytes());
-    }
-    b
 }
 
 #[cfg(test)]

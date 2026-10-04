@@ -111,7 +111,7 @@ theorem fmulE {s : State} {base : Addr} (hs : Scr s base) (hb : BEnv s.mem base)
       Nat.lt_of_lt_of_le (bo i hi) VG.Proof.Curve448.AArch64.Fast.Mb_le_Ib), bo, fieldMem_same tm, ?_⟩
     rw [VG.Proof.X448.AArch64.Weak.E_update tm]
     simp only [opMul]
-    congr 1
+    refine congrArg (Function.update _ o) ?_
     change toFe _ = toFe _ * toFe _
     rw [show VG.Proof.X448.Wide.valN (limbs t.mem base (slot o.val)) 8 =
       VG.Proof.X448.Wide.valN (VG.Proof.Curve448.AArch64.Fast.prodOut (limbs s.mem base (slot a.val))
@@ -180,7 +180,7 @@ theorem subE {s : State} {base : Addr} (hs : Scr s base) (hb : BEnv s.mem base) 
     rw [tl i hi]; exact VG.Proof.Curve448.AArch64.Fast.diff_bound ha i hi), fieldMem_same fm, ?_⟩
   rw [VG.Proof.X448.AArch64.Weak.E_update fm]
   simp only [opSub]
-  congr 1
+  refine congrArg (Function.update _ o) ?_
   change toFe _ = toFe _ - toFe _
   rw [VG.Proof.X448.Wide.valN_congr tl]
   exact VG.Proof.Curve448.AArch64.Fast.diff_val hb'
@@ -251,7 +251,7 @@ theorem smallE {s : State} {base : Addr} (hs : Scr s base) (hb : BEnv s.mem base
   refine ⟨⟨tk.mono (by decide), fieldMem_outside2 fm⟩, env_update hb fm
     (bnd_of_limbs tv (VG.Proof.Curve448.AArch64.Fast.small_bound ha (hb e))), fieldMem_same fm, ?_⟩
   rw [VG.Proof.X448.AArch64.Weak.E_update fm]
-  congr 1
+  refine congrArg (Function.update _ o) ?_
   change VG.Proof.X448.AArch64.Weak.F t.mem base (slot o.val) = _
   rw [fe_of_limbs tv]
   exact VG.Proof.Curve448.AArch64.Fast.smallF _ _
@@ -391,8 +391,8 @@ theorem copyE {s : State} {base : Addr} (hs : Scr s base) (hb : BEnv s.mem base)
   have fm : FieldMem base (slot o.val) s.mem t.mem := VG.Proof.X448.AArch64.FieldMem.output tm
   refine ⟨⟨tk.mono (by decide), fieldMem_outside2 fm⟩, env_update hb fm (fun i hi => by
     rw [tf i hi]; exact hb a i hi), tf, fieldMem_same fm, ?_⟩
-  rw [VG.Proof.X448.AArch64.Weak.E_update fm]
-  congr 1
+  rw [VG.Proof.X448.AArch64.Weak.E_update fm, opCopy]
+  refine congrArg (Function.update _ o) ?_
   exact congrArg toFe (VG.Proof.X448.Wide.valN_congr tf)
 
 end VG.Proof.X448.AArch64.Fast

@@ -140,44 +140,44 @@ theorem copies_ok {p : Params} (hF : PFacts p) {S' : Nat} {σ : State} (hp : kgP
   have L := h.k1.kc.lay hF hp
   unfold copies
   rw [WP.block_append_iff, WP.block_append_iff]
-  rcases hF.eta with ⟨_, hlen⟩ | ⟨_, hlen⟩ <;>
-  · refine WP.mono (copyP_ok L (dst := (.x26, 0)) (src := sc oHX) (by unfold copyPChk; lay [hF.pk, hF.sk, hlen]))
-      fun s₁ ⟨hP₁, k₁, hb₁⟩ => ?_
-    have L₁ := L.post hP₁
-    refine WP.mono (copyP_ok L₁ (dst := (.x27, 0)) (src := sc oHX) (by unfold copyPChk; lay [hF.pk, hF.sk, hlen]))
-      fun s₂ ⟨hP₂, k₂, hb₂⟩ => ?_
-    have L₂ := L₁.post hP₂
-    refine WP.mono (copyP_ok L₂ (dst := (.x27, 32)) (src := sc (oHX + 96))
-      (by unfold copyPChk; lay [hF.pk, hF.sk, hlen])) fun s₃ ⟨hP₃, k₃, hb₃⟩ => ?_
-    have hP := PPostB.app (PPostB.app hP₁ hP₂ (b27 _ _)) hP₃ (b27 _ _)
-    have h24 : s₃.gpr .x24 = s.gpr .x24 := by rw [k₃.get .x24, k₂.get .x24, k₁.get .x24]
-    obtain ⟨A, S, hA, hS, hG⟩ := h.ex
-    have hc : kcChk p ([((.x26, 0), 32)] ++ [((.x27, 0), 32)] ++ [((.x27, 32), 32)]) = true ∧
-        (∀ e < p.k * p.ℓ, keepB kgR (kgW p) ([((.x26, 0), 32)] ++ [((.x27, 0), 32)] ++ [((.x27, 32), 32)])
-          (aP e) 1024 = true) ∧
-        (∀ r < p.ℓ + p.k, keepB kgR (kgW p) ([((.x26, 0), 32)] ++ [((.x27, 0), 32)] ++ [((.x27, 32), 32)])
-          (sP p r) 1024 = true) :=
-      ⟨by unfold kcChk; lay [hF.pk, hF.sk, hlen], fun _ _ => by lay [hF.pk, hF.sk, hlen],
-        fun _ _ => by lay [hF.pk, hF.sk, hlen]⟩
-    have hHX₁ : bytesAt s₁.mem (pa s₁ (sc oHX)) 128 = hxOf p σ := by
-      rw [L.keepBytes hP₁ (by lay [hF.pk])]; exact h.k1.hx
-    have hHX₂ : bytesAt s₂.mem (pa s₂ (sc oHX)) 128 = hxOf p σ := by
-      rw [L₁.keepBytes hP₂ (by lay [hF.pk, hF.sk, hlen])]; exact hHX₁
-    have e1 : bytesAt s.mem (pa s (sc oHX)) 32 = rhoOf p σ := by
-      rw [rho_eq, ← h.k1.hx, Proof.MlKem.bytesAt_take _ _ (show 32 ≤ 128 by decide)]
-    have e1' : bytesAt s₁.mem (pa s₁ (sc oHX)) 32 = rhoOf p σ := by
-      rw [rho_eq, ← hHX₁, Proof.MlKem.bytesAt_take _ _ (show 32 ≤ 128 by decide)]
-    have e2 : bytesAt s₂.mem (pa s₂ (sc (oHX + 96))) 32 = kOf p σ := by
-      rw [kOf_eq, ← hHX₂, Proof.MlKem.bytesAt_slice _ _ (show 96 + 32 ≤ 128 by decide), sc_add]
-    refine ⟨A, S, s.gpr .x24, ⟨h.k1.kc.step hF hp hP hc.1, h24, hG, fun r hr => (hS r hr).2,
-      fun e he => L.keepPoly hP (hc.2.1 e he) (hA e he),
-      fun i hi => L.keepPoly hP (hc.2.2 _ (by omega)) (hS (p.ℓ + i) (by omega)).1,
-      fun j hj => by rw [ifn (Nat.not_lt_zero j)]; exact L.keepPoly hP (hc.2.2 j (by omega)) (hS j (by omega)).1,
-      ?_, ?_, ?_, fun _ h => absurd h (Nat.not_lt_zero _), fun _ h => absurd h (Nat.not_lt_zero _)⟩⟩
-    · rw [L₂.keepBytes hP₃ (by lay [hF.pk, hF.sk, hlen]), L₁.keepBytes hP₂ (by lay [hF.pk, hF.sk, hlen]),
-        hP₁.pa (show Reg.x26 ∈ keptRegs by decide), hb₁, e1]
-    · rw [L₂.keepBytes hP₃ (by lay [hF.pk, hF.sk, hlen]), hP₂.pa (show Reg.x27 ∈ keptRegs by decide), hb₂, e1']
-    · rw [hP₃.pa (show Reg.x27 ∈ keptRegs by decide), hb₃, e2]
+  have hlen : lenS p = 96 ∨ lenS p = 128 := hF.eta.imp And.right And.right
+  refine WP.mono (copyP_ok L (dst := (.x26, 0)) (src := sc oHX) (by unfold copyPChk; lay [hF.pk, hF.sk]))
+    fun s₁ ⟨hP₁, k₁, hb₁⟩ => ?_
+  have L₁ := L.post hP₁
+  refine WP.mono (copyP_ok L₁ (dst := (.x27, 0)) (src := sc oHX) (by unfold copyPChk; lay [hF.pk, hF.sk]))
+    fun s₂ ⟨hP₂, k₂, hb₂⟩ => ?_
+  have L₂ := L₁.post hP₂
+  refine WP.mono (copyP_ok L₂ (dst := (.x27, 32)) (src := sc (oHX + 96))
+    (by unfold copyPChk; lay [hF.pk, hF.sk])) fun s₃ ⟨hP₃, k₃, hb₃⟩ => ?_
+  have hP := PPostB.app (PPostB.app hP₁ hP₂ (b27 _ _)) hP₃ (b27 _ _)
+  have h24 : s₃.gpr .x24 = s.gpr .x24 := by rw [k₃.get .x24, k₂.get .x24, k₁.get .x24]
+  obtain ⟨A, S, hA, hS, hG⟩ := h.ex
+  have hc : kcChk p ([((.x26, 0), 32)] ++ [((.x27, 0), 32)] ++ [((.x27, 32), 32)]) = true ∧
+      (∀ e < p.k * p.ℓ, keepB kgR (kgW p) ([((.x26, 0), 32)] ++ [((.x27, 0), 32)] ++ [((.x27, 32), 32)])
+        (aP e) 1024 = true) ∧
+      (∀ r < p.ℓ + p.k, keepB kgR (kgW p) ([((.x26, 0), 32)] ++ [((.x27, 0), 32)] ++ [((.x27, 32), 32)])
+        (sP p r) 1024 = true) :=
+    ⟨by unfold kcChk; lay [hF.pk, hF.sk], fun _ _ => by lay [hF.pk, hF.sk],
+      fun _ _ => by lay [hF.pk, hF.sk]⟩
+  have hHX₁ : bytesAt s₁.mem (pa s₁ (sc oHX)) 128 = hxOf p σ := by
+    rw [L.keepBytes hP₁ (by lay [hF.pk])]; exact h.k1.hx
+  have hHX₂ : bytesAt s₂.mem (pa s₂ (sc oHX)) 128 = hxOf p σ := by
+    rw [L₁.keepBytes hP₂ (by lay [hF.pk, hF.sk])]; exact hHX₁
+  have e1 : bytesAt s.mem (pa s (sc oHX)) 32 = rhoOf p σ := by
+    rw [rho_eq, ← h.k1.hx, Proof.MlKem.bytesAt_take _ _ (show 32 ≤ 128 by decide)]
+  have e1' : bytesAt s₁.mem (pa s₁ (sc oHX)) 32 = rhoOf p σ := by
+    rw [rho_eq, ← hHX₁, Proof.MlKem.bytesAt_take _ _ (show 32 ≤ 128 by decide)]
+  have e2 : bytesAt s₂.mem (pa s₂ (sc (oHX + 96))) 32 = kOf p σ := by
+    rw [kOf_eq, ← hHX₂, Proof.MlKem.bytesAt_slice _ _ (show 96 + 32 ≤ 128 by decide), sc_add]
+  refine ⟨A, S, s.gpr .x24, ⟨h.k1.kc.step hF hp hP hc.1, h24, hG, fun r hr => (hS r hr).2,
+    fun e he => L.keepPoly hP (hc.2.1 e he) (hA e he),
+    fun i hi => L.keepPoly hP (hc.2.2 _ (by omega)) (hS (p.ℓ + i) (by omega)).1,
+    fun j hj => by rw [ifn (Nat.not_lt_zero j)]; exact L.keepPoly hP (hc.2.2 j (by omega)) (hS j (by omega)).1,
+    ?_, ?_, ?_, fun _ h => absurd h (Nat.not_lt_zero _), fun _ h => absurd h (Nat.not_lt_zero _)⟩⟩
+  · rw [L₂.keepBytes hP₃ (by lay [hF.pk, hF.sk]), L₁.keepBytes hP₂ (by lay [hF.pk, hF.sk]),
+      hP₁.pa (show Reg.x26 ∈ keptRegs by decide), hb₁, e1]
+  · rw [L₂.keepBytes hP₃ (by lay [hF.pk, hF.sk]), hP₂.pa (show Reg.x27 ∈ keptRegs by decide), hb₂, e1']
+  · rw [hP₃.pa (show Reg.x27 ∈ keptRegs by decide), hb₃, e2]
 
 theorem copies_piece {p : Params} (hF : PFacts p) {S : Nat} :
     Piece p S (fun σ s => KSamp p σ (p.k * p.ℓ) (p.ℓ + p.k) s) (KR0 p) (.block copies) :=
