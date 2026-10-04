@@ -176,7 +176,7 @@ def apply : Prog isa :=
 
 /-! ## The key schedule
 
-`vg_rc4_init(key = x0, key_len = x1, ctx = x2, scratch = x3)`. -/
+`vg_rc4_init(key = x0, key_len = x1, ctx = x2)`. -/
 
 /-- The next key byte, broadcast in `v6`, added to `j`: the key pointer `x7`
 and the bytes left before the key repeats, `x5`. -/

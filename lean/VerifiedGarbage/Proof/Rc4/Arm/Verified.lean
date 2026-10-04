@@ -22,14 +22,14 @@ theorem apply_correct (s : State) (hs : applyC.pre s) :
   obtain ⟨t, s', he, hpost, hpres, hsp⟩ := apply_ok s hs
   exact ⟨t, s', he, ⟨hpres, hsp⟩, hpost⟩
 
-theorem init_verified : Verified target VG.Impl.Rc4.Arm.init (initContract abi) := by
+theorem init_verified : Verified target VG.Impl.Rc4.Arm.init (initScratchContract abi) := by
   refine Verified.of_correct init_correct init_ct ?_
-  sig_implies [initContract, initSig, abi, argRegs, Arm.reduceClassify, Arm.Loc.val, initC,
-    State.addr] [initSat] using initSat
+  sig_implies [initScratchContract, initScratchSig, initPost, abi, argRegs, Arm.reduceClassify,
+    Arm.Loc.val, initC, State.addr] [initSat] using initSat
 
-theorem apply_verified : Verified target VG.Impl.Rc4.Arm.apply (applyContract abi) := by
+theorem apply_verified : Verified target VG.Impl.Rc4.Arm.apply (applyScratchContract abi) := by
   refine Verified.of_correct apply_correct apply_ct ?_
-  sig_implies [applyContract, applySig, abi, argRegs, Arm.reduceClassify, Arm.Loc.val, applyC,
-    State.addr] [applySat] using applySat
+  sig_implies [applyScratchContract, applyScratchSig, applyPost, applyLeak, abi, argRegs,
+    Arm.reduceClassify, Arm.Loc.val, applyC, State.addr] [applySat] using applySat
 
 end VG.Proof.Rc4.Arm

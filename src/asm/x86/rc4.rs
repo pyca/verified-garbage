@@ -6,7 +6,7 @@
 ///
 /// Contract: `VG.Spec.Rc4.initContract`. Constant time: only pointers and `key_len` may affect timing, not the key or key-dependent table indices.
 ///
-/// Secret-indexed table operations visit every doubleword of the table at fixed addresses, selecting and replacing bytes with masks made by `sub` and `sbb`. Our caller's `ebx`, `esi`, `edi` and `ebp` are saved in `scratch`.
+/// Secret-indexed table operations visit every doubleword of the table at fixed addresses, selecting and replacing bytes with masks made by `sub` and `sbb`. Our caller's `ebx`, `esi`, `edi` and `ebp` are saved in a 64-byte working space on the stack, which is zeroed before returning.
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -14,14 +14,22 @@
 ///
 /// * `key` must be valid for reads of `key_len` bytes.
 /// * `ctx` must be valid for reads and writes of 258 bytes.
-/// * `scratch` must be valid for reads and writes of 64 bytes.
 /// * On failure, the contents of `ctx` on return are unspecified.
-/// * The contents of `scratch` on return are unspecified.
-/// * `ctx` and `scratch` must not overlap each other or `key` (distinct Rust objects never do).
-/// * None of `key`, `ctx` and `scratch` may overlap the arguments on the stack, overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
+/// * `ctx` must not overlap `key` (distinct Rust objects never do).
+/// * Neither `key` nor `ctx` may overlap the arguments on the stack, overlap the return address on the stack or the 84 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_rc4_init(key: *const u8, key_len: usize, ctx: *mut [u8; 258], scratch: *mut [u64; 8]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_rc4_init(key: *const u8, key_len: usize, ctx: *mut [u8; 258]) -> u32 {
     core::arch::naked_asm!(
+        "lea esp, [esp-84]",
+        "mov eax, DWORD PTR [esp+88]",
+        "mov DWORD PTR [esp+4], eax",
+        "mov eax, DWORD PTR [esp+92]",
+        "mov DWORD PTR [esp+8], eax",
+        "mov eax, DWORD PTR [esp+96]",
+        "mov DWORD PTR [esp+12], eax",
+        "mov eax, esp",
+        "add eax, 20",
+        "mov DWORD PTR [esp+16], eax",
         "mov eax, DWORD PTR [esp+8]",
         "sub eax, 1",
         "cmp eax, 256",
@@ -986,6 +994,24 @@ pub(crate) unsafe extern "C" fn vg_rc4_init(key: *const u8, key_len: usize, ctx:
         "20:",
         "mov eax, 1",
         "21:",
+        "mov ecx, 0",
+        "mov DWORD PTR [esp+20], ecx",
+        "mov DWORD PTR [esp+24], ecx",
+        "mov DWORD PTR [esp+28], ecx",
+        "mov DWORD PTR [esp+32], ecx",
+        "mov DWORD PTR [esp+36], ecx",
+        "mov DWORD PTR [esp+40], ecx",
+        "mov DWORD PTR [esp+44], ecx",
+        "mov DWORD PTR [esp+48], ecx",
+        "mov DWORD PTR [esp+52], ecx",
+        "mov DWORD PTR [esp+56], ecx",
+        "mov DWORD PTR [esp+60], ecx",
+        "mov DWORD PTR [esp+64], ecx",
+        "mov DWORD PTR [esp+68], ecx",
+        "mov DWORD PTR [esp+72], ecx",
+        "mov DWORD PTR [esp+76], ecx",
+        "mov DWORD PTR [esp+80], ecx",
+        "lea esp, [esp+84]",
         "ret",
         ".p2align 6",
     )
@@ -995,7 +1021,7 @@ pub(crate) unsafe extern "C" fn vg_rc4_init(key: *const u8, key_len: usize, ctx:
 ///
 /// Contract: `VG.Spec.Rc4.applyContract`. Constant time: only pointers, `len` and the initial PRGA index `i` (the public byte count modulo 256 for an initialized context) may affect timing. Key bytes, the permutation, `j`, keystream lookup indices and data remain secret. The function may leak `i`.
 ///
-/// Secret-indexed table operations visit every doubleword of the table at fixed addresses, selecting and replacing bytes with masks made by `sub` and `sbb`. Our caller's `ebx`, `esi`, `edi` and `ebp` are saved in `scratch`, and `j` is kept there during each keystream lookup.
+/// Secret-indexed table operations visit every doubleword of the table at fixed addresses, selecting and replacing bytes with masks made by `sub` and `sbb`. Our caller's `ebx`, `esi`, `edi` and `ebp` are saved in a 64-byte working space on the stack, and `j` is kept there during each keystream lookup. The working space is zeroed before returning.
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -1003,13 +1029,21 @@ pub(crate) unsafe extern "C" fn vg_rc4_init(key: *const u8, key_len: usize, ctx:
 ///
 /// * `ctx` must be valid for reads and writes of 258 bytes.
 /// * `data` must be valid for reads and writes of `len` bytes.
-/// * `scratch` must be valid for reads and writes of 64 bytes.
-/// * The contents of `scratch` on return are unspecified.
-/// * `ctx`, `data` and `scratch` must not overlap each other (distinct Rust objects never do).
-/// * None of `ctx`, `data` and `scratch` may overlap the arguments on the stack, overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
+/// * `ctx` and `data` must not overlap each other (distinct Rust objects never do).
+/// * Neither `ctx` nor `data` may overlap the arguments on the stack, overlap the return address on the stack or the 84 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_rc4_apply(ctx: *mut [u8; 258], data: *mut u8, len: usize, scratch: *mut [u64; 8]) {
+pub(crate) unsafe extern "C" fn vg_rc4_apply(ctx: *mut [u8; 258], data: *mut u8, len: usize) {
     core::arch::naked_asm!(
+        "lea esp, [esp-84]",
+        "mov eax, DWORD PTR [esp+88]",
+        "mov DWORD PTR [esp+4], eax",
+        "mov eax, DWORD PTR [esp+92]",
+        "mov DWORD PTR [esp+8], eax",
+        "mov eax, DWORD PTR [esp+96]",
+        "mov DWORD PTR [esp+12], eax",
+        "mov eax, esp",
+        "add eax, 20",
+        "mov DWORD PTR [esp+16], eax",
         "mov edx, DWORD PTR [esp+4]",
         "movzx eax, BYTE PTR [edx+256]",
         "mov ecx, DWORD PTR [esp+12]",
@@ -2393,6 +2427,24 @@ pub(crate) unsafe extern "C" fn vg_rc4_apply(ctx: *mut [u8; 258], data: *mut u8,
         "jmp 21f",
         "20:",
         "21:",
+        "mov ecx, 0",
+        "mov DWORD PTR [esp+20], ecx",
+        "mov DWORD PTR [esp+24], ecx",
+        "mov DWORD PTR [esp+28], ecx",
+        "mov DWORD PTR [esp+32], ecx",
+        "mov DWORD PTR [esp+36], ecx",
+        "mov DWORD PTR [esp+40], ecx",
+        "mov DWORD PTR [esp+44], ecx",
+        "mov DWORD PTR [esp+48], ecx",
+        "mov DWORD PTR [esp+52], ecx",
+        "mov DWORD PTR [esp+56], ecx",
+        "mov DWORD PTR [esp+60], ecx",
+        "mov DWORD PTR [esp+64], ecx",
+        "mov DWORD PTR [esp+68], ecx",
+        "mov DWORD PTR [esp+72], ecx",
+        "mov DWORD PTR [esp+76], ecx",
+        "mov DWORD PTR [esp+80], ecx",
+        "lea esp, [esp+84]",
         "ret",
         ".p2align 6",
     )

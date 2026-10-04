@@ -1,20 +1,21 @@
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.SigEval
 import VerifiedGarbage.Proof.Framework.X86.Taint
-import VerifiedGarbage.Spec.Rc4.Contract
+import VerifiedGarbage.Proof.Rc4.Scratch
 
 /-!
 # RC4 on x86 (32-bit): the contracts the proofs use
 
-`Spec.Rc4.initContract` and `Spec.Rc4.applyContract` spelled out for x86,
-with the arguments only read (the taint analysis follows them in memory only
-while nothing that may alias them is written): `initC` and `applyC`.
+`Proof.Rc4.initScratchContract` and `Proof.Rc4.applyScratchContract` spelled
+out for x86, with the arguments only read (the taint analysis follows them in
+memory only while nothing that may alias them is written): `initC` and
+`applyC`.
 `wideInit` and `wideApply` let the code write them, as the shared contracts
 do, and imply those; `Verified.lean` narrows them back.
 -/
 
 namespace VG.Proof.Rc4.X86
-open VG VG.X86 VG.Spec.Rc4
+open VG VG.X86 VG.Spec.Rc4 VG.Proof.Rc4
 
 def initC : Contract isa where
   pre s :=
@@ -125,26 +126,34 @@ macro_rules
       | with_reducible exact Region.Disjoint.symm ‹_›
       | omega))
 
-theorem init_implies : wideInit.Implies (initContract abi) where
+theorem init_implies : wideInit.Implies (initScratchContract abi) where
   pre := by
-    wide_pre [initContract, initSig, abi, argSlots, argVal, argBytes, wideInit, initC]
+    wide_pre [initScratchContract, initScratchSig, initPost, abi, argSlots, argVal, argBytes,
+      wideInit, initC]
   post := by
-    sig_implies_post [initContract, initSig, abi, argSlots, argVal, argBytes, wideInit, initC]
+    sig_implies_post [initScratchContract, initScratchSig, initPost, abi, argSlots, argVal, argBytes,
+      wideInit, initC]
   pub := by
-    sig_implies_pub [initContract, initSig, abi, argSlots, argVal, argBytes, wideInit, initC]
+    sig_implies_pub [initScratchContract, initScratchSig, initPost, abi, argSlots, argVal, argBytes,
+      wideInit, initC]
   sat := by
-    sig_implies_sat [initContract, initSig, abi, argSlots, argVal, argBytes, wideInit, initC]
+    sig_implies_sat [initScratchContract, initScratchSig, initPost, abi, argSlots, argVal, argBytes,
+      wideInit, initC]
       [initSat, arg, argAddr, Mem.readW, Mem.read] using initSat
 
-theorem apply_implies : wideApply.Implies (applyContract abi) where
+theorem apply_implies : wideApply.Implies (applyScratchContract abi) where
   pre := by
-    wide_pre [applyContract, applySig, abi, argSlots, argVal, argBytes, wideApply, applyC]
+    wide_pre [applyScratchContract, applyScratchSig, applyPost, applyLeak, abi, argSlots, argVal,
+      argBytes, wideApply, applyC]
   post := by
-    sig_implies_post [applyContract, applySig, abi, argSlots, argVal, argBytes, wideApply, applyC]
+    sig_implies_post [applyScratchContract, applyScratchSig, applyPost, applyLeak, abi, argSlots, argVal,
+      argBytes, wideApply, applyC]
   pub := by
-    sig_implies_pub [applyContract, applySig, abi, argSlots, argVal, argBytes, wideApply, applyC]
+    sig_implies_pub [applyScratchContract, applyScratchSig, applyPost, applyLeak, abi, argSlots, argVal,
+      argBytes, wideApply, applyC]
   sat := by
-    sig_implies_sat [applyContract, applySig, abi, argSlots, argVal, argBytes, wideApply, applyC]
+    sig_implies_sat [applyScratchContract, applyScratchSig, applyPost, applyLeak, abi, argSlots, argVal,
+      argBytes, wideApply, applyC]
       [applySat, arg, argAddr, Mem.readW, Mem.read] using applySat
 
 end VG.Proof.Rc4.X86

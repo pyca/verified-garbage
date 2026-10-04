@@ -89,7 +89,7 @@ theorem wideApply_pre (s : State) (h : wideApply.pre s) :
   narrow
   exact ⟨trivial, trivial, h⟩
 
-theorem init_verified : Verified target init (initContract abi) := by
+theorem init_verified : Verified target init (initScratchContract abi) := by
   have hsat := init_implies.sat_left
   have narrowSat : ∃ s, initC.pre s := by
     obtain ⟨s, hs⟩ := hsat
@@ -119,7 +119,7 @@ theorem init_verified : Verified target init (initContract abi) := by
     narrow
     exact h
 
-theorem apply_verified : Verified target apply (applyContract abi) := by
+theorem apply_verified : Verified target apply (applyScratchContract abi) := by
   have hsat := apply_implies.sat_left
   have narrowSat : ∃ s, applyC.pre s := by
     obtain ⟨s, hs⟩ := hsat

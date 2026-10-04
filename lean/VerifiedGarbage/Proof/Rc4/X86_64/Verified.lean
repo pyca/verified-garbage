@@ -18,23 +18,21 @@ def initX : Contract isa where
   pre s :=
     let key : Region := ⟨s.gpr .rdi, (s.gpr .rsi).toNat⟩
     let ctx : Region := ⟨s.gpr .rdx, 258⟩
-    let scratch : Region := ⟨s.gpr .rcx, 64⟩
     let ret : Region := ⟨s.gpr .rsp, 8⟩
-    s.rd = [key] ∧ s.wr = [ctx, scratch] ∧ key.Disjoint ctx ∧ ret.Disjoint ctx ∧
-      ret.Disjoint scratch
+    s.rd = [key] ∧ s.wr = [ctx] ∧ key.Disjoint ctx ∧ ret.Disjoint ctx
   post s s' :=
     match Spec.Rc4.init (bytesAt s.mem (s.gpr .rdi) (s.gpr .rsi).toNat) with
     | .ok c => (s'.gpr .rax).setWidth 32 = 0 ∧ contextAt s'.mem (s.gpr .rdx) = c
     | .error .invalidKeyLength => (s'.gpr .rax).setWidth 32 = 1
   pub s₁ s₂ := s₁.gpr .rdi = s₂.gpr .rdi ∧ s₁.gpr .rsi = s₂.gpr .rsi ∧
-    s₁.gpr .rdx = s₂.gpr .rdx ∧ s₁.gpr .rcx = s₂.gpr .rcx
+    s₁.gpr .rdx = s₂.gpr .rdx
 
 /-- The registers the code writes. -/
 def written : List Reg := [.rax, .rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r11]
 
 theorem init_correct (s : State) (hs : initX.pre s) :
     ∃ t s', Exec isa init s t s' ∧ abiPreserved s s' ∧ initX.post s s' := by
-  obtain ⟨hrd, hwr, hkc, hrc, hrs⟩ := hs
+  obtain ⟨hrd, hwr, hkc, hrc⟩ := hs
   have hp : InRegions s.wr (s.gpr .rdx) 258 :=
     ⟨⟨s.gpr .rdx, 258⟩, by rw [hwr]; exact List.mem_cons_self, Region.contains_self _ _⟩
   have hk : InRegions (s.rd ++ s.wr) (s.gpr .rdi) (s.gpr .rsi).toNat :=
@@ -53,9 +51,8 @@ theorem init_correct (s : State) (hs : initX.pre s) :
   · intro r hr
     rw [hwr] at hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl
-    · exact hrc
-    · exact hrs
+    subst hr
+    exact hrc
   · unfold initX
     dsimp only
     revert hpost
@@ -64,32 +61,32 @@ theorem init_correct (s : State) (hs : initX.pre s) :
     | error e => cases e; intro hpost; rw [hpost]; rfl
 
 theorem init_ct : ConstantTime isa initX.pre initX.pub init := by
-  refine VG.Taint.constantTime (A := taint) (Taint.ofRegs [.rdi, .rsi, .rdx, .rcx]) ?_
+  refine VG.Taint.constantTime (A := taint) (Taint.ofRegs [.rdi, .rsi, .rdx]) ?_
     (by taint_decide)
   intro s₁ s₂ _ _ h
   apply Taint.agree_ofRegs
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl
+  rcases hr with rfl | rfl | rfl
   · exact h.1
   · exact h.2.1
-  · exact h.2.2.1
-  · exact h.2.2.2
+  · exact h.2.2
 
 def initSat : State where
   gpr r := match r with
-    | .rdi => 0x1000 | .rsi => 1 | .rdx => 0x2000 | .rcx => 0x3000 | .rsp => 0x4000 | _ => 0
+    | .rdi => 0x1000 | .rsi => 1 | .rdx => 0x2000 | .rsp => 0x4000 | _ => 0
   cf := none
   zf := none
   sf := none
   of := none
   mem _ := 0
   rd := [⟨0x1000, 1⟩]
-  wr := [⟨0x2000, 258⟩, ⟨0x3000, 64⟩]
+  wr := [⟨0x2000, 258⟩]
 
 theorem init_verified : Verified target init (Spec.Rc4.initContract abi) :=
   Verified.of_correct init_correct init_ct (by
-    sig_implies [Spec.Rc4.initContract, Spec.Rc4.initSig, initX, abi, argRegs] [initSat]
+    sig_implies [Spec.Rc4.initContract, Spec.Rc4.initSig, Spec.Rc4.initPost, initX, abi, argRegs]
+      [initSat]
       using initSat)
 
 /-! ## The stream function -/
@@ -99,10 +96,9 @@ def applyX : Contract isa where
   pre s :=
     let ctx : Region := ⟨s.gpr .rdi, 258⟩
     let data : Region := ⟨s.gpr .rsi, (s.gpr .rdx).toNat⟩
-    let scratch : Region := ⟨s.gpr .rcx, 64⟩
     let ret : Region := ⟨s.gpr .rsp, 8⟩
-    s.rd = [] ∧ s.wr = [ctx, data, scratch] ∧ ctx.Disjoint data ∧ ret.Disjoint ctx ∧
-      ret.Disjoint data ∧ ret.Disjoint scratch
+    s.rd = [] ∧ s.wr = [ctx, data] ∧ ctx.Disjoint data ∧ ret.Disjoint ctx ∧
+      ret.Disjoint data
   post s s' :=
     let result := update (contextAt s.mem (s.gpr .rdi))
       (bytesAt s.mem (s.gpr .rsi) (s.gpr .rdx).toNat)
@@ -114,7 +110,7 @@ def applyX : Contract isa where
 
 theorem apply_correct (s : State) (hs : applyX.pre s) :
     ∃ t s', Exec isa apply s t s' ∧ abiPreserved s s' ∧ applyX.post s s' := by
-  obtain ⟨_, hwr, hcd, hrc, hrd, hrs⟩ := hs
+  obtain ⟨_, hwr, hcd, hrc, hrd⟩ := hs
   have hp : InRegions s.wr (s.gpr .rdi) 258 :=
     ⟨⟨s.gpr .rdi, 258⟩, by rw [hwr]; exact List.mem_cons_self, Region.contains_self _ _⟩
   have hd : InRegions s.wr (s.gpr .rsi) (s.gpr .rdx).toNat :=
@@ -135,10 +131,9 @@ theorem apply_correct (s : State) (hs : applyX.pre s) :
   intro r hr
   rw [hwr] at hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl
+  rcases hr with rfl | rfl
   · exact hrc
   · exact hrd
-  · exact hrs
 
 structure EntryAgree (a b : State) : Prop where
   p : a.gpr .rdi = b.gpr .rdi
@@ -203,18 +198,19 @@ theorem apply_ct' : ConstantTime isa applyX.pre applyX.pub apply := by
 
 def applySat : State where
   gpr r := match r with
-    | .rdi => 0x1000 | .rsi => 0x2000 | .rdx => 1 | .rcx => 0x3000 | .rsp => 0x4000 | _ => 0
+    | .rdi => 0x1000 | .rsi => 0x2000 | .rdx => 1 | .rsp => 0x4000 | _ => 0
   cf := none
   zf := none
   sf := none
   of := none
   mem _ := 0
   rd := []
-  wr := [⟨0x1000, 258⟩, ⟨0x2000, 1⟩, ⟨0x3000, 64⟩]
+  wr := [⟨0x1000, 258⟩, ⟨0x2000, 1⟩]
 
 theorem apply_verified : Verified target apply (Spec.Rc4.applyContract abi) :=
   Verified.of_correct apply_correct apply_ct' (by
-    sig_implies [Spec.Rc4.applyContract, Spec.Rc4.applySig, applyX, abi, argRegs] [applySat]
+    sig_implies [Spec.Rc4.applyContract, Spec.Rc4.applySig, Spec.Rc4.applyPost, Spec.Rc4.applyLeak,
+      applyX, abi, argRegs] [applySat]
       using applySat)
 
 end VG.Proof.Rc4.X86_64
