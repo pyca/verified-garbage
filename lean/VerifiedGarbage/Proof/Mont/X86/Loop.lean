@@ -222,4 +222,51 @@ theorem row_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M 
     rw [← hW2, ← hW] at hlt
     omega
 
+/-- The invariant of the loop, before iteration `i`: the accumulator's
+words from `i` up hold `T < 2m` with `2^(32 i) T ≡ A_i B`, for the low `i`
+words `A_i` of `[a]`. -/
+structure LoopInv (base : Addr) (N acc a b m i : Nat) (s t : State) : Prop where
+  ebp : t.gpr .ebp = t.gpr .edi + BitVec.ofNat 32 (4 * i)
+  out : Outside base acc (4 * (2 * N + 1)) s.mem t.mem
+  keeps : Keeps clob s t
+  lt : val32 t.mem base (acc + 4 * i) (2 * N + 1 - i) < 2 * m
+  cong : ∃ U, 2 ^ (32 * i) * val32 t.mem base (acc + 4 * i) (2 * N + 1 - i) =
+    val32 s.mem base a i * val32 s.mem base b N + U * m
+
+/-- The loop of `mul`: from the invariant at 0 to the invariant at `N`. -/
+theorem loop_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M : Mod} {N acc a b m : Nat}
+    (hNw : words M = N) (hL : MulLay N size acc a b M.mo) (hN : 0 < N)
+    (hm : val32 s.mem base M.mo N = m) (hinv : (m * (minv32 M).toNat + 1) % 2 ^ 32 = 0)
+    (hB : val32 s.mem base b N < m) {t : State} (h0 : LoopInv base N acc a b m 0 s t) :
+    WP isa (.loop (.block (row M acc a b)) .ne) t fun u => LoopInv base N acc a b m N s u := by
+  have := hL.acc_le
+  have := hL.a_le
+  have := hL.b_le
+  have := hL.mo_le
+  have := hL.sa
+  have := hL.sb
+  have := hL.smo
+  have hn := hs.nowrap
+  refine WP.loop (M := isa)
+    (fun n t' => ∃ i, n = N - i ∧ i < N ∧ LoopInv base N acc a b m i s t') ?_ N t ⟨0, rfl, hN, h0⟩
+  rintro n t' ⟨i, rfl, hi, I⟩
+  have ht := hs.of_keeps I.keeps (by decide)
+  have hm' : val32 t'.mem base M.mo N = m := by rw [I.out.val32 (by omega) (by omega), hm]
+  have hb' : val32 t'.mem base b N = val32 s.mem base b N := I.out.val32 (by omega) (by omega)
+  have ha' : w32 t'.mem base (a + 4 * i) = w32 s.mem base (a + 4 * i) := I.out.w32 (by omega) (by omega)
+  refine WP.mono (row_ok ht hNw hL hi I.ebp hm' hinv (hb' ▸ hB) I.lt)
+    fun u ⟨hp, hz, O, ⟨q, hq⟩, hT, K⟩ => ?_
+  rw [hb', ha'] at hq
+  have I' : LoopInv base N acc a b m (i + 1) s u := by
+    refine ⟨hp, I.out.trans (O.mono (Nat.le_refl _) (Nat.le_refl _)), I.keeps.trans K, hT, ?_⟩
+    obtain ⟨U, hU⟩ := I.cong
+    refine ⟨U + 2 ^ (32 * i) * q, ?_⟩
+    rw [pow32_succ, val32_succ, Nat.mul_assoc, Nat.mul_left_comm, hq]
+    generalize 2 ^ (32 * i) = P at *
+    grind
+  by_cases hNi : i + 1 = N
+  · refine .inl ⟨by simp only [eval, hz, hNi, decide_true, Option.map_some, Bool.not_true], hNi ▸ I'⟩
+  · exact .inr ⟨by simp only [eval, hz, decide_eq_false hNi, Option.map_some, Bool.not_false],
+      N - (i + 1), by omega, i + 1, rfl, by omega, I'⟩
+
 end VG.Proof.Mont.X86
