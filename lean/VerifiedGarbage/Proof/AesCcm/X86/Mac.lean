@@ -60,10 +60,10 @@ theorem b0Pre_ok {K W SP : BitVec 32} {s : State} (L : Lay K W SP) (E : Env K W 
         .alu .add .eax (.reg .eax), .mov .ecx (imm 14), .alu .sub .ecx (slot nlenO), .alu .add .eax (.reg .ecx),
         .mov .ecx (slot alenO), .alu .test .ecx (.reg .ecx)])
       (.seq (.ite .e (.block []) (.block [.alu .add .eax (imm 64)]))
-      (.block ([.mov .ecx (slot c0O), .store (at_ .ebp blkO) .ecx, .mov .ecx (slot (c0O + 4)),
+      (.block (([.mov .ecx (slot c0O), .store (at_ .ebp blkO) .ecx, .mov .ecx (slot (c0O + 4)),
         .store (at_ .ebp (blkO + 4)) .ecx, .mov .ecx (slot (c0O + 8)), .store (at_ .ebp (blkO + 8)) .ecx,
         .store8 (at_ .ebp blkO) .al, .mov .eax (slot lenO), .bswap .eax, .alu .or .eax (slot (c0O + 12)),
-        .store (at_ .ebp (blkO + 12)) .eax] ++ zero4 y)))) s fun s' =>
+        .store (at_ .ebp (blkO + 12)) .eax] : List Instr) ++ zero4 y)))) s fun s' =>
       Env K W SP s' ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
       Frame [⟨w64 W + BitVec.ofNat 64 32, 16⟩, ⟨w64 W + BitVec.ofNat 64 y, 16⟩] s.mem s'.mem ∧
       bytesAt s'.mem (w64 W + BitVec.ofNat 64 y) 16 = Spec.Cmac.zeros 16 ∧
@@ -99,10 +99,10 @@ theorem b0Pre_ok {K W SP : BitVec 32} {s : State} (L : Lay K W SP) (E : Env K W 
     (w64 W + BitVec.ofNat 64 32) (Spec.Ccm.flags tl (15 - nl) al)).writeW (w64 W + BitVec.ofNat 64 44)
     (bswap (BitVec.ofNat 32 n) ||| s.mem.readW (w64 W + BitVec.ofNat 64 60) 32)) W y
   obtain ⟨s₃, run₃, hm₃, hbp₃, hsp₃, hrd₃, hwr₃⟩ : ∃ s₃, runBlock isa
-      ([.mov .ecx (slot c0O), .store (at_ .ebp blkO) .ecx, .mov .ecx (slot (c0O + 4)),
+      (([.mov .ecx (slot c0O), .store (at_ .ebp blkO) .ecx, .mov .ecx (slot (c0O + 4)),
         .store (at_ .ebp (blkO + 4)) .ecx, .mov .ecx (slot (c0O + 8)), .store (at_ .ebp (blkO + 8)) .ecx,
         .store8 (at_ .ebp blkO) .al, .mov .eax (slot lenO), .bswap .eax, .alu .or .eax (slot (c0O + 12)),
-        .store (at_ .ebp (blkO + 12)) .eax] ++ zero4 y) s₂ = some s₃ ∧
+        .store (at_ .ebp (blkO + 12)) .eax] : List Instr) ++ zero4 y) s₂ = some s₃ ∧
       s₃.mem = Cmac.zero4 (((((s.mem.writeW (w64 W + BitVec.ofNat 64 32) (s.mem.readW (w64 W + BitVec.ofNat 64 48) 32)).writeW
         (w64 W + BitVec.ofNat 64 36) (s.mem.readW (w64 W + BitVec.ofNat 64 52) 32)).writeW
         (w64 W + BitVec.ofNat 64 40) (s.mem.readW (w64 W + BitVec.ofNat 64 56) 32)).writeW
@@ -299,8 +299,8 @@ theorem tagArgs_ok {K W SP : BitVec 32} {s : State} (L : Lay K W SP) (E : Env K 
     (hK : slotv s.mem W ctxO = K) (hRo : slotv s.mem W roundsO = BitVec.ofNat 32 R)
     {nonce : List Byte} (h7 : 7 ≤ nonce.length) (h13 : nonce.length ≤ 13)
     (hc0 : bytesAt s.mem (w64 W + BitVec.ofNat 64 48) 16 = Spec.Ccm.ctrBlock nonce 0) (y : Nat) :
-    ∃ s₃, runBlock isa ([.mov .eax (imm 0)] ++ ctrAt ++ keyArgs c1O ++
-        [.mov .ebx (.reg .ebp), .alu .add .ebx (imm y), .mov .edi (imm 1)]) s = some s₃ ∧
+    ∃ s₃, runBlock isa (([.mov .eax (imm 0)] : List Instr) ++ ctrAt ++ keyArgs c1O ++
+        ([.mov .ebx (.reg .ebp), .alu .add .ebx (imm y), .mov .edi (imm 1)] : List Instr)) s = some s₃ ∧
       Frame [⟨w64 W + BitVec.ofNat 64 64, 16⟩] s.mem s₃.mem ∧
       bytesAt s₃.mem (w64 W + BitVec.ofNat 64 64) 16 = Spec.Ccm.ctrBlock nonce 0 ∧
       s₃.gpr .eax = K ∧ s₃.gpr .ecx = BitVec.ofNat 32 R ∧ s₃.gpr .edx = W + BitVec.ofNat 32 64 ∧
@@ -329,7 +329,7 @@ theorem tagArgs_ok {K W SP : BitVec 32} {s : State} (L : Lay K W SP) (E : Env K 
   have hR₂ : slotv s₂.mem W roundsO = BitVec.ofNat 32 R := by rw [k₂ _ (by decide) (by decide)]; exact hRo
   have E₂ : Env K W SP s₂ := E₁.keep (by rw [hbp₂, hbp₁]) (by rw [hsp₂, hsp₁]) hrd₂ hwr₂
   obtain ⟨s₃, run₃, hm₃, hax, hcx, hdx, hbx, hdi, hbp₃, hsp₃, hrd₃, hwr₃⟩ : ∃ s₃, runBlock isa
-      (keyArgs c1O ++ [.mov .ebx (.reg .ebp), .alu .add .ebx (imm y), .mov .edi (imm 1)]) s₂ = some s₃ ∧
+      (keyArgs c1O ++ ([.mov .ebx (.reg .ebp), .alu .add .ebx (imm y), .mov .edi (imm 1)] : List Instr)) s₂ = some s₃ ∧
       s₃.mem = s₂.mem ∧ s₃.gpr .eax = K ∧ s₃.gpr .ecx = BitVec.ofNat 32 R ∧ s₃.gpr .edx = W + BitVec.ofNat 32 64 ∧
       s₃.gpr .ebx = W + BitVec.ofNat 32 y ∧ s₃.gpr .edi = BitVec.ofNat 32 1 ∧ s₃.gpr .ebp = W ∧ s₃.gpr .esp = SP ∧
       s₃.rd = s₂.rd ∧ s₃.wr = s₂.wr := by

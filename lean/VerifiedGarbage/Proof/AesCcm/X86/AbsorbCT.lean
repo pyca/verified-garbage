@@ -54,9 +54,9 @@ structure PadPre (K W SP : BitVec 32) (R : Nat) (P : BitVec 32) (len : Nat) (s :
 `edi`. -/
 theorem wholeArgs_ct {y : Nat} (hy : y = 0 ∨ y = 96) {I : State → Prop} {c : Prog isa} {F : State → State → Prop}
     (hr : ∀ s₁ s₂, I s₁ → I s₂ → ∀ r ∈ [Reg.ebp, .edi], s₁.gpr r = s₂.gpr r)
-    (blk : ∀ s, I s → ∃ s', runBlock isa (keyArgs y ++ [.mov .esi (.reg .edi)] ++ updScr) s = some s' ∧ F s s')
+    (blk : ∀ s, I s → ∃ s', runBlock isa (keyArgs y ++ ([.mov .esi (.reg .edi)] : List Instr) ++ updScr) s = some s' ∧ F s s')
     (h₂ : CT (fun s' => ∃ s, I s ∧ F s s') c) :
-    CT I (.seq (.block (keyArgs y ++ [.mov .esi (.reg .edi)] ++ updScr)) c) := by
+    CT I (.seq (.block (keyArgs y ++ ([.mov .esi (.reg .edi)] : List Instr) ++ updScr)) c) := by
   rcases hy with rfl | rfl
   · exact CT.block_seq [.ebp, .edi] hr (by taint_decide) blk h₂
   · exact CT.block_seq [.ebp, .edi] hr (by taint_decide) blk h₂
@@ -64,7 +64,7 @@ theorem wholeArgs_ct {y : Nat} (hy : y = 0 ∨ y = 96) {I : State → Prop} {c :
 theorem absorbWhole_ct (v : Ctr32Impl) {K W SP : BitVec 32} (L : Lay K W SP) {R : Nat} (hR : R = 10 ∨ R = 12 ∨ R = 14)
     {y : Nat} (hy : y = 0 ∨ y = 96) {P : BitVec 32} {len : Nat} (hl : len < 2 ^ 32) :
     CT (PadPre K W SP R P len) (.seq (.block splitWhole)
-        (.ite .e (.block []) (.seq (.block (keyArgs y ++ [.mov .esi (.reg .edi)] ++ updScr)) (updCall v.callee v.suffix)))) := by
+        (.ite .e (.block []) (.seq (.block (keyArgs y ++ ([.mov .esi (.reg .edi)] : List Instr) ++ updScr)) (updCall v.callee v.suffix)))) := by
   refine CT.block_seq [.ebp] (pin_ebp fun s h => h.env.ebp) (by taint_decide)
     (fun s hs => split_ok L hs.env hs.d hs.n hl) ?_
   refine CT.ite (decide (len / 16 = 0)) (fun _ ⟨_, _, _, _, hzf, _⟩ => eval_e hzf) (fun _ => CT.nil) fun hf => ?_
@@ -96,8 +96,8 @@ theorem absorbTail_ct (v : Ctr32Impl) {K W SP : BitVec 32} (L : Lay K W SP) {R :
     {y : Nat} (hy : y = 0 ∨ y = 96) {Q : BitVec 32} {t : Nat} (ht : t < 16) :
     CT (TailPre K W SP R Q t) (.seq (.block [.mov .ecx (slot nO), .alu .test .ecx (.reg .ecx)])
         (.ite .e (.block [])
-          (.seq (.block (zero4 blkO ++ [.mov .edi (slot dO), .mov .edx (.reg .ebp), .alu .add .edx (imm blkO),
-              .mov .ecx (slot nO)]))
+          (.seq (.block (zero4 blkO ++ ([.mov .edi (slot dO), .mov .edx (.reg .ebp), .alu .add .edx (imm blkO),
+              .mov .ecx (slot nO)] : List Instr)))
             (.seq copyLoop (updBlock v.callee v.suffix y))))) := by
   refine CT.block_seq [.ebp] (pin_ebp fun s h => h.env.ebp) (by taint_decide)
     (fun s hs => testN_ok L hs.env (r := t) (by omega) hs.n) ?_

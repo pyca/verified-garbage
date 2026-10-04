@@ -99,8 +99,8 @@ structure CtrMid (K W SP : BitVec 32) (s : State) (R : Nat) (nonce : List Byte) 
 /-- The data and its length into `dO` and `nO`, and split. -/
 theorem ctrSplit_ok {K W SP : BitVec 32} {s : State} (L : Lay K W SP) (E : Env K W SP s) {D : BitVec 32} {n : Nat}
     (hDp : slotv s.mem W dataO = D) (hlen : slotv s.mem W lenO = BitVec.ofNat 32 n) (hn32 : n < 2 ^ 32) :
-    ∃ s₁, runBlock isa ([.mov .eax (slot dataO), .store (at_ .ebp dO) .eax, .mov .eax (slot lenO),
-        .store (at_ .ebp nO) .eax] ++ splitWhole) s = some s₁ ∧
+    ∃ s₁, runBlock isa (([.mov .eax (slot dataO), .store (at_ .ebp dO) .eax, .mov .eax (slot lenO),
+        .store (at_ .ebp nO) .eax] : List Instr) ++ splitWhole) s = some s₁ ∧
       s₁.gpr .ebx = D ∧ s₁.gpr .edi = BitVec.ofNat 32 (n / 16) ∧ s₁.zf = some (decide (n / 16 = 0)) ∧
       Env K W SP s₁ ∧ Frame [wC W] s.mem s₁.mem ∧ slotv s₁.mem W dO = D + BitVec.ofNat 32 (16 * (n / 16)) ∧
       slotv s₁.mem W nO = BitVec.ofNat 32 (n % 16) ∧ s₁.rd = s.rd ∧ s₁.wr = s.wr := by
@@ -141,7 +141,7 @@ theorem ctrArgs_ok {K W SP : BitVec 32} {s₁ : State} (L : Lay K W SP) (E₁ : 
     (hc0 : bytesAt s₁.mem (w64 W + BitVec.ofNat 64 48) 16 = Spec.Ccm.ctrBlock nonce 0) {i : Nat}
     (hi : i < 256 ^ (15 - nonce.length)) (hi32 : i < 2 ^ 32) {Q : BitVec 32} {b : BitVec 32}
     (hbx : s₁.gpr .ebx = Q) (hdi : s₁.gpr .edi = b) :
-    ∃ sc, runBlock isa ([.mov .eax (imm i)] ++ ctrAt ++ keyArgs c1O) s₁ = some sc ∧
+    ∃ sc, runBlock isa (([.mov .eax (imm i)] : List Instr) ++ ctrAt ++ keyArgs c1O) s₁ = some sc ∧
       Frame [⟨w64 W + BitVec.ofNat 64 64, 16⟩] s₁.mem sc.mem ∧
       bytesAt sc.mem (w64 W + BitVec.ofNat 64 64) 16 = Spec.Ccm.ctrBlock nonce i ∧
       sc.gpr .eax = K ∧ sc.gpr .ecx = BitVec.ofNat 32 R ∧ sc.gpr .edx = W + BitVec.ofNat 32 64 ∧ sc.gpr .ebx = Q ∧
@@ -190,9 +190,9 @@ theorem ctrWhole_ok (v : Ctr32Impl) {K W SP : BitVec 32} {s : State} {R : Nat} {
     {n : Nat} (C : CtrCtx K W SP s R nonce D n) (E : Env K W SP s) (hK : slotv s.mem W ctxO = K)
     (hRo : slotv s.mem W roundsO = BitVec.ofNat 32 R) (hDp : slotv s.mem W dataO = D)
     (hlen : slotv s.mem W lenO = BitVec.ofNat 32 n) :
-    WP isa (.seq (.block ([.mov .eax (slot dataO), .store (at_ .ebp dO) .eax, .mov .eax (slot lenO),
-        .store (at_ .ebp nO) .eax] ++ splitWhole))
-      (.ite .e (.block []) (.seq (.block ([.mov .eax (imm 1)] ++ ctrAt ++ keyArgs c1O)) (ctrCall v.callee)))) s
+    WP isa (.seq (.block (([.mov .eax (slot dataO), .store (at_ .ebp dO) .eax, .mov .eax (slot lenO),
+        .store (at_ .ebp nO) .eax] : List Instr) ++ splitWhole))
+      (.ite .e (.block []) (.seq (.block (([.mov .eax (imm 1)] : List Instr) ++ ctrAt ++ keyArgs c1O)) (ctrCall v.callee)))) s
       (CtrMid K W SP s R nonce D n) := by
   have L := C.lay
   have hb : 16 * (n / 16) ≤ n := Nat.mul_div_le n 16
@@ -303,8 +303,8 @@ theorem ctrTailArgs_ok {K W SP : BitVec 32} {t₀ : State} (L : Lay K W SP) (E�
     (h7 : 7 ≤ nonce.length) (h13 : nonce.length ≤ 13)
     (hc0 : bytesAt t₀.mem (w64 W + BitVec.ofNat 64 48) 16 = Spec.Ccm.ctrBlock nonce 0)
     (hj : n / 16 + 1 < 256 ^ (15 - nonce.length)) :
-    ∃ tc, runBlock isa ([.mov .eax (slot lenO), .shift .shr .eax 4, .alu .add .eax (imm 1)] ++ ctrAt ++ zero4 ksO ++
-        keyArgs c1O ++ [.mov .ebx (.reg .ebp), .alu .add .ebx (imm ksO), .mov .edi (imm 1)]) t₀ = some tc ∧
+    ∃ tc, runBlock isa (([.mov .eax (slot lenO), .shift .shr .eax 4, .alu .add .eax (imm 1)] : List Instr) ++ ctrAt ++ zero4 ksO ++
+        keyArgs c1O ++ ([.mov .ebx (.reg .ebp), .alu .add .ebx (imm ksO), .mov .edi (imm 1)] : List Instr)) t₀ = some tc ∧
       Frame [⟨w64 W + BitVec.ofNat 64 64, 32⟩] t₀.mem tc.mem ∧
       bytesAt tc.mem (w64 W + BitVec.ofNat 64 64) 16 = Spec.Ccm.ctrBlock nonce (n / 16 + 1) ∧
       bytesAt tc.mem (w64 W + BitVec.ofNat 64 80) 16 = Spec.Gcm.zeros 16 ∧
@@ -338,7 +338,7 @@ theorem ctrTailArgs_ok {K W SP : BitVec 32} {t₀ : State} (L : Lay K W SP) (E�
   have hz := zero4_fold tb.mem W 80
   simp only [Nat.reduceAdd] at hz
   obtain ⟨tc, runc, hmc, hax, hcx, hdx, hbx, hdi, hbpc, hspc, hrdc, hwrc⟩ : ∃ tc, runBlock isa
-      (zero4 ksO ++ (keyArgs c1O ++ [.mov .ebx (.reg .ebp), .alu .add .ebx (imm ksO), .mov .edi (imm 1)])) tb =
+      (zero4 ksO ++ (keyArgs c1O ++ ([.mov .ebx (.reg .ebp), .alu .add .ebx (imm ksO), .mov .edi (imm 1)] : List Instr))) tb =
         some tc ∧ tc.mem = Cmac.zero4 tb.mem (w64 W + BitVec.ofNat 64 80) ∧ tc.gpr .eax = K ∧
       tc.gpr .ecx = BitVec.ofNat 32 R ∧ tc.gpr .edx = W + BitVec.ofNat 32 64 ∧
       tc.gpr .ebx = W + BitVec.ofNat 32 80 ∧ tc.gpr .edi = BitVec.ofNat 32 1 ∧ tc.gpr .ebp = W ∧
@@ -394,8 +394,8 @@ theorem ctrTail_ok (v : Ctr32Impl) {K W SP : BitVec 32} {s : State} {R : Nat} {n
     (I : CtrMid K W SP s R nonce D n t) :
     WP isa (.seq (.block [.mov .ecx (slot nO), .alu .test .ecx (.reg .ecx)])
       (.ite .e (.block [])
-        (.seq (.block ([.mov .eax (slot lenO), .shift .shr .eax 4, .alu .add .eax (imm 1)] ++ ctrAt ++ zero4 ksO ++
-            keyArgs c1O ++ [.mov .ebx (.reg .ebp), .alu .add .ebx (imm ksO), .mov .edi (imm 1)]))
+        (.seq (.block (([.mov .eax (slot lenO), .shift .shr .eax 4, .alu .add .eax (imm 1)] : List Instr) ++ ctrAt ++ zero4 ksO ++
+            keyArgs c1O ++ ([.mov .ebx (.reg .ebp), .alu .add .ebx (imm ksO), .mov .edi (imm 1)] : List Instr)))
         (.seq (ctrCall v.callee)
           (.seq (.block [.mov .edi (slot dO), .mov .edx (.reg .ebp), .alu .add .edx (imm ksO), .mov .ecx (slot nO)])
             xorLoop))))) t

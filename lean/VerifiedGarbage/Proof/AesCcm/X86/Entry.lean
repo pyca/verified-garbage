@@ -24,7 +24,7 @@ abbrev entryPs : List (Nat × Nat) :=
   [(0, ctxO), (1, roundsO), (2, nonceO), (3, nlenO), (4, aadO), (5, alenO), (6, dataO), (7, lenO), (9, tglO)]
 
 theorem ccmEntry_eq :
-    ccmEntry = entry 8 (entryPs.flatMap (fun p => keep p.1 p.2) ++ [.store (at_ .ebp tpO) .ebp]) := rfl
+    ccmEntry = entry 8 (entryPs.flatMap (fun p => keep p.1 p.2) ++ ([.store (at_ .ebp tpO) .ebp] : List Instr)) := rfl
 
 /-- What the entry leaves. -/
 structure Entered (s : State) (W : BitVec 32) (s' : State) : Prop where

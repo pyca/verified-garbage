@@ -68,7 +68,7 @@ theorem minLen_ok {K W SP : BitVec 32} {s : State} (L : Lay K W SP) (E : Env K W
 theorem headerBlk_ok {K W SP : BitVec 32} {s : State} (L : Lay K W SP) (E : Env K W SP s) {a : Nat} (ha : a < 2 ^ 32)
     (hn : slotv s.mem W nO = BitVec.ofNat 32 a) :
     ∃ s₁, runBlock isa
-      (zero4 blkO ++ [.mov .eax (slot nO), .alu .cmp .eax (imm 0xff00)]) s = some s₁ ∧
+      (zero4 blkO ++ ([.mov .eax (slot nO), .alu .cmp .eax (imm 0xff00)] : List Instr)) s = some s₁ ∧
       s₁.mem = Cmac.zero4 s.mem (w64 W + BitVec.ofNat 64 32) ∧ s₁.gpr .eax = BitVec.ofNat 32 a ∧
       s₁.cf = some (decide (a < 2 ^ 16 - 2 ^ 8)) ∧ s₁.gpr .ebp = W ∧ s₁.gpr .esp = SP ∧
       s₁.rd = s.rd ∧ s₁.wr = s.wr := by

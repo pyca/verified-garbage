@@ -30,8 +30,8 @@ open VG.Proof.AesGcm.X86 (w64 toNat_ofNat32 toNat_add32 slotv LoopPre CopyPost c
 theorem ctrsBlk_ok {K W SP : BitVec 32} {s : State} (L : Lay K W SP) (E : Env K W SP s) {N : BitVec 32} {nl : Nat}
     (hNp : slotv s.mem W nonceO = N) (hnl : slotv s.mem W nlenO = BitVec.ofNat 32 nl) (h13 : nl ≤ 13) :
     ∃ s₁, runBlock isa
-      (zero4 c0O ++ [.mov .eax (imm 14), .alu .sub .eax (slot nlenO), .store8 (at_ .ebp c0O) .al,
-        .mov .edi (slot nonceO), .mov .edx (.reg .ebp), .alu .add .edx (imm (c0O + 1)), .mov .ecx (slot nlenO)]) s =
+      (zero4 c0O ++ ([.mov .eax (imm 14), .alu .sub .eax (slot nlenO), .store8 (at_ .ebp c0O) .al,
+        .mov .edi (slot nonceO), .mov .edx (.reg .ebp), .alu .add .edx (imm (c0O + 1)), .mov .ecx (slot nlenO)] : List Instr)) s =
         some s₁ ∧
       s₁.mem = (Cmac.zero4 s.mem (w64 W + BitVec.ofNat 64 48)).writeW (w64 W + BitVec.ofNat 64 48)
         (BitVec.ofNat 8 (15 - nl - 1)) ∧
@@ -151,7 +151,7 @@ theorem ctrAt_ok {K W SP : BitVec 32} {s : State} (L : Lay K W SP) (E : Env K W 
 /-- The arguments of `updBlock y`'s call. -/
 theorem updBlockArgs_ok {K W SP : BitVec 32} {s : State} (L : Lay K W SP) (E : Env K W SP s) {R : Nat}
     (hK : slotv s.mem W ctxO = K) (hRo : slotv s.mem W roundsO = BitVec.ofNat 32 R) (y : Nat) :
-    ∃ s₁, runBlock isa (keyArgs y ++ [.mov .ebx (.reg .ebp), .alu .add .ebx (imm blkO), .mov .esi (imm 1)] ++ updScr) s =
+    ∃ s₁, runBlock isa (keyArgs y ++ ([.mov .ebx (.reg .ebp), .alu .add .ebx (imm blkO), .mov .esi (imm 1)] : List Instr) ++ updScr) s =
       some s₁ ∧ s₁.mem = s.mem ∧ s₁.gpr .eax = K ∧ s₁.gpr .ecx = BitVec.ofNat 32 R ∧
       s₁.gpr .edx = W + BitVec.ofNat 32 y ∧ s₁.gpr .ebx = W + BitVec.ofNat 32 32 ∧ s₁.gpr .esi = BitVec.ofNat 32 1 ∧
       s₁.gpr .edi = W + BitVec.ofNat 32 384 ∧ s₁.gpr .ebp = W ∧ s₁.gpr .esp = SP ∧ s₁.rd = s.rd ∧ s₁.wr = s.wr := by

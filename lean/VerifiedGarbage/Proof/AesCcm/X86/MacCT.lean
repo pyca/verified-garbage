@@ -41,10 +41,10 @@ structure MacPre (K W SP : BitVec 32) (R : Nat) (N A D : BitVec 32) (nl al n tl 
 
 theorem b0Blk_ct {y : Nat} (hy : y = 0 ∨ y = 96) {I : State → Prop}
     (hr : ∀ s₁ s₂, I s₁ → I s₂ → ∀ r ∈ [Reg.ebp], s₁.gpr r = s₂.gpr r) :
-    CT I (.block ([.mov .ecx (slot c0O), .store (at_ .ebp blkO) .ecx, .mov .ecx (slot (c0O + 4)),
+    CT I (.block (([.mov .ecx (slot c0O), .store (at_ .ebp blkO) .ecx, .mov .ecx (slot (c0O + 4)),
         .store (at_ .ebp (blkO + 4)) .ecx, .mov .ecx (slot (c0O + 8)), .store (at_ .ebp (blkO + 8)) .ecx,
         .store8 (at_ .ebp blkO) .al, .mov .eax (slot lenO), .bswap .eax, .alu .or .eax (slot (c0O + 12)),
-        .store (at_ .ebp (blkO + 12)) .eax] ++ zero4 y)) := by
+        .store (at_ .ebp (blkO + 12)) .eax] : List Instr) ++ zero4 y)) := by
   rcases hy with rfl | rfl
   · exact CT.taint [.ebp] hr (by taint_decide)
   · exact CT.taint [.ebp] hr (by taint_decide)
@@ -110,8 +110,8 @@ structure TagPre (K W SP : BitVec 32) (R : Nat) (s : State) : Prop where
 
 theorem tag_ct (v : Ctr32Impl) {K W SP : BitVec 32} (L : Lay K W SP) {R : Nat} (hR : R = 10 ∨ R = 12 ∨ R = 14)
     {y : Nat} (hy : y = 0 ∨ y = 96) : CT (TagPre K W SP R) (tag v.callee y) := by
-  have blk : ∀ s, TagPre K W SP R s → ∃ s₃, runBlock isa ([.mov .eax (imm 0)] ++ ctrAt ++ keyArgs c1O ++
-      [.mov .ebx (.reg .ebp), .alu .add .ebx (imm y), .mov .edi (imm 1)]) s = some s₃ ∧
+  have blk : ∀ s, TagPre K W SP R s → ∃ s₃, runBlock isa (([.mov .eax (imm 0)] : List Instr) ++ ctrAt ++ keyArgs c1O ++
+      ([.mov .ebx (.reg .ebp), .alu .add .ebx (imm y), .mov .edi (imm 1)] : List Instr)) s = some s₃ ∧
       s₃.gpr .eax = K ∧ s₃.gpr .ecx = BitVec.ofNat 32 R ∧ s₃.gpr .edx = W + BitVec.ofNat 32 64 ∧
       s₃.gpr .ebx = W + BitVec.ofNat 32 y ∧ s₃.gpr .edi = BitVec.ofNat 32 1 ∧ s₃.gpr .ebp = W ∧ s₃.gpr .esp = SP ∧
       s₃.rd = s.rd ∧ s₃.wr = s.wr := fun s hs => by

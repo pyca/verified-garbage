@@ -114,7 +114,7 @@ theorem split_ok {K W SP : BitVec 32} {s : State} (L : Lay K W SP) (E : Env K W 
 theorem wholeArgs_ok {K W SP : BitVec 32} {s₁ : State} (L : Lay K W SP) (E₁ : Env K W SP s₁) {R : Nat}
     (hK₁ : slotv s₁.mem W ctxO = K) (hR₁ : slotv s₁.mem W roundsO = BitVec.ofNat 32 R) {P : BitVec 32} {b : Nat}
     (hbx : s₁.gpr .ebx = P) (hdi : s₁.gpr .edi = BitVec.ofNat 32 b) (y : Nat) :
-    ∃ s₂, runBlock isa (keyArgs y ++ [.mov .esi (.reg .edi)] ++ updScr) s₁ = some s₂ ∧
+    ∃ s₂, runBlock isa (keyArgs y ++ ([.mov .esi (.reg .edi)] : List Instr) ++ updScr) s₁ = some s₂ ∧
       s₂.mem = s₁.mem ∧ s₂.gpr .eax = K ∧ s₂.gpr .ecx = BitVec.ofNat 32 R ∧ s₂.gpr .edx = W + BitVec.ofNat 32 y ∧
       s₂.gpr .ebx = P ∧ s₂.gpr .esi = BitVec.ofNat 32 b ∧
       s₂.gpr .edi = W + BitVec.ofNat 32 384 ∧ s₂.gpr .ebp = W ∧ s₂.gpr .esp = SP ∧ s₂.rd = s₁.rd ∧ s₂.wr = s₁.wr := by
@@ -154,7 +154,7 @@ theorem absorbWhole_ok (v : Ctr32Impl) {K W SP : BitVec 32} {s : State} (L : Lay
     {y : Nat} (hy : y = 0 ∨ y = 96) {P : BitVec 32} {len : Nat} (hP : 0 < len → Buf W SP s P len)
     (hl : len < 2 ^ 32) (hd : slotv s.mem W dO = P) (hn : slotv s.mem W nO = BitVec.ofNat 32 len) :
     WP isa (.seq (.block splitWhole)
-        (.ite .e (.block []) (.seq (.block (keyArgs y ++ [.mov .esi (.reg .edi)] ++ updScr)) (updCall v.callee v.suffix))))
+        (.ite .e (.block []) (.seq (.block (keyArgs y ++ ([.mov .esi (.reg .edi)] : List Instr) ++ updScr)) (updCall v.callee v.suffix))))
       s fun s' => Absorbed K W SP s y
         (Spec.Cmac.chain (Spec.Ccm.ctxCiph s.mem (w64 K) R) (bytesAt s.mem (w64 W + BitVec.ofNat 64 y) 16)
           (Spec.Cmac.blocks 16 ((bytesAt s.mem (w64 P) len).take (16 * (len / 16))))) s' ∧
@@ -250,7 +250,7 @@ theorem testN_ok {K W SP : BitVec 32} {s : State} (L : Lay K W SP) (E : Env K W 
 theorem tailArgs_ok {K W SP : BitVec 32} {s₁ : State} (L : Lay K W SP) (E₁ : Env K W SP s₁) {Q : BitVec 32} {t : Nat}
     (hd₁ : slotv s₁.mem W dO = Q) (hn₁ : slotv s₁.mem W nO = BitVec.ofNat 32 t) :
     ∃ s₂, runBlock isa
-        (zero4 blkO ++ [.mov .edi (slot dO), .mov .edx (.reg .ebp), .alu .add .edx (imm blkO), .mov .ecx (slot nO)])
+        (zero4 blkO ++ ([.mov .edi (slot dO), .mov .edx (.reg .ebp), .alu .add .edx (imm blkO), .mov .ecx (slot nO)] : List Instr))
           s₁ = some s₂ ∧ s₂.mem = Cmac.zero4 s₁.mem (w64 W + BitVec.ofNat 64 32) ∧
         s₂.gpr .edi = Q ∧ s₂.gpr .edx = W + BitVec.ofNat 32 32 ∧ s₂.gpr .ecx = BitVec.ofNat 32 t ∧
         s₂.gpr .ebp = W ∧ s₂.gpr .esp = SP ∧ s₂.rd = s₁.rd ∧ s₂.wr = s₁.wr := by
@@ -276,8 +276,8 @@ theorem absorbTail_ok (v : Ctr32Impl) {K W SP : BitVec 32} {s : State} (L : Lay 
     (hn : slotv s.mem W nO = BitVec.ofNat 32 t) (hQ : 0 < t → Buf W SP s Q t) :
     WP isa (.seq (.block [.mov .ecx (slot nO), .alu .test .ecx (.reg .ecx)])
         (.ite .e (.block [])
-          (.seq (.block (zero4 blkO ++ [.mov .edi (slot dO), .mov .edx (.reg .ebp), .alu .add .edx (imm blkO),
-              .mov .ecx (slot nO)]))
+          (.seq (.block (zero4 blkO ++ ([.mov .edi (slot dO), .mov .edx (.reg .ebp), .alu .add .edx (imm blkO),
+              .mov .ecx (slot nO)] : List Instr)))
             (.seq copyLoop (updBlock v.callee v.suffix y)))))
       s (Absorbed K W SP s y
         (Spec.Cmac.chain (Spec.Ccm.ctxCiph s.mem (w64 K) R) (bytesAt s.mem (w64 W + BitVec.ofNat 64 y) 16)

@@ -30,9 +30,9 @@ structure CtrPre (K W SP : BitVec 32) (R : Nat) (D : BitVec 32) (n : Nat) (s : S
 
 theorem ctrWhole_ct (v : Ctr32Impl) {K W SP : BitVec 32} (L : Lay K W SP) {R : Nat} (hR : R = 10 ∨ R = 12 ∨ R = 14)
     {D : BitVec 32} {n : Nat} (hn32 : n < 2 ^ 32) :
-    CT (CtrPre K W SP R D n) (.seq (.block ([.mov .eax (slot dataO), .store (at_ .ebp dO) .eax, .mov .eax (slot lenO),
-        .store (at_ .ebp nO) .eax] ++ splitWhole))
-      (.ite .e (.block []) (.seq (.block ([.mov .eax (imm 1)] ++ ctrAt ++ keyArgs c1O)) (ctrCall v.callee)))) := by
+    CT (CtrPre K W SP R D n) (.seq (.block (([.mov .eax (slot dataO), .store (at_ .ebp dO) .eax, .mov .eax (slot lenO),
+        .store (at_ .ebp nO) .eax] : List Instr) ++ splitWhole))
+      (.ite .e (.block []) (.seq (.block (([.mov .eax (imm 1)] : List Instr) ++ ctrAt ++ keyArgs c1O)) (ctrCall v.callee)))) := by
   have hb : 16 * (n / 16) ≤ n := Nat.mul_div_le n 16
   refine CT.block_seq [.ebp] (pin_ebp fun _ h => h.env.ebp) (by taint_decide)
     (fun s hs => ctrSplit_ok L hs.env hs.data hs.len hn32) ?_
@@ -42,7 +42,7 @@ theorem ctrWhole_ct (v : Ctr32Impl) {K W SP : BitVec 32} (L : Lay K W SP) {R : N
       s₁.zf = some (decide (n / 16 = 0)) ∧ Env K W SP s₁ ∧ Frame [wC W] s.mem s₁.mem ∧
       slotv s₁.mem W dO = D + BitVec.ofNat 32 (16 * (n / 16)) ∧ slotv s₁.mem W nO = BitVec.ofNat 32 (n % 16) ∧
       s₁.rd = s.rd ∧ s₁.wr = s.wr) →
-      ∃ sc, runBlock isa ([.mov .eax (imm 1)] ++ ctrAt ++ keyArgs c1O) s₁ = some sc ∧
+      ∃ sc, runBlock isa (([.mov .eax (imm 1)] : List Instr) ++ ctrAt ++ keyArgs c1O) s₁ = some sc ∧
         sc.gpr .eax = K ∧ sc.gpr .ecx = BitVec.ofNat 32 R ∧ sc.gpr .edx = W + BitVec.ofNat 32 64 ∧ sc.gpr .ebx = D ∧
         sc.gpr .edi = BitVec.ofNat 32 (n / 16) ∧ sc.gpr .ebp = W ∧ sc.gpr .esp = SP ∧ sc.rd = s₁.rd ∧
         sc.wr = s₁.wr := fun s₁ ⟨s, hs, hbx, hdi, _, E₁, f₁, _, _, rd, wr⟩ => by
@@ -79,8 +79,8 @@ theorem ctrTail_ct (v : Ctr32Impl) {K W SP : BitVec 32} (L : Lay K W SP) {R : Na
     {D : BitVec 32} {n : Nat} (hn32 : n < 2 ^ 32) :
     CT (CtrTailPre K W SP R D n) (.seq (.block [.mov .ecx (slot nO), .alu .test .ecx (.reg .ecx)])
       (.ite .e (.block [])
-        (.seq (.block ([.mov .eax (slot lenO), .shift .shr .eax 4, .alu .add .eax (imm 1)] ++ ctrAt ++ zero4 ksO ++
-            keyArgs c1O ++ [.mov .ebx (.reg .ebp), .alu .add .ebx (imm ksO), .mov .edi (imm 1)]))
+        (.seq (.block (([.mov .eax (slot lenO), .shift .shr .eax 4, .alu .add .eax (imm 1)] : List Instr) ++ ctrAt ++ zero4 ksO ++
+            keyArgs c1O ++ ([.mov .ebx (.reg .ebp), .alu .add .ebx (imm ksO), .mov .edi (imm 1)] : List Instr)))
         (.seq (ctrCall v.callee)
           (.seq (.block [.mov .edi (slot dO), .mov .edx (.reg .ebp), .alu .add .edx (imm ksO), .mov .ecx (slot nO)])
             xorLoop))))) := by
@@ -91,8 +91,8 @@ theorem ctrTail_ct (v : Ctr32Impl) {K W SP : BitVec 32} (L : Lay K W SP) {R : Na
   -- The arguments of the call making the keystream block.
   have blk : ∀ t₀ : State, (∃ t, CtrTailPre K W SP R D n t ∧ t₀.mem = t.mem ∧ t₀.zf = some (decide (n % 16 = 0)) ∧
       t₀.gpr .ebp = W ∧ t₀.gpr .esp = SP ∧ t₀.rd = t.rd ∧ t₀.wr = t.wr) →
-      ∃ tc, runBlock isa ([.mov .eax (slot lenO), .shift .shr .eax 4, .alu .add .eax (imm 1)] ++ ctrAt ++
-          zero4 ksO ++ keyArgs c1O ++ [.mov .ebx (.reg .ebp), .alu .add .ebx (imm ksO), .mov .edi (imm 1)]) t₀ =
+      ∃ tc, runBlock isa (([.mov .eax (slot lenO), .shift .shr .eax 4, .alu .add .eax (imm 1)] : List Instr) ++ ctrAt ++
+          zero4 ksO ++ keyArgs c1O ++ ([.mov .ebx (.reg .ebp), .alu .add .ebx (imm ksO), .mov .edi (imm 1)] : List Instr)) t₀ =
           some tc ∧
         Frame [⟨w64 W + BitVec.ofNat 64 64, 32⟩] t₀.mem tc.mem ∧
         tc.gpr .eax = K ∧ tc.gpr .ecx = BitVec.ofNat 32 R ∧ tc.gpr .edx = W + BitVec.ofNat 32 64 ∧
