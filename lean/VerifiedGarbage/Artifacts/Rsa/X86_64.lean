@@ -4,6 +4,7 @@ import VerifiedGarbage.Proof.Bignum.X86_64.PcVerified
 import VerifiedGarbage.Proof.Bignum.X86_64.PdVerified
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxCT
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtVerified
+import VerifiedGarbage.Proof.Bignum.X86_64.IfmaVerified
 
 /-! # RSA (RFC 8017) on x86-64 -/
 
@@ -90,6 +91,23 @@ def artifacts : List Artifact := [
     contract := Spec.Rsa.privateCrtContract X86_64.abi
     verified := Proof.Bignum.X86_64.crt_verified _ (by decide +kernel)
     features := ["bmi2", "adx"]
+    spSafe := Code.all_of_allInstrs (by decide +kernel) },
+  { Spec.Rsa.privateCrtApi with
+    target := X86_64.target
+    name := Spec.Rsa.privateCrtApi.name ++ "_ifma"
+    doc := Spec.Rsa.privateCrtApi.doc
+      (notes := ["`vg_rsa_private_crt_adx`'s code, but for a modulus of 32 words and primes of 16 words \
+        each, whose exponentiations run at once in radix 2^52 with AVX512_IFMA's `vpmadd52luq` and \
+        `vpmadd52huq` on 256-bit registers: almost-Montgomery multiplications modulo both primes, a \
+        table of 16 powers of each base, and a fixed window of 4 bits over the exponents padded with \
+        zeros to 128 bytes, the table read by a masked selection from every entry. MXCSR is set to \
+        `0x1FBF` around the vector code, as Intel's guidance for data-operand-independent timing asks, \
+        and restored after it."])
+    code := Impl.Rsa.X86_64.CrtIfma.code Proof.Bignum.X86_64.Mont.adx.mm
+    contract := Spec.Rsa.privateCrtContract X86_64.abi
+    verified := Proof.Bignum.X86_64.ifma_verified _ (by decide +kernel) (by decide +kernel) (by decide +kernel)
+      (by decide +kernel)
+    features := ["avx", "avx2", "avx512ifma", "avx512vl", "bmi2", "adx"]
     spSafe := Code.all_of_allInstrs (by decide +kernel) }]
 
 end VG.Artifacts.Rsa.X86_64
