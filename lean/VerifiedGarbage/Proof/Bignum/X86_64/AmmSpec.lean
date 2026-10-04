@@ -74,6 +74,90 @@ theorem Out2.rebase {B : Addr} {o n : Nat} {m m' : Mem} (h : Out2 (off B o) 0 n 
   · rcases hx p hp with h3 | h3 <;> omega
   · omega
 
+/-- `ammCore` with `r8`, `r9`, `r11` at offsets `a`, `b`, `o` of `B = rbx`. -/
+theorem ammCoreSpec_ok {s : State} {B : Addr} {o a b : Nat} {k : Nat → Nat}
+    (hB : s.gpr .rbx = B) (r8₃ : s.gpr .r8 = off B a) (r9₃ : s.gpr .r9 = off B b) (r11₃ : s.gpr .r11 = off B o)
+    (hs : Scr s B (2 * D))
+    (ho : o + D + 160 ≤ 2 * D) (ha : a + D + 160 ≤ 2 * D) (hb : b + D + 160 ≤ 2 * D)
+    (hlt : ∀ p < 2, ∀ j < 20, limb s.mem B (D * p + a) j < 2 ^ 52 ∧ limb s.mem B (D * p + b) j < 2 ^ 52 ∧
+      limb s.mem B (D * p + oM) j < 2 ^ 52)
+    (hk : ∀ p < 2, ∀ t < 4, word s.mem B (D * p + oK0 + 8 * t) = BitVec.ofNat 64 (k p))
+    (hklt : ∀ p < 2, k p < 2 ^ 52) (hk0 : ∀ p < 2, (limb s.mem B (D * p + oM) 0 * k p + 1) % 2 ^ 52 = 0)
+    (hA : ∀ p < 2, val52 s.mem B (D * p + a) < 2 * val52 s.mem B (D * p + oM))
+    (hBv : ∀ p < 2, val52 s.mem B (D * p + b) < 2 * val52 s.mem B (D * p + oM))
+    (hM : ∀ p < 2, 4 * val52 s.mem B (D * p + oM) ≤ 2 ^ (52 * 20)) :
+    WP isa VG.Impl.Rsa.X86_64.CrtIfma.ammCore s fun s' => (∀ p < 2,
+      (∀ j < 20, limb s'.mem B (D * p + o) j < 2 ^ 52) ∧
+      val52 s'.mem B (D * p + o) < 2 * val52 s.mem B (D * p + oM) ∧
+      val52 s'.mem B (D * p + o) * 2 ^ (52 * 20) % val52 s.mem B (D * p + oM) =
+        val52 s.mem B (D * p + a) * val52 s.mem B (D * p + b) % val52 s.mem B (D * p + oM)) ∧
+      Out2 B o 160 s.mem s'.mem ∧
+      (∀ r, r ≠ .rax → r ≠ .rcx → r ≠ .rdx → r ≠ .rsi → r ≠ .r9 → r ≠ .r10 → r ≠ .r12 → s'.gpr r = s.gpr r) ∧
+      s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.mxcsr = s.mxcsr := by
+  have hD : D = 3872 := rfl
+  -- the operands, as functions of the limb index
+  let A : Nat → Nat → Nat := fun p => limb s.mem B (D * p + a)
+  let Bl : Nat → Nat → Nat := fun p => limb s.mem B (D * p + b)
+  let M : Nat → Nat → Nat := fun p => limb s.mem B (D * p + oM)
+  have rdS : ∀ d n, 0 < n → d + n ≤ 2 * D → InRegions (s.rd ++ s.wr) (off B d) n := fun d n hn hd =>
+    let ⟨_, h, c⟩ := hs.region hd hn; ⟨_, List.mem_append_right _ h, c⟩
+  have e : Env (s.setReg .r10 (s.gpr .rbx)) A M k Bl := by
+    refine ⟨fun p hp kk hk t ht => ?_, fun p hp kk hk t ht => ?_, fun p hp t ht => ?_, fun p hp l hl => ?_,
+      fun p hp j hj => (hlt p hp j hj).1, fun p hp j hj => (hlt p hp j hj).2.2, hklt,
+      fun p hp l hl => (hlt p hp l hl).2.1, fun d n hn hd => ?_, fun d n hn hd => ?_, fun d n hn hd => ?_⟩
+    · rw [RegUpd.mem_setReg, RegUpd.gpr_setReg_of_ne _ _ (by decide), r8₃, off_add]
+      show _ = BitVec.ofNat 64 (limb s.mem B (D * p + a) (kk + 5 * t))
+      rw [ofNat_toNat64, off_lim _]
+      exact congrArg (fun d => s.mem.readW (off B d) 64) (by omega)
+    · rw [RegUpd.mem_setReg, RegUpd.gpr_setReg_self, hB]
+      show _ = BitVec.ofNat 64 (limb s.mem B (D * p + oM) (kk + 5 * t))
+      rw [ofNat_toNat64, off_lim _]
+      exact congrArg (fun d => s.mem.readW (off B d) 64) (by simp only [oM]; omega)
+    · rw [RegUpd.mem_setReg, RegUpd.gpr_setReg_self, hB]
+      exact hk p hp t ht
+    · rw [RegUpd.mem_setReg, RegUpd.gpr_setReg_of_ne _ _ (by decide), r9₃, off_add]
+      show _ = BitVec.ofNat 64 (limb s.mem B (D * p + b) l)
+      rw [ofNat_toNat64]
+      exact congrArg (fun d => s.mem.readW (off B d) 64) (by omega)
+    · rw [RegUpd.rd_setReg, RegUpd.wr_setReg, RegUpd.gpr_setReg_of_ne _ _ (by decide), r8₃, off_add]
+      exact rdS _ n hn (by rw [show lim .r8 = D + 160 from rfl] at hd; omega)
+    · rw [RegUpd.rd_setReg, RegUpd.wr_setReg, RegUpd.gpr_setReg_of_ne _ _ (by decide), r9₃, off_add]
+      exact rdS _ n hn (by rw [show lim .r9 = D + 136 from rfl] at hd; omega)
+    · rw [RegUpd.rd_setReg, RegUpd.wr_setReg, RegUpd.gpr_setReg_self, hB]
+      exact rdS _ n hn (by rw [show lim .r10 = D + 192 from rfl] at hd; omega)
+  have hs₃ : Scr s (off B o) (D + 160) := hs.sub (by omega) (by omega)
+  refine WP.mono (ammCore_ok e r11₃ hs₃) fun s' ⟨hw, hdx, hsi, hf, hg, hrd, hwr, hx⟩ => ?_
+  refine ⟨fun p hp => ?_, hf.rebase (by omega), hg, hrd, hwr, hx⟩
+  have hl : ∀ j < 20, limb s'.mem B (D * p + o) j = carried (lm A M k Bl p 20) j := fun j hj => by
+    have := hw p hp j hj
+    simp only [word, off_off] at this
+    show (s'.mem.readW (off B _) 64).toNat = _
+    rw [show D * p + o + VG.Impl.Rsa.X86_64.CrtIfma.off j = o + (D * p + VG.Impl.Rsa.X86_64.CrtIfma.off j) by
+      omega, this, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := carried_lt (lm A M k Bl p 20) j; omega)]
+  have hv : val52 s'.mem B (D * p + o) = lval (carried (lm A M k Bl p 20)) 20 := by
+    unfold val52; exact lval_congr hl
+  have ok : (ops A M k p).Ok := ⟨fun j hj => (hlt p hp j hj).1, fun j hj => (hlt p hp j hj).2.2, hk0 p hp⟩
+  obtain ⟨he, hU⟩ := amm_val ok (b := Bl p) fun i hi => (hlt p hp i hi).2.1
+  have hcv := carried_val (lm A M k Bl p 20) 20
+  have hA' := hA p hp
+  have hB' := hBv p hp
+  have hM' := hM p hp
+  rw [hv]
+  unfold val52 at hA' hB' hM' ⊢
+  change lval (lm A M k Bl p 20) 20 * _ = lval (A p) 20 * lval (Bl p) 20 + lval (M p) 20 * _ at he
+  change lval (A p) 20 < 2 * lval (M p) 20 at hA'
+  change lval (Bl p) 20 < 2 * lval (M p) 20 at hB'
+  change 4 * lval (M p) 20 ≤ _ at hM'
+  have hlt2 := amm_lt he hU hA' hB' hM'
+  have hz : lval (lm A M k Bl p 20) 20 < 2 ^ (52 * 20) := by
+    generalize 2 ^ (52 * 20) = R at hM' ⊢; omega
+  rw [carryIn_zero hz] at hcv
+  replace hcv : lval (carried (lm A M k Bl p 20)) 20 = lval (lm A M k Bl p 20) 20 := by
+    generalize 2 ^ (52 * 20) = R at hcv; omega
+  rw [hcv]
+  refine ⟨fun j hj => (hl j hj) ▸ carried_lt _ j, hlt2, ?_⟩
+  rw [he, Nat.add_mul_mod_self_left]
+
 /-- `[o] := [a] [b] / 2¹⁰⁴⁰` for both primes. -/
 theorem amm_ok {s : State} {B : Addr} {o a b : Nat} {k : Nat → Nat}
     (hB : s.gpr .rbx = B) (hs : Scr s B (2 * D))
@@ -109,69 +193,10 @@ theorem amm_ok {s : State} {B : Addr} {o a b : Nat} {k : Nat → Nat}
     rw [u₃.other _ (by decide), u₂.other _ (by decide), u₁.other _ (by decide), hB]
   have g₃ : ∀ r, r ≠ .r8 → r ≠ .r9 → r ≠ .r11 → s₃.gpr r = s.gpr r := fun r h8 h9 h11 => by
     rw [u₃.other _ h11, u₂.other _ h9, u₁.other _ h8]
-  -- the operands, as functions of the limb index
-  let A : Nat → Nat → Nat := fun p => limb s.mem B (D * p + a)
-  let Bl : Nat → Nat → Nat := fun p => limb s.mem B (D * p + b)
-  let M : Nat → Nat → Nat := fun p => limb s.mem B (D * p + oM)
-  have rdS : ∀ d n, 0 < n → d + n ≤ 2 * D → InRegions (s.rd ++ s.wr) (off B d) n := fun d n hn hd =>
-    let ⟨_, h, c⟩ := hs.region hd hn; ⟨_, List.mem_append_right _ h, c⟩
-  have e : Env (s₃.setReg .r10 (s₃.gpr .rbx)) A M k Bl := by
-    refine ⟨fun p hp kk hk t ht => ?_, fun p hp kk hk t ht => ?_, fun p hp t ht => ?_, fun p hp l hl => ?_,
-      fun p hp j hj => (hlt p hp j hj).1, fun p hp j hj => (hlt p hp j hj).2.2, hklt,
-      fun p hp l hl => (hlt p hp l hl).2.1, fun d n hn hd => ?_, fun d n hn hd => ?_, fun d n hn hd => ?_⟩
-    · rw [RegUpd.mem_setReg, RegUpd.gpr_setReg_of_ne _ _ (by decide), r8₃, m₃, off_add]
-      show _ = BitVec.ofNat 64 (limb s.mem B (D * p + a) (kk + 5 * t))
-      rw [ofNat_toNat64, off_lim _]
-      exact congrArg (fun d => s.mem.readW (off B d) 64) (by omega)
-    · rw [RegUpd.mem_setReg, RegUpd.gpr_setReg_self, rbx₃, m₃]
-      show _ = BitVec.ofNat 64 (limb s.mem B (D * p + oM) (kk + 5 * t))
-      rw [ofNat_toNat64, off_lim _]
-      exact congrArg (fun d => s.mem.readW (off B d) 64) (by simp only [oM]; omega)
-    · rw [RegUpd.mem_setReg, RegUpd.gpr_setReg_self, rbx₃, m₃]
-      exact hk p hp t ht
-    · rw [RegUpd.mem_setReg, RegUpd.gpr_setReg_of_ne _ _ (by decide), r9₃, m₃, off_add]
-      show _ = BitVec.ofNat 64 (limb s.mem B (D * p + b) l)
-      rw [ofNat_toNat64]
-      exact congrArg (fun d => s.mem.readW (off B d) 64) (by omega)
-    · rw [RegUpd.rd_setReg, RegUpd.wr_setReg, rd₃, wr₃, RegUpd.gpr_setReg_of_ne _ _ (by decide), r8₃, off_add]
-      exact rdS _ n hn (by rw [show lim .r8 = D + 160 from rfl] at hd; omega)
-    · rw [RegUpd.rd_setReg, RegUpd.wr_setReg, rd₃, wr₃, RegUpd.gpr_setReg_of_ne _ _ (by decide), r9₃, off_add]
-      exact rdS _ n hn (by rw [show lim .r9 = D + 136 from rfl] at hd; omega)
-    · rw [RegUpd.rd_setReg, RegUpd.wr_setReg, rd₃, wr₃, RegUpd.gpr_setReg_self, rbx₃]
-      exact rdS _ n hn (by rw [show lim .r10 = D + 192 from rfl] at hd; omega)
-  have hs₃ : Scr s₃ (off B o) (D + 160) := (hs.sub (by omega) (by omega)).congr wr₃
-  refine WP.mono (ammCore_ok e u₃.self hs₃) fun s' ⟨hw, hdx, hsi, hf, hg, hrd, hwr, hx⟩ => ?_
-  refine ⟨fun p hp => ?_, by rw [← m₃]; exact hf.rebase (by omega), fun r h1 h2 h3 h4 h5 h6 h7 h8 h9 => ?_,
-    hrd.trans rd₃, hwr.trans wr₃, by rw [hx, u₃.mxcsr, u₂.mxcsr, u₁.mxcsr]⟩
-  · have hl : ∀ j < 20, limb s'.mem B (D * p + o) j = carried (lm A M k Bl p 20) j := fun j hj => by
-      have := hw p hp j hj
-      simp only [word, off_off] at this
-      show (s'.mem.readW (off B _) 64).toNat = _
-      rw [show D * p + o + VG.Impl.Rsa.X86_64.CrtIfma.off j = o + (D * p + VG.Impl.Rsa.X86_64.CrtIfma.off j) by
-        omega, this, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := carried_lt (lm A M k Bl p 20) j; omega)]
-    have hv : val52 s'.mem B (D * p + o) = lval (carried (lm A M k Bl p 20)) 20 := by
-      unfold val52; exact lval_congr hl
-    have ok : (ops A M k p).Ok := ⟨fun j hj => (hlt p hp j hj).1, fun j hj => (hlt p hp j hj).2.2, hk0 p hp⟩
-    obtain ⟨he, hU⟩ := amm_val ok (b := Bl p) fun i hi => (hlt p hp i hi).2.1
-    have hcv := carried_val (lm A M k Bl p 20) 20
-    have hA' := hA p hp
-    have hB' := hBv p hp
-    have hM' := hM p hp
-    rw [hv]
-    unfold val52 at hA' hB' hM' ⊢
-    change lval (lm A M k Bl p 20) 20 * _ = lval (A p) 20 * lval (Bl p) 20 + lval (M p) 20 * _ at he
-    change lval (A p) 20 < 2 * lval (M p) 20 at hA'
-    change lval (Bl p) 20 < 2 * lval (M p) 20 at hB'
-    change 4 * lval (M p) 20 ≤ _ at hM'
-    have hlt2 := amm_lt he hU hA' hB' hM'
-    have hz : lval (lm A M k Bl p 20) 20 < 2 ^ (52 * 20) := by
-      generalize 2 ^ (52 * 20) = R at hM' ⊢; omega
-    rw [carryIn_zero hz] at hcv
-    replace hcv : lval (carried (lm A M k Bl p 20)) 20 = lval (lm A M k Bl p 20) 20 := by
-      generalize 2 ^ (52 * 20) = R at hcv; omega
-    rw [hcv]
-    refine ⟨fun j hj => (hl j hj) ▸ carried_lt _ j, hlt2, ?_⟩
-    rw [he, Nat.add_mul_mod_self_left]
-  · rw [hg r h1 h2 h3 h4 h6 h7 h9, g₃ r h5 h6 h8]
+  rw [← m₃] at hlt hk hk0 hA hBv hM ⊢
+  refine WP.mono (ammCoreSpec_ok rbx₃ r8₃ r9₃ u₃.self (hs.congr wr₃) ho ha hb hlt hk hklt hk0 hA hBv hM)
+    fun s' ⟨hv, hf, hg, hrd, hwr, hx⟩ => ⟨hv, hf, fun r h1 h2 h3 h4 h5 h6 h7 h8 h9 => ?_,
+      hrd.trans rd₃, hwr.trans wr₃, by rw [hx, u₃.mxcsr, u₂.mxcsr, u₁.mxcsr]⟩
+  rw [hg r h1 h2 h3 h4 h6 h7 h9, g₃ r h5 h6 h8]
 
 end VG.Proof.Bignum.X86_64.AmmSym

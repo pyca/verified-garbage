@@ -92,4 +92,48 @@ theorem amm2_ok {s : State} {B : Addr} {o a b : Nat} {M k : Nat → Nat}
   rw [ar.mv p hp] at v e
   exact ⟨⟨l, v⟩, e⟩
 
+
+/-- `ammCore` on good numbers, `r8`, `r9`, `r11` at `a`, `b`, `o`. -/
+theorem ammCore2_ok {s : State} {B : Addr} {o a b : Nat} {M k : Nat → Nat}
+    (hB : s.gpr .rbx = B) (h8 : s.gpr .r8 = off B a) (h9 : s.gpr .r9 = off B b) (h11 : s.gpr .r11 = off B o)
+    (hs : Scr s B (2 * D)) (ar : Ar s.mem B M k)
+    (ho : o + 160 ≤ D) (ho' : 192 ≤ o) (ha : a + 160 ≤ D) (hb : b + 160 ≤ D)
+    (ga : ∀ p < 2, Good s.mem B M a p) (gb : ∀ p < 2, Good s.mem B M b p) :
+    WP isa VG.Impl.Rsa.X86_64.CrtIfma.ammCore s fun s' =>
+      (∀ p < 2, Good s'.mem B M o p ∧
+        val52 s'.mem B (D * p + o) * 2 ^ (52 * 20) % M p =
+          val52 s.mem B (D * p + a) * val52 s.mem B (D * p + b) % M p) ∧
+      Out2 B o 160 s.mem s'.mem ∧ Ar s'.mem B M k ∧
+      (∀ r, r ≠ .rax → r ≠ .rcx → r ≠ .rdx → r ≠ .rsi → r ≠ .r9 → r ≠ .r10 → r ≠ .r12 → s'.gpr r = s.gpr r) ∧
+      s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.mxcsr = s.mxcsr := by
+  refine WP.mono (ammCoreSpec_ok (k := k) hB h8 h9 h11 hs (by omega) (by omega) (by omega)
+    (fun p hp j hj => ⟨(ga p hp).lt j hj, (gb p hp).lt j hj, ar.mlt p hp j hj⟩) ar.kw ar.klt ar.k0
+    (fun p hp => by rw [ar.mv p hp]; exact (ga p hp).v) (fun p hp => by rw [ar.mv p hp]; exact (gb p hp).v)
+    (fun p hp => by rw [ar.mv p hp]; exact ar.bnd p hp)) fun s' ⟨hv, hf, hg, hrd, hwr, hx⟩ =>
+      ⟨fun p hp => ?_, hf, ar.of_out2 hf ho' ho, hg, hrd, hwr, hx⟩
+  obtain ⟨l, v, e⟩ := hv p hp
+  rw [ar.mv p hp] at v e
+  exact ⟨⟨l, v⟩, e⟩
+
+theorem Good.of_limbs {m m' : Mem} {B : Addr} {M : Nat → Nat} {c c' p : Nat} (g : Good m B M c p)
+    (h : ∀ l < 20, limb m' B (D * p + c') l = limb m B (D * p + c) l) : Good m' B M c' p :=
+  ⟨fun j hj => by rw [h j hj]; exact g.lt j hj, by
+    rw [show val52 m' B (D * p + c') = val52 m B (D * p + c) from lval_congr h]; exact g.v⟩
+
+theorem val52_of_limbs {m m' : Mem} {B : Addr} {d d' : Nat} (h : ∀ l < 20, limb m' B d' l = limb m B d l) :
+    val52 m' B d' = val52 m B d := lval_congr h
+
+/-- A Montgomery product of `T ≡ x^E R` and `X ≡ x^v R`: `x^(E+v) R`. -/
+theorem mont_mul2 {T T' X x E v R m : Nat} (hR : Nat.Coprime R m) (hT : T % m = x ^ E * R % m)
+    (hX : X % m = x ^ v * R % m) (h : T' * R % m = T * X % m) : T' % m = x ^ (E + v) * R % m := by
+  apply VG.Proof.Bignum.mont_cancel hR
+  rw [h, Nat.mul_mod, hT, hX, ← Nat.mul_mod, Nat.pow_add]
+  congr 1
+  grind
+
+
+theorem Out2.mono {B : Addr} {o n o' n' : Nat} {m m' : Mem} (h : Out2 B o n m m') (h1 : o' ≤ o)
+    (h2 : o + n ≤ o' + n') : Out2 B o' n' m m' := fun x hx => h x fun p hp => by
+  rcases hx p hp with h3 | h3 <;> omega
+
 end VG.Proof.Bignum.X86_64.AmmSym

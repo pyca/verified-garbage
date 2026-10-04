@@ -1,5 +1,6 @@
 import VerifiedGarbage.Proof.Bignum.X86_64.IfmaArea
 import VerifiedGarbage.Proof.Framework.X86_64.StraightY
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # RSA with AVX512_IFMA on x86-64: the table
@@ -133,5 +134,121 @@ theorem copy160_ok {s : State} {B : Addr} {o a : Nat} (hB : s.gpr .rbx = B) (hs 
       obtain ⟨y, hy, rfl⟩ := List.mem_map.1 hx
       obtain ⟨p, hp, k, hk, rfl⟩ := mem_cpList hy
       exact ⟨p, hp, by dsimp only; omega, by dsimp only; omega⟩
+
+
+/-- `tabBuild`'s operands for entry `i`: `r8` at `T_(i-1)`, `r9` at `X`, `r11` at `T_i`. -/
+theorem tabHead_ok {s : State} {B : Addr} {i : Nat} (hi : 1 ≤ i) (hi' : i < 16) (hB : s.gpr .rbx = B)
+    (h13 : s.gpr .r13 = BitVec.ofNat 64 (oTab + 160 * i)) :
+    WP isa (.block [.mov .r8 (.reg .rbx), .alu .add .r8 (.reg .r13), .alu .sub .r8 (.imm 160),
+        .mov .r9 (.reg .rbx), .alu .add .r9 (.imm (BitVec.ofNat 32 oX)), .mov .r11 (.reg .rbx),
+        .alu .add .r11 (.reg .r13)]) s fun s' =>
+      s'.gpr .r8 = off B (oTab + 160 * (i - 1)) ∧ s'.gpr .r9 = off B oX ∧ s'.gpr .r11 = off B (oTab + 160 * i) ∧
+      VG.Proof.MlKem.X86_64.Keep [.r8, .r9, .r11] s s' ∧
+      s'.mem = s.mem ∧ s'.xmm = s.xmm ∧ s'.ymmHi = s.ymmHi ∧ s'.mxcsr = s.mxcsr := by
+  refine WP.mono (VG.Proof.MlKem.X86_64.WP.keep [.r8, .r9, .r11] (Q := fun s' =>
+    s'.gpr .r8 = off B (oTab + 160 * (i - 1)) ∧ s'.gpr .r9 = off B oX ∧ s'.gpr .r11 = off B (oTab + 160 * i) ∧
+      s'.mem = s.mem ∧ s'.xmm = s.xmm ∧ s'.ymmHi = s.ymmHi ∧ s'.mxcsr = s.mxcsr) (by
+    xrun [hB, h13, sx160, se_ofNat (show oX < 2 ^ 31 by decide)]
+    and_intros
+    any_goals rfl
+    · rw [VG.Offset.add_ofNat_sub _ (by simp only [oTab]; omega)]
+      exact congrArg (off B) (by simp only [oTab]; omega)) rfl)
+    fun s' ⟨⟨a, b, c, d, e, f, g⟩, k⟩ => ⟨a, b, c, k, d, e, f, g⟩
+
+/-- `tabBuild`'s next entry, `ZF` after the last. -/
+theorem tabTail_ok {s : State} {i : Nat} (hi : i < 16) (h13 : s.gpr .r13 = BitVec.ofNat 64 (oTab + 160 * i)) :
+    WP isa (.block [.alu .add .r13 (.imm 160), .alu .cmp .r13 (.imm (BitVec.ofNat 32 (oTab + 2560)))]) s fun s' =>
+      s'.gpr .r13 = BitVec.ofNat 64 (oTab + 160 * (i + 1)) ∧ s'.zf = some (decide (i + 1 = 16)) ∧
+      VG.Proof.MlKem.X86_64.Keep [.r13] s s' ∧
+      s'.mem = s.mem ∧ s'.xmm = s.xmm ∧ s'.ymmHi = s.ymmHi ∧ s'.mxcsr = s.mxcsr := by
+  refine WP.mono (VG.Proof.MlKem.X86_64.WP.keep [.r13] (Q := fun s' =>
+    s'.gpr .r13 = BitVec.ofNat 64 (oTab + 160 * (i + 1)) ∧ s'.zf = some (decide (i + 1 = 16)) ∧
+      s'.mem = s.mem ∧ s'.xmm = s.xmm ∧ s'.ymmHi = s.ymmHi ∧ s'.mxcsr = s.mxcsr) (by
+    xrun [h13, sx160, se_ofNat (show oTab + 2560 < 2 ^ 31 by decide)]
+    and_intros
+    · rw [← BitVec.ofNat_add]; congr 1
+    · rw [← BitVec.ofNat_add, ofNat_sub_beq (by simp only [oTab]; omega) (by decide)]
+      exact decide_eq_decide.mpr (by simp only [oTab]; omega)
+    all_goals rfl) rfl)
+    fun s' ⟨⟨a, b, c, d, e, f⟩, k⟩ => ⟨a, b, k, c, d, e, f⟩
+
+
+/-- After the entries below `i` of the table, from `s₀`. -/
+structure TabInv (s₀ : State) (B : Addr) (M k x : Nat → Nat) (Q : Prop) (i : Nat) (t : State) : Prop where
+  rbx : t.gpr .rbx = B
+  r13 : t.gpr .r13 = BitVec.ofNat 64 (oTab + 160 * i)
+  scr : Scr t B (2 * D)
+  ar : Ar t.mem B M k
+  tab : ∀ j < i, ∀ p < 2, Good t.mem B M (oTab + 160 * j) p ∧
+    (Q → val52 t.mem B (D * p + (oTab + 160 * j)) % M p = x p ^ j * 2 ^ (52 * 20) % M p)
+  xg : ∀ p < 2, Good t.mem B M oX p
+  xv : Q → ∀ p < 2, val52 t.mem B (D * p + oX) % M p = x p ^ 1 * 2 ^ (52 * 20) % M p
+  frame : Out2 B oTab 2560 s₀.mem t.mem
+  gpr : ∀ r, r ≠ .rax → r ≠ .rcx → r ≠ .rdx → r ≠ .rsi → r ≠ .r8 → r ≠ .r9 → r ≠ .r10 → r ≠ .r11 → r ≠ .r12 →
+    r ≠ .r13 → t.gpr r = s₀.gpr r
+  rd : t.rd = s₀.rd
+  wr : t.wr = s₀.wr
+  mxcsr : t.mxcsr = s₀.mxcsr
+
+/-- Entry `i` of the table. -/
+theorem tabIter_ok {s₀ t : State} {B : Addr} {M k x : Nat → Nat} {Q : Prop} {i : Nat} (hi : 2 ≤ i) (hi' : i < 16)
+    (hR : ∀ p < 2, Nat.Coprime (2 ^ (52 * 20)) (M p)) (h : TabInv s₀ B M k x Q i t) :
+    WP isa (.seq (.block [.mov .r8 (.reg .rbx), .alu .add .r8 (.reg .r13), .alu .sub .r8 (.imm 160),
+        .mov .r9 (.reg .rbx), .alu .add .r9 (.imm (BitVec.ofNat 32 oX)), .mov .r11 (.reg .rbx),
+        .alu .add .r11 (.reg .r13)])
+      (.seq VG.Impl.Rsa.X86_64.CrtIfma.ammCore
+        (.block [.alu .add .r13 (.imm 160), .alu .cmp .r13 (.imm (BitVec.ofNat 32 (oTab + 2560)))]))) t
+      fun t' => TabInv s₀ B M k x Q (i + 1) t' ∧ t'.zf = some (decide (i + 1 = 16)) := by
+  have hD : D = 3872 := rfl
+  refine WP.seq (WP.mono (tabHead_ok (by omega) hi' h.rbx h.r13) fun t₁ ⟨h8, h9, h11, k₁, me₁, x₁, y₁, mx₁⟩ => ?_)
+  have rbx₁ : t₁.gpr .rbx = B := by rw [k₁.gpr (by decide)]; exact h.rbx
+  have hg : ∀ p < 2, Good t₁.mem B M (oTab + 160 * (i - 1)) p := fun p hp => by
+    rw [me₁]; exact (h.tab (i - 1) (by omega) p hp).1
+  refine WP.seq (WP.mono (ammCore2_ok (o := oTab + 160 * i) (k := k) rbx₁ h8 h9 h11 (h.scr.congr k₁.2.2)
+    (by rw [me₁]; exact h.ar) (by simp only [oTab]; omega) (by simp only [oTab]; omega)
+    (by simp only [oTab]; omega) (by simp only [oX]; omega) hg (fun p hp => by rw [me₁]; exact h.xg p hp))
+    fun t₂ ⟨hv₂, f₂, ar₂, g₂, rd₂, wr₂, x₂⟩ => ?_)
+  have r13₂ : t₂.gpr .r13 = BitVec.ofNat 64 (oTab + 160 * i) := by
+    rw [g₂ _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide),
+      k₁.gpr (by decide)]; exact h.r13
+  refine WP.mono (tabTail_ok hi' r13₂) fun t₃ ⟨r13₃, z₃, k₃, me₃, x₃, y₃, mx₃⟩ => ⟨⟨?_, r13₃, ?_, ?_, ?_, ?_, ?_,
+    ?_, ?_, ?_, ?_, ?_⟩, z₃⟩
+  · rw [k₃.gpr (by decide), g₂ _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)]
+    exact rbx₁
+  · exact h.scr.congr (by rw [k₃.2.2, wr₂, k₁.2.2])
+  · rw [me₃]; exact ar₂
+  · have hoD : oTab + 160 * i + 160 ≤ D := by simp only [oTab]; omega
+    intro j hj p hp
+    rcases Nat.lt_or_eq_of_le (Nat.le_of_lt_succ hj) with hj | rfl
+    · have hc : oTab + 160 * j + 160 ≤ oTab + 160 * i ∨ oTab + 160 * i + 160 ≤ oTab + 160 * j := .inl (by omega)
+      have hcD : oTab + 160 * j + 160 ≤ D := by simp only [oTab]; omega
+      obtain ⟨g, v⟩ := h.tab j hj p hp
+      refine ⟨?_, fun hq => ?_⟩
+      · have g₁ : Good t₁.mem B M (oTab + 160 * j) p := by rw [me₁]; exact g
+        rw [me₃]; exact g₁.of_out2 hp f₂ hc hcD hoD
+      · rw [me₃, f₂.val hp hc hcD hoD, me₁]; exact v hq
+    · obtain ⟨g, v⟩ := hv₂ p hp
+      refine ⟨by rw [me₃]; exact g, fun hq => ?_⟩
+      rw [me₁] at v
+      have e := mont_mul2 (R := 2 ^ (52 * 20)) (hR p hp) ((h.tab (j - 1) (by omega) p hp).2 hq) (h.xv hq p hp) v
+      rw [show j - 1 + 1 = j by omega] at e
+      rw [me₃]; exact e
+  · intro p hp
+    rw [me₃]
+    have g₁ : Good t₁.mem B M oX p := by rw [me₁]; exact h.xg p hp
+    exact g₁.of_out2 hp f₂
+      (.inl (by simp only [oX, oTab]; omega)) (by simp only [oX, D]; omega) (by simp only [oTab]; omega)
+  · intro hq p hp
+    rw [me₃, f₂.val hp (.inl (by simp only [oX, oTab]; omega)) (by simp only [oX, D]; omega)
+      (by simp only [oTab]; omega), me₁]
+    exact h.xv hq p hp
+  · rw [me₃]
+    exact h.frame.trans (me₁ ▸ f₂.mono (by omega) (by omega))
+  · intro r r1 r2 r3 r4 r5 r6 r7 r8 r9 r10
+    rw [k₃.gpr (by simp [r10]), g₂ r r1 r2 r3 r4 r6 r7 r9, k₁.gpr (by simp [r5, r6, r8])]
+    exact h.gpr r r1 r2 r3 r4 r5 r6 r7 r8 r9 r10
+  · rw [k₃.2.1, rd₂, k₁.2.1, h.rd]
+  · rw [k₃.2.2, wr₂, k₁.2.2, h.wr]
+  · rw [mx₃, x₂, mx₁, h.mxcsr]
 
 end VG.Proof.Bignum.X86_64.AmmSym
