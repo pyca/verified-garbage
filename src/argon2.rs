@@ -485,16 +485,11 @@ mod tests {
             let pair = (Blake2bBackend::select(f), CompressBackend::select(f));
             #[cfg(target_arch = "x86_64")]
             {
-                assert_ne!(
-                    pair,
+                let never = [
                     (Blake2bBackend::Scalar, CompressBackend::Avx2),
-                    "{bits:#b}"
-                );
-                assert_ne!(
-                    pair,
                     (Blake2bBackend::Avx2, CompressBackend::Scalar),
-                    "{bits:#b}"
-                );
+                ];
+                assert!(!never.contains(&pair), "{bits:#b}");
             }
             #[cfg(not(target_arch = "x86_64"))]
             assert_eq!(pair, (Blake2bBackend::Scalar, CompressBackend::Scalar));
