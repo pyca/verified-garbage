@@ -27,7 +27,7 @@ theorem enterRedc_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv mx : Bi
       wv t.mem (off B o) (slot wx aXc) wx * 2 ^ (64 * wx * nChunks w wx) % X =
         wv s.mem B (slot w Public.aY) w % X ∧
       Frm B [xRange o wx] s.mem t.mem ∧ Frm (off B o) (redcRanges wx) s.mem t.mem ∧
-      Keep (mmRegs ++ [.rdi]) s t := by
+      Keep (mmRegs ++ ([.rdi] : List Reg)) s t := by
   have hs := hg.scr
   have hn := hs.nowrap
   have h8 := hdr_lt_slot w 8 (show 31 < 32 by decide)
