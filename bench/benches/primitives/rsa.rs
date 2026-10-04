@@ -1,4 +1,5 @@
-//! The RSA public-key operation (RSAEP, without padding).
+//! The RSA public-key operation (RSAEP) and private-key operation (RSADP with
+//! the CRT), without padding.
 
 use criterion::Criterion;
 
@@ -11,7 +12,7 @@ pub fn bench(c: &mut Criterion) {
     use criterion::BenchmarkId;
     use openssl::bn::BigNum;
     use openssl::rsa::{Padding, Rsa};
-    use verified_garbage::rsa::PublicKey;
+    use verified_garbage::rsa::{PrivateKey, PublicKey};
 
     use crate::{OPENSSL, VG};
     let mut g = c.benchmark_group("rsa_public");
@@ -43,6 +44,42 @@ pub fn bench(c: &mut Criterion) {
             b.iter(|| {
                 black_box(&openssl_key)
                     .public_encrypt(black_box(&input), &mut out, Padding::NONE)
+                    .unwrap()
+            })
+        });
+    }
+    g.finish();
+
+    let mut g = c.benchmark_group("rsa_private");
+    // The same sizes, each library holding the private key in the CRT form
+    // `(p, q, dP, dQ, qInv)` (OpenSSL with its default blinding).
+    for bits in [2048, 3072, 4096] {
+        let key = Rsa::generate(bits).unwrap();
+        let n = key.n().to_vec();
+        let k = n.len();
+        let vg_key = PrivateKey::from_crt(
+            &n,
+            &key.p().unwrap().to_vec(),
+            &key.q().unwrap().to_vec(),
+            &key.dmp1().unwrap().to_vec(),
+            &key.dmq1().unwrap().to_vec(),
+            &key.iqmp().unwrap().to_vec(),
+        )
+        .unwrap();
+        let mut input = vec![0x42; k];
+        input[0] = 0;
+        let mut out = vec![0; k];
+        g.bench_function(BenchmarkId::new(VG, k), |b| {
+            b.iter(|| {
+                black_box(&vg_key)
+                    .private_op(black_box(&input), &mut out)
+                    .unwrap()
+            })
+        });
+        g.bench_function(BenchmarkId::new(OPENSSL, k), |b| {
+            b.iter(|| {
+                black_box(&key)
+                    .private_decrypt(black_box(&input), &mut out, Padding::NONE)
                     .unwrap()
             })
         });

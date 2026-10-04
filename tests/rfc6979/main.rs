@@ -1,11 +1,12 @@
 //! Deterministic ECDSA known-answer tests from the vendored RFC 6979,
 //! §A.2.5 (P-256): the private key, its public key, and its signatures of
-//! "sample" and "test" with SHA-256.
+//! "sample" and "test" with SHA-256 and with SHA-384.
 
 #![cfg(target_arch = "x86_64")]
 
 use verified_garbage::ecdsa::{Error, P256, SigningKey, VerifyingKey};
 use verified_garbage::hashes::sha256::Sha256;
+use verified_garbage::hashes::sha384::Sha384;
 
 const TEXT: &str = include_str!("../../vectors/rfc6979/rfc6979.txt");
 
@@ -23,10 +24,10 @@ fn value<'a>(lines: &mut impl Iterator<Item = &'a str>, label: &str) -> [u8; 32]
     unhex(&line[label.len()..]).try_into().unwrap()
 }
 
-/// Each message, with the `r ‖ s` of its SHA-256 signature.
-type Signatures = Vec<(String, [u8; 64])>;
+/// Each hash function, message and the `r ‖ s` of its signature.
+type Signatures = Vec<(&'static str, String, [u8; 64])>;
 
-/// `q`, `x`, `U = 04 ‖ Ux ‖ Uy`, and the SHA-256 signatures.
+/// `q`, `x`, `U = 04 ‖ Ux ‖ Uy`, and the SHA-256 and SHA-384 signatures.
 fn p256() -> ([u8; 32], [u8; 32], [u8; 65], Signatures) {
     let text = TEXT
         .split_once("\nA.2.5.  ECDSA, 256 Bits (Prime Field)\n")
@@ -41,16 +42,19 @@ fn p256() -> ([u8; 32], [u8; 32], [u8; 65], Signatures) {
     u[33..].copy_from_slice(&value(&mut lines, "Uy = "));
     let mut signatures = Vec::new();
     while let Some(line) = lines.next() {
-        let Some(message) = line.strip_prefix("With SHA-256, message = \"") else {
+        let Some((hash, message)) = ["SHA-256", "SHA-384"].into_iter().find_map(|hash| {
+            line.strip_prefix(&format!("With {hash}, message = \""))
+                .map(|m| (hash, m))
+        }) else {
             continue;
         };
         let message = message.strip_suffix("\":").unwrap();
         let mut rs = [0; 64];
         rs[..32].copy_from_slice(&value(&mut lines, "r = "));
         rs[32..].copy_from_slice(&value(&mut lines, "s = "));
-        signatures.push((message.to_string(), rs));
+        signatures.push((hash, message.to_string(), rs));
     }
-    assert_eq!(signatures.len(), 2);
+    assert_eq!(signatures.len(), 4);
     (q, x, u, signatures)
 }
 
@@ -66,22 +70,69 @@ fn add(x: &[u8; 32], delta: i16) -> [u8; 32] {
     out
 }
 
-#[test]
-fn p256_sha256() {
+/// The signature of `message` with `hash`, of the message and of its hash.
+fn sign(key: &SigningKey<P256>, hash: &str, message: &[u8]) -> [Result<[u8; 64], Error>; 2] {
+    if hash == "SHA-256" {
+        [
+            key.sign::<Sha256>(message),
+            key.sign_prehashed::<Sha256>(&Sha256::digest(message)),
+        ]
+    } else {
+        [
+            key.sign::<Sha384>(message),
+            key.sign_prehashed::<Sha384>(&Sha384::digest(message)),
+        ]
+    }
+}
+
+/// Whether `rs` verifies for `message` with `hash`, of the message and of
+/// its hash.
+fn verify(
+    key: &VerifyingKey<P256>,
+    hash: &str,
+    message: &[u8],
+    rs: &[u8; 64],
+) -> [Result<(), Error>; 2] {
+    if hash == "SHA-256" {
+        [
+            key.verify::<Sha256>(message, rs),
+            key.verify_prehashed::<Sha256>(&Sha256::digest(message), rs),
+        ]
+    } else {
+        [
+            key.verify::<Sha384>(message, rs),
+            key.verify_prehashed::<Sha384>(&Sha384::digest(message), rs),
+        ]
+    }
+}
+
+/// The signatures with `hash`, whichever implementation of it this CPU runs
+/// (the tests' names select them for each CPU configuration CI tests).
+fn p256_sign(hash: &str) {
     let (_, x, _, signatures) = p256();
     let key = SigningKey::<P256>::from_bytes(&x);
-    for (message, rs) in &signatures {
-        assert_eq!(key.sign_sha256(message.as_bytes()), Ok(*rs), "{message}");
-        let prehashed = key
-            .clone()
-            .sign_sha256_prehashed(&Sha256::digest(message.as_bytes()));
-        assert_eq!(prehashed, Ok(*rs), "{message}");
+    let mut signed = 0;
+    for (h, message, rs) in signatures.iter().filter(|(h, _, _)| *h == hash) {
+        let results = sign(&key.clone(), h, message.as_bytes());
+        assert_eq!(results, [Ok(*rs); 2], "{h} {message}");
+        signed += 1;
     }
+    assert_eq!(signed, 2);
     assert_eq!(format!("{key:?}"), "SigningKey { .. }");
 }
 
-/// The signatures verify with the public key, and not of another message
-/// or with another key.
+#[test]
+fn p256_sha256() {
+    p256_sign("SHA-256");
+}
+
+#[test]
+fn p256_sha384() {
+    p256_sign("SHA-384");
+}
+
+/// The signatures verify with the public key, and not of another message,
+/// with another hash function or with another key.
 #[test]
 fn p256_verify() {
     let (_, x, u, signatures) = p256();
@@ -91,20 +142,18 @@ fn p256_verify() {
         .public_key()
         .unwrap();
     let other = VerifyingKey::<P256>::from_bytes(&other);
-    for (message, rs) in &signatures {
-        let verified = key.verify_sha256(message.as_bytes(), rs);
-        assert_eq!(verified, Ok(()), "{message}");
-        let digest = Sha256::digest(message.as_bytes());
-        let prehashed = key.clone().verify_sha256_prehashed(&digest, rs);
-        assert_eq!(prehashed, Ok(()), "{message}");
-        assert_eq!(
-            key.verify_sha256(b"other", rs),
-            Err(Error::InvalidSignature)
-        );
-        assert_eq!(
-            other.verify_sha256(message.as_bytes(), rs),
-            Err(Error::InvalidSignature)
-        );
+    for (hash, message, rs) in &signatures {
+        let verified = verify(&key.clone(), hash, message.as_bytes(), rs);
+        assert_eq!(verified, [Ok(()); 2], "{hash} {message}");
+        let bad = Err(Error::InvalidSignature);
+        assert_eq!(verify(&key, hash, b"other", rs), [bad; 2]);
+        assert_eq!(verify(&other, hash, message.as_bytes(), rs), [bad; 2]);
+        let other_hash = if *hash == "SHA-256" {
+            "SHA-384"
+        } else {
+            "SHA-256"
+        };
+        assert_eq!(verify(&key, other_hash, message.as_bytes(), rs), [bad; 2]);
     }
     assert_ne!(key, other);
     assert!(format!("{key:?}").starts_with("VerifyingKey"));
@@ -127,12 +176,16 @@ fn p256_keys() {
     let (q, _, _, _) = p256();
     for bad in [[0; 32], q, add(&q, 1), [0xff; 32]] {
         let key = SigningKey::<P256>::from_bytes(&bad);
-        assert_eq!(key.sign_sha256(b"sample"), Err(Error::InvalidKey));
+        for hash in ["SHA-256", "SHA-384"] {
+            assert_eq!(sign(&key, hash, b"sample"), [Err(Error::InvalidKey); 2]);
+        }
         assert_eq!(key.public_key(), Err(Error::InvalidKey));
     }
     for good in [add(&[0; 32], 1), add(&q, -1)] {
         let key = SigningKey::<P256>::from_bytes(&good);
-        assert!(key.sign_sha256(b"sample").is_ok());
+        for hash in ["SHA-256", "SHA-384"] {
+            assert!(sign(&key, hash, b"sample").iter().all(Result::is_ok));
+        }
         assert!(key.public_key().is_ok());
     }
     assert_eq!(Error::InvalidKey.to_string(), "invalid ECDSA private key");

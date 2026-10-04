@@ -83,7 +83,7 @@ theorem pExpBit_ct : RelCT isa (Two PQ) (Precomputed.expBit M.mm) fun _ _ => Tru
   -- `Y := Y²` if started.
   refine RelCT.seq (R := Two fun (p : PBitPub) t => PQ ⟨p.L, p.N, 2 * p.E, p.V⟩ t)
     (two_post (two_ite (fun p s₁ s₂ h₁ h₂ => by simp only [eval, h₁.2, h₂.2])
-      (two_map (·.L) (fun _ _ h => h.1.1.goodL) (M.ct (by unfold MmUse; decide)))
+      (two_map (·.L) (fun _ _ h => h.1.1.goodL) (M.ctL (by unfold MmUse; decide)))
       (RelCT.block_nil fun _ _ _ => trivial)) ?_) ?_
   · rintro p t ⟨⟨X, x, hc, hy, hf, hV, hV'⟩, hz⟩
     exact WP.mono (pSq_ok hc hf.1 hf.2.1 hf.2.2.1 hf.2.2.2.1 hy hz) fun t' ⟨hc', hy', ha, _⟩ =>
@@ -106,7 +106,7 @@ theorem pExpBit_ct : RelCT isa (Two PQ) (Precomputed.expBit M.mm) fun _ _ => Tru
       (by taint_decide) fun p t h => startedTest_pq h.1.1) ?_
     refine two_ite (fun p s₁ s₂ h₁ h₂ => by simp only [eval, h₁.2, h₂.2]) ?_ ?_
     · exact two_map (fun (p : PBitPub) => p.L) (fun _ _ h => h.1.1.goodL)
-        (M.ct (by unfold MmUse; decide))
+        (M.ctL (by unfold MmUse; decide))
     · exact two_map (fun (p : PBitPub) => p.L) (fun _ _ h => h.1.1.goodL) start_ct
   · rintro p t ⟨⟨X, x, hc, hy, hf, -, -⟩, hz⟩
     exact WP.mono (pMul_ok hc hf.1 hf.2.1 hf.2.2.1 hf.2.2.2.1 hf.2.2.2.2.1 hf.2.2.2.2.2 hy hz)
@@ -238,7 +238,7 @@ theorem finish_ct : RelCT isa (Two FPre) (Precomputed.finish M.mm) fun _ _ => Tr
       ⟨⟨X, x, hc.mem hm k (by decide), by rw [hm]; exact hy, hZ, hw, hw'⟩, hz⟩
   refine two_ite (fun p s₁ s₂ h₁ h₂ => by simp only [eval, h₁.2, h₂.2]) ?_ ?_
   · exact two_map (fun (p : FPub) => p.L) (fun _ _ ⟨⟨⟨_, _, hc, _, hZ, _⟩, _⟩, _⟩ => ⟨hc.good, hZ⟩)
-      (M.ct (by unfold MmUse; decide))
+      (M.ctL (by unfold MmUse; decide))
   -- `Y := 1`.
   unfold setWord
   refine RelCT.seq (two_piece (Ψ := fun (p : FPub) t => GoodL p.L t ∧ t.gpr .r12 = BitVec.ofNat 64 p.L.w ∧

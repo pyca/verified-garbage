@@ -12,12 +12,15 @@ namespace VG.Proof.Bignum.X86_64
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Bignum.X86_64.Public
 open VG.Proof.MlKem.X86_64
 
-/-- The steps of the result. -/
-def outSteps : List (Prog isa) := [
-  .block [.mov .rbx (.mem (hdr (sArr aY))), .mov .rsi (.mem (hdr sOut)), .mov .rcx (.mem (hdr sK)),
+/-- The steps of the result, from array `j`. -/
+def outStepsArr (j : Nat) : List (Prog isa) := [
+  .block [.mov .rbx (.mem (hdr (sArr j))), .mov .rsi (.mem (hdr sOut)), .mov .rcx (.mem (hdr sK)),
     .mov .r15 (.mem (hdr sMask))],
   storeBE,
   .block ([.mov .rax (.mem (hdr sMask)), .alu .and .rax (.imm 1)] ++ exit)]
+
+/-- The steps of the result. -/
+abbrev outSteps : List (Prog isa) := outStepsArr aY
 
 theorem exit_eq : exit = [.mov .rbx (.mem (hdr 0)), .mov .rbp (.mem (hdr 1)), .mov .r12 (.mem (hdr 2)),
     .mov .r13 (.mem (hdr 3)), .mov .r14 (.mem (hdr 4)), .mov .r15 (.mem (hdr 5))] := rfl
@@ -35,15 +38,16 @@ theorem scr_ne_out {B out : Addr} {Z k : Nat} (hsep : ∀ j < k, Z ≤ ofs B (ou
   omega
 
 /-- The result: `i2osp (c ? Y : 0)` to `out`, `c` returned, and the saved
-registers restored from the header. -/
-theorem outPhase_ok {s : State} {B : Addr} {Z k : Nat} {minv : BitVec 64} {Y : Nat} {out : Addr} {c : Bool}
+registers restored from the header, `Y` in array `j`. -/
+theorem outPhaseArr_ok {s : State} {B : Addr} {Z k : Nat} {minv : BitVec 64} {Y : Nat} {out : Addr} {c : Bool}
+    {j : Nat} (hj : j < 8)
     (hg : Good s B Z ((k + 7) / 8) minv) (hZ : slot ((k + 7) / 8) 8 ≤ Z) (hk1 : 1 ≤ k) (hk' : k < 2 ^ 31)
-    (hY : wv s.mem B (slot ((k + 7) / 8) aY) ((k + 7) / 8) = Y)
+    (hY : wv s.mem B (slot ((k + 7) / 8) j) ((k + 7) / 8) = Y)
     (hO : word s.mem B (8 * sOut) = out) (hK : word s.mem B (8 * sK) = BitVec.ofNat 64 k)
     (hM : word s.mem B (8 * sMask) = mask c)
     (hout : ∀ j < k, InRegions s.wr (out + BitVec.ofNat 64 j) 1)
     (hsep : ∀ j < k, Z ≤ ofs B (out + BitVec.ofNat 64 j)) :
-    WP isa (seqs outSteps) s fun t =>
+    WP isa (seqs (outStepsArr j)) s fun t =>
       (List.range k).map (fun i => t.mem (out + BitVec.ofNat 64 i)) = Spec.Rsa.i2osp (if c then Y else 0) k ∧
       t.gpr .rax = BitVec.ofNat 64 c.toNat ∧
       (∀ i < 6, t.gpr (saved.getD i .rax) = word s.mem B (8 * i)) ∧
@@ -54,16 +58,16 @@ theorem outPhase_ok {s : State} {B : Addr} {Z k : Nat} {minv : BitVec 64} {Y : N
   have h0 := hdr_lt_slot ((k + 7) / 8) 0 (show 31 < 32 by decide)
   have h0' := slot_le (w := (k + 7) / 8) (show 0 < 8 by decide)
   have hl : ∀ i < 32, InRegions (s.rd ++ s.wr) (off B (8 * i)) 8 := fun i hi => hs.ld (by omega)
-  unfold outSteps
+  unfold outStepsArr
   refine WP.seq (WP.mono (WP.keep [.rbx, .rsi, .rcx, .r15] (Q := fun t =>
-      t.gpr .rbx = off B (slot ((k + 7) / 8) aY) ∧ t.gpr .rsi = out ∧ t.gpr .rcx = BitVec.ofNat 64 k ∧
+      t.gpr .rbx = off B (slot ((k + 7) / 8) j) ∧ t.gpr .rsi = out ∧ t.gpr .rcx = BitVec.ofNat 64 k ∧
       t.gpr .r15 = mask c ∧ t.mem = s.mem) (by
-    xrun [State.ea, hdr, hg.rdi, hdrOff, hl (sArr aY) (by decide), hl sOut (by decide), hl sK (by decide),
-      hl sMask (by decide), hg.hdr.harr aY (by decide), hO, hK, hM]) rfl)
+    xrun [State.ea, hdr, hg.rdi, hdrOff, hl (sArr j) (by unfold sArr; omega), hl sOut (by decide), hl sK (by decide),
+      hl sMask (by decide), hg.hdr.harr j hj, hO, hK, hM]) rfl)
     fun t₁ ⟨⟨hbx, hsi, hcx, h15, hm₁⟩, k₁⟩ => ?_)
   have hs₁ := hs.congr k₁.2.2
   refine WP.seq (WP.mono (storeBE_ok hs₁ hbx hsi hcx h15 hk1 hk' rfl
-    (by have := slot_le (w := (k + 7) / 8) (show aY < 8 by decide); omega)
+    (by have := slot_le (w := (k + 7) / 8) hj; omega)
     (fun j hj => by rw [k₁.2.2]; exact hout j hj) hsep) fun t₂ ⟨hb₂, hf₂, hwr₂, hrd₂, k₂⟩ => ?_)
   rw [hm₁, hY] at hb₂
   have hw₂ : ∀ i < 32, word t₂.mem B (8 * i) = word s.mem B (8 * i) := fun i hi => by
@@ -94,5 +98,20 @@ theorem outPhase_ok {s : State} {B : Addr} {Z k : Nat} {minv : BitVec 64} {Y : N
   · exact h3
   · exact h4
   · exact h5
+
+theorem outPhase_ok {s : State} {B : Addr} {Z k : Nat} {minv : BitVec 64} {Y : Nat} {out : Addr} {c : Bool}
+    (hg : Good s B Z ((k + 7) / 8) minv) (hZ : slot ((k + 7) / 8) 8 ≤ Z) (hk1 : 1 ≤ k) (hk' : k < 2 ^ 31)
+    (hY : wv s.mem B (slot ((k + 7) / 8) aY) ((k + 7) / 8) = Y)
+    (hO : word s.mem B (8 * sOut) = out) (hK : word s.mem B (8 * sK) = BitVec.ofNat 64 k)
+    (hM : word s.mem B (8 * sMask) = mask c)
+    (hout : ∀ j < k, InRegions s.wr (out + BitVec.ofNat 64 j) 1)
+    (hsep : ∀ j < k, Z ≤ ofs B (out + BitVec.ofNat 64 j)) :
+    WP isa (seqs outSteps) s fun t =>
+      (List.range k).map (fun i => t.mem (out + BitVec.ofNat 64 i)) = Spec.Rsa.i2osp (if c then Y else 0) k ∧
+      t.gpr .rax = BitVec.ofNat 64 c.toNat ∧
+      (∀ i < 6, t.gpr (saved.getD i .rax) = word s.mem B (8 * i)) ∧
+      (∀ x, (∀ j < k, x ≠ out + BitVec.ofNat 64 j) → t.mem x = s.mem x) ∧
+      Keep mmRegs s t :=
+  outPhaseArr_ok (by decide) hg hZ hk1 hk' hY hO hK hM hout hsep
 
 end VG.Proof.Bignum.X86_64

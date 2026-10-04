@@ -11,13 +11,14 @@ vectors (`vectors/nist-cavp-rsadp/`, SP 800-56B, 1024- and 2048-bit
 moduli). Each gives `n`, `e`, `d` and `c`, and either the result `k` or the
 failure for `c ≥ n`; no vector values are embedded in this test. For each:
 
-* `privateExponents` recovers the factors of `n` (Appendix C.1) and gives
-  `k`, or fails for `c ≥ n`.
-* The recovered `p > q` multiply to `n`; `privatePrimes` with them and `d`
-  gives `k`, and so does `privateCrt` with their CRT values (`crtValues`),
+* `primesKey` recovers the factors of `n` (Appendix C.1), as `k` octets
+  each, as `recoverPrimes` does.
+* The recovered `p > q` multiply to `n`; `crtKey` gives their CRT values
+  (`crtValues`), with which `privateCrt` gives `k`, or fails for `c ≥ n`,
   also with `p`, `dP` and `qInv` one octet longer (a leading zero).
 * `publicOp` with `e` takes `k` back to `c`.
-* Inconsistent keys fail: `qInv + p`, and `q + 2` (so `p q ≠ n`).
+* Inconsistent keys fail: `qInv + p`, and `q + 2` (so `p q ≠ n`), in
+  `privateCrt` and `crtKey`.
 * `publicPrecompute` gives `w = ⌈k / 8⌉` words of `n`, which make up `n`,
   then `w` words of `R² mod n`, which equal `(R mod n)² mod n`, with
   `R = 2^(64 w)` reduced by doubling; and nothing for the invalid moduli
@@ -106,25 +107,25 @@ def check (v : Vector) : Except String Nat := do
   else
     unless v.c ≥ n && v.c < 256 ^ len do throw "failing vector's input not in [n, 256^k)"
     unless publicOp nB eB cB == none do throw "RSAEP accepted an input not below n"
-  let (res, tries) := privateExponents nB eB cB dB
-  unless res == expected do throw "privateExponents mismatch"
+  let (some (p, q), tries) := recoverPrimes n e d | throw "factors not found"
   unless 1 ≤ tries && tries ≤ recoverTries do throw s!"{tries} tries"
-  let (some (p, q), tries') := recoverPrimes n e d | throw "factors not found"
-  unless tries' == tries do throw "tries mismatch"
+  unless primesKey nB eB dB == (some (i2osp p len, i2osp q len), tries) do
+    throw "primesKey mismatch"
   -- The `i`-th candidate is `g = i + 1`: those before the last tried fail.
   let (t, r) := splitTwos (d * e - 1)
   unless (List.range tries).all (fun i => (recoverStep n t r (i + 2)).isSome == (i + 1 == tries)) do
     throw "candidates tried"
-  -- The input `n` itself is not below `n`.
-  unless publicOp nB eB nB == none && (privateExponents nB eB nB dB).1 == none do
-    throw "accepted the input n"
   unless p * q == n && p > q && q > 1 do throw "factors wrong"
-  unless privatePrimes nB cB (bytes p) (bytes q) dB == expected do
-    throw "privatePrimes mismatch"
   let some (dP, dQ, qInv) := crtValues p q d | throw "no CRT values"
   unless (q * qInv) % p == 1 && dP < p - 1 && dQ < q - 1 do throw "CRT values wrong"
   let pLen := (bytes p).length
   let qLen := (bytes q).length
+  unless crtKey nB (bytes p) (bytes q) dB == some (i2osp dP pLen, i2osp dQ qLen, i2osp qInv pLen) do
+    throw "crtKey mismatch"
+  -- The input `n` itself is not below `n`.
+  unless publicOp nB eB nB == none &&
+      privateCrt nB nB (bytes p) (bytes q) (i2osp dP pLen) (i2osp dQ qLen) (i2osp qInv pLen) == none do
+    throw "accepted the input n"
   unless privateCrt nB cB (bytes p) (bytes q) (i2osp dP pLen) (i2osp dQ qLen)
       (i2osp qInv pLen) == expected do
     throw "privateCrt mismatch"
@@ -137,8 +138,8 @@ def check (v : Vector) : Except String Nat := do
   unless privateCrt nB cB (bytes p) (i2osp (q + 2) qLen) (i2osp dP pLen) (i2osp dQ qLen)
       (i2osp qInv pLen) == none do
     throw "privateCrt accepted p q ≠ n"
-  unless privatePrimes nB cB (bytes p) (i2osp (q + 2) qLen) dB == none do
-    throw "privatePrimes accepted p q ≠ n"
+  unless crtKey nB (bytes p) (i2osp (q + 2) qLen) dB == none do
+    throw "crtKey accepted p q ≠ n"
   let w := modulusWords len
   let some ws := publicPrecompute nB | throw "publicPrecompute rejected the modulus"
   unless ws.length == 2 * w do throw "publicPrecompute length"
@@ -150,8 +151,10 @@ def check (v : Vector) : Except String Nat := do
   -- A modulus with a leading zero octet, or an even one, is not valid.
   unless publicOp (0 :: nB) eB (0 :: kB) == none do throw "accepted a leading zero"
   unless publicOp (i2osp (n + 1) len) eB kB == none do throw "accepted an even modulus"
-  unless (privateExponents (i2osp (n + 1) len) eB cB dB) == (none, 0) do
-    throw "privateExponents accepted an even modulus"
+  unless primesKey (i2osp (n + 1) len) eB dB == (none, 0) do
+    throw "primesKey accepted an even modulus"
+  unless crtKey (i2osp (n + 1) len) (bytes p) (bytes q) dB == none do
+    throw "crtKey accepted an even modulus"
   return tries
 
 /-- Edges on arithmetic inputs. -/
@@ -178,10 +181,10 @@ def checkEdges : Except String Unit := do
 
 #assert_standard_axioms Spec.Rsa.publicOp
 #assert_standard_axioms Spec.Rsa.privateCrt
-#assert_standard_axioms Spec.Rsa.privatePrimes
-#assert_standard_axioms Spec.Rsa.privateExponents
+#assert_standard_axioms Spec.Rsa.crtKey
+#assert_standard_axioms Spec.Rsa.primesKey
 #assert_standard_axioms Spec.Rsa.publicPrecompute
-#assert_no_compiler_overrides Spec.Rsa.publicPrecompute Spec.Rsa.publicOp Spec.Rsa.privateCrt Spec.Rsa.privatePrimes Spec.Rsa.privateExponents
+#assert_no_compiler_overrides Spec.Rsa.publicPrecompute Spec.Rsa.publicOp Spec.Rsa.privateCrt Spec.Rsa.crtKey Spec.Rsa.primesKey
 #assert_spec_origin
 
 run_cmd do

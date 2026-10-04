@@ -1,8 +1,4 @@
 import VerifiedGarbage.Proof.Bignum.X86_64.Row
-import Mathlib.Tactic.LinearCombination
-import Mathlib.Tactic.Zify
-import Mathlib.Tactic.Ring
-import Mathlib.Tactic.Linarith
 
 /-!
 # Multiword arithmetic on x86-64: `acc := (acc + u m) / 2⁶⁴`
@@ -117,8 +113,7 @@ theorem redStep_ok {s₁ : State} {B : Addr} {Z w eA eN : Nat}
     have hp : 2 ^ 64 * 2 ^ (64 * (j - 1)) = 2 ^ (64 * j) := by
       rw [← Nat.pow_add]; congr 1; omega
     rw [show 64 * (j - 1 + 1) = 64 * j by omega]
-    zify at hv hval hp ⊢
-    linear_combination hval + (2 ^ (64 * j) : ℤ) * hv + ((lo.toNat : ℤ) - (t.gpr .rbp).toNat) * hp
+    grind
 
 /-! ## The top words -/
 
@@ -172,8 +167,7 @@ theorem redTop_val (m : Mem) (B : Addr) {Z eA w : Nat} (hn : B.toNat + Z ≤ 2 ^
     o1.wv (Or.inl (Nat.le_refl _)) (by omega), show 64 * (w - 1 + 1 + 1) = 64 * w + 64 by omega,
     show 64 * (w - 1 + 1) = 64 * w by omega, Nat.pow_add]
   rw [show (0 : BitVec 64).toNat = 0 from rfl, Nat.mul_zero, Nat.add_zero, ← hc]
-  zify at hp ⊢
-  linear_combination ((X + c).toNat : ℤ) * hp
+  grind
 
 /-! ## The row -/
 
@@ -221,7 +215,7 @@ theorem reduceRow_ok {s : State} {B : Addr} {Z w eA eN : Nat} (hs : Scr s B Z)
   have e2 : wv s.mem B eA (w + 2) = wv s.mem B eA w + 2 ^ (64 * w) *
       ((word s.mem B (eA + 8 * w)).toNat + 2 ^ 64 * (word s.mem B (eA + 8 * w + 8)).toNat) := by
     rw [show w + 2 = w + 1 + 1 from rfl, wv, wv, pow64_succ, show eA + 8 * (w + 1) = eA + 8 * w + 8 by omega]
-    ring
+    grind
   have hp : 2 ^ 64 * 2 ^ (64 * (w - 1)) = 2 ^ (64 * w) := by rw [← Nat.pow_add]; congr 1; omega
   -- The top fits.
   have hfit : (word t.mem B (eA + 8 * w)).toNat + (t.gpr .rbp).toNat +
@@ -229,14 +223,14 @@ theorem reduceRow_ok {s : State} {B : Addr} {Z w eA eN : Nat} (hs : Scr s B Z)
     rw [hX, hY]
     have hlt : 2 ^ (64 * w) * ((word s.mem B (eA + 8 * w)).toNat + (t.gpr .rbp).toNat +
         2 ^ 64 * (word s.mem B (eA + 8 * w + 8)).toNat) < 2 ^ (64 * w) * 2 ^ 128 := by
-      rw [← Nat.pow_add, show 64 * w + 128 = 64 * (w + 2) by omega]
-      zify at hval hb e2 hp ⊢
-      nlinarith [wv_lt t.mem B eA (w - 1)]
+      rw [← Nat.pow_add, show 64 * w + 128 = 64 * (w + 2) by omega, Nat.mul_add, Nat.mul_add]
+      rw [Nat.mul_add, ← Nat.mul_assoc (2 ^ 64), hp] at hval
+      rw [Nat.mul_add] at e2
+      omega_using [hval, hb, e2]
     exact Nat.lt_of_mul_lt_mul_left hlt
   refine ⟨?_, ?_, ((k₁.trans hI.keep).trans k').mono (by decide)⟩
   · rw [hm', redTop_val t.mem B hn (by omega) (show eA + 8 * w + 16 ≤ Z by omega) _ hfit, hX, hY, e2, ← hu]
-    zify at hval hp ⊢
-    linear_combination hval - ((t.gpr .rbp).toNat : ℤ) * hp
+    grind
   · rw [hm']
     intro x hx
     unfold redTopMem
