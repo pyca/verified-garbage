@@ -205,4 +205,213 @@ theorem to52_ok {s : State} {A C : Addr} (hA : s.gpr .rsi = A) (hC : s.gpr .r11 
       exact o.trans ((writeW_outside _ C _ (by have := off_lt n (by omega); omega)).mono (by omega)
         (by have := off_lt n (by omega); omega))
 
+
+/-! ## Back to words -/
+
+/-- Limb `j`'s part of the word at bit `lo`. -/
+def cj (lo j : Nat) (L : BitVec 64) : BitVec 64 :=
+  if lo ≤ 52 * j then (if 52 * j = lo then L else L <<< (52 * j - lo)) else L >>> (lo - 52 * j)
+
+/-- The code OR'ing limb `j` into the word at bit `lo`. -/
+def orj (lo j : Nat) : List Instr :=
+  ([.mov .rcx (.mem (VG.Impl.Rsa.X86_64.CrtIfma.at_ .r11 (VG.Impl.Rsa.X86_64.CrtIfma.off j)))] : List Instr) ++
+  (if lo ≤ 52 * j then (if 52 * j = lo then [] else VG.Impl.Rsa.X86_64.CrtIfma.shl .rcx (52 * j - lo))
+    else [.shift .shr .rcx (lo - 52 * j)]) ++
+  ([.alu .or .rax (.reg .rcx)] : List Instr)
+
+theorem orj_writes (lo j : Nat) : VG.Proof.MlKem.X86_64.writesOnly [.rax, .rcx, .rbp] (.block (orj lo j)) = true := by
+  unfold orj
+  split
+  · split <;> rfl
+  · rfl
+
+/-- `rax |= cj lo j L`, for limb `j` of the word at bit `lo`. -/
+theorem orj_ok {s : State} {C : Addr} {lo j : Nat} (h1 : 52 * j < lo + 64) (h2 : lo < 52 * j + 52)
+    (hC : s.gpr .r11 = C) (hrd : InRegions (s.rd ++ s.wr) (C + BitVec.ofNat 64 (VG.Impl.Rsa.X86_64.CrtIfma.off j)) 8) :
+    WP isa (.block (orj lo j)) s fun s' =>
+      s'.gpr .rax = s.gpr .rax ||| cj lo j (word s.mem C (VG.Impl.Rsa.X86_64.CrtIfma.off j)) ∧
+      VG.Proof.MlKem.X86_64.Keep [.rax, .rcx, .rbp] s s' ∧ s'.mem = s.mem ∧ s'.mxcsr = s.mxcsr := by
+  refine WP.mono (VG.Proof.MlKem.X86_64.WP.keep [.rax, .rcx, .rbp] (Q := fun s' =>
+    s'.gpr .rax = s.gpr .rax ||| cj lo j (word s.mem C (VG.Impl.Rsa.X86_64.CrtIfma.off j)) ∧ s'.mem = s.mem ∧
+      s'.mxcsr = s.mxcsr) ?_ (orj_writes lo j)) fun s' ⟨⟨a, b, c⟩, k⟩ => ⟨a, k, b, c⟩
+  unfold orj cj
+  by_cases hl : lo ≤ 52 * j
+  · by_cases he : 52 * j = lo
+    · simp only [he, Nat.le_refl, ite_true, List.cons_append, List.nil_append]
+      xrun [ea_at', hC, hrd]
+      rfl
+    · have hmc : (1 ≤ 64 - (52 * j - lo) ∧ 64 - (52 * j - lo) ≤ 63) = True := eq_true ⟨by omega, by omega⟩
+      simp only [hl, he, ite_true, ite_false, VG.Impl.Rsa.X86_64.CrtIfma.shl, List.cons_append, List.nil_append]
+      xrun [ea_at', hC, hrd, hmc]
+      refine ⟨?_, rfl⟩
+      rw [shl_eq' _ (by omega) (by omega)]
+  · have hsc : (1 ≤ lo - 52 * j ∧ lo - 52 * j ≤ 63) = True := eq_true ⟨by omega, by omega⟩
+    simp only [hl, ite_false, List.cons_append, List.nil_append]
+    xrun [ea_at', hC, hrd, hsc]
+    rfl
+
+
+theorem testBit_hi {x k j : Nat} (hx : x < 2 ^ k) (hj : k ≤ j) : x.testBit j = false :=
+  Nat.testBit_lt_two_pow (Nat.lt_of_lt_of_le hx (Nat.pow_le_pow_right (by decide) hj))
+
+/-- Bit `i` of limb `j`'s part of the word at bit `lo`. -/
+theorem cj_bit {lo j : Nat} {L : BitVec 64} (h1 : 52 * j < lo + 64) (h2 : lo < 52 * j + 52)
+    {i : Nat} (hi : i < 64) :
+    (cj lo j L).getLsbD i = (decide (52 * j ≤ lo + i) && L.toNat.testBit (lo + i - 52 * j)) := by
+  unfold cj
+  by_cases hl : lo ≤ 52 * j
+  · by_cases he : 52 * j = lo
+    · subst he
+      simp [BitVec.testBit_toNat]
+    · simp only [hl, he, ite_true, ite_false, BitVec.getLsbD_shiftLeft, hi, decide_true, Bool.true_and,
+        BitVec.testBit_toNat]
+      by_cases hk : i < 52 * j - lo
+      · simp [hk, show ¬ 52 * j ≤ lo + i by omega]
+      · simp only [hk, decide_false, Bool.not_false, Bool.true_and, show 52 * j ≤ lo + i by omega, decide_true]
+        congr 1; omega
+  · simp only [hl, ite_false, BitVec.getLsbD_ushiftRight, show 52 * j ≤ lo + i by omega, decide_true,
+      Bool.true_and, BitVec.testBit_toNat]
+    congr 1; omega
+
+/-- The bits of a number of limbs below `2⁵²`. -/
+theorem testBit_lval {L : Nat → Nat} (hL : ∀ j, L j < 2 ^ 52) :
+    ∀ n b, (lval L n).testBit b = (decide (b < 52 * n) && (L (b / 52)).testBit (b % 52))
+  | 0, b => by rw [lval_zero]; simp
+  | n + 1, b => by
+    rw [lval_succ, Nat.add_comm, Nat.mul_comm, Nat.testBit_two_pow_mul_add _ (lval_lt (fun j _ => hL j)),
+      testBit_lval hL n b]
+    by_cases hb : b < 52 * n
+    · simp [hb, show b < 52 * (n + 1) by omega]
+    · simp only [hb, ite_false]
+      by_cases hb' : b < 52 * (n + 1)
+      · simp only [hb', decide_true, Bool.true_and]
+        rw [show b / 52 = n by omega, show b - 52 * n = b % 52 by omega]
+      · simp only [hb', decide_false, Bool.false_and]
+        exact testBit_hi (hL n) (by omega)
+
+
+/-- The limbs with bits in the word at bit `lo`. -/
+def js (lo : Nat) : List Nat := (List.range 20).filter fun j => 52 * j < lo + 64 ∧ lo < 52 * j + 52
+
+theorem getLsbD_foldl_or (f : Nat → BitVec 64) (i : Nat) :
+    ∀ (l : List Nat) (a : BitVec 64), (l.foldl (fun a j => a ||| f j) a).getLsbD i =
+      (a.getLsbD i || l.any fun j => (f j).getLsbD i)
+  | [], a => by simp
+  | j :: l, a => by
+    rw [List.foldl_cons, getLsbD_foldl_or f i l, BitVec.getLsbD_or, List.any_cons, Bool.or_assoc]
+
+/-- The word at bit `lo` of a number of twenty limbs below `2⁵²`. -/
+theorem foldl_cj {Ls : Nat → BitVec 64} (hL : ∀ j, (Ls j).toNat < 2 ^ 52) (lo : Nat) :
+    (js lo).foldl (fun a j => a ||| cj lo j (Ls j)) 0 =
+      BitVec.ofNat 64 (lval (fun j => (Ls j).toNat) 20 / 2 ^ lo % 2 ^ 64) := by
+  apply BitVec.eq_of_getLsbD_eq; intro i hi
+  rw [getLsbD_foldl_or, BitVec.getLsbD_ofNat, Nat.testBit_mod_two_pow, Nat.testBit_div_two_pow,
+    testBit_lval hL]
+  have z : (0 : BitVec 64).getLsbD i = false := by simp
+  rw [z, Bool.false_or]
+  simp only [hi, decide_true, Bool.true_and]
+  apply Bool.eq_iff_iff.mpr
+  simp only [List.any_eq_true, js, List.mem_filter, List.mem_range, decide_eq_true_eq, Bool.and_eq_true]
+  constructor
+  · rintro ⟨j, ⟨hj, h1, h2⟩, hb⟩
+    rw [cj_bit h1 h2 hi] at hb
+    simp only [Bool.and_eq_true, decide_eq_true_eq] at hb
+    obtain ⟨hle, hb⟩ := hb
+    have hlt : lo + i - 52 * j < 52 := by
+      by_contra h
+      rw [testBit_hi (hL j) (by omega)] at hb
+      exact Bool.false_ne_true hb
+    refine ⟨by omega, ?_⟩
+    rw [show (i + lo) / 52 = j by omega, show (i + lo) % 52 = lo + i - 52 * j by omega]
+    exact hb
+  · rintro ⟨hlt, hb⟩
+    refine ⟨(i + lo) / 52, ⟨by omega, by omega, by omega⟩, ?_⟩
+    rw [cj_bit (by omega) (by omega) hi]
+    simp only [Bool.and_eq_true, decide_eq_true_eq]
+    exact ⟨by omega, by rw [show lo + i - 52 * ((i + lo) / 52) = (i + lo) % 52 by omega]; exact hb⟩
+
+
+/-- The limbs of `l` OR'ed into `rax`. -/
+theorem orList_ok {C : Addr} {lo : Nat} :
+    ∀ (l : List Nat) (s : State), (∀ j ∈ l, 52 * j < lo + 64 ∧ lo < 52 * j + 52 ∧ j < 20) → s.gpr .r11 = C →
+      (∀ j < 20, InRegions (s.rd ++ s.wr) (C + BitVec.ofNat 64 (VG.Impl.Rsa.X86_64.CrtIfma.off j)) 8) →
+      WP isa (.block (l.flatMap (orj lo))) s fun s' =>
+        s'.gpr .rax = l.foldl (fun a j => a ||| cj lo j (word s.mem C (VG.Impl.Rsa.X86_64.CrtIfma.off j))) (s.gpr .rax) ∧
+        VG.Proof.MlKem.X86_64.Keep [.rax, .rcx, .rbp] s s' ∧ s'.mem = s.mem ∧ s'.mxcsr = s.mxcsr
+  | [], s, _, _, _ => WP.block_nil ⟨rfl, VG.Proof.MlKem.X86_64.Keep.refl _ _, rfl, rfl⟩
+  | j :: l, s, hl, hC, hrd => by
+    obtain ⟨h1, h2, hj⟩ := hl j (List.mem_cons_self ..)
+    rw [List.flatMap_cons, WP.block_append_iff]
+    refine WP.mono (orj_ok h1 h2 hC (hrd j hj)) fun t ⟨a, k, m, x⟩ => ?_
+    refine WP.mono (orList_ok l t (fun j hj => hl j (List.mem_cons_of_mem _ hj)) ((k.gpr (by decide)).trans hC)
+      (fun j hj => by rw [k.2.1, k.2.2]; exact hrd j hj)) fun t' ⟨a', k', m', x'⟩ =>
+        ⟨?_, (k.trans k').mono (by simp), m'.trans m, x'.trans x⟩
+    rw [a', a, m, List.foldl_cons]
+
+theorem wv_digits {m : Mem} {D' : Addr} {V : Nat} :
+    ∀ n, (∀ w < n, word m D' (8 * w) = BitVec.ofNat 64 (V / 2 ^ (64 * w) % 2 ^ 64)) → wv m D' 0 n = V % 2 ^ (64 * n)
+  | 0, _ => by simp [VG.Proof.Bignum.X86_64.wv, Nat.mod_one]
+  | n + 1, h => by
+    rw [VG.Proof.Bignum.X86_64.wv, wv_digits n fun w hw => h w (by omega), Nat.zero_add, h n (by omega),
+      BitVec.toNat_ofNat, Nat.mod_mod_of_dvd _ (by decide), Nat.mul_succ, Nat.pow_add, Nat.mod_mul]
+
+
+theorem foldl_congr' {f g : BitVec 64 → Nat → BitVec 64} :
+    ∀ (l : List Nat) {a : BitVec 64}, (∀ a j, j ∈ l → f a j = g a j) → l.foldl f a = l.foldl g a
+  | [], _, _ => rfl
+  | j :: l, a, h => by
+    rw [List.foldl_cons, List.foldl_cons, h a j (List.mem_cons_self ..)]
+    exact foldl_congr' l fun a j hj => h a j (List.mem_cons_of_mem _ hj)
+
+/-- Word `w` of `to64`. -/
+def w64 (w : Nat) : List Instr :=
+  (Instr.mov32 .rax (.imm 0) :: (js (64 * w)).flatMap (orj (64 * w))) ++
+    [.store (VG.Impl.Rsa.X86_64.CrtIfma.at_ .r8 (8 * w)) .rax]
+
+theorem to64_eq : VG.Impl.Rsa.X86_64.CrtIfma.to64 = (List.range 17).flatMap w64 := rfl
+
+/-- The limbs at `C` as numbers, zero above 20. -/
+def limbsAt (m : Mem) (C : Addr) (j : Nat) : BitVec 64 :=
+  if j < 20 then word m C (VG.Impl.Rsa.X86_64.CrtIfma.off j) else 0
+
+/-- Word `w` of the twenty limbs below `2⁵²` at `r11 = C`, into `r8 + 8 w`. -/
+theorem w64_ok {s : State} {C D' : Addr} {w : Nat} (hC : s.gpr .r11 = C) (h8 : s.gpr .r8 = D')
+    (hrd : ∀ j < 20, InRegions (s.rd ++ s.wr) (C + BitVec.ofNat 64 (VG.Impl.Rsa.X86_64.CrtIfma.off j)) 8)
+    (hwr : InRegions s.wr (D' + BitVec.ofNat 64 (8 * w)) 8)
+    (hL : ∀ j < 20, (word s.mem C (VG.Impl.Rsa.X86_64.CrtIfma.off j)).toNat < 2 ^ 52) :
+    WP isa (.block (w64 w)) s fun s' =>
+      s'.mem = s.mem.writeW (off D' (8 * w))
+        (BitVec.ofNat 64 (lval (fun j => (limbsAt s.mem C j).toNat) 20 / 2 ^ (64 * w) % 2 ^ 64)) ∧
+      VG.Proof.MlKem.X86_64.Keep [.rax, .rcx, .rbp] s s' ∧ s'.mxcsr = s.mxcsr := by
+  rw [w64, List.cons_append, WP.block_cons_iff]
+  refine ⟨s.setReg32 .rax 0, rfl, ?_⟩
+  have g₀ : ∀ r, r ≠ .rax → (s.setReg32 .rax 0).gpr r = s.gpr r := fun r hr => by
+    rw [State.setReg32, RegUpd.gpr_setReg_of_ne _ _ hr]
+  rw [WP.block_append_iff]
+  refine WP.mono (orList_ok (C := C) (lo := 64 * w) (js (64 * w)) _ (fun j hj => by
+      simp only [js, List.mem_filter, List.mem_range, decide_eq_true_eq] at hj; exact ⟨hj.2.1, hj.2.2, hj.1⟩)
+    ((g₀ _ (by decide)).trans hC) hrd) fun t ⟨a, k, m, x⟩ => ?_
+  have hlm : (js (64 * w)).foldl (fun a j => a ||| cj (64 * w) j
+      (word (s.setReg32 .rax 0).mem C (VG.Impl.Rsa.X86_64.CrtIfma.off j))) ((s.setReg32 .rax 0).gpr .rax) =
+      BitVec.ofNat 64 (lval (fun j => (limbsAt s.mem C j).toNat) 20 / 2 ^ (64 * w) % 2 ^ 64) := by
+    rw [← foldl_cj (Ls := limbsAt s.mem C) (fun j => by
+      unfold limbsAt; split
+      · exact hL j (by assumption)
+      · simp) (64 * w)]
+    have e0 : (s.setReg32 .rax 0).gpr .rax = 0 := by rw [State.setReg32, RegUpd.gpr_setReg_self]; rfl
+    rw [e0]
+    refine foldl_congr' _ fun a j hj => ?_
+    simp only [js, List.mem_filter, List.mem_range] at hj
+    simp only [limbsAt, hj.1, ite_true]; rfl
+  have hst : InRegions t.wr (D' + BitVec.ofNat 64 (8 * w)) 8 := by rw [k.2.2]; exact hwr
+  have h8t : t.gpr .r8 = D' := by rw [k.gpr (by decide), g₀ _ (by decide)]; exact h8
+  rw [WP.block_cons_iff]
+  refine ⟨{ t with mem := t.mem.writeW (D' + BitVec.ofNat 64 (8 * w)) (t.gpr .rax) }, by
+    simp only [exec, ea_at', h8t, State.store64, hst, ite_true], WP.block_nil ⟨?_, ?_, x⟩⟩
+  · show t.mem.writeW _ (t.gpr .rax) = _
+    rw [a, hlm, m]; rfl
+  · exact ⟨fun r hr => by
+      show t.gpr r = s.gpr r
+      rw [k.gpr hr, g₀ _ (fun h => hr (by simp [h]))], k.2.1, k.2.2⟩
+
 end VG.Proof.Bignum.X86_64.AmmSym

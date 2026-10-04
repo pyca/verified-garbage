@@ -166,12 +166,12 @@ def to64 : List Instr :=
   (List.range 17).flatMap fun w =>
     let lo := 64 * w
     let js := (List.range 20).filter fun j => 52 * j < lo + 64 ∧ lo < 52 * j + 52
-    .mov32 .rax (.imm 0) :: js.flatMap fun j =>
+    (.mov32 .rax (.imm 0) :: js.flatMap fun j =>
       ([.mov .rcx (.mem (at_ .r11 (off j)))] : List Instr) ++
       (if lo ≤ 52 * j then (if 52 * j = lo then [] else shl .rcx (52 * j - lo))
         else [.shift .shr .rcx (lo - 52 * j)]) ++
-      ([.alu .or .rax (.reg .rcx)] : List Instr)
-    |>.append [.store (at_ .r8 (8 * w)) .rax]
+      ([.alu .or .rax (.reg .rcx)] : List Instr)) ++
+    [.store (at_ .r8 (8 * w)) .rax]
 
 /-! ## Before the vector code, in a prime's workspace (`rdi`) -/
 
