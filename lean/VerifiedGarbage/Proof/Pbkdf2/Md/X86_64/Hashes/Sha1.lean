@@ -14,7 +14,8 @@ is the generic Merkle–Damgård code (`Stream.params`), its specification
 `Spec.Hmac.sha1S`. The facts about the code HMAC and PBKDF2 add, which do not
 depend on `v`, are checked once (`coreOK`).
 
-`stream v` are the streaming `update` and `finalize` made with `v`, which
+`stream v` are the streaming `update` and `finalize` made with `v` (and
+their `_scratch` forms, which HMAC and PBKDF2 call), which
 `Generic/MdHash/X86_64/Stream.lean` emits from their `Api`s, named with
 its suffix.
 -/
@@ -35,8 +36,8 @@ def hash (v : Compress) : Hash where
   compC := v.callee.code
   initN := Spec.Sha1.initApi.name
   initC := Impl.Sha1.X86_64.Stream.init
-  updN := Spec.Sha1.updateApi.name ++ v.suffix
-  finN := Spec.Sha1.finalizeApi.name ++ v.suffix
+  updN := Spec.Sha1.updateScratchApi.name ++ v.suffix
+  finN := Spec.Sha1.finalizeScratchApi.name ++ v.suffix
   hmacInitN := Spec.Hmac.sha1I.initApi.name ++ v.suffix
   hmacFinN := Spec.Hmac.sha1I.finalizeApi.name ++ v.suffix
   iterN := Spec.Hmac.sha1I.iterateApi.name ++ v.suffix
@@ -155,19 +156,35 @@ theorem satP : ∃ s, (Spec.Hmac.sha1I.pbkdf2Contract X86_64.abi 24).pre s := by
     Spec.Pbkdf2.pbkdf2Contract, Spec.Pbkdf2.pbkdf2Sig, Spec.Hmac.sha1S, Spec.Hmac.sha1, X86_64.abi,
     X86_64.argRegs] using pbkSat 140
 
-/-- The streaming `update` and `finalize` made with `v`. -/
+/-- The streaming `update` and `finalize` made with `v`, which keep their
+working space in a frame of their own, and `update_scratch` and
+`finalize_scratch`, which HMAC's and PBKDF2's code calls with theirs. -/
 def stream : List StreamFn := [
   { api := Spec.Sha1.updateApi
-    code := Impl.Sha1.X86_64.Stream.update v.callee
-    contract := Spec.Sha1.updateContract X86_64.abi 8
-    stack := 8
-    verified := Proof.Sha1.X86_64.Shared.update v.ok v.mxcsr
-    spSafe := Proof.Sha1.X86_64.Shared.update_spSafe v.spSafe },
+    code := Impl.StackScratch.X86_64.withStackScratch 168 .r8 (Impl.Sha1.X86_64.Stream.update v.callee)
+    contract := Spec.Sha1.updateContract X86_64.abi (8 + 168)
+    stack := 8 + 168
+    verified := Proof.Sha1.X86_64.Shared.update v.ok v.mxcsr v.spSafe v.noStack
+    spSafe := X86_64.withStackScratch_spSafe (by decide)
+      (Proof.Sha1.X86_64.Shared.update_spSafe v.spSafe) },
   { api := Spec.Sha1.finalizeApi
-    code := Impl.Sha1.X86_64.Stream.finalize v.callee
-    contract := Spec.Sha1.finalizeContract X86_64.abi 8
+    code := Impl.StackScratch.X86_64.withStackScratch 168 .rcx (Impl.Sha1.X86_64.Stream.finalize v.callee)
+    contract := Spec.Sha1.finalizeContract X86_64.abi (8 + 168)
+    stack := 8 + 168
+    verified := Proof.Sha1.X86_64.Shared.finalize v.ok v.mxcsr v.spSafe v.noStack
+    spSafe := X86_64.withStackScratch_spSafe (by decide)
+      (Proof.Sha1.X86_64.Shared.finalize_spSafe v.spSafe) },
+  { api := Spec.Sha1.updateScratchApi
+    code := Impl.Sha1.X86_64.Stream.update v.callee
+    contract := Spec.Sha1.updateScratchContract X86_64.abi 8
     stack := 8
-    verified := Proof.Sha1.X86_64.Shared.finalize v.ok v.mxcsr
+    verified := Proof.Sha1.X86_64.Shared.updateScratch v.ok v.mxcsr
+    spSafe := Proof.Sha1.X86_64.Shared.update_spSafe v.spSafe },
+  { api := Spec.Sha1.finalizeScratchApi
+    code := Impl.Sha1.X86_64.Stream.finalize v.callee
+    contract := Spec.Sha1.finalizeScratchContract X86_64.abi 8
+    stack := 8
+    verified := Proof.Sha1.X86_64.Shared.finalizeScratch v.ok v.mxcsr
     spSafe := Proof.Sha1.X86_64.Shared.finalize_spSafe v.spSafe }]
 
 /-- SHA-1 with the implementation `v` of its compression function. -/
