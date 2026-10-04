@@ -696,4 +696,202 @@ theorem eCr_ok {u : State} {B : Addr} {Z o a p sp sl L : Nat} {ep : Addr} {eb : 
     have := Frm.of_outside_off ho (by omega) (by omega)
     rwa [show a + (D * p + (oE + 128 - L)) + 0 = a + D * p + oE + (128 - L) by omega] at this
 
+/-! ## The exponent's value -/
+
+/-- The exponent padded with zero bytes at the top to 128. -/
+def padE (eb : List Byte) : List Byte := List.replicate (128 - eb.length) 0 ++ eb
+
+theorem os2ip_snoc (l : List Byte) (b : Byte) : Spec.Rsa.os2ip (l ++ [b]) = 256 * Spec.Rsa.os2ip l + b.toNat := by
+  simp only [Spec.Rsa.os2ip, List.foldl_append, List.foldl_cons, List.foldl_nil]
+
+theorem os2ip_zeros (l : List Byte) : ∀ k, Spec.Rsa.os2ip (List.replicate k 0 ++ l) = Spec.Rsa.os2ip l
+  | 0 => rfl
+  | k + 1 => by
+    rw [List.replicate_succ, List.cons_append, ← os2ip_zeros l k]
+    simp only [Spec.Rsa.os2ip, List.foldl_cons]
+    rfl
+
+/-- The bytes at `oE` read as `ev` reads them: big-endian. -/
+theorem ev_os2ip (m : Mem) (F : Addr) (p : Nat) (bs : List Byte)
+    (h : ∀ i (hi : i < bs.length), m (off F (D * p + oE + i)) = bs[i]) :
+    ∀ n ≤ bs.length, AmmSym.ev m F p n = Spec.Rsa.os2ip (bs.take n)
+  | 0, _ => rfl
+  | n + 1, hn => by
+    rw [AmmSym.ev, ev_os2ip m F p bs h n (by omega), List.take_add_one, List.getElem?_eq_getElem (by omega),
+      Option.toList_some, os2ip_snoc, h n (by omega), Nat.mul_comm]
+
+theorem ev_padE {m : Mem} {F : Addr} {p : Nat} {eb : List Byte} (hL : eb.length ≤ 128)
+    (h : ∀ i, i < 128 → m (off F (D * p + oE + i)) = (padE eb).getD i 0) :
+    AmmSym.ev m F p 128 = Spec.Rsa.os2ip eb := by
+  have hl : (padE eb).length = 128 := by simp only [padE, List.length_append, List.length_replicate]; omega
+  have := ev_os2ip m F p (padE eb) (fun i hi => by
+    rw [h i (by omega), List.getD_eq_getElem?_getD, List.getElem?_eq_getElem (by omega), Option.getD_some]) 128
+    (by omega)
+  rw [this, show (padE eb).take 128 = padE eb by rw [List.take_of_length_le (by omega)], padE, os2ip_zeros]
+
+/-! ## The tail of a region -/
+
+/-- What the tail's steps read: the prime's workspace `off B o` (16 words),
+the area's base in it, `n`'s slots `sp` and `sl` (the exponent's pointer and
+length), and the exponent. -/
+structure TCtx (u : State) (B : Addr) (Z o a : Nat) (mx : BitVec 64) (sp sl : Nat) (ep : Addr)
+    (eb : List Byte) : Prop where
+  scr : Scr u B Z
+  rdi : u.gpr .rdi = off B o
+  hdr : Hdr u.mem (off B o) 16 mx
+  ia : word u.mem (off B o) (8 * sIfma) = off B a
+  lk : word u.mem (off B o) (8 * sLink) = B
+  pv : word u.mem B (8 * sp) = ep
+  lv : word u.mem B (8 * sl) = BitVec.ofNat 64 eb.length
+  src : Src u B Z ep eb
+
+theorem TCtx.of_frm {u u' : State} {B : Addr} {Z o a : Nat} {mx : BitVec 64} {sp sl : Nat} {ep : Addr}
+    {eb : List Byte} (h : TCtx u B Z o a mx sp sl ep eb) {rs : List (Nat × Nat)} (hf : Frm B rs u.mem u'.mem)
+    (hr : ∀ r ∈ rs, a ≤ r.1 ∧ r.1 + r.2 ≤ Z) (hoa : o + slot 16 8 + tabBytes 16 ≤ a) (haZ : a ≤ Z) (hsp : sp < 32)
+    (hsl : sl < 32) (k : Keep [.rax, .rcx, .rbp, .rsi, .r11, .r12] u u') : TCtx u' B Z o a mx sp sl ep eb := by
+  have hn := h.scr.nowrap
+  have h8 := hdr_lt_slot 16 8 (show 31 < 32 by decide)
+  have hT : tabBytes 16 = 2304 := rfl
+  have hr' : ∀ r ∈ rs, a ≤ r.1 := fun r hr' => (hr r hr').1
+  have hw : ∀ d, d + 8 ≤ a → word u'.mem B d = word u.mem B d := fun d hd =>
+    word_below_frm hf hr' hd (by unfold slot hdrBytes at h8; omega)
+  refine ⟨h.scr.congr k.2.2, (k.gpr (by decide)).trans h.rdi,
+    h.hdr.of_below hf (fun r hr'' => by have := hr' r hr''; unfold hdrBytes; unfold slot hdrBytes at h8; omega)
+      (by unfold hdrBytes; unfold slot hdrBytes at h8; omega), ?_, ?_, ?_, ?_, ?_⟩
+  · rw [word_off, hw _ (by unfold sIfma sFn; omega), ← word_off]; exact h.ia
+  · rw [word_off, hw _ (by unfold sLink sFn; omega), ← word_off]; exact h.lk
+  · rw [hw _ (by unfold slot hdrBytes at h8; omega)]; exact h.pv
+  · rw [hw _ (by unfold slot hdrBytes at h8; omega)]; exact h.lv
+  · exact h.src.congr (InScr.of_frm hf fun r hr'' => (hr r hr'').2) k.2.1 k.2.2
+
+theorem padE_lo {eb : List Byte} {i : Nat} (hi : i < 128 - eb.length) : (padE eb).getD i 0 = 0 := by
+  rw [padE, List.getD_eq_getElem?_getD, List.getElem?_append_left (by simp only [List.length_replicate]; omega),
+    List.getElem?_replicate]
+  simp only [hi, ↓reduceIte, Option.getD_some]
+
+theorem padE_hi {eb : List Byte} {i : Nat} (h1 : 128 - eb.length ≤ i) (h2 : i < 128) (hL : eb.length ≤ 128) :
+    (padE eb).getD i 0 = eb[i - (128 - eb.length)]'(by omega) := by
+  rw [padE, List.getD_eq_getElem?_getD, List.getElem?_append_right (by simp only [List.length_replicate]; omega),
+    List.length_replicate, List.getElem?_eq_getElem (by omega), Option.getD_some]
+
+/-- The ranges a region's tail writes. -/
+def tailR (a p : Nat) : List (Nat × Nat) :=
+  [(a + D * p + oFin, 160), (a + D * p + oK0, 32), (a + D * p + oE, 128)]
+
+theorem tailR_bound {a p Z : Nat} (hp : p < 2) (haZ : a + 2 * D + 8 ≤ Z) :
+    ∀ r ∈ tailR a p, a ≤ r.1 ∧ r.1 + r.2 ≤ Z := by
+  have hD : D = 3712 := rfl
+  have hDp : D * p ≤ 3712 := by rcases AmmSym.D_mul hp with h | h <;> omega
+  simp only [tailR, List.mem_cons, List.not_mem_nil, or_false, oFin, oK0, oE]
+  rintro _ (rfl | rfl | rfl) <;> constructor <;> simp only <;> omega
+
+/-- `p`'s tail: `R mod p` as the last multiplier, `k₀`, and the exponent. -/
+theorem regionB0_ok {u : State} {B : Addr} {Z o a sp sl : Nat} {mx : BitVec 64} {ep : Addr} {eb : List Byte}
+    (hc : TCtx u B Z o a mx sp sl ep eb) (hoa : o + slot 16 8 + tabBytes 16 ≤ a) (haZ : a + 2 * D + 8 ≤ Z)
+    (hsp : sp < 32) (hsl : sl < 32) (hL1 : 1 ≤ eb.length) (hL2 : eb.length ≤ 128) :
+    WP isa (VG.Impl.Bignum.X86_64.seqs ([.block (CrtIfma.arr52 0 Public.aY oFin), .block (CrtIfma.k0St 0),
+      .block CrtIfma.eZero] ++ CrtIfma.eCopy sp sl)) u fun u' =>
+      Limbs u'.mem (off B a) (D * 0 + oFin) (wv u.mem (off B o) (slot 16 Public.aY) 16) ∧
+      (∀ t < 4, word u'.mem (off B a) (D * 0 + oK0 + 8 * t) = mx &&& mask52) ∧
+      (∀ i, i < 128 → u'.mem (off (off B a) (D * 0 + oE + i)) = (padE eb).getD i 0) ∧
+      Frm B (tailR a 0) u.mem u'.mem ∧ Keep mmRegs u u' := by
+  have hn := hc.scr.nowrap
+  have hD : D = 3712 := rfl
+  have : oFin = 3552 := rfl
+  have : oK0 = 160 := rfl
+  have : oE = 3232 := rfl
+  have hB := tailR_bound (a := a) (p := 0) (by decide) haZ
+  refine wp_seqs_append (by simp) (by simp [CrtIfma.eCopy]) ?_
+  simp only [VG.Impl.Bignum.X86_64.seqs]
+  refine WP.seq (WP.mono (arr52r_ok hc.scr hc.rdi hc.hdr hc.ia hoa haZ (p := 0) (c := oFin) (j := Public.aY)
+    (by decide) (by decide) (by decide)) fun u₁ ⟨lF, f₁, k₁, r12₁, _⟩ => ?_)
+  have c₁ := hc.of_frm f₁ (fun r hr => by rw [List.mem_singleton.mp hr]; simp only; omega) hoa (by omega)
+    hsp hsl k₁
+  refine WP.seq (WP.mono (k0r_ok c₁.scr c₁.rdi c₁.hdr c₁.ia hoa haZ (p := 0) (by decide) r12₁)
+    fun u₂ ⟨hk, f₂, r11₂, k₂⟩ => ?_)
+  have c₂ := c₁.of_frm f₂ (fun r hr => by rw [List.mem_singleton.mp hr]; simp only; omega) hoa (by omega)
+    hsp hsl (k₂.mono (by simp))
+  refine WP.mono (eZr_ok c₂.scr haZ (p := 0) (by decide) r11₂) fun u₃ ⟨hz, f₃, _, k₃⟩ => ?_
+  have c₃ := c₂.of_frm f₃ (fun r hr => by rw [List.mem_singleton.mp hr]; simp only; omega) hoa (by omega)
+    hsp hsl (k₃.mono (by simp))
+  have r11₃ : u₃.gpr .r11 = off (off B a) (D * 0) := by rw [k₃.gpr (by decide)]; exact r11₂
+  refine WP.mono (eCr_ok c₃.scr c₃.rdi c₃.lk hoa haZ (p := 0) (by decide) hsp hsl c₃.pv c₃.lv c₃.src rfl hL1 hL2
+    r11₃) fun u' ⟨hb, f₄, k₄⟩ => ?_
+  refine ⟨((lF.of_frm f₂ (fun r hr => by rw [List.mem_singleton.mp hr]; simp only; omega) (by omega)).of_frm f₃
+      (fun r hr => by rw [List.mem_singleton.mp hr]; simp only; omega) (by omega)).of_frm f₄
+      (fun r hr => by rw [List.mem_singleton.mp hr]; simp only; omega) (by omega), fun t ht => ?_,
+    fun i hi => ?_, ?_, ?_⟩
+  · rw [word_off, f₄.word_eq (fun r hr => by rw [List.mem_singleton.mp hr]; simp only; omega) (by omega),
+      f₃.word_eq (fun r hr => by rw [List.mem_singleton.mp hr]; simp only; omega) (by omega), ← word_off]
+    exact hk t ht
+  · by_cases hlo : i < 128 - eb.length
+    · rw [padE_lo hlo, off_off, byte_frm f₄ (fun r hr => by rw [List.mem_singleton.mp hr]; simp only; omega)
+        (by omega), ← off_off]
+      exact hz i hi
+    · rw [padE_hi (by omega) hi hL2, show D * 0 + oE + i = D * 0 + oE + (128 - eb.length + (i - (128 - eb.length)))
+        by omega]
+      exact hb _ (by omega)
+  · refine (((f₁.append f₂).append f₃).append f₄).widen fun r hr => ?_
+    simp only [List.mem_append, List.mem_singleton] at hr
+    rcases hr with ((rfl | rfl) | rfl) | rfl
+    · exact ⟨_, List.mem_cons_self .., by simp only; omega⟩
+    · exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_self ..), by simp only; omega⟩
+    · exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_self ..)), by simp only; omega⟩
+    · exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_self ..)), by simp only; omega⟩
+  · exact (((k₁.trans k₂).trans k₃).trans k₄).mono (by simp [mmRegs])
+
+/-- `q`'s tail: `k₀`, 1 as the last multiplier, and the exponent. -/
+theorem regionB1_ok {u : State} {B : Addr} {Z o a sp sl : Nat} {mx : BitVec 64} {ep : Addr} {eb : List Byte}
+    (hc : TCtx u B Z o a mx sp sl ep eb) (hoa : o + slot 16 8 + tabBytes 16 ≤ a) (haZ : a + 2 * D + 8 ≤ Z)
+    (hsp : sp < 32) (hsl : sl < 32) (hL1 : 1 ≤ eb.length) (hL2 : eb.length ≤ 128) (h12 : u.gpr .r12 = mask52) :
+    WP isa (VG.Impl.Bignum.X86_64.seqs ([.block (CrtIfma.k0St 1), .block CrtIfma.eZero, .block CrtIfma.finOne] ++
+      CrtIfma.eCopy sp sl)) u fun u' =>
+      Limbs u'.mem (off B a) (D * 1 + oFin) 1 ∧
+      (∀ t < 4, word u'.mem (off B a) (D * 1 + oK0 + 8 * t) = mx &&& mask52) ∧
+      (∀ i, i < 128 → u'.mem (off (off B a) (D * 1 + oE + i)) = (padE eb).getD i 0) ∧
+      Frm B (tailR a 1) u.mem u'.mem ∧ Keep mmRegs u u' := by
+  have hn := hc.scr.nowrap
+  have hD : D = 3712 := rfl
+  have : oFin = 3552 := rfl
+  have : oK0 = 160 := rfl
+  have : oE = 3232 := rfl
+  refine wp_seqs_append (by simp) (by simp [CrtIfma.eCopy]) ?_
+  simp only [VG.Impl.Bignum.X86_64.seqs]
+  refine WP.seq (WP.mono (k0r_ok hc.scr hc.rdi hc.hdr hc.ia hoa haZ (p := 1) (by decide) h12)
+    fun u₁ ⟨hk, f₁, r11₁, k₁⟩ => ?_)
+  have c₁ := hc.of_frm f₁ (fun r hr => by rw [List.mem_singleton.mp hr]; simp only; omega) hoa (by omega)
+    hsp hsl (k₁.mono (by simp))
+  refine WP.seq (WP.mono (eZr_ok c₁.scr haZ (p := 1) (by decide) r11₁) fun u₂ ⟨hz, f₂, ra₂, k₂⟩ => ?_)
+  have c₂ := c₁.of_frm f₂ (fun r hr => by rw [List.mem_singleton.mp hr]; simp only; omega) hoa (by omega)
+    hsp hsl (k₂.mono (by simp))
+  have r11₂ : u₂.gpr .r11 = off (off B a) (D * 1) := by rw [k₂.gpr (by decide)]; exact r11₁
+  refine WP.mono (finr_ok c₂.scr haZ r11₂ ra₂) fun u₃ ⟨lF, f₃, k₃⟩ => ?_
+  have c₃ := c₂.of_frm f₃ (fun r hr => by rw [List.mem_singleton.mp hr]; simp only; omega) hoa (by omega)
+    hsp hsl (k₃.mono (by simp))
+  have r11₃ : u₃.gpr .r11 = off (off B a) (D * 1) := by rw [k₃.gpr (by decide)]; exact r11₂
+  refine WP.mono (eCr_ok c₃.scr c₃.rdi c₃.lk hoa haZ (p := 1) (by decide) hsp hsl c₃.pv c₃.lv c₃.src rfl hL1 hL2
+    r11₃) fun u' ⟨hb, f₄, k₄⟩ => ?_
+  refine ⟨lF.of_frm f₄ (fun r hr => by rw [List.mem_singleton.mp hr]; simp only; omega) (by omega), fun t ht => ?_,
+    fun i hi => ?_, ?_, ?_⟩
+  · rw [word_off, f₄.word_eq (fun r hr => by rw [List.mem_singleton.mp hr]; simp only; omega) (by omega),
+      f₃.word_eq (fun r hr => by rw [List.mem_singleton.mp hr]; simp only; omega) (by omega),
+      f₂.word_eq (fun r hr => by rw [List.mem_singleton.mp hr]; simp only; omega) (by omega), ← word_off]
+    exact hk t ht
+  · by_cases hlo : i < 128 - eb.length
+    · rw [padE_lo hlo, off_off, byte_frm f₄ (fun r hr => by rw [List.mem_singleton.mp hr]; simp only; omega)
+        (by omega), byte_frm f₃ (fun r hr => by rw [List.mem_singleton.mp hr]; simp only; omega)
+        (by omega), ← off_off]
+      exact hz i hi
+    · rw [padE_hi (by omega) hi hL2, show D * 1 + oE + i = D * 1 + oE + (128 - eb.length + (i - (128 - eb.length)))
+        by omega]
+      exact hb _ (by omega)
+  · refine (((f₁.append f₂).append f₃).append f₄).widen fun r hr => ?_
+    simp only [List.mem_append, List.mem_singleton] at hr
+    rcases hr with ((rfl | rfl) | rfl) | rfl
+    · exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_self ..), by simp only; omega⟩
+    · exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_self ..)), by simp only; omega⟩
+    · exact ⟨_, List.mem_cons_self .., by simp only; omega⟩
+    · exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_self ..)), by simp only; omega⟩
+  · exact (((k₁.trans k₂).trans k₃).trans k₄).mono (by simp [mmRegs])
+
 end VG.Proof.Bignum.X86_64
