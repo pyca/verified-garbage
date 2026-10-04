@@ -38,7 +38,9 @@ fn check<const T: usize>(key: &AesCcm, c: &Case, buf: &mut [u8], valid: bool) ->
     let r = key.decrypt_in_place(&c.iv.0, &c.aad.0, buf, tag);
     if valid {
         let mut e = c.msg.0.clone();
-        let t = key.encrypt_in_place::<T>(&c.iv.0, &c.aad.0, &mut e).unwrap();
+        let t = key
+            .encrypt_in_place::<T>(&c.iv.0, &c.aad.0, &mut e)
+            .unwrap();
         assert_eq!(e, c.ct.0);
         assert_eq!(t[..], c.tag.0);
     }

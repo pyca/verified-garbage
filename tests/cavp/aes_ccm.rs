@@ -73,7 +73,12 @@ fn seal<const T: usize>(key: &AesCcm, nonce: &[u8], aad: &[u8], pt: &[u8]) -> Ve
 }
 
 /// Decrypts `ct` (the encrypted payload followed by a `T`-byte tag).
-fn open<const T: usize>(key: &AesCcm, nonce: &[u8], aad: &[u8], ct: &[u8]) -> Result<Vec<u8>, Error> {
+fn open<const T: usize>(
+    key: &AesCcm,
+    nonce: &[u8],
+    aad: &[u8],
+    ct: &[u8],
+) -> Result<Vec<u8>, Error> {
     let (data, tag) = ct.split_at(ct.len() - T);
     let mut buf = data.to_vec();
     key.decrypt_in_place::<T>(nonce, aad, &mut buf, tag.try_into().unwrap())?;
@@ -124,11 +129,21 @@ fn aes_ccm() {
             let got = by_tag_len!(t, open(&key, &nonce, &aad, &ct));
             match r["Result"] {
                 "Pass" => {
-                    assert_eq!(got, Ok(bytes(&r, "Payload", "Plen")), "DVPT{bits} Count {}", r["Count"]);
+                    assert_eq!(
+                        got,
+                        Ok(bytes(&r, "Payload", "Plen")),
+                        "DVPT{bits} Count {}",
+                        r["Count"]
+                    );
                     passed += 1;
                 }
                 _ => {
-                    assert_eq!(got, Err(Error::TagMismatch), "DVPT{bits} Count {}", r["Count"]);
+                    assert_eq!(
+                        got,
+                        Err(Error::TagMismatch),
+                        "DVPT{bits} Count {}",
+                        r["Count"]
+                    );
                     failed += 1;
                 }
             }
