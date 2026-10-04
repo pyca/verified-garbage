@@ -1,6 +1,7 @@
 import VerifiedGarbage.TCB.X86_64.Target
 import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyVerified
 import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.Window
+import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyCode
 
 /-! Complete strict Ed25519 equation verification with a caller-supplied SHA-512 challenge. -/
 
@@ -18,8 +19,8 @@ def artifacts : List Artifact := [
     code := Impl.Ed25519.X86_64.verifyEquation Impl.X25519.X86_64.baseline
       (Impl.Ed25519.X86_64.double4 Impl.X25519.X86_64.baseline)
     contract := Spec.Ed25519.verifyEquationContract X86_64.abi
-    verified := Proof.Ed25519.X86_64.verify_verified (by lit_decide)
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
+    verified := Proof.Ed25519.X86_64.verify_verified Proof.Ed25519.X86_64.VerifyCode.baseline_mx
+    spSafe := Proof.Ed25519.X86_64.VerifyCode.baseline_spSafe },
   { Spec.Ed25519.verifyEquationApi with
     target := X86_64.target
     name := "vg_ed25519_verify_equation_adx"
@@ -32,9 +33,9 @@ def artifacts : List Artifact := [
     code := Impl.Ed25519.X86_64.verifyEquation Impl.X25519.X86_64.adx
       (Impl.Ed25519.X86_64.double4 Impl.X25519.X86_64.adx)
     contract := Spec.Ed25519.verifyEquationContract X86_64.abi
-    verified := Proof.Ed25519.X86_64.verify_verified (by lit_decide)
+    verified := Proof.Ed25519.X86_64.verify_verified Proof.Ed25519.X86_64.VerifyCode.adx_mx
     features := ["bmi2", "adx"]
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
+    spSafe := Proof.Ed25519.X86_64.VerifyCode.adx_spSafe },
   { Spec.Ed25519.verifyEquationApi with
     target := X86_64.target
     name := "vg_ed25519_verify_equation_ifma"
@@ -47,8 +48,8 @@ def artifacts : List Artifact := [
       through bytes 1600 to 1608 of `scratch`."])
     code := Impl.Ed25519.X86_64.verifyEquation Impl.X25519.X86_64.adx Impl.Ed25519.X86_64.Ifma.double4
     contract := Spec.Ed25519.verifyEquationContract X86_64.abi
-    verified := Proof.Ed25519.X86_64.verify_verified (by lit_decide)
+    verified := Proof.Ed25519.X86_64.verify_verified Proof.Ed25519.X86_64.VerifyCode.ifma_mx
     features := ["avx", "avx2", "bmi2", "adx", "avx512ifma", "avx512vl"]
-    spSafe := Code.all_of_allInstrs (by lit_decide) }]
+    spSafe := Proof.Ed25519.X86_64.VerifyCode.ifma_spSafe }]
 
 end VG.Artifacts.Ed25519Verify.X86_64

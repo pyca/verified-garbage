@@ -69,8 +69,8 @@ theorem kpad_spSafe : Impl.Sha3.X86_64.Stream.pad.all (fun i => !isa.writesSp i)
 theorem ksqz_spSafe : Impl.Sha3.X86_64.Stream.squeeze.all (fun i => !isa.writesSp i) = true := by decide +kernel
 
 theorem arg_wsp (d : Reg) (hd : d ∈ argRegs6) (a : Arg) : (a.mov d).all (fun i => !isa.writesSp i) = true := by
-  have : d ≠ .rsp := fun e => by subst e; revert hd; decide
-  cases a <;> cases d <;> simp_all [Arg.mov, Instr.dst]
+  simp only [argRegs6, List.mem_cons, List.not_mem_nil, or_false] at hd
+  rcases hd with rfl | rfl | rfl | rfl | rfl | rfl <;> cases a <;> rfl
 
 theorem setArgs_wsp (as : List Arg) : (setArgs as).all (fun i => !isa.writesSp i) = true := by
   rw [List.all_eq_true]

@@ -82,24 +82,30 @@ theorem block_run_ok (os : List VOp) (s : State) {Q : State → Prop} (h : Q (ru
     WP isa (.block (os.map .vop)) s Q :=
   WP.of_runBlock ⟨_, runBlock_run os s, h⟩
 
-/-! ## The low lanes after `VEX.128` instructions -/
+/-! ## The low lanes after `VEX.128` instructions
+
+These hold by definition, but are proven by `(rfl)`, not `rfl`: `simp` uses a
+lemma proven by `rfl` as a definitional rewrite, and the kernel then checks
+its result by unfolding `VOp.exec` at every instruction of a block. -/
 
 theorem xmm_vbin (op : VBinOp) (d a b : XReg) (s : State) (r : XReg) :
     ((VOp.vbin op .l128 d a b).exec s).xmm r =
-      if r = d then op.sse.eval (s.xmm a) (s.xmm b) else s.xmm r := rfl
+      if r = d then op.sse.eval (s.xmm a) (s.xmm b) else s.xmm r := (rfl)
 
 theorem xmm_vshift (op : XShiftOp) (d a : XReg) (n : BitVec 8) (s : State) (r : XReg) :
-    ((VOp.vshift op .l128 d a n).exec s).xmm r = if r = d then op.eval (s.xmm a) n else s.xmm r := rfl
+    ((VOp.vshift op .l128 d a n).exec s).xmm r = if r = d then op.eval (s.xmm a) n else s.xmm r :=
+  (rfl)
 
 theorem xmm_vpshufd (d a : XReg) (o : BitVec 8) (s : State) (r : XReg) :
     ((VOp.vpshufd .l128 d a o).exec s).xmm r = if r = d then shufDwords (s.xmm a) o else s.xmm r :=
-  rfl
+  (rfl)
 
 theorem xmm_vmovdqa (d a : XReg) (s : State) (r : XReg) :
-    ((VOp.vmovdqa .l128 d a).exec s).xmm r = if r = d then s.xmm a else s.xmm r := rfl
+    ((VOp.vmovdqa .l128 d a).exec s).xmm r = if r = d then s.xmm a else s.xmm r := (rfl)
 
 theorem xmm_vmovq (d : XReg) (g : Reg) (s : State) (r : XReg) :
-    ((VOp.vmovq d g).exec s).xmm r = if r = d then (0 : BitVec 64) ++ s.gpr g else s.xmm r := rfl
+    ((VOp.vmovq d g).exec s).xmm r = if r = d then (0 : BitVec 64) ++ s.gpr g else s.xmm r :=
+  (rfl)
 
 /-- What a block leaves: everything but the low lanes of the vector registers
 `rs` (and their upper lanes and the flags, which nothing reads). -/

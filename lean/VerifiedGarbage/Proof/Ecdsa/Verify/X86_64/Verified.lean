@@ -2,6 +2,7 @@ import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Main
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Contract
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Lit
 import VerifiedGarbage.Proof.Ecdsa.X86_64.Verified
+import VerifiedGarbage.Proof.P256.X86_64.TaintSums
 
 /-!
 # ECDSA verification over P-256 on x86-64: `Verified`
@@ -52,7 +53,9 @@ theorem verify_x86 (hL : Weierstrass.Law Spec.P256.curve) (s : State) (hs : veri
       exact hrs) (by decide)
 
 theorem verify_ct : ConstantTime isa verifyX86_64.pre verifyX86_64.pub verifyP256 := by
-  refine VG.Taint.constantTime (A := taint) (Taint.ofRegs [.rdi, .rsi, .rdx, .rcx]) ?_ (by taint_decide)
+  obtain ⟨_, hc⟩ : ∃ h, (taintS.check (Taint.ofRegs [.rdi, .rsi, .rdx, .rcx]) verifyP256 h).isSome = true := by
+    taint_decide_sum [Proof.P256.X86_64.ladderGSum, Proof.P256.X86_64.powPSum]
+  refine VG.Taint.constantTime (A := taintS) (Taint.ofRegs [.rdi, .rsi, .rdx, .rcx]) ?_ hc
   intro s₁ s₂ _ _ ⟨_, h1, h2, h3, h4⟩
   refine Taint.agree_ofRegs fun r hr => ?_
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr

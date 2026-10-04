@@ -1,6 +1,6 @@
 import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarBaseCTEngine
 import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarBaseMain
-import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarBaseLit
+import VerifiedGarbage.Proof.Ed25519.AArch64.CombErase
 import VerifiedGarbage.Proof.Framework.Contract
 
 /-! Merged from `Proof.Ed25519.AArch64.ScalarBaseCT`. -/

@@ -409,8 +409,7 @@ theorem cols_of_vf {rs : List XReg} {s t : State} (hv : VF rs s t) (h0 : x0 ∉ 
 theorem msg_word (m : Mem) (p : Addr) (r k q : Nat) :
     m.readW (p + BitVec.ofNat 64 (8 * msgWord r k q)) 64 =
       Spec.Blake2.blockAt 64 m p (Spec.Blake2.sigmaAt r (8 * (k / 2) + 2 * lane k q + k % 2)) := by
-  rw [msgWord]
-  exact (Proof.Blake2.blockAt_word m p _ (Fin.isLt _)).symm
+  rw [Proof.Blake2.blockAt_word m p _ (Fin.isLt _), msgWord]
 
 theorem lane_lo {k q : Nat} (hk : k < 2) : lane k q = q := by simp only [lane, hk, ite_true]
 theorem lane_hi {k q : Nat} (hk : ¬ k < 2) : lane k q = (q + 3) % 4 := by

@@ -586,7 +586,7 @@ theorem crtWin_ok (M : Mont) {t : State} {P : Addr} {wx : Nat} {minv : BitVec 64
   have hh04 : ∀ k < 32, word t₄.mem P (8 * k) = word t.mem P (8 * k) := fun k hk =>
     (hh₄ k hk).trans ((hh₃ k hk).trans ((hh₂ k hk).trans (hh₁ k hk)))
   have f04 : Frm P (crtWinRanges wx) t.mem t₄.mem := ((f₁.trans f₂).trans f₃).trans f₄
-  have k04 : Keep mmRegs t t₄ := (((k₁.trans k₂).trans k₃).trans k₄).mono (by simp [mmRegs])
+  have k04 : Keep mmRegs t t₄ := (((k₁.trans k₂).trans k₃).trans k₄).mono (by decide)
   -- The window, and `sV` up.
   refine WP.mono (winMid_ok (V := V) hc₄ (by rw [hh04 _ (by decide)]; exact hV) (by omega)) fun t₅ ⟨hm₅, k₅⟩ => ?_
   have o1 := writeW_outside t₄.mem P (d := 8 * Crt.sV) (BitVec.ofNat 64 (16 * V)) (by decide)
@@ -681,7 +681,7 @@ theorem crtWinStep_ok (M : Mont) {t s : State} {P : Addr} {wx : Nat} {minv : Bit
   refine WP.mono (crtWin_ok M (E := E * 16 ^ j + v / 16 ^ (2 - j)) hI.ctx hI.tab hw hw' hR hI.ylt hI.y hI.v
     (by have := Nat.mul_le_mul_left v hp; omega) hI.b (by omega) (by omega))
     fun s' ⟨hc', htab', hY', hYv', hV', hb', hz', hfr', k'⟩ => ⟨?_, hc', htab', hY', ?_, ?_, ?_,
-      hI.frm.trans hfr', (hI.keep.trans k').mono (by simp [mmRegs])⟩
+      hI.frm.trans hfr', (hI.keep.trans k').mono (by decide)⟩
   · rw [hz']; congr 1; exact decide_eq_decide.mpr (by omega)
   · intro hq; rw [hYv' hq, win_step hv hj]
   · rw [hV', Nat.pow_succ]; congr 1; rw [Nat.mul_comm 16, Nat.mul_assoc]

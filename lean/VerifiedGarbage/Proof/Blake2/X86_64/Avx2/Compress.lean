@@ -379,9 +379,10 @@ theorem finish0_ok {s : State} {st : Addr} (hdi : s.gpr .rdi = st)
   apply WP.of_runBlock
   simp only [v, runBlock_cons, runStep_some, runBlock_nil, exec, State.load256,
     State.store256_eq, ea_at, hdi, VOp.exec_gpr, VOp.exec_rd, VOp.exec_wr, VOp.exec_mem,
-    State.setV_gpr, State.setV_wr, State.setV_mem, hin, hout, ite_true,
+    State.setV_gpr, State.setV_rd, State.setV_wr, State.setV_mem, State.setMem_gpr, State.setMem_mem,
+    State.setMem_rd, State.setMem_wr, hin, hout, ite_true,
     Option.map_some, Option.some.injEq, exists_eq_left']
-  refine ⟨_, fun q hq => ?_, rfl, fun q hq => ?_, rfl, rfl, rfl, fun r h0 h1 h4 l => ?_⟩
+  refine ⟨_, fun q hq => ?_, rfl, fun q hq => ?_, trivial, trivial, trivial, fun r h0 h1 h4 l => ?_⟩
   · rw [VG.Proof.Poly1305.X86_64.Avx2.qword256_ymm _ _ hq, qw_xor, ifp rfl,
       VG.Proof.Argon2.X86_64.Avx2.qw_set256 _ _ _ _ hq, ifn (by decide),
       VG.Proof.Argon2.X86_64.Avx2.qw_set256 _ _ _ _ hq, ifp rfl,
@@ -403,10 +404,11 @@ theorem finish1_ok {s : State} {st : Addr} (hdi : s.gpr .rdi = st)
       t.wr = s.wr ∧ (∀ r, r ≠ x1 → r ≠ .xmm4 → ∀ l, t.lane r l = s.lane r l) := by
   apply WP.of_runBlock
   simp only [v, runBlock_cons, runStep_some, runBlock_nil, exec, State.load256,
-    State.store256_eq, ea_at, hdi, VOp.exec_gpr, VOp.exec_wr, VOp.exec_mem,
-    State.setV_gpr, State.setV_wr, State.setV_mem, hin, hout, ite_true,
+    State.store256_eq, ea_at, hdi, VOp.exec_gpr, VOp.exec_rd, VOp.exec_wr, VOp.exec_mem,
+    State.setV_gpr, State.setV_rd, State.setV_wr, State.setV_mem, State.setMem_gpr, State.setMem_mem,
+    State.setMem_rd, State.setMem_wr, hin, hout, ite_true,
     Option.map_some, Option.some.injEq, exists_eq_left']
-  refine ⟨_, fun q hq => ?_, rfl, rfl, rfl, rfl, fun r h1 h4 l => ?_⟩
+  refine ⟨_, fun q hq => ?_, rfl, trivial, trivial, trivial, fun r h1 h4 l => ?_⟩
   · rw [VG.Proof.Poly1305.X86_64.Avx2.qword256_ymm _ _ hq, qw_xor, ifp rfl,
       VG.Proof.Argon2.X86_64.Avx2.qw_set256 _ _ _ _ hq, ifn (by decide),
       VG.Proof.Argon2.X86_64.Avx2.qw_set256 _ _ _ _ hq, ifp rfl,

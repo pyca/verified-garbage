@@ -37,7 +37,7 @@ theorem scalar_op (op : Op) (hv : Valid op) {v : CState} {s : State} (h : C v s)
     refine ⟨⟨?_,rfl,rfl,rfl,?_⟩,rfl,rfl⟩
     · intro k hk
       have he := wreg_eq (⟨k,hk⟩ : Fin 16) d
-      simp only [State.write, Size.bits, step, Vector.getElem_set, he, Fin.ext_iff, eq_comm]
+      simp only [State.write, Size.bits, step, Vector.getElem_set, he, Fin.ext_iff, eq_comm (a := d.val)]
       split
       · rfl
       · exact h k hk
@@ -53,7 +53,7 @@ theorem scalar_op (op : Op) (hv : Valid op) {v : CState} {s : State} (h : C v s)
     refine ⟨⟨?_,rfl,rfl,rfl,?_⟩, trivial⟩
     · intro k hk
       have he := wreg_eq (⟨k,hk⟩ : Fin 16) d
-      simp only [step, Vector.getElem_set, he, Fin.ext_iff, eq_comm]
+      simp only [step, Vector.getElem_set, he, Fin.ext_iff, eq_comm (a := d.val)]
       split
       · simp only [VG.Proof.ChaCha20.rotateLeft_eq _ hv n.isLt, Fin.getElem_fin]
       · exact h k hk
