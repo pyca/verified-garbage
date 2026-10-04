@@ -37,7 +37,7 @@ theorem DCInv.agree {K W SP : Addr} {R : Nat} {N A D : Addr} {al n i : Nat} {t�
 
 /-- A step of `derive`, after its arguments. -/
 def DArgs (K W SP : Addr) (R : Nat) (N A D : Addr) (al n i : Nat) (t : State) : Prop :=
-  CtrCall t K (W + BitVec.ofNat 64 112) (W + BitVec.ofNat 64 128) (W + BitVec.ofNat 64 2048) R 1 ∧
+  CtrCall t K (W + BitVec.ofNat 64 112) (W + BitVec.ofNat 64 128) (W + BitVec.ofNat 64 1768) R 1 ∧
     t.gpr .rsp = SP ∧ DCInv K W SP R N A D al n i t
 
 theorem dArgs_wp {K W SP : Addr} (L : Lay K W SP) {R : Nat} (hR : R = 10 ∨ R = 14) {N A D : Addr} {al n i : Nat}
@@ -103,7 +103,7 @@ theorem dPost_check : ∃ hc, (taint.check (sivT [.rbx, .rbp, .r12]) (.block der
 
 /-- A step of `derive`, in two runs before the same block. -/
 theorem dStep_rel (v : GcmImpl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} (hR : R = 10 ∨ R = 14) {N A D : Addr}
-    {al n : Nat} (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 4096⟩) (hn : n ≤ 2 ^ 64) {i : Nat} (hi : i < R / 2 - 1) :
+    {al n : Nat} (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 3816⟩) (hn : n ≤ 2 ^ 64) {i : Nat} (hi : i < R / 2 - 1) :
     RelCT isa (fun t₁ t₂ => DCInv K W SP R N A D al n i t₁ ∧ DCInv K W SP R N A D al n i t₂)
       (.seq (.block (deriveBlock ++ ([.mov .rdi (.reg .r13)] : List Instr) ++ ctrArgs ++ ptr .rcx .r15 bO))
         (.seq (callCtr v.callees) (.block derPost)))
@@ -129,7 +129,7 @@ theorem dInit_check : ∃ hc, (taint.check (sivT []) (.block (([.mov32 .rbx (imm
     ([.mov .rbp (.mem (at_ .r15 roundsO)), .shift .shr .rbp 1, .alu .sub .rbp (imm 1)] : List Instr))) hc).isSome = true :=
   ⟨_, by taint_decide⟩
 
-theorem slots_derR {K W SP : Addr} (L : Lay K W SP) : ∀ q ∈ derR W SP, (⟨W + BitVec.ofNat 64 272, 48⟩ : Region).Disjoint q := by
+theorem slots_derR {K W SP : Addr} (L : Lay K W SP) : ∀ q ∈ derR W SP, (⟨W + BitVec.ofNat 64 200, 48⟩ : Region).Disjoint q := by
   intro q hq
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
   rcases hq with rfl | rfl | rfl | rfl
@@ -149,7 +149,7 @@ theorem dInit_wp {K W SP : Addr} (L : Lay K W SP) {R : Nat} (hR : R = 10 ∨ R =
 
 /-- `derive`, in two runs with the same public arguments. -/
 theorem derive_rel (v : GcmImpl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} (hR : R = 10 ∨ R = 14) {N A D : Addr}
-    {al n : Nat} (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 4096⟩) (hn : n ≤ 2 ^ 64) {P : State → State → Prop}
+    {al n : Nat} (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 3816⟩) (hn : n ≤ 2 ^ 64) {P : State → State → Prop}
     (hP : ∀ t₁ t₂, P t₁ t₂ → (One K W SP R N A D al n t₁ ∧ Buf K W SP t₁ N 12) ∧
       (One K W SP R N A D al n t₂ ∧ Buf K W SP t₂ N 12)) :
     RelCT isa P (derive v.callees) fun t₁ t₂ =>
@@ -189,7 +189,7 @@ theorem expArgs_wp {K W SP : Addr} (L : Lay K W SP) {R : Nat} (hR : R = 10 ∨ R
     WP isa (.block (ptr .rdi .r15 ekO ++ ([.mov .rsi (.mem (at_ .r15 roundsO)), .alu .sub .rsi (imm 6),
       .alu .add .rsi (.reg .rsi), .alu .add .rsi (.reg .rsi)] : List Instr) ++ ptr .rdx .r15 skO ++
       ptr .rcx .r15 scrO)) t fun t₁ =>
-      KeyCall t₁ (W + BitVec.ofNat 64 32) (W + BitVec.ofNat 64 512) (W + BitVec.ofNat 64 2048)
+      KeyCall t₁ (W + BitVec.ofNat 64 32) (W + BitVec.ofNat 64 248) (W + BitVec.ofNat 64 1768)
         (Spec.GcmSiv.keyLen R) ∧ t₁.gpr .rsp = SP := by
   obtain ⟨t₁, run₁, -, rdi, rsi, rdx, rcx, hg₁, hrd₁, hwr₁⟩ := expArgs_ok hR O.env O.sl
   have E₁ : Env K W SP t₁ := O.env.of_saved hg₁ hrd₁ hwr₁
@@ -198,7 +198,7 @@ theorem expArgs_wp {K W SP : Addr} (L : Lay K W SP) {R : Nat} (hR : R = 10 ∨ R
 
 /-- `keys`, in two runs with the same public arguments. -/
 theorem keys_rel (v : GcmImpl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} (hR : R = 10 ∨ R = 14) {N A D : Addr}
-    {al n : Nat} (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 4096⟩) (hn : n ≤ 2 ^ 64) {P : State → State → Prop}
+    {al n : Nat} (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 3816⟩) (hn : n ≤ 2 ^ 64) {P : State → State → Prop}
     (hP : ∀ t₁ t₂, P t₁ t₂ → (One K W SP R N A D al n t₁ ∧ Buf K W SP t₁ N 12) ∧
       (One K W SP R N A D al n t₂ ∧ Buf K W SP t₂ N 12)) :
     RelCT isa P (keys v.callees) fun _ _ => True := by
@@ -216,10 +216,10 @@ theorem keys_rel (v : GcmImpl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} (hR : 
   have r₁ := (rel_taintC [] (P := fun t₁ t₂ => DCInv K W SP R N A D al n (R / 2 - 1) t₁ ∧
       DCInv K W SP R N A D al n (R / 2 - 1) t₂) hDW hn (fun t₁ t₂ h => ⟨h.1.one, h.2.one, fun _ h => nomatch h⟩)
     expArgs_check).wp
-    (F₁ := fun (t₁ : State) => KeyCall t₁ (W + BitVec.ofNat 64 32) (W + BitVec.ofNat 64 512)
-      (W + BitVec.ofNat 64 2048) (Spec.GcmSiv.keyLen R) ∧ t₁.gpr .rsp = SP)
-    (F₂ := fun (t₁ : State) => KeyCall t₁ (W + BitVec.ofNat 64 32) (W + BitVec.ofNat 64 512)
-      (W + BitVec.ofNat 64 2048) (Spec.GcmSiv.keyLen R) ∧ t₁.gpr .rsp = SP)
+    (F₁ := fun (t₁ : State) => KeyCall t₁ (W + BitVec.ofNat 64 32) (W + BitVec.ofNat 64 248)
+      (W + BitVec.ofNat 64 1768) (Spec.GcmSiv.keyLen R) ∧ t₁.gpr .rsp = SP)
+    (F₂ := fun (t₁ : State) => KeyCall t₁ (W + BitVec.ofNat 64 32) (W + BitVec.ofNat 64 248)
+      (W + BitVec.ofNat 64 1768) (Spec.GcmSiv.keyLen R) ∧ t₁.gpr .rsp = SP)
     fun t₁ t₂ h => ⟨expArgs_wp L hR h.1.one, expArgs_wp L hR h.2.one⟩
   have r₂ := (RelCT.seq r₁ (key_rel v.key fun t₁ t₂ h =>
     ⟨_, _, _, _, h.2.1.1, h.2.2.1, by rw [h.2.1.2, h.2.2.2]⟩)).wp

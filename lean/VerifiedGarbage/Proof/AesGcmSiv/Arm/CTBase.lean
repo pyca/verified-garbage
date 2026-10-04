@@ -180,4 +180,34 @@ theorem rel_envArg {c : Prog isa} {p : Prm} (L : Lay p) {τ₁ τ₂ : State} (E
     · exact E₁.agree E₂ r h
     · exact hr r h) (E₁.sp_eq E₂) (hw E₁) (hw E₂) (argByte_eq L E₁ E₂ A₁ A₂) hc
 
+theorem argByte_eq16 {p : Prm} (L : Lay p) {s₁ s₂ : State} (E₁ : Env p s₁) (E₂ : Env p s₂) (A₁ : Args p s₁.mem)
+    (A₂ : Args p s₂.mem) : ∀ k < 16, s₁.mem (VG.Arm.Taint.argByte s₁ k) = s₂.mem (VG.Arm.Taint.argByte s₂ k) := by
+  refine argMem_of (j := 4) (E₁.sp_eq E₂) (by rw [E₁.sp]; have := L.spf; omega) fun i hi => ?_
+  have e : ∀ {s : State}, Env p s → Args p s.mem → stackArg s i = if i = 0 then BitVec.ofNat 32 p.al
+      else if i = 1 then p.D else if i = 2 then BitVec.ofNat 32 p.n else p.T := fun {s} E A => by
+    rw [Proof.AesGcm.Arm.stackArg_eq, E.sp]
+    rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3) with rfl | rfl | rfl | rfl
+    · exact A.a0
+    · exact A.a4
+    · exact A.a8
+    · exact A.a12
+  rw [e E₁ A₁, e E₂ A₂]
+
+/-- Code the taint analysis checks, from the registers holding the public
+arguments, the registers `rs` the two runs agree on, and the first four
+stack arguments (with `tag`). -/
+theorem rel_envArg16 {c : Prog isa} {p : Prm} (L : Lay p) {τ₁ τ₂ : State} (E₁ : Env p τ₁) (E₂ : Env p τ₂)
+    (A₁ : Args p τ₁.mem) (A₂ : Args p τ₂.mem) (rs : List Reg)
+    (hr : ∀ r ∈ rs, τ₁.gpr r = τ₂.gpr r)
+    (hc : ∃ h, (VG.Taint.check VG.Arm.taint (argTaint (pubRegs rs) 16) c h).isSome = true) :
+    RelCT isa (Eq2 τ₁ τ₂) c TT := by
+  have spf := L.spf
+  have hw : ∀ {τ : State}, Env p τ →
+      τ.sp.toNat + 16 ≤ 2 ^ 32 ∧ ∀ r ∈ τ.wr, Region.Disjoint ⟨State.addr τ.sp, 16⟩ r := fun E =>
+    ⟨by rw [E.sp]; omega, fun r hr => by rw [E.sp]; exact (E.perm.argw r hr).sub_left (Region.sub_prefix (by decide))⟩
+  exact rel_arg (pubRegs rs) 16 (fun r h => by
+    rcases List.mem_append.mp h with h | h
+    · exact E₁.agree E₂ r h
+    · exact hr r h) (E₁.sp_eq E₂) (hw E₁) (hw E₂) (argByte_eq16 L E₁ E₂ A₁ A₂) hc
+
 end VG.Proof.AesGcmSiv.Arm

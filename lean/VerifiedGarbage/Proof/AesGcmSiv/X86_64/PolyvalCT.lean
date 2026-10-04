@@ -88,8 +88,8 @@ theorem chunkPre_wp {K W SP : Addr} (L : Lay K W SP) {R : Nat} {N A D : Addr} {a
       (.seq (.ite .b (.block [.mov .r14 (.reg .rbx)]) (.block []))
       (.seq (.block (([.mov .rsi (.reg .r12)] : List Instr) ++ ptr .rdi .r15 revO))
       (.seq revLoop (.block (ghArgs ++ ptr .rdx .r15 revO ++ ([.mov .rcx (.reg .r14)] : List Instr))))))) t
-      fun t₅ => GhCall t₅ (W + BitVec.ofNat 64 64) (W + BitVec.ofNat 64 80) (W + BitVec.ofNat 64 768)
-        (W + BitVec.ofNat 64 1792) (min (b - d) 64) ∧ t₅.gpr .rsp = SP ∧
+      fun t₅ => GhCall t₅ (W + BitVec.ofNat 64 64) (W + BitVec.ofNat 64 80) (W + BitVec.ofNat 64 488)
+        (W + BitVec.ofNat 64 1512) (min (b - d) 64) ∧ t₅.gpr .rsp = SP ∧
         AMid K W SP R N A D al n Q b nr d (min (b - d) 64) t₅ := by
   have hQ : Buf K W SP t (Q + BitVec.ofNat 64 (16 * d)) (16 * (b - d)) := I.buf.slice (by omega)
   refine WP.mono (chunkPre_ok L I.one.env (by omega) hQ I.r12 I.rbx) fun t₅ Pr => ⟨Pr.call, Pr.env.rsp, ?_, Pr.r14⟩
@@ -100,7 +100,7 @@ theorem chunkPre_wp {K W SP : Addr} (L : Lay K W SP) {R : Nat} {N A D : Addr} {a
 
 theorem chunkCalled_wp (v : GcmImpl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} {N A D : Addr} {al n : Nat}
     {Q : Addr} {b nr d k : Nat} {t : State} (h : GhCall t (W + BitVec.ofNat 64 64) (W + BitVec.ofNat 64 80)
-      (W + BitVec.ofNat 64 768) (W + BitVec.ofNat 64 1792) k ∧ t.gpr .rsp = SP ∧
+      (W + BitVec.ofNat 64 488) (W + BitVec.ofNat 64 1512) k ∧ t.gpr .rsp = SP ∧
       AMid K W SP R N A D al n Q b nr d k t) :
     WP isa (.call v.gh.fn.name v.gh.fn.code) t (AMid K W SP R N A D al n Q b nr d k) := by
   obtain ⟨gc, hsp, M⟩ := h
@@ -153,7 +153,7 @@ theorem chunkEnd_check : ∃ hc, (taint.check (sivT [.r12, .rbx, .rbp, .r14])
 
 /-- A chunk, in two runs after the same blocks. -/
 theorem chunk_rel (v : GcmImpl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} {N A D : Addr} {al n : Nat}
-    (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 4096⟩) (hn : n ≤ 2 ^ 64) {Q : Addr} {b nr d : Nat} (hd : d < b) :
+    (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 3816⟩) (hn : n ≤ 2 ^ 64) {Q : Addr} {b nr d : Nat} (hd : d < b) :
     RelCT isa (fun t₁ t₂ => AInv K W SP R N A D al n Q b nr d t₁ ∧ AInv K W SP R N A D al n Q b nr d t₂)
       (absorbChunk v.callees)
       fun t₁ t₂ => (AInv K W SP R N A D al n Q b nr (d + min (b - d) 64) t₁ ∧
@@ -163,18 +163,18 @@ theorem chunk_rel (v : GcmImpl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} {N A 
   refine rel_assoc5 ?_
   have r₁ := (rel_taintC [.r12, .rbx, .rbp] (P := fun t₁ t₂ => AInv K W SP R N A D al n Q b nr d t₁ ∧
       AInv K W SP R N A D al n Q b nr d t₂) hDW hn (fun t₁ t₂ h => h.1.agree h.2) chunkPre_check).wp
-    (F₁ := fun (t₅ : State) => GhCall t₅ (W + BitVec.ofNat 64 64) (W + BitVec.ofNat 64 80) (W + BitVec.ofNat 64 768)
-        (W + BitVec.ofNat 64 1792) (min (b - d) 64) ∧ t₅.gpr .rsp = SP ∧
+    (F₁ := fun (t₅ : State) => GhCall t₅ (W + BitVec.ofNat 64 64) (W + BitVec.ofNat 64 80) (W + BitVec.ofNat 64 488)
+        (W + BitVec.ofNat 64 1512) (min (b - d) 64) ∧ t₅.gpr .rsp = SP ∧
         AMid K W SP R N A D al n Q b nr d (min (b - d) 64) t₅)
-    (F₂ := fun (t₅ : State) => GhCall t₅ (W + BitVec.ofNat 64 64) (W + BitVec.ofNat 64 80) (W + BitVec.ofNat 64 768)
-        (W + BitVec.ofNat 64 1792) (min (b - d) 64) ∧ t₅.gpr .rsp = SP ∧
+    (F₂ := fun (t₅ : State) => GhCall t₅ (W + BitVec.ofNat 64 64) (W + BitVec.ofNat 64 80) (W + BitVec.ofNat 64 488)
+        (W + BitVec.ofNat 64 1512) (min (b - d) 64) ∧ t₅.gpr .rsp = SP ∧
         AMid K W SP R N A D al n Q b nr d (min (b - d) 64) t₅)
     fun t₁ t₂ h => ⟨chunkPre_wp L hd h.1, chunkPre_wp L hd h.2⟩
   have r₂ := (gh_rel v.gh (P := fun t₁ t₂ => True ∧ (GhCall t₁ (W + BitVec.ofNat 64 64) (W + BitVec.ofNat 64 80)
-        (W + BitVec.ofNat 64 768) (W + BitVec.ofNat 64 1792) (min (b - d) 64) ∧ t₁.gpr .rsp = SP ∧
+        (W + BitVec.ofNat 64 488) (W + BitVec.ofNat 64 1512) (min (b - d) 64) ∧ t₁.gpr .rsp = SP ∧
         AMid K W SP R N A D al n Q b nr d (min (b - d) 64) t₁) ∧
-      (GhCall t₂ (W + BitVec.ofNat 64 64) (W + BitVec.ofNat 64 80) (W + BitVec.ofNat 64 768)
-        (W + BitVec.ofNat 64 1792) (min (b - d) 64) ∧ t₂.gpr .rsp = SP ∧
+      (GhCall t₂ (W + BitVec.ofNat 64 64) (W + BitVec.ofNat 64 80) (W + BitVec.ofNat 64 488)
+        (W + BitVec.ofNat 64 1512) (min (b - d) 64) ∧ t₂.gpr .rsp = SP ∧
         AMid K W SP R N A D al n Q b nr d (min (b - d) 64) t₂))
     fun t₁ t₂ h => ⟨_, _, _, _, _, h.2.1.1, h.2.2.1, by rw [h.2.1.2.1, h.2.2.2.1]⟩).wp
     (F₁ := AMid K W SP R N A D al n Q b nr d (min (b - d) 64))
@@ -192,7 +192,7 @@ theorem chunk_rel (v : GcmImpl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} {N A 
 
 /-- The chunks, in two runs. -/
 theorem chunks_rel (v : GcmImpl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} {N A D : Addr} {al n : Nat}
-    (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 4096⟩) (hn : n ≤ 2 ^ 64) {Q : Addr} {b nr : Nat} (hb : 1 ≤ b) :
+    (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 3816⟩) (hn : n ≤ 2 ^ 64) {Q : Addr} {b nr : Nat} (hb : 1 ≤ b) :
     RelCT isa (fun t₁ t₂ => AInv K W SP R N A D al n Q b nr 0 t₁ ∧ AInv K W SP R N A D al n Q b nr 0 t₂)
       (.loop (absorbChunk v.callees) .ne)
       fun t₁ t₂ => AInv K W SP R N A D al n Q b nr b t₁ ∧ AInv K W SP R N A D al n Q b nr b t₂ := by
@@ -225,21 +225,21 @@ theorem tailPre_check : ∃ hc, (taint.check (sivT [.r12, .rbx, .rbp])
 
 /-- The last bytes, in two runs. -/
 theorem absTail_rel (v : GcmImpl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} {N A D : Addr} {al n : Nat}
-    (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 4096⟩) (hn : n ≤ 2 ^ 64) {Q : Addr} {b nr : Nat} (hr1 : 1 ≤ nr)
+    (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 3816⟩) (hn : n ≤ 2 ^ 64) {Q : Addr} {b nr : Nat} (hr1 : 1 ≤ nr)
     (hr : nr < 16) :
     RelCT isa (fun t₁ t₂ => AInv K W SP R N A D al n Q b nr b t₁ ∧ AInv K W SP R N A D al n Q b nr b t₂)
       (absorbTail v.callees) fun _ _ => True := by
   have pre : ∀ {t : State}, AInv K W SP R N A D al n Q b nr b t → WP isa _ t fun t₃ =>
-      GhCall t₃ (W + BitVec.ofNat 64 64) (W + BitVec.ofNat 64 80) (W + BitVec.ofNat 64 768)
-        (W + BitVec.ofNat 64 1792) 1 ∧ t₃.gpr .rsp = SP := fun I =>
+      GhCall t₃ (W + BitVec.ofNat 64 64) (W + BitVec.ofNat 64 80) (W + BitVec.ofNat 64 488)
+        (W + BitVec.ofNat 64 1512) 1 ∧ t₃.gpr .rsp = SP := fun I =>
     WP.mono (tailPre_ok L I.one.env hr1 hr I.res I.r12 I.rbp) fun _ Tp => ⟨Tp.call, Tp.env.rsp⟩
   refine rel_assoc3 (RelCT.seq ((rel_taintC [.r12, .rbx, .rbp] (P := fun t₁ t₂ =>
       AInv K W SP R N A D al n Q b nr b t₁ ∧ AInv K W SP R N A D al n Q b nr b t₂) hDW hn
       (fun t₁ t₂ h => h.1.agree h.2) tailPre_check).wp
-    (F₁ := fun (t₃ : State) => GhCall t₃ (W + BitVec.ofNat 64 64) (W + BitVec.ofNat 64 80) (W + BitVec.ofNat 64 768)
-        (W + BitVec.ofNat 64 1792) 1 ∧ t₃.gpr .rsp = SP)
-    (F₂ := fun (t₃ : State) => GhCall t₃ (W + BitVec.ofNat 64 64) (W + BitVec.ofNat 64 80) (W + BitVec.ofNat 64 768)
-        (W + BitVec.ofNat 64 1792) 1 ∧ t₃.gpr .rsp = SP)
+    (F₁ := fun (t₃ : State) => GhCall t₃ (W + BitVec.ofNat 64 64) (W + BitVec.ofNat 64 80) (W + BitVec.ofNat 64 488)
+        (W + BitVec.ofNat 64 1512) 1 ∧ t₃.gpr .rsp = SP)
+    (F₂ := fun (t₃ : State) => GhCall t₃ (W + BitVec.ofNat 64 64) (W + BitVec.ofNat 64 80) (W + BitVec.ofNat 64 488)
+        (W + BitVec.ofNat 64 1512) 1 ∧ t₃.gpr .rsp = SP)
     fun t₁ t₂ h => ⟨pre h.1, pre h.2⟩) ?_)
   exact gh_rel v.gh fun t₁ t₂ h => ⟨_, _, _, _, _, h.2.1.1, h.2.2.1, by rw [h.2.1.2, h.2.2.2]⟩
 
@@ -289,7 +289,7 @@ theorem absTest_wp {K W SP : Addr} {R : Nat} {N A D : Addr} {al n : Nat} {Q : Ad
 
 /-- `absorb`, in two runs with the same public arguments. -/
 theorem absorb_rel (v : GcmImpl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} {N A D : Addr} {al n : Nat}
-    (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 4096⟩) (hn : n ≤ 2 ^ 64) {Q : Addr} {nb : Nat} {P : State → State → Prop}
+    (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 3816⟩) (hn : n ≤ 2 ^ 64) {Q : Addr} {nb : Nat} {P : State → State → Prop}
     (hP : ∀ t₁ t₂, P t₁ t₂ → AbsIn K W SP R N A D al n Q nb t₁ ∧ AbsIn K W SP R N A D al n Q nb t₂) :
     RelCT isa P (absorb v.callees) fun _ _ => True := by
   have r₁ := (rel_taintC [.r12, .rbp] hDW hn (fun t₁ t₂ h => ⟨(hP _ _ h).1.one, (hP _ _ h).2.one, fun r hr => by
@@ -354,7 +354,7 @@ theorem lensArgs_check : ∃ hc, (taint.check (sivT []) (.block (([.mov .rax (.m
 
 /-- `lens`, in two runs with the same public arguments. -/
 theorem lens_rel (v : GcmImpl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} {N A D : Addr} {al n : Nat}
-    (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 4096⟩) (hn : n ≤ 2 ^ 64) (hal : al < 2 ^ 64) (hn' : n < 2 ^ 64)
+    (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 3816⟩) (hn : n ≤ 2 ^ 64) (hal : al < 2 ^ 64) (hn' : n < 2 ^ 64)
     {P : State → State → Prop}
     (hP : ∀ t₁ t₂, P t₁ t₂ → One K W SP R N A D al n t₁ ∧ One K W SP R N A D al n t₂) :
     RelCT isa P (lens v.callees) fun _ _ => True := by
@@ -364,7 +364,7 @@ theorem lens_rel (v : GcmImpl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} {N A D
       .alu .add .rax (.reg .rax), .alu .add .rax (.reg .rax), .bswap .rax, .store (at_ .r15 (bO + 8)) .rax] :
         List Instr) ++ ghArgs ++ ptr .rdx .r15 bO ++ ([.mov32 .rcx (imm 1)] : List Instr))) t fun t₁ =>
       GhCall t₁ (W + BitVec.ofNat 64 64) (W + BitVec.ofNat 64 80) (W + BitVec.ofNat 64 128)
-        (W + BitVec.ofNat 64 1792) 1 ∧ t₁.gpr .rsp = SP := fun O => by
+        (W + BitVec.ofNat 64 1512) 1 ∧ t₁.gpr .rsp = SP := fun O => by
     obtain ⟨t₁, run₁, -, rdi₁, rsi₁, r8₁, rdx₁, rcx₁, hg₁, hrd₁, hwr₁⟩ := lensArgs_ok O.env O.sl.alen O.sl.len hal hn'
     have E₁ : Env K W SP t₁ := O.env.of_saved hg₁ hrd₁ hwr₁
     exact WP.of_runBlock ⟨t₁, run₁, gargs L E₁ (d := 128) (n := 1) (by decide) (by decide) rdi₁ rsi₁ rdx₁ rcx₁ r8₁,
@@ -372,9 +372,9 @@ theorem lens_rel (v : GcmImpl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} {N A D
   refine RelCT.seq ((rel_taintC [] hDW hn (fun t₁ t₂ h => ⟨(hP _ _ h).1, (hP _ _ h).2, fun _ h => nomatch h⟩)
     lensArgs_check).wp
     (F₁ := fun (t₁ : State) => GhCall t₁ (W + BitVec.ofNat 64 64) (W + BitVec.ofNat 64 80) (W + BitVec.ofNat 64 128)
-        (W + BitVec.ofNat 64 1792) 1 ∧ t₁.gpr .rsp = SP)
+        (W + BitVec.ofNat 64 1512) 1 ∧ t₁.gpr .rsp = SP)
     (F₂ := fun (t₁ : State) => GhCall t₁ (W + BitVec.ofNat 64 64) (W + BitVec.ofNat 64 80) (W + BitVec.ofNat 64 128)
-        (W + BitVec.ofNat 64 1792) 1 ∧ t₁.gpr .rsp = SP)
+        (W + BitVec.ofNat 64 1512) 1 ∧ t₁.gpr .rsp = SP)
     fun t₁ t₂ h => ⟨pre (hP _ _ h).1, pre (hP _ _ h).2⟩) ?_
   exact gh_rel v.gh fun t₁ t₂ h => ⟨_, _, _, _, _, h.2.1.1, h.2.2.1, by rw [h.2.1.2, h.2.2.2]⟩
 
@@ -403,7 +403,7 @@ theorem Bufs.of_eq {K W SP : Addr} {R : Nat} {N A D : Addr} {al n : Nat} {t t' :
 theorem polyBlk_wp {K W SP : Addr} {R : Nat} {N A D : Addr} {al n : Nat} {t : State}
     (h : Bufs K W SP R N A D al n t) {o₁ o₂ : Nat} {Q : Addr} {nb : Nat} (hQ : Buf K W SP t Q nb)
     (h₁ : t.mem.readW (W + BitVec.ofNat 64 o₁) 64 = Q) (h₂ : t.mem.readW (W + BitVec.ofNat 64 o₂) 64 = BitVec.ofNat 64 nb)
-    (ho₁ : o₁ + 8 ≤ 4096) (ho₂ : o₂ + 8 ≤ 4096) :
+    (ho₁ : o₁ + 8 ≤ 3816) (ho₂ : o₂ + 8 ≤ 3816) :
     WP isa (.block [.mov .r12 (.mem (at_ .r15 o₁)), .mov .rbp (.mem (at_ .r15 o₂))]) t
       fun t' => AbsIn K W SP R N A D al n Q nb t' ∧ Bufs K W SP R N A D al n t' := by
   have h15 := h.one.env.r15
@@ -425,7 +425,7 @@ theorem absorb_bufs (v : GcmImpl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} {N 
 
 /-- `polyval`, in two runs with the same public arguments. -/
 theorem polyval_rel (v : GcmImpl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} {N A D : Addr} {al n : Nat}
-    (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 4096⟩) (hn : n ≤ 2 ^ 64) (hal : al < 2 ^ 64) (hn' : n < 2 ^ 64)
+    (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 3816⟩) (hn : n ≤ 2 ^ 64) (hal : al < 2 ^ 64) (hn' : n < 2 ^ 64)
     {P : State → State → Prop}
     (hP : ∀ t₁ t₂, P t₁ t₂ → Bufs K W SP R N A D al n t₁ ∧ Bufs K W SP R N A D al n t₂) :
     RelCT isa P (polyval v.callees) fun _ _ => True := by

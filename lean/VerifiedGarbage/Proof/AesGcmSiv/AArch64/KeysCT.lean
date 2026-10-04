@@ -24,7 +24,7 @@ structure DC (p : Prm) (i : Nat) (t : State) : Prop where
 
 theorem derA_wp {p : Prm} (L : Lay p) {i : Nat} {t : State} (h : DC p i t) :
     WP isa (.block deriveBlock) t fun t₁ =>
-      CtrCall t₁ p.K (p.W + BitVec.ofNat 64 112) (p.W + BitVec.ofNat 64 224) (p.W + BitVec.ofNat 64 2048) p.R 1 ∧
+      CtrCall t₁ p.K (p.W + BitVec.ofNat 64 112) (p.W + BitVec.ofNat 64 224) (p.W + BitVec.ofNat 64 1760) p.R 1 ∧
         DC p i t₁ := by
   obtain ⟨t₁, run₁, -, x0, x1, x2, x3, x4, x5, ho₁, sp₁, rd₁, wr₁⟩ := derArgs_ok h.env h.x27
   have E₁ : Env p t₁ := h.env.keep (fun r hr => ho₁ r (by
@@ -33,7 +33,7 @@ theorem derA_wp {p : Prm} (L : Lay p) {i : Nat} {t : State} (h : DC p i t) :
   exact WP.of_runBlock ⟨t₁, run₁, derCall L E₁ x0 x1 x2 x3 x4 x5, E₁, by rw [ho₁ _ (by decide), h.x27]⟩
 
 theorem derC_wp (v : GcmImpl) {p : Prm} {i : Nat} {t : State}
-    (h : CtrCall t p.K (p.W + BitVec.ofNat 64 112) (p.W + BitVec.ofNat 64 224) (p.W + BitVec.ofNat 64 2048) p.R 1 ∧
+    (h : CtrCall t p.K (p.W + BitVec.ofNat 64 112) (p.W + BitVec.ofNat 64 224) (p.W + BitVec.ofNat 64 1760) p.R 1 ∧
       DC p i t) :
     WP isa (callCtr v.callees) t (DC p i) :=
   WP.mono (ctr_call v.ctr h.1) fun _ P =>
@@ -94,7 +94,7 @@ theorem keys_rel (v : GcmImpl) {p : Prm} (L : Lay p) {σ₁ σ₂ : State} (E₁
     RelCT isa (Eq2 σ₁ σ₂) (keys v.callees) TT := by
   refine rel_seq (derive_rel v L E₁ E₂) (derive_ok v L E₁) (derive_ok v L E₂) fun τ₁ τ₂ D₁ D₂ => ?_
   have wA : ∀ {τ : State}, Env p τ → WP isa (.block expandArgs) τ fun t₁ =>
-      KeyCall t₁ (p.W + BitVec.ofNat 64 32) (p.W + BitVec.ofNat 64 512) (p.W + BitVec.ofNat 64 2048)
+      KeyCall t₁ (p.W + BitVec.ofNat 64 32) (p.W + BitVec.ofNat 64 240) (p.W + BitVec.ofNat 64 1760)
         (Spec.GcmSiv.keyLen p.R) ∧ Env p t₁ := fun E => by
     obtain ⟨t₁, run₁, kc, E', -⟩ := expArgs_ok L E
     exact WP.of_runBlock ⟨t₁, run₁, kc, E'⟩
