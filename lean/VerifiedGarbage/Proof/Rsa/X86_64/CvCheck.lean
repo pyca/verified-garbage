@@ -439,4 +439,124 @@ theorem cvInv_ok {I : CvIn} {m₀ : Mem} {s : State} (h : CvS I m₀ s) (L : CvL
         ot o₃ (Nat.le_refl _) (by decide) (by decide), ot o₂ (by omega) (by decide) (by decide),
         ot o₁ (Nat.le_refl _) (by decide) (by decide)]
 
+/-- `divisor j ++ [divmod]`: `[aV] := d mod ([j] - 1)`, for an odd `[j]`. -/
+theorem cvDivPart_ok {I : CvIn} {m₀ : Mem} {s : State} (h : CvS I m₀ s) (L : CvLens I) {j : Nat} (hj : j = aP ∨ j = aQ) :
+    WP isa (seqs (divisor j ++ [divmod aU aV aC aT])) s fun t =>
+      CvS I m₀ t ∧ mword t.mem I.B = mword s.mem I.B ∧
+      (wv s.mem I.B (slot (wk I.k) j) (wk I.k) % 2 = 1 → 1 < wv s.mem I.B (slot (wk I.k) j) (wk I.k) →
+        wv t.mem I.B (slot (wk I.k) aV) (wk I.k + 1) =
+          wv s.mem I.B (slot (wk I.k) aD) (wk I.k) % (wv s.mem I.B (slot (wk I.k) j) (wk I.k) - 1)) ∧
+      ∀ i, i = aP ∨ i = aQ ∨ i = aD ∨ i = aX₂ →
+        wv t.mem I.B (slot (wk I.k) i) (wk I.k) = wv s.mem I.B (slot (wk I.k) i) (wk I.k) := by
+  have hn := h.ws.scr.nowrap
+  have hZ := h.ws.hZ
+  have h256 := h.ws.h256
+  have k1 := L.k1
+  have eM : Impl.Bignum.X86_64.Public.sMask = 22 := rfl
+  have hj16 : j < 16 := by rcases hj with rfl | rfl <;> decide
+  have hjC : j ≠ aC := by rcases hj with rfl | rfl <;> decide
+  have hjU : j ≠ aU := by rcases hj with rfl | rfl <;> decide
+  have hmw : ∀ {m m' : Mem} {i L' : Nat}, Outside I.B (slot (wk I.k) i) L' m m' → L' ≤ 8 * (wk I.k + 2) →
+      mword m' I.B = mword m I.B := fun {_ _ i _} o _ =>
+    o.word (Or.inl (by have := hdr_lt_slot (wk I.k) i (show Impl.Bignum.X86_64.Public.sMask < 32 by decide); omega))
+      (by omega)
+  have ot : ∀ {m m' : Mem} {j i Ln : Nat}, Outside I.B (slot (wk I.k) j) Ln m m' → Ln ≤ 8 * (wk I.k + 2) → i ≠ j →
+      i < 16 → wv m' I.B (slot (wk I.k) i) (wk I.k) = wv m I.B (slot (wk I.k) i) (wk I.k) :=
+    fun o hL hij hi => outside_arr o hL hij (by omega) hi hZ hn
+  simp only [divisor, List.cons_append, List.nil_append]
+  -- `[c] := [j]`, minus one.
+  refine WP.seq (WP.mono (zeroA_ok h.ws (j := aC) (by decide)) fun s₁ ⟨_, o₁, k₁⟩ => ?_)
+  have h₁ := h.arr (by decide) (Nat.le_refl _) o₁ k₁ (by decide)
+  refine WP.seq (WP.mono (copyA_ok h₁.ws (o := aC) (a := j) (by decide) hj16 (Ne.symm hjC)) fun s₂ ⟨c₂, o₂, k₂⟩ => ?_)
+  have h₂ := h₁.arr (by decide) (by omega) o₂ k₂ (by decide)
+  rw [ot o₁ (Nat.le_refl _) hjC hj16] at c₂
+  -- The low word.
+  have sC := h.ws.sl (j := aC) (by decide)
+  refine WP.seq (WP.mono (Q := fun (t : State) => t.mem = s₂.mem.writeW (off I.B (slot (wk I.k) aC))
+      (Bignum.X86_64.word s₂.mem I.B (slot (wk I.k) aC) - 1) ∧ Keep [.r12, .r9, .rbx, .rax] s₂ t) ?_
+    fun s₃ ⟨m₃, k₃⟩ => ?_)
+  · rw [List.append_assoc, WP.block_append_iff]
+    refine WP.mono h₂.ws.ws_ok fun t₁ ⟨_, e9, n₁, j₁⟩ => WP.block_append_iff.mpr ?_
+    refine WP.mono (base_ok aC (r := .rbx) (by decide) ((j₁.gpr (by decide)).trans h₂.ws.rdi) e9)
+      fun t₂ ⟨hbx, n₂, j₂⟩ => ?_
+    have hs₂ := h₂.ws.scr.congr (j₁.trans j₂).2.2
+    refine WP.mono (WP.keep [.rax] (Q := fun t => t.mem = s₂.mem.writeW (off I.B (slot (wk I.k) aC))
+      (Bignum.X86_64.word s₂.mem I.B (slot (wk I.k) aC) - 1)) (by
+      xrun [State.ea, at0, hbx, show BitVec.ofInt 64 0 = 0#64 from rfl, BitVec.add_zero,
+        hs₂.ld (d := slot (wk I.k) aC) (by omega), hs₂.st (d := slot (wk I.k) aC) (by omega), n₂, n₁]) rfl)
+      fun t ⟨mt, j₃⟩ => ⟨mt, ((j₁.trans j₂).trans j₃).mono (by simp)⟩
+  have o₃ := writeW_outside s₂.mem I.B (Bignum.X86_64.word s₂.mem I.B (slot (wk I.k) aC) - 1)
+    (d := slot (wk I.k) aC) (by omega)
+  rw [← m₃] at o₃
+  have h₃ := h₂.arr (by decide) (by omega) o₃ k₃ (by decide)
+  -- `[c] = [j] - 1` for an odd `[j]`.
+  have vC₃ : wv s₂.mem I.B (slot (wk I.k) aC) (wk I.k) % 2 = 1 →
+      wv s₃.mem I.B (slot (wk I.k) aC) (wk I.k) = wv s₂.mem I.B (slot (wk I.k) aC) (wk I.k) - 1 := by
+    have w1 := h.ws.w1
+    have e3 := wv_low (m := s₃.mem) (B := I.B) (e := slot (wk I.k) aC) (w := wk I.k) (by omega)
+    have e2 := wv_low (m := s₂.mem) (B := I.B) (e := slot (wk I.k) aC) (w := wk I.k) (by omega)
+    have hw3 : Bignum.X86_64.word s₃.mem I.B (slot (wk I.k) aC) =
+        Bignum.X86_64.word s₂.mem I.B (slot (wk I.k) aC) - 1 := by
+      rw [m₃, word_writeW_self]
+    have hup : wv s₃.mem I.B (slot (wk I.k) aC + 8) (wk I.k - 1) = wv s₂.mem I.B (slot (wk I.k) aC + 8) (wk I.k - 1) := by
+      rw [m₃]; exact (writeW_outside s₂.mem I.B _ (by omega)).wv (Or.inr (by omega)) (by omega)
+    intro ho
+    rw [e2] at ho ⊢
+    have hodd : (Bignum.X86_64.word s₂.mem I.B (slot (wk I.k) aC)).toNat % 2 = 1 := by omega
+    have hsub : (Bignum.X86_64.word s₂.mem I.B (slot (wk I.k) aC) - 1).toNat =
+        (Bignum.X86_64.word s₂.mem I.B (slot (wk I.k) aC)).toNat - 1 := by
+      rw [BitVec.toNat_sub_of_le (by rw [BitVec.le_def]; simp; omega)]; rfl
+    rw [e3, hup, hw3, hsub]
+    omega
+  rw [c₂] at vC₃
+  -- `[u] := d`.
+  refine WP.seq (WP.mono (zeroA_ok h₃.ws (j := aU) (by decide)) fun s₄ ⟨_, o₄, k₄⟩ => ?_)
+  have h₄ := h₃.arr (by decide) (Nat.le_refl _) o₄ k₄ (by decide)
+  refine WP.seq (WP.mono (copyA_ok h₄.ws (o := aU) (a := aD) (by decide) (by decide) (by decide)) fun s₅ ⟨c₅, o₅, k₅⟩ => ?_)
+  have h₅ := h₄.arr (by decide) (by omega) o₅ k₅ (by decide)
+  -- `divmod`.
+  simp only [seqs]
+  refine WP.mono (divmod_ok h₅.ws.scr h₅.ws.rdi h₅.ws.hw h₅.ws.hS (by have := h₅.ws.w1; omega) h₅.ws.w2 hZ
+    (iQ := aU) (iR := aV) (iD := aC) (iT := aT) (by decide) (by decide) (by decide) (by decide) (by decide)
+    (by decide) (by decide) (by decide) (by decide) (by decide)) fun t ⟨_, f₆, k₆, hv₆⟩ => ?_
+  have ht := h₅.step f₆ (fun r hr => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl <;> exact Mut.ofSlot _ _ _) (fun r hr => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl <;> dsimp only <;> exact h.ws.sl (by decide)) k₆ (by decide)
+  have f6 : ∀ i, i < 16 → i ≠ aU → i ≠ aV → i ≠ aT →
+      wv t.mem I.B (slot (wk I.k) i) (wk I.k) = wv s₅.mem I.B (slot (wk I.k) i) (wk I.k) := fun i hi h1 h2 h3 =>
+    f₆.wv_eq (fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl <;> dsimp only
+      · have := slot_far (w := wk I.k) h1; omega
+      · have := slot_far (w := wk I.k) h2; omega
+      · have := slot_far (w := wk I.k) h3; omega) (by have := h.ws.sl hi; omega)
+  have back : ∀ i, i < 16 → i ≠ aC → i ≠ aU → wv s₅.mem I.B (slot (wk I.k) i) (wk I.k) = wv s.mem I.B (slot (wk I.k) i) (wk I.k) :=
+    fun i hi h1 h2 => by
+      rw [ot o₅ (by omega) h2 hi, ot o₄ (Nat.le_refl _) h2 hi, ot o₃ (by omega) h1 hi, ot o₂ (by omega) h1 hi,
+        ot o₁ (Nat.le_refl _) h1 hi]
+  refine ⟨ht, ?_, fun ho h1 => ?_, fun i hi => ?_⟩
+  · have e6 : mword t.mem I.B = mword s₅.mem I.B := f₆.word_eq (fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl <;> dsimp only
+      · have := hdr_lt_slot (wk I.k) aU (show Impl.Bignum.X86_64.Public.sMask < 32 by decide); omega
+      · have := hdr_lt_slot (wk I.k) aV (show Impl.Bignum.X86_64.Public.sMask < 32 by decide); omega
+      · have := hdr_lt_slot (wk I.k) aT (show Impl.Bignum.X86_64.Public.sMask < 32 by decide); omega) (by omega)
+    exact e6.trans ((hmw o₅ (by omega)).trans ((hmw o₄ (Nat.le_refl _)).trans ((hmw o₃ (by omega)).trans
+      ((hmw o₂ (by omega)).trans (hmw o₁ (Nat.le_refl _))))))
+  · have hC : wv s₅.mem I.B (slot (wk I.k) aC) (wk I.k) = wv s.mem I.B (slot (wk I.k) j) (wk I.k) - 1 := by
+      rw [ot o₅ (by omega) (by decide) (by decide), ot o₄ (Nat.le_refl _) (by decide) (by decide)]
+      exact vC₃ ho
+    have hU : wv s₅.mem I.B (slot (wk I.k) aU) (wk I.k) = wv s.mem I.B (slot (wk I.k) aD) (wk I.k) := by
+      rw [c₅, ot o₄ (Nat.le_refl _) (by decide) (by decide), ot o₃ (by omega) (by decide) (by decide),
+        ot o₂ (by omega) (by decide) (by decide), ot o₁ (Nat.le_refl _) (by decide) (by decide)]
+    have hpos : 0 < wv s₅.mem I.B (slot (wk I.k) aC) (wk I.k) := by
+      rw [hC]; omega
+    rw [(hv₆ hpos).1, hU, hC]
+  · have hi16 : i < 16 := by rcases hi with rfl | rfl | rfl | rfl <;> decide
+    rw [f6 i hi16 (by rcases hi with rfl | rfl | rfl | rfl <;> decide) (by rcases hi with rfl | rfl | rfl | rfl <;> decide)
+      (by rcases hi with rfl | rfl | rfl | rfl <;> decide),
+      back i hi16 (by rcases hi with rfl | rfl | rfl | rfl <;> decide) (by rcases hi with rfl | rfl | rfl | rfl <;> decide)]
+
 end VG.Proof.Rsa.X86_64

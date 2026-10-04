@@ -312,10 +312,10 @@ def invPart : List (Prog isa) :=
   [zeroA aU, copyA aU aQ, zeroA aV, copyA aV aP, zeroA aX₁, .block (setOneA aX₁), zeroA aX₂,
     inverse aU aV aX₁ aX₂ aP aT, zeroA aC, .block (setOneA aC)] ++ eqA aV aC ++ [.block andZero]
 
-/-- `[aC] := [j]` with its low bit cleared, then `[aU] := d`. -/
+/-- `[aC] := [j] - 1` (for an odd `[j]`, whose low word is not zero), then `[aU] := d`. -/
 def divisor (j : Nat) : List (Prog isa) :=
   [zeroA aC, copyA aC j,
-    .block (ws ++ base aC .rbx ++ [.mov .rax (.mem (at0 .rbx)), .alu .and .rax (.imm (BitVec.ofInt 32 (-2))),
+    .block (ws ++ base aC .rbx ++ [.mov .rax (.mem (at0 .rbx)), .alu .sub .rax (.imm 1),
       .store (at0 .rbx) .rax]),
     zeroA aU, copyA aU aD]
 
