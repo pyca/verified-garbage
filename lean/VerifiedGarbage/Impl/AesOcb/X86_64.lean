@@ -201,7 +201,7 @@ def offset0 : List Instr :=
    .alu .and .rcx (.reg .r8), mvr .r8 .rdx, .shift .shr .r8 56, .alu .or .rcx (.reg .r8),
    .alu .xor .rcx (.reg .rax), ld .rbx .r15 botO] ++
   stage 0 1 ++ stage 1 2 ++ stage 2 4 ++ stage 3 8 ++ stage 4 16 ++ stage 5 32 ++
-  [.bswap .rax, st .r15 ofsO .rax, st .r15 o0O .rax, .bswap .rdx, st .r15 (ofsO + 8) .rdx,
+  [.bswap .rax, .bswap .rdx, st .r15 ofsO .rax, st .r15 (ofsO + 8) .rdx, st .r15 o0O .rax,
    st .r15 (o0O + 8) .rdx]
 
 variable (c : Callees)
