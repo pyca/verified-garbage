@@ -32,14 +32,17 @@ def partner (x : Nat) : Option Nat :=
   | some q => some (rWord q)
   | none => ((List.range 32).find? (fun q => rWord q == x)).map lWord
 
+-- The table, once, which the checks below and the targets' read (`lit_decide`).
+materialize_table partner 128
+
 /-- Exchange the halves. -/
 def swapW (W : Nat → BitVec w) : Nat → BitVec w := fun x =>
   match partner x with
   | some y => W y
   | none => W x
 
-theorem partner_l : ∀ q < 32, partner (lWord q) = some (rWord q) := by decide +kernel
-theorem partner_r : ∀ q < 32, partner (rWord q) = some (lWord q) := by decide +kernel
+theorem partner_l : ∀ q < 32, partner (lWord q) = some (rWord q) := by lit_decide
+theorem partner_r : ∀ q < 32, partner (rWord q) = some (lWord q) := by lit_decide
 
 theorem swapW_half_l (W : Nat → BitVec w) (b : Nat) : half lWord (swapW W) b = half rWord W b := by
   apply BitVec.eq_of_getLsbD_eq

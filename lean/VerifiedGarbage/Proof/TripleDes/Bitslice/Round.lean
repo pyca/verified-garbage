@@ -57,14 +57,17 @@ theorem steps_succ (ρ : Role) (k : BitVec 48) (n : Nat) (W : Nat → BitVec w) 
 /-- The S-box output that is bit `q` of `f`: S-box `src q / 4`, bit `src q % 4`. -/
 def src (q : Nat) : Nat := ((List.range 32).find? fun x => outBit (x / 4) (x % 4) == q).getD 0
 
-theorem src_spec : ∀ q < 32, src q < 32 ∧ outBit (src q / 4) (src q % 4) = q := by decide +kernel
+-- The table, once, which the checks below read (`lit_decide`).
+materialize_table src 32
+
+theorem src_spec : ∀ q < 32, src q < 32 ∧ outBit (src q / 4) (src q % 4) = q := by lit_decide
 
 theorem outIdx_read : ∀ ρ : Role, ∀ j < 8, ∀ q < 32, outIdx ρ j (readWord ρ q) = none := by
-  intro ρ; cases ρ <;> decide +kernel
+  intro ρ; cases ρ <;> lit_decide
 
 theorem outIdx_write : ∀ ρ : Role, ∀ j < 8, ∀ q < 32,
     outIdx ρ j (writeWord ρ q) = if j = src q / 4 then some (src q % 4) else none := by
-  intro ρ; cases ρ <;> decide +kernel
+  intro ρ; cases ρ <;> lit_decide
 
 theorem step_read (ρ : Role) (k : BitVec 48) {j q : Nat} (hj : j < 8) (hq : q < 32)
     (W : Nat → BitVec w) : step ρ k j W (readWord ρ q) = W (readWord ρ q) := by
@@ -178,7 +181,7 @@ theorem step_congr (ρ : Role) (k : BitVec 48) {j : Nat} (hj : j < 8) {W W' : Na
   split
   · rename_i i _
     rw [hx]
-    congr 1
+    refine congrArg (W' x ^^^ ·) ?_
     apply BitVec.eq_of_getLsbD_eq
     intro b hb
     simp only [sboxOut, getLsbD_ofBits, hb, decide_true, Bool.true_and, sboxIn_congr ρ k hj hW b]
@@ -187,7 +190,7 @@ theorem step_congr (ρ : Role) (k : BitVec 48) {j : Nat} (hj : j < 8) {W W' : Na
 theorem outIdx_lt64 : ∀ ρ : Role, ∀ j < 8, ∀ x, outIdx ρ j x ≠ none → x < 64 := by
   intro ρ j hj x hx
   have key : ∀ ρ : Role, ∀ j < 8, ∀ i < 4, writeWord ρ (outBit j i) < 64 := by
-    intro ρ; cases ρ <;> decide +kernel
+    intro ρ; cases ρ <;> lit_decide
   obtain ⟨i, hi⟩ := Option.ne_none_iff_exists'.mp hx
   have hm := List.find?_some hi
   have hl := List.mem_range.mp (List.mem_of_find?_eq_some hi)
@@ -203,16 +206,7 @@ theorem steps_congr (ρ : Role) (k : BitVec 48) {n : Nat} (hn : n ≤ 8) {W W' :
     intro x hx
     have ih' := ih (by omega)
     rw [steps_succ, steps_succ]
-    simp only [step]
-    split
-    · rename_i i _
-      rw [ih' x hx]
-      congr 1
-      apply BitVec.eq_of_getLsbD_eq
-      intro b hb
-      simp only [sboxOut, getLsbD_ofBits, hb, decide_true, Bool.true_and,
-        sboxIn_congr ρ k (by omega : n < 8) ih' b]
-    · exact ih' x hx
+    exact step_congr ρ k (by omega) ih' (ih' x hx)
 
 theorem steps_high (ρ : Role) (k : BitVec 48) {n : Nat} (hn : n ≤ 8) (W : Nat → BitVec w)
     {x : Nat} (hx : 64 ≤ x) : steps ρ k n W x = W x := by

@@ -1,3 +1,4 @@
+import VerifiedGarbage.Proof.TripleDes.Bitslice.LayoutLit
 import VerifiedGarbage.Impl.TripleDes.AArch64.Bitsliced
 import VerifiedGarbage.Proof.Framework.AArch64.Lit
 
@@ -6,6 +7,19 @@ import VerifiedGarbage.Proof.Framework.AArch64.Lit
 namespace VG.Impl.TripleDes.AArch64.BitsliceNeon
 
 open VG.AArch64
+
+-- The circuits' code and output registers, once, which the literals below,
+-- `outRegsTable` and the functions' literals (`Lit`) read rather than run the
+-- register allocator again.
+materialize_table sboxCompiled 8
+
+-- The transposition, once.
+materialize_value transpose
+
+-- Pairs of rounds and the exchange of the halves, once.
+materialize_value roundPairEncrypt := roundPair .encrypt
+materialize_value roundPairDecrypt := roundPair .decrypt
+materialize_value swapHalves
 
 def sbox0 : Prog isa := .block (sboxCode 0)
 def sbox1 : Prog isa := .block (sboxCode 1)

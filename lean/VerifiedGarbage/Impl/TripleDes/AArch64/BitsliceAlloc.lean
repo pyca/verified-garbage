@@ -35,9 +35,15 @@ def regOf (a : Alloc) (v : Nat) : VReg := ((a.regs.find? (·.2 == v)).map (·.1)
 
 def usesVar (v : Nat) (g : Gate) : Bool := g.a == v || g.b == v
 
+/-- The variables the gates read (`usesVar`), as a set of bits, which the
+kernel builds once for each gate's `rest` rather than comparing variables
+for each query. -/
+def readSet (rest : List Gate) : Nat :=
+  rest.foldl (fun t g => t ||| 2 ^ g.a ||| 2 ^ g.b) 0
+
 /-- Whether the variable is used by a later gate or is an output. -/
 def live (rest : List Gate) (outs : List Nat) (v : Nat) : Bool :=
-  outs.contains v || rest.any (usesVar v)
+  outs.contains v || (readSet rest).testBit v
 
 /-- Forget a dead variable, freeing its register. -/
 def kill (a : Alloc) (v : Nat) : Alloc :=
