@@ -1,4 +1,5 @@
 import VerifiedGarbage.Proof.MlKem.AArch64.Wp
+import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Impl.MlKem.AArch64.Ntt
 
 /-!
@@ -19,15 +20,15 @@ open VG VG.AArch64 VG.Impl.MlKem.AArch64
 
 theorem getLsbD_read (m : Mem) : ∀ (n : Nat) (a : Addr) (i : Nat), i < 8 * n →
     (m.read a n).getLsbD i = (m (a + BitVec.ofNat 64 (i / 8))).getLsbD (i % 8)
-  | 0, _, _, h => absurd h (by omega)
+  | 0, _, _, h => absurd h (by bdd_omega)
   | n + 1, a, i, h => by
     simp only [Mem.read, BitVec.getLsbD_append]
     by_cases hi : i < 8
     · simp [hi, Nat.div_eq_of_lt hi, Nat.mod_eq_of_lt hi]
     · simp only [hi, ite_false]
-      rw [getLsbD_read m n (a + 1) (i - 8) (by omega)]
-      have e1 : (i - 8) / 8 = i / 8 - 1 := by omega
-      have e2 : (i - 8) % 8 = i % 8 := by omega
+      rw [getLsbD_read m n (a + 1) (i - 8) (by bdd_omega)]
+      have e1 : (i - 8) / 8 = i / 8 - 1 := by bdd_omega
+      have e2 : (i - 8) % 8 = i % 8 := by bdd_omega
       rw [e1, e2]
       congr 2
       rw [BitVec.add_assoc]; congr 1
@@ -39,26 +40,26 @@ theorem getLsbD_readW32 (m : Mem) (a : Addr) (k : Nat) {j : Nat} (hj : j < 32) :
     (m.readW (a + BitVec.ofNat 64 (4 * k)) 32).getLsbD j =
       (m (a + BitVec.ofNat 64 ((32 * k + j) / 8))).getLsbD ((32 * k + j) % 8) := by
   simp only [Mem.readW, BitVec.getLsbD_setWidth, hj, decide_true, Bool.true_and]
-  rw [show 32 / 8 = 4 from rfl, getLsbD_read m 4 _ j (by omega), BitVec.add_assoc, ← BitVec.ofNat_add,
-    show 4 * k + j / 8 = (32 * k + j) / 8 by omega, show j % 8 = (32 * k + j) % 8 by omega]
+  rw [show 32 / 8 = 4 from rfl, getLsbD_read m 4 _ j (by bdd_omega), BitVec.add_assoc, ← BitVec.ofNat_add,
+    show 4 * k + j / 8 = (32 * k + j) / 8 by bdd_omega, show j % 8 = (32 * k + j) % 8 by bdd_omega]
 
 theorem read16 (m : Mem) (a : Addr) :
     m.read a 16 = ofVWords (m.readW (a + BitVec.ofNat 64 (4 * 0)) 32) (m.readW (a + BitVec.ofNat 64 (4 * 1)) 32)
       (m.readW (a + BitVec.ofNat 64 (4 * 2)) 32) (m.readW (a + BitVec.ofNat 64 (4 * 3)) 32) := by
   apply BitVec.eq_of_getLsbD_eq
   intro i hi
-  rw [getLsbD_read m 16 a i (by omega)]
+  rw [getLsbD_read m 16 a i (by bdd_omega)]
   simp only [ofVWords, BitVec.getLsbD_append]
   by_cases h0 : i < 32
   · simp only [h0]; rw [getLsbD_readW32 m a 0 h0]; simp
   by_cases h1 : i - 32 < 32
   · simp only [h0, h1]
-    rw [getLsbD_readW32 m a 1 h1, show 32 * 1 + (i - 32) = i by omega]; simp
+    rw [getLsbD_readW32 m a 1 h1, show 32 * 1 + (i - 32) = i by bdd_omega]; simp
   by_cases h2 : i - 32 - 32 < 32
   · simp only [h0, h1, h2]
-    rw [getLsbD_readW32 m a 2 h2, show 32 * 2 + (i - 32 - 32) = i by omega]; simp
+    rw [getLsbD_readW32 m a 2 h2, show 32 * 2 + (i - 32 - 32) = i by bdd_omega]; simp
   · simp only [h0, h1, h2]
-    rw [getLsbD_readW32 m a 3 (by omega), show 32 * 3 + (i - 32 - 32 - 32) = i by omega]; simp
+    rw [getLsbD_readW32 m a 3 (by bdd_omega), show 32 * 3 + (i - 32 - 32 - 32) = i by bdd_omega]; simp
 
 theorem toNat_sub_c (d : BitVec 64) (c : Nat) (hc : c < 16) :
     (d - BitVec.ofNat 64 c).toNat = if c ≤ d.toNat then d.toNat - c else 2 ^ 64 + d.toNat - c := by
@@ -71,8 +72,8 @@ theorem readW64_lo (m : Mem) (a : Addr) : (m.readW a 64).extractLsb' 0 32 = m.re
   apply BitVec.eq_of_getLsbD_eq
   intro i hi
   simp only [BitVec.getLsbD_extractLsb', hi, decide_true, Bool.true_and, Nat.zero_add, Mem.readW,
-    BitVec.getLsbD_setWidth, show i < 64 by omega]
-  rw [getLsbD_read m _ a i (by omega), getLsbD_read m _ a i (by omega)]
+    BitVec.getLsbD_setWidth, show i < 64 by bdd_omega]
+  rw [getLsbD_read m _ a i (by bdd_omega), getLsbD_read m _ a i (by bdd_omega)]
 
 /-- The high word of a 64-bit load. -/
 theorem readW64_hi (m : Mem) (a : Addr) :
@@ -80,9 +81,9 @@ theorem readW64_hi (m : Mem) (a : Addr) :
   apply BitVec.eq_of_getLsbD_eq
   intro i hi
   simp only [BitVec.getLsbD_extractLsb', hi, decide_true, Bool.true_and, Mem.readW,
-    BitVec.getLsbD_setWidth, show 32 + i < 64 by omega]
-  rw [getLsbD_read m _ a (32 + i) (by omega), getLsbD_read m _ _ i (by omega), BitVec.add_assoc,
-    ← BitVec.ofNat_add, show 4 + i / 8 = (32 + i) / 8 by omega, show i % 8 = (32 + i) % 8 by omega]
+    BitVec.getLsbD_setWidth, show 32 + i < 64 by bdd_omega]
+  rw [getLsbD_read m _ a (32 + i) (by bdd_omega), getLsbD_read m _ _ i (by bdd_omega), BitVec.add_assoc,
+    ← BitVec.ofNat_add, show 4 + i / 8 = (32 + i) / 8 by bdd_omega, show i % 8 = (32 + i) % 8 by bdd_omega]
 
 theorem getLsbD_ofVWords (w0 w1 w2 w3 : BitVec 32) {i : Nat} (hi : i < 128) :
     (ofVWords w0 w1 w2 w3).getLsbD i =
@@ -92,22 +93,22 @@ theorem getLsbD_ofVWords (w0 w1 w2 w3 : BitVec 32) {i : Nat} (hi : i < 128) :
   by_cases h0 : i < 32
   · simp [h0]
   by_cases h1 : i < 64
-  · simp [h0, h1, show i - 32 < 32 by omega]
+  · simp [h0, h1, show i - 32 < 32 by bdd_omega]
   by_cases h2 : i < 96
-  · simp [h0, h1, h2, show ¬ i - 32 < 32 by omega, show i - 32 - 32 = i - 64 by omega, show i - 64 < 32 by omega]
-  · simp [h0, h1, h2, show ¬ i - 32 < 32 by omega, show ¬ i - 32 - 32 < 32 by omega,
-      show i - 32 - 32 - 32 = i - 96 by omega]
+  · simp [h0, h1, h2, show ¬ i - 32 < 32 by bdd_omega, show i - 32 - 32 = i - 64 by bdd_omega, show i - 64 < 32 by bdd_omega]
+  · simp [h0, h1, h2, show ¬ i - 32 < 32 by bdd_omega, show ¬ i - 32 - 32 < 32 by bdd_omega,
+      show i - 32 - 32 - 32 = i - 96 by bdd_omega]
 
 theorem write16 (m : Mem) (a : Addr) (w0 w1 w2 w3 : BitVec 32) :
     m.write a 16 (ofVWords w0 w1 w2 w3) =
       (((m.writeW a w0).writeW (a + BitVec.ofNat 64 4) w1).writeW (a + BitVec.ofNat 64 8) w2).writeW
         (a + BitVec.ofNat 64 12) w3 := by
   funext x
-  have e : ∀ c : Nat, x - (a + BitVec.ofNat 64 c) = (x - a) - BitVec.ofNat 64 c := fun c => by
-    bv_omega
+  have e : ∀ c : Nat, x - (a + BitVec.ofNat 64 c) = (x - a) - BitVec.ofNat 64 c := fun c =>
+    Offset.sub_add_eq x a _
   simp only [Mem.writeW, Mem.write, e, show 32 / 8 = 4 from rfl]
   generalize x - a = d
-  rw [toNat_sub_c d 4 (by omega), toNat_sub_c d 8 (by omega), toNat_sub_c d 12 (by omega)]
+  rw [toNat_sub_c d 4 (by bdd_omega), toNat_sub_c d 8 (by bdd_omega), toNat_sub_c d 12 (by bdd_omega)]
   have := d.isLt
   have ext : ∀ (k : Nat) (w : BitVec 32), k < 4 → 4 * k ≤ d.toNat → d.toNat < 4 * k + 4 →
       (∀ b < 8, w.getLsbD (8 * (d.toNat - 4 * k) + b) = (ofVWords w0 w1 w2 w3).getLsbD (8 * d.toNat + b)) →
@@ -117,40 +118,40 @@ theorem write16 (m : Mem) (a : Addr) (w0 w1 w2 w3 : BitVec 32) :
     apply BitVec.eq_of_getLsbD_eq
     intro b hb
     simp only [BitVec.getLsbD_extractLsb', BitVec.getLsbD_setWidth, hb, decide_true, Bool.true_and,
-      show 8 * (d.toNat - 4 * k) + b < 8 * 4 by omega]
+      show 8 * (d.toNat - 4 * k) + b < 8 * 4 by bdd_omega]
     exact (hw b hb).symm
   have g := fun (b : Nat) (h : 8 * d.toNat + b < 128) => getLsbD_ofVWords w0 w1 w2 w3 h
   by_cases c3 : 12 ≤ d.toNat
   · by_cases c4 : d.toNat < 16
-    · simp only [c3, c4, ite_true, show d.toNat - 12 < 4 by omega]
-      refine ext 3 w3 (by omega) c3 (by omega) fun b hb => ?_
-      rw [g b (by omega)]
-      simp only [show ¬ 8 * d.toNat + b < 96 by omega, show ¬ 8 * d.toNat + b < 64 by omega,
-        show ¬ 8 * d.toNat + b < 32 by omega, ite_false, show 8 * (d.toNat - 4 * 3) + b = 8 * d.toNat + b - 96 by omega]
-    · simp only [c3, c4, ite_true, ite_false, show ¬ d.toNat - 12 < 4 by omega,
-        show ¬ d.toNat - 8 < 4 by omega, show ¬ d.toNat - 4 < 4 by omega, show 8 ≤ d.toNat by omega,
-        show 4 ≤ d.toNat by omega, show ¬ d.toNat < 4 by omega]
+    · simp only [c3, c4, ite_true, show d.toNat - 12 < 4 by bdd_omega]
+      refine ext 3 w3 (by bdd_omega) c3 (by bdd_omega) fun b hb => ?_
+      rw [g b (by bdd_omega)]
+      simp only [show ¬ 8 * d.toNat + b < 96 by bdd_omega, show ¬ 8 * d.toNat + b < 64 by bdd_omega,
+        show ¬ 8 * d.toNat + b < 32 by bdd_omega, ite_false, show 8 * (d.toNat - 4 * 3) + b = 8 * d.toNat + b - 96 by bdd_omega]
+    · simp only [c3, c4, ite_true, ite_false, show ¬ d.toNat - 12 < 4 by bdd_omega,
+        show ¬ d.toNat - 8 < 4 by bdd_omega, show ¬ d.toNat - 4 < 4 by bdd_omega, show 8 ≤ d.toNat by bdd_omega,
+        show 4 ≤ d.toNat by bdd_omega, show ¬ d.toNat < 4 by bdd_omega]
   by_cases c2 : 8 ≤ d.toNat
-  · simp only [c3, c2, ite_true, ite_false, show d.toNat < 16 by omega, show d.toNat - 8 < 4 by omega,
-      show ¬ 2 ^ 64 + d.toNat - 12 < 4 by omega]
-    refine ext 2 w2 (by omega) c2 (by omega) fun b hb => ?_
-    rw [g b (by omega)]
-    simp only [show 8 * d.toNat + b < 96 by omega, show ¬ 8 * d.toNat + b < 64 by omega,
-      show ¬ 8 * d.toNat + b < 32 by omega, ite_false, ite_true,
-      show 8 * (d.toNat - 4 * 2) + b = 8 * d.toNat + b - 64 by omega]
+  · simp only [c3, c2, ite_true, ite_false, show d.toNat < 16 by bdd_omega, show d.toNat - 8 < 4 by bdd_omega,
+      show ¬ 2 ^ 64 + d.toNat - 12 < 4 by bdd_omega]
+    refine ext 2 w2 (by bdd_omega) c2 (by bdd_omega) fun b hb => ?_
+    rw [g b (by bdd_omega)]
+    simp only [show 8 * d.toNat + b < 96 by bdd_omega, show ¬ 8 * d.toNat + b < 64 by bdd_omega,
+      show ¬ 8 * d.toNat + b < 32 by bdd_omega, ite_false, ite_true,
+      show 8 * (d.toNat - 4 * 2) + b = 8 * d.toNat + b - 64 by bdd_omega]
   by_cases c1 : 4 ≤ d.toNat
-  · simp only [c3, c2, c1, ite_true, ite_false, show d.toNat < 16 by omega, show d.toNat - 4 < 4 by omega,
-      show ¬ 2 ^ 64 + d.toNat - 12 < 4 by omega, show ¬ 2 ^ 64 + d.toNat - 8 < 4 by omega]
-    refine ext 1 w1 (by omega) c1 (by omega) fun b hb => ?_
-    rw [g b (by omega)]
-    simp only [show 8 * d.toNat + b < 64 by omega, show ¬ 8 * d.toNat + b < 32 by omega, ite_false,
-      ite_true, show 8 * (d.toNat - 4 * 1) + b = 8 * d.toNat + b - 32 by omega]
-  · simp only [c3, c2, c1, ite_true, ite_false, show d.toNat < 16 by omega, show d.toNat < 4 by omega,
-      show ¬ 2 ^ 64 + d.toNat - 12 < 4 by omega, show ¬ 2 ^ 64 + d.toNat - 8 < 4 by omega,
-      show ¬ 2 ^ 64 + d.toNat - 4 < 4 by omega]
-    refine ext 0 w0 (by omega) (by omega) (by omega) fun b hb => ?_
-    rw [g b (by omega)]
-    simp only [show 8 * d.toNat + b < 32 by omega, ite_true, show 8 * (d.toNat - 4 * 0) + b = 8 * d.toNat + b by omega]
+  · simp only [c3, c2, c1, ite_true, ite_false, show d.toNat < 16 by bdd_omega, show d.toNat - 4 < 4 by bdd_omega,
+      show ¬ 2 ^ 64 + d.toNat - 12 < 4 by bdd_omega, show ¬ 2 ^ 64 + d.toNat - 8 < 4 by bdd_omega]
+    refine ext 1 w1 (by bdd_omega) c1 (by bdd_omega) fun b hb => ?_
+    rw [g b (by bdd_omega)]
+    simp only [show 8 * d.toNat + b < 64 by bdd_omega, show ¬ 8 * d.toNat + b < 32 by bdd_omega, ite_false,
+      ite_true, show 8 * (d.toNat - 4 * 1) + b = 8 * d.toNat + b - 32 by bdd_omega]
+  · simp only [c3, c2, c1, ite_true, ite_false, show d.toNat < 16 by bdd_omega, show d.toNat < 4 by bdd_omega,
+      show ¬ 2 ^ 64 + d.toNat - 12 < 4 by bdd_omega, show ¬ 2 ^ 64 + d.toNat - 8 < 4 by bdd_omega,
+      show ¬ 2 ^ 64 + d.toNat - 4 < 4 by bdd_omega]
+    refine ext 0 w0 (by bdd_omega) (by bdd_omega) (by bdd_omega) fun b hb => ?_
+    rw [g b (by bdd_omega)]
+    simp only [show 8 * d.toNat + b < 32 by bdd_omega, ite_true, show 8 * (d.toNat - 4 * 0) + b = 8 * d.toNat + b by bdd_omega]
 
 
 /-! ## Lanes -/
@@ -159,107 +160,196 @@ theorem vword_ofVWords (w0 w1 w2 w3 : BitVec 32) {e : Nat} (he : e < 4) :
     vword (ofVWords w0 w1 w2 w3) e = [w0, w1, w2, w3][e] := by
   ext i hi
   simp only [vword, ofVWords, BitVec.getElem_extractLsb', BitVec.getLsbD_append]
-  rcases (show e = 0 ∨ e = 1 ∨ e = 2 ∨ e = 3 by omega) with rfl | rfl | rfl | rfl <;>
+  rcases (show e = 0 ∨ e = 1 ∨ e = 2 ∨ e = 3 by bdd_omega) with rfl | rfl | rfl | rfl <;>
     simp +arith [hi]
 
 /-- Two vectors with the same lanes are the same. -/
 theorem vec_ext {x y : BitVec 128} (h : ∀ e < 4, vword x e = vword y e) : x = y := by
   ext i hi
-  have := congrArg (fun w : BitVec 32 => w.getLsbD (i % 32)) (h (i / 32) (by omega))
-  simp only [vword, BitVec.getLsbD_extractLsb', show i % 32 < 32 by omega, decide_true,
-    Bool.true_and, show 32 * (i / 32) + i % 32 = i by omega] at this
+  have := congrArg (fun w : BitVec 32 => w.getLsbD (i % 32)) (h (i / 32) (by bdd_omega))
+  simp only [vword, BitVec.getLsbD_extractLsb', show i % 32 < 32 by bdd_omega, decide_true,
+    Bool.true_and, show 32 * (i / 32) + i % 32 = i by bdd_omega] at this
   simpa [BitVec.getElem_eq_testBit_toNat, BitVec.getLsbD] using this
 
 theorem ofVWords_vword (x : BitVec 128) : ofVWords (vword x 0) (vword x 1) (vword x 2) (vword x 3) = x :=
   vec_ext fun e he => by
     rw [vword_ofVWords _ _ _ _ he]
-    rcases (show e = 0 ∨ e = 1 ∨ e = 2 ∨ e = 3 by omega) with rfl | rfl | rfl | rfl <;> rfl
+    rcases (show e = 0 ∨ e = 1 ∨ e = 2 ∨ e = 3 by bdd_omega) with rfl | rfl | rfl | rfl <;> rfl
 
 /-- The lanes of the result of an operation on the lanes of two vectors. -/
 theorem vword_map2 (f : (w : Nat) → BitVec w → BitVec w → BitVec w) (x y : BitVec 128) {e : Nat}
     (he : e < 4) : vword (VArr.s4.map2 f x y) e = f 32 (vword x e) (vword y e) := by
   simp only [VArr.map2]
   rw [vword_ofVWords _ _ _ _ he]
-  rcases (show e = 0 ∨ e = 1 ∨ e = 2 ∨ e = 3 by omega) with rfl | rfl | rfl | rfl <;> rfl
+  rcases (show e = 0 ∨ e = 1 ∨ e = 2 ∨ e = 3 by bdd_omega) with rfl | rfl | rfl | rfl <;> rfl
 
 theorem vword_mapWords3 (f : BitVec 32 → BitVec 32 → BitVec 32 → BitVec 32) (x y z : BitVec 128)
     {e : Nat} (he : e < 4) : vword (mapWords3 f x y z) e = f (vword x e) (vword y e) (vword z e) := by
   simp only [mapWords3]
   rw [vword_ofVWords _ _ _ _ he]
-  rcases (show e = 0 ∨ e = 1 ∨ e = 2 ∨ e = 3 by omega) with rfl | rfl | rfl | rfl <;> rfl
+  rcases (show e = 0 ∨ e = 1 ∨ e = 2 ∨ e = 3 by bdd_omega) with rfl | rfl | rfl | rfl <;> rfl
 
-/-- Lane lemmas: each lane of each case, bit by bit. -/
-macro "lane_tac" e:ident i:ident : tactic => `(tactic| (
-  (rcases (show $e = 0 ∨ $e = 1 ∨ $e = 2 ∨ $e = 3 by omega) with h | h | h | h) <;> subst h <;>
-    simp +arith [List.range_succ] <;> (repeat rw [BitVec.getLsbD_append]) <;>
-    simp +arith [BitVec.getLsbD_extractLsb'] <;>
-    (try simp [show $i ≤ 63 by omega, show $i ≤ 31 by omega, show $i ≤ 95 by omega]) <;>
-    (try intro) <;> (try omega)))
+private theorem sw32 (w : BitVec 32) : (w.setWidth 128).setWidth 32 = w := by
+  rw [BitVec.setWidth_setWidth_of_le _ (by decide), BitVec.setWidth_eq]
 
-set_option linter.unusedSimpArgs false
+private theorem sw64 (w : BitVec 64) : (w.setWidth 128).setWidth 64 = w := by
+  rw [BitVec.setWidth_setWidth_of_le _ (by decide), BitVec.setWidth_eq]
+
+private theorem itT {α : Sort _} {p : Prop} [Decidable p] (h : p) (a b : α) : (if p then a else b) = a :=
+  ite_eq_left_of_eq_true a b (eq_true h)
+
+private theorem itF {α : Sort _} {p : Prop} [Decidable p] (h : ¬ p) (a b : α) : (if p then a else b) = b :=
+  ite_eq_right_of_eq_false a b (eq_false h)
+
+private theorem ofVWords_congr {a b c d a' b' c' d' : BitVec 32} (ha : a = a') (hb : b = b') (hc : c = c')
+    (hd : d = d') : ofVWords a b c d = ofVWords a' b' c' d' := by subst ha hb hc hd; rfl
+
+private theorem ofVDwords_congr {a b a' b' : BitVec 64} (ha : a = a') (hb : b = b') :
+    ofVDwords a b = ofVDwords a' b' := by subst ha hb; rfl
+
+/-- Word `e` of two doublewords: word `e % 2` of doubleword `e / 2`. -/
+private theorem vword_ofVDwords (a b : BitVec 64) {e : Nat} (he : e < 4) :
+    vword (ofVDwords a b) e = (if e < 2 then a else b).extractLsb' (32 * (e % 2)) 32 := by
+  apply BitVec.eq_of_getLsbD_eq; intro i hi
+  simp only [vword, ofVDwords, BitVec.getLsbD_extractLsb', hi, decide_true, Bool.true_and,
+    BitVec.getLsbD_append]
+  by_cases h : e < 2
+  · rw [itT h, itT (show 32 * e + i < 64 by bdd_omega)]; exact congrArg _ (by bdd_omega)
+  · rw [itF h, itF (show ¬ 32 * e + i < 64 by bdd_omega)]; exact congrArg _ (by bdd_omega)
+
+/-- Word `j` of doubleword `k`: word `2k + j`. -/
+private theorem vdword_word (x : BitVec 128) (k : Nat) {j : Nat} (hj : j < 2) :
+    (vdword x k).extractLsb' (32 * j) 32 = vword x (2 * k + j) := by
+  apply BitVec.eq_of_getLsbD_eq; intro i hi
+  simp only [vword, vdword, BitVec.getLsbD_extractLsb', hi, decide_true, Bool.true_and,
+    show 32 * j + i < 64 by bdd_omega]
+  exact congrArg _ (by bdd_omega)
+
+private theorem eval_trn1_d2 (x y : BitVec 128) :
+    VPermOp.eval .trn1 .d2 x y = ofVDwords (vdword x 0) (vdword y 0) := by
+  simp only [VPermOp.eval, VArr.lanes, VArr.ofLanes, List.length_cons, List.length_nil, Nat.reduceAdd, Nat.reduceDiv]
+  exact ofVDwords_congr (sw64 (vdword x 0)) (sw64 (vdword y 0))
+
+private theorem eval_trn2_d2 (x y : BitVec 128) :
+    VPermOp.eval .trn2 .d2 x y = ofVDwords (vdword x 1) (vdword y 1) := by
+  simp only [VPermOp.eval, VArr.lanes, VArr.ofLanes, List.length_cons, List.length_nil, Nat.reduceAdd, Nat.reduceDiv]
+  exact ofVDwords_congr (sw64 (vdword x 1)) (sw64 (vdword y 1))
 
 theorem vword_trn1_d2 (x y : BitVec 128) {e : Nat} (he : e < 4) :
     vword (VPermOp.eval .trn1 .d2 x y) e = if e < 2 then vword x e else vword y (e - 2) := by
-  ext i hi
-  simp only [VPermOp.eval, VArr.lanes, VArr.ofLanes, vword, vdword, ofVDwords, BitVec.getElem_extractLsb']
-  lane_tac e i
+  rw [eval_trn1_d2, vword_ofVDwords _ _ he]
+  by_cases h : e < 2
+  · rw [itT h, itT h, vdword_word _ _ (Nat.mod_lt _ (by decide))]; exact congrArg _ (by bdd_omega)
+  · rw [itF h, itF h, vdword_word _ _ (Nat.mod_lt _ (by decide))]; exact congrArg _ (by bdd_omega)
 
 theorem vword_trn2_d2 (x y : BitVec 128) {e : Nat} (he : e < 4) :
     vword (VPermOp.eval .trn2 .d2 x y) e = if e < 2 then vword x (e + 2) else vword y e := by
-  ext i hi
-  simp only [VPermOp.eval, VArr.lanes, VArr.ofLanes, vword, vdword, ofVDwords, BitVec.getElem_extractLsb']
-  lane_tac e i
-
-theorem vword_zip1_s4 (x : BitVec 128) {e : Nat} (he : e < 4) :
-    vword (VPermOp.eval .zip1 .s4 x x) e = vword x (e / 2) := by
-  ext i hi
-  simp only [VPermOp.eval, VArr.lanes, VArr.ofLanes, vword, ofVWords, BitVec.getElem_extractLsb']
-  lane_tac e i
+  rw [eval_trn2_d2, vword_ofVDwords _ _ he]
+  by_cases h : e < 2
+  · rw [itT h, itT h, vdword_word _ _ (Nat.mod_lt _ (by decide))]; exact congrArg _ (by bdd_omega)
+  · rw [itF h, itF h, vdword_word _ _ (Nat.mod_lt _ (by decide))]; exact congrArg _ (by bdd_omega)
 
 theorem vword_dup_d2 (g : BitVec 64) {e : Nat} (he : e < 4) :
     vword (ofVDwords g g) e = g.extractLsb' (32 * (e % 2)) 32 := by
-  ext i hi
-  simp only [vword, ofVDwords, BitVec.getElem_extractLsb']
-  lane_tac e i
+  rw [vword_ofVDwords _ _ he]
+  by_cases h : e < 2
+  · rw [itT h]
+  · rw [itF h]
 
-theorem vword_rev64s (x : BitVec 128) {e : Nat} (he : e < 4) :
-    vword (VRevOp.eval .rev64s x) e = vword x (if e % 2 = 0 then e + 1 else e - 1) := by
-  ext i hi
-  simp only [VRevOp.eval, vword, ofVBytes, vbyte, BitVec.getElem_extractLsb']
-  lane_tac e i
-  all_goals (repeat' split) <;> simp_all <;> (congr 1; omega)
+private theorem eval_zip1_s4 (x y : BitVec 128) :
+    VPermOp.eval .zip1 .s4 x y = ofVWords (vword x 0) (vword y 0) (vword x 1) (vword y 1) := by
+  simp only [VPermOp.eval, VArr.lanes, VArr.ofLanes, List.length_cons, List.length_nil, Nat.reduceAdd, Nat.reduceDiv]
+  exact ofVWords_congr (sw32 (vword x 0)) (sw32 (vword y 0)) (sw32 (vword x 1)) (sw32 (vword y 1))
+
+private theorem eval_zip2_s4 (x y : BitVec 128) :
+    VPermOp.eval .zip2 .s4 x y = ofVWords (vword x 2) (vword y 2) (vword x 3) (vword y 3) := by
+  simp only [VPermOp.eval, VArr.lanes, VArr.ofLanes, List.length_cons, List.length_nil, Nat.reduceAdd, Nat.reduceDiv]
+  exact ofVWords_congr (sw32 (vword x 2)) (sw32 (vword y 2)) (sw32 (vword x 3)) (sw32 (vword y 3))
+
+private theorem eval_uzp1_s4 (x y : BitVec 128) :
+    VPermOp.eval .uzp1 .s4 x y = ofVWords (vword x 0) (vword x 2) (vword y 0) (vword y 2) := by
+  simp only [VPermOp.eval, VArr.lanes, VArr.ofLanes, List.length_cons, List.length_nil, Nat.reduceAdd]
+  exact ofVWords_congr (sw32 (vword x 0)) (sw32 (vword x 2)) (sw32 (vword y 0)) (sw32 (vword y 2))
+
+private theorem eval_uzp2_s4 (x y : BitVec 128) :
+    VPermOp.eval .uzp2 .s4 x y = ofVWords (vword x 1) (vword x 3) (vword y 1) (vword y 3) := by
+  simp only [VPermOp.eval, VArr.lanes, VArr.ofLanes, List.length_cons, List.length_nil, Nat.reduceAdd]
+  exact ofVWords_congr (sw32 (vword x 1)) (sw32 (vword x 3)) (sw32 (vword y 1)) (sw32 (vword y 3))
+
+theorem vword_zip1_s4 (x : BitVec 128) {e : Nat} (he : e < 4) :
+    vword (VPermOp.eval .zip1 .s4 x x) e = vword x (e / 2) := by
+  rw [eval_zip1_s4, vword_ofVWords _ _ _ _ he]
+  rcases (show e = 0 ∨ e = 1 ∨ e = 2 ∨ e = 3 by bdd_omega) with rfl | rfl | rfl | rfl <;> rfl
 
 theorem vword_uzp1_s4 (x y : BitVec 128) {e : Nat} (he : e < 4) :
     vword (VPermOp.eval .uzp1 .s4 x y) e = if e < 2 then vword x (2 * e) else vword y (2 * (e - 2)) := by
-  ext i hi
-  simp only [VPermOp.eval, VArr.lanes, VArr.ofLanes, vword, ofVWords, BitVec.getElem_extractLsb']
-  lane_tac e i
+  rw [eval_uzp1_s4, vword_ofVWords _ _ _ _ he]
+  rcases (show e = 0 ∨ e = 1 ∨ e = 2 ∨ e = 3 by bdd_omega) with rfl | rfl | rfl | rfl <;> rfl
 
 theorem vword_uzp2_s4 (x y : BitVec 128) {e : Nat} (he : e < 4) :
     vword (VPermOp.eval .uzp2 .s4 x y) e =
       if e < 2 then vword x (2 * e + 1) else vword y (2 * (e - 2) + 1) := by
-  ext i hi
-  simp only [VPermOp.eval, VArr.lanes, VArr.ofLanes, vword, ofVWords, BitVec.getElem_extractLsb']
-  lane_tac e i
+  rw [eval_uzp2_s4, vword_ofVWords _ _ _ _ he]
+  rcases (show e = 0 ∨ e = 1 ∨ e = 2 ∨ e = 3 by bdd_omega) with rfl | rfl | rfl | rfl <;> rfl
 
 theorem vword_zip1_s4' (x y : BitVec 128) {e : Nat} (he : e < 4) :
     vword (VPermOp.eval .zip1 .s4 x y) e = if e % 2 = 0 then vword x (e / 2) else vword y (e / 2) := by
-  ext i hi
-  simp only [VPermOp.eval, VArr.lanes, VArr.ofLanes, vword, ofVWords, BitVec.getElem_extractLsb']
-  lane_tac e i
+  rw [eval_zip1_s4, vword_ofVWords _ _ _ _ he]
+  rcases (show e = 0 ∨ e = 1 ∨ e = 2 ∨ e = 3 by bdd_omega) with rfl | rfl | rfl | rfl <;> rfl
 
 theorem vword_zip2_s4 (x y : BitVec 128) {e : Nat} (he : e < 4) :
     vword (VPermOp.eval .zip2 .s4 x y) e =
       if e % 2 = 0 then vword x (2 + e / 2) else vword y (2 + e / 2) := by
-  ext i hi
-  simp only [VPermOp.eval, VArr.lanes, VArr.ofLanes, vword, ofVWords, BitVec.getElem_extractLsb']
-  lane_tac e i
+  rw [eval_zip2_s4, vword_ofVWords _ _ _ _ he]
+  rcases (show e = 0 ∨ e = 1 ∨ e = 2 ∨ e = 3 by bdd_omega) with rfl | rfl | rfl | rfl <;> rfl
 
-set_option linter.unusedSimpArgs true
+/-- Bit `r` of block `k` of `x ++ y`, blocks being `n` bits wide. -/
+private theorem getLsbD_append_block {w n : Nat} (x : BitVec w) (y : BitVec n) (k : Nat) {r : Nat}
+    (hr : r < n) :
+    (x ++ y).getLsbD (n * k + r) = if k = 0 then y.getLsbD r else x.getLsbD (n * (k - 1) + r) := by
+  rw [BitVec.getLsbD_append]
+  by_cases hk : k = 0
+  · subst hk; simp [hr]
+  · have h : n ≤ n * k := Nat.le_mul_of_pos_right n (by bdd_omega)
+    simp only [hk, show ¬ n * k + r < n by bdd_omega, ↓reduceIte]
+    exact congrArg _ (by rw [Nat.mul_sub_one, Nat.sub_add_comm h])
+
+private theorem getLsbD_ofVBytes (f : Nat → BitVec 8) {k r : Nat} (hk : k < 16) (hr : r < 8) :
+    (ofVBytes f).getLsbD (8 * k + r) = (f k).getLsbD r := by
+  simp only [ofVBytes, getLsbD_append_block _ _ _ hr]
+  match k, hk with
+  | 0, _ => ?_
+  | 1, _ => ?_
+  | 2, _ => ?_
+  | 3, _ => ?_
+  | 4, _ => ?_
+  | 5, _ => ?_
+  | 6, _ => ?_
+  | 7, _ => ?_
+  | 8, _ => ?_
+  | 9, _ => ?_
+  | 10, _ => ?_
+  | 11, _ => ?_
+  | 12, _ => ?_
+  | 13, _ => ?_
+  | 14, _ => ?_
+  | 15, _ => ?_
+  | _ + 16, h => exact absurd h (by bdd_omega)
+  all_goals
+    simp only [↓reduceIte, Nat.reduceSub, Nat.reduceEqDiff, Nat.mul_zero, Nat.zero_add]
+
+theorem vword_rev64s (x : BitVec 128) {e : Nat} (he : e < 4) :
+    vword (VRevOp.eval .rev64s x) e = vword x (if e % 2 = 0 then e + 1 else e - 1) := by
+  apply BitVec.eq_of_getLsbD_eq; intro i hi
+  simp only [vword, VRevOp.eval, BitVec.getLsbD_extractLsb', hi, decide_true, Bool.true_and]
+  rw [show 32 * e + i = 8 * (4 * e + i / 8) + i % 8 by bdd_omega,
+    getLsbD_ofVBytes _ (by bdd_omega) (Nat.mod_lt _ (by decide)), vbyte, BitVec.getLsbD_extractLsb',
+    decide_eq_true (Nat.mod_lt _ (by decide)), Bool.true_and]
+  exact congrArg _ (by split <;> omega)
 
 theorem vword_dup_s4 (w : BitVec 32) {e : Nat} (he : e < 4) : vword (ofVWords w w w w) e = w := by
   rw [vword_ofVWords _ _ _ _ he]
-  rcases (show e = 0 ∨ e = 1 ∨ e = 2 ∨ e = 3 by omega) with rfl | rfl | rfl | rfl <;> rfl
+  rcases (show e = 0 ∨ e = 1 ∨ e = 2 ∨ e = 3 by bdd_omega) with rfl | rfl | rfl | rfl <;> rfl
 
 /-- SQDMULH on lanes less than `2³¹`: `⌊a · b / 2³¹⌋`, without saturating. -/
 theorem sqdmulhLane_lt {a b : BitVec 32} (ha : a.toNat < 2 ^ 31) (hb : b.toNat < 2 ^ 31) :
@@ -267,7 +357,7 @@ theorem sqdmulhLane_lt {a b : BitVec 32} (ha : a.toNat < 2 ^ 31) (hb : b.toNat <
   have hne : ¬ (a = 0x80000000#32 ∧ b = 0x80000000#32) := fun h => by
     rw [h.1] at ha; exact absurd ha (by decide)
   simp only [sqdmulhLane, hne, ite_false, Option.some.injEq]
-  rw [BitVec.toInt_eq_toNat_of_lt (by omega), BitVec.toInt_eq_toNat_of_lt (by omega),
+  rw [BitVec.toInt_eq_toNat_of_lt (by bdd_omega), BitVec.toInt_eq_toNat_of_lt (by bdd_omega),
     show (2 : Int) * a.toNat * b.toNat = ((2 * a.toNat * b.toNat : Nat) : Int) by push_cast; rfl,
     ← Int.natCast_shiftRight, BitVec.ofInt_natCast, Nat.shiftRight_eq_div_pow,
     show 2 * a.toNat * b.toNat / 2 ^ 32 = a.toNat * b.toNat / 2 ^ 31 by rw [Nat.mul_assoc]; omega]
@@ -335,12 +425,19 @@ def writesV : Instr → Bool
 
 theorem exec_v {i : Instr} (hi : writesV i = false) {s s' : State} (h : exec i s = some s') :
     s'.v = s.v := by
-  cases i <;> simp only [writesV, Bool.true_eq_false] at hi <;>
-    simp only [exec] at h <;>
-    (try (obtain ⟨⟩ := h)) <;>
-    (try split at h) <;> (try (obtain ⟨⟩ := h)) <;>
-    simp_all [State.addWithCarry, State.write, State.store, State.load, Option.bind_eq_some_iff] <;>
-    (obtain ⟨_, _, _, rfl⟩ := h; rfl)
+  cases i <;> simp only [writesV, Bool.true_eq_false] at hi
+  all_goals
+    simp only [exec, Option.bind_eq_some_iff, Option.map_eq_some_iff] at h
+  all_goals
+    repeat' first
+      | split at h
+      | simp only [Option.map_eq_some_iff] at h
+      | rcases h with ⟨_, _, h⟩
+  all_goals
+    simp_all only [State.store]
+  all_goals
+    repeat' first | split at h | cases h
+  all_goals rfl
 
 /-- Code that writes no vector register keeps them. -/
 theorem WP.keepV : ∀ {is : List Instr} {s : State} {Q : State → Prop},
@@ -457,7 +554,7 @@ theorem eval_sqdmulh {s : State} {d n m : VReg} {f g : Nat → Nat} (hn : Lanes 
     exact Nat.lt_of_le_of_lt (Nat.div_le_div_right (c := 2 ^ 31)
       (Nat.mul_le_mul (Nat.le_of_lt h1) (Nat.le_of_lt h2))) (by decide)
   rw [vword_ofVWords _ _ _ _ he]
-  rcases (show e = 0 ∨ e = 1 ∨ e = 2 ∨ e = 3 by omega) with rfl | rfl | rfl | rfl <;>
+  rcases (show e = 0 ∨ e = 1 ∨ e = 2 ∨ e = 3 by bdd_omega) with rfl | rfl | rfl | rfl <;>
     simp only [List.getElem_cons_zero, List.getElem_cons_succ, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hl]
 
 /-! ## The arithmetic of the vector code -/
@@ -607,7 +704,7 @@ theorem vbfly_ok {z : VReg} (hc : VConsts s) {A B Z : Nat → Nat} (hA : Lanes (
         exact l₃.congr fun e he => by
           show (A e + B e * Z e % 3329) % 2 ^ 32 % 3329 = _
           have := hA' e he; have := t₁ e he
-          rw [Nat.mod_eq_of_lt (show A e + B e * Z e % 3329 < 2 ^ 32 by omega)])
+          rw [Nat.mod_eq_of_lt (show A e + B e * Z e % 3329 < 2 ^ 32 by bdd_omega)])
     (l₆.congr fun e he => ?_)
   have := hA' e he; have := t₁ e he
   show min _ _ = _
@@ -660,7 +757,7 @@ theorem vibfly_ok {z : VReg} (hz : z ∉ [VReg.v0, .v1, .v2, .v3, .v4, .v16, .v1
         exact l₂.congr fun e he => by
           show (A e + B e) % 2 ^ 32 % 3329 = _
           have := hA' e he; have := hB' e he
-          rw [Nat.mod_eq_of_lt (show A e + B e < 2 ^ 32 by omega)]) l₆
+          rw [Nat.mod_eq_of_lt (show A e + B e < 2 ^ 32 by bdd_omega)]) l₆
 
 /-- `sqdmulh t, d, M; mls d, t, q`: Barrett reduction of lanes `x < 2³¹`, to
 `x - ⌊x · M / 2³¹⌋ · q`, which is less than `2q` and congruent to `x`. -/

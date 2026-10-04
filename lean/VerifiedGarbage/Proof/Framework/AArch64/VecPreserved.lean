@@ -8,13 +8,14 @@ def VOp.dst : VOp → VReg
   | .mov d .. | .movi0 d | .dup _ d .. | .ins _ d .. | .dupS d .. => d
   | .logic _ d .. | .not d .. | .add _ d .. | .sub _ d .. | .shift _ _ d .. => d
   | .ext d .. | .rev _ d .. | .perm _ _ d .. | .tbl d .. => d
+  | .dupE _ d .. | .insE _ d .. | .cmeq _ d .. | .bsel _ d .. | .tblN _ _ d .. => d
   | .umull _ d .. | .umlal _ d .. | .mul d .. | .mla d .. | .mls d .. => d
   | .sqdmulh d .. | .umin d .. | .pmull _ d .. => d
   | .aese d .. | .aesd d .. | .aesmc d .. | .aesimc d .. => d
   | .sha1 _ d .. | .sha1h d .. | .sha1su0 d .. | .sha1su1 d .. => d
   | .sha256h d .. | .sha256h2 d .. | .sha256su0 d .. | .sha256su1 d .. => d
   | .sha512h d .. | .sha512h2 d .. | .sha512su0 d .. | .sha512su1 d .. => d
-  | .eor3 d .. | .bcax d .. | .rax1 d .. | .xar d .. => d
+  | .eor3 d .. | .bcax d .. | .rax1 d .. | .xar d .. | .xarS d .. => d
 
 /-- The vector register an instruction writes, if any. -/
 def vdstOf : Instr → Option VReg

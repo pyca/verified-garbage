@@ -17,6 +17,7 @@ use openssl::pkey::PKey;
 use openssl::sign::Signer;
 
 mod aes_gcm;
+mod aes_siv;
 mod argon2;
 mod blake2b;
 mod blake2s;
@@ -24,7 +25,10 @@ mod chacha20;
 mod chacha20poly1305;
 mod cmac_aes;
 mod cmac_triple_des;
+mod ecdh_p256;
+mod ecdsa_p256;
 mod ed25519;
+mod ed448;
 mod hmac_md5;
 mod hmac_sha1;
 mod hmac_sha224;
@@ -51,6 +55,7 @@ mod pbkdf2_sha512_256;
 mod poly1305;
 mod rc2_cbc;
 mod rc4;
+mod rsa;
 mod scrypt;
 mod sha1;
 mod sha224;
@@ -237,6 +242,7 @@ type Bench = (&'static [&'static str], fn(&mut Criterion));
 
 const BENCHES: &[Bench] = &[
     (aes_gcm::USES, aes_gcm::bench),
+    (aes_siv::USES, aes_siv::bench),
     (blake2b::USES, blake2b::bench),
     (blake2s::USES, blake2s::bench),
     (chacha20::USES, chacha20::bench),
@@ -268,6 +274,7 @@ const BENCHES: &[Bench] = &[
     (poly1305::USES, poly1305::bench),
     (rc2_cbc::USES, rc2_cbc::bench),
     (rc4::USES, rc4::bench),
+    (rsa::USES, rsa::bench),
     (triple_des_ecb::USES, triple_des_ecb::bench),
     (argon2::USES, argon2::bench),
     (scrypt::USES, scrypt::bench),
@@ -282,6 +289,9 @@ const BENCHES: &[Bench] = &[
     (x25519::USES, x25519::bench),
     (x448::USES, x448::bench),
     (ed25519::USES, ed25519::bench),
+    (ed448::USES, ed448::bench),
+    (ecdsa_p256::USES, ecdsa_p256::bench),
+    (ecdh_p256::USES, ecdh_p256::bench),
 ];
 
 /// Runs the benchmarks that use any of the modules in `$VG_BENCH_MODULES`

@@ -1,5 +1,5 @@
 import VerifiedGarbage.Proof.TripleDes.X86_64.FunctionsLit
-import VerifiedGarbage.Proof.Framework.X86_64.Taint
+import VerifiedGarbage.Proof.Framework.X86_64.TaintMono
 
 namespace VG.Proof.TripleDes.X86_64
 
@@ -12,29 +12,35 @@ def blockTaint : X86_64.Taint.T :=
   { regs := .ofList [.rdi, .rsi, .rdx], flags := false,
     lens := [0, 512], bases := [(.rdx, 1, 0)] }
 
-def ecbTaint : X86_64.Taint.T :=
-  { regs := .ofList [.rdi, .rsi, .rdx, .rcx, .rsp], flags := false,
-    lens := [0, 1024], bases := [(.rcx, 1, 0)] }
+/-- What the rounds need public: the pointers, the round counter and the
+saved ones in the scratch buffer. -/
+def roundTaint : X86_64.Taint.T :=
+  { regs := .ofList [.rax, .rdx, .rsi, .rdi], flags := false,
+    lens := [0, 512], bases := [(.rdx, 1, 0)], slots := [(1, 56, 8), (1, 48, 8)] }
+
+/-! Each function runs the loop of rounds three times, two of them in each
+direction: their bodies are analysed once, as summaries. -/
+
+taint_summary roundEnc : taintS roundTaint (.block (roundBody ++ roundAdvance .encrypt))
+taint_summary roundDec : taintS roundTaint (.block (roundBody ++ roundAdvance .decrypt))
+
+theorem encryptBlock_taint : ∃ h, (taintS.check blockTaint encryptBlock h).isSome = true := by
+  taint_decide_sum [roundEnc, roundDec]
+
+theorem decryptBlock_taint : ∃ h, (taintS.check blockTaint decryptBlock h).isSome = true := by
+  taint_decide_sum [roundEnc, roundDec]
 
 theorem encryptBlock_constantTime (pre : State → Prop) (pub : State → State → Prop)
     (hagree : ∀ s t, pre s → pre t → pub s t → X86_64.Taint.Agree blockTaint s t) :
     ConstantTime isa pre pub encryptBlock :=
-  VG.Taint.constantTime (A := taint) blockTaint hagree (by taint_decide)
+  let ⟨_, h⟩ := encryptBlock_taint
+  VG.Taint.constantTime (A := taintS) blockTaint hagree h
 
 theorem decryptBlock_constantTime (pre : State → Prop) (pub : State → State → Prop)
     (hagree : ∀ s t, pre s → pre t → pub s t → X86_64.Taint.Agree blockTaint s t) :
     ConstantTime isa pre pub decryptBlock :=
-  VG.Taint.constantTime (A := taint) blockTaint hagree (by taint_decide)
-
-theorem ecbEncrypt_constantTime (pre : State → Prop) (pub : State → State → Prop)
-    (hagree : ∀ s t, pre s → pre t → pub s t → X86_64.Taint.Agree ecbTaint s t) :
-    ConstantTime isa pre pub Ecb.encrypt :=
-  VG.Taint.constantTime (A := taint) ecbTaint hagree (by taint_decide)
-
-theorem ecbDecrypt_constantTime (pre : State → Prop) (pub : State → State → Prop)
-    (hagree : ∀ s t, pre s → pre t → pub s t → X86_64.Taint.Agree ecbTaint s t) :
-    ConstantTime isa pre pub Ecb.decrypt :=
-  VG.Taint.constantTime (A := taint) ecbTaint hagree (by taint_decide)
+  let ⟨_, h⟩ := decryptBlock_taint
+  VG.Taint.constantTime (A := taintS) blockTaint hagree h
 
 theorem expandKey_constantTime (pre : State → Prop) :
     ConstantTime isa pre (PublicRegs [.rdi, .rsi, .rdx, .rcx]) Key.expandKey := by

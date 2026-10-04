@@ -27,8 +27,6 @@ numbers: five limbs `a0, …, a4` stand for `val5 a0 a1 a2 a3 a4 = a0 + 2²⁶ a
 2⁵² a2 + 2⁷⁸ a3 + 2¹⁰⁴ a4`.
 -/
 
-open VG.PowLit
-
 namespace VG.Proof.Poly1305.AArch64
 
 open VG.Spec.Poly1305 (P)
@@ -342,8 +340,6 @@ end
 Each lemma runs a few instructions symbolically and states their effect on the
 numbers in the registers, unconditionally (modulo `2⁶⁴` where the code wraps).
 -/
-
-open VG.PowLit
 
 namespace VG.Proof.Poly1305.AArch64
 
@@ -766,8 +762,6 @@ section
 # Poly1305 on AArch64: absorbing a block
 -/
 
-open VG.PowLit
-
 namespace VG.Proof.Poly1305.AArch64
 
 open VG VG.AArch64 VG.Impl.Poly1305.AArch64
@@ -1002,8 +996,6 @@ section
 # Poly1305 on AArch64: the state in memory
 -/
 
-open VG.PowLit
-
 namespace VG.Proof.Poly1305.AArch64
 
 open VG VG.AArch64 VG.Impl.Poly1305.AArch64
@@ -1124,8 +1116,6 @@ end
 /-!
 # Poly1305 on AArch64: the coefficients and the accumulator on entry
 -/
-
-open VG.PowLit
 
 namespace VG.Proof.Poly1305.AArch64
 
@@ -1421,8 +1411,6 @@ section
 /-!
 # Poly1305 on AArch64: `blocks`
 -/
-
-open VG.PowLit
 
 namespace VG.Proof.Poly1305
 
@@ -1828,7 +1816,7 @@ theorem blocks_ok (s : State) (hs : Proof.Poly1305.blocksAArch64.pre s) :
     ∃ t s', Exec isa Impl.Poly1305.AArch64.blocks s t s' ∧ abiPreserved s s' ∧
       Proof.Poly1305.blocksAArch64.post s s' := by
   obtain ⟨t, s', he, h⟩ := blocks_correct (BPre.of s hs)
-  exact ⟨t, s', he, ⟨fun r hr => Exec.gpr (blocks_untouched r hr) he, Exec.sp he, Exec.preservedV he⟩, h⟩
+  exact ⟨t, s', he, ⟨fun r hr => Exec.gpr (blocks_untouched r hr) he, Exec.sp he, Exec.preservedV he (by lit_decide)⟩, h⟩
 
 theorem blocks_ct : ConstantTime isa Proof.Poly1305.blocksAArch64.pre
     Proof.Poly1305.blocksAArch64.pub Impl.Poly1305.AArch64.blocks := by
@@ -1836,7 +1824,7 @@ theorem blocks_ct : ConstantTime isa Proof.Poly1305.blocksAArch64.pre
   intro s₁ s₂ _ _ ⟨h1, h2, h3, hsp⟩
   refine ⟨hsp, fun r hr => ?_⟩
   simp only [VG.AArch64.Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl <;> assumption
+  rcases hr with rfl | rfl | rfl <;> with_reducible assumption
 
 theorem blocks_verified :
     Verified AArch64.target Impl.Poly1305.AArch64.blocks (Spec.Poly1305.blocksContract AArch64.abi)

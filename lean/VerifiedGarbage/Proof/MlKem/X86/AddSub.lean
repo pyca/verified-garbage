@@ -31,9 +31,9 @@ theorem addOp_spec : OpSpec addOp fun a b => condSub (a + b) := by
   simp only [State.ea, at_] at hin h₂
   rw [WP.block_append_iff]
   apply WP.of_runBlock
-  simp (config := {decide := true}) only [addOp, csub, at_, runBlock_cons, runStep_some, runBlock_nil,
+  simp only [reduceCtorEq, ↓reduceIte, Nat.reducePow, addOp, csub, at_, runBlock_cons, runStep_some, runBlock_nil,
     exec, execAlu, readSrc, State.ea, State.load32, State.setReg, arithFlags, State.setFlags,
-    Option.bind_some, Option.map_some, hin, ite_true, ite_false, Option.some.injEq, exists_eq_left']
+    Option.bind_some, Option.map_some, hin, Option.some.injEq, exists_eq_left']
   refine k _ ⟨fun r hr => ?_, rfl, rfl, rfl⟩ ?_
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     simp [hr.1, hr.2]
@@ -47,9 +47,9 @@ theorem subOp_spec : OpSpec subOp fun a b => condSub (a + q - b) := by
   simp only [State.ea, at_] at hin h₂
   rw [WP.block_append_iff]
   apply WP.of_runBlock
-  simp (config := {decide := true}) only [subOp, csub, at_, runBlock_cons, runStep_some, runBlock_nil,
+  simp only [reduceCtorEq, ↓reduceIte, Nat.reducePow, subOp, csub, at_, runBlock_cons, runStep_some, runBlock_nil,
     exec, execAlu, readSrc, State.ea, State.load32, State.setReg, arithFlags, State.setFlags,
-    Option.bind_some, Option.map_some, hin, ite_true, ite_false, Option.some.injEq, exists_eq_left']
+    Option.bind_some, Option.map_some, hin, Option.some.injEq, exists_eq_left']
   refine k _ ⟨fun r hr => ?_, rfl, rfl, rfl⟩ ?_
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     simp [hr.1, hr.2]
@@ -201,9 +201,9 @@ theorem map_step {op : List Instr} {F : Nat → Nat → Nat} (hop : OpSpec op F)
   have ecx₂ : s₂.gpr .ecx = BitVec.ofNat 32 (256 - k) := by rw [g₂ _ (by decide) (by decide), h.ecx]
   have out : InRegions s₂.wr (coeffAddr (fA s₀) k) 4 := hp.in_f w₂ hk
   apply WP.of_runBlock
-  simp (config := {decide := true}) only [runBlock_cons, runStep_some, runBlock_nil, exec, execAlu,
+  simp only [reduceCtorEq, ↓reduceIte, Nat.reducePow, runBlock_cons, runStep_some, runBlock_nil, exec, execAlu,
     readSrc, State.ea, at_, State.store32, State.setReg, arithFlags, State.setFlags, esi₂,
-    hp.ea_f k hk, out, ite_true, ite_false, Option.bind_some, Option.some.injEq, exists_eq_left']
+    hp.ea_f k hk, out, Option.bind_some, Option.some.injEq, exists_eq_left']
   have hv : s₂.gpr .eax = newC F s₀ k := eq_ofNat_of_toNat v₂
   refine ⟨⟨by simp [g₂, h.esp], r₂, w₂, ?_, ?_, ?_, ?_, fun i hi => ?_⟩, ?_⟩
   · simp only [ite_true, ite_false, show Reg.esi ≠ Reg.ecx by decide, show Reg.esi ≠ Reg.edi by decide]

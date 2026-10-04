@@ -224,6 +224,10 @@ Avoid these patterns (each has cost tens of seconds in one proof):
   `Mathlib.Data.List.*` each add about half a second to every module that
   imports them, even indirectly: keep them out of modules that many others
   import (a framework file, an algorithm's `Spec` or `Stream` lemmas).
+  `ci/check_lean_speed.py` fails when a module importing heavy algebra
+  (`HEAVY_MATHLIB`: `Ring`, `ZMod`, `NormNum`, `Linarith`, polynomials, …)
+  is imported by more than 40 others; core `grind` proves the ring
+  identities `ring` is used for.
 * **Imports across targets:** a module of one target (a path with a
   directory of `TCB/`, e.g. `Proof/Sha256/Arm/…`) never imports a module of
   another target, even for a lemma that mentions no ISA: a change to one
@@ -242,6 +246,26 @@ Avoid these patterns (each has cost tens of seconds in one proof):
   `foo.lit` and checks `foo.lit_eq` once; then `taint_decide` and
   `lit_decide` (not `decide +kernel`) evaluate the literal, and the
   registration file's `spSafe := Code.all_of_allInstrs (by lit_decide)`.
+  Functions that build code or tables (a register allocator, spec
+  tables) get literals too: `materialize_table f n` (for `f : Nat → α`;
+  `Nat`-valued tables are packed into one number, read by a shift),
+  `materialize_value c` (any value with `ToExpr`). `materialize_code`,
+  `lit_decide` and `taint_decide` unfold the definitions that lead to any
+  constant with a literal and read it, so a generator runs once, in its own
+  `lit_eq`, if every module that evaluates code using it imports the module
+  with its literal (a literal module imports the literal modules of the
+  code it contains). Materializing code checked only once does not pay.
+* **Constant time of many callers of the same function:** prove the
+  callee's taint once as a summary (`taint_summary`, `taint_decide_sum`,
+  `Proof/Framework/TaintSum.lean`) rather than analysing its body in every
+  caller's `taint_decide`; this needs a `Taint.Frame` instance for the ISA's
+  taint domain (so far `AArch64.VectorTaint`, `Framework/AArch64/TaintMono.lean`).
+* **Tactics run compiled:** a module defining tactics, elaborators,
+  simprocs or `MetaM` functions that imports only Lean core and precompiled
+  modules goes in `NativeTactics` (lakefile); the interpreter runs it an
+  order of magnitude slower in every module that uses it
+  (`ci/check_lean_speed.py` checks it). Mathlib tactics run interpreted:
+  keep `tauto` and similar out of hot proofs.
 * **Register reads after writes:** in symbolic execution never unfold
   `State.setReg` (`write`, `setFlags`, `arithFlags`, `setV`): the registers
   become a function that `simp` re-simplifies under a binder at every
@@ -272,9 +296,26 @@ Avoid these patterns (each has cost tens of seconds in one proof):
   first, for literal indices; for any other index give the bound, `xs[i]'h`.
 * **Satisfiability witnesses:** the regions of a concrete witness state are
   disjoint by `Region.disjoint_of_sep (by decide)`, not `bv_omega`.
+* **`decide := true` in `simp`:** `simp (config := {decide := true})` runs
+  `decide` on every closed proposition it visits: cheap for small facts
+  (register equalities, small `Nat` comparisons, where simprocs measured
+  slower), seconds per block when those facts evaluate expensive
+  definitions. There, reduce them with simprocs (`reduceCtorEq`,
+  `↓reduceIte`, `Nat.reduceLT`, `Nat.reduceEqDiff`, `and_self`, …) or
+  discharge side conditions with `(disch := decide)`. Measure both;
+  `ci/check_lean_speed.py` counts the uses per file
+  (`ci/lean_speed_allowed.py`). `set_option simprocs false` turns off every
+  simproc, even those listed in `simp only [...]`.
 * **`assumption` among facts about states:** `assumption` tries every
   hypothesis at default transparency, unfolding states and registers before
-  each failed match; use `with_reducible assumption`, or name the hypothesis.
+  each failed match; use `with_reducible assumption`, or name the hypothesis
+  (`ci/check_lean_speed.py` rejects a bare `assumption` after `<;>` or in
+  `first`).
+* **Numeral exponents:** `2 ^ 64` elaborates in time quadratic in the number
+  of numeral exponents in a statement; `Proof/Framework/PowLit.lean`'s macro
+  elaborates it as `2 ^ (64 : Nat)` (the same term). A module with numeral
+  exponents imports it, directly or through `Framework/GetElem.lean`
+  (`ci/check_lean_speed.py` checks it).
 * **Failing unfolding:** `rfl`, `trivial`, `congr 1`, `exact` and `simpa` on
   goals about symbolic memory or hash values can unfold definitions (down
   to `BitVec` internals) for seconds before failing or succeeding. Close
@@ -377,8 +418,12 @@ chooses differently on a CPU that has those features: the runner's, or one
 Intel SDE presents (`rust-cpu-features` in `ci.yml`; SDE runs the SHA
 extensions' code very slowly, so the chips that have them run only the
 tests that need them); and benchmarks each with
-`VG_CPU_FEATURES` (`CPU_FEATURES` in `ci/bench_arches.py`). To test the
-baseline ISA's implementations:
+`VG_CPU_FEATURES` (`CPU_FEATURES` in `ci/bench_arches.py`). A configuration
+to test is a line of a CPU's `runs` in `rust-cpu-features`
+(`<VG_CPU_FEATURES> | <tests>`), never a step or job of its own, and
+each CPU has one line per value of `VG_CPU_FEATURES` (CI checks both), so
+a run never repeats another: add tests to a CPU's line for those features.
+To test the baseline ISA's implementations:
 
 ```sh
 VG_CPU_FEATURES=none WYCHEPROOF_ROOT=/path/to/wycheproof cargo test --features cpu-features-env

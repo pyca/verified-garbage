@@ -4,7 +4,6 @@ import VerifiedGarbage.Spec.MlKem.Poly
 import VerifiedGarbage.TCB.X86.Target
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.Contract
-import Mathlib.Tactic.Tauto
 
 /-!
 # ML-KEM on x86 (32-bit): `vg_mlkem_compress_encode`
@@ -182,7 +181,9 @@ theorem step14 {s₀ : State} (hp : Pre s₀) {d k N : Nat} (hd : dN s₀ = d) (
       _ ≤ 2 ^ 32 := by decide
   have o := o₂.trans o₃
   have g : ∀ r, r ∉ [Reg.eax, .edx, .ebx] → s₃.gpr r = s.gpr r := fun r hr =>
-    o.gpr r (by simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hr ⊢; tauto)
+    o.gpr r (by
+      simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false, not_or] at hr ⊢
+      simp only [hr, not_false_eq_true, and_self])
   have esi₃ := g .esi (by decide)
   have edi₃ := g .edi (by decide)
   have ecx₃ := g .ecx (by decide)
@@ -192,9 +193,9 @@ theorem step14 {s₀ : State} (hp : Pre s₀) {d k N : Nat} (hd : dN s₀ = d) (
   have out := out_in hp (o.wr.trans h.wr) (j := t) (by omega)
   have ho : 1 * t = t := Nat.one_mul t
   apply WP.of_runBlock
-  simp (config := {decide := true}) only [runBlock_cons, runStep_some, runBlock_nil, exec, execAlu,
+  simp only [reduceCtorEq, ↓reduceIte, Nat.reducePow, runBlock_cons, runStep_some, runBlock_nil, exec, execAlu,
     readSrc, State.ea, at_, State.store8, State.setReg, arithFlags, State.setFlags, Reg8.reg,
-    Option.bind_some, edi₃, h.edi, ho, eo, out, ite_true, ite_false, Option.some.injEq, exists_eq_left']
+    Option.bind_some, edi₃, h.edi, ho, eo, out, Option.some.injEq, exists_eq_left']
   have hbyte : (s₃.gpr .ebx).setWidth 8 = (L s₀)[t]! := by
     rw [setWidth8_eq, v₃, byte14 hd hdk hd14 (by omega), pk_congr (fun i hi => hC i hi)]
     refine congrArg (BitVec.ofNat 8) ?_
@@ -233,7 +234,7 @@ theorem step10 {s₀ : State} (hp : Pre s₀) (hd : dN s₀ = 10) {t : Nat} (ht 
   have o₃ := (o₁.trans ((Only.setReg s₁ .ebp (s₁.gpr .eax)).trans (Only.setReg _ .ebx _))).trans o₂
   have bx : (s₂.gpr .ebx).toNat = C s₀ (4 * t + 3) % 4 := by
     rw [v₂, show (3 : BitVec 32) = BitVec.ofNat 32 (2 ^ 2 - 1) from rfl, toNat_and_mask _ _ (by decide)]
-    simp (config := {decide := true}) only [State.setReg, ite_true, ite_false]
+    simp only [reduceCtorEq, ↓reduceIte, Nat.reducePow, State.setReg]
     rw [v₁, hC 3 (by omega)]
   have bp : s₂.gpr .ebp = BitVec.ofNat 32 (C s₀ (4 * t + 3)) := by
     rw [o₂.gpr .ebp (by decide)]
@@ -244,7 +245,9 @@ theorem step10 {s₀ : State} (hp : Pre s₀) (hd : dN s₀ = 10) {t : Nat} (ht 
     (by have := Nat.mod_lt (C s₀ (4 * t + 3)) (show 4 > 0 by decide); omega) fun s₄ o₄ v₄ => ?_
   have o := o₃.trans o₄
   have g : ∀ r, r ∉ [Reg.eax, .edx, .ebx, .ebp] → s₄.gpr r = s.gpr r := fun r hr =>
-    o.gpr r (by simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hr ⊢; tauto)
+    o.gpr r (by
+      simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false, not_or] at hr ⊢
+      simp only [hr, not_false_eq_true, and_self])
   have esi₄ := g .esi (by decide)
   have edi₄ := g .edi (by decide)
   have ecx₄ := g .ecx (by decide)
@@ -267,9 +270,9 @@ theorem step10 {s₀ : State} (hp : Pre s₀) (hd : dN s₀ = 10) {t : Nat} (ht 
   have w4 := out 4 (by omega)
   simp only [Nat.add_zero] at e0 w0
   apply WP.of_runBlock
-  simp (config := {decide := true}) only [runBlock_cons, runStep_some, runBlock_nil, exec, execAlu,
+  simp only [reduceCtorEq, ↓reduceIte, Nat.reduceLeDiff, Nat.reduceEqDiff, Nat.reduceSub, Nat.reducePow, and_self, runBlock_cons, runStep_some, runBlock_nil, exec, execAlu,
     execShift, readSrc, State.ea, at_, State.store8, State.setReg, arithFlags, State.setFlags, Reg8.reg,
-    Option.bind_some, Option.map_some, edi₄, h.edi, e0, e1, e2, e3, e4, w0, w1, w2, w3, w4, bp₄, ite_true, ite_false,
+    Option.bind_some, Option.map_some, edi₄, h.edi, e0, e1, e2, e3, e4, w0, w1, w2, w3, w4, bp₄, 
     Option.some.injEq, exists_eq_left']
   -- The values.
   have lc : ∀ i < 4, C s₀ (4 * t + i) < 1024 := fun i _ => by rw [C, hd]; exact compress_lt 10 _
@@ -362,9 +365,9 @@ theorem init_piece : Piece Pre Pub (fun s₀ s => s = P0 s₀) (Init · 1) (.blo
     have v₂ := P0_arg hp.sp (n := 4) (i := 2) (by omega) fit hp.stk_a
     simp only [Nat.mul_zero, Nat.add_zero, Nat.mul_one, Nat.reduceMul, Nat.reduceAdd] at a₀ a₁ a₂
     apply WP.of_runBlock
-    simp (config := {decide := true}) only [ceInit, at_, runBlock_cons, runStep_some, runBlock_nil,
+    simp only [reduceCtorEq, ↓reduceIte, ceInit, at_, runBlock_cons, runStep_some, runBlock_nil,
       exec, execAlu, readSrc, State.ea, State.load32, State.setReg, arithFlags, State.setFlags,
-      Option.map_some, Option.bind_some, a₀, a₁, a₂, i₀, i₁, i₂, v₀, v₁, v₂, ite_true, ite_false,
+      Option.map_some, Option.bind_some, a₀, a₁, a₂, i₀, i₁, i₂, v₀, v₁, v₂, 
       Option.some.injEq, exists_eq_left']
     refine ⟨by simp, rfl, rfl, rfl, by simp, by simp, by simp, ?_⟩
     simp only [eval, sub_beq_zero]

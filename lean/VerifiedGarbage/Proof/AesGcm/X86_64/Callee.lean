@@ -1,9 +1,11 @@
 import VerifiedGarbage.Proof.AesGcm.X86_64.Loops
+import VerifiedGarbage.Impl.AesGcm.X86_64.Blocks
+import VerifiedGarbage.Spec.Gcm.Contract
+import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Spec
 import VerifiedGarbage.Proof.Aes.X86_64.Variant
 import VerifiedGarbage.Proof.Aes.X86_64.ExpandKey
 import VerifiedGarbage.Proof.Aes.X86_64.AesNi.ExpandKey
-import VerifiedGarbage.Proof.Gcm.X86_64.Ghash
-import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.Ghash
+import VerifiedGarbage.Proof.Gcm.X86_64.Contract
 import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 
 /-!
@@ -54,34 +56,6 @@ structure KeyImpl where
 
 theorem nosp_of {c : Prog isa} (h : ((instrs c).all fun i => !Taint.clobbers i .rsp) = true) : NoSp c :=
   fun i hi => by simpa using List.all_eq_true.mp h i hi
-
-namespace GhashImpl
-
-/-- `vg_ghash`, in the baseline ISA. -/
-def scalar : GhashImpl where
-  fn := ⟨"vg_ghash", Impl.Gcm.X86_64.ghash⟩
-  depth := by lit_decide
-  ok := Proof.Gcm.X86_64.ghash_correct
-  ct := Proof.Gcm.X86_64.ghash_ct
-  nosp := nosp_of (by rw [← Code.allInstrs_eq]; lit_decide)
-  mxcsr := by lit_decide
-  spSafe := Code.all_of_allInstrs (by lit_decide)
-  suffix := ""
-  features := []
-
-/-- `vg_ghash_pclmul`. -/
-def pclmul : GhashImpl where
-  fn := ⟨"vg_ghash_pclmul", Impl.Gcm.X86_64.Pclmul.ghash⟩
-  depth := by lit_decide
-  ok := Proof.Gcm.X86_64.Pclmul.ghash_correct
-  ct := Proof.Gcm.X86_64.Pclmul.ghash_ct
-  nosp := nosp_of (by rw [← Code.allInstrs_eq]; lit_decide)
-  mxcsr := by lit_decide
-  spSafe := Code.all_of_allInstrs (by lit_decide)
-  suffix := "_pclmul"
-  features := ["pclmulqdq", "ssse3"]
-
-end GhashImpl
 
 namespace KeyImpl
 
@@ -371,24 +345,80 @@ theorem key_rel (k : KeyImpl) {P : State → State → Prop}
 
 /-! ## The implementations, together -/
 
+/-- What `Blocks.stitchPart` needs of the loops `code` it runs, besides
+their contract: no write of `mxcsr` or `rsp`, no calls, and constant time,
+from the registers it keeps public. -/
+structure Piece (code : Prog isa) : Prop where
+  mxcsr : code.allInstrs (fun i => !loadsMxcsr i) = true
+  spSafe : code.all (fun i => !X86_64.isa.writesSp i) = true
+  nosp : code.allInstrs (fun i => !Taint.clobbers i .rsp) = true
+  depth : code.depth = 0
+  ct : ∃ hc, ((taint.check (Taint.ofRegs [.r11, .rdi, .rsi, .rdx, .rcx, .r8, .r9, .rsp])
+    (Blocks.stitchPart code) hc).map fun τ' => (RegSet.ofList [Reg.rsp]).subset τ'.regs &&
+      (!false || τ'.flags)) = some true
+
+/-- Loops that interleave counter mode and GHASH on groups of 16 blocks, for
+`vg_aes_gcm_encrypt_blocks` and `_decrypt_blocks` (`Gcm.X86_64.Stitch.SPre`).
+Their proof is supplied only by the instances that use them (it imports the
+algebra of `Proof/Gcm/Poly.lean`). -/
+structure StitchImpl where
+  /-- What the names of the instances using them end with, after the
+  callees' suffixes. -/
+  suffix : String
+  /-- The CPU features they need beyond the callees'. -/
+  features : List String
+  enc : Prog isa
+  dec : Prog isa
+  ok : Gcm.X86_64.Stitch.StitchOk enc dec
+  encP : Piece enc
+  decP : Piece dec
+
+namespace StitchImpl
+
+variable (st : Option StitchImpl) {f : StitchImpl → Prog isa} (hf : ∀ i, Piece (f i))
+include hf
+
+theorem head_mxcsr : (Blocks.head (st.map f)).allInstrs (fun i => !loadsMxcsr i) = true := by
+  rcases st with _ | i <;>
+  simp only [Option.map, Blocks.head, Blocks.stitchPart, Code.allInstrs, (hf _).mxcsr] <;> decide
+
+theorem head_spSafe : (Blocks.head (st.map f)).all (fun i => !X86_64.isa.writesSp i) = true := by
+  rcases st with _ | i <;>
+  simp only [Option.map, Blocks.head, Blocks.stitchPart, Code.all, (hf _).spSafe] <;> decide
+
+theorem head_nosp : (Blocks.head (st.map f)).allInstrs (fun i => !Taint.clobbers i .rsp) = true := by
+  rcases st with _ | i <;>
+  simp only [Option.map, Blocks.head, Blocks.stitchPart, Code.allInstrs, (hf _).nosp] <;> decide
+
+theorem head_depth : (Blocks.head (st.map f)).depth = 0 := by
+  rcases st with _ | i <;>
+  simp only [Option.map, Blocks.head, Blocks.stitchPart, Code.depth, (hf _).depth] <;> decide
+
+end StitchImpl
+
 /-- What an AES-GCM function calls: an implementation of `vg_aes_ctr32`, the
 `vg_aes_expand_key` for the same CPUs, and one of `vg_ghash`. -/
 structure GcmImpl where
   ctr : Ctr32Impl
   key : KeyImpl
   gh : GhashImpl
+  /-- The loops with which `vg_aes_gcm_encrypt_blocks` and `_decrypt_blocks`
+  interleave counter mode and GHASH, if any. -/
+  stitch : Option StitchImpl := none
 
 namespace GcmImpl
 
 variable (v : GcmImpl)
 
-def callees : Callees := ⟨⟨v.ctr.callee.name, v.ctr.callee.code⟩, v.key.fn, v.gh.fn⟩
-
 /-- What the names of the functions calling `vg_ghash` end with. -/
-def suffix : String := v.ctr.suffix ++ v.gh.suffix
+def suffix : String := v.ctr.suffix ++ v.gh.suffix ++ (v.stitch.map (·.suffix)).getD ""
 
-/-- The CPU features of the functions calling `vg_aes_ctr32` and `vg_ghash`. -/
-def features : List String := (v.ctr.features ++ v.gh.features).dedup
+def callees : Callees :=
+  ⟨⟨v.ctr.callee.name, v.ctr.callee.code⟩, v.key.fn, v.gh.fn,
+    ⟨Spec.Gcm.encryptBlocksApi.name ++ v.suffix,
+      Impl.AesGcm.X86_64.Blocks.encrypt ⟨v.ctr.callee.name, v.ctr.callee.code⟩ v.gh.fn (v.stitch.map (·.enc))⟩,
+    ⟨Spec.Gcm.decryptBlocksApi.name ++ v.suffix,
+      Impl.AesGcm.X86_64.Blocks.decrypt ⟨v.ctr.callee.name, v.ctr.callee.code⟩ v.gh.fn (v.stitch.map (·.dec))⟩⟩
 
 end GcmImpl
 

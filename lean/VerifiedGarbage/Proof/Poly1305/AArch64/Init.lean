@@ -109,7 +109,7 @@ theorem init_ok (s : State) (hs : Proof.Poly1305.initAArch64.pre s) :
       Proof.Poly1305.initAArch64.post s s' := by
   obtain ⟨h1, h2, h3⟩ := hs
   obtain ⟨t, s', he, h⟩ := init_correct ⟨h1, h2, h3⟩
-  exact ⟨t, s', he, ⟨fun r hr => Exec.gpr (init_untouched r hr) he, Exec.sp he, Exec.preservedV he⟩, h⟩
+  exact ⟨t, s', he, ⟨fun r hr => Exec.gpr (init_untouched r hr) he, Exec.sp he, Exec.preservedV he (by lit_decide)⟩, h⟩
 
 theorem init_ct : ConstantTime isa Proof.Poly1305.initAArch64.pre Proof.Poly1305.initAArch64.pub
     Impl.Poly1305.AArch64.init := by
@@ -117,7 +117,7 @@ theorem init_ct : ConstantTime isa Proof.Poly1305.initAArch64.pre Proof.Poly1305
   intro s₁ s₂ _ _ ⟨h1, h2, hsp⟩
   refine ⟨hsp, fun r hr => ?_⟩
   simp only [VG.AArch64.Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl <;> assumption
+  rcases hr with rfl | rfl <;> with_reducible assumption
 
 theorem init_verified :
     Verified AArch64.target Impl.Poly1305.AArch64.init (Spec.Poly1305.initContract AArch64.abi) :=

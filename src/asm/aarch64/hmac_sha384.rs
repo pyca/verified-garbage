@@ -237,7 +237,7 @@ pub(crate) unsafe extern "C" fn vg_hmac_sha384_finalize(inner: *mut [u8; 192], o
         "add x1, x2, #0",
         "add x2, x23, #744",
         "add x3, x23, #0",
-        "bl {vg_sha512_finalize}",
+        "bl {vg_sha512_finalize_scratch}",
         "ldr w9, [x20, #0]",
         "str w9, [x19, #0]",
         "ldr w9, [x20, #4]",
@@ -385,13 +385,13 @@ pub(crate) unsafe extern "C" fn vg_hmac_sha384_finalize(inner: *mut [u8; 192], o
         "ldr x30, [x23, #728]",
         "ldr x23, [x23, #736]",
         "ret",
-        vg_sha512_finalize = sym super::sha512::vg_sha512_finalize,
+        vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch,
         vg_sha512_compress = sym super::sha512::vg_sha512_compress,
     )
 }
 
 /// The CPU features `vg_hmac_sha384_init_sha3` requires (`Artifact.features`).
-pub(crate) const VG_HMAC_SHA384_INIT_SHA3_FEATURES: &[&str] = &["sha3"];
+pub(crate) const VG_HMAC_SHA384_INIT_SHA3_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["sha3"]);
 
 /// Starts an HMAC-SHA-384 computation with a key of at most 128 bytes: makes the SHA-384 streaming state `*inner` represent `K₀ ⊕ ipad` and `*outer` represent `K₀ ⊕ opad`, where `K₀` is the `key_len` bytes at `key` padded with zeros to 128 bytes (FIPS 198-1). The text is then absorbed with `vg_sha512_update` on `*inner` (its `count` starting at 128), and the MAC computed with `vg_hmac_sha384_finalize`.
 ///
@@ -601,7 +601,7 @@ pub(crate) unsafe extern "C" fn vg_hmac_sha384_init_sha3(inner: *mut [u8; 192], 
 }
 
 /// The CPU features `vg_hmac_sha384_finalize_sha3` requires (`Artifact.features`).
-pub(crate) const VG_HMAC_SHA384_FINALIZE_SHA3_FEATURES: &[&str] = &["sha3"];
+pub(crate) const VG_HMAC_SHA384_FINALIZE_SHA3_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["sha3"]);
 
 /// Finishes an HMAC-SHA-384 computation: if, for a 128-byte key `K₀` and a text of fewer than 2⁶⁴ − 128 bytes, the SHA-384 streaming state `*inner` represents `(K₀ ⊕ ipad) ‖ text`, of `count` bytes, and `*outer` represents `K₀ ⊕ opad`, writes the HMAC-SHA-384 of the text under `K₀` (48 bytes) to `*out`.
 ///
@@ -636,7 +636,7 @@ pub(crate) unsafe extern "C" fn vg_hmac_sha384_finalize_sha3(inner: *mut [u8; 19
         "add x1, x2, #0",
         "add x2, x23, #744",
         "add x3, x23, #0",
-        "bl {vg_sha512_finalize_sha3}",
+        "bl {vg_sha512_finalize_scratch_sha3}",
         "ldr w9, [x20, #0]",
         "str w9, [x19, #0]",
         "ldr w9, [x20, #4]",
@@ -785,7 +785,7 @@ pub(crate) unsafe extern "C" fn vg_hmac_sha384_finalize_sha3(inner: *mut [u8; 19
         "ldr x23, [x23, #736]",
         "ret",
         ".arch_extension nosha3",
-        vg_sha512_finalize_sha3 = sym super::sha512::vg_sha512_finalize_sha3,
+        vg_sha512_finalize_scratch_sha3 = sym super::sha512::vg_sha512_finalize_scratch_sha3,
         vg_sha512_compress_sha3 = sym super::sha512::vg_sha512_compress_sha3,
     )
 }

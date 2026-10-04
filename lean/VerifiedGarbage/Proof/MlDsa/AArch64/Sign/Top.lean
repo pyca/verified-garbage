@@ -162,7 +162,7 @@ theorem pro_ok {σ : State} (hin : ∀ k < 7, InRegions σ.wr (σ.gpr .x4 + BitV
   rw [pro_eq, WP.block_append_iff]
   refine WP.mono (WP.preservedV (Proof.MlKem.AArch64.KeyGen.saves_ok
     (σ.gpr .x4) .x4 oSV savedRegs (by decide) (by decide) 7
-    (by decide) rfl hin) (by decide +kernel)) fun s₁ ⟨⟨g₁, r₁, w₁, p₁, z₁, f₁⟩, hv₁⟩ => ?_
+    (by decide) rfl hin) (by lit_decide)) fun s₁ ⟨⟨g₁, r₁, w₁, p₁, z₁, f₁⟩, hv₁⟩ => ?_
   refine wp_addImm (by decide) fun s₂ h₂ e₂ => wp_addImm (by decide) fun s₃ h₃ e₃ =>
     wp_addImm (by decide) fun s₄ h₄ e₄ => wp_addImm (by decide) fun s₅ h₅ e₅ =>
       wp_addImm (by decide) fun s₆ h₆ e₆ => wp_movz fun s₇ h₇ e₇ => wp_nil ?_

@@ -4,6 +4,7 @@ import VerifiedGarbage.Proof.Md5.X86_64.Stream.Init
 import VerifiedGarbage.Proof.Md5.X86_64.Lit
 import VerifiedGarbage.Proof.Hmac.Generic.Common
 import VerifiedGarbage.Spec.Md5.Contract
+import VerifiedGarbage.Proof.Framework.TaintBatch
 
 /-!
 # MD5 on x86-64, as a Merkle–Damgård hash function
@@ -30,8 +31,8 @@ def hash : Hash where
   compC := Impl.Md5.X86_64.compress
   initN := Spec.Md5.initApi.name
   initC := Impl.Md5.X86_64.Stream.init
-  updN := Spec.Md5.updateApi.name
-  finN := Spec.Md5.finalizeApi.name
+  updN := Spec.Md5.updateScratchApi.name
+  finN := Spec.Md5.finalizeScratchApi.name
   hmacInitN := Spec.Hmac.md5I.initApi.name
   hmacFinN := Spec.Hmac.md5I.finalizeApi.name
   iterN := Spec.Hmac.md5I.iterateApi.name
@@ -40,44 +41,44 @@ def hash : Hash where
 def coreH : Hash := ⟨Impl.Md5.X86_64.Stream.params, 16, 48, "", .block [], "", .block [], "", "", "", "",
   ""⟩
 
-theorem coreOK : CoreOK coreH where
-  pbk := ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩,
-    ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩,
-    ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩,
-    ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩
-  iter := ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩,
-    ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩
-  hinit := {
-    pro := ⟨_, by taint_decide⟩
-    argI := by
-      simp only [List.mem_cons, List.not_mem_nil, or_false]
-      rintro st (rfl | rfl) <;> exact ⟨_, by taint_decide⟩
-    keys := ⟨_, by taint_decide⟩
-    mid := ⟨_, by taint_decide⟩
-    restore := ⟨_, by taint_decide⟩ }
-  hfin := ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩
-  pbkMx := by decide +kernel
-  pbkSp := by decide +kernel
-  hinitMx := by decide +kernel
-  hinitSp := by decide +kernel
-  hinitNs := by decide +kernel
-  hinitD := by decide +kernel
-  hfinMx := by decide +kernel
-  hfinSp := by decide +kernel
-  hfinNs := by decide +kernel
-  hfinD := by decide +kernel
-  iterMx := by decide +kernel
-  iterSp := by decide +kernel
-  iterNs := by decide +kernel
-  iterD := by decide +kernel
-  updMx := by decide +kernel
-  updNs := by decide +kernel
-  updD := by decide +kernel
-  finMx := by decide +kernel
-  finNs := by decide +kernel
-  finD := by decide +kernel
-  fitI := by decide
-  fitF := by decide
+theorem coreOK : CoreOK coreH := by
+  refine {
+    pbk := ⟨⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩,
+      ⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩,
+      ⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩,
+      ⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩⟩
+    iter := ⟨⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩,
+      ⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩⟩
+    hinit := {
+      pro := ⟨?_, ?_⟩
+      argI := List.forall_mem_cons.mpr ⟨⟨?_, ?_⟩, List.forall_mem_cons.mpr ⟨⟨?_, ?_⟩, List.forall_mem_nil _⟩⟩
+      keys := ⟨?_, ?_⟩
+      mid := ⟨?_, ?_⟩
+      restore := ⟨?_, ?_⟩ }
+    hfin := ⟨⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩⟩
+    pbkMx := ?_
+    pbkSp := ?_
+    hinitMx := ?_
+    hinitSp := ?_
+    hinitNs := ?_
+    hinitD := ?_
+    hfinMx := ?_
+    hfinSp := ?_
+    hfinNs := ?_
+    hfinD := ?_
+    iterMx := ?_
+    iterSp := ?_
+    iterNs := ?_
+    iterD := ?_
+    updMx := ?_
+    updNs := ?_
+    updD := ?_
+    finMx := ?_
+    finNs := ?_
+    finD := ?_
+    fitI := ?_
+    fitF := ?_ }
+  taint_decide_all
 
 theorem callees : Callees hash where
   cMx := by simp only [hash]; lit_decide

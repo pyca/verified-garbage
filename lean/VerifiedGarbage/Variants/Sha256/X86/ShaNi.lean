@@ -15,8 +15,8 @@ open VG.Proof.Sha256.X86.Stream (params dims)
 open VG.Proof.Sha256 (md)
 open VG.Proof.MdStream VG.Proof.MdStream.X86
 open VG.Proof.Pbkdf2.Stream.X86 (Sha256Stream)
-open VG.Proof.Pbkdf2.Md.X86 (sha256M)
-open VG.Proof.Sha256.X86.Variants (pbkdf2Fns)
+open VG.Proof.Pbkdf2.Md.X86 (sha256M sha224M)
+open VG.Proof.Sha256.X86.Variants (pbkdf2Fns pbkdf2Fns224)
 
 abbrev cmpN := "vg_sha256_compress_shani"
 abbrev cmpC := Impl.Sha256.X86.ShaNi.compress
@@ -45,12 +45,14 @@ theorem compress_shared : Verified X86.target cmpC (Spec.Sha256.compressContract
     Proof.Sha256.X86.Shared.compressWide_implies.sat_left).of_implies
       Proof.Sha256.X86.Shared.compressWide_implies
 
-theorem update_shared : Verified X86.target sha256Update (Spec.Sha256.updateContract X86.abi 20) :=
+theorem updateScratch_shared :
+    Verified X86.target sha256Update (Spec.Sha256.updateScratchContract X86.abi 20) :=
   (Proof.Sha256.X86.Shared.updateWide_of (Proof.Sha256.X86.Stream.update_of callee update_ct)
     Proof.Sha256.X86.Shared.updateWide_implies.sat_left).of_implies
       Proof.Sha256.X86.Shared.updateWide_implies
 
-theorem finalize_shared : Verified X86.target sha256Finalize (Spec.Sha256.finalizeContract X86.abi 20) :=
+theorem finalizeScratch_shared :
+    Verified X86.target sha256Finalize (Spec.Sha256.finalizeScratchContract X86.abi 20) :=
   (Proof.Sha256.X86.Shared.finalizeWide_of (Proof.Sha256.X86.Stream.finalize_of callee finalize_ct)
     Proof.Sha256.X86.Shared.finalizeWide_implies.sat_left).of_implies
       Proof.Sha256.X86.Shared.finalizeWide_implies
@@ -71,6 +73,10 @@ materialize_code sha256HInit := (sha256M stream cmpN cmpC).hmacInit
 materialize_code sha256HFinalize := (sha256M stream cmpN cmpC).hmacFin
 materialize_code sha256HIterate := (sha256M stream cmpN cmpC).iterate
 materialize_code sha256HPbkdf2 := (pbkdf2Fns stream cmpN cmpC).pbkdf2
+materialize_code sha224HInit := (sha224M stream cmpN cmpC).hmacInit
+materialize_code sha224HFinalize := (sha224M stream cmpN cmpC).hmacFin
+materialize_code sha224HIterate := (sha224M stream cmpN cmpC).iterate
+materialize_code sha224HPbkdf2 := (pbkdf2Fns224 stream cmpN cmpC).pbkdf2
 
 def variant : Proof.Sha256.X86.Variants.Backend where
   cmpN := cmpN
@@ -89,18 +95,36 @@ def variant : Proof.Sha256.X86.Variants.Backend where
       ofApi := rfl
       spSafe := Code.all_of_allInstrs (by lit_decide) },
     { api := Spec.Sha256.updateApi
-      code := sha256Update
-      contract := Spec.Sha256.updateContract X86.abi 20
-      stack := 20
-      verified := update_shared
+      code := Impl.StackScratch.X86.withStackScratch 636 5 sha256Update
+      contract := Spec.Sha256.updateContract X86.abi (20 + 636)
+      stack := 20 + 636
+      verified := Proof.Sha256.X86.Shared.update_frame updateScratch_shared (by lit_decide)
+        (by lit_decide)
       ofSig := ⟨_, _, _, rfl⟩
       ofApi := rfl
       spSafe := Code.all_of_allInstrs (by lit_decide) },
     { api := Spec.Sha256.finalizeApi
-      code := sha256Finalize
-      contract := Spec.Sha256.finalizeContract X86.abi 20
+      code := Impl.StackScratch.X86.withStackScratch 632 4 sha256Finalize
+      contract := Spec.Sha256.finalizeContract X86.abi (20 + 632)
+      stack := 20 + 632
+      verified := Proof.Sha256.X86.Shared.finalize_frame finalizeScratch_shared (by lit_decide)
+        (by lit_decide)
+      ofSig := ⟨_, _, _, rfl⟩
+      ofApi := rfl
+      spSafe := Code.all_of_allInstrs (by lit_decide) },
+    { api := Spec.Sha256.updateScratchApi
+      code := sha256Update
+      contract := Spec.Sha256.updateScratchContract X86.abi 20
       stack := 20
-      verified := finalize_shared
+      verified := updateScratch_shared
+      ofSig := ⟨_, _, _, rfl⟩
+      ofApi := rfl
+      spSafe := Code.all_of_allInstrs (by lit_decide) },
+    { api := Spec.Sha256.finalizeScratchApi
+      code := sha256Finalize
+      contract := Spec.Sha256.finalizeScratchContract X86.abi 20
+      stack := 20
+      verified := finalizeScratch_shared
       ofSig := ⟨_, _, _, rfl⟩
       ofApi := rfl
       spSafe := Code.all_of_allInstrs (by lit_decide) }]
@@ -114,5 +138,15 @@ def variant : Proof.Sha256.X86.Variants.Backend where
   finalizeStack := by lit_decide
   iterNoSp := NoSp.of_all (by lit_decide)
   iterStack := by lit_decide
+  init224Sp := Code.all_of_allInstrs (by lit_decide)
+  fin224Sp := Code.all_of_allInstrs (by lit_decide)
+  iter224Sp := Code.all_of_allInstrs (by lit_decide)
+  pbkdf2_224Sp := Code.all_of_allInstrs (by lit_decide)
+  init224NoSp := NoSp.of_all (by lit_decide)
+  init224Stack := by lit_decide
+  finalize224NoSp := NoSp.of_all (by lit_decide)
+  finalize224Stack := by lit_decide
+  iter224NoSp := NoSp.of_all (by lit_decide)
+  iter224Stack := by lit_decide
 
 end VG.Variants.Sha256.X86.ShaNi

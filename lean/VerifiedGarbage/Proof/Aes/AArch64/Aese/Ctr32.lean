@@ -657,7 +657,7 @@ theorem ctr32_correct (s : State) (hs : Proof.Aes.ctr32AArch64.pre s) :
     ∃ t s', Exec isa ctr32 s t s' ∧ abiPreserved s s' ∧ Proof.Aes.ctr32AArch64.post s s' := by
   obtain ⟨t, s', he, h₂, h₁⟩ :=
     WP.gprs (rs := preserved) (correct (pre_of hs)) (by decide +kernel) (by decide +kernel)
-  exact ⟨t, s', he, ⟨h₁, Exec.sp he, Exec.preservedV he⟩, h₂⟩
+  exact ⟨t, s', he, ⟨h₁, Exec.sp he, Exec.preservedV he (by lit_decide)⟩, h₂⟩
 
 theorem ctr32_ct : ConstantTime isa Proof.Aes.ctr32AArch64.pre Proof.Aes.ctr32AArch64.pub ctr32 := by
   refine VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0, .x1, .x2, .x3, .x4, .x5])
@@ -665,7 +665,7 @@ theorem ctr32_ct : ConstantTime isa Proof.Aes.ctr32AArch64.pre Proof.Aes.ctr32AA
   intro s₁ s₂ _ _ ⟨h1, h2, h3, h4, h5, h6, hsp⟩
   refine ⟨hsp, fun r hr => ?_⟩
   simp only [VG.AArch64.Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl <;> assumption
+  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption
 
 theorem ctr32_verified :
     Verified AArch64.target ctr32 (Spec.Gcm.ctr32Contract AArch64.abi) :=

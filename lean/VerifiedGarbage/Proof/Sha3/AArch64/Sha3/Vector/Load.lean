@@ -65,8 +65,8 @@ theorem load_ok (s₀ : VG.AArch64.State)
   · rw [hs.keep.rd,hs.keep.wr,hs.keep.gpr]
     exact hl
   · refine ⟨?_,hs.keep.mem,fun j hj => ?_⟩
-    · constructor <;> simp (config := {decide := true}) only [RegUpd.gpr_setV,RegUpd.gpr_write,
-        ite_false,RegUpd.rd_setV,RegUpd.rd_write,RegUpd.wr_setV,RegUpd.wr_write,
+    · constructor <;> simp only [reduceCtorEq, ↓reduceIte, RegUpd.gpr_setV,RegUpd.gpr_write,
+        RegUpd.rd_setV,RegUpd.rd_write,RegUpd.wr_setV,RegUpd.wr_write,
         RegUpd.sp_setV,RegUpd.sp_write,hs.keep.gpr,hs.keep.rd,hs.keep.wr,hs.keep.sp]
     · simp only [Spec.Sha3.stateAt,Vector.getElem_ofFn,low,RegUpd.v_setV,
         RegUpd.gpr_write_self,Size.bits,BitVec.setWidth_eq]

@@ -30,9 +30,9 @@ theorem setup_ok (s : State) :
       s'.gpr .r3 = s.gpr .r2 ∧ s'.gpr .r2 = s.gpr .r3 ∧
       zeroCount s' = some (s.gpr .r2 == 0) ∧ Keep [.r12, .r3, .r2] s s' := by
   refine ⟨_, by
-    simp (config := {decide := true}) only [Impl.TripleDes.Arm.Ecb.setup, rr,
-      runBlock_cons, runStep_some, runBlock_nil, exec, Op2.eval, ite_true,
-      Option.map_some, gpr_setReg, ite_false]
+    simp only [reduceCtorEq, ↓reduceIte, Impl.TripleDes.Arm.Ecb.setup, rr,
+      runBlock_cons, runStep_some, exec, Op2.eval, 
+      Option.map_some, gpr_setReg]
     rfl, ?_, ?_, ?_, ?_⟩
   · simp only [gpr_subFlags, gpr_setReg, reduceCtorEq, ite_false, ite_true]
   · simp only [gpr_subFlags, gpr_setReg, reduceCtorEq, ite_false, ite_true]

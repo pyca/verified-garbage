@@ -72,8 +72,8 @@ theorem fn_ok (r : Nat) (hr : r < 4) (b c d : Reg) (hb : b ≠ T0) (hc : c ≠ T
   simp only [T0, Ones] at hb hc hd h₄ ⊢
   apply WP.of_runBlock
   rcases (by omega : r = 0 ∨ r = 1 ∨ r = 2 ∨ r = 3) with rfl | rfl | rfl | rfl <;>
-  simp (config := {decide := true}) only [fn, T0, Ones, runBlock_cons, runStep_some,
-    runBlock_nil, exec, Op2.eval, isa, RegUpd.gpr_setReg, RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg, ite_true, ite_false, hb, hc, hd,
+  simp only [↓reduceIte, and_self, fn, T0, Ones, runBlock_cons, runStep_some,
+    runBlock_nil, exec, Op2.eval, isa, RegUpd.gpr_setReg, RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg, hb, hc, hd,
     h₁, h₂, h₃, h₄, Option.map_some, Option.some.injEq, exists_eq_left'] <;>
   refine ⟨?_, fun x hx => by simp [hx], trivial⟩
   · rw [show roundFn 0 = F from rfl, F_eq]
@@ -112,9 +112,9 @@ theorem tail_ok (a b : Reg) (k : Nat) (hk : k < 16) (T : Word) (n : Nat) (hn : 1
   have hax' : Reg.r1 ≠ a := fun h => hax h.symm
   simp only [T0, T1] at h₃ ha₁ ha₁' hb₁ ⊢
   apply WP.of_runBlock
-  simp (config := {decide := true}) only [tailI, T0, T1, runBlock_cons, runStep_some,
-    runBlock_nil, exec, Op2.eval, isa, RegUpd.gpr_setReg, RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg, State.load32, ho, hn, ite_true, ite_false,
-    ha₁, ha₁', hb₁, hba, hax', h₁, h₂, h₃, hr1, hin, hx, and_self,
+  simp only [↓reduceIte, Nat.reduceAdd, tailI, T0, T1, runBlock_cons, runStep_some,
+    runBlock_nil, exec, Op2.eval, isa, RegUpd.gpr_setReg, RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg, State.load32, ho, hn, 
+    ha₁, hb₁, hba, hax', h₁, h₂, h₃, hr1, hin, hx, and_self,
     Option.map_some, Option.some.injEq, exists_eq_left']
   refine ⟨by rw [movw_movt], fun r hr hr' => by simp [hr, hr'], trivial⟩
 

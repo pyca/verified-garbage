@@ -287,7 +287,7 @@ theorem cmp_ok {o : Nat} (ho : o = 0 ∨ o = 112) {s : State} (he : Env Ctx St W
     ⟨_, by xrun [h15₂, r₁, r₂, r₃, r₄], ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ fun s₃ ⟨hax, h13, h14, h15', hsp, hm, hrd, hwr⟩ =>
       ⟨he₂.keep (fun r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-        rcases hr with rfl | rfl | rfl | rfl <;> assumption) hrd hwr,
+        rcases hr with rfl | rfl | rfl | rfl <;> with_reducible assumption) hrd hwr,
        by rw [hax]; simp only [hXe], hm ▸ f₂⟩
   · simp only [gpr_setReg, gpr_arithFlags, cf_setReg, cf_arithFlags, ite_true, ite_false, reduceCtorEq, hX]
     by_cases e : X = 0

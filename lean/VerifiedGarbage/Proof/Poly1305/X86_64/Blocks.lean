@@ -9,8 +9,6 @@ import VerifiedGarbage.Proof.Framework.Omega
 # Poly1305 on x86-64: `blocks`
 -/
 
-open VG.PowLit
-
 namespace VG.Proof.Poly1305.X86_64
 
 open VG VG.X86_64 VG.Impl.Poly1305.X86_64
@@ -215,7 +213,7 @@ theorem mov_rcx_ok (s : State) :
     WP isa (.block [.mov .rcx (.reg .rdx)]) s fun s' =>
       s'.gpr .rcx = s.gpr .rdx ∧ Keeps [.rcx] s s' := by
   apply WP.of_runBlock
-  simp (config := {decide := true}) only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc,
+  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc,
     State.setReg, ite_true, Option.map_some, Option.some.injEq, exists_eq_left']
   refine ⟨trivial, fun r hr => ?_, rfl, rfl, rfl⟩
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -226,7 +224,7 @@ theorem test_ok (s : State) (r : Reg) :
     WP isa (.block [.alu .test r (.reg r)]) s fun s' =>
       s'.zf = some (s.gpr r &&& s.gpr r == 0) ∧ Keeps [] s s' := by
   apply WP.of_runBlock
-  simp (config := {decide := true}) only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc,
+  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc,
     execAlu, arithFlags, State.setFlags, Option.bind_some, Option.some.injEq, exists_eq_left']
   exact ⟨trivial, fun r _ => rfl, rfl, rfl, rfl⟩
 
@@ -433,7 +431,7 @@ theorem blocks_ct : ConstantTime isa Proof.Poly1305.blocksX86_64.pre Proof.Poly1
   intro s₁ s₂ _ _ ⟨h1, h2, h3⟩
   refine Taint.agree_ofRegs fun r hr => ?_
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl <;> assumption
+  rcases hr with rfl | rfl | rfl <;> with_reducible assumption
 
 theorem blocks_verified :
     Verified X86_64.target Impl.Poly1305.X86_64.blocks (Spec.Poly1305.blocksContract X86_64.abi) :=

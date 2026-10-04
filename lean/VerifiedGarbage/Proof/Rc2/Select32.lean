@@ -1,5 +1,6 @@
 import VerifiedGarbage.Spec.Rc2
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.PowLit
 
 /-! # Arithmetic selection lemmas for RC2's constant-time lookups -/
 

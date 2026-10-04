@@ -5,6 +5,9 @@
 pub(crate) mod aes;
 
 #[rustfmt::skip]
+pub(crate) mod argon2;
+
+#[rustfmt::skip]
 pub(crate) mod blake2b;
 
 #[rustfmt::skip]
@@ -36,6 +39,9 @@ pub(crate) mod hmac_md5;
 
 #[rustfmt::skip]
 pub(crate) mod hmac_sha1;
+
+#[rustfmt::skip]
+pub(crate) mod hmac_sha224;
 
 #[rustfmt::skip]
 pub(crate) mod hmac_sha256;
@@ -83,6 +89,9 @@ pub(crate) mod pbkdf2_md5;
 pub(crate) mod pbkdf2_sha1;
 
 #[rustfmt::skip]
+pub(crate) mod pbkdf2_sha224;
+
+#[rustfmt::skip]
 pub(crate) mod pbkdf2_sha256;
 
 #[rustfmt::skip]
@@ -102,6 +111,9 @@ pub(crate) mod poly1305;
 
 #[rustfmt::skip]
 pub(crate) mod rc2;
+
+#[rustfmt::skip]
+pub(crate) mod rc4;
 
 #[rustfmt::skip]
 pub(crate) mod scrypt;

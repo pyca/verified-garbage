@@ -21,6 +21,14 @@ secret.
   `H = CIPH_K(0¹²⁸)`, and with `S` it computes the unmasked tag
   `S ⊕ CIPH_K(J₀)`.
 * `vg_ghash` continues `GHASH_H` over whole blocks.
+* `vg_aes_gcm_encrypt_blocks` and `vg_aes_gcm_decrypt_blocks` do both, in
+  one pass, on whole blocks of text in place, with the cipher and the hash
+  subkey of a key context: counter mode as `vg_aes_ctr32`, and `GHASH_H`
+  continued over the ciphertext as `vg_ghash` (the blocks written when
+  encrypting, the blocks read when decrypting). An implementation can then
+  interleave the two, which are independent but for the ciphertext. Their
+  working space has room for `vg_aes_ctr32`'s and 64 bytes more, so that
+  the other functions of AES-GCM can pass them part of theirs.
 
 Each takes a `scratch` buffer of working space, sized for the target that
 needs the most.
@@ -59,7 +67,8 @@ data is encrypted or decrypted in place. The fixed-size secrets travel in
 buffers that are also working space, so that fewer arguments are passed in
 memory: the tags in the first 16 bytes of `work`. Each function's working
 space (`scratch` or `work`) has room for `vg_aes_ctr32`'s (2048 bytes) and
-512 bytes more.
+512 bytes more, but that of `vg_aes_gcm_encrypt_blocks` and
+`vg_aes_gcm_decrypt_blocks`, which has 64 bytes more.
 
 Every contract takes the number of bytes of stack below the stack pointer
 that an implementation's calls and frames use (`stack`, see `Sig.contract`),
@@ -136,6 +145,85 @@ def ghashApi : Api where
     Contract: `VG.Spec.Gcm.ghashContract`. Constant time: only the pointers and `n` may affect \
     timing, not `H`, `Y` or the data."
   safety := ["The contents of `scratch` on return are unspecified."]
+
+/-- `vg_aes_gcm_encrypt_blocks(ctx: *const [u64; 32], rounds: usize, counter: *mut [u8; 16], y: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 264])`,
+and `vg_aes_gcm_decrypt_blocks` with the same signature. `rounds` is public;
+`scratch` is working space. -/
+def cryptBlocksSig : Sig where
+  params := [("ctx", .array false .u64 32), ("rounds", .int .usize true),
+    ("counter", .array true .u8 16), ("y", .array true .u8 16),
+    ("data", .slice true (.array .u8 16) "n"), ("scratch", .array true .u64 264)]
+
+/-- For `rounds` of 10, 12 or 14, with the key context at `ctx`: replaces the
+`n` blocks `P` at `data` with `C = ctr32 CIPH_K CB₁ P`, where `CB₁` is the
+block at `counter` (as `vg_aes_ctr32`), leaves `inc₃₂ⁿ(CB₁)` at `counter`,
+and replaces the block `Y` at `y` with `GHASH_H` continued from `Y` over
+`C` (as `vg_ghash`). The key context, the counter, `Y` and the data are
+secret. -/
+def encryptBlocksContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
+  cryptBlocksSig.contract A
+    (pre := fun _ctx rounds _counter _y _data _n _scratch _ =>
+      rounds.toNat = 10 ∨ rounds.toNat = 12 ∨ rounds.toNat = 14)
+    (post := fun ctx rounds counter y data n _scratch m m' _ =>
+      let c := ctr32 (ctxCiph m ctx rounds.toNat) (blockAt m counter) (blocksAt m data n.toNat)
+      blocksAt m' data n.toNat = c ∧
+        blockAt m' counter = Nat.repeat inc32 n.toNat (blockAt m counter) ∧
+        blockAt m' y = ghashFrom (ctxH m ctx) (blockAt m y) c)
+    (stack := stack)
+
+/-- For `rounds` of 10, 12 or 14, with the key context at `ctx`: replaces the
+block `Y` at `y` with `GHASH_H` continued from `Y` over the `n` blocks `C`
+at `data` (as `vg_ghash`), replaces them with `ctr32 CIPH_K CB₁ C`, where
+`CB₁` is the block at `counter` (as `vg_aes_ctr32`), and leaves
+`inc₃₂ⁿ(CB₁)` at `counter`. The key context, the counter, `Y` and the data
+are secret. -/
+def decryptBlocksContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
+  cryptBlocksSig.contract A
+    (pre := fun _ctx rounds _counter _y _data _n _scratch _ =>
+      rounds.toNat = 10 ∨ rounds.toNat = 12 ∨ rounds.toNat = 14)
+    (post := fun ctx rounds counter y data n _scratch m m' _ =>
+      let c := blocksAt m data n.toNat
+      blocksAt m' data n.toNat = ctr32 (ctxCiph m ctx rounds.toNat) (blockAt m counter) c ∧
+        blockAt m' counter = Nat.repeat inc32 n.toNat (blockAt m counter) ∧
+        blockAt m' y = ghashFrom (ctxH m ctx) (blockAt m y) c)
+    (stack := stack)
+
+/-- `vg_aes_gcm_encrypt_blocks` on every target. -/
+def encryptBlocksApi : Api where
+  module := "gcm"
+  name := "vg_aes_gcm_encrypt_blocks"
+  sig := cryptBlocksSig
+  contracts := some fun A stack => encryptBlocksContract A stack
+  summary := "AES-GCM's encryption of whole blocks (NIST SP 800-38D §7.1 steps 3 and 5, on whole \
+    blocks), in place: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` \
+    rounds, XORs `CIPH_K(CB₁) … CIPH_K(CBₙ)` into the `n` 16-byte blocks at `data`, where `CB₁` \
+    is the counter block `*counter` and `CBᵢ₊₁ = inc₃₂(CBᵢ)`, leaves `inc₃₂ⁿ(CB₁)` in \
+    `*counter`, and replaces the block `Y` at `*y` with GHASH (§6.4) continued from `Y` over the \
+    ciphertext written, with the hash subkey of `*ctx`: as `vg_aes_ctr32` and then `vg_ghash`.\n\n\
+    Contract: `VG.Spec.Gcm.encryptBlocksContract`. Constant time: only the pointers, `rounds` \
+    and `n` may affect timing, not the key context, the counter block, `Y` or the data."
+  safety := [
+    "`rounds` must be 10, 12 or 14.",
+    "The contents of `scratch` on return are unspecified."]
+
+/-- `vg_aes_gcm_decrypt_blocks` on every target. -/
+def decryptBlocksApi : Api where
+  module := "gcm"
+  name := "vg_aes_gcm_decrypt_blocks"
+  sig := cryptBlocksSig
+  contracts := some fun A stack => decryptBlocksContract A stack
+  summary := "AES-GCM's decryption of whole blocks (NIST SP 800-38D §7.2 steps 5 and 6, on whole \
+    blocks), in place: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` \
+    rounds, replaces the block `Y` at `*y` with GHASH (§6.4) continued from `Y` over the `n` \
+    16-byte blocks of ciphertext at `data`, with the hash subkey of `*ctx`, then XORs \
+    `CIPH_K(CB₁) … CIPH_K(CBₙ)` into them, where `CB₁` is the counter block `*counter` and \
+    `CBᵢ₊₁ = inc₃₂(CBᵢ)`, and leaves `inc₃₂ⁿ(CB₁)` in `*counter`: as `vg_ghash` and then \
+    `vg_aes_ctr32`.\n\n\
+    Contract: `VG.Spec.Gcm.decryptBlocksContract`. Constant time: only the pointers, `rounds` \
+    and `n` may affect timing, not the key context, the counter block, `Y` or the data."
+  safety := [
+    "`rounds` must be 10, 12 or 14.",
+    "The contents of `scratch` on return are unspecified."]
 
 /-! ## AES-GCM: the key context -/
 

@@ -1,5 +1,6 @@
 import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Instances
 import VerifiedGarbage.Proof.Pbkdf2.Stream.X86.Sha256
+import VerifiedGarbage.Proof.Framework.TaintBatch
 
 /-!
 # HMAC-SHA-256 and PBKDF2-HMAC-SHA-256 over the compression function on x86 (32-bit), for every backend
@@ -60,9 +61,18 @@ where
       show 96 = 32 + 64 from rfl, show 112 ≤ 8 * 20 by decide, show 20 ≤ 64 by decide,
       show 32 ≤ 32 ∧ 32 ≤ 64 by decide⟩
 
-/-- SHA-256's sizes and digest code, without the functions: the code between
-the calls depends on nothing else. -/
-def sha256Shape : Hash := mdHash "" "" (.block []) (.block []) (.block [])
+/-- `H` without the names and code of the functions it calls: the code
+between the calls depends on nothing else. -/
+def shapeOf (H : Hash) : Hash :=
+  ⟨⟨H.st.B, H.st.S, H.st.D, H.st.F, H.st.W, "", .block [], "", .block [], "", .block []⟩, H.N, H.L, H.be, H.so,
+    "", .block [], H.out⟩
+
+/-- SHA-256's sizes and digest code, without the functions: `shapeOf` of
+every backend's `sha256M`, written out, so that the kernel reduces each side
+to it field by field rather than comparing the backends' functions. -/
+def sha256Shape : Hash :=
+  ⟨⟨64, 96, 32, 32, 20, "", .block [], "", .block [], "", .block []⟩, 32, 8, true, 112, "", .block [],
+    Impl.Sha256.X86.Stream.params.out⟩
 
 end VG.Proof.Pbkdf2.Md.X86
 
@@ -70,41 +80,54 @@ namespace VG.Proof.Pbkdf2.Md.X86.Instances
 
 open VG.X86
 open VG.Proof.Pbkdf2.Md.X86
+open VG.Impl.Pbkdf2.Md.X86 (Hash)
 open VG.Proof.Pbkdf2.Stream.X86 (Sha256Stream initW initG finW finG iterW iterG countF)
 
-theorem sha256Shape_iterChecks : Iterate.Checks sha256Shape where
-  pro := ⟨_, by taint_decide⟩
-  load := ⟨_, by taint_decide⟩
-  mid := ⟨_, by taint_decide⟩
-  tail := ⟨_, by taint_decide⟩
-  restore := ⟨_, by taint_decide⟩
+theorem sha256Shape_iterChecks : Iterate.Checks sha256Shape := by
+  refine {
+    pro := ⟨?_, ?_⟩
+    load := ⟨?_, ?_⟩
+    mid := ⟨?_, ?_⟩
+    tail := ⟨?_, ?_⟩
+    restore := ⟨?_, ?_⟩ }
+  taint_decide_all
 
-theorem sha256Shape_initChecks : HmacInit.Checks sha256Shape where
-  pro := ⟨_, by taint_decide⟩
-  blocks := ⟨_, by taint_decide⟩
-  toOuter := ⟨_, by taint_decide⟩
-  restore := ⟨_, by taint_decide⟩
+theorem sha256Shape_initChecks : HmacInit.Checks sha256Shape := by
+  refine {
+    pro := ⟨?_, ?_⟩
+    blocks := ⟨?_, ?_⟩
+    toOuter := ⟨?_, ?_⟩
+    restore := ⟨?_, ?_⟩ }
+  taint_decide_all
 
-theorem sha256Shape_finChecks : HmacFin.Checks sha256Shape where
-  pro := ⟨_, by taint_decide⟩
-  fin1 := ⟨_, by taint_decide⟩
-  mid := ⟨_, by taint_decide⟩
-  out := ⟨_, by taint_decide⟩
+theorem sha256Shape_finChecks : HmacFin.Checks sha256Shape := by
+  refine {
+    pro := ⟨?_, ?_⟩
+    fin1 := ⟨?_, ?_⟩
+    mid := ⟨?_, ?_⟩
+    out := ⟨?_, ?_⟩ }
+  taint_decide_all
+
+theorem iterChecks_of_shape {H : Hash} (h : Iterate.Checks (shapeOf H)) : Iterate.Checks H :=
+  ⟨h.pro, h.load, h.mid, h.tail, h.restore⟩
+
+theorem initChecks_of_shape {H : Hash} (h : HmacInit.Checks (shapeOf H)) : HmacInit.Checks H :=
+  ⟨h.pro, h.blocks, h.toOuter, h.restore⟩
+
+theorem finChecks_of_shape {H : Hash} (h : HmacFin.Checks (shapeOf H)) : HmacFin.Checks H :=
+  ⟨h.pro, h.fin1, h.mid, h.out⟩
 
 theorem sha256_iterChecks (v : Sha256Stream) (cmpN : String) (cmpC : Prog isa) :
     Iterate.Checks (sha256M v cmpN cmpC) :=
-  let h := sha256Shape_iterChecks
-  ⟨h.pro, h.load, h.mid, h.tail, h.restore⟩
+  iterChecks_of_shape (H := sha256M v cmpN cmpC) sha256Shape_iterChecks
 
 theorem sha256_initChecks (v : Sha256Stream) (cmpN : String) (cmpC : Prog isa) :
     HmacInit.Checks (sha256M v cmpN cmpC) :=
-  let h := sha256Shape_initChecks
-  ⟨h.pro, h.blocks, h.toOuter, h.restore⟩
+  initChecks_of_shape (H := sha256M v cmpN cmpC) sha256Shape_initChecks
 
 theorem sha256_finChecks (v : Sha256Stream) (cmpN : String) (cmpC : Prog isa) :
     HmacFin.Checks (sha256M v cmpN cmpC) :=
-  let h := sha256Shape_finChecks
-  ⟨h.pro, h.fin1, h.mid, h.out⟩
+  finChecks_of_shape (H := sha256M v cmpN cmpC) sha256Shape_finChecks
 
 theorem sha256_iterImp : (iterW Spec.Hmac.sha256S 104).Implies (Spec.Hmac.sha256I.iterateContract X86.abi 48) := by
   obtain ⟨a0, a1, a2, a3, a4, e, esp⟩ := iterSat_args 96 32 104

@@ -21,7 +21,7 @@ theorem x25519_ok (s : State) (hs : x25519Arm.pre s) :
 theorem x25519_ct' : ConstantTime isa x25519Arm.pre x25519Arm.pub Impl.X25519.Arm.x25519 :=
   x25519_ct fun _ _ _ _ ⟨_, h0, h1, h2, h3⟩ r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl <;> assumption
+    rcases hr with rfl | rfl | rfl | rfl <;> with_reducible assumption
 
 /-- A state satisfying the precondition. -/
 def x25519Sat : State where

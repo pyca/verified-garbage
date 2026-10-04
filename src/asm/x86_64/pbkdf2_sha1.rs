@@ -209,14 +209,14 @@ pub(crate) unsafe extern "sysv64" fn vg_pbkdf2_hmac_sha1(password: *const u8, pa
         "mov rdx, rbx",
         "mov rcx, rbp",
         "mov r8, r15",
-        "call {vg_sha1_update}",
+        "call {vg_sha1_update_scratch}",
         "mov rdi, r15",
         "add rdi, 764",
         "mov rsi, rbp",
         "mov rdx, r15",
         "add rdx, 888",
         "mov rcx, r15",
-        "call {vg_sha1_finalize}",
+        "call {vg_sha1_finalize_scratch}",
         "mov rdx, r15",
         "add rdx, 888",
         "mov ecx, 20",
@@ -240,7 +240,7 @@ pub(crate) unsafe extern "sysv64" fn vg_pbkdf2_hmac_sha1(password: *const u8, pa
         "mov rdx, r12",
         "mov rcx, r13",
         "mov r8, r15",
-        "call {vg_sha1_update}",
+        "call {vg_sha1_update_scratch}",
         "mov rbp, r13",
         "mov r13, QWORD PTR [r15+496]",
         "mov r12, QWORD PTR [rsp+8]",
@@ -266,7 +266,7 @@ pub(crate) unsafe extern "sysv64" fn vg_pbkdf2_hmac_sha1(password: *const u8, pa
         "add rdx, 908",
         "mov ecx, 4",
         "mov r8, r15",
-        "call {vg_sha1_update}",
+        "call {vg_sha1_update_scratch}",
         "mov rdi, r15",
         "add rdi, 764",
         "mov rsi, r15",
@@ -323,8 +323,8 @@ pub(crate) unsafe extern "sysv64" fn vg_pbkdf2_hmac_sha1(password: *const u8, pa
         "ret",
         ".p2align 6",
         vg_sha1_init = sym super::sha1::vg_sha1_init,
-        vg_sha1_update = sym super::sha1::vg_sha1_update,
-        vg_sha1_finalize = sym super::sha1::vg_sha1_finalize,
+        vg_sha1_update_scratch = sym super::sha1::vg_sha1_update_scratch,
+        vg_sha1_finalize_scratch = sym super::sha1::vg_sha1_finalize_scratch,
         vg_hmac_sha1_init = sym super::hmac_sha1::vg_hmac_sha1_init,
         vg_hmac_sha1_finalize = sym super::hmac_sha1::vg_hmac_sha1_finalize,
         vg_pbkdf2_hmac_sha1_iterate = sym super::pbkdf2_sha1::vg_pbkdf2_hmac_sha1_iterate,
@@ -332,7 +332,7 @@ pub(crate) unsafe extern "sysv64" fn vg_pbkdf2_hmac_sha1(password: *const u8, pa
 }
 
 /// The CPU features `vg_pbkdf2_hmac_sha1_iterate_shani` requires (`Artifact.features`).
-pub(crate) const VG_PBKDF2_HMAC_SHA1_ITERATE_SHANI_FEATURES: &[&str] = &["sha", "ssse3"];
+pub(crate) const VG_PBKDF2_HMAC_SHA1_ITERATE_SHANI_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["sha", "ssse3"]);
 
 /// Runs `n` steps of PBKDF2-HMAC-SHA-1's iteration: if, for a 64-byte key `K₀`, the SHA-1 streaming state in bytes 0 to 83 of `*key` represents `K₀ ⊕ ipad` and the one in bytes 84 to 167 represents `K₀ ⊕ opad` (as `vg_hmac_sha1_init` leaves them), repeats `U ← HMAC-SHA-1 (K₀, U)`, `T ← T ⊕ U` `n` times, from `U = *u` and `T = *t`, and leaves the final `T` in `*t` (RFC 8018, step 3 of `F`).
 ///
@@ -494,7 +494,7 @@ pub(crate) unsafe extern "sysv64" fn vg_pbkdf2_hmac_sha1_iterate_shani(key: *con
 }
 
 /// The CPU features `vg_pbkdf2_hmac_sha1_shani` requires (`Artifact.features`).
-pub(crate) const VG_PBKDF2_HMAC_SHA1_SHANI_FEATURES: &[&str] = &["sha", "ssse3"];
+pub(crate) const VG_PBKDF2_HMAC_SHA1_SHANI_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["sha", "ssse3"]);
 
 /// PBKDF2-HMAC-SHA-1 (RFC 8018 §5.2, with HMAC-SHA-1 as the pseudorandom function): writes the `out_len`-byte key derived from the `password_len` bytes at `password` and the `salt_len` bytes at `salt` with `c` iterations to `out`. Calls the verified SHA-1 and HMAC-SHA-1 functions and `vg_pbkdf2_hmac_sha1_iterate`.
 ///
@@ -546,14 +546,14 @@ pub(crate) unsafe extern "sysv64" fn vg_pbkdf2_hmac_sha1_shani(password: *const 
         "mov rdx, rbx",
         "mov rcx, rbp",
         "mov r8, r15",
-        "call {vg_sha1_update_shani}",
+        "call {vg_sha1_update_scratch_shani}",
         "mov rdi, r15",
         "add rdi, 764",
         "mov rsi, rbp",
         "mov rdx, r15",
         "add rdx, 888",
         "mov rcx, r15",
-        "call {vg_sha1_finalize_shani}",
+        "call {vg_sha1_finalize_scratch_shani}",
         "mov rdx, r15",
         "add rdx, 888",
         "mov ecx, 20",
@@ -577,7 +577,7 @@ pub(crate) unsafe extern "sysv64" fn vg_pbkdf2_hmac_sha1_shani(password: *const 
         "mov rdx, r12",
         "mov rcx, r13",
         "mov r8, r15",
-        "call {vg_sha1_update_shani}",
+        "call {vg_sha1_update_scratch_shani}",
         "mov rbp, r13",
         "mov r13, QWORD PTR [r15+496]",
         "mov r12, QWORD PTR [rsp+8]",
@@ -603,7 +603,7 @@ pub(crate) unsafe extern "sysv64" fn vg_pbkdf2_hmac_sha1_shani(password: *const 
         "add rdx, 908",
         "mov ecx, 4",
         "mov r8, r15",
-        "call {vg_sha1_update_shani}",
+        "call {vg_sha1_update_scratch_shani}",
         "mov rdi, r15",
         "add rdi, 764",
         "mov rsi, r15",
@@ -660,8 +660,8 @@ pub(crate) unsafe extern "sysv64" fn vg_pbkdf2_hmac_sha1_shani(password: *const 
         "ret",
         ".p2align 6",
         vg_sha1_init = sym super::sha1::vg_sha1_init,
-        vg_sha1_update_shani = sym super::sha1::vg_sha1_update_shani,
-        vg_sha1_finalize_shani = sym super::sha1::vg_sha1_finalize_shani,
+        vg_sha1_update_scratch_shani = sym super::sha1::vg_sha1_update_scratch_shani,
+        vg_sha1_finalize_scratch_shani = sym super::sha1::vg_sha1_finalize_scratch_shani,
         vg_hmac_sha1_init_shani = sym super::hmac_sha1::vg_hmac_sha1_init_shani,
         vg_hmac_sha1_finalize_shani = sym super::hmac_sha1::vg_hmac_sha1_finalize_shani,
         vg_pbkdf2_hmac_sha1_iterate_shani = sym super::pbkdf2_sha1::vg_pbkdf2_hmac_sha1_iterate_shani,

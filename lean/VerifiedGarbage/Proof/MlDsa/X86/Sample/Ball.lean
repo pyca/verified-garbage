@@ -124,8 +124,8 @@ theorem zinit_piece : Piece QPre QPub (Out L) (ZI · 0)
     have v₃ := h.args 3 (by decide)
     simp only [Nat.reduceMul, Nat.reduceAdd] at a₃
     apply WP.of_runBlock
-    simp (config := {decide := true}) only [argOp, at_, runBlock_cons, runStep_some, runBlock_nil, exec,
-      readSrc, State.ea, State.load32, State.setReg, Option.map_some, a₃, i₃, v₃, ite_true, ite_false,
+    simp only [reduceCtorEq, ↓reduceIte, Nat.reduceAdd, Nat.reduceMul, argOp, at_, runBlock_cons, runStep_some, runBlock_nil, exec,
+      readSrc, State.ea, State.load32, State.setReg, Option.map_some, a₃, i₃, v₃, 
       Option.some.injEq, exists_eq_left']
     exact ⟨⟨⟨⟨by simp [h.esp], h.rd, h.wr, h.frame⟩, h.args, by simp [h.esi]⟩, h.out⟩, by simp; rfl, by simp,
       by simp; rfl, by simp, fun j hj => absurd hj (by omega)⟩
@@ -143,9 +143,9 @@ theorem zstep {s₀ : State} (hp : QPre s₀) {k : Nat} (hk : k < 256) {s : Stat
   have fa : Frame [L.aR s₀] s.mem (s.mem.writeW (coeffAddr (L.aA s₀) k) (0 : BitVec 32)) :=
     (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (coeff_contains _ hk)
   apply WP.of_runBlock
-  simp (config := {decide := true}) only [at_, runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, readSrc,
+  simp only [reduceCtorEq, ↓reduceIte, Nat.reducePow, at_, runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, readSrc,
     State.ea, State.store32, State.setReg, arithFlags, State.setFlags, Option.bind_some, h.edi, h.eax, ea, hin,
-    ite_true, ite_false, Option.some.injEq, exists_eq_left']
+    Option.some.injEq, exists_eq_left']
   refine ⟨⟨⟨⟨⟨by simp [h.esp], h.rd, h.wr, h.frame.writeW (r := L.aR s₀) (by simp) _ (coeff_contains _ hk)⟩,
     args_frame hp.1 h.args fa (by simp only [List.mem_singleton, forall_eq]; exact hp.1.a_g.symm),
     by simp [h.esi]⟩, fun p hp' => ?_⟩, by simp [h.ebp], by simp [h.eax], ?_, ?_, fun j hj => ?_⟩, ?_⟩
@@ -235,10 +235,10 @@ theorem setup_piece : Piece QPre QPub (ZI · 256) (fun s₀ s => BI s₀ 0 (st (
           show 256 - τ s₀ + τ s₀ - 256 = 0 by omega]
       · rw [e8, Mem.readW_writeW_self32, show 256 - τ s₀ + τ s₀ - 256 = 0 by omega]
     apply WP.of_runBlock
-    simp (config := {decide := true}) only [bSetup, argOp, outOff, at_, runBlock_cons, runStep_some, runBlock_nil,
+    simp only [reduceCtorEq, ↓reduceIte, Nat.reduceMul, Nat.reducePow, bSetup, argOp, outOff, at_, runBlock_cons, runStep_some, runBlock_nil,
       exec, execAlu, readSrc, State.ea, State.load32, State.store32, State.setReg, arithFlags, State.setFlags,
       Option.map_some, Option.bind_some, h.esi, a₁, a₂, i₂, v₂, w₁, w₂, e0, e4, r0, r4, vlo, vhi, Nat.reduceAdd,
-      ite_true, ite_false, Option.some.injEq, exists_eq_left']
+      Option.some.injEq, exists_eq_left']
     exact fin _ (by simp) (by simp) (by simp) (by simp) (by simp) rfl rfl rfl
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl

@@ -46,7 +46,7 @@ theorem r4_post {s t : State} (h : r4K.post s t) :
   · change r = (if (List.range 4).all (fun k => (L s k).length == 256) then 1 else 0) at hr
     rw [ite_eq_right hall] at hr
     refine ⟨fun h1 => absurd (hr.symm.trans h1) (by decide),.inr ⟨hr,?_⟩⟩
-    simp only [List.all_eq_true,List.mem_range,not_forall,beq_iff_eq] at hall
+    simp only [List.all_eq_true,List.mem_range,Classical.not_forall,beq_iff_eq] at hall
     obtain ⟨k,hk,hk'⟩ := hall
     exact ⟨k,hk,rejNTT_none (B := 1008) (by decide) (by decide) hk'⟩
 

@@ -313,7 +313,7 @@ theorem correct (s : State) (hs : updateAArch64.pre s) :
     ∃ t s', Exec isa update s t s' ∧ abiPreserved s s' ∧ updateAArch64.post s s' := by
   obtain ⟨t, s', he, hq, hg⟩ := WP.gprs (rs := preserved) (correct_wp (UPre.of hs))
     (by decide +kernel) (by decide +kernel)
-  exact ⟨t, s', he, ⟨hg, Exec.sp he, Exec.preservedV he⟩, hq⟩
+  exact ⟨t, s', he, ⟨hg, Exec.sp he, Exec.preservedV he (by lit_decide)⟩, hq⟩
 
 theorem ct : ConstantTime isa updateAArch64.pre updateAArch64.pub update := by
   refine VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0, .x1, .x2, .x3, .x4, .x5])
@@ -321,7 +321,7 @@ theorem ct : ConstantTime isa updateAArch64.pre updateAArch64.pub update := by
   intro s₁ s₂ _ _ ⟨h1, h2, h3, h4, h5, h6, hsp⟩
   refine ⟨hsp, fun r hr => ?_⟩
   simp only [VG.AArch64.Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl <;> assumption
+  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption
 
 theorem verified : Verified AArch64.target update (Spec.Cmac.aesUpdateContract AArch64.abi) :=
   Verified.of_correct correct ct (by

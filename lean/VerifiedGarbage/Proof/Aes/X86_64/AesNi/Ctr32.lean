@@ -57,8 +57,8 @@ theorem ctr1_ok (b : XReg) (s : State) (h9 : b ≠ .xmm9) (h10 : b ≠ .xmm10) (
       s'.xmm b = XBinOp.eval .pshufb (s.xmm .xmm9) revMask ∧ s'.xmm .xmm9 = inc32 (s.xmm .xmm9) ∧
       XFrame [b, .xmm9] s s' := by
   apply WP.of_runBlock
-  simp (config := {decide := true}) only [runBlock_cons, runStep_some, runBlock_nil, exec, XOp.exec,
-    isa, State.setXmm, ite_true, ite_false, eval_movdqa, h9, Ne.symm h9, Ne.symm h10,
+  simp only [↓reduceIte, runBlock_cons, runStep_some, runBlock_nil, exec, XOp.exec,
+    isa, State.setXmm, eval_movdqa, h9, Ne.symm h9, Ne.symm h10,
     Ne.symm h11, hr, ho, paddd_one,
     Option.some.injEq, exists_eq_left']
   refine ⟨trivial, trivial, rfl, rfl, rfl, rfl, fun r hr => ?_⟩
@@ -130,8 +130,8 @@ theorem xor1_ok (b : XReg) (d : Nat) (s : State) (hb8 : b ≠ .xmm8)
       (∀ r, r ≠ b → r ≠ .xmm8 → s'.xmm r = s.xmm r) := by
   have hin' := inRegions_wr hin
   apply WP.of_runBlock
-  simp (config := {decide := true}) only [runBlock_cons, runStep_some, runBlock_nil, exec, XOp.exec,
-    isa, State.setXmm, State.load128, State.store128, ea_at, hin, hin', ite_true, ite_false, hb8,
+  simp only [↓reduceIte, runBlock_cons, runStep_some, runBlock_nil, exec, XOp.exec,
+    isa, State.setXmm, State.load128, State.store128, ea_at, hin, hin', hb8,
     Option.map_some, Option.some.injEq, exists_eq_left']
   exact ⟨trivial, trivial, trivial, trivial, fun r h1 h2 => by simp [h1, h2]⟩
 
@@ -218,7 +218,7 @@ the same code for different lists of registers (`blocks_ok`).
 namespace VG.Proof.Aes.X86_64.AesNi
 
 open VG VG.X86_64
-open VG.Impl.Aes.X86_64.AesNi (at_ ctrs xorData aes regs8 body8 body1 ctrLoad ctrStore ctr32)
+open VG.Impl.Aes.X86_64.AesNi (at_ ctrs xorData aes regs8 body8 body1 ctrLoad ctrStore ctrTail ctr32)
 open VG.Proof.Gcm.X86_64 (revMask blockAt_eq blockAt_store)
 open VG.Spec.Gcm (Block blockAt blocksAt inc32 aesWith)
 
@@ -504,7 +504,7 @@ theorem test_ok {s₀ : State} (hp : Pre s₀) {c : Nat} {s : State} (hI : Inv s
   have hn := nb_lt hp
   have hr8 := hI.r8
   apply WP.of_runBlock
-  simp (config := {decide := true}) only [runBlock_cons, runStep_some, runBlock_nil, exec, execAlu,
+  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, execAlu,
     readSrc, arithFlags, State.setFlags, isa, hr8, BitVec.and_self, Option.bind_some,
     Option.some.injEq, exists_eq_left']
   exact ⟨{ hI with }, by rw [beq_ofNat_zero (by omega)]⟩
@@ -548,13 +548,16 @@ theorem ctrStore_ok {s₀ : State} (hp : Pre s₀) {s : State} (hI : Inv s₀ (n
 
 /-! ## The whole function -/
 
-theorem correct {s₀ : State} (hp : Pre s₀) :
-    WP isa ctr32 s₀ fun s' => gprPreserved s₀ s' ∧ ctr32X86_64.post s₀ s' := by
+/-- The blocks left after `c`, eight and then one at a time, and the counter
+stored: what follows `ctrLoad` here, and the sixteen-block loop of
+`vg_aes_ctr32_vaes`. -/
+theorem tail_ok {s₀ : State} (hp : Pre s₀) {c₀ : Nat} {s₁ : State} (hI₁ : Inv s₀ c₀ c₀ s₁)
+    (hcf : s₁.cf = some (decide (nb s₀ - c₀ < 8))) :
+    WP isa ctrTail s₁ fun s' => gprPreserved s₀ s' ∧ ctr32X86_64.post s₀ s' := by
   have hn := nb_lt hp
-  refine WP.seq (WP.mono (ctrLoad_ok hp) fun s₁ ⟨hI₁, hcf⟩ => ?_)
   refine WP.seq (WP.mono (Q := fun s => ∃ c, nb s₀ - c < 8 ∧ Inv s₀ c c s) ?_ fun s₂ ⟨c, hc, hI₂⟩ => ?_)
-  · refine WP.ite (decide (nb s₀ < 8)) (by simp [eval, hcf]) (fun h => ?_) (fun h => ?_)
-    · exact WP.block_nil ⟨0, by simpa using h, hI₁⟩
+  · refine WP.ite (decide (nb s₀ - c₀ < 8)) (by simp [eval, hcf]) (fun h => ?_) (fun h => ?_)
+    · exact WP.block_nil ⟨c₀, by simpa using h, hI₁⟩
     · let I8 : Nat → State → Prop := fun m s => ∃ c, m = nb s₀ - c ∧ c + 8 ≤ nb s₀ ∧ Inv s₀ c c s
       have hstep : ∀ m s, I8 m s → WP isa body8 s (fun s' =>
           (eval .ae s' = some false ∧ ∃ c, nb s₀ - c < 8 ∧ Inv s₀ c c s') ∨
@@ -564,7 +567,7 @@ theorem correct {s₀ : State} (hp : Pre s₀) :
         by_cases hlt : nb s₀ - (c + 8) < 8
         · exact .inl ⟨by simp [eval, hcf', hlt], c + 8, hlt, hI'⟩
         · exact .inr ⟨by simp [eval, hcf', hlt], nb s₀ - (c + 8), by omega, c + 8, rfl, by omega, hI'⟩
-      exact WP.loop (M := isa) I8 hstep (nb s₀) s₁ ⟨0, rfl, by simpa using h, hI₁⟩
+      exact WP.loop (M := isa) I8 hstep (nb s₀ - c₀) s₁ ⟨c₀, rfl, by simp at h; omega, hI₁⟩
   refine WP.seq (WP.mono (test_ok hp hI₂) fun s₃ ⟨hI₃, hzf⟩ => ?_)
   refine WP.seq (WP.mono (Q := Inv s₀ (nb s₀) (nb s₀)) ?_ fun s₄ hI₄ => ctrStore_ok hp hI₄)
   refine WP.ite (decide (nb s₀ - c = 0)) (by simp [eval, hzf]) (fun h => ?_) (fun h => ?_)
@@ -582,6 +585,10 @@ theorem correct {s₀ : State} (hp : Pre s₀) :
       · exact .inr ⟨by simp [eval, hzf', hlast], nb s₀ - (c + 1), by omega, c + 1, rfl, by omega, hI'⟩
     have hlt : c < nb s₀ := by have := hI₃.le; simp at h; omega
     exact WP.loop (M := isa) I1 hstep (nb s₀ - c) s₃ ⟨c, rfl, hlt, hI₃⟩
+
+theorem correct {s₀ : State} (hp : Pre s₀) :
+    WP isa ctr32 s₀ fun s' => gprPreserved s₀ s' ∧ ctr32X86_64.post s₀ s' :=
+  WP.seq (WP.mono (ctrLoad_ok hp) fun _ ⟨hI₁, hcf⟩ => tail_ok hp hI₁ (by simpa using hcf))
 
 /-- A state satisfying the precondition (with no blocks). -/
 def satState : State where
@@ -607,7 +614,7 @@ theorem ctr32_ct : ConstantTime isa ctr32X86_64.pre ctr32X86_64.pub ctr32 := by
   intro s₁ s₂ _ _ ⟨h1, h2, h3, h4, h5, h6⟩
   refine Taint.agree_ofRegs fun r hr => ?_
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl <;> assumption
+  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption
 
 theorem ctr32_verified :
     Verified X86_64.target Impl.Aes.X86_64.AesNi.ctr32 (Spec.Gcm.ctr32Contract X86_64.abi) :=

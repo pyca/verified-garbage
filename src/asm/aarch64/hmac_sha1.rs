@@ -173,7 +173,7 @@ pub(crate) unsafe extern "C" fn vg_hmac_sha1_finalize(inner: *mut [u8; 84], oute
         "add x1, x2, #0",
         "add x2, x23, #216",
         "add x3, x23, #0",
-        "bl {vg_sha1_finalize}",
+        "bl {vg_sha1_finalize_scratch}",
         "ldr w9, [x20, #0]",
         "str w9, [x19, #0]",
         "ldr w9, [x20, #4]",
@@ -244,13 +244,13 @@ pub(crate) unsafe extern "C" fn vg_hmac_sha1_finalize(inner: *mut [u8; 84], oute
         "ldr x30, [x23, #200]",
         "ldr x23, [x23, #208]",
         "ret",
-        vg_sha1_finalize = sym super::sha1::vg_sha1_finalize,
+        vg_sha1_finalize_scratch = sym super::sha1::vg_sha1_finalize_scratch,
         vg_sha1_compress = sym super::sha1::vg_sha1_compress,
     )
 }
 
 /// The CPU features `vg_hmac_sha1_init_sha2` requires (`Artifact.features`).
-pub(crate) const VG_HMAC_SHA1_INIT_SHA2_FEATURES: &[&str] = &["sha2"];
+pub(crate) const VG_HMAC_SHA1_INIT_SHA2_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["sha2"]);
 
 /// Starts an HMAC-SHA-1 computation with a key of at most 64 bytes: makes the SHA-1 streaming state `*inner` represent `K₀ ⊕ ipad` and `*outer` represent `K₀ ⊕ opad`, where `K₀` is the `key_len` bytes at `key` padded with zeros to 64 bytes (FIPS 198-1). The text is then absorbed with `vg_sha1_update` on `*inner` (its `count` starting at 64), and the MAC computed with `vg_hmac_sha1_finalize`.
 ///
@@ -396,7 +396,7 @@ pub(crate) unsafe extern "C" fn vg_hmac_sha1_init_sha2(inner: *mut [u8; 84], out
 }
 
 /// The CPU features `vg_hmac_sha1_finalize_sha2` requires (`Artifact.features`).
-pub(crate) const VG_HMAC_SHA1_FINALIZE_SHA2_FEATURES: &[&str] = &["sha2"];
+pub(crate) const VG_HMAC_SHA1_FINALIZE_SHA2_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["sha2"]);
 
 /// Finishes an HMAC-SHA-1 computation: if, for a 64-byte key `K₀` and a text of fewer than 2⁶⁴ − 64 bytes, the SHA-1 streaming state `*inner` represents `(K₀ ⊕ ipad) ‖ text`, of `count` bytes, and `*outer` represents `K₀ ⊕ opad`, writes the HMAC-SHA-1 of the text under `K₀` (20 bytes) to `*out`.
 ///
@@ -431,7 +431,7 @@ pub(crate) unsafe extern "C" fn vg_hmac_sha1_finalize_sha2(inner: *mut [u8; 84],
         "add x1, x2, #0",
         "add x2, x23, #216",
         "add x3, x23, #0",
-        "bl {vg_sha1_finalize_sha2}",
+        "bl {vg_sha1_finalize_scratch_sha2}",
         "ldr w9, [x20, #0]",
         "str w9, [x19, #0]",
         "ldr w9, [x20, #4]",
@@ -503,7 +503,7 @@ pub(crate) unsafe extern "C" fn vg_hmac_sha1_finalize_sha2(inner: *mut [u8; 84],
         "ldr x23, [x23, #208]",
         "ret",
         ".arch_extension nosha2",
-        vg_sha1_finalize_sha2 = sym super::sha1::vg_sha1_finalize_sha2,
+        vg_sha1_finalize_scratch_sha2 = sym super::sha1::vg_sha1_finalize_scratch_sha2,
         vg_sha1_compress_sha2 = sym super::sha1::vg_sha1_compress_sha2,
     )
 }

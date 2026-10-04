@@ -878,7 +878,7 @@ theorem expandKey_correct (s : State) (hs : Proof.Aes.expandKeyAArch64.pre s) :
       Proof.Aes.expandKeyAArch64.post s s' := by
   obtain ⟨t, s', he, ⟨h₁, h₂⟩, h₃⟩ :=
     WP.gprs (rs := [.x30]) (ek_correct hs) (by decide +kernel) (by decide +kernel)
-  refine ⟨t, s', he, ⟨fun r hr => ?_, Exec.sp he, Exec.preservedV he⟩, h₂⟩
+  refine ⟨t, s', he, ⟨fun r hr => ?_, Exec.sp he, Exec.preservedV he (by lit_decide)⟩, h₂⟩
   simp only [preserved, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
   · exact h₁ 0 (by omega)
@@ -900,7 +900,7 @@ theorem expandKey_ct : ConstantTime isa Proof.Aes.expandKeyAArch64.pre
   intro s₁ s₂ _ _ ⟨h1, h2, h3, h4, hsp⟩
   refine ⟨hsp, fun r hr => ?_⟩
   simp only [VG.AArch64.Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl <;> assumption
+  rcases hr with rfl | rfl | rfl | rfl <;> with_reducible assumption
 
 theorem expandKey_verified :
     Verified AArch64.target Impl.Aes.AArch64.expandKey (Spec.Aes.expandKeyContract AArch64.abi) :=

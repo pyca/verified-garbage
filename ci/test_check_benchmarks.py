@@ -23,14 +23,31 @@ fn runtime() -> u32 {
 
 #[cfg(target_arch = "aarch64")]
 fn runtime() -> u32 {
-    Features::of(&["sha3"]).0 | Features::of(&["neon"]).0
+    Features::of(&["sha3"]).0
+        | Features::of(&["neon"]).0
+}
+
+impl Features {
+    pub(crate) fn of(names: &[&str]) -> Features {
+        Features(names.len() as u32)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    fn of_names() {}
 }
 """
 
 
-def asm(*features):
-    """A generated module with a variant needing each of `features`."""
-    return "".join(f"pub(crate) const VG_F{i}_FEATURES: &[&str] = &{json.dumps(f)};\n"
+def asm(*features, old=False):
+    """A generated module with a variant needing each of `features`: as a
+    `Features` constant, or with `old` as the list of names generated before."""
+    if old:
+        return "".join(f"pub(crate) const VG_F{i}_FEATURES: &[&str] = &{json.dumps(f)};\n"
+                       for i, f in enumerate(features))
+    return "".join(f"pub(crate) const VG_F{i}_FEATURES: crate::cpu::Features = "
+                   f"crate::cpu::Features::of(&{json.dumps(f)});\n"
                    for i, f in enumerate(features))
 
 
@@ -41,6 +58,7 @@ class Selection(unittest.TestCase):
                         'x448': {'x448'}, 'keccak': {'keccak'}, 'chacha': {'chacha'},
                         'hmac_sha256': {'hmac_sha256', 'sha256'}, 'argon2': {'argon2'},
                         'poly': {'poly'}}
+        self.base_files = {}
         self.files = {
             'src/cpu.rs': CPU,
             'src/asm/x86_64/x448.rs': asm(['bmi2'], ['bmi2', 'adx'], ['aes', 'ssse3', 'sha3']),
@@ -55,7 +73,19 @@ class Selection(unittest.TestCase):
         }
 
     def read(self, path, revision=None, root='.'):
+        if revision and path in self.base_files:
+            return self.base_files[path]
         return self.files.get(path)
+
+    def cpu(self, old, new, base=None):
+        """`src/cpu.rs` changed from `CPU` (or `base`) by replacing `old`."""
+        self.base_files['src/cpu.rs'] = base or CPU
+        self.files['src/cpu.rs'] = (base or CPU).replace(old, new)
+        assert self.files['src/cpu.rs'] != self.base_files['src/cpu.rs']
+        return self.rows(['src/cpu.rs'])
+
+    def modules(self, rows):
+        return {r['arch']: r['modules'] for r in rows}
 
     def rows(self, paths, registered=('triple_des_ecb',)):
         with mock.patch.object(planner, 'bench_catalog', return_value=self.catalog), \
@@ -81,11 +111,48 @@ class Selection(unittest.TestCase):
                          [(a, '') for a in planner.PLATFORMS])
 
     def test_shared_and_unknown_dependencies_preserve_full_suite(self):
-        for path in ['Cargo.lock', 'src/cpu.rs', 'src/unknown.rs']:
+        for path in ['Cargo.lock', 'ci/bench_compare.py', 'src/unknown.rs']:
             with self.subTest(path=path):
                 rows = self.rows([path])
                 self.assertEqual(len(rows), self.full_matrix())
                 self.assertTrue(all(r['modules'] == '' for r in rows))
+
+    def test_planner_changes_need_no_benchmarks(self):
+        self.assertEqual(self.rows(['ci/bench_arches.py']), [])
+
+    def test_cpu_detection_selects_modules_choosing_by_the_features_it_names(self):
+        # The feature a line detects is the first it names, not `bmi2`.
+        rows = self.cpu('let adx = 1;', 'let adx = (ebx >> 19) & bmi2;')
+        self.assertEqual(self.modules(rows), {'x86_64': 'x448'})
+        self.assertEqual(self.configurations(rows, 'x86_64'), ['', 'avx,avx2,bmi1,bmi2', 'none'])
+        rows = self.cpu('Features::of(&["sha3"]).0\n', '(Features::of(&["sha3"]).0 & 1)\n')
+        self.assertEqual(self.modules(rows), {'aarch64': 'keccak'})
+        # A feature no module chooses by needs nothing.
+        self.assertEqual(self.cpu('let aes = 1;', 'let aes = 2;'), [])
+
+    def test_cpu_detection_naming_no_feature_selects_all_of_its_architectures(self):
+        rows = self.cpu('    let ssse3 = 1;', '    let leaf = 7;\n    let ssse3 = 1;')
+        self.assertEqual(self.modules(rows), {'x86_64': 'x448'})
+
+    def test_shared_cpu_code_selects_every_module_choosing_by_features(self):
+        rows = self.cpu('Features(names.len() as u32)', 'Features(names.len() as u32 + 0)')
+        # Not ARMv7 or x86, where nothing chooses.
+        self.assertEqual(self.modules(rows), {'x86_64': 'x448', 'aarch64': 'chacha keccak'})
+        names = '["ssse3", "aes", "bmi2", "adx", "sha3", "neon"]'
+        rows = self.cpu(names, '["aes", "ssse3", "bmi2", "adx", "sha3", "neon"]')
+        self.assertEqual(self.modules(rows), {'x86_64': 'x448', 'aarch64': 'chacha keccak'})
+
+    def test_cpu_tests_comments_and_appended_names_need_nothing(self):
+        self.assertEqual(self.cpu('fn of_names() {}', 'fn of_names() { assert!(true); }'), [])
+        self.assertEqual(self.cpu('impl Features {', '// Sets.\nimpl Features {'), [])
+        self.assertEqual(self.cpu('"sha3", "neon"]', '"sha3", "neon", "vaes"]'), [])
+        self.assertEqual(self.cpu('const NAMES: [&str; 6]', 'const NAMES: [&str; 7]'), [])
+
+    def test_unreadable_cpu_change_runs_every_benchmark(self):
+        self.base_files['src/cpu.rs'] = None
+        rows = self.rows(['src/cpu.rs'])
+        self.assertEqual(len(rows), self.full_matrix())
+        self.assertTrue(all(r['modules'] == '' for r in rows))
 
     def test_configurations_choosing_the_same_implementations_run_once(self):
         rows = self.rows(['src/asm/x86_64/x448.rs'])
@@ -94,6 +161,13 @@ class Selection(unittest.TestCase):
         # (`aes,ssse3`), or with one the architecture never detects (`sha3`).
         self.assertEqual(self.configurations(rows, 'x86_64'), ['', 'avx,avx2,bmi1,bmi2', 'none'])
         self.assertEqual({r['modules'] for r in rows}, {'x448'})
+
+    def test_features_listed_by_names_at_base_count(self):
+        # Only the base has the variant needing ADX, as a list of names.
+        self.files['src/asm/x86_64/x448.rs'] = asm(['bmi2'])
+        self.base_files['src/asm/x86_64/x448.rs'] = asm(['bmi2'], ['bmi2', 'adx'], old=True)
+        rows = self.rows(['src/asm/x86_64/x448.rs'])
+        self.assertEqual(self.configurations(rows, 'x86_64'), ['', 'avx,avx2,bmi1,bmi2', 'none'])
 
     def test_features_named_in_rust_count_where_detected(self):
         rows = self.rows(['src/chacha.rs'])
@@ -115,6 +189,96 @@ class Selection(unittest.TestCase):
         self.assertEqual({r['modules'] for r in self.rows(['src/hmac/mod.rs'])}, {'hmac_sha256 poly'})
         self.assertEqual({r['modules'] for r in self.rows(['bench/tests/argon2.rs'])}, {'argon2'})
         self.assertEqual({r['modules'] for r in self.rows(['src/nofamily/mod.rs'])}, {''})
+
+    def test_shared_hash_code_selects_every_hash(self):
+        # `hmac_sha256`'s benchmark follows through its `USES` of `sha256`.
+        self.files['src/hashes/sha256.rs'] = ''
+        self.files['src/hashes/mod.rs'] = ''
+        self.catalog['sha256'] = {'sha256'}
+        rows = self.rows(['src/hashes/mod.rs'])
+        self.assertEqual({r['modules'] for r in rows}, {'keccak sha256'})
+        self.assertEqual(self.configurations(rows, 'aarch64'), ['', 'sha3'])
+        self.assertEqual(self.configurations(rows, 'x86_64'), [''])
+
+    def test_test_only_modules_need_nothing(self):
+        self.files['src/lib.rs'] = '#[cfg(test)]\nmod argon2_tests;\npub mod argon2;\n'
+        self.assertEqual(self.rows(['src/argon2_tests.rs']), [])
+        # Unless the base compiled it outside tests too.
+        self.base_files['src/lib.rs'] = 'mod argon2_tests;\n'
+        self.assertEqual(len(self.rows(['src/argon2_tests.rs'])), self.full_matrix())
+
+    def test_private_helpers_select_the_modules_using_them(self):
+        self.files.update({
+            'src/lib.rs': 'mod ct;\npub mod argon2;\n#[cfg(test)]\nmod argon2_tests;\nmod unused;\n',
+            'src/ct.rs': 'pub(crate) fn eq() { crate::ct::eq() }',
+            'src/argon2.rs': 'use crate::ct::eq;',
+            # Every hash module, through the shared hash code; not a test.
+            'src/hashes/mod.rs': 'crate::ct::eq()',
+            'src/hashes/sha256.rs': '',
+            'src/argon2_tests.rs': 'crate::ct::eq()',
+            'src/unused.rs': '',
+        })
+        self.catalog['sha256'] = {'sha256'}
+        self.assertEqual({r['modules'] for r in self.rows(['src/ct.rs'])},
+                         {'argon2 keccak sha256'})
+        # One nothing uses runs every benchmark.
+        self.assertEqual(len(self.rows(['src/unused.rs'])), self.full_matrix())
+
+    def test_benchmark_helpers_select_their_callers_uses(self):
+        self.files['bench/benches/primitives/kem.rs'] = 'macro_rules! kem_bench { () => {} }'
+        # Called through a `use`, by the macro's name alone.
+        self.files['bench/benches/primitives/x448.rs'] = 'use super::*;\nkem_bench!();'
+        self.assertEqual({r['modules'] for r in self.rows(['bench/benches/primitives/kem.rs'])},
+                         {'x448'})
+        # One no benchmark calls runs every benchmark.
+        self.files['bench/benches/primitives/x448.rs'] = ''
+        self.assertEqual(len(self.rows(['bench/benches/primitives/kem.rs'])), self.full_matrix())
+
+    def test_shards_follow_the_number_of_benchmarks(self):
+        shards = lambda n: [r['shard'] for r in planner.platforms('arm', benchmarks=n)]
+        with mock.patch.object(planner, 'BENCHMARKS_PER_JOB', None):
+            self.assertEqual(shards(1000), [''])
+        per_job = 30
+        patch = mock.patch.object(planner, 'BENCHMARKS_PER_JOB', per_job)
+        patch.start()
+        self.addCleanup(patch.stop)
+        self.assertEqual(shards(0), [''])
+        self.assertEqual(shards(per_job), [''])
+        self.assertEqual(shards(per_job + 1), ['1/2', '2/2'])
+        self.assertEqual(shards(2 * per_job + 1), ['1/3', '2/3', '3/3'])
+        # Each configuration is sharded; the benchmarks counted are those
+        # the selected modules run (`hmac_sha256`'s and `poly`'s).
+        with mock.patch.object(planner, 'BENCHMARKS_PER_JOB', 1):
+            rows = self.rows(['src/hmac/mod.rs'])
+        self.assertEqual([(r['cpu-features'], r['shard']) for r in rows if r['arch'] == 'aarch64'],
+                         [('', '1/2'), ('', '2/2')])
+
+    def test_shards_deal_out_groups_by_size(self):
+        groups = {'a': 3, 'b': 3, 'c': 2, 'd': 1, 'e': 1}
+        parts = [bench_compare.shard_groups(groups, i, 2) for i in (1, 2)]
+        self.assertEqual(parts, [['a', 'c'], ['b', 'd', 'e']])
+        self.assertEqual(bench_compare.shard_groups(groups, 1, 1), sorted(groups))
+        # More shards than groups leaves some empty.
+        self.assertEqual(bench_compare.shard_groups({'a': 1}, 2, 2), [])
+
+    def test_changes_to_tests_alone_need_nothing(self):
+        code = 'fn f() {}\n'
+        tests = '#[cfg(test)]\nmod tests {\n    #[test]\n    fn a() {}\n}\n'
+        self.base_files['src/chacha.rs'] = code + tests
+        # A test added, or a test module where there was none.
+        self.files['src/chacha.rs'] = code + tests.replace('fn a() {}', 'fn a() {}\n    fn b() {}')
+        self.assertEqual(self.rows(['src/chacha.rs']), [])
+        self.base_files['src/chacha.rs'] = code
+        self.files['src/chacha.rs'] = code + tests
+        self.assertEqual(self.rows(['src/chacha.rs']), [])
+        # Any change outside the tests counts.
+        self.files['src/chacha.rs'] = 'fn f() { g() }\n' + tests
+        self.assertEqual({r['modules'] for r in self.rows(['src/chacha.rs'])}, {'chacha'})
+
+    def test_features_named_in_tests_alone_choose_nothing(self):
+        self.files['src/chacha.rs'] = ('fn f() {}\n#[cfg(test)]\nmod tests {\n'
+                                       '    const F: Features = Features::of(&["neon"]);\n}\n')
+        self.assertEqual(self.configurations(self.rows(['src/chacha.rs']), 'aarch64'), [''])
 
     def test_registration_edits_only(self):
         def names(lines):

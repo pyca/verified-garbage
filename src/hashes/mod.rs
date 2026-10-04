@@ -66,8 +66,8 @@ pub trait HashFunction: Clone {
 ///
 /// `backends` names the enum of the implementations of `update` and
 /// `finalize` to choose from, each a variant: first the one for the
-/// target's baseline ISA, then any that need CPU features (listed in their
-/// generated `_FEATURES` constants), best first. An object uses the first
+/// target's baseline ISA, then any that need CPU features (their generated
+/// `_FEATURES` constants), best first. An object uses the first
 /// that the CPU can run, chosen when it is created (see `crate::cpu`).
 ///
 /// Every region is a distinct Rust object, so none overlaps another or the
@@ -108,7 +108,7 @@ macro_rules! streaming_hash {
             pub(crate) fn select(f: $crate::cpu::Features) -> Self {
                 $(
                     $(#[$attr])*
-                    if f.contains($crate::cpu::Features::all(&[$($req),*])) {
+                    if f.contains(const { $crate::cpu::Features::all(&[$($req),*]) }) {
                         return Self::$variant;
                     }
                 )*

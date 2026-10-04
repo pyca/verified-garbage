@@ -274,9 +274,9 @@ theorem blockEnd_piece (up : Bool) (len c B : Nat) (hB : len * B = 128) (hc : c 
     apply WP.of_runBlock
     cases up
     all_goals
-      simp (config := {decide := true}) only [blockEnd, dzOf, zUp, zDown, runBlock_cons, runStep_some,
+      simp only [reduceCtorEq, ↓reduceIte, Nat.reducePow, blockEnd, dzOf, zUp, zDown, runBlock_cons, runStep_some,
         runBlock_nil, exec, execAlu, readSrc, Option.map_some, Option.bind_some, State.setReg, arithFlags,
-        State.setFlags, State.ea, at_, State.load32, hsl, ins, h.mem.slot, ite_true, ite_false,
+        State.setFlags, State.ea, at_, State.load32, hsl, ins, h.mem.slot, 
         Option.some.injEq, exists_eq_left']
       refine ⟨⟨by simp [h.esp], h.rd, h.wr, ?_, ?_, ?_⟩, ?_⟩
     · simp only [show Reg.esi ≠ Reg.ebp by decide, ite_false, ite_true, h.edi]

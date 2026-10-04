@@ -2,6 +2,7 @@ import Mathlib.Algebra.Polynomial.Expand
 import Mathlib.Algebra.Polynomial.Inductions
 import Mathlib.Algebra.Polynomial.Reverse
 import VerifiedGarbage.Proof.Gcm.Poly
+import VerifiedGarbage.Proof.Gcm.X86_64.Contract
 import VerifiedGarbage.Impl.Gcm.X86_64
 import Mathlib.Tactic.Ring.RingNF
 import Mathlib.Tactic.SplitIfs
@@ -44,8 +45,6 @@ coefficient of `Xⁱ` (integers' order), and `sp v e m` the polynomial over
 `ℕ` of the bits `e + 4u` (`u < m`) of `v`, so that a word whose bits are
 only those is `2ᵉ · (sp v e m)(16)`.
 -/
-
-open VG.PowLit
 
 namespace VG.Proof.Gcm.X86_64.Ctmul
 
@@ -434,8 +433,6 @@ section
 and not memory.
 -/
 
-open VG.PowLit
-
 namespace VG.Proof.Gcm.X86_64
 
 open VG VG.X86_64 VG.Impl.Gcm.X86_64 VG.Proof.Gcm.X86_64.Ctmul
@@ -536,7 +533,7 @@ theorem zero_ok {lo hi : Reg} (h : lo ≠ hi) (s : State) :
     WP isa (.block [.mov lo (.imm 0), .mov hi (.imm 0)]) s fun s' =>
       s'.gpr hi ++ s'.gpr lo = (0 : BitVec 128) ∧ Keeps [lo, hi] s s' := by
   apply WP.of_runBlock
-  simp (config := {decide := true}) only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc,
+  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc,
     isa, State.setReg, ite_true, ite_false, Option.map_some, Option.some.injEq, exists_eq_left', h]
   refine ⟨by decide, fun r hr => ?_, rfl, rfl, rfl⟩
   simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
@@ -678,8 +675,6 @@ word (the coefficients of `x⁰ … x⁶³`):
 
 hence one block computes `(Y ⊕ X) • H` (`reduce_eq_mul`).
 -/
-
-open VG.PowLit
 
 namespace VG.Proof.Gcm.X86_64.Ctmul
 
@@ -1095,10 +1090,10 @@ theorem tail_ok (s : State) :
       s'.gpr .rdi = s.gpr .rdx ∧ s'.zf = some (s.gpr .rcx &&& s.gpr .rcx == 0) ∧
       Keeps [.rdi] s s' := by
   apply WP.of_runBlock
-  simp (config := {decide := true}) only [runBlock_cons, runStep_some, runBlock_nil, exec, execAlu,
+  simp only [and_self, runBlock_cons, runStep_some, runBlock_nil, exec, execAlu,
     readSrc, isa, RegUpd.gpr_setReg, RegUpd.mem_setReg,
     RegUpd.rd_setReg, RegUpd.wr_setReg, RegUpd.gpr_arithFlags, RegUpd.mem_arithFlags,
-    RegUpd.rd_arithFlags, RegUpd.wr_arithFlags, RegUpd.zf_arithFlags, Keeps, and_true, ite_true, ite_false,
+    RegUpd.rd_arithFlags, RegUpd.wr_arithFlags, RegUpd.zf_arithFlags, Keeps, and_true, ite_true, 
     Option.bind_some, Option.map_some, Option.some.injEq, exists_eq_left']
   refine ⟨by trivial, by trivial, fun r hr => ?_⟩
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -1115,40 +1110,10 @@ section
 # GHASH on x86-64: the whole function
 -/
 
-open VG.PowLit
-
 namespace VG.Proof.Gcm
 
 open Spec.Gcm
 
-open VG.X86_64 in
-/-- X86-64 contract for `vg_ghash(h: *const [u8; 16], y: *mut [u8; 16], data:
-*const [u8; 16], n: usize, scratch: *mut [u64; 32])`: replaces the block `Y` at
-`y` with `GHASH_H` continued from `Y` over the `n` blocks at `data`, where `H`
-is the block at `h`.
-
-The code may read `h` (16 bytes) and `data` (`16 * n` bytes), and read and
-write `y` (16 bytes) and `scratch` (256 bytes, whose contents on exit are
-unspecified). `y` and `scratch` may not overlap each other, the other
-buffers, or the return address on the stack. The pointers and `n` are
-public; `H`, `Y` and the data are secret. -/
-def ghashX86_64 : Contract X86_64.isa where
-  pre s :=
-    let h : Region := ⟨s.gpr .rdi, 16⟩
-    let y : Region := ⟨s.gpr .rsi, 16⟩
-    let data : Region := ⟨s.gpr .rdx, 16 * (s.gpr .rcx).toNat⟩
-    let scratch : Region := ⟨s.gpr .r8, 256⟩
-    let ret : Region := ⟨s.gpr .rsp, 8⟩
-    s.rd = [h, data] ∧ s.wr = [y, scratch] ∧
-    h.Disjoint y ∧ h.Disjoint scratch ∧ y.Disjoint data ∧ y.Disjoint scratch ∧
-    data.Disjoint scratch ∧ ret.Disjoint y ∧ ret.Disjoint scratch
-  post s s' :=
-    blockAt s'.mem (s.gpr .rsi) =
-      ghashFrom (blockAt s.mem (s.gpr .rdi)) (blockAt s.mem (s.gpr .rsi))
-        (blocksAt s.mem (s.gpr .rdx) (s.gpr .rcx).toNat)
-  pub s₁ s₂ :=
-    s₁.gpr .rdi = s₂.gpr .rdi ∧ s₁.gpr .rsi = s₂.gpr .rsi ∧ s₁.gpr .rdx = s₂.gpr .rdx ∧
-    s₁.gpr .rcx = s₂.gpr .rcx ∧ s₁.gpr .r8 = s₂.gpr .r8
 
 end VG.Proof.Gcm
 
@@ -1783,7 +1748,7 @@ theorem ghash_ct : ConstantTime isa Proof.Gcm.ghashX86_64.pre Proof.Gcm.ghashX86
   intro s₁ s₂ _ _ ⟨h1, h2, h3, h4, h5⟩
   refine Taint.agree_ofRegs fun r hr => ?_
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl | rfl <;> assumption
+  rcases hr with rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption
 
 theorem ghash_verified :
     Verified X86_64.target Impl.Gcm.X86_64.ghash (Spec.Gcm.ghashContract X86_64.abi) :=

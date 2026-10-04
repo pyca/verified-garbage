@@ -39,15 +39,15 @@ theorem comp_spec {d : Nat} (hd : d ∈ compressWidths) (is : List Instr) (s : S
   rw [ofNat_of_lt ha] at hl
   rw [WP.block_append_iff]
   apply WP.of_runBlock
-  simp (config := {decide := true}) only [compOp, runBlock_cons, runStep_some, runBlock_nil, exec,
+  simp only [reduceCtorEq, ↓reduceIte, Nat.reduceLeDiff, Nat.reduceEqDiff, Nat.reduceSub, Nat.reducePow, and_self, compOp, runBlock_cons, runStep_some, runBlock_nil, exec,
     execAlu, execShift, execMul, readSrc, State.setReg, arithFlags, State.setFlags, Option.bind_some,
-    Option.map_some, ite_true, ite_false, Option.some.injEq, exists_eq_left']
+    Option.map_some, Option.some.injEq, exists_eq_left']
   refine k _ ⟨fun r hr => ?_, rfl, rfl, rfl⟩ ?_
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     simp [hr.1, hr.2]
   · simp only [ite_true]
     rw [toNat_and_mask _ _ hd', toNat_shr]
-    simp only [BitVec.toNat_add, BitVec.toNat_ofNat, h]
+    rw [BitVec.toNat_add]; simp only [BitVec.toNat_ofNat, h]
     have hm : cmul d < 2 ^ 32 := by
       rcases mem_compressWidths hd with rfl | rfl | rfl <;> decide
     rw [Nat.mod_eq_of_lt hm, show (262080 : BitVec 32).toNat = compressAdd from rfl, cmul_eq,
@@ -92,8 +92,8 @@ theorem accStep_spec {d : Nat} (hd : d ∈ compressWidths) (j : Nat) (is : List 
   refine ldComp_spec hd j _ s P hc fun s₁ o₁ v₁ => ?_
   rw [WP.block_append_iff]
   apply WP.of_runBlock
-  simp (config := {decide := true}) only [runBlock_cons, runStep_some, runBlock_nil, exec, execAlu,
-    execShift, readSrc, State.setReg, arithFlags, State.setFlags, Option.bind_some, ite_true, ite_false,
+  simp only [reduceCtorEq, ↓reduceIte, Nat.reducePow, runBlock_cons, runStep_some, runBlock_nil, exec, execAlu,
+    execShift, readSrc, State.setReg, arithFlags, State.setFlags, Option.bind_some, 
     Option.some.injEq, exists_eq_left', show 1 ≤ 32 - d by omega, show 32 - d ≤ 31 by omega, and_self]
   refine k _ ⟨fun r hr => ?_, o₁.mem, o₁.rd, o₁.wr⟩ ?_
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr

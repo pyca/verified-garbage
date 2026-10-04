@@ -98,7 +98,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅</td>
+<td>✅ operations scheduled for latency</td>
 
 <td>✅</td>
 
@@ -264,7 +264,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅ AES-NI</td>
+<td>✅ AES-NI, VAES, AVX2</td>
 
 <td>✅ AES, PMULL</td>
 
@@ -334,7 +334,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>❌</td>
+<td>✅ SHA extensions</td>
 
 </tr>
 
@@ -462,9 +462,9 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅</td>
+<td>✅ AVX-512F, AVX2; bitsliced, 64, 128, 256 or 512 blocks at a time</td>
 
-<td>✅</td>
+<td>✅ bitsliced, 128 blocks at a time</td>
 
 <td>✅</td>
 
@@ -480,7 +480,7 @@ yours to keep:
 
 <td>✅ AVX-512F, AVX2</td>
 
-<td>✅ NEON</td>
+<td>✅ SVE2; NEON</td>
 
 <td>✅</td>
 
@@ -510,13 +510,13 @@ yours to keep:
 
 <td>✅</td>
 
-<td>❌</td>
+<td>✅</td>
+
+<td>✅ permutation kept in AdvSIMD registers</td>
 
 <td>✅</td>
 
-<td>❌</td>
-
-<td>❌</td>
+<td>✅</td>
 
 </tr>
 
@@ -544,11 +544,43 @@ yours to keep:
 
 <tr>
 
+<td>AES-CCM (128-, 192- and 256-bit keys)</td>
+
+<td>✅</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+</tr>
+
+<tr>
+
+<td>AES-GCM-SIV (128- and 256-bit keys)</td>
+
+<td>✅</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+</tr>
+
+<tr>
+
 <td>AES-GCM (128-, 192- and 256-bit keys)</td>
 
 <td>✅</td>
 
-<td>✅ AES-NI, PCLMULQDQ; GHASH with <code>mul</code></td>
+<td>✅ AES-NI, VAES, PCLMULQDQ, VPCLMULQDQ, AVX-512F, AVX-512BW, AVX2; GHASH with <code>mul</code>; 16 blocks at a time with VAES, 8 with VPCLMULQDQ; counter mode and GHASH interleaved, in 256- or 512-bit registers</td>
 
 <td>✅ AES, PMULL</td>
 
@@ -560,13 +592,45 @@ yours to keep:
 
 <tr>
 
+<td>AES-OCB3 (128-, 192- and 256-bit keys)</td>
+
+<td>✅</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+</tr>
+
+<tr>
+
+<td>AES-SIV (256-, 384- and 512-bit keys)</td>
+
+<td>✅</td>
+
+<td>✅ AES-NI, VAES, AVX2</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+</tr>
+
+<tr>
+
 <td>ChaCha20-Poly1305</td>
 
 <td>✅</td>
 
 <td>✅ AVX-512F, AVX2</td>
 
-<td>✅ NEON</td>
+<td>✅ SVE2; NEON</td>
 
 <td>✅</td>
 
@@ -606,9 +670,9 @@ yours to keep:
 
 <td>✅</td>
 
-<td>❌</td>
+<td>✅</td>
 
-<td>❌</td>
+<td>✅</td>
 
 </tr>
 
@@ -622,9 +686,9 @@ yours to keep:
 
 <td>✅</td>
 
-<td>❌</td>
+<td>✅</td>
 
-<td>❌</td>
+<td>✅</td>
 
 </tr>
 
@@ -638,9 +702,9 @@ yours to keep:
 
 <td>✅</td>
 
-<td>❌</td>
+<td>✅</td>
 
-<td>❌</td>
+<td>✅</td>
 
 </tr>
 
@@ -688,7 +752,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>❌</td>
+<td>✅ SHA extensions</td>
 
 </tr>
 
@@ -870,7 +934,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>❌</td>
+<td>✅</td>
 
 <td>❌</td>
 
@@ -956,7 +1020,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>❌</td>
+<td>✅ SHA extensions, AVX2, BMI1, BMI2</td>
 
 <td>❌</td>
 
@@ -979,6 +1043,22 @@ yours to keep:
 <td>✅</td>
 
 <td>✅</td>
+
+</tr>
+
+<tr>
+
+<td>Ed448</td>
+
+<td>✅</td>
+
+<td>✅</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+<td>❌</td>
 
 </tr>
 
@@ -1027,6 +1107,22 @@ yours to keep:
 <td>✅</td>
 
 <td>✅</td>
+
+</tr>
+
+<tr>
+
+<td>RSA</td>
+
+<td>✅</td>
+
+<td>✅ BMI2, ADX</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+<td>❌</td>
 
 </tr>
 

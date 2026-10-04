@@ -320,12 +320,12 @@ pub(crate) unsafe extern "C" fn vg_pbkdf2_hmac_sha512_256(password: *const u8, p
         "add x2, x19, #0",
         "add x3, x20, #0",
         "add x4, x23, #0",
-        "bl {vg_sha512_update}",
+        "bl {vg_sha512_update_scratch}",
         "add x0, x23, #2528",
         "add x1, x20, #0",
         "add x2, x23, #2784",
         "add x3, x23, #0",
-        "bl {vg_sha512_finalize}",
+        "bl {vg_sha512_finalize_scratch}",
         "add x2, x23, #2784",
         "movz x3, #32, lsl #0",
         "b 23f",
@@ -443,7 +443,7 @@ pub(crate) unsafe extern "C" fn vg_pbkdf2_hmac_sha512_256(password: *const u8, p
         "add x2, x21, #0",
         "add x3, x22, #0",
         "add x4, x23, #0",
-        "bl {vg_sha512_update}",
+        "bl {vg_sha512_update_scratch}",
         "add x20, x22, #0",
         "ldr x22, [x23, #1928]",
         "ldr x21, [x23, #1944]",
@@ -553,7 +553,7 @@ pub(crate) unsafe extern "C" fn vg_pbkdf2_hmac_sha512_256(password: *const u8, p
         "add x2, x23, #2848",
         "movz x3, #4, lsl #0",
         "add x4, x23, #0",
-        "bl {vg_sha512_update}",
+        "bl {vg_sha512_update_scratch}",
         "add x0, x23, #2528",
         "add x1, x23, #2144",
         "add x2, x20, #132",
@@ -615,8 +615,8 @@ pub(crate) unsafe extern "C" fn vg_pbkdf2_hmac_sha512_256(password: *const u8, p
         "ldr x23, [x23, #1920]",
         "ret",
         vg_sha512_256_init = sym super::sha512::vg_sha512_256_init,
-        vg_sha512_update = sym super::sha512::vg_sha512_update,
-        vg_sha512_finalize = sym super::sha512::vg_sha512_finalize,
+        vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch,
+        vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch,
         vg_hmac_sha512_256_init = sym super::hmac_sha512_256::vg_hmac_sha512_256_init,
         vg_hmac_sha512_256_finalize = sym super::hmac_sha512_256::vg_hmac_sha512_256_finalize,
         vg_pbkdf2_hmac_sha512_256_iterate = sym super::pbkdf2_sha512_256::vg_pbkdf2_hmac_sha512_256_iterate,
@@ -624,7 +624,7 @@ pub(crate) unsafe extern "C" fn vg_pbkdf2_hmac_sha512_256(password: *const u8, p
 }
 
 /// The CPU features `vg_pbkdf2_hmac_sha512_256_iterate_sha3` requires (`Artifact.features`).
-pub(crate) const VG_PBKDF2_HMAC_SHA512_256_ITERATE_SHA3_FEATURES: &[&str] = &["sha3"];
+pub(crate) const VG_PBKDF2_HMAC_SHA512_256_ITERATE_SHA3_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["sha3"]);
 
 /// Runs `n` steps of PBKDF2-HMAC-SHA-512/256's iteration: if, for a 128-byte key `K₀`, the SHA-512/256 streaming state in bytes 0 to 191 of `*key` represents `K₀ ⊕ ipad` and the one in bytes 192 to 383 represents `K₀ ⊕ opad` (as `vg_hmac_sha512_256_init` leaves them), repeats `U ← HMAC-SHA-512/256 (K₀, U)`, `T ← T ⊕ U` `n` times, from `U = *u` and `T = *t`, and leaves the final `T` in `*t` (RFC 8018, step 3 of `F`).
 ///
@@ -902,7 +902,7 @@ pub(crate) unsafe extern "C" fn vg_pbkdf2_hmac_sha512_256_iterate_sha3(key: *con
 }
 
 /// The CPU features `vg_pbkdf2_hmac_sha512_256_sha3` requires (`Artifact.features`).
-pub(crate) const VG_PBKDF2_HMAC_SHA512_256_SHA3_FEATURES: &[&str] = &["sha3"];
+pub(crate) const VG_PBKDF2_HMAC_SHA512_256_SHA3_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["sha3"]);
 
 /// PBKDF2-HMAC-SHA-512/256 (RFC 8018 §5.2, with HMAC-SHA-512/256 as the pseudorandom function): writes the `out_len`-byte key derived from the `password_len` bytes at `password` and the `salt_len` bytes at `salt` with `c` iterations to `out`. Calls the verified SHA-512/256 and HMAC-SHA-512/256 functions and `vg_pbkdf2_hmac_sha512_256_iterate`.
 ///
@@ -952,12 +952,12 @@ pub(crate) unsafe extern "C" fn vg_pbkdf2_hmac_sha512_256_sha3(password: *const 
         "add x2, x19, #0",
         "add x3, x20, #0",
         "add x4, x23, #0",
-        "bl {vg_sha512_update_sha3}",
+        "bl {vg_sha512_update_scratch_sha3}",
         "add x0, x23, #2528",
         "add x1, x20, #0",
         "add x2, x23, #2784",
         "add x3, x23, #0",
-        "bl {vg_sha512_finalize_sha3}",
+        "bl {vg_sha512_finalize_scratch_sha3}",
         "add x2, x23, #2784",
         "movz x3, #32, lsl #0",
         "b 23f",
@@ -1075,7 +1075,7 @@ pub(crate) unsafe extern "C" fn vg_pbkdf2_hmac_sha512_256_sha3(password: *const 
         "add x2, x21, #0",
         "add x3, x22, #0",
         "add x4, x23, #0",
-        "bl {vg_sha512_update_sha3}",
+        "bl {vg_sha512_update_scratch_sha3}",
         "add x20, x22, #0",
         "ldr x22, [x23, #1928]",
         "ldr x21, [x23, #1944]",
@@ -1185,7 +1185,7 @@ pub(crate) unsafe extern "C" fn vg_pbkdf2_hmac_sha512_256_sha3(password: *const 
         "add x2, x23, #2848",
         "movz x3, #4, lsl #0",
         "add x4, x23, #0",
-        "bl {vg_sha512_update_sha3}",
+        "bl {vg_sha512_update_scratch_sha3}",
         "add x0, x23, #2528",
         "add x1, x23, #2144",
         "add x2, x20, #132",
@@ -1248,8 +1248,8 @@ pub(crate) unsafe extern "C" fn vg_pbkdf2_hmac_sha512_256_sha3(password: *const 
         "ret",
         ".arch_extension nosha3",
         vg_sha512_256_init = sym super::sha512::vg_sha512_256_init,
-        vg_sha512_update_sha3 = sym super::sha512::vg_sha512_update_sha3,
-        vg_sha512_finalize_sha3 = sym super::sha512::vg_sha512_finalize_sha3,
+        vg_sha512_update_scratch_sha3 = sym super::sha512::vg_sha512_update_scratch_sha3,
+        vg_sha512_finalize_scratch_sha3 = sym super::sha512::vg_sha512_finalize_scratch_sha3,
         vg_hmac_sha512_256_init_sha3 = sym super::hmac_sha512_256::vg_hmac_sha512_256_init_sha3,
         vg_hmac_sha512_256_finalize_sha3 = sym super::hmac_sha512_256::vg_hmac_sha512_256_finalize_sha3,
         vg_pbkdf2_hmac_sha512_256_iterate_sha3 = sym super::pbkdf2_sha512_256::vg_pbkdf2_hmac_sha512_256_iterate_sha3,

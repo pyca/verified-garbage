@@ -4,6 +4,7 @@ import VerifiedGarbage.Proof.Sha1.AArch64.Variant
 import VerifiedGarbage.Proof.Sha1.Md
 import VerifiedGarbage.Proof.Hmac.Generic.Common
 import VerifiedGarbage.TCB.AArch64.Target
+import VerifiedGarbage.Proof.Framework.TaintBatch
 
 /-!
 # SHA-1 on AArch64, as a Merkle–Damgård hash function
@@ -30,9 +31,9 @@ def hash (v : Compress) : Hash where
   compC := v.code
   initN := Spec.Sha1.initApi.name
   initC := Impl.Sha1.AArch64.Stream.init
-  updN := Spec.Sha1.updateApi.name ++ v.suffix
+  updN := Spec.Sha1.updateScratchApi.name ++ v.suffix
   updC := v.update
-  finN := Spec.Sha1.finalizeApi.name ++ v.suffix
+  finN := Spec.Sha1.finalizeScratchApi.name ++ v.suffix
   finC := v.finalize
   hmacInitN := Spec.Hmac.sha1I.initApi.name ++ v.suffix
   hmacFinN := Spec.Hmac.sha1I.finalizeApi.name ++ v.suffix
@@ -42,24 +43,24 @@ def hash (v : Compress) : Hash where
 def coreH : Hash := ⟨Impl.Pbkdf2.AArch64.ofMd Impl.Sha1.AArch64.Stream.params, 20, 56, "", .block [], "",
   .block [], "", .block [], "", .block [], "", "", ""⟩
 
-theorem coreOK : CoreOK coreH where
-  pbk := ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩,
-    ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩,
-    ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩,
-    ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩
-  iter := ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩,
-    ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩
-  hinit := {
-    pro := ⟨_, by taint_decide⟩
-    argI := by
-      simp only [List.mem_cons, List.not_mem_nil, or_false]
-      rintro st (rfl | rfl) <;> exact ⟨_, by taint_decide⟩
-    keys := ⟨_, by taint_decide⟩
-    mid := ⟨_, by taint_decide⟩
-    restore := ⟨_, by taint_decide⟩ }
-  hfin := ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩
-  fitI := by decide
-  fitF := by decide
+theorem coreOK : CoreOK coreH := by
+  refine {
+    pbk := ⟨⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩,
+      ⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩,
+      ⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩,
+      ⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩⟩
+    iter := ⟨⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩,
+      ⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩⟩
+    hinit := {
+      pro := ⟨?_, ?_⟩
+      argI := List.forall_mem_cons.mpr ⟨⟨?_, ?_⟩, List.forall_mem_cons.mpr ⟨⟨?_, ?_⟩, List.forall_mem_nil _⟩⟩
+      keys := ⟨?_, ?_⟩
+      mid := ⟨?_, ?_⟩
+      restore := ⟨?_, ?_⟩ }
+    hfin := ⟨⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩⟩
+    fitI := ?_
+    fitF := ?_ }
+  taint_decide_all
 
 variable (v : Compress)
 
@@ -147,20 +148,34 @@ theorem satP : ∃ s, (Spec.Hmac.sha1I.pbkdf2Contract AArch64.abi 16).pre s := b
     Spec.Pbkdf2.pbkdf2Contract, Spec.Pbkdf2.pbkdf2Sig, Spec.Hmac.sha1S, Spec.Hmac.sha1, AArch64.abi,
     AArch64.argRegs] using pbkSat 140
 
-/-- The streaming `update` and `finalize` made with `v`, which
+/-- The streaming `update` and `finalize` made with `v`, which keep their
+working space in a frame of their own, and `update_scratch` and
+`finalize_scratch`, which HMAC's and PBKDF2's code calls with theirs, which
 `Generic/MdHash/AArch64/Stream.lean` emits. -/
 def stream : List StreamFn := [
   { api := Spec.Sha1.updateApi
-    code := v.update
-    contract := Spec.Sha1.updateContract AArch64.abi 16
-    stack := 16
+    code := Impl.StackScratch.AArch64.withStackScratch 160 .x4 v.update
+    contract := Spec.Sha1.updateContract AArch64.abi (16 + 160)
+    stack := 16 + 160
     verified := Proof.Sha1.AArch64.Shared.update_of v.update_verified
     spSafe := Code.all_of_forall (fun _ => rfl) _ },
   { api := Spec.Sha1.finalizeApi
-    code := v.finalize
-    contract := Spec.Sha1.finalizeContract AArch64.abi 16
-    stack := 16
+    code := Impl.StackScratch.AArch64.withStackScratch 160 .x3 v.finalize
+    contract := Spec.Sha1.finalizeContract AArch64.abi (16 + 160)
+    stack := 16 + 160
     verified := Proof.Sha1.AArch64.Shared.finalize_of v.finalize_verified
+    spSafe := Code.all_of_forall (fun _ => rfl) _ },
+  { api := Spec.Sha1.updateScratchApi
+    code := v.update
+    contract := Spec.Sha1.updateScratchContract AArch64.abi 16
+    stack := 16
+    verified := Proof.Sha1.AArch64.Shared.updateScratch_of v.update_verified
+    spSafe := Code.all_of_forall (fun _ => rfl) _ },
+  { api := Spec.Sha1.finalizeScratchApi
+    code := v.finalize
+    contract := Spec.Sha1.finalizeScratchContract AArch64.abi 16
+    stack := 16
+    verified := Proof.Sha1.AArch64.Shared.finalizeScratch_of v.finalize_verified
     spSafe := Code.all_of_forall (fun _ => rfl) _ }]
 
 /-- Every construction follows the registered compression backend. -/

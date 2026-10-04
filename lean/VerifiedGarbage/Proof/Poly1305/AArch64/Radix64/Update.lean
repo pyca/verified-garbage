@@ -11,8 +11,6 @@ import VerifiedGarbage.Proof.Framework.Omega
 # Poly1305 on AArch64: `update`
 -/
 
-open VG.PowLit
-
 namespace VG.Proof.Poly1305.AArch64.Radix64
 
 open VG VG.AArch64 VG.Proof.Poly1305.AArch64
@@ -670,7 +668,7 @@ theorem update_ok (s : State) (hs : Proof.Poly1305.updateAArch64.pre s) :
     ∃ t s', Exec isa Impl.Poly1305.AArch64.Radix64.update s t s' ∧ abiPreserved s s' ∧
       Proof.Poly1305.updateAArch64.post s s' := by
   obtain ⟨t, s', he, h⟩ := update_correct (UPre.of s hs)
-  exact ⟨t, s', he, ⟨fun r hr => Exec.gpr (update_untouched r hr) he, Exec.sp he, Exec.preservedV he⟩, h⟩
+  exact ⟨t, s', he, ⟨fun r hr => Exec.gpr (update_untouched r hr) he, Exec.sp he, Exec.preservedV he (by lit_decide)⟩, h⟩
 
 theorem update_ct : ConstantTime isa Proof.Poly1305.updateAArch64.pre
     Proof.Poly1305.updateAArch64.pub Impl.Poly1305.AArch64.Radix64.update := by
@@ -679,7 +677,7 @@ theorem update_ct : ConstantTime isa Proof.Poly1305.updateAArch64.pre
   intro s₁ s₂ _ _ ⟨h1, h2, h3, h4, hsp⟩
   refine ⟨hsp, fun r hr => ?_⟩
   simp only [VG.AArch64.Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl <;> assumption
+  rcases hr with rfl | rfl | rfl | rfl <;> with_reducible assumption
 
 theorem update_verified :
     Verified AArch64.target Impl.Poly1305.AArch64.Radix64.update (Spec.Poly1305.updateContract AArch64.abi)

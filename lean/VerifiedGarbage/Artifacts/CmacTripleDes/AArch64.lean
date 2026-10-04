@@ -13,9 +13,10 @@ open VG.Proof.CmacTripleDes.AArch64
 
 /-- How the functions compute DES. -/
 def desNote : String :=
-  "This implementation computes DES without tables: its bit permutations as shifts and masks, \
-  and its eight S-boxes at once, bitsliced across a 64-bit word, as a tree of multiplexers \
-  over constants."
+  "This implementation looks up DES's S-boxes with AdvSIMD `tbl` in tables held in the vector \
+  registers (two boxes to a 64-byte table), which takes a time independent of the index, and \
+  computes its bit permutations as rotations and masks; the halves are kept rotated and spread \
+  so that the expansion is a byte layout, and the round keys are spread once per block."
 
 def artifacts : List Artifact := [
   { Spec.Cmac.tdesInitApi with

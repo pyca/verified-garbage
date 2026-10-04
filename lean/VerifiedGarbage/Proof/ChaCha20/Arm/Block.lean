@@ -30,10 +30,10 @@ theorem qr_ok {a b c d : Reg} (hab : a ≠ b) (hac : a ≠ c) (had : a ≠ d) (h
       (∀ r, r ≠ a → r ≠ b → r ≠ c → r ≠ d → s'.gpr r = s.gpr r) ∧
       s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   apply WP.of_runBlock
-  simp (config := {decide := true}) only [qr, runBlock_cons, runStep_some,
+  simp only [↓reduceIte, Nat.reduceLeDiff, and_self, qr, runBlock_cons, runStep_some,
     runBlock_nil, exec, Op2.eval, isa, State.setReg, ha, hb,
     hc, hd, hab, hac, had, hbc, hbd, hcd, hab.symm, hac.symm, had.symm, hbc.symm, hbd.symm,
-    hcd.symm, ite_true, ite_false, Option.map_some, Option.some.injEq,
+    hcd.symm, Option.map_some, Option.some.injEq,
     exists_eq_left']
   and_intros
   all_goals first
@@ -414,16 +414,16 @@ theorem copyWord_ok {s₀ : State} (hp : Pre s₀) {k : Nat} (hk : k < 16) {s : 
       ⟨bufR s₀, hw, contains_off (by simp only [slotOff]; omega) (by simp only [slotOff]; omega)⟩
     have e2 := hp.eaB (show slotOff k < 256 by simp only [slotOff]; omega)
     have h6 : slotOff k < 4096 := by simp only [slotOff]; omega
-    simp (config := {decide := true}) only [copyWord, h, and_self, ite_true, List.cons_append,
+    simp only [reduceCtorEq, ↓reduceIte, copyWord, h, and_self, List.cons_append,
       List.nil_append, runBlock_cons, runStep_some, runBlock_nil,
           exec, isa, State.setReg, State.load32, State.store32, hr0, hr1,
-      e0, e1, e2, h4, h5, h6, hin, o₁, o₂, ite_false, Option.map_some,
+      e0, e1, e2, h4, h5, h6, hin, o₁, o₂, Option.map_some,
       Option.some.injEq, exists_eq_left']
     exact ⟨trivial, fun r hr => by simp [hr], trivial⟩
-  · simp (config := {decide := true}) only [copyWord, h, ite_false, List.append_nil,
+  · simp only [reduceCtorEq, ↓reduceIte, and_self, copyWord, h, List.append_nil,
       runBlock_cons, runStep_some, runBlock_nil,
       exec, isa, State.setReg, State.load32, State.store32, hr0, hr1, e0, e1, h4, h5, hin, o₁,
-      ite_true, Option.map_some, Option.some.injEq, exists_eq_left']
+      Option.map_some, Option.some.injEq, exists_eq_left']
     exact ⟨trivial, fun r hr => by simp [hr], trivial⟩
 
 /-- The copy invariant after `n` words, relative to the state `s₁` after the prologue's stores. -/
@@ -796,7 +796,7 @@ theorem block_ct :
   intro s₁ s₂ _ _ ⟨h1, h2⟩
   refine Taint.agree_ofRegs fun r hr => ?_
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl <;> assumption
+  rcases hr with rfl | rfl <;> with_reducible assumption
 
 theorem block_verified :
     Verified Arm.target Impl.ChaCha20.Arm.block (Spec.ChaCha20.blockContract Arm.abi) :=

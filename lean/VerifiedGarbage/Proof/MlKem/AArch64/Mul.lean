@@ -1,4 +1,5 @@
 import VerifiedGarbage.Proof.MlKem.AArch64.NttCommon
+import VerifiedGarbage.Proof.Framework.Omega
 import Mathlib.Tactic.Set
 
 /-!
@@ -159,9 +160,9 @@ theorem vpair_ok {rest : List Instr} {s : State} {Q : State → Prop} (hc : VCon
   have l₄' : Lanes (s₄.v .v23) fun e => FE e * GE e + R e * Γ e := l₄.congr fun e he => by
     have h1 := pp (b1 e he) (b3 e he)
     have := y_lt e he
-    rw [Nat.mod_eq_of_lt (show FE e * GE e < 2 ^ 32 by omega), Nat.mod_eq_of_lt
-      (show R e * Γ e < 2 ^ 32 by omega)]
-    exact Nat.mod_eq_of_lt (by omega)
+    rw [Nat.mod_eq_of_lt (show FE e * GE e < 2 ^ 32 by bdd_omega), Nat.mod_eq_of_lt
+      (show R e * Γ e < 2 ^ 32 by bdd_omega)]
+    exact Nat.mod_eq_of_lt (by bdd_omega)
   have c₄ := c₂.chg (h₃.chg.trans h₄.chg)
   refine vbar_ok (d := .v23) (t := .v22) (hc := c₄) (hf := l₄') (hlt := y_lt)
     (k := fun s₅ h₅ l₅ r₅ => ?_)
@@ -185,9 +186,9 @@ theorem vpair_ok {rest : List Instr} {s : State} {Q : State → Prop} (hc : VCon
     have := pp (b1 e he) (b4 e he); have := pp (b2 e he) (b3 e he); omega
   have l₈' : Lanes (s₈.v .v24) fun e => FE e * GO e + FO e * GE e := l₈.congr fun e he => by
     have := pp (b1 e he) (b4 e he); have := pp (b2 e he) (b3 e he)
-    rw [Nat.mod_eq_of_lt (show FE e * GO e < 2 ^ 32 by omega), Nat.mod_eq_of_lt
-      (show FO e * GE e < 2 ^ 32 by omega)]
-    exact Nat.mod_eq_of_lt (by omega)
+    rw [Nat.mod_eq_of_lt (show FE e * GO e < 2 ^ 32 by bdd_omega), Nat.mod_eq_of_lt
+      (show FO e * GE e < 2 ^ 32 by bdd_omega)]
+    exact Nat.mod_eq_of_lt (by bdd_omega)
   have c₈ := c₆.chg (h₇.chg.trans h₈.chg)
   refine vbar_ok (d := .v24) (t := .v22) (hc := c₈) (hf := l₈') (hlt := z_lt)
     (k := fun s₉ h₉ l₉ r₉ => ?_)
@@ -204,24 +205,24 @@ theorem step {s₀ : State} (hp : Pre s₀) {c : Nat} (hc : c < 32) {s : State} 
   show WP isa (.block (.ldrq .v0 .x1 0 :: .ldrq .v1 .x1 16 :: .ldrq .v4 .x2 0 :: .ldrq .v5 .x2 16 ::
     .ldrq .v18 .x3 0 :: .vop (.perm .uzp1 .s4 .v6 .v0 .v1) :: .vop (.perm .uzp2 .s4 .v7 .v0 .v1) ::
     .vop (.perm .uzp1 .s4 .v19 .v4 .v5) :: .vop (.perm .uzp2 .s4 .v20 .v4 .v5) ::
-    ([.vop (.mul .v21 .v7 .v20), .vop (.sqdmulh .v22 .v21 .v17), .vop (.mls .v21 .v22 .v16),
+    (([.vop (.mul .v21 .v7 .v20), .vop (.sqdmulh .v22 .v21 .v17), .vop (.mls .v21 .v22 .v16),
       .vop (.mul .v23 .v6 .v19), .vop (.mla .v23 .v21 .v18), .vop (.sqdmulh .v22 .v23 .v17),
-      .vop (.mls .v23 .v22 .v16)] ++ vcsub .v23 .v22 ++
-      [.vop (.mul .v24 .v6 .v20), .vop (.mla .v24 .v7 .v19), .vop (.sqdmulh .v22 .v24 .v17),
-      .vop (.mls .v24 .v22 .v16)] ++ vcsub .v24 .v22 ++
-      (.vop (.perm .zip1 .s4 .v0 .v23 .v24) :: .vop (.perm .zip2 .s4 .v1 .v23 .v24) :: .strq .v0 .x0 0 ::
-        .strq .v1 .x0 16 :: ([.addImm .x .x0 .x0 32, .addImm .x .x1 .x1 32, .addImm .x .x2 .x2 32,
-        .addImm .x .x3 .x3 16, .subImm .x .x11 .x11 1] ++ []))))) s _
-  have hj : 8 * c + 4 ≤ 256 := by omega
-  have hj' : 8 * c + 4 + 4 ≤ 256 := by omega
+      .vop (.mls .v23 .v22 .v16)] : List Instr) ++ vcsub .v23 .v22 ++
+      ([.vop (.mul .v24 .v6 .v20), .vop (.mla .v24 .v7 .v19), .vop (.sqdmulh .v22 .v24 .v17),
+      .vop (.mls .v24 .v22 .v16)] : List Instr) ++ vcsub .v24 .v22 ++
+      (Instr.vop (.perm .zip1 .s4 .v0 .v23 .v24) :: .vop (.perm .zip2 .s4 .v1 .v23 .v24) :: .strq .v0 .x0 0 ::
+        .strq .v1 .x0 16 :: (([.addImm .x .x0 .x0 32, .addImm .x .x1 .x1 32, .addImm .x .x2 .x2 32,
+        .addImm .x .x3 .x3 16, .subImm .x .x11 .x11 1] : List Instr) ++ ([] : List Instr)))))) s _
+  have hj : 8 * c + 4 ≤ 256 := by bdd_omega
+  have hj' : 8 * c + 4 + 4 ≤ 256 := by bdd_omega
   have inF : ∀ {j : Nat}, j + 4 ≤ 256 → InRegions (s.rd ++ s.wr) (coeffAddr (fP s₀) j) 16 :=
     fun hj => by
       rw [h.rd, h.wr, hp.rd, hp.wr]
-      exact in_regions (R := polyRegion (fP s₀)) (by simp) (contains_off (by omega) (by decide))
+      exact in_regions (R := polyRegion (fP s₀)) (by simp) (contains_off (by bdd_omega) (by decide))
   have inG : ∀ {j : Nat}, j + 4 ≤ 256 → InRegions (s.rd ++ s.wr) (coeffAddr (gP s₀) j) 16 :=
     fun hj => by
       rw [h.rd, h.wr, hp.rd, hp.wr]
-      exact in_regions (R := polyRegion (gP s₀)) (by simp) (contains_off (by omega) (by decide))
+      exact in_regions (R := polyRegion (gP s₀)) (by simp) (contains_off (by bdd_omega) (by decide))
   -- the loads
   refine wp_ldrq (a := coeffAddr (fP s₀) (8 * c)) (by decide) (by rw [h.x1, ptr_zero]) (inF hj)
     fun s₁ h₁ => ?_
@@ -236,7 +237,7 @@ theorem step {s₀ : State} (hp : Pre s₀) {c : Nat} (hc : c < 32) {s : State} 
     (by rw [h₄.gpr, h₃.gpr, h₂.gpr, h₁.gpr, h.x3, ptr_zero])
     (by rw [h₄.rd, h₄.wr, h₃.rd, h₃.wr, h₂.rd, h₂.wr, h₁.rd, h₁.wr, h.rd, h.wr, hp.rd, hp.wr]
         exact in_rd_wr (in_regions (R := polyRegion (sP s₀)) (by simp)
-          (contains_off (by omega) (by decide)))) fun s₅ h₅ => ?_
+          (contains_off (by bdd_omega) (by decide)))) fun s₅ h₅ => ?_
   have m₄ : s₄.mem = s.mem := by rw [h₄.mem, h₃.mem, h₂.mem, h₁.mem]
   have cf : ∀ j < 256, (coeffAt s.mem (fP s₀) j).toNat = ((F s₀)[j]!).val := fun j hj => by
     rw [h.f j hj, polyAt_val hp.f (show j < n by rw [n_eq]; exact hj)]
@@ -244,26 +245,26 @@ theorem step {s₀ : State} (hp : Pre s₀) {c : Nat} (hc : c < 32) {s : State} 
     rw [h.g j hj, polyAt_val hp.g (show j < n by rw [n_eq]; exact hj)]
   have lf0 : Lanes (s₅.v .v0) fun e => ((F s₀)[8 * c + e]!).val := by
     rw [h₅.get .v0, h₄.get .v0, h₃.get .v0, h₂.get .v0, h₁.v]
-    exact lanes_coeffs fun e he => cf _ (by omega)
+    exact lanes_coeffs fun e he => cf _ (by bdd_omega)
   have lf1 : Lanes (s₅.v .v1) fun e => ((F s₀)[8 * c + 4 + e]!).val := by
     rw [h₅.get .v1, h₄.get .v1, h₃.get .v1, h₂.v, h₁.mem]
-    exact lanes_coeffs fun e he => cf _ (by omega)
+    exact lanes_coeffs fun e he => cf _ (by bdd_omega)
   have lg4 : Lanes (s₅.v .v4) fun e => ((Gp s₀)[8 * c + e]!).val := by
     rw [h₅.get .v4, h₄.get .v4, h₃.v, h₂.mem, h₁.mem]
-    exact lanes_coeffs fun e he => cg _ (by omega)
+    exact lanes_coeffs fun e he => cg _ (by bdd_omega)
   have lg5 : Lanes (s₅.v .v5) fun e => ((Gp s₀)[8 * c + 4 + e]!).val := by
     rw [h₅.get .v5, h₄.v, h₃.mem, h₂.mem, h₁.mem]
-    exact lanes_coeffs fun e he => cg _ (by omega)
+    exact lanes_coeffs fun e he => cg _ (by bdd_omega)
   have lγ : Lanes (s₅.v .v18) fun e => gammaTable.getD (4 * c + e) 0 := by
     rw [h₅.v, m₄, read16]
     intro e he
     have t : ∀ j, j < 4 → (s.mem.readW (sP s₀ + BitVec.ofNat 64 (4 * (4 * c)) + BitVec.ofNat 64 (4 * j))
         32).toNat = gammaTable.getD (4 * c + j) 0 := fun j hj => by
-      rw [ptr_add, show 4 * (4 * c) + 4 * j = 4 * (4 * c + j) by omega, h.tab _ (by omega),
+      rw [ptr_add, show 4 * (4 * c) + 4 * j = 4 * (4 * c + j) by bdd_omega, h.tab _ (by bdd_omega),
         BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by
-          have := gammaTable_lt (4 * c + j) (by omega); have hq : q = 3329 := rfl; omega)]
+          have := gammaTable_lt (4 * c + j) (by bdd_omega); have hq : q = 3329 := rfl; omega)]
     rw [vword_ofVWords _ _ _ _ he]
-    rcases (show e = 0 ∨ e = 1 ∨ e = 2 ∨ e = 3 by omega) with rfl | rfl | rfl | rfl
+    rcases (show e = 0 ∨ e = 1 ∨ e = 2 ∨ e = 3 by bdd_omega) with rfl | rfl | rfl | rfl
     · exact t 0 (by decide)
     · exact t 1 (by decide)
     · exact t 2 (by decide)
@@ -279,14 +280,14 @@ theorem step {s₀ : State} (hp : Pre s₀) {c : Nat} (hc : c < 32) {s : State} 
       show _ = _
       rw [vword_uzp1_s4 _ _ he]
       split
-      · rw [hx _ (by omega)]; dsimp only; rw [show 8 * c + 2 * e = 2 * (4 * c + e) by omega]
-      · rw [hy _ (by omega)]; dsimp only; rw [show 8 * c + 4 + 2 * (e - 2) = 2 * (4 * c + e) by omega],
+      · rw [hx _ (by bdd_omega)]; dsimp only; rw [show 8 * c + 2 * e = 2 * (4 * c + e) by bdd_omega]
+      · rw [hy _ (by bdd_omega)]; dsimp only; rw [show 8 * c + 4 + 2 * (e - 2) = 2 * (4 * c + e) by bdd_omega],
      fun e he => by
       show _ = _
       rw [vword_uzp2_s4 _ _ he]
       split
-      · rw [hx _ (by omega)]; dsimp only; rw [show 8 * c + (2 * e + 1) = 2 * (4 * c + e) + 1 by omega]
-      · rw [hy _ (by omega)]; dsimp only; rw [show 8 * c + 4 + (2 * (e - 2) + 1) = 2 * (4 * c + e) + 1 by omega]⟩
+      · rw [hx _ (by bdd_omega)]; dsimp only; rw [show 8 * c + (2 * e + 1) = 2 * (4 * c + e) + 1 by bdd_omega]
+      · rw [hy _ (by bdd_omega)]; dsimp only; rw [show 8 * c + 4 + (2 * (e - 2) + 1) = 2 * (4 * c + e) + 1 by bdd_omega]⟩
   have fe : Lanes (s₉.v .v6) fun e => ((F s₀)[2 * (4 * c + e)]!).val := by
     rw [h₉.get .v6, h₈.get .v6, h₇.get .v6, h₆.v]; exact (ev (A := fun j => ((F s₀)[j]!).val) lf0 lf1).1
   have fo : Lanes (s₉.v .v7) fun e => ((F s₀)[2 * (4 * c + e) + 1]!).val := by
@@ -301,7 +302,7 @@ theorem step {s₀ : State} (hp : Pre s₀) {c : Nat} (hc : c < 32) {s : State} 
   have vc₉ : VConsts s₉ := h.vc.chg (((((((((h₁.chg.trans h₂.chg).trans h₃.chg).trans h₄.chg).trans
     h₅.chg).trans h₆.chg).trans h₇.chg).trans h₈.chg).trans h₉.chg))
   refine vpair_ok vc₉ fe fo ge go gγ (fun _ _ => val_lt _) (fun _ _ => val_lt _) (fun _ _ => val_lt _)
-    (fun _ _ => val_lt _) (fun e he => by have := gammaTable_lt (4 * c + e) (by omega); exact this)
+    (fun _ _ => val_lt _) (fun e he => by have := gammaTable_lt (4 * c + e) (by bdd_omega); exact this)
     fun s₁₀ h₁₀ l23 l24 => ?_
   refine wp_vop (d := .v0) rfl fun s₁₁ h₁₁ => wp_vop (d := .v1) rfl fun s₁₂ h₁₂ => ?_
   have g₁₂ : s₁₂.gpr = s.gpr := by
@@ -311,7 +312,7 @@ theorem step {s₀ : State} (hp : Pre s₀) {c : Nat} (hc : c < 32) {s : State} 
     rw [h₁₂.wr, h₁₁.wr, h₁₀.wr, h₉.wr, h₈.wr, h₇.wr, h₆.wr, h₅.wr, h₄.wr, h₃.wr, h₂.wr, h₁.wr, h.wr]
   have inH : ∀ {j : Nat}, j + 4 ≤ 256 → InRegions s₀.wr (coeffAddr (hP s₀) j) 16 := fun hj => by
     rw [hp.wr]
-    exact in_regions (R := polyRegion (hP s₀)) (by simp) (contains_off (by omega) (by decide))
+    exact in_regions (R := polyRegion (hP s₀)) (by simp) (contains_off (by bdd_omega) (by decide))
   refine wp_strq (a := coeffAddr (hP s₀) (8 * c)) (by decide) (by rw [g₁₂, h.x0, ptr_zero])
     (by rw [w₁₂]; exact inH hj) fun s₁₃ h₁₃ => ?_
   refine wp_strq (a := coeffAddr (hP s₀) (8 * c + 4)) (by decide)
@@ -349,10 +350,10 @@ theorem step {s₀ : State} (hp : Pre s₀) {c : Nat} (hc : c < 32) {s : State} 
     fun hd r hr => by rw [List.mem_singleton.mp hr]; exact hd.symm
   refine ⟨⟨by rw [k'.rd, k₁₄.rd, h.rd], by rw [k'.wr, k₁₄.wr, h.wr], by rw [k'.sp, k₁₄.sp, h.sp],
     ?_, ?_, ?_, ?_, x11', ?_, ?_, fun j hj => ?_, fun j hj => ?_, fun j hj => ?_⟩, by rw [x11']; omega⟩
-  · rw [e0, g₁₄, h.x0, coeffAddr, ptr_add, show 4 * (8 * c) + 32 = 4 * (8 * (c + 1)) by omega]
-  · rw [e1, g₁₄, h.x1, coeffAddr, ptr_add, show 4 * (8 * c) + 32 = 4 * (8 * (c + 1)) by omega]
-  · rw [e2, g₁₄, h.x2, coeffAddr, ptr_add, show 4 * (8 * c) + 32 = 4 * (8 * (c + 1)) by omega]
-  · rw [e3, g₁₄, h.x3, ptr_add, show 4 * (4 * c) + 16 = 4 * (4 * (c + 1)) by omega]
+  · rw [e0, g₁₄, h.x0, coeffAddr, ptr_add, show 4 * (8 * c) + 32 = 4 * (8 * (c + 1)) by bdd_omega]
+  · rw [e1, g₁₄, h.x1, coeffAddr, ptr_add, show 4 * (8 * c) + 32 = 4 * (8 * (c + 1)) by bdd_omega]
+  · rw [e2, g₁₄, h.x2, coeffAddr, ptr_add, show 4 * (8 * c) + 32 = 4 * (8 * (c + 1)) by bdd_omega]
+  · rw [e3, g₁₄, h.x3, ptr_add, show 4 * (4 * c) + 16 = 4 * (4 * (c + 1)) by bdd_omega]
   · refine ⟨by rw [hv, h₁₄.v, h₁₃.v, h₁₂.get .v16, h₁₁.get .v16]; exact (vc₉.chg h₁₀).q,
       by rw [hv, h₁₄.v, h₁₃.v, h₁₂.get .v17, h₁₁.get .v17]; exact (vc₉.chg h₁₀).m⟩
   · -- the eight coefficients stored
@@ -363,27 +364,27 @@ theorem step {s₀ : State} (hp : Pre s₀) {c : Nat} (hc : c < 32) {s : State} 
     have ge_ : ∀ e, e < 8 → e % 2 = 0 → G s₀ (8 * c + e) = BitVec.ofNat 32 (((((F s₀)[2 * (4 * c + e / 2) + 1]!).val *
         ((Gp s₀)[2 * (4 * c + e / 2) + 1]!).val % 3329) * gammaTable.getD (4 * c + e / 2) 0 +
         ((F s₀)[2 * (4 * c + e / 2)]!).val * ((Gp s₀)[2 * (4 * c + e / 2)]!).val) % 3329) := fun e he h2 => by
-      rw [show 8 * c + e = 2 * (4 * c + e / 2) by omega, G_even _ (by omega)]
+      rw [show 8 * c + e = 2 * (4 * c + e / 2) by bdd_omega, G_even _ (by bdd_omega)]
     have go_ : ∀ e, e < 8 → e % 2 = 1 → G s₀ (8 * c + e) = BitVec.ofNat 32 (((((F s₀)[2 * (4 * c + e / 2)]!).val *
         ((Gp s₀)[2 * (4 * c + e / 2) + 1]!).val + ((F s₀)[2 * (4 * c + e / 2) + 1]!).val *
         ((Gp s₀)[2 * (4 * c + e / 2)]!).val) % 3329)) := fun e he h2 => by
-      rw [show 8 * c + e = 2 * (4 * c + e / 2) + 1 by omega, G_odd _ (by omega)]
-    rw [mm, show 8 * (c + 1) = 8 * c + 4 + 4 by omega]
+      rw [show 8 * c + e = 2 * (4 * c + e / 2) + 1 by bdd_omega, G_odd _ (by bdd_omega)]
+    rw [mm, show 8 * (c + 1) = 8 * c + 4 + 4 by bdd_omega]
     refine CoeffsUpTo.write16 (CoeffsUpTo.write16 h.out hj fun e he => ?_) hj' fun e he => ?_
     · rw [h₁₁.v, vword_zip1_s4' _ _ he]
       split
-      · rw [ge_ e (by omega) ‹_›]; exact val (l23 _ (by omega)) (lt _)
-      · rw [go_ e (by omega) (by omega)]; exact val (l24 _ (by omega)) (lt _)
+      · rw [ge_ e (by bdd_omega) ‹_›]; exact val (l23 _ (by bdd_omega)) (lt _)
+      · rw [go_ e (by bdd_omega) (by bdd_omega)]; exact val (l24 _ (by bdd_omega)) (lt _)
     · rw [h₁₂.v, h₁₁.get .v23, h₁₁.get .v24, vword_zip2_s4 _ _ he,
-        show 8 * c + 4 + e = 8 * c + (4 + e) by omega]
+        show 8 * c + 4 + e = 8 * c + (4 + e) by bdd_omega]
       split
-      · rw [ge_ (4 + e) (by omega) (by omega), show (4 + e) / 2 = 2 + e / 2 by omega]
-        exact val (l23 _ (by omega)) (lt _)
-      · rw [go_ (4 + e) (by omega) (by omega), show (4 + e) / 2 = 2 + e / 2 by omega]
-        exact val (l24 _ (by omega)) (lt _)
+      · rw [ge_ (4 + e) (by bdd_omega) (by bdd_omega), show (4 + e) / 2 = 2 + e / 2 by bdd_omega]
+        exact val (l23 _ (by bdd_omega)) (lt _)
+      · rw [go_ (4 + e) (by bdd_omega) (by bdd_omega), show (4 + e) / 2 = 2 + e / 2 by bdd_omega]
+        exact val (l24 _ (by bdd_omega)) (lt _)
   · rw [coeffAt_frame fr (dj hp.hf) hj, h.f j hj]
   · rw [coeffAt_frame fr (dj hp.hg) hj, h.g j hj]
-  · rw [fr.readW (r := ⟨sP s₀, 1024⟩) (contains_off (by omega) (by decide)) (dj hp.hs) (by decide),
+  · rw [fr.readW (r := ⟨sP s₀, 1024⟩) (contains_off (by bdd_omega) (by decide)) (dj hp.hs) (by decide),
       h.tab j hj]
 
 theorem correct (s₀ : State) (hs : mulAArch64.pre s₀) :
@@ -398,7 +399,7 @@ theorem correct (s₀ : State) (hs : mulAArch64.pre s₀) :
   refine WP.mono (table_ok gammaTable (fun k hk => Nat.lt_trans (gammaTable_lt k hk) (by decide))
     (b := .x3) (by decide) fun k hk => by
       rw [hp.wr]
-      exact in_regions (R := polyRegion (sP s₀)) (by simp) (contains_off (by omega) (by decide)))
+      exact in_regions (R := polyRegion (sP s₀)) (by simp) (contains_off (by bdd_omega) (by decide)))
     fun s₁ h₁ => WP.mono (Ntt.vconsts_ok s₁) fun s₃ ⟨k₃, m₃, vc₃, _⟩ => ?_
   refine WP.mono (WP.keepV (by decide) (wp_movz (d := .x11) (imm := 32) (is := [])
     fun s₄ h₄ e₄ => wp_nil (Q := fun s₄ => Keep [.x11] s₃ s₄ ∧ s₄.mem = s₃.mem ∧ (s₄.gpr .x11).toNat = 32)

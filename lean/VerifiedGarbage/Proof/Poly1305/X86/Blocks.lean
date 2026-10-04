@@ -62,8 +62,6 @@ numbers: five words `a0, …, a4` stand for `val5 a0 a1 a2 a3 a4 = a0 + 2³² a1
 them as atoms.
 -/
 
-open VG.PowLit
-
 namespace VG.Proof.Poly1305.X86
 
 open VG.Spec.Poly1305 (P)
@@ -347,8 +345,6 @@ end
 Each lemma runs a few instructions symbolically and states their effect on the
 numbers in the registers and the words in memory.
 -/
-
-open VG.PowLit
 
 namespace VG.Proof.Poly1305.X86
 
@@ -834,8 +830,6 @@ section
 /-!
 # Poly1305 on x86 (32-bit): absorbing a block
 -/
-
-open VG.PowLit
 
 namespace VG.Proof.Poly1305.X86
 
@@ -1416,8 +1410,6 @@ end
 # Poly1305 on x86 (32-bit): the final reduction
 -/
 
-open VG.PowLit
-
 namespace VG.Proof.Poly1305.X86
 
 open VG VG.X86 VG.Impl.Poly1305.X86
@@ -1682,10 +1674,10 @@ theorem reduce_ok {st : BitVec 32} {s : State} (hc : Ctx st s) {f : Nat → Nat}
       (g3 := gsum f 3 % 2 ^ 32) (g4 := g4) (hf 0 (by decide)) (hf 1 (by decide)) (hf 2 (by decide))
       (hf 3 (by decide)) h4 rfl rfl rfl rfl rfl with ⟨h1, h2⟩ | ⟨h1, h2⟩
     · have hbt : b = true := by rw [hb, h1]; rfl
-      simp (config := {decide := true}) only [hbt, ite_true, Nat.reduceAdd, Nat.reduceSub]
+      simp only [↓reduceIte, Nat.reduceLT, Nat.reduceLeDiff, Nat.reducePow, and_self, hbt, Nat.reduceAdd, Nat.reduceSub]
       exact h2
     · have hbt : b = false := by rw [hb, h1]; rfl
-      simp (config := {decide := true}) only [hbt, Bool.false_eq_true, ite_false, Nat.reduceAdd,
+      simp only [↓reduceIte, Nat.reduceLT, Nat.reduceLeDiff, Nat.reducePow, hbt, Bool.false_eq_true, 
         Nat.reduceSub]
       exact h2
   · simp only [upd, ite_true]; exact Nat.mod_lt _ (by decide)
@@ -1705,8 +1697,6 @@ section
 Little-endian numbers of 32-bit words in memory, the key and its clamped `r`,
 and the tag.
 -/
-
-open VG.PowLit
 
 namespace VG.Proof.Poly1305.X86
 
@@ -1860,8 +1850,6 @@ section
 # Poly1305 on x86 (32-bit): saving registers and clamping the key
 -/
 
-open VG.PowLit
-
 namespace VG.Proof.Poly1305.X86
 
 open VG VG.X86 VG.Impl.Poly1305.X86
@@ -1915,7 +1903,7 @@ theorem save_ok {s : State} {st : BitVec 32} (hst : s.mem.readW (addr (s.gpr .es
   · simp only [upd]
     rw [ite_eq_right (by omega_using [hk5]), ite_eq_right (by omega_using [hk]), ite_eq_right (by omega_using [hk]),
       ite_eq_right (by omega_using [hk])]
-  · refine ⟨?_, ?_, ?_, ?_⟩ <;> simp (config := {decide := true}) only [upd, ite_true, ite_false]
+  · refine ⟨?_, ?_, ?_, ?_⟩ <;> simp only [↓reduceIte, Nat.reduceEqDiff, upd]
 
 
 theorem and0_toNat (x : BitVec 32) : (x &&& 0x0fffffff).toNat = x.toNat &&& 0x0fffffff := by
@@ -2193,7 +2181,7 @@ theorem okStep_ok {st : BitVec 32} {blk : Bool} {rs : List Reg} {S : List Nat} {
     rename_i hd
     refine ⟨execMul q s, rfl, ⟨fun r hr => Taint.execMul_gpr q s (fun e => hr (e ▸ hd.1))
       (fun e => hr (e ▸ hd.2)), rfl, rfl, Frame.refl _ _, fun _ _ _ => rfl⟩, fun _ => rfl⟩
-  | bswap | movzx8 | store8 | push | pop | movdquLoad | movdquStore | xop =>
+  | bswap | movzx8 | store8 | push | pop | alloc | free | movdquLoad | movdquStore | xop =>
     simp only [okStep, reduceCtorEq] at h
 
 /-- A block that `okList` accepts runs, whatever the values. -/
@@ -2243,8 +2231,6 @@ Absorbing a block and the final reduction run whatever the values (`Safe`),
 and compute what the lemmas on them (above) say where the numbers are within
 their bounds.
 -/
-
-open VG.PowLit
 
 namespace VG.Proof.Poly1305.X86
 
@@ -2379,8 +2365,6 @@ section
 /-!
 # Poly1305 on x86 (32-bit): `blocks`
 -/
-
-open VG.PowLit
 
 namespace VG.Proof.Poly1305
 

@@ -1,3 +1,4 @@
+import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.MlKem1024.X86.Pack
 import VerifiedGarbage.Proof.MlKem.Encode1024
 import VerifiedGarbage.Spec.MlKem.Contract1024
@@ -135,12 +136,12 @@ theorem G.coef {s₀ s : State} (hp : Pre s₀) {b t k : Nat} (h : G s₀ b t k 
   have ff := hp.f_fit
   have e : s.ea (at_ .esi (4 * i)) = coeffAddr (fA s₀) (8 * t + i) := by
     show (s.gpr .esi + BitVec.ofNat 32 (4 * i)).setWidth 64 = _
-    rw [h.esi, ea_add (by omega)]
+    rw [h.esi, ea_add (by bdd_omega)]
     congr 2; omega
   refine ⟨?_, ?_, hp.f_red _ (by rw [n_eq]; omega)⟩
   · rw [e]; exact ⟨polyRegion (fA s₀), by rw [h.rd, h.wr, pushed_rd, P0_wr, hp.rd]; simp,
       coeff_contains _ (by rw [n_eq]; omega)⟩
-  · rw [e, ← coeffAt_eq, hp.f_keep h.frame (by omega)]
+  · rw [e, ← coeffAt_eq, hp.f_keep h.frame (by bdd_omega)]
 
 /-- Coefficient `8 t + i` of group `t`, from `esi`, with an offset `o` of the index. -/
 theorem G.coefO {s₀ s : State} (hp : Pre s₀) {b t k : Nat} (h : G s₀ b t k s) (ht : t < 32) (o : Nat)
@@ -155,13 +156,13 @@ theorem G.st8 {s₀ s : State} (hp : Pre s₀) {b t k : Nat} (h : G s₀ b t k s
   have fo := hp.o_fit
   have e : s.ea (at_ .edi k) = oA s₀ + BitVec.ofNat 64 (b * t + k) := by
     show (s.gpr .edi + BitVec.ofNat 32 k).setWidth 64 = _
-    rw [h.edi, ea_add (by omega)]
+    rw [h.edi, ea_add (by bdd_omega)]
   have hin : InRegions s.wr (s.ea (at_ .edi k)) 1 :=
-    ⟨oR s₀, by rw [h.wr, P0_wr, hp.wr]; simp, by rw [e]; exact contains_at (by omega) fo⟩
+    ⟨oR s₀, by rw [h.wr, P0_wr, hp.wr]; simp, by rw [e]; exact contains_at (by bdd_omega) fo⟩
   refine wp_st8 hin (kk _ ⟨h.esp, h.rd, h.wr, h.esi, h.edi, h.ecx, ?_, ?_⟩ fun _ => rfl)
-  · rw [e]; exact h.frame.writeW (List.mem_singleton_self _) _ (contains_at (by omega) fo)
+  · rw [e]; exact h.frame.writeW (List.mem_singleton_self _) _ (contains_at (by bdd_omega) fo)
   · rw [e]
-    exact bytes_extend1 (by omega) h.out hv
+    exact bytes_extend1 (by bdd_omega) h.out hv
 
 /-- Bytes `k … k + 3` of group `t`, the bytes of `ebx = W`. -/
 theorem st4_spec {s₀ s : State} (hp : Pre s₀) {b t k : Nat} (h : G s₀ b t k s)
@@ -172,22 +173,22 @@ theorem st4_spec {s₀ s : State} (hp : Pre s₀) {b t k : Nat} (h : G s₀ b t 
   simp only [st4, List.cons_append, List.nil_append]
   refine wp_mov fun s₁ o₁ e₁ => ?_
   have t0 : (s₁.gpr .eax).toNat = W / 2 ^ (8 * 0) := by rw [e₁, hW, Nat.mul_zero, Nat.pow_zero, Nat.div_one]
-  refine (h.of_only o₁ (by decide)).st8 hp (k := k) (r := .al) (by omega)
+  refine (h.of_only o₁ (by decide)).st8 hp (k := k) (r := .al) (by bdd_omega)
     (by rw [show (Reg8.al).reg = .eax from rfl, setWidth8_eq, t0]; exact hb 0 (by decide)) fun s₂ h₂ g₂ => ?_
   refine wp_shr (by decide) (by decide) fun s₃ o₃ e₃ => ?_
   have t1 : (s₃.gpr .eax).toNat = W / 2 ^ (8 * 1) := by
     rw [e₃, toNat_shr, g₂, t0, Nat.div_div_eq_div_mul]
-  refine (h₂.of_only o₃ (by decide)).st8 hp (k := k + 1) (r := .al) (by omega)
+  refine (h₂.of_only o₃ (by decide)).st8 hp (k := k + 1) (r := .al) (by bdd_omega)
     (by rw [show (Reg8.al).reg = .eax from rfl, setWidth8_eq, t1]; exact hb 1 (by decide)) fun s₄ h₄ g₄ => ?_
   refine wp_shr (by decide) (by decide) fun s₅ o₅ e₅ => ?_
   have t2 : (s₅.gpr .eax).toNat = W / 2 ^ (8 * 2) := by
     rw [e₅, toNat_shr, g₄, t1, Nat.div_div_eq_div_mul]
-  refine (h₄.of_only o₅ (by decide)).st8 hp (k := k + 1 + 1) (r := .al) (by omega)
+  refine (h₄.of_only o₅ (by decide)).st8 hp (k := k + 1 + 1) (r := .al) (by bdd_omega)
     (by rw [show (Reg8.al).reg = .eax from rfl, setWidth8_eq, t2]; exact hb 2 (by decide)) fun s₆ h₆ g₆ => ?_
   refine wp_shr (by decide) (by decide) fun s₇ o₇ e₇ => ?_
   have t3 : (s₇.gpr .eax).toNat = W / 2 ^ (8 * 3) := by
     rw [e₇, toNat_shr, g₆, t2, Nat.div_div_eq_div_mul]
-  refine (h₆.of_only o₇ (by decide)).st8 hp (k := k + 1 + 1 + 1) (r := .al) (by omega)
+  refine (h₆.of_only o₇ (by decide)).st8 hp (k := k + 1 + 1 + 1) (r := .al) (by bdd_omega)
     (by rw [show (Reg8.al).reg = .eax from rfl, setWidth8_eq, t3]; exact hb 3 (by decide)) fun s₈ h₈ g₈ => ?_
   refine kk s₈ h₈ ⟨fun x hx => ?_, ?_, ?_⟩
   · rw [g₈, o₇.gpr x (by simpa using hx), g₆, o₅.gpr x (by simpa using hx), g₄, o₃.gpr x (by simpa using hx),
@@ -204,17 +205,17 @@ theorem st3_spec {s₀ s : State} (hp : Pre s₀) {b t k : Nat} (h : G s₀ b t 
   simp only [st3, List.cons_append, List.nil_append]
   refine wp_mov fun s₁ o₁ e₁ => ?_
   have t0 : (s₁.gpr .eax).toNat = W / 2 ^ (8 * 0) := by rw [e₁, hW, Nat.mul_zero, Nat.pow_zero, Nat.div_one]
-  refine (h.of_only o₁ (by decide)).st8 hp (k := k) (r := .al) (by omega)
+  refine (h.of_only o₁ (by decide)).st8 hp (k := k) (r := .al) (by bdd_omega)
     (by rw [show (Reg8.al).reg = .eax from rfl, setWidth8_eq, t0]; exact hb 0 (by decide)) fun s₂ h₂ g₂ => ?_
   refine wp_shr (by decide) (by decide) fun s₃ o₃ e₃ => ?_
   have t1 : (s₃.gpr .eax).toNat = W / 2 ^ (8 * 1) := by
     rw [e₃, toNat_shr, g₂, t0, Nat.div_div_eq_div_mul]
-  refine (h₂.of_only o₃ (by decide)).st8 hp (k := k + 1) (r := .al) (by omega)
+  refine (h₂.of_only o₃ (by decide)).st8 hp (k := k + 1) (r := .al) (by bdd_omega)
     (by rw [show (Reg8.al).reg = .eax from rfl, setWidth8_eq, t1]; exact hb 1 (by decide)) fun s₄ h₄ g₄ => ?_
   refine wp_shr (by decide) (by decide) fun s₅ o₅ e₅ => ?_
   have t2 : (s₅.gpr .eax).toNat = W / 2 ^ (8 * 2) := by
     rw [e₅, toNat_shr, g₄, t1, Nat.div_div_eq_div_mul]
-  refine (h₄.of_only o₅ (by decide)).st8 hp (k := k + 1 + 1) (r := .al) (by omega)
+  refine (h₄.of_only o₅ (by decide)).st8 hp (k := k + 1 + 1) (r := .al) (by bdd_omega)
     (by rw [show (Reg8.al).reg = .eax from rfl, setWidth8_eq, t2]; exact hb 2 (by decide)) fun s₆ h₆ g₆ => ?_
   refine kk s₆ h₆ ⟨fun x hx => ?_, ?_, ?_⟩
   · rw [g₆, o₅.gpr x (by simpa using hx), g₄, o₃.gpr x (by simpa using hx), g₂, o₁.gpr x (by simpa using hx)]
@@ -225,7 +226,7 @@ theorem st3_spec {s₀ s : State} (hp : Pre s₀) {b t k : Nat} (h : G s₀ b t 
 theorem next_spec {s₀ s : State} {b t : Nat} (ht : t < 32) (h : G s₀ b t b s) :
     WP isa (.block (nextG 32 b)) s fun s' => G s₀ b (t + 1) 0 s' ∧ eval .ne s' = some (decide (t + 1 < 32)) := by
   apply WP.of_runBlock
-  simp (config := {decide := true}) only [nextG, runBlock_cons, runStep_some, runBlock_nil, exec, execAlu,
+  simp only [reduceCtorEq, ↓reduceIte, Nat.reducePow, nextG, runBlock_cons, runStep_some, runBlock_nil, exec, execAlu,
     readSrc, State.setReg, arithFlags, State.setFlags, Option.bind_some, Option.some.injEq, exists_eq_left']
   refine ⟨⟨by simp [h.esp], h.rd, h.wr, ?_, ?_, ?_, h.frame, fun j hj => h.out j (by rw [Nat.mul_succ] at hj; omega)⟩,
     ?_⟩
@@ -236,7 +237,7 @@ theorem next_spec {s₀ s : State} {b t : Nat} (ht : t < 32) (h : G s₀ b t b s
   · simp only [ite_true, h.ecx]
     exact cnt_next ht
   · simp only [eval, h.ecx]
-    exact cnt_ne ht (by omega)
+    exact cnt_ne ht (by bdd_omega)
 
 /-! ## `d` = 5: five bytes of eight coefficients -/
 
@@ -247,7 +248,7 @@ include hp hd ht
 /-- Compressed coefficient `8 t + i`, from memory. -/
 theorem cv {i : Nat} (hi : i < 8) :
     compress d (F s₀)[8 * t + i]! = cf d (coeffAt s₀.mem (fA s₀) (8 * t + i)).toNat := by
-  have := hp.C_eq (i := 8 * t + i) (by omega)
+  have := hp.C_eq (i := 8 * t + i) (by bdd_omega)
   rw [C, hd] at this
   exact this
 
@@ -288,32 +289,28 @@ theorem step5 {s₀ : State} (hp : Pre s₀) (hd : dN s₀ = 5) {t : Nat} (ht : 
       rw [o₇.gpr _ (by decide), o₆.gpr _ (by decide), o₅.gpr _ (by decide), o₄.gpr _ (by decide)]
     rw [e₈, bp₇, e₇, ax₆, BitVec.toNat_add, toNat_shr, bp₃, v₄]
     omega
-  refine accSs_spec hdm 0 a 6 _ s₈ _ _ (fun i hi => by rw [Nat.zero_add]; exact co h₈ i (by omega)) bx₈
+  refine accSs_spec hdm 0 a 6 _ s₈ _ _ (fun i hi => by rw [Nat.zero_add]; exact co h₈ i (by bdd_omega)) bx₈
     (by have := Nat.mod_lt (cf 5 (a 6)) (show 4 > 0 by decide); omega) fun s₉ o₉ v₉ => ?_
   have h₉ := h₈.of_only o₉ (by decide)
   simp only [pk, Nat.mul_zero, Nat.pow_zero, Nat.mul_one, Nat.zero_add, Nat.reduceMul, Nat.reducePow] at v₉
-  refine st4_spec hp h₉ (k := 0) (by omega) v₉ (fun i hi => ?_) fun s₁₀ h₁₀ g₁₀ => ?_
+  refine st4_spec hp h₉ (k := 0) (by bdd_omega) v₉ (fun i hi => ?_) fun s₁₀ h₁₀ g₁₀ => ?_
   · have l := lc
     have c0 : compress 5 (F s₀)[8 * t]! = cf 5 (a 0) := c 0 (by decide)
-    rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 by omega) with rfl | rfl | rfl | rfl <;>
+    rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 by bdd_omega) with rfl | rfl | rfl | rfl <;>
       simp only [Nat.add_zero, Nat.mul_zero, Nat.pow_zero, Nat.div_one, Nat.reduceMul, Nat.reducePow]
     · rw [L, hd, compressEncode5_0 _ ht, c0, c 1 (by decide)]
-      have := l 0; have := l 1; have := l 2; have := l 3; have := l 4; have := l 5
-      exact ofNat8_eq (by omega)
+      exact ofNat8_eq (by omega_using [l 0, l 1, l 2, l 3, l 4, l 5])
     · rw [L, hd, compressEncode5_1 _ ht, c 1 (by decide), c 2 (by decide), c 3 (by decide)]
-      have := l 0; have := l 1; have := l 2; have := l 3; have := l 4; have := l 5
-      exact ofNat8_eq (by omega)
+      exact ofNat8_eq (by omega_using [l 0, l 1, l 2, l 3, l 4, l 5])
     · rw [L, hd, compressEncode5_2 _ ht, c 3 (by decide), c 4 (by decide)]
-      have := l 0; have := l 1; have := l 2; have := l 3; have := l 4; have := l 5
-      exact ofNat8_eq (by omega)
+      exact ofNat8_eq (by omega_using [l 0, l 1, l 2, l 3, l 4, l 5])
     · rw [L, hd, compressEncode5_3 _ ht, c 4 (by decide), c 5 (by decide), c 6 (by decide)]
-      have := l 0; have := l 1; have := l 2; have := l 3; have := l 4; have := l 5
-      exact ofNat8_eq (by omega)
+      exact ofNat8_eq (by omega_using [l 0, l 1, l 2, l 3, l 4, l 5])
   refine wp_mov fun s₁₁ o₁₁ e₁₁ => ?_
-  refine (h₁₀.of_only o₁₁ (by decide)).st8 hp (k := 0 + 4) (r := .al) (by omega) ?_ fun s₁₂ h₁₂ _ => ?_
+  refine (h₁₀.of_only o₁₁ (by decide)).st8 hp (k := 0 + 4) (r := .al) (by bdd_omega) ?_ fun s₁₂ h₁₂ _ => ?_
   · rw [show (Reg8.al).reg = .eax from rfl, e₁₁, g₁₀.gpr _ (by decide), o₉.gpr _ (by decide), setWidth8_eq, bp₈,
       show 5 * t + (0 + 4) = 5 * t + 4 from rfl, L, hd, compressEncode5_4 _ ht, c 6 (by decide), c 7 (by decide)]
-    exact ofNat8_eq (by omega)
+    exact ofNat8_eq (by bdd_omega)
   exact next_spec ht h₁₂
 
 /-! ## `d` = 11: eleven bytes of eight coefficients -/
@@ -343,26 +340,22 @@ theorem step11 {s₀ : State} (hp : Pre s₀) (hd : dN s₀ = 11) {t : Nat} (ht 
   have bx₅ : (s₅.gpr .ebx).toNat = cf 11 (a 2) % 1024 := by
     rw [e₅, e₄, o₃.gpr _ (by decide), o₂.gpr _ (by decide),
       show (1023 : BitVec 32) = BitVec.ofNat 32 (2 ^ 10 - 1) from rfl, toNat_and_mask _ _ (by decide), v₁]
-  refine accSs_spec hdm 0 a 2 _ s₅ _ _ (fun i hi => by rw [Nat.zero_add]; exact co h₅ i (by omega)) bx₅
+  refine accSs_spec hdm 0 a 2 _ s₅ _ _ (fun i hi => by rw [Nat.zero_add]; exact co h₅ i (by bdd_omega)) bx₅
     (by have := Nat.mod_lt (cf 11 (a 2)) (show 1024 > 0 by decide); omega) fun s₆ o₆ v₆ => ?_
   have h₆ := h₅.of_only o₆ (by decide)
   simp only [pk, Nat.mul_zero, Nat.pow_zero, Nat.mul_one, Nat.zero_add, Nat.reduceMul, Nat.reducePow] at v₆
-  refine st4_spec hp h₆ (k := 0) (by omega) v₆ (fun i hi => ?_) fun s₇ h₇ g₇ => ?_
+  refine st4_spec hp h₆ (k := 0) (by bdd_omega) v₆ (fun i hi => ?_) fun s₇ h₇ g₇ => ?_
   · have l := lc
-    rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 by omega) with rfl | rfl | rfl | rfl <;>
+    rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 by bdd_omega) with rfl | rfl | rfl | rfl <;>
       simp only [Nat.add_zero, Nat.mul_zero, Nat.pow_zero, Nat.div_one, Nat.reduceMul, Nat.reducePow]
     · rw [L, hd, compressEncode11_0 _ ht, c0]
-      have := l 0; have := l 1; have := l 2
-      exact ofNat8_eq (by omega)
+      exact ofNat8_eq (by omega_using [l 0, l 1, l 2])
     · rw [L, hd, compressEncode11_1 _ ht, c0, c 1 (by decide)]
-      have := l 0; have := l 1; have := l 2
-      exact ofNat8_eq (by omega)
+      exact ofNat8_eq (by omega_using [l 0, l 1, l 2])
     · rw [L, hd, compressEncode11_2 _ ht, c 1 (by decide), c 2 (by decide)]
-      have := l 0; have := l 1; have := l 2
-      exact ofNat8_eq (by omega)
+      exact ofNat8_eq (by omega_using [l 0, l 1, l 2])
     · rw [L, hd, compressEncode11_3 _ ht, c 2 (by decide)]
-      have := l 0; have := l 1; have := l 2
-      exact ofNat8_eq (by omega)
+      exact ofNat8_eq (by omega_using [l 0, l 1, l 2])
   have bp₇ : (s₇.gpr .ebp).toNat = cf 11 (a 2) / 1024 := by
     rw [g₇.gpr _ (by decide), o₆.gpr _ (by decide), bp₅]
   -- Bytes 4–7.
@@ -371,7 +364,7 @@ theorem step11 {s₀ : State} (hp : Pre s₀) (hd : dN s₀ = 11) {t : Nat} (ht 
   have h₁₀ := h₇.of_only ((o₈.trans o₉).trans o₁₀) (by decide)
   have bx₁₀ : (s₁₀.gpr .ebx).toNat = cf 11 (a 5) % 512 := by
     rw [e₁₀, e₉, show (511 : BitVec 32) = BitVec.ofNat 32 (2 ^ 9 - 1) from rfl, toNat_and_mask _ _ (by decide), v₈]
-  refine accSs_spec hdm 3 (fun i => a (3 + i)) 2 _ s₁₀ _ _ (fun i hi => co h₁₀ (3 + i) (by omega)) bx₁₀
+  refine accSs_spec hdm 3 (fun i => a (3 + i)) 2 _ s₁₀ _ _ (fun i hi => co h₁₀ (3 + i) (by bdd_omega)) bx₁₀
     (by have := Nat.mod_lt (cf 11 (a 5)) (show 512 > 0 by decide); omega) fun s₁₁ o₁₁ v₁₁ => ?_
   simp only [pk, Nat.mul_zero, Nat.pow_zero, Nat.mul_one, Nat.zero_add, Nat.add_zero, Nat.reduceMul,
     Nat.reducePow, Nat.reduceAdd] at v₁₁
@@ -381,28 +374,24 @@ theorem step11 {s₀ : State} (hp : Pre s₀) (hd : dN s₀ = 11) {t : Nat} (ht 
       cf 11 (a 2) / 1024 := by
     have l3 := lc 3; have l4 := lc 4
     have hm := Nat.mod_lt (cf 11 (a 5)) (show 512 > 0 by decide)
-    have r := ror_shl (d := 1) (by decide) (by decide) (s₁₁.gpr .ebx) v₁₁ (by omega)
+    have r := ror_shl (d := 1) (by decide) (by decide) (s₁₁.gpr .ebx) v₁₁ (by bdd_omega)
     rw [e₁₃, BitVec.toNat_add, e₁₂, r, o₁₂.gpr .ebp (by decide), o₁₁.gpr .ebp (by decide),
       o₁₀.gpr .ebp (by decide), o₉.gpr .ebp (by decide), o₈.gpr .ebp (by decide), bp₇]
     have := lc 2
     omega
-  refine st4_spec hp h₁₃ (k := 4) (by omega) bx₁₃ (fun i hi => ?_) fun s₁₄ h₁₄ g₁₄ => ?_
+  refine st4_spec hp h₁₃ (k := 4) (by bdd_omega) bx₁₃ (fun i hi => ?_) fun s₁₄ h₁₄ g₁₄ => ?_
   · have l := lc
-    rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 by omega) with rfl | rfl | rfl | rfl <;>
+    rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 by bdd_omega) with rfl | rfl | rfl | rfl <;>
       simp only [Nat.add_zero, Nat.mul_zero, Nat.pow_zero, Nat.div_one, Nat.reduceMul, Nat.reducePow,
         Nat.add_assoc, Nat.reduceAdd]
     · rw [L, hd, compressEncode11_4 _ ht, c 2 (by decide), c 3 (by decide)]
-      have := l 2; have := l 3; have := l 4; have := l 5
-      exact ofNat8_eq (by omega)
+      exact ofNat8_eq (by omega_using [l 2, l 3, l 4, l 5])
     · rw [L, hd, compressEncode11_5 _ ht, c 3 (by decide), c 4 (by decide)]
-      have := l 2; have := l 3; have := l 4; have := l 5
-      exact ofNat8_eq (by omega)
+      exact ofNat8_eq (by omega_using [l 2, l 3, l 4, l 5])
     · rw [L, hd, compressEncode11_6 _ ht, c 4 (by decide), c 5 (by decide)]
-      have := l 2; have := l 3; have := l 4; have := l 5
-      exact ofNat8_eq (by omega)
+      exact ofNat8_eq (by omega_using [l 2, l 3, l 4, l 5])
     · rw [L, hd, compressEncode11_7 _ ht, c 5 (by decide)]
-      have := l 2; have := l 3; have := l 4; have := l 5
-      exact ofNat8_eq (by omega)
+      exact ofNat8_eq (by omega_using [l 2, l 3, l 4, l 5])
   -- Bytes 8–10.
   refine ldC_spec hdm 5 _ s₁₄ _ (co h₁₄ 5 (by decide)) fun s₁₅ o₁₅ v₁₅ => ?_
   refine wp_shr (by decide) (by decide) fun s₁₆ o₁₆ e₁₆ => wp_mov fun s₁₇ o₁₇ e₁₇ => ?_
@@ -412,32 +401,29 @@ theorem step11 {s₀ : State} (hp : Pre s₀) (hd : dN s₀ = 11) {t : Nat} (ht 
   refine ldC_spec hdm 7 _ s₁₇ _ (co h₁₇ 7 (by decide)) fun s₁₈ o₁₈ v₁₈ => ?_
   refine wp_mov fun s₁₉ o₁₉ e₁₉ => ?_
   have h₁₉ := h₁₇.of_only (o₁₈.trans o₁₉) (by decide)
-  refine accSs_spec hdm 6 (fun i => a (6 + i)) 1 _ s₁₉ _ _ (fun i hi => co h₁₉ (6 + i) (by omega))
+  refine accSs_spec hdm 6 (fun i => a (6 + i)) 1 _ s₁₉ _ _ (fun i hi => co h₁₉ (6 + i) (by bdd_omega))
     (by rw [e₁₉, v₁₈]) (by have := lc 7; omega) fun s₂₀ o₂₀ v₂₀ => ?_
   simp only [pk, Nat.mul_zero, Nat.pow_zero, Nat.mul_one, Nat.zero_add, Nat.add_zero, Nat.reducePow] at v₂₀
   refine wp_ror (by decide) (by decide) fun s₂₁ o₂₁ e₂₁ => wp_addr fun s₂₂ o₂₂ e₂₂ => ?_
   have h₂₂ := (h₁₉.of_only o₂₀ (by decide)).of_only (o₂₁.trans o₂₂) (by decide)
   have bx₂₂ : (s₂₂.gpr .ebx).toNat = (cf 11 (a 7) * 2048 + cf 11 (a 6)) * 4 + cf 11 (a 5) / 512 := by
     have l6 := lc 6; have l7 := lc 7
-    have r := ror_shl (d := 2) (by decide) (by decide) (s₂₀.gpr .ebx) v₂₀ (by omega)
+    have r := ror_shl (d := 2) (by decide) (by decide) (s₂₀.gpr .ebx) v₂₀ (by bdd_omega)
     rw [e₂₂, BitVec.toNat_add, e₂₁, r, o₂₁.gpr .ebp (by decide), o₂₀.gpr .ebp (by decide),
       o₁₉.gpr .ebp (by decide), o₁₈.gpr .ebp (by decide), bp₁₇]
     have := lc 5
     omega
-  refine st3_spec hp h₂₂ (k := 8) (by omega) bx₂₂ (fun i hi => ?_) fun s₂₃ h₂₃ _ => next_spec ht h₂₃
+  refine st3_spec hp h₂₂ (k := 8) (by bdd_omega) bx₂₂ (fun i hi => ?_) fun s₂₃ h₂₃ _ => next_spec ht h₂₃
   have l := lc
-  rcases (show i = 0 ∨ i = 1 ∨ i = 2 by omega) with rfl | rfl | rfl <;>
+  rcases (show i = 0 ∨ i = 1 ∨ i = 2 by bdd_omega) with rfl | rfl | rfl <;>
     simp only [Nat.add_zero, Nat.mul_zero, Nat.pow_zero, Nat.div_one, Nat.reduceMul, Nat.reducePow,
       Nat.add_assoc, Nat.reduceAdd]
   · rw [L, hd, compressEncode11_8 _ ht, c 5 (by decide), c 6 (by decide)]
-    have := l 5; have := l 6; have := l 7
-    exact ofNat8_eq (by omega)
+    exact ofNat8_eq (by omega_using [l 5, l 6, l 7])
   · rw [L, hd, compressEncode11_9 _ ht, c 6 (by decide), c 7 (by decide)]
-    have := l 5; have := l 6; have := l 7
-    exact ofNat8_eq (by omega)
+    exact ofNat8_eq (by omega_using [l 5, l 6, l 7])
   · rw [L, hd, compressEncode11_10 _ ht, c 7 (by decide)]
-    have := l 5; have := l 6; have := l 7
-    exact ofNat8_eq (by omega)
+    exact ofNat8_eq (by omega_using [l 5, l 6, l 7])
 
 /-! ## The function -/
 
@@ -462,17 +448,17 @@ theorem init_piece : Piece Pre Pub (fun s₀ s => s = P0 s₀) Init (.block ceIn
     have a₀ := P0_argAddr s₀ 0
     have a₁ := P0_argAddr s₀ 1
     have a₂ := P0_argAddr s₀ 2
-    have i₀ := P0_argIn (s₀ := s₀) (n := 4) (i := 0) (by omega) fit (by simp [hp.wr])
-    have i₁ := P0_argIn (s₀ := s₀) (n := 4) (i := 1) (by omega) fit (by simp [hp.wr])
-    have i₂ := P0_argIn (s₀ := s₀) (n := 4) (i := 2) (by omega) fit (by simp [hp.wr])
-    have v₀ := P0_arg hp.sp (n := 4) (i := 0) (by omega) fit hp.stk_a
-    have v₁ := P0_arg hp.sp (n := 4) (i := 1) (by omega) fit hp.stk_a
-    have v₂ := P0_arg hp.sp (n := 4) (i := 2) (by omega) fit hp.stk_a
+    have i₀ := P0_argIn (s₀ := s₀) (n := 4) (i := 0) (by bdd_omega) fit (by simp [hp.wr])
+    have i₁ := P0_argIn (s₀ := s₀) (n := 4) (i := 1) (by bdd_omega) fit (by simp [hp.wr])
+    have i₂ := P0_argIn (s₀ := s₀) (n := 4) (i := 2) (by bdd_omega) fit (by simp [hp.wr])
+    have v₀ := P0_arg hp.sp (n := 4) (i := 0) (by bdd_omega) fit hp.stk_a
+    have v₁ := P0_arg hp.sp (n := 4) (i := 1) (by bdd_omega) fit hp.stk_a
+    have v₂ := P0_arg hp.sp (n := 4) (i := 2) (by bdd_omega) fit hp.stk_a
     simp only [Nat.mul_zero, Nat.add_zero, Nat.mul_one, Nat.reduceMul, Nat.reduceAdd] at a₀ a₁ a₂
     apply WP.of_runBlock
-    simp (config := {decide := true}) only [ceInit5, at_, runBlock_cons, runStep_some, runBlock_nil,
+    simp only [reduceCtorEq, ↓reduceIte, ceInit5, at_, runBlock_cons, runStep_some, runBlock_nil,
       exec, execAlu, readSrc, State.ea, State.load32, State.setReg, arithFlags, State.setFlags,
-      Option.map_some, Option.bind_some, a₀, a₁, a₂, i₀, i₁, i₂, v₀, v₁, v₂, ite_true, ite_false,
+      Option.map_some, Option.bind_some, a₀, a₁, a₂, i₀, i₁, i₂, v₀, v₁, v₂, 
       Option.some.injEq, exists_eq_left']
     refine ⟨by simp, rfl, rfl, rfl, by simp, by simp, ?_⟩
     simp only [eval, sub_beq_zero]
@@ -491,7 +477,7 @@ theorem ecx_piece (d b : Nat) {hc : Taint.Hint VG.X86.Taint.T}
   simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, Option.map_some, State.setReg,
     Option.some.injEq, exists_eq_left']
   refine ⟨⟨by simp [h.esp], h.rd, h.wr, by simp [h.esi], by simp [h.edi], by simp,
-    (by rw [h.mem]; exact Frame.refl _ _), fun j hj => absurd hj (by omega)⟩, hd⟩
+    (by rw [h.mem]; exact Frame.refl _ _), fun j hj => absurd hj (by bdd_omega)⟩, hd⟩
 
 theorem loop_piece {d b : Nat} (body : List Instr)
     (hstep : ∀ t < 32, ∀ s₀ s, Pre s₀ → dN s₀ = d → G s₀ b t 0 s →

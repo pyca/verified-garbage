@@ -1,3 +1,4 @@
+import VerifiedGarbage.Proof.Framework.PowLit
 /-!
 # Index bounds by `decide`
 

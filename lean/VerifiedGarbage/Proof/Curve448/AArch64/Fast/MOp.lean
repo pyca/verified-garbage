@@ -115,17 +115,17 @@ theorem addPair_ok (s : State) (a : Acc) {lo hi : Reg} (add : Bool) (h₁ : a.lo
     refine ⟨?_, rfl, fun q hq => ?_, rfl, rfl⟩
   rotate_left
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hq
-    simp only [read_x, RegUpd.gpr_addWithCarry, hq.1, hq.2, ite_false]
+    simp only [read_x, RegUpd.gpr_write, RegUpd.gpr_addWithCarry, hq.1, hq.2, ite_false]
   rotate_left
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hq
-    simp only [read_x, RegUpd.gpr_addWithCarry, hq.1, hq.2, ite_false]
+    simp only [read_x, RegUpd.gpr_write, RegUpd.gpr_addWithCarry, hq.1, hq.2, ite_false]
   · have := subPair_mod (s.gpr a.lo) (s.gpr a.hi) (s.gpr lo) (s.gpr hi)
-    simp only [accVal, read_x, RegUpd.gpr_addWithCarry, RegUpd.c_addWithCarry, h₁, Ne.symm h₁,
+    simp only [accVal, read_x, RegUpd.gpr_write, RegUpd.gpr_addWithCarry, RegUpd.c_addWithCarry, h₁, Ne.symm h₁,
       Ne.symm h₂, ite_true, ite_false, BitVec.setWidth_eq, Bool.false_eq_true]
     dsimp only [addCarry, carryOut, Size.bits] at this ⊢
     exact this
   · have := addPair_mod (s.gpr a.lo) (s.gpr a.hi) (s.gpr lo) (s.gpr hi)
-    simp only [accVal, read_x, RegUpd.gpr_addWithCarry, RegUpd.c_addWithCarry, h₁, Ne.symm h₁,
+    simp only [accVal, read_x, RegUpd.gpr_write, RegUpd.gpr_addWithCarry, RegUpd.c_addWithCarry, h₁, Ne.symm h₁,
       Ne.symm h₂, ite_true, ite_false, BitVec.setWidth_eq]
     dsimp only [addCarry, carryOut, Size.bits] at this ⊢
     exact this
@@ -196,7 +196,7 @@ theorem sub_emod' {x p : Nat} {e f : Int} (h : (x : Int) = e % M) (hp : (p : Int
     (hpM : p ≤ M) : (((x + (M - p)) % M : Nat) : Int) = (e - f) % M := by
   rw [Int.natCast_emod, Int.natCast_add, Int.natCast_sub hpM, h, hp, Int.emod_add_emod]
   rw [show e + ((M : Nat) - f % (M : Nat)) = (e - f % (M : Nat)) + (M : Nat) by omega,
-    Int.add_emod_right, Int.sub_emod, Int.emod_emod_of_dvd _ (dvd_refl _), ← Int.sub_emod]
+    Int.add_emod_right, Int.sub_emod, Int.emod_emod_of_dvd _ (Int.dvd_refl _), ← Int.sub_emod]
 
 theorem self_emod {x : Nat} (h : x < M) : (x : Int) = (x : Int) % M := by
   rw [← Int.natCast_emod, Nat.mod_eq_of_lt h]
@@ -371,7 +371,7 @@ theorem mop_ok (hG : Good R accs) (hb8 : b % 8 = 0) (hb : b + 64 ≤ 8192) {s : 
       exact he c hc
     have hP : pair (u.gpr R.t) (u.gpr R.p1) = v x * v y := by rw [uv, tx, ty, hv x hx, hv y hy]
     refine WP.mono (targets_ok hG _ ts hts hP he') fun w ⟨wv, wm, wk⟩ =>
-      ⟨by simpa only [opSem, Nat.cast_mul] using wv, wm.trans (um.trans tm), ?_⟩
+      ⟨by simpa only [opSem, Int.natCast_mul] using wv, wm.trans (um.trans tm), ?_⟩
     refine ((tk.mono ?_).trans (uk.mono ?_)).trans (wk.mono sub)
     · intro r hr; simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl

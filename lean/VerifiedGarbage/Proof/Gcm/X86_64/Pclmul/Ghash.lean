@@ -34,8 +34,6 @@ What the instructions of `Impl.Gcm.X86_64.Pclmul` compute, in the ring `Q` of
 * `hInv` computes `H · x⁻¹` (`x_φ_hInv`).
 -/
 
-open VG.PowLit
-
 namespace VG.Proof.Gcm.X86_64.Pclmul
 
 open Polynomial
@@ -371,8 +369,8 @@ theorem zero_ok (s : State) :
       prod s' = Prod.zero ∧ Only [.xmm8, .xmm9, .xmm10] s s' := by
   apply WP.of_runBlock
   simp only [Impl.Gcm.X86_64.Pclmul.zero]
-  simp (config := {decide := true}) only [runBlock_cons, runStep_some, runBlock_nil, exec, XOp.exec,
-    isa, State.setXmm, ite_false, eval_pxor, BitVec.xor_self, Option.some.injEq,
+  simp only [reduceCtorEq, ↓reduceIte, runBlock_cons, runStep_some, runBlock_nil, exec, XOp.exec,
+    isa, State.setXmm, eval_pxor, BitVec.xor_self, Option.some.injEq,
     exists_eq_left']
   refine ⟨rfl, fun r _ => rfl, rfl, rfl, rfl, fun r hr => ?_⟩
   simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
@@ -384,8 +382,8 @@ theorem acc_ok (a b : XReg) (s : State) (ha8 : a ≠ .xmm8) (ha9 : a ≠ .xmm9) 
       prod s' = (prod s).acc (s.xmm a) (s.xmm b) ∧ Only [.xmm8, .xmm9, .xmm10, .xmm11] s s' := by
   apply WP.of_runBlock
   simp only [Impl.Gcm.X86_64.Pclmul.acc]
-  simp (config := {decide := true}) only [runBlock_cons, runStep_some, runBlock_nil, exec, XOp.exec,
-    isa, State.setXmm, ite_true, ite_false, eval_pxor, eval_movdqa, ha8, ha9, ha10, ha11, hb8, hb9,
+  simp only [reduceCtorEq, ↓reduceIte, runBlock_cons, runStep_some, runBlock_nil, exec, XOp.exec,
+    isa, State.setXmm, eval_pxor, eval_movdqa, ha8, ha9, ha10, ha11, hb8, hb9,
     hb10, hb11, Option.some.injEq, exists_eq_left']
   refine ⟨?_, fun r _ => rfl, rfl, rfl, rfl, fun r hr => ?_⟩
   · simp only [prod, Prod.acc, ite_true, ite_false, reduceCtorEq]
@@ -399,8 +397,8 @@ theorem reduce_ok (d : XReg) (s : State) (hd8 : d ≠ .xmm8) (hd9 : d ≠ .xmm9)
   apply WP.of_runBlock
   simp only [Impl.Gcm.X86_64.Pclmul.reduce, Impl.Gcm.X86_64.Pclmul.fold, List.cons_append,
     List.nil_append]
-  simp (config := {decide := true}) only [runBlock_cons, runStep_some, runBlock_nil, exec, XOp.exec,
-    isa, State.setXmm, ite_true, ite_false, eval_pxor, eval_movdqa, hd8, hd9, hd10, hd11, h1,
+  simp only [reduceCtorEq, ↓reduceIte, runBlock_cons, runStep_some, runBlock_nil, exec, XOp.exec,
+    isa, State.setXmm, eval_pxor, eval_movdqa, hd8, hd9, hd10, hd11, h1,
     Ne.symm hd8,
     Option.some.injEq, exists_eq_left']
   refine ⟨?_, fun r _ => rfl, rfl, rfl, rfl, fun r hr => ?_⟩
@@ -492,8 +490,6 @@ that `mul(a, Tₖ) = a · Hᵏ`, and `xmm2` holds `Y` after `i` blocks, as a
 block; the memory is not written until the epilogue stores `Y`.
 -/
 
-open VG.PowLit
-
 namespace VG.Proof.Gcm.X86_64.Pclmul
 
 open Spec.Gcm
@@ -531,7 +527,7 @@ end VG.Proof.Gcm.X86_64.Pclmul
 namespace VG.Proof.Gcm.X86_64.Pclmul
 
 open VG VG.X86_64 VG.Proof.Gcm.Poly
-open VG.Impl.Gcm.X86_64.Pclmul (at_ poly prologue body4 body1 epilogue ghash)
+open VG.Impl.Gcm.X86_64.Pclmul (at_ poly prologue body4 body1 epilogue ghashTail ghash)
 open VG.Spec.Gcm (Block blockAt blocksAt ghashFrom mul)
 
 /-! ## Four blocks and one block, in `Q` -/
@@ -960,13 +956,16 @@ theorem test_ok {s₀ : State} (hp : Pre s₀) {i : Nat} {s : State} (hI : Inv s
 
 /-! ## The whole function -/
 
-theorem correct {s₀ : State} (hp : Pre s₀) :
-    WP isa ghash s₀ fun s' => gprPreserved s₀ s' ∧ ghashX86_64.post s₀ s' := by
+/-- The blocks left after `i₀`, four and then one at a time, and `Y` stored:
+what follows the prologue here, and the eight-block loop of
+`vg_ghash_vpclmul`. -/
+theorem tail_ok {s₀ : State} (hp : Pre s₀) {i₀ : Nat} {s₁ : State} (hI₁ : Inv s₀ i₀ s₁)
+    (hcf : s₁.cf = some (decide (nb s₀ - i₀ < 4))) :
+    WP isa ghashTail s₁ fun s' => gprPreserved s₀ s' ∧ ghashX86_64.post s₀ s' := by
   have hn := hp.nb_lt
-  refine WP.seq (WP.mono (prologue_ok hp) fun s₁ ⟨hI₁, hcf⟩ => ?_)
   refine WP.seq (WP.mono (Q := fun s => ∃ i, nb s₀ - i < 4 ∧ Inv s₀ i s) ?_ fun s₂ ⟨i, hi, hI₂⟩ => ?_)
-  · refine WP.ite (decide (nb s₀ < 4)) (by simp only [eval, hcf]) (fun h => ?_) (fun h => ?_)
-    · exact WP.block_nil ⟨0, by simpa using h, hI₁⟩
+  · refine WP.ite (decide (nb s₀ - i₀ < 4)) (by simp only [eval, hcf]) (fun h => ?_) (fun h => ?_)
+    · exact WP.block_nil ⟨i₀, by simpa using h, hI₁⟩
     · let Inv4 : Nat → State → Prop := fun m s => ∃ i, m = nb s₀ - i ∧ i + 4 ≤ nb s₀ ∧ Inv s₀ i s
       have hstep : ∀ m s, Inv4 m s → WP isa (.block body4) s (fun s' =>
           (eval .ae s' = some false ∧ ∃ i, nb s₀ - i < 4 ∧ Inv s₀ i s') ∨
@@ -976,7 +975,7 @@ theorem correct {s₀ : State} (hp : Pre s₀) :
         by_cases hlt : nb s₀ - (i + 4) < 4
         · exact .inl ⟨by simp only [eval, hcf', hlt, decide_true, Option.map_some, Bool.not_true], i + 4, hlt, hI'⟩
         · exact .inr ⟨by simp only [eval, hcf', hlt, decide_false, Option.map_some, Bool.not_false], nb s₀ - (i + 4), by omega, i + 4, rfl, by omega, hI'⟩
-      exact WP.loop (M := isa) Inv4 hstep (nb s₀) s₁ ⟨0, rfl, by simpa using h, hI₁⟩
+      exact WP.loop (M := isa) Inv4 hstep (nb s₀ - i₀) s₁ ⟨i₀, rfl, by simp at h; omega, hI₁⟩
   refine WP.seq (WP.mono (test_ok hp hI₂) fun s₃ ⟨hI₃, hzf⟩ => ?_)
   refine WP.seq (WP.mono (Q := Inv s₀ (nb s₀)) ?_ fun s₄ hI₄ => epilogue_ok hp hI₄)
   refine WP.ite (decide (nb s₀ - i = 0)) (by simp only [eval, hzf]) (fun h => ?_) (fun h => ?_)
@@ -994,6 +993,10 @@ theorem correct {s₀ : State} (hp : Pre s₀) :
       · exact .inr ⟨by simp only [eval, hzf', hlast, decide_false, Option.map_some, Bool.not_false], nb s₀ - (i + 1), by omega, i + 1, rfl, by omega, hI'⟩
     have hlt : i < nb s₀ := by have := hI₃.le; simp only [decide_eq_false_iff_not] at h; omega
     exact WP.loop (M := isa) Inv1 hstep (nb s₀ - i) s₃ ⟨i, rfl, hlt, hI₃⟩
+
+theorem correct {s₀ : State} (hp : Pre s₀) :
+    WP isa ghash s₀ fun s' => gprPreserved s₀ s' ∧ ghashX86_64.post s₀ s' :=
+  WP.seq (WP.mono (prologue_ok hp) fun _ ⟨hI₁, hcf⟩ => tail_ok hp hI₁ (by simpa using hcf))
 
 /-- A state satisfying the precondition (with no blocks). -/
 def satState : State where
@@ -1020,7 +1023,7 @@ theorem ghash_ct : ConstantTime isa ghashX86_64.pre ghashX86_64.pub Impl.Gcm.X86
   intro s₁ s₂ _ _ ⟨h1, h2, h3, h4, h5⟩
   refine Taint.agree_ofRegs fun r hr => ?_
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl | rfl <;> assumption
+  rcases hr with rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption
 
 theorem ghash_verified :
     Verified X86_64.target Impl.Gcm.X86_64.Pclmul.ghash (Spec.Gcm.ghashContract X86_64.abi) :=

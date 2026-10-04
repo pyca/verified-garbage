@@ -276,9 +276,9 @@ theorem mul_step {core : List Instr} {acc : Bool} {V : Nat → Nat → Nat → N
     rw [g₂ _ (by decide) (by decide) (by decide), h.ecx]
   have out : InRegions s₂.wr (coeffAddr (hA s₀) k) 4 := hp.in_h w₂ hk
   apply WP.of_runBlock
-  simp (config := {decide := true}) only [mulTail, runBlock_cons, runStep_some, runBlock_nil, exec, execAlu,
+  simp only [reduceCtorEq, ↓reduceIte, Nat.reducePow, mulTail, runBlock_cons, runStep_some, runBlock_nil, exec, execAlu,
     readSrc, State.ea, at_, State.store32, State.setReg, arithFlags, State.setFlags, ebp₂,
-    ea_ptr hp.h_fit hk, out, ite_true, ite_false, Option.bind_some, Option.some.injEq, exists_eq_left']
+    ea_ptr hp.h_fit hk, out, Option.bind_some, Option.some.injEq, exists_eq_left']
   have hv : s₂.gpr .ebx = newM V s₀ k := eq_ofNat_of_toNat v₂
   refine ⟨⟨by simp [g₂, h.esp], r₂, w₂, ?_, ?_, ?_, ?_, ?_, fun i hi => ?_⟩, ?_⟩
   · simp only [ite_true, ite_false, show Reg.ebp ≠ Reg.ecx by decide]
@@ -331,9 +331,9 @@ theorem mulInit_piece (acc : Bool) (V : Nat → Nat → Nat → Nat) :
     obtain ⟨a₂, i₂, v₂⟩ := hp.arg_P0 (i := 2) (by omega)
     simp only [Nat.mul_zero, Nat.add_zero, Nat.mul_one, Nat.reduceAdd, Nat.reduceMul] at a₀ a₁ a₂
     apply WP.of_runBlock
-    simp (config := {decide := true}) only [mulInit, at_, runBlock_cons, runStep_some, runBlock_nil,
+    simp only [reduceCtorEq, ↓reduceIte, mulInit, at_, runBlock_cons, runStep_some, runBlock_nil,
       exec, readSrc, State.ea, State.load32, State.setReg, Option.map_some, a₀, a₁, a₂, i₀, i₁, i₂, v₀, v₁,
-      v₂, ite_true, ite_false, Option.some.injEq, exists_eq_left']
+      v₂, Option.some.injEq, exists_eq_left']
     refine ⟨by simp, rfl, rfl, by simp, by simp, by simp, by simp, Frame.refl _ _, fun i hi => ?_⟩
     simp only [Nat.not_lt_zero, ite_false]
     exact hp.h_P0 hi

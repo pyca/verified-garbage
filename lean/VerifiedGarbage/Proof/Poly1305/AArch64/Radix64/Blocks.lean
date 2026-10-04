@@ -3,7 +3,7 @@ import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Setup
 
 namespace VG.Proof.Poly1305.AArch64.Radix64
 open VG VG.AArch64 VG.Impl.Poly1305.AArch64.Radix64
-open VG.Proof.Poly1305.AArch64 VG.PowLit
+open VG.Proof.Poly1305.AArch64
 open VG.Spec.Poly1305 (P bytesAt leNum clamp accumulate Repr)
 
 structure Common (s₀ : State) (i : Nat) (s : State) : Prop where
@@ -87,7 +87,7 @@ theorem storeH_ok (s : State) (hw : sR (s.gpr .x0) ∈ s.wr) :
   have o0 := o 0 (by decide); have o8 := o 8 (by decide); have o16 := o 16 (by decide)
   simp only [off] at o0 o8 o16
   apply WP.of_runBlock
-  simp (config := {decide := true}) only [storeH, runBlock_cons, runStep_some, runBlock_nil,
+  simp only [and_self, storeH, runBlock_cons, runStep_some, runBlock_nil,
     exec_str_x (show 0 % 8 = 0 ∧ 0 < 32768 by decide) o0, exec_str_x (show 8 % 8 = 0 ∧ 8 < 32768 by decide),
     exec_str_x (show 16 % 8 = 0 ∧ 16 < 32768 by decide), o8, o16, Option.some.injEq, exists_eq_left']
   trivial
@@ -159,7 +159,7 @@ theorem blocks_ok (s : State) (hs : Proof.Poly1305.blocksAArch64.pre s) :
     ∃ t s', Exec isa Impl.Poly1305.AArch64.Radix64.blocks s t s' ∧ abiPreserved s s' ∧
       Proof.Poly1305.blocksAArch64.post s s' := by
   obtain ⟨t, s', he, h⟩ := blocks_correct (BPre.of s hs)
-  exact ⟨t, s', he, ⟨fun r hr => Exec.gpr (blocks_untouched r hr) he, Exec.sp he, Exec.preservedV he⟩, h⟩
+  exact ⟨t, s', he, ⟨fun r hr => Exec.gpr (blocks_untouched r hr) he, Exec.sp he, Exec.preservedV he (by lit_decide)⟩, h⟩
 
 theorem blocks_ct : ConstantTime isa Proof.Poly1305.blocksAArch64.pre
     Proof.Poly1305.blocksAArch64.pub Impl.Poly1305.AArch64.Radix64.blocks := by
@@ -167,7 +167,7 @@ theorem blocks_ct : ConstantTime isa Proof.Poly1305.blocksAArch64.pre
   intro s₁ s₂ _ _ ⟨h1, h2, h3, hsp⟩
   refine ⟨hsp, fun r hr => ?_⟩
   simp only [VG.AArch64.Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl <;> assumption
+  rcases hr with rfl | rfl | rfl <;> with_reducible assumption
 
 theorem blocks_verified :
     Verified AArch64.target Impl.Poly1305.AArch64.Radix64.blocks (Spec.Poly1305.blocksContract AArch64.abi)

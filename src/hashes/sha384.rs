@@ -19,39 +19,40 @@
     target_arch = "x86"
 ))]
 
+use super::sha512::{finalize, update};
+#[cfg(target_arch = "x86_64")]
+use super::sha512::{finalize_avx2, finalize_shani, update_avx2, update_shani};
+#[cfg(target_arch = "aarch64")]
+use super::sha512::{finalize_sha3, update_sha3};
+use crate::arch::sha512::vg_sha384_init;
 #[cfg(target_arch = "x86_64")]
 use crate::arch::sha512::{
     VG_SHA512_FINALIZE_AVX2_FEATURES, VG_SHA512_FINALIZE_SHANI_FEATURES,
-    VG_SHA512_UPDATE_AVX2_FEATURES, VG_SHA512_UPDATE_SHANI_FEATURES, vg_sha512_finalize_avx2,
-    vg_sha512_finalize_shani, vg_sha512_update_avx2, vg_sha512_update_shani,
+    VG_SHA512_UPDATE_AVX2_FEATURES, VG_SHA512_UPDATE_SHANI_FEATURES,
 };
 #[cfg(target_arch = "aarch64")]
-use crate::arch::sha512::{
-    VG_SHA512_FINALIZE_SHA3_FEATURES, VG_SHA512_UPDATE_SHA3_FEATURES, vg_sha512_finalize_sha3,
-    vg_sha512_update_sha3,
-};
-use crate::arch::sha512::{vg_sha384_init, vg_sha512_finalize, vg_sha512_update};
+use crate::arch::sha512::{VG_SHA512_FINALIZE_SHA3_FEATURES, VG_SHA512_UPDATE_SHA3_FEATURES};
 
 super::streaming_hash!(
     /// An incremental SHA-384 computation (FIPS 180-4 §6.5).
     Sha384 {
         state: 192,
-        scratch: 172,
+        scratch: 0,
         block: 128,
         output: 48,
         final_hash: 64,
         init: vg_sha384_init,
         backends: Sha384Backend {
-            Scalar => (vg_sha512_update, vg_sha512_finalize),
+            Scalar => (update, finalize),
             #[cfg(target_arch = "aarch64")]
             Sha3 if [VG_SHA512_UPDATE_SHA3_FEATURES, VG_SHA512_FINALIZE_SHA3_FEATURES] =>
-                (vg_sha512_update_sha3, vg_sha512_finalize_sha3),
+                (update_sha3, finalize_sha3),
             #[cfg(target_arch = "x86_64")]
             ShaNi if [VG_SHA512_UPDATE_SHANI_FEATURES, VG_SHA512_FINALIZE_SHANI_FEATURES] =>
-                (vg_sha512_update_shani, vg_sha512_finalize_shani),
+                (update_shani, finalize_shani),
             #[cfg(target_arch = "x86_64")]
             Avx2 if [VG_SHA512_UPDATE_AVX2_FEATURES, VG_SHA512_FINALIZE_AVX2_FEATURES] =>
-                (vg_sha512_update_avx2, vg_sha512_finalize_avx2),
+                (update_avx2, finalize_avx2),
         },
     }
 );

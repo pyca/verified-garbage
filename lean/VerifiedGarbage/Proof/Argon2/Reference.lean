@@ -1,4 +1,5 @@
 import VerifiedGarbage.Proof.Argon2.Dimensions
+import VerifiedGarbage.Proof.Framework.PowLit
 
 /-! # Bounds for the quadratic reference-window mapping in RFC 9106 §3.4.2 -/
 

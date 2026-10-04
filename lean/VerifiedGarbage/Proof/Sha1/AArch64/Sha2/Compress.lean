@@ -58,11 +58,11 @@ theorem rounds4_ok (n : Nat) (s : State) (v : HashValue) (q : BitVec 128)
   generalize msg n = x at *
   simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or,
     List.nodup_nil, and_true] at hd
-  simp (config := {decide := true}) only [runBlock_cons, runStep_some, runBlock_nil, exec_movz_w, exec_movk_w, exec_vop, VOp.eval,
-    isa, RegUpd.v_setV, ite_true, ite_false, RegUpd.gpr_setV, RegUpd.mem_setV,
+  simp only [reduceCtorEq, ↓reduceIte, and_self, runBlock_cons, runStep_some, runBlock_nil, exec_movz_w, exec_movk_w, exec_vop, VOp.eval,
+    isa, RegUpd.v_setV, RegUpd.gpr_setV, RegUpd.mem_setV,
     RegUpd.rd_setV, RegUpd.wr_setV, RegUpd.gpr_write_self, RegUpd.v_write,
     RegUpd.mem_write, RegUpd.rd_write, RegUpd.wr_write, Size.bits,
-    Nat.reduceLeDiff, ite_true,
+    Nat.reduceLeDiff, 
     BitVec.setWidth_setWidth_of_le, BitVec.setWidth_eq, Option.map_some,
     hd, h0, h1, hq, eReg_low, vword_ofVWords_0, abcd,
     Option.some.injEq, exists_eq_left']
@@ -93,8 +93,8 @@ theorem schedule_hi (n : Nat) (hn : 4 ≤ n) (s : State) (a b c d : BitVec 128)
   simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or,
     List.nodup_nil, and_true, List.reverse_cons, List.reverse_nil, List.nil_append,
     List.cons_append] at hd hd''
-  simp (config := {decide := true}) only [runBlock_cons, runStep_some, runBlock_nil, exec_vop, VOp.eval,
-    isa, RegUpd.v_setV, ite_true, ite_false, RegUpd.gpr_setV, RegUpd.mem_setV,
+  simp only [↓reduceIte, and_self, runBlock_cons, runStep_some, runBlock_nil, exec_vop, VOp.eval,
+    isa, RegUpd.v_setV, RegUpd.gpr_setV, RegUpd.mem_setV,
     RegUpd.rd_setV, RegUpd.wr_setV, hd'', ha, hb, hc, hd',
     Option.map_some, Option.some.injEq, exists_eq_left']
   exact ⟨trivial, fun r hr => by simp only [hr, ite_false], trivial⟩
@@ -107,10 +107,10 @@ theorem schedule_lo (n : Nat) (hn : n < 4) (s : State)
       s'.gpr = s.gpr ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   apply WP.of_runBlock
   simp only [schedule, hn, ite_true]
-  simp (config := {decide := true}) only [runBlock_cons, runStep_some, runBlock_nil, exec_vop, VOp.eval,
+  simp only [↓reduceIte, runBlock_cons, runStep_some, runBlock_nil, exec_vop, VOp.eval,
     isa, exec_ldrq, show 16 * n % 16 = 0 by omega, show 16 * n < 65536 by omega,
-    and_self, ite_true, hin, Option.map_some,
-    RegUpd.v_setV, ite_true, RegUpd.gpr_setV, RegUpd.mem_setV,
+    and_self, hin, Option.map_some,
+    RegUpd.v_setV, RegUpd.gpr_setV, RegUpd.mem_setV,
     RegUpd.rd_setV, RegUpd.wr_setV, Option.some.injEq, exists_eq_left']
   exact ⟨trivial, fun r hr => by simp only [hr, ite_false], trivial⟩
 
@@ -260,8 +260,8 @@ theorem load_ok (s : State)
       s'.v .v17 = eReg (stateAt s.mem (s.gpr .x0)) ∧
       (∀ r, r ≠ .x4 → s'.gpr r = s.gpr r) ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   apply WP.of_runBlock
-  simp (config := {decide := true}) only [load, runBlock_cons, runStep_some, runBlock_nil,
-    exec, addr, State.load, VOp.eval, Option.bind_some, and_self, ite_true, ite_false, isa,
+  simp only [reduceCtorEq, ↓reduceIte, Nat.reduceLT, Nat.reduceLeDiff, Nat.reduceMul, Nat.reduceMod, load, runBlock_cons, runStep_some, runBlock_nil,
+    exec, addr, State.load, VOp.eval, Option.bind_some, and_self, isa,
     Option.map_some, RegUpd.gpr_setV, RegUpd.v_setV, RegUpd.gpr_write_self,
     RegUpd.v_write, RegUpd.mem_write, RegUpd.rd_write, RegUpd.wr_write,
     RegUpd.mem_setV, RegUpd.rd_setV, RegUpd.wr_setV, Size.bytes, Size.bits,

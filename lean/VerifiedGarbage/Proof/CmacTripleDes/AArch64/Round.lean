@@ -1,196 +1,263 @@
-import VerifiedGarbage.Impl.CmacTripleDes.AArch64.Round
-import VerifiedGarbage.Proof.CmacTripleDes.Des
+import VerifiedGarbage.Proof.CmacTripleDes.AArch64.Layout
+import VerifiedGarbage.Proof.Framework.AArch64.Tbl
 import VerifiedGarbage.Proof.Framework.AArch64.Linear
-import VerifiedGarbage.Proof.Framework.Bitslice.Rows
 
 /-!
 # A DES round on AArch64
 
-The round's three parts are checked by evaluation (`Straight.check`): the
-broadcast inputs (`inputs`) and the output (`output`), which only move,
-mask and XOR bits, over the lane domain; the S-boxes (`sboxes`), which
-combine words bitwise with constants that differ by position, over the row
-domain (`Bitslice.rows`), on all 64 values of a box's input at once.
-`round_ok` composes them: `R` and `L ⊕ f(R, K)`.
+The round's three parts: the S-boxes' index, the spread round key at `x10`
+XORed with `R` (`sIn_ok`), in `v0` and its quarters in `v1`–`v3`; the
+S-boxes' outputs by `tbl` (`sOut_ok`, from `select_full_run`); and `L`
+XORed with groups of them (`pOut_ok`), checked by evaluation over the lane
+domain (`Straight.check`). `round_ok` composes them: the spread
+`L ⊕ f(R, K)`.
 -/
 
 namespace VG.Proof.CmacTripleDes.AArch64
 
-open VG VG.AArch64 VG.AArch64.Straight VG.Bitslice VG.Impl.CmacTripleDes VG.Impl.CmacTripleDes.AArch64
+open VG VG.AArch64 VG.AArch64.RegUpd VG.AArch64.Straight VG.AArch64.Tbl VG.Bitslice
+  VG.Impl.CmacTripleDes VG.Impl.CmacTripleDes.AArch64 VG.Impl.Tbl.AArch64 VG.Proof.CmacTripleDes
 
-/-- The round's memory: the broadcast inputs in slots 0–5 at `x15`, and the
-round key at `x14`. -/
-def rCfg : Cfg := { base := .x15, slots := 6, ext := .x14, exts := 1 }
+/-- What the rounds keep in the vector registers: the tables, and 64, 128
+and 192 in every byte of `v4`, `v5` and `v6`. -/
+structure Consts (s : State) : Prop where
+  tab : ∀ k < 256, tbyte s.v k = sTable k
+  c64 : s.v .v4 = bc 64
+  c128 : s.v .v5 = bc 128
+  c192 : s.v .v6 = bc 192
 
-/-- Slot `k` of the scratch buffer. -/
-abbrev slotW (s : State) (k : Nat) : BitVec 64 := s.mem.readW (wordAddr (s.gpr .x15) k) 64
+theorem Consts.congr {s s' : State} (h : Consts s)
+    (hv : ∀ w, w ≠ .v0 → w ≠ .v1 → w ≠ .v2 → w ≠ .v3 → s'.v w = s.v w) : Consts s' where
+  tab k hk := by rw [tbyte_congr (fun r a b c d _ _ => hv r a b c d) k hk]; exact h.tab k hk
+  c64 := by rw [hv _ (by decide) (by decide) (by decide) (by decide)]; exact h.c64
+  c128 := by rw [hv _ (by decide) (by decide) (by decide) (by decide)]; exact h.c128
+  c192 := by rw [hv _ (by decide) (by decide) (by decide) (by decide)]; exact h.c192
 
-/-- The round key's word. -/
-abbrev keyW (s : State) : BitVec 64 := s.mem.readW (wordAddr (s.gpr .x14) 0) 64
+/-! ## The index -/
 
-/-! ## The inputs -/
+/-- The step of the key pointer. -/
+def kstep (down : Bool) : Instr := if down then .subImm .x .x10 .x10 8 else .addImm .x .x10 .x10 8
 
-/-- Bit `p` of slot `t`: in lane `p / 6`, below its fifth bit, bit `t` of
-the box's input, `R`'s bit (atom `0 … 63`) XOR the key's (atom `64 …`). -/
-def inG (t p : Nat) : List Nat :=
-  if p < 48 ∧ p % 6 < 4 then [expSrc (6 * (p / 6) + t), 64 + 6 * (p / 6) + t] else []
+theorem exec_kstep (s : State) (down : Bool) :
+    exec (kstep down) s =
+      some (s.write .x .x10 (if down then s.gpr .x10 - 8 else s.gpr .x10 + 8)) := by
+  cases down
+  · simp only [kstep, Bool.false_eq_true, ite_false, exec_addImm_x (by decide : 8 < 4096),
+      State.read, BitVec.setWidth_eq]; rfl
+  · simp only [kstep, ite_true, exec_subImm_x (by decide : 8 < 4096), State.read,
+      BitVec.setWidth_eq]; rfl
 
-def inPost (e : Env (Nat × Nat)) : Bool :=
-  (List.range 6).all fun t => e.slot t == some (outWord (inG t))
+theorem sIn_eq (b : Reg) (down : Bool) : sIn b down =
+    [.ldr .x .x5 .x10 0, kstep down, .logic .eor .x .x5 .x5 b, .vop (.ins .d2 .v0 0 .x5),
+     .vop (.logic .eor .v1 .v0 .v4), .vop (.logic .eor .v2 .v0 .v5),
+     .vop (.logic .eor .v3 .v0 .v6)] := rfl
 
-theorem inputs_check :
-    check (lanes 64 7) rCfg (linExt 1) inputs (linEnv [(.x13, 0)]) inPost = true := by
-  decide +kernel
+theorem vbyte_setLane0 (x : BitVec 128) (y : BitVec 64) {e : Nat} (he : e < 8) :
+    vbyte (setLane x 64 0 y) e = y.extractLsb' (8 * e) 8 := by
+  apply BitVec.eq_of_getLsbD_eq; intro i hi
+  simp only [vbyte, setLane, BitVec.getLsbD_extractLsb', hi, decide_true, Bool.true_and,
+    BitVec.getLsbD_or, BitVec.getLsbD_and, BitVec.getLsbD_not, BitVec.getLsbD_shiftLeft,
+    BitVec.getLsbD_setWidth, BitVec.getLsbD_allOnes, Nat.mul_zero, Nat.sub_zero,
+    show 8 * e + i < 128 by omega, show 8 * e + i < 64 by omega, show ¬ 8 * e + i < 0 by omega]
+  simp
 
-theorem inG_lt : ∀ t < 6, ∀ p < 64, ∀ a ∈ inG t p, a < 2 ^ 7 := by decide
-
-/-- The registers the round keeps. -/
-def kept : List Reg := [.x0, .x1, .x2, .x3, .x4, .x14, .x15, .x16, .x17]
-
-theorem inputs_kept :
-    (.x12 :: .x13 :: kept).all (fun r => inputs.all fun i => dstOf i != some r) = true := by
-  decide +kernel
-
-/-- The inputs of `inputs`: `R` and the round key. -/
-def inW (s : State) (i : Nat) : BitVec 64 := if i = 0 then s.gpr .x13 else keyW s
-
-theorem inputs_ok {s : State} (hok : Ok rCfg s) :
-    ∃ s', runBlock isa inputs s = some s' ∧
-      (∀ t < 6, ∀ p < 64, (slotW s' t).getLsbD p = xorBits (inW s) (inG t p)) ∧
-      s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp ∧ (∀ r ∈ .x12 :: .x13 :: kept, s'.gpr r = s.gpr r) ∧
-      Frame [slotRegion rCfg s] s.mem s'.mem := by
-  obtain ⟨e', he, hpost⟩ := of_check _ _ _ inputs_check
-  have hrel : Rel (LaneRel 7 (assign (inW s) (2 ^ 7))) rCfg (linExt 1) (linEnv [(.x13, 0)]) s := by
-    refine ⟨fun r a h => ?_, (fun _ _ _ h => by cases h), fun j a hj h => ?_, fun _ _ h => by cases h⟩
-    · simp only [linEnv, List.find?, Option.map_eq_some_iff] at h
-      split at h
-      · rename_i hr
-        simp only [beq_iff_eq] at hr; subst hr
-        simp only [Option.some.injEq, exists_eq_left'] at h; subst h
-        exact inWord_rel (inW s) (i := 0) (by decide)
-      · simp at h
-    · simp only [rCfg] at hj
-      obtain rfl : j = 0 := by omega
-      simp only [linExt, Option.some.injEq] at h; subst h
-      exact inWord_rel (inW s) (i := 1) (by decide)
-  obtain ⟨s', hs', p⟩ := run lanes_sound hok hrel he
-  refine ⟨s', hs', fun t ht q hq => ?_, p.rd, p.wr, p.sp, fun r hr => p.other r ?_, p.frame⟩
-  · have h := List.all_eq_true.mp hpost t (List.mem_range.mpr ht)
-    simp only [beq_iff_eq] at h
-    exact outWord_rel (inG_lt t ht) (p.rel.slot t _ (by simp only [rCfg]; omega) h) q hq
-  · rw [List.all_eq_true.mp inputs_kept r hr]; decide
+theorem sIn_ok (s : State) {b : Reg} (hb5 : b ≠ .x5) (hb10 : b ≠ .x10) (down : Bool)
+    (hk : InRegions (s.rd ++ s.wr) (s.gpr .x10) 8) (hc : Consts s) :
+    ∃ s', runBlock isa (sIn b down) s = some s' ∧
+      (∀ e < 8, vbyte (s'.v .v0) e =
+        (s.mem.readW (s.gpr .x10) 64 ^^^ s.gpr b).extractLsb' (8 * e) 8) ∧
+      (∀ e < 16, vbyte (s'.v .v1) e = vbyte (s'.v .v0) e ^^^ 64) ∧
+      (∀ e < 16, vbyte (s'.v .v2) e = vbyte (s'.v .v0) e ^^^ 128) ∧
+      (∀ e < 16, vbyte (s'.v .v3) e = vbyte (s'.v .v0) e ^^^ 192) ∧
+      s'.gpr .x10 = (if down then s.gpr .x10 - 8 else s.gpr .x10 + 8) ∧
+      (∀ r, r ≠ .x5 → r ≠ .x10 → s'.gpr r = s.gpr r) ∧
+      (∀ w, w ≠ .v0 → w ≠ .v1 → w ≠ .v2 → w ≠ .v3 → s'.v w = s.v w) ∧
+      s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp := by
+  have hk' : InRegions (s.rd ++ s.wr) (s.gpr .x10 + BitVec.ofNat 64 0) 8 := by
+    rw [BitVec.add_zero]; exact hk
+  let K := s.mem.readW (s.gpr .x10 + BitVec.ofNat 64 0) 64
+  let s₁ := s.write .x .x5 K
+  let s₂ := s₁.write .x .x10 (if down then s₁.gpr .x10 - 8 else s₁.gpr .x10 + 8)
+  let s₃ := s₂.write .x .x5 (s₂.read .x .x5 ^^^ s₂.read .x b)
+  let s₄ := s₃.setV .v0 (setLane (s₃.v .v0) 64 0 (s₃.gpr .x5))
+  let s₅ := s₄.setV .v1 (s₄.v .v0 ^^^ s₄.v .v4)
+  let s₆ := s₅.setV .v2 (s₅.v .v0 ^^^ s₅.v .v5)
+  let s₇ := s₆.setV .v3 (s₆.v .v0 ^^^ s₆.v .v6)
+  have x5₃ : s₃.gpr .x5 = K ^^^ s.gpr b := by
+    simp only [s₃, s₂, s₁, State.read, gpr_write_self, BitVec.setWidth_eq,
+      gpr_write_of_ne _ _ _ (by decide : Reg.x5 ≠ .x10), gpr_write_of_ne _ _ _ hb10,
+      gpr_write_of_ne _ _ _ hb5]
+  have v0₇ : s₇.v .v0 = setLane (s.v .v0) 64 0 (K ^^^ s.gpr b) := by
+    simp only [s₇, s₆, s₅, v_setV_of_ne _ _ (by decide : VReg.v0 ≠ .v3),
+      v_setV_of_ne _ _ (by decide : VReg.v0 ≠ .v2), v_setV_of_ne _ _ (by decide : VReg.v0 ≠ .v1)]
+    rw [show s₄.v .v0 = setLane (s₃.v .v0) 64 0 (s₃.gpr .x5) from v_setV_self _ _ _, x5₃]; rfl
+  have vs : ∀ w, w ≠ .v0 → w ≠ .v1 → w ≠ .v2 → w ≠ .v3 → s₇.v w = s.v w := by
+    intro w h0 h1 h2 h3
+    simp only [s₇, s₆, s₅, s₄, v_setV_of_ne _ _ h3, v_setV_of_ne _ _ h2, v_setV_of_ne _ _ h1,
+      v_setV_of_ne _ _ h0]; rfl
+  have c₄ : ∀ w, w = .v4 ∨ w = .v5 ∨ w = .v6 → s₆.v w = s.v w := by
+    intro w hw
+    rcases hw with rfl | rfl | rfl <;>
+      simp only [s₆, s₅, s₄, v_setV_of_ne _ _ (by decide : VReg.v4 ≠ .v2),
+        v_setV_of_ne _ _ (by decide : VReg.v5 ≠ .v2), v_setV_of_ne _ _ (by decide : VReg.v6 ≠ .v2),
+        v_setV_of_ne _ _ (by decide : VReg.v4 ≠ .v1), v_setV_of_ne _ _ (by decide : VReg.v5 ≠ .v1),
+        v_setV_of_ne _ _ (by decide : VReg.v6 ≠ .v1), v_setV_of_ne _ _ (by decide : VReg.v4 ≠ .v0),
+        v_setV_of_ne _ _ (by decide : VReg.v5 ≠ .v0), v_setV_of_ne _ _ (by decide : VReg.v6 ≠ .v0)] <;> rfl
+  have z₆ : s₆.v .v0 = s₇.v .v0 := (v_setV_of_ne _ _ (by decide)).symm
+  have z₅ : s₅.v .v0 = s₇.v .v0 := by
+    rw [← z₆]; exact (v_setV_of_ne _ _ (by decide)).symm
+  have z₄ : s₄.v .v0 = s₇.v .v0 := by
+    rw [← z₅]; exact (v_setV_of_ne _ _ (by decide)).symm
+  refine ⟨s₇, ?_, fun e he => ?_, fun e he => ?_, fun e he => ?_, fun e he => ?_, ?_,
+    fun r h5 h10 => ?_, vs, rfl, rfl, rfl, rfl⟩
+  · rw [sIn_eq, runBlock_cons, exec_ldr_x (by decide) hk', runStep_some, runBlock_cons,
+      exec_kstep, runStep_some, runBlock_cons, exec_logic, runStep_some, runBlock_cons,
+      exec_insd _ _ _ (by decide), runStep_some, runBlock_cons, exec_eorv, runStep_some,
+      runBlock_cons, exec_eorv, runStep_some, runBlock_cons, exec_eorv, runStep_some, runBlock_nil]
+  · rw [v0₇, vbyte_setLane0 _ _ he]
+    simp only [K, BitVec.add_zero]
+  · have : s₇.v .v1 = s₄.v .v0 ^^^ s₄.v .v4 := by
+      simp only [s₇, s₆, v_setV_of_ne _ _ (by decide : VReg.v1 ≠ .v3),
+        v_setV_of_ne _ _ (by decide : VReg.v1 ≠ .v2)]; exact v_setV_self _ _ _
+    rw [this, vbyte_xor, z₄, show s₄.v .v4 = s.v .v4 from by
+      rw [← c₄ .v4 (by simp)]; simp only [s₆, s₅, v_setV_of_ne _ _ (by decide : VReg.v4 ≠ .v2),
+        v_setV_of_ne _ _ (by decide : VReg.v4 ≠ .v1)], hc.c64, vbyte_bc _ he]
+  · have : s₇.v .v2 = s₅.v .v0 ^^^ s₅.v .v5 := by
+      simp only [s₇, v_setV_of_ne _ _ (by decide : VReg.v2 ≠ .v3)]; exact v_setV_self _ _ _
+    rw [this, vbyte_xor, z₅, show s₅.v .v5 = s.v .v5 from by
+      rw [← c₄ .v5 (by simp)]; simp only [s₆, v_setV_of_ne _ _ (by decide : VReg.v5 ≠ .v2)],
+      hc.c128, vbyte_bc _ he]
+  · have : s₇.v .v3 = s₆.v .v0 ^^^ s₆.v .v6 := v_setV_self _ _ _
+    rw [this, vbyte_xor, z₆, c₄ .v6 (by simp), hc.c192, vbyte_bc _ he]
+  · simp only [s₇, s₆, s₅, s₄, gpr_setV, s₃, gpr_write_of_ne _ _ _ (by decide : Reg.x10 ≠ .x5),
+      s₂, gpr_write_self, BitVec.setWidth_eq, s₁]
+  · simp only [s₇, s₆, s₅, s₄, gpr_setV, s₃, s₂, s₁, gpr_write_of_ne _ _ _ h5,
+      gpr_write_of_ne _ _ _ h10]
 
 /-! ## The S-boxes -/
 
-/-- Slot `t` on row `c`, at every position: bit `t` of `c`. -/
-def rowIn (t : Nat) : Nat := tableOf (fun a => (a / 64).testBit t) 4096
+theorem exec_umovx0 (s : State) (d : Reg) (n : VReg) :
+    exec (.umov .x d n 0) s = some (s.write .x d ((s.v n).extractLsb' 0 64)) := by
+  simp [exec, Size.bits]
 
-def sbEnv : Env Nat := { reg := fun _ => none, slot := fun t => if t < 6 then some (rowIn t) else none }
+theorem extract_vbyte (v : BitVec 128) {l : Nat} (hl : l < 8) :
+    ((v.extractLsb' 0 64).extractLsb' (8 * l) 8) = vbyte v l := by
+  apply BitVec.eq_of_getLsbD_eq; intro i hi
+  simp [vbyte, hi, show 8 * l + i < 64 by omega]
 
-/-- At bit `6 (7 - i) + off i b`, output bit `b` of box `i`, on every row. -/
-def sbPost (e : Env Nat) : Bool :=
-  match e.reg .x5 with
-  | some F => (List.range 8).all fun i => (List.range 4).all fun b => (List.range 64).all fun c =>
-      F.testBit (64 * c + (6 * (7 - i) + off i b)) == (Spec.TripleDes.sBox i (BitVec.ofNat 6 c)).getLsbD b
-  | none => false
+/-- The S-boxes' outputs `y`, in `x5`: byte `l` is the table's byte at the
+index's byte `l`. -/
+theorem sOut_ok {s : State} (I : Nat → BitVec 8)
+    (h0 : ∀ e < 16, vbyte (s.v .v0) e = I e)
+    (h1 : ∀ e < 16, vbyte (s.v .v1) e = I e ^^^ 64)
+    (h2 : ∀ e < 16, vbyte (s.v .v2) e = I e ^^^ 128)
+    (h3 : ∀ e < 16, vbyte (s.v .v3) e = I e ^^^ 192) :
+    ∃ s', runBlock isa sOut s = some s' ∧
+      (∀ l < 8, (s'.gpr .x5).extractLsb' (8 * l) 8 = tbyte s.v (I l).toNat) ∧
+      (∀ r, r ≠ .x5 → s'.gpr r = s.gpr r) ∧
+      (∀ w, w ≠ .v0 → w ≠ .v1 → w ≠ .v2 → w ≠ .v3 → s'.v w = s.v w) ∧
+      s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp := by
+  obtain ⟨d, rund, d0, dv⟩ := select_full_run I h0 h1 h2 h3
+  let t := d.write .x .x5 ((d.v .v0).extractLsb' 0 64)
+  refine ⟨t, ?_, fun l hl => ?_, fun r hr => ?_, fun w a b c e => ?_, ?_, ?_, ?_, ?_⟩
+  · rw [sOut, runBlock_cat_some rund (by rw [runBlock_cons, exec_umovx0, runStep_some, runBlock_nil])]
+  · simp only [t, gpr_write_self, BitVec.setWidth_eq]
+    rw [extract_vbyte _ hl, d0 l (by omega)]
+  · simp only [t, gpr_write_of_ne _ _ _ hr, dv.gpr]
+  · simp only [t, v_write]; exact dv.2 w (by simp [a, b, c, e])
+  · simp only [t, mem_write, dv.mem]
+  · simp only [t, rd_write, dv.rd]
+  · simp only [t, wr_write, dv.wr]
+  · simp only [t, sp_write]; rw [dv.1]
 
-theorem sboxes_check : check (rows 64 6) rCfg (fun _ => none) sboxes sbEnv sbPost = true := by
-  decide +kernel
-
-theorem sboxes_kept :
-    (.x12 :: .x13 :: kept).all (fun r => sboxes.all fun i => dstOf i != some r) = true := by
-  decide +kernel
-
-/-- The input of the box whose lane holds bit `p`, from bit `p` of the slots. -/
-def boxIn (s : State) (p : Nat) : BitVec 6 := ofBits 6 fun t => (slotW s t).getLsbD p
-
-theorem sboxes_ok {s : State} (hok : Ok rCfg s) :
-    ∃ s', runBlock isa sboxes s = some s' ∧
-      (∀ i < 8, ∀ b < 4, (s'.gpr .x5).getLsbD (6 * (7 - i) + off i b) =
-        (Spec.TripleDes.sBox i (boxIn s (6 * (7 - i) + off i b))).getLsbD b) ∧
-      s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp ∧ (∀ r ∈ .x12 :: .x13 :: kept, s'.gpr r = s.gpr r) ∧
-      Frame [slotRegion rCfg s] s.mem s'.mem := by
-  obtain ⟨e', he, hpost⟩ := of_check _ _ _ sboxes_check
-  obtain ⟨F, hF, hout⟩ : ∃ F, e'.reg .x5 = some F ∧ ∀ i < 8, ∀ b < 4, ∀ c < 64,
-      F.testBit (64 * c + (6 * (7 - i) + off i b)) = (Spec.TripleDes.sBox i (BitVec.ofNat 6 c)).getLsbD b := by
-    simp only [sbPost] at hpost
-    split at hpost
-    · rename_i F hF
-      refine ⟨F, hF, fun i hi b hb c hc => ?_⟩
-      have := List.all_eq_true.mp (List.all_eq_true.mp (List.all_eq_true.mp hpost i
-        (List.mem_range.mpr hi)) b (List.mem_range.mpr hb)) c (List.mem_range.mpr hc)
-      simpa using this
-    · cases hpost
-  have key : ∀ p < 64, ∃ s', runBlock isa sboxes s = some s' ∧
-      Post (RowRel p (boxIn s p).toNat) rCfg (fun _ => none) e' s s'
-        (fun r => (sboxes.all fun i => dstOf i != some r) = false) := by
-    intro p hp
-    refine run (rows_sound hp (boxIn s p).isLt) hok
-      ⟨fun r a h => by simp [sbEnv] at h, fun t a ht h => ?_, (fun _ _ _ h => by cases h), fun _ _ h => by cases h⟩ he
-    simp only [sbEnv] at h
-    split at h
-    · rename_i ht6
-      cases h
-      show (rowIn t).testBit (64 * (boxIn s p).toNat + p) = (slotW s t).getLsbD p
-      have hc := (boxIn s p).isLt
-      rw [rowIn, testBit_tableOf, decide_eq_true (by omega : 64 * (boxIn s p).toNat + p < 4096),
-        Bool.true_and, show (64 * (boxIn s p).toNat + p) / 64 = (boxIn s p).toNat by omega,
-        BitVec.testBit_toNat, boxIn, getLsbD_ofBits, decide_eq_true ht6, Bool.true_and]
-    · cases h
-  obtain ⟨s', hs', p₀⟩ := key 0 (by omega)
-  refine ⟨s', hs', fun i hi b hb => ?_, p₀.rd, p₀.wr, p₀.sp, fun r hr => p₀.other r ?_, p₀.frame⟩
-  · have hp : 6 * (7 - i) + off i b < 64 := by revert i b; decide
-    obtain ⟨s'', hs'', p₁⟩ := key _ hp
-    obtain rfl := run_unique hs'' hs'
-    have h := p₁.rel.reg .x5 F hF
-    simp only [RowRel] at h
-    rw [← h, hout i hi b hb _ (boxIn s _).isLt, BitVec.ofNat_toNat, BitVec.setWidth_eq]
-  · rw [List.all_eq_true.mp sboxes_kept r hr]; decide
-
-/-! ## The output -/
+/-! ## `P` -/
 
 /-- No memory. -/
 def oCfg : Cfg := { base := .x15, slots := 0, ext := .x14, exts := 0 }
-
-/-- `x12`: `R` (input word 2). -/
-def oG12 (p : Nat) : List Nat := [128 + p]
-
-/-- `x13`: bit `j` of `L` (input word 1) XOR, for `j < 32`, the S-boxes' bit
-`pSrc j` (in `x5`, input word 0). -/
-def oG13 (p : Nat) : List Nat := if p < 32 then [outPos (pSrc p), 64 + p] else [64 + p]
-
-def oIns : List (Reg × Nat) := [(.x5, 0), (.x12, 1), (.x13, 2)]
-
-theorem output_check :
-    check (lanes 64 8) oCfg (linExt 3) output (linEnv oIns) (linPost 8 [(.x12, oG12), (.x13, oG13)]) = true := by
-  decide +kernel
-
-theorem output_kept : kept.all (fun r => output.all fun i => dstOf i != some r) = true := by
-  decide +kernel
-
-/-- The inputs of `output`. -/
-def oW (s : State) (i : Nat) : BitVec 64 :=
-  if i = 0 then s.gpr .x5 else if i = 1 then s.gpr .x12 else s.gpr .x13
 
 theorem oCfg_ok (s : State) : Ok oCfg s :=
   ⟨fun k hk => absurd hk (by simp [oCfg]), fun k hk => absurd hk (by simp [oCfg]), by decide,
     fun k hk => absurd hk (by simp [oCfg])⟩
 
-theorem output_ok (s : State) :
-    ∃ s', runBlock isa output s = some s' ∧
-      (∀ p < 64, (s'.gpr .x12).getLsbD p = xorBits (oW s) (oG12 p)) ∧
-      (∀ p < 64, (s'.gpr .x13).getLsbD p = xorBits (oW s) (oG13 p)) ∧
-      s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp ∧ (∀ r ∈ kept, s'.gpr r = s.gpr r) ∧ s'.mem = s.mem := by
-  obtain ⟨s', hs', hout, hrd, hwr, hsp, hoth, hfr⟩ := linear_ok output_check (oCfg_ok s) (oW s)
-    (fun r i hri => by
-      simp only [oIns, List.mem_cons, List.mem_nil_iff, Prod.mk.injEq, or_false] at hri
-      rcases hri with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;> exact ⟨by decide, rfl⟩)
-    (fun j hj => absurd hj (by simp [oCfg]))
-  refine ⟨s', hs', hout .x12 oG12 (by simp), hout .x13 oG13 (by simp), hrd, hwr, hsp,
-    fun r hr => hoth r (List.all_eq_true.mp output_kept r hr), ?_⟩
+theorem frame_oCfg {s : State} {m m' : Mem} (h : Frame [slotRegion oCfg s] m m') : m' = m := by
   funext a
-  exact hfr a fun r hr => by
+  exact h a fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr; simp [slotRegion, oCfg, Region.Contains]
+
+theorem ySrc_bound : ∀ p < 64, (ySrc p).all (· < 64) = true := by lit_decide
+
+theorem ySrc_lt {p q : Nat} (hp : p < 64) (h : ySrc p = some q) : q < 64 := by
+  have := ySrc_bound p hp
+  rw [h] at this
+  simpa using this
+
+/-- The inputs of `pOut a`: `y` (input word 0) and `a` (input word 1). -/
+def pIns (a : Reg) : List (Reg × Nat) := [(.x5, 0), (a, 1)]
+
+/-- Bit `p` of `a` afterwards: bit `ySrc p` of `y` XORed in, where it is spread. -/
+def pG (p : Nat) : List Nat :=
+  match ySrc p with
+  | some q => [q, 64 + p]
+  | none => [64 + p]
+
+theorem pOut11_check :
+    check (lanes 64 7) oCfg (linExt 2) (pOut .x11) (linEnv (pIns .x11)) (linPost 7 [(.x11, pG)]) = true := by
+  lit_decide
+
+theorem pOut12_check :
+    check (lanes 64 7) oCfg (linExt 2) (pOut .x12) (linEnv (pIns .x12)) (linPost 7 [(.x12, pG)]) = true := by
+  lit_decide
+
+/-- The registers `pOut` keeps. -/
+def pKept : List Reg := [.x1, .x2, .x3, .x4, .x5, .x10, .x14, .x15, .x16]
+
+theorem pOut11_kept : (.x12 :: pKept).all (fun r => (pOut .x11).all fun i => dstOf i != some r) = true := by
+  lit_decide
+
+theorem pOut12_kept : (.x11 :: pKept).all (fun r => (pOut .x12).all fun i => dstOf i != some r) = true := by
+  lit_decide
+
+theorem pOut11_v : (pOut .x11).all (fun i => vdstOf i == none) = true := by lit_decide
+theorem pOut12_v : (pOut .x12).all (fun i => vdstOf i == none) = true := by lit_decide
+
+theorem pOut_ok (s : State) {a b : Reg} (hab : (a = .x11 ∧ b = .x12) ∨ (a = .x12 ∧ b = .x11)) :
+    ∃ s', runBlock isa (pOut a) s = some s' ∧
+      (∀ p < 64, (s'.gpr a).getLsbD p =
+        ((match ySrc p with | some q => (s.gpr .x5).getLsbD q | none => false) ^^ (s.gpr a).getLsbD p)) ∧
+      (∀ r ∈ b :: pKept, s'.gpr r = s.gpr r) ∧ s'.v = s.v ∧
+      s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp := by
+  let W (i : Nat) : BitVec 64 := if i = 0 then s.gpr .x5 else s.gpr a
+  have go : ∀ (hchk : check (lanes 64 7) oCfg (linExt 2) (pOut a) (linEnv (pIns a)) (linPost 7 [(a, pG)]) = true)
+      (hkept : (b :: pKept).all (fun r => (pOut a).all fun i => dstOf i != some r) = true)
+      (hv : (pOut a).all (fun i => vdstOf i == none) = true),
+      ∃ s', runBlock isa (pOut a) s = some s' ∧
+      (∀ p < 64, (s'.gpr a).getLsbD p =
+        ((match ySrc p with | some q => (s.gpr .x5).getLsbD q | none => false) ^^ (s.gpr a).getLsbD p)) ∧
+      (∀ r ∈ b :: pKept, s'.gpr r = s.gpr r) ∧ s'.v = s.v ∧
+      s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp := by
+    intro hchk hkept hv
+    obtain ⟨s', hs', hout, hrd, hwr, hsp, hoth, hfr⟩ := linear_ok hchk (oCfg_ok s) W
+      (fun r i hri => by
+        simp only [pIns, List.mem_cons, List.mem_nil_iff, Prod.mk.injEq, or_false] at hri
+        rcases hri with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;> exact ⟨by decide, rfl⟩)
+      (fun j hj => absurd hj (by simp [oCfg]))
+    refine ⟨s', hs', fun p hp => ?_, fun r hr => hoth r (List.all_eq_true.mp hkept r hr), ?_, ?_,
+      hrd, hwr, hsp⟩
+    · rw [hout a pG (by simp) p hp, pG]
+      split
+      · rename_i q hq
+        have hq64 : q < 64 := ySrc_lt hp hq
+        simp only [xorBits_cons, xorBits_nil, Bool.xor_false, bitOf, W,
+          Nat.div_eq_of_lt hq64, Nat.mod_eq_of_lt hq64, show (64 + p) / 64 = 1 by omega,
+          show (64 + p) % 64 = p by omega, ite_true, show (1 : Nat) ≠ 0 by decide, ite_false]
+      · simp only [xorBits_cons, xorBits_nil, Bool.xor_false, bitOf, W, Bool.false_xor,
+          show (64 + p) / 64 = 1 by omega, show (64 + p) % 64 = p by omega,
+          show (1 : Nat) ≠ 0 by decide, ite_false]
+    · exact runBlock_v hv hs'
+    · exact frame_oCfg hfr
+  rcases hab with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
+  · exact go pOut11_check pOut11_kept pOut11_v
+  · exact go pOut12_check pOut12_kept pOut12_v
 
 /-! ## The round -/
 
@@ -204,71 +271,82 @@ theorem runBlock_append (a b : List Instr) (s : State) :
     | none => rfl
     | some s' => rw [runStep_some, runStep_some, ih]
 
-theorem expSrc_lt : ∀ q < 48, expSrc q < 32 := by decide
+theorem xSrc_rot_lt : ∀ p < 64, (xSrc p + 32 - rot) % 32 < 32 := by decide
 
-/-- The box inputs that `inputs` broadcasts. -/
-theorem boxIn_eq {s s₁ : State}
-    (h : ∀ t < 6, ∀ p < 64, (slotW s₁ t).getLsbD p = xorBits (inW s) (inG t p))
-    {i o : Nat} (hi : i < 8) (ho : o < 4) :
-    boxIn s₁ (6 * (7 - i) + o) = chunk ((s.gpr .x13).setWidth 32) ((keyW s).setWidth 48) i := by
-  apply BitVec.eq_of_getLsbD_eq
-  intro t ht
-  have hE := expSrc_lt (6 * (7 - i) + t) (by omega)
-  rw [boxIn, getLsbD_ofBits, decide_eq_true ht, Bool.true_and, h t ht _ (by omega),
-    getLsbD_chunk _ _ hi ht, inG, ite_eq_left (by omega), show (6 * (7 - i) + o) / 6 = 7 - i by omega]
-  simp only [xorBits_cons, xorBits_nil, Bool.xor_false, bitOf, inW, BitVec.getLsbD_setWidth,
-    Nat.div_eq_of_lt (show expSrc (6 * (7 - i) + t) < 64 by omega),
-    Nat.mod_eq_of_lt (show expSrc (6 * (7 - i) + t) < 64 by omega),
-    show (64 + 6 * (7 - i) + t) / 64 = 1 by omega, show (64 + 6 * (7 - i) + t) % 64 = 6 * (7 - i) + t by omega,
-    hE, show 6 * (7 - i) + t < 48 by omega, decide_true, Bool.true_and, ite_true]
-  rfl
+/-- The bit of `y` that `P` takes for a spread bit: box `i`'s output bit `q`. -/
+theorem y_bit {y : BitVec 64} (I : Nat → BitVec 8) (T : Nat → BitVec 8)
+    (hy : ∀ l < 8, y.extractLsb' (8 * l) 8 = T (I l).toNat) {i q : Nat} (hi : i < 8)
+    (hpos : posOf i q < 8) :
+    y.getLsbD (8 * laneOf i + posOf i q) = (T (I (laneOf i)).toNat).getLsbD (posOf i q) := by
+  rw [← hy _ (laneOf_lt i hi), BitVec.getLsbD_extractLsb', decide_eq_true hpos, Bool.true_and]
 
-theorem off_lt : ∀ i < 8, ∀ b < 4, off i b < 4 := by decide
+theorem posOf_lt : ∀ i < 8, ∀ q < 4, posOf i q < 8 := by decide
 
-theorem pSrc_lt : ∀ j < 32, pSrc j < 32 := by decide
-
-/-- One round: `(L, R) := (R, L ⊕ f(R, K))` on the low 32 bits of `x12` and
-`x13`, with the round key the low 48 bits of `[x14]`. -/
-theorem round_ok {s : State} (hok : Ok rCfg s) :
-    ∃ s', runBlock isa round s = some s' ∧
-      s'.gpr .x12 = s.gpr .x13 ∧
-      (s'.gpr .x13).setWidth 32 = (s.gpr .x12).setWidth 32 ^^^
-        Spec.TripleDes.roundFunction ((s.gpr .x13).setWidth 32) ((keyW s).setWidth 48) ∧
-      s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp ∧ (∀ r ∈ kept, s'.gpr r = s.gpr r) ∧
-      Frame [slotRegion rCfg s] s.mem s'.mem := by
-  obtain ⟨s₁, h₁, hx, rd₁, wr₁, sp₁, k₁, f₁⟩ := inputs_ok hok
-  have hok₁ : Ok rCfg s₁ := hok.congr (k₁ .x15 (by simp [kept])) (k₁ .x14 (by simp [kept])) rd₁ wr₁
-  obtain ⟨s₂, h₂, hy, rd₂, wr₂, sp₂, k₂, f₂⟩ := sboxes_ok hok₁
-  obtain ⟨s₃, h₃, o12, o13, rd₃, wr₃, sp₃, k₃, m₃⟩ := output_ok s₂
-  have x12₂ : s₂.gpr .x12 = s.gpr .x12 := (k₂ .x12 (by simp)).trans (k₁ .x12 (by simp))
-  have x13₂ : s₂.gpr .x13 = s.gpr .x13 := (k₂ .x13 (by simp)).trans (k₁ .x13 (by simp))
-  refine ⟨s₃, ?_, ?_, ?_, rd₃.trans (rd₂.trans rd₁), wr₃.trans (wr₂.trans wr₁), sp₃.trans (sp₂.trans sp₁),
-    fun r hr => (k₃ r hr).trans ((k₂ r (by simp [hr])).trans (k₁ r (by simp [hr]))), ?_⟩
-  · rw [round, runBlock_append, runBlock_append, h₁, Option.bind_some, h₂, Option.bind_some, h₃]
+/-- One round: `a := a ⊕ f(b, K)`, spread, with the spread round key at
+`x10`, moving it to the next. -/
+theorem round_ok {s : State} {a b : Reg} (hab : (a = .x11 ∧ b = .x12) ∨ (a = .x12 ∧ b = .x11))
+    (down : Bool) (hc : Consts s) (hk : InRegions (s.rd ++ s.wr) (s.gpr .x10) 8)
+    {l r : BitVec 32} {K : BitVec 64} (hl : s.gpr a = spreadW l) (hr : s.gpr b = spreadW r)
+    (hK : s.mem.readW (s.gpr .x10) 64 = spread K) :
+    ∃ s', runBlock isa (round a b down) s = some s' ∧
+      s'.gpr a = spreadW (l ^^^ Spec.TripleDes.roundFunction r (K.setWidth 48)) ∧
+      s'.gpr .x10 = (if down then s.gpr .x10 - 8 else s.gpr .x10 + 8) ∧
+      (∀ g ∈ b :: [.x1, .x2, .x3, .x4, .x14, .x15, .x16], s'.gpr g = s.gpr g) ∧
+      Consts s' ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp := by
+  have hb5 : b ≠ .x5 := by rcases hab with ⟨-, rfl⟩ | ⟨-, rfl⟩ <;> decide
+  have hb10 : b ≠ .x10 := by rcases hab with ⟨-, rfl⟩ | ⟨-, rfl⟩ <;> decide
+  have ha5 : a ≠ .x5 := by rcases hab with ⟨rfl, -⟩ | ⟨rfl, -⟩ <;> decide
+  have ha10 : a ≠ .x10 := by rcases hab with ⟨rfl, -⟩ | ⟨rfl, -⟩ <;> decide
+  obtain ⟨s₁, h₁, i₀, i₁, i₂, i₃, x10₁, g₁, v₁, m₁, rd₁, wr₁, sp₁⟩ := sIn_ok s hb5 hb10 down hk hc
+  have hc₁ : Consts s₁ := hc.congr v₁
+  let I : Nat → BitVec 8 := fun e => vbyte (s₁.v .v0) e
+  obtain ⟨s₂, h₂, y₂, g₂, v₂, m₂, rd₂, wr₂, sp₂⟩ := sOut_ok (s := s₁) I (fun _ _ => rfl)
+    (fun e he => i₁ e he) (fun e he => i₂ e he) (fun e he => i₃ e he)
+  have hc₂ : Consts s₂ := hc₁.congr v₂
+  obtain ⟨s₃, h₃, a₃, k₃, v₃, m₃, rd₃, wr₃, sp₃⟩ := pOut_ok s₂ hab
+  have hc₃ : Consts s₃ := hc₂.congr fun w _ _ _ _ => by rw [v₃]
+  have a₂ : s₂.gpr a = spreadW l := by rw [g₂ a ha5, g₁ a ha5 ha10, hl]
+  -- The S-boxes' outputs.
+  have hy : ∀ l' < 8, (s₂.gpr .x5).extractLsb' (8 * l') 8 = sTable (I l').toNat := by
+    intro l' hl'
+    rw [y₂ l' hl', hc₁.tab _ (I l').isLt]
+  have hI : ∀ i < 8, (I (laneOf i)).toNat = 2 ^ 6 * boxTable i + (chunk r (K.setWidth 48) i).toNat := by
+    intro i hi
+    have hL := laneOf_lt i hi
+    simp only [I]
+    rw [i₀ _ hL, hK, hr, index_byte K r hL, boxOf_laneOf i hi, BitVec.toNat_ofNat]
+    have := (chunk r (K.setWidth 48) i).isLt
+    have := tableOf_lt i hi
+    omega
+  refine ⟨s₃, ?_, ?_, ?_, fun g hg => ?_, hc₃, by rw [m₃, m₂, m₁], by rw [rd₃, rd₂, rd₁],
+    by rw [wr₃, wr₂, wr₁], by rw [sp₃, sp₂, sp₁]⟩
+  · rw [round, runBlock_cat_some (runBlock_cat_some h₁ h₂) h₃]
   · apply BitVec.eq_of_getLsbD_eq
     intro p hp
-    rw [o12 p hp, oG12]
-    simp only [xorBits_cons, xorBits_nil, Bool.xor_false, bitOf, oW,
-      show (128 + p) / 64 = 2 by omega, show (128 + p) % 64 = p by omega]
-    rw [ite_eq_right (by decide), ite_eq_right (by decide), x13₂]
-  · apply BitVec.eq_of_getLsbD_eq
-    intro j hj
-    have hu := pSrc_lt j hj
-    have hi : 7 - pSrc j / 4 < 8 := by omega
-    have hb : pSrc j % 4 < 4 := by omega
-    have ho := off_lt _ hi _ hb
-    have hpos : outPos (pSrc j) = 6 * (7 - (7 - pSrc j / 4)) + off (7 - pSrc j / 4) (pSrc j % 4) := by
-      rw [outPos, show 7 - (7 - pSrc j / 4) = pSrc j / 4 by omega]
-    rw [BitVec.getLsbD_setWidth, decide_eq_true hj, Bool.true_and, o13 j (by omega), oG13, ite_eq_left hj,
-      BitVec.getLsbD_xor, BitVec.getLsbD_setWidth, decide_eq_true hj, Bool.true_and,
-      getLsbD_roundFunction _ _ hj]
-    simp only [xorBits_cons, xorBits_nil, Bool.xor_false, bitOf, oW]
-    rw [Nat.div_eq_of_lt (show outPos (pSrc j) < 64 by omega), Nat.mod_eq_of_lt (show outPos (pSrc j) < 64 by omega),
-      show (64 + j) / 64 = 1 by omega, show (64 + j) % 64 = j by omega, ite_eq_left rfl, ite_eq_right (by decide),
-      ite_eq_left rfl, x12₂, hpos, hy _ hi _ hb, boxIn_eq hx hi ho, Bool.xor_comm]
-  · have hr : slotRegion rCfg s₁ = slotRegion rCfg s := by
-      simp only [slotRegion]; rw [show rCfg.base = .x15 from rfl, k₁ .x15 (by simp [kept])]
-    rw [hr] at f₂
-    rw [m₃]; exact f₁.trans f₂
+    rw [a₃ p hp, a₂, getLsbD_spreadW _ hp, getLsbD_spreadW _ hp]
+    have hj := xSrc_rot_lt p hp
+    cases hx : xBit p
+    · have : ySrc p = none := by simp [ySrc, hx]
+      rw [this]; simp
+    · rw [ySrc_eq hx, BitVec.getLsbD_xor, Bool.true_and, Bool.true_and,
+        getLsbD_roundFunction r _ hj]
+      dsimp only
+      have hu := pSrc_lt _ hj
+      have hi : 7 - pSrc ((xSrc p + 32 - rot) % 32) / 4 < 8 := by omega
+      have hq : pSrc ((xSrc p + 32 - rot) % 32) % 4 < 4 := Nat.mod_lt _ (by decide)
+      rw [y_bit I sTable hy hi (posOf_lt _ hi _ hq), hI _ hi,
+        sTable_bit _ hi _ (chunk r (K.setWidth 48) _).isLt _ hq, BitVec.ofNat_toNat,
+        BitVec.setWidth_eq, Bool.xor_comm]
+  · rw [k₃ .x10 (by simp [pKept]), g₂ .x10 (by decide), x10₁]
+  · have hg' : g ∈ b :: pKept := by
+      simp only [pKept, List.mem_cons, List.not_mem_nil, or_false] at hg ⊢
+      rcases hg with h | h | h | h | h | h | h | h <;> simp [h]
+    have h5 : g ≠ .x5 := by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hg
+      rcases hg with h | h | h | h | h | h | h | h <;> subst h <;> first | exact hb5 | decide
+    have h10 : g ≠ .x10 := by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hg
+      rcases hg with h | h | h | h | h | h | h | h <;> subst h <;> first | exact hb10 | decide
+    rw [k₃ g hg', g₂ g h5, g₁ g h5 h10]
 
 end VG.Proof.CmacTripleDes.AArch64

@@ -31,11 +31,11 @@ theorem dbl_ok (s : State) {K : Addr} (hb : s.gpr .rbx = K) {src dst : Nat}
     ∃ s', runBlock isa (dbl src dst) s = some s' ∧ s'.mem = dblMem s.mem K src dst ∧
       (∀ r, r ≠ .rax → r ≠ .rdx → r ≠ .rcx → r ≠ .r8 → s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   refine ⟨_, by
-    simp (config := {decide := true}) only [dbl, runBlock_cons, runStep_some, runBlock_nil, at_, exec,
+    simp only [reduceCtorEq, ↓reduceIte, Nat.reduceLeDiff, Nat.reduceEqDiff, Nat.reduceSub, Nat.reducePow, and_self, BitVec.reduceSignExtend, dbl, runBlock_cons, runStep_some, runBlock_nil, at_, exec,
       readSrc, readSrc32, execAlu, execShift, State.load64, State.store64, State.ea, State.setReg32, offset_nat,
       Option.bind_some, Option.map_some, gpr_setReg, gpr_arithFlags, gpr_setFlags, mem_setReg, mem_arithFlags,
       mem_setFlags, rd_setReg, rd_arithFlags, rd_setFlags, wr_setReg, wr_arithFlags, wr_setFlags,
-      ite_true, ite_false, hb, r₀, r₁, w₀, w₁]
+      hb, r₀, r₁, w₀, w₁]
     rfl, ?_⟩
   refine ⟨?_, ?_, rfl, rfl⟩
   · rfl
@@ -87,10 +87,10 @@ theorem subkeysPre_ok (s : State)
       (∀ r ∈ calleeSaved, r ≠ .rbx → r ≠ .rbp → s'.gpr r = s.gpr r) ∧
       s'.mem = preMem s ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   refine ⟨_, by
-    simp (config := {decide := true}) only [subkeysPre, ctrArgs, cOff, List.cons_append, List.nil_append,
+    simp only [reduceCtorEq, ↓reduceIte, Nat.reduceAdd, Nat.reducePow, BitVec.reduceSignExtend, subkeysPre, ctrArgs, cOff, List.cons_append, List.nil_append,
       runBlock_cons, runStep_some, runBlock_nil, at_, exec, readSrc, readSrc32, execAlu, State.store64,
       State.ea, State.setReg32, offset_nat, Option.bind_some, Option.map_some, gpr_setReg, gpr_arithFlags,
-      mem_setReg, rd_setReg, wr_setReg, ite_true, ite_false, w₁, w₂, w₃, w₄, w₅, w₆]
+      mem_setReg, rd_setReg, wr_setReg, w₁, w₂, w₃, w₄, w₅, w₆]
     rfl, ?_⟩
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   all_goals first
@@ -172,8 +172,8 @@ theorem restore2_ok (s : State) {B : Addr} (hb : s.gpr .rbp = B)
       s'.gpr .rbp = s.mem.readW (B + BitVec.ofNat 64 2072) 64 ∧
       (∀ r, r ≠ .rbx → r ≠ .rbp → s'.gpr r = s.gpr r) ∧ s'.mem = s.mem := by
   refine ⟨_, by
-    simp (config := {decide := true}) only [runBlock_cons, runStep_some, runBlock_nil, at_, exec, readSrc,
-      State.load64, State.ea, offset_nat, gpr_setReg, mem_setReg, rd_setReg, wr_setReg, ite_true, ite_false,
+    simp only [reduceCtorEq, ↓reduceIte, runBlock_cons, runStep_some, runBlock_nil, at_, exec, readSrc,
+      State.load64, State.ea, offset_nat, gpr_setReg, mem_setReg, rd_setReg, wr_setReg, 
       Option.map_some, hb, r₁, r₂]
     rfl, ?_⟩
   refine ⟨?_, ?_, ?_, rfl⟩

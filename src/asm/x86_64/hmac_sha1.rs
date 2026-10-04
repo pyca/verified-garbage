@@ -173,7 +173,7 @@ pub(crate) unsafe extern "sysv64" fn vg_hmac_sha1_finalize(inner: *mut [u8; 84],
         "mov rdx, r15",
         "add rdx, 208",
         "mov rcx, r15",
-        "call {vg_sha1_finalize}",
+        "call {vg_sha1_finalize_scratch}",
         "mov eax, DWORD PTR [r12]",
         "mov DWORD PTR [rbx], eax",
         "mov eax, DWORD PTR [r12+4]",
@@ -245,13 +245,13 @@ pub(crate) unsafe extern "sysv64" fn vg_hmac_sha1_finalize(inner: *mut [u8; 84],
         "mov r15, QWORD PTR [r15+200]",
         "ret",
         ".p2align 6",
-        vg_sha1_finalize = sym super::sha1::vg_sha1_finalize,
+        vg_sha1_finalize_scratch = sym super::sha1::vg_sha1_finalize_scratch,
         vg_sha1_compress = sym super::sha1::vg_sha1_compress,
     )
 }
 
 /// The CPU features `vg_hmac_sha1_init_shani` requires (`Artifact.features`).
-pub(crate) const VG_HMAC_SHA1_INIT_SHANI_FEATURES: &[&str] = &["sha", "ssse3"];
+pub(crate) const VG_HMAC_SHA1_INIT_SHANI_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["sha", "ssse3"]);
 
 /// Starts an HMAC-SHA-1 computation with a key of at most 64 bytes: makes the SHA-1 streaming state `*inner` represent `K₀ ⊕ ipad` and `*outer` represent `K₀ ⊕ opad`, where `K₀` is the `key_len` bytes at `key` padded with zeros to 64 bytes (FIPS 198-1). The text is then absorbed with `vg_sha1_update` on `*inner` (its `count` starting at 64), and the MAC computed with `vg_hmac_sha1_finalize`.
 ///
@@ -395,7 +395,7 @@ pub(crate) unsafe extern "sysv64" fn vg_hmac_sha1_init_shani(inner: *mut [u8; 84
 }
 
 /// The CPU features `vg_hmac_sha1_finalize_shani` requires (`Artifact.features`).
-pub(crate) const VG_HMAC_SHA1_FINALIZE_SHANI_FEATURES: &[&str] = &["sha", "ssse3"];
+pub(crate) const VG_HMAC_SHA1_FINALIZE_SHANI_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["sha", "ssse3"]);
 
 /// Finishes an HMAC-SHA-1 computation: if, for a 64-byte key `K₀` and a text of fewer than 2⁶⁴ − 64 bytes, the SHA-1 streaming state `*inner` represents `(K₀ ⊕ ipad) ‖ text`, of `count` bytes, and `*outer` represents `K₀ ⊕ opad`, writes the HMAC-SHA-1 of the text under `K₀` (20 bytes) to `*out`.
 ///
@@ -429,7 +429,7 @@ pub(crate) unsafe extern "sysv64" fn vg_hmac_sha1_finalize_shani(inner: *mut [u8
         "mov rdx, r15",
         "add rdx, 208",
         "mov rcx, r15",
-        "call {vg_sha1_finalize_shani}",
+        "call {vg_sha1_finalize_scratch_shani}",
         "mov eax, DWORD PTR [r12]",
         "mov DWORD PTR [rbx], eax",
         "mov eax, DWORD PTR [r12+4]",
@@ -501,7 +501,7 @@ pub(crate) unsafe extern "sysv64" fn vg_hmac_sha1_finalize_shani(inner: *mut [u8
         "mov r15, QWORD PTR [r15+200]",
         "ret",
         ".p2align 6",
-        vg_sha1_finalize_shani = sym super::sha1::vg_sha1_finalize_shani,
+        vg_sha1_finalize_scratch_shani = sym super::sha1::vg_sha1_finalize_scratch_shani,
         vg_sha1_compress_shani = sym super::sha1::vg_sha1_compress_shani,
     )
 }

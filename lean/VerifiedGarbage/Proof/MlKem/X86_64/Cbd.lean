@@ -1,4 +1,5 @@
 import VerifiedGarbage.Impl.MlKem.X86_64.Cbd
+import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.MlKem.X86_64.AddSub
 import VerifiedGarbage.Proof.MlKem.Encode
 import VerifiedGarbage.Proof.Framework.X86_64.Taint
@@ -43,7 +44,7 @@ theorem cbd_vals : ∀ v < 256, (cbdFix (nib 0 (cbdE (BitVec.ofNat 16 v)))).toNa
 
 theorem word_psrlw (a : BitVec 128) (n : BitVec 8) (hn : n.toNat ≤ 15) {i : Nat} (hi : i < 8) :
     word (XShiftOp.eval .psrlw a n) i = word a i >>> n.toNat := by
-  simp only [XShiftOp.eval, ite_eq_right_of_eq_false _ _ (eq_false (show ¬ 15 < n.toNat by omega))]
+  simp only [XShiftOp.eval, ite_eq_right_of_eq_false _ _ (eq_false (show ¬ 15 < n.toNat by bdd_omega))]
   exact word_ofWords _ hi
 
 /-- The even byte of a word read from memory. -/
@@ -53,11 +54,11 @@ theorem word_lo (m : Mem) (a : Addr) {i : Nat} (hi : i < 8) :
   apply BitVec.eq_of_getLsbD_eq; intro j hj
   simp only [BitVec.getLsbD_and, Mem.readW, BitVec.getLsbD_setWidth]
   by_cases h : j < 8
-  · rw [getLsbD_read _ _ (by omega), show j / 8 = 0 by omega, show j % 8 = j by omega, BitVec.add_zero,
+  · rw [getLsbD_read _ _ (by bdd_omega), show j / 8 = 0 by bdd_omega, show j % 8 = j by bdd_omega, BitVec.add_zero,
       show (0x00FF#16).getLsbD j = true by revert j; decide]
     simp [h]
   · rw [show (0x00FF#16).getLsbD j = false by revert h hj; revert j; decide]
-    rw [BitVec.getLsbD_of_ge (m (a + BitVec.ofNat 64 (2 * i))) j (by omega)]; simp
+    rw [BitVec.getLsbD_of_ge (m (a + BitVec.ofNat 64 (2 * i))) j (by bdd_omega)]; simp
 
 /-- The odd byte of a word read from memory. -/
 theorem word_hi (m : Mem) (a : Addr) {i : Nat} (hi : i < 8) :
@@ -66,11 +67,11 @@ theorem word_hi (m : Mem) (a : Addr) {i : Nat} (hi : i < 8) :
   apply BitVec.eq_of_getLsbD_eq; intro j hj
   simp only [BitVec.getLsbD_ushiftRight, Mem.readW, BitVec.getLsbD_setWidth]
   by_cases h : j < 8
-  · rw [getLsbD_read _ _ (by omega), show (8 + j) / 8 = 1 by omega, show (8 + j) % 8 = j by omega,
+  · rw [getLsbD_read _ _ (by bdd_omega), show (8 + j) / 8 = 1 by bdd_omega, show (8 + j) % 8 = j by bdd_omega,
       BitVec.add_assoc, ← BitVec.ofNat_add]
-    simp [show 8 + j < 16 by omega, hj]
-  · simp only [show ¬ 8 + j < 16 by omega, decide_false, Bool.false_and]
-    rw [BitVec.getLsbD_of_ge (m (a + BitVec.ofNat 64 (2 * i + 1))) j (by omega), Bool.and_false]
+    simp [show 8 + j < 16 by bdd_omega, hj]
+  · simp only [show ¬ 8 + j < 16 by bdd_omega, decide_false, Bool.false_and]
+    rw [BitVec.getLsbD_of_ge (m (a + BitVec.ofNat 64 (2 * i + 1))) j (by bdd_omega), Bool.and_false]
 
 theorem dword_punpcklwd0' (a : BitVec 128) {j : Nat} (hj : j < 4) :
     dword (XBinOp.eval .punpcklwd a 0) j = (word a j).setWidth 32 := by
@@ -108,7 +109,7 @@ def twoD : BitVec 128 := 0x00000002000000020000000200000002#128
 
 theorem word_m {i : Nat} (hi : i < 8) : word m8V i = 0x00FF#16 ∧ word m9V i = 0x55#16 ∧
     word m10V i = 0x33#16 ∧ word m11V i = 0x22#16 ∧ word m12V i = 0x0F#16 := by
-  rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7) with
+  rcases (by bdd_omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7) with
     rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
 
 theorem dword_twoD {j : Nat} (hj : j < 4) : dword twoD j = 2#32 := by
@@ -145,8 +146,8 @@ theorem front_ok {s : State} (hc : Consts s) (h1 : InRegions (s.rd ++ s.wr) (s.g
   simp only [cbdFront, cbdNib]
   vrunm [h1, eval_movdqa]
   refine ⟨⟨hc.m8, hc.m9, hc.m10, hc.m11, hc.m12, hc.two, hc.z, hc.q⟩, fun k hk => ?_⟩
-  have hk2 : k / 2 < 8 := by omega
-  have h42 : 4 + k / 2 < 8 := by omega
+  have hk2 : k / 2 < 8 := by bdd_omega
+  have h42 : 4 + k / 2 < 8 := by bdd_omega
   obtain ⟨a8, a9, a10, a11, a12⟩ := word_m hk2
   obtain ⟨b8, b9, b10, b11, b12⟩ := word_m h42
   simp (disch := first | omega | decide) only [word_punpcklwd, word_punpckhwd, word_pand, word_paddw,
@@ -182,7 +183,7 @@ def grpX (A B : BitVec 128) (k : Nat) : BitVec 128 :=
 theorem dword_grpX (A B : BitVec 128) {k j : Nat} (hk : k < 4) (hj : j < 4) :
     dword (grpX A B k) j = grpV A B k j := by
   rcases cases4 hk with rfl | rfl | rfl | rfl <;> rcases cases4 hj with rfl | rfl | rfl | rfl <;>
-    simp (disch := omega) only [grpX, outV, ext2, grpV, cbdFix, cadd32, Nat.reduceMod, Nat.reduceDiv,
+    simp (disch := bdd_omega) only [grpX, outV, ext2, grpV, cbdFix, cadd32, Nat.reduceMod, Nat.reduceDiv,
       Nat.reduceEqDiff, ↓reduceIte, dword_paddd,
       dword_psubd, dword_pand,
       dword_psrad31, dword_punpcklqdq, dword_punpckhqdq, dword_punpcklwd0', dword_punpckhwd0', dword_twoD, dword_qD,
@@ -235,7 +236,7 @@ theorem body_ok {s : State} (hc : Consts s) (h1 : InRegions (s.rd ++ s.wr) (s.gp
   refine WP.mono (front_ok hc h1) fun s₁ ⟨hc₁, m₁, g₁, rd₁, wr₁, hn⟩ => ?_
   have hw₁ : ∀ off, off = 0 ∨ off = 64 → ∀ k < 4, InRegions s₁.wr (s₁.gpr .rsi + BitVec.ofNat 64 (off + 16 * k)) 16 :=
     fun off ho k hk => by
-      rw [wr₁, g₁, show off + 16 * k = 16 * (off / 16 + k) by omega]; exact hw _ (by omega)
+      rw [wr₁, g₁, show off + 16 * k = 16 * (off / 16 + k) by bdd_omega]; exact hw _ (by bdd_omega)
   rw [WP.block_append_iff]
   refine WP.mono (grp_ok (Or.inl rfl) hc₁ (hw₁ 0 (.inl rfl))) fun s₂ ⟨hc₂, g₂, rd₂, wr₂, x₂, m₂⟩ => ?_
   obtain ⟨x0, x1⟩ := x₂ rfl
@@ -268,20 +269,20 @@ theorem coeffAt_wr4 (m : Mem) (p : Addr) {c₀ off : Nat} (hoff : off = 0 ∨ of
   have ha : ∀ d, 4 ∣ d → coeffAddr p c₀ + BitVec.ofNat 64 d = coeffAddr p (c₀ + d / 4) := fun d hd => by
     rw [show d = 4 * (d / 4) from (Nat.mul_div_cancel' hd).symm, coeffAddr_off, Nat.mul_div_cancel_left _ (by decide)]
   simp only [wr4]
-  rw [ha off (by omega), ha (off + 16) (by omega), ha (off + 32) (by omega), ha (off + 48) (by omega),
-    coeffAt_write128 _ _ (by omega) _ hk, coeffAt_write128 _ _ (by omega) _ hk, coeffAt_write128 _ _ (by omega) _ hk,
-    coeffAt_write128 _ _ (by omega) _ hk]
+  rw [ha off (by bdd_omega), ha (off + 16) (by bdd_omega), ha (off + 32) (by bdd_omega), ha (off + 48) (by bdd_omega),
+    coeffAt_write128 _ _ (by bdd_omega) _ hk, coeffAt_write128 _ _ (by bdd_omega) _ hk, coeffAt_write128 _ _ (by bdd_omega) _ hk,
+    coeffAt_write128 _ _ (by bdd_omega) _ hk]
   generalize hb : c₀ + off / 4 = b at *
-  have e16 : (off + 16) / 4 = off / 4 + 4 := by omega
-  have e32 : (off + 32) / 4 = off / 4 + 8 := by omega
-  have e48 : (off + 48) / 4 = off / 4 + 12 := by omega
+  have e16 : (off + 16) / 4 = off / 4 + 4 := by bdd_omega
+  have e32 : (off + 32) / 4 = off / 4 + 8 := by bdd_omega
+  have e48 : (off + 48) / 4 = off / 4 + 12 := by bdd_omega
   rw [e16, e32, e48, ← Nat.add_assoc, ← Nat.add_assoc, ← Nat.add_assoc, hb]
   by_cases hin : b ≤ k ∧ k < b + 16
   · rw [ite_eq_left hin]
-    rcases (by omega : (k - b) / 4 = 0 ∨ (k - b) / 4 = 1 ∨ (k - b) / 4 = 2 ∨ (k - b) / 4 = 3) with h | h | h | h <;>
-      rw [h] <;> simp (disch := omega) only [ite_eq_left, ite_eq_right] <;> congr 1 <;> omega
+    rcases (by bdd_omega : (k - b) / 4 = 0 ∨ (k - b) / 4 = 1 ∨ (k - b) / 4 = 2 ∨ (k - b) / 4 = 3) with h | h | h | h <;>
+      rw [h] <;> simp (disch := bdd_omega) only [ite_eq_left, ite_eq_right] <;> congr 1 <;> omega
   · rw [ite_eq_right hin]
-    simp (disch := omega) only [ite_eq_right]
+    simp (disch := bdd_omega) only [ite_eq_right]
 
 /-- A coefficient from nibble `h` of byte `b` at `p`. -/
 theorem nib_val (m : Mem) (p : Addr) {h : Nat} (hh : h < 2) (b : Nat) :
@@ -290,7 +291,7 @@ theorem nib_val (m : Mem) (p : Addr) {h : Nat} (hh : h < 2) (b : Nat) :
         cbdY ((m (p + BitVec.ofNat 64 b)).toNat / 16 ^ h)) % 3329 := by
   have hv := cbd_vals _ (m (p + BitVec.ofNat 64 b)).isLt
   rw [BitVec.ofNat_toNat] at hv
-  rcases (by omega : h = 0 ∨ h = 1) with rfl | rfl
+  rcases (by bdd_omega : h = 0 ∨ h = 1) with rfl | rfl
   · rw [Nat.pow_zero, Nat.div_one]; exact hv.1
   · rw [Nat.pow_one]; exact hv.2
 
@@ -304,21 +305,21 @@ theorem grp_val {m : Mem} {p : Addr} {A₀ B₀ A₁ B₁ : BitVec 128} (hn : Ni
   unfold grpV
   by_cases hj2 : j < 2
   · rw [ite_eq_left hj2]
-    rcases (by omega : g = 0 ∨ g = 1) with rfl | rfl
-    · rw [ite_eq_left rfl, hn.a0 _ (by omega), show (2 * t + j) % 2 = j % 2 by omega,
-        show 2 * ((2 * t + j) / 2) = 8 * 0 + 2 * t + j / 2 by omega]
-      exact nib_val m p (by omega) _
-    · rw [ite_eq_right (by decide), hn.a1 _ (by omega), show (2 * t + j) % 2 = j % 2 by omega,
-        show 2 * (4 + (2 * t + j) / 2) = 8 * 1 + 2 * t + j / 2 by omega]
-      exact nib_val m p (by omega) _
+    rcases (by bdd_omega : g = 0 ∨ g = 1) with rfl | rfl
+    · rw [ite_eq_left rfl, hn.a0 _ (by bdd_omega), show (2 * t + j) % 2 = j % 2 by bdd_omega,
+        show 2 * ((2 * t + j) / 2) = 8 * 0 + 2 * t + j / 2 by bdd_omega]
+      exact nib_val m p (by bdd_omega) _
+    · rw [ite_eq_right (by decide), hn.a1 _ (by bdd_omega), show (2 * t + j) % 2 = j % 2 by bdd_omega,
+        show 2 * (4 + (2 * t + j) / 2) = 8 * 1 + 2 * t + j / 2 by bdd_omega]
+      exact nib_val m p (by bdd_omega) _
   · rw [ite_eq_right hj2]
-    rcases (by omega : g = 0 ∨ g = 1) with rfl | rfl
-    · rw [ite_eq_left rfl, hn.b0 _ (by omega), show (2 * t + j - 2) % 2 = j % 2 by omega,
-        show 2 * ((2 * t + j - 2) / 2) + 1 = 8 * 0 + 2 * t + j / 2 by omega]
-      exact nib_val m p (by omega) _
-    · rw [ite_eq_right (by decide), hn.b1 _ (by omega), show (2 * t + j - 2) % 2 = j % 2 by omega,
-        show 2 * (4 + (2 * t + j - 2) / 2) + 1 = 8 * 1 + 2 * t + j / 2 by omega]
-      exact nib_val m p (by omega) _
+    rcases (by bdd_omega : g = 0 ∨ g = 1) with rfl | rfl
+    · rw [ite_eq_left rfl, hn.b0 _ (by bdd_omega), show (2 * t + j - 2) % 2 = j % 2 by bdd_omega,
+        show 2 * ((2 * t + j - 2) / 2) + 1 = 8 * 0 + 2 * t + j / 2 by bdd_omega]
+      exact nib_val m p (by bdd_omega) _
+    · rw [ite_eq_right (by decide), hn.b1 _ (by bdd_omega), show (2 * t + j - 2) % 2 = j % 2 by bdd_omega,
+        show 2 * (4 + (2 * t + j - 2) / 2) + 1 = 8 * 1 + 2 * t + j / 2 by bdd_omega]
+      exact nib_val m p (by bdd_omega) _
 
 /-! ## The loop -/
 
@@ -328,10 +329,10 @@ theorem wr4_frame {m : Mem} {P : Addr} {c₀ off : Nat} (hoff : off = 0 ∨ off 
   have ha : ∀ d, 4 ∣ d → coeffAddr P c₀ + BitVec.ofNat 64 d = coeffAddr P (c₀ + d / 4) := fun d hd => by
     rw [show d = 4 * (d / 4) from (Nat.mul_div_cancel' hd).symm, coeffAddr_off, Nat.mul_div_cancel_left _ (by decide)]
   simp only [wr4]
-  rw [ha off (by omega), ha (off + 16) (by omega), ha (off + 32) (by omega), ha (off + 48) (by omega)]
-  exact ((((Frame.refl _ _).writeW (List.mem_singleton_self _) _ (polyR_contains _ (by omega))).writeW
-    (List.mem_singleton_self _) _ (polyR_contains _ (by omega))).writeW (List.mem_singleton_self _) _
-    (polyR_contains _ (by omega))).writeW (List.mem_singleton_self _) _ (polyR_contains _ (by omega))
+  rw [ha off (by bdd_omega), ha (off + 16) (by bdd_omega), ha (off + 32) (by bdd_omega), ha (off + 48) (by bdd_omega)]
+  exact ((((Frame.refl _ _).writeW (List.mem_singleton_self _) _ (polyR_contains _ (by bdd_omega))).writeW
+    (List.mem_singleton_self _) _ (polyR_contains _ (by bdd_omega))).writeW (List.mem_singleton_self _) _
+    (polyR_contains _ (by bdd_omega))).writeW (List.mem_singleton_self _) _ (polyR_contains _ (by bdd_omega))
 
 section
 variable (s₀ : State)
@@ -363,45 +364,45 @@ theorem val_eq {i : Nat} (hi : i < 8) {s : State} (hI : Inv s₀ i s) {g t j : N
       val s₀ (32 * i + 16 * g + 4 * t + j) := by
   have hb : s.mem (s.gpr .rdi + BitVec.ofNat 64 (8 * g + 2 * t + j / 2)) =
       (bytesAt s₀.mem (bP s₀) 128).getD ((32 * i + 16 * g + 4 * t + j) / 2) 0 := by
-    rw [hI.rdi, BitVec.add_assoc, ← BitVec.ofNat_add, bytesAt_getD _ _ (by omega),
-      show 16 * i + (8 * g + 2 * t + j / 2) = (32 * i + 16 * g + 4 * t + j) / 2 by omega]
-    exact bytes_frame hI.frame (by simpa using hp.2.2.1) (by decide) _ (by omega)
+    rw [hI.rdi, BitVec.add_assoc, ← BitVec.ofNat_add, bytesAt_getD _ _ (by bdd_omega),
+      show 16 * i + (8 * g + 2 * t + j / 2) = (32 * i + 16 * g + 4 * t + j) / 2 by bdd_omega]
+    exact bytes_frame hI.frame (by simpa using hp.2.2.1) (by decide) _ (by bdd_omega)
   rw [val, samplePolyCBD2_val _ (by rw [n_eq]; omega), nibble, q_eq, ← hb,
-    show (32 * i + 16 * g + 4 * t + j) % 2 = j % 2 by omega]
+    show (32 * i + 16 * g + 4 * t + j) % 2 = j % 2 by bdd_omega]
 
 theorem step {i : Nat} (hi : i < 8) {s : State} (hI : Inv s₀ i s) :
     WP isa (.block cbd2Body) s fun s' => Inv s₀ (i + 1) s' ∧
       s'.gpr .rcx = s.gpr .rcx - 1 ∧ s'.zf = some (s.gpr .rcx - 1 == 0) := by
   have hrd : s.rd ++ s.wr = [⟨bP s₀, 128⟩, pR (fP s₀)] := by rw [hI.rd, hI.wr, hp.1, hp.2.1]; rfl
   have hwr : s.wr = [pR (fP s₀)] := by rw [hI.wr, hp.2.1]
-  refine WP.mono (body_ok hI.c (by rw [hrd, hI.rdi]; exact ⟨⟨bP s₀, 128⟩, by simp, Offset.contains_base _ (by omega) (by omega)⟩)
+  refine WP.mono (body_ok hI.c (by rw [hrd, hI.rdi]; exact ⟨⟨bP s₀, 128⟩, by simp, Offset.contains_base _ (by bdd_omega) (by bdd_omega)⟩)
     (fun k hk => by
-      rw [hwr, hI.rsi, show 16 * k = 4 * (4 * k) by omega, coeffAddr_off]
-      exact ⟨_, List.mem_singleton_self _, polyR_contains _ (by omega)⟩))
+      rw [hwr, hI.rsi, show 16 * k = 4 * (4 * k) by bdd_omega, coeffAddr_off]
+      exact ⟨_, List.mem_singleton_self _, polyR_contains _ (by bdd_omega)⟩))
     fun s' ⟨hc', rd', wr', di', si', cx', z', _, A₀, B₀, A₁, B₁, hn, hm⟩ => ⟨?_, cx', z'⟩
   refine ⟨?_, ?_, rd'.trans hI.rd, wr'.trans hI.wr, hc', ?_, fun k hk => ?_⟩
   · rw [di', hI.rdi, show (16 : BitVec 64) = BitVec.ofNat 64 16 from rfl, BitVec.add_assoc, ← BitVec.ofNat_add,
       Nat.mul_succ]
   · rw [si', hI.rsi, show (128 : BitVec 64) = BitVec.ofNat 64 (4 * 32) from rfl, coeffAddr_off, Nat.mul_succ]
   · rw [hm, hI.rsi]
-    exact hI.frame.trans ((wr4_frame (.inl rfl) (by omega) _).trans (wr4_frame (.inr rfl) (by omega) _))
-  · rw [hm, hI.rsi, coeffAt_wr4 _ _ (.inr rfl) (by omega) _ (by omega),
-      coeffAt_wr4 _ _ (.inl rfl) (by omega) _ (by omega)]
+    exact hI.frame.trans ((wr4_frame (.inl rfl) (by bdd_omega) _).trans (wr4_frame (.inr rfl) (by bdd_omega) _))
+  · rw [hm, hI.rsi, coeffAt_wr4 _ _ (.inr rfl) (by bdd_omega) _ (by bdd_omega),
+      coeffAt_wr4 _ _ (.inl rfl) (by bdd_omega) _ (by bdd_omega)]
     by_cases hlo : k < 32 * i
-    · rw [ite_eq_right (by omega), ite_eq_right (by omega)]; exact hI.coeff k hlo
+    · rw [ite_eq_right (by bdd_omega), ite_eq_right (by bdd_omega)]; exact hI.coeff k hlo
     · obtain ⟨g, hg, t, ht, j, hj, rfl⟩ : ∃ g < 2, ∃ t < 4, ∃ j < 4, k = 32 * i + 16 * g + 4 * t + j :=
-        ⟨(k - 32 * i) / 16, by omega, (k - 32 * i) % 16 / 4, by omega, (k - 32 * i) % 4, by omega, by omega⟩
+        ⟨(k - 32 * i) / 16, by bdd_omega, (k - 32 * i) % 16 / 4, by bdd_omega, (k - 32 * i) % 4, by bdd_omega, by bdd_omega⟩
       have hv := grp_val hn hg ht hj
       rw [val_eq hp hi hI hg ht hj] at hv
-      rcases (by omega : g = 0 ∨ g = 1) with rfl | rfl
+      rcases (by bdd_omega : g = 0 ∨ g = 1) with rfl | rfl
       · rw [ite_eq_left rfl, ite_eq_left rfl] at hv
-        rw [ite_eq_right (by omega), ite_eq_left (by omega),
-          show (32 * i + 16 * 0 + 4 * t + j - (32 * i + 0 / 4)) / 4 = t by omega,
-          show (32 * i + 16 * 0 + 4 * t + j - (32 * i + 0 / 4)) % 4 = j by omega, dword_grpX _ _ ht hj, hv]
+        rw [ite_eq_right (by bdd_omega), ite_eq_left (by bdd_omega),
+          show (32 * i + 16 * 0 + 4 * t + j - (32 * i + 0 / 4)) / 4 = t by bdd_omega,
+          show (32 * i + 16 * 0 + 4 * t + j - (32 * i + 0 / 4)) % 4 = j by bdd_omega, dword_grpX _ _ ht hj, hv]
       · rw [ite_eq_right (by decide), ite_eq_right (by decide)] at hv
-        rw [ite_eq_left (by omega),
-          show (32 * i + 16 * 1 + 4 * t + j - (32 * i + 64 / 4)) / 4 = t by omega,
-          show (32 * i + 16 * 1 + 4 * t + j - (32 * i + 64 / 4)) % 4 = j by omega, dword_grpX _ _ ht hj, hv]
+        rw [ite_eq_left (by bdd_omega),
+          show (32 * i + 16 * 1 + 4 * t + j - (32 * i + 64 / 4)) / 4 = t by bdd_omega,
+          show (32 * i + 16 * 1 + 4 * t + j - (32 * i + 64 / 4)) % 4 = j by bdd_omega, dword_grpX _ _ ht hj, hv]
 
 theorem correct : ∃ t s', Exec isa Impl.MlKem.X86_64.cbd2 s₀ t s' ∧ abiPreserved s₀ s' ∧ cbd2K.post s₀ s' := by
   have hL : WP isa Impl.MlKem.X86_64.cbd2 s₀ (Inv s₀ 8) := by
@@ -415,7 +416,7 @@ theorem correct : ∃ t s', Exec isa Impl.MlKem.X86_64.cbd2 s₀ t s' ∧ abiPre
           simp only [RegUpd.gpr_setReg, RegUpd.gpr_setXmm, hr, ite_false]) fun s ⟨hc, hcx, hm0, k0⟩ => ?_)
     refine wp_countdown (cnt := .rcx) (N := 8) (by decide) (by decide) (Inv s₀)
       (fun i hi s hI _ => step hp hi hI) (fun _ h => h)
-      ⟨?_, ?_, k0.2.1, k0.2.2, hc, by rw [hm0]; exact Frame.refl _ _, fun k hk => absurd hk (by omega)⟩ hcx
+      ⟨?_, ?_, k0.2.1, k0.2.2, hc, by rw [hm0]; exact Frame.refl _ _, fun k hk => absurd hk (by bdd_omega)⟩ hcx
     · rw [k0.gpr (by decide)]; exact (BitVec.add_zero _).symm
     · rw [k0.gpr (by decide)]; exact (BitVec.add_zero _).symm
   obtain ⟨t, s', he, hI, hk⟩ := WP.keep [.rax, .rdi, .rsi, .rcx] hL (by decide)

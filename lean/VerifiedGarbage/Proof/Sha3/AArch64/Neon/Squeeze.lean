@@ -19,7 +19,7 @@ theorem OutKeep.trans {s t u : State} (h : OutKeep s t) (k : OutKeep t u) : OutK
     k.rd.trans h.rd,k.wr.trans h.wr,k.sp.trans h.sp⟩
 theorem OutKeep.upd {s t : State} {r : Reg} {v : BitVec 64}
     (h : Upd s t r v) (hr : r = .x6 ∨ r = .x7) : OutKeep s t :=
-  ⟨fun q h6 h7 => h.other q (by rcases hr with h | h <;> subst r <;> assumption),h.vec,h.rd,h.wr,h.sp⟩
+  ⟨fun q h6 h7 => h.other q (by rcases hr with h | h <;> subst r <;> with_reducible assumption),h.vec,h.rd,h.wr,h.sp⟩
 theorem OutKeep.mem {s t : State} {m : Mem} (h : Mupd s t m) : OutKeep s t :=
   ⟨fun _ _ _ => congrFun h.gpr _,h.vec,h.rd,h.wr,h.sp⟩
 

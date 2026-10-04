@@ -465,11 +465,11 @@ theorem initCarry_ok {s : State} {v : HashValue} (hv : Vars8 s v) :
   obtain ⟨h0, h1, h2, h3, h4, h5, h6, h7⟩ := hv
   apply WP.of_runBlock
   rw [initCarry_eq]
-  simp (config := {decide := true}) only [vars0, Keeps, runBlock_cons, runStep_some,
+  simp only [reduceCtorEq, ↓reduceIte, and_self, vars0, Keeps, runBlock_cons, runStep_some,
     runBlock_nil, exec, execAlu, readSrc, isa, RegUpd.gpr_setReg, RegUpd.mem_setReg, RegUpd.rd_setReg,
     RegUpd.wr_setReg, RegUpd.xmm_setReg, RegUpd.ymmHi_setReg, RegUpd.gpr_arithFlags,
     RegUpd.mem_arithFlags, RegUpd.rd_arithFlags, RegUpd.wr_arithFlags, RegUpd.xmm_arithFlags,
-    h0, h1, h2, h3, h4, h5, h6, h7, ite_true, ite_false,
+    h0, h1, h2, h3, h4, h5, h6, h7, 
     Option.map_some, Option.bind_some, Option.some.injEq, exists_eq_left']
   refine ⟨trivial, trivial, trivial, trivial, fun r hr => ?_, trivial, rfl⟩
   simp only [pubRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -585,8 +585,8 @@ theorem next_ok (s : State) :
     WP isa (.block [.alu .add T (.imm 128)]) s fun s' =>
       s'.gpr .r15 = s.gpr .r15 + 128 ∧ (∀ r, r ≠ .r15 → s'.gpr r = s.gpr r) ∧ Keeps s s' := by
   apply WP.of_runBlock
-  simp (config := {decide := true}) only [T, Keeps, runBlock_cons, runStep_some, runBlock_nil, exec, execAlu,
-    readSrc, isa, State.setReg, arithFlags, State.setFlags, e128, ite_true, Option.bind_some,
+  simp only [↓reduceIte, Nat.reducePow, and_self, T, Keeps, runBlock_cons, runStep_some, runBlock_nil, exec, execAlu,
+    readSrc, isa, State.setReg, arithFlags, State.setFlags, e128, Option.bind_some,
     Option.some.injEq, exists_eq_left']
   exact ⟨trivial, fun r hr => by simp [hr], trivial, trivial, trivial, fun r hr => by simp [pub_ne15 hr], trivial⟩
 
@@ -594,7 +594,7 @@ theorem cmp_ok (s : State) :
     WP isa (.block [.alu .cmp .rdx (.imm 1)]) s fun s' =>
       eval .e s' = some (s.gpr .rdx - 1 == 0) ∧ s'.gpr = s.gpr ∧ Keeps s s' := by
   apply WP.of_runBlock
-  simp (config := {decide := true}) only [Keeps, runBlock_cons, runStep_some, runBlock_nil, exec, execAlu,
+  simp only [and_self, implies_true, Keeps, runBlock_cons, runStep_some, runBlock_nil, exec, execAlu,
     readSrc, isa, arithFlags, State.setFlags, e1, Option.bind_some, Option.some.injEq, exists_eq_left']
   exact ⟨by simp [eval], trivial⟩
 
@@ -605,8 +605,8 @@ theorem adv_ok (s : State) (a b : BitVec 32) :
       (∀ r, r ≠ .rsi → r ≠ .rdx → s'.gpr r = s.gpr r) ∧
       s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.xmm = s.xmm ∧ s'.ymmHi = s.ymmHi := by
   apply WP.of_runBlock
-  simp (config := {decide := true}) only [runBlock_cons, runStep_some, runBlock_nil, exec, execAlu,
-    readSrc, isa, State.setReg, arithFlags, State.setFlags, ite_true, ite_false, Option.bind_some,
+  simp only [reduceCtorEq, ↓reduceIte, Nat.reducePow, and_self, runBlock_cons, runStep_some, runBlock_nil, exec, execAlu,
+    readSrc, isa, State.setReg, arithFlags, State.setFlags, Option.bind_some,
     Option.some.injEq, exists_eq_left']
   exact ⟨by simp [eval], trivial, trivial, fun r h1 h2 => by simp [h1, h2], trivial⟩
 

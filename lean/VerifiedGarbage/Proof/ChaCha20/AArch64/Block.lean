@@ -40,12 +40,12 @@ theorem qr_ok {a b c d : Reg} (hab : a ≠ b) (hac : a ≠ c) (had : a ≠ d) (h
       (∀ r, r ≠ a → r ≠ b → r ≠ c → r ≠ d → s'.gpr r = s.gpr r) ∧
       s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   apply WP.of_runBlock
-  simp (config := {decide := true}) only [qr, runBlock_cons, runStep_some,
+  simp only [↓reduceIte, Nat.reduceLeDiff, and_self, and_true, qr, runBlock_cons, runStep_some,
     runBlock_nil, exec_add, exec_logic,
     exec_ror_w (show 16 < 32 by decide), exec_ror_w (show 20 < 32 by decide),
     exec_ror_w (show 24 < 32 by decide), exec_ror_w (show 25 < 32 by decide), isa,
     State.read, State.write, Size.bits, ha, hb, hc, hd, hab, hac, had, hbc, hbd, hcd, hab.symm,
-    hac.symm, had.symm, hbc.symm, hbd.symm, hcd.symm, ite_true, ite_false,
+    hac.symm, had.symm, hbc.symm, hbd.symm, hcd.symm, 
     BitVec.setWidth_setWidth_of_le, BitVec.setWidth_eq, Option.some.injEq,
     exists_eq_left']
   and_intros
@@ -301,12 +301,12 @@ theorem add_step {s₀ : State} (hp : Pre s₀) {R : CState} {sB : State} {i : N
   apply WP.of_runBlock
   simp only [addWord, runBlock_cons, runStep_some,
     exec_ldr_w (show 4 * (i + 1) % 4 = 0 ∧ 4 * (i + 1) < 16384 by omega) hin, exec_add, isa, hx0, hv]
-  simp (config := {decide := true}) only [State.write, State.read, Size.bits, hne, ite_false,
-    hr, ite_true, BitVec.setWidth_setWidth_of_le, BitVec.setWidth_eq]
+  simp only [↓reduceIte, Nat.reduceLeDiff, State.write, State.read, Size.bits, hne, 
+    hr, BitVec.setWidth_setWidth_of_le, BitVec.setWidth_eq]
   rw [exec_str_w (show 4 * (i + 1) % 4 = 0 ∧ 4 * (i + 1) < 16384 by omega)
     (by simpa [State.write, hne, n1] using hout)]
-  simp (config := {decide := true}) only [runStep_some, runBlock_nil, Option.some.injEq,
-    exists_eq_left', ite_true, ite_false, hx1, n1, BitVec.setWidth_setWidth_of_le, BitVec.setWidth_eq]
+  simp only [reduceCtorEq, ↓reduceIte, Nat.reduceLeDiff, runStep_some, runBlock_nil, Option.some.injEq,
+    exists_eq_left', hx1, n1, BitVec.setWidth_setWidth_of_le, BitVec.setWidth_eq]
   have ho : (outR s₀).Contains (buf s₀ + BitVec.ofNat 64 (4 * (i + 1))) (32 / 8) :=
     contains_off (by lit_omega) (by lit_omega)
   refine ⟨?_, fun j hj h1 hji => ?_, fun j hj hij => ?_, h.frame.writeW (List.mem_singleton_self _) _ ho,
@@ -333,7 +333,7 @@ theorem first_ok {s₀ : State} (hp : Pre s₀) {R : CState} {s : State} (hh : H
     rw [hwr, hx1]; exact hp.out_out (k := 0) (by lit_omega)
   have h0 : s.gpr .x2 = R[0].setWidth 64 := hh 0 (by lit_omega)
   apply WP.of_runBlock
-  simp (config := {decide := true}) only [runBlock_cons, runStep_some,
+  simp only [Nat.reduceLeDiff, runBlock_cons, runStep_some,
     runBlock_nil, isa,
     exec_str_w (show 0 % 4 = 0 ∧ 0 < 16384 by omega) hout, Option.some.injEq, exists_eq_left', hx1, h0,
     BitVec.setWidth_setWidth_of_le, BitVec.setWidth_eq]
@@ -362,11 +362,11 @@ theorem last_ok {s₀ : State} (hp : Pre s₀) {R : CState} {sB s : State} (h : 
   have hv := hp.read_st h.frame (k := 0) (by lit_omega)
   apply WP.of_runBlock
   rw [last_eq]
-  simp (config := {decide := true}) only [runBlock_cons, runStep_some,
+  simp only [reduceCtorEq, ↓reduceIte, Nat.reduceLeDiff, Nat.reduceMul, runBlock_cons, runStep_some,
     runBlock_nil, exec_ldr_w
     (show 4 * 0 % 4 = 0 ∧ 4 * 0 < 16384 by omega), exec_add, exec_str_w
     (show 4 * 0 % 4 = 0 ∧ 4 * 0 < 16384 by omega), isa, State.read, State.write, Size.bits, hx0,
-    hx1, hin, hin', hout, hv, h.out0, ite_true, ite_false, BitVec.setWidth_setWidth_of_le,
+    hx1, hin, hin', hout, hv, h.out0, BitVec.setWidth_setWidth_of_le,
     BitVec.setWidth_eq, Option.some.injEq, exists_eq_left']
   refine ⟨fun j hj => ?_, fun r hr => ?_, ?_⟩
   · by_cases hj0 : j = 0
@@ -425,7 +425,7 @@ def satState : State where
 theorem block_correct (s : State) (hs : Proof.ChaCha20.blockAArch64.pre s) :
     ∃ t s', Exec isa block s t s' ∧ abiPreserved s s' ∧ Proof.ChaCha20.blockAArch64.post s s' := by
   obtain ⟨t, s', he, h₁, h₂⟩ := correct (pre_of s hs)
-  exact ⟨t, s', he, ⟨h₁, Exec.sp he, Exec.preservedV he⟩, h₂⟩
+  exact ⟨t, s', he, ⟨h₁, Exec.sp he, Exec.preservedV he (by lit_decide)⟩, h₂⟩
 
 theorem block_ct : ConstantTime isa Proof.ChaCha20.blockAArch64.pre Proof.ChaCha20.blockAArch64.pub
     Impl.ChaCha20.AArch64.block := by
@@ -433,7 +433,7 @@ theorem block_ct : ConstantTime isa Proof.ChaCha20.blockAArch64.pre Proof.ChaCha
   intro s₁ s₂ _ _ ⟨h1, h2, hsp⟩
   refine ⟨hsp, fun r hr => ?_⟩
   simp only [VG.AArch64.Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl <;> assumption
+  rcases hr with rfl | rfl <;> with_reducible assumption
 
 theorem block_verified :
     Verified AArch64.target Impl.ChaCha20.AArch64.block (Spec.ChaCha20.blockContract AArch64.abi) :=

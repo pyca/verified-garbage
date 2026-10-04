@@ -12,6 +12,7 @@ import VerifiedGarbage.TCB.X86_64.Target
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.ContractPost
 import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+import VerifiedGarbage.Proof.Framework.X86_64.TaintMono
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
@@ -611,7 +612,7 @@ theorem ptr_ok (d r : Reg) {k : Nat} (hk : k < 2 ^ 31) (s : State) :
       s'.gpr d = off (s.gpr r) k ∧ (∀ q, q ≠ d → s'.gpr q = s.gpr q) ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
       s'.mem = s.mem := by
   apply WP.of_runBlock
-  simp (config := {decide := true}) only [ptr, runBlock_cons, runStep_some, runBlock_nil, exec, readSrc,
+  simp only [and_self, ptr, runBlock_cons, runStep_some, runBlock_nil, exec, readSrc,
     execAlu, arithFlags, State.setReg, State.setFlags, Option.map_some, Option.bind_some,
     Option.some.injEq, exists_eq_left', ite_true, se_ofNat hk]
   exact ⟨by rw [off_eq], fun q hq => by simp [hq], trivial⟩
@@ -622,7 +623,7 @@ theorem anchor_ok (r : Reg) {k : Nat} (hk : k < 2 ^ 31) (s : State) :
       s'.gpr .r15 = s.gpr r - BitVec.ofNat 64 k ∧ (∀ q, q ≠ .r15 → s'.gpr q = s.gpr q) ∧ s'.rd = s.rd ∧
       s'.wr = s.wr ∧ s'.mem = s.mem := by
   apply WP.of_runBlock
-  simp (config := {decide := true}) only [anchor, runBlock_cons, runStep_some, runBlock_nil, exec,
+  simp only [and_self, anchor, runBlock_cons, runStep_some, runBlock_nil, exec,
     readSrc, execAlu, arithFlags, State.setReg, State.setFlags, Option.map_some, Option.bind_some,
     Option.some.injEq, exists_eq_left', ite_true, se_ofNat hk]
   exact ⟨trivial, fun q hq => by simp [hq], trivial⟩
@@ -2167,7 +2168,7 @@ theorem agree₀ {s₁ s₂ : State} (h₁ : preX86_64 s₁) (h₂ : preX86_64 s
   refine ⟨⟨fun r hr => ?_, fun h => by cases h⟩, fun _ => ?_, wf _ h₁, wf _ h₂, ?_, ?_,
     X86_64.Taint.noLo⟩
   · simp only [τ₀, RegSet.mem_ofList, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl | rfl | rfl <;> assumption
+    rcases hr with rfl | rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption
   · rw [h₁.2.1, h₂.2.1, p1, p4, p5]
   · intro sl h; simp [τ₀] at h
   · intro sl h; simp [τ₀] at h
@@ -2310,22 +2311,51 @@ end
 
 /-! ## `seal` and `open` -/
 
+/-! The analyses of the code that the checks below share, as summaries
+(`taint_summary`): the prologue, which every check before the call of
+`vg_chacha20_xor` starts with, and the calls of the Poly1305 functions, from
+the registers public at them (the larger set where the code after the call
+needs `rbx` and `rbp`). -/
+
+/-- The public registers at the calls of `vg_poly1305_blocks`. -/
+def τB (big : Bool) : X86_64.Taint.T :=
+  { regs := .ofList ((if big then [.rbx, .rbp] else []) ++ [.rdx, .rsp, .rsi, .rdi, .r13, .r14, .r15]),
+    flags := false, lens := [1024, 0], bases := [(.rdi, 0, 448)] }
+
+taint_summary prologueSum : taintS τ₀ prologue
+
+section
+open Impl.Poly1305.X86_64.Blocks
+taint_summary blocksBig : taintS (τB true) (.call scalar.name scalar.code)
+taint_summary blocksSmall : taintS (τB false) (.call scalar.name scalar.code)
+taint_summary blocksBigAvx2 : taintS (τB true) (.call avx2.name avx2.code)
+taint_summary blocksSmallAvx2 : taintS (τB false) (.call avx2.name avx2.code)
+taint_summary blocksBigAvx512 : taintS (τB true) (.call avx512.name avx512.code)
+taint_summary blocksSmallAvx512 : taintS (τB false) (.call avx512.name avx512.code)
+end
+
+taint_summary finalizeSum : taintS (τB false)
+  (.call "vg_poly1305_finalize" Impl.Poly1305.X86_64.finalize)
+
 /-- The code around the call of `vg_chacha20_xor`, for each implementation of
-`vg_poly1305_blocks`: the analysis descends into its calls, so it runs on
-each implementation's code. -/
+`vg_poly1305_blocks`, with the summaries. -/
 theorem sealPre_taint (b : Impl.Poly1305.X86_64.Blocks) :
-    ∃ h, (taint.check τ₀ (sealPre b) h).isSome = true := by
-  cases b <;> exact ⟨_, by taint_decide⟩
+    ∃ h, (taintS.check τ₀ (sealPre b) h).isSome = true := by
+  cases b <;> taint_decide_sum [prologueSum, blocksBig, blocksSmall, blocksBigAvx2, blocksSmallAvx2,
+    blocksBigAvx512, blocksSmallAvx512]
 
 theorem sealPost_taint (b : Impl.Poly1305.X86_64.Blocks) :
-    ∃ h, (taint.check τ₁ (sealPost b) h).isSome = true := by
-  cases b <;> exact ⟨_, by taint_decide⟩
+    ∃ h, (taintS.check τ₁ (sealPost b) h).isSome = true := by
+  cases b <;> taint_decide_sum [blocksBig, blocksSmall, blocksBigAvx2, blocksSmallAvx2,
+    blocksBigAvx512, blocksSmallAvx512, finalizeSum]
 
 theorem openPre_taint (b : Impl.Poly1305.X86_64.Blocks) :
-    ∃ h, (taint.check τ₀ (openPre b) h).isSome = true := by
-  cases b <;> exact ⟨_, by taint_decide⟩
+    ∃ h, (taintS.check τ₀ (openPre b) h).isSome = true := by
+  cases b <;> taint_decide_sum [prologueSum, blocksBig, blocksSmall, blocksBigAvx2, blocksSmallAvx2,
+    blocksBigAvx512, blocksSmallAvx512]
 
-theorem openPost_taint : ∃ h, (taint.check τ₁ openPost h).isSome = true := ⟨_, by taint_decide⟩
+theorem openPost_taint : ∃ h, (taintS.check τ₁ openPost h).isSome = true := by
+  taint_decide_sum [finalizeSum]
 
 section
 variable (v : Proof.ChaCha20.X86_64.XorImpl) {s₀ s₀' : State} (h₀ : preX86_64 s₀) (h₀' : preX86_64 s₀')
@@ -2337,11 +2367,11 @@ theorem seal_rel : RelCT isa (fun s₁ s₂ => s₁ = s₀ ∧ s₂ = s₀') («
   have hp' := APre.of _ h₀'
   obtain ⟨_, hpre⟩ := sealPre_taint v.poly
   obtain ⟨_, hpost⟩ := sealPost_taint v.poly
-  have pre := ((RelCT.taint (A := taint) (P := fun s₁ s₂ => s₁ = s₀ ∧ s₂ = s₀') τ₀
+  have pre := ((RelCT.taint (A := taintS) (P := fun s₁ s₂ => s₁ = s₀ ∧ s₂ = s₀') τ₀
     (fun _ _ h => h.1 ▸ h.2 ▸ agree₀ h₀ h₀' hq) hpre).wp (F₁ := XArgs s₀) (F₂ := XArgs s₀') fun _ _ h =>
     ⟨by rw [h.1]; exact sealPre_ok v.poly hp, by rw [h.2]; exact sealPre_ok v.poly hp'⟩).mono
     (fun _ _ h => h) fun _ _ h => h.2
-  have post := RelCT.taint (A := taint) (P := fun s₁ s₂ => After s₀ s₁ ∧ After s₀' s₂) τ₁
+  have post := RelCT.taint (A := taintS) (P := fun s₁ s₂ => After s₀ s₁ ∧ After s₀' s₂) τ₁
     (fun _ _ h => agree₁ hp hp' hq h.1 h.2) hpost
   exact RelCT.of_exec seal_exec (pre.seq ((call_rel hp hp' hq v).seq post))
 
@@ -2350,11 +2380,11 @@ theorem open_rel : RelCT isa (fun s₁ s₂ => s₁ = s₀ ∧ s₂ = s₀') («
   have hp' := APre.of _ h₀'
   obtain ⟨_, hpre⟩ := openPre_taint v.poly
   obtain ⟨_, hpost⟩ := openPost_taint
-  have pre := ((RelCT.taint (A := taint) (P := fun s₁ s₂ => s₁ = s₀ ∧ s₂ = s₀') τ₀
+  have pre := ((RelCT.taint (A := taintS) (P := fun s₁ s₂ => s₁ = s₀ ∧ s₂ = s₀') τ₀
     (fun _ _ h => h.1 ▸ h.2 ▸ agree₀ h₀ h₀' hq) hpre).wp (F₁ := XArgs s₀) (F₂ := XArgs s₀') fun _ _ h =>
     ⟨by rw [h.1]; exact openPre_ok v.poly hp, by rw [h.2]; exact openPre_ok v.poly hp'⟩).mono
     (fun _ _ h => h) fun _ _ h => h.2
-  have post := RelCT.taint (A := taint) (P := fun s₁ s₂ => After s₀ s₁ ∧ After s₀' s₂) τ₁
+  have post := RelCT.taint (A := taintS) (P := fun s₁ s₂ => After s₀ s₁ ∧ After s₀' s₂) τ₁
     (fun _ _ h => agree₁ hp hp' hq h.1 h.2) hpost
   exact RelCT.of_exec open_exec (pre.seq ((call_rel hp hp' hq v).seq post))
 

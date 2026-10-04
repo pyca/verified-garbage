@@ -1,4 +1,5 @@
-//! Pure Ed25519 known-answer tests from the vendored RFC 8032, section 7.1.
+//! Known-answer tests from the vendored RFC 8032: pure Ed25519 (section 7.1)
+//! here, Ed448 (section 7.4) in `ed448`.
 
 #![cfg(any(
     target_arch = "x86_64",
@@ -6,6 +7,8 @@
     target_arch = "x86",
     target_arch = "arm"
 ))]
+
+mod ed448;
 
 use verified_garbage::ed25519::{Error, SigningKey, VerifyingKey};
 

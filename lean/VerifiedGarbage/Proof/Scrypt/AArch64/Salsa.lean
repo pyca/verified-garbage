@@ -43,9 +43,9 @@ theorem line_regs {a b c : Reg} (ha : a ≠ .x1) {sh : Nat} (hsh : sh < 32) (s :
       (∀ r, r ≠ a → r ≠ .x1 → s'.gpr r = s.gpr r) ∧
       s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   apply WP.of_runBlock
-  simp (config := {decide := true}) only [runBlock_cons, runStep_some, runBlock_nil, exec_add,
+  simp only [↓reduceIte, Nat.reduceLeDiff, and_self, runBlock_cons, runStep_some, runBlock_nil, exec_add,
     exec_logic, exec_ror_w hsh, isa, State.read, State.write, Size.bits, hva, hvb, hvc, ha,
-    ite_true, ite_false, BitVec.setWidth_setWidth_of_le, BitVec.setWidth_eq,
+    BitVec.setWidth_setWidth_of_le, BitVec.setWidth_eq,
     Option.some.injEq, exists_eq_left']
   refine ⟨trivial, fun r h1 h2 => ?_, trivial⟩
   simp only [h1, h2, ite_false]
@@ -271,12 +271,12 @@ theorem finish_step {s₀ : State} (hp : Pre s₀) {R : Vector Word 16} {i : Nat
   apply WP.of_runBlock
   simp only [finishWord, runBlock_cons, runStep_some,
     exec_ldr_w (show 4 * i % 4 = 0 ∧ 4 * i < 16384 by omega) hin, exec_add, isa, hx0, hv]
-  simp (config := {decide := true}) only [State.write, State.read, Size.bits, n1, ite_false,
-    hr, ite_true, BitVec.setWidth_setWidth_of_le, BitVec.setWidth_eq]
+  simp only [↓reduceIte, Nat.reduceLeDiff, State.write, State.read, Size.bits, n1, 
+    hr, BitVec.setWidth_setWidth_of_le, BitVec.setWidth_eq]
   rw [exec_str_w (show 4 * i % 4 = 0 ∧ 4 * i < 16384 by omega)
     (by simpa [State.write, n0, n1, hx0] using hout)]
-  simp (config := {decide := true}) only [runStep_some, runBlock_nil, Option.some.injEq,
-    exists_eq_left', ite_true, ite_false, hx0, n0, BitVec.setWidth_setWidth_of_le,
+  simp only [reduceCtorEq, ↓reduceIte, Nat.reduceLeDiff, runStep_some, runBlock_nil, Option.some.injEq,
+    exists_eq_left', hx0, n0, BitVec.setWidth_setWidth_of_le,
     BitVec.setWidth_eq]
   refine ⟨fun j hj => ?_, fun j hj hij => ?_, h.rd, h.wr, fun r hw hx => ?_⟩
   · by_cases e : j = i
@@ -346,7 +346,7 @@ theorem salsa_correct (s : State) (hs : Proof.Scrypt.salsaAArch64.pre s) :
     ∃ t s', Exec isa Impl.Scrypt.AArch64.salsa s t s' ∧ abiPreserved s s' ∧
       Proof.Scrypt.salsaAArch64.post s s' := by
   obtain ⟨t, s', he, h₁, h₂⟩ := correct (pre_of s hs)
-  exact ⟨t, s', he, ⟨h₁, Exec.sp he, Exec.preservedV he⟩, h₂⟩
+  exact ⟨t, s', he, ⟨h₁, Exec.sp he, Exec.preservedV he (by lit_decide)⟩, h₂⟩
 
 theorem salsa_ct : ConstantTime isa Proof.Scrypt.salsaAArch64.pre Proof.Scrypt.salsaAArch64.pub
     Impl.Scrypt.AArch64.salsa := by

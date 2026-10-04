@@ -204,9 +204,9 @@ theorem map_step {op : List Instr} {F : Nat → Nat → Nat} (hop : OpSpec op F)
   have ecx₂ : s₂.gpr .ecx = BitVec.ofNat 32 (256 - k) := by rw [g₂ _ (by decide) (by decide), h.ecx]
   have out : InRegions s₂.wr (coeffAddr (fA s₀) k) 4 := hp.in_f w₂ hk
   apply WP.of_runBlock
-  simp (config := {decide := true}) only [runBlock_cons, runStep_some, runBlock_nil, exec, execAlu,
+  simp only [reduceCtorEq, ↓reduceIte, Nat.reducePow, runBlock_cons, runStep_some, runBlock_nil, exec, execAlu,
     readSrc, State.ea, at_, State.store32, State.setReg, arithFlags, State.setFlags, esi₂,
-    hp.ea_f k hk, out, ite_true, ite_false, Option.bind_some, Option.some.injEq, exists_eq_left']
+    hp.ea_f k hk, out, Option.bind_some, Option.some.injEq, exists_eq_left']
   have hv : s₂.gpr .eax = newC F s₀ k := eq_ofNat_of_toNat v₂
   refine ⟨⟨by simp [g₂, h.esp], r₂, w₂, ?_, ?_, ?_, ?_, fun i hi => ?_⟩, ?_⟩
   · simp only [ite_true, ite_false, show Reg.esi ≠ Reg.ecx by decide, show Reg.esi ≠ Reg.edi by decide]
@@ -254,9 +254,9 @@ theorem init_piece (F : Nat → Nat → Nat) :
     obtain ⟨a₁, i₁, v₁⟩ := hp.arg_P0 (i := 1) (by omega)
     simp only [Nat.mul_zero, Nat.add_zero, Nat.mul_one, Nat.reduceAdd] at a₀ a₁
     apply WP.of_runBlock
-    simp (config := {decide := true}) only [mapInit, at_, runBlock_cons, runStep_some, runBlock_nil,
+    simp only [reduceCtorEq, ↓reduceIte, mapInit, at_, runBlock_cons, runStep_some, runBlock_nil,
       exec, readSrc, State.ea, State.load32, State.setReg, Option.map_some, a₀, a₁, i₀, i₁, v₀, v₁,
-      ite_true, ite_false, Option.some.injEq, exists_eq_left']
+      Option.some.injEq, exists_eq_left']
     refine ⟨by simp, rfl, rfl, by simp, by simp, by simp, Frame.refl _ _, fun i hi => ?_⟩
     simp only [Nat.not_lt_zero, ite_false]
     exact hp.f_P0 hi

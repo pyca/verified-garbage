@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.Sha1.X86.Stream.Init
 import VerifiedGarbage.Proof.Sha1.X86.Stream.Md
 import VerifiedGarbage.Proof.Md5.X86.Stream.Init
 import VerifiedGarbage.Proof.Md5.X86.Stream.Md
+import VerifiedGarbage.Proof.Framework.TaintBatch
 
 /-!
 # HMAC over any streaming hash function on x86 (32-bit): the hash functions
@@ -74,85 +75,89 @@ theorem finK_of_finKr {c : Prog isa} {S Wb F D : Nat} {R : Mem → Addr → List
 /-! ## SHA-1 -/
 
 def sha1H : Hash := ⟨64, 84, 20, 20, 20, "vg_sha1_init", Impl.Sha1.X86.Stream.init,
-  "vg_sha1_update", Impl.Sha1.X86.Stream.update, "vg_sha1_finalize", Impl.Sha1.X86.Stream.finalize⟩
+  "vg_sha1_update_scratch", Impl.Sha1.X86.Stream.update, "vg_sha1_finalize_scratch", Impl.Sha1.X86.Stream.finalize⟩
 
-def sha1OK : HashOK sha1H where
-  SH := Spec.Hmac.sha1S
-  Wb := 160
-  hS := rfl
-  hD := rfl
-  hB := rfl
-  hDF := by decide
-  hF := by decide
-  hD0 := by decide
-  hS0 := by decide
-  hSB := by decide
-  hB0 := by decide
-  hBB := by decide
-  hWb := by decide
-  hW := by decide
-  repr := sha1_repr
-  init := Proof.Sha1.X86.Stream.init_verified
-  upd := Proof.Sha1.X86.Stream.Update.update_verified
-  fin := Proof.Sha1.X86.Stream.Finalize.finalize_verified.of_implies
-    { pre := fun _ h => h
-      post := fun s s' _ h m hr _ hc => by
-        show List.take 20 (Spec.Sha1.bytesAt s'.mem _ 20) = _
-        rw [List.take_of_length_le (by simp [Spec.Sha1.bytesAt])]
-        exact h m hr hc
-      pub := fun _ _ _ _ h => h
-      sat := Proof.Sha1.X86.Stream.Finalize.finalize_verified.2.2 }
-  initSp := nosp_of (by lit_decide)
-  updSp := nosp_of (by lit_decide)
-  finSp := nosp_of (by lit_decide)
-  initSU := by lit_decide
-  updSU := by lit_decide
-  finSU := by lit_decide
+def sha1OK : HashOK sha1H := by
+  refine {
+    SH := Spec.Hmac.sha1S
+    Wb := 160
+    hS := rfl
+    hD := rfl
+    hB := rfl
+    hDF := by decide
+    hF := by decide
+    hD0 := by decide
+    hS0 := by decide
+    hSB := by decide
+    hB0 := by decide
+    hBB := by decide
+    hWb := by decide
+    hW := by decide
+    repr := sha1_repr
+    init := Proof.Sha1.X86.Stream.init_verified
+    upd := Proof.Sha1.X86.Stream.Update.update_verified
+    fin := Proof.Sha1.X86.Stream.Finalize.finalize_verified.of_implies
+      { pre := fun _ h => h
+        post := fun s s' _ h m hr _ hc => by
+          show List.take 20 (Spec.Sha1.bytesAt s'.mem _ 20) = _
+          rw [List.take_of_length_le (by simp [Spec.Sha1.bytesAt])]
+          exact h m hr hc
+        pub := fun _ _ _ _ h => h
+        sat := Proof.Sha1.X86.Stream.Finalize.finalize_verified.2.2 }
+    initSp := nosp_of ?_
+    updSp := nosp_of ?_
+    finSp := nosp_of ?_
+    initSU := ?_
+    updSU := ?_
+    finSU := ?_ }
+  taint_decide_all
 
 /-! ## MD5 -/
 
 def md5H : Hash := ⟨64, 80, 16, 16, 14, "vg_md5_init", Impl.Md5.X86.Stream.init,
-  "vg_md5_update", Impl.Md5.X86.Stream.update, "vg_md5_finalize", Impl.Md5.X86.Stream.finalize⟩
+  "vg_md5_update_scratch", Impl.Md5.X86.Stream.update, "vg_md5_finalize_scratch", Impl.Md5.X86.Stream.finalize⟩
 
-def md5OK : HashOK md5H where
-  SH := Spec.Hmac.md5S
-  Wb := 112
-  hS := rfl
-  hD := rfl
-  hB := rfl
-  hDF := by decide
-  hF := by decide
-  hD0 := by decide
-  hS0 := by decide
-  hSB := by decide
-  hB0 := by decide
-  hBB := by decide
-  hWb := by decide
-  hW := by decide
-  repr := md5_repr
-  init := Proof.Md5.X86.Stream.init_verified
-  upd := Proof.Md5.X86.Stream.Update.update_verified
-  fin := Proof.Md5.X86.Stream.Finalize.finalize_verified.of_implies
-    { pre := fun _ h => h
-      post := fun s s' _ h m hr _ hc => by
-        show List.take 16 (Spec.Md5.bytesAt s'.mem _ 16) = _
-        rw [List.take_of_length_le (by simp [Spec.Md5.bytesAt])]
-        exact h m hr hc
-      pub := fun _ _ _ _ h => h
-      sat := Proof.Md5.X86.Stream.Finalize.finalize_verified.2.2 }
-  initSp := nosp_of (by lit_decide)
-  updSp := nosp_of (by lit_decide)
-  finSp := nosp_of (by lit_decide)
-  initSU := by lit_decide
-  updSU := by lit_decide
-  finSU := by lit_decide
+def md5OK : HashOK md5H := by
+  refine {
+    SH := Spec.Hmac.md5S
+    Wb := 112
+    hS := rfl
+    hD := rfl
+    hB := rfl
+    hDF := by decide
+    hF := by decide
+    hD0 := by decide
+    hS0 := by decide
+    hSB := by decide
+    hB0 := by decide
+    hBB := by decide
+    hWb := by decide
+    hW := by decide
+    repr := md5_repr
+    init := Proof.Md5.X86.Stream.init_verified
+    upd := Proof.Md5.X86.Stream.Update.update_verified
+    fin := Proof.Md5.X86.Stream.Finalize.finalize_verified.of_implies
+      { pre := fun _ h => h
+        post := fun s s' _ h m hr _ hc => by
+          show List.take 16 (Spec.Md5.bytesAt s'.mem _ 16) = _
+          rw [List.take_of_length_le (by simp [Spec.Md5.bytesAt])]
+          exact h m hr hc
+        pub := fun _ _ _ _ h => h
+        sat := Proof.Md5.X86.Stream.Finalize.finalize_verified.2.2 }
+    initSp := nosp_of ?_
+    updSp := nosp_of ?_
+    finSp := nosp_of ?_
+    initSU := ?_
+    updSU := ?_
+    finSU := ?_ }
+  taint_decide_all
 
 /-! ## The SHA-512 family -/
 
 /-- The SHA-512 family member with initial hash value `iv` and a `D`-byte digest. -/
 def sha512H (D : Nat) (initN : String) (iv : Spec.Sha512.HashValue) : Hash :=
-  ⟨128, 192, D, 64, 34, initN, Impl.Sha512.X86.Stream.init iv, "vg_sha512_update",
-    Impl.Sha512.X86.Stream.update, "vg_sha512_finalize", Impl.Sha512.X86.Stream.finalize⟩
+  ⟨128, 192, D, 64, 34, initN, Impl.Sha512.X86.Stream.init iv, "vg_sha512_update_scratch",
+    Impl.Sha512.X86.Stream.update, "vg_sha512_finalize_scratch", Impl.Sha512.X86.Stream.finalize⟩
 
 theorem sha512_updSp : NoSp Impl.Sha512.X86.Stream.update := nosp_of (by lit_decide)
 theorem sha512_finSp : NoSp Impl.Sha512.X86.Stream.finalize := nosp_of (by lit_decide)

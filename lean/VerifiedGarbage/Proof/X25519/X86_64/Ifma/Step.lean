@@ -161,7 +161,7 @@ theorem vstep_ok {s₀ s : State} {base : Addr} {k : Nat} {u : Fe} {x1 : Nat →
   refine ⟨⟨⟨by rw [RegUpd.gpr_arithFlags]; exact hs₅.rdi, by rw [RegUpd.wr_arithFlags]; exact hs₅.wr,
     hs₅.nowrap⟩, fun r hr => ?_, ?_, ?_, ?_, ?_, ?_, hi.hx1, ?_, lim₅, ?_, ?_, ?_, ?_⟩, ?_⟩
   · rw [RegUpd.gpr_arithFlags, K₅.gpr, K₄.gpr, K₃.gpr, vm_gpr v₂,
-      g₁ r (by simp only [List.mem_cons, List.not_mem_nil, or_false] at hr ⊢; tauto), hi.gpr r hr]
+      g₁ r (by simp only [List.mem_cons, List.not_mem_nil, or_false] at hr ⊢; grind), hi.gpr r hr]
   · rw [RegUpd.gpr_arithFlags, rbx₅]
   · rw [RegUpd.rd_arithFlags, K₅.rd, K₄.rd, K₃.rd, vm_rd v₂, rd₁, hi.rd]
   · rw [RegUpd.wr_arithFlags, K₅.wr, K₄.wr, K₃.wr, vm_wr v₂, wr₁, hi.wr]

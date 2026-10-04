@@ -1,4 +1,5 @@
 import VerifiedGarbage.Spec.MlKem
+import VerifiedGarbage.Proof.Framework.PowLit
 
 /-!
 # ML-KEM: arithmetic modulo `q`, for every target

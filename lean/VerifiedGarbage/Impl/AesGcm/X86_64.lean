@@ -23,9 +23,15 @@ Every function has a buffer `W` of 2560 bytes (`scratch` or `work`):
   lengths block;
 * `[112, 128)`: the tag `open` computes;
 * `[128, 176)`: our caller's `rbx, rbp, r12–r15`;
-* `[176, 240)`: public values kept across calls (`roundsO`, …);
+* `[176, 240)`: public values kept across calls (`roundsO`, …; `seal` and
+  `open` keep the whole length at `tlenO` and what is left of the data after
+  its whole blocks at `dataO` and `lenO`; `stream_encrypt` and
+  `stream_decrypt` keep the text so far at `tlenO`, what is left of the data
+  at `dataO` and `lenO`, and the whole length at `auxO`);
 * `[240, 256)` and `[256, 272)`: the two tags compared, padded with zeros;
-* `[512, 2560)`: the working space of the functions called.
+* `[512, 2560)`: the working space of the functions called, and
+  `[448, 2560)` that of `vg_aes_gcm_encrypt_blocks` and
+  `vg_aes_gcm_decrypt_blocks`.
 
 ## Registers
 
@@ -57,6 +63,16 @@ rounds is kept in `W` (`roundsO`) and loaded before each call of
 * `recv`, `cmp o`: the received tag and the computed one (at `W + o`), each
   of `rbx` bytes, padded with zeros; `eax` is 1 if they are equal and 0 if
   not, without a branch.
+* `oneBlocks f`: `seal` and `open` encrypt or decrypt the whole blocks of the
+  data and absorb them in one call of `f` (`vg_aes_gcm_encrypt_blocks` or
+  `vg_aes_gcm_decrypt_blocks`), which can interleave the two; the pieces
+  above then handle the last bytes. When the tag is wrong, `oneUndo`
+  encrypts the whole blocks `open` decrypted again.
+* `streamText enc`: `stream_encrypt` and `stream_decrypt` likewise
+  (`streamBlocks f`), after finishing the partial block the text so far left
+  (`streamHead`), and before the last bytes, when there are at least 256
+  bytes; fewer go through `crypt` and `absorb` in two passes, as the call
+  would not interleave them and its bookkeeping would cost more than it saves.
 
 Only the pointers, the lengths, `rounds`, `tag_len` and (for `open`) whether
 the tag is right can affect timing: the branches are on those, and the
@@ -73,11 +89,14 @@ structure Fn where
   code : Prog isa
 
 /-- The implementations called: of `vg_aes_ctr32`, `vg_aes_expand_key` and
-`vg_ghash`. -/
+`vg_ghash`, and the instances of `vg_aes_gcm_encrypt_blocks` and
+`vg_aes_gcm_decrypt_blocks` that call them. -/
 structure Callees where
   ctr : Fn
   key : Fn
   gh : Fn
+  enc : Fn
+  dec : Fn
 
 def at_ (b : Reg) (d : Nat) : MemOp := { base := b, disp := d }
 def imm (n : Nat) : Src := .imm (BitVec.ofNat 32 n)
@@ -101,6 +120,7 @@ def aadO : Nat := 232
 def vO : Nat := 240
 def rO : Nat := 256
 def scrO : Nat := 512
+def bScrO : Nat := 448
 
 def saved : List (Reg × Nat) :=
   [(.rbx, 128), (.rbp, 136), (.r12, 144), (.r13, 152), (.r14, 160), (.r15, 168)]
@@ -336,27 +356,79 @@ def cryptEntry : List Instr :=
 def firstFlush : Prog isa :=
   .seq (.block [.mov .rbx (.mem (at_ .r15 alenO)), .alu .and .rbx (imm 15)]) (flush c 16)
 
-/-- The text (`len` bytes at `data`, as kept) absorbed into GHASH. -/
-def textAbsorb : Prog isa :=
-  .seq (.block [.mov .rbp (.mem (at_ .r15 lenO)), .alu .test .rbp (.reg .rbp)])
+/-- The data kept, its length, and the text so far modulo 16, into `r12`,
+`rbp` and `rbx` (for `crypt` and `absorb`). -/
+def streamLoad : List Instr :=
+  [.mov .r12 (.mem (at_ .r15 dataO)), .mov .rbp (.mem (at_ .r15 lenO)), .mov .rbx (.mem (at_ .r15 tlenO)),
+    .alu .and .rbx (imm 15)]
+
+/-- The length of the head of the text, the bytes that finish the block the
+text so far left partial (none if it left none): `min (16 - rbx, rbp)`, or 0
+if `rbx = 0`, into `lenO` and `rbp`; the whole length is kept at `auxO`. -/
+def streamHead : Prog isa :=
+  .seq (.block [.store (at_ .r15 auxO) .rbp, .alu .test .rbx (.reg .rbx)])
+  (.seq (.ite .e (.block [.mov32 .rcx (imm 0)]) minLen)
+    (.block [.store (at_ .r15 lenO) .rcx, .mov .rbp (.reg .rcx)]))
+
+/-- Past the head: the text so far and the data kept advance by its length,
+and what is left (of the length at `auxO`) becomes the length kept. -/
+def streamNext : List Instr :=
+  [.mov .rax (.mem (at_ .r15 lenO)), .mov .rcx (.mem (at_ .r15 dataO)), .alu .add .rcx (.reg .rax),
+    .store (at_ .r15 dataO) .rcx, .mov .rcx (.mem (at_ .r15 tlenO)), .alu .add .rcx (.reg .rax),
+    .store (at_ .r15 tlenO) .rcx, .mov .rcx (.mem (at_ .r15 auxO)), .alu .sub .rcx (.reg .rax),
+    .store (at_ .r15 lenO) .rcx]
+
+/-- The whole blocks of the data kept (which starts a block), encrypted or
+decrypted and absorbed in one call of `f` (`vg_aes_gcm_encrypt_blocks` or
+`vg_aes_gcm_decrypt_blocks`), with `scratch` at `W + 448` passed on the
+stack; then the data kept is what is left, and the text so far includes the
+whole blocks. -/
+def streamBlocks (f : Fn) : Prog isa :=
+  .seq (.block [.mov .rax (.mem (at_ .r15 lenO)), .shift .shr .rax 4, .alu .test .rax (.reg .rax)])
+    (.ite .e (.block [])
+      (.seq (.block ([.mov .rdi (.reg .r13), .mov .rsi (.mem (at_ .r15 roundsO))] ++ ptr .rdx .r14 48 ++
+          ptr .rcx .r14 16 ++ [.mov .r8 (.mem (at_ .r15 dataO)), .mov .r9 (.reg .rax)] ++ ptr .rax .r15 bScrO))
+      (.seq (.frame (.push [.rax]) (.call f.name f.code) (.pop .rax 1))
+        (.block [.mov .rax (.mem (at_ .r15 lenO)), .mov .rcx (.reg .rax), .alu .and .rcx (imm 15),
+          .store (at_ .r15 lenO) .rcx, .alu .sub .rax (.reg .rcx), .mov .rcx (.mem (at_ .r15 dataO)),
+          .alu .add .rcx (.reg .rax), .store (at_ .r15 dataO) .rcx, .mov .rcx (.mem (at_ .r15 tlenO)),
+          .alu .add .rcx (.reg .rax), .store (at_ .r15 tlenO) .rcx]))))
+
+/-- Whether the data kept (`rbp` bytes) is short of 16 blocks, the fewest
+`vg_aes_gcm_encrypt_blocks` interleaves (`CF`). -/
+def streamSmall : List Instr := [.mov32 .rcx (imm 256), .alu .cmp .rbp (.reg .rcx)]
+
+/-- The text of `encrypt` (`enc`) or `decrypt`: if there is any, the
+additional data padded first if there is no text yet; then, if there are
+fewer than 256 bytes (`streamSmall`), all of them with `crypt` and `absorb`;
+otherwise the head (the bytes that finish the block the text so far left
+partial) with `crypt` and `absorb`, the whole blocks in one call of
+`vg_aes_gcm_encrypt_blocks` or `_decrypt_blocks`, and the rest with `crypt`
+and `absorb`. Encrypting absorbs each part after `crypt`, decrypting
+before. -/
+def streamText (enc : Bool) : Prog isa :=
+  let part : Prog isa := if enc then .seq (crypt c) (.seq (.block streamLoad) (absorb c 16))
+    else .seq (absorb c 16) (.seq (.block streamLoad) (crypt c))
+  .seq (.block [.alu .test .rbp (.reg .rbp)])
     (.ite .e (.block [])
       (.seq (.block [.mov .rax (.mem (at_ .r15 tlenO)), .alu .test .rax (.reg .rax)])
       (.seq (.ite .e (firstFlush c) (.block []))
-      (.seq (.block [.mov .r12 (.mem (at_ .r15 dataO)), .mov .rbp (.mem (at_ .r15 lenO)),
-          .mov .rbx (.mem (at_ .r15 tlenO)), .alu .and .rbx (imm 15)])
-        (absorb c 16)))))
+      (.seq (.block streamLoad)
+      (.seq (.block streamSmall)
+      (.ite .b part
+      (.seq streamHead
+      (.seq part
+      (.seq (.block streamNext)
+      (.seq (streamBlocks (if enc then c.enc else c.dec))
+      (.seq (.block streamLoad) part)))))))))))
 
 /-- `vg_aes_gcm_stream_encrypt`. -/
 def streamEncrypt : Prog isa :=
-  .seq (.block cryptEntry) (.seq (crypt c) (.seq (textAbsorb c) (.block restore)))
+  .seq (.block cryptEntry) (.seq (streamText c true) (.block restore))
 
 /-- `vg_aes_gcm_stream_decrypt`. -/
 def streamDecrypt : Prog isa :=
-  .seq (.block cryptEntry)
-  (.seq (textAbsorb c)
-  (.seq (.block [.mov .r12 (.mem (at_ .r15 dataO)), .mov .rbp (.mem (at_ .r15 lenO)),
-      .mov .rbx (.mem (at_ .r15 tlenO)), .alu .and .rbx (imm 15)])
-  (.seq (crypt c) (.block restore))))
+  .seq (.block cryptEntry) (.seq (streamText c false) (.block restore))
 
 /-- The entry of `finish` and `verify`: `(ctx = rdi, rounds = rsi, state = rdx,
 aad_len = rcx, text_len = r8, work = r9)`. -/
@@ -411,13 +483,31 @@ def oneAad : Prog isa :=
   (.seq (.block [.mov .rbx (.mem (at_ .r15 alenO)), .alu .and .rbx (imm 15)])
     (flush c 16))))
 
-/-- The data (as ciphertext) absorbed and padded, and the tag into `W + o`. -/
+/-- The whole blocks of the data encrypted (with `f`, `vg_aes_gcm_encrypt_blocks`)
+or decrypted (`vg_aes_gcm_decrypt_blocks`) and absorbed, from the first counter
+block, in one call: the counter at `r14 + 48`, the accumulator at `r14 + 16`
+and `scratch` at `W + 448`, passed on the stack. The data kept then becomes
+what is left, the last `len mod 16` bytes, and `len` itself stays at
+`W + 192`. -/
+def oneBlocks (f : Fn) : Prog isa :=
+  .seq (.block [.mov .rax (.mem (at_ .r15 lenO)), .store (at_ .r15 tlenO) .rax, .shift .shr .rax 4,
+      .alu .test .rax (.reg .rax)])
+    (.ite .e (.block [])
+      (.seq (.block ([.mov .rdi (.reg .r13), .mov .rsi (.mem (at_ .r15 roundsO))] ++ ptr .rdx .r14 48 ++
+          ptr .rcx .r14 16 ++ [.mov .r8 (.mem (at_ .r15 dataO)), .mov .r9 (.reg .rax)] ++ ptr .rax .r15 bScrO))
+        (.seq (.frame (.push [.rax]) (.call f.name f.code) (.pop .rax 1))
+          (.block [.mov .rax (.mem (at_ .r15 lenO)), .mov .rcx (.reg .rax), .alu .and .rcx (imm 15),
+            .store (at_ .r15 lenO) .rcx, .alu .sub .rax (.reg .rcx), .alu .add .rax (.mem (at_ .r15 dataO)),
+            .store (at_ .r15 dataO) .rax]))))
+
+/-- The data left (as ciphertext) absorbed and padded, and the tag of all of it
+(`len` at `W + 192`) into `W + o`. -/
 def oneTag (o : Nat) : Prog isa :=
   .seq (.block [.mov .r12 (.mem (at_ .r15 dataO)), .mov .rbp (.mem (at_ .r15 lenO)), .mov32 .rbx (imm 0)])
   (.seq (absorb c 16)
   (.seq (.block [.mov .rbx (.mem (at_ .r15 lenO)), .alu .and .rbx (imm 15)])
   (.seq (flush c 16)
-  (.seq (.block [.mov .rbx (.mem (at_ .r15 alenO)), .mov .rbp (.mem (at_ .r15 lenO))])
+  (.seq (.block [.mov .rbx (.mem (at_ .r15 alenO)), .mov .rbp (.mem (at_ .r15 tlenO))])
     (tag c o)))))
 
 /-- The data encrypted or decrypted, from the first counter block. -/
@@ -425,9 +515,23 @@ def oneCrypt : Prog isa :=
   .seq (.block [.mov .r12 (.mem (at_ .r15 dataO)), .mov .rbp (.mem (at_ .r15 lenO)), .mov32 .rbx (imm 0)])
     (crypt c)
 
+/-- The whole blocks decrypted by `oneBlocks`, encrypted again (when the tag
+is wrong): `vg_aes_ctr32` from the first counter block, which `tag`'s call of
+`vg_aes_ctr32` left at the state's start, at the data's start (`len - len mod
+16` bytes before the data kept). -/
+def oneUndo : Prog isa :=
+  .seq (.block ([.mov .rax (.mem (at_ .r15 tlenO)), .mov .rcx (.reg .rax), .alu .and .rcx (imm 15),
+      .alu .sub .rax (.reg .rcx), .mov .rcx (.mem (at_ .r15 dataO)), .alu .sub .rcx (.reg .rax),
+      .shift .shr .rax 4, .mov .r8 (.reg .rax), .alu .test .rax (.reg .rax)]))
+    (.ite .e (.block [])
+      (.seq (.block ([.mov .rdi (.reg .r13), .mov .rsi (.mem (at_ .r15 roundsO)), .mov .rdx (.reg .r14)] ++
+          ptr .r9 .r15 scrO))
+        (.call c.ctr.name c.ctr.code)))
+
 /-- `vg_aes_gcm_seal`. -/
 def «seal» : Prog isa :=
-  .seq (.block oneEntry) (.seq (oneAad c) (.seq (oneCrypt c) (.seq (oneTag c 0) (.block restore))))
+  .seq (.block oneEntry) (.seq (oneAad c) (.seq (oneBlocks c.enc) (.seq (oneCrypt c) (.seq (oneTag c 0)
+    (.block restore)))))
 
 /-- `vg_aes_gcm_open`, with `tag_len = [rsp + 32]`. -/
 def «open» : Prog isa :=
@@ -435,13 +539,14 @@ def «open» : Prog isa :=
   (.seq tagLenOk
   (.seq (.ite .e (.block [.mov32 .rax (imm 0)])
       (.seq (oneAad c)
+      (.seq (oneBlocks c.dec)
       (.seq (oneTag c uO)
       (.seq (.block [.mov .rbx (.mem (at_ .r15 tlO))])
       (.seq recv
       (.seq (cmp uO)
       (.seq (.block [.store (at_ .r15 auxO) .rax, .alu .test .rax (.reg .rax)])
-      (.seq (.ite .e (.block []) (oneCrypt c))
-        (.block [.mov .rax (.mem (at_ .r15 auxO))])))))))))
+      (.seq (.ite .e (oneUndo c) (oneCrypt c))
+        (.block [.mov .rax (.mem (at_ .r15 auxO))]))))))))))
     (.block restore)))
 
 end VG.Impl.AesGcm.X86_64

@@ -218,7 +218,7 @@ theorem setNonce_ct : ConstantTime isa Proof.ChaCha20.setNonceX86_64.pre Proof.C
   intro s₁ s₂ _ _ ⟨h1, h2⟩
   refine Taint.agree_ofRegs fun r hr => ?_
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl <;> assumption
+  rcases hr with rfl | rfl <;> with_reducible assumption
 
 /-- A state satisfying the precondition of `set_nonce`. -/
 def setNonceSat : State where
@@ -333,7 +333,7 @@ theorem init_ct : ConstantTime isa Proof.ChaCha20.initX86_64.pre Proof.ChaCha20.
   intro s₁ s₂ _ _ ⟨h1, h2, h3⟩
   refine Taint.agree_ofRegs fun r hr => ?_
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl <;> assumption
+  rcases hr with rfl | rfl | rfl <;> with_reducible assumption
 
 /-- A state satisfying the precondition of `init`. -/
 def initSat : State where

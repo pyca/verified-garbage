@@ -51,16 +51,20 @@ FEATURES = {
     "sha": "SHA extensions",
     "sha512": "SHA512",
     "aes": "AES-NI",
+    "vaes": "VAES",
     "pclmulqdq": "PCLMULQDQ",
+    "vpclmulqdq": "VPCLMULQDQ",
     "ssse3": None,
     "avx512f": "AVX-512F",
     "avx512ifma": "AVX-512 IFMA",
     "avx512vl": "AVX-512VL",
+    "avx512bw": "AVX-512BW",
     "avx2": "AVX2",
     "avx": None,
     "bmi1": "BMI1",
     "bmi2": "BMI2",
     "adx": "ADX",
+    "sve2": "SVE2",
 }
 
 # Names that differ on one architecture: AArch64's `aes` (Rust's name for
@@ -69,7 +73,7 @@ ARCH_FEATURES = {"aarch64": {"aes": "AES, PMULL", "sha2": "SHA extensions", "sha
 
 CFG = re.compile(r"^#!\[cfg\((.*?)\)\]$", re.MULTILINE | re.DOTALL)
 ARCH = re.compile(r'target_arch\s*=\s*"(\w+)"')
-FEATURE_CONST = re.compile(r"_FEATURES: &\[&str\] = &\[(.*?)\];")
+FEATURE_CONST = re.compile(r"_FEATURES: crate::cpu::Features = crate::cpu::Features::of\(&\[(.*?)\]\);")
 
 
 def supported(row, errors):

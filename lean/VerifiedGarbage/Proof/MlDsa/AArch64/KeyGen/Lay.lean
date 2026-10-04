@@ -93,12 +93,12 @@ theorem kgLay {p : Params} (hF : PFacts p) {S : Nat} {σ s : State}
         | exact absurd rfl hne
         | simp only [e25, e26, e27, e28]
           first
-            | assumption
+            | with_reducible assumption
             | exact Region.Disjoint.symm (by assumption)
   · simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false]
-    rintro b (rfl | rfl | rfl | rfl) <;> simp only [e25, e26, e27, e28, h.sp] <;> assumption
+    rintro b (rfl | rfl | rfl | rfl) <;> simp only [e25, e26, e27, e28, h.sp] <;> with_reducible assumption
   · simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false]
-    rintro b (rfl | rfl | rfl | rfl) <;> simp only [e25, e26, e27, e28] <;> assumption
+    rintro b (rfl | rfl | rfl | rfl) <;> simp only [e25, e26, e27, e28] <;> with_reducible assumption
   · simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false]
     rintro b (rfl | rfl | rfl | rfl) <;> simp only [e25, e26, e27, e28]
     · exact mrd ⟨σ.gpr .x0, 32⟩ (by rw [hrd]; simp)

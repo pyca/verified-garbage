@@ -210,7 +210,7 @@ theorem agree₀ {s₁ s₂ : State} (h₁ : Proof.Sha3.padArm.pre s₁) (h₂ :
     fun _ h => (List.not_mem_nil h).elim, fun _ h => (List.not_mem_nil h).elim, fun _ => psp,
     fun k hk => ?_⟩
   · simp only [τ₀, RegSet.mem_ofList, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl <;> assumption
+    rcases hr with rfl | rfl | rfl | rfl <;> with_reducible assumption
   · rw [hp₁.wr, hp₂.wr]; simp only [stR, scR, stA, scr, st, p0, a0]
   · simp only [τ₀] at hk
     rw [argByte_eq hp₁.sp_fit hk, argByte_eq hp₂.sp_fit hk,

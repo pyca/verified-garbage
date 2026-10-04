@@ -1477,7 +1477,7 @@ pub(crate) unsafe extern "sysv64" fn vg_sha1_init(state: *mut [u8; 84]) {
 }
 
 /// The CPU features `vg_sha1_compress_shani` requires (`Artifact.features`).
-pub(crate) const VG_SHA1_COMPRESS_SHANI_FEATURES: &[&str] = &["sha", "ssse3"];
+pub(crate) const VG_SHA1_COMPRESS_SHANI_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["sha", "ssse3"]);
 
 /// The SHA-1 compression function (FIPS 180-4 §6.1.2): updates the hash value `*state` with the `n` 64-byte blocks starting at `blocks`, in order.
 ///
@@ -1675,12 +1675,255 @@ pub(crate) unsafe extern "sysv64" fn vg_sha1_compress_shani(state: *mut [u32; 5]
 ///
 /// * `state` must be valid for reads and writes of 84 bytes.
 /// * `data` must be valid for reads of `len` bytes.
+/// * `state` must not overlap `data` (distinct Rust objects never do).
+/// * Neither `state` nor `data` may overlap the return address on the stack or the 176 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_sha1_update(state: *mut [u8; 84], count: u64, data: *const u8, len: usize) {
+    core::arch::naked_asm!(
+        "lea rsp, [rsp-168]",
+        "mov r8, rsp",
+        "add r8, 8",
+        "mov QWORD PTR [r8+112], rbx",
+        "mov QWORD PTR [r8+120], rbp",
+        "mov QWORD PTR [r8+128], r12",
+        "mov QWORD PTR [r8+136], r13",
+        "mov QWORD PTR [r8+144], r14",
+        "mov QWORD PTR [r8+152], r15",
+        "mov rbx, rdi",
+        "mov r15, r8",
+        "mov rbp, rdx",
+        "mov r12, rcx",
+        "mov r13, rsi",
+        "and r13, 63",
+        "20:",
+        "test r13, r13",
+        "je 21f",
+        "mov eax, 64",
+        "sub rax, r13",
+        "cmp r12, rax",
+        "jb 23f",
+        "jmp 24f",
+        "23:",
+        "mov rax, r12",
+        "24:",
+        "sub r12, rax",
+        "test rax, rax",
+        "je 25f",
+        "27:",
+        "movzx r9d, BYTE PTR [rbp]",
+        "mov BYTE PTR [rbx+r13*1+20], r9b",
+        "add rbp, 1",
+        "add r13, 1",
+        "sub rax, 1",
+        "jne 27b",
+        "jmp 26f",
+        "25:",
+        "26:",
+        "mov r14d, 0",
+        "cmp r13, 64",
+        "je 28f",
+        "jmp 29f",
+        "28:",
+        "mov rsi, rbx",
+        "add rsi, 20",
+        "mov r13d, 0",
+        "mov r14d, 1",
+        "29:",
+        "jmp 22f",
+        "21:",
+        "cmp r12, 64",
+        "jae 210f",
+        "mov eax, 64",
+        "sub rax, r13",
+        "cmp r12, rax",
+        "jb 212f",
+        "jmp 213f",
+        "212:",
+        "mov rax, r12",
+        "213:",
+        "sub r12, rax",
+        "test rax, rax",
+        "je 214f",
+        "216:",
+        "movzx r9d, BYTE PTR [rbp]",
+        "mov BYTE PTR [rbx+r13*1+20], r9b",
+        "add rbp, 1",
+        "add r13, 1",
+        "sub rax, 1",
+        "jne 216b",
+        "jmp 215f",
+        "214:",
+        "215:",
+        "mov r14d, 0",
+        "cmp r13, 64",
+        "je 217f",
+        "jmp 218f",
+        "217:",
+        "mov rsi, rbx",
+        "add rsi, 20",
+        "mov r13d, 0",
+        "mov r14d, 1",
+        "218:",
+        "jmp 211f",
+        "210:",
+        "mov rsi, rbp",
+        "mov rax, r12",
+        "and rax, 63",
+        "mov r14, r12",
+        "sub r14, rax",
+        "add rbp, r14",
+        "mov r12, rax",
+        "shr r14, 6",
+        "211:",
+        "22:",
+        "test r14, r14",
+        "jne 219f",
+        "jmp 220f",
+        "219:",
+        "mov rdi, rbx",
+        "mov rdx, r14",
+        "mov rcx, r15",
+        "call {vg_sha1_compress}",
+        "mov rbx, rdi",
+        "mov r15, rcx",
+        "220:",
+        "test r14, r14",
+        "jne 20b",
+        "mov rbx, QWORD PTR [r15+112]",
+        "mov rbp, QWORD PTR [r15+120]",
+        "mov r12, QWORD PTR [r15+128]",
+        "mov r13, QWORD PTR [r15+136]",
+        "mov r14, QWORD PTR [r15+144]",
+        "mov r15, QWORD PTR [r15+152]",
+        "lea rsp, [rsp+168]",
+        "ret",
+        ".p2align 6",
+        vg_sha1_compress = sym super::sha1::vg_sha1_compress,
+    )
+}
+
+/// Finishes a SHA-1 computation: if the streaming state `*state` represents a message of `count` bytes (modulo 2⁶⁴), writes the SHA-1 digest of that message to `*out`.
+///
+/// Contract: `VG.Spec.Sha1.finalizeContract`. Constant time: only the pointers and `count` may affect timing, not the state.
+///
+/// # Safety
+///
+/// * `state` must be valid for reads and writes of 84 bytes.
+/// * `out` must be valid for reads and writes of 20 bytes.
+/// * The contents of `state` on return are unspecified.
+/// * `state` and `out` must not overlap each other (distinct Rust objects never do).
+/// * Neither `state` nor `out` may overlap the return address on the stack or the 176 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_sha1_finalize(state: *mut [u8; 84], count: u64, out: *mut [u8; 20]) {
+    core::arch::naked_asm!(
+        "lea rsp, [rsp-168]",
+        "mov rcx, rsp",
+        "add rcx, 8",
+        "mov QWORD PTR [rcx+112], rbx",
+        "mov QWORD PTR [rcx+120], rbp",
+        "mov QWORD PTR [rcx+128], r12",
+        "mov QWORD PTR [rcx+136], r13",
+        "mov QWORD PTR [rcx+144], r14",
+        "mov QWORD PTR [rcx+152], r15",
+        "mov rbx, rdi",
+        "mov r15, rcx",
+        "mov rbp, rdx",
+        "mov r12, rsi",
+        "mov r13, rsi",
+        "and r13, 63",
+        "mov eax, 128",
+        "mov BYTE PTR [rbx+r13*1+20], al",
+        "add r13, 1",
+        "mov r14d, 0",
+        "cmp r13, 57",
+        "jae 20f",
+        "jmp 21f",
+        "20:",
+        "mov r14d, 1",
+        "21:",
+        "22:",
+        "mov eax, 64",
+        "test r14, r14",
+        "je 23f",
+        "jmp 24f",
+        "23:",
+        "mov eax, 56",
+        "24:",
+        "mov r9d, 0",
+        "sub rax, r13",
+        "je 25f",
+        "27:",
+        "mov BYTE PTR [rbx+r13*1+20], r9b",
+        "add r13, 1",
+        "sub rax, 1",
+        "jne 27b",
+        "jmp 26f",
+        "25:",
+        "26:",
+        "test r14, r14",
+        "je 28f",
+        "jmp 29f",
+        "28:",
+        "mov rax, r12",
+        "add rax, rax",
+        "add rax, rax",
+        "add rax, rax",
+        "bswap rax",
+        "mov QWORD PTR [rbx+76], rax",
+        "29:",
+        "mov rsi, rbx",
+        "add rsi, 20",
+        "mov rdi, rbx",
+        "mov edx, 1",
+        "mov rcx, r15",
+        "call {vg_sha1_compress}",
+        "mov rbx, rdi",
+        "mov r15, rcx",
+        "mov r13d, 0",
+        "sub r14, 1",
+        "je 22b",
+        "mov eax, DWORD PTR [rbx]",
+        "bswap eax",
+        "mov DWORD PTR [rbp], eax",
+        "mov eax, DWORD PTR [rbx+4]",
+        "bswap eax",
+        "mov DWORD PTR [rbp+4], eax",
+        "mov eax, DWORD PTR [rbx+8]",
+        "bswap eax",
+        "mov DWORD PTR [rbp+8], eax",
+        "mov eax, DWORD PTR [rbx+12]",
+        "bswap eax",
+        "mov DWORD PTR [rbp+12], eax",
+        "mov eax, DWORD PTR [rbx+16]",
+        "bswap eax",
+        "mov DWORD PTR [rbp+16], eax",
+        "mov rbx, QWORD PTR [r15+112]",
+        "mov rbp, QWORD PTR [r15+120]",
+        "mov r12, QWORD PTR [r15+128]",
+        "mov r13, QWORD PTR [r15+136]",
+        "mov r14, QWORD PTR [r15+144]",
+        "mov r15, QWORD PTR [r15+152]",
+        "lea rsp, [rsp+168]",
+        "ret",
+        ".p2align 6",
+        vg_sha1_compress = sym super::sha1::vg_sha1_compress,
+    )
+}
+
+/// `vg_sha1_update`, with its working space in `*scratch`.
+///
+/// Contract: `VG.Spec.Sha1.updateScratchContract`. Constant time: only the pointers, `count` and `len` may affect timing, not the state or the data.
+///
+/// # Safety
+///
+/// * `state` must be valid for reads and writes of 84 bytes.
+/// * `data` must be valid for reads of `len` bytes.
 /// * `scratch` must be valid for reads and writes of 160 bytes.
 /// * The contents of `scratch` on return are unspecified.
 /// * `state` and `scratch` must not overlap each other or `data` (distinct Rust objects never do).
 /// * None of `state`, `data` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_sha1_update(state: *mut [u8; 84], count: u64, data: *const u8, len: usize, scratch: *mut [u64; 20]) {
+pub(crate) unsafe extern "sysv64" fn vg_sha1_update_scratch(state: *mut [u8; 84], count: u64, data: *const u8, len: usize, scratch: *mut [u64; 20]) {
     core::arch::naked_asm!(
         "mov QWORD PTR [r8+112], rbx",
         "mov QWORD PTR [r8+120], rbp",
@@ -1800,9 +2043,9 @@ pub(crate) unsafe extern "sysv64" fn vg_sha1_update(state: *mut [u8; 84], count:
     )
 }
 
-/// Finishes a SHA-1 computation: if the streaming state `*state` represents a message of `count` bytes (modulo 2⁶⁴), writes the SHA-1 digest of that message to `*out`.
+/// `vg_sha1_finalize`, with its working space in `*scratch`.
 ///
-/// Contract: `VG.Spec.Sha1.finalizeContract`. Constant time: only the pointers and `count` may affect timing, not the state.
+/// Contract: `VG.Spec.Sha1.finalizeScratchContract`. Constant time: only the pointers and `count` may affect timing, not the state.
 ///
 /// # Safety
 ///
@@ -1814,7 +2057,7 @@ pub(crate) unsafe extern "sysv64" fn vg_sha1_update(state: *mut [u8; 84], count:
 /// * `state`, `out` and `scratch` must not overlap each other (distinct Rust objects never do).
 /// * None of `state`, `out` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_sha1_finalize(state: *mut [u8; 84], count: u64, out: *mut [u8; 20], scratch: *mut [u64; 20]) {
+pub(crate) unsafe extern "sysv64" fn vg_sha1_finalize_scratch(state: *mut [u8; 84], count: u64, out: *mut [u8; 20], scratch: *mut [u64; 20]) {
     core::arch::naked_asm!(
         "mov QWORD PTR [rcx+112], rbx",
         "mov QWORD PTR [rcx+120], rbp",
@@ -1907,11 +2150,262 @@ pub(crate) unsafe extern "sysv64" fn vg_sha1_finalize(state: *mut [u8; 84], coun
 }
 
 /// The CPU features `vg_sha1_update_shani` requires (`Artifact.features`).
-pub(crate) const VG_SHA1_UPDATE_SHANI_FEATURES: &[&str] = &["sha", "ssse3"];
+pub(crate) const VG_SHA1_UPDATE_SHANI_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["sha", "ssse3"]);
 
 /// Absorbs data into a SHA-1 computation: if the streaming state `*state` represents a message of `count` bytes (modulo 2⁶⁴), it then represents that message followed by the `len` bytes at `data`.
 ///
 /// Contract: `VG.Spec.Sha1.updateContract`. Constant time: only the pointers, `count` and `len` may affect timing, not the state or the data.
+///
+/// # Safety
+///
+/// * `state` must be valid for reads and writes of 84 bytes.
+/// * `data` must be valid for reads of `len` bytes.
+/// * `state` must not overlap `data` (distinct Rust objects never do).
+/// * Neither `state` nor `data` may overlap the return address on the stack or the 176 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `sha` and `ssse3` target features.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_sha1_update_shani(state: *mut [u8; 84], count: u64, data: *const u8, len: usize) {
+    core::arch::naked_asm!(
+        "lea rsp, [rsp-168]",
+        "mov r8, rsp",
+        "add r8, 8",
+        "mov QWORD PTR [r8+112], rbx",
+        "mov QWORD PTR [r8+120], rbp",
+        "mov QWORD PTR [r8+128], r12",
+        "mov QWORD PTR [r8+136], r13",
+        "mov QWORD PTR [r8+144], r14",
+        "mov QWORD PTR [r8+152], r15",
+        "mov rbx, rdi",
+        "mov r15, r8",
+        "mov rbp, rdx",
+        "mov r12, rcx",
+        "mov r13, rsi",
+        "and r13, 63",
+        "20:",
+        "test r13, r13",
+        "je 21f",
+        "mov eax, 64",
+        "sub rax, r13",
+        "cmp r12, rax",
+        "jb 23f",
+        "jmp 24f",
+        "23:",
+        "mov rax, r12",
+        "24:",
+        "sub r12, rax",
+        "test rax, rax",
+        "je 25f",
+        "27:",
+        "movzx r9d, BYTE PTR [rbp]",
+        "mov BYTE PTR [rbx+r13*1+20], r9b",
+        "add rbp, 1",
+        "add r13, 1",
+        "sub rax, 1",
+        "jne 27b",
+        "jmp 26f",
+        "25:",
+        "26:",
+        "mov r14d, 0",
+        "cmp r13, 64",
+        "je 28f",
+        "jmp 29f",
+        "28:",
+        "mov rsi, rbx",
+        "add rsi, 20",
+        "mov r13d, 0",
+        "mov r14d, 1",
+        "29:",
+        "jmp 22f",
+        "21:",
+        "cmp r12, 64",
+        "jae 210f",
+        "mov eax, 64",
+        "sub rax, r13",
+        "cmp r12, rax",
+        "jb 212f",
+        "jmp 213f",
+        "212:",
+        "mov rax, r12",
+        "213:",
+        "sub r12, rax",
+        "test rax, rax",
+        "je 214f",
+        "216:",
+        "movzx r9d, BYTE PTR [rbp]",
+        "mov BYTE PTR [rbx+r13*1+20], r9b",
+        "add rbp, 1",
+        "add r13, 1",
+        "sub rax, 1",
+        "jne 216b",
+        "jmp 215f",
+        "214:",
+        "215:",
+        "mov r14d, 0",
+        "cmp r13, 64",
+        "je 217f",
+        "jmp 218f",
+        "217:",
+        "mov rsi, rbx",
+        "add rsi, 20",
+        "mov r13d, 0",
+        "mov r14d, 1",
+        "218:",
+        "jmp 211f",
+        "210:",
+        "mov rsi, rbp",
+        "mov rax, r12",
+        "and rax, 63",
+        "mov r14, r12",
+        "sub r14, rax",
+        "add rbp, r14",
+        "mov r12, rax",
+        "shr r14, 6",
+        "211:",
+        "22:",
+        "test r14, r14",
+        "jne 219f",
+        "jmp 220f",
+        "219:",
+        "mov rdi, rbx",
+        "mov rdx, r14",
+        "mov rcx, r15",
+        "call {vg_sha1_compress_shani}",
+        "mov rbx, rdi",
+        "mov r15, rcx",
+        "220:",
+        "test r14, r14",
+        "jne 20b",
+        "mov rbx, QWORD PTR [r15+112]",
+        "mov rbp, QWORD PTR [r15+120]",
+        "mov r12, QWORD PTR [r15+128]",
+        "mov r13, QWORD PTR [r15+136]",
+        "mov r14, QWORD PTR [r15+144]",
+        "mov r15, QWORD PTR [r15+152]",
+        "lea rsp, [rsp+168]",
+        "ret",
+        ".p2align 6",
+        vg_sha1_compress_shani = sym super::sha1::vg_sha1_compress_shani,
+    )
+}
+
+/// The CPU features `vg_sha1_finalize_shani` requires (`Artifact.features`).
+pub(crate) const VG_SHA1_FINALIZE_SHANI_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["sha", "ssse3"]);
+
+/// Finishes a SHA-1 computation: if the streaming state `*state` represents a message of `count` bytes (modulo 2⁶⁴), writes the SHA-1 digest of that message to `*out`.
+///
+/// Contract: `VG.Spec.Sha1.finalizeContract`. Constant time: only the pointers and `count` may affect timing, not the state.
+///
+/// # Safety
+///
+/// * `state` must be valid for reads and writes of 84 bytes.
+/// * `out` must be valid for reads and writes of 20 bytes.
+/// * The contents of `state` on return are unspecified.
+/// * `state` and `out` must not overlap each other (distinct Rust objects never do).
+/// * Neither `state` nor `out` may overlap the return address on the stack or the 176 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `sha` and `ssse3` target features.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_sha1_finalize_shani(state: *mut [u8; 84], count: u64, out: *mut [u8; 20]) {
+    core::arch::naked_asm!(
+        "lea rsp, [rsp-168]",
+        "mov rcx, rsp",
+        "add rcx, 8",
+        "mov QWORD PTR [rcx+112], rbx",
+        "mov QWORD PTR [rcx+120], rbp",
+        "mov QWORD PTR [rcx+128], r12",
+        "mov QWORD PTR [rcx+136], r13",
+        "mov QWORD PTR [rcx+144], r14",
+        "mov QWORD PTR [rcx+152], r15",
+        "mov rbx, rdi",
+        "mov r15, rcx",
+        "mov rbp, rdx",
+        "mov r12, rsi",
+        "mov r13, rsi",
+        "and r13, 63",
+        "mov eax, 128",
+        "mov BYTE PTR [rbx+r13*1+20], al",
+        "add r13, 1",
+        "mov r14d, 0",
+        "cmp r13, 57",
+        "jae 20f",
+        "jmp 21f",
+        "20:",
+        "mov r14d, 1",
+        "21:",
+        "22:",
+        "mov eax, 64",
+        "test r14, r14",
+        "je 23f",
+        "jmp 24f",
+        "23:",
+        "mov eax, 56",
+        "24:",
+        "mov r9d, 0",
+        "sub rax, r13",
+        "je 25f",
+        "27:",
+        "mov BYTE PTR [rbx+r13*1+20], r9b",
+        "add r13, 1",
+        "sub rax, 1",
+        "jne 27b",
+        "jmp 26f",
+        "25:",
+        "26:",
+        "test r14, r14",
+        "je 28f",
+        "jmp 29f",
+        "28:",
+        "mov rax, r12",
+        "add rax, rax",
+        "add rax, rax",
+        "add rax, rax",
+        "bswap rax",
+        "mov QWORD PTR [rbx+76], rax",
+        "29:",
+        "mov rsi, rbx",
+        "add rsi, 20",
+        "mov rdi, rbx",
+        "mov edx, 1",
+        "mov rcx, r15",
+        "call {vg_sha1_compress_shani}",
+        "mov rbx, rdi",
+        "mov r15, rcx",
+        "mov r13d, 0",
+        "sub r14, 1",
+        "je 22b",
+        "mov eax, DWORD PTR [rbx]",
+        "bswap eax",
+        "mov DWORD PTR [rbp], eax",
+        "mov eax, DWORD PTR [rbx+4]",
+        "bswap eax",
+        "mov DWORD PTR [rbp+4], eax",
+        "mov eax, DWORD PTR [rbx+8]",
+        "bswap eax",
+        "mov DWORD PTR [rbp+8], eax",
+        "mov eax, DWORD PTR [rbx+12]",
+        "bswap eax",
+        "mov DWORD PTR [rbp+12], eax",
+        "mov eax, DWORD PTR [rbx+16]",
+        "bswap eax",
+        "mov DWORD PTR [rbp+16], eax",
+        "mov rbx, QWORD PTR [r15+112]",
+        "mov rbp, QWORD PTR [r15+120]",
+        "mov r12, QWORD PTR [r15+128]",
+        "mov r13, QWORD PTR [r15+136]",
+        "mov r14, QWORD PTR [r15+144]",
+        "mov r15, QWORD PTR [r15+152]",
+        "lea rsp, [rsp+168]",
+        "ret",
+        ".p2align 6",
+        vg_sha1_compress_shani = sym super::sha1::vg_sha1_compress_shani,
+    )
+}
+
+/// The CPU features `vg_sha1_update_scratch_shani` requires (`Artifact.features`).
+pub(crate) const VG_SHA1_UPDATE_SCRATCH_SHANI_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["sha", "ssse3"]);
+
+/// `vg_sha1_update`, with its working space in `*scratch`.
+///
+/// Contract: `VG.Spec.Sha1.updateScratchContract`. Constant time: only the pointers, `count` and `len` may affect timing, not the state or the data.
 ///
 /// # Safety
 ///
@@ -1923,7 +2417,7 @@ pub(crate) const VG_SHA1_UPDATE_SHANI_FEATURES: &[&str] = &["sha", "ssse3"];
 /// * None of `state`, `data` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha` and `ssse3` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_sha1_update_shani(state: *mut [u8; 84], count: u64, data: *const u8, len: usize, scratch: *mut [u64; 20]) {
+pub(crate) unsafe extern "sysv64" fn vg_sha1_update_scratch_shani(state: *mut [u8; 84], count: u64, data: *const u8, len: usize, scratch: *mut [u64; 20]) {
     core::arch::naked_asm!(
         "mov QWORD PTR [r8+112], rbx",
         "mov QWORD PTR [r8+120], rbp",
@@ -2043,12 +2537,12 @@ pub(crate) unsafe extern "sysv64" fn vg_sha1_update_shani(state: *mut [u8; 84], 
     )
 }
 
-/// The CPU features `vg_sha1_finalize_shani` requires (`Artifact.features`).
-pub(crate) const VG_SHA1_FINALIZE_SHANI_FEATURES: &[&str] = &["sha", "ssse3"];
+/// The CPU features `vg_sha1_finalize_scratch_shani` requires (`Artifact.features`).
+pub(crate) const VG_SHA1_FINALIZE_SCRATCH_SHANI_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["sha", "ssse3"]);
 
-/// Finishes a SHA-1 computation: if the streaming state `*state` represents a message of `count` bytes (modulo 2⁶⁴), writes the SHA-1 digest of that message to `*out`.
+/// `vg_sha1_finalize`, with its working space in `*scratch`.
 ///
-/// Contract: `VG.Spec.Sha1.finalizeContract`. Constant time: only the pointers and `count` may affect timing, not the state.
+/// Contract: `VG.Spec.Sha1.finalizeScratchContract`. Constant time: only the pointers and `count` may affect timing, not the state.
 ///
 /// # Safety
 ///
@@ -2061,7 +2555,7 @@ pub(crate) const VG_SHA1_FINALIZE_SHANI_FEATURES: &[&str] = &["sha", "ssse3"];
 /// * None of `state`, `out` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha` and `ssse3` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_sha1_finalize_shani(state: *mut [u8; 84], count: u64, out: *mut [u8; 20], scratch: *mut [u64; 20]) {
+pub(crate) unsafe extern "sysv64" fn vg_sha1_finalize_scratch_shani(state: *mut [u8; 84], count: u64, out: *mut [u8; 20], scratch: *mut [u64; 20]) {
     core::arch::naked_asm!(
         "mov QWORD PTR [rcx+112], rbx",
         "mov QWORD PTR [rcx+120], rbp",

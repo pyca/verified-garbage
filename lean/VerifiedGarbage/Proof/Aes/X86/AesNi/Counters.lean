@@ -95,10 +95,10 @@ theorem counter_one (b : XReg) (s : State) (hb : b ≠ .xmm7) :
       (∀ r, r ≠ b → s'.xmm r = s.xmm r) := by
   apply WP.of_runBlock
   simp only [ctrs, List.append_nil]
-  simp (config := {decide := true}) only [runBlock_cons, runStep_some, runBlock_nil,
+  simp only [reduceCtorEq, ↓reduceIte, Nat.reduceAdd, Nat.reducePow, runBlock_cons, runStep_some, runBlock_nil,
     exec, isa, readSrc, XOp.exec, execAlu, counterLane, gpr_setReg,
     gpr_setXmm, xmm_setReg, xmm_setXmm, xmm_arithFlags, mem_setReg, rd_setReg,
-    wr_setReg, ite_true, ite_false, Ne.symm hb, Option.map_some, Option.bind_some,
+    wr_setReg, Ne.symm hb, Option.map_some, Option.bind_some,
     Option.some.injEq, exists_eq_left']
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · trivial

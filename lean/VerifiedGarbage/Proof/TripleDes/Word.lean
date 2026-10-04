@@ -1,4 +1,5 @@
 import VerifiedGarbage.Proof.Framework.Bitslice.Table
+import VerifiedGarbage.Proof.Framework.PowLit
 
 namespace VG.Proof.TripleDes
 

@@ -207,12 +207,12 @@ pub(crate) unsafe extern "C" fn vg_pbkdf2_hmac_sha1(password: *const u8, passwor
         "add x2, x19, #0",
         "add x3, x20, #0",
         "add x4, x23, #0",
-        "bl {vg_sha1_update}",
+        "bl {vg_sha1_update_scratch}",
         "add x0, x23, #780",
         "add x1, x20, #0",
         "add x2, x23, #904",
         "add x3, x23, #0",
-        "bl {vg_sha1_finalize}",
+        "bl {vg_sha1_finalize_scratch}",
         "add x2, x23, #904",
         "movz x3, #20, lsl #0",
         "b 23f",
@@ -276,7 +276,7 @@ pub(crate) unsafe extern "C" fn vg_pbkdf2_hmac_sha1(password: *const u8, passwor
         "add x2, x21, #0",
         "add x3, x22, #0",
         "add x4, x23, #0",
-        "bl {vg_sha1_update}",
+        "bl {vg_sha1_update_scratch}",
         "add x20, x22, #0",
         "ldr x22, [x23, #504]",
         "ldr x21, [x23, #520]",
@@ -332,7 +332,7 @@ pub(crate) unsafe extern "C" fn vg_pbkdf2_hmac_sha1(password: *const u8, passwor
         "add x2, x23, #924",
         "movz x3, #4, lsl #0",
         "add x4, x23, #0",
-        "bl {vg_sha1_update}",
+        "bl {vg_sha1_update_scratch}",
         "add x0, x23, #780",
         "add x1, x23, #612",
         "add x2, x20, #68",
@@ -388,8 +388,8 @@ pub(crate) unsafe extern "C" fn vg_pbkdf2_hmac_sha1(password: *const u8, passwor
         "ldr x23, [x23, #496]",
         "ret",
         vg_sha1_init = sym super::sha1::vg_sha1_init,
-        vg_sha1_update = sym super::sha1::vg_sha1_update,
-        vg_sha1_finalize = sym super::sha1::vg_sha1_finalize,
+        vg_sha1_update_scratch = sym super::sha1::vg_sha1_update_scratch,
+        vg_sha1_finalize_scratch = sym super::sha1::vg_sha1_finalize_scratch,
         vg_hmac_sha1_init = sym super::hmac_sha1::vg_hmac_sha1_init,
         vg_hmac_sha1_finalize = sym super::hmac_sha1::vg_hmac_sha1_finalize,
         vg_pbkdf2_hmac_sha1_iterate = sym super::pbkdf2_sha1::vg_pbkdf2_hmac_sha1_iterate,
@@ -397,7 +397,7 @@ pub(crate) unsafe extern "C" fn vg_pbkdf2_hmac_sha1(password: *const u8, passwor
 }
 
 /// The CPU features `vg_pbkdf2_hmac_sha1_iterate_sha2` requires (`Artifact.features`).
-pub(crate) const VG_PBKDF2_HMAC_SHA1_ITERATE_SHA2_FEATURES: &[&str] = &["sha2"];
+pub(crate) const VG_PBKDF2_HMAC_SHA1_ITERATE_SHA2_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["sha2"]);
 
 /// Runs `n` steps of PBKDF2-HMAC-SHA-1's iteration: if, for a 64-byte key `K₀`, the SHA-1 streaming state in bytes 0 to 83 of `*key` represents `K₀ ⊕ ipad` and the one in bytes 84 to 167 represents `K₀ ⊕ opad` (as `vg_hmac_sha1_init` leaves them), repeats `U ← HMAC-SHA-1 (K₀, U)`, `T ← T ⊕ U` `n` times, from `U = *u` and `T = *t`, and leaves the final `T` in `*t` (RFC 8018, step 3 of `F`).
 ///
@@ -562,7 +562,7 @@ pub(crate) unsafe extern "C" fn vg_pbkdf2_hmac_sha1_iterate_sha2(key: *const [u8
 }
 
 /// The CPU features `vg_pbkdf2_hmac_sha1_sha2` requires (`Artifact.features`).
-pub(crate) const VG_PBKDF2_HMAC_SHA1_SHA2_FEATURES: &[&str] = &["sha2"];
+pub(crate) const VG_PBKDF2_HMAC_SHA1_SHA2_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["sha2"]);
 
 /// PBKDF2-HMAC-SHA-1 (RFC 8018 §5.2, with HMAC-SHA-1 as the pseudorandom function): writes the `out_len`-byte key derived from the `password_len` bytes at `password` and the `salt_len` bytes at `salt` with `c` iterations to `out`. Calls the verified SHA-1 and HMAC-SHA-1 functions and `vg_pbkdf2_hmac_sha1_iterate`.
 ///
@@ -612,12 +612,12 @@ pub(crate) unsafe extern "C" fn vg_pbkdf2_hmac_sha1_sha2(password: *const u8, pa
         "add x2, x19, #0",
         "add x3, x20, #0",
         "add x4, x23, #0",
-        "bl {vg_sha1_update_sha2}",
+        "bl {vg_sha1_update_scratch_sha2}",
         "add x0, x23, #780",
         "add x1, x20, #0",
         "add x2, x23, #904",
         "add x3, x23, #0",
-        "bl {vg_sha1_finalize_sha2}",
+        "bl {vg_sha1_finalize_scratch_sha2}",
         "add x2, x23, #904",
         "movz x3, #20, lsl #0",
         "b 23f",
@@ -681,7 +681,7 @@ pub(crate) unsafe extern "C" fn vg_pbkdf2_hmac_sha1_sha2(password: *const u8, pa
         "add x2, x21, #0",
         "add x3, x22, #0",
         "add x4, x23, #0",
-        "bl {vg_sha1_update_sha2}",
+        "bl {vg_sha1_update_scratch_sha2}",
         "add x20, x22, #0",
         "ldr x22, [x23, #504]",
         "ldr x21, [x23, #520]",
@@ -737,7 +737,7 @@ pub(crate) unsafe extern "C" fn vg_pbkdf2_hmac_sha1_sha2(password: *const u8, pa
         "add x2, x23, #924",
         "movz x3, #4, lsl #0",
         "add x4, x23, #0",
-        "bl {vg_sha1_update_sha2}",
+        "bl {vg_sha1_update_scratch_sha2}",
         "add x0, x23, #780",
         "add x1, x23, #612",
         "add x2, x20, #68",
@@ -794,8 +794,8 @@ pub(crate) unsafe extern "C" fn vg_pbkdf2_hmac_sha1_sha2(password: *const u8, pa
         "ret",
         ".arch_extension nosha2",
         vg_sha1_init = sym super::sha1::vg_sha1_init,
-        vg_sha1_update_sha2 = sym super::sha1::vg_sha1_update_sha2,
-        vg_sha1_finalize_sha2 = sym super::sha1::vg_sha1_finalize_sha2,
+        vg_sha1_update_scratch_sha2 = sym super::sha1::vg_sha1_update_scratch_sha2,
+        vg_sha1_finalize_scratch_sha2 = sym super::sha1::vg_sha1_finalize_scratch_sha2,
         vg_hmac_sha1_init_sha2 = sym super::hmac_sha1::vg_hmac_sha1_init_sha2,
         vg_hmac_sha1_finalize_sha2 = sym super::hmac_sha1::vg_hmac_sha1_finalize_sha2,
         vg_pbkdf2_hmac_sha1_iterate_sha2 = sym super::pbkdf2_sha1::vg_pbkdf2_hmac_sha1_iterate_sha2,

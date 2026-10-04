@@ -13,16 +13,40 @@ Each platform's `modules` narrows its benchmarks to the modules whose own
 files changed:
 
   * `src/asm/<arch>/<module>.rs`: `<module>`, on that architecture;
-  * `src/<module>.rs` or `src/hashes/<module>.rs`: `<module>`;
+  * `src/<module>.rs` or `src/hashes/<module>.rs`: `<module>`, and
+    `src/hashes/mod.rs` (`streaming_hash!`, `HashFunction`): every hash
+    module in `src/hashes/` (benchmarks of code built on a hash, such as
+    HMAC, list that hash in their `USES`);
   * `src/<family>/<hash>.rs`: `<family>_<hash>` (as in `src/asm/`), and
     `src/<family>/mod.rs`: every `<family>_<hash>`;
+  * a private module of the crate, `src/<helper>.rs` (`mod <helper>;` in
+    `src/lib.rs`, used by none of the benchmarks, e.g. `ct`): the modules
+    whose code names `crate::<helper>`;
+  * a module only tests compile (`#[cfg(test)] mod <name>;`): none;
   * `bench/benches/primitives/<name>.rs`, or its differential test
-    `bench/tests/<name>.rs`: the modules in its `USES`.
+    `bench/tests/<name>.rs`: the modules in its `USES`, or for a helper
+    without one (e.g. `mlkem.rs`, a macro), those of the benchmarks that
+    call it.
+
+A change to a file of `src/` only inside its tests (a top-level
+`#[cfg(test)] mod`, which no benchmark compiles) needs nothing.
 
 The benchmarks run those that use any of them, and all of them for a module
-none uses (e.g. `cpu`, `lib`, or the generated `src/asm/<arch>/mod.rs`). Any
+none uses (e.g. `lib`, or the generated `src/asm/<arch>/mod.rs`). Any
 other shared change (e.g. executable code in benchmarks' `main.rs`, or a benchmark whose
 `USES` cannot be read) leaves `modules` empty, which runs every benchmark.
+
+A change to `src/cpu.rs` needs, on each architecture, the modules that
+choose among implementations by a feature whose detection changed there:
+the first feature each changed line names (the one it detects, as in
+`let vaes = (ecx7 >> 9) & avx;`), in an item only one architecture (or a
+few) compiles, such as its `runtime()`, or all its features if those lines
+name none. A change to an item every architecture compiles (`Features`,
+`detected()`) needs every module that chooses by a feature, on the
+architectures detecting any; one to its tests, its comments or the names
+appended to `NAMES` needs nothing. Its other code (choosing an
+implementation once, when an object is created) is the same everywhere, so
+measuring it where something is chosen suffices.
 
 An architecture with primitives that choose among implementations by CPU
 feature is benchmarked once with every feature the runner has, and once
@@ -31,17 +55,22 @@ src/cpu.rs), so that every implementation is measured. Each entry's
 `cpu-features` is its restriction, empty for none. With `--base REV`, edits
 consisting only of module/benchmark registrations select their dependencies.
 
+With a `BENCHMARKS_PER_JOB`, each configuration is split into jobs of at most
+that many of the benchmarks it runs (`shard` is `i/n`, empty for one):
+`bench_compare.py --shard` runs that share of them.
+
 When only some benchmarks run, a configuration runs only if it can choose
 other implementations of them than the configurations before it: one that
 allows the same of the feature sets they choose by is left out. A benchmark
 chooses by the features of each of its `USES` modules' generated variants
 (a `_FEATURES` constant of `src/asm/<arch>/<module>.rs`) and by each feature
-its architecture detects that their Rust code names in quotes (e.g.
-`chacha20`'s `"neon"`), at base and at head. A module whose Rust code reads `VG_CPU_FEATURES` itself (on
+its architecture detects that their Rust code, but its tests, names in quotes
+(e.g. `chacha20`'s `"neon"`), at base and at head. A module whose Rust code reads `VG_CPU_FEATURES` itself (on
 AArch64, SHA-3 uses FEAT_SHA3 only when it is named) depends on which of its
 features each configuration names. All benchmarks run every configuration.
 """
 
+import difflib
 import functools
 import json
 import pathlib
@@ -72,7 +101,11 @@ PLATFORMS = {
 # each implementation a runner can run is measured (on x86-64, each of
 # Ed25519's combinations of SHA-512 and field multiplication, and, on
 # x86-64 and x86, AES-GCM's `_aesni` and `_pclmul`, which a runner with
-# both extensions never chooses; no runner has the SHA512 extension,
+# both extensions never chooses, and on x86-64 its `_aesni_pclmul` and the
+# instances with VAES or VPCLMULQDQ alone or paired with the other's 128-bit
+# instruction, which a runner with both never chooses, and with both in
+# 256-bit registers alone, which a runner with AVX512BW never chooses; on AArch64, ChaCha20's `_neon` instances,
+# which the SVE2 runner never chooses; no runner has the SHA512 extension,
 # whose variants only ci.yml tests, under SDE).
 CPU_FEATURES = {
     "x86_64": [
@@ -82,14 +115,29 @@ CPU_FEATURES = {
         "avx,avx2,bmi2,adx,avx512ifma,avx512vl",
         "aes,ssse3",
         "pclmulqdq,ssse3",
+        "aes,pclmulqdq,ssse3",
+        "aes,avx,avx2,ssse3,vaes",
+        "avx,avx2,pclmulqdq,ssse3,vpclmulqdq",
+        "aes,avx,avx2,pclmulqdq,ssse3,vaes",
+        "aes,avx,avx2,pclmulqdq,ssse3,vpclmulqdq",
+        "aes,avx,avx2,pclmulqdq,ssse3,vaes,vpclmulqdq",
         "none",
     ],
-    "aarch64": ["sha3", "none"],
+    "aarch64": ["neon", "sha3", "none"],
     "x86": ["aes", "pclmulqdq,ssse3", "none"],
 }
 
+# The benchmarks (`BENCHES` entries of bench/benches/primitives/main.rs) one
+# job runs at most, or None for one job per configuration. Every runner takes
+# about 1 s per benchmark id per pass; with 2 rounds (bench_compare.py), all
+# 51 fit in one job on every runner, and each shard would add a job per
+# configuration (with its own builds), so none is split for now.
+BENCHMARKS_PER_JOB = None
+
+# Changes to this script choose benchmarks but are not measured by any:
+# `ci/test_check_benchmarks.py` tests it.
 SHARED = re.compile(
-    r"src/|bench/|Cargo\.(toml|lock)$|ci/bench_(compare|arches)\.py$"
+    r"src/|bench/|Cargo\.(toml|lock)$|ci/bench_compare\.py$"
     r"|\.github/workflows/bench\.yml$"
 )
 
@@ -98,6 +146,9 @@ SHARED = re.compile(
 # on every one.
 ASM = re.compile(r"src/asm/([a-z0-9_]+)/([a-z0-9_]+)\.rs$")
 API = re.compile(r"src/(?:hashes/)?([a-z0-9_]+)\.rs$")
+HASHES = "src/hashes/mod.rs"
+# A module declared in `src/lib.rs`: its attributes, and `pub` if it has it.
+LIB_MOD = re.compile(r"^((?:#\[[^\n]*\]\n)*)(pub(?:\([a-z]+\))? )?mod ([a-z0-9_]+);", re.M)
 FAMILY = re.compile(r"src/(?!asm/|hashes/)([a-z0-9_]+)/([a-z0-9_]+)\.rs$")
 # One algorithm's benchmark, and the modules it lists in its `USES`.
 BENCH = re.compile(r"bench/benches/primitives/(?!main\.rs$)([a-z0-9_]+)\.rs$")
@@ -105,15 +156,26 @@ BENCH = re.compile(r"bench/benches/primitives/(?!main\.rs$)([a-z0-9_]+)\.rs$")
 BENCH_TEST = re.compile(r"bench/tests/([a-z0-9_]+)\.rs$")
 USES = re.compile(r"pub const USES: &\[&str\] = &\[([^\]]*)\];")
 QUOTED = re.compile(r'"([a-z0-9_]+)"')
-# A generated variant's CPU features, and the features `src/cpu.rs` knows.
-FEATURES = re.compile(r"_FEATURES: &\[&str\] = &\[([^\]]*)\];")
+# A generated variant's CPU features (a `Features` constant, or a list of
+# names at a base revision from before it was one), and the features
+# `src/cpu.rs` knows.
+FEATURES = re.compile(
+    r"_FEATURES: (?:&\[&str\] = &\[|crate::cpu::Features = crate::cpu::Features::of\(&\[)([^\]]*)\]")
 NAMES = re.compile(r"const NAMES: \[&str; \d+\] = \[([^\]]*)\];")
 # Each architecture's feature detection in `src/cpu.rs`: its `cfg`, and the
 # body, which names each feature in quotes or as a `let`.
 RUNTIME = re.compile(r"(#\[cfg\([^\n]*\)\])\nfn runtime\(\) -> u32 \{\n(.*?)\n\}\n", re.S)
 LET = re.compile(r"\blet ([a-z0-9_]+) =")
+# A top-level module only tests compile: from its `#[cfg(test)]` to the `}`
+# closing it, alone in column 0 as rustfmt writes it.
+TEST_MOD = re.compile(r"^#\[cfg\(test\)\]\n(?:#\[[^\n]*\]\n)*(?:pub(?:\([a-z]+\))? )?mod [a-z0-9_]+ \{\n.*?^\}$",
+                      re.M | re.S)
 # Code choosing by what `VG_CPU_FEATURES` names, not only by what it allows.
 OPT_IN = re.compile(r'var\("VG_CPU_FEATURES"\)')
+
+# The first line of an item of `src/cpu.rs`: in column 0, and not a
+# comment, an attribute or the end of an item.
+ITEM_START = re.compile(r"(?!//|#\[|[\s})\]]|$)")
 
 ALL = None
 
@@ -144,6 +206,42 @@ def bench_catalog(revision=None, root="."):
     return catalog if catalog and all(catalog.values()) else None
 
 
+def bench_count(modules, root="."):
+    """How many benchmarks run for `modules` (ALL: every registered one)."""
+    main = read("bench/benches/primitives/main.rs", None, root) or ""
+    names = set(re.findall(r"\(([a-z0-9_]+)::USES, \1::bench\)", main))
+    if modules is ALL:
+        return len(names)
+    catalog = bench_catalog(None, root) or {}
+    return sum(1 for uses in catalog.values() if uses & modules)
+
+
+def test_lines(text):
+    """The (0-based) numbers of the lines of `text` in its test modules."""
+    lines = set()
+    for m in TEST_MOD.finditer(text):
+        first = text.count("\n", 0, m.start())
+        lines.update(range(first, first + m[0].count("\n") + 1))
+    return lines
+
+
+def without_tests(text):
+    """`text` without its test modules."""
+    return TEST_MOD.sub("", text)
+
+
+def tests_only(path, base):
+    """Whether `path` changed since `base` only inside its test modules."""
+    old, new = (read(path, base) if base else None), read(path)
+    if old is None or new is None or old == new:
+        return False
+    sides = [old.splitlines(), new.splitlines()]
+    tests = [test_lines(old), test_lines(new)]
+    matcher = difflib.SequenceMatcher(None, *sides, autojunk=False)
+    return all(set(range(i1, i2)) <= tests[0] and set(range(j1, j2)) <= tests[1]
+               for tag, i1, i2, j1, j2 in matcher.get_opcodes() if tag != "equal")
+
+
 def registrations(path, base):
     """Only changed module declarations/registry entries; other code means all."""
     if not base:
@@ -172,23 +270,61 @@ def rust_files(root="."):
     return sorted(p.relative_to(root).as_posix() for p in pathlib.Path(root, "src").glob("**/*.rs"))
 
 
+def hashes(root="."):
+    """The hash modules: the files of `src/hashes/` but its `mod.rs`."""
+    return {m[1] for path in rust_files(root)
+            if (m := re.fullmatch(r"src/hashes/([a-z0-9_]+)\.rs", path)) and m[1] != "mod"}
+
+
+def lib_modules(revision=None, root="."):
+    """The modules `src/lib.rs` declares: for each, whether only tests
+    compile it, and whether it is public."""
+    return {m[3]: ("#[cfg(test)]" in m[1], bool(m[2]))
+            for m in LIB_MOD.finditer(read("src/lib.rs", revision, root) or "")}
+
+
+def test_only(module, base=None):
+    """Whether only tests compile `module` (at `base` too, if given), so no
+    benchmark can measure it."""
+    return all(lib_modules(r).get(module, (False,))[0] for r in ([base, None] if base else [None]))
+
+
 def users(family, known, root="."):
     """The modules whose Rust code (outside the family's) uses the family's
-    shared code; a file that is no module's names itself, which no
-    benchmark uses."""
+    shared code, or a private module of the crate; a file that is no
+    module's names itself, which no benchmark uses. Modules only tests
+    compile are left out."""
     names = set()
+    tests = {m for m, (test, _) in lib_modules(None, root).items() if test}
     for path in rust_files(root):
-        if path.startswith(("src/asm/", f"src/{family}/")) or not re.search(
-                rf"\bcrate::{family}::", read(path, None, root) or ""):
+        if path.startswith(("src/asm/", f"src/{family}/")) or path == f"src/{family}.rs" or not re.search(
+                rf"\b(?:crate|super)::{family}::", read(path, None, root) or ""):
             continue
         api, other = API.match(path), FAMILY.match(path)
-        if api:
-            names.add(api[1])
+        if path == HASHES:
+            names |= hashes(root)
+        elif api:
+            if api[1] not in tests:
+                names.add(api[1])
         elif other and other[2] == "mod":
             names |= members(other[1], known) or {path}
         else:
             names.add(f"{other[1]}_{other[2]}" if other else path)
     return names
+
+
+def helper_uses(name, catalog):
+    """The `USES` of the benchmarks that call the helper
+    `bench/benches/primitives/<name>.rs` (a module of `main.rs` without
+    `USES` of its own), or None if none does."""
+    text = read(f"bench/benches/primitives/{name}.rs")
+    if text is None or not catalog:
+        return None
+    macros = re.findall(r"macro_rules! ([a-z0-9_]+)", text)
+    calls = re.compile(r"\b(?:%s)" % "|".join([rf"{name}::", *(rf"{m}!" for m in macros)]))
+    uses = set().union(*(u for n, u in catalog.items()
+                         if n != name and calls.search(read(f"bench/benches/primitives/{n}.rs") or "")))
+    return uses or None
 
 
 def sources(module):
@@ -231,7 +367,7 @@ def requirements(arch, modules, revisions):
             found = {frozenset(QUOTED.findall(lst)) for lst in FEATURES.findall(asm)}
             opt_in = False
             for path in sources(module):
-                text = read(path, revision) or ""
+                text = without_tests(read(path, revision) or "")
                 if arch_features:
                     found |= {frozenset([name]) for name in quoted.findall(text)}
                 opt_in |= bool(OPT_IN.search(text))
@@ -266,6 +402,8 @@ def arches(changed, base=None):
 
     for path in changed:
         asm, api, family = ASM.match(path), API.match(path), FAMILY.match(path)
+        if path.startswith("src/") and not asm and tests_only(path, base):
+            continue
         if path in ("src/lib.rs", "bench/benches/primitives/main.rs") or (asm and asm[2] == "mod"):
             names = registrations(path, base)
             for arch in ([asm[1]] if asm else PLATFORMS):
@@ -280,11 +418,41 @@ def arches(changed, base=None):
                             need(arch, module)
                     else:
                         need(arch, name)
+        elif path == "src/cpu.rs":
+            changes = cpu_changes(base)
+            for a in PLATFORMS:
+                if changes is None:
+                    needed[a] = ALL
+                    continue
+                if "*" not in changes and a not in changes:
+                    continue
+                modules = cpu_modules(a, ALL if "*" in changes else changes[a], known,
+                                      [base, None] if base else [None])
+                if modules is None:
+                    needed[a] = ALL
+                for module in modules or ():
+                    need(a, module)
+        elif asm and asm[1] in PLATFORMS:
+            need(asm[1], asm[2])
         elif asm:
             # The assembly of an architecture that is not benchmarked (e.g.
             # PPC64LE) needs no benchmark.
-            if asm[1] in PLATFORMS:
-                need(asm[1], asm[2])
+            pass
+        elif path == HASHES:
+            for a in PLATFORMS:
+                for name in hashes():
+                    need(a, name)
+        elif api and path == f"src/{api[1]}.rs" and test_only(api[1], base):
+            continue
+        elif (api and path == f"src/{api[1]}.rs" and api[1] not in known
+              and lib_modules().get(api[1], (False, True)) == (False, False)):
+            # A private helper: only the crate's own modules can use it.
+            names = users(api[1], known)
+            for a in PLATFORMS:
+                if not names:
+                    needed[a] = ALL
+                for name in names:
+                    need(a, name)
         elif api:
             for a in PLATFORMS:
                 need(a, api[1])
@@ -298,7 +466,8 @@ def arches(changed, base=None):
                 for name in names:
                     need(a, name)
         elif (bench := BENCH.match(path) or BENCH_TEST.match(path)) and (
-                uses := bench_uses(f"bench/benches/primitives/{bench[1]}.rs")):
+                uses := bench_uses(f"bench/benches/primitives/{bench[1]}.rs")
+                or helper_uses(bench[1], catalogs[-1])):
             for a in PLATFORMS:
                 for m in uses:
                     need(a, m)
@@ -307,7 +476,86 @@ def arches(changed, base=None):
                 needed[a] = ALL
     revisions = [base, None] if base else [None]
     return [p for a in PLATFORMS if a in needed
-            for p in platforms(a, needed[a], run_requirements(a, needed[a], catalogs, revisions))]
+            for p in platforms(a, needed[a], run_requirements(a, needed[a], catalogs, revisions),
+                               bench_count(needed[a]))]
+
+
+def cpu_item(lines, i):
+    """The item of `src/cpu.rs` (as `lines`) line `i` is in: its first line,
+    and its attributes."""
+    while i < len(lines) - 1 and lines[i].startswith("#["):  # The next item's.
+        i += 1
+    while i > 0 and not ITEM_START.match(lines[i]):
+        i -= 1
+    attributes = []
+    j = i - 1
+    while j >= 0 and lines[j].startswith(("#[", "///")):
+        attributes += [lines[j]] if lines[j].startswith("#[") else []
+        j -= 1
+    return lines[i], attributes
+
+
+def cpu_changes(base):
+    """What the change to `src/cpu.rs` since `base` affects: for each
+    architecture whose own detection changed, the first feature each changed
+    line names (ALL if none does); "*" for a change to code every
+    architecture compiles; None if either revision cannot be read."""
+    old, new = read("src/cpu.rs", base) if base else None, read("src/cpu.rs")
+    if old is None or new is None:
+        return None
+    names = [QUOTED.findall(m[1]) if (m := NAMES.search(t)) else [] for t in (old, new)]
+    known = set(names[0]) | set(names[1])
+    sides = [old.splitlines(), new.splitlines()]
+    items = {}
+    matcher = difflib.SequenceMatcher(None, *sides, autojunk=False)
+    for tag, i1, i2, j1, j2 in matcher.get_opcodes():
+        if tag == "equal":
+            continue
+        for side, lo, hi in ((0, i1, i2), (1, j1, j2)):
+            for k in range(lo, hi):
+                code = sides[side][k].split("//")[0].strip()
+                if not code:
+                    continue
+                first, attributes = cpu_item(sides[side], k)
+                cfgs = [a for a in attributes if a.startswith("#[cfg(")]
+                if "#[cfg(test)]" in cfgs:
+                    continue
+                if re.search(r"\bconst NAMES\b", first):
+                    # Names appended change no other feature's bit, and
+                    # choose nothing until something detects them.
+                    a, b = names
+                    if a == b[:len(a)] or b == a[:len(b)]:
+                        continue
+                    arches = "*"
+                else:
+                    arches = frozenset(re.findall(r'target_arch = "([a-z0-9_]+)"', " ".join(cfgs)))
+                    if not arches or any("not(" in c for c in cfgs):
+                        arches = "*"
+                key = (arches, first.strip())
+                # The feature a line detects comes first (`let vaes = … & avx`).
+                named = [n for n in re.findall(r"[a-z0-9_]+", code) if n in known]
+                items.setdefault(key, set()).update(named[:1])
+    changes = {}
+    for (arches, _), features in items.items():
+        for arch in [arches] if arches == "*" else arches:
+            if not features or arches == "*":
+                changes[arch] = ALL
+            elif changes.get(arch, set()) is not ALL:
+                changes.setdefault(arch, set()).update(features)
+    return changes
+
+
+def cpu_modules(arch, changes, known, revisions):
+    """The modules `known` on `arch` that choose by a feature in `changes`
+    (ALL: by any), or None if what they choose by cannot be read."""
+    modules = set()
+    for module in sorted(known):
+        reqs = requirements(arch, {module}, revisions)
+        if reqs is None:
+            return None
+        if any(changes is ALL or {f.rstrip("!") for f in req} & changes for req in reqs):
+            modules.add(module)
+    return modules
 
 
 def run_requirements(arch, modules, catalogs, revisions):
@@ -319,9 +567,14 @@ def run_requirements(arch, modules, catalogs, revisions):
     return requirements(arch, uses, revisions)
 
 
-def platforms(arch, modules=ALL, reqs=None):
+def platforms(arch, modules=ALL, reqs=None, benchmarks=None):
     """The matrix entries of `arch`: one per CPU feature configuration, but
-    with `reqs`, only the first of those allowing the same of them."""
+    with `reqs`, only the first of those allowing the same of them; each in
+    as many shards as `benchmarks` (by default, every registered one)
+    needs."""
+    if benchmarks is None:
+        benchmarks = bench_count(ALL)
+    shards = max(1, -(-benchmarks // BENCHMARKS_PER_JOB)) if BENCHMARKS_PER_JOB else 1
     configurations = ["", *CPU_FEATURES.get(arch, [])]
     if reqs is not None:
         chosen = {}
@@ -337,8 +590,10 @@ def platforms(arch, modules=ALL, reqs=None):
             **PLATFORMS[arch],
             "cpu-features": features,
             "modules": " ".join(sorted(modules or ())),
+            "shard": f"{shard}/{shards}" if shards > 1 else "",
         }
         for features in configurations
+        for shard in range(1, shards + 1)
     ]
 
 

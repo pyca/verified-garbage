@@ -202,7 +202,7 @@ theorem linv_zero {s₀ : State} (hp : Pre s₀) {s : State} (hc : Common s₀ 0
     (hm : s.mem = flagMem s₀) : LInv s₀ 0 s := by
   have hr := rw_scr hp.scr_fits
   refine ⟨hc, by rw [hedi]; simp [blkAddr], ?_, ?_, ?_, ?_⟩ <;> rw [hm] <;>
-    simp (config := {decide := true}) (disch := decide) only [flagMem, saveMem, Mem.readW_writeW_self32, hr]
+    simp (disch := decide) only [flagMem, saveMem, Mem.readW_writeW_self32, hr]
   · simp only [Nat.zero_mul, Nat.add_zero, t₀]; exact (Proof.Blake2.X86.Stream.lo_append _ _).symm
   · simp only [Nat.zero_mul, Nat.add_zero, t₀]; exact (Proof.Blake2.X86.Stream.hi_append _ _).symm
   · simp [nb]

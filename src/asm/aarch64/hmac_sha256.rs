@@ -173,7 +173,7 @@ pub(crate) unsafe extern "C" fn vg_hmac_sha256_finalize(inner: *mut [u8; 96], ou
         "add x1, x2, #0",
         "add x2, x23, #216",
         "add x3, x23, #0",
-        "bl {vg_sha256_finalize}",
+        "bl {vg_sha256_finalize_scratch}",
         "ldr w9, [x20, #0]",
         "str w9, [x19, #0]",
         "ldr w9, [x20, #4]",
@@ -261,13 +261,13 @@ pub(crate) unsafe extern "C" fn vg_hmac_sha256_finalize(inner: *mut [u8; 96], ou
         "ldr x30, [x23, #200]",
         "ldr x23, [x23, #208]",
         "ret",
-        vg_sha256_finalize = sym super::sha256::vg_sha256_finalize,
+        vg_sha256_finalize_scratch = sym super::sha256::vg_sha256_finalize_scratch,
         vg_sha256_compress = sym super::sha256::vg_sha256_compress,
     )
 }
 
 /// The CPU features `vg_hmac_sha256_init_sha2` requires (`Artifact.features`).
-pub(crate) const VG_HMAC_SHA256_INIT_SHA2_FEATURES: &[&str] = &["sha2"];
+pub(crate) const VG_HMAC_SHA256_INIT_SHA2_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["sha2"]);
 
 /// Starts an HMAC-SHA-256 computation with a key of at most 64 bytes: makes the SHA-256 streaming state `*inner` represent `K₀ ⊕ ipad` and `*outer` represent `K₀ ⊕ opad`, where `K₀` is the `key_len` bytes at `key` padded with zeros to 64 bytes (FIPS 198-1). The text is then absorbed with `vg_sha256_update` on `*inner` (its `count` starting at 64), and the MAC computed with `vg_hmac_sha256_finalize`.
 ///
@@ -413,7 +413,7 @@ pub(crate) unsafe extern "C" fn vg_hmac_sha256_init_sha2(inner: *mut [u8; 96], o
 }
 
 /// The CPU features `vg_hmac_sha256_finalize_sha2` requires (`Artifact.features`).
-pub(crate) const VG_HMAC_SHA256_FINALIZE_SHA2_FEATURES: &[&str] = &["sha2"];
+pub(crate) const VG_HMAC_SHA256_FINALIZE_SHA2_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["sha2"]);
 
 /// Finishes an HMAC-SHA-256 computation: if, for a 64-byte key `K₀` and a text of fewer than 2⁶⁴ − 64 bytes, the SHA-256 streaming state `*inner` represents `(K₀ ⊕ ipad) ‖ text`, of `count` bytes, and `*outer` represents `K₀ ⊕ opad`, writes the HMAC-SHA-256 of the text under `K₀` (32 bytes) to `*out`.
 ///
@@ -448,7 +448,7 @@ pub(crate) unsafe extern "C" fn vg_hmac_sha256_finalize_sha2(inner: *mut [u8; 96
         "add x1, x2, #0",
         "add x2, x23, #216",
         "add x3, x23, #0",
-        "bl {vg_sha256_finalize_sha2}",
+        "bl {vg_sha256_finalize_scratch_sha2}",
         "ldr w9, [x20, #0]",
         "str w9, [x19, #0]",
         "ldr w9, [x20, #4]",
@@ -537,7 +537,7 @@ pub(crate) unsafe extern "C" fn vg_hmac_sha256_finalize_sha2(inner: *mut [u8; 96
         "ldr x23, [x23, #208]",
         "ret",
         ".arch_extension nosha2",
-        vg_sha256_finalize_sha2 = sym super::sha256::vg_sha256_finalize_sha2,
+        vg_sha256_finalize_scratch_sha2 = sym super::sha256::vg_sha256_finalize_scratch_sha2,
         vg_sha256_compress_sha2 = sym super::sha256::vg_sha256_compress_sha2,
     )
 }

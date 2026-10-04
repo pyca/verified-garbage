@@ -64,7 +64,7 @@ theorem streamAad_rel (v : GcmImpl) {s₀ s₀' : State} (hp : Proof.AesGcm.stre
   refine fn_rel (Ctx := s₀.gpr .rdi) (St := s₀.gpr .rsi) (W := s₀.gpr .r9) (SP := s₀.gpr .rsp)
     [.rdi, .rsi, .rdx, .rcx, .r8, .r9, .rsp] (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> assumption)
+      rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption)
     ⟨_, by taint_decide⟩ (streamAadEntry_ok hp) hE₂ ?_
   have a := RelCT.exists_ fun H₁ => RelCT.exists_ fun H₂ =>
     absorb_rel v L (.inr rfl) (H₁ := H₁) (H₂ := H₂) (x₁ := List.replicate ((s₀.gpr .rdx).toNat % 16) 0)

@@ -180,7 +180,7 @@ pub(crate) unsafe extern "C" fn vg_hmac_md5_finalize(inner: *mut [u8; 80], outer
         "add r1, r11, r12",
         "mov r12, r11",
         "push {{r1, r12}}",
-        "bl {vg_md5_finalize}",
+        "bl {vg_md5_finalize_scratch}",
         "ldr r1, [sp], #8",
         "mov r3, r11",
         "movw r12, #148",
@@ -235,7 +235,7 @@ pub(crate) unsafe extern "C" fn vg_hmac_md5_finalize(inner: *mut [u8; 80], outer
         "ldr lr, [r11, #140]",
         "ldr r11, [r11, #144]",
         "bx lr",
-        vg_md5_finalize = sym super::md5::vg_md5_finalize,
+        vg_md5_finalize_scratch = sym super::md5::vg_md5_finalize_scratch,
         vg_md5_compress = sym super::md5::vg_md5_compress,
     )
 }

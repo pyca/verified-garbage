@@ -25,9 +25,9 @@ theorem storeTail_ok (d : Direction) (s : State)
   have h1 : InRegions s.wr (State.addr (s.gpr .r1 + BitVec.ofNat 32 4)) 4 := by
     simpa only [Nat.mul_one] using hw 1 (by decide)
   cases d <;> refine ⟨_, by
-    simp (config := {decide := true}) only [storeTail, ite_true, ite_false,
-      runBlock_cons, runStep_some, runBlock_nil, exec, State.store32, h0, h1,
-      Op2.eval, Option.map_some, gpr_setReg, mem_setReg, wr_setReg]
+    simp only [reduceCtorEq, ↓reduceIte, Nat.reduceLT, storeTail, 
+      runBlock_cons, runStep_some, exec, State.store32, h0, h1,
+      Op2.eval, gpr_setReg, mem_setReg, wr_setReg]
     rfl, ?_, ?_, ?_, ?_, ?_, ?_⟩
   all_goals try simp only [gpr_setReg, reduceCtorEq, ite_true, ite_false,
     rd_setReg, wr_setReg, sp_setReg]

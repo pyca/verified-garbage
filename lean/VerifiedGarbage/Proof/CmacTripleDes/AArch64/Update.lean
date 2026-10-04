@@ -53,7 +53,7 @@ abbrev ciph : Spec.Cmac.Cipher := ciphAt s₀.mem (W s₀)
 abbrev blks : List (List Byte) := Spec.Cmac.blocksAt s₀.mem (Dp s₀) 8 (N s₀)
 
 /-- What changes. -/
-abbrev chg : List Region := [stR s₀, ⟨S s₀, 48⟩]
+abbrev chg : List Region := [stR s₀, ⟨S s₀, 384⟩]
 
 end
 
@@ -105,7 +105,7 @@ theorem chainIn_ok (s : State) {P Q : Addr} (hp : s.gpr .x1 = P) (hq : s.gpr .x2
       runStep_some, runBlock_cons, exec_logic, runStep_some, runBlock_cons, exec_rev, runStep_some, runBlock_nil],
     ?_⟩
   refine ⟨?_, fun r h₁ h₂ => ?_, rfl, rfl, rfl, rfl⟩
-  · simp (config := {decide := true}) only [s₁, State.read, gpr_write, mem_write, ite_true, ite_false,
+  · simp only [reduceCtorEq, ↓reduceIte, s₁, State.read, gpr_write, mem_write, 
       BitVec.setWidth_eq, rev64_eq, add_ofNat_zero, hp, hq]
   · simp [s₁, gpr_write, h₁, h₂]
 
@@ -127,7 +127,7 @@ theorem chainOut_ok (s : State) {P : Addr} (hp : s.gpr .x1 = P) (wp : InRegions 
   · simp [s₁, gpr_write, State.read]
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     simp [s₁, gpr_write, hr.1, hr.2.1, hr.2.2]
-  · simp (config := {decide := true}) only [s₁, mem_write, State.read, gpr_write, ite_true, ite_false,
+  · simp only [reduceCtorEq, ↓reduceIte, s₁, mem_write, State.read, gpr_write, 
       BitVec.setWidth_eq, rev64_eq, hp, add_ofNat_zero]
 
 /-! ## Regions -/
@@ -165,7 +165,7 @@ theorem UPre.data {hp : UPre s₀} {m : Mem} (hf : Frame (chg s₀) s₀.mem m) 
 theorem UPre.block {hp : UPre s₀} {s : State} (h14 : s.gpr .x14 = W s₀) (h15 : s.gpr .x15 = S s₀)
     (hrd : s.rd = s₀.rd) (hwr : s.wr = s₀.wr) : BlockPre s where
   sched := ⟨schR s₀, by rw [hrd, hwr, hp.rd]; simp, by rw [h14], Nat.le_refl _, by show 384 < 2 ^ 64; decide⟩
-  scr := ⟨scrR s₀, by rw [hwr, hp.wr]; simp, by rw [h15], by show 48 ≤ 640; decide, by show 640 < 2 ^ 64; decide⟩
+  scr := ⟨scrR s₀, by rw [hwr, hp.wr]; simp, by rw [h15], by show 384 ≤ 640; decide, by show 640 < 2 ^ 64; decide⟩
   disj := by
     rw [h14, h15]
     exact hp.sch_scr.symm.sub_left (Region.sub_prefix (by decide))
@@ -198,8 +198,8 @@ theorem body_ok {s₀ : State} (hp : UPre s₀) {k : Nat} (hk : k < N s₀) {s :
   have x15₁ : s₁.gpr .x15 = S s₀ := by rw [k₁ _ (by decide) (by decide), h.x15]
   have bp : BlockPre s₁ := UPre.block (hp := hp) x14₁ x15₁ (by rw [rd₁, h.rd]) (by rw [wr₁, h.wr])
   refine WP.seq (WP.mono (block_ok bp) fun s₂ ⟨same₂, x14₂, ax₂⟩ => ?_)
-  have xR₁ : xR s₁ = ⟨S s₀, 48⟩ := by rw [xR, x15₁]
-  have f₂ : Frame [⟨S s₀, 48⟩] s.mem s₂.mem := by rw [← m₁, ← xR₁]; exact same₂.frame
+  have xR₁ : xR s₁ = ⟨S s₀, 384⟩ := by rw [xR, x15₁]
+  have f₂ : Frame [⟨S s₀, 384⟩] s.mem s₂.mem := by rw [← m₁, ← xR₁]; exact same₂.frame
   have wr₂ : s₂.wr = [stR s₀, scrR s₀] := by rw [same₂.wr, wr₁, h.wr, hp.wr]
   have x1₂ : s₂.gpr .x1 = St s₀ := by
     rw [same₂.keep .x1 (by simp [outer]), k₁ _ (by decide) (by decide), h.x1]

@@ -53,9 +53,9 @@ theorem nib_spec (is : List Instr) (s : State) (P : State → Prop)
     WP isa (.block (cbdNibble ++ is)) s P := by
   rw [WP.block_append_iff]
   apply WP.of_runBlock
-  simp (config := {decide := true}) only [cbdNibble, csub, runBlock_cons, runStep_some, runBlock_nil,
+  simp only [reduceCtorEq, ↓reduceIte, Nat.reduceLeDiff, Nat.reduceEqDiff, Nat.reduceSub, Nat.reducePow, and_self, cbdNibble, csub, runBlock_cons, runStep_some, runBlock_nil,
     exec, execAlu, execShift, readSrc, State.setReg, arithFlags, State.setFlags, Option.bind_some,
-    Option.map_some, ite_true, ite_false, Option.some.injEq, exists_eq_left', List.cons_append,
+    Option.map_some, Option.some.injEq, exists_eq_left', List.cons_append,
     List.nil_append]
   refine k _ ⟨fun r hr => ?_, rfl, rfl, rfl⟩ ?_
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
@@ -162,9 +162,9 @@ theorem init_piece :
     have v₁ := P0_arg hp.sp (n := 2) (i := 1) (by omega) fit hp.stk_a
     simp only [Nat.mul_zero, Nat.add_zero, Nat.mul_one, Nat.reduceAdd] at a₀ a₁
     apply WP.of_runBlock
-    simp (config := {decide := true}) only [cbdInit, at_, runBlock_cons, runStep_some,
+    simp only [reduceCtorEq, ↓reduceIte, cbdInit, at_, runBlock_cons, runStep_some,
       runBlock_nil, exec, readSrc, State.ea, State.load32, State.setReg, Option.map_some, a₀, a₁, i₀,
-      i₁, v₀, v₁, ite_true, ite_false, Option.some.injEq, exists_eq_left']
+      i₁, v₀, v₁, Option.some.injEq, exists_eq_left']
     exact ⟨by simp, rfl, rfl, by simp, by simp, by simp, Frame.refl _ _, fun j hj => absurd hj (by omega)⟩
   · simp only [List.mem_singleton] at hr
     subst hr
@@ -231,9 +231,9 @@ theorem step {s₀ : State} (hp : Pre s₀) {k : Nat} (hk : k < 128) {s : State}
     rw [v₃]; simp only [State.setReg, ite_true]; rw [o₂.gpr _ (by decide), bx₁]
   have out1 : InRegions s₄.wr (coeffAddr (fA s₀) (2 * k + 1)) 4 := by rw [wr₄]; exact outF _ (by omega)
   apply WP.of_runBlock
-  simp (config := {decide := true}) only [runBlock_cons, runStep_some, runBlock_nil, exec, execAlu,
+  simp only [reduceCtorEq, ↓reduceIte, Nat.reducePow, runBlock_cons, runStep_some, runBlock_nil, exec, execAlu,
     readSrc, State.ea, at_, State.store32, State.setReg, arithFlags, State.setFlags, edi₄, o1, out1,
-    ite_true, ite_false, Option.bind_some, Option.some.injEq, exists_eq_left']
+    Option.bind_some, Option.some.injEq, exists_eq_left']
   have lb := b.isLt
   have c0 : s₂.gpr .eax = V s₀ (2 * k) := by
     rw [v₂, ax₁, toNat_byte32, ← eB]

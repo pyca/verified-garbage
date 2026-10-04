@@ -31,7 +31,7 @@ theorem save_ok (s : State) (b : Reg) {W : Addr} (hb : s.gpr b = W) (hw : Covers
       s'.mem = savedMem s.mem W s.gpr := by
   have w (d : Nat) (h : d + 8 ≤ 2560) : InRegions s.wr (W + BitVec.ofNat 64 d) 8 := in_off hw h (by decide)
   refine ⟨_, by
-    simp (config := {decide := true}) only [save, saved, List.map, List.cons_append,
+    simp only [reduceCtorEq, ↓reduceIte, ↓reduceDIte, Nat.reduceLT, Nat.reduceGT, Nat.reduceLeDiff, Nat.reduceEqDiff, Nat.reduceAdd, Nat.reduceSub, Nat.reduceMul, Nat.reduceDiv, Nat.reduceMod, Nat.reducePow, BitVec.reduceEq, not_false_eq_true, not_true_eq_false, Bool.not_true, Bool.not_false, and_self, false_implies, implies_true, Nat.reduceBEq, Nat.reduceBNe, decide_true, decide_false, BitVec.reduceSignExtend, save, saved, List.map, List.cons_append,
       List.nil_append, runBlock_cons, runStep_some, runBlock_nil, exec, addr, State.store, Size.bytes,
       Size.bits, State.read, gpr_write, ite_true, ite_false, Option.bind_some, hb,
       w 128 (by decide), w 136 (by decide), w 144 (by decide), w 152 (by decide), w 160 (by decide),
@@ -104,7 +104,7 @@ theorem restore_ok (s : State) {W : Addr} (h19 : s.gpr .x19 = W) (hr : Covers [�
       s'.wr = s.wr := by
   have r (d : Nat) (h : d + 8 ≤ 2560) : InRegions (s.rd ++ s.wr) (W + BitVec.ofNat 64 d) 8 := in_off hr h (by decide)
   refine ⟨_, by
-    simp (config := {decide := true}) only [restore, saved, List.map, runBlock_cons, runStep_some,
+    simp only [reduceCtorEq, ↓reduceIte, ↓reduceDIte, Nat.reduceLT, Nat.reduceGT, Nat.reduceLeDiff, Nat.reduceEqDiff, Nat.reduceAdd, Nat.reduceSub, Nat.reduceMul, Nat.reduceDiv, Nat.reduceMod, Nat.reducePow, BitVec.reduceEq, not_false_eq_true, not_true_eq_false, Bool.not_true, Bool.not_false, and_self, false_implies, implies_true, Nat.reduceBEq, Nat.reduceBNe, decide_true, decide_false, BitVec.reduceSignExtend, restore, saved, List.map, runBlock_cons, runStep_some,
       runBlock_nil, exec, addr, State.load, Size.bytes, Size.bits, gpr_write, mem_write, rd_write,
       wr_write, ite_true, ite_false, Option.bind_some, Option.map_some, h19,
       r 128 (by decide), r 136 (by decide), r 144 (by decide), r 152 (by decide), r 160 (by decide),

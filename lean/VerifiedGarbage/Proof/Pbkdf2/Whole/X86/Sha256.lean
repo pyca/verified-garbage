@@ -1,5 +1,6 @@
 import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.CT
 import VerifiedGarbage.Proof.Sha256.X86.Variants.Interface
+import VerifiedGarbage.Proof.Framework.TaintBatch
 
 /-!
 # PBKDF2-HMAC-SHA-256 on x86 (32-bit), the whole derivation, for every backend
@@ -43,33 +44,47 @@ def sha256OKF (v : Backend) : FnsOK v.F where
   hBS := show 64 ≤ 96 by decide
   fits := show 20 + 2 * 32 + 32 ≤ 4 * 96 by decide
 
-/-- The sizes of `Backend.F`, which are all the taint checks depend on. -/
-def sha256Shape : Fns := Proof.Sha256.X86.Variants.fns "" "" (.block []) (.block []) (.block [])
+/-- `F` without the names and code of the functions it calls: the code
+between the calls depends on nothing else. -/
+def shapeOf (F : Fns) : Fns :=
+  ⟨⟨F.H.B, F.H.S, F.H.D, F.H.F, F.H.W, "", .block [], "", .block [], "", .block []⟩, F.W, "", .block [], "",
+    .block [], "", .block []⟩
 
-theorem sha256Shape_checks : Checks sha256Shape where
-  pro := ⟨_, by taint_decide⟩
-  cmp := ⟨_, by taint_decide⟩
-  hk1 := ⟨_, by taint_decide⟩
-  hk3 := ⟨_, by taint_decide⟩
-  hk5 := ⟨_, by taint_decide⟩
-  hk7 := ⟨_, by taint_decide⟩
-  short := ⟨_, by taint_decide⟩
-  su1 := ⟨_, by taint_decide⟩
-  su3 := ⟨_, by taint_decide⟩
-  su4 := ⟨_, by taint_decide⟩
-  init := ⟨_, by taint_decide⟩
-  b1 := ⟨_, by taint_decide⟩
-  b2 := ⟨_, by taint_decide⟩
-  b4 := ⟨_, by taint_decide⟩
-  b6 := ⟨_, by taint_decide⟩
-  b7 := ⟨_, by taint_decide⟩
-  tail := ⟨_, by taint_decide⟩
-  restore := ⟨_, by taint_decide⟩
+/-- The sizes of `Backend.F`, which are all the taint checks depend on:
+`shapeOf` of every backend's `Backend.F`, written out, so that the kernel
+reduces each side to it field by field rather than comparing the backends'
+functions. -/
+def sha256Shape : Fns :=
+  ⟨⟨64, 96, 32, 32, 20, "", .block [], "", .block [], "", .block []⟩, Spec.Hmac.sha256I.scratch, "", .block [], "",
+    .block [], "", .block []⟩
 
-theorem sha256_checks (v : Backend) : Checks v.F :=
-  let h := sha256Shape_checks
+theorem sha256Shape_checks : Checks sha256Shape := by
+  refine {
+    pro := ⟨?_, ?_⟩
+    cmp := ⟨?_, ?_⟩
+    hk1 := ⟨?_, ?_⟩
+    hk3 := ⟨?_, ?_⟩
+    hk5 := ⟨?_, ?_⟩
+    hk7 := ⟨?_, ?_⟩
+    short := ⟨?_, ?_⟩
+    su1 := ⟨?_, ?_⟩
+    su3 := ⟨?_, ?_⟩
+    su4 := ⟨?_, ?_⟩
+    init := ⟨?_, ?_⟩
+    b1 := ⟨?_, ?_⟩
+    b2 := ⟨?_, ?_⟩
+    b4 := ⟨?_, ?_⟩
+    b6 := ⟨?_, ?_⟩
+    b7 := ⟨?_, ?_⟩
+    tail := ⟨?_, ?_⟩
+    restore := ⟨?_, ?_⟩ }
+  taint_decide_all
+
+theorem checks_of_shape {F : Fns} (h : Checks (shapeOf F)) : Checks F :=
   ⟨h.pro, h.cmp, h.hk1, h.hk3, h.hk5, h.hk7, h.short, h.su1, h.su3, h.su4, h.init, h.b1, h.b2, h.b4, h.b6, h.b7,
     h.tail, h.restore⟩
+
+theorem sha256_checks (v : Backend) : Checks v.F := checks_of_shape (F := v.F) sha256Shape_checks
 
 theorem sha256_sat : ∃ s, (Spec.Hmac.sha256I.pbkdf2Contract X86.abi 76).pre s := by
   sig_implies_sat [Spec.Hmac.Instance.pbkdf2Contract, Spec.Pbkdf2.pbkdf2Contract, Spec.Pbkdf2.pbkdf2Sig,

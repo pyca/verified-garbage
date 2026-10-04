@@ -180,7 +180,7 @@ pub(crate) unsafe extern "C" fn vg_hmac_sha1_finalize(inner: *mut [u8; 84], oute
         "add r1, r11, r12",
         "mov r12, r11",
         "push {{r1, r12}}",
-        "bl {vg_sha1_finalize}",
+        "bl {vg_sha1_finalize_scratch}",
         "ldr r1, [sp], #8",
         "mov r3, r11",
         "movw r12, #196",
@@ -243,7 +243,7 @@ pub(crate) unsafe extern "C" fn vg_hmac_sha1_finalize(inner: *mut [u8; 84], oute
         "ldr lr, [r11, #188]",
         "ldr r11, [r11, #192]",
         "bx lr",
-        vg_sha1_finalize = sym super::sha1::vg_sha1_finalize,
+        vg_sha1_finalize_scratch = sym super::sha1::vg_sha1_finalize_scratch,
         vg_sha1_compress = sym super::sha1::vg_sha1_compress,
     )
 }

@@ -1,4 +1,5 @@
 import VerifiedGarbage.Spec.MlDsa
+import VerifiedGarbage.Proof.Framework.PowLit
 
 /-!
 # ML-DSA: the coefficients of `BitPack` and `BitUnpack` modulo `q`, for every target

@@ -66,10 +66,12 @@ jobs:
       fail-fast: false
       matrix:
         include: ${{ fromJSON(needs.arches.outputs.matrix) }}
-    name: Compare with base (${{ matrix.arch }}${{ matrix.cpu-features && format(', VG_CPU_FEATURES={0}', matrix.cpu-features) || '' }})
+    name: Compare with base (${{ matrix.arch }}${{ matrix.cpu-features && format(', VG_CPU_FEATURES={0}', matrix.cpu-features) || '' }}${{ matrix.shard && format(', shard {0}', matrix.shard) || '' }})
     runs-on: ${{ matrix.os }}
-    # Running every benchmark (for a shared change, or by hand) takes about
-    # 14 minutes on the aarch64 runners and longer on the others.
+    # Running every benchmark took 25-30 minutes on every runner with 3
+    # rounds; with 2, about 20-25. If it outgrows the timeout again, set
+    # BENCHMARKS_PER_JOB (ci/bench_arches.py) to split configurations into
+    # shards.
     timeout-minutes: 30
     # With an empty image the job runs directly on the runner.
     container:
@@ -109,13 +111,10 @@ jobs:
           openssl version -a
           python3 -c 'from pathlib import Path; print(Path("/proc/cpuinfo").read_text().split("\n\n", 1)[0])'
       - name: Install Rust
-        run: rustup toolchain install stable --profile minimal --component clippy,rustfmt
-      - name: Lint the benchmarks
-        working-directory: head/bench
-        run: |
-          cargo fmt --check
-          cargo clippy --all-targets --locked -- -D warnings
+        # ci.yml's `rust` job lints the benchmarks, once per architecture.
+        run: rustup toolchain install stable --profile minimal
       - name: Benchmark base and head
         env:
           MODULES: ${{ matrix.modules }}
-        run: python3 head/ci/bench_compare.py base head --modules "$MODULES" --summary "$GITHUB_STEP_SUMMARY"
+          SHARD: ${{ matrix.shard }}
+        run: python3 head/ci/bench_compare.py base head --modules "$MODULES" --shard "$SHARD" --summary "$GITHUB_STEP_SUMMARY"
