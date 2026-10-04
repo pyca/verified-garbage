@@ -65,8 +65,13 @@ pub fn bench(c: &mut Criterion) {
             b.iter(|| {
                 buf.copy_from_slice(&ct);
                 let k = AesCcm::new(black_box(&key)).unwrap();
-                k.decrypt_in_place(black_box(&nonce), black_box(&aad), black_box(&mut buf), &tag)
-                    .unwrap()
+                k.decrypt_in_place(
+                    black_box(&nonce),
+                    black_box(&aad),
+                    black_box(&mut buf),
+                    &tag,
+                )
+                .unwrap()
             })
         });
         g.bench_function(BenchmarkId::new(OPENSSL, size), |b| {

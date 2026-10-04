@@ -58,10 +58,8 @@ macro_rules! instance {
 /// The best implementation of AES a CPU with the features `f` can run, with
 /// the AES-CCM functions for it.
 fn select(f: Features) -> Backend {
-    const VAES: Features = Features::all(&[
-        VG_AES_CCM_SEAL_VAES_FEATURES,
-        VG_AES_CCM_OPEN_VAES_FEATURES,
-    ]);
+    const VAES: Features =
+        Features::all(&[VG_AES_CCM_SEAL_VAES_FEATURES, VG_AES_CCM_OPEN_VAES_FEATURES]);
     const AESNI: Features = Features::all(&[
         VG_AES_CCM_SEAL_AESNI_FEATURES,
         VG_AES_CCM_OPEN_AESNI_FEATURES,
@@ -156,7 +154,14 @@ impl AesCcm {
         // below it, and none wraps around the end of the address space. The
         // CPU has the features of the implementation selected. `scratch` is
         // uninitialized: it is only working space.
-        unsafe { expand(key.as_ptr(), key.len(), &mut k.schedule, scratch.as_mut_ptr()) };
+        unsafe {
+            expand(
+                key.as_ptr(),
+                key.len(),
+                &mut k.schedule,
+                scratch.as_mut_ptr(),
+            )
+        };
         Ok(k)
     }
 
