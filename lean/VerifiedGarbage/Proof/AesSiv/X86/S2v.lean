@@ -367,4 +367,180 @@ theorem adStep_wp {C W SP : BitVec 32} (L : Lay C W SP) {s : State} (E : Env C W
     exact (Mem.readW_writeW_self32 _ _ _).trans (Proof.AesGcm.X86.pred_count hiN hN)
   · rw [zf₂, Proof.AesGcm.X86.pred_beq hiN hN]
 
+/-! ## The loop over the components -/
+
+/-- The next descriptor's address and length into `W + strO` and
+`W + slenO`. -/
+theorem adNext_ok {C W SP : BitVec 32} (L : Lay C W SP) {s : State} (E : Env C W SP s) {A : BitVec 32} {j : Nat}
+    (hads : slotv s.mem W adsO = A + BitVec.ofNat 32 j) (hfit : A.toNat + j + 8 ≤ 2 ^ 32)
+    (rD : Covers [⟨w64 A + BitVec.ofNat 64 j, 8⟩] (s.rd ++ s.wr))
+    (dW : (⟨w64 A + BitVec.ofNat 64 j, 8⟩ : Region).Disjoint ⟨w64 W, 2576⟩) :
+    ∃ s', runBlock isa adNext s = some s' ∧
+      s'.mem = (s.mem.writeW (w64 W + BitVec.ofNat 64 strO) (s.mem.readW (w64 A + BitVec.ofNat 64 j) 32)).writeW
+        (w64 W + BitVec.ofNat 64 slenO) (s.mem.readW (w64 A + BitVec.ofNat 64 (j + 4)) 32) ∧
+      s'.gpr .ebp = W ∧ s'.gpr .esp = SP ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
+  have p0 : (A + BitVec.ofNat 32 j + BitVec.ofNat 32 0).setWidth 64 = w64 A + BitVec.ofNat 64 j := by
+    rw [Proof.AesGcm.X86.add_zero32]; exact Buf.ptr (by omega)
+  have p4 : (A + BitVec.ofNat 32 j + BitVec.ofNat 32 4).setWidth 64 = w64 A + BitVec.ofNat 64 (j + 4) := by
+    rw [add32_assoc]; exact Buf.ptr (by omega)
+  have i0 : InRegions (s.rd ++ s.wr) (w64 A + BitVec.ofNat 64 j) 4 := by
+    have := Proof.AesGcm.X86.in_off (p := w64 A + BitVec.ofNat 64 j) rD (d := 0) (n := 4) (by decide) (by decide)
+    rwa [BitVec.add_zero] at this
+  have i4 : InRegions (s.rd ++ s.wr) (w64 A + BitVec.ofNat 64 (j + 4)) 4 := by
+    have := Proof.AesGcm.X86.in_off (p := w64 A + BitVec.ofNat 64 j) rD (d := 4) (n := 4) (by decide) (by decide)
+    rwa [add_ofNat_assoc] at this
+  have r4 : (s.mem.writeW (w64 W + BitVec.ofNat 64 strO) (s.mem.readW (w64 A + BitVec.ofNat 64 j) 32)).readW
+      (w64 A + BitVec.ofNat 64 (j + 4)) 32 = s.mem.readW (w64 A + BitVec.ofNat 64 (j + 4)) 32 :=
+    Cmac.readW_writeW_disj _ (((dW.sub_left (by
+      rw [← add_ofNat_assoc]; exact Offset.sub_base _ (by decide))).sub_right (Lay.wSub (by decide))).symm)
+  refine ⟨_, by crun [adNext, E.ebp, L.aW, E.perm.wW, E.perm.wR, hads, p0, p4, i0, i4], ?_, ?_, ?_, ?_, ?_⟩
+  · cmems [hads, p0, p4, r4]
+  · cregs [E.ebp]
+  · cregs [E.esp]
+  all_goals cmems []
+
+/-- Before the `i`-th component (and, for `i = N`, after the last): `D` is
+S2V's state of the first `i`, with the next descriptor's address and how
+many are left in their slots. -/
+structure AInv (s₀ : State) (C W SP A : BitVec 32) (R N : Nat) (D : BitVec 32) (n i : Nat) (s : State) :
+    Prop where
+  kept : Kept s₀ C W SP R D n [] s
+  le : i ≤ N
+  ads : slotv s.mem W adsO = A + BitVec.ofNat 32 (8 * i)
+  left : slotv s.mem W leftO = BitVec.ofNat 32 (N - i)
+  acc : bytesAt s.mem (w64 W + BitVec.ofNat 64 dOff) 16 =
+    Spec.Siv.s2vAcc (Spec.Siv.ctxMac s₀.mem (w64 C) R) ((Spec.Siv.components 32 s₀.mem (w64 A) N).take i)
+
+theorem sub_wS {W : BitVec 32} {d k : Nat} (h₁ : 200 ≤ d) (h₂ : d + k ≤ 256) :
+    Region.Sub ⟨w64 W + BitVec.ofNat 64 d, k⟩ (wS W) := Offset.sub _ h₁ (by omega)
+
+/-- One component: its descriptor read (`adNext_ok`), its CMAC into the
+working space (`cmacOf_ok`) and the step of S2V (`adStep_wp`). -/
+theorem adBody_ok (v : Ctr32Impl) {s₀ : State} {C W SP A : BitVec 32} {R N : Nat} {D : BitVec 32} {n i : Nat}
+    (hA : AdCtx s₀ C W SP A R N) (hiN : i < N) {s : State} (h : AInv s₀ C W SP A R N D n i s) :
+    WP isa (.seq (.block adNext) (.seq (cmacOf v.callee v.suffix stOff) (.block adStep))) s
+      fun s' => AInv s₀ C W SP A R N D n (i + 1) s' ∧ s'.zf = some (decide (i + 1 = N)) := by
+  have L := hA.lay
+  have K := h.kept
+  have hRb : R ≤ 14 := by rcases hA.rounds with h | h | h <;> omega
+  have hfA := hA.desc.wrap
+  -- The descriptor, as on entry.
+  have dW : (⟨w64 A + BitVec.ofNat 64 (8 * i), 8⟩ : Region).Disjoint ⟨w64 W, 2576⟩ :=
+    hA.desc.w.sub_left (Offset.sub_base _ (by omega))
+  have dS : (below SP 56).Disjoint ⟨w64 A + BitVec.ofNat 64 (8 * i), 8⟩ :=
+    hA.desc.stk.sub_right (Offset.sub_base _ (by omega))
+  have rD : Covers [⟨w64 A + BitVec.ofNat 64 (8 * i), 8⟩] (s.rd ++ s.wr) := by
+    rw [K.rd, K.wr]; exact Proof.AesGcm.X86.covers_off hA.desc.rd (by omega) (by have := hA.desc.lt; omega)
+  have wd : ∀ {d : Nat}, d + 4 ≤ 8 → s.mem.readW (w64 A + BitVec.ofNat 64 (8 * i + d)) 32 =
+      s₀.mem.readW (w64 A + BitVec.ofNat 64 (8 * i + d)) 32 := fun hd =>
+    K.big.readW (r := ⟨w64 A + BitVec.ofNat 64 (8 * i), 8⟩)
+      (by rw [← add_ofNat_assoc]; exact Offset.contains_base _ hd (by omega)) (fun r hr => by
+        simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl
+        · exact dW
+        · exact dS.symm) (by decide)
+  have w0 := wd (d := 0) (by decide)
+  have w4 := wd (d := 4) (by decide)
+  rw [Nat.add_zero] at w0
+  obtain ⟨s₁, run₁, m₁, bp₁, sp₁, rd₁, wr₁⟩ := adNext_ok L K.env h.ads (by omega) rD dW
+  refine WP.seq (WP.of_runBlock ⟨s₁, run₁, ?_⟩)
+  have E₁ : Env C W SP s₁ := ⟨bp₁, sp₁, K.env.perm.of_eq rd₁ wr₁⟩
+  have f₁ : Frame [⟨w64 W + BitVec.ofNat 64 strO, 8⟩] s.mem s₁.mem := by
+    rw [m₁]
+    exact ((Frame.refl _ _).writeW (List.mem_singleton_self _) _
+      (Offset.contains (w64 W) (d := 200) (n := 4) (e := 200) (k := 8) (by decide) (by decide) (by decide))).writeW
+      (List.mem_singleton_self _) _
+      (Offset.contains (w64 W) (d := 204) (n := 4) (e := 200) (k := 8) (by decide) (by decide) (by decide))
+  have K₁ := K.step L (by simp) E₁ rd₁ wr₁ f₁ fun r hr => by
+    simp only [List.mem_singleton] at hr; subst hr; exact .inl ⟨wS W, by simp, sub_wS (by decide) (by decide)⟩
+  have hc₁ := hA.comps i hiN
+  -- The component's CMAC.
+  have P₁ : CmacPre C W SP R (compA s₀.mem A i) (compL s₀.mem A i) s₁ :=
+    ⟨E₁, K₁.slots.ctx, K₁.slots.rounds,
+      by rw [m₁, slotv, readW_writeW_off _ _ _ (by decide) (by decide) (by decide), Mem.readW_writeW_self32, w0],
+      by rw [m₁, slotv, Mem.readW_writeW_self32, w4]; exact (Proof.AesGcm.X86.ofNat_toNat32 _).symm,
+      BitVec.isLt _, hc₁.of_eq K₁.rd K₁.wr⟩
+  refine WP.seq (WP.mono (cmacOf_ok v L hA.rounds P₁) fun s₂ M => ?_)
+  have K₂ := K₁.step L (by simp) M.env M.rd M.wr M.frame fun r hr => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl
+    · exact .inl ⟨wB W, by simp, Offset.sub _ (by decide) (by decide)⟩
+    · exact .inl ⟨wS W, by simp, sub_wS (by decide) (by decide)⟩
+    · exact .inl ⟨wC W, by simp, Offset.sub _ (by decide) (by decide)⟩
+    · exact .inl ⟨below SP 56, by simp, fun _ h => h⟩
+  -- The slots `adStep` reads.
+  have kS : ∀ o, (176 ≤ o ∧ o + 4 ≤ 200) → slotv s₂.mem W o = slotv s.mem W o := fun o ho => by
+    rw [cmacR_slot L M.frame (by omega) (by omega)]
+    exact f₁.readW (r := ⟨w64 W + BitVec.ofNat 64 o, 4⟩) (Region.contains_self _ _) (fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr; exact Lay.w_w (.inl (by simp only [strO]; omega)) (by omega)
+        (by decide)) (by decide)
+  refine WP.mono (adStep_wp L M.env hiN hA.N32 (by rw [kS _ (by decide)]; exact h.ads)
+    (by rw [kS _ (by decide)]; exact h.left)) fun s₃ ⟨E₃, rd₃, wr₃, f₃, o₃, a₃, l₃, z₃⟩ => ⟨⟨?_, hiN, a₃, l₃, ?_⟩, z₃⟩
+  · exact K₂.step L (by simp) E₃ rd₃ wr₃ f₃ fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · exact .inl ⟨wC W, by simp, Offset.sub _ (by decide) (by decide)⟩
+      · exact .inl ⟨wV W, by simp, fun _ h => h⟩
+  · -- `D = dbl(D) ⊕ AES-CMAC(K1, S)`.
+    have hD₂ : bytesAt s₂.mem (w64 W + BitVec.ofNat 64 dOff) 16 = bytesAt s.mem (w64 W + BitVec.ofNat 64 dOff) 16 := by
+      rw [Proof.AesGcm.X86.bytesAt_frame M.frame (fun r hr => by
+          simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+          rcases hr with rfl | rfl | rfl | rfl
+          · exact Lay.w_w (.inr (by decide)) (by decide) (by decide)
+          · exact Lay.w_w (.inr (by decide)) (by decide) (by decide)
+          · exact Lay.w_w (.inr (by decide)) (by decide) (by decide)
+          · exact (L.stk_w' (by decide)).symm) (by decide),
+        Proof.AesGcm.X86.bytesAt_frame f₁ (fun r hr => by
+          simp only [List.mem_singleton] at hr; subst hr; exact Lay.w_w (.inr (by decide)) (by decide) (by decide))
+          (by decide)]
+    have hS : bytesAt s₁.mem (w64 (compA s₀.mem A i)) (compL s₀.mem A i) =
+        bytesAt s₀.mem (w64 (compA s₀.mem A i)) (compL s₀.mem A i) :=
+      K₁.bytes hc₁.w hc₁.stk (by simp) (by have := hc₁.lt; omega)
+    rw [o₃, M.out, hD₂, h.acc, K₁.mac L hA.rounds (by simp), hS, components_take_succ _ _ hiN, s2vAcc_snoc,
+      Spec.Siv.s2vStep, Siv.xor_eq, Proof.Cmac.xor_comm]
+    rfl
+
+theorem leftTest_ok {C W SP : BitVec 32} (L : Lay C W SP) {s : State} (E : Env C W SP s) {N : Nat}
+    (hN : N < 2 ^ 32) (hl : slotv s.mem W leftO = BitVec.ofNat 32 N) :
+    ∃ s', runBlock isa [.mov .eax (slot leftO), .alu .test .eax (.reg .eax)] s = some s' ∧ s'.mem = s.mem ∧
+      s'.zf = some (decide (N = 0)) ∧ s'.gpr .ebp = W ∧ s'.gpr .esp = SP ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
+  refine ⟨_, by crun [E.ebp, L.aW, E.perm.wR, hl], ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · rfl
+  · cmems [hl]; rw [Proof.AesGcm.X86.and_self_beq32 hN]
+  · cregs [E.ebp]
+  · cregs [E.esp]
+  all_goals rfl
+
+theorem AInv.keep {s₀ : State} {C W SP A : BitVec 32} {R N : Nat} {D : BitVec 32} {n i : Nat} {s s' : State}
+    (L : Lay C W SP) (h : AInv s₀ C W SP A R N D n i s) (hm : s'.mem = s.mem) (hbp : s'.gpr .ebp = W)
+    (hsp : s'.gpr .esp = SP) (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr) : AInv s₀ C W SP A R N D n i s' :=
+  ⟨h.kept.step L (by simp) ⟨hbp, hsp, h.kept.env.perm.of_eq hrd hwr⟩ hrd hwr (rs := [])
+    (by rw [hm]; exact Frame.refl _ _)
+    (fun r hr => by simp at hr), h.le, by rw [hm]; exact h.ads, by rw [hm]; exact h.left, by rw [hm]; exact h.acc⟩
+
+/-- `s2vAds`: S2V over every component. -/
+theorem s2vAds_ok (v : Ctr32Impl) {s₀ : State} {C W SP A : BitVec 32} {R N : Nat} {D : BitVec 32} {n : Nat}
+    (hA : AdCtx s₀ C W SP A R N) {s : State} (h : AInv s₀ C W SP A R N D n 0 s) :
+    WP isa (s2vAds v.callee v.suffix) s (AInv s₀ C W SP A R N D n N) := by
+  have L := hA.lay
+  have l₀ := h.left
+  rw [Nat.sub_zero] at l₀
+  obtain ⟨s₁, run₁, m₁, zf₁, bp₁, sp₁, rd₁, wr₁⟩ := leftTest_ok L h.kept.env hA.N32 l₀
+  have h₁ := h.keep L m₁ bp₁ sp₁ rd₁ wr₁
+  refine WP.seq (WP.of_runBlock ⟨s₁, run₁, ?_⟩)
+  refine WP.ite (decide (N = 0)) (eval_e zf₁) (fun hz => ?_) (fun hz => ?_)
+  · have hN : N = 0 := of_decide_eq_true hz
+    subst hN
+    exact WP.block_nil h₁
+  · have hN : N ≠ 0 := of_decide_eq_false hz
+    refine WP.loop (fun (k : Nat) (t : State) => ∃ i, k = N - i ∧ i < N ∧ AInv s₀ C W SP A R N D n i t)
+      (fun k t ⟨i, hk, hi, ht⟩ => ?_) (N - 0) s₁ ⟨0, rfl, by omega, h₁⟩
+    refine WP.mono (adBody_ok v hA hi ht) fun t' ⟨ht', hz'⟩ => ?_
+    by_cases he : i + 1 = N
+    · left
+      refine ⟨by rw [eval_ne hz']; simp [he], ?_⟩
+      exact (congrArg (fun j => AInv s₀ C W SP A R N D n j t') he).mp ht'
+    · right
+      refine ⟨by rw [eval_ne hz']; simp [he], N - (i + 1), by omega, i + 1, rfl, by omega, ht'⟩
+
 end VG.Proof.AesSiv.X86
