@@ -78,32 +78,32 @@ theorem nib_eq (k j : Nat) : nib k j = (k.testBit (4 * j)).toNat + 2 * (k.testBi
   omega
 
 /-- `x2` = nibble `j` of `k`, from the table of `k`'s bits at `d`. -/
-theorem nibble_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) (K : CombCfg)
-    {k j N : Nat} (hj : 4 * j + 4 ≤ N) (hN : K.bits + N ≤ size) (hb4 : K.bits + 3 < 4096)
+theorem nibble_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) (bits : Nat)
+    {k j N : Nat} (hj : 4 * j + 4 ≤ N) (hN : bits + N ≤ size) (hb4 : bits + 3 < 4096)
     (hx : s.gpr .x19 = BitVec.ofNat 64 j)
-    (hbits : ∀ t < N, s.mem (off base (K.bits + t)) = if k.testBit t then 1 else 0) :
-    WP isa (.block (nibble K)) s fun t =>
+    (hbits : ∀ t < N, s.mem (off base (bits + t)) = if k.testBit t then 1 else 0) :
+    WP isa (.block (nibble bits)) s fun t =>
       t.gpr .x2 = BitVec.ofNat 64 (nib k j) ∧ Keeps [.x2, .x4, .x16] s t := by
   have hn := hs.nowrap
   have hsz := hs.enc
   rw [nibble, ← List.singleton_append (l := [Instr.add .x .x16 .x0 .x16, _, _, _, _, _, _, _, _, _, _]),
     show ([Instr.lsl .x .x16 .x19 2] : List Instr) ++ Instr.add .x .x16 .x0 .x16 ::
-      [.ldrb .x2 .x16 (K.bits + 3), .add .x .x2 .x2 .x2, .ldrb .x4 .x16 (K.bits + 2),
-      .add .x .x2 .x2 .x4, .add .x .x2 .x2 .x2, .ldrb .x4 .x16 (K.bits + 1),
-      .add .x .x2 .x2 .x4, .add .x .x2 .x2 .x2, .ldrb .x4 .x16 K.bits, .add .x .x2 .x2 .x4] =
+      [.ldrb .x2 .x16 (bits + 3), .add .x .x2 .x2 .x2, .ldrb .x4 .x16 (bits + 2),
+      .add .x .x2 .x2 .x4, .add .x .x2 .x2 .x2, .ldrb .x4 .x16 (bits + 1),
+      .add .x .x2 .x2 .x4, .add .x .x2 .x2 .x2, .ldrb .x4 .x16 bits, .add .x .x2 .x2 .x4] =
       ([.lsl .x .x16 .x19 2, .add .x .x16 .x0 .x16] : List Instr) ++
-      [.ldrb .x2 .x16 (K.bits + 3), .add .x .x2 .x2 .x2, .ldrb .x4 .x16 (K.bits + 2),
-      .add .x .x2 .x2 .x4, .add .x .x2 .x2 .x2, .ldrb .x4 .x16 (K.bits + 1),
-      .add .x .x2 .x2 .x4, .add .x .x2 .x2 .x2, .ldrb .x4 .x16 K.bits, .add .x .x2 .x2 .x4] from rfl,
+      [.ldrb .x2 .x16 (bits + 3), .add .x .x2 .x2 .x2, .ldrb .x4 .x16 (bits + 2),
+      .add .x .x2 .x2 .x4, .add .x .x2 .x2 .x2, .ldrb .x4 .x16 (bits + 1),
+      .add .x .x2 .x2 .x4, .add .x .x2 .x2 .x2, .ldrb .x4 .x16 bits, .add .x .x2 .x2 .x4] from rfl,
     WP.block_append_iff]
   refine WP.mono (combIndex_ok s hs (by omega) hx) fun a ⟨a16, ka⟩ => ?_
-  have hr : ∀ i < 4, InRegions (a.rd ++ a.wr) (off base (K.bits + (4 * j + i))) 1 := fun i hi =>
+  have hr : ∀ i < 4, InRegions (a.rd ++ a.wr) (off base (bits + (4 * j + i))) 1 := fun i hi =>
     ⟨_, List.mem_append_right _ (ka.wr ▸ hs.wr), hs.contains (by omega) (by decide)⟩
-  have he : ∀ i, a.gpr .x16 + BitVec.ofNat 64 (K.bits + i) = off base (K.bits + (4 * j + i)) :=
+  have he : ∀ i, a.gpr .x16 + BitVec.ofNat 64 (bits + i) = off base (bits + (4 * j + i)) :=
     fun i => by
       rw [a16, BitVec.add_assoc, BitVec.ofNat_add_ofNat]
       exact congrArg (off base) (by omega)
-  have hv : ∀ i < 4, ((a.mem.read (off base (K.bits + (4 * j + i))) 1).setWidth 32).setWidth 64 =
+  have hv : ∀ i < 4, ((a.mem.read (off base (bits + (4 * j + i))) 1).setWidth 32).setWidth 64 =
       BitVec.ofNat 64 (k.testBit (4 * j + i)).toNat := fun i hi => by
     rw [read1_zext, ka.mem, hbits _ (by omega)]
     exact (bool_ext _).trans rfl
@@ -125,8 +125,8 @@ theorem nibble_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) 
   simp only [runBlock_cons, runStep_some, runBlock_nil, exec, read_x,
     State.load, addr, Size.bits, RegUpd.gpr_write, RegUpd.mem_write,
     RegUpd.rd_write, RegUpd.wr_write, BitVec.setWidth_eq, Nat.mod_one,
-    show K.bits + 3 < 4096 * 1 by omega, show K.bits + 2 < 4096 * 1 by omega,
-    show K.bits + 1 < 4096 * 1 by omega, show K.bits < 4096 * 1 by omega,
+    show bits + 3 < 4096 * 1 by omega, show bits + 2 < 4096 * 1 by omega,
+    show bits + 1 < 4096 * 1 by omega, show bits < 4096 * 1 by omega,
     and_self, e0, e1, e2, e3, r0, r1, r2, r3, v0, v1, v2, v3,
     ite_true, ite_false, reduceCtorEq, Option.map_some, Option.bind_some,
     Option.some.injEq, exists_eq_left']
@@ -200,15 +200,15 @@ theorem masks_ok (s : State) {a : Nat} (ha : a < 9) (hx : s.gpr .x2 = BitVec.ofN
       hr.2.2.2.2.2.2.1, hr.2.2.2.2.2.2.2.1, hr.2.2.2.2.2.2.2.2, ite_false]
 
 /-- The digit's masks: the masks of `|k_j - 8|` for nibble `j` of `k`. -/
-theorem digit_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) (K : CombCfg)
-    {k j N : Nat} (hj : 4 * j + 4 ≤ N) (hN : K.bits + N ≤ size) (hb4 : K.bits + 3 < 4096)
+theorem digit_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) (bits : Nat)
+    {k j N : Nat} (hj : 4 * j + 4 ≤ N) (hN : bits + N ≤ size) (hb4 : bits + 3 < 4096)
     (hx : s.gpr .x19 = BitVec.ofNat 64 j)
-    (hbits : ∀ t < N, s.mem (off base (K.bits + t)) = if k.testBit t then 1 else 0) :
-    WP isa (.block (digit K)) s fun t =>
+    (hbits : ∀ t < N, s.mem (off base (bits + t)) = if k.testBit t then 1 else 0) :
+    WP isa (.block (digit bits)) s fun t =>
       (∀ m ≤ 8, t.gpr (maskReg m) = bmask (decide (mag (nib k j) = m))) ∧
       Keeps (.x2 :: .x4 :: .x9 :: .x16 :: maskRegs) s t := by
   rw [digit, List.append_assoc, WP.block_append_iff]
-  refine WP.mono (nibble_ok hs K hj hN hb4 hx hbits) fun a ⟨a2, ka⟩ => ?_
+  refine WP.mono (nibble_ok hs bits hj hN hb4 hx hbits) fun a ⟨a2, ka⟩ => ?_
   rw [WP.block_append_iff]
   refine WP.mono (magnitude_ok a (nib_lt k j) a2) fun b ⟨b2, b9, kb⟩ => ?_
   refine WP.mono (masks_ok b (Nat.lt_succ_of_le (mag_le (nib_lt k j))) b2 b9) fun t ⟨tm, kt⟩ =>

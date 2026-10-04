@@ -139,15 +139,6 @@ theorem add_of_tangentOk (hp : 2 < C.p) {x1 y1 x3 y3 : Nat}
     simp only [toF_sub, toF_mul, toF_ofNat, toF_ofNat' 2]
     rw [hy3, hx3]
 
-omit [Fact C.p.Prime] in
-/-- `[1]P = P`. -/
-theorem mul_one_pt (P : Point C) : mul 1 P = P := by
-  rw [Spec.Weierstrass.mul]
-  simp only [Nat.one_ne_zero, ↓reduceIte, Nat.reduceDiv, Nat.reduceMod, Nat.one_ne_zero]
-  rw [Spec.Weierstrass.mul]
-  simp only [↓reduceIte]
-  rfl
-
 /-- `[m 16^j]G` from the checks of row `j`, given `[16^j]G`. -/
 theorem row_mul (hC : Law C) (hp : 2 < C.p) (hG : onCurve C (G C) = true) {row : List (Nat × Nat)}
     {j : Nat} (h0 : mul (16 ^ j) (G C) = ptN C (row.getD 0 (0, 0)))

@@ -140,9 +140,6 @@ theorem mul_zero_pt (P : Point c.C) : Spec.Weierstrass.mul 0 P = .infinity := by
 theorem x0_not_powClob {n : Nat} (hn : n < 7) : Reg.x0 ∉ powClob n := fun h =>
   (List.mem_cons.mp h).elim (fun h => absurd h (by decide)) (x0_not_clob n hn)
 
-theorem ladW_eq (c : Cfg) : ladW c.ladderCfg = slW c [RX, RY, RZ, T0, T1, T2, T3, T4, T5, DX, DY, DZ,
-    T0, T1, T2, T3, T4, T5, TX, TY, TZ, TMP] := rfl
-
 theorem powWP_eq (c : Cfg) : powW c.powP = slW c [ACC, PT, TMP] := rfl
 theorem powWN_eq (c : Cfg) : powW c.powN = slW c [ACC, PT, TMP] := rfl
 

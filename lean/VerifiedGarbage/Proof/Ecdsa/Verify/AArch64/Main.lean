@@ -8,8 +8,7 @@ import VerifiedGarbage.Proof.Ecdh.AArch64.Main
 `verify_ok`: `Cfg.verify` returns 1 exactly if the specification's
 verification of the signature holds, for any curve the proof of the code
 supports (`CfgOk`) whose group law the proofs support (`Law`), and
-restores the callee-saved registers. `front_ok`, `mid_ok`, `points_ok` (with
-the invariants of the group law for the two ladders, `step_rep`) and
+restores the callee-saved registers. `front_ok`, `mid_ok`, `points_ok` and
 `tail_ok` compute what `verify_eq` connects to the specification.
 -/
 
@@ -67,7 +66,7 @@ theorem verify_ok (hc : CfgOk c) (hC : Law c.C) (hT : CombOk c.C (16 * c.n) c.tb
   refine front_ok hc hp fun g s₁ hg hF => mid_ok hc hF fun s₂ hM => ?_
   have F₂ := hM.fixed
   obtain ⟨ha, hb, h1⟩ := consts_tmv hc F₂
-  -- The point the second ladder multiplies.
+  -- The point the window method multiplies.
   let P := peerPt c (s₀.mem (s₀.gpr .x0) = 4) (keyX c s₀) (keyY c s₀)
   have hPc : onCurve c.C P = true := peerPt_onCurve hc _ _ _
   have hG : Rep c.C (tmv c.C c.n (s₀.gpr .x3) s₂ (c.sl GX)) (tmv c.C c.n (s₀.gpr .x3) s₂ (c.sl GY))
@@ -86,10 +85,8 @@ theorem verify_ok (hc : CfgOk c) (hC : Law c.C) (hT : CombOk c.C (16 * c.n) c.tb
   refine points_ok hc hM
     (Q₁ := fun j X Y Z => Rep c.C X Y Z (mul (sv c (s₀.gpr .x3) s₂ U >>> j) (G c.C)))
     (Q₂ := fun j X Y Z => Rep c.C X Y Z (mul (sv c (s₀.gpr .x3) s₂ V >>> j) P))
-    hC hT (fun X Y Z h => by simp only [Nat.shiftRight_zero]; exact h)
-    (step_rep hC hPc ha hb hQ)
-    (by rw [shiftRight_eq_zero hv, mul_zero_pt]; exact rep_infinity' hC)
-    fun s₃ hP => ?_
+    hC hT (fun X Y Z h => by simp only [Nat.shiftRight_zero]; exact h) hPc hQ
+    (fun X Y Z h => by simp only [Nat.shiftRight_zero]; exact h) fun s₃ hP => ?_
   refine WP.mono (tail_ok hc hP) fun s' ⟨saved, xo, hxo, hx, ret⟩ =>
     ⟨fun r hr => (saved r hr).trans (hg r hr), ?_⟩
   obtain ⟨X1, Y1, Z1, X2, Y2, Z2, q1, q2, hsum⟩ := hP.pt

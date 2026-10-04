@@ -31,9 +31,7 @@ namespace VG.Impl.Weierstrass.AArch64
 
 open VG.AArch64 VG.Impl.Mont VG.Impl.Mont.AArch64 VG.Impl.Weierstrass
 
-namespace CombCfg
-
-variable (K : CombCfg)
+/-! ## Digits, shared with the window method -/
 
 /-- Word `w` of `v`. -/
 def wordOf (v w : Nat) : BitVec 64 := BitVec.ofNat 64 (v >>> (64 * w))
@@ -46,11 +44,11 @@ def maskReg (m : Nat) : Reg := maskRegs.getD m .x1
 
 /-- `x2` = the nibble `j = x19` of the scalar: `b₀ + 2b₁ + 4b₂ + 8b₃` of the
 bytes at `x0 + 4 x19 + bits`, by Horner's rule, through `x16` and `x4`. -/
-def nibble : List Instr :=
+def nibble (bits : Nat) : List Instr :=
   [.lsl .x .x16 .x19 2, .add .x .x16 .x0 .x16,
-    .ldrb .x2 .x16 (K.bits + 3), .add .x .x2 .x2 .x2, .ldrb .x4 .x16 (K.bits + 2),
-    .add .x .x2 .x2 .x4, .add .x .x2 .x2 .x2, .ldrb .x4 .x16 (K.bits + 1),
-    .add .x .x2 .x2 .x4, .add .x .x2 .x2 .x2, .ldrb .x4 .x16 K.bits, .add .x .x2 .x2 .x4]
+    .ldrb .x2 .x16 (bits + 3), .add .x .x2 .x2 .x2, .ldrb .x4 .x16 (bits + 2),
+    .add .x .x2 .x2 .x4, .add .x .x2 .x2 .x2, .ldrb .x4 .x16 (bits + 1),
+    .add .x .x2 .x2 .x4, .add .x .x2 .x2 .x2, .ldrb .x4 .x16 bits, .add .x .x2 .x2 .x4]
 
 /-- From the nibble `k` in `x2`: `|k - 8|` into `x2`, through `x3`, `x4` and `x9`:
 `x3 = k - 8`, `x4` all ones if it is negative, and `|k - 8| = (x3 ^ x4) - x4`. -/
@@ -70,7 +68,24 @@ def masks : List Instr :=
   [.subImm .x (maskReg 8) (maskReg 8) 1]
 
 /-- The digit's masks: its nibble, its magnitude and the masks. -/
-def digit : List Instr := (nibble K) ++ magnitude ++ masks
+def digit (bits : Nat) : List Instr := nibble bits ++ magnitude ++ masks
+
+/-- `x3` all ones if digit `x19` is negative, that is if bit 3 of its nibble is
+clear: `x3 = b₃ - 1`, through `x16`. -/
+def signMask (bits : Nat) : List Instr :=
+  [.lsl .x .x16 .x19 2, .add .x .x16 .x0 .x16, .ldrb .x3 .x16 (bits + 3), .subImm .x .x3 .x3 1]
+
+/-- `[y] = -[y]` (through `[neg]`, with zero at `z`) if digit `x19` of the
+table at `bits` is negative. -/
+def negY (M : Mod) (neg z y bits : Nat) : List Instr :=
+  Mont.AArch64.sub M neg z y ++ signMask bits ++ sel M.n y y neg
+
+/-- `[o] = [a]`, a point. -/
+def copyPt (n : Nat) (o a : Pt) : List Instr := copy n o.x a.x ++ copy n o.y a.y ++ copy n o.z a.z
+
+namespace CombCfg
+
+variable (K : CombCfg)
 
 /-- `x4 |= v & mask m` for the word `v`, built in `x9`, through `x2`. -/
 def selectCand (v : BitVec 64) (m : Nat) : List Instr :=
@@ -99,24 +114,12 @@ def selectFrom : List Nat → Prog isa
   | j :: js => .seq (.block [.subImm .x .x9 .x19 j])
       (.ite (.zero .x .x9) (.block ((select K) (K.tbl.getD j []))) (selectFrom js))
 
-/-- `x3` all ones if digit `x19` is negative, that is if bit 3 of its nibble is
-clear: `x3 = b₃ - 1`, through `x16`. -/
-def signMask : List Instr :=
-  [.lsl .x .x16 .x19 2, .add .x .x16 .x0 .x16, .ldrb .x3 .x16 (K.bits + 3), .subImm .x .x3 .x3 1]
-
-/-- `E.y = -E.y` if the digit is negative. -/
-def negate : List Instr :=
-  Mont.AArch64.sub K.M K.neg K.zero K.E.y ++ (signMask K) ++ sel K.M.n K.E.y K.E.y K.neg
-
-/-- `[o] = [a]`, a point. -/
-def copyPt (n : Nat) (o a : Pt) : List Instr := copy n o.x a.x ++ copy n o.y a.y ++ copy n o.z a.z
-
 /-- Iteration `j = x19 - 1` (with `x19` counting down from `J`): the entry,
 negated for a negative digit, added to `A`. -/
 def step : Prog isa :=
-  .seq (.block (decCounter :: (digit K))) <|
+  .seq (.block (decCounter :: (digit K.bits))) <|
   .seq ((selectFrom K) (List.range K.J)) <|
-  .seq (.block (negate K)) <|
+  .seq (.block (negY K.M K.neg K.zero K.E.y K.bits)) <|
   .seq (fprogB K.M (rcb K.S K.A K.E K.D)) <|
   .block (copyPt K.M.n K.A K.D)
 
