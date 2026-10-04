@@ -39,6 +39,7 @@ mod pbkdf2_sha224;
 mod pbkdf2_sha256;
 mod pbkdf2_sha384;
 mod pbkdf2_sha512;
+mod rsa;
 mod x25519;
 mod x448;
 
