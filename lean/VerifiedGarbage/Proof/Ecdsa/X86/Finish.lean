@@ -27,6 +27,17 @@ theorem bytesAt_keep {q p : Addr} {len k : Nat} {m m' : Mem} (h : Outside q 0 le
   simp only [List.mem_range] at hi
   exact keep_of_disjoint' h hd hl hi hk
 
+/-- A range changed at `p + d` is one changed at offset `d` of `p`. -/
+theorem _root_.VG.Proof.Mont.Outside.shift {p : Addr} {d len : Nat} {m m' : Mem}
+    (h : Outside (p + BitVec.ofNat 64 d) 0 len m m') (hd : d + len ≤ 2 ^ 64) : Outside p d len m m' :=
+  fun x hx => h x (Or.inr (by
+    show 0 + len ≤ (x - (p + BitVec.ofNat 64 d)).toNat
+    rcases Nat.lt_or_ge (x - (p + BitVec.ofNat 64 d)).toNat len with hlt | hge
+    · have := (Offset.lt_iff x p hd).mp hlt
+      simp only [ofs] at hx
+      omega
+    · omega))
+
 theorem mask_bit (b : Bool) : (mask32 (b = true) &&& 1 : BitVec 32) = if b then 1 else 0 := by
   cases b <;> decide
 
@@ -58,7 +69,8 @@ theorem finish_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size
           else List.replicate (16 * c.n) 0) ∧
       s'.gpr .eax = (if b then 1 else 0) ∧
       (∀ rd ∈ Cfg.saved, s'.gpr rd.1 = g rd.1) ∧
-      (∀ r, r ∉ [.eax, .ebx, .ecx, .edx, .esi, .edi, .ebp] → s'.gpr r = s.gpr r) := by
+      (∀ r, r ∉ [.eax, .ebx, .ecx, .edx, .esi, .edi, .ebp] → s'.gpr r = s.gpr r) ∧
+      Outside (o32.setWidth 64) 0 (16 * c.n) s.mem s'.mem := by
   have h7 := hc.n7
   have hn0 := hc.n0
   have hn := hs.nowrap
@@ -148,7 +160,7 @@ theorem finish_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size
     rw [u₁₀.other _ (by decide), u₁₀.other _ (by decide), hx₉]
   refine wp_movS (restoreLd hs₁₀ hx₁₀ (d := 8) (by omega)) fun s₁₁ u₁₁ _ => WP.block_nil ?_
   have hm₁₀ : s₁₀.mem = s₄.mem := by rw [u₁₀.mem, u₉.mem, u₈.mem, u₇.mem, hm₆]
-  refine ⟨?_, ?_, fun rd hrd => ?_, fun r hr => ?_⟩
+  refine ⟨?_, ?_, fun rd hrd => ?_, fun r hr => ?_, ?_⟩
   · rw [u₁₁.mem, hm₁₀, show 16 * c.n = 8 * c.n + 8 * c.n by omega, bytesAt_add, first, e₄, ss₃]
     cases b
     · simp only [Bool.false_eq_true, ite_false, List.replicate_append_replicate]
@@ -175,5 +187,8 @@ theorem finish_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size
     obtain ⟨h1, h2, h3, h4, h5, h6, h7'⟩ := hr
     rw [u₁₁.other _ h6, u₁₀.other _ h7', u₉.other _ h5, u₈.other _ h2, u₇.other _ h4, k₆.1 _ (by simp [h1]),
       k₄.1 _ (by simp [h1]), k₃.1 _ (by simp [h1]), k₂.1 _ (by simp [h2, h3])]
+  · rw [u₁₁.mem, hm₁₀, ← hm₂]
+    exact ((O₃.shift (by omega)).mono (Nat.zero_le _) (by omega)).trans
+      ((O₄.shift (by omega)).mono (Nat.zero_le _) (by omega))
 
 end VG.Proof.Ecdsa.X86
