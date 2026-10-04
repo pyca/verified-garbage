@@ -968,7 +968,7 @@ yours to keep:
 
 <td>✅ AVX-512 IFMA, AVX-512VL, AVX2, BMI2, ADX</td>
 
-<td>✅</td>
+<td>✅ public keys by a fixed-base comb on edwards25519</td>
 
 <td>✅</td>
 
