@@ -11,6 +11,8 @@ import VerifiedGarbage.Proof.Framework.X86_64.Abi
 import VerifiedGarbage.Proof.Framework.X86_64.Spill
 import VerifiedGarbage.Proof.Sha256.X86_64.Contract
 import VerifiedGarbage.Proof.Framework.X86_64.Bswap
+import VerifiedGarbage.Proof.Framework.X86_64.Residue
+import VerifiedGarbage.Spec.Sha256.Contract
 
 /-!
 # SHA-256 compression function on x86-64: the message schedule and the rounds
@@ -696,7 +698,7 @@ theorem restore_ok {s₀ : State} (hp : Pre s₀) {s : State} (hc : Common s₀ 
 /-! ## The whole function -/
 
 theorem correct {s₀ : State} (hp : Pre s₀) :
-    WP isa compress s₀ fun s' => gprPreserved s₀ s' ∧ Proof.Sha256.compressX86_64.post s₀ s' := by
+    WP isa compressBody s₀ fun s' => gprPreserved s₀ s' ∧ Proof.Sha256.compressX86_64.post s₀ s' := by
   refine WP.seq (WP.mono (save_ok hp) fun s₁ ⟨hg, hrd, hwr, hm, hzf⟩ => ?_)
   refine WP.seq (WP.mono (Q := Common s₀ (nb s₀)) ?_ fun s₂ hc => restore_ok hp hc)
   have hc₀ := common_zero hp hg hrd hwr hm
@@ -733,8 +735,8 @@ def satState : State where
   rd := [⟨0x2000, 0⟩]
   wr := [⟨0x1000, 32⟩, ⟨0x3000, 560⟩]
 
-theorem compress_verified :
-    Verified X86_64.target Impl.Sha256.X86_64.compress Proof.Sha256.compressX86_64 := by
+theorem body_verified :
+    Verified X86_64.target Impl.Sha256.X86_64.compressBody Proof.Sha256.compressX86_64 := by
   refine ⟨fun s hs => ?_, ?_, ?_⟩
   · obtain ⟨t, s', he, h⟩ := correct (pre_of s hs)
     exact ⟨t, s', he, abiPreserved_of_exec (by lit_decide) he h.1, h.2⟩
@@ -747,5 +749,43 @@ theorem compress_verified :
     first
     | exact Offset.disjoint_of_le (by decide) (by decide)
     | exact Region.Disjoint.symm (Offset.disjoint_of_le (by decide) (by decide))
+
+/-! ## No secret residue
+
+`compressBody` keeps `rdi`, `rcx` and the upper halves of the vector
+registers; `compress` clears the rest. -/
+
+/-- What `compressBody` leaves that `compress` does not clear. -/
+def Kept (s s' : State) : Prop :=
+  s'.gpr .rdi = s.gpr .rdi ∧ s'.gpr .rcx = s.gpr .rcx ∧ (s'.ymmHi, s'.zmmHi) = (s.ymmHi, s.zmmHi)
+
+theorem body_kept {s s' : State} {t : List Leak} (h : Exec isa compressBody s t s') : Kept s s' := by
+  have hk : ((instrs compressBody).all fun i =>
+      !Taint.clobbers i .rdi && !Taint.clobbers i .rcx && !writesUpper i) = true := by
+    rw [← Code.allInstrs_eq]; lit_decide
+  have h' := fun i hi => List.all_eq_true.mp hk i hi
+  simp only [Bool.and_eq_true, Bool.not_eq_true'] at h'
+  exact ⟨Exec.gpr (fun i hi => (h' i hi).1.1) h, Exec.gpr (fun i hi => (h' i hi).1.2) h,
+    Exec.uppers (fun i hi => (h' i hi).2) h⟩
+
+theorem compress_clear :
+    Verified X86_64.target Impl.Sha256.X86_64.compress Proof.Sha256.compressX86_64 ∧
+      ∀ s t s', Proof.Sha256.compressX86_64.pre s → Exec isa Impl.Sha256.X86_64.compress s t s' →
+        noResidue Spec.Sha256.compressSig 0 s s' :=
+  Verified.clear (by decide) (by decide) Kept
+    (fun s hs => by
+      obtain ⟨t, s', he, ha, hp⟩ := body_verified.1 s hs
+      exact ⟨t, s', he, ha, hp, body_kept he⟩)
+    body_verified.2.1 body_verified.2.2 (fun _ _ h => h)
+    (fun _ _ _ ⟨hdi, hcx, hu⟩ => noResidue_cleared [(.rdi, 0), (.rcx, 3)] (by decide)
+      (fun p hp => by
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hp
+        rcases hp with rfl | rfl
+        exacts [hdi, hcx])
+      (fun _ => by simpa using hu) (fun _ h => absurd h (Nat.not_lt_zero _)))
+
+theorem compress_verified :
+    Verified X86_64.target Impl.Sha256.X86_64.compress Proof.Sha256.compressX86_64 :=
+  compress_clear.1
 
 end VG.Proof.Sha256.X86_64

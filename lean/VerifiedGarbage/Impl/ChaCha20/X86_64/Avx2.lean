@@ -1,4 +1,5 @@
 import VerifiedGarbage.Impl.ChaCha20.X86_64.Xor
+import VerifiedGarbage.Impl.Clear.X86_64
 
 /-!
 # ChaCha20 keystream XOR: x86-64 implementation with AVX2
@@ -189,9 +190,17 @@ def next : List Instr :=
 /-- Eight blocks. -/
 def body : Prog isa := .seq (.block setup) (.seq (rounds 10) (.block (finish ++ next)))
 
-def xor : Prog isa :=
+def xorBody : Prog isa :=
   .seq (.block (consts ++ [.alu .cmp .rdx (.imm 512)]))
   (.seq (.ite .b (.block []) (.loop body .ae))
   (.seq (.block [.vop .vzeroupper]) (.call "vg_chacha20_xor" Xor.xor)))
+
+/-- The registers `xor` clears on return: the caller-saved ones but `rsi`
+(which `vg_chacha20_xor` leaves pointing at `buf`, for callers). -/
+def cleared : List Reg := [.rax, .rcx, .rdx, .rdi, .r8, .r9, .r10, .r11]
+
+/-- `xorBody`, then the vector registers and `cleared` zeroed, leaving no
+secret residue (`X86_64.noResidue`). -/
+def xor : Prog isa := .seq xorBody (.block (Clear.X86_64.clear cleared true))
 
 end VG.Impl.ChaCha20.X86_64.Avx2

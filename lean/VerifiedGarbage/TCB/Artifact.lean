@@ -53,6 +53,11 @@ structure Target where
   rustAbi : String
   /-- The calling convention that `rustAbi` stands for. -/
   abi : Abi isa
+  /-- What returning without secret residue means for a function with
+  signature `sig` whose calls and frames use `stack` bytes of stack
+  (`Artifact.clearsResidue`), relating the entry state to the exit state;
+  `False` on a target that does not define it. -/
+  noResidue : Sig → Nat → isa.State → isa.State → Prop := fun _ _ _ _ => False
 
 /-- The specification of one function. -/
 structure Contract (M : ISA) where
@@ -323,5 +328,11 @@ structure Artifact where
   function's `# Safety` section, which `doc` must end with when this is not
   empty. -/
   features : List String := []
+  /-- Whether the function returns without secret residue (opt-in): every
+  run from `contract.pre` ends in a state related to its entry state by
+  `target.noResidue`, as `noResidue` proves. -/
+  clearsResidue : Bool := false
+  noResidue : clearsResidue = true → ∀ s t s', contract.pre s → Exec target.isa code s t s' →
+    target.noResidue sig stack s s' := by intro h; cases h
 
 end VG

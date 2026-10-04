@@ -43,6 +43,25 @@ def abiPreserved (s s' : State) : Prop :=
 /-- System V argument registers, in order. -/
 def argRegs : List Reg := [.rdi, .rsi, .rdx, .rcx, .r8, .r9]
 
+/-- Returning without secret residue (`Target.noResidue`), for a function
+with signature `sig` whose calls and frames use `n` bytes of stack: what it
+leaves where its Rust caller cannot clear it is zero, public or the
+caller's. Each caller-saved general-purpose register (but `rax` if it holds
+the result) is zero or holds a pointer argument passed in a register; the
+flags are those `xor r32, r32` leaves; each SSE register and each upper half
+of an AVX or AVX-512 register is zero or as on entry; and each of the `n`
+bytes of stack below the return address is as on entry or a byte of a return
+address the function's calls stored (one of the `unknowns`). Buffers are
+Rust objects, which the caller clears itself. -/
+def noResidue (sig : Sig) (n : Nat) (s s' : State) : Prop :=
+  (∀ r, r ∉ calleeSaved → (r = .rax → sig.ret = none) → s'.gpr r = 0 ∨
+    ∃ i < argRegs.length, (sig.words 64)[i]? = some .addr ∧ s'.gpr r = s.gpr (argRegs.getD i .rax)) ∧
+  s'.cf = some false ∧ s'.of = some false ∧ s'.zf = some true ∧ s'.sf = some false ∧
+  (∀ x, (s'.xmm x = 0 ∨ s'.xmm x = s.xmm x) ∧ (s'.ymmHi x = 0 ∨ s'.ymmHi x = s.ymmHi x) ∧
+    (s'.zmmHi x = 0 ∨ s'.zmmHi x = s.zmmHi x)) ∧
+  ∀ i < n, s'.mem (s.gpr .rsp - BitVec.ofNat 64 (i + 1)) = s.mem (s.gpr .rsp - BitVec.ofNat 64 (i + 1)) ∨
+    ∃ j, ∃ k < 8, s'.mem (s.gpr .rsp - BitVec.ofNat 64 (i + 1)) = (s.unknowns j).extractLsb' (8 * k) 8
+
 /-! ## The calling convention, for `Sig`
 
 Each integer or pointer argument takes the next of `rdi, rsi,
@@ -113,5 +132,6 @@ abbrev target : Target where
     target_feature = \"sse2\")"
   rustAbi := "sysv64"
   abi := abi
+  noResidue := noResidue
 
 end VG.X86_64

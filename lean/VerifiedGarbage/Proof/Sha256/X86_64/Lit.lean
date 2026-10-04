@@ -7,6 +7,7 @@ import VerifiedGarbage.Impl.Sha256.X86_64
 
 namespace VG
 
+materialize_code Impl.Sha256.X86_64.compressBody
 materialize_code Impl.Sha256.X86_64.compress
 
 end VG
