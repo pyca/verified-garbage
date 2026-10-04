@@ -50,7 +50,7 @@ theorem bit_byte : ∀ b : BitVec 8, ∀ j < 8,
 def bitJ (j : Nat) : List Instr :=
   [.lsr .x .x5 .x4 j, .logic .and .x .x5 .x5 .x8, .strb .x5 .x11 (BITS + j)]
 
-theorem bitJ_ok {s : State} {base : Addr} (hs : Scr s base) {i : Nat} (hi : i < 56)
+theorem bitJ_ok {s : State} {base : Addr} (hs : Scr s base) {i : Nat} (hi : i < 57)
     (hp : s.gpr .x11 = off base (8 * i)) (hc : s.gpr .x8 = 1)
     {b : BitVec 8} (ha : s.gpr .x4 = b.setWidth 64) {j : Nat} (hj : j < 8) :
     WP isa (.block (bitJ j)) s fun t =>
@@ -71,7 +71,7 @@ theorem bitJ_ok {s : State} {base : Addr} (hs : Scr s base) {i : Nat} (hi : i < 
   simp only [RegUpd.gpr_write, hr, ite_false]
 
 /-- Expanding eight bits preserves each byte already written. -/
-theorem byteBits_ok {s : State} {base : Addr} (hs : Scr s base) {i : Nat} (hi : i < 56)
+theorem byteBits_ok {s : State} {base : Addr} (hs : Scr s base) {i : Nat} (hi : i < 57)
     (hp : s.gpr .x11 = off base (8 * i)) (hc : s.gpr .x8 = 1)
     {b : BitVec 8} (ha : s.gpr .x4 = b.setWidth 64) :
     WP isa (.block ((List.range 8).flatMap bitJ)) s fun t =>

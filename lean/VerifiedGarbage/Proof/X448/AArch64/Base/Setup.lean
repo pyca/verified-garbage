@@ -2,6 +2,7 @@ import VerifiedGarbage.Proof.X448.AArch64.Base.Combine
 import VerifiedGarbage.Proof.X448.AArch64.Fast.Setup
 import VerifiedGarbage.Proof.X448.AArch64.Fast.VSave
 import VerifiedGarbage.Proof.X448.AArch64.Bits
+import VerifiedGarbage.Proof.X448.AArch64.Base.Const
 
 /-!
 # X448 of the base point on AArch64: the setup
@@ -19,35 +20,6 @@ open VG.Proof.X448.AArch64 (Scr Keeps off word limbs Outside Outside2 store_ok)
 open VG.Proof.X448.AArch64.Weak (Index Env)
 open VG.Proof.X448.AArch64.Fast
 open VG.Proof.Curve448.AArch64.Fast (Mb Ib)
-
-/-- A constant slot: its limbs from immediates, through `x4`. -/
-theorem constSlot_ok {s : State} {base : Addr} (hs : Scr s base) {o : Nat} (ho : o + 64 ≤ 8192)
-    (ho8 : o % 8 = 0) (v : Spec.X448.Fe) :
-    WP isa (.block (constSlot o v)) s fun t =>
-      (∀ w < 8, word t.mem base (o + 8 * w) = limb v w) ∧ Outside base o 64 s.mem t.mem ∧
-      Keeps [.x4] s t := by
-  let inv := fun n (t : State) =>
-    (∀ w < n, word t.mem base (o + 8 * w) = limb v w) ∧ Outside base o 64 s.mem t.mem ∧ Keeps [.x4] s t
-  have step : ∀ n t, n < 8 → inv n t →
-      WP isa (.block (const64 .x4 (limb v n) ++ [st .x4 (o + 8 * n)])) t (inv (n + 1)) := by
-    intro n t hn ⟨tv, tm, tk⟩
-    rw [WP.block_append_iff]
-    refine WP.mono (VG.AArch64.Tbl.const64_ok t .x4 (limb v n)) fun a ⟨a4, ka, ea⟩ => ?_
-    have kt : Keeps [.x4] t a := ⟨fun r hr => ka r (by simpa using hr), by rw [ea], by rw [ea]⟩
-    have ha : Scr a base := (hs.of_keeps tk (by decide)).of_keeps kt (by decide)
-    have am : a.mem = t.mem := by rw [ea]
-    refine WP.mono (store_ok ha (by omega) (by omega) .x4) fun u ⟨um, uk⟩ => ⟨fun w hw => ?_, ?_, ?_⟩
-    · rw [um, VG.Proof.X448.AArch64.word_write_aligned _ _ (by omega) (by omega) (by omega) (by omega)]
-      by_cases h : w = n
-      · subst h; rw [ite_eq_left rfl, a4]
-      · rw [ite_eq_right (by omega), am]; exact tv w (by omega)
-    · intro x hx
-      rw [um, VG.Proof.X448.AArch64.writeW_outside _ _ _ (by omega) x (by omega), am]
-      exact tm x hx
-    · exact (tk.trans kt).trans (uk.mono (by simp))
-  have := wp_range_flatMap (M := isa) (N := 8) inv step 8 (le_refl _) s
-    ⟨fun _ hw => absurd hw (Nat.not_lt_zero _), Outside.refl _ _ _ _, Keeps.refl _ _⟩
-  exact this
 
 open VG.Proof.X448.AArch64 (Saved)
 
@@ -246,12 +218,6 @@ theorem consts_ok {s : State} {base : Addr} (hs : Scr s base) :
         k3.1 r (by simp [hr.1]), k2.1 r (by simp [hr.1]), k1.1 r (by simp [hr.1])]
     · rw [rd, k6.2.1, k5.2.1, k4.2.1, k3.2.1, k2.2.1, k1.2.1]
     · rw [wr, k6.2.2, k5.2.2, k4.2.2, k3.2.2, k2.2.2, k1.2.2]
-
-theorem F_of_words {m : Mem} {base : Addr} {o : Nat} {v : Spec.X448.Fe}
-    (h : ∀ w < 8, word m base (o + 8 * w) = limb v w) : VG.Proof.X448.AArch64.Weak.F m base o = v := by
-  simp only [VG.Proof.X448.AArch64.Weak.F]
-  rw [VG.Proof.X448.Wide.valN_congr (fun w hw => show (word m base (o + 8 * w)).toNat = _ by rw [h w hw]),
-    limb_val, VG.Proof.X448.toFe_self]
 
 theorem bnd_of_words {m : Mem} {base : Addr} {o : Nat} {v : Spec.X448.Fe}
     (h : ∀ w < 8, word m base (o + 8 * w) = limb v w) : Bnd Ib m base o := fun w hw => by

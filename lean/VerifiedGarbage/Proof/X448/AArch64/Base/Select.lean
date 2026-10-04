@@ -1,4 +1,5 @@
 import VerifiedGarbage.Proof.X448.AArch64.Base.Digit
+import VerifiedGarbage.Proof.X448.AArch64.Base.Const
 import VerifiedGarbage.Proof.X448.AArch64.Init
 import VerifiedGarbage.Proof.X448.Wide.Limbs
 import VerifiedGarbage.Proof.Framework.AArch64.Tbl
@@ -230,27 +231,6 @@ theorem fieldPrefix_ok {s : State} {base : Addr} (hs : Scr s base) {ao ae : Nat}
           VG.Proof.X448.AArch64.writeW_outside _ _ _ (by omega) x (by omega)]
 
 /-! ## The selected field's value -/
-
-theorem limb_valN (v : Spec.X448.Fe) : ∀ n, VG.Proof.X448.Wide.valN (fun i => (limb v i).toNat) n =
-    v.val % VG.Proof.X448.Wide.radix ^ n
-  | 0 => by simp [VG.Proof.X448.Wide.valN, Nat.mod_one]
-  | n + 1 => by
-    rw [VG.Proof.X448.Wide.valN_succ, limb_valN v n, Nat.pow_succ, Nat.mod_mul]
-    congr 2
-    simp only [limb, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow]
-    rw [Nat.mod_eq_of_lt (Nat.lt_of_lt_of_le (Nat.mod_lt _ (by decide)) (by decide)),
-      show 2 ^ (56 * n) = VG.Proof.X448.Wide.radix ^ n by rw [Nat.pow_mul]; rfl]
-    rfl
-
-theorem limb_val (v : Spec.X448.Fe) : VG.Proof.X448.Wide.valN (fun i => (limb v i).toNat) 8 = v.val := by
-  rw [limb_valN]
-  refine Nat.mod_eq_of_lt (Nat.lt_of_lt_of_le v.isLt ?_)
-  rw [show VG.Proof.X448.Wide.radix ^ 8 = VG.Proof.X448.Wide.full from rfl, VG.Proof.X448.Wide.full_eq]
-  omega
-
-theorem limb_lt (v : Spec.X448.Fe) (w : Nat) : (limb v w).toNat < 2 ^ 56 := by
-  simp only [limb, BitVec.toNat_ofNat]
-  exact Nat.lt_of_le_of_lt (Nat.mod_le _ _) (Nat.mod_lt _ (by decide))
 
 private theorem entries_getD (j a : Nat) (ha : a < 9) (f : Spec.X448.Fe × Spec.X448.Fe → Spec.X448.Fe) :
     (((List.range 9).map (Impl.X448.baseTable j)).map f).getD a 0 = f (Impl.X448.baseTable j a) := by

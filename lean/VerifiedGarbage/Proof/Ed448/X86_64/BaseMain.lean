@@ -23,17 +23,6 @@ open VG.Proof.X448.X86_64 (Scr Index Env E FieldOk word off Outside ofs Saved cl
 open VG.Impl.X448.X86_64 (BITS slot)
 open VG.Spec.Ed448 (bytesAt decodeLE)
 
-theorem bytesAt_getD (m : Mem) (p : Addr) {n i : Nat} (hi : i < n) :
-    (bytesAt m p n).getD i 0 = m (p + BitVec.ofNat 64 i) := by
-  rw [bytesAt_eq]
-  simp [Spec.X25519.bytesAt, List.getD_eq_getElem?_getD, hi]
-
-/-- Bit `t` of the scalar is bit `t % 8` of its byte `t / 8`. -/
-theorem scalar_bit (m : Mem) (p : Addr) {t : Nat} (ht : t < 456) :
-    ((m (p + BitVec.ofNat 64 (t / 8))).toNat >>> (t % 8)) &&& 1 =
-      (decodeLE (bytesAt m p 57) >>> t) &&& 1 := by
-  rw [decodeLE_eq, Proof.X25519.leNum_bit, bytesAt_getD m p (by omega)]
-
 /-- The result's bytes: those of `y = Y/Z` and the sign of `x = X/Z`, for
 `(X : Y : Z)` the ladder's point of a scalar of 57 bytes. -/
 theorem encode_result (hL : BaseLadderOk) {X Y Z : Spec.X448.Fe} {m : Mem} {p : Addr}
@@ -148,10 +137,10 @@ theorem scalarBase_correct (hL : BaseLadderOk) {s : State} (hp : scalarBaseLocal
   have e₅ : ∀ i : Index, E s₅.mem base i = E s₃.mem base i := fun i => by rw [m₅, e₄]
   have I₅ : MInv base K s₅ 456 s₅ := by
     refine ⟨hs₅, rbx₅, fun _ _ => rfl, rfl, rfl, Outside.refl _ _ _ _, ?_, ?_, ?_⟩
-    · show Proof.Ed448.X86_64.pt (E s₅.mem base) 8 9 10 = _
-      simp only [Proof.Ed448.X86_64.pt, e₅]; exact q₃
+    · show Proof.Ed448.pt (E s₅.mem base) 8 9 10 = _
+      simp only [Proof.Ed448.pt, e₅]; exact q₃
     · rw [e₅]; exact d₃
-    · simp only [Proof.Ed448.X86_64.pt, e₅, Nat.sub_self]; exact p₃
+    · simp only [Proof.Ed448.pt, e₅, Nat.sub_self]; exact p₃
   refine WP.mono (loop_ok hf hbits 456 s₅ (by decide) (by decide) I₅) fun s₆ I₆ => ?_
   -- The inversion of `Z`.
   apply WP.seq

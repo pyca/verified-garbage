@@ -74,7 +74,7 @@ theorem bitsBody_ok {s : State} {base k : Addr} (hs : Scr s base) (hk : s.gpr .x
   refine WP.mono (bitHead_ok hs hk hb hkr) fun t ⟨ta, tp, tm, tk⟩ => ?_
   have tc : t.gpr .x8 = 1 := (tk.1 _ (by decide)).trans hc
   rw [WP.block_append_iff]
-  refine WP.mono (byteBits_ok (hs.of_keeps tk (by decide)) hi tp tc ta) fun u ⟨uf, um, uk⟩ => ?_
+  refine WP.mono (byteBits_ok (hs.of_keeps tk (by decide)) (by omega) tp tc ta) fun u ⟨uf, um, uk⟩ => ?_
   have ub : u.gpr .x19 = BitVec.ofNat 64 i := (uk.1 _ (by decide)).trans ((tk.1 _ (by decide)).trans hb)
   refine WP.mono (bitTail_ok hi ub) fun v ⟨vb, vz, vm, vk⟩ => ?_
   refine ⟨vb, vz, (vk.1 _ (by decide)).trans ((uk.1 _ (by decide)).trans tc), ?_, ?_, ?_⟩

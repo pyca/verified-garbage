@@ -239,7 +239,7 @@ theorem subNeg_eval (xo : Index) (h : xo ≠ 12) (e : VG.Proof.X448.X86_64.Env) 
     evalOps [.sub 12 xo.val xo.val, .sub 12 12 xo.val] e 12 = (e xo - e xo) - e xo ∧
       ∀ i : Index, i ≠ 12 → evalOps [.sub 12 xo.val xo.val, .sub 12 12 xo.val] e i = e i := by
   have h12 : idx 12 = 12 := rfl
-  simp only [evalOps, List.foldl, evalOp, idx_val, h12, VG.Proof.X448.X86_64.opSub]
+  simp only [evalOps, List.foldl, evalOp, idx_val, h12]
   refine ⟨?_, fun i hi => ?_⟩
   · rw [Function.update_self, Function.update_self, Function.update_of_ne h]
   · rw [Function.update_of_ne hi, Function.update_of_ne hi]
