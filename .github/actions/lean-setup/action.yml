@@ -2,8 +2,8 @@ name: Set up Lean and Mathlib
 description: >
   Installs elan (and so the toolchain `lean/lean-toolchain` names), and
   restores (or clones) Mathlib and its dependencies in `lean/.lake/packages`.
-  It runs no Lake command, so a job can restore `lean/.lake/build` at the
-  same time; `lean-mathlib`, after that, makes sure Mathlib is built.
+  It runs no Lake command; `lean-mathlib`, after it, makes sure Mathlib is
+  built. Jobs run both through `lean-prepare`.
 
 outputs:
   mods:
