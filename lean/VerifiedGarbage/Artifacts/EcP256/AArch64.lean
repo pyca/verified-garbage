@@ -22,7 +22,7 @@ def artifacts : List Artifact := [
       constant tables of `[m 16^j]G` (`m = 1 … 8`), each entry selected in constant time from \
       immediates by masks of the digit's magnitude and negated by a mask of its sign, and added by \
       the complete addition formulas of Renes, Costello and Batina; and `Z⁻¹` is Fermat's, by \
-      square-and-always-multiply over the bits of `p - 2`. The result (or zeros) is selected by a \
+      a chain of sliding 4-bit windows over `p - 2`, fixed by the code. The result (or zeros) is selected by a \
       mask of `d ∈ [1, n-1]` and `Z ≠ 0`, so the time depends only on the pointers."])
     code := Impl.EcKey.AArch64.publicKeyP256
     contract := Spec.EcKey.P256.inst.publicKeyContract AArch64.abi

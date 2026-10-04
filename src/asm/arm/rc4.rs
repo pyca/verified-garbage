@@ -6,20 +6,20 @@
 ///
 /// Contract: `VG.Spec.Rc4.initContract`. Constant time: only pointers and `key_len` may affect timing, not the key or key-dependent table indices.
 ///
-/// Secret-indexed table operations visit every word of the table at fixed addresses, selecting and replacing bytes with masks made by `cmp` and `adc`. Our caller's `r4`–`r11` are saved in `scratch`.
+/// Secret-indexed table operations visit every word of the table at fixed addresses, selecting and replacing bytes with masks made by `cmp` and `adc`. Our caller's `r4`–`r11` are saved in a 64-byte working space on the stack, which is zeroed before returning.
 ///
 /// # Safety
 ///
 /// * `key` must be valid for reads of `key_len` bytes.
 /// * `ctx` must be valid for reads and writes of 258 bytes.
-/// * `scratch` must be valid for reads and writes of 64 bytes.
 /// * On failure, the contents of `ctx` on return are unspecified.
-/// * The contents of `scratch` on return are unspecified.
-/// * `ctx` and `scratch` must not overlap each other or `key` (distinct Rust objects never do).
-/// * None of `key`, `ctx` and `scratch` may wrap around the end of the address space (no Rust object does).
+/// * `ctx` must not overlap `key` (distinct Rust objects never do).
+/// * Neither `key` nor `ctx` may overlap the 64 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_rc4_init(key: *const u8, key_len: usize, ctx: *mut [u8; 258], scratch: *mut [u64; 8]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_rc4_init(key: *const u8, key_len: usize, ctx: *mut [u8; 258]) -> u32 {
     core::arch::naked_asm!(
+        "sub sp, sp, #64",
+        "add r3, sp, #0",
         "sub r12, r1, #1",
         "lsr r12, r12, #8",
         "cmp r12, #0",
@@ -975,6 +975,25 @@ pub(crate) unsafe extern "C" fn vg_rc4_init(key: *const u8, key_len: usize, ctx:
         "20:",
         "mov r0, #1",
         "21:",
+        "add r12, sp, #0",
+        "mov r2, #0",
+        "str r2, [r12, #0]",
+        "str r2, [r12, #4]",
+        "str r2, [r12, #8]",
+        "str r2, [r12, #12]",
+        "str r2, [r12, #16]",
+        "str r2, [r12, #20]",
+        "str r2, [r12, #24]",
+        "str r2, [r12, #28]",
+        "str r2, [r12, #32]",
+        "str r2, [r12, #36]",
+        "str r2, [r12, #40]",
+        "str r2, [r12, #44]",
+        "str r2, [r12, #48]",
+        "str r2, [r12, #52]",
+        "str r2, [r12, #56]",
+        "str r2, [r12, #60]",
+        "add sp, sp, #64",
         "bx lr",
     )
 }
@@ -983,19 +1002,19 @@ pub(crate) unsafe extern "C" fn vg_rc4_init(key: *const u8, key_len: usize, ctx:
 ///
 /// Contract: `VG.Spec.Rc4.applyContract`. Constant time: only pointers, `len` and the initial PRGA index `i` (the public byte count modulo 256 for an initialized context) may affect timing. Key bytes, the permutation, `j`, keystream lookup indices and data remain secret. The function may leak `i`.
 ///
-/// Secret-indexed table operations visit every word of the table at fixed addresses, selecting and replacing bytes with masks made by `cmp` and `adc`. Our caller's `r4`–`r11` are saved in `scratch`.
+/// Secret-indexed table operations visit every word of the table at fixed addresses, selecting and replacing bytes with masks made by `cmp` and `adc`. Our caller's `r4`–`r11` are saved in a 64-byte working space on the stack, which is zeroed before returning.
 ///
 /// # Safety
 ///
 /// * `ctx` must be valid for reads and writes of 258 bytes.
 /// * `data` must be valid for reads and writes of `len` bytes.
-/// * `scratch` must be valid for reads and writes of 64 bytes.
-/// * The contents of `scratch` on return are unspecified.
-/// * `ctx`, `data` and `scratch` must not overlap each other (distinct Rust objects never do).
-/// * None of `ctx`, `data` and `scratch` may wrap around the end of the address space (no Rust object does).
+/// * `ctx` and `data` must not overlap each other (distinct Rust objects never do).
+/// * Neither `ctx` nor `data` may overlap the 64 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_rc4_apply(ctx: *mut [u8; 258], data: *mut u8, len: usize, scratch: *mut [u64; 8]) {
+pub(crate) unsafe extern "C" fn vg_rc4_apply(ctx: *mut [u8; 258], data: *mut u8, len: usize) {
     core::arch::naked_asm!(
+        "sub sp, sp, #64",
+        "add r3, sp, #0",
         "ldrb r12, [r0, #256]",
         "cmp r2, #0",
         "beq 20f",
@@ -2358,6 +2377,25 @@ pub(crate) unsafe extern "C" fn vg_rc4_apply(ctx: *mut [u8; 258], data: *mut u8,
         "b 21f",
         "20:",
         "21:",
+        "add r12, sp, #0",
+        "mov r2, #0",
+        "str r2, [r12, #0]",
+        "str r2, [r12, #4]",
+        "str r2, [r12, #8]",
+        "str r2, [r12, #12]",
+        "str r2, [r12, #16]",
+        "str r2, [r12, #20]",
+        "str r2, [r12, #24]",
+        "str r2, [r12, #28]",
+        "str r2, [r12, #32]",
+        "str r2, [r12, #36]",
+        "str r2, [r12, #40]",
+        "str r2, [r12, #44]",
+        "str r2, [r12, #48]",
+        "str r2, [r12, #52]",
+        "str r2, [r12, #56]",
+        "str r2, [r12, #60]",
+        "add sp, sp, #64",
         "bx lr",
     )
 }

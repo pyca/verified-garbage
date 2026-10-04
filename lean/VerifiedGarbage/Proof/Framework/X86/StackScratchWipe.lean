@@ -67,17 +67,17 @@ theorem wipe_noSp (off words : Nat) : NoSp (.block (wipe off words) : Prog isa) 
 section
 variable {sig : Sig} {nm : String} {e : Elem} {n : Nat}
   {pre : Curry (sig.words abi.ptrBits) (Mem → Prop)} {post : sig.Post abi.ptrBits} {wa : Bool}
-  {stack bytes words : Nat}
+  {stack bytes words : Nat} {leak : Option (Curry (sig.words abi.ptrBits) (Mem → List Nat))}
 
 /-- Code verified for a function whose last argument, on the stack, is a
 scratch buffer of `n` elements `e`, with `stack` bytes of stack, is verified
 for the function without it, which allocates the buffer in a frame of
 `bytes` more bytes of stack and zeroes its first `words` doublewords after
-the code (`withStackScratchWiped`), if its precondition and postcondition
+the code (`withStackScratchWiped`), if its precondition, postcondition and leak
 read memory only within the function's buffers (`hpre`, `hpost`,
-`hpostOut`). -/
+`hpostOut`, `hleak`, which holds of no leak). -/
 theorem Verified.stackScratchWiped {c : Prog isa}
-    (h : Verified target c (Sig.scratchContract abi sig nm e n pre post wa stack))
+    (h : Verified target c (Sig.scratchContract abi sig nm e n pre post wa stack leak))
     (hb : 8 + 4 * slots sig + n * e.size ≤ bytes ∧ bytes < 4096 ∧ bytes % 4 = 0)
     (hsp : c.allInstrs (fun i => !Taint.clobbers i .esp) = true) (hd : stackUse c ≤ stack)
     (hw : 4 * words ≤ n * e.size)
@@ -93,9 +93,10 @@ theorem Verified.stackScratchWiped {c : Prog isa}
       Curry.apply (sig.words abi.ptrBits) post vs m m₁ r →
         Curry.apply (sig.words abi.ptrBits) post vs m m₂ r)
     (hsat : ∃ s, (sig.contract abi pre post wa (stack + bytes)).pre s)
-    (hl : Sig.noLists sig.params = true := by decide) :
+    (hl : Sig.noLists sig.params = true := by decide)
+    (hleak : Sig.LeakLocal abi.ptrBits sig leak := by trivial) :
     Verified target (withStackScratchWiped bytes (slots sig) words c)
-      (sig.contract abi pre post wa (stack + bytes)) := by
+      (sig.contract abi pre post wa (stack + bytes) leak) := by
   obtain ⟨hcor, hct, -⟩ := h
   have hnsp : NoSp c := fun i hi => by
     rw [Code.allInstrs_eq, List.all_eq_true] at hsp
@@ -108,7 +109,7 @@ theorem Verified.stackScratchWiped {c : Prog isa}
   have hd' : stackUse (.seq c (.block (wipe (8 + 4 * slots sig) words)) : Prog isa) ≤ stack := by
     simp only [stackUse]; omega
   -- The buffer, in 64 bits, from the frame's base `E - bytes`.
-  have hR : ∀ s, (sig.contract abi pre post wa (stack + bytes)).pre s →
+  have hR : ∀ s, (sig.contract abi pre post wa (stack + bytes) leak).pre s →
       (s.gpr .esp - BitVec.ofNat 32 bytes + BitVec.ofNat 32 (8 + 4 * slots sig)).setWidth 64 =
         (s.gpr .esp).setWidth 64 - BitVec.ofNat 64 (bytes - (8 + 4 * slots sig)) ∧
       stack + bytes ≤ (s.gpr .esp).toNat := fun s hs => by
@@ -118,7 +119,7 @@ theorem Verified.stackScratchWiped {c : Prog isa}
     exact ⟨sub_add_setWidth (by omega) (by omega), by omega⟩
   -- The buffer is below the stack the contract without it reserves, so apart
   -- from its buffers.
-  have hdisj : ∀ s, (sig.contract abi pre post wa (stack + bytes)).pre s →
+  have hdisj : ∀ s, (sig.contract abi pre post wa (stack + bytes) leak).pre s →
       ∀ b ∈ Sig.bufs sig.params (stackArgs sig s),
         b.1.Disjoint ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 (bytes - (8 + 4 * slots sig)),
           n * e.size⟩ := by
@@ -133,9 +134,9 @@ theorem Verified.stackScratchWiped {c : Prog isa}
     exact (Region.Disjoint.symm (hres _ hbelow b (List.mem_append_left _ hb'))).sub_right
       (below_sub' _ (by omega) (by omega))
   -- Every run is `setArgs`, then the code's run from `narrow`, then the wipe.
-  have hrun : ∀ s, (sig.contract abi pre post wa (stack + bytes)).pre s → ∃ t s₃ s₄,
+  have hrun : ∀ s, (sig.contract abi pre post wa (stack + bytes) leak).pre s → ∃ t s₃ s₄,
       Exec isa c (narrow sig e n bytes wa s) t s₃ ∧
-      (Sig.scratchContract abi sig nm e n pre post wa stack).post (narrow sig e n bytes wa s) s₃ ∧
+      (Sig.scratchContract abi sig nm e n pre post wa stack leak).post (narrow sig e n bytes wa s) s₃ ∧
       Frame [⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 (bytes - (8 + 4 * slots sig)), n * e.size⟩]
         s₃.mem s₄.mem ∧
       s₃.gpr .esp = s.gpr .esp - BitVec.ofNat 32 bytes ∧
@@ -198,9 +199,9 @@ theorem Verified.stackScratchWiped {c : Prog isa}
       exact hdisj s hs b hb' a ha').symm
   · obtain ⟨u₁, _, _, f₁, _, _, p₁, x₁, _⟩ := hrun s₁ h₁
     obtain ⟨u₂, _, _, f₂, _, _, p₂, x₂, _⟩ := hrun s₂ h₂
-    rw [(Exec.det e₁ x₁).1, (Exec.det e₂ x₂).1, p₁, p₂, ((pub_stack hl).mp hp).1,
+    rw [(Exec.det e₁ x₁).1, (Exec.det e₂ x₂).1, p₁, p₂, ((pubL_stack hl).mp hp).1.1,
       hct _ _ _ _ _ _ (narrow_pre hb.1 hpre h₁ hl) (narrow_pre hb.1 hpre h₂ hl)
-        (narrow_pub hb.1 h₁ h₂ hp hl) f₁ f₂]
+        (narrow_pub hb.1 h₁ h₂ hp hl hleak) f₁ f₂]
 
 end
 

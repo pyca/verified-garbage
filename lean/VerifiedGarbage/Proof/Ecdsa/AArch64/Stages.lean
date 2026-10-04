@@ -140,8 +140,6 @@ theorem mul_zero_pt (P : Point c.C) : Spec.Weierstrass.mul 0 P = .infinity := by
 theorem x0_not_powClob {n : Nat} (hn : n < 7) : Reg.x0 ∉ powClob n := fun h =>
   (List.mem_cons.mp h).elim (fun h => absurd h (by decide)) (x0_not_clob n hn)
 
-theorem powWP_eq (c : Cfg) : powW c.powP = slW c [ACC, PT, TMP] := rfl
-theorem powWN_eq (c : Cfg) : powW c.powN = slW c [ACC, PT, TMP] := rfl
 
 /-- The flag word apart from numbered slots. -/
 theorem flag_unch {base : Addr} {l : List Nat} {m m' : Mem} (hu : Unch base (slW c l) m m')
