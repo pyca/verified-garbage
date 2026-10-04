@@ -2,6 +2,8 @@ import VerifiedGarbage.Proof.AesSiv.X86.EncCT
 import VerifiedGarbage.Proof.AesSiv.X86.Init
 import VerifiedGarbage.Proof.AesSiv.Scratch
 import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.X86.StackScratch
+import VerifiedGarbage.Proof.Framework.X86.Inline
 
 namespace VG.Proof.AesSiv.X86
 
@@ -156,5 +158,108 @@ theorem decrypt_verified :
     rename_i q0 _ q1 q2 q3 q4 q5 q6 q7
     exact (decrypt_top_ct v s₁ (encPre_of (hpre _ h₁)) _ _ _ _ _ _
       ⟨encPre_of (hpre _ h₁), encPre_pub (hpre _ h₂) ⟨q0, q1, q2, q3, q4, q5, q6, q7⟩ hp⟩ e₁ e₂).1
+
+/-! ## `vg_aes_siv_init` -/
+
+/-- The regions of `initX86`: the key and the stack arguments read-only. -/
+def initRd (s : State) : List Region := [⟨w64 (arg s 0), (arg s 1).toNat⟩, ⟨argAddr s 0, 16⟩]
+def initWr (s : State) : List Region := [⟨w64 (arg s 2), 512⟩, ⟨w64 (arg s 3), 2560⟩]
+
+theorem initPre_of {s : State} (h : (Proof.AesSiv.initScratchContract X86.abi 48).pre s) :
+    initX86.pre (s.withRegions (initRd s) (initWr s)) ∧ s.rd = [⟨w64 (arg s 0), (arg s 1).toNat⟩] ∧
+      s.wr = [⟨w64 (arg s 2), 512⟩, ⟨w64 (arg s 3), 2560⟩, ⟨argAddr s 0, 16⟩] := by
+  sig_pre [Proof.AesSiv.initScratchContract, Proof.AesSiv.initScratchSig, Spec.Siv.initPre, X86.abi, X86.argSlots,
+    X86.argVal, X86.argBytes] at h
+  sig_split h
+  rename_i sp48 fa hrd hwr kc ks ka cs ca sa rk rc rs ra stk stc sts sta fk fc fs
+  exact ⟨⟨rfl, rfl, kc, ks, ka, cs, ca, sa, rk, rc, rs, ra, stk, stc, sts, sta, fk, fc, fs, sp48, (by omega : (s.gpr .esp).toNat + 20 ≤ 2 ^ 32), h⟩,
+    hrd, hwr⟩
+
+/-- A state satisfying `vg_aes_siv_init`'s precondition: a key of 32 bytes
+at `0x1000`, the context at `0x2000` and the scratch buffer at `0x4000`, as
+stack arguments at `0x8004`. -/
+def initSat : State where
+  gpr r := match r with | .esp => 0x8000 | _ => 0
+  cf := none
+  zf := none
+  sf := none
+  of := none
+  mem a := if a = 0x8005 then 0x10 else if a = 0x8008 then 32 else if a = 0x800d then 0x20
+    else if a = 0x8011 then 0x40 else 0
+  rd := [⟨0x1000, 32⟩]
+  wr := [⟨0x2000, 512⟩, ⟨0x4000, 2560⟩, ⟨0x8004, 16⟩]
+
+theorem initSat_pre : ∃ s, (Proof.AesSiv.initScratchContract X86.abi 48).pre s := by
+  have a0 : arg initSat 0 = 0x1000 := by decide
+  have a1 : arg initSat 1 = 32 := by decide
+  have a2 : arg initSat 2 = 0x2000 := by decide
+  have a3 : arg initSat 3 = 0x4000 := by decide
+  have e : argAddr initSat 0 = 0x8004 := by decide
+  have esp : initSat.gpr .esp = 0x8000 := rfl
+  sig_implies_sat [Proof.AesSiv.initScratchContract, Proof.AesSiv.initScratchSig, Spec.Siv.initPre,
+    Spec.Siv.initPost, X86.abi, X86.argSlots, X86.argVal, X86.argBytes] [a0, a1, a2, a3, e, esp] using initSat
+
+theorem init_verified :
+    Verified X86.target (initCore v.expand v.callee v.suffix) (Proof.AesSiv.initScratchContract X86.abi 48) := by
+  refine X86.Verified.narrowTo (k := initX86)
+    ⟨fun s hs => init_wp v hs, init_ct v, initSat_pre.elim fun s hs => ⟨_, (initPre_of hs).1⟩⟩
+    initRd initWr (fun s hs => (initPre_of hs).1) (fun s hs => ?_) (fun s hs => ?_) (fun s s' hs hq => ?_)
+    (fun s₁ s₂ h₁ h₂ hp => ?_) initSat_pre
+  · obtain ⟨-, hrd, hwr⟩ := initPre_of hs
+    rw [hrd, hwr]
+    exact Covers.of_mem fun r hr => by
+      simp only [initRd, initWr, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl | rfl <;> simp
+  · obtain ⟨-, -, hwr⟩ := initPre_of hs
+    rw [hwr]
+    exact Covers.of_mem fun r hr => by
+      simp only [initWr, List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl <;> simp
+  · sig_post [Proof.AesSiv.initScratchContract, Proof.AesSiv.initScratchSig, Spec.Siv.initPost, X86.abi,
+      X86.argSlots, X86.argVal, X86.argBytes]
+    exact hq
+  · sig_pub [Proof.AesSiv.initScratchContract, Proof.AesSiv.initScratchSig, X86.abi, X86.argSlots, X86.argVal,
+      X86.argBytes] at hp
+    sig_split hp
+    rename_i q0 q1 q2 q3
+    refine ⟨q0, fun i hi => ?_⟩
+    rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3) with rfl | rfl | rfl | rfl
+    · exact q1
+    · exact q2
+    · exact q3
+    · exact hp
+
+theorem noEsp_of {c : Prog isa} (h : NoSp c) :
+    c.allInstrs (fun i => !Taint.clobbers i .esp) = true := by
+  rw [Code.allInstrs_eq]
+  exact List.all_eq_true.mpr fun i hi => by simp [h i hi]
+
+theorem init_noEsp : (initCore v.expand v.callee v.suffix).allInstrs (fun i => !Taint.clobbers i .esp) = true := by
+  simp only [initCore, Impl.CmacAes.Stream.X86.call4, Code.allInstrs, noEsp_of v.expandNosp,
+    noEsp_of (Proof.CmacAes.X86.subkeys_nosp v)]
+  decide +kernel
+
+theorem init_stackUse : stackUse (initCore v.expand v.callee v.suffix) ≤ 48 := by
+  simp only [initCore, Impl.CmacAes.Stream.X86.call4, stackUse, v.expandStack, Proof.CmacAes.X86.subkeys_stack v]
+  decide +kernel
+
+/-- A state satisfying `vg_aes_siv_init`'s precondition, without the
+working space. -/
+def initFrameSat : State := { initSat with rd := [⟨0x1000, 32⟩], wr := [⟨0x2000, 512⟩, ⟨0x8004, 12⟩] }
+
+theorem initFrameSat_pre : ∃ s, (Spec.Siv.initContract X86.abi 2628).pre s := by
+  implies_sat [Spec.Siv.initContract, Spec.Siv.initSig, Spec.Siv.initPre, Spec.Siv.initPost,
+    X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
+    [initFrameSat, initSat, X86.arg, X86.argAddr, Mem.readW, Mem.read] using initFrameSat
+
+/-- `initCore` in a frame of 2580 bytes: the return address, the three
+argument slots and the 2560 bytes of working space. -/
+theorem init_framed :
+    Verified X86.target (Impl.StackScratch.X86.withStackScratch 2580 3 (initCore v.expand v.callee v.suffix))
+      (Spec.Siv.initContract X86.abi 2628) :=
+  X86.Verified.stackScratch (sig := Spec.Siv.initSig) (nm := "scratch") (e := .u64) (n := 320)
+    (pre := Spec.Siv.initPre X86.abi.ptrBits) (post := Spec.Siv.initPost X86.abi.ptrBits)
+    (wa := true) (stack := 48) (bytes := 2580) (init_verified v) (by decide) (init_noEsp v)
+    (init_stackUse v) (Proof.AesSiv.initPre_local _) (Proof.AesSiv.initPost_local _) initFrameSat_pre
 
 end VG.Proof.AesSiv.X86
