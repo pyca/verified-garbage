@@ -91,28 +91,29 @@ def tReg : XReg := .xmm15
 
 /-- Step `i` (0–4) of a block, for `p` (0) and `q` (1) in turn at each
 stage: `r8` the first operand, `r9` the second plus 8 per block, `r10` the
-region (the modulus and `k₀`). -/
+region (the modulus and `k₀`). Ordered so that the chain through `u` and
+the shift starts first: the low halves into roles 0 and 1, `u`, what role
+1 needs before the shift, the shift, then the rest limb by limb. -/
 def ammStep (i : Nat) : List Instr :=
   let ps := [0, 1]
+  let loA (p k : Nat) : Instr := .vpmadd52Load false (acc p k i) (bReg p) (at_ .r8 (D * p + 32 * k))
+  let hiA (p k : Nat) : Instr := .vpmadd52Load true (acc p (k + 1) i) (bReg p) (at_ .r8 (D * p + 32 * k))
+  let loM (p k : Nat) : Instr := .vpmadd52Load false (acc p k i) (uReg p) (at_ .r10 (D * p + oM + 32 * k))
+  let hiM (p k : Nat) : Instr := .vpmadd52Load true (acc p k (i + 1)) (uReg p) (at_ .r10 (D * p + oM + 32 * k))
   ps.flatMap (fun p => [.mov .rax (.mem (at_ .r9 (D * p + 32 * i))), .vop (.vmovq (bReg p) .rax),
     .vop (.vpbroadcastq .l256 (bReg p) (bReg p))]) ++
-  ps.flatMap (fun p => (List.range 5).map fun k =>
-    .vpmadd52Load false (acc p k i) (bReg p) (at_ .r8 (D * p + 32 * k))) ++
-  ps.flatMap (fun p => (List.range 4).map fun k =>
-    .vpmadd52Load true (acc p (k + 1) i) (bReg p) (at_ .r8 (D * p + 32 * k))) ++
+  ps.flatMap (fun p => [loA p 0, loA p 1]) ++
   ps.flatMap (fun p => [.vop (.vbin .vpxor .l256 tReg tReg tReg),
     .vpmadd52Load false tReg (acc p 0 i) (at_ .r10 (D * p + oK0)),
     .vop (.vpbroadcastq .l256 (uReg p) tReg)]) ++
-  ps.flatMap (fun p => (List.range 5).map fun k =>
-    .vpmadd52Load false (acc p k i) (uReg p) (at_ .r10 (D * p + oM + 32 * k))) ++
+  ps.flatMap (fun p => [hiA p 0, loM p 0, loM p 1]) ++
   ps.flatMap (fun p => [.vop (.vshift .psrlq .l256 tReg (acc p 0 i) 52),
     .vop (.vpblendd .l256 tReg zReg tReg 0x03), .vop (.vbin .vpaddq .l256 (acc p 1 i) (acc p 1 i) tReg),
     .vop (.vpermq (acc p 0 i) (acc p 0 i) 0x39),
     .vop (.vpblendd .l256 (acc p 0 i) (acc p 0 i) zReg 0xC0)]) ++
-  ps.flatMap (fun p => (List.range 4).map (fun k =>
-      .vpmadd52Load true (acc p k (i + 1)) (uReg p) (at_ .r10 (D * p + oM + 32 * k))) ++
-    [.vpmadd52Load true (acc p 4 (i + 1)) (bReg p) (at_ .r8 (D * p + 128)),
-     .vpmadd52Load true (acc p 4 (i + 1)) (uReg p) (at_ .r10 (D * p + oM + 128))])
+  ps.flatMap (fun p => [hiM p 0]) ++
+  ps.flatMap (fun p => (List.range 3).flatMap fun j => [loA p (j + 2), hiA p (j + 1), loM p (j + 2), hiM p (j + 1)]) ++
+  ps.flatMap (fun p => [.vpmadd52Load true (acc p 4 (i + 1)) (bReg p) (at_ .r8 (D * p + 128)), hiM p 4])
 
 /-- A block: five steps, then the next block's limbs of the second operand
 and the count of blocks. -/
