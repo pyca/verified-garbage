@@ -83,22 +83,26 @@ def rcb3 (S : RcbSlots) (p q o : Pt) : List FOp :=
     .sub o.x o.x S.t1, .mul o.z S.t4 o.z, .mul S.t1 S.t3 S.t0,
     .add o.z o.z S.t1]
 
-/-- `o = p + p` for a curve with `a = -3`, the slot `S.b3` holding `b` (Algorithm 6
-of Renes, Costello and Batina, in its stated order; temporaries `t0 … t3`; `o`
-apart from `p`): 8 products, 3 squares and 2 by `b`. -/
-def dbl3 (S : RcbSlots) (p o : Pt) : List FOp :=
-  [.mul S.t0 p.x p.x, .mul S.t1 p.y p.y, .mul S.t2 p.z p.z,
-    .mul S.t3 p.x p.y, .add S.t3 S.t3 S.t3, .mul o.z p.x p.z,
-    .add o.z o.z o.z, .mul o.y S.b3 S.t2, .sub o.y o.y o.z,
-    .add o.x o.y o.y, .add o.y o.x o.y, .sub o.x S.t1 o.y,
-    .add o.y S.t1 o.y, .mul o.y o.x o.y, .mul o.x o.x S.t3,
-    .add S.t3 S.t2 S.t2, .add S.t2 S.t2 S.t3, .mul o.z S.b3 o.z,
-    .sub o.z o.z S.t2, .sub o.z o.z S.t0, .add S.t3 o.z o.z,
-    .add o.z o.z S.t3, .add S.t3 S.t0 S.t0, .add S.t0 S.t3 S.t0,
-    .sub S.t0 S.t0 S.t2, .mul S.t0 S.t0 o.z, .add o.y o.y S.t0,
-    .mul S.t0 p.y p.z, .add S.t0 S.t0 S.t0, .mul o.z S.t0 o.z,
-    .sub o.x o.x o.z, .mul o.z S.t0 S.t1, .add o.z o.z o.z,
-    .add o.z o.z o.z]
+/-- `o = 2p` in Jacobian coordinates (`(X : Y : Z)` for `(X / Z², Y / Z³)`) for
+a curve with `a = -3` (dbl-2001-b: 3 products and 5 squares; temporaries `t0 … t3`;
+`o` apart from `p`). -/
+def dblJ (S : RcbSlots) (p o : Pt) : List FOp :=
+  [.mul S.t0 p.z p.z, .mul S.t1 p.y p.y, .mul S.t2 p.x S.t1, .sub S.t3 p.x S.t0,
+    .add o.x p.x S.t0, .mul S.t3 S.t3 o.x, .add o.x S.t3 S.t3, .add S.t3 o.x S.t3,
+    .add S.t2 S.t2 S.t2, .add S.t2 S.t2 S.t2, .add o.z p.y p.z, .mul o.z o.z o.z,
+    .sub o.z o.z S.t1, .sub o.z o.z S.t0, .mul o.x S.t3 S.t3, .sub o.x o.x S.t2,
+    .sub o.x o.x S.t2, .sub o.y S.t2 o.x, .mul o.y S.t3 o.y, .mul S.t1 S.t1 S.t1,
+    .add S.t1 S.t1 S.t1, .add S.t1 S.t1 S.t1, .add S.t1 S.t1 S.t1, .sub o.y o.y S.t1]
+
+/-- `o` = the projective `p` in Jacobian coordinates: `(XZ : YZ² : Z)` (`z.x`
+holding zero; temporary `t0`). -/
+def toJ (S : RcbSlots) (p z o : Pt) : List FOp :=
+  [.mul o.x p.x p.z, .mul S.t0 p.z p.z, .mul o.y p.y S.t0, .add o.z p.z z.x]
+
+/-- `o` = the Jacobian `p` in projective coordinates: `(XZ : Y : Z³)` (`z.x`
+holding zero; temporary `t0`). -/
+def fromJ (S : RcbSlots) (p z o : Pt) : List FOp :=
+  [.mul o.x p.x p.z, .mul S.t0 p.z p.z, .mul o.z S.t0 p.z, .add o.y p.y z.x]
 
 /-- What scalar multiplication needs: the field, the slots of `G` and of the
 points, the slots of the complete addition, and the table of the scalar's

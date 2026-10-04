@@ -4,9 +4,11 @@ import VerifiedGarbage.Impl.CmacAes.Arm
 /-!
 # AES-CCM: 32-bit ARM implementation
 
-`vg_aes_ccm_seal(schedule = r0, rounds = r1, nonce = r2, nonce_len = r3, aad = [sp], aad_len = [sp + 4], data = [sp + 8], len = [sp + 12], work = [sp + 16], tag_len = [sp + 20])`
+`vg_aes_ccm_seal(schedule = r0, rounds = r1, nonce = r2, nonce_len = r3, aad = [sp], aad_len = [sp + 4], data = [sp + 8], len = [sp + 12], tag = [sp + 16], tag_len = [sp + 20], work = [sp + 24])`
 and `vg_aes_ccm_open` with the same arguments (see `VG.Spec.Ccm.sealContract`
-and `openContract`), composed of calls of the verified `vg_cmac_aes_update`,
+and `openContract`), with the working space `work` as a last argument, which
+a frame on the stack allocates (`Impl.StackScratch.Arm.withStackScratch`),
+composed of calls of the verified `vg_cmac_aes_update`,
 whose chaining (`Cᵢ = CIPH_K(Cᵢ₋₁ ⊕ Mᵢ)`) from a zero block is CCM's CBC-MAC
 (§6.1 steps 1–4), and `vg_aes_ctr32`, as on x86-64
 (`Impl/AesCcm/X86_64.lean`).
@@ -20,8 +22,8 @@ whenever they are needed.
 
 ## The working space
 
-`work` (`W`, 2560 bytes): `[0, 16)` the tag (the received one, for `open`),
-`[32, 48)` a block `B`: `B₀`, the first block of the associated data or a
+`work` (`W`, 2560 bytes): `[0, 16)` the tag `seal` computes, which it then
+copies to `tag`, `[32, 48)` a block `B`: `B₀`, the first block of the associated data or a
 last block padded with zeros, `[48, 64)` the counter block `Ctr₀`,
 `[64, 80)` the counter block passed to `vg_aes_ctr32`, `[80, 96)` a
 keystream block, `[112, 128)` the MAC `open` computes, `[128, 164)` our
@@ -60,11 +62,13 @@ pointer), `r5` (a length) and `r6`, which the callees also preserve.
   `2^(8q)`; then the last bytes with a keystream block.
 * `mask`: every byte of the data ANDed with `0 − ok`, for `ok` the result
   of `cmp`.
+* `tagOut`: the first `tag_len` bytes of the tag at `W` copied to `tag`.
 
-`seal` computes the MAC of the payload, the tag, then encrypts the payload;
-`open` decrypts it, computes the MAC of the plaintext and the tag at
-`W + 112`, compares the first `tag_len` bytes of the two tags without a
-branch (`recv`, `cmp`), and masks the data.
+`seal` computes the MAC of the payload, the tag, then encrypts the payload
+and copies the tag to `tag`; `open` decrypts it, computes the MAC of the
+plaintext and the tag at `W + 112`, compares the first `tag_len` bytes of it
+with the received tag at `tag` without a branch (AES-GCM's `recv` and `cmp`),
+and masks the data.
 
 The model branches only on `Z`: `aad_len < 0xff00` takes the carry of a
 comparison with `adc`. Only the pointers, `rounds`, the lengths and
@@ -75,7 +79,7 @@ numbers of calls, bytes copied and blocks chained.
 namespace VG.Impl.AesCcm.Arm
 
 open VG.Arm
-open VG.Impl.AesGcm.Arm (imm addI save restore ctrFrame copyLoop xorLoop zero16 uO rO cmp)
+open VG.Impl.AesGcm.Arm (imm addI save restore ctrFrame copyLoop xorLoop zero16 uO recv cmp)
 
 /-! ## The working space -/
 
@@ -225,12 +229,10 @@ def ctrTail : Prog isa :=
 steps 3–5). -/
 def ctr : Prog isa := .seq (.block [.ldrSp .r4 8, .ldrSp .r5 12]) (.seq ctrWhole ctrTail)
 
-/-! ## Comparing the tags -/
+/-! ## The tag -/
 
-/-- The `r6` bytes of the received tag (at `W`), padded with zeros at
-`W + 256`. -/
-def recv : Prog isa :=
-  .seq (.block (zero16 rO ++ [.mov .r1 (.reg .r11), addI .r2 .r11 rO, .mov .r3 (.reg .r6)])) copyLoop
+/-- The first `tag_len` bytes of the tag at `W` copied to `tag`. -/
+def tagOut : Prog isa := .seq (.block [.mov .r1 (.reg .r11), .ldrSp .r2 16, .ldrSp .r3 20]) copyLoop
 
 /-! ## Masking the data -/
 
@@ -244,16 +246,16 @@ def mask : Prog isa :=
 
 /-! ## The functions -/
 
-/-- Saves the registers in the working space (`[sp + 16]`), and keeps `W`
+/-- Saves the registers in the working space (`[sp + 24]`), and keeps `W`
 in `r11`, the key schedule in `r9` and the rounds in `r8`. -/
 def entry : List Instr :=
-  .ldrSp .r12 16 :: save .r12 ++ [.mov .r11 (.reg .r12), .mov .r9 (.reg .r0), .mov .r8 (.reg .r1)]
+  .ldrSp .r12 24 :: save .r12 ++ [.mov .r11 (.reg .r12), .mov .r9 (.reg .r0), .mov .r8 (.reg .r1)]
 
 /-- `vg_aes_ccm_seal`. -/
 def «seal» : Prog isa :=
-  .seq (.block entry) (.seq ctrs (.seq (mac 0) (.seq (tag 0) (.seq ctr (.block restore)))))
+  .seq (.block entry) (.seq ctrs (.seq (mac 0) (.seq (tag 0) (.seq ctr (.seq tagOut (.block restore))))))
 
-/-- `vg_aes_ccm_open`. -/
+/-- `vg_aes_ccm_open`, with the received tag at `tag`. -/
 def «open» : Prog isa :=
   .seq (.block entry)
   (.seq ctrs

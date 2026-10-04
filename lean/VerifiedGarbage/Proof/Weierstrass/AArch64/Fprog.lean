@@ -247,17 +247,4 @@ theorem rcb3_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat → 
   exact WP.mono (ofN_ok hL hAl hm rcb3N_ok hA hSl hI hV) fun s' ⟨k, I, v⟩ =>
     ⟨k, I, v.trans (rcb3N_run _)⟩
 
-/-- `o = p + p` by Algorithm 6 (`a = -3`, with `b` in `S.b3`). -/
-theorem dbl3_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat → Prop} (hL : Lay M size Sl)
-    (hAl : Aligned M Sl) (hm : UnitMod m (2 ^ (64 * M.n))) {S : RcbSlots} {p o : Pt}
-    (hA : RcbApart S p p o) (hSl : ∀ x ∈ rcbW S o ++ rcbR S p p, Sl x) {V : List Nat} {E : Nat → Fin m}
-    {s : State} (hI : Inv M base size m Sl V E s) (hV : ∀ x ∈ rcbR S p p, x ∈ V) :
-    WP isa (.block (fprog M (dbl3 S p o))) s fun s' => ProgKeep M base (rcbW S o) s s' ∧
-      Inv M base size m Sl ([o.x, o.y, o.z] ++ V) (runOps (dbl3 S p o) E) s' ∧
-      (runOps (dbl3 S p o) E o.x, runOps (dbl3 S p o) E o.y, runOps (dbl3 S p o) E o.z) =
-        VG.Proof.Weierstrass.rcbDbl3 (E S.b3) (E p.x) (E p.y) (E p.z) := by
-  rw [dbl3_eq]
-  exact WP.mono (ofN_ok hL hAl hm dbl3N_ok hA hSl hI hV) fun s' ⟨k, I, v⟩ =>
-    ⟨k, I, v.trans (dbl3N_run _)⟩
-
 end VG.Proof.Weierstrass.AArch64

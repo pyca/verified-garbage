@@ -140,13 +140,13 @@ end
 
 /-- Between the pieces of the MAC: one run, the environment with `q − 1` in
 `r10`, and `Ctr₀` at `W + 48`. -/
-def MacI (k w sp N A D : BitVec 32) (R nl al n tl : Nat) (s : State) : Prop :=
-  One k w sp N A D R nl al n tl s ∧ Env k w sp R (14 - nl) s ∧
+def MacI (k w sp N A D T : BitVec 32) (R nl al n tl : Nat) (s : State) : Prop :=
+  One k w sp N A D T R nl al n tl s ∧ Env k w sp R (14 - nl) s ∧
     ∃ nonce : List Byte, nonce.length = nl ∧
       bytesAt s.mem (State.addr w + BitVec.ofNat 64 48) 16 = Spec.Ccm.ctrBlock nonce 0
 
 section
-variable {k w sp N A D : BitVec 32} {R nl al n tl : Nat}
+variable {k w sp N A D T : BitVec 32} {R nl al n tl : Nat}
 
 theorem c0_macR {y : Nat} (hy : y = 0 ∨ y = 112) (L : Lay k w sp) {m m' : Mem} (hf : Frame (macR w sp y) m m') :
     bytesAt m' (State.addr w + BitVec.ofNat 64 48) 16 = bytesAt m (State.addr w + BitVec.ofNat 64 48) 16 :=
@@ -161,22 +161,22 @@ theorem c0_macR {y : Nat} (hy : y = 0 ∨ y = 112) (L : Lay k w sp) {m m' : Mem}
     · exact (L.stk_w' (by decide)).symm) (by decide)
 
 /-- After a piece of the MAC. -/
-theorem MacI.next {y : Nat} (hy : y = 0 ∨ y = 112) {s s' : State} (h : MacI k w sp N A D R nl al n tl s)
-    {Y : List Byte} (M : MacStep k w sp R (14 - nl) s y Y s') : MacI k w sp N A D R nl al n tl s' := by
+theorem MacI.next {y : Nat} (hy : y = 0 ∨ y = 112) {s s' : State} (h : MacI k w sp N A D T R nl al n tl s)
+    {Y : List Byte} (M : MacStep k w sp R (14 - nl) s y Y s') : MacI k w sp N A D T R nl al n tl s' := by
   obtain ⟨o, he, nonce, hl, hc⟩ := h
   have L : Lay k w sp := by have := o.ar.lay; rwa [o.sp] at this
   exact ⟨o.next M.frame (macR_mut hy) (by rw [M.env.sp, he.sp]) M.rd M.wr, M.env, nonce, hl,
     by rw [c0_macR hy L M.frame, hc]⟩
 
-theorem MacI.lay {s : State} (h : MacI k w sp N A D R nl al n tl s) : Lay k w sp := by
+theorem MacI.lay {s : State} (h : MacI k w sp N A D T R nl al n tl s) : Lay k w sp := by
   have := h.1.ar.lay; rwa [h.1.sp] at this
 
 variable (L : Lay k w sp) (hR : R = 10 ∨ R = 12 ∨ R = 14) (hal : al < 2 ^ 32)
 include L hR hal
 
 /-- The associated data. -/
-theorem aad_ct {y : Nat} (hy : y = 0 ∨ y = 112) : CT (MacI k w sp N A D R nl al n tl) (aad y) := by
-  refine CT.seq (J := fun s => MacI k w sp N A D R nl al n tl s ∧ s.gpr .r4 = A ∧
+theorem aad_ct {y : Nat} (hy : y = 0 ∨ y = 112) : CT (MacI k w sp N A D T R nl al n tl) (aad y) := by
+  refine CT.seq (J := fun s => MacI k w sp N A D T R nl al n tl s ∧ s.gpr .r4 = A ∧
     s.gpr .r5 = BitVec.ofNat 32 al ∧ s.z = decide (al = 0)) ?_ (fun s h => ?_) ?_
   · exact CT.args [] (fun s h => h.1.pubArgs) (fun _ _ _ _ _ h => by simp at h) ⟨_, by taint_decide⟩
   · obtain ⟨s₁, run₁, h4, h5, hz, g₁, k₁⟩ := aadLd_ok h.1.ar.stk h.1.eA h.1.eal hal
@@ -190,7 +190,7 @@ theorem aad_ct {y : Nat} (hy : y = 0 ∨ y = 112) : CT (MacI k w sp N A D R nl a
   refine CT.ite (decide (al = 0)) (fun s h => h.2.2.2) (fun _ => CT.skip) fun hb => ?_
   have h0 : al ≠ 0 := by simpa using hb
   have hn1 : headLen al ≤ al := by unfold headLen; omega
-  have bufA : ∀ {s : State}, MacI k w sp N A D R nl al n tl s → Buf w sp s A al := fun h => by
+  have bufA : ∀ {s : State}, MacI k w sp N A D T R nl al n tl s → Buf w sp s A al := fun h => by
     have := h.1.ar.aad; rwa [h.1.sp] at this
   refine CT.seq (J := AbsI k w sp R (14 - nl) (A + BitVec.ofNat 32 (headLen al)) (al - headLen al))
     ((aadHead_ct L hR hy (by omega) hal).mono fun s ⟨h, h4, h5, _⟩ => ⟨h.2.1, bufA h, h4, h5⟩)
@@ -199,9 +199,9 @@ theorem aad_ct {y : Nat} (hy : y = 0 ∨ y = 112) : CT (MacI k w sp N A D R nl a
         A₂.rd A₂.wr, A₂.r4, A₂.r5⟩) (absorbPad_ct L hR hy (by omega))
 
 /-- `B₀`. -/
-theorem b0_ct {y : Nat} (hy : y = 0 ∨ y = 112) : CT (MacI k w sp N A D R nl al n tl) (b0 y) := by
+theorem b0_ct {y : Nat} (hy : y = 0 ∨ y = 112) : CT (MacI k w sp N A D T R nl al n tl) (b0 y) := by
   refine CT.assoc (CT.seq (J := Env k w sp R (14 - nl)) ?_ (fun s ⟨o, he, nonce, hl, hc⟩ => ?_) (updBlock_ct L hR hy))
-  · obtain ⟨_, hc⟩ : ∃ h, (VG.Taint.check VG.Arm.taint (argTaint [.r8, .r9, .r10, .r11] (4 * 6))
+  · obtain ⟨_, hc⟩ : ∃ h, (VG.Taint.check VG.Arm.taint (argTaint [.r8, .r9, .r10, .r11] (4 * 7))
         (.seq flagsCode (.block (b0Block y))) h).isSome = true := by
       rcases hy with rfl | rfl <;> exact ⟨_, by taint_decide⟩
     exact CT.args _ (fun s h => h.1.pubArgs) (fun s₁ s₂ h₁ h₂ r hr => env_eq h₁.2.1 h₂.2.1 (by simpa using hr)) ⟨_, hc⟩
@@ -210,12 +210,12 @@ theorem b0_ct {y : Nat} (hy : y = 0 ∨ y = 112) : CT (MacI k w sp N A D R nl al
       fun _ h => h.1
 
 /-- The MAC. -/
-theorem mac_ct {y : Nat} (hy : y = 0 ∨ y = 112) (hn : n < 2 ^ 32) : CT (MacI k w sp N A D R nl al n tl) (mac y) := by
-  refine CT.seq (J := MacI k w sp N A D R nl al n tl) (b0_ct L hR hal hy) (fun s ⟨o, he, nonce, hl, hc⟩ => ?_) ?_
+theorem mac_ct {y : Nat} (hy : y = 0 ∨ y = 112) (hn : n < 2 ^ 32) : CT (MacI k w sp N A D T R nl al n tl) (mac y) := by
+  refine CT.seq (J := MacI k w sp N A D T R nl al n tl) (b0_ct L hR hal hy) (fun s ⟨o, he, nonce, hl, hc⟩ => ?_) ?_
   · have Ar := o.ar
     exact WP.mono (b0_ok L he Ar.stk hR o.etl o.eal o.en hl Ar.h7 Ar.h13 Ar.t4 Ar.t16 Ar.te hal Ar.n32 Ar.hn hc hy)
       fun _ M => MacI.next hy ⟨o, he, nonce, hl, hc⟩ M
-  refine CT.seq (J := MacI k w sp N A D R nl al n tl) (aad_ct L hR hal hy) (fun s h => ?_) ?_
+  refine CT.seq (J := MacI k w sp N A D T R nl al n tl) (aad_ct L hR hal hy) (fun s h => ?_) ?_
   · obtain ⟨o, he, _⟩ := id h
     have bufA : Buf w sp s A al := by have := o.ar.aad; rwa [o.sp] at this
     exact WP.mono (aad_ok L he hR hy o.ar.stk o.eA o.eal hal bufA) fun _ M => MacI.next hy h M

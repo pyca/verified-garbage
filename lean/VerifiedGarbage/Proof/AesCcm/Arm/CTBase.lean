@@ -24,22 +24,22 @@ open VG.Proof.AesGcm.Arm (CT ArgsKeep arg_frame)
 /-- The stack arguments `a`, which the code may not write, as public. -/
 structure PubArgs (sp : BitVec 32) (a : Nat → BitVec 32) (s : State) : Prop where
   hsp : s.sp = sp
-  fit : sp.toNat + 4 * 6 ≤ 2 ^ 32
-  wr : ∀ r ∈ s.wr, (args s 6).Disjoint r
-  arg : ∀ i < 6, stackArg s i = a i
+  fit : sp.toNat + 4 * 7 ≤ 2 ^ 32
+  wr : ∀ r ∈ s.wr, (args s 7).Disjoint r
+  arg : ∀ i < 7, stackArg s i = a i
 
 /-- A block the taint analysis checks from the registers `rs` and the stack
 arguments, the same in both runs. -/
 theorem CT.args {I : State → Prop} {c : Prog isa} {sp : BitVec 32} {a : Nat → BitVec 32} (rs : List Reg)
     (hI : ∀ s, I s → PubArgs sp a s) (hp : ∀ s₁ s₂, I s₁ → I s₂ → ∀ r ∈ rs, s₁.gpr r = s₂.gpr r)
-    (hc : ∃ h, (VG.Taint.check VG.Arm.taint (argTaint rs (4 * 6)) c h).isSome = true) : CT I c := by
+    (hc : ∃ h, (VG.Taint.check VG.Arm.taint (argTaint rs (4 * 7)) c h).isSome = true) : CT I c := by
   obtain ⟨_, hc⟩ := hc
-  refine Proof.AesGcm.Arm.CT.argTaint rs (4 * 6) hp (fun s₁ s₂ h₁ h₂ => (hI _ h₁).hsp.trans (hI _ h₂).hsp.symm)
+  refine Proof.AesGcm.Arm.CT.argTaint rs (4 * 7) hp (fun s₁ s₂ h₁ h₂ => (hI _ h₁).hsp.trans (hI _ h₂).hsp.symm)
     (fun s h => ⟨by rw [(hI s h).hsp]; exact (hI s h).fit, fun r hr => ?_⟩)
     (fun s₁ s₂ h₁ h₂ => argMem_of ((hI _ h₁).hsp.trans (hI _ h₂).hsp.symm) (by rw [(hI _ h₁).hsp]; exact (hI _ h₁).fit)
       fun i hi => by rw [(hI _ h₁).arg i hi, (hI _ h₂).arg i hi]) hc
   have := (hI s h).wr r hr
-  rwa [show Proof.AesCcm.Arm.args s 6 = ⟨State.addr s.sp, 4 * 6⟩ by
+  rwa [show Proof.AesCcm.Arm.args s 7 = ⟨State.addr s.sp, 4 * 7⟩ by
     simp only [Proof.AesCcm.Arm.args, Proof.AesGcm.Arm.argAddr_zero]] at this
 
 /-- `a; (b; c)`, from `(a; b); c`. -/
@@ -60,62 +60,60 @@ theorem CT.assoc4 {I : State → Prop} {a b c d e : Prog isa} (h : CT I (.seq (.
   exact ⟨ht, hq⟩
 
 /-- The values of the stack arguments. -/
-abbrev argVals (A D w : BitVec 32) (al n tl : Nat) (i : Nat) : BitVec 32 :=
-  [A, BitVec.ofNat 32 al, D, BitVec.ofNat 32 n, w, BitVec.ofNat 32 tl].getD i 0
+abbrev argVals (A D T w : BitVec 32) (al n tl : Nat) (i : Nat) : BitVec 32 :=
+  [A, BitVec.ofNat 32 al, D, BitVec.ofNat 32 n, T, BitVec.ofNat 32 tl, w].getD i 0
 
 /-- One run between the pieces, with its public values: the arguments, the
 stack pointer and what the code may write. -/
-structure One (k w sp N A D : BitVec 32) (R nl al n tl : Nat) (s : State) : Prop where
+structure One (k w sp N A D T : BitVec 32) (R nl al n tl : Nat) (s : State) : Prop where
   ar : Args s k w N A D R nl al n tl
   sp : s.sp = sp
-  wr : s.wr = [⟨State.addr D, n⟩, ⟨State.addr w, 2560⟩]
+  wr : ∀ r ∈ s.wr, (args s 7).Disjoint r
   eA : stackArg s 0 = A
   eal : stackArg s 1 = BitVec.ofNat 32 al
   eD : stackArg s 2 = D
   en : stackArg s 3 = BitVec.ofNat 32 n
-  eW : stackArg s 4 = w
+  eT : stackArg s 4 = T
   etl : stackArg s 5 = BitVec.ofNat 32 tl
+  eW : stackArg s 6 = w
 
 namespace One
 
-variable {k w sp N A D : BitVec 32} {R nl al n tl : Nat} {s : State} (h : One k w sp N A D R nl al n tl s)
+variable {k w sp N A D T : BitVec 32} {R nl al n tl : Nat} {s : State} (h : One k w sp N A D T R nl al n tl s)
 include h
 
-theorem pubArgs : PubArgs sp (argVals A D w al n tl) s where
+theorem pubArgs : PubArgs sp (argVals A D T w al n tl) s where
   hsp := h.sp
   fit := by rw [← h.sp]; exact h.ar.stk.fit
-  wr r hr := by
-    rw [h.wr] at hr
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl
-    · exact h.ar.da.symm
-    · exact h.ar.stk.aw
+  wr := h.wr
   arg i hi := by
-    rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 by omega) with rfl | rfl | rfl | rfl | rfl | rfl
+    rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 by omega) with
+      rfl | rfl | rfl | rfl | rfl | rfl | rfl
     · exact h.eA
     · exact h.eal
     · exact h.eD
     · exact h.en
-    · exact h.eW
+    · exact h.eT
     · exact h.etl
+    · exact h.eW
 
 /-- After code that writes regions apart from the stack arguments. -/
 theorem next' {s' : State} {rs : List Region} (hf : Frame rs s.mem s'.mem)
-    (hd : ∀ r ∈ rs, (args s 6).Disjoint r) (hsp : s'.sp = s.sp) (hrd : s'.rd = s.rd)
-    (hwr : s'.wr = s.wr) : One k w sp N A D R nl al n tl s' := by
+    (hd : ∀ r ∈ rs, (args s 7).Disjoint r) (hsp : s'.sp = s.sp) (hrd : s'.rd = s.rd)
+    (hwr : s'.wr = s.wr) : One k w sp N A D T R nl al n tl s' := by
   have Ar := h.ar
   have hk : Stk w s s' := Ar.stk.frame hf hd hsp hrd hwr
-  have ea : args s' 6 = args s 6 := Proof.AesGcm.Arm.args_sp hsp 6
-  have ka : ∀ i < 6, stackArg s' i = stackArg s i := hk.keep.arg
+  have ea : args s' 7 = args s 7 := Proof.AesGcm.Arm.args_sp hsp 7
+  have ka : ∀ i < 7, stackArg s' i = stackArg s i := hk.keep.arg
   have sb : blw s'.sp = blw s.sp := by rw [hsp]
-  refine ⟨?_, by rw [hsp, h.sp], by rw [hwr, h.wr], by rw [ka 0 (by decide), h.eA], by rw [ka 1 (by decide), h.eal],
-    by rw [ka 2 (by decide), h.eD], by rw [ka 3 (by decide), h.en], by rw [ka 4 (by decide), h.eW],
-    by rw [ka 5 (by decide), h.etl]⟩
+  refine ⟨?_, by rw [hsp, h.sp], by rw [hwr, ea]; exact h.wr, by rw [ka 0 (by decide), h.eA],
+    by rw [ka 1 (by decide), h.eal], by rw [ka 2 (by decide), h.eD], by rw [ka 3 (by decide), h.en],
+    by rw [ka 4 (by decide), h.eT], by rw [ka 5 (by decide), h.etl], by rw [ka 6 (by decide), h.eW]⟩
   have L := Ar.lay
   exact {
     lay := ⟨L.kw, L.ww, by rw [hsp]; exact L.sp16, L.k_w, by rw [sb]; exact L.stk_k, by rw [sb]; exact L.stk_w⟩
     perm := Ar.perm.of_eq hrd hwr
-    stk := ⟨ArgsKeep.refl 6 s', by rw [hsp]; exact Ar.stk.fit, by rw [ea, hrd]; exact Ar.stk.rd,
+    stk := ⟨ArgsKeep.refl 7 s', by rw [hsp]; exact Ar.stk.fit, by rw [ea, hrd]; exact Ar.stk.rd,
       by rw [ea]; exact Ar.stk.aw⟩
     rounds := Ar.rounds
     nonce := { Ar.nonce.of_eq hrd hwr with stk := by rw [sb]; exact Ar.nonce.stk }
@@ -137,7 +135,7 @@ theorem next' {s' : State} {rs : List Region} (hf : Frame rs s.mem s'.mem)
 /-- After code that writes regions within `mutR`. -/
 theorem next {s' : State} {rs : List Region} (hf : Frame rs s.mem s'.mem)
     (hsub : ∀ r ∈ rs, ∃ r' ∈ mutR w sp D n, Region.Sub r r') (hsp : s'.sp = s.sp) (hrd : s'.rd = s.rd)
-    (hwr : s'.wr = s.wr) : One k w sp N A D R nl al n tl s' := by
+    (hwr : s'.wr = s.wr) : One k w sp N A D T R nl al n tl s' := by
   rw [← h.sp] at hsub
   exact h.next' (hf.sub hsub) (args_mut h.ar) hsp hrd hwr
 

@@ -6,8 +6,9 @@ import VerifiedGarbage.Proof.AesCcm.AArch64.Seal
 Untrusted: everything here is checked by Lean. `open` is `entry`, `Ctr₀`
 (`ctrs`), counter mode over the data (`ctr`), which decrypts it, the MAC of
 the plaintext (`mac 96`), encrypted at `W + 96` (`tag 96`), the comparison
-with the received tag at `W` (`cmp`), the result, the data masked with it
-(`mask`) and `restore` (`open_wp`).
+with the received tag at `tag`, whose address the entry keeps in `W`
+(`loadTag_ok`, `cmp`), the result, the data masked with it (`mask`) and
+`restore` (`open_wp`).
 -/
 
 set_option linter.unusedSimpArgs false
@@ -48,7 +49,7 @@ theorem length_chain {ciph : Spec.Ccm.Cipher} (hc : BlockCipher ciph) :
 theorem open_wp' (v : Proof.CmacAes.AArch64.UpdateImpl) {c : Cx} {N : Addr} {s : State} (Ar : Args c N s) :
     WP isa («open» v.callee v.ctr.callee) s fun s' => GprAbi s s' ∧
       openOut (Spec.Ccm.decryptWith (Spec.Ccm.ctxCiph s.mem c.K c.R) c.tl (bytesAt s.mem N c.nl)
-          (bytesAt s.mem c.D c.n) (bytesAt s.mem c.A c.al) (bytesAt s.mem c.W c.tl)) (s'.gpr .x0)
+          (bytesAt s.mem c.D c.n) (bytesAt s.mem c.A c.al) (bytesAt s.mem c.T c.tl)) (s'.gpr .x0)
         (bytesAt s'.mem c.D c.n) c.n := by
   have L := Ar.lay
   have ht16 := L.t16
@@ -67,15 +68,19 @@ theorem open_wp' (v : Proof.CmacAes.AArch64.UpdateImpl) {c : Cx} {N : Addr} {s :
   have c₄ : bytesAt s₄.mem (c.W + BitVec.ofNat 64 48) 16 = Spec.Ccm.ctrBlock (bytesAt s.mem N c.nl) 0 := by
     rw [Proof.AesGcm.AArch64.bytesAt_frame M.frame (macR_c0 L (.inr rfl)) (by decide), c₃]
   refine WP.seq (WP.mono (tag_ok v.ctr L M.env hnl c₄ (.inr rfl)) fun s₅ ⟨E₅, rd₅, wr₅, f₅, h₅⟩ => ?_)
-  refine WP.seq (WP.mono (cmp_ok L E₅) fun s₆ ⟨x10₆, E₆, og₆, f₆⟩ => ?_)
-  refine WP.seq (WP.mono (ret_ok (b := decide (bytesAt s₅.mem (c.W + BitVec.ofNat 64 96) c.tl =
-      bytesAt s₅.mem c.W c.tl)) (by rw [x10₆]; congr 1; simp)) fun s₇ ⟨x0₇, og₇, hm₇, sp₇, rd₇, wr₇⟩ => ?_)
-  have E₇ : Env c s₇ := E₆.others og₇ (by decide) sp₇ rd₇ wr₇
-  refine WP.seq (WP.mono (mask_ok L E₇ (ok := decide (bytesAt s₅.mem (c.W + BitVec.ofNat 64 96) c.tl =
-      bytesAt s₅.mem c.W c.tl)) (by rw [og₇ _ (by decide), x10₆]; congr 1; simp))
-    fun s₈ ⟨hd₈, E₈, og₈, f₈⟩ => ?_)
   have f₁₄ : Frame (mutR c) s₁.mem s₄.mem := f₁₃.trans (M.frame.sub (macR_mut (.inr rfl)))
   have f₁₅ : Frame (mutR c) s₁.mem s₅.mem := f₁₄.trans (f₅.sub (tagR_mut c (.inr rfl)))
+  -- The address of the received tag, from its slot.
+  refine WP.seq (WP.mono (loadTag_ok E₅ (En.slots.mut L f₁₅) .x12) fun s₉ ⟨x12₉, og₉, m₉, sp₉, rd₉, wr₉⟩ => ?_)
+  have E₉ : Env c s₉ := E₅.others og₉ (by decide) sp₉ rd₉ wr₉
+  refine WP.seq (WP.mono (cmp_ok L E₉ x12₉) fun s₆ ⟨x10₆, E₆, og₆, f₆⟩ => ?_)
+  rw [m₉] at x10₆ f₆
+  refine WP.seq (WP.mono (ret_ok (b := decide (bytesAt s₅.mem (c.W + BitVec.ofNat 64 96) c.tl =
+      bytesAt s₅.mem c.T c.tl)) (by rw [x10₆]; congr 1; simp)) fun s₇ ⟨x0₇, og₇, hm₇, sp₇, rd₇, wr₇⟩ => ?_)
+  have E₇ : Env c s₇ := E₆.others og₇ (by decide) sp₇ rd₇ wr₇
+  refine WP.seq (WP.mono (mask_ok L E₇ (ok := decide (bytesAt s₅.mem (c.W + BitVec.ofNat 64 96) c.tl =
+      bytesAt s₅.mem c.T c.tl)) (by rw [og₇ _ (by decide), x10₆]; congr 1; simp))
+    fun s₈ ⟨hd₈, E₈, og₈, f₈⟩ => ?_)
   have f₁₆ : Frame (mutR c) s₁.mem s₆.mem := f₁₅.trans (f₆.sub (cmpR_mut c))
   have f₁₈ : Frame (mutR c) s₁.mem s₈.mem := by
     rw [hm₇] at f₈; exact f₁₆.trans (f₈.sub (maskR_mut c))
@@ -104,25 +109,9 @@ theorem open_wp' (v : Proof.CmacAes.AArch64.UpdateImpl) {c : Cx} {N : Addr} {s :
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl | rfl <;> exact L.d_w' (by decide)) (by have := L.n_lt; omega),
       buf_macR (L.bufD M.env.perm) (by decide) M.frame]
-  have hrecv : bytesAt s₅.mem c.W c.tl = bytesAt s.mem c.W c.tl := by
-    have hk : ∀ {m m' : Mem} {rs : List Region}, Frame rs m m' → (∀ r ∈ rs, (⟨c.W, c.tl⟩ : Region).Disjoint r) →
-        bytesAt m' c.W c.tl = bytesAt m c.W c.tl := fun hf hd => Proof.AesGcm.AArch64.bytesAt_frame hf hd (by omega)
-    rw [hk f₅ (fun r hr => by
-        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-        rcases hr with rfl | rfl | rfl <;> exact L.w0_w (by have : uO = 96 := rfl; omega) (by decide)),
-      hk M.frame (fun r hr => by
-        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-        rcases hr with rfl | rfl | rfl <;> exact L.w0_w (by have : uO = 96 := rfl; omega) (by decide)),
-      hk f₃ (fun r hr => by
-        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-        rcases hr with rfl | rfl | rfl
-        · exact L.w0_w (by omega) (by decide)
-        · exact L.w0_w (by omega) (by decide)
-        · exact (L.d_w.sub_right (Region.sub_prefix (by omega))).symm),
-      hk f₂ (fun r hr => by
-        simp only [List.mem_singleton] at hr; subst hr; exact L.w0_w (by omega) (by decide)),
-      hk En.frame (fun r hr => by
-        simp only [List.mem_singleton] at hr; subst hr; exact L.w0_w (by omega) (by decide))]
+  have hrecv : bytesAt s₅.mem c.T c.tl = bytesAt s.mem c.T c.tl := by
+    rw [tag_mut L f₁₅ ht16, Proof.AesGcm.AArch64.bytesAt_frame En.frame (fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr; exact L.t_w.sub_right (Lay.wSub (by decide))) (by omega)]
   have hY := congrArg List.length h₅
   rw [length_bytesAt, length_xorFrom] at hY
   have hcomp : bytesAt s₅.mem (c.W + BitVec.ofNat 64 96) c.tl =
@@ -137,17 +126,17 @@ theorem open_wp' (v : Proof.CmacAes.AArch64.UpdateImpl) {c : Cx} {N : Addr} {s :
     rw [mac_eq _ _ (by rw [hnl]; have := L.h13; omega), List.length_take,
       length_chain (hBC _) _ _ (by simp [Spec.Cmac.zeros])]
     omega
-  have hiff := cryptTag_eq_iff (hBC s.mem) L.t16 (bytesAt s.mem N c.nl) hmlen (length_bytesAt s.mem c.W c.tl)
+  have hiff := cryptTag_eq_iff (hBC s.mem) L.t16 (bytesAt s.mem N c.nl) hmlen (length_bytesAt s.mem c.T c.tl)
   simp only [openOut, Spec.Ccm.decryptWith]
   rw [hcomp, hrecv] at hd₈ x0₇
   by_cases he : Spec.Ccm.cryptTag (Spec.Ccm.ctxCiph s.mem c.K c.R) c.tl (bytesAt s.mem N c.nl)
-      (bytesAt s.mem c.W c.tl) = Spec.Ccm.mac (Spec.Ccm.ctxCiph s.mem c.K c.R) c.tl (bytesAt s.mem N c.nl)
+      (bytesAt s.mem c.T c.tl) = Spec.Ccm.mac (Spec.Ccm.ctxCiph s.mem c.K c.R) c.tl (bytesAt s.mem N c.nl)
         (bytesAt s.mem c.A c.al) (Spec.Ccm.crypt (Spec.Ccm.ctxCiph s.mem c.K c.R) (bytesAt s.mem N c.nl)
           (bytesAt s.mem c.D c.n))
   · have hq : Spec.Ccm.cryptTag (Spec.Ccm.ctxCiph s.mem c.K c.R) c.tl (bytesAt s.mem N c.nl)
         (Spec.Ccm.mac (Spec.Ccm.ctxCiph s.mem c.K c.R) c.tl (bytesAt s.mem N c.nl) (bytesAt s.mem c.A c.al)
           (Spec.Ccm.crypt (Spec.Ccm.ctxCiph s.mem c.K c.R) (bytesAt s.mem N c.nl) (bytesAt s.mem c.D c.n))) =
-        bytesAt s.mem c.W c.tl := hiff.mpr he.symm
+        bytesAt s.mem c.T c.tl := hiff.mpr he.symm
     simp only [he, ↓reduceIte]
     refine ⟨?_, ?_⟩
     · rw [x0', og₈ _ (by decide), x0₇]; simp [hq]
@@ -155,16 +144,16 @@ theorem open_wp' (v : Proof.CmacAes.AArch64.UpdateImpl) {c : Cx} {N : Addr} {s :
   · have hq : ¬ Spec.Ccm.cryptTag (Spec.Ccm.ctxCiph s.mem c.K c.R) c.tl (bytesAt s.mem N c.nl)
         (Spec.Ccm.mac (Spec.Ccm.ctxCiph s.mem c.K c.R) c.tl (bytesAt s.mem N c.nl) (bytesAt s.mem c.A c.al)
           (Spec.Ccm.crypt (Spec.Ccm.ctxCiph s.mem c.K c.R) (bytesAt s.mem N c.nl) (bytesAt s.mem c.D c.n))) =
-        bytesAt s.mem c.W c.tl := fun h => he (hiff.mp h).symm
+        bytesAt s.mem c.T c.tl := fun h => he (hiff.mp h).symm
     simp only [he, ↓reduceIte]
     refine ⟨?_, ?_⟩
     · rw [x0', og₈ _ (by decide), x0₇]; simp [hq]
     · rw [hm, hd₈]; simp only [hq, decide_false, Bool.false_eq_true, ↓reduceIte]
 
 /-- `vg_aes_ccm_open`. -/
-theorem open_wp (v : Proof.CmacAes.AArch64.UpdateImpl) {s : State} (h : onePre s) :
+theorem open_wp (v : Proof.CmacAes.AArch64.UpdateImpl) {s : State} (h : openAArch64.pre s) :
     WP isa («open» v.callee v.ctr.callee) s fun s' => GprAbi s s' ∧ openAArch64.post s s' := by
-  have Ar := args_of h
+  have Ar := args_of_open h
   refine WP.mono (open_wp' v Ar) fun s' ⟨ga, hp⟩ => ⟨ga, ?_⟩
   exact hp
 

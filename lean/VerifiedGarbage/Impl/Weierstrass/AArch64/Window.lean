@@ -9,9 +9,10 @@ signed 4-bit windows. The scalar is recoded as `k' = k + 8 Σ_{j<J} 16^j`
 give the digits `d_j = k'_j - 8 ∈ [-8, 7]` with `k = Σ_j d_j 16^j`. The
 table `[m]P` for `m = 1 … 8` is built in the working space (`build`: `P`,
 then seven complete additions); then, from `R = O`, for `j = J - 1` down
-to `0`, `R = 16 R + [d_j]P`: four doublings, the entry of `|d_j|` selected in
+to `0`, `R = 16 R + [d_j]P`: four doublings (in Jacobian coordinates, `quad`), the
+entry of `|d_j|` selected in
 constant time and negated for a negative digit, and a complete addition. The
-formulas are those for `a = -3` (`dbl3`, `rcb3`, with `b` in `S.b3`).
+formulas are those for `a = -3` (`dblJ`, `rcb3`, with `b` in `S.b3`).
 
 The digits are secret: every entry's every word is loaded and masked
 (`selectWord`), the masks of the magnitudes as for the comb (`digit`), and
@@ -64,13 +65,33 @@ def select : List Instr :=
   (List.range K.M.n).flatMap (selectWord K 1 K.E.y) ++
   (List.range K.M.n).flatMap (selectWord K 2 K.E.z)
 
-/-- `R = R + R`, through `D`. -/
-def double : Prog isa := .seq (fprogB K.M (dbl3 K.S K.R K.D)) (.block (copyPt K.M.n K.R K.D))
+/-- The slots of zero, as a point (`toJ` and `fromJ` add zero to copy). -/
+def zeroPt : Pt := ⟨K.zero, K.zero, K.zero⟩
+
+/-- `R.y` = Montgomery's one where the mask `x2` is all ones, word `w`: through
+`x4` and `x9`. -/
+def ySelWord (w : Nat) : List Instr :=
+  [ld .x9 (K.R.y + 8 * w), .bicRor .x .x9 .x9 .x2 0] ++ const64 .x4 (wordOf K.one w) ++
+    [.logic .and .x .x4 .x4 .x2, .logic .orr .x .x4 .x4 .x9, st .x4 (K.R.y + 8 * w)]
+
+/-- `R = (0 : 1 : 0)` where `E.z` is zero: `R.x` and `R.z` are zero then already. -/
+def ySel : List Instr := zeroMask K.M.n K.E.z ++ (List.range K.M.n).flatMap (ySelWord K)
+
+/-- `R = 16 R` but where it is `O`: into Jacobian coordinates in `E`, four
+doublings between `E` and `D`, and back. -/
+def jac : Prog isa :=
+  .seq (fprogB K.M (toJ K.S K.R (zeroPt K) K.E)) <|
+  .seq (fprogB K.M (dblJ K.S K.E K.D)) <| .seq (fprogB K.M (dblJ K.S K.D K.E)) <|
+  .seq (fprogB K.M (dblJ K.S K.E K.D)) <| .seq (fprogB K.M (dblJ K.S K.D K.E)) <|
+  fprogB K.M (fromJ K.S K.E (zeroPt K) K.R)
+
+/-- `R = 16 R`. -/
+def quad : Prog isa := .seq (jac K) (.block (ySel K))
 
 /-- Iteration `j = x19 - 1`: `R = 16 R + [d_j]P`. -/
 def step : Prog isa :=
   .seq (.block [decCounter]) <|
-  .seq (double K) <| .seq (double K) <| .seq (double K) <| .seq (double K) <|
+  .seq (quad K) <|
   .seq (.block (digit K.bits ++ select K ++ negY K.M K.neg K.zero K.E.y K.bits)) <|
   .seq (fprogB K.M (rcb3 K.S K.R K.E K.D)) <|
   .block (copyPt K.M.n K.R K.D)

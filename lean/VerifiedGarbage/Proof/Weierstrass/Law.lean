@@ -52,6 +52,8 @@ structure GroupRep (C : Curve) (A : Type) [Lean.Grind.IntModule A] (f : Point C 
 /-- What the proofs of the code need of the group law of `C`. -/
 structure Law (C : Curve) : Prop where
   one_ne_zero : (1 : Fe C) ≠ 0
+  /-- `Fin p` has no zero divisors (`p` is prime). -/
+  mul_ne_zero : ∀ {a b : Fe C}, a ≠ 0 → b ≠ 0 → a * b ≠ 0
   /-- The complete formulas compute the sum. -/
   add : ∀ {P Q : Point C}, onCurve C P = true → onCurve C Q = true →
     ∀ {X1 Y1 Z1 X2 Y2 Z2 X3 Y3 Z3 : Fe C}, Rep C X1 Y1 Z1 P → Rep C X2 Y2 Z2 Q →

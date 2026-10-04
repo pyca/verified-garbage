@@ -11,7 +11,8 @@ import VerifiedGarbage.Proof.Framework.RelCTAssoc
 Untrusted: everything here is checked by Lean. The public values of a call
 (`Cx`): the key schedule (240 bytes at `K`), the working space (2560 bytes at
 `W`), the data (`n` bytes at `D`), the associated data (`al` bytes at `A`),
-the rounds, the tag length and the nonce length, and the stack pointer; what
+the tag (`tl` bytes at `T`), the rounds, the tag length and the nonce length,
+and the stack pointer; what
 the precondition says of them (`Lay`); what a state may access (`Perm`); the
 registers holding them (`Env`); and the values the entry keeps in `W`
 (`Slots`). The pieces write only the parts of `W` in `mutR` and the data, so
@@ -77,6 +78,7 @@ structure Cx where
   al : Nat
   nl : Nat
   SP : Addr
+  T : Addr
 
 /-- What the precondition says of the public values. -/
 structure Lay (c : Cx) : Prop where
@@ -98,6 +100,9 @@ structure Lay (c : Cx) : Prop where
   h7 : 7 ≤ c.nl
   h13 : c.nl ≤ 13
   hn : c.n < 256 ^ (15 - c.nl)
+  tw : c.T.toNat + c.tl ≤ 2 ^ 64
+  t_w : (⟨c.T, c.tl⟩ : Region).Disjoint ⟨c.W, 2560⟩
+  t_d : (⟨c.T, c.tl⟩ : Region).Disjoint ⟨c.D, c.n⟩
 
 /-- What a state may access. -/
 structure Perm (c : Cx) (s : State) : Prop where
@@ -105,6 +110,7 @@ structure Perm (c : Cx) (s : State) : Prop where
   w : Covers [⟨c.W, 2560⟩] s.wr
   d : Covers [⟨c.D, c.n⟩] s.wr
   a : Covers [⟨c.A, c.al⟩] (s.rd ++ s.wr)
+  t : Covers [⟨c.T, c.tl⟩] (s.rd ++ s.wr)
 
 /-- The registers holding the public values throughout, the stack pointer,
 and what the state may access. -/
@@ -123,7 +129,8 @@ abbrev envRegs : List Reg := [.x19, .x20, .x21, .x22, .x27, .x28]
 
 theorem Perm.of_eq {c : Cx} {s s' : State} (h : Perm c s) (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr) :
     Perm c s' :=
-  ⟨by rw [hrd, hwr]; exact h.k, by rw [hwr]; exact h.w, by rw [hwr]; exact h.d, by rw [hrd, hwr]; exact h.a⟩
+  ⟨by rw [hrd, hwr]; exact h.k, by rw [hwr]; exact h.w, by rw [hwr]; exact h.d, by rw [hrd, hwr]; exact h.a,
+    by rw [hrd, hwr]; exact h.t⟩
 
 /-- An environment, after code that keeps its registers, the stack pointer
 and the permissions. -/
@@ -276,11 +283,12 @@ theorem Lay.srcW {c : Cx} (L : Lay c) {s : State} (P : Perm c s) {t k : Nat} (hk
 /-! ## The slots -/
 
 /-- The values the entry keeps in `W`: the address and length of the
-associated data, and the length of the nonce. -/
+associated data, the length of the nonce and the address of the tag. -/
 structure Slots (c : Cx) (m : Mem) : Prop where
   aad : m.readW (c.W + BitVec.ofNat 64 216) 64 = c.A
   alen : m.readW (c.W + BitVec.ofNat 64 224) 64 = BitVec.ofNat 64 c.al
   nlen : m.readW (c.W + BitVec.ofNat 64 232) 64 = BitVec.ofNat 64 c.nl
+  tag : m.readW (c.W + BitVec.ofNat 64 240) 64 = c.T
 
 /-- The parts of `W` the pieces write: `[0, 112)` and `[256, 2560)`. -/
 abbrev wLo (W : Addr) : Region := ⟨W, 112⟩
@@ -335,12 +343,12 @@ variable {c : Cx} (L : Lay c) {m m' : Mem} (hf : Frame (mutR c) m m')
 include L hf
 
 theorem Slots.mut (S : Slots c m) : Slots c m' := by
-  have k : ∀ d, 216 ≤ d → d + 8 ≤ 240 →
+  have k : ∀ d, 216 ≤ d → d + 8 ≤ 248 →
       m'.readW (c.W + BitVec.ofNat 64 d) 64 = m.readW (c.W + BitVec.ofNat 64 d) 64 := fun d h₁ h₂ =>
     hf.readW (r := ⟨c.W + BitVec.ofNat 64 d, 8⟩) (w := 64) (Region.contains_self _ _)
       (kept_mut L ⟨by omega, by omega⟩) (by decide)
   exact ⟨by rw [k 216 (by decide) (by decide)]; exact S.aad, by rw [k 224 (by decide) (by decide)]; exact S.alen,
-    by rw [k 232 (by decide) (by decide)]; exact S.nlen⟩
+    by rw [k 232 (by decide) (by decide)]; exact S.nlen, by rw [k 240 (by decide) (by decide)]; exact S.tag⟩
 
 theorem saved_mut {s₀ : State} (S : Proof.AesGcm.AArch64.SavedAt m c.W s₀) :
     Proof.AesGcm.AArch64.SavedAt m' c.W s₀ :=
@@ -353,6 +361,14 @@ theorem ciph_mut : Spec.Ccm.ctxCiph m' c.K c.R = Spec.Ccm.ctxCiph m c.K c.R := b
 
 theorem aad_mut : bytesAt m' c.A c.al = bytesAt m c.A c.al :=
   Proof.AesGcm.AArch64.bytesAt_frame hf (a_mut L) (by have := L.al_lt; omega)
+
+theorem tag_mut (ht : c.tl ≤ 16) : bytesAt m' c.T c.tl = bytesAt m c.T c.tl :=
+  Proof.AesGcm.AArch64.bytesAt_frame hf (fun r hr => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl
+    · exact L.t_w.sub_right (Region.sub_prefix (by decide))
+    · exact L.t_w.sub_right (Lay.wSub (by decide))
+    · exact L.t_d) (by omega)
 
 end
 

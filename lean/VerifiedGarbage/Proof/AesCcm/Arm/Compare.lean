@@ -6,7 +6,7 @@ import VerifiedGarbage.Proof.AesGcm.Arm.Compare
 
 Untrusted: everything here is checked by Lean. These are AES-GCM's pieces
 (`Proof/AesGcm/Arm/Compare.lean`), with AES-CCM's environment: `recv` pads
-the `r6` bytes of the received tag at `W` with zeros at `W + 256`
+the `r6` bytes of the received tag at `tag` with zeros at `W + 256`
 (`recv_ok`); `cmp o` pads the first `r6` bytes of the tag at `W + o` at
 `W + 240` and leaves 1 in `r0` if they are the received ones, 0 if not
 (`cmp_ok`).
@@ -144,37 +144,86 @@ theorem cmpTail_ok {s : State} (he : Env k w sp R q1 s) :
     exact propext (words_eq_iff _ _ _ _ _ _ _ _).symm
   · intro r x y z; rw [g₃ r x y, g₂ r x y z, g₁ r x y z]
 
-/-- `recv`: the received tag (`r6` bytes at `W`), padded with zeros at `W + 256`. -/
-theorem recv_ok {s : State} (he : Env k w sp R q1 s) {tl : Nat} (h6 : s.gpr .r6 = BitVec.ofNat 32 tl)
-    (h1 : 1 ≤ tl) (h16 : tl ≤ 16) :
-    WP isa Impl.AesCcm.Arm.recv s fun s' => bytesAt s'.mem (State.addr w + BitVec.ofNat 64 256) 16 =
-        bytesAt s.mem (State.addr w) tl ++ zeros (16 - tl) ∧
+/-- A copy of `tl` bytes from `S`, apart from `W + d`, to `W + d`, which
+holds 16 zero bytes. -/
+theorem padCopyAny_ok {s : State} (he : Env k w sp R q1 s) {S : BitVec 32} {d tl : Nat}
+    (hd : d + 16 ≤ 2560) (h1 : 1 ≤ tl) (h16 : tl ≤ 16) (hSr : Covers [⟨State.addr S, tl⟩] (s.rd ++ s.wr))
+    (hSf : S.toNat + tl ≤ 2 ^ 32) (hSd : (⟨State.addr S, tl⟩ : Region).Disjoint ⟨State.addr w + BitVec.ofNat 64 d, 16⟩)
+    {m₀ : Mem} (hm : s.mem = store4 m₀ (State.addr w + BitVec.ofNat 64 d) 0 0 0 0) (hr1 : s.gpr .r1 = S)
+    (hr2 : s.gpr .r2 = w + BitVec.ofNat 32 d) (hr3 : s.gpr .r3 = BitVec.ofNat 32 tl) :
+    WP isa copyLoop s fun s' => bytesAt s'.mem (State.addr w + BitVec.ofNat 64 d) 16 =
+        bytesAt m₀ (State.addr S) tl ++ zeros (16 - tl) ∧
+      Frame [⟨State.addr w + BitVec.ofNat 64 d, 16⟩] m₀ s'.mem ∧ LoopOut s S (w + BitVec.ofNat 32 d) tl s' := by
+  have eD := L.wA (d := d) (by omega)
+  have ww := L.ww
+  have lp : LoopPre s S (w + BitVec.ofNat 32 d) tl := by
+    refine ⟨hr1, hr2, hr3, h1, by omega, hSf, by rw [L.wN (by omega)]; omega, hSr, ?_, ?_⟩
+    · rw [eD]; exact he.perm.wC (by omega)
+    · rw [eD]; exact hSd.sub_right (Region.sub_prefix h16)
+  refine WP.mono (copyLoop_ok s lp) fun s' ⟨hm', lo⟩ => ?_
+  rw [hm, eD] at hm'
+  have fz : Frame [⟨State.addr w + BitVec.ofNat 64 d, 16⟩] m₀ (store4 m₀ (State.addr w + BitVec.ofNat 64 d) 0 0 0 0) :=
+    Cmac.frame_store4 _ _ _ _ _
+  have hx : bytesAt (store4 m₀ (State.addr w + BitVec.ofNat 64 d) 0 0 0 0) (State.addr S) tl =
+      bytesAt m₀ (State.addr S) tl :=
+    bytesAt_frame fz (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact hSd) (by omega)
+  rw [hx] at hm'
+  have hlen := length_bytesAt m₀ (State.addr S) tl
+  refine ⟨?_, ?_, lo⟩
+  · rw [hm', bytesAt_writeBytes_prefix _ _ _ (by rw [hlen]; omega) (by omega), hlen, store4_zero_tail _ _ h16]
+  · rw [hm']
+    exact fz.trans ((writeBytes_frame' _ hlen).sub fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr
+      exact ⟨_, List.mem_singleton_self _, Region.sub_prefix (by omega)⟩)
+
+/-- `recv` (AES-GCM's): the received tag, the `r6` bytes at `T` (the stack
+argument at `sp + 16`), padded with zeros at `W + 256`. -/
+theorem recv_ok {s : State} (he : Env k w sp R q1 s) {T : BitVec 32} {tl : Nat}
+    (hTi : InRegions (s.rd ++ s.wr) (State.addr (s.sp + BitVec.ofNat 32 16)) 4)
+    (hTv : s.mem.readW (State.addr (s.sp + BitVec.ofNat 32 16)) 32 = T)
+    (hTr : Covers [⟨State.addr T, tl⟩] (s.rd ++ s.wr)) (hTf : T.toNat + tl ≤ 2 ^ 32)
+    (hTd : (⟨State.addr T, tl⟩ : Region).Disjoint ⟨State.addr w + BitVec.ofNat 64 256, 16⟩)
+    (h6 : s.gpr .r6 = BitVec.ofNat 32 tl) (h1 : 1 ≤ tl) (h16 : tl ≤ 16) :
+    WP isa recv s fun s' => bytesAt s'.mem (State.addr w + BitVec.ofNat 64 256) 16 =
+        bytesAt s.mem (State.addr T) tl ++ zeros (16 - tl) ∧
       Frame [⟨State.addr w + BitVec.ofNat 64 256, 16⟩] s.mem s'.mem ∧
       (∀ r, r ≠ .r0 → r ≠ .r1 → r ≠ .r2 → r ≠ .r3 → r ≠ .r12 → s'.gpr r = s.gpr r) ∧
       s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp := by
-  obtain ⟨s₁, run₁, hm₁, g₁, rd₁, wr₁, sp₁, -⟩ := zero16_ok L he (d := rO) (by decide) (by decide)
-  have h11 : s₁.gpr .r11 = w := by rw [g₁ _ (by decide), he.r11]
-  obtain ⟨s₂, run₂, h1₂, h2₂, h3₂, g₂, k₂⟩ : ∃ s₂, runBlock isa [.mov .r1 (.reg .r11), addI .r2 .r11 rO,
-      .mov .r3 (.reg .r6)] s₁ = some s₂ ∧ s₂.gpr .r1 = w ∧ s₂.gpr .r2 = w + BitVec.ofNat 32 256 ∧
-      s₂.gpr .r3 = BitVec.ofNat 32 tl ∧ (∀ r, r ≠ .r1 → r ≠ .r2 → r ≠ .r3 → s₂.gpr r = s₁.gpr r) ∧ Keeps s₁ s₂ := by
-    refine ⟨_, by simp only [rO]; arun [], ?_, ?_, ?_, ?_, ?_⟩
-    · simp [gpr_setReg, h11]
-    · simp [gpr_setReg, h11]
-    · simp [gpr_setReg, g₁ .r6 (by decide), h6]
-    · intro r x y z; simp [gpr_setReg, x, y, z]
+  obtain ⟨s₀, run₀, h1₀, g₀, k₀⟩ : ∃ s₀, runBlock isa [.ldrSp .r1 16] s = some s₀ ∧ s₀.gpr .r1 = T ∧
+      (∀ r, r ≠ .r1 → s₀.gpr r = s.gpr r) ∧ Keeps s s₀ := by
+    refine ⟨_, by arun [hTi, hTv], ?_, ?_, ?_⟩
+    · simp [gpr_setReg, hTv]
+    · intro r hr; simp [gpr_setReg, hr]
     · exact ⟨rfl, rfl, rfl, rfl⟩
-  refine WP.seq (WP.of_runBlock ⟨s₂, runBlock_app_of run₁ run₂, ?_⟩)
-  have he₂ := he.keep (fun r hr => by
+  have he₀ := he.keep (fun r hr => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl <;> exact g₀ _ (by decide)) k₀.sp k₀.rd k₀.wr
+  obtain ⟨s₁, run₁, hm₁, g₁, rd₁, wr₁, sp₁, -⟩ := zero16_ok L he₀ (d := rO) (by decide) (by decide)
+  have h11 : s₁.gpr .r11 = w := by rw [g₁ _ (by decide), he₀.r11]
+  obtain ⟨s₂, run₂, h2₂, h3₂, g₂, k₂⟩ : ∃ s₂, runBlock isa [addI .r2 .r11 rO, .mov .r3 (.reg .r6)] s₁ = some s₂ ∧
+      s₂.gpr .r2 = w + BitVec.ofNat 32 256 ∧ s₂.gpr .r3 = BitVec.ofNat 32 tl ∧
+      (∀ r, r ≠ .r2 → r ≠ .r3 → s₂.gpr r = s₁.gpr r) ∧ Keeps s₁ s₂ := by
+    refine ⟨_, by simp only [rO]; arun [], ?_, ?_, ?_, ?_⟩
+    · simp [gpr_setReg, h11]
+    · simp [gpr_setReg, g₁ .r6 (by decide), g₀ .r6 (by decide), h6]
+    · intro r x y; simp [gpr_setReg, x, y]
+    · exact ⟨rfl, rfl, rfl, rfl⟩
+  have run : runBlock isa (.ldrSp .r1 16 :: zero16 rO ++ [addI .r2 .r11 rO, .mov .r3 (.reg .r6)]) s = some s₂ :=
+    runBlock_app_of (a := [.ldrSp .r1 16]) run₀ (runBlock_app_of run₁ run₂)
+  refine WP.seq (WP.of_runBlock ⟨s₂, run, ?_⟩)
+  have he₂ := he₀.keep (fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl <;>
-      rw [g₂ _ (by decide) (by decide) (by decide), g₁ _ (by decide)]) (k₂.sp.trans sp₁) (k₂.rd.trans rd₁)
+      rw [g₂ _ (by decide) (by decide), g₁ _ (by decide)]) (k₂.sp.trans sp₁) (k₂.rd.trans rd₁)
       (k₂.wr.trans wr₁)
-  refine WP.mono (padCopy_ok L he₂ (o := 0) (d := 256) (.inl (by decide)) (by decide) (by decide) h1 h16
-    (by rw [add_ofNat_zero]) (by omega) (m₀ := s.mem) (by rw [k₂.mem, hm₁]; rfl) h1₂ h2₂ h3₂) fun s₃ ⟨hb, hf, lo⟩ => ?_
-  rw [add_ofNat_zero] at hb
-  refine ⟨hb, hf, fun r a b d e f => ?_, lo.rd.trans (k₂.rd.trans rd₁), lo.wr.trans (k₂.wr.trans wr₁),
-    lo.sp.trans (k₂.sp.trans sp₁)⟩
-  rw [lo.other r a b d e f, g₂ r b d e, g₁ r a]
+  have h1₂ : s₂.gpr .r1 = T := by rw [g₂ _ (by decide) (by decide), g₁ _ (by decide), h1₀]
+  have hTr₂ : Covers [⟨State.addr T, tl⟩] (s₂.rd ++ s₂.wr) := by
+    rw [k₂.rd, k₂.wr, rd₁, wr₁, k₀.rd, k₀.wr]; exact hTr
+  refine WP.mono (padCopyAny_ok L he₂ (d := 256) (by decide) h1 h16 hTr₂ hTf hTd (m₀ := s.mem)
+    (by rw [k₂.mem, hm₁, k₀.mem]; rfl) h1₂ h2₂ h3₂) fun s₃ ⟨hb, hf, lo⟩ => ?_
+  refine ⟨hb, hf, fun r a b d e f => ?_, lo.rd.trans (k₂.rd.trans (rd₁.trans k₀.rd)),
+    lo.wr.trans (k₂.wr.trans (wr₁.trans k₀.wr)), lo.sp.trans (k₂.sp.trans (sp₁.trans k₀.sp))⟩
+  rw [lo.other r a b d e f, g₂ r d e, g₁ r a, g₀ r b]
 
 /-- `cmp o`: the first `r6` bytes of the tag at `W + o`, padded with zeros at
 `W + 240`, compared with the received tag at `W + 256`. -/
