@@ -1,5 +1,6 @@
 import VerifiedGarbage.Proof.AesGcm.X86.Verified
 import VerifiedGarbage.Proof.Framework.X86.StackScratch
+import VerifiedGarbage.Proof.Framework.X86.TagScratch
 
 /-!
 # AES-GCM's key setup and streaming functions on x86, with their working space on the stack
@@ -12,6 +13,13 @@ in a frame that allocates it and copies the arguments passed on the stack
 `stream_encrypt` and `stream_decrypt`) and the 2560 bytes of working space.
 The copies are read only where the pre- and postconditions read the buffers
 (`Proof/AesGcm/Scratch.lean`).
+
+`stream_finish`, `stream_verify`, `seal` and `open` run their code, proved
+for working space that carries the tag in its first 16 bytes
+(`Proof/AesGcm/Tag.lean`), in a frame that holds the return address, the
+copied argument slots (eight, nine, nine and ten), with the working space's
+address in place of the tag pointer, the tag pointer and the working space,
+and copies the tag in and out (`Verified.tagScratch`).
 -/
 
 set_option linter.unusedSimpArgs false
@@ -195,5 +203,121 @@ theorem streamDecrypt_framed :
     (bytes := 2604) (streamDecrypt_verified (vg := vg)) (by decide) (streamDecrypt_noEsp vg)
     (streamDecrypt_stackUse vg) (streamTextPre_local _) (streamDecryptPost_local _)
     streamDecryptFrameSat_pre
+
+theorem streamFinish_noEsp :
+    (streamFinish vg.callees).allInstrs (fun i => !Taint.clobbers i .esp) = true := by
+  simp only [ctrCall, ghCall, keyCall, copyLoop, xorLoop, minLen, ghash1, absorbHead, absorbWhole, absorbTail, absorb, flush, lens, cryptHead, cryptWhole, cryptTail, crypt, tag, j012, j0hash, j0, recv, cmp, tagLenOk, entry, init, streamInit, streamAad, cryptEntry, firstFlush, textAbsorb, streamEncrypt, streamDecrypt, finEntry, finTag, streamFinish, streamVerify, oneEntry, oneAad, oneTag, oneCrypt, «seal», «open», Code.allInstrs, GcmImpl.callees,
+    noEsp_of vg.ctr.nosp, noEsp_of vg.ctr.expandNosp, noEsp_of vg.gh.nosp, Bool.true_and,
+    Bool.and_true]
+  decide +kernel
+
+theorem streamFinish_stackUse : stackUse (streamFinish vg.callees) ≤ 28 := by
+  simp only [ctrCall, ghCall, keyCall, copyLoop, xorLoop, minLen, ghash1, absorbHead, absorbWhole, absorbTail, absorb, flush, lens, cryptHead, cryptWhole, cryptTail, crypt, tag, j012, j0hash, j0, recv, cmp, tagLenOk, entry, init, streamInit, streamAad, cryptEntry, firstFlush, textAbsorb, streamEncrypt, streamDecrypt, finEntry, finTag, streamFinish, streamVerify, oneEntry, oneAad, oneTag, oneCrypt, «seal», «open», stackUse, GcmImpl.callees, vg.ctr.stack,
+    vg.ctr.expandStack, vg.gh.stack, Nat.max_le, X86.frameBytes, List.length_cons, List.length_nil]
+  omega
+
+theorem streamVerify_noEsp :
+    (streamVerify vg.callees).allInstrs (fun i => !Taint.clobbers i .esp) = true := by
+  simp only [ctrCall, ghCall, keyCall, copyLoop, xorLoop, minLen, ghash1, absorbHead, absorbWhole, absorbTail, absorb, flush, lens, cryptHead, cryptWhole, cryptTail, crypt, tag, j012, j0hash, j0, recv, cmp, tagLenOk, entry, init, streamInit, streamAad, cryptEntry, firstFlush, textAbsorb, streamEncrypt, streamDecrypt, finEntry, finTag, streamFinish, streamVerify, oneEntry, oneAad, oneTag, oneCrypt, «seal», «open», Code.allInstrs, GcmImpl.callees,
+    noEsp_of vg.ctr.nosp, noEsp_of vg.ctr.expandNosp, noEsp_of vg.gh.nosp, Bool.true_and,
+    Bool.and_true]
+  decide +kernel
+
+theorem streamVerify_stackUse : stackUse (streamVerify vg.callees) ≤ 28 := by
+  simp only [ctrCall, ghCall, keyCall, copyLoop, xorLoop, minLen, ghash1, absorbHead, absorbWhole, absorbTail, absorb, flush, lens, cryptHead, cryptWhole, cryptTail, crypt, tag, j012, j0hash, j0, recv, cmp, tagLenOk, entry, init, streamInit, streamAad, cryptEntry, firstFlush, textAbsorb, streamEncrypt, streamDecrypt, finEntry, finTag, streamFinish, streamVerify, oneEntry, oneAad, oneTag, oneCrypt, «seal», «open», stackUse, GcmImpl.callees, vg.ctr.stack,
+    vg.ctr.expandStack, vg.gh.stack, Nat.max_le, X86.frameBytes, List.length_cons, List.length_nil]
+  omega
+
+theorem seal_noEsp :
+    («seal» vg.callees).allInstrs (fun i => !Taint.clobbers i .esp) = true := by
+  simp only [ctrCall, ghCall, keyCall, copyLoop, xorLoop, minLen, ghash1, absorbHead, absorbWhole, absorbTail, absorb, flush, lens, cryptHead, cryptWhole, cryptTail, crypt, tag, j012, j0hash, j0, recv, cmp, tagLenOk, entry, init, streamInit, streamAad, cryptEntry, firstFlush, textAbsorb, streamEncrypt, streamDecrypt, finEntry, finTag, streamFinish, streamVerify, oneEntry, oneAad, oneTag, oneCrypt, «seal», «open», Code.allInstrs, GcmImpl.callees,
+    noEsp_of vg.ctr.nosp, noEsp_of vg.ctr.expandNosp, noEsp_of vg.gh.nosp, Bool.true_and,
+    Bool.and_true]
+  decide +kernel
+
+theorem seal_stackUse : stackUse («seal» vg.callees) ≤ 28 := by
+  simp only [ctrCall, ghCall, keyCall, copyLoop, xorLoop, minLen, ghash1, absorbHead, absorbWhole, absorbTail, absorb, flush, lens, cryptHead, cryptWhole, cryptTail, crypt, tag, j012, j0hash, j0, recv, cmp, tagLenOk, entry, init, streamInit, streamAad, cryptEntry, firstFlush, textAbsorb, streamEncrypt, streamDecrypt, finEntry, finTag, streamFinish, streamVerify, oneEntry, oneAad, oneTag, oneCrypt, «seal», «open», stackUse, GcmImpl.callees, vg.ctr.stack,
+    vg.ctr.expandStack, vg.gh.stack, Nat.max_le, X86.frameBytes, List.length_cons, List.length_nil]
+  omega
+
+theorem open_noEsp :
+    («open» vg.callees).allInstrs (fun i => !Taint.clobbers i .esp) = true := by
+  simp only [ctrCall, ghCall, keyCall, copyLoop, xorLoop, minLen, ghash1, absorbHead, absorbWhole, absorbTail, absorb, flush, lens, cryptHead, cryptWhole, cryptTail, crypt, tag, j012, j0hash, j0, recv, cmp, tagLenOk, entry, init, streamInit, streamAad, cryptEntry, firstFlush, textAbsorb, streamEncrypt, streamDecrypt, finEntry, finTag, streamFinish, streamVerify, oneEntry, oneAad, oneTag, oneCrypt, «seal», «open», Code.allInstrs, GcmImpl.callees,
+    noEsp_of vg.ctr.nosp, noEsp_of vg.ctr.expandNosp, noEsp_of vg.gh.nosp, Bool.true_and,
+    Bool.and_true]
+  decide +kernel
+
+theorem open_stackUse : stackUse («open» vg.callees) ≤ 28 := by
+  simp only [ctrCall, ghCall, keyCall, copyLoop, xorLoop, minLen, ghash1, absorbHead, absorbWhole, absorbTail, absorb, flush, lens, cryptHead, cryptWhole, cryptTail, crypt, tag, j012, j0hash, j0, recv, cmp, tagLenOk, entry, init, streamInit, streamAad, cryptEntry, firstFlush, textAbsorb, streamEncrypt, streamDecrypt, finEntry, finTag, streamFinish, streamVerify, oneEntry, oneAad, oneTag, oneCrypt, «seal», «open», stackUse, GcmImpl.callees, vg.ctr.stack,
+    vg.ctr.expandStack, vg.gh.stack, Nat.max_le, X86.frameBytes, List.length_cons, List.length_nil]
+  omega
+
+/-- A state satisfying `vg_aes_gcm_stream_finish`'s precondition, with a
+16-byte tag at `0x4000`. -/
+def finFrameSat : State := { finSat with wr := [⟨0x3000, 80⟩, ⟨0x4000, 16⟩, ⟨0x8004, 32⟩] }
+
+theorem finFrameSat_pre : ∃ s, (Spec.Gcm.streamFinishContract X86.abi 2628).pre s := by
+  implies_sat [Spec.Gcm.streamFinishContract, Spec.Gcm.streamFinishSig, Spec.Gcm.streamFinishPre,
+    Spec.Gcm.streamFinishPost, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
+    [finFrameSat, finSat, X86.arg, X86.argAddr, Mem.readW, Mem.read] using finFrameSat
+
+theorem streamFinish_framed :
+    Verified X86.target (Impl.StackScratch.X86.withTagScratch 2600 8 7 (streamFinish vg.callees))
+      (Spec.Gcm.streamFinishContract X86.abi 2628) :=
+  X86.Verified.tagScratch (sig := Spec.Gcm.streamFinishSig) (q := 5) (nm := "work") (e := .u64)
+    (n := 320) (wa := true) (stack := 28) (bytes := 2600) (streamFinish_verified (vg := vg))
+    (Proof.AesGcm.streamFinish_tagFrame _) rfl (by decide) (streamFinish_noEsp vg)
+    (streamFinish_stackUse vg) finFrameSat_pre
+
+/-- A state satisfying `vg_aes_gcm_stream_verify`'s precondition, with a
+16-byte tag at `0x4000`. -/
+def verFrameSat : State := { verSat with wr := [⟨0x3000, 80⟩, ⟨0x4000, 16⟩, ⟨0x8004, 36⟩] }
+
+theorem verFrameSat_pre : ∃ s, (Spec.Gcm.streamVerifyContract X86.abi 2632).pre s := by
+  implies_sat [Spec.Gcm.streamVerifyContract, Spec.Gcm.streamVerifySig, Spec.Gcm.streamVerifyPre,
+    Spec.Gcm.streamVerifyPost, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
+    [verFrameSat, verSat, X86.arg, X86.argAddr, Mem.readW, Mem.read] using verFrameSat
+
+theorem streamVerify_framed :
+    Verified X86.target (Impl.StackScratch.X86.withTagScratch 2604 9 7 (streamVerify vg.callees))
+      (Spec.Gcm.streamVerifyContract X86.abi 2632) :=
+  X86.Verified.tagScratch (sig := Spec.Gcm.streamVerifySig) (q := 5) (nm := "work") (e := .u64)
+    (n := 320) (wa := true) (stack := 28) (bytes := 2604) (streamVerify_verified (vg := vg))
+    (Proof.AesGcm.streamVerify_tagFrame _) rfl (by decide) (streamVerify_noEsp vg)
+    (streamVerify_stackUse vg) verFrameSat_pre
+
+/-- A state satisfying `vg_aes_gcm_seal`'s precondition, with a 16-byte tag
+at `0x4000`. -/
+def sealFrameSat : State := { sealSat with wr := [⟨0x3000, 0⟩, ⟨0x4000, 16⟩, ⟨0x8004, 36⟩] }
+
+theorem sealFrameSat_pre : ∃ s, (Spec.Gcm.sealContract X86.abi 2632).pre s := by
+  implies_sat [Spec.Gcm.sealContract, Spec.Gcm.sealSig, Spec.Gcm.sealPre, Spec.Gcm.sealPost,
+    X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
+    [sealFrameSat, sealSat, X86.arg, X86.argAddr, Mem.readW, Mem.read] using sealFrameSat
+
+theorem seal_framed :
+    Verified X86.target (Impl.StackScratch.X86.withTagScratch 2604 9 8 («seal» vg.callees))
+      (Spec.Gcm.sealContract X86.abi 2632) :=
+  X86.Verified.tagScratch (sig := Spec.Gcm.sealSig) (q := 5) (nm := "work") (e := .u64)
+    (n := 320) (wa := true) (stack := 28) (bytes := 2604) (seal_verified (vg := vg))
+    (Proof.AesGcm.seal_tagFrame _) rfl (by decide) (seal_noEsp vg) (seal_stackUse vg)
+    sealFrameSat_pre
+
+/-- A state satisfying `vg_aes_gcm_open`'s precondition, with a 16-byte tag
+at `0x4000`. -/
+def openFrameSat : State := { openSat with wr := [⟨0x3000, 0⟩, ⟨0x4000, 16⟩, ⟨0x8004, 40⟩] }
+
+theorem openFrameSat_pre : ∃ s, (Spec.Gcm.openContract X86.abi 2636).pre s := by
+  implies_sat [Spec.Gcm.openContract, Spec.Gcm.openSig, Spec.Gcm.openPre, Spec.Gcm.openPost,
+    Spec.Gcm.openLeak, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
+    [openFrameSat, openSat, X86.arg, X86.argAddr, Mem.readW, Mem.read] using openFrameSat
+
+theorem open_framed :
+    Verified X86.target (Impl.StackScratch.X86.withTagScratch 2608 10 8 («open» vg.callees))
+      (Spec.Gcm.openContract X86.abi 2636) :=
+  X86.Verified.tagScratch (sig := Spec.Gcm.openSig) (q := 5) (nm := "work") (e := .u64)
+    (n := 320) (wa := true) (stack := 28) (bytes := 2608) (open_verified (vg := vg))
+    (Proof.AesGcm.open_tagFrame _) rfl (by decide) (open_noEsp vg) (open_stackUse vg)
+    openFrameSat_pre
 
 end VG.Proof.AesGcm.X86

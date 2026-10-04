@@ -87,7 +87,7 @@ def streamDecryptScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Cont
 
 /-! ## Locality -/
 
-private theorem bytesAt_congr {m₁ m₂ : Mem} {p : Addr} {n : Nat}
+theorem bytesAt_congr {m₁ m₂ : Mem} {p : Addr} {n : Nat}
     (h : ∀ i < n, m₂ (p + BitVec.ofNat 64 i) = m₁ (p + BitVec.ofNat 64 i)) :
     Spec.Aes.bytesAt m₂ p n = Spec.Aes.bytesAt m₁ p n := by
   simp only [Spec.Aes.bytesAt]
@@ -142,7 +142,7 @@ theorem streamRepr_congr {m₁ m₂ : Mem} {p : Addr} {ciph : Block → Block} {
 
 /-- The memory agrees on the `n` bytes at `p`, from its agreeing on the
 region. -/
-private theorem agree_of {m₁ m₂ : Mem} {p : Addr} {n : Nat}
+theorem agree_of {m₁ m₂ : Mem} {p : Addr} {n : Nat}
     (h : ∀ a, Region.Contains ⟨p, n⟩ a 1 → m₁ a = m₂ a) :
     ∀ i < n, m₂ (p + BitVec.ofNat 64 i) = m₁ (p + BitVec.ofNat 64 i) := by
   intro i hi
@@ -153,7 +153,7 @@ private theorem agree_of {m₁ m₂ : Mem} {p : Addr} {n : Nat}
     have := (p + BitVec.ofNat 64 i - p).isLt
     omega
 
-private theorem le15 {n : Nat} (h : n = 10 ∨ n = 12 ∨ n = 14) : n ≤ 15 := by omega
+theorem le15 {n : Nat} (h : n = 10 ∨ n = 12 ∨ n = 14) : n ≤ 15 := by omega
 
 variable (pb : Nat)
 

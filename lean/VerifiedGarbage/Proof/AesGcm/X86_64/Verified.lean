@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.AesGcm.X86_64.StreamVerifyCT
 import VerifiedGarbage.Proof.AesGcm.X86_64.OpenCT
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.AesGcm.Scratch
+import VerifiedGarbage.Proof.AesGcm.Tag
 
 /-!
 # AES-GCM on x86-64: `Verified`
@@ -294,9 +295,9 @@ def finSat : State where
   wr := [⟨0x3000, 80⟩, ⟨0x4000, 2560⟩]
 
 theorem streamFinish_verified (v : GcmImpl) :
-    Verified X86_64.target (streamFinish v.callees) (Spec.Gcm.streamFinishContract X86_64.abi 8) :=
+    Verified X86_64.target (streamFinish v.callees) (Proof.AesGcm.streamFinishWorkContract X86_64.abi 8) :=
   Verified.of_correct (streamFinish_correct v) (streamFinish_ct v) (by
-    sig_implies [Spec.Gcm.streamFinishContract, Spec.Gcm.streamFinishSig, Proof.AesGcm.streamFinishX86_64, Proof.AesGcm.finPre, X86_64.abi, Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.stk,
+    sig_implies [Proof.AesGcm.streamFinishWorkContract, Proof.AesGcm.streamFinishWorkSig, Proof.AesGcm.streamFinishWorkPre, Proof.AesGcm.streamFinishWorkPost, Proof.AesGcm.streamFinishX86_64, Proof.AesGcm.finPre, X86_64.abi, Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.stk,
       Proof.AesGcm.ret, Proof.AesGcm.rounds, X86_64.stackArg, X86_64.stackArgAddr,
       List.getD, List.range, List.range.loop, VG.X86_64.below,
       X86_64.argRegs] [finSat] using finSat)
@@ -314,9 +315,9 @@ def verSat : State where
   wr := [⟨0x3000, 80⟩, ⟨0x4000, 2560⟩]
 
 theorem streamVerify_verified (v : GcmImpl) :
-    Verified X86_64.target (streamVerify v.callees) (Spec.Gcm.streamVerifyContract X86_64.abi 8) :=
+    Verified X86_64.target (streamVerify v.callees) (Proof.AesGcm.streamVerifyWorkContract X86_64.abi 8) :=
   Verified.of_correct (streamVerify_correct v) (streamVerify_ct v) (by
-    sig_implies [Spec.Gcm.streamVerifyContract, Spec.Gcm.streamVerifySig, Proof.AesGcm.streamVerifyX86_64, Proof.AesGcm.verifyPre, X86_64.abi, Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.stk,
+    sig_implies [Proof.AesGcm.streamVerifyWorkContract, Proof.AesGcm.streamVerifyWorkSig, Proof.AesGcm.streamVerifyWorkPre, Proof.AesGcm.streamVerifyWorkPost, Proof.AesGcm.streamVerifyX86_64, Proof.AesGcm.verifyPre, X86_64.abi, Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.stk,
       Proof.AesGcm.ret, Proof.AesGcm.rounds, X86_64.stackArg, X86_64.stackArgAddr,
       List.getD, List.range, List.range.loop, VG.X86_64.below,
       X86_64.argRegs] [verSat] using verSat)
@@ -334,9 +335,9 @@ def sealSat : State where
   wr := [⟨0, 0⟩, ⟨0, 2560⟩]
 
 theorem seal_verified (v : GcmImpl) :
-    Verified X86_64.target («seal» v.callees) (Spec.Gcm.sealContract X86_64.abi 24) :=
+    Verified X86_64.target («seal» v.callees) (Proof.AesGcm.sealWorkContract X86_64.abi 24) :=
   Verified.of_correct (seal_correct v) (seal_ct v) (by
-    sig_implies [Spec.Gcm.sealContract, Spec.Gcm.sealSig, Proof.AesGcm.sealX86_64, Proof.AesGcm.onePre, Proof.AesGcm.onePub, X86_64.abi, Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.stk24,
+    sig_implies [Proof.AesGcm.sealWorkContract, Proof.AesGcm.sealWorkSig, Proof.AesGcm.sealWorkPre, Proof.AesGcm.sealWorkPost, Proof.AesGcm.sealX86_64, Proof.AesGcm.onePre, Proof.AesGcm.onePub, X86_64.abi, Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.stk24,
       Proof.AesGcm.ret, Proof.AesGcm.rounds, X86_64.stackArg, X86_64.stackArgAddr,
       List.getD, List.range, List.range.loop, VG.X86_64.below,
       X86_64.argRegs] [sealSat] using sealSat)
@@ -360,28 +361,28 @@ theorem leak_bool {a b : Bool} (h : [if a = true then 1 else 0] = [if b = true t
 /-- `open`'s public data include its leak, from which `pub` has whether it
 succeeds. -/
 theorem open_verified (v : GcmImpl) :
-    Verified X86_64.target («open» v.callees) (Spec.Gcm.openContract X86_64.abi 24) :=
+    Verified X86_64.target («open» v.callees) (Proof.AesGcm.openWorkContract X86_64.abi 24) :=
   Verified.of_correct (open_correct v) (open_ct v)
-    { pre := by sig_implies_pre [Spec.Gcm.openContract, Spec.Gcm.openSig, Proof.AesGcm.openX86_64, Proof.AesGcm.onePre, Proof.AesGcm.onePub, X86_64.abi, Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.stk24,
+    { pre := by sig_implies_pre [Proof.AesGcm.openWorkContract, Proof.AesGcm.openWorkSig, Proof.AesGcm.openWorkPre, Proof.AesGcm.openWorkPost, Proof.AesGcm.openWorkLeak, Proof.AesGcm.openX86_64, Proof.AesGcm.onePre, Proof.AesGcm.onePub, X86_64.abi, Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.stk24,
       Proof.AesGcm.ret, Proof.AesGcm.rounds, X86_64.stackArg, X86_64.stackArgAddr,
       List.getD, List.range, List.range.loop, VG.X86_64.below,
       X86_64.argRegs]
-      post := by sig_implies_post [Spec.Gcm.openContract, Spec.Gcm.openSig, Proof.AesGcm.openX86_64, Proof.AesGcm.onePre, Proof.AesGcm.onePub, X86_64.abi, Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.stk24,
+      post := by sig_implies_post [Proof.AesGcm.openWorkContract, Proof.AesGcm.openWorkSig, Proof.AesGcm.openWorkPre, Proof.AesGcm.openWorkPost, Proof.AesGcm.openWorkLeak, Proof.AesGcm.openX86_64, Proof.AesGcm.onePre, Proof.AesGcm.onePub, X86_64.abi, Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.stk24,
       Proof.AesGcm.ret, Proof.AesGcm.rounds, X86_64.stackArg, X86_64.stackArgAddr,
       List.getD, List.range, List.range.loop, VG.X86_64.below,
       X86_64.argRegs]
       pub := by
         intro s₁ s₂ _ _ h
-        sig_pub [Spec.Gcm.openContract, Spec.Gcm.openSig, Proof.AesGcm.openX86_64, Proof.AesGcm.onePre, Proof.AesGcm.onePub, X86_64.abi, Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.stk24,
+        sig_pub [Proof.AesGcm.openWorkContract, Proof.AesGcm.openWorkSig, Proof.AesGcm.openWorkPre, Proof.AesGcm.openWorkPost, Proof.AesGcm.openWorkLeak, Proof.AesGcm.openX86_64, Proof.AesGcm.onePre, Proof.AesGcm.onePub, X86_64.abi, Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.stk24,
       Proof.AesGcm.ret, Proof.AesGcm.rounds, X86_64.stackArg, X86_64.stackArgAddr,
       List.getD, List.range, List.range.loop, VG.X86_64.below,
       X86_64.argRegs] at h
         sig_split h
-        sig_reduce [Spec.Gcm.openContract, Spec.Gcm.openSig, Proof.AesGcm.openX86_64, Proof.AesGcm.onePre, Proof.AesGcm.onePub, X86_64.abi, Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.stk24,
+        sig_reduce [Proof.AesGcm.openWorkContract, Proof.AesGcm.openWorkSig, Proof.AesGcm.openWorkPre, Proof.AesGcm.openWorkPost, Proof.AesGcm.openWorkLeak, Proof.AesGcm.openX86_64, Proof.AesGcm.onePre, Proof.AesGcm.onePub, X86_64.abi, Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.stk24,
       Proof.AesGcm.ret, Proof.AesGcm.rounds, X86_64.stackArg, X86_64.stackArgAddr,
       List.getD, List.range, List.range.loop, VG.X86_64.below,
       X86_64.argRegs]
-        sig_simp [Spec.Gcm.openContract, Spec.Gcm.openSig, Proof.AesGcm.openX86_64, Proof.AesGcm.onePre, Proof.AesGcm.onePub, X86_64.abi, Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.stk24,
+        sig_simp [Proof.AesGcm.openWorkContract, Proof.AesGcm.openWorkSig, Proof.AesGcm.openWorkPre, Proof.AesGcm.openWorkPost, Proof.AesGcm.openWorkLeak, Proof.AesGcm.openX86_64, Proof.AesGcm.onePre, Proof.AesGcm.onePub, X86_64.abi, Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.stk24,
       Proof.AesGcm.ret, Proof.AesGcm.rounds, X86_64.stackArg, X86_64.stackArgAddr,
       List.getD, List.range, List.range.loop, VG.X86_64.below,
       X86_64.argRegs] [Nat.forall_lt_succ_right, Nat.not_lt_zero, false_imp_iff, forall_const, true_and]
@@ -390,7 +391,7 @@ theorem open_verified (v : GcmImpl) :
         all_goals first
           | with_reducible assumption
           | (apply leak_bool; with_reducible assumption)
-      sat := by sig_implies_sat [Spec.Gcm.openContract, Spec.Gcm.openSig, Proof.AesGcm.openX86_64, Proof.AesGcm.onePre, Proof.AesGcm.onePub, X86_64.abi, Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.stk24,
+      sat := by sig_implies_sat [Proof.AesGcm.openWorkContract, Proof.AesGcm.openWorkSig, Proof.AesGcm.openWorkPre, Proof.AesGcm.openWorkPost, Proof.AesGcm.openWorkLeak, Proof.AesGcm.openX86_64, Proof.AesGcm.onePre, Proof.AesGcm.onePub, X86_64.abi, Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.stk24,
       Proof.AesGcm.ret, Proof.AesGcm.rounds, X86_64.stackArg, X86_64.stackArgAddr,
       List.getD, List.range, List.range.loop, VG.X86_64.below,
       X86_64.argRegs] [openSat] using openSat }

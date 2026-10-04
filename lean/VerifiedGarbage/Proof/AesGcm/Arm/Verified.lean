@@ -5,6 +5,7 @@ import VerifiedGarbage.Proof.AesGcm.Arm.CTOpen
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.AesGcm.Scratch
+import VerifiedGarbage.Proof.AesGcm.Tag
 
 /-!
 # AES-GCM on ARMv7: `Verified`
@@ -94,9 +95,9 @@ def fSat : State :=
     [⟨0x1000, 256⟩, ⟨0x8000, 20⟩] [⟨0x3000, 80⟩, ⟨0, 2560⟩]
 
 theorem streamFinish_verified :
-    Verified Arm.target streamFinish (Spec.Gcm.streamFinishContract Arm.abi 8) :=
+    Verified Arm.target streamFinish (Proof.AesGcm.streamFinishWorkContract Arm.abi 8) :=
   Verified.of_correct (fun _ hs => streamFinish_wp hs) streamFinish_ct (by
-    sig_implies [Spec.Gcm.streamFinishContract, Spec.Gcm.streamFinishSig, streamFinishArm, finPre, finPub,
+    sig_implies [Proof.AesGcm.streamFinishWorkContract, Proof.AesGcm.streamFinishWorkSig, Proof.AesGcm.streamFinishWorkPre, Proof.AesGcm.streamFinishWorkPost, streamFinishArm, finPre, finPub,
       bel, arg, args, arg64, roundsOk, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
       [fSat, mkSat, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read] using fSat)
 
@@ -107,15 +108,15 @@ def vSat : State :=
 
 /-- The postconditions match; the result is the low word of `r1:r0`. -/
 theorem streamVerify_verified :
-    Verified Arm.target streamVerify (Spec.Gcm.streamVerifyContract Arm.abi 8) :=
+    Verified Arm.target streamVerify (Proof.AesGcm.streamVerifyWorkContract Arm.abi 8) :=
   Verified.of_correct (fun _ hs => streamVerify_wp hs) streamVerify_ct
     { pre := by
-        sig_implies_pre [Spec.Gcm.streamVerifyContract, Spec.Gcm.streamVerifySig, streamVerifyArm, finPre,
+        sig_implies_pre [Proof.AesGcm.streamVerifyWorkContract, Proof.AesGcm.streamVerifyWorkSig, Proof.AesGcm.streamVerifyWorkPre, Proof.AesGcm.streamVerifyWorkPost, streamVerifyArm, finPre,
           finPub, bel, arg, args, arg64, roundsOk, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val,
           Arm.State.addr]
       post := by
         intro s s' _ h
-        sig_eval [Spec.Gcm.streamVerifyContract, Spec.Gcm.streamVerifySig, Arm.abi, Arm.argRegs,
+        sig_eval [Proof.AesGcm.streamVerifyWorkContract, Proof.AesGcm.streamVerifyWorkSig, Proof.AesGcm.streamVerifyWorkPre, Proof.AesGcm.streamVerifyWorkPost, Arm.abi, Arm.argRegs,
           Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
         simp only [streamVerifyArm, Arm.State.addr] at h
         have e : ∀ x y : BitVec 32, (x ++ y).setWidth 32 = y := fun _ _ => BitVec.setWidth_append_eq_right
@@ -123,11 +124,11 @@ theorem streamVerify_verified :
         rw [e]
         exact h iv a c hs ha hc
       pub := by
-        sig_implies_pub [Spec.Gcm.streamVerifyContract, Spec.Gcm.streamVerifySig, streamVerifyArm, finPre,
+        sig_implies_pub [Proof.AesGcm.streamVerifyWorkContract, Proof.AesGcm.streamVerifyWorkSig, Proof.AesGcm.streamVerifyWorkPre, Proof.AesGcm.streamVerifyWorkPost, streamVerifyArm, finPre,
           finPub, bel, arg, args, arg64, roundsOk, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val,
           Arm.State.addr]
       sat := by
-        sig_implies_sat [Spec.Gcm.streamVerifyContract, Spec.Gcm.streamVerifySig, streamVerifyArm, finPre,
+        sig_implies_sat [Proof.AesGcm.streamVerifyWorkContract, Proof.AesGcm.streamVerifyWorkSig, Proof.AesGcm.streamVerifyWorkPre, Proof.AesGcm.streamVerifyWorkPost, streamVerifyArm, finPre,
           finPub, bel, arg, args, arg64, roundsOk, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val,
           Arm.State.addr]
           [vSat, mkSat, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read] using vSat }
@@ -138,9 +139,9 @@ def oSat : State :=
   mkSat (fun r => match r with | .r0 => 0x1000 | .r1 => 10 | .r2 => 0x2000 | _ => 0)
     [⟨0x1000, 256⟩, ⟨0x2000, 0⟩, ⟨0, 0⟩, ⟨0x8000, 20⟩] [⟨0, 0⟩, ⟨0, 2560⟩]
 
-theorem seal_verified : Verified Arm.target «seal» (Spec.Gcm.sealContract Arm.abi 8) :=
+theorem seal_verified : Verified Arm.target «seal» (Proof.AesGcm.sealWorkContract Arm.abi 8) :=
   Verified.of_correct (fun _ hs => seal_wp hs) seal_ct (by
-    sig_implies [Spec.Gcm.sealContract, Spec.Gcm.sealSig, sealArm, onePre, onePub, bel, arg, args, arg64,
+    sig_implies [Proof.AesGcm.sealWorkContract, Proof.AesGcm.sealWorkSig, Proof.AesGcm.sealWorkPre, Proof.AesGcm.sealWorkPost, sealArm, onePre, onePub, bel, arg, args, arg64,
       roundsOk, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
       [oSat, mkSat, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read] using oSat)
 
@@ -156,14 +157,14 @@ theorem leak_bool {a b : Bool} (h : [if a = true then 1 else 0] = [if b = true t
 
 /-- The postconditions match on `openResult`; the result is the low word of
 `r1:r0`; and `open`'s public data include its leak, whether it succeeds. -/
-theorem open_verified : Verified Arm.target «open» (Spec.Gcm.openContract Arm.abi 8) :=
+theorem open_verified : Verified Arm.target «open» (Proof.AesGcm.openWorkContract Arm.abi 8) :=
   Verified.of_correct (fun _ hs => open_wp hs) open_ct
     { pre := by
-        sig_implies_pre [Spec.Gcm.openContract, Spec.Gcm.openSig, openArm, onePre, onePub, bel, arg, args,
+        sig_implies_pre [Proof.AesGcm.openWorkContract, Proof.AesGcm.openWorkSig, Proof.AesGcm.openWorkPre, Proof.AesGcm.openWorkPost, Proof.AesGcm.openWorkLeak, openArm, onePre, onePub, bel, arg, args,
           arg64, roundsOk, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
       post := by
         intro s s' _ h
-        sig_eval [Spec.Gcm.openContract, Spec.Gcm.openSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
+        sig_eval [Proof.AesGcm.openWorkContract, Proof.AesGcm.openWorkSig, Proof.AesGcm.openWorkPre, Proof.AesGcm.openWorkPost, Proof.AesGcm.openWorkLeak, Arm.abi, Arm.argRegs, Arm.reduceClassify,
           Arm.Loc.val, Arm.State.addr]
         simp only [openArm, Arm.State.addr] at h
         have e : ∀ x y : BitVec 32, (x ++ y).setWidth 32 = y := fun _ _ => BitVec.setWidth_append_eq_right
@@ -171,7 +172,7 @@ theorem open_verified : Verified Arm.target «open» (Spec.Gcm.openContract Arm.
         exact h
       pub := by
         intro s₁ s₂ _ _ h
-        sig_pub [Spec.Gcm.openContract, Spec.Gcm.openSig, openArm, onePre, onePub, bel, arg, args,
+        sig_pub [Proof.AesGcm.openWorkContract, Proof.AesGcm.openWorkSig, Proof.AesGcm.openWorkPre, Proof.AesGcm.openWorkPost, Proof.AesGcm.openWorkLeak, openArm, onePre, onePub, bel, arg, args,
           arg64, roundsOk, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr] at h
         obtain ⟨hsp, hl, h0, h1, h2, h3, a0, a1, a2, a3, a4, a5⟩ := h
         refine ⟨⟨hsp, h0, h1, h2, h3, fun i hi => ?_⟩, leak_bool hl⟩
@@ -184,7 +185,7 @@ theorem open_verified : Verified Arm.target «open» (Spec.Gcm.openContract Arm.
         · exact a4
         · exact a5
       sat := by
-        sig_implies_sat [Spec.Gcm.openContract, Spec.Gcm.openSig, openArm, onePre, onePub, bel, arg, args,
+        sig_implies_sat [Proof.AesGcm.openWorkContract, Proof.AesGcm.openWorkSig, Proof.AesGcm.openWorkPre, Proof.AesGcm.openWorkPost, Proof.AesGcm.openWorkLeak, openArm, onePre, onePub, bel, arg, args,
           arg64, roundsOk, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
           [opSat, mkSat, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read] using opSat }
 

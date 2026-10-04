@@ -1,6 +1,7 @@
 import VerifiedGarbage.Proof.AesGcm.X86_64.Verified
 import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
 import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratch
+import VerifiedGarbage.Proof.Framework.X86_64.TagScratch
 
 /-!
 # AES-GCM's key setup and streaming start on x86-64, with their working space on the stack
@@ -140,5 +141,103 @@ theorem streamDecrypt_framed :
     (bytes := 2584) (streamDecrypt_verified v) (by decide) (by decide) (by decide)
     (streamDecrypt_spSafe v) (streamDecrypt_xdepth v) (streamTextPre_local _) (streamDecryptPost_local _)
     streamDecryptFrameSat_pre
+
+theorem streamFinish_xdepth : (streamFinish v.callees).x86_64Depth ≤ 8 := by
+  simp only [init, streamInit, streamAad, streamEncrypt, streamDecrypt, streamFinish, streamVerify,
+    ghash1, absorbHead, absorbWhole, absorbTail, absorb, flush, lens, cryptHead, cryptWhole, cryptTail,
+    crypt, tag, j0hash, j0, firstFlush, finTag, tagLenOk, recv, cmp, Code.x86_64Depth, GcmImpl.callees, v.ctr.noStack,
+    v.key.noStack, v.gh.noStack, Nat.max_le]
+  decide +kernel
+
+theorem streamVerify_xdepth : (streamVerify v.callees).x86_64Depth ≤ 8 := by
+  simp only [init, streamInit, streamAad, streamEncrypt, streamDecrypt, streamFinish, streamVerify,
+    ghash1, absorbHead, absorbWhole, absorbTail, absorb, flush, lens, cryptHead, cryptWhole, cryptTail,
+    crypt, tag, j0hash, j0, firstFlush, finTag, tagLenOk, recv, cmp, Code.x86_64Depth, GcmImpl.callees, v.ctr.noStack,
+    v.key.noStack, v.gh.noStack, Nat.max_le]
+  decide +kernel
+
+theorem seal_xdepth : («seal» v.callees).x86_64Depth ≤ 24 := by
+  have e := encryptBlocks_xdepth v v.stitch
+  have d := decryptBlocks_xdepth v v.stitch
+  simp only [GcmImpl.callees] at e d
+  simp only [init, streamInit, streamAad, streamEncrypt, streamDecrypt, «seal», «open», ghash1, absorbHead, absorbWhole, absorbTail, absorb, flush, lens, cryptHead, cryptWhole, cryptTail, crypt, tag, j0hash, j0, firstFlush, streamText, streamLoad, streamSmall, streamHead, streamNext, streamBlocks, finTag, oneAad, oneBlocks, oneTag, oneCrypt, oneUndo, tagLenOk, recv, cmp, copyLoop, xorLoop, minLen, j012, initState, Code.x86_64Depth, X86_64.Instr.frameBytes, List.length_cons, List.length_nil, GcmImpl.callees,
+    v.ctr.noStack, v.key.noStack, v.gh.noStack, Nat.max_le, ↓reduceIte, Bool.false_eq_true]
+  omega
+
+theorem open_xdepth : («open» v.callees).x86_64Depth ≤ 24 := by
+  have e := encryptBlocks_xdepth v v.stitch
+  have d := decryptBlocks_xdepth v v.stitch
+  simp only [GcmImpl.callees] at e d
+  simp only [init, streamInit, streamAad, streamEncrypt, streamDecrypt, «seal», «open», ghash1, absorbHead, absorbWhole, absorbTail, absorb, flush, lens, cryptHead, cryptWhole, cryptTail, crypt, tag, j0hash, j0, firstFlush, streamText, streamLoad, streamSmall, streamHead, streamNext, streamBlocks, finTag, oneAad, oneBlocks, oneTag, oneCrypt, oneUndo, tagLenOk, recv, cmp, copyLoop, xorLoop, minLen, j012, initState, Code.x86_64Depth, X86_64.Instr.frameBytes, List.length_cons, List.length_nil, GcmImpl.callees,
+    v.ctr.noStack, v.key.noStack, v.gh.noStack, Nat.max_le, ↓reduceIte, Bool.false_eq_true]
+  omega
+
+/-- A state satisfying `vg_aes_gcm_stream_finish`'s precondition, with a
+16-byte tag. -/
+def finFrameSat : State := { finSat with wr := [⟨0x3000, 80⟩, ⟨0x4000, 16⟩] }
+
+theorem finFrameSat_pre : ∃ s, (Spec.Gcm.streamFinishContract X86_64.abi 2584).pre s := by
+  implies_sat [Spec.Gcm.streamFinishContract, Spec.Gcm.streamFinishSig, Spec.Gcm.streamFinishPre,
+    Spec.Gcm.streamFinishPost, X86_64.abi, X86_64.argRegs] [finFrameSat, finSat] using finFrameSat
+
+theorem streamFinish_framed :
+    Verified X86_64.target
+      (Impl.StackScratch.X86_64.withTagScratch 2576 0 (.reg .r9) (streamFinish v.callees))
+      (Spec.Gcm.streamFinishContract X86_64.abi 2584) :=
+  X86_64.Verified.tagScratch (sig := Spec.Gcm.streamFinishSig) (q := 5) (nm := "work") (e := .u64)
+    (n := 320) (wa := true) (stack := 8) (bytes := 2576) (streamFinish_verified v)
+    (Proof.AesGcm.streamFinish_tagFrame _) rfl (by decide) (by decide) (by decide)
+    (streamFinish_spSafe v) (streamFinish_xdepth v) finFrameSat_pre
+
+/-- A state satisfying `vg_aes_gcm_stream_verify`'s precondition, with a
+16-byte tag. -/
+def verFrameSat : State := { verSat with wr := [⟨0x3000, 80⟩, ⟨0x4000, 16⟩] }
+
+theorem verFrameSat_pre : ∃ s, (Spec.Gcm.streamVerifyContract X86_64.abi 2592).pre s := by
+  implies_sat [Spec.Gcm.streamVerifyContract, Spec.Gcm.streamVerifySig, Spec.Gcm.streamVerifyPre,
+    Spec.Gcm.streamVerifyPost, X86_64.abi, X86_64.argRegs] [verFrameSat, verSat] using verFrameSat
+
+theorem streamVerify_framed :
+    Verified X86_64.target
+      (Impl.StackScratch.X86_64.withTagScratch 2584 1 (.reg .r9) (streamVerify v.callees))
+      (Spec.Gcm.streamVerifyContract X86_64.abi 2592) :=
+  X86_64.Verified.tagScratch (sig := Spec.Gcm.streamVerifySig) (q := 5) (nm := "work") (e := .u64)
+    (n := 320) (wa := true) (stack := 8) (bytes := 2584) (streamVerify_verified v)
+    (Proof.AesGcm.streamVerify_tagFrame _) rfl (by decide) (by decide) (by decide)
+    (streamVerify_spSafe v) (streamVerify_xdepth v) verFrameSat_pre
+
+/-- A state satisfying `vg_aes_gcm_seal`'s precondition, with a 16-byte
+tag. -/
+def sealFrameSat : State := { sealSat with wr := [⟨0, 0⟩, ⟨0, 16⟩] }
+
+theorem sealFrameSat_pre : ∃ s, (Spec.Gcm.sealContract X86_64.abi 2624).pre s := by
+  implies_sat [Spec.Gcm.sealContract, Spec.Gcm.sealSig, Spec.Gcm.sealPre, Spec.Gcm.sealPost,
+    X86_64.abi, X86_64.argRegs] [sealFrameSat, sealSat] using sealFrameSat
+
+theorem seal_framed :
+    Verified X86_64.target
+      (Impl.StackScratch.X86_64.withTagScratch 2600 3 (.stack 2) («seal» v.callees))
+      (Spec.Gcm.sealContract X86_64.abi 2624) :=
+  X86_64.Verified.tagScratch (sig := Spec.Gcm.sealSig) (q := 5) (nm := "work") (e := .u64)
+    (n := 320) (wa := true) (stack := 24) (bytes := 2600) (seal_verified v)
+    (Proof.AesGcm.seal_tagFrame _) rfl (by decide) (by decide) (by decide)
+    (seal_spSafe v) (seal_xdepth v) sealFrameSat_pre
+
+/-- A state satisfying `vg_aes_gcm_open`'s precondition, with a 16-byte
+tag. -/
+def openFrameSat : State := { openSat with wr := [⟨0, 0⟩, ⟨0, 16⟩] }
+
+theorem openFrameSat_pre : ∃ s, (Spec.Gcm.openContract X86_64.abi 2632).pre s := by
+  implies_sat [Spec.Gcm.openContract, Spec.Gcm.openSig, Spec.Gcm.openPre, Spec.Gcm.openPost,
+    Spec.Gcm.openLeak, X86_64.abi, X86_64.argRegs] [openFrameSat, openSat] using openFrameSat
+
+theorem open_framed :
+    Verified X86_64.target
+      (Impl.StackScratch.X86_64.withTagScratch 2608 4 (.stack 2) («open» v.callees))
+      (Spec.Gcm.openContract X86_64.abi 2632) :=
+  X86_64.Verified.tagScratch (sig := Spec.Gcm.openSig) (q := 5) (nm := "work") (e := .u64)
+    (n := 320) (wa := true) (stack := 24) (bytes := 2608) (open_verified v)
+    (Proof.AesGcm.open_tagFrame _) rfl (by decide) (by decide) (by decide)
+    (open_spSafe v) (open_xdepth v) openFrameSat_pre
 
 end VG.Proof.AesGcm.X86_64

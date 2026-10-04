@@ -9,6 +9,7 @@ import VerifiedGarbage.Proof.AesGcm.X86.Open
 import VerifiedGarbage.Proof.AesGcm.X86.Init
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.AesGcm.Scratch
+import VerifiedGarbage.Proof.AesGcm.Tag
 
 /-!
 # AES-GCM on x86: `Verified`
@@ -150,7 +151,7 @@ def finSat : State where
   rd := [⟨0x1000, 256⟩]
   wr := [⟨0x3000, 80⟩, ⟨0x4000, 2560⟩, ⟨0x8004, 32⟩]
 
-theorem streamFinish_verified : Verified X86.target (streamFinish vg.callees) (Spec.Gcm.streamFinishContract X86.abi 28) :=
+theorem streamFinish_verified : Verified X86.target (streamFinish vg.callees) (Proof.AesGcm.streamFinishWorkContract X86.abi 28) :=
   Verified.of_correct streamFinish_correct streamFinish_ct (by
     have a0 : arg finSat 0 = 0x1000 := by decide
     have a1 : arg finSat 1 = 10 := by decide
@@ -162,7 +163,7 @@ theorem streamFinish_verified : Verified X86.target (streamFinish vg.callees) (S
     have a7 : arg finSat 7 = 0x4000 := by decide
     have e : argAddr finSat 0 = 0x8004 := by decide
     have esp : finSat.gpr .esp = 0x8000 := rfl
-    sig_implies [Spec.Gcm.streamFinishContract, Spec.Gcm.streamFinishSig, streamFinishX86, finPre, pubN,
+    sig_implies [Proof.AesGcm.streamFinishWorkContract, Proof.AesGcm.streamFinishWorkSig, Proof.AesGcm.streamFinishWorkPre, Proof.AesGcm.streamFinishWorkPost, streamFinishX86, finPre, pubN,
       roundsOk, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
       [a0, a1, a2, a3, a4, a5, a6, a7, e, esp] using finSat)
 
@@ -179,7 +180,7 @@ def verSat : State where
   rd := [⟨0x1000, 256⟩]
   wr := [⟨0x3000, 80⟩, ⟨0x4000, 2560⟩, ⟨0x8004, 36⟩]
 
-theorem streamVerify_verified : Verified X86.target (streamVerify vg.callees) (Spec.Gcm.streamVerifyContract X86.abi 28) :=
+theorem streamVerify_verified : Verified X86.target (streamVerify vg.callees) (Proof.AesGcm.streamVerifyWorkContract X86.abi 28) :=
   Verified.of_correct streamVerify_correct streamVerify_ct (by
     have a0 : arg verSat 0 = 0x1000 := by decide
     have a1 : arg verSat 1 = 10 := by decide
@@ -192,7 +193,7 @@ theorem streamVerify_verified : Verified X86.target (streamVerify vg.callees) (S
     have a8 : arg verSat 8 = 0 := by decide
     have e : argAddr verSat 0 = 0x8004 := by decide
     have esp : verSat.gpr .esp = 0x8000 := rfl
-    sig_implies [Spec.Gcm.streamVerifyContract, Spec.Gcm.streamVerifySig, streamVerifyX86, verifyPre, pubN,
+    sig_implies [Proof.AesGcm.streamVerifyWorkContract, Proof.AesGcm.streamVerifyWorkSig, Proof.AesGcm.streamVerifyWorkPre, Proof.AesGcm.streamVerifyWorkPost, streamVerifyX86, verifyPre, pubN,
       roundsOk, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
       [a0, a1, a2, a3, a4, a5, a6, a7, a8, e, esp] using verSat)
 
@@ -211,7 +212,7 @@ def sealSat : State where
   rd := [⟨0x1000, 256⟩, ⟨0x2000, 0⟩, ⟨0x2100, 0⟩]
   wr := [⟨0x3000, 0⟩, ⟨0x4000, 2560⟩, ⟨0x8004, 36⟩]
 
-theorem seal_verified : Verified X86.target («seal» vg.callees) (Spec.Gcm.sealContract X86.abi 28) :=
+theorem seal_verified : Verified X86.target («seal» vg.callees) (Proof.AesGcm.sealWorkContract X86.abi 28) :=
   Verified.of_correct seal_correct seal_ct (by
     have a0 : arg sealSat 0 = 0x1000 := by decide
     have a1 : arg sealSat 1 = 10 := by decide
@@ -224,7 +225,7 @@ theorem seal_verified : Verified X86.target («seal» vg.callees) (Spec.Gcm.seal
     have a8 : arg sealSat 8 = 0x4000 := by decide
     have e : argAddr sealSat 0 = 0x8004 := by decide
     have esp : sealSat.gpr .esp = 0x8000 := rfl
-    sig_implies [Spec.Gcm.sealContract, Spec.Gcm.sealSig, sealX86, onePre, pubN, roundsOk,
+    sig_implies [Proof.AesGcm.sealWorkContract, Proof.AesGcm.sealWorkSig, Proof.AesGcm.sealWorkPre, Proof.AesGcm.sealWorkPost, sealX86, onePre, pubN, roundsOk,
       X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
       [a0, a1, a2, a3, a4, a5, a6, a7, a8, e, esp] using sealSat)
 
@@ -247,20 +248,20 @@ theorem leak_bool {a b : Bool} (h : [if a = true then 1 else 0] = [if b = true t
 
 /-- `open`'s public data include its leak, from which `pub` has whether it
 succeeds. -/
-theorem open_verified : Verified X86.target («open» vg.callees) (Spec.Gcm.openContract X86.abi 28) :=
+theorem open_verified : Verified X86.target («open» vg.callees) (Proof.AesGcm.openWorkContract X86.abi 28) :=
   Verified.of_correct open_correct open_ct
-    { pre := by sig_implies_pre [Spec.Gcm.openContract, Spec.Gcm.openSig, openX86, onePre, pubN, roundsOk,
+    { pre := by sig_implies_pre [Proof.AesGcm.openWorkContract, Proof.AesGcm.openWorkSig, Proof.AesGcm.openWorkPre, Proof.AesGcm.openWorkPost, Proof.AesGcm.openWorkLeak, openX86, onePre, pubN, roundsOk,
         X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
-      post := by sig_implies_post [Spec.Gcm.openContract, Spec.Gcm.openSig, openX86, onePre, pubN, roundsOk,
+      post := by sig_implies_post [Proof.AesGcm.openWorkContract, Proof.AesGcm.openWorkSig, Proof.AesGcm.openWorkPre, Proof.AesGcm.openWorkPost, Proof.AesGcm.openWorkLeak, openX86, onePre, pubN, roundsOk,
         X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
       pub := by
         intro s₁ s₂ _ _ h
-        sig_pub [Spec.Gcm.openContract, Spec.Gcm.openSig, openX86, onePre, pubN, roundsOk,
+        sig_pub [Proof.AesGcm.openWorkContract, Proof.AesGcm.openWorkSig, Proof.AesGcm.openWorkPre, Proof.AesGcm.openWorkPost, Proof.AesGcm.openWorkLeak, openX86, onePre, pubN, roundsOk,
           X86.abi, X86.argSlots, X86.argVal, X86.argBytes] at h
         sig_split h
-        sig_reduce [Spec.Gcm.openContract, Spec.Gcm.openSig, openX86, onePre, pubN, roundsOk,
+        sig_reduce [Proof.AesGcm.openWorkContract, Proof.AesGcm.openWorkSig, Proof.AesGcm.openWorkPre, Proof.AesGcm.openWorkPost, Proof.AesGcm.openWorkLeak, openX86, onePre, pubN, roundsOk,
           X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
-        sig_simp [Spec.Gcm.openContract, Spec.Gcm.openSig, openX86, onePre, pubN, roundsOk,
+        sig_simp [Proof.AesGcm.openWorkContract, Proof.AesGcm.openWorkSig, Proof.AesGcm.openWorkPre, Proof.AesGcm.openWorkPost, Proof.AesGcm.openWorkLeak, openX86, onePre, pubN, roundsOk,
           X86.abi, X86.argSlots, X86.argVal, X86.argBytes] [Nat.forall_lt_succ_right, Nat.not_lt_zero,
           false_imp_iff, forall_const, true_and]
         sig_and_intros
@@ -281,7 +282,7 @@ theorem open_verified : Verified X86.target («open» vg.callees) (Spec.Gcm.open
         have a9 : arg openSat 9 = 0 := by decide
         have e : argAddr openSat 0 = 0x8004 := by decide
         have esp : openSat.gpr .esp = 0x8000 := rfl
-        sig_implies_sat [Spec.Gcm.openContract, Spec.Gcm.openSig, openX86, onePre, pubN, roundsOk,
+        sig_implies_sat [Proof.AesGcm.openWorkContract, Proof.AesGcm.openWorkSig, Proof.AesGcm.openWorkPre, Proof.AesGcm.openWorkPost, Proof.AesGcm.openWorkLeak, openX86, onePre, pubN, roundsOk,
           X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
           [a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, e, esp] using openSat }
 

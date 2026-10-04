@@ -1,6 +1,7 @@
 import VerifiedGarbage.Proof.AesGcm.Arm.Verified
 import VerifiedGarbage.Proof.Framework.Arm.StackScratch
 import VerifiedGarbage.Proof.Framework.Arm.RegScratch
+import VerifiedGarbage.Proof.Framework.Arm.TagScratch
 
 /-!
 # AES-GCM's key setup and streaming functions on ARMv7, with their working space on the stack
@@ -18,6 +19,13 @@ too (`Verified.stackScratch`); so do the frames of 2592 bytes of
 stack arguments (`aad_len`, `text_len`, `data` and `len`). The copies are
 read only where the pre- and postconditions read the buffers
 (`Proof/AesGcm/Scratch.lean`).
+
+`stream_finish`, `stream_verify`, `seal` and `open` run their code, proved
+for working space that carries the tag in its first 16 bytes
+(`Proof/AesGcm/Tag.lean`), in a frame of 2592 bytes that holds the copies of
+their stack arguments (with the working space's address in place of the
+tag pointer, their fifth word on the stack), the saved `lr` and the working
+space, and copies the tag in and out (`Verified.tagScratch`).
 -/
 
 namespace VG.Proof.AesGcm.Arm
@@ -118,5 +126,77 @@ theorem streamDecrypt_framed :
     (post := Spec.Gcm.streamDecryptPost Arm.abi.ptrBits) (wa := true) (stack := 8)
     (m := 6) streamDecrypt_verified (by decide) (by decide) (by decide) (by decide)
     (streamTextPre_local _) (streamDecryptPost_local _) streamDecryptFrameSat_pre
+
+/-- A state satisfying `vg_aes_gcm_stream_finish`'s precondition, with a
+16-byte tag at 0. -/
+def finFrameSat : State :=
+  mkSat (fun r => match r with | .r0 => 0x1000 | .r1 => 10 | .r2 => 0x3000 | _ => 0)
+    [⟨0x1000, 256⟩, ⟨0x8000, 20⟩] [⟨0x3000, 80⟩, ⟨0, 16⟩]
+
+theorem finFrameSat_pre : ∃ s, (Spec.Gcm.streamFinishContract Arm.abi 2600).pre s := by
+  implies_sat [Spec.Gcm.streamFinishContract, Spec.Gcm.streamFinishSig, Spec.Gcm.streamFinishPre,
+    Spec.Gcm.streamFinishPost, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
+    [finFrameSat, mkSat, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read] using finFrameSat
+
+theorem streamFinish_framed :
+    Verified Arm.target (Impl.StackScratch.Arm.withTagScratch 2592 5 4 32 streamFinish)
+      (Spec.Gcm.streamFinishContract Arm.abi 2600) :=
+  Arm.Verified.tagScratch (sig := Spec.Gcm.streamFinishSig) (q := 5) (nm := "work") (e := .u64)
+    (n := 320) (wa := true) (stack := 8) streamFinish_verified
+    (Proof.AesGcm.streamFinish_tagFrame _) rfl (by decide) (by decide) (by decide) finFrameSat_pre
+
+/-- A state satisfying `vg_aes_gcm_stream_verify`'s precondition, with a
+16-byte tag at 0. -/
+def verFrameSat : State :=
+  mkSat (fun r => match r with | .r0 => 0x1000 | .r1 => 10 | .r2 => 0x3000 | _ => 0)
+    [⟨0x1000, 256⟩, ⟨0x8000, 24⟩] [⟨0x3000, 80⟩, ⟨0, 16⟩]
+
+theorem verFrameSat_pre : ∃ s, (Spec.Gcm.streamVerifyContract Arm.abi 2600).pre s := by
+  implies_sat [Spec.Gcm.streamVerifyContract, Spec.Gcm.streamVerifySig, Spec.Gcm.streamVerifyPre,
+    Spec.Gcm.streamVerifyPost, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
+    [verFrameSat, mkSat, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read] using verFrameSat
+
+theorem streamVerify_framed :
+    Verified Arm.target (Impl.StackScratch.Arm.withTagScratch 2592 6 4 32 streamVerify)
+      (Spec.Gcm.streamVerifyContract Arm.abi 2600) :=
+  Arm.Verified.tagScratch (sig := Spec.Gcm.streamVerifySig) (q := 5) (nm := "work") (e := .u64)
+    (n := 320) (wa := true) (stack := 8) streamVerify_verified
+    (Proof.AesGcm.streamVerify_tagFrame _) rfl (by decide) (by decide) (by decide) verFrameSat_pre
+
+/-- A state satisfying `vg_aes_gcm_seal`'s precondition (with no nonce,
+additional data or data), with a 16-byte tag at 0. -/
+def sealFrameSat : State :=
+  mkSat (fun r => match r with | .r0 => 0x1000 | .r1 => 10 | .r2 => 0x2000 | _ => 0)
+    [⟨0x1000, 256⟩, ⟨0x2000, 0⟩, ⟨0, 0⟩, ⟨0x8000, 20⟩] [⟨0, 0⟩, ⟨0, 16⟩]
+
+theorem sealFrameSat_pre : ∃ s, (Spec.Gcm.sealContract Arm.abi 2600).pre s := by
+  implies_sat [Spec.Gcm.sealContract, Spec.Gcm.sealSig, Spec.Gcm.sealPre, Spec.Gcm.sealPost,
+    Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
+    [sealFrameSat, mkSat, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read] using sealFrameSat
+
+theorem seal_framed :
+    Verified Arm.target (Impl.StackScratch.Arm.withTagScratch 2592 5 4 32 «seal»)
+      (Spec.Gcm.sealContract Arm.abi 2600) :=
+  Arm.Verified.tagScratch (sig := Spec.Gcm.sealSig) (q := 5) (nm := "work") (e := .u64)
+    (n := 320) (wa := true) (stack := 8) seal_verified
+    (Proof.AesGcm.seal_tagFrame _) rfl (by decide) (by decide) (by decide) sealFrameSat_pre
+
+/-- A state satisfying `vg_aes_gcm_open`'s precondition (with no nonce,
+additional data or data), with a 16-byte tag at 0. -/
+def openFrameSat : State :=
+  mkSat (fun r => match r with | .r0 => 0x1000 | .r1 => 10 | .r2 => 0x2000 | _ => 0)
+    [⟨0x1000, 256⟩, ⟨0x2000, 0⟩, ⟨0, 0⟩, ⟨0x8000, 24⟩] [⟨0, 0⟩, ⟨0, 16⟩]
+
+theorem openFrameSat_pre : ∃ s, (Spec.Gcm.openContract Arm.abi 2600).pre s := by
+  implies_sat [Spec.Gcm.openContract, Spec.Gcm.openSig, Spec.Gcm.openPre, Spec.Gcm.openPost,
+    Spec.Gcm.openLeak, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
+    [openFrameSat, mkSat, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read] using openFrameSat
+
+theorem open_framed :
+    Verified Arm.target (Impl.StackScratch.Arm.withTagScratch 2592 6 4 32 «open»)
+      (Spec.Gcm.openContract Arm.abi 2600) :=
+  Arm.Verified.tagScratch (sig := Spec.Gcm.openSig) (q := 5) (nm := "work") (e := .u64)
+    (n := 320) (wa := true) (stack := 8) open_verified
+    (Proof.AesGcm.open_tagFrame _) rfl (by decide) (by decide) (by decide) openFrameSat_pre
 
 end VG.Proof.AesGcm.Arm

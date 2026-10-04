@@ -10,6 +10,7 @@ import VerifiedGarbage.Proof.AesGcm.AArch64.OpenCT
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Spec.Gcm.Contract
 import VerifiedGarbage.Proof.AesGcm.Scratch
+import VerifiedGarbage.Proof.AesGcm.Tag
 
 /-!
 # AES-GCM on AArch64: `Verified`
@@ -209,30 +210,30 @@ theorem streamDecrypt_verified (v : GcmImpl) :
       [streamCryptSat] using streamCryptSat)
 
 theorem streamFinish_verified (v : GcmImpl) :
-    Verified AArch64.target (streamFinish v.callees) (Spec.Gcm.streamFinishContract AArch64.abi) :=
+    Verified AArch64.target (streamFinish v.callees) (Proof.AesGcm.streamFinishWorkContract AArch64.abi) :=
   Verified.of_correct (streamFinish_correct v) (streamFinish_ct v) (by
-    sig_implies [Spec.Gcm.streamFinishContract, Spec.Gcm.streamFinishSig, streamFinishAArch64, finPre, args, rounds, AArch64.abi,
+    sig_implies [Proof.AesGcm.streamFinishWorkContract, Proof.AesGcm.streamFinishWorkSig, Proof.AesGcm.streamFinishWorkPre, Proof.AesGcm.streamFinishWorkPost, streamFinishAArch64, finPre, args, rounds, AArch64.abi,
       AArch64.argRegs, AArch64.stackArg, AArch64.stackArgAddr, List.getD, List.range, List.range.loop]
       [finSat] using finSat)
 
 theorem streamVerify_verified (v : GcmImpl) :
-    Verified AArch64.target (streamVerify v.callees) (Spec.Gcm.streamVerifyContract AArch64.abi) :=
+    Verified AArch64.target (streamVerify v.callees) (Proof.AesGcm.streamVerifyWorkContract AArch64.abi) :=
   Verified.of_correct (streamVerify_correct v) (streamVerify_ct v) (by
-    sig_implies [Spec.Gcm.streamVerifyContract, Spec.Gcm.streamVerifySig, streamVerifyAArch64, finPre, args, rounds, AArch64.abi,
+    sig_implies [Proof.AesGcm.streamVerifyWorkContract, Proof.AesGcm.streamVerifyWorkSig, Proof.AesGcm.streamVerifyWorkPre, Proof.AesGcm.streamVerifyWorkPost, streamVerifyAArch64, finPre, args, rounds, AArch64.abi,
       AArch64.argRegs, AArch64.stackArg, AArch64.stackArgAddr, List.getD, List.range, List.range.loop]
       [finSat] using finSat)
 
 theorem seal_verified (v : GcmImpl) :
-    Verified AArch64.target («seal» v.callees) (Spec.Gcm.sealContract AArch64.abi) :=
+    Verified AArch64.target («seal» v.callees) (Proof.AesGcm.sealWorkContract AArch64.abi) :=
   Verified.of_correct (seal_correct v) (seal_ct v) (by
-    sig_implies [Spec.Gcm.sealContract, Spec.Gcm.sealSig, sealAArch64, onePre, onePub, args, rounds, AArch64.abi,
+    sig_implies [Proof.AesGcm.sealWorkContract, Proof.AesGcm.sealWorkSig, Proof.AesGcm.sealWorkPre, Proof.AesGcm.sealWorkPost, sealAArch64, onePre, onePub, args, rounds, AArch64.abi,
       AArch64.argRegs, AArch64.stackArg, AArch64.stackArgAddr, List.getD, List.range, List.range.loop]
       [sealSat, stackArg, stackArgAddr, Mem.readW, Mem.read] using sealSat)
 
 theorem open_verified (v : GcmImpl) :
-    Verified AArch64.target («open» v.callees) (Spec.Gcm.openContract AArch64.abi) :=
+    Verified AArch64.target («open» v.callees) (Proof.AesGcm.openWorkContract AArch64.abi) :=
   Verified.of_correct (open_correct v) (open_ct v) (by
-    sig_implies [Spec.Gcm.openContract, Spec.Gcm.openSig, openAArch64, onePre, onePub, openRes, args, rounds, AArch64.abi,
+    sig_implies [Proof.AesGcm.openWorkContract, Proof.AesGcm.openWorkSig, Proof.AesGcm.openWorkPre, Proof.AesGcm.openWorkPost, Proof.AesGcm.openWorkLeak, openAArch64, onePre, onePub, openRes, args, rounds, AArch64.abi,
       AArch64.argRegs, AArch64.stackArg, AArch64.stackArgAddr, List.getD, List.range, List.range.loop]
       [openSat, stackArg, stackArgAddr, Mem.readW, Mem.read] using openSat)
 

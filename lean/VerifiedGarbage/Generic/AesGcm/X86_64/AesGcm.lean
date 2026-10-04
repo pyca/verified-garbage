@@ -33,16 +33,20 @@ and absorb the whole blocks of the data in one call of the instance of
 combination, which interleaves the two for the implementations that allow
 it (`GcmImpl.stitch`).
 
-The stack is 8 bytes for `stream_finish` and `stream_verify`: the return
-address of a call of `vg_aes_expand_key`, `vg_aes_ctr32` or `vg_ghash`, which
-make no calls. `init`, `stream_init` and `stream_aad` need 2568 bytes more,
-for the frame that holds their working space.
-`seal`, `open`, `stream_encrypt` and `stream_decrypt` need 24: the argument
-they pass on the stack, the return address of their call of
+The stack is 8 bytes for the code of `stream_finish` and `stream_verify`:
+the return address of a call of `vg_aes_expand_key`, `vg_aes_ctr32` or
+`vg_ghash`, which make no calls. `init`, `stream_init` and `stream_aad` need
+2568 bytes more, for the frame that holds their working space.
+The code of `seal`, `open`, `stream_encrypt` and `stream_decrypt` needs 24:
+the argument they pass on the stack, the return address of their call of
 `vg_aes_gcm_encrypt_blocks` or `vg_aes_gcm_decrypt_blocks`, and that of its
 calls. `stream_encrypt` and `stream_decrypt` need 2584 bytes more, for the
 frame that holds their working space, which was their second stack argument
-(`Verified.stackArgScratch`).
+(`Verified.stackArgScratch`). `stream_finish`, `stream_verify`, `seal` and
+`open` run their code, proved for working space that carries the tag in its
+first 16 bytes, in a frame that holds the working space after a copy of
+their stack arguments and the tag pointer, and copies the tag in and out
+(`Verified.tagScratch`): 2576, 2584, 2600 and 2608 bytes more.
 -/
 
 /-! The interleaved loops a variant names, with their proofs (which import the
@@ -122,21 +126,21 @@ def artifactsOf (v : GcmImpl) : List Artifact := [
     name := Spec.Gcm.sealApi.name ++ v.suffix
     target := X86_64.target
     doc := Spec.Gcm.sealApi.doc (notes := [note v])
-    code := Impl.AesGcm.X86_64.«seal» v.callees
-    contract := Spec.Gcm.sealContract X86_64.abi 24
-    stack := 24
-    verified := seal_verified v
-    spSafe := seal_spSafe v
+    code := Impl.StackScratch.X86_64.withTagScratch 2600 3 (.stack 2) (Impl.AesGcm.X86_64.«seal» v.callees)
+    contract := Spec.Gcm.sealContract X86_64.abi 2624
+    stack := 2624
+    verified := seal_framed v
+    spSafe := X86_64.withTagScratch_spSafe (k := 8) (seal_spSafe v)
     features := v.features },
   { Spec.Gcm.openApi with
     name := Spec.Gcm.openApi.name ++ v.suffix
     target := X86_64.target
     doc := Spec.Gcm.openApi.doc (notes := [note v])
-    code := Impl.AesGcm.X86_64.«open» v.callees
-    contract := Spec.Gcm.openContract X86_64.abi 24
-    stack := 24
-    verified := open_verified v
-    spSafe := open_spSafe v
+    code := Impl.StackScratch.X86_64.withTagScratch 2608 4 (.stack 2) (Impl.AesGcm.X86_64.«open» v.callees)
+    contract := Spec.Gcm.openContract X86_64.abi 2632
+    stack := 2632
+    verified := open_framed v
+    spSafe := X86_64.withTagScratch_spSafe (k := 8) (open_spSafe v)
     features := v.features },
   { Spec.Gcm.streamInitApi with
     name := Spec.Gcm.streamInitApi.name ++ v.suffix
@@ -184,21 +188,23 @@ def artifactsOf (v : GcmImpl) : List Artifact := [
     name := Spec.Gcm.streamFinishApi.name ++ v.suffix
     target := X86_64.target
     doc := Spec.Gcm.streamFinishApi.doc (notes := [note v])
-    code := Impl.AesGcm.X86_64.streamFinish v.callees
-    contract := Spec.Gcm.streamFinishContract X86_64.abi 8
-    stack := 8
-    verified := streamFinish_verified v
-    spSafe := streamFinish_spSafe v
+    code := Impl.StackScratch.X86_64.withTagScratch 2576 0 (.reg .r9)
+      (Impl.AesGcm.X86_64.streamFinish v.callees)
+    contract := Spec.Gcm.streamFinishContract X86_64.abi 2584
+    stack := 2584
+    verified := streamFinish_framed v
+    spSafe := X86_64.withTagScratch_spSafe (k := 5) (streamFinish_spSafe v)
     features := (v.ctr.features ++ v.gh.features).dedup },
   { Spec.Gcm.streamVerifyApi with
     name := Spec.Gcm.streamVerifyApi.name ++ v.suffix
     target := X86_64.target
     doc := Spec.Gcm.streamVerifyApi.doc (notes := [note v])
-    code := Impl.AesGcm.X86_64.streamVerify v.callees
-    contract := Spec.Gcm.streamVerifyContract X86_64.abi 8
-    stack := 8
-    verified := streamVerify_verified v
-    spSafe := streamVerify_spSafe v
+    code := Impl.StackScratch.X86_64.withTagScratch 2584 1 (.reg .r9)
+      (Impl.AesGcm.X86_64.streamVerify v.callees)
+    contract := Spec.Gcm.streamVerifyContract X86_64.abi 2592
+    stack := 2592
+    verified := streamVerify_framed v
+    spSafe := X86_64.withTagScratch_spSafe (k := 5) (streamVerify_spSafe v)
     features := (v.ctr.features ++ v.gh.features).dedup }]
 
 /-- The artifacts of a variant, from the implementations it names. -/
