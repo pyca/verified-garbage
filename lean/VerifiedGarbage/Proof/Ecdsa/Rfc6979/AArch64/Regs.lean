@@ -19,6 +19,9 @@ theorem below16 (B : Addr) : below (B + BitVec.ofNat 64 16) 16 = ⟨B, 16⟩ := 
   show (⟨B + BitVec.ofNat 64 16 - BitVec.ofNat 64 16, 16⟩ : Region) = _
   rw [BitVec.add_sub_cancel]
 
+/-- A fact `simp` has reduced to `True`, or an equation of definitionally equal sides. -/
+macro "atriv" : tactic => `(tactic| first | trivial | rfl)
+
 theorem ne_cs {r d : Reg} (hr : r ∈ preserved) (hd : d ∉ preserved) : r ≠ d :=
   fun e => hd (e ▸ hr)
 
