@@ -218,4 +218,65 @@ theorem stop_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) :
     ⟨(Upd.of_wp hL hc (by decide) v₁).ctx.regs hL v₂.rd v₂.wr v₂.mem (by rw [v₂.gpr]),
       by rw [v₂.mem, v₁.mem], by rw [zf₂, v₁.gpr]; decide, by rw [v₂.gpr, v₁.other _ (by decide)]⟩
 
+/-! ## The wiping -/
+
+/-- `k` zero words stored at the frame's start: only `K`, `V` and `h` change. -/
+theorem zeroN_ok (hL : L.Ok) {u : State} (hc : Ctx L g m₀ u) : ∀ k ≤ 40,
+    WP isa (.block ((List.range k).map fun j => .store (stk (4 * j)) .ecx)) u fun u' =>
+      u'.rd = u.rd ∧ u'.wr = u.wr ∧ u'.gpr = u.gpr ∧ Frame [⟨L.B + BitVec.ofNat 64 76, 160⟩] u.mem u'.mem
+  | 0, _ => WP.of_runBlock ⟨u, rfl, rfl, rfl, rfl, Frame.refl _ _⟩
+  | k + 1, hk => by
+    have nB := hL.nB
+    rw [List.range_succ, List.map_append, List.map_singleton, WP.block_append_iff]
+    refine WP.mono (zeroN_ok hL hc k (by omega)) fun u₁ ⟨hrd, hwr, hg, hf⟩ => ?_
+    have e : addr L.F (4 * k) = L.B + BitVec.ofNat 64 (76 + 4 * k) := hL.addrF (by omega)
+    refine wp_stm (B := L.F) (by rw [hg, hc.esp]) (by rw [e, hwr]; exact hc.inFrW (by omega) (by omega) hL)
+      fun u₂ v₂ => WP.block_nil ⟨by rw [v₂.rd, hrd], by rw [v₂.wr, hwr], by rw [v₂.gpr, hg], hf.trans ?_⟩
+    rw [v₂.mem, e]
+    exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Offset.contains _ (by omega) (by omega) (by omega))
+
+/-- One of our caller's registers, restored. -/
+theorem restoreOne_ok (hL : L.Ok) {u : State} (hc : Ctx L g m₀ u) {r : Reg} {d : Nat} (hp : (r, d) ∈ saved)
+    (hr : r ≠ .esp) : WP isa (.block [.mov r (.mem (stk d))]) u (Upd L g m₀ u r (g r)) := by
+  have ho := saved_off _ hp
+  have e : addr L.F d = L.B + BitVec.ofNat 64 (76 + d) := hL.addrF (by omega)
+  have hs := hc.saved (r, d) hp
+  dsimp only at hs
+  refine wp_ldm hc.esp (by rw [e]; exact hc.inFr (by omega) (by omega) hL) fun _ v₁ => WP.block_nil ?_
+  rw [e, hs] at v₁
+  exact Upd.of_wp hL hc hr v₁
+
+/-- Our caller's registers, restored. -/
+theorem restore_ok (hL : L.Ok) {u : State} (hc : Ctx L g m₀ u) :
+    WP isa (.block Cfg.restore) u fun u' => Ctx L g m₀ u' ∧ u'.mem = u.mem ∧ u'.gpr .eax = u.gpr .eax ∧
+      ∀ p ∈ saved, u'.gpr p.1 = g p.1 := by
+  rw [show Cfg.restore = [.mov .ebx (.mem (stk 164))] ++ ([.mov .esi (.mem (stk 168))] ++
+    ([.mov .edi (.mem (stk 172))] ++ [.mov .ebp (.mem (stk 176))])) from rfl]
+  refine WP.block_append (WP.mono (restoreOne_ok hL hc (by decide) (by decide)) fun u₁ h₁ => ?_)
+  refine WP.block_append (WP.mono (restoreOne_ok hL h₁.ctx (by decide) (by decide)) fun u₂ h₂ => ?_)
+  refine WP.block_append (WP.mono (restoreOne_ok hL h₂.ctx (by decide) (by decide)) fun u₃ h₃ => ?_)
+  refine WP.mono (restoreOne_ok hL h₃.ctx (by decide) (by decide)) fun u₄ h₄ =>
+    ⟨h₄.ctx, by rw [h₄.mem, h₃.mem, h₂.mem, h₁.mem], ?_, fun p hp => ?_⟩
+  · rw [h₄.keep _ (by decide), h₃.keep _ (by decide), h₂.keep _ (by decide), h₁.keep _ (by decide)]
+  · simp only [saved, fSave, List.mem_cons, List.not_mem_nil, or_false] at hp
+    rcases hp with rfl | rfl | rfl | rfl
+    · rw [h₄.keep _ (by decide), h₃.keep _ (by decide), h₂.keep _ (by decide), h₁.val]
+    · rw [h₄.keep _ (by decide), h₃.keep _ (by decide), h₂.val]
+    · rw [h₄.keep _ (by decide), h₃.val]
+    · exact h₄.val
+
+/-- `K`, `V` and `h` cleared (`eax` kept), and our caller's registers back. -/
+theorem wipe_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) :
+    WP isa (.block Cfg.wipe) t fun t' => Ctx L g m₀ t' ∧ t'.gpr .eax = t.gpr .eax ∧
+      Frame [⟨L.B + BitVec.ofNat 64 76, 160⟩] t.mem t'.mem ∧ ∀ p ∈ saved, t'.gpr p.1 = g p.1 := by
+  rw [Cfg.wipe]
+  refine WP.block_append (WP.block_append (wp_movi fun u₁ v₁ => WP.block_nil ?_))
+  have hc₁ := (Upd.of_wp hL hc (by decide) v₁).ctx
+  refine WP.mono (zeroN_ok hL hc₁ 40 (Nat.le_refl _)) fun u₂ ⟨hrd, hwr, hg, hf⟩ => ?_
+  have hc₂ : Ctx L g m₀ u₂ := hc₁.keep hL hrd hwr (by rw [hg]) hf (fun r hr => by
+    simp only [List.mem_singleton] at hr; subst hr; exact safe_low L (by omega))
+  refine WP.mono (restore_ok hL hc₂) fun t' ⟨hc', hm', ha', hs'⟩ => ⟨hc', ?_, ?_, hs'⟩
+  · rw [ha', hg, v₁.other _ (by decide)]
+  · rw [hm', ← v₁.mem]; exact hf
+
 end VG.Proof.Ecdsa.Rfc6979.X86
