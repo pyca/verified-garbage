@@ -162,4 +162,17 @@ theorem agree_of {s₁ s₂ : State} {l : List (Reg × BitVec 64)} (h₁ : ∀ p
   obtain ⟨p, hp, rfl⟩ := List.mem_map.mp hr
   rw [h₁ p hp, h₂ p hp]
 
+/-- `a; (b; (c; (d; e)))`, related as `(a; (b; (c; d))); e`. -/
+theorem rel_assoc4 {P Q : State → State → Prop} {a b c d e : Prog isa}
+    (h : RelCT isa P (.seq (.seq a (.seq b (.seq c d))) e) Q) : RelCT isa P (.seq a (.seq b (.seq c (.seq d e)))) Q := by
+  intro s₁ s₂ t₁ t₂ s₁' s₂' hp e₁ e₂
+  cases e₁ with | seq a₁ e₁ => cases e₁ with | seq b₁ e₁ => cases e₁ with | seq c₁ e₁ => cases e₁ with
+    | seq d₁ f₁ =>
+  cases e₂ with | seq a₂ e₂ => cases e₂ with | seq b₂ e₂ => cases e₂ with | seq c₂ e₂ => cases e₂ with
+    | seq d₂ f₂ =>
+  obtain ⟨ht, hq⟩ := h _ _ _ _ _ _ hp (.seq (.seq a₁ (.seq b₁ (.seq c₁ d₁))) f₁)
+    (.seq (.seq a₂ (.seq b₂ (.seq c₂ d₂))) f₂)
+  simp only [List.append_assoc] at ht
+  exact ⟨ht, hq⟩
+
 end VG.Proof.AesCcm.X86_64

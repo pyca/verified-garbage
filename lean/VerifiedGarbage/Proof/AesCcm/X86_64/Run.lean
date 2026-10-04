@@ -56,6 +56,10 @@ theorem seq_assoc3 {a b c d : Prog isa} {s : State} {Q : State → Prop}
     (h : WP isa (.seq (.seq a (.seq b c)) d) s Q) : WP isa (.seq a (.seq b (.seq c d))) s Q :=
   WP.seq (WP.mono (WP.seq_iff.mp (WP.assoc h)) fun _ h => WP.assoc h)
 
+theorem seq_assoc4 {a b c d e : Prog isa} {s : State} {Q : State → Prop}
+    (h : WP isa (.seq (.seq a (.seq b (.seq c d))) e) s Q) : WP isa (.seq a (.seq b (.seq c (.seq d e)))) s Q :=
+  WP.seq (WP.mono (WP.seq_iff.mp (WP.assoc h)) fun _ h => seq_assoc3 h)
+
 theorem runBlock_append (a b : List Instr) (s : State) :
     runBlock isa (a ++ b) s = (runBlock isa a s).bind (runBlock isa b) := by
   induction a generalizing s with

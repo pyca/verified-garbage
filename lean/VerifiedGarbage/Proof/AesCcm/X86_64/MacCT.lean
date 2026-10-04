@@ -1,6 +1,7 @@
 import VerifiedGarbage.Proof.AesCcm.X86_64.CTBase
 import VerifiedGarbage.Proof.AesCcm.X86_64.Mac
 import VerifiedGarbage.Proof.AesCcm.X86_64.Args
+import VerifiedGarbage.Proof.AesCcm.X86_64.Tag
 
 /-!
 # AES-CCM on x86-64: the MAC is constant time
@@ -16,11 +17,12 @@ set_option linter.unusedSimpArgs false
 namespace VG.Proof.AesCcm.X86_64
 
 open VG VG.X86_64 VG.X86_64.RegUpd VG.Impl.AesCcm.X86_64
-open VG.Impl.AesGcm.X86_64 (at_ imm ptr copyLoop)
+open VG.Impl.AesGcm.X86_64 (at_ imm ptr copyLoop minLen)
 open VG.Spec.Aes (bytesAt)
 open VG.Proof.Aes.X86_64 (Ctr32Impl)
 open VG.Proof.CmacAes.Stream.X86_64 (UArgs upd_rel)
 open VG.Proof.AesGcm.X86_64 (LoopPre copyLoop_ok)
+open VG.Proof.AesCcm (hdrLen headLen adataBlocks)
 open VG.WriteBytes
 
 /-! ## `updBlock` -/
@@ -453,5 +455,236 @@ theorem absorbPad_rel (v : Ctr32Impl) {K W SP : Addr} (L : Lay K W SP) {R : Nat}
   obtain ⟨-, σ₁, σ₂, -, ⟨o₁, a₁, _, A₁⟩, ⟨o₂, a₂, _, A₂⟩⟩ := h
   exact ⟨o₁.macR L hDW hy16 A₁.env A₁.frame A₁.wr, o₂.macR L hDW hy16 A₂.env A₂.frame A₂.wr,
     ⟨a₁.buf.of_eq A₁.rd A₁.wr, A₁.r12, A₁.rbp⟩, ⟨a₂.buf.of_eq A₂.rd A₂.wr, A₂.r12, A₂.rbp⟩⟩
+
+/-! ## `aad` -/
+
+theorem aadHeadPre_check : ∃ hc, (taint.check (ccmT [.r12, .rbp]) (.seq header (.seq minLen
+    (.seq (.block [.mov .rsi (.reg .r12), .mov .rdi (.reg .r15), .alu .add .rdi (.reg .rbx), .alu .add .rdi (imm bO),
+      .alu .add .r12 (.reg .rcx), .alu .sub .rbp (.reg .rcx)]) copyLoop))) hc).isSome = true := ⟨_, by taint_decide⟩
+
+/-- The first block of the associated data, in two runs. -/
+theorem aadHead_rel (v : Ctr32Impl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} {N A D : Addr} {nl al n tl : Nat}
+    (hR : R = 10 ∨ R = 12 ∨ R = 14) (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 2560⟩) (hn : n ≤ 2 ^ 64)
+    {y : Nat} (hy : y = 0 ∨ y = 96) {P : Addr} {a : Nat} (ha0 : 0 < a) {Q : State → State → Prop}
+    (hQ : ∀ s₁ s₂, Q s₁ s₂ → One K W SP R N A D nl al n tl s₁ ∧ One K W SP R N A D nl al n tl s₂ ∧
+      AbsPre K W SP P a s₁ ∧ AbsPre K W SP P a s₂) :
+    RelCT isa Q (aadHead v.callee v.suffix y) fun _ _ => True := by
+  have r₁ := (rel_taintC [.r12, .rbp] hDW hn (fun s₁ s₂ (h : Q s₁ s₂) => by
+    obtain ⟨o₁, o₂, a₁, a₂⟩ := hQ _ _ h
+    exact Both.of o₁ o₂ (agree_of (l := [(.r12, P), (.rbp, BitVec.ofNat 64 a)])
+      (fun p hp => by simp only [List.mem_cons, List.not_mem_nil, or_false] at hp; rcases hp with rfl | rfl
+                      · exact a₁.r12
+                      · exact a₁.rbp)
+      (fun p hp => by simp only [List.mem_cons, List.not_mem_nil, or_false] at hp; rcases hp with rfl | rfl
+                      · exact a₂.r12
+                      · exact a₂.rbp))) aadHeadPre_check).wpDep
+    (F := fun (σ s' : State) => One K W SP R N A D nl al n tl σ ∧
+      (Env K W SP s' ∧ s'.rd = σ.rd ∧ s'.wr = σ.wr ∧ Frame [⟨W + BitVec.ofNat 64 32, 16⟩] σ.mem s'.mem))
+    fun s₁ s₂ h => by
+      obtain ⟨o₁, o₂, a₁, a₂⟩ := hQ _ _ h
+      exact ⟨WP.mono (aadHeadPre_ok o₁.env a₁.buf ha0 a₁.r12 a₁.rbp) fun _ q => ⟨o₁, q.1, q.2.1, q.2.2.1, q.2.2.2.1⟩,
+        WP.mono (aadHeadPre_ok o₂.env a₂.buf ha0 a₂.r12 a₂.rbp) fun _ q => ⟨o₂, q.1, q.2.1, q.2.2.1, q.2.2.2.1⟩⟩
+  have hm : ∀ r ∈ [(⟨W + BitVec.ofNat 64 32, 16⟩ : Region)], ∃ r' ∈ mutR W SP D n, Region.Sub r r' := fun r hr => by
+    simp only [List.mem_singleton] at hr; subst hr; exact ⟨wA W, by simp, Offset.sub_base W (by decide)⟩
+  refine rel_assoc4 (RelCT.seq r₁ (updBlock_rel v L hR hDW hn hy (N := N) (A := A) (nl := nl) (al := al) (tl := tl)
+    fun s₁ s₂ h => ?_))
+  obtain ⟨-, σ₁, σ₂, -, ⟨o₁, E₁, -, w₁, f₁⟩, ⟨o₂, E₂, -, w₂, f₂⟩⟩ := h
+  exact ⟨E₁, E₂, slots_mut L hDW (f₁.sub hm) o₁.sl, slots_mut L hDW (f₂.sub hm) o₂.sl, w₁.trans o₁.wr,
+    w₂.trans o₂.wr, fun _ h => nomatch h⟩
+
+theorem aadBlk_ok {K W SP : Addr} {s : State} (E : Env K W SP s) {R : Nat} {N A D : Addr} {nl al n tl : Nat}
+    (S : Slots W R N A D nl al n tl s.mem) (ha : al < 2 ^ 64) :
+    WP isa (.block [.mov .r12 (.mem (at_ .r15 aadO)), .mov .rbp (.mem (at_ .r15 alenO)), .alu .test .rbp (.reg .rbp)])
+      s fun s₁ => s₁.mem = s.mem ∧ s₁.gpr .r12 = A ∧ s₁.gpr .rbp = BitVec.ofNat 64 al ∧
+        s₁.zf = some (decide (al = 0)) ∧ (∀ r ∈ [Reg.r13, .r15, .rsp], s₁.gpr r = s.gpr r) ∧ s₁.rd = s.rd ∧
+        s₁.wr = s.wr := by
+  have h15 := E.r15
+  have r₁ := E.perm.wR (show 176 + 8 ≤ 2560 by decide)
+  have r₂ := E.perm.wR (show 184 + 8 ≤ 2560 by decide)
+  have hAp := S.aad
+  have hal := S.alen
+  refine WP.of_runBlock ⟨_, by crun [h15, r₁, r₂], ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · rfl
+  · simp [gpr_setReg, gpr_arithFlags, hAp]
+  · simp [gpr_setReg, gpr_arithFlags, hal]
+  · simp only [zf_arithFlags, gpr_setReg, ite_true, ite_false, reduceCtorEq, hal, and_self_beq ha]
+  · intro r hr; simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl <;> simp [gpr_setReg, gpr_arithFlags]
+  all_goals rfl
+
+theorem aadBlk_check : ∃ hc, ((taint.check (ccmT [])
+    (.block [.mov .r12 (.mem (at_ .r15 aadO)), .mov .rbp (.mem (at_ .r15 alenO)), .alu .test .rbp (.reg .rbp)])
+    hc).map (·.flags)) = some true := ⟨_, by taint_decide⟩
+
+/-- The associated data, in two runs. -/
+theorem aad_rel (v : Ctr32Impl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} {N A D : Addr} {nl al n tl : Nat}
+    (hR : R = 10 ∨ R = 12 ∨ R = 14) (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 2560⟩) (hn : n ≤ 2 ^ 64)
+    {y : Nat} (hy : y = 0 ∨ y = 96) {Q : State → State → Prop}
+    (hQ : ∀ s₁ s₂, Q s₁ s₂ → One K W SP R N A D nl al n tl s₁ ∧ One K W SP R N A D nl al n tl s₂ ∧
+      Buf K W SP s₁ A al ∧ Buf K W SP s₂ A al) :
+    RelCT isa Q (aad v.callee v.suffix y) fun _ _ => True := by
+  have hy16 : y + 16 ≤ 112 := by omega
+  have r₁ := (rel_flagsC [] hDW hn (fun s₁ s₂ (h : Q s₁ s₂) => by
+    obtain ⟨o₁, o₂, -, -⟩ := hQ _ _ h; exact Both.of o₁ o₂ fun _ h => nomatch h) aadBlk_check).wpDep
+    (F := fun (σ s' : State) => One K W SP R N A D nl al n tl σ ∧ Buf K W SP σ A al ∧
+      (s'.mem = σ.mem ∧ s'.gpr .r12 = A ∧ s'.gpr .rbp = BitVec.ofNat 64 al ∧
+        s'.zf = some (decide (al = 0)) ∧ (∀ r ∈ [Reg.r13, .r15, .rsp], s'.gpr r = σ.gpr r) ∧ s'.rd = σ.rd ∧
+        s'.wr = σ.wr))
+    fun s₁ s₂ h => by
+      obtain ⟨o₁, o₂, b₁, b₂⟩ := hQ _ _ h
+      exact ⟨WP.mono (aadBlk_ok o₁.env o₁.sl b₁.lt) fun _ q => ⟨o₁, b₁, q⟩,
+        WP.mono (aadBlk_ok o₂.env o₂.sl b₂.lt) fun _ q => ⟨o₂, b₂, q⟩⟩
+  refine RelCT.seq r₁ (RelCT.ite (fun s₁ s₂ h => eval_e_eq h.1.2) (RelCT.block_nil fun _ _ _ => trivial) ?_)
+  -- The associated data is not empty.
+  have hA : ∀ s₁ s₂, ((s₁.cf = s₂.cf ∧ s₁.zf = s₂.zf) ∧ ∃ σ₁ σ₂, Q σ₁ σ₂ ∧
+      (One K W SP R N A D nl al n tl σ₁ ∧ Buf K W SP σ₁ A al ∧ (s₁.mem = σ₁.mem ∧ s₁.gpr .r12 = A ∧
+        s₁.gpr .rbp = BitVec.ofNat 64 al ∧ s₁.zf = some (decide (al = 0)) ∧
+        (∀ r ∈ [Reg.r13, .r15, .rsp], s₁.gpr r = σ₁.gpr r) ∧ s₁.rd = σ₁.rd ∧ s₁.wr = σ₁.wr)) ∧
+      (One K W SP R N A D nl al n tl σ₂ ∧ Buf K W SP σ₂ A al ∧ (s₂.mem = σ₂.mem ∧ s₂.gpr .r12 = A ∧
+        s₂.gpr .rbp = BitVec.ofNat 64 al ∧ s₂.zf = some (decide (al = 0)) ∧
+        (∀ r ∈ [Reg.r13, .r15, .rsp], s₂.gpr r = σ₂.gpr r) ∧ s₂.rd = σ₂.rd ∧ s₂.wr = σ₂.wr))) ∧
+      isa.eval .e s₁ = some false →
+      (One K W SP R N A D nl al n tl s₁ ∧ AbsPre K W SP A al s₁) ∧
+      (One K W SP R N A D nl al n tl s₂ ∧ AbsPre K W SP A al s₂) ∧ 0 < al :=
+    fun s₁ s₂ ⟨⟨_, σ₁, σ₂, _, ⟨o₁, b₁, m₁, h₁, p₁, z₁, g₁, rd₁, wr₁⟩, ⟨o₂, b₂, m₂, h₂, p₂, _, g₂, rd₂, wr₂⟩⟩, he⟩ => by
+      refine ⟨⟨⟨o₁.env.keep g₁ rd₁ wr₁, m₁ ▸ o₁.sl, wr₁.trans o₁.wr⟩, ⟨b₁.of_eq rd₁ wr₁, h₁, p₁⟩⟩,
+        ⟨⟨o₂.env.keep g₂ rd₂ wr₂, m₂ ▸ o₂.sl, wr₂.trans o₂.wr⟩, ⟨b₂.of_eq rd₂ wr₂, h₂, p₂⟩⟩, ?_⟩
+      rcases Nat.eq_zero_or_pos al with h0 | h0
+      · rw [show isa.eval .e s₁ = s₁.zf from rfl, z₁, h0] at he; cases he
+      · exact h0
+  rcases Nat.eq_zero_or_pos al with h0 | h0
+  · exact RelCT.of_false fun s₁ s₂ h => by have := (hA s₁ s₂ h).2.2; omega
+  have hl : headLen al ≤ al := by unfold headLen; have := Proof.AesCcm.hdrLen_le al; omega
+  have r₂ := (aadHead_rel v L hR hDW hn hy h0 (P := A) (A := A) (N := N) (nl := nl) (tl := tl)
+    fun s₁ s₂ h => by obtain ⟨⟨o₁, a₁⟩, ⟨o₂, a₂⟩, -⟩ := hA s₁ s₂ h; exact ⟨o₁, o₂, a₁, a₂⟩).wpDep
+    (F := fun (σ s' : State) => One K W SP R N A D nl al n tl σ ∧ AbsPre K W SP A al σ ∧
+      ∃ Y, @Absorbed K W SP σ y (A + BitVec.ofNat 64 (headLen al)) (al - headLen al) Y s')
+    fun s₁ s₂ h => by
+      obtain ⟨⟨o₁, a₁⟩, ⟨o₂, a₂⟩, -⟩ := hA s₁ s₂ h
+      exact ⟨WP.mono (aadHead_ok v L o₁.env hR o₁.sl.rounds hy a₁.buf h0 a₁.r12 a₁.rbp) fun _ q => ⟨o₁, a₁, _, q⟩,
+        WP.mono (aadHead_ok v L o₂.env hR o₂.sl.rounds hy a₂.buf h0 a₂.r12 a₂.rbp) fun _ q => ⟨o₂, a₂, _, q⟩⟩
+  refine RelCT.seq r₂ (absorbPad_rel v L hR hDW hn hy (N := N) (A := A) (nl := nl) (al := al) (tl := tl)
+    (P := A + BitVec.ofNat 64 (headLen al)) (len := al - headLen al)
+    fun s₁ s₂ h => ?_)
+  obtain ⟨-, σ₁, σ₂, -, ⟨o₁, a₁, _, A₁⟩, ⟨o₂, a₂, _, A₂⟩⟩ := h
+  exact ⟨o₁.macR L hDW hy16 A₁.env A₁.frame A₁.wr, o₂.macR L hDW hy16 A₂.env A₂.frame A₂.wr,
+    ⟨(a₁.buf.drop hl).of_eq A₁.rd A₁.wr, A₁.r12, A₁.rbp⟩, ⟨(a₂.buf.drop hl).of_eq A₂.rd A₂.wr, A₂.r12, A₂.rbp⟩⟩
+
+/-! ## `mac` and `tag` -/
+
+theorem macBlk_ok {K W SP : Addr} {s : State} (E : Env K W SP s) {R : Nat} {N A D : Addr} {nl al n tl : Nat}
+    (S : Slots W R N A D nl al n tl s.mem) :
+    WP isa (.block [.mov .r12 (.mem (at_ .r15 dataO)), .mov .rbp (.mem (at_ .r15 lenO))]) s fun s₃ =>
+      s₃.mem = s.mem ∧ s₃.gpr .r12 = D ∧ s₃.gpr .rbp = BitVec.ofNat 64 n ∧
+      (∀ r, r ≠ .r12 → r ≠ .rbp → s₃.gpr r = s.gpr r) ∧ s₃.rd = s.rd ∧ s₃.wr = s.wr := by
+  have h15 := E.r15
+  have r₁ := E.perm.wR (show 192 + 8 ≤ 2560 by decide)
+  have r₂ := E.perm.wR (show 200 + 8 ≤ 2560 by decide)
+  have hd := S.data
+  have hl := S.len
+  refine WP.of_runBlock ⟨_, by crun [h15, r₁, r₂], ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · rfl
+  · simp [gpr_setReg, hd]
+  · simp [gpr_setReg, hl]
+  · intro r a b; simp [gpr_setReg, a, b]
+  all_goals rfl
+
+theorem macBlk_check : ∃ hc, (taint.check (ccmT [])
+    (.block [.mov .r12 (.mem (at_ .r15 dataO)), .mov .rbp (.mem (at_ .r15 lenO))]) hc).isSome = true :=
+  ⟨_, by taint_decide⟩
+
+/-- The MAC, in two runs. -/
+theorem mac_rel (v : Ctr32Impl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} {N A D : Addr} {nl al n tl : Nat}
+    (hR : R = 10 ∨ R = 12 ∨ R = 14) (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 2560⟩) (hn : n ≤ 2 ^ 64)
+    (h7 : 7 ≤ nl) (h13 : nl ≤ 13) (ht4 : 4 ≤ tl) (ht16 : tl ≤ 16) (hte : tl % 2 = 0) (hal : al < 2 ^ 64)
+    (hn' : n < 256 ^ (15 - nl)) {y : Nat} (hy : y = 0 ∨ y = 96) {Q : State → State → Prop}
+    (hQ : ∀ s₁ s₂, Q s₁ s₂ → (One K W SP R N A D nl al n tl s₁ ∧ C0 W nl s₁ ∧ Buf K W SP s₁ A al ∧
+      Buf K W SP s₁ D n) ∧ (One K W SP R N A D nl al n tl s₂ ∧ C0 W nl s₂ ∧ Buf K W SP s₂ A al ∧ Buf K W SP s₂ D n)) :
+    RelCT isa Q (mac v.callee v.suffix y) fun _ _ => True := by
+  have hy16 : y + 16 ≤ 112 := by omega
+  have r₁ := (b0_rel v L hR hDW hn h7 h13 ht4 ht16 hte hal hn' hy (P := Q) fun s₁ s₂ h => by
+    obtain ⟨⟨o₁, c₁, -⟩, ⟨o₂, c₂, -⟩⟩ := hQ _ _ h
+    exact ⟨Both.of o₁ o₂ (fun _ h => nomatch h), c₁, c₂⟩).wpDep
+    (F := fun (σ s' : State) => One K W SP R N A D nl al n tl σ ∧ Buf K W SP σ A al ∧ Buf K W SP σ D n ∧
+      (Env K W SP s' ∧ Frame (macR W SP y) σ.mem s'.mem ∧ s'.rd = σ.rd ∧ s'.wr = σ.wr))
+    fun s₁ s₂ h => by
+      obtain ⟨⟨o₁, ⟨_, l₁, c₁⟩, a₁, d₁⟩, ⟨o₂, ⟨_, l₂, c₂⟩, a₂, d₂⟩⟩ := hQ _ _ h
+      exact ⟨WP.mono (b0_ok v L o₁.env o₁.sl hR l₁ h7 h13 ht4 ht16 hte hal hn' c₁ hy) fun _ q =>
+          ⟨o₁, a₁, d₁, q.1, q.2.1, q.2.2.2.1, q.2.2.2.2⟩,
+        WP.mono (b0_ok v L o₂.env o₂.sl hR l₂ h7 h13 ht4 ht16 hte hal hn' c₂ hy) fun _ q =>
+          ⟨o₂, a₂, d₂, q.1, q.2.1, q.2.2.2.1, q.2.2.2.2⟩⟩
+  have hB : ∀ s₁ s₂, (True ∧ ∃ σ₁ σ₂, Q σ₁ σ₂ ∧
+      (One K W SP R N A D nl al n tl σ₁ ∧ Buf K W SP σ₁ A al ∧ Buf K W SP σ₁ D n ∧
+        (Env K W SP s₁ ∧ Frame (macR W SP y) σ₁.mem s₁.mem ∧ s₁.rd = σ₁.rd ∧ s₁.wr = σ₁.wr)) ∧
+      (One K W SP R N A D nl al n tl σ₂ ∧ Buf K W SP σ₂ A al ∧ Buf K W SP σ₂ D n ∧
+        (Env K W SP s₂ ∧ Frame (macR W SP y) σ₂.mem s₂.mem ∧ s₂.rd = σ₂.rd ∧ s₂.wr = σ₂.wr))) →
+      (One K W SP R N A D nl al n tl s₁ ∧ Buf K W SP s₁ A al ∧ Buf K W SP s₁ D n) ∧
+      (One K W SP R N A D nl al n tl s₂ ∧ Buf K W SP s₂ A al ∧ Buf K W SP s₂ D n) :=
+    fun s₁ s₂ ⟨_, σ₁, σ₂, _, ⟨o₁, a₁, d₁, E₁, f₁, rd₁, wr₁⟩, ⟨o₂, a₂, d₂, E₂, f₂, rd₂, wr₂⟩⟩ =>
+      ⟨⟨o₁.macR L hDW hy16 E₁ f₁ wr₁, a₁.of_eq rd₁ wr₁, d₁.of_eq rd₁ wr₁⟩,
+        ⟨o₂.macR L hDW hy16 E₂ f₂ wr₂, a₂.of_eq rd₂ wr₂, d₂.of_eq rd₂ wr₂⟩⟩
+  have r₂ := (aad_rel v L hR hDW hn hy (A := A) (N := N) (nl := nl) (tl := tl) fun s₁ s₂ h => by
+    obtain ⟨⟨o₁, a₁, -⟩, ⟨o₂, a₂, -⟩⟩ := hB s₁ s₂ h; exact ⟨o₁, o₂, a₁, a₂⟩).wpDep
+    (F := fun (σ s' : State) => One K W SP R N A D nl al n tl σ ∧ Buf K W SP σ D n ∧
+      ∃ Y, @MacStep K W SP σ y Y s')
+    fun s₁ s₂ h => by
+      obtain ⟨⟨o₁, a₁, d₁⟩, ⟨o₂, a₂, d₂⟩⟩ := hB s₁ s₂ h
+      exact ⟨WP.mono (aad_ok v L o₁.env o₁.sl hR hy a₁) fun _ q => ⟨o₁, d₁, _, q⟩,
+        WP.mono (aad_ok v L o₂.env o₂.sl hR hy a₂) fun _ q => ⟨o₂, d₂, _, q⟩⟩
+  have hC : ∀ (PP : State → State → Prop) s₁ s₂, (True ∧ ∃ σ₁ σ₂, PP σ₁ σ₂ ∧
+      (One K W SP R N A D nl al n tl σ₁ ∧ Buf K W SP σ₁ D n ∧ ∃ Y, @MacStep K W SP σ₁ y Y s₁) ∧
+      (One K W SP R N A D nl al n tl σ₂ ∧ Buf K W SP σ₂ D n ∧ ∃ Y, @MacStep K W SP σ₂ y Y s₂)) →
+      (One K W SP R N A D nl al n tl s₁ ∧ Buf K W SP s₁ D n) ∧ (One K W SP R N A D nl al n tl s₂ ∧ Buf K W SP s₂ D n) :=
+    fun _ s₁ s₂ ⟨_, σ₁, σ₂, _, ⟨o₁, d₁, _, M₁⟩, ⟨o₂, d₂, _, M₂⟩⟩ =>
+      ⟨⟨o₁.macR L hDW hy16 M₁.env M₁.frame M₁.wr, d₁.of_eq M₁.rd M₁.wr⟩,
+        ⟨o₂.macR L hDW hy16 M₂.env M₂.frame M₂.wr, d₂.of_eq M₂.rd M₂.wr⟩⟩
+  refine RelCT.seq r₁ (RelCT.seq r₂ (RelCT.seq ((rel_taintC (K := K) (SP := SP) (R := R) (N := N) (A := A)
+      (nl := nl) (al := al) (tl := tl) [] hDW hn ?hb macBlk_check).wpDep
+    (F := fun (σ s' : State) => One K W SP R N A D nl al n tl σ ∧ Buf K W SP σ D n ∧
+      (s'.mem = σ.mem ∧ s'.gpr .r12 = D ∧ s'.gpr .rbp = BitVec.ofNat 64 n ∧
+        (∀ r, r ≠ .r12 → r ≠ .rbp → s'.gpr r = σ.gpr r) ∧ s'.rd = σ.rd ∧ s'.wr = σ.wr)) ?hw)
+    (absorbPad_rel v L hR hDW hn hy (N := N) (A := A) (nl := nl) (al := al) (tl := tl) (P := D) (len := n) ?hq)))
+  case hb =>
+    intro s₁ s₂ h
+    obtain ⟨⟨o₁, -⟩, ⟨o₂, -⟩⟩ := hC _ s₁ s₂ h; exact Both.of o₁ o₂ fun _ h => nomatch h
+  case hw =>
+    intro s₁ s₂ h
+    obtain ⟨⟨o₁, d₁⟩, ⟨o₂, d₂⟩⟩ := hC _ s₁ s₂ h
+    exact ⟨WP.mono (macBlk_ok o₁.env o₁.sl) fun _ q => ⟨o₁, d₁, q⟩,
+      WP.mono (macBlk_ok o₂.env o₂.sl) fun _ q => ⟨o₂, d₂, q⟩⟩
+  intro s₁ s₂ h
+  obtain ⟨_, σ₁, σ₂, _, ⟨o₁, d₁, m₁, h12₁, hbp₁, g₁, rd₁, wr₁⟩, ⟨o₂, d₂, m₂, h12₂, hbp₂, g₂, rd₂, wr₂⟩⟩ := h
+  have keep : ∀ {σ s' : State}, One K W SP R N A D nl al n tl σ → s'.mem = σ.mem →
+      (∀ r, r ≠ .r12 → r ≠ .rbp → s'.gpr r = σ.gpr r) → s'.rd = σ.rd → s'.wr = σ.wr →
+      One K W SP R N A D nl al n tl s' := fun o m g rd wr =>
+    ⟨o.env.keep (fun r hr => g r (by
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr; rcases hr with rfl | rfl | rfl <;> decide)
+      (by simp only [List.mem_cons, List.not_mem_nil, or_false] at hr; rcases hr with rfl | rfl | rfl <;> decide))
+      rd wr, m ▸ o.sl, wr.trans o.wr⟩
+  exact ⟨keep o₁ m₁ g₁ rd₁ wr₁, keep o₂ m₂ g₂ rd₂ wr₂, ⟨d₁.of_eq rd₁ wr₁, h12₁, hbp₁⟩, ⟨d₂.of_eq rd₂ wr₂, h12₂, hbp₂⟩⟩
+
+theorem tagArgs_check {y : Nat} (hy : y = 0 ∨ y = 96) : ∃ hc, (taint.check (ccmT [])
+    (.block ([.mov .rsi (.mem (at_ .r15 roundsO)), .mov32 .rax (imm 0)] ++ ctrAt ++ [.mov .rdi (.reg .r13)] ++
+      ptr .rdx .r15 c1O ++ ptr .rcx .r15 y ++ [.mov32 .r8 (imm 1)] ++ ptr .r9 .r15 scrO)) hc).isSome = true := by
+  rcases hy with rfl | rfl <;> exact ⟨_, by taint_decide⟩
+
+/-- The tag, in two runs. -/
+theorem tag_rel (v : Ctr32Impl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} {N A D : Addr} {nl al n tl : Nat}
+    (hR : R = 10 ∨ R = 12 ∨ R = 14) (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 2560⟩) (hn : n ≤ 2 ^ 64)
+    (h7 : 7 ≤ nl) (h13 : nl ≤ 13) {y : Nat} (hy : y = 0 ∨ y = 96) {Q : State → State → Prop}
+    (hQ : ∀ s₁ s₂, Q s₁ s₂ → (One K W SP R N A D nl al n tl s₁ ∧ C0 W nl s₁) ∧
+      (One K W SP R N A D nl al n tl s₂ ∧ C0 W nl s₂)) :
+    RelCT isa Q (tag v.callee y) fun _ _ => True := by
+  have a := (rel_taintC [] hDW hn (fun s₁ s₂ h => by
+    obtain ⟨⟨o₁, -⟩, ⟨o₂, -⟩⟩ := hQ _ _ h; exact Both.of o₁ o₂ fun _ h => nomatch h) (tagArgs_check hy)).wp
+    (F₁ := fun (s : State) => CtrCall s K (W + BitVec.ofNat 64 64) (W + BitVec.ofNat 64 y) (W + BitVec.ofNat 64 384) R 1 ∧
+      s.gpr .rsp = SP)
+    (F₂ := fun (s : State) => CtrCall s K (W + BitVec.ofNat 64 64) (W + BitVec.ofNat 64 y) (W + BitVec.ofNat 64 384) R 1 ∧
+      s.gpr .rsp = SP)
+    fun s₁ s₂ h => by
+      obtain ⟨⟨o₁, _, l₁, c₁⟩, ⟨o₂, _, l₂, c₂⟩⟩ := hQ _ _ h
+      exact ⟨WP.mono (tagArgs_ok L o₁.env hR o₁.sl.rounds (by omega) (by omega) c₁ hy) fun _ q => ⟨q.2.1, q.1.rsp⟩,
+        WP.mono (tagArgs_ok L o₂.env hR o₂.sl.rounds (by omega) (by omega) c₂ hy) fun _ q => ⟨q.2.1, q.1.rsp⟩⟩
+  exact RelCT.seq a (ctr_rel v fun s₁ s₂ h => ⟨_, _, _, _, _, _, h.2.1.1, h.2.2.1, by rw [h.2.1.2, h.2.2.2]⟩)
 
 end VG.Proof.AesCcm.X86_64

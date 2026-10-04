@@ -21,14 +21,17 @@ open VG.Spec.Aes (bytesAt)
 open VG.Proof.Aes.X86_64 (Ctr32Impl)
 open VG.Proof.AesCcm (hdrLen headLen adataBlocks)
 
-/-- The first block of the associated data. -/
-theorem aadHead_ok (v : Ctr32Impl) {K W SP : Addr} {s : State} (L : Lay K W SP) (E : Env K W SP s) {R : Nat}
-    (hR : R = 10 ∨ R = 12 ∨ R = 14) (hRo : s.mem.readW (W + BitVec.ofNat 64 232) 64 = BitVec.ofNat 64 R)
-    {y : Nat} (hy : y = 0 ∨ y = 96) {A : Addr} {a : Nat} (hA : Buf K W SP s A a) (ha0 : 0 < a)
+/-- The encoding of the length of the associated data and its first bytes in `B`. -/
+theorem aadHeadPre_ok {K W SP : Addr} {s : State} (E : Env K W SP s)
+    {A : Addr} {a : Nat} (hA : Buf K W SP s A a) (ha0 : 0 < a)
     (h12 : s.gpr .r12 = A) (hbp : s.gpr .rbp = BitVec.ofNat 64 a) :
-    WP isa (aadHead v.callee v.suffix y) s (@Absorbed K W SP s y (A + BitVec.ofNat 64 (headLen a)) (a - headLen a)
-      (Spec.Cmac.chain (Spec.Ccm.ctxCiph s.mem K R) (bytesAt s.mem (W + BitVec.ofNat 64 y) 16)
-        [Spec.Ccm.pad16 (Spec.Ccm.encodeLen a ++ (bytesAt s.mem A a).take (headLen a))])) := by
+    WP isa (.seq header (.seq minLen (.seq (.block [.mov .rsi (.reg .r12), .mov .rdi (.reg .r15),
+        .alu .add .rdi (.reg .rbx), .alu .add .rdi (imm bO), .alu .add .r12 (.reg .rcx), .alu .sub .rbp (.reg .rcx)])
+        copyLoop))) s fun s₄ =>
+      Env K W SP s₄ ∧ s₄.rd = s.rd ∧ s₄.wr = s.wr ∧ Frame [⟨W + BitVec.ofNat 64 32, 16⟩] s.mem s₄.mem ∧
+      s₄.gpr .r12 = A + BitVec.ofNat 64 (headLen a) ∧ s₄.gpr .rbp = BitVec.ofNat 64 (a - headLen a) ∧
+      bytesAt s₄.mem (W + BitVec.ofNat 64 32) 16 =
+        Spec.Ccm.pad16 (Spec.Ccm.encodeLen a ++ (bytesAt s.mem A a).take (headLen a)) := by
   have ha := hA.lt
   have hh := Proof.AesCcm.hdrLen_le a
   have hh2 : 2 ≤ hdrLen a := by unfold hdrLen; split <;> [omega; split <;> omega]
@@ -73,7 +76,7 @@ theorem aadHead_ok (v : Ctr32Impl) {K W SP : Addr} {s : State} (L : Lay K W SP) 
     (hA.w.sub_left (Region.sub_prefix hn1'.2.1)).sub_right (Lay.wSub (by omega))
   have lp : LoopPre s₃ A (W + BitVec.ofNat 64 (32 + hdrLen a)) (headLen a) :=
     ⟨hsi, hdi, hcx₃, hn1'.1, by omega, (hA₃.take hn1'.2.1).rd, E₃.perm.wC (by omega), dAB⟩
-  refine WP.seq (WP.mono (copyLoop_ok s₃ lp) fun s₄ ⟨hm₄, hg₄, hrd₄, hwr₄⟩ => ?_)
+  refine WP.mono (copyLoop_ok s₃ lp) fun s₄ ⟨hm₄, hg₄, hrd₄, hwr₄⟩ => ?_
   have E₄ : Env K W SP s₄ := E₃.keep (fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl <;> exact hg₄ _ (by decide) (by decide)) hrd₄ hwr₄
@@ -105,6 +108,19 @@ theorem aadHead_ok (v : Ctr32Impl) {K W SP : Addr} {s : State} (L : Lay K W SP) 
       rw [List.drop_eq_nil_of_le (by rw [hl]; omega), List.nil_append, List.append_assoc,
         show 16 - hdrLen a - (hdrLen a + headLen a - hdrLen a) = 16 - (hdrLen a + headLen a) by omega]
     · exact absurd (congrArg List.length e) (by rw [List.length_append, hl]; simp; omega)
+  exact ⟨E₄, by rw [hrd₄, hrd₃, hrd₂, hrd₁], by rw [hwr₄, hwr₃, hwr₂, hwr₁], fB,
+    by rw [hg₄ _ (by decide) (by decide), h12₃], by rw [hg₄ _ (by decide) (by decide), hbp₃], hB₄⟩
+
+/-- The first block of the associated data. -/
+theorem aadHead_ok (v : Ctr32Impl) {K W SP : Addr} {s : State} (L : Lay K W SP) (E : Env K W SP s) {R : Nat}
+    (hR : R = 10 ∨ R = 12 ∨ R = 14) (hRo : s.mem.readW (W + BitVec.ofNat 64 232) 64 = BitVec.ofNat 64 R)
+    {y : Nat} (hy : y = 0 ∨ y = 96) {A : Addr} {a : Nat} (hA : Buf K W SP s A a) (ha0 : 0 < a)
+    (h12 : s.gpr .r12 = A) (hbp : s.gpr .rbp = BitVec.ofNat 64 a) :
+    WP isa (aadHead v.callee v.suffix y) s (@Absorbed K W SP s y (A + BitVec.ofNat 64 (headLen a)) (a - headLen a)
+      (Spec.Cmac.chain (Spec.Ccm.ctxCiph s.mem K R) (bytesAt s.mem (W + BitVec.ofNat 64 y) 16)
+        [Spec.Ccm.pad16 (Spec.Ccm.encodeLen a ++ (bytesAt s.mem A a).take (headLen a))])) := by
+  refine seq_assoc4 (WP.seq (WP.mono (aadHeadPre_ok E hA ha0 h12 hbp)
+    fun s₄ ⟨E₄, hrd₄, hwr₄, fB, h12₄, hbp₄, hB₄⟩ => ?_))
   have hRo₄ : s₄.mem.readW (W + BitVec.ofNat 64 232) 64 = BitVec.ofNat 64 R := by
     rw [fB.readW (r := ⟨W + BitVec.ofNat 64 232, 8⟩) (Region.contains_self _ _) (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact L.w_w (.inr (by decide)) (by decide) (by decide))
@@ -121,14 +137,14 @@ theorem aadHead_ok (v : Ctr32Impl) {K W SP : Addr} {s : State} (L : Lay K W SP) 
   have hRb : 16 * (R + 1) ≤ 240 := by rcases hR with rfl | rfl | rfl <;> decide
   refine WP.mono (updBlock_ok v L E₄ hR hRo₄ hy) fun s₅ ⟨E₅, g₅, hr₅, hw₅, f₅, h₅⟩ =>
     ⟨E₅, ?_, ?_, (fB.sub fun r hr => ?_).trans (f₅.sub fun r hr => ?_), ?_, ?_, ?_⟩
-  · rw [g₅ _ (by simp), hg₄ _ (by decide) (by decide), h12₃]
-  · rw [g₅ _ (by simp), hg₄ _ (by decide) (by decide), hbp₃]
+  · rw [g₅ _ (by simp), h12₄]
+  · rw [g₅ _ (by simp), hbp₄]
   · simp only [List.mem_singleton] at hr; subst hr; exact sub_mac (by simp)
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl <;> exact sub_mac (by simp)
   · rw [h₅, hY₄, hB₄, ctxCiph_frame fB dK hRb]
-  · rw [hr₅, hrd₄, hrd₃, hrd₂, hrd₁]
-  · rw [hw₅, hwr₄, hwr₃, hwr₂, hwr₁]
+  · rw [hr₅, hrd₄]
+  · rw [hw₅, hwr₄]
 
 /-- What a piece of the MAC leaves: the environment, what it writes, the
 MAC state `Y` at `W + y`, and the permissions. -/

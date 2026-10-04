@@ -18,17 +18,17 @@ open VG.Impl.AesGcm.X86_64 (at_ imm ptr)
 open VG.Spec.Aes (bytesAt)
 open VG.Proof.Aes.X86_64 (Ctr32Impl)
 
-/-- The MAC state at `W + y` XORed with `CIPH_K(Ctr₀)`. -/
-theorem tag_ok (v : Ctr32Impl) {K W SP : Addr} {s : State} (L : Lay K W SP) (E : Env K W SP s) {R : Nat}
+/-- The arguments of the call: `Ctr₀` at `W + 64`. -/
+theorem tagArgs_ok {K W SP : Addr} {s : State} (L : Lay K W SP) (E : Env K W SP s) {R : Nat}
     (hR : R = 10 ∨ R = 12 ∨ R = 14) (hRo : s.mem.readW (W + BitVec.ofNat 64 232) 64 = BitVec.ofNat 64 R)
     {nonce : List Byte} (h7 : 7 ≤ nonce.length) (h13 : nonce.length ≤ 13)
     (hc0 : bytesAt s.mem (W + BitVec.ofNat 64 48) 16 = Spec.Ccm.ctrBlock nonce 0) {y : Nat} (hy : y = 0 ∨ y = 96) :
-    WP isa (tag v.callee y) s fun s' => Env K W SP s' ∧
-      (∀ r ∈ [Reg.rbx, .rbp, .r12, .r14], s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
-      Frame [⟨W + BitVec.ofNat 64 64, 16⟩, ⟨W + BitVec.ofNat 64 y, 16⟩, ⟨W + BitVec.ofNat 64 384, 2176⟩,
-        below SP 16] s.mem s'.mem ∧
-      bytesAt s'.mem (W + BitVec.ofNat 64 y) 16 =
-        xorFrom (Spec.Ccm.ctxCiph s.mem K R) nonce 0 (bytesAt s.mem (W + BitVec.ofNat 64 y) 16) := by
+    WP isa (.block ([.mov .rsi (.mem (at_ .r15 roundsO)), .mov32 .rax (imm 0)] ++ ctrAt ++ [.mov .rdi (.reg .r13)] ++
+      ptr .rdx .r15 c1O ++ ptr .rcx .r15 y ++ [.mov32 .r8 (imm 1)] ++ ptr .r9 .r15 scrO)) s fun s₃ =>
+      Env K W SP s₃ ∧ CtrCall s₃ K (W + BitVec.ofNat 64 64) (W + BitVec.ofNat 64 y) (W + BitVec.ofNat 64 384) R 1 ∧
+      (∀ r ∈ [Reg.rbx, .rbp, .r12, .r14], s₃.gpr r = s.gpr r) ∧ s₃.rd = s.rd ∧ s₃.wr = s.wr ∧
+      Frame [⟨W + BitVec.ofNat 64 64, 16⟩] s.mem s₃.mem ∧
+      bytesAt s₃.mem (W + BitVec.ofNat 64 64) 16 = Spec.Ccm.ctrBlock nonce 0 := by
   have h15 := E.r15
   have h13' := E.r13
   have r₁ := E.perm.wR (show 232 + 8 ≤ 2560 by decide)
@@ -72,7 +72,7 @@ theorem tag_ok (v : Ctr32Impl) {K W SP : Addr} {s : State} (L : Lay K W SP) (E :
     all_goals rfl
   have E₃ : Env K W SP s₃ := E₂.keep (fun r hr => hg₃ r (by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr ⊢; rcases hr with rfl | rfl | rfl <;> simp)) hrd₃ hwr₃
-  refine WP.seq (WP.of_runBlock ⟨s₃, ?_, ?_⟩)
+  refine WP.of_runBlock ⟨s₃, ?_, ?_⟩
   · simp only [List.append_assoc]
     rw [runBlock_append, run₁, Option.bind_some, runBlock_append, run₂, Option.bind_some]
     simpa only [List.append_assoc] using run₃
@@ -82,26 +82,44 @@ theorem tag_ok (v : Ctr32Impl) {K W SP : Addr} {s : State} (L : Lay K W SP) (E :
     · exact L.w_w (.inl (by decide)) (by decide) (by decide)
     · exact L.w_w (.inr (by decide)) (by decide) (by decide)
   have hqk : (⟨K, 240⟩ : Region).Disjoint ⟨W + BitVec.ofNat 64 y, 16 * 1⟩ := L.k_w.sub_right (Lay.wSub (by omega))
-  refine WP.mono (ctr_call v (cargs L E₃ hR (c := 64) (by decide) hq hqc hqk (E₃.perm.wC (d := y) (n := 16 * 1) (by omega))
-    hdi hsi hdx hcx hr8 hr9)) fun s₄ h => ?_
-  -- The frame of the whole block.
-  have f₃ : Frame [⟨W + BitVec.ofNat 64 64, 16⟩] s.mem s₃.mem := by rw [hm₃, ← hm₁]; exact f₂
+  refine ⟨E₃, cargs L E₃ hR (c := 64) (by decide) hq hqc hqk (E₃.perm.wC (d := y) (n := 16 * 1) (by omega))
+    hdi hsi hdx hcx hr8 hr9, fun r hr => ?_, by rw [hrd₃, hrd₂, hrd₁], by rw [hwr₃, hwr₂, hwr₁],
+    by rw [hm₃, ← hm₁]; exact f₂, by rw [hm₃]; exact hc₂⟩
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  have h3 : r ∈ [Reg.r13, .r15, .rsp, .rbx, .rbp, .r12, .r14] := by rcases hr with rfl | rfl | rfl | rfl <;> simp
+  have ha : r ≠ .rax := by rcases hr with rfl | rfl | rfl | rfl <;> decide
+  have hc : r ≠ .rcx := by rcases hr with rfl | rfl | rfl | rfl <;> decide
+  have hd : r ≠ .rdx := by rcases hr with rfl | rfl | rfl | rfl <;> decide
+  have hs : r ≠ .rsi := by rcases hr with rfl | rfl | rfl | rfl <;> decide
+  rw [hg₃ r h3, hg₂ r ha hc hd, hg₁ r ha hs]
+
+/-- The MAC state at `W + y` XORed with `CIPH_K(Ctr₀)`. -/
+theorem tag_ok (v : Ctr32Impl) {K W SP : Addr} {s : State} (L : Lay K W SP) (E : Env K W SP s) {R : Nat}
+    (hR : R = 10 ∨ R = 12 ∨ R = 14) (hRo : s.mem.readW (W + BitVec.ofNat 64 232) 64 = BitVec.ofNat 64 R)
+    {nonce : List Byte} (h7 : 7 ≤ nonce.length) (h13 : nonce.length ≤ 13)
+    (hc0 : bytesAt s.mem (W + BitVec.ofNat 64 48) 16 = Spec.Ccm.ctrBlock nonce 0) {y : Nat} (hy : y = 0 ∨ y = 96) :
+    WP isa (tag v.callee y) s fun s' => Env K W SP s' ∧
+      (∀ r ∈ [Reg.rbx, .rbp, .r12, .r14], s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
+      Frame [⟨W + BitVec.ofNat 64 64, 16⟩, ⟨W + BitVec.ofNat 64 y, 16⟩, ⟨W + BitVec.ofNat 64 384, 2176⟩,
+        below SP 16] s.mem s'.mem ∧
+      bytesAt s'.mem (W + BitVec.ofNat 64 y) 16 =
+        xorFrom (Spec.Ccm.ctxCiph s.mem K R) nonce 0 (bytesAt s.mem (W + BitVec.ofNat 64 y) 16) := by
+  refine WP.seq (WP.mono (tagArgs_ok L E hR hRo h7 h13 hc0 hy) fun s₃ ⟨E₃, C₃, g₃, hrd₃, hwr₃, f₃, hc₃⟩ => ?_)
+  refine WP.mono (ctr_call v C₃) fun s₄ h => ?_
+  have hqc : (⟨W + BitVec.ofNat 64 y, 16 * 1⟩ : Region).Disjoint ⟨W + BitVec.ofNat 64 64, 16⟩ := by
+    rcases hy with rfl | rfl
+    · exact L.w_w (.inl (by decide)) (by decide) (by decide)
+    · exact L.w_w (.inr (by decide)) (by decide) (by decide)
   have hRb : 16 * (R + 1) ≤ 240 := by rcases hR with rfl | rfl | rfl <;> decide
   have hK₃ : Spec.Ccm.ctxCiph s₃.mem K R = Spec.Ccm.ctxCiph s.mem K R :=
     ctxCiph_frame f₃ (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact L.k_w.sub_right (Lay.wSub (by decide))) hRb
   have hY₃ : bytesAt s₃.mem (W + BitVec.ofNat 64 y) 16 = bytesAt s.mem (W + BitVec.ofNat 64 y) 16 :=
     bytesAt_frame f₃ (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact hqc) (by decide)
-  refine ⟨E₃.of_saved h.saved h.rd h.wr, fun r hr => ?_, by rw [h.rd, hrd₃, hrd₂, hrd₁],
-    by rw [h.wr, hwr₃, hwr₂, hwr₁], ?_, ?_⟩
-  · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    have hr' : r ∈ calleeSaved := by rcases hr with rfl | rfl | rfl | rfl <;> decide
-    have h3 : r ∈ [Reg.r13, .r15, .rsp, .rbx, .rbp, .r12, .r14] := by rcases hr with rfl | rfl | rfl | rfl <;> simp
-    have ha : r ≠ .rax := by rcases hr with rfl | rfl | rfl | rfl <;> decide
-    have hc : r ≠ .rcx := by rcases hr with rfl | rfl | rfl | rfl <;> decide
-    have hd : r ≠ .rdx := by rcases hr with rfl | rfl | rfl | rfl <;> decide
-    have hs : r ≠ .rsi := by rcases hr with rfl | rfl | rfl | rfl <;> decide
-    rw [h.saved r hr', hg₃ r h3, hg₂ r ha hc hd, hg₁ r ha hs]
+  refine ⟨E₃.of_saved h.saved h.rd h.wr, fun r hr => ?_, by rw [h.rd, hrd₃], by rw [h.wr, hwr₃], ?_, ?_⟩
+  · have hr' : r ∈ calleeSaved := by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr; rcases hr with rfl | rfl | rfl | rfl <;> decide
+    rw [h.saved r hr', g₃ r hr]
   · have f₄ := h.frame
     rw [E₃.rsp] at f₄
     refine (f₃.sub fun r hr => ⟨r, by simp at hr ⊢; exact .inl hr, fun _ h => h⟩).trans
@@ -117,7 +135,7 @@ theorem tag_ok (v : Ctr32Impl) {K W SP : Addr} {s : State} (L : Lay K W SP) (E :
       (fun i hi => by
         rw [show i = 0 by omega, Nat.zero_add]
         show Spec.Gcm.ofBytes _ = _
-        rw [hm₃, hc₂]) h.out
+        rw [hc₃]) h.out
     rw [Nat.mul_one] at hc
     rw [hc, hK₃, hY₃]
 
