@@ -61,6 +61,10 @@ Modelling choices:
   (see `TCB/Code.lean`). A linker veneer between a `bl` and its target may
   change `x16` and `x17` (IP0, IP1: AAPCS64 §6.1.1, "Use of IP0 and IP1 by
   the linker"), so a call leaves unknown values in them too.
+* A `static` the code reads (`Artifact.consts`) is at the address
+  `State.syms name`, where `name` is its name, which `adrSym` (`adrp` and
+  `add`, resolved by the linker) puts in a register. No instruction changes
+  `syms`: a static's address is fixed for the run of the program.
 * The stack pointer is always 16-byte aligned (AAPCS64 §6.4.5.1, "SP mod 16
   = 0"), and a frame moves it by 16 bytes, so the model does not check the
   stack alignment that the push and pop of a frame require.
@@ -159,6 +163,8 @@ structure State where
   call stores and, on the ARM targets, what a linker veneer may leave in the
   intra-procedure-call scratch registers (see `TCB/Code.lean`). -/
   unknowns : Nat → BitVec 64 := fun _ => 0
+  /-- The address of each `static` the code can name (`adrSym`), by name. -/
+  syms : String → BitVec 64 := fun _ => 0
 
 inductive LogicOp | and | orr | eor
   deriving DecidableEq, Repr
@@ -326,6 +332,9 @@ inductive Instr
   PSTATE.C is set, else `m`; the flags are not set. (`lo` is `hs` with the
   sources swapped.) -/
   | csel (sz : Size) (d n m : Reg)
+  /-- `adrp d, name` then `add d, d, :lo12:name` (ADRP, ADD (immediate), no
+  shift): the address of the `static` `name`, `State.syms name`. -/
+  | adrSym (d : Reg) (name : String)
   /-- `add d, n, #imm` (ADD (immediate), `imm < 4096`, no shift) -/
   | addImm (sz : Size) (d n : Reg) (imm : Nat)
   /-- `sub d, n, #imm` (SUB (immediate), `imm < 4096`, no shift) -/
@@ -780,6 +789,17 @@ def VOp.eval (s : State) : VOp → Option (VReg × BitVec 128)
   (`cond = '0010'`) `ConditionHolds` is `PSTATE.C == '1'` (DDI 0487 C6.2 and
   J1.3, `ConditionHolds`); the flags are not set. See
   https://developer.arm.com/documentation/ddi0596/2020-12/Base-Instructions/CSEL--Conditional-Select-;
+* "ADRP" then "ADD (immediate)" into the same register (`adrSym`): ADRP's
+  `base = PC[]; base<11:0> = Zeros(12); X[d, 64] = base + imm`, with `imm`
+  the page offset the linker writes for the static's address `S`
+  (`Page(S) - Page(P)`, `Page(x) = x` with bits 11:0 cleared: ELF for the
+  Arm 64-bit Architecture, `R_AARCH64_ADR_PREL_PG_HI21`; Mach-O's
+  `ARM64_RELOC_PAGE21`), so `X[d] = Page(S)`; then ADD's `X[d, 64] = X[d] +
+  imm12`, with `imm12 = S<11:0>` (`R_AARCH64_ADD_ABS_LO12_NC`;
+  `ARM64_RELOC_PAGEOFF12`): `X[d] = S`, the flags not set. A static beyond
+  ADRP's range (±4 GB) does not link. See Arm DDI 0487 C6.2 and
+  https://developer.arm.com/documentation/ddi0602/2025-09/Base-Instructions/ADRP--Form-PC-relative-address-to-4KB-page-
+  https://github.com/ARM-software/abi-aa/blob/main/aaelf64/aaelf64.rst;
 * "AND/ORR/EOR (shifted register)" and "BIC (shifted register)": the
   ROR forms use `operand2 = ShiftReg(m, SRType_ROR, shift_amount, datasize)`;
   BIC complements this rotated operand before AND. `imm6<5> = 1` is
@@ -830,6 +850,7 @@ def exec : Instr → State → Option State
   | .sbc sz d n m, s =>
     some (s.write sz d (s.read sz n + ~~~s.read sz m + BitVec.ofNat sz.bits s.c.toNat))
   | .csel sz d n m, s => some (s.write sz d (if s.c then s.read sz n else s.read sz m))
+  | .adrSym d name, s => some (s.write .x d (s.syms name))
   | .addImm sz d n imm, s =>
     if imm < 4096 then some (s.write sz d (s.read sz n + BitVec.ofNat _ imm)) else none
   | .subImm sz d n imm, s =>

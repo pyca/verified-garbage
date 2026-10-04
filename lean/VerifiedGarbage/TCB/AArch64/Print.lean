@@ -143,6 +143,7 @@ def Instr.asm : Instr → List String
   | .adc sz d n m => [s!"adc {d.name sz}, {n.name sz}, {m.name sz}"]
   | .sbc sz d n m => [s!"sbc {d.name sz}, {n.name sz}, {m.name sz}"]
   | .csel sz d n m => [s!"csel {d.name sz}, {n.name sz}, {m.name sz}, hs"]
+  | .adrSym d name => [s!"adrp {d.name .x}, {name}", s!"add {d.name .x}, {d.name .x}, :lo12:{name}"]
   | .addImm sz d n imm => [s!"add {d.name sz}, {n.name sz}, #{imm}"]
   | .subImm sz d n imm => [s!"sub {d.name sz}, {n.name sz}, #{imm}"]
   | .logic op sz d n m => [s!"{op.name} {d.name sz}, {n.name sz}, {m.name sz}"]
@@ -185,6 +186,12 @@ def printer : Printer isa where
   jump l := s!"b {l}"
   ret := ["ret"]
   call := "bl"
+  -- The static's page and offset, in the syntax of the object format
+  -- (`TCB/Rust.lean`); `asm` gives ELF's, for reading.
+  symLines
+    | .adrSym d name => some [.sym s!"adrp {d.name .x}, " .page name,
+        .sym s!"add {d.name .x}, {d.name .x}, " .pageOff name]
+    | _ => none
   -- LLVM's AArch64 assembler rejects, e.g., `aese` unless the `aes` extension
   -- is enabled, and a directive in a naked function stays in effect for the
   -- rest of the module, so each function disables what it enabled.
