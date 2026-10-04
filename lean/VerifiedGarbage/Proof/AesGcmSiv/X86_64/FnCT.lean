@@ -225,4 +225,89 @@ theorem seal_rel (v : GcmImpl) {s₀ s₀' : State} (hp : onePre s₀) (hp' : on
   exact sealBody_rel v Ar.lay Ar.rounds Ar.data.w (Nat.le_of_lt Ar.data.lt) Ar.aad.lt Ar.data.lt
     fun _ _ h => ⟨h.2.1, h.2.2⟩
 
+/-! ## `open` -/
+
+theorem cmp_check : ∃ hc, (taint.check (sivT []) (.block Impl.AesGcmSiv.X86_64.cmp) hc).isSome = true :=
+  ⟨_, by taint_decide⟩
+
+theorem mask_check : ∃ hc, (taint.check (sivT []) mask hc).isSome = true := ⟨_, by taint_decide⟩
+
+theorem fin_check : ∃ hc, (taint.check (sivT [])
+    (.block (([.mov .rax (.mem (at_ .r15 okO))] : List Instr) ++ restore)) hc).isSome = true := ⟨_, by taint_decide⟩
+
+/-- `St`, with `ok` at `W + 208` either 1 or 0. -/
+def StO (K W SP : Addr) (R : Nat) (N A D : Addr) (al n : Nat) (t : State) : Prop :=
+  St K W SP R N A D al n t ∧
+    (t.mem.readW (W + BitVec.ofNat 64 208) 64 = 1#64 ∨ t.mem.readW (W + BitVec.ofNat 64 208) 64 = 0#64)
+
+theorem cmp_st {K W SP : Addr} (L : Lay K W SP) {R : Nat} {N A D : Addr} {al n : Nat} {t : State}
+    (h : St K W SP R N A D al n t) : WP isa (.block Impl.AesGcmSiv.X86_64.cmp) t (StO K W SP R N A D al n) := by
+  obtain ⟨t', run', hm', hg', hrd', hwr'⟩ := cmp_ok h.bufs.one.env
+  have fO : Frame [wO W] t.mem t'.mem := by
+    rw [hm']; exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
+  refine WP.of_runBlock ⟨t', run', h.frame (h.bufs.one.env.of_saved hg' hrd' hwr') fO (fun q hq => by
+    simp only [List.mem_singleton] at hq; subst hq; exact L.w_w (.inr (by decide)) (by decide) (by decide))
+    hrd' hwr', ?_⟩
+  rw [hm', Mem.readW_writeW_self64]
+  split
+  · exact .inl rfl
+  · exact .inr rfl
+
+theorem mask_st {K W SP : Addr} {R : Nat} {N A D : Addr} {al n : Nat} {t : State} (h : StO K W SP R N A D al n t) :
+    WP isa mask t (St K W SP R N A D al n) := by
+  have hok : t.mem.readW (W + BitVec.ofNat 64 208) 64 =
+      if t.mem.readW (W + BitVec.ofNat 64 208) 64 = 1#64 then 1#64 else 0#64 := by
+    rcases h.2 with h' | h' <;> rw [h'] <;> decide
+  refine WP.mono (mask_ok h.1.bufs.one.env h.1.bufs.one.sl h.1.bufs.data
+    (by rw [h.1.bufs.one.wr]; exact Proof.AesGcm.X86_64.covers_of_mem (by simp)) hok) fun _ Mk =>
+    h.1.frame Mk.env Mk.frame (fun q hq => by
+      simp only [List.mem_singleton] at hq; subst hq; exact (h.1.bufs.data.w.sub_right (Lay.wSub (by decide))).symm)
+      Mk.rd Mk.wr
+
+/-- `open` after its entry, in two runs. -/
+theorem openBody_rel (v : GcmImpl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} (hR : R = 10 ∨ R = 14) {N A D : Addr}
+    {al n : Nat} (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 4096⟩) (hn : n ≤ 2 ^ 64) (hal : al < 2 ^ 64) (hn' : n < 2 ^ 64)
+    {P : State → State → Prop} (hP : ∀ t₁ t₂, P t₁ t₂ → St K W SP R N A D al n t₁ ∧ St K W SP R N A D al n t₂) :
+    RelCT isa P (.seq (keys v.callees) (.seq (crypt v.callees) (.seq (polyval v.callees) (.seq (tag v.callees t2O)
+      (.seq (.block Impl.AesGcmSiv.X86_64.cmp) (.seq mask
+        (.block (([.mov .rax (.mem (at_ .r15 okO))] : List Instr) ++ restore))))))))
+      fun _ _ => True := by
+  have r₁ := (keys_rel v L hR hDW hn fun t₁ t₂ h => ⟨⟨(hP _ _ h).1.bufs.one, (hP _ _ h).1.nonce⟩,
+      ⟨(hP _ _ h).2.bufs.one, (hP _ _ h).2.nonce⟩⟩).wp
+    (F₁ := StK K W SP R N A D al n) (F₂ := StK K W SP R N A D al n)
+    fun t₁ t₂ h => ⟨keys_st v L hR (hP _ _ h).1, keys_st v L hR (hP _ _ h).2⟩
+  have r₂ := (crypt_rel v L hR hDW hn (P := fun t₁ t₂ => True ∧ StK K W SP R N A D al n t₁ ∧
+      StK K W SP R N A D al n t₂) fun t₁ t₂ h =>
+      ⟨⟨h.2.1.1.bufs.one, h.2.1.1.bufs.data⟩, ⟨h.2.2.1.bufs.one, h.2.2.1.bufs.data⟩⟩).wp
+    (F₁ := StK K W SP R N A D al n) (F₂ := StK K W SP R N A D al n)
+    fun t₁ t₂ h => ⟨crypt_st v L hR h.2.1, crypt_st v L hR h.2.2⟩
+  have r₃ := (polyval_rel v L hDW hn hal hn' (P := fun t₁ t₂ => True ∧ StK K W SP R N A D al n t₁ ∧
+      StK K W SP R N A D al n t₂) fun t₁ t₂ h => ⟨h.2.1.1.bufs, h.2.2.1.bufs⟩).wp
+    (F₁ := St K W SP R N A D al n) (F₂ := St K W SP R N A D al n)
+    fun t₁ t₂ h => ⟨polyval_st v L h.2.1, polyval_st v L h.2.2⟩
+  have r₄ := (tag_rel v L hR hDW hn (o := t2O) (by decide) (P := fun t₁ t₂ => True ∧ St K W SP R N A D al n t₁ ∧
+      St K W SP R N A D al n t₂) fun t₁ t₂ h => ⟨h.2.1.bufs.one, h.2.2.bufs.one, fun _ h => nomatch h⟩).wp
+    (F₁ := St K W SP R N A D al n) (F₂ := St K W SP R N A D al n)
+    fun t₁ t₂ h => ⟨tag_st v L hR (by decide) h.2.1, tag_st v L hR (by decide) h.2.2⟩
+  have r₅ := (rel_taintC [] (P := fun t₁ t₂ => True ∧ St K W SP R N A D al n t₁ ∧ St K W SP R N A D al n t₂) hDW hn
+    (fun t₁ t₂ h => ⟨h.2.1.bufs.one, h.2.2.bufs.one, fun _ h => nomatch h⟩) cmp_check).wp
+    (F₁ := StO K W SP R N A D al n) (F₂ := StO K W SP R N A D al n)
+    fun t₁ t₂ h => ⟨cmp_st L h.2.1, cmp_st L h.2.2⟩
+  have r₆ := (rel_taintC [] (P := fun t₁ t₂ => True ∧ StO K W SP R N A D al n t₁ ∧ StO K W SP R N A D al n t₂)
+    hDW hn (fun t₁ t₂ h => ⟨h.2.1.1.bufs.one, h.2.2.1.bufs.one, fun _ h => nomatch h⟩) mask_check).wp
+    (F₁ := St K W SP R N A D al n) (F₂ := St K W SP R N A D al n)
+    fun t₁ t₂ h => ⟨mask_st h.2.1, mask_st h.2.2⟩
+  have r₇ := rel_taintC [] (P := fun t₁ t₂ => True ∧ St K W SP R N A D al n t₁ ∧ St K W SP R N A D al n t₂) hDW hn
+    (fun t₁ t₂ h => ⟨h.2.1.bufs.one, h.2.2.bufs.one, fun _ h => nomatch h⟩) fin_check
+  exact RelCT.seq r₁ (RelCT.seq r₂ (RelCT.seq r₃ (RelCT.seq r₄ (RelCT.seq r₅ (RelCT.seq r₆ r₇)))))
+
+/-- `vg_aes_gcm_siv_open`, in two runs with the same public arguments. -/
+theorem open_rel (v : GcmImpl) {s₀ s₀' : State} (hp : onePre s₀) (hp' : onePre s₀') (hq : onePub s₀ s₀') :
+    RelCT isa (fun s₁ s₂ => s₁ = s₀ ∧ s₂ = s₀') («open» v.callees) fun _ _ => True := by
+  have Ar := args_of hp
+  refine RelCT.seq (entry_rel (pub_regs hq) (hq.2.2.2.2.2.2.2 1 (by decide)) (argW_in hp) (argW_in hp')
+    (entry_st_self hp) (entry_st_pub hp' hq)) ?_
+  exact openBody_rel v Ar.lay Ar.rounds Ar.data.w (Nat.le_of_lt Ar.data.lt) Ar.aad.lt Ar.data.lt
+    fun _ _ h => ⟨h.2.1, h.2.2⟩
+
 end VG.Proof.AesGcmSiv.X86_64
