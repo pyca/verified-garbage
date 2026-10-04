@@ -80,10 +80,10 @@ impl Run {
         // buffers are separate and of the sizes of the signature.
         unsafe { vg_aes_expand_key(key.as_ptr(), key_len, &mut schedule, &mut scratch) };
         let rounds = key_len / 4 + 6;
-        for (encrypt, decrypt, features) in IMPLEMENTATIONS {
-            if !crate::cpu::detected().contains(features) {
-                continue;
-            }
+        let runnable = IMPLEMENTATIONS
+            .into_iter()
+            .filter(|(_, _, features)| crate::cpu::detected().contains(*features));
+        for (encrypt, decrypt, _) in runnable {
             let f = if self.encrypt { encrypt } else { decrypt };
             for m in (0..=self.n.min(17)).chain([self.n]) {
                 let mut data = [[0xa5; 16]; MAX + 1];
