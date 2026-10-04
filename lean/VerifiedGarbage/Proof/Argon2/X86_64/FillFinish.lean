@@ -160,7 +160,7 @@ structure Done (s t : State) (p : Params) (state : FillState) : Prop where
   wr : t.wr = s.wr
   frame : Frame (writes s p) s.mem t.mem
 
-theorem code_ok (v : Proof.Blake2.X86_64.Backend) (name : String) (s : State) (p : Params)
+theorem code_ok [CompressImpl] (v : Proof.Blake2.X86_64.Backend) (name : String) (s : State) (p : Params)
     (h : Ready p s) (state : FillState)
     (represented : Proof.Argon2.Represents s.mem (matrix s) p.blocks state.memory) :
     WP isa (Impl.Argon2.X86_64.FillFinish.code name (HPrime.hash v)) s (Done s · p state) := by

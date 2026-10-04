@@ -12,27 +12,10 @@ for a 0 (`bitMask_bool_ok`).
 
 namespace VG.Proof.Weierstrass.X86_64
 
-open VG VG.X86_64 VG.Impl.Mont.X86_64 VG.Impl.Weierstrass.X86_64 VG.Proof.Mont.X86_64
+open VG VG.X86_64 VG.Impl.Mont.X86_64 VG.Impl.Mont VG.Impl.Weierstrass.X86_64 VG.Impl.Weierstrass VG.Proof.Mont.X86_64 VG.Proof.Mont
 open VG.Proof.X25519.X86_64 (Keeps)
 
 /-! ## Bytes -/
-
-theorem ofs_off0 (base : Addr) {d : Nat} (h : d < 2 ^ 64) : ofs base (off base d) = d :=
-  Mem.sub_ofNat_toNat base h
-
-theorem writeW8_outside (m : Mem) (base : Addr) {d : Nat} (v : BitVec 8) (h : d + 1 ≤ 2 ^ 64) :
-    Outside base d 1 m (m.writeW (off base d) v) := by
-  intro x hx
-  simp only [Mem.writeW]
-  apply Mem.write_apply
-  rw [Offset.lt_iff x base (by omega)]
-  simp only [ofs] at hx
-  omega
-
-theorem writeW8_self (m : Mem) (a : Addr) (v : BitVec 8) : (m.writeW a v) a = v := by
-  simp only [Mem.writeW, Mem.write, BitVec.sub_self, BitVec.toNat_zero,
-    Nat.mul_zero, BitVec.setWidth_eq]
-  exact BitVec.extractLsb'_eq_self
 
 /-! ## Masks -/
 

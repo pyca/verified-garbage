@@ -18,8 +18,8 @@ slots `nslots + 8 j` to `nslots + 8 j + 7`.
 
 namespace VG.Proof.Ecdsa.X86_64
 
-open VG VG.X86_64 VG.Impl.Mont.X86_64 VG.Impl.Weierstrass.X86_64 VG.Impl.Ecdsa.X86_64
-open VG.Proof.Mont.X86_64 VG.Proof.Weierstrass.X86_64 VG.Proof.Weierstrass Spec.Weierstrass
+open VG VG.X86_64 VG.Impl.Mont.X86_64 VG.Impl.Mont VG.Impl.Weierstrass.X86_64 VG.Impl.Weierstrass VG.Impl.Ecdsa.X86_64
+open VG.Proof.Mont.X86_64 VG.Proof.Mont VG.Proof.Weierstrass.X86_64 VG.Proof.Weierstrass Spec.Weierstrass
 
 /-- The size of the working space, in bytes. -/
 abbrev size : Nat := 8192
@@ -29,8 +29,9 @@ and fit in `n` words (`n < 7`), `G` is on the curve, `p < 2n` (so `x mod n`
 is one conditional subtraction), the Montgomery constants are right,
 encodings are `8 n` bytes, and a hash of `8 n` bytes is not truncated.
 `n ≤ 4`: the code keeps `out` in `r14`, which the multiplications of more
-words use. The group law needs more (`Weierstrass.Good`: a prime field and
-no point of order 2), which only the proofs of the results take. -/
+words use. The group law needs more (`Weierstrass.Law`, which a prime field
+and no point of order 2 give: `Weierstrass.Good.law`), which only the proofs
+of the results take. -/
 structure CfgOk (c : Cfg) : Prop where
   n0 : 0 < c.n
   n7 : c.n < 7

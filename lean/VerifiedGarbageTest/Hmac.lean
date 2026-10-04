@@ -194,7 +194,10 @@ run_cmd do
   -- `sha256I`'s functions have the names and modules the Rust code uses.
   for (a, n, m) in [(sha256I.initApi, "vg_hmac_sha256_init", "hmac_sha256"),
       (sha256I.finalizeApi, "vg_hmac_sha256_finalize", "hmac_sha256"),
-      (sha256I.iterateApi, "vg_pbkdf2_hmac_sha256_iterate", "pbkdf2_sha256")] do
+      (sha256I.initScratchApi, "vg_hmac_sha256_init_scratch", "hmac_sha256"),
+      (sha256I.finalizeScratchApi, "vg_hmac_sha256_finalize_scratch", "hmac_sha256"),
+      (sha256I.iterateApi, "vg_pbkdf2_hmac_sha256_iterate", "pbkdf2_sha256"),
+      (sha256I.pbkdf2ScratchApi, "vg_pbkdf2_hmac_sha256_scratch", "pbkdf2_sha256")] do
     unless a.name == n && a.module == m do
       throwError "{a.module}::{a.name} is not {m}::{n}"
   unless sha256I.pbkdf2Api.name == "vg_pbkdf2_hmac_sha256" &&
@@ -235,7 +238,8 @@ run_cmd do
     let some w := scratchWords update.sig | throwError "{update.name} has no working space"
     unless w ≤ I.scratch do throwError "{lean}: {update.name} needs {w} words of working space"
   let names := instances.flatMap fun (I, _, _) =>
-    [I.initApi.name, I.finalizeApi.name, I.iterateApi.name, I.pbkdf2Api.name]
+    [I.initApi.name, I.finalizeApi.name, I.initScratchApi.name, I.finalizeScratchApi.name,
+      I.iterateApi.name, I.pbkdf2Api.name, I.pbkdf2ScratchApi.name]
   unless names.eraseDups.length == names.length do throwError "duplicate names: {names}"
 
 /-! ## `init` for a key of any length -/
@@ -255,17 +259,20 @@ run_cmd do
     throwError "`finalizes` does not list the instances"
   for (I, finalize) in finalizes do
     -- `initAnyKeyApi` replaces `initApi`: the same Rust function, with the
-    -- same arguments but for more working space, which also holds that of
-    -- the hash's `finalize` (and, as `scratch` does, of its `update`), and
-    -- a word for each byte of the streaming state.
+    -- same arguments, which keeps more working space on its stack
+    -- (`initAnyKeyScratch`); `init_scratch` is `init` with its working
+    -- space, `scratch`, as one more argument.
     let a := I.initAnyKeyApi
     let b := I.initApi
+    let c := I.initScratchApi
     unless a.name == b.name && a.module == b.module do
       throwError "{a.module}::{a.name} is not {b.module}::{b.name}"
-    unless a.sig.params.dropLast == b.sig.params.dropLast do
+    unless a.sig.params == b.sig.params do
       throwError "{a.name}: the arguments differ from `initApi`'s"
-    unless scratchWords a.sig == some (I.scratch + I.S.stateBytes) do
-      throwError "{a.name}: working space is not {I.scratch + I.S.stateBytes} words"
+    unless c.sig.params.dropLast == b.sig.params && scratchWords c.sig == some I.scratch do
+      throwError "{c.name}: the arguments are not `initApi`'s and its working space"
+    unless c.name == b.name ++ "_scratch" && c.module == b.module do
+      throwError "{c.module}::{c.name} is not {b.module}::{b.name}_scratch"
     let some w := scratchWords finalize.sig | throwError "{finalize.name} has no working space"
     unless w ≤ I.scratch do throwError "{I.lean}: {finalize.name} needs {w} words of working space"
     unless (finalize.name.replace "_scratch" "").replace "_finalize" "_update" == I.update do

@@ -136,16 +136,16 @@ theorem sha256_iterImp : (iterW Spec.Hmac.sha256S 104).Implies (Spec.Hmac.sha256
     X86.argBytes]
     [a0, a1, a2, a3, a4, e, esp, iterSat] using iterSat 96 32 104
 
-theorem sha256_initImp : (initW Spec.Hmac.sha256S 104).Implies (Spec.Hmac.sha256I.initContract X86.abi 48) := by
+theorem sha256_initImp : (initW Spec.Hmac.sha256S 104).Implies (Spec.Hmac.sha256I.initScratchContract X86.abi 48) := by
   obtain ⟨a0, a1, a2, a3, a4, e, esp⟩ := initSat_args 96 104
-  sig_implies [Spec.Hmac.Instance.initContract, Spec.Hmac.initContract, Spec.Hmac.initSig,
+  sig_implies [Spec.Hmac.Instance.initScratchContract, Spec.Hmac.initScratchContract, Spec.Hmac.initScratchSig, Spec.Hmac.initPre, Spec.Hmac.initPost,
     Spec.Hmac.sha256I, Spec.Hmac.sha256S, Spec.Hmac.sha256, initW, initG, X86.abi, X86.argSlots, X86.argVal,
     X86.argBytes]
     [a0, a1, a2, a3, a4, e, esp, initSat] using initSat 96 104
 
-theorem sha256_finImp : (finW Spec.Hmac.sha256S 104).Implies (Spec.Hmac.sha256I.finalizeContract X86.abi 48) := by
+theorem sha256_finImp : (finW Spec.Hmac.sha256S 104).Implies (Spec.Hmac.sha256I.finalizeScratchContract X86.abi 48) := by
   obtain ⟨a0, a1, a2, a3, a4, a5, e, esp⟩ := finSat_args 96 32 104
-  sig_implies [Spec.Hmac.Instance.finalizeContract, Spec.Hmac.finalizeContract, Spec.Hmac.finalizeSig,
+  sig_implies [Spec.Hmac.Instance.finalizeScratchContract, Spec.Hmac.finalizeScratchContract, Spec.Hmac.finalizeScratchSig, Spec.Hmac.finalizePost,
     Spec.Hmac.sha256I, Spec.Hmac.sha256S, Spec.Hmac.sha256, finW, finG, countF, X86.abi, X86.argSlots,
     X86.argVal, X86.argBytes]
     [a0, a1, a2, a3, a4, a5, e, esp, finSat] using finSat 96 32 104
@@ -160,7 +160,7 @@ theorem sha256_iterate (v : Sha256Stream) (cmpN : String) {cmpC : Prog isa}
 /-- HMAC's `finalize` for SHA-256 with any backend. -/
 theorem sha256_finalize (v : Sha256Stream) (cmpN : String) {cmpC : Prog isa}
     (hc : CompOk Proof.Sha256.md 112 cmpC) :
-    Verified X86.target (sha256M v cmpN cmpC).hmacFin (Spec.Hmac.sha256I.finalizeContract X86.abi 48) :=
+    Verified X86.target (sha256M v cmpN cmpC).hmacFin (Spec.Hmac.sha256I.finalizeScratchContract X86.abi 48) :=
   (HmacFin.verifiedW (sha256Ok v cmpN hc) (sha256_finChecks v cmpN cmpC)
     (show 8 * 20 + 16 + 32 ≤ 8 * 104 by decide) sha256_finImp.sat_left).of_implies sha256_finImp
 
@@ -175,7 +175,7 @@ open VG.Proof.Pbkdf2.Stream.X86 (Sha256Stream)
 /-- HMAC's `init` for SHA-256 with any backend. -/
 theorem sha256_init (v : Sha256Stream) (cmpN : String) {cmpC : Prog isa}
     (hc : CompOk Proof.Sha256.md 112 cmpC) :
-    Verified X86.target (sha256M v cmpN cmpC).hmacInit (Spec.Hmac.sha256I.initContract X86.abi 48) :=
+    Verified X86.target (sha256M v cmpN cmpC).hmacInit (Spec.Hmac.sha256I.initScratchContract X86.abi 48) :=
   (HmacInit.verifiedW (sha256Ok v cmpN hc) (sha256_initChecks v cmpN cmpC)
     (show 8 * 20 + 16 ≤ 8 * 104 by decide) sha256_initImp.sat_left).of_implies sha256_initImp
 

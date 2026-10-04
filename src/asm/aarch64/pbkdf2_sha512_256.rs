@@ -283,14 +283,14 @@ pub(crate) unsafe extern "C" fn vg_pbkdf2_hmac_sha512_256_iterate(key: *const [u
 /// * `password` must be valid for reads of `password_len` bytes.
 /// * `salt` must be valid for reads of `salt_len` bytes.
 /// * `out` must be valid for reads and writes of `out_len` bytes.
-/// * `scratch` must be valid for reads and writes of 3408 bytes.
 /// * `c` must be positive, and `out_len` at most `(2^32 - 1) * 32`.
-/// * The contents of `scratch` on return are unspecified.
-/// * `out` and `scratch` must not overlap each other, `password` or `salt` (distinct Rust objects never do).
-/// * None of `password`, `salt`, `out` and `scratch` may overlap the 16 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * `out` must not overlap `password` or `salt` (distinct Rust objects never do).
+/// * None of `password`, `salt` and `out` may overlap the 3424 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_pbkdf2_hmac_sha512_256(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, c: u32, out: *mut u8, out_len: usize, scratch: *mut [u64; 426]) {
+pub(crate) unsafe extern "C" fn vg_pbkdf2_hmac_sha512_256(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, c: u32, out: *mut u8, out_len: usize) {
     core::arch::naked_asm!(
+        "sub sp, sp, #3408",
+        "add x7, sp, #0",
         "add x10, x4, #0",
         "add x4, x7, #0",
         "str x19, [x4, #1872]",
@@ -341,7 +341,7 @@ pub(crate) unsafe extern "C" fn vg_pbkdf2_hmac_sha512_256(password: *const u8, p
         "add x0, x23, #1952",
         "add x1, x23, #2144",
         "add x4, x23, #0",
-        "bl {vg_hmac_sha512_256_init}",
+        "bl {vg_hmac_sha512_256_init_scratch}",
         "ldr w9, [x23, #1952]",
         "str w9, [x23, #2336]",
         "ldr w9, [x23, #1956]",
@@ -559,7 +559,7 @@ pub(crate) unsafe extern "C" fn vg_pbkdf2_hmac_sha512_256(password: *const u8, p
         "add x2, x20, #132",
         "add x3, x23, #2720",
         "add x4, x23, #0",
-        "bl {vg_hmac_sha512_256_finalize}",
+        "bl {vg_hmac_sha512_256_finalize_scratch}",
         "ldr w9, [x23, #2720]",
         "str w9, [x23, #2752]",
         "ldr w9, [x23, #2724]",
@@ -613,12 +613,13 @@ pub(crate) unsafe extern "C" fn vg_pbkdf2_hmac_sha512_256(password: *const u8, p
         "ldr x24, [x23, #1904]",
         "ldr x30, [x23, #1912]",
         "ldr x23, [x23, #1920]",
+        "add sp, sp, #3408",
         "ret",
         vg_sha512_256_init = sym super::sha512::vg_sha512_256_init,
         vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch,
         vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch,
-        vg_hmac_sha512_256_init = sym super::hmac_sha512_256::vg_hmac_sha512_256_init,
-        vg_hmac_sha512_256_finalize = sym super::hmac_sha512_256::vg_hmac_sha512_256_finalize,
+        vg_hmac_sha512_256_init_scratch = sym super::hmac_sha512_256::vg_hmac_sha512_256_init_scratch,
+        vg_hmac_sha512_256_finalize_scratch = sym super::hmac_sha512_256::vg_hmac_sha512_256_finalize_scratch,
         vg_pbkdf2_hmac_sha512_256_iterate = sym super::pbkdf2_sha512_256::vg_pbkdf2_hmac_sha512_256_iterate,
     )
 }
@@ -913,16 +914,16 @@ pub(crate) const VG_PBKDF2_HMAC_SHA512_256_SHA3_FEATURES: crate::cpu::Features =
 /// * `password` must be valid for reads of `password_len` bytes.
 /// * `salt` must be valid for reads of `salt_len` bytes.
 /// * `out` must be valid for reads and writes of `out_len` bytes.
-/// * `scratch` must be valid for reads and writes of 3408 bytes.
 /// * `c` must be positive, and `out_len` at most `(2^32 - 1) * 32`.
-/// * The contents of `scratch` on return are unspecified.
-/// * `out` and `scratch` must not overlap each other, `password` or `salt` (distinct Rust objects never do).
-/// * None of `password`, `salt`, `out` and `scratch` may overlap the 16 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * `out` must not overlap `password` or `salt` (distinct Rust objects never do).
+/// * None of `password`, `salt` and `out` may overlap the 3424 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha3` target feature.
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_pbkdf2_hmac_sha512_256_sha3(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, c: u32, out: *mut u8, out_len: usize, scratch: *mut [u64; 426]) {
+pub(crate) unsafe extern "C" fn vg_pbkdf2_hmac_sha512_256_sha3(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, c: u32, out: *mut u8, out_len: usize) {
     core::arch::naked_asm!(
         ".arch_extension sha3",
+        "sub sp, sp, #3408",
+        "add x7, sp, #0",
         "add x10, x4, #0",
         "add x4, x7, #0",
         "str x19, [x4, #1872]",
@@ -973,7 +974,7 @@ pub(crate) unsafe extern "C" fn vg_pbkdf2_hmac_sha512_256_sha3(password: *const 
         "add x0, x23, #1952",
         "add x1, x23, #2144",
         "add x4, x23, #0",
-        "bl {vg_hmac_sha512_256_init_sha3}",
+        "bl {vg_hmac_sha512_256_init_scratch_sha3}",
         "ldr w9, [x23, #1952]",
         "str w9, [x23, #2336]",
         "ldr w9, [x23, #1956]",
@@ -1191,7 +1192,7 @@ pub(crate) unsafe extern "C" fn vg_pbkdf2_hmac_sha512_256_sha3(password: *const 
         "add x2, x20, #132",
         "add x3, x23, #2720",
         "add x4, x23, #0",
-        "bl {vg_hmac_sha512_256_finalize_sha3}",
+        "bl {vg_hmac_sha512_256_finalize_scratch_sha3}",
         "ldr w9, [x23, #2720]",
         "str w9, [x23, #2752]",
         "ldr w9, [x23, #2724]",
@@ -1245,13 +1246,14 @@ pub(crate) unsafe extern "C" fn vg_pbkdf2_hmac_sha512_256_sha3(password: *const 
         "ldr x24, [x23, #1904]",
         "ldr x30, [x23, #1912]",
         "ldr x23, [x23, #1920]",
+        "add sp, sp, #3408",
         "ret",
         ".arch_extension nosha3",
         vg_sha512_256_init = sym super::sha512::vg_sha512_256_init,
         vg_sha512_update_scratch_sha3 = sym super::sha512::vg_sha512_update_scratch_sha3,
         vg_sha512_finalize_scratch_sha3 = sym super::sha512::vg_sha512_finalize_scratch_sha3,
-        vg_hmac_sha512_256_init_sha3 = sym super::hmac_sha512_256::vg_hmac_sha512_256_init_sha3,
-        vg_hmac_sha512_256_finalize_sha3 = sym super::hmac_sha512_256::vg_hmac_sha512_256_finalize_sha3,
+        vg_hmac_sha512_256_init_scratch_sha3 = sym super::hmac_sha512_256::vg_hmac_sha512_256_init_scratch_sha3,
+        vg_hmac_sha512_256_finalize_scratch_sha3 = sym super::hmac_sha512_256::vg_hmac_sha512_256_finalize_scratch_sha3,
         vg_pbkdf2_hmac_sha512_256_iterate_sha3 = sym super::pbkdf2_sha512_256::vg_pbkdf2_hmac_sha512_256_iterate_sha3,
     )
 }

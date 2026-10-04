@@ -49,6 +49,5 @@ super::streaming_hmac!(
             (vg_hmac_sha512_init_avx2, vg_hmac_sha512_finalize_avx2),
     },
     state: 192,
-    scratch: 234,
     output: 64,
 );

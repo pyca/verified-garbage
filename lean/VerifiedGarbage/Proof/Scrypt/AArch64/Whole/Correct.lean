@@ -12,8 +12,8 @@ section
 /-!
 # scrypt on AArch64: PBKDF2-HMAC-SHA256 as a callee
 
-`vg_pbkdf2_hmac_sha256` (any implementation of it) is verified against the
-shared contract `VG.Spec.Hmac.sha256I.pbkdf2Contract`; its caller works with
+`vg_pbkdf2_hmac_sha256_scratch` (any implementation of it) is verified against the
+shared contract `VG.Spec.Hmac.sha256I.pbkdf2ScratchContract`; its caller works with
 the same contract spelt out (`pbkG`, the contract its proof is written
 against): `pbk_correct` and `pbk_ct` are its correctness and constant time
 under `pbkG`, from its `Verified` proof.
@@ -29,9 +29,9 @@ open VG.Proof.Pbkdf2.Md.AArch64.Calls (stk)
 abbrev pbkK : Contract isa := pbkG Spec.Hmac.sha256S 200
 
 theorem pbk_pre {s : State} (h : pbkK.pre s) :
-    (Spec.Hmac.sha256I.pbkdf2Contract AArch64.abi 16).pre s := by
-  simp only [Spec.Hmac.Instance.pbkdf2Contract, Spec.Hmac.Instance.pbkdf2Scratch]
-  sig_pre [Spec.Pbkdf2.pbkdf2Contract, Spec.Pbkdf2.pbkdf2Sig, Spec.Hmac.sha256I, Spec.Hmac.sha256S,
+    (Spec.Hmac.sha256I.pbkdf2ScratchContract AArch64.abi 16).pre s := by
+  simp only [Spec.Hmac.Instance.pbkdf2ScratchContract, Spec.Hmac.Instance.pbkdf2Scratch]
+  sig_pre [Spec.Pbkdf2.pbkdf2ScratchContract, Spec.Pbkdf2.pbkdf2ScratchSig, Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post, Spec.Hmac.sha256I, Spec.Hmac.sha256S,
     AArch64.abi, AArch64.argRegs]
   simp only [pbkK, pbkG, Spec.Hmac.sha256S] at h
   sig_split h
@@ -41,22 +41,22 @@ theorem pbk_pre {s : State} (h : pbkK.pre s) :
     | with_reducible exact Region.Disjoint.symm ‹_›
     | omega
 
-theorem pbk_post {s s' : State} (h : (Spec.Hmac.sha256I.pbkdf2Contract AArch64.abi 16).post s s') :
+theorem pbk_post {s s' : State} (h : (Spec.Hmac.sha256I.pbkdf2ScratchContract AArch64.abi 16).post s s') :
     pbkK.post s s' := by
-  simp only [Spec.Hmac.Instance.pbkdf2Contract, Spec.Hmac.Instance.pbkdf2Scratch] at h
-  sig_post [Spec.Pbkdf2.pbkdf2Contract, Spec.Pbkdf2.pbkdf2Sig, Spec.Hmac.sha256I, Spec.Hmac.sha256S,
+  simp only [Spec.Hmac.Instance.pbkdf2ScratchContract, Spec.Hmac.Instance.pbkdf2Scratch] at h
+  sig_post [Spec.Pbkdf2.pbkdf2ScratchContract, Spec.Pbkdf2.pbkdf2ScratchSig, Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post, Spec.Hmac.sha256I, Spec.Hmac.sha256S,
     AArch64.abi, AArch64.argRegs] at h
   exact h
 
 theorem pbk_pub {s₁ s₂ : State} (h : pbkK.pub s₁ s₂) :
-    (Spec.Hmac.sha256I.pbkdf2Contract AArch64.abi 16).pub s₁ s₂ := by
-  simp only [Spec.Hmac.Instance.pbkdf2Contract, Spec.Hmac.Instance.pbkdf2Scratch]
-  sig_pub [Spec.Pbkdf2.pbkdf2Contract, Spec.Pbkdf2.pbkdf2Sig, Spec.Hmac.sha256I, Spec.Hmac.sha256S,
+    (Spec.Hmac.sha256I.pbkdf2ScratchContract AArch64.abi 16).pub s₁ s₂ := by
+  simp only [Spec.Hmac.Instance.pbkdf2ScratchContract, Spec.Hmac.Instance.pbkdf2Scratch]
+  sig_pub [Spec.Pbkdf2.pbkdf2ScratchContract, Spec.Pbkdf2.pbkdf2ScratchSig, Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post, Spec.Hmac.sha256I, Spec.Hmac.sha256S,
     AArch64.abi, AArch64.argRegs]
   obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9⟩ := h
   exact ⟨h9, h1, h2, h3, h4, h5, h6, h7, h8⟩
 
-variable {pbk : Prog isa} (hv : Verified AArch64.target pbk (Spec.Hmac.sha256I.pbkdf2Contract AArch64.abi 16))
+variable {pbk : Prog isa} (hv : Verified AArch64.target pbk (Spec.Hmac.sha256I.pbkdf2ScratchContract AArch64.abi 16))
 include hv
 
 theorem pbk_correct (s : State) (h : pbkK.pre s) :
@@ -74,7 +74,7 @@ end
 /-!
 # scrypt on AArch64: the calls
 
-What a call of `vg_pbkdf2_hmac_sha256` (`pbk_call`) and of `vg_scrypt_romix`
+What a call of `vg_pbkdf2_hmac_sha256_scratch` (`pbk_call`) and of `vg_scrypt_romix`
 (`romix_call`) from the frames does, from their arguments (`PbkArgs`,
 `RomixArgs`): each keeps `Ctx`, and changes memory only in what it writes and
 the stack below the frames. `pbk_pre'` and `romix_pre` are their
@@ -192,7 +192,7 @@ theorem pbk_wsub (hL : L.Ok) {salt : Addr} {sl : BitVec 64} {out : Addr} {ol : B
   · exact hr.ow
   · exact hL.scr_in
 
-theorem pbk_call (hv : Verified AArch64.target pbk (Spec.Hmac.sha256I.pbkdf2Contract AArch64.abi 16))
+theorem pbk_call (hv : Verified AArch64.target pbk (Spec.Hmac.sha256I.pbkdf2ScratchContract AArch64.abi 16))
     (hd : pbk.aarch64Depth ≤ 1) (name : String) (hL : L.Ok) {t : State}
     (hc : Ctx L g vv m₀ t) {salt : Addr} {sl : BitVec 64} {out : Addr} {ol : BitVec 64}
     (ha : PbkArgs L salt sl out ol t) (hr : PbkRegions L salt sl out ol) :
@@ -384,7 +384,7 @@ theorem scr_sub (hL : L.Ok) : Region.Sub ⟨L.scr, 200 * 8⟩ L.SC :=
 /-! ## Step 1 -/
 
 section
-variable {pbk : Prog isa} (hv : Verified AArch64.target pbk (Spec.Hmac.sha256I.pbkdf2Contract AArch64.abi 16))
+variable {pbk : Prog isa} (hv : Verified AArch64.target pbk (Spec.Hmac.sha256I.pbkdf2ScratchContract AArch64.abi 16))
   (hd : pbk.aarch64Depth ≤ 1) (name : String)
 include hv hd
 
@@ -549,7 +549,7 @@ theorem loop_ok (hL : L.Ok) {t : State} (h : Inv L g vv m₀ 0 t) :
 /-! ## Step 3 -/
 
 section
-variable {pbk : Prog isa} (hv : Verified AArch64.target pbk (Spec.Hmac.sha256I.pbkdf2Contract AArch64.abi 16))
+variable {pbk : Prog isa} (hv : Verified AArch64.target pbk (Spec.Hmac.sha256I.pbkdf2ScratchContract AArch64.abi 16))
   (hd : pbk.aarch64Depth ≤ 1) (name : String)
 include hv hd
 
@@ -609,7 +609,7 @@ end
 /-! ## The whole function -/
 
 section
-variable {pbk : Prog isa} (hv : Verified AArch64.target pbk (Spec.Hmac.sha256I.pbkdf2Contract AArch64.abi 16))
+variable {pbk : Prog isa} (hv : Verified AArch64.target pbk (Spec.Hmac.sha256I.pbkdf2ScratchContract AArch64.abi 16))
   (hd : pbk.aarch64Depth ≤ 1) (name : String)
 include hv hd
 

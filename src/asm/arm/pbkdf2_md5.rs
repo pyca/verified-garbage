@@ -148,14 +148,24 @@ pub(crate) unsafe extern "C" fn vg_pbkdf2_hmac_md5_iterate(key: *const [u8; 160]
 /// * `password` must be valid for reads of `password_len` bytes.
 /// * `salt` must be valid for reads of `salt_len` bytes.
 /// * `out` must be valid for reads and writes of `out_len` bytes.
-/// * `scratch` must be valid for reads and writes of 1024 bytes.
 /// * `c` must be positive, and `out_len` at most `(2^32 - 1) * 16`.
-/// * The contents of `scratch` on return are unspecified.
-/// * `out` and `scratch` must not overlap each other, `password`, `salt` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `password`, `salt`, `out` and `scratch` may overlap the 24 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * `out` must not overlap `password`, `salt` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `password`, `salt` and `out` may overlap the 1080 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_pbkdf2_hmac_md5(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, c: u32, out: *mut u8, out_len: usize, scratch: *mut [u64; 128]) {
+pub(crate) unsafe extern "C" fn vg_pbkdf2_hmac_md5(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, c: u32, out: *mut u8, out_len: usize) {
     core::arch::naked_asm!(
+        "sub sp, sp, #1056",
+        "add r12, sp, #0",
+        "str lr, [r12, #16]",
+        "ldr lr, [sp, #1056]",
+        "str lr, [r12, #0]",
+        "ldr lr, [sp, #1060]",
+        "str lr, [r12, #4]",
+        "ldr lr, [sp, #1064]",
+        "str lr, [r12, #8]",
+        "add lr, sp, #20",
+        "str lr, [r12, #12]",
+        "ldr lr, [sp, #16]",
         "ldr r12, [sp, #12]",
         "str r4, [r12, #384]",
         "str r5, [r12, #388]",
@@ -212,7 +222,7 @@ pub(crate) unsafe extern "C" fn vg_pbkdf2_hmac_md5(password: *const u8, password
         "add r1, r11, r12",
         "mov r12, r11",
         "push {{r12, lr}}",
-        "bl {vg_hmac_md5_init}",
+        "bl {vg_hmac_md5_init_scratch}",
         "ldr r12, [sp], #8",
         "mov r8, #0",
         "movw r9, #80",
@@ -273,7 +283,7 @@ pub(crate) unsafe extern "C" fn vg_pbkdf2_hmac_md5(password: *const u8, password
         "add r2, r6, #68",
         "mov r3, #0",
         "push {{r10, r12}}",
-        "bl {vg_hmac_md5_finalize}",
+        "bl {vg_hmac_md5_finalize_scratch}",
         "ldr r12, [sp], #8",
         "mov r8, #0",
         "movw r9, #16",
@@ -340,12 +350,13 @@ pub(crate) unsafe extern "C" fn vg_pbkdf2_hmac_md5(password: *const u8, password
         "ldr r10, [r11, #408]",
         "ldr lr, [r11, #412]",
         "ldr r11, [r11, #416]",
+        "add sp, sp, #1056",
         "bx lr",
         vg_md5_init = sym super::md5::vg_md5_init,
         vg_md5_update_scratch = sym super::md5::vg_md5_update_scratch,
         vg_md5_finalize_scratch = sym super::md5::vg_md5_finalize_scratch,
-        vg_hmac_md5_init = sym super::hmac_md5::vg_hmac_md5_init,
-        vg_hmac_md5_finalize = sym super::hmac_md5::vg_hmac_md5_finalize,
+        vg_hmac_md5_init_scratch = sym super::hmac_md5::vg_hmac_md5_init_scratch,
+        vg_hmac_md5_finalize_scratch = sym super::hmac_md5::vg_hmac_md5_finalize_scratch,
         vg_pbkdf2_hmac_md5_iterate = sym super::pbkdf2_md5::vg_pbkdf2_hmac_md5_iterate,
     )
 }

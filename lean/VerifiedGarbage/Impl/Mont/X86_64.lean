@@ -1,4 +1,5 @@
 import VerifiedGarbage.TCB.X86_64.Isa
+import VerifiedGarbage.Impl.Mont.Mod
 
 /-!
 # Montgomery arithmetic modulo an odd multiword modulus, on x86-64
@@ -35,15 +36,6 @@ open VG.X86_64
 
 /-- `[rdi + d]`: byte `d` of the working space. -/
 def sc (d : Nat) : MemOp := { base := .rdi, disp := d }
-
-/-- A modulus: its number of words `n`, where it is (`mo`, `n` words), the
-working space's temporary area for `csub` (`tmp`, `n` words), and
-`minv = -m⁻¹ mod 2⁶⁴`. -/
-structure Mod where
-  n : Nat
-  mo : Nat
-  tmp : Nat
-  minv : BitVec 64
 
 /-- The accumulator's registers: `n + 2` of `r8`–`r15`. -/
 def acc (n : Nat) : List Reg := [.r8, .r9, .r10, .r11, .r12, .r13, .r14, .r15].take (n + 2)

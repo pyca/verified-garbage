@@ -97,7 +97,7 @@ scratch space. -/
 
 variable (S : StreamingHash) (W : Nat)
 
-/-- `init(inner, outer, key, key_len, scratch)`: `VG.Spec.Hmac.initContract`. -/
+/-- `init(inner, outer, key, key_len, scratch)`: `VG.Spec.Hmac.initScratchContract`. -/
 def initG : Contract isa where
   pre s :=
     let inner : Region := ⟨State.addr (s.gpr .r0), S.stateBytes⟩
@@ -122,7 +122,7 @@ def initG : Contract isa where
     s₁.sp = s₂.sp ∧ s₁.gpr .r0 = s₂.gpr .r0 ∧ s₁.gpr .r1 = s₂.gpr .r1 ∧
     s₁.gpr .r2 = s₂.gpr .r2 ∧ s₁.gpr .r3 = s₂.gpr .r3 ∧ stackArg s₁ 0 = stackArg s₂ 0
 
-/-- `finalize(inner, outer, count, out, scratch)`: `VG.Spec.Hmac.finalizeContract`. -/
+/-- `finalize(inner, outer, count, out, scratch)`: `VG.Spec.Hmac.finalizeScratchContract`. -/
 def finG : Contract isa where
   pre s :=
     let inner : Region := ⟨State.addr (s.gpr .r0), S.stateBytes⟩

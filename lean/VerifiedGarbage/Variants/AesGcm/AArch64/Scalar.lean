@@ -9,6 +9,6 @@ the cipher (`vg_aes_ctr32`, `vg_aes_expand_key`) and the hash (`vg_ghash`).
 
 namespace VG.Variants.AesGcm.AArch64.Scalar
 
-def variant : Proof.AesGcm.AArch64.GcmImpl := ⟨.scalar, .scalar, .scalar⟩
+def variant : Proof.AesGcm.AArch64.GcmVariant := ⟨.scalar, .scalar, .scalar⟩
 
 end VG.Variants.AesGcm.AArch64.Scalar

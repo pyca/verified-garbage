@@ -79,7 +79,7 @@ theorem update_spec (s : State) (p : Params) (pass lane slice index : Nat) (stat
   rw [random]
   rfl
 
-theorem code_spec_ok (s : State) (p : Params) (pass lane slice index : Nat)
+theorem code_spec_ok [CompressImpl] (s : State) (p : Params) (pass lane slice index : Nat)
     (ready : Ready p pass lane slice index s) (state : FillState)
     (represented : Proof.Argon2.Represents s.mem (matrix s) p.blocks state.memory)
     (random : s.gpr .rdi = Proof.Argon2.FillStep.random p pass lane slice index state.memory) :

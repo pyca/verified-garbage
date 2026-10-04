@@ -780,9 +780,9 @@ theorem finalize_ct : ConstantTime isa Proof.Poly1305.finalizeArm.pre Proof.Poly
       taint_decide)
 
 theorem finalize_verified :
-    Verified Arm.target Impl.Poly1305.Arm.finalize (Spec.Poly1305.finalizeContract Arm.abi) :=
+    Verified Arm.target Impl.Poly1305.Arm.finalize (Spec.Poly1305.finalizeScratchContract Arm.abi) :=
   Verified.of_correct finalize_ok finalize_ct (by
-    sig_implies [Spec.Poly1305.finalizeContract, Spec.Poly1305.finalizeSig,
+    sig_implies [Spec.Poly1305.finalizeScratchContract, Spec.Poly1305.finalizeScratchSig, Spec.Poly1305.finalizePost,
       Proof.Poly1305.finalizeArm, Proof.Poly1305.countArm, Arm.abi, Arm.argRegs, Arm.reduceClassify,
       Arm.Loc.val, Arm.State.addr] [Proof.Poly1305.Arm.Fin.finalizeSat, Arm.stackArg,
       Arm.stackArgAddr, Mem.readW, Mem.read] using Proof.Poly1305.Arm.Fin.finalizeSat)

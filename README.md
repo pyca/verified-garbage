@@ -426,7 +426,7 @@ yours to keep:
 
 <td>✅ AVX-512F, AVX2</td>
 
-<td>✅</td>
+<td>✅ NEON, four blocks at a time, on Apple's cores</td>
 
 <td>✅</td>
 
@@ -548,7 +548,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>❌</td>
+<td>✅ AES-NI, VAES, AVX2</td>
 
 <td>❌</td>
 
@@ -564,7 +564,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>❌</td>
+<td>✅ AES-NI, VAES, PCLMULQDQ, VPCLMULQDQ, AVX2</td>
 
 <td>❌</td>
 
@@ -580,7 +580,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅ AES-NI, VAES, PCLMULQDQ, VPCLMULQDQ, AVX-512F, AVX-512BW, AVX2; GHASH with <code>mul</code>; 16 blocks at a time with VAES, 8 with VPCLMULQDQ; counter mode and GHASH interleaved, in 256- or 512-bit registers</td>
+<td>✅ AES-NI, VAES, PCLMULQDQ, VPCLMULQDQ, AVX-512F, AVX-512BW, AVX2; GHASH with <code>mul</code>; 16 blocks at a time with VAES, 8 with VPCLMULQDQ; counter mode and GHASH interleaved, in 128-bit (AES-NI, PCLMULQDQ, AVX), 256- or 512-bit registers</td>
 
 <td>✅ AES, PMULL</td>
 
@@ -666,7 +666,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅</td>
+<td>✅ AVX-512F, AVX2</td>
 
 <td>✅</td>
 
@@ -682,7 +682,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅</td>
+<td>✅ AVX-512F, AVX2</td>
 
 <td>✅</td>
 
@@ -698,7 +698,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅</td>
+<td>✅ AVX-512F, AVX2</td>
 
 <td>✅</td>
 
@@ -936,6 +936,22 @@ yours to keep:
 
 <td>✅</td>
 
+<td>✅</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+</tr>
+
+<tr>
+
+<td>ECDH P-384</td>
+
+<td>✅</td>
+
+<td>❌</td>
+
 <td>❌</td>
 
 <td>❌</td>
@@ -968,7 +984,7 @@ yours to keep:
 
 <td>✅ BMI2, ADX</td>
 
-<td>✅</td>
+<td>✅ public keys by a fixed-base comb on edwards448</td>
 
 <td>✅</td>
 
@@ -1020,7 +1036,23 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅ SHA extensions, AVX2, BMI1, BMI2</td>
+<td>✅ SHA extensions, SHA512, AVX2, BMI1, BMI2</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+</tr>
+
+<tr>
+
+<td>ECDSA P-384</td>
+
+<td>✅</td>
+
+<td>❌</td>
 
 <td>❌</td>
 

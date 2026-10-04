@@ -867,11 +867,11 @@ pub(crate) unsafe extern "sysv64" fn vg_scrypt_romix(b: *mut [u8; 128], r: usize
     )
 }
 
-/// scrypt (RFC 7914 §6) with block size parameter `r`, cost parameter `N = vlen / r` and parallelization parameter `p = blen / r`: writes the `out_len`-byte key derived from the `password_len` bytes at `password` and the `salt_len` bytes at `salt` to `out`. Calls `vg_pbkdf2_hmac_sha256` for its two PBKDF2-HMAC-SHA256 steps and `vg_scrypt_romix` for each of the `p` blocks.
+/// scrypt (RFC 7914 §6) with block size parameter `r`, cost parameter `N = vlen / r` and parallelization parameter `p = blen / r`: writes the `out_len`-byte key derived from the `password_len` bytes at `password` and the `salt_len` bytes at `salt` to `out`. Calls `vg_pbkdf2_hmac_sha256_scratch` for its two PBKDF2-HMAC-SHA256 steps and `vg_scrypt_romix` for each of the `p` blocks.
 ///
 /// Contract: `VG.Spec.Scrypt.scryptContract`. Not constant time in the indices: timing may depend on the pointers, the lengths, `r`, `N`, `p` and the indices `j` of step 3 of each scryptROMix, which are derived from the password and the salt and so leak information about them (as in every scrypt that indexes `V` directly), but on nothing else.
 ///
-/// Derives both keys with `vg_pbkdf2_hmac_sha256` and runs scryptROMix on each block with `vg_scrypt_romix`, using the start of `scratch` as the working space of each. The password, its length, `r` and `b`, PBKDF2's stack arguments and the next block are kept in a 56-byte stack frame; the calls use the 32 bytes below it.
+/// Derives both keys with `vg_pbkdf2_hmac_sha256_scratch` and runs scryptROMix on each block with `vg_scrypt_romix`, using the start of `scratch` as the working space of each. The password, its length, `r` and `b`, PBKDF2's stack arguments and the next block are kept in a 56-byte stack frame; the calls use the 32 bytes below it.
 ///
 /// # Safety
 ///
@@ -901,7 +901,7 @@ pub(crate) unsafe extern "sysv64" fn vg_scrypt(password: *const u8, password_len
         "mov QWORD PTR [rsp], rax",
         "mov QWORD PTR [rsp+8], r8",
         "mov r8d, 1",
-        "call {vg_pbkdf2_hmac_sha256}",
+        "call {vg_pbkdf2_hmac_sha256_scratch}",
         "mov rax, QWORD PTR [rsp+48]",
         "mov QWORD PTR [rsp+16], rax",
         "20:",
@@ -934,7 +934,7 @@ pub(crate) unsafe extern "sysv64" fn vg_scrypt(password: *const u8, password_len
         "mov QWORD PTR [rsp], rax",
         "mov QWORD PTR [rsp+8], r8",
         "mov r8d, 1",
-        "call {vg_pbkdf2_hmac_sha256}",
+        "call {vg_pbkdf2_hmac_sha256_scratch}",
         "pop rax",
         "pop rax",
         "pop rax",
@@ -944,7 +944,7 @@ pub(crate) unsafe extern "sysv64" fn vg_scrypt(password: *const u8, password_len
         "pop rax",
         "ret",
         ".p2align 6",
-        vg_pbkdf2_hmac_sha256 = sym super::pbkdf2_sha256::vg_pbkdf2_hmac_sha256,
+        vg_pbkdf2_hmac_sha256_scratch = sym super::pbkdf2_sha256::vg_pbkdf2_hmac_sha256_scratch,
         vg_scrypt_romix = sym super::scrypt::vg_scrypt_romix,
     )
 }
@@ -952,11 +952,11 @@ pub(crate) unsafe extern "sysv64" fn vg_scrypt(password: *const u8, password_len
 /// The CPU features `vg_scrypt_avx2` requires (`Artifact.features`).
 pub(crate) const VG_SCRYPT_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2", "bmi1", "bmi2"]);
 
-/// scrypt (RFC 7914 §6) with block size parameter `r`, cost parameter `N = vlen / r` and parallelization parameter `p = blen / r`: writes the `out_len`-byte key derived from the `password_len` bytes at `password` and the `salt_len` bytes at `salt` to `out`. Calls `vg_pbkdf2_hmac_sha256` for its two PBKDF2-HMAC-SHA256 steps and `vg_scrypt_romix` for each of the `p` blocks.
+/// scrypt (RFC 7914 §6) with block size parameter `r`, cost parameter `N = vlen / r` and parallelization parameter `p = blen / r`: writes the `out_len`-byte key derived from the `password_len` bytes at `password` and the `salt_len` bytes at `salt` to `out`. Calls `vg_pbkdf2_hmac_sha256_scratch` for its two PBKDF2-HMAC-SHA256 steps and `vg_scrypt_romix` for each of the `p` blocks.
 ///
 /// Contract: `VG.Spec.Scrypt.scryptContract`. Not constant time in the indices: timing may depend on the pointers, the lengths, `r`, `N`, `p` and the indices `j` of step 3 of each scryptROMix, which are derived from the password and the salt and so leak information about them (as in every scrypt that indexes `V` directly), but on nothing else.
 ///
-/// Derives both keys with `vg_pbkdf2_hmac_sha256_avx2` and runs scryptROMix on each block with `vg_scrypt_romix`, using the start of `scratch` as the working space of each. The password, its length, `r` and `b`, PBKDF2's stack arguments and the next block are kept in a 56-byte stack frame; the calls use the 32 bytes below it.
+/// Derives both keys with `vg_pbkdf2_hmac_sha256_scratch_avx2` and runs scryptROMix on each block with `vg_scrypt_romix`, using the start of `scratch` as the working space of each. The password, its length, `r` and `b`, PBKDF2's stack arguments and the next block are kept in a 56-byte stack frame; the calls use the 32 bytes below it.
 ///
 /// # Safety
 ///
@@ -987,7 +987,7 @@ pub(crate) unsafe extern "sysv64" fn vg_scrypt_avx2(password: *const u8, passwor
         "mov QWORD PTR [rsp], rax",
         "mov QWORD PTR [rsp+8], r8",
         "mov r8d, 1",
-        "call {vg_pbkdf2_hmac_sha256_avx2}",
+        "call {vg_pbkdf2_hmac_sha256_scratch_avx2}",
         "mov rax, QWORD PTR [rsp+48]",
         "mov QWORD PTR [rsp+16], rax",
         "20:",
@@ -1020,7 +1020,7 @@ pub(crate) unsafe extern "sysv64" fn vg_scrypt_avx2(password: *const u8, passwor
         "mov QWORD PTR [rsp], rax",
         "mov QWORD PTR [rsp+8], r8",
         "mov r8d, 1",
-        "call {vg_pbkdf2_hmac_sha256_avx2}",
+        "call {vg_pbkdf2_hmac_sha256_scratch_avx2}",
         "pop rax",
         "pop rax",
         "pop rax",
@@ -1030,7 +1030,7 @@ pub(crate) unsafe extern "sysv64" fn vg_scrypt_avx2(password: *const u8, passwor
         "pop rax",
         "ret",
         ".p2align 6",
-        vg_pbkdf2_hmac_sha256_avx2 = sym super::pbkdf2_sha256::vg_pbkdf2_hmac_sha256_avx2,
+        vg_pbkdf2_hmac_sha256_scratch_avx2 = sym super::pbkdf2_sha256::vg_pbkdf2_hmac_sha256_scratch_avx2,
         vg_scrypt_romix = sym super::scrypt::vg_scrypt_romix,
     )
 }
@@ -1038,11 +1038,11 @@ pub(crate) unsafe extern "sysv64" fn vg_scrypt_avx2(password: *const u8, passwor
 /// The CPU features `vg_scrypt_shani` requires (`Artifact.features`).
 pub(crate) const VG_SCRYPT_SHANI_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["sha", "ssse3"]);
 
-/// scrypt (RFC 7914 §6) with block size parameter `r`, cost parameter `N = vlen / r` and parallelization parameter `p = blen / r`: writes the `out_len`-byte key derived from the `password_len` bytes at `password` and the `salt_len` bytes at `salt` to `out`. Calls `vg_pbkdf2_hmac_sha256` for its two PBKDF2-HMAC-SHA256 steps and `vg_scrypt_romix` for each of the `p` blocks.
+/// scrypt (RFC 7914 §6) with block size parameter `r`, cost parameter `N = vlen / r` and parallelization parameter `p = blen / r`: writes the `out_len`-byte key derived from the `password_len` bytes at `password` and the `salt_len` bytes at `salt` to `out`. Calls `vg_pbkdf2_hmac_sha256_scratch` for its two PBKDF2-HMAC-SHA256 steps and `vg_scrypt_romix` for each of the `p` blocks.
 ///
 /// Contract: `VG.Spec.Scrypt.scryptContract`. Not constant time in the indices: timing may depend on the pointers, the lengths, `r`, `N`, `p` and the indices `j` of step 3 of each scryptROMix, which are derived from the password and the salt and so leak information about them (as in every scrypt that indexes `V` directly), but on nothing else.
 ///
-/// Derives both keys with `vg_pbkdf2_hmac_sha256_shani` and runs scryptROMix on each block with `vg_scrypt_romix`, using the start of `scratch` as the working space of each. The password, its length, `r` and `b`, PBKDF2's stack arguments and the next block are kept in a 56-byte stack frame; the calls use the 32 bytes below it.
+/// Derives both keys with `vg_pbkdf2_hmac_sha256_scratch_shani` and runs scryptROMix on each block with `vg_scrypt_romix`, using the start of `scratch` as the working space of each. The password, its length, `r` and `b`, PBKDF2's stack arguments and the next block are kept in a 56-byte stack frame; the calls use the 32 bytes below it.
 ///
 /// # Safety
 ///
@@ -1073,7 +1073,7 @@ pub(crate) unsafe extern "sysv64" fn vg_scrypt_shani(password: *const u8, passwo
         "mov QWORD PTR [rsp], rax",
         "mov QWORD PTR [rsp+8], r8",
         "mov r8d, 1",
-        "call {vg_pbkdf2_hmac_sha256_shani}",
+        "call {vg_pbkdf2_hmac_sha256_scratch_shani}",
         "mov rax, QWORD PTR [rsp+48]",
         "mov QWORD PTR [rsp+16], rax",
         "20:",
@@ -1106,7 +1106,7 @@ pub(crate) unsafe extern "sysv64" fn vg_scrypt_shani(password: *const u8, passwo
         "mov QWORD PTR [rsp], rax",
         "mov QWORD PTR [rsp+8], r8",
         "mov r8d, 1",
-        "call {vg_pbkdf2_hmac_sha256_shani}",
+        "call {vg_pbkdf2_hmac_sha256_scratch_shani}",
         "pop rax",
         "pop rax",
         "pop rax",
@@ -1116,7 +1116,7 @@ pub(crate) unsafe extern "sysv64" fn vg_scrypt_shani(password: *const u8, passwo
         "pop rax",
         "ret",
         ".p2align 6",
-        vg_pbkdf2_hmac_sha256_shani = sym super::pbkdf2_sha256::vg_pbkdf2_hmac_sha256_shani,
+        vg_pbkdf2_hmac_sha256_scratch_shani = sym super::pbkdf2_sha256::vg_pbkdf2_hmac_sha256_scratch_shani,
         vg_scrypt_romix = sym super::scrypt::vg_scrypt_romix,
     )
 }

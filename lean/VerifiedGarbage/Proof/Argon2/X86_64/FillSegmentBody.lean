@@ -126,7 +126,7 @@ structure Done (s t : State) (p : Params) (pass lane slice index : Nat) (state :
   rd : t.rd = s.rd
   wr : t.wr = s.wr
   frame : Frame (FillBlock.writes s p) s.mem t.mem
-  mxcsr : t.mxcsr = s.mxcsr
+  mxcsr : ctl t.mxcsr = ctl s.mxcsr
   regs : ∀ r ∈ calleeSaved, r ≠ .r15 → t.gpr r = s.gpr r
   layout : FillKernel.Layout p t
   cache : ∃ old, AddressCache.Invariant p pass lane slice old t
@@ -136,7 +136,7 @@ structure Done (s t : State) (p : Params) (pass lane slice index : Nat) (state :
   cf : t.cf = decide (index + 1 < p.segmentLen)
   next : index + 1 < p.segmentLen → ∃ old, RandomSource.Ready p pass lane slice (index + 1) old t
 
-theorem body_ok (s : State) (p : Params) (pass lane slice index old : Nat)
+theorem body_ok [CompressImpl] (s : State) (p : Params) (pass lane slice index old : Nat)
     (h : RandomSource.Ready p pass lane slice index old s) (state : FillState)
     (represented : Proof.Argon2.Represents s.mem (FillKernel.matrix s) p.blocks state.memory) :
     WP isa Impl.Argon2.X86_64.FillSegment.body s (Done s · p pass lane slice index state) := by
@@ -150,7 +150,7 @@ theorem body_ok (s : State) (p : Params) (pass lane slice index old : Nat)
   have base : FillKernel.matrix t = FillKernel.matrix a := by unfold FillKernel.matrix; rw [keeps.mem, bp]
   have work : AddressCalls.work t = AddressCalls.work a := by unfold AddressCalls.work; rw [keeps.mem, bp]
   refine ⟨?_, base.trans filled.matrix, work.trans filled.work, ?_, keeps.rd.trans filled.rd,
-    keeps.wr.trans filled.wr, ?_, keeps.mxcsr.trans filled.mxcsr, ?_, ?_, ?_, ?_, ?_, ?_, cf, ?_⟩
+    keeps.wr.trans filled.wr, ?_, (ctl_eq_of keeps.mxcsr).trans filled.mxcsr, ?_, ?_, ?_, ?_, ?_, ?_, cf, ?_⟩
   · rw [keeps.mem, base]; exact filled.represented
   · exact ⟨(keeps.regs .rbx (by decide)).trans ready.filling.position.current,
       (keeps.regs .r12 (by decide)).trans ready.filling.position.laneLength,

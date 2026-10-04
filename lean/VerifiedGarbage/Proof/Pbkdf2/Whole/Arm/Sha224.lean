@@ -46,12 +46,12 @@ def sha224OKF : FnsOK sha224F where
   encB4 := by decide
   encD := by decide
 
-theorem sha224_sat : ∃ s, (Spec.Hmac.sha224I.pbkdf2Contract Arm.abi 24).pre s := by
-  sig_implies_sat [Spec.Hmac.Instance.pbkdf2Contract, Spec.Pbkdf2.pbkdf2Contract, Spec.Pbkdf2.pbkdf2Sig,
+theorem sha224_sat : ∃ s, (Spec.Hmac.sha224I.pbkdf2ScratchContract Arm.abi 24).pre s := by
+  sig_implies_sat [Spec.Hmac.Instance.pbkdf2ScratchContract, Spec.Pbkdf2.pbkdf2ScratchContract, Spec.Pbkdf2.pbkdf2ScratchSig, Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post,
     Spec.Hmac.Instance.pbkdf2Scratch, Spec.Hmac.sha224I, Spec.Hmac.sha224S, Spec.Hmac.sha224, Arm.abi,
     Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr] [pbkSat, pbkMem] using pbkSat 200
 
-theorem sha224 : Verified Arm.target sha224F.pbkdf2 (Spec.Hmac.sha224I.pbkdf2Contract Arm.abi 24) :=
+theorem sha224 : Verified Arm.target sha224F.pbkdf2 (Spec.Hmac.sha224I.pbkdf2ScratchContract Arm.abi 24) :=
   verified sha224OKF sha224_checks rfl rfl sha224_sat
 
 end VG.Proof.Pbkdf2.Whole.Arm

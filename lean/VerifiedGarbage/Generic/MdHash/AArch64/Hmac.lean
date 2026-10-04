@@ -13,7 +13,10 @@ emitted once for each variant (`Variants/MdHash/AArch64/`), named with its
 suffix.
 
 `stack` is the 16 bytes below the stack pointer that the streaming
-functions may use for a frame saving `x30`.
+functions may use for a frame saving `x30`. `init` and `finalize` keep their
+working space in a frame of their own, above those; `init_scratch` and
+`finalize_scratch`, the same code with it as an argument, are what PBKDF2's
+code calls.
 -/
 
 namespace VG.Generic.MdHash.AArch64.Hmac
@@ -23,20 +26,42 @@ def artifacts (v : Proof.Pbkdf2.Md.AArch64.MdHash) : List Artifact := [
     name := v.I.initApi.name ++ v.suffix
     target := AArch64.target
     doc := v.I.initApi.doc
-    code := v.H.hmacInit
-    contract := v.I.initContract AArch64.abi 16
+    code := Impl.StackScratch.AArch64.withStackScratch (Proof.Pbkdf2.Md.AArch64.hmacFrame v.I) .x4 v.H.hmacInit
+    contract := v.I.initContract AArch64.abi (16 + Proof.Pbkdf2.Md.AArch64.hmacFrame v.I)
     ofSig := ⟨_, _, _, by unfold Spec.Hmac.Instance.initContract; rfl⟩
-    stack := 16
-    verified := v.hmacInit
+    stack := 16 + Proof.Pbkdf2.Md.AArch64.hmacFrame v.I
+    verified := v.hmacInitF
     spSafe := Code.all_of_forall (fun _ => rfl) _
     features := v.features },
   { v.I.finalizeApi with
     name := v.I.finalizeApi.name ++ v.suffix
     target := AArch64.target
     doc := v.I.finalizeApi.doc
-    code := v.H.hmacFin
-    contract := v.I.finalizeContract AArch64.abi 16
+    code := Impl.StackScratch.AArch64.withStackScratch (Proof.Pbkdf2.Md.AArch64.hmacFrame v.I) .x4 v.H.hmacFin
+    contract := v.I.finalizeContract AArch64.abi (16 + Proof.Pbkdf2.Md.AArch64.hmacFrame v.I)
     ofSig := ⟨_, _, _, by unfold Spec.Hmac.Instance.finalizeContract; rfl⟩
+    stack := 16 + Proof.Pbkdf2.Md.AArch64.hmacFrame v.I
+    verified := v.hmacFinF
+    spSafe := Code.all_of_forall (fun _ => rfl) _
+    features := v.features },
+  { v.I.initScratchApi with
+    name := v.I.initScratchApi.name ++ v.suffix
+    target := AArch64.target
+    doc := v.I.initScratchApi.doc
+    code := v.H.hmacInit
+    contract := v.I.initScratchContract AArch64.abi 16
+    ofSig := ⟨_, _, _, by unfold Spec.Hmac.Instance.initScratchContract; rfl⟩
+    stack := 16
+    verified := v.hmacInit
+    spSafe := Code.all_of_forall (fun _ => rfl) _
+    features := v.features },
+  { v.I.finalizeScratchApi with
+    name := v.I.finalizeScratchApi.name ++ v.suffix
+    target := AArch64.target
+    doc := v.I.finalizeScratchApi.doc
+    code := v.H.hmacFin
+    contract := v.I.finalizeScratchContract AArch64.abi 16
+    ofSig := ⟨_, _, _, by unfold Spec.Hmac.Instance.finalizeScratchContract; rfl⟩
     stack := 16
     verified := v.hmacFin
     spSafe := Code.all_of_forall (fun _ => rfl) _

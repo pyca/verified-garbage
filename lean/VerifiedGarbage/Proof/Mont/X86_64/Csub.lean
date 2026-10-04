@@ -11,7 +11,7 @@ temporary area (`diffs`), its borrow becomes a mask (`rax`, all ones if
 
 namespace VG.Proof.Mont.X86_64
 
-open VG VG.X86_64 VG.Impl.Mont.X86_64
+open VG VG.X86_64 VG.Impl.Mont.X86_64 VG.Impl.Mont
 open VG.Proof.X25519.X86_64 (Keeps Keeps.trans Keeps.mono se0 sub_borrow sbb_borrow toNat_ofBool)
 
 /-- The registers but `rs` and the regions are unchanged (memory may change). -/
@@ -217,26 +217,6 @@ theorem selects_ok {size : Nat} : ∀ (ts : List Reg) {s : State} {base : Addr} 
     cases k <;> rfl
 
 /-! ## The conditional subtraction -/
-
-/-- What `csub` computes: the number `T + X top < 2m` below `m`, given its
-difference with `m`, `D + m = T + X b`, and the selection by the borrow. -/
-theorem csub_arith {T D top X m : Nat} {b : Bool} (hX : m < X) (hD : D < X)
-    (hV : T + X * top < 2 * m) (he : D + m = T + X * b.toNat) :
-    (if top < b.toNat then T else D) = (T + X * top) % m := by
-  have htop : top ≤ 1 := by
-    rcases Nat.lt_or_ge top 2 with h | h
-    · omega
-    · have : X * 2 ≤ X * top := Nat.mul_le_mul_left _ h
-      omega
-  rcases (by omega : top = 0 ∨ top = 1) with rfl | rfl <;> cases b <;>
-    simp only [Bool.toNat_false, Bool.toNat_true, Nat.mul_zero, Nat.mul_one, Nat.add_zero] at he hV ⊢
-  · simp only [Nat.lt_irrefl, ite_false]
-    rw [Nat.mod_eq_sub_mod (by omega), Nat.mod_eq_of_lt (by omega)]; omega
-  · simp only [Nat.zero_lt_one, ite_true]
-    rw [Nat.mod_eq_of_lt (by omega)]
-  · omega
-  · simp only [Nat.lt_irrefl, ite_false]
-    rw [Nat.mod_eq_sub_mod (by omega), Nat.mod_eq_of_lt (by omega)]; omega
 
 /-- `csub`: `ts + 2^(64 n) top < 2m` reduced modulo `m`. -/
 theorem csub_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M : Mod}

@@ -17,8 +17,8 @@ flag, and selects for the ladder the peer's point if the flag is set, else
 
 namespace VG.Proof.Ecdh.X86_64
 
-open VG VG.X86_64 VG.Impl.Mont.X86_64 VG.Impl.Weierstrass.X86_64 VG.Impl.Ecdsa.X86_64
-open VG.Proof.Mont.X86_64 VG.Proof.Weierstrass.X86_64 VG.Proof.Weierstrass Spec.Weierstrass
+open VG VG.X86_64 VG.Impl.Mont.X86_64 VG.Impl.Mont VG.Impl.Weierstrass.X86_64 VG.Impl.Weierstrass VG.Impl.Ecdsa.X86_64
+open VG.Proof.Mont.X86_64 VG.Proof.Mont VG.Proof.Weierstrass.X86_64 VG.Proof.Weierstrass Spec.Weierstrass
 open VG.Proof.Ecdsa.X86_64
 open VG.Proof.X25519.X86_64 (Keeps)
 open VG.Impl.Ecdh.X86_64 (QY R2P BP QXM QYM W0 W1 W2 W3 PX PY)
@@ -307,8 +307,8 @@ ladder: `Main.lean` gives the one of the group law, that `R` represents
 
 namespace VG.Proof.Ecdh.X86_64
 
-open VG VG.X86_64 VG.Impl.Mont.X86_64 VG.Impl.Weierstrass.X86_64 VG.Impl.Ecdsa.X86_64
-open VG.Proof.Mont.X86_64 VG.Proof.Weierstrass.X86_64 VG.Proof.Weierstrass Spec.Weierstrass
+open VG VG.X86_64 VG.Impl.Mont.X86_64 VG.Impl.Mont VG.Impl.Weierstrass.X86_64 VG.Impl.Weierstrass VG.Impl.Ecdsa.X86_64
+open VG.Proof.Mont.X86_64 VG.Proof.Mont VG.Proof.Weierstrass.X86_64 VG.Proof.Weierstrass Spec.Weierstrass
 open VG.Proof.Ecdsa.X86_64
 open VG.Impl.Ecdh.X86_64 (PX PY)
 
@@ -324,7 +324,7 @@ theorem ladLayQ (hc : CfgOk c) : LadLay (Impl.Ecdh.X86_64.Cfg.ladderQ c) size :=
     ⟨fun h => by have := sl_inj c hn h; exact absurd this (by decide),
       fun h => by have := sl_inj c hn h; exact absurd this (by decide),
       fun h => by have := sl_inj c hn h; exact absurd this (by decide)⟩, ?_,
-    ⟨show 1 ≤ 64 * c.n by omega, show 64 * c.n < 2 ^ 31 by omega⟩, bitsAt_le c h7 (by decide), ?_⟩
+    ⟨show 1 ≤ 64 * c.n by omega, show 64 * c.n < 2 ^ 16 by omega⟩, bitsAt_le c h7 (by decide), ?_⟩
   · exact lay_map hc rfl rfl rfl (l := [AP, B3P, PX, PY, ONEP, RX, RY, RZ, T0, T1, T2, T3, T4, T5,
       DX, DY, DZ, TX, TY, TZ]) (by decide)
   · exact map_sl_disj hn (l₁ := [AP, B3P, PX, PY, ONEP])

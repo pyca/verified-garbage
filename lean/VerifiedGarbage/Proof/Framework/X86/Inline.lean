@@ -102,6 +102,20 @@ theorem exec_widen (hc : Covers (s.rd ++ s.wr) (rd ++ wr)) (hw : Covers s.wr wr)
     subst h
     simp only [State.withRegions_wr, State.withRegions_ea, hw _ _ hi, ite_true]
     rfl
+  | movqLoad d m =>
+    simp only [exec, State.load64, Option.map_eq_some_iff] at h ⊢
+    split at h <;> [rename_i hi; simp at h]
+    obtain ⟨v, hv, rfl⟩ := h
+    simp only [State.withRegions_rd, State.withRegions_wr, State.withRegions_mem, State.withRegions_ea,
+      hc _ _ hi, ite_true]
+    exact ⟨v, hv, rfl⟩
+  | movqStore m r =>
+    simp only [exec, State.store64] at h ⊢
+    split at h <;> [rename_i hi; cases h]
+    simp only [Option.some.injEq] at h
+    subst h
+    simp only [State.withRegions_wr, State.withRegions_ea, hw _ _ hi, ite_true]
+    rfl
   | push _ | pop _ _ | alloc _ | free _ => simp only [exec, reduceCtorEq] at h
 
 theorem addrs_withRegions (i : Instr) (s : State) (rd wr : List Region) :
@@ -148,6 +162,16 @@ theorem exec_regions {i : Instr} (h : exec i s = some s') :
     subst h
     obtain ⟨r, hr, hc⟩ := hi
     exact ⟨rfl, rfl, (Frame.refl _ _).writeW hr _ hc⟩
+  | movqLoad d m =>
+    simp only [exec, Option.map_eq_some_iff] at h
+    obtain ⟨_, _, rfl⟩ := h; exact ⟨rfl, rfl, Frame.refl _ _⟩
+  | movqStore m r =>
+    simp only [exec, State.store64] at h
+    split at h <;> [rename_i hi; cases h]
+    simp only [Option.some.injEq] at h
+    subst h
+    obtain ⟨r, hr, hc⟩ := hi
+    exact ⟨rfl, rfl, (Frame.refl _ _).writeW hr _ hc⟩
   | push _ | pop _ _ | alloc _ | free _ => simp only [exec, reduceCtorEq] at h
 
 theorem exec_gpr {i : Instr} {r : Reg} (hi : Taint.clobbers i r = false) (h : exec i s = some s') :
@@ -173,6 +197,14 @@ theorem exec_gpr {i : Instr} {r : Reg} (hi : Taint.clobbers i r = false) (h : ex
       obtain ⟨_, _, rfl⟩ := h; rfl
     | movdquStore m r' =>
       simp only [exec, State.store128] at h
+      split at h <;> [skip; cases h]
+      simp only [Option.some.injEq] at h
+      subst h; rfl
+    | movqLoad d m =>
+      simp only [exec, Option.map_eq_some_iff] at h
+      obtain ⟨_, _, rfl⟩ := h; rfl
+    | movqStore m r' =>
+      simp only [exec, State.store64] at h
       split at h <;> [skip; cases h]
       simp only [Option.some.injEq] at h
       subst h; rfl

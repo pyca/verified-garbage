@@ -7,8 +7,7 @@
 //! absorbed so far, with the message's last bytes that do not fill a block
 //! buffered in it (`VG.Spec.Poly1305.Buffered`), and compute the tag. This
 //! module only keeps that state together with the message length (modulo
-//! 2⁶⁴), which the contracts take as an argument, and gives them working
-//! space (`scratch`).
+//! 2⁶⁴), which the contracts take as an argument.
 //!
 //! `vg_poly1305_update` absorbs the whole blocks of the data with an
 //! implementation of `vg_poly1305_blocks`, and is emitted once for each
@@ -18,7 +17,11 @@
 //! them (and fewer with `vg_poly1305_blocks_avx2`), and other CPUs with AVX2
 //! `vg_poly1305_update_avx2`, which absorbs them with
 //! `vg_poly1305_blocks_avx2`, four at a time once there are at least 32 of
-//! them.
+//! them. On AArch64, `vg_poly1305_update_neon` absorbs the whole blocks of
+//! data of at least 128 bytes four at a time in NEON (AdvSIMD), which every
+//! AArch64 CPU has; it is chosen only on Apple's cores (`target_vendor =
+//! "apple"`), because on others, such as Arm's Neoverse N2, the scalar code
+//! is faster.
 //!
 //! A key must be used to authenticate only one message: the tags of two
 //! messages under the same key reveal enough to forge others.
@@ -30,6 +33,8 @@
     target_arch = "x86"
 ))]
 
+#[cfg(target_arch = "aarch64")]
+use crate::arch::poly1305::vg_poly1305_update_neon;
 #[cfg(target_arch = "x86_64")]
 use crate::arch::poly1305::{
     VG_POLY1305_UPDATE_AVX2_FEATURES, VG_POLY1305_UPDATE_AVX512_FEATURES, vg_poly1305_update_avx2,
@@ -53,6 +58,9 @@ enum Backend {
     /// `vg_poly1305_update_avx512`, with `vg_poly1305_blocks_avx512`.
     #[cfg(target_arch = "x86_64")]
     Avx512,
+    /// `vg_poly1305_update_neon`, four blocks at a time in NEON.
+    #[cfg(target_arch = "aarch64")]
+    Neon,
 }
 
 impl Backend {
@@ -68,9 +76,30 @@ impl Backend {
         }
     }
 
+    /// The best implementation a CPU with the features `f` can run: NEON on
+    /// Apple's cores.
+    #[cfg(target_arch = "aarch64")]
+    fn select(f: Features) -> Backend {
+        Backend::select_for(f, cfg!(target_vendor = "apple"))
+    }
+
+    /// The best implementation a CPU with the features `f` can run, on
+    /// Apple's cores if `apple`: no CPU feature tells which run the NEON code
+    /// faster than the scalar code (Apple's, about twice as fast) or slower
+    /// (Arm's Neoverse N2, whose two vector pipelines its multiplications
+    /// saturate).
+    #[cfg(target_arch = "aarch64")]
+    fn select_for(f: Features, apple: bool) -> Backend {
+        if apple && f.contains(const { Features::of(&["neon"]) }) {
+            Backend::Neon
+        } else {
+            Backend::Scalar
+        }
+    }
+
     /// The best implementation a CPU with the features `f` can run: there
     /// is only one here.
-    #[cfg(not(target_arch = "x86_64"))]
+    #[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
     fn select(_: Features) -> Backend {
         Backend::Scalar
     }
@@ -116,45 +145,37 @@ impl Poly1305 {
 
     /// Absorbs `data`.
     pub fn update(&mut self, data: &[u8]) {
-        let mut scratch = [0u64; 16];
         let update = match self.backend {
             Backend::Scalar => vg_poly1305_update,
             #[cfg(target_arch = "x86_64")]
             Backend::Avx2 => vg_poly1305_update_avx2,
             #[cfg(target_arch = "x86_64")]
             Backend::Avx512 => vg_poly1305_update_avx512,
+            #[cfg(target_arch = "aarch64")]
+            Backend::Neon => vg_poly1305_update_neon,
         };
-        // SAFETY: `self.state` and `scratch` are valid for reads and writes of
-        // 128 bytes and `data` for reads of `data.len()` bytes; they are
-        // distinct objects, so they do not overlap each other or anything on
-        // the stack (the return address, any arguments, and the stack below
-        // the stack pointer the calls use), and do not wrap around the end of
-        // the address space. `self.state` represents a message of
-        // `self.count` bytes, modulo 2⁶⁴. The CPU has the features of the
-        // implementation selected (`Backend::select`).
-        unsafe {
-            update(
-                &mut self.state,
-                self.count,
-                data.as_ptr(),
-                data.len(),
-                &mut scratch,
-            )
-        };
+        // SAFETY: `self.state` is valid for reads and writes of 128 bytes and
+        // `data` for reads of `data.len()` bytes; they are distinct objects,
+        // so they do not overlap each other or anything on the stack (the
+        // return address, any arguments, and the stack below the stack
+        // pointer the calls use), and do not wrap around the end of the
+        // address space. `self.state` represents a message of `self.count`
+        // bytes, modulo 2⁶⁴. The CPU has the features of the implementation
+        // selected (`Backend::select`).
+        unsafe { update(&mut self.state, self.count, data.as_ptr(), data.len()) };
         self.count = self.count.wrapping_add(data.len() as u64);
     }
 
     /// Returns the tag of everything absorbed.
     pub fn finalize(mut self) -> [u8; 16] {
         let mut tag = [0; 16];
-        let mut scratch = [0u64; 16];
-        // SAFETY: `self.state` and `scratch` are valid for reads and writes of
-        // 128 bytes and `tag` for writes of 16 bytes; they are distinct
-        // objects, so they do not overlap each other or anything on the stack
-        // (the return address and any arguments), and do not wrap around the
-        // end of the address space. `self.state` represents a message of
-        // `self.count` bytes, modulo 2⁶⁴.
-        unsafe { vg_poly1305_finalize(&mut self.state, self.count, &mut tag, &mut scratch) };
+        // SAFETY: `self.state` is valid for reads and writes of 128 bytes and
+        // `tag` for writes of 16 bytes; they are distinct objects, so they do
+        // not overlap each other or anything on the stack (the return address
+        // and any arguments), and do not wrap around the end of the address
+        // space. `self.state` represents a message of `self.count` bytes,
+        // modulo 2⁶⁴.
+        unsafe { vg_poly1305_finalize(&mut self.state, self.count, &mut tag) };
         tag
     }
 
@@ -231,28 +252,39 @@ mod tests {
         assert_eq!(check(&longer), Err(InvalidMac));
     }
 
-    /// The implementation chosen gives the same tag as the scalar one, for
-    /// lengths around the number of blocks from which the vector code runs
-    /// (16) and multiples of four blocks, in one piece and in two split at
+    /// The implementation chosen, and on AArch64 the NEON one whichever is
+    /// chosen, give the same tag as the scalar one, for lengths around the
+    /// numbers of blocks from which the vector code runs (8 on AArch64, 16 on
+    /// x86-64) and multiples of four blocks, in one piece and in two split at
     /// many positions.
     #[test]
     fn implementations_agree() {
         let key: [u8; 32] = core::array::from_fn(|i| (i * 11 + 1) as u8);
         let msg: [u8; 1100] = core::array::from_fn(|i| (i * 31 + 7) as u8);
+        #[allow(unused_mut)]
+        let mut backends = [Backend::select(detected()); 2];
+        #[cfg(target_arch = "aarch64")]
+        {
+            backends[1] = Backend::Neon;
+        }
         for len in [
-            0, 1, 15, 16, 17, 63, 64, 65, 255, 256, 257, 271, 272, 273, 319, 320, 321, 495, 496,
-            511, 512, 513, 527, 528, 529, 623, 624, 625, 639, 640, 641, 1024, 1100,
+            0, 1, 15, 16, 17, 63, 64, 65, 127, 128, 129, 191, 192, 193, 255, 256, 257, 271, 272,
+            273, 319, 320, 321, 495, 496, 511, 512, 513, 527, 528, 529, 623, 624, 625, 639, 640,
+            641, 1024, 1100,
         ] {
             let mut scalar = Poly1305::new(&key);
             scalar.backend = Backend::Scalar;
             scalar.update(&msg[..len]);
             let expected = scalar.finalize();
             assert_eq!(Poly1305::mac(&key, &msg[..len]), expected);
-            for split in (0..=len).step_by(13) {
-                let mut p = Poly1305::new(&key);
-                p.update(&msg[..split]);
-                p.update(&msg[split..len]);
-                assert_eq!(p.finalize(), expected);
+            for backend in backends {
+                for split in (0..=len).step_by(13) {
+                    let mut p = Poly1305::new(&key);
+                    p.backend = backend;
+                    p.update(&msg[..split]);
+                    p.update(&msg[split..len]);
+                    assert_eq!(p.finalize(), expected);
+                }
             }
         }
     }
@@ -281,6 +313,14 @@ mod tests {
                 Backend::Scalar
             );
             assert_eq!(Backend::select(Features::of(&["avx"])), Backend::Scalar);
+        }
+        #[cfg(target_arch = "aarch64")]
+        {
+            let neon = Features::of(&["neon"]);
+            assert_eq!(Backend::select_for(neon, true), Backend::Neon);
+            assert_eq!(Backend::select_for(neon, false), Backend::Scalar);
+            assert_eq!(Backend::select_for(Features(0), true), Backend::Scalar);
+            assert_eq!(Backend::select_for(Features(0), false), Backend::Scalar);
         }
     }
 }

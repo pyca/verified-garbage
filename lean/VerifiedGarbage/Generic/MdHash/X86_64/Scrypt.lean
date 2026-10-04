@@ -5,13 +5,13 @@ import VerifiedGarbage.Proof.Scrypt.X86_64.Whole.Verified
 # scrypt (RFC 7914 §6) on x86-64, over SHA-256
 
 A generic file (see `TCB/Emit.lean`): `vg_scrypt`, calling the
-`vg_pbkdf2_hmac_sha256` made with the variant's SHA-256 compression function
+`vg_pbkdf2_hmac_sha256_scratch` made with the variant's SHA-256 compression function
 (and `vg_scrypt_romix`), is emitted for every SHA-256 variant carried by
 `MdHash.sha256`, named with its suffix (e.g. `vg_scrypt_shani`), and needs its
 CPU features. Other hash functions emit no scrypt artifact.
 
 The stack is 88 bytes: a 56-byte frame, the return address of a call, and
-the 24 bytes `vg_pbkdf2_hmac_sha256`'s own calls use.
+the 24 bytes `vg_pbkdf2_hmac_sha256_scratch`'s own calls use.
 -/
 
 namespace VG.Generic.MdHash.X86_64.Scrypt

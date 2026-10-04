@@ -1881,7 +1881,7 @@ theorem writes_eq (s t : State) (p : Params) (bp : t.gpr .rbp = s.gpr .rbp) (sp 
   unfold writes
   rw [bp, sp, base, work, output]
 
-theorem code_ok (v : Proof.Blake2.X86_64.Backend) (name : String) (s : State) (p : Params) (h : Ready p s) :
+theorem code_ok [CompressImpl] (v : Proof.Blake2.X86_64.Backend) (name : String) (s : State) (p : Params) (h : Ready p s) :
     WP isa (Impl.Argon2.X86_64.InitFill.code name (HPrime.hash v)) s (Done s · p) := by
   have params := h.environment.parameters
   have q : 2 ≤ p.laneLen := by

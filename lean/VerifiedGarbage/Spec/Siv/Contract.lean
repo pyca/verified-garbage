@@ -35,9 +35,9 @@ absorbs one component at a time (§2.4):
 The functions check no length; the RFC limits the associated data to 126
 components (§7), which the caller counts. The synthetic IV travels in the
 first 16 bytes of `work`, which is also working space, so that fewer
-arguments are passed in memory. Each function's working space (`scratch` or
-`work`) has room for `vg_aes_ctr32`'s (2048 bytes) and 512 bytes more, and
-`encrypt`'s and `decrypt`'s 16 more, for S2V's state.
+arguments are passed in memory. `encrypt`'s and `decrypt`'s working space
+(`work`) has room for `vg_aes_ctr32`'s (2048 bytes) and 528 bytes more, for
+S2V's state; `init` keeps its working space on the stack.
 
 Every contract takes the number of bytes of stack below the stack pointer
 that an implementation's calls and frames use (`stack`, see `Sig.contract`),
@@ -50,20 +50,22 @@ namespace VG.Spec.Siv
 
 /-! ## The key context -/
 
-/-- `vg_aes_siv_init(key: *const u8, key_len: usize, ctx: *mut [u64; 64], scratch: *mut [u64; 320])`.
-`scratch` is working space. -/
+/-- `vg_aes_siv_init(key: *const u8, key_len: usize, ctx: *mut [u64; 64])`. -/
 def initSig : Sig where
-  params := [("key", .slice false .u8 "key_len"), ("ctx", .array true .u64 64),
-    ("scratch", .array true .u64 320)]
+  params := [("key", .slice false .u8 "key_len"), ("ctx", .array true .u64 64)]
 
-/-- For a key of 32, 48 or 64 bytes at `key`, makes the 512 bytes at `ctx`
-its key context (`KeyRepr`). -/
+/-- `init`'s precondition: a key of 32, 48 or 64 bytes. -/
+def initPre (pb : Nat) : Curry (initSig.words pb) (Mem → Prop) :=
+  fun _key keyLen _ctx _ => keyLen.toNat = 32 ∨ keyLen.toNat = 48 ∨ keyLen.toNat = 64
+
+/-- Makes the 512 bytes at `ctx` the key context (`KeyRepr`) of the key at
+`key`. -/
+def initPost (pb : Nat) : initSig.Post pb := fun key keyLen ctx m m' _ =>
+  KeyRepr m' ctx (Aes.bytesAt m key keyLen.toNat)
+
+/-- For a key of 32, 48 or 64 bytes at `key`: `initPost`. -/
 def initContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  initSig.contract A
-    (pre := fun _key keyLen _ctx _scratch _ =>
-      keyLen.toNat = 32 ∨ keyLen.toNat = 48 ∨ keyLen.toNat = 64)
-    (post := fun key keyLen ctx _scratch m m' _ => KeyRepr m' ctx (Aes.bytesAt m key keyLen.toNat))
-    (writeArgs := true)
+  initSig.contract A (pre := initPre A.ptrBits) (post := initPost A.ptrBits) (writeArgs := true)
     (stack := stack)
 
 /-- `vg_aes_siv_init` on every target. -/
@@ -82,9 +84,7 @@ def initApi : Api where
     `vg_aes_siv_*` functions read it, with `Nr` as their `rounds`.\n\n\
     Contract: `VG.Spec.Siv.initContract`. The key context is `VG.Spec.Siv.KeyRepr`. Constant \
     time: only the pointers and `key_len` may affect timing, not the key."
-  safety := [
-    "`key_len` must be 32, 48 or 64.",
-    "The contents of `scratch` on return are unspecified."]
+  safety := ["`key_len` must be 32, 48 or 64."]
 
 /-! ## Encryption and decryption -/
 

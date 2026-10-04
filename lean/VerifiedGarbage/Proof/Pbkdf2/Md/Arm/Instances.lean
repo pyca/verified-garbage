@@ -221,18 +221,18 @@ def finSat (S D sc : Nat) : State where
 
 /-- `initG` implies the shared contract for any hash function and scratch space
 (`generic_implies`), given that the shared contract is satisfiable. -/
-theorem initImp (S : Spec.Hmac.StreamingHash) (W : Nat) (h : ∃ s, (Spec.Hmac.initContract S W Arm.abi 16).pre s) :
-    (initG S W).Implies (Spec.Hmac.initContract S W Arm.abi 16) := by
+theorem initImp (S : Spec.Hmac.StreamingHash) (W : Nat) (h : ∃ s, (Spec.Hmac.initScratchContract S W Arm.abi 16).pre s) :
+    (initG S W).Implies (Spec.Hmac.initScratchContract S W Arm.abi 16) := by
   generic_implies [
-    Spec.Hmac.initContract, Spec.Hmac.initSig, initG, below, count, Arm.abi, Arm.argRegs,
+    Spec.Hmac.initScratchContract, Spec.Hmac.initScratchSig, Spec.Hmac.initPre, Spec.Hmac.initPost, initG, below, count, Arm.abi, Arm.argRegs,
     Arm.reduceClassify, Arm.Loc.val, Arm.State.addr] using h
 
 /-- `finG` implies the shared contract for any hash function and scratch space
 (`generic_implies`), given that the shared contract is satisfiable. -/
-theorem finImp (S : Spec.Hmac.StreamingHash) (W : Nat) (h : ∃ s, (Spec.Hmac.finalizeContract S W Arm.abi 16).pre s) :
-    (finG S W).Implies (Spec.Hmac.finalizeContract S W Arm.abi 16) := by
+theorem finImp (S : Spec.Hmac.StreamingHash) (W : Nat) (h : ∃ s, (Spec.Hmac.finalizeScratchContract S W Arm.abi 16).pre s) :
+    (finG S W).Implies (Spec.Hmac.finalizeScratchContract S W Arm.abi 16) := by
   generic_implies [
-    Spec.Hmac.finalizeContract, Spec.Hmac.finalizeSig, finG, below, count, Arm.abi, Arm.argRegs,
+    Spec.Hmac.finalizeScratchContract, Spec.Hmac.finalizeScratchSig, Spec.Hmac.finalizePost, finG, below, count, Arm.abi, Arm.argRegs,
     Arm.reduceClassify, Arm.Loc.val, Arm.State.addr] using h
 
 /-- A state satisfying `iterate`'s precondition, with states of `S` bytes, a
@@ -284,20 +284,20 @@ theorem sha1_initChecks : HmacInit.Checks sha1Md := by
     ⟨?_, ?_⟩⟩
   taint_decide_all
 
-theorem sha1_initImp : (initG Spec.Hmac.sha1S 56).Implies (Spec.Hmac.sha1I.initContract Arm.abi 16) :=
+theorem sha1_initImp : (initG Spec.Hmac.sha1S 56).Implies (Spec.Hmac.sha1I.initScratchContract Arm.abi 16) :=
   initImp Spec.Hmac.sha1S 56 (by
-    inst_sat [Spec.Hmac.initContract, Spec.Hmac.initSig, Spec.Hmac.sha1S, Spec.Hmac.sha1, initG, below,
+    inst_sat [Spec.Hmac.initScratchContract, Spec.Hmac.initScratchSig, Spec.Hmac.initPre, Spec.Hmac.initPost, Spec.Hmac.sha1S, Spec.Hmac.sha1, initG, below,
       count, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr] using initSat 84 56)
 
-theorem sha1_finImp : (finG Spec.Hmac.sha1S 56).Implies (Spec.Hmac.sha1I.finalizeContract Arm.abi 16) :=
+theorem sha1_finImp : (finG Spec.Hmac.sha1S 56).Implies (Spec.Hmac.sha1I.finalizeScratchContract Arm.abi 16) :=
   finImp Spec.Hmac.sha1S 56 (by
-    inst_sat [Spec.Hmac.finalizeContract, Spec.Hmac.finalizeSig, Spec.Hmac.sha1S, Spec.Hmac.sha1, finG,
+    inst_sat [Spec.Hmac.finalizeScratchContract, Spec.Hmac.finalizeScratchSig, Spec.Hmac.finalizePost, Spec.Hmac.sha1S, Spec.Hmac.sha1, finG,
       below, count, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr] using finSat 84 20 56)
 
-theorem sha1_init : Verified Arm.target sha1Md.hmacInit (Spec.Hmac.sha1I.initContract Arm.abi 16) :=
+theorem sha1_init : Verified Arm.target sha1Md.hmacInit (Spec.Hmac.sha1I.initScratchContract Arm.abi 16) :=
   (HmacInit.verified sha1MdOK sha1_initChecks (by decide) sha1_initImp.sat_left).of_implies sha1_initImp
 
-theorem sha1_finalize : Verified Arm.target sha1Md.hmacFin (Spec.Hmac.sha1I.finalizeContract Arm.abi 16) :=
+theorem sha1_finalize : Verified Arm.target sha1Md.hmacFin (Spec.Hmac.sha1I.finalizeScratchContract Arm.abi 16) :=
   (Fin.verified sha1MdOK sha1_finChecks (by decide) sha1_finImp.sat_left).of_implies
     sha1_finImp
 
@@ -326,20 +326,20 @@ theorem md5_initChecks : HmacInit.Checks md5Md := by
     ⟨?_, ?_⟩⟩
   taint_decide_all
 
-theorem md5_initImp : (initG Spec.Hmac.md5S 48).Implies (Spec.Hmac.md5I.initContract Arm.abi 16) :=
+theorem md5_initImp : (initG Spec.Hmac.md5S 48).Implies (Spec.Hmac.md5I.initScratchContract Arm.abi 16) :=
   initImp Spec.Hmac.md5S 48 (by
-    inst_sat [Spec.Hmac.initContract, Spec.Hmac.initSig, Spec.Hmac.md5S, Spec.Hmac.md5, initG, below,
+    inst_sat [Spec.Hmac.initScratchContract, Spec.Hmac.initScratchSig, Spec.Hmac.initPre, Spec.Hmac.initPost, Spec.Hmac.md5S, Spec.Hmac.md5, initG, below,
       count, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr] using initSat 80 48)
 
-theorem md5_finImp : (finG Spec.Hmac.md5S 48).Implies (Spec.Hmac.md5I.finalizeContract Arm.abi 16) :=
+theorem md5_finImp : (finG Spec.Hmac.md5S 48).Implies (Spec.Hmac.md5I.finalizeScratchContract Arm.abi 16) :=
   finImp Spec.Hmac.md5S 48 (by
-    inst_sat [Spec.Hmac.finalizeContract, Spec.Hmac.finalizeSig, Spec.Hmac.md5S, Spec.Hmac.md5, finG,
+    inst_sat [Spec.Hmac.finalizeScratchContract, Spec.Hmac.finalizeScratchSig, Spec.Hmac.finalizePost, Spec.Hmac.md5S, Spec.Hmac.md5, finG,
       below, count, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr] using finSat 80 16 48)
 
-theorem md5_init : Verified Arm.target md5Md.hmacInit (Spec.Hmac.md5I.initContract Arm.abi 16) :=
+theorem md5_init : Verified Arm.target md5Md.hmacInit (Spec.Hmac.md5I.initScratchContract Arm.abi 16) :=
   (HmacInit.verified md5MdOK md5_initChecks (by decide) md5_initImp.sat_left).of_implies md5_initImp
 
-theorem md5_finalize : Verified Arm.target md5Md.hmacFin (Spec.Hmac.md5I.finalizeContract Arm.abi 16) :=
+theorem md5_finalize : Verified Arm.target md5Md.hmacFin (Spec.Hmac.md5I.finalizeScratchContract Arm.abi 16) :=
   (Fin.verified md5MdOK md5_finChecks (by decide) md5_finImp.sat_left).of_implies
     md5_finImp
 
@@ -368,20 +368,20 @@ theorem sha384_initChecks : HmacInit.Checks sha384Md := by
     ⟨?_, ?_⟩⟩
   taint_decide_all
 
-theorem sha384_initImp : (initG Spec.Hmac.sha384S 234).Implies (Spec.Hmac.sha384I.initContract Arm.abi 16) :=
+theorem sha384_initImp : (initG Spec.Hmac.sha384S 234).Implies (Spec.Hmac.sha384I.initScratchContract Arm.abi 16) :=
   initImp Spec.Hmac.sha384S 234 (by
-    inst_sat [Spec.Hmac.initContract, Spec.Hmac.initSig, Spec.Hmac.sha384S, Spec.Hmac.sha384, initG, below,
+    inst_sat [Spec.Hmac.initScratchContract, Spec.Hmac.initScratchSig, Spec.Hmac.initPre, Spec.Hmac.initPost, Spec.Hmac.sha384S, Spec.Hmac.sha384, initG, below,
       count, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr] using initSat 192 234)
 
-theorem sha384_finImp : (finG Spec.Hmac.sha384S 234).Implies (Spec.Hmac.sha384I.finalizeContract Arm.abi 16) :=
+theorem sha384_finImp : (finG Spec.Hmac.sha384S 234).Implies (Spec.Hmac.sha384I.finalizeScratchContract Arm.abi 16) :=
   finImp Spec.Hmac.sha384S 234 (by
-    inst_sat [Spec.Hmac.finalizeContract, Spec.Hmac.finalizeSig, Spec.Hmac.sha384S, Spec.Hmac.sha384, finG,
+    inst_sat [Spec.Hmac.finalizeScratchContract, Spec.Hmac.finalizeScratchSig, Spec.Hmac.finalizePost, Spec.Hmac.sha384S, Spec.Hmac.sha384, finG,
       below, count, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr] using finSat 192 48 234)
 
-theorem sha384_init : Verified Arm.target sha384Md.hmacInit (Spec.Hmac.sha384I.initContract Arm.abi 16) :=
+theorem sha384_init : Verified Arm.target sha384Md.hmacInit (Spec.Hmac.sha384I.initScratchContract Arm.abi 16) :=
   (HmacInit.verified sha384MdOK sha384_initChecks (by decide) sha384_initImp.sat_left).of_implies sha384_initImp
 
-theorem sha384_finalize : Verified Arm.target sha384Md.hmacFin (Spec.Hmac.sha384I.finalizeContract Arm.abi 16) :=
+theorem sha384_finalize : Verified Arm.target sha384Md.hmacFin (Spec.Hmac.sha384I.finalizeScratchContract Arm.abi 16) :=
   (Fin.verified sha384MdOK sha384_finChecks (by decide) sha384_finImp.sat_left).of_implies
     sha384_finImp
 
@@ -410,20 +410,20 @@ theorem sha512_initChecks : HmacInit.Checks sha512Md' := by
     ⟨?_, ?_⟩⟩
   taint_decide_all
 
-theorem sha512_initImp : (initG Spec.Hmac.sha512S 234).Implies (Spec.Hmac.sha512I.initContract Arm.abi 16) :=
+theorem sha512_initImp : (initG Spec.Hmac.sha512S 234).Implies (Spec.Hmac.sha512I.initScratchContract Arm.abi 16) :=
   initImp Spec.Hmac.sha512S 234 (by
-    inst_sat [Spec.Hmac.initContract, Spec.Hmac.initSig, Spec.Hmac.sha512S, Spec.Hmac.sha512, initG, below,
+    inst_sat [Spec.Hmac.initScratchContract, Spec.Hmac.initScratchSig, Spec.Hmac.initPre, Spec.Hmac.initPost, Spec.Hmac.sha512S, Spec.Hmac.sha512, initG, below,
       count, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr] using initSat 192 234)
 
-theorem sha512_finImp : (finG Spec.Hmac.sha512S 234).Implies (Spec.Hmac.sha512I.finalizeContract Arm.abi 16) :=
+theorem sha512_finImp : (finG Spec.Hmac.sha512S 234).Implies (Spec.Hmac.sha512I.finalizeScratchContract Arm.abi 16) :=
   finImp Spec.Hmac.sha512S 234 (by
-    inst_sat [Spec.Hmac.finalizeContract, Spec.Hmac.finalizeSig, Spec.Hmac.sha512S, Spec.Hmac.sha512, finG,
+    inst_sat [Spec.Hmac.finalizeScratchContract, Spec.Hmac.finalizeScratchSig, Spec.Hmac.finalizePost, Spec.Hmac.sha512S, Spec.Hmac.sha512, finG,
       below, count, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr] using finSat 192 64 234)
 
-theorem sha512_init : Verified Arm.target sha512Md'.hmacInit (Spec.Hmac.sha512I.initContract Arm.abi 16) :=
+theorem sha512_init : Verified Arm.target sha512Md'.hmacInit (Spec.Hmac.sha512I.initScratchContract Arm.abi 16) :=
   (HmacInit.verified sha512MdOK' sha512_initChecks (by decide) sha512_initImp.sat_left).of_implies sha512_initImp
 
-theorem sha512_finalize : Verified Arm.target sha512Md'.hmacFin (Spec.Hmac.sha512I.finalizeContract Arm.abi 16) :=
+theorem sha512_finalize : Verified Arm.target sha512Md'.hmacFin (Spec.Hmac.sha512I.finalizeScratchContract Arm.abi 16) :=
   (Fin.verified sha512MdOK' sha512_finChecks (by decide) sha512_finImp.sat_left).of_implies
     sha512_finImp
 
@@ -452,20 +452,20 @@ theorem sha512_224_initChecks : HmacInit.Checks sha512_224Md := by
     ⟨?_, ?_⟩⟩
   taint_decide_all
 
-theorem sha512_224_initImp : (initG Spec.Hmac.sha512_224S 234).Implies (Spec.Hmac.sha512_224I.initContract Arm.abi 16) :=
+theorem sha512_224_initImp : (initG Spec.Hmac.sha512_224S 234).Implies (Spec.Hmac.sha512_224I.initScratchContract Arm.abi 16) :=
   initImp Spec.Hmac.sha512_224S 234 (by
-    inst_sat [Spec.Hmac.initContract, Spec.Hmac.initSig, Spec.Hmac.sha512_224S, Spec.Hmac.sha512_224, initG, below,
+    inst_sat [Spec.Hmac.initScratchContract, Spec.Hmac.initScratchSig, Spec.Hmac.initPre, Spec.Hmac.initPost, Spec.Hmac.sha512_224S, Spec.Hmac.sha512_224, initG, below,
       count, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr] using initSat 192 234)
 
-theorem sha512_224_finImp : (finG Spec.Hmac.sha512_224S 234).Implies (Spec.Hmac.sha512_224I.finalizeContract Arm.abi 16) :=
+theorem sha512_224_finImp : (finG Spec.Hmac.sha512_224S 234).Implies (Spec.Hmac.sha512_224I.finalizeScratchContract Arm.abi 16) :=
   finImp Spec.Hmac.sha512_224S 234 (by
-    inst_sat [Spec.Hmac.finalizeContract, Spec.Hmac.finalizeSig, Spec.Hmac.sha512_224S, Spec.Hmac.sha512_224, finG,
+    inst_sat [Spec.Hmac.finalizeScratchContract, Spec.Hmac.finalizeScratchSig, Spec.Hmac.finalizePost, Spec.Hmac.sha512_224S, Spec.Hmac.sha512_224, finG,
       below, count, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr] using finSat 192 28 234)
 
-theorem sha512_224_init : Verified Arm.target sha512_224Md.hmacInit (Spec.Hmac.sha512_224I.initContract Arm.abi 16) :=
+theorem sha512_224_init : Verified Arm.target sha512_224Md.hmacInit (Spec.Hmac.sha512_224I.initScratchContract Arm.abi 16) :=
   (HmacInit.verified sha512_224MdOK sha512_224_initChecks (by decide) sha512_224_initImp.sat_left).of_implies sha512_224_initImp
 
-theorem sha512_224_finalize : Verified Arm.target sha512_224Md.hmacFin (Spec.Hmac.sha512_224I.finalizeContract Arm.abi 16) :=
+theorem sha512_224_finalize : Verified Arm.target sha512_224Md.hmacFin (Spec.Hmac.sha512_224I.finalizeScratchContract Arm.abi 16) :=
   (Fin.verified sha512_224MdOK sha512_224_finChecks (by decide) sha512_224_finImp.sat_left).of_implies
     sha512_224_finImp
 
@@ -494,20 +494,20 @@ theorem sha512_256_initChecks : HmacInit.Checks sha512_256Md := by
     ⟨?_, ?_⟩⟩
   taint_decide_all
 
-theorem sha512_256_initImp : (initG Spec.Hmac.sha512_256S 234).Implies (Spec.Hmac.sha512_256I.initContract Arm.abi 16) :=
+theorem sha512_256_initImp : (initG Spec.Hmac.sha512_256S 234).Implies (Spec.Hmac.sha512_256I.initScratchContract Arm.abi 16) :=
   initImp Spec.Hmac.sha512_256S 234 (by
-    inst_sat [Spec.Hmac.initContract, Spec.Hmac.initSig, Spec.Hmac.sha512_256S, Spec.Hmac.sha512_256, initG, below,
+    inst_sat [Spec.Hmac.initScratchContract, Spec.Hmac.initScratchSig, Spec.Hmac.initPre, Spec.Hmac.initPost, Spec.Hmac.sha512_256S, Spec.Hmac.sha512_256, initG, below,
       count, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr] using initSat 192 234)
 
-theorem sha512_256_finImp : (finG Spec.Hmac.sha512_256S 234).Implies (Spec.Hmac.sha512_256I.finalizeContract Arm.abi 16) :=
+theorem sha512_256_finImp : (finG Spec.Hmac.sha512_256S 234).Implies (Spec.Hmac.sha512_256I.finalizeScratchContract Arm.abi 16) :=
   finImp Spec.Hmac.sha512_256S 234 (by
-    inst_sat [Spec.Hmac.finalizeContract, Spec.Hmac.finalizeSig, Spec.Hmac.sha512_256S, Spec.Hmac.sha512_256, finG,
+    inst_sat [Spec.Hmac.finalizeScratchContract, Spec.Hmac.finalizeScratchSig, Spec.Hmac.finalizePost, Spec.Hmac.sha512_256S, Spec.Hmac.sha512_256, finG,
       below, count, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr] using finSat 192 32 234)
 
-theorem sha512_256_init : Verified Arm.target sha512_256Md.hmacInit (Spec.Hmac.sha512_256I.initContract Arm.abi 16) :=
+theorem sha512_256_init : Verified Arm.target sha512_256Md.hmacInit (Spec.Hmac.sha512_256I.initScratchContract Arm.abi 16) :=
   (HmacInit.verified sha512_256MdOK sha512_256_initChecks (by decide) sha512_256_initImp.sat_left).of_implies sha512_256_initImp
 
-theorem sha512_256_finalize : Verified Arm.target sha512_256Md.hmacFin (Spec.Hmac.sha512_256I.finalizeContract Arm.abi 16) :=
+theorem sha512_256_finalize : Verified Arm.target sha512_256Md.hmacFin (Spec.Hmac.sha512_256I.finalizeScratchContract Arm.abi 16) :=
   (Fin.verified sha512_256MdOK sha512_256_finChecks (by decide) sha512_256_finImp.sat_left).of_implies
     sha512_256_finImp
 

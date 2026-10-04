@@ -166,14 +166,30 @@ pub(crate) unsafe extern "C" fn vg_pbkdf2_hmac_md5_iterate(key: *const [u8; 160]
 /// * `password` must be valid for reads of `password_len` bytes.
 /// * `salt` must be valid for reads of `salt_len` bytes.
 /// * `out` must be valid for reads and writes of `out_len` bytes.
-/// * `scratch` must be valid for reads and writes of 1024 bytes.
 /// * `c` must be positive, and `out_len` at most `(2^32 - 1) * 16`.
-/// * The contents of `scratch` on return are unspecified.
-/// * `out` and `scratch` must not overlap each other, `password` or `salt` (distinct Rust objects never do).
-/// * None of `password`, `salt`, `out` and `scratch` may overlap the arguments on the stack, overlap the return address on the stack or the 76 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `out` must not overlap `password` or `salt` (distinct Rust objects never do).
+/// * None of `password`, `salt` and `out` may overlap the arguments on the stack, overlap the return address on the stack or the 1136 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_pbkdf2_hmac_md5(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, c: u32, out: *mut u8, out_len: usize, scratch: *mut [u64; 128]) {
+pub(crate) unsafe extern "C" fn vg_pbkdf2_hmac_md5(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, c: u32, out: *mut u8, out_len: usize) {
     core::arch::naked_asm!(
+        "lea esp, [esp-1060]",
+        "mov eax, DWORD PTR [esp+1064]",
+        "mov DWORD PTR [esp+4], eax",
+        "mov eax, DWORD PTR [esp+1068]",
+        "mov DWORD PTR [esp+8], eax",
+        "mov eax, DWORD PTR [esp+1072]",
+        "mov DWORD PTR [esp+12], eax",
+        "mov eax, DWORD PTR [esp+1076]",
+        "mov DWORD PTR [esp+16], eax",
+        "mov eax, DWORD PTR [esp+1080]",
+        "mov DWORD PTR [esp+20], eax",
+        "mov eax, DWORD PTR [esp+1084]",
+        "mov DWORD PTR [esp+24], eax",
+        "mov eax, DWORD PTR [esp+1088]",
+        "mov DWORD PTR [esp+28], eax",
+        "mov eax, esp",
+        "add eax, 36",
+        "mov DWORD PTR [esp+32], eax",
         "mov eax, DWORD PTR [esp+32]",
         "mov DWORD PTR [eax+384], ebx",
         "mov DWORD PTR [eax+388], esi",
@@ -236,7 +252,7 @@ pub(crate) unsafe extern "C" fn vg_pbkdf2_hmac_md5(password: *const u8, password
         "push edx",
         "push esi",
         "push edi",
-        "call {vg_hmac_md5_init}",
+        "call {vg_hmac_md5_init_scratch}",
         "pop eax",
         "pop eax",
         "pop eax",
@@ -327,7 +343,7 @@ pub(crate) unsafe extern "C" fn vg_pbkdf2_hmac_md5(password: *const u8, password
         "push eax",
         "push esi",
         "push edx",
-        "call {vg_hmac_md5_finalize}",
+        "call {vg_hmac_md5_finalize_scratch}",
         "pop eax",
         "pop eax",
         "pop eax",
@@ -403,13 +419,14 @@ pub(crate) unsafe extern "C" fn vg_pbkdf2_hmac_md5(password: *const u8, password
         "mov esi, DWORD PTR [eax+388]",
         "mov edi, DWORD PTR [eax+392]",
         "mov ebp, DWORD PTR [eax+396]",
+        "lea esp, [esp+1060]",
         "ret",
         ".p2align 6",
         vg_md5_init = sym super::md5::vg_md5_init,
         vg_md5_update_scratch = sym super::md5::vg_md5_update_scratch,
         vg_md5_finalize_scratch = sym super::md5::vg_md5_finalize_scratch,
-        vg_hmac_md5_init = sym super::hmac_md5::vg_hmac_md5_init,
-        vg_hmac_md5_finalize = sym super::hmac_md5::vg_hmac_md5_finalize,
+        vg_hmac_md5_init_scratch = sym super::hmac_md5::vg_hmac_md5_init_scratch,
+        vg_hmac_md5_finalize_scratch = sym super::hmac_md5::vg_hmac_md5_finalize_scratch,
         vg_pbkdf2_hmac_md5_iterate = sym super::pbkdf2_md5::vg_pbkdf2_hmac_md5_iterate,
     )
 }

@@ -289,14 +289,18 @@ pub(crate) unsafe extern "sysv64" fn vg_pbkdf2_hmac_sha384_iterate(key: *const [
 /// * `password` must be valid for reads of `password_len` bytes.
 /// * `salt` must be valid for reads of `salt_len` bytes.
 /// * `out` must be valid for reads and writes of `out_len` bytes.
-/// * `scratch` must be valid for reads and writes of 3408 bytes.
 /// * `c` must be positive, and `out_len` at most `(2^32 - 1) * 48`.
-/// * The contents of `scratch` on return are unspecified.
-/// * `out` and `scratch` must not overlap each other, `password`, `salt` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `password`, `salt`, `out` and `scratch` may overlap the return address on the stack or the 24 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `out` must not overlap `password`, `salt` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `password`, `salt` and `out` may overlap the return address on the stack or the 3456 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_pbkdf2_hmac_sha384(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, c: u32, out: *mut u8, out_len: usize, scratch: *mut [u64; 426]) {
+pub(crate) unsafe extern "sysv64" fn vg_pbkdf2_hmac_sha384(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, c: u32, out: *mut u8, out_len: usize) {
     core::arch::naked_asm!(
+        "lea rsp, [rsp-3432]",
+        "mov rax, QWORD PTR [rsp+3440]",
+        "mov QWORD PTR [rsp+8], rax",
+        "mov rax, rsp",
+        "add rax, 24",
+        "mov QWORD PTR [rsp+16], rax",
         "mov r10, r8",
         "mov r8, QWORD PTR [rsp+16]",
         "mov QWORD PTR [r8+1872], rbx",
@@ -346,7 +350,7 @@ pub(crate) unsafe extern "sysv64" fn vg_pbkdf2_hmac_sha384(password: *const u8, 
         "mov rsi, r15",
         "add rsi, 2128",
         "mov r8, r15",
-        "call {vg_hmac_sha384_init}",
+        "call {vg_hmac_sha384_init_scratch}",
         "mov r14d, 0",
         "22:",
         "movzx eax, BYTE PTR [r15+r14*1+1936]",
@@ -396,7 +400,7 @@ pub(crate) unsafe extern "sysv64" fn vg_pbkdf2_hmac_sha384(password: *const u8, 
         "mov rcx, r15",
         "add rcx, 2704",
         "mov r8, r15",
-        "call {vg_hmac_sha384_finalize}",
+        "call {vg_hmac_sha384_finalize_scratch}",
         "mov r14d, 0",
         "27:",
         "movzx eax, BYTE PTR [r15+r14*1+2704]",
@@ -440,13 +444,14 @@ pub(crate) unsafe extern "sysv64" fn vg_pbkdf2_hmac_sha384(password: *const u8, 
         "mov r13, QWORD PTR [r15+1896]",
         "mov r14, QWORD PTR [r15+1904]",
         "mov r15, QWORD PTR [r15+1912]",
+        "lea rsp, [rsp+3432]",
         "ret",
         ".p2align 6",
         vg_sha384_init = sym super::sha512::vg_sha384_init,
         vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch,
         vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch,
-        vg_hmac_sha384_init = sym super::hmac_sha384::vg_hmac_sha384_init,
-        vg_hmac_sha384_finalize = sym super::hmac_sha384::vg_hmac_sha384_finalize,
+        vg_hmac_sha384_init_scratch = sym super::hmac_sha384::vg_hmac_sha384_init_scratch,
+        vg_hmac_sha384_finalize_scratch = sym super::hmac_sha384::vg_hmac_sha384_finalize_scratch,
         vg_pbkdf2_hmac_sha384_iterate = sym super::pbkdf2_sha384::vg_pbkdf2_hmac_sha384_iterate,
     )
 }
@@ -745,15 +750,19 @@ pub(crate) const VG_PBKDF2_HMAC_SHA384_AVX2_FEATURES: crate::cpu::Features = cra
 /// * `password` must be valid for reads of `password_len` bytes.
 /// * `salt` must be valid for reads of `salt_len` bytes.
 /// * `out` must be valid for reads and writes of `out_len` bytes.
-/// * `scratch` must be valid for reads and writes of 3408 bytes.
 /// * `c` must be positive, and `out_len` at most `(2^32 - 1) * 48`.
-/// * The contents of `scratch` on return are unspecified.
-/// * `out` and `scratch` must not overlap each other, `password`, `salt` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `password`, `salt`, `out` and `scratch` may overlap the return address on the stack or the 24 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `out` must not overlap `password`, `salt` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `password`, `salt` and `out` may overlap the return address on the stack or the 3456 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `bmi1` and `bmi2` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_pbkdf2_hmac_sha384_avx2(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, c: u32, out: *mut u8, out_len: usize, scratch: *mut [u64; 426]) {
+pub(crate) unsafe extern "sysv64" fn vg_pbkdf2_hmac_sha384_avx2(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, c: u32, out: *mut u8, out_len: usize) {
     core::arch::naked_asm!(
+        "lea rsp, [rsp-3432]",
+        "mov rax, QWORD PTR [rsp+3440]",
+        "mov QWORD PTR [rsp+8], rax",
+        "mov rax, rsp",
+        "add rax, 24",
+        "mov QWORD PTR [rsp+16], rax",
         "mov r10, r8",
         "mov r8, QWORD PTR [rsp+16]",
         "mov QWORD PTR [r8+1872], rbx",
@@ -803,7 +812,7 @@ pub(crate) unsafe extern "sysv64" fn vg_pbkdf2_hmac_sha384_avx2(password: *const
         "mov rsi, r15",
         "add rsi, 2128",
         "mov r8, r15",
-        "call {vg_hmac_sha384_init_avx2}",
+        "call {vg_hmac_sha384_init_scratch_avx2}",
         "mov r14d, 0",
         "22:",
         "movzx eax, BYTE PTR [r15+r14*1+1936]",
@@ -853,7 +862,7 @@ pub(crate) unsafe extern "sysv64" fn vg_pbkdf2_hmac_sha384_avx2(password: *const
         "mov rcx, r15",
         "add rcx, 2704",
         "mov r8, r15",
-        "call {vg_hmac_sha384_finalize_avx2}",
+        "call {vg_hmac_sha384_finalize_scratch_avx2}",
         "mov r14d, 0",
         "27:",
         "movzx eax, BYTE PTR [r15+r14*1+2704]",
@@ -897,13 +906,14 @@ pub(crate) unsafe extern "sysv64" fn vg_pbkdf2_hmac_sha384_avx2(password: *const
         "mov r13, QWORD PTR [r15+1896]",
         "mov r14, QWORD PTR [r15+1904]",
         "mov r15, QWORD PTR [r15+1912]",
+        "lea rsp, [rsp+3432]",
         "ret",
         ".p2align 6",
         vg_sha384_init = sym super::sha512::vg_sha384_init,
         vg_sha512_update_scratch_avx2 = sym super::sha512::vg_sha512_update_scratch_avx2,
         vg_sha512_finalize_scratch_avx2 = sym super::sha512::vg_sha512_finalize_scratch_avx2,
-        vg_hmac_sha384_init_avx2 = sym super::hmac_sha384::vg_hmac_sha384_init_avx2,
-        vg_hmac_sha384_finalize_avx2 = sym super::hmac_sha384::vg_hmac_sha384_finalize_avx2,
+        vg_hmac_sha384_init_scratch_avx2 = sym super::hmac_sha384::vg_hmac_sha384_init_scratch_avx2,
+        vg_hmac_sha384_finalize_scratch_avx2 = sym super::hmac_sha384::vg_hmac_sha384_finalize_scratch_avx2,
         vg_pbkdf2_hmac_sha384_iterate_avx2 = sym super::pbkdf2_sha384::vg_pbkdf2_hmac_sha384_iterate_avx2,
     )
 }
@@ -1202,15 +1212,19 @@ pub(crate) const VG_PBKDF2_HMAC_SHA384_SHANI_FEATURES: crate::cpu::Features = cr
 /// * `password` must be valid for reads of `password_len` bytes.
 /// * `salt` must be valid for reads of `salt_len` bytes.
 /// * `out` must be valid for reads and writes of `out_len` bytes.
-/// * `scratch` must be valid for reads and writes of 3408 bytes.
 /// * `c` must be positive, and `out_len` at most `(2^32 - 1) * 48`.
-/// * The contents of `scratch` on return are unspecified.
-/// * `out` and `scratch` must not overlap each other, `password`, `salt` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `password`, `salt`, `out` and `scratch` may overlap the return address on the stack or the 24 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `out` must not overlap `password`, `salt` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `password`, `salt` and `out` may overlap the return address on the stack or the 3456 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2` and `sha512` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_pbkdf2_hmac_sha384_shani(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, c: u32, out: *mut u8, out_len: usize, scratch: *mut [u64; 426]) {
+pub(crate) unsafe extern "sysv64" fn vg_pbkdf2_hmac_sha384_shani(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, c: u32, out: *mut u8, out_len: usize) {
     core::arch::naked_asm!(
+        "lea rsp, [rsp-3432]",
+        "mov rax, QWORD PTR [rsp+3440]",
+        "mov QWORD PTR [rsp+8], rax",
+        "mov rax, rsp",
+        "add rax, 24",
+        "mov QWORD PTR [rsp+16], rax",
         "mov r10, r8",
         "mov r8, QWORD PTR [rsp+16]",
         "mov QWORD PTR [r8+1872], rbx",
@@ -1260,7 +1274,7 @@ pub(crate) unsafe extern "sysv64" fn vg_pbkdf2_hmac_sha384_shani(password: *cons
         "mov rsi, r15",
         "add rsi, 2128",
         "mov r8, r15",
-        "call {vg_hmac_sha384_init_shani}",
+        "call {vg_hmac_sha384_init_scratch_shani}",
         "mov r14d, 0",
         "22:",
         "movzx eax, BYTE PTR [r15+r14*1+1936]",
@@ -1310,7 +1324,7 @@ pub(crate) unsafe extern "sysv64" fn vg_pbkdf2_hmac_sha384_shani(password: *cons
         "mov rcx, r15",
         "add rcx, 2704",
         "mov r8, r15",
-        "call {vg_hmac_sha384_finalize_shani}",
+        "call {vg_hmac_sha384_finalize_scratch_shani}",
         "mov r14d, 0",
         "27:",
         "movzx eax, BYTE PTR [r15+r14*1+2704]",
@@ -1354,13 +1368,14 @@ pub(crate) unsafe extern "sysv64" fn vg_pbkdf2_hmac_sha384_shani(password: *cons
         "mov r13, QWORD PTR [r15+1896]",
         "mov r14, QWORD PTR [r15+1904]",
         "mov r15, QWORD PTR [r15+1912]",
+        "lea rsp, [rsp+3432]",
         "ret",
         ".p2align 6",
         vg_sha384_init = sym super::sha512::vg_sha384_init,
         vg_sha512_update_scratch_shani = sym super::sha512::vg_sha512_update_scratch_shani,
         vg_sha512_finalize_scratch_shani = sym super::sha512::vg_sha512_finalize_scratch_shani,
-        vg_hmac_sha384_init_shani = sym super::hmac_sha384::vg_hmac_sha384_init_shani,
-        vg_hmac_sha384_finalize_shani = sym super::hmac_sha384::vg_hmac_sha384_finalize_shani,
+        vg_hmac_sha384_init_scratch_shani = sym super::hmac_sha384::vg_hmac_sha384_init_scratch_shani,
+        vg_hmac_sha384_finalize_scratch_shani = sym super::hmac_sha384::vg_hmac_sha384_finalize_scratch_shani,
         vg_pbkdf2_hmac_sha384_iterate_shani = sym super::pbkdf2_sha384::vg_pbkdf2_hmac_sha384_iterate_shani,
     )
 }

@@ -21,7 +21,7 @@ theorem toNat_two_sub_modEq (y : BitVec 64) :
     ((BitVec.setWidth 64 (2 : BitVec 32) - y).toNat : Int) ≡ 2 - y.toNat [ZMOD 2 ^ 64] := by
   rw [BitVec.toNat_sub, show (BitVec.setWidth 64 (2 : BitVec 32)).toNat = 2 from rfl]
   have hy := y.isLt
-  have : ((2 ^ 64 - y.toNat + 2 : Nat) : Int) = 2 - y.toNat + 2 ^ 64 := by push_cast [Nat.cast_sub hy.le]; ring
+  have : ((2 ^ 64 - y.toNat + 2 : Nat) : Int) = 2 - y.toNat + 2 ^ 64 := by push_cast [Nat.cast_sub hy.le]; omega
   rw [Int.natCast_emod, this]
   refine (Int.mod_modEq _ _).trans ?_
   show (2 - (y.toNat : Int) + 2 ^ 64) % 2 ^ 64 = (2 - (y.toNat : Int)) % 2 ^ 64
@@ -69,7 +69,7 @@ theorem neg_inv {a x : Nat} (hx : x < 2 ^ 64) (h : ((a : Int) * x - 1) % (2 ^ 64
     push_cast
     have := (hr.mul_left (a : Int)).add_right 1
     refine this.trans ?_
-    rw [show (a : Int) * -(x : Int) + 1 = -((a : Int) * x - 1) by ring]
+    rw [show (a : Int) * -(x : Int) + 1 = -((a : Int) * x - 1) by rw [Int.mul_neg]; omega]
   have h3 : -((a : Int) * x - 1) ≡ 0 [ZMOD 2 ^ 64] := by
     unfold Int.ModEq
     rw [Int.emod_eq_zero_of_dvd (dvd_neg.mpr (Int.dvd_of_emod_eq_zero h))]

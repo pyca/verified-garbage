@@ -1,4 +1,4 @@
-import VerifiedGarbage.Proof.AesGcm.X86_64.GhashImpls
+import VerifiedGarbage.Proof.AesGcm.X86_64.Variant
 
 /-!
 # The functions AES-GCM calls on x86-64: Vpclmul
@@ -8,6 +8,6 @@ A variant of `AesGcm` on x86-64 (see `TCB/Emit.lean`): `vg_aes_ctr32` and `vg_ae
 
 namespace VG.Variants.AesGcm.X86_64.Vpclmul
 
-def variant : Proof.AesGcm.X86_64.GcmImpl := ⟨.scalar, .scalar, .vpclmul, none⟩
+def variant : Proof.AesGcm.X86_64.GcmVariant := ⟨.scalar, .scalar, .vpclmul, none⟩
 
 end VG.Variants.AesGcm.X86_64.Vpclmul

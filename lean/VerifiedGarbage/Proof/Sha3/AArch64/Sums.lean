@@ -107,7 +107,7 @@ memory, and keep `x25`–`x28`. -/
 def spongeSumCmds (ns c : String) (base : Option String) :
     List String × List (String × String) := Id.run do
   let fn (f n : String) :=
-    s!"(.call (\"vg_keccak_{f}\" ++ {c}.suffix) (Impl.Sha3.AArch64.Stream.{n}With {c}))"
+    s!"(.call (\"vg_keccak_{f}_scratch\" ++ {c}.suffix) (Impl.Sha3.AArch64.Stream.{n}With {c}))"
   let ofRegs (rs : String) := s!"(VectorTaint.ofRegs [{rs}])"
   let all := "(VectorTaint.ofRegs VG.Proof.Sha3.AArch64.MlKemSums.callee)"
   let high := ofRegs ".x25, .x26, .x27, .x28"
@@ -131,7 +131,7 @@ callee-saved registers public at some call (the larger first). -/
 def spongeSumSavingCmds (ns c : String) : List String := Id.run do
   let perm := s!"(.call {c}.name {c}.code)"
   let fn (f n : String) :=
-    s!"(.call (\"vg_keccak_{f}\" ++ {c}.suffix) (Impl.Sha3.AArch64.Stream.{n}With {c}))"
+    s!"(.call (\"vg_keccak_{f}_scratch\" ++ {c}.suffix) (Impl.Sha3.AArch64.Stream.{n}With {c}))"
   let ofRegs (rs : String) := s!"(VectorTaint.ofRegs [{rs}])"
   let s := ".x19, .x20, .x21, .x22, .x23, .x24"
   let perms := (spongeSaved.map fun (n, rs) => (s!"perm{n}s", s!".x0, .x1, {s}, {rs}")) ++

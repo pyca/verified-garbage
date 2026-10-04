@@ -1,17 +1,19 @@
 import VerifiedGarbage.Proof.Weierstrass.X86_64.Words
-import VerifiedGarbage.Spec.Ecdsa.Rfc6979.P256Sha256
+import VerifiedGarbage.Spec.Ecdsa.Rfc6979
+import VerifiedGarbage.Spec.Ecdsa.P256
 
 /-!
 # Deterministic ECDSA on x86-64: big-endian numbers
 
 The 32 bytes at an address, big-endian, from the byte reversals of their
 four words (`ofBytes_32`); a number's encoding is determined by its value
-(`toBytes_ofBytes`); and RFC 6979's conversions at P-256 (`bits2octets_eq`).
+(`toBytes_ofBytes`); and RFC 6979's conversions at P-256, of a hash of at
+least 32 bytes, which take its leftmost 32 (`hashToInt_take`, `bits2octets_eq`).
 -/
 
 namespace VG.Proof.Ecdsa.Rfc6979.X86_64
 
-open VG VG.X86_64 VG.Proof.Weierstrass.X86_64
+open VG VG.X86_64 VG.Proof.Weierstrass.X86_64 VG.Proof.Weierstrass
 
 /-- The bytes at an address, whichever specification names them. -/
 theorem ecdsa_bytesAt : Spec.Ecdsa.bytesAt = Spec.Sha256.bytesAt := rfl
@@ -86,13 +88,29 @@ theorem hashToInt_32 {h : List Byte} (hl : h.length = 32) :
     Spec.Ecdsa.hashToInt Spec.P256.curve h = Spec.Weierstrass.ofBytes h := by
   rw [Spec.Ecdsa.hashToInt, nBits_p256, hl]; rfl
 
+/-- A hash of at least 32 bytes is the number of its leftmost 32. -/
+theorem hashToInt_take {h : List Byte} (hl : 32 ≤ h.length) :
+    Spec.Ecdsa.hashToInt Spec.P256.curve h = Spec.Weierstrass.ofBytes (h.take 32) := by
+  have hd : (h.drop 32).length = h.length - 32 := List.length_drop
+  have key : Spec.Weierstrass.ofBytes h =
+      Spec.Weierstrass.ofBytes (h.take 32) * 2 ^ (8 * (h.length - 32)) + Spec.Weierstrass.ofBytes (h.drop 32) := by
+    conv => lhs; rw [← List.take_append_drop 32 h]
+    rw [ofBytes_append, hd, pow256]
+  rw [Spec.Ecdsa.hashToInt, nBits_p256]
+  by_cases h32 : h.length = 32
+  · rw [show h.take 32 = h from List.take_of_length_le (by omega), h32]; rfl
+  · simp only [show ¬ 8 * h.length ≤ 256 by omega, ite_false]
+    rw [key, show 8 * h.length - 256 = 8 * (h.length - 32) by omega, Nat.shiftRight_eq_div_pow,
+      Nat.add_comm, Nat.add_mul_div_right _ _ (Nat.two_pow_pos _),
+      Nat.div_eq_of_lt (by have := ofBytes_lt (h.drop 32); rwa [hd] at this), Nat.zero_add]
+
 theorem rlen_p256 : Spec.Ecdsa.Rfc6979.rlen Spec.P256.curve = 32 := by
   rw [Spec.Ecdsa.Rfc6979.rlen, nBits_p256]
 
-theorem bits2octets_eq {h : List Byte} (hl : h.length = 32) :
+theorem bits2octets_eq {h : List Byte} (hl : 32 ≤ h.length) :
     Spec.Ecdsa.Rfc6979.bits2octets Spec.P256.curve h =
-      Spec.Weierstrass.toBytes 32 (Spec.Weierstrass.ofBytes h % Spec.P256.n) := by
+      Spec.Weierstrass.toBytes 32 (Spec.Weierstrass.ofBytes (h.take 32) % Spec.P256.n) := by
   rw [Spec.Ecdsa.Rfc6979.bits2octets, Spec.Ecdsa.Rfc6979.int2octets, Spec.Ecdsa.Rfc6979.bits2int, rlen_p256,
-    hashToInt_32 hl]; rfl
+    hashToInt_take hl]; rfl
 
 end VG.Proof.Ecdsa.Rfc6979.X86_64

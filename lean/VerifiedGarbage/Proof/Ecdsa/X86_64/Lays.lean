@@ -11,8 +11,8 @@ which `decide` checks.
 
 namespace VG.Proof.Ecdsa.X86_64
 
-open VG VG.X86_64 VG.Impl.Mont.X86_64 VG.Impl.Weierstrass.X86_64 VG.Impl.Ecdsa.X86_64
-open VG.Proof.Mont.X86_64 VG.Proof.Weierstrass.X86_64 VG.Proof.Weierstrass Spec.Weierstrass
+open VG VG.X86_64 VG.Impl.Mont.X86_64 VG.Impl.Mont VG.Impl.Weierstrass.X86_64 VG.Impl.Weierstrass VG.Impl.Ecdsa.X86_64
+open VG.Proof.Mont.X86_64 VG.Proof.Mont VG.Proof.Weierstrass.X86_64 VG.Proof.Weierstrass Spec.Weierstrass
 
 variable {c : Cfg}
 
@@ -74,7 +74,7 @@ theorem ladLay (hc : CfgOk c) : LadLay c.ladderCfg size := by
     ⟨fun h => by have := sl_inj c hn h; exact absurd this (by decide),
       fun h => by have := sl_inj c hn h; exact absurd this (by decide),
       fun h => by have := sl_inj c hn h; exact absurd this (by decide)⟩, ?_,
-    ⟨show 1 ≤ 64 * c.n by omega, show 64 * c.n < 2 ^ 31 by omega⟩, bitsAt_le c h7 (by decide), ?_⟩
+    ⟨show 1 ≤ 64 * c.n by omega, show 64 * c.n < 2 ^ 16 by omega⟩, bitsAt_le c h7 (by decide), ?_⟩
   · exact lay_map hc rfl rfl rfl (l := [AP, B3P, GX, GY, ONEP, RX, RY, RZ, T0, T1, T2, T3, T4, T5,
       DX, DY, DZ, TX, TY, TZ]) (by decide)
   · exact map_sl_disj hn (l₁ := [AP, B3P, GX, GY, ONEP])
@@ -110,7 +110,7 @@ theorem powLay_of (hc : CfgOk c) {jm : Nat} (hjm : jm ∉ [ACC, PT, TMP]) (minv 
     · exact sl_apart c hi.2.1
     · exact sl_apart c hi.2.2
   refine ⟨sl_le c h7 (by decide), sl_le c h7 (by decide), sl_le c h7 hb45, sl_le c h7 ho45,
-    bitsAt_le c h7 hj, ⟨show 1 ≤ 64 * c.n by omega, show 64 * c.n < 2 ^ 31 by omega⟩,
+    bitsAt_le c h7 hj, ⟨show 1 ≤ 64 * c.n by omega, show 64 * c.n < 2 ^ 16 by omega⟩,
     sl_apart c (by decide), sl_apart c (by decide), sl_apart c (Ne.symm ho), hw base hb, ?_,
     hw jm hjm⟩
   intro w hw'

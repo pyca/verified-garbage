@@ -5,6 +5,7 @@ import VerifiedGarbage.Proof.Rc2.Stream
 import VerifiedGarbage.Proof.Framework.WriteBytes
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Rc2.Scratch
 
 section
 
@@ -229,53 +230,53 @@ theorem stackArgs_one (s : State) : List.map (stackArg s) (List.range 1) = [stac
 theorem args_getD (s : State) : (s.gpr .rdi :: s.gpr .rsi :: s.gpr .rdx :: s.gpr .rcx :: s.gpr .r8 :: s.gpr .r9 ::
     List.map (stackArg s) (List.range 1)).getD 6 0 = stackArg s 0 := rfl
 
-theorem update_implies (d : Spec.Rc2.Direction) : (updateContract d).Implies (Spec.Rc2.cbcUpdateContract abi d 16) where
+theorem update_implies (d : Spec.Rc2.Direction) : (updateContract d).Implies (Proof.Rc2.cbcUpdateScratchContract abi d 16) where
   pre := by
     intro s h
     -- Twice: the stack arguments' list evaluates only on the second pass.
-    sig_pre [Spec.Rc2.cbcUpdateContract, Spec.Rc2.cbcUpdateSig, abi, argRegs, updateContract, publicRegs_seven, args_getD, stackArgs_one, List.append_eq] at h
-    sig_pre [Spec.Rc2.cbcUpdateContract, Spec.Rc2.cbcUpdateSig, abi, argRegs, updateContract, publicRegs_seven, args_getD, stackArgs_one, List.append_eq] at h
+    sig_pre [Proof.Rc2.cbcUpdateScratchContract, Proof.Rc2.cbcUpdateScratchSig, Spec.Rc2.cbcUpdatePre, Spec.Rc2.cbcUpdatePost, abi, argRegs, updateContract, publicRegs_seven, args_getD, stackArgs_one, List.append_eq] at h
+    sig_pre [Proof.Rc2.cbcUpdateScratchContract, Proof.Rc2.cbcUpdateScratchSig, Spec.Rc2.cbcUpdatePre, Spec.Rc2.cbcUpdatePost, abi, argRegs, updateContract, publicRegs_seven, args_getD, stackArgs_one, List.append_eq] at h
     sig_split h
-    sig_reduce [Spec.Rc2.cbcUpdateContract, Spec.Rc2.cbcUpdateSig, abi, argRegs, updateContract, publicRegs_seven, args_getD, stackArgs_one, List.append_eq]
+    sig_reduce [Proof.Rc2.cbcUpdateScratchContract, Proof.Rc2.cbcUpdateScratchSig, Spec.Rc2.cbcUpdatePre, Spec.Rc2.cbcUpdatePost, abi, argRegs, updateContract, publicRegs_seven, args_getD, stackArgs_one, List.append_eq]
     sig_and_intros
     sig_close
     all_goals first
       | with_reducible assumption
       | with_reducible exact Region.Disjoint.symm ‹_›
       | omega
-  post := by sig_implies_post [Spec.Rc2.cbcUpdateContract, Spec.Rc2.cbcUpdateSig, abi, argRegs, updateContract, publicRegs_seven, args_getD, stackArgs_one, List.append_eq]
+  post := by sig_implies_post [Proof.Rc2.cbcUpdateScratchContract, Proof.Rc2.cbcUpdateScratchSig, Spec.Rc2.cbcUpdatePre, Spec.Rc2.cbcUpdatePost, abi, argRegs, updateContract, publicRegs_seven, args_getD, stackArgs_one, List.append_eq]
   pub := by
     rintro s₁ s₂ - - h
-    sig_pub [Spec.Rc2.cbcUpdateContract, Spec.Rc2.cbcUpdateSig, abi, argRegs, updateContract, publicRegs_seven, args_getD, stackArgs_one, List.append_eq] at h
+    sig_pub [Proof.Rc2.cbcUpdateScratchContract, Proof.Rc2.cbcUpdateScratchSig, Spec.Rc2.cbcUpdatePre, Spec.Rc2.cbcUpdatePost, abi, argRegs, updateContract, publicRegs_seven, args_getD, stackArgs_one, List.append_eq] at h
     simp only [List.getD_cons_succ, List.getD_cons_zero] at h
     sig_split h
     rename_i h1 h2 h3 h4 h5 h6 h7
     exact ⟨(publicRegs_seven _ _).2 ⟨h2, h3, h4, h5, h6, h7, h1⟩, h⟩
-  sat := by sig_implies_sat [Spec.Rc2.cbcUpdateContract, Spec.Rc2.cbcUpdateSig, abi, argRegs, updateContract, publicRegs_seven, args_getD, stackArgs_one, List.append_eq] [updateSatState, stackArg, stackArgAddr, Mem.readW, Mem.read] using updateSatState
+  sat := by sig_implies_sat [Proof.Rc2.cbcUpdateScratchContract, Proof.Rc2.cbcUpdateScratchSig, Spec.Rc2.cbcUpdatePre, Spec.Rc2.cbcUpdatePost, abi, argRegs, updateContract, publicRegs_seven, args_getD, stackArgs_one, List.append_eq] [updateSatState, stackArg, stackArgAddr, Mem.readW, Mem.read] using updateSatState
 
-theorem init_implies : initContract.Implies (Spec.Rc2.cbcInitContract abi 8) where
+theorem init_implies : initContract.Implies (Proof.Rc2.cbcInitScratchContract abi 8) where
   pre := by
     intro s h
     -- Twice: the stack arguments' list evaluates only on the second pass.
-    sig_pre [Spec.Rc2.cbcInitContract, Spec.Rc2.cbcInitSig, abi, argRegs, initContract, publicRegs_seven, args_getD, stackArgs_one, List.append_eq] at h
-    sig_pre [Spec.Rc2.cbcInitContract, Spec.Rc2.cbcInitSig, abi, argRegs, initContract, publicRegs_seven, args_getD, stackArgs_one, List.append_eq] at h
+    sig_pre [Proof.Rc2.cbcInitScratchContract, Proof.Rc2.cbcInitScratchSig, Spec.Rc2.cbcInitPost, abi, argRegs, initContract, publicRegs_seven, args_getD, stackArgs_one, List.append_eq] at h
+    sig_pre [Proof.Rc2.cbcInitScratchContract, Proof.Rc2.cbcInitScratchSig, Spec.Rc2.cbcInitPost, abi, argRegs, initContract, publicRegs_seven, args_getD, stackArgs_one, List.append_eq] at h
     sig_split h
-    sig_reduce [Spec.Rc2.cbcInitContract, Spec.Rc2.cbcInitSig, abi, argRegs, initContract, publicRegs_seven, args_getD, stackArgs_one, List.append_eq]
+    sig_reduce [Proof.Rc2.cbcInitScratchContract, Proof.Rc2.cbcInitScratchSig, Spec.Rc2.cbcInitPost, abi, argRegs, initContract, publicRegs_seven, args_getD, stackArgs_one, List.append_eq]
     sig_and_intros
     sig_close
     all_goals first
       | with_reducible assumption
       | with_reducible exact Region.Disjoint.symm ‹_›
       | omega
-  post := by sig_implies_post [Spec.Rc2.cbcInitContract, Spec.Rc2.cbcInitSig, abi, argRegs, initContract, publicRegs_seven, args_getD, stackArgs_one, List.append_eq]
+  post := by sig_implies_post [Proof.Rc2.cbcInitScratchContract, Proof.Rc2.cbcInitScratchSig, Spec.Rc2.cbcInitPost, abi, argRegs, initContract, publicRegs_seven, args_getD, stackArgs_one, List.append_eq]
   pub := by
     rintro s₁ s₂ - - h
-    sig_pub [Spec.Rc2.cbcInitContract, Spec.Rc2.cbcInitSig, abi, argRegs, initContract, publicRegs_seven, args_getD, stackArgs_one, List.append_eq] at h
+    sig_pub [Proof.Rc2.cbcInitScratchContract, Proof.Rc2.cbcInitScratchSig, Spec.Rc2.cbcInitPost, abi, argRegs, initContract, publicRegs_seven, args_getD, stackArgs_one, List.append_eq] at h
     simp only [List.getD_cons_succ, List.getD_cons_zero] at h
     sig_split h
     rename_i h1 h2 h3 h4 h5 h6 h7
     exact ⟨(publicRegs_seven _ _).2 ⟨h2, h3, h4, h5, h6, h7, h1⟩, h⟩
-  sat := by sig_implies_sat [Spec.Rc2.cbcInitContract, Spec.Rc2.cbcInitSig, abi, argRegs, initContract, publicRegs_seven, args_getD, stackArgs_one, List.append_eq] [initSatState, stackArg, stackArgAddr, Mem.readW, Mem.read] using initSatState
+  sat := by sig_implies_sat [Proof.Rc2.cbcInitScratchContract, Proof.Rc2.cbcInitScratchSig, Spec.Rc2.cbcInitPost, abi, argRegs, initContract, publicRegs_seven, args_getD, stackArgs_one, List.append_eq] [initSatState, stackArg, stackArgAddr, Mem.readW, Mem.read] using initSatState
 
 end VG.Proof.Rc2.X86_64.Stream
 

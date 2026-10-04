@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.AesGcm.X86.Seal
 import VerifiedGarbage.Proof.AesGcm.X86.Open
 import VerifiedGarbage.Proof.AesGcm.X86.Init
 import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.AesGcm.Scratch
 
 /-!
 # AES-GCM on x86: `Verified`
@@ -45,7 +46,7 @@ def saSat : State where
   rd := [⟨0x1000, 256⟩, ⟨0x2000, 0⟩]
   wr := [⟨0x3000, 80⟩, ⟨0x4000, 2560⟩, ⟨0x8004, 28⟩]
 
-theorem streamAad_verified : Verified X86.target (streamAad vg.callees) (Spec.Gcm.streamAadContract X86.abi 24) :=
+theorem streamAad_verified : Verified X86.target (streamAad vg.callees) (Proof.AesGcm.streamAadScratchContract X86.abi 24) :=
   Verified.of_correct streamAad_correct streamAad_ct (by
     have a0 : arg saSat 0 = 0x1000 := by decide
     have a1 : arg saSat 1 = 0x3000 := by decide
@@ -56,7 +57,7 @@ theorem streamAad_verified : Verified X86.target (streamAad vg.callees) (Spec.Gc
     have a6 : arg saSat 6 = 0x4000 := by decide
     have e : argAddr saSat 0 = 0x8004 := by decide
     have esp : saSat.gpr .esp = 0x8000 := rfl
-    sig_implies [Spec.Gcm.streamAadContract, Spec.Gcm.streamAadSig, streamAadX86, streamAadPre, pubN,
+    sig_implies [Proof.AesGcm.streamAadScratchContract, Proof.AesGcm.streamAadScratchSig, Spec.Gcm.streamAadPost, streamAadX86, streamAadPre, pubN,
       X86.abi, X86.argSlots, X86.argVal, X86.argBytes] [a0, a1, a2, a3, a4, a5, a6, e, esp] using saSat)
 
 /-- A state satisfying `vg_aes_gcm_stream_init`'s precondition (with no
@@ -73,7 +74,7 @@ def siSat : State where
   rd := [⟨0x1000, 256⟩, ⟨0x2000, 0⟩]
   wr := [⟨0x3000, 80⟩, ⟨0x4000, 2560⟩, ⟨0x8004, 20⟩]
 
-theorem streamInit_verified : Verified X86.target (streamInit vg.callees) (Spec.Gcm.streamInitContract X86.abi 24) :=
+theorem streamInit_verified : Verified X86.target (streamInit vg.callees) (Proof.AesGcm.streamInitScratchContract X86.abi 24) :=
   Verified.of_correct streamInit_correct streamInit_ct (by
     have a0 : arg siSat 0 = 0x1000 := by decide
     have a1 : arg siSat 1 = 0x2000 := by decide
@@ -82,7 +83,7 @@ theorem streamInit_verified : Verified X86.target (streamInit vg.callees) (Spec.
     have a4 : arg siSat 4 = 0x4000 := by decide
     have e : argAddr siSat 0 = 0x8004 := by decide
     have esp : siSat.gpr .esp = 0x8000 := rfl
-    sig_implies [Spec.Gcm.streamInitContract, Spec.Gcm.streamInitSig, streamInitX86, streamInitPre, pubN,
+    sig_implies [Proof.AesGcm.streamInitScratchContract, Proof.AesGcm.streamInitScratchSig, Spec.Gcm.streamInitPost, streamInitX86, streamInitPre, pubN,
       X86.abi, X86.argSlots, X86.argVal, X86.argBytes] [a0, a1, a2, a3, a4, e, esp] using siSat)
 
 /-- A state satisfying the precondition of `vg_aes_gcm_stream_encrypt` and
@@ -99,7 +100,7 @@ def crSat : State where
   rd := [⟨0x1000, 256⟩]
   wr := [⟨0x3000, 80⟩, ⟨0x2000, 0⟩, ⟨0x4000, 2560⟩, ⟨0x8004, 40⟩]
 
-theorem streamEncrypt_verified : Verified X86.target (streamEncrypt vg.callees) (Spec.Gcm.streamEncryptContract X86.abi 28) :=
+theorem streamEncrypt_verified : Verified X86.target (streamEncrypt vg.callees) (Proof.AesGcm.streamEncryptScratchContract X86.abi 28) :=
   Verified.of_correct streamEncrypt_correct streamEncrypt_ct (by
     have a0 : arg crSat 0 = 0x1000 := by decide
     have a1 : arg crSat 1 = 10 := by decide
@@ -113,11 +114,11 @@ theorem streamEncrypt_verified : Verified X86.target (streamEncrypt vg.callees) 
     have a9 : arg crSat 9 = 0x4000 := by decide
     have e : argAddr crSat 0 = 0x8004 := by decide
     have esp : crSat.gpr .esp = 0x8000 := rfl
-    sig_implies [Spec.Gcm.streamEncryptContract, Spec.Gcm.streamCryptSig, streamEncryptX86, streamCryptPre, pubN,
+    sig_implies [Proof.AesGcm.streamEncryptScratchContract, Proof.AesGcm.streamCryptScratchSig, Spec.Gcm.streamTextPre, Spec.Gcm.streamEncryptPost, Spec.Gcm.streamDecryptPost, streamEncryptX86, streamCryptPre, pubN,
       roundsOk, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
       [a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, e, esp] using crSat)
 
-theorem streamDecrypt_verified : Verified X86.target (streamDecrypt vg.callees) (Spec.Gcm.streamDecryptContract X86.abi 28) :=
+theorem streamDecrypt_verified : Verified X86.target (streamDecrypt vg.callees) (Proof.AesGcm.streamDecryptScratchContract X86.abi 28) :=
   Verified.of_correct streamDecrypt_correct streamDecrypt_ct (by
     have a0 : arg crSat 0 = 0x1000 := by decide
     have a1 : arg crSat 1 = 10 := by decide
@@ -131,7 +132,7 @@ theorem streamDecrypt_verified : Verified X86.target (streamDecrypt vg.callees) 
     have a9 : arg crSat 9 = 0x4000 := by decide
     have e : argAddr crSat 0 = 0x8004 := by decide
     have esp : crSat.gpr .esp = 0x8000 := rfl
-    sig_implies [Spec.Gcm.streamDecryptContract, Spec.Gcm.streamCryptSig, streamDecryptX86, streamCryptPre, pubN,
+    sig_implies [Proof.AesGcm.streamDecryptScratchContract, Proof.AesGcm.streamCryptScratchSig, Spec.Gcm.streamTextPre, Spec.Gcm.streamEncryptPost, Spec.Gcm.streamDecryptPost, streamDecryptX86, streamCryptPre, pubN,
       roundsOk, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
       [a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, e, esp] using crSat)
 
@@ -297,7 +298,7 @@ def initSat : State where
   rd := [⟨0x1000, 16⟩]
   wr := [⟨0x2000, 256⟩, ⟨0x4000, 2560⟩, ⟨0x8004, 16⟩]
 
-theorem init_verified : Verified X86.target (init vg.callees) (Spec.Gcm.initContract X86.abi 28) :=
+theorem init_verified : Verified X86.target (init vg.callees) (Proof.AesGcm.initScratchContract X86.abi 28) :=
   Verified.of_correct init_correct init_ct (by
     have a0 : arg initSat 0 = 0x1000 := by decide
     have a1 : arg initSat 1 = 16 := by decide
@@ -305,7 +306,7 @@ theorem init_verified : Verified X86.target (init vg.callees) (Spec.Gcm.initCont
     have a3 : arg initSat 3 = 0x4000 := by decide
     have e : argAddr initSat 0 = 0x8004 := by decide
     have esp : initSat.gpr .esp = 0x8000 := rfl
-    sig_implies [Spec.Gcm.initContract, Spec.Gcm.initSig, initX86, initPre, pubN,
+    sig_implies [Proof.AesGcm.initScratchContract, Proof.AesGcm.initScratchSig, Spec.Gcm.initPre, Spec.Gcm.initPost, initX86, initPre, pubN,
       X86.abi, X86.argSlots, X86.argVal, X86.argBytes] [a0, a1, a2, a3, e, esp] using initSat)
 
 

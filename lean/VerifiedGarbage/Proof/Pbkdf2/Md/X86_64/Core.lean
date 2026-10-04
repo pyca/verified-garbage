@@ -2,6 +2,7 @@ import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Pbkdf2CT
 import VerifiedGarbage.Proof.Pbkdf2.X86_64.IterateCT
 import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.HmacInit
 import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.HmacFin
+import VerifiedGarbage.Proof.Framework.X86_64.Depth
 
 /-!
 # HMAC and PBKDF2-HMAC over any Merkle–Damgård hash function on x86-64: the functions, verified
@@ -130,6 +131,42 @@ theorem core_finC_depth (h : (core H).finC.depth ≤ 1) : H.finC.depth ≤ 1 := 
 
 end
 
+/-! ## How much stack HMAC and PBKDF2 use
+
+HMAC's and PBKDF2's own code has no frames: the stack it uses is the return
+addresses of the calls it nests, with callees that use none. -/
+
+section
+variable {H : Hash} (hc : H.compC.x86_64Depth = 0) (hi : H.initC.x86_64Depth = 0)
+include hc hi
+
+theorem core_hmacInit_xdepth (h : (core H).hmacInit.x86_64Depth ≤ 16) : H.hmacInit.x86_64Depth ≤ 16 := by
+  simp only [Hash.hmacInit, Hash.initKeys, Hash.stream, Impl.Pbkdf2.Md.X86_64.Stream.callInit,
+    Impl.MdStream.X86_64.compressAt, Impl.MdStream.X86_64.compressWith,
+    core, Code.x86_64Depth, hc, hi] at h ⊢
+  exact h
+
+theorem core_pbkdf2_xdepth (h : (core H).pbkdf2.x86_64Depth ≤ 24) : H.pbkdf2.x86_64Depth ≤ 24 := by
+  simp only [Hash.pbkdf2, Hash.key, Hash.hashKey, Hash.setup, Hash.block, Hash.outLen, Hash.outLoop,
+    Hash.hmacInit, Hash.initKeys, Hash.hmacFin, Hash.iterate, Impl.Pbkdf2.X86_64.iterate, Impl.Pbkdf2.X86_64.body,
+    Impl.Pbkdf2.X86_64.compressBlock, Hash.updC, Hash.finC, Hash.stream,
+    Impl.Pbkdf2.Md.X86_64.Stream.callInit, Impl.Pbkdf2.Md.X86_64.Stream.callFin,
+    Impl.MdStream.X86_64.update, Impl.MdStream.X86_64.updateBody, Impl.MdStream.X86_64.updateTail,
+    Impl.MdStream.X86_64.compressN, Impl.MdStream.X86_64.compressAt, Impl.MdStream.X86_64.compressWith,
+    Impl.MdStream.X86_64.finalize, Impl.MdStream.X86_64.finalizeBody,
+    core, Code.x86_64Depth, hc, hi] at h ⊢
+  exact h
+
+omit hi in
+theorem core_hmacFin_xdepth (h : (core H).hmacFin.x86_64Depth ≤ 16) : H.hmacFin.x86_64Depth ≤ 16 := by
+  simp only [Hash.hmacFin, Hash.finC, Hash.stream, Impl.Pbkdf2.Md.X86_64.Stream.callFin,
+    Impl.MdStream.X86_64.compressAt, Impl.MdStream.X86_64.compressWith,
+    Impl.MdStream.X86_64.finalize, Impl.MdStream.X86_64.finalizeBody,
+    core, Code.x86_64Depth, hc] at h ⊢
+  exact h
+
+end
+
 /-! ## The taint checks, which look only at the own code -/
 
 theorem HmacInit.Checks.of_core {H : Hash} (h : HmacInit.Checks (core H)) : HmacInit.Checks H :=
@@ -161,6 +198,11 @@ structure CoreOK (C : Hash) : Prop where
   hfinSp : C.hmacFin.allInstrs (fun i => !isa.writesSp i) = true
   hfinNs : C.hmacFin.allInstrs (fun i => !Taint.clobbers i .rsp) = true
   hfinD : C.hmacFin.depth ≤ 2
+  /-- The stack HMAC's functions use, without that of their callees. -/
+  hinitXD : C.hmacInit.x86_64Depth ≤ 16
+  hfinXD : C.hmacFin.x86_64Depth ≤ 16
+  /-- The stack `pbkdf2` uses, without that of its callees' callees. -/
+  pbkXD : C.pbkdf2.x86_64Depth ≤ 24
   iterMx : C.iterate.allInstrs (fun i => !loadsMxcsr i) = true
   iterSp : C.iterate.allInstrs (fun i => !isa.writesSp i) = true
   iterNs : C.iterate.allInstrs (fun i => !Taint.clobbers i .rsp) = true
@@ -186,6 +228,9 @@ structure Callees (H : Hash) : Prop where
   iSp : H.initC.allInstrs (fun i => !isa.writesSp i) = true
   iNs : H.initC.allInstrs (fun i => !Taint.clobbers i .rsp) = true
   iD : H.initC.depth = 0
+  /-- Neither uses any stack. -/
+  cXD : H.compC.x86_64Depth = 0
+  iXD : H.initC.x86_64Depth = 0
 
 namespace Callees
 
@@ -198,6 +243,9 @@ theorem updSp : NoSp H.updC := nosp_of (core_updC K.cNs C.updNs)
 theorem finSp : NoSp H.finC := nosp_of (core_finC K.cNs C.finNs)
 theorem updD : H.updC.depth ≤ 1 := core_updC_depth K.cD C.updD
 theorem finD : H.finC.depth ≤ 1 := core_finC_depth K.cD C.finD
+theorem hmacInitXD : H.hmacInit.x86_64Depth ≤ 16 := core_hmacInit_xdepth K.cXD K.iXD C.hinitXD
+theorem hmacFinXD : H.hmacFin.x86_64Depth ≤ 16 := core_hmacFin_xdepth K.cXD C.hfinXD
+theorem pbkdf2XD : H.pbkdf2.x86_64Depth ≤ 24 := core_pbkdf2_xdepth K.cXD K.iXD C.pbkXD
 
 end Callees
 
@@ -219,16 +267,22 @@ def pbkSat (sc : Nat) : State where
   rd := [⟨0x10000, 0⟩, ⟨0x20000, 0⟩, ⟨0x90008, 16⟩]
   wr := [⟨0x30000, 0⟩, ⟨0, sc * 8⟩]
 
+/-- A state satisfying the precondition of `pbkdf2` with its working space on
+the stack: `pbkSat` without the working space, and with `out_len` its only
+stack argument. -/
+def pbkFrameSat : State :=
+  { pbkSat 0 with rd := [⟨0x10000, 0⟩, ⟨0x20000, 0⟩, ⟨0x90008, 8⟩], wr := [⟨0x30000, 0⟩] }
+
 section
 variable {H : Hash} (hH : HashOK H) (C : CoreOK (core H)) (K : Callees H)
 include hH C K
 
-theorem hmacInit_ok (hsat : ∃ s, (Spec.Hmac.initContract hH.SH H.W X86_64.abi 16).pre s) :
+theorem hmacInit_ok (hsat : ∃ s, (Spec.Hmac.initScratchContract hH.SH H.W X86_64.abi 16).pre s) :
     Verified X86_64.target H.hmacInit (initG hH.SH H.W) :=
   HmacInit.verified hH (HmacInit.Checks.of_core C.hinit) C.fitI (core_hmacInit K.cMx K.iMx C.hinitMx)
     (initImp _ _ hsat).sat_left
 
-theorem hmacFin_ok (hsat : ∃ s, (Spec.Hmac.finalizeContract hH.SH H.W X86_64.abi 16).pre s) :
+theorem hmacFin_ok (hsat : ∃ s, (Spec.Hmac.finalizeScratchContract hH.SH H.W X86_64.abi 16).pre s) :
     Verified X86_64.target H.hmacFin (finG hH.SH H.W) :=
   HmacFin.verified hH (HmacFin.Checks.of_core C.hfin) C.fitF (core_hmacFin K.cMx C.hfinMx)
     (finImp _ _ hsat).sat_left
@@ -240,13 +294,13 @@ theorem iterate_ok (hsat : ∃ s, (Spec.Pbkdf2.iterateContract hH.SH H.W X86_64.
   VG.Proof.Pbkdf2.X86_64.verified hH.iterOk C.iter hH.comp (core_iterate hmx C.iterMx) (iterImp _ _ hsat).sat_left
 
 /-- HMAC's `init`, verified against the shared contract. -/
-theorem hmacInit_verified (hsat : ∃ s, (Spec.Hmac.initContract hH.SH H.W X86_64.abi 16).pre s) :
-    Verified X86_64.target H.hmacInit (Spec.Hmac.initContract hH.SH H.W X86_64.abi 16) :=
+theorem hmacInit_verified (hsat : ∃ s, (Spec.Hmac.initScratchContract hH.SH H.W X86_64.abi 16).pre s) :
+    Verified X86_64.target H.hmacInit (Spec.Hmac.initScratchContract hH.SH H.W X86_64.abi 16) :=
   (hmacInit_ok hH C K hsat).of_implies (initImp _ _ hsat)
 
 /-- HMAC's `finalize`, verified against the shared contract. -/
-theorem hmacFin_verified (hsat : ∃ s, (Spec.Hmac.finalizeContract hH.SH H.W X86_64.abi 16).pre s) :
-    Verified X86_64.target H.hmacFin (Spec.Hmac.finalizeContract hH.SH H.W X86_64.abi 16) :=
+theorem hmacFin_verified (hsat : ∃ s, (Spec.Hmac.finalizeScratchContract hH.SH H.W X86_64.abi 16).pre s) :
+    Verified X86_64.target H.hmacFin (Spec.Hmac.finalizeScratchContract hH.SH H.W X86_64.abi 16) :=
   (hmacFin_ok hH C K hsat).of_implies (finImp _ _ hsat)
 
 /-- `iterate`, verified against the shared contract. -/
@@ -256,11 +310,11 @@ theorem iterate_verified (hsat : ∃ s, (Spec.Pbkdf2.iterateContract hH.SH H.W X
 
 /-- `pbkdf2`, verified against the shared contract. -/
 theorem pbkdf2_verified
-    (hsI : ∃ s, (Spec.Hmac.initContract hH.SH H.W X86_64.abi 16).pre s)
-    (hsF : ∃ s, (Spec.Hmac.finalizeContract hH.SH H.W X86_64.abi 16).pre s)
+    (hsI : ∃ s, (Spec.Hmac.initScratchContract hH.SH H.W X86_64.abi 16).pre s)
+    (hsF : ∃ s, (Spec.Hmac.finalizeScratchContract hH.SH H.W X86_64.abi 16).pre s)
     (hsT : ∃ s, (Spec.Pbkdf2.iterateContract hH.SH H.W X86_64.abi 8).pre s)
-    (hsat : ∃ s, (Spec.Pbkdf2.pbkdf2Contract hH.SH (H.W + H.S) X86_64.abi 24).pre s) :
-    Verified X86_64.target H.pbkdf2 (Spec.Pbkdf2.pbkdf2Contract hH.SH (H.W + H.S) X86_64.abi 24) :=
+    (hsat : ∃ s, (Spec.Pbkdf2.pbkdf2ScratchContract hH.SH (H.W + H.S) X86_64.abi 24).pre s) :
+    Verified X86_64.target H.pbkdf2 (Spec.Pbkdf2.pbkdf2ScratchContract hH.SH (H.W + H.S) X86_64.abi 24) :=
   (Pbk.verified hH hH.psizes (Pbk.Checks.of_core C.pbk)
     (hmacInit_ok hH C K hsI) (nosp_of (core_hmacInit K.cNs K.iNs C.hinitNs)) (core_hmacInit_depth K.cD K.iD C.hinitD)
     (hmacFin_ok hH C K hsF) (nosp_of (core_hmacFin K.cNs C.hfinNs)) (core_hmacFin_depth K.cD C.hfinD)

@@ -4,6 +4,7 @@ import VerifiedGarbage.Spec.Cmac.Contract
 import VerifiedGarbage.Proof.CmacAes.Stream.X86_64.AbsorbCorrect
 import VerifiedGarbage.Proof.Framework.X86_64.Taint
 import VerifiedGarbage.Proof.CmacAes.Stream.X86_64.Common
+import VerifiedGarbage.Proof.CmacAes.Stream.Scratch
 
 section
 
@@ -471,9 +472,9 @@ def initSat : State where
   wr := [⟨0x1000, 304⟩, ⟨0x4000, 2304⟩]
 
 theorem init_verified (v : Ctr32Impl) :
-    Verified X86_64.target (init v.expand v.callee v.suffix) (Spec.Cmac.aesInitContract X86_64.abi 16) :=
+    Verified X86_64.target (init v.expand v.callee v.suffix) (initScratchContract X86_64.abi 16) :=
   Verified.of_correct (init_correct v) (init_ct v) (by
-    sig_implies [Spec.Cmac.aesInitContract, Spec.Cmac.aesInitSig, initX86_64, X86_64.abi,
+    sig_implies [initScratchContract, initScratchSig, Spec.Cmac.aesInitPre, Spec.Cmac.aesInitPost, initX86_64, X86_64.abi,
       X86_64.argRegs] [initSat] using initSat)
 
 /-- A state satisfying `vg_cmac_aes_absorb`'s precondition (with no data). -/
@@ -489,9 +490,9 @@ def absorbSat : State where
   wr := [⟨0x1000, 304⟩, ⟨0x4000, 2304⟩]
 
 theorem absorb_verified (v : Ctr32Impl) :
-    Verified X86_64.target (absorb v.callee v.suffix) (Spec.Cmac.aesAbsorbContract X86_64.abi 16) :=
+    Verified X86_64.target (absorb v.callee v.suffix) (absorbScratchContract X86_64.abi 16) :=
   Verified.of_correct (absorb_correct v) (absorb_ct v) (by
-    sig_implies [Spec.Cmac.aesAbsorbContract, Spec.Cmac.aesAbsorbSig, absorbX86_64, X86_64.abi,
+    sig_implies [absorbScratchContract, absorbScratchSig, Spec.Cmac.aesAbsorbPre, Spec.Cmac.aesAbsorbPost, absorbX86_64, X86_64.abi,
       X86_64.argRegs] [absorbSat] using absorbSat)
 
 /-- A state satisfying `vg_cmac_aes_finish`'s precondition. -/
@@ -507,9 +508,9 @@ def finishSat : State where
   wr := [⟨0x1000, 304⟩, ⟨0x2000, 16⟩, ⟨0x4000, 2304⟩]
 
 theorem finish_verified (v : Ctr32Impl) :
-    Verified X86_64.target (finish v.callee v.suffix) (Spec.Cmac.aesFinishContract X86_64.abi 16) :=
+    Verified X86_64.target (finish v.callee v.suffix) (finishScratchContract X86_64.abi 16) :=
   Verified.of_correct (finish_correct v) (finish_ct v) (by
-    sig_implies [Spec.Cmac.aesFinishContract, Spec.Cmac.aesFinishSig, finishX86_64, X86_64.abi,
+    sig_implies [finishScratchContract, finishScratchSig, Spec.Cmac.aesFinishPre, Spec.Cmac.aesFinishPost, finishX86_64, X86_64.abi,
       X86_64.argRegs] [finishSat] using finishSat)
 
 end VG.Proof.CmacAes.Stream.X86_64

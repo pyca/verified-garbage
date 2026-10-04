@@ -9,7 +9,9 @@
 //! one must be rejected, and for an `acceptable` one either outcome is fine
 //! (but a result, if produced, must be the expected one).
 
+mod aes_ccm;
 mod aes_gcm;
+mod aes_gcm_siv;
 mod aes_siv;
 mod chacha20;
 mod chacha20poly1305;
@@ -40,6 +42,7 @@ mod pbkdf2_sha224;
 mod pbkdf2_sha256;
 mod pbkdf2_sha384;
 mod pbkdf2_sha512;
+mod rsa;
 mod x25519;
 mod x448;
 

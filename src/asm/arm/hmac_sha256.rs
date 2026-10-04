@@ -11,13 +11,283 @@
 /// * `inner` must be valid for reads and writes of 96 bytes.
 /// * `outer` must be valid for reads and writes of 96 bytes.
 /// * `key` must be valid for reads of `key_len` bytes.
+/// * `key_len` must be at most 64.
+/// * `inner` and `outer` must not overlap each other or `key` (distinct Rust objects never do).
+/// * None of `inner`, `outer` and `key` may overlap the 880 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_hmac_sha256_init(inner: *mut [u8; 96], outer: *mut [u8; 96], key: *const u8, key_len: usize) {
+    core::arch::naked_asm!(
+        "sub sp, sp, #864",
+        "add r12, sp, #0",
+        "str lr, [r12, #4]",
+        "add lr, sp, #8",
+        "str lr, [r12, #0]",
+        "ldr lr, [sp, #4]",
+        "ldr r12, [sp, #0]",
+        "str r4, [r12, #160]",
+        "str r5, [r12, #164]",
+        "str r6, [r12, #168]",
+        "str r7, [r12, #172]",
+        "str r8, [r12, #176]",
+        "str r9, [r12, #180]",
+        "str r10, [r12, #184]",
+        "str lr, [r12, #188]",
+        "str r11, [r12, #192]",
+        "mov r4, r0",
+        "mov r5, r1",
+        "mov r6, r2",
+        "mov r7, r3",
+        "mov r11, r12",
+        "mov r0, r4",
+        "bl {vg_sha256_init}",
+        "mov r0, r5",
+        "bl {vg_sha256_init}",
+        "movw r1, #13878",
+        "movt r1, #13878",
+        "str r1, [r4, #32]",
+        "str r1, [r4, #36]",
+        "str r1, [r4, #40]",
+        "str r1, [r4, #44]",
+        "str r1, [r4, #48]",
+        "str r1, [r4, #52]",
+        "str r1, [r4, #56]",
+        "str r1, [r4, #60]",
+        "str r1, [r4, #64]",
+        "str r1, [r4, #68]",
+        "str r1, [r4, #72]",
+        "str r1, [r4, #76]",
+        "str r1, [r4, #80]",
+        "str r1, [r4, #84]",
+        "str r1, [r4, #88]",
+        "str r1, [r4, #92]",
+        "mov r8, r4",
+        "cmp r7, #0",
+        "beq 20f",
+        "22:",
+        "ldrb r12, [r6, #0]",
+        "eor r12, r12, #54",
+        "strb r12, [r8, #32]",
+        "add r6, r6, #1",
+        "add r8, r8, #1",
+        "subs r7, r7, #1",
+        "bne 22b",
+        "b 21f",
+        "20:",
+        "21:",
+        "movw r1, #27242",
+        "movt r1, #27242",
+        "ldr r12, [r4, #32]",
+        "eor r12, r12, r1",
+        "str r12, [r5, #32]",
+        "ldr r12, [r4, #36]",
+        "eor r12, r12, r1",
+        "str r12, [r5, #36]",
+        "ldr r12, [r4, #40]",
+        "eor r12, r12, r1",
+        "str r12, [r5, #40]",
+        "ldr r12, [r4, #44]",
+        "eor r12, r12, r1",
+        "str r12, [r5, #44]",
+        "ldr r12, [r4, #48]",
+        "eor r12, r12, r1",
+        "str r12, [r5, #48]",
+        "ldr r12, [r4, #52]",
+        "eor r12, r12, r1",
+        "str r12, [r5, #52]",
+        "ldr r12, [r4, #56]",
+        "eor r12, r12, r1",
+        "str r12, [r5, #56]",
+        "ldr r12, [r4, #60]",
+        "eor r12, r12, r1",
+        "str r12, [r5, #60]",
+        "ldr r12, [r4, #64]",
+        "eor r12, r12, r1",
+        "str r12, [r5, #64]",
+        "ldr r12, [r4, #68]",
+        "eor r12, r12, r1",
+        "str r12, [r5, #68]",
+        "ldr r12, [r4, #72]",
+        "eor r12, r12, r1",
+        "str r12, [r5, #72]",
+        "ldr r12, [r4, #76]",
+        "eor r12, r12, r1",
+        "str r12, [r5, #76]",
+        "ldr r12, [r4, #80]",
+        "eor r12, r12, r1",
+        "str r12, [r5, #80]",
+        "ldr r12, [r4, #84]",
+        "eor r12, r12, r1",
+        "str r12, [r5, #84]",
+        "ldr r12, [r4, #88]",
+        "eor r12, r12, r1",
+        "str r12, [r5, #88]",
+        "ldr r12, [r4, #92]",
+        "eor r12, r12, r1",
+        "str r12, [r5, #92]",
+        "mov r0, r4",
+        "add r6, r4, #32",
+        "mov r3, r11",
+        "mov r1, r6",
+        "mov r2, #1",
+        "bl {vg_sha256_compress}",
+        "mov r0, r5",
+        "add r6, r5, #32",
+        "mov r1, r6",
+        "mov r2, #1",
+        "bl {vg_sha256_compress}",
+        "ldr r4, [r11, #160]",
+        "ldr r5, [r11, #164]",
+        "ldr r6, [r11, #168]",
+        "ldr r7, [r11, #172]",
+        "ldr r8, [r11, #176]",
+        "ldr r9, [r11, #180]",
+        "ldr r10, [r11, #184]",
+        "ldr lr, [r11, #188]",
+        "ldr r11, [r11, #192]",
+        "add sp, sp, #864",
+        "bx lr",
+        vg_sha256_init = sym super::sha256::vg_sha256_init,
+        vg_sha256_compress = sym super::sha256::vg_sha256_compress,
+    )
+}
+
+/// Finishes an HMAC-SHA-256 computation: if, for a 64-byte key `K₀` and a text of fewer than 2⁶⁴ − 64 bytes, the SHA-256 streaming state `*inner` represents `(K₀ ⊕ ipad) ‖ text`, of `count` bytes, and `*outer` represents `K₀ ⊕ opad`, writes the HMAC-SHA-256 of the text under `K₀` (32 bytes) to `*out`.
+///
+/// Contract: `VG.Spec.Hmac.Instance.finalizeContract` of `VG.Spec.Hmac.sha256I`. Constant time: only the pointers and `count` may affect timing, not the states.
+///
+/// # Safety
+///
+/// * `inner` must be valid for reads and writes of 96 bytes.
+/// * `outer` must be valid for reads of 96 bytes.
+/// * `out` must be valid for reads and writes of 32 bytes.
+/// * The contents of `inner` on return are unspecified.
+/// * `inner` and `out` must not overlap each other, `outer` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `inner`, `outer` and `out` may overlap the 880 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_hmac_sha256_finalize(inner: *mut [u8; 96], outer: *const [u8; 96], count: u64, out: *mut [u8; 32]) {
+    core::arch::naked_asm!(
+        "sub sp, sp, #864",
+        "add r12, sp, #0",
+        "str lr, [r12, #8]",
+        "ldr lr, [sp, #864]",
+        "str lr, [r12, #0]",
+        "add lr, sp, #12",
+        "str lr, [r12, #4]",
+        "ldr lr, [sp, #8]",
+        "ldr r12, [sp, #4]",
+        "str r4, [r12, #160]",
+        "str r5, [r12, #164]",
+        "str r6, [r12, #168]",
+        "str r7, [r12, #172]",
+        "str r8, [r12, #176]",
+        "str r9, [r12, #180]",
+        "str r10, [r12, #184]",
+        "str lr, [r12, #188]",
+        "str r11, [r12, #192]",
+        "mov r5, r1",
+        "ldr r7, [sp, #0]",
+        "mov r11, r12",
+        "movw r12, #228",
+        "add r1, r11, r12",
+        "mov r12, r11",
+        "push {{r1, r12}}",
+        "bl {vg_sha256_finalize_scratch}",
+        "ldr r1, [sp], #8",
+        "mov r3, r11",
+        "movw r12, #196",
+        "add r0, r11, r12",
+        "movw r12, #228",
+        "add r6, r11, r12",
+        "ldr r12, [r5, #0]",
+        "str r12, [r0, #0]",
+        "ldr r12, [r5, #4]",
+        "str r12, [r0, #4]",
+        "ldr r12, [r5, #8]",
+        "str r12, [r0, #8]",
+        "ldr r12, [r5, #12]",
+        "str r12, [r0, #12]",
+        "ldr r12, [r5, #16]",
+        "str r12, [r0, #16]",
+        "ldr r12, [r5, #20]",
+        "str r12, [r0, #20]",
+        "ldr r12, [r5, #24]",
+        "str r12, [r0, #24]",
+        "ldr r12, [r5, #28]",
+        "str r12, [r0, #28]",
+        "mov r12, #128",
+        "str r12, [r6, #32]",
+        "mov r12, #0",
+        "str r12, [r6, #36]",
+        "str r12, [r6, #40]",
+        "str r12, [r6, #44]",
+        "str r12, [r6, #48]",
+        "str r12, [r6, #52]",
+        "movw r12, #0",
+        "movt r12, #0",
+        "str r12, [r6, #56]",
+        "movw r12, #0",
+        "movt r12, #3",
+        "str r12, [r6, #60]",
+        "mov r1, r6",
+        "mov r2, #1",
+        "bl {vg_sha256_compress}",
+        "mov r6, r7",
+        "ldr r9, [r0, #0]",
+        "rev r9, r9",
+        "str r9, [r6, #0]",
+        "ldr r9, [r0, #4]",
+        "rev r9, r9",
+        "str r9, [r6, #4]",
+        "ldr r9, [r0, #8]",
+        "rev r9, r9",
+        "str r9, [r6, #8]",
+        "ldr r9, [r0, #12]",
+        "rev r9, r9",
+        "str r9, [r6, #12]",
+        "ldr r9, [r0, #16]",
+        "rev r9, r9",
+        "str r9, [r6, #16]",
+        "ldr r9, [r0, #20]",
+        "rev r9, r9",
+        "str r9, [r6, #20]",
+        "ldr r9, [r0, #24]",
+        "rev r9, r9",
+        "str r9, [r6, #24]",
+        "ldr r9, [r0, #28]",
+        "rev r9, r9",
+        "str r9, [r6, #28]",
+        "ldr r4, [r11, #160]",
+        "ldr r5, [r11, #164]",
+        "ldr r6, [r11, #168]",
+        "ldr r7, [r11, #172]",
+        "ldr r8, [r11, #176]",
+        "ldr r9, [r11, #180]",
+        "ldr r10, [r11, #184]",
+        "ldr lr, [r11, #188]",
+        "ldr r11, [r11, #192]",
+        "add sp, sp, #864",
+        "bx lr",
+        vg_sha256_finalize_scratch = sym super::sha256::vg_sha256_finalize_scratch,
+        vg_sha256_compress = sym super::sha256::vg_sha256_compress,
+    )
+}
+
+/// `vg_hmac_sha256_init`, with its working space in `*scratch`.
+///
+/// Contract: `VG.Spec.Hmac.Instance.initScratchContract` of `VG.Spec.Hmac.sha256I`. Constant time: only the pointers and `key_len` may affect timing, not the key.
+///
+/// # Safety
+///
+/// * `inner` must be valid for reads and writes of 96 bytes.
+/// * `outer` must be valid for reads and writes of 96 bytes.
+/// * `key` must be valid for reads of `key_len` bytes.
 /// * `scratch` must be valid for reads and writes of 832 bytes.
 /// * `key_len` must be at most 64.
 /// * The contents of `scratch` on return are unspecified.
 /// * `inner`, `outer` and `scratch` must not overlap each other, `key` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `inner`, `outer`, `key` and `scratch` may overlap the 16 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_hmac_sha256_init(inner: *mut [u8; 96], outer: *mut [u8; 96], key: *const u8, key_len: usize, scratch: *mut [u64; 104]) {
+pub(crate) unsafe extern "C" fn vg_hmac_sha256_init_scratch(inner: *mut [u8; 96], outer: *mut [u8; 96], key: *const u8, key_len: usize, scratch: *mut [u64; 104]) {
     core::arch::naked_asm!(
         "ldr r12, [sp, #0]",
         "str r4, [r12, #160]",
@@ -146,9 +416,9 @@ pub(crate) unsafe extern "C" fn vg_hmac_sha256_init(inner: *mut [u8; 96], outer:
     )
 }
 
-/// Finishes an HMAC-SHA-256 computation: if, for a 64-byte key `K₀` and a text of fewer than 2⁶⁴ − 64 bytes, the SHA-256 streaming state `*inner` represents `(K₀ ⊕ ipad) ‖ text`, of `count` bytes, and `*outer` represents `K₀ ⊕ opad`, writes the HMAC-SHA-256 of the text under `K₀` (32 bytes) to `*out`.
+/// `vg_hmac_sha256_finalize`, with its working space in `*scratch`.
 ///
-/// Contract: `VG.Spec.Hmac.Instance.finalizeContract` of `VG.Spec.Hmac.sha256I`. Constant time: only the pointers and `count` may affect timing, not the states.
+/// Contract: `VG.Spec.Hmac.Instance.finalizeScratchContract` of `VG.Spec.Hmac.sha256I`. Constant time: only the pointers and `count` may affect timing, not the states.
 ///
 /// # Safety
 ///
@@ -161,7 +431,7 @@ pub(crate) unsafe extern "C" fn vg_hmac_sha256_init(inner: *mut [u8; 96], outer:
 /// * `inner`, `out` and `scratch` must not overlap each other, `outer` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `inner`, `outer`, `out` and `scratch` may overlap the 16 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_hmac_sha256_finalize(inner: *mut [u8; 96], outer: *const [u8; 96], count: u64, out: *mut [u8; 32], scratch: *mut [u64; 104]) {
+pub(crate) unsafe extern "C" fn vg_hmac_sha256_finalize_scratch(inner: *mut [u8; 96], outer: *const [u8; 96], count: u64, out: *mut [u8; 32], scratch: *mut [u64; 104]) {
     core::arch::naked_asm!(
         "ldr r12, [sp, #4]",
         "str r4, [r12, #160]",

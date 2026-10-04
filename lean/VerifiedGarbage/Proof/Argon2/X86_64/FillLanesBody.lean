@@ -15,13 +15,13 @@ structure Done (s t : State) (p : Params) (pass lane slice : Nat) (state : FillS
   rd : t.rd = s.rd
   wr : t.wr = s.wr
   frame : Frame (FillBlock.writes s p) s.mem t.mem
-  mxcsr : t.mxcsr = s.mxcsr
+  mxcsr : ctl t.mxcsr = ctl s.mxcsr
   regs : ∀ r ∈ calleeSaved, r ≠ .rbx → r ≠ .r15 → t.gpr r = s.gpr r
   header : ∃ a, SegmentSetup.Ready p pass lane slice a ∧ Divide.Keeps [.rbx] a t
   cf : t.cf = decide (lane + 1 < p.lanes)
   next : lane + 1 < p.lanes → SegmentSetup.Ready p pass (lane + 1) slice t
 
-theorem body_ok (s : State) (p : Params) (pass lane slice : Nat)
+theorem body_ok [CompressImpl] (s : State) (p : Params) (pass lane slice : Nat)
     (h : SegmentSetup.Ready p pass lane slice s) (state : FillState)
     (represented : Proof.Argon2.Represents s.mem (FillKernel.matrix s) p.blocks state.memory) :
     WP isa Impl.Argon2.X86_64.FillLanes.body s (Done s · p pass lane slice state) := by
@@ -41,7 +41,7 @@ theorem body_ok (s : State) (p : Params) (pass lane slice : Nat)
   have lanesBound : p.lanes < 2 ^ 64 := Nat.lt_trans h.parameters.lanesBound (by decide)
   have laneBound := h.parameters.laneBound
   refine ⟨?_, base.trans filled.matrix, work.trans filled.work, nextWord, keeps.rd.trans filled.rd,
-    keeps.wr.trans filled.wr, ?_, keeps.mxcsr.trans filled.mxcsr, ?_, ⟨a, ready, keeps⟩, ?_, ?_⟩
+    keeps.wr.trans filled.wr, ?_, (ctl_eq_of keeps.mxcsr).trans filled.mxcsr, ?_, ⟨a, ready, keeps⟩, ?_, ?_⟩
   · rw [keeps.mem, base]; exact filled.represented
   · rw [keeps.mem]; exact filled.frame
   · intro r hr bx ix

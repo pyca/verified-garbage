@@ -9,17 +9,8 @@ From a cleared accumulator (`zeros_ok`), `k` rounds leave `T_k < 2m` with
 
 namespace VG.Proof.Mont.X86_64
 
-open VG VG.X86_64 VG.Impl.Mont.X86_64
+open VG VG.X86_64 VG.Impl.Mont.X86_64 VG.Impl.Mont
 open VG.Proof.X25519.X86_64 (Keeps Keeps.trans Keeps.mono)
-
-theorem wordsVal_succ_top (m : Mem) (base : Addr) (d k : Nat) :
-    wordsVal m base d (k + 1) = wordsVal m base d k + 2 ^ (64 * k) * (word m base (d + 8 * k)).toNat := by
-  induction k generalizing d with
-  | zero => simp [wordsVal]
-  | succ k ih =>
-    rw [wordsVal, ih (d + 8), wordsVal, pow64_succ, Nat.mul_add, Nat.mul_assoc,
-      show d + 8 + 8 * k = d + 8 * (k + 1) by omega]
-    omega
 
 theorem regsVal_zero {s : State} {rs : List Reg} (h : ∀ r ∈ rs, s.gpr r = 0) : regsVal s rs = 0 := by
   induction rs with

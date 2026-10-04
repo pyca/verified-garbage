@@ -9,7 +9,7 @@ per field operation) runs as `fprog`, and `fprog_ok`/`rcb_ok` hold for it.
 
 namespace VG.Proof.Weierstrass.X86_64
 
-open VG VG.X86_64 VG.Impl.Mont.X86_64 VG.Impl.Weierstrass.X86_64
+open VG VG.X86_64 VG.Impl.Mont.X86_64 VG.Impl.Mont VG.Impl.Weierstrass.X86_64 VG.Impl.Weierstrass
 
 theorem blocks_wp : ∀ (ls : List (List Instr)) {s : State} {Q : State → Prop},
     WP isa (blocks ls) s Q ↔ WP isa (.block ls.flatten) s Q

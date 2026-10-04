@@ -45,6 +45,5 @@ super::whole_pbkdf2!(
         #[cfg(target_arch = "x86_64")]
         Avx2 if [VG_PBKDF2_HMAC_SHA512_224_AVX2_FEATURES] => vg_pbkdf2_hmac_sha512_224_avx2,
     },
-    scratch: 426,
     output: 28,
 );

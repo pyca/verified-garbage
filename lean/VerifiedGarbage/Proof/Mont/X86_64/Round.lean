@@ -11,7 +11,7 @@ becomes `(T + a_i B + u m) / 2⁶⁴ < 2m` for some `u`, with the low word of
 
 namespace VG.Proof.Mont.X86_64
 
-open VG VG.X86_64 VG.Impl.Mont.X86_64
+open VG VG.X86_64 VG.Impl.Mont.X86_64 VG.Impl.Mont
 open VG.Proof.X25519.X86_64 (Keeps Keeps.trans Keeps.mono)
 
 /-! ## The window -/
@@ -108,14 +108,6 @@ theorem rowCarry_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size
   omega
 
 /-! ## A round -/
-
-/-- `t₀ + (t₀ m' mod 2⁶⁴) m ≡ 0 (mod 2⁶⁴)` when `m m' ≡ -1`. -/
-theorem mont_low (t0 minv m : Nat) (h : (m * minv + 1) % 2 ^ 64 = 0) :
-    (t0 + t0 * minv % 2 ^ 64 * m) % 2 ^ 64 = 0 := by
-  rw [Nat.add_mod, Nat.mul_mod (t0 * minv % 2 ^ 64), Nat.mod_mod, ← Nat.mul_mod,
-    ← Nat.add_mod, show t0 + t0 * minv * m = t0 * (m * minv + 1) by
-      rw [Nat.mul_add, Nat.mul_one, Nat.mul_assoc, Nat.mul_comm minv m]; omega,
-    Nat.mul_mod, h, Nat.mul_zero, Nat.zero_mod]
 
 theorem round_eq (M : Mod) (a b i : Nat) :
     round M a b i = ([.mov .rcx (.mem (sc (a + 8 * i)))] : List Instr) ++

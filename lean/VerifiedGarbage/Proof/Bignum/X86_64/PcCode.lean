@@ -209,7 +209,7 @@ theorem pcCtx_of {s : State} (h : pcContract.pre s) : PcCtx s := by
   obtain ⟨hk1, hk2⟩ := hk
   unfold Spec.Rsa.scratchWords at hsl
   unfold Spec.Rsa.precomputedWords Spec.Rsa.modulusWords at hpl
-  have hs : Scr s (s.gpr .r8) ((s.gpr .r9).toNat * 8) := ⟨by rw [hwr]; simp, wS⟩
+  have hs : Scr s (s.gpr .r8) ((s.gpr .r9).toNat * 8) := Scr.of_mem (by rw [hwr]; simp) wS
   have hn := hs.nowrap
   have hp8 : (s.gpr .rsi).toNat * 8 = 16 * (((s.gpr .rcx).toNat + 7) / 8) := by omega
   have hpre : (⟨s.gpr .rdi, (s.gpr .rsi).toNat * 8⟩ : Region) ∈ s.wr := by rw [hwr]; simp

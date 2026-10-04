@@ -15,7 +15,7 @@ structure Finished (s t : State) (p : Params) (pass slice : Nat) (state : FillSt
   rd : t.rd = s.rd
   wr : t.wr = s.wr
   frame : Frame (FillBlock.writes s p) s.mem t.mem
-  mxcsr : t.mxcsr = s.mxcsr
+  mxcsr : ctl t.mxcsr = ctl s.mxcsr
   regs : ∀ r ∈ calleeSaved, r ≠ .rbx → r ≠ .r15 → t.gpr r = s.gpr r
   header : ∃ lane a, lane + 1 = p.lanes ∧ SegmentSetup.Ready p pass lane slice a ∧ Divide.Keeps [.rbx] a t
 
@@ -38,7 +38,7 @@ theorem Finished.prepend {s a t : State} {p : Params} {pass lane slice : Nat} {s
     exact first.frame.trans frame
   · intro r hr bx ix; exact (rest.regs r hr bx ix).trans (first.regs r hr bx ix)
 
-theorem loop_ok (count : Nat) (s : State) (p : Params) (pass lane slice : Nat)
+theorem loop_ok [CompressImpl] (count : Nat) (s : State) (p : Params) (pass lane slice : Nat)
     (h : SegmentSetup.Ready p pass lane slice s) (state : FillState)
     (represented : Proof.Argon2.Represents s.mem (FillKernel.matrix s) p.blocks state.memory)
     (positive : 0 < count) (endLane : lane + count = p.lanes) :

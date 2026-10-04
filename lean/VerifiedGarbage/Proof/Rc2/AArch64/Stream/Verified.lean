@@ -2,6 +2,7 @@ import VerifiedGarbage.Proof.Rc2.AArch64.Stream.Init
 import VerifiedGarbage.Proof.Rc2.AArch64.Stream.Update
 import VerifiedGarbage.Proof.Rc2.AArch64.Stream.ConstantTime
 import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Rc2.Scratch
 
 /-!
 # Verified streaming RC2-CBC on AArch64
@@ -51,21 +52,21 @@ theorem decryptUpdate_correct (s : State) (hs : (updateContract .decrypt).pre s)
   WP.withPreservedV (update_correct .decrypt s hs)
     (by lit_decide)
 
-theorem init_verified : Verified target init (Spec.Rc2.cbcInitContract abi 16) := by
+theorem init_verified : Verified target init (Proof.Rc2.cbcInitScratchContract abi 16) := by
   refine Verified.of_correct init_correct' (init_constantTime _) ?_
-  sig_implies [Spec.Rc2.cbcInitContract, Spec.Rc2.cbcInitSig, abi, argRegs, initContract,
+  sig_implies [Proof.Rc2.cbcInitScratchContract, Proof.Rc2.cbcInitScratchSig, Spec.Rc2.cbcInitPost, abi, argRegs, initContract,
     publicRegs_seven] [initSat] using initSat
 
 theorem encryptUpdate_verified :
-    Verified target encryptUpdate (Spec.Rc2.cbcEncryptUpdateContract abi 16) := by
+    Verified target encryptUpdate (Proof.Rc2.cbcEncryptUpdateScratchContract abi 16) := by
   refine Verified.of_correct encryptUpdate_correct (encryptUpdate_constantTime _) ?_
-  sig_implies [Spec.Rc2.cbcEncryptUpdateContract, Spec.Rc2.cbcUpdateContract, Spec.Rc2.cbcUpdateSig,
+  sig_implies [Proof.Rc2.cbcEncryptUpdateScratchContract, Proof.Rc2.cbcUpdateScratchContract, Proof.Rc2.cbcUpdateScratchSig, Spec.Rc2.cbcUpdatePre, Spec.Rc2.cbcUpdatePost,
     abi, argRegs, updateContract, publicRegs_seven] [updateSat] using updateSat
 
 theorem decryptUpdate_verified :
-    Verified target decryptUpdate (Spec.Rc2.cbcDecryptUpdateContract abi 16) := by
+    Verified target decryptUpdate (Proof.Rc2.cbcDecryptUpdateScratchContract abi 16) := by
   refine Verified.of_correct decryptUpdate_correct (decryptUpdate_constantTime _) ?_
-  sig_implies [Spec.Rc2.cbcDecryptUpdateContract, Spec.Rc2.cbcUpdateContract, Spec.Rc2.cbcUpdateSig,
+  sig_implies [Proof.Rc2.cbcDecryptUpdateScratchContract, Proof.Rc2.cbcUpdateScratchContract, Proof.Rc2.cbcUpdateScratchSig, Spec.Rc2.cbcUpdatePre, Spec.Rc2.cbcUpdatePost,
     abi, argRegs, updateContract, publicRegs_seven] [updateSat] using updateSat
 
 end VG.Proof.Rc2.AArch64.Stream

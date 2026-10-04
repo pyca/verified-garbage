@@ -1,0 +1,132 @@
+import VerifiedGarbage.Impl.Mont.AArch64
+import VerifiedGarbage.Impl.Weierstrass.Slots
+
+/-!
+# Short Weierstrass curves on AArch64: points, scalar multiplication, powers
+
+Code for any curve `y² = x³ + ax + b` over a prime field of `n` 64-bit
+words, with the Montgomery arithmetic of `Impl/Mont/AArch64.lean`. Field
+elements are in Montgomery form (`x R mod p`, `R = 2^(64 n)`) in slots of
+the working space, whose base is in `x0`; a point is three slots, projective
+coordinates `(X : Y : Z)`.
+
+* `fprog`: field operations on slots (`FOp`, `Impl/Weierstrass/Slots.lean`),
+  such as the complete addition `rcb`, one after the other.
+* `ladder`: `[k]G` by double-and-add from the top bit, 256 times (or as many
+  bits as the table has): `D = R + R`, `S = D + G` and `R = D` or `S` by a
+  mask of the bit, so every iteration does the same.
+* `pow`: `x^e` by square-and-multiply over the bits of a public exponent,
+  also always multiplying and selecting by a mask, so that one loop serves
+  every exponent.
+* `bits`: the bits of a little-endian number in a slot, one byte each.
+
+The loops count down in `x19`. The only branches are on it, and every
+address is `x0` plus a constant, or plus the counter: nothing but `x0` may
+affect timing.
+-/
+
+namespace VG.Impl.Weierstrass.AArch64
+
+open VG.AArch64 VG.Impl.Mont VG.Impl.Mont.AArch64 VG.Impl.Weierstrass
+
+/-- The code of a field operation. -/
+def opCode (M : Mod) : FOp → List Instr
+  | .mul o a b => Mont.AArch64.mul M o a b
+  | .add o a b => Mont.AArch64.add M o a b
+  | .sub o a b => Mont.AArch64.sub M o a b
+
+/-- A straight-line sequence of field operations. -/
+def fprog (M : Mod) (ops : List FOp) : List Instr := ops.flatMap (opCode M)
+
+/-- Straight-line code as a sequence of blocks (the same instructions as their
+concatenation; the kernel handles many short blocks better than one long one). -/
+def blocks : List (List Instr) → Prog isa
+  | [] => .block []
+  | [b] => .block b
+  | b :: bs => .seq (.block b) (blocks bs)
+
+/-- `fprog`, a block per operation. -/
+def fprogB (M : Mod) (ops : List FOp) : Prog isa := blocks (ops.map (opCode M))
+
+/-- `[o] = [a]` if the mask `x3` is zero, `[b]` if it is all ones, `n`
+words, through `x1` and `x2`. -/
+def sel : Nat → Nat → Nat → Nat → List Instr
+  | 0, _, _, _ => []
+  | k + 1, o, a, b => [ld .x1 a, ld .x2 b, .logic .eor .x .x2 .x2 .x1, .logic .and .x .x2 .x2 .x3,
+      .logic .eor .x .x1 .x1 .x2, st .x1 o] ++ sel k (o + 8) (a + 8) (b + 8)
+
+/-- `o = a` or `b`, a point, by the mask `x3`. -/
+def selPt (n : Nat) (o a b : Pt) : List Instr :=
+  sel n o.x a.x b.x ++ sel n o.y a.y b.y ++ sel n o.z a.z b.z
+
+/-- `[o] = [a]`, `n` words, through `x1`. -/
+def copy : Nat → Nat → Nat → List Instr
+  | 0, _, _ => []
+  | k + 1, o, a => [ld .x1 a, st .x1 o] ++ copy k (o + 8) (a + 8)
+
+/-- The mask `x3 = -[x0 + x19 + d]` of the bit of iteration `x19`, through
+`x1`, `x7` and `x16`. -/
+def bitMask (d : Nat) : List Instr :=
+  [.movz .x .x7 0 0, .add .x .x16 .x0 .x19, .ldrb .x1 .x16 d, .sub .x .x3 .x7 .x1]
+
+/-- `x19 -= 1`. -/
+def decCounter : Instr := .subImm .x .x19 .x19 1
+
+/-- One iteration of the ladder, for the bit `t = x19 - 1`: `D = R + R`,
+`T = D + G`, then `R = T` if bit `t` is set, else `D`. -/
+def ladderBody (L : LadderCfg) : Prog isa :=
+  .seq (.block [decCounter]) <| .seq (fprogB L.M (rcb L.S L.R L.R L.D)) <|
+    .seq (fprogB L.M (rcb L.S L.D L.G L.T)) <|
+    .block (bitMask L.bits ++ selPt L.M.n L.R L.D L.T)
+
+/-- The ladder over the bits `nbits - 1` down to 0, from `R` as set up by the
+caller (the point at infinity). -/
+def ladder (L : LadderCfg) : Prog isa :=
+  .seq (.block [.movz .x .x19 (BitVec.ofNat 16 L.nbits) 0]) (.loop (ladderBody L) (.nonzero .x .x19))
+
+/-- One iteration: `acc = acc²`, `tmp = acc · base`, and `acc = tmp` if the
+exponent's bit `x19 - 1` is set. -/
+def powBody (P : PowCfg) : Prog isa :=
+  .seq (.block (decCounter :: Mont.AArch64.mul P.M P.acc P.acc P.acc)) <|
+  .seq (.block (Mont.AArch64.mul P.M P.tmp P.acc P.base)) <|
+    .block (bitMask P.bits ++ sel P.M.n P.acc P.acc P.tmp)
+
+/-- `[acc] = [base]^e` (in Montgomery form), from the top bit of `e`. -/
+def pow (P : PowCfg) : Prog isa :=
+  .seq (.block (copy P.M.n P.acc P.one ++ [.movz .x .x19 (BitVec.ofNat 16 P.nbits) 0]))
+    (.loop (powBody P) (.nonzero .x .x19))
+
+/-- Byte `j` of the table at `dst` for byte `x19` of the number: bit `j` of
+`x1` (with `x5 = 1`), stored at `x17 + dst + j`, where `x17 = x0 + 8 x19`. -/
+def bitJ (dst j : Nat) : List Instr :=
+  (if j = 0 then [.logic .and .x .x2 .x1 .x5] else [.lsr .x .x2 .x1 j, .logic .and .x .x2 .x2 .x5]) ++
+    [.strb .x2 .x17 (dst + j)]
+
+/-- The table at `dst` of the bits of the `nbytes`-byte little-endian number at
+`src`: byte `8i + j` is bit `j` of byte `i` (so byte `t` is bit `t`), from
+the top byte down. -/
+def bits (src dst nbytes : Nat) : Prog isa :=
+  .seq (.block [.movz .x .x19 (BitVec.ofNat 16 nbytes) 0, .movz .x .x5 1 0]) (.loop (.block (
+    [decCounter, .add .x .x16 .x0 .x19, .ldrb .x1 .x16 src, .lsl .x .x17 .x19 3,
+      .add .x .x17 .x0 .x17] ++
+    (List.range 8).flatMap (bitJ dst))) (.nonzero .x .x19))
+
+/-! ## Numbers as bytes -/
+
+/-- `[x0 + o] = ` the `n`-word big-endian number at `[src]`, little-endian,
+through `x5` (so `src` may be any of `x1`–`x4`). -/
+def loadBE (n : Nat) (o : Nat) (src : Reg) : List Instr :=
+  (List.range n).flatMap fun j =>
+    [.ldr .x .x5 src (8 * (n - 1 - j)), .rev .x5 .x5, st .x5 (o + 8 * j)]
+
+/-- `[dst + d] = ` the `n`-word number at `[x0 + a]`, big-endian, masked with
+`x3`, through `x1`. -/
+def storeBE (n : Nat) (dst : Reg) (d a : Nat) : List Instr :=
+  (List.range n).flatMap fun j =>
+    [ld .x1 (a + 8 * j), .logic .and .x .x1 .x1 .x3, .rev .x1 .x1, .str .x .x1 dst (d + 8 * (n - 1 - j))]
+
+/-- `[x0 + o] = x`, `n` words, through `x1`. -/
+def setConst (n : Nat) (o x : Nat) : List Instr :=
+  (List.range n).flatMap fun j => const64 .x1 (BitVec.ofNat 64 (x >>> (64 * j))) ++ [st .x1 (o + 8 * j)]
+
+end VG.Impl.Weierstrass.AArch64

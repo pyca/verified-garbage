@@ -29,7 +29,7 @@ timing (the contract would let the peer's public key affect it too).
 
 namespace VG.Impl.Ecdh.X86_64
 
-open VG.X86_64 VG.Impl.Mont.X86_64 VG.Impl.Weierstrass.X86_64 VG.Impl.Ecdsa.X86_64
+open VG.X86_64 VG.Impl.Mont.X86_64 VG.Impl.Mont VG.Impl.Weierstrass.X86_64 VG.Impl.Weierstrass VG.Impl.Ecdsa.X86_64
 
 /-! Slots of the signature's layout, as ECDH uses them. The hash's slot `E`
 holds the peer's `x`. -/
@@ -120,7 +120,7 @@ curve, and the point the ladder multiplies. -/
 def validate : Prog isa :=
   blocks ([Mont.X86_64.mul c.MP' (c.sl QXM) (c.sl E) (c.sl R2P),
     Mont.X86_64.mul c.MP' (c.sl QYM) (c.sl QY) (c.sl R2P)] ++
-    (curveOps c).map (FOp.code c.MP') ++ [checkZero c (c.sl W1) ++ select c])
+    (curveOps c).map (opCode c.MP') ++ [checkZero c (c.sl W1) ++ select c])
 
 /-- The ladder of the signature, from the point at `PX`, `PY`, `ONEP`. -/
 def ladderQ : LadderCfg := { c.ladderCfg with G := c.pt PX PY ONEP }

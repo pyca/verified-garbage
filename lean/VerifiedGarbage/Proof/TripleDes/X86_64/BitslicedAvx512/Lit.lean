@@ -1,5 +1,5 @@
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
-import VerifiedGarbage.Impl.TripleDes.X86_64.BitslicedAvx512
+import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedAvx512.SboxLit
+import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedAvx2.Lit
 
 namespace VG
 

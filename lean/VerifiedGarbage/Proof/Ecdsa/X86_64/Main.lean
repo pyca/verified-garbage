@@ -7,7 +7,7 @@ import VerifiedGarbage.Proof.Ecdsa.Sign
 
 `sign_ok`: `Cfg.sign` computes the specification's signature of the hash
 with `d` and `k`, for any curve the proof of the code supports (`CfgOk`)
-whose group law the proofs support (`Good`), and restores the callee-saved
+whose group law the proofs support (`Law`), and restores the callee-saved
 registers. Four stages, each a lemma: the setup and the tables of bits
 (`stage₁`, in `Stages.lean`), `[k]G` and `Z^(p-2)` (`stage₂`), `x`, `r`, the
 checks and `k^(n-2)` (`stage₃`), and `s`, its check and the result
@@ -16,8 +16,8 @@ checks and `k^(n-2)` (`stage₃`), and `s`, its check and the result
 
 namespace VG.Proof.Ecdsa.X86_64
 
-open VG VG.X86_64 VG.Impl.Mont.X86_64 VG.Impl.Weierstrass.X86_64 VG.Impl.Ecdsa.X86_64
-open VG.Proof.Mont.X86_64 VG.Proof.Weierstrass.X86_64 VG.Proof.Weierstrass Spec.Weierstrass
+open VG VG.X86_64 VG.Impl.Mont.X86_64 VG.Impl.Mont VG.Impl.Weierstrass.X86_64 VG.Impl.Weierstrass VG.Impl.Ecdsa.X86_64
+open VG.Proof.Mont.X86_64 VG.Proof.Mont VG.Proof.Weierstrass.X86_64 VG.Proof.Weierstrass Spec.Weierstrass
 open VG.Proof.X25519.X86_64 (Keeps)
 
 variable {c : Cfg}
@@ -36,7 +36,7 @@ structure St₂ (c : Cfg) (s₀ : State) (base : Addr) (s : State) : Prop extend
   rz_lt : sv c base s RZ < c.C.p
 
 /-- `[k]G`, then `Z^(p-2)`. -/
-theorem stage₂ (hc : CfgOk c) (hC : Good c.C) {s₀ : State} {base : Addr} {s : State} (hS : St₁ c s₀ base s)
+theorem stage₂ (hc : CfgOk c) (hC : Law c.C) {s₀ : State} {base : Addr} {s : State} (hS : St₁ c s₀ base s)
     {rest : Prog isa} {Q : State → Prop} (h : ∀ s', St₂ c s₀ base s' → WP isa rest s' Q) :
     WP isa (.seq (ladder c.ladderCfg) (.seq (pow c.powP) rest)) s Q := by
   have h0 := hc.n0
@@ -54,14 +54,14 @@ theorem stage₂ (hc : CfgOk c) (hC : Good c.C) {s₀ : State} {base : Addr} {s 
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hi
     show sv c base s i < c.C.p
     rcases hi with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
-    · exact F.ap.trans_lt (hmont _)
-    · exact F.b3p.trans_lt (hmont _)
-    · exact F.gx.trans_lt (hmont _)
-    · exact F.gy.trans_lt (hmont _)
-    · exact F.onep.trans_lt (Nat.mod_lt _ (by omega))
-    · exact hS.rx.trans_lt (by omega)
-    · exact hS.ry.trans_lt (hmont _)
-    · exact hS.rz.trans_lt (by omega)
+    · exact lt_of_eq_of_lt F.ap (hmont _)
+    · exact lt_of_eq_of_lt F.b3p (hmont _)
+    · exact lt_of_eq_of_lt F.gx (hmont _)
+    · exact lt_of_eq_of_lt F.gy (hmont _)
+    · exact lt_of_eq_of_lt F.onep (Nat.mod_lt _ (by omega))
+    · exact lt_of_eq_of_lt hS.rx (by omega)
+    · exact lt_of_eq_of_lt hS.ry (hmont _)
+    · exact lt_of_eq_of_lt hS.rz (by omega)
   have hG : Rep c.C (tmv c.C c.n base s (c.sl GX)) (tmv c.C c.n base s (c.sl GY))
       (tmv c.C c.n base s (c.sl ONEP)) (G c.C) := by
     show Rep c.C (toM _ _ (wordsVal s.mem base (c.sl GX) c.n)) (toM _ _ (wordsVal s.mem base (c.sl GY) c.n))
@@ -158,7 +158,7 @@ theorem stage₃ (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State} (hS : S
   have e₇ : ∀ {i}, i < 45 → i ∉ [XM, X, RR, KM, TMP] → sv c base s₇ i = sv c base s i := fun hi hl =>
     sv_unch Mp.unch h7 hn hi (apart_slW hl)
   refine WP.seq (WP.mono (pow_ok (P := c.powN) (e := c.C.n - 2) (powLayN hc) hnR hs₈ (modN_of hc F₈.mn)
-    ((e₈ (i := KM) (by decide) (by decide)).trans_lt Mp.km_lt) F₈.onen
+    (lt_of_eq_of_lt (e₈ (i := KM) (by decide) (by decide)) Mp.km_lt) F₈.onen
     (fun t ht => by
       show s₈.mem (off base (bitsAt c.n 2 + t)) = _
       rw [tbl_unch O₈.unch h7 hn (j := 2) (by decide) ht (tbl_apart_flag h0 2 t),
@@ -195,7 +195,6 @@ theorem stage₃ (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State} (hS : S
   · refine v₉.trans ?_
     show toM c.C.n (2 ^ (64 * c.n)) (sv c base s₈ KM) ^ _ = _
     rw [e₈ (i := KM) (by decide) (by decide), Mp.km, hS.k]
-    rfl
 
 /-- The result the contract asks for: the specification's signature of the
 hash with `d` and `k`, big-endian, and `1`, or zeros and `0`. -/
@@ -208,7 +207,7 @@ def SignPost (c : Cfg) (s₀ s' : State) : Prop :=
       Spec.Ecdsa.bytesAt s'.mem (s₀.gpr .rdi) (16 * c.n) = List.replicate (16 * c.n) 0
 
 /-- `s`, its check, and the result. -/
-theorem stage₄ (hc : CfgOk c) (hC : Good c.C) {s₀ : State} (hp : Pre c s₀) {base : Addr} (hb : base = s₀.gpr .r8)
+theorem stage₄ (hc : CfgOk c) (hC : Law c.C) {s₀ : State} (hp : Pre c s₀) {base : Addr} (hb : base = s₀.gpr .r8)
     {s : State} (hS : St₃ c s₀ base s) :
     WP isa c.scalar s fun s' => (∀ r ∈ Cfg.saved.map Prod.fst, s'.gpr r = s₀.gpr r) ∧ SignPost c s₀ s' := by
   have h0 := hc.n0
@@ -251,7 +250,7 @@ theorem stage₄ (hc : CfgOk c) (hC : Good c.C) {s₀ : State} (hp : Pre c s₀)
   -- The specification.
   have hsig := signWith_eq hC (C := c.C) (d := dv c s₀) (e := ev c s₀) (k := kv c s₀) hS.rep hS.x_lt hS.x
     (s := wordsVal s₁₁.mem base (c.sl SS) c.n) ss_lt (by
-      rw [ss, trm, tdm, tem, acc₁₀, hS.acc, hS.rr, hS.d, hS.e, add_comm])
+      rw [ss, trm, tdm, tem, acc₁₀, hS.acc, hS.rr, hS.d, hS.e, Lean.Grind.AddCommMonoid.add_comm])
   unfold SignPost
   rw [hashToInt_eq hc, hsig]
   rw [ss₁₂, rr₁₂, hS.rr] at bytes
@@ -276,7 +275,7 @@ theorem sign_eq (c : Cfg) : c.sign = .seq (.block c.setup) (.seq (bits (c.sl K) 
 
 /-- `vg_ecdsa_<curve>_sign` computes the specification's signature and
 restores the callee-saved registers. -/
-theorem sign_ok (hc : CfgOk c) (hC : Good c.C) {s₀ : State} (hp : Pre c s₀) :
+theorem sign_ok (hc : CfgOk c) (hC : Law c.C) {s₀ : State} (hp : Pre c s₀) :
     WP isa c.sign s₀ fun s' => (∀ r ∈ Cfg.saved.map Prod.fst, s'.gpr r = s₀.gpr r) ∧ SignPost c s₀ s' := by
   rw [sign_eq]
   exact stage₁ hc (hp.setup hc.n7) fun _ S₁ => stage₂ hc hC S₁ fun _ S₂ => stage₃ hc S₂ fun _ S₃ =>

@@ -53,12 +53,12 @@ structure Done (s t : State) (p : Params) (pass slice : Nat) (state : FillState)
   rd : t.rd = s.rd
   wr : t.wr = s.wr
   frame : Frame (FillBlock.writes s p) s.mem t.mem
-  mxcsr : t.mxcsr = s.mxcsr
+  mxcsr : ctl t.mxcsr = ctl s.mxcsr
   regs : ∀ r ∈ calleeSaved, r ≠ .rbx → r ≠ .r14 → r ≠ .r15 → t.gpr r = s.gpr r
   cf : t.cf = decide (slice + 1 < 4)
   next : slice + 1 < 4 → FillSlice.Ready p pass (slice + 1) t
 
-theorem body_ok (s : State) (p : Params) (pass slice : Nat) (h : FillSlice.Ready p pass slice s) (state : FillState)
+theorem body_ok [CompressImpl] (s : State) (p : Params) (pass slice : Nat) (h : FillSlice.Ready p pass slice s) (state : FillState)
     (represented : Proof.Argon2.Represents s.mem (FillKernel.matrix s) p.blocks state.memory) :
     WP isa Impl.Argon2.X86_64.FillSlices.body s (Done s · p pass slice state) := by
   unfold Impl.Argon2.X86_64.FillSlices.body
@@ -77,7 +77,7 @@ theorem body_ok (s : State) (p : Params) (pass slice : Nat) (h : FillSlice.Ready
   have work : AddressCalls.work t = AddressCalls.work a := by unfold AddressCalls.work; rw [keeps.mem, bp]
   have sliceBound := h.parameters.sliceBound
   refine ⟨?_, base.trans filled.matrix, work.trans filled.work, nextHeader, keeps.rd.trans filled.rd,
-    keeps.wr.trans filled.wr, ?_, keeps.mxcsr.trans filled.mxcsr, ?_, ?_, ?_⟩
+    keeps.wr.trans filled.wr, ?_, (ctl_eq_of keeps.mxcsr).trans filled.mxcsr, ?_, ?_, ?_⟩
   · rw [keeps.mem, base]; exact filled.represented
   · rw [keeps.mem]; exact filled.frame
   · intro r hr bx sl ix

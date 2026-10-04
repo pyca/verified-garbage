@@ -47,7 +47,10 @@
 //! eight blocks at a time in 256-bit registers), or those of the pairs
 //! (`_vaes_vpclmul`, `_vaes_pclmul`, `_aesni_vpclmul`), and CPUs with VAES,
 //! VPCLMULQDQ, AVX512F and AVX512BW the `_vaes_vpclmul_avx512` ones, whose
-//! interleaved counter mode and GHASH work in 512-bit registers; likewise on x86, where
+//! interleaved counter mode and GHASH work in 512-bit registers, and CPUs
+//! with AES-NI, PCLMULQDQ and AVX but neither VAES nor VPCLMULQDQ the
+//! `_aesni_pclmul_avx` ones, which interleave them in 128-bit registers
+//! (where the `_aesni_pclmul` ones make two passes); likewise on x86, where
 //! AES-NI needs no SSSE3 (and the 256-bit instances are not built); on AArch64, CPUs with the AES and PMULL extensions (which Rust's
 //! `aes` feature stands for together) run the `_aes` ones (with
 //! `vg_aes_ctr32_aes` and `vg_ghash_aes`).
@@ -80,6 +83,14 @@ use crate::arch::gcm::{
     vg_aes_gcm_stream_init_aesni, vg_aes_gcm_stream_init_aesni_pclmul,
     vg_aes_gcm_stream_init_pclmul, vg_aes_gcm_stream_verify_aesni,
     vg_aes_gcm_stream_verify_aesni_pclmul, vg_aes_gcm_stream_verify_pclmul,
+};
+#[cfg(target_arch = "x86_64")]
+use crate::arch::gcm::{
+    VG_AES_GCM_SEAL_AESNI_PCLMUL_AVX_FEATURES, vg_aes_gcm_init_aesni_pclmul_avx,
+    vg_aes_gcm_open_aesni_pclmul_avx, vg_aes_gcm_seal_aesni_pclmul_avx,
+    vg_aes_gcm_stream_aad_aesni_pclmul_avx, vg_aes_gcm_stream_decrypt_aesni_pclmul_avx,
+    vg_aes_gcm_stream_encrypt_aesni_pclmul_avx, vg_aes_gcm_stream_finish_aesni_pclmul_avx,
+    vg_aes_gcm_stream_init_aesni_pclmul_avx, vg_aes_gcm_stream_verify_aesni_pclmul_avx,
 };
 #[cfg(target_arch = "x86_64")]
 use crate::arch::gcm::{
@@ -140,7 +151,7 @@ const MAX_AAD: u64 = (1 << 61) - 1;
 /// any way; one enum of the instances keeps every `match` exhaustive over
 /// exactly the functions that exist.)
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum Backend {
+pub(crate) enum Backend {
     /// The baseline ISA: `vg_aes_ctr32`, `vg_aes_expand_key` and `vg_ghash`.
     Scalar,
     /// AES-NI for AES: the `_aesni` instances.
@@ -172,6 +183,10 @@ enum Backend {
     /// instances.
     #[cfg(target_arch = "x86_64")]
     VaesVpclmulAvx512,
+    /// AES-NI and PCLMULQDQ, with counter mode and GHASH interleaved in
+    /// 128-bit registers (AVX): the `_aesni_pclmul_avx` instances.
+    #[cfg(target_arch = "x86_64")]
+    AesNiPclmulAvx,
     /// The AES instructions for AES and PMULL for GHASH (Rust's `aes`
     /// feature stands for both): the `_aes` instances.
     #[cfg(target_arch = "aarch64")]
@@ -180,13 +195,14 @@ enum Backend {
 
 /// The instance of a function for `backend`: the baseline one, then those
 /// for x86-64 and x86 (AES-NI, PCLMULQDQ, both), those for x86-64 alone
-/// (VAES, VPCLMULQDQ, and their pairs with the others) and AArch64 (AES and
-/// PMULL).
+/// (VAES, VPCLMULQDQ, and their pairs with the others; AES-NI and PCLMULQDQ
+/// with AVX) and AArch64 (AES and PMULL).
 macro_rules! instance {
     ($backend:expr, $scalar:ident,
      x86_64: [$aesni:ident, $pclmul:ident, $aesni_pclmul:ident],
      vaes: [$vaes:ident, $vpclmul:ident, $vaes_pclmul:ident, $aesni_vpclmul:ident,
         $vaes_vpclmul:ident, $vaes_vpclmul_avx512:ident],
+     avx: [$aesni_pclmul_avx:ident],
      aarch64: [$aes:ident]) => {
         match $backend {
             Backend::Scalar => $scalar,
@@ -208,11 +224,16 @@ macro_rules! instance {
             Backend::VaesVpclmul => $vaes_vpclmul,
             #[cfg(target_arch = "x86_64")]
             Backend::VaesVpclmulAvx512 => $vaes_vpclmul_avx512,
+            #[cfg(target_arch = "x86_64")]
+            Backend::AesNiPclmulAvx => $aesni_pclmul_avx,
             #[cfg(target_arch = "aarch64")]
             Backend::Aes => $aes,
         }
     };
 }
+// `aes_gcm_siv` (only on x86-64 so far) chooses its instances with it too.
+#[cfg(target_arch = "x86_64")]
+pub(crate) use instance;
 
 /// The features of the baseline ISA: none.
 const BASELINE: Features = Features(0);
@@ -220,7 +241,7 @@ const BASELINE: Features = Features(0);
 impl Backend {
     /// Every implementation, best first, with the features it needs
     /// (computed at compile time, so that choosing one compares bit sets).
-    const ALL: &[(Backend, Features)] = &[
+    pub(crate) const ALL: &[(Backend, Features)] = &[
         #[cfg(target_arch = "x86_64")]
         (
             Backend::VaesVpclmulAvx512,
@@ -232,6 +253,8 @@ impl Backend {
         (Backend::VaesPclmul, Backend::VaesPclmul.features()),
         #[cfg(target_arch = "x86_64")]
         (Backend::AesNiVpclmul, Backend::AesNiVpclmul.features()),
+        #[cfg(target_arch = "x86_64")]
+        (Backend::AesNiPclmulAvx, Backend::AesNiPclmulAvx.features()),
         #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
         (Backend::AesNiPclmul, Backend::AesNiPclmul.features()),
         #[cfg(target_arch = "x86_64")]
@@ -256,12 +279,13 @@ impl Backend {
             vaes: [VG_AES_GCM_SEAL_VAES_FEATURES, VG_AES_GCM_SEAL_VPCLMUL_FEATURES,
                 VG_AES_GCM_SEAL_VAES_PCLMUL_FEATURES, VG_AES_GCM_SEAL_AESNI_VPCLMUL_FEATURES,
                 VG_AES_GCM_SEAL_VAES_VPCLMUL_FEATURES, VG_AES_GCM_SEAL_VAES_VPCLMUL_AVX512_FEATURES],
+            avx: [VG_AES_GCM_SEAL_AESNI_PCLMUL_AVX_FEATURES],
             aarch64: [VG_AES_GCM_SEAL_AES_FEATURES])
     }
 }
 
 /// The best implementation a CPU with the features `f` can run.
-fn select(f: Features) -> Backend {
+pub(crate) fn select(f: Features) -> Backend {
     let best = Backend::ALL.iter().find(|(_, need)| f.contains(*need));
     best.map_or(Backend::Scalar, |(b, _)| *b)
 }
@@ -389,17 +413,14 @@ impl AesGcm {
             vaes: [vg_aes_gcm_init_vaes, vg_aes_gcm_init_vpclmul, vg_aes_gcm_init_vaes_pclmul,
                 vg_aes_gcm_init_aesni_vpclmul, vg_aes_gcm_init_vaes_vpclmul,
                 vg_aes_gcm_init_vaes_vpclmul_avx512],
+            avx: [vg_aes_gcm_init_aesni_pclmul_avx],
             aarch64: [vg_aes_gcm_init_aes]);
-        let mut scratch = MaybeUninit::<[u64; 320]>::uninit();
         // SAFETY: `key` is valid for reads of `key.len()` bytes, which is 16,
-        // 24 or 32; `k.ctx` and `scratch` are valid for reads and writes of
-        // 256 and 2560 bytes. They are distinct objects, so no two overlap,
-        // nor do they overlap anything on the stack, or wrap around the end
-        // of the address space. The CPU has the features of the
-        // implementation selected. `scratch` is uninitialized: it is only
-        // working space, and the contract's result does not depend on what
-        // it holds.
-        unsafe { init(key.as_ptr(), key.len(), &mut k.ctx, scratch.as_mut_ptr()) };
+        // 24 or 32; `k.ctx` is valid for reads and writes of 256 bytes. They
+        // are distinct objects, so they do not overlap each other or anything
+        // on the stack, or wrap around the end of the address space. The CPU
+        // has the features of the implementation selected.
+        unsafe { init(key.as_ptr(), key.len(), &mut k.ctx) };
         Ok(k)
     }
 
@@ -425,6 +446,7 @@ impl AesGcm {
             vaes: [vg_aes_gcm_seal_vaes, vg_aes_gcm_seal_vpclmul, vg_aes_gcm_seal_vaes_pclmul,
                 vg_aes_gcm_seal_aesni_vpclmul, vg_aes_gcm_seal_vaes_vpclmul,
                 vg_aes_gcm_seal_vaes_vpclmul_avx512],
+            avx: [vg_aes_gcm_seal_aesni_pclmul_avx],
             aarch64: [vg_aes_gcm_seal_aes]);
         let mut work = MaybeUninit::<[u64; 320]>::uninit();
         // SAFETY: `self.ctx` is the key context `vg_aes_gcm_init` wrote for
@@ -503,6 +525,7 @@ impl AesGcm {
             vaes: [vg_aes_gcm_open_vaes, vg_aes_gcm_open_vpclmul, vg_aes_gcm_open_vaes_pclmul,
                 vg_aes_gcm_open_aesni_vpclmul, vg_aes_gcm_open_vaes_vpclmul,
                 vg_aes_gcm_open_vaes_vpclmul_avx512],
+            avx: [vg_aes_gcm_open_aesni_pclmul_avx],
             aarch64: [vg_aes_gcm_open_aes]);
         let mut work = MaybeUninit::<[u64; 320]>::uninit();
         put_tag(&mut work, tag);
@@ -590,25 +613,15 @@ impl<'a, const DECRYPT: bool> Stream<'a, DECRYPT> {
                 vg_aes_gcm_stream_init_vaes_pclmul, vg_aes_gcm_stream_init_aesni_vpclmul,
                 vg_aes_gcm_stream_init_vaes_vpclmul,
                 vg_aes_gcm_stream_init_vaes_vpclmul_avx512],
+            avx: [vg_aes_gcm_stream_init_aesni_pclmul_avx],
             aarch64: [vg_aes_gcm_stream_init_aes]);
-        let mut scratch = MaybeUninit::<[u64; 320]>::uninit();
         // SAFETY: `key.ctx` is a key context (as in
         // `AesGcm::encrypt_in_place`), valid for reads of 256 bytes, `nonce`
-        // for reads of `nonce.len()`, and `s.state` and `scratch`
-        // (uninitialized working space, as in `AesGcm::new`) for reads and
-        // writes of 80 and 2560. They are distinct objects, so the writable
-        // ones overlap nothing else, nor anything on the stack, and none
-        // wraps around. The CPU has the features of the implementation
-        // selected.
-        unsafe {
-            init(
-                &key.ctx,
-                nonce.as_ptr(),
-                nonce.len(),
-                &mut s.state,
-                scratch.as_mut_ptr(),
-            )
-        };
+        // for reads of `nonce.len()`, and `s.state` for reads and writes of
+        // 80. They are distinct objects, so the writable one overlaps nothing
+        // else, nor anything on the stack, and none wraps around. The CPU has
+        // the features of the implementation selected.
+        unsafe { init(&key.ctx, nonce.as_ptr(), nonce.len(), &mut s.state) };
         Ok(s)
     }
 
@@ -626,8 +639,8 @@ impl<'a, const DECRYPT: bool> Stream<'a, DECRYPT> {
                 vg_aes_gcm_stream_aad_vaes_pclmul, vg_aes_gcm_stream_aad_aesni_vpclmul,
                 vg_aes_gcm_stream_aad_vaes_vpclmul,
                 vg_aes_gcm_stream_aad_vaes_vpclmul_avx512],
+            avx: [vg_aes_gcm_stream_aad_aesni_pclmul_avx],
             aarch64: [vg_aes_gcm_stream_aad_aes]);
-        let mut scratch = MaybeUninit::<[u64; 320]>::uninit();
         // SAFETY: as in `new`; `self.state` represents a message with
         // `self.aad_len` bytes of additional data and no text yet.
         unsafe {
@@ -637,7 +650,6 @@ impl<'a, const DECRYPT: bool> Stream<'a, DECRYPT> {
                 self.aad_len,
                 aad.as_ptr(),
                 aad.len(),
-                scratch.as_mut_ptr(),
             )
         };
         self.aad_len = aad_len;
@@ -658,6 +670,7 @@ impl<'a, const DECRYPT: bool> Stream<'a, DECRYPT> {
                     vg_aes_gcm_stream_decrypt_vaes_pclmul, vg_aes_gcm_stream_decrypt_aesni_vpclmul,
                     vg_aes_gcm_stream_decrypt_vaes_vpclmul,
                 vg_aes_gcm_stream_decrypt_vaes_vpclmul_avx512],
+                avx: [vg_aes_gcm_stream_decrypt_aesni_pclmul_avx],
                 aarch64: [vg_aes_gcm_stream_decrypt_aes])
         } else {
             instance!(self.key.backend, vg_aes_gcm_stream_encrypt,
@@ -667,9 +680,9 @@ impl<'a, const DECRYPT: bool> Stream<'a, DECRYPT> {
                     vg_aes_gcm_stream_encrypt_vaes_pclmul, vg_aes_gcm_stream_encrypt_aesni_vpclmul,
                     vg_aes_gcm_stream_encrypt_vaes_vpclmul,
                 vg_aes_gcm_stream_encrypt_vaes_vpclmul_avx512],
+                avx: [vg_aes_gcm_stream_encrypt_aesni_pclmul_avx],
                 aarch64: [vg_aes_gcm_stream_encrypt_aes])
         };
-        let mut scratch = MaybeUninit::<[u64; 320]>::uninit();
         // SAFETY: as in `new`, with `data` valid for reads and writes of
         // `data.len()` bytes (a unique borrow, so it overlaps nothing else);
         // `self.state` represents a message with `self.aad_len` bytes of
@@ -683,7 +696,6 @@ impl<'a, const DECRYPT: bool> Stream<'a, DECRYPT> {
                 self.text_len,
                 data.as_mut_ptr(),
                 data.len(),
-                scratch.as_mut_ptr(),
             )
         };
         self.text_len = text_len;
@@ -701,6 +713,7 @@ impl Stream<'_, false> {
                 vg_aes_gcm_stream_finish_vaes_pclmul, vg_aes_gcm_stream_finish_aesni_vpclmul,
                 vg_aes_gcm_stream_finish_vaes_vpclmul,
                 vg_aes_gcm_stream_finish_vaes_vpclmul_avx512],
+            avx: [vg_aes_gcm_stream_finish_aesni_pclmul_avx],
             aarch64: [vg_aes_gcm_stream_finish_aes]);
         let mut work = MaybeUninit::<[u64; 320]>::uninit();
         // SAFETY: as in `update`, with `work` (a local: working space, but
@@ -735,6 +748,7 @@ impl Stream<'_, true> {
                 vg_aes_gcm_stream_verify_vaes_pclmul, vg_aes_gcm_stream_verify_aesni_vpclmul,
                 vg_aes_gcm_stream_verify_vaes_vpclmul,
                 vg_aes_gcm_stream_verify_vaes_vpclmul_avx512],
+            avx: [vg_aes_gcm_stream_verify_aesni_pclmul_avx],
             aarch64: [vg_aes_gcm_stream_verify_aes]);
         let mut work = MaybeUninit::<[u64; 320]>::uninit();
         put_tag(&mut work, tag);
@@ -897,10 +911,17 @@ mod tests {
                 f(&["avx", "avx2", "pclmulqdq", "ssse3", "vpclmulqdq"]),
                 Backend::Vpclmul
             );
+            // AES-NI and PCLMULQDQ with AVX (and without AVX2, which the
+            // 256-bit code needs): one pass.
             assert_eq!(
                 f(&["aes", "avx", "pclmulqdq", "ssse3", "vaes", "vpclmulqdq"]),
-                Backend::AesNiPclmul
+                Backend::AesNiPclmulAvx
             );
+            assert_eq!(
+                f(&["aes", "avx", "pclmulqdq", "ssse3"]),
+                Backend::AesNiPclmulAvx
+            );
+            assert_eq!(f(&["aes", "avx", "ssse3"]), Backend::AesNi);
         }
         #[cfg(target_arch = "x86")]
         {
@@ -1015,7 +1036,20 @@ mod tests {
                     assert!(seal.contains(*other));
                 }
             }
-            let groups: [(Features, &[Features]); 6] = [
+            let groups: [(Features, &[Features]); 7] = [
+                (
+                    VG_AES_GCM_SEAL_AESNI_PCLMUL_AVX_FEATURES,
+                    &[
+                        VG_AES_GCM_INIT_AESNI_PCLMUL_AVX_FEATURES,
+                        VG_AES_GCM_OPEN_AESNI_PCLMUL_AVX_FEATURES,
+                        VG_AES_GCM_STREAM_INIT_AESNI_PCLMUL_AVX_FEATURES,
+                        VG_AES_GCM_STREAM_AAD_AESNI_PCLMUL_AVX_FEATURES,
+                        VG_AES_GCM_STREAM_ENCRYPT_AESNI_PCLMUL_AVX_FEATURES,
+                        VG_AES_GCM_STREAM_DECRYPT_AESNI_PCLMUL_AVX_FEATURES,
+                        VG_AES_GCM_STREAM_FINISH_AESNI_PCLMUL_AVX_FEATURES,
+                        VG_AES_GCM_STREAM_VERIFY_AESNI_PCLMUL_AVX_FEATURES,
+                    ][..],
+                ),
                 (
                     VG_AES_GCM_SEAL_VAES_FEATURES,
                     &[
@@ -1181,6 +1215,50 @@ mod tests {
                 assert_eq!(&buf[..], &ct[..]);
                 k.decrypt_in_place(&nonce, &aad, buf, &tag).unwrap();
                 assert_eq!(buf, &msg[..len]);
+            }
+        }
+    }
+
+    /// Every implementation the CPU can run encrypts and decrypts long
+    /// messages (whole groups of 16 blocks, which some implementations
+    /// interleave, and the blocks left) as the baseline one does, one-shot
+    /// and streaming.
+    #[test]
+    fn backends_agree() {
+        let msg: [u8; 1300] = core::array::from_fn(|i| (i * 13 + 1) as u8);
+        let aad = [9u8; 7];
+        let nonce = [2u8; 12];
+        for key_len in [16, 24, 32] {
+            let k = AesGcm::new(&[0x5a; 32][..key_len]).unwrap();
+            let base = AesGcm {
+                backend: Backend::Scalar,
+                ..k.clone()
+            };
+            for &(b, need) in Backend::ALL {
+                if !detected().contains(need) {
+                    continue;
+                }
+                let k = AesGcm {
+                    backend: b,
+                    ..k.clone()
+                };
+                for len in [256, 300, 512, 1024, 1300] {
+                    let mut want = msg;
+                    let want_tag = base
+                        .encrypt_in_place(&nonce, &aad, &mut want[..len])
+                        .unwrap();
+                    let mut ct = msg;
+                    let tag = k.encrypt_in_place(&nonce, &aad, &mut ct[..len]).unwrap();
+                    assert_eq!((&ct[..len], tag), (&want[..len], want_tag), "{b:?}");
+                    let mut e = k.encryptor(&nonce).unwrap();
+                    e.update_aad(&aad).unwrap();
+                    let mut s = msg;
+                    e.update(&mut s[..len]).unwrap();
+                    assert_eq!((&s[..len], e.finalize()), (&want[..len], want_tag), "{b:?}");
+                    k.decrypt_in_place(&nonce, &aad, &mut ct[..len], &tag)
+                        .unwrap();
+                    assert_eq!(&ct[..len], &msg[..len], "{b:?}");
+                }
             }
         }
     }

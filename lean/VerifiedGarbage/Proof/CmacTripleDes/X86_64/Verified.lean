@@ -8,8 +8,10 @@ import VerifiedGarbage.Proof.Framework.X86_64.Abi
 # TDEA-CMAC on x86-64: `Verified`
 
 Correctness and constant time under this target's contracts (`Contract.lean`),
-and the shared contracts of `Spec/Cmac/TripleDesContract.lean`, which imply
-them, with no stack: the functions call nothing.
+and the shared
+contracts with the working space as an argument
+(`Proof/CmacTripleDes/Scratch.lean`), which imply them, with no stack: the
+functions call nothing.
 -/
 
 namespace VG.Proof.CmacTripleDes.X86_64
@@ -37,13 +39,13 @@ theorem finalize_correct (s : State) (hs : finalizeX86_64.pre s) :
   obtain ⟨t, s', he, hg, hp⟩ := finalize_wp hs
   exact ⟨t, s', he, abiPreserved_of_exec finalize_mx he hg, hp⟩
 
-theorem init_verified : Verified X86_64.target init (Spec.Cmac.tdesInitContract X86_64.abi 0) :=
+theorem init_verified : Verified X86_64.target init (initScratchContract X86_64.abi 0) :=
   Verified.of_correct init_correct init_ct init_implies
 
-theorem update_verified : Verified X86_64.target update (Spec.Cmac.tdesUpdateContract X86_64.abi 0) :=
+theorem update_verified : Verified X86_64.target update (updateScratchContract X86_64.abi 0) :=
   Verified.of_correct update_correct update_ct update_implies
 
-theorem finalize_verified : Verified X86_64.target finalize (Spec.Cmac.tdesFinalizeContract X86_64.abi 0) :=
+theorem finalize_verified : Verified X86_64.target finalize (finalizeScratchContract X86_64.abi 0) :=
   Verified.of_correct finalize_correct finalize_ct finalize_implies
 
 end VG.Proof.CmacTripleDes.X86_64

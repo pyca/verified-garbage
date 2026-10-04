@@ -78,20 +78,20 @@ theorem sha224_initChecks : HmacInit.Checks sha224Md :=
     rintro st (rfl | rfl) <;> exact ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩,
     ⟨_, by taint_decide⟩⟩
 
-theorem sha224_initImp : (initG Spec.Hmac.sha224S 104).Implies (Spec.Hmac.sha224I.initContract Arm.abi 16) :=
+theorem sha224_initImp : (initG Spec.Hmac.sha224S 104).Implies (Spec.Hmac.sha224I.initScratchContract Arm.abi 16) :=
   initImp Spec.Hmac.sha224S 104 (by
-    inst_sat [Spec.Hmac.initContract, Spec.Hmac.initSig, Spec.Hmac.sha224S, Spec.Hmac.sha224, initG, below,
+    inst_sat [Spec.Hmac.initScratchContract, Spec.Hmac.initScratchSig, Spec.Hmac.initPre, Spec.Hmac.initPost, Spec.Hmac.sha224S, Spec.Hmac.sha224, initG, below,
       count, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr] using initSat 96 104)
 
-theorem sha224_finImp : (finG Spec.Hmac.sha224S 104).Implies (Spec.Hmac.sha224I.finalizeContract Arm.abi 16) :=
+theorem sha224_finImp : (finG Spec.Hmac.sha224S 104).Implies (Spec.Hmac.sha224I.finalizeScratchContract Arm.abi 16) :=
   finImp Spec.Hmac.sha224S 104 (by
-    inst_sat [Spec.Hmac.finalizeContract, Spec.Hmac.finalizeSig, Spec.Hmac.sha224S, Spec.Hmac.sha224, finG,
+    inst_sat [Spec.Hmac.finalizeScratchContract, Spec.Hmac.finalizeScratchSig, Spec.Hmac.finalizePost, Spec.Hmac.sha224S, Spec.Hmac.sha224, finG,
       below, count, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr] using finSat 96 28 104)
 
-theorem sha224_init : Verified Arm.target sha224Md.hmacInit (Spec.Hmac.sha224I.initContract Arm.abi 16) :=
+theorem sha224_init : Verified Arm.target sha224Md.hmacInit (Spec.Hmac.sha224I.initScratchContract Arm.abi 16) :=
   (HmacInit.verified sha224MdOK sha224_initChecks (by decide) sha224_initImp.sat_left).of_implies sha224_initImp
 
-theorem sha224_finalize : Verified Arm.target sha224Md.hmacFin (Spec.Hmac.sha224I.finalizeContract Arm.abi 16) :=
+theorem sha224_finalize : Verified Arm.target sha224Md.hmacFin (Spec.Hmac.sha224I.finalizeScratchContract Arm.abi 16) :=
   (Fin.verified sha224MdOK sha224_finChecks (by decide) sha224_finImp.sat_left).of_implies
     sha224_finImp
 

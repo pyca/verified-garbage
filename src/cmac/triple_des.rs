@@ -25,13 +25,9 @@ use crate::arch::cmac_triple_des::{
     vg_cmac_triple_des_finalize, vg_cmac_triple_des_init, vg_cmac_triple_des_update,
 };
 use crate::zeroize::zeroize;
-use core::mem::MaybeUninit;
 
 /// An 8-byte block.
 type Block = [u8; 8];
-
-/// The working space of the CMAC functions, in 64-bit words.
-const SCRATCH: usize = 80;
 
 /// An incremental TDEA-CMAC computation.
 ///
@@ -78,16 +74,11 @@ impl TripleDesCmac {
             buf: [0; 8],
             buf_len: 0,
         };
-        let mut scratch = MaybeUninit::<[u64; SCRATCH]>::uninit();
         // SAFETY: `key` is valid for reads of `key.len()` bytes, which is 16
-        // or 24; `c.key` for reads and writes of 400 bytes and `scratch` of
-        // 640. `c.key` is a field of a local and `scratch` a local, so
-        // neither overlaps the other, `key` or the return address. The
-        // scratch buffer is uninitialized: it is only working space, and the
-        // contract's result does not depend on what it holds.
-        unsafe {
-            vg_cmac_triple_des_init(key.as_ptr(), key.len(), &mut c.key, scratch.as_mut_ptr())
-        };
+        // or 24, and `c.key` for reads and writes of 400 bytes. `c.key` is a
+        // field of a local, so it overlaps neither `key` nor the call's stack
+        // frame.
+        unsafe { vg_cmac_triple_des_init(key.as_ptr(), key.len(), &mut c.key) };
         Ok(c)
     }
 
@@ -96,22 +87,14 @@ impl TripleDesCmac {
         if blocks.is_empty() {
             return;
         }
-        let mut scratch = MaybeUninit::<[u64; SCRATCH]>::uninit();
         let schedule = self.key.first_chunk::<384>().unwrap();
         // SAFETY: `schedule` holds the key schedule written by `new`; it is
         // valid for reads of 384 bytes, `self.state` for reads and writes of
-        // 8, `blocks` for reads of `8 * blocks.len()` and `scratch`
-        // (uninitialized working space, as in `new`) for reads and writes of
-        // 640. `self.state` is a mutable borrow and `scratch` a local, so
-        // neither overlaps another argument or the return address.
+        // 8 and `blocks` for reads of `8 * blocks.len()`. `self.state` is a
+        // mutable borrow, so it overlaps neither another argument nor the
+        // call's stack frame.
         unsafe {
-            vg_cmac_triple_des_update(
-                schedule,
-                &mut self.state,
-                blocks.as_ptr(),
-                blocks.len(),
-                scratch.as_mut_ptr(),
-            )
+            vg_cmac_triple_des_update(schedule, &mut self.state, blocks.as_ptr(), blocks.len())
         };
     }
 
@@ -142,25 +125,17 @@ impl TripleDesCmac {
 
     /// Returns the MAC of everything absorbed.
     pub fn finalize(mut self) -> [u8; 8] {
-        let mut scratch = MaybeUninit::<[u64; SCRATCH]>::uninit();
         // SAFETY: `self.key` holds the key schedule and then its subkeys,
         // written by `new`; it is valid for reads of 400 bytes, `self.state`
-        // for reads and writes of 8, `self.buf` for reads of `self.buf_len`
-        // (at most 8) and `scratch` (uninitialized working space, as in
-        // `new`) for reads and writes of 640. `self.state` is a mutable
-        // borrow and `scratch` a local, so neither overlaps another argument
-        // or the return address. The state is the chaining of the blocks
+        // for reads and writes of 8 and `self.buf` for reads of
+        // `self.buf_len` (at most 8). `self.state` is a mutable borrow, so it
+        // overlaps neither another argument nor the call's stack frame. The
+        // state is the chaining of the blocks
         // before the buffered ones, and the buffer holds at least a byte if
         // any were chained, as the contract's postcondition requires to give
         // the MAC.
         unsafe {
-            vg_cmac_triple_des_finalize(
-                &self.key,
-                &mut self.state,
-                self.buf.as_ptr(),
-                self.buf_len,
-                scratch.as_mut_ptr(),
-            )
+            vg_cmac_triple_des_finalize(&self.key, &mut self.state, self.buf.as_ptr(), self.buf_len)
         };
         self.state
     }

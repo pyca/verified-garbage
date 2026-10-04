@@ -1,4 +1,4 @@
-import VerifiedGarbage.Proof.Ed448.Group.Edwards
+import VerifiedGarbage.Proof.Edwards.Group
 
 /-!
 # The Montgomery ladder on the u-coordinates of Edwards points
@@ -24,7 +24,7 @@ with `y² / 0 = 0` for the points with `x = 0`, whose u is infinite.
 
 namespace VG.Proof.X448.Edwards
 
-open VG.Proof.Ed448.Edwards
+open VG.Proof.EdwardsLaw
 
 variable {F : Type*} [Field F] {d : F}
 

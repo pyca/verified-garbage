@@ -227,14 +227,30 @@ pub(crate) unsafe extern "C" fn vg_pbkdf2_hmac_sha224_iterate(key: *const [u8; 1
 /// * `password` must be valid for reads of `password_len` bytes.
 /// * `salt` must be valid for reads of `salt_len` bytes.
 /// * `out` must be valid for reads and writes of `out_len` bytes.
-/// * `scratch` must be valid for reads and writes of 1600 bytes.
 /// * `c` must be positive, and `out_len` at most `(2^32 - 1) * 28`.
-/// * The contents of `scratch` on return are unspecified.
-/// * `out` and `scratch` must not overlap each other, `password` or `salt` (distinct Rust objects never do).
-/// * None of `password`, `salt`, `out` and `scratch` may overlap the arguments on the stack, overlap the return address on the stack or the 76 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `out` must not overlap `password` or `salt` (distinct Rust objects never do).
+/// * None of `password`, `salt` and `out` may overlap the arguments on the stack, overlap the return address on the stack or the 1712 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_pbkdf2_hmac_sha224(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, c: u32, out: *mut u8, out_len: usize, scratch: *mut [u64; 200]) {
+pub(crate) unsafe extern "C" fn vg_pbkdf2_hmac_sha224(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, c: u32, out: *mut u8, out_len: usize) {
     core::arch::naked_asm!(
+        "lea esp, [esp-1636]",
+        "mov eax, DWORD PTR [esp+1640]",
+        "mov DWORD PTR [esp+4], eax",
+        "mov eax, DWORD PTR [esp+1644]",
+        "mov DWORD PTR [esp+8], eax",
+        "mov eax, DWORD PTR [esp+1648]",
+        "mov DWORD PTR [esp+12], eax",
+        "mov eax, DWORD PTR [esp+1652]",
+        "mov DWORD PTR [esp+16], eax",
+        "mov eax, DWORD PTR [esp+1656]",
+        "mov DWORD PTR [esp+20], eax",
+        "mov eax, DWORD PTR [esp+1660]",
+        "mov DWORD PTR [esp+24], eax",
+        "mov eax, DWORD PTR [esp+1664]",
+        "mov DWORD PTR [esp+28], eax",
+        "mov eax, esp",
+        "add eax, 36",
+        "mov DWORD PTR [esp+32], eax",
         "mov eax, DWORD PTR [esp+32]",
         "mov DWORD PTR [eax+832], ebx",
         "mov DWORD PTR [eax+836], esi",
@@ -297,7 +313,7 @@ pub(crate) unsafe extern "C" fn vg_pbkdf2_hmac_sha224(password: *const u8, passw
         "push edx",
         "push esi",
         "push edi",
-        "call {vg_hmac_sha224_init}",
+        "call {vg_hmac_sha224_init_scratch}",
         "pop eax",
         "pop eax",
         "pop eax",
@@ -388,7 +404,7 @@ pub(crate) unsafe extern "C" fn vg_pbkdf2_hmac_sha224(password: *const u8, passw
         "push eax",
         "push esi",
         "push edx",
-        "call {vg_hmac_sha224_finalize}",
+        "call {vg_hmac_sha224_finalize_scratch}",
         "pop eax",
         "pop eax",
         "pop eax",
@@ -464,13 +480,14 @@ pub(crate) unsafe extern "C" fn vg_pbkdf2_hmac_sha224(password: *const u8, passw
         "mov esi, DWORD PTR [eax+836]",
         "mov edi, DWORD PTR [eax+840]",
         "mov ebp, DWORD PTR [eax+844]",
+        "lea esp, [esp+1636]",
         "ret",
         ".p2align 6",
         vg_sha224_init = sym super::sha256::vg_sha224_init,
         vg_sha256_update_scratch = sym super::sha256::vg_sha256_update_scratch,
         vg_sha256_finalize_scratch = sym super::sha256::vg_sha256_finalize_scratch,
-        vg_hmac_sha224_init = sym super::hmac_sha224::vg_hmac_sha224_init,
-        vg_hmac_sha224_finalize = sym super::hmac_sha224::vg_hmac_sha224_finalize,
+        vg_hmac_sha224_init_scratch = sym super::hmac_sha224::vg_hmac_sha224_init_scratch,
+        vg_hmac_sha224_finalize_scratch = sym super::hmac_sha224::vg_hmac_sha224_finalize_scratch,
         vg_pbkdf2_hmac_sha224_iterate = sym super::pbkdf2_sha224::vg_pbkdf2_hmac_sha224_iterate,
     )
 }
@@ -707,15 +724,31 @@ pub(crate) const VG_PBKDF2_HMAC_SHA224_SHANI_FEATURES: crate::cpu::Features = cr
 /// * `password` must be valid for reads of `password_len` bytes.
 /// * `salt` must be valid for reads of `salt_len` bytes.
 /// * `out` must be valid for reads and writes of `out_len` bytes.
-/// * `scratch` must be valid for reads and writes of 1600 bytes.
 /// * `c` must be positive, and `out_len` at most `(2^32 - 1) * 28`.
-/// * The contents of `scratch` on return are unspecified.
-/// * `out` and `scratch` must not overlap each other, `password` or `salt` (distinct Rust objects never do).
-/// * None of `password`, `salt`, `out` and `scratch` may overlap the arguments on the stack, overlap the return address on the stack or the 76 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `out` must not overlap `password` or `salt` (distinct Rust objects never do).
+/// * None of `password`, `salt` and `out` may overlap the arguments on the stack, overlap the return address on the stack or the 1712 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha` and `ssse3` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_pbkdf2_hmac_sha224_shani(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, c: u32, out: *mut u8, out_len: usize, scratch: *mut [u64; 200]) {
+pub(crate) unsafe extern "C" fn vg_pbkdf2_hmac_sha224_shani(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, c: u32, out: *mut u8, out_len: usize) {
     core::arch::naked_asm!(
+        "lea esp, [esp-1636]",
+        "mov eax, DWORD PTR [esp+1640]",
+        "mov DWORD PTR [esp+4], eax",
+        "mov eax, DWORD PTR [esp+1644]",
+        "mov DWORD PTR [esp+8], eax",
+        "mov eax, DWORD PTR [esp+1648]",
+        "mov DWORD PTR [esp+12], eax",
+        "mov eax, DWORD PTR [esp+1652]",
+        "mov DWORD PTR [esp+16], eax",
+        "mov eax, DWORD PTR [esp+1656]",
+        "mov DWORD PTR [esp+20], eax",
+        "mov eax, DWORD PTR [esp+1660]",
+        "mov DWORD PTR [esp+24], eax",
+        "mov eax, DWORD PTR [esp+1664]",
+        "mov DWORD PTR [esp+28], eax",
+        "mov eax, esp",
+        "add eax, 36",
+        "mov DWORD PTR [esp+32], eax",
         "mov eax, DWORD PTR [esp+32]",
         "mov DWORD PTR [eax+832], ebx",
         "mov DWORD PTR [eax+836], esi",
@@ -778,7 +811,7 @@ pub(crate) unsafe extern "C" fn vg_pbkdf2_hmac_sha224_shani(password: *const u8,
         "push edx",
         "push esi",
         "push edi",
-        "call {vg_hmac_sha224_init_shani}",
+        "call {vg_hmac_sha224_init_scratch_shani}",
         "pop eax",
         "pop eax",
         "pop eax",
@@ -869,7 +902,7 @@ pub(crate) unsafe extern "C" fn vg_pbkdf2_hmac_sha224_shani(password: *const u8,
         "push eax",
         "push esi",
         "push edx",
-        "call {vg_hmac_sha224_finalize_shani}",
+        "call {vg_hmac_sha224_finalize_scratch_shani}",
         "pop eax",
         "pop eax",
         "pop eax",
@@ -945,13 +978,14 @@ pub(crate) unsafe extern "C" fn vg_pbkdf2_hmac_sha224_shani(password: *const u8,
         "mov esi, DWORD PTR [eax+836]",
         "mov edi, DWORD PTR [eax+840]",
         "mov ebp, DWORD PTR [eax+844]",
+        "lea esp, [esp+1636]",
         "ret",
         ".p2align 6",
         vg_sha224_init = sym super::sha256::vg_sha224_init,
         vg_sha256_update_scratch_shani = sym super::sha256::vg_sha256_update_scratch_shani,
         vg_sha256_finalize_scratch_shani = sym super::sha256::vg_sha256_finalize_scratch_shani,
-        vg_hmac_sha224_init_shani = sym super::hmac_sha224::vg_hmac_sha224_init_shani,
-        vg_hmac_sha224_finalize_shani = sym super::hmac_sha224::vg_hmac_sha224_finalize_shani,
+        vg_hmac_sha224_init_scratch_shani = sym super::hmac_sha224::vg_hmac_sha224_init_scratch_shani,
+        vg_hmac_sha224_finalize_scratch_shani = sym super::hmac_sha224::vg_hmac_sha224_finalize_scratch_shani,
         vg_pbkdf2_hmac_sha224_iterate_shani = sym super::pbkdf2_sha224::vg_pbkdf2_hmac_sha224_iterate_shani,
     )
 }

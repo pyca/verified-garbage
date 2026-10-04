@@ -18,8 +18,8 @@ the signature's `finish` writes `r ‖ s`.
 
 namespace VG.Proof.EcKey.X86_64
 
-open VG VG.X86_64 VG.Impl.Mont.X86_64 VG.Impl.Weierstrass.X86_64 VG.Impl.Ecdsa.X86_64
-open VG.Proof.Mont.X86_64 VG.Proof.Weierstrass.X86_64 VG.Proof.Weierstrass Spec.Weierstrass
+open VG VG.X86_64 VG.Impl.Mont.X86_64 VG.Impl.Mont VG.Impl.Weierstrass.X86_64 VG.Impl.Weierstrass VG.Impl.Ecdsa.X86_64
+open VG.Proof.Mont.X86_64 VG.Proof.Mont VG.Proof.Weierstrass.X86_64 VG.Proof.Weierstrass Spec.Weierstrass
 open VG.Proof.Ecdsa.X86_64
 open VG.Proof.X25519.X86_64 (Keeps)
 
@@ -162,7 +162,7 @@ theorem pkFinish_ok {c : Cfg} (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr
   · rw [m₆, k₅.2.1, bytesAt_add, show 16 * c.n = 8 * c.n + 8 * c.n by omega, bytesAt_add, lead, first,
       BitVec.add_assoc, BitVec.ofNat_add_ofNat, e₄, y₃]
     cases b
-    · simp only [Bool.false_eq_true, ite_false, List.replicate_add]; rfl
+    · simp only [Bool.false_eq_true, ite_false, ← List.replicate_append_replicate]; rfl
     · simp only [ite_true]; rfl
   · have hra : Reg.rax ∉ Cfg.saved.map Prod.fst := by decide
     rw [r₆ _ hra, e₅, hrcx₄, mask_bit]
@@ -185,8 +185,8 @@ flag and writes the result (`middle_ok`).
 
 namespace VG.Proof.EcKey.X86_64
 
-open VG VG.X86_64 VG.Impl.Mont.X86_64 VG.Impl.Weierstrass.X86_64 VG.Impl.Ecdsa.X86_64
-open VG.Proof.Mont.X86_64 VG.Proof.Weierstrass.X86_64 VG.Proof.Weierstrass Spec.Weierstrass
+open VG VG.X86_64 VG.Impl.Mont.X86_64 VG.Impl.Mont VG.Impl.Weierstrass.X86_64 VG.Impl.Weierstrass VG.Impl.Ecdsa.X86_64
+open VG.Proof.Mont.X86_64 VG.Proof.Mont VG.Proof.Weierstrass.X86_64 VG.Proof.Weierstrass Spec.Weierstrass
 open VG.Proof.Ecdsa.X86_64
 open VG.Impl.EcKey.X86_64 (YM Y)
 
@@ -346,8 +346,8 @@ with the public key's. `middle_ok` and `publicKey_eq` do the rest.
 
 namespace VG.Proof.EcKey.X86_64
 
-open VG VG.X86_64 VG.Impl.Mont.X86_64 VG.Impl.Weierstrass.X86_64 VG.Impl.Ecdsa.X86_64
-open VG.Proof.Mont.X86_64 VG.Proof.Weierstrass.X86_64 VG.Proof.Weierstrass Spec.Weierstrass
+open VG VG.X86_64 VG.Impl.Mont.X86_64 VG.Impl.Mont VG.Impl.Weierstrass.X86_64 VG.Impl.Weierstrass VG.Impl.Ecdsa.X86_64
+open VG.Proof.Mont.X86_64 VG.Proof.Mont VG.Proof.Weierstrass.X86_64 VG.Proof.Weierstrass Spec.Weierstrass
 open VG.Proof.Ecdsa.X86_64
 open VG.Proof.X25519.X86_64 (Keeps)
 
@@ -391,7 +391,7 @@ theorem args_ok (s : State) :
 
 /-- `vg_ec_<curve>_public_key` computes the specification's public key and
 restores the callee-saved registers. -/
-theorem publicKey_ok (hc : CfgOk c) (hC : Good c.C) {s₀ : State} (hp : PkPre c s₀) :
+theorem publicKey_ok (hc : CfgOk c) (hC : Law c.C) {s₀ : State} (hp : PkPre c s₀) :
     WP isa (Impl.EcKey.X86_64.Cfg.publicKey c) s₀ fun s' =>
       (∀ r ∈ Cfg.saved.map Prod.fst, s'.gpr r = s₀.gpr r) ∧ PkPost c s₀ s' := by
   have h0 := hc.n0

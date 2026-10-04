@@ -2,6 +2,7 @@ import VerifiedGarbage.Proof.TripleDes.AArch64.Bitsliced.Tail
 import VerifiedGarbage.Proof.TripleDes.AArch64.Bitsliced.ConstantTime
 import VerifiedGarbage.Proof.TripleDes.AArch64.Ecb.Contract
 import VerifiedGarbage.Proof.Framework.AArch64.Inline
+import VerifiedGarbage.Proof.TripleDes.Scratch
 
 /-! # The AdvSIMD bitsliced ECB functions meet their contracts -/
 
@@ -87,24 +88,24 @@ theorem ecb_contract (d : Direction) (s : State) (hs : (contract d).pre s) :
 
 theorem encrypt_correct (s : State) (hs : (contract .encrypt).pre s) :
     ∃ t s', Exec isa encrypt s t s' ∧ abiPreserved s s' ∧ (contract .encrypt).post s s' := by
-  obtain ⟨t, s', he, hp, hg⟩ := WP.gprs (ecb_contract .encrypt s hs) (rs := preserved)
+  obtain ⟨t, s', he, hp, hg⟩ := WP.gprs (c := encrypt) (ecb_contract .encrypt s hs) (rs := preserved)
     (by lit_decide) (by lit_decide)
   exact ⟨t, s', he, ⟨hg, VG.AArch64.Exec.sp he, VG.AArch64.Exec.preservedV he (by lit_decide)⟩, hp⟩
 
 theorem decrypt_correct (s : State) (hs : (contract .decrypt).pre s) :
     ∃ t s', Exec isa decrypt s t s' ∧ abiPreserved s s' ∧ (contract .decrypt).post s s' := by
-  obtain ⟨t, s', he, hp, hg⟩ := WP.gprs (ecb_contract .decrypt s hs) (rs := preserved)
+  obtain ⟨t, s', he, hp, hg⟩ := WP.gprs (c := decrypt) (ecb_contract .decrypt s hs) (rs := preserved)
     (by lit_decide) (by lit_decide)
   exact ⟨t, s', he, ⟨hg, VG.AArch64.Exec.sp he, VG.AArch64.Exec.preservedV he (by lit_decide)⟩, hp⟩
 
-theorem encrypt_verified : Verified target encrypt (Spec.TripleDes.ecbEncryptContract abi 0) := by
+theorem encrypt_verified : Verified target encrypt (Proof.TripleDes.ecbEncryptScratchContract abi 0) := by
   refine Verified.of_correct encrypt_correct (encrypt_constantTime _) ?_
-  sig_implies [Spec.TripleDes.ecbEncryptContract, Spec.TripleDes.ecbContract,
-    Spec.TripleDes.ecbSig, abi, argRegs, contract, publicRegs_four] [satState] using satState
+  sig_implies [Proof.TripleDes.ecbEncryptScratchContract, Proof.TripleDes.ecbScratchContract,
+    Proof.TripleDes.ecbScratchSig, Spec.TripleDes.ecbPost, abi, argRegs, contract, publicRegs_four] [satState] using satState
 
-theorem decrypt_verified : Verified target decrypt (Spec.TripleDes.ecbDecryptContract abi 0) := by
+theorem decrypt_verified : Verified target decrypt (Proof.TripleDes.ecbDecryptScratchContract abi 0) := by
   refine Verified.of_correct decrypt_correct (decrypt_constantTime _) ?_
-  sig_implies [Spec.TripleDes.ecbDecryptContract, Spec.TripleDes.ecbContract,
-    Spec.TripleDes.ecbSig, abi, argRegs, contract, publicRegs_four] [satState] using satState
+  sig_implies [Proof.TripleDes.ecbDecryptScratchContract, Proof.TripleDes.ecbScratchContract,
+    Proof.TripleDes.ecbScratchSig, Spec.TripleDes.ecbPost, abi, argRegs, contract, publicRegs_four] [satState] using satState
 
 end VG.Proof.TripleDes.AArch64.BitslicedNeon

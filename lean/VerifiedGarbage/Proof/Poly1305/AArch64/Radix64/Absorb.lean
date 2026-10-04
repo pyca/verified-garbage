@@ -14,18 +14,22 @@ theorem absorb_eq (pad : Bool) : absorb pad =
     (combine ++ (fold ++ addLow)))))))) := by
   simp only [absorb, products, List.append_assoc]
 
-theorem absorb_ok (s : State) (pad : Bool) {q : Nat}
-    (hr0 : (s.gpr .x7).toNat < 2 ^ 60) (hr1 : (s.gpr .x8).toNat = 4 * q) (hq : q < 2 ^ 58)
-    (hs1 : (s.gpr .x17).toNat = 5 * q)
-    (h0 : InRegions (s.rd ++ s.wr) (s.gpr .x1 + BitVec.ofNat 64 0) 8)
-    (h8 : InRegions (s.rd ++ s.wr) (s.gpr .x1 + BitVec.ofNat 64 8) 8) :
-    WP isa (.block (absorb pad)) s fun s' =>
-      ((s.gpr .x6).toNat ≤ 4 →
-        hval s' % P = ((hval s + (word s.mem (s.gpr .x1) 0 + 2 ^ 64 * word s.mem (s.gpr .x1) 8 +
-          2 ^ 128 * pad.toNat)) * ((s.gpr .x7).toNat + 2 ^ 64 * (s.gpr .x8).toNat)) % P ∧
-        (s'.gpr .x6).toNat ≤ 4) ∧ Keeps absorbRegs s s' := by
-  rw [absorb_eq]
-  refine WP.block_append (WP.mono (addBlock_ok s pad h0 h8) fun s₁ ⟨e₁, k₁⟩ => ?_)
+/-- `products ++ combine ++ fold ++ addLow`: `x4:x5:x6` (`x6 ≤ 6`) times the key, partially reduced. -/
+theorem mul_eq : Impl.Poly1305.AArch64.Radix64.products ++ combine ++ fold ++ addLow =
+    mulTo .x9 .x10 .x4 .x7 ++ (mulAdd .x9 .x10 .x5 .x17 ++
+    (mulTo .x11 .x12 .x4 .x8 ++ (mulAdd .x11 .x12 .x5 .x7 ++
+    (mulAddSmall .x11 .x12 .x6 .x17 ++ (([.mul .x .x13 .x6 .x7] : List Instr) ++
+    (combine ++ (fold ++ addLow))))))) := by
+  simp only [Impl.Poly1305.AArch64.Radix64.products, List.append_assoc]
+
+theorem mul_ok (s₁ : State) {q : Nat}
+    (hr0 : (s₁.gpr .x7).toNat < 2 ^ 60) (hr1 : (s₁.gpr .x8).toNat = 4 * q) (hq : q < 2 ^ 58)
+    (hs1 : (s₁.gpr .x17).toNat = 5 * q) :
+    WP isa (.block (Impl.Poly1305.AArch64.Radix64.products ++ combine ++ fold ++ addLow)) s₁ fun s' =>
+      ((s₁.gpr .x6).toNat ≤ 6 →
+        hval s' % P = (hval s₁ * ((s₁.gpr .x7).toNat + 2 ^ 64 * (s₁.gpr .x8).toNat)) % P ∧
+        (s'.gpr .x6).toNat ≤ 4) ∧ Keeps absorbRegs s₁ s' := by
+  rw [mul_eq]
   refine WP.block_append (WP.mono (mulTo_ok s₁ (by decide) (by decide) (by decide))
     fun s₂ ⟨e₂, k₂⟩ => ?_)
   refine WP.block_append (WP.mono (mulAdd_ok s₂ (by decide) (by decide) (by decide) (by decide)
@@ -39,50 +43,39 @@ theorem absorb_ok (s : State) (pad : Bool) {q : Nat}
   refine WP.block_append (WP.mono (combine_ok s₇) fun s₈ ⟨e₈, k₈⟩ => ?_)
   refine WP.block_append (WP.mono (fold_ok s₈) fun s₉ ⟨f₁, f₂, f₃, f₄, k₉⟩ => ?_)
   refine WP.mono (addLow_ok s₉) fun s₁₀ ⟨e₁₀, k₁₀⟩ => ?_
-  refine ⟨fun hh2 => ?_, (k₁.trans ((((((((k₂.trans k₃).trans k₄).trans k₅).trans k₆).trans k₇).trans
+  refine ⟨fun a2 => ?_, (((((((((k₂.trans k₃).trans k₄).trans k₅).trans k₆).trans k₇).trans
     k₈).trans k₉).trans k₁₀)).mono (by decide)⟩
-  have hp1 : pad.toNat ≤ 1 := Bool.toNat_le pad
-  have hw0 := (s.mem.readW (s.gpr .x1 + BitVec.ofNat 64 0) 64).isLt
-  have hw8 := (s.mem.readW (s.gpr .x1 + BitVec.ofNat 64 8) 64).isLt
-  have g0 := (s.gpr .x4).isLt; have g1 := (s.gpr .x5).isLt
-  -- h += m
-  have e₁ := e₁ (by simp only [word, hval]; omega_using [hh2, hp1, hw0, hw8, g0, g1])
   have a0 := (s₁.gpr .x4).isLt; have a1 := (s₁.gpr .x5).isLt
-  have a2 : (s₁.gpr .x6).toNat ≤ 6 := add_arith g0 g1 hh2 hw0 hw8 hp1 e₁ a0 a1
-  have r8₁ : s₁.gpr .x7 = s.gpr .x7 := k₁.gpr'
-  have r9₁ : s₁.gpr .x8 = s.gpr .x8 := k₁.gpr'
-  have r10₁ : s₁.gpr .x17 = s.gpr .x17 := k₁.gpr'
   obtain ⟨b1, b2, b3, b4, b5, b6⟩ := absorb_bounds a0 a1 a2 hr0 hq
   -- x = h0 r0
-  rw [r8₁] at e₂
   have rbx₂ : s₂.gpr .x5 = s₁.gpr .x5 := k₂.gpr'
-  have r10₂ : s₂.gpr .x17 = s.gpr .x17 := k₂.gpr'.trans r10₁
+  have r10₂ : s₂.gpr .x17 = s₁.gpr .x17 := k₂.gpr'
   -- x += h1 s1
   rw [rbx₂, r10₂, hs1] at e₃
   have e₃ := e₃ (by omega_using [e₂, b1, b2])
   rw [e₂] at e₃
   have k₃' := k₂.trans k₃
   have r11₃ : s₃.gpr .x4 = s₁.gpr .x4 := k₃'.gpr'
-  have r9₃ : s₃.gpr .x8 = s.gpr .x8 := k₃'.gpr'.trans r9₁
+  have r9₃ : s₃.gpr .x8 = s₁.gpr .x8 := k₃'.gpr'
   -- y = h0 r1
   rw [r11₃, r9₃, hr1] at e₄
   have k₄' := k₃'.trans k₄
   have rbx₄ : s₄.gpr .x5 = s₁.gpr .x5 := k₄'.gpr'
-  have r8₄ : s₄.gpr .x7 = s.gpr .x7 := k₄'.gpr'.trans r8₁
+  have r8₄ : s₄.gpr .x7 = s₁.gpr .x7 := k₄'.gpr'
   -- y += h1 r0
   rw [rbx₄, r8₄] at e₅
   have e₅ := e₅ (by omega_using [e₄, b3, b4])
   rw [e₄] at e₅
   have k₅' := k₄'.trans k₅
   have rbp₅ : s₅.gpr .x6 = s₁.gpr .x6 := k₅'.gpr'
-  have r10₅ : s₅.gpr .x17 = s.gpr .x17 := k₅'.gpr'.trans r10₁
+  have r10₅ : s₅.gpr .x17 = s₁.gpr .x17 := k₅'.gpr'
   -- y += h2 s1
   rw [rbp₅, r10₅, hs1] at e₆
   have e₆ := e₆ b5 (by omega_using [e₄, b3, b4, b5, e₅])
   rw [e₅] at e₆
   have k₆' := k₅'.trans k₆
   have rbp₆ : s₆.gpr .x6 = s₁.gpr .x6 := k₆'.gpr'
-  have r8₆ : s₆.gpr .x7 = s.gpr .x7 := k₆'.gpr'.trans r8₁
+  have r8₆ : s₆.gpr .x7 = s₁.gpr .x7 := k₆'.gpr'
   -- h2 r0
   rw [rbp₆, r8₆] at e₇
   have e₇ := e₇ (by omega_using [hr0, b6])
@@ -106,11 +99,11 @@ theorem absorb_ok (s : State) (pad : Bool) {q : Nat}
   have w0 := (s₁₀.gpr .x4).isLt; have w1 := (s₁₀.gpr .x5).isLt
   have hu : (s₈.gpr .x11).toNat + 2 ^ 64 * (((s₆.gpr .x11).toNat + (s₃.gpr .x10).toNat) / 2 ^ 64) =
       (s₆.gpr .x11).toNat + (s₃.gpr .x10).toNat := by
-    clear e₁₀ f₁ f₂ f₃ f₄ e₁ e₃ e₆ e₇
+    clear e₁₀ f₁ f₂ f₃ f₄ e₃ e₆ e₇
     omega_using [e₈]
-  have ht' : (s₈.gpr .x12).toNat = (s₆.gpr .x12).toNat + (s₁.gpr .x6).toNat * (s.gpr .x7).toNat +
+  have ht' : (s₈.gpr .x12).toNat = (s₆.gpr .x12).toNat + (s₁.gpr .x6).toNat * (s₁.gpr .x7).toNat +
       ((s₆.gpr .x11).toNat + (s₃.gpr .x10).toNat) / 2 ^ 64 := by
-    clear e₁₀ f₁ f₂ f₃ f₄ e₁ e₃ e₆ e₇
+    clear e₁₀ f₁ f₂ f₃ f₄ e₃ e₆ e₇
     omega_using [e₈, hu]
   rw [ht'] at e₁₀
   obtain ⟨m, hb⟩ := absorb_arith (q := q)
@@ -121,6 +114,34 @@ theorem absorb_ok (s : State) (pad : Bool) {q : Nat}
   refine ⟨?_, hb⟩
   rw [hval, m]
   change (hval s₁ * _) % P = _
-  rw [e₁, hr1]
+  rw [hr1]
+
+theorem absorb_ok (s : State) (pad : Bool) {q : Nat}
+    (hr0 : (s.gpr .x7).toNat < 2 ^ 60) (hr1 : (s.gpr .x8).toNat = 4 * q) (hq : q < 2 ^ 58)
+    (hs1 : (s.gpr .x17).toNat = 5 * q)
+    (h0 : InRegions (s.rd ++ s.wr) (s.gpr .x1 + BitVec.ofNat 64 0) 8)
+    (h8 : InRegions (s.rd ++ s.wr) (s.gpr .x1 + BitVec.ofNat 64 8) 8) :
+    WP isa (.block (absorb pad)) s fun s' =>
+      ((s.gpr .x6).toNat ≤ 4 →
+        hval s' % P = ((hval s + (word s.mem (s.gpr .x1) 0 + 2 ^ 64 * word s.mem (s.gpr .x1) 8 +
+          2 ^ 128 * pad.toNat)) * ((s.gpr .x7).toNat + 2 ^ 64 * (s.gpr .x8).toNat)) % P ∧
+        (s'.gpr .x6).toNat ≤ 4) ∧ Keeps absorbRegs s s' := by
+  rw [show absorb pad = addBlock pad ++ (Impl.Poly1305.AArch64.Radix64.products ++ combine ++ fold ++ addLow) by
+    simp only [absorb, List.append_assoc]]
+  refine WP.block_append (WP.mono (addBlock_ok s pad h0 h8) fun s₁ ⟨e₁, k₁⟩ => ?_)
+  have r8₁ : s₁.gpr .x7 = s.gpr .x7 := k₁.gpr'
+  have r9₁ : s₁.gpr .x8 = s.gpr .x8 := k₁.gpr'
+  have r10₁ : s₁.gpr .x17 = s.gpr .x17 := k₁.gpr'
+  refine WP.mono (mul_ok s₁ (by rw [r8₁]; exact hr0) (by rw [r9₁]; exact hr1) hq (by rw [r10₁]; exact hs1))
+    fun s' ⟨hm, k⟩ => ⟨fun hh2 => ?_, (k₁.trans k).mono (by decide)⟩
+  have hp1 : pad.toNat ≤ 1 := Bool.toNat_le pad
+  have hw0 := (s.mem.readW (s.gpr .x1 + BitVec.ofNat 64 0) 64).isLt
+  have hw8 := (s.mem.readW (s.gpr .x1 + BitVec.ofNat 64 8) 64).isLt
+  have g0 := (s.gpr .x4).isLt; have g1 := (s.gpr .x5).isLt
+  have e₁ := e₁ (by simp only [word, hval]; omega_using [hh2, hp1, hw0, hw8, g0, g1])
+  have a0 := (s₁.gpr .x4).isLt; have a1 := (s₁.gpr .x5).isLt
+  obtain ⟨hv, hb⟩ := hm (add_arith g0 g1 hh2 hw0 hw8 hp1 e₁ a0 a1)
+  refine ⟨?_, hb⟩
+  rw [hv, e₁, r8₁, r9₁]
 
 end VG.Proof.Poly1305.AArch64.Radix64

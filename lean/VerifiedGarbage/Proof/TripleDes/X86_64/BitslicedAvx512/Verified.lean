@@ -1,6 +1,7 @@
 import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedAvx512.Ecb
 import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedAvx512.ConstantTime
 import VerifiedGarbage.Proof.TripleDes.X86_64.Bitsliced.Verified
+import VerifiedGarbage.Proof.TripleDes.Scratch
 
 /-! # The AVX-512 bitsliced ECB functions meet their contracts -/
 
@@ -14,27 +15,27 @@ theorem encrypt_correct (s : State) (hs : (contract .encrypt).pre s) :
       (contract .encrypt).post s s' := by
   obtain ⟨rd, wr, kd, kb, db, rdt, rb, fit⟩ := hs
   obtain ⟨t, s', he, ha, hp⟩ := ecb_ok .encrypt rd wr kd kb db rdt rb fit
-  exact ⟨t, s', he, abiPreserved_of_exec (by lit_decide) he ha, hp⟩
+  exact ⟨t, s', he, abiPreserved_of_exec (c := Impl.TripleDes.X86_64.BitsliceAvx512.encrypt) (by lit_decide) he ha, hp⟩
 
 theorem decrypt_correct (s : State) (hs : (contract .decrypt).pre s) :
     ∃ t s', Exec isa Impl.TripleDes.X86_64.BitsliceAvx512.decrypt s t s' ∧ abiPreserved s s' ∧
       (contract .decrypt).post s s' := by
   obtain ⟨rd, wr, kd, kb, db, rdt, rb, fit⟩ := hs
   obtain ⟨t, s', he, ha, hp⟩ := ecb_ok .decrypt rd wr kd kb db rdt rb fit
-  exact ⟨t, s', he, abiPreserved_of_exec (by lit_decide) he ha, hp⟩
+  exact ⟨t, s', he, abiPreserved_of_exec (c := Impl.TripleDes.X86_64.BitsliceAvx512.decrypt) (by lit_decide) he ha, hp⟩
 
 theorem encrypt_verified : Verified target Impl.TripleDes.X86_64.BitsliceAvx512.encrypt
-    (Spec.TripleDes.ecbEncryptContract abi) := by
+    (Proof.TripleDes.ecbEncryptScratchContract abi) := by
   refine Verified.of_correct encrypt_correct
     (encrypt_constantTime _ _ (ecbTaint_agree .encrypt)) ?_
-  sig_implies [Spec.TripleDes.ecbEncryptContract, Spec.TripleDes.ecbContract,
-    Spec.TripleDes.ecbSig, abi, argRegs, contract, publicRegs_five] [satState] using satState
+  sig_implies [Proof.TripleDes.ecbEncryptScratchContract, Proof.TripleDes.ecbScratchContract,
+    Proof.TripleDes.ecbScratchSig, Spec.TripleDes.ecbPost, abi, argRegs, contract, publicRegs_five] [satState] using satState
 
 theorem decrypt_verified : Verified target Impl.TripleDes.X86_64.BitsliceAvx512.decrypt
-    (Spec.TripleDes.ecbDecryptContract abi) := by
+    (Proof.TripleDes.ecbDecryptScratchContract abi) := by
   refine Verified.of_correct decrypt_correct
     (decrypt_constantTime _ _ (ecbTaint_agree .decrypt)) ?_
-  sig_implies [Spec.TripleDes.ecbDecryptContract, Spec.TripleDes.ecbContract,
-    Spec.TripleDes.ecbSig, abi, argRegs, contract, publicRegs_five] [satState] using satState
+  sig_implies [Proof.TripleDes.ecbDecryptScratchContract, Proof.TripleDes.ecbScratchContract,
+    Proof.TripleDes.ecbScratchSig, Spec.TripleDes.ecbPost, abi, argRegs, contract, publicRegs_five] [satState] using satState
 
 end VG.Proof.TripleDes.X86_64.BitslicedAvx512

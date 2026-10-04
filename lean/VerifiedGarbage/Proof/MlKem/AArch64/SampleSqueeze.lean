@@ -332,11 +332,11 @@ theorem seed_frame {s₀ : State} (hp : Pre s₀) {m : Mem} (hf : Frame [scR s�
 theorem calls_ok (v : Proof.Sha3.AArch64.Permutation) {s₀ : State} (hp : Pre s₀) {s : State} (h : AfterPro s₀ s) {len : Nat}
     (hl : len ≤ 840) (hlv : ((BitVec.ofNat 16 len).setWidth 64).toNat = len) {R : Prog isa}
     {Q : State → Prop} (hR : ∀ s', Mid s₀ s' → Buf len s₀ s'.mem → WP isa R s' Q) :
-    WP isa (.seq (.call ("vg_keccak_absorb" ++ v.callee.suffix) (Impl.Sha3.AArch64.Stream.absorbWith v.callee)) <|
+    WP isa (.seq (.call ("vg_keccak_absorb_scratch" ++ v.callee.suffix) (Impl.Sha3.AArch64.Stream.absorbWith v.callee)) <|
       .seq (.block samplePadArgs) <|
-      .seq (.call ("vg_keccak_pad" ++ v.callee.suffix) (Impl.Sha3.AArch64.Stream.padWith v.callee)) <|
+      .seq (.call ("vg_keccak_pad_scratch" ++ v.callee.suffix) (Impl.Sha3.AArch64.Stream.padWith v.callee)) <|
       .seq (.block (sampleSqueezeArgs len)) <|
-      .seq (.call ("vg_keccak_squeeze" ++ v.callee.suffix) (Impl.Sha3.AArch64.Stream.squeezeWith v.callee)) R) s Q := by
+      .seq (.call ("vg_keccak_squeeze_scratch" ++ v.callee.suffix) (Impl.Sha3.AArch64.Stream.squeezeWith v.callee)) R) s Q := by
   have hsd : ∀ {u : State}, Mid s₀ u → 16 ≤ u.sp.toNat := fun hu => by rw [hu.sp]; exact hp.sp16
   have cw : ∀ {u : State}, Mid s₀ u → ∀ {rs : List Region},
       (∀ r ∈ rs, ∃ off, r.base = So s₀ off ∧ off + r.len ≤ 2048) → Covers rs u.wr :=

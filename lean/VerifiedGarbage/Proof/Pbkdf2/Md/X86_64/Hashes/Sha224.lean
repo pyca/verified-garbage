@@ -40,8 +40,8 @@ def hash (v : Compress) : Hash where
   initC := Impl.Sha256.X86_64.Stream.init224
   updN := Spec.Sha256.updateScratchApi.name ++ v.suffix
   finN := Spec.Sha256.finalizeScratchApi.name ++ v.suffix
-  hmacInitN := Spec.Hmac.sha224I.initApi.name ++ v.suffix
-  hmacFinN := Spec.Hmac.sha224I.finalizeApi.name ++ v.suffix
+  hmacInitN := Spec.Hmac.sha224I.initScratchApi.name ++ v.suffix
+  hmacFinN := Spec.Hmac.sha224I.finalizeScratchApi.name ++ v.suffix
   iterN := Spec.Hmac.sha224I.iterateApi.name ++ v.suffix
 
 /-- `hash v` without the functions it calls, the same for every `v`. -/
@@ -73,6 +73,9 @@ theorem coreOK : CoreOK coreH := by
     hfinSp := ?_
     hfinNs := ?_
     hfinD := ?_
+    hinitXD := ?_
+    hfinXD := ?_
+    pbkXD := ?_
     iterMx := ?_
     iterSp := ?_
     iterNs := ?_
@@ -100,6 +103,8 @@ theorem callees : Callees (hash v) where
   iSp := by simp only [hash] <;> decide +kernel
   iNs := by simp only [hash] <;> decide +kernel
   iD := by simp only [hash] <;> decide +kernel
+  cXD := v.noStack
+  iXD := by simp only [hash] <;> decide +kernel
 
 def ok : HashOK (hash v) where
   md := Proof.Sha256.md
@@ -140,28 +145,42 @@ def ok : HashOK (hash v) where
   updDepth := Callees.updD (callees v) coreOK
   finDepth := Callees.finD (callees v) coreOK
 
-theorem satI : ∃ s, (Spec.Hmac.sha224I.initContract X86_64.abi 16).pre s := by
-  inst_sat [Spec.Hmac.Instance.initContract, Spec.Hmac.sha224I, Spec.Hmac.initContract, Spec.Hmac.initSig,
+theorem satI : ∃ s, (Spec.Hmac.sha224I.initScratchContract X86_64.abi 16).pre s := by
+  inst_sat [Spec.Hmac.Instance.initScratchContract, Spec.Hmac.sha224I, Spec.Hmac.initScratchContract, Spec.Hmac.initScratchSig, Spec.Hmac.initPre, Spec.Hmac.initPost,
     Spec.Hmac.sha224S, Spec.Hmac.sha224, X86_64.abi, X86_64.argRegs] using initSat 96 104
 
-theorem satF : ∃ s, (Spec.Hmac.sha224I.finalizeContract X86_64.abi 16).pre s := by
-  inst_sat [Spec.Hmac.Instance.finalizeContract, Spec.Hmac.sha224I, Spec.Hmac.finalizeContract,
-    Spec.Hmac.finalizeSig, Spec.Hmac.sha224S, Spec.Hmac.sha224, X86_64.abi, X86_64.argRegs] using finSat 96 28 104
+theorem satF : ∃ s, (Spec.Hmac.sha224I.finalizeScratchContract X86_64.abi 16).pre s := by
+  inst_sat [Spec.Hmac.Instance.finalizeScratchContract, Spec.Hmac.sha224I, Spec.Hmac.finalizeScratchContract,
+    Spec.Hmac.finalizeScratchSig, Spec.Hmac.finalizePost, Spec.Hmac.sha224S, Spec.Hmac.sha224, X86_64.abi, X86_64.argRegs] using finSat 96 28 104
 
 theorem satT : ∃ s, (Spec.Hmac.sha224I.iterateContract X86_64.abi 8).pre s := by
   inst_sat [Spec.Hmac.Instance.iterateContract, Spec.Hmac.sha224I, Spec.Pbkdf2.iterateContract,
     Spec.Pbkdf2.iterateSig, Spec.Hmac.sha224S, Spec.Hmac.sha224, X86_64.abi, X86_64.argRegs] using
     Pbkdf2.X86_64.iterSat 96 28 104
 
-theorem satP : ∃ s, (Spec.Hmac.sha224I.pbkdf2Contract X86_64.abi 24).pre s := by
-  inst_sat [Spec.Hmac.Instance.pbkdf2Contract, Spec.Hmac.Instance.pbkdf2Scratch, Spec.Hmac.sha224I,
-    Spec.Pbkdf2.pbkdf2Contract, Spec.Pbkdf2.pbkdf2Sig, Spec.Hmac.sha224S, Spec.Hmac.sha224, X86_64.abi,
+theorem satP : ∃ s, (Spec.Hmac.sha224I.pbkdf2ScratchContract X86_64.abi 24).pre s := by
+  inst_sat [Spec.Hmac.Instance.pbkdf2ScratchContract, Spec.Hmac.Instance.pbkdf2Scratch, Spec.Hmac.sha224I,
+    Spec.Pbkdf2.pbkdf2ScratchContract, Spec.Pbkdf2.pbkdf2ScratchSig, Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post, Spec.Hmac.sha224S, Spec.Hmac.sha224, X86_64.abi,
     X86_64.argRegs] using pbkSat 200
+
+theorem satPF :
+    ∃ s, (Spec.Hmac.sha224I.pbkdf2Contract X86_64.abi (24 + pbkdf2Frame Spec.Hmac.sha224I)).pre s := by
+  inst_sat [Spec.Hmac.Instance.pbkdf2Contract, pbkdf2Frame, Spec.Hmac.Instance.pbkdf2Scratch, Spec.Hmac.sha224I,
+    Spec.Pbkdf2.pbkdf2Contract, Spec.Pbkdf2.pbkdf2Sig, Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post, Spec.Hmac.sha224S, Spec.Hmac.sha224, X86_64.abi,
+    X86_64.argRegs, pbkFrameSat, pbkSat] using pbkFrameSat
 
 /-- SHA-224 with the implementation `v` of SHA-256's compression function.
 Its streaming `update` and `finalize` are SHA-256's, which SHA-256's variant
 with `v` carries. -/
 def variant : MdHash :=
-  MdHash.of (ok v) coreOK (callees v) rfl rfl satI satF satT satP v.suffix v.features []
+  MdHash.of (ok v) coreOK (callees v) rfl rfl satI satF satT satP (by decide)
+    (by
+      unfold Spec.Hmac.Instance.initContract Spec.Hmac.initContract
+      exact X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (Nat.le_of_ble_eq_true rfl))
+    (by
+      unfold Spec.Hmac.Instance.finalizeContract Spec.Hmac.finalizeContract
+      exact X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
+    (by decide) satPF
+    v.suffix v.features []
 
 end VG.Proof.Pbkdf2.Md.X86_64.Sha224

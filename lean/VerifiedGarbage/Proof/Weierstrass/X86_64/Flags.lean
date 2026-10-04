@@ -15,15 +15,8 @@ of `[a] ≠ 0` (`checkNonzero_ok`).
 
 namespace VG.Proof.Weierstrass.X86_64
 
-open VG VG.X86_64 VG.Impl.Mont.X86_64 VG.Impl.Ecdsa.X86_64 VG.Proof.Mont.X86_64
+open VG VG.X86_64 VG.Impl.Mont.X86_64 VG.Impl.Mont VG.Impl.Ecdsa.X86_64 VG.Proof.Mont.X86_64 VG.Proof.Mont
 open VG.Proof.X25519.X86_64 (Keeps Keeps.trans Keeps.mono sub_borrow sbb_borrow)
-
-/-- A mask: all ones if `p`, else zero. -/
-abbrev mask (p : Prop) [Decidable p] : BitVec 64 := if p then BitVec.allOnes 64 else 0
-
-theorem mask_and (p q : Prop) [Decidable p] [Decidable q] : mask p &&& mask q = mask (p ∧ q) := by
-  by_cases hp : p <;> by_cases hq : q <;>
-    simp only [mask, hp, hq, ite_true, ite_false, and_self, and_false, false_and] <;> decide
 
 theorem or_eq_zero (x y : BitVec 64) : x ||| y = 0 ↔ x = 0 ∧ y = 0 := BitVec.or_eq_zero_iff
 
@@ -126,23 +119,6 @@ theorem ltStep_succ (a m k : Nat) :
 
 theorem ltN_eq (c : Cfg) (a : Nat) :
     c.ltN a = (List.range c.n).flatMap (ltStep a (c.sl MN)) ++ ([.alu .sbb .rax (.reg .rax)] : List Instr) := rfl
-
-/-- The borrow out of `A' = A + P a` less `M' = M + P b`, for `A, M < P`. -/
-theorem lt_top {A M P x y : Nat} (hA : A < P) (hM : M < P) :
-    (A + P * x < M + P * y) ↔ x < y + (decide (A < M)).toNat := by
-  rcases Nat.lt_trichotomy x y with h | rfl | h
-  · have := Nat.mul_le_mul_left P (show x + 1 ≤ y by omega)
-    rw [Nat.mul_succ] at this
-    constructor
-    · intro; omega
-    · intro; omega
-  · by_cases h : A < M <;> simp only [h, decide_true, decide_false, Bool.toNat_true, Bool.toNat_false] <;> omega
-  · have := Nat.mul_le_mul_left P (show y + 1 ≤ x by omega)
-    rw [Nat.mul_succ] at this
-    have := Bool.toNat_le (decide (A < M))
-    constructor
-    · intro; omega
-    · intro; omega
 
 theorem ltSteps_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {a m : Nat} :
     ∀ k, a + 8 * (k + 1) ≤ size → m + 8 * (k + 1) ≤ size →

@@ -48,9 +48,9 @@ def mdHash (suffix cmpN : String) (cmpC updC finC : Prog isa) : Impl.Pbkdf2.Md.X
 def fns (suffix cmpN : String) (cmpC updC finC : Prog isa) : Impl.Pbkdf2.Whole.X86.Fns where
   H := hmacHash suffix updC finC
   W := Spec.Hmac.sha256I.scratch
-  hiN := Spec.Hmac.sha256I.initApi.name ++ suffix
+  hiN := Spec.Hmac.sha256I.initScratchApi.name ++ suffix
   hiC := (mdHash suffix cmpN cmpC updC finC).hmacInit
-  hfN := Spec.Hmac.sha256I.finalizeApi.name ++ suffix
+  hfN := Spec.Hmac.sha256I.finalizeScratchApi.name ++ suffix
   hfC := (mdHash suffix cmpN cmpC updC finC).hmacFin
   itN := Spec.Hmac.sha256I.iterateApi.name ++ suffix
   itC := (mdHash suffix cmpN cmpC updC finC).iterate
@@ -75,9 +75,9 @@ def mdHash224 (suffix cmpN : String) (cmpC updC finC : Prog isa) : Impl.Pbkdf2.M
 def fns224 (suffix cmpN : String) (cmpC updC finC : Prog isa) : Impl.Pbkdf2.Whole.X86.Fns where
   H := hmacHash224 suffix updC finC
   W := Spec.Hmac.sha224I.scratch
-  hiN := Spec.Hmac.sha224I.initApi.name ++ suffix
+  hiN := Spec.Hmac.sha224I.initScratchApi.name ++ suffix
   hiC := (mdHash224 suffix cmpN cmpC updC finC).hmacInit
-  hfN := Spec.Hmac.sha224I.finalizeApi.name ++ suffix
+  hfN := Spec.Hmac.sha224I.finalizeScratchApi.name ++ suffix
   hfC := (mdHash224 suffix cmpN cmpC updC finC).hmacFin
   itN := Spec.Hmac.sha224I.iterateApi.name ++ suffix
   itC := (mdHash224 suffix cmpN cmpC updC finC).iterate

@@ -17,13 +17,13 @@ reduction after round 5. `QG` is what holds before the blocks after round
 
 namespace VG.Proof.Gcm.X86_64.Stitch
 
-open VG VG.X86_64 VG.Proof.Gcm.Poly
+open VG VG.X86_64
 open VG.Proof.Gcm.X86_64.Pclmul (Prod reduce prod)
 open VG.Impl.Gcm.X86_64.Pclmul (poly)
 open VG.Proof.Gcm.X86_64.Vpclmul (reduce_lanes combine_ok)
 open VG.Impl.Gcm.X86_64.Stitch (ghLoad aregs gq ordE ordD)
 open VG.Proof.Aes.X86_64.AesNi (Keys)
-open VG.Spec.Gcm (Block blockAt)
+open VG.Spec.Gcm (Block blockAt ghashFrom)
 
 structure GEnv (s₀ : State) (lo : Nat) (a : Addr) (X : Nat → Block) (P : Nat → Nat → Block) (s : State) :
     Prop where
@@ -94,6 +94,13 @@ theorem ite_f {c : Prop} [Decidable c] {α : Type} {a b : α} (h : ¬ c) : ite c
 /-- `Y` after the sixteen blocks of a body. -/
 abbrev yNew (ord : Nat → Nat) (X : Nat → Block) (P : Nat → Nat → Block) (yl : Nat → Block) : Block :=
   reduce (accN ord X P yl 0 8) ^^^ reduce (accN ord X P yl 1 8)
+
+/-- What the products of a body, in the order `ord`, add up to, for the
+powers `P` (`P k l` in lane `l` of the `k`-th load): `GHASH` over its sixteen
+blocks, from `Y` in lane 0 (`Stitch/Ok.lean` proves it of the powers the
+setup stores). -/
+def FinOk (ord : Nat → Nat) (H : Block) (P : Nat → Nat → Block) : Prop :=
+  ∀ X yl, yl 1 = 0 → yNew ord X P yl = ghashFrom H (yl 0) ((List.range 16).map X)
 
 /-- What holds before the blocks after round `j` of a batch. -/
 def QG (s₀ : State) (lo : Nat → Nat) (a : Addr) (X : Nat → Block) (P : Nat → Nat → Block)

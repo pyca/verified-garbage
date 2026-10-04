@@ -10,6 +10,8 @@ first word. The lane count and matrix base are reloaded after volatile calls.
 
 namespace VG.Impl.Argon2.X86_64.FillKernel
 
+variable [Compressor]
+
 open VG.X86_64
 open VG.Impl.Argon2.X86_64 (at_)
 
