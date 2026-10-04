@@ -241,4 +241,115 @@ theorem vecBody_ok {s : State} {B : Addr} {M k x : Nat → Nat} {Q : Prop} (hB :
   · rw [g₄ r r1 r2 r3 r4 r5 r6 r7 r8 r9, g₃ r r1 r2 r3 r4 r5 r6 r7 r8 r9 r10 r11 r12,
       g₂ r r1 r2 r3 r4 r5 r6 r7 r8 r9, g₁ r r1 r2 r3 r4 r5 r6 r7 r8 r9]
 
+
+/-! ## Writes above both regions -/
+
+theorem writeW32_outside (m : Mem) (base : Addr) {d : Nat} (v : BitVec 32) (h : d + 4 ≤ 2 ^ 64) :
+    Outside base d 4 m (m.writeW (off base d) v) := by
+  intro x hx
+  apply Mem.write_apply
+  simp only [ofs] at hx
+  have : (x - off base d).toNat = (2 ^ 64 - d + (x - base).toNat) % 2 ^ 64 :=
+    Offset.toNat_sub_add x base (by omega)
+  rw [this]
+  have := (x - base).isLt
+  rcases hx with hx | hx
+  · rw [Nat.mod_eq_of_lt (by omega)]; omega
+  · rw [show 2 ^ 64 - d + (x - base).toNat = (x - base).toNat - d + 2 ^ 64 by omega,
+      Nat.add_mod_right, Nat.mod_eq_of_lt (by omega)]
+    omega
+
+section
+variable {m m' : Mem} {B : Addr} {n : Nat} (h : Outside B (2 * D) n m m')
+include h
+
+theorem hi_word {p c : Nat} (hp : p < 2) (hc : c + 8 ≤ D) : word m' B (D * p + c) = word m B (D * p + c) :=
+  h.word (.inl (by rcases D_mul hp with h | h <;> simp only [D] at * <;> omega))
+    (by rcases D_mul hp with h | h <;> simp only [D] at * <;> omega)
+
+theorem hi_limb {p c : Nat} (hp : p < 2) (hc : c + 160 ≤ D) {j : Nat} (hj : j < 20) :
+    limb m' B (D * p + c) j = limb m B (D * p + c) j := by
+  have := off_lt j hj
+  show (word m' B _).toNat = (word m B _).toNat
+  rw [Nat.add_assoc, hi_word h hp (by omega)]
+
+theorem hi_val {p c : Nat} (hp : p < 2) (hc : c + 160 ≤ D) : val52 m' B (D * p + c) = val52 m B (D * p + c) :=
+  val52_of_limbs fun _ hj => hi_limb h hp hc hj
+
+theorem Good.of_hi {M : Nat → Nat} {p c : Nat} (g : Good m B M c p) (hp : p < 2) (hc : c + 160 ≤ D) :
+    Good m' B M c p :=
+  g.of_limbs fun _ hj => hi_limb h hp hc hj
+
+theorem Ar.of_hi {M k : Nat → Nat} (a : Ar m B M k) : Ar m' B M k := by
+  refine ⟨fun p hp j hj => ?_, fun p hp => ?_, fun p hp t ht => ?_, a.klt, fun p hp => ?_, a.bnd⟩
+  · rw [hi_limb h hp (by decide) hj]; exact a.mlt p hp j hj
+  · rw [hi_val h hp (by decide)]; exact a.mv p hp
+  · rw [Nat.add_assoc, hi_word h hp (by simp only [oK0, D]; omega), ← Nat.add_assoc]; exact a.kw p hp t ht
+  · rw [hi_limb h hp (by decide) (by decide)]; exact a.k0 p hp
+
+theorem ev_of_hi {p : Nat} (hp : p < 2) : ev m' B p 128 = ev m B p 128 :=
+  ev_congr 128 fun i hi => h _ (.inl (by
+    rw [ofs_off0 B (by have := hi; rcases D_mul hp with h | h <;> simp only [oE, D] at * <;> omega)]
+    rcases D_mul hp with h | h <;> simp only [oE, D] at * <;> omega))
+
+end
+
+
+theorem Outside.readW32 {B : Addr} {o n : Nat} {m m' : Mem} (h : Outside B o n m m') {d : Nat}
+    (hd : d + 4 ≤ o ∨ o + n ≤ d) (hd' : d + 4 ≤ 2 ^ 64) : m'.readW (off B d) 32 = m.readW (off B d) 32 :=
+  (Mem.readW_congr fun i hi => (h _ (by have : i < 4 := hi; rw [ofs_off B (by omega)]; omega)).symm).symm
+
+/-- The vector code: `Y ≡ x^e Fin` for each prime. -/
+theorem vec_ok {s : State} {B : Addr} {M k x : Nat → Nat} {Q : Prop} (hB : s.gpr .rbx = B)
+    (hs : Scr s B (2 * D + 8)) (ar : Ar s.mem B M k) (hR : ∀ p < 2, Nat.Coprime (2 ^ (52 * 20)) (M p))
+    (gx : ∀ p < 2, Good s.mem B M oX p) (gy : ∀ p < 2, Good s.mem B M oY p)
+    (gk : ∀ p < 2, Good s.mem B M oK1 p) (gf : ∀ p < 2, Good s.mem B M oFin p)
+    (vx : Q → ∀ p < 2, val52 s.mem B (D * p + oX) % M p = x p * 2 ^ 1024 % M p)
+    (vy : Q → ∀ p < 2, val52 s.mem B (D * p + oY) % M p = 1 * 2 ^ 1024 % M p)
+    (vk : Q → ∀ p < 2, val52 s.mem B (D * p + oK1) % M p = 2 ^ 1056 % M p) :
+    WP isa VG.Impl.Rsa.X86_64.CrtIfma.vec s fun s' =>
+      (∀ p < 2, Good s'.mem B M oY p ∧
+        (Q → val52 s'.mem B (D * p + oY) % M p =
+          x p ^ ev s.mem B p 128 * val52 s.mem B (D * p + oFin) % M p)) ∧
+      Outside B 0 (2 * D + 8) s.mem s'.mem ∧
+      (∀ r, r ≠ .rax → r ≠ .rcx → r ≠ .rdx → r ≠ .rsi → r ≠ .r8 → r ≠ .r9 → r ≠ .r10 → r ≠ .r11 → r ≠ .r12 →
+        r ≠ .r13 → r ≠ .r14 → r ≠ .r15 → s'.gpr r = s.gpr r) ∧
+      s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.mxcsr = s.mxcsr &&& 0xFFFF := by
+  have hD : D = 3872 := rfl
+  have hn := hs.nowrap
+  refine WP.seq (WP.mono (mxSave_ok hB hs) fun s₁ ⟨m₁, k₁, x₁⟩ => ?_)
+  have hB₁ : s₁.gpr .rbx = B := by rw [k₁.gpr (by decide)]; exact hB
+  refine WP.seq (WP.seq (WP.mono (mxSet_ok hB₁ (hs.congr k₁.2.2)) fun s₂ ⟨m₂, k₂, x₂⟩ => ?_))
+  have hB₂ : s₂.gpr .rbx = B := by rw [k₂.gpr (by decide)]; exact hB₁
+  have hs₂ : Scr s₂ B (2 * D + 8) := hs.congr (by rw [k₂.2.2, k₁.2.2])
+  have O₁ : Outside B (2 * D) 4 s.mem s₁.mem := by
+    rw [m₁]
+    exact (writeW32_outside _ B _ (by omega)).trans (writeW32_outside _ B _ (by omega))
+  have O₂ : Outside B (2 * D + 4) 4 s₁.mem s₂.mem := by
+    rw [m₂]; exact writeW32_outside _ B _ (by omega)
+  have O : Outside B (2 * D) 8 s.mem s₂.mem := (O₁.mono (by omega) (by omega)).trans (O₂.mono (by omega) (by omega))
+  refine WP.seq (WP.mono (vecBody_ok (Q := Q) (x := x) hB₂ (Scr.mono hs₂ (by omega)) (Ar.of_hi O ar) hR
+    (fun p hp => (gx p hp).of_hi O hp (by decide)) (fun p hp => (gy p hp).of_hi O hp (by decide))
+    (fun p hp => (gk p hp).of_hi O hp (by decide)) (fun p hp => (gf p hp).of_hi O hp (by decide))
+    (fun hq p hp => by rw [hi_val O hp (by decide)]; exact vx hq p hp)
+    (fun hq p hp => by rw [hi_val O hp (by decide)]; exact vy hq p hp)
+    (fun hq p hp => by rw [hi_val O hp (by decide)]; exact vk hq p hp))
+    fun s₃ ⟨v₃, O₃, g₃, rd₃, wr₃, x₃⟩ => ?_)
+  rw [WP.block_cons_iff]
+  refine ⟨s₃, rfl, WP.block_nil ?_⟩
+  have hB₃ : s₃.gpr .rbx = B := by
+    rw [g₃ _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
+      (by decide) (by decide) (by decide) (by decide)]; exact hB₂
+  have hv : s₃.mem.readW (off B oMx) 32 = s.mxcsr &&& 0xFFFF := by
+    rw [Outside.readW32 O₃ (.inr (by simp only [oMx]; omega)) (by simp only [oMx]; omega),
+      Outside.readW32 O₂ (.inl (by simp only [oMx]; omega)) (by simp only [oMx]; omega), m₁, Mem.readW_writeW_self32]
+  refine WP.mono (mxRestore_ok hB₃ (hs₂.congr wr₃) hv) fun s₄ ⟨m₄, g₄, rd₄, wr₄, x₄⟩ =>
+    ⟨fun p hp => ?_, ?_, fun r r1 r2 r3 r4 r5 r6 r7 r8 r9 r10 r11 r12 => ?_, by rw [rd₄, rd₃, k₂.2.1, k₁.2.1],
+      by rw [wr₄, wr₃, k₂.2.2, k₁.2.2], x₄⟩
+  · rw [m₄]
+    refine ⟨(v₃ p hp).1, fun hq => ?_⟩
+    rw [(v₃ p hp).2 hq, ev_of_hi O hp, hi_val O hp (by decide)]
+  · rw [m₄]; exact (O.mono (by omega) (by omega)).trans (O₃.mono (by omega) (by omega))
+  · rw [g₄, g₃ r r1 r2 r3 r4 r5 r6 r7 r8 r9 r10 r11 r12, k₂.gpr (by simp [r1]), k₁.gpr (by simp [r8])]
+
 end VG.Proof.Bignum.X86_64.AmmSym
