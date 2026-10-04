@@ -208,9 +208,9 @@ theorem ifmaA_ok {s : State} {B : Addr} {Z w op oq a : Nat} {minv mp mq mk : Bit
     (hYp : wv s.mem (off B op) (slot 16 Public.aY) 16 < P) (hYq : wv s.mem (off B oq) (slot 16 Public.aY) 16 < Q)
     (hep : Src s B Z ep ebp) (heq : Src s B Z eq ebq) (hLp1 : 1 ≤ ebp.length) (hLp2 : ebp.length ≤ 128)
     (hLq1 : 1 ≤ ebq.length) (hLq2 : ebq.length ≤ 128) :
-    WP isa (seqs ([.block (([.mov .rdx (.mem (hdr sWsQ))] : List Instr) ++ wsEndT ++
+    WP isa (seqs (([.block (([.mov .rdx (.mem (hdr sWsQ))] : List Instr) ++ wsEndT ++
       ([.mov .rdx (.mem (hdr sWsP)), .store (ws .rdx sIfma) .rax, .mov .rdx (.mem (hdr sWsQ)),
-        .store (ws .rdx sIfma) .rax, enterP] : List Instr))] ++ (CrtIfma.region 0 sDp sPlen ++
+        .store (ws .rdx sIfma) .rax, enterP] : List Instr))] : List (Prog isa)) ++ (CrtIfma.region 0 sDp sPlen ++
       (([.block [leave, enterQ]] : List (Prog isa)) ++ CrtIfma.region 1 sDq sQlen)))) s fun t =>
       IMem t.mem B w op oq a minv mp mq mk P Q ep eq ebp.length ebq.length ∧
       RegOut t.mem (off B a) 0 P (2 ^ 32 * wv s.mem (off B op) (slot 16 Public.aY) 16 % P)
@@ -220,7 +220,7 @@ theorem ifmaA_ok {s : State} {B : Addr} {Z w op oq a : Nat} {minv mp mq mk : Bit
         (wv s.mem (off B oq) (slot 16 aXc) 16) (wv s.mem (off B oq) (slot 16 Public.aY) 16) 1
         (mq &&& mask52) ebq ∧
       Frm B ([(op + 8 * sIfma, 8), (oq + 8 * sIfma, 8)] ++ ifmaR op oq a) s.mem t.mem ∧
-      t.wr = s.wr ∧ t.rd = s.rd ∧ t.gpr .rdi = off B oq ∧ Keep (mmRegs ++ [.rdi]) s t := by
+      t.wr = s.wr ∧ t.rd = s.rd ∧ t.gpr .rdi = off B oq ∧ Keep (mmRegs ++ ([.rdi] : List Reg)) s t := by
   have hn := hs.nowrap
   have hT : tabBytes 16 = 2304 := rfl
   have hD : D = 3712 := rfl
