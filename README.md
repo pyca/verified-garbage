@@ -1166,6 +1166,22 @@ yours to keep:
 
 <tr>
 
+<td>RSAES-OAEP</td>
+
+<td>✅</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+</tr>
+
+<tr>
+
 <td>RSASSA-PSS</td>
 
 <td>✅</td>
