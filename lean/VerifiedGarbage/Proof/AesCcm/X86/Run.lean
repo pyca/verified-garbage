@@ -100,6 +100,11 @@ theorem CT.assoc3 {I : State → Prop} {a b c d : Prog isa}
               simp only [List.append_assoc] at ht
               exact ⟨ht, hq⟩
 
+/-- A register pinned. -/
+theorem pin1 {I : State → Prop} {a : Reg} {x : BitVec 32} (h : ∀ s, I s → s.gpr a = x) :
+    ∀ s₁ s₂, I s₁ → I s₂ → ∀ r ∈ [a], s₁.gpr r = s₂.gpr r := fun s₁ s₂ h₁ h₂ r hr => by
+  simp only [List.mem_singleton] at hr; subst hr; rw [h _ h₁, h _ h₂]
+
 /-- `ebp` pinned. -/
 theorem pin_ebp {I : State → Prop} {W : BitVec 32} (h : ∀ s, I s → s.gpr .ebp = W) :
     ∀ s₁ s₂, I s₁ → I s₂ → ∀ r ∈ [Reg.ebp], s₁.gpr r = s₂.gpr r := fun s₁ s₂ h₁ h₂ r hr => by
