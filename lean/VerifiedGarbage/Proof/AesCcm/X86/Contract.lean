@@ -69,8 +69,9 @@ def openX86 : Contract isa where
   pre := onePre
   post s s' :=
     match openRes s with
-    | some pt => s'.gpr .eax = 1 ∧ bytesAt s'.mem ((arg s 6).setWidth 64) (arg s 7).toNat = pt
-    | none => s'.gpr .eax = 0 ∧ bytesAt s'.mem ((arg s 6).setWidth 64) (arg s 7).toNat = zeros (arg s 7).toNat
+    | some pt => (s'.gpr .edx ++ s'.gpr .eax).setWidth 32 = 1 ∧ bytesAt s'.mem ((arg s 6).setWidth 64) (arg s 7).toNat = pt
+    | none => (s'.gpr .edx ++ s'.gpr .eax).setWidth 32 = 0 ∧
+      bytesAt s'.mem ((arg s 6).setWidth 64) (arg s 7).toNat = zeros (arg s 7).toNat
   pub s₁ s₂ := onePub s₁ s₂ ∧ (openRes s₁).isSome = (openRes s₂).isSome
 
 end VG.Proof.AesCcm.X86
