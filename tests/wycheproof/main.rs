@@ -19,6 +19,7 @@ mod cmac_aes;
 mod ecdh_p256;
 mod ecdh_p384;
 mod ecdsa_p256;
+mod ecdsa_p384;
 mod ed25519;
 mod ed448;
 mod harness;
