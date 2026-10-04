@@ -41,7 +41,7 @@ theorem update_call_ct (backend : Whole.Backend) {args : List (Reg × Value)}
       Whole.CallReady Proof.Sha512.updateAArch64 L.E L.inputs L.outputs t)
     (hregs : ∀ r ∈ ([.x0,.x1,.x2,.x3,.x4] : List Reg), ∃ a, (r,a)∈args) :
     RelCT isa (Two L g₁ g₂ v₁ v₂ m₁ m₂ (OutArgs L args))
-      (.call (Spec.Sha512.updateApi.name ++ backend.suffix) backend.update)
+      (.call (Spec.Sha512.updateScratchApi.name ++ backend.suffix) backend.update)
       (Two L g₁ g₂ v₁ v₂ m₁ m₂ fun _ => True) := by
   apply call_ct backend.update_verified.1 backend.update_verified.2.1 (Whole.update_depth backend) (fun hc h => ready hc.sp h)
   intro a b ar aw br bw h
@@ -53,7 +53,7 @@ theorem update_call_ct (backend : Whole.Backend) {args : List (Reg × Value)}
 
 theorem finalize_call_ct (backend : Whole.Backend) (hL : L.Ok) :
     RelCT isa (Two L g₁ g₂ v₁ v₂ m₁ m₂ (OutArgs L finalizeValues))
-      (.call (Spec.Sha512.finalizeApi.name ++ backend.suffix) backend.finalize)
+      (.call (Spec.Sha512.finalizeScratchApi.name ++ backend.suffix) backend.finalize)
       (Two L g₁ g₂ v₁ v₂ m₁ m₂ fun _ => True) := by
   apply call_ct backend.finalize_verified.1 backend.finalize_verified.2.1 (Whole.finalize_depth backend)
   · intro g v m t hc hs

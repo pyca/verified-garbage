@@ -5303,12 +5303,304 @@ pub(crate) unsafe extern "C" fn vg_sha512_compress_sha3(state: *mut [u64; 8], bl
 ///
 /// * `state` must be valid for reads and writes of 192 bytes.
 /// * `data` must be valid for reads of `len` bytes.
+/// * `state` must not overlap `data` (distinct Rust objects never do).
+/// * Neither `state` nor `data` may overlap the 1392 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_sha512_update(state: *mut [u8; 192], count: u64, data: *const u8, len: usize) {
+    core::arch::naked_asm!(
+        "sub sp, sp, #1376",
+        "add x4, sp, #0",
+        "str x30, [sp, #-16]!",
+        "str x19, [x4, #640]",
+        "str x20, [x4, #648]",
+        "str x21, [x4, #656]",
+        "str x22, [x4, #664]",
+        "str x23, [x4, #672]",
+        "str x24, [x4, #680]",
+        "add x19, x0, #0",
+        "add x20, x4, #0",
+        "add x21, x2, #0",
+        "add x22, x3, #0",
+        "movz x9, #127, lsl #0",
+        "and x23, x1, x9",
+        "cbz x22, 20f",
+        "22:",
+        "movz x10, #0, lsl #0",
+        "cbz x23, 23f",
+        "movz x11, #128, lsl #0",
+        "sub x11, x11, x23",
+        "lsr x9, x22, #7",
+        "cbz x9, 25f",
+        "b 26f",
+        "25:",
+        "add x9, x22, x23",
+        "lsr x9, x9, #7",
+        "cbz x9, 27f",
+        "b 28f",
+        "27:",
+        "add x11, x22, #0",
+        "28:",
+        "26:",
+        "sub x22, x22, x11",
+        "lsr x13, x11, #3",
+        "cbz x13, 29f",
+        "211:",
+        "ldr x9, [x21, #0]",
+        "add x12, x19, x23",
+        "str x9, [x12, #64]",
+        "add x21, x21, #8",
+        "add x23, x23, #8",
+        "sub x11, x11, #8",
+        "lsr x13, x11, #3",
+        "cbnz x13, 211b",
+        "b 210f",
+        "29:",
+        "210:",
+        "cbz x11, 212f",
+        "214:",
+        "ldrb w9, [x21, #0]",
+        "add x12, x19, x23",
+        "strb w9, [x12, #64]",
+        "add x21, x21, #1",
+        "add x23, x23, #1",
+        "sub x11, x11, #1",
+        "cbnz x11, 214b",
+        "b 213f",
+        "212:",
+        "213:",
+        "sub x9, x23, #128",
+        "cbz x9, 215f",
+        "b 216f",
+        "215:",
+        "add x1, x19, #64",
+        "movz x23, #0, lsl #0",
+        "movz x10, #1, lsl #0",
+        "216:",
+        "b 24f",
+        "23:",
+        "lsr x9, x22, #7",
+        "cbz x9, 217f",
+        "add x1, x21, #0",
+        "lsr x10, x22, #7",
+        "lsl x9, x10, #7",
+        "add x21, x21, x9",
+        "sub x22, x22, x9",
+        "b 218f",
+        "217:",
+        "movz x11, #128, lsl #0",
+        "sub x11, x11, x23",
+        "lsr x9, x22, #7",
+        "cbz x9, 219f",
+        "b 220f",
+        "219:",
+        "add x9, x22, x23",
+        "lsr x9, x9, #7",
+        "cbz x9, 221f",
+        "b 222f",
+        "221:",
+        "add x11, x22, #0",
+        "222:",
+        "220:",
+        "sub x22, x22, x11",
+        "lsr x13, x11, #3",
+        "cbz x13, 223f",
+        "225:",
+        "ldr x9, [x21, #0]",
+        "add x12, x19, x23",
+        "str x9, [x12, #64]",
+        "add x21, x21, #8",
+        "add x23, x23, #8",
+        "sub x11, x11, #8",
+        "lsr x13, x11, #3",
+        "cbnz x13, 225b",
+        "b 224f",
+        "223:",
+        "224:",
+        "cbz x11, 226f",
+        "228:",
+        "ldrb w9, [x21, #0]",
+        "add x12, x19, x23",
+        "strb w9, [x12, #64]",
+        "add x21, x21, #1",
+        "add x23, x23, #1",
+        "sub x11, x11, #1",
+        "cbnz x11, 228b",
+        "b 227f",
+        "226:",
+        "227:",
+        "sub x9, x23, #128",
+        "cbz x9, 229f",
+        "b 230f",
+        "229:",
+        "add x1, x19, #64",
+        "movz x23, #0, lsl #0",
+        "movz x10, #1, lsl #0",
+        "230:",
+        "218:",
+        "24:",
+        "cbz x10, 231f",
+        "add x0, x19, #0",
+        "add x2, x10, #0",
+        "add x3, x20, #0",
+        "bl {vg_sha512_compress}",
+        "b 232f",
+        "231:",
+        "232:",
+        "cbnz x22, 22b",
+        "b 21f",
+        "20:",
+        "21:",
+        "ldr x19, [x20, #640]",
+        "ldr x21, [x20, #656]",
+        "ldr x22, [x20, #664]",
+        "ldr x23, [x20, #672]",
+        "ldr x24, [x20, #680]",
+        "ldr x20, [x20, #648]",
+        "ldr x30, [sp], #16",
+        "add sp, sp, #1376",
+        "ret",
+        vg_sha512_compress = sym super::sha512::vg_sha512_compress,
+    )
+}
+
+/// Finishes a SHA-384, SHA-512, SHA-512/224 or SHA-512/256 computation: if the streaming state `*state` represents a message of `count` bytes, hashed from an initial hash value, writes the final hash value `H⁽ᴺ⁾` of that message (64 bytes) to `*out`. The SHA-512 digest is all of it; the SHA-384, SHA-512/224 and SHA-512/256 digests are its first 48, 28 and 32 bytes.
+///
+/// Contract: `VG.Spec.Sha512.finalizeContract`. Constant time: only the pointers and `count` may affect timing, not the state.
+///
+/// # Safety
+///
+/// * `state` must be valid for reads and writes of 192 bytes.
+/// * `out` must be valid for reads and writes of 64 bytes.
+/// * `count` must be the exact length of the message: messages of 2⁶⁴ bytes or more are not supported.
+/// * The contents of `state` on return are unspecified.
+/// * `state` and `out` must not overlap each other (distinct Rust objects never do).
+/// * Neither `state` nor `out` may overlap the 1392 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_sha512_finalize(state: *mut [u8; 192], count: u64, out: *mut [u8; 64]) {
+    core::arch::naked_asm!(
+        "sub sp, sp, #1376",
+        "add x3, sp, #0",
+        "str x30, [sp, #-16]!",
+        "str x19, [x3, #640]",
+        "str x20, [x3, #648]",
+        "str x21, [x3, #656]",
+        "str x22, [x3, #664]",
+        "str x23, [x3, #672]",
+        "str x24, [x3, #680]",
+        "add x19, x0, #0",
+        "add x20, x3, #0",
+        "add x21, x2, #0",
+        "add x22, x1, #0",
+        "movz x9, #127, lsl #0",
+        "and x23, x22, x9",
+        "movz x9, #128, lsl #0",
+        "add x12, x19, x23",
+        "strb w9, [x12, #64]",
+        "add x23, x23, #1",
+        "add x24, x23, #15",
+        "lsr x24, x24, #7",
+        "20:",
+        "movz x11, #128, lsl #0",
+        "cbz x24, 21f",
+        "b 22f",
+        "21:",
+        "movz x11, #112, lsl #0",
+        "22:",
+        "movz x9, #0, lsl #0",
+        "sub x11, x11, x23",
+        "lsr x13, x11, #3",
+        "cbz x13, 23f",
+        "25:",
+        "add x12, x19, x23",
+        "str x9, [x12, #64]",
+        "add x23, x23, #8",
+        "sub x11, x11, #8",
+        "lsr x13, x11, #3",
+        "cbnz x13, 25b",
+        "b 24f",
+        "23:",
+        "24:",
+        "cbz x11, 26f",
+        "28:",
+        "add x12, x19, x23",
+        "strb w9, [x12, #64]",
+        "add x23, x23, #1",
+        "sub x11, x11, #1",
+        "cbnz x11, 28b",
+        "b 27f",
+        "26:",
+        "27:",
+        "cbz x24, 29f",
+        "b 210f",
+        "29:",
+        "lsr x9, x22, #61",
+        "rev x9, x9",
+        "str x9, [x19, #176]",
+        "add x9, x22, x22",
+        "add x9, x9, x9",
+        "add x9, x9, x9",
+        "rev x9, x9",
+        "str x9, [x19, #184]",
+        "210:",
+        "add x1, x19, #64",
+        "add x0, x19, #0",
+        "movz x2, #1, lsl #0",
+        "add x3, x20, #0",
+        "bl {vg_sha512_compress}",
+        "movz x23, #0, lsl #0",
+        "sub x24, x24, #1",
+        "cbz x24, 20b",
+        "ldr x9, [x19, #0]",
+        "rev x9, x9",
+        "str x9, [x21, #0]",
+        "ldr x9, [x19, #8]",
+        "rev x9, x9",
+        "str x9, [x21, #8]",
+        "ldr x9, [x19, #16]",
+        "rev x9, x9",
+        "str x9, [x21, #16]",
+        "ldr x9, [x19, #24]",
+        "rev x9, x9",
+        "str x9, [x21, #24]",
+        "ldr x9, [x19, #32]",
+        "rev x9, x9",
+        "str x9, [x21, #32]",
+        "ldr x9, [x19, #40]",
+        "rev x9, x9",
+        "str x9, [x21, #40]",
+        "ldr x9, [x19, #48]",
+        "rev x9, x9",
+        "str x9, [x21, #48]",
+        "ldr x9, [x19, #56]",
+        "rev x9, x9",
+        "str x9, [x21, #56]",
+        "ldr x19, [x20, #640]",
+        "ldr x21, [x20, #656]",
+        "ldr x22, [x20, #664]",
+        "ldr x23, [x20, #672]",
+        "ldr x24, [x20, #680]",
+        "ldr x20, [x20, #648]",
+        "ldr x30, [sp], #16",
+        "add sp, sp, #1376",
+        "ret",
+        vg_sha512_compress = sym super::sha512::vg_sha512_compress,
+    )
+}
+
+/// `vg_sha512_update`, with its working space in `*scratch`.
+///
+/// Contract: `VG.Spec.Sha512.updateScratchContract`. Constant time: only the pointers, `count` and `len` may affect timing, not the state or the data.
+///
+/// # Safety
+///
+/// * `state` must be valid for reads and writes of 192 bytes.
+/// * `data` must be valid for reads of `len` bytes.
 /// * `scratch` must be valid for reads and writes of 1376 bytes.
 /// * The contents of `scratch` on return are unspecified.
 /// * `state` and `scratch` must not overlap each other or `data` (distinct Rust objects never do).
 /// * None of `state`, `data` and `scratch` may overlap the 16 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_sha512_update(state: *mut [u8; 192], count: u64, data: *const u8, len: usize, scratch: *mut [u64; 172]) {
+pub(crate) unsafe extern "C" fn vg_sha512_update_scratch(state: *mut [u8; 192], count: u64, data: *const u8, len: usize, scratch: *mut [u64; 172]) {
     core::arch::naked_asm!(
         "str x30, [sp, #-16]!",
         "str x19, [x4, #640]",
@@ -5462,9 +5754,9 @@ pub(crate) unsafe extern "C" fn vg_sha512_update(state: *mut [u8; 192], count: u
     )
 }
 
-/// Finishes a SHA-384, SHA-512, SHA-512/224 or SHA-512/256 computation: if the streaming state `*state` represents a message of `count` bytes, hashed from an initial hash value, writes the final hash value `H⁽ᴺ⁾` of that message (64 bytes) to `*out`. The SHA-512 digest is all of it; the SHA-384, SHA-512/224 and SHA-512/256 digests are its first 48, 28 and 32 bytes.
+/// `vg_sha512_finalize`, with its working space in `*scratch`.
 ///
-/// Contract: `VG.Spec.Sha512.finalizeContract`. Constant time: only the pointers and `count` may affect timing, not the state.
+/// Contract: `VG.Spec.Sha512.finalizeScratchContract`. Constant time: only the pointers and `count` may affect timing, not the state.
 ///
 /// # Safety
 ///
@@ -5477,7 +5769,7 @@ pub(crate) unsafe extern "C" fn vg_sha512_update(state: *mut [u8; 192], count: u
 /// * `state`, `out` and `scratch` must not overlap each other (distinct Rust objects never do).
 /// * None of `state`, `out` and `scratch` may overlap the 16 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_sha512_finalize(state: *mut [u8; 192], count: u64, out: *mut [u8; 64], scratch: *mut [u64; 172]) {
+pub(crate) unsafe extern "C" fn vg_sha512_finalize_scratch(state: *mut [u8; 192], count: u64, out: *mut [u8; 64], scratch: *mut [u64; 172]) {
     core::arch::naked_asm!(
         "str x30, [sp, #-16]!",
         "str x19, [x3, #640]",
@@ -5596,13 +5888,317 @@ pub(crate) const VG_SHA512_UPDATE_SHA3_FEATURES: crate::cpu::Features = crate::c
 ///
 /// * `state` must be valid for reads and writes of 192 bytes.
 /// * `data` must be valid for reads of `len` bytes.
+/// * `state` must not overlap `data` (distinct Rust objects never do).
+/// * Neither `state` nor `data` may overlap the 1392 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `sha3` target feature.
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_sha512_update_sha3(state: *mut [u8; 192], count: u64, data: *const u8, len: usize) {
+    core::arch::naked_asm!(
+        ".arch_extension sha3",
+        "sub sp, sp, #1376",
+        "add x4, sp, #0",
+        "str x30, [sp, #-16]!",
+        "str x19, [x4, #640]",
+        "str x20, [x4, #648]",
+        "str x21, [x4, #656]",
+        "str x22, [x4, #664]",
+        "str x23, [x4, #672]",
+        "str x24, [x4, #680]",
+        "add x19, x0, #0",
+        "add x20, x4, #0",
+        "add x21, x2, #0",
+        "add x22, x3, #0",
+        "movz x9, #127, lsl #0",
+        "and x23, x1, x9",
+        "cbz x22, 20f",
+        "22:",
+        "movz x10, #0, lsl #0",
+        "cbz x23, 23f",
+        "movz x11, #128, lsl #0",
+        "sub x11, x11, x23",
+        "lsr x9, x22, #7",
+        "cbz x9, 25f",
+        "b 26f",
+        "25:",
+        "add x9, x22, x23",
+        "lsr x9, x9, #7",
+        "cbz x9, 27f",
+        "b 28f",
+        "27:",
+        "add x11, x22, #0",
+        "28:",
+        "26:",
+        "sub x22, x22, x11",
+        "lsr x13, x11, #3",
+        "cbz x13, 29f",
+        "211:",
+        "ldr x9, [x21, #0]",
+        "add x12, x19, x23",
+        "str x9, [x12, #64]",
+        "add x21, x21, #8",
+        "add x23, x23, #8",
+        "sub x11, x11, #8",
+        "lsr x13, x11, #3",
+        "cbnz x13, 211b",
+        "b 210f",
+        "29:",
+        "210:",
+        "cbz x11, 212f",
+        "214:",
+        "ldrb w9, [x21, #0]",
+        "add x12, x19, x23",
+        "strb w9, [x12, #64]",
+        "add x21, x21, #1",
+        "add x23, x23, #1",
+        "sub x11, x11, #1",
+        "cbnz x11, 214b",
+        "b 213f",
+        "212:",
+        "213:",
+        "sub x9, x23, #128",
+        "cbz x9, 215f",
+        "b 216f",
+        "215:",
+        "add x1, x19, #64",
+        "movz x23, #0, lsl #0",
+        "movz x10, #1, lsl #0",
+        "216:",
+        "b 24f",
+        "23:",
+        "lsr x9, x22, #7",
+        "cbz x9, 217f",
+        "add x1, x21, #0",
+        "lsr x10, x22, #7",
+        "lsl x9, x10, #7",
+        "add x21, x21, x9",
+        "sub x22, x22, x9",
+        "b 218f",
+        "217:",
+        "movz x11, #128, lsl #0",
+        "sub x11, x11, x23",
+        "lsr x9, x22, #7",
+        "cbz x9, 219f",
+        "b 220f",
+        "219:",
+        "add x9, x22, x23",
+        "lsr x9, x9, #7",
+        "cbz x9, 221f",
+        "b 222f",
+        "221:",
+        "add x11, x22, #0",
+        "222:",
+        "220:",
+        "sub x22, x22, x11",
+        "lsr x13, x11, #3",
+        "cbz x13, 223f",
+        "225:",
+        "ldr x9, [x21, #0]",
+        "add x12, x19, x23",
+        "str x9, [x12, #64]",
+        "add x21, x21, #8",
+        "add x23, x23, #8",
+        "sub x11, x11, #8",
+        "lsr x13, x11, #3",
+        "cbnz x13, 225b",
+        "b 224f",
+        "223:",
+        "224:",
+        "cbz x11, 226f",
+        "228:",
+        "ldrb w9, [x21, #0]",
+        "add x12, x19, x23",
+        "strb w9, [x12, #64]",
+        "add x21, x21, #1",
+        "add x23, x23, #1",
+        "sub x11, x11, #1",
+        "cbnz x11, 228b",
+        "b 227f",
+        "226:",
+        "227:",
+        "sub x9, x23, #128",
+        "cbz x9, 229f",
+        "b 230f",
+        "229:",
+        "add x1, x19, #64",
+        "movz x23, #0, lsl #0",
+        "movz x10, #1, lsl #0",
+        "230:",
+        "218:",
+        "24:",
+        "cbz x10, 231f",
+        "add x0, x19, #0",
+        "add x2, x10, #0",
+        "add x3, x20, #0",
+        "bl {vg_sha512_compress_sha3}",
+        "b 232f",
+        "231:",
+        "232:",
+        "cbnz x22, 22b",
+        "b 21f",
+        "20:",
+        "21:",
+        "ldr x19, [x20, #640]",
+        "ldr x21, [x20, #656]",
+        "ldr x22, [x20, #664]",
+        "ldr x23, [x20, #672]",
+        "ldr x24, [x20, #680]",
+        "ldr x20, [x20, #648]",
+        "ldr x30, [sp], #16",
+        "add sp, sp, #1376",
+        "ret",
+        ".arch_extension nosha3",
+        vg_sha512_compress_sha3 = sym super::sha512::vg_sha512_compress_sha3,
+    )
+}
+
+/// The CPU features `vg_sha512_finalize_sha3` requires (`Artifact.features`).
+pub(crate) const VG_SHA512_FINALIZE_SHA3_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["sha3"]);
+
+/// Finishes a SHA-384, SHA-512, SHA-512/224 or SHA-512/256 computation: if the streaming state `*state` represents a message of `count` bytes, hashed from an initial hash value, writes the final hash value `H⁽ᴺ⁾` of that message (64 bytes) to `*out`. The SHA-512 digest is all of it; the SHA-384, SHA-512/224 and SHA-512/256 digests are its first 48, 28 and 32 bytes.
+///
+/// Contract: `VG.Spec.Sha512.finalizeContract`. Constant time: only the pointers and `count` may affect timing, not the state.
+///
+/// # Safety
+///
+/// * `state` must be valid for reads and writes of 192 bytes.
+/// * `out` must be valid for reads and writes of 64 bytes.
+/// * `count` must be the exact length of the message: messages of 2⁶⁴ bytes or more are not supported.
+/// * The contents of `state` on return are unspecified.
+/// * `state` and `out` must not overlap each other (distinct Rust objects never do).
+/// * Neither `state` nor `out` may overlap the 1392 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `sha3` target feature.
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_sha512_finalize_sha3(state: *mut [u8; 192], count: u64, out: *mut [u8; 64]) {
+    core::arch::naked_asm!(
+        ".arch_extension sha3",
+        "sub sp, sp, #1376",
+        "add x3, sp, #0",
+        "str x30, [sp, #-16]!",
+        "str x19, [x3, #640]",
+        "str x20, [x3, #648]",
+        "str x21, [x3, #656]",
+        "str x22, [x3, #664]",
+        "str x23, [x3, #672]",
+        "str x24, [x3, #680]",
+        "add x19, x0, #0",
+        "add x20, x3, #0",
+        "add x21, x2, #0",
+        "add x22, x1, #0",
+        "movz x9, #127, lsl #0",
+        "and x23, x22, x9",
+        "movz x9, #128, lsl #0",
+        "add x12, x19, x23",
+        "strb w9, [x12, #64]",
+        "add x23, x23, #1",
+        "add x24, x23, #15",
+        "lsr x24, x24, #7",
+        "20:",
+        "movz x11, #128, lsl #0",
+        "cbz x24, 21f",
+        "b 22f",
+        "21:",
+        "movz x11, #112, lsl #0",
+        "22:",
+        "movz x9, #0, lsl #0",
+        "sub x11, x11, x23",
+        "lsr x13, x11, #3",
+        "cbz x13, 23f",
+        "25:",
+        "add x12, x19, x23",
+        "str x9, [x12, #64]",
+        "add x23, x23, #8",
+        "sub x11, x11, #8",
+        "lsr x13, x11, #3",
+        "cbnz x13, 25b",
+        "b 24f",
+        "23:",
+        "24:",
+        "cbz x11, 26f",
+        "28:",
+        "add x12, x19, x23",
+        "strb w9, [x12, #64]",
+        "add x23, x23, #1",
+        "sub x11, x11, #1",
+        "cbnz x11, 28b",
+        "b 27f",
+        "26:",
+        "27:",
+        "cbz x24, 29f",
+        "b 210f",
+        "29:",
+        "lsr x9, x22, #61",
+        "rev x9, x9",
+        "str x9, [x19, #176]",
+        "add x9, x22, x22",
+        "add x9, x9, x9",
+        "add x9, x9, x9",
+        "rev x9, x9",
+        "str x9, [x19, #184]",
+        "210:",
+        "add x1, x19, #64",
+        "add x0, x19, #0",
+        "movz x2, #1, lsl #0",
+        "add x3, x20, #0",
+        "bl {vg_sha512_compress_sha3}",
+        "movz x23, #0, lsl #0",
+        "sub x24, x24, #1",
+        "cbz x24, 20b",
+        "ldr x9, [x19, #0]",
+        "rev x9, x9",
+        "str x9, [x21, #0]",
+        "ldr x9, [x19, #8]",
+        "rev x9, x9",
+        "str x9, [x21, #8]",
+        "ldr x9, [x19, #16]",
+        "rev x9, x9",
+        "str x9, [x21, #16]",
+        "ldr x9, [x19, #24]",
+        "rev x9, x9",
+        "str x9, [x21, #24]",
+        "ldr x9, [x19, #32]",
+        "rev x9, x9",
+        "str x9, [x21, #32]",
+        "ldr x9, [x19, #40]",
+        "rev x9, x9",
+        "str x9, [x21, #40]",
+        "ldr x9, [x19, #48]",
+        "rev x9, x9",
+        "str x9, [x21, #48]",
+        "ldr x9, [x19, #56]",
+        "rev x9, x9",
+        "str x9, [x21, #56]",
+        "ldr x19, [x20, #640]",
+        "ldr x21, [x20, #656]",
+        "ldr x22, [x20, #664]",
+        "ldr x23, [x20, #672]",
+        "ldr x24, [x20, #680]",
+        "ldr x20, [x20, #648]",
+        "ldr x30, [sp], #16",
+        "add sp, sp, #1376",
+        "ret",
+        ".arch_extension nosha3",
+        vg_sha512_compress_sha3 = sym super::sha512::vg_sha512_compress_sha3,
+    )
+}
+
+/// The CPU features `vg_sha512_update_scratch_sha3` requires (`Artifact.features`).
+pub(crate) const VG_SHA512_UPDATE_SCRATCH_SHA3_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["sha3"]);
+
+/// `vg_sha512_update`, with its working space in `*scratch`.
+///
+/// Contract: `VG.Spec.Sha512.updateScratchContract`. Constant time: only the pointers, `count` and `len` may affect timing, not the state or the data.
+///
+/// # Safety
+///
+/// * `state` must be valid for reads and writes of 192 bytes.
+/// * `data` must be valid for reads of `len` bytes.
 /// * `scratch` must be valid for reads and writes of 1376 bytes.
 /// * The contents of `scratch` on return are unspecified.
 /// * `state` and `scratch` must not overlap each other or `data` (distinct Rust objects never do).
 /// * None of `state`, `data` and `scratch` may overlap the 16 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha3` target feature.
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_sha512_update_sha3(state: *mut [u8; 192], count: u64, data: *const u8, len: usize, scratch: *mut [u64; 172]) {
+pub(crate) unsafe extern "C" fn vg_sha512_update_scratch_sha3(state: *mut [u8; 192], count: u64, data: *const u8, len: usize, scratch: *mut [u64; 172]) {
     core::arch::naked_asm!(
         ".arch_extension sha3",
         "str x30, [sp, #-16]!",
@@ -5758,12 +6354,12 @@ pub(crate) unsafe extern "C" fn vg_sha512_update_sha3(state: *mut [u8; 192], cou
     )
 }
 
-/// The CPU features `vg_sha512_finalize_sha3` requires (`Artifact.features`).
-pub(crate) const VG_SHA512_FINALIZE_SHA3_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["sha3"]);
+/// The CPU features `vg_sha512_finalize_scratch_sha3` requires (`Artifact.features`).
+pub(crate) const VG_SHA512_FINALIZE_SCRATCH_SHA3_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["sha3"]);
 
-/// Finishes a SHA-384, SHA-512, SHA-512/224 or SHA-512/256 computation: if the streaming state `*state` represents a message of `count` bytes, hashed from an initial hash value, writes the final hash value `H⁽ᴺ⁾` of that message (64 bytes) to `*out`. The SHA-512 digest is all of it; the SHA-384, SHA-512/224 and SHA-512/256 digests are its first 48, 28 and 32 bytes.
+/// `vg_sha512_finalize`, with its working space in `*scratch`.
 ///
-/// Contract: `VG.Spec.Sha512.finalizeContract`. Constant time: only the pointers and `count` may affect timing, not the state.
+/// Contract: `VG.Spec.Sha512.finalizeScratchContract`. Constant time: only the pointers and `count` may affect timing, not the state.
 ///
 /// # Safety
 ///
@@ -5777,7 +6373,7 @@ pub(crate) const VG_SHA512_FINALIZE_SHA3_FEATURES: crate::cpu::Features = crate:
 /// * None of `state`, `out` and `scratch` may overlap the 16 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha3` target feature.
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_sha512_finalize_sha3(state: *mut [u8; 192], count: u64, out: *mut [u8; 64], scratch: *mut [u64; 172]) {
+pub(crate) unsafe extern "C" fn vg_sha512_finalize_scratch_sha3(state: *mut [u8; 192], count: u64, out: *mut [u8; 64], scratch: *mut [u64; 172]) {
     core::arch::naked_asm!(
         ".arch_extension sha3",
         "str x30, [sp, #-16]!",

@@ -36,9 +36,9 @@ def hash (v : Compress) (I : Spec.Hmac.Instance) (D : Nat) (initN : String) (iv 
   compC := v.code
   initN := initN
   initC := Impl.Sha512.AArch64.Stream.init iv
-  updN := Spec.Sha512.updateApi.name ++ v.suffix
+  updN := Spec.Sha512.updateScratchApi.name ++ v.suffix
   updC := v.update
-  finN := Spec.Sha512.finalizeApi.name ++ v.suffix
+  finN := Spec.Sha512.finalizeScratchApi.name ++ v.suffix
   finC := v.finalize
   hmacInitN := I.initApi.name ++ v.suffix
   hmacFinN := I.finalizeApi.name ++ v.suffix
@@ -151,19 +151,34 @@ def ok (hR : I.S.Repr = Spec.Sha512.Repr iv)
 end
 
 /-- Streaming wrappers shared by all four digest sizes. The SHA-512 member
-emits them once per backend through `MdHash`; the other members call them. -/
+emits them once per backend through `MdHash`; the other members call them:
+`update` and `finalize`, which keep their working space in a frame of their
+own, and `update_scratch` and `finalize_scratch`, which HMAC's, PBKDF2's and
+Ed25519's code calls with theirs. -/
 def stream (v : Compress) : List StreamFn := [
   { api := Spec.Sha512.updateApi
-    code := v.update
-    contract := Spec.Sha512.updateContract AArch64.abi 16
-    stack := 16
+    code := Impl.StackScratch.AArch64.withStackScratch 1376 .x4 v.update
+    contract := Spec.Sha512.updateContract AArch64.abi (16 + 1376)
+    stack := 16 + 1376
     verified := Proof.Sha512.AArch64.Shared.update_of v.update_verified
     spSafe := Code.all_of_forall (fun _ => rfl) _ },
   { api := Spec.Sha512.finalizeApi
-    code := v.finalize
-    contract := Spec.Sha512.finalizeContract AArch64.abi 16
-    stack := 16
+    code := Impl.StackScratch.AArch64.withStackScratch 1376 .x3 v.finalize
+    contract := Spec.Sha512.finalizeContract AArch64.abi (16 + 1376)
+    stack := 16 + 1376
     verified := Proof.Sha512.AArch64.Shared.finalize_of v.finalize_verified
+    spSafe := Code.all_of_forall (fun _ => rfl) _ },
+  { api := Spec.Sha512.updateScratchApi
+    code := v.update
+    contract := Spec.Sha512.updateScratchContract AArch64.abi 16
+    stack := 16
+    verified := Proof.Sha512.AArch64.Shared.updateScratch_of v.update_verified
+    spSafe := Code.all_of_forall (fun _ => rfl) _ },
+  { api := Spec.Sha512.finalizeScratchApi
+    code := v.finalize
+    contract := Spec.Sha512.finalizeScratchContract AArch64.abi 16
+    stack := 16
+    verified := Proof.Sha512.AArch64.Shared.finalizeScratch_of v.finalize_verified
     spSafe := Code.all_of_forall (fun _ => rfl) _ }]
 
 /-! ## SHA-384 -/

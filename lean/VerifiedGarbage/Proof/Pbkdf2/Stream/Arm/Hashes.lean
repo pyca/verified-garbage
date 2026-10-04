@@ -94,8 +94,8 @@ def md5OK : HashOK md5H where
 
 /-- The SHA-512 family member with initial hash value `iv` and a `D`-byte digest. -/
 def sha512H (D : Nat) (initN : String) (iv : Spec.Sha512.HashValue) : Hash :=
-  ⟨128, 192, D, 64, 34, initN, Impl.Sha512.Arm.Stream.init iv, "vg_sha512_update",
-    Impl.Sha512.Arm.Stream.update, "vg_sha512_finalize", Impl.Sha512.Arm.Stream.finalize⟩
+  ⟨128, 192, D, 64, 34, initN, Impl.Sha512.Arm.Stream.init iv, "vg_sha512_update_scratch",
+    Impl.Sha512.Arm.Stream.update, "vg_sha512_finalize_scratch", Impl.Sha512.Arm.Stream.finalize⟩
 
 theorem sha512_updNF : Impl.Sha512.Arm.Stream.update.noFrames = true := by decide +kernel
 theorem sha512_finNF : Impl.Sha512.Arm.Stream.finalize.noFrames = true := by decide +kernel

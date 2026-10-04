@@ -229,7 +229,7 @@ theorem init_step (hc : Ctx L g vec m₀ t) (hL : L.Ok) (ha : Arguments L m₀) 
 
 theorem update_step (v : Whole.Backend) (hc : Ctx L g vec m₀ t) (hL : L.Ok) (ha : Arguments L m₀)
     (hh : Spec.Sha512.Repr Spec.Sha512.H0_512 t.mem L.scr []) :
-    WP isa (callWith updateArgs (Spec.Sha512.updateApi.name ++ v.suffix) v.update) t fun u =>
+    WP isa (callWith updateArgs (Spec.Sha512.updateScratchApi.name ++ v.suffix) v.update) t fun u =>
       Ctx L g vec m₀ u ∧ Spec.Sha512.Repr Spec.Sha512.H0_512 u.mem L.scr
         (Spec.Ed25519.bytesAt m₀ L.seed 32) := by
   refine WP.seq (WP.mono (setup_ok hc hL ha
@@ -270,7 +270,7 @@ theorem finalize_writes (L : Lay) : ∀ r ∈ Whole.finalizeWr L.scr (L.E + 192)
 
 theorem finalize_step (v : Whole.Backend) (hc : Ctx L g vec m₀ t) (hL : L.Ok) (ha : Arguments L m₀)
     (hh : Spec.Sha512.Repr Spec.Sha512.H0_512 t.mem L.scr (Spec.Ed25519.bytesAt m₀ L.seed 32)) :
-    WP isa (callWith finalizeArgs (Spec.Sha512.finalizeApi.name ++ v.suffix) v.finalize) t fun u =>
+    WP isa (callWith finalizeArgs (Spec.Sha512.finalizeScratchApi.name ++ v.suffix) v.finalize) t fun u =>
       Ctx L g vec m₀ u ∧ Spec.Ed25519.bytesAt u.mem (L.E + 192) 64 =
         Spec.Sha512.sha512 (Spec.Ed25519.bytesAt m₀ L.seed 32) := by
   refine WP.seq (WP.mono (setup_ok hc hL ha

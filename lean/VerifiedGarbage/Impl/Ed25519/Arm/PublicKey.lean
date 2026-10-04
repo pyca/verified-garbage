@@ -30,8 +30,8 @@ def finalizeArgs : List Instr := setup [(.r0, .caller 2 0), (.r2, .const 32), (.
 def baseArgs : List Instr := setup [(.r0, .caller 0 0), (.r1, .frame 24), (.r2, .caller 2 0)] []
 def hash : Prog isa :=
   .seq (callWith initArgs Spec.Sha512.init512Api.name (Sha512.Arm.Stream.init Spec.Sha512.H0_512))
-    (.seq (callWith updateArgs Spec.Sha512.updateApi.name Sha512.Arm.Stream.update)
-      (callWith finalizeArgs Spec.Sha512.finalizeApi.name Sha512.Arm.Stream.finalize))
+    (.seq (callWith updateArgs Spec.Sha512.updateScratchApi.name Sha512.Arm.Stream.update)
+      (callWith finalizeArgs Spec.Sha512.finalizeScratchApi.name Sha512.Arm.Stream.finalize))
 def wipe : List Instr := zeroWords 6 56
 def body : Prog isa := .seq hash (.seq (.block prune)
   (.seq (callWith baseArgs "vg_ed25519_scalar_base" scalarBase) (.block wipe)))

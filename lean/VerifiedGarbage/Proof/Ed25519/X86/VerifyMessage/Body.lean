@@ -301,7 +301,7 @@ theorem finalize_step (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : Arguments L m₀)
     {msg : List Byte}
     (hlen : msg.length < 2 ^ 64) (hcount : L.len.toNat + 64 = msg.length)
     (hr : Spec.Sha512.Repr Spec.Sha512.H0_512 s.mem (L.scr.setWidth 64) msg) :
-    WP isa (VG.Impl.Ed25519.X86.PublicKey.callWith finalizeArgs Spec.Sha512.finalizeApi.name Impl.Sha512.X86.Stream.finalize) s fun t => Ctx L g m₀ t ∧ Frame (hashWrites L) s.mem t.mem ∧
+    WP isa (VG.Impl.Ed25519.X86.PublicKey.callWith finalizeArgs Spec.Sha512.finalizeScratchApi.name Impl.Sha512.X86.Stream.finalize) s fun t => Ctx L g m₀ t ∧ Frame (hashWrites L) s.mem t.mem ∧
       Spec.Ed25519.bytesAt t.mem (L.E.setWidth 64 + 192) 64 = Spec.Sha512.sha512 msg := by
   refine WP.seq (WP.mono (finalizeArgs_ok hc hL ha) fun u ⟨hu, hf, a0, a3, a4, ac⟩ => ?_)
   have H := hashSpace hL
