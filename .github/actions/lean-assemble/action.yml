@@ -18,6 +18,12 @@ inputs:
   cache-key:
     description: That restore's primary key, to save the build under.
     required: true
+  manifest-cache:
+    description: The key of the cache of the build's manifest (the plan job's `manifest-cache`).
+    required: true
+  manifest-cache-prefix:
+    description: Its fallback, the key of other sources' manifests (`manifest-cache-prefix`).
+    required: true
 
 runs:
   using: composite
@@ -68,13 +74,14 @@ runs:
     # after it merges main, and it would re-prove everything main changed
     # since. (Merge queue runs each get their own branch, whose caches no
     # other run can restore.)
+    # Unless the job restored it already (the plan job, to plan).
     - name: Restore the manifest of the last build
-      if: ${{ inputs.cache-hit != 'true' && github.ref == 'refs/heads/main' }}
+      if: ${{ inputs.cache-hit != 'true' && github.ref == 'refs/heads/main' && hashFiles('.lean-manifest/manifest.json') == '' }}
       uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
         path: .lean-manifest
-        key: lean-manifest-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('lean/lean-toolchain', 'lean/lake-manifest.json') }}-${{ hashFiles('lean/lakefile.toml', 'lean/*.lean', 'lean/VerifiedGarbage/**', 'lean/VerifiedGarbageTest/**') }}
-        restore-keys: lean-manifest-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('lean/lean-toolchain', 'lean/lake-manifest.json') }}-
+        key: ${{ inputs.manifest-cache }}
+        restore-keys: ${{ inputs.manifest-cache-prefix }}
     - name: Write the manifest of this build
       id: manifest
       if: ${{ inputs.cache-hit != 'true' && github.ref == 'refs/heads/main' }}

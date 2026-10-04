@@ -40,10 +40,30 @@ jobs:
       shards: ${{ steps.plan.outputs.shards }}
       build-key: ${{ steps.plan.outputs.build-key }}
       reuse: ${{ steps.reuse.outputs.run-id }}
+      # The caches' keys, for every job that restores them.
+      build-cache: ${{ steps.keys.outputs.build-cache }}
+      build-cache-prefix: ${{ steps.keys.outputs.build-cache-prefix }}
+      manifest-cache: ${{ steps.keys.outputs.manifest-cache }}
+      manifest-cache-prefix: ${{ steps.keys.outputs.manifest-cache-prefix }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+      # The keys of the caches of the build and of its manifest, for every
+      # job that restores them: the toolchain and dependencies (a prefix,
+      # which other sources' entries share, as fallbacks), then the sources.
+      - name: Name the caches
+        id: keys
+        env:
+          PREFIX: ${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('lean/lean-toolchain', 'lean/lake-manifest.json') }}-
+          SOURCES: ${{ hashFiles('lean/lakefile.toml', 'lean/*.lean', 'lean/VerifiedGarbage/**', 'lean/VerifiedGarbageTest/**') }}
+        run: |
+          {
+            echo "build-cache-prefix=lean-build-$PREFIX"
+            echo "build-cache=lean-build-$PREFIX$SOURCES"
+            echo "manifest-cache-prefix=lean-manifest-$PREFIX"
+            echo "manifest-cache=lean-manifest-$PREFIX$SOURCES"
+          } >> "$GITHUB_OUTPUT"
       # GitHub moves main to exactly the commit its merge queue tested, with
       # this workflow, restoring only main's caches (and its own new
       # branch's, which start empty): that run's Lean outputs are what a push
@@ -72,8 +92,8 @@ jobs:
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: .lean-manifest
-          key: lean-manifest-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('lean/lean-toolchain', 'lean/lake-manifest.json') }}-${{ hashFiles('lean/lakefile.toml', 'lean/*.lean', 'lean/VerifiedGarbage/**', 'lean/VerifiedGarbageTest/**') }}
-          restore-keys: lean-manifest-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('lean/lean-toolchain', 'lean/lake-manifest.json') }}-
+          key: ${{ steps.keys.outputs.manifest-cache }}
+          restore-keys: ${{ steps.keys.outputs.manifest-cache-prefix }}
       - id: plan
         env:
           MATCHED: ${{ steps.manifest.outputs.cache-matched-key }}
@@ -111,10 +131,10 @@ jobs:
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: lean/.lake/build
-          key: lean-build-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('lean/lean-toolchain', 'lean/lake-manifest.json') }}-${{ hashFiles('lean/lakefile.toml', 'lean/*.lean', 'lean/VerifiedGarbage/**', 'lean/VerifiedGarbageTest/**') }}
+          key: ${{ steps.keys.outputs.build-cache }}
           restore-keys: |
             ${{ steps.plan.outputs.build-key }}
-            lean-build-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('lean/lean-toolchain', 'lean/lake-manifest.json') }}-
+            ${{ steps.keys.outputs.build-cache-prefix }}
       - uses: ./.github/actions/lean-setup
         id: lean-setup
         if: ${{ steps.here.outputs.build == 'true' }}
@@ -143,6 +163,8 @@ jobs:
           id: lean
           cache-hit: ${{ steps.lean-build.outputs.cache-hit }}
           cache-key: ${{ steps.lean-build.outputs.cache-primary-key }}
+          manifest-cache: ${{ steps.keys.outputs.manifest-cache }}
+          manifest-cache-prefix: ${{ steps.keys.outputs.manifest-cache-prefix }}
 
   # Each shard uploads its outputs, then lists the run's artifacts; one that
   # finds every shard's assembles them (`lean-assemble`), on the runner it
@@ -190,10 +212,10 @@ jobs:
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: lean/.lake/build
-          key: lean-build-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('lean/lean-toolchain', 'lean/lake-manifest.json') }}-${{ hashFiles('lean/lakefile.toml', 'lean/*.lean', 'lean/VerifiedGarbage/**', 'lean/VerifiedGarbageTest/**') }}
+          key: ${{ needs.lean.outputs.build-cache }}
           restore-keys: |
             ${{ needs.lean.outputs.build-key }}
-            lean-build-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('lean/lean-toolchain', 'lean/lake-manifest.json') }}-
+            ${{ needs.lean.outputs.build-cache-prefix }}
       - uses: ./.github/actions/lean-setup
         id: lean-setup
       - wait: [lean-build]
@@ -269,6 +291,8 @@ jobs:
           id: ${{ matrix.shard }}
           cache-hit: ${{ steps.lean-build.outputs.cache-hit }}
           cache-key: ${{ steps.lean-build.outputs.cache-primary-key }}
+          manifest-cache: ${{ needs.lean.outputs.manifest-cache }}
+          manifest-cache-prefix: ${{ needs.lean.outputs.manifest-cache-prefix }}
       # Last: only once every check of the whole build has passed.
       - name: Record that this shard assembled the build
         if: ${{ steps.all-uploaded.outputs.all == 'true' }}
@@ -770,10 +794,10 @@ jobs:
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: lean/.lake/build
-          key: lean-build-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('lean/lean-toolchain', 'lean/lake-manifest.json') }}-${{ hashFiles('lean/lakefile.toml', 'lean/*.lean', 'lean/VerifiedGarbage/**', 'lean/VerifiedGarbageTest/**') }}
+          key: ${{ needs.lean.outputs.build-cache }}
           restore-keys: |
             ${{ needs.lean.outputs.build-key }}
-            lean-build-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('lean/lean-toolchain', 'lean/lake-manifest.json') }}-
+            ${{ needs.lean.outputs.build-cache-prefix }}
       - uses: ./.github/actions/lean-setup
         id: lean-setup
         if: ${{ steps.check.outputs.assemble == 'true' }}
@@ -795,3 +819,5 @@ jobs:
           id: all-green
           cache-hit: ${{ steps.lean-build.outputs.cache-hit }}
           cache-key: ${{ steps.lean-build.outputs.cache-primary-key }}
+          manifest-cache: ${{ needs.lean.outputs.manifest-cache }}
+          manifest-cache-prefix: ${{ needs.lean.outputs.manifest-cache-prefix }}
