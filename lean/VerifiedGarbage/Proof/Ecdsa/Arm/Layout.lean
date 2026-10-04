@@ -12,7 +12,7 @@ of its arguments (`Pre`), for any curve of `n` 64-bit words, and the state
 The arguments are `out`, `d`, `digest` and `k` in `r0`–`r3` and `scratch`
 on the stack (AAPCS). The working space is the first `4096` bytes of the
 `8192` at `scratch` (every offset in it is an immediate offset of `ldr` and
-`str`): the saved registers in `[0, 32)` and `out` at 32, the slots
+`str`): the saved registers in `[0, 36)`, the slots
 `c.sl i = 64 + 8 n i` of `n` words for `i < nslots`, the tables of bits
 `bitsAt n j` (`64 n` bytes each, `j < 3`), and the multiplications'
 accumulator at `c.wk = bitsAt n 3`.
@@ -83,7 +83,7 @@ structure Pre (c : Cfg) (s : State) : Prop where
   sp_fit : s.sp.toNat + 4 ≤ 2 ^ 32
 
 /-- The registers `A` names hold none of the working registers of the setup. -/
-def argsOk (A : Args) : Prop := A.k ∉ [.r4, .r12] ∧ A.d ∉ [.r4, .r12] ∧ A.e ∉ [.r4, .r12]
+def argsOk (A : Args) : Prop := A.k ∉ [.r4, .r12, .lr] ∧ A.d ∉ [.r4, .r12, .lr] ∧ A.e ∉ [.r4, .r12, .lr]
 
 /-- What `setupWith A` needs of its arguments: `scratch` readable and its
 `8192` bytes writable, `k`, `d` and the hash readable and apart from the
@@ -133,15 +133,15 @@ theorem Pre.setup {c : Cfg} {s : State} (hp : Pre c s) (h7 : c.n < 7) : SetupPre
 abbrev sv (c : Cfg) (base : Addr) (s : State) (i : Nat) : Nat := wordsVal s.mem base (c.sl i) c.n
 
 /-- What `setupWith A` leaves, from the state `s₀` at entry, with the working
-space at `base`: `r12 = base`, `r4`–`r11` in `[0, 32)` and `out` at 32, `k`,
-`d` and the hash in their slots, the constants in theirs, and the flag all
-ones; only `r4` and `r12` and the working space changed. -/
+space at `base`: `r12 = base`, `r4`–`r11` and `lr` in `[0, 36)`, `lr = out`,
+`k`, `d` and the hash in their slots, the constants in theirs, and the flag
+all ones; only `r4`, `r12`, `lr` and the working space changed. -/
 structure SetupPost (c : Cfg) (A : Args) (s₀ : State) (base : Addr) (s : State) : Prop where
   scr : Scr s base size
-  keep : VG.Proof.X25519.Arm.Rest [.r4, .r12] s₀ s
+  keep : VG.Proof.X25519.Arm.Rest [.r4, .r12, .lr] s₀ s
   unch : Unch base [(0, size)] s₀.mem s.mem
   saved : ∀ rd ∈ Cfg.saved, s.mem.readW (off base rd.2) 32 = s₀.gpr rd.1
-  out : s.mem.readW (off base Cfg.outAt) 32 = s₀.gpr .r0
+  lr : s.gpr .lr = s₀.gpr .r0
   k : sv c base s K = ofBytes (Spec.Ecdsa.bytesAt s₀.mem (ptr s₀ A.k) (8 * c.n))
   d : sv c base s D = ofBytes (Spec.Ecdsa.bytesAt s₀.mem (ptr s₀ A.d) (8 * c.n))
   e : sv c base s E = ofBytes (Spec.Ecdsa.bytesAt s₀.mem (ptr s₀ A.e) (8 * c.n))

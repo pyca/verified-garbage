@@ -3,9 +3,9 @@ import VerifiedGarbage.Proof.Ecdsa.Arm.Scalar
 /-!
 # ECDSA on 32-bit ARM: the result
 
-`finish` reads `out` from where the setup kept it, writes `r ‖ s` big-endian
-to it, or zeros, by the flag's mask, returns the flag's low bit and restores
-`r4`–`r11` (`finish_ok`). The stores are outside the working space, so it
+`finish` writes `r ‖ s` big-endian to `out` (in `lr`), or zeros, by the
+flag's mask, returns the flag's low bit and restores `r4`–`r11` and `lr`
+(`finish_ok`). The stores are outside the working space, so it
 keeps its numbers and the saved registers (`Outside.unch_far`).
 -/
 
@@ -45,14 +45,14 @@ theorem restore_eq : Cfg.restore = Cfg.saved.map fun p => .ldr p.1 wb p.2 := rfl
 
 theorem saved_nodup : (Cfg.saved.map Prod.fst).Nodup := by decide
 
-theorem finish_eq (c : Cfg) : c.finish = .ldr .r10 wb (c.sl FLAG) :: .ldr .r1 wb Cfg.outAt ::
-    (storeBE c.n .r1 0 (c.sl RR) ++ (storeBE c.n .r1 (8 * c.n) (c.sl SS) ++
+theorem finish_eq (c : Cfg) : c.finish = .ldr .r10 wb (c.sl FLAG) ::
+    (storeBE c.n .lr 0 (c.sl RR) ++ (storeBE c.n .lr (8 * c.n) (c.sl SS) ++
     (.dp .and .r0 .r10 (.imm 1) :: Cfg.restore))) := by
   simp only [Cfg.finish, List.append_assoc, List.cons_append, List.nil_append]
 
 /-- The result, the return value and the callee-saved registers. -/
 theorem finish_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size) {o32 : BitVec 32}
-    (hout : s.mem.readW (off base Cfg.outAt) 32 = o32) (hofit : o32.toNat + 16 * c.n ≤ 2 ^ 32)
+    (hout : s.gpr .lr = o32) (hofit : o32.toNat + 16 * c.n ≤ 2 ^ 32)
     (hw : (⟨State.addr o32, 16 * c.n⟩ : Region) ∈ s.wr)
     (hd : Region.Disjoint ⟨State.addr o32, 16 * c.n⟩ ⟨base, size⟩)
     {g : Reg → BitVec 32} (hsv : ∀ rd ∈ Cfg.saved, s.mem.readW (off base rd.2) 32 = g rd.1) (b : Bool)
@@ -63,13 +63,12 @@ theorem finish_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size
           else List.replicate (16 * c.n) 0) ∧
       s'.gpr .r0 = (if b then 1 else 0) ∧
       (∀ rd ∈ Cfg.saved, s'.gpr rd.1 = g rd.1) ∧
-      Rest [.r0, .r1, .r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11] s s' ∧
+      Rest [.r0, .r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .lr] s s' ∧
       Outside (State.addr o32) 0 (16 * c.n) s.mem s'.mem := by
   have h7 := hc.n7
   have hn0 := hc.n0
   have hn := hs.nowrap
   have hsz : size = 4096 := rfl
-  have ho32 : Cfg.outAt = 32 := rfl
   have hRR := sl_le c h7 (i := RR) (by decide)
   have hSS := sl_le c h7 (i := SS) (by decide)
   have hF := sl_le c h7 (i := FLAG) (by decide)
@@ -88,27 +87,23 @@ theorem finish_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size
   rw [finish_eq]
   refine wp_ldr (hs.off_lt (by omega)) (hs.ea (by omega)) (hs.read (d := c.sl FLAG) (n := 4) (by omega))
     fun s₁ u₁ => ?_
-  have hs₁ := hs.of_rest (u₁.rest (ws := [.r10]) (by simp)) (by decide)
-  refine wp_ldr (hs.off_lt (by omega)) (hs₁.ea (by omega)) (hs₁.read (d := Cfg.outAt) (n := 4) (by omega))
-    fun s₂ u₂ => ?_
-  have k₂ : Rest [.r1, .r10] s s₂ := (u₁.rest (by simp)).trans (u₂.rest (by simp))
+  have k₂ : Rest [.r10] s s₁ := u₁.rest (by simp)
   have hs₂ := hs.of_rest k₂ (by decide)
-  have hm₂ : s₂.mem = s.mem := by rw [u₂.mem, u₁.mem]
-  have hc₂ : s₂.gpr .r10 = mask32 (b = true) := by
-    rw [u₂.other _ (by decide), u₁.gpr, ← flagW, hf]
-  have hr1 : s₂.gpr .r1 = o32 := by rw [u₂.gpr, u₁.mem, hout]
-  refine VG.Proof.X25519.Arm.WP.append (storeBE_ok hs₂ (dst := .r1) (d := 0) (a := c.sl RR) (by decide) b
+  have hm₂ : s₁.mem = s.mem := u₁.mem
+  have hc₂ : s₁.gpr .r10 = mask32 (b = true) := by rw [u₁.gpr, ← flagW, hf]
+  have hr1 : s₁.gpr .lr = o32 := by rw [u₁.other _ (by decide), hout]
+  refine VG.Proof.X25519.Arm.WP.append (storeBE_ok hs₂ (dst := .lr) (d := 0) (a := c.sl RR) (by decide) b
     hc₂ hRR (by rw [hr1]; omega) (by omega) (fun e he => ⟨_, by rw [k₂.wr]; exact hw, by
       rw [hr1, hout64, h0]; exact Offset.contains_base out (by omega) (by omega)⟩)
     (by rw [hr1, hout64]; exact hdsc hRR (by omega))) fun s₃ ⟨e₃, k₃, O₃⟩ => ?_
   rw [hr1, hout64] at e₃ O₃
   have hs₃ := hs₂.of_rest k₃ (by decide)
   have U₃ := O₃.unch_far (hscd (d := 0) (by omega))
-  have hr1₃ : s₃.gpr .r1 = o32 := by rw [k₃.gpr _ (by decide), hr1]
+  have hr1₃ : s₃.gpr .lr = o32 := by rw [k₃.gpr _ (by decide), hr1]
   have hc₃ : s₃.gpr .r10 = mask32 (b = true) := by rw [k₃.gpr _ (by decide), hc₂]
   have ss₃ : wordsVal s₃.mem base (c.sl SS) c.n = sv c base s SS := by
     rw [U₃.wordsVal (fun w hw => by simp only [List.mem_singleton] at hw; subst hw; omega) (by omega), hm₂]
-  refine VG.Proof.X25519.Arm.WP.append (storeBE_ok hs₃ (dst := .r1) (d := 8 * c.n) (a := c.sl SS) (by decide) b
+  refine VG.Proof.X25519.Arm.WP.append (storeBE_ok hs₃ (dst := .lr) (d := 8 * c.n) (a := c.sl SS) (by decide) b
     hc₃ hSS (by rw [hr1₃]; omega) (by omega) (fun e he => ⟨_, by rw [k₃.wr, k₂.wr]; exact hw, by
       rw [hr1₃, hout64, h8]; exact Offset.contains_base out (by omega) (by omega)⟩)
     (by rw [hr1₃, hout64]; exact hdsc hSS (by omega))) fun s₄ ⟨e₄, k₄, O₄⟩ => ?_

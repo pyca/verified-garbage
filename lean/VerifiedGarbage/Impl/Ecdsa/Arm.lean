@@ -11,7 +11,9 @@ words; `n = 4` for the 256-bit curves), from the code of
 `Impl/Weierstrass/Arm.lean`, as on x86 (`Impl/Ecdsa/X86.lean`):
 
 1. the working space's base goes to `r12`, the callee-saved registers
-   `r4`–`r11` are saved in its first 32 bytes and `out` after them; `k`, `d`
+   `r4`–`r11` and `lr` are saved in its first 36 bytes, and `out` goes to
+   `lr`, which nothing else uses (so `out` stays known to be public through
+   the computation's stores of secrets); `k`, `d`
    and the hash are read big-endian into slots, and the constants (the
    moduli, `a`, `3b`, `G` and Montgomery's ones in Montgomery form,
    `R² mod n`, and the exponents `p - 2` and `n - 2`) are stored as
@@ -40,7 +42,7 @@ def minv (m : Nat) : Nat :=
   let inv := (List.range 6).foldl (fun x _ => x * ((2 + 2 ^ 64 - m * x % 2 ^ 64) % 2 ^ 64) % 2 ^ 64) 1
   (2 ^ 64 - inv) % 2 ^ 64
 
-/-- The working space: the saved registers in bytes `[0, 32)` and `out` at 32, then
+/-- The working space: the saved registers in bytes `[0, 36)`, then
 slots of `n` words (`slot n i`) from byte 64, then the tables of bits
 (`bitsAt`), then the multiplications' accumulator (`wkAt`). -/
 def slot (n i : Nat) : Nat := 64 + 8 * n * i
@@ -152,7 +154,7 @@ def powN : PowCfg := ⟨c.MN', c.sl ACC, c.sl PT, c.sl KM, c.sl ONEN, bitsAt c.n
 
 /-- The callee-saved registers, and where they are saved. -/
 def saved : List (Reg × Nat) :=
-  [(.r4, 0), (.r5, 4), (.r6, 8), (.r7, 12), (.r8, 16), (.r9, 20), (.r10, 24), (.r11, 28)]
+  [(.r4, 0), (.r5, 4), (.r6, 8), (.r7, 12), (.r8, 16), (.r9, 20), (.r10, 24), (.r11, 28), (.lr, 32)]
 
 /-- The constants, and `R = (0 : 1 : 0)`: slots and values. -/
 def consts : List (Nat × Nat) :=
@@ -160,18 +162,15 @@ def consts : List (Nat × Nat) :=
     (B3P, c.mont (3 * c.C.b)), (GX, c.mont c.C.gx), (GY, c.mont c.C.gy), (R2N, c.R * c.R % c.C.n),
     (ONEN, c.R % c.C.n), (EXPP, c.C.p - 2), (EXPN, c.C.n - 2), (RX, 0), (RY, c.mont 1), (RZ, 0)]
 
-/-- Where `out` is kept. -/
-def outAt : Nat := 32
-
 /-- Saves them at `[r12]`. -/
 def saveCode : List Instr := saved.map fun (r, d) => .str r wb d
 
 /-- The working space from its argument to `r12`; saves the callee-saved
-registers and `out` there; reads `k`, `d` and the hash from the registers
+registers there and moves `out` to `lr`; reads `k`, `d` and the hash from the registers
 `A` names; stores the constants; and sets `R = (0 : 1 : 0)` and the flag (a
 word) to all ones. -/
 def setupWith (A : Args) : List Instr :=
-  [.ldrSp wb 0] ++ saveCode ++ [.str .r0 wb outAt] ++
+  [.ldrSp wb 0] ++ saveCode ++ [.mov .lr (.reg .r0)] ++
   loadBE c.n (c.sl K) A.k ++ loadBE c.n (c.sl D) A.d ++ loadBE c.n (c.sl E) A.e ++
   c.consts.flatMap (fun (i, x) => setConst c.n (c.sl i) x) ++
   [.mov .r4 (.imm 0), .dp .sub .r4 .r4 (.imm 1), .str .r4 wb (c.sl FLAG)]
@@ -223,11 +222,11 @@ def middle : Prog isa :=
 /-- The callee-saved registers restored. -/
 def restore : List Instr := saved.map fun (r, d) => .ldr r wb d
 
-/-- `r ‖ s` (or zeros) to `out` (through `r1`), the flag's low bit to `r0`,
-and the callee-saved registers restored. -/
+/-- `r ‖ s` (or zeros) to `out` (in `lr`), the flag's low bit to `r0`, and
+the callee-saved registers restored. -/
 def finish : List Instr :=
-  [.ldr .r10 wb (c.sl FLAG), .ldr .r1 wb outAt] ++
-  storeBE c.n .r1 0 (c.sl RR) ++ storeBE c.n .r1 (8 * c.n) (c.sl SS) ++
+  [.ldr .r10 wb (c.sl FLAG)] ++
+  storeBE c.n .lr 0 (c.sl RR) ++ storeBE c.n .lr (8 * c.n) (c.sl SS) ++
   [.dp .and .r0 .r10 (.imm 1)] ++ restore
 
 /-- `s = k⁻¹ (e + r d) mod n`, with `k⁻¹ R` in `ACC`, and its check. -/

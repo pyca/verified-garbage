@@ -4,7 +4,7 @@ import VerifiedGarbage.Proof.Ecdsa.Arm.Lays
 # ECDSA on 32-bit ARM: what every phase keeps
 
 After `setup`, the slots below `12` but the temporary area's hold constants
-the code only reads, and `[0, 36)` the saved registers and `out` (`Fixed`); every
+the code only reads, and `[0, 36)` the saved registers (`Fixed`); every
 later phase writes only slots from `12` on, the temporary area, the flag,
 the tables and the multiplications' accumulator (`FixedOk`), so it keeps them (`Fixed.unch`). A slot or a
 table byte apart from what a phase writes keeps its value too (`sv_unch`,
@@ -19,7 +19,7 @@ open VG.Proof.Mont.Arm VG.Proof.Mont VG.Proof.Weierstrass.Arm VG.Proof.Weierstra
 
 variable {c : Cfg}
 
-/-- The constants, the saved registers `g` and `out` (`g .r0`). -/
+/-- The constants and the saved registers `g`. -/
 structure Fixed (c : Cfg) (base : Addr) (g : Reg → BitVec 32) (m : Mem) : Prop where
   mp : wordsVal m base (c.sl MP) c.n = c.C.p
   mn : wordsVal m base (c.sl MN) c.n = c.C.n
@@ -33,7 +33,6 @@ structure Fixed (c : Cfg) (base : Addr) (g : Reg → BitVec 32) (m : Mem) : Prop
   r2n : wordsVal m base (c.sl R2N) c.n = 2 ^ (64 * c.n) * 2 ^ (64 * c.n) % c.C.n
   onen : wordsVal m base (c.sl ONEN) c.n = 2 ^ (64 * c.n) % c.C.n
   saved : ∀ rd ∈ Cfg.saved, m.readW (off base rd.2) 32 = g rd.1
-  out : m.readW (off base Cfg.outAt) 32 = g .r0
 
 /-- What a phase writes misses the constants and the saved registers. -/
 def FixedOk (c : Cfg) (W : List (Nat × Nat)) : Prop :=
@@ -96,17 +95,12 @@ theorem Fixed.unch {base : Addr} {g : Reg → BitVec 32} {m m' : Mem} (h : Fixed
     (e ONEP (by decide) (by decide)).trans h.onep, (e AP (by decide) (by decide)).trans h.ap,
     (e B3P (by decide) (by decide)).trans h.b3p, (e GX (by decide) (by decide)).trans h.gx,
     (e GY (by decide) (by decide)).trans h.gy, (e R2N (by decide) (by decide)).trans h.r2n,
-    (e ONEN (by decide) (by decide)).trans h.onen, fun p hp => ?_, ?_⟩
-  · have : p.2 + 4 ≤ 32 := saved_lt p hp
-    refine (Unch.readW32 hu (d := p.2) (fun w hw => Or.inl ?_) (by omega)).trans (h.saved p hp)
-    rcases hW w hw with ⟨h1, -⟩ | h
-    · rw [h1, sl_eq]; omega
-    · rw [sl_eq] at h; omega
-  · have ho : Cfg.outAt = 32 := rfl
-    refine (Unch.readW32 hu (d := Cfg.outAt) (fun w hw => Or.inl ?_) (by omega)).trans h.out
-    rcases hW w hw with ⟨h1, -⟩ | h
-    · rw [h1, sl_eq]; omega
-    · rw [sl_eq] at h; omega
+    (e ONEN (by decide) (by decide)).trans h.onen, fun p hp => ?_⟩
+  have : p.2 + 4 ≤ 36 := saved_lt p hp
+  refine (Unch.readW32 hu (d := p.2) (fun w hw => Or.inl ?_) (by omega)).trans (h.saved p hp)
+  rcases hW w hw with ⟨h1, -⟩ | h
+  · rw [h1, sl_eq]; omega
+  · rw [sl_eq] at h; omega
 
 /-- A slot apart from the ranges of other numbered slots. -/
 theorem apart_slW {l : List Nat} {i : Nat} (hi : i ∉ l) :
