@@ -27,25 +27,31 @@ open VG.Proof.AesCcm (hdrLen headLen adataBlocks)
 
 /-! ## `minLen` -/
 
+theorem minLen1_ok {K W SP : BitVec 32} {s : State} (L : Lay K W SP) (E : Env K W SP s) {n b : Nat}
+    (hn : slotv s.mem W nO = BitVec.ofNat 32 n) (hb : slotv s.mem W bO = BitVec.ofNat 32 b) (hb16 : b ≤ 16)
+    (hnlt : n < 2 ^ 32) :
+    ∃ s₁, runBlock isa
+      [.mov .ecx (imm 16), .alu .sub .ecx (slot bO), .mov .eax (slot nO), .alu .cmp .eax (.reg .ecx)] s = some s₁ ∧
+      s₁.gpr .ecx = BitVec.ofNat 32 (16 - b) ∧ s₁.gpr .eax = BitVec.ofNat 32 n ∧
+      s₁.cf = some (decide (n < 16 - b)) ∧ s₁.gpr .ebp = W ∧ s₁.gpr .esp = SP ∧ s₁.mem = s.mem ∧
+      s₁.rd = s.rd ∧ s₁.wr = s.wr := by
+  have e16 := ofNat16_sub hb16
+  refine ⟨_, by crun [E.ebp, L.aW, E.perm.wR, hn, hb], ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · cregs [e16]
+  · cregs []
+  · cmems [e16, toNat_ofNat32 hnlt, toNat_ofNat32 (show 16 - b < 2 ^ 32 by omega)]
+  · cregs [E.ebp]
+  · cregs [E.esp]
+  all_goals cmems []
+
+
 /-- `ecx := min (16 − b, n)`, for `n` at `W + nO` and `b` at `W + bO`. -/
 theorem minLen_ok {K W SP : BitVec 32} {s : State} (L : Lay K W SP) (E : Env K W SP s) {n b : Nat}
     (hn : slotv s.mem W nO = BitVec.ofNat 32 n) (hb : slotv s.mem W bO = BitVec.ofNat 32 b) (hb16 : b ≤ 16)
     (hnlt : n < 2 ^ 32) :
     WP isa minLen s fun s' => s'.gpr .ecx = BitVec.ofNat 32 (min (16 - b) n) ∧ s'.gpr .ebp = W ∧
       s'.gpr .esp = SP ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
-  have e16 := ofNat16_sub hb16
-  obtain ⟨s₁, run₁, cx, ax, cf, bp, sp, m₁, rd₁, wr₁⟩ : ∃ s₁, runBlock isa
-      [.mov .ecx (imm 16), .alu .sub .ecx (slot bO), .mov .eax (slot nO), .alu .cmp .eax (.reg .ecx)] s = some s₁ ∧
-      s₁.gpr .ecx = BitVec.ofNat 32 (16 - b) ∧ s₁.gpr .eax = BitVec.ofNat 32 n ∧
-      s₁.cf = some (decide (n < 16 - b)) ∧ s₁.gpr .ebp = W ∧ s₁.gpr .esp = SP ∧ s₁.mem = s.mem ∧
-      s₁.rd = s.rd ∧ s₁.wr = s.wr := by
-    refine ⟨_, by crun [E.ebp, L.aW, E.perm.wR, hn, hb], ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
-    · cregs [e16]
-    · cregs []
-    · cmems [e16, toNat_ofNat32 hnlt, toNat_ofNat32 (show 16 - b < 2 ^ 32 by omega)]
-    · cregs [E.ebp]
-    · cregs [E.esp]
-    all_goals cmems []
+  obtain ⟨s₁, run₁, cx, ax, cf, bp, sp, m₁, rd₁, wr₁⟩ := minLen1_ok L E hn hb hb16 hnlt
   refine WP.seq (WP.of_runBlock ⟨s₁, run₁, ?_⟩)
   refine WP.ite (decide (n < 16 - b)) (eval_b cf) (fun ht => ?_) (fun hf => ?_)
   · have hlt : n < 16 - b := by simpa using ht
@@ -59,6 +65,24 @@ theorem minLen_ok {K W SP : BitVec 32} {s : State} (L : Lay K W SP) (E : Env K W
 
 /-! ## The encoding of the length -/
 
+theorem headerBlk_ok {K W SP : BitVec 32} {s : State} (L : Lay K W SP) (E : Env K W SP s) {a : Nat} (ha : a < 2 ^ 32)
+    (hn : slotv s.mem W nO = BitVec.ofNat 32 a) :
+    ∃ s₁, runBlock isa
+      (zero4 blkO ++ [.mov .eax (slot nO), .alu .cmp .eax (imm 0xff00)]) s = some s₁ ∧
+      s₁.mem = Cmac.zero4 s.mem (w64 W + BitVec.ofNat 64 32) ∧ s₁.gpr .eax = BitVec.ofNat 32 a ∧
+      s₁.cf = some (decide (a < 2 ^ 16 - 2 ^ 8)) ∧ s₁.gpr .ebp = W ∧ s₁.gpr .esp = SP ∧
+      s₁.rd = s.rd ∧ s₁.wr = s.wr := by
+  have hz := zero4_fold s.mem W 32
+  simp only [Nat.reduceAdd] at hz
+  refine ⟨_, by crun [zero4, E.ebp, L.aW, E.perm.wW, E.perm.wR, hn], ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · cmems [hz]
+  · cregs [hn]
+  · cmems [hn, toNat_ofNat32 ha]; rfl
+  · cregs [E.ebp]
+  · cregs [E.esp]
+  all_goals cmems []
+
+
 /-- `B` zeroed, then the encoding of the length `a` (at `W + nO`) of the
 associated data at its start, and its length at `W + bO`. -/
 theorem header_ok {K W SP : BitVec 32} {s : State} (L : Lay K W SP) (E : Env K W SP s) {a : Nat} (ha : a < 2 ^ 32)
@@ -67,20 +91,7 @@ theorem header_ok {K W SP : BitVec 32} {s : State} (L : Lay K W SP) (E : Env K W
       Frame [⟨w64 W + BitVec.ofNat 64 32, 16⟩, ⟨w64 W + BitVec.ofNat 64 bO, 4⟩] s.mem s'.mem ∧
       slotv s'.mem W bO = BitVec.ofNat 32 (hdrLen a) ∧
       bytesAt s'.mem (w64 W + BitVec.ofNat 64 32) 16 = Spec.Ccm.encodeLen a ++ Spec.Ccm.zeros (16 - hdrLen a) := by
-  have hz := zero4_fold s.mem W 32
-  simp only [Nat.reduceAdd] at hz
-  obtain ⟨s₁, run₁, hm₁, hax, hcf₁, hbp, hsp, hrd₁, hwr₁⟩ : ∃ s₁, runBlock isa
-      (zero4 blkO ++ [.mov .eax (slot nO), .alu .cmp .eax (imm 0xff00)]) s = some s₁ ∧
-      s₁.mem = Cmac.zero4 s.mem (w64 W + BitVec.ofNat 64 32) ∧ s₁.gpr .eax = BitVec.ofNat 32 a ∧
-      s₁.cf = some (decide (a < 2 ^ 16 - 2 ^ 8)) ∧ s₁.gpr .ebp = W ∧ s₁.gpr .esp = SP ∧
-      s₁.rd = s.rd ∧ s₁.wr = s.wr := by
-    refine ⟨_, by crun [zero4, E.ebp, L.aW, E.perm.wW, E.perm.wR, hn], ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
-    · cmems [hz]
-    · cregs [hn]
-    · cmems [hn, toNat_ofNat32 ha]; rfl
-    · cregs [E.ebp]
-    · cregs [E.esp]
-    all_goals cmems []
+  obtain ⟨s₁, run₁, hm₁, hax, hcf₁, hbp, hsp, hrd₁, hwr₁⟩ := headerBlk_ok L E ha hn
   have hz' : bytesAt s₁.mem (w64 W + BitVec.ofNat 64 32) 16 = Spec.Ccm.zeros 16 := by rw [hm₁, zero4_bytes']; rfl
   have fz : Frame [⟨w64 W + BitVec.ofNat 64 32, 16⟩, ⟨w64 W + BitVec.ofNat 64 bO, 4⟩] s.mem s₁.mem := by
     rw [hm₁]; exact (Cmac.frame_store4 _ _ _ _ _).mono (by simp)
@@ -135,6 +146,33 @@ theorem header_ok {K W SP : BitVec 32} {s : State} (L : Lay K W SP) (E : Env K W
 
 /-! ## The first block of the associated data -/
 
+theorem aadHeadArgs_ok {K W SP : BitVec 32} {s₂ : State} (L : Lay K W SP) (E₂ : Env K W SP s₂) {A : BitVec 32}
+    {a k b : Nat} (hd₂ : slotv s₂.mem W dO = A) (hn₂ : slotv s₂.mem W nO = BitVec.ofNat 32 a)
+    (hb₂ : slotv s₂.mem W bO = BitVec.ofNat 32 b) (hcx₂ : s₂.gpr .ecx = BitVec.ofNat 32 k) (hk : k ≤ a)
+    (ha : a < 2 ^ 32) :
+    ∃ s₃, runBlock isa
+      [.mov .edi (slot dO), .mov .edx (.reg .ebp), .alu .add .edx (imm blkO), .alu .add .edx (slot bO),
+        .mov .eax (slot nO), .alu .sub .eax (.reg .ecx), .store (at_ .ebp nO) .eax,
+        .mov .eax (.reg .edi), .alu .add .eax (.reg .ecx), .store (at_ .ebp dO) .eax] s₂ = some s₃ ∧
+      s₃.mem = (s₂.mem.writeW (w64 W + BitVec.ofNat 64 nO) (BitVec.ofNat 32 (a - k))).writeW
+        (w64 W + BitVec.ofNat 64 dO) (A + BitVec.ofNat 32 k) ∧
+      s₃.gpr .edi = A ∧ s₃.gpr .edx = W + BitVec.ofNat 32 (32 + b) ∧
+      s₃.gpr .ecx = BitVec.ofNat 32 k ∧ s₃.gpr .ebp = W ∧ s₃.gpr .esp = SP ∧
+      s₃.rd = s₂.rd ∧ s₃.wr = s₂.wr := by
+  have hbp₂ := E₂.ebp
+  have eh : W + BitVec.ofNat 32 32 + BitVec.ofNat 32 b = W + BitVec.ofNat 32 (32 + b) := by
+    rw [BitVec.add_assoc, ← BitVec.ofNat_add]
+  have es : BitVec.ofNat 32 a - BitVec.ofNat 32 k = BitVec.ofNat 32 (a - k) := ofNat_sub32 hk ha
+  refine ⟨_, by crun [hbp₂, L.aW, E₂.perm.wW, E₂.perm.wR, hd₂, hn₂, hb₂], ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · cmems [hd₂, hn₂, hcx₂, es]
+  · cregs [hd₂]
+  · cregs [hbp₂, eh]
+  · cregs [hcx₂]
+  · cregs [hbp₂]
+  · cregs [E₂.esp]
+  all_goals cmems []
+
+
 /-- The first block of the associated data (`a` bytes at `A`, kept at
 `W + dO`, `a` at `W + nO`), chained into `W + y`; `dO` and `nO` then the
 rest. -/
@@ -165,28 +203,8 @@ theorem aadHead_ok (v : Ctr32Impl) {K W SP : BitVec 32} {s : State} (L : Lay K W
   have hn₂ : slotv s₂.mem W nO = BitVec.ofNat 32 a := by rw [hm₂]; exact hn₁
   have hd₂ : slotv s₂.mem W dO = A := by rw [hm₂]; exact hd₁
   have hb₂ : slotv s₂.mem W bO = BitVec.ofNat 32 (hdrLen a) := by rw [hm₂]; exact hb₁
-  have eh : W + BitVec.ofNat 32 32 + BitVec.ofNat 32 (hdrLen a) = W + BitVec.ofNat 32 (32 + hdrLen a) := by
-    rw [BitVec.add_assoc, ← BitVec.ofNat_add]
-  have es : BitVec.ofNat 32 a - BitVec.ofNat 32 (headLen a) = BitVec.ofNat 32 (a - headLen a) :=
-    ofNat_sub32 hn1.2.1 ha
-  obtain ⟨s₃, run₃, hm₃, hdi, hdx, hcx₃, hbp₃, hsp₃, hrd₃, hwr₃⟩ : ∃ s₃, runBlock isa
-      [.mov .edi (slot dO), .mov .edx (.reg .ebp), .alu .add .edx (imm blkO), .alu .add .edx (slot bO),
-        .mov .eax (slot nO), .alu .sub .eax (.reg .ecx), .store (at_ .ebp nO) .eax,
-        .mov .eax (.reg .edi), .alu .add .eax (.reg .ecx), .store (at_ .ebp dO) .eax] s₂ = some s₃ ∧
-      s₃.mem = (s₂.mem.writeW (w64 W + BitVec.ofNat 64 nO) (BitVec.ofNat 32 (a - headLen a))).writeW
-        (w64 W + BitVec.ofNat 64 dO) (A + BitVec.ofNat 32 (headLen a)) ∧
-      s₃.gpr .edi = A ∧ s₃.gpr .edx = W + BitVec.ofNat 32 (32 + hdrLen a) ∧
-      s₃.gpr .ecx = BitVec.ofNat 32 (headLen a) ∧ s₃.gpr .ebp = W ∧ s₃.gpr .esp = SP ∧
-      s₃.rd = s₂.rd ∧ s₃.wr = s₂.wr := by
-    refine ⟨_, by crun [hbp₂, L.aW, E₁.perm.wW, E₁.perm.wR, hrd₂, hwr₂, hd₂, hn₂, hb₂], ?_, ?_, ?_, ?_, ?_, ?_, ?_,
-      ?_⟩
-    · cmems [hd₂, hn₂, hcx₂, es]
-    · cregs [hd₂]
-    · cregs [hbp₂, eh]
-    · cregs [hcx₂]
-    · cregs [hbp₂]
-    · cregs [hsp₂]
-    all_goals cmems []
+  obtain ⟨s₃, run₃, hm₃, hdi, hdx, hcx₃, hbp₃, hsp₃, hrd₃, hwr₃⟩ :=
+    aadHeadArgs_ok L ⟨hbp₂, hsp₂, E₁.perm.of_eq hrd₂ hwr₂⟩ hd₂ hn₂ hb₂ hcx₂ hn1.2.1 ha
   refine WP.seq (WP.of_runBlock ⟨s₃, run₃, ?_⟩)
   have E₃ : Env K W SP s₃ := ⟨hbp₃, hsp₃, E.perm.of_eq (by rw [hrd₃, hrd₂, hrd₁]) (by rw [hwr₃, hwr₂, hwr₁])⟩
   have hA₃ := hA.of_eq (s' := s₃) (by rw [hrd₃, hrd₂, hrd₁]) (by rw [hwr₃, hwr₂, hwr₁])
@@ -305,6 +323,22 @@ theorem aadHead_ok (v : Ctr32Impl) {K W SP : BitVec 32} {s : State} (L : Lay K W
 
 /-! ## The associated data -/
 
+theorem aadBlk_ok {K W SP : BitVec 32} {s : State} (L : Lay K W SP) (E : Env K W SP s) {A : BitVec 32} {al : Nat}
+    (hAp : slotv s.mem W aadO = A) (hal : slotv s.mem W alenO = BitVec.ofNat 32 al) (hl : al < 2 ^ 32) :
+    ∃ s₁, runBlock isa
+      [.mov .eax (slot aadO), .store (at_ .ebp dO) .eax, .mov .eax (slot alenO), .store (at_ .ebp nO) .eax,
+        .alu .test .eax (.reg .eax)] s = some s₁ ∧
+      s₁.mem = (s.mem.writeW (w64 W + BitVec.ofNat 64 dO) A).writeW (w64 W + BitVec.ofNat 64 nO)
+        (BitVec.ofNat 32 al) ∧
+      s₁.zf = some (decide (al = 0)) ∧ s₁.gpr .ebp = W ∧ s₁.gpr .esp = SP ∧ s₁.rd = s.rd ∧ s₁.wr = s.wr := by
+  refine ⟨_, by crun [E.ebp, L.aW, E.perm.wW, E.perm.wR, hAp, hal], ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · cmems [hAp, hal]
+  · cmems [hal]; rw [and_self_beq32 hl]
+  · cregs [E.ebp]
+  · cregs [E.esp]
+  all_goals cmems []
+
+
 /-- The associated data (`al` bytes at `A`, kept at `W + aadO` and
 `W + alenO`), formatted and chained into `W + y`. -/
 theorem aad_ok (v : Ctr32Impl) {K W SP : BitVec 32} {s : State} (L : Lay K W SP) (E : Env K W SP s) {R : Nat}
@@ -314,18 +348,7 @@ theorem aad_ok (v : Ctr32Impl) {K W SP : BitVec 32} {s : State} (L : Lay K W SP)
     WP isa (aad v.callee v.suffix y) s (Absorbed K W SP s y
       (Spec.Cmac.chain (Spec.Ccm.ctxCiph s.mem (w64 K) R) (bytesAt s.mem (w64 W + BitVec.ofNat 64 y) 16)
         (adataBlocks (bytesAt s.mem (w64 A) al)))) := by
-  obtain ⟨s₁, run₁, hm₁, hzf, hbp, hsp, hrd₁, hwr₁⟩ : ∃ s₁, runBlock isa
-      [.mov .eax (slot aadO), .store (at_ .ebp dO) .eax, .mov .eax (slot alenO), .store (at_ .ebp nO) .eax,
-        .alu .test .eax (.reg .eax)] s = some s₁ ∧
-      s₁.mem = (s.mem.writeW (w64 W + BitVec.ofNat 64 dO) A).writeW (w64 W + BitVec.ofNat 64 nO)
-        (BitVec.ofNat 32 al) ∧
-      s₁.zf = some (decide (al = 0)) ∧ s₁.gpr .ebp = W ∧ s₁.gpr .esp = SP ∧ s₁.rd = s.rd ∧ s₁.wr = s.wr := by
-    refine ⟨_, by crun [E.ebp, L.aW, E.perm.wW, E.perm.wR, hAp, hal], ?_, ?_, ?_, ?_, ?_, ?_⟩
-    · cmems [hAp, hal]
-    · cmems [hal]; rw [and_self_beq32 hl]
-    · cregs [E.ebp]
-    · cregs [E.esp]
-    all_goals cmems []
+  obtain ⟨s₁, run₁, hm₁, hzf, hbp, hsp, hrd₁, hwr₁⟩ := aadBlk_ok L E hAp hal hl
   refine WP.seq (WP.of_runBlock ⟨s₁, run₁, ?_⟩)
   have E₁ : Env K W SP s₁ := E.keep (by rw [hbp, E.ebp]) (by rw [hsp, E.esp]) hrd₁ hwr₁
   have f₁ : Frame [wC W] s.mem s₁.mem := by
