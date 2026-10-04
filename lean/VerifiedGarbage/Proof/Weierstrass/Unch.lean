@@ -38,6 +38,17 @@ theorem Unch.outside {base : Addr} {W : List (Nat × Nat)} {m m' : Mem} (h : Unc
     {o n : Nat} (hW : ∀ w ∈ W, o ≤ w.1 ∧ w.1 + w.2 ≤ o + n) : Outside base o n m m' :=
   fun x hx => h x fun w hw => by have := hW w hw; omega
 
+/-- Bytes that changed only in a region apart from the working space. -/
+theorem _root_.VG.Proof.Mont.Outside.unch_far {q base : Addr} {len size : Nat} {m m' : Mem}
+    (h : Outside q 0 len m m') (hd : Region.Disjoint ⟨base, size⟩ ⟨q, len⟩) :
+    Unch base [(size, 2 ^ 64)] m m' := by
+  intro x hx
+  have hx' := hx _ (List.mem_singleton_self _)
+  have hlt := (x - base).isLt
+  refine h x (Or.inr (Nat.le_of_not_lt fun hl => ?_))
+  simp only [ofs] at hx' hl
+  exact hd x (show (x - base).toNat + 1 ≤ size by omega) (show (x - q).toNat + 1 ≤ len by omega)
+
 /-- A word apart from the ranges. -/
 theorem Unch.word {base : Addr} {W : List (Nat × Nat)} {m m' : Mem} (h : Unch base W m m')
     {d : Nat} (hd : ∀ w ∈ W, d + 8 ≤ w.1 ∨ w.1 + w.2 ≤ d) (hd' : d + 8 ≤ 2 ^ 64) :
