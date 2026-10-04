@@ -274,4 +274,14 @@ theorem ctr32_ccm {m m' : Mem} {K C D : Addr} {R : Nat} {nonce : List Byte} (hn 
   rw [ctr32_bytes hd]
   exact xorKs_eq (fun c hc => Cmac.aesWith_bytes _ _ hc) hn hinc (by rw [Cmac.bytesAt_length])
 
+/-- A zero block XORed with CCM's keystream from `Ctrⱼ`: `CIPH_K(Ctrⱼ)`. -/
+theorem xorFrom_zeros {ciph : Ccm.Cipher} (hc : BlockCipher ciph) (nonce : List Byte) (j : Nat) :
+    xorFrom ciph nonce j (Ccm.zeros 16) = ciph (Ccm.ctrBlock nonce j) := by
+  refine Gcm.list_ext (by rw [length_xorFrom, hc]; rfl) fun i hi => ?_
+  simp only [length_xorFrom, Ccm.zeros, List.length_replicate] at hi
+  rw [getD_xorFrom _ _ _ _ (by simp [Ccm.zeros, hi]), ksb, Nat.div_eq_of_lt hi, Nat.mod_eq_of_lt hi, Nat.add_zero,
+    show (Ccm.zeros 16).getD i 0 = 0 by
+      simp only [Ccm.zeros, List.getD_eq_getElem?_getD, List.getElem?_replicate, hi, ↓reduceIte, Option.getD_some]]
+  exact BitVec.zero_xor
+
 end VG.Proof.AesCcm
