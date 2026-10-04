@@ -62,6 +62,34 @@ theorem dataStr_ok {C W SP : BitVec 32} (L : Lay C W SP) {s : State} (E : Env C 
   · cregs [E.esp]
   all_goals cmems []
 
+/-- The data as S2V's last string: what `cmacOf` and `finish` start from. -/
+theorem dataStr_pre {C W SP : BitVec 32} (L : Lay C W SP) {s₀ : State} {R : Nat} {D : BitVec 32} {n : Nat}
+    {ext : List Region} {s : State} (K : Kept s₀ C W SP R D n ext s)
+    (hext : ∀ r ∈ ext, r.Disjoint ⟨w64 W + BitVec.ofNat 64 128, 2448⟩) (hD : Buf W SP s D n) (hn : n < 2 ^ 32) :
+    ∃ s', runBlock isa [.mov .eax (slot dataO), .store (at_ .ebp strO) .eax, .mov .eax (slot lenO),
+        .store (at_ .ebp slenO) .eax] s = some s' ∧ CmacPre C W SP R D n s' ∧ Kept s₀ C W SP R D n ext s' ∧
+      Frame [⟨w64 W + BitVec.ofNat 64 strO, 8⟩] s.mem s'.mem := by
+  obtain ⟨s₄, run₄, m₄, bp₄, sp₄, rd₄, wr₄⟩ := dataStr_ok L K.env K.slots.data K.slots.len
+  have E₄ : Env C W SP s₄ := ⟨bp₄, sp₄, K.env.perm.of_eq rd₄ wr₄⟩
+  have c (d : Nat) (hd : d + 4 ≤ 8) : (⟨w64 W + BitVec.ofNat 64 strO, 8⟩ : Region).Contains
+      (w64 W + BitVec.ofNat 64 strO + BitVec.ofNat 64 d) 4 := Offset.contains_base _ hd (by omega)
+  have c0 : (⟨w64 W + BitVec.ofNat 64 strO, 8⟩ : Region).Contains (w64 W + BitVec.ofNat 64 strO) (32 / 8) := by
+    simpa using c 0 (by decide)
+  have c4 : (⟨w64 W + BitVec.ofNat 64 strO, 8⟩ : Region).Contains (w64 W + BitVec.ofNat 64 slenO) (32 / 8) := by
+    have e : w64 W + BitVec.ofNat 64 slenO = w64 W + BitVec.ofNat 64 strO + BitVec.ofNat 64 4 := by
+      rw [Offset.add_add]
+    rw [e]; exact c 4 (by decide)
+  have f₄ : Frame [⟨w64 W + BitVec.ofNat 64 strO, 8⟩] s.mem s₄.mem := by
+    rw [m₄]
+    exact ((Frame.refl _ _).writeW (List.mem_singleton_self _) _ c0).writeW (List.mem_singleton_self _) _ c4
+  have K₄ : Kept s₀ C W SP R D n ext s₄ := K.step L hext E₄ rd₄ wr₄ f₄ fun r hr => by
+    simp only [List.mem_singleton] at hr; subst hr
+    exact .inl ⟨wS W, by simp, sub_wS (by decide) (by decide)⟩
+  refine ⟨s₄, run₄, ⟨E₄, K₄.slots.ctx, K₄.slots.rounds, ?_, ?_, hn, hD.of_eq rd₄ wr₄⟩, K₄, f₄⟩
+  · rw [m₄, slotv, readW_writeW_off _ _ _ (.inl (by decide)) (by decide) (by decide)]
+    exact Mem.readW_writeW_self32 _ _ _
+  · rw [m₄]; exact Mem.readW_writeW_self32 _ _ _
+
 /-- What `encS2v` leaves: the data as S2V's last string, and `D` S2V's state
 of the components. -/
 structure S2vOut (C W SP A D : BitVec 32) (R N n : Nat) (s s' : State) : Prop where
@@ -107,35 +135,11 @@ theorem encS2v_ok (v : Ctr32Impl) {C W SP A D : BitVec 32} {R N n : Nat} {s : St
     ⟨K₂, Nat.zero_le _, by rw [k₂ _ (by decide) (by decide), a₁, h.a2, Nat.mul_zero]; exact (BitVec.add_zero _).symm,
       by rw [k₂ _ (by decide) (by decide), l₁, h.a3, Nat.sub_zero], by rw [List.take_zero]; exact st₂⟩
   refine WP.seq (WP.mono (s2vAds_ok v h.ads I₀) fun s₃ I => ?_)
-  have K₃ := I.kept
-  obtain ⟨s₄, run₄, m₄, bp₄, sp₄, rd₄, wr₄⟩ := dataStr_ok L K₃.env K₃.slots.data K₃.slots.len
-  refine WP.of_runBlock ⟨s₄, run₄, ?_⟩
-  have E₄ : Env C W SP s₄ := ⟨bp₄, sp₄, K₃.env.perm.of_eq rd₄ wr₄⟩
-  have c (d : Nat) (hd : d + 4 ≤ 8) : (⟨w64 W + BitVec.ofNat 64 strO, 8⟩ : Region).Contains
-      (w64 W + BitVec.ofNat 64 strO + BitVec.ofNat 64 d) 4 := Offset.contains_base _ hd (by omega)
-  have c0 : (⟨w64 W + BitVec.ofNat 64 strO, 8⟩ : Region).Contains (w64 W + BitVec.ofNat 64 strO) (32 / 8) := by
-    simpa using c 0 (by decide)
-  have c4 : (⟨w64 W + BitVec.ofNat 64 strO, 8⟩ : Region).Contains (w64 W + BitVec.ofNat 64 slenO) (32 / 8) := by
-    have e : w64 W + BitVec.ofNat 64 slenO = w64 W + BitVec.ofNat 64 strO + BitVec.ofNat 64 4 := by
-      rw [Offset.add_add]
-    rw [e]; exact c 4 (by decide)
-  have f₄ : Frame [⟨w64 W + BitVec.ofNat 64 strO, 8⟩] s₃.mem s₄.mem := by
-    rw [m₄]
-    exact ((Frame.refl _ _).writeW (List.mem_singleton_self _) _ c0).writeW (List.mem_singleton_self _) _ c4
-  have K₄ : Kept s C W SP R D n [] s₄ := K₃.step L (by simp) E₄ rd₄ wr₄ f₄ fun r hr => by
-    simp only [List.mem_singleton] at hr; subst hr
-    exact .inl ⟨wS W, by simp, sub_wS (by decide) (by decide)⟩
-  have rd : ∀ o, o + 4 ≤ strO → slotv s₄.mem W o = slotv s₃.mem W o := fun o h₁ => by
-    rw [m₄, slotv, readW_writeW_off _ _ _ (.inl (by simp only [strO, slenO] at h₁ ⊢; omega)) (by simp only [strO] at h₁ ⊢; omega)
-      (by decide), readW_writeW_off _ _ _ (.inl h₁) (by simp only [strO] at h₁ ⊢; omega) (by decide)]
-  refine ⟨⟨E₄, K₄.slots.ctx, K₄.slots.rounds, ?_, ?_, h.n32, h.data.buf.of_eq (K₄.rd) (K₄.wr)⟩, K₄, ?_⟩
-  · rw [m₄, slotv, readW_writeW_off _ _ _ (.inl (by decide)) (by decide) (by decide)]
-    exact Mem.readW_writeW_self32 _ _ _
-  · rw [m₄]; exact Mem.readW_writeW_self32 _ _ _
-  · have fd : Frame [⟨w64 W + BitVec.ofNat 64 strO, 8⟩] s₃.mem s₄.mem := f₄
-    rw [Proof.AesGcm.X86.bytesAt_frame fd (fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact Lay.w_w (.inr (by decide)) (by decide) (by decide))
-      (by decide), I.acc, components_take_all]
+  obtain ⟨s₄, run₄, P₄, K₄, f₄⟩ := dataStr_pre L I.kept (by simp) (h.data.buf.of_eq I.kept.rd I.kept.wr) h.n32
+  refine WP.of_runBlock ⟨s₄, run₄, P₄, K₄, ?_⟩
+  rw [Proof.AesGcm.X86.bytesAt_frame f₄ (fun r hr => by
+    simp only [List.mem_singleton] at hr; subst hr; exact Lay.w_w (.inr (by decide)) (by decide) (by decide))
+    (by decide), I.acc, components_take_all]
 
 /-! ## `vg_aes_siv_encrypt` -/
 
@@ -144,13 +148,15 @@ theorem Kept.widen {s₀ : State} {C W SP : BitVec 32} {R : Nat} {D : BitVec 32}
   { h with big := h.big.mono fun r hr => by rw [← List.append_assoc]; exact List.mem_append_left _ hr }
 
 /-- The IV at `W`, while no piece names it. -/
-theorem Kept.iv {s₀ : State} {C W SP : BitVec 32} {R : Nat} {D : BitVec 32} {n : Nat} {s : State}
-    (L : Lay C W SP) (h : Kept s₀ C W SP R D n [] s) : bytesAt s.mem (w64 W) 16 = bytesAt s₀.mem (w64 W) 16 :=
+theorem Kept.iv {s₀ : State} {C W SP : BitVec 32} {R : Nat} {D : BitVec 32} {n : Nat} {ext : List Region}
+    {s : State} (L : Lay C W SP) (h : Kept s₀ C W SP R D n ext s)
+    (he : ∀ r ∈ ext, (⟨w64 W, 16⟩ : Region).Disjoint r) : bytesAt s.mem (w64 W) 16 = bytesAt s₀.mem (w64 W) 16 :=
   Proof.AesGcm.X86.bytesAt_frame h.big (fun r hr => by
-    simp only [List.append_nil, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl
+    simp only [List.cons_append, List.nil_append, List.mem_cons] at hr
+    rcases hr with rfl | rfl | hr
     · simpa using Lay.w_w (W := W) (a := 0) (n := 16) (.inl (by decide)) (by decide) (by decide)
-    · exact (L.stk_w.sub_right (Region.sub_prefix (by decide))).symm) (by decide)
+    · exact (L.stk_w.sub_right (Region.sub_prefix (by decide))).symm
+    · exact he r hr) (by decide)
 
 /-- What `finish out` writes: the IV at `W` (which the pieces name in `ext`) or
 the IV at `W + 112`, and parts of `W` the pieces write. -/

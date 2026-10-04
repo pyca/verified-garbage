@@ -14,6 +14,7 @@ open VG VG.X86 VG.X86.RegUpd VG.Impl.AesSiv.X86 VG.WriteBytes
 open VG.Spec.Aes (bytesAt)
 open VG.Proof.Aes.X86 (Ctr32Impl)
 open VG.Impl.AesGcm.X86 (at_ imm slot restore)
+open VG.Proof.AesGcm.X86 (exit_ok ret_below covers_left readW_writeW_off)
 open VG.Proof.AesGcm.X86 (w64 slotv bytes16_eq xor4_eq_zero w64_add in_of_covers succ_ofNat32 add_zero32 pred_count
   pred_beq bytesAt_succ length_bytesAt and_self_beq32 CT)
 
@@ -167,5 +168,172 @@ theorem mask_ok {C W SP : BitVec 32} {s : State} (L : Lay C W SP) (E : Env C W S
     refine ⟨by simp [eval, hz, he], n - (j + 1), by omega, j + 1, rfl, by omega, di',
       by rw [cx', pred_count hj hn32], hmem, gg, by rw [rd', rd], by rw [wr', wr]⟩
 
+
+/-! ## `vg_aes_siv_decrypt` -/
+
+theorem okVal_eq (m : Mem) (W : BitVec 32) :
+    okVal m W = if decide (bytesAt m (w64 W) 16 = bytesAt m (w64 W + BitVec.ofNat 64 tOff) 16) then 1 else 0 := by
+  unfold okVal; split <;> simp_all
+
+theorem retEax_ok {C W SP : BitVec 32} (L : Lay C W SP) {s : State} (E : Env C W SP s) :
+    ∃ s', runBlock isa [.mov .eax (slot okO)] s = some s' ∧ s'.gpr .eax = slotv s.mem W okO ∧
+      (∀ r, r ≠ .eax → s'.gpr r = s.gpr r) ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
+  refine ⟨_, by crun [E.ebp, L.aW, E.perm.wR], ?_, fun r h₁ => ?_, ?_, ?_, ?_⟩
+  · cregs []
+  · cregs []
+  all_goals cmems []
+
+/-- `vg_aes_siv_decrypt`: the plaintext and 1 if the IV at `W` is right,
+zeros and 0 if not. -/
+theorem decrypt_wp (v : Ctr32Impl) {C W SP A D : BitVec 32} {R N n : Nat} {s : State}
+    (h : EPre C W SP A D R N n s) :
+    WP isa (decrypt v.callee v.suffix) s fun s' => abiPreserved s s' ∧
+      match Spec.Siv.decryptWith (Spec.Siv.ctxMac s.mem (w64 C) R) (Spec.Siv.ctxCiph s.mem (w64 C) R)
+          (Spec.Siv.components 32 s.mem (w64 A) N) (bytesAt s.mem (w64 W) 16) (bytesAt s.mem (w64 D) n) with
+      | some pt => s'.gpr .eax = 1 ∧ bytesAt s'.mem (w64 D) n = pt
+      | none => s'.gpr .eax = 0 ∧ bytesAt s'.mem (w64 D) n = Spec.Siv.zeros n := by
+  have L := h.ads.lay
+  have hR := h.ads.rounds
+  have hRb := rounds_le hR
+  have hDw : (⟨w64 D, n⟩ : Region).Disjoint ⟨w64 W + BitVec.ofNat 64 128, 2448⟩ :=
+    h.data.buf.w.sub_right (Lay.wSub (by decide))
+  have dDW : (⟨w64 W, 16⟩ : Region).Disjoint ⟨w64 D, n⟩ :=
+    (h.data.buf.w.sub_right (Region.sub_prefix (by decide))).symm
+  have hextD : ∀ r ∈ [(⟨w64 D, n⟩ : Region)], r.Disjoint ⟨w64 W + BitVec.ofNat 64 128, 2448⟩ := fun r hr => by
+    simp only [List.mem_singleton] at hr; subst hr; exact hDw
+  refine WP.seq (WP.mono (encS2v_ok v h) fun s₁ O => ?_)
+  have K₁ := O.kept
+  -- CTR from the IV.
+  obtain ⟨s₂, run₂, m₂, bp₂, sp₂, rd₂, wr₂⟩ := counter_ok L K₁.env
+  refine WP.seq (WP.of_runBlock ⟨s₂, run₂, ?_⟩)
+  have E₂ : Env C W SP s₂ := ⟨bp₂, sp₂, K₁.env.perm.of_eq rd₂ wr₂⟩
+  have f₂ : Frame [⟨w64 W + BitVec.ofNat 64 cbOff, 16⟩] s₁.mem s₂.mem := by
+    rw [m₂]; exact Proof.Cmac.frame_store4 _ _ _ _ _
+  have K₂ : Kept s C W SP R D n [] s₂ := K₁.step L (by simp) E₂ rd₂ wr₂ f₂ counter_wR
+  have hq : bytesAt s₂.mem (w64 W + BitVec.ofNat 64 cbOff) 16 = Spec.Siv.counter (bytesAt s₁.mem (w64 W) 16) := by
+    rw [m₂]; exact counter_bytes _ _
+  refine WP.seq (WP.mono (ctr_ok v L hR E₂ (h.data.of_eq K₂.rd K₂.wr) h.n32 K₂.slots.ctx K₂.slots.rounds
+    K₂.slots.data K₂.slots.len hq (counter_low _)) fun s₃ ⟨E₃, rd₃, wr₃, f₃, d₃⟩ => ?_)
+  have K₃ : Kept s C W SP R D n [⟨w64 D, n⟩] s₃ :=
+    (K₂.widen _).step L hextD E₃ rd₃ wr₃ f₃ (ctrR_wR (by simp))
+  -- S2V's end with the plaintext into `W + 112`.
+  obtain ⟨s₄, run₄, P₄, K₄, f₄⟩ := dataStr_pre L K₃ hextD (h.data.buf.of_eq K₃.rd K₃.wr) h.n32
+  refine WP.seq (WP.of_runBlock ⟨s₄, run₄, ?_⟩)
+  refine WP.seq (WP.mono (finish_ok v L hR P₄ (out := tOff) (.inr rfl)) fun s₅ F => ?_)
+  have K₅ : Kept s C W SP R D n [⟨w64 D, n⟩] s₅ := K₄.step L hextD F.env F.rd F.wr F.frame (finR_wR (.inr rfl))
+  -- The comparison.
+  obtain ⟨s₆, run₆, m₆, g₆, rd₆, wr₆⟩ := compare_ok L F.env
+  refine WP.seq (WP.of_runBlock ⟨s₆, run₆, ?_⟩)
+  have E₆ : Env C W SP s₆ := F.env.keep (g₆ _ (by decide) (by decide)) (g₆ _ (by decide) (by decide)) rd₆ wr₆
+  have f₆ : Frame [⟨w64 W + BitVec.ofNat 64 okO, 4⟩] s₅.mem s₆.mem := by
+    rw [m₆]; exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
+  have K₆ : Kept s C W SP R D n [⟨w64 D, n⟩] s₆ := K₅.step L hextD E₆ rd₆ wr₆ f₆ fun r hr => by
+    simp only [List.mem_singleton] at hr; subst hr
+    exact .inl ⟨wS W, by simp, sub_wS (by decide) (by decide)⟩
+  have hok : slotv s₆.mem W okO = okVal s₅.mem W := by rw [m₆]; exact Mem.readW_writeW_self32 _ _ _
+  rw [okVal_eq] at hok
+  -- The mask.
+  refine WP.seq (WP.mono (mask_ok L E₆ K₆.slots.data K₆.slots.len h.n32 (h.data.buf.of_eq K₆.rd K₆.wr)
+    (by rw [K₆.wr]; exact h.data.wr) hok) fun s₇ ⟨E₇, rd₇, wr₇, m₇⟩ => ?_)
+  have f₇ : Frame [⟨w64 D, n⟩] s₆.mem s₇.mem := by
+    rw [m₇]; exact writeBytes_frame _ _ _ (by rw [length_mask]; exact Region.contains_self _ _)
+  have K₇ : Kept s C W SP R D n [⟨w64 D, n⟩] s₇ := K₆.step L hextD E₇ rd₇ wr₇ f₇ fun r hr => by
+    simp only [List.mem_singleton] at hr; subst hr; exact .inr ⟨_, by simp, fun _ h => h⟩
+  -- The result, and the exit.
+  rw [WP.block_append_iff]
+  obtain ⟨s₈, run₈, ax₈, g₈, m₈, rd₈, wr₈⟩ := retEax_ok L E₇
+  refine WP.of_runBlock ⟨s₈, run₈, ?_⟩
+  have K₈ : Kept s C W SP R D n [⟨w64 D, n⟩] s₈ :=
+    K₇.step L hextD (E₇.keep (g₈ _ (by decide)) (g₈ _ (by decide)) rd₈ wr₈) rd₈ wr₈ (rs := [])
+      (by rw [m₈]; exact Frame.refl _ _) (fun r hr => by simp at hr)
+  have hret : s₈.mem.readW (w64 (s.gpr .esp)) 32 = s.mem.readW (w64 (s.gpr .esp)) 32 := by
+    rw [h.sp]
+    exact K₈.big.readW (r := ⟨w64 SP, 4⟩) (Region.contains_self _ _) (fun r hr => by
+      simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl
+      · exact h.ret.sub_right (Lay.wSub (by decide))
+      · exact ret_below L.sp
+      · exact h.retD) (by decide)
+  refine WP.mono (exit_ok K₈.env.ebp (by rw [K₈.env.esp, h.sp]) (covers_left (fun a m ⟨r, hr, hc⟩ => by
+      simp only [List.mem_singleton] at hr; subst hr
+      exact K₈.env.perm.w a m ⟨_, List.mem_singleton_self _, by simp only [Region.Contains] at hc ⊢; omega⟩))
+    (by have := L.fw; omega) K₈.saved hret) fun s₉ ⟨ab, m₉, ax₉, _, _⟩ => ⟨ab, ?_⟩
+  -- The values.
+  have dext : ∀ r ∈ [(⟨w64 D, n⟩ : Region)], (⟨w64 W, 16⟩ : Region).Disjoint r := fun r hr => by
+    simp only [List.mem_singleton] at hr; subst hr; exact dDW
+  have iv₁ : bytesAt s₁.mem (w64 W) 16 = bytesAt s.mem (w64 W) 16 := K₁.iv L (by simp)
+  have iv₅ : bytesAt s₅.mem (w64 W) 16 = bytesAt s.mem (w64 W) 16 := K₅.iv L dext
+  have dc : ∀ r ∈ [(⟨w64 D, n⟩ : Region)], (⟨w64 C, 512⟩ : Region).Disjoint r := fun r hr => by
+    simp only [List.mem_singleton] at hr; subst hr; exact h.data.c
+  have mac₄ : Spec.Siv.ctxMac s₄.mem (w64 C) R = Spec.Siv.ctxMac s.mem (w64 C) R := K₄.mac L hR dc
+  have ciph₂ : Spec.Siv.ctxCiph s₂.mem (w64 C) R = Spec.Siv.ctxCiph s.mem (w64 C) R :=
+    ctxCiph_frame K₂.big (fun r hr => by
+      simp only [List.append_nil, List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · exact L.c_w.sub_right (Lay.wSub (by decide))
+      · exact L.stk_c.symm) hRb
+  have p₂ : bytesAt s₂.mem (w64 D) n = bytesAt s.mem (w64 D) n :=
+    K₂.bytes h.data.buf.w h.data.buf.stk (by simp) (by have := h.data.buf.lt; omega)
+  -- `D`, from `encS2v` to `finish`.
+  have dD : ∀ {rs : List Region}, (∀ r ∈ rs, (⟨w64 W + BitVec.ofNat 64 dOff, 16⟩ : Region).Disjoint r) →
+      ∀ {m m' : Mem}, Frame rs m m' →
+      bytesAt m' (w64 W + BitVec.ofNat 64 dOff) 16 = bytesAt m (w64 W + BitVec.ofNat 64 dOff) 16 :=
+    fun hd _ _ hf => Proof.AesGcm.X86.bytesAt_frame hf hd (by decide)
+  have acc₄ : bytesAt s₄.mem (w64 W + BitVec.ofNat 64 dOff) 16 =
+      Spec.Siv.s2vAcc (Spec.Siv.ctxMac s.mem (w64 C) R) (Spec.Siv.components 32 s.mem (w64 A) N) := by
+    rw [dD (fun r hr => by
+        simp only [List.mem_singleton] at hr; subst hr; exact Lay.w_w (.inr (by decide)) (by decide) (by decide)) f₄,
+      dD (fun r hr => by
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl | rfl | rfl
+        · exact Lay.w_w (.inr (by decide)) (by decide) (by decide)
+        · exact Lay.w_w (.inr (by decide)) (by decide) (by decide)
+        · exact (L.stk_w' (by decide)).symm
+        · exact (h.data.buf.w.sub_right (Lay.wSub (by decide))).symm) f₃,
+      dD (fun r hr => by
+        simp only [List.mem_singleton] at hr; subst hr; exact Lay.w_w (.inr (by decide)) (by decide) (by decide)) f₂,
+      O.acc]
+  have pt₄ : bytesAt s₄.mem (w64 D) n = bytesAt s₃.mem (w64 D) n :=
+    Proof.AesGcm.X86.bytesAt_frame f₄ (fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr; exact h.data.buf.w.sub_right (Lay.wSub (by decide)))
+      (by have := h.data.buf.lt; omega)
+  have o₅ := F.out
+  rw [mac₄, acc₄, pt₄] at o₅
+  have pt₃ := d₃
+  rw [ciph₂, p₂, iv₁] at pt₃
+  -- The plaintext through the comparison.
+  have pt₆ : bytesAt s₆.mem (w64 D) n = bytesAt s₃.mem (w64 D) n := by
+    rw [Proof.AesGcm.X86.bytesAt_frame f₆ (fun r hr => by
+        simp only [List.mem_singleton] at hr; subst hr; exact h.data.buf.w.sub_right (Lay.wSub (by decide)))
+        (by have := h.data.buf.lt; omega)]
+    exact Proof.AesGcm.X86.bytesAt_frame F.frame (fun r hr => (finR_buf h.data.buf (.inr rfl) r hr))
+      (by have := h.data.buf.lt; omega) |>.trans pt₄
+  have hlm := length_mask s₆.mem (w64 D) (decide (bytesAt s₅.mem (w64 W) 16 =
+    bytesAt s₅.mem (w64 W + BitVec.ofNat 64 tOff) 16)) n
+  have out₇ : bytesAt s₇.mem (w64 D) n = if decide (bytesAt s₅.mem (w64 W) 16 =
+      bytesAt s₅.mem (w64 W + BitVec.ofNat 64 tOff) 16) then bytesAt s₆.mem (w64 D) n else Spec.Siv.zeros n := by
+    rw [m₇]
+    have := Proof.AesGcm.X86.bytesAt_writeBytes_self s₆.mem (w64 D) _ (by rw [hlm]; have := h.data.buf.lt; omega)
+    rw [hlm] at this
+    exact this
+  have ok₇ : slotv s₇.mem W okO = slotv s₆.mem W okO :=
+    f₇.readW (r := ⟨w64 W + BitVec.ofNat 64 okO, 4⟩) (Region.contains_self _ _) (fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr
+      exact (h.data.buf.w.sub_right (Lay.wSub (by decide))).symm) (by decide)
+  have eax₉ : s₉.gpr .eax = if decide (bytesAt s₅.mem (w64 W) 16 =
+      bytesAt s₅.mem (w64 W + BitVec.ofNat 64 tOff) 16) then 1 else 0 := by
+    rw [ax₉, ax₈, ok₇, hok]
+  rw [Spec.Siv.decryptWith_eq, Spec.Siv.openWith, ← pt₃]
+  rw [m₉, m₈, out₇, eax₉, iv₅, o₅, pt₆]
+  by_cases hc : Spec.Siv.s2vFinish (Spec.Siv.ctxMac s.mem (w64 C) R)
+      (Spec.Siv.s2vAcc (Spec.Siv.ctxMac s.mem (w64 C) R) (Spec.Siv.components 32 s.mem (w64 A) N))
+      (bytesAt s₃.mem (w64 D) n) = bytesAt s.mem (w64 W) 16
+  · simp only [hc, ↓reduceIte, decide_true]
+    exact ⟨trivial, trivial⟩
+  · have hc' : ¬ bytesAt s.mem (w64 W) 16 = Spec.Siv.s2vFinish (Spec.Siv.ctxMac s.mem (w64 C) R)
+        (Spec.Siv.s2vAcc (Spec.Siv.ctxMac s.mem (w64 C) R) (Spec.Siv.components 32 s.mem (w64 A) N))
+        (bytesAt s₃.mem (w64 D) n) := fun e => hc e.symm
+    simp only [hc, hc', ↓reduceIte, decide_false]
+    exact ⟨rfl, rfl⟩
 
 end VG.Proof.AesSiv.X86
