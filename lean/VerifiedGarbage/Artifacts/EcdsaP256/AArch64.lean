@@ -44,7 +44,8 @@ def artifacts : List Artifact := [
       computed for the key's point if it is valid, else `G`, so always on a point of the curve. \
       `s⁻¹` modulo `n` and `Z⁻¹` are Fermat's, by the signature's chains; `[u]G` is the \
       signature's comb over the nibbles of `u`, and `[v]Q` `vg_ecdh_p256`'s signed 4-bit windows \
-      (65 digits of `v + 8 Σ_{j<65} 16^j`, four doublings and a constant-time selection from a \
+      (65 digits of `v + 8 Σ_{j<65} 16^j`, four doublings in Jacobian coordinates and a \
+      constant-time selection from a \
       table of `[1 … 8]Q` each), with the complete formulas of Renes, Costello and Batina for \
       `a = -3`, which also add the two. The result is the conjunction of the checks (the key, \
       `r` and `s` in `[1, n-1]`, the sum not the point at infinity, and `x ≡ r` modulo `n`) as a mask, so the time \

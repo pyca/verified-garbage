@@ -18,13 +18,13 @@ open VG.Impl.AesGcm.Arm (imm addI zero16 xorLoop ctrFrame)
 open VG.Proof.AesGcm.Arm (CT bytesAt_frame ctr_call CtrCall)
 
 section
-variable {k w sp N A D : BitVec 32} {R nl al n tl : Nat}
+variable {k w sp N A D T : BitVec 32} {R nl al n tl : Nat}
 
 /-- After code that writes `rs`, within what the pieces write and apart from `Ctr₀`. -/
-theorem MacI.of {s s' : State} (h : MacI k w sp N A D R nl al n tl s) (he : Env k w sp R (14 - nl) s')
+theorem MacI.of {s s' : State} (h : MacI k w sp N A D T R nl al n tl s) (he : Env k w sp R (14 - nl) s')
     {rs : List Region} (hf : Frame rs s.mem s'.mem) (hsub : ∀ r ∈ rs, ∃ r' ∈ mutR w sp D n, Region.Sub r r')
     (hd : ∀ r ∈ rs, (⟨State.addr w + BitVec.ofNat 64 48, 16⟩ : Region).Disjoint r) (hrd : s'.rd = s.rd)
-    (hwr : s'.wr = s.wr) : MacI k w sp N A D R nl al n tl s' := by
+    (hwr : s'.wr = s.wr) : MacI k w sp N A D T R nl al n tl s' := by
   obtain ⟨o, he₀, nonce, hl, hc⟩ := h
   exact ⟨o.next hf hsub (by rw [he.sp, he₀.sp]) hrd hwr, he, nonce, hl, by rw [bytesAt_frame hf hd (by decide), hc]⟩
 
@@ -32,7 +32,7 @@ variable (L : Lay k w sp) (hR : R = 10 ∨ R = 12 ∨ R = 14)
 include L hR
 
 /-- `tag y`. -/
-theorem tag_ct {y : Nat} (hy : y = 0 ∨ y = 112) : CT (MacI k w sp N A D R nl al n tl) (tag y) := by
+theorem tag_ct {y : Nat} (hy : y = 0 ∨ y = 112) : CT (MacI k w sp N A D T R nl al n tl) (tag y) := by
   refine CT.seq (J := fun s => CtrCall s k (w + BitVec.ofNat 32 64) (w + BitVec.ofNat 32 y)
     (w + BitVec.ofNat 32 384) R 1 ∧ s.sp = sp) ?_ (fun s ⟨o, he, nonce, hl, hc⟩ => ?_) ?_
   · obtain ⟨_, hc⟩ : ∃ h, (VG.Taint.check VG.Arm.taint (Taint.ofRegs [.r8, .r9, .r10, .r11])

@@ -21,12 +21,12 @@ open VG.Proof.AesGcm.Arm (CT bytesAt_frame savedR)
 open VG.Proof.AesCcm (length_bytesAt)
 
 section
-variable {k w sp N A D : BitVec 32} {R nl al n tl : Nat} (L : Lay k w sp) (hR : R = 10 ∨ R = 12 ∨ R = 14)
+variable {k w sp N A D T : BitVec 32} {R nl al n tl : Nat} (L : Lay k w sp) (hR : R = 10 ∨ R = 12 ∨ R = 14)
 include L hR
 
 /-- Counter mode. -/
 theorem ctr_ct (h7 : 7 ≤ nl) (h13 : nl ≤ 13) (hn : n < 256 ^ (15 - nl)) (hn4 : n < 2 ^ 32) :
-    CT (MacI k w sp N A D R nl al n tl) ctr := by
+    CT (MacI k w sp N A D T R nl al n tl) ctr := by
   refine CT.seq (J := CrI k w sp R nl D n) ?_ (fun s ⟨o, he, c0⟩ => ?_) ?_
   · exact CT.args [] (fun s h => h.1.pubArgs) (fun _ _ _ _ _ h => by simp at h) ⟨_, by taint_decide⟩
   · obtain ⟨s₁, run₁, h4, h5, g₁, k₁⟩ := dataLd_ok o.ar.stk o.eD o.en
@@ -54,20 +54,20 @@ end
 
 /-- At the entry: one run, and the registers holding the key schedule, the
 rounds and the nonce. -/
-def EntI (k w sp N A D : BitVec 32) (R nl al n tl : Nat) (s : State) : Prop :=
-  One k w sp N A D R nl al n tl s ∧ s.gpr .r0 = k ∧ s.gpr .r1 = BitVec.ofNat 32 R ∧ s.gpr .r2 = N ∧
+def EntI (k w sp N A D T : BitVec 32) (R nl al n tl : Nat) (s : State) : Prop :=
+  One k w sp N A D T R nl al n tl s ∧ s.gpr .r0 = k ∧ s.gpr .r1 = BitVec.ofNat 32 R ∧ s.gpr .r2 = N ∧
     s.gpr .r3 = BitVec.ofNat 32 nl
 
 /-- After the entry. -/
-def AftI (k w sp N A D : BitVec 32) (R nl al n tl : Nat) (s : State) : Prop :=
-  One k w sp N A D R nl al n tl s ∧ Env k w sp R (s.gpr .r10).toNat s ∧ s.gpr .r2 = N ∧
+def AftI (k w sp N A D T : BitVec 32) (R nl al n tl : Nat) (s : State) : Prop :=
+  One k w sp N A D T R nl al n tl s ∧ Env k w sp R (s.gpr .r10).toNat s ∧ s.gpr .r2 = N ∧
     s.gpr .r3 = BitVec.ofNat 32 nl
 
 section
-variable {k w sp N A D : BitVec 32} {R nl al n tl : Nat} (L : Lay k w sp) (hR : R = 10 ∨ R = 12 ∨ R = 14)
+variable {k w sp N A D T : BitVec 32} {R nl al n tl : Nat} (L : Lay k w sp) (hR : R = 10 ∨ R = 12 ∨ R = 14)
 
 /-- The entry. -/
-theorem entry_ct : CT (EntI k w sp N A D R nl al n tl) (.block entry) :=
+theorem entry_ct : CT (EntI k w sp N A D T R nl al n tl) (.block entry) :=
   CT.args [.r0, .r1, .r2, .r3] (fun s h => h.1.pubArgs) (fun s₁ s₂ h₁ h₂ r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl
@@ -76,8 +76,8 @@ theorem entry_ct : CT (EntI k w sp N A D R nl al n tl) (.block entry) :=
     · rw [h₁.2.2.2.1, h₂.2.2.2.1]
     · rw [h₁.2.2.2.2, h₂.2.2.2.2]) ⟨_, by taint_decide⟩
 
-theorem entry_wpI {s : State} (h : EntI k w sp N A D R nl al n tl s) :
-    WP isa (.block entry) s (AftI k w sp N A D R nl al n tl) := by
+theorem entry_wpI {s : State} (h : EntI k w sp N A D T R nl al n tl s) :
+    WP isa (.block entry) s (AftI k w sp N A D T R nl al n tl) := by
   obtain ⟨o, h0, h1, h2, h3⟩ := h
   refine WP.mono (entry_wp o.ar h0 h1 o.eW) fun s₁ ⟨he₁, g₁, rd₁, wr₁, _, f₁⟩ => ?_
   have hsp : s₁.sp = s.sp := he₁.sp
@@ -88,7 +88,7 @@ theorem entry_wpI {s : State} (h : EntI k w sp N A D R nl al n tl s) :
     by rw [g₁ _ (by decide) (by decide) (by decide) (by decide), h3]⟩
 
 /-- `Ctr₀`. -/
-theorem ctrs_ct : CT (AftI k w sp N A D R nl al n tl) ctrs :=
+theorem ctrs_ct : CT (AftI k w sp N A D T R nl al n tl) ctrs :=
   CT.args [.r2, .r3, .r8, .r9, .r11] (fun s h => h.1.pubArgs) (fun s₁ s₂ h₁ h₂ r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl
@@ -99,8 +99,8 @@ theorem ctrs_ct : CT (AftI k w sp N A D R nl al n tl) ctrs :=
     · rw [h₁.2.1.r11, h₂.2.1.r11]) ⟨_, by taint_decide⟩
 
 include L in
-theorem ctrs_wpI {s : State} (h : AftI k w sp N A D R nl al n tl s) :
-    WP isa ctrs s (MacI k w sp N A D R nl al n tl) := by
+theorem ctrs_wpI {s : State} (h : AftI k w sp N A D T R nl al n tl s) :
+    WP isa ctrs s (MacI k w sp N A D T R nl al n tl) := by
   obtain ⟨o, he, h2, h3⟩ := h
   have hN : Buf w sp s N nl := by have := o.ar.nonce; rwa [o.sp] at this
   refine WP.mono (ctrs_ok L he hN h2 h3 o.ar.h7 o.ar.h13) fun s₂ ⟨c₂, h10₂, f₂, g₂, rd₂, wr₂, sp₂⟩ => ?_
@@ -113,8 +113,8 @@ theorem ctrs_wpI {s : State} (h : AftI k w sp N A D R nl al n tl s) :
 
 include L hR
 
-theorem mac_wpI {y : Nat} (hy : y = 0 ∨ y = 112) {s : State} (h : MacI k w sp N A D R nl al n tl s) :
-    WP isa (mac y) s (MacI k w sp N A D R nl al n tl) := by
+theorem mac_wpI {y : Nat} (hy : y = 0 ∨ y = 112) {s : State} (h : MacI k w sp N A D T R nl al n tl s) :
+    WP isa (mac y) s (MacI k w sp N A D T R nl al n tl) := by
   obtain ⟨o, he, nonce, hl, hc⟩ := id h
   have Ar := o.ar
   have hA : Buf w sp s A al := by have := Ar.aad; rwa [o.sp] at this
@@ -122,8 +122,8 @@ theorem mac_wpI {y : Nat} (hy : y = 0 ∨ y = 112) {s : State} (h : MacI k w sp 
   exact WP.mono (mac_ok L he Ar.stk o.sp hR o.eA o.eal o.eD o.en o.etl hl Ar.h7 Ar.h13 Ar.t4 Ar.t16 Ar.te Ar.al32
     Ar.n32 Ar.hn hc hy hA hD) fun _ M => MacI.next hy h M
 
-theorem tag_wpI {y : Nat} (hy : y = 0 ∨ y = 112) {s : State} (h : MacI k w sp N A D R nl al n tl s) :
-    WP isa (tag y) s (MacI k w sp N A D R nl al n tl) := by
+theorem tag_wpI {y : Nat} (hy : y = 0 ∨ y = 112) {s : State} (h : MacI k w sp N A D T R nl al n tl s) :
+    WP isa (tag y) s (MacI k w sp N A D T R nl al n tl) := by
   obtain ⟨o, he, nonce, hl, hc⟩ := id h
   refine WP.mono (tag_ok L he hR (nonce := nonce) (by rw [hl]; exact o.ar.h7) (by rw [hl]; exact o.ar.h13) hc hy)
     fun s' ⟨he', rd, wr, _, f, _⟩ => h.of he' f (fun r hr => ?_) (fun r hr => ?_) rd wr
@@ -142,8 +142,8 @@ theorem tag_wpI {y : Nat} (hy : y = 0 ∨ y = 112) {s : State} (h : MacI k w sp 
     · exact L.w_w (.inl (by decide)) (by decide) (by decide)
     · exact (L.stk_w' (by decide)).symm
 
-theorem ctr_wpI {s : State} (h : MacI k w sp N A D R nl al n tl s) :
-    WP isa ctr s (MacI k w sp N A D R nl al n tl) := by
+theorem ctr_wpI {s : State} (h : MacI k w sp N A D T R nl al n tl s) :
+    WP isa ctr s (MacI k w sp N A D T R nl al n tl) := by
   obtain ⟨o, he, nonce, hl, hc⟩ := id h
   have hD : Dat k w sp s D n := by have := o.ar.data; rwa [o.sp] at this
   refine WP.mono (ctr_ok L he o.ar.stk hR (nonce := nonce) (by rw [hl]; exact o.ar.h7) (by rw [hl]; exact o.ar.h13)
@@ -158,20 +158,19 @@ theorem ctr_wpI {s : State} (h : MacI k w sp N A D R nl al n tl s) :
 
 /-- `vg_aes_ccm_seal`, from the entry invariant. -/
 theorem seal_ctI (hal : al < 2 ^ 32) (h7 : 7 ≤ nl) (h13 : nl ≤ 13) (hn : n < 256 ^ (15 - nl)) (hn4 : n < 2 ^ 32) :
-    CT (EntI k w sp N A D R nl al n tl) «seal» := by
+    CT (EntI k w sp N A D T R nl al n tl) «seal» := by
   refine CT.seq entry_ct (fun _ h => entry_wpI h) ?_
   refine CT.seq ctrs_ct (fun _ h => ctrs_wpI L h) ?_
   refine CT.seq (mac_ct L hR hal (.inl rfl) hn4) (fun _ h => mac_wpI L hR (.inl rfl) h) ?_
   refine CT.seq (tag_ct L hR (.inl rfl)) (fun _ h => tag_wpI L hR (.inl rfl) h) ?_
   refine CT.seq (ctr_ct L hR h7 h13 hn hn4) (fun _ h => ctr_wpI L hR h) ?_
-  obtain ⟨_, hc⟩ : ∃ h, (VG.Taint.check VG.Arm.taint (Taint.ofRegs [.r11]) (.block restore) h).isSome = true :=
-    ⟨_, by taint_decide⟩
-  exact CT.taint _ (fun s₁ s₂ h₁ h₂ r hr => by
-    simp only [List.mem_singleton] at hr; subst hr; rw [h₁.2.1.r11, h₂.2.1.r11]) hc
+  -- The copy of the tag to `tag`, a public stack argument, and the exit.
+  exact CT.args [.r11] (fun s h => h.1.pubArgs) (fun s₁ s₂ h₁ h₂ r hr => by
+    simp only [List.mem_singleton] at hr; subst hr; rw [h₁.2.1.r11, h₂.2.1.r11]) ⟨_, by taint_decide⟩
 
 /-- `vg_aes_ccm_open`, from the entry invariant. -/
 theorem open_ctI (hal : al < 2 ^ 32) (h7 : 7 ≤ nl) (h13 : nl ≤ 13) (hn : n < 256 ^ (15 - nl)) (hn4 : n < 2 ^ 32) :
-    CT (EntI k w sp N A D R nl al n tl) «open» := by
+    CT (EntI k w sp N A D T R nl al n tl) «open» := by
   refine CT.seq entry_ct (fun _ h => entry_wpI h) ?_
   refine CT.seq ctrs_ct (fun _ h => ctrs_wpI L h) ?_
   refine CT.seq (ctr_ct L hR h7 h13 hn hn4) (fun _ h => ctr_wpI L hR h) ?_
