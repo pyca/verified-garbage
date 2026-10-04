@@ -5,6 +5,8 @@ import VerifiedGarbage.Impl.Argon2.X86_64.Finish
 
 namespace VG.Impl.Argon2.X86_64.FillFinish
 
+variable [Compressor]
+
 open VG.X86_64
 
 def code (name : String) (h : HPrime.Hash) : Prog isa :=

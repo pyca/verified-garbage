@@ -15,7 +15,7 @@ structure Finished (s t : State) (p : Params) (pass : Nat) (state : FillState) :
   rd : t.rd = s.rd
   wr : t.wr = s.wr
   frame : Frame (FillBlock.writes s p) s.mem t.mem
-  mxcsr : t.mxcsr = s.mxcsr
+  mxcsr : ctl t.mxcsr = ctl s.mxcsr
   regs : ∀ r ∈ calleeSaved, r ≠ .rbx → r ≠ .r14 → r ≠ .r15 → t.gpr r = s.gpr r
 
 theorem Done.finished {s t : State} {p : Params} {pass slice : Nat} {state : FillState}
@@ -34,7 +34,7 @@ theorem Finished.prepend {s a t : State} {p : Params} {pass slice : Nat} {state 
     exact first.frame.trans frame
   · intro r hr bx sl ix; exact (rest.regs r hr bx sl ix).trans (first.regs r hr bx sl ix)
 
-theorem loop_ok (count : Nat) (s : State) (p : Params) (pass slice : Nat)
+theorem loop_ok [CompressImpl] (count : Nat) (s : State) (p : Params) (pass slice : Nat)
     (h : FillSlice.Ready p pass slice s) (state : FillState)
     (represented : Proof.Argon2.Represents s.mem (FillKernel.matrix s) p.blocks state.memory)
     (positive : 0 < count) (endSlice : slice + count = 4) :
@@ -56,7 +56,7 @@ theorem loop_ok (count : Nat) (s : State) (p : Params) (pass slice : Nat)
       refine ⟨_, t, .loopNext run ?_ restRun, finished.prepend done⟩
       simp only [eval, done.cf, active, decide_true]
 
-theorem pass_ok (s : State) (p : Params) (pass : Nat) (h : FillSlice.Ready p pass 0 s) (state : FillState)
+theorem pass_ok [CompressImpl] (s : State) (p : Params) (pass : Nat) (h : FillSlice.Ready p pass 0 s) (state : FillState)
     (represented : Proof.Argon2.Represents s.mem (FillKernel.matrix s) p.blocks state.memory) :
     WP isa Impl.Argon2.X86_64.FillSlices.loop s (Finished s · p pass (fillPass p state pass)) := by
   rw [← Proof.Argon2.slices_pass p pass state]

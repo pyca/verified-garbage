@@ -57,7 +57,7 @@ structure Saved (s t : State) : Prop where
   regs : ∀ r, r ≠ .rax → t.gpr r = s.gpr r
   rd : t.rd = s.rd
   wr : t.wr = s.wr
-  mxcsr : t.mxcsr = s.mxcsr
+  mxcsr : ctl t.mxcsr = ctl s.mxcsr
   cf : t.cf = decide ((s.mem.readW (off (s.gpr .rbp) 0) 64 + 1).toNat <
     (s.mem.readW (off (s.gpr .rbp) 72) 64).toNat)
   frame : Frame [⟨off (s.gpr .rbp) 0, 8⟩] s.mem t.mem
@@ -76,7 +76,7 @@ theorem advance_ok (s : State) (read : InRegions (s.rd ++ s.wr) (off (s.gpr .rbp
   rintro t ⟨mem, regs, rd, wr, mx, cf⟩
   have finalMem : t.mem = s.mem.writeW (off (s.gpr .rbp) 0) (s.mem.readW (off (s.gpr .rbp) 0) 64 + 1) := by
     rw [mem, keeps.mem, bp, value]
-  refine ⟨finalMem, ?_, rd.trans keeps.rd, wr.trans keeps.wr, mx.trans keeps.mxcsr, ?_, ?_⟩
+  refine ⟨finalMem, ?_, rd.trans keeps.rd, wr.trans keeps.wr, ctl_eq_of (mx.trans keeps.mxcsr), ?_, ?_⟩
   · intro r ne
     have outside : r ∉ [Reg.rax] := by simp only [List.mem_cons, List.not_mem_nil, or_false]; exact ne
     exact (congrFun regs r).trans (keeps.regs r outside)
@@ -193,12 +193,12 @@ structure Done (s t : State) (p : Params) (pass : Nat) (state : FillState) : Pro
   rd : t.rd = s.rd
   wr : t.wr = s.wr
   frame : Frame (writes s p) s.mem t.mem
-  mxcsr : t.mxcsr = s.mxcsr
+  mxcsr : ctl t.mxcsr = ctl s.mxcsr
   regs : ∀ r ∈ calleeSaved, r ≠ .rbx → r ≠ .r14 → r ≠ .r15 → t.gpr r = s.gpr r
   cf : t.cf = decide (pass + 1 < p.passes)
   next : pass + 1 < p.passes → Ready p (pass + 1) t
 
-theorem body_ok (s : State) (p : Params) (pass : Nat) (h : Ready p pass s) (state : FillState)
+theorem body_ok [CompressImpl] (s : State) (p : Params) (pass : Nat) (h : Ready p pass s) (state : FillState)
     (represented : Proof.Argon2.Represents s.mem (FillKernel.matrix s) p.blocks state.memory) :
     WP isa Impl.Argon2.X86_64.FillIterations.body s (Done s · p pass state) := by
   unfold Impl.Argon2.X86_64.FillIterations.body

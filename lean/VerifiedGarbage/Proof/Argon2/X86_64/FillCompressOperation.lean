@@ -118,18 +118,18 @@ theorem destination_unchanged {s t : State} (h : OperationReady s) (called : Cal
     ← blockAt_get s.mem (destination s) ⟨i, hi⟩] at read
   exact read
 
-theorem operation_ok (s : State) (h : OperationReady s) :
-    WP isa operation s (OperationDone s) := by
+theorem operation_ok [CompressImpl] (s : State) (h : OperationReady s) :
+    WP isa operation s fun t => OperationDone s t ∧ ctl t.mxcsr = ctl s.mxcsr := by
   unfold operation
-  refine WP.seq ((call_ok _ s h.call).mono ?_)
-  intro a called
+  refine WP.seq ((call_ok s h.call).mono ?_)
+  rintro a ⟨called, mx1⟩
   have bp : a.gpr .rbp = s.gpr .rbp := called.regs .rbp (by simp [calleeSaved])
   have reads (d : Nat) (hd : d ∈ [0, 16, 248]) :
       InRegions (a.rd ++ a.wr) (off (a.gpr .rbp) d) 8 := by
     rw [called.rd, called.wr, bp]; exact h.frameRead d hd
-  refine WP.seq ((writeArgs_ok a (reads 16 (by simp)) (reads 248 (by simp))
-    (reads 0 (by simp))).mono ?_)
-  rintro b ⟨dest, src, counter, keeps⟩
+  refine WP.seq ((WP.with_mx (by lit_decide) (writeArgs_ok a (reads 16 (by simp))
+    (reads 248 (by simp)) (reads 0 (by simp)))).mono ?_)
+  rintro b ⟨⟨dest, src, counter, keeps⟩, mx2⟩
   have dest' : b.gpr .rdi = destination s := by
     rw [dest, bp, frame_word h called 16 (by decide), destination]
   have src' : b.gpr .rsi = s.gpr .rdx := by
@@ -145,10 +145,10 @@ theorem operation_ok (s : State) (h : OperationReady s) :
     rw [dest', keeps.wr, called.wr]; exact h.destinationWrite
   have sep : (⟨b.gpr .rsi, 1024⟩ : Region).Disjoint ⟨b.gpr .rdi, 1024⟩ := by
     rw [src', dest']; exact (h.destinationSafe _ (by simp [callWrites])).symm
-  refine (FillWrite.code_cover_ok b readable writable sep).mono ?_
-  rintro t ⟨value, frame, tk, _⟩
-  refine ⟨?_, ?_, tk.2.1.trans (keeps.rd.trans called.rd),
-    tk.2.2.trans (keeps.wr.trans called.wr), ?_⟩
+  refine (WP.with_mx (by lit_decide) (FillWrite.code_cover_ok b readable writable sep)).mono ?_
+  rintro t ⟨⟨value, frame, tk, _⟩, mx3⟩
+  refine ⟨⟨?_, ?_, tk.2.1.trans (keeps.rd.trans called.rd),
+    tk.2.2.trans (keeps.wr.trans called.wr), ?_⟩, by rw [mx3, mx2]; exact mx1⟩
   · rw [dest', src', counter', keeps.mem, called.result, destination_unchanged h called] at value
     exact value
   · intro r hr

@@ -39,20 +39,20 @@ theorem zero_preserved {s t : State} (h : Ready s)
   · exact Offset.disjoint_base _ (by decide) (by decide)
   · exact (h.stackWork.sub_right (Offset.sub_base _ (by decide))).symm
 
-theorem calls_ok (p : Params) (pass lane slice counter : Nat) (s : State) (h : Ready s)
+theorem calls_ok [CompressImpl] (p : Params) (pass lane slice counter : Nat) (s : State) (h : Ready s)
     (zero : blockAt s.mem (off (work s) 7168) = zeroBlock)
     (input : blockAt s.mem (off (work s) 5120) = Proof.Argon2.addressInput p pass lane slice counter) :
-    WP isa calls s (Generated s · p pass lane slice counter) := by
+    WP isa calls s fun t => Generated s t p pass lane slice counter ∧ ctl t.mxcsr = ctl s.mxcsr := by
   unfold calls
   refine WP.seq ((stage_ok s h 7168 5120 4096 (by decide) (by decide) (by decide)
     (by decide) (by decide) (by decide)).mono ?_)
-  intro a first
+  rintro a ⟨first, mx1⟩
   refine (stage_ok a first.ready 7168 4096 6144 (by decide) (by decide) (by decide)
     (by decide) (by decide) (by decide)).mono ?_
-  intro t second
-  refine ⟨?_, second.ready, second.work.trans first.work,
+  rintro t ⟨second, mx2⟩
+  refine ⟨⟨?_, second.ready, second.work.trans first.work,
     fun r hr => (second.regs r hr).trans (first.regs r hr),
-    second.rd.trans first.rd, second.wr.trans first.wr, ?_⟩
+    second.rd.trans first.rd, second.wr.trans first.wr, ?_⟩, by rw [mx2, mx1]⟩
   · have result := second.result
     rw [first.work, zero_preserved h first.frame, zero, first.result, zero, input] at result
     rw [Proof.Argon2.addressBlock_eq]

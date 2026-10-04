@@ -377,7 +377,7 @@ open VG VG.X86_64 VG.Spec.Argon2
 def counterValue (p : Params) (pass slice index old : Nat) : Addr :=
   BitVec.ofNat 64 (if independent p pass slice then index / 128 + 1 else old)
 
-theorem counter_ok (s : State) (p : Params) (pass lane slice index old : Nat)
+theorem counter_ok [CompressImpl] (s : State) (p : Params) (pass lane slice index old : Nat)
     (h : Ready p pass lane slice index old s) :
     WP isa Impl.Argon2.X86_64.RandomSource.code s fun t =>
       t.mem.readW (off (t.gpr .rbp) 8) 64 = counterValue p pass slice index old := by
@@ -413,12 +413,13 @@ namespace VG.Proof.Argon2.X86_64.FillCompress
 
 open VG VG.X86_64
 
-theorem call_rel (name : String) {P : State → State → Prop}
+theorem call_rel [CompressImpl] {P : State → State → Prop}
     (pre : ∀ s t, P s t → CallReady s ∧ CallReady t ∧
       s.gpr .rdi = t.gpr .rdi ∧ s.gpr .rsi = t.gpr .rsi ∧
       s.gpr .rdx = t.gpr .rdx ∧ s.gpr .rcx = t.gpr .rcx ∧ s.gpr .rsp = t.gpr .rsp) :
-    RelCT isa P (.call name Impl.Argon2.X86_64.compress) (fun _ _ => True) := by
-  apply RelCT.callEx (k := compressLocal) compress_correct compress_ct
+    RelCT isa P (.call Impl.Argon2.X86_64.Compressor.name Impl.Argon2.X86_64.Compressor.code)
+      (fun _ _ => True) := by
+  apply RelCT.callEx (k := compressLocal) CompressImpl.correct CompressImpl.ct
   intro s t hp
   obtain ⟨hs, ht, di, si, dx, cx, sp⟩ := pre s t hp
   obtain ⟨ps, cs, ws⟩ := call_hyps s hs
@@ -624,19 +625,19 @@ theorem args_public_rel (x y out : Nat)
   · exact (ha.keeps.regs .rsp (by decide)).trans
       (hp.stacks.trans (hb.keeps.regs .rsp (by decide)).symm)
 
-theorem stage_rel (x y out : Nat)
+theorem stage_rel [CompressImpl] (x y out : Nat)
     (hx : 4096 ≤ x) (hy : 4096 ≤ y) (ho : 4096 ≤ out)
     (bx : x + 1024 ≤ 8192) (by_ : y + 1024 ≤ 8192) (bo : out + 1024 ≤ 8192)
     (argTrace : RelCT isa (fun s t => s.gpr .rbp = t.gpr .rbp)
       (.block (args x y out)) (fun _ _ => True)) :
     RelCT isa Related (stage x y out) Related := by
-  have call := FillCompress.call_rel Spec.Argon2.compressApi.name (P := CallRelated)
+  have call := FillCompress.call_rel (P := CallRelated)
     (fun _ _ hp => ⟨hp.left, hp.right, hp.args .rdi (by simp), hp.args .rsi (by simp),
       hp.args .rdx (by simp), hp.args .rcx (by simp), hp.args .rsp (by simp)⟩)
   have trace := (args_public_rel x y out hx hy ho bx by_ bo argTrace).seq call
   have full := trace.wpDep (fun s t hp =>
-    ⟨stage_ok s hp.left x y out hx hy ho bx by_ bo,
-      stage_ok t hp.right x y out hx hy ho bx by_ bo⟩)
+    ⟨(stage_ok s hp.left x y out hx hy ho bx by_ bo).mono fun _ h => h.1,
+      (stage_ok t hp.right x y out hx hy ho bx by_ bo).mono fun _ h => h.1⟩)
   refine full.mono (fun _ _ h => h) ?_
   intro a b h
   obtain ⟨_, s, t, hp, ha, hb⟩ := h
@@ -647,7 +648,7 @@ theorem stage_rel (x y out : Nat)
       (hp.stacks.trans (hb.regs .rsp (by simp [calleeSaved])).symm),
     ha.work.trans (hp.work.trans hb.work.symm)⟩
 
-theorem calls_rel : RelCT isa Related calls Related :=
+theorem calls_rel [CompressImpl] : RelCT isa Related calls Related :=
   (stage_rel 7168 5120 4096 (by decide) (by decide) (by decide)
     (by decide) (by decide) (by decide) first_args_rel).seq
   (stage_rel 7168 4096 6144 (by decide) (by decide) (by decide)
@@ -744,7 +745,7 @@ theorem prepare_rel : RelCT isa PrepareRelated prepare Related := by
   obtain ⟨_, s, t, hp, ha, hb⟩ := h
   exact hp.related.of_stable ha.stable hb.stable
 
-theorem code_rel : RelCT isa PrepareRelated code Related := prepare_rel.seq calls_rel
+theorem code_rel [CompressImpl] : RelCT isa PrepareRelated code Related := prepare_rel.seq calls_rel
 
 end VG.Proof.Argon2.X86_64.AddressCalls
 end
@@ -872,7 +873,7 @@ theorem save_public_rel : RelCT isa CheckedRelated (.block save) AddressCalls.Pr
   · rw [ha.rd, ha.wr, ha.regs]; exact hp.related.prepare.leftReads
   · rw [hb.rd, hb.wr, hb.regs]; exact hp.related.prepare.rightReads
 
-theorem select_trace : RelCT isa CacheRelated select (fun _ _ => True) := by
+theorem select_trace [CompressImpl] : RelCT isa CacheRelated select (fun _ _ => True) := by
   have noop : RelCT isa (fun _ _ : State => True) (.block []) (fun _ _ => True) :=
     RelCT.taint (A := taint) (Taint.ofRegs [])
       (fun _ _ _ => Taint.agree_ofRegs (by intro r hr; simp at hr)) (by taint_decide)
@@ -889,7 +890,7 @@ structure ReadyRelated (p : Spec.Argon2.Params) (pass lane slice old : Nat) (s t
   right : Ready p pass lane slice old t
   pubs : CacheRelated s t
 
-theorem select_public_rel (p : Spec.Argon2.Params) (pass lane slice old : Nat) :
+theorem select_public_rel [CompressImpl] (p : Spec.Argon2.Params) (pass lane slice old : Nat) :
     RelCT isa (ReadyRelated p pass lane slice old) select WordRelated := by
   have trace := select_trace.mono (P' := ReadyRelated p pass lane slice old)
     (fun _ _ h => h.pubs) (fun _ _ h => h)
@@ -907,7 +908,7 @@ theorem select_public_rel (p : Spec.Argon2.Params) (pass lane slice old : Nat) :
   · exact (ha.regs .r15 (by simp [calleeSaved])).trans
       (hp.pubs.indices.trans (hb.regs .r15 (by simp [calleeSaved])).symm)
 
-theorem code_rel (p : Spec.Argon2.Params) (pass lane slice old : Nat) :
+theorem code_rel [CompressImpl] (p : Spec.Argon2.Params) (pass lane slice old : Nat) :
     RelCT isa (ReadyRelated p pass lane slice old) code (fun _ _ => True) :=
   (select_public_rel p pass lane slice old).seq word_rel
 
@@ -968,7 +969,7 @@ theorem Related.cache {p : Params} {pass lane slice index old : Nat} {s t : Stat
   · exact h.left.filling.position.index.trans h.right.filling.position.index.symm
   · exact h.left.cache.words.counterWord.trans h.right.cache.words.counterWord.symm
 
-theorem code_rel (p : Params) (pass lane slice index old : Nat) :
+theorem code_rel [CompressImpl] (p : Params) (pass lane slice index old : Nat) :
     RelCT isa (Related p pass lane slice index old) code (fun _ _ => True) := by
   have branches : RelCT isa
       (fun s t => Related p pass lane slice index old s t ∧ s.zf = t.zf)
@@ -983,17 +984,6 @@ theorem code_rel (p : Params) (pass lane slice index old : Nat) :
   exact (prepare_rel p pass lane slice index old).seq branches
 
 end VG.Proof.Argon2.X86_64.RandomSource
-end
-
-/-! Merged from `Proof.Argon2.X86_64.FillWriteLit`. -/
-section
-/-! Checked literal of the complete copy/XOR block write. -/
-
-namespace VG
-
-materialize_code Impl.Argon2.X86_64.FillWrite.code
-
-end VG
 end
 
 /-! Merged from `Proof.Argon2.X86_64.FillWriteCT`. -/
@@ -1195,13 +1185,13 @@ theorem called_public {s t a b : State} (hp : Related s t)
         hp.left.workWord, hp.right.workWord]
       exact hp.args .rcx (by simp)
 
-theorem call_public_rel : RelCT isa Related
-    (.call Spec.Argon2.compressApi.name VG.Impl.Argon2.X86_64.compress) BeforeWrite := by
-  have trace := call_rel Spec.Argon2.compressApi.name (P := Related) (fun _ _ hp =>
+theorem call_public_rel [CompressImpl] : RelCT isa Related
+    (.call Impl.Argon2.X86_64.Compressor.name Impl.Argon2.X86_64.Compressor.code) BeforeWrite := by
+  have trace := call_rel (P := Related) (fun _ _ hp =>
     ⟨hp.left.call, hp.right.call, hp.args .rdi (by simp), hp.args .rsi (by simp),
       hp.args .rdx (by simp), hp.args .rcx (by simp), hp.args .rsp (by simp)⟩)
   have full := trace.wpDep (fun s t hp =>
-    ⟨call_ok _ s hp.left.call, call_ok _ t hp.right.call⟩)
+    ⟨(call_ok s hp.left.call).mono fun _ h => h.1, (call_ok t hp.right.call).mono fun _ h => h.1⟩)
   refine full.mono (fun _ _ h => h) ?_
   intro a b h
   obtain ⟨_, s, t, hp, ha, hb⟩ := h
@@ -1232,7 +1222,7 @@ theorem writeArgs_public_rel : RelCT isa BeforeWrite (.block writeArgs)
   · exact ha.1.trans ((hp.words 16 (by simp)).trans hb.1.symm)
   · exact ha.2.1.trans ((congrArg (· + (4096 : Addr)) (hp.words 248 (by simp))).trans hb.2.1.symm)
 
-theorem operation_rel : RelCT isa Related operation (fun _ _ => True) :=
+theorem operation_rel [CompressImpl] : RelCT isa Related operation (fun _ _ => True) :=
   call_public_rel.seq (writeArgs_public_rel.seq FillWrite.code_rel)
 
 end VG.Proof.Argon2.X86_64.FillCompress
@@ -1287,7 +1277,7 @@ theorem setup_public_rel : RelCT isa CodeRelated setup Related := by
   obtain ⟨_, s, t, hp, ha, hb⟩ := h
   exact prepared_public hp ha hb
 
-theorem code_rel : RelCT isa CodeRelated code (fun _ _ => True) :=
+theorem code_rel [CompressImpl] : RelCT isa CodeRelated code (fun _ _ => True) :=
   setup_public_rel.seq operation_rel
 
 end VG.Proof.Argon2.X86_64.FillCompress
@@ -1342,7 +1332,7 @@ theorem prepare_public_rel (p : Params) (pass lane slice index : Nat) :
   obtain ⟨_, s, t, hp, ha, hb⟩ := h
   exact prepared_public hp ha hb
 
-theorem code_rel (p : Params) (pass lane slice index : Nat) :
+theorem code_rel [CompressImpl] (p : Params) (pass lane slice index : Nat) :
     RelCT isa (Related p pass lane slice index) Impl.Argon2.X86_64.FillKernel.code
       (fun _ _ => True) := (prepare_public_rel p pass lane slice index).seq FillCompress.code_rel
 
@@ -1357,7 +1347,7 @@ namespace VG.Proof.Argon2.X86_64.FillBlock
 
 open VG VG.X86_64 VG.Spec.Argon2
 
-theorem counter_run {s t : State} {trace : List Leak} {p : Params} {pass lane slice index old : Nat}
+theorem counter_run [CompressImpl] {s t : State} {trace : List Leak} {p : Params} {pass lane slice index old : Nat}
     (h : RandomSource.Ready p pass lane slice index old s) (state : FillState)
     (represented : Proof.Argon2.Represents s.mem (FillKernel.matrix s) p.blocks state.memory)
     (run : Exec isa Impl.Argon2.X86_64.FillBlock.code s trace t) :
@@ -1415,7 +1405,7 @@ theorem Related.reference_eq {p : Params} {pass lane slice index old : Nat} {s t
   · exact h.references mode
   · simp only [Proof.Argon2.FillStep.random, mode, ite_true]
 
-theorem source_public_rel (p : Params) (pass lane slice index old : Nat) (leftState rightState : FillState) :
+theorem source_public_rel [CompressImpl] (p : Params) (pass lane slice index old : Nat) (leftState rightState : FillState) :
     RelCT isa (Related p pass lane slice index old leftState rightState)
       Impl.Argon2.X86_64.RandomSource.code (FillKernel.Related p pass lane slice index) := by
   intro s t ta tb a b hp ea eb
@@ -1439,7 +1429,7 @@ theorem source_public_rel (p : Params) (pass lane slice index old : Nat) (leftSt
       (hp.source.work.trans (hb.frame_word hp.source.right 248 (by decide) (by decide)).symm)
   · rw [ha.random, hb.random]; exact hp.reference_eq
 
-theorem code_rel (p : Params) (pass lane slice index old : Nat) (leftState rightState : FillState) :
+theorem code_rel [CompressImpl] (p : Params) (pass lane slice index old : Nat) (leftState rightState : FillState) :
     RelCT isa (Related p pass lane slice index old leftState rightState)
       Impl.Argon2.X86_64.FillBlock.code (fun _ _ => True) :=
   (source_public_rel p pass lane slice index old leftState rightState).seq
@@ -1466,7 +1456,7 @@ structure NextRelated (p : Params) (pass lane slice index : Nat) (leftState righ
   leftMatrix : Proof.Argon2.Represents s.mem (FillKernel.matrix s) p.blocks leftState.memory
   rightMatrix : Proof.Argon2.Represents t.mem (FillKernel.matrix t) p.blocks rightState.memory
 
-theorem body_rel (p : Params) (pass lane slice index old : Nat) (leftState rightState : FillState) :
+theorem body_rel [CompressImpl] (p : Params) (pass lane slice index old : Nat) (leftState rightState : FillState) :
     RelCT isa (FillBlock.Related p pass lane slice index old leftState rightState) body
       (fun s t => s.cf = t.cf ∧ (index + 1 < p.segmentLen →
         NextRelated p pass lane slice (index + 1)
@@ -1542,7 +1532,7 @@ structure Related (p : Params) (pass lane slice index count old : Nat) (leftStat
   indices : (Proof.Argon2.segment p pass lane slice index count leftState).indices =
     (Proof.Argon2.segment p pass lane slice index count rightState).indices
 
-theorem loop_rel (p : Params) (pass lane slice index count old : Nat) (leftState rightState : FillState)
+theorem loop_rel [CompressImpl] (p : Params) (pass lane slice index count old : Nat) (leftState rightState : FillState)
     (positive : 0 < count) (endIndex : index + count = p.segmentLen) :
     RelCT isa (Related p pass lane slice index count old leftState rightState)
       Impl.Argon2.X86_64.FillSegment.loop (fun _ _ => True) := by
@@ -1668,7 +1658,7 @@ theorem check_public_rel (p : Params) (pass lane slice : Nat) (leftState rightSt
   obtain ⟨_, s, t, hp, ⟨fa, ka⟩, ⟨fb, kb⟩⟩ := h
   exact ⟨hp.of_keeps ka kb, fa, fb⟩
 
-theorem code_rel (p : Params) (pass lane slice : Nat) (leftState rightState : FillState) :
+theorem code_rel [CompressImpl] (p : Params) (pass lane slice : Nat) (leftState rightState : FillState) :
     RelCT isa (Related p pass lane slice leftState rightState) code (fun _ _ => True) := by
   have branches : RelCT isa
       (fun s t => PreparedRelated p pass lane slice leftState rightState s t ∧

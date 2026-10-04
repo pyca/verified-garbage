@@ -35,7 +35,7 @@ theorem finished_prepared {p : Params} {pass lane slice : Nat} {s a t : State} {
     FillSegment.Finished s t p pass lane slice state := by
   refine ⟨finished.represented, finished.matrix.trans prepared.matrix, finished.work.trans prepared.work,
     finished.position, finished.layout, finished.cache, finished.matrixWork, finished.passWord, finished.lanesWord,
-    ?_, finished.rd.trans prepared.rd, finished.wr.trans prepared.wr, ?_, finished.mxcsr.trans prepared.mxcsr⟩
+    ?_, finished.rd.trans prepared.rd, finished.wr.trans prepared.wr, ?_, finished.mxcsr.trans (ctl_eq_of prepared.mxcsr)⟩
   · intro r hr ne; exact (finished.regs r hr ne).trans (prepared.regs r hr ne)
   · have firstFrame : Frame (FillBlock.writes s p) s.mem a.mem := by
       apply prepared.frame.sub
@@ -58,7 +58,7 @@ namespace VG.Proof.Argon2.X86_64.SegmentSetup
 
 open VG VG.X86_64 VG.Spec.Argon2 VG.Impl.Argon2.X86_64.SegmentSetup
 
-theorem code_ok (s : State) (p : Params) (pass lane slice : Nat)
+theorem code_ok [CompressImpl] (s : State) (p : Params) (pass lane slice : Nat)
     (h : Ready p pass lane slice s) (state : FillState)
     (represented : Proof.Argon2.Represents s.mem (FillKernel.matrix s) p.blocks state.memory) :
     WP isa code s (FillSegment.Finished s · p pass lane slice

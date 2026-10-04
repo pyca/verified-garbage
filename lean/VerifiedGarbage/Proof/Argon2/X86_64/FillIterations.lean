@@ -15,7 +15,7 @@ structure Finished (s t : State) (p : Params) (state : FillState) : Prop where
   rd : t.rd = s.rd
   wr : t.wr = s.wr
   frame : Frame (writes s p) s.mem t.mem
-  mxcsr : t.mxcsr = s.mxcsr
+  mxcsr : ctl t.mxcsr = ctl s.mxcsr
   regs : ∀ r ∈ calleeSaved, r ≠ .rbx → r ≠ .r14 → r ≠ .r15 → t.gpr r = s.gpr r
 
 theorem Done.finished {s t : State} {p : Params} {pass : Nat} {state : FillState}
@@ -33,7 +33,7 @@ theorem Finished.prepend {s a t : State} {p : Params} {pass : Nat} {state finalS
     exact first.frame.trans frame
   · intro r hr bx sl ix; exact (rest.regs r hr bx sl ix).trans (first.regs r hr bx sl ix)
 
-theorem loop_ok (count : Nat) (s : State) (p : Params) (pass : Nat) (h : Ready p pass s) (state : FillState)
+theorem loop_ok [CompressImpl] (count : Nat) (s : State) (p : Params) (pass : Nat) (h : Ready p pass s) (state : FillState)
     (represented : Proof.Argon2.Represents s.mem (FillKernel.matrix s) p.blocks state.memory)
     (positive : 0 < count) (endPass : pass + count = p.passes) :
     WP isa Impl.Argon2.X86_64.FillIterations.loop s (Finished s · p (Proof.Argon2.iterations p pass count state)) := by

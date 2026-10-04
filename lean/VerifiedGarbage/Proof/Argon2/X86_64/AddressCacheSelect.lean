@@ -4,50 +4,16 @@ import VerifiedGarbage.Proof.Argon2.X86_64.AddressCalls
 
 /-! Merged from `Proof.Argon2.X86_64.AddressGeneration`. -/
 section
-/-! Merged from `Proof.Argon2.X86_64.AddressCallsMx`. -/
-section
-/-! The baseline independent-address calls preserve all MXCSR bits. -/
-
-namespace VG.Proof.Argon2.X86_64.AddressCalls
-
-open VG VG.X86_64 VG.Impl.Argon2.X86_64.AddressCalls
-
-theorem compression_noMx : VG.Impl.Argon2.X86_64.compress.allInstrs (fun i => !loadsMxcsr i) = true :=
-  by lit_decide
-
-theorem stage_noMx (x y out : Nat) : (stage x y out).allInstrs (fun i => !loadsMxcsr i) = true := by
-  change ((Code.block (args x y out) : Prog isa).allInstrs (fun i => !loadsMxcsr i) &&
-    VG.Impl.Argon2.X86_64.compress.allInstrs (fun i => !loadsMxcsr i)) = true
-  rw [compression_noMx]
-  rfl
-
-theorem calls_noMx : calls.allInstrs (fun i => !loadsMxcsr i) = true := by
-  change ((stage 7168 5120 4096).allInstrs (fun i => !loadsMxcsr i) &&
-    (stage 7168 4096 6144).allInstrs (fun i => !loadsMxcsr i)) = true
-  rw [stage_noMx, stage_noMx]
-  rfl
-
-theorem calls_mx_ok (p : Spec.Argon2.Params) (pass lane slice counter : Nat) (s : State) (h : Ready s)
-    (zero : Spec.Argon2.blockAt s.mem (off (work s) 7168) = Spec.Argon2.zeroBlock)
-    (input : Spec.Argon2.blockAt s.mem (off (work s) 5120) =
-      Proof.Argon2.addressInput p pass lane slice counter) :
-    WP isa calls s fun t => Generated s t p pass lane slice counter ∧ t.mxcsr = s.mxcsr :=
-  WP.mono_mx calls_noMx (calls_ok p pass lane slice counter s h zero input)
-    (fun _ generated mx => ⟨generated, mx⟩)
-
-end VG.Proof.Argon2.X86_64.AddressCalls
-end
-
 /-! Complete independent-address generation against the reviewed algorithm. -/
 
 namespace VG.Proof.Argon2.X86_64.AddressCalls
 
 open VG VG.X86_64 VG.Spec.Argon2 VG.Impl.Argon2.X86_64.AddressCalls
 
-theorem code_ok (p : Params) (pass lane slice counter : Nat) (s : State) (h : Ready s)
+theorem code_ok [CompressImpl] (p : Params) (pass lane slice counter : Nat) (s : State) (h : Ready s)
     (reads : ∀ d ∈ [0, 8, 72, 112, 240], InRegions (s.rd ++ s.wr) (off (s.gpr .rbp) d) 8)
     (words : AddressHeader.Words p pass lane slice counter s) :
-    WP isa code s fun t => Generated s t p pass lane slice counter ∧ t.mxcsr = s.mxcsr := by
+    WP isa code s fun t => Generated s t p pass lane slice counter ∧ ctl t.mxcsr = ctl s.mxcsr := by
   unfold code
   refine WP.seq ((prepare_ok p pass lane slice counter s h reads words).mono ?_)
   intro a prepared
@@ -55,7 +21,7 @@ theorem code_ok (p : Params) (pass lane slice counter : Nat) (s : State) (h : Re
     rw [prepared.stable.work_eq]; exact prepared.zero
   have input : blockAt a.mem (off (work a) 5120) = Proof.Argon2.addressInput p pass lane slice counter := by
     rw [prepared.stable.work_eq]; exact prepared.input
-  refine (calls_mx_ok p pass lane slice counter a prepared.stable.ready zero input).mono ?_
+  refine (calls_ok p pass lane slice counter a prepared.stable.ready zero input).mono ?_
   rintro t ⟨generated, mx⟩
   have frame := generated.frame
   rw [writes, prepared.stable.work_eq, prepared.stable.regs .rsp (by simp [calleeSaved])] at frame
@@ -68,7 +34,7 @@ theorem code_ok (p : Params) (pass lane slice counter : Nat) (s : State) (h : Re
   refine ⟨⟨?_, generated.ready, generated.work.trans prepared.stable.work_eq,
     fun r hr => (generated.regs r hr).trans (prepared.stable.regs r hr),
     generated.rd.trans prepared.stable.rd, generated.wr.trans prepared.stable.wr,
-    firstFrame.trans frame⟩, mx.trans prepared.stable.mxcsr⟩
+    firstFrame.trans frame⟩, mx.trans (ctl_eq_of prepared.stable.mxcsr)⟩
   have block := generated.block
   rw [prepared.stable.work_eq] at block
   exact block
@@ -178,7 +144,7 @@ structure Selected (s t : State) (p : Params) (pass lane slice : Nat) : Prop whe
   rd : t.rd = s.rd
   wr : t.wr = s.wr
   frame : Frame (writes s) s.mem t.mem
-  mxcsr : t.mxcsr = s.mxcsr
+  mxcsr : ctl t.mxcsr = ctl s.mxcsr
   counterWord : t.mem.readW (off (t.gpr .rbp) 8) 64 = counter (s.gpr .r15)
 
 theorem check_stable {s a : State} (h : AddressCalls.Ready s) (k : Divide.Keeps [.rax] s a) :
@@ -190,7 +156,7 @@ theorem check_stable {s a : State} (h : AddressCalls.Ready s) (k : Divide.Keeps 
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
   · rw [k.mem]; exact Frame.refl _ _
 
-theorem selected_ok (p : Params) (pass lane slice old : Nat) (s : State)
+theorem selected_ok [CompressImpl] (p : Params) (pass lane slice old : Nat) (s : State)
     (h : Ready p pass lane slice old s) :
     WP isa select s (Selected s · p pass lane slice) := by
   unfold select
@@ -204,7 +170,7 @@ theorem selected_ok (p : Params) (pass lane slice old : Nat) (s : State)
     apply WP.of_runBlock
     simp only [runBlock_nil, Option.some.injEq, exists_eq_left']
     refine ⟨?_, stableA.ready, stableA.work_eq, stableA.regs, keeps.rd, keeps.wr,
-      ?_, keeps.mxcsr, ?_⟩
+      ?_, ctl_eq_of keeps.mxcsr, ?_⟩
     · rw [keeps.mem]; exact h.cached equal
     · rw [keeps.mem]; exact Frame.refl _ _
     · rw [stableA.regs .rbp (by simp [calleeSaved]), keeps.mem]; exact equal.symm
@@ -238,7 +204,7 @@ theorem selected_ok (p : Params) (pass lane slice old : Nat) (s : State)
         rcases hr with rfl | rfl <;> simp [writes])
     refine ⟨?_, generated.ready, generated.work.trans workB, regs,
       generated.rd.trans (saved.rd.trans keeps.rd), generated.wr.trans (saved.wr.trans keeps.wr),
-      firstFrame.trans finalFrame, mx.trans (saved.mxcsr.trans keeps.mxcsr), ?_⟩
+      firstFrame.trans finalFrame, mx.trans (ctl_eq_of (saved.mxcsr.trans keeps.mxcsr)), ?_⟩
     · have block := generated.block
       rw [workB] at block
       exact block

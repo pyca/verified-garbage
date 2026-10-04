@@ -4,6 +4,8 @@ import VerifiedGarbage.Impl.Argon2.X86_64.FillSlice
 
 namespace VG.Impl.Argon2.X86_64.FillSlices
 
+variable [Compressor]
+
 open VG.X86_64
 
 def advance : List Instr := [.alu .add .r14 (.imm 1), .alu .cmp .r14 (.imm 4)]

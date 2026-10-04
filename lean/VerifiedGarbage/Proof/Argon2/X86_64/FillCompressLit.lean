@@ -1,11 +1,10 @@
 import VerifiedGarbage.Proof.Framework.X86_64.Lit
-import VerifiedGarbage.Impl.Argon2.X86_64.FillCompress
+import VerifiedGarbage.Impl.Argon2.X86_64.FillWrite
 
-/-! Checked literals for compression and the enclosing argument setup. -/
+/-! A checked literal for the block write after compression. -/
 
 namespace VG
 
-materialize_code Impl.Argon2.X86_64.FillCompress.operation
-materialize_code Impl.Argon2.X86_64.FillCompress.code
+materialize_code Impl.Argon2.X86_64.FillWrite.code
 
 end VG

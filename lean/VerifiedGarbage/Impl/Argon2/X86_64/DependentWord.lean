@@ -6,6 +6,8 @@ public loop position and matrix base determine the read address.
 
 namespace VG.Impl.Argon2.X86_64.DependentWord
 
+variable [Compressor]
+
 open VG.X86_64
 open VG.Impl.Argon2.X86_64 (at_)
 

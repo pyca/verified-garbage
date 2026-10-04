@@ -4,6 +4,8 @@ import VerifiedGarbage.Impl.Argon2.X86_64.FillSlices
 
 namespace VG.Impl.Argon2.X86_64.FillIteration
 
+variable [Compressor]
+
 open VG.X86_64
 
 def setup : List Instr := [.mov .r14 (.imm 0)]

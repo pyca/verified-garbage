@@ -25,7 +25,6 @@ namespace VG
 
 materialize_code Impl.Argon2.X86_64.Derive.prepare
 materialize_code Impl.Argon2.X86_64.FillSetup.code
-materialize_code Impl.Argon2.X86_64.FillIterations.loop
 materialize_code Impl.Argon2.X86_64.FinalReduction.code
 
 end VG

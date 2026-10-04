@@ -229,7 +229,7 @@ structure Done (s t : State) (p : Params) (pass lane slice : Nat) : Prop where
   random : t.gpr .rdi =
     (addressBlock p pass lane slice (wanted s))[(s.gpr .r15).toNat % 128]'(Nat.mod_lt _ (by decide))
 
-theorem code_ok (p : Params) (pass lane slice old : Nat) (s : State)
+theorem code_ok [CompressImpl] (p : Params) (pass lane slice old : Nat) (s : State)
     (h : Ready p pass lane slice old s) :
     WP isa code s (Done s · p pass lane slice) := by
   unfold code
@@ -256,7 +256,7 @@ theorem code_ok (p : Params) (pass lane slice old : Nat) (s : State)
     · rw [sp, work']; exact selected.layout.stackWork
   refine ⟨⟨?_, layout, work'.trans selected.work_eq, regs,
     keeps.rd.trans selected.rd, keeps.wr.trans selected.wr, ?_,
-    keeps.mxcsr.trans selected.mxcsr, ?_⟩, ?_⟩
+    (ctl_eq_of keeps.mxcsr).trans selected.mxcsr, ?_⟩, ?_⟩
   · rw [keeps.mem]; exact selected.block
   · rw [keeps.mem]; exact selected.frame
   · rw [bp, keeps.mem]; exact selected.counterWord
