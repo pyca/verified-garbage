@@ -230,6 +230,9 @@ def zeroOut (sPtr sLen : Nat) : Prog isa :=
   .seq (.block [.mov .rsi (.mem (hdr sPtr)), .mov .rcx (.mem (hdr sLen)), .mov32 .rax (.imm 0)])
     (.loop (.block [.store8 (at0 .rsi) .rax, .alu .add .rsi (.imm 1), .alu .sub .rcx (.imm 1)]) .ne)
 
+/-- The mask's low bit returned, and the saved registers restored. -/
+def retMask : List Instr := [.mov .rax (.mem (hdr sMask)), .alu .and .rax (.imm 1)] ++ exit
+
 /-! ## `vg_rsa_crt_values` -/
 
 namespace CrtValues
@@ -322,11 +325,10 @@ def divisor (j : Nat) : List (Prog isa) :=
 /-- The computation, once `n` is known valid. -/
 def main : Prog isa := seqs ([
   .block head] ++ loadA aN sN sK ++ loadA aP sP sPl ++ loadA aQ sQ sQl ++ loadA aD sD sDl ++ pqCheck ++ invPart ++
-  storeA aX₂ sQi sPl sMask ++
-  -- `dP = d mod (p - 1)` and `dQ = d mod (q - 1)`.
-  divisor aP ++ [divmod aU aV aC aT] ++ storeA aV sDp sPl sMask ++
-  divisor aQ ++ [divmod aU aV aC aT] ++ storeA aV sDq sQl sMask ++
-  [.block ([.mov .rax (.mem (hdr sMask)), .alu .and .rax (.imm 1)] ++ exit)])
+  -- `dP = d mod (p - 1)` into `aX₁` and `dQ = d mod (q - 1)` in `aV`.
+  divisor aP ++ [divmod aU aV aC aT, zeroA aX₁, copyA aX₁ aV] ++ divisor aQ ++ [divmod aU aV aC aT] ++
+  storeA aX₂ sQi sPl sMask ++ storeA aX₁ sDp sPl sMask ++ storeA aV sDq sQl sMask ++
+  [.block retMask])
 
 /-- `vg_rsa_crt_values`. -/
 def code : Prog isa :=

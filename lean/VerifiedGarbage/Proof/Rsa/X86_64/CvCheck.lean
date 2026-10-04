@@ -446,7 +446,7 @@ theorem cvDivPart_ok {I : CvIn} {m₀ : Mem} {s : State} (h : CvS I m₀ s) (L :
       (wv s.mem I.B (slot (wk I.k) j) (wk I.k) % 2 = 1 → 1 < wv s.mem I.B (slot (wk I.k) j) (wk I.k) →
         wv t.mem I.B (slot (wk I.k) aV) (wk I.k + 1) =
           wv s.mem I.B (slot (wk I.k) aD) (wk I.k) % (wv s.mem I.B (slot (wk I.k) j) (wk I.k) - 1)) ∧
-      ∀ i, i = aP ∨ i = aQ ∨ i = aD ∨ i = aX₂ →
+      ∀ i, i = aP ∨ i = aQ ∨ i = aD ∨ i = aX₁ ∨ i = aX₂ →
         wv t.mem I.B (slot (wk I.k) i) (wk I.k) = wv s.mem I.B (slot (wk I.k) i) (wk I.k) := by
   have hn := h.ws.scr.nowrap
   have hZ := h.ws.hZ
@@ -554,9 +554,9 @@ theorem cvDivPart_ok {I : CvIn} {m₀ : Mem} {s : State} (h : CvS I m₀ s) (L :
     have hpos : 0 < wv s₅.mem I.B (slot (wk I.k) aC) (wk I.k) := by
       rw [hC]; omega
     rw [(hv₆ hpos).1, hU, hC]
-  · have hi16 : i < 16 := by rcases hi with rfl | rfl | rfl | rfl <;> decide
-    rw [f6 i hi16 (by rcases hi with rfl | rfl | rfl | rfl <;> decide) (by rcases hi with rfl | rfl | rfl | rfl <;> decide)
-      (by rcases hi with rfl | rfl | rfl | rfl <;> decide),
-      back i hi16 (by rcases hi with rfl | rfl | rfl | rfl <;> decide) (by rcases hi with rfl | rfl | rfl | rfl <;> decide)]
+  · have hi16 : i < 16 := by rcases hi with rfl | rfl | rfl | rfl | rfl <;> decide
+    rw [f6 i hi16 (by rcases hi with rfl | rfl | rfl | rfl | rfl <;> decide) (by rcases hi with rfl | rfl | rfl | rfl | rfl <;> decide)
+      (by rcases hi with rfl | rfl | rfl | rfl | rfl <;> decide),
+      back i hi16 (by rcases hi with rfl | rfl | rfl | rfl | rfl <;> decide) (by rcases hi with rfl | rfl | rfl | rfl | rfl <;> decide)]
 
 end VG.Proof.Rsa.X86_64
