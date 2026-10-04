@@ -361,3 +361,105 @@ theorem eCopy_ok {s : State} {W B C ep : Addr} {L sp sl : Nat} {eb : List Byte} 
       fun _ _ h => absurd h (Nat.not_lt_zero _), Outside.refl _ _ _ _, VG.Proof.MlKem.X86_64.Keep.refl _ _, rfl⟩
 
 end VG.Proof.Bignum.X86_64.AmmSym
+
+namespace VG.Proof.Bignum.X86_64
+
+open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Rsa.X86_64 VG.Impl.Rsa.X86_64.Crt
+open VG.Proof.MlKem.X86_64
+open VG.Impl.Rsa.X86_64.CrtIfma (D oM oK0 oK1 oX oY oE oFin sIfma mask52)
+
+/-! ## `2¹⁰⁵⁶ mod X` -/
+
+/-- The ranges `k1` writes in the prime's workspace. -/
+def k1Ranges (wx : Nat) : List (Nat × Nat) :=
+  [(slot wx Public.aAcc, 8 * (wx + 2)), (slot wx Public.aTmp, 8 * (wx + 2)),
+    (slot wx VG.Impl.Rsa.X86_64.Crt.aT, 8 * (wx + 2)), (8 * VG.Impl.Rsa.X86_64.CrtIfma.sCtr, 8)]
+
+/-- `aT := 2³² [aY] mod X` in the prime's workspace `W`. -/
+theorem k1_ok {s : State} {W : Addr} {wx : Nat} {minv : BitVec 64} {X : Nat}
+    (hg : Good s W (slot wx 8) wx minv) (hw2 : 2 ≤ wx) (hw' : wx < 2 ^ 31)
+    (hN : wv s.mem W (slot wx Public.aN) wx = X) (hY : wv s.mem W (slot wx Public.aY) wx < X) :
+    WP isa (VG.Impl.Bignum.X86_64.seqs VG.Impl.Rsa.X86_64.CrtIfma.k1) s fun t =>
+      wv t.mem W (slot wx VG.Impl.Rsa.X86_64.Crt.aT) wx = 2 ^ 32 * wv s.mem W (slot wx Public.aY) wx % X ∧
+      Frm W (k1Ranges wx) s.mem t.mem ∧ Hdr t.mem W wx minv ∧ Keep mmRegs s t := by
+  unfold VG.Impl.Rsa.X86_64.CrtIfma.k1
+  refine wp_seqs_append (by simp [copyArr]) (by simp) (WP.mono (copyArr_ok hg (Nat.le_refl _) (by omega) hw'
+    (o := VG.Impl.Rsa.X86_64.Crt.aT) (a := Public.aY) (by decide) (by decide) (by decide))
+    fun s₁ ⟨hv₁, ho₁, k₁⟩ => ?_)
+  have hn := hg.scr.nowrap
+  have lT := slot_le (w := wx) (show VG.Impl.Rsa.X86_64.Crt.aT < 8 by decide)
+  have lN := slot_le (w := wx) (show Public.aN < 8 by decide)
+  have sTN := slot_sep (w := wx) (show VG.Impl.Rsa.X86_64.Crt.aT ≠ Public.aN by decide)
+  have hg₁ := hg.of_outsideArr ho₁ k₁
+  have hN₁ : wv s₁.mem W (slot wx Public.aN) wx = X := by rw [ho₁.wv (by omega) (by omega)]; exact hN
+  simp only [VG.Impl.Bignum.X86_64.seqs]
+  refine WP.seq (WP.mono (WP.keep [.rcx] (Q := fun t => t.gpr .rcx = BitVec.ofNat 64 32 ∧ t.mem = s₁.mem) (by
+    xrun; and_intros) rfl) fun s₂ ⟨⟨cx₂, me₂⟩, k₂⟩ => ?_)
+  have hg₂ : Good s₂ W (slot wx 8) wx minv := by
+    refine ⟨hg₁.scr.congr k₂.2.2, (k₂.gpr (by decide)).trans hg₁.rdi, ?_⟩
+    rw [me₂]; exact hg₁.hdr
+  refine WP.mono (doubles_ok hg₂.scr hg₂.rdi hg₂.hdr (Nat.le_refl _) hw2 hw' (mo := Public.aN)
+    (acc := Public.aAcc) (tmp := Public.aTmp) (o := VG.Impl.Rsa.X86_64.Crt.aT)
+    (sl := VG.Impl.Rsa.X86_64.CrtIfma.sCtr) (by decide) (by decide) (by decide) (by decide) (by decide)
+    (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (c := 32) (by decide)
+    (by decide) cx₂ (by rw [me₂, hv₁, hN₁]; exact hY)) fun t ⟨hv, hf, hH, k⟩ => ⟨?_, ?_, hH, ?_⟩
+  · rw [hv, me₂, hN₁, hv₁]
+  · exact (Frm.of_outside (ho₁.mono (o' := slot wx VG.Impl.Rsa.X86_64.Crt.aT) (n' := 8 * (wx + 2))
+      (Nat.le_refl _) (by omega)) (by simp [k1Ranges])).trans (by rw [← me₂]; exact hf)
+  · exact ((k₁.trans k₂).trans k).mono (by simp [mmRegs])
+
+/-! ## Facts about the area that the region's steps carry -/
+
+/-- The twenty limbs of `v` at offset `e` of the area `F`. -/
+def Limbs (m : Mem) (F : Addr) (e v : Nat) : Prop :=
+  ∀ k < 20, word m F (e + CrtIfma.off k) = BitVec.ofNat 64 (AmmSym.limbN v k)
+
+theorem off_lt160 {k : Nat} (hk : k < 20) : CrtIfma.off k + 8 ≤ 160 := by
+  rw [AmmSym.off_lim]; omega
+
+theorem Limbs.of_frm {m m' : Mem} {B : Addr} {a e v : Nat} {rs : List (Nat × Nat)} (h : Limbs m (off B a) e v)
+    (hf : Frm B rs m m') (hd : ∀ r ∈ rs, a + e + 160 ≤ r.1 ∨ r.1 + r.2 ≤ a + e) (hz : a + e + 160 ≤ 2 ^ 64) :
+    Limbs m' (off B a) e v := fun k hk => by
+  have := off_lt160 hk
+  rw [word_off, hf.word_eq (fun r hr => by rcases hd r hr with h | h <;> omega) (by omega), ← word_off]
+  exact h k hk
+
+theorem byte_frm {m m' : Mem} {B : Addr} {rs : List (Nat × Nat)} (hf : Frm B rs m m') {d : Nat}
+    (hd : ∀ r ∈ rs, d + 1 ≤ r.1 ∨ r.1 + r.2 ≤ d) (hz : d < 2 ^ 64) : m' (off B d) = m (off B d) :=
+  hf _ fun r hr => by rw [AmmSym.ofs_off0 B hz]; rcases hd r hr with h | h <;> omega
+
+/-- `arr52` in a prime's workspace (`rdi = off B o`, 16 words), the area at `off B a`. -/
+theorem arr52r_ok {t : State} {B : Addr} {Z o a p j c : Nat} {mx : BitVec 64} (hs : Scr t B Z)
+    (hdi : t.gpr .rdi = off B o) (hH : Hdr t.mem (off B o) 16 mx)
+    (hia : word t.mem (off B o) (8 * sIfma) = off B a) (hoa : o + slot 16 8 + tabBytes 16 ≤ a)
+    (haZ : a + 2 * D + 8 ≤ Z) (hp : p < 2) (hc : c + 160 ≤ D) (hj : j < 8) :
+    WP isa (.block (CrtIfma.arr52 p j c)) t fun t' =>
+      Limbs t'.mem (off B a) (D * p + c) (wv t.mem (off B o) (slot 16 j) 16) ∧
+      Frm B [(a + (D * p + c), 160)] t.mem t'.mem ∧
+      Keep [.rax, .rcx, .rbp, .rsi, .r11, .r12] t t' ∧ t'.gpr .r12 = mask52 ∧ t'.mxcsr = t.mxcsr := by
+  have hn := hs.nowrap
+  have hD : D = 3712 := rfl
+  have hDp : D * p ≤ 3712 := by rcases AmmSym.D_mul hp with h | h <;> omega
+  have h8 := hdr_lt_slot 16 8 (show 31 < 32 by decide)
+  have lj := slot_le (w := 16) hj
+  have hT : tabBytes 16 = 2304 := rfl
+  have hH' : ∀ i < 32, InRegions (t.rd ++ t.wr) (off (off B o) (8 * i)) 8 := fun i hi => by
+    rw [off_off]; exact hs.ld (by have := hdr_lt_slot 16 8 hi; omega)
+  refine WP.mono (AmmSym.arr52_ok (A := off B a) (Aj := off (off B o) (slot 16 j)) hdi hH'
+    (by unfold sArr; omega) (hH.harr j hj) hia (by omega)
+    (fun i hi => by rw [off_off, AmmSym.off_add]; exact hs.ld (by omega))
+    (fun k hk => by
+      have := off_lt160 hk
+      rw [off_off, AmmSym.off_add]; exact hs.st (by omega))
+    (fun m m' ho i hi => by
+      rw [off_off] at ho
+      rw [off_off, word_off, word_off]
+      exact (Frm.of_outside_off ho (by omega) (by omega)).word_eq
+        (fun r hr => by rw [List.mem_singleton.mp hr]; exact .inl (by simp only; omega)) (by omega)))
+    fun t' ⟨hv, ho, k, h12, hx⟩ => ⟨fun k hk => ?_, ?_, k, h12, hx⟩
+  · rw [← word_off, hv k hk, wv_off, Nat.add_zero]
+  · rw [off_off] at ho
+    have := Frm.of_outside_off ho (by omega) (by omega)
+    simpa only [Nat.add_zero] using this
+
+end VG.Proof.Bignum.X86_64
