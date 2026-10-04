@@ -24,6 +24,17 @@ and the data. -/
 abbrev ctrR (W SP D : Addr) (n : Nat) : List Region :=
   [⟨W + BitVec.ofNat 64 64, 32⟩, ⟨W + BitVec.ofNat 64 216, 8⟩, ⟨W + BitVec.ofNat 64 384, 2176⟩, below SP 16, ⟨D, n⟩]
 
+/-- What `ctr` writes, within what the pieces may write. -/
+theorem ctrR_mut (W SP D : Addr) (n : Nat) : ∀ r ∈ ctrR W SP D n, ∃ r' ∈ mutR W SP D n, Region.Sub r r' := by
+  intro r hr
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl | rfl | rfl
+  · exact ⟨wA W, by simp, Offset.sub_base W (by decide)⟩
+  · exact ⟨wK W, by simp, Offset.sub W (by decide) (by decide)⟩
+  · exact ⟨wC W, by simp, Offset.sub W (by decide) (by decide)⟩
+  · exact ⟨_, by simp, fun _ h => h⟩
+  · exact ⟨_, by simp, fun _ h => h⟩
+
 /-- What `ctr` needs, of the state `s` it starts from. -/
 structure CtrCtx (K W SP : Addr) (s : State) (R : Nat) (nonce : List Byte) (D : Addr) (n : Nat) : Prop where
   lay : Lay K W SP
@@ -350,8 +361,8 @@ theorem chunk_inv {K W SP : Addr} {s : State} {R : Nat} {nonce : List Byte} {D :
 theorem chunk_ok (v : Ctr32Impl) {K W SP : Addr} {s : State} {R : Nat} {nonce : List Byte} {D : Addr} {n : Nat}
     (C : CtrCtx K W SP s R nonce D n) {b : Nat} {t : State} (I : CtrInv K W SP s R nonce D n b t)
     (hb : b < n / 16) :
-    WP isa (ctrChunk v.callee) t fun t' => ∃ k, 1 ≤ k ∧ b + k ≤ n / 16 ∧
-      CtrInv K W SP s R nonce D n (b + k) t' ∧ t'.zf = some (decide (b + k = n / 16)) := by
+    WP isa (ctrChunk v.callee) t fun t' => ∃ k, k = min (n / 16 - b) (2 ^ 32 - (1 + b) % 2 ^ 32) ∧ 1 ≤ k ∧
+      b + k ≤ n / 16 ∧ CtrInv K W SP s R nonce D n (b + k) t' ∧ t'.zf = some (decide (b + k = n / 16)) := by
   have L := C.lay
   have hn64 : n < 2 ^ 64 := C.buf.lt
   refine seq_assoc (WP.seq (WP.mono (kSel_ok I.rbx I.r14 (by omega)) fun t₂ ⟨hm₂, hr8₂, hg₂, hrd₂, hwr₂⟩ => ?_))
@@ -394,7 +405,7 @@ theorem chunk_ok (v : Ctr32Impl) {K W SP : Addr} {s : State} {R : Nat} {nonce : 
     step_ok E₆.r15 (E₆.perm.wR (show 216 + 8 ≤ 2560 by decide)) hkO (by rw [sv .rbx (by simp), I.rbx])
       (by rw [sv .r14 (by simp), I.r14]) (by rw [sv .r12 (by simp), I.r12]) hkb hn64
   obtain ⟨fr, dn, rs⟩ := chunk_inv C I hk32 hkb f₅ hc₅ E₅.rsp h hm₇
-  exact WP.of_runBlock ⟨t₇, run₇, k, hk1, hkb, ⟨E₆.keep hg₇ hrd₇ hwr₇, by rw [hrd₇, h.rd, hrd₅, I.rd],
+  exact WP.of_runBlock ⟨t₇, run₇, k, hk, hk1, hkb, ⟨E₆.keep hg₇ hrd₇ hwr₇, by rw [hrd₇, h.rd, hrd₅, I.rd],
     by rw [hwr₇, h.wr, hwr₅, I.wr], h12₇, hbx₇, h14₇, hkb, fr, dn, rs⟩, hzf₇⟩
 
 end VG.Proof.AesCcm.X86_64

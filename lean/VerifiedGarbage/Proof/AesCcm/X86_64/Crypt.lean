@@ -20,12 +20,12 @@ open VG.Proof.AesGcm.X86_64 (LoopPre xorLoop_ok xorBytes)
 open VG.Spec.Aes (bytesAt)
 open VG.Proof.Aes.X86_64 (Ctr32Impl)
 
-/-- The whole blocks, in chunks. -/
-theorem ctrHead_ok (v : Ctr32Impl) {K W SP : Addr} {s : State} {R : Nat} {nonce : List Byte} {N A D : Addr}
+/-- `r12`, `rbx` and `r14` for the first chunk. -/
+theorem ctrHeadBlk_ok {K W SP : Addr} {s : State} {R : Nat} {nonce : List Byte} {N A D : Addr}
     {nl al n tl : Nat} (C : CtrCtx K W SP s R nonce D n) (E : Env K W SP s) (S : Slots W R N A D nl al n tl s.mem) :
-    WP isa (.seq (.block [.mov .r12 (.mem (at_ .r15 dataO)), .mov .rbx (.mem (at_ .r15 lenO)), .shift .shr .rbx 4,
-      .mov32 .r14 (imm 1), .alu .test .rbx (.reg .rbx)]) (.ite .e (.block []) (.loop (ctrChunk v.callee) .ne))) s
-      (CtrInv K W SP s R nonce D n (n / 16)) := by
+    WP isa (.block [.mov .r12 (.mem (at_ .r15 dataO)), .mov .rbx (.mem (at_ .r15 lenO)), .shift .shr .rbx 4,
+      .mov32 .r14 (imm 1), .alu .test .rbx (.reg .rbx)]) s fun s₁ =>
+      CtrInv K W SP s R nonce D n 0 s₁ ∧ s₁.zf = some (decide (n / 16 = 0)) := by
   have h15 := E.r15
   have r₁ := E.perm.wR (show 192 + 8 ≤ 2560 by decide)
   have r₂ := E.perm.wR (show 200 + 8 ≤ 2560 by decide)
@@ -49,10 +49,16 @@ theorem ctrHead_ok (v : Ctr32Impl) {K W SP : Addr} {s : State} {R : Nat} {nonce 
       rcases hr with rfl | rfl | rfl <;>
         simp only [gpr_setReg, gpr_setFlags, gpr_arithFlags, ite_true, ite_false, reduceCtorEq]
     all_goals rfl
-  refine WP.seq (WP.of_runBlock ⟨s₁, run₁, ?_⟩)
-  have I₀ : CtrInv K W SP s R nonce D n 0 s₁ :=
-    ⟨E.keep hg hrd hwr, hrd, hwr, by rw [h12, Nat.mul_zero, BitVec.add_zero], by rw [hbx, Nat.sub_zero], h14,
-      Nat.zero_le _, by rw [hm₁]; exact Frame.refl _ _, rfl, by rw [hm₁]⟩
+  exact WP.of_runBlock ⟨s₁, run₁, ⟨E.keep hg hrd hwr, hrd, hwr, by rw [h12, Nat.mul_zero, BitVec.add_zero],
+    by rw [hbx, Nat.sub_zero], h14, Nat.zero_le _, by rw [hm₁]; exact Frame.refl _ _, rfl, by rw [hm₁]⟩, hzf⟩
+
+/-- The whole blocks, in chunks. -/
+theorem ctrHead_ok (v : Ctr32Impl) {K W SP : Addr} {s : State} {R : Nat} {nonce : List Byte} {N A D : Addr}
+    {nl al n tl : Nat} (C : CtrCtx K W SP s R nonce D n) (E : Env K W SP s) (S : Slots W R N A D nl al n tl s.mem) :
+    WP isa (.seq (.block [.mov .r12 (.mem (at_ .r15 dataO)), .mov .rbx (.mem (at_ .r15 lenO)), .shift .shr .rbx 4,
+      .mov32 .r14 (imm 1), .alu .test .rbx (.reg .rbx)]) (.ite .e (.block []) (.loop (ctrChunk v.callee) .ne))) s
+      (CtrInv K W SP s R nonce D n (n / 16)) := by
+  refine WP.seq (WP.mono (ctrHeadBlk_ok C E S) fun s₁ ⟨I₀, hzf⟩ => ?_)
   refine WP.ite _ (eval_e hzf) (fun ht => ?_) (fun hf => ?_)
   · have h0 := of_decide_eq_true ht
     exact WP.of_runBlock ⟨s₁, rfl, by rw [h0]; exact I₀⟩
@@ -60,7 +66,7 @@ theorem ctrHead_ok (v : Ctr32Impl) {K W SP : Addr} {s : State} {R : Nat} {nonce 
     refine WP.loop (M := isa) (fun m t => ∃ b, m = n / 16 - b ∧ b < n / 16 ∧ CtrInv K W SP s R nonce D n b t) ?_
       (n / 16 - 0) s₁ ⟨0, rfl, by omega, I₀⟩
     rintro m t ⟨b, rfl, hb, I⟩
-    refine WP.mono (chunk_ok v C I hb) fun t' ⟨k, hk1, hkb, I', hz⟩ => ?_
+    refine WP.mono (chunk_ok v C I hb) fun t' ⟨k, _, hk1, hkb, I', hz⟩ => ?_
     by_cases he : b + k = n / 16
     · left; exact ⟨(eval_ne hz).trans (by simp [he]), by rw [← he]; exact I'⟩
     · right; exact ⟨(eval_ne hz).trans (by simp [he]), n / 16 - (b + k), by omega, b + k, rfl, by omega, I'⟩
@@ -279,6 +285,23 @@ theorem tail_ok (v : Ctr32Impl) {K W SP : Addr} {s : State} {R : Nat} {nonce : L
     conv => rhs; rw [show n = 16 * (n / 16) + n % 16 from (Nat.div_add_mod n 16).symm]
     rw [Proof.Cmac.Stream.bytesAt_append, xorFrom_append _ _ _ (length_bytesAt _ _ _), Nat.add_comm 1 (n / 16)]
 
+/-- `rbp = n mod 16`, and ZF set when there are no last bytes. -/
+theorem ctrB3_ok {K W SP : Addr} {t : State} (E : Env K W SP t) {n : Nat}
+    (hl : t.mem.readW (W + BitVec.ofNat 64 200) 64 = BitVec.ofNat 64 n) (hn64 : n < 2 ^ 64) :
+    WP isa (.block [.mov .rbp (.mem (at_ .r15 lenO)), .alu .and .rbp (imm 15), .alu .test .rbp (.reg .rbp)]) t
+      fun t₀ => t₀.mem = t.mem ∧ t₀.gpr .rbp = BitVec.ofNat 64 (n % 16) ∧ t₀.zf = some (decide (n % 16 = 0)) ∧
+        (∀ r, r ≠ .rbp → t₀.gpr r = t.gpr r) ∧ t₀.rd = t.rd ∧ t₀.wr = t.wr := by
+  have h15 := E.r15
+  have rl := E.perm.wR (show 200 + 8 ≤ 2560 by decide)
+  refine WP.of_runBlock ⟨_, by crun [h15, rl], ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · rfl
+  · simp only [gpr_setReg, gpr_arithFlags, ite_true, ite_false, reduceCtorEq, hl, and15',
+      toNat_ofNat_of_lt hn64]
+  · simp only [zf_arithFlags, gpr_setReg, gpr_arithFlags, ite_true, ite_false, reduceCtorEq, hl, and15',
+      toNat_ofNat_of_lt hn64, and_self_beq (show n % 16 < 2 ^ 64 by omega)]
+  · intro r h₁; simp only [gpr_setReg, gpr_arithFlags, h₁, ite_false]
+  all_goals rfl
+
 /-- Counter mode: the data XORed with CCM's keystream from `Ctr₁`. -/
 theorem ctr_ok (v : Ctr32Impl) {K W SP : Addr} {s : State} {R : Nat} {nonce : List Byte} {N A D : Addr}
     {nl al n tl : Nat} (C : CtrCtx K W SP s R nonce D n) (E : Env K W SP s) (S : Slots W R N A D nl al n tl s.mem) :
@@ -287,23 +310,9 @@ theorem ctr_ok (v : Ctr32Impl) {K W SP : Addr} {s : State} {R : Nat} {nonce : Li
       bytesAt s'.mem D n = xorFrom (Spec.Ccm.ctxCiph s.mem K R) nonce 1 (bytesAt s.mem D n) := by
   have hn64 : n < 2 ^ 64 := C.buf.lt
   refine seq_assoc (WP.seq (WP.mono (ctrHead_ok v C E S) fun t I => ?_))
-  have h15 := I.env.r15
-  have rl := I.env.perm.wR (show 200 + 8 ≤ 2560 by decide)
   have hl : t.mem.readW (W + BitVec.ofNat 64 200) 64 = BitVec.ofNat 64 n := by
     rw [C.readW_kept I.frame (by omega)]; exact S.len
-  obtain ⟨t₀, run₀, hm₀, hbp, hzf, hg₀, hrd₀, hwr₀⟩ : ∃ t₀, runBlock isa
-      [.mov .rbp (.mem (at_ .r15 lenO)), .alu .and .rbp (imm 15), .alu .test .rbp (.reg .rbp)] t = some t₀ ∧
-      t₀.mem = t.mem ∧ t₀.gpr .rbp = BitVec.ofNat 64 (n % 16) ∧ t₀.zf = some (decide (n % 16 = 0)) ∧
-      (∀ r, r ≠ .rbp → t₀.gpr r = t.gpr r) ∧ t₀.rd = t.rd ∧ t₀.wr = t.wr := by
-    refine ⟨_, by crun [h15, rl], ?_, ?_, ?_, ?_, ?_, ?_⟩
-    · rfl
-    · simp only [gpr_setReg, gpr_arithFlags, ite_true, ite_false, reduceCtorEq, hl, and15',
-        toNat_ofNat_of_lt hn64]
-    · simp only [zf_arithFlags, gpr_setReg, gpr_arithFlags, ite_true, ite_false, reduceCtorEq, hl, and15',
-        toNat_ofNat_of_lt hn64, and_self_beq (show n % 16 < 2 ^ 64 by omega)]
-    · intro r h₁; simp only [gpr_setReg, gpr_arithFlags, h₁, ite_false]
-    all_goals rfl
-  refine WP.seq (WP.of_runBlock ⟨t₀, run₀, ?_⟩)
+  refine WP.seq (WP.mono (ctrB3_ok I.env hl hn64) fun t₀ ⟨hm₀, hbp, hzf, hg₀, hrd₀, hwr₀⟩ => ?_)
   refine WP.ite _ (eval_e hzf) (fun ht => ?_) (fun hf => ?_)
   · have h0 := of_decide_eq_true ht
     refine WP.of_runBlock ⟨t₀, rfl, I.env.keep (fun r hr => hg₀ r (by

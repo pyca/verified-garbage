@@ -81,17 +81,6 @@ theorem macTag_ok (v : Ctr32Impl) {K W SP : Addr} {s : State} (L : Lay K W SP) (
       · exact (L.stk_w' (by decide)).symm) (by decide), hc₁]
   · rw [h₂, M.out, ctxCiph_frame M.frame (k_macR L (by omega)) hRb]
 
-/-- What `ctr` writes, within what the pieces may write. -/
-theorem ctrR_mut (W SP D : Addr) (n : Nat) : ∀ r ∈ ctrR W SP D n, ∃ r' ∈ mutR W SP D n, Region.Sub r r' := by
-  intro r hr
-  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl | rfl
-  · exact ⟨wA W, by simp, Offset.sub_base W (by decide)⟩
-  · exact ⟨wK W, by simp, Offset.sub W (by decide) (by decide)⟩
-  · exact ⟨wC W, by simp, Offset.sub W (by decide) (by decide)⟩
-  · exact ⟨_, by simp, fun _ h => h⟩
-  · exact ⟨_, by simp, fun _ h => h⟩
-
 /-- The return address is outside what the functions write. -/
 theorem ret_disj {K W SP D : Addr} {n : Nat} (L : Lay K W SP) (hW : (⟨SP, 8⟩ : Region).Disjoint ⟨W, 2560⟩)
     (hD : (⟨SP, 8⟩ : Region).Disjoint ⟨D, n⟩) : ∀ r ∈ entryR W :: mutR W SP D n, (⟨SP, 8⟩ : Region).Disjoint r := by
