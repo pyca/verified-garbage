@@ -4,7 +4,7 @@ import VerifiedGarbage.Impl.AesCcm.Arm
 # AES-SIV: 32-bit ARM implementation
 
 `vg_aes_siv_init(key = r0, key_len = r1, ctx = r2, scratch = r3)`,
-`vg_aes_siv_encrypt(ctx = r0, rounds = r1, ads = r2, ads_count = r3, data = [sp], len = [sp + 4], work = [sp + 8])`
+`vg_aes_siv_encrypt(ctx = r0, rounds = r1, ads = r2, ads_count = r3, data = [sp], len = [sp + 4], siv = [sp + 8], work = [sp + 12])`
 and `vg_aes_siv_decrypt` with the same arguments (see `VG.Spec.Siv.initContract`
 and the others), composed of calls of the verified `vg_aes_expand_key_scratch`,
 `vg_cmac_aes_subkeys`, `vg_cmac_aes_update`, `vg_cmac_aes_finalize` and
@@ -23,7 +23,9 @@ CMAC subkeys (240–271) and `K2`'s schedule (272–511), so bytes 0–271 are
 `vg_cmac_aes_finalize`'s `key`. `init`'s working space (`scratch`, 2560
 bytes): `[0, 2176)` the working space of the functions called, `[2176, 2196)`
 our caller's `r4`–`r6`, `r11` and our return address `lr`. `encrypt`'s and
-`decrypt`'s (`work`, `W`, 2576 bytes): `[0, 16)` the synthetic IV, `[16, 32)`
+`decrypt`'s (`work`, `W`, 2576 bytes): `[0, 16)` the synthetic IV (`encrypt`
+copies it to `siv` at the end, `decrypt` copies the received one from `siv`
+at the start), `[16, 32)`
 a zero block, `[32, 64)` the last bytes of S2V's last string (`tail`),
 `[80, 96)` a keystream block, `[96, 112)` the counter block passed to
 `vg_aes_ctr32`, `[112, 128)` the IV `decrypt` computes, `[128, 164)` our
@@ -47,17 +49,19 @@ them (they are callee-saved).
   CMAC state with `vg_cmac_aes_update` over the whole blocks of `S` but its
   last 1 to 16 bytes and `vg_cmac_aes_finalize` of those (`cmacOf`), and
   replace `D` with `dbl(D)` XOR it.
-* `encrypt` then finishes S2V with the plaintext into the IV (`finish`) and
+* `encrypt` then finishes S2V with the plaintext into the IV (`finish`),
   encrypts the plaintext with CTR from the IV with two bits cleared, `Q`
   (`ctr`): the whole blocks in one call of `vg_aes_ctr32`, which increments
   only the last 32 bits of the counter block, as a big-endian integer; but
   `Q` clears their most significant bit and `len < 2³²` gives fewer than
   `2²⁸` blocks, so they never wrap around, and the counter is `Q + i`. Then
   `vg_aes_ctr32` on a zero block with the counter it left gives the keystream
-  of the last bytes, which are XORed with it.
-* `decrypt` then decrypts with CTR from the IV it is given, finishes S2V with
-  the plaintext into `[112, 128)`, compares the two IVs without a branch and
-  ANDs every byte of the data with the mask of the result.
+  of the last bytes, which are XORed with it. Last, it copies the IV to `siv`
+  (`sivOut`).
+* `decrypt` then copies the IV it is given from `siv` to `W` (`sivIn`),
+  decrypts with CTR from it, finishes S2V with the plaintext into
+  `[112, 128)`, compares the two IVs without a branch and ANDs every byte of
+  the data with the mask of the result.
 
 `finish`, for a string `P` of `L` bytes: if `L < 16`, the tail is
 `pad(P) XOR dbl(D)` and its CMAC is that of one complete block; otherwise,
@@ -150,11 +154,11 @@ def init : Prog isa :=
 
 /-! ## S2V's first state -/
 
-/-- Saves the registers in the working space (`[sp + 8]`) and keeps the
+/-- Saves the registers in the working space (`[sp + 12]`) and keeps the
 arguments in them: `W` in `r11`, the context in `r10`, the rounds in `r9`,
 and the descriptors of the components and their number in `r8` and `r7`. -/
 def encPre : List Instr :=
-  .ldrSp .r12 8 :: save .r12 ++ [mov .r11 .r12, mov .r10 .r0, mov .r9 .r1, mov .r8 .r2, mov .r7 .r3]
+  .ldrSp .r12 12 :: save .r12 ++ [mov .r11 .r12, mov .r10 .r0, mov .r9 .r1, mov .r8 .r2, mov .r7 .r3]
 
 /-- The zero block at `W + 16`, `D` zeroed, and the arguments of
 `vg_cmac_aes_finalize(key = r0, rounds = r1, state = r2, last = r3, last_len = [sp], scratch = [sp + 4])`
@@ -340,13 +344,23 @@ then the data and its length in `r6` and `r5`. -/
 def encS2v : Prog isa :=
   .seq (.block (encPre ++ startPre)) (.seq finFrame (.seq s2vAds (.block [.ldrSp .r6 0, .ldrSp .r5 4])))
 
+/-- The synthetic IV at `W` copied to `siv` (`[sp + 8]`). -/
+def sivOut : List Instr :=
+  [.ldrSp .r1 8, .ldr .r0 .r11 0, .str .r0 .r1 0, .ldr .r0 .r11 4, .str .r0 .r1 4, .ldr .r0 .r11 8,
+   .str .r0 .r1 8, .ldr .r0 .r11 12, .str .r0 .r1 12]
+
+/-- The received synthetic IV at `siv` (`[sp + 8]`) copied to `W`. -/
+def sivIn : List Instr :=
+  [.ldrSp .r1 8, .ldr .r0 .r1 0, .str .r0 .r11 0, .ldr .r0 .r1 4, .str .r0 .r11 4, .ldr .r0 .r1 8,
+   .str .r0 .r11 8, .ldr .r0 .r1 12, .str .r0 .r11 12]
+
 def encrypt : Prog isa :=
-  .seq encS2v (.seq (finish 0) (.seq (ctr 0) (.block restore)))
+  .seq encS2v (.seq (finish 0) (.seq (ctr 0) (.seq (.block sivOut) (.block restore))))
 
 def decrypt : Prog isa :=
   .seq encS2v
-    (.seq (ctr 0)
+    (.seq (.block sivIn) (.seq (ctr 0)
       (.seq (.block [.ldrSp .r6 0, .ldrSp .r5 4])
-        (.seq (finish tOff) (.seq (.block (compare ++ [.ldrSp .r6 0, .ldrSp .r5 4])) (.seq maskData (.block restore))))))
+        (.seq (finish tOff) (.seq (.block (compare ++ [.ldrSp .r6 0, .ldrSp .r5 4])) (.seq maskData (.block restore)))))))
 
 end VG.Impl.AesSiv.Arm
