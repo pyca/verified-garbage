@@ -6,8 +6,8 @@ import VerifiedGarbage.Proof.Mont.AArch64.Rounds
 `csubR M ts top` reduces `ts + 2^(64 n) top < 2m` modulo `m` (`csubR_ok`):
 the difference with `m` goes to the registers `dRegs n` (`diffsR_ok`, a chain
 of `subs` and `sbcs`, in which the carry flag is the complement of the
-borrow), the borrow of the top word becomes a mask (`maskR_ok`), and the mask
-selects each word (`selectsR_ok`).
+borrow), the top word's subtraction leaves the carry set exactly if it does not
+borrow (`flagR_ok`), and a `csel` on it selects each word (`selectsR_ok`).
 -/
 
 namespace VG.Proof.Mont.AArch64
@@ -157,52 +157,35 @@ theorem diffsR_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) 
   rw [Nat.mul_assoc]
   omega
 
-/-! ## The mask and the selection -/
+/-! ## The borrow and the selection -/
 
-/-- The top word less the borrow `!c`, and its borrow as a mask in `x17`: all
-ones if it borrows. -/
-theorem maskR_ok (s : State) (top : Reg) (hz : s.gpr .x7 = 0) :
-    WP isa (.block [.sbcs .x .x2 top .x7, .sbc .x .x17 .x7 .x7]) s fun s' =>
-      s'.gpr .x17 = (if (s.gpr top).toNat < (!s.c).toNat then BitVec.allOnes 64 else 0) ∧
-      Keeps [.x2, .x17] s s' := by
+theorem borrow_flag (x : Nat) (c : Bool) (hx : x < 2 ^ 64) :
+    decide (2 ^ 64 ≤ x + (2 ^ 64 - 1) + c.toNat) = !decide (x < (!c).toNat) := by
+  cases c
+  · by_cases h : x < 1
+    · rw [decide_eq_false (by simp only [Bool.toNat_false]; omega), decide_eq_true (by simpa using h)]; rfl
+    · rw [decide_eq_true (by simp only [Bool.toNat_false]; omega), decide_eq_false (by simpa using h)]; rfl
+  · rw [decide_eq_true (by simp only [Bool.toNat_true]; omega), decide_eq_false (by simp)]; rfl
+
+/-- The top word less the borrow `!c`: the carry is then set exactly if it
+does not borrow. -/
+theorem flagR_ok (s : State) (top : Reg) (hz : s.gpr .x7 = 0) :
+    WP isa (.block [.sbcs .x .x2 top .x7]) s fun s' =>
+      s'.c = !decide ((s.gpr top).toNat < (!s.c).toNat) ∧ Keeps [.x2] s s' := by
   apply WP.of_runBlock
-  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, read_x, RegUpd.gpr_write,
-    RegUpd.gpr_addWithCarry, RegUpd.c_addWithCarry, BitVec.setWidth_eq, ite_true, ite_false,
-    reduceCtorEq, hz, Option.some.injEq, exists_eq_left']
-  refine ⟨?_, fun r hr => ?_, rfl, rfl, rfl, rfl⟩
-  · dsimp only [Size.bits]
-    have h0 : (~~~(0 : BitVec 64)).toNat = 2 ^ 64 - 1 := rfl
-    have := (s.gpr top).isLt
-    rw [h0]
-    have key : decide (2 ^ 64 ≤ (s.gpr top).toNat + (2 ^ 64 - 1) + s.c.toNat) =
-        !decide ((s.gpr top).toNat < (!s.c).toNat) := by
-      cases s.c
-      · simp only [Bool.toNat_false, Bool.not_false, Bool.toNat_true, Nat.add_zero]
-        by_cases h : (s.gpr top).toNat < 1
-        · rw [decide_eq_false (by omega), decide_eq_true h]; rfl
-        · rw [decide_eq_true (by omega), decide_eq_false h]; rfl
-      · simp only [Bool.toNat_true, Bool.not_true, Bool.toNat_false]
-        rw [decide_eq_true (by omega), decide_eq_false (by omega)]; rfl
-    rw [key]
-    by_cases h : (s.gpr top).toNat < (!s.c).toNat <;> simp only [h, decide_true, decide_false,
-      Bool.not_true, Bool.not_false, ite_true, ite_false] <;> decide
-  · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
-    simp only [RegUpd.gpr_write, RegUpd.gpr_addWithCarry, hr.1, hr.2, ite_false]
+  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, read_x,
+    RegUpd.c_addWithCarry, hz, Option.some.injEq, exists_eq_left']
+  refine ⟨borrow_flag _ _ (s.gpr top).isLt, fun r hr => ?_, rfl, rfl, rfl, rfl⟩
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  simp only [RegUpd.gpr_addWithCarry, hr, ite_false]
 
-theorem select_val (t d : BitVec 64) (k : Bool) :
-    d ^^^ ((t ^^^ d) &&& (if k then BitVec.allOnes 64 else 0)) = if k then t else d := by
-  cases k
-  · simp
-  · simp only [ite_true, BitVec.and_allOnes]
-    rw [BitVec.xor_comm t d, ← BitVec.xor_assoc, BitVec.xor_self, BitVec.zero_xor]
-
-/-- Each word of `ts` kept if the mask `x17` is all ones (`k`), and replaced by
-the word of `ds` if it is zero. -/
+/-- Each word of `ts` kept if the carry is clear (`k`), and replaced by the
+word of `ds` if it is set. -/
 theorem selectsR_ok : ∀ (ts ds : List Reg) {s : State} (k : Bool), ts.length = ds.length → Fresh ts →
-    DRegs ds → s.gpr .x17 = (if k then BitVec.allOnes 64 else 0) →
+    DRegs ds → s.c = !k →
     WP isa (.block (selectsR ts ds)) s fun s' =>
-      regsVal s' ts = (if k then regsVal s ts else regsVal s ds) ∧ Keeps (.x2 :: ts) s s'
-  | [], [], s, k, _, _, _, _ => WP.block_nil ⟨by cases k <;> rfl, fun _ _ => rfl, rfl, rfl, rfl, rfl⟩
+      regsVal s' ts = (if k then regsVal s ts else regsVal s ds) ∧ Keeps ts s s' ∧ s'.c = s.c
+  | [], [], s, k, _, _, _, _ => WP.block_nil ⟨by cases k <;> rfl, ⟨fun _ _ => rfl, rfl, rfl, rfl, rfl⟩, rfl⟩
   | [], _ :: _, _, _, hl, _, _, _ => absurd hl (by simp)
   | _ :: _, [], _, _, hl, _, _, _ => absurd hl (by simp)
   | t :: ts, d :: ds, s, k, hl, hf, hd, hk => by
@@ -213,34 +196,27 @@ theorem selectsR_ok : ∀ (ts ds : List Reg) {s : State} (k : Bool), ts.length =
       hto.2.2.2.2.1, hto.2.2.2.2.2.1, hto.2.2.2.2.2.2.1, hto.2.2.2.2.2.2.2.1,
       hto.2.2.2.2.2.2.2.2.1, hto.2.2.2.2.2.2.2.2.2])
     simp only [List.length_cons, Nat.add_right_cancel_iff] at hl
-    rw [selectsR, WP.block_append_iff]
-    refine WP.mono (show WP isa (.block [.logic .eor .x .x2 t d, .logic .and .x .x2 .x2 .x17,
-        .logic .eor .x t d .x2]) s (fun s₁ =>
-        s₁.gpr t = (if k then s.gpr t else s.gpr d) ∧ Keeps [.x2, t] s s₁) by
+    rw [selectsR, ← List.singleton_append, WP.block_append_iff]
+    refine WP.mono (show WP isa (.block [.csel .x t d t]) s (fun s₁ =>
+        s₁.gpr t = (if k then s.gpr t else s.gpr d) ∧ Keeps [t] s s₁ ∧ s₁.c = s.c) by
       apply WP.of_runBlock
-      have ht2' : t ≠ .x2 := hto.2.2.1
-      have hdx2 : d ≠ .x2 := (dPool_ne d hdP).1
       simp only [runBlock_cons, runStep_some, runBlock_nil, exec, read_x, RegUpd.gpr_write,
-        BitVec.setWidth_eq, ite_true, ite_false, reduceCtorEq, Option.some.injEq, exists_eq_left',
-        hk, ht2', hdx2]
-      refine ⟨select_val _ _ k, fun r hr => ?_, rfl, rfl, rfl, rfl⟩
-      simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
-      simp only [RegUpd.gpr_write, hr.1, hr.2, ite_false]) fun s₁ ⟨e₁, k₁⟩ => ?_
-    have hk₁ : s₁.gpr .x17 = (if k then BitVec.allOnes 64 else 0) := by
-      rw [k₁.gpr _ (by simp [Ne.symm hto.2.2.2.2.2.2.2.2.2]), hk]
-    refine WP.mono (selectsR_ok ts ds k hl hf.tail hd.tail hk₁) fun s₂ ⟨e₂, k₂⟩ => ?_
+        BitVec.setWidth_eq, ite_true, Option.some.injEq, exists_eq_left', hk]
+      refine ⟨by cases k <;> rfl, ⟨fun r hr => ?_, rfl, rfl, rfl, rfl⟩, by rw [RegUpd.c_write, hk]⟩
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      simp only [RegUpd.gpr_write, hr, ite_false]) fun s₁ ⟨e₁, k₁, c₁⟩ => ?_
+    refine WP.mono (selectsR_ok ts ds k hl hf.tail hd.tail (c₁.trans hk)) fun s₂ ⟨e₂, k₂, c₂⟩ => ?_
     have hR : regsVal s₁ ts = regsVal s ts := regsVal_congr fun q hq => k₁.gpr q (by
-      have := hf.tail.2 q hq
-      simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at this ⊢
-      exact ⟨this.2.2.1, fun h => htn (h ▸ hq)⟩)
+      simp only [List.mem_cons, List.not_mem_nil, or_false]
+      exact fun h => htn (h ▸ hq))
     have hD : regsVal s₁ ds = regsVal s ds := regsVal_congr fun q hq => k₁.gpr q (by
       have hqP := hd.2 q (List.mem_cons_of_mem _ hq)
-      simp only [List.mem_cons, List.not_mem_nil, or_false, not_or]
-      exact ⟨(dPool_ne q hqP).1, dPool_fresh hqP (by simp [hto.1, hto.2.1, hto.2.2.1, hto.2.2.2.1,
+      simp only [List.mem_cons, List.not_mem_nil, or_false]
+      exact dPool_fresh hqP (by simp [hto.1, hto.2.1, hto.2.2.1, hto.2.2.2.1,
         hto.2.2.2.2.1, hto.2.2.2.2.2.1, hto.2.2.2.2.2.2.1, hto.2.2.2.2.2.2.2.1,
-        hto.2.2.2.2.2.2.2.2.1, hto.2.2.2.2.2.2.2.2.2])⟩)
-    have ht₂ : s₂.gpr t = s₁.gpr t := k₂.gpr t (by simp [htn, hto.2.2.1])
-    refine ⟨?_, (k₁.mono (by sub_regs)).trans (k₂.mono (by sub_regs))⟩
+        hto.2.2.2.2.2.2.2.2.1, hto.2.2.2.2.2.2.2.2.2]))
+    have ht₂ : s₂.gpr t = s₁.gpr t := k₂.gpr t htn
+    refine ⟨?_, (k₁.mono (by sub_regs)).trans (k₂.mono (by sub_regs)), c₂.trans c₁⟩
     rw [regsVal, regsVal, regsVal, ht₂, e₁, e₂, hR, hD]
     cases k <;> rfl
 
@@ -280,7 +256,7 @@ theorem csubR_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {
       · exact absurd h (by decide)
       · exact (dPool_ne _ (hD.2 _ h)).2.2.1 rfl), hz]
   rw [WP.block_append_iff]
-  refine WP.mono (maskR_ok s₁ top hz₁) fun s₂ ⟨x₂, k₂⟩ => ?_
+  refine WP.mono (flagR_ok s₁ top hz₁) fun s₂ ⟨x₂, k₂⟩ => ?_
   have htopP : ∀ d ∈ dRegs M.n, d ≠ top := fun d hd => dPool_fresh (hD.2 d hd) (by
     simp [htop.2.1, htop.2.2.1, htop.2.2.2.1, htop.2.2.2.2.1, htop.2.2.2.2.2.1, htop.2.2.2.2.2.2.1,
       htop.2.2.2.2.2.2.2.1, htop.2.2.2.2.2.2.2.2.1, htop.2.2.2.2.2.2.2.2.2.1, htop.2.2.2.2.2.2.2.2.2.2])
@@ -290,20 +266,16 @@ theorem csubR_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {
     · exact htop.2.2.2.1 h
     · exact htopP _ h rfl)
   rw [htop₁] at x₂
-  have hDs : ∀ q ∈ dRegs M.n, q ∉ [Reg.x2, .x17] := fun q hq hq' => by
-    have := dPool_ne q (hD.2 q hq)
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hq'
-    rcases hq' with h | h
-    · exact this.1 h
-    · exact this.2.1 h
+  have hDs : ∀ q ∈ dRegs M.n, q ∉ [Reg.x2] := fun q hq hq' =>
+    (dPool_ne q (hD.2 q hq)).1 (List.mem_singleton.mp hq')
   refine WP.mono (selectsR_ok _ (dRegs M.n) (decide ((s.gpr top).toNat < (!s₁.c).toNat))
-    (s := s₂) (by rw [hlen, hDl']) hft hD (by rw [x₂]; simp only [decide_eq_true_eq]))
-    fun s₃ ⟨e₃, k₃⟩ => ?_
+    (s := s₂) (by rw [hlen, hDl']) hft hD x₂)
+    fun s₃ ⟨e₃, k₃, _⟩ => ?_
   have hR₂ : regsVal s₂ (t :: ts') = regsVal s (t :: ts') := by
     rw [regsVal_congr fun q hq => k₂.gpr q (by
       have := hft.2 q hq
       simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at this ⊢
-      exact ⟨this.2.2.1, this.2.2.2.2.2.2.2.2.2⟩)]
+      exact this.2.2.1)]
     exact regsVal_congr fun q hq => k₁.gpr q (by
       have hq' := hft.2 q hq
       intro h
@@ -318,10 +290,8 @@ theorem csubR_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {
       intro r hr; rcases List.mem_cons.mp hr with h | h
       · subst h; exact List.mem_cons_self ..
       · exact List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_append_right _ h)))).trans
-      ((k₂.mono (by sub_regs)).trans (k₃.mono (by
-      intro r hr; rcases List.mem_cons.mp hr with h | h
-      · subst h; exact List.mem_cons_self ..
-      · exact List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_append_left _ h))))))⟩
+      ((k₂.mono (by sub_regs)).trans (k₃.mono fun r hr =>
+        List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_append_left _ hr)))))⟩
   rw [e₃, hR₂, hD₂]
   simp only [decide_eq_true_eq]
   have hDlt := regsVal_lt s₁ (dRegs M.n)
