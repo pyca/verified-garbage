@@ -2,4 +2,4 @@ name = "AES-OCB3 (128-, 192- and 256-bit keys)"
 family = "AEADs"
 specs = ["Aes", "Ocb"]
 modules = ["src/aes_ocb.rs"]
-asm = ["aes_ocb"]
+asm = ["aes", "aes_ocb"]

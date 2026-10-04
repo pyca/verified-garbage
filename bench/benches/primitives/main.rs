@@ -19,6 +19,7 @@ use openssl::sign::Signer;
 mod aes_ccm;
 mod aes_gcm;
 mod aes_gcm_siv;
+mod aes_ocb;
 mod aes_siv;
 mod argon2;
 mod blake2b;
@@ -246,6 +247,7 @@ const BENCHES: &[Bench] = &[
     (aes_ccm::USES, aes_ccm::bench),
     (aes_gcm::USES, aes_gcm::bench),
     (aes_gcm_siv::USES, aes_gcm_siv::bench),
+    (aes_ocb::USES, aes_ocb::bench),
     (aes_siv::USES, aes_siv::bench),
     (blake2b::USES, blake2b::bench),
     (blake2s::USES, blake2s::bench),
