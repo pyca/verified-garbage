@@ -274,4 +274,23 @@ theorem pS_ct (M : Mont) (hP : PPhaseCT M) : RelCT isa (Two (Stage R4)) (seqs (p
   · obtain ⟨_, hpq, _⟩ := hMk' hm; simp only [hm, ↓reduceIte]; exact ⟨_, hpq.symm⟩
   · obtain ⟨_, _, hqi⟩ := hMk' hm; simp only [hm, ↓reduceIte]; exact hqi
 
+/-! ## `main` -/
+
+/-- `main` leaks the same in runs that agree on the public data, given that
+its parts do. -/
+theorem crtMain_ct (M : Mont) (hS : SetupCT) (hC : ChecksCT) (hQ : QPhaseCT M) (hP : PPhaseCT M)
+    (hF : RelCT isa (Two (Stage R5)) (seqs finish) fun _ _ => True) :
+    RelCT isa (Two (Stage R0)) (Crt.main M.mm) fun _ _ => True := by
+  rw [crtMain_eq]
+  refine RelCT.seqs_append (by simp [nSetup]) (by simp [qPhase]) (RelCT.seq (R := Two (Stage R3)) ?_ ?_)
+  · refine RelCT.seqs_append (by simp [nSetup]) (by simp [checks])
+      (RelCT.seq (R := Two (Stage R2)) ?_ (checksS_ct hC))
+    refine RelCT.seqs_append (by simp [nSetup]) (by simp [primesSetup])
+      (RelCT.seq (R := Two (Stage R1)) ?_ (setupS_ct hS))
+    exact stage_step (nSetup_ct M) fun p σ xb _ _ _ _ _ t h hv ht => by
+      subst ht; exact WP.mono (nPart_ok M h hv) fun _ ⟨minv, hr⟩ => ⟨minv, hr⟩
+  rw [List.append_assoc]
+  refine RelCT.seqs_append (by simp [qPhase]) (by simp [pPhase]) (RelCT.seq (qS_ct M hQ) ?_)
+  exact RelCT.seqs_append (by simp [pPhase]) (by simp [finish]) (RelCT.seq (pS_ct M hP) hF)
+
 end VG.Proof.Bignum.X86_64
