@@ -601,16 +601,17 @@ jobs:
               - | ed25519 message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
           # The runner has SVE2, so the unrestricted run tests the `_sve2`
           # instances; `neon` and `none` test ChaCha20's NEON and scalar ones,
-          # `sha3` and `none` the SHA-3 prototype and its scalar fallback, and
+          # `sha3` and `none` the SHA-3 prototype and its scalar fallback (and
+          # the instances of ML-KEM, ML-DSA and Ed448 calling each), and
           # `none` deterministic ECDSA with the scalar SHA-256 and SHA-512.
           - chip: native
             arch: aarch64
             os: ubuntu-24.04-arm
             runs: |
-              - | aes_gcm cmac sha1 sha224 sha256 sha384 sha512 sha3 shake mlkem mldsa scrypt chacha20 ed25519 message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
+              - | aes_gcm cmac sha1 sha224 sha256 sha384 sha512 sha3 shake mlkem mldsa ed448 scrypt chacha20 ed25519 message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
               neon | chacha20
-              sha3 | sha3 shake mlkem mldsa
-              none | chacha20 sha3 shake mlkem mldsa ecdsa p256_sha
+              sha3 | sha3 shake mlkem mldsa ed448
+              none | chacha20 sha3 shake mlkem mldsa ecdsa p256_sha ed448
     name: Rust (${{ matrix.os && format('native, {0}', matrix.os) || matrix.chip == 'native' && 'native' || format('sde -{0}', matrix.chip) }}${{ matrix.arch && format(', {0}', matrix.arch) || '' }})
     runs-on: ${{ matrix.os || 'ubuntu-latest' }}
     container:
