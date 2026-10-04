@@ -177,9 +177,7 @@ def to64 : List Instr :=
 
 /-- `aT := 2³² [aY] mod X` (`[aY] = R mod X`, so `aT = 2¹⁰⁵⁶ mod X`). -/
 def k1 : List (Prog isa) :=
-  copyArr aT aY ++ [.block [.mov32 .rax (.imm 32), .store (hdr sCtr) .rax],
-    .loop (.seq (double aN aAcc aTmp aT)
-      (.block [.mov .rax (.mem (hdr sCtr)), .alu .sub .rax (.imm 1), .store (hdr sCtr) .rax])) .ne]
+  copyArr aT aY ++ [.block [.mov32 .rcx (.imm 32)], doubles aN aAcc aTmp aT sCtr]
 
 /-- Array `j` into the limbs at offset `o` of the region at `r11`'s base
 `rbx + p D`. -/
