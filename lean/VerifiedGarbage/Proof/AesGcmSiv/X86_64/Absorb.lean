@@ -291,4 +291,89 @@ theorem chunk_ok (v : GcmImpl) {K W SP : Addr} (L : Lay K W SP) {t : State} (E :
       rcases hr with rfl | rfl | rfl <;> simp
   · simp only [mem_arithFlags, mem_setReg]; rw [out₆]
 
+theorem elemsAt_add (m : Mem) (Q : Addr) (d k : Nat) :
+    elemsAt m Q (d + k) = elemsAt m Q d ++ elemsAt m (Q + BitVec.ofNat 64 (16 * d)) k := by
+  simp only [elemsAt, List.range_add, List.map_append, List.map_map]
+  refine congrArg _ (List.map_congr_left fun i _ => ?_)
+  simp only [Function.comp, add_ofNat_assoc, Nat.mul_add]
+
+/-- A buffer misses what absorbing writes. -/
+theorem buf_absR {K W SP : Addr} {s : State} {Q : Addr} {k : Nat} (h : Buf K W SP s Q k) :
+    ∀ r ∈ absR W SP, (⟨Q, k⟩ : Region).Disjoint r := by
+  intro r hr
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl | rfl | rfl
+  · exact h.w.sub_right (Lay.wSub (by decide))
+  · exact h.w.sub_right (Lay.wSub (by decide))
+  · exact h.w.sub_right (Lay.wSub (by decide))
+  · exact h.w.sub_right (Lay.wSub (by decide))
+  · exact h.stk.symm
+
+/-- So do the other parts of `W`. -/
+theorem w_absR {K W SP : Addr} (L : Lay K W SP) {d k : Nat}
+    (hd : d + k ≤ 80 ∨ 96 ≤ d ∧ d + k ≤ 128 ∨ 144 ≤ d ∧ d + k ≤ 768) :
+    ∀ r ∈ absR W SP, (⟨W + BitVec.ofNat 64 d, k⟩ : Region).Disjoint r := by
+  intro r hr
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl | rfl | rfl
+  · rcases hd with hd | hd | hd
+    · exact L.w_w (.inl (by omega)) (by omega) (by decide)
+    · exact L.w_w (.inr (by omega)) (by omega) (by decide)
+    · exact L.w_w (.inr (by omega)) (by omega) (by decide)
+  · rcases hd with hd | hd | hd
+    · exact L.w_w (.inl (by omega)) (by omega) (by decide)
+    · exact L.w_w (.inl (by omega)) (by omega) (by decide)
+    · exact L.w_w (.inr (by omega)) (by omega) (by decide)
+  · exact L.w_w (.inl (by omega)) (by omega) (by decide)
+  · exact L.w_w (.inl (by omega)) (by omega) (by decide)
+  · exact (L.stk_w' (by omega)).symm
+
+theorem elemsAt_frame {K W SP : Addr} {s : State} {m m' : Mem} (hf : Frame (absR W SP) m m') {Q : Addr} {k : Nat}
+    (h : Buf K W SP s Q (16 * k)) : elemsAt m' Q k = elemsAt m Q k := by
+  unfold elemsAt
+  rw [← GcmSiv.elems_bytesAt, ← GcmSiv.elems_bytesAt,
+    Proof.AesGcm.X86_64.bytesAt_frame hf (buf_absR h) (by have := h.lt; omega)]
+
+/-- What absorbing leaves, from `t`, having absorbed the elements `xs`. -/
+structure AbsPost (K W SP : Addr) (xs : List Spec.GcmSiv.Elem) (t t' : State) : Prop where
+  env : Env K W SP t'
+  rd : t'.rd = t.rd
+  wr : t'.wr = t.wr
+  frame : Frame (absR W SP) t.mem t'.mem
+  out : Spec.Gcm.blockAt t'.mem (W + BitVec.ofNat 64 80) =
+    Spec.Gcm.ghashFrom (Spec.Gcm.blockAt t.mem (W + BitVec.ofNat 64 64))
+      (Spec.Gcm.blockAt t.mem (W + BitVec.ofNat 64 80)) xs
+
+theorem chunks_ok (v : GcmImpl) {K W SP : Addr} (L : Lay K W SP) {t : State} (E : Env K W SP t)
+    {Q : Addr} {b : Nat} (hb : 1 ≤ b) (hQ : Buf K W SP t Q (16 * b))
+    (h12 : t.gpr .r12 = Q) (hbx : t.gpr .rbx = BitVec.ofNat 64 b) :
+    WP isa (.loop (absorbChunk v.callees) .ne) t fun t' => AbsPost K W SP (elemsAt t.mem Q b) t t' ∧
+      t'.gpr .r12 = Q + BitVec.ofNat 64 (16 * b) ∧ t'.gpr .rbp = t.gpr .rbp := by
+  refine WP.loop (M := isa) (body := absorbChunk v.callees) (c := .ne)
+    (fun (m : Nat) (t' : State) => ∃ d, m = b - d ∧ d < b ∧ AbsPost K W SP (elemsAt t.mem Q d) t t' ∧
+      t'.gpr .r12 = Q + BitVec.ofNat 64 (16 * d) ∧ t'.gpr .rbx = BitVec.ofNat 64 (b - d) ∧
+      t'.gpr .rbp = t.gpr .rbp) ?_ (b - 0) t
+    ⟨0, rfl, hb, ⟨E, rfl, rfl, Frame.refl _ _, by simp [elemsAt, Proof.Gcm.ghashFrom_nil]⟩,
+      by rw [h12, Nat.mul_zero, BitVec.add_zero], by rw [hbx, Nat.sub_zero], rfl⟩
+  rintro m t' ⟨d, rfl, hd, P, h12', hbx', hbp'⟩
+  have hQ' : Buf K W SP t' (Q + BitVec.ofNat 64 (16 * d)) (16 * (b - d)) :=
+    (hQ.slice (by omega)).of_eq P.rd P.wr
+  refine WP.mono (chunk_ok v L P.env (by omega) hQ' h12' hbx') fun t'' C => ?_
+  have hk : 1 ≤ min (b - d) 64 := by omega
+  have P' : AbsPost K W SP (elemsAt t.mem Q (d + min (b - d) 64)) t t'' := by
+    refine ⟨C.env, C.rd.trans P.rd, C.wr.trans P.wr, P.frame.trans C.frame, ?_⟩
+    rw [C.out, P.out, Proof.AesGcm.X86_64.blockAt_frame P.frame (w_absR L (.inl (by decide))),
+      elemsAt_frame P.frame ((hQ.slice (k := 16 * min (b - d) 64) (by omega))), elemsAt_add,
+      Proof.Gcm.ghashFrom_append]
+  have r12'' : t''.gpr .r12 = Q + BitVec.ofNat 64 (16 * (d + min (b - d) 64)) := by
+    rw [C.r12, add_ofNat_assoc, Nat.mul_add]
+  have rbp'' : t''.gpr .rbp = t.gpr .rbp := C.rbp.trans hbp'
+  by_cases he : b - d - min (b - d) 64 = 0
+  · left
+    have hdb : d + min (b - d) 64 = b := by omega
+    refine ⟨(eval_ne C.zf).trans (by simp [he]), hdb ▸ P', hdb ▸ r12'', rbp''⟩
+  · right
+    refine ⟨(eval_ne C.zf).trans (by simp [he]), b - (d + min (b - d) 64), by omega, d + min (b - d) 64, rfl,
+      by omega, P', r12'', by rw [C.rbx]; congr 1; omega, rbp''⟩
+
 end VG.Proof.AesGcmSiv.X86_64
