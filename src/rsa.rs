@@ -451,7 +451,7 @@ mod tests {
         );
     }
 
-    /// `a b`, big-endian.
+    /// `a b`, big-endian, in `a.len() + b.len()` bytes.
     fn mul(a: &[u8], b: &[u8]) -> Vec<u8> {
         let mut r = vec![0u32; a.len() + b.len()];
         for (i, &x) in a.iter().rev().enumerate() {
@@ -463,11 +463,7 @@ mod tests {
                 r[t] &= 0xff;
             }
         }
-        let mut v: Vec<u8> = r.iter().rev().map(|&x| x as u8).collect();
-        while v[0] == 0 {
-            v.remove(0);
-        }
-        v
+        r.iter().rev().map(|&x| x as u8).collect()
     }
 
     /// A key `p q = n` of two odd numbers with `dP = dQ = 1` and
