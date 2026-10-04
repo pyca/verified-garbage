@@ -591,4 +591,109 @@ theorem regionA_ok {s : State} {B : Addr} {Z o w a p X : Nat} {mx : BitVec 64} (
     w₄.trans k₁.2.2, d₄.trans hdi₁, ?_, h12⟩
   exact (k₁.trans (((k₁'.trans k₂).trans k₃).trans k₄)).mono (by simp [mmRegs])
 
+/-! ## The region's tail -/
+
+theorem byte_of_word0 {m : Mem} {F : Addr} {d k : Nat} (h : word m F d = 0) (hk : k < 8) :
+    m (off F (d + k)) = 0 := by
+  have e := VG.X86_64.byte_readW m (off F d) (w := 64) (k := k) (by omega)
+  rw [show m.readW (off F d) 64 = word m F d from rfl, h, AmmSym.off_add] at e
+  rw [← e]; simp
+
+/-- `k0St` in a prime's workspace, the area at `off B a`. -/
+theorem k0r_ok {u : State} {B : Addr} {Z o a p : Nat} {mx : BitVec 64} (hs : Scr u B Z)
+    (hdi : u.gpr .rdi = off B o) (hH : Hdr u.mem (off B o) 16 mx)
+    (hia : word u.mem (off B o) (8 * sIfma) = off B a) (hoa : o + slot 16 8 + tabBytes 16 ≤ a)
+    (haZ : a + 2 * D + 8 ≤ Z) (hp : p < 2) (h12 : u.gpr .r12 = mask52) :
+    WP isa (.block (CrtIfma.k0St p)) u fun u' =>
+      (∀ t < 4, word u'.mem (off B a) (D * p + oK0 + 8 * t) = mx &&& mask52) ∧
+      Frm B [(a + D * p + oK0, 32)] u.mem u'.mem ∧ u'.gpr .r11 = off (off B a) (D * p) ∧
+      Keep [.rax, .r11] u u' := by
+  have hn := hs.nowrap
+  have hD : D = 3712 := rfl
+  have hDp : D * p ≤ 3712 := by rcases AmmSym.D_mul hp with h | h <;> omega
+  have h8 := hdr_lt_slot 16 8 (show 31 < 32 by decide)
+  have hT : tabBytes 16 = 2304 := rfl
+  have : oK0 = 160 := rfl
+  have hH' : ∀ i < 32, InRegions (u.rd ++ u.wr) (off (off B o) (8 * i)) 8 := fun i hi => by
+    rw [off_off]; exact hs.ld (by have := hdr_lt_slot 16 8 hi; omega)
+  refine WP.mono (AmmSym.k0St_ok (A := off B a) hdi hH' hia hH.hminv h12 (by omega) fun t ht => by
+    rw [off_off, AmmSym.off_add]; exact hs.st (by omega)) fun u' ⟨hw, ho, r11, k, _⟩ => ⟨fun t ht => ?_, ?_, r11, k⟩
+  · rw [Nat.add_assoc, ← word_off]; exact hw t ht
+  · rw [off_off] at ho
+    exact Frm.of_outside_off ho (by omega) (by omega)
+
+/-- `eZero` with `r11` at region `p` of the area `off B a`. -/
+theorem eZr_ok {u : State} {B : Addr} {Z a p : Nat} (hs : Scr u B Z) (haZ : a + 2 * D + 8 ≤ Z) (hp : p < 2)
+    (h11 : u.gpr .r11 = off (off B a) (D * p)) :
+    WP isa (.block CrtIfma.eZero) u fun u' =>
+      (∀ i < 128, u'.mem (off (off B a) (D * p + oE + i)) = 0) ∧
+      Frm B [(a + D * p + oE, 128)] u.mem u'.mem ∧ u'.gpr .rax = 0 ∧ Keep [.rax] u u' := by
+  have hn := hs.nowrap
+  have hD : D = 3712 := rfl
+  have hDp : D * p ≤ 3712 := by rcases AmmSym.D_mul hp with h | h <;> omega
+  have : oE = 3232 := rfl
+  refine WP.mono (AmmSym.eZero_ok h11 fun l hl => by
+    rw [off_off, AmmSym.off_add]; exact hs.st (by omega)) fun u' ⟨hw, ho, ra, k, _⟩ => ⟨fun i hi => ?_, ?_, ra, k⟩
+  · have e := byte_of_word0 (hw (i / 8) (by omega)) (show i % 8 < 8 from Nat.mod_lt _ (by decide))
+    rw [show D * p + oE + i = D * p + (oE + 8 * (i / 8) + i % 8) by omega, ← off_off]
+    exact e
+  · rw [off_off] at ho
+    exact Frm.of_outside_off ho (by omega) (by omega)
+
+/-- `finOne` with `r11` at `q`'s region (`rax = 0`). -/
+theorem finr_ok {u : State} {B : Addr} {Z a : Nat} (hs : Scr u B Z) (haZ : a + 2 * D + 8 ≤ Z)
+    (h11 : u.gpr .r11 = off (off B a) (D * 1)) (ha : u.gpr .rax = 0) :
+    WP isa (.block CrtIfma.finOne) u fun u' =>
+      Limbs u'.mem (off B a) (D * 1 + oFin) 1 ∧ Frm B [(a + D * 1 + oFin, 160)] u.mem u'.mem ∧
+      Keep [.rax] u u' := by
+  have hn := hs.nowrap
+  have hD : D = 3712 := rfl
+  have : oFin = 3552 := rfl
+  refine WP.mono (AmmSym.finOne_ok h11 ha fun j hj => by
+    have := off_lt160 hj
+    rw [off_off, AmmSym.off_add]; exact hs.st (by omega)) fun u' ⟨hw, ho, k, _⟩ => ⟨fun j hj => ?_, ?_, k⟩
+  · rw [Nat.add_assoc, ← word_off]; exact hw j hj
+  · rw [off_off] at ho
+    exact Frm.of_outside_off ho (by omega) (by omega)
+
+/-- `eCopy` with `r11` at region `p` of the area `off B a`: the exponent's
+bytes (`eb`, its pointer and length in `n`'s slots `sp` and `sl`) at the end
+of the 128 at `oE`. -/
+theorem eCr_ok {u : State} {B : Addr} {Z o a p sp sl L : Nat} {ep : Addr} {eb : List Byte} (hs : Scr u B Z)
+    (hdi : u.gpr .rdi = off B o) (hlk : word u.mem (off B o) (8 * sLink) = B)
+    (hoa : o + slot 16 8 + tabBytes 16 ≤ a) (haZ : a + 2 * D + 8 ≤ Z) (hp : p < 2)
+    (hsp : sp < 32) (hsl : sl < 32) (hpv : word u.mem B (8 * sp) = ep)
+    (hlv : word u.mem B (8 * sl) = BitVec.ofNat 64 L) (he : Src u B Z ep eb) (hL : eb.length = L)
+    (hL1 : 1 ≤ L) (hL2 : L ≤ 128) (h11 : u.gpr .r11 = off (off B a) (D * p)) :
+    WP isa (VG.Impl.Bignum.X86_64.seqs (CrtIfma.eCopy sp sl)) u fun u' =>
+      (∀ i (h : i < L), u'.mem (off (off B a) (D * p + oE + (128 - L + i))) = eb[i]'(by omega)) ∧
+      Frm B [(a + D * p + oE + (128 - L), L)] u.mem u'.mem ∧ Keep [.rax, .rcx, .rsi, .r11] u u' := by
+  have hn := hs.nowrap
+  have hD : D = 3712 := rfl
+  have hDp : D * p ≤ 3712 := by rcases AmmSym.D_mul hp with h | h <;> omega
+  have h8 := hdr_lt_slot 16 8 (show 31 < 32 by decide)
+  have hT : tabBytes 16 = 2304 := rfl
+  have : oE = 3232 := rfl
+  have hC : ∀ i, off (off (off B a) (D * p)) (oE + 128 - L) + BitVec.ofNat 64 i =
+      off B (a + D * p + oE + (128 - L) + i) := fun i => by
+    rw [AmmSym.off_add, off_off, off_off]; congr 1; omega
+  refine WP.mono (AmmSym.eCopy_ok (B := B) (W := off B o) hL hL1 hL2 hdi h11
+    (by rw [off_off]; exact hs.ld (by unfold sLink sFn; omega)) hlk
+    (hs.ld (by unfold slot hdrBytes at h8; omega)) (hs.ld (by unfold slot hdrBytes at h8; omega)) hpv hlv
+    (fun i hi => he.rd i (by omega)) (fun i hi => he.val i (by omega))
+    (fun i hi => by rw [hC]; exact hs.st8 (by omega))
+    (fun m m' ho i hi => by
+      rw [off_off, off_off] at ho
+      exact Frm.of_outside_off ho (by omega) (by omega) _ fun r hr => by
+        rw [List.mem_singleton.mp hr]; have := he.out i (by omega); simp only; omega))
+    fun u' ⟨hb, ho, k, _⟩ => ⟨fun i hi => ?_, ?_, k⟩
+  · have e := hb i hi
+    rw [hC] at e
+    rw [off_off]
+    rw [show a + (D * p + oE + (128 - L + i)) = a + D * p + oE + (128 - L) + i by omega]
+    exact e
+  · rw [off_off, off_off] at ho
+    have := Frm.of_outside_off ho (by omega) (by omega)
+    rwa [show a + (D * p + (oE + 128 - L)) + 0 = a + D * p + oE + (128 - L) by omega] at this
+
 end VG.Proof.Bignum.X86_64
