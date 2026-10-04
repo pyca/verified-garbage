@@ -185,4 +185,179 @@ theorem eZero_ok {s : State} {C : Addr} (hC : s.gpr .r11 = C)
     · exact .inl (by rw [e])
     · exact .inr (by omega)) (fun d hd => by have := hl d hd; simp only [oE] at this; omega)
 
+/-- `q`'s last multiplier: 1, in the limbs at `oFin` (`r11 = C`, `rax = 0`). -/
+theorem finOne_ok {s : State} {C : Addr} (hC : s.gpr .r11 = C) (ha : s.gpr .rax = 0)
+    (hwr : ∀ j < 20, InRegions s.wr (C + BitVec.ofNat 64 (oFin + VG.Impl.Rsa.X86_64.CrtIfma.off j)) 8) :
+    WP isa (.block VG.Impl.Rsa.X86_64.CrtIfma.finOne) s fun s' =>
+      (∀ j < 20, word s'.mem C (oFin + VG.Impl.Rsa.X86_64.CrtIfma.off j) = BitVec.ofNat 64 (limbN 1 j)) ∧
+      Outside C oFin 160 s.mem s'.mem ∧ VG.Proof.MlKem.X86_64.Keep [.rax] s s' ∧ s'.mxcsr = s.mxcsr := by
+  unfold VG.Impl.Rsa.X86_64.CrtIfma.finOne
+  rw [WP.block_append_iff, map_store (fun j => oFin + VG.Impl.Rsa.X86_64.CrtIfma.off j)]
+  have hl : ∀ d ∈ (List.range 20).map (fun j => oFin + VG.Impl.Rsa.X86_64.CrtIfma.off j),
+      ∃ j < 20, d = oFin + VG.Impl.Rsa.X86_64.CrtIfma.off j := by
+    simp only [List.mem_map, List.mem_range]; rintro _ ⟨j, hj, rfl⟩; exact ⟨j, hj, rfl⟩
+  refine WP.mono (stRax_ok _ _ hC ha fun d hd => by
+    obtain ⟨j, hj, rfl⟩ := List.mem_map.mp hd
+    exact hwr j (List.mem_range.mp hj)) fun t ht => ?_
+  subst ht
+  have h0 : InRegions s.wr (C + BitVec.ofNat 64 oFin) 8 := hwr 0 (by decide)
+  refine WP.mono (VG.Proof.MlKem.X86_64.WP.keep [.rax] (Q := fun t' =>
+    t'.mem = (stMem s.mem C 0 ((List.range 20).map fun j => oFin + VG.Impl.Rsa.X86_64.CrtIfma.off j)).writeW
+      (off C oFin) (1 : BitVec 64) ∧ t'.mxcsr = s.mxcsr) (by
+      xrun [ea_at', hC, h0]
+      and_intros
+      all_goals rfl) rfl) fun s' ⟨⟨me, mx⟩, k⟩ => ?_
+  have hF : ∀ j < 20, oFin + VG.Impl.Rsa.X86_64.CrtIfma.off j + 8 ≤ oFin + 160 := fun j hj => by
+    rw [off_lim]; omega
+  refine ⟨fun j hj => ?_, ?_, ⟨fun r hr => k.gpr hr, k.2.1, k.2.2⟩, mx⟩
+  · rw [me]
+    by_cases e : j = 0
+    · subst e
+      exact VG.Proof.Bignum.X86_64.word_writeW_self _ _ _ _
+    · rw [(writeW_outside _ C _ (by simp only [oFin]; omega)).word (.inr (by rw [off_lim]; omega))
+        (by have := hF j hj; simp only [oFin] at this ⊢; omega)]
+      rw [word_stMem _ _ _ _ (List.mem_map.mpr ⟨j, List.mem_range.mpr hj, rfl⟩) (fun d hd => by
+          obtain ⟨j', hj', rfl⟩ := List.mem_map.mp hd
+          rw [List.mem_range] at hj'
+          by_cases e' : j' = j
+          · exact .inl (by rw [e'])
+          · exact .inr (by rw [off_lim, off_lim]; omega))
+        (fun d hd => by
+          obtain ⟨j', hj', rfl⟩ := List.mem_map.mp hd
+          have := hF j' (List.mem_range.mp hj'); simp only [oFin] at this ⊢; omega)]
+      unfold limbN
+      rw [Nat.div_eq_of_lt (Nat.one_lt_two_pow (by omega))]
+      rfl
+  · rw [me]
+    exact (stMem_outside _ _ _ (by simp only [oFin]; omega) _ fun d hd => by
+      obtain ⟨j', hj', rfl⟩ := List.mem_map.mp hd
+      exact ⟨by omega, hF j' (List.mem_range.mp hj')⟩).trans
+      ((writeW_outside _ C _ (by simp only [oFin]; omega)).mono (by omega) (by simp only [oFin]; omega))
+
+/-! ## The exponent's bytes -/
+
+theorem writeB_outside (m : Mem) (base : Addr) {d : Nat} (v : BitVec 8) (h : d + 1 ≤ 2 ^ 64) :
+    Outside base d 1 m (m.writeW (off base d) v) := by
+  intro x hx
+  apply Mem.write_apply
+  simp only [ofs] at hx
+  have : (x - off base d).toNat = (2 ^ 64 - d + (x - base).toNat) % 2 ^ 64 :=
+    Offset.toNat_sub_add x base (by omega)
+  rw [this]
+  have := (x - base).isLt
+  rcases hx with hx | hx
+  · rw [Nat.mod_eq_of_lt (by omega)]; omega
+  · rw [show 2 ^ 64 - d + (x - base).toNat = (x - base).toNat - d + 2 ^ 64 by omega,
+      Nat.add_mod_right, Nat.mod_eq_of_lt (by omega)]
+    omega
+
+theorem ofs_self (C : Addr) {i : Nat} (h : i < 2 ^ 64) : ofs C (C + BitVec.ofNat 64 i) = i := by
+  rw [ofs, BitVec.add_comm, BitVec.add_sub_cancel, BitVec.toNat_ofNat, Nat.mod_eq_of_lt h]
+
+theorem writeB_self (m : Mem) (a : Addr) (v : BitVec 8) : (m.writeW a v) a = v := by
+  simp only [Mem.writeW, Mem.write, BitVec.sub_self, BitVec.toNat_zero]
+  ext i hi; simp
+
+theorem setWidth_byte' (b : BitVec 8) : (b.setWidth 64).setWidth 8 = b := by
+  ext i hi; simp
+
+/-- The copy after `j` bytes. -/
+structure CpInv (s₀ t : State) (C ep : Addr) (L : Nat) (eb : List Byte) (hL : eb.length = L) (j : Nat) : Prop where
+  si : t.gpr .rsi = ep + BitVec.ofNat 64 j
+  di : t.gpr .r11 = C + BitVec.ofNat 64 j
+  cx : t.gpr .rcx = BitVec.ofNat 64 (L - j)
+  bytes : ∀ i (h : i < L), i < j → t.mem (C + BitVec.ofNat 64 i) = eb[i]'(by omega)
+  out : Outside C 0 j s₀.mem t.mem
+  keep : VG.Proof.MlKem.X86_64.Keep [.rax, .rcx, .rsi, .r11] s₀ t
+  mx : t.mxcsr = s₀.mxcsr
+
+theorem cpStep_ok {s₀ t : State} {C ep : Addr} {L : Nat} {eb : List Byte} {hL : eb.length = L} {j : Nat}
+    (hj : j < L) (hL2 : L ≤ 128) (hI : CpInv s₀ t C ep L eb hL j)
+    (hrd : ∀ i < L, InRegions (s₀.rd ++ s₀.wr) (ep + BitVec.ofNat 64 i) 1)
+    (hval : ∀ i (h : i < L), s₀.mem (ep + BitVec.ofNat 64 i) = eb[i]'(by omega))
+    (hwr : ∀ i < L, InRegions s₀.wr (C + BitVec.ofNat 64 i) 1)
+    (hsep : ∀ m m' : Mem, Outside C 0 L m m' → ∀ i < L, m' (ep + BitVec.ofNat 64 i) = m (ep + BitVec.ofNat 64 i)) :
+    WP isa (.block [.movzx8 .rax (VG.Impl.Bignum.X86_64.at0 .rsi), .store8 (VG.Impl.Bignum.X86_64.at0 .r11) .rax,
+      .alu .add .rsi (.imm 1), .alu .add .r11 (.imm 1), .alu .sub .rcx (.imm 1)]) t fun t' =>
+      t'.zf = some (decide (j + 1 = L)) ∧ CpInv s₀ t' C ep L eb hL (j + 1) := by
+  have hr : InRegions (t.rd ++ t.wr) (ep + BitVec.ofNat 64 j) 1 := by
+    rw [hI.keep.2.1, hI.keep.2.2]; exact hrd j hj
+  have hw : InRegions t.wr (C + BitVec.ofNat 64 j) 1 := by rw [hI.keep.2.2]; exact hwr j hj
+  have hb : t.mem (ep + BitVec.ofNat 64 j) = eb[j]'(by omega) := by
+    rw [hsep _ _ (hI.out.mono (Nat.le_refl _) (by omega)) j hj]; exact hval j hj
+  have e0 : ∀ x : Addr, x + BitVec.ofInt 64 0 = x := fun x => BitVec.add_zero x
+  refine WP.mono (VG.Proof.MlKem.X86_64.WP.keep [.rax, .rcx, .rsi, .r11] (Q := fun t' =>
+    t'.gpr .rsi = ep + BitVec.ofNat 64 (j + 1) ∧ t'.gpr .r11 = C + BitVec.ofNat 64 (j + 1) ∧
+      t'.gpr .rcx = BitVec.ofNat 64 (L - (j + 1)) ∧ t'.zf = some (decide (j + 1 = L)) ∧
+      t'.mem = t.mem.writeW (C + BitVec.ofNat 64 j) (eb[j]'(by omega)) ∧ t'.mxcsr = t.mxcsr) (by
+      xrun [State.ea, VG.Impl.Bignum.X86_64.at0, hI.si, hI.di, hI.cx, e0, hr, hw, hb]
+      have e1 : BitVec.ofNat 64 (L - j) - 1 = BitVec.ofNat 64 (L - (j + 1)) := by
+        rw [show (1 : BitVec 64) = BitVec.ofNat 64 1 from rfl, VG.Offset.ofNat_sub_ofNat (by omega)]
+        congr 1
+      and_intros
+      · rw [BitVec.add_assoc, ofNat_add_one]
+      · rw [BitVec.add_assoc, ofNat_add_one]
+      · exact e1
+      · rw [e1]
+        by_cases h : j + 1 = L
+        · simp only [h, Nat.sub_self, decide_true]; rfl
+        · simp only [h, decide_false, beq_eq_false_iff_ne, ne_eq]
+          intro h'
+          have := congrArg BitVec.toNat h'
+          rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)] at this
+          change _ = 0 at this
+          omega
+      · rw [setWidth_byte']
+      · rfl) rfl) fun t' ⟨⟨si, di, cx, zf, me, mx⟩, k⟩ => ⟨zf, si, di, cx, fun i hiL hi => ?_, ?_,
+        (hI.keep.trans k).mono (by simp), mx.trans hI.mx⟩
+  · have ow := writeB_outside t.mem C (d := j) (eb[j]'(by omega)) (by omega)
+    rw [me]
+    by_cases e : i = j
+    · subst e; exact (writeB_self _ _ _).trans rfl
+    · rw [ow _ (by rw [ofs_self C (by omega)]; omega)]
+      exact hI.bytes i hiL (by omega)
+  · rw [me]
+    exact (hI.out.mono (Nat.le_refl _) (by omega)).trans
+      ((writeB_outside t.mem C (d := j) (eb[j]'(by omega)) (by omega)).mono (by omega) (by omega))
+
+/-- The exponent's `L` bytes (`eb`, at `ep`, the pointer and length in the
+slots `sp` and `sl` of `n`'s workspace `B`) at the end of the 128 at `oE` of
+the region at `C` (`r11`). -/
+theorem eCopy_ok {s : State} {W B C ep : Addr} {L sp sl : Nat} {eb : List Byte} (hL : eb.length = L)
+    (hL1 : 1 ≤ L) (hL2 : L ≤ 128) (hdi : s.gpr .rdi = W) (hC : s.gpr .r11 = C)
+    (hlk : InRegions (s.rd ++ s.wr) (off W (8 * VG.Impl.Rsa.X86_64.Crt.sLink)) 8)
+    (hlv : word s.mem W (8 * VG.Impl.Rsa.X86_64.Crt.sLink) = B)
+    (hp : InRegions (s.rd ++ s.wr) (off B (8 * sp)) 8) (hl : InRegions (s.rd ++ s.wr) (off B (8 * sl)) 8)
+    (hpv : word s.mem B (8 * sp) = ep) (hlv' : word s.mem B (8 * sl) = BitVec.ofNat 64 L)
+    (hrd : ∀ i < L, InRegions (s.rd ++ s.wr) (ep + BitVec.ofNat 64 i) 1)
+    (hval : ∀ i (h : i < L), s.mem (ep + BitVec.ofNat 64 i) = eb[i]'(by omega))
+    (hwr : ∀ i < L, InRegions s.wr (off C (oE + 128 - L) + BitVec.ofNat 64 i) 1)
+    (hsep : ∀ m m' : Mem, Outside (off C (oE + 128 - L)) 0 L m m' → ∀ i < L,
+      m' (ep + BitVec.ofNat 64 i) = m (ep + BitVec.ofNat 64 i)) :
+    WP isa (VG.Impl.Bignum.X86_64.seqs (VG.Impl.Rsa.X86_64.CrtIfma.eCopy sp sl)) s fun s' =>
+      (∀ i (h : i < L), s'.mem (off C (oE + 128 - L) + BitVec.ofNat 64 i) = eb[i]'(by omega)) ∧
+      Outside (off C (oE + 128 - L)) 0 L s.mem s'.mem ∧
+      VG.Proof.MlKem.X86_64.Keep [.rax, .rcx, .rsi, .r11] s s' ∧ s'.mxcsr = s.mxcsr := by
+  unfold VG.Impl.Rsa.X86_64.CrtIfma.eCopy
+  simp only [VG.Impl.Bignum.X86_64.seqs]
+  refine WP.seq (WP.mono (VG.Proof.MlKem.X86_64.WP.keep [.rax, .rcx, .rsi, .r11] (Q := fun t =>
+    t.gpr .rsi = ep ∧ t.gpr .r11 = off C (oE + 128 - L) ∧ t.gpr .rcx = BitVec.ofNat 64 L ∧ t.mem = s.mem ∧
+      t.mxcsr = s.mxcsr) (by
+      have hlv₁ : s.mem.readW (off W (8 * VG.Impl.Rsa.X86_64.Crt.sLink)) 64 = B := hlv
+      xrun [State.ea, VG.Impl.Bignum.X86_64.hdr, VG.Impl.Rsa.X86_64.Crt.ws, hdi, hdrOff, hlk, hlv₁, hp, hl,
+        se_ofNat (show oE + 128 < 2 ^ 31 by simp only [oE]; omega)]
+      and_intros
+      · exact hpv
+      · rw [show s.mem.readW (off B (8 * sl)) 64 = BitVec.ofNat 64 L from hlv', hC,
+          VG.Offset.add_ofNat_sub _ (by simp only [oE]; omega)]
+      · exact hlv'
+      all_goals rfl) rfl) fun s₁ ⟨⟨si, di, cx, me, mx⟩, k⟩ => ?_)
+  have e0 : ∀ x : Addr, x + BitVec.ofNat 64 0 = x := fun x => BitVec.add_zero x
+  refine wp_upto (a := 0) (N := L) (by omega) (fun j t => CpInv s₁ t (off C (oE + 128 - L)) ep L eb hL j)
+    (fun j _ hj t hI => cpStep_ok hj hL2 hI (fun i hi => by rw [k.2.1, k.2.2]; exact hrd i hi)
+      (fun i hi => by rw [me]; exact hval i hi) (fun i hi => by rw [k.2.2]; exact hwr i hi) hsep)
+    (fun t hI => ⟨fun i hi => hI.bytes i hi hi, by rw [← me]; exact hI.out, (k.trans hI.keep).mono (by simp),
+      hI.mx.trans mx⟩) ⟨by rw [e0]; exact si, by rw [e0]; exact di, by rw [Nat.sub_zero]; exact cx,
+      fun _ _ h => absurd h (Nat.not_lt_zero _), Outside.refl _ _ _ _, VG.Proof.MlKem.X86_64.Keep.refl _ _, rfl⟩
+
 end VG.Proof.Bignum.X86_64.AmmSym
