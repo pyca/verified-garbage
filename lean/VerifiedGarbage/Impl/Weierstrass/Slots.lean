@@ -11,8 +11,8 @@ projective coordinates `(X : Y : Z)`.
 * `FOp`: a field operation on slots, and `rcb`, the sum of two points by the
   complete formulas of Renes, Costello and Batina (Algorithm 1, any `a`), in
   their 40 steps;
-* `LadderCfg`, `PowCfg`: the slots and tables of bits that scalar
-  multiplication and powers use.
+* `LadderCfg`, `PowCfg`, `CombCfg`: the slots and tables of bits that scalar
+  multiplication, powers and the fixed-base comb use.
 -/
 
 namespace VG.Impl.Weierstrass
@@ -86,5 +86,26 @@ structure PowCfg where
   one : Nat
   bits : Nat
   nbits : Nat
+
+/-- What the comb needs: the field, the complete addition's slots, the
+accumulator `A` (the result), the slots of the selected entry `E` and of the
+sum `D`, a slot for `-y` and one holding zero, the scalar's table of bits,
+the tables (`tbl[j][m - 1]` is the Montgomery form of `[m 16^j]P`'s `(x, y)`),
+the start `[c]P` (Montgomery `(x, y)`) and `R mod p`. -/
+structure CombCfg where
+  M : Mod
+  S : RcbSlots
+  A : Pt
+  E : Pt
+  D : Pt
+  neg : Nat
+  zero : Nat
+  bits : Nat
+  tbl : List (List (Nat × Nat))
+  start : Nat × Nat
+  one : Nat
+
+/-- The number of the comb's tables (and of digits). -/
+def CombCfg.J (K : CombCfg) : Nat := K.tbl.length
 
 end VG.Impl.Weierstrass
