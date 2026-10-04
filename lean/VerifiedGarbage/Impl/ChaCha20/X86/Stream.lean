@@ -49,7 +49,7 @@ namespace VG.Impl.ChaCha20.X86.Stream
 
 open VG.X86
 open VG.Impl.ChaCha20.X86 (at_ block)
-open VG.Impl.ChaCha20.X86.Xor (xorLoop)
+open VG.Impl.ChaCha20.X86.Xor (xorLoop xorBytes)
 
 /-- `r + k` into `d`. -/
 def ptr (d r : Reg) (k : Nat) : List Instr := [.mov d (.reg r), .alu .add d (.imm (BitVec.ofNat 32 k))]
@@ -93,10 +93,6 @@ def start : List Instr :=
    .mov .ebx (.reg .eax), .mov .esi (.mem (at_ .esp 8)), .mov .ebp (.mem (at_ .esp 12)),
    .mov .eax (.mem (at_ .ebx 128)), .alu .and .eax (.imm 63), .mov .ecx (.reg .ebp),
    .alu .cmp .eax (.reg .ebp)]
-
-/-- XORs the `ecx` bytes at `edx` into the data (`esi`), advancing both. -/
-def xorBytes : Prog isa :=
-  .seq (.block [.alu .test .ecx (.reg .ecx)]) (.ite .e (.block []) xorLoop)
 
 /-- Everything up to the whole blocks: the bytes left in the buffered block,
 `ecx = min(eax, len)` of them, from `ebx + 128 - eax`, counted off `ebp`;

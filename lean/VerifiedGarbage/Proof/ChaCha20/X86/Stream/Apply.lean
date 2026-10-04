@@ -13,8 +13,9 @@ namespace VG.Proof.ChaCha20.X86.Stream
 
 open VG VG.X86 VG.Impl.ChaCha20.X86.Stream
 open VG.Impl.ChaCha20.X86 (at_)
+open VG.Impl.ChaCha20.X86.Xor (xorBytes)
 open VG.Proof.ChaCha20.X86 (contains_off)
-open VG.Proof.ChaCha20.X86.Xor (toNat_ofNat_lt32 ptr_add)
+open VG.Proof.ChaCha20.X86.Bytes (toNat_ofNat_lt32 ptr_add BPre BPost xorBytes_ok ofNat32_beq_zero)
 open VG.Spec.ChaCha20 (keyAt restAt leftAt bytesAt stateAt serialize block)
 
 /-! ## The check -/
@@ -293,7 +294,7 @@ theorem startLoads_ok {s₀ : State} (hp : APre s₀) {s : State} (h : Q0 s₀ s
   · dsimp only
     rw [hf.bytes (R := dR s₀) (by simpa using hp.st_d.symm) (show L s₀ ≤ 2 ^ 64 by have := L_lt s₀; omega) hk]
     simp
-  · simp only [Proof.ChaCha20.X86.Xor.toNat_ofNat_lt32 hO]
+  · simp only [Proof.ChaCha20.X86.Bytes.toNat_ofNat_lt32 hO]
 
 theorem start_ok {s₀ : State} (hp : APre s₀) (hle : L s₀ ≤ N s₀) {s : State} (h : Q0 s₀ s) :
     WP isa (.block start) s fun s' => R1 s₀ (L s₀) s' ∧ s'.cf = some (decide (O s₀ < L s₀)) := by
@@ -406,7 +407,7 @@ theorem rest1_ok {s₀ : State} (hp : APre s₀) {s₂ : State} (h₂ : R1 s₀ 
   simp (config := {decide := true}) only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc,
     execAlu, arithFlags, State.setReg, State.setFlags, Option.map_some, Option.bind_some,
     Option.some.injEq, exists_eq_left', ite_true, hebp, and_mask,
-    Proof.ChaCha20.X86.Xor.toNat_ofNat_lt32 (show L s₀ - H s₀ < 2 ^ 32 by omega)]
+    Proof.ChaCha20.X86.Bytes.toNat_ofNat_lt32 (show L s₀ - H s₀ < 2 ^ 32 by omega)]
   have hnb : (L s₀ - H s₀) / 64 * 64 = 64 * NB s₀ := by simp only [NB, blocksOf, H]; omega
   rw [hnb]
   have hk4 : ∀ r, r ≠ .eax → r ≠ .ecx → r ≠ .edx → r ≠ .esi → s₄.gpr r = s₃.gpr r := h₄.keep

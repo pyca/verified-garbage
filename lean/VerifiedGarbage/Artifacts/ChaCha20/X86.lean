@@ -18,8 +18,10 @@ def artifacts : List Artifact := [
     spSafe := Code.all_of_allInstrs (by lit_decide) },
   { Spec.ChaCha20.xorApi with
     target := X86.target
-    doc := Spec.ChaCha20.xorApi.doc (notes := ["Four blocks at a time with SSE2 while at least \
-      256 bytes remain, then calls `vg_chacha20_block` for each 64 bytes."])
+    doc := Spec.ChaCha20.xorApi.doc (notes := ["Four blocks at a time with SSE2 while more than \
+      64 bytes remain (the last four for all that is left), keeping seven of the sixteen words of \
+      the four states in XMM registers during the rounds; then, for the last 64 bytes or fewer, \
+      calls `vg_chacha20_block` and XORs its output 16 bytes at a time."])
     code := Impl.ChaCha20.X86.Xor.xor
     contract := Spec.ChaCha20.xorContract X86.abi 12
     stack := 12
