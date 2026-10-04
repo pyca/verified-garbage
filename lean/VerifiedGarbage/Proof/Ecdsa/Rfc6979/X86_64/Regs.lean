@@ -134,7 +134,7 @@ theorem Ctx.set (hL : L.Ok) {u u' : State} (hc : Ctx L g m₀ u) {d : Reg} (hd :
 theorem scr_ok (hL : L.Ok) {u : State} (hc : Ctx L g m₀ u) {d : Reg} (hd : d ∉ calleeSaved) {a : Nat}
     (ha : a < 2 ^ 31) :
     WP isa (.block (Cfg.scr d a)) u (Upd L g m₀ u d (L.scr + BitVec.ofNat 64 a)) := by
-  have h192 := hc.inFr (d := 192) (by omega) (by omega)
+  have h192 := hc.inFr (d := 208) (by omega) (by omega)
   have hrsp : d ≠ .rsp := fun h => hd (h ▸ by decide)
   apply WP.of_runBlock
   simp only [Cfg.scr, fScratch, runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, readSrc,
