@@ -197,5 +197,3 @@ theorem repr_outer {k0 d : List Byte} (hk : k0.length = 64) (hd : d.length = 32)
       List.drop_left' (by rw [xorPad_length, hk]), hb]
 
 end VG.Proof.Hmac.Common
-
--- Temporary: changes this module so CI shards the Lean build (pyca/verified-garbage#808).
