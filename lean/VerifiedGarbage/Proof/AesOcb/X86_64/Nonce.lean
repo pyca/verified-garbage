@@ -64,12 +64,14 @@ theorem Slots.of_mut {K W SP D : Addr} {n : Nat} (L : Lay K W SP) (hDW : (⟨D, 
   nlen := by rw [kept_read L hDW h (by decide), S.nlen]
 
 /-- What `nonce` writes: the parts of `W` the pieces write and the stack. -/
-abbrev nonceR (W SP : Addr) : List Region := [wA W, wB W, wC W, below SP 8]
+abbrev nonceR (W SP : Addr) : List Region := [⟨W + BitVec.ofNat 64 16, 144⟩, wB W, wC W, below SP 8]
 
 theorem nonceR_mut {W SP D : Addr} {n : Nat} {m m' : Mem} (h : Frame (nonceR W SP) m m') :
-    Frame (mutR W SP D n) m m' := h.sub fun r hr => ⟨r, by
-      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
-      rcases hr with rfl | rfl | rfl | rfl <;> simp, fun _ h => h⟩
+    Frame (mutR W SP D n) m m' := h.sub fun r hr => by
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl | rfl
+  · exact ⟨_, List.mem_cons_self .., sub_wA (by decide)⟩
+  all_goals exact ⟨_, by simp, fun _ h => h⟩
 
 /-- What `nonce` leaves. -/
 structure NonceOk (K W SP D : Addr) (n : Nat) (o : Block) (s s' : State) : Prop where
@@ -100,7 +102,7 @@ theorem nonce_ok (v : BlocksImpl) {K W SP : Addr} (L : Lay K W SP) {s : State} (
   have F₁ : Frame (nonceR W SP) s.mem s₁.mem := P₁.frame.sub fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
-    · exact ⟨_, List.mem_cons_self .., sub_wA (by decide)⟩
+    · exact ⟨_, List.mem_cons_self .., Offset.sub W (by decide) (by decide)⟩
     · exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_self ..), sub_wB (by decide) (by decide)⟩
   have hrnd₁ : s₁.mem.readW (W + BitVec.ofNat 64 232) 64 = BitVec.ofNat 64 R := by
     rw [kept_read L hDW (nonceR_mut F₁) (by decide), hrnd]
@@ -110,7 +112,7 @@ theorem nonce_ok (v : BlocksImpl) {K W SP : Addr} (L : Lay K W SP) {s : State} (
   have F₂ : Frame (nonceR W SP) s₁.mem s₂.mem := P₂.frame.sub fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
-    · exact ⟨_, List.mem_cons_self .., sub_wA (by decide)⟩
+    · exact ⟨_, List.mem_cons_self .., Offset.sub W (by decide) (by decide)⟩
     · exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_self ..)), sub_wC (by decide) (by decide)⟩
     · rw [E₁.rsp]; exact ⟨_, by simp, fun _ h => h⟩
   have ktop : blockAtMem s₂.mem (W + BitVec.ofNat 64 tmpO) =
@@ -140,7 +142,7 @@ theorem nonce_ok (v : BlocksImpl) {K W SP : Addr} (L : Lay K W SP) {s : State} (
     by rw [P₃.wr, P₂.wr, P₁.wr]⟩
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
-    · exact ⟨_, List.mem_cons_self .., sub_wA (by decide)⟩
+    · exact ⟨_, List.mem_cons_self .., Offset.sub W (by decide) (by decide)⟩
     · exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_self ..), sub_wB (by decide) (by decide)⟩
   · rw [P₃.ofs, ktop, Proof.Ocb.offset0_eq]; rfl
   · rw [P₃.o0, ktop, Proof.Ocb.offset0_eq]; rfl

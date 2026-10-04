@@ -23,7 +23,7 @@ def Saved (m : Mem) (W : Addr) (g : Reg → BitVec 64) : Prop :=
   ∀ p ∈ saved, m.readW (W + BitVec.ofNat 64 p.2) 64 = g p.1
 
 /-- The parts of `W` that `entry` writes. -/
-abbrev entryR (W : Addr) : Region := ⟨W, 384⟩
+abbrev entryR (W : Addr) : Region := ⟨W + BitVec.ofNat 64 32, 352⟩
 
 theorem readW_writeW_off {m : Mem} {W : Addr} {d e : Nat} (v : BitVec 64) (h : d + 8 ≤ e ∨ e + 8 ≤ d)
     (hd : d + 8 ≤ 2 ^ 64) (he : e + 8 ≤ 2 ^ 64) :
@@ -229,7 +229,7 @@ theorem entry_ok {K W SP : Addr} (L : Lay K W SP) {s : State} (P : Perm K W s) {
   · refine (((f₁₄.mono (rs' := [⟨W + BitVec.ofNat 64 160, 144⟩, ⟨W + BitVec.ofNat 64 208, 24⟩,
       ⟨W + BitVec.ofNat 64 32, 64⟩]) (by simp)).trans (fr₇.mono (by simp)))).sub fun r hr => ?_
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl <;> exact ⟨_, List.mem_singleton_self _, Offset.sub_base W (by decide)⟩
+    rcases hr with rfl | rfl | rfl <;> exact ⟨_, List.mem_singleton_self _, Offset.sub W (by decide) (by decide)⟩
 
 /-- `restore`: our caller's registers back. -/
 theorem restore_ok {K W SP : Addr} {s : State} (E : Env K W SP s) {g : Reg → BitVec 64} (hs : Saved s.mem W g) :

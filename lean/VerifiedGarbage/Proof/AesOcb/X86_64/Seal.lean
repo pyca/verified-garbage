@@ -125,7 +125,7 @@ theorem ret_disj {K W SP D : Addr} {n : Nat} (L : Lay K W SP) (hW : (⟨SP, 8⟩
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl | rfl
-  · exact hW.sub_right (Region.sub_prefix (by decide))
+  · exact hW.sub_right (Lay.wSub (by decide))
   · exact hW.sub_right (Region.sub_prefix (by decide))
   · exact hW.sub_right (Lay.wSub (by decide))
   · exact hW.sub_right (Lay.wSub (by decide))
@@ -159,6 +159,12 @@ structure Pre (K W SP N A D : Addr) (R nl al n tl : Nat) (s s' : State) : Prop w
   ciph : ctxCiph s'.mem K R = ctxCiph s.mem K R
   lstar : ctxLstar s'.mem K = ctxLstar s.mem K
   data : bytesAt s'.mem D n = bytesAt s.mem D n
+  tagIn : bytesAt s'.mem W 16 = bytesAt s.mem W 16
+
+/-- The first block of `W` misses what the pieces before the data write. -/
+theorem w16_disj {d k : Nat} (W : Addr) (h : 16 ≤ d) (hk : d + k ≤ 2560) :
+    (⟨W, 16⟩ : Region).Disjoint ⟨W + BitVec.ofNat 64 d, k⟩ :=
+  Offset.base_disjoint W h (by omega)
 
 /-- `entry`, `nonce` and `hash`. -/
 theorem pre_wp (v : BlocksImpl) {s : State} {K W SP N A D : Addr} {R nl al n tl : Nat}
@@ -178,13 +184,13 @@ theorem pre_wp (v : BlocksImpl) {s : State} {K W SP N A D : Addr} {R nl al n tl 
     unfold ctxCiph
     rw [bytesAt_frame P₁.frame (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact (L.k_w.sub_left (Region.sub_prefix hRb)).sub_right (Region.sub_prefix (by decide))) (by omega)]
+      exact (L.k_w.sub_left (Region.sub_prefix hRb)).sub_right (Lay.wSub (by decide))) (by omega)]
   have eL : ctxLstar s₁.mem K = ctxLstar s.mem K := blockAtMem_frame P₁.frame (fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr
-    exact (L.k_w.sub_left (Lay.kSub (by decide))).sub_right (Region.sub_prefix (by decide)))
+    exact (L.k_w.sub_left (Lay.kSub (by decide))).sub_right (Lay.wSub (by decide)))
   have eB : ∀ {P : Addr} {k : Nat}, Buf W SP s P k → bytesAt s₁.mem P k = bytesAt s.mem P k := fun hP =>
     bytesAt_frame P₁.frame (fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact hP.w.sub_right (Region.sub_prefix (by decide)))
+      simp only [List.mem_singleton] at hr; subst hr; exact hP.w.sub_right (Lay.wSub (by decide)))
       (by have := hP.lt; omega)
   -- `Offset_0`.
   refine WP.seq (WP.mono (nonce_ok v L P₁.env Ar.rounds P₁.slots.rounds P₁.slots.nonce P₁.slots.nlen P₁.slots.tl
@@ -217,7 +223,7 @@ theorem pre_wp (v : BlocksImpl) {s : State} {K W SP N A D : Addr} {R nl al n tl 
       · exact (L.stk_w' (by omega)).symm
   refine hk s₃ ⟨E₃, ?_, by rw [rd₃, P₂.rd, P₁.rd], by rw [wr₃, P₂.wr, P₁.wr], Slots.of_mut L Ar.data.w F₃' S₂,
     saved_mut L Ar.data.w (F₂.trans F₃') P₁.saved, ?_, ?_, ?_, ?_, ?_, by rw [sum₃],
-    (ctxCiph_mut L Ar.data.k F₃' Ar.rounds).trans c₂, (lstar_mut L Ar.data.k F₃').trans l₂, ?_⟩
+    (ctxCiph_mut L Ar.data.k F₃' Ar.rounds).trans c₂, (lstar_mut L Ar.data.k F₃').trans l₂, ?_, ?_⟩
   · exact (P₁.frame.sub fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact ⟨_, List.mem_cons_self .., fun _ h => h⟩).trans
       ((F₂.trans F₃').sub fun r hr => ⟨r, List.mem_cons_of_mem _ hr, fun _ h => h⟩)
@@ -238,10 +244,28 @@ theorem pre_wp (v : BlocksImpl) {s : State} {K W SP N A D : Addr} {R nl al n tl 
       bytesAt_frame P₂.frame (fun r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl | rfl | rfl
-        · exact hd.w.sub_right (Region.sub_prefix (by decide))
+        · exact hd.w.sub_right (Lay.wSub (by decide))
         · exact hd.w.sub_right (Lay.wSub (by decide))
         · exact hd.w.sub_right (Lay.wSub (by decide))
         · exact hd.stk.symm) (by have := hd.lt; omega), eB hd.toBuf]
+  · have st16 : (below SP 8).Disjoint ⟨W, 16⟩ := L.stk_w.sub_right (Region.sub_prefix (by decide))
+    rw [bytesAt_frame F₃ (fun r hr => by
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl | rfl | rfl | rfl
+        · exact w16_disj W (by decide) (by decide)
+        · exact w16_disj W (by decide) (by decide)
+        · exact w16_disj W (by decide) (by decide)
+        · exact w16_disj W (by decide) (by decide)
+        · exact st16.symm) (by decide),
+      bytesAt_frame P₂.frame (fun r hr => by
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl | rfl | rfl
+        · exact w16_disj W (by decide) (by decide)
+        · exact w16_disj W (by decide) (by decide)
+        · exact w16_disj W (by decide) (by decide)
+        · exact st16.symm) (by decide),
+      bytesAt_frame P₁.frame (fun r hr => by
+        simp only [List.mem_singleton] at hr; subst hr; exact w16_disj W (by decide) (by decide)) (by decide)]
 
 /-- `body`'s frame misses a block of `W` outside the offset, the checksum and
 `[96, 144)`. -/
