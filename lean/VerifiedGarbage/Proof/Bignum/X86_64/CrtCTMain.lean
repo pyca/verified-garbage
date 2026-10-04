@@ -274,6 +274,62 @@ theorem pS_ct (M : Mont) (hP : PPhaseCT M) : RelCT isa (Two (Stage R4)) (seqs (p
   · obtain ⟨_, hpq, _⟩ := hMk' hm; simp only [hm, ↓reduceIte]; exact ⟨_, hpq.symm⟩
   · obtain ⟨_, _, hqi⟩ := hMk' hm; simp only [hm, ↓reduceIte]; exact hqi
 
+/-! ## The result -/
+
+/-- The public data of the result, without `-n⁻¹`. -/
+structure OPubW where
+  B : Addr
+  Z : Nat
+  w : Nat
+  k : Nat
+  op : Addr
+
+/-- `outPhase_ok`'s hypotheses, for some `-n⁻¹`. -/
+def OPreW (p : OPubW) (s : State) : Prop := ∃ minv, OPre ⟨⟨p.B, p.Z, p.w, minv⟩, p.k, p.op⟩ s
+
+/-- Before `storeBE`, from array `j`. -/
+def O1Arr (j : Nat) (p : OPubW) (s : State) : Prop :=
+  ∃ c : Bool, Scr s p.B p.Z ∧ s.gpr .rdi = p.B ∧ p.w = (p.k + 7) / 8 ∧ slot p.w 8 ≤ p.Z ∧
+    1 ≤ p.k ∧ p.k < 2 ^ 31 ∧ s.gpr .rbx = off p.B (slot p.w j) ∧ s.gpr .rsi = p.op ∧
+    s.gpr .rcx = BitVec.ofNat 64 p.k ∧ s.gpr .r15 = mask c ∧
+    (∀ j < p.k, InRegions s.wr (p.op + BitVec.ofNat 64 j) 1) ∧
+    (∀ j < p.k, p.Z ≤ ofs p.B (p.op + BitVec.ofNat 64 j))
+
+/-- The result's store from array `j` (`out_ct`'s), given that the taint
+analysis checks its loads. -/
+theorem outArr_ct {j : Nat} (hj : j < 8) {hc : VG.Taint.Hint VG.X86_64.Taint.T}
+    (hT : (taint.check (Taint.ofRegs [.rdi]) (.block [.mov .rbx (.mem (hdr (sArr j))), .mov .rsi (.mem (hdr Public.sOut)),
+      .mov .rcx (.mem (hdr Public.sK)), .mov .r15 (.mem (hdr Public.sMask))]) hc).isSome = true) :
+    RelCT isa (Two OPreW) (seqs (outStepsArr j)) fun _ _ => True := by
+  unfold outStepsArr
+  refine RelCT.seq (two_piece (Ψ := O1Arr j) [.rdi] (fun p s₁ s₂ ⟨_, _, h₁, _⟩ ⟨_, _, h₂, _⟩ r hr => by
+    simp only [List.mem_singleton] at hr; subst hr; rw [h₁.rdi, h₂.rdi]) hT ?_) ?_
+  · rintro p s ⟨_, c, hg, hw, hZ, hk1, hk, hO, hK, hM, hout, hsep⟩
+    dsimp only at hg hw hZ hk1 hk hO hK hM hout hsep
+    have hn := hg.scr.nowrap
+    obtain ⟨g0, g8⟩ := slot0_ge p.w
+    have hl : ∀ i < 32, InRegions (s.rd ++ s.wr) (off p.B (8 * i)) 8 := fun i hi => hg.scr.ld (by omega)
+    refine WP.mono (WP.keep [.rbx, .rsi, .rcx, .r15] (Q := fun t =>
+        t.gpr .rbx = off p.B (slot p.w j) ∧ t.gpr .rsi = p.op ∧ t.gpr .rcx = BitVec.ofNat 64 p.k ∧
+        t.gpr .r15 = mask c ∧ t.mem = s.mem) (by
+      xrun [State.ea, hdr, hg.rdi, hdrOff, hl (sArr j) (by unfold sArr; omega), hl Public.sOut (by decide),
+        hl Public.sK (by decide), hl Public.sMask (by decide), hg.hdr.harr j hj, hO, hK, hM]) rfl)
+      fun t ⟨⟨hbx, hsi, hcx, h15, hm⟩, k⟩ => ⟨c, hg.scr.congr k.2.2, (k.gpr (by decide)).trans hg.rdi, hw, hZ,
+        hk1, hk, hbx, hsi, hcx, h15, fun j hj => by rw [k.2.2]; exact hout j hj, hsep⟩
+  refine RelCT.seq (two_piece (Ψ := fun p s => s.gpr .rdi = p.B) [.rbx, .rsi, .rcx]
+    (fun p s₁ s₂ ⟨_, _, _, _, _, _, _, a₁, b₁, c₁, _⟩ ⟨_, _, _, _, _, _, _, a₂, b₂, c₂, _⟩ r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl
+      · rw [a₁, a₂]
+      · rw [b₁, b₂]
+      · rw [c₁, c₂]) (by taint_decide) ?_) ?_
+  · rintro p s ⟨c, hs, hdi, hw, hZ, hk1, hk, hbx, hsi, hcx, h15, hout, hsep⟩
+    exact WP.mono (storeBE_ok hs hbx hsi hcx h15 hk1 hk hw
+      (by have := slot_le (w := p.w) hj; omega) hout hsep)
+      fun t ⟨_, _, _, _, k⟩ => (k.gpr (by decide)).trans hdi
+  exact two_taint [.rdi] (fun p s₁ s₂ h₁ h₂ r hr => by
+    simp only [List.mem_singleton] at hr; subst hr; rw [h₁, h₂]) (by taint_decide)
+
 /-! ## `main` -/
 
 /-- `main` leaks the same in runs that agree on the public data, given that
