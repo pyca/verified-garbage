@@ -83,10 +83,11 @@ fn aes_ccm() {
             // The file has no acceptable vectors.
             _ => {
                 assert!(matches!(test.result, Expectation::Invalid), "tcId {id}");
-                match decrypted {
-                    Err(Error::TagMismatch) => assert!(buf.iter().all(|&b| b == 0), "tcId {id}"),
-                    Err(Error::InvalidNonceLength) => assert_eq!(buf, c.ct.0, "tcId {id}"),
-                    r => panic!("tcId {id}: {r:?}"),
+                if decrypted == Err(Error::TagMismatch) {
+                    assert!(buf.iter().all(|&b| b == 0), "tcId {id}");
+                } else {
+                    assert_eq!(decrypted, Err(Error::InvalidNonceLength), "tcId {id}");
+                    assert_eq!(buf, c.ct.0, "tcId {id}");
                 }
                 invalid += 1;
             }

@@ -127,23 +127,14 @@ fn aes_ccm() {
             let t: usize = r["Tlen"].parse().unwrap();
             let ct = unhex(r["CT"]);
             let got = by_tag_len!(t, open(&key, &nonce, &aad, &ct));
+            let at = format!("DVPT{bits} Count {}", r["Count"]);
             match r["Result"] {
                 "Pass" => {
-                    assert_eq!(
-                        got,
-                        Ok(bytes(&r, "Payload", "Plen")),
-                        "DVPT{bits} Count {}",
-                        r["Count"]
-                    );
+                    assert_eq!(got, Ok(bytes(&r, "Payload", "Plen")), "{at}");
                     passed += 1;
                 }
                 _ => {
-                    assert_eq!(
-                        got,
-                        Err(Error::TagMismatch),
-                        "DVPT{bits} Count {}",
-                        r["Count"]
-                    );
+                    assert_eq!(got, Err(Error::TagMismatch), "{at}");
                     failed += 1;
                 }
             }
