@@ -1,5 +1,6 @@
 import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Instances
 import VerifiedGarbage.Proof.Pbkdf2.Stream.X86.Sha256
+import VerifiedGarbage.Proof.Framework.TaintBatch
 
 /-!
 # HMAC-SHA-256 and PBKDF2-HMAC-SHA-256 over the compression function on x86 (32-bit), for every backend
@@ -82,24 +83,30 @@ open VG.Proof.Pbkdf2.Md.X86
 open VG.Impl.Pbkdf2.Md.X86 (Hash)
 open VG.Proof.Pbkdf2.Stream.X86 (Sha256Stream initW initG finW finG iterW iterG countF)
 
-theorem sha256Shape_iterChecks : Iterate.Checks sha256Shape where
-  pro := ⟨_, by taint_decide⟩
-  load := ⟨_, by taint_decide⟩
-  mid := ⟨_, by taint_decide⟩
-  tail := ⟨_, by taint_decide⟩
-  restore := ⟨_, by taint_decide⟩
+theorem sha256Shape_iterChecks : Iterate.Checks sha256Shape := by
+  refine {
+    pro := ⟨?_, ?_⟩
+    load := ⟨?_, ?_⟩
+    mid := ⟨?_, ?_⟩
+    tail := ⟨?_, ?_⟩
+    restore := ⟨?_, ?_⟩ }
+  taint_decide_all
 
-theorem sha256Shape_initChecks : HmacInit.Checks sha256Shape where
-  pro := ⟨_, by taint_decide⟩
-  blocks := ⟨_, by taint_decide⟩
-  toOuter := ⟨_, by taint_decide⟩
-  restore := ⟨_, by taint_decide⟩
+theorem sha256Shape_initChecks : HmacInit.Checks sha256Shape := by
+  refine {
+    pro := ⟨?_, ?_⟩
+    blocks := ⟨?_, ?_⟩
+    toOuter := ⟨?_, ?_⟩
+    restore := ⟨?_, ?_⟩ }
+  taint_decide_all
 
-theorem sha256Shape_finChecks : HmacFin.Checks sha256Shape where
-  pro := ⟨_, by taint_decide⟩
-  fin1 := ⟨_, by taint_decide⟩
-  mid := ⟨_, by taint_decide⟩
-  out := ⟨_, by taint_decide⟩
+theorem sha256Shape_finChecks : HmacFin.Checks sha256Shape := by
+  refine {
+    pro := ⟨?_, ?_⟩
+    fin1 := ⟨?_, ?_⟩
+    mid := ⟨?_, ?_⟩
+    out := ⟨?_, ?_⟩ }
+  taint_decide_all
 
 theorem iterChecks_of_shape {H : Hash} (h : Iterate.Checks (shapeOf H)) : Iterate.Checks H :=
   ⟨h.pro, h.load, h.mid, h.tail, h.restore⟩

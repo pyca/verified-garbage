@@ -1,5 +1,6 @@
 import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.Instances
 import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.Sha224
+import VerifiedGarbage.Proof.Framework.TaintBatch
 
 /-!
 # PBKDF2-HMAC-SHA-224 on 32-bit ARM, the whole derivation
@@ -18,7 +19,8 @@ open VG.Proof.Pbkdf2.Stream.Arm (sha224H sha224OK)
 def sha224F : Fns := fnsOf Spec.Hmac.sha224I Md.Arm.sha224Md
 
 theorem sha224_checks : Checks sha224F := by
-  constructor <;> exact ⟨_, by taint_decide⟩
+  constructor <;> refine ⟨?_, ?_⟩
+  taint_decide_all
 
 def sha224OKF : FnsOK sha224F where
   hH := sha224OK

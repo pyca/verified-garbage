@@ -1,4 +1,5 @@
 import VerifiedGarbage.Proof.MlKem.X86_64.S4Top
+import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.MlKem.X86_64.SampleCT
 
 /-!
@@ -82,12 +83,12 @@ theorem bpre {σ : State} (hp : sample4K.pre σ) {K t : Nat} (hK : K < 4) (ht : 
     (h : LAt σ K t s) : BPre s (poly4 (aP σ) K) (Lt σ K t) := by
   have hp' := pre_of hp
   refine ⟨h.rbp, h.rdi, sampleAfter_length_le (a := []) (by simp) _ t, fun j hj => ?_, h.stored,
-    by simpa using lat_regions hp' hK h (j := 0) (by omega), lat_regions hp' hK h (by omega),
-    lat_regions hp' hK h (by omega)⟩
+    by simpa using lat_regions hp' hK h (j := 0) (by bdd_omega), lat_regions hp' hK h (by bdd_omega),
+    lat_regions hp' hK h (by bdd_omega)⟩
   rw [h.pinv.env.wr, hp'.wr]
   refine ⟨aR σ, by simp, ?_⟩
   rw [coeffAddr, poly4, Offset.add_add]
-  exact Offset.contains_base _ (by omega) (by omega)
+  exact Offset.contains_base _ (by bdd_omega) (by bdd_omega)
 
 /-- Two runs at iteration `t + u` of the scalar group from iteration `t`, `n = 4 - u` iterations from its
 end. -/
@@ -100,10 +101,10 @@ def GI (K t : Nat) (c : BitVec 64) (n : Nat) (s₁ s₂ : State) : Prop :=
 theorem gi_brel {K t : Nat} {c : BitVec 64} {n : Nat} (hK : K < 4) (ht : t + 4 ≤ 168) {s₁ s₂ : State}
     (h : GI K t c n s₁ s₂) : BRel s₁ s₂ := by
   obtain ⟨σ₁, σ₂, u, p₁, p₂, hq, _, hu, l₁, l₂, c₁, c₂, -⟩ := h
-  refine ⟨poly4 (aP σ₁) K, Lt σ₁ K (t + u), bpre p₁ hK (by omega) l₁,
-    by rw [pub_aP hq, pub_Lt hq hK]; exact bpre p₂ hK (by omega) l₂,
+  refine ⟨poly4 (aP σ₁) K, Lt σ₁ K (t + u), bpre p₁ hK (by bdd_omega) l₁,
+    by rw [pub_aP hq, pub_Lt hq hK]; exact bpre p₂ hK (by bdd_omega) l₂,
     by rw [l₁.rsi, l₂.rsi, at', at', pub_scr hq], by rw [c₁, c₂], fun k hk => ?_⟩
-  rw [out_byte hK l₁ (by omega), out_byte hK l₂ (by omega), pub_B hq hK]
+  rw [out_byte hK l₁ (by bdd_omega), out_byte hK l₂ (by bdd_omega), pub_B hq hK]
 
 /-- The four iterations of `vg_mlkem_sample_ntt`'s loop. -/
 theorem iloop_ct {K t : Nat} {c : BitVec 64} (hK : K < 4) (ht : t + 4 ≤ 168) (n : Nat) :
@@ -115,17 +116,17 @@ theorem iloop_ct {K t : Nat} {c : BitVec 64} (hK : K < 4) (ht : t + 4 ≤ 168) (
         x'.zf = some (x.gpr .rcx - 1 == 0)) ∧ x'.gpr .r10 = x.gpr .r10)
     (RelCT.mono body_ct (fun x y h => gi_brel hK ht h) fun _ _ _ => trivial) (fun x y h => ?_) ?_
   · obtain ⟨σ₁, σ₂, u, p₁, p₂, _, _, hu, l₁, l₂, _⟩ := h
-    exact ⟨WP.all (fun p hp' => WP.gpr (lat_step (pre_of hp'.1) hK (by omega) hp'.2.2) (r := .r10) (by decide))
+    exact ⟨WP.all (fun p hp' => WP.gpr (lat_step (pre_of hp'.1) hK (by bdd_omega) hp'.2.2) (r := .r10) (by decide))
         ⟨(σ₁, u), p₁, hu, l₁⟩,
-      WP.all (fun p hp' => WP.gpr (lat_step (pre_of hp'.1) hK (by omega) hp'.2.2) (r := .r10) (by decide))
+      WP.all (fun p hp' => WP.gpr (lat_step (pre_of hp'.1) hK (by bdd_omega) hp'.2.2) (r := .r10) (by decide))
         ⟨(σ₂, u), p₂, hu, l₂⟩⟩
   · intro x y x' y' ⟨σ₁, σ₂, u, p₁, p₂, hq, hn, hu, l₁, l₂, c₁, c₂, d₁, d₂, v₁, v₂⟩ f₁ f₂
     obtain ⟨⟨l₁', r₁, z₁⟩, e₁⟩ := f₁ (σ₁, u) ⟨p₁, hu, l₁⟩
     obtain ⟨⟨l₂', r₂, z₂⟩, e₂⟩ := f₂ (σ₂, u) ⟨p₂, hu, l₂⟩
     rw [c₁, SampleNtt.zf_last (by decide) hu] at z₁
     rw [c₂, SampleNtt.zf_last (by decide) hu] at z₂
-    rw [c₁, ofNat64_pred (by omega) (by omega)] at r₁
-    rw [c₂, ofNat64_pred (by omega) (by omega)] at r₂
+    rw [c₁, ofNat64_pred (by bdd_omega) (by bdd_omega)] at r₁
+    rw [c₂, ofNat64_pred (by bdd_omega) (by bdd_omega)] at r₂
     refine ⟨by show x'.zf.map _ = y'.zf.map _; rw [z₁, z₂], fun hf => ?_, fun ht' => ?_⟩
     · have : u + 1 = 4 := by
         have : x'.zf.map (!·) = some false := hf
@@ -135,7 +136,7 @@ theorem iloop_ct {K t : Nat} {c : BitVec 64} (hK : K < 4) (ht : t + 4 ≤ 168) (
     · have : u + 1 ≠ 4 := by
         have : x'.zf.map (!·) = some true := ht'
         rw [z₁] at this; simpa using this
-      exact ⟨4 - (u + 1), by omega, σ₁, σ₂, u + 1, p₁, p₂, hq, rfl, by omega, by rw [← Nat.add_assoc]; exact l₁',
+      exact ⟨4 - (u + 1), by bdd_omega, σ₁, σ₂, u + 1, p₁, p₂, hq, rfl, by bdd_omega, by rw [← Nat.add_assoc]; exact l₁',
         by rw [← Nat.add_assoc]; exact l₂', by rw [r₁]; congr 1, by rw [r₂]; congr 1, by rw [e₁, d₁], by rw [e₂, d₂],
         v₁, v₂⟩
 
@@ -149,7 +150,7 @@ theorem cmpG_ok {σ : State} {K t : Nat} {c : BitVec 64} {s : State} (h : LV σ 
   have hlen : (Lt σ K t).length ≤ 256 := sampleAfter_length_le (a := []) (by simp) _ t
   refine WP.mono (cmp249_ok s) fun s' ⟨hcf, hm, hg, hrd, hwr, hl⟩ => ?_
   exact ⟨⟨⟨h.1.lat.same hg hm hrd hwr, fun h' => (h.1.vc h').same hl⟩, by rw [hg]; exact h.2⟩,
-    by rw [hcf, h.1.lat.rdi, ofNat64_toNat (by omega)]⟩
+    by rw [hcf, h.1.lat.rdi, ofNat64_toNat (by bdd_omega)]⟩
 
 /-- A group of four iterations. -/
 theorem vgrp_ct {K t : Nat} {c : BitVec 64} (hK : K < 4) (ht : t + 4 ≤ 168) :
@@ -294,21 +295,21 @@ theorem loopV_ct {K : Nat} (hK : K < 4) (n : Nat) :
   by_cases hi : i < 21 ∧ n = 21 - i
   · obtain ⟨hi, hn⟩ := hi
     refine RelCT.mono (P := RV K (8 * i) (BitVec.ofNat 64 (21 - i)))
-      (RelCT.seq (vgrp_ct hK (by omega)) (RelCT.seq (vgrp_ct hK (by omega)) sub10_ct))
+      (RelCT.seq (vgrp_ct hK (by bdd_omega)) (RelCT.seq (vgrp_ct hK (by bdd_omega)) sub10_ct))
       (fun _ _ h => h.2.2) fun x y ⟨σ₁, σ₂, p₁, p₂, hq, ⟨l₁, d₁, z₁⟩, ⟨l₂, d₂, z₂⟩⟩ => ?_
-    rw [ofNat64_pred (by omega) (by omega)] at d₁ d₂ z₁ z₂
-    rw [ofNat64_beq_zero (by omega)] at z₁ z₂
-    rw [show 8 * i + 4 + 4 = 8 * (i + 1) by omega] at l₁ l₂
+    rw [ofNat64_pred (by bdd_omega) (by bdd_omega)] at d₁ d₂ z₁ z₂
+    rw [ofNat64_beq_zero (by bdd_omega)] at z₁ z₂
+    rw [show 8 * i + 4 + 4 = 8 * (i + 1) by bdd_omega] at l₁ l₂
     refine ⟨by show x.zf.map _ = y.zf.map _; rw [z₁, z₂], fun hf => ?_, fun ht => ?_⟩
     · have : 21 - i - 1 = 0 := by
         have : x.zf.map (!·) = some false := hf
         rw [z₁] at this; simpa using this
-      rw [show i + 1 = 21 by omega] at l₁ l₂
+      rw [show i + 1 = 21 by bdd_omega] at l₁ l₂
       exact ⟨σ₁, σ₂, p₁, p₂, hq, l₁.lat, l₂.lat⟩
     · have : 21 - i - 1 ≠ 0 := by
         have : x.zf.map (!·) = some true := ht
         rw [z₁] at this; simpa using this
-      exact ⟨21 - (i + 1), by omega, i + 1, rfl, by omega, σ₁, σ₂, p₁, p₂, hq,
+      exact ⟨21 - (i + 1), by bdd_omega, i + 1, rfl, by bdd_omega, σ₁, σ₂, p₁, p₂, hq,
         ⟨l₁, by rw [d₁]; congr 1⟩, ⟨l₂, by rw [d₂]; congr 1⟩⟩
   · exact RelCT.of_false fun _ _ h => hi ⟨h.2.1, h.1⟩
 

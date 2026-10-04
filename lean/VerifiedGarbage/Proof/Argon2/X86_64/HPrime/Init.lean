@@ -23,8 +23,8 @@ open VG VG.X86_64 VG.Impl.Argon2.X86_64.HPrime
 /-- Obligations of any streaming BLAKE2b backend used by H′. -/
 structure HashOk (h : Hash) : Prop where
   init : Verified X86_64.target h.init (Spec.Blake2.initBContract X86_64.abi)
-  update : Verified X86_64.target h.update (Spec.Blake2.updateBContract X86_64.abi 8)
-  finalize : Verified X86_64.target h.finalize (Spec.Blake2.finalizeBContract X86_64.abi 8)
+  update : Verified X86_64.target h.update (Spec.Blake2.updateBScratchContract X86_64.abi 8)
+  finalize : Verified X86_64.target h.finalize (Spec.Blake2.finalizeBScratchContract X86_64.abi 8)
   initNoSp : NoSp h.init
   updateNoSp : NoSp h.update
   finalizeNoSp : NoSp h.finalize

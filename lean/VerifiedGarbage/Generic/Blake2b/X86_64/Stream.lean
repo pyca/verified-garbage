@@ -21,21 +21,41 @@ def artifacts (v : Proof.Blake2.X86_64.Backend) : List Artifact := [
     spSafe := v.spSafe
     features := v.features },
   { Spec.Blake2.updateBApi with
-    name := v.updateName
+    name := Spec.Blake2.updateBApi.name ++ v.suffix
     target := VG.X86_64.target
     doc := Spec.Blake2.updateBApi.doc
+    code := Impl.StackScratch.X86_64.withStackScratch 584 .r8 v.update
+    contract := Spec.Blake2.updateBContract VG.X86_64.abi (8 + 584)
+    stack := 8 + 584
+    verified := v.update_framed
+    spSafe := VG.X86_64.withStackScratch_spSafe (by decide) v.updateSpSafe
+    features := v.features },
+  { Spec.Blake2.finalizeBApi with
+    name := Spec.Blake2.finalizeBApi.name ++ v.suffix
+    target := VG.X86_64.target
+    doc := Spec.Blake2.finalizeBApi.doc
+    code := Impl.StackScratch.X86_64.withStackScratch 584 .rcx v.finalize
+    contract := Spec.Blake2.finalizeBContract VG.X86_64.abi (8 + 584)
+    stack := 8 + 584
+    verified := v.finalize_framed
+    spSafe := VG.X86_64.withStackScratch_spSafe (by decide) v.finalizeSpSafe
+    features := v.features },
+  { Spec.Blake2.updateBScratchApi with
+    name := v.updateName
+    target := VG.X86_64.target
+    doc := Spec.Blake2.updateBScratchApi.doc
     code := v.update
-    contract := Spec.Blake2.updateBContract VG.X86_64.abi 8
+    contract := Spec.Blake2.updateBScratchContract VG.X86_64.abi 8
     stack := 8
     verified := v.update_verified
     spSafe := v.updateSpSafe
     features := v.features },
-  { Spec.Blake2.finalizeBApi with
+  { Spec.Blake2.finalizeBScratchApi with
     name := v.finalizeName
     target := VG.X86_64.target
-    doc := Spec.Blake2.finalizeBApi.doc
+    doc := Spec.Blake2.finalizeBScratchApi.doc
     code := v.finalize
-    contract := Spec.Blake2.finalizeBContract VG.X86_64.abi 8
+    contract := Spec.Blake2.finalizeBScratchContract VG.X86_64.abi 8
     stack := 8
     verified := v.finalize_verified
     spSafe := v.finalizeSpSafe

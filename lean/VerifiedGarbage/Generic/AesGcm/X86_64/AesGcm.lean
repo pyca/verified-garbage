@@ -18,7 +18,9 @@ against the contract.
 Each function needs the CPU features of the implementations it calls:
 `init` calls only AES's, `stream_init` and `stream_aad` only GHASH's (so
 their `_aesni` or `_pclmul` instances are the baseline code under another
-name, which keeps every instance of a combination callable together).
+name, which keeps every instance of a combination callable together), and
+`stream_finish` and `stream_verify` only both's (they do not call the
+interleaved loops, whose features `GcmImpl.features` adds).
 
 `seal`, `open`, `stream_encrypt` and `stream_decrypt` encrypt or decrypt
 and absorb the whole blocks of the data in one call of the instance of
@@ -153,7 +155,7 @@ def artifacts (v : GcmImpl) : List Artifact := [
     stack := 8
     verified := streamFinish_verified v
     spSafe := streamFinish_spSafe v
-    features := v.features },
+    features := (v.ctr.features ++ v.gh.features).dedup },
   { Spec.Gcm.streamVerifyApi with
     name := Spec.Gcm.streamVerifyApi.name ++ v.suffix
     target := X86_64.target
@@ -163,6 +165,6 @@ def artifacts (v : GcmImpl) : List Artifact := [
     stack := 8
     verified := streamVerify_verified v
     spSafe := streamVerify_spSafe v
-    features := v.features }]
+    features := (v.ctr.features ++ v.gh.features).dedup }]
 
 end VG.Generic.AesGcm.X86_64.AesGcm

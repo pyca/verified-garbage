@@ -23,16 +23,32 @@ def artifacts : List Artifact := [
   { Spec.Blake2.updateSApi with
     target := X86.target
     doc := Spec.Blake2.updateSApi.doc
-    code := Impl.Blake2.X86.Stream.update 32 "vg_blake2s_compress" Impl.Blake2.X86.CompressS.compress
-    contract := Spec.Blake2.updateSContract X86.abi 32
-    stack := 32
-    verified := Proof.Blake2.X86.S.update_verified
+    code := Impl.StackScratch.X86.withStackScratch 604 5 (Impl.Blake2.X86.Stream.update 32 "vg_blake2s_compress" Impl.Blake2.X86.CompressS.compress)
+    contract := Spec.Blake2.updateSContract X86.abi (32 + 604)
+    stack := 32 + 604
+    verified := Proof.Blake2.X86.S.update_framed
     spSafe := Code.all_of_allInstrs (by lit_decide) },
   { Spec.Blake2.finalizeSApi with
     target := X86.target
     doc := Spec.Blake2.finalizeSApi.doc
+    code := Impl.StackScratch.X86.withStackScratch 600 4 (Impl.Blake2.X86.Stream.finalize 32 "vg_blake2s_compress" Impl.Blake2.X86.CompressS.compress)
+    contract := Spec.Blake2.finalizeSContract X86.abi (32 + 600)
+    stack := 32 + 600
+    verified := Proof.Blake2.X86.S.finalize_framed
+    spSafe := Code.all_of_allInstrs (by lit_decide) },
+  { Spec.Blake2.updateSScratchApi with
+    target := X86.target
+    doc := Spec.Blake2.updateSScratchApi.doc
+    code := Impl.Blake2.X86.Stream.update 32 "vg_blake2s_compress" Impl.Blake2.X86.CompressS.compress
+    contract := Spec.Blake2.updateSScratchContract X86.abi 32
+    stack := 32
+    verified := Proof.Blake2.X86.S.update_verified
+    spSafe := Code.all_of_allInstrs (by lit_decide) },
+  { Spec.Blake2.finalizeSScratchApi with
+    target := X86.target
+    doc := Spec.Blake2.finalizeSScratchApi.doc
     code := Impl.Blake2.X86.Stream.finalize 32 "vg_blake2s_compress" Impl.Blake2.X86.CompressS.compress
-    contract := Spec.Blake2.finalizeSContract X86.abi 32
+    contract := Spec.Blake2.finalizeSScratchContract X86.abi 32
     stack := 32
     verified := Proof.Blake2.X86.S.finalize_verified
     spSafe := Code.all_of_allInstrs (by lit_decide) }]

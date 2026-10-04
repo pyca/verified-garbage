@@ -1978,13 +1978,304 @@ pub(crate) unsafe extern "C" fn vg_blake2s_init(state: *mut [u8; 96], outlen: us
 ///
 /// * `state` must be valid for reads and writes of 96 bytes.
 /// * `data` must be valid for reads of `len` bytes.
+/// * `count` must be the exact length of the data so far (the key block included), and `count + len` less than 2⁶⁴.
+/// * `state` must not overlap `data` or the arguments on the stack (distinct Rust objects never do).
+/// * Neither `state` nor `data` may overlap the return address on the stack or the 636 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_blake2s_update(state: *mut [u8; 96], count: u64, data: *const u8, len: usize) {
+    core::arch::naked_asm!(
+        "lea esp, [esp-604]",
+        "mov eax, DWORD PTR [esp+608]",
+        "mov DWORD PTR [esp+4], eax",
+        "mov eax, DWORD PTR [esp+612]",
+        "mov DWORD PTR [esp+8], eax",
+        "mov eax, DWORD PTR [esp+616]",
+        "mov DWORD PTR [esp+12], eax",
+        "mov eax, DWORD PTR [esp+620]",
+        "mov DWORD PTR [esp+16], eax",
+        "mov eax, DWORD PTR [esp+624]",
+        "mov DWORD PTR [esp+20], eax",
+        "mov eax, esp",
+        "add eax, 28",
+        "mov DWORD PTR [esp+24], eax",
+        "mov eax, DWORD PTR [esp+24]",
+        "mov DWORD PTR [eax+512], ebx",
+        "mov DWORD PTR [eax+516], esi",
+        "mov DWORD PTR [eax+520], edi",
+        "mov DWORD PTR [eax+524], ebp",
+        "mov ebp, eax",
+        "mov ebx, DWORD PTR [esp+4]",
+        "mov esi, DWORD PTR [esp+16]",
+        "mov edi, DWORD PTR [esp+20]",
+        "mov eax, DWORD PTR [esp+8]",
+        "mov DWORD PTR [ebp+528], eax",
+        "mov ecx, DWORD PTR [esp+12]",
+        "mov DWORD PTR [ebp+532], ecx",
+        "or ecx, eax",
+        "je 20f",
+        "sub eax, 1",
+        "and eax, 63",
+        "add eax, 1",
+        "jmp 21f",
+        "20:",
+        "mov eax, 0",
+        "21:",
+        "test edi, edi",
+        "je 22f",
+        "test eax, eax",
+        "je 24f",
+        "mov ecx, 64",
+        "sub ecx, eax",
+        "cmp edi, ecx",
+        "jb 26f",
+        "jmp 27f",
+        "26:",
+        "mov ecx, edi",
+        "27:",
+        "sub edi, ecx",
+        "mov edx, ebx",
+        "add edx, eax",
+        "mov eax, DWORD PTR [ebp+528]",
+        "add eax, ecx",
+        "mov DWORD PTR [ebp+528], eax",
+        "mov eax, DWORD PTR [ebp+532]",
+        "adc eax, 0",
+        "mov DWORD PTR [ebp+532], eax",
+        "test ecx, ecx",
+        "je 28f",
+        "210:",
+        "movzx eax, BYTE PTR [esi]",
+        "mov BYTE PTR [edx+32], al",
+        "add esi, 1",
+        "add edx, 1",
+        "sub ecx, 1",
+        "jne 210b",
+        "jmp 29f",
+        "28:",
+        "29:",
+        "test edi, edi",
+        "je 211f",
+        "mov DWORD PTR [ebp+536], esi",
+        "mov DWORD PTR [ebp+540], edi",
+        "mov esi, ebx",
+        "add esi, 32",
+        "mov edi, 1",
+        "mov ecx, DWORD PTR [ebp+528]",
+        "mov edx, DWORD PTR [ebp+532]",
+        "mov eax, 0",
+        "push ebp",
+        "push eax",
+        "push edx",
+        "push ecx",
+        "push edi",
+        "push esi",
+        "push ebx",
+        "call {vg_blake2s_compress}",
+        "pop eax",
+        "pop eax",
+        "pop eax",
+        "pop eax",
+        "pop eax",
+        "pop eax",
+        "pop eax",
+        "mov esi, DWORD PTR [ebp+536]",
+        "mov edi, DWORD PTR [ebp+540]",
+        "jmp 212f",
+        "211:",
+        "212:",
+        "jmp 25f",
+        "24:",
+        "25:",
+        "test edi, edi",
+        "je 213f",
+        "mov eax, edi",
+        "sub eax, 1",
+        "mov ecx, eax",
+        "and ecx, 63",
+        "sub eax, ecx",
+        "je 215f",
+        "mov DWORD PTR [ebp+540], edi",
+        "mov DWORD PTR [ebp+544], eax",
+        "mov edi, eax",
+        "shr edi, 6",
+        "mov ecx, DWORD PTR [ebp+528]",
+        "add ecx, 64",
+        "mov edx, DWORD PTR [ebp+532]",
+        "adc edx, 0",
+        "mov eax, 0",
+        "push ebp",
+        "push eax",
+        "push edx",
+        "push ecx",
+        "push edi",
+        "push esi",
+        "push ebx",
+        "call {vg_blake2s_compress}",
+        "pop eax",
+        "pop eax",
+        "pop eax",
+        "pop eax",
+        "pop eax",
+        "pop eax",
+        "pop eax",
+        "mov eax, DWORD PTR [ebp+544]",
+        "add esi, eax",
+        "mov edi, DWORD PTR [ebp+540]",
+        "sub edi, eax",
+        "jmp 216f",
+        "215:",
+        "216:",
+        "mov ecx, edi",
+        "mov edx, ebx",
+        "217:",
+        "movzx eax, BYTE PTR [esi]",
+        "mov BYTE PTR [edx+32], al",
+        "add esi, 1",
+        "add edx, 1",
+        "sub ecx, 1",
+        "jne 217b",
+        "jmp 214f",
+        "213:",
+        "214:",
+        "jmp 23f",
+        "22:",
+        "23:",
+        "mov eax, ebp",
+        "mov ebx, DWORD PTR [eax+512]",
+        "mov esi, DWORD PTR [eax+516]",
+        "mov edi, DWORD PTR [eax+520]",
+        "mov ebp, DWORD PTR [eax+524]",
+        "lea esp, [esp+604]",
+        "ret",
+        ".p2align 6",
+        vg_blake2s_compress = sym super::blake2s::vg_blake2s_compress,
+    )
+}
+
+/// Finishes a BLAKE2s computation: if the streaming state `*state` represents data of `count` bytes, compresses its last block and writes the final state `h[0..7]` (32 bytes) to `*out`. The digest of `outlen` bytes (`init`'s) is its first `outlen` bytes.
+///
+/// Contract: `VG.Spec.Blake2.finalizeSContract`. Constant time: only the pointers and `count` may affect timing, not the state.
+///
+/// # Safety
+///
+/// * `state` must be valid for reads and writes of 96 bytes.
+/// * `out` must be valid for reads and writes of 32 bytes.
+/// * `count` must be the exact length of the data (the key block included), less than 2⁶⁴.
+/// * The contents of `state` on return are unspecified.
+/// * `state` and `out` must not overlap each other or the arguments on the stack (distinct Rust objects never do).
+/// * Neither `state` nor `out` may overlap the return address on the stack or the 632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_blake2s_finalize(state: *mut [u8; 96], count: u64, out: *mut [u8; 32]) {
+    core::arch::naked_asm!(
+        "lea esp, [esp-600]",
+        "mov eax, DWORD PTR [esp+604]",
+        "mov DWORD PTR [esp+4], eax",
+        "mov eax, DWORD PTR [esp+608]",
+        "mov DWORD PTR [esp+8], eax",
+        "mov eax, DWORD PTR [esp+612]",
+        "mov DWORD PTR [esp+12], eax",
+        "mov eax, DWORD PTR [esp+616]",
+        "mov DWORD PTR [esp+16], eax",
+        "mov eax, esp",
+        "add eax, 24",
+        "mov DWORD PTR [esp+20], eax",
+        "mov eax, DWORD PTR [esp+20]",
+        "mov DWORD PTR [eax+512], ebx",
+        "mov DWORD PTR [eax+516], esi",
+        "mov DWORD PTR [eax+520], edi",
+        "mov DWORD PTR [eax+524], ebp",
+        "mov ebp, eax",
+        "mov ebx, DWORD PTR [esp+4]",
+        "mov eax, DWORD PTR [esp+8]",
+        "mov ecx, DWORD PTR [esp+12]",
+        "or ecx, eax",
+        "je 20f",
+        "sub eax, 1",
+        "and eax, 63",
+        "add eax, 1",
+        "jmp 21f",
+        "20:",
+        "mov eax, 0",
+        "21:",
+        "mov edx, ebx",
+        "add edx, eax",
+        "mov ecx, 64",
+        "sub ecx, eax",
+        "mov eax, 0",
+        "je 22f",
+        "24:",
+        "mov BYTE PTR [edx+32], al",
+        "add edx, 1",
+        "sub ecx, 1",
+        "jne 24b",
+        "jmp 23f",
+        "22:",
+        "23:",
+        "mov esi, ebx",
+        "add esi, 32",
+        "mov edi, 1",
+        "mov eax, 1",
+        "mov ecx, DWORD PTR [esp+8]",
+        "mov edx, DWORD PTR [esp+12]",
+        "push ebp",
+        "push eax",
+        "push edx",
+        "push ecx",
+        "push edi",
+        "push esi",
+        "push ebx",
+        "call {vg_blake2s_compress}",
+        "pop eax",
+        "pop eax",
+        "pop eax",
+        "pop eax",
+        "pop eax",
+        "pop eax",
+        "pop eax",
+        "mov eax, DWORD PTR [esp+16]",
+        "mov ecx, DWORD PTR [ebx]",
+        "mov DWORD PTR [eax], ecx",
+        "mov ecx, DWORD PTR [ebx+4]",
+        "mov DWORD PTR [eax+4], ecx",
+        "mov ecx, DWORD PTR [ebx+8]",
+        "mov DWORD PTR [eax+8], ecx",
+        "mov ecx, DWORD PTR [ebx+12]",
+        "mov DWORD PTR [eax+12], ecx",
+        "mov ecx, DWORD PTR [ebx+16]",
+        "mov DWORD PTR [eax+16], ecx",
+        "mov ecx, DWORD PTR [ebx+20]",
+        "mov DWORD PTR [eax+20], ecx",
+        "mov ecx, DWORD PTR [ebx+24]",
+        "mov DWORD PTR [eax+24], ecx",
+        "mov ecx, DWORD PTR [ebx+28]",
+        "mov DWORD PTR [eax+28], ecx",
+        "mov eax, ebp",
+        "mov ebx, DWORD PTR [eax+512]",
+        "mov esi, DWORD PTR [eax+516]",
+        "mov edi, DWORD PTR [eax+520]",
+        "mov ebp, DWORD PTR [eax+524]",
+        "lea esp, [esp+600]",
+        "ret",
+        ".p2align 6",
+        vg_blake2s_compress = sym super::blake2s::vg_blake2s_compress,
+    )
+}
+
+/// `vg_blake2s_update`, with its working space in `*scratch`.
+///
+/// Contract: `VG.Spec.Blake2.updateSScratchContract`. Constant time: only the pointers, `count` and `len` may affect timing, not the state or the data.
+///
+/// # Safety
+///
+/// * `state` must be valid for reads and writes of 96 bytes.
+/// * `data` must be valid for reads of `len` bytes.
 /// * `scratch` must be valid for reads and writes of 576 bytes.
 /// * `count` must be the exact length of the data so far (the key block included), and `count + len` less than 2⁶⁴.
 /// * The contents of `scratch` on return are unspecified.
 /// * `state` and `scratch` must not overlap each other, `data` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `state`, `data` and `scratch` may overlap the return address on the stack or the 32 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_blake2s_update(state: *mut [u8; 96], count: u64, data: *const u8, len: usize, scratch: *mut [u64; 72]) {
+pub(crate) unsafe extern "C" fn vg_blake2s_update_scratch(state: *mut [u8; 96], count: u64, data: *const u8, len: usize, scratch: *mut [u64; 72]) {
     core::arch::naked_asm!(
         "mov eax, DWORD PTR [esp+24]",
         "mov DWORD PTR [eax+512], ebx",
@@ -2139,9 +2430,9 @@ pub(crate) unsafe extern "C" fn vg_blake2s_update(state: *mut [u8; 96], count: u
     )
 }
 
-/// Finishes a BLAKE2s computation: if the streaming state `*state` represents data of `count` bytes, compresses its last block and writes the final state `h[0..7]` (32 bytes) to `*out`. The digest of `outlen` bytes (`init`'s) is its first `outlen` bytes.
+/// `vg_blake2s_finalize`, with its working space in `*scratch`.
 ///
-/// Contract: `VG.Spec.Blake2.finalizeSContract`. Constant time: only the pointers and `count` may affect timing, not the state.
+/// Contract: `VG.Spec.Blake2.finalizeSScratchContract`. Constant time: only the pointers and `count` may affect timing, not the state.
 ///
 /// # Safety
 ///
@@ -2154,7 +2445,7 @@ pub(crate) unsafe extern "C" fn vg_blake2s_update(state: *mut [u8; 96], count: u
 /// * `state`, `out` and `scratch` must not overlap each other or the arguments on the stack (distinct Rust objects never do).
 /// * None of `state`, `out` and `scratch` may overlap the return address on the stack or the 32 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_blake2s_finalize(state: *mut [u8; 96], count: u64, out: *mut [u8; 32], scratch: *mut [u64; 72]) {
+pub(crate) unsafe extern "C" fn vg_blake2s_finalize_scratch(state: *mut [u8; 96], count: u64, out: *mut [u8; 32], scratch: *mut [u64; 72]) {
     core::arch::naked_asm!(
         "mov eax, DWORD PTR [esp+20]",
         "mov DWORD PTR [eax+512], ebx",

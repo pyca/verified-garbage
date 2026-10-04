@@ -53,7 +53,7 @@ def withField (c : Proof.Sha512.X86_64.Compress) (fld : Impl.Ed25519.X86_64.Arit
       name := Spec.Ed25519.publicKeyApi.name ++ c.suffix ++ fs
       target := X86_64.target
       doc := Spec.Ed25519.publicKeyApi.doc (notes := ["Hashes the seed with `vg_sha512_init`, \
-        `vg_sha512_update" ++ c.suffix ++ "` and `vg_sha512_finalize" ++ c.suffix ++ "`, keeping \
+        `vg_sha512_update_scratch" ++ c.suffix ++ "` and `vg_sha512_finalize_scratch" ++ c.suffix ++ "`, keeping \
         the state and the digest in `scratch`, and encodes `[s]B` with \
         `vg_ed25519_scalar_base" ++ fs ++ "`. The pruned scalar `s` is kept in a \
         56-byte stack frame with the pointers and cleared before the frame is popped; the calls \

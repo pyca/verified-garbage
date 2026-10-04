@@ -23,16 +23,32 @@ def artifacts : List Artifact := [
   { Spec.Blake2.updateBApi with
     target := X86.target
     doc := Spec.Blake2.updateBApi.doc
-    code := Impl.Blake2.X86.Stream.update 64 "vg_blake2b_compress" Impl.Blake2.X86.CompressB.compress
-    contract := Spec.Blake2.updateBContract X86.abi 32
-    stack := 32
-    verified := Proof.Blake2.X86.B.updateB_verified
+    code := Impl.StackScratch.X86.withStackScratch 604 5 (Impl.Blake2.X86.Stream.update 64 "vg_blake2b_compress" Impl.Blake2.X86.CompressB.compress)
+    contract := Spec.Blake2.updateBContract X86.abi (32 + 604)
+    stack := 32 + 604
+    verified := Proof.Blake2.X86.B.updateB_framed
     spSafe := Code.all_of_allInstrs (by lit_decide) },
   { Spec.Blake2.finalizeBApi with
     target := X86.target
     doc := Spec.Blake2.finalizeBApi.doc
+    code := Impl.StackScratch.X86.withStackScratch 600 4 (Impl.Blake2.X86.Stream.finalize 64 "vg_blake2b_compress" Impl.Blake2.X86.CompressB.compress)
+    contract := Spec.Blake2.finalizeBContract X86.abi (32 + 600)
+    stack := 32 + 600
+    verified := Proof.Blake2.X86.B.finalizeB_framed
+    spSafe := Code.all_of_allInstrs (by lit_decide) },
+  { Spec.Blake2.updateBScratchApi with
+    target := X86.target
+    doc := Spec.Blake2.updateBScratchApi.doc
+    code := Impl.Blake2.X86.Stream.update 64 "vg_blake2b_compress" Impl.Blake2.X86.CompressB.compress
+    contract := Spec.Blake2.updateBScratchContract X86.abi 32
+    stack := 32
+    verified := Proof.Blake2.X86.B.updateB_verified
+    spSafe := Code.all_of_allInstrs (by lit_decide) },
+  { Spec.Blake2.finalizeBScratchApi with
+    target := X86.target
+    doc := Spec.Blake2.finalizeBScratchApi.doc
     code := Impl.Blake2.X86.Stream.finalize 64 "vg_blake2b_compress" Impl.Blake2.X86.CompressB.compress
-    contract := Spec.Blake2.finalizeBContract X86.abi 32
+    contract := Spec.Blake2.finalizeBScratchContract X86.abi 32
     stack := 32
     verified := Proof.Blake2.X86.B.finalizeB_verified
     spSafe := Code.all_of_allInstrs (by lit_decide) }]

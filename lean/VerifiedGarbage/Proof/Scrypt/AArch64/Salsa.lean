@@ -346,7 +346,7 @@ theorem salsa_correct (s : State) (hs : Proof.Scrypt.salsaAArch64.pre s) :
     ∃ t s', Exec isa Impl.Scrypt.AArch64.salsa s t s' ∧ abiPreserved s s' ∧
       Proof.Scrypt.salsaAArch64.post s s' := by
   obtain ⟨t, s', he, h₁, h₂⟩ := correct (pre_of s hs)
-  exact ⟨t, s', he, ⟨h₁, Exec.sp he, Exec.preservedV he⟩, h₂⟩
+  exact ⟨t, s', he, ⟨h₁, Exec.sp he, Exec.preservedV he (by lit_decide)⟩, h₂⟩
 
 theorem salsa_ct : ConstantTime isa Proof.Scrypt.salsaAArch64.pre Proof.Scrypt.salsaAArch64.pub
     Impl.Scrypt.AArch64.salsa := by

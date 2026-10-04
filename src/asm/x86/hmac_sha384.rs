@@ -255,7 +255,7 @@ pub(crate) unsafe extern "C" fn vg_hmac_sha384_finalize(inner: *mut [u8; 192], o
         "push ecx",
         "push eax",
         "push ebx",
-        "call {vg_sha512_finalize}",
+        "call {vg_sha512_finalize_scratch}",
         "pop eax",
         "pop eax",
         "pop eax",
@@ -450,7 +450,7 @@ pub(crate) unsafe extern "C" fn vg_hmac_sha384_finalize(inner: *mut [u8; 192], o
         "mov ebp, DWORD PTR [eax+284]",
         "ret",
         ".p2align 6",
-        vg_sha512_finalize = sym super::sha512::vg_sha512_finalize,
+        vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch,
         vg_sha512_compress = sym super::sha512::vg_sha512_compress,
     )
 }

@@ -4,6 +4,7 @@ import VerifiedGarbage.Proof.Sha512.AArch64.Shared
 import VerifiedGarbage.Proof.Hmac.Generic.Common
 import VerifiedGarbage.Spec.Sha512.Contract
 import VerifiedGarbage.TCB.AArch64.Target
+import VerifiedGarbage.Proof.Framework.TaintBatch
 
 /-!
 # The SHA-512 family on AArch64, as Merkle–Damgård hash functions
@@ -35,9 +36,9 @@ def hash (v : Compress) (I : Spec.Hmac.Instance) (D : Nat) (initN : String) (iv 
   compC := v.code
   initN := initN
   initC := Impl.Sha512.AArch64.Stream.init iv
-  updN := Spec.Sha512.updateApi.name ++ v.suffix
+  updN := Spec.Sha512.updateScratchApi.name ++ v.suffix
   updC := v.update
-  finN := Spec.Sha512.finalizeApi.name ++ v.suffix
+  finN := Spec.Sha512.finalizeScratchApi.name ++ v.suffix
   finC := v.finalize
   hmacInitN := I.initApi.name ++ v.suffix
   hmacFinN := I.finalizeApi.name ++ v.suffix
@@ -48,25 +49,24 @@ def coreH (D : Nat) : Hash :=
   ⟨Impl.Pbkdf2.AArch64.ofMd Impl.Sha512.AArch64.Stream.params, D, 234, "", .block [], "", .block [], "", .block [], "", .block [], "", "", ""⟩
 
 theorem coreOK (D : Nat) (hD : D = 28 ∨ D = 32 ∨ D = 48 ∨ D = 64) : CoreOK (coreH D) := by
-  rcases hD with rfl | rfl | rfl | rfl <;> exact {
-      pbk := ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩,
-        ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩,
-        ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩,
-        ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩
-      iter := ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩,
-        ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩
+  rcases hD with rfl | rfl | rfl | rfl <;> refine {
+      pbk := ⟨⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩,
+        ⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩,
+        ⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩,
+        ⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩⟩
+      iter := ⟨⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩,
+        ⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩⟩
       hinit := {
-        pro := ⟨_, by taint_decide⟩
-        argI := by
-          simp only [List.mem_cons, List.not_mem_nil, or_false]
-          rintro st (rfl | rfl) <;> exact ⟨_, by taint_decide⟩
-        keys := ⟨_, by taint_decide⟩
-        mid := ⟨_, by taint_decide⟩
-        restore := ⟨_, by taint_decide⟩ }
-      hfin := ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩
-      fitI := by decide
-      fitF := by decide
+        pro := ⟨?_, ?_⟩
+        argI := List.forall_mem_cons.mpr ⟨⟨?_, ?_⟩, List.forall_mem_cons.mpr ⟨⟨?_, ?_⟩, List.forall_mem_nil _⟩⟩
+        keys := ⟨?_, ?_⟩
+        mid := ⟨?_, ?_⟩
+        restore := ⟨?_, ?_⟩ }
+      hfin := ⟨⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩⟩
+      fitI := ?_
+      fitF := ?_
   }
+  taint_decide_all
 
 /-- The initial hash values of the family. -/
 abbrev IVs (iv : Spec.Sha512.HashValue) : Prop := iv = H0_384 ∨ iv = H0_512 ∨ iv = H0_512_224 ∨ iv = H0_512_256
@@ -151,19 +151,34 @@ def ok (hR : I.S.Repr = Spec.Sha512.Repr iv)
 end
 
 /-- Streaming wrappers shared by all four digest sizes. The SHA-512 member
-emits them once per backend through `MdHash`; the other members call them. -/
+emits them once per backend through `MdHash`; the other members call them:
+`update` and `finalize`, which keep their working space in a frame of their
+own, and `update_scratch` and `finalize_scratch`, which HMAC's, PBKDF2's and
+Ed25519's code calls with theirs. -/
 def stream (v : Compress) : List StreamFn := [
   { api := Spec.Sha512.updateApi
-    code := v.update
-    contract := Spec.Sha512.updateContract AArch64.abi 16
-    stack := 16
+    code := Impl.StackScratch.AArch64.withStackScratch 1376 .x4 v.update
+    contract := Spec.Sha512.updateContract AArch64.abi (16 + 1376)
+    stack := 16 + 1376
     verified := Proof.Sha512.AArch64.Shared.update_of v.update_verified
     spSafe := Code.all_of_forall (fun _ => rfl) _ },
   { api := Spec.Sha512.finalizeApi
-    code := v.finalize
-    contract := Spec.Sha512.finalizeContract AArch64.abi 16
-    stack := 16
+    code := Impl.StackScratch.AArch64.withStackScratch 1376 .x3 v.finalize
+    contract := Spec.Sha512.finalizeContract AArch64.abi (16 + 1376)
+    stack := 16 + 1376
     verified := Proof.Sha512.AArch64.Shared.finalize_of v.finalize_verified
+    spSafe := Code.all_of_forall (fun _ => rfl) _ },
+  { api := Spec.Sha512.updateScratchApi
+    code := v.update
+    contract := Spec.Sha512.updateScratchContract AArch64.abi 16
+    stack := 16
+    verified := Proof.Sha512.AArch64.Shared.updateScratch_of v.update_verified
+    spSafe := Code.all_of_forall (fun _ => rfl) _ },
+  { api := Spec.Sha512.finalizeScratchApi
+    code := v.finalize
+    contract := Spec.Sha512.finalizeScratchContract AArch64.abi 16
+    stack := 16
+    verified := Proof.Sha512.AArch64.Shared.finalizeScratch_of v.finalize_verified
     spSafe := Code.all_of_forall (fun _ => rfl) _ }]
 
 /-! ## SHA-384 -/

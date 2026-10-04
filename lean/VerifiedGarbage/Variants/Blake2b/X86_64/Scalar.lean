@@ -25,5 +25,11 @@ def variant : Proof.Blake2.X86_64.Backend where
   finalizeSpSafe := Code.all_of_allInstrs (by
     change (Impl.Blake2.X86_64.Stream.finalize Spec.Blake2.b).allInstrs _ = true
     lit_decide)
+  updateDepth := by
+    change (Impl.Blake2.X86_64.Stream.update Spec.Blake2.b).x86_64Depth ≤ 8
+    lit_decide
+  finalizeDepth := by
+    change (Impl.Blake2.X86_64.Stream.finalize Spec.Blake2.b).x86_64Depth ≤ 8
+    lit_decide
 
 end VG.Variants.Blake2b.X86_64.Scalar

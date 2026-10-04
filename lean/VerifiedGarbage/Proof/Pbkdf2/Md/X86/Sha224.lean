@@ -1,5 +1,6 @@
 import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Sha256
 import VerifiedGarbage.Proof.Pbkdf2.Stream.X86.Sha224
+import VerifiedGarbage.Proof.Framework.TaintBatch
 
 /-!
 # HMAC-SHA-224 and PBKDF2-HMAC-SHA-224 over the compression function on x86 (32-bit), for every backend
@@ -57,9 +58,12 @@ where
       show 96 = 32 + 64 from rfl, show 112 ≤ 8 * 20 by decide, show 20 ≤ 64 by decide,
       show 28 ≤ 32 ∧ 32 ≤ 64 by decide⟩
 
-/-- SHA-224's sizes and digest code, without the functions: the code between
-the calls depends on nothing else. -/
-def sha224Shape : Hash := mdHash224 "" "" (.block []) (.block []) (.block [])
+/-- SHA-224's sizes and digest code, without the functions: `shapeOf` of
+every backend's `sha224M`, written out, so that the kernel reduces each side
+to it field by field rather than comparing the backends' functions. -/
+def sha224Shape : Hash :=
+  ⟨⟨64, 96, 28, 32, 20, "", .block [], "", .block [], "", .block []⟩, 32, 8, true, 112, "", .block [],
+    Impl.Sha256.X86.Stream.params.out⟩
 
 end VG.Proof.Pbkdf2.Md.X86
 
@@ -69,39 +73,42 @@ open VG.X86
 open VG.Proof.Pbkdf2.Md.X86
 open VG.Proof.Pbkdf2.Stream.X86 (Sha256Stream initW initG finW finG iterW iterG countF)
 
-theorem sha224Shape_iterChecks : Iterate.Checks sha224Shape where
-  pro := ⟨_, by taint_decide⟩
-  load := ⟨_, by taint_decide⟩
-  mid := ⟨_, by taint_decide⟩
-  tail := ⟨_, by taint_decide⟩
-  restore := ⟨_, by taint_decide⟩
+theorem sha224Shape_iterChecks : Iterate.Checks sha224Shape := by
+  refine {
+    pro := ⟨?_, ?_⟩
+    load := ⟨?_, ?_⟩
+    mid := ⟨?_, ?_⟩
+    tail := ⟨?_, ?_⟩
+    restore := ⟨?_, ?_⟩ }
+  taint_decide_all
 
-theorem sha224Shape_initChecks : HmacInit.Checks sha224Shape where
-  pro := ⟨_, by taint_decide⟩
-  blocks := ⟨_, by taint_decide⟩
-  toOuter := ⟨_, by taint_decide⟩
-  restore := ⟨_, by taint_decide⟩
+theorem sha224Shape_initChecks : HmacInit.Checks sha224Shape := by
+  refine {
+    pro := ⟨?_, ?_⟩
+    blocks := ⟨?_, ?_⟩
+    toOuter := ⟨?_, ?_⟩
+    restore := ⟨?_, ?_⟩ }
+  taint_decide_all
 
-theorem sha224Shape_finChecks : HmacFin.Checks sha224Shape where
-  pro := ⟨_, by taint_decide⟩
-  fin1 := ⟨_, by taint_decide⟩
-  mid := ⟨_, by taint_decide⟩
-  out := ⟨_, by taint_decide⟩
+theorem sha224Shape_finChecks : HmacFin.Checks sha224Shape := by
+  refine {
+    pro := ⟨?_, ?_⟩
+    fin1 := ⟨?_, ?_⟩
+    mid := ⟨?_, ?_⟩
+    out := ⟨?_, ?_⟩ }
+  taint_decide_all
 
 theorem sha224_iterChecks (v : Sha256Stream) (cmpN : String) (cmpC : Prog isa) :
     Iterate.Checks (sha224M v cmpN cmpC) :=
-  let h := sha224Shape_iterChecks
-  ⟨h.pro, h.load, h.mid, h.tail, h.restore⟩
+  iterChecks_of_shape (H := sha224M v cmpN cmpC) sha224Shape_iterChecks
 
 theorem sha224_initChecks (v : Sha256Stream) (cmpN : String) (cmpC : Prog isa) :
     HmacInit.Checks (sha224M v cmpN cmpC) :=
-  let h := sha224Shape_initChecks
-  ⟨h.pro, h.blocks, h.toOuter, h.restore⟩
+  initChecks_of_shape (H := sha224M v cmpN cmpC) sha224Shape_initChecks
 
 theorem sha224_finChecks (v : Sha256Stream) (cmpN : String) (cmpC : Prog isa) :
     HmacFin.Checks (sha224M v cmpN cmpC) :=
-  let h := sha224Shape_finChecks
-  ⟨h.pro, h.fin1, h.mid, h.out⟩
+  finChecks_of_shape (H := sha224M v cmpN cmpC) sha224Shape_finChecks
 
 theorem sha224_iterImp : (iterW Spec.Hmac.sha224S 104).Implies (Spec.Hmac.sha224I.iterateContract X86.abi 48) := by
   obtain ⟨a0, a1, a2, a3, a4, e, esp⟩ := iterSat_args 96 28 104

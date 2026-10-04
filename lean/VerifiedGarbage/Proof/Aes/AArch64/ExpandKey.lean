@@ -878,7 +878,7 @@ theorem expandKey_correct (s : State) (hs : Proof.Aes.expandKeyAArch64.pre s) :
       Proof.Aes.expandKeyAArch64.post s s' := by
   obtain ⟨t, s', he, ⟨h₁, h₂⟩, h₃⟩ :=
     WP.gprs (rs := [.x30]) (ek_correct hs) (by decide +kernel) (by decide +kernel)
-  refine ⟨t, s', he, ⟨fun r hr => ?_, Exec.sp he, Exec.preservedV he⟩, h₂⟩
+  refine ⟨t, s', he, ⟨fun r hr => ?_, Exec.sp he, Exec.preservedV he (by lit_decide)⟩, h₂⟩
   simp only [preserved, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
   · exact h₁ 0 (by omega)

@@ -498,7 +498,7 @@ theorem expandKey_correct (s : State) (hs : Proof.Aes.expandKeyAArch64.pre s) :
     ∃ t s', Exec isa expandKey s t s' ∧ abiPreserved s s' ∧ Proof.Aes.expandKeyAArch64.post s s' := by
   obtain ⟨t, s', he, h₂, h₁⟩ :=
     WP.gprs (rs := preserved) (correct (pre_of hs)) (by decide +kernel) (by decide +kernel)
-  exact ⟨t, s', he, ⟨h₁, Exec.sp he, Exec.preservedV he⟩, h₂⟩
+  exact ⟨t, s', he, ⟨h₁, Exec.sp he, Exec.preservedV he (by lit_decide)⟩, h₂⟩
 
 theorem expandKey_ct : ConstantTime isa Proof.Aes.expandKeyAArch64.pre
     Proof.Aes.expandKeyAArch64.pub expandKey := by

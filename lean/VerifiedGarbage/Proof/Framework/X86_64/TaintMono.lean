@@ -831,86 +831,7 @@ theorem step_keeps' (i : Instr) (hk : keepsI F i = true) (hΦF : Le Φ F) (hΦ :
 
 end
 
-/-! ## Stores of public values, without repeats
-
-A store of a public value adds its slot, even when the slot is public
-already: code that keeps a public value in a scratch word, storing it again
-in every round, makes the list of slots grow, and every later access and
-comparison slower. `stepKD` adds a slot only if it is not there: the same
-slots (`Sim`), so the same analysis. -/
-
-/-- The slots after a store, without adding one that is there. -/
-def storeSlotsKD (τ : T) (m : MemOp) (w : Nat) (p : Bool) : List (Nat × Nat × Nat) :=
-  match addrOfK τ m with
-  | some (i, d) =>
-    bif Nat.ble (d + w) (τ.lens.getD i 0) then
-      let kept := KList.filter (fun sl => p || !Nat.beq sl.1 i || Nat.ble (d + w) sl.2.1 ||
-        Nat.ble (sl.2.1 + sl.2.2) d) τ.slots
-      bif p then (bif mem3 (i, d, w) kept then kept else (i, d, w) :: kept) else kept
-    else bif p then τ.slots else []
-  | none => bif p then τ.slots else []
-
-def storeStepKD (τ : T) (m : MemOp) (w : Nat) (p : Bool) : Option T :=
-  bif memPub τ m then some { τ with slots := storeSlotsKD τ m w p } else none
-
-/-- `stepK`, with stores that do not repeat a slot (written out, rather than
-calling `stepK`, so that the kernel matches on the instruction once). -/
-def stepKD (τ : T) : Instr → Option T
-  | .mov d src =>
-    bif srcOkK τ src then
-      some { τ with
-        regs := setK τ d (srcPub τ src || loadPubK τ 8 src), bases := movBasesK τ d src, lo := .empty }
-    else none
-  | .mov32 d src =>
-    bif srcOkK τ src then
-      some { τ with
-        regs := setK τ d (srcPub τ src || loadPubK τ 4 src || loPub τ src), bases := killK τ d, lo := .empty }
-    else none
-  | .store m r => storeStepKD τ m 8 (pub τ r)
-  | .store32 m r => storeStepKD τ m 4 (pub τ r)
-  | .store8 m r => storeStepKD τ m 1 (pub τ r)
-  | .alu op d src => aluStepK τ op d src true
-  | .alu32 op d src => aluStepK τ op d src false
-  | .shift32 _ d _ | .shift _ d _ =>
-    some { τ with flags := τ.flags && pub τ d, bases := killK τ d, lo := .empty }
-  | .bswap32 d | .bswap d => some { τ with bases := killK τ d, lo := .empty }
-  | .rorx32 d r _ | .rorx d r _ =>
-    some { τ with regs := setK τ d (pub τ r), bases := killK τ d, lo := .empty }
-  | .andn32 d a b | .andn d a b =>
-    let p := pub τ a && pub τ b
-    some { τ with regs := setK τ d p, flags := p, bases := killK τ d, lo := .empty }
-  | .movImm64 d _ => some { τ with regs := setK τ d true, bases := killK τ d, lo := .empty }
-  | .movzx8 d m =>
-    bif memPub τ m then some { τ with regs := setK τ d false, bases := killK τ d, lo := .empty } else none
-  | .vpmovmskb _ d _ => some { τ with regs := setK τ d false, bases := killK τ d, lo := .empty }
-  | .movdquLoad _ m => bif memPub τ m then some τ else none
-  | .movdquStore m _ => storeStepK τ m 16 false
-  | .xop _ | .vop _ => some τ
-  | .vmovdquLoad _ _ m | .vbroadcasti128 _ m => bif memPub τ m then some τ else none
-  | .vmovdquStore .l128 m _ => storeStepK τ m 16 false
-  | .vmovdquStore .l256 m _ => storeStepK τ m 32 false
-  | .zop _ => some τ
-  | .vmovdqu32Load _ m | .vbroadcasti32x4 _ m | .zbcst _ _ _ m =>
-    bif memPub τ m then some τ else none
-  | .vmovdqu32Store m _ => storeStepK τ m 64 false
-  | .stmxcsr m => storeStepK τ m 4 false
-  | .ldmxcsr m => bif memPub τ m then some τ else none
-  | .lfence => some τ
-  | .mul r => some (mulStep τ r)
-  | .mulx hi lo src => bif srcOkK τ src then some (mulxStepK τ hi lo src) else none
-  | .adcx d src | .adox d src => adxStepK τ d src
-  | .push _ | .pop .. | .alloc _ | .free _ => none
-
-/-- The same taints, but for repeated slots. -/
-structure Sim (a b : T) : Prop where
-  regs : a.regs = b.regs
-  flags : a.flags = b.flags
-  lens : a.lens = b.lens
-  bases : a.bases = b.bases
-  slots : ∀ x, x ∈ a.slots ↔ x ∈ b.slots
-  lo : a.lo = b.lo
-
-theorem Sim.refl (a : T) : Sim a a := ⟨rfl, rfl, rfl, rfl, fun _ => Iff.rfl, rfl⟩
+/-! ## Repeated slots -/
 
 theorem Sim.slots_nil {a b : T} (h : Sim a b) (hb : b.slots = []) : a.slots = [] := by
   cases e : a.slots with
@@ -925,56 +846,6 @@ theorem Le.sim {a a' b b' : T} (ha : Sim a' a) (hb : Sim b' b) (h : Le a b) : Le
   rcases h.lens with e | ⟨e, es⟩
   · exact .inl (by rw [ha.lens, hb.lens, e])
   · exact .inr ⟨by rw [ha.lens, e], ha.slots_nil es⟩
-
-theorem Sim.agree {a b : T} {s₁ s₂ : State} (h : Sim a b) (hb : Agree b s₁ s₂) : Agree a s₁ s₂ := by
-  refine le_sound ?_ hb
-  simp only [le, Bool.and_eq_true, Bool.or_eq_true, Bool.not_eq_true', beq_iff_eq, List.all_eq_true,
-    List.contains_iff_mem, h.regs, h.flags, h.lens, h.bases, h.lo, RegSet.subset_refl, and_true, true_and]
-  refine ⟨?_, fun x hx => (h.slots x).mp hx⟩
-  refine ⟨?_, fun _ hx => hx⟩
-  cases b.flags
-  · exact .inl rfl
-  · exact .inr rfl
-
-theorem mem_storeSlotsKD (τ : T) (m : MemOp) (w : Nat) (p : Bool) (x : Nat × Nat × Nat) :
-    x ∈ storeSlotsKD τ m w p ↔ x ∈ storeSlots τ m w p := by
-  rw [← storeSlotsK_eq]
-  unfold storeSlotsKD storeSlotsK
-  cases addrOfK τ m with
-  | none => exact Iff.rfl
-  | some id =>
-    obtain ⟨i, d⟩ := id
-    simp only
-    cases Nat.ble (d + w) (τ.lens.getD i 0) <;> cases p <;> simp only [Bool.cond_false, Bool.cond_true]
-    generalize KList.filter _ τ.slots = l
-    cases hm : mem3 (i, d, w) l
-    · exact Iff.rfl
-    · rw [mem3_eq, List.contains_iff_mem] at hm
-      simp only [Bool.cond_true, List.mem_cons, iff_or_self]
-      rintro rfl; exact hm
-
-theorem stepKD_spec (τ : T) (i : Instr) :
-    (stepKD τ i = none ∧ step τ i = none) ∨ ∃ a b, stepKD τ i = some a ∧ step τ i = some b ∧ Sim a b := by
-  have st : ∀ m w p, (storeStepKD τ m w p = none ∧ storeStep τ m w p = none) ∨
-      ∃ a b, storeStepKD τ m w p = some a ∧ storeStep τ m w p = some b ∧ Sim a b := by
-    intro m w p
-    unfold storeStepKD storeStep
-    cases memPub τ m
-    · exact .inl ⟨rfl, rfl⟩
-    · exact .inr ⟨_, _, rfl, rfl, ⟨rfl, rfl, rfl, rfl, mem_storeSlotsKD τ m w p, rfl⟩⟩
-  have other : ∀ {i}, stepKD τ i = stepK τ i →
-      (stepKD τ i = none ∧ step τ i = none) ∨ ∃ a b, stepKD τ i = some a ∧ step τ i = some b ∧ Sim a b := by
-    intro i e
-    rw [e, stepK_eq]
-    cases step τ i
-    · exact .inl ⟨rfl, rfl⟩
-    · exact .inr ⟨_, _, rfl, rfl, Sim.refl _⟩
-  cases i
-  case store m r => exact st m 8 _
-  case store32 m r => exact st m 4 _
-  case store8 m r => exact st m 1 _
-  case vmovdquStore l _ _ => cases l <;> exact other rfl
-  all_goals exact other rfl
 
 /-! ## Calls and returns -/
 
@@ -1017,12 +888,7 @@ def taintS : VG.Taint isa where
   T := Taint.T
   Agree := Taint.Agree
   step := Taint.stepKD
-  step_sound {τ τ' i s₁ s₂ s₁' s₂'} ha hs e₁ e₂ := by
-    rcases Taint.stepKD_spec τ i with ⟨h, -⟩ | ⟨a, b, h₁, h₂, hab⟩
-    · rw [h] at hs; cases hs
-    · rw [h₁] at hs; cases hs
-      obtain ⟨h₃, h₄⟩ := taint.step_sound (τ' := b) ha (by show Taint.stepK τ i = some b; rw [Taint.stepK_eq]; exact h₂) e₁ e₂
-      exact ⟨h₃, hab.agree h₄⟩
+  step_sound := taint.step_sound
   condPub τ _ := τ.flags
   cond_sound := Taint.cond_sound
   meet := Taint.meet

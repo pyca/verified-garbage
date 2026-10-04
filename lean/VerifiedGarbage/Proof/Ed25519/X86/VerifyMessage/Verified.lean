@@ -228,7 +228,7 @@ theorem update_call_ct (hL : L.Ok) {vs : List Value} (hn : vs.length = 6)
     {c p n : BitVec 32} (hi : Input L p n)
     (hargs : ∀ t, OutArgs L vs t → UpdateArgs L c p n t) :
     RelCT isa (Two L g₁ g₂ m₁ m₂ (OutArgs L vs))
-      (.call Spec.Sha512.updateApi.name Impl.Sha512.X86.Stream.update)
+      (.call Spec.Sha512.updateScratchApi.name Impl.Sha512.X86.Stream.update)
       (Two L g₁ g₂ m₁ m₂ fun _ => True) := by
   apply call_ct hL Proof.Sha512.X86.Stream.Update.update_verified.1
     Proof.Sha512.X86.Stream.Update.update_verified.2.1 Whole.update_nosp (by rw [Whole.update_stack])
@@ -246,7 +246,7 @@ theorem append_pair_eq {a b c d : BitVec 32} (h : a ++ b = c ++ d) : a = c ∧ b
 
 theorem finalize_call_ct (hL : L.Ok) (count : BitVec 64) :
     RelCT isa (Two L g₁ g₂ m₁ m₂ (FinArgs L count))
-      (.call Spec.Sha512.finalizeApi.name Impl.Sha512.X86.Stream.finalize)
+      (.call Spec.Sha512.finalizeScratchApi.name Impl.Sha512.X86.Stream.finalize)
       (Two L g₁ g₂ m₁ m₂ fun _ => True) := by
   apply call_ct hL Proof.Sha512.X86.Stream.Finalize.finalize_verified.1
     Proof.Sha512.X86.Stream.Finalize.finalize_verified.2.1 Whole.finalize_nosp (by rw [Whole.finalize_stack])

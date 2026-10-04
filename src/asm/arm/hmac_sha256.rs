@@ -180,7 +180,7 @@ pub(crate) unsafe extern "C" fn vg_hmac_sha256_finalize(inner: *mut [u8; 96], ou
         "add r1, r11, r12",
         "mov r12, r11",
         "push {{r1, r12}}",
-        "bl {vg_sha256_finalize}",
+        "bl {vg_sha256_finalize_scratch}",
         "ldr r1, [sp], #8",
         "mov r3, r11",
         "movw r12, #196",
@@ -255,7 +255,7 @@ pub(crate) unsafe extern "C" fn vg_hmac_sha256_finalize(inner: *mut [u8; 96], ou
         "ldr lr, [r11, #188]",
         "ldr r11, [r11, #192]",
         "bx lr",
-        vg_sha256_finalize = sym super::sha256::vg_sha256_finalize,
+        vg_sha256_finalize_scratch = sym super::sha256::vg_sha256_finalize_scratch,
         vg_sha256_compress = sym super::sha256::vg_sha256_compress,
     )
 }

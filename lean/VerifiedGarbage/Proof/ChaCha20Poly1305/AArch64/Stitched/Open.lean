@@ -34,14 +34,14 @@ theorem openStitched_correct (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State}
     WP isa (openStitched v.callee) s₀ fun s' => abiPreserved s₀ s' ∧ openAArch64.post s₀ s' := by
   have hL' := (Nat.le_of_lt (s₀.gpr .x4).isLt)
   unfold openStitched cryptRest
-  refine WP.seq (WP.mono (WP.preservedV (prologue_ok hp)) fun s₁ ⟨h₁, v₁⟩ => ?_)
+  refine WP.seq (WP.mono (WP.preservedV (prologue_ok hp) (by lit_decide)) fun s₁ ⟨h₁, v₁⟩ => ?_)
   have hA : bytesAt s₁.mem (ad s₀) (AL s₀) = A s₀ :=
     bytesAt_frame h₁.inv.frame (by rdisj_all) (Nat.le_of_lt (s₀.gpr .x2).isLt)
   refine WP.seq (WP.mono (WP.preservedV (macPad_ok hp (p := .x24) (n := .x25) ⟨.inl rfl, .inl rfl⟩
-    (srcA hp) h₁.inv.x21 h₁.inv.rd h₁.inv.wr h₁.inv.x24 (by rw [h₁.inv.x25]; exact hRDX s₀)))
+    (srcA hp) h₁.inv.x21 h₁.inv.rd h₁.inv.wr h₁.inv.x24 (by rw [h₁.inv.x25]; exact hRDX s₀)) (by lit_decide))
     fun s₂ ⟨⟨k₂, r₂⟩, v₂⟩ => ?_)
   have i₂ := mac_inv h₁.inv k₂
-  refine WP.seq (WP.mono (WP.preservedV (lengths_ok hp i₂)) fun s₃ ⟨⟨i₃, k₃, len₃⟩, v₃⟩ => ?_)
+  refine WP.seq (WP.mono (WP.preservedV (lengths_ok hp i₂) (by lit_decide)) fun s₃ ⟨⟨i₃, k₃, len₃⟩, v₃⟩ => ?_)
   have st₃ : stateAt s₃.mem (off (cx s₀) 64) = Spec.ChaCha20.initState (K s₀) 0 (N s₀) := by
     rw [stateAt_frame k₃.frame (by rdisj_all), stateAt_frame k₂.frame (by rdisj_all), h₁.st]
   have D₃ : bytesAt s₃.mem (dp s₀) (L s₀) = D s₀ := by
@@ -52,7 +52,7 @@ theorem openStitched_correct (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State}
   have hle := hc.le
   have hpre : pre false T = 512 * T := rfl
   refine WP.seq (WP.mono (WP.preservedV (macPad_ok hp (p := .x22) (n := .x23) ⟨.inr rfl, .inr rfl⟩
-    (srcAt hp (p := pre false T) (by omega)) hc.inv.x21 hc.inv.rd hc.inv.wr hc.x22 hc.x23))
+    (srcAt hp (p := pre false T) (by omega)) hc.inv.x21 hc.inv.rd hc.inv.wr hc.x22 hc.x23) (by lit_decide))
     fun s₅ ⟨⟨k₅, r₅⟩, v₅⟩ => ?_)
   have i₅ := mac_inv0 hc.inv k₅
   have hd₅ : ∀ r ∈ macR s₀, (dR s₀).Disjoint r := by
@@ -79,15 +79,15 @@ theorem openStitched_correct (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State}
       rcases hr with rfl | rfl
       · exact sub_disj s₀ (by lit_omega) (by lit_omega) (by lit_omega)
       · exact hp.c_d.sub_left (sub_ctx s₀ (by lit_omega)))
-  refine WP.seq (WP.mono (WP.preservedV (absorbLengths_ok0 hp i₆)) fun s₇ ⟨⟨i₇, k₇, r₇⟩, v₇⟩ => ?_)
-  refine WP.seq (WP.mono (WP.preservedV (finalizeTo_ok0 hp i₇ (out := 640) (.inr ⟨by omega, by omega⟩)))
+  refine WP.seq (WP.mono (WP.preservedV (absorbLengths_ok0 hp i₆) (by lit_decide)) fun s₇ ⟨⟨i₇, k₇, r₇⟩, v₇⟩ => ?_)
+  refine WP.seq (WP.mono (WP.preservedV (finalizeTo_ok0 hp i₇ (out := 640) (.inr ⟨by omega, by omega⟩)) (by lit_decide))
     fun s₈ ⟨⟨k₈, tag₈⟩, v₈⟩ => ?_)
   have x21₈ : s₈.gpr .x21 = cx s₀ := by rw [k₈.cs _ (pres .x21) (pres30 .x21), i₇.x21]
   refine WP.block_append (WP.mono (WP.preservedV (compare_ok hp x21₈ (by rw [k₈.rd, i₇.rd])
-    (by rw [k₈.wr, i₇.wr]))) fun s₉ ⟨⟨rax₉, g₉, sp₉, m₉, rd₉, wr₉⟩, v₉⟩ => ?_)
+    (by rw [k₈.wr, i₇.wr])) (by lit_decide)) fun s₉ ⟨⟨rax₉, g₉, sp₉, m₉, rd₉, wr₉⟩, v₉⟩ => ?_)
   refine WP.mono (WP.preservedV (restore_ok hp (by rw [g₉ _ (pres .x21), x21₈])
     (by rw [m₉]; exact i₇.saved.frame k₈.frame (by rdisj_all))
-    (by rw [rd₉, k₈.rd, i₇.rd]) (by rw [wr₉, k₈.wr, i₇.wr]))) fun s₁₀ ⟨⟨⟨rs₁₀, g₁₀, m₁₀⟩, sp₁₀⟩, v₁₀⟩ => ?_
+    (by rw [rd₉, k₈.rd, i₇.rd]) (by rw [wr₉, k₈.wr, i₇.wr])) (by lit_decide)) fun s₁₀ ⟨⟨⟨rs₁₀, g₁₀, m₁₀⟩, sp₁₀⟩, v₁₀⟩ => ?_
   -- The tag computed, and the one received.
   have R₄ := hc.mac
   simp only [Bool.false_eq_true, ↓reduceIte] at R₄
