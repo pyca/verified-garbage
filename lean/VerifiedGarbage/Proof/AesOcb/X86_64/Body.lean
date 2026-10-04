@@ -329,4 +329,84 @@ theorem bodySeal_ok (v : BlocksImpl) {K W SP : Addr} (L : Lay K W SP) {s : State
   · rw [Pt.ck, ckT]
     simp only [↓reduceIte, pT, rest]
 
+theorem ckOf_dck {X : Nat → Block} {inv : Cipher} {o0 l : Block} {c : List Byte} {m : Nat}
+    (h : ∀ i < m, X i = Proof.Ocb.decBlock inv o0 l c i) : ckOf X m = Proof.Ocb.dckAt inv o0 l c m := by
+  induction m with
+  | zero => rfl
+  | succ m ih => rw [ckOf, Proof.Ocb.dckAt, ih (fun i hi => h i (by omega)), h m (by omega)]
+
+/-- `body` for `open`. -/
+theorem bodyOpen_ok (v : BlocksImpl) {K W SP : Addr} (L : Lay K W SP) {s : State} (E : Env K W SP s) {R : Nat}
+    (hR : R = 10 ∨ R = 12 ∨ R = 14) (hrnd : s.mem.readW (W + BitVec.ofNat 64 232) 64 = BitVec.ofNat 64 R)
+    {D : Addr} {n : Nat} (hD : DBuf K W SP s D n) (hdata : s.mem.readW (W + BitVec.ofNat 64 dataO) 64 = D)
+    (hlen : s.mem.readW (W + BitVec.ofNat 64 216) 64 = BitVec.ofNat 64 n) {O0 : Block}
+    (hofs : blockAtMem s.mem (W + BitVec.ofNat 64 ofsO) = O0) (ho0 : blockAtMem s.mem (W + BitVec.ofNat 64 o0O) = O0)
+    (hck : blockAtMem s.mem (W + BitVec.ofNat 64 ckO) = 0)
+    (hl0 : blockAtMem s.mem (W + BitVec.ofNat 64 l0O) = lAt (ctxLstar s.mem K) 0) :
+    WP isa (body (callees v) false) s (BodyPost K W SP D n
+      (if 0 < n % 16 then
+        Proof.Ocb.decBlocks (Spec.Ocb.ctxInv s.mem K R) O0 (ctxLstar s.mem K) (bytesAt s.mem D n) (n / 16) ++
+          Spec.Ocb.xor ((bytesAt s.mem D n).drop (16 * (n / 16)))
+            (Spec.Ocb.toBytes (ctxCiph s.mem K R (offAt O0 (ctxLstar s.mem K) (n / 16) ^^^ ctxLstar s.mem K)))
+      else Proof.Ocb.decBlocks (Spec.Ocb.ctxInv s.mem K R) O0 (ctxLstar s.mem K) (bytesAt s.mem D n) (n / 16))
+      (if 0 < n % 16 then offAt O0 (ctxLstar s.mem K) (n / 16) ^^^ ctxLstar s.mem K
+       else offAt O0 (ctxLstar s.mem K) (n / 16))
+      (if 0 < n % 16 then
+        Proof.Ocb.dckAt (Spec.Ocb.ctxInv s.mem K R) O0 (ctxLstar s.mem K) (bytesAt s.mem D n) (n / 16) ^^^
+          pad (Spec.Ocb.xor ((bytesAt s.mem D n).drop (16 * (n / 16)))
+            (Spec.Ocb.toBytes (ctxCiph s.mem K R (offAt O0 (ctxLstar s.mem K) (n / 16) ^^^ ctxLstar s.mem K))))
+      else Proof.Ocb.dckAt (Spec.Ocb.ctxInv s.mem K R) O0 (ctxLstar s.mem K) (bytesAt s.mem D n) (n / 16)) s) := by
+  have hn := hD.lt
+  have hmn : 16 * (n / 16) ≤ n := Nat.mul_div_le n 16
+  have hDm : DBuf K W SP s D (16 * (n / 16)) := hD.take' hmn
+  have hP : DBuf K W SP s (D + BitVec.ofNat 64 (16 * (n / 16))) (n % 16) :=
+    hD.slice (a := 16 * (n / 16)) (k := n % 16) (by omega)
+  have dDP : (⟨D, 16 * (n / 16)⟩ : Region).Disjoint ⟨D + BitVec.ofNat 64 (16 * (n / 16)), n % 16⟩ :=
+    Offset.base_disjoint D (Nat.le_refl _) (by omega)
+  have hl : ∀ i < n / 16, blockAtMem s.mem (D + BitVec.ofNat 64 (16 * i)) = Spec.Ocb.blockAt (bytesAt s.mem D n) i :=
+    fun i hi => (Proof.Ocb.blockAt_bytesAt s.mem D (by omega)).symm
+  simp only [body, Bool.false_eq_true, ↓reduceIte]
+  refine wp_seq_assoc (WP.seq (WP.mono (wholeIte_ok (O0 := O0) (l := ctxLstar s.mem K) (ckF1 := fun _ => 0)
+    (ckF2 := ckOf fun i => decG (bytesAt s.mem K (16 * (R + 1)))
+      (blockAtMem s.mem (D + BitVec.ofNat 64 (16 * i)) ^^^ offAt O0 (ctxLstar s.mem K) (i + 1)) ^^^
+        offAt O0 (ctxLstar s.mem K) (i + 1))
+    v.decOk v.decNosp v.decDepth hcall_dec xorOfs_ok openPost_ok L E hR hD hdata hlen hrnd hofs ho0 hck hl0
+    (fun _ => rfl) rfl (fun _ => rfl)) fun t Pw => ?_))
+  have fW : Frame (mutR W SP D (16 * (n / 16))) s.mem t.mem := wholeR_mut Pw.frame
+  have hrnd₁ := (kept_read L hDm.w fW (d := 232) (by decide)).trans hrnd
+  have hdata₁ := (kept_read L hDm.w fW (d := 208) (by decide)).trans hdata
+  have hlen₁ := (kept_read L hDm.w fW (d := 216) (by decide)).trans hlen
+  refine WP.mono (restIte_ok v false L Pw.env hR hrnd₁ (hD.of_eq Pw.rd Pw.wr) hdata₁ hlen₁) fun t' Pt => ?_
+  have cT : ctxCiph t.mem K R = ctxCiph s.mem K R := ctxCiph_mut L hDm.k fW hR
+  have lT : ctxLstar t.mem K = ctxLstar s.mem K :=
+    blockAtMem_frame fW fun r hr => (k_mut L hDm.k r hr).sub_left (Lay.kSub (by decide))
+  have pT : bytesAt t.mem (D + BitVec.ofNat 64 (16 * (n / 16))) (n % 16) =
+      bytesAt s.mem (D + BitVec.ofNat 64 (16 * (n / 16))) (n % 16) :=
+    bytesAt_frame Pw.frame (disj_whole hP.w hP.stk dDP.symm) (by omega)
+  have rest : (bytesAt s.mem D n).drop (16 * (n / 16)) = bytesAt s.mem (D + BitVec.ofNat 64 (16 * (n / 16))) (n % 16) := by
+    rw [Proof.Ocb.bytesAt_drop s.mem D hmn, show n - 16 * (n / 16) = n % 16 by omega]
+  have ckT : blockAtMem t.mem (W + BitVec.ofNat 64 ckO) =
+      Proof.Ocb.dckAt (Spec.Ocb.ctxInv s.mem K R) O0 (ctxLstar s.mem K) (bytesAt s.mem D n) (n / 16) := by
+    rw [Pw.ck, ckOf_dck fun i hi => by rw [decG_eq, hl i hi, Proof.Ocb.decBlock, BitVec.xor_comm]]
+  have blk : bytesAt t'.mem D (16 * (n / 16)) =
+      Proof.Ocb.decBlocks (Spec.Ocb.ctxInv s.mem K R) O0 (ctxLstar s.mem K) (bytesAt s.mem D n) (n / 16) := by
+    rw [bytesAt_frame Pt.frame (disj_tail hDm.w hDm.stk dDP) (by omega), Proof.Ocb.bytesAt_blocks, Proof.Ocb.decBlocks]
+    refine flatMap_range_congr fun i hi => ?_
+    rw [← Proof.Ocb.toBytes_ofBytes (length_bytesAt _ _ 16), ← blockAtMem, Pw.blk i hi, decG_eq, hl i hi,
+      Proof.Ocb.decBlock, BitVec.xor_comm]
+  have e := Proof.Ocb.bytesAt_append t'.mem D (16 * (n / 16)) (n % 16)
+  rw [show 16 * (n / 16) + n % 16 = n by omega] at e
+  refine ⟨Pt.env, (Pw.frame.sub (wholeR_sub hmn)).trans (Pt.frame.sub (tailR_sub (by omega))),
+    by rw [Pt.rd, Pw.rd], by rw [Pt.wr, Pw.wr], ?_, ?_, ?_⟩
+  · rw [e, blk, Pt.out]
+    by_cases hr : 0 < n % 16
+    · simp only [hr, ↓reduceIte, pT, cT, lT, Pw.ofs, rest]
+    · have b0 : ∀ (m : Mem) (p : Addr), bytesAt m p 0 = [] := fun _ _ => rfl
+      simp only [hr, ↓reduceIte, show n % 16 = 0 by omega, b0, List.append_nil, Nat.lt_irrefl]
+  · rw [Pt.ofs, Pw.ofs, lT]
+  · rw [Pt.ck, ckT]
+    by_cases hr : 0 < n % 16
+    · simp only [hr, Bool.false_eq_true, ↓reduceIte, Pt.out, pT, cT, lT, Pw.ofs, rest]
+    · simp only [hr, ↓reduceIte]
+
 end VG.Proof.AesOcb.X86_64
