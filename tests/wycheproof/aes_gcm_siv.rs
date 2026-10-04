@@ -37,11 +37,8 @@ fn aes_gcm_siv() {
     for (group, test) in file.tests() {
         let c = &test.case;
         let id = test.tc_id;
-        assert_eq!(
-            (group.params.iv_size, group.params.tag_size),
-            (96, 128),
-            "tcId {id}"
-        );
+        let sizes = (group.params.iv_size, group.params.tag_size);
+        assert_eq!(sizes, (96, 128), "tcId {id}");
         let key = AesGcmSiv::new(&c.key.0).unwrap();
         let nonce: &[u8; 12] = c.iv.0.as_slice().try_into().unwrap();
         let tag: &[u8; 16] = c.tag.0.as_slice().try_into().unwrap();
