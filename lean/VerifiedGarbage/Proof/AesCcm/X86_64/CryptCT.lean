@@ -325,4 +325,85 @@ theorem tail_rel (v : Ctr32Impl) {K W SP : Addr} {R : Nat} {N A D : Addr} {nl al
           · rw [b₁, b₂]) tailEnd_check
   exact RelCT.seq r₁ (RelCT.seq r₂ r₃)
 
+/-! ## Counter mode -/
+
+theorem ctrHead_check : ∃ hc, ((taint.check (ccmT [])
+    (.block [.mov .r12 (.mem (at_ .r15 dataO)), .mov .rbx (.mem (at_ .r15 lenO)), .shift .shr .rbx 4,
+      .mov32 .r14 (imm 1), .alu .test .rbx (.reg .rbx)]) hc).map (·.flags)) = some true := ⟨_, by taint_decide⟩
+
+theorem ctrB3_check : ∃ hc, ((taint.check (ccmT [])
+    (.block [.mov .rbp (.mem (at_ .r15 lenO)), .alu .and .rbp (imm 15), .alu .test .rbp (.reg .rbp)]) hc).map
+      (·.flags)) = some true := ⟨_, by taint_decide⟩
+
+/-- The chunks, in two runs that have done the same blocks. -/
+theorem chunks_rel (v : Ctr32Impl) {K W SP : Addr} {R : Nat} {N A D : Addr} {nl al n tl : Nat} {σ₁ σ₂ : State}
+    {nonce₁ nonce₂ : List Byte} (C₁ : CtrCtx K W SP σ₁ R nonce₁ D n) (C₂ : CtrCtx K W SP σ₂ R nonce₂ D n)
+    (O₁ : One K W SP R N A D nl al n tl σ₁) (O₂ : One K W SP R N A D nl al n tl σ₂) (m : Nat) :
+    RelCT isa (fun t₁ t₂ => ∃ b, m = n / 16 - b ∧ b < n / 16 ∧ CtrInv K W SP σ₁ R nonce₁ D n b t₁ ∧
+        CtrInv K W SP σ₂ R nonce₂ D n b t₂) (.loop (ctrChunk v.callee) .ne)
+      fun t₁ t₂ => CtrInv K W SP σ₁ R nonce₁ D n (n / 16) t₁ ∧ CtrInv K W SP σ₂ R nonce₂ D n (n / 16) t₂ := by
+  refine RelCT.loop (M := isa) (fun (m : Nat) (t₁ t₂ : State) => ∃ b, m = n / 16 - b ∧ b < n / 16 ∧
+    CtrInv K W SP σ₁ R nonce₁ D n b t₁ ∧ CtrInv K W SP σ₂ R nonce₂ D n b t₂) (fun m => ?_) m
+  refine RelCT.exists_ (M := isa) (P := fun b (t₁ t₂ : State) => m = n / 16 - b ∧ b < n / 16 ∧
+    CtrInv K W SP σ₁ R nonce₁ D n b t₁ ∧ CtrInv K W SP σ₂ R nonce₂ D n b t₂) fun b => ?_
+  by_cases hb : b < n / 16
+  swap
+  · exact RelCT.of_false fun _ _ h => hb h.2.1
+  by_cases hm : m = n / 16 - b
+  swap
+  · exact RelCT.of_false fun _ _ h => hm h.1
+  refine ((chunk_rel v C₁ C₂ O₁ O₂ hb).wp fun t₁ t₂ h => ⟨chunk_ok v C₁ h.1 hb, chunk_ok v C₂ h.2 hb⟩).mono
+    (fun t₁ t₂ h => ⟨h.2.2.1, h.2.2.2⟩) fun t₁ t₂ ⟨hz, ⟨k₁, hk₁, hk1, _, I₁, hz₁⟩, ⟨k₂, hk₂, _, _, I₂, _⟩⟩ => ?_
+  subst hk₁ hk₂
+  refine ⟨eval_ne_eq hz, fun hf => ?_, fun ht => ?_⟩
+  · rw [eval_ne hz₁] at hf
+    have he : b + min (n / 16 - b) (2 ^ 32 - (1 + b) % 2 ^ 32) = n / 16 := by simpa using hf
+    rw [he] at I₁ I₂
+    exact ⟨I₁, I₂⟩
+  · rw [eval_ne hz₁] at ht
+    have he : b + min (n / 16 - b) (2 ^ 32 - (1 + b) % 2 ^ 32) ≠ n / 16 := by simpa using ht
+    exact ⟨n / 16 - (b + min (n / 16 - b) (2 ^ 32 - (1 + b) % 2 ^ 32)), by omega, _, rfl, by omega, I₁, I₂⟩
+
+/-- After the whole blocks: `n mod 16` in `rbp`, and ZF set when there are no
+last bytes. -/
+theorem tailIn_ok {K W SP : Addr} {R : Nat} {N A D : Addr} {nl al n tl : Nat} {σ t : State}
+    {nonce : List Byte} (C : CtrCtx K W SP σ R nonce D n) (O : One K W SP R N A D nl al n tl σ)
+    (I : CtrInv K W SP σ R nonce D n (n / 16) t) :
+    WP isa (.block [.mov .rbp (.mem (at_ .r15 lenO)), .alu .and .rbp (imm 15), .alu .test .rbp (.reg .rbp)]) t
+      fun t₀ => TailIn K W SP R nonce D n σ t₀ ∧ t₀.zf = some (decide (n % 16 = 0)) := by
+  have hl : t.mem.readW (W + BitVec.ofNat 64 200) 64 = BitVec.ofNat 64 n := by
+    rw [C.readW_kept I.frame (by omega)]; exact O.sl.len
+  exact WP.mono (ctrB3_ok I.env hl C.buf.lt) fun t₀ ⟨hm, hbp, hz, hg, hrd, hwr⟩ =>
+    ⟨⟨t, I, hm, hg, hbp, hrd, hwr⟩, hz⟩
+
+/-- Counter mode, in two runs from `σ₁` and `σ₂`. -/
+theorem crypt_rel (v : Ctr32Impl) {K W SP : Addr} {R : Nat} {N A D : Addr} {nl al n tl : Nat} {σ₁ σ₂ : State}
+    {nonce₁ nonce₂ : List Byte} (C₁ : CtrCtx K W SP σ₁ R nonce₁ D n) (C₂ : CtrCtx K W SP σ₂ R nonce₂ D n)
+    (O₁ : One K W SP R N A D nl al n tl σ₁) (O₂ : One K W SP R N A D nl al n tl σ₂) :
+    RelCT isa (fun t₁ t₂ => t₁ = σ₁ ∧ t₂ = σ₂) (ctr v.callee) fun _ _ => True := by
+  have hDW := C₁.buf.w
+  have hn : n ≤ 2 ^ 64 := Nat.le_of_lt C₁.buf.lt
+  have r₁ := (rel_flagsC (K := K) (SP := SP) (R := R) (N := N) (A := A) (nl := nl) (al := al) (tl := tl)
+    (P := fun t₁ t₂ => t₁ = σ₁ ∧ t₂ = σ₂) [] hDW hn (fun t₁ t₂ h => by
+      rw [h.1, h.2]; exact Both.of O₁ O₂ (fun _ h => nomatch h)) ctrHead_check).wp
+    (F₁ := fun (t : State) => CtrInv K W SP σ₁ R nonce₁ D n 0 t ∧ t.zf = some (decide (n / 16 = 0)))
+    (F₂ := fun (t : State) => CtrInv K W SP σ₂ R nonce₂ D n 0 t ∧ t.zf = some (decide (n / 16 = 0)))
+    fun t₁ t₂ h => by rw [h.1, h.2]; exact ⟨ctrHeadBlk_ok C₁ O₁.env O₁.sl, ctrHeadBlk_ok C₂ O₂.env O₂.sl⟩
+  have r₃ := (rel_flagsC (K := K) (SP := SP) (R := R) (N := N) (A := A) (nl := nl) (al := al) (tl := tl) [] hDW hn
+    (fun t₁ t₂ (h : CtrInv K W SP σ₁ R nonce₁ D n (n / 16) t₁ ∧ CtrInv K W SP σ₂ R nonce₂ D n (n / 16) t₂) =>
+      Both.of (h.1.one C₁ O₁) (h.2.one C₂ O₂) (fun _ h => nomatch h)) ctrB3_check).wp
+    fun t₁ t₂ h => ⟨tailIn_ok C₁ O₁ h.1, tailIn_ok C₂ O₂ h.2⟩
+  refine RelCT.seq r₁ (RelCT.seq ?_ (RelCT.seq r₃ ?_))
+  · refine RelCT.ite (fun t₁ t₂ h => eval_e_eq h.1.2)
+      (RelCT.block_nil fun t₁ t₂ ⟨⟨_, ⟨I₁, hz₁⟩, I₂, _⟩, ht⟩ => ?_)
+      ((chunks_rel v C₁ C₂ O₁ O₂ (n / 16 - 0)).mono (fun t₁ t₂ ⟨⟨_, ⟨I₁, hz₁⟩, I₂, _⟩, hf⟩ => ?_) fun _ _ h => h)
+    · have h0 : n / 16 = 0 := by rw [eval_e hz₁] at ht; simpa using ht
+      rw [h0]; exact ⟨I₁, I₂⟩
+    · have h0 : n / 16 ≠ 0 := by rw [eval_e hz₁] at hf; simpa using hf
+      exact ⟨0, rfl, by omega, I₁, I₂⟩
+  · refine RelCT.ite (fun t₁ t₂ h => eval_e_eq h.1.2) (RelCT.block_nil fun _ _ _ => trivial) ?_
+    by_cases h0 : n % 16 = 0
+    · exact RelCT.of_false fun t₁ t₂ ⟨⟨_, ⟨_, hz₁⟩, _⟩, hf⟩ => by rw [eval_e hz₁] at hf; simp [h0] at hf
+    · exact (tail_rel v C₁ C₂ O₁ O₂ h0).mono (fun t₁ t₂ h => ⟨h.1.2.1.1, h.1.2.2.1⟩) fun _ _ h => h
+
 end VG.Proof.AesCcm.X86_64
