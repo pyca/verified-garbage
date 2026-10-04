@@ -129,6 +129,18 @@ theorem hmacInit_keepsV : H.hmacInit.allInstrs keepsV = true := by
     keepsV, vdstOf]
 
 include hH in
+/-- HMAC's `finalize` writes no SIMD register but in the functions it calls,
+which write none either. -/
+theorem hmacFin_keepsV : H.hmacFin.allInstrs keepsV = true := by
+  have hf := hH.finKeepsV
+  rw [Code.allInstrs_eq] at hf ⊢
+  simp only [Hash.hmacFin, Impl.Pbkdf2.Md.AArch64.Stream.callFin, instrs, List.all_append,
+    hH.finMid_keepsV, hH.cmp_keepsV, hH.finOut_keepsV, Bool.and_true]
+  simp [Hash.stream, hf, Impl.Pbkdf2.Md.AArch64.Stream.finPrologue, Impl.Pbkdf2.Md.AArch64.Stream.save,
+    Impl.Pbkdf2.Md.AArch64.Stream.saved, Impl.MdStream.AArch64.mov, Impl.MdStream.AArch64.mov, keepsV,
+    vdstOf]
+
+include hH in
 /-- The MD PBKDF2 wrapper uses only scalar instructions around its certified callees. -/
 theorem pbkdf2_keepsV : H.pbkdf2.allInstrs keepsV = true := by
   have hi := hH.initKeepsV
@@ -137,13 +149,7 @@ theorem pbkdf2_keepsV : H.pbkdf2.allInstrs keepsV = true := by
   have ht : H.iterate.allInstrs keepsV = true :=
     Pbkdf2.AArch64.iterate_keepsV hH.shape hH.comp.keepsV
   have hinit : H.hmacInit.allInstrs keepsV = true := hH.hmacInit_keepsV
-  have hfin : H.hmacFin.allInstrs keepsV = true := by
-    rw [Code.allInstrs_eq] at hf ⊢
-    simp only [Hash.hmacFin, Impl.Pbkdf2.Md.AArch64.Stream.callFin, instrs, List.all_append,
-      hH.finMid_keepsV, hH.cmp_keepsV, hH.finOut_keepsV, Bool.and_true]
-    simp [Hash.stream, hf, Impl.Pbkdf2.Md.AArch64.Stream.finPrologue, Impl.Pbkdf2.Md.AArch64.Stream.save,
-      Impl.Pbkdf2.Md.AArch64.Stream.saved, Impl.MdStream.AArch64.mov, Impl.MdStream.AArch64.mov, keepsV,
-      vdstOf]
+  have hfin : H.hmacFin.allInstrs keepsV = true := hH.hmacFin_keepsV
   have hk : H.key.allInstrs keepsV = true := by
     simp [Hash.key, Hash.keyShr, Hash.keySub, Hash.short, Hash.hashKey, Hash.hkInit,
       Hash.hkUpd, Hash.hkFin, Hash.hkKey, Impl.MdStream.AArch64.mov,
