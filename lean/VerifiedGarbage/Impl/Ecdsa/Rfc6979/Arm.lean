@@ -44,8 +44,8 @@ HMAC's inner and outer streaming states, the working space of HMAC's and
    number of candidates tried is all it reveals.
 
 `core` writes the signature or zeros to `out`, and its return value is ours.
-Every address is `sp`, `r8` (the frame) or a pointer argument plus a
-constant.
+Every address is `sp`, the frame's base (in `r8`, and in `r12` for the
+prologue and the epilogue) or a pointer argument plus a constant.
 -/
 
 namespace VG.Impl.Ecdsa.Rfc6979.Arm
@@ -94,11 +94,11 @@ variable (c : Cfg)
 /-- Our caller's registers into the frame (through `r12`, its base); the
 arguments to the registers that keep them, and the frame's base to `r8`. -/
 def prologue : List Instr :=
-  .addSp .r12 0 :: saved.map (fun (r, d) => .str r .r12 d) ++
+  .addSp .r12 0 :: saved.map (fun p => .str p.1 .r12 p.2) ++
     [.mov .r4 (.reg .r0), .mov .r5 (.reg .r1), .mov .r6 (.reg .r2), .mov .r11 (.reg .r3), .mov .r8 (.reg .r12)]
 
-/-- Our caller's registers back (`r8` last). -/
-def epilogue : List Instr := saved.map fun (r, d) => .ldr r .r8 d
+/-- Our caller's registers back, through `r12` (the frame's base). -/
+def epilogue : List Instr := saved.map fun p => .ldr p.1 .r12 p.2
 
 /-- The arguments of HMAC's `init`: the states, the key `K` of `D` bytes,
 and the working space (pushed). -/
@@ -227,10 +227,13 @@ def tryOne : Prog isa :=
   (.seq (.block goOn)
     (.ite .ne (.seq c.rekey (.block again)) (.block stop)))))
 
+/-- The 40 words of `K`, `V` and `h` (and the unused word), each from `r1`. -/
+def zeros : List (Reg × Nat) := (List.range 40).map fun j => (.r1, 4 * j)
+
 /-- `K`, `V` and `h` cleared (`r0`, the result, kept), and our caller's
-registers back. -/
+registers back, through `r12` (the frame's base). -/
 def wipe : List Instr :=
-  [.mov .r1 (.imm 0)] ++ (List.range 40).map (fun j => .str .r1 .r8 (4 * j)) ++ epilogue
+  [.mov .r12 (.reg .r8), .mov .r1 (.imm 0)] ++ zeros.map (fun p => .str p.1 .r12 p.2) ++ epilogue
 
 /-- The frame's body. -/
 def body : Prog isa :=
