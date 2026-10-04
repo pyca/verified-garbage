@@ -4,10 +4,10 @@ import VerifiedGarbage.Proof.AesOcb.X86_64.Open
 /-!
 # AES-OCB on x86-64: `vg_aes_ocb_open` is constant time
 
-Untrusted: everything here is checked by Lean. As `seal` (`pre_rel`,
-`bodyOpen_rel`, `tag_rel`), then the comparison, the mask and `restore`,
-which pass the taint analysis from the public slots: the comparison's
-result is a value, not a branch.
+Untrusted: everything here is checked by Lean. As `seal` (`front_rel`), then
+the copy of the received tag to `W`, the comparison, the mask and `restore`,
+which pass the taint analysis from the public slots and the address of the
+tag at `W + tgO`: the comparison's result is a value, not a branch.
 -/
 
 set_option linter.unusedSimpArgs false
@@ -19,8 +19,21 @@ open VG.Spec.Aes (bytesAt)
 open VG.Proof.Aes.X86_64 (BlocksImpl)
 
 section
-variable {s₀ s₀' : State} {K W SP N A D : Addr} {R nl al n tl : Nat} (T : Two s₀ s₀' K W SP N A D R nl al n tl)
+variable {s₀ s₀' : State} {K W SP N A D : Addr} {R nl al n tl : Nat} {Tg : Addr}
+  (T : Two s₀ s₀' K W SP N A D R nl al n tl Tg)
 include T
+
+/-- `recv` keeps the public arguments. -/
+theorem recv_one {s : State} (o : OneT K W SP R N A D nl n tl Tg s) :
+    WP isa recv s (One K W SP R N A D nl n tl) := by
+  refine WP.mono (recv_ok o.1.env T.ar.t1 T.ar.t16 o.2.1 o.1.sl.tl o.2.2 T.ar.tag.w) fun t ⟨m, g, rd, wr⟩ => ?_
+  have fr : Frame (mutR W SP D n) s.mem t.mem := by
+    rw [m]
+    refine (writeBytes_frame _ _ _ (by rw [Proof.AesCcm.X86_64.length_bytesAt]; exact Region.contains_self _ _)).sub
+      fun r hr => ?_
+    simp only [List.mem_singleton] at hr; subst hr
+    exact ⟨_, List.mem_cons_self .., Region.sub_prefix (by have := T.ar.t16; omega)⟩
+  exact o.1.step T.ar.lay T.ar.data.w (o.1.env.keep g rd wr) wr fr
 
 /-- The comparison keeps the public arguments, and leaves 1 or 0 at `W`. -/
 theorem cmpRes {s : State} (o : One K W SP R N A D nl n tl s) :
@@ -50,31 +63,22 @@ theorem mask_one {s : State} (o : One K W SP R N A D nl n tl s) {c : Bool}
     simp only [List.mem_singleton] at hr; subst hr; exact ⟨_, by simp, fun _ h => h⟩
   exact o.step T.ar.lay T.ar.data.w E wr fr
 
+variable (hw : s₀.wr = [⟨D, n⟩, ⟨W, 2560⟩]) (hw' : s₀'.wr = [⟨D, n⟩, ⟨W, 2560⟩])
+include hw hw'
+
 /-- `vg_aes_ocb_open` in two runs. -/
 theorem open_rel (v : BlocksImpl) :
     RelCT isa (fun a b => a = s₀ ∧ b = s₀') («open» (callees v)) fun _ _ => True := by
-  have L := T.ar.lay
   have hDW := T.ar.data.w
   have hn : n ≤ 2 ^ 64 := Nat.le_of_lt T.ar.data.lt
-  have pre := (pre_rel T v).wp (F₁ := Pre K W SP N A D R nl al n tl s₀) (F₂ := Pre K W SP N A D R nl al n tl s₀')
-    fun a b h => by
-      obtain ⟨rfl, rfl⟩ := h
-      exact ⟨pre_wp' v T.ar T.sp T.dd T.nn T.ww T.tt T.di T.si T.dx T.cx T.r8 T.r9,
-        pre_wp' v T.ar' T.sp' T.dd' T.nn' T.ww' T.tt' T.di' T.si' T.dx' T.cx' T.r8' T.r9'⟩
-  have body1 : ∀ {σ s : State}, Args σ K W SP N A D R nl al n tl → Pre K W SP N A D R nl al n tl σ s →
-      WP isa (body (callees v) false) s (One K W SP R N A D nl n tl) := fun Ar P =>
-    WP.mono (bodyOpen_ok v L P.env Ar.rounds P.slots.rounds (Ar.data.of_eq P.rd P.wr) P.slots.data P.slots.len P.ofs
-      P.o0 P.ck (by rw [P.l0, P.lstar])) fun t B =>
-      (brun_of Ar P).1.step L hDW B.env B.wr (bodyR_mut B.frame)
-  have bb := (bodyOpen_rel v L T.ar.rounds hDW T.ar.data.lt
-    (P := fun a b => True ∧ Pre K W SP N A D R nl al n tl s₀ a ∧ Pre K W SP N A D R nl al n tl s₀' b)
-    fun a b h => ⟨brun_of T.ar h.2.1, brun_of T.ar' h.2.2⟩).wp
+  have fr := front_rel T hw hw' v false (.inr rfl)
+  have rr := (rel_taintC [] [tgO] hDW hn (fun a b (h : True ∧ OneT K W SP R N A D nl n tl Tg a ∧
+    OneT K W SP R N A D nl n tl Tg b) => ⟨h.2.1.1.env, h.2.2.1.env, h.2.1.1.sl, h.2.2.1.sl, h.2.1.1.wr, h.2.2.1.wr,
+      fun _ h => (nomatch h), fun d hd => by
+        simp only [List.mem_singleton] at hd; subst hd; exact ⟨by decide, by rw [h.2.1.2.1, h.2.2.2.1]⟩⟩)
+    (c := recv) ⟨_, by taint_decide⟩).wp
     (F₁ := One K W SP R N A D nl n tl) (F₂ := One K W SP R N A D nl n tl)
-    fun a b h => ⟨body1 T.ar h.2.1, body1 T.ar' h.2.2⟩
-  have tt := (tag_rel v L T.ar.rounds hDW hn (d := t2O) (.inr rfl)
-    (P := fun a b => True ∧ One K W SP R N A D nl n tl a ∧ One K W SP R N A D nl n tl b) fun _ _ h => h.2).wp
-    (F₁ := One K W SP R N A D nl n tl) (F₂ := One K W SP R N A D nl n tl)
-    fun a b h => ⟨tag_one T v (.inr rfl) h.2.1, tag_one T v (.inr rfl) h.2.2⟩
+    fun a b h => ⟨recv_one T h.2.1, recv_one T h.2.2⟩
   have cc := (rel_taintC [] [] hDW hn (fun a b (h : True ∧ One K W SP R N A D nl n tl a ∧
     One K W SP R N A D nl n tl b) => Both.of h.2.1 h.2.2) (c := cmp) ⟨_, by taint_decide⟩).wp
     (F₁ := fun (s : State) => One K W SP R N A D nl n tl s ∧ ∃ c : Bool, s.mem.readW (W + BitVec.ofNat 64 tagO) 64 =
@@ -93,12 +97,17 @@ theorem open_rel (v : BlocksImpl) :
     One K W SP R N A D nl n tl b) => Both.of h.2.1 h.2.2) (c := .block ([ld .rax .r15 tagO] ++ restore))
     ⟨_, by taint_decide⟩
   unfold «open»
-  exact Proof.AesCcm.X86_64.rel_assoc3 (RelCT.seq pre (RelCT.seq bb (RelCT.seq tt (RelCT.seq cc (RelCT.seq mm rs)))))
+  exact RelCT.seq fr (RelCT.seq rr (RelCT.seq cc (RelCT.seq mm rs)))
 
 end
 
 /-- `vg_aes_ocb_open` is constant time. -/
 theorem open_ct (v : BlocksImpl) : ConstantTime isa openX86_64.pre openX86_64.pub («open» (callees v)) :=
-  fun _ _ _ _ _ _ h₁ h₂ hq e₁ e₂ => (open_rel (Two.of h₁ h₂ hq.1) v _ _ _ _ _ _ ⟨rfl, rfl⟩ e₁ e₂).1
+  fun s₁ s₂ _ _ _ _ h₁ h₂ hq e₁ e₂ => by
+    have T := Two.of hq.1 (openArgs_of h₁) (openArgs_of h₂)
+    obtain ⟨⟨q1, q2, q3, q4, q5, q6, q7, q8⟩, -⟩ := hq
+    have hw₂ : s₂.wr = [⟨arg s₁ 0, (arg s₁ 1).toNat⟩, ⟨arg s₁ 4, 2560⟩] := by
+      rw [h₂.2.1, q8 0 (by decide), q8 1 (by decide), q8 4 (by decide)]
+    exact (open_rel T h₁.2.1 hw₂ v _ _ _ _ _ _ ⟨rfl, rfl⟩ e₁ e₂).1
 
 end VG.Proof.AesOcb.X86_64

@@ -60,14 +60,14 @@ theorem readW_writeW_off {m : Mem} {W : Addr} {d e : Nat} (v : BitVec 64) (h : d
 
 /-- `entry`. -/
 theorem entry_ok {K W : Addr} (L : Lay K W) {s : State} (P : Perm K W s) {R n : Nat} {N A D : Addr}
-    {nl al tl : Nat} (hW : stackArg s 0 = W) (htl : stackArg s 1 = BitVec.ofNat 64 tl)
-    (hargs : Covers [⟨s.sp, 16⟩] (s.rd ++ s.wr)) (hargsW : (⟨s.sp, 16⟩ : Region).Disjoint ⟨W, 2560⟩)
+    {nl al tl : Nat} (hW : stackArg s 2 = W) (htl : stackArg s 1 = BitVec.ofNat 64 tl)
+    (hargs : Covers [⟨s.sp, 24⟩] (s.rd ++ s.wr)) (hargsW : (⟨s.sp, 24⟩ : Region).Disjoint ⟨W, 2560⟩)
     (h0 : s.gpr .x0 = K) (h1 : s.gpr .x1 = BitVec.ofNat 64 R) (h2 : s.gpr .x2 = N)
     (h3 : s.gpr .x3 = BitVec.ofNat 64 nl) (h4 : s.gpr .x4 = A) (h5 : s.gpr .x5 = BitVec.ofNat 64 al)
     (h6 : s.gpr .x6 = D) (h7 : s.gpr .x7 = BitVec.ofNat 64 n) :
     WP isa (.block entry) s (EntryPost K W D R n N A nl al tl s) := by
-  have a₀ : InRegions (s.rd ++ s.wr) (s.sp + BitVec.ofNat 64 (8 * 0)) 8 := in_off hargs (by decide) (by decide)
-  obtain ⟨_, run₀, rfl⟩ := ldrSp_ok (t := .x9) (s := s) (i := 0) (by decide) a₀
+  have a₀ : InRegions (s.rd ++ s.wr) (s.sp + BitVec.ofNat 64 (8 * 2)) 8 := in_off hargs (by decide) (by decide)
+  obtain ⟨_, run₀, rfl⟩ := ldrSp_ok (t := .x9) (s := s) (i := 2) (by decide) a₀
   rw [hW] at run₀
   simp only [Nat.reduceMul] at run₀
   have x9₀ : (s.write .x .x9 W).gpr .x9 = W := by simp [gpr_write]
