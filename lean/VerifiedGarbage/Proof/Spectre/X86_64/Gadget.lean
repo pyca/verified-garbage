@@ -139,8 +139,8 @@ theorem gadget_not_sct : ¬ SpecConstantTime spectre Pre Pub gadget := by
     ⟨rfl, rfl, rfl, rfl, fun k hk => by
       have : k = 0 := by simp [s₀] at hk; omega
       subst this; rfl⟩
-    (.seq (.blockDone (.cons rfl .nil)) (.iteT (.blockDone (.cons rfl (.cons rfl .nil)))))
-    (.seq (.blockDone (.cons rfl .nil)) (.iteT (.blockDone (.cons rfl (.cons rfl .nil)))))
+    (.seq (.blockDone (.cons rfl rfl .nil)) (.iteT (.blockDone (.cons rfl rfl (.cons rfl rfl .nil)))))
+    (.seq (.blockDone (.cons rfl rfl .nil)) (.iteT (.blockDone (.cons rfl rfl (.cons rfl rfl .nil)))))
   revert this
   decide +kernel
 
@@ -189,10 +189,10 @@ def t₀ (x : BitVec 64) : State where
 theorem gadget11_not_sct : ¬ SpecConstantTime spectre (fun _ => True) Pub11 gadget11 := by
   intro h
   have := h (t₀ 0) (t₀ 1) [true] 5 _ _ _ _ trivial trivial (by simp [Pub11, t₀])
-    (.seq (.blockDone (.cons rfl (.cons rfl .nil)))
-      (.seq (.iteT (.blockDone (.cons rfl .nil))) (.blockDone (.cons rfl (.cons rfl .nil)))))
-    (.seq (.blockDone (.cons rfl (.cons rfl .nil)))
-      (.seq (.iteT (.blockDone (.cons rfl .nil))) (.blockDone (.cons rfl (.cons rfl .nil)))))
+    (.seq (.blockDone (.cons rfl rfl (.cons rfl rfl .nil)))
+      (.seq (.iteT (.blockDone (.cons rfl rfl .nil))) (.blockDone (.cons rfl rfl (.cons rfl rfl .nil)))))
+    (.seq (.blockDone (.cons rfl rfl (.cons rfl rfl .nil)))
+      (.seq (.iteT (.blockDone (.cons rfl rfl .nil))) (.blockDone (.cons rfl rfl (.cons rfl rfl .nil)))))
   revert this
   decide +kernel
 

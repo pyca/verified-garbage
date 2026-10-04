@@ -16,6 +16,15 @@ A transient store is not checked either (Spectre v1.1, "bounds check bypass
 store"): its bytes go to the store buffer whatever the address, and later
 transient loads of those addresses see them (store-to-load forwarding), so
 it writes memory (`tstore`).
+
+`lfence` is the speculation barrier: "LFENCE does not execute until all
+prior instructions have completed locally, and no later instruction begins
+execution until LFENCE completes" (SDM Vol. 2, "LFENCE"), so nothing after
+it executes transiently; Intel recommends it against bounds check bypass
+("Speculative Execution Side Channel Mitigations", rev. 3.0, §2.1). On AMD
+processors it is dispatch-serializing only with `MSR C001_1029[1]` set
+(AMD, "Software Techniques for Managing Speculation on AMD Processors"),
+the default on Family 17h and later.
 -/
 
 namespace VG.X86_64.Spectre
@@ -47,6 +56,9 @@ def spectre : VG.Spectre isa where
   sexec i s := (tstore i s).or (isa.exec i (widen s))
   saddrs i s := isa.addrs i s
   sret _ s := some (sret s)
+  fence i := match i with
+    | .lfence => true
+    | _ => false
 
 theorem addrs_widen (i : Instr) (s : State) : isa.addrs i (widen s) = isa.addrs i s := by
   cases i <;> rfl

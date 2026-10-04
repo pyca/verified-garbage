@@ -1,4 +1,5 @@
 import VerifiedGarbage.Proof.Framework.X86_64.Spectre
+import VerifiedGarbage.Proof.Framework.SpectreSeq
 import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Verified
 
 /-! # Speculative constant time of the x86-64 X25519 artifacts
@@ -55,5 +56,11 @@ theorem x25519Ifma_sct : SpecConstantTime spectre Proof.X25519.x25519X86_64.pre 
     refine Taint.agree_ofRegs fun r hr => ?_
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl <;> with_reducible assumption
+
+/-- The artifact's sequential constant time, recovered from its speculative
+constant time (`SpecConstantTime.constantTime`). -/
+theorem x25519_ct_of_sct : ConstantTime isa Proof.X25519.x25519X86_64.pre
+    Proof.X25519.x25519X86_64.pub Impl.X25519.X86_64.x25519 :=
+  SpecConstantTime.constantTime spectre x25519_sct
 
 end VG.Proof.SpectreDemo
