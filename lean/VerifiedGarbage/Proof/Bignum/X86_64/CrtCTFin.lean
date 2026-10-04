@@ -127,7 +127,7 @@ theorem stage5_fa {p : CrtPub} {t : State} (h : Stage R5 p t) :
   dsimp only
   exact ⟨⟨minv, hr.good, hZ⟩, ⟨hr.good.scr, hr.good.rdi, hr.good.hdr.harr aAcc (by decide), hr.wsP, hr.wsQ,
       hr.pws.hdr.hw, hr.qws.hdr.hw, by rw [hr.pws.hdr.harr _ (by decide), off_off],
-      by rw [hr.qws.hdr.harr _ (by decide), off_off], by decide, le_refl _, by unfold offQ offP; omega, hZq⟩,
+      by rw [hr.qws.hdr.harr _ (by decide), off_off], by decide, le_refl _, by unfold offQ offP; omega, by omega⟩,
     by rw [hr.qws.hdr.harr _ (by decide), off_off], by omega, hwq, by omega⟩
 
 /-- `finishSum` leaves what the store needs. -/
@@ -147,7 +147,7 @@ theorem finSum_out {p : CrtPub} {t₂ : State} (h : Stage R5 p t₂) :
   have hZ : slot ((p.k + 7) / 8) 8 ≤ p.Z := by unfold offQ at hZq; omega
   refine WP.mono (finishSum_ok hr.good (by unfold CrtPub.w at hw; omega) hr.wsP hr.wsQ hr.pws.hdr.hw hr.qws.hdr.hw
     (by rw [hr.pws.hdr.harr _ (by decide), off_off]) (by rw [hr.qws.hdr.harr _ (by decide), off_off])
-    (by rw [hr.qws.hdr.harr _ (by decide), off_off]) hlo hop hoq (by omega) hwp (by omega) hwq')
+    (by rw [hr.qws.hdr.harr _ (by decide), off_off]) hlo (by unfold offQ offP; omega) hZq (by omega) hwp (by omega) hwq')
     fun t₃ ⟨_, ho₃, k₃⟩ => ?_
   have hacc := accs_le ((p.k + 7) / 8)
   have hb₃ : ∀ i < 32, word t₃.mem p.B (8 * i) = word t₂.mem p.B (8 * i) := fun i hi =>

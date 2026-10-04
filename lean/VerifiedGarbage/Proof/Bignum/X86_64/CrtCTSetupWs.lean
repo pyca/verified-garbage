@@ -110,7 +110,7 @@ theorem wsNew_ct {slotWs slotLen : Nat} {hc : VG.Taint.Hint VG.X86_64.Taint.T}
 arguments, and the byte strings. -/
 def SSt (p : SetupPub) (t : State) : Prop :=
   ∃ pb qb ib : List Byte, Scr t p.B p.Z ∧ Hdr t.mem p.B p.w p.minv ∧ 8 ≤ p.w ∧ p.w < 2 ^ 28 ∧
-    offQ p.w p.pl + slot (wsWords p.ql) 8 ≤ p.Z ∧
+    offQ p.w p.pl + slot (wsWords p.ql) 8 + tabBytes (wsWords p.ql) ≤ p.Z ∧
     word t.mem p.B (8 * sPlen) = BitVec.ofNat 64 p.pl ∧ word t.mem p.B (8 * sQlen) = BitVec.ofNat 64 p.ql ∧
     word t.mem p.B (8 * sP) = p.pp ∧ word t.mem p.B (8 * sQ) = p.qp ∧ word t.mem p.B (8 * sQinv) = p.ip ∧
     Src t p.B p.Z p.pp pb ∧ Src t p.B p.Z p.qp qb ∧ Src t p.B p.Z p.ip ib ∧ pb.length = p.pl ∧
@@ -140,7 +140,7 @@ theorem SSt.scr {p : SetupPub} {t : State} (h : SSt p t) : Scr t p.B p.Z :=
   let ⟨_, _, _, hs, _⟩ := h; hs
 
 theorem SSt.bounds {p : SetupPub} {t : State} (h : SSt p t) :
-    8 ≤ p.w ∧ p.w < 2 ^ 28 ∧ offQ p.w p.pl + slot (wsWords p.ql) 8 ≤ p.Z ∧ 1 ≤ p.pl ∧ p.pl < 8 * p.w ∧
+    8 ≤ p.w ∧ p.w < 2 ^ 28 ∧ offQ p.w p.pl + slot (wsWords p.ql) 8 + tabBytes (wsWords p.ql) ≤ p.Z ∧ 1 ≤ p.pl ∧ p.pl < 8 * p.w ∧
       1 ≤ p.ql ∧ p.ql < 8 * p.w :=
   let ⟨_, _, _, _, _, a1, a2, hZ, _, _, _, _, _, _, _, _, _, _, _, d1, d2, d3, d4⟩ := h
   ⟨a1, a2, hZ, d1, d2, d3, d4⟩
@@ -251,7 +251,7 @@ theorem stage2_ok {p : SetupPub} {s : State} (h : SA p s ∧ s.gpr .rdi = p.B) :
     (by xrun [State.ea, hdr, hdi, hdrOff, hs.ld (d := 8 * sWsP) (by unfold sWsP sFn; omega), hWsP]) rfl)
     fun t ⟨⟨hdx, hm⟩, k⟩ => ⟨hA.frm' hm k, (k.gpr (by decide)).trans hdi, hdx⟩
 
-theorem stage3_ok {p : SetupPub} {s : State} (h : SS2 p s) : WP isa (.block wsEnd) s (SS3 p) := by
+theorem stage3_ok {p : SetupPub} {s : State} (h : SS2 p s) : WP isa (.block wsEndT) s (SS3 p) := by
   obtain ⟨hA, hdi, hdx⟩ := h
   have hA' := hA
   obtain ⟨⟨_, _, _, hs, -, a1, -, hZ, -⟩, -, -, hw, ha⟩ := hA'
@@ -259,11 +259,11 @@ theorem stage3_ok {p : SetupPub} {s : State} (h : SS2 p s) : WP isa (.block wsEn
   have h8 : 256 ≤ slot p.w 8 := by unfold slot hdrBytes; omega
   have hP8 : 256 ≤ slot (wsWords p.pl) 8 := by unfold slot hdrBytes; omega
   unfold offQ at hZ
-  refine WP.mono (wsEnd_ok (wx := wsWords p.pl) (hs.sub (o := offP p.w)
+  refine WP.mono (wsEndT_ok (wx := wsWords p.pl) (hs.sub (o := offP p.w)
     (n := slot (wsWords p.pl) 8) (by unfold offP; omega) (by omega)) hdx hw
     (ha _ (by decide)) (Nat.le_refl _)) fun t ⟨hax, hm, k⟩ => ?_
   rw [off_off] at hax
-  exact ⟨hA.frm' hm k, (k.gpr (by decide)).trans hdi, hax⟩
+  exact ⟨hA.frm' hm k, (k.gpr (by decide)).trans hdi, by rw [hax]; exact congrArg (off p.B) (by unfold offQ offP; omega)⟩
 
 theorem wsQ_ok {p : SetupPub} {s : State} (h : SS3 p s) :
     WP isa (seqs (wsNew sWsQ sQlen)) s (SBr (·.B) p) := by
@@ -291,7 +291,7 @@ theorem wsQ_ok {p : SetupPub} {s : State} (h : SS3 p s) :
 theorem SB.scr {p : SetupPub} {t : State} (h : SB p t) : Scr t p.B p.Z := let ⟨⟨⟨_, _, _, hs, _⟩, _⟩, _⟩ := h; hs
 
 theorem SB.bounds {p : SetupPub} {t : State} (h : SB p t) :
-    8 ≤ p.w ∧ p.w < 2 ^ 28 ∧ offQ p.w p.pl + slot (wsWords p.ql) 8 ≤ p.Z ∧ 1 ≤ p.pl ∧ p.pl < 8 * p.w ∧
+    8 ≤ p.w ∧ p.w < 2 ^ 28 ∧ offQ p.w p.pl + slot (wsWords p.ql) 8 + tabBytes (wsWords p.ql) ≤ p.Z ∧ 1 ≤ p.pl ∧ p.pl < 8 * p.w ∧
       1 ≤ p.ql ∧ p.ql < 8 * p.w := h.1.1.bounds
 
 /-- Into a workspace from the modulus' (`enterP`, `enterQ`), or back (`leave`). -/
@@ -303,7 +303,7 @@ theorem SB.move {p : SetupPub} {s : State} (h : SB p s) {X : Addr} {i : Nat} {A'
 
 /-- A prime's workspace context from `SB`. -/
 theorem SB.sub {p : SetupPub} {s : State} (h : SB p s) {o wx : Nat} (hdi : s.gpr .rdi = off p.B o)
-    (hF : WsF s.mem p.B o wx) (hlo : slot p.w 8 ≤ o) (hhi : o + slot wx 8 ≤ p.Z) :
+    (hF : WsF s.mem p.B o wx) (hlo : slot p.w 8 ≤ o) (hhi : o + slot wx 8 + tabBytes wx ≤ p.Z) :
     SubCtx s p.B p.Z o p.w wx (word s.mem (off p.B o) (8 * sMinv)) :=
   let ⟨⟨⟨_, _, _, hs, hH, _⟩, _⟩, _⟩ := h
   ⟨hs, hdi, hdr_any hF.2.1 hF.2.2, hF.1, hH.hw, hH.harr, hlo, hhi⟩
@@ -316,7 +316,7 @@ theorem SB.load {p : SetupPub} {s : State} {o wx j sp sl len : Nat} {ptr : Addr}
   simp only [LPre] at hL
   obtain ⟨minv, bs, hc, hw2, hwx, hw30, hj, hsp, hsl, hp, hl, hbl, hsrc, hk1, hk', hkw⟩ := hL
   have hn : p.B.toNat + p.Z ≤ 2 ^ 64 := hc.scr.nowrap
-  have hi : o + slot wx 8 ≤ p.Z := hc.hi
+  have hi : o + slot wx 8 + tabBytes wx ≤ p.Z := hc.hi
   have h8 : 256 ≤ slot wx 8 := by unfold slot hdrBytes; omega
   exact WP.mono (primeLoad_ok hc hw2 hwx hw30 hj hsp hsl hp hl hsrc hk1 hk' hkw) fun t ⟨hc', _, ho, k⟩ =>
     ⟨h.frm (Frm.of_load ho hj (by omega) (List.mem_singleton_self _)) (fun r hr => by
@@ -324,7 +324,7 @@ theorem SB.load {p : SetupPub} {s : State} {o wx j sp sl len : Nat} {ptr : Addr}
 
 /-- `LPre` from `SB`, in the workspace at `off B o` (`rdi`). -/
 theorem SB.lpre {p : SetupPub} {s : State} (h : SB p s) {o wx j sp sl len : Nat} {ptr : Addr} {bs : List Byte}
-    (hdi : s.gpr .rdi = off p.B o) (hF : WsF s.mem p.B o wx) (hlo : slot p.w 8 ≤ o) (hhi : o + slot wx 8 ≤ p.Z)
+    (hdi : s.gpr .rdi = off p.B o) (hF : WsF s.mem p.B o wx) (hlo : slot p.w 8 ≤ o) (hhi : o + slot wx 8 + tabBytes wx ≤ p.Z)
     (hw2 : 2 ≤ wx) (hwx : wx ≤ p.w) (hj : j < 8) (hsp : sp < 32) (hsl : sl < 32)
     (hp : word s.mem p.B (8 * sp) = ptr) (hl : word s.mem p.B (8 * sl) = BitVec.ofNat 64 bs.length)
     (hbl : bs.length = len) (hsrc : Src s p.B p.Z ptr bs) (hk1 : 1 ≤ bs.length) (hk' : bs.length < 2 ^ 31)
@@ -427,7 +427,7 @@ theorem setup_ct : SetupCT := by
     fun p s h => wsP_ok h) ?_)
   -- `q`'s workspace.
   refine RelCT.seqs_append (by simp) (by simp [wsNew]) (RelCT.seq (RelCT.block_append
-    (l₁ := ([.mov .rdx (.mem (hdr sWsP))] : List Instr)) (RelCT.seq (two_piece (Ψ := SS2) [.rdi]
+    (l₁ := ([.mov .rdx (.mem (hdr sWsP))] : List Instr)) (l₂ := wsEndT) (RelCT.seq (two_piece (Ψ := SS2) [.rdi]
     (pins_of (fun p _ => p.B) fun p s h r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact h.2) (by taint_decide)
     fun p s h => stage2_ok h) (two_piece (Ψ := SS3) [.rdx]
