@@ -49,7 +49,8 @@ trustworthy. Read `lean/README.md` first.
   callers, without anyone listing it. The Rust code that chooses among
   implementations matches exhaustively on the primitive's backend enum
   (`streaming_hash!`'s, which `streaming_hmac!` and `whole_pbkdf2!`
-  follow; `chacha20::Backend`, which ChaCha20-Poly1305 follows): a new
+  follow; `chacha20::Backend`, which ChaCha20-Poly1305 follows; a caller of
+  several, like Argon2, matches on each of their enums together): a new
   backend does not compile until everything built on it handles it.
   `ci/check_variants.py` checks the generated code: each caller of a
   function with a variant has that variant, calling it, and each variant is
@@ -133,7 +134,13 @@ instructions in an ISA model) go in their own PR before either.
    registered in `Generic/<Iface>/<Target>/<Alg>.lean`, which the emitter
    applies to every implementation in `Variants/<Iface>/<Target>/` (see
    `TCB/Emit.lean`), and so is a function that calls a generic caller
-   (e.g. HMAC's `init`, calling SHA-256's `update`). Never list the
+   (e.g. HMAC's `init`, calling SHA-256's `update`). A function that calls
+   functions of several such interfaces is generic over all of them, in
+   `Generic/<Iface₁>/…/<Ifaceₙ>/<Target>/<Alg>.lean`, whose `artifacts`
+   takes a variant of each, in path order: the emitter applies it to every
+   combination (e.g. Argon2's x86-64 derivation,
+   `Generic/Blake2b/Argon2Compress/X86_64/Argon2.lean`, calling BLAKE2b's
+   streaming functions and Argon2's `G`). Never list the
    implementations in the caller: a new implementation is a new variant
    file, and its callers follow.
 5. Regenerate `src/asm/`, build the public Rust API on top of the primitive,
@@ -401,10 +408,12 @@ lake env lean --run EmitOne.lean Md5.X86_64
 lake env lean --run EmitOne.lean --check Md5.X86_64
 ```
 
-Name a generic group (`<Iface>.<Target>`, e.g. `Sha256Compress.AArch64`) to
-emit its generic callers for each variant. It refuses a file that is new or
-that other registration files also emit into; the full emitter handles
-those, and the checks below still run everything before pushing.
+Name a generic group (`<Iface>.<Target>`, e.g. `Sha256Compress.AArch64`, or
+`<Iface₁>.….<Ifaceₙ>.<Target>`, e.g. `Blake2b.Argon2Compress.X86_64`) to
+emit its generic callers for each variant (or combination of variants). It
+refuses a file that is new or that other registration files also emit into;
+the full emitter handles those, and the checks below still run everything
+before pushing.
 
 ## Checks to run before pushing
 
