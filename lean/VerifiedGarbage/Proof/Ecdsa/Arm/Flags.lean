@@ -6,8 +6,9 @@ import VerifiedGarbage.Impl.Ecdsa.Arm
 
 The checks of `Impl/Ecdsa/Arm.lean` as masks, all ones or zero:
 `nonzero a` sets `r5` to all ones iff `[a] ≠ 0` (`nonzero_ok`: the words
-or'ed, then the top bit of `-x | x`), `ltN a` sets `r5` to all ones iff
-`[a] < [MN]` (`ltN_ok`: the carry out of `[a] - [MN]`, digit by digit), and
+or'ed, then the top bit of `-x | x`), `ltM m a` sets `r5` to all ones iff
+`[a] < [m]` (`ltM_ok`: the carry out of `[a] - [m]`, digit by digit; `ltN`
+is `ltM` for `MN`), and
 `andFlag` ands `r5` into the flag word (`andFlag_ok`); so `checkRange a` ands
 the mask of `0 < [a] < [MN]` into the flag (`checkRange_ok`) and
 `checkNonzero a` the mask of `[a] ≠ 0` (`checkNonzero_ok`).
@@ -195,8 +196,8 @@ theorem ltDigit_ok {s : State} {j : Nat} (h6 : s.gpr .r6 = VG.Proof.X25519.Arm.m
 def ltWord (a m k : Nat) : List Instr :=
   [.ldr .r7 wb (a + 4 * k), .ldr .r8 wb (m + 4 * k)] ++ Cfg.ltDigit (2 * k) ++ Cfg.ltDigit (2 * k + 1)
 
-theorem ltN_eq (c : Cfg) (a : Nat) :
-    c.ltN a = ([mask16, .mov .r3 (.imm 1)] : List Instr) ++ (List.range (2 * c.n)).flatMap (ltWord a (c.sl MN)) ++
+theorem ltM_eq (c : Cfg) (m a : Nat) :
+    c.ltM m a = ([mask16, .mov .r3 (.imm 1)] : List Instr) ++ (List.range (2 * c.n)).flatMap (ltWord a m) ++
       ([.dp .sub .r5 .r3 (.imm 1)] : List Instr) :=
   rfl
 
@@ -262,20 +263,20 @@ theorem ltK_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {a 
     rw [ea, em, Nat.mul_comm a1, Nat.mul_comm n1]
     exact heq
 
-/-- `r5` is all ones iff `[a] < [MN]`; `r3`, `r4`, `r6`, `r7` and `r8` change too. -/
-theorem ltN_ok (c : Cfg) {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {a : Nat}
-    (ha : a + 8 * c.n ≤ size) (hm : c.sl MN + 8 * c.n ≤ size) :
-    WP isa (.block (c.ltN a)) s fun s' =>
-      s'.gpr .r5 = mask32 (wordsVal s.mem base a c.n < wordsVal s.mem base (c.sl MN) c.n) ∧
+/-- `r5` is all ones iff `[a] < [m]`; `r3`, `r4`, `r6`, `r7` and `r8` change too. -/
+theorem ltM_ok (c : Cfg) {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {m a : Nat}
+    (ha : a + 8 * c.n ≤ size) (hm : m + 8 * c.n ≤ size) :
+    WP isa (.block (c.ltM m a)) s fun s' =>
+      s'.gpr .r5 = mask32 (wordsVal s.mem base a c.n < wordsVal s.mem base m c.n) ∧
       Rest [.r3, .r4, .r5, .r6, .r7, .r8] s s' ∧ s'.mem = s.mem := by
-  rw [ltN_eq]
+  rw [ltM_eq]
   simp only [List.cons_append, List.nil_append]
   refine wp_movw fun s₁ u₁ => ?_
   refine wp_mov (op2_imm (by decide)) fun s₂ u₂ => ?_
   have K₂ : Rest [.r3, .r4, .r5, .r6, .r7, .r8] s s₂ := (u₁.rest (by simp)).trans (u₂.rest (by simp))
   have hs₂ := hs.of_rest K₂ (by decide)
   have c₂ : (s₂.gpr .r3).toNat = 1 := by rw [u₂.gpr]; rfl
-  refine VG.Proof.X25519.Arm.WP.append (ltK_ok hs₂ (a := a) (m := c.sl MN)
+  refine VG.Proof.X25519.Arm.WP.append (ltK_ok hs₂ (a := a) (m := m)
     (by rw [u₂.other _ (by decide), u₁.gpr]) (by omega) (2 * c.n) (by omega) (by omega))
     fun s₃ ⟨C₃, ⟨T, hT, V₃⟩, K₃, m₃⟩ => ?_
   have mem₂ : s₂.mem = s.mem := by rw [u₂.mem, u₁.mem]
@@ -283,10 +284,10 @@ theorem ltN_ok (c : Cfg) {s : State} {base : Addr} {size : Nat} (hs : Scr s base
   refine wp_dp (op2_imm (by decide)) fun s₄ u₄ => WP.block_nil ⟨?_, K₂.trans ((K₃.mono (by simp)).trans
     (u₄.rest (by simp))), by rw [u₄.mem, m₃, mem₂]⟩
   have hA := val32_lt s.mem base a (2 * c.n)
-  have hN := val32_lt s.mem base (c.sl MN) (2 * c.n)
+  have hN := val32_lt s.mem base m (2 * c.n)
   rw [u₄.gpr, dpVal, wordsVal_eq_val32, wordsVal_eq_val32]
   generalize 2 ^ (32 * (2 * c.n)) = P at *
-  have hr3 : s₃.gpr .r3 = if val32 s.mem base a (2 * c.n) < val32 s.mem base (c.sl MN) (2 * c.n) then 0 else 1 := by
+  have hr3 : s₃.gpr .r3 = if val32 s.mem base a (2 * c.n) < val32 s.mem base m (2 * c.n) then 0 else 1 := by
     apply BitVec.eq_of_toNat_eq
     obtain h | h : (s₃.gpr .r3).toNat = 0 ∨ (s₃.gpr .r3).toNat = 1 := by omega
     · rw [h, Nat.mul_zero] at V₃
@@ -295,6 +296,14 @@ theorem ltN_ok (c : Cfg) {s : State} {base : Addr} {size : Nat} (hs : Scr s base
       rw [h, ite_eq_right (by omega)]; rfl
   rw [hr3]
   split <;> decide
+
+/-- `r5` is all ones iff `[a] < [MN]`; `r3`, `r4`, `r6`, `r7` and `r8` change too. -/
+theorem ltN_ok (c : Cfg) {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {a : Nat}
+    (ha : a + 8 * c.n ≤ size) (hm : c.sl MN + 8 * c.n ≤ size) :
+    WP isa (.block (c.ltN a)) s fun s' =>
+      s'.gpr .r5 = mask32 (wordsVal s.mem base a c.n < wordsVal s.mem base (c.sl MN) c.n) ∧
+      Rest [.r3, .r4, .r5, .r6, .r7, .r8] s s' ∧ s'.mem = s.mem :=
+  ltM_ok c hs ha hm
 
 /-! ## The flag -/
 

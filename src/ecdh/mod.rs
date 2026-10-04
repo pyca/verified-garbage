@@ -10,7 +10,12 @@
 //! key, and returns the x-coordinate of `dQ`, in constant time. The public
 //! key is one call too (`vg_ec_<curve>_public_key`).
 
-#![cfg(any(target_arch = "x86_64", target_arch = "x86", target_arch = "aarch64"))]
+#![cfg(any(
+    target_arch = "x86_64",
+    target_arch = "x86",
+    target_arch = "aarch64",
+    target_arch = "arm"
+))]
 
 mod p256;
 
