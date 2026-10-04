@@ -192,3 +192,5 @@ theorem offset0_ok {K W SP : Addr} (L : Lay K W SP) {s : State} (E : Env K W SP 
       blockAtMem_store2, val]
   · rw [g₈ r h1 h2, g₇ r h1 h2 h3 h5 h6 h7 h8, g₆ r h1 h2 h3 h5 h6 h7 h8, g₅ r h1 h2 h3 h5 h6 h7 h8,
       g₄ r h1 h2 h3 h5 h6 h7 h8, g₃ r h1 h2 h3 h5 h6 h7 h8, g₂ r h1 h2 h3 h5 h6 h7 h8, g₁ r h1 h2 h3 h4 h5]
+
+end VG.Proof.AesOcb.X86_64
