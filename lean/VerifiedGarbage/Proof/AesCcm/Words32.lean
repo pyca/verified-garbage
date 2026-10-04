@@ -1,4 +1,5 @@
 import VerifiedGarbage.Proof.AesCcm.Words
+import VerifiedGarbage.Proof.AesCcm.Bytes
 import VerifiedGarbage.Proof.Cmac.Mem32
 import VerifiedGarbage.Proof.Cmac.Frame
 
@@ -20,24 +21,6 @@ namespace VG.Proof.AesCcm
 open VG VG.WriteBytes
 open VG.Spec.Aes (bytesAt)
 open VG.Proof.Cmac (le4)
-
-theorem writeW32_eq (m : Mem) (a : Addr) (v : BitVec 32) : m.writeW a v = writeBytes m a (le4 v) := by
-  funext x
-  simp only [Mem.writeW, Mem.write, writeBytes, Proof.Cmac.length_le4]
-  split
-  · rename_i h
-    rw [Proof.Cmac.getD_le4 _ h]
-    simp
-  · rfl
-
-theorem bytesAt_writeW32_at (m : Mem) (p : Addr) {o n : Nat} (v : BitVec 32) (h : o + 4 ≤ n) (hn : n < 2 ^ 64) :
-    bytesAt (m.writeW (p + BitVec.ofNat 64 o) v) p n = (bytesAt m p n).take o ++ le4 v ++ (bytesAt m p n).drop (o + 4) := by
-  rw [writeW32_eq, bytesAt_writeBytes_at _ _ _ (by rw [Proof.Cmac.length_le4]; exact h) hn, Proof.Cmac.length_le4]
-
-theorem bytesAt_writeW32_base (m : Mem) (p : Addr) {n : Nat} (v : BitVec 32) (h : 4 ≤ n) (hn : n < 2 ^ 64) :
-    bytesAt (m.writeW p v) p n = le4 v ++ (bytesAt m p n).drop 4 := by
-  have := bytesAt_writeW32_at m p (o := 0) v h hn
-  simpa using this
 
 /-- The bytes of a buffer after a write that misses it. -/
 theorem bytesAt_writeW_sep (m : Mem) {q a : Addr} {w n : Nat} (v : BitVec w)
@@ -72,13 +55,6 @@ theorem b0_bytes (m : Mem) (p : Addr) (w₀ w₁ w₂ x : BitVec 32) (f : Byte) 
     bytesAt_writeW_sep _ _ (dj 8 4 12 4 (.inl (by decide)) (by decide) (by decide)) (by decide),
     bytesAt_writeW_sep _ _ (d0' 8 4 (by decide) (by decide)) (by decide), bytesAt_writeW32_self, bytesAt_writeW32_self]
 
-theorem le4_or (a b : BitVec 32) : le4 (a ||| b) = List.zipWith (· ||| ·) (le4 a) (le4 b) := by
-  apply List.ext_getElem (by simp [le4])
-  intro k h₁ h₂
-  simp only [le4, List.getElem_map, List.getElem_range, List.getElem_zipWith]
-  ext j hj
-  simp
-
 /-- The bytes of `[v]₃₂`, the most significant first. -/
 theorem le4_byteRev32_ofNat {v : Nat} (hv : v < 2 ^ 32) : le4 (byteRev32 (BitVec.ofNat 32 v)) = Spec.Ccm.be 4 v := by
   rw [le4, byteRev32_extract, Spec.Ccm.be, show List.range 4 = [0, 1, 2, 3] from rfl]
@@ -89,7 +65,7 @@ theorem le4_byteRev32_ofNat {v : Nat} (hv : v < 2 ^ 32) : le4 (byteRev32 (BitVec
 
 /-- The last 4 bytes of `Ctrᵢ`, for `i < 2³²`: `[i]₃₂`, ORed with those of
 `Ctr₀` (the nonce's last bytes, when `q < 4`). -/
-theorem ctrBlock_drop12 {nonce : List Byte} (h7 : 7 ≤ nonce.length) (h13 : nonce.length ≤ 13) {i : Nat}
+theorem ctrBlock_drop12_or {nonce : List Byte} (h7 : 7 ≤ nonce.length) (h13 : nonce.length ≤ 13) {i : Nat}
     (hi : i < 256 ^ (15 - nonce.length)) (hi32 : i < 2 ^ 32) :
     (Spec.Ccm.ctrBlock nonce i).drop 12 =
       List.zipWith (· ||| ·) (Spec.Ccm.be 4 i) ((Spec.Ccm.ctrBlock nonce 0).drop 12) := by
@@ -130,7 +106,7 @@ theorem ctr_or32 {nonce : List Byte} (h7 : 7 ≤ nonce.length) (h13 : nonce.leng
     (hw : le4 w = (Spec.Ccm.ctrBlock nonce 0).drop 12) {i : Nat} (hi : i < 256 ^ (15 - nonce.length))
     (hi32 : i < 2 ^ 32) :
     le4 (byteRev32 (BitVec.ofNat 32 i) ||| w) = (Spec.Ccm.ctrBlock nonce i).drop 12 := by
-  rw [le4_or, le4_byteRev32_ofNat hi32, hw, ctrBlock_drop12 h7 h13 hi hi32]
+  rw [le4_or, le4_byteRev32_ofNat hi32, hw, ctrBlock_drop12_or h7 h13 hi hi32]
 
 /-! ## The encoding of the length of the associated data (A.2.2) -/
 
