@@ -270,6 +270,7 @@ def «open» : Prog isa :=
   (.seq (cmp uO)
   (.seq (.block [.store (at_ .ebp okO) .eax])
   (.seq mask
-    (.block ([.mov .eax (slot okO)] ++ restore))))))))))
+  (.seq (.block [.mov .eax (slot okO)])
+    (.block restore))))))))))
 
 end VG.Impl.AesCcm.X86
