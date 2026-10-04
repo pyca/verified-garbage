@@ -2,7 +2,7 @@ import VerifiedGarbage.Impl.Mont.AArch64
 import VerifiedGarbage.Impl.Weierstrass.Slots
 
 /-!
-# Short Weierstrass curves on AArch64: points, scalar multiplication, powers
+# Short Weierstrass curves on AArch64: points and scalar multiplication
 
 Code for any curve `y² = x³ + ax + b` over a prime field of `n` 64-bit
 words, with the Montgomery arithmetic of `Impl/Mont/AArch64.lean`. Field
@@ -15,9 +15,7 @@ coordinates `(X : Y : Z)`.
 * `ladder`: `[k]G` by double-and-add from the top bit, 256 times (or as many
   bits as the table has): `D = R + R`, `S = D + G` and `R = D` or `S` by a
   mask of the bit, so every iteration does the same.
-* `pow`: `x^e` by square-and-multiply over the bits of a public exponent,
-  also always multiplying and selecting by a mask, so that one loop serves
-  every exponent.
+* powers are by chains of the exponent (`AArch64/Chain.lean`).
 * `bits`: the bits of a little-endian number in a slot, one byte each.
 
 The loops count down in `x19`. The only branches are on it, and every
@@ -83,18 +81,6 @@ def ladderBody (L : LadderCfg) : Prog isa :=
 caller (the point at infinity). -/
 def ladder (L : LadderCfg) : Prog isa :=
   .seq (.block [.movz .x .x19 (BitVec.ofNat 16 L.nbits) 0]) (.loop (ladderBody L) (.nonzero .x .x19))
-
-/-- One iteration: `acc = acc²`, `tmp = acc · base`, and `acc = tmp` if the
-exponent's bit `x19 - 1` is set. -/
-def powBody (P : PowCfg) : Prog isa :=
-  .seq (.block (decCounter :: Mont.AArch64.mul P.M P.acc P.acc P.acc)) <|
-  .seq (.block (Mont.AArch64.mul P.M P.tmp P.acc P.base)) <|
-    .block (bitMask P.bits ++ sel P.M.n P.acc P.acc P.tmp)
-
-/-- `[acc] = [base]^e` (in Montgomery form), from the top bit of `e`. -/
-def pow (P : PowCfg) : Prog isa :=
-  .seq (.block (copy P.M.n P.acc P.one ++ [.movz .x .x19 (BitVec.ofNat 16 P.nbits) 0]))
-    (.loop (powBody P) (.nonzero .x .x19))
 
 /-- Byte `j` of the table at `dst` for byte `x19` of the number: bit `j` of
 `x1` (with `x5 = 1`), stored at `x17 + dst + j`, where `x17 = x0 + 8 x19`. -/

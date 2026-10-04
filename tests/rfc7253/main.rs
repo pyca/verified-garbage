@@ -9,7 +9,7 @@
 //! RFC's text: a field `X: hex` of a tuple, continued on the rows of hex
 //! after it, and the `Output` lines of the iterative test.
 
-#![cfg(target_arch = "x86_64")]
+#![cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
 
 use verified_garbage::aes_ocb::{AesOcb, Error};
 

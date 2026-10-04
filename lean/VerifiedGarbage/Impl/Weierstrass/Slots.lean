@@ -62,6 +62,44 @@ def rcb (S : RcbSlots) (p q o : Pt) : List FOp :=
     .sub o.x o.x S.t0, .mul S.t0 S.t3 S.t1, .mul o.z S.t5 o.z,
     .add o.z o.z S.t0]
 
+/-- `o = p + q` for a curve with `a = -3`, the slot `S.b3` holding `b` (Algorithm 4
+of Renes, Costello and Batina, in its stated order; temporaries `t0 … t4`; `o`
+apart from `p` and `q`): 12 products and 2 by `b`, against Algorithm 1's 12, 3
+by `a` and 2 by `3b`. -/
+def rcb3 (S : RcbSlots) (p q o : Pt) : List FOp :=
+  [.mul S.t0 p.x q.x, .mul S.t1 p.y q.y, .mul S.t2 p.z q.z,
+    .add S.t3 p.x p.y, .add S.t4 q.x q.y, .mul S.t3 S.t3 S.t4,
+    .add S.t4 S.t0 S.t1, .sub S.t3 S.t3 S.t4, .add S.t4 p.y p.z,
+    .add o.x q.y q.z, .mul S.t4 S.t4 o.x, .add o.x S.t1 S.t2,
+    .sub S.t4 S.t4 o.x, .add o.x p.x p.z, .add o.y q.x q.z,
+    .mul o.x o.x o.y, .add o.y S.t0 S.t2, .sub o.y o.x o.y,
+    .mul o.z S.b3 S.t2, .sub o.x o.y o.z, .add o.z o.x o.x,
+    .add o.x o.x o.z, .sub o.z S.t1 o.x, .add o.x S.t1 o.x,
+    .mul o.y S.b3 o.y, .add S.t1 S.t2 S.t2, .add S.t2 S.t1 S.t2,
+    .sub o.y o.y S.t2, .sub o.y o.y S.t0, .add S.t1 o.y o.y,
+    .add o.y S.t1 o.y, .add S.t1 S.t0 S.t0, .add S.t0 S.t1 S.t0,
+    .sub S.t0 S.t0 S.t2, .mul S.t1 S.t4 o.y, .mul S.t2 S.t0 o.y,
+    .mul o.y o.x o.z, .add o.y o.y S.t2, .mul o.x S.t3 o.x,
+    .sub o.x o.x S.t1, .mul o.z S.t4 o.z, .mul S.t1 S.t3 S.t0,
+    .add o.z o.z S.t1]
+
+/-- `o = p + p` for a curve with `a = -3`, the slot `S.b3` holding `b` (Algorithm 6
+of Renes, Costello and Batina, in its stated order; temporaries `t0 … t3`; `o`
+apart from `p`): 8 products, 3 squares and 2 by `b`. -/
+def dbl3 (S : RcbSlots) (p o : Pt) : List FOp :=
+  [.mul S.t0 p.x p.x, .mul S.t1 p.y p.y, .mul S.t2 p.z p.z,
+    .mul S.t3 p.x p.y, .add S.t3 S.t3 S.t3, .mul o.z p.x p.z,
+    .add o.z o.z o.z, .mul o.y S.b3 S.t2, .sub o.y o.y o.z,
+    .add o.x o.y o.y, .add o.y o.x o.y, .sub o.x S.t1 o.y,
+    .add o.y S.t1 o.y, .mul o.y o.x o.y, .mul o.x o.x S.t3,
+    .add S.t3 S.t2 S.t2, .add S.t2 S.t2 S.t3, .mul o.z S.b3 o.z,
+    .sub o.z o.z S.t2, .sub o.z o.z S.t0, .add S.t3 o.z o.z,
+    .add o.z o.z S.t3, .add S.t3 S.t0 S.t0, .add S.t0 S.t3 S.t0,
+    .sub S.t0 S.t0 S.t2, .mul S.t0 S.t0 o.z, .add o.y o.y S.t0,
+    .mul S.t0 p.y p.z, .add S.t0 S.t0 S.t0, .mul o.z S.t0 o.z,
+    .sub o.x o.x o.z, .mul o.z S.t0 S.t1, .add o.z o.z o.z,
+    .add o.z o.z o.z]
+
 /-- What scalar multiplication needs: the field, the slots of `G` and of the
 points, the slots of the complete addition, and the table of the scalar's
 bits (byte `t` is bit `t`), with `nbits` bits. -/
@@ -107,5 +145,30 @@ structure CombCfg where
 
 /-- The number of the comb's tables (and of digits). -/
 def CombCfg.J (K : CombCfg) : Nat := K.tbl.length
+
+/-- What the window method needs: the field, the complete addition's slots,
+the point `P` (read only), the accumulator `R` (the result), the slots of the
+selected entry `E` and of the sum `D`, a slot for `-y` and one holding zero,
+the table of bits of the recoded scalar (`4 J` bytes), where the table of
+`[m]P` for `m = 1 … 8` goes (`tbl`: 8 points of three `n`-word slots), the
+number of digits `J`, and `R mod p`. -/
+structure WinCfg where
+  M : Mod
+  S : RcbSlots
+  P : Pt
+  R : Pt
+  E : Pt
+  D : Pt
+  neg : Nat
+  zero : Nat
+  bits : Nat
+  tbl : Nat
+  J : Nat
+  one : Nat
+
+/-- Entry `m` (`1 … 8`) of the window method's table of `[m]P`. -/
+def WinCfg.tblPt (K : WinCfg) (m : Nat) : Pt :=
+  ⟨K.tbl + 24 * K.M.n * (m - 1), K.tbl + 24 * K.M.n * (m - 1) + 8 * K.M.n,
+    K.tbl + 24 * K.M.n * (m - 1) + 16 * K.M.n⟩
 
 end VG.Impl.Weierstrass

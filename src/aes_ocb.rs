@@ -23,16 +23,23 @@
 //! `vg_aes_decrypt_blocks`), which have the same contracts: on x86-64, CPUs
 //! with AES-NI and SSSE3 run the `_aesni` instances (`crate::aes::Backend`;
 //! there is no VAES implementation of whole blocks yet, so its CPUs run them
-//! too). Only x86-64 has an implementation so far.
+//! too); on AArch64, CPUs with the AES instructions run the `_aes` ones.
+//! x86-64 and AArch64 have implementations so far.
 
-#![cfg(target_arch = "x86_64")]
+#![cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
 
 use crate::aes::Backend;
+#[cfg(target_arch = "aarch64")]
+use crate::arch::aes_ocb::{
+    VG_AES_OCB_INIT_AES_FEATURES, VG_AES_OCB_OPEN_AES_FEATURES, VG_AES_OCB_SEAL_AES_FEATURES,
+    vg_aes_ocb_init_aes, vg_aes_ocb_open_aes, vg_aes_ocb_seal_aes,
+};
+#[cfg(target_arch = "x86_64")]
 use crate::arch::aes_ocb::{
     VG_AES_OCB_INIT_AESNI_FEATURES, VG_AES_OCB_OPEN_AESNI_FEATURES, VG_AES_OCB_SEAL_AESNI_FEATURES,
-    vg_aes_ocb_init, vg_aes_ocb_init_aesni, vg_aes_ocb_open, vg_aes_ocb_open_aesni,
-    vg_aes_ocb_seal, vg_aes_ocb_seal_aesni,
+    vg_aes_ocb_init_aesni, vg_aes_ocb_open_aesni, vg_aes_ocb_seal_aesni,
 };
+use crate::arch::aes_ocb::{vg_aes_ocb_init, vg_aes_ocb_open, vg_aes_ocb_seal};
 use crate::cpu::{Features, detected};
 use crate::zeroize::zeroize;
 use core::mem::MaybeUninit;
@@ -41,19 +48,24 @@ use core::mem::MaybeUninit;
 /// `open`, the tag in its first bytes.
 const WORK: usize = 320;
 
-/// The instance of a function for `backend`.
+/// The instance of a function for `backend`: the scalar one, x86-64's for
+/// AES-NI, or AArch64's for the AES instructions.
 macro_rules! instance {
-    ($backend:expr, $scalar:ident, $aesni:ident) => {
+    ($backend:expr, $scalar:ident, $aesni:ident, $aes:ident) => {
         match $backend {
             Backend::Scalar => $scalar,
             // No VAES implementation of whole blocks yet.
+            #[cfg(target_arch = "x86_64")]
             Backend::AesNi | Backend::Vaes => $aesni,
+            #[cfg(target_arch = "aarch64")]
+            Backend::Aes => $aes,
         }
     };
 }
 
 /// The best implementation of AES a CPU with the features `f` can run, with
 /// the AES-OCB functions for it.
+#[cfg(target_arch = "x86_64")]
 fn select(f: Features) -> Backend {
     const AESNI: Features = Features::all(&[
         VG_AES_OCB_INIT_AESNI_FEATURES,
@@ -61,6 +73,18 @@ fn select(f: Features) -> Backend {
         VG_AES_OCB_OPEN_AESNI_FEATURES,
     ]);
     Backend::select_for(f, AESNI, AESNI)
+}
+
+/// The best implementation of AES a CPU with the features `f` can run, with
+/// the AES-OCB functions for it.
+#[cfg(target_arch = "aarch64")]
+fn select(f: Features) -> Backend {
+    const AES: Features = Features::all(&[
+        VG_AES_OCB_INIT_AES_FEATURES,
+        VG_AES_OCB_SEAL_AES_FEATURES,
+        VG_AES_OCB_OPEN_AES_FEATURES,
+    ]);
+    Backend::select_for(f, AES)
 }
 
 /// Fails to compile unless `T` is a tag length OCB allows: 1 to 16 bytes.
@@ -121,7 +145,12 @@ impl AesOcb {
             rounds: key.len() / 4 + 6,
             backend: select(detected()),
         };
-        let init = instance!(k.backend, vg_aes_ocb_init, vg_aes_ocb_init_aesni);
+        let init = instance!(
+            k.backend,
+            vg_aes_ocb_init,
+            vg_aes_ocb_init_aesni,
+            vg_aes_ocb_init_aes
+        );
         let mut scratch = MaybeUninit::<[u64; WORK]>::uninit();
         // SAFETY: `key` is valid for reads of `key.len()` bytes, which is 16,
         // 24 or 32; `k.ctx` and `scratch` are valid for reads and writes of
@@ -150,7 +179,12 @@ impl AesOcb {
     ) -> Result<[u8; T], Error> {
         assert_tag_length!(T);
         check(nonce)?;
-        let seal = instance!(self.backend, vg_aes_ocb_seal, vg_aes_ocb_seal_aesni);
+        let seal = instance!(
+            self.backend,
+            vg_aes_ocb_seal,
+            vg_aes_ocb_seal_aesni,
+            vg_aes_ocb_seal_aes
+        );
         let mut work = MaybeUninit::<[u64; WORK]>::uninit();
         // SAFETY: `self.ctx` is the key context `vg_aes_ocb_init` wrote for
         // `self.rounds` (10, 12 or 14) rounds, valid for reads of 256 bytes.
@@ -201,7 +235,12 @@ impl AesOcb {
     ) -> Result<(), Error> {
         assert_tag_length!(T);
         check(nonce)?;
-        let open = instance!(self.backend, vg_aes_ocb_open, vg_aes_ocb_open_aesni);
+        let open = instance!(
+            self.backend,
+            vg_aes_ocb_open,
+            vg_aes_ocb_open_aesni,
+            vg_aes_ocb_open_aes
+        );
         let mut work = MaybeUninit::<[u64; WORK]>::uninit();
         let mut t = [0u8; 16];
         t[..T].copy_from_slice(tag);

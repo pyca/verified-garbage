@@ -550,9 +550,9 @@ yours to keep:
 
 <td>✅ AES-NI, VAES, AVX2</td>
 
-<td>❌</td>
+<td>✅ AES, PMULL</td>
 
-<td>❌</td>
+<td>✅</td>
 
 <td>❌</td>
 
@@ -598,7 +598,7 @@ yours to keep:
 
 <td>✅ AES-NI</td>
 
-<td>❌</td>
+<td>✅ AES, PMULL</td>
 
 <td>❌</td>
 
