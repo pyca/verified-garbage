@@ -146,14 +146,18 @@ pub(crate) unsafe extern "sysv64" fn vg_pbkdf2_hmac_md5_iterate(key: *const [u8;
 /// * `password` must be valid for reads of `password_len` bytes.
 /// * `salt` must be valid for reads of `salt_len` bytes.
 /// * `out` must be valid for reads and writes of `out_len` bytes.
-/// * `scratch` must be valid for reads and writes of 1024 bytes.
 /// * `c` must be positive, and `out_len` at most `(2^32 - 1) * 16`.
-/// * The contents of `scratch` on return are unspecified.
-/// * `out` and `scratch` must not overlap each other, `password`, `salt` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `password`, `salt`, `out` and `scratch` may overlap the return address on the stack or the 24 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `out` must not overlap `password`, `salt` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `password`, `salt` and `out` may overlap the return address on the stack or the 1072 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_pbkdf2_hmac_md5(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, c: u32, out: *mut u8, out_len: usize, scratch: *mut [u64; 128]) {
+pub(crate) unsafe extern "sysv64" fn vg_pbkdf2_hmac_md5(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, c: u32, out: *mut u8, out_len: usize) {
     core::arch::naked_asm!(
+        "lea rsp, [rsp-1048]",
+        "mov rax, QWORD PTR [rsp+1056]",
+        "mov QWORD PTR [rsp+8], rax",
+        "mov rax, rsp",
+        "add rax, 24",
+        "mov QWORD PTR [rsp+16], rax",
         "mov r10, r8",
         "mov r8, QWORD PTR [rsp+16]",
         "mov QWORD PTR [r8+384], rbx",
@@ -297,6 +301,7 @@ pub(crate) unsafe extern "sysv64" fn vg_pbkdf2_hmac_md5(password: *const u8, pas
         "mov r13, QWORD PTR [r15+408]",
         "mov r14, QWORD PTR [r15+416]",
         "mov r15, QWORD PTR [r15+424]",
+        "lea rsp, [rsp+1048]",
         "ret",
         ".p2align 6",
         vg_md5_init = sym super::md5::vg_md5_init,

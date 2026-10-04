@@ -5,7 +5,7 @@ import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Calls
 # HMAC and PBKDF2-HMAC over any Merkle–Damgård hash function on x86-64: the shared contracts
 
 `pbkG` is the contract the proof of `pbkdf2` is written against:
-`VG.Spec.Pbkdf2.pbkdf2Contract` with its facts spelt out, which it implies for
+`VG.Spec.Pbkdf2.pbkdf2ScratchContract` with its facts spelt out, which it implies for
 any streaming hash function and scratch space (`generic_implies`), as HMAC's
 `initG` and `finG` (`Calls.lean`) imply `VG.Spec.Hmac.initScratchContract` and
 `VG.Spec.Hmac.finalizeScratchContract` (`initImp`, `finImp`). `initSat` and `finSat`
@@ -62,27 +62,27 @@ theorem map_range2 {α : Type} (f : Nat → α) : List.map f (List.range 2) = [f
 
 /-- `pbkG` implies the shared contract for any hash function and scratch space
 (`generic_implies`), given that the shared contract is satisfiable. -/
-theorem pbkImp (h : ∃ s, (Spec.Pbkdf2.pbkdf2Contract S W X86_64.abi 24).pre s) :
-    (pbkG S W).Implies (Spec.Pbkdf2.pbkdf2Contract S W X86_64.abi 24) := by
+theorem pbkImp (h : ∃ s, (Spec.Pbkdf2.pbkdf2ScratchContract S W X86_64.abi 24).pre s) :
+    (pbkG S W).Implies (Spec.Pbkdf2.pbkdf2ScratchContract S W X86_64.abi 24) := by
   exact
     { pre := by
         intro s h
         -- Twice: the stack arguments' list evaluates only on the second pass.
-        sig_pre [Spec.Pbkdf2.pbkdf2Contract, Spec.Pbkdf2.pbkdf2Sig, pbkG, X86_64.abi, X86_64.argRegs, map_range2, List.append_eq] at h
-        sig_pre [Spec.Pbkdf2.pbkdf2Contract, Spec.Pbkdf2.pbkdf2Sig, pbkG, X86_64.abi, X86_64.argRegs, map_range2, List.append_eq] at h
+        sig_pre [Spec.Pbkdf2.pbkdf2ScratchContract, Spec.Pbkdf2.pbkdf2ScratchSig, Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post, pbkG, X86_64.abi, X86_64.argRegs, map_range2, List.append_eq] at h
+        sig_pre [Spec.Pbkdf2.pbkdf2ScratchContract, Spec.Pbkdf2.pbkdf2ScratchSig, Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post, pbkG, X86_64.abi, X86_64.argRegs, map_range2, List.append_eq] at h
         sig_split h
-        sig_reduce [Spec.Pbkdf2.pbkdf2Contract, Spec.Pbkdf2.pbkdf2Sig, pbkG, X86_64.abi, X86_64.argRegs, map_range2, List.append_eq]
+        sig_reduce [Spec.Pbkdf2.pbkdf2ScratchContract, Spec.Pbkdf2.pbkdf2ScratchSig, Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post, pbkG, X86_64.abi, X86_64.argRegs, map_range2, List.append_eq]
         sig_and_intros
         sig_close
         all_goals with_reducible assumption
       post := by
         rintro s s' - h
-        sig_post [Spec.Pbkdf2.pbkdf2Contract, Spec.Pbkdf2.pbkdf2Sig, pbkG, X86_64.abi, X86_64.argRegs, map_range2, List.append_eq]
-        sig_reduce [Spec.Pbkdf2.pbkdf2Contract, Spec.Pbkdf2.pbkdf2Sig, pbkG, X86_64.abi, X86_64.argRegs, map_range2, List.append_eq] at h
+        sig_post [Spec.Pbkdf2.pbkdf2ScratchContract, Spec.Pbkdf2.pbkdf2ScratchSig, Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post, pbkG, X86_64.abi, X86_64.argRegs, map_range2, List.append_eq]
+        sig_reduce [Spec.Pbkdf2.pbkdf2ScratchContract, Spec.Pbkdf2.pbkdf2ScratchSig, Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post, pbkG, X86_64.abi, X86_64.argRegs, map_range2, List.append_eq] at h
         exact h
       pub := by
         rintro s₁ s₂ - - h
-        sig_pub [Spec.Pbkdf2.pbkdf2Contract, Spec.Pbkdf2.pbkdf2Sig, pbkG, X86_64.abi, X86_64.argRegs, map_range2, List.append_eq] at h
+        sig_pub [Spec.Pbkdf2.pbkdf2ScratchContract, Spec.Pbkdf2.pbkdf2ScratchSig, Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post, pbkG, X86_64.abi, X86_64.argRegs, map_range2, List.append_eq] at h
         simp only [List.getD_cons_succ, List.getD_cons_zero] at h
         sig_split h
         rename_i h1 h2 h3 h4 h5 h6 h7 h8

@@ -38,6 +38,5 @@ super::whole_pbkdf2!(
         #[cfg(target_arch = "x86_64")]
         ShaNi if [VG_PBKDF2_HMAC_SHA1_SHANI_FEATURES] => vg_pbkdf2_hmac_sha1_shani,
     },
-    scratch: 140,
     output: 20,
 );

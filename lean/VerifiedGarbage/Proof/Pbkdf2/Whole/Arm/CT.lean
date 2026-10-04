@@ -543,8 +543,8 @@ end
 
 /-- The public arguments of the shared contract. -/
 theorem pub_of {S : Spec.Hmac.StreamingHash} {W : Nat} {s₁ s₂ : State}
-    (h : (Spec.Pbkdf2.pbkdf2Contract S W Arm.abi 24).pub s₁ s₂) : PubEq s₁ s₂ := by
-  sig_pub [Spec.Pbkdf2.pbkdf2Contract, Spec.Pbkdf2.pbkdf2Sig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
+    (h : (Spec.Pbkdf2.pbkdf2ScratchContract S W Arm.abi 24).pub s₁ s₂) : PubEq s₁ s₂ := by
+  sig_pub [Spec.Pbkdf2.pbkdf2ScratchContract, Spec.Pbkdf2.pbkdf2ScratchSig, Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post, Arm.abi, Arm.argRegs, Arm.reduceClassify,
     Arm.Loc.val] at h
   obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9⟩ := h
   exact ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9⟩
@@ -552,13 +552,13 @@ theorem pub_of {S : Spec.Hmac.StreamingHash} {W : Nat} {s₁ s₂ : State}
 /-- `pbkdf2` is verified against the shared contract, given the taint checks
 and a state satisfying it. -/
 theorem verified (hF : FnsOK F) (hc : Checks F) {S : Spec.Hmac.StreamingHash} {W : Nat} (hS : hF.hH.SH = S)
-    (hW : F.W + F.H.S = W) (hsat : ∃ s, (Spec.Pbkdf2.pbkdf2Contract S W Arm.abi 24).pre s) :
-    Verified Arm.target F.pbkdf2 (Spec.Pbkdf2.pbkdf2Contract S W Arm.abi 24) := by
+    (hW : F.W + F.H.S = W) (hsat : ∃ s, (Spec.Pbkdf2.pbkdf2ScratchContract S W Arm.abi 24).pre s) :
+    Verified Arm.target F.pbkdf2 (Spec.Pbkdf2.pbkdf2ScratchContract S W Arm.abi 24) := by
   subst hS hW
   refine ⟨fun s hs => WP.mono (correct (hF := hF) (pre_of hF hs) hF.sizes) fun s' ⟨a, h⟩ => ⟨a, ?_⟩,
     fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hpub e₁ e₂ =>
       (ct (hF := hF) (pre_of hF h₁) (pre_of hF h₂) (pub_of hpub) hc _ _ _ _ _ _ ⟨rfl, rfl⟩ e₁ e₂).1, hsat⟩
-  sig_post [Spec.Pbkdf2.pbkdf2Contract, Spec.Pbkdf2.pbkdf2Sig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
+  sig_post [Spec.Pbkdf2.pbkdf2ScratchContract, Spec.Pbkdf2.pbkdf2ScratchSig, Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post, Arm.abi, Arm.argRegs, Arm.reduceClassify,
     Arm.Loc.val]
   exact h
 

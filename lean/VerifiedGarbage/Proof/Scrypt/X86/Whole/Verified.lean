@@ -1,4 +1,5 @@
 import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Sha256
+import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Frame
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.X86.RelCT
 import VerifiedGarbage.Proof.Scrypt.X86.Whole.Calls
@@ -109,7 +110,7 @@ theorem toNat_blen (hL : L.Ok) : (BitVec.ofNat 32 (L.blen.toNat * 128)).toNat = 
 /-! ## Step 1 -/
 
 section
-variable {pbk : Prog isa} (hv : Verified X86.target pbk (Spec.Hmac.sha256I.pbkdf2Contract X86.abi 76))
+variable {pbk : Prog isa} (hv : Verified X86.target pbk (Spec.Hmac.sha256I.pbkdf2ScratchContract X86.abi 76))
   (hsp : NoSp pbk) (hst : stackUse pbk ≤ 76) (name : String)
 include hv hsp hst
 
@@ -245,7 +246,7 @@ theorem loop_ok (hL : L.Ok) {t : State} (h : Inv L g m₀ 0 t) : WP isa romixLoo
 /-! ## Step 3 -/
 
 section
-variable {pbk : Prog isa} (hv : Verified X86.target pbk (Spec.Hmac.sha256I.pbkdf2Contract X86.abi 76))
+variable {pbk : Prog isa} (hv : Verified X86.target pbk (Spec.Hmac.sha256I.pbkdf2ScratchContract X86.abi 76))
   (hsp : NoSp pbk) (hst : stackUse pbk ≤ 76) (name : String)
 include hv hsp hst
 
@@ -352,7 +353,7 @@ theorem pop_esp (B : BitVec 32) : B + BitVec.ofNat 32 80 + BitVec.ofNat 32 (4 * 
   rw [BitVec.add_assoc, BitVec.ofNat_add_ofNat]
 
 section
-variable {pbk : Prog isa} (hv : Verified X86.target pbk (Spec.Hmac.sha256I.pbkdf2Contract X86.abi 76))
+variable {pbk : Prog isa} (hv : Verified X86.target pbk (Spec.Hmac.sha256I.pbkdf2ScratchContract X86.abi 76))
   (hsp : NoSp pbk) (hst : stackUse pbk ≤ 76) (name : String)
 include hv hsp hst
 
@@ -613,7 +614,7 @@ theorem loop_ct :
 /-! ## The whole function -/
 
 section
-variable {pbk : Prog isa} (hv : Verified X86.target pbk (Spec.Hmac.sha256I.pbkdf2Contract X86.abi 76))
+variable {pbk : Prog isa} (hv : Verified X86.target pbk (Spec.Hmac.sha256I.pbkdf2ScratchContract X86.abi 76))
   (hsp : NoSp pbk) (hst : stackUse pbk ≤ 76) (name : String)
 include hv hsp hst
 
@@ -676,7 +677,7 @@ end
 its shared contract that never writes `esp` and uses at most 76 bytes of
 stack, is verified against `Spec.Scrypt.scryptContract` for the 116 bytes of
 stack its frame and calls use (`scrypt_verified_of`); and so is the one
-calling the `vg_pbkdf2_hmac_sha256` made with any SHA-256 backend
+calling the `vg_pbkdf2_hmac_sha256_scratch` made with any SHA-256 backend
 (`scrypt_verified`), whose code never writes `esp` but by the frame
 (`scrypt_spSafe`).
 -/
@@ -753,7 +754,7 @@ theorem scrypt_implies : Proof.Scrypt.scryptX86.Implies (Spec.Scrypt.scryptContr
           X86.argVal, X86.argBytes] [satState, satMem] using satState }
 
 section
-variable {pbk : Prog isa} (hv : Verified X86.target pbk (Spec.Hmac.sha256I.pbkdf2Contract X86.abi 76))
+variable {pbk : Prog isa} (hv : Verified X86.target pbk (Spec.Hmac.sha256I.pbkdf2ScratchContract X86.abi 76))
   (hsp : NoSp pbk) (hst : stackUse pbk ≤ 76) (name : String)
 include hv hsp hst
 
@@ -766,42 +767,19 @@ end
 
 /-! ## With the PBKDF2 made with a SHA-256 backend -/
 
-theorem clobbers_esp (i : Instr) : Taint.clobbers i .esp = isa.writesSp i := by
-  cases i <;> rfl
-
-theorem all_eq (p : Instr → Bool) (c : Prog isa) : c.all p = (VG.instrs c).all p := by
-  induction c <;> simp_all [Code.all, VG.instrs, List.all_append, Bool.and_assoc]
-
-/-- Code whose instructions never write `esp`, but by its frames, keeps it. -/
-theorem nosp_of_all {c : Prog isa} (h : c.all (fun i => !isa.writesSp i) = true) : NoSp c := by
-  intro i hi
-  rw [all_eq, List.all_eq_true] at h
-  rw [clobbers_esp]
-  simpa using h i hi
-
 variable (v : Backend)
 
 /-- PBKDF2-HMAC-SHA256 made with `v`. -/
 abbrev pbkOf : Prog isa := v.F.pbkdf2
 
 /-- Its name. -/
-abbrev pbkName : String := Spec.Hmac.sha256I.pbkdf2Api.name ++ v.suffix
-
-theorem pbk_stack : stackUse (pbkOf v) ≤ 76 := by
-  have := v.stream.updSU; have := v.stream.finSU; have := v.initStack; have := v.finalizeStack; have := v.iterStack
-  have hi : stackUse Impl.Sha256.X86.Stream.init ≤ 20 := by lit_decide
-  simp only [pbkOf, Impl.Pbkdf2.Whole.X86.Fns.pbkdf2, Impl.Pbkdf2.Whole.X86.Fns.key,
-    Impl.Pbkdf2.Whole.X86.Fns.hashKey, Impl.Pbkdf2.Whole.X86.Fns.setup, Impl.Pbkdf2.Whole.X86.Fns.block,
-    Impl.Pbkdf2.Whole.X86.Fns.outLen, Impl.Pbkdf2.Whole.X86.Fns.outLoop, Impl.Pbkdf2.Stream.X86.copy,
-    Impl.Pbkdf2.Stream.X86.Hash.callInit, Backend.F, Proof.Sha256.X86.Variants.pbkdf2Fns,
-    Proof.Sha256.X86.Variants.fns, Proof.Sha256.X86.Variants.hmacHash, Proof.Pbkdf2.Md.X86.sha256M,
-    stackUse, frameBytes, List.length_cons, List.length_nil, Nat.max_le] at *
-  omega
+abbrev pbkName : String := Spec.Hmac.sha256I.pbkdf2ScratchApi.name ++ v.suffix
 
 /-- `vg_scrypt` made with `v`. -/
 theorem scrypt_verified :
     Verified X86.target (scrypt (pbkName v) (pbkOf v)) (Spec.Scrypt.scryptContract X86.abi 116) :=
-  scrypt_verified_of (Proof.Pbkdf2.Whole.X86.sha256_verified v) (nosp_of_all v.pbkdf2Sp) (pbk_stack v) _
+  scrypt_verified_of (Proof.Pbkdf2.Whole.X86.sha256_verified v) (Proof.Pbkdf2.Whole.X86.nosp_of_all v.pbkdf2Sp)
+    (Proof.Pbkdf2.Whole.X86.sha256_stack v) _
 
 /-- No instruction writes `esp` but the frame's push and pop. -/
 theorem scrypt_spSafe : (scrypt (pbkName v) (pbkOf v)).all (fun i => !isa.writesSp i) = true := by
