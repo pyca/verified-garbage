@@ -196,10 +196,16 @@ theorem sha384_satT : ∃ s, (Spec.Hmac.sha384I.iterateContract AArch64.abi).pre
     Spec.Pbkdf2.iterateSig, Spec.Hmac.sha384S, Spec.Hmac.sha384, AArch64.abi, AArch64.argRegs] using
     Pbkdf2.AArch64.iterSat 192 48 234
 
-theorem sha384_satP : ∃ s, (Spec.Hmac.sha384I.pbkdf2Contract AArch64.abi 16).pre s := by
-  inst_sat [Spec.Hmac.Instance.pbkdf2Contract, Spec.Hmac.Instance.pbkdf2Scratch, Spec.Hmac.sha384I,
-    Spec.Pbkdf2.pbkdf2Contract, Spec.Pbkdf2.pbkdf2Sig, Spec.Hmac.sha384S, Spec.Hmac.sha384, AArch64.abi,
+theorem sha384_satP : ∃ s, (Spec.Hmac.sha384I.pbkdf2ScratchContract AArch64.abi 16).pre s := by
+  inst_sat [Spec.Hmac.Instance.pbkdf2ScratchContract, Spec.Hmac.Instance.pbkdf2Scratch, Spec.Hmac.sha384I,
+    Spec.Pbkdf2.pbkdf2ScratchContract, Spec.Pbkdf2.pbkdf2ScratchSig, Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post, Spec.Hmac.sha384S, Spec.Hmac.sha384, AArch64.abi,
     AArch64.argRegs] using pbkSat 426
+
+theorem sha384_satPF :
+    ∃ s, (Spec.Hmac.sha384I.pbkdf2Contract AArch64.abi (16 + pbkdf2Frame Spec.Hmac.sha384I)).pre s := by
+  inst_sat [Spec.Hmac.Instance.pbkdf2Contract, pbkdf2Frame, Spec.Hmac.Instance.pbkdf2Scratch, Spec.Hmac.sha384I,
+    Spec.Pbkdf2.pbkdf2Contract, Spec.Pbkdf2.pbkdf2Sig, Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post, Spec.Hmac.sha384S, Spec.Hmac.sha384, AArch64.abi,
+    AArch64.argRegs, pbkFrameSat, pbkSat] using pbkFrameSat
 
 theorem sha384_coreOK : CoreOK (coreH 48) := coreOK 48 (Or.inr (Or.inr (Or.inl rfl)))
 
@@ -215,6 +221,7 @@ def sha384 (v : Compress) : MdHash :=
     (by
       unfold Spec.Hmac.Instance.finalizeContract Spec.Hmac.finalizeContract
       exact AArch64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
+    (by decide) sha384_satPF
     v.suffix v.features with
     sha384 := some v }
 
@@ -233,10 +240,16 @@ theorem sha512_satT : ∃ s, (Spec.Hmac.sha512I.iterateContract AArch64.abi).pre
     Spec.Pbkdf2.iterateSig, Spec.Hmac.sha512S, Spec.Hmac.sha512, AArch64.abi, AArch64.argRegs] using
     Pbkdf2.AArch64.iterSat 192 64 234
 
-theorem sha512_satP : ∃ s, (Spec.Hmac.sha512I.pbkdf2Contract AArch64.abi 16).pre s := by
-  inst_sat [Spec.Hmac.Instance.pbkdf2Contract, Spec.Hmac.Instance.pbkdf2Scratch, Spec.Hmac.sha512I,
-    Spec.Pbkdf2.pbkdf2Contract, Spec.Pbkdf2.pbkdf2Sig, Spec.Hmac.sha512S, Spec.Hmac.sha512, AArch64.abi,
+theorem sha512_satP : ∃ s, (Spec.Hmac.sha512I.pbkdf2ScratchContract AArch64.abi 16).pre s := by
+  inst_sat [Spec.Hmac.Instance.pbkdf2ScratchContract, Spec.Hmac.Instance.pbkdf2Scratch, Spec.Hmac.sha512I,
+    Spec.Pbkdf2.pbkdf2ScratchContract, Spec.Pbkdf2.pbkdf2ScratchSig, Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post, Spec.Hmac.sha512S, Spec.Hmac.sha512, AArch64.abi,
     AArch64.argRegs] using pbkSat 426
+
+theorem sha512_satPF :
+    ∃ s, (Spec.Hmac.sha512I.pbkdf2Contract AArch64.abi (16 + pbkdf2Frame Spec.Hmac.sha512I)).pre s := by
+  inst_sat [Spec.Hmac.Instance.pbkdf2Contract, pbkdf2Frame, Spec.Hmac.Instance.pbkdf2Scratch, Spec.Hmac.sha512I,
+    Spec.Pbkdf2.pbkdf2Contract, Spec.Pbkdf2.pbkdf2Sig, Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post, Spec.Hmac.sha512S, Spec.Hmac.sha512, AArch64.abi,
+    AArch64.argRegs, pbkFrameSat, pbkSat] using pbkFrameSat
 
 theorem sha512_coreOK : CoreOK (coreH 64) := coreOK 64 (Or.inr (Or.inr (Or.inr rfl)))
 
@@ -251,6 +264,7 @@ def sha512 (v : Compress) : MdHash :=
     (by
       unfold Spec.Hmac.Instance.finalizeContract Spec.Hmac.finalizeContract
       exact AArch64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
+    (by decide) sha512_satPF
     v.suffix v.features (stream v) with
     sha512 := some v }
 
@@ -269,10 +283,16 @@ theorem sha512_224_satT : ∃ s, (Spec.Hmac.sha512_224I.iterateContract AArch64.
     Spec.Pbkdf2.iterateSig, Spec.Hmac.sha512_224S, Spec.Hmac.sha512_224, AArch64.abi, AArch64.argRegs] using
     Pbkdf2.AArch64.iterSat 192 28 234
 
-theorem sha512_224_satP : ∃ s, (Spec.Hmac.sha512_224I.pbkdf2Contract AArch64.abi 16).pre s := by
-  inst_sat [Spec.Hmac.Instance.pbkdf2Contract, Spec.Hmac.Instance.pbkdf2Scratch, Spec.Hmac.sha512_224I,
-    Spec.Pbkdf2.pbkdf2Contract, Spec.Pbkdf2.pbkdf2Sig, Spec.Hmac.sha512_224S, Spec.Hmac.sha512_224, AArch64.abi,
+theorem sha512_224_satP : ∃ s, (Spec.Hmac.sha512_224I.pbkdf2ScratchContract AArch64.abi 16).pre s := by
+  inst_sat [Spec.Hmac.Instance.pbkdf2ScratchContract, Spec.Hmac.Instance.pbkdf2Scratch, Spec.Hmac.sha512_224I,
+    Spec.Pbkdf2.pbkdf2ScratchContract, Spec.Pbkdf2.pbkdf2ScratchSig, Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post, Spec.Hmac.sha512_224S, Spec.Hmac.sha512_224, AArch64.abi,
     AArch64.argRegs] using pbkSat 426
+
+theorem sha512_224_satPF :
+    ∃ s, (Spec.Hmac.sha512_224I.pbkdf2Contract AArch64.abi (16 + pbkdf2Frame Spec.Hmac.sha512_224I)).pre s := by
+  inst_sat [Spec.Hmac.Instance.pbkdf2Contract, pbkdf2Frame, Spec.Hmac.Instance.pbkdf2Scratch, Spec.Hmac.sha512_224I,
+    Spec.Pbkdf2.pbkdf2Contract, Spec.Pbkdf2.pbkdf2Sig, Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post, Spec.Hmac.sha512_224S, Spec.Hmac.sha512_224, AArch64.abi,
+    AArch64.argRegs, pbkFrameSat, pbkSat] using pbkFrameSat
 
 theorem sha512_224_coreOK : CoreOK (coreH 28) := coreOK 28 (Or.inl rfl)
 
@@ -287,6 +307,7 @@ def sha512_224 (v : Compress) : MdHash :=
     (by
       unfold Spec.Hmac.Instance.finalizeContract Spec.Hmac.finalizeContract
       exact AArch64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
+    (by decide) sha512_224_satPF
     v.suffix v.features
 
 /-! ## SHA-512/256 -/
@@ -304,10 +325,16 @@ theorem sha512_256_satT : ∃ s, (Spec.Hmac.sha512_256I.iterateContract AArch64.
     Spec.Pbkdf2.iterateSig, Spec.Hmac.sha512_256S, Spec.Hmac.sha512_256, AArch64.abi, AArch64.argRegs] using
     Pbkdf2.AArch64.iterSat 192 32 234
 
-theorem sha512_256_satP : ∃ s, (Spec.Hmac.sha512_256I.pbkdf2Contract AArch64.abi 16).pre s := by
-  inst_sat [Spec.Hmac.Instance.pbkdf2Contract, Spec.Hmac.Instance.pbkdf2Scratch, Spec.Hmac.sha512_256I,
-    Spec.Pbkdf2.pbkdf2Contract, Spec.Pbkdf2.pbkdf2Sig, Spec.Hmac.sha512_256S, Spec.Hmac.sha512_256, AArch64.abi,
+theorem sha512_256_satP : ∃ s, (Spec.Hmac.sha512_256I.pbkdf2ScratchContract AArch64.abi 16).pre s := by
+  inst_sat [Spec.Hmac.Instance.pbkdf2ScratchContract, Spec.Hmac.Instance.pbkdf2Scratch, Spec.Hmac.sha512_256I,
+    Spec.Pbkdf2.pbkdf2ScratchContract, Spec.Pbkdf2.pbkdf2ScratchSig, Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post, Spec.Hmac.sha512_256S, Spec.Hmac.sha512_256, AArch64.abi,
     AArch64.argRegs] using pbkSat 426
+
+theorem sha512_256_satPF :
+    ∃ s, (Spec.Hmac.sha512_256I.pbkdf2Contract AArch64.abi (16 + pbkdf2Frame Spec.Hmac.sha512_256I)).pre s := by
+  inst_sat [Spec.Hmac.Instance.pbkdf2Contract, pbkdf2Frame, Spec.Hmac.Instance.pbkdf2Scratch, Spec.Hmac.sha512_256I,
+    Spec.Pbkdf2.pbkdf2Contract, Spec.Pbkdf2.pbkdf2Sig, Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post, Spec.Hmac.sha512_256S, Spec.Hmac.sha512_256, AArch64.abi,
+    AArch64.argRegs, pbkFrameSat, pbkSat] using pbkFrameSat
 
 theorem sha512_256_coreOK : CoreOK (coreH 32) := coreOK 32 (Or.inr (Or.inl rfl))
 
@@ -322,6 +349,7 @@ def sha512_256 (v : Compress) : MdHash :=
     (by
       unfold Spec.Hmac.Instance.finalizeContract Spec.Hmac.finalizeContract
       exact AArch64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
+    (by decide) sha512_256_satPF
     v.suffix v.features
 
 end VG.Proof.Pbkdf2.Md.AArch64.Sha512

@@ -7,7 +7,7 @@ This extends the checked scalar analysis without changing its domain or
 agreement relation. SIMD values are secret, and register-only SIMD operations
 cannot change any general-purpose register, flag or memory. Loads must use
 public addresses; stores use the existing checked secret-store rule for sixteen
-bytes.
+bytes (eight for `movq`).
 -/
 namespace VG.X86.SseTaint
 open VG.X86.Taint
@@ -26,6 +26,8 @@ theorem agree_withXmm {τ : T} {s₁ s₂ : State} (ha : Agree τ s₁ s₂)
 def step (τ : T) : Instr → Option T
   | .movdquLoad _ m => if memPub τ m then some τ else none
   | .movdquStore m _ => storeStepK τ m 16 false []
+  | .movqLoad _ m => if memPub τ m then some τ else none
+  | .movqStore m _ => storeStepK τ m 8 false []
   | .xop _ => some τ
   | i => Taint.stepK τ i
 
@@ -55,6 +57,25 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State}
     rename_i h₁ h₂
     cases e₁; cases e₂
     exact ha.store (n := 16) hm (by decide) (fun hp => by cases hp) h₁ h₂
+      (fun _ h => (List.not_mem_nil h).elim) (fun _ h => (List.not_mem_nil h).elim)
+  | movqLoad d m =>
+    simp only [step] at hs
+    split at hs <;> [skip; cases hs]
+    rename_i hm; cases hs
+    simp only [exec, Option.map_eq_some_iff] at e₁ e₂
+    obtain ⟨v₁, -, rfl⟩ := e₁; obtain ⟨v₂, -, rfl⟩ := e₂
+    exact ⟨by simp only [addrs, ha.ea hm], agree_withXmm ha _ _⟩
+  | movqStore m r =>
+    simp only [step, storeStepK_eq, storeStep] at hs
+    split at hs <;> [skip; cases hs]
+    rename_i hm; cases hs
+    refine ⟨by simp only [addrs, ha.ea hm], ?_⟩
+    simp only [exec, State.store64] at e₁ e₂
+    split at e₁ <;> [skip; cases e₁]
+    split at e₂ <;> [skip; cases e₂]
+    rename_i h₁ h₂
+    cases e₁; cases e₂
+    exact ha.store (n := 8) hm (by decide) (fun hp => by cases hp) h₁ h₂
       (fun _ h => (List.not_mem_nil h).elim) (fun _ h => (List.not_mem_nil h).elim)
   | xop op =>
     simp only [step, Option.some.injEq] at hs

@@ -3,17 +3,21 @@ import VerifiedGarbage.Proof.Framework.Arm.StackScratch
 import VerifiedGarbage.Proof.Framework.Arm.RegScratch
 
 /-!
-# AES-GCM's key setup and streaming start on ARMv7, with their working space on the stack
+# AES-GCM's key setup and streaming functions on ARMv7, with their working space on the stack
 
-`init`, `stream_init` and `stream_aad` run their code, proved with the
-working space as an argument (`Verified.lean`), in a frame that allocates it.
+`init`, `stream_init`, `stream_aad`, `stream_encrypt` and `stream_decrypt` run
+their code, proved with the working space as an argument (`Verified.lean`),
+in a frame that allocates it.
 `init`'s working space is its fourth argument, in `r3`: its frame is the 2560
 bytes of working space (`Verified.regScratch`). That of `stream_init` and
 `stream_aad` is passed on the stack: their frames of 2576 bytes hold the
 copies of the other arguments passed on the stack (none for `stream_init`,
 `data` and `len` for `stream_aad`), the buffer's address and the saved `lr`
-too (`Verified.stackScratch`). The copies are read only where the
-postconditions read the buffers (`Proof/AesGcm/Scratch.lean`).
+too (`Verified.stackScratch`); so do the frames of 2592 bytes of
+`stream_encrypt` and `stream_decrypt`, with copies of their six words of
+stack arguments (`aad_len`, `text_len`, `data` and `len`). The copies are
+read only where the pre- and postconditions read the buffers
+(`Proof/AesGcm/Scratch.lean`).
 -/
 
 namespace VG.Proof.AesGcm.Arm
@@ -77,5 +81,42 @@ theorem streamAad_framed :
     (m := 2) streamAad_verified (by decide) (by decide) (by decide) (by decide)
     (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (streamAadPost_local _)
     streamAadFrameSat_pre
+
+/-- A state satisfying the preconditions of `vg_aes_gcm_stream_encrypt` and
+`vg_aes_gcm_stream_decrypt`, without the working space: their six words of
+stack arguments at `0x8000`. -/
+def crFrameSat : State :=
+  mkSat (fun r => match r with | .r0 => 0x1000 | .r1 => 10 | .r2 => 0x3000 | _ => 0)
+    [⟨0x1000, 256⟩, ⟨0x8000, 24⟩] [⟨0x3000, 80⟩, ⟨0, 0⟩]
+
+theorem streamEncryptFrameSat_pre : ∃ s, (Spec.Gcm.streamEncryptContract Arm.abi 2600).pre s := by
+  implies_sat [Spec.Gcm.streamEncryptContract, Spec.Gcm.streamCryptSig, Spec.Gcm.streamTextPre,
+    Spec.Gcm.streamEncryptPost, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
+    [crFrameSat, mkSat, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read]
+    using crFrameSat
+
+theorem streamEncrypt_framed :
+    Verified Arm.target (Impl.StackScratch.Arm.withStackScratch 2592 6 streamEncrypt)
+      (Spec.Gcm.streamEncryptContract Arm.abi 2600) :=
+  Arm.Verified.stackScratch (sig := Spec.Gcm.streamCryptSig) (nm := "scratch") (e := .u64)
+    (n := 320) (pre := Spec.Gcm.streamTextPre Arm.abi.ptrBits)
+    (post := Spec.Gcm.streamEncryptPost Arm.abi.ptrBits) (wa := true) (stack := 8)
+    (m := 6) streamEncrypt_verified (by decide) (by decide) (by decide) (by decide)
+    (streamTextPre_local _) (streamEncryptPost_local _) streamEncryptFrameSat_pre
+
+theorem streamDecryptFrameSat_pre : ∃ s, (Spec.Gcm.streamDecryptContract Arm.abi 2600).pre s := by
+  implies_sat [Spec.Gcm.streamDecryptContract, Spec.Gcm.streamCryptSig, Spec.Gcm.streamTextPre,
+    Spec.Gcm.streamDecryptPost, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
+    [crFrameSat, mkSat, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read]
+    using crFrameSat
+
+theorem streamDecrypt_framed :
+    Verified Arm.target (Impl.StackScratch.Arm.withStackScratch 2592 6 streamDecrypt)
+      (Spec.Gcm.streamDecryptContract Arm.abi 2600) :=
+  Arm.Verified.stackScratch (sig := Spec.Gcm.streamCryptSig) (nm := "scratch") (e := .u64)
+    (n := 320) (pre := Spec.Gcm.streamTextPre Arm.abi.ptrBits)
+    (post := Spec.Gcm.streamDecryptPost Arm.abi.ptrBits) (wa := true) (stack := 8)
+    (m := 6) streamDecrypt_verified (by decide) (by decide) (by decide) (by decide)
+    (streamTextPre_local _) (streamDecryptPost_local _) streamDecryptFrameSat_pre
 
 end VG.Proof.AesGcm.Arm

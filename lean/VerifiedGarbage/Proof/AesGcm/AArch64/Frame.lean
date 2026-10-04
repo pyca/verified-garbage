@@ -2,11 +2,12 @@ import VerifiedGarbage.Proof.AesGcm.AArch64.Verified
 import VerifiedGarbage.Proof.Framework.AArch64.StackScratch
 
 /-!
-# AES-GCM's key setup and streaming start on AArch64, with their working space on the stack
+# AES-GCM's key setup and streaming functions on AArch64, with their working space on the stack
 
-`init`, `stream_init` and `stream_aad` run their code, proved with the
-working space as an argument (`Verified.lean`), in a frame of 2560 bytes that
-allocates it (`Verified.stackScratch`).
+`init`, `stream_init`, `stream_aad`, `stream_encrypt` and `stream_decrypt`
+run their code, proved with the working space as an argument
+(`Verified.lean`), in a frame of 2560 bytes that allocates it
+(`Verified.stackScratch`).
 -/
 
 namespace VG.Proof.AesGcm.AArch64
@@ -60,5 +61,37 @@ theorem streamAad_framed (v : GcmImpl) :
   AArch64.Verified.stackScratch (sig := Spec.Gcm.streamAadSig) (nm := "scratch") (e := .u64)
     (n := 320) (post := Spec.Gcm.streamAadPost AArch64.abi.ptrBits) (wa := true) (stack := 0)
     (bytes := 2560) (streamAad_verified v) (by decide) (by decide) streamAadFrameSat_pre
+
+/-- A state satisfying the preconditions of `vg_aes_gcm_stream_encrypt` and
+`vg_aes_gcm_stream_decrypt`, without the working space. -/
+def streamCryptFrameSat : State := { streamCryptSat with wr := [⟨0x3000, 80⟩, ⟨0x2000, 0⟩] }
+
+theorem streamEncryptFrameSat_pre : ∃ s, (Spec.Gcm.streamEncryptContract AArch64.abi 2560).pre s := by
+  implies_sat [Spec.Gcm.streamEncryptContract, Spec.Gcm.streamCryptSig, Spec.Gcm.streamTextPre,
+    Spec.Gcm.streamEncryptPost, AArch64.abi, AArch64.argRegs] [streamCryptFrameSat, streamCryptSat]
+    using streamCryptFrameSat
+
+theorem streamDecryptFrameSat_pre : ∃ s, (Spec.Gcm.streamDecryptContract AArch64.abi 2560).pre s := by
+  implies_sat [Spec.Gcm.streamDecryptContract, Spec.Gcm.streamCryptSig, Spec.Gcm.streamTextPre,
+    Spec.Gcm.streamDecryptPost, AArch64.abi, AArch64.argRegs] [streamCryptFrameSat, streamCryptSat]
+    using streamCryptFrameSat
+
+theorem streamEncrypt_framed (v : GcmImpl) :
+    Verified AArch64.target
+      (Impl.StackScratch.AArch64.withStackScratch 2560 .x7 (streamEncrypt v.callees))
+      (Spec.Gcm.streamEncryptContract AArch64.abi 2560) :=
+  AArch64.Verified.stackScratch (sig := Spec.Gcm.streamCryptSig) (nm := "scratch") (e := .u64)
+    (n := 320) (pre := Spec.Gcm.streamTextPre AArch64.abi.ptrBits)
+    (post := Spec.Gcm.streamEncryptPost AArch64.abi.ptrBits) (wa := true) (stack := 0)
+    (bytes := 2560) (streamEncrypt_verified v) (by decide) (by decide) streamEncryptFrameSat_pre
+
+theorem streamDecrypt_framed (v : GcmImpl) :
+    Verified AArch64.target
+      (Impl.StackScratch.AArch64.withStackScratch 2560 .x7 (streamDecrypt v.callees))
+      (Spec.Gcm.streamDecryptContract AArch64.abi 2560) :=
+  AArch64.Verified.stackScratch (sig := Spec.Gcm.streamCryptSig) (nm := "scratch") (e := .u64)
+    (n := 320) (pre := Spec.Gcm.streamTextPre AArch64.abi.ptrBits)
+    (post := Spec.Gcm.streamDecryptPost AArch64.abi.ptrBits) (wa := true) (stack := 0)
+    (bytes := 2560) (streamDecrypt_verified v) (by decide) (by decide) streamDecryptFrameSat_pre
 
 end VG.Proof.AesGcm.AArch64

@@ -564,7 +564,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>❌</td>
+<td>✅ AES-NI, VAES, PCLMULQDQ, VPCLMULQDQ, AVX2</td>
 
 <td>❌</td>
 

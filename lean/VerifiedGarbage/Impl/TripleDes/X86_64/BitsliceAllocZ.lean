@@ -69,9 +69,17 @@ def sortBy (key : Nat → Nat) : List Nat → List Nat
     let ys := sortBy key xs
     (ys.filter fun y => key y < key x) ++ x :: ys.filter fun y => key x ≤ key y
 
-/-- How many gates read each variable, plus one for each output. -/
+/-- How many gates read each variable, plus one for each output: the count
+of variable `v` in the 8-bit field `v` (a circuit has fewer than 256 gates),
+counted once, in one number, which the kernel reads in two operations
+rather than comparing variables again for every gate. -/
+def useTable (gs : List Gate) (outs : List Nat) : Nat :=
+  let add (t v : Nat) : Nat := t + 2 ^ (8 * v)
+  outs.foldl add (gs.foldl (fun t g => (gateIns g).foldl add t) 0)
+
+/-- How many gates read variable `v`, plus one if it is an output. -/
 def uses (gs : List Gate) (outs : List Nat) (v : Nat) : Nat :=
-  (gs.filter fun g => (gateIns g).contains v).length + (outs.filter (· == v)).length
+  (useTable gs outs >>> (8 * v)) % 256
 
 /-- Fuse the gates: each gate's function, and the gates absorbed into others. -/
 def fuseAll (gs : List Gate) (outs : List Nat) : List (Nat × Fn) × List Nat :=
@@ -123,8 +131,13 @@ def slotOf (a : Alloc) (v : Nat) : Option Nat := (a.slots.find? (·.2 == v)).map
 
 def usesVar (v : Nat) (g : TGate) : Bool := g.f.ins.contains v
 
+/-- The variables the gates read, as a set of bits, which the kernel builds
+once for each gate's `rest` rather than comparing variables for each query. -/
+def readSet (rest : List TGate) : Nat :=
+  rest.foldl (fun t g => g.f.ins.foldl (fun t v => t ||| 2 ^ v) t) 0
+
 def live (rest : List TGate) (outs : List Nat) (v : Nat) : Bool :=
-  outs.contains v || rest.any (usesVar v)
+  outs.contains v || (readSet rest).testBit v
 
 def nextUse (rest : List TGate) (outs : List Nat) (v : Nat) : Nat :=
   match rest.findIdx? (usesVar v) with

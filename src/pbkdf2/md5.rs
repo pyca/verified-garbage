@@ -25,6 +25,5 @@ super::whole_pbkdf2!(
     Md5 (Md5Backend) {
         Scalar => vg_pbkdf2_hmac_md5,
     },
-    scratch: 128,
     output: 16,
 );

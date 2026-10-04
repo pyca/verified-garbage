@@ -217,14 +217,24 @@ pub(crate) unsafe extern "C" fn vg_pbkdf2_hmac_sha224_iterate(key: *const [u8; 1
 /// * `password` must be valid for reads of `password_len` bytes.
 /// * `salt` must be valid for reads of `salt_len` bytes.
 /// * `out` must be valid for reads and writes of `out_len` bytes.
-/// * `scratch` must be valid for reads and writes of 1600 bytes.
 /// * `c` must be positive, and `out_len` at most `(2^32 - 1) * 28`.
-/// * The contents of `scratch` on return are unspecified.
-/// * `out` and `scratch` must not overlap each other, `password`, `salt` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `password`, `salt`, `out` and `scratch` may overlap the 24 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * `out` must not overlap `password`, `salt` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `password`, `salt` and `out` may overlap the 1656 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_pbkdf2_hmac_sha224(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, c: u32, out: *mut u8, out_len: usize, scratch: *mut [u64; 200]) {
+pub(crate) unsafe extern "C" fn vg_pbkdf2_hmac_sha224(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, c: u32, out: *mut u8, out_len: usize) {
     core::arch::naked_asm!(
+        "sub sp, sp, #1632",
+        "add r12, sp, #0",
+        "str lr, [r12, #16]",
+        "ldr lr, [sp, #1632]",
+        "str lr, [r12, #0]",
+        "ldr lr, [sp, #1636]",
+        "str lr, [r12, #4]",
+        "ldr lr, [sp, #1640]",
+        "str lr, [r12, #8]",
+        "add lr, sp, #20",
+        "str lr, [r12, #12]",
+        "ldr lr, [sp, #16]",
         "ldr r12, [sp, #12]",
         "str r4, [r12, #832]",
         "str r5, [r12, #836]",
@@ -409,6 +419,7 @@ pub(crate) unsafe extern "C" fn vg_pbkdf2_hmac_sha224(password: *const u8, passw
         "ldr r10, [r11, #856]",
         "ldr lr, [r11, #860]",
         "ldr r11, [r11, #864]",
+        "add sp, sp, #1632",
         "bx lr",
         vg_sha224_init = sym super::sha256::vg_sha224_init,
         vg_sha256_update_scratch = sym super::sha256::vg_sha256_update_scratch,

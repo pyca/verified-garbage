@@ -151,7 +151,7 @@ const MAX_AAD: u64 = (1 << 61) - 1;
 /// any way; one enum of the instances keeps every `match` exhaustive over
 /// exactly the functions that exist.)
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum Backend {
+pub(crate) enum Backend {
     /// The baseline ISA: `vg_aes_ctr32`, `vg_aes_expand_key` and `vg_ghash`.
     Scalar,
     /// AES-NI for AES: the `_aesni` instances.
@@ -231,6 +231,9 @@ macro_rules! instance {
         }
     };
 }
+// `aes_gcm_siv` (only on x86-64 so far) chooses its instances with it too.
+#[cfg(target_arch = "x86_64")]
+pub(crate) use instance;
 
 /// The features of the baseline ISA: none.
 const BASELINE: Features = Features(0);
@@ -238,7 +241,7 @@ const BASELINE: Features = Features(0);
 impl Backend {
     /// Every implementation, best first, with the features it needs
     /// (computed at compile time, so that choosing one compares bit sets).
-    const ALL: &[(Backend, Features)] = &[
+    pub(crate) const ALL: &[(Backend, Features)] = &[
         #[cfg(target_arch = "x86_64")]
         (
             Backend::VaesVpclmulAvx512,
@@ -282,7 +285,7 @@ impl Backend {
 }
 
 /// The best implementation a CPU with the features `f` can run.
-fn select(f: Features) -> Backend {
+pub(crate) fn select(f: Features) -> Backend {
     let best = Backend::ALL.iter().find(|(_, need)| f.contains(*need));
     best.map_or(Backend::Scalar, |(b, _)| *b)
 }
@@ -680,12 +683,8 @@ impl<'a, const DECRYPT: bool> Stream<'a, DECRYPT> {
                 avx: [vg_aes_gcm_stream_encrypt_aesni_pclmul_avx],
                 aarch64: [vg_aes_gcm_stream_encrypt_aes])
         };
-        let mut scratch = MaybeUninit::<[u64; 320]>::uninit();
         // SAFETY: as in `new`, with `data` valid for reads and writes of
-        // `data.len()` bytes (a unique borrow, so it overlaps nothing else),
-        // and `scratch` (a local, so it overlaps nothing else either) of 2560
-        // bytes: it is only working space, and the contract's result does
-        // not depend on what it holds, so it may be uninitialized;
+        // `data.len()` bytes (a unique borrow, so it overlaps nothing else);
         // `self.state` represents a message with `self.aad_len` bytes of
         // additional data and `self.text_len` of text.
         unsafe {
@@ -697,7 +696,6 @@ impl<'a, const DECRYPT: bool> Stream<'a, DECRYPT> {
                 self.text_len,
                 data.as_mut_ptr(),
                 data.len(),
-                scratch.as_mut_ptr(),
             )
         };
         self.text_len = text_len;
