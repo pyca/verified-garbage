@@ -406,4 +406,113 @@ theorem preB_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv mp : BitVec 
     (by decide) (by decide) (by decide) (by decide) (by omega)]
   exact ho₁.wv (by omega) (by omega)
 
+/-- A prime's part of `pre`'s result: `R_X` in its `aY`, `x R_X` in its `aXc`. -/
+structure PrimeRdy (t : State) (B : Addr) (o wx : Nat) (mx : BitVec 64) (N X C : Nat) : Prop where
+  ws : WsAt t.mem B o wx mx
+  x : XVals t B o wx mx X
+  ylt : wv t.mem (off B o) (slot wx Public.aY) wx < X
+  yv : X ∣ N → wv t.mem (off B o) (slot wx Public.aY) wx % X = 2 ^ (64 * wx) % X
+  clt : wv t.mem (off B o) (slot wx aXc) wx < X
+  cv : X ∣ N → wv t.mem (off B o) (slot wx aXc) wx % X = C * 2 ^ (64 * wx) % X
+
+theorem PrimeRdy.of_disj {s t : State} {B : Addr} {o wx : Nat} {mx : BitVec 64} {N X C : Nat}
+    {rs : List (Nat × Nat)} (h : PrimeRdy s B o wx mx N X C) (hf : Frm B rs s.mem t.mem)
+    (hr : ∀ r ∈ rs, r.1 + r.2 ≤ o ∨ o + slot wx 8 ≤ r.1) (ho : o + slot wx 8 ≤ 2 ^ 64) :
+    PrimeRdy t B o wx mx N X C := by
+  have h17 : 8 * 17 ≤ slot wx 8 := by unfold slot hdrBytes; omega
+  refine ⟨h.ws.of_disj hf (fun r hr' => by rcases hr r hr' with h | h <;> omega) (by omega),
+    h.x.of_disj hf hr ho, ?_, fun hd => ?_, ?_, fun hd => ?_⟩
+  · rw [wvX_disj hf hr ho (by decide)]; exact h.ylt
+  · rw [wvX_disj hf hr ho (by decide)]; exact h.yv hd
+  · rw [wvX_disj hf hr ho (by decide)]; exact h.clt
+  · rw [wvX_disj hf hr ho (by decide)]; exact h.cv hd
+
+/-- `pre`: `G` in `n`'s `aX`, and both primes ready. -/
+theorem pre_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv mp mq : BitVec 64} {N P Q C op wp oq : Nat}
+    (hg : Good s B Z w minv) (hw : 8 ≤ w) (hw28 : w < 2 ^ 28) (hlo : slot w 8 ≤ op)
+    (hpq : op + slot wp 8 + tabBytes wp ≤ oq) (hoq : oq + slot wp 8 + tabBytes wp ≤ Z) (hwp2 : 2 ≤ wp)
+    (hwp : wp ≤ w) (hsp : word s.mem B (8 * sWsP) = off B op) (hsq : word s.mem B (8 * sWsQ) = off B oq)
+    (hwsp : WsAt s.mem B op wp mp) (hwsq : WsAt s.mem B oq wp mq)
+    (hN : NVals s B w minv N) (hodd : N % 2 = 1) (hN1 : 1 < N)
+    (hXm : wv s.mem B (slot w Public.aXm) w % N = C * 2 ^ (64 * w) % N)
+    (hP : XVals s B op wp mp P) (hP1 : 1 < P) (hPodd : P % 2 = 1)
+    (hQ : XVals s B oq wp mq Q) (hQ1 : 1 < Q) (hQodd : Q % 2 = 1) :
+    WP isa (seqs (VG.Impl.Rsa.X86_64.CrtIfma.pre M.mm)) s fun t => Good t B Z w minv ∧ NVals t B w minv N ∧
+      PrimeRdy t B op wp mp N P C ∧ PrimeRdy t B oq wp mq N Q C ∧
+      wv t.mem B (slot w Public.aX) w < N ∧
+      wv t.mem B (slot w Public.aX) w % N = 2 ^ (64 * wp * (nChunks w wp + 1)) % N ∧
+      Frm B (preRanges w op wp oq wp) s.mem t.mem ∧ Keep mmRegs s t := by
+  have hs := hg.scr
+  have hn := hs.nowrap
+  have h8 := hdr_lt_slot w 8 (show 31 < 32 by decide)
+  have hX8 : 256 ≤ slot wp 8 := by unfold slot hdrBytes; omega
+  have hz : B.toNat + slot w 8 ≤ 2 ^ 64 := by omega
+  have lX := slot_le (w := w) (show Public.aX < 8 by decide)
+  have lM := slot_le (w := w) (show Public.aXm < 8 by decide)
+  have sXM := slot_sep (w := w) (show Public.aX ≠ Public.aXm by decide)
+  have hXh := hdr_lt_slot w Public.aX (show 31 < 32 by decide)
+  have hgl := gRanges_lt w
+  rw [pre_eq, ← List.append_assoc]
+  -- `G` into `aY` and `aX`.
+  refine wp_seqs_append (by simp [Crt.gPow, copyArr]) (by simp [copyArr, prepCode])
+    (WP.mono (preA_ok M hg hw hw28 (by omega) hoq hwp2 hwp hsq hwsq hN hodd hN1)
+      fun s₁ ⟨hg₁, hN₁, hYl₁, hYv₁, hXY₁, fA, kA⟩ => ?_)
+  have hA : ∀ r ∈ gRanges w ++ [(slot w Public.aX, 8 * (w + 2))], r.1 + r.2 ≤ slot w 8 := fun r hr => by
+    rcases List.mem_append.mp hr with hr | hr
+    · exact (hgl r hr).2
+    · rw [List.mem_singleton.mp hr]; simp only; omega
+  have hAd : ∀ {o}, slot w 8 ≤ o → ∀ r ∈ gRanges w ++ [(slot w Public.aX, 8 * (w + 2))],
+      r.1 + r.2 ≤ o ∨ o + slot wp 8 ≤ r.1 := fun ho r hr => .inl (by have := hA r hr; omega)
+  have hsq₁ : word s₁.mem B (8 * sWsQ) = off B oq := by
+    rw [gRanges_hdr fA (fun r hr => by rw [List.mem_singleton.mp hr]; simp only [hdrBytes]; omega) (by decide)
+      (by decide) (by decide) (by unfold sWsQ sFn; omega)]; exact hsq
+  have hsp₁ : word s₁.mem B (8 * sWsP) = off B op := by
+    rw [gRanges_hdr fA (fun r hr => by rw [List.mem_singleton.mp hr]; simp only [hdrBytes]; omega) (by decide)
+      (by decide) (by decide) (by unfold sWsP sFn; omega)]; exact hsp
+  have hXm₁ : wv s₁.mem B (slot w Public.aXm) w % N = C * 2 ^ (64 * w) % N := by
+    rw [gRanges_arr fA (fun r hr => by rw [List.mem_singleton.mp hr]; simp only; omega) (by decide)
+      (by decide) (by decide) (by decide) (by omega)]; exact hXm
+  -- `q`.
+  refine wp_seqs_append (by simp [prepCode]) (by simp [copyArr, prepCode])
+    (WP.mono (prep_ok (C := C) M hg₁ hw hw28 (by omega) hoq hwp2 hwp (by decide) (by decide) (by decide) hsq₁
+      (hwsq.of_disj fA (fun r hr => by rcases hAd (o := oq) (by omega) r hr with h | h <;> omega) (by omega))
+      hN₁ hodd hXm₁ (hQ.of_disj fA (hAd (by omega)) (by omega)) hQ1 hQodd hYl₁ hYv₁)
+      fun s₂ ⟨hg₂, hwsq₂, hQ₂, hqy, hqyv, hqx, hqxv, hN₂, fQ, kQ⟩ => ?_)
+  have hQd : ∀ r ∈ gRanges w ++ [xRange oq wp], r.1 + r.2 ≤ op ∨ op + slot wp 8 ≤ r.1 := fun r hr => by
+    rcases List.mem_append.mp hr with hr | hr
+    · exact .inl (by have := (hgl r hr).2; omega)
+    · rw [List.mem_singleton.mp hr]; exact .inr (by simp only [xRange]; omega)
+  have hsp₂ : word s₂.mem B (8 * sWsP) = off B op := by
+    rw [gRanges_hdr fQ (fun r hr => by rw [List.mem_singleton.mp hr]; simp only [xRange, hdrBytes]; omega) (by decide)
+      (by decide) (by decide) (by unfold sWsP sFn; omega)]; exact hsp₁
+  have hX₂ : wv s₂.mem B (slot w Public.aX) w = wv s₁.mem B (slot w Public.aX) w :=
+    gRanges_arr fQ (fun r hr => by rw [List.mem_singleton.mp hr]; exact .inl (by simp only [xRange]; omega))
+      (by decide) (by decide) (by decide) (by decide) (by omega)
+  have hXm₂ : wv s₂.mem B (slot w Public.aXm) w % N = C * 2 ^ (64 * w) % N := by
+    rw [gRanges_arr fQ (fun r hr => by rw [List.mem_singleton.mp hr]; exact .inl (by simp only [xRange]; omega))
+      (by decide) (by decide) (by decide) (by decide) (by omega)]; exact hXm₁
+  have hP₁ := hP.of_disj fA (hAd (o := op) (by omega)) (by omega)
+  -- `p`.
+  refine WP.mono (preB_ok (C := C) M hg₂ hw hw28 hlo (by omega) hwp2 hwp hsp₂
+    ((hwsp.of_disj fA (fun r hr => by rcases hAd (o := op) (by omega) r hr with h | h <;> omega) (by omega)).of_disj
+      fQ (fun r hr => by rcases hQd r hr with h | h <;> omega) (by omega))
+    hN₂ hodd hXm₂ (hP₁.of_disj fQ hQd (by omega)) hP1 hPodd (by rw [hX₂, hXY₁]; exact hYl₁)
+    (by rw [hX₂, hXY₁]; exact hYv₁))
+    fun t ⟨hgt, hNt, hwspt, hPt, hpy, hpyv, hpx, hpxv, hXt, fB, kB⟩ => ?_
+  have hBd : ∀ r ∈ gRanges w ++ [xRange op wp], r.1 + r.2 ≤ oq ∨ oq + slot wp 8 ≤ r.1 := fun r hr => by
+    rcases List.mem_append.mp hr with hr | hr
+    · exact .inl (by have := (hgl r hr).2; omega)
+    · rw [List.mem_singleton.mp hr]; exact .inl (by simp only [xRange]; omega)
+  have hsub : ∀ {r : Nat × Nat} {x : Nat × Nat}, r ∈ gRanges w ++ [x] → x ∈ [(slot w Public.aX, 8 * (w + 2)),
+      xRange oq wp, xRange op wp] → r ∈ preRanges w op wp oq wp := fun hr hx => by
+    unfold preRanges
+    rcases List.mem_append.mp hr with hr | hr
+    · exact List.mem_append_left _ hr
+    · rw [List.mem_singleton.mp hr]; exact List.mem_append_right _ hx
+  refine ⟨hgt, hNt, ⟨hwspt, hPt, hpy, hpyv, hpx, hpxv⟩,
+    PrimeRdy.of_disj ⟨hwsq₂, hQ₂, hqy, hqyv, hqx, hqxv⟩ fB hBd (by omega), by rw [hXt, hX₂, hXY₁]; exact hYl₁,
+    by rw [hXt, hX₂, hXY₁]; exact hYv₁, ?_, (kA.trans kQ).trans kB |>.mono (by simp [mmRegs])⟩
+  exact ((fA.mono fun r hr => hsub hr (by simp)).trans (fQ.mono fun r hr => hsub hr (by simp))).trans
+    (fB.mono fun r hr => hsub hr (by simp))
+
 end VG.Proof.Bignum.X86_64
