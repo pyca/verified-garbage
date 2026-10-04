@@ -550,7 +550,7 @@ jobs:
               options: --platform linux/386
             install-amd64-libc: true
             runs: |
-              - | sha1 sha224 sha256 sha384 sha512 aes_gcm cmac chacha20 mlkem scrypt x25519 ed25519 cpu
+              - | sha1 sha224 sha256 sha384 sha512 aes_gcm cmac chacha20 mlkem scrypt x25519 ed25519 ecdsa p256_sha cpu
               none | all
               aes | aes_gcm cpu
               pclmulqdq,ssse3 | aes_gcm cpu

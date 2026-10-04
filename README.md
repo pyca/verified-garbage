@@ -1042,7 +1042,7 @@ yours to keep:
 
 <td>❌</td>
 
-<td>❌</td>
+<td>✅ SHA extensions</td>
 
 </tr>
 
