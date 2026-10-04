@@ -164,7 +164,7 @@ yours to keep:
 
 <td>✅ lane complementing</td>
 
-<td>✅ SHA extensions; rounds unrolled, round constants as immediates</td>
+<td>✅ SHA extensions; rounds unrolled, round constants as immediates; whole blocks absorbed with the state in registers</td>
 
 <td>✅</td>
 
