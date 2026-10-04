@@ -29,7 +29,8 @@ theorem ctrs_ok {K W SP : Addr} {s : State} (E : Env K W SP s) {R : Nat} {N A D 
     {nl al n tl : Nat} (S : Slots W R N A D nl al n tl s.mem) (hN : Buf K W SP s N nl) (h7 : 7 ≤ nl)
     (h13 : nl ≤ 13) :
     WP isa ctrs s fun s' => Env K W SP s' ∧ Frame [⟨W + BitVec.ofNat 64 48, 16⟩] s.mem s'.mem ∧
-      bytesAt s'.mem (W + BitVec.ofNat 64 48) 16 = Spec.Ccm.ctrBlock (bytesAt s.mem N nl) 0 := by
+      bytesAt s'.mem (W + BitVec.ofNat 64 48) 16 = Spec.Ccm.ctrBlock (bytesAt s.mem N nl) 0 ∧
+      s'.rd = s.rd ∧ s'.wr = s.wr := by
   have h15 := E.r15
   have w₁ := E.perm.wW (show 48 + 8 ≤ 2560 by decide)
   have w₂ := E.perm.wW (show 56 + 8 ≤ 2560 by decide)
@@ -77,7 +78,8 @@ theorem ctrs_ok {K W SP : Addr} {s : State} (E : Env K W SP s) {R : Nat} {N A D 
       exact hN.w.sub_right (Lay.wSub (by decide))) (by omega)
   refine ⟨E₁.keep (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl <;> exact hg₂ _ (by decide) (by decide)) hrd₂ hwr₂, ?_, ?_⟩
+      rcases hr with rfl | rfl | rfl <;> exact hg₂ _ (by decide) (by decide)) hrd₂ hwr₂, ?_, ?_,
+    by rw [hrd₂, hrd₁], by rw [hwr₂, hwr₁]⟩
   · refine hfz.trans ?_
     rw [hm₂]
     exact writeBytes_frame _ _ _ (by
