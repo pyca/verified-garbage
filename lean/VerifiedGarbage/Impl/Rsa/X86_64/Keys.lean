@@ -274,7 +274,9 @@ def fail : Prog isa := seqs [zeroOut sDp sPl, zeroOut sDq sQl, zeroOut sQi sPl, 
 def head : List Instr :=
   [.mov .rcx (.mem (hdr sK)), .mov .r12 (.reg .rcx), .alu .add .r12 (.imm 7), .shift .shr .r12 3,
     .store (hdr sW) .r12] ++ setBases ++
-  [.store (hdr sStride) .rax, .mov .rax (.imm (BitVec.ofInt 32 (-1))), .store (hdr sMask) .rax]
+  [.mov .rax (.reg .r12), .alu .add .rax (.imm 2), .alu .add .rax (.reg .rax), .alu .add .rax (.reg .rax),
+    .alu .add .rax (.reg .rax), .store (hdr sStride) .rax, .mov .rax (.imm (BitVec.ofInt 32 (-1))),
+    .store (hdr sMask) .rax]
 
 /-- `p q` into the arrays 2 and 3 (`2 w + 2` words), then the mask of
 `p q = n` and'ed into `sMask`. -/
