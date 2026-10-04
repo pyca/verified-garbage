@@ -8,6 +8,7 @@
 
 use serde::Deserialize;
 use verified_garbage::ecdsa::{Error, P256, VerifyingKey};
+use verified_garbage::hashes::sha256::Sha256;
 
 use crate::harness::{self, Expectation, Hex};
 use crate::require_vectors;
@@ -47,7 +48,7 @@ fn ecdsa_secp256r1_sha256_p1363_test() {
             assert_eq!(test.result, Expectation::Invalid, "tcId {}", test.tc_id);
             continue;
         };
-        let result = key.verify_sha256(&test.case.msg.0, &sig);
+        let result = key.verify::<Sha256>(&test.case.msg.0, &sig);
         match test.result {
             Expectation::Valid => {
                 assert_eq!(result, Ok(()), "tcId {}", test.tc_id);

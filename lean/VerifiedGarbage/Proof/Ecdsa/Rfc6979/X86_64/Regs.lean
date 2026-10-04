@@ -83,11 +83,11 @@ theorem toNat_add_of {p : Addr} {d : Nat} (h : p.toNat + d < 2 ^ 64) :
   rw [Offset.toNat_add_ofNat, Nat.mod_eq_of_lt (a := d) (by omega), Nat.mod_eq_of_lt h]
 
 /-- The stack below `rsp` a call nested `n / 8 - 1` deep uses, within the 24 bytes below the frame. -/
-theorem Ctx.below_sub {L : Lay} {g : Reg → BitVec 64} {m₀ : Mem} {u : State} (hc : Ctx L g m₀ u) {n : Nat}
+theorem Ctx.below_sub {dn : Nat} {L : Lay dn} {g : Reg → BitVec 64} {m₀ : Mem} {u : State} (hc : Ctx L g m₀ u) {n : Nat}
     (hn : n ≤ 24) : Region.Sub (below (u.gpr .rsp) n) ⟨L.B, 24⟩ := by
   rw [hc.rsp, ← below24]; exact VG.X86_64.below_sub hn (by omega)
 
-theorem Lay.Ok.low_scr {L : Lay} (h : L.Ok) {e k : Nat} (h₂ : e + k ≤ 8192) :
+theorem Lay.Ok.low_scr {dn : Nat} {L : Lay dn} (h : L.Ok) {e k : Nat} (h₂ : e + k ≤ 8192) :
     Region.Disjoint ⟨L.B, 24⟩ ⟨L.scr + BitVec.ofNat 64 e, k⟩ :=
   (h.kc.sub_left (Region.sub_prefix (by omega))).sub_right (Offset.sub_base _ h₂)
 
@@ -103,7 +103,7 @@ theorem WP.keepCs {c : Prog isa} {s : State} {Q : State → Prop} (h : WP isa c 
 
 /-- Code that keeps the permissions and the callee-saved registers, and
 writes only safe regions, keeps `Ctx`. -/
-theorem Ctx.of_keep {L : Lay} {g : Reg → BitVec 64} {m₀ : Mem} (hL : L.Ok) {t : State}
+theorem Ctx.of_keep {dn : Nat} {L : Lay dn} {g : Reg → BitVec 64} {m₀ : Mem} (hL : L.Ok) {t : State}
     (hc : Ctx L g m₀ t) {is : List Instr} {ws : List Region} {Q : State → Prop}
     (h : WP isa (.block is) t fun t' => t'.rd = t.rd ∧ t'.wr = t.wr ∧ Frame ws t.mem t'.mem ∧ Q t')
     (hk : (instrs (.block is : Prog isa)).all (fun i => calleeSaved.all fun r => !Taint.clobbers i r) = true)
@@ -116,14 +116,14 @@ theorem Ctx.of_keep {L : Lay} {g : Reg → BitVec 64} {m₀ : Mem} (hL : L.Ok) {
 
 /-- `u'` is `u` with only the caller-saved register `d` (and the flags)
 changed, to `v`. -/
-structure Upd (L : Lay) (g : Reg → BitVec 64) (m₀ : Mem) (u : State) (d : Reg) (v : BitVec 64)
+structure Upd {dn : Nat} (L : Lay dn) (g : Reg → BitVec 64) (m₀ : Mem) (u : State) (d : Reg) (v : BitVec 64)
     (u' : State) : Prop where
   ctx : Ctx L g m₀ u'
   mem : u'.mem = u.mem
   val : u'.gpr d = v
   keep : ∀ r, r ≠ d → u'.gpr r = u.gpr r
 
-variable {L : Lay} {g : Reg → BitVec 64} {m₀ : Mem}
+variable {dn : Nat} {L : Lay dn} {g : Reg → BitVec 64} {m₀ : Mem}
 
 theorem Ctx.set (hL : L.Ok) {u u' : State} (hc : Ctx L g m₀ u) {d : Reg} (hd : d ∉ calleeSaved)
     (hrd : u'.rd = u.rd) (hwr : u'.wr = u.wr) (hm : u'.mem = u.mem) (hk : ∀ r, r ≠ d → u'.gpr r = u.gpr r) :
@@ -134,11 +134,11 @@ theorem Ctx.set (hL : L.Ok) {u u' : State} (hc : Ctx L g m₀ u) {d : Reg} (hd :
 theorem scr_ok (hL : L.Ok) {u : State} (hc : Ctx L g m₀ u) {d : Reg} (hd : d ∉ calleeSaved) {a : Nat}
     (ha : a < 2 ^ 31) :
     WP isa (.block (Cfg.scr d a)) u (Upd L g m₀ u d (L.scr + BitVec.ofNat 64 a)) := by
-  have h128 := hc.inFr (d := 128) (by omega) (by omega)
+  have h192 := hc.inFr (d := 192) (by omega) (by omega)
   have hrsp : d ≠ .rsp := fun h => hd (h ▸ by decide)
   apply WP.of_runBlock
   simp only [Cfg.scr, fScratch, runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, readSrc,
-    State.load64, ea_stk, hc.rsp, Offset.add_add, Nat.reduceAdd, h128, ite_true, Option.map_some,
+    State.load64, ea_stk, hc.rsp, Offset.add_add, Nat.reduceAdd, h192, ite_true, Option.map_some,
     Option.bind_some, RegUpd.gpr_setReg_self, hc.pScr, sx32 ha, Option.some.injEq, exists_eq_left']
   refine ⟨hc.set hL hd rfl rfl rfl fun r hr => ?_, rfl, RegUpd.gpr_setReg_self _ _ _, fun r hr => ?_⟩
   · rw [RegUpd.gpr_setReg_of_ne _ _ hr, RegUpd.gpr_arithFlags, RegUpd.gpr_setReg_of_ne _ _ hr]
