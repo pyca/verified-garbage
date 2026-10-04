@@ -394,19 +394,20 @@ theorem xorSt_ok (s : State) {St : Addr} (hb : s.gpr .x1 = St) (r : InRegions (s
 theorem storeSt_ok (s : State) {St : Addr} (hb : s.gpr .x1 = St) (w : InRegions s.wr St 8) :
     ∃ s', runBlock isa [.rev .x5 .x5, .str .x .x5 .x1 0] s = some s' ∧
       s'.mem = s.mem.writeW St (byteRev64 (s.gpr .x5)) ∧
-      s'.sp = s.sp ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
+      s'.sp = s.sp ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ (∀ r, r ≠ .x5 → s'.gpr r = s.gpr r) := by
   let s₁ := s.write .x .x5 (rev64 (s.read .x .x5))
   have w' : InRegions s₁.wr (s₁.gpr .x1 + BitVec.ofNat 64 0) 8 := by
     rw [add_ofNat_zero, gpr_write_of_ne _ _ _ (by decide), hb]; exact w
   refine ⟨_, by
     rw [runBlock_cons, exec_rev, runStep_some, runBlock_cons, exec_str_x (by decide) w', runStep_some,
       runBlock_nil], ?_⟩
-  refine ⟨?_, rfl, rfl, rfl⟩
+  refine ⟨?_, rfl, rfl, rfl, fun r hr => gpr_write_of_ne _ _ _ hr⟩
   simp (config := {decide := true}) only [s₁, mem_write, State.read, gpr_write, ite_true, ite_false,
     BitVec.setWidth_eq, rev64_eq, hb, add_ofNat_zero]
 
 theorem finalize_wp {s₀ : State} (h0 : finalizeAArch64.pre s₀) :
-    WP isa finalize s₀ fun s' => finalizeAArch64.post s₀ s' := by
+    WP isa finalize s₀ fun s' =>
+      finalizeAArch64.post s₀ s' ∧ ∀ r ∈ savedRegs, s'.gpr r = s₀.gpr r := by
   have hp := FPre.of h0
   generalize hW : s₀.gpr .x0 = W at hp
   generalize hSt : s₀.gpr .x1 = St at hp
@@ -416,7 +417,8 @@ theorem finalize_wp {s₀ : State} (h0 : finalizeAArch64.pre s₀) :
   have sw := hp.scr_wrap
   have kw := hp.key_wrap
   have tw := hp.st_wrap
-  refine WP.seq (WP.mono (finPre_wp hp) fun s₁ h₁ => ?_)
+  refine WP.seq (WP.mono (WP.gprs (rs := savedRegs) (finPre_wp hp) (by lit_decide) (by lit_decide))
+    fun s₁ ⟨h₁, sv₁⟩ => ?_)
   have rdwr₁ : s₁.rd ++ s₁.wr = [⟨W, 400⟩, ⟨P, L⟩, ⟨St, 8⟩, ⟨S, 640⟩] := by rw [h₁.rd, h₁.wr, hp.rd, hp.wr]; rfl
   obtain ⟨s₂, run₂, ax₂, g₂, sp₂, m₂, rd₂, wr₂⟩ := xorSt_ok s₁ h₁.x1
     (by rw [rdwr₁]; exact in_rw (r := ⟨St, 8⟩) (by simp) (Region.contains_self _ _))
@@ -425,16 +427,21 @@ theorem finalize_wp {s₀ : State} (h0 : finalizeAArch64.pre s₀) :
     { sched := ⟨⟨W, 400⟩, by rw [rd₂, wr₂, h₁.rd, hp.rd]; simp, by rw [g₂ _ (by decide) (by decide), h₁.x14],
         by show 384 ≤ 400; decide, by show 400 < 2 ^ 64; decide⟩
       scr := ⟨⟨S, 640⟩, by rw [wr₂, h₁.wr, hp.wr]; simp, by rw [g₂ _ (by decide) (by decide), h₁.x15],
-        by show 384 ≤ 640; decide, by show 640 < 2 ^ 64; decide⟩
+        by show 456 ≤ 640; decide, by show 640 < 2 ^ 64; decide⟩
       disj := by
         rw [g₂ _ (by decide) (by decide), g₂ _ (by decide) (by decide), h₁.x14, h₁.x15]
         exact (hp.key_scr.symm.sub_left (Region.sub_prefix (by decide))).sub_right
           (Region.sub_prefix (by decide)) }
-  refine WP.seq (WP.mono (block_ok bp) fun s₃ ⟨same₃, x14₃, ax₃⟩ => ?_)
+  refine WP.seq (WP.mono (block_ok bp) fun s₃ ⟨same₃, x14₃, ax₃, sv₃⟩ => ?_)
   have x1₃ : s₃.gpr .x1 = St := by rw [same₃.keep .x1 (by simp [outer]), g₂ _ (by decide) (by decide), h₁.x1]
-  obtain ⟨s₄, run₄, m₄, sp₄, rd₄, wr₄⟩ := storeSt_ok s₃ x1₃
+  obtain ⟨s₄, run₄, m₄, sp₄, rd₄, wr₄, g₄⟩ := storeSt_ok s₃ x1₃
     (by rw [same₃.wr, wr₂, h₁.wr, hp.wr]; exact in_rw (r := ⟨St, 8⟩) (by simp) (Region.contains_self _ _))
-  refine WP.of_runBlock ⟨s₄, run₄, ?_⟩
+  refine WP.of_runBlock ⟨s₄, run₄, ⟨?_, fun r hr => ?_⟩⟩
+  rotate_right
+  · obtain ⟨i, hi, e⟩ := mem_savedRegs hr
+    subst e
+    have : ∀ i < 9, savedReg i ≠ .x5 ∧ savedReg i ≠ .x6 := by decide
+    rw [g₄ _ (this i hi).1, sv₃ i hi, g₂ _ (this i hi).1 (this i hi).2, sv₁ _ hr]
   intro hk msg hml hne hst
   rw [hW, hSt, hP, hL] at *
   have keyD (r : Region) (hr : Region.Sub r ⟨S, 640⟩) : (⟨W, 384⟩ : Region).Disjoint r :=

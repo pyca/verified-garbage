@@ -184,6 +184,22 @@ theorem frame_oCfg {s : State} {m m' : Mem} (h : Frame [slotRegion oCfg s] m m')
   exact h a fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr; simp [slotRegion, oCfg, Region.Contains]
 
+/-- The masks and their registers. -/
+def maskConsts : List (Reg × BitVec 64) :=
+  pGroups.zipIdx.map fun (g, k) => (maskReg k, BitVec.ofNat 64 g.2)
+
+/-- The mask registers hold the masks. -/
+def Masks (s : State) : Prop := ∀ r v, (r, v) ∈ maskConsts → s.gpr r = v
+
+/-- The mask registers are none of the round's others. -/
+theorem maskRegs_ne : ∀ p ∈ maskConsts, p.1 ≠ .x5 ∧ p.1 ≠ .x10 ∧ p.1 ≠ .x11 ∧ p.1 ≠ .x12 ∧
+    p.1 ≠ .x16 ∧ p.1 ≠ .x6 ∧ p.1 ≠ .x7 ∧ p.1 ≠ .x14 ∧ p.1 ≠ .x15 ∧ p.1 ≠ .x1 ∧ p.1 ≠ .x2 ∧
+    p.1 ≠ .x3 ∧ p.1 ≠ .x4 := by
+  lit_decide
+
+theorem Masks.congr {s s' : State} (h : Masks s) (hg : ∀ p ∈ maskConsts, s'.gpr p.1 = s.gpr p.1) :
+    Masks s' := fun r v hp => by rw [hg (r, v) hp]; exact h r v hp
+
 theorem ySrc_bound : ∀ p < 64, (ySrc p).all (· < 64) = true := by lit_decide
 
 theorem ySrc_lt {p q : Nat} (hp : p < 64) (h : ySrc p = some q) : q < 64 := by
@@ -201,11 +217,21 @@ def pG (p : Nat) : List Nat :=
   | none => [64 + p]
 
 theorem pOut11_check :
-    check (lanes 64 7) oCfg (linExt 2) (pOut .x11) (linEnv (pIns .x11)) (linPost 7 [(.x11, pG)]) = true := by
+    check (lanes 64 7) oCfg (linExt 2) (pOut .x11) (linEnvC (pIns .x11) maskConsts)
+      (linPost 7 [(.x11, pG)]) = true := by
   lit_decide
 
 theorem pOut12_check :
-    check (lanes 64 7) oCfg (linExt 2) (pOut .x12) (linEnv (pIns .x12)) (linPost 7 [(.x12, pG)]) = true := by
+    check (lanes 64 7) oCfg (linExt 2) (pOut .x12) (linEnvC (pIns .x12) maskConsts)
+      (linPost 7 [(.x12, pG)]) = true := by
+  lit_decide
+
+theorem pOut11_masks :
+    maskConsts.all (fun p => (pOut .x11).all fun i => dstOf i != some p.1) = true := by
+  lit_decide
+
+theorem pOut12_masks :
+    maskConsts.all (fun p => (pOut .x12).all fun i => dstOf i != some p.1) = true := by
   lit_decide
 
 /-- The registers `pOut` keeps. -/
@@ -220,29 +246,32 @@ theorem pOut12_kept : (.x11 :: pKept).all (fun r => (pOut .x12).all fun i => dst
 theorem pOut11_v : (pOut .x11).all (fun i => vdstOf i == none) = true := by lit_decide
 theorem pOut12_v : (pOut .x12).all (fun i => vdstOf i == none) = true := by lit_decide
 
-theorem pOut_ok (s : State) {a b : Reg} (hab : (a = .x11 ∧ b = .x12) ∨ (a = .x12 ∧ b = .x11)) :
+theorem pOut_ok (s : State) {a b : Reg} (hab : (a = .x11 ∧ b = .x12) ∨ (a = .x12 ∧ b = .x11))
+    (hm : Masks s) :
     ∃ s', runBlock isa (pOut a) s = some s' ∧
       (∀ p < 64, (s'.gpr a).getLsbD p =
         ((match ySrc p with | some q => (s.gpr .x5).getLsbD q | none => false) ^^ (s.gpr a).getLsbD p)) ∧
-      (∀ r ∈ b :: pKept, s'.gpr r = s.gpr r) ∧ s'.v = s.v ∧
+      (∀ r ∈ b :: pKept, s'.gpr r = s.gpr r) ∧ Masks s' ∧ s'.v = s.v ∧
       s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp := by
   let W (i : Nat) : BitVec 64 := if i = 0 then s.gpr .x5 else s.gpr a
-  have go : ∀ (hchk : check (lanes 64 7) oCfg (linExt 2) (pOut a) (linEnv (pIns a)) (linPost 7 [(a, pG)]) = true)
+  have go : ∀ (hchk : check (lanes 64 7) oCfg (linExt 2) (pOut a) (linEnvC (pIns a) maskConsts)
+        (linPost 7 [(a, pG)]) = true)
       (hkept : (b :: pKept).all (fun r => (pOut a).all fun i => dstOf i != some r) = true)
+      (hmk : maskConsts.all (fun p => (pOut a).all fun i => dstOf i != some p.1) = true)
       (hv : (pOut a).all (fun i => vdstOf i == none) = true),
       ∃ s', runBlock isa (pOut a) s = some s' ∧
       (∀ p < 64, (s'.gpr a).getLsbD p =
         ((match ySrc p with | some q => (s.gpr .x5).getLsbD q | none => false) ^^ (s.gpr a).getLsbD p)) ∧
-      (∀ r ∈ b :: pKept, s'.gpr r = s.gpr r) ∧ s'.v = s.v ∧
+      (∀ r ∈ b :: pKept, s'.gpr r = s.gpr r) ∧ Masks s' ∧ s'.v = s.v ∧
       s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp := by
-    intro hchk hkept hv
-    obtain ⟨s', hs', hout, hrd, hwr, hsp, hoth, hfr⟩ := linear_ok hchk (oCfg_ok s) W
+    intro hchk hkept hmk hv
+    obtain ⟨s', hs', hout, hrd, hwr, hsp, hoth, hfr⟩ := linear_okC hchk (oCfg_ok s) W
       (fun r i hri => by
         simp only [pIns, List.mem_cons, List.mem_nil_iff, Prod.mk.injEq, or_false] at hri
         rcases hri with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;> exact ⟨by decide, rfl⟩)
-      (fun j hj => absurd hj (by simp [oCfg]))
-    refine ⟨s', hs', fun p hp => ?_, fun r hr => hoth r (List.all_eq_true.mp hkept r hr), ?_, ?_,
-      hrd, hwr, hsp⟩
+      hm (fun j hj => absurd hj (by simp [oCfg]))
+    refine ⟨s', hs', fun p hp => ?_, fun r hr => hoth r (List.all_eq_true.mp hkept r hr),
+      hm.congr fun p hp => hoth p.1 (List.all_eq_true.mp hmk p hp), ?_, ?_, hrd, hwr, hsp⟩
     · rw [hout a pG (by simp) p hp, pG]
       split
       · rename_i q hq
@@ -256,8 +285,8 @@ theorem pOut_ok (s : State) {a b : Reg} (hab : (a = .x11 ∧ b = .x12) ∨ (a = 
     · exact runBlock_v hv hs'
     · exact frame_oCfg hfr
   rcases hab with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
-  · exact go pOut11_check pOut11_kept pOut11_v
-  · exact go pOut12_check pOut12_kept pOut12_v
+  · exact go pOut11_check pOut11_kept pOut11_masks pOut11_v
+  · exact go pOut12_check pOut12_kept pOut12_masks pOut12_v
 
 /-! ## The round -/
 
@@ -285,14 +314,14 @@ theorem posOf_lt : ∀ i < 8, ∀ q < 4, posOf i q < 8 := by decide
 /-- One round: `a := a ⊕ f(b, K)`, spread, with the spread round key at
 `x10`, moving it to the next. -/
 theorem round_ok {s : State} {a b : Reg} (hab : (a = .x11 ∧ b = .x12) ∨ (a = .x12 ∧ b = .x11))
-    (down : Bool) (hc : Consts s) (hk : InRegions (s.rd ++ s.wr) (s.gpr .x10) 8)
+    (down : Bool) (hc : Consts s) (hm : Masks s) (hk : InRegions (s.rd ++ s.wr) (s.gpr .x10) 8)
     {l r : BitVec 32} {K : BitVec 64} (hl : s.gpr a = spreadW l) (hr : s.gpr b = spreadW r)
     (hK : s.mem.readW (s.gpr .x10) 64 = spread K) :
     ∃ s', runBlock isa (round a b down) s = some s' ∧
       s'.gpr a = spreadW (l ^^^ Spec.TripleDes.roundFunction r (K.setWidth 48)) ∧
       s'.gpr .x10 = (if down then s.gpr .x10 - 8 else s.gpr .x10 + 8) ∧
       (∀ g ∈ b :: [.x1, .x2, .x3, .x4, .x14, .x15, .x16], s'.gpr g = s.gpr g) ∧
-      Consts s' ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp := by
+      Consts s' ∧ Masks s' ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp := by
   have hb5 : b ≠ .x5 := by rcases hab with ⟨-, rfl⟩ | ⟨-, rfl⟩ <;> decide
   have hb10 : b ≠ .x10 := by rcases hab with ⟨-, rfl⟩ | ⟨-, rfl⟩ <;> decide
   have ha5 : a ≠ .x5 := by rcases hab with ⟨rfl, -⟩ | ⟨rfl, -⟩ <;> decide
@@ -303,7 +332,10 @@ theorem round_ok {s : State} {a b : Reg} (hab : (a = .x11 ∧ b = .x12) ∨ (a =
   obtain ⟨s₂, h₂, y₂, g₂, v₂, m₂, rd₂, wr₂, sp₂⟩ := sOut_ok (s := s₁) I (fun _ _ => rfl)
     (fun e he => i₁ e he) (fun e he => i₂ e he) (fun e he => i₃ e he)
   have hc₂ : Consts s₂ := hc₁.congr v₂
-  obtain ⟨s₃, h₃, a₃, k₃, v₃, m₃, rd₃, wr₃, sp₃⟩ := pOut_ok s₂ hab
+  have hm₂ : Masks s₂ := hm.congr fun p hp => by
+    obtain ⟨n5, n10, -⟩ := maskRegs_ne p hp
+    rw [g₂ _ n5, g₁ _ n5 n10]
+  obtain ⟨s₃, h₃, a₃, k₃, hm₃, v₃, m₃, rd₃, wr₃, sp₃⟩ := pOut_ok s₂ hab hm₂
   have hc₃ : Consts s₃ := hc₂.congr fun w _ _ _ _ => by rw [v₃]
   have a₂ : s₂.gpr a = spreadW l := by rw [g₂ a ha5, g₁ a ha5 ha10, hl]
   -- The S-boxes' outputs.
@@ -318,7 +350,7 @@ theorem round_ok {s : State} {a b : Reg} (hab : (a = .x11 ∧ b = .x12) ∨ (a =
     have := (chunk r (K.setWidth 48) i).isLt
     have := tableOf_lt i hi
     omega
-  refine ⟨s₃, ?_, ?_, ?_, fun g hg => ?_, hc₃, by rw [m₃, m₂, m₁], by rw [rd₃, rd₂, rd₁],
+  refine ⟨s₃, ?_, ?_, ?_, fun g hg => ?_, hc₃, hm₃, by rw [m₃, m₂, m₁], by rw [rd₃, rd₂, rd₁],
     by rw [wr₃, wr₂, wr₁], by rw [sp₃, sp₂, sp₁]⟩
   · rw [round, runBlock_cat_some (runBlock_cat_some h₁ h₂) h₃]
   · apply BitVec.eq_of_getLsbD_eq

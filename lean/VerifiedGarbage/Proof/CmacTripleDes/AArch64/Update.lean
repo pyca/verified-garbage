@@ -17,16 +17,6 @@ open VG VG.AArch64 VG.AArch64.RegUpd VG.Impl.CmacTripleDes.AArch64 VG.Proof.Cmac
 
 theorem rev64_eq (x : BitVec 64) : rev64 x = byteRev64 x := rfl
 
-/-- The key schedule is unchanged outside a frame. -/
-theorem scheduleAt_frame {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {p : Addr}
-    (hd : ∀ r ∈ rs, (⟨p, 384⟩ : Region).Disjoint r) :
-    Spec.TripleDes.scheduleAt m' p = Spec.TripleDes.scheduleAt m p := by
-  apply Vector.ext
-  intro n hn
-  rw [← vgetD _ hn 0, ← vgetD _ hn 0, scheduleAt_getD _ _ hn, scheduleAt_getD _ _ hn]
-  exact hf.readW (r := ⟨p + BitVec.ofNat 64 (8 * n), 8⟩) (Region.contains_self _ _)
-    (fun r hr => (hd r hr).sub_left (Offset.sub_base _ (by omega))) (by decide)
-
 theorem in_rw {rs : List Region} {r : Region} (hr : r ∈ rs) {a : Addr} {n : Nat} (hc : r.Contains a n) :
     InRegions rs a n := ⟨r, hr, hc⟩
 
@@ -53,7 +43,7 @@ abbrev ciph : Spec.Cmac.Cipher := ciphAt s₀.mem (W s₀)
 abbrev blks : List (List Byte) := Spec.Cmac.blocksAt s₀.mem (Dp s₀) 8 (N s₀)
 
 /-- What changes. -/
-abbrev chg : List Region := [stR s₀, ⟨S s₀, 384⟩]
+abbrev chg : List Region := [stR s₀, ⟨S s₀, 456⟩]
 
 end
 
@@ -85,6 +75,7 @@ structure LInv (s₀ : State) (k : Nat) (s : State) : Prop where
   rd : s.rd = s₀.rd
   wr : s.wr = s₀.wr
   frame : Frame (chg s₀) s₀.mem s.mem
+  saved : ∀ i < 9, s.gpr (savedReg i) = s₀.gpr (savedReg i)
   state : Spec.Aes.bytesAt s.mem (St s₀) 8 =
     Spec.Cmac.chain (ciph s₀) (Spec.Aes.bytesAt s₀.mem (St s₀) 8) ((blks s₀).take k)
 
@@ -165,7 +156,7 @@ theorem UPre.data {hp : UPre s₀} {m : Mem} (hf : Frame (chg s₀) s₀.mem m) 
 theorem UPre.block {hp : UPre s₀} {s : State} (h14 : s.gpr .x14 = W s₀) (h15 : s.gpr .x15 = S s₀)
     (hrd : s.rd = s₀.rd) (hwr : s.wr = s₀.wr) : BlockPre s where
   sched := ⟨schR s₀, by rw [hrd, hwr, hp.rd]; simp, by rw [h14], Nat.le_refl _, by show 384 < 2 ^ 64; decide⟩
-  scr := ⟨scrR s₀, by rw [hwr, hp.wr]; simp, by rw [h15], by show 384 ≤ 640; decide, by show 640 < 2 ^ 64; decide⟩
+  scr := ⟨scrR s₀, by rw [hwr, hp.wr]; simp, by rw [h15], by show 456 ≤ 640; decide, by show 640 < 2 ^ 64; decide⟩
   disj := by
     rw [h14, h15]
     exact hp.sch_scr.symm.sub_left (Region.sub_prefix (by decide))
@@ -197,9 +188,8 @@ theorem body_ok {s₀ : State} (hp : UPre s₀) {k : Nat} (hk : k < N s₀) {s :
   have x14₁ : s₁.gpr .x14 = W s₀ := by rw [k₁ _ (by decide) (by decide), h.x14]
   have x15₁ : s₁.gpr .x15 = S s₀ := by rw [k₁ _ (by decide) (by decide), h.x15]
   have bp : BlockPre s₁ := UPre.block (hp := hp) x14₁ x15₁ (by rw [rd₁, h.rd]) (by rw [wr₁, h.wr])
-  refine WP.seq (WP.mono (block_ok bp) fun s₂ ⟨same₂, x14₂, ax₂⟩ => ?_)
-  have xR₁ : xR s₁ = ⟨S s₀, 384⟩ := by rw [xR, x15₁]
-  have f₂ : Frame [⟨S s₀, 384⟩] s.mem s₂.mem := by rw [← m₁, ← xR₁]; exact same₂.frame
+  refine WP.seq (WP.mono (block_ok bp) fun s₂ ⟨same₂, x14₂, ax₂, sv₂⟩ => ?_)
+  have f₂ : Frame [⟨S s₀, 456⟩] s.mem s₂.mem := by rw [← m₁, ← x15₁]; exact same₂.frame
   have wr₂ : s₂.wr = [stR s₀, scrR s₀] := by rw [same₂.wr, wr₁, h.wr, hp.wr]
   have x1₂ : s₂.gpr .x1 = St s₀ := by
     rw [same₂.keep .x1 (by simp [outer]), k₁ _ (by decide) (by decide), h.x1]
@@ -208,7 +198,7 @@ theorem body_ok {s₀ : State} (hp : UPre s₀) {k : Nat} (hk : k < N s₀) {s :
   have hS : sch s₁ = Spec.TripleDes.scheduleAt s₀.mem (W s₀) := by
     rw [sch, x14₁, m₁]; exact UPre.sched (hp := hp) h.frame
   have hD := UPre.data (hp := hp) h.frame hk
-  refine WP.of_runBlock ⟨s₃, h₃, ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩⟩
+  refine WP.of_runBlock ⟨s₃, h₃, ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, fun i hi => ?_, ?_⟩⟩
   · rw [k₃ _ (by decide), x14₂, x14₁]
   · rw [k₃ _ (by decide), same₂.x15, x15₁]
   · rw [k₃ _ (by decide), x1₂]
@@ -222,6 +212,9 @@ theorem body_ok {s₀ : State} (hp : UPre s₀) {k : Nat} (hk : k < N s₀) {s :
   · rw [m₃]
     exact (h.frame.trans (f₂.mono fun r hr => by simp at hr; simp [hr])).writeW (r := stR s₀) (by simp) _
       (by simpa using Region.contains_self (St s₀) 8)
+  · have : ∀ i < 9, savedReg i ∉ [Reg.x2, .x3, .x5] ∧ savedReg i ≠ .x5 ∧ savedReg i ≠ .x6 := by
+      decide
+    rw [k₃ _ (this i hi).1, sv₂ i hi, k₁ _ (this i hi).2.1 (this i hi).2.2, h.saved i hi]
   · rw [m₃, ← le8_readW, Mem.readW_writeW_self64, ax₂, ax₁, ← tdesWith_le8, hS, le8_xor, le8_readW, le8_readW,
       h.state, hD, take_succ_blks s₀ hk, chain_append, chain_single]
 
@@ -251,15 +244,20 @@ theorem prologue_wp {s₀ : State} :
   refine WP.of_runBlock ⟨_, by
     rw [runBlock_cons, exec_mov, runStep_some, runBlock_cons, exec_mov, runStep_some, runBlock_nil], ?_⟩
   refine ⟨by simp [gpr_write], by simp [gpr_write], by simp [gpr_write], by simp [gpr_write],
-    by simp only [gpr_write]; rw [x3_ofNat]; rfl, rfl, rfl, rfl, Frame.refl _ _,
+    by simp only [gpr_write]; rw [x3_ofNat]; rfl, rfl, rfl, rfl, Frame.refl _ _, fun i hi => ?_,
     by simp only [mem_write, List.take_zero]; rfl⟩
+  have : ∀ i < 9, savedReg i ≠ .x14 ∧ savedReg i ≠ .x15 := by decide
+  rw [gpr_write_of_ne _ _ _ (this i hi).2, gpr_write_of_ne _ _ _ (this i hi).1]
 
 theorem update_wp {s₀ : State} (h0 : updateAArch64.pre s₀) :
-    WP isa update s₀ fun s' => updateAArch64.post s₀ s' := by
+    WP isa update s₀ fun s' =>
+      updateAArch64.post s₀ s' ∧ ∀ i < 9, s'.gpr (savedReg i) = s₀.gpr (savedReg i) := by
   have hp := UPre.of h0
   have hN : N s₀ < 2 ^ 64 := (s₀.gpr .x3).isLt
   refine WP.seq (WP.mono prologue_wp fun s₁ h₁ => ?_)
-  have fin : ∀ s, LInv s₀ (N s₀) s → updateAArch64.post s₀ s := fun s h => by
+  have fin : ∀ s, LInv s₀ (N s₀) s →
+      updateAArch64.post s₀ s ∧ ∀ i < 9, s.gpr (savedReg i) = s₀.gpr (savedReg i) := fun s h => by
+    refine ⟨?_, h.saved⟩
     show Spec.Aes.bytesAt s.mem (St s₀) 8 = Spec.Cmac.chain (ciph s₀) _ (blks s₀)
     rw [h.state, List.take_of_length_le (by simp [Spec.Cmac.blocksAt])]
   have ev := eval_zero (r := .x3) (x := N s₀) hN (by rw [h₁.x3]; rfl)

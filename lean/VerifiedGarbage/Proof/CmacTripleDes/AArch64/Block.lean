@@ -2,6 +2,7 @@ import VerifiedGarbage.Proof.CmacTripleDes.AArch64.Spread
 import VerifiedGarbage.Proof.CmacTripleDes.Block
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AArch64.Spill
 
 /-!
 # TDEA on AArch64: the passes and the block
@@ -47,11 +48,11 @@ theorem eval_zero {s : State} {r : Reg} {x : Nat} (hx : x < 2 ^ 64) (h : s.gpr r
 
 
 /-- What the block needs: the key schedule at `x14` readable, and the first
-384 bytes of the scratch buffer at `x15` writable, apart from it. -/
+456 bytes of the scratch buffer at `x15` writable, apart from it. -/
 structure BlockPre (s : State) : Prop where
   sched : ∃ R ∈ s.rd ++ s.wr, R.base = s.gpr .x14 ∧ 384 ≤ R.len ∧ R.len < 2 ^ 64
-  scr : ∃ R ∈ s.wr, R.base = s.gpr .x15 ∧ 384 ≤ R.len ∧ R.len < 2 ^ 64
-  disj : Region.Disjoint ⟨s.gpr .x15, 384⟩ ⟨s.gpr .x14, 384⟩
+  scr : ∃ R ∈ s.wr, R.base = s.gpr .x15 ∧ 456 ≤ R.len ∧ R.len < 2 ^ 64
+  disj : Region.Disjoint ⟨s.gpr .x15, 456⟩ ⟨s.gpr .x14, 384⟩
 
 /-- The spread round keys' slots. -/
 abbrev xR (s₀ : State) : Region := ⟨s₀.gpr .x15, 384⟩
@@ -95,7 +96,8 @@ theorem sched_word {s₀ : State} (hp : BlockPre s₀) {m : Mem} (hf : Frame [xR
     m.readW (s₀.gpr .x14 + BitVec.ofNat 64 d) 64 = s₀.mem.readW (s₀.gpr .x14 + BitVec.ofNat 64 d) 64 :=
   (hf.readW (r := ⟨s₀.gpr .x14 + BitVec.ofNat 64 d, 8⟩) (Region.contains_self _ _) (fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr
-    exact (hp.disj.sub_right (Offset.sub_base _ hd)).symm) (by decide))
+    exact ((hp.disj.sub_left (Region.sub_prefix (by decide))).sub_right (Offset.sub_base _ hd)).symm)
+    (by decide))
 
 theorem ofNat_sub_one {k : Nat} (hk : 1 ≤ k) (hk' : k < 2 ^ 64) :
     BitVec.ofNat 64 k - 1 = BitVec.ofNat 64 (k - 1) := by
@@ -379,6 +381,9 @@ theorem fp_kept : blockKept.all (fun r => fpCode.all fun i => dstOf i != some r)
 
 theorem ip_v : ipCode.all (fun i => vdstOf i == none) = true := by lit_decide
 
+theorem ip_masks : maskConsts.all (fun p => ipCode.all fun i => dstOf i != some p.1) = true := by
+  lit_decide
+
 theorem xPos_facts : ∀ e < 32, xPos e < 64 ∧ xBit (xPos e) = true ∧ xSrc (xPos e) = e := by decide
 
 theorem ip_ok (s : State) :
@@ -386,14 +391,14 @@ theorem ip_ok (s : State) :
       s'.gpr .x11 = spreadW (split (Spec.TripleDes.permute Spec.TripleDes.ip (s.gpr .x5))).1 ∧
       s'.gpr .x12 = spreadW (split (Spec.TripleDes.permute Spec.TripleDes.ip (s.gpr .x5))).2 ∧
       s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp ∧ (∀ r ∈ blockKept, s'.gpr r = s.gpr r) ∧
-      s'.mem = s.mem ∧ s'.v = s.v := by
+      s'.mem = s.mem ∧ s'.v = s.v ∧ (∀ p ∈ maskConsts, s'.gpr p.1 = s.gpr p.1) := by
   obtain ⟨s', hs', hout, hrd, hwr, hsp, hoth, hfr⟩ := linear_ok ip_check (oCfg_ok s) (fun _ => s.gpr .x5)
     (fun r i hri => by
       simp only [List.mem_cons, List.mem_nil_iff, Prod.mk.injEq, or_false] at hri
       obtain ⟨rfl, rfl⟩ := hri; exact ⟨by decide, rfl⟩)
     (fun j hj => absurd hj (by simp [oCfg]))
   refine ⟨s', hs', ?_, ?_, hrd, hwr, hsp, fun r hr => hoth r (List.all_eq_true.mp ip_kept r hr),
-    frame_oCfg hfr, runBlock_v ip_v hs'⟩
+    frame_oCfg hfr, runBlock_v ip_v hs', fun p hp => hoth p.1 (List.all_eq_true.mp ip_masks p hp)⟩
   · apply BitVec.eq_of_getLsbD_eq; intro p hp
     have hj := xSrc_rot_lt p hp
     rw [hout .x11 ipG11 (by simp) p hp, getLsbD_spreadW _ hp, ipG11]
@@ -467,6 +472,7 @@ structure OInv (s₀ : State) (x : BitVec 64) (p : Nat) (s : State) : Prop where
   x14 : s.gpr .x14 = s₀.gpr .x14
   x10 : s.gpr .x10 = s₀.gpr .x15 + BitVec.ofNat 64 (8 * kpos p 0)
   consts : Consts s
+  masks : Masks s
   keys : Keys s₀ s.mem 48
   l : s.gpr .x11 = spreadW (passes (sch s₀) p (split (Spec.TripleDes.permute Spec.TripleDes.ip x))).1
   r : s.gpr .x12 = spreadW (passes (sch s₀) p (split (Spec.TripleDes.permute Spec.TripleDes.ip x))).2
@@ -488,7 +494,35 @@ theorem quarterConsts_ok (s : State) :
   · simp only [v_setV_of_ne _ _ h6, v_setV_of_ne _ _ h5, v_setV_of_ne _ _ h4, v_write]
   · simp only [gpr_setV, gpr_write_of_ne _ _ _ hr]
 
-theorem setup_eq : setup = loadTable sTable ++ (quarterConsts ++ (ipCode ++ ([mov .x10 .x15] : List Instr))) := by
+theorem maskSet_check :
+    check (lanes 64 7) oCfg (linExt 2) maskSet (linEnv [])
+      (fun e => maskConsts.all fun p => e.cst p.1 == some p.2) = true := by
+  lit_decide
+
+/-- The registers the masks' setup keeps. -/
+def maskKept : List Reg := [.x1, .x2, .x3, .x4, .x5, .x14, .x15]
+
+theorem maskSet_keeps : maskKept.all (fun r => maskSet.all fun i => dstOf i != some r) = true := by
+  lit_decide
+
+theorem maskSet_v : maskSet.all (fun i => vdstOf i == none) = true := by lit_decide
+
+theorem maskSet_ok (s : State) :
+    ∃ s', runBlock isa maskSet s = some s' ∧ Masks s' ∧ (∀ r ∈ maskKept, s'.gpr r = s.gpr r) ∧
+      s'.v = s.v ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp := by
+  obtain ⟨e', he, hpost⟩ := of_check _ _ _ maskSet_check
+  have hrel : Rel (LaneRel 7 0) oCfg (linExt 2) (linEnv []) s :=
+    ⟨fun r a h => (by simp [linEnv] at h), fun _ _ _ h => (by cases h),
+      fun j _ hj _ => absurd hj (by simp [oCfg]), fun _ _ h => (by cases h)⟩
+  obtain ⟨s', hs', p⟩ := run lanes_sound (oCfg_ok s) hrel he
+  refine ⟨s', hs', fun r v hp => p.rel.cst r v ?_, fun r hr => p.other r fun h => ?_,
+    runBlock_v maskSet_v hs', frame_oCfg p.frame, p.rd, p.wr, p.sp⟩
+  · have := List.all_eq_true.mp hpost (r, v) hp
+    simpa using this
+  · rw [List.all_eq_true.mp maskSet_keeps r hr] at h; cases h
+
+theorem setup_eq : setup = loadTable sTable ++ (quarterConsts ++ (maskSet ++
+    (ipCode ++ ([mov .x10 .x15] : List Instr)))) := by
   simp only [setup, List.append_assoc]
 
 theorem setup_ok {s₀ : State} {s : State} (h : SInv s₀ 24 s) :
@@ -496,21 +530,36 @@ theorem setup_ok {s₀ : State} {s : State} (h : SInv s₀ 24 s) :
   rw [setup_eq, WP.block_append_iff]
   refine WP.mono (loadTable_ok s sTable) fun a ⟨atab, av, ag, am, ard, awr, asp⟩ => ?_
   rw [WP.block_append_iff]
-  obtain ⟨b, hb, b4, b5, b6, bv, bg, bm, brd, bwr, bsp⟩ := quarterConsts_ok a
-  refine WP.of_runBlock ⟨b, hb, ?_⟩
+  obtain ⟨b₀, hb, b4, b5, b6, bv₀, bg₀, bm₀, brd₀, bwr₀, bsp₀⟩ := quarterConsts_ok a
+  refine WP.of_runBlock ⟨b₀, hb, ?_⟩
   rw [WP.block_append_iff]
-  obtain ⟨c, hc, c11, c12, crd, cwr, csp, ck, cm, cv⟩ := ip_ok b
+  obtain ⟨b, hbm, bmask, bk, bvv, bm₁, brd₁, bwr₁, bsp₁⟩ := maskSet_ok b₀
+  refine WP.of_runBlock ⟨b, hbm, ?_⟩
+  rw [WP.block_append_iff]
+  have bv : ∀ w, w ≠ .v4 → w ≠ .v5 → w ≠ .v6 → b.v w = a.v w := fun w h4 h5 h6 => by
+    rw [bvv]; exact bv₀ w h4 h5 h6
+  have bg : ∀ r ∈ maskKept, r ≠ .x6 → b.gpr r = a.gpr r := fun r hr h6 => by
+    rw [bk r hr]; exact bg₀ r h6
+  have bm : b.mem = a.mem := by rw [bm₁, bm₀]
+  have brd : b.rd = a.rd := by rw [brd₁, brd₀]
+  have bwr : b.wr = a.wr := by rw [bwr₁, bwr₀]
+  have bsp : b.sp = a.sp := by rw [bsp₁, bsp₀]
+  replace b4 : b.v .v4 = bc 64 := by rw [bvv]; exact b4
+  replace b5 : b.v .v5 = bc 128 := by rw [bvv]; exact b5
+  replace b6 : b.v .v6 = bc 192 := by rw [bvv]; exact b6
+  obtain ⟨c, hc, c11, c12, crd, cwr, csp, ck, cm, cv, cmask⟩ := ip_ok b
   refine WP.of_runBlock ⟨c, hc, ?_⟩
   refine WP.of_runBlock ⟨_, by rw [runBlock_cons, exec_mov, runStep_some, runBlock_nil], ?_⟩
-  have g : ∀ r, r ≠ .x6 → r ≠ .x7 → b.gpr r = s.gpr r := fun r h6 h7 => by rw [bg r h6, ag r h6 h7]
+  have g : ∀ r ∈ maskKept, r ≠ .x6 → r ≠ .x7 → b.gpr r = s.gpr r := fun r hr h6 h7 => by
+    rw [bg r hr h6, ag r h6 h7]
   have hc' : Consts c := by
     refine ⟨fun k hk => ?_, by rw [cv, b4], by rw [cv, b5], by rw [cv, b6]⟩
     rw [cv, tbyte_congr' (fun t ht => ?_) k hk, atab k hk]
     obtain ⟨-, -, -, -, h4, h5, h6, -⟩ := treg_ne8 t ht
     exact bv _ h4 h5 h6
   have x15c : c.gpr .x15 = s₀.gpr .x15 := by
-    rw [ck .x15 (by simp [blockKept]), g _ (by decide) (by decide), h.same.x15]
-  refine ⟨⟨?_, fun r hr => ?_, ?_, ?_, ?_, ?_⟩, ?_, ?_, hc'.congr (fun _ _ _ _ _ => rfl), ?_, ?_, ?_⟩
+    rw [ck .x15 (by simp [blockKept]), g _ (by simp [maskKept]) (by decide) (by decide), h.same.x15]
+  refine ⟨⟨?_, fun r hr => ?_, ?_, ?_, ?_, ?_⟩, ?_, ?_, hc'.congr (fun _ _ _ _ _ => rfl), ?_, ?_, ?_, ?_⟩
   · rw [gpr_write_of_ne _ _ _ (by decide), x15c]
   · have hk : r ∈ blockKept := by
       simp only [outer, blockKept, List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
@@ -518,20 +567,25 @@ theorem setup_ok {s₀ : State} {s : State} (h : SInv s₀ 24 s) :
     have h6 : r ≠ .x6 ∧ r ≠ .x7 ∧ r ≠ .x10 := by
       simp only [outer, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl <;> decide
-    rw [gpr_write_of_ne _ _ _ h6.2.2, ck r hk, g r h6.1 h6.2.1, h.same.keep r hr]
+    have hm : r ∈ maskKept := by
+      simp only [outer, maskKept, List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
+      rcases hr with rfl | rfl | rfl | rfl <;> simp
+    rw [gpr_write_of_ne _ _ _ h6.2.2, ck r hk, g r hm h6.1 h6.2.1, h.same.keep r hr]
   · rw [sp_write, csp, bsp, asp, h.same.sp]
   · rw [rd_write, crd, brd, ard, h.same.rd]
   · rw [wr_write, cwr, bwr, awr, h.same.wr]
   · rw [mem_write, cm, bm, am]; exact h.same.frame
-  · rw [gpr_write_of_ne _ _ _ (by decide), ck .x14 (by simp [blockKept]), g _ (by decide) (by decide),
+  · rw [gpr_write_of_ne _ _ _ (by decide), ck .x14 (by simp [blockKept]), g _ (by simp [maskKept]) (by decide) (by decide),
       h.x14]
   · rw [gpr_write_self, BitVec.setWidth_eq, x15c]
     simp [kpos]
+  · exact bmask.congr fun p hp => by
+      rw [gpr_write_of_ne _ _ _ (maskRegs_ne p hp).2.1, cmask p hp]
   · rw [mem_write, cm, bm, am]
     exact h.keys
-  · rw [gpr_write_of_ne _ _ _ (by decide), c11, g _ (by decide) (by decide), h.x5]
+  · rw [gpr_write_of_ne _ _ _ (by decide), c11, g _ (by simp [maskKept]) (by decide) (by decide), h.x5]
     rfl
-  · rw [gpr_write_of_ne _ _ _ (by decide), c12, g _ (by decide) (by decide), h.x5]
+  · rw [gpr_write_of_ne _ _ _ (by decide), c12, g _ (by simp [maskKept]) (by decide) (by decide), h.x5]
     rfl
 
 /-! ## The passes -/
@@ -543,6 +597,7 @@ structure PInv (s₀ : State) (p : Nat) (lr : BitVec 32 × BitVec 32) (j : Nat) 
   x10 : s.gpr .x10 = s₀.gpr .x15 + BitVec.ofNat 64 (8 * kpos p (2 * j))
   x16 : s.gpr .x16 = BitVec.ofNat 64 (8 - j)
   consts : Consts s
+  masks : Masks s
   keys : Keys s₀ s.mem 48
   l : s.gpr .x11 = spreadW (rounds (passKeys (sch s₀) p) (2 * j) lr).1
   r : s.gpr .x12 = spreadW (rounds (passKeys (sch s₀) p) (2 * j) lr).2
@@ -594,8 +649,8 @@ theorem pairStep_ok {s₀ : State} (hp : BlockPre s₀) {p : Nat} (hp3 : p < 3) 
     exact ⟨R, List.mem_append_right _ hR, hc⟩
   have k0 := kpos_lt hp3 (show 2 * j < 16 by omega)
   have k1 := kpos_lt hp3 (show 2 * j + 1 < 16 by omega)
-  obtain ⟨s₁, h₁, a₁, x10₁, g₁, c₁, m₁, rd₁, wr₁, sp₁⟩ := round_ok (Or.inl ⟨rfl, rfl⟩) (downOf p)
-    h.consts (by rw [h.x10]; exact slot h.same _ k0) h.l h.r
+  obtain ⟨s₁, h₁, a₁, x10₁, g₁, c₁, mk₁, m₁, rd₁, wr₁, sp₁⟩ := round_ok (Or.inl ⟨rfl, rfl⟩) (downOf p)
+    h.consts h.masks (by rw [h.x10]; exact slot h.same _ k0) h.l h.r
     (by rw [h.x10]; exact h.keys _ k0)
   refine WP.of_runBlock ⟨s₁, h₁, ?_⟩
   rw [WP.block_append_iff]
@@ -604,14 +659,14 @@ theorem pairStep_ok {s₀ : State} (hp : BlockPre s₀) {p : Nat} (hp3 : p < 3) 
     by rw [sp₁, h.same.sp], by rw [rd₁, h.same.rd], by rw [wr₁, h.same.wr], by rw [m₁]; exact h.same.frame⟩
   have x10₁' : s₁.gpr .x10 = s₀.gpr .x15 + BitVec.ofNat 64 (8 * kpos p (2 * j + 1)) := by
     rw [x10₁, h.x10, kpos_step _ hp3 (by omega)]
-  obtain ⟨s₂, h₂, a₂, x10₂, g₂, c₂, m₂, rd₂, wr₂, sp₂⟩ := round_ok (Or.inr ⟨rfl, rfl⟩) (downOf p)
-    c₁ (by rw [x10₁']; exact slot same₁ _ k1) (by rw [g₁ .x12 (by simp), h.r]) a₁
+  obtain ⟨s₂, h₂, a₂, x10₂, g₂, c₂, mk₂, m₂, rd₂, wr₂, sp₂⟩ := round_ok (Or.inr ⟨rfl, rfl⟩) (downOf p)
+    c₁ mk₁ (by rw [x10₁']; exact slot same₁ _ k1) (by rw [g₁ .x12 (by simp), h.r]) a₁
     (by rw [x10₁', m₁]; exact h.keys _ k1)
   refine WP.of_runBlock ⟨s₂, h₂, ?_⟩
   refine WP.of_runBlock ⟨_, by rw [runBlock_cons, exec_subImm_x (by decide), runStep_some, runBlock_nil], ?_⟩
   have hr₁ := rounds_succ (passKeys (sch s₀) p) (2 * j) lr
   have hr₂ := rounds_succ (passKeys (sch s₀) p) (2 * j + 1) lr
-  refine ⟨⟨?_, fun r hr => ?_, ?_, ?_, ?_, ?_⟩, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  refine ⟨⟨?_, fun r hr => ?_, ?_, ?_, ?_, ?_⟩, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · rw [gpr_write_of_ne _ _ _ (by decide), g₂ .x15 (by simp), same₁.x15]
   · rw [gpr_write_of_ne _ _ _ (outer_ne hr).2.2.2.2, g₂ r (by
       simp only [outer, List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
@@ -629,6 +684,7 @@ theorem pairStep_ok {s₀ : State} (hp : BlockPre s₀) {p : Nat} (hp3 : p < 3) 
     simp only [BitVec.toNat_sub, BitVec.toNat_ofNat, Size.bits]
     omega
   · exact c₂.congr fun _ _ _ _ _ => rfl
+  · exact mk₂.congr fun p hp => gpr_write_of_ne _ _ _ (maskRegs_ne p hp).2.2.2.2.1
   · rw [mem_write, m₂, m₁]; exact h.keys
   · rw [gpr_write_of_ne _ _ _ (by decide), g₂ .x11 (by simp), a₁, show 2 * (j + 1) = 2 * j + 1 + 1 by omega,
       hr₂, hr₁, passKeys_at s₀ (show 2 * j < 16 by omega)]
@@ -638,7 +694,7 @@ theorem pairStep_ok {s₀ : State} (hp : BlockPre s₀) {p : Nat} (hp3 : p < 3) 
 /-- Pass `p`: sixteen rounds from the halves `lr`. -/
 theorem pass_ok {s₀ : State} (hp : BlockPre s₀) {p : Nat} (hp3 : p < 3) {lr : BitVec 32 × BitVec 32}
     {s : State} (h : Same s₀ s) (h14 : s.gpr .x14 = s₀.gpr .x14)
-    (h10 : s.gpr .x10 = s₀.gpr .x15 + BitVec.ofNat 64 (8 * kpos p 0)) (hc : Consts s)
+    (h10 : s.gpr .x10 = s₀.gpr .x15 + BitVec.ofNat 64 (8 * kpos p 0)) (hc : Consts s) (hm : Masks s)
     (hk : Keys s₀ s.mem 48) (hl : s.gpr .x11 = spreadW lr.1) (hr : s.gpr .x12 = spreadW lr.2) :
     WP isa (pass (downOf p)) s (PInv s₀ p lr 8) := by
   refine WP.seq (WP.of_runBlock ⟨_, by rw [runBlock_cons, exec_movz_x (by decide), runStep_some, runBlock_nil], ?_⟩)
@@ -647,7 +703,8 @@ theorem pass_ok {s₀ : State} (hp : BlockPre s₀) {p : Nat} (hp3 : p < 3) {lr 
   have hI : PInv s₀ p lr 0 (s.write .x .x16 ((8 : BitVec 16).setWidth 64 <<< (16 * 0))) :=
     ⟨⟨by rw [g _ (by decide), h.x15], fun r hr => by rw [g _ (outer_ne hr).2.2.2.2, h.keep r hr],
       h.sp, h.rd, h.wr, h.frame⟩, by rw [g _ (by decide), h14], by rw [g _ (by decide), h10],
-      by rw [gpr_write_self]; decide, hc.congr fun _ _ _ _ _ => rfl, hk,
+      by rw [gpr_write_self]; decide, hc.congr fun _ _ _ _ _ => rfl,
+      hm.congr fun p hp => g _ (maskRegs_ne p hp).2.2.2.2.1, hk,
       by rw [g _ (by decide), hl]; rfl, by rw [g _ (by decide), hr]; rfl⟩
   refine WP.loop (M := isa)
     (body := .block (round .x11 .x12 (downOf p) ++ round .x12 .x11 (downOf p) ++ [.subImm .x .x16 .x16 1]))
@@ -691,10 +748,10 @@ theorem passTail_ok (s : State) (d : Nat) (hd : d < 4096) :
 theorem passStep_ok {s₀ : State} (hp : BlockPre s₀) {x : BitVec 64} {p : Nat} (hp2 : p < 2) {s : State}
     (h : OInv s₀ x p s) :
     WP isa (.seq (pass (downOf p)) (.block (passTail (if p = 0 then 120 else 136)))) s (OInv s₀ x (p + 1)) := by
-  refine WP.seq (WP.mono (pass_ok hp (by omega) h.same h.x14 h.x10 h.consts h.keys h.l h.r) fun s₁ h₁ => ?_)
+  refine WP.seq (WP.mono (pass_ok hp (by omega) h.same h.x14 h.x10 h.consts h.masks h.keys h.l h.r) fun s₁ h₁ => ?_)
   obtain ⟨s₂, h₂, t10, t11, t12, tk, tv, tsp, tm, trd, twr⟩ :=
     passTail_ok s₁ (if p = 0 then 120 else 136) (by split <;> decide)
-  refine WP.of_runBlock ⟨s₂, h₂, ⟨⟨?_, fun r hr => ?_, ?_, ?_, ?_, ?_⟩, ?_, ?_, ?_, ?_, ?_, ?_⟩⟩
+  refine WP.of_runBlock ⟨s₂, h₂, ⟨⟨?_, fun r hr => ?_, ?_, ?_, ?_, ?_⟩, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩⟩
   · rw [tk .x15 (by decide) (by decide) (by decide) (by decide), h₁.same.x15]
   · obtain ⟨a, b, c, d, -⟩ := outer_ne hr
     rw [tk r a b c d, h₁.same.keep r hr]
@@ -707,21 +764,24 @@ theorem passStep_ok {s₀ : State} (hp : BlockPre s₀) {x : BitVec 64} {p : Nat
     congr 2
     rcases (by omega : p = 0 ∨ p = 1) with rfl | rfl <;> decide
   · exact h₁.consts.congr fun _ _ _ _ _ => by rw [tv]
+  · exact h₁.masks.congr fun p hp => by
+      obtain ⟨a, b, c, d, -⟩ := maskRegs_ne p hp
+      exact tk _ a b c d
   · rw [tm]; exact h₁.keys
   · rw [t11, h₁.r, passes, swap]
   · rw [t12, h₁.l, passes, swap]
 
 /-- TDEA encryption of the block in `x5` (as a 64-bit integer) with the key
-schedule at `x14`, into `x5`. -/
-theorem block_ok {s₀ : State} (hp : BlockPre s₀) :
-    WP isa block s₀ fun s =>
+schedule at `x14`, into `x5`, but for the callee-saved registers. -/
+theorem blockCore_ok {s₀ : State} (hp : BlockPre s₀) :
+    WP isa blockCore s₀ fun s =>
       Same s₀ s ∧ s.gpr .x14 = s₀.gpr .x14 ∧ s.gpr .x5 = tdes (sch s₀) (s₀.gpr .x5) := by
   refine WP.seq (WP.mono (spreadPre_ok s₀) fun s₁ h₁ => ?_)
   refine WP.seq (WP.mono (spreadLoop_ok hp h₁) fun s₂ h₂ => ?_)
   refine WP.seq (WP.mono (setup_ok h₂) fun s₃ h₃ => ?_)
   refine WP.seq (WP.mono (passStep_ok hp (p := 0) (by decide) h₃) fun s₄ h₄ => ?_)
   refine WP.seq (WP.mono (passStep_ok hp (p := 1) (by decide) h₄) fun s₅ h₅ => ?_)
-  refine WP.seq (WP.mono (pass_ok hp (p := 2) (by decide) h₅.same h₅.x14 h₅.x10 h₅.consts h₅.keys
+  refine WP.seq (WP.mono (pass_ok hp (p := 2) (by decide) h₅.same h₅.x14 h₅.x10 h₅.consts h₅.masks h₅.keys
     h₅.l h₅.r) fun s₆ h₆ => ?_)
   obtain ⟨s₇, h₇, x5₇, rd₇, wr₇, sp₇, k₇, m₇⟩ := fp_ok s₆ h₆.l h₆.r
   refine WP.of_runBlock ⟨s₇, h₇, ⟨⟨?_, fun r hr => ?_, ?_, ?_, ?_, ?_⟩, ?_, ?_⟩⟩
@@ -737,5 +797,102 @@ theorem block_ok {s₀ : State} (hp : BlockPre s₀) :
   · rw [k₇ .x14 (by simp [blockKept]), h₆.x14]
   · rw [x5₇, tdes_eq]
     rfl
+
+/-- The key schedule is unchanged outside a frame. -/
+theorem scheduleAt_frame {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {p : Addr}
+    (hd : ∀ r ∈ rs, (⟨p, 384⟩ : Region).Disjoint r) :
+    Spec.TripleDes.scheduleAt m' p = Spec.TripleDes.scheduleAt m p := by
+  apply Vector.ext
+  intro n hn
+  rw [← vgetD _ hn 0, ← vgetD _ hn 0, scheduleAt_getD _ _ hn, scheduleAt_getD _ _ hn]
+  exact hf.readW (r := ⟨p + BitVec.ofNat 64 (8 * n), 8⟩) (Region.contains_self _ _)
+    (fun r hr => (hd r hr).sub_left (Offset.sub_base _ (by omega))) (by decide)
+
+/-! ## Keeping the callee-saved registers -/
+
+/-- The callee-saved mask registers' slots, after the spread round keys. -/
+def saveSlots : List (Reg × Nat) := (List.range 9).map fun i => (savedReg i, 384 + 8 * i)
+
+theorem save_eq : blockSave = Spill.saveCode .x15 saveSlots := by decide
+
+theorem restore_eq : blockRestore = Spill.restoreCode .x15 saveSlots := by decide
+
+theorem saveSlots_facts : (∀ p ∈ saveSlots, 384 ≤ p.2 ∧ p.2 + 8 ≤ 384 + 72) ∧
+    (∀ p ∈ saveSlots, p.2 % 8 = 0 ∧ p.2 < 32768) ∧ Spill.Fits saveSlots ∧
+    Spill.Restorable .x15 saveSlots ∧ .x15 ∉ saveSlots.map Prod.fst ∧ .x14 ∉ saveSlots.map Prod.fst ∧
+    .x5 ∉ saveSlots.map Prod.fst ∧ (∀ r ∈ outer, r ∉ saveSlots.map Prod.fst) := by
+  decide
+
+/-- The callee-saved registers the block writes. -/
+def savedRegs : List Reg := (List.range 9).map savedReg
+
+theorem mem_savedRegs {r : Reg} (h : r ∈ savedRegs) : ∃ i < 9, r = savedReg i := by
+  obtain ⟨i, hi, rfl⟩ := List.mem_map.mp h
+  exact ⟨i, List.mem_range.mp hi, rfl⟩
+
+theorem mem_saveSlots {i : Nat} (hi : i < 9) : (savedReg i, 384 + 8 * i) ∈ saveSlots :=
+  List.mem_map.mpr ⟨i, List.mem_range.mpr hi, rfl⟩
+
+/-- What the block keeps: `Same`, with the saves' slots too. -/
+structure SameB (s₀ s : State) : Prop where
+  x15 : s.gpr .x15 = s₀.gpr .x15
+  keep : ∀ r ∈ outer, s.gpr r = s₀.gpr r
+  sp : s.sp = s₀.sp
+  rd : s.rd = s₀.rd
+  wr : s.wr = s₀.wr
+  frame : Frame [⟨s₀.gpr .x15, 456⟩] s₀.mem s.mem
+
+/-- TDEA encryption of the block in `x5` (as a 64-bit integer) with the key
+schedule at `x14`, into `x5`. -/
+theorem block_ok {s₀ : State} (hp : BlockPre s₀) :
+    WP isa block s₀ fun s =>
+      SameB s₀ s ∧ s.gpr .x14 = s₀.gpr .x14 ∧ s.gpr .x5 = tdes (sch s₀) (s₀.gpr .x5) ∧
+      ∀ i < 9, s.gpr (savedReg i) = s₀.gpr (savedReg i) := by
+  obtain ⟨hl, ho, hf, hr, h15, h14, h5, hout⟩ := saveSlots_facts
+  obtain ⟨X, hX, hXb, hXl, hXw⟩ := hp.scr
+  have slotIn : ∀ p ∈ saveSlots, X.Contains ((s₀.gpr .x15) + BitVec.ofNat 64 p.2) 8 := fun p hp' => by
+    rw [← hXb]; exact Offset.contains_base _ (by have := hl p hp'; omega) (by have := hl p hp'; omega)
+  rw [block, save_eq]
+  apply WP.seq
+  refine WP.mono (Spill.save_wp ho fun p hp' => ⟨X, hX, slotIn p hp'⟩) fun s₁ st => ?_
+  have saveF : Frame [⟨(s₀.gpr .x15) + BitVec.ofNat 64 384, 72⟩] s₀.mem s₁.mem := by
+    rw [st.mem]; exact Spill.saveMem_frame hl (by decide) _ _ _
+  have bp₁ : BlockPre s₁ :=
+    ⟨by rw [st.rd, st.wr, st.gpr]; exact hp.sched, by rw [st.wr, st.gpr]; exact hp.scr,
+      by rw [st.gpr]; exact hp.disj⟩
+  have sch₁ : sch s₁ = sch s₀ := by
+    simp only [sch, st.gpr]
+    exact scheduleAt_frame saveF fun r hr' => by
+      simp only [List.mem_singleton] at hr'; subst hr'
+      exact (hp.disj.sub_left (Offset.sub_base _ (by decide))).symm
+  apply WP.seq
+  refine WP.mono (blockCore_ok bp₁) fun s₂ ⟨same₂, x14₂, x5₂⟩ => ?_
+  have x15₂ : s₂.gpr .x15 = (s₀.gpr .x15) := by rw [same₂.x15, st.gpr]
+  have sv : Spill.Saved (s₀.gpr .x15) s₀.gpr saveSlots s₂.mem := by
+    have h := Spill.saveMem_saved hf s₀.mem (s₀.gpr .x15) s₀.gpr
+    rw [← st.mem] at h
+    refine h.frame_in hl same₂.frame fun r hr' => ?_
+    simp only [List.mem_singleton] at hr'; subst hr'
+    simp only [xR, st.gpr]
+    exact Offset.disjoint_base _ (by decide) (by decide)
+  rw [restore_eq]
+  refine WP.mono (Spill.restore_wp x15₂ ho hr (fun p hp' => ?_) sv) fun s₃ h₃ => ?_
+  · rw [same₂.rd, same₂.wr, st.rd, st.wr]
+    exact ⟨X, List.mem_append_right _ hX, slotIn p hp'⟩
+  refine ⟨⟨?_, fun r hr' => ?_, ?_, ?_, ?_, ?_⟩, ?_, ?_, fun i hi => ?_⟩
+  · rw [h₃.other _ h15, x15₂]
+  · rw [h₃.other _ (hout r hr'), same₂.keep r hr', st.gpr]
+  · rw [h₃.sp, same₂.sp, st.sp]
+  · rw [h₃.rd, same₂.rd, st.rd]
+  · rw [h₃.wr, same₂.wr, st.wr]
+  · rw [h₃.mem]
+    refine (saveF.sub fun r hr' => ?_).trans (same₂.frame.sub fun r hr' => ?_)
+    · simp only [List.mem_singleton] at hr'; subst hr'
+      exact ⟨_, List.mem_singleton_self _, Offset.sub_base _ (by decide)⟩
+    · simp only [List.mem_singleton] at hr'; subst hr'
+      exact ⟨_, List.mem_singleton_self _, by simp only [xR, st.gpr]; exact Region.sub_prefix (by decide)⟩
+  · rw [h₃.other _ h14, x14₂, st.gpr]
+  · rw [h₃.other _ h5, x5₂, sch₁, st.gpr]
+  · exact h₃.gpr_of (.inl (List.mem_map.mpr ⟨_, mem_saveSlots hi, rfl⟩))
 
 end VG.Proof.CmacTripleDes.AArch64

@@ -7,7 +7,8 @@ import VerifiedGarbage.Impl.Tbl.AArch64
 The S-boxes are looked up with `tbl` (`Impl/Tbl/AArch64.lean`), two boxes
 to a 64-byte table (`boxTable`), the four tables in `v16`–`v31`; bit
 permutations are XORs of rotated and masked *groups* of a word (`groups`,
-`linCode`), with constants built with `movz` and `movk` (`movImm`).
+`linCode`), with constants built with `movz` and `movk` (`movImm`); in the
+rounds, `P`'s eleven masks are held in registers (`maskReg`) instead.
 
 `L` and `R` are kept rotated left by 13 bits and *spread* (`xSrc`): bits
 `8 m … 8 m + 5` of byte `m < 4` are bits `8 m … 8 m + 5` of the rotated
@@ -25,9 +26,11 @@ permutation `P`, and the initial and final permutations into `IP` and
 `block` (TDEA encryption of the block in `x5`, with the key schedule at
 `x14` and the scratch buffer at `x15`) first spreads the 48 round keys into
 the scratch buffer (`spreadBody`, two at a time, by a `tbl` from four
-shifted copies of them), loads the tables and the constants, and then runs
-the three passes from the spread keys. It uses `x0`, `x5`–`x13`, `x16` and
-`x17`, and the caller-saved vector registers `v0`–`v7` and `v16`–`v31`.
+shifted copies of them), loads the tables, the constants and the masks, and
+then runs the three passes from the spread keys. It uses `x0`, `x5`–`x13`,
+`x16` and `x17`, the caller-saved vector registers `v0`–`v7` and
+`v16`–`v31`, and `x19`–`x27`, which it saves in the scratch buffer after the
+spread keys (bytes 384–455) and restores (`blockSave`, `blockRestore`).
 -/
 
 namespace VG.Impl.CmacTripleDes.AArch64
@@ -144,11 +147,32 @@ def ySrc (p : Nat) : Option Nat :=
 /-- The groups of `P`, in three parts. -/
 def pGroups : List (Nat × Nat) := groups ySrc 64
 
+/-- The register holding group `k`'s mask throughout the rounds. -/
+def maskReg (k : Nat) : Reg :=
+  [Reg.x19, .x20, .x21, .x22, .x23, .x24, .x25, .x26, .x27, .x0, .x8].getD k .x8
+
+/-- The groups of `P` with their mask registers. -/
+def pGroupsR : List (Nat × Reg) := pGroups.zipIdx.map fun (g, k) => (g.1, maskReg k)
+
+/-- The masks into their registers. -/
+def maskSet : List Instr := pGroups.zipIdx.flatMap fun (g, k) => movImm (maskReg k) g.2
+
+/-- One group: `src` rotated right by `r`, masked by the register `u`, into `t`. -/
+def groupR (src t : Reg) (r : Nat) (u : Reg) : List Instr :=
+  if r = 0 then [.logic .and .x t src u] else [.ror .x t src r, .logic .and .x t t u]
+
+/-- The XOR of the groups `gs` (masks in registers) of `src` into `dst`. -/
+def linCodeR (src dst t : Reg) (init : Bool) : List (Nat × Reg) → List Instr
+  | [] => []
+  | (r, u) :: gs =>
+    if init then groupR src dst r u ++ linCodeR src dst t false gs
+    else groupR src t r u ++ [.logic .eor .x dst dst t] ++ linCodeR src dst t false gs
+
 /-- `a := a ⊕ P(y)`, spread: three sums of groups, into `x6`, `x9` and `x17`. -/
 def pOut (a : Reg) : List Instr :=
-  linCode .x5 .x6 .x7 .x8 true (pGroups.take 4) ++
-  linCode .x5 .x9 .x13 .x0 true ((pGroups.drop 4).take 4) ++
-  linCode .x5 .x17 .x7 .x8 true (pGroups.drop 8) ++
+  linCodeR .x5 .x6 .x7 true (pGroupsR.take 4) ++
+  linCodeR .x5 .x9 .x13 true ((pGroupsR.drop 4).take 4) ++
+  linCodeR .x5 .x17 .x7 true (pGroupsR.drop 8) ++
   [.logic .eor .x a a .x6, .logic .eor .x .x9 .x9 .x17, .logic .eor .x a a .x9]
 
 /-- One round: `a := a ⊕ f(b, K)`, spread. -/
@@ -207,17 +231,29 @@ def spreadBody : List Instr :=
    .vop (.logic .and .v4 .v4 .v6), .vop (.logic .eor .v4 .v4 .v7), .strq .v4 .x7 0,
    .addImm .x .x6 .x6 16, .addImm .x .x7 .x7 16, .subImm .x .x16 .x16 1]
 
-/-- The tables, the quarters' constants, `IP`, and `x10` to the first spread key. -/
+/-- The tables, the quarters' constants, the masks, `IP`, and `x10` to the
+first spread key. -/
 def setup : List Instr :=
-  Tbl.AArch64.loadTable sTable ++ quarterConsts ++ ipCode ++ [mov .x10 .x15]
+  Tbl.AArch64.loadTable sTable ++ quarterConsts ++ maskSet ++ ipCode ++ [mov .x10 .x15]
 
 /-- TDEA encryption (`E_K3(D_K2(E_K1(x)))`) of the block `x` in `x5` (as a
 64-bit integer), into `x5`, with the key schedule at `x14`: the passes share
 one `IP` and one `IP⁻¹`, which cancel between them. -/
-def block : Prog isa :=
+def blockCore : Prog isa :=
   .seq (.block spreadPre) (.seq (.loop (.block spreadBody) (.nonzero .x .x16))
     (.seq (.block setup) (.seq (.seq (pass false) (.block (passTail 120)))
       (.seq (.seq (pass true) (.block (passTail 136))) (.seq (pass false) (.block fpCode))))))
+
+/-- The callee-saved registers that hold masks. -/
+def savedReg (i : Nat) : Reg := [Reg.x19, .x20, .x21, .x22, .x23, .x24, .x25, .x26, .x27].getD i .x19
+
+/-- They are saved after the spread round keys in the scratch buffer. -/
+def blockSave : List Instr := (List.range 9).map fun i => .str .x (savedReg i) .x15 (384 + 8 * i)
+
+def blockRestore : List Instr := (List.range 9).map fun i => .ldr .x (savedReg i) .x15 (384 + 8 * i)
+
+/-- TDEA encryption, keeping the callee-saved registers that hold masks. -/
+def block : Prog isa := .seq (.block blockSave) (.seq blockCore (.block blockRestore))
 
 /-! ## The key schedule -/
 
