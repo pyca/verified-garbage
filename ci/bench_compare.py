@@ -168,6 +168,13 @@ def run(binary, home, library, args, checkout, modules, groups=None):
             str(args.warm_up_time),
             "--measurement-time",
             str(args.measurement_time),
+            # Criterion's default 100 samples cannot fit in a short
+            # measurement once an iteration takes more than a few
+            # milliseconds (PBKDF2 at 16384 iterations, signatures), so
+            # those overran it with a warning; faster benchmarks take as
+            # long either way, with more iterations per sample.
+            "--sample-size",
+            "25",
             # Only the median is used, not the bootstrapped confidence
             # intervals, whose default 100000 resamples cost more than a
             # short measurement.
