@@ -44,7 +44,7 @@ theorem implies :
           AArch64.abi, AArch64.argRegs, satState, below] [satState 48] using satState 48 }
 
 /-- SHA-384, with the implementation `v` of SHA-512's compression function. -/
-def pack (v : Compress) : RfcHash where
+def pack (hL : Weierstrass.Law Spec.P256.curve) (v : Compress) : RfcHash where
   I := Spec.Ecdsa.Rfc6979.P256Sha384.inst
   H := Proof.Pbkdf2.Md.AArch64.Sha512.hash v Spec.Hmac.sha384I 48 Spec.Sha512.init384Api.name Spec.Sha512.H0_384
   ok := Proof.Pbkdf2.Md.AArch64.Sha512.ok v rfl (fun _ => rfl) rfl rfl rfl (Or.inr (Or.inr (Or.inl rfl))) rfl
@@ -60,12 +60,12 @@ def pack (v : Compress) : RfcHash where
   hS := Nat.le_of_ble_eq_true rfl
   hW := Nat.le_of_ble_eq_true rfl
   hWb := Nat.le_of_ble_eq_true rfl
-  coreX := Proof.Ecdsa.AArch64.sign_a64
+  coreX := Proof.Ecdsa.AArch64.sign_a64 hL
   coreCT := Proof.Ecdsa.AArch64.sign_ct
 
-theorem sign_verified (v : Compress) :
-    Verified AArch64.target (cfgOf (pack v)).sign
+theorem sign_verified (hL : Weierstrass.Law Spec.P256.curve) (v : Compress) :
+    Verified AArch64.target (cfgOf (pack hL v)).sign
       (Spec.Ecdsa.Rfc6979.P256Sha384.inst.signContract AArch64.abi 240) :=
-  AArch64.sign_verified (pack v) implies
+  AArch64.sign_verified (pack hL v) implies
 
 end VG.Proof.Ecdsa.Rfc6979.AArch64.Sha384
