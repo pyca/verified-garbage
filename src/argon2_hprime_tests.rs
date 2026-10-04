@@ -7,6 +7,8 @@
 ))]
 
 use crate::arch::argon2::vg_argon2_hprime;
+#[cfg(target_arch = "x86_64")]
+use crate::arch::argon2::vg_argon2_hprime_avx2;
 use crate::hashes::blake2b::{Blake2b, Blake2bBackend};
 
 #[repr(C)]
@@ -33,6 +35,14 @@ fn check(input: &[u8], expected: &[u8]) {
         unsafe {
             match backend {
                 Blake2bBackend::Scalar => vg_argon2_hprime(
+                    input.as_ptr(),
+                    input.len(),
+                    result.as_mut_ptr(),
+                    result.len(),
+                    &mut scratch.data,
+                ),
+                #[cfg(target_arch = "x86_64")]
+                Blake2bBackend::Avx2 => vg_argon2_hprime_avx2(
                     input.as_ptr(),
                     input.len(),
                     result.as_mut_ptr(),

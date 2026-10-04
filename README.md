@@ -66,7 +66,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅</td>
+<td>✅ AVX2</td>
 
 <td>✅</td>
 
