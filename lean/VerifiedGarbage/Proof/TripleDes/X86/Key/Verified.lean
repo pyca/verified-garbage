@@ -1,6 +1,7 @@
 import VerifiedGarbage.Proof.TripleDes.X86.Key.Correct
 import VerifiedGarbage.Proof.TripleDes.X86.Key.ConstantTime
 import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.TripleDes.Scratch
 
 namespace VG.Proof.TripleDes.X86.Key
 open VG VG.X86
@@ -18,10 +19,10 @@ def satState : State where
   wr := [⟨0x2000, 384⟩, ⟨0x3000, 512⟩]
 
 theorem verified : Verified target Impl.TripleDes.X86.Key.expandKey
-    (Spec.TripleDes.expandKeyContract abi) := by
+    (Proof.TripleDes.expandKeyScratchContract abi) := by
   refine Verified.of_correct expand_correct
     (expandKey_constantTime _ _ (fun _ _ h₁ h₂ hp => keyTaint_agree h₁ h₂ hp)) ?_
-  sig_implies [Spec.TripleDes.expandKeyContract, Spec.TripleDes.expandKeySig, abi, argSlots, argVal,
+  sig_implies [Proof.TripleDes.expandKeyScratchContract, Proof.TripleDes.expandKeyScratchSig, Spec.TripleDes.expandKeyPre, Spec.TripleDes.expandKeyPost, abi, argSlots, argVal,
     argBytes, addr32, contract]
     [satState, arg, argAddr, Mem.readW, Mem.read] using satState
 

@@ -1,5 +1,6 @@
 import VerifiedGarbage.Proof.TripleDes.Arm.Key.Correct
 import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.TripleDes.Scratch
 
 namespace VG.Proof.TripleDes.Arm.Key
 
@@ -27,9 +28,9 @@ theorem publicRegs_four (s₁ s₂ : State) : PublicRegs [.r0, .r1, .r2, .r3] s�
     s₁.gpr .r3 = s₂.gpr .r3 := by simp [PublicRegs]
 
 theorem verified : Verified target Impl.TripleDes.Arm.Key.expandKey
-    (Spec.TripleDes.expandKeyContract abi) := by
+    (Proof.TripleDes.expandKeyScratchContract abi) := by
   refine Verified.of_correct correct (expandKey_constantTime _) ?_
-  sig_implies [Spec.TripleDes.expandKeyContract, Spec.TripleDes.expandKeySig, abi, argRegs, Arm.reduceClassify, Arm.Loc.val, State.addr,
+  sig_implies [Proof.TripleDes.expandKeyScratchContract, Proof.TripleDes.expandKeyScratchSig, Spec.TripleDes.expandKeyPre, Spec.TripleDes.expandKeyPost, abi, argRegs, Arm.reduceClassify, Arm.Loc.val, State.addr,
     contract, publicRegs_four] [satState] using satState
 
 end VG.Proof.TripleDes.Arm.Key

@@ -6,13 +6,14 @@ import VerifiedGarbage.Proof.Ecdsa.AArch64.Verified
 /-!
 # ECDSA verification over P-256 on AArch64: `Verified`
 
-P-256 is a curve the proof supports (`p256_ok`, and `Proof.P256.good` for its
-group law), so `verify_ok` gives the contract's postcondition; `x19` and
-`x20` are restored, and no instruction writes the other callee-saved
-registers, `sp` or a SIMD register (`abiPreserved_of`). Constant time by
-taint tracking: the only branches are on loop counters, and every address is
-an argument plus a constant or a counter, so only the pointers affect timing
-(the contract would let the key, the hash and the signature affect it too).
+P-256 is a curve the proof supports (`p256_ok`, and `Law` for its group law,
+which the registration file supplies: `Proof.P256.law`), so `verify_ok` gives
+the contract's postcondition; `x19` and `x20` are restored, and no instruction
+writes the other callee-saved registers, `sp` or a SIMD register
+(`abiPreserved_of`). Constant time by taint tracking: the only branches are on
+loop counters, and every address is an argument plus a constant or a counter,
+so only the pointers affect timing (the contract would let the key, the hash
+and the signature affect it too).
 -/
 
 namespace VG.Proof.Ecdsa.Verify.AArch64
@@ -24,9 +25,9 @@ theorem pre_of {s : State} (h : verifyAArch64.pre s) : VPre p256 s := by
   obtain ⟨h1, h2, h3, h4, h5, h6⟩ := h
   exact ⟨h1, h2, h3, h4, h5, h6⟩
 
-theorem verify_a64 (s : State) (hs : verifyAArch64.pre s) :
+theorem verify_a64 (hL : Weierstrass.Law Spec.P256.curve) (s : State) (hs : verifyAArch64.pre s) :
     ∃ t s', Exec isa verifyP256 s t s' ∧ abiPreserved s s' ∧ verifyAArch64.post s s' := by
-  obtain ⟨t, s', he, hsv, hpost⟩ := verify_ok p256_ok Proof.P256.good (pre_of hs)
+  obtain ⟨t, s', he, hsv, hpost⟩ := verify_ok p256_ok hL (pre_of hs)
   exact ⟨t, s', he, abiPreserved_of he (by lit_decide) (by lit_decide) (by lit_decide) hsv, hpost⟩
 
 theorem verify_ct : ConstantTime isa verifyAArch64.pre verifyAArch64.pub verifyP256 :=
@@ -39,8 +40,8 @@ theorem verify_ct : ConstantTime isa verifyAArch64.pre verifyAArch64.pub verifyP
       · exact h2
       · exact h3⟩) (by taint_decide)
 
-theorem verify_verified :
+theorem verify_verified (hL : Weierstrass.Law Spec.P256.curve) :
     Verified AArch64.target verifyP256 (Spec.Ecdsa.P256.inst.verifyContract AArch64.abi) :=
-  Verified.of_correct verify_a64 verify_ct implies
+  Verified.of_correct (verify_a64 hL) verify_ct implies
 
 end VG.Proof.Ecdsa.Verify.AArch64

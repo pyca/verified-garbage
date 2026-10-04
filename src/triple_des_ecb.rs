@@ -102,13 +102,12 @@ impl TripleDesEcb {
             return Err(Error::InvalidKeyLength);
         }
         let mut schedule = [0; 384];
-        let mut scratch = [0u64; 64];
-        // SAFETY: the key has a validated length; key, schedule and scratch
-        // are separate valid buffers of the required sizes.
+        // SAFETY: the key has a validated length; key and schedule are
+        // separate valid buffers of the required sizes. The function zeroes
+        // its working space on its own stack before returning.
         unsafe {
-            vg_triple_des_expand_key(key.as_ptr(), key.len(), &mut schedule, &mut scratch);
+            vg_triple_des_expand_key(key.as_ptr(), key.len(), &mut schedule);
         }
-        zeroize(&mut scratch);
         Ok(Self {
             schedule,
             backend: Backend::select(detected()),
@@ -143,20 +142,14 @@ impl TripleDesEcb {
             #[cfg(target_arch = "x86_64")]
             (Backend::Avx512, false) => vg_triple_des_ecb_decrypt_avx512,
         };
-        let mut scratch = [0u64; 128];
         // SAFETY: buffer contains complete eight-byte blocks, including zero
-        // blocks. The buffer, schedule and scratch are separate valid objects
-        // and do not overlap the callee's stack. `Backend::select` chose `f`
-        // for the CPU's features.
+        // blocks. The buffer and schedule are separate valid objects and do
+        // not overlap the callee's stack. `Backend::select` chose `f` for the
+        // CPU's features. The function zeroes its working space on its own
+        // stack before returning.
         unsafe {
-            f(
-                &self.schedule,
-                buffer.as_mut_ptr().cast(),
-                buffer.len() / 8,
-                &mut scratch,
-            );
+            f(&self.schedule, buffer.as_mut_ptr().cast(), buffer.len() / 8);
         }
-        zeroize(&mut scratch);
         Ok(())
     }
 }

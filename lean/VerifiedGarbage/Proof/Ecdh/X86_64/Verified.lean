@@ -6,13 +6,14 @@ import VerifiedGarbage.Proof.Ecdsa.X86_64.Verified
 /-!
 # ECDH over P-256 on x86-64: `Verified`
 
-P-256 is a curve the proof supports (`p256_ok`, and `Proof.P256.good` for its
-group law), so `exchange_ok` gives the contract's postcondition; the
-callee-saved registers are restored, `rsp` is never written, and every store
-is to `out` or `scratch`, which the return address is apart from
-(`abiPreserved`). Constant time by taint tracking: the only branches are on
-loop counters, and every address is an argument plus a constant or a counter,
-so not even the peer's key (which the contract would let leak) affects timing.
+P-256 is a curve the proof supports (`p256_ok`, and `Law` for its group law,
+which the registration file supplies: `Proof.P256.law`), so `exchange_ok`
+gives the contract's postcondition; the callee-saved registers are restored,
+`rsp` is never written, and every store is to `out` or `scratch`, which the
+return address is apart from (`abiPreserved`). Constant time by taint
+tracking: the only branches are on loop counters, and every address is an
+argument plus a constant or a counter, so not even the peer's key (which the
+contract would let leak) affects timing.
 -/
 
 namespace VG.Proof.Ecdh.X86_64
@@ -36,9 +37,9 @@ theorem post_of {s s' : State} (h : EPost p256 s s') : ecdhX86_64.post s s' := b
       (Spec.Ecdsa.bytesAt s.mem (s.gpr .rdx) (1 + 16 * p256.n)) = ex s.mem (s.gpr .rsi) (s.gpr .rdx) from rfl, hq]
   rcases q with _ | z <;> exact id
 
-theorem ecdh_x86 (s : State) (hs : ecdhX86_64.pre s) :
+theorem ecdh_x86 (hL : Weierstrass.Law Spec.P256.curve) (s : State) (hs : ecdhX86_64.pre s) :
     ∃ t s', Exec isa exchangeP256 s t s' ∧ abiPreserved s s' ∧ ecdhX86_64.post s s' := by
-  obtain ⟨t, s', he, hsv, hpost⟩ := exchange_ok p256_ok Proof.P256.good (pre_of hs)
+  obtain ⟨t, s', he, hsv, hpost⟩ := exchange_ok p256_ok hL (pre_of hs)
   have hsp : ∀ i ∈ instrs exchangeP256, Taint.clobbers i .rsp = false := by
     have h : exchangeP256.allInstrs (fun i => !Taint.clobbers i .rsp) = true := by lit_decide
     rw [Code.allInstrs_eq, List.all_eq_true] at h
@@ -74,8 +75,8 @@ theorem ecdh_ct : ConstantTime isa ecdhX86_64.pre ecdhX86_64.pub exchangeP256 :=
   · exact h3
   · exact h4
 
-theorem ecdh_verified :
+theorem ecdh_verified (hL : Weierstrass.Law Spec.P256.curve) :
     Verified X86_64.target exchangeP256 (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P256.inst X86_64.abi) :=
-  Verified.of_correct ecdh_x86 ecdh_ct implies
+  Verified.of_correct (ecdh_x86 hL) ecdh_ct implies
 
 end VG.Proof.Ecdh.X86_64

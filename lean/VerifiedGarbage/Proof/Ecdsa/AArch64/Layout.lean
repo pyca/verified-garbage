@@ -30,8 +30,8 @@ and fit in `n` words (`n < 7`: the multiplications accumulate in
 `x8`–`x15`), `G` is on the curve, `p < 2n` (so `x mod n` is one conditional
 subtraction), the Montgomery constants are right, encodings are `8 n`
 bytes, and a hash of `8 n` bytes is not truncated. The group law needs
-more (`Weierstrass.Good`: a prime field and no point of order 2), which
-only the proofs of the results take. -/
+more (`Weierstrass.Law`, which a prime field and no point of order 2 give:
+`Weierstrass.Good.law`), which only the proofs of the results take. -/
 structure CfgOk (c : Cfg) : Prop where
   n0 : 0 < c.n
   n7 : c.n < 7

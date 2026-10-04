@@ -16,10 +16,21 @@ open VG.Proof.MlKem.X86_64
 
 /-- What code in a prime's workspace may change, at `B`: all but its link,
 `w_X`, `-X⁻¹` and its arrays' bases. -/
-def xRange (o wx : Nat) : Nat × Nat := (o + 8 * 17, slot wx 8 - 8 * 17)
+def xRange (o wx : Nat) : Nat × Nat := (o + 8 * 17, slot wx 8 + tabBytes wx - 8 * 17)
 
 theorem Frm.to_x {B : Addr} {o wx : Nat} {rs : List (Nat × Nat)} {m m' : Mem} (h : Frm (off B o) rs m m')
     (hr : ∀ r ∈ rs, 8 * 17 ≤ r.1 ∧ r.1 + r.2 ≤ slot wx 8) (ho : o + slot wx 8 ≤ 2 ^ 64)
+    {rs' : List (Nat × Nat)} (hx : xRange o wx ∈ rs') : Frm B rs' m m' := by
+  have h256 : 8 * 17 ≤ slot wx 8 := by unfold slot hdrBytes; omega
+  refine (h.rebase (by omega) fun r hr' => by have := hr r hr'; omega).widen fun r hr' => ⟨_, hx, ?_⟩
+  obtain ⟨r₀, hr₀, rfl⟩ := List.mem_map.mp hr'
+  have := hr r₀ hr₀
+  simp only [xRange]
+  omega
+
+/-- `Frm.to_x` for changes that reach the table. -/
+theorem Frm.to_xT {B : Addr} {o wx : Nat} {rs : List (Nat × Nat)} {m m' : Mem} (h : Frm (off B o) rs m m')
+    (hr : ∀ r ∈ rs, 8 * 17 ≤ r.1 ∧ r.1 + r.2 ≤ slot wx 8 + tabBytes wx) (ho : o + (slot wx 8 + tabBytes wx) ≤ 2 ^ 64)
     {rs' : List (Nat × Nat)} (hx : xRange o wx ∈ rs') : Frm B rs' m m' := by
   have h256 : 8 * 17 ≤ slot wx 8 := by unfold slot hdrBytes; omega
   refine (h.rebase (by omega) fun r hr' => by have := hr r hr'; omega).widen fun r hr' => ⟨_, hx, ?_⟩
@@ -89,7 +100,7 @@ abbrev nChunks (w wx : Nat) : Nat := (w + wx - 1) / wx
 modulus' `Y`, reduced into the prime's `Y`: `R_X mod X` if `X` divides `N`. -/
 theorem unitPhase_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv mx : BitVec 64} {N X : Nat}
     {sl o wx : Nat} (hg : Good s B Z w minv) (hw : 8 ≤ w) (hw28 : w < 2 ^ 28) (hlo : slot w 8 ≤ o)
-    (hhi : o + slot wx 8 ≤ Z) (hwx2 : 2 ≤ wx) (hwx : wx ≤ w) (hsl : sl < 32) (hsl1 : sl ≠ Crt.sD)
+    (hhi : o + slot wx 8 + tabBytes wx ≤ Z) (hwx2 : 2 ≤ wx) (hwx : wx ≤ w) (hsl : sl < 32) (hsl1 : sl ≠ Crt.sD)
     (hsl2 : sl ≠ Public.sCnt) (hslv : word s.mem B (8 * sl) = off B o) (hws : WsAt s.mem B o wx mx)
     (hN : NVals s B w minv N) (hodd : N % 2 = 1) (hN1 : 1 < N) (hX : XVals s B o wx mx X) (hX1 : 1 < X)
     (hXodd : X % 2 = 1) :
@@ -119,7 +130,7 @@ theorem unitPhase_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv mx : Bi
   refine wp_seqs_append (by simp [Crt.gPow]) (by simp) ?_
   refine WP.mono (gPow_ok M hg (by omega) (by omega) (by omega) hN.n hN.inv hodd hN1 hN.r2 hN.one hsl hslv
     hws.hdr.hw (by
-      have := (hs.sub (o := o) (n := slot wx 8) hhi (by omega)).ld (d := 8 * sW) (by unfold sW; omega)
+      have := (hs.sub (o := o) (n := slot wx 8) (by omega) (by omega)).ld (d := 8 * sW) (by unfold sW; omega)
       exact this) (by omega) hwx) fun s₁ ⟨hg₁, hlt₁, hG₁, f₁, k₁⟩ => ?_
   have hb₁ : ∀ i < 32, i ≠ Crt.sD → i ≠ Public.sCnt → word s₁.mem B (8 * i) = word s.mem B (8 * i) :=
     fun i hi h1 h2 => f₁.word_eq (fun r hr => by

@@ -1,4 +1,5 @@
 import VerifiedGarbage.TCB.AArch64.Target
+import VerifiedGarbage.Proof.P256.Curve
 import VerifiedGarbage.Impl.EcKey.P256.AArch64
 import VerifiedGarbage.Proof.EcKey.AArch64.Verified
 
@@ -21,7 +22,7 @@ def artifacts : List Artifact := [
       `Z ≠ 0`, so the time depends only on the pointers."])
     code := Impl.EcKey.AArch64.publicKeyP256
     contract := Spec.EcKey.P256.inst.publicKeyContract AArch64.abi
-    verified := Proof.EcKey.AArch64.pk_verified
+    verified := Proof.EcKey.AArch64.pk_verified Proof.P256.law
     spSafe := Code.all_of_forall (fun _ => rfl) _ }]
 
 end VG.Artifacts.EcP256.AArch64
