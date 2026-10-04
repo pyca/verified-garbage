@@ -7,7 +7,9 @@ import VerifiedGarbage.Proof.Framework.Contract
 # Ed448 public-key derivation on x86-64: `Verified`
 
 The frame's body leaves the public key in `out` (`body_ok`), and the whole
-function meets `pkLocal` and the ABI (`publicKey_ok`).
+function meets `pkLocal` and the ABI (`publicKey_ok`), given that the
+reference ladder encodes `[k]B` (`BaseLadderOk`, which the registration file
+passes in).
 
 Constant time: two runs whose pointers agree have the same layout, so between
 the frame's push and pop they are related by `Two`: both satisfy `Ctx` with
@@ -26,13 +28,13 @@ variable {L : Lay} {g : Reg → BitVec 64} {mx : BitVec 32} {m₀ : Mem}
 /-! ## Correctness -/
 
 /-- The public key of the seed in `out`. -/
-theorem body_ok (hL : L.Ok) {t : State} (hc : Ctx L g mx m₀ t) :
+theorem body_ok (hb : Proof.Ed448.BaseLadderOk) (hL : L.Ok) {t : State} (hc : Ctx L g mx m₀ t) :
     WP isa pkBody t fun t' => Ctx L g mx m₀ t' ∧
       Spec.Ed448.bytesAt t'.mem L.out 57 = Spec.Ed448.publicKey (Spec.Ed448.bytesAt m₀ L.seed 57) := by
   refine WP.seq (WP.mono (hash_ok hL hc) fun t₁ ⟨hc₁, hh₁⟩ => ?_)
   refine WP.seq (WP.mono (prune_ok hc₁ hh₁) fun t₂ ⟨hc₂, hs₂⟩ => ?_)
   refine WP.seq (WP.mono (baseArgs_ok hc₂) fun t₃ ⟨hc₃, hm₃, ha₃⟩ => ?_)
-  refine WP.seq (WP.mono (base_ok hL hc₃ ha₃ (hm₃ ▸ hs₂)) fun t₄ ⟨hc₄, ho₄⟩ => ?_)
+  refine WP.seq (WP.mono (base_ok hb hL hc₃ ha₃ (hm₃ ▸ hs₂)) fun t₄ ⟨hc₄, ho₄⟩ => ?_)
   refine WP.mono (wipe_ok hc₄) fun t₅ ⟨hc₅, hf₅⟩ => ⟨hc₅, ?_⟩
   have e : Spec.Ed448.bytesAt t₅.mem L.out 57 = Spec.Ed448.bytesAt t₄.mem L.out 57 := by
     simp only [Spec.Ed448.bytesAt]
@@ -48,12 +50,12 @@ theorem pop_rsp (B : Addr) : B + BitVec.ofNat 64 16 + BitVec.ofNat 64 (8 * 11) =
   rw [add_add]
 
 /-- `vg_ed448_public_key` meets `pkLocal` and the ABI. -/
-theorem publicKey_ok {s : State} (h : pkLocal.pre s) :
+theorem publicKey_ok (hb : Proof.Ed448.BaseLadderOk) {s : State} (h : pkLocal.pre s) :
     WP isa publicKey s fun s' => abiPreserved s s' ∧ pkLocal.post s s' := by
   have hL := lay_ok h
   have hc := push_ctx h
   refine WP.frame (rs := pushRs) (by decide) (by decide) (by decide) (by show 8 * 11 ≤ _; have := h.1; omega)
-    (WP.mono (body_ok hL hc) fun u ⟨hu, ho⟩ => ⟨hu.rsp.trans hc.rsp.symm, hu.wr.trans hc.wr.symm, ?_, ?_⟩)
+    (WP.mono (body_ok hb hL hc) fun u ⟨hu, ho⟩ => ⟨hu.rsp.trans hc.rsp.symm, hu.wr.trans hc.wr.symm, ?_, ?_⟩)
   · have hrsp : (popped .rax pushRs.length u).gpr .rsp = s.gpr .rsp := by
       rw [popped_rsp, hu.rsp, show pushRs.length = 11 from rfl, pop_rsp, lay_ret]
     refine ⟨fun r hr => ?_, ?_, by rw [popped_mxcsr, hu.mx]⟩
@@ -180,7 +182,7 @@ theorem rspAnd {Φ : Lay → State → Prop} (r : Reg) (v : Lay → BitVec 64) (
   · exact (hv L t₁ f₁).trans (hv L t₂ f₂).symm
 
 /-- The frame's body. -/
-theorem body_ct : RelCT isa (Two fun _ _ => True) pkBody fun _ _ => True := by
+theorem body_ct (hb : Proof.Ed448.BaseLadderOk) : RelCT isa (Two fun _ _ => True) pkBody fun _ _ => True := by
   -- zeroing the state
   have z₁ : RelCT isa (Two fun _ _ => True) (.block pkZeroHead)
       (Two fun L t => t.gpr .rdi = L.scr ∧ t.gpr .rax = 0) :=
@@ -243,7 +245,7 @@ theorem body_ct : RelCT isa (Two fun _ _ => True) pkBody fun _ _ => True := by
     two_blk [.rsp] rspOnly (by taint_decide) fun _ _ _ _ _ _ hc _ =>
       WP.mono (baseArgs_ok hc) fun _ ⟨hc', _, ha⟩ => ⟨hc', ha⟩
   have b₂ := two_callP (n := "vg_ed448_scalar_base") (Φ := BaseArgs)
-    Proof.Ed448.X86_64.scalarBase_ok Proof.Ed448.X86_64.scalarBase_ct
+    (Proof.Ed448.X86_64.scalarBase_ok hb) Proof.Ed448.X86_64.scalarBase_ct
     base_nosp base_depth baseRd baseWr (fun _ _ _ _ _ hL hc ha => base_pre hL hc ha)
     (fun L t₁ t₂ _ _ _ _ _ _ c₁ c₂ a₁ a₂ => by
       obtain ⟨d₁, s₁, x₁⟩ := base_regs a₁ (baseRd L) (baseWr L)
@@ -255,8 +257,8 @@ theorem body_ct : RelCT isa (Two fun _ _ => True) pkBody fun _ _ => True := by
   exact ((z₁.seq z₂).seq ((a₁.seq a₂).seq ((p₁.seq p₂).seq (q₁.seq q₂)))).seq
     ((r₁.seq r₂).seq (b₁.seq (b₂.seq w)))
 
-theorem publicKey_ct : ConstantTime isa pkLocal.pre pkLocal.pub publicKey := by
-  refine RelCT.constantTime (RelCT.frame (fun _ _ h => h.2.2.1) (RelCT.mono body_ct ?_ fun _ _ _ => trivial))
+theorem publicKey_ct (hb : Proof.Ed448.BaseLadderOk) : ConstantTime isa pkLocal.pre pkLocal.pub publicKey := by
+  refine RelCT.constantTime (RelCT.frame (fun _ _ h => h.2.2.1) (RelCT.mono (body_ct hb) ?_ fun _ _ _ => trivial))
   rintro _ _ ⟨s₁, s₂, ⟨h₁, h₂, hsp, hdi, hsi, hdx⟩, rfl, rfl⟩
   have e : lay s₂ = lay s₁ := by simp only [lay, hsp, hdi, hsi, hdx]
   exact ⟨⟨lay s₁, s₁.gpr, s₂.gpr, s₁.mxcsr, s₂.mxcsr, s₁.mem, s₂.mem⟩, lay_ok h₁, push_ctx h₁,
@@ -269,8 +271,8 @@ theorem implies : pkLocal.Implies (Spec.Ed448.publicKeyContract X86_64.abi 104) 
     X86_64.abi, X86_64.argRegs, pkLocal] [Proof.Ed448.X86_64.scalarBaseSat]
     using Proof.Ed448.X86_64.scalarBaseSat
 
-theorem publicKey_verified :
+theorem publicKey_verified (hb : Proof.Ed448.BaseLadderOk) :
     Verified X86_64.target publicKey (Spec.Ed448.publicKeyContract X86_64.abi 104) :=
-  Verified.of_correct (fun _ h => publicKey_ok h) publicKey_ct implies
+  Verified.of_correct (fun _ h => publicKey_ok hb h) (publicKey_ct hb) implies
 
 end VG.Proof.Ed448.X86_64.PublicKey

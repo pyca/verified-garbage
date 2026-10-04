@@ -368,7 +368,7 @@ theorem decodeUV_eval (xo yo : Index) (h : (xo = 6 ∧ yo = 7) ∨ (xo = 8 ∧ y
   have hk : ∀ i : Index, i ≠ 3 → i ≠ 4 → i ≠ 5 → i ≠ 12 → i ≠ 13 → i ≠ xo →
       evalOps (decodeUV yo.val xo.val) e i = e i := fun i h3 h4 h5 h12 h13 hx =>
     evalOps_keep _ _ _ fun op hop => by
-      have hd := decodeUV_dest xo.val yo.val (by rcases h with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;> simp) op hop
+      have hd := decodeUV_dest xo.val yo.val (by rcases h with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;> decide) op hop
       have : i.val ≠ 3 := fun h => h3 (Fin.ext h)
       have : i.val ≠ 4 := fun h => h4 (Fin.ext h)
       have : i.val ≠ 5 := fun h => h5 (Fin.ext h)
@@ -435,7 +435,8 @@ theorem bytesAt57_len (m : Mem) (p : Addr) : (Spec.Ed448.bytesAt m p 57).length 
   simp [Spec.Ed448.bytesAt]
 
 include hf in
-theorem decode_ok {s : State} {base p : Addr} (hs : Scr s base) (hp : s.gpr .rsi = p) (xo yo : Index)
+theorem decode_ok (hR : RecoverOk) {s : State} {base p : Addr} (hs : Scr s base) (hp : s.gpr .rsi = p)
+    (xo yo : Index)
     (hxy : (xo = 6 ∧ yo = 7) ∨ (xo = 8 ∧ yo = 9))
     (h10 : E s.mem base 10 = 1) (h11 : E s.mem base 11 = Spec.Ed448.d)
     (hr8 : ∀ i < 7, InRegions (s.rd ++ s.wr) (p + BitVec.ofNat 64 (8 * i)) 8)
@@ -495,7 +496,7 @@ theorem decode_ok {s : State} {base p : Addr} (hs : Scr s base) (hp : s.gpr .rsi
   generalize ht : u * u * u * v = tt at *
   generalize hx : tt * rootPow (tt * ((u * v) * (u * v))) = x at *
   rw [x4] at xt hc3
-  have hD := Proof.Ed448.decodePoint_impl (Spec.Ed448.bytesAt s.mem p 57) (bytesAt57_len _ _)
+  have hD := Proof.Ed448.decodePoint_impl hR (Spec.Ed448.bytesAt s.mem p 57) (bytesAt57_len _ _)
     (Spec.Ed448.decodeLE (Spec.Ed448.bytesAt s.mem p 56)) ((s.mem (p + BitVec.ofNat 64 56)).toNat)
     (by rw [bytesAt57_take]) (by rw [bytesAt57_getD]) Y u v tt x hY hu hv ht hx
   -- what is kept
