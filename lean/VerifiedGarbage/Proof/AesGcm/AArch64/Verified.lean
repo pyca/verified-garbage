@@ -195,16 +195,16 @@ theorem streamAad_verified (v : GcmImpl) :
       [streamAadSat] using streamAadSat)
 
 theorem streamEncrypt_verified (v : GcmImpl) :
-    Verified AArch64.target (streamEncrypt v.callees) (Spec.Gcm.streamEncryptContract AArch64.abi) :=
+    Verified AArch64.target (streamEncrypt v.callees) (Proof.AesGcm.streamEncryptScratchContract AArch64.abi) :=
   Verified.of_correct (streamEncrypt_correct v) (streamEncrypt_ct v) (by
-    sig_implies [Spec.Gcm.streamEncryptContract, Spec.Gcm.streamCryptSig, streamEncryptAArch64, streamCryptPre, streamCryptPub, args, rounds, AArch64.abi,
+    sig_implies [Proof.AesGcm.streamEncryptScratchContract, Proof.AesGcm.streamCryptScratchSig, Spec.Gcm.streamTextPre, Spec.Gcm.streamEncryptPost, Spec.Gcm.streamDecryptPost, streamEncryptAArch64, streamCryptPre, streamCryptPub, args, rounds, AArch64.abi,
       AArch64.argRegs, AArch64.stackArg, AArch64.stackArgAddr, List.getD, List.range, List.range.loop]
       [streamCryptSat] using streamCryptSat)
 
 theorem streamDecrypt_verified (v : GcmImpl) :
-    Verified AArch64.target (streamDecrypt v.callees) (Spec.Gcm.streamDecryptContract AArch64.abi) :=
+    Verified AArch64.target (streamDecrypt v.callees) (Proof.AesGcm.streamDecryptScratchContract AArch64.abi) :=
   Verified.of_correct (streamDecrypt_correct v) (streamDecrypt_ct v) (by
-    sig_implies [Spec.Gcm.streamDecryptContract, Spec.Gcm.streamCryptSig, streamDecryptAArch64, streamCryptPre, streamCryptPub, args, rounds, AArch64.abi,
+    sig_implies [Proof.AesGcm.streamDecryptScratchContract, Proof.AesGcm.streamCryptScratchSig, Spec.Gcm.streamTextPre, Spec.Gcm.streamEncryptPost, Spec.Gcm.streamDecryptPost, streamDecryptAArch64, streamCryptPre, streamCryptPub, args, rounds, AArch64.abi,
       AArch64.argRegs, AArch64.stackArg, AArch64.stackArgAddr, List.getD, List.range, List.range.loop]
       [streamCryptSat] using streamCryptSat)
 

@@ -683,12 +683,8 @@ impl<'a, const DECRYPT: bool> Stream<'a, DECRYPT> {
                 avx: [vg_aes_gcm_stream_encrypt_aesni_pclmul_avx],
                 aarch64: [vg_aes_gcm_stream_encrypt_aes])
         };
-        let mut scratch = MaybeUninit::<[u64; 320]>::uninit();
         // SAFETY: as in `new`, with `data` valid for reads and writes of
-        // `data.len()` bytes (a unique borrow, so it overlaps nothing else),
-        // and `scratch` (a local, so it overlaps nothing else either) of 2560
-        // bytes: it is only working space, and the contract's result does
-        // not depend on what it holds, so it may be uninitialized;
+        // `data.len()` bytes (a unique borrow, so it overlaps nothing else);
         // `self.state` represents a message with `self.aad_len` bytes of
         // additional data and `self.text_len` of text.
         unsafe {
@@ -700,7 +696,6 @@ impl<'a, const DECRYPT: bool> Stream<'a, DECRYPT> {
                 self.text_len,
                 data.as_mut_ptr(),
                 data.len(),
-                scratch.as_mut_ptr(),
             )
         };
         self.text_len = text_len;

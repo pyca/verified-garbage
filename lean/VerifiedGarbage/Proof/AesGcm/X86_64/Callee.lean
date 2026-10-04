@@ -357,6 +357,8 @@ structure Piece (code : Prog isa) : Prop where
   spSafe : code.all (fun i => !X86_64.isa.writesSp i) = true
   nosp : code.allInstrs (fun i => !Taint.clobbers i .rsp) = true
   depth : code.depth = 0
+  /-- It uses no stack. -/
+  xdepth : code.x86_64Depth = 0
   ct : ∃ hc, ((taint.check (Taint.ofRegs [.r11, .rdi, .rsi, .rdx, .rcx, .r8, .r9, .rsp])
     (Blocks.stitchPart code) hc).map fun τ' => (RegSet.ofList [Reg.rsp]).subset τ'.regs &&
       (!false || τ'.flags)) = some true
@@ -397,6 +399,10 @@ theorem head_nosp : (Blocks.head (st.map f)).allInstrs (fun i => !Taint.clobbers
 theorem head_depth : (Blocks.head (st.map f)).depth = 0 := by
   rcases st with _ | i <;>
   simp only [Option.map, Blocks.head, Blocks.stitchPart, Code.depth, (hf _).depth] <;> decide
+
+theorem head_xdepth : (Blocks.head (st.map f)).x86_64Depth = 0 := by
+  rcases st with _ | i <;>
+  simp only [Option.map, Blocks.head, Blocks.stitchPart, Code.x86_64Depth, (hf _).xdepth] <;> decide
 
 end StitchImpl
 

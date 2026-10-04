@@ -73,17 +73,17 @@ def scSat : State :=
     [⟨0x1000, 256⟩, ⟨0x8000, 28⟩] [⟨0x3000, 80⟩, ⟨0, 0⟩, ⟨0, 2560⟩]
 
 theorem streamEncrypt_verified :
-    Verified Arm.target streamEncrypt (Spec.Gcm.streamEncryptContract Arm.abi 8) :=
+    Verified Arm.target streamEncrypt (Proof.AesGcm.streamEncryptScratchContract Arm.abi 8) :=
   Verified.of_correct (fun _ hs => streamEncrypt_wp hs) streamEncrypt_ct (by
-    sig_implies [Spec.Gcm.streamEncryptContract, Spec.Gcm.streamCryptSig, streamEncryptArm, streamCryptPre,
+    sig_implies [Proof.AesGcm.streamEncryptScratchContract, Proof.AesGcm.streamCryptScratchSig, Spec.Gcm.streamTextPre, Spec.Gcm.streamEncryptPost, Spec.Gcm.streamDecryptPost, streamEncryptArm, streamCryptPre,
       streamCryptPub, bel, arg, args, arg64, roundsOk, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val,
       Arm.State.addr]
       [scSat, mkSat, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read] using scSat)
 
 theorem streamDecrypt_verified :
-    Verified Arm.target streamDecrypt (Spec.Gcm.streamDecryptContract Arm.abi 8) :=
+    Verified Arm.target streamDecrypt (Proof.AesGcm.streamDecryptScratchContract Arm.abi 8) :=
   Verified.of_correct (fun _ hs => streamDecrypt_wp hs) streamDecrypt_ct (by
-    sig_implies [Spec.Gcm.streamDecryptContract, Spec.Gcm.streamCryptSig, streamDecryptArm, streamCryptPre,
+    sig_implies [Proof.AesGcm.streamDecryptScratchContract, Proof.AesGcm.streamCryptScratchSig, Spec.Gcm.streamTextPre, Spec.Gcm.streamEncryptPost, Spec.Gcm.streamDecryptPost, streamDecryptArm, streamCryptPre,
       streamCryptPub, bel, arg, args, arg64, roundsOk, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val,
       Arm.State.addr]
       [scSat, mkSat, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read] using scSat)

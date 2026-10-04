@@ -266,17 +266,17 @@ def crSat : State where
   wr := [⟨0x3000, 80⟩, ⟨0x2000, 0⟩, ⟨0, 2560⟩]
 
 theorem streamEncrypt_verified (v : GcmImpl) :
-    Verified X86_64.target (streamEncrypt v.callees) (Spec.Gcm.streamEncryptContract X86_64.abi 24) :=
+    Verified X86_64.target (streamEncrypt v.callees) (Proof.AesGcm.streamEncryptScratchContract X86_64.abi 24) :=
   Verified.of_correct (streamEncrypt_correct v) (streamEncrypt_ct v) (by
-    sig_implies [Spec.Gcm.streamEncryptContract, Spec.Gcm.streamCryptSig, Proof.AesGcm.streamEncryptX86_64, Proof.AesGcm.streamCryptPre, Proof.AesGcm.streamCryptPub, X86_64.abi, Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.stk24,
+    sig_implies [Proof.AesGcm.streamEncryptScratchContract, Proof.AesGcm.streamCryptScratchSig, Spec.Gcm.streamTextPre, Spec.Gcm.streamEncryptPost, Spec.Gcm.streamDecryptPost, Proof.AesGcm.streamEncryptX86_64, Proof.AesGcm.streamCryptPre, Proof.AesGcm.streamCryptPub, X86_64.abi, Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.stk24,
       Proof.AesGcm.ret, Proof.AesGcm.rounds, X86_64.stackArg, X86_64.stackArgAddr,
       List.getD, List.range, List.range.loop, VG.X86_64.below,
       X86_64.argRegs] [crSat] using crSat)
 
 theorem streamDecrypt_verified (v : GcmImpl) :
-    Verified X86_64.target (streamDecrypt v.callees) (Spec.Gcm.streamDecryptContract X86_64.abi 24) :=
+    Verified X86_64.target (streamDecrypt v.callees) (Proof.AesGcm.streamDecryptScratchContract X86_64.abi 24) :=
   Verified.of_correct (streamDecrypt_correct v) (streamDecrypt_ct v) (by
-    sig_implies [Spec.Gcm.streamDecryptContract, Spec.Gcm.streamCryptSig, Proof.AesGcm.streamDecryptX86_64, Proof.AesGcm.streamCryptPre, Proof.AesGcm.streamCryptPub, X86_64.abi, Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.stk24,
+    sig_implies [Proof.AesGcm.streamDecryptScratchContract, Proof.AesGcm.streamCryptScratchSig, Spec.Gcm.streamTextPre, Spec.Gcm.streamEncryptPost, Spec.Gcm.streamDecryptPost, Proof.AesGcm.streamDecryptX86_64, Proof.AesGcm.streamCryptPre, Proof.AesGcm.streamCryptPub, X86_64.abi, Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.stk24,
       Proof.AesGcm.ret, Proof.AesGcm.rounds, X86_64.stackArg, X86_64.stackArgAddr,
       List.getD, List.range, List.range.loop, VG.X86_64.below,
       X86_64.argRegs] [crSat] using crSat)
