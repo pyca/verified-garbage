@@ -196,4 +196,40 @@ theorem finTag_rel {o R : Nat} (ho : o = 0 ∨ o = 112) {aL tL : BitVec 64} :
 
 end
 
+/-- The environment, and the address `T` of `tag` in memory at `b + d`. -/
+def TagAt (Ctx St W SP : Addr) (b : Reg) (d : Nat) (T : Addr) (s : State) : Prop :=
+  Env Ctx St W SP s ∧ s.mem.readW (s.gpr b + BitVec.ofNat 64 d) 64 = T ∧
+    InRegions (s.rd ++ s.wr) (s.gpr b + BitVec.ofNat 64 d) 8
+
+/-- `tagOut src`, with the address of `tag` the same `T` in both runs. -/
+theorem tagOut_rel {Ctx St W SP T : Addr} {b : Reg} {d : Nat} (hb : b ∈ [Reg.r13, .r14, .r15, .rsp])
+    (hc : ∃ hc, (taint.check (Taint.ofRegs [b]) (.block [.mov .rdi (.mem (at_ b d))]) hc).isSome = true)
+    {P : State → State → Prop} (hP : ∀ s₁ s₂, P s₁ s₂ → TagAt Ctx St W SP b d T s₁ ∧ TagAt Ctx St W SP b d T s₂) :
+    RelCT isa P (.block (tagOut (at_ b d))) fun s₁ s₂ => Env Ctx St W SP s₁ ∧ Env Ctx St W SP s₂ := by
+  have hL : ∀ s, TagAt Ctx St W SP b d T s →
+      WP isa (.block [.mov .rdi (.mem (at_ b d))]) s fun s' => Env Ctx St W SP s' ∧ s'.gpr .rdi = T :=
+    fun s ⟨he, hT, r₁⟩ => by
+      obtain ⟨s₁, run₁, hdi, hg, hrd, hwr⟩ : ∃ s₁, runBlock isa [.mov .rdi (.mem (at_ b d))] s = some s₁ ∧
+          s₁.gpr .rdi = T ∧ (∀ r, r ≠ .rdi → s₁.gpr r = s.gpr r) ∧ s₁.rd = s.rd ∧ s₁.wr = s.wr := by
+        refine ⟨_, by xrun [r₁], ?_, ?_, ?_, ?_⟩
+        · simp [gpr_setReg, hT]
+        · intro r a; simp [gpr_setReg, a]
+        all_goals rfl
+      refine WP.of_runBlock ⟨s₁, run₁, he.keep (fun r hr => ?_) hrd hwr, hdi⟩
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl | rfl <;> exact hg _ (by decide)
+  have hb' : ∀ s₁ s₂, Env Ctx St W SP s₁ → Env Ctx St W SP s₂ → s₁.gpr b = s₂.gpr b := fun s₁ s₂ e₁ e₂ =>
+    env_agree e₁ e₂ b hb
+  have a := rel_wp (rel_taint (P := P) [b] (fun s₁ s₂ h r hr => by
+      simp only [List.mem_singleton] at hr; subst hr; exact hb' _ _ (hP _ _ h).1.1 (hP _ _ h).2.1)
+      hc) hP hL hL
+  have c := rel_env (by decide) (fun _ _ h => ⟨h.2.1.1, h.2.2.1⟩)
+    (rel_taint (P := fun s₁ s₂ => True ∧ (Env Ctx St W SP s₁ ∧ s₁.gpr .rdi = T) ∧ (Env Ctx St W SP s₂ ∧
+      s₂.gpr .rdi = T)) (c := .block [.mov .rax (.mem (at_ .r15 0)), .mov .rdx (.mem (at_ .r15 8)),
+        .store (at_ .rdi 0) .rax, .store (at_ .rdi 8) .rdx]) ([.rdi] ++ [.r13, .r14, .r15, .rsp])
+      (fun _ _ h => EnvAgree.regs ⟨h.2.1.1, h.2.2.1, fun r hr => by
+        simp only [List.mem_singleton] at hr; subst hr; rw [h.2.1.2, h.2.2.2]⟩) ⟨_, by taint_decide⟩)
+  exact (rel_block_split (RelCT.seq (a.mono (fun _ _ h => h) fun _ _ h => ⟨trivial, h.2⟩) c)).mono
+    (fun _ _ h => h) fun _ _ h => h.2
+
 end VG.Proof.AesGcm.X86_64

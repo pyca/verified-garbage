@@ -41,6 +41,42 @@ theorem pubOf_esp {n : Nat} {s : State} {p : BitVec 32 × (Nat → BitVec 32)} (
     s.gpr .esp = p.1 := by
   rw [← h]; rfl
 
+/-- The public data of a run with `n` stack arguments, with the arguments `i`
+and `n - 1` (`W`, the last) exchanged: the pieces of the functions that take
+`W` last find it at `i`. -/
+def pubSw (n i : Nat) (s : State) : BitVec 32 × (Nat → BitVec 32) :=
+  (s.gpr .esp, fun k => if k < n then arg s (if k = i then n - 1 else if k = n - 1 then i else k) else 0)
+
+theorem pubSw_eq {n i : Nat} (hi : i < n) {s₁ s₂ : State} (h : pubN n s₁ s₂) : pubSw n i s₁ = pubSw n i s₂ := by
+  obtain ⟨h₁, h₂⟩ := h
+  simp only [pubSw, h₁, Prod.mk.injEq, true_and]
+  funext k
+  split
+  · next hk => exact h₂ _ (by split <;> (try split) <;> omega)
+  · rfl
+
+theorem pubSw_arg {n i : Nat} {s : State} {p : BitVec 32 × (Nat → BitVec 32)} (h : pubSw n i s = p) {k : Nat}
+    (hk : k < n) (hi : k ≠ i) (hn : k + 1 ≠ n) : arg s k = p.2 k := by
+  rw [← h]; simp only [pubSw, hk, hi, show k ≠ n - 1 by omega, ↓reduceIte]
+
+/-- `W`, at `i`. -/
+theorem pubSw_W {n i m : Nat} {s : State} {p : BitVec 32 × (Nat → BitVec 32)} (h : pubSw n i s = p)
+    (hi : i < n) (hm : n = m + 1) : arg s m = p.2 i := by
+  rw [← h]; simp only [pubSw, hi, ↓reduceIte, show n - 1 = m by omega]
+
+/-- The argument `i`, at `n - 1`. -/
+theorem pubSw_last {n i m : Nat} {s : State} {p : BitVec 32 × (Nat → BitVec 32)} (h : pubSw n i s = p)
+    (hi : i < n) (hm : n = m + 1) : arg s i = p.2 m := by
+  rw [← h]
+  simp only [pubSw, show m < n by omega, show n - 1 = m by omega, ↓reduceIte]
+  by_cases e : m = i
+  · subst e; simp
+  · simp [e]
+
+theorem pubSw_esp {n i : Nat} {s : State} {p : BitVec 32 × (Nat → BitVec 32)} (h : pubSw n i s = p) :
+    s.gpr .esp = p.1 := by
+  rw [← h]; rfl
+
 /-- A piece from states none of which satisfies `P`. -/
 theorem Pc.vacuous {α : Sort _} {P Q : α → State → Prop} {c : Prog isa} (h : ∀ a s, ¬ P a s) : Pc P c Q :=
   ⟨fun a s hs => absurd hs (h a s), RelCT.of_false fun _ _ ⟨⟨a, h₁⟩, _⟩ => h a _ h₁⟩

@@ -14,8 +14,11 @@ import VerifiedGarbage.Proof.AesGcm.Scratch
 Untrusted: everything here is checked by Lean. Correctness and constant time
 (for any implementations `v` of `vg_aes_ctr32`, `vg_aes_expand_key` and
 `vg_ghash`), a state satisfying each precondition, and the shared contracts
-of `Spec/Gcm/Contract.lean` (with 8 bytes of stack, for the return address
-of a call: the functions called make no calls).
+of `Spec/Gcm/Contract.lean` with the working space as a last argument
+(`Proof/AesGcm/Scratch.lean`; with 8 bytes of stack, for the return address
+of a call: the functions called make no calls, and 24 for those that call
+`vg_aes_gcm_encrypt_blocks` or `vg_aes_gcm_decrypt_blocks` with an argument
+on the stack).
 -/
 
 set_option linter.unusedSimpArgs false
@@ -281,47 +284,50 @@ theorem streamDecrypt_verified (v : GcmImpl) :
       List.getD, List.range, List.range.loop, VG.X86_64.below,
       X86_64.argRegs] [crSat] using crSat)
 
-/-- A state satisfying `vg_aes_gcm_stream_finish`'s precondition. -/
+/-- A state satisfying `vg_aes_gcm_stream_finish`'s precondition (with `work` at 0). -/
 def finSat : State where
   gpr r := match r with
-    | .rdi => 0x1000 | .rsi => 10 | .rdx => 0x3000 | .r9 => 0x4000 | .rsp => 0x8000 | _ => 0
-  cf := none
-  zf := none
-  sf := none
-  of := none
-  mem _ := 0
-  rd := [⟨0x1000, 256⟩]
-  wr := [⟨0x3000, 80⟩, ⟨0x4000, 2560⟩]
-
-theorem streamFinish_verified (v : GcmImpl) :
-    Verified X86_64.target (streamFinish v.callees) (Spec.Gcm.streamFinishContract X86_64.abi 8) :=
-  Verified.of_correct (streamFinish_correct v) (streamFinish_ct v) (by
-    sig_implies [Spec.Gcm.streamFinishContract, Spec.Gcm.streamFinishSig, Proof.AesGcm.streamFinishX86_64, Proof.AesGcm.finPre, X86_64.abi, Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.stk,
-      Proof.AesGcm.ret, Proof.AesGcm.rounds, X86_64.stackArg, X86_64.stackArgAddr,
-      List.getD, List.range, List.range.loop, VG.X86_64.below,
-      X86_64.argRegs] [finSat] using finSat)
-
-/-- A state satisfying `vg_aes_gcm_stream_verify`'s precondition. -/
-def verSat : State where
-  gpr r := match r with
-    | .rdi => 0x1000 | .rsi => 10 | .rdx => 0x3000 | .r9 => 0x4000 | .rsp => 0x8000 | _ => 0
+    | .rdi => 0x1000 | .rsi => 10 | .rdx => 0x3000 | .r9 => 0x5000 | .rsp => 0x8000 | _ => 0
   cf := none
   zf := none
   sf := none
   of := none
   mem _ := 0
   rd := [⟨0x1000, 256⟩, ⟨0x8008, 8⟩]
-  wr := [⟨0x3000, 80⟩, ⟨0x4000, 2560⟩]
+  wr := [⟨0x3000, 80⟩, ⟨0x5000, 16⟩, ⟨0, 2560⟩]
+
+theorem streamFinish_verified (v : GcmImpl) :
+    Verified X86_64.target (streamFinish v.callees) (Proof.AesGcm.streamFinishScratchContract X86_64.abi 8) :=
+  Verified.of_correct (streamFinish_correct v) (streamFinish_ct v) (by
+    sig_implies [Proof.AesGcm.streamFinishScratchContract, Proof.AesGcm.streamFinishScratchSig, Spec.Gcm.streamFinishPre,
+      Spec.Gcm.streamFinishPost, Proof.AesGcm.streamFinishX86_64, Proof.AesGcm.finPre, X86_64.abi, Proof.AesGcm.arg,
+      Proof.AesGcm.args, Proof.AesGcm.stk, Proof.AesGcm.ret, Proof.AesGcm.rounds, X86_64.stackArg, X86_64.stackArgAddr,
+      List.getD, List.range, List.range.loop, VG.X86_64.below,
+      X86_64.argRegs] [finSat] using finSat)
+
+/-- A state satisfying `vg_aes_gcm_stream_verify`'s precondition (with no tag, and `work` at 0). -/
+def verSat : State where
+  gpr r := match r with
+    | .rdi => 0x1000 | .rsi => 10 | .rdx => 0x3000 | .r9 => 0x5000 | .rsp => 0x8000 | _ => 0
+  cf := none
+  zf := none
+  sf := none
+  of := none
+  mem _ := 0
+  rd := [⟨0x1000, 256⟩, ⟨0x5000, 0⟩, ⟨0x8008, 16⟩]
+  wr := [⟨0x3000, 80⟩, ⟨0, 2560⟩]
 
 theorem streamVerify_verified (v : GcmImpl) :
-    Verified X86_64.target (streamVerify v.callees) (Spec.Gcm.streamVerifyContract X86_64.abi 8) :=
+    Verified X86_64.target (streamVerify v.callees) (Proof.AesGcm.streamVerifyScratchContract X86_64.abi 8) :=
   Verified.of_correct (streamVerify_correct v) (streamVerify_ct v) (by
-    sig_implies [Spec.Gcm.streamVerifyContract, Spec.Gcm.streamVerifySig, Proof.AesGcm.streamVerifyX86_64, Proof.AesGcm.verifyPre, X86_64.abi, Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.stk,
-      Proof.AesGcm.ret, Proof.AesGcm.rounds, X86_64.stackArg, X86_64.stackArgAddr,
+    sig_implies [Proof.AesGcm.streamVerifyScratchContract, Proof.AesGcm.streamVerifyScratchSig, Spec.Gcm.streamVerifyPre,
+      Spec.Gcm.streamVerifyPost, Proof.AesGcm.streamVerifyX86_64, Proof.AesGcm.verifyPre, X86_64.abi, Proof.AesGcm.arg,
+      Proof.AesGcm.args, Proof.AesGcm.stk, Proof.AesGcm.ret, Proof.AesGcm.rounds, X86_64.stackArg, X86_64.stackArgAddr,
       List.getD, List.range, List.range.loop, VG.X86_64.below,
       X86_64.argRegs] [verSat] using verSat)
 
-/-- A state satisfying `vg_aes_gcm_seal`'s precondition (with no nonce, additional data or data, and `work` at 0). -/
+/-- A state satisfying `vg_aes_gcm_seal`'s precondition (with no nonce, additional data or data, `tag` at
+`0x3000` and `work` at 0). -/
 def sealSat : State where
   gpr r := match r with
     | .rdi => 0x1000 | .rsi => 10 | .rdx => 0x2000 | .r8 => 0x2100 | .rsp => 0x8000 | _ => 0
@@ -329,19 +335,21 @@ def sealSat : State where
   zf := none
   sf := none
   of := none
-  mem _ := 0
-  rd := [⟨0x1000, 256⟩, ⟨0x2000, 0⟩, ⟨0x2100, 0⟩, ⟨0x8008, 24⟩]
-  wr := [⟨0, 0⟩, ⟨0, 2560⟩]
+  mem a := if a = 0x8019 then 0x30 else 0
+  rd := [⟨0x1000, 256⟩, ⟨0x2000, 0⟩, ⟨0x2100, 0⟩, ⟨0x8008, 32⟩]
+  wr := [⟨0, 0⟩, ⟨0x3000, 16⟩, ⟨0, 2560⟩]
 
 theorem seal_verified (v : GcmImpl) :
-    Verified X86_64.target («seal» v.callees) (Spec.Gcm.sealContract X86_64.abi 24) :=
+    Verified X86_64.target («seal» v.callees) (Proof.AesGcm.sealScratchContract X86_64.abi 24) :=
   Verified.of_correct (seal_correct v) (seal_ct v) (by
-    sig_implies [Spec.Gcm.sealContract, Spec.Gcm.sealSig, Proof.AesGcm.sealX86_64, Proof.AesGcm.onePre, Proof.AesGcm.onePub, X86_64.abi, Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.stk24,
+    sig_implies [Proof.AesGcm.sealScratchContract, Proof.AesGcm.sealScratchSig, Spec.Gcm.sealPre, Spec.Gcm.sealPost,
+      Proof.AesGcm.sealX86_64, Proof.AesGcm.sealPre, Proof.AesGcm.oneLay, Proof.AesGcm.onePub, X86_64.abi, Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.stk24,
       Proof.AesGcm.ret, Proof.AesGcm.rounds, X86_64.stackArg, X86_64.stackArgAddr,
       List.getD, List.range, List.range.loop, VG.X86_64.below,
       X86_64.argRegs] [sealSat] using sealSat)
 
-/-- A state satisfying `vg_aes_gcm_open`'s precondition (with no nonce, additional data or data, and `work` at 0). -/
+/-- A state satisfying `vg_aes_gcm_open`'s precondition (with no nonce, additional data, data or tag, and
+`work` at 0). -/
 def openSat : State where
   gpr r := match r with
     | .rdi => 0x1000 | .rsi => 10 | .rdx => 0x2000 | .r8 => 0x2100 | .rsp => 0x8000 | _ => 0
@@ -350,47 +358,41 @@ def openSat : State where
   sf := none
   of := none
   mem _ := 0
-  rd := [⟨0x1000, 256⟩, ⟨0x2000, 0⟩, ⟨0x2100, 0⟩, ⟨0x8008, 32⟩]
+  rd := [⟨0x1000, 256⟩, ⟨0x2000, 0⟩, ⟨0x2100, 0⟩, ⟨0, 0⟩, ⟨0x8008, 40⟩]
   wr := [⟨0, 0⟩, ⟨0, 2560⟩]
-
-/-- The leak `open` may have: whether it succeeds. -/
-theorem leak_bool {a b : Bool} (h : [if a = true then 1 else 0] = [if b = true then 1 else 0]) : a = b := by
-  cases a <;> cases b <;> simp_all
 
 /-- `open`'s public data include its leak, from which `pub` has whether it
 succeeds. -/
 theorem open_verified (v : GcmImpl) :
-    Verified X86_64.target («open» v.callees) (Spec.Gcm.openContract X86_64.abi 24) :=
+    Verified X86_64.target («open» v.callees) (Proof.AesGcm.openScratchContract X86_64.abi 24) :=
   Verified.of_correct (open_correct v) (open_ct v)
-    { pre := by sig_implies_pre [Spec.Gcm.openContract, Spec.Gcm.openSig, Proof.AesGcm.openX86_64, Proof.AesGcm.onePre, Proof.AesGcm.onePub, X86_64.abi, Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.stk24,
+    { pre := by sig_implies_pre [Proof.AesGcm.openScratchContract, Proof.AesGcm.openScratchSig, Spec.Gcm.openPre, Spec.Gcm.openPost, Spec.Gcm.openLeak, Proof.AesGcm.openX86_64, Proof.AesGcm.openLeak, Proof.AesGcm.openPre, Proof.AesGcm.oneLay, Proof.AesGcm.onePub, X86_64.abi, Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.stk24,
       Proof.AesGcm.ret, Proof.AesGcm.rounds, X86_64.stackArg, X86_64.stackArgAddr,
       List.getD, List.range, List.range.loop, VG.X86_64.below,
       X86_64.argRegs]
-      post := by sig_implies_post [Spec.Gcm.openContract, Spec.Gcm.openSig, Proof.AesGcm.openX86_64, Proof.AesGcm.onePre, Proof.AesGcm.onePub, X86_64.abi, Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.stk24,
+      post := by sig_implies_post [Proof.AesGcm.openScratchContract, Proof.AesGcm.openScratchSig, Spec.Gcm.openPre, Spec.Gcm.openPost, Spec.Gcm.openLeak, Proof.AesGcm.openX86_64, Proof.AesGcm.openLeak, Proof.AesGcm.openPre, Proof.AesGcm.oneLay, Proof.AesGcm.onePub, X86_64.abi, Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.stk24,
       Proof.AesGcm.ret, Proof.AesGcm.rounds, X86_64.stackArg, X86_64.stackArgAddr,
       List.getD, List.range, List.range.loop, VG.X86_64.below,
       X86_64.argRegs]
       pub := by
         intro s₁ s₂ _ _ h
-        sig_pub [Spec.Gcm.openContract, Spec.Gcm.openSig, Proof.AesGcm.openX86_64, Proof.AesGcm.onePre, Proof.AesGcm.onePub, X86_64.abi, Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.stk24,
+        sig_pub [Proof.AesGcm.openScratchContract, Proof.AesGcm.openScratchSig, Spec.Gcm.openPre, Spec.Gcm.openPost, Spec.Gcm.openLeak, Proof.AesGcm.openX86_64, Proof.AesGcm.openLeak, Proof.AesGcm.openPre, Proof.AesGcm.oneLay, Proof.AesGcm.onePub, X86_64.abi, Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.stk24,
       Proof.AesGcm.ret, Proof.AesGcm.rounds, X86_64.stackArg, X86_64.stackArgAddr,
       List.getD, List.range, List.range.loop, VG.X86_64.below,
       X86_64.argRegs] at h
         sig_split h
-        sig_reduce [Spec.Gcm.openContract, Spec.Gcm.openSig, Proof.AesGcm.openX86_64, Proof.AesGcm.onePre, Proof.AesGcm.onePub, X86_64.abi, Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.stk24,
+        sig_reduce [Proof.AesGcm.openScratchContract, Proof.AesGcm.openScratchSig, Spec.Gcm.openPre, Spec.Gcm.openPost, Spec.Gcm.openLeak, Proof.AesGcm.openX86_64, Proof.AesGcm.openLeak, Proof.AesGcm.openPre, Proof.AesGcm.oneLay, Proof.AesGcm.onePub, X86_64.abi, Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.stk24,
       Proof.AesGcm.ret, Proof.AesGcm.rounds, X86_64.stackArg, X86_64.stackArgAddr,
       List.getD, List.range, List.range.loop, VG.X86_64.below,
       X86_64.argRegs]
-        sig_simp [Spec.Gcm.openContract, Spec.Gcm.openSig, Proof.AesGcm.openX86_64, Proof.AesGcm.onePre, Proof.AesGcm.onePub, X86_64.abi, Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.stk24,
+        sig_simp [Proof.AesGcm.openScratchContract, Proof.AesGcm.openScratchSig, Spec.Gcm.openPre, Spec.Gcm.openPost, Spec.Gcm.openLeak, Proof.AesGcm.openX86_64, Proof.AesGcm.openLeak, Proof.AesGcm.openPre, Proof.AesGcm.oneLay, Proof.AesGcm.onePub, X86_64.abi, Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.stk24,
       Proof.AesGcm.ret, Proof.AesGcm.rounds, X86_64.stackArg, X86_64.stackArgAddr,
       List.getD, List.range, List.range.loop, VG.X86_64.below,
       X86_64.argRegs] [Nat.forall_lt_succ_right, Nat.not_lt_zero, false_imp_iff, forall_const, true_and]
         sig_and_intros
         sig_close
-        all_goals first
-          | with_reducible assumption
-          | (apply leak_bool; with_reducible assumption)
-      sat := by sig_implies_sat [Spec.Gcm.openContract, Spec.Gcm.openSig, Proof.AesGcm.openX86_64, Proof.AesGcm.onePre, Proof.AesGcm.onePub, X86_64.abi, Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.stk24,
+        all_goals with_reducible assumption
+      sat := by sig_implies_sat [Proof.AesGcm.openScratchContract, Proof.AesGcm.openScratchSig, Spec.Gcm.openPre, Spec.Gcm.openPost, Spec.Gcm.openLeak, Proof.AesGcm.openX86_64, Proof.AesGcm.openLeak, Proof.AesGcm.openPre, Proof.AesGcm.oneLay, Proof.AesGcm.onePub, X86_64.abi, Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.stk24,
       Proof.AesGcm.ret, Proof.AesGcm.rounds, X86_64.stackArg, X86_64.stackArgAddr,
       List.getD, List.range, List.range.loop, VG.X86_64.below,
       X86_64.argRegs] [openSat] using openSat }

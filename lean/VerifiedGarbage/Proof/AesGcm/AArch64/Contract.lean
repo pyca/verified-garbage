@@ -117,15 +117,17 @@ def streamDecryptAArch64 : Contract isa where
   pub := streamCryptPub
 
 /-- What `vg_aes_gcm_stream_finish` needs: `(ctx = x0, rounds = x1, state = x2, aad_len = x3,
-text_len = x4, work = x5)`, and `vg_aes_gcm_stream_verify` with `tag_len = x6`. -/
+text_len = x4, tag = x5, work = x6)`. -/
 def finPre (s : State) : Prop :=
   let ctx : Region := ⟨s.gpr .x0, 256⟩
   let st : Region := ⟨s.gpr .x2, 80⟩
-  let work : Region := ⟨s.gpr .x5, 2560⟩
-  s.rd = [ctx] ∧ s.wr = [st, work] ∧
-    ctx.Disjoint st ∧ ctx.Disjoint work ∧ st.Disjoint work ∧
-    (s.gpr .x0).toNat + 256 ≤ 2 ^ 64 ∧ (s.gpr .x2).toNat + 80 ≤ 2 ^ 64 ∧ (s.gpr .x5).toNat + 2560 ≤ 2 ^ 64 ∧
-    rounds (s.gpr .x1)
+  let tag : Region := ⟨s.gpr .x5, 16⟩
+  let work : Region := ⟨s.gpr .x6, 2560⟩
+  s.rd = [ctx] ∧ s.wr = [st, tag, work] ∧
+    ctx.Disjoint st ∧ ctx.Disjoint tag ∧ ctx.Disjoint work ∧ st.Disjoint tag ∧ st.Disjoint work ∧
+    tag.Disjoint work ∧
+    (s.gpr .x0).toNat + 256 ≤ 2 ^ 64 ∧ (s.gpr .x2).toNat + 80 ≤ 2 ^ 64 ∧ (s.gpr .x5).toNat + 16 ≤ 2 ^ 64 ∧
+    (s.gpr .x6).toNat + 2560 ≤ 2 ^ 64 ∧ rounds (s.gpr .x1)
 
 /-- `vg_aes_gcm_stream_finish`. -/
 def streamFinishAArch64 : Contract isa where
@@ -137,11 +139,25 @@ def streamFinishAArch64 : Contract isa where
       s.gpr .x3 = BitVec.ofNat 64 a.length → (s.gpr .x4).toNat = c.length →
       bytesAt s'.mem (s.gpr .x5) 16 = fullTag ciph h iv a c
   pub s₁ s₂ := s₁.gpr .x0 = s₂.gpr .x0 ∧ s₁.gpr .x1 = s₂.gpr .x1 ∧ s₁.gpr .x2 = s₂.gpr .x2 ∧
-    s₁.gpr .x3 = s₂.gpr .x3 ∧ s₁.gpr .x4 = s₂.gpr .x4 ∧ s₁.gpr .x5 = s₂.gpr .x5 ∧ s₁.sp = s₂.sp
+    s₁.gpr .x3 = s₂.gpr .x3 ∧ s₁.gpr .x4 = s₂.gpr .x4 ∧ s₁.gpr .x5 = s₂.gpr .x5 ∧
+    s₁.gpr .x6 = s₂.gpr .x6 ∧ s₁.sp = s₂.sp
+
+/-- What `vg_aes_gcm_stream_verify` needs: `(ctx = x0, rounds = x1, state = x2, aad_len = x3,
+text_len = x4, tag = x5, tag_len = x6, work = x7)`. -/
+def verPre (s : State) : Prop :=
+  let ctx : Region := ⟨s.gpr .x0, 256⟩
+  let st : Region := ⟨s.gpr .x2, 80⟩
+  let tag : Region := ⟨s.gpr .x5, (s.gpr .x6).toNat⟩
+  let work : Region := ⟨s.gpr .x7, 2560⟩
+  s.rd = [ctx, tag] ∧ s.wr = [st, work] ∧
+    ctx.Disjoint st ∧ ctx.Disjoint work ∧ st.Disjoint tag ∧ st.Disjoint work ∧ tag.Disjoint work ∧
+    (s.gpr .x0).toNat + 256 ≤ 2 ^ 64 ∧ (s.gpr .x2).toNat + 80 ≤ 2 ^ 64 ∧
+    (s.gpr .x5).toNat + (s.gpr .x6).toNat ≤ 2 ^ 64 ∧ (s.gpr .x7).toNat + 2560 ≤ 2 ^ 64 ∧
+    rounds (s.gpr .x1)
 
 /-- `vg_aes_gcm_stream_verify`. -/
 def streamVerifyAArch64 : Contract isa where
-  pre := finPre
+  pre := verPre
   post s s' :=
     let ciph := ctxCiph s.mem (s.gpr .x0) (s.gpr .x1).toNat
     let h := ctxH s.mem (s.gpr .x0)
@@ -149,29 +165,46 @@ def streamVerifyAArch64 : Contract isa where
     ∀ iv a c, StreamRepr s.mem (s.gpr .x2) ciph h iv a c →
       s.gpr .x3 = BitVec.ofNat 64 a.length → (s.gpr .x4).toNat = c.length →
       let t := fullTag ciph h iv a c
-      if tagLenOk tl ∧ t.take tl = bytesAt s.mem (s.gpr .x5) tl then
-        (s'.gpr .x0).setWidth 32 = 1 ∧ bytesAt s'.mem (s.gpr .x5) 16 = t
-      else (s'.gpr .x0).setWidth 32 = 0 ∧ bytesAt s'.mem (s.gpr .x5) 16 = zeros 16
+      if tagLenOk tl ∧ t.take tl = bytesAt s.mem (s.gpr .x5) tl then (s'.gpr .x0).setWidth 32 = 1
+      else (s'.gpr .x0).setWidth 32 = 0
   pub s₁ s₂ := s₁.gpr .x0 = s₂.gpr .x0 ∧ s₁.gpr .x1 = s₂.gpr .x1 ∧ s₁.gpr .x2 = s₂.gpr .x2 ∧
     s₁.gpr .x3 = s₂.gpr .x3 ∧ s₁.gpr .x4 = s₂.gpr .x4 ∧ s₁.gpr .x5 = s₂.gpr .x5 ∧
-    s₁.gpr .x6 = s₂.gpr .x6 ∧ s₁.sp = s₂.sp
+    s₁.gpr .x6 = s₂.gpr .x6 ∧ s₁.gpr .x7 = s₂.gpr .x7 ∧ s₁.sp = s₂.sp
 
-/-- What `vg_aes_gcm_seal` needs: `(ctx = x0, rounds = x1, nonce = x2, nonce_len = x3, aad = x4,
-aad_len = x5, data = x6, len = x7, work = [sp])`, and `vg_aes_gcm_open` with `tag_len = [sp + 8]`. -/
-def onePre (n : Nat) (s : State) : Prop :=
+/-- What `vg_aes_gcm_seal` and `vg_aes_gcm_open` need of their common arguments:
+`(ctx = x0, rounds = x1, nonce = x2, nonce_len = x3, aad = x4, aad_len = x5, data = x6,
+len = x7, …)`, with `n` arguments on the stack and `work` the `w`-th. -/
+def oneCore (n w : Nat) (s : State) : Prop :=
   let ctx : Region := ⟨s.gpr .x0, 256⟩
   let nonce : Region := ⟨s.gpr .x2, (s.gpr .x3).toNat⟩
   let aad : Region := ⟨s.gpr .x4, (s.gpr .x5).toNat⟩
   let data : Region := ⟨s.gpr .x6, (s.gpr .x7).toNat⟩
-  let work : Region := ⟨stackArg s 0, 2560⟩
-  s.rd = [ctx, nonce, aad, args s n] ∧ s.wr = [data, work] ∧
+  let work : Region := ⟨stackArg s w, 2560⟩
+  ctx ∈ s.rd ∧ nonce ∈ s.rd ∧ aad ∈ s.rd ∧ args s n ∈ s.rd ∧ data ∈ s.wr ∧ work ∈ s.wr ∧
     ctx.Disjoint data ∧ ctx.Disjoint work ∧ nonce.Disjoint data ∧ nonce.Disjoint work ∧
     aad.Disjoint data ∧ aad.Disjoint work ∧
     data.Disjoint work ∧ data.Disjoint (args s n) ∧ work.Disjoint (args s n) ∧
     (s.gpr .x0).toNat + 256 ≤ 2 ^ 64 ∧ (s.gpr .x2).toNat + (s.gpr .x3).toNat ≤ 2 ^ 64 ∧
     (s.gpr .x4).toNat + (s.gpr .x5).toNat ≤ 2 ^ 64 ∧ (s.gpr .x6).toNat + (s.gpr .x7).toNat ≤ 2 ^ 64 ∧
-    (stackArg s 0).toNat + 2560 ≤ 2 ^ 64 ∧ s.sp.toNat + 8 * n ≤ 2 ^ 64 ∧ rounds (s.gpr .x1)
+    (stackArg s w).toNat + 2560 ≤ 2 ^ 64 ∧ s.sp.toNat + 8 * n ≤ 2 ^ 64 ∧ rounds (s.gpr .x1)
 
+/-- What `vg_aes_gcm_seal` needs: its common arguments, `tag = [sp]` and `work = [sp + 8]`. -/
+def sealPre (s : State) : Prop :=
+  let ctx : Region := ⟨s.gpr .x0, 256⟩
+  let nonce : Region := ⟨s.gpr .x2, (s.gpr .x3).toNat⟩
+  let aad : Region := ⟨s.gpr .x4, (s.gpr .x5).toNat⟩
+  let data : Region := ⟨s.gpr .x6, (s.gpr .x7).toNat⟩
+  let tag : Region := ⟨stackArg s 0, 16⟩
+  let work : Region := ⟨stackArg s 1, 2560⟩
+  s.rd = [ctx, nonce, aad, args s 2] ∧ s.wr = [data, tag, work] ∧
+    ctx.Disjoint data ∧ ctx.Disjoint work ∧ nonce.Disjoint data ∧ nonce.Disjoint work ∧
+    aad.Disjoint data ∧ aad.Disjoint work ∧ data.Disjoint tag ∧
+    data.Disjoint work ∧ data.Disjoint (args s 2) ∧ tag.Disjoint work ∧ work.Disjoint (args s 2) ∧
+    (s.gpr .x0).toNat + 256 ≤ 2 ^ 64 ∧ (s.gpr .x2).toNat + (s.gpr .x3).toNat ≤ 2 ^ 64 ∧
+    (s.gpr .x4).toNat + (s.gpr .x5).toNat ≤ 2 ^ 64 ∧ (s.gpr .x6).toNat + (s.gpr .x7).toNat ≤ 2 ^ 64 ∧
+    (stackArg s 1).toNat + 2560 ≤ 2 ^ 64 ∧ s.sp.toNat + 8 * 2 ≤ 2 ^ 64 ∧ rounds (s.gpr .x1)
+
+/-- The public arguments of `seal` and `open`, with `n` on the stack. -/
 def onePub (n : Nat) (s₁ s₂ : State) : Prop :=
   s₁.gpr .x0 = s₂.gpr .x0 ∧ s₁.gpr .x1 = s₂.gpr .x1 ∧ s₁.gpr .x2 = s₂.gpr .x2 ∧
     s₁.gpr .x3 = s₂.gpr .x3 ∧ s₁.gpr .x4 = s₂.gpr .x4 ∧ s₁.gpr .x5 = s₂.gpr .x5 ∧
@@ -179,13 +212,30 @@ def onePub (n : Nat) (s₁ s₂ : State) : Prop :=
 
 /-- `vg_aes_gcm_seal`. -/
 def sealAArch64 : Contract isa where
-  pre := onePre 1
+  pre := sealPre
   post s s' :=
     encryptWith (ctxCiph s.mem (s.gpr .x0) (s.gpr .x1).toNat) (ctxH s.mem (s.gpr .x0)) 16
         (bytesAt s.mem (s.gpr .x2) (s.gpr .x3).toNat) (bytesAt s.mem (s.gpr .x6) (s.gpr .x7).toNat)
         (bytesAt s.mem (s.gpr .x4) (s.gpr .x5).toNat) =
       (bytesAt s'.mem (s.gpr .x6) (s.gpr .x7).toNat, bytesAt s'.mem (stackArg s 0) 16)
-  pub := onePub 1
+  pub := onePub 2
+
+/-- What `vg_aes_gcm_open` needs: its common arguments, `tag = [sp]`, `tag_len = [sp + 8]` and
+`work = [sp + 16]`. -/
+def openPre (s : State) : Prop :=
+  let ctx : Region := ⟨s.gpr .x0, 256⟩
+  let nonce : Region := ⟨s.gpr .x2, (s.gpr .x3).toNat⟩
+  let aad : Region := ⟨s.gpr .x4, (s.gpr .x5).toNat⟩
+  let data : Region := ⟨s.gpr .x6, (s.gpr .x7).toNat⟩
+  let tag : Region := ⟨stackArg s 0, (stackArg s 1).toNat⟩
+  let work : Region := ⟨stackArg s 2, 2560⟩
+  s.rd = [ctx, nonce, aad, tag, args s 3] ∧ s.wr = [data, work] ∧
+    ctx.Disjoint data ∧ ctx.Disjoint work ∧ nonce.Disjoint data ∧ nonce.Disjoint work ∧
+    aad.Disjoint data ∧ aad.Disjoint work ∧
+    data.Disjoint work ∧ data.Disjoint (args s 3) ∧ tag.Disjoint work ∧ work.Disjoint (args s 3) ∧
+    (s.gpr .x0).toNat + 256 ≤ 2 ^ 64 ∧ (s.gpr .x2).toNat + (s.gpr .x3).toNat ≤ 2 ^ 64 ∧
+    (s.gpr .x4).toNat + (s.gpr .x5).toNat ≤ 2 ^ 64 ∧ (s.gpr .x6).toNat + (s.gpr .x7).toNat ≤ 2 ^ 64 ∧
+    (stackArg s 2).toNat + 2560 ≤ 2 ^ 64 ∧ s.sp.toNat + 8 * 3 ≤ 2 ^ 64 ∧ rounds (s.gpr .x1)
 
 /-- What `vg_aes_gcm_open` computes, for the arguments of `s`. -/
 def openRes (s : State) : Option (List Byte) :=
@@ -193,15 +243,18 @@ def openRes (s : State) : Option (List Byte) :=
     (bytesAt s.mem (s.gpr .x2) (s.gpr .x3).toNat) (bytesAt s.mem (s.gpr .x6) (s.gpr .x7).toNat)
     (bytesAt s.mem (s.gpr .x4) (s.gpr .x5).toNat) (bytesAt s.mem (stackArg s 0) (stackArg s 1).toNat)
 
+/-- What `vg_aes_gcm_open` may leak: whether it succeeds, for `rounds` of 10, 12 or 14. -/
+def openLeakOf (s : State) : List Nat :=
+  if ¬rounds (s.gpr .x1) then [] else [if (openRes s).isSome = true then 1 else 0]
+
 /-- `vg_aes_gcm_open`. -/
 def openAArch64 : Contract isa where
-  pre := onePre 2
+  pre := openPre
   post s s' :=
     match openRes s with
     | some pt => (s'.gpr .x0).setWidth 32 = 1 ∧ bytesAt s'.mem (s.gpr .x6) (s.gpr .x7).toNat = pt
     | none => (s'.gpr .x0).setWidth 32 = 0 ∧
         bytesAt s'.mem (s.gpr .x6) (s.gpr .x7).toNat = bytesAt s.mem (s.gpr .x6) (s.gpr .x7).toNat
-  pub s₁ s₂ := onePub 2 s₁ s₂ ∧
-    [if (openRes s₁).isSome = true then 1 else 0] = [if (openRes s₂).isSome = true then 1 else 0]
+  pub s₁ s₂ := onePub 3 s₁ s₂ ∧ openLeakOf s₁ = openLeakOf s₂
 
 end VG.Proof.AesGcm.AArch64
