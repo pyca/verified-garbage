@@ -6,7 +6,8 @@ import VerifiedGarbage.Proof.Sha512.Spec
 Without a rotation instruction, a rotation is the exclusive or of a shift each
 way. The shifts of `Σ₀`, `Σ₁`, `σ₀` and `σ₁` are chained, as SIMD code computes
 them: one copy of the word is shifted right by each term's amount in turn,
-another left (`chain5`, `chain6`). `Maj(a, b, c)` is `((a ⊕ b) ∧ (b ⊕ c)) ⊕ b`,
+another left (`chain5`), and for `Σ₀` and `Σ₁` the two chains are combined
+separately (`split6`). `Maj(a, b, c)` is `((a ⊕ b) ∧ (b ⊕ c)) ⊕ b`,
 which lets a round reuse the previous round's `a ⊕ b` as its `b ⊕ c`.
 -/
 
@@ -33,22 +34,25 @@ theorem rotateRight_eq_shifts (x : Word) {n : Nat} (h0 : 0 < n) (h : n < 64) :
 def chain5 (x : Word) (r₁ l₁ r₂ l₂ r₃ : Nat) : Word :=
   x >>> r₁ ^^^ x <<< l₁ ^^^ x >>> r₁ >>> r₂ ^^^ x <<< l₁ <<< l₂ ^^^ x >>> r₁ >>> r₂ >>> r₃
 
-/-- The six terms of `Σ₀` or `Σ₁`: `chain5` and a third left shift. -/
-def chain6 (x : Word) (r₁ l₁ r₂ l₂ r₃ l₃ : Nat) : Word :=
-  chain5 x r₁ l₁ r₂ l₂ r₃ ^^^ x <<< l₁ <<< l₂ <<< l₃
-
 theorem xor_left_comm (a b c : Word) : a ^^^ (b ^^^ c) = b ^^^ (a ^^^ c) := by
   rw [← BitVec.xor_assoc, BitVec.xor_comm a b, BitVec.xor_assoc]
 
-theorem bsig1_chain (x : Word) : chain6 x 14 23 4 23 23 4 = bsig1 x := by
-  simp only [chain6, chain5, ← BitVec.shiftRight_add, ← BitVec.shiftLeft_add, Nat.reduceAdd]
+/-- The six terms of `Σ₀` or `Σ₁` as two chains: the right shifts by `r₁`,
+`r₁ + r₂`, `r₁ + r₂ + r₃` combined, the left shifts by `l₁`, `l₁ + l₂`,
+`l₁ + l₂ + l₃` combined, and then the two. -/
+def split6 (x : Word) (r₁ r₂ r₃ l₁ l₂ l₃ : Nat) : Word :=
+  (x >>> r₁ ^^^ x >>> r₁ >>> r₂ ^^^ x >>> r₁ >>> r₂ >>> r₃) ^^^
+    (x <<< l₁ ^^^ x <<< l₁ <<< l₂ ^^^ x <<< l₁ <<< l₂ <<< l₃)
+
+theorem bsig1_split (x : Word) : split6 x 14 4 23 23 23 4 = bsig1 x := by
+  simp only [split6, ← BitVec.shiftRight_add, ← BitVec.shiftLeft_add, Nat.reduceAdd]
   rw [bsig1, rotateRight_eq_shifts x (n := 14) (by decide) (by decide),
     rotateRight_eq_shifts x (n := 18) (by decide) (by decide),
     rotateRight_eq_shifts x (n := 41) (by decide) (by decide)]
   simp only [Nat.reduceSub, BitVec.xor_assoc, BitVec.xor_comm, xor_left_comm]
 
-theorem bsig0_chain (x : Word) : chain6 x 28 25 6 5 5 6 = bsig0 x := by
-  simp only [chain6, chain5, ← BitVec.shiftRight_add, ← BitVec.shiftLeft_add, Nat.reduceAdd]
+theorem bsig0_split (x : Word) : split6 x 28 6 5 25 5 6 = bsig0 x := by
+  simp only [split6, ← BitVec.shiftRight_add, ← BitVec.shiftLeft_add, Nat.reduceAdd]
   rw [bsig0, rotateRight_eq_shifts x (n := 28) (by decide) (by decide),
     rotateRight_eq_shifts x (n := 34) (by decide) (by decide),
     rotateRight_eq_shifts x (n := 39) (by decide) (by decide)]
