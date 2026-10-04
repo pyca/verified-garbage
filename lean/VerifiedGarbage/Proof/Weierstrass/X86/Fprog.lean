@@ -1,6 +1,7 @@
 import VerifiedGarbage.Proof.Weierstrass.Env
 import VerifiedGarbage.Impl.Weierstrass.X86
 import VerifiedGarbage.Proof.Mont.X86.Ops
+import VerifiedGarbage.Proof.Weierstrass.Unch
 
 /-!
 # Field programs on x86 (32-bit)
@@ -88,6 +89,20 @@ theorem edi_not_clob : Reg.edi ∉ clob := by decide
 theorem ProgKeep.scr {M : Mod} {base : Addr} {wk : Nat} {W : List Nat} {s s' : State} {size : Nat}
     (h : ProgKeep M base wk W s s') (hs : Scr s base size) : Scr s' base size :=
   ⟨(congrArg (BitVec.setWidth 64) (h.gpr _ edi_not_clob)).trans hs.edi, h.wr ▸ hs.wr, hs.nowrap⟩
+
+theorem Outs.unch {base : Addr} {rs : List (Nat × Nat)} {m m' : Mem} (h : Outs base rs m m') :
+    VG.Proof.Weierstrass.Unch base rs m m' := h
+
+theorem _root_.VG.Proof.Mont.X86.OpKeep.scr {M : Mod} {base : Addr} {wk o size : Nat} {s s' : State}
+    (h : OpKeep M base wk o s s') (hs : Scr s base size) : Scr s' base size :=
+  ⟨(congrArg (BitVec.setWidth 64) (h.gpr _ edi_not_clob)).trans hs.edi, h.wr ▸ hs.wr, hs.nowrap⟩
+
+theorem _root_.VG.Proof.Mont.X86.OpKeep.unch {M : Mod} {base : Addr} {wk o : Nat} {s s' : State}
+    (h : OpKeep M base wk o s s') :
+    VG.Proof.Weierstrass.Unch base [(o, 8 * M.n), (M.tmp, 8 * M.n), (wk, accLen M)] s.mem s'.mem := h.mem
+
+theorem ProgKeep.unch {M : Mod} {base : Addr} {wk : Nat} {W : List Nat} {s s' : State}
+    (h : ProgKeep M base wk W s s') : VG.Proof.Weierstrass.Unch base (progW M wk W) s.mem s'.mem := h.mem
 
 /-- An operation's frame, as a program's. -/
 theorem ProgKeep.of_op {M : Mod} {base : Addr} {wk o : Nat} {s s' : State} (h : OpKeep M base wk o s s') :
