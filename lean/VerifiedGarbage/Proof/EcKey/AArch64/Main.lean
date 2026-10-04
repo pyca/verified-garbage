@@ -371,16 +371,18 @@ open VG.Proof.Ed25519.AArch64 (Keeps read_x)
 variable {c : Cfg}
 
 /-- The arguments: `out = x0` (`1 + 16 n` bytes), `d = x1` (`8 n` bytes)
-and `scratch = x2`, readable and writable as the contract says and apart
+and `scratch = x2`, and the comb's tables at the static `c.tsym`
+(`Artifact.consts`), readable and writable as the contract says and apart
 from each other as it says. -/
 structure PkPre (c : Cfg) (s : State) : Prop where
-  rd : s.rd = [⟨s.gpr .x1, 8 * c.n⟩]
+  rd : s.rd = [⟨s.gpr .x1, 8 * c.n⟩, ⟨s.syms c.tsym, 8 * c.combWords.length⟩]
   wr : s.wr = [⟨s.gpr .x0, 1 + 16 * c.n⟩, ⟨s.gpr .x2, size⟩]
   out_sc : Region.Disjoint ⟨s.gpr .x0, 1 + 16 * c.n⟩ ⟨s.gpr .x2, size⟩
   out_d : Region.Disjoint ⟨s.gpr .x0, 1 + 16 * c.n⟩ ⟨s.gpr .x1, 8 * c.n⟩
   d_sc : Region.Disjoint ⟨s.gpr .x1, 8 * c.n⟩ ⟨s.gpr .x2, size⟩
   out_fit : (s.gpr .x0).toNat + (1 + 16 * c.n) ≤ 2 ^ 64
   sc_fit : (s.gpr .x2).toNat + size ≤ 2 ^ 64
+  tbl : TblPre c s (s.syms c.tsym) (s.gpr .x2)
 
 /-- The private key. -/
 abbrev dk (c : Cfg) (s₀ : State) : Nat := ofBytes (Spec.Ecdsa.bytesAt s₀.mem (s₀.gpr .x1) (8 * c.n))
@@ -408,25 +410,27 @@ theorem args_ok (s : State) :
 
 /-- `vg_ec_<curve>_public_key` computes the specification's public key and
 restores the callee-saved registers. -/
-theorem publicKey_ok (hc : CfgOk c) (hC : Law c.C) (hT : CombOk c.C (16 * c.n) c.tbl c.start)
-    {s₀ : State} (hp : PkPre c s₀) :
+theorem publicKey_ok (hc : CfgOk c) (hC : Law c.C)
+    (hT : CombOkW c.C Cfg.combW (Cfg.combJ c.n) c.tbl c.start) {s₀ : State} (hp : PkPre c s₀) :
     WP isa (Impl.EcKey.AArch64.Cfg.publicKey c) s₀ fun s' =>
       (∀ r ∈ Cfg.saved.map Prod.fst, s'.gpr r = s₀.gpr r) ∧ PkPost c s₀ s' := by
   have h0 := hc.n0
   have hpR := unitMod_pow_two hc.p_odd (64 * c.n)
-  refine WP.seq (WP.mono (args_ok s₀) fun s₁ ⟨x4₁, x3₁, x2₁, k₁⟩ => ?_)
+  refine WP.seq (WP.mono_syms (args_ok s₀) fun s₁ ⟨x4₁, x3₁, x2₁, k₁⟩ sy₁ => ?_)
   have x1₁ : s₁.gpr .x1 = s₀.gpr .x1 := k₁.gpr _ (by decide)
   have x0₁ : s₁.gpr .x0 = s₀.gpr .x0 := k₁.gpr _ (by decide)
   -- The signature's regions, `k`, `d` and the hash all at `d`.
   obtain ⟨sN, hsN⟩ : ∃ sN, sN = s₁.withRegions
-      [⟨s₀.gpr .x1, 8 * c.n⟩, ⟨s₀.gpr .x1, 8 * c.n⟩, ⟨s₀.gpr .x1, 8 * c.n⟩]
+      [⟨s₀.gpr .x1, 8 * c.n⟩, ⟨s₀.gpr .x1, 8 * c.n⟩, ⟨s₀.gpr .x1, 8 * c.n⟩,
+        ⟨s₀.syms c.tsym, 8 * c.combWords.length⟩]
       [⟨s₀.gpr .x0, 16 * c.n⟩, ⟨s₀.gpr .x2, size⟩] := ⟨_, rfl⟩
   have g : ∀ r, sN.gpr r = s₁.gpr r := fun r => by rw [hsN]; rfl
   have mN : sN.mem = s₀.mem := by rw [hsN]; exact k₁.mem
+  have sN₁ : sN.syms = s₀.syms := by rw [hsN]; exact sy₁
   have hsub : Region.Sub ⟨s₀.gpr .x0, 16 * c.n⟩ ⟨s₀.gpr .x0, 1 + 16 * c.n⟩ := Region.sub_prefix (by omega)
   have hpN : Pre c sN := by
-    refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;>
-      simp only [g, x1₁, x0₁, x2₁, x3₁, x4₁]
+    refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ⟨?_, ?_, ?_, ?_⟩⟩ <;>
+      simp only [g, x1₁, x0₁, x2₁, x3₁, x4₁, mN, sN₁]
     · rw [hsN]; rfl
     · rw [hsN]; rfl
     · exact hp.out_sc.sub_left hsub
@@ -438,22 +442,28 @@ theorem publicKey_ok (hc : CfgOk c) (hC : Law c.C) (hT : CombOk c.C (16 * c.n) c
     · exact hp.d_sc
     · have := hp.out_fit; omega
     · exact hp.sc_fit
+    · rw [hsN]; simp
+    · exact hp.tbl.held
+    · exact hp.tbl.fit
+    · exact hp.tbl.sc
   have hb : sN.gpr .x4 = s₀.gpr .x2 := by rw [g, x4₁]
-  obtain ⟨t, s₂N, ex, S₂⟩ := stage₁ hc (hpN.setup hc.n7) (rest := .seq (CombCfg.comb c.combCfg) (.seq (ChainCfg.pow c.powP) (.block [])))
-    (Q := St₂ c sN (sN.gpr .x4)) fun _ S₁ => stage₂ hc hC hT S₁ fun _ S₂ => WP.block_nil S₂
+  obtain ⟨t, s₂N, ex, S₂⟩ := stage₁ hc (hpN.setup hc.n7) (rest := .seq (TCombCfg.comb c.combCfg) (.seq (ChainCfg.pow c.powP) (.block [])))
+    (Q := St₂ c sN (sN.gpr .x4)) fun _ S₁ => stage₂ hc hC hT hpN.tbl S₁ fun _ S₂ => WP.block_nil S₂
   rw [hb] at S₂
   -- The same run, with the public key's regions.
-  have hrd₁ : s₁.rd = [⟨s₀.gpr .x1, 8 * c.n⟩] := by rw [k₁.rd, hp.rd]
+  have hrd₁ : s₁.rd = [⟨s₀.gpr .x1, 8 * c.n⟩, ⟨s₀.syms c.tsym, 8 * c.combWords.length⟩] := by rw [k₁.rd, hp.rd]
   have hwr₁ : s₁.wr = [⟨s₀.gpr .x0, 1 + 16 * c.n⟩, ⟨s₀.gpr .x2, size⟩] := by rw [k₁.wr, hp.wr]
   have ex' := Exec.widen ex (rd := s₁.rd) (wr := s₁.wr)
     (by
       rw [hsN, State.withRegions_rd, State.withRegions_wr, hrd₁, hwr₁]
       refine Covers.of_sub fun r hr => ?_
       simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl | rfl | rfl
+      rcases hr with rfl | rfl | rfl | rfl | rfl | rfl
       · exact ⟨_, List.mem_cons_self .., 0, (BitVec.add_zero _).symm, Nat.le_of_eq (Nat.zero_add _)⟩
       · exact ⟨_, List.mem_cons_self .., 0, (BitVec.add_zero _).symm, Nat.le_of_eq (Nat.zero_add _)⟩
       · exact ⟨_, List.mem_cons_self .., 0, (BitVec.add_zero _).symm, Nat.le_of_eq (Nat.zero_add _)⟩
+      · exact ⟨⟨s₀.syms c.tsym, 8 * c.combWords.length⟩, by simp, 0, (BitVec.add_zero _).symm,
+          Nat.le_of_eq (Nat.zero_add _)⟩
       · exact ⟨⟨s₀.gpr .x0, 1 + 16 * c.n⟩, by simp, 0, (BitVec.add_zero _).symm,
           by show 0 + 16 * c.n ≤ 1 + 16 * c.n; omega⟩
       · exact ⟨⟨s₀.gpr .x2, size⟩, by simp, 0, (BitVec.add_zero _).symm, Nat.le_of_eq (Nat.zero_add _)⟩)
