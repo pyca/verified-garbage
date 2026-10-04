@@ -352,24 +352,27 @@ theorem derStep_ok (v : GcmImpl) {p : Prm} (L : Lay p) {σ : State} {i : Nat} (h
     rw [show 8 * (i + 1) = 8 * i + 8 by omega, Proof.Cmac.bytesAt_add, GcmSiv.halves_succ, ← I.out, keep,
       add_ofNat_assoc, last]
 
+/-- The start of `derive`: `i = 0`. -/
+theorem derive0_ok {p : Prm} (L : Lay p) {σ : State} (E : Env p σ) :
+    ∃ t₀, runBlock isa [.mov .eax (imm 0), .store (at_ .ebp iO) .eax] σ = some t₀ ∧ DInv p σ 0 t₀ := by
+  refine ⟨_, by grun [E.ebp, L.aW, E.perm.wW], ?_⟩
+  have f : Frame [⟨w64 p.W + BitVec.ofNat 64 180, 4⟩] σ.mem
+      (σ.mem.writeW (w64 p.W + BitVec.ofNat 64 180) (BitVec.ofNat 32 0)) :=
+    (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
+  have f' : Frame (derR p) σ.mem (σ.mem.writeW (w64 p.W + BitVec.ofNat 64 180) (BitVec.ofNat 32 0)) :=
+    f.sub fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr
+      exact ⟨⟨w64 p.W + BitVec.ofNat 64 176, 8⟩, by simp, Offset.sub _ (by decide) (by decide)⟩
+  refine ⟨E.mut L (by gregs [E.ebp]) (by gregs [E.esp]) (by gmems []) (by gmems [])
+      (by gmems []; exact frame_toMut f' (inMut_derR p)),
+    by gmems [slotv_eq], Nat.zero_le _, by gregs [], by gmems [], by gmems [], by gmems []; exact f', ?_⟩
+  simp [GcmSiv.halves, bytesAt]
+
 /-- `derive`: the halves of `derive_keys` at `W + 16`. -/
 theorem derive_ok (v : GcmImpl) {p : Prm} (L : Lay p) {σ : State} (E : Env p σ) :
     WP isa (derive v.callees) σ (DInv p σ (p.R / 2 - 1)) := by
   have hR := L.rounds
-  obtain ⟨t₀, run₀, I₀⟩ : ∃ t₀, runBlock isa [.mov .eax (imm 0), .store (at_ .ebp iO) .eax] σ = some t₀ ∧
-      DInv p σ 0 t₀ := by
-    refine ⟨_, by grun [E.ebp, L.aW, E.perm.wW], ?_⟩
-    have f : Frame [⟨w64 p.W + BitVec.ofNat 64 180, 4⟩] σ.mem
-        (σ.mem.writeW (w64 p.W + BitVec.ofNat 64 180) (BitVec.ofNat 32 0)) :=
-      (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
-    have f' : Frame (derR p) σ.mem (σ.mem.writeW (w64 p.W + BitVec.ofNat 64 180) (BitVec.ofNat 32 0)) :=
-      f.sub fun r hr => by
-        simp only [List.mem_singleton] at hr; subst hr
-        exact ⟨⟨w64 p.W + BitVec.ofNat 64 176, 8⟩, by simp, Offset.sub _ (by decide) (by decide)⟩
-    refine ⟨E.mut L (by gregs [E.ebp]) (by gregs [E.esp]) (by gmems []) (by gmems [])
-        (by gmems []; exact frame_toMut f' (inMut_derR p)),
-      by gmems [slotv_eq], Nat.zero_le _, by gregs [], by gmems [], by gmems [], by gmems []; exact f', ?_⟩
-    simp [GcmSiv.halves, bytesAt]
+  obtain ⟨t₀, run₀, I₀⟩ := derive0_ok L E
   unfold derive
   refine WP.seq (WP.of_runBlock ⟨t₀, run₀, ?_⟩)
   refine WP.loop (M := isa) (fun m t => ∃ i, m = (p.R / 2 - 1) - i ∧ i < p.R / 2 - 1 ∧ DInv p σ i t) ?_

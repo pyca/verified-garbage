@@ -45,23 +45,27 @@ structure ExpPost (p : Prm) (t t' : State) : Prop where
   ciph : Spec.GcmSiv.ctxCiph t'.mem (w64 p.W + BitVec.ofNat 64 512) p.R =
     Spec.GcmSiv.aes (bytesAt t.mem (w64 p.W + BitVec.ofNat 64 32) (Spec.GcmSiv.keyLen p.R))
 
-theorem expand_ok (v : GcmImpl) {p : Prm} (L : Lay p) {t : State} (E : Env p t) :
-    WP isa (expand v.callees) t (ExpPost p t) := by
-  have hR := L.rounds
-  have hRs := E.slots.rounds
-  simp only [slotv_eq, roundsO] at hRs
-  obtain ⟨t₁, run₁, eax, ecx, edx, ebp₁, esp₁, esi₁, rd₁, wr₁, hm₁⟩ : ∃ t₁, runBlock isa expandArgs t = some t₁ ∧
+/-- The arguments of `expand`'s call. -/
+theorem expArgs_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t) :
+    ∃ t₁, runBlock isa expandArgs t = some t₁ ∧
       t₁.gpr .eax = p.W + BitVec.ofNat 32 32 ∧ t₁.gpr .ecx = BitVec.ofNat 32 (Spec.GcmSiv.keyLen p.R) ∧
       t₁.gpr .edx = p.W + BitVec.ofNat 32 512 ∧ t₁.gpr .ebp = p.W ∧ t₁.gpr .esp = p.SP ∧
       t₁.gpr .esi = t.gpr .esi ∧ t₁.rd = t.rd ∧ t₁.wr = t.wr ∧ t₁.mem = t.mem := by
-    refine ⟨_, by simp only [expandArgs]; grun [E.ebp, L.aW, E.perm.wR, hRs], ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
-    · gregs [E.ebp]
-    · gregs [hRs, keyLen_eq hR]
-    · gregs [E.ebp]
-    · gregs [E.ebp]
-    · gregs [E.esp]
-    · gregs []
-    all_goals gmems []
+  have hR := L.rounds
+  have hRs := E.slots.rounds
+  simp only [slotv_eq, roundsO] at hRs
+  refine ⟨_, by simp only [expandArgs]; grun [E.ebp, L.aW, E.perm.wR, hRs], ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · gregs [E.ebp]
+  · gregs [hRs, keyLen_eq hR]
+  · gregs [E.ebp]
+  · gregs [E.ebp]
+  · gregs [E.esp]
+  · gregs []
+  all_goals gmems []
+
+theorem expand_ok (v : GcmImpl) {p : Prm} (L : Lay p) {t : State} (E : Env p t) :
+    WP isa (expand v.callees) t (ExpPost p t) := by
+  obtain ⟨t₁, run₁, eax, ecx, edx, ebp₁, esp₁, esi₁, rd₁, wr₁, hm₁⟩ := expArgs_ok L E
   have E₁ : Env p t₁ := E.keep (by rw [ebp₁, E.ebp]) (by rw [esp₁, E.esp]) rd₁ wr₁ hm₁
   refine WP.seq (WP.of_runBlock ⟨t₁, run₁, ?_⟩)
   refine WP.mono (callKey_ok v L E₁ eax ecx edx)
