@@ -30,7 +30,12 @@
 //! that the key is valid (SP 800-56A §5.6.2.3.3). It runs in constant time,
 //! although nothing it handles is secret.
 
-#![cfg(any(target_arch = "x86_64", target_arch = "x86", target_arch = "aarch64"))]
+#![cfg(any(
+    target_arch = "x86_64",
+    target_arch = "x86",
+    target_arch = "aarch64",
+    target_arch = "arm"
+))]
 
 mod p256;
 
