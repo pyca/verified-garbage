@@ -167,17 +167,16 @@ def aad (y : Nat) : Prog isa :=
 
 /-- `Ctr₀ = [q − 1]₈ ‖ N ‖ 0⁸q` (A.3) at `W + 48`. -/
 def ctrs : Prog isa :=
-  .seq (.block (zero16 c0O ++ [.mov32 .rax (imm 14), .alu .sub .rax (.mem (at_ .r15 nlenO)),
-      .store8 (at_ .r15 c0O) .rax, .mov .rsi (.mem (at_ .r15 nonceO)), .mov .rcx (.mem (at_ .r15 nlenO))] ++
-      ptr .rdi .r15 (c0O + 1)))
+  .seq (.block ([.mov .rsi (.mem (at_ .r15 nonceO)), .mov .rcx (.mem (at_ .r15 nlenO))] ++ zero16 c0O ++
+      [.mov32 .rax (imm 14), .alu .sub .rax (.reg .rcx), .store8 (at_ .r15 c0O) .rax] ++ ptr .rdi .r15 (c0O + 1)))
     copyLoop
 
 /-- The counter block `Ctrᵢ` (A.3), for `i < 2^(8q)` in `rax`, at `W + 64`:
 `Ctr₀` with `[i]₆₄` ORed into its last 8 bytes (whose bytes before the last
 `q` are zero). -/
 def ctrAt : List Instr :=
-  [.mov .rcx (.mem (at_ .r15 c0O)), .store (at_ .r15 c1O) .rcx, .bswap .rax, .alu .or .rax (.mem (at_ .r15 (c0O + 8))),
-    .store (at_ .r15 (c1O + 8)) .rax]
+  [.mov .rcx (.mem (at_ .r15 c0O)), .mov .rdx (.mem (at_ .r15 (c0O + 8))), .store (at_ .r15 c1O) .rcx, .bswap .rax,
+    .alu .or .rax (.reg .rdx), .store (at_ .r15 (c1O + 8)) .rax]
 
 /-- `B₀` (A.2.1) in `B`, from `Ctr₀`: its first byte replaced by the flags
 `64 [a > 0] + 8 ((t − 2) / 2) + q − 1` (and `8 ((t − 2) / 2) = 4 (t − 2)`
@@ -188,9 +187,9 @@ def b0 (y : Nat) : Prog isa :=
       .alu .add .rax (.reg .rax), .mov32 .rcx (imm 14), .alu .sub .rcx (.mem (at_ .r15 nlenO)),
       .alu .add .rax (.reg .rcx), .mov .rcx (.mem (at_ .r15 alenO)), .alu .test .rcx (.reg .rcx)])
   (.seq (.ite .e (.block []) (.block [.alu .add .rax (imm 64)]))
-  (.seq (.block ([.mov .rcx (.mem (at_ .r15 c0O)), .store (at_ .r15 bO) .rcx, .store8 (at_ .r15 bO) .rax,
-      .mov .rax (.mem (at_ .r15 lenO)), .bswap .rax, .alu .or .rax (.mem (at_ .r15 (c0O + 8))),
-      .store (at_ .r15 (bO + 8)) .rax] ++ zero16 y))
+  (.seq (.block ([.mov .rcx (.mem (at_ .r15 c0O)), .mov .rdx (.mem (at_ .r15 (c0O + 8))),
+      .mov .rsi (.mem (at_ .r15 lenO)), .store (at_ .r15 bO) .rcx, .store8 (at_ .r15 bO) .rax, .bswap .rsi,
+      .alu .or .rsi (.reg .rdx), .store (at_ .r15 (bO + 8)) .rsi] ++ zero16 y))
     (updBlock c sfx y)))
 
 /-- `Yᵣ`, the CBC-MAC of the formatted nonce, associated data and payload
@@ -204,7 +203,7 @@ def mac (y : Nat) : Prog isa :=
 /-- `Yᵣ ⊕ CIPH_K(Ctr₀)` at `W + y`, by `vg_aes_ctr32` on it with a copy of
 `Ctr₀` (which it increments). -/
 def tag (y : Nat) : Prog isa :=
-  .seq (.block ([.mov32 .rax (imm 0)] ++ ctrAt ++ [.mov .rdi (.reg .r13), .mov .rsi (.mem (at_ .r15 roundsO))] ++
+  .seq (.block ([.mov .rsi (.mem (at_ .r15 roundsO)), .mov32 .rax (imm 0)] ++ ctrAt ++ [.mov .rdi (.reg .r13)] ++
       ptr .rdx .r15 c1O ++ ptr .rcx .r15 y ++ [.mov32 .r8 (imm 1)] ++ ptr .r9 .r15 scrO))
     (callCtr c)
 
@@ -219,8 +218,8 @@ def ctrChunk : Prog isa :=
   .seq (.block [.mov32 .r8 (.reg .r14), .movImm64 .rcx 0x100000000, .alu .sub .rcx (.reg .r8),
       .mov .r8 (.reg .rbx), .alu .cmp .rbx (.reg .rcx)])
   (.seq (.ite .b (.block []) (.block [.mov .r8 (.reg .rcx)]))
-  (.seq (.block ([.store (at_ .r15 kO) .r8, .mov .rax (.reg .r14)] ++ ctrAt ++
-      [.mov .rdi (.reg .r13), .mov .rsi (.mem (at_ .r15 roundsO))] ++ ptr .rdx .r15 c1O ++ [.mov .rcx (.reg .r12)] ++
+  (.seq (.block ([.mov .rsi (.mem (at_ .r15 roundsO)), .mov .rax (.reg .r14)] ++ ctrAt ++
+      [.store (at_ .r15 kO) .r8, .mov .rdi (.reg .r13)] ++ ptr .rdx .r15 c1O ++ [.mov .rcx (.reg .r12)] ++
       ptr .r9 .r15 scrO))
   (.seq (callCtr c)
     (.block [.mov .rax (.mem (at_ .r15 kO)), .alu .sub .rbx (.reg .rax), .alu .add .r14 (.reg .rax),
@@ -236,8 +235,8 @@ def ctr : Prog isa :=
   (.seq (.ite .e (.block []) (.loop (ctrChunk c) .ne))
   (.seq (.block [.mov .rbp (.mem (at_ .r15 lenO)), .alu .and .rbp (imm 15), .alu .test .rbp (.reg .rbp)])
     (.ite .e (.block [])
-      (.seq (.block (zero16 ksO ++ [.mov .rax (.reg .r14)] ++ ctrAt ++
-          [.mov .rdi (.reg .r13), .mov .rsi (.mem (at_ .r15 roundsO))] ++ ptr .rdx .r15 c1O ++ ptr .rcx .r15 ksO ++
+      (.seq (.block ([.mov .rsi (.mem (at_ .r15 roundsO)), .mov .rax (.reg .r14)] ++ ctrAt ++ zero16 ksO ++
+          [.mov .rdi (.reg .r13)] ++ ptr .rdx .r15 c1O ++ ptr .rcx .r15 ksO ++
           [.mov32 .r8 (imm 1)] ++ ptr .r9 .r15 scrO))
       (.seq (callCtr c)
         (.seq (.block ([.mov .rdi (.reg .r12)] ++ ptr .rsi .r15 ksO ++ [.mov .rcx (.reg .rbp)])) xorLoop))))))
@@ -261,12 +260,11 @@ def mask : Prog isa :=
 argument, is on the stack above the return address), keeps `W` in `r15` and
 the key schedule in `r13`, and the other arguments in `W`. -/
 def entry : List Instr :=
-  [.mov .rax (.mem (at_ .rsp 24))] ++ save .rax ++
+  [.mov .rax (.mem (at_ .rsp 24)), .mov .r10 (.mem (at_ .rsp 8)), .mov .r11 (.mem (at_ .rsp 16))] ++ save .rax ++
     [.mov .r15 (.reg .rax), .mov .r13 (.reg .rdi), .store (at_ .r15 roundsO) .rsi,
       .store (at_ .r15 nonceO) .rdx, .store (at_ .r15 nlenO) .rcx, .store (at_ .r15 aadO) .r8,
-      .store (at_ .r15 alenO) .r9, .mov .rax (.mem (at_ .rsp 8)), .store (at_ .r15 dataO) .rax,
-      .mov .rax (.mem (at_ .rsp 16)), .store (at_ .r15 lenO) .rax, .mov .rax (.mem (at_ .rsp 32)),
-      .store (at_ .r15 tlO) .rax]
+      .store (at_ .r15 alenO) .r9, .store (at_ .r15 dataO) .r10, .store (at_ .r15 lenO) .r11,
+      .mov .rax (.mem (at_ .rsp 32)), .store (at_ .r15 tlO) .rax]
 
 /-- `vg_aes_ccm_seal`. -/
 def «seal» : Prog isa :=
