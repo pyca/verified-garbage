@@ -1,5 +1,6 @@
 import VerifiedGarbage.Proof.AesCcm.Words
 import VerifiedGarbage.Proof.Cmac.Mem32
+import VerifiedGarbage.Proof.Cmac.Frame
 
 /-!
 # AES-CCM: blocks built of 32-bit words
@@ -37,6 +38,39 @@ theorem bytesAt_writeW32_base (m : Mem) (p : Addr) {n : Nat} (v : BitVec 32) (h 
     bytesAt (m.writeW p v) p n = le4 v ++ (bytesAt m p n).drop 4 := by
   have := bytesAt_writeW32_at m p (o := 0) v h hn
   simpa using this
+
+/-- The bytes of a buffer after a write that misses it. -/
+theorem bytesAt_writeW_sep (m : Mem) {q a : Addr} {w n : Nat} (v : BitVec w)
+    (h : (⟨q, n⟩ : Region).Disjoint ⟨a, w / 8⟩) (hn : n ≤ 2 ^ 64) : bytesAt (m.writeW a v) q n = bytesAt m q n :=
+  Proof.Cmac.bytesAt_frame ((Frame.refl _ _).writeW (List.mem_singleton_self _) v (Region.contains_self _ _))
+    (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact h) hn
+
+/-- The four bytes of a word just written. -/
+theorem bytesAt_writeW32_self (m : Mem) (p : Addr) (v : BitVec 32) : bytesAt (m.writeW p v) p 4 = le4 v := by
+  rw [bytesAt_writeW32_base _ _ _ (by decide) (by decide), List.drop_eq_nil_of_le (by rw [length_bytesAt]),
+    List.append_nil]
+
+/-- `B₀` as the x86 code builds it: the first three words of `Ctr₀`, the
+flags over its first byte, then the last word. -/
+theorem b0_bytes (m : Mem) (p : Addr) (w₀ w₁ w₂ x : BitVec 32) (f : Byte) :
+    bytesAt (((((m.writeW p w₀).writeW (p + BitVec.ofNat 64 4) w₁).writeW (p + BitVec.ofNat 64 8) w₂).writeW p f).writeW
+      (p + BitVec.ofNat 64 12) x) p 16 = (f :: (le4 w₀).drop 1) ++ le4 w₁ ++ le4 w₂ ++ le4 x := by
+  have dj : ∀ a n d k, a + n ≤ d ∨ d + k ≤ a → a + n ≤ 16 → d + k ≤ 16 →
+      (⟨p + BitVec.ofNat 64 a, n⟩ : Region).Disjoint ⟨p + BitVec.ofNat 64 d, k⟩ :=
+    fun a n d k h ha hd => Offset.disjoint p h (by omega) (by omega)
+  have d0 : ∀ d k, 4 ≤ d → d + k ≤ 16 → (⟨p, 4⟩ : Region).Disjoint ⟨p + BitVec.ofNat 64 d, k⟩ := fun d k h hd => by
+    simpa using dj 0 4 d k (.inl h) (by decide) hd
+  have d0' : ∀ a n, 1 ≤ a → a + n ≤ 16 → (⟨p + BitVec.ofNat 64 a, n⟩ : Region).Disjoint ⟨p, 8 / 8⟩ := fun a n h ha => by
+    simpa using dj a n 0 1 (.inr h) ha (by decide)
+  rw [Cmac.bytesAt_split4]
+  rw [bytesAt_writeW_sep _ _ (d0 12 4 (by decide) (by decide)) (by decide), bytesAt_writeW8_base _ _ _ (by decide)
+      (by decide), bytesAt_writeW_sep _ _ (d0 8 4 (by decide) (by decide)) (by decide),
+    bytesAt_writeW_sep _ _ (d0 4 4 (by decide) (by decide)) (by decide), bytesAt_writeW32_self,
+    bytesAt_writeW_sep _ _ (dj 4 4 12 4 (.inl (by decide)) (by decide) (by decide)) (by decide),
+    bytesAt_writeW_sep _ _ (d0' 4 4 (by decide) (by decide)) (by decide),
+    bytesAt_writeW_sep _ _ (dj 4 4 8 4 (.inl (by decide)) (by decide) (by decide)) (by decide), bytesAt_writeW32_self,
+    bytesAt_writeW_sep _ _ (dj 8 4 12 4 (.inl (by decide)) (by decide) (by decide)) (by decide),
+    bytesAt_writeW_sep _ _ (d0' 8 4 (by decide) (by decide)) (by decide), bytesAt_writeW32_self, bytesAt_writeW32_self]
 
 theorem le4_or (a b : BitVec 32) : le4 (a ||| b) = List.zipWith (· ||| ·) (le4 a) (le4 b) := by
   apply List.ext_getElem (by simp [le4])
