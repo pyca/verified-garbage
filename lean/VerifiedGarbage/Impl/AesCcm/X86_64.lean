@@ -72,7 +72,7 @@ namespace VG.Impl.AesCcm.X86_64
 
 open VG.X86_64
 open VG.Impl.Aes.X86_64 (Ctr32)
-open VG.Impl.AesGcm.X86_64 (at_ imm ptr copyLoop xorLoop minLen recv cmp)
+open VG.Impl.AesGcm.X86_64 (at_ imm ptr copyLoop xorLoop minLen cmp rO)
 
 /-! ## The working space -/
 
@@ -105,6 +105,13 @@ def restore : List Instr := saved.map fun (r, d) => .mov r (.mem (at_ .r15 d))
 /-- The 16 bytes at `W + d` zeroed. -/
 def zero16 (d : Nat) : List Instr :=
   [.mov32 .rax (imm 0), .store (at_ .r15 d) .rax, .store (at_ .r15 (d + 8)) .rax]
+
+/-- The `rbx` bytes of the received tag at `W`, padded with zeros at
+`W + rO` (AES-GCM's `rO`), as `cmp` takes them. -/
+def recv : Prog isa :=
+  .seq (.block ([.mov32 .rax (imm 0), .store (at_ .r15 rO) .rax, .store (at_ .r15 (rO + 8)) .rax] ++
+    ptr .rdi .r15 rO ++ [.mov .rsi (.reg .r15), .mov .rcx (.reg .rbx)]))
+    copyLoop
 
 variable (c : Ctr32) (sfx : String)
 

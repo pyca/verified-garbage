@@ -14,6 +14,8 @@
 //! `vg_chacha20_poly1305_open_avx512` (with `vg_chacha20_xor_avx512` and
 //! `vg_poly1305_blocks_avx512`), and other CPUs with AVX2
 //! `vg_chacha20_poly1305_seal_avx2` and `vg_chacha20_poly1305_open_avx2`.
+//! On x86, CPUs with SSSE3 run `vg_chacha20_poly1305_seal_ssse3` and
+//! `vg_chacha20_poly1305_open_ssse3` (with `vg_chacha20_xor_ssse3`).
 //! On AArch64, CPUs with AdvSIMD (the baseline) run
 //! `vg_chacha20_poly1305_seal_neon` and `vg_chacha20_poly1305_open_neon`,
 //! which absorb each whole 512 bytes into Poly1305 in the integer registers
@@ -42,6 +44,10 @@ use crate::arch::chacha20poly1305::{vg_chacha20_poly1305_open, vg_chacha20_poly1
 use crate::arch::chacha20poly1305::{
     vg_chacha20_poly1305_open_neon, vg_chacha20_poly1305_open_sve2, vg_chacha20_poly1305_seal_neon,
     vg_chacha20_poly1305_seal_sve2,
+};
+#[cfg(target_arch = "x86")]
+use crate::arch::chacha20poly1305::{
+    vg_chacha20_poly1305_open_ssse3, vg_chacha20_poly1305_seal_ssse3,
 };
 use crate::chacha20::Backend;
 use crate::cpu::{Features, detected};
@@ -155,6 +161,8 @@ impl ChaCha20Poly1305 {
             Backend::Avx2 => vg_chacha20_poly1305_seal_avx2,
             #[cfg(target_arch = "x86_64")]
             Backend::Avx512 => vg_chacha20_poly1305_seal_avx512,
+            #[cfg(target_arch = "x86")]
+            Backend::Ssse3 => vg_chacha20_poly1305_seal_ssse3,
         };
         // SAFETY: `ctx` is valid for reads and writes of 1024 bytes, `aad`
         // for reads of `aad.len()` bytes and `data` for reads and writes of
@@ -201,6 +209,8 @@ impl ChaCha20Poly1305 {
             Backend::Avx2 => vg_chacha20_poly1305_open_avx2,
             #[cfg(target_arch = "x86_64")]
             Backend::Avx512 => vg_chacha20_poly1305_open_avx512,
+            #[cfg(target_arch = "x86")]
+            Backend::Ssse3 => vg_chacha20_poly1305_open_ssse3,
         };
         // SAFETY: as in `encrypt_in_place`.
         let ok = unsafe {
@@ -360,6 +370,27 @@ mod tests {
         // calls its AVX2 implementation.
         assert_eq!(select(VG_CHACHA20_XOR_AVX512_FEATURES), Backend::Scalar);
         assert_eq!(select(Features::of(&["avx"])), Backend::Scalar);
+    }
+
+    /// On x86, the SSSE3 instances need the features of
+    /// `vg_chacha20_xor_ssse3` (and of `vg_chacha20_apply_ssse3`, which
+    /// `select` checks), and `select` chooses them with SSSE3.
+    #[cfg(target_arch = "x86")]
+    #[test]
+    fn features() {
+        use crate::arch::chacha20::{
+            VG_CHACHA20_APPLY_SSSE3_FEATURES, VG_CHACHA20_XOR_SSSE3_FEATURES,
+        };
+        use crate::arch::chacha20poly1305::{
+            VG_CHACHA20_POLY1305_OPEN_SSSE3_FEATURES, VG_CHACHA20_POLY1305_SEAL_SSSE3_FEATURES,
+        };
+        use crate::cpu::Features;
+        let ssse3 = VG_CHACHA20_XOR_SSSE3_FEATURES;
+        assert_eq!(VG_CHACHA20_APPLY_SSSE3_FEATURES, ssse3);
+        assert_eq!(VG_CHACHA20_POLY1305_SEAL_SSSE3_FEATURES, ssse3);
+        assert_eq!(VG_CHACHA20_POLY1305_OPEN_SSSE3_FEATURES, ssse3);
+        assert_eq!(select(ssse3), Backend::Ssse3);
+        assert_eq!(select(Features::of(&[])), Backend::Scalar);
     }
 
     /// On AArch64, the SVE2 instances need the features of

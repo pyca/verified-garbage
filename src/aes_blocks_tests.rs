@@ -2,7 +2,7 @@
 //! whole blocks (`vg_aes_encrypt_blocks`, `vg_aes_decrypt_blocks`), each
 //! implementation the CPU can run, against the NIST CAVP ECB known-answer
 //! tests, vendored unmodified under `vectors/nist-cavp/aes/`.
-#![cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
+#![cfg(any(target_arch = "x86", target_arch = "x86_64", target_arch = "aarch64"))]
 
 #[cfg(target_arch = "aarch64")]
 use crate::arch::aes::{
@@ -20,7 +20,7 @@ use crate::cpu::Features;
 #[cfg(target_arch = "x86_64")]
 type Blocks =
     unsafe extern "sysv64" fn(*const [u8; 240], usize, *mut [u8; 16], usize, *mut [u64; 256]);
-#[cfg(target_arch = "aarch64")]
+#[cfg(any(target_arch = "x86", target_arch = "aarch64"))]
 type Blocks = unsafe extern "C" fn(*const [u8; 240], usize, *mut [u8; 16], usize, *mut [u64; 256]);
 
 /// Each implementation, encryption and decryption, with the features it needs.
@@ -58,6 +58,14 @@ const IMPLEMENTATIONS: [(Blocks, Blocks, Features); 2] = [
         ]),
     ),
 ];
+
+/// Each implementation, encryption and decryption, with the features it needs.
+#[cfg(target_arch = "x86")]
+const IMPLEMENTATIONS: [(Blocks, Blocks, Features); 1] = [(
+    vg_aes_encrypt_blocks,
+    vg_aes_decrypt_blocks,
+    Features::of(&[]),
+)];
 
 const FILES: [&str; 12] = [
     include_str!("../vectors/nist-cavp/aes/ECBGFSbox128.rsp"),

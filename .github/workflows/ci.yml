@@ -539,9 +539,10 @@ jobs:
               aes,avx,pclmulqdq,ssse3 | aes_gcm cpu
               aes,avx,avx2,pclmulqdq,ssse3,vaes,vpclmulqdq | aes_gcm cpu
           # x86 feature dispatch, natively in a 32-bit userspace, with the
-          # runner's features and every test with the baseline
-          # implementations; and AES-GCM's instances for AES's or GHASH's
-          # extension alone, as on x86-64.
+          # runner's features (ChaCha20's and ChaCha20-Poly1305's SSSE3
+          # instances) and every test with the baseline implementations; and
+          # AES-GCM's instances for AES's or GHASH's extension alone, as on
+          # x86-64.
           - chip: native
             arch: x86
             container:
@@ -549,7 +550,7 @@ jobs:
               options: --platform linux/386
             install-amd64-libc: true
             runs: |
-              - | sha1 sha224 sha256 sha384 sha512 aes_gcm cmac chacha20 mlkem scrypt x25519 ed25519 cpu
+              - | sha1 sha224 sha256 sha384 sha512 aes_gcm cmac chacha20 mlkem scrypt x25519 ed25519 ecdsa p256_sha cpu
               none | all
               aes | aes_gcm cpu
               pclmulqdq,ssse3 | aes_gcm cpu
@@ -606,16 +607,18 @@ jobs:
           # The runner has SVE2, so the unrestricted run tests the `_sve2`
           # instances; `neon` and `none` test ChaCha20's NEON and scalar ones,
           # `sha3` and `none` the SHA-3 prototype and its scalar fallback (and
-          # the instances of ML-KEM, ML-DSA and Ed448 calling each), and
-          # `none` deterministic ECDSA with the scalar SHA-256 and SHA-512.
+          # the instances of ML-KEM, ML-DSA and Ed448 calling each),
+          # `none` deterministic ECDSA with the scalar SHA-256 and SHA-512
+          # and AES-CCM with the scalar AES, and the unrestricted run and
+          # `none` AES-GCM-SIV's and AES-OCB's `_aes` and scalar instances.
           - chip: native
             arch: aarch64
             os: ubuntu-24.04-arm
             runs: |
-              - | aes_gcm cmac sha1 sha224 sha256 sha384 sha512 sha3 shake mlkem mldsa ed448 scrypt chacha20 ed25519 message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
+              - | aes_gcm aes_gcm_siv aes_ocb aes_siv aes_ccm cmac sha1 sha224 sha256 sha384 sha512 sha3 shake mlkem mldsa ed448 scrypt chacha20 ed25519 message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
               neon | chacha20
               sha3 | sha3 shake mlkem mldsa ed448
-              none | chacha20 sha3 shake mlkem mldsa ecdsa p256_sha ed448
+              none | aes_siv chacha20 sha3 shake mlkem mldsa ecdsa p256_sha ed448 aes_gcm_siv aes_ccm aes_ocb
     name: Rust (${{ matrix.os && format('native, {0}', matrix.os) || matrix.chip == 'native' && 'native' || format('sde -{0}', matrix.chip) }}${{ matrix.arch && format(', {0}', matrix.arch) || '' }})
     runs-on: ${{ matrix.os || 'ubuntu-latest' }}
     container:

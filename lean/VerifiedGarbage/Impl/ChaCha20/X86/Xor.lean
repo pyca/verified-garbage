@@ -33,6 +33,10 @@ that remain if fewer (`body4`):
   run past its end, if any, are stored in `buf[0, 16)` (whose slot has been
   read), and their first bytes XORed into the data afterwards (`last`).
 
+`vg_chacha20_xor_ssse3` (`xorSsse3`) is the same code with `vqr3` for `vqr`,
+whose rotations by 16 and 8 bits are `pshufb`: the prologue stores its
+controls in `buf[288, 320)` (`masks`), which nothing else writes.
+
 If 64 bytes or fewer remain after that, `vg_chacha20_block(state, buf)` is
 called and the first bytes of its output (the first 64 bytes of `buf`) are
 XORed into the data (`tail`), 16 at a time through `xmm4` and `xmm5`, then
@@ -59,7 +63,7 @@ timing. On return `eax` holds `buf`.
 namespace VG.Impl.ChaCha20.X86.Xor
 
 open VG.X86
-open VG.Impl.ChaCha20.X86 (at_ block xb vqr)
+open VG.Impl.ChaCha20.X86 (at_ block xb vqr vqr3 masks)
 
 /-- Our caller's callee-saved registers, and where they are saved in `buf`. -/
 def saved : List (Reg × Nat) := [(.ebx, 256), (.esi, 260), (.edi, 264), (.ebp, 268)]
@@ -70,11 +74,11 @@ def save : List Instr := saved.map fun (r, d) => .store (at_ .eax d) r
 /-- Restore them, with `buf` in `eax`. -/
 def restore : List Instr := saved.map fun (r, d) => .mov r (.mem (at_ .eax d))
 
-/-- With `buf` in `eax`: save our caller's registers, load the other
-arguments, and compare the length with 65. -/
+/-- With `buf` in `eax`: save our caller's registers, and load the other
+arguments. -/
 def prologue : List Instr :=
   save ++ [.mov .edi (.reg .eax), .mov .ebx (.mem (at_ .esp 4)), .mov .esi (.mem (at_ .esp 8)),
-    .mov .ebp (.mem (at_ .esp 12)), .alu .cmp .ebp (.imm 65)]
+    .mov .ebp (.mem (at_ .esp 12))]
 
 /-- `vg_chacha20_block(state, buf)`: the keystream block into `buf`. -/
 def callBlock : Prog isa :=
@@ -138,8 +142,17 @@ def ld (r : XReg) (k : Nat) : Instr := .movdquLoad r (at_ .edi (slot k))
 /-- Store word `k` from `r` into its slot. -/
 def st (k : Nat) (r : XReg) : Instr := .movdquStore (at_ .edi (slot k)) r
 
-def QStep.code (q : QStep) : List Instr :=
-  q.loads.map (fun p => ld p.1 p.2) ++ vqr q.a q.b q.c q.d ++ q.stores.map fun p => st p.1 p.2
+/-- The quarter round of the four-block code (`vqr`, or `vqr3` with SSSE3),
+and what the prologue does first for it (`vqr3`'s controls). -/
+structure Kernel where
+  qr : XReg → XReg → XReg → XReg → List Instr
+  init : List Instr
+
+def sse2 : Kernel := ⟨vqr, []⟩
+def ssse3 : Kernel := ⟨vqr3, masks⟩
+
+def QStep.code (k : Kernel) (q : QStep) : List Instr :=
+  q.loads.map (fun p => ld p.1 p.2) ++ k.qr q.a q.b q.c q.d ++ q.stores.map fun p => st p.1 p.2
 
 /-- The words kept in registers between double rounds. -/
 def cached : List (Nat × XReg) :=
@@ -160,23 +173,24 @@ def plan : List QStep := [
   ⟨[(.xmm2, 4), (.xmm3, 9), (.xmm5, 14)], .xmm1, .xmm2, .xmm3, .xmm5, []⟩]
 
 /-- Quarter round `i` of `plan`. -/
-def quarter4 (i : Nat) : Prog isa := .block (plan.getD i ⟨[], .xmm0, .xmm0, .xmm0, .xmm0, []⟩).code
+def quarter4 (k : Kernel) (i : Nat) : Prog isa :=
+  .block ((plan.getD i ⟨[], .xmm0, .xmm0, .xmm0, .xmm0, []⟩).code k)
 
 /-- `inner_block` (RFC 8439 §2.3.1) on each of the four states. -/
-def doubleRound4 : Prog isa :=
-  .seq (quarter4 0) <| .seq (quarter4 1) <| .seq (quarter4 2) <| .seq (quarter4 3) <|
-  .seq (quarter4 4) <| .seq (quarter4 5) <| .seq (quarter4 6) (quarter4 7)
+def doubleRound4 (k : Kernel) : Prog isa :=
+  .seq (quarter4 k 0) <| .seq (quarter4 k 1) <| .seq (quarter4 k 2) <| .seq (quarter4 k 3) <|
+  .seq (quarter4 k 4) <| .seq (quarter4 k 5) <| .seq (quarter4 k 6) (quarter4 k 7)
 
 /-- `n` double rounds on each of the four states. -/
-def rounds4 : Nat → Prog isa
+def rounds4 (k : Kernel) : Nat → Prog isa
   | 0 => .block []
-  | n + 1 => .seq (rounds4 n) doubleRound4
+  | n + 1 => .seq (rounds4 k n) (doubleRound4 k)
 
 /-- The rounds: the cached words loaded, ten double rounds, and the cached
 words stored back. -/
-def rounds10 : Prog isa :=
+def rounds10 (k : Kernel) : Prog isa :=
   .seq (.block (cached.map fun p => ld p.2 p.1))
-  (.seq (rounds4 10) (.block (cached.map fun p => st p.1 p.2)))
+  (.seq (rounds4 k 10) (.block (cached.map fun p => st p.1 p.2)))
 
 /-- `pshufd` with `0x55 * i`: doubleword `i` of `src` in every doubleword of `d`. -/
 def bcast (d src : XReg) (i : Nat) : Instr := .xop (.pshufd d src (BitVec.ofNat 8 (0x55 * i)))
@@ -271,17 +285,23 @@ def next4 : List Instr :=
 
 /-- Four blocks of keystream, XORed into the next 256 bytes of data, or all
 that is left if fewer; then `CF` is clear if more than 64 bytes remain. -/
-def body4 : Prog isa :=
-  .seq (.block setup4) (.seq rounds10 (.seq finish4
+def body4 (k : Kernel) : Prog isa :=
+  .seq (.block setup4) (.seq (rounds10 k) (.seq finish4
   (.seq (.block [.alu .cmp .ebp (.imm 257)]) (.seq (.ite .b last (.block next4))
     (.block [.alu .cmp .ebp (.imm 65)])))))
 
-def xor : Prog isa :=
+def xorWith (k : Kernel) : Prog isa :=
   .seq (.block [.mov .eax (.mem (at_ .esp 16))])
-  (.seq (.block prologue)
-  (.seq (.ite .b (.block []) (.loop body4 .ae))
+  (.seq (.block prologue) (.seq (.block k.init) (.seq (.block [.alu .cmp .ebp (.imm 65)])
+  (.seq (.ite .b (.block []) (.loop (body4 k) .ae))
   (.seq (.block [.alu .test .ebp (.reg .ebp)])
   (.seq (.ite .e (.block []) tail)
-    (.block (.mov .eax (.reg .edi) :: restore))))))
+    (.block (.mov .eax (.reg .edi) :: restore))))))))
+
+/-- `vg_chacha20_xor`. -/
+def xor : Prog isa := xorWith sse2
+
+/-- `vg_chacha20_xor_ssse3`. -/
+def xorSsse3 : Prog isa := xorWith ssse3
 
 end VG.Impl.ChaCha20.X86.Xor

@@ -484,7 +484,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅</td>
+<td>✅ SSE2, SSSE3</td>
 
 </tr>
 
@@ -550,7 +550,7 @@ yours to keep:
 
 <td>✅ AES-NI, VAES, AVX2</td>
 
-<td>❌</td>
+<td>✅ AES, PMULL</td>
 
 <td>❌</td>
 
@@ -566,7 +566,7 @@ yours to keep:
 
 <td>✅ AES-NI, VAES, PCLMULQDQ, VPCLMULQDQ, AVX2</td>
 
-<td>❌</td>
+<td>✅ AES, PMULL</td>
 
 <td>❌</td>
 
@@ -598,7 +598,7 @@ yours to keep:
 
 <td>✅ AES-NI</td>
 
-<td>❌</td>
+<td>✅ AES, PMULL</td>
 
 <td>❌</td>
 
@@ -614,7 +614,7 @@ yours to keep:
 
 <td>✅ AES-NI, VAES, AVX2</td>
 
-<td>❌</td>
+<td>✅ AES, PMULL</td>
 
 <td>❌</td>
 
@@ -1042,7 +1042,7 @@ yours to keep:
 
 <td>❌</td>
 
-<td>❌</td>
+<td>✅ SHA extensions</td>
 
 </tr>
 
@@ -1088,7 +1088,7 @@ yours to keep:
 
 <td>✅ SHA extensions</td>
 
-<td>❌</td>
+<td>✅</td>
 
 <td>❌</td>
 

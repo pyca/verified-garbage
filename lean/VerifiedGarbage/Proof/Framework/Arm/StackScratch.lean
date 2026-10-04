@@ -25,7 +25,10 @@ others, which take `4m` bytes of stack and otherwise `r0`–`r3`, which
 `setArgs` keeps. The copies are memory the code reads on entry, which the
 contract without the argument says nothing of: the precondition and
 postcondition must read memory only within the function's buffers (`hpre`,
-`hpost`), which the frame lies outside of.
+`hpost`), which the frame lies outside of. So must the leak the contract may
+declare (`Sig.contract`'s `leak`, which the code's contract takes too):
+`hleak` (`Sig.LeakLocal`, which holds of no leak and is then proved by
+default). `pubL_arm` is `pub_arm` with a leak.
 -/
 
 namespace VG.Arm
@@ -136,6 +139,24 @@ theorem pub_arm {sig : Sig} {pre : Curry (sig.words abi.ptrBits) (Mem → Prop)}
   rw [args_arm]
   simp only [Sig.descs_of_noLists _ _ _ hl, List.not_mem_nil, false_implies, implies_true, and_true]
   exact Iff.rfl
+
+/-- The public data of a contract, and what it may leak, by where AAPCS passes
+the arguments. -/
+theorem pubL_arm {sig : Sig} {pre : Curry (sig.words abi.ptrBits) (Mem → Prop)}
+    {post : sig.Post abi.ptrBits} {wa : Bool} {stack : Nat}
+    {leak : Option (Curry (sig.words abi.ptrBits) (Mem → List Nat))} {s₁ s₂ : State}
+    (hl : Sig.noLists sig.params = true) :
+    (sig.contract abi pre post wa stack leak).pub s₁ s₂ ↔
+      (s₁.sp = s₂.sp ∧ leakAgree leak (armArgs sig s₁) s₁.mem (armArgs sig s₂) s₂.mem) ∧
+      ∀ i, (sig.params.flatMap (·.2.pubs)).getD i false = true →
+        ((armArgs sig s₁).getD i 0).setWidth ((widths sig).getD i 64) =
+          ((armArgs sig s₂).getD i 0).setWidth ((widths sig).getD i 64) := by
+  simp only [Sig.contract]
+  rw [args_arm]
+  simp only [Sig.descs_of_noLists _ _ _ hl, List.not_mem_nil, false_implies, implies_true, and_true]
+  cases leak with
+  | none => simp only [leakAgree, and_true]; exact Iff.rfl
+  | some f => exact Iff.rfl
 
 theorem classify_length : ∀ (ws : List Nat) (ncrn nsaa : Nat), (classify ws ncrn nsaa).1.length = ws.length
   | [], _, _ => rfl
@@ -495,7 +516,7 @@ theorem narrow_mem (sig : Sig) (e : Elem) (n bytes m : Nat) (s : State) :
 section
 variable {sig : Sig} {nm : String} {e : Elem} {n : Nat}
   {pre : Curry (sig.words abi.ptrBits) (Mem → Prop)} {post : sig.Post abi.ptrBits} {wa : Bool}
-  {stack bytes m : Nat}
+  {stack bytes m : Nat} {leak : Option (Curry (sig.words abi.ptrBits) (Mem → List Nat))}
 
 /-- The sizes `withStackScratch` needs: the frame holds the copies, the
 buffer's address, the saved `lr` and the buffer; the offsets are encodable. -/
@@ -505,7 +526,7 @@ abbrev Fits (m bytes : Nat) (e : Elem) (n : Nat) : Prop :=
 
 /-- What `setArgs` gives, from a state satisfying the contract without the
 buffer. -/
-theorem argsState_run {s : State} (hs : (sig.contract abi pre post wa (stack + bytes)).pre s)
+theorem argsState_run {s : State} (hs : (sig.contract abi pre post wa (stack + bytes) leak).pre s)
     (hN : nsaa sig = 4 * m) (hb : Fits m bytes e n) (hl : Sig.noLists sig.params = true) :
     let u := allocState bytes s
     execBlock isa (setArgs bytes m) u =
@@ -557,7 +578,7 @@ theorem armArgs_congr {s s' : State} (hloc : (locs sig).all (Loc.ok (4 * m)) = t
 /-- What `narrow` keeps of `s`, and what it holds. -/
 theorem narrow_facts (hcl : ScratchOnStack sig) (hN : nsaa sig = 4 * m)
     (hloc : (locs sig).all (Loc.ok (4 * m)) = true) (hb : Fits m bytes e n) {s : State}
-    (hs : (sig.contract abi pre post wa (stack + bytes)).pre s) (hl : Sig.noLists sig.params = true) :
+    (hs : (sig.contract abi pre post wa (stack + bytes) leak).pre s) (hl : Sig.noLists sig.params = true) :
     (narrow sig e n bytes m s).sp = s.sp - BitVec.ofNat 32 bytes ∧
       (∀ q, q ≠ .r12 → (narrow sig e n bytes m s).gpr q = s.gpr q) ∧
       armArgs (sig.withScratch nm e n) (narrow sig e n bytes m s) =
@@ -584,7 +605,7 @@ theorem stackBelow_sub (E : Addr) (bytes stack : Nat) :
 /-- The buffers lie outside the frame: `narrow`'s memory is `s`'s there. -/
 theorem narrow_agree (hcl : ScratchOnStack sig) (hN : nsaa sig = 4 * m)
     (hloc : (locs sig).all (Loc.ok (4 * m)) = true) (hb : Fits m bytes e n) {s : State}
-    (hs : (sig.contract abi pre post wa (stack + bytes)).pre s) (hl : Sig.noLists sig.params = true) :
+    (hs : (sig.contract abi pre post wa (stack + bytes) leak).pre s) (hl : Sig.noLists sig.params = true) :
     ∀ b ∈ Sig.bufs sig.params (armArgs sig s), ∀ x, b.1.Contains x 1 →
       (narrow sig e n bytes m s).mem x = s.mem x := by
   obtain ⟨-, -, -, hf⟩ := narrow_facts (nm := "") hcl hN hloc hb hs hl
@@ -609,8 +630,8 @@ theorem narrow_pre (hcl : ScratchOnStack sig) (hN : nsaa sig = 4 * m)
     (hpre : ∀ vs m₁ m₂, vs.length = (sig.words abi.ptrBits).length →
       (∀ b ∈ Sig.bufs sig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
       Curry.apply (sig.words abi.ptrBits) pre vs m₁ → Curry.apply (sig.words abi.ptrBits) pre vs m₂)
-    {s : State} (hs : (sig.contract abi pre post wa (stack + bytes)).pre s) (hl : Sig.noLists sig.params = true) :
-    (Sig.scratchContract abi sig nm e n pre post wa stack).pre (narrow sig e n bytes m s) := by
+    {s : State} (hs : (sig.contract abi pre post wa (stack + bytes) leak).pre s) (hl : Sig.noLists sig.params = true) :
+    (Sig.scratchContract abi sig nm e n pre post wa stack leak).pre (narrow sig e n bytes m s) := by
   obtain ⟨hsp₂, -, hst', -⟩ := narrow_facts (nm := nm) hcl hN hloc hb hs hl
   have hag := narrow_agree hcl hN hloc hb hs hl
   obtain ⟨hb1, -⟩ := hb
@@ -704,23 +725,25 @@ theorem narrow_pre (hcl : ScratchOnStack sig) (hN : nsaa sig = 4 * m)
 one with it in `narrow`: the buffer's address is the stack pointer's. -/
 theorem narrow_pub (hcl : ScratchOnStack sig) (hN : nsaa sig = 4 * m)
     (hloc : (locs sig).all (Loc.ok (4 * m)) = true) (hb : Fits m bytes e n) {s₁ s₂ : State}
-    (h₁ : (sig.contract abi pre post wa (stack + bytes)).pre s₁)
-    (h₂ : (sig.contract abi pre post wa (stack + bytes)).pre s₂)
-    (hp : (sig.contract abi pre post wa (stack + bytes)).pub s₁ s₂) (hl : Sig.noLists sig.params = true) :
-    (Sig.scratchContract abi sig nm e n pre post wa stack).pub (narrow sig e n bytes m s₁)
+    (h₁ : (sig.contract abi pre post wa (stack + bytes) leak).pre s₁)
+    (h₂ : (sig.contract abi pre post wa (stack + bytes) leak).pre s₂)
+    (hp : (sig.contract abi pre post wa (stack + bytes) leak).pub s₁ s₂) (hl : Sig.noLists sig.params = true)
+    (hleak : Sig.LeakLocal abi.ptrBits sig leak := by trivial) :
+    (Sig.scratchContract abi sig nm e n pre post wa stack leak).pub (narrow sig e n bytes m s₁)
       (narrow sig e n bytes m s₂) := by
-  rw [pub_arm hl] at hp
-  obtain ⟨hsp, hpa⟩ := hp
+  rw [pubL_arm hl] at hp
+  obtain ⟨⟨hsp, hlk⟩, hpa⟩ := hp
   obtain ⟨e₁, -, a₁, -⟩ := narrow_facts (nm := nm) hcl hN hloc hb h₁ hl
   obtain ⟨e₂, -, a₂, -⟩ := narrow_facts (nm := nm) hcl hN hloc hb h₂ hl
-  refine (pub_arm (sig := sig.withScratch nm e n)
+  have l₁ := armArgs_length sig s₁
+  have l₂ := armArgs_length sig s₂
+  refine (pubL_arm (sig := sig.withScratch nm e n)
     (pre := Curry.withScratch abi.ptrBits nm e n sig.params pre)
     (post := Curry.withScratch abi.ptrBits nm e n sig.params post)
     (Sig.noLists_withScratch nm e n hl)).mpr ?_
   rw [e₁, e₂, a₁, a₂, hsp]
-  refine ⟨rfl, fun i hi => ?_⟩
-  have l₁ := armArgs_length sig s₁
-  have l₂ := armArgs_length sig s₂
+  refine ⟨⟨rfl, leakAgree_withScratch hleak _ _ l₁ l₂ (narrow_agree hcl hN hloc hb h₁ hl)
+    (narrow_agree hcl hN hloc hb h₂ hl) hlk⟩, fun i hi => ?_⟩
   have lp := Sig.pubs_length sig.params abi.ptrBits
   have lw : (widths sig).length = (sig.params.flatMap fun p => p.2.words abi.ptrBits).length := by
     rw [widths, List.length_map]; rfl
@@ -753,7 +776,7 @@ def popState (bytes : Nat) (s s₃ : State) : State :=
 requires, and whose memory and registers are those of the code's run. -/
 theorem withStackScratch_run {c : Prog isa} (hcl : ScratchOnStack sig) (hN : nsaa sig = 4 * m)
     (hloc : (locs sig).all (Loc.ok (4 * m)) = true) (hb : Fits m bytes e n) {s : State}
-    (hs : (sig.contract abi pre post wa (stack + bytes)).pre s) {t : List Leak} {s₃ : State}
+    (hs : (sig.contract abi pre post wa (stack + bytes) leak).pre s) {t : List Leak} {s₃ : State}
     (he : Exec isa c (narrow sig e n bytes m s) t s₃) (ha : abiPreserved (narrow sig e n bytes m s) s₃) (hl : Sig.noLists sig.params = true) :
     Exec isa (withStackScratch bytes m c) s
         (setArgsTrace bytes (s.sp - BitVec.ofNat 32 bytes) m ++ t) (popState bytes s s₃) ∧
@@ -835,12 +858,12 @@ theorem withStackScratch_run {c : Prog isa} (hcl : ScratchOnStack sig) (hN : nsa
 /-- Code verified for a function whose last argument, on the stack, is a
 scratch buffer of `n` elements `e`, with `stack` bytes of stack, is verified
 for the function without it, which allocates the buffer in a frame of
-`bytes` more bytes of stack (`withStackScratch`), if its precondition and
-postcondition read memory only within the function's buffers (`hpre`,
-`hpost`). The other arguments are in `r0`–`r3` and the first `4m` bytes of
-stack (`hcl`, `hN`, `hloc`). -/
+`bytes` more bytes of stack (`withStackScratch`), if its precondition,
+postcondition and leak read memory only within the function's buffers
+(`hpre`, `hpost`, `hleak`, which holds of no leak). The other arguments are
+in `r0`–`r3` and the first `4m` bytes of stack (`hcl`, `hN`, `hloc`). -/
 theorem Verified.stackScratch {c : Prog isa}
-    (h : Verified target c (Sig.scratchContract abi sig nm e n pre post wa stack))
+    (h : Verified target c (Sig.scratchContract abi sig nm e n pre post wa stack leak))
     (hcl : ScratchOnStack sig) (hN : nsaa sig = 4 * m)
     (hloc : (locs sig).all (Loc.ok (4 * m)) = true) (hb : Fits m bytes e n)
     (hpre : ∀ vs m₁ m₂, vs.length = (sig.words abi.ptrBits).length →
@@ -851,13 +874,14 @@ theorem Verified.stackScratch {c : Prog isa}
       Curry.apply (sig.words abi.ptrBits) post vs m₁ m' r →
         Curry.apply (sig.words abi.ptrBits) post vs m₂ m' r)
     (hsat : ∃ s, (sig.contract abi pre post wa (stack + bytes)).pre s)
-    (hl : Sig.noLists sig.params = true := by decide) :
-    Verified target (withStackScratch bytes m c) (sig.contract abi pre post wa (stack + bytes)) := by
+    (hl : Sig.noLists sig.params = true := by decide)
+    (hleak : Sig.LeakLocal abi.ptrBits sig leak := by trivial) :
+    Verified target (withStackScratch bytes m c) (sig.contract abi pre post wa (stack + bytes) leak) := by
   obtain ⟨hcor, hct, -⟩ := h
   -- Every run is `setArgs`, then the code's run from `narrow`.
-  have hrun : ∀ s, (sig.contract abi pre post wa (stack + bytes)).pre s → ∃ t s₃,
+  have hrun : ∀ s, (sig.contract abi pre post wa (stack + bytes) leak).pre s → ∃ t s₃,
       Exec isa c (narrow sig e n bytes m s) t s₃ ∧
-      (Sig.scratchContract abi sig nm e n pre post wa stack).post (narrow sig e n bytes m s) s₃ ∧
+      (Sig.scratchContract abi sig nm e n pre post wa stack leak).post (narrow sig e n bytes m s) s₃ ∧
       Exec isa (withStackScratch bytes m c) s
         (setArgsTrace bytes (s.sp - BitVec.ofNat 32 bytes) m ++ t) (popState bytes s s₃) ∧
       abiPreserved s (popState bytes s s₃) ∧ (popState bytes s s₃).mem = s₃.mem ∧
@@ -880,9 +904,9 @@ theorem Verified.stackScratch {c : Prog isa}
     exact hpost _ _ _ _ _ (armArgs_length sig s) (narrow_agree hcl hN hloc hb hs hl) hq''
   · obtain ⟨u₁, r₁, f₁, -, x₁, -⟩ := hrun s₁ h₁
     obtain ⟨u₂, r₂, f₂, -, x₂, -⟩ := hrun s₂ h₂
-    rw [(Exec.det e₁ x₁).1, (Exec.det e₂ x₂).1, ((pub_arm hl).mp hp).1,
+    rw [(Exec.det e₁ x₁).1, (Exec.det e₂ x₂).1, ((pubL_arm hl).mp hp).1.1,
       hct _ _ _ _ _ _ (narrow_pre hcl hN hloc hb hpre h₁ hl) (narrow_pre hcl hN hloc hb hpre h₂ hl)
-        (narrow_pub hcl hN hloc hb h₁ h₂ hp hl) f₁ f₂]
+        (narrow_pub hcl hN hloc hb h₁ h₂ hp hl hleak) f₁ f₂]
 
 end
 

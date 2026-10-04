@@ -77,7 +77,8 @@ def XBinOp.name : XBinOp → String
   | .pshufb => "pshufb" | .sha256msg1 => "sha256msg1" | .sha256msg2 => "sha256msg2"
   | .aesenc => "aesenc" | .aesenclast => "aesenclast"
   | .paddq => "paddq" | .sha1msg1 => "sha1msg1" | .sha1msg2 => "sha1msg2"
-  | .sha1nexte => "sha1nexte"
+  | .sha1nexte => "sha1nexte" | .aesdec => "aesdec" | .aesdeclast => "aesdeclast"
+  | .aesimc => "aesimc"
 
 def XShiftOp.name : XShiftOp → String
   | .pslld => "pslld" | .psrld => "psrld" | .psllq => "psllq" | .psrlq => "psrlq"
