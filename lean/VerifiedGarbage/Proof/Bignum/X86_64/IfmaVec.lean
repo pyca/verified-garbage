@@ -87,6 +87,14 @@ theorem mont_into {X K X' a c d R m : Nat} (hR : Nat.Coprime R m) (hX : X % m = 
   congr 1
   rw [Nat.mul_assoc, e, Nat.mul_assoc]
 
+theorem mont_into0 {X K X' c d R m y : Nat} (hR : Nat.Coprime R m) (hX : X % m = 1 * c % m)
+    (hK : K % m = d % m) (e : c * d = R * R) (h : X' * R % m = X * K % m) : X' % m = y ^ 0 * R % m := by
+  rw [Nat.pow_zero]; exact mont_into hR hX hK e h
+
+theorem mont_into1 {X K X' a c d R m : Nat} (hR : Nat.Coprime R m) (hX : X % m = a * c % m)
+    (hK : K % m = d % m) (e : c * d = R * R) (h : X' * R % m = X * K % m) : X' % m = a ^ 1 * R % m := by
+  rw [Nat.pow_one]; exact mont_into hR hX hK e h
+
 /-- Out of Montgomery form: `Y ≡ b R` gives `Y F / R ≡ b F`. -/
 theorem mont_out {Y F Y' b R m : Nat} (hR : Nat.Coprime R m) (hY : Y % m = b * R % m)
     (h : Y' * R % m = Y * F % m) : Y' % m = b * F % m := by
@@ -114,5 +122,123 @@ theorem OutE.limb {B : Addr} {m m' : Mem} (h : OutE B m m') {p c : Nat} (hp : p 
   have := off_lt j hj
   show (word m' B _).toNat = (word m B _).toNat
   rw [Nat.add_assoc, h.word_at hp (by omega) (by omega) (by omega) (by omega) (by omega)]
+
+
+theorem pow_split {a b c : Nat} (h : a + b = c + c) : 2 ^ a * 2 ^ b = 2 ^ c * 2 ^ c := by
+  rw [← Nat.pow_add, ← Nat.pow_add, h]
+
+theorem Out2.toOutside {B : Addr} {o n : Nat} {m m' : Mem} (h : Out2 B o n m m') (hon : o + n ≤ D) :
+    Outside B 0 (2 * D) m m' := fun a ha => h a fun p hp => by
+  have hD : D = 3872 := rfl
+  rcases ha with ha | ha
+  · omega
+  · have : D * p ≤ D := by rcases D_mul hp with h | h <;> omega
+    exact .inr (by omega)
+
+theorem OutE.toOutside {B : Addr} {m m' : Mem} (h : OutE B m m') : Outside B 0 (2 * D) m m' :=
+  fun a ha => h a fun p hp => by
+    have hD : D = 3872 := rfl
+    rcases ha with ha | ha
+    · omega
+    · have : D * p ≤ D := by rcases D_mul hp with h | h <;> omega
+      simp only [oY, oS, oV, oTab] at *
+      exact ⟨.inr (by omega), .inr (by omega), .inr (by omega), .inr (by omega)⟩
+
+theorem Out2.byte {B : Addr} {o n : Nat} {m m' : Mem} (h : Out2 B o n m m') {p i : Nat} (hp : p < 2)
+    (hi : i < 128) (ho : o + n ≤ oE ∨ oE + 128 ≤ o) (hoD : o + n ≤ D) :
+    m' (off B (D * p + oE + i)) = m (off B (D * p + oE + i)) := by
+  have hD : D = 3872 := rfl
+  refine h _ fun p' hp' => ?_
+  rw [ofs_off0 B (by rcases D_mul hp with h | h <;> simp only [oE] at * <;> omega)]
+  rcases D_mul hp with h1 | h1 <;> rcases D_mul hp' with h2 | h2 <;> simp only [oE] at * <;> omega
+
+theorem Good.of_outE {m m' : Mem} {B : Addr} {M : Nat → Nat} {c p : Nat} (g : Good m B M c p) (hp : p < 2)
+    (h : OutE B m m')
+    (hY : c + 160 ≤ oY ∨ oY + 160 ≤ c) (hS : c + 160 ≤ oS ∨ oS + 160 ≤ c) (hV : c + 160 ≤ oV ∨ oV + 8 ≤ c)
+    (hT : c + 160 ≤ oTab ∨ oTab + 2560 ≤ c) (hcD : c + 160 ≤ D) :
+    Good m' B M c p ∧ val52 m' B (D * p + c) = val52 m B (D * p + c) := by
+  have e : ∀ j < 20, limb m' B (D * p + c) j = limb m B (D * p + c) j := fun j hj =>
+    h.limb hp hY hS hV hT hcD hj
+  exact ⟨g.of_limbs e, val52_of_limbs e⟩
+
+/-- The vector code inside the MXCSR prologue and epilogue. -/
+theorem vecBody_ok {s : State} {B : Addr} {M k x : Nat → Nat} {Q : Prop} (hB : s.gpr .rbx = B)
+    (hs : Scr s B (2 * D)) (ar : Ar s.mem B M k) (hR : ∀ p < 2, Nat.Coprime (2 ^ (52 * 20)) (M p))
+    (gx : ∀ p < 2, Good s.mem B M oX p) (gy : ∀ p < 2, Good s.mem B M oY p)
+    (gk : ∀ p < 2, Good s.mem B M oK1 p) (gf : ∀ p < 2, Good s.mem B M oFin p)
+    (vx : Q → ∀ p < 2, val52 s.mem B (D * p + oX) % M p = x p * 2 ^ 1024 % M p)
+    (vy : Q → ∀ p < 2, val52 s.mem B (D * p + oY) % M p = 1 * 2 ^ 1024 % M p)
+    (vk : Q → ∀ p < 2, val52 s.mem B (D * p + oK1) % M p = 2 ^ 1056 % M p) :
+    WP isa (VG.Impl.Bignum.X86_64.seqs ([VG.Impl.Rsa.X86_64.CrtIfma.amm oX oX oK1,
+        VG.Impl.Rsa.X86_64.CrtIfma.amm oY oY oK1] ++ VG.Impl.Rsa.X86_64.CrtIfma.expLoop ++
+        [VG.Impl.Rsa.X86_64.CrtIfma.amm oY oY oFin])) s fun s' =>
+      (∀ p < 2, Good s'.mem B M oY p ∧
+        (Q → val52 s'.mem B (D * p + oY) % M p =
+          x p ^ ev s.mem B p 128 * val52 s.mem B (D * p + oFin) % M p)) ∧
+      Outside B 0 (2 * D) s.mem s'.mem ∧
+      (∀ r, r ≠ .rax → r ≠ .rcx → r ≠ .rdx → r ≠ .rsi → r ≠ .r8 → r ≠ .r9 → r ≠ .r10 → r ≠ .r11 → r ≠ .r12 →
+        r ≠ .r13 → r ≠ .r14 → r ≠ .r15 → s'.gpr r = s.gpr r) ∧
+      s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.mxcsr = s.mxcsr := by
+  have hD : D = 3872 := rfl
+  have e2 : 2 ^ 1024 * 2 ^ 1056 = 2 ^ (52 * 20) * 2 ^ (52 * 20) := by
+    simp only [← Nat.pow_add, Nat.reduceAdd, Nat.reduceMul]
+  refine wp_seqs_app (by simp) (by simp) (wp_seqs_app (by simp) (by simp [VG.Impl.Rsa.X86_64.CrtIfma.expLoop,
+    VG.Impl.Rsa.X86_64.CrtIfma.tabBuild]) ?_)
+  refine WP.seq (WP.mono (amm2_ok hB hs ar (by decide) (by decide) (by decide) (by decide) gx gk)
+    fun s₁ ⟨v₁, f₁, ar₁, g₁, rd₁, wr₁, x₁⟩ => ?_)
+  have hB₁ : s₁.gpr .rbx = B := by
+    rw [g₁ _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
+      (by decide)]; exact hB
+  have hs₁ : Scr s₁ B (2 * D) := hs.congr wr₁
+  have gy₁ : ∀ p < 2, Good s₁.mem B M oY p := fun p hp => (gy p hp).of_out2 hp f₁ (.inl (by decide)) (by decide)
+    (by decide)
+  have gk₁ : ∀ p < 2, Good s₁.mem B M oK1 p := fun p hp => (gk p hp).of_out2 hp f₁ (.inr (by decide)) (by decide)
+    (by decide)
+  refine WP.mono (amm2_ok hB₁ hs₁ ar₁ (by decide) (by decide) (by decide) (by decide) gy₁ gk₁)
+    fun s₂ ⟨v₂, f₂, ar₂, g₂, rd₂, wr₂, x₂⟩ => ?_
+  have hB₂ : s₂.gpr .rbx = B := by
+    rw [g₂ _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
+      (by decide)]; exact hB₁
+  have hs₂ : Scr s₂ B (2 * D) := hs₁.congr wr₂
+  have gx₂ : ∀ p < 2, Good s₂.mem B M oX p := fun p hp => (v₁ p hp).1.of_out2 hp f₂ (.inr (by decide))
+    (by decide) (by decide)
+  have vx₂ : Q → ∀ p < 2, val52 s₂.mem B (D * p + oX) % M p = x p ^ 1 * 2 ^ (52 * 20) % M p := fun hq p hp => by
+    rw [f₂.val hp (.inr (by decide)) (by decide) (by decide)]
+    exact mont_into1 (hR p hp) (vx hq p hp) (vk hq p hp) e2 (v₁ p hp).2
+  have vy₂ : Q → ∀ p < 2, val52 s₂.mem B (D * p + oY) % M p = x p ^ 0 * 2 ^ (52 * 20) % M p := fun hq p hp => by
+    have e := (v₂ p hp).2
+    rw [f₁.val hp (.inl (by decide)) (by decide) (by decide), f₁.val hp (.inr (by decide)) (by decide)
+      (by decide)] at e
+    exact mont_into0 (hR p hp) (vy hq p hp) (vk hq p hp) e2 e
+  refine WP.mono (expLoop_ok hB₂ hs₂ ar₂ hR (fun p hp => (v₂ p hp).1) gx₂ vy₂ vx₂)
+    fun s₃ ⟨st₃, f₃, g₃, rd₃, wr₃, x₃⟩ => ?_
+  have hB₃ : s₃.gpr .rbx = B := by
+    rw [g₃ _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
+      (by decide) (by decide) (by decide) (by decide)]; exact hB₂
+  -- `Fin`, unchanged
+  have gf₃ : ∀ p < 2, Good s₃.mem B M oFin p ∧ val52 s₃.mem B (D * p + oFin) = val52 s.mem B (D * p + oFin) :=
+    fun p hp => by
+      have g₁ := (gf p hp).of_out2 hp f₁ (.inr (by decide)) (by decide) (by decide)
+      have g₂ := g₁.of_out2 hp f₂ (.inr (by decide)) (by decide) (by decide)
+      obtain ⟨g₃, e₃⟩ := g₂.of_outE hp f₃ (.inr (by decide)) (.inr (by decide)) (.inr (by decide))
+        (.inr (by decide)) (by decide)
+      refine ⟨g₃, ?_⟩
+      rw [e₃, f₂.val hp (.inr (by decide)) (by decide) (by decide),
+        f₁.val hp (.inr (by decide)) (by decide) (by decide)]
+  have hev : ∀ p < 2, ev s₂.mem B p 128 = ev s.mem B p 128 := fun p hp =>
+    ev_congr 128 fun i hi => (f₂.byte hp hi (.inl (by decide)) (by decide)).trans
+      (f₁.byte hp hi (.inl (by decide)) (by decide))
+  refine WP.mono (amm2_ok hB₃ (hs₂.congr wr₃) st₃.ar (by decide) (by decide) (by decide) (by decide) st₃.y
+    (fun p hp => (gf₃ p hp).1)) fun s₄ ⟨v₄, f₄, ar₄, g₄, rd₄, wr₄, x₄⟩ =>
+      ⟨fun p hp => ⟨(v₄ p hp).1, fun hq => ?_⟩, ?_, fun r r1 r2 r3 r4 r5 r6 r7 r8 r9 r10 r11 r12 => ?_,
+        by rw [rd₄, rd₃, rd₂, rd₁], by rw [wr₄, wr₃, wr₂, wr₁], by rw [x₄, x₃, x₂, x₁]⟩
+  · have e := (v₄ p hp).2
+    rw [(gf₃ p hp).2] at e
+    rw [← hev p hp]
+    exact mont_out (hR p hp) (st₃.yv hq p hp) e
+  · exact ((f₁.toOutside (by decide)).trans (f₂.toOutside (by decide))).trans
+      (f₃.toOutside.trans (f₄.toOutside (by decide)))
+  · rw [g₄ r r1 r2 r3 r4 r5 r6 r7 r8 r9, g₃ r r1 r2 r3 r4 r5 r6 r7 r8 r9 r10 r11 r12,
+      g₂ r r1 r2 r3 r4 r5 r6 r7 r8 r9, g₁ r r1 r2 r3 r4 r5 r6 r7 r8 r9]
 
 end VG.Proof.Bignum.X86_64.AmmSym
