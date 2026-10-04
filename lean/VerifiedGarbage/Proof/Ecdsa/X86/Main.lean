@@ -22,7 +22,7 @@ open VG VG.X86 VG.X86.Wp VG.Impl.Mont.X86 VG.Impl.Mont VG.Impl.Weierstrass.X86 V
 open VG.Impl.Ecdsa.X86
 open VG.Proof.Mont.X86 VG.Proof.Mont VG.Proof.Weierstrass.X86 VG.Proof.Weierstrass Spec.Weierstrass
 
-variable {c : Cfg}
+variable {c : Cfg} {A : Args}
 
 /-- The ranges of numbered slots and of the accumulator. -/
 abbrev slWk (c : Cfg) (l : List Nat) : List (Nat × Nat) := slW c l ++ [(c.wk, 16 * c.n + 4)]
@@ -56,21 +56,21 @@ theorem flag_le (h0 : 0 < c.n) (h7 : c.n < 7) : ∀ w ∈ [(c.sl FLAG, 4)], w.1 
   omega
 
 /-- After `[k]G` and `Z^(p-2)`. -/
-structure St₂ (c : Cfg) (s₀ : State) (base : Addr) (s : State) : Prop extends Keep c s₀ base s where
-  k : sv c base s K = kv c s₀
-  d : sv c base s D = dv c s₀
-  e : sv c base s E = ev c s₀
+structure St₂ (c : Cfg) (A : Args) (s₀ : State) (base : Addr) (s : State) : Prop extends Keep c s₀ base s where
+  k : sv c base s K = kv c A s₀
+  d : sv c base s D = dv c A s₀
+  e : sv c base s E = ev c A s₀
   flag : flagW c base s = BitVec.allOnes 32
   t₂ : ∀ t < 64 * c.n, s.mem (off base (bitsAt c.n 2 + t)) = if (c.C.n - 2).testBit t then 1 else 0
   rep : Rep c.C (tmv c.C c.n base s (c.sl RX)) (tmv c.C c.n base s (c.sl RY))
-    (tmv c.C c.n base s (c.sl RZ)) (mul (kv c s₀) (G c.C))
+    (tmv c.C c.n base s (c.sl RZ)) (mul (kv c A s₀) (G c.C))
   acc_lt : sv c base s ACC < c.C.p
   acc : toM c.C.p (2 ^ (64 * c.n)) (sv c base s ACC) = tmv c.C c.n base s (c.sl RZ) ^ (c.C.p - 2)
   rz_lt : sv c base s RZ < c.C.p
 
 /-- `[k]G`, then `Z^(p-2)`. -/
-theorem stage₂ (hc : CfgOk c) (hC : Law c.C) {s₀ : State} {base : Addr} {s : State} (hS : St₁ c s₀ base s)
-    {rest : Prog isa} {Q : State → Prop} (h : ∀ s', St₂ c s₀ base s' → WP isa rest s' Q) :
+theorem stage₂ (hc : CfgOk c) (hC : Law c.C) {s₀ : State} {base : Addr} {s : State} (hS : St₁ c A s₀ base s)
+    {rest : Prog isa} {Q : State → Prop} (h : ∀ s', St₂ c A s₀ base s' → WP isa rest s' Q) :
     WP isa (.seq (ladder c.ladderCfg c.wk) (.seq (pow c.powP c.wk) rest)) s Q := by
   have h0 := hc.n0
   have h7 := hc.n7
@@ -78,7 +78,7 @@ theorem stage₂ (hc : CfgOk c) (hC : Law c.C) {s₀ : State} {base : Addr} {s :
   have hpR := unitMod_pow_two hc.p_odd (64 * c.n)
   have hp3 := hc.p_ge
   have F := hS.fixed
-  have hkl : kv c s₀ < 2 ^ (64 * c.n) := hS.k ▸ wordsVal_lt _ _ _ _
+  have hkl : kv c A s₀ < 2 ^ (64 * c.n) := hS.k ▸ wordsVal_lt _ _ _ _
   have hmont : ∀ x, c.mont x < c.C.p := fun x => Nat.mod_lt _ (by omega)
   have hlt : ∀ x ∈ ladR c.ladderCfg, wordsVal s.mem base x c.MP'.n < c.C.p := by
     intro x hx
@@ -102,11 +102,11 @@ theorem stage₂ (hc : CfgOk c) (hC : Law c.C) {s₀ : State} {base : Addr} {s :
     rw [F.gx, F.gy, F.onep, toM_cmont hc, toM_cmont hc, toM_one hpR]
     exact rep_affine' hC _ _
   have hR : Rep c.C (tmv c.C c.n base s (c.sl RX)) (tmv c.C c.n base s (c.sl RY))
-      (tmv c.C c.n base s (c.sl RZ)) (mul (kv c s₀ >>> (64 * c.n)) (G c.C)) := by
+      (tmv c.C c.n base s (c.sl RZ)) (mul (kv c A s₀ >>> (64 * c.n)) (G c.C)) := by
     show Rep c.C (toM _ _ (sv c base s RX)) (toM _ _ (sv c base s RY)) (toM _ _ (sv c base s RZ)) _
     rw [hS.rx, hS.ry, hS.rz, toM_cmont hc, toM_zero, shiftRight_eq_zero hkl, mul_zero_pt]
     exact rep_infinity' hC
-  have hstep := step_rep (L := c.ladderCfg) (k := kv c s₀) hC hc.onG (by
+  have hstep := step_rep (L := c.ladderCfg) (k := kv c A s₀) hC hc.onG (by
       show toM c.C.p (2 ^ (64 * c.n)) (wordsVal s.mem base (c.sl AP) c.n) = _
       rw [F.ap]; exact toM_cmont hc _)
     (by
@@ -156,23 +156,23 @@ theorem stage₂ (hc : CfgOk c) (hC : Law c.C) {s₀ : State} {base : Addr} {s :
     exact L₅ (c.sl RZ) (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_singleton_self _)))
 
 /-- After `x`, `r`, the checks and `k^(n-2)`. -/
-structure St₃ (c : Cfg) (s₀ : State) (base : Addr) (s : State) : Prop extends Keep c s₀ base s where
-  d : sv c base s D = dv c s₀
-  e : sv c base s E = ev c s₀
+structure St₃ (c : Cfg) (A : Args) (s₀ : State) (base : Addr) (s : State) : Prop extends Keep c s₀ base s where
+  d : sv c base s D = dv c A s₀
+  e : sv c base s E = ev c A s₀
   rep : Rep c.C (tmv c.C c.n base s (c.sl RX)) (tmv c.C c.n base s (c.sl RY))
-    (tmv c.C c.n base s (c.sl RZ)) (mul (kv c s₀) (G c.C))
+    (tmv c.C c.n base s (c.sl RZ)) (mul (kv c A s₀) (G c.C))
   x_lt : sv c base s X < c.C.p
   x : Fin.ofNat c.C.p (sv c base s X) =
     tmv c.C c.n base s (c.sl RX) * tmv c.C c.n base s (c.sl RZ) ^ (c.C.p - 2)
   rr : sv c base s RR = sv c base s X % c.C.n
   flag : flagW c base s = BitVec.allOnes 32 &&&
-    mask32 (0 < dv c s₀ ∧ dv c s₀ < c.C.n) &&& mask32 (0 < kv c s₀ ∧ kv c s₀ < c.C.n) &&&
+    mask32 (0 < dv c A s₀ ∧ dv c A s₀ < c.C.n) &&& mask32 (0 < kv c A s₀ ∧ kv c A s₀ < c.C.n) &&&
     mask32 (sv c base s X % c.C.n ≠ 0)
-  acc : toM c.C.n (2 ^ (64 * c.n)) (sv c base s ACC) = Fin.ofNat c.C.n (kv c s₀) ^ (c.C.n - 2)
+  acc : toM c.C.n (2 ^ (64 * c.n)) (sv c base s ACC) = Fin.ofNat c.C.n (kv c A s₀) ^ (c.C.n - 2)
 
 /-- `x`, `r`, `k R mod n` and the checks, then `k^(n-2)`. -/
-theorem stage₃ (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State} (hS : St₂ c s₀ base s)
-    {rest : Prog isa} {Q : State → Prop} (h : ∀ s', St₃ c s₀ base s' → WP isa rest s' Q) :
+theorem stage₃ (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State} (hS : St₂ c A s₀ base s)
+    {rest : Prog isa} {Q : State → Prop} (h : ∀ s', St₃ c A s₀ base s' → WP isa rest s' Q) :
     WP isa (.seq c.middle (.seq (pow c.powN c.wk) rest)) s Q := by
   have h0 := hc.n0
   have h7 := hc.n7
@@ -236,8 +236,8 @@ theorem stage₃ (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State} (hS : S
 /-- The result the contract asks for: the specification's signature of the
 hash with `d` and `k`, big-endian, and `1`, or zeros and `0`. -/
 def SignPost (c : Cfg) (s₀ s' : State) : Prop :=
-  match Spec.Ecdsa.signWith c.C (dv c s₀)
-      (Spec.Ecdsa.hashToInt c.C (Spec.Ecdsa.bytesAt s₀.mem (ptr s₀ 2) (8 * c.n))) (kv c s₀) with
+  match Spec.Ecdsa.signWith c.C (dv c .sign s₀)
+      (Spec.Ecdsa.hashToInt c.C (Spec.Ecdsa.bytesAt s₀.mem (ptr s₀ 2) (8 * c.n))) (kv c .sign s₀) with
   | some rs => s'.gpr .eax = 1 ∧
       Spec.Ecdsa.bytesAt s'.mem (ptr s₀ 0) (16 * c.n) = Spec.Ecdsa.encode c.C rs
   | none => s'.gpr .eax = 0 ∧
@@ -253,7 +253,7 @@ structure SignKeep (c : Cfg) (s₀ s' : State) : Prop where
 
 /-- `s`, its check, and the result. -/
 theorem stage₄ (hc : CfgOk c) (hC : Law c.C) {s₀ : State} (hp : Pre c s₀) {base : Addr} (hb : base = ptr s₀ 4)
-    {s : State} (hS : St₃ c s₀ base s) :
+    {s : State} (hS : St₃ c .sign s₀ base s) :
     WP isa c.scalar s fun s' => SignKeep c s₀ s' ∧ SignPost c s₀ s' := by
   have h0 := hc.n0
   have h7 := hc.n7
@@ -284,7 +284,7 @@ theorem stage₄ (hc : CfgOk c) (hC : Law c.C) {s₀ : State} (hp : Pre c s₀) 
   have ss₁₂ : sv c base s₁₂ SS = sv c base s₁₁ SS := sv_flag O₁₂ h0 h7 hn (by decide) (by decide)
   -- The flag.
   have hflag : flagW c base s₁₂ =
-      mask32 (decide ((((0 < dv c s₀ ∧ dv c s₀ < c.C.n) ∧ (0 < kv c s₀ ∧ kv c s₀ < c.C.n)) ∧
+      mask32 (decide ((((0 < dv c .sign s₀ ∧ dv c .sign s₀ < c.C.n) ∧ (0 < kv c .sign s₀ ∧ kv c .sign s₀ < c.C.n)) ∧
         sv c base s X % c.C.n ≠ 0) ∧ wordsVal s₁₁.mem base (c.sl SS) c.n ≠ 0) = true) := by
     rw [f₁₂, flagW, flag_unch U₁₁ h7 h0 hn (by decide), flag_unch U₁₀ h7 h0 hn (by decide), ← flagW, hS.flag,
       BitVec.allOnes_and, mask32_and, mask32_and, mask32_and]
@@ -293,30 +293,31 @@ theorem stage₄ (hc : CfgOk c) (hC : Law c.C) {s₀ : State} (hp : Pre c s₀) 
     rw [k₁₂.1 _ (by decide), g₁₁ _ (by decide), g₁₀ _ (by decide), hS.esp]
   have hrw : s₁₂.rd ++ s₁₂.wr = s₀.rd ++ s₀.wr := by
     rw [k₁₂.2.1, k₁₂.2.2, rd₁₁, wr₁₁, rd₁₀, wr₁₀, hS.rd, hS.wr]
-  have hout := argLoad_ok (hp.setup h7) hesp hrw (by
+  have hout := argLoad_ok (i := 0) ⟨argsR s₀, by rw [hp.rd]; simp, arg_contains hp.sp_fit (by decide)⟩
+    (hp.args_sc.sub_left (arg_sub hp.sp_fit (by decide))) hesp hrw (by
     rw [← hb]; exact W₁₂.outside fun w hw => by
-      rw [List.mem_singleton.mp hw]; exact ⟨Nat.le_refl _, Nat.le_refl _⟩) (i := 0) (by decide)
+      rw [List.mem_singleton.mp hw]; exact ⟨Nat.le_refl _, Nat.le_refl _⟩)
   have hw : (⟨(arg s₀ 0).setWidth 64, 16 * c.n⟩ : Region) ∈ s₁₂.wr := by
     rw [k₁₂.2.2, wr₁₁, wr₁₀, hS.wr, hp.wr]; simp
   refine WP.mono (finish_ok hc hs₁₂ hout hp.out_fit hw (hb ▸ hp.out_sc) F₁₂.saved _ hflag)
     fun s' ⟨bytes, ret, saved, others, Oout⟩ => ⟨⟨saved, by rw [others _ (by decide), hesp],
       ⟨s₁₂.mem, hb ▸ W₁₂, Oout⟩⟩, ?_⟩
   -- The specification.
-  have hsig := signWith_eq hC (C := c.C) (d := dv c s₀) (e := ev c s₀) (k := kv c s₀) hS.rep hS.x_lt hS.x
+  have hsig := signWith_eq hC (C := c.C) (d := dv c .sign s₀) (e := ev c .sign s₀) (k := kv c .sign s₀) hS.rep hS.x_lt hS.x
     (s := wordsVal s₁₁.mem base (c.sl SS) c.n) ss_lt (by
       rw [ss, trm, tdm, tem, acc₁₀, hS.acc, hS.rr, hS.d, hS.e, Lean.Grind.AddCommMonoid.add_comm])
   unfold SignPost
   rw [hashToInt_eq hc, hsig]
   rw [ss₁₂, rr₁₂, hS.rr] at bytes
-  by_cases hP : 1 ≤ dv c s₀ ∧ dv c s₀ < c.C.n ∧ 1 ≤ kv c s₀ ∧ kv c s₀ < c.C.n ∧
+  by_cases hP : 1 ≤ dv c .sign s₀ ∧ dv c .sign s₀ < c.C.n ∧ 1 ≤ kv c .sign s₀ ∧ kv c .sign s₀ < c.C.n ∧
       sv c base s X % c.C.n ≠ 0 ∧ wordsVal s₁₁.mem base (c.sl SS) c.n ≠ 0
-  · have hd : decide ((((0 < dv c s₀ ∧ dv c s₀ < c.C.n) ∧ (0 < kv c s₀ ∧ kv c s₀ < c.C.n)) ∧
+  · have hd : decide ((((0 < dv c .sign s₀ ∧ dv c .sign s₀ < c.C.n) ∧ (0 < kv c .sign s₀ ∧ kv c .sign s₀ < c.C.n)) ∧
         sv c base s X % c.C.n ≠ 0) ∧ wordsVal s₁₁.mem base (c.sl SS) c.n ≠ 0) = true := by
       simp only [decide_eq_true_eq]; omega
     rw [ite_eq_left_of_eq_true _ _ (eq_true hP)]
     refine ⟨by rw [ret, hd]; rfl, ?_⟩
     rw [bytes, hd, ite_eq_left_of_eq_true _ _ (eq_true rfl), Spec.Ecdsa.encode, hc.len]
-  · have hd : decide ((((0 < dv c s₀ ∧ dv c s₀ < c.C.n) ∧ (0 < kv c s₀ ∧ kv c s₀ < c.C.n)) ∧
+  · have hd : decide ((((0 < dv c .sign s₀ ∧ dv c .sign s₀ < c.C.n) ∧ (0 < kv c .sign s₀ ∧ kv c .sign s₀ < c.C.n)) ∧
         sv c base s X % c.C.n ≠ 0) ∧ wordsVal s₁₁.mem base (c.sl SS) c.n ≠ 0) = false := by
       simp only [decide_eq_false_iff_not]; omega
     rw [ite_eq_right_of_eq_false _ _ (eq_false hP)]

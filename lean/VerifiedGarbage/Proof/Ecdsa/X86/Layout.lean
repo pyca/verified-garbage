@@ -97,61 +97,98 @@ theorem arg_contains {s : State} (hfit : (s.gpr .esp).toNat + 24 ≤ 2 ^ 32) {i 
   rw [e0, ei]
   exact Offset.contains_base _ (show 4 * i + 4 ≤ 20 by omega) (by omega)
 
-/-- What `setup` needs of its arguments: the working space writable, the
-arguments' slots and `k`, `d` and `digest` readable, apart from it, and
-nothing wrapping around `2³²`. -/
-structure SetupPre (c : Cfg) (s : State) : Prop where
-  wr : scR s ∈ s.wr
-  arg_in : ∀ i < 5, InRegions (s.rd ++ s.wr) (argAddr s i) 4
-  k_in : ∀ e, e + 4 ≤ 8 * c.n → InRegions (s.rd ++ s.wr) (ptr s 3 + BitVec.ofNat 64 e) 4
-  d_in : ∀ e, e + 4 ≤ 8 * c.n → InRegions (s.rd ++ s.wr) (ptr s 1 + BitVec.ofNat 64 e) 4
-  digest_in : ∀ e, e + 4 ≤ 8 * c.n → InRegions (s.rd ++ s.wr) (ptr s 2 + BitVec.ofNat 64 e) 4
-  d_sc : (dR c s).Disjoint (scR s)
-  digest_sc : (digestR c s).Disjoint (scR s)
-  k_sc : (kR c s).Disjoint (scR s)
-  args_sc : (argsR s).Disjoint (scR s)
-  d_fit : (arg s 1).toNat + 8 * c.n ≤ 2 ^ 32
-  digest_fit : (arg s 2).toNat + 8 * c.n ≤ 2 ^ 32
-  k_fit : (arg s 3).toNat + 8 * c.n ≤ 2 ^ 32
-  sc_fit : (arg s 4).toNat + size ≤ 2 ^ 32
-  sp_fit : (s.gpr .esp).toNat + 24 ≤ 2 ^ 32
+/-- The arguments `A` names. -/
+def _root_.VG.Impl.Ecdsa.X86.Args.idx (A : Args) : List Nat := [A.sc, A.k, A.d, A.e]
+
+/-- An argument slot's address, in the argument region. -/
+theorem arg_sub {s : State} (hfit : (s.gpr .esp).toNat + 24 ≤ 2 ^ 32) {i : Nat}
+    (hi : i < 5) : Region.Sub ⟨argAddr s i, 4⟩ (argsR s) := by
+  have e0 : argAddr s 0 = (s.gpr .esp).setWidth 64 + BitVec.ofNat 64 4 := by
+    rw [argAddr_eq, addr_eq (by omega)]
+  have ei : argAddr s i = (s.gpr .esp).setWidth 64 + BitVec.ofNat 64 4 + BitVec.ofNat 64 (4 * i) := by
+    rw [argAddr_eq, addr_eq (by omega), Offset.add_add]
+  show Region.Sub ⟨argAddr s i, 4⟩ ⟨argAddr s 0, 20⟩
+  rw [e0, ei]
+  exact Offset.sub_base _ (show 4 * i + 4 ≤ 20 by omega)
+
+/-- Argument `i` of `k`'s slot is in the slots of the `k` arguments. -/
+theorem arg_subN {s : State} {k i : Nat} (hfit : (s.gpr .esp).toNat + 4 + 4 * k ≤ 2 ^ 32) (hi : i < k) :
+    Region.Sub ⟨argAddr s i, 4⟩ ⟨argAddr s 0, 4 * k⟩ := by
+  have e0 : argAddr s 0 = (s.gpr .esp).setWidth 64 + BitVec.ofNat 64 4 := by
+    rw [argAddr_eq, addr_eq (by omega)]
+  have ei : argAddr s i = (s.gpr .esp).setWidth 64 + BitVec.ofNat 64 4 + BitVec.ofNat 64 (4 * i) := by
+    rw [argAddr_eq, addr_eq (by omega), Offset.add_add]
+  rw [e0, ei]
+  exact Offset.sub_base _ (show 4 * i + 4 ≤ 4 * k by omega)
+
+theorem arg_containsN {s : State} {k i : Nat} (hfit : (s.gpr .esp).toNat + 4 + 4 * k ≤ 2 ^ 32) (hi : i < k) :
+    Region.Contains ⟨argAddr s 0, 4 * k⟩ (argAddr s i) 4 := by
+  have e0 : argAddr s 0 = (s.gpr .esp).setWidth 64 + BitVec.ofNat 64 4 := by
+    rw [argAddr_eq, addr_eq (by omega)]
+  have ei : argAddr s i = (s.gpr .esp).setWidth 64 + BitVec.ofNat 64 4 + BitVec.ofNat 64 (4 * i) := by
+    rw [argAddr_eq, addr_eq (by omega), Offset.add_add]
+  rw [e0, ei]
+  exact Offset.contains_base _ (show 4 * i + 4 ≤ 4 * k by omega) (by omega)
+
+/-- What `setupWith A` needs of its arguments: the working space writable,
+the slots of the arguments `A` names and `k`, `d` and the hash readable,
+apart from it, and nothing wrapping around `2³²`. -/
+structure SetupPre (c : Cfg) (A : Args) (s : State) : Prop where
+  wr : (⟨ptr s A.sc, size⟩ : Region) ∈ s.wr
+  arg_in : ∀ i ∈ A.idx, InRegions (s.rd ++ s.wr) (argAddr s i) 4
+  arg_sc : ∀ i ∈ A.idx, Region.Disjoint ⟨argAddr s i, 4⟩ ⟨ptr s A.sc, size⟩
+  sp_fit : ∀ i ∈ A.idx, (s.gpr .esp).toNat + 8 + 4 * i ≤ 2 ^ 32
+  k_in : ∀ e, e + 4 ≤ 8 * c.n → InRegions (s.rd ++ s.wr) (ptr s A.k + BitVec.ofNat 64 e) 4
+  d_in : ∀ e, e + 4 ≤ 8 * c.n → InRegions (s.rd ++ s.wr) (ptr s A.d + BitVec.ofNat 64 e) 4
+  e_in : ∀ e, e + 4 ≤ 8 * c.n → InRegions (s.rd ++ s.wr) (ptr s A.e + BitVec.ofNat 64 e) 4
+  k_sc : Region.Disjoint ⟨ptr s A.k, 8 * c.n⟩ ⟨ptr s A.sc, size⟩
+  d_sc : Region.Disjoint ⟨ptr s A.d, 8 * c.n⟩ ⟨ptr s A.sc, size⟩
+  e_sc : Region.Disjoint ⟨ptr s A.e, 8 * c.n⟩ ⟨ptr s A.sc, size⟩
+  k_fit : (arg s A.k).toNat + 8 * c.n ≤ 2 ^ 32
+  d_fit : (arg s A.d).toNat + 8 * c.n ≤ 2 ^ 32
+  e_fit : (arg s A.e).toNat + 8 * c.n ≤ 2 ^ 32
+  sc_fit : (arg s A.sc).toNat + size ≤ 2 ^ 32
 
 /-- The words of a region are accessible. -/
 theorem inRegions_words {rs : List Region} {p : Addr} {len : Nat} (h : (⟨p, len⟩ : Region) ∈ rs)
     (hl : len ≤ 2 ^ 64) : ∀ d, d + 4 ≤ len → InRegions rs (p + BitVec.ofNat 64 d) 4 :=
   fun _ hd => ⟨_, h, Offset.contains_base p hd (by omega)⟩
 
-theorem Pre.setup {c : Cfg} {s : State} (hp : Pre c s) (h7 : c.n < 7) : SetupPre c s where
+theorem idx_sign {i : Nat} (hi : i ∈ Args.sign.idx) : i < 5 := by
+  simp only [Args.idx, List.mem_cons, List.not_mem_nil, or_false] at hi
+  omega
+
+theorem Pre.setup {c : Cfg} {s : State} (hp : Pre c s) (h7 : c.n < 7) : SetupPre c .sign s where
   wr := by rw [hp.wr]; simp
-  arg_in := fun i hi => ⟨argsR s, by rw [hp.rd]; simp, arg_contains hp.sp_fit hi⟩
+  arg_in := fun i hi => ⟨argsR s, by rw [hp.rd]; simp, arg_contains hp.sp_fit (idx_sign hi)⟩
+  arg_sc := fun i hi => hp.args_sc.sub_left (arg_sub hp.sp_fit (idx_sign hi))
+  sp_fit := fun i hi => by have := idx_sign hi; have := hp.sp_fit; omega
   k_in := inRegions_words (by rw [hp.rd]; simp) (by omega)
   d_in := inRegions_words (by rw [hp.rd]; simp) (by omega)
-  digest_in := inRegions_words (by rw [hp.rd]; simp) (by omega)
-  d_sc := hp.d_sc
-  digest_sc := hp.digest_sc
+  e_in := inRegions_words (by rw [hp.rd]; simp) (by omega)
   k_sc := hp.k_sc
-  args_sc := hp.args_sc
-  d_fit := hp.d_fit
-  digest_fit := hp.digest_fit
+  d_sc := hp.d_sc
+  e_sc := hp.digest_sc
   k_fit := hp.k_fit
+  d_fit := hp.d_fit
+  e_fit := hp.digest_fit
   sc_fit := hp.sc_fit
-  sp_fit := hp.sp_fit
 
 /-- The number in slot `i`. -/
 abbrev sv (c : Cfg) (base : Addr) (s : State) (i : Nat) : Nat := wordsVal s.mem base (c.sl i) c.n
 
-/-- What `setup` leaves, from the state `s₀` at entry, with the working space
-at `base = scratch`: `edi = base`, `ebx`, `esi`, `edi` and `ebp` in `[0, 16)`,
+/-- What `setupWith A` leaves, from the state `s₀` at entry, with the working
+space at `base`, the argument `A.sc`: `edi = base`, `ebx`, `esi`, `edi` and `ebp` in `[0, 16)`,
 `k`, `d` and the hash in their slots, the constants in theirs, and the flag
 all ones; only `eax`, `ebx` and `edi` and the working space changed. -/
-structure SetupPost (c : Cfg) (s₀ : State) (base : Addr) (s : State) : Prop where
+structure SetupPost (c : Cfg) (A : Args) (s₀ : State) (base : Addr) (s : State) : Prop where
   scr : Scr s base size
   keep : Keeps [.eax, .ebx, .edi] s₀ s
   unch : Unch base [(0, size)] s₀.mem s.mem
   saved : ∀ rd ∈ Cfg.saved, s.mem.readW (off base rd.2) 32 = s₀.gpr rd.1
-  k : sv c base s K = ofBytes (Spec.Ecdsa.bytesAt s₀.mem (ptr s₀ 3) (8 * c.n))
-  d : sv c base s D = ofBytes (Spec.Ecdsa.bytesAt s₀.mem (ptr s₀ 1) (8 * c.n))
-  e : sv c base s E = ofBytes (Spec.Ecdsa.bytesAt s₀.mem (ptr s₀ 2) (8 * c.n))
+  k : sv c base s K = ofBytes (Spec.Ecdsa.bytesAt s₀.mem (ptr s₀ A.k) (8 * c.n))
+  d : sv c base s D = ofBytes (Spec.Ecdsa.bytesAt s₀.mem (ptr s₀ A.d) (8 * c.n))
+  e : sv c base s E = ofBytes (Spec.Ecdsa.bytesAt s₀.mem (ptr s₀ A.e) (8 * c.n))
   consts : ∀ ix ∈ c.consts, sv c base s ix.1 = ix.2
   flag : flagW c base s = BitVec.allOnes 32
 

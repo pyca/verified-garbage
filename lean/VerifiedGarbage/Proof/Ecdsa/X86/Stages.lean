@@ -16,12 +16,12 @@ open VG VG.X86 VG.X86.Wp VG.Impl.Mont.X86 VG.Impl.Mont VG.Impl.Weierstrass.X86 V
 open VG.Impl.Ecdsa.X86
 open VG.Proof.Mont.X86 VG.Proof.Mont VG.Proof.Weierstrass.X86 VG.Proof.Weierstrass Spec.Weierstrass
 
-variable {c : Cfg}
+variable {c : Cfg} {A : Args}
 
 /-- The arguments' numbers. -/
-abbrev kv (c : Cfg) (s₀ : State) : Nat := ofBytes (Spec.Ecdsa.bytesAt s₀.mem (ptr s₀ 3) (8 * c.n))
-abbrev dv (c : Cfg) (s₀ : State) : Nat := ofBytes (Spec.Ecdsa.bytesAt s₀.mem (ptr s₀ 1) (8 * c.n))
-abbrev ev (c : Cfg) (s₀ : State) : Nat := ofBytes (Spec.Ecdsa.bytesAt s₀.mem (ptr s₀ 2) (8 * c.n))
+abbrev kv (c : Cfg) (A : Args) (s₀ : State) : Nat := ofBytes (Spec.Ecdsa.bytesAt s₀.mem (ptr s₀ A.k) (8 * c.n))
+abbrev dv (c : Cfg) (A : Args) (s₀ : State) : Nat := ofBytes (Spec.Ecdsa.bytesAt s₀.mem (ptr s₀ A.d) (8 * c.n))
+abbrev ev (c : Cfg) (A : Args) (s₀ : State) : Nat := ofBytes (Spec.Ecdsa.bytesAt s₀.mem (ptr s₀ A.e) (8 * c.n))
 
 /-- What the stages keep: the working space, `esp`, the regions, the
 constants and the saved registers. -/
@@ -34,31 +34,31 @@ structure Keep (c : Cfg) (s₀ : State) (base : Addr) (s : State) : Prop where
   whole : Unch base [(0, size)] s₀.mem s.mem
 
 /-- After the setup and the tables. -/
-structure St₁ (c : Cfg) (s₀ : State) (base : Addr) (s : State) : Prop extends Keep c s₀ base s where
-  k : sv c base s K = kv c s₀
-  d : sv c base s D = dv c s₀
-  e : sv c base s E = ev c s₀
+structure St₁ (c : Cfg) (A : Args) (s₀ : State) (base : Addr) (s : State) : Prop extends Keep c s₀ base s where
+  k : sv c base s K = kv c A s₀
+  d : sv c base s D = dv c A s₀
+  e : sv c base s E = ev c A s₀
   rx : sv c base s RX = 0
   ry : sv c base s RY = c.mont 1
   rz : sv c base s RZ = 0
   flag : flagW c base s = BitVec.allOnes 32
-  t₀ : ∀ t < 64 * c.n, s.mem (off base (bitsAt c.n 0 + t)) = if (kv c s₀).testBit t then 1 else 0
+  t₀ : ∀ t < 64 * c.n, s.mem (off base (bitsAt c.n 0 + t)) = if (kv c A s₀).testBit t then 1 else 0
   t₁ : ∀ t < 64 * c.n, s.mem (off base (bitsAt c.n 1 + t)) = if (c.C.p - 2).testBit t then 1 else 0
   t₂ : ∀ t < 64 * c.n, s.mem (off base (bitsAt c.n 2 + t)) = if (c.C.n - 2).testBit t then 1 else 0
   gpr : ∀ r, r ∉ [.eax, .ebx, .edx, .esi, .edi] → s.gpr r = s₀.gpr r
 
 /-- The setup, then the three tables. -/
-theorem stage₁ (hc : CfgOk c) {s₀ : State} (hp : SetupPre c s₀) {rest : Prog isa} {Q : State → Prop}
-    (h : ∀ s, St₁ c s₀ (ptr s₀ 4) s → WP isa rest s Q) :
-    WP isa (.seq (.block c.setup) (.seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n))
+theorem stage₁ (hc : CfgOk c) {s₀ : State} (hp : SetupPre c A s₀) {rest : Prog isa} {Q : State → Prop}
+    (h : ∀ s, St₁ c A s₀ (ptr s₀ A.sc) s → WP isa rest s Q) :
+    WP isa (.seq (.block (c.setupWith A)) (.seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n))
       (.seq (bits (c.sl EXPP) (bitsAt c.n 1) (8 * c.n))
       (.seq (bits (c.sl EXPN) (bitsAt c.n 2) (8 * c.n)) rest)))) s₀ Q := by
   have h0 := hc.n0
   have h7 := hc.n7
   refine WP.seq (WP.mono (setup_ok hc hp) fun s₁ P => ?_)
   have hn := P.scr.nowrap
-  have hc' : ∀ ix ∈ c.consts, sv c (ptr s₀ 4) s₁ ix.1 = ix.2 := P.consts
-  have fx : Fixed c (ptr s₀ 4) s₀.gpr s₁.mem :=
+  have hc' : ∀ ix ∈ c.consts, sv c (ptr s₀ A.sc) s₁ ix.1 = ix.2 := P.consts
+  have fx : Fixed c (ptr s₀ A.sc) s₀.gpr s₁.mem :=
     ⟨hc' (MP, c.C.p) (by simp [Cfg.consts]), hc' (MN, c.C.n) (by simp [Cfg.consts]),
       hc' (ZERO, 0) (by simp [Cfg.consts]), hc' (ONE, 1) (by simp [Cfg.consts]),
       (hc' (ONEP, c.mont 1) (by simp [Cfg.consts])).trans (by simp only [Cfg.mont, Cfg.R, Nat.one_mul]),
@@ -74,24 +74,24 @@ theorem stage₁ (hc : CfgOk c) {s₀ : State} (hp : SetupPre c s₀) {rest : Pr
     (hsep (i := K) (by decide) 0)) fun s₂ ⟨b₂, k₂, O₂⟩ => ?_)
   have hs₂ := P.scr.of_keeps k₂ (by decide)
   have u₂ := O₂.unch
-  have v₂ : ∀ {i}, i < 45 → sv c (ptr s₀ 4) s₂ i = sv c (ptr s₀ 4) s₁ i := fun hi =>
+  have v₂ : ∀ {i}, i < 45 → sv c (ptr s₀ A.sc) s₂ i = sv c (ptr s₀ A.sc) s₁ i := fun hi =>
     sv_unch u₂ h7 hn hi (apart_tbl hi 0)
   -- The table of `p - 2`.
   refine WP.seq (WP.mono (bits_ok hs₂ h0 (sl_le c h7 (i := EXPP) (by decide)) (hsz (j := 1) (by decide))
     (hsep (i := EXPP) (by decide) 1)) fun s₃ ⟨b₃, k₃, O₃⟩ => ?_)
   have hs₃ := hs₂.of_keeps k₃ (by decide)
   have u₃ := O₃.unch
-  have v₃ : ∀ {i}, i < 45 → sv c (ptr s₀ 4) s₃ i = sv c (ptr s₀ 4) s₁ i := fun hi =>
+  have v₃ : ∀ {i}, i < 45 → sv c (ptr s₀ A.sc) s₃ i = sv c (ptr s₀ A.sc) s₁ i := fun hi =>
     (sv_unch u₃ h7 hn hi (apart_tbl hi 1)).trans (v₂ hi)
   -- The table of `n - 2`.
   refine WP.seq (WP.mono (bits_ok hs₃ h0 (sl_le c h7 (i := EXPN) (by decide)) (hsz (j := 2) (by decide))
     (hsep (i := EXPN) (by decide) 2)) fun s₄ ⟨b₄, k₄, O₄⟩ => h s₄ ?_)
   have u₄ := O₄.unch
-  have v₄ : ∀ {i}, i < 45 → sv c (ptr s₀ 4) s₄ i = sv c (ptr s₀ 4) s₁ i := fun hi =>
+  have v₄ : ∀ {i}, i < 45 → sv c (ptr s₀ A.sc) s₄ i = sv c (ptr s₀ A.sc) s₁ i := fun hi =>
     (sv_unch u₄ h7 hn hi (apart_tbl hi 2)).trans (v₃ hi)
-  have hk : (kv c s₀) = sv c (ptr s₀ 4) s₁ K := P.k.symm
-  have hp2 : c.C.p - 2 = sv c (ptr s₀ 4) s₁ EXPP := (hc' (EXPP, c.C.p - 2) (by simp [Cfg.consts])).symm
-  have hn2 : c.C.n - 2 = sv c (ptr s₀ 4) s₁ EXPN := (hc' (EXPN, c.C.n - 2) (by simp [Cfg.consts])).symm
+  have hk : (kv c A s₀) = sv c (ptr s₀ A.sc) s₁ K := P.k.symm
+  have hp2 : c.C.p - 2 = sv c (ptr s₀ A.sc) s₁ EXPP := (hc' (EXPP, c.C.p - 2) (by simp [Cfg.consts])).symm
+  have hn2 : c.C.n - 2 = sv c (ptr s₀ A.sc) s₁ EXPN := (hc' (EXPN, c.C.n - 2) (by simp [Cfg.consts])).symm
   have K₄ : Keeps [.eax, .ebx, .edx, .esi, .edi] s₀ s₄ :=
     (((P.keep.mono (by decide)).widen k₂).widen k₃).widen k₄
   refine ⟨⟨hs₃.of_keeps k₄ (by decide), K₄.1 _ (by decide), K₄.2.1, K₄.2.2, ?_, ?_⟩,
@@ -101,7 +101,7 @@ theorem stage₁ (hc : CfgOk c) {s₀ : State} (hp : SetupPre c s₀) {rest : Pr
     by rw [v₄ (by decide)]; exact hc' (RZ, 0) (by simp [Cfg.consts]), ?_, ?_, ?_, ?_, K₄.1⟩
   · exact (fx.unch h7 hn (fixedOk_tbl 0) u₂ |>.unch h7 hn (fixedOk_tbl 1) u₃).unch h7 hn (fixedOk_tbl 2) u₄
   · intro x hx
-    have hx' : size ≤ ofs (ptr s₀ 4) x := by have := hx _ (List.mem_singleton_self _); omega
+    have hx' : size ≤ ofs (ptr s₀ A.sc) x := by have := hx _ (List.mem_singleton_self _); omega
     rw [O₄ x (Or.inr (by have := bitsAt_le c h7 (j := 2) (by decide); omega)),
       O₃ x (Or.inr (by have := bitsAt_le c h7 (j := 1) (by decide); omega)),
       O₂ x (Or.inr (by have := bitsAt_le c h7 (j := 0) (by decide); omega)),
