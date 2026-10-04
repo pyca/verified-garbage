@@ -213,24 +213,21 @@ def nonce : Prog isa :=
 /-! ## `HASH` -/
 
 /-- One block of the associated data (at `rbx`) XORed with its offset to
-`W + bufO + 16 j` (`j` in `r13`, counting up), `i` in `rbp`. -/
+`rsi` (from `W + bufO`, counting up, as does `r13` from 0), `i` in `rbp`. -/
 def hashFill : Prog isa :=
   .seq lNtz
     (.block (xor16 .r15 lO ohO ++
       [ld .rax .rbx 0, ld .rdx .rbx 8, .alu .xor .rax (.mem (at_ .r15 ohO)),
-       .alu .xor .rdx (.mem (at_ .r15 (ohO + 8))),
-       mvr .rcx .r13, .alu .add .rcx (.reg .rcx), .alu .add .rcx (.reg .rcx),
-       .alu .add .rcx (.reg .rcx), .alu .add .rcx (.reg .rcx), .alu .add .rcx (.reg .r15),
-       st .rcx bufO .rax, st .rcx (bufO + 8) .rdx,
-       addi .rbx 16, addi .rbp 1, addi .r13 1, .alu .cmp .r13 (.reg .r12)]))
+       .alu .xor .rdx (.mem (at_ .r15 (ohO + 8))), st .rsi 0 .rax, st .rsi 8 .rdx,
+       addi .rsi 16, addi .rbx 16, addi .rbp 1, addi .r13 1, .alu .cmp .r13 (.reg .r12)]))
+
+/-- `r13 ← 0`, `rsi ← W + bufO`. -/
+def bufStart : List Instr := [.alu .xor .r13 (.reg .r13), mvr .rsi .r15, addi .rsi bufO]
 
 /-- Add the `r12` blocks at `W + bufO` to the sum. -/
 def hashSum : Prog isa :=
-  .seq (.block [.alu .xor .r13 (.reg .r13)])
-    (.loop (.block (
-      [mvr .rcx .r13, .alu .add .rcx (.reg .rcx), .alu .add .rcx (.reg .rcx),
-       .alu .add .rcx (.reg .rcx), .alu .add .rcx (.reg .rcx), .alu .add .rcx (.reg .r15)] ++
-      xor16 .rcx bufO sumO ++ [addi .r13 1, .alu .cmp .r13 (.reg .r12)])) .ne)
+  .seq (.block bufStart)
+    (.loop (.block (xor16 .rsi 0 sumO ++ [addi .rsi 16, addi .r13 1, .alu .cmp .r13 (.reg .r12)])) .ne)
 
 /-- A chunk of up to 8 blocks: `r12 ← min(8, blocks left)`, fill, encipher,
 add; then on to the next (ZF set when none are left). The blocks left are
@@ -238,7 +235,7 @@ in `W + alenO` (as blocks, while hashing). -/
 def hashChunk : Prog isa :=
   .seq (.block [ld .r12 .r15 alenO, .alu .cmp .r12 (.imm 8)])
     (.seq (.ite .b (.block []) (.block [.mov .r12 (.imm 8)]))
-      (.seq (.block [.alu .xor .r13 (.reg .r13)])
+      (.seq (.block bufStart)
         (.seq (.loop (hashFill) .ne)
           (.seq (callBlocks c.enc [mvr .rdx .r15, addi .rdx bufO, mvr .rcx .r12])
             (.seq hashSum
