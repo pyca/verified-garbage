@@ -168,4 +168,13 @@ theorem Only.prod {rs : List XReg} {s s' : State} (h : Only rs s s') (h8 : .xmm8
     (h9 : .xmm9 ∉ rs) (h10 : .xmm10 ∉ rs) : prod s' = prod s := by
   simp only [VG.Proof.Gcm.X86_64.Pclmul.prod, h.xmm _ h8, h.xmm _ h9, h.xmm _ h10]
 
+/-! ## Addresses -/
+
+theorem toNat_ofNat_lt {n : Nat} (h : n < 2 ^ 64) : (BitVec.ofNat 64 n).toNat = n := by
+  rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt h
+
+/-- `rcx − k`, for `rcx` counting blocks down. -/
+theorem ofNat_sub_ofNat {n k : Nat} (hk : k ≤ n) (_hn : n < 2 ^ 64) :
+    BitVec.ofNat 64 n - BitVec.ofNat 64 k = BitVec.ofNat 64 (n - k) := Offset.ofNat_sub_ofNat hk
+
 end VG.Proof.Gcm.X86_64.Pclmul

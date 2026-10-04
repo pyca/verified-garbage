@@ -968,7 +968,7 @@ yours to keep:
 
 <td>✅ BMI2, ADX</td>
 
-<td>✅</td>
+<td>✅ public keys by a fixed-base comb on edwards448</td>
 
 <td>✅</td>
 

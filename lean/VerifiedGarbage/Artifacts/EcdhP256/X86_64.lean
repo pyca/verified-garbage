@@ -1,4 +1,5 @@
 import VerifiedGarbage.TCB.X86_64.Target
+import VerifiedGarbage.Proof.P256.Curve
 import VerifiedGarbage.Impl.Ecdh.P256.X86_64
 import VerifiedGarbage.Proof.Ecdh.X86_64.Verified
 import VerifiedGarbage.Proof.Ecdh.X86_64.Lit
@@ -23,7 +24,7 @@ def artifacts : List Artifact := [
       in `[1, n-1]` and `Z ≠ 0`, so the time depends only on the pointers."])
     code := Impl.Ecdh.X86_64.exchangeP256
     contract := Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P256.inst X86_64.abi
-    verified := Proof.Ecdh.X86_64.ecdh_verified
+    verified := Proof.Ecdh.X86_64.ecdh_verified Proof.P256.law
     spSafe := Code.all_of_allInstrs (by lit_decide) }]
 
 end VG.Artifacts.EcdhP256.X86_64

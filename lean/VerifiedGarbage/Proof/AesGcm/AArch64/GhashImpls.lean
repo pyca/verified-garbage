@@ -29,4 +29,12 @@ def aes : GhashImpl where
 
 end GhashImpl
 
+/-- The implementation of `vg_ghash` named `n`. -/
+def GhashName.impl : GhashName → GhashImpl
+  | .scalar => .scalar
+  | .aes => .aes
+
+/-- The implementations a variant calls. -/
+def GcmVariant.impl (v : GcmVariant) : GcmImpl := ⟨v.ctr, v.key, v.gh.impl⟩
+
 end VG.Proof.AesGcm.AArch64

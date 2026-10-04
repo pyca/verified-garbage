@@ -1,4 +1,5 @@
 import VerifiedGarbage.TCB.X86_64.Target
+import VerifiedGarbage.Proof.P256.Curve
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Sha384
 
 /-!
@@ -27,12 +28,12 @@ def artifacts (v : Proof.Pbkdf2.Md.X86_64.MdHash) : List Artifact :=
     { Spec.Ecdsa.Rfc6979.P256Sha384.signApi with
       name := Spec.Ecdsa.Rfc6979.P256Sha384.signApi.name ++ c.suffix
       target := X86_64.target
-      doc := Spec.Ecdsa.Rfc6979.P256Sha384.signApi.doc (notes := [signNotes (cfgOf (pack c)).H])
-      code := (cfgOf (pack c)).sign
+      doc := Spec.Ecdsa.Rfc6979.P256Sha384.signApi.doc (notes := [signNotes (cfgOf (pack Proof.P256.law c)).H])
+      code := (cfgOf (pack Proof.P256.law c)).sign
       contract := Spec.Ecdsa.Rfc6979.P256Sha384.inst.signContract X86_64.abi 224
       stack := 224
-      verified := sign_verified c
-      spSafe := sign_spSafe (pack c)
+      verified := sign_verified Proof.P256.law c
+      spSafe := sign_spSafe (pack Proof.P256.law c)
       features := c.features }]
 
 end VG.Generic.MdHash.X86_64.EcdsaP256Sha384

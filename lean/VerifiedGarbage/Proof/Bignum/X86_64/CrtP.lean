@@ -37,7 +37,7 @@ theorem mqPart_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv mq : BitVe
     (hg : Good s B Z w minv) (hw : 8 ≤ w) (hw28 : w < 2 ^ 28) (hN : NVals s B w minv N) (hodd : N % 2 = 1)
     (hYl : wv s.mem B (slot w Public.aY) w < N) (hY : wv s.mem B (slot w Public.aY) w % N = G % N)
     (hq : word s.mem B (8 * sWsQ) = off B oq) (hws : WsAt s.mem B oq wq mq) (hlo : slot w 8 ≤ oq)
-    (hhi : oq + slot wq 8 ≤ Z) (hwq : 1 ≤ wq) (hwq' : wq ≤ w) :
+    (hhi : oq + slot wq 8 + tabBytes wq ≤ Z) (hwq : 1 ≤ wq) (hwq' : wq ≤ w) :
     WP isa (seqs (mqSteps M.mm)) s fun t => Good t B Z w minv ∧
       wv t.mem B (slot w Public.aX) w < N ∧
       wv t.mem B (slot w Public.aX) w % N = wv s.mem (off B oq) (slot wq Public.aY) wq * G % N ∧
@@ -62,7 +62,7 @@ theorem mqPart_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv mq : BitVe
     ho₁.word (Or.inr (by omega)) hd'
   have hs₁ := hs.congr k₁.2.2
   have hdi₁ : s₁.gpr .rdi = B := (k₁.gpr (by decide)).trans hg.rdi
-  have hsq : Scr s₁ (off B oq) (slot wq 8) := hs₁.sub hhi (by omega)
+  have hsq : Scr s₁ (off B oq) (slot wq 8) := hs₁.sub (by omega) (by omega)
   have hqw : ∀ i < 32, word s₁.mem (off B oq) (8 * i) = word s.mem (off B oq) (8 * i) := fun i hi => by
     rw [word_off, word_off]; exact hq₁ _ (by omega) (by omega)
   refine WP.seq (WP.mono (WP.keep [.rax, .rsi, .r12, .rbx] (Q := fun t => t.gpr .rsi = off (off B oq) (slot wq Public.aY) ∧
@@ -163,7 +163,7 @@ theorem SubCtx.of_arrays {s t : State} {B : Addr} {Z o w wx : Nat} {mx : BitVec 
 `h = (m_p - m_q) qInv R_p⁻¹ R_p` into `p`'s `Y`, `qInv` masked by `c`. -/
 theorem hPart_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv mx : BitVec 64} {N X mqv m1 o wx : Nat}
     {qp : Addr} {qib : List Byte} {c : Bool}
-    (hg : Good s B Z w minv) (hw28 : w < 2 ^ 28) (hlo : slot w 8 ≤ o) (hhi : o + slot wx 8 ≤ Z)
+    (hg : Good s B Z w minv) (hw28 : w < 2 ^ 28) (hlo : slot w 8 ≤ o) (hhi : o + slot wx 8 + tabBytes wx ≤ Z)
     (hwx2 : 2 ≤ wx) (hwx : wx ≤ w) (hslv : word s.mem B (8 * sWsP) = off B o) (hws : WsAt s.mem B o wx mx)
     (hX : XVals s B o wx mx X) (hX1 : 1 < X) (hXodd : X % 2 = 1)
     (hXn : wv s.mem B (slot w Public.aX) w % N = mqv * 2 ^ (64 * wx * (nChunks w wx + 1)) % N)
@@ -318,7 +318,7 @@ theorem pRanges_le (w : Nat) : ∀ r ∈ pRanges w, r.1 + r.2 ≤ slot w 8 := by
   rcases hr with rfl | rfl | rfl | rfl | rfl | rfl <;> simp only [Crt.sD, Public.sCnt, sFn] <;> omega
 
 theorem pxR_bound {w o wx : Nat} (hlo : slot w 8 ≤ o) :
-    ∀ r ∈ pRanges w ++ [xRange o wx], 8 * 22 ≤ r.1 ∧ r.1 + r.2 ≤ o + slot wx 8 := by
+    ∀ r ∈ pRanges w ++ [xRange o wx], 8 * 22 ≤ r.1 ∧ r.1 + r.2 ≤ o + slot wx 8 + tabBytes wx := by
   have := hdr_lt_slot w Public.aAcc (show 31 < 32 by decide)
   have := hdr_lt_slot w Public.aTmp (show 31 < 32 by decide)
   have := hdr_lt_slot w Public.aY (show 31 < 32 by decide)
@@ -356,7 +356,7 @@ theorem Frm.px_hdr {m m' : Mem} {B : Addr} {w o wx : Nat} (hf : Frm B (pRanges w
   · exact Or.inl (by simp only at hb ⊢; omega)) (by omega)
 
 theorem Frm.px_above {m m' : Mem} {B : Addr} {w o wx : Nat} (hf : Frm B (pRanges w ++ [xRange o wx]) m m')
-    (hlo : slot w 8 ≤ o) {d : Nat} (hd : o + slot wx 8 ≤ d) (hd' : d + 8 ≤ 2 ^ 64) :
+    (hlo : slot w 8 ≤ o) {d : Nat} (hd : o + slot wx 8 + tabBytes wx ≤ d) (hd' : d + 8 ≤ 2 ^ 64) :
     word m' B d = word m B d :=
   hf.word_eq (fun r hr => Or.inr (by have := pxR_bound hlo r hr; omega)) hd'
 
@@ -379,8 +379,8 @@ theorem Frm.px_wv {m m' : Mem} {B : Addr} {w o wx : Nat} (hf : Frm B (pRanges w 
 `N`, `X_m ≡ c R (mod N)`, `m_q` in `q`'s `Y` and `qInv` (masked by `c`). -/
 theorem pPhase_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv mx mq : BitVec 64}
     {N X C o wx oq wq : Nat} {ep qp : Addr} {eb qib : List Byte} {c : Bool}
-    (hg : Good s B Z w minv) (hw : 8 ≤ w) (hw28 : w < 2 ^ 28) (hlo : slot w 8 ≤ o) (hhi : o + slot wx 8 ≤ oq)
-    (hqhi : oq + slot wq 8 ≤ Z) (hwx2 : 2 ≤ wx) (hwx : wx ≤ w) (hwq : 1 ≤ wq) (hwq' : wq ≤ w)
+    (hg : Good s B Z w minv) (hw : 8 ≤ w) (hw28 : w < 2 ^ 28) (hlo : slot w 8 ≤ o) (hhi : o + slot wx 8 + tabBytes wx ≤ oq)
+    (hqhi : oq + slot wq 8 + tabBytes wq ≤ Z) (hwx2 : 2 ≤ wx) (hwx : wx ≤ w) (hwq : 1 ≤ wq) (hwq' : wq ≤ w)
     (hslv : word s.mem B (8 * sWsP) = off B o) (hws : WsAt s.mem B o wx mx)
     (hslq : word s.mem B (8 * sWsQ) = off B oq) (hwsq : WsAt s.mem B oq wq mq)
     (hN : NVals s B w minv N) (hodd : N % 2 = 1) (hN1 : 1 < N)
@@ -405,7 +405,7 @@ theorem pPhase_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv mx mq : Bi
   have hQ8 : 256 ≤ slot wq 8 := by unfold slot hdrBytes; omega
   have ho64 : o < 2 ^ 64 := by omega
   have hz : B.toNat + slot w 8 ≤ 2 ^ 64 := by omega
-  have hhi' : o + slot wx 8 ≤ Z := by omega
+  have hhi' : o + slot wx 8 + tabBytes wx ≤ Z := by omega
   have hsub : ∀ {rs : List (Nat × Nat)}, (∀ r ∈ rs, r ∈ pRanges w ++ [xRange o wx]) → ∀ {m m' : Mem},
       Frm B rs m m' → Frm B (pRanges w ++ [xRange o wx]) m m' := fun h _ _ f => f.mono h
   have sgx : ∀ r ∈ gRanges w ++ [xRange o wx], r ∈ pRanges w ++ [xRange o wx] := fun r hr =>

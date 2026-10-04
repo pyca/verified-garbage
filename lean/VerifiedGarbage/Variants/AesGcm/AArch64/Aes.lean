@@ -1,4 +1,4 @@
-import VerifiedGarbage.Proof.AesGcm.AArch64.GhashImpls
+import VerifiedGarbage.Proof.AesGcm.AArch64.Callee
 
 /-!
 # The functions AES-GCM calls on AArch64: Aes
@@ -11,6 +11,6 @@ Rust's `aes` feature.
 
 namespace VG.Variants.AesGcm.AArch64.Aes
 
-def variant : Proof.AesGcm.AArch64.GcmImpl := ⟨.aese, .aese, .aes⟩
+def variant : Proof.AesGcm.AArch64.GcmVariant := ⟨.aese, .aese, .aes⟩
 
 end VG.Variants.AesGcm.AArch64.Aes

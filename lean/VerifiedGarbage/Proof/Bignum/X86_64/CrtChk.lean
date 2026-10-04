@@ -28,7 +28,7 @@ def keyMask (m0 : Bool) (N P Q QI : Nat) : Bool := m0 && decide (P * Q = N) && d
 `p := M ? p : 3`, `q := M ? q : 3`, their `-X⁻¹` and 1. -/
 theorem checks_ok {s : State} {B : Addr} {Z w : Nat} {minv mp mq : BitVec 64} {op oq wp wq N P Q QI : Nat}
     {m0 : Bool} (hg : Good s B Z w minv) (hw : 8 ≤ w) (hw28 : w < 2 ^ 28) (hlo : slot w 8 ≤ op)
-    (hop : op + slot wp 8 ≤ oq) (hoq : oq + slot wq 8 ≤ Z) (hwp : 2 ≤ wp) (hwp' : wp ≤ w) (hwq : 2 ≤ wq)
+    (hop : op + slot wp 8 + tabBytes wp ≤ oq) (hoq : oq + slot wq 8 + tabBytes wq ≤ Z) (hwp : 2 ≤ wp) (hwp' : wp ≤ w) (hwq : 2 ≤ wq)
     (hwq' : wq ≤ w) (hsP : word s.mem B (8 * sWsP) = off B op) (hsQ : word s.mem B (8 * sWsQ) = off B oq)
     (hwsP : WsAt s.mem B op wp mp) (hwsQ : WsAt s.mem B oq wq mq)
     (hN : wv s.mem B (slot w Public.aN) w = N) (hM : word s.mem B (8 * Public.sMask) = mask m0)
