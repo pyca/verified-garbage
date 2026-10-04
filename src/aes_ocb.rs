@@ -29,9 +29,9 @@
 
 use crate::aes::Backend;
 use crate::arch::aes_ocb::{
-    VG_AES_OCB_INIT_AESNI_FEATURES, VG_AES_OCB_OPEN_AESNI_FEATURES,
-    VG_AES_OCB_SEAL_AESNI_FEATURES, vg_aes_ocb_init, vg_aes_ocb_init_aesni, vg_aes_ocb_open,
-    vg_aes_ocb_open_aesni, vg_aes_ocb_seal, vg_aes_ocb_seal_aesni,
+    VG_AES_OCB_INIT_AESNI_FEATURES, VG_AES_OCB_OPEN_AESNI_FEATURES, VG_AES_OCB_SEAL_AESNI_FEATURES,
+    vg_aes_ocb_init, vg_aes_ocb_init_aesni, vg_aes_ocb_open, vg_aes_ocb_open_aesni,
+    vg_aes_ocb_seal, vg_aes_ocb_seal_aesni,
 };
 use crate::cpu::{Features, detected};
 use crate::zeroize::zeroize;
@@ -284,8 +284,11 @@ mod tests {
         assert!(data.iter().all(|&b| b == 1));
         for n in [1, 15] {
             let nonce = [7u8; 15];
-            let tag = k.encrypt_in_place::<1>(&nonce[..n], &[2], &mut data).unwrap();
-            k.decrypt_in_place(&nonce[..n], &[2], &mut data, &tag).unwrap();
+            let tag = k
+                .encrypt_in_place::<1>(&nonce[..n], &[2], &mut data)
+                .unwrap();
+            k.decrypt_in_place(&nonce[..n], &[2], &mut data, &tag)
+                .unwrap();
             assert!(data.iter().all(|&b| b == 1));
         }
     }

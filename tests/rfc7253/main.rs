@@ -25,7 +25,7 @@ fn appendix() -> impl Iterator<Item = &'static str> {
 }
 
 fn unhex(s: &str) -> Option<Vec<u8>> {
-    if s.len() % 2 != 0 || !s.bytes().all(|b| b.is_ascii_hexdigit()) {
+    if !s.len().is_multiple_of(2) || !s.bytes().all(|b| b.is_ascii_hexdigit()) {
         return None;
     }
     let b = s.as_bytes();
@@ -56,7 +56,9 @@ fn tuples() -> Vec<Tuple> {
     let mut out = Vec::new();
     for line in appendix() {
         let field = line.split_once(':').and_then(|(name, value)| {
-            let i = ["K", "N", "A", "P", "C"].iter().position(|&f| f == name.trim())?;
+            let i = ["K", "N", "A", "P", "C"]
+                .iter()
+                .position(|&f| f == name.trim())?;
             Some((i, unhex(value.trim())?))
         });
         if let Some((i, value)) = field {
@@ -83,9 +85,12 @@ fn check<const T: usize>(tuple: &Tuple) {
     let (ct, tag) = tuple.c.split_at(tuple.p.len());
     let tag: &[u8; T] = tag.try_into().unwrap();
     let mut buf = tuple.p.clone();
-    let t = key.encrypt_in_place::<T>(&tuple.n, &tuple.a, &mut buf).unwrap();
+    let t = key
+        .encrypt_in_place::<T>(&tuple.n, &tuple.a, &mut buf)
+        .unwrap();
     assert_eq!((&buf[..], &t), (ct, tag));
-    key.decrypt_in_place(&tuple.n, &tuple.a, &mut buf, tag).unwrap();
+    key.decrypt_in_place(&tuple.n, &tuple.a, &mut buf, tag)
+        .unwrap();
     assert_eq!(buf, tuple.p);
 
     let flip = |v: &[u8], i: usize| {
@@ -94,17 +99,40 @@ fn check<const T: usize>(tuple: &Tuple) {
         v
     };
     let mut cases = vec![(tuple.n.clone(), tuple.a.clone(), ct.to_vec(), flip(tag, 0))];
-    cases.push((tuple.n.clone(), tuple.a.clone(), ct.to_vec(), flip(tag, 8 * T - 1)));
-    cases.push((flip(&tuple.n, 0), tuple.a.clone(), ct.to_vec(), tag.to_vec()));
+    cases.push((
+        tuple.n.clone(),
+        tuple.a.clone(),
+        ct.to_vec(),
+        flip(tag, 8 * T - 1),
+    ));
+    cases.push((
+        flip(&tuple.n, 0),
+        tuple.a.clone(),
+        ct.to_vec(),
+        tag.to_vec(),
+    ));
     if !ct.is_empty() {
-        cases.push((tuple.n.clone(), tuple.a.clone(), flip(ct, 8 * ct.len() - 1), tag.to_vec()));
+        cases.push((
+            tuple.n.clone(),
+            tuple.a.clone(),
+            flip(ct, 8 * ct.len() - 1),
+            tag.to_vec(),
+        ));
     }
     if !tuple.a.is_empty() {
-        cases.push((tuple.n.clone(), flip(&tuple.a, 3), ct.to_vec(), tag.to_vec()));
+        cases.push((
+            tuple.n.clone(),
+            flip(&tuple.a, 3),
+            ct.to_vec(),
+            tag.to_vec(),
+        ));
     }
     for (n, a, mut c, t) in cases {
         let t: &[u8; T] = t.as_slice().try_into().unwrap();
-        assert_eq!(key.decrypt_in_place(&n, &a, &mut c, t), Err(Error::TagMismatch));
+        assert_eq!(
+            key.decrypt_in_place(&n, &a, &mut c, t),
+            Err(Error::TagMismatch)
+        );
         assert!(c.iter().all(|&b| b == 0));
     }
 }
