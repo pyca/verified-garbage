@@ -80,6 +80,26 @@ theorem CT.block_seq {I : State → Prop} {is : List Instr} {c : Prog isa} {F : 
     CT I (.seq (.block is) c) :=
   CT.seq (CT.taint rs hr h) (fun s hs => let ⟨s', r, f⟩ := blk s hs; WP.of_runBlock ⟨s', r, s, hs, f⟩) h₂
 
+/-- `a; (b; (c; d))` from `(a; (b; c)); d`. -/
+theorem CT.assoc3 {I : State → Prop} {a b c d : Prog isa}
+    (h : Proof.AesGcm.X86.CT I (.seq (.seq a (.seq b c)) d)) : Proof.AesGcm.X86.CT I (.seq a (.seq b (.seq c d))) := by
+  intro s₁ s₂ t₁ t₂ s₁' s₂' hp e₁ e₂
+  cases e₁ with
+  | seq a₁ e₁ =>
+    cases e₁ with
+    | seq b₁ e₁ =>
+      cases e₁ with
+      | seq c₁ d₁ =>
+        cases e₂ with
+        | seq a₂ e₂ =>
+          cases e₂ with
+          | seq b₂ e₂ =>
+            cases e₂ with
+            | seq c₂ d₂ =>
+              obtain ⟨ht, hq⟩ := h _ _ _ _ _ _ hp (.seq (.seq a₁ (.seq b₁ c₁)) d₁) (.seq (.seq a₂ (.seq b₂ c₂)) d₂)
+              simp only [List.append_assoc] at ht
+              exact ⟨ht, hq⟩
+
 /-- `ebp` pinned. -/
 theorem pin_ebp {I : State → Prop} {W : BitVec 32} (h : ∀ s, I s → s.gpr .ebp = W) :
     ∀ s₁ s₂, I s₁ → I s₂ → ∀ r ∈ [Reg.ebp], s₁.gpr r = s₂.gpr r := fun s₁ s₂ h₁ h₂ r hr => by

@@ -18,6 +18,29 @@ open VG.Proof.Aes.X86 (Ctr32Impl)
 open VG.Impl.AesGcm.X86 (at_ imm slot copyLoop zero4 splitWhole dO nO)
 open VG.Proof.AesGcm.X86 (CT w64 slotv WEnv padLoop_ok)
 
+/-- The slots are kept when `dO` and `nO` are written. -/
+theorem dn_kept {W : BitVec 32} {m m' : Mem} {a b : BitVec 32}
+    (hm : m' = (m.writeW (w64 W + BitVec.ofNat 64 dO) a).writeW (w64 W + BitVec.ofNat 64 nO) b) {o : Nat}
+    (h₁ : 112 ≤ o) (h₂ : o + 4 ≤ 240) : slotv m' W o = slotv m W o := by
+  have f₁ : Frame [wC W] m m' := by
+    rw [hm]
+    exact ((Frame.refl _ _).writeW (List.mem_singleton_self _) _
+      (Offset.contains (w64 W) (d := 272) (n := 4) (e := 240) (k := 2320) (by decide) (by decide) (by decide))).writeW
+      (List.mem_singleton_self _) _
+      (Offset.contains (w64 W) (d := 276) (n := 4) (e := 240) (k := 2320) (by decide) (by decide) (by decide))
+  exact f₁.readW (r := ⟨w64 W + BitVec.ofNat 64 o, 4⟩) (Region.contains_self _ _) (fun r hr => by
+    simp only [List.mem_singleton] at hr; subst hr; exact Lay.w_w (.inl (by omega)) (by omega) (by decide))
+    (by decide)
+
+/-- `dO` and `nO`, after they are written. -/
+theorem dn_read {W : BitVec 32} {m m' : Mem} {a b : BitVec 32}
+    (hm : m' = (m.writeW (w64 W + BitVec.ofNat 64 dO) a).writeW (w64 W + BitVec.ofNat 64 nO) b) :
+    slotv m' W dO = a ∧ slotv m' W nO = b := by
+  subst hm
+  refine ⟨?_, Mem.readW_writeW_self32 _ _ _⟩
+  rw [slotv, Proof.AesGcm.X86.readW_writeW_off _ _ _ (by decide) (by decide) (by decide)]
+  exact Mem.readW_writeW_self32 _ _ _
+
 /-- What `absorbPad` of the `len` bytes at `P` starts from. -/
 structure PadPre (K W SP : BitVec 32) (R : Nat) (P : BitVec 32) (len : Nat) (s : State) : Prop where
   env : Env K W SP s
