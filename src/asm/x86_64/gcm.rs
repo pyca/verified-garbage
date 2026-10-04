@@ -1805,15 +1805,16 @@ pub(crate) const VG_AES_GCM_INIT_AESNI_FEATURES: crate::cpu::Features = crate::c
 ///
 /// * `key` must be valid for reads of `key_len` bytes.
 /// * `ctx` must be valid for reads and writes of 256 bytes.
-/// * `scratch` must be valid for reads and writes of 2560 bytes.
 /// * `key_len` must be 16, 24 or 32.
-/// * The contents of `scratch` on return are unspecified.
-/// * `ctx` and `scratch` must not overlap each other or `key` (distinct Rust objects never do).
-/// * None of `key`, `ctx` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `ctx` must not overlap `key` (distinct Rust objects never do).
+/// * Neither `key` nor `ctx` may overlap the return address on the stack or the 2576 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `ssse3` and `aes` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_init_aesni(key: *const u8, key_len: usize, ctx: *mut [u64; 32], scratch: *mut [u64; 320]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_init_aesni(key: *const u8, key_len: usize, ctx: *mut [u64; 32]) {
     core::arch::naked_asm!(
+        "lea rsp, [rsp-2568]",
+        "mov rcx, rsp",
+        "add rcx, 8",
         "mov QWORD PTR [rcx+128], rbx",
         "mov QWORD PTR [rcx+136], rbp",
         "mov QWORD PTR [rcx+144], r12",
@@ -1849,6 +1850,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_init_aesni(key: *const u8, key_l
         "mov r13, QWORD PTR [r15+152]",
         "mov r14, QWORD PTR [r15+160]",
         "mov r15, QWORD PTR [r15+168]",
+        "lea rsp, [rsp+2568]",
         "ret",
         ".p2align 6",
         vg_aes_expand_key_aesni = sym super::aes::vg_aes_expand_key_aesni,
@@ -3193,13 +3195,14 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_open_aesni(ctx: *const [u64; 32]
 /// * `ctx` must be valid for reads of 256 bytes.
 /// * `nonce` must be valid for reads of `nonce_len` bytes.
 /// * `state` must be valid for reads and writes of 80 bytes.
-/// * `scratch` must be valid for reads and writes of 2560 bytes.
-/// * The contents of `scratch` on return are unspecified.
-/// * `state` and `scratch` must not overlap each other, `ctx` or `nonce` (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `state` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `state` must not overlap `ctx` or `nonce` (distinct Rust objects never do).
+/// * None of `ctx`, `nonce` and `state` may overlap the return address on the stack or the 2576 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_init_aesni(ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, state: *mut [u64; 10], scratch: *mut [u64; 320]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_init_aesni(ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, state: *mut [u64; 10]) {
     core::arch::naked_asm!(
+        "lea rsp, [rsp-2568]",
+        "mov r8, rsp",
+        "add r8, 8",
         "mov QWORD PTR [r8+128], rbx",
         "mov QWORD PTR [r8+136], rbp",
         "mov QWORD PTR [r8+144], r12",
@@ -3387,6 +3390,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_init_aesni(ctx: *const [u
         "mov r13, QWORD PTR [r15+152]",
         "mov r14, QWORD PTR [r15+160]",
         "mov r15, QWORD PTR [r15+168]",
+        "lea rsp, [rsp+2568]",
         "ret",
         ".p2align 6",
         vg_ghash = sym super::gcm::vg_ghash,
@@ -3404,13 +3408,14 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_init_aesni(ctx: *const [u
 /// * `ctx` must be valid for reads of 256 bytes.
 /// * `state` must be valid for reads and writes of 80 bytes.
 /// * `data` must be valid for reads of `len` bytes.
-/// * `scratch` must be valid for reads and writes of 2560 bytes.
-/// * The contents of `scratch` on return are unspecified.
-/// * `state` and `scratch` must not overlap each other, `ctx` or `data` (distinct Rust objects never do).
-/// * None of `ctx`, `state`, `data` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `state` must not overlap `ctx` or `data` (distinct Rust objects never do).
+/// * None of `ctx`, `state` and `data` may overlap the return address on the stack or the 2576 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_aad_aesni(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, data: *const u8, len: usize, scratch: *mut [u64; 320]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_aad_aesni(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
+        "lea rsp, [rsp-2568]",
+        "mov r9, rsp",
+        "add r9, 8",
         "mov QWORD PTR [r9+128], rbx",
         "mov QWORD PTR [r9+136], rbp",
         "mov QWORD PTR [r9+144], r12",
@@ -3512,6 +3517,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_aad_aesni(ctx: *const [u6
         "mov r13, QWORD PTR [r15+152]",
         "mov r14, QWORD PTR [r15+160]",
         "mov r15, QWORD PTR [r15+168]",
+        "lea rsp, [rsp+2568]",
         "ret",
         ".p2align 6",
         vg_ghash = sym super::gcm::vg_ghash,
@@ -5343,15 +5349,16 @@ pub(crate) const VG_AES_GCM_INIT_AESNI_PCLMUL_FEATURES: crate::cpu::Features = c
 ///
 /// * `key` must be valid for reads of `key_len` bytes.
 /// * `ctx` must be valid for reads and writes of 256 bytes.
-/// * `scratch` must be valid for reads and writes of 2560 bytes.
 /// * `key_len` must be 16, 24 or 32.
-/// * The contents of `scratch` on return are unspecified.
-/// * `ctx` and `scratch` must not overlap each other or `key` (distinct Rust objects never do).
-/// * None of `key`, `ctx` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `ctx` must not overlap `key` (distinct Rust objects never do).
+/// * Neither `key` nor `ctx` may overlap the return address on the stack or the 2576 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `ssse3` and `aes` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_init_aesni_pclmul(key: *const u8, key_len: usize, ctx: *mut [u64; 32], scratch: *mut [u64; 320]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_init_aesni_pclmul(key: *const u8, key_len: usize, ctx: *mut [u64; 32]) {
     core::arch::naked_asm!(
+        "lea rsp, [rsp-2568]",
+        "mov rcx, rsp",
+        "add rcx, 8",
         "mov QWORD PTR [rcx+128], rbx",
         "mov QWORD PTR [rcx+136], rbp",
         "mov QWORD PTR [rcx+144], r12",
@@ -5387,6 +5394,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_init_aesni_pclmul(key: *const u8
         "mov r13, QWORD PTR [r15+152]",
         "mov r14, QWORD PTR [r15+160]",
         "mov r15, QWORD PTR [r15+168]",
+        "lea rsp, [rsp+2568]",
         "ret",
         ".p2align 6",
         vg_aes_expand_key_aesni = sym super::aes::vg_aes_expand_key_aesni,
@@ -6734,14 +6742,15 @@ pub(crate) const VG_AES_GCM_STREAM_INIT_AESNI_PCLMUL_FEATURES: crate::cpu::Featu
 /// * `ctx` must be valid for reads of 256 bytes.
 /// * `nonce` must be valid for reads of `nonce_len` bytes.
 /// * `state` must be valid for reads and writes of 80 bytes.
-/// * `scratch` must be valid for reads and writes of 2560 bytes.
-/// * The contents of `scratch` on return are unspecified.
-/// * `state` and `scratch` must not overlap each other, `ctx` or `nonce` (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `state` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `state` must not overlap `ctx` or `nonce` (distinct Rust objects never do).
+/// * None of `ctx`, `nonce` and `state` may overlap the return address on the stack or the 2576 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `pclmulqdq` and `ssse3` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_init_aesni_pclmul(ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, state: *mut [u64; 10], scratch: *mut [u64; 320]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_init_aesni_pclmul(ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, state: *mut [u64; 10]) {
     core::arch::naked_asm!(
+        "lea rsp, [rsp-2568]",
+        "mov r8, rsp",
+        "add r8, 8",
         "mov QWORD PTR [r8+128], rbx",
         "mov QWORD PTR [r8+136], rbp",
         "mov QWORD PTR [r8+144], r12",
@@ -6929,6 +6938,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_init_aesni_pclmul(ctx: *c
         "mov r13, QWORD PTR [r15+152]",
         "mov r14, QWORD PTR [r15+160]",
         "mov r15, QWORD PTR [r15+168]",
+        "lea rsp, [rsp+2568]",
         "ret",
         ".p2align 6",
         vg_ghash_pclmul = sym super::gcm::vg_ghash_pclmul,
@@ -6949,14 +6959,15 @@ pub(crate) const VG_AES_GCM_STREAM_AAD_AESNI_PCLMUL_FEATURES: crate::cpu::Featur
 /// * `ctx` must be valid for reads of 256 bytes.
 /// * `state` must be valid for reads and writes of 80 bytes.
 /// * `data` must be valid for reads of `len` bytes.
-/// * `scratch` must be valid for reads and writes of 2560 bytes.
-/// * The contents of `scratch` on return are unspecified.
-/// * `state` and `scratch` must not overlap each other, `ctx` or `data` (distinct Rust objects never do).
-/// * None of `ctx`, `state`, `data` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `state` must not overlap `ctx` or `data` (distinct Rust objects never do).
+/// * None of `ctx`, `state` and `data` may overlap the return address on the stack or the 2576 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `pclmulqdq` and `ssse3` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_aad_aesni_pclmul(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, data: *const u8, len: usize, scratch: *mut [u64; 320]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_aad_aesni_pclmul(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
+        "lea rsp, [rsp-2568]",
+        "mov r9, rsp",
+        "add r9, 8",
         "mov QWORD PTR [r9+128], rbx",
         "mov QWORD PTR [r9+136], rbp",
         "mov QWORD PTR [r9+144], r12",
@@ -7058,6 +7069,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_aad_aesni_pclmul(ctx: *co
         "mov r13, QWORD PTR [r15+152]",
         "mov r14, QWORD PTR [r15+160]",
         "mov r15, QWORD PTR [r15+168]",
+        "lea rsp, [rsp+2568]",
         "ret",
         ".p2align 6",
         vg_ghash_pclmul = sym super::gcm::vg_ghash_pclmul,
@@ -11567,15 +11579,16 @@ pub(crate) const VG_AES_GCM_INIT_AESNI_PCLMUL_AVX_FEATURES: crate::cpu::Features
 ///
 /// * `key` must be valid for reads of `key_len` bytes.
 /// * `ctx` must be valid for reads and writes of 256 bytes.
-/// * `scratch` must be valid for reads and writes of 2560 bytes.
 /// * `key_len` must be 16, 24 or 32.
-/// * The contents of `scratch` on return are unspecified.
-/// * `ctx` and `scratch` must not overlap each other or `key` (distinct Rust objects never do).
-/// * None of `key`, `ctx` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `ctx` must not overlap `key` (distinct Rust objects never do).
+/// * Neither `key` nor `ctx` may overlap the return address on the stack or the 2576 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `ssse3` and `aes` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_init_aesni_pclmul_avx(key: *const u8, key_len: usize, ctx: *mut [u64; 32], scratch: *mut [u64; 320]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_init_aesni_pclmul_avx(key: *const u8, key_len: usize, ctx: *mut [u64; 32]) {
     core::arch::naked_asm!(
+        "lea rsp, [rsp-2568]",
+        "mov rcx, rsp",
+        "add rcx, 8",
         "mov QWORD PTR [rcx+128], rbx",
         "mov QWORD PTR [rcx+136], rbp",
         "mov QWORD PTR [rcx+144], r12",
@@ -11611,6 +11624,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_init_aesni_pclmul_avx(key: *cons
         "mov r13, QWORD PTR [r15+152]",
         "mov r14, QWORD PTR [r15+160]",
         "mov r15, QWORD PTR [r15+168]",
+        "lea rsp, [rsp+2568]",
         "ret",
         ".p2align 6",
         vg_aes_expand_key_aesni = sym super::aes::vg_aes_expand_key_aesni,
@@ -12958,14 +12972,15 @@ pub(crate) const VG_AES_GCM_STREAM_INIT_AESNI_PCLMUL_AVX_FEATURES: crate::cpu::F
 /// * `ctx` must be valid for reads of 256 bytes.
 /// * `nonce` must be valid for reads of `nonce_len` bytes.
 /// * `state` must be valid for reads and writes of 80 bytes.
-/// * `scratch` must be valid for reads and writes of 2560 bytes.
-/// * The contents of `scratch` on return are unspecified.
-/// * `state` and `scratch` must not overlap each other, `ctx` or `nonce` (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `state` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `state` must not overlap `ctx` or `nonce` (distinct Rust objects never do).
+/// * None of `ctx`, `nonce` and `state` may overlap the return address on the stack or the 2576 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `pclmulqdq` and `ssse3` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_init_aesni_pclmul_avx(ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, state: *mut [u64; 10], scratch: *mut [u64; 320]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_init_aesni_pclmul_avx(ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, state: *mut [u64; 10]) {
     core::arch::naked_asm!(
+        "lea rsp, [rsp-2568]",
+        "mov r8, rsp",
+        "add r8, 8",
         "mov QWORD PTR [r8+128], rbx",
         "mov QWORD PTR [r8+136], rbp",
         "mov QWORD PTR [r8+144], r12",
@@ -13153,6 +13168,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_init_aesni_pclmul_avx(ctx
         "mov r13, QWORD PTR [r15+152]",
         "mov r14, QWORD PTR [r15+160]",
         "mov r15, QWORD PTR [r15+168]",
+        "lea rsp, [rsp+2568]",
         "ret",
         ".p2align 6",
         vg_ghash_pclmul = sym super::gcm::vg_ghash_pclmul,
@@ -13173,14 +13189,15 @@ pub(crate) const VG_AES_GCM_STREAM_AAD_AESNI_PCLMUL_AVX_FEATURES: crate::cpu::Fe
 /// * `ctx` must be valid for reads of 256 bytes.
 /// * `state` must be valid for reads and writes of 80 bytes.
 /// * `data` must be valid for reads of `len` bytes.
-/// * `scratch` must be valid for reads and writes of 2560 bytes.
-/// * The contents of `scratch` on return are unspecified.
-/// * `state` and `scratch` must not overlap each other, `ctx` or `data` (distinct Rust objects never do).
-/// * None of `ctx`, `state`, `data` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `state` must not overlap `ctx` or `data` (distinct Rust objects never do).
+/// * None of `ctx`, `state` and `data` may overlap the return address on the stack or the 2576 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `pclmulqdq` and `ssse3` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_aad_aesni_pclmul_avx(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, data: *const u8, len: usize, scratch: *mut [u64; 320]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_aad_aesni_pclmul_avx(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
+        "lea rsp, [rsp-2568]",
+        "mov r9, rsp",
+        "add r9, 8",
         "mov QWORD PTR [r9+128], rbx",
         "mov QWORD PTR [r9+136], rbp",
         "mov QWORD PTR [r9+144], r12",
@@ -13282,6 +13299,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_aad_aesni_pclmul_avx(ctx:
         "mov r13, QWORD PTR [r15+152]",
         "mov r14, QWORD PTR [r15+160]",
         "mov r15, QWORD PTR [r15+168]",
+        "lea rsp, [rsp+2568]",
         "ret",
         ".p2align 6",
         vg_ghash_pclmul = sym super::gcm::vg_ghash_pclmul,
@@ -15113,15 +15131,16 @@ pub(crate) const VG_AES_GCM_INIT_AESNI_VPCLMUL_FEATURES: crate::cpu::Features = 
 ///
 /// * `key` must be valid for reads of `key_len` bytes.
 /// * `ctx` must be valid for reads and writes of 256 bytes.
-/// * `scratch` must be valid for reads and writes of 2560 bytes.
 /// * `key_len` must be 16, 24 or 32.
-/// * The contents of `scratch` on return are unspecified.
-/// * `ctx` and `scratch` must not overlap each other or `key` (distinct Rust objects never do).
-/// * None of `key`, `ctx` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `ctx` must not overlap `key` (distinct Rust objects never do).
+/// * Neither `key` nor `ctx` may overlap the return address on the stack or the 2576 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `ssse3` and `aes` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_init_aesni_vpclmul(key: *const u8, key_len: usize, ctx: *mut [u64; 32], scratch: *mut [u64; 320]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_init_aesni_vpclmul(key: *const u8, key_len: usize, ctx: *mut [u64; 32]) {
     core::arch::naked_asm!(
+        "lea rsp, [rsp-2568]",
+        "mov rcx, rsp",
+        "add rcx, 8",
         "mov QWORD PTR [rcx+128], rbx",
         "mov QWORD PTR [rcx+136], rbp",
         "mov QWORD PTR [rcx+144], r12",
@@ -15157,6 +15176,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_init_aesni_vpclmul(key: *const u
         "mov r13, QWORD PTR [r15+152]",
         "mov r14, QWORD PTR [r15+160]",
         "mov r15, QWORD PTR [r15+168]",
+        "lea rsp, [rsp+2568]",
         "ret",
         ".p2align 6",
         vg_aes_expand_key_aesni = sym super::aes::vg_aes_expand_key_aesni,
@@ -16504,14 +16524,15 @@ pub(crate) const VG_AES_GCM_STREAM_INIT_AESNI_VPCLMUL_FEATURES: crate::cpu::Feat
 /// * `ctx` must be valid for reads of 256 bytes.
 /// * `nonce` must be valid for reads of `nonce_len` bytes.
 /// * `state` must be valid for reads and writes of 80 bytes.
-/// * `scratch` must be valid for reads and writes of 2560 bytes.
-/// * The contents of `scratch` on return are unspecified.
-/// * `state` and `scratch` must not overlap each other, `ctx` or `nonce` (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `state` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `state` must not overlap `ctx` or `nonce` (distinct Rust objects never do).
+/// * None of `ctx`, `nonce` and `state` may overlap the return address on the stack or the 2576 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_init_aesni_vpclmul(ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, state: *mut [u64; 10], scratch: *mut [u64; 320]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_init_aesni_vpclmul(ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, state: *mut [u64; 10]) {
     core::arch::naked_asm!(
+        "lea rsp, [rsp-2568]",
+        "mov r8, rsp",
+        "add r8, 8",
         "mov QWORD PTR [r8+128], rbx",
         "mov QWORD PTR [r8+136], rbp",
         "mov QWORD PTR [r8+144], r12",
@@ -16699,6 +16720,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_init_aesni_vpclmul(ctx: *
         "mov r13, QWORD PTR [r15+152]",
         "mov r14, QWORD PTR [r15+160]",
         "mov r15, QWORD PTR [r15+168]",
+        "lea rsp, [rsp+2568]",
         "ret",
         ".p2align 6",
         vg_ghash_vpclmul = sym super::gcm::vg_ghash_vpclmul,
@@ -16719,14 +16741,15 @@ pub(crate) const VG_AES_GCM_STREAM_AAD_AESNI_VPCLMUL_FEATURES: crate::cpu::Featu
 /// * `ctx` must be valid for reads of 256 bytes.
 /// * `state` must be valid for reads and writes of 80 bytes.
 /// * `data` must be valid for reads of `len` bytes.
-/// * `scratch` must be valid for reads and writes of 2560 bytes.
-/// * The contents of `scratch` on return are unspecified.
-/// * `state` and `scratch` must not overlap each other, `ctx` or `data` (distinct Rust objects never do).
-/// * None of `ctx`, `state`, `data` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `state` must not overlap `ctx` or `data` (distinct Rust objects never do).
+/// * None of `ctx`, `state` and `data` may overlap the return address on the stack or the 2576 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_aad_aesni_vpclmul(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, data: *const u8, len: usize, scratch: *mut [u64; 320]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_aad_aesni_vpclmul(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
+        "lea rsp, [rsp-2568]",
+        "mov r9, rsp",
+        "add r9, 8",
         "mov QWORD PTR [r9+128], rbx",
         "mov QWORD PTR [r9+136], rbp",
         "mov QWORD PTR [r9+144], r12",
@@ -16828,6 +16851,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_aad_aesni_vpclmul(ctx: *c
         "mov r13, QWORD PTR [r15+152]",
         "mov r14, QWORD PTR [r15+160]",
         "mov r15, QWORD PTR [r15+168]",
+        "lea rsp, [rsp+2568]",
         "ret",
         ".p2align 6",
         vg_ghash_vpclmul = sym super::gcm::vg_ghash_vpclmul,
@@ -18656,14 +18680,15 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_decrypt_blocks_pclmul(ctx: *cons
 ///
 /// * `key` must be valid for reads of `key_len` bytes.
 /// * `ctx` must be valid for reads and writes of 256 bytes.
-/// * `scratch` must be valid for reads and writes of 2560 bytes.
 /// * `key_len` must be 16, 24 or 32.
-/// * The contents of `scratch` on return are unspecified.
-/// * `ctx` and `scratch` must not overlap each other or `key` (distinct Rust objects never do).
-/// * None of `key`, `ctx` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `ctx` must not overlap `key` (distinct Rust objects never do).
+/// * Neither `key` nor `ctx` may overlap the return address on the stack or the 2576 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_init_pclmul(key: *const u8, key_len: usize, ctx: *mut [u64; 32], scratch: *mut [u64; 320]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_init_pclmul(key: *const u8, key_len: usize, ctx: *mut [u64; 32]) {
     core::arch::naked_asm!(
+        "lea rsp, [rsp-2568]",
+        "mov rcx, rsp",
+        "add rcx, 8",
         "mov QWORD PTR [rcx+128], rbx",
         "mov QWORD PTR [rcx+136], rbp",
         "mov QWORD PTR [rcx+144], r12",
@@ -18699,6 +18724,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_init_pclmul(key: *const u8, key_
         "mov r13, QWORD PTR [r15+152]",
         "mov r14, QWORD PTR [r15+160]",
         "mov r15, QWORD PTR [r15+168]",
+        "lea rsp, [rsp+2568]",
         "ret",
         ".p2align 6",
         vg_aes_expand_key = sym super::aes::vg_aes_expand_key,
@@ -20046,14 +20072,15 @@ pub(crate) const VG_AES_GCM_STREAM_INIT_PCLMUL_FEATURES: crate::cpu::Features = 
 /// * `ctx` must be valid for reads of 256 bytes.
 /// * `nonce` must be valid for reads of `nonce_len` bytes.
 /// * `state` must be valid for reads and writes of 80 bytes.
-/// * `scratch` must be valid for reads and writes of 2560 bytes.
-/// * The contents of `scratch` on return are unspecified.
-/// * `state` and `scratch` must not overlap each other, `ctx` or `nonce` (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `state` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `state` must not overlap `ctx` or `nonce` (distinct Rust objects never do).
+/// * None of `ctx`, `nonce` and `state` may overlap the return address on the stack or the 2576 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `pclmulqdq` and `ssse3` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_init_pclmul(ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, state: *mut [u64; 10], scratch: *mut [u64; 320]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_init_pclmul(ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, state: *mut [u64; 10]) {
     core::arch::naked_asm!(
+        "lea rsp, [rsp-2568]",
+        "mov r8, rsp",
+        "add r8, 8",
         "mov QWORD PTR [r8+128], rbx",
         "mov QWORD PTR [r8+136], rbp",
         "mov QWORD PTR [r8+144], r12",
@@ -20241,6 +20268,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_init_pclmul(ctx: *const [
         "mov r13, QWORD PTR [r15+152]",
         "mov r14, QWORD PTR [r15+160]",
         "mov r15, QWORD PTR [r15+168]",
+        "lea rsp, [rsp+2568]",
         "ret",
         ".p2align 6",
         vg_ghash_pclmul = sym super::gcm::vg_ghash_pclmul,
@@ -20261,14 +20289,15 @@ pub(crate) const VG_AES_GCM_STREAM_AAD_PCLMUL_FEATURES: crate::cpu::Features = c
 /// * `ctx` must be valid for reads of 256 bytes.
 /// * `state` must be valid for reads and writes of 80 bytes.
 /// * `data` must be valid for reads of `len` bytes.
-/// * `scratch` must be valid for reads and writes of 2560 bytes.
-/// * The contents of `scratch` on return are unspecified.
-/// * `state` and `scratch` must not overlap each other, `ctx` or `data` (distinct Rust objects never do).
-/// * None of `ctx`, `state`, `data` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `state` must not overlap `ctx` or `data` (distinct Rust objects never do).
+/// * None of `ctx`, `state` and `data` may overlap the return address on the stack or the 2576 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `pclmulqdq` and `ssse3` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_aad_pclmul(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, data: *const u8, len: usize, scratch: *mut [u64; 320]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_aad_pclmul(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
+        "lea rsp, [rsp-2568]",
+        "mov r9, rsp",
+        "add r9, 8",
         "mov QWORD PTR [r9+128], rbx",
         "mov QWORD PTR [r9+136], rbp",
         "mov QWORD PTR [r9+144], r12",
@@ -20370,6 +20399,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_aad_pclmul(ctx: *const [u
         "mov r13, QWORD PTR [r15+152]",
         "mov r14, QWORD PTR [r15+160]",
         "mov r15, QWORD PTR [r15+168]",
+        "lea rsp, [rsp+2568]",
         "ret",
         ".p2align 6",
         vg_ghash_pclmul = sym super::gcm::vg_ghash_pclmul,
@@ -22190,14 +22220,15 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_decrypt_blocks(ctx: *const [u64;
 ///
 /// * `key` must be valid for reads of `key_len` bytes.
 /// * `ctx` must be valid for reads and writes of 256 bytes.
-/// * `scratch` must be valid for reads and writes of 2560 bytes.
 /// * `key_len` must be 16, 24 or 32.
-/// * The contents of `scratch` on return are unspecified.
-/// * `ctx` and `scratch` must not overlap each other or `key` (distinct Rust objects never do).
-/// * None of `key`, `ctx` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `ctx` must not overlap `key` (distinct Rust objects never do).
+/// * Neither `key` nor `ctx` may overlap the return address on the stack or the 2576 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_init(key: *const u8, key_len: usize, ctx: *mut [u64; 32], scratch: *mut [u64; 320]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_init(key: *const u8, key_len: usize, ctx: *mut [u64; 32]) {
     core::arch::naked_asm!(
+        "lea rsp, [rsp-2568]",
+        "mov rcx, rsp",
+        "add rcx, 8",
         "mov QWORD PTR [rcx+128], rbx",
         "mov QWORD PTR [rcx+136], rbp",
         "mov QWORD PTR [rcx+144], r12",
@@ -22233,6 +22264,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_init(key: *const u8, key_len: us
         "mov r13, QWORD PTR [r15+152]",
         "mov r14, QWORD PTR [r15+160]",
         "mov r15, QWORD PTR [r15+168]",
+        "lea rsp, [rsp+2568]",
         "ret",
         ".p2align 6",
         vg_aes_expand_key = sym super::aes::vg_aes_expand_key,
@@ -23569,13 +23601,14 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_open(ctx: *const [u64; 32], roun
 /// * `ctx` must be valid for reads of 256 bytes.
 /// * `nonce` must be valid for reads of `nonce_len` bytes.
 /// * `state` must be valid for reads and writes of 80 bytes.
-/// * `scratch` must be valid for reads and writes of 2560 bytes.
-/// * The contents of `scratch` on return are unspecified.
-/// * `state` and `scratch` must not overlap each other, `ctx` or `nonce` (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `state` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `state` must not overlap `ctx` or `nonce` (distinct Rust objects never do).
+/// * None of `ctx`, `nonce` and `state` may overlap the return address on the stack or the 2576 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_init(ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, state: *mut [u64; 10], scratch: *mut [u64; 320]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_init(ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, state: *mut [u64; 10]) {
     core::arch::naked_asm!(
+        "lea rsp, [rsp-2568]",
+        "mov r8, rsp",
+        "add r8, 8",
         "mov QWORD PTR [r8+128], rbx",
         "mov QWORD PTR [r8+136], rbp",
         "mov QWORD PTR [r8+144], r12",
@@ -23763,6 +23796,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_init(ctx: *const [u64; 32
         "mov r13, QWORD PTR [r15+152]",
         "mov r14, QWORD PTR [r15+160]",
         "mov r15, QWORD PTR [r15+168]",
+        "lea rsp, [rsp+2568]",
         "ret",
         ".p2align 6",
         vg_ghash = sym super::gcm::vg_ghash,
@@ -23780,13 +23814,14 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_init(ctx: *const [u64; 32
 /// * `ctx` must be valid for reads of 256 bytes.
 /// * `state` must be valid for reads and writes of 80 bytes.
 /// * `data` must be valid for reads of `len` bytes.
-/// * `scratch` must be valid for reads and writes of 2560 bytes.
-/// * The contents of `scratch` on return are unspecified.
-/// * `state` and `scratch` must not overlap each other, `ctx` or `data` (distinct Rust objects never do).
-/// * None of `ctx`, `state`, `data` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `state` must not overlap `ctx` or `data` (distinct Rust objects never do).
+/// * None of `ctx`, `state` and `data` may overlap the return address on the stack or the 2576 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_aad(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, data: *const u8, len: usize, scratch: *mut [u64; 320]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_aad(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
+        "lea rsp, [rsp-2568]",
+        "mov r9, rsp",
+        "add r9, 8",
         "mov QWORD PTR [r9+128], rbx",
         "mov QWORD PTR [r9+136], rbp",
         "mov QWORD PTR [r9+144], r12",
@@ -23888,6 +23923,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_aad(ctx: *const [u64; 32]
         "mov r13, QWORD PTR [r15+152]",
         "mov r14, QWORD PTR [r15+160]",
         "mov r15, QWORD PTR [r15+168]",
+        "lea rsp, [rsp+2568]",
         "ret",
         ".p2align 6",
         vg_ghash = sym super::gcm::vg_ghash,
@@ -25703,15 +25739,16 @@ pub(crate) const VG_AES_GCM_INIT_VAES_FEATURES: crate::cpu::Features = crate::cp
 ///
 /// * `key` must be valid for reads of `key_len` bytes.
 /// * `ctx` must be valid for reads and writes of 256 bytes.
-/// * `scratch` must be valid for reads and writes of 2560 bytes.
 /// * `key_len` must be 16, 24 or 32.
-/// * The contents of `scratch` on return are unspecified.
-/// * `ctx` and `scratch` must not overlap each other or `key` (distinct Rust objects never do).
-/// * None of `key`, `ctx` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `ctx` must not overlap `key` (distinct Rust objects never do).
+/// * Neither `key` nor `ctx` may overlap the return address on the stack or the 2576 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `ssse3`, `vaes` and `aes` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_init_vaes(key: *const u8, key_len: usize, ctx: *mut [u64; 32], scratch: *mut [u64; 320]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_init_vaes(key: *const u8, key_len: usize, ctx: *mut [u64; 32]) {
     core::arch::naked_asm!(
+        "lea rsp, [rsp-2568]",
+        "mov rcx, rsp",
+        "add rcx, 8",
         "mov QWORD PTR [rcx+128], rbx",
         "mov QWORD PTR [rcx+136], rbp",
         "mov QWORD PTR [rcx+144], r12",
@@ -25747,6 +25784,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_init_vaes(key: *const u8, key_le
         "mov r13, QWORD PTR [r15+152]",
         "mov r14, QWORD PTR [r15+160]",
         "mov r15, QWORD PTR [r15+168]",
+        "lea rsp, [rsp+2568]",
         "ret",
         ".p2align 6",
         vg_aes_expand_key_aesni = sym super::aes::vg_aes_expand_key_aesni,
@@ -27091,13 +27129,14 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_open_vaes(ctx: *const [u64; 32],
 /// * `ctx` must be valid for reads of 256 bytes.
 /// * `nonce` must be valid for reads of `nonce_len` bytes.
 /// * `state` must be valid for reads and writes of 80 bytes.
-/// * `scratch` must be valid for reads and writes of 2560 bytes.
-/// * The contents of `scratch` on return are unspecified.
-/// * `state` and `scratch` must not overlap each other, `ctx` or `nonce` (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `state` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `state` must not overlap `ctx` or `nonce` (distinct Rust objects never do).
+/// * None of `ctx`, `nonce` and `state` may overlap the return address on the stack or the 2576 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_init_vaes(ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, state: *mut [u64; 10], scratch: *mut [u64; 320]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_init_vaes(ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, state: *mut [u64; 10]) {
     core::arch::naked_asm!(
+        "lea rsp, [rsp-2568]",
+        "mov r8, rsp",
+        "add r8, 8",
         "mov QWORD PTR [r8+128], rbx",
         "mov QWORD PTR [r8+136], rbp",
         "mov QWORD PTR [r8+144], r12",
@@ -27285,6 +27324,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_init_vaes(ctx: *const [u6
         "mov r13, QWORD PTR [r15+152]",
         "mov r14, QWORD PTR [r15+160]",
         "mov r15, QWORD PTR [r15+168]",
+        "lea rsp, [rsp+2568]",
         "ret",
         ".p2align 6",
         vg_ghash = sym super::gcm::vg_ghash,
@@ -27302,13 +27342,14 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_init_vaes(ctx: *const [u6
 /// * `ctx` must be valid for reads of 256 bytes.
 /// * `state` must be valid for reads and writes of 80 bytes.
 /// * `data` must be valid for reads of `len` bytes.
-/// * `scratch` must be valid for reads and writes of 2560 bytes.
-/// * The contents of `scratch` on return are unspecified.
-/// * `state` and `scratch` must not overlap each other, `ctx` or `data` (distinct Rust objects never do).
-/// * None of `ctx`, `state`, `data` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `state` must not overlap `ctx` or `data` (distinct Rust objects never do).
+/// * None of `ctx`, `state` and `data` may overlap the return address on the stack or the 2576 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_aad_vaes(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, data: *const u8, len: usize, scratch: *mut [u64; 320]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_aad_vaes(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
+        "lea rsp, [rsp-2568]",
+        "mov r9, rsp",
+        "add r9, 8",
         "mov QWORD PTR [r9+128], rbx",
         "mov QWORD PTR [r9+136], rbp",
         "mov QWORD PTR [r9+144], r12",
@@ -27410,6 +27451,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_aad_vaes(ctx: *const [u64
         "mov r13, QWORD PTR [r15+152]",
         "mov r14, QWORD PTR [r15+160]",
         "mov r15, QWORD PTR [r15+168]",
+        "lea rsp, [rsp+2568]",
         "ret",
         ".p2align 6",
         vg_ghash = sym super::gcm::vg_ghash,
@@ -29241,15 +29283,16 @@ pub(crate) const VG_AES_GCM_INIT_VAES_PCLMUL_FEATURES: crate::cpu::Features = cr
 ///
 /// * `key` must be valid for reads of `key_len` bytes.
 /// * `ctx` must be valid for reads and writes of 256 bytes.
-/// * `scratch` must be valid for reads and writes of 2560 bytes.
 /// * `key_len` must be 16, 24 or 32.
-/// * The contents of `scratch` on return are unspecified.
-/// * `ctx` and `scratch` must not overlap each other or `key` (distinct Rust objects never do).
-/// * None of `key`, `ctx` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `ctx` must not overlap `key` (distinct Rust objects never do).
+/// * Neither `key` nor `ctx` may overlap the return address on the stack or the 2576 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `ssse3`, `vaes` and `aes` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_init_vaes_pclmul(key: *const u8, key_len: usize, ctx: *mut [u64; 32], scratch: *mut [u64; 320]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_init_vaes_pclmul(key: *const u8, key_len: usize, ctx: *mut [u64; 32]) {
     core::arch::naked_asm!(
+        "lea rsp, [rsp-2568]",
+        "mov rcx, rsp",
+        "add rcx, 8",
         "mov QWORD PTR [rcx+128], rbx",
         "mov QWORD PTR [rcx+136], rbp",
         "mov QWORD PTR [rcx+144], r12",
@@ -29285,6 +29328,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_init_vaes_pclmul(key: *const u8,
         "mov r13, QWORD PTR [r15+152]",
         "mov r14, QWORD PTR [r15+160]",
         "mov r15, QWORD PTR [r15+168]",
+        "lea rsp, [rsp+2568]",
         "ret",
         ".p2align 6",
         vg_aes_expand_key_aesni = sym super::aes::vg_aes_expand_key_aesni,
@@ -30632,14 +30676,15 @@ pub(crate) const VG_AES_GCM_STREAM_INIT_VAES_PCLMUL_FEATURES: crate::cpu::Featur
 /// * `ctx` must be valid for reads of 256 bytes.
 /// * `nonce` must be valid for reads of `nonce_len` bytes.
 /// * `state` must be valid for reads and writes of 80 bytes.
-/// * `scratch` must be valid for reads and writes of 2560 bytes.
-/// * The contents of `scratch` on return are unspecified.
-/// * `state` and `scratch` must not overlap each other, `ctx` or `nonce` (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `state` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `state` must not overlap `ctx` or `nonce` (distinct Rust objects never do).
+/// * None of `ctx`, `nonce` and `state` may overlap the return address on the stack or the 2576 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `pclmulqdq` and `ssse3` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_init_vaes_pclmul(ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, state: *mut [u64; 10], scratch: *mut [u64; 320]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_init_vaes_pclmul(ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, state: *mut [u64; 10]) {
     core::arch::naked_asm!(
+        "lea rsp, [rsp-2568]",
+        "mov r8, rsp",
+        "add r8, 8",
         "mov QWORD PTR [r8+128], rbx",
         "mov QWORD PTR [r8+136], rbp",
         "mov QWORD PTR [r8+144], r12",
@@ -30827,6 +30872,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_init_vaes_pclmul(ctx: *co
         "mov r13, QWORD PTR [r15+152]",
         "mov r14, QWORD PTR [r15+160]",
         "mov r15, QWORD PTR [r15+168]",
+        "lea rsp, [rsp+2568]",
         "ret",
         ".p2align 6",
         vg_ghash_pclmul = sym super::gcm::vg_ghash_pclmul,
@@ -30847,14 +30893,15 @@ pub(crate) const VG_AES_GCM_STREAM_AAD_VAES_PCLMUL_FEATURES: crate::cpu::Feature
 /// * `ctx` must be valid for reads of 256 bytes.
 /// * `state` must be valid for reads and writes of 80 bytes.
 /// * `data` must be valid for reads of `len` bytes.
-/// * `scratch` must be valid for reads and writes of 2560 bytes.
-/// * The contents of `scratch` on return are unspecified.
-/// * `state` and `scratch` must not overlap each other, `ctx` or `data` (distinct Rust objects never do).
-/// * None of `ctx`, `state`, `data` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `state` must not overlap `ctx` or `data` (distinct Rust objects never do).
+/// * None of `ctx`, `state` and `data` may overlap the return address on the stack or the 2576 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `pclmulqdq` and `ssse3` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_aad_vaes_pclmul(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, data: *const u8, len: usize, scratch: *mut [u64; 320]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_aad_vaes_pclmul(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
+        "lea rsp, [rsp-2568]",
+        "mov r9, rsp",
+        "add r9, 8",
         "mov QWORD PTR [r9+128], rbx",
         "mov QWORD PTR [r9+136], rbp",
         "mov QWORD PTR [r9+144], r12",
@@ -30956,6 +31003,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_aad_vaes_pclmul(ctx: *con
         "mov r13, QWORD PTR [r15+152]",
         "mov r14, QWORD PTR [r15+160]",
         "mov r15, QWORD PTR [r15+168]",
+        "lea rsp, [rsp+2568]",
         "ret",
         ".p2align 6",
         vg_ghash_pclmul = sym super::gcm::vg_ghash_pclmul,
@@ -34527,15 +34575,16 @@ pub(crate) const VG_AES_GCM_INIT_VAES_VPCLMUL_FEATURES: crate::cpu::Features = c
 ///
 /// * `key` must be valid for reads of `key_len` bytes.
 /// * `ctx` must be valid for reads and writes of 256 bytes.
-/// * `scratch` must be valid for reads and writes of 2560 bytes.
 /// * `key_len` must be 16, 24 or 32.
-/// * The contents of `scratch` on return are unspecified.
-/// * `ctx` and `scratch` must not overlap each other or `key` (distinct Rust objects never do).
-/// * None of `key`, `ctx` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `ctx` must not overlap `key` (distinct Rust objects never do).
+/// * Neither `key` nor `ctx` may overlap the return address on the stack or the 2576 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `ssse3`, `vaes` and `aes` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_init_vaes_vpclmul(key: *const u8, key_len: usize, ctx: *mut [u64; 32], scratch: *mut [u64; 320]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_init_vaes_vpclmul(key: *const u8, key_len: usize, ctx: *mut [u64; 32]) {
     core::arch::naked_asm!(
+        "lea rsp, [rsp-2568]",
+        "mov rcx, rsp",
+        "add rcx, 8",
         "mov QWORD PTR [rcx+128], rbx",
         "mov QWORD PTR [rcx+136], rbp",
         "mov QWORD PTR [rcx+144], r12",
@@ -34571,6 +34620,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_init_vaes_vpclmul(key: *const u8
         "mov r13, QWORD PTR [r15+152]",
         "mov r14, QWORD PTR [r15+160]",
         "mov r15, QWORD PTR [r15+168]",
+        "lea rsp, [rsp+2568]",
         "ret",
         ".p2align 6",
         vg_aes_expand_key_aesni = sym super::aes::vg_aes_expand_key_aesni,
@@ -35918,14 +35968,15 @@ pub(crate) const VG_AES_GCM_STREAM_INIT_VAES_VPCLMUL_FEATURES: crate::cpu::Featu
 /// * `ctx` must be valid for reads of 256 bytes.
 /// * `nonce` must be valid for reads of `nonce_len` bytes.
 /// * `state` must be valid for reads and writes of 80 bytes.
-/// * `scratch` must be valid for reads and writes of 2560 bytes.
-/// * The contents of `scratch` on return are unspecified.
-/// * `state` and `scratch` must not overlap each other, `ctx` or `nonce` (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `state` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `state` must not overlap `ctx` or `nonce` (distinct Rust objects never do).
+/// * None of `ctx`, `nonce` and `state` may overlap the return address on the stack or the 2576 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_init_vaes_vpclmul(ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, state: *mut [u64; 10], scratch: *mut [u64; 320]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_init_vaes_vpclmul(ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, state: *mut [u64; 10]) {
     core::arch::naked_asm!(
+        "lea rsp, [rsp-2568]",
+        "mov r8, rsp",
+        "add r8, 8",
         "mov QWORD PTR [r8+128], rbx",
         "mov QWORD PTR [r8+136], rbp",
         "mov QWORD PTR [r8+144], r12",
@@ -36113,6 +36164,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_init_vaes_vpclmul(ctx: *c
         "mov r13, QWORD PTR [r15+152]",
         "mov r14, QWORD PTR [r15+160]",
         "mov r15, QWORD PTR [r15+168]",
+        "lea rsp, [rsp+2568]",
         "ret",
         ".p2align 6",
         vg_ghash_vpclmul = sym super::gcm::vg_ghash_vpclmul,
@@ -36133,14 +36185,15 @@ pub(crate) const VG_AES_GCM_STREAM_AAD_VAES_VPCLMUL_FEATURES: crate::cpu::Featur
 /// * `ctx` must be valid for reads of 256 bytes.
 /// * `state` must be valid for reads and writes of 80 bytes.
 /// * `data` must be valid for reads of `len` bytes.
-/// * `scratch` must be valid for reads and writes of 2560 bytes.
-/// * The contents of `scratch` on return are unspecified.
-/// * `state` and `scratch` must not overlap each other, `ctx` or `data` (distinct Rust objects never do).
-/// * None of `ctx`, `state`, `data` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `state` must not overlap `ctx` or `data` (distinct Rust objects never do).
+/// * None of `ctx`, `state` and `data` may overlap the return address on the stack or the 2576 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_aad_vaes_vpclmul(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, data: *const u8, len: usize, scratch: *mut [u64; 320]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_aad_vaes_vpclmul(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
+        "lea rsp, [rsp-2568]",
+        "mov r9, rsp",
+        "add r9, 8",
         "mov QWORD PTR [r9+128], rbx",
         "mov QWORD PTR [r9+136], rbp",
         "mov QWORD PTR [r9+144], r12",
@@ -36242,6 +36295,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_aad_vaes_vpclmul(ctx: *co
         "mov r13, QWORD PTR [r15+152]",
         "mov r14, QWORD PTR [r15+160]",
         "mov r15, QWORD PTR [r15+168]",
+        "lea rsp, [rsp+2568]",
         "ret",
         ".p2align 6",
         vg_ghash_vpclmul = sym super::gcm::vg_ghash_vpclmul,
@@ -39396,15 +39450,16 @@ pub(crate) const VG_AES_GCM_INIT_VAES_VPCLMUL_AVX512_FEATURES: crate::cpu::Featu
 ///
 /// * `key` must be valid for reads of `key_len` bytes.
 /// * `ctx` must be valid for reads and writes of 256 bytes.
-/// * `scratch` must be valid for reads and writes of 2560 bytes.
 /// * `key_len` must be 16, 24 or 32.
-/// * The contents of `scratch` on return are unspecified.
-/// * `ctx` and `scratch` must not overlap each other or `key` (distinct Rust objects never do).
-/// * None of `key`, `ctx` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `ctx` must not overlap `key` (distinct Rust objects never do).
+/// * Neither `key` nor `ctx` may overlap the return address on the stack or the 2576 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `ssse3`, `vaes` and `aes` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_init_vaes_vpclmul_avx512(key: *const u8, key_len: usize, ctx: *mut [u64; 32], scratch: *mut [u64; 320]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_init_vaes_vpclmul_avx512(key: *const u8, key_len: usize, ctx: *mut [u64; 32]) {
     core::arch::naked_asm!(
+        "lea rsp, [rsp-2568]",
+        "mov rcx, rsp",
+        "add rcx, 8",
         "mov QWORD PTR [rcx+128], rbx",
         "mov QWORD PTR [rcx+136], rbp",
         "mov QWORD PTR [rcx+144], r12",
@@ -39440,6 +39495,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_init_vaes_vpclmul_avx512(key: *c
         "mov r13, QWORD PTR [r15+152]",
         "mov r14, QWORD PTR [r15+160]",
         "mov r15, QWORD PTR [r15+168]",
+        "lea rsp, [rsp+2568]",
         "ret",
         ".p2align 6",
         vg_aes_expand_key_aesni = sym super::aes::vg_aes_expand_key_aesni,
@@ -40787,14 +40843,15 @@ pub(crate) const VG_AES_GCM_STREAM_INIT_VAES_VPCLMUL_AVX512_FEATURES: crate::cpu
 /// * `ctx` must be valid for reads of 256 bytes.
 /// * `nonce` must be valid for reads of `nonce_len` bytes.
 /// * `state` must be valid for reads and writes of 80 bytes.
-/// * `scratch` must be valid for reads and writes of 2560 bytes.
-/// * The contents of `scratch` on return are unspecified.
-/// * `state` and `scratch` must not overlap each other, `ctx` or `nonce` (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `state` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `state` must not overlap `ctx` or `nonce` (distinct Rust objects never do).
+/// * None of `ctx`, `nonce` and `state` may overlap the return address on the stack or the 2576 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_init_vaes_vpclmul_avx512(ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, state: *mut [u64; 10], scratch: *mut [u64; 320]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_init_vaes_vpclmul_avx512(ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, state: *mut [u64; 10]) {
     core::arch::naked_asm!(
+        "lea rsp, [rsp-2568]",
+        "mov r8, rsp",
+        "add r8, 8",
         "mov QWORD PTR [r8+128], rbx",
         "mov QWORD PTR [r8+136], rbp",
         "mov QWORD PTR [r8+144], r12",
@@ -40982,6 +41039,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_init_vaes_vpclmul_avx512(
         "mov r13, QWORD PTR [r15+152]",
         "mov r14, QWORD PTR [r15+160]",
         "mov r15, QWORD PTR [r15+168]",
+        "lea rsp, [rsp+2568]",
         "ret",
         ".p2align 6",
         vg_ghash_vpclmul = sym super::gcm::vg_ghash_vpclmul,
@@ -41002,14 +41060,15 @@ pub(crate) const VG_AES_GCM_STREAM_AAD_VAES_VPCLMUL_AVX512_FEATURES: crate::cpu:
 /// * `ctx` must be valid for reads of 256 bytes.
 /// * `state` must be valid for reads and writes of 80 bytes.
 /// * `data` must be valid for reads of `len` bytes.
-/// * `scratch` must be valid for reads and writes of 2560 bytes.
-/// * The contents of `scratch` on return are unspecified.
-/// * `state` and `scratch` must not overlap each other, `ctx` or `data` (distinct Rust objects never do).
-/// * None of `ctx`, `state`, `data` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `state` must not overlap `ctx` or `data` (distinct Rust objects never do).
+/// * None of `ctx`, `state` and `data` may overlap the return address on the stack or the 2576 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_aad_vaes_vpclmul_avx512(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, data: *const u8, len: usize, scratch: *mut [u64; 320]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_aad_vaes_vpclmul_avx512(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
+        "lea rsp, [rsp-2568]",
+        "mov r9, rsp",
+        "add r9, 8",
         "mov QWORD PTR [r9+128], rbx",
         "mov QWORD PTR [r9+136], rbp",
         "mov QWORD PTR [r9+144], r12",
@@ -41111,6 +41170,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_aad_vaes_vpclmul_avx512(c
         "mov r13, QWORD PTR [r15+152]",
         "mov r14, QWORD PTR [r15+160]",
         "mov r15, QWORD PTR [r15+168]",
+        "lea rsp, [rsp+2568]",
         "ret",
         ".p2align 6",
         vg_ghash_vpclmul = sym super::gcm::vg_ghash_vpclmul,
@@ -42939,14 +42999,15 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_decrypt_blocks_vpclmul(ctx: *con
 ///
 /// * `key` must be valid for reads of `key_len` bytes.
 /// * `ctx` must be valid for reads and writes of 256 bytes.
-/// * `scratch` must be valid for reads and writes of 2560 bytes.
 /// * `key_len` must be 16, 24 or 32.
-/// * The contents of `scratch` on return are unspecified.
-/// * `ctx` and `scratch` must not overlap each other or `key` (distinct Rust objects never do).
-/// * None of `key`, `ctx` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `ctx` must not overlap `key` (distinct Rust objects never do).
+/// * Neither `key` nor `ctx` may overlap the return address on the stack or the 2576 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_init_vpclmul(key: *const u8, key_len: usize, ctx: *mut [u64; 32], scratch: *mut [u64; 320]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_init_vpclmul(key: *const u8, key_len: usize, ctx: *mut [u64; 32]) {
     core::arch::naked_asm!(
+        "lea rsp, [rsp-2568]",
+        "mov rcx, rsp",
+        "add rcx, 8",
         "mov QWORD PTR [rcx+128], rbx",
         "mov QWORD PTR [rcx+136], rbp",
         "mov QWORD PTR [rcx+144], r12",
@@ -42982,6 +43043,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_init_vpclmul(key: *const u8, key
         "mov r13, QWORD PTR [r15+152]",
         "mov r14, QWORD PTR [r15+160]",
         "mov r15, QWORD PTR [r15+168]",
+        "lea rsp, [rsp+2568]",
         "ret",
         ".p2align 6",
         vg_aes_expand_key = sym super::aes::vg_aes_expand_key,
@@ -44329,14 +44391,15 @@ pub(crate) const VG_AES_GCM_STREAM_INIT_VPCLMUL_FEATURES: crate::cpu::Features =
 /// * `ctx` must be valid for reads of 256 bytes.
 /// * `nonce` must be valid for reads of `nonce_len` bytes.
 /// * `state` must be valid for reads and writes of 80 bytes.
-/// * `scratch` must be valid for reads and writes of 2560 bytes.
-/// * The contents of `scratch` on return are unspecified.
-/// * `state` and `scratch` must not overlap each other, `ctx` or `nonce` (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `state` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `state` must not overlap `ctx` or `nonce` (distinct Rust objects never do).
+/// * None of `ctx`, `nonce` and `state` may overlap the return address on the stack or the 2576 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_init_vpclmul(ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, state: *mut [u64; 10], scratch: *mut [u64; 320]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_init_vpclmul(ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, state: *mut [u64; 10]) {
     core::arch::naked_asm!(
+        "lea rsp, [rsp-2568]",
+        "mov r8, rsp",
+        "add r8, 8",
         "mov QWORD PTR [r8+128], rbx",
         "mov QWORD PTR [r8+136], rbp",
         "mov QWORD PTR [r8+144], r12",
@@ -44524,6 +44587,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_init_vpclmul(ctx: *const 
         "mov r13, QWORD PTR [r15+152]",
         "mov r14, QWORD PTR [r15+160]",
         "mov r15, QWORD PTR [r15+168]",
+        "lea rsp, [rsp+2568]",
         "ret",
         ".p2align 6",
         vg_ghash_vpclmul = sym super::gcm::vg_ghash_vpclmul,
@@ -44544,14 +44608,15 @@ pub(crate) const VG_AES_GCM_STREAM_AAD_VPCLMUL_FEATURES: crate::cpu::Features = 
 /// * `ctx` must be valid for reads of 256 bytes.
 /// * `state` must be valid for reads and writes of 80 bytes.
 /// * `data` must be valid for reads of `len` bytes.
-/// * `scratch` must be valid for reads and writes of 2560 bytes.
-/// * The contents of `scratch` on return are unspecified.
-/// * `state` and `scratch` must not overlap each other, `ctx` or `data` (distinct Rust objects never do).
-/// * None of `ctx`, `state`, `data` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `state` must not overlap `ctx` or `data` (distinct Rust objects never do).
+/// * None of `ctx`, `state` and `data` may overlap the return address on the stack or the 2576 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_aad_vpclmul(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, data: *const u8, len: usize, scratch: *mut [u64; 320]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_aad_vpclmul(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
+        "lea rsp, [rsp-2568]",
+        "mov r9, rsp",
+        "add r9, 8",
         "mov QWORD PTR [r9+128], rbx",
         "mov QWORD PTR [r9+136], rbp",
         "mov QWORD PTR [r9+144], r12",
@@ -44653,6 +44718,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_aad_vpclmul(ctx: *const [
         "mov r13, QWORD PTR [r15+152]",
         "mov r14, QWORD PTR [r15+160]",
         "mov r15, QWORD PTR [r15+168]",
+        "lea rsp, [rsp+2568]",
         "ret",
         ".p2align 6",
         vg_ghash_vpclmul = sym super::gcm::vg_ghash_vpclmul,

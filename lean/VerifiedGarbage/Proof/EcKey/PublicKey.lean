@@ -1,4 +1,4 @@
-import VerifiedGarbage.Proof.Weierstrass.Complete
+import VerifiedGarbage.Proof.Weierstrass.Law
 import VerifiedGarbage.Spec.EcKey
 
 /-!
@@ -22,7 +22,7 @@ theorem fe_eq {x : Nat} (hx : x < C.p) {a : Fe C} (h : a = Fin.ofNat C.p x) : a 
   exact Fin.ext (by rw [Fin.val_ofNat, Nat.mod_eq_of_lt hx])
 
 /-- The affine point a representative with `Z ≠ 0` stands for. -/
-theorem affine_of_rep (hC : Good C) {X Y Z : Fe C} {P : Point C} (hR : Rep C X Y Z P) (hZ : Z ≠ 0)
+theorem affine_of_rep (hC : Law C) {X Y Z : Fe C} {P : Point C} (hR : Rep C X Y Z P) (hZ : Z ≠ 0)
     {x y : Nat} (hx : x < C.p) (hxX : Fin.ofNat C.p x = X * Z ^ (C.p - 2))
     (hy : y < C.p) (hyY : Fin.ofNat C.p y = Y * Z ^ (C.p - 2)) :
     P = .affine ⟨x, hx⟩ ⟨y, hy⟩ := by
@@ -31,7 +31,7 @@ theorem affine_of_rep (hC : Good C) {X Y Z : Fe C} {P : Point C} (hR : Rep C X Y
   | affine a b =>
     rw [fe_eq hx ((hR.x_eq hC).trans hxX.symm), fe_eq hy ((hR.y_eq hC).trans hyY.symm)]
 
-theorem publicKey_eq (hC : Good C) {d : Nat} {X Y Z : Fe C} (hR : Rep C X Y Z (mul d (G C)))
+theorem publicKey_eq (hC : Law C) {d : Nat} {X Y Z : Fe C} (hR : Rep C X Y Z (mul d (G C)))
     {x y : Nat} (hx : x < C.p) (hxX : Fin.ofNat C.p x = X * Z ^ (C.p - 2))
     (hy : y < C.p) (hyY : Fin.ofNat C.p y = Y * Z ^ (C.p - 2)) :
     publicKey C d = if 1 ≤ d ∧ d < C.n then

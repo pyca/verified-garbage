@@ -700,16 +700,16 @@ pub(crate) const VG_AES_GCM_INIT_AES_FEATURES: crate::cpu::Features = crate::cpu
 ///
 /// * `key` must be valid for reads of `key_len` bytes.
 /// * `ctx` must be valid for reads and writes of 256 bytes.
-/// * `scratch` must be valid for reads and writes of 2560 bytes.
 /// * `key_len` must be 16, 24 or 32.
-/// * The contents of `scratch` on return are unspecified.
-/// * `ctx` and `scratch` must not overlap each other or `key` (distinct Rust objects never do).
-/// * None of `key`, `ctx` and `scratch` may wrap around the end of the address space (no Rust object does).
+/// * `ctx` must not overlap `key` (distinct Rust objects never do).
+/// * Neither `key` nor `ctx` may overlap the 2560 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` target feature.
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_aes_gcm_init_aes(key: *const u8, key_len: usize, ctx: *mut [u64; 32], scratch: *mut [u64; 320]) {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_init_aes(key: *const u8, key_len: usize, ctx: *mut [u64; 32]) {
     core::arch::naked_asm!(
         ".arch_extension aes",
+        "sub sp, sp, #2560",
+        "add x3, sp, #0",
         "str x20, [x3, #136]",
         "str x21, [x3, #144]",
         "str x22, [x3, #152]",
@@ -750,6 +750,7 @@ pub(crate) unsafe extern "C" fn vg_aes_gcm_init_aes(key: *const u8, key_len: usi
         "ldr x28, [x19, #200]",
         "ldr x30, [x19, #208]",
         "ldr x19, [x19, #128]",
+        "add sp, sp, #2560",
         "ret",
         ".arch_extension noaes",
         vg_aes_expand_key_aes = sym super::aes::vg_aes_expand_key_aes,
@@ -1847,15 +1848,15 @@ pub(crate) const VG_AES_GCM_STREAM_INIT_AES_FEATURES: crate::cpu::Features = cra
 /// * `ctx` must be valid for reads of 256 bytes.
 /// * `nonce` must be valid for reads of `nonce_len` bytes.
 /// * `state` must be valid for reads and writes of 80 bytes.
-/// * `scratch` must be valid for reads and writes of 2560 bytes.
-/// * The contents of `scratch` on return are unspecified.
-/// * `state` and `scratch` must not overlap each other, `ctx` or `nonce` (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `state` and `scratch` may wrap around the end of the address space (no Rust object does).
+/// * `state` must not overlap `ctx` or `nonce` (distinct Rust objects never do).
+/// * None of `ctx`, `nonce` and `state` may overlap the 2560 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` target feature.
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_init_aes(ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, state: *mut [u64; 10], scratch: *mut [u64; 320]) {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_init_aes(ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, state: *mut [u64; 10]) {
     core::arch::naked_asm!(
         ".arch_extension aes",
+        "sub sp, sp, #2560",
+        "add x4, sp, #0",
         "str x20, [x4, #136]",
         "str x21, [x4, #144]",
         "str x22, [x4, #152]",
@@ -1965,6 +1966,7 @@ pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_init_aes(ctx: *const [u64; 32]
         "ldr x28, [x19, #200]",
         "ldr x30, [x19, #208]",
         "ldr x19, [x19, #128]",
+        "add sp, sp, #2560",
         "ret",
         ".arch_extension noaes",
         vg_ghash_aes = sym super::gcm::vg_ghash_aes,
@@ -1985,15 +1987,15 @@ pub(crate) const VG_AES_GCM_STREAM_AAD_AES_FEATURES: crate::cpu::Features = crat
 /// * `ctx` must be valid for reads of 256 bytes.
 /// * `state` must be valid for reads and writes of 80 bytes.
 /// * `data` must be valid for reads of `len` bytes.
-/// * `scratch` must be valid for reads and writes of 2560 bytes.
-/// * The contents of `scratch` on return are unspecified.
-/// * `state` and `scratch` must not overlap each other, `ctx` or `data` (distinct Rust objects never do).
-/// * None of `ctx`, `state`, `data` and `scratch` may wrap around the end of the address space (no Rust object does).
+/// * `state` must not overlap `ctx` or `data` (distinct Rust objects never do).
+/// * None of `ctx`, `state` and `data` may overlap the 2560 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` target feature.
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_aad_aes(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, data: *const u8, len: usize, scratch: *mut [u64; 320]) {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_aad_aes(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
         ".arch_extension aes",
+        "sub sp, sp, #2560",
+        "add x5, sp, #0",
         "str x20, [x5, #136]",
         "str x21, [x5, #144]",
         "str x22, [x5, #152]",
@@ -2092,6 +2094,7 @@ pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_aad_aes(ctx: *const [u64; 32],
         "ldr x28, [x19, #200]",
         "ldr x30, [x19, #208]",
         "ldr x19, [x19, #128]",
+        "add sp, sp, #2560",
         "ret",
         ".arch_extension noaes",
         vg_ghash_aes = sym super::gcm::vg_ghash_aes,
@@ -2971,14 +2974,14 @@ pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_verify_aes(ctx: *const [u64; 3
 ///
 /// * `key` must be valid for reads of `key_len` bytes.
 /// * `ctx` must be valid for reads and writes of 256 bytes.
-/// * `scratch` must be valid for reads and writes of 2560 bytes.
 /// * `key_len` must be 16, 24 or 32.
-/// * The contents of `scratch` on return are unspecified.
-/// * `ctx` and `scratch` must not overlap each other or `key` (distinct Rust objects never do).
-/// * None of `key`, `ctx` and `scratch` may wrap around the end of the address space (no Rust object does).
+/// * `ctx` must not overlap `key` (distinct Rust objects never do).
+/// * Neither `key` nor `ctx` may overlap the 2560 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_aes_gcm_init(key: *const u8, key_len: usize, ctx: *mut [u64; 32], scratch: *mut [u64; 320]) {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_init(key: *const u8, key_len: usize, ctx: *mut [u64; 32]) {
     core::arch::naked_asm!(
+        "sub sp, sp, #2560",
+        "add x3, sp, #0",
         "str x20, [x3, #136]",
         "str x21, [x3, #144]",
         "str x22, [x3, #152]",
@@ -3019,6 +3022,7 @@ pub(crate) unsafe extern "C" fn vg_aes_gcm_init(key: *const u8, key_len: usize, 
         "ldr x28, [x19, #200]",
         "ldr x30, [x19, #208]",
         "ldr x19, [x19, #128]",
+        "add sp, sp, #2560",
         "ret",
         vg_aes_expand_key = sym super::aes::vg_aes_expand_key,
         vg_aes_ctr32 = sym super::aes::vg_aes_ctr32,
@@ -4100,13 +4104,13 @@ pub(crate) unsafe extern "C" fn vg_aes_gcm_open(ctx: *const [u64; 32], rounds: u
 /// * `ctx` must be valid for reads of 256 bytes.
 /// * `nonce` must be valid for reads of `nonce_len` bytes.
 /// * `state` must be valid for reads and writes of 80 bytes.
-/// * `scratch` must be valid for reads and writes of 2560 bytes.
-/// * The contents of `scratch` on return are unspecified.
-/// * `state` and `scratch` must not overlap each other, `ctx` or `nonce` (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `state` and `scratch` may wrap around the end of the address space (no Rust object does).
+/// * `state` must not overlap `ctx` or `nonce` (distinct Rust objects never do).
+/// * None of `ctx`, `nonce` and `state` may overlap the 2560 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_init(ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, state: *mut [u64; 10], scratch: *mut [u64; 320]) {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_init(ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, state: *mut [u64; 10]) {
     core::arch::naked_asm!(
+        "sub sp, sp, #2560",
+        "add x4, sp, #0",
         "str x20, [x4, #136]",
         "str x21, [x4, #144]",
         "str x22, [x4, #152]",
@@ -4216,6 +4220,7 @@ pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_init(ctx: *const [u64; 32], no
         "ldr x28, [x19, #200]",
         "ldr x30, [x19, #208]",
         "ldr x19, [x19, #128]",
+        "add sp, sp, #2560",
         "ret",
         vg_ghash = sym super::gcm::vg_ghash,
     )
@@ -4232,13 +4237,13 @@ pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_init(ctx: *const [u64; 32], no
 /// * `ctx` must be valid for reads of 256 bytes.
 /// * `state` must be valid for reads and writes of 80 bytes.
 /// * `data` must be valid for reads of `len` bytes.
-/// * `scratch` must be valid for reads and writes of 2560 bytes.
-/// * The contents of `scratch` on return are unspecified.
-/// * `state` and `scratch` must not overlap each other, `ctx` or `data` (distinct Rust objects never do).
-/// * None of `ctx`, `state`, `data` and `scratch` may wrap around the end of the address space (no Rust object does).
+/// * `state` must not overlap `ctx` or `data` (distinct Rust objects never do).
+/// * None of `ctx`, `state` and `data` may overlap the 2560 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_aad(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, data: *const u8, len: usize, scratch: *mut [u64; 320]) {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_aad(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
+        "sub sp, sp, #2560",
+        "add x5, sp, #0",
         "str x20, [x5, #136]",
         "str x21, [x5, #144]",
         "str x22, [x5, #152]",
@@ -4337,6 +4342,7 @@ pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_aad(ctx: *const [u64; 32], sta
         "ldr x28, [x19, #200]",
         "ldr x30, [x19, #208]",
         "ldr x19, [x19, #128]",
+        "add sp, sp, #2560",
         "ret",
         vg_ghash = sym super::gcm::vg_ghash,
     )

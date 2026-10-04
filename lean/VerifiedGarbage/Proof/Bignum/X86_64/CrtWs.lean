@@ -37,6 +37,25 @@ theorem wsEnd_ok {s : State} {X : Addr} {Z wx : Nat} (hs : Scr s X Z) (hdx : s.g
   congr 2
   unfold slot Public.aOne; omega
 
+/-- `rax := ` the end of a prime's workspace at `rdx = X`, past its table. -/
+theorem wsEndT_ok {s : State} {X : Addr} {Z wx : Nat} (hs : Scr s X Z) (hdx : s.gpr .rdx = X)
+    (hw : word s.mem X (8 * sW) = BitVec.ofNat 64 wx)
+    (ha : word s.mem X (8 * sArr Public.aOne) = off X (slot wx Public.aOne)) (hZ : slot wx 8 ≤ Z) :
+    WP isa (.block wsEndT) s fun t => t.gpr .rax = off X (slot wx 8 + tabBytes wx) ∧ t.mem = s.mem ∧
+      Keep [.rax, .rdx] s t := by
+  have hl : ∀ i < 32, InRegions (s.rd ++ s.wr) (off X (8 * i)) 8 := fun i hi =>
+    hs.ld (by have := hdr_lt_slot wx 8 hi; omega)
+  refine WP.mono (WP.keep [.rax, .rdx] (c := .block wsEndT)
+    (Q := fun t => t.gpr .rax = off X (slot wx 8 + tabBytes wx) ∧ t.mem = s.mem) ?_ rfl)
+    fun t ⟨⟨h1, h2⟩, k⟩ => ⟨h1, h2, k⟩
+  unfold wsEndT wsEnd
+  simp only [List.cons_append, List.nil_append]
+  xrun [State.ea, ws, hdx, hdrOff, hl (sArr Public.aOne) (by decide), ha, hl sW (by decide), hw, sx2]
+  rw [show (2 : BitVec 64) = BitVec.ofNat 64 2 from rfl]
+  simp only [BitVec.ofNat_add_ofNat, off, BitVec.add_assoc]
+  congr 2
+  unfold slot tabBytes Public.aOne; omega
+
 /-- A change within ranges, each within one of `rs'`, is within `rs'`. -/
 theorem Frm.widen {B : Addr} {rs rs' : List (Nat × Nat)} {m m' : Mem} (h : Frm B rs m m')
     (hr : ∀ r ∈ rs, ∃ r' ∈ rs', r'.1 ≤ r.1 ∧ r.1 + r.2 ≤ r'.1 + r'.2) : Frm B rs' m m' := fun x hx =>

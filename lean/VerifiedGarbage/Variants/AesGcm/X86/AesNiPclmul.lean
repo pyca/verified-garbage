@@ -1,4 +1,4 @@
-import VerifiedGarbage.Proof.AesGcm.X86.GhashImpls
+import VerifiedGarbage.Proof.AesGcm.X86.Callee
 
 /-!
 # The functions AES-GCM calls on x86: AesNiPclmul
@@ -8,6 +8,6 @@ A variant of `AesGcm` on x86 (see `TCB/Emit.lean`): AES-NI for the cipher (`vg_a
 
 namespace VG.Variants.AesGcm.X86.AesNiPclmul
 
-def variant : Proof.AesGcm.X86.GcmImpl := ⟨.aesni, .pclmul⟩
+def variant : Proof.AesGcm.X86.GcmVariant := ⟨.aesni, .pclmul⟩
 
 end VG.Variants.AesGcm.X86.AesNiPclmul

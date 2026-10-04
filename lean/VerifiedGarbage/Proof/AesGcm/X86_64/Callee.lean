@@ -33,6 +33,8 @@ open VG.Proof.Aes.X86_64 (Ctr32Impl)
 structure GhashImpl where
   fn : Fn
   depth : fn.code.depth = 0
+  /-- It uses no stack, so that its callers can say how much they use. -/
+  noStack : fn.code.x86_64Depth = 0 := by lit_decide
   ok : ∀ s, Proof.Gcm.ghashX86_64.pre s →
     ∃ t s', Exec isa fn.code s t s' ∧ abiPreserved s s' ∧ Proof.Gcm.ghashX86_64.post s s'
   ct : ConstantTime isa Proof.Gcm.ghashX86_64.pre Proof.Gcm.ghashX86_64.pub fn.code
@@ -46,6 +48,8 @@ structure GhashImpl where
 structure KeyImpl where
   fn : Fn
   depth : fn.code.depth = 0
+  /-- It uses no stack, so that its callers can say how much they use. -/
+  noStack : fn.code.x86_64Depth = 0 := by lit_decide
   ok : ∀ s, Proof.Aes.expandKeyX86_64.pre s →
     ∃ t s', Exec isa fn.code s t s' ∧ abiPreserved s s' ∧ Proof.Aes.expandKeyX86_64.post s s'
   ct : ConstantTime isa Proof.Aes.expandKeyX86_64.pre Proof.Aes.expandKeyX86_64.pub fn.code
@@ -421,5 +425,23 @@ def callees : Callees :=
       Impl.AesGcm.X86_64.Blocks.decrypt ⟨v.ctr.callee.name, v.ctr.callee.code⟩ v.gh.fn (v.stitch.map (·.dec))⟩⟩
 
 end GcmImpl
+
+/-- The implementations of `vg_ghash`, by name, as the variants of `AesGcm`
+choose them (`GcmVariant`). `GhashName.impl`, in `GhashImpls.lean`, gives
+their `GhashImpl`s, whose proofs import the algebra of `Proof/Gcm/Poly.lean`,
+which the variants then need not import. -/
+inductive GhashName where
+  | scalar
+  | pclmul
+  | vpclmul
+
+/-- A variant of `AesGcm` (see `TCB/Emit.lean`): a `GcmImpl` with its
+implementation of `vg_ghash` named (`GhashName`), which `GcmVariant.impl`
+(`GhashImpls.lean`) resolves. -/
+structure GcmVariant where
+  ctr : Ctr32Impl
+  key : KeyImpl
+  gh : GhashName
+  stitch : Option StitchImpl := none
 
 end VG.Proof.AesGcm.X86_64

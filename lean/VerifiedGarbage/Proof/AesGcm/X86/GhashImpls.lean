@@ -30,4 +30,12 @@ def pclmul : GhashImpl where
 
 end GhashImpl
 
+/-- The implementation of `vg_ghash` named `n`. -/
+def GhashName.impl : GhashName → GhashImpl
+  | .scalar => .scalar
+  | .pclmul => .pclmul
+
+/-- The implementations a variant calls. -/
+def GcmVariant.impl (v : GcmVariant) : GcmImpl := ⟨v.ctr, v.gh.impl⟩
+
 end VG.Proof.AesGcm.X86

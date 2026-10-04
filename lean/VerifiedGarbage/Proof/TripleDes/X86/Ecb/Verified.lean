@@ -1,5 +1,6 @@
 import VerifiedGarbage.Proof.TripleDes.X86.Ecb.Correct
 import VerifiedGarbage.Proof.TripleDes.X86.Ecb.ConstantTime
+import VerifiedGarbage.Proof.TripleDes.Scratch
 
 namespace VG.Proof.TripleDes.X86.Ecb
 open VG VG.X86
@@ -48,13 +49,13 @@ def satState : State where
   wr := [⟨0x2000, 0⟩, ⟨0x3000, 1024⟩, ⟨0x4004, 16⟩]
 
 theorem wide_implies (d : Spec.TripleDes.Direction) :
-    (wideContract d).Implies (Spec.TripleDes.ecbContract abi d 16) := by
+    (wideContract d).Implies (Proof.TripleDes.ecbScratchContract abi d 16) := by
   refine { pre := ?_, post := ?_, pub := ?_, sat := ?_ }
   · intro s h
-    sig_pre [Spec.TripleDes.ecbContract, Spec.TripleDes.ecbSig, abi, argSlots, argVal, argBytes, addr32, wideContract, contract, below] at h
+    sig_pre [Proof.TripleDes.ecbScratchContract, Proof.TripleDes.ecbScratchSig, Spec.TripleDes.ecbPost, abi, argSlots, argVal, argBytes, addr32, wideContract, contract, below] at h
     sig_split h
-    sig_reduce [Spec.TripleDes.ecbContract, Spec.TripleDes.ecbSig, abi, argSlots, argVal, argBytes, addr32, wideContract, contract, below]
-    sig_simp [Spec.TripleDes.ecbContract, Spec.TripleDes.ecbSig, abi, argSlots, argVal, argBytes, addr32, wideContract, contract, below] []
+    sig_reduce [Proof.TripleDes.ecbScratchContract, Proof.TripleDes.ecbScratchSig, Spec.TripleDes.ecbPost, abi, argSlots, argVal, argBytes, addr32, wideContract, contract, below]
+    sig_simp [Proof.TripleDes.ecbScratchContract, Proof.TripleDes.ecbScratchSig, Spec.TripleDes.ecbPost, abi, argSlots, argVal, argBytes, addr32, wideContract, contract, below] []
     sig_and_intros
     sig_close
     all_goals first
@@ -63,9 +64,9 @@ theorem wide_implies (d : Spec.TripleDes.Direction) :
       | omega
       | (rw [Taint.sub_setWidth (by omega)]; simp only [Nat.mul_comm] at *; with_reducible assumption)
       | (simp only [Nat.mul_comm] at *; first | with_reducible assumption | with_reducible exact Region.Disjoint.symm ‹_›)
-  · sig_implies_post [Spec.TripleDes.ecbContract, Spec.TripleDes.ecbSig, abi, argSlots, argVal, argBytes, addr32, wideContract, contract, below]
-  · sig_implies_pub [Spec.TripleDes.ecbContract, Spec.TripleDes.ecbSig, abi, argSlots, argVal, argBytes, addr32, wideContract, contract, below]
-  · sig_implies_sat [Spec.TripleDes.ecbContract, Spec.TripleDes.ecbSig, abi, argSlots, argVal, argBytes, addr32, wideContract, contract, below]
+  · sig_implies_post [Proof.TripleDes.ecbScratchContract, Proof.TripleDes.ecbScratchSig, Spec.TripleDes.ecbPost, abi, argSlots, argVal, argBytes, addr32, wideContract, contract, below]
+  · sig_implies_pub [Proof.TripleDes.ecbScratchContract, Proof.TripleDes.ecbScratchSig, Spec.TripleDes.ecbPost, abi, argSlots, argVal, argBytes, addr32, wideContract, contract, below]
+  · sig_implies_sat [Proof.TripleDes.ecbScratchContract, Proof.TripleDes.ecbScratchSig, Spec.TripleDes.ecbPost, abi, argSlots, argVal, argBytes, addr32, wideContract, contract, below]
       [satState, arg, argAddr, Mem.readW, Mem.read] using satState
 
 theorem ecb_constantTime (d : Spec.TripleDes.Direction) :
@@ -75,7 +76,7 @@ theorem ecb_constantTime (d : Spec.TripleDes.Direction) :
   · exact ecbDecrypt_constantTime _ _ (fun _ _ h₁ h₂ hp => ecbTaint_agree h₁ h₂ hp)
 
 theorem ecb_verified (d : Spec.TripleDes.Direction) :
-    Verified target (Impl.TripleDes.X86.Ecb.ecb d) (Spec.TripleDes.ecbContract abi d 16) := by
+    Verified target (Impl.TripleDes.X86.Ecb.ecb d) (Proof.TripleDes.ecbScratchContract abi d 16) := by
   have hsat := (wide_implies d).sat_left
   have narrowSat : ∃ s, (contract d).pre s := by
     obtain ⟨s, hs⟩ := hsat
@@ -105,7 +106,7 @@ theorem ecb_verified (d : Spec.TripleDes.Direction) :
     narrow
     exact h
 
-theorem encrypt_verified : Verified target Impl.TripleDes.X86.Ecb.encrypt (Spec.TripleDes.ecbEncryptContract abi 16) := ecb_verified .encrypt
-theorem decrypt_verified : Verified target Impl.TripleDes.X86.Ecb.decrypt (Spec.TripleDes.ecbDecryptContract abi 16) := ecb_verified .decrypt
+theorem encrypt_verified : Verified target Impl.TripleDes.X86.Ecb.encrypt (Proof.TripleDes.ecbEncryptScratchContract abi 16) := ecb_verified .encrypt
+theorem decrypt_verified : Verified target Impl.TripleDes.X86.Ecb.decrypt (Proof.TripleDes.ecbDecryptScratchContract abi 16) := ecb_verified .decrypt
 
 end VG.Proof.TripleDes.X86.Ecb

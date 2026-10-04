@@ -1,5 +1,6 @@
 import VerifiedGarbage.TCB.AArch64.Target
-import VerifiedGarbage.Proof.AesGcm.AArch64.Verified
+import VerifiedGarbage.Proof.AesGcm.AArch64.Frame
+import VerifiedGarbage.Proof.AesGcm.AArch64.GhashImpls
 
 /-!
 # AES-GCM (NIST SP 800-38D) on AArch64
@@ -18,9 +19,10 @@ against the contract.
 Each function needs the CPU features of the implementations it calls:
 `init` calls only AES's, `stream_init` and `stream_aad` only GHASH's.
 
-The functions use no stack: their calls (`bl`) keep the return address in
-`x30`, which they save in the scratch buffer. `seal` and `open` read their
-last arguments from the stack.
+The functions' calls (`bl`) keep the return address in `x30`, which they
+save in the working space. `seal` and `open` read their last arguments from
+the stack. `init`, `stream_init` and `stream_aad` keep their working space
+in a frame of 2560 bytes; the others use no stack.
 -/
 
 namespace VG.Generic.AesGcm.AArch64.AesGcm
@@ -32,14 +34,16 @@ def note (v : GcmImpl) : String :=
   "This implementation encrypts with `" ++ v.ctr.callee.name ++ "` (and expands keys with `" ++
     v.key.fn.name ++ "`) and hashes with `" ++ v.gh.fn.name ++ "`."
 
-def artifacts (v : GcmImpl) : List Artifact := [
+/-- The artifacts calling the implementations `v`. -/
+def artifactsOf (v : GcmImpl) : List Artifact := [
   { Spec.Gcm.initApi with
     name := Spec.Gcm.initApi.name ++ v.suffix
     target := AArch64.target
     doc := Spec.Gcm.initApi.doc (notes := [note v])
-    code := Impl.AesGcm.AArch64.init v.callees
-    contract := Spec.Gcm.initContract AArch64.abi
-    verified := init_verified v
+    code := Impl.StackScratch.AArch64.withStackScratch 2560 .x3 (Impl.AesGcm.AArch64.init v.callees)
+    contract := Spec.Gcm.initContract AArch64.abi 2560
+    stack := 2560
+    verified := init_framed v
     spSafe := Code.all_of_forall (fun _ => rfl) _
     features := v.ctr.features },
   { Spec.Gcm.sealApi with
@@ -64,18 +68,20 @@ def artifacts (v : GcmImpl) : List Artifact := [
     name := Spec.Gcm.streamInitApi.name ++ v.suffix
     target := AArch64.target
     doc := Spec.Gcm.streamInitApi.doc (notes := [note v])
-    code := Impl.AesGcm.AArch64.streamInit v.callees
-    contract := Spec.Gcm.streamInitContract AArch64.abi
-    verified := streamInit_verified v
+    code := Impl.StackScratch.AArch64.withStackScratch 2560 .x4 (Impl.AesGcm.AArch64.streamInit v.callees)
+    contract := Spec.Gcm.streamInitContract AArch64.abi 2560
+    stack := 2560
+    verified := streamInit_framed v
     spSafe := Code.all_of_forall (fun _ => rfl) _
     features := v.gh.features },
   { Spec.Gcm.streamAadApi with
     name := Spec.Gcm.streamAadApi.name ++ v.suffix
     target := AArch64.target
     doc := Spec.Gcm.streamAadApi.doc (notes := [note v])
-    code := Impl.AesGcm.AArch64.streamAad v.callees
-    contract := Spec.Gcm.streamAadContract AArch64.abi
-    verified := streamAad_verified v
+    code := Impl.StackScratch.AArch64.withStackScratch 2560 .x5 (Impl.AesGcm.AArch64.streamAad v.callees)
+    contract := Spec.Gcm.streamAadContract AArch64.abi 2560
+    stack := 2560
+    verified := streamAad_framed v
     spSafe := Code.all_of_forall (fun _ => rfl) _
     features := v.gh.features },
   { Spec.Gcm.streamEncryptApi with
@@ -114,5 +120,8 @@ def artifacts (v : GcmImpl) : List Artifact := [
     verified := streamVerify_verified v
     spSafe := Code.all_of_forall (fun _ => rfl) _
     features := v.features }]
+
+/-- The artifacts of a variant, from the implementations it names. -/
+def artifacts (v : GcmVariant) : List Artifact := artifactsOf v.impl
 
 end VG.Generic.AesGcm.AArch64.AesGcm
