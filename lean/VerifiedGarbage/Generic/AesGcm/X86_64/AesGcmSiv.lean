@@ -1,6 +1,6 @@
 import VerifiedGarbage.TCB.X86_64.Target
 import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Verified
-import VerifiedGarbage.Proof.AesGcm.X86_64.GhashImpls
+import VerifiedGarbage.Generic.AesGcm.X86_64.AesGcm
 
 /-!
 # AES-GCM-SIV (RFC 8452) on x86-64
