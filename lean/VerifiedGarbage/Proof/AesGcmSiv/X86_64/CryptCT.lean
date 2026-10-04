@@ -203,4 +203,120 @@ theorem blks_rel (v : GcmImpl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} (hR : 
     · exact RelCT.of_false fun _ _ h => hm h.1
   · exact RelCT.of_false fun _ _ h => hj h.2.1
 
+/-! ## The last bytes, and the whole of counter mode -/
+
+theorem tail2_check : ∃ hc, (taint.check (sivT [.r12, .rbx, .rbp])
+    (.seq (.block (([.mov .rdi (.reg .r12)] : List Instr) ++ ptr .rsi .r15 bO ++ ([.mov .rcx (.reg .rbp)] : List Instr)))
+      xorLoop) hc).isSome = true := ⟨_, by taint_decide⟩
+
+/-- The tag's code leaves a run with the public arguments, and the registers. -/
+theorem tag_cinv (v : GcmImpl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} (hR : R = 10 ∨ R = 14) {N A D : Addr}
+    {al n b j : Nat} {t : State} (I : CInv K W SP R N A D al n b j t) :
+    WP isa (tag v.callees 128) t (CInv K W SP R N A D al n b j) :=
+  WP.mono (tag_ok v L hR I.one.env I.one.sl (o := 128) (by decide)) fun t' T =>
+    ⟨⟨T.env, I.one.sl.of_frame T.frame (fun q hq => by
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
+        rcases hq with rfl | rfl | rfl | rfl
+        · exact L.w_w (.inr (by decide)) (by decide) (by decide)
+        · exact L.w_w (.inr (by decide)) (by decide) (by decide)
+        · exact L.w_w (.inl (by decide)) (by decide) (by decide)
+        · exact (L.stk_w' (by decide)).symm), T.wr.trans I.one.wr⟩,
+      I.buf.of_eq T.rd T.wr, by rw [T.saved _ (by decide), I.r12], by rw [T.saved _ (by decide), I.rbx],
+      by rw [T.saved _ (by decide), I.rbp]⟩
+
+/-- The last bytes, in two runs. -/
+theorem tail_rel (v : GcmImpl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} (hR : R = 10 ∨ R = 14) {N A D : Addr}
+    {al n b j : Nat} (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 4096⟩) (hn : n ≤ 2 ^ 64) :
+    RelCT isa (fun t₁ t₂ => CInv K W SP R N A D al n b j t₁ ∧ CInv K W SP R N A D al n b j t₂) (cryptTail v.callees)
+      fun _ _ => True := by
+  refine RelCT.assoc ?_
+  show RelCT isa _ (.seq (tag v.callees 128) _) _
+  have r₁ := (tag_rel v L hR hDW hn (o := 128) (by decide)
+    (P := fun t₁ t₂ => CInv K W SP R N A D al n b j t₁ ∧ CInv K W SP R N A D al n b j t₂)
+    fun t₁ t₂ h => ⟨h.1.one, h.2.one, fun _ h => nomatch h⟩).wp
+    (F₁ := CInv K W SP R N A D al n b j) (F₂ := CInv K W SP R N A D al n b j)
+    fun t₁ t₂ h => ⟨tag_cinv v L hR h.1, tag_cinv v L hR h.2⟩
+  exact RelCT.seq r₁ (rel_taintC [.r12, .rbx, .rbp] hDW hn (fun t₁ t₂ h => h.2.1.agree h.2.2) tail2_check)
+
+/-- The start of `crypt`, in a run. -/
+theorem head_cinv {K W SP : Addr} (L : Lay K W SP) {R : Nat} {N A D : Addr} {al n : Nat} {t : State}
+    (O : One K W SP R N A D al n t) (hD : Buf K W SP t D n) :
+    WP isa (.block [.mov .rax (.mem (at_ .r15 tagO)), .store (at_ .r15 cmO) .rax, .mov .rax (.mem (at_ .r15 (tagO + 8))),
+        .movImm64 .rcx 0x8000000000000000, .alu .or .rax (.reg .rcx), .store (at_ .r15 (cmO + 8)) .rax,
+        .mov .r12 (.mem (at_ .r15 dataO)), .mov .rbp (.mem (at_ .r15 lenO)), .mov .rbx (.reg .rbp),
+        .shift .shr .rbx 4, .alu .and .rbp (imm 15), .alu .test .rbx (.reg .rbx)]) t fun t₁ =>
+      CInv K W SP R N A D al n (n / 16) 0 t₁ ∧ t₁.zf = some (decide (n / 16 = 0)) := by
+  obtain ⟨t₁, run₁, hm₁, h12₁, hbp₁, hbx₁, hzf₁, hg₁, hrd₁, hwr₁⟩ := cryptHead_ok L O.env O.sl hD
+  refine WP.of_runBlock ⟨t₁, run₁, ⟨⟨O.env.keep (fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl <;> exact hg₁ _ (by decide) (by decide) (by decide) (by decide)) hrd₁ hwr₁,
+    by rw [hm₁]; exact O.sl.of_frame (Proof.Cmac.frame_store2 _ _ _) (fun q hq => by
+      simp only [List.mem_singleton] at hq; subst hq; exact L.w_w (.inr (by decide)) (by decide) (by decide)),
+    hwr₁.trans O.wr⟩, hD.of_eq hrd₁ hwr₁, by rw [h12₁, Nat.mul_zero, BitVec.add_zero], by rw [hbx₁, Nat.sub_zero],
+    hbp₁⟩, hzf₁⟩
+
+theorem head_check : ∃ hc, (taint.check (sivT [])
+    (.block [.mov .rax (.mem (at_ .r15 tagO)), .store (at_ .r15 cmO) .rax, .mov .rax (.mem (at_ .r15 (tagO + 8))),
+        .movImm64 .rcx 0x8000000000000000, .alu .or .rax (.reg .rcx), .store (at_ .r15 (cmO + 8)) .rax,
+        .mov .r12 (.mem (at_ .r15 dataO)), .mov .rbp (.mem (at_ .r15 lenO)), .mov .rbx (.reg .rbp),
+        .shift .shr .rbx 4, .alu .and .rbp (imm 15), .alu .test .rbx (.reg .rbx)]) hc).isSome = true :=
+  ⟨_, by taint_decide⟩
+
+theorem test_check : ∃ hc, (taint.check (sivT [.r12, .rbx, .rbp]) (.block [.alu .test .rbp (.reg .rbp)]) hc).isSome =
+    true := ⟨_, by taint_decide⟩
+
+theorem test_cinv {K W SP : Addr} {R : Nat} {N A D : Addr} {al n b j : Nat} {t : State}
+    (I : CInv K W SP R N A D al n b j t) :
+    WP isa (.block [.alu .test .rbp (.reg .rbp)]) t fun t' =>
+      CInv K W SP R N A D al n b j t' ∧ t'.zf = some (decide (n % 16 = 0)) := by
+  have hn := I.buf.lt
+  refine WP.of_runBlock ⟨_, by srun [], ?_, ?_⟩
+  · exact ⟨⟨I.one.env.keep (fun _ _ => by simp only [gpr_arithFlags]) rfl rfl, I.one.sl, I.one.wr⟩, I.buf.of_eq rfl rfl,
+      by simp only [gpr_arithFlags, I.r12], by simp only [gpr_arithFlags, I.rbx], by simp only [gpr_arithFlags, I.rbp]⟩
+  · simp only [zf_arithFlags, I.rbp]
+    rw [Proof.AesGcm.X86_64.and_self_beq (by omega)]
+
+/-- `crypt`, in two runs with the same public arguments. -/
+theorem crypt_rel (v : GcmImpl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} (hR : R = 10 ∨ R = 14) {N A D : Addr}
+    {al n : Nat} (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 4096⟩) (hn : n ≤ 2 ^ 64) {P : State → State → Prop}
+    (hP : ∀ t₁ t₂, P t₁ t₂ → (One K W SP R N A D al n t₁ ∧ Buf K W SP t₁ D n) ∧
+      (One K W SP R N A D al n t₂ ∧ Buf K W SP t₂ D n)) :
+    RelCT isa P (crypt v.callees) fun _ _ => True := by
+  have r₁ := (rel_taintC [] hDW hn (fun t₁ t₂ h => ⟨(hP _ _ h).1.1, (hP _ _ h).2.1, fun _ h => nomatch h⟩)
+    head_check).wp
+    (F₁ := fun (t₁ : State) => CInv K W SP R N A D al n (n / 16) 0 t₁ ∧ t₁.zf = some (decide (n / 16 = 0)))
+    (F₂ := fun (t₁ : State) => CInv K W SP R N A D al n (n / 16) 0 t₁ ∧ t₁.zf = some (decide (n / 16 = 0)))
+    fun t₁ t₂ h => ⟨head_cinv L (hP _ _ h).1.1 (hP _ _ h).1.2, head_cinv L (hP _ _ h).2.1 (hP _ _ h).2.2⟩
+  have r₂ : RelCT isa (fun t₁ t₂ => True ∧ (CInv K W SP R N A D al n (n / 16) 0 t₁ ∧
+        t₁.zf = some (decide (n / 16 = 0))) ∧ (CInv K W SP R N A D al n (n / 16) 0 t₂ ∧
+        t₂.zf = some (decide (n / 16 = 0))))
+      (.ite .e (.block []) (.loop (cryptBlock v.callees) .ne))
+      fun t₁ t₂ => CInv K W SP R N A D al n (n / 16) (n / 16) t₁ ∧ CInv K W SP R N A D al n (n / 16) (n / 16) t₂ := by
+    refine RelCT.ite (fun t₁ t₂ h => by rw [eval_e h.2.1.2, eval_e h.2.2.2]) ?_ ?_
+    · refine RelCT.block_nil fun t₁ t₂ h => ?_
+      have h0 : n / 16 = 0 := by have := h.2; rw [eval_e h.1.2.1.2] at this; simpa using this
+      have a := h.1.2.1.1
+      have b := h.1.2.2.1
+      rw [h0] at a b ⊢
+      exact ⟨a, b⟩
+    · by_cases h0 : n / 16 = 0
+      · refine RelCT.of_false fun t₁ t₂ h => ?_
+        have := h.2
+        rw [eval_e h.1.2.1.2] at this
+        simp [h0] at this
+      · exact (blks_rel v L hR hDW hn (b := n / 16) (by omega) (by omega)).mono
+          (fun t₁ t₂ h => ⟨h.1.2.1.1, h.1.2.2.1⟩) fun _ _ h => h
+  have r₃ := (rel_taintC [.r12, .rbx, .rbp] (P := fun t₁ t₂ => CInv K W SP R N A D al n (n / 16) (n / 16) t₁ ∧
+      CInv K W SP R N A D al n (n / 16) (n / 16) t₂) hDW hn (fun t₁ t₂ h => h.1.agree h.2) test_check).wp
+    (F₁ := fun (t : State) => CInv K W SP R N A D al n (n / 16) (n / 16) t ∧ t.zf = some (decide (n % 16 = 0)))
+    (F₂ := fun (t : State) => CInv K W SP R N A D al n (n / 16) (n / 16) t ∧ t.zf = some (decide (n % 16 = 0)))
+    fun t₁ t₂ h => ⟨test_cinv h.1, test_cinv h.2⟩
+  have r₄ : RelCT isa (fun t₁ t₂ => True ∧ (CInv K W SP R N A D al n (n / 16) (n / 16) t₁ ∧
+        t₁.zf = some (decide (n % 16 = 0))) ∧ (CInv K W SP R N A D al n (n / 16) (n / 16) t₂ ∧
+        t₂.zf = some (decide (n % 16 = 0))))
+      (.ite .e (.block []) (cryptTail v.callees)) fun _ _ => True :=
+    RelCT.ite (fun t₁ t₂ h => by rw [eval_e h.2.1.2, eval_e h.2.2.2]) (RelCT.block_nil fun _ _ _ => trivial)
+      ((tail_rel v L hR hDW hn).mono (fun t₁ t₂ h => ⟨h.1.2.1.1, h.1.2.2.1⟩) fun _ _ _ => trivial)
+  exact RelCT.seq r₁ (RelCT.seq r₂ (RelCT.seq r₃ r₄))
+
 end VG.Proof.AesGcmSiv.X86_64
