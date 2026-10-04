@@ -41,5 +41,32 @@ class Composition(unittest.TestCase):
         self.assertEqual(errors, ["x: vg_g_a_b does not call vg_f_b"])
 
 
+
+class Qualified(unittest.TestCase):
+    # A caller of two interfaces whose variants share the suffix `a`: `h`
+    # (with `h_a`) and `f` (with `f_a`), its instances qualified by the tags
+    # `p` and `q`.
+    CALLS = {
+        "vg_h": [], "vg_h_a": [], "vg_f": [], "vg_f_a": [],
+        "vg_g": ["vg_h", "vg_f"], "vg_g_p_a": ["vg_h_a", "vg_f"], "vg_g_q_a": ["vg_h", "vg_f_a"],
+        "vg_g_p_a_q_a": ["vg_h_a", "vg_f_a"],
+    }
+    RUST = "vg_g vg_g_p_a vg_g_q_a vg_g_p_a_q_a"
+
+    def test_qualified(self):
+        self.assertEqual(check_variants.check(fns(self.CALLS), self.RUST), [])
+
+    def test_qualified_missing(self):
+        calls = {k: v for k, v in self.CALLS.items() if k != "vg_g_p_a_q_a"}
+        errors = check_variants.check(fns(calls), "vg_g vg_g_p_a vg_g_q_a")
+        self.assertEqual(len(errors), 2)
+        self.assertIn("vg_g_p_a calls vg_f, which has the variant vg_f_a, but there is no", errors[0])
+
+    def test_qualified_must_call(self):
+        calls = dict(self.CALLS, vg_g_q_a=["vg_h", "vg_f"])
+        errors = check_variants.check(fns(calls), self.RUST)
+        self.assertEqual(errors, ["x: none of vg_g_p_a, vg_g_q_a calls vg_f_a"])
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -32,8 +32,8 @@ use core::fmt;
 use crate::arch::argon2::vg_argon2;
 #[cfg(target_arch = "x86_64")]
 use crate::arch::argon2::{
-    VG_ARGON2_COMPRESS_AVX2_FEATURES, VG_ARGON2_COMPRESS_AVX512_FEATURES, vg_argon2_avx2,
-    vg_argon2_avx512,
+    VG_ARGON2_COMPRESS_AVX2_FEATURES, VG_ARGON2_COMPRESS_AVX512_FEATURES, vg_argon2_g_avx2,
+    vg_argon2_g_avx512,
 };
 use crate::cpu::Features;
 use crate::hashes::blake2b::Blake2bBackend;
@@ -348,9 +348,9 @@ impl<'a> Derivation<'a> {
         ) {
             (Blake2bBackend::Scalar, CompressBackend::Scalar) => vg_argon2,
             #[cfg(target_arch = "x86_64")]
-            (Blake2bBackend::Scalar, CompressBackend::Avx2) => vg_argon2_avx2,
+            (Blake2bBackend::Scalar, CompressBackend::Avx2) => vg_argon2_g_avx2,
             #[cfg(target_arch = "x86_64")]
-            (Blake2bBackend::Scalar, CompressBackend::Avx512) => vg_argon2_avx512,
+            (Blake2bBackend::Scalar, CompressBackend::Avx512) => vg_argon2_g_avx512,
         };
         // SAFETY: `Derivation::new` validated the costs and the lengths of
         // the inputs and `out`, which establishes every numeric precondition
@@ -432,10 +432,10 @@ mod tests {
     fn select() {
         #[cfg(target_arch = "x86_64")]
         {
-            use crate::arch::argon2::{VG_ARGON2_AVX2_FEATURES, VG_ARGON2_AVX512_FEATURES};
-            assert_eq!(VG_ARGON2_AVX2_FEATURES, VG_ARGON2_COMPRESS_AVX2_FEATURES);
+            use crate::arch::argon2::{VG_ARGON2_G_AVX2_FEATURES, VG_ARGON2_G_AVX512_FEATURES};
+            assert_eq!(VG_ARGON2_G_AVX2_FEATURES, VG_ARGON2_COMPRESS_AVX2_FEATURES);
             assert_eq!(
-                VG_ARGON2_AVX512_FEATURES,
+                VG_ARGON2_G_AVX512_FEATURES,
                 VG_ARGON2_COMPRESS_AVX512_FEATURES
             );
             assert_eq!(

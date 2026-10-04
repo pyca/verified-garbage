@@ -1,4 +1,5 @@
 import VerifiedGarbage.Proof.Argon2.X86_64.DeriveVerified
+import VerifiedGarbage.TCB.Emit
 
 /-!
 # Argon2 on x86-64, for every BLAKE2b backend and every implementation of G
@@ -8,8 +9,9 @@ both the BLAKE2b streaming functions of a backend `v`
 (`Variants/Blake2b/X86_64/`), through H₀ and `vg_argon2_hprime`, and an
 implementation `c` of the compression function G
 (`Variants/Argon2Compress/X86_64/`), and is emitted once for each pair,
-named with both suffixes (e.g. `vg_argon2_avx2` for G with AVX2), needing
-both's CPU features.
+named by `Emit.qualifiedName` with the tags `blake2b` and `g` (e.g.
+`vg_argon2_g_avx2` for G with AVX2 and BLAKE2b's baseline backend),
+needing both's CPU features.
 -/
 
 namespace VG.Generic.Blake2b.Argon2Compress.X86_64.Argon2
@@ -18,7 +20,8 @@ def artifacts (v : Proof.Blake2.X86_64.Backend) (c : Proof.Argon2.X86_64.Compres
     List Artifact :=
   have : Proof.Argon2.X86_64.CompressImpl := c
   [{ Spec.Argon2.deriveApi with
-    name := Spec.Argon2.deriveApi.name ++ v.suffix ++ c.suffix
+    name := Emit.qualifiedName Spec.Argon2.deriveApi.name
+      [("blake2b", v.suffix), ("g", c.suffix)]
     target := VG.X86_64.target
     doc := Spec.Argon2.deriveApi.doc
       (notes := ["Serial lane evaluation honors every positive worker limit. All hashing uses \
