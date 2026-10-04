@@ -300,4 +300,95 @@ theorem byteIter_ok {t₀ t : State} {B : Addr} {M k x : Nat → Nat} {Q : Prop}
   · rw [k₄.2.2, w₃.wr, wru, k₂.2.2, k₁.2.2, h.wr]
   · rw [x₄, w₃.mxcsr, xu, x₂, x₁, h.mxcsr]
 
+
+/-- The loop over the bytes, from byte `128 - n`. -/
+theorem byteLoop_ok {t₀ : State} {B : Addr} {M k x : Nat → Nat} {Q : Prop}
+    (hB : t₀.gpr .rbx = B) (hs : Scr t₀ B (2 * D)) (hR : ∀ p < 2, Nat.Coprime (2 ^ (52 * 20)) (M p)) :
+    ∀ n t, 1 ≤ n → n ≤ 128 → ByteInv t₀ B M k x Q (128 - n) t →
+      WP isa (.loop (VG.Impl.Bignum.X86_64.seqs [.block ((List.range 2).flatMap fun p =>
+        [.movzx8 .rax { base := .rbx, index := some .r13, disp := ((D * p + oE : Nat) : Int) },
+          .shift .ror .rax 8, .store (VG.Impl.Rsa.X86_64.CrtIfma.at_ .rbx (D * p + oV)) .rax]),
+      .block [.mov32 .r14 (.imm 2)],
+      .loop (VG.Impl.Bignum.X86_64.seqs (VG.Impl.Rsa.X86_64.CrtIfma.window ++ [.block [.alu .sub .r14 (.imm 1)]])) .ne,
+      .block [.alu .add .r13 (.imm 1), .alu .cmp .r13 (.imm 128)]]) .ne) t (ByteInv t₀ B M k x Q 128) := by
+  intro n t h1 h128 hI
+  refine WP.loop (M := isa) (c := .ne) (Q := ByteInv t₀ B M k x Q 128)
+    (fun n t => 1 ≤ n ∧ n ≤ 128 ∧ ByteInv t₀ B M k x Q (128 - n) t) ?_ n t ⟨h1, h128, hI⟩
+  intro n t ⟨h1, h128, hI⟩
+  refine WP.mono (byteIter_ok (i := 128 - n) (by omega) hB hs hR hI) fun t' ⟨hI', hz⟩ => ?_
+  simp only [eval, hz, Option.map_some]
+  rcases Nat.eq_or_lt_of_le h1 with rfl | hn
+  · exact .inl ⟨by simp, hI'⟩
+  · refine .inr ⟨by simp only [decide_eq_false (show ¬ (128 - n + 1 = 128) by omega), Bool.not_false], n - 1,
+      by omega, by omega, by omega, by rw [show 128 - (n - 1) = 128 - n + 1 by omega]; exact hI'⟩
+
+theorem ev_congr {m m' : Mem} {B : Addr} {p : Nat} :
+    ∀ n, (∀ i < n, m' (off B (D * p + oE + i)) = m (off B (D * p + oE + i))) → ev m' B p n = ev m B p n
+  | 0, _ => rfl
+  | n + 1, h => by
+    simp only [ev]; rw [ev_congr n fun i hi => h i (by omega), h n (by omega)]
+
+/-- `m'` agrees with `m` but on `Y`, `S`, `V` and the table of each region. -/
+def OutE (B : Addr) (m m' : Mem) : Prop :=
+  ∀ a, (∀ p < 2, (ofs B a < D * p + oY ∨ D * p + oY + 160 ≤ ofs B a) ∧
+    (ofs B a < D * p + oS ∨ D * p + oS + 160 ≤ ofs B a) ∧ (ofs B a < D * p + oV ∨ D * p + oV + 8 ≤ ofs B a) ∧
+    (ofs B a < D * p + oTab ∨ D * p + oTab + 2560 ≤ ofs B a)) → m' a = m a
+
+theorem OutE.trans {B : Addr} {m₁ m₂ m₃ : Mem} (h₁ : OutE B m₁ m₂) (h₂ : OutE B m₂ m₃) : OutE B m₁ m₃ :=
+  fun a ha => (h₂ a ha).trans (h₁ a ha)
+
+theorem OutE.ofW {B : Addr} {m m' : Mem} (h : OutW B m m') : OutE B m m' :=
+  fun a ha => h a fun p hp => ⟨(ha p hp).1, (ha p hp).2.1, (ha p hp).2.2.1⟩
+
+theorem OutE.ofT {B : Addr} {m m' : Mem} (h : Out2 B oTab 2560 m m') : OutE B m m' :=
+  fun a ha => h a fun p hp => (ha p hp).2.2.2
+
+/-- The exponentiations: `Y ≡ x^e R` for the exponents `e`, from `Y ≡ R` and `X ≡ x R`. -/
+theorem expLoop_ok {s : State} {B : Addr} {M k x : Nat → Nat} {Q : Prop} (hB : s.gpr .rbx = B)
+    (hs : Scr s B (2 * D)) (ar : Ar s.mem B M k) (hR : ∀ p < 2, Nat.Coprime (2 ^ (52 * 20)) (M p))
+    (gy : ∀ p < 2, Good s.mem B M oY p) (gx : ∀ p < 2, Good s.mem B M oX p)
+    (vy : Q → ∀ p < 2, val52 s.mem B (D * p + oY) % M p = x p ^ 0 * 2 ^ (52 * 20) % M p)
+    (vx : Q → ∀ p < 2, val52 s.mem B (D * p + oX) % M p = x p ^ 1 * 2 ^ (52 * 20) % M p) :
+    WP isa (VG.Impl.Bignum.X86_64.seqs VG.Impl.Rsa.X86_64.CrtIfma.expLoop) s fun s' =>
+      ExpSt s'.mem B M k x Q (fun p => ev s.mem B p 128) ∧ OutE B s.mem s'.mem ∧
+      (∀ r, r ≠ .rax → r ≠ .rcx → r ≠ .rdx → r ≠ .rsi → r ≠ .r8 → r ≠ .r9 → r ≠ .r10 → r ≠ .r11 → r ≠ .r12 →
+        r ≠ .r13 → r ≠ .r14 → r ≠ .r15 → s'.gpr r = s.gpr r) ∧
+      s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.mxcsr = s.mxcsr := by
+  have hD : D = 3872 := rfl
+  refine wp_seqs_app (by simp [VG.Impl.Rsa.X86_64.CrtIfma.tabBuild]) (by simp)
+    (WP.mono (tabBuild_ok hB hs ar hR gy gx vy vx) fun s₁ t₁ => ?_)
+  refine WP.seq ?_
+  rw [WP.block_cons_iff]
+  refine ⟨s₁.setReg32 .r13 0, rfl, WP.block_nil ?_⟩
+  generalize hu : s₁.setReg32 .r13 0 = u
+  have eu : u.mem = s₁.mem ∧ u.rd = s₁.rd ∧ u.wr = s₁.wr ∧ u.mxcsr = s₁.mxcsr ∧
+      u.gpr .r13 = BitVec.ofNat 64 0 ∧ ∀ r, r ≠ .r13 → u.gpr r = s₁.gpr r := by
+    rw [← hu]
+    exact ⟨rfl, rfl, rfl, rfl, by rw [State.setReg32, RegUpd.gpr_setReg_self]; rfl,
+      fun r hr => by rw [State.setReg32, RegUpd.gpr_setReg_of_ne _ _ hr]⟩
+  obtain ⟨mu, rdu, wru, xu, r13u, gu⟩ := eu
+  have hBu : u.gpr .rbx = B := by rw [gu _ (by decide)]; exact t₁.rbx
+  have hsu : Scr u B (2 * D) := hs.congr (by rw [wru, t₁.wr])
+  have st₀ : ExpSt u.mem B M k x Q (fun p => ev u.mem B p 0) := by
+    rw [mu]
+    refine ⟨t₁.ar, t₁.tab, fun p hp => (gy p hp).of_out2 hp t₁.frame (.inl (by decide)) (by decide) (by decide),
+      fun hq p hp => ?_⟩
+    rw [t₁.frame.val hp (.inl (by decide)) (by decide) (by decide)]
+    exact vy hq p hp
+  refine WP.mono (byteLoop_ok hBu hsu hR 128 u (by decide) (Nat.le_refl _)
+    ⟨r13u, st₀, OutW.refl _ _, fun _ _ _ _ _ _ _ _ _ _ _ _ _ => rfl, rfl, rfl, rfl⟩) fun s' b' => ?_
+  have hev : ∀ p < 2, ev u.mem B p 128 = ev s.mem B p 128 := fun p hp => by
+    rw [mu]
+    refine ev_congr 128 fun i hi => t₁.frame _ fun p' hp' => ?_
+    have hDp : D * p ≤ 3872 := by rcases D_mul hp with h | h <;> omega
+    rw [ofs_off0 B (by have := hs.nowrap; simp only [oE] at *; omega)]
+    rcases D_mul hp with h1 | h1 <;> rcases D_mul hp' with h2 | h2 <;> simp only [oTab, oE] at * <;> omega
+  refine ⟨b'.st.congrE hev, ?_, fun r r1 r2 r3 r4 r5 r6 r7 r8 r9 r10 r11 r12 => ?_, ?_, ?_, ?_⟩
+  · exact (OutE.ofT t₁.frame).trans (mu ▸ OutE.ofW b'.frame)
+  · rw [b'.gpr r r1 r2 r3 r4 r5 r6 r7 r8 r9 r10 r11 r12, gu r r10]
+    exact t₁.gpr r r1 r2 r3 r4 r5 r6 r7 r8 r9 r10
+  · rw [b'.rd, rdu, t₁.rd]
+  · rw [b'.wr, wru, t₁.wr]
+  · rw [b'.mxcsr, xu, t₁.mxcsr]
+
 end VG.Proof.Bignum.X86_64.AmmSym
