@@ -173,4 +173,62 @@ theorem result_ok {s : State} {B : Addr} {Z o a p X : Nat} {mx : BitVec 64} (hs 
   · rw [k₃.gpr (by decide), k₂.gpr (by decide), k₁.gpr (by decide)]
   · exact ((k₁.trans k₂).trans k₃).mono (by simp [mmRegs])
 
+/-! ## The area's base -/
+
+/-- `ifma`'s first block: the area after `q`'s workspace and table, its base
+into both primes' `sIfma`, and into `p`'s workspace. -/
+theorem ifmaHead_ok {s : State} {B : Addr} {Z w op oq : Nat} {minv mq : BitVec 64} (hg : Good s B Z w minv)
+    (hlo : slot w 8 ≤ op) (hpq : op + slot 16 8 + tabBytes 16 ≤ oq)
+    (haZ : oq + slot 16 8 + tabBytes 16 + 2 * D + 8 ≤ Z)
+    (hsp : word s.mem B (8 * sWsP) = off B op) (hsq : word s.mem B (8 * sWsQ) = off B oq)
+    (hwsq : WsAt s.mem B oq 16 mq) :
+    WP isa (.block (([.mov .rdx (.mem (hdr sWsQ))] : List Instr) ++ wsEndT ++
+      ([.mov .rdx (.mem (hdr sWsP)), .store (ws .rdx sIfma) .rax, .mov .rdx (.mem (hdr sWsQ)),
+        .store (ws .rdx sIfma) .rax, enterP] : List Instr))) s fun t =>
+      t.mem = (s.mem.writeW (off (off B op) (8 * sIfma)) (off (off B oq) (slot 16 8 + tabBytes 16))).writeW
+        (off (off B oq) (8 * sIfma)) (off (off B oq) (slot 16 8 + tabBytes 16)) ∧
+      t.gpr .rdi = off B op ∧ Keep [.rax, .rdx, .rdi] s t := by
+  have hs := hg.scr
+  have hn := hs.nowrap
+  have h8 := hdr_lt_slot w 8 (show 31 < 32 by decide)
+  have h16 := hdr_lt_slot 16 8 (show 31 < 32 by decide)
+  have hT : tabBytes 16 = 2304 := rfl
+  have hD : D = 3712 := rfl
+  have hl : ∀ i < 32, InRegions (s.rd ++ s.wr) (off B (8 * i)) 8 := fun i hi =>
+    hs.ld (by have := hdr_lt_slot w 8 hi; omega)
+  rw [WP.block_append_iff, WP.block_append_iff]
+  refine WP.mono (WP.keep [.rdx] (Q := fun t => t.gpr .rdx = off B oq ∧ t.mem = s.mem) (by
+    xrun [State.ea, hdr, hg.rdi, hdrOff, hl sWsQ (by decide), hsq]) rfl) fun s₁ ⟨⟨dx₁, me₁⟩, k₁⟩ => ?_
+  refine WP.mono (wsEndT_ok (X := off B oq) (Z := slot 16 8 + tabBytes 16) (wx := 16)
+    ((hs.congr k₁.2.2).sub (by omega) (by omega)) dx₁ (by rw [me₁]; exact hwsq.hdr.hw)
+    (by rw [me₁]; exact hwsq.hdr.harr _ (by decide)) (by omega)) fun s₂ ⟨ax₂, me₂, k₂⟩ => ?_
+  have k12 := k₁.trans k₂
+  have hdi₂ : s₂.gpr .rdi = B := by rw [k12.gpr (by decide)]; exact hg.rdi
+  have hl₂ : ∀ i < 32, InRegions (s₂.rd ++ s₂.wr) (off B (8 * i)) 8 := fun i hi => by
+    rw [k12.2.1, k12.2.2]; exact hl i hi
+  have hst : ∀ o, o + 8 * 30 ≤ Z → InRegions s₂.wr (off (off B o) (8 * sIfma)) 8 := fun o ho => by
+    rw [k12.2.2, off_off]; exact hs.st (by unfold sIfma sFn; omega)
+  have hm₂ : s₂.mem = s.mem := me₂.trans me₁
+  have hq' : (s.mem.writeW (off (off B op) (8 * sIfma)) (off (off B oq) (slot 16 8 + tabBytes 16))).readW
+      (off B (8 * sWsQ)) 64 = off B oq := by
+    rw [off_off]
+    have := (writeW_outside s.mem B (d := op + 8 * sIfma) (off (off B oq) (slot 16 8 + tabBytes 16))
+      (by unfold sIfma sFn; omega)).word (d := 8 * sWsQ) (.inl (by unfold sWsQ sFn; omega))
+      (by unfold sWsQ sFn; omega)
+    exact this.trans hsq
+  refine WP.mono (WP.keep [.rdx, .rdi] (Q := fun t =>
+    t.mem = (s.mem.writeW (off (off B op) (8 * sIfma)) (off (off B oq) (slot 16 8 + tabBytes 16))).writeW
+      (off (off B oq) (8 * sIfma)) (off (off B oq) (slot 16 8 + tabBytes 16)) ∧ t.gpr .rdi = off B op) (by
+    xrun [State.ea, hdr, ws, enterP, hdi₂, hdrOff, hl₂ sWsP (by decide), hl₂ sWsQ (by decide), hm₂, hsp, ax₂,
+      hst op (by omega), hst oq (by omega), hq']
+    show word _ B (8 * sWsP) = off B op
+    have e1 := (writeW_outside s.mem B (d := op + 8 * sIfma) (off (off B oq) (slot 16 8 + tabBytes 16))
+      (by unfold sIfma sFn; omega)).word (d := 8 * sWsP) (.inl (by unfold sWsP sFn; omega)) (by unfold sWsP sFn; omega)
+    have e2 := (writeW_outside (s.mem.writeW (off B (op + 8 * sIfma)) (off (off B oq) (slot 16 8 + tabBytes 16))) B
+      (d := oq + 8 * sIfma) (off (off B oq) (slot 16 8 + tabBytes 16))
+      (by unfold sIfma sFn; omega)).word (d := 8 * sWsP) (.inl (by unfold sWsP sFn; omega)) (by unfold sWsP sFn; omega)
+    rw [off_off B op, off_off B oq (8 * sIfma), e2, e1]
+    exact hsp) rfl) fun t ⟨⟨me, di⟩, k₃⟩ => ?_
+  exact ⟨me, di, (k12.trans k₃).mono (by simp)⟩
+
 end VG.Proof.Bignum.X86_64

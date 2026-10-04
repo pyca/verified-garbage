@@ -69,8 +69,8 @@ abbrev LimbsAt (m : Mem) (F : Addr) (c : Nat) (v : Nat → Nat) : Prop :=
 /-- `vec` from the regions: for each prime `M p` (odd, `w = 16` words), `k₀`
 from its inverse `mi p`, `2¹⁰⁵⁶ mod M`, `x R`, `R` (`R = 2^(64 w)`) and the
 last multiplier `Fin p`. -/
-theorem vecR_ok {s : State} {F : Addr} {M K1 Xc Y Fin x : Nat → Nat} {mi : Nat → BitVec 64} {Q : Prop} {w : Nat}
-    (hw : w = 16) (hB : s.gpr .rbx = F) (hs : Scr s F (2 * D + 8))
+theorem vecR_ok {s : State} {F : Addr} {M K1 Xc Y Fin x : Nat → Nat} {mi : Nat → BitVec 64} {Q : Prop} {w R : Nat}
+    (hw : w = 16) (hR : R = 2 ^ (64 * w)) (hB : s.gpr .rbx = F) (hs : Scr s F (2 * D + 8))
     (hM : LimbsAt s.mem F oM M) (hK : LimbsAt s.mem F oK1 K1) (hX : LimbsAt s.mem F oX Xc)
     (hY : LimbsAt s.mem F oY Y) (hF : LimbsAt s.mem F oFin Fin)
     (hk0 : ∀ p < 2, ∀ t < 4, word s.mem F (D * p + oK0 + 8 * t) = mi p &&& mask52)
@@ -78,9 +78,9 @@ theorem vecR_ok {s : State} {F : Addr} {M K1 Xc Y Fin x : Nat → Nat} {mi : Nat
     (hMlt : ∀ p < 2, M p < 2 ^ (64 * w)) (hModd : ∀ p < 2, M p % 2 = 1)
     (hKlt : ∀ p < 2, K1 p < M p) (hXlt : ∀ p < 2, Xc p < M p) (hYlt : ∀ p < 2, Y p < M p)
     (hFlt : ∀ p < 2, Fin p < 2 * M p)
-    (vx : Q → ∀ p < 2, Xc p % M p = x p * 2 ^ (64 * w) % M p)
-    (vy : Q → ∀ p < 2, Y p % M p = 2 ^ (64 * w) % M p)
-    (vk : Q → ∀ p < 2, K1 p % M p = 2 ^ 32 * 2 ^ (64 * w) % M p) :
+    (vx : Q → ∀ p < 2, Xc p % M p = x p * R % M p)
+    (vy : Q → ∀ p < 2, Y p % M p = R % M p)
+    (vk : Q → ∀ p < 2, K1 p % M p = 2 ^ 32 * R % M p) :
     WP isa VG.Impl.Rsa.X86_64.CrtIfma.vec s fun s' =>
       (∀ p < 2, Good s'.mem F M oY p ∧ (Q → val52 s'.mem F (D * p + oY) % M p = x p ^ ev s.mem F p 128 * Fin p % M p)) ∧
       Outside F 0 (2 * D + 8) s.mem s'.mem ∧
@@ -88,6 +88,7 @@ theorem vecR_ok {s : State} {F : Addr} {M K1 Xc Y Fin x : Nat → Nat} {mi : Nat
         r ≠ .r13 → r ≠ .r14 → r ≠ .r15 → s'.gpr r = s.gpr r) ∧
       s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.mxcsr = s.mxcsr &&& 0xFFFF := by
   -- Closed powers are never compared (`isDefEq` would evaluate them): rewrite the exponents.
+  subst hR
   have e1 : 64 * w = 1024 := by omega
   rw [e1] at vx vy vk
   rw [hw] at hMlt
