@@ -13,7 +13,8 @@ transcribes. The RTL numbers bits from 0 at the most significant end:
 
 Modelling choices:
 * Registers are `r0`, `r2`–`r12` and `r14`–`r31`. The stack pointer `r1` is
-  separate and only the push and pop of a frame (see `push`) read or write
+  separate: only the push and pop of a frame (see `push`) write it, and
+  only they and `addSp` (`addi RT, r1, SI`, a pointer into the stack) read
   it. `r13` is the thread pointer, which the ABI reserves (ELFv2 ABI §2.2.2.1,
   Table 2.21, "Reserved"): it is never an operand, so never changed. The link
   register `LR` is modelled (`State.lr`); the count register, `XER` and the
@@ -53,8 +54,15 @@ Modelling choices:
   §2.2.1, "Function Call Linkage Protocols"), which the printer never emits,
   so a call does not access memory.
 * The stack pointer is always 16-byte aligned (ELFv2 ABI §2.2.3.1, "The
-  stack shall be quadword aligned"), and a frame moves it by 48 bytes, so
-  the model does not check the alignment.
+  stack shall be quadword aligned"), and a frame moves it by 48 bytes or
+  by a multiple of 16, so the model does not check the alignment.
+* A frame may instead allocate a buffer on the stack (`alloc`, `stdu r1,
+  -bytes(r1)`), released by its pop (`free`, `addi r1, r1, bytes`): the
+  frame is the 32-byte header of the ELFv2 minimum frame (as for `push`)
+  followed by `bytes - 32` bytes of local variable space, which becomes a
+  writable region. `bytes` is a multiple of 16, more than 32 and less than
+  4096, as for the frames of the other models: less than a page, so that
+  the allocation does not move `r1` past a guard page below the stack.
 -/
 
 namespace VG.PPC64LE
@@ -155,6 +163,15 @@ inductive Instr
   /-- `ld RT, 32(r1)` then `addi r1, r1, 48`: the pop of a frame of 48 bytes
   (see `pop`) -/
   | pop (r : Reg)
+  /-- `stdu r1, -bytes(r1)`: the push of a frame of `bytes` bytes whose local
+  variable space it does not write (see `push`); `32 < bytes < 4096`, a
+  multiple of 16 -/
+  | alloc (bytes : Nat)
+  /-- `addi r1, r1, bytes`: the pop of a frame of `bytes` bytes (see `pop`) -/
+  | free (bytes : Nat)
+  /-- `addi RT, r1, SI` with `0 ≤ SI < 2 ^ 15`: a pointer `SI` bytes above the
+  stack pointer -/
+  | addSp (d : Reg) (imm : Nat)
   deriving DecidableEq, Repr
 
 /-- Branch conditions: a comparison with zero into `CR0`, then the branch. -/
@@ -218,8 +235,9 @@ abbrev Size.ext (sz : Size) (v : BitVec sz.bits) : BitVec 64 := v.setWidth 64
 /-- Semantics, transcribing the Power ISA 3.1C, Book I:
 * §3.3.9 "Add" (`RT ← (RA) + (RB)`), "Subtract From" (`RT ← ¬(RA) + (RB)
   + 1`, i.e. `(RB) - (RA)`), "Add Immediate" (`RT ← (RA|0) + EXTS(SI)`; `li`
-  is `addi RT, 0, SI`, `subi RT, RA, imm` is `addi RT, RA, -imm`), "Add
-  Immediate Shifted" (`lis RT, SI` is `addis RT, 0, SI`: `RT ← EXTS(SI ||
+  is `addi RT, 0, SI`, `subi RT, RA, imm` is `addi RT, RA, -imm`, and
+  `addSp` is `addi RT, 1, SI`, whose `RA` is `r1`), "Add Immediate
+  Shifted" (`lis RT, SI` is `addis RT, 0, SI`: `RT ← EXTS(SI ||
   0x0000)`); the non-record, non-overflow forms, which set no other
   register;
 * §3.3.13 "OR Immediate" (`RA ← (RS) | (48 0 || UI)`), "OR Immediate
@@ -258,6 +276,7 @@ def exec : Instr → State → Option State
   | .subi d n imm, s =>
     if n ≠ .r0 ∧ imm ≤ 2 ^ 15 then some (s.write d (s.gpr n - BitVec.ofNat 64 imm)) else none
   | .li d imm, s => if imm < 2 ^ 15 then some (s.write d (BitVec.ofNat 64 imm)) else none
+  | .addSp d imm, s => if imm < 2 ^ 15 then some (s.write d (s.sp + BitVec.ofNat 64 imm)) else none
   | .lis d imm, s => some (s.write d ((imm ++ (0 : BitVec 16)).signExtend 64))
   | .ori d n imm, s => some (s.write d (s.gpr n ||| imm.setWidth 64))
   | .oris d n imm, s => some (s.write d (s.gpr n ||| imm.setWidth 64 <<< 16))
@@ -290,7 +309,7 @@ def exec : Instr → State → Option State
   | .mflr d, s => some (s.write d s.lr)
   | .mtlr r, s => some { s with lr := s.gpr r }
   -- Only the push and pop of a frame (`push`, `pop`).
-  | .push _, _ | .pop _, _ => none
+  | .push _, _ | .pop _, _ | .alloc _, _ | .free _, _ => none
 
 def addrs : Instr → State → List Addr
   | .load _ _ n off, s => [s.gpr n + BitVec.ofNat 64 off]
@@ -301,6 +320,7 @@ def addrs : Instr → State → List Addr
   | .storeRev _ _ a b, s => [s.gpr a + s.gpr b]
   | .push _, s => [s.sp - 48, s.sp - 16]
   | .pop _, s => [s.sp + 32]
+  | .alloc bytes, s => [s.sp - BitVec.ofNat 64 bytes]
   | _, _ => []
 
 /-- Book I §3.3.10 "Compare Logical Immediate" (`cmplwi` is `cmpli BF, 0,
@@ -341,7 +361,17 @@ RS, 32(r1)`). The frame is the minimum frame of the ELFv2 ABI (§2.2.3.1:
 doubleword and the TOC pointer doubleword) followed by 16 bytes of local
 variable space, which holds the register (and 8 bytes it does not write)
 and becomes a writable region, at the head of `wr`. Faults if the frame
-would wrap around the address space (`sp < 48`). -/
+would wrap around the address space (`sp < 48`).
+
+`alloc bytes` is "Store Doubleword with Update" alone (`stdu r1,
+-bytes(r1)`, its `DS` field `-bytes / 4`): it stores the back chain at the
+new stack pointer, and the `bytes - 32` bytes above the header become a
+writable region, at the head of `wr`, which it does not write: like the 8
+bytes of `push`'s local variable space that it does not write, they hold
+what memory held there before, below the stack pointer, where the contract
+says nothing of them (`Abi.reserved`). Faults unless `bytes` is a multiple
+of 16 with `32 < bytes < 4096`, or if the frame would wrap around the
+address space (`sp < bytes`). -/
 def push : Instr → State → Option State
   | .push r, s =>
     if 48 ≤ s.sp.toNat then
@@ -349,17 +379,28 @@ def push : Instr → State → Option State
       some { s with sp := sp, mem := (s.mem.write sp 8 s.sp).write (sp + 32) 8 (s.gpr r),
                     wr := ⟨sp + 32, 16⟩ :: s.wr }
     else none
+  | .alloc bytes, s =>
+    if 32 < bytes ∧ bytes < 4096 ∧ bytes % 16 = 0 ∧ bytes ≤ s.sp.toNat then
+      let sp := s.sp - BitVec.ofNat 64 bytes
+      some { s with sp := sp, mem := s.mem.write sp 8 s.sp, wr := ⟨sp + 32, bytes - 32⟩ :: s.wr }
+    else none
   | _, _ => none
 
 /-- The pop of a frame: Book I §3.3.2, "Load Doubleword" (`ld RT, 32(r1)`:
 `RT ← MEM((r1) + 32, 8)`), then "Add Immediate" (`addi r1, r1, 48`). Faults
 unless the stack pointer and the writable regions are those the push left
 (`s₁`), whose head is the frame's local variable space; it removes that
-region. -/
+region. `free bytes` is "Add Immediate" alone (`addi r1, r1, bytes`: `RT ←
+(RA) + EXTS(SI)`), likewise for the frame of `alloc bytes`. -/
 def pop : Instr → State → State → Option State
   | .pop r, s₁, s₂ =>
     if s₂.sp = s₁.sp ∧ s₂.wr = s₁.wr ∧ s₁.wr.head? = some ⟨s₁.sp + 32, 16⟩ then
       some { s₂.write r (s₂.mem.read (s₂.sp + 32) 8) with sp := s₂.sp + 48, wr := s₂.wr.tail }
+    else none
+  | .free bytes, s₁, s₂ =>
+    if 32 < bytes ∧ bytes < 4096 ∧ bytes % 16 = 0 ∧
+        s₂.sp = s₁.sp ∧ s₂.wr = s₁.wr ∧ s₁.wr.head? = some ⟨s₁.sp + 32, bytes - 32⟩ then
+      some { s₂ with sp := s₂.sp + BitVec.ofNat 64 bytes, wr := s₂.wr.tail }
     else none
   | _, _, _ => none
 
@@ -374,8 +415,8 @@ abbrev isa : ISA where
   callAddrs _ := []
   ret := ret
   retAddrs _ := []
-  -- No modelled instruction has the stack pointer as an operand, other than
-  -- the push and pop of a frame.
+  -- No modelled instruction writes the stack pointer, other than the push
+  -- and pop of a frame.
   writesSp _ := false
   push := push
   pop := pop

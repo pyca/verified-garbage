@@ -528,6 +528,11 @@ instructions. -/
   "mflr %r0", "stdu %r1, -48(%r1)", "std %r0, 32(%r1)", "<call vg_f>", "ld %r0, 32(%r1)",
   "addi %r1, %r1, 48", "mtlr %r0", "blr"]
 
+-- A buffer on the stack (PPC64LE): a frame of 112 bytes, the buffer above its 32-byte header.
+#guard text (PPC64LE.printer.function
+    (.frame (.alloc 112) (.block [.addSp .r6 32]) (.free 112) : Prog PPC64LE.isa)) == [
+  "stdu %r1, -112(%r1)", "addi %r6, %r1, 32", "addi %r1, %r1, 112", "blr"]
+
 #guard Rust.line Arm.printer.call (.text "push {r4, lr}") == "        \"push {{r4, lr}}\",\n"
 
 /-! ## CPU features
