@@ -128,4 +128,107 @@ theorem diffWord_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size
     rw [e0] at e1
     omega
 
+/-- The first `k` words of `[src] - m`. -/
+def diffK (M : Mod) (src k : Nat) : List Instr := (List.range k).flatMap (diffWord M src)
+
+theorem diffK_succ (M : Mod) (src k : Nat) : diffK M src (k + 1) = diffK M src k ++ diffWord M src k := by
+  simp only [diffK, List.range_succ, List.flatMap_append, List.flatMap_cons, List.flatMap_nil, List.append_nil]
+
+/-- The first `k` words of `[src] - m` into `[tmp]`, from the carry `c`:
+`[tmp] + 2^(32k) c' + m_k + 1 = X_k + 2^(32k) + c`, for the low `2k` digits
+`X_k` and words `m_k`. -/
+theorem diffK_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M : Mod} {src : Nat}
+    (h6 : s.gpr .r6 = VG.Proof.X25519.Arm.mask16) (hc : (s.gpr .r3).toNat ≤ 1) :
+    ∀ {k : Nat}, src + 4 * (2 * k) ≤ size → M.mo + 4 * k ≤ size → M.tmp + 4 * k ≤ size →
+    (M.tmp + 4 * k ≤ src ∨ src + 4 * (2 * k) ≤ M.tmp) → (M.tmp + 4 * k ≤ M.mo ∨ M.mo + 4 * k ≤ M.tmp) →
+    Digs s.mem base src (2 * k) →
+    WP isa (.block (diffK M src k)) s fun u =>
+      Outside base M.tmp (4 * k) s.mem u.mem ∧ (u.gpr .r3).toNat ≤ 1 ∧
+      val32 u.mem base M.tmp k + 2 ^ (32 * k) * (u.gpr .r3).toNat + val32 s.mem base M.mo k + 1 =
+        dval s.mem base src (2 * k) + 2 ^ (32 * k) + (s.gpr .r3).toNat ∧
+      Rest [.r3, .r4, .r5, .r7, .r8] s u
+  | 0, _, _, _, _, _, _ => WP.block_nil ⟨VG.Proof.Mont.Outside.refl _ _ _ _, hc,
+      by simp only [val32, dval, Nat.mul_zero, Nat.pow_zero]; omega, Rest.refl _ _⟩
+  | k + 1, hsrc, hmo, htmp, hts, htm, hd => by
+    have hn := hs.nowrap
+    rw [diffK_succ]
+    refine VG.Proof.X25519.Arm.WP.append (diffK_ok hs h6 hc (k := k) (by omega) (by omega) (by omega) (by omega)
+      (by omega) (hd.mono (by omega))) fun s₁ ⟨O₁, C₁, V₁, K₁⟩ => ?_
+    have hs₁ := hs.of_rest K₁ (by decide)
+    have x0 : w32 s₁.mem base (src + 4 * (2 * k)) = w32 s.mem base (src + 4 * (2 * k)) := O₁.w32 (by omega) (by omega)
+    have x1 : w32 s₁.mem base (src + 4 * (2 * k + 1)) = w32 s.mem base (src + 4 * (2 * k + 1)) :=
+      O₁.w32 (by omega) (by omega)
+    have mk : w32 s₁.mem base (M.mo + 4 * k) = w32 s.mem base (M.mo + 4 * k) := O₁.w32 (by omega) (by omega)
+    refine WP.mono (diffWord_ok hs₁ (k := k) (by rw [K₁.gpr _ (by decide)]; exact h6) (by omega) (by omega)
+      (by omega) (by rw [x0]; exact hd _ (by omega)) (by rw [x1]; exact hd _ (by omega)) C₁)
+      fun u ⟨O₂, C₂, V₂, K₂⟩ => ⟨(O₁.mono (Nat.le_refl _) (by omega)).trans (O₂.mono (by omega) (by omega)), C₂, ?_,
+        K₁.trans K₂⟩
+    rw [x0, x1, mk] at V₂
+    have hlow : val32 u.mem base M.tmp k = val32 s₁.mem base M.tmp k := O₂.val32 (by omega) (by omega)
+    rw [val32_append _ _ _ k 1, val32_append _ _ _ k 1, show 2 * (k + 1) = 2 * k + 1 + 1 by omega, dval, dval,
+      hlow, show 32 * (k + 1) = 32 * k + 32 by omega, Nat.pow_add, show 16 * (2 * k + 1) = 32 * k + 16 by omega,
+      show 16 * (2 * k) = 32 * k by omega, Nat.pow_add]
+    simp only [val32, Nat.mul_zero, Nat.add_zero]
+    generalize 2 ^ (32 * k) = P at *
+    grind
+
+/-- `x ^ ((t ^ x) & mask)`: `t` under the mask of all ones, `x` under 0. -/
+theorem select_val (x t : BitVec 32) (b : Bool) :
+    x ^^^ ((t ^^^ x) &&& (if b then BitVec.allOnes 32 else 0)) = if b then t else x := by
+  cases b
+  · simp
+  · ext i hi
+    simp only [BitVec.getElem_xor, BitVec.getElem_and, BitVec.getElem_allOnes, ite_true, Bool.and_true]
+    cases x[i] <;> cases t[i] <;> rfl
+
+/-- Word `k` of `[o]`: of `[tmp]` under the mask, else the packed digits. -/
+theorem selWord_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M : Mod} {src o k : Nat}
+    (b : Bool) (h3 : s.gpr .r3 = if b then BitVec.allOnes 32 else 0)
+    (hsrc : src + 8 * k + 8 ≤ size) (htmp : M.tmp + 4 * k + 4 ≤ size) (ho : o + 4 * k + 4 ≤ size)
+    (hx0 : w32 s.mem base (src + 8 * k) < 2 ^ 16) (hx1 : w32 s.mem base (src + 8 * k + 4) < 2 ^ 16) :
+    WP isa (.block (selWord M src o k)) s fun u =>
+      Outside base (o + 4 * k) 4 s.mem u.mem ∧
+      w32 u.mem base (o + 4 * k) = (if b then w32 s.mem base (M.tmp + 4 * k) else
+        w32 s.mem base (src + 8 * k) + 2 ^ 16 * w32 s.mem base (src + 8 * k + 4)) ∧
+      Rest [.r5, .r7] s u := by
+  have hn := hs.nowrap
+  simp only [selWord]
+  refine wp_ldr (hs.off_lt (by omega)) (hs.ea (by omega)) (hs.read (by omega)) fun s₁ u₁ => ?_
+  have hs₁ := hs.of_rest (u₁.rest (ws := [.r5, .r7]) (by simp)) (by decide)
+  refine wp_ldr (hs.off_lt (by omega)) (hs₁.ea (by omega)) (hs₁.read (by omega)) fun s₂ u₂ => ?_
+  refine wp_dp (op2_lsl (by decide)) fun s₃ u₃ => ?_
+  have K₃ : Rest [.r5, .r7] s s₃ := ((u₁.rest (by simp)).trans (u₂.rest (by simp))).trans (u₃.rest (by simp))
+  have hs₃ := hs.of_rest K₃ (by decide)
+  refine wp_ldr (hs.off_lt (by omega)) (hs₃.ea (by omega)) (hs₃.read (by omega)) fun s₄ u₄ => ?_
+  refine wp_dp (op2_reg _ _) fun s₅ u₅ => ?_
+  refine wp_dp (op2_reg _ _) fun s₆ u₆ => ?_
+  refine wp_dp (op2_reg _ _) fun s₇ u₇ => ?_
+  have K₇ : Rest [.r5, .r7] s s₇ := K₃.trans (((u₄.rest (by simp)).trans (u₅.rest (by simp))).trans
+    ((u₆.rest (by simp)).trans (u₇.rest (by simp))))
+  have hs₇ := hs.of_rest K₇ (by decide)
+  refine wp_str (hs.off_lt (by omega)) (hs₇.ea (by omega)) (hs₇.write (by omega)) fun s₈ m₈ => WP.block_nil ?_
+  have m₇ : s₇.mem = s.mem := by rw [u₇.mem, u₆.mem, u₅.mem, u₄.mem, u₃.mem, u₂.mem, u₁.mem]
+  have m₃ : s₃.mem = s.mem := by rw [u₃.mem, u₂.mem, u₁.mem]
+  -- r5 = x₀ | x₁ << 16
+  have r5₃ : s₃.gpr .r5 = s.mem.readW (off base (src + 8 * k)) 32 |||
+      s.mem.readW (off base (src + 8 * k + 4)) 32 <<< 16 := by
+    rw [u₃.gpr, dpVal, u₂.other _ (by decide), u₁.gpr, u₂.gpr, u₁.mem]
+  have r7₄ : s₄.gpr .r7 = s.mem.readW (off base (M.tmp + 4 * k)) 32 := by rw [u₄.gpr, m₃]
+  have r5₆ : s₆.gpr .r5 = s₃.gpr .r5 := by rw [u₆.other _ (by decide), u₅.other _ (by decide), u₄.other _ (by decide)]
+  have r3₅ : s₅.gpr .r3 = s.gpr .r3 := by rw [u₅.other _ (by decide), u₄.other _ (by decide), K₃.gpr _ (by decide)]
+  have r7₆ : s₆.gpr .r7 = (s₄.gpr .r7 ^^^ s₃.gpr .r5) &&& s.gpr .r3 := by
+    rw [u₆.gpr, dpVal, u₅.gpr, dpVal, u₄.other .r5 (by decide), r3₅]
+  have r5₇ : s₇.gpr .r5 = s₃.gpr .r5 ^^^ ((s₄.gpr .r7 ^^^ s₃.gpr .r5) &&& s.gpr .r3) := by
+    rw [u₇.gpr, dpVal, r5₆, r7₆]
+  refine ⟨?_, ?_, K₇.trans (m₈.rest _)⟩
+  · rw [m₈.mem, m₇]; exact writeW32_outside _ _ _ (by omega)
+  · rw [m₈.mem, m₇, w32_write_self, r5₇, h3, select_val]
+    cases b
+    · simp only [Bool.false_eq_true, ite_false]
+      have e0 : w32 s.mem base (src + 8 * k) = (s.mem.readW (off base (src + 8 * k)) 32).toNat := rfl
+      have e1 : w32 s.mem base (src + 8 * k + 4) = (s.mem.readW (off base (src + 8 * k + 4)) 32).toNat := rfl
+      rw [e0] at hx0; rw [e1] at hx1
+      rw [r5₃, pack_toNat _ _ hx0, e0, e1, Nat.mod_eq_of_lt hx1]; omega
+    · simp only [ite_true]; rw [r7₄]
+
 end VG.Proof.Mont.Arm
