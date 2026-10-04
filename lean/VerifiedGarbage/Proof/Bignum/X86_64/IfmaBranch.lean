@@ -236,4 +236,117 @@ theorem branchA_ok (M : Mont) {s t₀ : State} {B : Addr} {Z k : Nat} {op np ip 
   · have := qv (hMK hm); simp only [hm, ↓reduceIte] at this; exact this
   · have := pv (hMK hm); simp only [hm, ↓reduceIte] at this; exact this
 
+/-- `x` with `x R ≡ X`, for `R` invertible modulo `N > 1`. -/
+theorem exists_mont' {R N : Nat} (hR : Nat.Coprime R N) (hN1 : 1 < N) (X : Nat) :
+    ∃ x, X % N = x * R % N := by
+  obtain ⟨m, -, hm⟩ := Nat.exists_mul_mod_eq_one_of_coprime hR hN1
+  refine ⟨X * m, ?_⟩
+  rw [Nat.mul_assoc, Nat.mul_mod, Nat.mul_comm m R, hm, Nat.mul_one, Nat.mod_mod]
+
+/-- `post`, after `pre` and `ifma`: what `pPart` leaves. -/
+theorem branchB_ok (M : Mont) {s t₁ : State} {B : Addr} {Z k : Nat} {op np ip pp qp dpp dqp qip : Addr}
+    {pl ql : Nat} {nb xb pb qb dpb dqb qib : List Byte} {minv mp mq : BitVec 64} {Mk : Bool}
+    (h : CrtPre s B Z k op np ip pp qp dpp dqp qip pl ql nb xb pb qb dpb dqb qib)
+    (hv : Spec.Rsa.modulusValid (Spec.Rsa.os2ip nb) k = true)
+    (hd : IDone s t₁ B Z ((k + 7) / 8) (offP ((k + 7) / 8)) (offQ ((k + 7) / 8) pl)
+        (offQ ((k + 7) / 8) pl + slot 16 8 + tabBytes 16) minv mp mq (Spec.Rsa.os2ip nb) (Spec.Rsa.os2ip xb)
+        (Spec.Rsa.os2ip pb) (Spec.Rsa.os2ip qb) dpp dqp qip pl ql dpb dqb Mk)
+    (hMk : Mk = keyMask (decide (Spec.Rsa.os2ip xb < Spec.Rsa.os2ip nb)) (Spec.Rsa.os2ip nb) (Spec.Rsa.os2ip pb)
+      (Spec.Rsa.os2ip qb) (Spec.Rsa.os2ip qib))
+    (hw32 : (k + 7) / 8 = 32) (hpl : wsWords pl = 16) (hql : wsWords ql = 16)
+    (hpost : (seqs (CrtIfma.post M.mm)).allInstrs (fun i => !loadsMxcsr i) = true) :
+    WP isa (seqs (CrtIfma.post M.mm)) t₁ fun t => PDone s t B Z ((k + 7) / 8) pl ql minv mp mq
+      (Spec.Rsa.os2ip xb) (Spec.Rsa.os2ip pb) (Spec.Rsa.os2ip qb) (Spec.Rsa.os2ip qib) dpb dqb Mk ∧
+      t.mxcsr = t₁.mxcsr := by
+  obtain ⟨hodd, hN1, hPN, hQN⟩ := crt_bounds h hv
+  have hk1 := h.k1
+  have hpl1 := h.pl1
+  have hql1 := h.ql1
+  have hZq := h.z
+  have hqil := h.qil
+  generalize Spec.Rsa.os2ip nb = N at *
+  generalize Spec.Rsa.os2ip xb = C at *
+  generalize Spec.Rsa.os2ip pb = P at *
+  generalize Spec.Rsa.os2ip qb = Q at *
+  generalize hQIe : Spec.Rsa.os2ip qib = QI at *
+  obtain ⟨hMk', hP', hQ'⟩ := mask_facts hMk hodd hPN hQN
+  have hn := hd.good.scr.nowrap
+  have h8 := hdr_lt_slot ((k + 7) / 8) 8 (show 31 < 32 by decide)
+  have hpl' : pl ≤ 128 := by unfold wsWords at hpl; omega
+  have hop : offP ((k + 7) / 8) = slot ((k + 7) / 8) 8 := rfl
+  have hoq : offQ ((k + 7) / 8) pl = slot ((k + 7) / 8) 8 + slot (wsWords pl) 8 + tabBytes (wsWords pl) := rfl
+  have hW8 : 256 ≤ slot (wsWords pl) 8 := by unfold slot hdrBytes; omega
+  have hm := hd.im
+  -- The multiplier of `R_p` in `p`'s `aY`: `C^dp` for a key that passed the checks.
+  obtain ⟨x0, hx0⟩ := exists_mont' (VG.Proof.Bignum.coprime_pow2 hP'.2 (64 * wsWords pl)) hP'.1
+    (wv t₁.mem (off B (offP ((k + 7) / 8))) (slot (wsWords pl) Public.aY) (wsWords pl))
+  refine WP.mono_mx hpost (post_ok M (wx := wsWords pl) (wq := wsWords ql) (op := offP ((k + 7) / 8))
+    (oq := offQ ((k + 7) / 8) pl) (mx := mp) (mq := mq) (X := if Mk then P else 3)
+    (m1 := if Mk then C ^ Spec.Rsa.os2ip dpb else x0) (c := Mk) (qib := qib) hd.good (by omega) (by omega) hd.nv
+    hodd hd.xl (by rw [hpl]; exact hd.xv) hm.wsQ (by rw [hql]; exact hm.qws) hZq (by rw [hql]; omega)
+    (by rw [hql]; omega) (le_refl _) (by rw [hoq, hop]) (by rw [hpl]; decide) (by rw [hpl]; omega) hm.wsP
+    (by rw [hpl]; exact hm.pws) (by rw [hpl]; exact ⟨hm.pn, hm.pinv, hm.pone⟩) hP'.1 hP'.2
+    (by rw [hpl]; exact hd.plt) (fun _ => ?_) hm.pmk
+    (fun hm' => by obtain ⟨_, hpq, _⟩ := hMk' hm'; simp only [hm', ↓reduceIte]; exact ⟨Q, hpq.symm⟩) hd.qi
+    (by rw [hqil]; exact hm.pl) (h.qi.congrK hd.iscr hd.keep) (by rw [hqil]; exact hpl1) (by rw [hqil]; omega)
+    (by rw [hqil, hpl]; omega)
+    (fun hm' => by obtain ⟨_, _, hqi⟩ := hMk' hm'; simp only [hm', ↓reduceIte, hQIe]; exact hqi))
+    fun t ⟨hg', hws', hX', hlt', hh', f', k'⟩ mx' => ?_
+  · by_cases hmk : Mk
+    · simp only [hmk, ↓reduceIte]
+      rw [hpl]
+      exact hd.pval hmk
+    · simp only [hmk, Bool.false_eq_true, ↓reduceIte] at hx0 ⊢
+      exact hx0
+  have hz : slot ((k + 7) / 8) 8 ≤ 2 ^ 64 := by omega
+  have ns : NSafe ((k + 7) / 8) (gRanges ((k + 7) / 8) ++
+      [(slot ((k + 7) / 8) Public.aX, 8 * ((k + 7) / 8 + 2)), xRange (offP ((k + 7) / 8)) (wsWords pl)]) :=
+    fun r hr => by
+      rcases List.mem_append.mp hr with hr | hr
+      · exact .inl hr
+      · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl
+        · exact .inr (.inl rfl)
+        · exact .inr (.inr (by simp only [xRange]; omega))
+  have hqZ : offQ ((k + 7) / 8) pl + slot 16 8 ≤ 2 ^ 64 := by
+    have := hZq; rw [hql] at this; omega
+  have h16 := hdr_lt_slot 16 8 (show 31 < 32 by decide)
+  have hqk : ∀ d, offQ ((k + 7) / 8) pl ≤ d → d + 8 ≤ 2 ^ 64 → word t.mem B d = word t₁.mem B d :=
+    fun d hd' hd'' => f'.word_eq (fun r hr => by
+      rcases List.mem_append.mp hr with hr | hr
+      · exact .inr (by have := (gRanges_lt _ r hr).2; rw [hoq] at hd'; omega)
+      · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl
+        · have := slot_le (w := (k + 7) / 8) (show Public.aX < 8 by decide); simp only; rw [hoq] at hd'; omega
+        · simp only [xRange]; rw [hoq] at hd'; omega) hd''
+  have hqv : ∀ d n, d + 8 * n ≤ slot 16 8 → wv t.mem (off B (offQ ((k + 7) / 8) pl)) d n =
+      wv t₁.mem (off B (offQ ((k + 7) / 8) pl)) d n := fun d n hdn => by
+    rw [wv_off, wv_off]; exact wv_congr fun i hi => hqk _ (by omega) (by omega)
+  have hY8 := slot_le (w := 16) (show Public.aY < 8 by decide)
+  have hN8 := slot_le (w := 16) (show Public.aN < 8 by decide)
+  refine ⟨⟨hg', by rw [nsafe_word f' ns (by decide) (by decide) (by decide)]; exact hd.msk,
+    by rw [nsafe_word f' ns (by decide) (by decide) (by decide)]; exact hm.wsP,
+    by rw [nsafe_word f' ns (by decide) (by decide) (by decide)]; exact hm.wsQ, hws',
+    (show WsAt t₁.mem B (offQ ((k + 7) / 8) pl) (wsWords ql) mq by rw [hql]; exact hm.qws).of_words fun i hi => by
+      rw [word_off, word_off]; exact hqk _ (by omega) (by omega),
+    by rw [hql, hqv _ _ (by omega)]; exact hm.qn, by rw [hql, hqv _ _ (by omega)]; exact hd.qlt,
+    fun hmk => by rw [hql, hqv _ _ (by omega)]; exact hd.qval hmk, hlt', fun hmk => ?_,
+    hd.hfix.trans fun i hi hf => by
+      have h1 : i ≠ Crt.sD := by rintro rfl; revert hf; decide
+      have h2 : i ≠ Public.sCnt := by rintro rfl; revert hf; decide
+      exact nsafe_word f' ns hi h1 h2,
+    hd.iscr.trans (InScr.of_frm f' fun r hr => by
+      rcases List.mem_append.mp hr with hr | hr
+      · have := (gRanges_lt _ r hr).2; omega
+      · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl
+        · have := slot_le (w := (k + 7) / 8) (show Public.aX < 8 by decide); simp only; omega
+        · simp only [xRange]; rw [hoq] at hZq; rw [hop]; omega),
+    (hd.keep.trans k').mono (by simp [mmRegs])⟩, mx'⟩
+  obtain ⟨a, b, ha, hb, hbP, hh⟩ := hh' hmk
+  simp only [hmk, ↓reduceIte] at ha hb hbP hh
+  rw [show wv t₁.mem (off B (offQ ((k + 7) / 8) pl)) (slot (wsWords ql) Public.aY) (wsWords ql) =
+    wv t₁.mem (off B (offQ ((k + 7) / 8) pl)) (slot 16 Public.aY) 16 by rw [hql], hd.qval hmk] at hb
+  exact ⟨a, b, ha, hb, hbP, by rw [hh, hQIe]⟩
+
 end VG.Proof.Bignum.X86_64
