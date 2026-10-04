@@ -62,12 +62,24 @@ theorem mutW_frame {K W SP : Addr} (L : Lay K W SP) {d k : Nat}
   · exact L.w_w (.inl (by omega)) (by omega) (by decide)
   · exact (L.stk_w' (by omega)).symm
 
+/-- What `keys` writes: the keys, GHASH's key and accumulator, the blocks
+the calls use, the encryption key's schedule and the working spaces. -/
+abbrev keyR (W SP : Addr) : List Region := [⟨W + BitVec.ofNat 64 16, 128⟩, wC W, below SP 8]
+
+theorem keyR_mutW (W SP : Addr) : ∀ r ∈ keyR W SP, ∃ r' ∈ mutW W SP, Region.Sub r r' := by
+  intro r hr
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl
+  · exact sub_wA (by decide)
+  · exact ⟨_, by simp, fun _ h => h⟩
+  · exact sub_stk
+
 /-- What `keys` leaves, from `σ`. -/
 structure KeysPost (K W SP : Addr) (R : Nat) (N : Addr) (σ t : State) : Prop where
   env : Env K W SP t
   rd : t.rd = σ.rd
   wr : t.wr = σ.wr
-  frame : Frame (mutW W SP) σ.mem t.mem
+  frame : Frame (keyR W SP) σ.mem t.mem
   auth : (Spec.GcmSiv.deriveKeys (Spec.GcmSiv.ctxCiph σ.mem K R) (Spec.GcmSiv.keyLen R) (bytesAt σ.mem N 12)).1 =
     bytesAt t.mem (W + BitVec.ofNat 64 16) 16
   ciph : Spec.GcmSiv.ctxCiph t.mem (W + BitVec.ofNat 64 512) R = Spec.GcmSiv.aes
@@ -81,24 +93,24 @@ theorem keys_ok (v : GcmImpl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} (hR : R
     (hN : Buf K W SP σ N 12) (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 4096⟩) :
     WP isa (keys v.callees) σ (KeysPost K W SP R N σ) := by
   refine WP.seq (WP.mono (derive_ok v L hR E S hN hDW) fun t₂ I => ?_)
-  have f₂ : Frame (mutW W SP) σ.mem t₂.mem := I.frame.sub fun r hr => by
+  have f₂ : Frame (keyR W SP) σ.mem t₂.mem := I.frame.sub fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl
-    · exact sub_wA (by decide)
-    · exact sub_wA (by decide)
-    · exact sub_wC (by decide) (by decide)
-    · exact sub_stk
-  have S₂ := slots_mut L hDW (f₂.sub (mutW_mut W SP D n)) S
+    · exact ⟨⟨W + BitVec.ofNat 64 16, 128⟩, by simp, Offset.sub W (by decide) (by decide)⟩
+    · exact ⟨⟨W + BitVec.ofNat 64 16, 128⟩, by simp, Offset.sub W (by decide) (by decide)⟩
+    · exact ⟨wC W, by simp, Offset.sub W (by decide) (by decide)⟩
+    · exact ⟨_, by simp, fun _ h => h⟩
+  have S₂ := slots_mut L hDW ((f₂.sub (keyR_mutW W SP)).sub (mutW_mut W SP D n)) S
   refine WP.seq (WP.mono (expand_ok v L hR I.env S₂) fun t₃ X => ?_)
   obtain ⟨t₄, run₄, hG, hY, f₄, hg₄, hrd₄, hwr₄⟩ := hkey_ok X.env
   refine WP.of_runBlock ⟨t₄, run₄, ?_⟩
   have fX := X.frame
-  have f₃ : Frame (mutW W SP) t₂.mem t₃.mem := fX.sub fun r hr => by
+  have f₃ : Frame (keyR W SP) t₂.mem t₃.mem := fX.sub fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
-    · exact sub_wC (by decide) (by decide)
-    · exact sub_wC (by decide) (by decide)
-    · exact sub_stk
+    · exact ⟨wC W, by simp, Offset.sub W (by decide) (by decide)⟩
+    · exact ⟨wC W, by simp, Offset.sub W (by decide) (by decide)⟩
+    · exact ⟨_, by simp, fun _ h => h⟩
   have dA : ∀ q ∈ [(⟨W + BitVec.ofNat 64 512, 240⟩ : Region), ⟨W + BitVec.ofNat 64 2048, 512⟩, below SP 8],
       (⟨W + BitVec.ofNat 64 16, 16⟩ : Region).Disjoint q := fun q hq => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
@@ -113,7 +125,9 @@ theorem keys_ok (v : GcmImpl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} (hR : R
   have hK := I.keys hR
   refine ⟨X.env.keep (fun r hr => ?_) hrd₄ hwr₄, by rw [hrd₄, X.rd, I.rd], by rw [hwr₄, X.wr, I.wr],
     (f₂.trans f₃).trans (f₄.sub fun q hq => by
-      simp only [List.mem_singleton] at hq; subst hq; exact sub_wA (by decide)), ?_, ?_,
+      simp only [List.mem_singleton] at hq; subst hq
+      exact ⟨⟨W + BitVec.ofNat 64 16, 128⟩, by simp, Offset.sub W (by decide) (by decide)⟩),
+    ?_, ?_,
     by rw [hG, hA₄, ← Proof.AesGcm.X86_64.bytesAt_frame fX dA (by decide)], hY⟩
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl <;> exact hg₄ _ (by simp)

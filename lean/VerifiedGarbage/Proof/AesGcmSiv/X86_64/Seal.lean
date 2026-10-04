@@ -108,7 +108,8 @@ theorem seal_wp' (v : GcmImpl) {s : State} {K W SP N A D : Addr} {R al n : Nat}
   have bD₁ := Ar.data.of_eq rd₁ wr₁
   -- The keys.
   refine WP.seq (WP.mono (keys_ok v L Ar.rounds E₁ S₁ bN₁ Ar.data.w) fun s₂ Ky => ?_)
-  have S₂ := slots_mut L Ar.data.w (Ky.frame.sub (mutW_mut W SP D n)) S₁
+  have fK : Frame (mutW W SP) s₁.mem s₂.mem := Ky.frame.sub (keyR_mutW W SP)
+  have S₂ := slots_mut L Ar.data.w (fK.sub (mutW_mut W SP D n)) S₁
   -- POLYVAL and the tag input.
   refine WP.seq (WP.mono (polyval_ok v L Ky.env S₂ (bA₁.of_eq Ky.rd Ky.wr) (bD₁.of_eq Ky.rd Ky.wr)
     (bN₁.of_eq Ky.rd Ky.wr) Ky.hkey Ky.acc) fun s₃ Po => ?_)
@@ -118,7 +119,7 @@ theorem seal_wp' (v : GcmImpl) {s : State} {K W SP N A D : Addr} {R al n : Nat}
   refine WP.seq (WP.mono (tag_ok v L Ar.rounds Po.env S₃ (o := 0) (by decide)) fun s₄ Tg => ?_)
   have f₄ : Frame (mutW W SP) s₃.mem s₄.mem := Tg.frame.sub (tagR_mutW W SP (by decide))
   have S₄ := slots_mut L Ar.data.w (f₄.sub (mutW_mut W SP D n)) S₃
-  have f₁₄ : Frame (mutW W SP) s₁.mem s₄.mem := (Ky.frame.trans f₃).trans f₄
+  have f₁₄ : Frame (mutW W SP) s₁.mem s₄.mem := (fK.trans f₃).trans f₄
   -- Counter mode.
   have bD₄ : Buf K W SP s₄ D n := bD₁.of_eq (by rw [Tg.rd, Po.rd, Ky.rd]) (by rw [Tg.wr, Po.wr, Ky.wr])
   refine WP.seq (WP.mono (crypt_ok v L Ar.rounds Tg.env S₄ bD₄
@@ -146,9 +147,9 @@ theorem seal_wp' (v : GcmImpl) {s : State} {K W SP N A D : Addr} {R al n : Nat}
         Spec.GcmSiv.ctxCiph s₂.mem (W + BitVec.ofNat 64 512) R := ctxCiph_frame Po.frame (key_polyR L) hRb
     have key₄ : Spec.GcmSiv.ctxCiph s₄.mem (W + BitVec.ofNat 64 512) R =
         Spec.GcmSiv.ctxCiph s₃.mem (W + BitVec.ofNat 64 512) R := ctxCiph_frame Tg.frame (key_tagR L (by decide)) hRb
-    have n₂ : bytesAt s₂.mem N 12 = bytesAt s.mem N 12 := by rw [buf_mutW bN₁ Ky.frame, hent Ar.nonce]
-    have a₂ : bytesAt s₂.mem A al = bytesAt s.mem A al := by rw [buf_mutW bA₁ Ky.frame, hent Ar.aad]
-    have d₂ : bytesAt s₂.mem D n = bytesAt s.mem D n := by rw [buf_mutW bD₁ Ky.frame, hent Ar.data]
+    have n₂ : bytesAt s₂.mem N 12 = bytesAt s.mem N 12 := by rw [buf_mutW bN₁ fK, hent Ar.nonce]
+    have a₂ : bytesAt s₂.mem A al = bytesAt s.mem A al := by rw [buf_mutW bA₁ fK, hent Ar.aad]
+    have d₂ : bytesAt s₂.mem D n = bytesAt s.mem D n := by rw [buf_mutW bD₁ fK, hent Ar.data]
     have d₄ : bytesAt s₄.mem D n = bytesAt s.mem D n := by rw [buf_mutW bD₁ f₁₄, hent Ar.data]
     have t₅ : bytesAt s₅.mem W 16 = bytesAt s₄.mem W 16 := Proof.AesGcm.X86_64.bytesAt_frame Cr.frame (fun q hq => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hq

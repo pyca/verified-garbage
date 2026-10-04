@@ -75,13 +75,26 @@ abbrev openResult (s : State) : Option (List Byte) :=
     (bytesAt s.mem (s.gpr .rdx) 12) (bytesAt s.mem (s.gpr .r9) (arg s 0).toNat)
     (bytesAt s.mem (s.gpr .rcx) (s.gpr .r8).toNat) (bytesAt s.mem (arg s 1) 16)
 
+/-- What `vg_aes_gcm_siv_open` leaves in `rax` and in the `n` bytes of data
+at `D`, for the result `r`. Irreducible, so that checking a state against
+it never evaluates `r`. -/
+@[irreducible] def openPost (r : Option (List Byte)) (s' : State) (D : Addr) (n : Nat) : Prop :=
+  match r with
+  | some pt => (s'.gpr .rax).setWidth 32 = 1 ∧ bytesAt s'.mem D n = pt
+  | none => (s'.gpr .rax).setWidth 32 = 0 ∧ bytesAt s'.mem D n = zeros n
+
+theorem openPost_some {r : Option (List Byte)} {pt : List Byte} {s' : State} {D : Addr} {n : Nat}
+    (hr : r = some pt) (hax : (s'.gpr .rax).setWidth 32 = 1) (hd : bytesAt s'.mem D n = pt) : openPost r s' D n := by
+  subst hr; unfold openPost; exact ⟨hax, hd⟩
+
+theorem openPost_none {r : Option (List Byte)} {s' : State} {D : Addr} {n : Nat}
+    (hr : r = none) (hax : (s'.gpr .rax).setWidth 32 = 0) (hd : bytesAt s'.mem D n = zeros n) : openPost r s' D n := by
+  subst hr; unfold openPost; exact ⟨hax, hd⟩
+
 /-- `vg_aes_gcm_siv_open`. -/
 def openX86_64 : Contract isa where
   pre := onePre
-  post s s' :=
-    match openResult s with
-    | some pt => (s'.gpr .rax).setWidth 32 = 1 ∧ bytesAt s'.mem (s.gpr .r9) (arg s 0).toNat = pt
-    | none => (s'.gpr .rax).setWidth 32 = 0 ∧ bytesAt s'.mem (s.gpr .r9) (arg s 0).toNat = zeros (arg s 0).toNat
+  post s s' := openPost (openResult s) s' (s.gpr .r9) (arg s 0).toNat
   pub s₁ s₂ := onePub s₁ s₂ ∧ (openResult s₁).isSome = (openResult s₂).isSome
 
 end VG.Proof.AesGcmSiv
