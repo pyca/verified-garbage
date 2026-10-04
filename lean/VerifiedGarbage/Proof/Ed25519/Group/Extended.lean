@@ -1,7 +1,7 @@
 import Mathlib.NumberTheory.LucasPrimality
 import Mathlib.Tactic.NormNum.Prime
 import VerifiedGarbage.Spec.X25519
-import VerifiedGarbage.Proof.Ed25519.Group.Edwards
+import VerifiedGarbage.Proof.Edwards.Group
 import Mathlib.Algebra.Group.Defs
 import Mathlib.Algebra.Group.Basic
 import VerifiedGarbage.Spec.Ed25519
@@ -276,12 +276,119 @@ section
 # The points of a complete twisted Edwards curve form a commutative group
 
 `EPoint d` is the type of affine points; its addition is the Edwards law of
-`Edwards.lean`, its zero `(0, 1)` and its negation `(-x, y)`.
+RFC 8032 §5.1.4 (below, by the twist), its zero `(0, 1)` and its negation `(-x, y)`.
 -/
 
 namespace VG.Proof.Ed25519.Edwards
 
+/-! ## The twisted curve, as the untwisted one
+
+Ed25519's curve `-x² + y² = 1 + d x² y²` (`a = -1`) is the curve
+`x² + y² = 1 - d x² y²` of `Proof/Edwards/Group.lean` (`a = 1`, with `-d`) through
+`(x, y) ↦ (s x, y)` for `s² = -1`, which takes RFC 8032 §5.1.4's addition to
+§5.2.4's (`addX_twist`, `addY_twist`). So the group law's facts (completeness,
+closure, associativity) are those of the untwisted law, carried back. -/
+
 variable {F : Type*} [Field F]
+
+/-- The curve `-x² + y² = 1 + d x² y²`. -/
+def OnCurve (d x y : F) : Prop := -x ^ 2 + y ^ 2 = 1 + d * x ^ 2 * y ^ 2
+
+/-- What makes the addition law complete. -/
+structure Params (d : F) : Prop where
+  two : (2 : F) ≠ 0
+  sqrtm1 : ∃ s : F, s ^ 2 = -1
+  nonsq : ∀ r : F, r ^ 2 ≠ d
+
+/-- The affine addition law (RFC 8032 §5.1.4, divided out). -/
+def addX (d x1 y1 x2 y2 : F) : F := (x1 * y2 + y1 * x2) / (1 + d * x1 * x2 * y1 * y2)
+
+def addY (d x1 y1 x2 y2 : F) : F := (y1 * y2 + x1 * x2) / (1 - d * x1 * x2 * y1 * y2)
+
+section
+variable {d s x y x1 y1 x2 y2 : F} (hs : s ^ 2 = -1)
+include hs
+
+theorem s_ne_zero : s ≠ 0 := by
+  rintro rfl
+  have : (1 : F) = 0 := by linear_combination hs
+  exact one_ne_zero this
+
+theorem onCurve_twist : OnCurve d x y ↔ VG.Proof.EdwardsLaw.OnCurve (-d) (s * x) y := by
+  unfold OnCurve VG.Proof.EdwardsLaw.OnCurve
+  exact ⟨fun h => by linear_combination h + (x ^ 2 + d * x ^ 2 * y ^ 2) * hs,
+    fun h => by linear_combination h - (x ^ 2 + d * x ^ 2 * y ^ 2) * hs⟩
+
+theorem params_twist (hP : Params d) : VG.Proof.EdwardsLaw.Params (-d) := by
+  refine ⟨hP.two, fun r hr => hP.nonsq (r / s) ?_⟩
+  rw [div_pow, hr, hs, neg_div_neg_eq, div_one]
+
+theorem addX_twist :
+    VG.Proof.EdwardsLaw.addX (-d) (s * x1) y1 (s * x2) y2 = s * addX d x1 y1 x2 y2 := by
+  have e : 1 + -d * (s * x1) * (s * x2) * y1 * y2 = 1 + d * x1 * x2 * y1 * y2 := by
+    linear_combination (-d * x1 * x2 * y1 * y2) * hs
+  simp only [VG.Proof.EdwardsLaw.addX, addX, e]
+  ring
+
+theorem addY_twist :
+    VG.Proof.EdwardsLaw.addY (-d) (s * x1) y1 (s * x2) y2 = addY d x1 y1 x2 y2 := by
+  have e1 : y1 * y2 - s * x1 * (s * x2) = y1 * y2 + x1 * x2 := by
+    linear_combination (-x1 * x2) * hs
+  have e2 : 1 - -d * (s * x1) * (s * x2) * y1 * y2 = 1 - d * x1 * x2 * y1 * y2 := by
+    linear_combination (d * x1 * x2 * y1 * y2) * hs
+  simp only [VG.Proof.EdwardsLaw.addY, addY, e1, e2]
+
+end
+
+section
+variable {d x1 y1 x2 y2 x3 y3 : F}
+
+theorem den_add_ne (hP : Params d) (h1 : OnCurve d x1 y1) (h2 : OnCurve d x2 y2) :
+    1 + d * x1 * x2 * y1 * y2 ≠ 0 := by
+  obtain ⟨s, hs⟩ := hP.sqrtm1
+  have := VG.Proof.EdwardsLaw.den_add_ne (params_twist hs hP) ((onCurve_twist hs).1 h1)
+    ((onCurve_twist hs).1 h2)
+  rwa [show 1 + -d * (s * x1) * (s * x2) * y1 * y2 = 1 + d * x1 * x2 * y1 * y2 by
+    linear_combination (-d * x1 * x2 * y1 * y2) * hs] at this
+
+theorem den_sub_ne (hP : Params d) (h1 : OnCurve d x1 y1) (h2 : OnCurve d x2 y2) :
+    1 - d * x1 * x2 * y1 * y2 ≠ 0 := by
+  obtain ⟨s, hs⟩ := hP.sqrtm1
+  have := VG.Proof.EdwardsLaw.den_sub_ne (params_twist hs hP) ((onCurve_twist hs).1 h1)
+    ((onCurve_twist hs).1 h2)
+  rwa [show 1 - -d * (s * x1) * (s * x2) * y1 * y2 = 1 - d * x1 * x2 * y1 * y2 by
+    linear_combination (d * x1 * x2 * y1 * y2) * hs] at this
+
+theorem onCurve_add (hP : Params d) (h1 : OnCurve d x1 y1) (h2 : OnCurve d x2 y2) :
+    OnCurve d (addX d x1 y1 x2 y2) (addY d x1 y1 x2 y2) := by
+  obtain ⟨s, hs⟩ := hP.sqrtm1
+  have := VG.Proof.EdwardsLaw.onCurve_add (params_twist hs hP) ((onCurve_twist hs).1 h1)
+    ((onCurve_twist hs).1 h2)
+  rw [addX_twist hs, addY_twist hs] at this
+  exact (onCurve_twist hs).2 this
+
+theorem add_assoc_x (hP : Params d) (h1 : OnCurve d x1 y1) (h2 : OnCurve d x2 y2)
+    (h3 : OnCurve d x3 y3) :
+    addX d (addX d x1 y1 x2 y2) (addY d x1 y1 x2 y2) x3 y3 =
+      addX d x1 y1 (addX d x2 y2 x3 y3) (addY d x2 y2 x3 y3) := by
+  obtain ⟨s, hs⟩ := hP.sqrtm1
+  have := VG.Proof.EdwardsLaw.add_assoc_x (params_twist hs hP) ((onCurve_twist hs).1 h1)
+    ((onCurve_twist hs).1 h2) ((onCurve_twist hs).1 h3)
+  rw [addX_twist hs, addY_twist hs, addX_twist hs, addY_twist hs, addX_twist hs,
+    addX_twist hs] at this
+  exact mul_left_cancel₀ (s_ne_zero hs) this
+
+theorem add_assoc_y (hP : Params d) (h1 : OnCurve d x1 y1) (h2 : OnCurve d x2 y2)
+    (h3 : OnCurve d x3 y3) :
+    addY d (addX d x1 y1 x2 y2) (addY d x1 y1 x2 y2) x3 y3 =
+      addY d x1 y1 (addX d x2 y2 x3 y3) (addY d x2 y2 x3 y3) := by
+  obtain ⟨s, hs⟩ := hP.sqrtm1
+  have := VG.Proof.EdwardsLaw.add_assoc_y (params_twist hs hP) ((onCurve_twist hs).1 h1)
+    ((onCurve_twist hs).1 h2) ((onCurve_twist hs).1 h3)
+  rwa [addX_twist hs, addY_twist hs, addX_twist hs, addY_twist hs, addY_twist hs,
+    addY_twist hs] at this
+
+end
 
 /-- An affine point of the curve. -/
 @[ext]

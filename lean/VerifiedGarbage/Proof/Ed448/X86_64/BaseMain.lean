@@ -16,7 +16,7 @@ space, and the return address is kept.
 
 namespace VG.Proof.Ed448.X86_64
 
-open VG VG.X86_64 VG.Impl.Ed448.X86_64 VG.Proof.Ed448 VG.Proof.Ed448.Edwards
+open VG VG.X86_64 VG.Impl.Ed448.X86_64 VG.Proof.Ed448 VG.Proof.EdwardsLaw
 open VG.Proof.X448.X86_64 (Scr Index Env E FieldOk word off Outside ofs Saved clob writeW_outside
   word_writeW_self invert_ok setRbx_ok E_outside contains_sc ofs_off')
 open VG.Impl.X448.X86_64 (BITS slot)

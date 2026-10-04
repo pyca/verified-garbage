@@ -19,10 +19,12 @@ equations, checked by `linear_combination` with the quotients of dividing by
 them (Hales, "The group law for Edwards curves"). `EPoint d`, the affine
 points, form a commutative group with zero `(0, 1)` and negation `(-x, y)`.
 
-This follows `Proof/Ed25519/Group/Edwards.lean` (`a = -1`).
+Ed448's curve (edwards448, `d = -39081`) is one; Ed25519's twisted curve
+(`a = -1`) is another through `(x, y) ↦ (√-1 · x, y)`, which takes it to this
+form with `-d` (`Proof/Ed25519/Group/Extended.lean`).
 -/
 
-namespace VG.Proof.Ed448.Edwards
+namespace VG.Proof.EdwardsLaw
 
 variable {F : Type*} [Field F]
 
@@ -330,4 +332,4 @@ instance : AddCommGroup (EPoint d) where
   nsmul := nsmulRec
   zsmul := zsmulRec
 
-end VG.Proof.Ed448.Edwards
+end VG.Proof.EdwardsLaw
