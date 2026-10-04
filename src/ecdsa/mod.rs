@@ -1,8 +1,9 @@
 //! ECDSA (FIPS 186-5 §6.4) with deterministic signatures (RFC 6979 §3.2).
 //!
 //! A [`SigningKey<C>`] holds a private key on the curve `C` (so far
-//! [`P256`]), and signs with a hash function `H` that the curve has
-//! signatures with ([`SignatureHash<C>`]: for P-256, SHA-256 and SHA-384),
+//! [`P256`] and, on x86-64, `P384`), and signs with a hash function `H`
+//! that the curve has signatures with ([`SignatureHash<C>`]: for P-256,
+//! SHA-256 and SHA-384; for P-384, SHA-384),
 //! as in `key.sign::<Sha256>(message)`. Each signature is one call of
 //! verified code, for the curve and the hash function
 //! (`vg_ecdsa_<curve>_<hash>_sign`, contract
@@ -38,7 +39,10 @@
 ))]
 
 mod p256;
+mod p384;
 
+#[cfg(target_arch = "x86_64")]
+pub use crate::ec::P384;
 pub use crate::ec::{Curve, P256};
 
 use crate::zeroize::zeroize;
@@ -59,7 +63,7 @@ mod sealed {
 
 /// A hash function that ECDSA signs with, and verifies signatures of, over
 /// the curve `C`: for P-256, [`Sha256`](crate::hashes::sha256::Sha256) and
-/// [`Sha384`](crate::hashes::sha384::Sha384).
+/// [`Sha384`](crate::hashes::sha384::Sha384); for P-384, `Sha384`.
 pub trait SignatureHash<C: Curve>: sealed::Functions<C> {}
 
 /// Why signing, deriving the public key, or verifying a signature failed.
@@ -67,7 +71,8 @@ pub trait SignatureHash<C: Curve>: sealed::Functions<C> {}
 pub enum Error {
     /// The private key is not in `[1, n − 1]`. For a valid key, signing
     /// fails only if none of the candidates for `k` it tries is suitable:
-    /// for P-256, with probability under 2⁻²⁴⁸; deriving the public key
+    /// for P-256, with probability under 2⁻²⁴⁸, and for P-384 under
+    /// 2⁻¹⁵⁴⁴; deriving the public key
     /// never fails.
     InvalidKey,
     /// The signature is not valid for the public key, or the public key is

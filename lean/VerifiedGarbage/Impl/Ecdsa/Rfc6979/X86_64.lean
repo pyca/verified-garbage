@@ -4,18 +4,19 @@ import VerifiedGarbage.Impl.Pbkdf2.Md.X86_64
 # Deterministic ECDSA (RFC 6979) on x86-64
 
 `sign R H core (out = rdi, d = rsi, digest = rdx, scratch = rcx) -> eax`, for
-a curve of 32-byte scalars and a Merkle–Damgård hash function `H` whose
-output is `D` bytes, `32 ≤ D ≤ 64`, a multiple of 8 (one `V` makes a
-candidate: `blocks = 1`): RFC 6979 §3.2, with HMAC computed by calling `H`'s
-HMAC `init`, streaming `update` and HMAC `finalize`, and each candidate tried
-by calling `core`, the signature with a given `k` (`vg_ecdsa_<curve>_sign`),
-which reads the leftmost 32 bytes of `V` and of the digest (their leftmost
-256 bits, `bits2int`).
+a curve of `Q = 8 w` byte scalars (`w ≤ 6` words: 4 for P-256, 6 for P-384)
+and a Merkle–Damgård hash function `H` whose output is `D` bytes,
+`Q ≤ D ≤ 64`, a multiple of 8 (one `V` makes a candidate: `blocks = 1`):
+RFC 6979 §3.2, with HMAC computed by calling `H`'s HMAC `init`, streaming
+`update` and HMAC `finalize`, and each candidate tried by calling `core`, the
+signature with a given `k` (`vg_ecdsa_<curve>_sign`), which reads the
+leftmost `Q` bytes of `V` and of the digest (their leftmost `8 Q` bits,
+`bits2int`).
 
-Everything runs in one stack frame of 25 words, pushed from `rdi`, `rsi`,
-`rdx`, `rcx` and 21 copies of `rax`: from `rsp`, `K` and `V` (64 bytes each,
-of which the first `D` are used), `h` (the hash's leftmost 32 bytes reduced
-modulo `n`, `bits2octets`, 32 bytes), the number of candidates left, then
+Everything runs in one stack frame of 27 words, pushed from `rdi`, `rsi`,
+`rdx`, `rcx` and 23 copies of `rax`: from `rsp`, `K` and `V` (64 bytes each,
+of which the first `D` are used), `h` (the hash's leftmost `Q` bytes reduced
+modulo `n`, `bits2octets`, in 48 bytes), the number of candidates left, then
 `scratch`, `digest`, `d` and `out`. The layout is the same for every hash
 function. The calls use only `scratch`, which `core` overwrites entirely,
 and the frame, which they cannot change; `K`, `V` and `h` are cleared before
@@ -23,8 +24,11 @@ the frame is popped. In `scratch`: HMAC's inner and outer streaming states,
 the working space of HMAC's and `H`'s functions (each at the size SHA-512's
 need), and the message of steps d, f and h.3.
 
-1. `h = bits2octets(digest)`: the leftmost 32 bytes, minus `n` if they are
-   at least `n` (a conditional subtraction, as `2^256 < 2n`).
+1. `h = bits2octets(digest)`: the leftmost `Q` bytes, minus `n` if they are
+   at least `n` (a conditional subtraction, as `2^(8 Q) < 2n`), a word at a
+   time through memory: the words of the digest to `V`'s place, those of
+   the difference to `K`'s (before steps b and c set them), and the one
+   the borrow selects, big-endian, to `h`.
 2. Steps b to g: `V = 0x01…`, `K = 0x00…`, `K = HMAC_K(V ‖ 0x00 ‖ d ‖ h)`,
    `V = HMAC_K(V)`, `K = HMAC_K(V ‖ 0x01 ‖ d ‖ h)`, `V = HMAC_K(V)`.
 3. At most `tries` times: `V = HMAC_K(V)`, the candidate `k = V`, and
@@ -57,11 +61,11 @@ def at_ (b : Reg) (d : Nat) : MemOp := { base := b, disp := d }
 def fK : Nat := 0
 def fV : Nat := 64
 def fH : Nat := 128
-def fCnt : Nat := 160
-def fScratch : Nat := 168
-def fDigest : Nat := 176
-def fD : Nat := 184
-def fOut : Nat := 192
+def fCnt : Nat := 176
+def fScratch : Nat := 184
+def fDigest : Nat := 192
+def fD : Nat := 200
+def fOut : Nat := 208
 
 /-! Where things are in `scratch`. -/
 def sInner : Nat := 0
@@ -73,6 +77,8 @@ def sMsg : Nat := 2256
 structure Cfg where
   /-- The hash function's code and names. -/
   H : Hash
+  /-- The words of the curve's scalars. -/
+  w : Nat
   /-- The order of the curve's base point. -/
   n : Nat
   /-- The most candidates to try. -/
@@ -135,22 +141,24 @@ first, so that every address the message's block computes is from them or
 `rsp`). -/
 def msgPtrs : List Instr := [.mov .rdi (.mem (stk fScratch)), .mov .rsi (.mem (stk fD))]
 
-/-- The message `V ‖ b` (and `‖ d ‖ h` if `full`) at `scratch + sMsg`, for
-`V` of `D` bytes, with `scratch` in `rdi` and `d` in `rsi`: `V` and `h` from
-the frame, `b` a byte. -/
-def msg (D b : Nat) (full : Bool) : List Instr :=
+/-- The message `V ‖ b` (and `‖ d ‖ h` if `full`, `w` words each) at
+`scratch + sMsg`, for `V` of `D` bytes, with `scratch` in `rdi` and `d` in
+`rsi`: `V` and `h` from the frame, `b` a byte. -/
+def msg (w D b : Nat) (full : Bool) : List Instr :=
   copyN (D / 8) .rsp fV .rdi sMsg ++
     [.mov32 .rax (.imm (BitVec.ofNat 32 b)), .store8 (at_ .rdi (sMsg + D)) .rax] ++
-    (if full then copyN 4 .rsi 0 .rdi (sMsg + D + 1) ++ copyN 4 .rsp fH .rdi (sMsg + D + 33) else [])
+    (if full then copyN w .rsi 0 .rdi (sMsg + D + 1) ++ copyN w .rsp fH .rdi (sMsg + D + 1 + 8 * w)
+    else [])
 
 /-- `K = HMAC_K(V ‖ b ‖ d ‖ h)`, then `V = HMAC_K(V)` (steps d–e, f–g). -/
 def rekeyFull (b : Nat) : Prog isa :=
-  .seq (.block msgPtrs) (.seq (.block (msg c.H.D b true))
-    (.seq (c.hmac (scr .rdx sMsg) (c.H.D + 65) fK) c.hmacV))
+  .seq (.block msgPtrs) (.seq (.block (msg c.w c.H.D b true))
+    (.seq (c.hmac (scr .rdx sMsg) (c.H.D + 16 * c.w + 1) fK) c.hmacV))
 
 /-- `K = HMAC_K(V ‖ 0x00)`, then `V = HMAC_K(V)` (step h.3). -/
 def rekey : Prog isa :=
-  .seq (.block msgPtrs) (.seq (.block (msg c.H.D 0 false)) (.seq (c.hmac (scr .rdx sMsg) (c.H.D + 1) fK) c.hmacV))
+  .seq (.block msgPtrs) (.seq (.block (msg c.w c.H.D 0 false))
+    (.seq (c.hmac (scr .rdx sMsg) (c.H.D + 1) fK) c.hmacV))
 
 /-- The 64-bit words of `n`, least significant first. -/
 def nWord (j : Nat) : BitVec 64 := BitVec.ofNat 64 (c.n >>> (64 * j))
@@ -158,22 +166,26 @@ def nWord (j : Nat) : BitVec 64 := BitVec.ofNat 64 (c.n >>> (64 * j))
 /-- `digest` in `rsi`. -/
 def digestPtr : List Instr := [.mov .rsi (.mem (stk fDigest))]
 
-/-- `h`: the 32 bytes at `digest` (in `rsi`), as a big-endian number in
-`r11:r10:r9:r8`, minus `n` (in `rsi:rdi:rcx:rax`) if that does not borrow,
-back big-endian into the frame. -/
+/-- Word `j` of the number at `digest` (in `rsi`), least significant first,
+to `V`'s place, and word `j` of it minus `n` (with the borrow of the words
+before) to `K`'s: `rax` and `rdx` change, and the borrow is the carry flag. -/
+def subWord (j : Nat) : List Instr :=
+  [.mov .rax (.mem (at_ .rsi (8 * (c.w - 1 - j)))), .bswap .rax, .store (stk (fV + 8 * j)) .rax,
+    .movImm64 .rdx (c.nWord j), .alu (if j = 0 then .sub else .sbb) .rax (.reg .rdx),
+    .store (stk (fK + 8 * j)) .rax]
+
+/-- Word `j` of the result, by the mask `rdx` (all ones if subtracting `n`
+borrowed): the number's word if so, the difference's if not, big-endian to
+`h`. -/
+def selWord (j : Nat) : List Instr :=
+  [.mov .rax (.mem (stk (fV + 8 * j))), .mov .rcx (.mem (stk (fK + 8 * j))), .alu .xor .rax (.reg .rcx),
+    .alu .and .rax (.reg .rdx), .alu .xor .rax (.reg .rcx), .bswap .rax,
+    .store (stk (fH + 8 * (c.w - 1 - j))) .rax]
+
+/-- `h`: the `Q` bytes at `digest` (in `rsi`), as a big-endian number,
+minus `n` if that does not borrow, big-endian into the frame. -/
 def reduce : List Instr :=
-  [.mov .r8 (.mem (at_ .rsi 24)), .bswap .r8, .mov .r9 (.mem (at_ .rsi 16)), .bswap .r9,
-    .mov .r10 (.mem (at_ .rsi 8)), .bswap .r10, .mov .r11 (.mem (at_ .rsi 0)), .bswap .r11,
-    .movImm64 .rdx (c.nWord 0), .mov .rax (.reg .r8), .alu .sub .rax (.reg .rdx),
-    .movImm64 .rdx (c.nWord 1), .mov .rcx (.reg .r9), .alu .sbb .rcx (.reg .rdx),
-    .movImm64 .rdx (c.nWord 2), .mov .rdi (.reg .r10), .alu .sbb .rdi (.reg .rdx),
-    .movImm64 .rdx (c.nWord 3), .mov .rsi (.reg .r11), .alu .sbb .rsi (.reg .rdx),
-    .alu .sbb .rdx (.reg .rdx)] ++
-  -- `x = d ^ ((x ^ d) & mask)`: `x` if it borrowed, `d` if not.
-  ([(.r8, .rax), (.r9, .rcx), (.r10, .rdi), (.r11, .rsi)] : List (Reg × Reg)).flatMap
-    (fun (x, d) => [.alu .xor x (.reg d), .alu .and x (.reg .rdx), .alu .xor x (.reg d)]) ++
-  [.bswap .r11, .store (stk fH) .r11, .bswap .r10, .store (stk (fH + 8)) .r10,
-    .bswap .r9, .store (stk (fH + 16)) .r9, .bswap .r8, .store (stk (fH + 24)) .r8]
+  (List.range c.w).flatMap c.subWord ++ [.alu .sbb .rdx (.reg .rdx)] ++ (List.range c.w).flatMap c.selWord
 
 /-- `V = 0x01…`, `K = 0x00…`, all 64 bytes of each. -/
 def initKV : List Instr :=
@@ -213,7 +225,7 @@ def tryOne : Prog isa :=
 
 /-- `K`, `V` and `h` cleared (`rax`, the result, kept). -/
 def wipe : List Instr :=
-  [.alu32 .xor .rcx (.reg .rcx)] ++ (List.range 20).map fun j => .store (stk (8 * j)) .rcx
+  [.alu32 .xor .rcx (.reg .rcx)] ++ (List.range 22).map fun j => .store (stk (8 * j)) .rcx
 
 /-- The frame's body. -/
 def body : Prog isa :=
@@ -227,7 +239,7 @@ def body : Prog isa :=
 
 /-- `vg_ecdsa_<curve>_<hash>_sign`. -/
 def sign : Prog isa :=
-  .frame (.push ([.rdi, .rsi, .rdx, .rcx] ++ List.replicate 21 .rax)) c.body (.pop .rcx 25)
+  .frame (.push ([.rdi, .rsi, .rdx, .rcx] ++ List.replicate 23 .rax)) c.body (.pop .rcx 27)
 
 end Cfg
 
