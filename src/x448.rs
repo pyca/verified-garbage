@@ -8,6 +8,11 @@
 //! multiplications. This module gives it working space, and destroys what it
 //! leaves there.
 //!
+//! On AArch64, [`public_key`](PrivateKey::public_key) is the verified
+//! assembly `vg_x448_base` (contract `VG.Spec.X448.x448BaseContract`):
+//! `X448(k, 5)` computed as the u-coordinate of a fixed-base multiplication on
+//! edwards448, with precomputed tables, rather than with the ladder.
+//!
 //! [`diffie_hellman`](PrivateKey::diffie_hellman) rejects the all-zero
 //! shared secret that a public key of small order gives (RFC 7748 §6.2), in
 //! constant time; [`x448`] is the function itself, which does not.
@@ -20,6 +25,8 @@
 ))]
 
 use crate::arch::x448::vg_x448;
+#[cfg(target_arch = "aarch64")]
+use crate::arch::x448::vg_x448_base;
 #[cfg(target_arch = "x86_64")]
 use crate::arch::x448::{VG_X448_ADX_FEATURES, vg_x448_adx};
 use crate::cpu::{Features, detected};
@@ -91,6 +98,26 @@ pub fn x448(scalar: &[u8; 56], u: &[u8; 56]) -> [u8; 56] {
     out
 }
 
+/// `X448(scalar, 5)`, by `vg_x448_base`.
+#[cfg(target_arch = "aarch64")]
+fn base(scalar: &[u8; 56]) -> [u8; 56] {
+    let mut out = [0u8; 56];
+    let mut scratch = [0u64; 1024];
+    // SAFETY: `out` and `scratch` are valid for reads and writes of 56 and
+    // 8192 bytes, and `scalar` for reads of 56 bytes; the writable buffers are
+    // disjoint from each other and from the input. No buffer overlaps the
+    // callee's stack or wraps around the address space.
+    unsafe { vg_x448_base(&mut out, scalar, &mut scratch) };
+    zeroize(&mut scratch);
+    out
+}
+
+/// `X448(scalar, 5)`, with the ladder.
+#[cfg(not(target_arch = "aarch64"))]
+fn base(scalar: &[u8; 56]) -> [u8; 56] {
+    x448(scalar, &BASE_POINT)
+}
+
 /// An X448 private key: 56 bytes, which X448 decodes into a scalar.
 #[derive(Clone)]
 pub struct PrivateKey {
@@ -138,7 +165,7 @@ impl PrivateKey {
 
     /// The public key, `X448(k, 5)` (RFC 7748 §6.2).
     pub fn public_key(&self) -> [u8; 56] {
-        x448(&self.bytes, &BASE_POINT)
+        base(&self.bytes)
     }
 
     /// The shared secret with the peer whose public key is `peer`,
@@ -171,6 +198,21 @@ mod tests {
         assert_eq!(a.diffie_hellman(&kb), b.diffie_hellman(&ka));
         assert_eq!(PrivateKey::from_bytes(a.as_bytes()).public_key(), ka);
         assert_eq!(a.clone().public_key(), ka);
+    }
+
+    /// The public key is `X448(k, 5)` for many scalars: random ones, and ones
+    /// with every nibble the same (each digit of the fixed-base comb).
+    #[test]
+    fn public_key_is_x448_of_base_point() {
+        let check = |k: &[u8; 56]| {
+            assert_eq!(PrivateKey::from_bytes(k).public_key(), x448(k, &BASE_POINT));
+        };
+        for n in 0..=15u8 {
+            check(&[n * 0x11; 56]);
+        }
+        for _ in 0..64 {
+            check(PrivateKey::generate().unwrap().as_bytes());
+        }
     }
 
     /// The baseline agrees with the implementation chosen for this CPU,
