@@ -31,12 +31,12 @@ theorem combLay (hc : CfgOk c) : CombLay c.combCfg size := by
   have hJ := combJ hc
   have hb := bitsAt_le c h7 (j := 0) (by decide)
   refine ⟨?_, rcbApart_of hn (lw := [T0, T1, T2, T3, T4, T5, DX, DY, DZ])
-      (lr := [AP, B3P, RX, RY, RZ, TX, TY, TZ]) rfl rfl (by decide) (by decide), ?_,
+      (lr := [AP, BM, RX, RY, RZ, TX, TY, TZ]) rfl rfl (by decide) (by decide), ?_,
     map_sl_nodup hn (l := [RX, RY, RZ, TX, TY, TZ, PT, T0, T1, T2, T3, T4, T5, DX, DY, DZ])
       (by decide), ⟨by omega, by omega⟩, ?_, ?_, ?_⟩
-  · exact lay_map hc rfl rfl rfl (l := [AP, B3P, ZERO, RX, RY, RZ, TX, TY, TZ, PT, T0, T1, T2, T3,
+  · exact lay_map hc rfl rfl rfl (l := [AP, BM, ZERO, RX, RY, RZ, TX, TY, TZ, PT, T0, T1, T2, T3,
       T4, T5, DX, DY, DZ]) (by decide)
-  · exact map_sl_disj hn (l₁ := [AP, B3P, ZERO])
+  · exact map_sl_disj hn (l₁ := [AP, BM, ZERO])
       (l₂ := [RX, RY, RZ, TX, TY, TZ, PT, T0, T1, T2, T3, T4, T5, DX, DY, DZ]) (by decide)
   · rw [hJ]; show bitsAt c.n 0 + 4 * (16 * c.n) ≤ 8192; omega
   · show bitsAt c.n 0 + 3 < 4096; omega
@@ -49,7 +49,7 @@ theorem combLay (hc : CfgOk c) : CombLay c.combCfg size := by
 
 theorem combA (c : Cfg) : CombA c.combCfg where
   sl := by
-    have e : combSlots c.combCfg = [AP, B3P, ZERO, RX, RY, RZ, TX, TY, TZ, PT, T0, T1, T2, T3, T4, T5,
+    have e : combSlots c.combCfg = [AP, BM, ZERO, RX, RY, RZ, TX, TY, TZ, PT, T0, T1, T2, T3, T4, T5,
       DX, DY, DZ].map c.sl := rfl
     rw [e]
     intro x hx

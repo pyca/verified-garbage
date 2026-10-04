@@ -56,18 +56,18 @@ theorem stage₂ (hc : CfgOk c) (hC : Law c.C) (hT : CombOk c.C (16 * c.n) c.tbl
     refine ⟨?_, ?_, ?_, F.zero, ?_⟩
     · show toM c.C.p (2 ^ (64 * c.n)) (wordsVal s.mem base (c.sl AP) c.n) = _
       rw [F.ap]; exact toM_cmont hc _
-    · show toM c.C.p (2 ^ (64 * c.n)) (wordsVal s.mem base (c.sl B3P) c.n) = _
-      rw [F.b3p]; exact toM_cmont hc _
+    · show toM c.C.p (2 ^ (64 * c.n)) (wordsVal s.mem base (c.sl BM) c.n) = _
+      rw [F.bm]; exact toM_cmont hc _
     · intro x hx
       simp only [combRo, List.mem_cons, List.not_mem_nil, or_false] at hx
       rcases hx with rfl | rfl | rfl
       · show wordsVal s.mem base (c.sl AP) c.n < _; rw [F.ap]; exact mont_lt hc _
-      · show wordsVal s.mem base (c.sl B3P) c.n < _; rw [F.b3p]; exact mont_lt hc _
+      · show wordsVal s.mem base (c.sl BM) c.n < _; rw [F.bm]; exact mont_lt hc _
       · show wordsVal s.mem base (c.sl ZERO) c.n < _; rw [F.zero]; omega
     · intro t ht
       rw [combJ hc] at ht
       exact hS.t₀ t (by omega)
-  have W := comb_ok (combLay hc) (combA c) hpR hC hc.onG (combVals hc hC hT) hc.p_lt hS.scr
+  have W := comb_ok (combLay hc) (combA c) hpR hC hc.am3 hc.onG (combVals hc hC hT) hc.p_lt hS.scr
     (modP_of hc F.mp) hF (kv_lt_comb hc hkl)
   refine WP.seq (WP.mono W fun s₅ h₅ => ?_)
   obtain ⟨K₅, U₅, M₅, L₅, R₅⟩ := h₅

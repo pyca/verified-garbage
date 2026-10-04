@@ -12,7 +12,7 @@ scratch = x4) -> w0`, for a curve whose field elements and scalars are `n`
 
 1. `x19` and `x20` are saved in the working space, whose base is then
    `x0`, and `out` is kept in `x20`; `k`, `d` and the hash are read
-   big-endian into slots, and the constants (the moduli, `a`, `3b`, `G` and
+   big-endian into slots, and the constants (the moduli, `a`, `b`, `G` and
    Montgomery's ones in Montgomery form, `R² mod n`, and the exponents
    `p - 2` and `n - 2`) are stored as immediates;
 2. the bits of `k`, `p - 2` and `n - 2` are expanded into tables;
@@ -51,7 +51,7 @@ def ZERO := 3
 def ONE := 4
 def ONEP := 5
 def AP := 6
-def B3P := 7
+def BM := 7
 def GX := 8
 def GY := 9
 def R2N := 10
@@ -141,7 +141,7 @@ def MN' : Mod where
 
 def pt (x y z : Nat) : Pt := ⟨c.sl x, c.sl y, c.sl z⟩
 
-def rcbSlots : RcbSlots := ⟨c.sl AP, c.sl B3P, c.sl T0, c.sl T1, c.sl T2, c.sl T3, c.sl T4, c.sl T5⟩
+def rcbSlots : RcbSlots := ⟨c.sl AP, c.sl BM, c.sl T0, c.sl T1, c.sl T2, c.sl T3, c.sl T4, c.sl T5⟩
 
 /-- The comb for `[k]G`, into `R`, from the table of the bits of `k`. -/
 def combCfg : CombCfg where
@@ -194,7 +194,7 @@ def saved : List (Reg × Nat) := [(.x19, 0), (.x20, 8)]
 /-- The constants, and `R = (0 : 1 : 0)`: slots and values. -/
 def consts : List (Nat × Nat) :=
   [(MP, c.C.p), (MN, c.C.n), (ZERO, 0), (ONE, 1), (ONEP, c.mont 1), (AP, c.mont c.C.a),
-    (B3P, c.mont (3 * c.C.b)), (GX, c.mont c.C.gx), (GY, c.mont c.C.gy), (R2N, c.R * c.R % c.C.n),
+    (BM, c.mont c.C.b), (GX, c.mont c.C.gx), (GY, c.mont c.C.gy), (R2N, c.R * c.R % c.C.n),
     (ONEN, c.R % c.C.n), (EXPP, c.C.p - 2), (EXPN, c.C.n - 2), (RX, 0), (RY, c.mont 1), (RZ, 0)]
 
 /-- Saves them, with the working space in `x4`, which then goes to `x0`,
