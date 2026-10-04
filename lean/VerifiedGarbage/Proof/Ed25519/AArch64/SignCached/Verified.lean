@@ -18,7 +18,7 @@ theorem body_depth (v : Whole.Backend) : (body v.code v.suffix).aarch64Depth ≤
   have hb := Whole.depth_zero_of_noFrames base_noFrames
   have hm := Whole.depth_zero_of_noFrames mul_noFrames
   simp only [body, secretCode, nonceCode, challengeCode, hashSeed, hashNonce, hashChallenge,
-    init, update, finalize, reduce, Impl.Ed25519.AArch64.Whole.callWith, Code.aarch64Depth,
+    init, update, finalize, reduce, Impl.Ed25519.AArch64.Whole.callWith, Code.aarch64Depth, Nat.max_le,
     Impl.Sha512.AArch64.Stream.init, hr, hb, hm]
   omega
 
@@ -69,7 +69,7 @@ theorem update_call_ct (backend : Backend) (hL : L.Ok) (count : Nat) (p n : Valu
     (hi : Input L (value L p) (value L n)) :
     RelCT isa (Two L g₁ g₂ v₁ v₂ m₁ m₂ (OutArgs L
       [(.x0, .caller 5 0), (.x1, .const count), (.x2, p), (.x3, n), (.x4, .caller 5 192)]))
-      (.call (Spec.Sha512.updateApi.name ++ backend.suffix) backend.update)
+      (.call (Spec.Sha512.updateScratchApi.name ++ backend.suffix) backend.update)
       (Two L g₁ g₂ v₁ v₂ m₁ m₂ fun _ => True) := by
   apply call_ct backend.update_verified.1 backend.update_verified.2.1 (Whole.update_depth backend)
   · intro g v m t hc hs
@@ -90,7 +90,7 @@ theorem finalize_call_ct (backend : Backend) (hL : L.Ok) (n : Nat) (b : Bool) :
     RelCT isa (Two L g₁ g₂ v₁ v₂ m₁ m₂ (OutArgs L
       [(.x0, .caller 5 0), (.x1, if b then .caller 4 n else .const n),
         (.x2, .frame 192), (.x3, .caller 5 192)]))
-      (.call (Spec.Sha512.finalizeApi.name ++ backend.suffix) backend.finalize)
+      (.call (Spec.Sha512.finalizeScratchApi.name ++ backend.suffix) backend.finalize)
       (Two L g₁ g₂ v₁ v₂ m₁ m₂ fun _ => True) := by
   apply call_ct backend.finalize_verified.1 backend.finalize_verified.2.1 (Whole.finalize_depth backend)
   · intro g v m t hc hs

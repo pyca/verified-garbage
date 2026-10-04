@@ -1,4 +1,5 @@
 import VerifiedGarbage.Proof.MlKem.X86_64.S4Base
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # ML-KEM on x86-64: `vg_mlkem_sample_ntt4_avx2`, the round constants and the padded seeds
@@ -41,7 +42,7 @@ theorem wb_out (m : Mem) (p : Addr) {w : Nat} (v : BitVec w) {e d : Nat} (h : d 
     (hd : d < 2 ^ 63) (he : e + w / 8 < 2 ^ 63) :
     (m.writeW (p + BitVec.ofNat 64 e) v) (p + BitVec.ofNat 64 d) = m (p + BitVec.ofNat 64 d) := by
   refine writeW_byte_off _ _ _ _ ?_
-  rw [Offset.sub_toNat' _ (by omega) (by omega)]
+  rw [Offset.sub_toNat' _ (by bdd_omega) (by bdd_omega)]
   split <;> omega
 
 /-! ## The round constants -/
@@ -60,7 +61,7 @@ theorem rc_step {σ : State} (hp : Pre σ) {s₀ : State} (he : Env σ s₀) {r 
   have hbx : s.gpr .rbx = scr σ := by rw [h.keep.gpr (by decide), he.rbx]
   refine wp_movi64 fun s₁ u₁ => wp_vmovq fun s₂ u₂ => wp_vbcast fun s₃ u₃ =>
     wp_vst (a := at' σ (32 * (50 + r))) (by rw [VG.Proof.Sha3.X86_64.ea_at, u₃.gpr, u₂.gpr, u₁.other _ (by decide), hbx]; rfl)
-      (by rw [u₃.wr, u₂.wr, u₁.wr, h.keep.2.2, he.wr]; exact in_scr hp rfl (by omega))
+      (by rw [u₃.wr, u₂.wr, u₁.wr, h.keep.2.2, he.wr]; exact in_scr hp rfl (by bdd_omega))
       fun s₄ g₄ _ m₄ r₄ w₄ => VG.Proof.Sha3.X86_64.wp_nil ?_
   have hv : ∀ k < 4, q4 s₃ .xmm0 k = Spec.Sha3.RC r := fun k hk => by
     rw [u₃.val k hk, u₂.val 0 (by decide), ite_eq_left rfl, u₁.gpr]
@@ -76,8 +77,8 @@ theorem rc_step {σ : State} (hp : Pre σ) {s₀ : State} (he : Env σ s₀) {r 
     · subst e
       rw [la, ← Offset.add_add, readW_write256 _ _ _ hk, q4_ymm _ _ hk, hv k hk]
     · have e := readW_writeW_off s.mem (scr σ) (s₃.ymm .xmm0) (d := 32 * (50 + r') + 8 * k)
-        (e := 32 * (50 + r)) (n := 8) (by omega) (by omega) (by omega)
-      exact e.trans (h.rc r' (by omega) k hk)
+        (e := 32 * (50 + r)) (n := 8) (by bdd_omega) (by bdd_omega) (by bdd_omega)
+      exact e.trans (h.rc r' (by bdd_omega) k hk)
 
 theorem rcTable_eq : Impl.Sha3.X86_64.X4.rcTable .rbx (oRc / 32) = (List.range 24).flatMap fun r =>
     [.movImm64 .rax (Spec.Sha3.RC r), .vop (.vmovq .xmm0 .rax), .vop (.vpbroadcastq .l256 .xmm0 .xmm0),
@@ -88,7 +89,7 @@ theorem rc_ok {σ : State} (hp : Pre σ) {s₀ : State} (he : Env σ s₀) :
     WP isa (.block (Impl.Sha3.X86_64.X4.rcTable .rbx (oRc / 32))) s₀ (RcInv σ s₀ 24) := by
   rw [rcTable_eq]
   exact wp_range_flatMap (M := isa) (RcInv σ s₀) (fun r s hr h => rc_step hp he hr h) 24 (Nat.le_refl _) s₀
-    ⟨Keep.refl _ _, Frame.refl _ _, fun _ h => absurd h (by omega)⟩
+    ⟨Keep.refl _ _, Frame.refl _ _, fun _ h => absurd h (by bdd_omega)⟩
 
 
 /-! ## The states, byte by byte -/
@@ -105,10 +106,10 @@ theorem bytes_write {m : Mem} {p : Addr} {F : Nat → Nat → Byte}
   split
   · rename_i hc
     simp only [off4] at hc
-    exact wb_in m p v hc.1 (by omega) hw
+    exact wb_in m p v hc.1 (by bdd_omega) hw
   · rename_i hc
     simp only [off4] at hc
-    rw [ba, wb_out m p v (by omega) (by omega) (by omega)]
+    rw [ba, wb_out m p v (by bdd_omega) (by bdd_omega) (by bdd_omega)]
     exact h k hk q hq
 
 /-- The four states hold `F`. -/
@@ -127,7 +128,7 @@ theorem AI.write {σ : State} {m₁ : Mem} {s s' : State} (h : AI σ m₁ s) {e 
   obtain ⟨v, hv⟩ := hm
   have hf : Frame [⟨at' σ e, n⟩] s.mem s'.mem := by
     rw [hv]; exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (by
-      rw [show 8 * n / 8 = n by omega]; exact Region.contains_self _ _)
+      rw [show 8 * n / 8 = n by bdd_omega]; exact Region.contains_self _ _)
   refine ⟨h.env.write (by simp only [oSave]; omega) hf hrd hwr fun r hr => hg r (by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl | rfl <;> decide),
@@ -146,22 +147,22 @@ structure ZInv (σ : State) (m₁ : Mem) (n : Nat) (s : State) : Prop where
 theorem zero_step {σ : State} (hp : Pre σ) {m₁ : Mem} {i : Nat} (hi : i < 25) {s : State} (h : ZInv σ m₁ i s) :
     WP isa (.block [Impl.Sha3.X86_64.X4.st .rbx i .xmm0]) s (ZInv σ m₁ (i + 1)) := by
   refine wp_vst (a := at' σ (32 * i)) (by rw [VG.Proof.Sha3.X86_64.ea_at, h.ai.env.rbx])
-    (by rw [h.ai.env.wr]; exact in_scr hp rfl (by omega)) fun s' g' q' m' r' w' => VG.Proof.Sha3.X86_64.wp_nil ?_
-  refine ⟨h.ai.write (e := 32 * i) (n := 32) (by omega) ⟨_, m'⟩ r' w' fun r _ => by rw [g'],
+    (by rw [h.ai.env.wr]; exact in_scr hp rfl (by bdd_omega)) fun s' g' q' m' r' w' => VG.Proof.Sha3.X86_64.wp_nil ?_
+  refine ⟨h.ai.write (e := 32 * i) (n := 32) (by bdd_omega) ⟨_, m'⟩ r' w' fun r _ => by rw [g'],
     fun k hk => by rw [q', h.x0 k hk], fun k hk q hq hn => ?_⟩
   rw [m']
   have hb := bytes_write (m := s.mem) (p := scr σ) (F := fun k q => s.mem (ba (scr σ) k q))
-    (fun _ _ _ _ => rfl) (s.ymm .xmm0) (e := 32 * i) (by decide) (by omega) hk hq
+    (fun _ _ _ _ => rfl) (s.ymm .xmm0) (e := 32 * i) (by decide) (by bdd_omega) hk hq
   rw [hb]
   split
   · rename_i hc
     simp only [off4] at hc ⊢
-    rw [show 8 * (32 * (q / 8) + 8 * k + q % 8 - 32 * i) = 64 * k + 8 * (q % 8) by omega, ← extract_extract (s.ymm .xmm0) (64 * k) 64 (8 * (q % 8)) 8 (by omega),
+    rw [show 8 * (32 * (q / 8) + 8 * k + q % 8 - 32 * i) = 64 * k + 8 * (q % 8) by bdd_omega, ← extract_extract (s.ymm .xmm0) (64 * k) 64 (8 * (q % 8)) 8 (by bdd_omega),
       q4_ymm _ _ hk, h.x0 k hk]
     apply BitVec.eq_of_getLsbD_eq; intro j _; simp
   · rename_i hc
     simp only [off4] at hc
-    exact h.bytes k hk q hq (by omega)
+    exact h.bytes k hk q hq (by bdd_omega)
 
 theorem zero4_eq : zero4 = Impl.Sha3.X86_64.X4.vb .vpxor .xmm0 .xmm0 .xmm0 ::
     (List.range 25).flatMap fun i => [Impl.Sha3.X86_64.X4.st .rbx i .xmm0] := rfl
@@ -170,9 +171,9 @@ theorem zero_ok {σ : State} (hp : Pre σ) {m₁ : Mem} {s : State} (h : AI σ m
     WP isa (.block zero4) s (fun s' => AI σ m₁ s' ∧ SB σ s'.mem fun _ _ => 0) := by
   rw [zero4_eq]
   refine wp_vxor fun s₁ u₁ => WP.mono (wp_range_flatMap (M := isa) (ZInv σ m₁) (fun i s hi h => zero_step hp hi h)
-    25 (Nat.le_refl _) s₁ ⟨h.write (e := 0) (n := 0) (by omega) ⟨0, ?_⟩ u₁.rd u₁.wr fun r _ => by rw [u₁.gpr],
-      fun k hk => by rw [u₁.val k hk, BitVec.xor_self]; rfl, fun _ _ _ _ h => absurd h (by omega)⟩)
-    fun s' h' => ⟨h'.ai, fun k hk q hq => h'.bytes k hk q hq (by omega)⟩
+    25 (Nat.le_refl _) s₁ ⟨h.write (e := 0) (n := 0) (by bdd_omega) ⟨0, ?_⟩ u₁.rd u₁.wr fun r _ => by rw [u₁.gpr],
+      fun k hk => by rw [u₁.val k hk, BitVec.xor_self]; rfl, fun _ _ _ _ h => absurd h (by bdd_omega)⟩)
+    fun s' h' => ⟨h'.ai, fun k hk q hq => h'.bytes k hk q hq (by bdd_omega)⟩
   rw [u₁.mem]
   funext x
   simp [Mem.writeW, Mem.write]
@@ -194,27 +195,27 @@ theorem lane_step {σ : State} (hp : Pre σ) {m₁ : Mem} {K i : Nat} (hK : K < 
       (fun s' => AI σ m₁ s' ∧ SB σ s'.mem (HF σ K (i + 1))) := by
   obtain ⟨ha, hb⟩ := h
   refine wp_movm (a := sd σ + BitVec.ofNat 64 (34 * K + 8 * i)) (by rw [ea_at, ha.env.r12])
-    (in_sd' hp ha.env.rd ha.env.wr (by omega)) fun s₁ u₁ => wp_store (a := at' σ (32 * i + 8 * K))
-      (by rw [ea_at, u₁.other _ (by decide), ha.env.rbx]) (by rw [u₁.wr]; exact in_scr hp ha.env.wr (by omega))
+    (in_sd' hp ha.env.rd ha.env.wr (by bdd_omega)) fun s₁ u₁ => wp_store (a := at' σ (32 * i + 8 * K))
+      (by rw [ea_at, u₁.other _ (by decide), ha.env.rbx]) (by rw [u₁.wr]; exact in_scr hp ha.env.wr (by bdd_omega))
       fun s₂ g₂ m₂ r₂ w₂ => wp_nil ?_
   have hm : s₂.mem = s.mem.writeW (at' σ (32 * i + 8 * K)) (s.mem.readW (sd σ + BitVec.ofNat 64 (34 * K + 8 * i)) 64) := by
     rw [m₂, u₁.mem, u₁.gpr]
-  refine ⟨ha.write (e := 32 * i + 8 * K) (n := 8) (by omega) ⟨_, hm⟩ (r₂.trans u₁.rd) (w₂.trans u₁.wr)
+  refine ⟨ha.write (e := 32 * i + 8 * K) (n := 8) (by bdd_omega) ⟨_, hm⟩ (r₂.trans u₁.rd) (w₂.trans u₁.wr)
     fun r hr => by rw [g₂, u₁.other r hr], fun k hk q hq => ?_⟩
-  rw [hm, bytes_write hb _ (by decide) (by omega) hk hq]
+  rw [hm, bytes_write hb _ (by decide) (by bdd_omega) hk hq]
   simp only [off4]
   by_cases hc : 32 * i + 8 * K ≤ 32 * (q / 8) + 8 * k + q % 8 ∧ 32 * (q / 8) + 8 * k + q % 8 < 32 * i + 8 * K + 64 / 8
-  · have hk' : k = K := by omega
-    have hq' : q / 8 = i := by omega
+  · have hk' : k = K := by bdd_omega
+    have hq' : q / 8 = i := by bdd_omega
     subst hk'
-    rw [ifp hc, HF, ifp (.inr ⟨rfl, by omega⟩),
-      show 8 * (32 * (q / 8) + 8 * k + q % 8 - (32 * i + 8 * k)) = 8 * (q % 8) by omega,
-      byte_readW _ _ (by omega), Offset.add_add, show 34 * k + 8 * i + q % 8 = 34 * k + q by omega,
-      seed_byte hp ha.env.frame hK (by omega)]
+    rw [ifp hc, HF, ifp (.inr ⟨rfl, by bdd_omega⟩),
+      show 8 * (32 * (q / 8) + 8 * k + q % 8 - (32 * i + 8 * k)) = 8 * (q % 8) by bdd_omega,
+      byte_readW _ _ (by bdd_omega), Offset.add_add, show 34 * k + 8 * i + q % 8 = 34 * k + q by bdd_omega,
+      seed_byte hp ha.env.frame hK (by bdd_omega)]
   · rw [ifn hc, HF, HF]
     by_cases hc' : (k < K ∧ q < 34) ∨ (k = K ∧ q < 8 * i)
-    · rw [ifp hc', ifp (by omega)]
-    · rw [ifn hc', ifn (by omega)]
+    · rw [ifp hc', ifp (by bdd_omega)]
+    · rw [ifn hc', ifn (by bdd_omega)]
 
 theorem byte_setWidth (b : Byte) : BitVec.setWidth 8 (BitVec.setWidth 64 b) = b := by
   apply BitVec.eq_of_getLsbD_eq; intro j hj; simp [hj]
@@ -228,25 +229,25 @@ theorem byte_step {σ : State} (hp : Pre σ) {m₁ : Mem} {K j : Nat} (hK : K < 
         SB σ s'.mem fun k q => if (k < K ∧ q < 34) ∨ (k = K ∧ q < 32 + (j + 1)) then Bq σ k q else 0) := by
   obtain ⟨ha, hb⟩ := h
   refine wp_movzx8 (a := sd σ + BitVec.ofNat 64 (34 * K + (32 + j))) (by rw [ea_at, ha.env.r12])
-    (in_sd' hp ha.env.rd ha.env.wr (by omega)) fun s₁ u₁ => wp_store8 (a := at' σ (128 + 8 * K + j))
-      (by rw [ea_at, u₁.other _ (by decide), ha.env.rbx]) (by rw [u₁.wr]; exact in_scr hp ha.env.wr (by omega))
+    (in_sd' hp ha.env.rd ha.env.wr (by bdd_omega)) fun s₁ u₁ => wp_store8 (a := at' σ (128 + 8 * K + j))
+      (by rw [ea_at, u₁.other _ (by decide), ha.env.rbx]) (by rw [u₁.wr]; exact in_scr hp ha.env.wr (by bdd_omega))
       fun s₂ g₂ m₂ r₂ w₂ => wp_nil ?_
   have hm : s₂.mem = s.mem.writeW (at' σ (128 + 8 * K + j)) (s.mem (sd σ + BitVec.ofNat 64 (34 * K + (32 + j)))) := by
     rw [m₂, u₁.mem, u₁.gpr, byte_setWidth]
-  refine ⟨ha.write (e := 128 + 8 * K + j) (n := 1) (by omega) ⟨_, hm⟩ (r₂.trans u₁.rd) (w₂.trans u₁.wr)
+  refine ⟨ha.write (e := 128 + 8 * K + j) (n := 1) (by bdd_omega) ⟨_, hm⟩ (r₂.trans u₁.rd) (w₂.trans u₁.wr)
     fun r hr => by rw [g₂, u₁.other r hr], fun k hk q hq => ?_⟩
-  rw [hm, bytes_write hb _ (by decide) (by omega) hk hq]
+  rw [hm, bytes_write hb _ (by decide) (by bdd_omega) hk hq]
   simp only [off4]
   by_cases hc : 128 + 8 * K + j ≤ 32 * (q / 8) + 8 * k + q % 8 ∧ 32 * (q / 8) + 8 * k + q % 8 < 128 + 8 * K + j + 8 / 8
-  · have hk' : k = K := by omega
-    have hq' : q = 32 + j := by omega
+  · have hk' : k = K := by bdd_omega
+    have hq' : q = 32 + j := by bdd_omega
     subst hk' hq'
-    rw [ifp hc, ifp (.inr ⟨rfl, by omega⟩), show 8 * (32 * ((32 + j) / 8) + 8 * k + (32 + j) % 8 -
-      (128 + 8 * k + j)) = 0 by omega, Proof.Sha3.extractLsb'_byte, seed_byte hp ha.env.frame hK (by omega)]
+    rw [ifp hc, ifp (.inr ⟨rfl, by bdd_omega⟩), show 8 * (32 * ((32 + j) / 8) + 8 * k + (32 + j) % 8 -
+      (128 + 8 * k + j)) = 0 by bdd_omega, Proof.Sha3.extractLsb'_byte, seed_byte hp ha.env.frame hK (by bdd_omega)]
   · rw [ifn hc]
     by_cases hc' : (k < K ∧ q < 34) ∨ (k = K ∧ q < 32 + j)
-    · rw [ifp hc', ifp (by omega)]
-    · rw [ifn hc', ifn (by omega)]
+    · rw [ifp hc', ifp (by bdd_omega)]
+    · rw [ifn hc', ifn (by bdd_omega)]
 
 theorem seedLanes_eq (K : Nat) : seedLanes K = (List.range 4).flatMap (fun i =>
     [.mov .rax (.mem (at_ .r12 (34 * K + 8 * i))), .store (at_ .rbx (32 * i + 8 * K)) .rax]) ++
@@ -266,7 +267,7 @@ theorem seed_step {σ : State} (hp : Pre σ) {m₁ : Mem} {K : Nat} (hK : K < 4)
   · rw [h.2 k hk q hq, GF, HF]
     by_cases hc : k < K ∧ q < 34
     · rw [ifp hc, ifp (.inl hc)]
-    · rw [ifn hc, ifn (by omega)]
+    · rw [ifn hc, ifn (by bdd_omega)]
   rw [WP.block_append_iff]
   refine WP.mono (byte_step hp (j := 0) hK (by decide) ⟨h₁.1, fun k hk q hq => ?_⟩) fun s₂ h₂ =>
     WP.mono (byte_step hp (j := 1) hK (by decide) h₂) fun s₃ ⟨h₃, b₃⟩ => ⟨h₃, fun k hk q hq => ?_⟩
@@ -295,18 +296,18 @@ theorem cbyte_step {σ : State} (hp : Pre σ) {m₁ : Mem} {F : Nat → Nat → 
         SB σ s'.mem fun k q => if k = K ∧ q = q₀ then c else F k q) := by
   obtain ⟨ha, hb⟩ := h
   refine wp_store8 (a := at' σ (32 * (q₀ / 8) + 8 * K + q₀ % 8)) (by rw [ea_at, ha.env.rbx])
-    (by exact in_scr hp ha.env.wr (by omega)) fun s₂ g₂ m₂ r₂ w₂ => wp_nil ?_
+    (by exact in_scr hp ha.env.wr (by bdd_omega)) fun s₂ g₂ m₂ r₂ w₂ => wp_nil ?_
   have hm : s₂.mem = s.mem.writeW (at' σ (32 * (q₀ / 8) + 8 * K + q₀ % 8)) c := by
     rw [m₂, hax, byte_setWidth]
-  refine ⟨ha.write (n := 1) (by omega) ⟨_, hm⟩ r₂ w₂ fun r _ => by rw [g₂], by rw [g₂], fun k hk q hq => ?_⟩
-  rw [hm, bytes_write hb _ (by decide) (by omega) hk hq]
+  refine ⟨ha.write (n := 1) (by bdd_omega) ⟨_, hm⟩ r₂ w₂ fun r _ => by rw [g₂], by rw [g₂], fun k hk q hq => ?_⟩
+  rw [hm, bytes_write hb _ (by decide) (by bdd_omega) hk hq]
   simp only [off4]
   by_cases hc : 32 * (q₀ / 8) + 8 * K + q₀ % 8 ≤ 32 * (q / 8) + 8 * k + q % 8 ∧
       32 * (q / 8) + 8 * k + q % 8 < 32 * (q₀ / 8) + 8 * K + q₀ % 8 + 8 / 8
-  · have e : k = K ∧ q = q₀ := by omega
-    rw [ifp hc, ifp e, show 8 * (32 * (q / 8) + 8 * k + q % 8 - (32 * (q₀ / 8) + 8 * K + q₀ % 8)) = 0 by omega,
+  · have e : k = K ∧ q = q₀ := by bdd_omega
+    rw [ifp hc, ifp e, show 8 * (32 * (q / 8) + 8 * k + q % 8 - (32 * (q₀ / 8) + 8 * K + q₀ % 8)) = 0 by bdd_omega,
       Proof.Sha3.extractLsb'_byte]
-  · rw [ifn hc, ifn (by omega)]
+  · rw [ifn hc, ifn (by bdd_omega)]
 
 /-- The four states hold their padded seeds. -/
 def PF (σ : State) (k q : Nat) : Byte :=
@@ -331,17 +332,17 @@ theorem cbytes_ok {σ : State} (hp : Pre σ) {m₁ : Mem} {F : Nat → Nat → B
   · rw [hb' k hk q hq]
     dsimp only
     by_cases e : k = K ∧ q = q₀
-    · rw [ifp e, ifp (by omega)]
+    · rw [ifp e, ifp (by bdd_omega)]
     · rw [ifn e]
       by_cases e' : k < K ∧ q = q₀
-      · rw [ifp e', ifp (by omega)]
-      · rw [ifn e', ifn (by omega)]
-  · rw [h.2 k hk q hq]; dsimp only; rw [ifn (by omega)]
+      · rw [ifp e', ifp (by bdd_omega)]
+      · rw [ifn e', ifn (by bdd_omega)]
+  · rw [h.2 k hk q hq]; dsimp only; rw [ifn (by bdd_omega)]
   · rw [hb k hk q hq]
     dsimp only
     by_cases e : q = q₀
     · rw [ifp e, ifp ⟨hk, e⟩]
-    · rw [ifn e, ifn (by omega)]
+    · rw [ifn e, ifn (by bdd_omega)]
 
 theorem absorb4_eq : absorb4 = zero4 ++ ((List.range 4).flatMap seedLanes ++
     (([.mov32 .rax (.imm 0x1f)] : List Instr) ++ ((List.range 4).flatMap (fun k =>
@@ -359,11 +360,11 @@ theorem absorb_ok {σ : State} (hp : Pre σ) {m₁ : Mem} {s : State} (h : AI σ
   rw [WP.block_append_iff]
   refine WP.mono (wp_range_flatMap (M := isa) (fun K s => AI σ m₁ s ∧ SB σ s.mem (GF σ K))
     (fun K s hK h => seed_step hp hK h) 4 (Nat.le_refl _) s₁ ⟨h₁, fun k hk q hq => ?_⟩) fun s₂ h₂ => ?_
-  · rw [z₁ k hk q hq, GF, ifn (by omega)]
+  · rw [z₁ k hk q hq, GF, ifn (by bdd_omega)]
   rw [WP.block_append_iff]
   refine WP.mono (wp_mov32i (is := []) fun s₃ u₃ => VG.Proof.Sha3.X86_64.wp_nil
     (Q := fun s₃ => AI σ m₁ s₃ ∧ s₃.gpr .rax = (0x1f : Byte).setWidth 64 ∧ SB σ s₃.mem (GF σ 4))
-    ⟨h₂.1.write (e := 0) (n := 0) (by omega) ⟨0, ?_⟩ u₃.rd u₃.wr fun r hr => u₃.other r hr, by rw [u₃.gpr]; rfl,
+    ⟨h₂.1.write (e := 0) (n := 0) (by bdd_omega) ⟨0, ?_⟩ u₃.rd u₃.wr fun r hr => u₃.other r hr, by rw [u₃.gpr]; rfl,
       by rw [u₃.mem]; exact h₂.2⟩) fun s₃ ⟨a₃, x₃, b₃⟩ => ?_
   · rw [u₃.mem]; funext x; simp [Mem.writeW, Mem.write]
   rw [WP.block_append_iff]
@@ -372,7 +373,7 @@ theorem absorb_ok {σ : State} (hp : Pre σ) {m₁ : Mem} {s : State} (h : AI σ
   refine WP.mono (wp_mov32i (is := []) fun s₅ u₅ => VG.Proof.Sha3.X86_64.wp_nil
     (Q := fun s₅ => AI σ m₁ s₅ ∧ s₅.gpr .rax = (0x80 : Byte).setWidth 64 ∧
       SB σ s₅.mem fun k q => if q = 34 then 0x1f else GF σ 4 k q)
-    ⟨a₄.write (e := 0) (n := 0) (by omega) ⟨0, ?_⟩ u₅.rd u₅.wr fun r hr => u₅.other r hr, by rw [u₅.gpr]; rfl,
+    ⟨a₄.write (e := 0) (n := 0) (by bdd_omega) ⟨0, ?_⟩ u₅.rd u₅.wr fun r hr => u₅.other r hr, by rw [u₅.gpr]; rfl,
       by rw [u₅.mem]; exact b₄⟩) fun s₅ ⟨a₅, x₅, b₅⟩ => ?_
   · rw [u₅.mem]; funext x; simp [Mem.writeW, Mem.write]
   refine WP.mono (cbytes_ok hp (by decide) x₅ ⟨a₅, b₅⟩) fun s₆ ⟨a₆, b₆⟩ => ⟨a₆, fun k hk q hq => ?_⟩
@@ -380,11 +381,11 @@ theorem absorb_ok {σ : State} (hp : Pre σ) {m₁ : Mem} {s : State} (h : AI σ
   dsimp only
   rw [GF]
   by_cases e1 : q < 34
-  · rw [ifn (show ¬ q = 167 by omega), ifn (show ¬ q = 34 by omega), ifp (show k < 4 ∧ q < 34 from ⟨hk, e1⟩),
+  · rw [ifn (show ¬ q = 167 by bdd_omega), ifn (show ¬ q = 34 by bdd_omega), ifp (show k < 4 ∧ q < 34 from ⟨hk, e1⟩),
       ifp e1]
-  · rw [ifn e1, ifn (show ¬ (k < 4 ∧ q < 34) by omega)]
+  · rw [ifn e1, ifn (show ¬ (k < 4 ∧ q < 34) by bdd_omega)]
     by_cases e2 : q = 34
-    · rw [ifn (show ¬ q = 167 by omega), ifp e2, ifp e2]
+    · rw [ifn (show ¬ q = 167 by bdd_omega), ifp e2, ifp e2]
     · rw [ifn e2, ifn e2]
 
 end VG.Proof.MlKem.X86_64.S4

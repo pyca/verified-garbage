@@ -279,7 +279,7 @@ theorem prologue_ok {s₀ : State} (hp : Pre s₀) : WP isa (.block sampleProlog
       sv₈, f₈, fun r hr => by rw [k₈.vcs r hr, h₄.vcs r hr, h₃.vcs r hr, h₂.vcs r hr, h₁.vcs r hr]⟩
   have z9 : s₈.gpr .x9 = 0 := by rw [e₈]; rfl
   have c2 : s₈.gpr .x2 = scP s₀ := by rw [h₈.get .x2, h₇.get .x2, h₆.get .x2, h₅.get .x2, g₄]
-  refine WP.mono (WP.preservedV (zst_ok hp 25 (by decide) z9 c2 mid₈.wr) (hc := by decide +kernel)) fun s₉ ⟨⟨g₉, r₉, w₉, p₉, z₉, f₉⟩, vc₉⟩ => ?_
+  refine WP.mono (WP.preservedV (zst_ok hp 25 (by decide) z9 c2 mid₈.wr) (hc := by lit_decide)) fun s₉ ⟨⟨g₉, r₉, w₉, p₉, z₉, f₉⟩, vc₉⟩ => ?_
   have mid₉ : Mid s₀ s₉ :=
     ⟨by rw [r₉, mid₈.rd], by rw [w₉, mid₈.wr], by rw [p₉, mid₈.sp], by rw [g₉, mid₈.x24],
       by rw [g₉, mid₈.x25], by rw [g₉, mid₈.x26], fun r hr a b c d => by rw [g₉, mid₈.cs r hr a b c d],

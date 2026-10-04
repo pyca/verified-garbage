@@ -23,16 +23,32 @@ def artifacts : List Artifact := [
   { Spec.Blake2.updateBApi with
     target := Arm.target
     doc := Spec.Blake2.updateBApi.doc
-    code := Impl.Blake2.Arm.Stream.update (w := 64) "vg_blake2b_compress" Impl.Blake2.Arm.B.compress
-    contract := Spec.Blake2.updateBContract Arm.abi 16
-    stack := 16
-    verified := Proof.Blake2.ArmB.updateB_verified
+    code := Impl.StackScratch.Arm.withStackScratch 592 2 (Impl.Blake2.Arm.Stream.update (w := 64) "vg_blake2b_compress" Impl.Blake2.Arm.B.compress)
+    contract := Spec.Blake2.updateBContract Arm.abi (16 + 592)
+    stack := 16 + 592
+    verified := Proof.Blake2.ArmB.updateB_framed
     spSafe := Code.all_of_forall (fun _ => rfl) _ },
   { Spec.Blake2.finalizeBApi with
     target := Arm.target
     doc := Spec.Blake2.finalizeBApi.doc
+    code := Impl.StackScratch.Arm.withStackScratch 592 1 (Impl.Blake2.Arm.Stream.finalize (w := 64) "vg_blake2b_compress" Impl.Blake2.Arm.B.compress)
+    contract := Spec.Blake2.finalizeBContract Arm.abi (16 + 592)
+    stack := 16 + 592
+    verified := Proof.Blake2.ArmB.finalizeB_framed
+    spSafe := Code.all_of_forall (fun _ => rfl) _ },
+  { Spec.Blake2.updateBScratchApi with
+    target := Arm.target
+    doc := Spec.Blake2.updateBScratchApi.doc
+    code := Impl.Blake2.Arm.Stream.update (w := 64) "vg_blake2b_compress" Impl.Blake2.Arm.B.compress
+    contract := Spec.Blake2.updateBScratchContract Arm.abi 16
+    stack := 16
+    verified := Proof.Blake2.ArmB.updateB_verified
+    spSafe := Code.all_of_forall (fun _ => rfl) _ },
+  { Spec.Blake2.finalizeBScratchApi with
+    target := Arm.target
+    doc := Spec.Blake2.finalizeBScratchApi.doc
     code := Impl.Blake2.Arm.Stream.finalize (w := 64) "vg_blake2b_compress" Impl.Blake2.Arm.B.compress
-    contract := Spec.Blake2.finalizeBContract Arm.abi 16
+    contract := Spec.Blake2.finalizeBScratchContract Arm.abi 16
     stack := 16
     verified := Proof.Blake2.ArmB.finalizeB_verified
     spSafe := Code.all_of_forall (fun _ => rfl) _ }]

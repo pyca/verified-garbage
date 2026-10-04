@@ -23,16 +23,32 @@ def artifacts : List Artifact := [
   { Spec.Blake2.updateSApi with
     target := Arm.target
     doc := Spec.Blake2.updateSApi.doc
-    code := Impl.Blake2.Arm.Stream.update (w := 32) "vg_blake2s_compress" Impl.Blake2.Arm.S.compress
-    contract := Spec.Blake2.updateSContract Arm.abi 16
-    stack := 16
-    verified := Proof.Blake2.Arm.Blake2s.updateS_verified
+    code := Impl.StackScratch.Arm.withStackScratch 592 2 (Impl.Blake2.Arm.Stream.update (w := 32) "vg_blake2s_compress" Impl.Blake2.Arm.S.compress)
+    contract := Spec.Blake2.updateSContract Arm.abi (16 + 592)
+    stack := 16 + 592
+    verified := Proof.Blake2.Arm.Blake2s.updateS_framed
     spSafe := Code.all_of_forall (fun _ => rfl) _ },
   { Spec.Blake2.finalizeSApi with
     target := Arm.target
     doc := Spec.Blake2.finalizeSApi.doc
+    code := Impl.StackScratch.Arm.withStackScratch 592 1 (Impl.Blake2.Arm.Stream.finalize (w := 32) "vg_blake2s_compress" Impl.Blake2.Arm.S.compress)
+    contract := Spec.Blake2.finalizeSContract Arm.abi (16 + 592)
+    stack := 16 + 592
+    verified := Proof.Blake2.Arm.Blake2s.finalizeS_framed
+    spSafe := Code.all_of_forall (fun _ => rfl) _ },
+  { Spec.Blake2.updateSScratchApi with
+    target := Arm.target
+    doc := Spec.Blake2.updateSScratchApi.doc
+    code := Impl.Blake2.Arm.Stream.update (w := 32) "vg_blake2s_compress" Impl.Blake2.Arm.S.compress
+    contract := Spec.Blake2.updateSScratchContract Arm.abi 16
+    stack := 16
+    verified := Proof.Blake2.Arm.Blake2s.updateS_verified
+    spSafe := Code.all_of_forall (fun _ => rfl) _ },
+  { Spec.Blake2.finalizeSScratchApi with
+    target := Arm.target
+    doc := Spec.Blake2.finalizeSScratchApi.doc
     code := Impl.Blake2.Arm.Stream.finalize (w := 32) "vg_blake2s_compress" Impl.Blake2.Arm.S.compress
-    contract := Spec.Blake2.finalizeSContract Arm.abi 16
+    contract := Spec.Blake2.finalizeSScratchContract Arm.abi 16
     stack := 16
     verified := Proof.Blake2.Arm.Blake2s.finalizeS_verified
     spSafe := Code.all_of_forall (fun _ => rfl) _ }]

@@ -6,7 +6,7 @@ import VerifiedGarbage.Impl.Blake2.Arm.CompressB
 
 `vg_argon2_hprime(input = r0, input_len = r1, out = r2, out_len = r3,
 scratch = [sp])`. Every hash is computed by the ARMv7 BLAKE2b streaming
-functions (`vg_blake2b_init`, `_update`, `_finalize`), each called with its
+functions (`vg_blake2b_init`, `_update_scratch`, `_finalize_scratch`), each called with its
 stack arguments pushed in a frame of their own (`update`: `push {r9, r10,
 r12, lr}`, the data, its length and the functions' scratch, and a word that
 keeps the stack pointer 8-byte aligned; `finalize`: `push {r9, r12}`, the
@@ -41,8 +41,8 @@ def baseSlot : Nat := 840
 def pfxOff : Nat := 832
 
 def initName : String := "vg_blake2b_init"
-def updateName : String := "vg_blake2b_update"
-def finalizeName : String := "vg_blake2b_finalize"
+def updateName : String := "vg_blake2b_update_scratch"
+def finalizeName : String := "vg_blake2b_finalize_scratch"
 
 def initCode : Prog isa := Impl.Blake2.Arm.Stream.init Spec.Blake2.b
 def updateCode : Prog isa :=

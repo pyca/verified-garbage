@@ -81,7 +81,7 @@ theorem init_ct : RelCT isa (Two L g₁ g₂ v₁ v₂ m₁ m₂ (Slots L initVa
 
 theorem update_ct (v : Whole.Backend) (hL : L.Ok) :
     RelCT isa (Two L g₁ g₂ v₁ v₂ m₁ m₂ (Slots L updateValues))
-      (.call (Spec.Sha512.updateApi.name ++ v.suffix) v.update)
+      (.call (Spec.Sha512.updateScratchApi.name ++ v.suffix) v.update)
       (Two L g₁ g₂ v₁ v₂ m₁ m₂ fun _ => True) := by
   apply call_ct v.update_verified.1 v.update_verified.2.1 (Whole.update_depth v) (fun _ hsp h => update_ready hL hsp h)
   · intro a b ar aw br bw hsp hg
@@ -92,7 +92,7 @@ theorem update_ct (v : Whole.Backend) (hL : L.Ok) :
 
 theorem finalize_ct (v : Whole.Backend) (hL : L.Ok) :
     RelCT isa (Two L g₁ g₂ v₁ v₂ m₁ m₂ (Slots L finalizeValues))
-      (.call (Spec.Sha512.finalizeApi.name ++ v.suffix) v.finalize)
+      (.call (Spec.Sha512.finalizeScratchApi.name ++ v.suffix) v.finalize)
       (Two L g₁ g₂ v₁ v₂ m₁ m₂ fun _ => True) := by
   apply call_ct v.finalize_verified.1 v.finalize_verified.2.1 (Whole.finalize_depth v) (fun _ hsp h => finalize_ready hL hsp h)
   · intro a b ar aw br bw hsp hg

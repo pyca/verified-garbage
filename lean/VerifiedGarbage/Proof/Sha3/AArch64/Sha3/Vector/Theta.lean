@@ -1,5 +1,4 @@
 import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Semantics
-import Mathlib.Tactic.IntervalCases
 
 namespace VG.Proof.Sha3.AArch64.Sha3.Vector
 
@@ -40,7 +39,8 @@ theorem theta_d (σ : Low) (A : Spec.Sha3.State) (h : ALanes σ A) (x : Nat) (hx
     runLow theta σ (dreg x) = D A x := by
   have ha : ∀ i (hi : i < 25), σ (vreg i) = A[i]! := fun i hi => (h i hi).trans
     (VG.Proof.Sha3.getElem!_eq A hi).symm
-  interval_cases x <;>
+  obtain rfl | rfl | rfl | rfl | rfl : x = 0 ∨ x = 1 ∨ x = 2 ∨ x = 3 ∨ x = 4 := by omega
+  all_goals
     simp only [runLow, theta, List.foldl_cons, List.foldl_nil, opLow, put, dreg,
       List.getD_cons_succ, List.getD_cons_zero, reduceCtorEq, ite_true, ite_false]
   all_goals

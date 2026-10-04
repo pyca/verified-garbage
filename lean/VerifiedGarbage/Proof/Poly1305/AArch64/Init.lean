@@ -109,7 +109,7 @@ theorem init_ok (s : State) (hs : Proof.Poly1305.initAArch64.pre s) :
       Proof.Poly1305.initAArch64.post s s' := by
   obtain ⟨h1, h2, h3⟩ := hs
   obtain ⟨t, s', he, h⟩ := init_correct ⟨h1, h2, h3⟩
-  exact ⟨t, s', he, ⟨fun r hr => Exec.gpr (init_untouched r hr) he, Exec.sp he, Exec.preservedV he⟩, h⟩
+  exact ⟨t, s', he, ⟨fun r hr => Exec.gpr (init_untouched r hr) he, Exec.sp he, Exec.preservedV he (by lit_decide)⟩, h⟩
 
 theorem init_ct : ConstantTime isa Proof.Poly1305.initAArch64.pre Proof.Poly1305.initAArch64.pub
     Impl.Poly1305.AArch64.init := by

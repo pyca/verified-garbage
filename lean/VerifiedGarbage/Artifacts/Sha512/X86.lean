@@ -44,18 +44,34 @@ def artifacts : List Artifact := [
   { Spec.Sha512.updateApi with
     target := X86.target
     doc := Spec.Sha512.updateApi.doc
-    code := Impl.Sha512.X86.Stream.update
-    contract := Spec.Sha512.updateContract X86.abi 20
-    stack := 20
+    code := Impl.StackScratch.X86.withStackScratch 1404 5 Impl.Sha512.X86.Stream.update
+    contract := Spec.Sha512.updateContract X86.abi (20 + 1404)
+    stack := 20 + 1404
     verified := Proof.Sha512.X86.Shared.update
     spSafe := Code.all_of_allInstrs (by lit_decide) },
   { Spec.Sha512.finalizeApi with
     target := X86.target
     doc := Spec.Sha512.finalizeApi.doc
-    code := Impl.Sha512.X86.Stream.finalize
-    contract := Spec.Sha512.finalizeContract X86.abi 20
-    stack := 20
+    code := Impl.StackScratch.X86.withStackScratch 1400 4 Impl.Sha512.X86.Stream.finalize
+    contract := Spec.Sha512.finalizeContract X86.abi (20 + 1400)
+    stack := 20 + 1400
     verified := Proof.Sha512.X86.Shared.finalize
+    spSafe := Code.all_of_allInstrs (by lit_decide) },
+  { Spec.Sha512.updateScratchApi with
+    target := X86.target
+    doc := Spec.Sha512.updateScratchApi.doc
+    code := Impl.Sha512.X86.Stream.update
+    contract := Spec.Sha512.updateScratchContract X86.abi 20
+    stack := 20
+    verified := Proof.Sha512.X86.Shared.updateScratch
+    spSafe := Code.all_of_allInstrs (by lit_decide) },
+  { Spec.Sha512.finalizeScratchApi with
+    target := X86.target
+    doc := Spec.Sha512.finalizeScratchApi.doc
+    code := Impl.Sha512.X86.Stream.finalize
+    contract := Spec.Sha512.finalizeScratchContract X86.abi 20
+    stack := 20
+    verified := Proof.Sha512.X86.Shared.finalizeScratch
     spSafe := Code.all_of_allInstrs (by lit_decide) }]
 
 end VG.Artifacts.Sha512.X86

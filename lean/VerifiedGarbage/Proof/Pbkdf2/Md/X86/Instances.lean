@@ -3,6 +3,7 @@ import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Lit
 import VerifiedGarbage.Proof.Pbkdf2.Md.X86.IterateCT
 import VerifiedGarbage.Proof.Pbkdf2.Md.X86.HmacFinCT
 import VerifiedGarbage.Proof.Pbkdf2.Md.X86.HmacInitCT
+import VerifiedGarbage.Proof.Framework.TaintBatch
 
 /-!
 # HMAC's `init` and `finalize` and PBKDF2's `iterate` on x86 (32-bit): the instances
@@ -108,18 +109,22 @@ theorem initSat_args (S sc : Nat) :
 
 /-! ## MD5 -/
 
-theorem md5_iterChecks : Iterate.Checks md5M where
-  pro := ⟨_, by taint_decide⟩
-  load := ⟨_, by taint_decide⟩
-  mid := ⟨_, by taint_decide⟩
-  tail := ⟨_, by taint_decide⟩
-  restore := ⟨_, by taint_decide⟩
+theorem md5_iterChecks : Iterate.Checks md5M := by
+  refine {
+    pro := ⟨?_, ?_⟩
+    load := ⟨?_, ?_⟩
+    mid := ⟨?_, ?_⟩
+    tail := ⟨?_, ?_⟩
+    restore := ⟨?_, ?_⟩ }
+  taint_decide_all
 
-theorem md5_finChecks : HmacFin.Checks md5M where
-  pro := ⟨_, by taint_decide⟩
-  fin1 := ⟨_, by taint_decide⟩
-  mid := ⟨_, by taint_decide⟩
-  out := ⟨_, by taint_decide⟩
+theorem md5_finChecks : HmacFin.Checks md5M := by
+  refine {
+    pro := ⟨?_, ?_⟩
+    fin1 := ⟨?_, ?_⟩
+    mid := ⟨?_, ?_⟩
+    out := ⟨?_, ?_⟩ }
+  taint_decide_all
 
 theorem md5_iterImp : (iterW Spec.Hmac.md5S 48).Implies (Spec.Hmac.md5I.iterateContract X86.abi 48) := by
   obtain ⟨a0, a1, a2, a3, a4, e, esp⟩ := iterSat_args 80 16 48
@@ -141,11 +146,13 @@ theorem md5_iterate : Verified X86.target md5M.iterate (Spec.Hmac.md5I.iterateCo
 theorem md5_finalize : Verified X86.target md5M.hmacFin (Spec.Hmac.md5I.finalizeContract X86.abi 48) :=
   (HmacFin.verifiedW md5Ok md5_finChecks (by decide) md5_finImp.sat_left).of_implies md5_finImp
 
-theorem md5_initChecks : HmacInit.Checks md5M where
-  pro := ⟨_, by taint_decide⟩
-  blocks := ⟨_, by taint_decide⟩
-  toOuter := ⟨_, by taint_decide⟩
-  restore := ⟨_, by taint_decide⟩
+theorem md5_initChecks : HmacInit.Checks md5M := by
+  refine {
+    pro := ⟨?_, ?_⟩
+    blocks := ⟨?_, ?_⟩
+    toOuter := ⟨?_, ?_⟩
+    restore := ⟨?_, ?_⟩ }
+  taint_decide_all
 
 theorem md5_initImp : (initW Spec.Hmac.md5S 48).Implies (Spec.Hmac.md5I.initContract X86.abi 48) := by
   obtain ⟨a0, a1, a2, a3, a4, e, esp⟩ := initSat_args 80 48
@@ -159,18 +166,22 @@ theorem md5_init : Verified X86.target md5M.hmacInit (Spec.Hmac.md5I.initContrac
 
 /-! ## SHA-1 -/
 
-theorem sha1_iterChecks : Iterate.Checks sha1M where
-  pro := ⟨_, by taint_decide⟩
-  load := ⟨_, by taint_decide⟩
-  mid := ⟨_, by taint_decide⟩
-  tail := ⟨_, by taint_decide⟩
-  restore := ⟨_, by taint_decide⟩
+theorem sha1_iterChecks : Iterate.Checks sha1M := by
+  refine {
+    pro := ⟨?_, ?_⟩
+    load := ⟨?_, ?_⟩
+    mid := ⟨?_, ?_⟩
+    tail := ⟨?_, ?_⟩
+    restore := ⟨?_, ?_⟩ }
+  taint_decide_all
 
-theorem sha1_finChecks : HmacFin.Checks sha1M where
-  pro := ⟨_, by taint_decide⟩
-  fin1 := ⟨_, by taint_decide⟩
-  mid := ⟨_, by taint_decide⟩
-  out := ⟨_, by taint_decide⟩
+theorem sha1_finChecks : HmacFin.Checks sha1M := by
+  refine {
+    pro := ⟨?_, ?_⟩
+    fin1 := ⟨?_, ?_⟩
+    mid := ⟨?_, ?_⟩
+    out := ⟨?_, ?_⟩ }
+  taint_decide_all
 
 theorem sha1_iterImp : (iterW Spec.Hmac.sha1S 56).Implies (Spec.Hmac.sha1I.iterateContract X86.abi 48) := by
   obtain ⟨a0, a1, a2, a3, a4, e, esp⟩ := iterSat_args 84 20 56
@@ -192,11 +203,13 @@ theorem sha1_iterate : Verified X86.target sha1M.iterate (Spec.Hmac.sha1I.iterat
 theorem sha1_finalize : Verified X86.target sha1M.hmacFin (Spec.Hmac.sha1I.finalizeContract X86.abi 48) :=
   (HmacFin.verifiedW sha1Ok sha1_finChecks (by decide) sha1_finImp.sat_left).of_implies sha1_finImp
 
-theorem sha1_initChecks : HmacInit.Checks sha1M where
-  pro := ⟨_, by taint_decide⟩
-  blocks := ⟨_, by taint_decide⟩
-  toOuter := ⟨_, by taint_decide⟩
-  restore := ⟨_, by taint_decide⟩
+theorem sha1_initChecks : HmacInit.Checks sha1M := by
+  refine {
+    pro := ⟨?_, ?_⟩
+    blocks := ⟨?_, ?_⟩
+    toOuter := ⟨?_, ?_⟩
+    restore := ⟨?_, ?_⟩ }
+  taint_decide_all
 
 theorem sha1_initImp : (initW Spec.Hmac.sha1S 56).Implies (Spec.Hmac.sha1I.initContract X86.abi 48) := by
   obtain ⟨a0, a1, a2, a3, a4, e, esp⟩ := initSat_args 84 56
@@ -210,18 +223,22 @@ theorem sha1_init : Verified X86.target sha1M.hmacInit (Spec.Hmac.sha1I.initCont
 
 /-! ## SHA-384 -/
 
-theorem sha384_iterChecks : Iterate.Checks sha384M where
-  pro := ⟨_, by taint_decide⟩
-  load := ⟨_, by taint_decide⟩
-  mid := ⟨_, by taint_decide⟩
-  tail := ⟨_, by taint_decide⟩
-  restore := ⟨_, by taint_decide⟩
+theorem sha384_iterChecks : Iterate.Checks sha384M := by
+  refine {
+    pro := ⟨?_, ?_⟩
+    load := ⟨?_, ?_⟩
+    mid := ⟨?_, ?_⟩
+    tail := ⟨?_, ?_⟩
+    restore := ⟨?_, ?_⟩ }
+  taint_decide_all
 
-theorem sha384_finChecks : HmacFin.Checks sha384M where
-  pro := ⟨_, by taint_decide⟩
-  fin1 := ⟨_, by taint_decide⟩
-  mid := ⟨_, by taint_decide⟩
-  out := ⟨_, by taint_decide⟩
+theorem sha384_finChecks : HmacFin.Checks sha384M := by
+  refine {
+    pro := ⟨?_, ?_⟩
+    fin1 := ⟨?_, ?_⟩
+    mid := ⟨?_, ?_⟩
+    out := ⟨?_, ?_⟩ }
+  taint_decide_all
 
 theorem sha384_iterImp : (iterW Spec.Hmac.sha384S 234).Implies (Spec.Hmac.sha384I.iterateContract X86.abi 48) := by
   obtain ⟨a0, a1, a2, a3, a4, e, esp⟩ := iterSat_args 192 48 234
@@ -243,11 +260,13 @@ theorem sha384_iterate : Verified X86.target sha384M.iterate (Spec.Hmac.sha384I.
 theorem sha384_finalize : Verified X86.target sha384M.hmacFin (Spec.Hmac.sha384I.finalizeContract X86.abi 48) :=
   (HmacFin.verifiedW sha384Ok sha384_finChecks (by decide) sha384_finImp.sat_left).of_implies sha384_finImp
 
-theorem sha384_initChecks : HmacInit.Checks sha384M where
-  pro := ⟨_, by taint_decide⟩
-  blocks := ⟨_, by taint_decide⟩
-  toOuter := ⟨_, by taint_decide⟩
-  restore := ⟨_, by taint_decide⟩
+theorem sha384_initChecks : HmacInit.Checks sha384M := by
+  refine {
+    pro := ⟨?_, ?_⟩
+    blocks := ⟨?_, ?_⟩
+    toOuter := ⟨?_, ?_⟩
+    restore := ⟨?_, ?_⟩ }
+  taint_decide_all
 
 theorem sha384_initImp : (initW Spec.Hmac.sha384S 234).Implies (Spec.Hmac.sha384I.initContract X86.abi 48) := by
   obtain ⟨a0, a1, a2, a3, a4, e, esp⟩ := initSat_args 192 234
@@ -261,18 +280,22 @@ theorem sha384_init : Verified X86.target sha384M.hmacInit (Spec.Hmac.sha384I.in
 
 /-! ## SHA-512 -/
 
-theorem sha512_iterChecks : Iterate.Checks sha512M' where
-  pro := ⟨_, by taint_decide⟩
-  load := ⟨_, by taint_decide⟩
-  mid := ⟨_, by taint_decide⟩
-  tail := ⟨_, by taint_decide⟩
-  restore := ⟨_, by taint_decide⟩
+theorem sha512_iterChecks : Iterate.Checks sha512M' := by
+  refine {
+    pro := ⟨?_, ?_⟩
+    load := ⟨?_, ?_⟩
+    mid := ⟨?_, ?_⟩
+    tail := ⟨?_, ?_⟩
+    restore := ⟨?_, ?_⟩ }
+  taint_decide_all
 
-theorem sha512_finChecks : HmacFin.Checks sha512M' where
-  pro := ⟨_, by taint_decide⟩
-  fin1 := ⟨_, by taint_decide⟩
-  mid := ⟨_, by taint_decide⟩
-  out := ⟨_, by taint_decide⟩
+theorem sha512_finChecks : HmacFin.Checks sha512M' := by
+  refine {
+    pro := ⟨?_, ?_⟩
+    fin1 := ⟨?_, ?_⟩
+    mid := ⟨?_, ?_⟩
+    out := ⟨?_, ?_⟩ }
+  taint_decide_all
 
 theorem sha512_iterImp : (iterW Spec.Hmac.sha512S 234).Implies (Spec.Hmac.sha512I.iterateContract X86.abi 48) := by
   obtain ⟨a0, a1, a2, a3, a4, e, esp⟩ := iterSat_args 192 64 234
@@ -294,11 +317,13 @@ theorem sha512_iterate : Verified X86.target sha512M'.iterate (Spec.Hmac.sha512I
 theorem sha512_finalize : Verified X86.target sha512M'.hmacFin (Spec.Hmac.sha512I.finalizeContract X86.abi 48) :=
   (HmacFin.verifiedW sha512Ok' sha512_finChecks (by decide) sha512_finImp.sat_left).of_implies sha512_finImp
 
-theorem sha512_initChecks : HmacInit.Checks sha512M' where
-  pro := ⟨_, by taint_decide⟩
-  blocks := ⟨_, by taint_decide⟩
-  toOuter := ⟨_, by taint_decide⟩
-  restore := ⟨_, by taint_decide⟩
+theorem sha512_initChecks : HmacInit.Checks sha512M' := by
+  refine {
+    pro := ⟨?_, ?_⟩
+    blocks := ⟨?_, ?_⟩
+    toOuter := ⟨?_, ?_⟩
+    restore := ⟨?_, ?_⟩ }
+  taint_decide_all
 
 theorem sha512_initImp : (initW Spec.Hmac.sha512S 234).Implies (Spec.Hmac.sha512I.initContract X86.abi 48) := by
   obtain ⟨a0, a1, a2, a3, a4, e, esp⟩ := initSat_args 192 234
@@ -312,18 +337,22 @@ theorem sha512_init : Verified X86.target sha512M'.hmacInit (Spec.Hmac.sha512I.i
 
 /-! ## SHA-512/224 -/
 
-theorem sha512_224_iterChecks : Iterate.Checks sha512_224M where
-  pro := ⟨_, by taint_decide⟩
-  load := ⟨_, by taint_decide⟩
-  mid := ⟨_, by taint_decide⟩
-  tail := ⟨_, by taint_decide⟩
-  restore := ⟨_, by taint_decide⟩
+theorem sha512_224_iterChecks : Iterate.Checks sha512_224M := by
+  refine {
+    pro := ⟨?_, ?_⟩
+    load := ⟨?_, ?_⟩
+    mid := ⟨?_, ?_⟩
+    tail := ⟨?_, ?_⟩
+    restore := ⟨?_, ?_⟩ }
+  taint_decide_all
 
-theorem sha512_224_finChecks : HmacFin.Checks sha512_224M where
-  pro := ⟨_, by taint_decide⟩
-  fin1 := ⟨_, by taint_decide⟩
-  mid := ⟨_, by taint_decide⟩
-  out := ⟨_, by taint_decide⟩
+theorem sha512_224_finChecks : HmacFin.Checks sha512_224M := by
+  refine {
+    pro := ⟨?_, ?_⟩
+    fin1 := ⟨?_, ?_⟩
+    mid := ⟨?_, ?_⟩
+    out := ⟨?_, ?_⟩ }
+  taint_decide_all
 
 theorem sha512_224_iterImp : (iterW Spec.Hmac.sha512_224S 234).Implies (Spec.Hmac.sha512_224I.iterateContract X86.abi 48) := by
   obtain ⟨a0, a1, a2, a3, a4, e, esp⟩ := iterSat_args 192 28 234
@@ -345,11 +374,13 @@ theorem sha512_224_iterate : Verified X86.target sha512_224M.iterate (Spec.Hmac.
 theorem sha512_224_finalize : Verified X86.target sha512_224M.hmacFin (Spec.Hmac.sha512_224I.finalizeContract X86.abi 48) :=
   (HmacFin.verifiedW sha512_224Ok sha512_224_finChecks (by decide) sha512_224_finImp.sat_left).of_implies sha512_224_finImp
 
-theorem sha512_224_initChecks : HmacInit.Checks sha512_224M where
-  pro := ⟨_, by taint_decide⟩
-  blocks := ⟨_, by taint_decide⟩
-  toOuter := ⟨_, by taint_decide⟩
-  restore := ⟨_, by taint_decide⟩
+theorem sha512_224_initChecks : HmacInit.Checks sha512_224M := by
+  refine {
+    pro := ⟨?_, ?_⟩
+    blocks := ⟨?_, ?_⟩
+    toOuter := ⟨?_, ?_⟩
+    restore := ⟨?_, ?_⟩ }
+  taint_decide_all
 
 theorem sha512_224_initImp : (initW Spec.Hmac.sha512_224S 234).Implies (Spec.Hmac.sha512_224I.initContract X86.abi 48) := by
   obtain ⟨a0, a1, a2, a3, a4, e, esp⟩ := initSat_args 192 234
@@ -363,18 +394,22 @@ theorem sha512_224_init : Verified X86.target sha512_224M.hmacInit (Spec.Hmac.sh
 
 /-! ## SHA-512/256 -/
 
-theorem sha512_256_iterChecks : Iterate.Checks sha512_256M where
-  pro := ⟨_, by taint_decide⟩
-  load := ⟨_, by taint_decide⟩
-  mid := ⟨_, by taint_decide⟩
-  tail := ⟨_, by taint_decide⟩
-  restore := ⟨_, by taint_decide⟩
+theorem sha512_256_iterChecks : Iterate.Checks sha512_256M := by
+  refine {
+    pro := ⟨?_, ?_⟩
+    load := ⟨?_, ?_⟩
+    mid := ⟨?_, ?_⟩
+    tail := ⟨?_, ?_⟩
+    restore := ⟨?_, ?_⟩ }
+  taint_decide_all
 
-theorem sha512_256_finChecks : HmacFin.Checks sha512_256M where
-  pro := ⟨_, by taint_decide⟩
-  fin1 := ⟨_, by taint_decide⟩
-  mid := ⟨_, by taint_decide⟩
-  out := ⟨_, by taint_decide⟩
+theorem sha512_256_finChecks : HmacFin.Checks sha512_256M := by
+  refine {
+    pro := ⟨?_, ?_⟩
+    fin1 := ⟨?_, ?_⟩
+    mid := ⟨?_, ?_⟩
+    out := ⟨?_, ?_⟩ }
+  taint_decide_all
 
 theorem sha512_256_iterImp : (iterW Spec.Hmac.sha512_256S 234).Implies (Spec.Hmac.sha512_256I.iterateContract X86.abi 48) := by
   obtain ⟨a0, a1, a2, a3, a4, e, esp⟩ := iterSat_args 192 32 234
@@ -396,11 +431,13 @@ theorem sha512_256_iterate : Verified X86.target sha512_256M.iterate (Spec.Hmac.
 theorem sha512_256_finalize : Verified X86.target sha512_256M.hmacFin (Spec.Hmac.sha512_256I.finalizeContract X86.abi 48) :=
   (HmacFin.verifiedW sha512_256Ok sha512_256_finChecks (by decide) sha512_256_finImp.sat_left).of_implies sha512_256_finImp
 
-theorem sha512_256_initChecks : HmacInit.Checks sha512_256M where
-  pro := ⟨_, by taint_decide⟩
-  blocks := ⟨_, by taint_decide⟩
-  toOuter := ⟨_, by taint_decide⟩
-  restore := ⟨_, by taint_decide⟩
+theorem sha512_256_initChecks : HmacInit.Checks sha512_256M := by
+  refine {
+    pro := ⟨?_, ?_⟩
+    blocks := ⟨?_, ?_⟩
+    toOuter := ⟨?_, ?_⟩
+    restore := ⟨?_, ?_⟩ }
+  taint_decide_all
 
 theorem sha512_256_initImp : (initW Spec.Hmac.sha512_256S 234).Implies (Spec.Hmac.sha512_256I.initContract X86.abi 48) := by
   obtain ⟨a0, a1, a2, a3, a4, e, esp⟩ := initSat_args 192 234

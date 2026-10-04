@@ -1,4 +1,5 @@
 import VerifiedGarbage.Proof.MlKem.X86_64.YNttLay
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # ML-KEM on x86-64: the layers of the NTT and its inverse with `len` = 4 and 2 on AVX2 registers
@@ -41,8 +42,8 @@ theorem ystep42 {core zeta : List Instr} {dz : BitVec 32} (hY : laneSseBlock (to
       S16 s'.mem (spW sP) R ∧ s'.gpr .rdx = wAddr (spW sP) (j + 32) ∧
       s'.gpr .r8 = s.gpr .r8 + BitVec.signExtend 64 dz ∧ s'.gpr .rcx = s.gpr .rcx - 1 ∧
       s'.zf = some (s.gpr .rcx - 1 == 0) ∧ BInvY sP s s' := by
-  have j0 : j + 16 ≤ 256 := by omega
-  have j1 : j + 16 + 16 ≤ 256 := by omega
+  have j0 : j + 16 ≤ 256 := by bdd_omega 256
+  have j1 : j + 16 + 16 ≤ 256 := by bdd_omega 256
   have a1 : wAddr (spW sP) j + BitVec.ofNat 64 32 = wAddr (spW sP) (j + 16) := wAddr_add _ _ 16
   have r0 : InRegions (s.rd ++ s.wr) (s.gpr .rdx + BitVec.ofNat 64 0) 32 := by
     rw [hdx, add_ofNat_zero]; exact sp_inY (List.mem_append_right s.rd hw) j0
@@ -79,16 +80,16 @@ theorem ystep42 {core zeta : List Instr} {dz : BitVec 32} (hY : laneSseBlock (to
     State.setMem_setMem, w0, w1]
   rw [dx5, a1, m5]
   refine ⟨?_, ?_, ?_, ?_, ?_, ⟨⟨fun r hr => ?_, ?_, ?_⟩, ?_, ?_, ?_⟩⟩
-  · refine s16_write2Y (s := s5) hS j0 j1 (by omega) (a := fun e => R[j + e]!) (b := fun e => R[j + 16 + e]!)
-      (fun l hl => ((C5 l hl).1).congr fun e _ => by rw [show j + 8 * l + e = j + (8 * l + e) by omega])
+  · refine s16_write2Y (s := s5) hS j0 j1 (by bdd_omega 256) (a := fun e => R[j + e]!) (b := fun e => R[j + 16 + e]!)
+      (fun l hl => ((C5 l hl).1).congr fun e _ => by rw [show j + 8 * l + e = j + (8 * l + e) by bdd_omega 256])
       (fun l hl => ((C5 l hl).2).congr fun e _ => by
-        rw [show j + 16 + 8 * l + e = j + 16 + (8 * l + e) by omega]) fun i hi => ?_
+        rw [show j + 16 + 8 * l + e = j + 16 + (8 * l + e) by bdd_omega 256]) fun i hi => ?_
     by_cases h1 : j ≤ i ∧ i < j + 16
-    · rw [ite_eq_left_of_eq_true _ _ (eq_true h1), show j + (i - j) = i by omega]
+    · rw [ite_eq_left_of_eq_true _ _ (eq_true h1), show j + (i - j) = i by bdd_omega 256]
     · rw [ite_eq_right_of_eq_false _ _ (eq_false h1)]
       by_cases h2 : j + 16 ≤ i ∧ i < j + 16 + 16
-      · rw [ite_eq_left_of_eq_true _ _ (eq_true h2), show j + 16 + (i - (j + 16)) = i by omega]
-      · rw [ite_eq_right_of_eq_false _ _ (eq_false h2)]; exact hR i hi (by omega)
+      · rw [ite_eq_left_of_eq_true _ _ (eq_true h2), show j + 16 + (i - (j + 16)) = i by bdd_omega 256]
+      · rw [ite_eq_right_of_eq_false _ _ (eq_false h2)]; exact hR i hi (by bdd_omega 256)
   · rw [show BitVec.signExtend 64 (64 : BitVec 32) = BitVec.ofNat 64 (2 * 32) by decide, wAddr_add]
   · rw [g5, h84, o3.gpr, o12.gpr]
   · rw [g5, g4.keep.gpr (by decide), o3.gpr, o12.gpr]
@@ -158,11 +159,11 @@ theorem core4_ok {t : State} (hc : VConsts t) {A B ζ : Nat → Zq} (hA : Lanes 
       dsimp only; rw [e0, word_punpcklqdq _ _ he]
       by_cases h : e < 4 <;> simp only [h, ite_true, ite_false]
       · exact hA e he
-      · exact hB (e - 4) (by omega))
+      · exact hB (e - 4) (by bdd_omega 256))
     (fun e he => by
       dsimp only; rw [e1, word_punpckhqdq _ _ he]
       by_cases h : e < 4 <;> simp only [h, ite_true, ite_false]
-      · exact hA (4 + e) (by omega)
+      · exact hA (4 + e) (by bdd_omega 256)
       · exact hB e he)
     (by rw [o1.xmm _ (by decide)]; exact hz)) fun t2 ⟨X, Y, o2⟩ => ?_
   refine WP.mono (scat4_ok t2) fun t3 ⟨⟨f0, f1⟩, o3⟩ => ⟨⟨fun e he => ?_, fun e he => ?_⟩, ?_⟩
@@ -171,16 +172,16 @@ theorem core4_ok {t : State} (hc : VConsts t) {A B ζ : Nat → Zq} (hA : Lanes 
     · rw [X e he]; dsimp only
       rw [ite_eq_left_of_eq_true _ _ (eq_true ‹e < 4›), ite_eq_left_of_eq_true _ _ (eq_true ‹e < 4›),
         ite_eq_left_of_eq_true _ _ (eq_true ‹e < 4›)]
-    · rw [Y (e - 4) (by omega)]; dsimp only
-      rw [ite_eq_left_of_eq_true _ _ (eq_true (show e - 4 < 4 by omega)),
-        ite_eq_left_of_eq_true _ _ (eq_true (show e - 4 < 4 by omega)),
-        ite_eq_right_of_eq_false _ _ (eq_false ‹¬ e < 4›), show 4 + (e - 4) = e by omega]
+    · rw [Y (e - 4) (by bdd_omega 256)]; dsimp only
+      rw [ite_eq_left_of_eq_true _ _ (eq_true (show e - 4 < 4 by bdd_omega 256)),
+        ite_eq_left_of_eq_true _ _ (eq_true (show e - 4 < 4 by bdd_omega 256)),
+        ite_eq_right_of_eq_false _ _ (eq_false ‹¬ e < 4›), show 4 + (e - 4) = e by bdd_omega 256]
   · rw [f1, word_punpckhqdq _ _ he]
     split
-    · rw [X (4 + e) (by omega)]; dsimp only
-      rw [ite_eq_right_of_eq_false _ _ (eq_false (show ¬ 4 + e < 4 by omega)),
-        ite_eq_right_of_eq_false _ _ (eq_false (show ¬ 4 + e < 4 by omega)),
-        ite_eq_left_of_eq_true _ _ (eq_true ‹e < 4›), show 4 + e - 4 = e by omega]
+    · rw [X (4 + e) (by bdd_omega 256)]; dsimp only
+      rw [ite_eq_right_of_eq_false _ _ (eq_false (show ¬ 4 + e < 4 by bdd_omega 256)),
+        ite_eq_right_of_eq_false _ _ (eq_false (show ¬ 4 + e < 4 by bdd_omega 256)),
+        ite_eq_left_of_eq_true _ _ (eq_true ‹e < 4›), show 4 + e - 4 = e by bdd_omega 256]
     · rw [Y e he]; dsimp only
       rw [ite_eq_right_of_eq_false _ _ (eq_false ‹¬ e < 4›), ite_eq_right_of_eq_false _ _ (eq_false ‹¬ e < 4›),
         ite_eq_right_of_eq_false _ _ (eq_false ‹¬ e < 4›)]
@@ -206,48 +207,48 @@ theorem core2_ok {t : State} (hc : VConsts t) {A B ζ : Nat → Zq} (hA : Lanes 
     (fun e he => by
       dsimp only; rw [e0, word_punpcklqdq _ _ he]
       by_cases h : e < 4 <;> simp only [h, ite_true, ite_false]
-      · rw [word_d8 _ (by omega), ite_eq_left_of_eq_true _ _ (eq_true h)]; exact hA _ (by omega)
-      · rw [word_d8 _ (by omega), ite_eq_left_of_eq_true _ _ (eq_true (show e - 4 < 4 by omega)),
-          show (e - 4) / 2 = (e - 4) / 2 by rfl, show (e - 4) % 2 = e % 2 by omega]
-        exact hB _ (by omega))
+      · rw [word_d8 _ (by bdd_omega 256), ite_eq_left_of_eq_true _ _ (eq_true h)]; exact hA _ (by bdd_omega 256)
+      · rw [word_d8 _ (by bdd_omega 256), ite_eq_left_of_eq_true _ _ (eq_true (show e - 4 < 4 by bdd_omega 256)),
+          show (e - 4) / 2 = (e - 4) / 2 by rfl, show (e - 4) % 2 = e % 2 by bdd_omega 256]
+        exact hB _ (by bdd_omega 256))
     (fun e he => by
       dsimp only; rw [e1, word_punpckhqdq _ _ he]
       by_cases h : e < 4 <;> simp only [h, ite_true, ite_false]
-      · rw [word_d8 _ (by omega), ite_eq_right_of_eq_false _ _ (eq_false (show ¬ 4 + e < 4 by omega)),
-          show (4 + e - 4) / 2 = e / 2 by omega, show (4 + e) % 2 = e % 2 by omega]
-        exact hA _ (by omega)
-      · rw [word_d8 _ (by omega), ite_eq_right_of_eq_false _ _ (eq_false h)]; exact hB _ (by omega))
+      · rw [word_d8 _ (by bdd_omega 256), ite_eq_right_of_eq_false _ _ (eq_false (show ¬ 4 + e < 4 by bdd_omega 256)),
+          show (4 + e - 4) / 2 = e / 2 by bdd_omega 256, show (4 + e) % 2 = e % 2 by bdd_omega 256]
+        exact hA _ (by bdd_omega 256)
+      · rw [word_d8 _ (by bdd_omega 256), ite_eq_right_of_eq_false _ _ (eq_false h)]; exact hB _ (by bdd_omega 256))
     (by rw [o1.xmm _ (by decide)]; exact hz)) fun t2 ⟨X, Y, o2⟩ => ?_
   refine WP.mono (scat2_ok t2) fun t3 ⟨⟨f0, f1⟩, o3⟩ => ⟨⟨fun i hi => ?_, fun i hi => ?_⟩, ?_⟩
   · rw [f0, word_punpckldq _ _ hi]
-    have hw : 2 * (i / 4) + i % 2 < 8 := by omega
+    have hw : 2 * (i / 4) + i % 2 < 8 := by bdd_omega 256
     by_cases h : i % 4 < 2
-    · rw [ite_eq_left_of_eq_true _ _ (eq_true (show i / 2 % 2 = 0 by omega)), X _ hw]; dsimp only
-      rw [ite_eq_left_of_eq_true _ _ (eq_true h), ite_eq_left_of_eq_true _ _ (eq_true (show 2 * (i / 4) + i % 2 < 4 by omega)),
-        ite_eq_left_of_eq_true _ _ (eq_true (show 2 * (i / 4) + i % 2 < 4 by omega)),
-        show 4 * ((2 * (i / 4) + i % 2) / 2) + (2 * (i / 4) + i % 2) % 2 = i by omega,
-        show 4 * ((2 * (i / 4) + i % 2) / 2) + 2 + (2 * (i / 4) + i % 2) % 2 = i + 2 by omega]
-    · rw [ite_eq_right_of_eq_false _ _ (eq_false (show ¬ i / 2 % 2 = 0 by omega)), Y _ hw]; dsimp only
+    · rw [ite_eq_left_of_eq_true _ _ (eq_true (show i / 2 % 2 = 0 by bdd_omega 256)), X _ hw]; dsimp only
+      rw [ite_eq_left_of_eq_true _ _ (eq_true h), ite_eq_left_of_eq_true _ _ (eq_true (show 2 * (i / 4) + i % 2 < 4 by bdd_omega 256)),
+        ite_eq_left_of_eq_true _ _ (eq_true (show 2 * (i / 4) + i % 2 < 4 by bdd_omega 256)),
+        show 4 * ((2 * (i / 4) + i % 2) / 2) + (2 * (i / 4) + i % 2) % 2 = i by bdd_omega 256,
+        show 4 * ((2 * (i / 4) + i % 2) / 2) + 2 + (2 * (i / 4) + i % 2) % 2 = i + 2 by bdd_omega 256]
+    · rw [ite_eq_right_of_eq_false _ _ (eq_false (show ¬ i / 2 % 2 = 0 by bdd_omega 256)), Y _ hw]; dsimp only
       rw [ite_eq_right_of_eq_false _ _ (eq_false h),
-        ite_eq_left_of_eq_true _ _ (eq_true (show 2 * (i / 4) + i % 2 < 4 by omega)),
-        ite_eq_left_of_eq_true _ _ (eq_true (show 2 * (i / 4) + i % 2 < 4 by omega)),
-        show 4 * ((2 * (i / 4) + i % 2) / 2) + (2 * (i / 4) + i % 2) % 2 = i - 2 by omega,
-        show 4 * ((2 * (i / 4) + i % 2) / 2) + 2 + (2 * (i / 4) + i % 2) % 2 = i by omega]
+        ite_eq_left_of_eq_true _ _ (eq_true (show 2 * (i / 4) + i % 2 < 4 by bdd_omega 256)),
+        ite_eq_left_of_eq_true _ _ (eq_true (show 2 * (i / 4) + i % 2 < 4 by bdd_omega 256)),
+        show 4 * ((2 * (i / 4) + i % 2) / 2) + (2 * (i / 4) + i % 2) % 2 = i - 2 by bdd_omega 256,
+        show 4 * ((2 * (i / 4) + i % 2) / 2) + 2 + (2 * (i / 4) + i % 2) % 2 = i by bdd_omega 256]
   · rw [f1, word_punpckhdq _ _ hi]
-    have hw : 4 + 2 * (i / 4) + i % 2 < 8 := by omega
+    have hw : 4 + 2 * (i / 4) + i % 2 < 8 := by bdd_omega 256
     by_cases h : i % 4 < 2
-    · rw [ite_eq_left_of_eq_true _ _ (eq_true (show i / 2 % 2 = 0 by omega)), X _ hw]; dsimp only
+    · rw [ite_eq_left_of_eq_true _ _ (eq_true (show i / 2 % 2 = 0 by bdd_omega 256)), X _ hw]; dsimp only
       rw [ite_eq_left_of_eq_true _ _ (eq_true h),
-        ite_eq_right_of_eq_false _ _ (eq_false (show ¬ 4 + 2 * (i / 4) + i % 2 < 4 by omega)),
-        ite_eq_right_of_eq_false _ _ (eq_false (show ¬ 4 + 2 * (i / 4) + i % 2 < 4 by omega)),
-        show 4 * ((4 + 2 * (i / 4) + i % 2 - 4) / 2) + (4 + 2 * (i / 4) + i % 2) % 2 = i by omega,
-        show 4 * ((4 + 2 * (i / 4) + i % 2 - 4) / 2) + 2 + (4 + 2 * (i / 4) + i % 2) % 2 = i + 2 by omega]
-    · rw [ite_eq_right_of_eq_false _ _ (eq_false (show ¬ i / 2 % 2 = 0 by omega)), Y _ hw]; dsimp only
+        ite_eq_right_of_eq_false _ _ (eq_false (show ¬ 4 + 2 * (i / 4) + i % 2 < 4 by bdd_omega 256)),
+        ite_eq_right_of_eq_false _ _ (eq_false (show ¬ 4 + 2 * (i / 4) + i % 2 < 4 by bdd_omega 256)),
+        show 4 * ((4 + 2 * (i / 4) + i % 2 - 4) / 2) + (4 + 2 * (i / 4) + i % 2) % 2 = i by bdd_omega 256,
+        show 4 * ((4 + 2 * (i / 4) + i % 2 - 4) / 2) + 2 + (4 + 2 * (i / 4) + i % 2) % 2 = i + 2 by bdd_omega 256]
+    · rw [ite_eq_right_of_eq_false _ _ (eq_false (show ¬ i / 2 % 2 = 0 by bdd_omega 256)), Y _ hw]; dsimp only
       rw [ite_eq_right_of_eq_false _ _ (eq_false h),
-        ite_eq_right_of_eq_false _ _ (eq_false (show ¬ 4 + 2 * (i / 4) + i % 2 < 4 by omega)),
-        ite_eq_right_of_eq_false _ _ (eq_false (show ¬ 4 + 2 * (i / 4) + i % 2 < 4 by omega)),
-        show 4 * ((4 + 2 * (i / 4) + i % 2 - 4) / 2) + (4 + 2 * (i / 4) + i % 2) % 2 = i - 2 by omega,
-        show 4 * ((4 + 2 * (i / 4) + i % 2 - 4) / 2) + 2 + (4 + 2 * (i / 4) + i % 2) % 2 = i by omega]
+        ite_eq_right_of_eq_false _ _ (eq_false (show ¬ 4 + 2 * (i / 4) + i % 2 < 4 by bdd_omega 256)),
+        ite_eq_right_of_eq_false _ _ (eq_false (show ¬ 4 + 2 * (i / 4) + i % 2 < 4 by bdd_omega 256)),
+        show 4 * ((4 + 2 * (i / 4) + i % 2 - 4) / 2) + (4 + 2 * (i / 4) + i % 2) % 2 = i - 2 by bdd_omega 256,
+        show 4 * ((4 + 2 * (i / 4) + i % 2 - 4) / 2) + 2 + (4 + 2 * (i / 4) + i % 2) % 2 = i by bdd_omega 256]
   · exact ((o1.trans o2).trans o3).mono (by simp)
 
 end
@@ -292,17 +293,17 @@ theorem ylay42_loop {bf gath scat zeta : List Instr} {dz : BitVec 32}
       ([.alu .add .r8 (.imm dz)] : List Instr) ++ toY (gath ++ bf ++ scat) ++
       ([.vmovdquStore .l256 (at_ .rdx 0) .xmm0, .vmovdquStore .l256 (at_ .rdx 32) .xmm1, .alu .add .rdx (.imm 64)] : List Instr) ++
       ([.alu .sub .rcx (.imm 1)] : List Instr) = ybody42 (gath ++ bf ++ scat) zeta dz by simp [List.append_assoc]]
-  refine WP.mono (ystep42 hY (j := 32 * i) (by omega) hb'.consts hdx' hS' hw'
+  refine WP.mono (ystep42 hY (j := 32 * i) (by bdd_omega 256) hb'.consts hdx' hS' hw'
     (fun s' k => hz i hi s' (by rw [k.gpr, h8']) (by rw [k.mem]; exact hT') (by rw [k.wr]; exact hw'))
     (hcore i hi) (hR i hi))
     fun u' ⟨hS'', hdx'', h8'', hcx, hzf, hb''⟩ => ⟨⟨hS'', by rw [hdx'', Nat.mul_succ],
       by rw [h8'', h8', hdz i hi], hb'.trans hb''⟩, hcx, hzf⟩
 
 theorem sel_A0 {j : Nat} (hj : j < 4) : sel 0xA0 j = 2 * (j / 2) := by
-  rcases (by omega : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3) with rfl | rfl | rfl | rfl <;> decide
+  rcases (by bdd_omega 256 : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3) with rfl | rfl | rfl | rfl <;> decide
 
 theorem sel_F5 {j : Nat} (hj : j < 4) : sel 0xF5 j = 1 + 2 * (j / 2) := by
-  rcases (by omega : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3) with rfl | rfl | rfl | rfl <;> decide
+  rcases (by bdd_omega 256 : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3) with rfl | rfl | rfl | rfl <;> decide
 
 section
 variable {bf : List Instr} {op : Zq → Zq → Zq → Zq × Zq} (hbf : VBflyOk bf op)
@@ -317,66 +318,66 @@ theorem ylay4_ok (hY : laneSseBlock (toY (gath4 ++ bf ++ scat4)) = some (gath4 +
     WP isa (ylay4 bf t) s fun s' => S16 s'.mem (spW sP) (layF blk F 4 zi 32) ∧ BInvY sP s s' := by
   have ht : t < 128 := by have := (hz 0 (by decide)).1; omega
   have hF : ∀ m, m ≤ 8 → ∀ j, 32 * m ≤ j → j < 256 → (layF blk F 4 zi (4 * m))[j]! = F[j]! := fun m hm j h1 h2 => by
-    rw [layF_get hblk F (by decide) zi (by omega) h2, ite_eq_right_of_eq_false _ _ (eq_false (by omega))]
+    rw [layF_get hblk F (by decide) zi (by bdd_omega 256) h2, ite_eq_right_of_eq_false _ _ (eq_false (by bdd_omega 256))]
   refine ylay42_loop hY ht (fun m => 4 * m) rfl (fun m _ => by
       rw [show BitVec.signExtend 64 (8 : BitVec 32) = BitVec.ofNat 64 (2 * 4) by decide, wAddr_add,
-        show t + 4 * m + 4 = t + 4 * (m + 1) by omega])
+        show t + 4 * m + 4 = t + 4 * (m + 1) by bdd_omega 256])
     (fun m => layF blk F 4 zi (4 * m)) (fun m l e => zeta (zi (4 * m + l + 2 * (e / 4))))
     (fun m hm s' h8 hT' hw' => WP.mono (yzetaS_ok 0xA0 0xF5 (zP := sP) (z := z) (k := t + 4 * m)
-        (fun j hj => by rw [sel_A0 hj]; have := (hz (4 * m + 3) (by omega)).1; omega)
-        (fun j hj => by rw [sel_F5 hj]; have := (hz (4 * m + 3) (by omega)).1; omega) h8
-        (tab_in (List.mem_append_right _ hw') (by omega)) hT')
+        (fun j hj => by rw [sel_A0 hj]; have := (hz (4 * m + 3) (by bdd_omega 256)).1; omega)
+        (fun j hj => by rw [sel_F5 hj]; have := (hz (4 * m + 3) (by bdd_omega 256)).1; omega) h8
+        (tab_in (List.mem_append_right _ hw') (by bdd_omega 256)) hT')
       fun s'' ⟨Z0, Z1, o⟩ => ⟨fun l hl => ?_, o.mono (by simp)⟩) (fun m hm l hl t' hc' hA hB hZ => ?_) ?_ hc hsi
     hS hT hw
   · rcases lane01 hl with rfl | rfl
     · exact Z0.congr fun i hi => by
-        rw [sel_A0 (by omega), show t + 4 * m + 2 * (i / 2 / 2) = t + (4 * m + 0 + 2 * (i / 4)) by omega,
-          (hz _ (by omega)).2]
+        rw [sel_A0 (by bdd_omega 256), show t + 4 * m + 2 * (i / 2 / 2) = t + (4 * m + 0 + 2 * (i / 4)) by bdd_omega 256,
+          (hz _ (by bdd_omega 256)).2]
     · exact Z1.congr fun i hi => by
-        rw [sel_F5 (by omega), show t + 4 * m + (1 + 2 * (i / 2 / 2)) = t + (4 * m + 1 + 2 * (i / 4)) by omega,
-          (hz _ (by omega)).2]
+        rw [sel_F5 (by bdd_omega 256), show t + 4 * m + (1 + 2 * (i / 2 / 2)) = t + (4 * m + 1 + 2 * (i / 4)) by bdd_omega 256,
+          (hz _ (by bdd_omega 256)).2]
   · refine WP.mono (core4_ok hbf hc' hA hB hZ) fun t'' ⟨⟨a, b⟩, o⟩ => ⟨⟨a.congr fun e he => ?_, b.congr fun e he => ?_⟩, o⟩
-    · have hR := layF_get hblk F (len := 4) (by decide) zi (b := 4 * (m + 1)) (by omega) (show 32 * m + 8 * l + e < 256 by omega)
-      rw [ite_eq_left_of_eq_true _ _ (eq_true (show 32 * m + 8 * l + e < 2 * 4 * (4 * (m + 1)) by omega)),
-        show (32 * m + 8 * l + e) / (2 * 4) = 4 * m + l by omega] at hR
+    · have hR := layF_get hblk F (len := 4) (by decide) zi (b := 4 * (m + 1)) (by bdd_omega 256) (show 32 * m + 8 * l + e < 256 by bdd_omega 256)
+      rw [ite_eq_left_of_eq_true _ _ (eq_true (show 32 * m + 8 * l + e < 2 * 4 * (4 * (m + 1)) by bdd_omega 256)),
+        show (32 * m + 8 * l + e) / (2 * 4) = 4 * m + l by bdd_omega 256] at hR
       rw [hR]
       by_cases h : e < 4
       · rw [ite_eq_left_of_eq_true _ _ (eq_true h),
-          ite_eq_left_of_eq_true _ _ (eq_true (show (32 * m + 8 * l + e) % (2 * 4) < 4 by omega)),
-          hF m (by omega) (32 * m + 8 * l + e) (by omega) (by omega),
-          hF m (by omega) (32 * m + 8 * l + (4 + e)) (by omega) (by omega),
-          show 32 * m + 8 * l + (4 + e) = 32 * m + 8 * l + e + 4 by omega, show 4 * m + l + 2 * (e / 4) = 4 * m + l by omega]
+          ite_eq_left_of_eq_true _ _ (eq_true (show (32 * m + 8 * l + e) % (2 * 4) < 4 by bdd_omega 256)),
+          hF m (by bdd_omega 256) (32 * m + 8 * l + e) (by bdd_omega 256) (by bdd_omega 256),
+          hF m (by bdd_omega 256) (32 * m + 8 * l + (4 + e)) (by bdd_omega 256) (by bdd_omega 256),
+          show 32 * m + 8 * l + (4 + e) = 32 * m + 8 * l + e + 4 by bdd_omega 256, show 4 * m + l + 2 * (e / 4) = 4 * m + l by bdd_omega 256]
       · rw [ite_eq_right_of_eq_false _ _ (eq_false h),
-          ite_eq_right_of_eq_false _ _ (eq_false (show ¬ (32 * m + 8 * l + e) % (2 * 4) < 4 by omega)),
-          hF m (by omega) (32 * m + 8 * l + (e - 4)) (by omega) (by omega),
-          hF m (by omega) (32 * m + 8 * l + e) (by omega) (by omega),
-          show 32 * m + 8 * l + (e - 4) = 32 * m + 8 * l + e - 4 by omega,
-          show 4 * m + l + 2 * ((e - 4) / 4) = 4 * m + l by omega]
-    · have hR := layF_get hblk F (len := 4) (by decide) zi (b := 4 * (m + 1)) (by omega)
-        (show 32 * m + 16 + 8 * l + e < 256 by omega)
-      rw [ite_eq_left_of_eq_true _ _ (eq_true (show 32 * m + 16 + 8 * l + e < 2 * 4 * (4 * (m + 1)) by omega)),
-        show (32 * m + 16 + 8 * l + e) / (2 * 4) = 4 * m + l + 2 by omega] at hR
+          ite_eq_right_of_eq_false _ _ (eq_false (show ¬ (32 * m + 8 * l + e) % (2 * 4) < 4 by bdd_omega 256)),
+          hF m (by bdd_omega 256) (32 * m + 8 * l + (e - 4)) (by bdd_omega 256) (by bdd_omega 256),
+          hF m (by bdd_omega 256) (32 * m + 8 * l + e) (by bdd_omega 256) (by bdd_omega 256),
+          show 32 * m + 8 * l + (e - 4) = 32 * m + 8 * l + e - 4 by bdd_omega 256,
+          show 4 * m + l + 2 * ((e - 4) / 4) = 4 * m + l by bdd_omega 256]
+    · have hR := layF_get hblk F (len := 4) (by decide) zi (b := 4 * (m + 1)) (by bdd_omega 256)
+        (show 32 * m + 16 + 8 * l + e < 256 by bdd_omega 256)
+      rw [ite_eq_left_of_eq_true _ _ (eq_true (show 32 * m + 16 + 8 * l + e < 2 * 4 * (4 * (m + 1)) by bdd_omega 256)),
+        show (32 * m + 16 + 8 * l + e) / (2 * 4) = 4 * m + l + 2 by bdd_omega 256] at hR
       rw [hR]
       by_cases h : e < 4
       · rw [ite_eq_left_of_eq_true _ _ (eq_true h),
-          ite_eq_left_of_eq_true _ _ (eq_true (show (32 * m + 16 + 8 * l + e) % (2 * 4) < 4 by omega)),
-          hF m (by omega) (32 * m + 16 + 8 * l + e) (by omega) (by omega),
-          hF m (by omega) (32 * m + 16 + 8 * l + (4 + e)) (by omega) (by omega),
-          show 32 * m + 16 + 8 * l + (4 + e) = 32 * m + 16 + 8 * l + e + 4 by omega,
-          show 4 * m + l + 2 * ((4 + e) / 4) = 4 * m + l + 2 by omega]
+          ite_eq_left_of_eq_true _ _ (eq_true (show (32 * m + 16 + 8 * l + e) % (2 * 4) < 4 by bdd_omega 256)),
+          hF m (by bdd_omega 256) (32 * m + 16 + 8 * l + e) (by bdd_omega 256) (by bdd_omega 256),
+          hF m (by bdd_omega 256) (32 * m + 16 + 8 * l + (4 + e)) (by bdd_omega 256) (by bdd_omega 256),
+          show 32 * m + 16 + 8 * l + (4 + e) = 32 * m + 16 + 8 * l + e + 4 by bdd_omega 256,
+          show 4 * m + l + 2 * ((4 + e) / 4) = 4 * m + l + 2 by bdd_omega 256]
       · rw [ite_eq_right_of_eq_false _ _ (eq_false h),
-          ite_eq_right_of_eq_false _ _ (eq_false (show ¬ (32 * m + 16 + 8 * l + e) % (2 * 4) < 4 by omega)),
-          hF m (by omega) (32 * m + 16 + 8 * l + (e - 4)) (by omega) (by omega),
-          hF m (by omega) (32 * m + 16 + 8 * l + e) (by omega) (by omega),
-          show 32 * m + 16 + 8 * l + (e - 4) = 32 * m + 16 + 8 * l + e - 4 by omega,
-          show 4 * m + l + 2 * (e / 4) = 4 * m + l + 2 by omega]
+          ite_eq_right_of_eq_false _ _ (eq_false (show ¬ (32 * m + 16 + 8 * l + e) % (2 * 4) < 4 by bdd_omega 256)),
+          hF m (by bdd_omega 256) (32 * m + 16 + 8 * l + (e - 4)) (by bdd_omega 256) (by bdd_omega 256),
+          hF m (by bdd_omega 256) (32 * m + 16 + 8 * l + e) (by bdd_omega 256) (by bdd_omega 256),
+          show 32 * m + 16 + 8 * l + (e - 4) = 32 * m + 16 + 8 * l + e - 4 by bdd_omega 256,
+          show 4 * m + l + 2 * (e / 4) = 4 * m + l + 2 by bdd_omega 256]
   · intro m hm i hi h
-    rw [layF_get hblk F (by decide) zi (by omega) hi, layF_get hblk F (by decide) zi (by omega) hi]
+    rw [layF_get hblk F (by decide) zi (by bdd_omega 256) hi, layF_get hblk F (by decide) zi (by bdd_omega 256) hi]
     rcases h with h | h
-    · rw [ite_eq_left_of_eq_true _ _ (eq_true (show i < 2 * 4 * (4 * (m + 1)) by omega)),
-        ite_eq_left_of_eq_true _ _ (eq_true (show i < 2 * 4 * (4 * m) by omega))]
-    · rw [ite_eq_right_of_eq_false _ _ (eq_false (show ¬ i < 2 * 4 * (4 * (m + 1)) by omega)),
-        ite_eq_right_of_eq_false _ _ (eq_false (show ¬ i < 2 * 4 * (4 * m) by omega))]
+    · rw [ite_eq_left_of_eq_true _ _ (eq_true (show i < 2 * 4 * (4 * (m + 1)) by bdd_omega 256)),
+        ite_eq_left_of_eq_true _ _ (eq_true (show i < 2 * 4 * (4 * m) by bdd_omega 256))]
+    · rw [ite_eq_right_of_eq_false _ _ (eq_false (show ¬ i < 2 * 4 * (4 * (m + 1)) by bdd_omega 256)),
+        ite_eq_right_of_eq_false _ _ (eq_false (show ¬ i < 2 * 4 * (4 * m) by bdd_omega 256))]
 
 theorem ylay2_ok (hY : laneSseBlock (toY (gath2 ++ bf ++ scat2)) = some (gath2 ++ bf ++ scat2))
     {sP : Addr} {t : Nat} (zi : Nat → Nat) {z : Nat → Zq}
@@ -386,58 +387,58 @@ theorem ylay2_ok (hY : laneSseBlock (toY (gath2 ++ bf ++ scat2)) = some (gath2 +
     WP isa (ylay2 bf t) s fun s' => S16 s'.mem (spW sP) (layF blk F 2 zi 64) ∧ BInvY sP s s' := by
   have ht : t < 128 := by have := (hz 0 (by decide)).1; omega
   have hF : ∀ m, m ≤ 8 → ∀ j, 32 * m ≤ j → j < 256 → (layF blk F 2 zi (8 * m))[j]! = F[j]! := fun m hm j h1 h2 => by
-    rw [layF_get hblk F (by decide) zi (by omega) h2, ite_eq_right_of_eq_false _ _ (eq_false (by omega))]
+    rw [layF_get hblk F (by decide) zi (by bdd_omega 256) h2, ite_eq_right_of_eq_false _ _ (eq_false (by bdd_omega 256))]
   refine ylay42_loop hY ht (fun m => 8 * m) rfl (fun m _ => by
       rw [show BitVec.signExtend 64 (16 : BitVec 32) = BitVec.ofNat 64 (2 * 8) by decide, wAddr_add,
-        show t + 8 * m + 8 = t + 8 * (m + 1) by omega])
+        show t + 8 * m + 8 = t + 8 * (m + 1) by bdd_omega 256])
     (fun m => layF blk F 2 zi (8 * m)) (fun m l e => zeta (zi (8 * m + (2 * l + e / 2 + 2 * (e / 4)))))
     (fun m hm s' h8 hT' hw' => WP.mono (yzeta8_ok (zP := sP) (z := z) (k := t + 8 * m)
-        (by have := (hz (8 * m + 7) (by omega)).1; omega) h8 (tab_in (List.mem_append_right _ hw') (by omega)) hT')
+        (by have := (hz (8 * m + 7) (by bdd_omega 256)).1; omega) h8 (tab_in (List.mem_append_right _ hw') (by bdd_omega 256)) hT')
       fun s'' ⟨Z, o⟩ => ⟨fun l hl => (Z l hl).congr fun i hi => by
-        rw [Nat.add_assoc, (hz _ (by omega)).2], o.mono (by simp)⟩)
+        rw [Nat.add_assoc, (hz _ (by bdd_omega 256)).2], o.mono (by simp)⟩)
     (fun m hm l hl t' hc' hA hB hZ => ?_) ?_ hc hsi hS hT hw
   · refine WP.mono (core2_ok hbf hc' hA hB hZ) fun t'' ⟨⟨a, b⟩, o⟩ => ⟨⟨a.congr fun e he => ?_, b.congr fun e he => ?_⟩, o⟩
-    · have hR := layF_get hblk F (len := 2) (by decide) zi (b := 8 * (m + 1)) (by omega)
-        (show 32 * m + 8 * l + e < 256 by omega)
-      rw [ite_eq_left_of_eq_true _ _ (eq_true (show 32 * m + 8 * l + e < 2 * 2 * (8 * (m + 1)) by omega)),
+    · have hR := layF_get hblk F (len := 2) (by decide) zi (b := 8 * (m + 1)) (by bdd_omega 256)
+        (show 32 * m + 8 * l + e < 256 by bdd_omega 256)
+      rw [ite_eq_left_of_eq_true _ _ (eq_true (show 32 * m + 8 * l + e < 2 * 2 * (8 * (m + 1)) by bdd_omega 256)),
         show (32 * m + 8 * l + e) / (2 * 2) = 8 * m + (2 * l + (2 * (e / 4) + e % 2) / 2 +
-          2 * ((2 * (e / 4) + e % 2) / 4)) by omega] at hR
+          2 * ((2 * (e / 4) + e % 2) / 4)) by bdd_omega 256] at hR
       rw [hR]
       by_cases h : e % 4 < 2
       · rw [ite_eq_left_of_eq_true _ _ (eq_true h),
-          ite_eq_left_of_eq_true _ _ (eq_true (show (32 * m + 8 * l + e) % (2 * 2) < 2 by omega)),
-          hF m (by omega) (32 * m + 8 * l + e) (by omega) (by omega),
-          hF m (by omega) (32 * m + 8 * l + (e + 2)) (by omega) (by omega),
-          show 32 * m + 8 * l + (e + 2) = 32 * m + 8 * l + e + 2 by omega]
+          ite_eq_left_of_eq_true _ _ (eq_true (show (32 * m + 8 * l + e) % (2 * 2) < 2 by bdd_omega 256)),
+          hF m (by bdd_omega 256) (32 * m + 8 * l + e) (by bdd_omega 256) (by bdd_omega 256),
+          hF m (by bdd_omega 256) (32 * m + 8 * l + (e + 2)) (by bdd_omega 256) (by bdd_omega 256),
+          show 32 * m + 8 * l + (e + 2) = 32 * m + 8 * l + e + 2 by bdd_omega 256]
       · rw [ite_eq_right_of_eq_false _ _ (eq_false h),
-          ite_eq_right_of_eq_false _ _ (eq_false (show ¬ (32 * m + 8 * l + e) % (2 * 2) < 2 by omega)),
-          hF m (by omega) (32 * m + 8 * l + (e - 2)) (by omega) (by omega),
-          hF m (by omega) (32 * m + 8 * l + e) (by omega) (by omega),
-          show 32 * m + 8 * l + (e - 2) = 32 * m + 8 * l + e - 2 by omega]
-    · have hR := layF_get hblk F (len := 2) (by decide) zi (b := 8 * (m + 1)) (by omega)
-        (show 32 * m + 16 + 8 * l + e < 256 by omega)
-      rw [ite_eq_left_of_eq_true _ _ (eq_true (show 32 * m + 16 + 8 * l + e < 2 * 2 * (8 * (m + 1)) by omega)),
+          ite_eq_right_of_eq_false _ _ (eq_false (show ¬ (32 * m + 8 * l + e) % (2 * 2) < 2 by bdd_omega 256)),
+          hF m (by bdd_omega 256) (32 * m + 8 * l + (e - 2)) (by bdd_omega 256) (by bdd_omega 256),
+          hF m (by bdd_omega 256) (32 * m + 8 * l + e) (by bdd_omega 256) (by bdd_omega 256),
+          show 32 * m + 8 * l + (e - 2) = 32 * m + 8 * l + e - 2 by bdd_omega 256]
+    · have hR := layF_get hblk F (len := 2) (by decide) zi (b := 8 * (m + 1)) (by bdd_omega 256)
+        (show 32 * m + 16 + 8 * l + e < 256 by bdd_omega 256)
+      rw [ite_eq_left_of_eq_true _ _ (eq_true (show 32 * m + 16 + 8 * l + e < 2 * 2 * (8 * (m + 1)) by bdd_omega 256)),
         show (32 * m + 16 + 8 * l + e) / (2 * 2) = 8 * m + (2 * l + (4 + 2 * (e / 4) + e % 2) / 2 +
-          2 * ((4 + 2 * (e / 4) + e % 2) / 4)) by omega] at hR
+          2 * ((4 + 2 * (e / 4) + e % 2) / 4)) by bdd_omega 256] at hR
       rw [hR]
       by_cases h : e % 4 < 2
       · rw [ite_eq_left_of_eq_true _ _ (eq_true h),
-          ite_eq_left_of_eq_true _ _ (eq_true (show (32 * m + 16 + 8 * l + e) % (2 * 2) < 2 by omega)),
-          hF m (by omega) (32 * m + 16 + 8 * l + e) (by omega) (by omega),
-          hF m (by omega) (32 * m + 16 + 8 * l + (e + 2)) (by omega) (by omega),
-          show 32 * m + 16 + 8 * l + (e + 2) = 32 * m + 16 + 8 * l + e + 2 by omega]
+          ite_eq_left_of_eq_true _ _ (eq_true (show (32 * m + 16 + 8 * l + e) % (2 * 2) < 2 by bdd_omega 256)),
+          hF m (by bdd_omega 256) (32 * m + 16 + 8 * l + e) (by bdd_omega 256) (by bdd_omega 256),
+          hF m (by bdd_omega 256) (32 * m + 16 + 8 * l + (e + 2)) (by bdd_omega 256) (by bdd_omega 256),
+          show 32 * m + 16 + 8 * l + (e + 2) = 32 * m + 16 + 8 * l + e + 2 by bdd_omega 256]
       · rw [ite_eq_right_of_eq_false _ _ (eq_false h),
-          ite_eq_right_of_eq_false _ _ (eq_false (show ¬ (32 * m + 16 + 8 * l + e) % (2 * 2) < 2 by omega)),
-          hF m (by omega) (32 * m + 16 + 8 * l + (e - 2)) (by omega) (by omega),
-          hF m (by omega) (32 * m + 16 + 8 * l + e) (by omega) (by omega),
-          show 32 * m + 16 + 8 * l + (e - 2) = 32 * m + 16 + 8 * l + e - 2 by omega]
+          ite_eq_right_of_eq_false _ _ (eq_false (show ¬ (32 * m + 16 + 8 * l + e) % (2 * 2) < 2 by bdd_omega 256)),
+          hF m (by bdd_omega 256) (32 * m + 16 + 8 * l + (e - 2)) (by bdd_omega 256) (by bdd_omega 256),
+          hF m (by bdd_omega 256) (32 * m + 16 + 8 * l + e) (by bdd_omega 256) (by bdd_omega 256),
+          show 32 * m + 16 + 8 * l + (e - 2) = 32 * m + 16 + 8 * l + e - 2 by bdd_omega 256]
   · intro m hm i hi h
-    rw [layF_get hblk F (by decide) zi (by omega) hi, layF_get hblk F (by decide) zi (by omega) hi]
+    rw [layF_get hblk F (by decide) zi (by bdd_omega 256) hi, layF_get hblk F (by decide) zi (by bdd_omega 256) hi]
     rcases h with h | h
-    · rw [ite_eq_left_of_eq_true _ _ (eq_true (show i < 2 * 2 * (8 * (m + 1)) by omega)),
-        ite_eq_left_of_eq_true _ _ (eq_true (show i < 2 * 2 * (8 * m) by omega))]
-    · rw [ite_eq_right_of_eq_false _ _ (eq_false (show ¬ i < 2 * 2 * (8 * (m + 1)) by omega)),
-        ite_eq_right_of_eq_false _ _ (eq_false (show ¬ i < 2 * 2 * (8 * m) by omega))]
+    · rw [ite_eq_left_of_eq_true _ _ (eq_true (show i < 2 * 2 * (8 * (m + 1)) by bdd_omega 256)),
+        ite_eq_left_of_eq_true _ _ (eq_true (show i < 2 * 2 * (8 * m) by bdd_omega 256))]
+    · rw [ite_eq_right_of_eq_false _ _ (eq_false (show ¬ i < 2 * 2 * (8 * (m + 1)) by bdd_omega 256)),
+        ite_eq_right_of_eq_false _ _ (eq_false (show ¬ i < 2 * 2 * (8 * m) by bdd_omega 256))]
 
 end
 

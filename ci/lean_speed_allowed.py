@@ -3,8 +3,11 @@
 `DECIDE_SIMP_ALLOWED`: `simp (config := {decide := true})` whose replacement
 by simprocs broke the proof (`decide` evaluated a closed fact that no simproc
 reduces, such as a definition applied to literals, or the goal's shape
-changed), or uses inside tactic macros that many proofs share. Lower a count
-when you remove a use; never raise one or add a file.
+changed), or was not cheaper: in the shared block-runner and layout macros
+`decide` only decides small closed facts, and simprocs measured slower (e.g.
+ML-DSA x86-64 `lay`: 87e9 to 154e9 instructions in one user). Lower a count
+when you remove a use; raise one or add a file only with a measurement
+showing `decide` is the cheaper option there.
 
 `BARE_ASSUMPTION_ALLOWED`: bare `assumption` after `<;>` or in `first | …`
 that needs default transparency (the hypothesis matches only up to unfolding)
@@ -32,8 +35,6 @@ DECIDE_SIMP_ALLOWED = {
     "VerifiedGarbage/Proof/AesSiv/X86_64/FinishShort.lean": 8,
     "VerifiedGarbage/Proof/AesSiv/X86_64/Init.lean": 4,
     "VerifiedGarbage/Proof/AesSiv/X86_64/Open.lean": 6,
-    "VerifiedGarbage/Proof/AesSiv/X86_64/S2vAd.lean": 2,
-    "VerifiedGarbage/Proof/AesSiv/X86_64/S2vStart.lean": 2,
     "VerifiedGarbage/Proof/AesSiv/X86_64/XorBytes.lean": 1,
     "VerifiedGarbage/Proof/Blake2/AArch64/Compress.lean": 11,
     "VerifiedGarbage/Proof/Blake2/Arm/CompressB.lean": 9,
@@ -44,13 +45,13 @@ DECIDE_SIMP_ALLOWED = {
     "VerifiedGarbage/Proof/ChaCha20/AArch64/Mixed5/Args.lean": 1,
     "VerifiedGarbage/Proof/ChaCha20/AArch64/Mixed8/Last.lean": 1,
     "VerifiedGarbage/Proof/ChaCha20/AArch64/Mixed8/Save.lean": 1,
-    "VerifiedGarbage/Proof/ChaCha20/AArch64/Neon4/Setup.lean": 3,
+    "VerifiedGarbage/Proof/ChaCha20/AArch64/Neon4/Setup.lean": 2,
     "VerifiedGarbage/Proof/ChaCha20/AArch64/Neon4/Transpose.lean": 1,
     "VerifiedGarbage/Proof/ChaCha20/AArch64/Rows6/Ops.lean": 6,
     "VerifiedGarbage/Proof/ChaCha20/AArch64/Rows6/Save.lean": 1,
     "VerifiedGarbage/Proof/ChaCha20/AArch64/Rows6/Setup.lean": 2,
-    "VerifiedGarbage/Proof/ChaCha20/AArch64/Stream/Apply.lean": 18,
-    "VerifiedGarbage/Proof/ChaCha20/AArch64/Stream/Init.lean": 6,
+    "VerifiedGarbage/Proof/ChaCha20/AArch64/Stream/Apply.lean": 5,
+    "VerifiedGarbage/Proof/ChaCha20/AArch64/Stream/Init.lean": 4,
     "VerifiedGarbage/Proof/ChaCha20/Arm/Block.lean": 3,
     "VerifiedGarbage/Proof/ChaCha20/Arm/Stream/Apply.lean": 8,
     "VerifiedGarbage/Proof/ChaCha20/Arm/Stream/Init.lean": 2,
@@ -73,7 +74,7 @@ DECIDE_SIMP_ALLOWED = {
     "VerifiedGarbage/Proof/ChaCha20Poly1305/X86_64/CT.lean": 19,
     "VerifiedGarbage/Proof/CmacAes/AArch64/Finalize.lean": 2,
     "VerifiedGarbage/Proof/CmacAes/AArch64/Subkeys.lean": 2,
-    "VerifiedGarbage/Proof/CmacAes/AArch64/Update.lean": 2,
+    "VerifiedGarbage/Proof/CmacAes/AArch64/UpdateLoop.lean": 2,
     "VerifiedGarbage/Proof/CmacAes/Stream/AArch64/AbsorbBlocks.lean": 14,
     "VerifiedGarbage/Proof/CmacAes/Stream/X86_64/Copy.lean": 1,
     "VerifiedGarbage/Proof/CmacAes/Stream/X86_64/Init.lean": 4,
@@ -223,11 +224,8 @@ DECIDE_SIMP_ALLOWED = {
 BARE_ASSUMPTION_ALLOWED = {
     "VerifiedGarbage/Proof/Aes/X86_64/Vaes/Ctr32.lean": 2,
     "VerifiedGarbage/Proof/AesGcm/X86_64/Blocks/Base.lean": 1,
-    "VerifiedGarbage/Proof/AesSiv/X86_64/CryptCT.lean": 1,
     "VerifiedGarbage/Proof/AesSiv/X86_64/Init.lean": 1,
-    "VerifiedGarbage/Proof/AesSiv/X86_64/S2vAd.lean": 1,
-    "VerifiedGarbage/Proof/AesSiv/X86_64/S2vStart.lean": 1,
-    "VerifiedGarbage/Proof/Argon2/AArch64/Taint.lean": 1,
+    "VerifiedGarbage/Proof/Argon2/AArch64/Compress.lean": 1,
     "VerifiedGarbage/Proof/Argon2/X86/Divide.lean": 1,
     "VerifiedGarbage/Proof/Argon2/X86_64/Taint.lean": 1,
     "VerifiedGarbage/Proof/Blake2/AArch64/Compress.lean": 1,
@@ -281,4 +279,30 @@ BARE_ASSUMPTION_ALLOWED = {
     "VerifiedGarbage/Proof/Sha512/X86_64/Avx2/Compress.lean": 1,
     "VerifiedGarbage/Proof/Sha512/X86_64/Compress.lean": 1,
     "VerifiedGarbage/Proof/Sha512/X86_64/ShaNi/Compress.lean": 1,
+}
+
+# Proofs that unfold a stack-depth function and close it by `omega` without
+# `Nat.max_le` (see `check_lean_speed.py`): an induction over any code (one
+# `max` of two variables per case), and proofs being changed elsewhere when
+# the rule was added. Same rule.
+DEPTH_OMEGA_ALLOWED = {
+    "VerifiedGarbage/Proof/MlKem/Arm/CallF.lean": 1,
+    "VerifiedGarbage/Proof/Pbkdf2/Md/AArch64/Core.lean": 3,
+}
+
+# Uses of `Exec.preservedV`, `WP.preservedV` or `WP.withPreservedV` that leave
+# the check of every instruction to its default `decide +kernel` (see
+# `check_lean_speed.py`), in proofs that were being changed elsewhere when the
+# rule was added: pass `(by lit_decide)`. Same rule.
+DEFAULT_CERT_ALLOWED = {
+    "VerifiedGarbage/Proof/Md5/AArch64/Compress.lean": 1,
+    "VerifiedGarbage/Proof/Md5/AArch64/Stream/Init.lean": 1,
+    "VerifiedGarbage/Proof/Sha1/AArch64/Compress.lean": 1,
+    "VerifiedGarbage/Proof/Sha1/AArch64/Sha2/Compress.lean": 1,
+    "VerifiedGarbage/Proof/Sha1/AArch64/Stream/Init.lean": 1,
+    "VerifiedGarbage/Proof/Sha256/AArch64/Compress.lean": 1,
+    "VerifiedGarbage/Proof/Sha256/AArch64/Sha2/Compress.lean": 1,
+    "VerifiedGarbage/Proof/Sha3/AArch64/Permute.lean": 1,
+    "VerifiedGarbage/Proof/Sha512/AArch64/Compress.lean": 1,
+    "VerifiedGarbage/Proof/Sha512/AArch64/Sha3/Compress.lean": 1,
 }

@@ -77,7 +77,7 @@ theorem update_call (hc : Ctx E g m₀ rd wr t) (hE : 24 ≤ E.toNat)
     (hs : Region.Disjoint ⟨scr.setWidth 64, 192⟩ (below (t.gpr .esp) 4))
     (hd : Region.Disjoint ⟨p.setWidth 64, len.toNat⟩ (below (t.gpr .esp) 4))
     (hr : Spec.Sha512.Repr Spec.Sha512.H0_512 t.mem (scr.setWidth 64) prev) :
-    WP isa (.call Spec.Sha512.updateApi.name update) t fun u =>
+    WP isa (.call Spec.Sha512.updateScratchApi.name update) t fun u =>
       Ctx E g m₀ rd wr u ∧ Frame (wr' ++ [below E 24]) t.mem u.mem ∧
       Spec.Sha512.Repr Spec.Sha512.H0_512 u.mem (scr.setWidth 64)
         (prev ++ Spec.Ed25519.bytesAt t.mem (p.setWidth 64) len.toNat) := by
@@ -100,7 +100,7 @@ theorem finalize_call (hc : Ctx E g m₀ rd wr t) (hE : 24 ≤ E.toNat)
     (hcount : Proof.Sha512.countX86 t.callEntry = BitVec.ofNat 64 msg.length)
     (hs : Region.Disjoint ⟨scr.setWidth 64, 192⟩ (below (t.gpr .esp) 4))
     (hr : Spec.Sha512.Repr Spec.Sha512.H0_512 t.mem (scr.setWidth 64) msg) (hlen : msg.length < 2 ^ 64) :
-    WP isa (.call Spec.Sha512.finalizeApi.name finalize) t fun u =>
+    WP isa (.call Spec.Sha512.finalizeScratchApi.name finalize) t fun u =>
       Ctx E g m₀ rd wr u ∧ Frame (wr' ++ [below E 24]) t.mem u.mem ∧
       Spec.Ed25519.bytesAt u.mem (out.setWidth 64) 64 = Spec.Sha512.finalHash Spec.Sha512.H0_512 msg := by
   refine call_ok hc hE Proof.Sha512.X86.Stream.Finalize.finalize_verified.1 finalize_nosp

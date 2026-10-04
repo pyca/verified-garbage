@@ -113,7 +113,7 @@ theorem update_call_ct (hL : L.Ok) (count : Nat) (p n : Value)
     (hi : Input L (value L p) (value L n)) :
     RelCT isa (Two L g₁ g₂ m₁ m₂ (AllArgs L
       [(.r0, .caller 5 0), (.r2, .const count), (.r3, .const 0)] [p,n,.caller 5 192]))
-      (.call Spec.Sha512.updateApi.name Impl.Sha512.Arm.Stream.update)
+      (.call Spec.Sha512.updateScratchApi.name Impl.Sha512.Arm.Stream.update)
       (Two L g₁ g₂ m₁ m₂ fun _ => True) := by
   apply call_ct Proof.Sha512.Arm.Stream.Update.update_verified.1
     Proof.Sha512.Arm.Stream.Update.update_verified.2.1 Whole.update_noFrames
@@ -134,7 +134,7 @@ theorem finalize_call_ct (hL : L.Ok) (n : Nat) (b : Bool) :
     RelCT isa (Two L g₁ g₂ m₁ m₂ (AllArgs L
       [(.r0, .caller 5 0), (.r2, if b then .caller 4 n else .const n), (.r3, .const 0)]
       [.frame 184, .caller 5 192]))
-      (.call Spec.Sha512.finalizeApi.name Impl.Sha512.Arm.Stream.finalize)
+      (.call Spec.Sha512.finalizeScratchApi.name Impl.Sha512.Arm.Stream.finalize)
       (Two L g₁ g₂ m₁ m₂ fun _ => True) := by
   apply call_ct Proof.Sha512.Arm.Stream.Finalize.finalize_verified.1
     Proof.Sha512.Arm.Stream.Finalize.finalize_verified.2.1 Whole.finalize_noFrames

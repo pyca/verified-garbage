@@ -294,6 +294,27 @@ theorem step_upd (hr : τ.regs.subset r = true) (hf : τ.flags = true → f = tr
   | movdquStore _ _ => simp only [step, reduceCtorEq] at hs
   | xop _ => simp only [step, reduceCtorEq] at hs
 
+theorem LeR.sim {a a' b b' : T} (ha : Sim a' a) (hb : Sim b' b) (h : LeR a b) : LeR a' b' where
+  regs := by rw [ha.regs, hb.regs]; exact h.regs
+  flags e := by rw [hb.flags]; exact h.flags (ha.flags ▸ e)
+  slots x hx := (hb.slots x).mpr (h.slots x ((ha.slots x).mp hx))
+  shape := by
+    have e := h.shape
+    have e₁ : b.lens = a.lens := (congrArg T.lens e).trans rfl
+    have e₂ : b.bases = a.bases := (congrArg T.bases e).trans rfl
+    have e₃ : b.wbases = a.wbases := (congrArg T.wbases e).trans rfl
+    have e₄ : b.argLen = a.argLen := (congrArg T.argLen e).trans rfl
+    have e₅ : b.argBases = a.argBases := (congrArg T.argBases e).trans rfl
+    have e₆ : b.stk = a.stk := (congrArg T.stk e).trans rfl
+    have e₇ : b.room = a.room := (congrArg T.room e).trans rfl
+    obtain ⟨_, _, _, _, _, _, _, _, _, _⟩ := a'
+    obtain ⟨_, _, _, _, _, _, _, _, _, _⟩ := b'
+    simp only [upd, T.mk.injEq, true_and]
+    exact ⟨hb.lens.trans (e₁.trans ha.lens.symm), hb.bases.trans (e₂.trans ha.bases.symm),
+      hb.wbases.trans (e₃.trans ha.wbases.symm), hb.argLen.trans (e₄.trans ha.argLen.symm),
+      hb.argBases.trans (e₅.trans ha.argBases.symm), hb.stk.trans (e₆.trans ha.stk.symm),
+      hb.room.trans (e₇.trans ha.room.symm)⟩
+
 theorem LeR.step {τ σ τ' : T} (h : LeR τ σ) (i : Instr) (hs : step τ i = some τ') :
     ∃ σ', step σ i = some σ' ∧ LeR τ' σ' := by
   rw [h.shape]; exact step_upd h.regs h.flags h.slots i hs
@@ -601,10 +622,15 @@ instance : VG.Taint.Frame taint where
     show leK _ _ = true
     rw [leK_eq]; exact le_of_le_leR (by rw [← leK_eq]; exact hm) (leR_iff.mp h)
   step {τ σ τ'} i h hs := by
-    have hs : stepK τ i = some τ' := hs
-    rw [stepK_eq] at hs
-    obtain ⟨σ', h₁, h₂⟩ := (leR_iff.mp h).step i hs
-    exact ⟨σ', by show stepK σ i = some σ'; rw [stepK_eq]; exact h₁, leR_iff.mpr h₂⟩
+    have hs : stepKD τ i = some τ' := hs
+    rcases stepKD_spec τ i with ⟨h', -⟩ | ⟨a, b, h₁, h₂, hab⟩
+    · rw [h'] at hs; cases hs
+    rw [h₁] at hs; cases hs
+    obtain ⟨σ'', h₃, h₄⟩ := (leR_iff.mp h).step i h₂
+    rcases stepKD_spec σ i with ⟨-, h'⟩ | ⟨c, d, h₅, h₆, hcd⟩
+    · rw [h'] at h₃; cases h₃
+    rw [h₆] at h₃; cases h₃
+    exact ⟨c, h₅, leR_iff.mpr (h₄.sim hab hcd)⟩
   condPub _ h hc := (leR_iff.mp h).flags hc
   meet h₁ h₂ := leR_iff.mpr (meet_upd (leR_iff.mp h₁) (leR_iff.mp h₂))
   call {τ σ τ'} h hs := by
@@ -679,10 +705,13 @@ instance : VG.Taint.Frame taint where
     intro r _
     left; simp [RegSet.mem, RegSet.empty]
   keepsCall_bot := rfl
-  step_keeps i hk hΦF hΦ hs := by
-    have hs : stepK _ i = some _ := hs
-    rw [stepK_eq] at hs
-    exact step_keeps' i hk hΦF hΦ hs
+  step_keeps {F Φ σ σ'} i hk hΦF hΦ hs := by
+    have hs : stepKD σ i = some σ' := hs
+    rcases stepKD_spec σ i with ⟨h', -⟩ | ⟨a, b, h₁, h₂, hab⟩
+    · rw [h'] at hs; cases hs
+    rw [h₁] at hs; cases hs
+    have h := frLe_iff.mp (step_keeps' i hk hΦF hΦ h₂)
+    exact frLe_iff.mpr ⟨hab.regs ▸ h.1, fun e => hab.flags ▸ h.2 e⟩
   call_keeps _ _ hΦ hs := by
     obtain ⟨e₁, e₂⟩ := callStep_regs hs
     obtain ⟨a₁, a₂⟩ := frLe_iff.mp hΦ

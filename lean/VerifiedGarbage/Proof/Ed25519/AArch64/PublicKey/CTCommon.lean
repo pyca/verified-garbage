@@ -229,7 +229,7 @@ theorem init_step (hc : Ctx L g vec m₀ t) (hL : L.Ok) (ha : Arguments L m₀) 
 
 theorem update_step (v : Whole.Backend) (hc : Ctx L g vec m₀ t) (hL : L.Ok) (ha : Arguments L m₀)
     (hh : Spec.Sha512.Repr Spec.Sha512.H0_512 t.mem L.scr []) :
-    WP isa (callWith updateArgs (Spec.Sha512.updateApi.name ++ v.suffix) v.update) t fun u =>
+    WP isa (callWith updateArgs (Spec.Sha512.updateScratchApi.name ++ v.suffix) v.update) t fun u =>
       Ctx L g vec m₀ u ∧ Spec.Sha512.Repr Spec.Sha512.H0_512 u.mem L.scr
         (Spec.Ed25519.bytesAt m₀ L.seed 32) := by
   refine WP.seq (WP.mono (setup_ok hc hL ha
@@ -270,7 +270,7 @@ theorem finalize_writes (L : Lay) : ∀ r ∈ Whole.finalizeWr L.scr (L.E + 192)
 
 theorem finalize_step (v : Whole.Backend) (hc : Ctx L g vec m₀ t) (hL : L.Ok) (ha : Arguments L m₀)
     (hh : Spec.Sha512.Repr Spec.Sha512.H0_512 t.mem L.scr (Spec.Ed25519.bytesAt m₀ L.seed 32)) :
-    WP isa (callWith finalizeArgs (Spec.Sha512.finalizeApi.name ++ v.suffix) v.finalize) t fun u =>
+    WP isa (callWith finalizeArgs (Spec.Sha512.finalizeScratchApi.name ++ v.suffix) v.finalize) t fun u =>
       Ctx L g vec m₀ u ∧ Spec.Ed25519.bytesAt u.mem (L.E + 192) 64 =
         Spec.Sha512.sha512 (Spec.Ed25519.bytesAt m₀ L.seed 32) := by
   refine WP.seq (WP.mono (setup_ok hc hL ha
@@ -388,7 +388,7 @@ theorem body_depth (v : Whole.Backend) : (body v.code v.suffix).aarch64Depth ≤
   change (Impl.Sha512.AArch64.Stream.finalizeWith v.suffix v.code).aarch64Depth ≤ 1 at hf
   have hb := Whole.depth_zero_of_noFrames base_noFrames
   simp only [body, Impl.Ed25519.AArch64.PublicKey.hash, Impl.Ed25519.AArch64.Whole.callWith,
-    Code.aarch64Depth, Impl.Sha512.AArch64.Stream.init, hb]
+    Code.aarch64Depth, Nat.max_le, Impl.Sha512.AArch64.Stream.init, hb]
   omega
 
 theorem publicKey_ok (v : Whole.Backend) {s : State} (h : pkLocal.pre s) :
