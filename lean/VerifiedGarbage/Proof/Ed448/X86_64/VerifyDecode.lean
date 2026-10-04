@@ -1,5 +1,7 @@
 import VerifiedGarbage.Proof.Ed448.X86_64.VerifyChecks
-import VerifiedGarbage.Proof.Ed448.X86_64.VerifyField
+import VerifiedGarbage.Proof.Ed448.VerifyFormulas
+import VerifiedGarbage.Proof.Ed448.X86_64.BaseField
+import VerifiedGarbage.Impl.Ed448.X86_64.VerifyEquation
 import VerifiedGarbage.Proof.Ed448.Recover
 import VerifiedGarbage.Proof.Ed448.DecodeBytes
 
@@ -15,7 +17,7 @@ hold the decoded point's coordinates (`Z = 1`).
 -/
 
 namespace VG.Proof.Ed448.X86_64
-open VG VG.X86_64 VG.Impl.Ed448.X86_64
+open VG VG.X86_64 VG.Impl.Ed448 VG.Impl.Ed448.X86_64
 open VG.Proof.X448.X86_64 (Scr word off Outside Outside2 ofs writeW_outside word_writeW_self contains_sc rv mv fe E
   Index Keeps freeze_ok stores_ok val7 mv7 rvW slot_lt W_len)
 open VG.Impl.X448.X86_64 (W w sc at_ slot)
@@ -233,17 +235,6 @@ theorem zeroSign (z : Bool) (sb : Nat) (hsb : sb < 2) :
     ((if z then (1 : BitVec 64) else 0) &&& BitVec.ofNat 64 sb = 0 ↔ ¬ (z = true ∧ sb = 1)) := by
   rcases (by omega : sb = 0 ∨ sb = 1) with rfl | rfl <;> cases z <;> decide
 
-theorem idx_val (i : Index) : idx i.val = i := Fin.ext (Nat.mod_eq_of_lt i.isLt)
-
-theorem subNeg_eval (xo : Index) (h : xo ≠ 12) (e : VG.Proof.X448.X86_64.Env) :
-    evalOps [.sub 12 xo.val xo.val, .sub 12 12 xo.val] e 12 = (e xo - e xo) - e xo ∧
-      ∀ i : Index, i ≠ 12 → evalOps [.sub 12 xo.val xo.val, .sub 12 12 xo.val] e i = e i := by
-  have h12 : idx 12 = 12 := rfl
-  simp only [evalOps, List.foldl, evalOp, idx_val, h12]
-  refine ⟨?_, fun i hi => ?_⟩
-  · rw [Function.update_self, Function.update_self, Function.update_of_ne h]
-  · rw [Function.update_of_ne hi, Function.update_of_ne hi]
-
 variable {fld : Impl.X448.X86_64.Field} (hf : FieldOk fld)
 
 include hf in
@@ -350,51 +341,6 @@ theorem decodeSign_ok {s : State} {base : Addr} (hs : Scr s base) (xo : Index) (
   · rw [kt.wr, wr7, k6.wr, wr5, wr4, wr3, wr2, k1.2.2.2]
   · intro x h1 h2
     rw [kt.mem x h1, m7, k6.mem x h1, O5 x h2]
-
-theorem decodeUV_dest : ∀ xo yo : Nat, (xo = 6 ∧ yo = 7) ∨ (xo = 8 ∧ yo = 9) →
-    ∀ op ∈ decodeUV yo xo, fopDest op % 22 = 3 ∨ fopDest op % 22 = 4 ∨ fopDest op % 22 = 5 ∨
-      fopDest op % 22 = 12 ∨ fopDest op % 22 = 13 ∨ fopDest op % 22 = xo := by
-  rintro xo yo (⟨rfl, rfl⟩ | ⟨rfl, rfl⟩) <;> decide
-
-theorem decodeUV_eval (xo yo : Index) (h : (xo = 6 ∧ yo = 7) ∨ (xo = 8 ∧ yo = 9))
-    (e : VG.Proof.X448.X86_64.Env) :
-    let y := e yo
-    let u := y * y - e 10
-    let v := e 11 * (y * y) - e 10
-    let t := u * u * u * v
-    let e' := evalOps (decodeUV yo.val xo.val) e
-    e' 13 = u ∧ e' 3 = v ∧ e' xo = t ∧ e' 12 = t * ((u * v) * (u * v)) ∧
-      ∀ i : Index, i ≠ 3 → i ≠ 4 → i ≠ 5 → i ≠ 12 → i ≠ 13 → i ≠ xo → e' i = e i := by
-  have hk : ∀ i : Index, i ≠ 3 → i ≠ 4 → i ≠ 5 → i ≠ 12 → i ≠ 13 → i ≠ xo →
-      evalOps (decodeUV yo.val xo.val) e i = e i := fun i h3 h4 h5 h12 h13 hx =>
-    evalOps_keep _ _ _ fun op hop => by
-      have hd := decodeUV_dest xo.val yo.val (by rcases h with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;> decide) op hop
-      have : i.val ≠ 3 := fun h => h3 (Fin.ext h)
-      have : i.val ≠ 4 := fun h => h4 (Fin.ext h)
-      have : i.val ≠ 5 := fun h => h5 (Fin.ext h)
-      have : i.val ≠ 12 := fun h => h12 (Fin.ext h)
-      have : i.val ≠ 13 := fun h => h13 (Fin.ext h)
-      have := Fin.val_ne_of_ne hx
-      omega
-  rcases h with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
-  · exact ⟨rfl, rfl, rfl, rfl, hk⟩
-  · exact ⟨rfl, rfl, rfl, rfl, hk⟩
-
-theorem decodeXOps_eval (xo : Index) (h : xo = 6 ∨ xo = 8) (e : VG.Proof.X448.X86_64.Env) :
-    let x := e xo * e 21
-    let e' := evalOps [.mul xo.val xo.val 21, .sqr 12 xo.val, .mul 12 3 12] e
-    e' xo = x ∧ e' 12 = e 3 * (x * x) ∧ e' 13 = e 13 ∧ ∀ i : Index, i ≠ xo → i ≠ 12 → e' i = e i := by
-  have hk : ∀ i : Index, i ≠ xo → i ≠ 12 →
-      evalOps [.mul xo.val xo.val 21, .sqr 12 xo.val, .mul 12 3 12] e i = e i := fun i hx h12 =>
-    evalOps_keep _ _ _ fun op hop => by
-      simp only [List.mem_cons, List.not_mem_nil, or_false] at hop
-      have := Fin.val_ne_of_ne hx
-      have : i.val ≠ 12 := fun h => h12 (Fin.ext h)
-      have := xo.isLt
-      rcases hop with rfl | rfl | rfl <;> simp only [fopDest] <;> omega
-  rcases h with rfl | rfl
-  · exact ⟨rfl, rfl, rfl, hk⟩
-  · exact ⟨rfl, rfl, rfl, hk⟩
 
 include hf in
 theorem decodeX_ok {s : State} {base : Addr} (hs : Scr s base) (xo : Index) (hxo : xo = 6 ∨ xo = 8) :

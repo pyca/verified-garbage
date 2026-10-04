@@ -1,0 +1,221 @@
+import VerifiedGarbage.Impl.Ed448.AArch64.ScalarBase
+
+/-!
+# Ed448 verification's equation on AArch64
+
+`vg_ed448_verify_equation(pk = x0, signature = x1, challenge = x2,
+scratch = x3) -> w0`: 1 if the public key and `R` (the signature's first 57
+bytes) decode, `S` (its last 57) is below `L`, and `[4][S]B = [4]R + [4][k]A`
+for the 456-bit challenge `k`; 0 otherwise. The algorithm is x86-64's, with
+the field arithmetic of `vg_ed448_scalar_base` (X448's eight 56-bit limbs per
+slot).
+
+Everything is computed whatever the inputs, and the checks are accumulated
+in `x20`, which stays 0 exactly when every one passes: each check ORs into
+it a word that is 0 if and only if it passes.
+
+* `S < L`: its byte 56 is 0, and its low 448 bits plus `2^448 - L` do not
+  carry (`carryK`: eight 56-bit chunks of seven bytes, added with carries).
+* Decoding a point (RFC 8032 §5.2.3) at `x0` or `x1` into the slots `xo` and
+  `yo`: the eight seven-byte chunks of `y` into slot `yo`; `y < p` (`y + 2^224
+  + 1` does not carry) and bits 448–454 of the encoding 0; the sign bit kept
+  in `x17`; `u = y² - 1`, `v = d y² - 1`, the candidate root `x = u³v
+  (u⁵v³)^((p-3)/4)` (`root`: X448's addition chain until `2^223 - 1`, then 223
+  squarings), the check `v x² = u`, the check that `x = 0` comes with the
+  sign bit 0, and `x` swapped with `-x` by a mask (kept in `x17` while `-x`
+  is computed) if its low bit is not the sign bit. A comparison or a low bit uses `x`, or the elements compared,
+  fully reduced into `X2` (slot 1) as sixteen 28-bit limbs (`canon`, with
+  X448's `toLegacy` and `freeze`).
+* `A` is decoded into slots 6–7 (`Z = 1` in slot 10) and negated, and
+  `Q = [S]B + [k](-A)` computed from the top bit down, as `[s]B` is: `Q`
+  doubled, `B` (slots 8–10) added and swapped into `Q` by bit `t` of `S`,
+  then `-A` added and swapped in by bit `t` of `k`. The bits of `S` are bytes
+  at `BITS`, those of `k` at `2 KOFF` (beyond `ldrb`'s immediates, so
+  through `x11 + KOFF`).
+* `Q`'s `Y` is moved to slot 6 (`X2` is used to compare), `R` decoded into
+  slots 8–9, `Q` and `R` doubled twice, and compared: `X_Q Z_R = X_R Z_Q` and
+  `Y_Q Z_R = Y_R Z_Q`.
+
+The result is 1 if `x20` is 0; `x19` and `x20` are saved in the working space
+and restored. Every address and branch depends only on the pointers.
+-/
+
+namespace VG.Impl.Ed448.AArch64
+
+open VG.AArch64
+open VG.Impl.X448.AArch64 (ld st slot BITS X2 T0 T1 T2 T3 T4 T5 T6 T7)
+
+/-! ## The working space -/
+
+/-- A fully reduced field element (sixteen 28-bit limbs), to compare another with. -/
+def CAN : Nat := 2880
+/-- Half the offset of the bits of `k`. -/
+def KOFF : Nat := 2048
+
+/-! ## Checks -/
+
+/-- `x20 |= x5`. -/
+def orBad : List Instr := [.logic .orr .x .x20 .x20 .x5]
+
+/-- `x5 = 1` if `x5 = 0`, else `0`: the no-borrow flag of `0 - x5`. -/
+def isZero : List Instr := [.movz .x .x6 0 0, .subs .x .x7 .x6 .x5, .adc .x .x5 .x6 .x6]
+
+/-- Slot `a` fully reduced into `X2`, as sixteen 28-bit limbs. -/
+def canon (a : Nat) : List Instr :=
+  Curve448.AArch64.copy X2 (slot a) ++ Curve448.AArch64.toLegacy X2 ++ Impl.X448.AArch64.freeze
+
+/-- `x5` = the OR of the sixteen words of `X2` XORed with those of `CAN`. -/
+def diffCan : List Instr :=
+  [.movz .x .x5 0 0] ++ (List.range 16).flatMap fun i =>
+    [ld .x4 (X2 + 8 * i), ld .x6 (CAN + 8 * i), .logic .eor .x .x4 .x4 .x6, .logic .orr .x .x5 .x5 .x4]
+
+/-- `x20 |= 0` exactly when slots `a` and `b` hold the same field element. -/
+def eqSlots (a b : Nat) : List Instr :=
+  canon a ++ Impl.X448.AArch64.copy CAN X2 ++ canon b ++ diffCan ++ orBad
+
+/-- `x4` = the seven bytes at `rp + o`, little-endian, from the highest. -/
+def bytes7 (rp : Reg) (o : Nat) : List Instr :=
+  [.movz .x .x4 0 0] ++ (List.range 7).flatMap fun j =>
+    [.lsl .x .x4 .x4 8, .ldrb .x7 rp (o + (6 - j)), .add .x .x4 .x4 .x7]
+
+/-- `x5` = the carry out of the 56 bytes at `rp + o` plus `K`, as eight
+56-bit chunks with carries. -/
+def carryK (rp : Reg) (o K : Nat) : List Instr :=
+  [.movz .x .x5 0 0] ++ (List.range 8).flatMap fun i =>
+    bytes7 rp (o + 7 * i) ++
+      Impl.X448.AArch64.Base.const64 .x6 (BitVec.ofNat 64 ((K >>> (56 * i)) % 2 ^ 56)) ++
+      [.add .x .x4 .x4 .x6, .add .x .x4 .x4 .x5, .lsr .x .x5 .x4 56]
+
+/-- `x20 |= 0` exactly when the 57 bytes at `x1 + 57` are below `L`. -/
+def sCheck : List Instr :=
+  carryK .x1 57 (2 ^ 448 - Spec.Ed448.L) ++ orBad ++ [.ldrb .x5 .x1 113] ++ orBad
+
+/-! ## Decoding a point -/
+
+/-- `[T7] = [z]^((p-3)/4)`: X448's addition chain (`Weak.invert`) as far as
+`z^(2^223 - 1)` in `T7` and `z^(2^222 - 1)` in `T6`, then
+`(z^(2^223 - 1))^(2^223) · z^(2^222 - 1)`. -/
+def root (z : Nat) : Prog isa :=
+  .seq (X448.AArch64.Weak.ops [.copy T0 (slot z)]) <| .seq (X448.AArch64.Weak.sqn T0 1) <|
+  .seq (X448.AArch64.Weak.ops [.mul T0 T0 (slot z), .copy T1 T0]) <|
+  .seq (X448.AArch64.Weak.sqn T1 2) <| .seq (X448.AArch64.Weak.ops [.mul T1 T1 T0, .copy T2 T1]) <|
+  .seq (X448.AArch64.Weak.sqn T2 4) <| .seq (X448.AArch64.Weak.ops [.mul T2 T2 T1, .copy T3 T2]) <|
+  .seq (X448.AArch64.Weak.sqn T3 8) <| .seq (X448.AArch64.Weak.ops [.mul T3 T3 T2, .copy T4 T3]) <|
+  .seq (X448.AArch64.Weak.sqn T4 16) <| .seq (X448.AArch64.Weak.ops [.mul T4 T4 T3, .copy T5 T4]) <|
+  .seq (X448.AArch64.Weak.sqn T5 32) <| .seq (X448.AArch64.Weak.ops [.mul T5 T5 T4, .copy T6 T5]) <|
+  .seq (X448.AArch64.Weak.sqn T6 64) <| .seq (X448.AArch64.Weak.ops [.mul T6 T6 T5]) <|
+  .seq (X448.AArch64.Weak.sqn T6 64) <| .seq (X448.AArch64.Weak.ops [.mul T6 T6 T5]) <|
+  .seq (X448.AArch64.Weak.sqn T6 16) <| .seq (X448.AArch64.Weak.ops [.mul T6 T6 T3]) <|
+  .seq (X448.AArch64.Weak.sqn T6 8) <| .seq (X448.AArch64.Weak.ops [.mul T6 T6 T2]) <|
+  .seq (X448.AArch64.Weak.sqn T6 4) <| .seq (X448.AArch64.Weak.ops [.mul T6 T6 T1]) <|
+  .seq (X448.AArch64.Weak.sqn T6 2) <| .seq (X448.AArch64.Weak.ops [.mul T6 T6 T0, .copy T7 T6]) <|
+  .seq (X448.AArch64.Weak.sqn T7 1) <| .seq (X448.AArch64.Weak.ops [.mul T7 T7 (slot z)]) <|
+  .seq (X448.AArch64.Weak.sqn T7 223) (X448.AArch64.Weak.ops [.mul T7 T7 T6])
+
+/-- The 57 bytes at `rp`: `y`'s eight seven-byte chunks into slot `yo`, the
+sign bit into `x17`, and `x20 |= 0` exactly when `y < p` and bits 448–454
+are 0. -/
+def decodeY (rp : Reg) (yo : Nat) : List Instr :=
+  (List.range 8).flatMap (fun i => bytes7 rp (7 * i) ++ [st .x4 (slot yo + 8 * i)]) ++
+  carryK rp 0 (2 ^ 224 + 1) ++ orBad ++
+  [.ldrb .x5 rp 56, .lsr .x .x17 .x5 7, .movz .x .x6 0x7f 0, .logic .and .x .x5 .x5 .x6] ++ orBad
+
+/-- `x` fully reduced into `X2`; `x20 |= 0` exactly when `x ≠ 0` or the sign
+bit is 0. -/
+def zeroSign (xo : Nat) : List Instr :=
+  canon xo ++ [.movz .x .x5 0 0] ++
+  (List.range 16).flatMap (fun i => [ld .x4 (X2 + 8 * i), .logic .orr .x .x5 .x5 .x4]) ++ isZero ++
+  [.logic .and .x .x5 .x5 .x17] ++ orBad
+
+/-- `x17` = the mask of `x`'s low bit (from `X2`) differing from the sign bit
+(in `x17`). -/
+def negMask : List Instr :=
+  [ld .x4 X2, .movz .x .x6 1 0, .logic .and .x .x4 .x4 .x6, .logic .eor .x .x4 .x4 .x17,
+    .movz .x .x6 0 0, .sub .x .x17 .x6 .x4]
+
+/-- `x` swapped with `-x` (in slot 12) by the mask in `x17`. -/
+def negSwap (xo : Nat) : List Instr :=
+  [.addImm .x .x6 .x17 0] ++ Curve448.AArch64.cswap (slot xo) (slot 12)
+
+/-- Decode the 57 bytes at `rp` into slots `xo` and `yo`. -/
+def decode (rp : Reg) (xo yo : Nat) : Prog isa :=
+  .seq (.block (decodeY rp yo)) <| .seq (field (decodeUV yo xo)) <| .seq (root 12) <|
+  .seq (field [.mul xo xo 21, .sqr 12 xo, .mul 12 3 12]) <|
+  .seq (.block (eqSlots 12 13 ++ zeroSign xo ++ negMask)) <|
+  .seq (field [.sub 12 xo xo, .sub 12 12 xo]) (.block (negSwap xo))
+
+/-! ## `[S]B + [k](-A)` -/
+
+/-- Bit `j` of scalar byte `x19` (at `src + so + x19`) at `x3 + 8 x19 + d1 + d2 + j`. -/
+def bitsBodyAt (src : Reg) (so d1 d2 : Nat) : List Instr :=
+  [.add .x .x11 src .x19, .ldrb .x4 .x11 so, .lsl .x .x11 .x19 3, .add .x .x11 .x3 .x11,
+    .addImm .x .x11 .x11 d1] ++
+  (List.range 8).flatMap (fun j =>
+    [.lsr .x .x5 .x4 j, .logic .and .x .x5 .x5 .x8, .strb .x5 .x11 (d2 + j)]) ++
+  [.addImm .x .x19 .x19 1, .subImm .x .x11 .x19 57]
+
+/-- The 456 bits of the 57 bytes at `src + so`. -/
+def bitsAt (src : Reg) (so d1 d2 : Nat) : Prog isa :=
+  .seq (.block [.movz .x .x19 0 0, .movz .x .x8 1 0]) (.loop (.block (bitsBodyAt src so d1 d2)) (.nonzero .x .x11))
+
+/-- `x6 = -[x3 + x19 + d1 + d2]`: the mask of a bit. -/
+def maskAt (d1 d2 : Nat) : List Instr :=
+  [.add .x .x11 .x3 .x19, .addImm .x .x11 .x11 d1, .ldrb .x4 .x11 d2, .movz .x .x6 0 0, .sub .x .x6 .x6 .x4]
+
+/-- `T` (slots 3–5) swapped into `Q` (slots 0–2) by the mask `x6`. -/
+def swapT : List Instr :=
+  Curve448.AArch64.cswap (slot 0) (slot 3) ++ Curve448.AArch64.cswap (slot 1) (slot 4) ++
+    Curve448.AArch64.cswap (slot 2) (slot 5)
+
+/-- One bit `t = x19 - 1`, from the top. -/
+def vstep : Prog isa :=
+  .seq (.block [.subImm .x .x19 .x19 1]) <| .seq (field (doubleAt 0 1 2)) <|
+  .seq (field (addAt 8 9)) <| .seq (.block (maskAt 0 BITS ++ swapT)) <|
+  .seq (field (addAt 6 7)) (.block (maskAt KOFF KOFF ++ swapT))
+
+/-- The 456 bits, from 455 down to 0. -/
+def vloop : Prog isa :=
+  .seq (.block [.movz .x .x19 456 0]) (.loop vstep (.nonzero .x .x19))
+
+/-! ## The function -/
+
+/-- `x12 = 2^28 - 1`, `x19` and `x20` saved, `x20 = 0`, and every slot zeroed;
+then `B` and the constants 1 and `d`. -/
+def ventry : List Instr :=
+  [.movz .x .x12 0xffff 0, .movk .x .x12 0x0fff 1, st .x19 0, st .x20 8, .movz .x .x20 0 0,
+    .movz .x .x4 0 0] ++
+  (List.range 352).map (fun i => st .x4 (slot 0 + 8 * i)) ++
+  Impl.X448.AArch64.Base.constSlot (slot 8) Spec.Ed448.basePoint.X ++
+  Impl.X448.AArch64.Base.constSlot (slot 9) Spec.Ed448.basePoint.Y ++
+  Impl.X448.AArch64.Base.constSlot (slot 10) 1 ++ Impl.X448.AArch64.Base.constSlot (slot 11) Spec.Ed448.d
+
+/-- `Q` the neutral point `(0 : 1 : 1)` (slot 0 is still zero). -/
+def qInit : List Instr :=
+  Impl.X448.AArch64.Base.constSlot (slot 1) 1 ++ Impl.X448.AArch64.Base.constSlot (slot 2) 1
+
+/-- `[4]Q` and `[4]R` compared (`Q` in slots 0, 6 and 2, `R` in 8–10), the
+result `x0 = (x20 == 0)`, and `x19` and `x20` restored. -/
+def vfinish : Prog isa :=
+  .seq (field (doubleAt 0 6 2 ++ doubleAt 0 6 2 ++ doubleAt 8 9 10 ++ doubleAt 8 9 10 ++
+    [.mul 12 0 10, .mul 13 8 2])) <|
+  .seq (.block (eqSlots 12 13)) <| .seq (field [.mul 12 6 10, .mul 13 9 2]) <|
+  .block (eqSlots 12 13 ++ [.addImm .x .x5 .x20 0] ++ isZero ++
+    [.addImm .x .x0 .x5 0, ld .x19 0, ld .x20 8])
+
+/-- The bits of `S` (the signature's last 57 bytes) at `BITS`, and of `k` at `2 KOFF`. -/
+def vbits : Prog isa :=
+  .seq (bitsAt .x1 57 0 BITS) (bitsAt .x2 0 KOFF KOFF)
+
+/-- `A` decoded into slots 6–7 and negated (slot 0 is zero), and `Q` the neutral point. -/
+def vdecodeA : Prog isa :=
+  .seq (decode .x0 6 7) <| .seq (field [.sub 6 0 6]) (.block qInit)
+
+/-- `Q`'s `Y` moved to slot 6, and `R` decoded into slots 8–9. -/
+def vdecodeR : Prog isa :=
+  .seq (Impl.X448.AArch64.Weak.ops [.copy (slot 6) (slot 1)]) (decode .x1 8 9)
+
+def verifyEquation : Prog isa :=
+  .seq (.block ventry) <| .seq vbits <| .seq (.block sCheck) <| .seq vdecodeA <| .seq vloop <|
+  .seq vdecodeR vfinish
+
+end VG.Impl.Ed448.AArch64

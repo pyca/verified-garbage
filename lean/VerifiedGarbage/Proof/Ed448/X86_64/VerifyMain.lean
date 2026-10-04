@@ -44,9 +44,6 @@ theorem movRsi_ok {s : State} {base : Addr} (hs : Scr s base) {d : Nat} (hd : d 
   erun [hs.rdi, rb]
   exact fun r hr => by simp only [hr, ite_false]
 
-theorem evalOps_append (a b : List FOp) (e : Env) : evalOps (a ++ b) e = evalOps b (evalOps a e) :=
-  List.foldl_append ..
-
 /-- `[4]Q` and `[4]R`, doubling `Q` twice and then `R` twice. -/
 def vcompare : List FOp := doubleAt 0 1 2 ++ doubleAt 0 1 2 ++ doubleAt 8 9 10 ++ doubleAt 8 9 10
 
