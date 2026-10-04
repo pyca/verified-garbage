@@ -4,9 +4,10 @@ import VerifiedGarbage.Impl.CmacAes.Stream.X86
 /-!
 # AES-CCM: x86 (32-bit) implementation
 
-`vg_aes_ccm_seal(schedule, rounds, nonce, nonce_len, aad, aad_len, data, len, work, tag_len)`
+`vg_aes_ccm_seal(schedule, rounds, nonce, nonce_len, aad, aad_len, data, len, tag, tag_len, work)`
 and `vg_aes_ccm_open` with the same arguments (see `VG.Spec.Ccm.sealContract`
-and `openContract`), cdecl (every argument on the stack), composed of calls
+and `openContract`, which a frame allocating `work` on the stack implements:
+`Proof/AesCcm/X86/Frame.lean`), cdecl (every argument on the stack), composed of calls
 of the verified `vg_cmac_aes_update`, whose chaining (`Cᵢ = CIPH_K(Cᵢ₋₁ ⊕ Mᵢ)`)
 from a zero block is CCM's CBC-MAC (§6.1 steps 1–4), and `vg_aes_ctr32`.
 Like those, they are generic over the implementation of AES they call
@@ -18,7 +19,7 @@ conventions and pieces of x86's AES-GCM (`Impl/AesGcm/X86.lean`).
 
 `work` (`W`, 2560 bytes):
 
-* `[0, 16)`: the tag (the received one, for `open`);
+* `[0, 16)`: the tag `seal` computes, copied to `tag` at the end;
 * `[32, 48)`: a block `B`: `B₀`, the first block of the associated data, or
   a last block padded with zeros;
 * `[48, 64)`: the counter block `Ctr₀`;
@@ -29,8 +30,8 @@ conventions and pieces of x86's AES-GCM (`Impl/AesGcm/X86.lean`).
 * `[144, 184)`: the arguments, kept for the whole function, and whether the
   tags are equal;
 * `[196, 212)` and `[240, 256)`: the received tag and the computed one,
-  compared (AES-GCM's `recv` and `cmp`, with the received tag at `W` itself,
-  whose address is kept at `W + 212`);
+  compared (AES-GCM's `recv` and `cmp`, with the address of the received tag,
+  `tag`, kept at `W + 212`);
 * `[272, 284)`: the arguments of the piece running (`dO`, `nO`, `bO`);
 * `[384, 2560)`: the working space of the functions called.
 
@@ -70,7 +71,8 @@ As on x86-64:
   wrap around; then the last bytes with a keystream block.
 * `mask`: every byte of the data ANDed with `0 − ok`.
 
-`seal` computes the MAC of the payload, the tag, then encrypts the payload;
+`seal` computes the MAC of the payload, the tag, encrypts the payload, then
+copies the tag to `tag` (`tagOut`);
 `open` decrypts it, computes the MAC of the plaintext and the tag at
 `W + 96`, compares the first `tag_len` bytes of the two tags without a
 branch (`recv`, `cmp`), and masks the data.
@@ -248,16 +250,20 @@ def mask : Prog isa :=
 
 /-! ## The functions -/
 
-/-- Our caller's registers saved in `work` (the ninth argument), `ebp :=`
-`work`, the arguments kept, and the address of the received tag (`W`
-itself) at `W + 212`. -/
+/-- The first `tag_len` bytes of the tag at `W` copied to `tag` (kept at
+`W + tpO`). -/
+def tagOut : Prog isa :=
+  .seq (.block [.mov .edi (.reg .ebp), .mov .edx (slot tpO), .mov .ecx (slot tglO)]) copyLoop
+
+/-- Our caller's registers saved in `work` (the eleventh argument), `ebp :=`
+`work`, and the arguments kept (`tag` at `W + 212`). -/
 def ccmEntry : Prog isa :=
-  entry 8 (keep 0 ctxO ++ keep 1 roundsO ++ keep 2 nonceO ++ keep 3 nlenO ++ keep 4 aadO ++ keep 5 alenO ++
-    keep 6 dataO ++ keep 7 lenO ++ keep 9 tglO ++ [.store (at_ .ebp tpO) .ebp])
+  entry 10 (keep 0 ctxO ++ keep 1 roundsO ++ keep 2 nonceO ++ keep 3 nlenO ++ keep 4 aadO ++ keep 5 alenO ++
+    keep 6 dataO ++ keep 7 lenO ++ keep 8 tpO ++ keep 9 tglO)
 
 /-- `vg_aes_ccm_seal`. -/
 def «seal» : Prog isa :=
-  .seq ccmEntry (.seq ctrs (.seq (mac c sfx 0) (.seq (tag c 0) (.seq (ctr c) (.block restore)))))
+  .seq ccmEntry (.seq ctrs (.seq (mac c sfx 0) (.seq (tag c 0) (.seq (ctr c) (.seq tagOut (.block restore))))))
 
 /-- `vg_aes_ccm_open`. -/
 def «open» : Prog isa :=

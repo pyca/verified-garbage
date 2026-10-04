@@ -21,21 +21,21 @@ open VG.Proof.AesGcm.X86 (CT w64 slotv)
 
 /-- What the MAC's pieces keep: the slots, and the associated data and the
 data readable. -/
-structure MacMid (K W SP : BitVec 32) (R : Nat) (N A D : BitVec 32) (nl al n tl : Nat) (s : State) : Prop where
+structure MacMid (K W SP : BitVec 32) (R : Nat) (N A D T : BitVec 32) (nl al n tl : Nat) (s : State) : Prop where
   env : Env K W SP s
-  slots : Slots W K R N A D nl al n tl s.mem
+  slots : Slots W K R N A D T nl al n tl s.mem
   aad : Buf W SP s A al
   data : Buf W SP s D n
 
-theorem MacMid.next {K W SP : BitVec 32} (L : Lay K W SP) {R : Nat} {N A D : BitVec 32} {nl al n tl : Nat} {s : State}
-    (h : MacMid K W SP R N A D nl al n tl s) {y : Nat} (hy : y = 0 ∨ y = 96) {s' : State} (E : Env K W SP s')
+theorem MacMid.next {K W SP : BitVec 32} (L : Lay K W SP) {R : Nat} {N A D T : BitVec 32} {nl al n tl : Nat} {s : State}
+    (h : MacMid K W SP R N A D T nl al n tl s) {y : Nat} (hy : y = 0 ∨ y = 96) {s' : State} (E : Env K W SP s')
     (f : Frame (macR W SP y) s.mem s'.mem) (rd : s'.rd = s.rd) (wr : s'.wr = s.wr) :
-    MacMid K W SP R N A D nl al n tl s' :=
+    MacMid K W SP R N A D T nl al n tl s' :=
   ⟨E, h.slots.macR L hy f, h.aad.of_eq rd wr, h.data.of_eq rd wr⟩
 
 /-- What `b0` and `mac` start from: also `Ctr₀` at `W + 48`. -/
-structure MacPre (K W SP : BitVec 32) (R : Nat) (N A D : BitVec 32) (nl al n tl : Nat) (s : State) : Prop
-    extends MacMid K W SP R N A D nl al n tl s where
+structure MacPre (K W SP : BitVec 32) (R : Nat) (N A D T : BitVec 32) (nl al n tl : Nat) (s : State) : Prop
+    extends MacMid K W SP R N A D T nl al n tl s where
   c0 : ∃ nonce : List Byte, nonce.length = nl ∧
     bytesAt s.mem (w64 W + BitVec.ofNat 64 48) 16 = Spec.Ccm.ctrBlock nonce 0
 
@@ -50,10 +50,10 @@ theorem b0Blk_ct {y : Nat} (hy : y = 0 ∨ y = 96) {I : State → Prop}
   · exact CT.taint [.ebp] hr (by taint_decide)
 
 theorem b0_ct (v : Ctr32Impl) {K W SP : BitVec 32} (L : Lay K W SP) {R : Nat} (hR : R = 10 ∨ R = 12 ∨ R = 14)
-    {N A D : BitVec 32} {nl al n tl : Nat} (h7 : 7 ≤ nl) (h13 : nl ≤ 13) (ht4 : 4 ≤ tl) (ht16 : tl ≤ 16)
+    {N A D T : BitVec 32} {nl al n tl : Nat} (h7 : 7 ≤ nl) (h13 : nl ≤ 13) (ht4 : 4 ≤ tl) (ht16 : tl ≤ 16)
     (hte : tl % 2 = 0) (hal : al < 2 ^ 32) (hn : n < 256 ^ (15 - nl)) (hn32 : n < 2 ^ 32) {y : Nat}
     (hy : y = 0 ∨ y = 96) :
-    CT (MacPre K W SP R N A D nl al n tl) (b0 v.callee v.suffix y) := by
+    CT (MacPre K W SP R N A D T nl al n tl) (b0 v.callee v.suffix y) := by
   refine CT.assoc3 (CT.seq (J := fun s => Env K W SP s ∧ slotv s.mem W ctxO = K ∧
       slotv s.mem W roundsO = BitVec.ofNat 32 R) ?_ (fun s hs => ?_) (updBlock_ct v L hR hy fun _ h => h))
   · refine CT.block_seq [.ebp] (pin_ebp fun _ h => h.env.ebp) (by taint_decide)
@@ -79,16 +79,16 @@ theorem b0_ct (v : Ctr32Impl) {K W SP : BitVec 32} (L : Lay K W SP) {R : Nat} (h
       by rw [k₃ _ (by decide) (by decide)]; exact hs.slots.rounds⟩
 
 theorem mac_ct (v : Ctr32Impl) {K W SP : BitVec 32} (L : Lay K W SP) {R : Nat} (hR : R = 10 ∨ R = 12 ∨ R = 14)
-    {N A D : BitVec 32} {nl al n tl : Nat} (h7 : 7 ≤ nl) (h13 : nl ≤ 13) (ht4 : 4 ≤ tl) (ht16 : tl ≤ 16)
+    {N A D T : BitVec 32} {nl al n tl : Nat} (h7 : 7 ≤ nl) (h13 : nl ≤ 13) (ht4 : 4 ≤ tl) (ht16 : tl ≤ 16)
     (hte : tl % 2 = 0) (hal : al < 2 ^ 32) (hn : n < 256 ^ (15 - nl)) (hn32 : n < 2 ^ 32) {y : Nat}
     (hy : y = 0 ∨ y = 96) :
-    CT (MacPre K W SP R N A D nl al n tl) (mac v.callee v.suffix y) := by
-  refine CT.seq (J := MacMid K W SP R N A D nl al n tl) (b0_ct v L hR h7 h13 ht4 ht16 hte hal hn hn32 hy)
+    CT (MacPre K W SP R N A D T nl al n tl) (mac v.callee v.suffix y) := by
+  refine CT.seq (J := MacMid K W SP R N A D T nl al n tl) (b0_ct v L hR h7 h13 ht4 ht16 hte hal hn hn32 hy)
     (fun s hs => ?_) ?_
   · obtain ⟨nonce, hnl, hc0⟩ := hs.c0
     exact WP.mono (b0_ok v L hs.env hR hs.slots hnl h7 h13 ht4 ht16 hte hal hn hn32 hc0 hy)
       fun s₁ ⟨E₁, f₁, _, rd, wr⟩ => hs.toMacMid.next L hy E₁ f₁ rd wr
-  refine CT.seq (J := MacMid K W SP R N A D nl al n tl)
+  refine CT.seq (J := MacMid K W SP R N A D T nl al n tl)
     ((aad_ct v L hR hy hal).mono fun s hs => ⟨hs.env, hs.slots.ctx, hs.slots.rounds, hs.slots.aad, hs.slots.alen,
       hs.aad⟩)
     (fun s hs => WP.mono (aad_ok v L hs.env hR hs.slots.ctx hs.slots.rounds hy hs.slots.aad hs.slots.alen hs.aad hal)

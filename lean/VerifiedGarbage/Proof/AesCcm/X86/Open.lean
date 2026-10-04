@@ -7,7 +7,7 @@ import VerifiedGarbage.Proof.AesCcm.X86.Mask
 Untrusted: everything here is checked by Lean. `open` is the start (the
 entry and `Ctr₀`), counter mode over the data, which decrypts it (`ctr_ok`),
 the MAC of the plaintext at `W + 96` (`mac_ok`), encrypted (`tag_ok`), the
-received tag padded (`recvW_ok`) and compared with it without a branch
+received tag padded (AES-GCM's `recv_ok`) and compared with it without a branch
 (AES-GCM's `cmp_ok`), the data masked (`mask_ok`) and the exit
 (`open_wp`).
 -/
@@ -31,14 +31,14 @@ theorem append_zeros_iff {x y : List Byte} {k : Nat} :
   ⟨List.append_cancel_right, fun h => by rw [h]⟩
 
 /-- `vg_aes_ccm_open`, for its arguments. -/
-theorem open_wp' (v : Ctr32Impl) {s : State} {K W SP N A D : BitVec 32} {R nl al n tl : Nat}
-    (Ar : Args s K W SP N A D R nl al n tl) (hsp : s.gpr .esp = SP) (a0 : arg s 0 = K)
+theorem open_wp' (v : Ctr32Impl) {s : State} {K W SP N A D T : BitVec 32} {R nl al n tl : Nat}
+    (Ar : Args s K W SP N A D T R nl al n tl) (hsp : s.gpr .esp = SP) (a0 : arg s 0 = K)
     (a1 : arg s 1 = BitVec.ofNat 32 R) (a2 : arg s 2 = N) (a3 : arg s 3 = BitVec.ofNat 32 nl) (a4 : arg s 4 = A)
-    (a5 : arg s 5 = BitVec.ofNat 32 al) (a6 : arg s 6 = D) (a7 : arg s 7 = BitVec.ofNat 32 n) (a8 : arg s 8 = W)
-    (a9 : arg s 9 = BitVec.ofNat 32 tl) :
+    (a5 : arg s 5 = BitVec.ofNat 32 al) (a6 : arg s 6 = D) (a7 : arg s 7 = BitVec.ofNat 32 n) (a8 : arg s 8 = T)
+    (a9 : arg s 9 = BitVec.ofNat 32 tl) (a10 : arg s 10 = W) :
     WP isa («open» v.callee v.suffix) s fun s' => abiPreserved s s' ∧
       match Spec.Ccm.decryptWith (Spec.Ccm.ctxCiph s.mem (w64 K) R) tl (bytesAt s.mem (w64 N) nl)
-          (bytesAt s.mem (w64 D) n) (bytesAt s.mem (w64 A) al) (bytesAt s.mem (w64 W) tl) with
+          (bytesAt s.mem (w64 D) n) (bytesAt s.mem (w64 A) al) (bytesAt s.mem (w64 T) tl) with
       | some pt => s'.gpr .eax = 1 ∧ bytesAt s'.mem (w64 D) n = pt
       | none => s'.gpr .eax = 0 ∧ bytesAt s'.mem (w64 D) n = Spec.Ccm.zeros n := by
   have L := Ar.lay
@@ -47,7 +47,7 @@ theorem open_wp' (v : Ctr32Impl) {s : State} {K W SP N A D : BitVec 32} {R nl al
   have h13' : (bytesAt s.mem (w64 N) nl).length ≤ 13 := by rw [hnl]; exact Ar.h13
   have ht16 := Ar.t16
   have ht4 := Ar.t4
-  refine seq_assoc (WP.seq (WP.mono (start_ok Ar hsp a0 a1 a2 a3 a4 a5 a6 a7 a8 a9) fun s₂ St => ?_))
+  refine seq_assoc (WP.seq (WP.mono (start_ok Ar hsp a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10) fun s₂ St => ?_))
   -- Counter mode: the plaintext.
   have C₂ : CtrCtx K W SP s₂ R (bytesAt s.mem (w64 N) nl) D n :=
     ⟨L, Ar.rounds, h7', h13', by rw [hnl]; exact Ar.hn, Ar.n32, St.c0, Ar.data.of_eq St.rd St.wr,
@@ -81,7 +81,10 @@ theorem open_wp' (v : Ctr32Impl) {s : State} {K W SP N A D : BitVec 32} {R nl al
   have rd₅' : s₅.rd = s.rd := by rw [rd₅, A₄.rd, rd₃']
   have wr₅' : s₅.wr = s.wr := by rw [wr₅, A₄.wr, wr₃']
   -- The received tag.
-  refine WP.seq (WP.mono (recvW_ok L E₅ S₅.tl S₅.tp (by omega) ht16) fun s₆ ⟨b₆, f₆, E₆, rd₆, wr₆⟩ => ?_)
+  have Tb₅ := Ar.tag.of_eq rd₅' wr₅'
+  refine WP.seq (WP.mono (Proof.AesGcm.X86.recv_ok ⟨E₅.ebp, E₅.perm.w, L.fw⟩ S₅.tl S₅.tp Tb₅.rd Tb₅.wrap Tb₅.w
+    (by omega) ht16) fun s₆ ⟨b₆, f₆, bp₆, _, sp₆, rd₆, wr₆⟩ => ?_)
+  have E₆ : Env K W SP s₆ := ⟨by rw [bp₆, E₅.ebp], by rw [sp₆, E₅.esp], E₅.perm.of_eq rd₆ wr₆⟩
   -- The comparison.
   have hv₆ : slotv s₆.mem W tglO = BitVec.ofNat 32 tl := by
     show s₆.mem.readW (w64 W + BitVec.ofNat 64 tglO) 32 = _
@@ -175,33 +178,8 @@ theorem open_wp' (v : Ctr32Impl) {s : State} {K W SP N A D : BitVec 32} {R nl al
         · exact .inl (Lay.wSub (by decide))
         · exact .inr rfl) f₅,
       buf_kept Ar.data (y := 96) (by decide) A₄.frame]
-  have dT : ∀ {d k : Nat}, tl ≤ d → d + k ≤ 2560 → ∀ r ∈ [(⟨w64 W + BitVec.ofNat 64 d, k⟩ : Region)],
-      (⟨w64 W, tl⟩ : Region).Disjoint r := fun h₁ h₂ r hr => by
-    simp only [List.mem_singleton] at hr; subst hr
-    simpa using Lay.w_w (W := W) (a := 0) (n := tl) (.inl (by omega)) (by omega) h₂
-  have dTs : (⟨w64 W, tl⟩ : Region).Disjoint (below SP 56) := (L.stk_w.sub_right (Region.sub_prefix (by omega))).symm
-  have tg₅ : bytesAt s₅.mem (w64 W) tl = bytesAt s.mem (w64 W) tl := by
-    rw [Proof.AesGcm.X86.bytesAt_frame f₅ (fun r hr => by
-        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-        rcases hr with rfl | rfl | rfl | rfl
-        · exact dT (by omega) (by decide) _ (List.mem_singleton_self _)
-        · exact dT (by omega) (by decide) _ (List.mem_singleton_self _)
-        · exact dT (by omega) (by decide) _ (List.mem_singleton_self _)
-        · exact dTs) (by omega),
-      Proof.AesGcm.X86.bytesAt_frame A₄.frame (fun r hr => by
-        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-        rcases hr with rfl | rfl | rfl | rfl
-        · exact dT (by omega) (by decide) _ (List.mem_singleton_self _)
-        · exact dT (by omega) (by decide) _ (List.mem_singleton_self _)
-        · exact dT (by omega) (by decide) _ (List.mem_singleton_self _)
-        · exact dTs) (by omega),
-      Proof.AesGcm.X86.bytesAt_frame f₃ (fun r hr => by
-        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-        rcases hr with rfl | rfl | rfl | rfl
-        · exact dT (by omega) (by decide) _ (List.mem_singleton_self _)
-        · exact dT (by omega) (by decide) _ (List.mem_singleton_self _)
-        · exact dTs
-        · exact (Ar.data.w.sub_right (Region.sub_prefix (by omega))).symm) (by omega), St.tagB]
+  have tg₅ : bytesAt s₅.mem (w64 T) tl = bytesAt s.mem (w64 T) tl := by
+    rw [buf_mut Ar.tag Ar.td f₂₅, St.tagB]
   have hl : (bytesAt s.mem (w64 N) nl).length ≤ 15 := by rw [hnl]; have := Ar.h13; omega
   have o₄ := A₄.out
   rw [ci₃, aa₃, pt₃] at o₄
@@ -221,10 +199,10 @@ theorem open_wp' (v : Ctr32Impl) {s : State} {K W SP N A D : BitVec 32} {R nl al
         tl := by
     rw [Proof.AesCcm.mac_eq _ _ hl, List.length_take, length_bytesAt] at *; omega
   have key : c = true ↔
-      Spec.Ccm.cryptTag (Spec.Ccm.ctxCiph s.mem (w64 K) R) tl (bytesAt s.mem (w64 N) nl) (bytesAt s.mem (w64 W) tl) =
+      Spec.Ccm.cryptTag (Spec.Ccm.ctxCiph s.mem (w64 K) R) tl (bytesAt s.mem (w64 N) nl) (bytesAt s.mem (w64 T) tl) =
         Spec.Ccm.mac (Spec.Ccm.ctxCiph s.mem (w64 K) R) tl (bytesAt s.mem (w64 N) nl) (bytesAt s.mem (w64 A) al)
           (Spec.Ccm.crypt (Spec.Ccm.ctxCiph s.mem (w64 K) R) (bytesAt s.mem (w64 N) nl) (bytesAt s.mem (w64 D) n)) := by
-    rw [← hc, b₆, tg₅, hV, decide_eq_true_iff, show Spec.Ccm.zeros (16 - tl) = Spec.Gcm.zeros (16 - tl) from rfl,
+    rw [← hc, b₆, tg₅, hV, decide_eq_true_iff,
       append_zeros_iff, cryptTag_eq_iff (hBC _) ht16 _ hML (length_bytesAt _ _ _), eq_comm]
   simp only [Spec.Ccm.decryptWith]
   have hD₉ : bytesAt s'.mem (w64 D) n = if c then bytesAt s₈.mem (w64 D) n else Spec.Ccm.zeros n := by

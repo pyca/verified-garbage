@@ -173,8 +173,8 @@ theorem b0Pre_ok {K W SP : BitVec 32} {s : State} (L : Lay K W SP) (E : Env K W 
 
 /-- The slots, after code that writes only `macR`. -/
 theorem Slots.macR {K W SP : BitVec 32} (L : Lay K W SP) {y : Nat} (hy : y = 0 ∨ y = 96) {m m' : Mem}
-    (hf : Frame (macR W SP y) m m') {R : Nat} {N A D : BitVec 32} {nl al n tl : Nat}
-    (S : Slots W K R N A D nl al n tl m) : Slots W K R N A D nl al n tl m' :=
+    (hf : Frame (macR W SP y) m m') {R : Nat} {N A D T : BitVec 32} {nl al n tl : Nat}
+    (S : Slots W K R N A D T nl al n tl m) : Slots W K R N A D T nl al n tl m' :=
   ⟨by rw [slot_kept L hy hf (by decide) (by decide)]; exact S.ctx,
     by rw [slot_kept L hy hf (by decide) (by decide)]; exact S.rounds,
     by rw [slot_kept L hy hf (by decide) (by decide)]; exact S.nonce,
@@ -188,7 +188,7 @@ theorem Slots.macR {K W SP : BitVec 32} (L : Lay K W SP) {y : Nat} (hy : y = 0 �
 
 /-- `B₀` chained into a zeroed MAC state at `W + y`. -/
 theorem b0_ok (v : Ctr32Impl) {K W SP : BitVec 32} {s : State} (L : Lay K W SP) (E : Env K W SP s) {R : Nat}
-    (hR : R = 10 ∨ R = 12 ∨ R = 14) {N A D : BitVec 32} {nl al n tl : Nat} (S : Slots W K R N A D nl al n tl s.mem)
+    (hR : R = 10 ∨ R = 12 ∨ R = 14) {N A D T : BitVec 32} {nl al n tl : Nat} (S : Slots W K R N A D T nl al n tl s.mem)
     {nonce : List Byte} (hnl : nonce.length = nl) (h7 : 7 ≤ nl) (h13 : nl ≤ 13) (ht4 : 4 ≤ tl) (ht16 : tl ≤ 16)
     (hte : tl % 2 = 0) (hal : al < 2 ^ 32) (hn : n < 256 ^ (15 - nl)) (hn32 : n < 2 ^ 32)
     (hc0 : bytesAt s.mem (w64 W + BitVec.ofNat 64 48) 16 = Spec.Ccm.ctrBlock nonce 0) {y : Nat} (hy : y = 0 ∨ y = 96) :
@@ -243,7 +243,7 @@ theorem dataArgs_ok {K W SP : BitVec 32} {s₂ : State} (L : Lay K W SP) (E₂ :
 
 /-- CBC-MAC of the formatted nonce, associated data and payload into `W + y`. -/
 theorem mac_ok (v : Ctr32Impl) {K W SP : BitVec 32} {s : State} (L : Lay K W SP) (E : Env K W SP s) {R : Nat}
-    (hR : R = 10 ∨ R = 12 ∨ R = 14) {N A D : BitVec 32} {nl al n tl : Nat} (S : Slots W K R N A D nl al n tl s.mem)
+    (hR : R = 10 ∨ R = 12 ∨ R = 14) {N A D T : BitVec 32} {nl al n tl : Nat} (S : Slots W K R N A D T nl al n tl s.mem)
     {nonce : List Byte} (hnl : nonce.length = nl) (h7 : 7 ≤ nl) (h13 : nl ≤ 13) (ht4 : 4 ≤ tl) (ht16 : tl ≤ 16)
     (hte : tl % 2 = 0) (hal : al < 2 ^ 32) (hn : n < 256 ^ (15 - nl)) (hn32 : n < 2 ^ 32)
     (hc0 : bytesAt s.mem (w64 W + BitVec.ofNat 64 48) 16 = Spec.Ccm.ctrBlock nonce 0) {y : Nat} (hy : y = 0 ∨ y = 96)

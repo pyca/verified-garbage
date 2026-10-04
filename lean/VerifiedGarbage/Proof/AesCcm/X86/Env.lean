@@ -169,8 +169,8 @@ end Buf
 
 /-- The public values the entry keeps in `W`: the key schedule, the rounds,
 the nonce and its length, the associated data and its length, the data and
-its length, the tag length, and `W` itself (where the received tag is). -/
-structure Slots (W K : BitVec 32) (R : Nat) (N A D : BitVec 32) (nl al n tl : Nat) (m : Mem) : Prop where
+its length, the tag and its length. -/
+structure Slots (W K : BitVec 32) (R : Nat) (N A D T : BitVec 32) (nl al n tl : Nat) (m : Mem) : Prop where
   ctx : slotv m W Impl.AesCcm.X86.ctxO = K
   rounds : slotv m W Impl.AesCcm.X86.roundsO = BitVec.ofNat 32 R
   nonce : slotv m W Impl.AesCcm.X86.nonceO = N
@@ -180,7 +180,7 @@ structure Slots (W K : BitVec 32) (R : Nat) (N A D : BitVec 32) (nl al n tl : Na
   data : slotv m W Impl.AesCcm.X86.dataO = D
   len : slotv m W Impl.AesCcm.X86.lenO = BitVec.ofNat 32 n
   tl : slotv m W Impl.AesGcm.X86.tglO = BitVec.ofNat 32 tl
-  tp : slotv m W Impl.AesGcm.X86.tpO = W
+  tp : slotv m W Impl.AesGcm.X86.tpO = T
 
 /-- The parts of `W` the pieces write: the blocks at `[0, 112)`, the result of
 the comparison at `[176, 180)`, the padded received tag at `[196, 212)`, and
@@ -221,8 +221,8 @@ theorem kept_mut {K W SP D : BitVec 32} {n : Nat} (L : Lay K W SP)
 /-- The slots, after code that changes only `mutR`. -/
 theorem slots_mut {K W SP D' : BitVec 32} {n' : Nat} (L : Lay K W SP)
     (hD : (⟨w64 D', n'⟩ : Region).Disjoint ⟨w64 W, 2560⟩) {m m' : Mem} (hf : Frame (mutR W SP D' n') m m')
-    {R : Nat} {N A D : BitVec 32} {nl al n tl : Nat} (S : Slots W K R N A D nl al n tl m) :
-    Slots W K R N A D nl al n tl m' := by
+    {R : Nat} {N A D T : BitVec 32} {nl al n tl : Nat} (S : Slots W K R N A D T nl al n tl m) :
+    Slots W K R N A D T nl al n tl m' := by
   have k : ∀ o, (112 ≤ o ∧ o + 4 ≤ 176 ∨ 180 ≤ o ∧ o + 4 ≤ 196 ∨ 212 ≤ o ∧ o + 4 ≤ 240) →
       slotv m' W o = slotv m W o := fun o ho =>
     hf.readW (r := ⟨w64 W + BitVec.ofNat 64 o, 4⟩) (Region.contains_self _ _) (kept_mut L hD ho) (by decide)

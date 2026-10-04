@@ -18,7 +18,7 @@ open VG VG.X86 VG.X86.RegUpd VG.Impl.AesCcm.X86 VG.WriteBytes
 open VG.Spec.Aes (bytesAt)
 open VG.Proof.Aes.X86 (Ctr32Impl)
 open VG.Impl.AesGcm.X86 (at_ imm slot zero4 copyLoop cmp recv restore tglO tpO rO vO)
-open VG.Proof.AesGcm.X86 (CT w64 slotv slotv_eq WEnv cmp_ok recv_ct length_bytesAt and_self_beq32 readW_writeW_off)
+open VG.Proof.AesGcm.X86 (CT w64 slotv slotv_eq WEnv cmp_ok recv_ct recv_ok length_bytesAt and_self_beq32 readW_writeW_off)
 
 /-- `cmp 96` (AES-GCM's `cmp_ct`, for CCM's offset of the computed tag). -/
 theorem cmp96_ct {I : State → Prop} {W : BitVec 32} {t : Nat}
@@ -88,9 +88,9 @@ theorem okStore_ok {K W SP : BitVec 32} {s : State} (L : Lay K W SP) (E : Env K 
   refine ⟨_, by crun [E.ebp, L.aW, E.perm.wW], ?_, E.keep (by cregs []) (by cregs []) (by cmems []) (by cmems []), ?_, ?_⟩
   all_goals cmems []
 
-theorem open_top_ct (v : Ctr32Impl) {K W SP N A D : BitVec 32} {R nl al n tl : Nat} (z : State)
-    (Tz : Top K W SP N A D R nl al n tl z) :
-    CT (Top K W SP N A D R nl al n tl) («open» v.callee v.suffix) := by
+theorem open_top_ct (v : Ctr32Impl) {K W SP N A D T : BitVec 32} {R nl al n tl : Nat} (z : State)
+    (Tz : Top K W SP N A D T R nl al n tl z) :
+    CT (Top K W SP N A D T R nl al n tl) («open» v.callee v.suffix) := by
   have Ar := Tz.args
   have L := Ar.lay
   have h7' : ∀ m : Mem, 7 ≤ (bytesAt m (w64 N) nl).length := fun m => by rw [length_bytesAt]; exact Ar.h7
@@ -98,68 +98,70 @@ theorem open_top_ct (v : Ctr32Impl) {K W SP N A D : BitVec 32} {R nl al n tl : N
   have c0W : ∀ {d k : Nat}, (64 ≤ d ∨ d + k ≤ 48) → d + k ≤ 2560 →
       (⟨w64 W + BitVec.ofNat 64 48, 16⟩ : Region).Disjoint ⟨w64 W + BitVec.ofNat 64 d, k⟩ := fun h₁ h₂ =>
     Lay.w_w (by omega) (by decide) h₂
-  refine RelCT.assoc (CT.seq (J := fun s => ∃ s₀, Top K W SP N A D R nl al n tl s₀ ∧ Run s₀ K W SP N A D R nl al n tl s)
+  refine RelCT.assoc (CT.seq (J := fun s => ∃ s₀, Top K W SP N A D T R nl al n tl s₀ ∧ Run s₀ K W SP N A D T R nl al n tl s)
     (start_ct L Ar.h13) (fun s hs => WP.mono (start_ok hs.args hs.sp hs.a0 hs.a1 hs.a2 hs.a3 hs.a4 hs.a5 hs.a6 hs.a7
-      hs.a8 hs.a9) fun _ St => ⟨s, hs, Run.of_started St⟩) ?_)
+      hs.a8 hs.a9 hs.a10) fun _ St => ⟨s, hs, Run.of_started St⟩) ?_)
   -- Counter mode.
-  refine CT.seq (J := fun s => ∃ s₀, Top K W SP N A D R nl al n tl s₀ ∧ Run s₀ K W SP N A D R nl al n tl s)
-    ((ctr_ct v L Ar.rounds Ar.n32).mono fun s ⟨_, T, h⟩ => h.ctr_pre T.args)
-    (fun s ⟨s₀, T, h⟩ => by
-      obtain ⟨E, hK, hRo, hDp, hlen, nonce, C⟩ := h.ctr_pre T.args
-      exact WP.mono (ctr_ok v C E hK hRo hDp hlen) fun _ ⟨E', rd, wr, f, _⟩ => ⟨s₀, T, h.ctr T.args E' rd wr f⟩) ?_
+  refine CT.seq (J := fun s => ∃ s₀, Top K W SP N A D T R nl al n tl s₀ ∧ Run s₀ K W SP N A D T R nl al n tl s)
+    ((ctr_ct v L Ar.rounds Ar.n32).mono fun s ⟨_, Tp, h⟩ => h.ctr_pre Tp.args)
+    (fun s ⟨s₀, Tp, h⟩ => by
+      obtain ⟨E, hK, hRo, hDp, hlen, nonce, C⟩ := h.ctr_pre Tp.args
+      exact WP.mono (ctr_ok v C E hK hRo hDp hlen) fun _ ⟨E', rd, wr, f, _⟩ => ⟨s₀, Tp, h.ctr Tp.args E' rd wr f⟩) ?_
   -- The MAC.
-  refine CT.seq (J := fun s => ∃ s₀, Top K W SP N A D R nl al n tl s₀ ∧ Run s₀ K W SP N A D R nl al n tl s)
+  refine CT.seq (J := fun s => ∃ s₀, Top K W SP N A D T R nl al n tl s₀ ∧ Run s₀ K W SP N A D T R nl al n tl s)
     ((mac_ct v L Ar.rounds Ar.h7 Ar.h13 Ar.t4 Ar.t16 Ar.te Ar.al32 Ar.hn Ar.n32 (.inr rfl)).mono
-      fun s ⟨_, T, h⟩ => h.mac_pre T.args)
-    (fun s ⟨s₀, T, h⟩ => WP.mono (mac_ok v L h.env Ar.rounds (h.slots T.args) (length_bytesAt _ _ _) Ar.h7 Ar.h13
-      Ar.t4 Ar.t16 Ar.te Ar.al32 Ar.hn Ar.n32 h.c0 (.inr rfl) (T.args.aad.of_eq h.rd h.wr)
-      (T.args.data.of_eq h.rd h.wr)) fun _ A' => ⟨s₀, T, h.mac T.args (.inr rfl) A'⟩) ?_
+      fun s ⟨_, Tp, h⟩ => h.mac_pre Tp.args)
+    (fun s ⟨s₀, Tp, h⟩ => WP.mono (mac_ok v L h.env Ar.rounds (h.slots Tp.args) (length_bytesAt _ _ _) Ar.h7 Ar.h13
+      Ar.t4 Ar.t16 Ar.te Ar.al32 Ar.hn Ar.n32 h.c0 (.inr rfl) (Tp.args.aad.of_eq h.rd h.wr)
+      (Tp.args.data.of_eq h.rd h.wr)) fun _ A' => ⟨s₀, Tp, h.mac Tp.args (.inr rfl) A'⟩) ?_
   -- The tag.
-  refine CT.seq (J := fun s => ∃ s₀, Top K W SP N A D R nl al n tl s₀ ∧ Run s₀ K W SP N A D R nl al n tl s)
-    ((tag_ct v L Ar.rounds (.inr rfl)).mono fun s ⟨_, T, h⟩ => h.tag_pre T.args)
-    (fun s ⟨s₀, T, h⟩ => WP.mono (tag_ok v L h.env Ar.rounds (h.slots T.args).ctx (h.slots T.args).rounds (h7' _)
-      (h13' _) h.c0 (.inr rfl)) fun _ ⟨E, rd, wr, f, _⟩ => ⟨s₀, T, h.tag T.args (.inr rfl) E rd wr f⟩) ?_
+  refine CT.seq (J := fun s => ∃ s₀, Top K W SP N A D T R nl al n tl s₀ ∧ Run s₀ K W SP N A D T R nl al n tl s)
+    ((tag_ct v L Ar.rounds (.inr rfl)).mono fun s ⟨_, Tp, h⟩ => h.tag_pre Tp.args)
+    (fun s ⟨s₀, Tp, h⟩ => WP.mono (tag_ok v L h.env Ar.rounds (h.slots Tp.args).ctx (h.slots Tp.args).rounds (h7' _)
+      (h13' _) h.c0 (.inr rfl)) fun _ ⟨E, rd, wr, f, _⟩ => ⟨s₀, Tp, h.tag Tp.args (.inr rfl) E rd wr f⟩) ?_
   -- The received tag.
-  refine CT.seq (J := fun s => ∃ s₀, Top K W SP N A D R nl al n tl s₀ ∧ Run s₀ K W SP N A D R nl al n tl s)
-    (recv_ct (W := W) (T := W) (t := tl) fun s ⟨_, T, h⟩ =>
-      ⟨⟨h.env.ebp, h.env.perm.w, L.fw⟩, (h.slots T.args).tl, (h.slots T.args).tp⟩)
-    (fun s ⟨s₀, T, h⟩ => WP.mono (recvW_ok L h.env (h.slots T.args).tl (h.slots T.args).tp (by have := Ar.t4; omega)
-      Ar.t16) fun _ ⟨_, f, E, rd, wr⟩ => ⟨s₀, T, h.step E rd wr f
+  refine CT.seq (J := fun s => ∃ s₀, Top K W SP N A D T R nl al n tl s₀ ∧ Run s₀ K W SP N A D T R nl al n tl s)
+    (recv_ct (W := W) (T := T) (t := tl) fun s ⟨_, Tp, h⟩ =>
+      ⟨⟨h.env.ebp, h.env.perm.w, L.fw⟩, (h.slots Tp.args).tl, (h.slots Tp.args).tp⟩)
+    (fun s ⟨s₀, Tp, h⟩ => WP.mono (recv_ok ⟨h.env.ebp, h.env.perm.w, L.fw⟩ (h.slots Tp.args).tl (h.slots Tp.args).tp
+      (Tp.args.tag.of_eq h.rd h.wr).rd (Tp.args.tag.of_eq h.rd h.wr).wrap (Tp.args.tag.of_eq h.rd h.wr).w
+      (by have := Ar.t4; omega) Ar.t16) fun _ ⟨_, f, bp, _, sp, rd, wr⟩ => ⟨s₀, Tp,
+        h.step ⟨by rw [bp, h.env.ebp], by rw [sp, h.env.esp], h.env.perm.of_eq rd wr⟩ rd wr f
         (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact ⟨wT W, by simp, fun _ h => h⟩)
         (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact c0W (.inl (by decide)) (by decide))⟩) ?_
   -- The comparison.
-  refine CT.seq (J := fun s => (∃ s₀, Top K W SP N A D R nl al n tl s₀ ∧ Run s₀ K W SP N A D R nl al n tl s) ∧
+  refine CT.seq (J := fun s => (∃ s₀, Top K W SP N A D T R nl al n tl s₀ ∧ Run s₀ K W SP N A D T R nl al n tl s) ∧
       ∃ c : Bool, s.gpr .eax = if c then 1 else 0)
-    (cmp96_ct (W := W) (t := tl) fun s ⟨_, T, h⟩ => ⟨⟨h.env.ebp, h.env.perm.w, L.fw⟩, (h.slots T.args).tl⟩)
-    (fun s ⟨s₀, T, h⟩ => WP.mono (cmp_ok (o := uO) ⟨h.env.ebp, h.env.perm.w, L.fw⟩ (h.slots T.args).tl
+    (cmp96_ct (W := W) (t := tl) fun s ⟨_, Tp, h⟩ => ⟨⟨h.env.ebp, h.env.perm.w, L.fw⟩, (h.slots Tp.args).tl⟩)
+    (fun s ⟨s₀, Tp, h⟩ => WP.mono (cmp_ok (o := uO) ⟨h.env.ebp, h.env.perm.w, L.fw⟩ (h.slots Tp.args).tl
       (by have := Ar.t4; omega) Ar.t16 (by decide)) fun s' ⟨ax, f, bp, _, sp, rd, wr⟩ =>
-        ⟨⟨s₀, T, h.step ⟨by rw [bp, h.env.ebp], by rw [sp, h.env.esp], h.env.perm.of_eq rd wr⟩ rd wr f
+        ⟨⟨s₀, Tp, h.step ⟨by rw [bp, h.env.ebp], by rw [sp, h.env.esp], h.env.perm.of_eq rd wr⟩ rd wr f
           (fun r hr => by
             simp only [List.mem_singleton] at hr; subst hr; exact ⟨wC W, by simp, Offset.sub _ (by decide) (by decide)⟩)
           (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact c0W (.inl (by decide)) (by decide))⟩,
           _, by rw [ax, ofNat_ite]⟩) ?_
   -- `ok` kept.
-  refine CT.seq (J := fun s => (∃ s₀, Top K W SP N A D R nl al n tl s₀ ∧ Run s₀ K W SP N A D R nl al n tl s) ∧
+  refine CT.seq (J := fun s => (∃ s₀, Top K W SP N A D T R nl al n tl s₀ ∧ Run s₀ K W SP N A D T R nl al n tl s) ∧
       ∃ c : Bool, slotv s.mem W okO = if c then 1 else 0)
     (CT.taint [.ebp] (pin_ebp fun _ ⟨⟨_, _, h⟩, _⟩ => h.env.ebp) (by taint_decide))
-    (fun s ⟨⟨s₀, T, h⟩, c, hc⟩ => by
+    (fun s ⟨⟨s₀, Tp, h⟩, c, hc⟩ => by
       obtain ⟨s', run, hm, E', rd, wr⟩ := okStore_ok L h.env
-      refine WP.of_runBlock ⟨s', run, ⟨s₀, T, h.step E' rd wr (rs := [wO W]) ?_ ?_ ?_⟩, c, ?_⟩
+      refine WP.of_runBlock ⟨s', run, ⟨s₀, Tp, h.step E' rd wr (rs := [wO W]) ?_ ?_ ?_⟩, c, ?_⟩
       · rw [hm]; exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
       · intro r hr; simp only [List.mem_singleton] at hr; subst hr; exact ⟨wO W, by simp, fun _ h => h⟩
       · intro r hr; simp only [List.mem_singleton] at hr; subst hr; exact c0W (.inl (by decide)) (by decide)
       · rw [hm, ← hc]; exact Mem.readW_writeW_self32 _ _ _) ?_
   -- The data masked.
-  refine CT.seq (J := fun s => ∃ s₀, Top K W SP N A D R nl al n tl s₀ ∧ Run s₀ K W SP N A D R nl al n tl s)
-    (mask_ct L Ar.n32 fun s ⟨⟨_, T, h⟩, _⟩ => ⟨h.env, (h.slots T.args).data, (h.slots T.args).len⟩)
-    (fun s ⟨⟨s₀, T, h⟩, c, hc⟩ => WP.mono (mask_ok L h.env (h.slots T.args).data (h.slots T.args).len Ar.n32
-      (T.args.data.of_eq h.rd h.wr) (by rw [h.wr]; exact T.args.dw) hc) fun s' ⟨E, rd, wr, hm⟩ =>
-        ⟨s₀, T, h.step E rd wr (rs := [⟨w64 D, n⟩])
+  refine CT.seq (J := fun s => ∃ s₀, Top K W SP N A D T R nl al n tl s₀ ∧ Run s₀ K W SP N A D T R nl al n tl s)
+    (mask_ct L Ar.n32 fun s ⟨⟨_, Tp, h⟩, _⟩ => ⟨h.env, (h.slots Tp.args).data, (h.slots Tp.args).len⟩)
+    (fun s ⟨⟨s₀, Tp, h⟩, c, hc⟩ => WP.mono (mask_ok L h.env (h.slots Tp.args).data (h.slots Tp.args).len Ar.n32
+      (Tp.args.data.of_eq h.rd h.wr) (by rw [h.wr]; exact Tp.args.dw) hc) fun s' ⟨E, rd, wr, hm⟩ =>
+        ⟨s₀, Tp, h.step E rd wr (rs := [⟨w64 D, n⟩])
           (by rw [hm]; exact writeBytes_frame _ _ _ (by rw [length_mask]; exact Region.contains_self _ _))
           (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact ⟨_, by simp, fun _ h => h⟩)
           (fun r hr => by
             simp only [List.mem_singleton] at hr; subst hr
-            exact (T.args.data.w.sub_right (Lay.wSub (by decide))).symm)⟩) ?_
+            exact (Tp.args.data.w.sub_right (Lay.wSub (by decide))).symm)⟩) ?_
   -- `ok` returned, and the exit.
   refine CT.seq (J := fun s => s.gpr .ebp = W)
     (CT.taint [.ebp] (pin_ebp fun _ ⟨_, _, h⟩ => h.env.ebp) (by taint_decide))
@@ -170,7 +172,7 @@ theorem open_ct (v : Ctr32Impl) : ConstantTime isa openX86.pre openX86.pub («op
   CT.constantTime pubOf (fun _ _ _ _ h => pubOf_eq h.1) fun p => by
     by_cases hex : ∃ s, openX86.pre s ∧ pubOf s = p
     · obtain ⟨z, hz, hp⟩ := hex
-      exact (open_top_ct v z (top_of hz hp)).mono fun s hs => top_of hs.1 hs.2
+      exact (open_top_ct v z (top_of (args_of_open hz) hp)).mono fun s hs => top_of (args_of_open hs.1) hs.2
     · intro s₁ _ _ _ _ _ h
       exact (hex ⟨s₁, h.1⟩).elim
 
