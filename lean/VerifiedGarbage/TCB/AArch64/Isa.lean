@@ -39,7 +39,7 @@ Modelling choices:
   result is zero-extended into the 64-bit register (DDI 0487, the pseudocode
   accessor `X[n, width] = value` sets `_R[n] = ZeroExtend(value, 64)`).
 * Of the condition flags, only PSTATE.C is observable: ADDS/ADCS/SUBS/SBCS
-  write it and ADCS/SBCS/ADC/SBC read it. N, Z and V are not observable by any
+  write it and ADCS/SBCS/ADC/SBC and CSEL (with the condition HS) read it. N, Z and V are not observable by any
   modelled instruction; control flow uses `cbz`/`cbnz`. A call makes C
   unknown, since NZCV is undefined at a public interface (AAPCS64 §6.1.1).
 * Immediates that the instruction cannot encode make the instruction fault,
@@ -54,7 +54,7 @@ Modelling choices:
   of their data when PSTATE.DIT is 1 (DDI 0487, "About PSTATE.DIT", FEAT_DIT,
   which lists MADD and UBFM, as it does the other modelled data-processing
   instructions that read a register: ADD, SUB, AND, BIC, EOR, ORR, EXTR, REV and
-  MOVK, ADDS, ADCS, SUBS, SBCS, ADC, SBC and UMULH). The code does not set PSTATE.DIT,
+  MOVK, ADDS, ADCS, SUBS, SBCS, ADC, SBC, CSEL and UMULH). The code does not set PSTATE.DIT,
   for these as for the others.
 * Calls are `bl` and returns `ret` (DDI 0487, C6.2 "BL", "RET"). The return
   addresses are the next of the state's `unknowns`, which nothing constrains
@@ -322,6 +322,10 @@ inductive Instr
   /-- SBC: subtract the second operand and NOT(PSTATE.C); the flags are not
   set. -/
   | sbc (sz : Size) (d n m : Reg)
+  /-- `csel d, n, m, hs` (CSEL with the condition HS, "carry set"): `n` if
+  PSTATE.C is set, else `m`; the flags are not set. (`lo` is `hs` with the
+  sources swapped.) -/
+  | csel (sz : Size) (d n m : Reg)
   /-- `add d, n, #imm` (ADD (immediate), `imm < 4096`, no shift) -/
   | addImm (sz : Size) (d n : Reg) (imm : Nat)
   /-- `sub d, n, #imm` (SUB (immediate), `imm < 4096`, no shift) -/
@@ -771,6 +775,11 @@ def VOp.eval (s : State) : VOp → Option (VReg × BitVec 128)
   and DDI 0596:
   https://developer.arm.com/documentation/ddi0596/2020-12/Base-Instructions/ADC--Add-with-Carry-
   https://developer.arm.com/documentation/ddi0596/2020-12/Base-Instructions/SBC--Subtract-with-Carry-;
+* "CSEL": `if ConditionHolds(cond) then result = X[n, datasize] else
+  result = X[m, datasize]; X[d, datasize] = result`, where for HS
+  (`cond = '0010'`) `ConditionHolds` is `PSTATE.C == '1'` (DDI 0487 C6.2 and
+  J1.3, `ConditionHolds`); the flags are not set. See
+  https://developer.arm.com/documentation/ddi0596/2020-12/Base-Instructions/CSEL--Conditional-Select-;
 * "AND/ORR/EOR (shifted register)" and "BIC (shifted register)": the
   ROR forms use `operand2 = ShiftReg(m, SRType_ROR, shift_amount, datasize)`;
   BIC complements this rotated operand before AND. `imm6<5> = 1` is
@@ -820,6 +829,7 @@ def exec : Instr → State → Option State
     some (s.write sz d (s.read sz n + s.read sz m + BitVec.ofNat sz.bits s.c.toNat))
   | .sbc sz d n m, s =>
     some (s.write sz d (s.read sz n + ~~~s.read sz m + BitVec.ofNat sz.bits s.c.toNat))
+  | .csel sz d n m, s => some (s.write sz d (if s.c then s.read sz n else s.read sz m))
   | .addImm sz d n imm, s =>
     if imm < 4096 then some (s.write sz d (s.read sz n + BitVec.ofNat _ imm)) else none
   | .subImm sz d n imm, s =>
