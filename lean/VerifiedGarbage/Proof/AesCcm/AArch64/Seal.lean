@@ -5,16 +5,19 @@ import VerifiedGarbage.Proof.AesCcm.AArch64.Crypt
 
 Untrusted: everything here is checked by Lean. `seal` is `entry`, `Ctr₀`
 (`ctrs`), the MAC of the payload (`mac 0`), encrypted at `W` (`tag 0`),
-counter mode over the data (`ctr`) and `restore` (`seal_wp`).
+counter mode over the data (`ctr`), the tag copied to `tag`, whose address
+the entry keeps in `W` (`loadTag_ok`, `tagOut_ok`), and `restore`
+(`seal_wp`).
 -/
 
 set_option linter.unusedSimpArgs false
 
 namespace VG.Proof.AesCcm.AArch64
 
-open VG VG.AArch64 VG.AArch64.RegUpd VG.Impl.AesCcm.AArch64
+open VG VG.AArch64 VG.AArch64.RegUpd VG.Impl.AesCcm.AArch64 VG.WriteBytes
 open VG.Spec.Aes (bytesAt)
-open VG.Proof.AesGcm.AArch64 (SavedAt exit_ok covers_left)
+open VG.Proof.AesGcm.AArch64 (SavedAt exit_ok covers_left LoopPre copyLoop_ok loopRegs Others)
+open VG.Impl.AesGcm.AArch64 (mov copyLoop)
 open VG.Proof.AesCcm (xorFrom length_bytesAt crypt_eq take_xorFrom_zero mac_eq length_xorFrom BlockCipher)
 
 /-- The entry keeps a buffer missing `W`. -/
@@ -86,11 +89,46 @@ theorem d_lo {c : Cx} (L : Lay c) {rs : List Region} (hs : ∀ r ∈ rs, ∃ r' 
   · exact (L.d_w.sub_right (Region.sub_prefix (by decide))).sub_right hsub
   · exact (L.d_w' (by decide)).sub_right hsub
 
+/-- The address of the tag loaded from its slot into `r`. -/
+theorem loadTag_ok {c : Cx} {s : State} (E : Env c s) (S : Slots c s.mem) (r : Reg) :
+    WP isa (.block [.ldr .x r .x19 tagO]) s fun s₁ =>
+      s₁.gpr r = c.T ∧ Others [r] s s₁ ∧ s₁.mem = s.mem ∧ s₁.sp = s.sp ∧ s₁.rd = s.rd ∧ s₁.wr = s.wr := by
+  have q := E.perm.wR (show 240 + 8 ≤ 2560 by decide)
+  refine Proof.AesGcm.AArch64.WP.run ⟨_, by carun [tagO, E.x19, q], rfl⟩ fun s₁ hs₁ => ?_
+  subst hs₁
+  refine ⟨?_, fun r' hr' => ?_, rfl, rfl, rfl, rfl⟩
+  · simp only [gpr_write, BitVec.setWidth_eq, ite_true]; rw [← S.tag]; rfl
+  · simp only [List.mem_singleton] at hr'; simp [gpr_write, hr']
+
+/-- `tagOut`: the first `tl` bytes at `W` copied to the tag at `T`, in `x11`. -/
+theorem tagOut_ok {c : Cx} (L : Lay c) {s : State} (E : Env c s) (hx11 : s.gpr .x11 = c.T)
+    (hTw : Covers [⟨c.T, c.tl⟩] s.wr) :
+    WP isa tagOut s fun s' => Env c s' ∧ s'.mem = writeBytes s.mem c.T (bytesAt s.mem c.W c.tl) ∧
+      s'.sp = s.sp ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
+  obtain ⟨s₁, run₁, x12₁, x13₁, og₁, sp₁, m₁, rd₁, wr₁⟩ : ∃ s₁, runBlock isa [mov .x12 .x19, mov .x13 .x20] s =
+      some s₁ ∧ s₁.gpr .x12 = c.W ∧ s₁.gpr .x13 = BitVec.ofNat 64 c.tl ∧ Others [.x12, .x13] s s₁ ∧
+      s₁.sp = s.sp ∧ s₁.mem = s.mem ∧ s₁.rd = s.rd ∧ s₁.wr = s.wr := by
+    refine ⟨_, by carun [], ?_⟩
+    refine ⟨?_, ?_, fun r hr => ?_, rfl, rfl, rfl, rfl⟩
+    · simp [gpr_write, E.x19]
+    · simp [gpr_write, E.x20]
+    · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr; simp [gpr_write, hr]
+  refine WP.seq (WP.of_runBlock ⟨s₁, run₁, ?_⟩)
+  have E₁ : Env c s₁ := E.others og₁ (by decide) sp₁ rd₁ wr₁
+  have x11₁ : s₁.gpr .x11 = c.T := by rw [og₁ .x11 (by decide), hx11]
+  have lp : LoopPre s₁ c.W c.T c.tl :=
+    ⟨by have := L.t16; omega, by simpa using E₁.perm.wCR (d := 0) (n := c.tl) (by have := L.t16; omega),
+      by rw [wr₁]; exact hTw, (L.t_w.sub_right (Region.sub_prefix (by have := L.t16; omega))).symm⟩
+  refine WP.mono (copyLoop_ok s₁ x12₁ x11₁ x13₁ (by have := L.t4; omega) lp)
+    fun s₂ ⟨hm₂, _, _, og₂, sp₂, rd₂, wr₂⟩ => ⟨E₁.others og₂ (by decide) sp₂ rd₂ wr₂, by rw [hm₂, m₁],
+      by rw [sp₂, sp₁], by rw [rd₂, rd₁], by rw [wr₂, wr₁]⟩
+
 /-- `vg_aes_ccm_seal`, for its arguments. -/
-theorem seal_wp' (v : Proof.CmacAes.AArch64.UpdateImpl) {c : Cx} {N : Addr} {s : State} (Ar : Args c N s) :
+theorem seal_wp' (v : Proof.CmacAes.AArch64.UpdateImpl) {c : Cx} {N : Addr} {s : State} (Ar : Args c N s)
+    (hTw : Covers [⟨c.T, c.tl⟩] s.wr) :
     WP isa («seal» v.callee v.ctr.callee) s fun s' => GprAbi s s' ∧
       Spec.Ccm.encryptWith (Spec.Ccm.ctxCiph s.mem c.K c.R) c.tl (bytesAt s.mem N c.nl) (bytesAt s.mem c.D c.n)
-        (bytesAt s.mem c.A c.al) = (bytesAt s'.mem c.D c.n, bytesAt s'.mem c.W c.tl) := by
+        (bytesAt s.mem c.A c.al) = (bytesAt s'.mem c.D c.n, bytesAt s'.mem c.T c.tl) := by
   have L := Ar.lay
   refine WP.seq (WP.mono (entry_ok Ar) fun s₁ En => ?_)
   have hN₁ : Buf c s₁ N c.nl := Ar.nonce.of_eq En.rd En.wr
@@ -110,7 +148,18 @@ theorem seal_wp' (v : Proof.CmacAes.AArch64.UpdateImpl) {c : Cx} {N : Addr} {s :
   have f₁₄ : Frame (mutR c) s₁.mem s₄.mem := f₁₃.trans (f₄.sub (tagR_mut c (.inl rfl)))
   have f₁₅ : Frame (mutR c) s₁.mem s₅.mem := f₁₄.trans (f₅.sub (ctrR_mut c))
   have sv₅ : SavedAt s₅.mem c.W s := saved_mut L f₁₅ En.saved
-  refine WP.mono (exit_ok E₅.x19 (by rw [E₅.sp, Ar.sp]) (covers_left E₅.perm.w) sv₅)
+  -- The tag copied to `T`.
+  refine WP.seq (WP.mono (loadTag_ok E₅ (En.slots.mut L f₁₅) .x11) fun s₆ ⟨x11₆, og₆, m₆, sp₆, rd₆, wr₆⟩ => ?_)
+  have E₆ : Env c s₆ := E₅.others og₆ (by decide) sp₆ rd₆ wr₆
+  have rw₆ : s₆.wr = s.wr := by rw [wr₆, wr₅, wr₄, M.wr, wr₂, En.wr]
+  refine WP.seq (WP.mono (tagOut_ok L E₆ x11₆ (by rw [rw₆]; exact hTw)) fun s₇ ⟨E₇, m₇, sp₇, rd₇, wr₇⟩ => ?_)
+  have hx : (bytesAt s₆.mem c.W c.tl).length = c.tl := length_bytesAt _ _ _
+  have f₇ : Frame [⟨c.T, c.tl⟩] s₆.mem s₇.mem := by
+    rw [m₇]; exact Proof.AesGcm.AArch64.writeBytes_frame' _ hx
+  have sv₇ : SavedAt s₇.mem c.W s := (m₆ ▸ sv₅).frame f₇ fun r hr => by
+    simp only [List.mem_singleton] at hr; subst hr
+    exact (L.t_w.sub_right (Lay.wSub (by decide))).symm
+  refine WP.mono (exit_ok E₇.x19 (by rw [E₇.sp, Ar.sp]) (covers_left E₇.perm.w) sv₇)
     fun s' ⟨ga, hm, _, _, _⟩ => ⟨ga, ?_⟩
   -- The ciphertext and the tag.
   have hBC : ∀ m : Mem, BlockCipher (Spec.Ccm.ctxCiph m c.K c.R) := fun _ x => Proof.Cmac.aesWith_length _ _ x
@@ -142,17 +191,26 @@ theorem seal_wp' (v : Proof.CmacAes.AArch64.UpdateImpl) {c : Cx} {N : Addr} {s :
   have hY := congrArg List.length h₄
   rw [length_bytesAt, length_xorFrom] at hY
   simp only [Spec.Ccm.encryptWith, Prod.mk.injEq]
+  have d₇ : bytesAt s₇.mem c.D c.n = bytesAt s₅.mem c.D c.n := by
+    rw [Proof.AesGcm.AArch64.bytesAt_frame f₇ (fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr; exact L.t_d.symm) (by have := L.n_lt; omega), m₆]
+  have t₇ : bytesAt s₇.mem c.T c.tl = bytesAt s₅.mem c.W c.tl := by
+    have e := Proof.AesCcm.bytesAt_writeBytes_at s₆.mem c.T (o := 0) (n := c.tl) (bytesAt s₆.mem c.W c.tl)
+      (by rw [hx]; omega) (by have := L.t16; omega)
+    rw [BitVec.add_zero, List.take_zero, List.nil_append, Nat.zero_add,
+      List.drop_eq_nil_of_le (by rw [length_bytesAt, hx]), List.append_nil] at e
+    rw [m₇, e, m₆]
   refine ⟨?_, ?_⟩
-  · rw [hm, h₅, k₄, hd₄, crypt_eq (hBC _)]
-  · rw [hm, w₅, Proof.AesCcm.bytesAt_prefix s₄.mem c.W L.t16, h₄, k₃,
+  · rw [hm, d₇, h₅, k₄, hd₄, crypt_eq (hBC _)]
+  · rw [hm, t₇, w₅, Proof.AesCcm.bytesAt_prefix s₄.mem c.W L.t16, h₄, k₃,
       take_xorFrom_zero (hBC _) _ hY.symm L.t16, M', k₂, ha₂, hd₂,
       ← mac_eq _ _ (by rw [hnl]; have := L.h13; omega)]
 
 /-- `vg_aes_ccm_seal`. -/
-theorem seal_wp (v : Proof.CmacAes.AArch64.UpdateImpl) {s : State} (h : onePre s) :
+theorem seal_wp (v : Proof.CmacAes.AArch64.UpdateImpl) {s : State} (h : sealAArch64.pre s) :
     WP isa («seal» v.callee v.ctr.callee) s fun s' => GprAbi s s' ∧ sealAArch64.post s s' := by
-  have Ar := args_of h
-  refine WP.mono (seal_wp' v Ar) fun s' ⟨ga, hp⟩ => ⟨ga, ?_⟩
+  have A := args_of_seal h
+  refine WP.mono (seal_wp' v A.1 A.2) fun s' ⟨ga, hp⟩ => ⟨ga, ?_⟩
   simp only [sealAArch64]
   simpa only [cxOf] using hp
 

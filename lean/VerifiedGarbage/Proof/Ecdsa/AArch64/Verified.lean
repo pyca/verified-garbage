@@ -46,6 +46,9 @@ theorem p256_ok : CfgOk p256 where
   tbl_len := by decide
   len := rfl
   hash := p256_nBits
+  chain_p := by decide +kernel
+  chain_n := by decide +kernel
+  am3 := by unfold AM3; decide +kernel
 
 theorem pre_of {s : State} (h : signAArch64.pre s) : Pre p256 s := by
   obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11⟩ := h

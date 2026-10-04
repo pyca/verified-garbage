@@ -95,7 +95,7 @@ def save : List Instr :=
 
 /-- `R = U + R`, through `D`. -/
 def sum : Prog isa :=
-  .seq (fprogB c.MP' (rcb c.rcbSlots (c.pt UX UY UZ) (c.pt RX RY RZ) (c.pt DX DY DZ)))
+  .seq (fprogB c.MP' (rcb3 c.rcbSlots (c.pt UX UY UZ) (c.pt RX RY RZ) (c.pt DX DY DZ)))
     (.block (copy c.n (c.sl RX) (c.sl DX) ++ copy c.n (c.sl RY) (c.sl DY) ++
       copy c.n (c.sl RZ) (c.sl DZ)))
 
@@ -122,7 +122,7 @@ def points : Prog isa :=
 
 /-- Everything after the checks of the key. -/
 def back : Prog isa :=
-  .seq (scalars c) <| .seq (pow c.powN) <| .seq (uv c) <| .seq (points c) <| .seq (pow c.powP) (final c)
+  .seq (scalars c) <| .seq (ChainCfg.pow c.powN) <| .seq (uv c) <| .seq (points c) <| .seq (ChainCfg.pow c.powP) (final c)
 
 /-- `vg_ecdsa_<curve>_verify`. -/
 def verify : Prog isa :=

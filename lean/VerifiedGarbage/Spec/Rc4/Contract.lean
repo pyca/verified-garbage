@@ -10,9 +10,10 @@ Only `i` may leak on update: it is the total public byte count modulo 256
 after initialization. This lets an implementation continue a public scan
 of the table across updates without exposing a key-dependent index.
 
-The context is `contextAt`'s 258 bytes. Each primitive has 64 bytes of
-separate scratch space, unspecified on return. `stack` accounts for frames
-and calls, and `writeArgs` permits calls through stack-passed arguments.
+The context is `contextAt`'s 258 bytes. Each primitive keeps its working
+space on its own stack and zeroes it before returning. `stack` accounts for
+frames and calls, and `writeArgs` permits calls through stack-passed
+arguments.
 Initialization returns 0 on success or 1 on invalid key length, when the
 context is unspecified. Update accepts any byte-valued context, including
 zero-length input, and applies exactly `update`. Finalization needs no
@@ -21,21 +22,21 @@ primitive: the model emits no bytes and examines no secrets.
 
 namespace VG.Spec.Rc4
 
-/-- `vg_rc4_init(key: *const u8, key_len: usize, ctx: *mut [u8; 258],
-scratch: *mut [u64; 8]) -> u32`. -/
+/-- `vg_rc4_init(key: *const u8, key_len: usize, ctx: *mut [u8; 258]) -> u32`. -/
 def initSig : Sig where
-  params := [("key", .slice false .u8 "key_len"), ("ctx", .array true .u8 258),
-    ("scratch", .array true .u64 8)]
+  params := [("key", .slice false .u8 "key_len"), ("ctx", .array true .u8 258)]
   ret := some .u32
 
+/-- If `init` of the `key_len` bytes at `key` succeeds, returns 0 having
+written its context to `ctx` (`contextAt`); otherwise returns 1. -/
+def initPost (pb : Nat) : initSig.Post pb := fun key keyLen ctx m m' r =>
+  match init (bytesAt m key keyLen.toNat) with
+  | .ok c => r = 0 ∧ contextAt m' ctx = c
+  | .error .invalidKeyLength => r = 1
+
+/-- `initPost`. -/
 def initContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  initSig.contract A
-    (post := fun key keyLen ctx _scratch m m' r =>
-      match init (bytesAt m key keyLen.toNat) with
-      | .ok c => r = 0 ∧ contextAt m' ctx = c
-      | .error .invalidKeyLength => r = 1)
-    (writeArgs := true)
-    (stack := stack)
+  initSig.contract A (post := initPost A.ptrBits) (writeArgs := true) (stack := stack)
 
 def initApi : Api where
   module := "rc4"
@@ -49,23 +50,26 @@ def initApi : Api where
     No initial stream bytes are discarded.\n\n\
     Contract: `VG.Spec.Rc4.initContract`. Constant time: only pointers and \
     `key_len` may affect timing, not the key or key-dependent table indices."
-  safety := ["On failure, the contents of `ctx` on return are unspecified.",
-    "The contents of `scratch` on return are unspecified."]
+  safety := ["On failure, the contents of `ctx` on return are unspecified."]
 
-/-- `vg_rc4_apply(ctx: *mut [u8; 258], data: *mut u8, len: usize,
-scratch: *mut [u64; 8])`. -/
+/-- `vg_rc4_apply(ctx: *mut [u8; 258], data: *mut u8, len: usize)`. -/
 def applySig : Sig where
-  params := [("ctx", .array true .u8 258), ("data", .slice true .u8 "len"),
-    ("scratch", .array true .u64 8)]
+  params := [("ctx", .array true .u8 258), ("data", .slice true .u8 "len")]
 
+/-- `update` of the context at `ctx` (`contextAt`) and the `len` bytes at
+`data` leaves its next context at `ctx` and its output at `data`. -/
+def applyPost (pb : Nat) : applySig.Post pb := fun ctx data len m m' _ =>
+  let result := update (contextAt m ctx) (bytesAt m data len.toNat)
+  contextAt m' ctx = result.1 ∧ bytesAt m' data len.toNat = result.2
+
+/-- The context's PRGA index `i`, which `vg_rc4_apply` may leak. -/
+def applyLeak (pb : Nat) : Curry (applySig.words pb) (Mem → List Nat) :=
+  fun ctx _data _len m => [(contextAt m ctx).i.toNat]
+
+/-- `applyPost`, leaking `applyLeak`. -/
 def applyContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  applySig.contract A
-    (post := fun ctx data len _scratch m m' _ =>
-      let result := update (contextAt m ctx) (bytesAt m data len.toNat)
-      contextAt m' ctx = result.1 ∧ bytesAt m' data len.toNat = result.2)
-    (writeArgs := true)
-    (stack := stack)
-    (leak := some fun ctx _data _len _scratch m => [(contextAt m ctx).i.toNat])
+  applySig.contract A (post := applyPost A.ptrBits) (writeArgs := true) (stack := stack)
+    (leak := some (applyLeak A.ptrBits))
 
 def applyApi : Api where
   module := "rc4"
@@ -81,6 +85,6 @@ def applyApi : Api where
     the initial PRGA index `i` (the public byte count modulo 256 for an initialized \
     context) may affect timing. Key bytes, the permutation, `j`, keystream \
     lookup indices and data remain secret. The function may leak `i`."
-  safety := ["The contents of `scratch` on return are unspecified."]
+  safety := []
 
 end VG.Spec.Rc4

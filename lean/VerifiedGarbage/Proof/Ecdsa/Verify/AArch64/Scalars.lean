@@ -87,7 +87,7 @@ theorem mulN_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size)
 theorem mid_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {g : Reg → BitVec 64} {s : State}
     (hF : Front c s₀ base g s) {rest : Prog isa} {Q : State → Prop}
     (h : ∀ s', Mid c s₀ base g s' → WP isa rest s' Q) :
-    WP isa (.seq (Impl.Ecdsa.Verify.AArch64.Cfg.scalars c) (.seq (pow c.powN)
+    WP isa (.seq (Impl.Ecdsa.Verify.AArch64.Cfg.scalars c) (.seq (ChainCfg.pow c.powN)
       (.seq (Impl.Ecdsa.Verify.AArch64.Cfg.uv c) rest))) s Q := by
   have h0 := hc.n0
   have h7 := hc.n7
@@ -131,18 +131,13 @@ theorem mid_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {g : Reg → BitVec 6
   have sm₃ : toM c.C.n (2 ^ (64 * c.n)) (sv c base s₃ SM') = Fin.ofNat c.C.n (sigS c s₀) := by
     rw [toM_r2 hnR (by rw [e₃, show sv c base s₂ R2N = _ from F₂.r2n]), v₂ (by decide) (by decide), hF.pt]
   -- `w = s^(n-2)`.
-  refine WP.seq (WP.mono (pow_ok (P := c.powN) (e := c.C.n - 2) (powLayN hc) (powAN c h0 h7) hnR hs₃ M₃ lt₃ F₃.onen
-    (fun t ht => by
-      show s₃.mem (off base (bitsAt c.n 2 + t)) = _
-      rw [tbl_unch U₃ h7 (j := 2) (by decide) ht (tbl_apart_slW (by decide) 2 t),
-        tbl_unch U₂ h7 (j := 2) (by decide) ht (tbl_apart_flag h0 2 t)]
-      exact hF.t₂ t ht)
-    (show c.C.n - 2 < 2 ^ (64 * c.n) by have := hc.n_lt; omega)) fun s₄ ⟨K₄, U₄, lt₄, v₄⟩ => ?_)
-  rw [powWN_eq] at U₄
+  refine WP.seq (WP.mono (chainPow_ok (chainLayN hc) hnR hs₃ M₃ lt₃ (chainOkN hc))
+    fun s₄ ⟨K₄, U₄, lt₄, v₄⟩ => ?_)
+  rw [chainWN_eq] at U₄
   have hs₄ := hs₃.of_keepRegs K₄ (x0_not_powClob h7)
-  have F₄ := F₃.unch h7 hn (fixedOk_slW (by decide)) U₄
-  have e₄ : ∀ {i}, i < 45 → i ∉ [ACC, PT, TMP] → sv c base s₄ i = sv c base s₃ i := fun hi hl =>
-    sv_unch U₄ h7 hn hi (apart_slW hl)
+  have F₄ := F₃.unch h7 hn fixedOk_chainWc U₄
+  have e₄ : ∀ {i}, i < 45 → i ∉ [ACC, TMP] → sv c base s₄ i = sv c base s₃ i := fun hi hl =>
+    sv_unch U₄ h7 hn hi (apart_chainWc hi hl)
   have w₄ : toM c.C.n (2 ^ (64 * c.n)) (sv c base s₄ ACC) = Fin.ofNat c.C.n (sigS c s₀) ^ (c.C.n - 2) := by
     rw [← sm₃]; exact v₄
   -- `u` and `v`.
@@ -174,18 +169,18 @@ theorem mid_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {g : Reg → BitVec 6
     fun s₁₀ ⟨hs₁₀, M₁₀, g₁₀, rd₁₀, wr₁₀, U₁₀, v₁₀, lt₁₀, e₁₀⟩ => h s₁₀ ?_
   have F₁₀ := F₉.unch h7 hn (fixedOk_slW (by decide)) U₁₀
   -- What changed: the flag and `midW`.
-  have UW : Unch base ([(c.sl FLAG, 8)] ++ slW c midW) s.mem s₁₀.mem := by
+  have UW : Unch base ([(c.sl FLAG, 8)] ++ chainWc c ++ slW c midW) s.mem s₁₀.mem := by
     refine (U₂.trans (U₃.trans (U₄.trans (U₅.trans (U₆.trans (U₇.trans (U₈.trans (U₉.trans
       U₁₀)))))))).mono fun w hw => ?_
     simp only [List.mem_append, List.map_cons, List.map_nil, List.mem_cons, List.not_mem_nil,
       or_false] at hw ⊢
-    rcases hw with hw | hw | hw | hw | hw | hw | hw | hw | hw
-    all_goals first
-      | exact Or.inl hw
-      | (rcases hw with hw | hw <;> subst hw <;> simp)
-      | (rcases hw with hw | hw | hw <;> subst hw <;> simp)
+    grind
+  have hmw : ∀ i, i ∉ midW → i ∉ [ACC, TMP] := fun i hl h => hl (by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at h
+    rcases h with rfl | rfl <;> decide)
   have a : ∀ {i}, i < 45 → i ∉ midW → i ≠ FLAG → sv c base s₁₀ i = sv c base s i := fun hi hl hf =>
-    sv_unch UW h7 hn hi (apart_append (apart_flag h0 hf) (apart_slW hl))
+    sv_unch UW h7 hn hi (apart_append (apart_append (apart_flag h0 hf) (apart_chainWc hi (hmw _ hl)))
+      (apart_slW hl))
   -- The values.
   have d₄ : sv c base s₄ D = dig c s₀ := by
     rw [e₄ (by decide) (by decide), v₃ (by decide) (by decide) (by decide), v₂ (by decide) (by decide), hF.d]
@@ -203,7 +198,7 @@ theorem mid_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {g : Reg → BitVec 6
   have vm₈ : toM c.C.n (2 ^ (64 * c.n)) (sv c base s₈ VM) =
       Fin.ofNat c.C.n (sigR c s₀) * Fin.ofNat c.C.n (sigS c s₀) ^ (c.C.n - 2) := by
     rw [toM_mul hnR e₈, v₇ (i := RM') (by decide) (by decide) (by decide), rm₆, acc₇, w₄]
-  have U' : Unch base (slW c midW) s₂.mem s₁₀.mem := by
+  have U' : Unch base (chainWc c ++ slW c midW) s₂.mem s₁₀.mem := by
     refine (U₃.trans (U₄.trans (U₅.trans (U₆.trans (U₇.trans (U₈.trans (U₉.trans
       U₁₀))))))).mono fun w hw => ?_
     simp only [List.mem_append, List.map_cons, List.map_nil, List.mem_cons, List.not_mem_nil,
@@ -231,16 +226,21 @@ theorem mid_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {g : Reg → BitVec 6
     lt₁₀,
     by rw [toM_one_mul hnR (by rw [e₁₀, show sv c base s₉ ONE = 1 from F₉.one]),
       v₉ (i := VM) (by decide) (by decide) (by decide), vm₈], ?_⟩
-  · rw [tbl_unch UW h7 (j := 1) (by decide) ht (apart_append (tbl_apart_flag h0 1 t)
-      (tbl_apart_slW (by decide) 1 t))]
+  · rw [tbl_unch UW h7 (j := 1) (by decide) ht (apart_append (apart_append (tbl_apart_flag h0 1 t)
+      (tbl_apart_chainWc (by decide) ht)) (tbl_apart_slW (by decide) 1 t))]
     exact hF.t₁ t ht
-  · rw [flag_unch U' h7 h0 hn (by decide)]
+  · rw [flag_unch_cw U' h7 h0 hn (by decide)]
     exact flag₂
   · refine unch_whole (hF.unch.trans UW) fun w hw => ?_
     simp only [List.mem_append] at hw
-    rcases hw with hw | hw | hw
+    rcases hw with hw | (hw | hw) | hw
     · rw [List.mem_singleton.mp hw]; exact Nat.le_of_eq (Nat.zero_add _)
     · exact flag_le h0 h7 w hw
+    · simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
+      rcases hw with rfl | rfl | rfl
+      · exact sl_le c h7 (by decide)
+      · exact ct_le c h7
+      · exact sl_le c h7 (by decide)
     · exact slW_le h7 (by decide) w hw
 
 end VG.Proof.Ecdsa.Verify.AArch64

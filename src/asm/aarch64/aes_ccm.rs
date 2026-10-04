@@ -5,7 +5,7 @@
 /// The CPU features `vg_aes_ccm_seal_aes` requires (`Artifact.features`).
 pub(crate) const VG_AES_CCM_SEAL_AES_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes"]);
 
-/// AES-CCM generation-encryption (NIST SP 800-38C §6.1, with the formatting and counter generation of its Appendix A): with the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it, encrypts the `len` bytes of payload at `data` in place, under the `nonce_len`-byte nonce at `nonce`, and writes the encrypted MAC (`T ⊕ MSB_Tlen(S₀)`) of `tag_len` bytes, of the payload and the `aad_len` bytes of associated data at `aad`, to the first `tag_len` bytes of `*work`. The ciphertext of §6.1 is the encrypted payload followed by it. The rest of `*work` is working space, unspecified on return.
+/// AES-CCM generation-encryption (NIST SP 800-38C §6.1, with the formatting and counter generation of its Appendix A): with the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it, encrypts the `len` bytes of payload at `data` in place, under the `nonce_len`-byte nonce at `nonce`, and writes the encrypted MAC (`T ⊕ MSB_Tlen(S₀)`) of `tag_len` bytes, of the payload and the `aad_len` bytes of associated data at `aad`, to the `tag_len` bytes at `tag`. The ciphertext of §6.1 is the encrypted payload followed by it.
 ///
 /// Contract: `VG.Spec.Ccm.sealContract`. Constant time: only the pointers, `rounds`, the lengths and `tag_len` may affect timing, not the key schedule, the nonce, the associated data or the payload.
 ///
@@ -17,19 +17,28 @@ pub(crate) const VG_AES_CCM_SEAL_AES_FEATURES: crate::cpu::Features = crate::cpu
 /// * `nonce` must be valid for reads of `nonce_len` bytes.
 /// * `aad` must be valid for reads of `aad_len` bytes.
 /// * `data` must be valid for reads and writes of `len` bytes.
-/// * `work` must be valid for reads and writes of 2560 bytes.
+/// * `tag` must be valid for reads and writes of `tag_len` bytes.
 /// * `rounds` must be 10, 12 or 14.
 /// * `tag_len` must be 4, 6, 8, 10, 12, 14 or 16, and `nonce_len` from 7 to 13 (Appendix A.1).
 /// * `len` must be less than `2^(8 * (15 - nonce_len))` (Appendix A.1).
-/// * `data` and `work` must not overlap each other, `schedule`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `schedule`, `nonce`, `aad`, `data` and `work` may wrap around the end of the address space (no Rust object does).
+/// * `data` and `tag` must not overlap each other, `schedule`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the 2592 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` target feature.
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_aes_ccm_seal_aes(schedule: *const [u8; 240], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, work: *mut [u64; 320], tag_len: usize) {
+pub(crate) unsafe extern "C" fn vg_aes_ccm_seal_aes(schedule: *const [u8; 240], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut u8, tag_len: usize) {
     core::arch::naked_asm!(
         ".arch_extension aes",
-        "ldr x9, [sp, #0]",
+        "sub sp, sp, #2592",
+        "add x16, sp, #0",
+        "ldr x17, [sp, #2592]",
+        "str x17, [x16, #0]",
+        "ldr x17, [sp, #2600]",
+        "str x17, [x16, #8]",
+        "add x17, sp, #32",
+        "str x17, [x16, #16]",
+        "ldr x9, [sp, #16]",
         "ldr x10, [sp, #8]",
+        "ldr x11, [sp, #0]",
         "str x20, [x9, #136]",
         "str x21, [x9, #144]",
         "str x22, [x9, #152]",
@@ -48,6 +57,7 @@ pub(crate) unsafe extern "C" fn vg_aes_ccm_seal_aes(schedule: *const [u8; 240], 
         "str x4, [x19, #216]",
         "str x5, [x19, #224]",
         "str x3, [x19, #232]",
+        "str x11, [x19, #240]",
         "add x27, x6, #0",
         "add x28, x7, #0",
         "movz x9, #0, lsl #0",
@@ -324,6 +334,16 @@ pub(crate) unsafe extern "C" fn vg_aes_ccm_seal_aes(schedule: *const [u8; 240], 
         "b 226f",
         "225:",
         "226:",
+        "ldr x11, [x19, #240]",
+        "add x12, x19, #0",
+        "add x13, x20, #0",
+        "228:",
+        "ldrb w14, [x12, #0]",
+        "strb w14, [x11, #0]",
+        "add x12, x12, #1",
+        "add x11, x11, #1",
+        "sub x13, x13, #1",
+        "cbnz x13, 228b",
         "ldr x20, [x19, #136]",
         "ldr x21, [x19, #144]",
         "ldr x22, [x19, #152]",
@@ -335,6 +355,7 @@ pub(crate) unsafe extern "C" fn vg_aes_ccm_seal_aes(schedule: *const [u8; 240], 
         "ldr x28, [x19, #200]",
         "ldr x30, [x19, #208]",
         "ldr x19, [x19, #128]",
+        "add sp, sp, #2592",
         "ret",
         ".arch_extension noaes",
         vg_cmac_aes_update_aes = sym super::cmac_aes::vg_cmac_aes_update_aes,
@@ -345,7 +366,7 @@ pub(crate) unsafe extern "C" fn vg_aes_ccm_seal_aes(schedule: *const [u8; 240], 
 /// The CPU features `vg_aes_ccm_open_aes` requires (`Artifact.features`).
 pub(crate) const VG_AES_CCM_OPEN_AES_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes"]);
 
-/// AES-CCM decryption-verification (NIST SP 800-38C §6.2, with the formatting and counter generation of its Appendix A): with the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it, and the received encrypted MAC of `tag_len` bytes (the last `tag_len` bytes of the ciphertext) in the first `tag_len` bytes of `*work`, decrypts the `len` bytes of encrypted payload at `data` in place, under the `nonce_len`-byte nonce at `nonce`, and returns 1 if the MAC is that of the payload and the `aad_len` bytes of associated data at `aad`; otherwise returns 0 and overwrites the `len` bytes at `data` with zeros. The rest of `*work` is working space, unspecified on return. The MACs are compared without a branch.
+/// AES-CCM decryption-verification (NIST SP 800-38C §6.2, with the formatting and counter generation of its Appendix A): with the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it, and the received encrypted MAC (the last `tag_len` bytes of the ciphertext) the `tag_len` bytes at `tag`, decrypts the `len` bytes of encrypted payload at `data` in place, under the `nonce_len`-byte nonce at `nonce`, and returns 1 if the MAC is that of the payload and the `aad_len` bytes of associated data at `aad`; otherwise returns 0 and overwrites the `len` bytes at `data` with zeros. The MACs are compared without a branch.
 ///
 /// Contract: `VG.Spec.Ccm.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths, `tag_len` and whether the function returns 1 or 0 may affect timing, not the key schedule, the nonce, the associated data, the data or the tag.
 ///
@@ -359,19 +380,28 @@ pub(crate) const VG_AES_CCM_OPEN_AES_FEATURES: crate::cpu::Features = crate::cpu
 /// * `nonce` must be valid for reads of `nonce_len` bytes.
 /// * `aad` must be valid for reads of `aad_len` bytes.
 /// * `data` must be valid for reads and writes of `len` bytes.
-/// * `work` must be valid for reads and writes of 2560 bytes.
+/// * `tag` must be valid for reads of `tag_len` bytes.
 /// * `rounds` must be 10, 12 or 14.
 /// * `tag_len` must be 4, 6, 8, 10, 12, 14 or 16, and `nonce_len` from 7 to 13 (Appendix A.1).
 /// * `len` must be less than `2^(8 * (15 - nonce_len))` (Appendix A.1).
-/// * `data` and `work` must not overlap each other, `schedule`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `schedule`, `nonce`, `aad`, `data` and `work` may wrap around the end of the address space (no Rust object does).
+/// * `data` must not overlap `schedule`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the 2592 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` target feature.
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_aes_ccm_open_aes(schedule: *const [u8; 240], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, work: *mut [u64; 320], tag_len: usize) -> u32 {
+pub(crate) unsafe extern "C" fn vg_aes_ccm_open_aes(schedule: *const [u8; 240], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
         ".arch_extension aes",
-        "ldr x9, [sp, #0]",
+        "sub sp, sp, #2592",
+        "add x16, sp, #0",
+        "ldr x17, [sp, #2592]",
+        "str x17, [x16, #0]",
+        "ldr x17, [sp, #2600]",
+        "str x17, [x16, #8]",
+        "add x17, sp, #32",
+        "str x17, [x16, #16]",
+        "ldr x9, [sp, #16]",
         "ldr x10, [sp, #8]",
+        "ldr x11, [sp, #0]",
         "str x20, [x9, #136]",
         "str x21, [x9, #144]",
         "str x22, [x9, #152]",
@@ -390,6 +420,7 @@ pub(crate) unsafe extern "C" fn vg_aes_ccm_open_aes(schedule: *const [u8; 240], 
         "str x4, [x19, #216]",
         "str x5, [x19, #224]",
         "str x3, [x19, #232]",
+        "str x11, [x19, #240]",
         "add x27, x6, #0",
         "add x28, x7, #0",
         "movz x9, #0, lsl #0",
@@ -666,13 +697,13 @@ pub(crate) unsafe extern "C" fn vg_aes_ccm_open_aes(schedule: *const [u8; 240], 
         "add x3, x19, #96",
         "movz x4, #1, lsl #0",
         "bl {vg_aes_ctr32_aes}",
+        "ldr x12, [x19, #240]",
         "movz x9, #0, lsl #0",
         "str x9, [x19, #256]",
         "str x9, [x19, #264]",
         "str x9, [x19, #272]",
         "str x9, [x19, #280]",
         "add x11, x19, #272",
-        "add x12, x19, #0",
         "add x13, x20, #0",
         "228:",
         "ldrb w14, [x12, #0]",
@@ -729,6 +760,7 @@ pub(crate) unsafe extern "C" fn vg_aes_ccm_open_aes(schedule: *const [u8; 240], 
         "ldr x28, [x19, #200]",
         "ldr x30, [x19, #208]",
         "ldr x19, [x19, #128]",
+        "add sp, sp, #2592",
         "ret",
         ".arch_extension noaes",
         vg_aes_ctr32_aes = sym super::aes::vg_aes_ctr32_aes,
@@ -739,7 +771,7 @@ pub(crate) unsafe extern "C" fn vg_aes_ccm_open_aes(schedule: *const [u8; 240], 
 /// The CPU features `vg_aes_ccm_seal_aes_cbc` requires (`Artifact.features`).
 pub(crate) const VG_AES_CCM_SEAL_AES_CBC_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes"]);
 
-/// AES-CCM generation-encryption (NIST SP 800-38C §6.1, with the formatting and counter generation of its Appendix A): with the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it, encrypts the `len` bytes of payload at `data` in place, under the `nonce_len`-byte nonce at `nonce`, and writes the encrypted MAC (`T ⊕ MSB_Tlen(S₀)`) of `tag_len` bytes, of the payload and the `aad_len` bytes of associated data at `aad`, to the first `tag_len` bytes of `*work`. The ciphertext of §6.1 is the encrypted payload followed by it. The rest of `*work` is working space, unspecified on return.
+/// AES-CCM generation-encryption (NIST SP 800-38C §6.1, with the formatting and counter generation of its Appendix A): with the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it, encrypts the `len` bytes of payload at `data` in place, under the `nonce_len`-byte nonce at `nonce`, and writes the encrypted MAC (`T ⊕ MSB_Tlen(S₀)`) of `tag_len` bytes, of the payload and the `aad_len` bytes of associated data at `aad`, to the `tag_len` bytes at `tag`. The ciphertext of §6.1 is the encrypted payload followed by it.
 ///
 /// Contract: `VG.Spec.Ccm.sealContract`. Constant time: only the pointers, `rounds`, the lengths and `tag_len` may affect timing, not the key schedule, the nonce, the associated data or the payload.
 ///
@@ -751,19 +783,28 @@ pub(crate) const VG_AES_CCM_SEAL_AES_CBC_FEATURES: crate::cpu::Features = crate:
 /// * `nonce` must be valid for reads of `nonce_len` bytes.
 /// * `aad` must be valid for reads of `aad_len` bytes.
 /// * `data` must be valid for reads and writes of `len` bytes.
-/// * `work` must be valid for reads and writes of 2560 bytes.
+/// * `tag` must be valid for reads and writes of `tag_len` bytes.
 /// * `rounds` must be 10, 12 or 14.
 /// * `tag_len` must be 4, 6, 8, 10, 12, 14 or 16, and `nonce_len` from 7 to 13 (Appendix A.1).
 /// * `len` must be less than `2^(8 * (15 - nonce_len))` (Appendix A.1).
-/// * `data` and `work` must not overlap each other, `schedule`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `schedule`, `nonce`, `aad`, `data` and `work` may wrap around the end of the address space (no Rust object does).
+/// * `data` and `tag` must not overlap each other, `schedule`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the 2592 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` target feature.
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_aes_ccm_seal_aes_cbc(schedule: *const [u8; 240], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, work: *mut [u64; 320], tag_len: usize) {
+pub(crate) unsafe extern "C" fn vg_aes_ccm_seal_aes_cbc(schedule: *const [u8; 240], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut u8, tag_len: usize) {
     core::arch::naked_asm!(
         ".arch_extension aes",
-        "ldr x9, [sp, #0]",
+        "sub sp, sp, #2592",
+        "add x16, sp, #0",
+        "ldr x17, [sp, #2592]",
+        "str x17, [x16, #0]",
+        "ldr x17, [sp, #2600]",
+        "str x17, [x16, #8]",
+        "add x17, sp, #32",
+        "str x17, [x16, #16]",
+        "ldr x9, [sp, #16]",
         "ldr x10, [sp, #8]",
+        "ldr x11, [sp, #0]",
         "str x20, [x9, #136]",
         "str x21, [x9, #144]",
         "str x22, [x9, #152]",
@@ -782,6 +823,7 @@ pub(crate) unsafe extern "C" fn vg_aes_ccm_seal_aes_cbc(schedule: *const [u8; 24
         "str x4, [x19, #216]",
         "str x5, [x19, #224]",
         "str x3, [x19, #232]",
+        "str x11, [x19, #240]",
         "add x27, x6, #0",
         "add x28, x7, #0",
         "movz x9, #0, lsl #0",
@@ -1058,6 +1100,16 @@ pub(crate) unsafe extern "C" fn vg_aes_ccm_seal_aes_cbc(schedule: *const [u8; 24
         "b 226f",
         "225:",
         "226:",
+        "ldr x11, [x19, #240]",
+        "add x12, x19, #0",
+        "add x13, x20, #0",
+        "228:",
+        "ldrb w14, [x12, #0]",
+        "strb w14, [x11, #0]",
+        "add x12, x12, #1",
+        "add x11, x11, #1",
+        "sub x13, x13, #1",
+        "cbnz x13, 228b",
         "ldr x20, [x19, #136]",
         "ldr x21, [x19, #144]",
         "ldr x22, [x19, #152]",
@@ -1069,6 +1121,7 @@ pub(crate) unsafe extern "C" fn vg_aes_ccm_seal_aes_cbc(schedule: *const [u8; 24
         "ldr x28, [x19, #200]",
         "ldr x30, [x19, #208]",
         "ldr x19, [x19, #128]",
+        "add sp, sp, #2592",
         "ret",
         ".arch_extension noaes",
         vg_cmac_aes_update_aes_cbc = sym super::cmac_aes::vg_cmac_aes_update_aes_cbc,
@@ -1079,7 +1132,7 @@ pub(crate) unsafe extern "C" fn vg_aes_ccm_seal_aes_cbc(schedule: *const [u8; 24
 /// The CPU features `vg_aes_ccm_open_aes_cbc` requires (`Artifact.features`).
 pub(crate) const VG_AES_CCM_OPEN_AES_CBC_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes"]);
 
-/// AES-CCM decryption-verification (NIST SP 800-38C §6.2, with the formatting and counter generation of its Appendix A): with the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it, and the received encrypted MAC of `tag_len` bytes (the last `tag_len` bytes of the ciphertext) in the first `tag_len` bytes of `*work`, decrypts the `len` bytes of encrypted payload at `data` in place, under the `nonce_len`-byte nonce at `nonce`, and returns 1 if the MAC is that of the payload and the `aad_len` bytes of associated data at `aad`; otherwise returns 0 and overwrites the `len` bytes at `data` with zeros. The rest of `*work` is working space, unspecified on return. The MACs are compared without a branch.
+/// AES-CCM decryption-verification (NIST SP 800-38C §6.2, with the formatting and counter generation of its Appendix A): with the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it, and the received encrypted MAC (the last `tag_len` bytes of the ciphertext) the `tag_len` bytes at `tag`, decrypts the `len` bytes of encrypted payload at `data` in place, under the `nonce_len`-byte nonce at `nonce`, and returns 1 if the MAC is that of the payload and the `aad_len` bytes of associated data at `aad`; otherwise returns 0 and overwrites the `len` bytes at `data` with zeros. The MACs are compared without a branch.
 ///
 /// Contract: `VG.Spec.Ccm.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths, `tag_len` and whether the function returns 1 or 0 may affect timing, not the key schedule, the nonce, the associated data, the data or the tag.
 ///
@@ -1093,19 +1146,28 @@ pub(crate) const VG_AES_CCM_OPEN_AES_CBC_FEATURES: crate::cpu::Features = crate:
 /// * `nonce` must be valid for reads of `nonce_len` bytes.
 /// * `aad` must be valid for reads of `aad_len` bytes.
 /// * `data` must be valid for reads and writes of `len` bytes.
-/// * `work` must be valid for reads and writes of 2560 bytes.
+/// * `tag` must be valid for reads of `tag_len` bytes.
 /// * `rounds` must be 10, 12 or 14.
 /// * `tag_len` must be 4, 6, 8, 10, 12, 14 or 16, and `nonce_len` from 7 to 13 (Appendix A.1).
 /// * `len` must be less than `2^(8 * (15 - nonce_len))` (Appendix A.1).
-/// * `data` and `work` must not overlap each other, `schedule`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `schedule`, `nonce`, `aad`, `data` and `work` may wrap around the end of the address space (no Rust object does).
+/// * `data` must not overlap `schedule`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the 2592 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` target feature.
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_aes_ccm_open_aes_cbc(schedule: *const [u8; 240], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, work: *mut [u64; 320], tag_len: usize) -> u32 {
+pub(crate) unsafe extern "C" fn vg_aes_ccm_open_aes_cbc(schedule: *const [u8; 240], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
         ".arch_extension aes",
-        "ldr x9, [sp, #0]",
+        "sub sp, sp, #2592",
+        "add x16, sp, #0",
+        "ldr x17, [sp, #2592]",
+        "str x17, [x16, #0]",
+        "ldr x17, [sp, #2600]",
+        "str x17, [x16, #8]",
+        "add x17, sp, #32",
+        "str x17, [x16, #16]",
+        "ldr x9, [sp, #16]",
         "ldr x10, [sp, #8]",
+        "ldr x11, [sp, #0]",
         "str x20, [x9, #136]",
         "str x21, [x9, #144]",
         "str x22, [x9, #152]",
@@ -1124,6 +1186,7 @@ pub(crate) unsafe extern "C" fn vg_aes_ccm_open_aes_cbc(schedule: *const [u8; 24
         "str x4, [x19, #216]",
         "str x5, [x19, #224]",
         "str x3, [x19, #232]",
+        "str x11, [x19, #240]",
         "add x27, x6, #0",
         "add x28, x7, #0",
         "movz x9, #0, lsl #0",
@@ -1400,13 +1463,13 @@ pub(crate) unsafe extern "C" fn vg_aes_ccm_open_aes_cbc(schedule: *const [u8; 24
         "add x3, x19, #96",
         "movz x4, #1, lsl #0",
         "bl {vg_aes_ctr32_aes}",
+        "ldr x12, [x19, #240]",
         "movz x9, #0, lsl #0",
         "str x9, [x19, #256]",
         "str x9, [x19, #264]",
         "str x9, [x19, #272]",
         "str x9, [x19, #280]",
         "add x11, x19, #272",
-        "add x12, x19, #0",
         "add x13, x20, #0",
         "228:",
         "ldrb w14, [x12, #0]",
@@ -1463,6 +1526,7 @@ pub(crate) unsafe extern "C" fn vg_aes_ccm_open_aes_cbc(schedule: *const [u8; 24
         "ldr x28, [x19, #200]",
         "ldr x30, [x19, #208]",
         "ldr x19, [x19, #128]",
+        "add sp, sp, #2592",
         "ret",
         ".arch_extension noaes",
         vg_aes_ctr32_aes = sym super::aes::vg_aes_ctr32_aes,
@@ -1470,7 +1534,7 @@ pub(crate) unsafe extern "C" fn vg_aes_ccm_open_aes_cbc(schedule: *const [u8; 24
     )
 }
 
-/// AES-CCM generation-encryption (NIST SP 800-38C §6.1, with the formatting and counter generation of its Appendix A): with the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it, encrypts the `len` bytes of payload at `data` in place, under the `nonce_len`-byte nonce at `nonce`, and writes the encrypted MAC (`T ⊕ MSB_Tlen(S₀)`) of `tag_len` bytes, of the payload and the `aad_len` bytes of associated data at `aad`, to the first `tag_len` bytes of `*work`. The ciphertext of §6.1 is the encrypted payload followed by it. The rest of `*work` is working space, unspecified on return.
+/// AES-CCM generation-encryption (NIST SP 800-38C §6.1, with the formatting and counter generation of its Appendix A): with the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it, encrypts the `len` bytes of payload at `data` in place, under the `nonce_len`-byte nonce at `nonce`, and writes the encrypted MAC (`T ⊕ MSB_Tlen(S₀)`) of `tag_len` bytes, of the payload and the `aad_len` bytes of associated data at `aad`, to the `tag_len` bytes at `tag`. The ciphertext of §6.1 is the encrypted payload followed by it.
 ///
 /// Contract: `VG.Spec.Ccm.sealContract`. Constant time: only the pointers, `rounds`, the lengths and `tag_len` may affect timing, not the key schedule, the nonce, the associated data or the payload.
 ///
@@ -1482,17 +1546,26 @@ pub(crate) unsafe extern "C" fn vg_aes_ccm_open_aes_cbc(schedule: *const [u8; 24
 /// * `nonce` must be valid for reads of `nonce_len` bytes.
 /// * `aad` must be valid for reads of `aad_len` bytes.
 /// * `data` must be valid for reads and writes of `len` bytes.
-/// * `work` must be valid for reads and writes of 2560 bytes.
+/// * `tag` must be valid for reads and writes of `tag_len` bytes.
 /// * `rounds` must be 10, 12 or 14.
 /// * `tag_len` must be 4, 6, 8, 10, 12, 14 or 16, and `nonce_len` from 7 to 13 (Appendix A.1).
 /// * `len` must be less than `2^(8 * (15 - nonce_len))` (Appendix A.1).
-/// * `data` and `work` must not overlap each other, `schedule`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `schedule`, `nonce`, `aad`, `data` and `work` may wrap around the end of the address space (no Rust object does).
+/// * `data` and `tag` must not overlap each other, `schedule`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the 2592 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_aes_ccm_seal(schedule: *const [u8; 240], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, work: *mut [u64; 320], tag_len: usize) {
+pub(crate) unsafe extern "C" fn vg_aes_ccm_seal(schedule: *const [u8; 240], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut u8, tag_len: usize) {
     core::arch::naked_asm!(
-        "ldr x9, [sp, #0]",
+        "sub sp, sp, #2592",
+        "add x16, sp, #0",
+        "ldr x17, [sp, #2592]",
+        "str x17, [x16, #0]",
+        "ldr x17, [sp, #2600]",
+        "str x17, [x16, #8]",
+        "add x17, sp, #32",
+        "str x17, [x16, #16]",
+        "ldr x9, [sp, #16]",
         "ldr x10, [sp, #8]",
+        "ldr x11, [sp, #0]",
         "str x20, [x9, #136]",
         "str x21, [x9, #144]",
         "str x22, [x9, #152]",
@@ -1511,6 +1584,7 @@ pub(crate) unsafe extern "C" fn vg_aes_ccm_seal(schedule: *const [u8; 240], roun
         "str x4, [x19, #216]",
         "str x5, [x19, #224]",
         "str x3, [x19, #232]",
+        "str x11, [x19, #240]",
         "add x27, x6, #0",
         "add x28, x7, #0",
         "movz x9, #0, lsl #0",
@@ -1787,6 +1861,16 @@ pub(crate) unsafe extern "C" fn vg_aes_ccm_seal(schedule: *const [u8; 240], roun
         "b 226f",
         "225:",
         "226:",
+        "ldr x11, [x19, #240]",
+        "add x12, x19, #0",
+        "add x13, x20, #0",
+        "228:",
+        "ldrb w14, [x12, #0]",
+        "strb w14, [x11, #0]",
+        "add x12, x12, #1",
+        "add x11, x11, #1",
+        "sub x13, x13, #1",
+        "cbnz x13, 228b",
         "ldr x20, [x19, #136]",
         "ldr x21, [x19, #144]",
         "ldr x22, [x19, #152]",
@@ -1798,13 +1882,14 @@ pub(crate) unsafe extern "C" fn vg_aes_ccm_seal(schedule: *const [u8; 240], roun
         "ldr x28, [x19, #200]",
         "ldr x30, [x19, #208]",
         "ldr x19, [x19, #128]",
+        "add sp, sp, #2592",
         "ret",
         vg_cmac_aes_update = sym super::cmac_aes::vg_cmac_aes_update,
         vg_aes_ctr32 = sym super::aes::vg_aes_ctr32,
     )
 }
 
-/// AES-CCM decryption-verification (NIST SP 800-38C §6.2, with the formatting and counter generation of its Appendix A): with the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it, and the received encrypted MAC of `tag_len` bytes (the last `tag_len` bytes of the ciphertext) in the first `tag_len` bytes of `*work`, decrypts the `len` bytes of encrypted payload at `data` in place, under the `nonce_len`-byte nonce at `nonce`, and returns 1 if the MAC is that of the payload and the `aad_len` bytes of associated data at `aad`; otherwise returns 0 and overwrites the `len` bytes at `data` with zeros. The rest of `*work` is working space, unspecified on return. The MACs are compared without a branch.
+/// AES-CCM decryption-verification (NIST SP 800-38C §6.2, with the formatting and counter generation of its Appendix A): with the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it, and the received encrypted MAC (the last `tag_len` bytes of the ciphertext) the `tag_len` bytes at `tag`, decrypts the `len` bytes of encrypted payload at `data` in place, under the `nonce_len`-byte nonce at `nonce`, and returns 1 if the MAC is that of the payload and the `aad_len` bytes of associated data at `aad`; otherwise returns 0 and overwrites the `len` bytes at `data` with zeros. The MACs are compared without a branch.
 ///
 /// Contract: `VG.Spec.Ccm.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths, `tag_len` and whether the function returns 1 or 0 may affect timing, not the key schedule, the nonce, the associated data, the data or the tag.
 ///
@@ -1818,17 +1903,26 @@ pub(crate) unsafe extern "C" fn vg_aes_ccm_seal(schedule: *const [u8; 240], roun
 /// * `nonce` must be valid for reads of `nonce_len` bytes.
 /// * `aad` must be valid for reads of `aad_len` bytes.
 /// * `data` must be valid for reads and writes of `len` bytes.
-/// * `work` must be valid for reads and writes of 2560 bytes.
+/// * `tag` must be valid for reads of `tag_len` bytes.
 /// * `rounds` must be 10, 12 or 14.
 /// * `tag_len` must be 4, 6, 8, 10, 12, 14 or 16, and `nonce_len` from 7 to 13 (Appendix A.1).
 /// * `len` must be less than `2^(8 * (15 - nonce_len))` (Appendix A.1).
-/// * `data` and `work` must not overlap each other, `schedule`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `schedule`, `nonce`, `aad`, `data` and `work` may wrap around the end of the address space (no Rust object does).
+/// * `data` must not overlap `schedule`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the 2592 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_aes_ccm_open(schedule: *const [u8; 240], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, work: *mut [u64; 320], tag_len: usize) -> u32 {
+pub(crate) unsafe extern "C" fn vg_aes_ccm_open(schedule: *const [u8; 240], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "ldr x9, [sp, #0]",
+        "sub sp, sp, #2592",
+        "add x16, sp, #0",
+        "ldr x17, [sp, #2592]",
+        "str x17, [x16, #0]",
+        "ldr x17, [sp, #2600]",
+        "str x17, [x16, #8]",
+        "add x17, sp, #32",
+        "str x17, [x16, #16]",
+        "ldr x9, [sp, #16]",
         "ldr x10, [sp, #8]",
+        "ldr x11, [sp, #0]",
         "str x20, [x9, #136]",
         "str x21, [x9, #144]",
         "str x22, [x9, #152]",
@@ -1847,6 +1941,7 @@ pub(crate) unsafe extern "C" fn vg_aes_ccm_open(schedule: *const [u8; 240], roun
         "str x4, [x19, #216]",
         "str x5, [x19, #224]",
         "str x3, [x19, #232]",
+        "str x11, [x19, #240]",
         "add x27, x6, #0",
         "add x28, x7, #0",
         "movz x9, #0, lsl #0",
@@ -2123,13 +2218,13 @@ pub(crate) unsafe extern "C" fn vg_aes_ccm_open(schedule: *const [u8; 240], roun
         "add x3, x19, #96",
         "movz x4, #1, lsl #0",
         "bl {vg_aes_ctr32}",
+        "ldr x12, [x19, #240]",
         "movz x9, #0, lsl #0",
         "str x9, [x19, #256]",
         "str x9, [x19, #264]",
         "str x9, [x19, #272]",
         "str x9, [x19, #280]",
         "add x11, x19, #272",
-        "add x12, x19, #0",
         "add x13, x20, #0",
         "228:",
         "ldrb w14, [x12, #0]",
@@ -2186,6 +2281,7 @@ pub(crate) unsafe extern "C" fn vg_aes_ccm_open(schedule: *const [u8; 240], roun
         "ldr x28, [x19, #200]",
         "ldr x30, [x19, #208]",
         "ldr x19, [x19, #128]",
+        "add sp, sp, #2592",
         "ret",
         vg_aes_ctr32 = sym super::aes::vg_aes_ctr32,
         vg_cmac_aes_update = sym super::cmac_aes::vg_cmac_aes_update,

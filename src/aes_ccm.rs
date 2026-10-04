@@ -31,9 +31,10 @@
 //! than 32 bytes together, the `_aes_cbc` ones, whose CBC-MAC keeps the
 //! round keys and the chaining value in vector registers across blocks
 //! (`vg_cmac_aes_update_aes_cbc`, as AES-CMAC chooses it in
-//! `crate::cmac::aes`); both encrypt with `vg_aes_ctr32_aes`.
+//! `crate::cmac::aes`); both encrypt with `vg_aes_ctr32_aes`. On ARMv7 there
+//! is only the constant-time scalar implementation.
 
-#![cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
+#![cfg(any(target_arch = "x86_64", target_arch = "aarch64", target_arch = "arm"))]
 
 use crate::aes::Backend;
 use crate::arch::aes::vg_aes_expand_key;
@@ -57,10 +58,6 @@ use crate::arch::aes_ccm::{vg_aes_ccm_open, vg_aes_ccm_seal};
 use crate::cpu::{Features, detected};
 use crate::zeroize::zeroize;
 use core::mem::MaybeUninit;
-
-/// The working space of `vg_aes_ccm_seal` and `vg_aes_ccm_open`, in 64-bit
-/// words: the tag in its first bytes.
-const WORK: usize = 320;
 
 /// The instance of a function for `backend`; on AArch64, the `_aes_cbc` one
 /// rather than the `_aes` one if `cbc`.
@@ -110,6 +107,13 @@ fn select(f: Features) -> Backend {
         VG_AES_CCM_OPEN_AES_CBC_FEATURES,
     ]);
     Backend::select_for(f, AES)
+}
+
+/// The only implementation of AES on ARMv7, with the AES-CCM functions for
+/// it.
+#[cfg(target_arch = "arm")]
+fn select(f: Features) -> Backend {
+    Backend::select(f)
 }
 
 /// Whether the AES extension's instances run the `_aes_cbc` CBC-MAC, for
@@ -244,20 +248,19 @@ impl AesCcm {
             x86_64: [vg_aes_ccm_seal_aesni, vg_aes_ccm_seal_vaes],
             aarch64: [vg_aes_ccm_seal_aes, vg_aes_ccm_seal_aes_cbc]
         );
-        let mut work = MaybeUninit::<[u64; WORK]>::uninit();
+        let mut tag = [0u8; T];
         // SAFETY: `self.schedule` is the key schedule `vg_aes_expand_key`
         // wrote for `self.rounds` (10, 12 or 14) rounds, valid for reads of
         // 240 bytes. `nonce` (7 to 13 bytes) and `aad` are valid for reads
         // of their lengths, `data` for reads and writes of `data.len()`
         // bytes, which `check` has checked is less than `2^(8 (15 −
-        // nonce.len()))`, and `work` for reads and writes of 2560. `T` is a
-        // length Appendix A.1 allows (`assert_tag_length`). `data` and
-        // `work` are unique borrows, so they overlap neither each other nor
-        // the other buffers; no buffer overlaps the arguments on the stack,
-        // the return address or the stack below it, and none wraps around
-        // the end of the address space. The CPU has the features of the
-        // implementation selected. `work` is uninitialized: it is only
-        // working space but for the tag written to its first `T` bytes.
+        // nonce.len()))`, and `tag` for reads and writes of `T` bytes, a
+        // length Appendix A.1 allows (`assert_tag_length`). `data` and `tag`
+        // are unique borrows, so they overlap neither each other nor the
+        // other buffers; no buffer overlaps the arguments on the stack, the
+        // return address or the stack below it, and none wraps around the
+        // end of the address space. The CPU has the features of the
+        // implementation selected.
         unsafe {
             seal(
                 &self.schedule,
@@ -268,15 +271,10 @@ impl AesCcm {
                 aad.len(),
                 data.as_mut_ptr(),
                 data.len(),
-                work.as_mut_ptr(),
+                tag.as_mut_ptr(),
                 T,
             )
         };
-        // SAFETY: `seal` wrote the tag to the first `T` (at most 16) bytes
-        // of `work`, and so the first 16 bytes.
-        let b = unsafe { first_block(&work) };
-        let mut tag = [0u8; T];
-        tag.copy_from_slice(&b[..T]);
         Ok(tag)
     }
 
@@ -303,18 +301,9 @@ impl AesCcm {
             x86_64: [vg_aes_ccm_open_aesni, vg_aes_ccm_open_vaes],
             aarch64: [vg_aes_ccm_open_aes, vg_aes_ccm_open_aes_cbc]
         );
-        let mut work = MaybeUninit::<[u64; WORK]>::uninit();
-        let mut t = [0u8; 16];
-        t[..T].copy_from_slice(tag);
-        let w = work.as_mut_ptr().cast::<u64>();
-        // SAFETY: `work` is valid for writes of 320 words.
-        unsafe {
-            w.write(u64::from_le_bytes(t[..8].try_into().unwrap()));
-            w.add(1)
-                .write(u64::from_le_bytes(t[8..].try_into().unwrap()));
-        }
-        // SAFETY: as in `encrypt_in_place`, with the received tag in the
-        // first `T` bytes of `work`.
+        // SAFETY: as in `encrypt_in_place`, with the received tag `tag`
+        // valid for reads of `T` bytes; `tag` is a shared borrow, which
+        // `data`, a unique one, does not overlap.
         let ok = unsafe {
             open(
                 &self.schedule,
@@ -325,7 +314,7 @@ impl AesCcm {
                 aad.len(),
                 data.as_mut_ptr(),
                 data.len(),
-                work.as_mut_ptr(),
+                tag.as_ptr(),
                 T,
             )
         };
@@ -337,22 +326,6 @@ impl AesCcm {
             Err(Error::TagMismatch)
         }
     }
-}
-
-/// The first 16 bytes of `work`, where `seal` writes the tag.
-///
-/// # Safety
-///
-/// They must have been written.
-unsafe fn first_block(work: &MaybeUninit<[u64; WORK]>) -> [u8; 16] {
-    let w = work.as_ptr().cast::<u64>();
-    let mut b = [0u8; 16];
-    // SAFETY: the first two words are initialized (the caller's guarantee).
-    unsafe {
-        b[..8].copy_from_slice(&w.read().to_le_bytes());
-        b[8..].copy_from_slice(&w.add(1).read().to_le_bytes());
-    }
-    b
 }
 
 #[cfg(test)]

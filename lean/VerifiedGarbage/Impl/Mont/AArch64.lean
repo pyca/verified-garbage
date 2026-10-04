@@ -24,19 +24,19 @@ working space too, at `M.mo`; `M.minv` is `-m⁻¹ mod 2⁶⁴`. With
   and `t + t₀ m = (t - t₀) + 2⁶⁴ t₀ m'` with `m' = (m + 1) / 2⁶⁴`, so the
   words above `t₀` get `t₀ m'`, whose words of zero need nothing and powers
   of two need shifts: for `p`, one product and two shifts, in one chain.
-  The accumulator stays below `2m`, and the result is reduced by `csub`.
+  The accumulator stays below `2m`, and the result is reduced by `csubR`.
 * `add o a b`, `sub o a b`: `[a] ± [b] mod m`, with a conditional
-  subtraction (`csub`) or addition of `m`.
-* `csub`: a number below `2m` in `n` registers and a top word (0 or 1)
-  reduced below `m`: the difference with `m` is computed into the
-  temporary area `[M.tmp]`, and then selected with a mask if it did not
+  subtraction (`csubR`) or addition of `m`.
+* `csubR`: a number below `2m` in `n` registers and a top word (0 or 1)
+  reduced below `m`: the difference with `m` is computed into the registers
+  `dRegs n`, free at that point, and then selected with a mask if it did not
   borrow.
 
 A product is `mul` and `umulh` (or shifts), the carries are `adds`, `adcs`
 and `adc` (with `x7 = 0`), every selection is a mask, and every address is `x0` plus
 a constant: nothing but `x0` may affect timing. The operations use the
 registers `x1`–`x7`, `x16`, `x17` and `acc n` (`x8`–`x13` for `n = 4`), and
-write only `[o]` and `[M.tmp]`.
+write only `[o]` (their frames allow `[M.tmp]` too).
 -/
 
 namespace VG.Impl.Mont.AArch64
@@ -67,27 +67,28 @@ def win (n i j : Nat) : Reg := (acc n).getD ((i + j) % (n + 2)) .x8
 /-- The words of round `i`'s accumulator, low to high. -/
 def wins (n i : Nat) : List Reg := (List.range (n + 2)).map (win n i)
 
-/-- `[tmp + d] = ts - [mo + d]`, word by word, with `subs` on the first word
-and `sbcs` on the others, through `x2` and `x16`. -/
-def diffs (first : Bool) : List Reg → Nat → Nat → List Instr
-  | [], _, _ => []
-  | t :: ts, mo, tmp =>
-    [ld .x2 mo, if first then .subs .x .x16 t .x2 else .sbcs .x .x16 t .x2, st .x16 tmp] ++
-      diffs false ts (mo + 8) (tmp + 8)
+/-- `ds = ts - [mo]`, word by word, with `subs` on the first word and `sbcs` on
+the others, through `x2`. -/
+def diffsR (first : Bool) : List Reg → List Reg → Nat → List Instr
+  | t :: ts, d :: ds, mo =>
+    [ld .x2 mo, if first then .subs .x d t .x2 else .sbcs .x d t .x2] ++ diffsR false ts ds (mo + 8)
+  | _, _, _ => []
 
-/-- `ts = [tmp]` where the mask `x17` is zero, word by word, through `x2`
-and `x16`. -/
-def selects : List Reg → Nat → List Instr
-  | [], _ => []
-  | t :: ts, tmp => [ld .x16 tmp, .logic .eor .x .x2 t .x16, .logic .and .x .x2 .x2 .x17,
-      .logic .eor .x t .x16 .x2] ++ selects ts (tmp + 8)
+/-- `ts = ds` where the mask `x17` is zero, word by word, through `x2`. -/
+def selectsR : List Reg → List Reg → List Instr
+  | t :: ts, d :: ds => [.logic .eor .x .x2 t d, .logic .and .x .x2 .x2 .x17,
+      .logic .eor .x t d .x2] ++ selectsR ts ds
+  | _, _ => []
 
-/-- `ts` (and the top word `top`), below `2m`, reduced modulo `m`: the
-difference with `m` is computed into `[tmp]`; `x17` is all ones if it
-borrowed (`sbc` of zeros, with `x7 = 0`), and selects the difference
-where it is zero. -/
-def csub (M : Mod) (ts : List Reg) (top : Reg) : List Instr :=
-  diffs true ts M.mo M.tmp ++ [.sbcs .x .x16 top .x7, .sbc .x .x17 .x7 .x7] ++ selects ts M.tmp
+/-- The registers free for the difference when a sum or product is reduced. -/
+def dRegs (n : Nat) : List Reg := [.x1, .x3, .x4, .x5, .x6, .x16].take n
+
+/-- `ts` (and the top word `top`), below `2m`, reduced modulo `m`, in
+registers: the difference with `m` into `dRegs n`; `x17` is all ones if it
+borrowed, and selects the difference where it is zero. -/
+def csubR (M : Mod) (ts : List Reg) (top : Reg) : List Instr :=
+  diffsR true ts (dRegs M.n) M.mo ++ [.sbcs .x .x2 top .x7, .sbc .x .x17 .x7 .x7] ++
+    selectsR ts (dRegs M.n)
 
 /-- `[o] = ts`. -/
 def stores : List Reg → Nat → List Instr
@@ -281,7 +282,7 @@ def mulSetup (M : Mod) (b : Nat) : List Instr :=
 def mul (M : Mod) (o a b : Nat) : List Instr :=
   let low := (List.range M.n).map (win M.n M.n)
   mulSetup M b ++ (List.range M.n).flatMap (round M a b) ++
-    csub M low (win M.n M.n M.n) ++ stores low o
+    csubR M low (win M.n M.n M.n) ++ stores low o
 
 /-- `ts op= [b]`, word by word through `x2`, with `op` on the first word and
 `op'` on the others (`adds` and `adcs`, `subs` and `sbcs`). -/
@@ -296,7 +297,7 @@ def top (n : Nat) : Reg := (acc n).getD n .x8
 /-- `[o] = [a] + [b] mod m`. -/
 def add (M : Mod) (o a b : Nat) : List Instr :=
   zero7 :: loads (low M.n) a ++ chain (.adds .x) (.adcs .x) (low M.n) b ++
-    [.adc .x (top M.n) .x7 .x7] ++ csub M (low M.n) (top M.n) ++ stores (low M.n) o
+    [.adc .x (top M.n) .x7 .x7] ++ csubR M (low M.n) (top M.n) ++ stores (low M.n) o
 
 /-- `ts += [mo]` masked with `x17`, word by word through `x2`. -/
 def addMasked (first : Bool) : List Reg → Nat → List Instr

@@ -32,7 +32,7 @@ abbrev winQ (c : Cfg) : WinCfg := c.winCfg PX PY
 /-- The indices of the table's slots. -/
 def tblI : List Nat := (List.range 24).map (WT + ·)
 
-def roI : List Nat := [AP, B3P, ZERO, PX, PY, ONEP]
+def roI : List Nat := [AP, BM, ZERO, PX, PY, ONEP]
 def otherI : List Nat := [RX, RY, RZ, TX, TY, TZ, PT, T0, T1, T2, T3, T4, T5, DX, DY, DZ]
 
 theorem winTblSlots_eq (c : Cfg) : winTblSlots (winQ c) = tblI.map c.sl := by
@@ -169,14 +169,15 @@ theorem tbl_apart_slW' {l : List Nat} (hl : ∀ i ∈ l, i < 45 ∨ 69 ≤ i) {j
   · exact Or.inl (bits_le_sl hj ht h)
 
 /-- The flag word survives the window method and the power. -/
-theorem flag_unch_win {base : Addr} {l₁ l₂ : List Nat} {m m' : Mem}
-    (hu : Unch base (winX c ++ (slW c l₁ ++ slW c l₂)) m m') (h7 : c.n < 7) (h0 : 0 < c.n)
-    (hn : base.toNat + size ≤ 2 ^ 64) (hl₁ : FLAG ∉ l₁) (hl₂ : FLAG ∉ l₂) :
+theorem flag_unch_win {base : Addr} {l₁ : List Nat} {m m' : Mem}
+    (hu : Unch base (winX c ++ (slW c l₁ ++ chainWc c)) m m') (h7 : c.n < 7) (h0 : 0 < c.n)
+    (hn : base.toNat + size ≤ 2 ^ 64) (hl₁ : FLAG ∉ l₁) :
     word m' base (c.sl FLAG) = word m base (c.sl FLAG) := by
   have hF := sl_le c h7 (i := FLAG) (by decide)
   refine hu.word (fun w hw => ?_) (by omega)
   rcases apart_append (apart_winX (c := c) (i := FLAG) (by decide))
-    (apart_append (apart_slW hl₁) (apart_slW hl₂)) w hw with h | h
+    (apart_append (apart_slW hl₁) (apart_chainWc (c := c) (i := FLAG) (by decide) (by decide))) w hw
+    with h | h
   · exact Or.inl (by omega)
   · exact Or.inr h
 
@@ -269,11 +270,11 @@ theorem winMul_ok (hc : CfgOk c) (hC : Law c.C) {base : Addr} {s : State} (hs : 
   have hF : WinFixed (winQ c) c.C base s₂ P (wordsVal s.mem base (c.sl ks) c.n + 8 * geom (16 * c.n + 1)) := by
     refine ⟨?_, ?_, fun x hx => ?_, F₂.zero, ?_, fun t ht => ?_⟩
     · show toM _ _ (wordsVal s₂.mem _ (c.sl AP) c.n) = _; rw [F₂.ap]; exact toM_cmont hc _
-    · show toM _ _ (wordsVal s₂.mem _ (c.sl B3P) c.n) = _; rw [F₂.b3p]; exact toM_cmont hc _
+    · show toM _ _ (wordsVal s₂.mem _ (c.sl BM) c.n) = _; rw [F₂.bm]; exact toM_cmont hc _
     · simp only [winRo, List.mem_cons, List.not_mem_nil, or_false] at hx
       rcases hx with rfl | rfl | rfl | rfl | rfl | rfl
       · exact lt_of_eq_of_lt F₂.ap (hmont _)
-      · exact lt_of_eq_of_lt F₂.b3p (hmont _)
+      · exact lt_of_eq_of_lt F₂.bm (hmont _)
       · exact lt_of_eq_of_lt F₂.zero (by omega)
       · exact lt_of_eq_of_lt (e₂ (i := PX) (by decide)) hpx
       · exact lt_of_eq_of_lt (e₂ (i := PY) (by decide)) hpy
@@ -283,7 +284,7 @@ theorem winMul_ok (hc : CfgOk c) (hC : Law c.C) {base : Addr} {s : State} (hs : 
       rw [tv (by decide), tv (by decide), tv (by decide)]; exact hrep
     · rw [hJ] at ht
       exact b₂ t (by omega)
-  refine WP.seq (WP.mono (window_ok (winLayQ hc) (winAQ c) hpR hC hP hc.p_lt (hmont 1)
+  refine WP.seq (WP.mono (window_ok (winLayQ hc) (winAQ c) hpR hC hc.am3 hP hc.p_lt (hmont 1)
     (show toM c.C.p (2 ^ (64 * c.n)) (c.mont 1) = 1 by rw [toM_cmont hc]; rfl) hs₂ hM₂ hF
     (by rw [hJ]; exact hrec) (Nat.le_add_left _ _)) fun s₃ ⟨K₃, U₃, M₃, L₃, R₃⟩ => h s₃ ?_)
   rw [winW_eq] at U₃
@@ -299,7 +300,7 @@ structure WinPost (c : Cfg) (base : Addr) (P : Point c.C) (k : Nat) (s s' : Stat
   gpr : ∀ r, r ∉ combClob c.n → r ∉ powClob c.n → s'.gpr r = s.gpr r
   rd : s'.rd = s.rd
   wr : s'.wr = s.wr
-  unch : Unch base (winX c ++ (slW c (otherI ++ tblI ++ [TMP]) ++ slW c [ACC, PT, TMP])) s.mem s'.mem
+  unch : Unch base (winX c ++ (slW c (otherI ++ tblI ++ [TMP]) ++ chainWc c)) s.mem s'.mem
   q : Rep c.C (tmv c.C c.n base s' (c.sl RX)) (tmv c.C c.n base s' (c.sl RY))
     (tmv c.C c.n base s' (c.sl RZ)) (mul k P)
   acc_lt : sv c base s' ACC < c.C.p
@@ -312,10 +313,9 @@ theorem winPow_ok (hc : CfgOk c) (hC : Law c.C) {base : Addr} {s : State} (hs : 
     (hpx : sv c base s PX < c.C.p) (hpy : sv c base s PY < c.C.p)
     (hrep : Rep c.C (tmv c.C c.n base s (c.sl PX)) (tmv c.C c.n base s (c.sl PY))
       (tmv c.C c.n base s (c.sl ONEP)) P)
-    (ht₁ : ∀ t < 64 * c.n, s.mem (off base (bitsAt c.n 1 + t)) = if (c.C.p - 2).testBit t then 1 else 0)
     {rest : Prog isa} {R : State → Prop}
     (h : ∀ s', WinPost c base P (sv c base s K) s s' → WP isa rest s' R) :
-    WP isa (.seq (c.winPrep (c.sl K)) (.seq (WinCfg.window (winQ c)) (.seq (pow c.powP) rest))) s R := by
+    WP isa (.seq (c.winPrep (c.sl K)) (.seq (WinCfg.window (winQ c)) (.seq (ChainCfg.pow c.powP) rest))) s R := by
   have h0 := hc.n0
   have h7 := hc.n7
   have hn := hs.nowrap
@@ -323,16 +323,11 @@ theorem winPow_ok (hc : CfgOk c) (hC : Law c.C) {base : Addr} {s : State} (hs : 
   refine winMul_ok hc hC hs F hP hpx hpy hrep (ks := K) (by decide) fun s₃ W => ?_
   have F₃ := F.unch h7 hn (fixedOk_winX.append (fixedOk_slW (by decide))) W.unch
   have rz₃ : wordsVal s₃.mem base (c.sl RZ) c.n < c.C.p := W.lt _ (by simp)
-  refine WP.seq (WP.mono (pow_ok (P := c.powP) (e := c.C.p - 2) (powLayP hc) (powAP c h0 h7) hpR W.scr
-    W.mod rz₃ F₃.onep (fun t ht => by
-      show s₃.mem (off base (bitsAt c.n 1 + t)) = _
-      rw [tbl_unch W.unch h7 (j := 1) (by decide) ht (apart_append (tbl_apart_winX (by decide) ht)
-        (tbl_apart_slW' (by decide) (by decide) ht))]
-      exact ht₁ t ht)
-    (show c.C.p - 2 < 2 ^ (64 * c.n) by have := hc.p_lt; omega)) fun s₄ ⟨K₄, U₄, lt₄, v₄⟩ => h s₄ ?_)
-  rw [powWP_eq] at U₄
-  have r₄ : ∀ {i}, i < 45 → i ∉ [ACC, PT, TMP] → sv c base s₄ i = sv c base s₃ i := fun hi h₁ =>
-    sv_unch U₄ h7 hn hi (apart_slW h₁)
+  refine WP.seq (WP.mono (chainPow_ok (chainLayP hc) hpR W.scr W.mod rz₃ (chainOkP hc))
+    fun s₄ ⟨K₄, U₄, lt₄, v₄⟩ => h s₄ ?_)
+  rw [chainWP_eq] at U₄
+  have r₄ : ∀ {i}, i < 45 → i ∉ [ACC, TMP] → sv c base s₄ i = sv c base s₃ i := fun hi h₁ =>
+    sv_unch U₄ h7 hn hi (apart_chainWc hi h₁)
   refine ⟨W.scr.of_keepRegs K₄ (x0_not_powClob h7), fun r hr hr' => ?_, by rw [K₄.rd, W.rd],
     by rw [K₄.wr, W.wr], (W.unch.trans U₄).mono (by simp), ?_, lt₄, ?_, ?_⟩
   · rw [K₄.gpr r hr', W.gpr r hr]

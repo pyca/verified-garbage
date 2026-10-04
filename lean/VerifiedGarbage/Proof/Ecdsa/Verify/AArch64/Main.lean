@@ -37,23 +37,15 @@ theorem verify_eq'' (c : Cfg) : Impl.Ecdsa.Verify.AArch64.Cfg.verify c =
       (.seq (bits (c.sl EXPN) (bitsAt c.n 2) (8 * c.n)) (.block [])))))
       (.seq (.block (Impl.Ecdsa.Verify.AArch64.Cfg.loadS c)) (.seq (.block (Impl.Ecdh.AArch64.Cfg.peer c))
       (.seq (Impl.Ecdh.AArch64.Cfg.validate c) (.seq (Impl.Ecdsa.Verify.AArch64.Cfg.scalars c)
-      (.seq (pow c.powN) (.seq (Impl.Ecdsa.Verify.AArch64.Cfg.uv c)
-      (.seq (Impl.Ecdsa.Verify.AArch64.Cfg.points c) (.seq (pow c.powP)
+      (.seq (ChainCfg.pow c.powN) (.seq (Impl.Ecdsa.Verify.AArch64.Cfg.uv c)
+      (.seq (Impl.Ecdsa.Verify.AArch64.Cfg.points c) (.seq (ChainCfg.pow c.powP)
         (Impl.Ecdsa.Verify.AArch64.Cfg.final c)))))))))) := rfl
 
-/-- What the slots of `a`, `3b` and `G` stand for. -/
-theorem consts_tmv (hc : CfgOk c) {base : Addr} {g : Reg → BitVec 64} {s : State}
-    (F : Fixed c base g s.mem) :
-    tmv c.C c.n base s (c.sl AP) = Fin.ofNat c.C.p c.C.a ∧
-      tmv c.C c.n base s (c.sl B3P) = Fin.ofNat c.C.p (3 * c.C.b) ∧
-      tmv c.C c.n base s (c.sl ONEP) = 1 := by
-  refine ⟨?_, ?_, ?_⟩
-  · show toM _ _ (wordsVal s.mem base (c.sl AP) c.n) = _
-    rw [F.ap]; exact toM_cmont hc _
-  · show toM _ _ (wordsVal s.mem base (c.sl B3P) c.n) = _
-    rw [F.b3p]; exact toM_cmont hc _
-  · show toM _ _ (wordsVal s.mem base (c.sl ONEP) c.n) = _
-    rw [F.onep]; exact toM_one (unitMod_pow_two hc.p_odd _)
+/-- What the slot of Montgomery's one stands for. -/
+theorem onep_tmv (hc : CfgOk c) {base : Addr} {g : Reg → BitVec 64} {s : State}
+    (F : Fixed c base g s.mem) : tmv c.C c.n base s (c.sl ONEP) = 1 := by
+  show toM _ _ (wordsVal s.mem base (c.sl ONEP) c.n) = _
+  rw [F.onep]; exact toM_one (unitMod_pow_two hc.p_odd _)
 
 /-- `vg_ecdsa_<curve>_verify` returns whether the specification's
 verification holds, and restores the callee-saved registers. -/
@@ -65,7 +57,7 @@ theorem verify_ok (hc : CfgOk c) (hC : Law c.C) (hT : CombOk c.C (16 * c.n) c.tb
   rw [verify_eq'']
   refine front_ok hc hp fun g s₁ hg hF => mid_ok hc hF fun s₂ hM => ?_
   have F₂ := hM.fixed
-  obtain ⟨ha, hb, h1⟩ := consts_tmv hc F₂
+  have h1 := onep_tmv hc F₂
   -- The point the window method multiplies.
   let P := peerPt c (s₀.mem (s₀.gpr .x0) = 4) (keyX c s₀) (keyY c s₀)
   have hPc : onCurve c.C P = true := peerPt_onCurve hc _ _ _

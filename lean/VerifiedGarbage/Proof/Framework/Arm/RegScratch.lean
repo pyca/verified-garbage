@@ -13,7 +13,8 @@ contract with the argument (`narrowR`), and its run there is its run from that
 state (`Exec.widen`), as on AArch64. The return address is in `lr`, which the
 code keeps, so the buffer can start at the stack pointer, and nothing is
 written to memory: unlike `Verified.stackScratch`, the precondition and
-postcondition may read any memory.
+postcondition may read any memory, as may the leak the contract may declare
+(`Sig.contract`'s `leak`, which the code's contract takes too).
 -/
 
 namespace VG.Arm
@@ -45,7 +46,7 @@ theorem Loc.val_avoids {r : Reg} {s s' : State} (hr : ∀ q, q ≠ r → s'.gpr 
 section
 variable {sig : Sig} {nm : String} {e : Elem} {n : Nat}
   {pre : Curry (sig.words abi.ptrBits) (Mem → Prop)} {post : sig.Post abi.ptrBits} {wa : Bool}
-  {stack bytes : Nat} {r : Reg}
+  {stack bytes : Nat} {r : Reg} {leak : Option (Curry (sig.words abi.ptrBits) (Mem → List Nat))}
 
 theorem armArgs_withScratch_reg (hcl : ScratchInReg sig r) (nm : String) (e : Elem) (n : Nat)
     (s : State) :
@@ -102,9 +103,9 @@ abbrev FitsR (bytes : Nat) (e : Elem) (n : Nat) : Prop :=
 /-- The precondition of the contract without the buffer gives the one with it
 in `narrowR`. -/
 theorem narrowR_pre (hcl : ScratchInReg sig r) (hloc : (locs sig).all (Loc.avoids r) = true)
-    (hb : FitsR bytes e n) {s : State} (hs : (sig.contract abi pre post wa (stack + bytes)).pre s)
+    (hb : FitsR bytes e n) {s : State} (hs : (sig.contract abi pre post wa (stack + bytes) leak).pre s)
     (hl : Sig.noLists sig.params = true) :
-    (Sig.scratchContract abi sig nm e n pre post wa stack).pre (narrowR e n bytes r s) := by
+    (Sig.scratchContract abi sig nm e n pre post wa stack leak).pre (narrowR e n bytes r s) := by
   obtain ⟨hb0, -, -, -, hb4⟩ := hb
   rw [pre_arm hl] at hs
   obtain ⟨⟨hst, -⟩, hrd, hwr, hpw, hres, hnw, hpr⟩ := hs
@@ -162,22 +163,24 @@ theorem narrowR_pre (hcl : ScratchInReg sig r) (hloc : (locs sig).all (Loc.avoid
       rw [hsp, toNat_sub64 (by omega), hE]; omega
   · exact Eq.mpr (congrFun (Curry.apply_withScratch abi.ptrBits nm e n sig.params pre _ _ hlen) s.mem) hpr
 
-/-- The public data of the contract without the buffer is public in
-`narrowR` for the contract with it. -/
+/-- The public data of the contract without the buffer, and its leak, are
+public in `narrowR` for the contract with it, which reads the same memory. -/
 theorem narrowR_pub (hcl : ScratchInReg sig r) (hloc : (locs sig).all (Loc.avoids r) = true)
-    {s₁ s₂ : State} (hp : (sig.contract abi pre post wa (stack + bytes)).pub s₁ s₂) (hl : Sig.noLists sig.params = true) :
-    (Sig.scratchContract abi sig nm e n pre post wa stack).pub (narrowR e n bytes r s₁)
+    {s₁ s₂ : State} (hp : (sig.contract abi pre post wa (stack + bytes) leak).pub s₁ s₂)
+    (hl : Sig.noLists sig.params = true) :
+    (Sig.scratchContract abi sig nm e n pre post wa stack leak).pub (narrowR e n bytes r s₁)
       (narrowR e n bytes r s₂) := by
-  rw [pub_arm hl] at hp
-  obtain ⟨hsp, hpa⟩ := hp
-  refine (pub_arm (sig := sig.withScratch nm e n)
+  rw [pubL_arm hl] at hp
+  obtain ⟨⟨hsp, hlk⟩, hpa⟩ := hp
+  have l₁ := armArgs_length sig s₁
+  have l₂ := armArgs_length sig s₂
+  refine (pubL_arm (sig := sig.withScratch nm e n)
     (pre := Curry.withScratch abi.ptrBits nm e n sig.params pre)
     (post := Curry.withScratch abi.ptrBits nm e n sig.params post)
     (Sig.noLists_withScratch nm e n hl)).mpr ?_
-  rw [narrowR_armArgs hcl hloc, narrowR_armArgs hcl hloc, narrowR_sp, narrowR_sp, hsp]
-  refine ⟨rfl, fun i hi => ?_⟩
-  have l₁ := armArgs_length sig s₁
-  have l₂ := armArgs_length sig s₂
+  rw [narrowR_armArgs hcl hloc, narrowR_armArgs hcl hloc, narrowR_sp, narrowR_sp, narrowR_mem,
+    narrowR_mem, hsp]
+  refine ⟨⟨rfl, leakAgree_withScratch_same _ _ l₁ l₂ hlk⟩, fun i hi => ?_⟩
   have lp := Sig.pubs_length sig.params abi.ptrBits
   have lw : (widths sig).length = (sig.params.flatMap fun p => p.2.words abi.ptrBits).length := by
     rw [widths, List.length_map]; rfl
@@ -203,7 +206,8 @@ theorem narrowR_pub (hcl : ScratchInReg sig r) (hloc : (locs sig).all (Loc.avoid
 with the same trace, which keeps what the calling convention requires, and
 whose memory and registers are those of the code's run. -/
 theorem withRegScratch_run {c : Prog isa} (hcl : ScratchInReg sig r) (hb : FitsR bytes e n)
-    {s : State} (hs : (sig.contract abi pre post wa (stack + bytes)).pre s) {t : List Leak} {s₃ : State}
+    {s : State} (hs : (sig.contract abi pre post wa (stack + bytes) leak).pre s) {t : List Leak}
+    {s₃ : State}
     (he : Exec isa c (narrowR e n bytes r s) t s₃) (ha : abiPreserved (narrowR e n bytes r s) s₃)
     (hl : Sig.noLists sig.params = true) :
     Exec isa (withRegScratch bytes r c) s t (popState bytes s s₃) ∧
@@ -253,16 +257,17 @@ for the function without it, which allocates the buffer in a frame of
 `bytes` more bytes of stack (`withRegScratch`). The other arguments are in
 registers too (`hcl`, `hloc`). -/
 theorem Verified.regScratch {c : Prog isa}
-    (h : Verified target c (Sig.scratchContract abi sig nm e n pre post wa stack))
+    (h : Verified target c (Sig.scratchContract abi sig nm e n pre post wa stack leak))
     (hcl : ScratchInReg sig r) (hloc : (locs sig).all (Loc.avoids r) = true) (hb : FitsR bytes e n)
     (hsat : ∃ s, (sig.contract abi pre post wa (stack + bytes)).pre s)
     (hl : Sig.noLists sig.params = true := by decide) :
-    Verified target (withRegScratch bytes r c) (sig.contract abi pre post wa (stack + bytes)) := by
+    Verified target (withRegScratch bytes r c)
+      (sig.contract abi pre post wa (stack + bytes) leak) := by
   obtain ⟨hcor, hct, -⟩ := h
   have hlen := armArgs_length sig
-  have hrun : ∀ s, (sig.contract abi pre post wa (stack + bytes)).pre s → ∃ t s₃,
+  have hrun : ∀ s, (sig.contract abi pre post wa (stack + bytes) leak).pre s → ∃ t s₃,
       Exec isa c (narrowR e n bytes r s) t s₃ ∧
-      (Sig.scratchContract abi sig nm e n pre post wa stack).post (narrowR e n bytes r s) s₃ ∧
+      (Sig.scratchContract abi sig nm e n pre post wa stack leak).post (narrowR e n bytes r s) s₃ ∧
       Exec isa (withRegScratch bytes r c) s t (popState bytes s s₃) ∧
       abiPreserved s (popState bytes s s₃) ∧ (popState bytes s s₃).mem = s₃.mem ∧
       (popState bytes s s₃).gpr = s₃.gpr := by

@@ -255,4 +255,19 @@ theorem WinLay.rcbApart_tbl {K : WinCfg} {size : Nat} (hL : WinLay K size) {m : 
       · exact hL.tbl_ne (List.mem_append_left _ (hab _ hxs)) hj rfl
       · exact hL.tbl_ne₂ (i := i) (j := j) (by omega) e.symm
 
+/-- The slots `toJ`, `dblJ` and `fromJ` use in the window method's doublings are apart:
+`R` into `E`, `E` into `D`, `D` into `E` and `E` into `R` (`z` the slots of zero). -/
+theorem WinLay.rcbApart_jac {K : WinCfg} {size : Nat} (hL : WinLay K size) :
+    RcbApart K.S K.R ⟨K.zero, K.zero, K.zero⟩ K.E ∧ RcbApart K.S K.E K.E K.D ∧
+      RcbApart K.S K.D K.D K.E ∧ RcbApart K.S K.E ⟨K.zero, K.zero, K.zero⟩ K.R := by
+  have hnd := hL.nodup
+  have ha := hL.ro K.S.a (by simp [winRo])
+  have hb := hL.ro K.S.b3 (by simp [winRo])
+  have hz := hL.ro K.zero (by simp [winRo])
+  simp only [winOther, rcbW, List.cons_append, List.nil_append, List.nodup_cons, List.mem_cons,
+    List.not_mem_nil, or_false, not_or] at hnd ha hb hz
+  refine ⟨⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩⟩ <;>
+    simp only [rcbW, rcbR, List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or,
+      List.nodup_nil, and_true, forall_eq_or_imp, forall_eq] <;> grind
+
 end VG.Proof.Weierstrass
