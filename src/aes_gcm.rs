@@ -151,7 +151,7 @@ const MAX_AAD: u64 = (1 << 61) - 1;
 /// any way; one enum of the instances keeps every `match` exhaustive over
 /// exactly the functions that exist.)
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum Backend {
+pub(crate) enum Backend {
     /// The baseline ISA: `vg_aes_ctr32`, `vg_aes_expand_key` and `vg_ghash`.
     Scalar,
     /// AES-NI for AES: the `_aesni` instances.
@@ -231,6 +231,7 @@ macro_rules! instance {
         }
     };
 }
+pub(crate) use instance;
 
 /// The features of the baseline ISA: none.
 const BASELINE: Features = Features(0);
@@ -238,7 +239,7 @@ const BASELINE: Features = Features(0);
 impl Backend {
     /// Every implementation, best first, with the features it needs
     /// (computed at compile time, so that choosing one compares bit sets).
-    const ALL: &[(Backend, Features)] = &[
+    pub(crate) const ALL: &[(Backend, Features)] = &[
         #[cfg(target_arch = "x86_64")]
         (
             Backend::VaesVpclmulAvx512,
@@ -282,7 +283,7 @@ impl Backend {
 }
 
 /// The best implementation a CPU with the features `f` can run.
-fn select(f: Features) -> Backend {
+pub(crate) fn select(f: Features) -> Backend {
     let best = Backend::ALL.iter().find(|(_, need)| f.contains(*need));
     best.map_or(Backend::Scalar, |(b, _)| *b)
 }
