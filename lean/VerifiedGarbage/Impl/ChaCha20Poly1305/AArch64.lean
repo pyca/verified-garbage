@@ -19,7 +19,7 @@ The context (1024 bytes, see `VG.Spec.ChaCha20Poly1305.sealContract`):
 * `[592, 640)`: our caller's `x21`–`x25` and our return address `x30`;
 * `[640, 656)`: the tag computed by `open`;
 * `[656, 672)`: the lengths block;
-* `[672, 800)`: the working space of `vg_poly1305_finalize` (`scratch`).
+* `[672, 800)`: the working space of `vg_poly1305_finalize_scratch` (`scratch`).
 
 `x21` holds the context, `x22` the data, `x23` its length, `x24` the
 additional data and `x25` its length throughout: they are callee-saved, and
@@ -121,7 +121,7 @@ length (`count`) is 0 modulo 16, and nothing is buffered. -/
 def finalizeTo (out : Nat) : Prog isa :=
   .seq (.block [.addImm .x .x0 .x21 448, .movz .x .x1 0 0, .addImm .x .x2 .x21 out,
     .addImm .x .x3 .x21 672])
-    (.call "vg_poly1305_finalize" Impl.Poly1305.AArch64.Radix64.finalize)
+    (.call "vg_poly1305_finalize_scratch" Impl.Poly1305.AArch64.Radix64.finalize)
 
 def sealWith (c : XorCallee) : Prog isa :=
   .seq prologue

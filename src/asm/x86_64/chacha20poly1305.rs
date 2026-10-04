@@ -174,7 +174,7 @@ pub(crate) unsafe extern "sysv64" fn vg_chacha20_poly1305_seal_avx2(ctx: *mut [u
         "mov esi, 0",
         "mov rdx, r15",
         "add rdx, 48",
-        "call {vg_poly1305_finalize}",
+        "call {vg_poly1305_finalize_scratch}",
         "mov rbx, QWORD PTR [rdi+144]",
         "mov rbp, QWORD PTR [rdi+152]",
         "mov r13, QWORD PTR [rdi+160]",
@@ -186,7 +186,7 @@ pub(crate) unsafe extern "sysv64" fn vg_chacha20_poly1305_seal_avx2(ctx: *mut [u
         vg_poly1305_init = sym super::poly1305::vg_poly1305_init,
         vg_poly1305_blocks_avx2 = sym super::poly1305::vg_poly1305_blocks_avx2,
         vg_chacha20_xor_avx2 = sym super::chacha20::vg_chacha20_xor_avx2,
-        vg_poly1305_finalize = sym super::poly1305::vg_poly1305_finalize,
+        vg_poly1305_finalize_scratch = sym super::poly1305::vg_poly1305_finalize_scratch,
     )
 }
 
@@ -362,7 +362,7 @@ pub(crate) unsafe extern "sysv64" fn vg_chacha20_poly1305_open_avx2(ctx: *mut [u
         "mov esi, 0",
         "mov rdx, r15",
         "add rdx, 640",
-        "call {vg_poly1305_finalize}",
+        "call {vg_poly1305_finalize_scratch}",
         "mov rax, QWORD PTR [rcx]",
         "xor rax, QWORD PTR [rdi-400]",
         "mov rdx, QWORD PTR [rcx+8]",
@@ -382,7 +382,7 @@ pub(crate) unsafe extern "sysv64" fn vg_chacha20_poly1305_open_avx2(ctx: *mut [u
         vg_poly1305_init = sym super::poly1305::vg_poly1305_init,
         vg_poly1305_blocks_avx2 = sym super::poly1305::vg_poly1305_blocks_avx2,
         vg_chacha20_xor_avx2 = sym super::chacha20::vg_chacha20_xor_avx2,
-        vg_poly1305_finalize = sym super::poly1305::vg_poly1305_finalize,
+        vg_poly1305_finalize_scratch = sym super::poly1305::vg_poly1305_finalize_scratch,
     )
 }
 
@@ -558,7 +558,7 @@ pub(crate) unsafe extern "sysv64" fn vg_chacha20_poly1305_seal_avx512(ctx: *mut 
         "mov esi, 0",
         "mov rdx, r15",
         "add rdx, 48",
-        "call {vg_poly1305_finalize}",
+        "call {vg_poly1305_finalize_scratch}",
         "mov rbx, QWORD PTR [rdi+144]",
         "mov rbp, QWORD PTR [rdi+152]",
         "mov r13, QWORD PTR [rdi+160]",
@@ -570,7 +570,7 @@ pub(crate) unsafe extern "sysv64" fn vg_chacha20_poly1305_seal_avx512(ctx: *mut 
         vg_poly1305_init = sym super::poly1305::vg_poly1305_init,
         vg_poly1305_blocks_avx512 = sym super::poly1305::vg_poly1305_blocks_avx512,
         vg_chacha20_xor_avx512 = sym super::chacha20::vg_chacha20_xor_avx512,
-        vg_poly1305_finalize = sym super::poly1305::vg_poly1305_finalize,
+        vg_poly1305_finalize_scratch = sym super::poly1305::vg_poly1305_finalize_scratch,
     )
 }
 
@@ -746,7 +746,7 @@ pub(crate) unsafe extern "sysv64" fn vg_chacha20_poly1305_open_avx512(ctx: *mut 
         "mov esi, 0",
         "mov rdx, r15",
         "add rdx, 640",
-        "call {vg_poly1305_finalize}",
+        "call {vg_poly1305_finalize_scratch}",
         "mov rax, QWORD PTR [rcx]",
         "xor rax, QWORD PTR [rdi-400]",
         "mov rdx, QWORD PTR [rcx+8]",
@@ -766,7 +766,7 @@ pub(crate) unsafe extern "sysv64" fn vg_chacha20_poly1305_open_avx512(ctx: *mut 
         vg_poly1305_init = sym super::poly1305::vg_poly1305_init,
         vg_poly1305_blocks_avx512 = sym super::poly1305::vg_poly1305_blocks_avx512,
         vg_chacha20_xor_avx512 = sym super::chacha20::vg_chacha20_xor_avx512,
-        vg_poly1305_finalize = sym super::poly1305::vg_poly1305_finalize,
+        vg_poly1305_finalize_scratch = sym super::poly1305::vg_poly1305_finalize_scratch,
     )
 }
 
@@ -938,7 +938,7 @@ pub(crate) unsafe extern "sysv64" fn vg_chacha20_poly1305_seal(ctx: *mut [u64; 1
         "mov esi, 0",
         "mov rdx, r15",
         "add rdx, 48",
-        "call {vg_poly1305_finalize}",
+        "call {vg_poly1305_finalize_scratch}",
         "mov rbx, QWORD PTR [rdi+144]",
         "mov rbp, QWORD PTR [rdi+152]",
         "mov r13, QWORD PTR [rdi+160]",
@@ -950,7 +950,7 @@ pub(crate) unsafe extern "sysv64" fn vg_chacha20_poly1305_seal(ctx: *mut [u64; 1
         vg_poly1305_init = sym super::poly1305::vg_poly1305_init,
         vg_poly1305_blocks = sym super::poly1305::vg_poly1305_blocks,
         vg_chacha20_xor = sym super::chacha20::vg_chacha20_xor,
-        vg_poly1305_finalize = sym super::poly1305::vg_poly1305_finalize,
+        vg_poly1305_finalize_scratch = sym super::poly1305::vg_poly1305_finalize_scratch,
     )
 }
 
@@ -1122,7 +1122,7 @@ pub(crate) unsafe extern "sysv64" fn vg_chacha20_poly1305_open(ctx: *mut [u64; 1
         "mov esi, 0",
         "mov rdx, r15",
         "add rdx, 640",
-        "call {vg_poly1305_finalize}",
+        "call {vg_poly1305_finalize_scratch}",
         "mov rax, QWORD PTR [rcx]",
         "xor rax, QWORD PTR [rdi-400]",
         "mov rdx, QWORD PTR [rcx+8]",
@@ -1142,6 +1142,6 @@ pub(crate) unsafe extern "sysv64" fn vg_chacha20_poly1305_open(ctx: *mut [u64; 1
         vg_poly1305_init = sym super::poly1305::vg_poly1305_init,
         vg_poly1305_blocks = sym super::poly1305::vg_poly1305_blocks,
         vg_chacha20_xor = sym super::chacha20::vg_chacha20_xor,
-        vg_poly1305_finalize = sym super::poly1305::vg_poly1305_finalize,
+        vg_poly1305_finalize_scratch = sym super::poly1305::vg_poly1305_finalize_scratch,
     )
 }

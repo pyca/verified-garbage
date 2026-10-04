@@ -511,23 +511,23 @@ theorem finalize_ct : ConstantTime isa Proof.Poly1305.finalizeX86_64.pre
   rcases hr with rfl | rfl | rfl <;> with_reducible assumption
 
 theorem finalize_verified :
-    Verified X86_64.target Impl.Poly1305.X86_64.finalize (Spec.Poly1305.finalizeContract X86_64.abi)
+    Verified X86_64.target Impl.Poly1305.X86_64.finalize (Spec.Poly1305.finalizeScratchContract X86_64.abi)
       :=
   Verified.of_correct finalize_ok finalize_ct
     { pre := by
-        sig_implies_pre [Spec.Poly1305.finalizeContract, Spec.Poly1305.finalizeSig,
+        sig_implies_pre [Spec.Poly1305.finalizeScratchContract, Spec.Poly1305.finalizeScratchSig, Spec.Poly1305.finalizePost,
           Proof.Poly1305.finalizeX86_64, X86_64.abi, X86_64.argRegs]
       post := by
         intro s s' _ h
-        sig_eval [Spec.Poly1305.finalizeContract, Spec.Poly1305.finalizeSig, X86_64.abi,
+        sig_eval [Spec.Poly1305.finalizeScratchContract, Spec.Poly1305.finalizeScratchSig, Spec.Poly1305.finalizePost, X86_64.abi,
             X86_64.argRegs]
         intro key msg hb hc
         exact h.2 key msg hb (count_mod hc)
       pub := by
-        sig_implies_pub [Spec.Poly1305.finalizeContract, Spec.Poly1305.finalizeSig,
+        sig_implies_pub [Spec.Poly1305.finalizeScratchContract, Spec.Poly1305.finalizeScratchSig, Spec.Poly1305.finalizePost,
           Proof.Poly1305.finalizeX86_64, X86_64.abi, X86_64.argRegs]
       sat := by
-        sig_implies_sat [Spec.Poly1305.finalizeContract, Spec.Poly1305.finalizeSig, X86_64.abi,
+        sig_implies_sat [Spec.Poly1305.finalizeScratchContract, Spec.Poly1305.finalizeScratchSig, Spec.Poly1305.finalizePost, X86_64.abi,
           X86_64.argRegs,
           Proof.Poly1305.X86_64.finalizeSat]
           [Proof.Poly1305.X86_64.finalizeSat] using Proof.Poly1305.X86_64.finalizeSat }
