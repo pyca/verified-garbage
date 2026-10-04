@@ -21,11 +21,12 @@ open VG.Proof.X25519.Arm (Rest Upd Mupd Fupd)
 
 /-! ## The working space -/
 
-/-- The working space: `r12` holds its base `base`, it is writable, it lies
-below `2³²`, and offsets in it are below 4096. -/
+/-- The working space: `r12` holds its base `base`, it is the start of a
+writable region (which may be longer), it lies below `2³²`, and offsets in it
+are below 4096. -/
 structure Scr (s : State) (base : Addr) (size : Nat) : Prop where
   wb : State.addr (s.gpr .r12) = base
-  wr : (⟨base, size⟩ : Region) ∈ s.wr
+  wr : ∃ len, size ≤ len ∧ len ≤ 2 ^ 32 ∧ (⟨base, len⟩ : Region) ∈ s.wr
   nowrap : base.toNat + size ≤ 2 ^ 32
   small : size ≤ 4096
 
@@ -51,10 +52,13 @@ theorem Scr.contains {base : Addr} {size d n : Nat} (hn : base.toNat + size ≤ 
 
 theorem Scr.read {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {d n : Nat}
     (hd : d + n ≤ size) : InRegions (s.rd ++ s.wr) (off base d) n :=
-  ⟨_, List.mem_append_right _ hs.wr, Scr.contains hs.nowrap hd⟩
+  have ⟨_, hl, hl', hR⟩ := hs.wr
+  ⟨_, List.mem_append_right _ hR, Offset.contains_base base (by omega) (by omega)⟩
 
 theorem Scr.write {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {d n : Nat}
-    (hd : d + n ≤ size) : InRegions s.wr (off base d) n := ⟨_, hs.wr, Scr.contains hs.nowrap hd⟩
+    (hd : d + n ≤ size) : InRegions s.wr (off base d) n :=
+  have ⟨_, hl, hl', hR⟩ := hs.wr
+  ⟨_, hR, Offset.contains_base base (by omega) (by omega)⟩
 
 theorem Scr.off_lt {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {d : Nat}
     (hd : d < size) : d < 4096 := by have := hs.small; omega
