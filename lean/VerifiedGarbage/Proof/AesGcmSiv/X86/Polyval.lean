@@ -65,6 +65,30 @@ structure TailPre (p : Prm) (P : Addr) (r : Nat) (t t₃ : State) : Prop where
   frame : Frame [⟨w64 p.W + BitVec.ofNat 64 224, 16⟩, ⟨w64 p.W + BitVec.ofNat 64 176, 4⟩] t.mem t₃.mem
   bytes : bytesAt t₃.mem (w64 p.W + BitVec.ofNat 64 224) 16 = bytesAt t.mem P r ++ Spec.GcmSiv.zeros (16 - r)
 
+/-- `absTailPre`'s first block: the block zeroed, and the copy's arguments. -/
+theorem absTail1_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t) {P : BitVec 32} {r : Nat}
+    (hsi : t.gpr .esi = P) (hn : slotv t.mem p.W nO = BitVec.ofNat 32 r) :
+    ∃ t₁ : State, runBlock isa (zero4 bO ++ ([.mov .edi (.reg .esi), .mov .edx (.reg .ebp), .alu .add .edx (imm bO),
+        .mov .ecx (slot nO)] : List Instr)) t = some t₁ ∧
+      t₁.mem = Proof.Cmac.zero4 t.mem (w64 p.W + BitVec.ofNat 64 224) ∧ t₁.gpr .edi = P ∧
+      t₁.gpr .edx = p.W + BitVec.ofNat 32 224 ∧ t₁.gpr .ecx = BitVec.ofNat 32 r ∧ t₁.gpr .ebp = p.W ∧
+      t₁.gpr .esp = p.SP ∧ t₁.rd = t.rd ∧ t₁.wr = t.wr := by
+  simp only [slotv_eq, nO] at hn
+  have hz := zero4_fold t.mem p.W 224
+  simp only [Nat.reduceAdd] at hz
+  have rn : (Proof.Cmac.zero4 t.mem (w64 p.W + BitVec.ofNat 64 224)).readW (w64 p.W + BitVec.ofNat 64 176) 32 =
+      t.mem.readW (w64 p.W + BitVec.ofNat 64 176) 32 := by
+    rw [← hz]; simp (disch := decide) only [readW_writeW_off]
+  refine ⟨_, by simp only [zero4]; grun [E.ebp, L.aW, E.perm.wW, E.perm.wR, hn, hz, rn], ?_, ?_, ?_, ?_, ?_, ?_,
+    ?_, ?_⟩
+  · gmems [hz]
+  · gregs [hsi]
+  · gregs [E.ebp]
+  · gmems [hz, rn, hn]
+  · gregs [E.ebp]
+  · gregs [E.esp]
+  all_goals rfl
+
 /-- `absTailPre`: the last `r` (1 to 15) bytes at `P`, padded with zeros. -/
 theorem absTailPre_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t) {P : BitVec 32} {r : Nat}
     (hr1 : 1 ≤ r) (hr : r < 16) (hc : Covers [⟨w64 P, r⟩] (t.rd ++ t.wr)) (hf : P.toNat + r ≤ 2 ^ 32)
@@ -72,28 +96,7 @@ theorem absTailPre_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t) {P : BitVe
     (hn : slotv t.mem p.W nO = BitVec.ofNat 32 r) :
     WP isa absTailPre t (TailPre p (w64 P) r t) := by
   have hw := L.ww
-  simp only [slotv_eq, nO] at hn
-  have hz := zero4_fold t.mem p.W 224
-  simp only [Nat.reduceAdd] at hz
-  have rn : (Proof.Cmac.zero4 t.mem (w64 p.W + BitVec.ofNat 64 224)).readW (w64 p.W + BitVec.ofNat 64 176) 32 =
-      t.mem.readW (w64 p.W + BitVec.ofNat 64 176) 32 := by
-    rw [← hz]; simp (disch := decide) only [readW_writeW_off]
-  -- The block zeroed, and the copy's arguments.
-  obtain ⟨t₁, run₁, hm₁, di₁, dx₁, cx₁, bp₁, sp₁, rd₁, wr₁⟩ : ∃ t₁ : State,
-      runBlock isa (zero4 bO ++ ([.mov .edi (.reg .esi), .mov .edx (.reg .ebp), .alu .add .edx (imm bO),
-        .mov .ecx (slot nO)] : List Instr)) t = some t₁ ∧
-      t₁.mem = Proof.Cmac.zero4 t.mem (w64 p.W + BitVec.ofNat 64 224) ∧ t₁.gpr .edi = P ∧
-      t₁.gpr .edx = p.W + BitVec.ofNat 32 224 ∧ t₁.gpr .ecx = BitVec.ofNat 32 r ∧ t₁.gpr .ebp = p.W ∧
-      t₁.gpr .esp = p.SP ∧ t₁.rd = t.rd ∧ t₁.wr = t.wr := by
-    refine ⟨_, by simp only [zero4]; grun [E.ebp, L.aW, E.perm.wW, E.perm.wR, hn, hz, rn], ?_, ?_, ?_, ?_, ?_, ?_,
-      ?_, ?_⟩
-    · gmems [hz]
-    · gregs [hsi]
-    · gregs [E.ebp]
-    · gmems [hz, rn, hn]
-    · gregs [E.ebp]
-    · gregs [E.esp]
-    all_goals rfl
+  obtain ⟨t₁, run₁, hm₁, di₁, dx₁, cx₁, bp₁, sp₁, rd₁, wr₁⟩ := absTail1_ok L E hsi hn
   unfold absTailPre
   refine WP.seq (WP.of_runBlock ⟨t₁, run₁, ?_⟩)
   have f₁ : Frame [⟨w64 p.W + BitVec.ofNat 64 224, 16⟩] t.mem t₁.mem := by
@@ -252,23 +255,27 @@ def lensMem (m : Mem) (W : Addr) (al n : Nat) : Mem :=
   (Proof.Cmac.store4 m (W + BitVec.ofNat 64 224) (BitVec.ofNat 32 al <<< 3) (BitVec.ofNat 32 al >>> 29)
     (BitVec.ofNat 32 n <<< 3) (BitVec.ofNat 32 n >>> 29)).writeW (W + BitVec.ofNat 64 176) (BitVec.ofNat 32 16)
 
+/-- `lensBlock`: the lengths block at `W + 224`, as the bytes to absorb. -/
+theorem lensBlock_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t) :
+    ∃ t₁ : State, runBlock isa lensBlock t = some t₁ ∧
+      t₁.mem = lensMem t.mem (w64 p.W) p.al p.n ∧ t₁.gpr .esi = p.W + BitVec.ofNat 32 224 ∧
+      t₁.gpr .ebp = p.W ∧ t₁.gpr .esp = p.SP ∧ t₁.rd = t.rd ∧ t₁.wr = t.wr := by
+  have ha := E.slots.alen
+  have hn := E.slots.len
+  simp only [slotv_eq, alenO, lenO] at ha hn
+  refine ⟨_, by simp only [lensBlock, le64At]; grun [E.ebp, L.aW, E.perm.wW, E.perm.wR, ha, hn], ?_, ?_, ?_, ?_,
+    ?_, ?_⟩
+  · gmems [ha, hn, add_self32_3, lensMem, Proof.Cmac.store4, add_ofNat_assoc]
+  · gregs [E.ebp]
+  · gregs [E.ebp]
+  · gregs [E.esp]
+  all_goals rfl
+
 /-- `lensBlock` and its chunk: the lengths block absorbed. -/
 theorem lens_ok (v : GcmImpl) {p : Prm} (L : Lay p) {t : State} (E : Env p t) :
     WP isa (lens v.callees) t (AbsPost p
       [Spec.GcmSiv.ofBytes (Spec.GcmSiv.le64 (8 * p.al) ++ Spec.GcmSiv.le64 (8 * p.n))] t) := by
-  have ha := E.slots.alen
-  have hn := E.slots.len
-  simp only [slotv_eq, alenO, lenO] at ha hn
-  obtain ⟨t₁, run₁, hm₁, si₁, bp₁, sp₁, rd₁, wr₁⟩ : ∃ t₁ : State, runBlock isa lensBlock t = some t₁ ∧
-      t₁.mem = lensMem t.mem (w64 p.W) p.al p.n ∧ t₁.gpr .esi = p.W + BitVec.ofNat 32 224 ∧
-      t₁.gpr .ebp = p.W ∧ t₁.gpr .esp = p.SP ∧ t₁.rd = t.rd ∧ t₁.wr = t.wr := by
-    refine ⟨_, by simp only [lensBlock, le64At]; grun [E.ebp, L.aW, E.perm.wW, E.perm.wR, ha, hn], ?_, ?_, ?_, ?_,
-      ?_, ?_⟩
-    · gmems [ha, hn, add_self32_3, lensMem, Proof.Cmac.store4, add_ofNat_assoc]
-    · gregs [E.ebp]
-    · gregs [E.ebp]
-    · gregs [E.esp]
-    all_goals rfl
+  obtain ⟨t₁, run₁, hm₁, si₁, bp₁, sp₁, rd₁, wr₁⟩ := lensBlock_ok L E
   refine WP.seq (WP.of_runBlock ⟨t₁, run₁, ?_⟩)
   have f₁ : Frame [⟨w64 p.W + BitVec.ofNat 64 224, 16⟩, ⟨w64 p.W + BitVec.ofNat 64 176, 4⟩] t.mem t₁.mem := by
     rw [hm₁, lensMem]

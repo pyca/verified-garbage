@@ -278,6 +278,22 @@ structure ChunkPost (p : Prm) (Q : BitVec 32) (m k : Nat) (t t' : State) : Prop 
     Spec.Gcm.ghashFrom (Spec.Gcm.blockAt t.mem (w64 p.W + BitVec.ofNat 64 64))
       (Spec.Gcm.blockAt t.mem (w64 p.W + BitVec.ofNat 64 80)) (elemsAt t.mem (w64 Q) k)
 
+/-- `chunkLen`'s first block: `nO / 16` compared with 64. -/
+theorem chunkLen1_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t) {m : Nat} (hm : m < 2 ^ 32)
+    (hn : slotv t.mem p.W nO = BitVec.ofNat 32 m) :
+    ∃ t₁, runBlock isa [.mov .ecx (slot nO), .shift .shr .ecx 4, .alu .cmp .ecx (imm 64)] t = some t₁ ∧
+      t₁.gpr .ecx = BitVec.ofNat 32 (m / 16) ∧ t₁.cf = some (decide (m / 16 < 64)) ∧ t₁.gpr .ebp = p.W ∧
+      t₁.gpr .esp = p.SP ∧ t₁.gpr .esi = t.gpr .esi ∧ t₁.rd = t.rd ∧ t₁.wr = t.wr ∧ t₁.mem = t.mem := by
+  simp only [slotv_eq, nO] at hn
+  refine ⟨_, by grun [E.ebp, L.aW, E.perm.wR, hn], ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · gregs [hn, ofNat_lsr32 hm]
+  · gmems [hn, ofNat_lsr32 hm]
+    rw [toNat_ofNat32 (by omega), toNat_ofNat32 (by decide)]
+  · gregs [E.ebp]
+  · gregs [E.esp]
+  · gregs []
+  all_goals gmems []
+
 /-- `chunkLen`: the number of blocks of the chunk, in `ecx` and at `W + iO`. -/
 theorem chunkLen_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t) {m : Nat} (hm : m < 2 ^ 32)
     (hn : slotv t.mem p.W nO = BitVec.ofNat 32 m) :
@@ -285,19 +301,8 @@ theorem chunkLen_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t) {m : Nat} (h
       slotv t'.mem p.W iO = BitVec.ofNat 32 (min (m / 16) 64) ∧ slotv t'.mem p.W nO = BitVec.ofNat 32 m ∧
       t'.gpr .esi = t.gpr .esi ∧ t'.rd = t.rd ∧ t'.wr = t.wr ∧
       Frame [⟨w64 p.W + BitVec.ofNat 64 180, 4⟩] t.mem t'.mem := by
+  obtain ⟨t₁, run₁, cx₁, cf₁, bp₁, sp₁, si₁, rd₁, wr₁, m₁⟩ := chunkLen1_ok L E hm hn
   simp only [slotv_eq, nO] at hn
-  obtain ⟨t₁, run₁, cx₁, cf₁, bp₁, sp₁, si₁, rd₁, wr₁, m₁⟩ : ∃ t₁, runBlock isa
-      [.mov .ecx (slot nO), .shift .shr .ecx 4, .alu .cmp .ecx (imm 64)] t = some t₁ ∧
-      t₁.gpr .ecx = BitVec.ofNat 32 (m / 16) ∧ t₁.cf = some (decide (m / 16 < 64)) ∧ t₁.gpr .ebp = p.W ∧
-      t₁.gpr .esp = p.SP ∧ t₁.gpr .esi = t.gpr .esi ∧ t₁.rd = t.rd ∧ t₁.wr = t.wr ∧ t₁.mem = t.mem := by
-    refine ⟨_, by grun [E.ebp, L.aW, E.perm.wR, hn], ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
-    · gregs [hn, ofNat_lsr32 hm]
-    · gmems [hn, ofNat_lsr32 hm]
-      rw [toNat_ofNat32 (by omega), toNat_ofNat32 (by decide)]
-    · gregs [E.ebp]
-    · gregs [E.esp]
-    · gregs []
-    all_goals gmems []
   have E₁ : Env p t₁ := E.keep (by rw [bp₁, E.ebp]) (by rw [sp₁, E.esp]) rd₁ wr₁ m₁
   refine WP.seq (WP.of_runBlock ⟨t₁, run₁, ?_⟩)
   -- `ecx := min (m / 16, 64)`, by the branch.

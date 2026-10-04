@@ -94,4 +94,14 @@ theorem pin2 {I : State → Prop} {a b : Reg} {x y : BitVec 32} (h : ∀ s, I s 
   · rw [(h _ h₁).1, (h _ h₂).1]
   · rw [(h _ h₁).2, (h _ h₂).2]
 
+/-- Three registers pinned. -/
+theorem pin3 {I : State → Prop} {a b c : Reg} {x y z : BitVec 32}
+    (h : ∀ s, I s → s.gpr a = x ∧ s.gpr b = y ∧ s.gpr c = z) :
+    ∀ s₁ s₂, I s₁ → I s₂ → ∀ r ∈ [a, b, c], s₁.gpr r = s₂.gpr r := fun s₁ s₂ h₁ h₂ r hr => by
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl
+  · rw [(h _ h₁).1, (h _ h₂).1]
+  · rw [(h _ h₁).2.1, (h _ h₂).2.1]
+  · rw [(h _ h₁).2.2, (h _ h₂).2.2]
+
 end VG.Proof.AesGcmSiv.X86
