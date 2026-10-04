@@ -74,7 +74,7 @@ theorem finK_of_finKr {c : Prog isa} {S Wb F D : Nat} {R : Mem → Addr → List
 /-! ## SHA-1 -/
 
 def sha1H : Hash := ⟨64, 84, 20, 20, 20, "vg_sha1_init", Impl.Sha1.X86.Stream.init,
-  "vg_sha1_update", Impl.Sha1.X86.Stream.update, "vg_sha1_finalize", Impl.Sha1.X86.Stream.finalize⟩
+  "vg_sha1_update_scratch", Impl.Sha1.X86.Stream.update, "vg_sha1_finalize_scratch", Impl.Sha1.X86.Stream.finalize⟩
 
 def sha1OK : HashOK sha1H where
   SH := Spec.Hmac.sha1S

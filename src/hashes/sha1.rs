@@ -34,23 +34,72 @@ use crate::arch::sha1::{
 };
 use crate::arch::sha1::{vg_sha1_finalize, vg_sha1_init, vg_sha1_update};
 
+/// Defines `$update` and `$finalize`: `$vg_update` and `$vg_finalize`, which
+/// keep their working space on their own stack, taking the empty working
+/// space `streaming_hash!` passes.
+macro_rules! own_scratch {
+    ($(#[$cfg:meta])* $update:ident => $vg_update:ident, $finalize:ident => $vg_finalize:ident) => {
+        /// The `update` of a backend, which keeps its working space on its
+        /// own stack.
+        ///
+        /// # Safety
+        ///
+        /// As for the function it calls.
+        $(#[$cfg])*
+        unsafe fn $update(
+            state: *mut [u8; 84],
+            count: u64,
+            data: *const u8,
+            len: usize,
+            _: *mut [u64; 0],
+        ) {
+            // SAFETY: the caller's obligations.
+            unsafe { $vg_update(state, count, data, len) }
+        }
+
+        /// The `finalize` of a backend, which keeps its working space on its
+        /// own stack.
+        ///
+        /// # Safety
+        ///
+        /// As for the function it calls.
+        $(#[$cfg])*
+        unsafe fn $finalize(state: *mut [u8; 84], count: u64, out: *mut [u8; 20], _: *mut [u64; 0]) {
+            // SAFETY: the caller's obligations.
+            unsafe { $vg_finalize(state, count, out) }
+        }
+    };
+}
+
+own_scratch!(update => vg_sha1_update, finalize => vg_sha1_finalize);
+own_scratch!(
+    #[cfg(target_arch = "aarch64")]
+    update_sha2 => vg_sha1_update_sha2,
+    finalize_sha2 => vg_sha1_finalize_sha2
+);
+own_scratch!(
+    #[cfg(target_arch = "x86_64")]
+    update_shani => vg_sha1_update_shani,
+    finalize_shani => vg_sha1_finalize_shani
+);
+
 super::streaming_hash!(
     /// An incremental SHA-1 computation.
     Sha1 {
         state: 84,
-        scratch: 20,
+        scratch: 0,
         block: 64,
         output: 20,
         final_hash: 20,
         init: vg_sha1_init,
         backends: Sha1Backend {
-            Scalar => (vg_sha1_update, vg_sha1_finalize),
+            Scalar => (update, finalize),
             #[cfg(target_arch = "aarch64")]
             Sha2 if [VG_SHA1_UPDATE_SHA2_FEATURES, VG_SHA1_FINALIZE_SHA2_FEATURES] =>
-                (vg_sha1_update_sha2, vg_sha1_finalize_sha2),
+                (update_sha2, finalize_sha2),
             #[cfg(target_arch = "x86_64")]
             ShaNi if [VG_SHA1_UPDATE_SHANI_FEATURES, VG_SHA1_FINALIZE_SHANI_FEATURES] =>
-                (vg_sha1_update_shani, vg_sha1_finalize_shani),
+                (update_shani, finalize_shani),
         },
     }
 );
