@@ -466,8 +466,22 @@ theorem cryptHead_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t) :
   · gregs [E.esp]
   all_goals rfl
 
-theorem crypt_ok (v : GcmImpl) {p : Prm} (L : Lay p) {t : State} (E : Env p t) :
-    WP isa (crypt v.callees) t (CryptPost p t) := by
+/-- What `cryptHead` leaves, from `t`. -/
+structure CStart (p : Prm) (t t₁ : State) : Prop where
+  env : Env p t₁
+  rd : t₁.rd = t.rd
+  wr : t₁.wr = t.wr
+  esi : t₁.gpr .esi = p.D
+  z : t₁.zf = some (decide (p.n / 16 = 0))
+  n : slotv t₁.mem p.W nO = BitVec.ofNat 32 p.n
+  ctr : CtrSt (w64 p.W) (Spec.GcmSiv.initialCounter (bytesAt t.mem (w64 p.W) 16)) 0 t₁.mem
+  data : bytesAt t₁.mem (w64 p.D) p.n = bytesAt t.mem (w64 p.D) p.n
+  ciph : Spec.GcmSiv.ctxCiph t₁.mem (w64 p.W + BitVec.ofNat 64 512) p.R =
+    Spec.GcmSiv.ctxCiph t.mem (w64 p.W + BitVec.ofNat 64 512) p.R
+  frame : Frame (cryR p) t.mem t₁.mem
+
+theorem cryptStart_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t) :
+    ∃ t₁, runBlock isa cryptHead t = some t₁ ∧ CStart p t t₁ := by
   have hw := L.ww
   have hn := L.n32
   obtain ⟨t₁, run₁, hm₁, si₁, z₁, bp₁, sp₁, rd₁, wr₁⟩ := cryptHead_ok L E
@@ -520,6 +534,16 @@ theorem crypt_ok (v : GcmImpl) {p : Prm} (L : Lay p) {t : State} (E : Env p t) :
     · exact ⟨⟨w64 p.W + BitVec.ofNat 64 176, 8⟩, by simp, Offset.sub _ (by decide) (by decide)⟩
   have E₁ : Env p t₁ := E.mut L bp₁ sp₁ rd₁ wr₁ (frame_toMut fm₁ (inMut_cryR p))
   have n₁ : slotv t₁.mem p.W nO = BitVec.ofNat 32 p.n := by rw [slotv_eq, hm₁, headMem, Mem.readW_writeW_self32]
+  exact ⟨t₁, run₁, E₁, rd₁, wr₁, si₁, z₁, n₁, C₀, hx₁, hc₁, fm₁⟩
+
+theorem crypt_ok (v : GcmImpl) {p : Prm} (L : Lay p) {t : State} (E : Env p t) :
+    WP isa (crypt v.callees) t (CryptPost p t) := by
+  have hw := L.ww
+  have hn := L.n32
+  obtain ⟨t₁, run₁, ⟨E₁, rd₁, wr₁, si₁, z₁, n₁, C₀, hx₁, hc₁, fm₁⟩⟩ := cryptStart_ok L E
+  have hcl : ∀ y, (Spec.GcmSiv.ctxCiph t.mem (w64 p.W + BitVec.ofNat 64 512) p.R y).length = 16 :=
+    GcmSiv.ctxCiph_length _ _ _
+  have hxl : (bytesAt t.mem (w64 p.D) p.n).length = p.n := Proof.Cmac.bytesAt_length _ _ _
   refine WP.seq (WP.of_runBlock ⟨t₁, run₁, ?_⟩)
   -- The whole blocks.
   have hmid : WP isa (.ite .e (.block []) (.loop (cryptBlock v.callees) .ne)) t₁
