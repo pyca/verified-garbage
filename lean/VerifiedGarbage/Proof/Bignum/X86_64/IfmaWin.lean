@@ -263,10 +263,11 @@ def rotCode (p : Nat) : List Instr :=
     .store (VG.Impl.Rsa.X86_64.CrtIfma.at_ .rbx (D * p + oV)) .rax]
 
 theorem window_eq : VG.Impl.Rsa.X86_64.CrtIfma.window =
-    [.block [.mov32 .r15 (.imm 4)],
-      .loop (.seq (VG.Impl.Rsa.X86_64.CrtIfma.amm oY oY oY) (.block [.alu .sub .r15 (.imm 1)])) .ne] ++
+    ([.block [.mov32 .r15 (.imm 4)],
+      .loop (.seq (VG.Impl.Rsa.X86_64.CrtIfma.amm oY oY oY) (.block [.alu .sub .r15 (.imm 1)])) .ne] :
+        List (Prog isa)) ++
     ((VG.Impl.Rsa.X86_64.CrtIfma.select 0 ++ VG.Impl.Rsa.X86_64.CrtIfma.select 1) ++
-      [.block (rotCode 0 ++ rotCode 1), VG.Impl.Rsa.X86_64.CrtIfma.amm oY oY oS]) := by
+      ([.block (rotCode 0 ++ rotCode 1), VG.Impl.Rsa.X86_64.CrtIfma.amm oY oY oS] : List (Prog isa))) := by
   simp only [VG.Impl.Rsa.X86_64.CrtIfma.window, List.append_assoc]; rfl
 
 /-- A window: `Y ≡ x^E R` becomes `x^(16 E + v) R` for the top 4 bits `v` of
