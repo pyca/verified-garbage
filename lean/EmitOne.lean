@@ -15,8 +15,9 @@ than building every module of the library as `Emit.lean` needs. Run it from
   fails if those files on disk differ from what would be generated.
 
 A name may also be a generic group, `<Iface>.<Target>` (e.g.
-`Sha256Compress.AArch64`): its generic files applied to its variants, as
-`Emit.lean` emits them.
+`Sha256Compress.AArch64`), or `<Iface₁>.….<Ifaceₙ>.<Target>` for callers of
+several interfaces (e.g. `Blake2b.Argon2Compress.X86_64`): its generic files
+applied to its variants, as `Emit.lean` emits them.
 
 It runs the same trusted printer (`VG.Emit.run`) and the same audits
 (`#assert_standard_axioms`, `#assert_no_compiler_overrides`,
@@ -50,6 +51,14 @@ def runProc (cmd : String) (args : Array String) : IO UInt32 := do
   let child ← IO.Process.spawn { cmd, args }
   child.wait
 
+/-- The name of a generic group on the command line, from its interfaces
+(`VG.Emit.interfacesOf`): `Sha256Compress.AArch64` for
+`["Sha256Compress.AArch64"]`, `Blake2b.Argon2Compress.X86_64` for
+`["Blake2b.X86_64", "Argon2Compress.X86_64"]`. -/
+def groupName (is : List String) : String :=
+  let target := ((is.headD "").splitOn ".").getLastD ""
+  ".".intercalate (is.map fun i => (i.splitOn ".").headD "") ++ "." ++ target
+
 def main (args : List String) : IO UInt32 := do
   let (check, names) := match args with
     | "--check" :: rest => (true, rest)
@@ -59,15 +68,17 @@ def main (args : List String) : IO UInt32 := do
     return 2
   let regs := (← VG.Emit.registrations).filter fun m =>
     names.any fun n => m == s!"VerifiedGarbage.Artifacts.{n}"
-  let gens := (← VG.Emit.grouped VG.Emit.genericDir).filter fun g => names.contains g.1
-  let vars := (← VG.Emit.grouped VG.Emit.variantDir).filter fun g => names.contains g.1
+  let gens := (← VG.Emit.genericGroups VG.Emit.genericDir).filter fun g =>
+    names.contains (groupName g.1)
+  let vars := (← VG.Emit.grouped VG.Emit.variantDir).filter fun v =>
+    gens.any (·.1.contains v.1)
   for n in names do
-    unless regs.contains s!"VerifiedGarbage.Artifacts.{n}" || gens.any (·.1 == n) do
+    unless regs.contains s!"VerifiedGarbage.Artifacts.{n}" || gens.any (groupName ·.1 == n) do
       IO.eprintln s!"{n}: no registration file VerifiedGarbage/Artifacts/{n.replace "." "/"}.lean \
         and no generic group {n}"
       return 2
   -- Build what the driver imports, and the trusted base's shared library.
-  let mods := regs ++ (gens ++ vars).flatMap (·.2)
+  let mods := regs ++ gens.flatMap (·.2) ++ vars.flatMap (·.2)
   let code ← runProc "lake" (#["build", "NativeTCB:shared"] ++ (mods.map ("+" ++ ·)).toArray)
   unless code == 0 do return code
   let driver : FilePath := ".lake" / "emit" / "One.lean"

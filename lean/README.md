@@ -42,7 +42,9 @@ VerifiedGarbage/
   Variants/       Implementations of an interface that generic callers call: one
                   file per implementation, `Variants/<Iface>/<Target>/<Name>.lean`
   Generic/        Callers proven for any variant of an interface, emitted once per
-                  variant: `Generic/<Iface>/<Target>/<Alg>.lean`
+                  variant: `Generic/<Iface>/<Target>/<Alg>.lean`; callers of several
+                  interfaces, once per combination of their variants:
+                  `Generic/<Iface₁>/<Iface₂>/<Target>/<Alg>.lean`
   Artifacts.lean  An empty list, which the emitter still reads; add nothing to it
 VerifiedGarbageTest/  Golden tests for the (unverified) printers and calling conventions
 Emit.lean       Renders every artifact into `../src/asm/` (see `TCB/Emit.lean`)

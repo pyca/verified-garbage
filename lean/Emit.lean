@@ -37,7 +37,7 @@ def main (args : List String) : IO UInt32 := do
   let driver : System.FilePath := ".lake" / "emit" / "Driver.lean"
   IO.FS.createDirAll ".lake/emit"
   IO.FS.writeFile driver (VG.Emit.driver (← VG.Emit.registrations)
-    (← VG.Emit.grouped VG.Emit.genericDir) (← VG.Emit.grouped VG.Emit.variantDir))
+    (← VG.Emit.genericGroups VG.Emit.genericDir) (← VG.Emit.grouped VG.Emit.variantDir))
   let lean ← IO.appPath
   let child ← IO.Process.spawn
     { cmd := lean.toString,
