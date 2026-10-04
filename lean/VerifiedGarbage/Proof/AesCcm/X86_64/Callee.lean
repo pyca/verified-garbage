@@ -153,38 +153,34 @@ theorem ctr_rel (v : Ctr32Impl) {P : State → State → Prop}
 
 /-! ## The arguments -/
 
-/-- Data for a call: `k` bytes at `Q`, which the code may read and write
-(`rw`), apart from the key schedule, the parts of `W` from `384` on and the
-stack below `SP`. -/
-structure Src (K W SP : Addr) (s : State) (Q : Addr) (k : Nat) : Prop where
+/-- Data for a call: `k` bytes at `Q`, which the code may read, apart from
+the parts of `W` from `384` on and the stack below `SP`. -/
+structure Src (W SP : Addr) (s : State) (Q : Addr) (k : Nat) : Prop where
   rd : Covers [⟨Q, k⟩] (s.rd ++ s.wr)
   wrap : Q.toNat + k ≤ 2 ^ 64
-  qk : (⟨K, 240⟩ : Region).Disjoint ⟨Q, k⟩
   qs : (⟨Q, k⟩ : Region).Disjoint ⟨W + BitVec.ofNat 64 384, 2176⟩
   stk : (below SP 16).Disjoint ⟨Q, k⟩
 
 /-- Bytes of `W` below 384 as data. -/
 theorem srcW {K W SP : Addr} {s : State} (L : Lay K W SP) (P : Perm K W s) {t k : Nat} (hk : t + k ≤ 384) :
-    Src K W SP s (W + BitVec.ofNat 64 t) k where
+    Src W SP s (W + BitVec.ofNat 64 t) k where
   rd := covers_left (P.wC (by omega))
   wrap := by
     have := L.ww
     rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := t) (by omega), Nat.mod_eq_of_lt (by omega)]
     omega
-  qk := L.k_w.sub_right (Lay.wSub (by omega))
   qs := L.w_w (.inl (by omega)) (by omega) (by decide)
   stk := L.stk_w' (by omega)
 
 /-- A buffer as data. -/
-theorem srcBuf {K W SP : Addr} {s : State} {Q : Addr} {k : Nat} (h : Buf K W SP s Q k) (hk : (⟨K, 240⟩ : Region).Disjoint ⟨Q, k⟩) :
-    Src K W SP s Q k :=
-  ⟨h.rd, h.wrap, hk, h.w.sub_right (Lay.wSub (by decide)), h.stk⟩
+theorem srcBuf {K W SP : Addr} {s : State} {Q : Addr} {k : Nat} (h : Buf K W SP s Q k) : Src W SP s Q k :=
+  ⟨h.rd, h.wrap, h.w.sub_right (Lay.wSub (by decide)), h.stk⟩
 
 /-- The arguments of `vg_cmac_aes_update`: the key schedule, the state at
 `W + y`, `n` blocks at `Q`, and the working space at `W + 384`. -/
 theorem uargs {K W SP : Addr} {s : State} (L : Lay K W SP) (E : Env K W SP s) {R : Nat}
     (hR : R = 10 ∨ R = 12 ∨ R = 14) {y : Nat} (hy : y + 16 ≤ 384) {Q : Addr} {n : Nat}
-    (hq : Src K W SP s Q (16 * n)) (hqy : (⟨Q, 16 * n⟩ : Region).Disjoint ⟨W + BitVec.ofNat 64 y, 16⟩)
+    (hq : Src W SP s Q (16 * n)) (hqy : (⟨Q, 16 * n⟩ : Region).Disjoint ⟨W + BitVec.ofNat 64 y, 16⟩)
     (hn : 16 * n < 2 ^ 64) (rdi : s.gpr .rdi = K) (rsi : s.gpr .rsi = BitVec.ofNat 64 R) (rdx : s.gpr .rdx = W + BitVec.ofNat 64 y)
     (rcx : s.gpr .rcx = Q) (r8 : s.gpr .r8 = BitVec.ofNat 64 n) (r9 : s.gpr .r9 = W + BitVec.ofNat 64 384) :
     UArgs s K (W + BitVec.ofNat 64 y) Q (W + BitVec.ofNat 64 384) R n where
@@ -223,8 +219,8 @@ theorem uargs {K W SP : Addr} {s : State} (L : Lay K W SP) (E : Env K W SP s) {R
 `W + 384`. -/
 theorem cargs {K W SP : Addr} {s : State} (L : Lay K W SP) (E : Env K W SP s) {R : Nat}
     (hR : R = 10 ∨ R = 12 ∨ R = 14) {c : Nat} (hc : c + 16 ≤ 384) {Q : Addr} {n : Nat}
-    (hq : Src K W SP s Q (16 * n)) (hqc : (⟨Q, 16 * n⟩ : Region).Disjoint ⟨W + BitVec.ofNat 64 c, 16⟩)
-    (hqw : Covers [⟨Q, 16 * n⟩] s.wr)
+    (hq : Src W SP s Q (16 * n)) (hqc : (⟨Q, 16 * n⟩ : Region).Disjoint ⟨W + BitVec.ofNat 64 c, 16⟩)
+    (hqk : (⟨K, 240⟩ : Region).Disjoint ⟨Q, 16 * n⟩) (hqw : Covers [⟨Q, 16 * n⟩] s.wr)
     (rdi : s.gpr .rdi = K) (rsi : s.gpr .rsi = BitVec.ofNat 64 R) (rdx : s.gpr .rdx = W + BitVec.ofNat 64 c)
     (rcx : s.gpr .rcx = Q) (r8 : s.gpr .r8 = BitVec.ofNat 64 n) (r9 : s.gpr .r9 = W + BitVec.ofNat 64 384) :
     CtrCall s K (W + BitVec.ofNat 64 c) Q (W + BitVec.ofNat 64 384) R n where
@@ -237,7 +233,7 @@ theorem cargs {K W SP : Addr} {s : State} (L : Lay K W SP) (E : Env K W SP s) {R
   rounds := hR
   wrap := hq.wrap
   kc := by simpa using L.k_w' (a := 0) (n := 240) (d := c) (k := 16) (by decide) (by omega)
-  kd := hq.qk
+  kd := hqk
   ks := by simpa using L.k_w' (a := 0) (n := 240) (d := 384) (k := 2048) (by decide) (by decide)
   cd := hqc.symm
   cs := L.w_w (.inl (by omega)) (by omega) (by decide)

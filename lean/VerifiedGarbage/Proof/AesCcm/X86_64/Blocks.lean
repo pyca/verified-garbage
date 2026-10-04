@@ -65,6 +65,7 @@ theorem updBlock_ok (v : Ctr32Impl) {K W SP : Addr} {s : State} (L : Lay K W SP)
     (hR : R = 10 ∨ R = 12 ∨ R = 14) (hRo : s.mem.readW (W + BitVec.ofNat 64 232) 64 = BitVec.ofNat 64 R)
     {y : Nat} (hy : y = 0 ∨ y = 96) :
     WP isa (updBlock v.callee v.suffix y) s fun s' => Env K W SP s' ∧
+      (∀ r ∈ [Reg.rbx, .rbp, .r12, .r14], s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
       Frame [⟨W + BitVec.ofNat 64 y, 16⟩, ⟨W + BitVec.ofNat 64 384, 2176⟩, below SP 16] s.mem s'.mem ∧
       bytesAt s'.mem (W + BitVec.ofNat 64 y) 16 =
         Spec.Cmac.chain (Spec.Ccm.ctxCiph s.mem K R) (bytesAt s.mem (W + BitVec.ofNat 64 y) 16)
@@ -78,7 +79,7 @@ theorem updBlock_ok (v : Ctr32Impl) {K W SP : Addr} {s : State} (L : Lay K W SP)
       s₁.gpr .rdi = K ∧ s₁.gpr .rsi = BitVec.ofNat 64 R ∧ s₁.gpr .rdx = W + BitVec.ofNat 64 y ∧
       s₁.gpr .rcx = W + BitVec.ofNat 64 32 ∧ s₁.gpr .r8 = BitVec.ofNat 64 1 ∧
       s₁.gpr .r9 = W + BitVec.ofNat 64 384 ∧
-      (∀ r ∈ [Reg.r13, .r15, .rsp], s₁.gpr r = s.gpr r) ∧ s₁.rd = s.rd ∧ s₁.wr = s.wr := by
+      (∀ r ∈ [Reg.r13, .r15, .rsp, .rbx, .rbp, .r12, .r14], s₁.gpr r = s.gpr r) ∧ s₁.rd = s.rd ∧ s₁.wr = s.wr := by
     refine ⟨_, by crun [updArgs, h15, r₁], ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
     · rfl
     · simp [gpr_setReg, h13]
@@ -88,9 +89,10 @@ theorem updBlock_ok (v : Ctr32Impl) {K W SP : Addr} {s : State} (L : Lay K W SP)
     · simp [gpr_setReg]
     · simp [gpr_setReg, h15]
     · intro r hr; simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl <;> simp [gpr_setReg]
+      rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp [gpr_setReg]
     all_goals rfl
-  have E₁ : Env K W SP s₁ := E.keep hg₁ hrd₁ hwr₁
+  have E₁ : Env K W SP s₁ := E.keep (fun r hr => hg₁ r (by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr ⊢; rcases hr with rfl | rfl | rfl <;> simp)) hrd₁ hwr₁
   refine WP.seq (WP.of_runBlock ⟨s₁, run₁, ?_⟩)
   have hq := srcW (s := s₁) L E₁.perm (t := 32) (k := 16 * 1) (by decide)
   have hqy : (⟨W + BitVec.ofNat 64 32, 16 * 1⟩ : Region).Disjoint ⟨W + BitVec.ofNat 64 y, 16⟩ := by
@@ -98,7 +100,9 @@ theorem updBlock_ok (v : Ctr32Impl) {K W SP : Addr} {s : State} (L : Lay K W SP)
     · exact L.w_w (.inr (by decide)) (by decide) (by decide)
     · exact L.w_w (.inl (by decide)) (by decide) (by decide)
   refine WP.mono (upd_call v _ (uargs L E₁ hR (by omega) hq hqy (by decide) hdi hsi hdx hcx hr8 hr9))
-    fun s₂ h => ⟨E₁.of_saved h.saved h.rd h.wr, ?_, ?_⟩
+    fun s₂ h => ⟨E₁.of_saved h.saved h.rd h.wr, fun r hr => ?_, by rw [h.rd, hrd₁], by rw [h.wr, hwr₁], ?_, ?_⟩
+  · rw [h.saved r (by simp only [List.mem_cons, List.not_mem_nil, or_false] at hr; rcases hr with rfl | rfl | rfl | rfl <;> decide),
+      hg₁ r (by simp only [List.mem_cons, List.not_mem_nil, or_false] at hr ⊢; rcases hr with rfl | rfl | rfl | rfl <;> simp)]
   · rw [← hm₁]; simpa [E₁.rsp] using h.frame
   · rw [h.out, Proof.Cmac.Stream.blocksAt_eq, Nat.mul_one, Proof.Cmac.Stream.blocks_single
       (Proof.Cmac.bytesAt_length _ _ _), hm₁]

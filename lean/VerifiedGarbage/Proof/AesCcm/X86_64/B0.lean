@@ -159,7 +159,7 @@ theorem b0_ok (v : Ctr32Impl) {K W SP : Addr} {s : State} (L : Lay K W SP) (E : 
     · exact L.w_w (.inr (by omega)) (by omega) (by omega)
   have hRo₃ : s₃.mem.readW (W + BitVec.ofNat 64 232) 64 = BitVec.ofNat 64 R := by
     rw [kept 232 8 ⟨Nat.le_refl _, by decide⟩]; exact S.rounds
-  refine WP.mono (updBlock_ok v L E₃ hR hRo₃ hy) fun s₄ ⟨E₄, f₄, h₄⟩ => ⟨E₄, ?_, ?_⟩
+  refine WP.mono (updBlock_ok v L E₃ hR hRo₃ hy) fun s₄ ⟨E₄, _, _, _, f₄, h₄⟩ => ⟨E₄, ?_, ?_⟩
   · refine (f₃.sub fun r hr => ?_).trans (f₄.sub fun r hr => ?_)
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl

@@ -47,6 +47,10 @@ theorem and_self_beq {a : Nat} (ha : a < 2 ^ 64) : (BitVec.ofNat 64 a &&& BitVec
       have := congrArg BitVec.toNat e; rwa [toNat_ofNat_of_lt ha] at this)
     rw [beq_eq_false_iff_ne.mpr this]; simp [h]
 
+theorem seq_assoc {a b c : Prog isa} {s : State} {Q : State → Prop} (h : WP isa (.seq (.seq a b) c) s Q) :
+    WP isa (.seq a (.seq b c)) s Q :=
+  WP.seq (WP.mono (WP.seq_iff.mp (WP.seq_iff.mp h)) fun _ h => WP.seq h)
+
 theorem runBlock_append (a b : List Instr) (s : State) :
     runBlock isa (a ++ b) s = (runBlock isa a s).bind (runBlock isa b) := by
   induction a generalizing s with

@@ -58,6 +58,12 @@ theorem and15 (x : BitVec 64) : x &&& (BitVec.ofNat 32 15).signExtend 64 = BitVe
   rw [show (15 : Nat) % 2 ^ 64 = 2 ^ 4 - 1 by decide, Nat.and_two_pow_sub_one_eq_mod]
   omega
 
+theorem and15' (x : BitVec 64) : x &&& 15#64 = BitVec.ofNat 64 (x.toNat % 16) := by
+  apply BitVec.eq_of_toNat_eq
+  simp only [BitVec.toNat_and, BitVec.toNat_ofNat]
+  rw [show (15 : Nat) % 2 ^ 64 = 2 ^ 4 - 1 by decide, Nat.and_two_pow_sub_one_eq_mod]
+  omega
+
 /-! ## Covering -/
 
 /-- The part of a region at an offset is covered when the region is. -/
