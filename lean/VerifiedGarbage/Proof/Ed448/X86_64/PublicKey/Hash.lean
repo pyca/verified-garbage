@@ -205,7 +205,7 @@ theorem repr_nil {mem : Mem} {p : Addr} {rate : Nat} (h : stateAt mem p = Spec.S
 
 theorem abs_call (hL : L.Ok) {t : State} (hc : Ctx L g mx m₀ t) (ha : AbsArgs L t)
     (hz : stateAt t.mem L.scr = Spec.Sha3.zero) :
-    WP isa (.call "vg_keccak_absorb" Impl.Sha3.X86_64.Stream.absorb) t fun t' => Ctx L g mx m₀ t' ∧
+    WP isa (.call "vg_keccak_absorb_scratch" Impl.Sha3.X86_64.Stream.absorb) t fun t' => Ctx L g mx m₀ t' ∧
       Spec.Sha3.Repr t'.mem L.scr 136 (Spec.Sha3.bytesAt m₀ L.seed 57) := by
   refine call_ok hL Proof.Sha3.X86_64.Stream.Absorb.absorb_correct absorb_nosp absorb_depth hc
     (abs_pre hL hc ha) abs_sub abs_wsub fun s' hc' _ _ ⟨s₂, hm, _, hpost, _⟩ => ⟨hc', ?_⟩
@@ -216,7 +216,7 @@ theorem abs_call (hL : L.Ok) {t : State} (hc : Ctx L g mx m₀ t) (ha : AbsArgs 
   rwa [List.nil_append, hc.ce_seed hL] at h
 
 theorem abs_step (hL : L.Ok) {t : State} (hc : Ctx L g mx m₀ t) (hz : stateAt t.mem L.scr = Spec.Sha3.zero) :
-    WP isa (callWith pkAbsorbArgs "vg_keccak_absorb" Impl.Sha3.X86_64.Stream.absorb) t fun t' =>
+    WP isa (callWith pkAbsorbArgs "vg_keccak_absorb_scratch" Impl.Sha3.X86_64.Stream.absorb) t fun t' =>
       Ctx L g mx m₀ t' ∧ Spec.Sha3.Repr t'.mem L.scr 136 (Spec.Sha3.bytesAt m₀ L.seed 57) :=
   WP.seq (WP.mono (absArgs_ok hc) fun _ ⟨hc₁, hm₁, ha⟩ => abs_call hL hc₁ ha (hm₁ ▸ hz))
 
@@ -275,7 +275,7 @@ theorem pad_wsub : ∀ r ∈ padWr L, Within r L.OUT ∨ Within r L.SCR := abs_w
 
 theorem pad_call (hL : L.Ok) {t : State} (hc : Ctx L g mx m₀ t) (ha : PadArgs L t) {msg : List Byte}
     (hr : Spec.Sha3.Repr t.mem L.scr 136 msg) (hl : msg.length = 57) :
-    WP isa (.call "vg_keccak_pad" Impl.Sha3.X86_64.Stream.pad) t fun t' => Ctx L g mx m₀ t' ∧
+    WP isa (.call "vg_keccak_pad_scratch" Impl.Sha3.X86_64.Stream.pad) t fun t' => Ctx L g mx m₀ t' ∧
       stateAt t'.mem L.scr = Spec.Sha3.absorb 136 (Spec.Sha3.pad 136 Spec.Sha3.shakeSuffix msg) := by
   refine call_ok hL Proof.Sha3.X86_64.Stream.Pad.pad_correct pad_nosp pad_depth hc
     (pad_pre hL hc ha) pad_sub pad_wsub fun s' hc' _ _ ⟨s₂, hm, _, hpost⟩ => ⟨hc', ?_⟩
@@ -288,7 +288,7 @@ theorem pad_call (hL : L.Ok) {t : State} (hc : Ctx L g mx m₀ t) (ha : PadArgs 
 
 theorem pad_step (hL : L.Ok) {t : State} (hc : Ctx L g mx m₀ t) {msg : List Byte}
     (hr : Spec.Sha3.Repr t.mem L.scr 136 msg) (hl : msg.length = 57) :
-    WP isa (callWith pkPadArgs "vg_keccak_pad" Impl.Sha3.X86_64.Stream.pad) t fun t' =>
+    WP isa (callWith pkPadArgs "vg_keccak_pad_scratch" Impl.Sha3.X86_64.Stream.pad) t fun t' =>
       Ctx L g mx m₀ t' ∧
         stateAt t'.mem L.scr = Spec.Sha3.absorb 136 (Spec.Sha3.pad 136 Spec.Sha3.shakeSuffix msg) :=
   WP.seq (WP.mono (padArgs_ok hc) fun _ ⟨hc₁, hm₁, ha⟩ => pad_call hL hc₁ ha (hm₁ ▸ hr) hl)
@@ -358,7 +358,7 @@ theorem sqz_wsub : ∀ r ∈ sqzWr L, Within r L.OUT ∨ Within r L.SCR := by
   · exact .inr (within_off _ (by omega))
 
 theorem sqz_call (hL : L.Ok) {t : State} (hc : Ctx L g mx m₀ t) (ha : SqzArgs L t) :
-    WP isa (.call "vg_keccak_squeeze" Impl.Sha3.X86_64.Stream.squeeze) t fun t' => Ctx L g mx m₀ t' ∧
+    WP isa (.call "vg_keccak_squeeze_scratch" Impl.Sha3.X86_64.Stream.squeeze) t fun t' => Ctx L g mx m₀ t' ∧
       Spec.Sha3.bytesAt t'.mem (L.scr + BitVec.ofNat 64 1024) 114 =
         Spec.Sha3.squeezeFrom 136 (stateAt t.mem L.scr) 0 114 := by
   refine call_ok hL Proof.Sha3.X86_64.Stream.Squeeze.squeeze_correct squeeze_nosp squeeze_depth hc
@@ -369,7 +369,7 @@ theorem sqz_call (hL : L.Ok) {t : State} (hc : Ctx L g mx m₀ t) (ha : SqzArgs 
   rw [hpost, hc.ce_state hL]
 
 theorem sqz_step (hL : L.Ok) {t : State} (hc : Ctx L g mx m₀ t) :
-    WP isa (callWith pkSqueezeArgs "vg_keccak_squeeze" Impl.Sha3.X86_64.Stream.squeeze) t fun t' =>
+    WP isa (callWith pkSqueezeArgs "vg_keccak_squeeze_scratch" Impl.Sha3.X86_64.Stream.squeeze) t fun t' =>
       Ctx L g mx m₀ t' ∧ Spec.Sha3.bytesAt t'.mem (L.scr + BitVec.ofNat 64 1024) 114 =
         Spec.Sha3.squeezeFrom 136 (stateAt t.mem L.scr) 0 114 :=
   WP.seq (WP.mono (sqzArgs_ok hc) fun _ ⟨hc₁, hm₁, ha⟩ => by rw [← hm₁]; exact sqz_call hL hc₁ ha)

@@ -115,17 +115,17 @@ def zeroSt : List Instr := Impl.MlKem.AArch64.zeroState .x28 oST
 
 /-- Absorb `len` bytes at `src`, at the position `pos` of the block (rate 136). -/
 def kabs (src len pos : Arg) : Prog isa :=
-  callA ("vg_keccak_absorb" ++ c.suffix) (Impl.Sha3.AArch64.Stream.absorbWith c)
+  callA ("vg_keccak_absorb_scratch" ++ c.suffix) (Impl.Sha3.AArch64.Stream.absorbWith c)
     [(.x2, pos), (.x0, .off oST), (.x1, .imm 136), (.x3, src), (.x4, len), (.x5, .off oKS)]
 
 /-- Pad at the position `pos`, with the suffix of SHAKE. -/
 def kpad (pos : Arg) : Prog isa :=
-  callA ("vg_keccak_pad" ++ c.suffix) (Impl.Sha3.AArch64.Stream.padWith c)
+  callA ("vg_keccak_pad_scratch" ++ c.suffix) (Impl.Sha3.AArch64.Stream.padWith c)
     [(.x2, pos), (.x0, .off oST), (.x1, .imm 136), (.x3, .imm 0x1f), (.x4, .off oKS)]
 
 /-- Squeeze 64 bytes from position 0 to `μ`. -/
 def ksqz : Prog isa :=
-  callA ("vg_keccak_squeeze" ++ c.suffix) (Impl.Sha3.AArch64.Stream.squeezeWith c)
+  callA ("vg_keccak_squeeze_scratch" ++ c.suffix) (Impl.Sha3.AArch64.Stream.squeezeWith c)
     [(.x0, .off oST), (.x1, .imm 136), (.x2, .imm 0), (.x3, .off oMU), (.x4, .imm 64), (.x5, .off oKS)]
 
 /-- `μ = H(tr ‖ 0 ‖ ctx_len ‖ ctx ‖ M, 64)`, for the 64 bytes `tr` at `tr`. -/

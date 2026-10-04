@@ -62,11 +62,11 @@ def sponge (iS rate : Nat) (len : Src) (outlen : Nat) : Prog isa :=
   .seq (.block [.mov .esi (.mem (argOp iS))]) <|
   .seq (zeroSt 0) <|
   .seq (.block (absArgs rate len)) <|
-  .seq (callWith [.edi, .ebp, .ebx, .edx, .ecx, .eax] "vg_keccak_absorb" Impl.Sha3.X86.Stream.absorb) <|
+  .seq (callWith [.edi, .ebp, .ebx, .edx, .ecx, .eax] "vg_keccak_absorb_scratch" Impl.Sha3.X86.Stream.absorb) <|
   .seq (.block (padArgs rate len)) <|
-  .seq (callWith [.edi, .ebx, .edx, .ecx, .eax] "vg_keccak_pad" Impl.Sha3.X86.Stream.pad) <|
+  .seq (callWith [.edi, .ebx, .edx, .ecx, .eax] "vg_keccak_pad_scratch" Impl.Sha3.X86.Stream.pad) <|
   .seq (.block (sqzArgs rate outlen))
-    (callWith [.edi, .ebp, .ebx, .edx, .ecx, .eax] "vg_keccak_squeeze" Impl.Sha3.X86.Stream.squeeze)
+    (callWith [.edi, .ebp, .ebx, .edx, .ecx, .eax] "vg_keccak_squeeze_scratch" Impl.Sha3.X86.Stream.squeeze)
 
 /-- `eax ← r >> 8`: 1 if `r` = 256, 0 if it is less. -/
 def retJ (r : Reg) : List Instr := [.mov .eax (.reg r), .shift .shr .eax 8]

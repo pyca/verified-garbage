@@ -41,7 +41,7 @@ theorem absorb_piece' (E S D W : State → BitVec 32) (rate : Nat) (len : State 
       (∀ msg, Repr s.mem ((S s₀).setWidth 64) rate msg → 0 = msg.length % rate →
         Repr s'.mem ((S s₀).setWidth 64) rate (msg ++ bytesAt s.mem ((D s₀).setWidth 64) (len s₀))) →
       B s₀ s') :
-    Piece Pre Pub A B (Impl.MlKem.X86.callWith rs6 "vg_keccak_absorb" Impl.Sha3.X86.Stream.absorb) := by
+    Piece Pre Pub A B (Impl.MlKem.X86.callWith rs6 "vg_keccak_absorb_scratch" Impl.Sha3.X86.Stream.absorb) := by
   have hp0 : 0 < rate := by simp [rates] at hr; omega
   refine Piece.callWith Proof.Sha3.X86.Stream.Absorb.absorb_verified.1
     Proof.Sha3.X86.Stream.Absorb.absorb_verified.2.1 absorb_nosp (by decide) (by decide)
@@ -84,7 +84,7 @@ theorem pad_piece' (E S W : State → BitVec 32) (rate : Nat) (pos : State → N
       (∀ msg, Repr s.mem ((S s₀).setWidth 64) rate msg → pos s₀ = msg.length % rate →
         stateAt s'.mem ((S s₀).setWidth 64) = absorb rate (pad rate ((BitVec.ofNat 32 sfx).setWidth 8) msg)) →
       B s₀ s') :
-    Piece Pre Pub A B (Impl.MlKem.X86.callWith rs5 "vg_keccak_pad" Impl.Sha3.X86.Stream.pad) := by
+    Piece Pre Pub A B (Impl.MlKem.X86.callWith rs5 "vg_keccak_pad_scratch" Impl.Sha3.X86.Stream.pad) := by
   refine Piece.callWith Proof.Sha3.X86.Stream.Pad.pad_verified.1
     Proof.Sha3.X86.Stream.Pad.pad_verified.2.1 pad_nosp (by decide) (by decide)
     (fun _ => []) (fun s₀ => [reg32 (S s₀) 200, reg32 (W s₀) 640, below (E s₀) 20])
@@ -267,7 +267,7 @@ structure A1 (L : Lay) (s₀ s : State) : Prop extends Ctx L s₀ s where
 
 theorem absorb_call (hL : L.Ok) : Piece (Pre L) (PubP L)
     (fun s₀ s => Z L s₀ s ∧ AbsArgs s (L.sP s₀) (L.dP s₀) (L.WW s₀) L.rate 0 (L.ml s₀)) (A1 L)
-    (callWith rs6 "vg_keccak_absorb" Impl.Sha3.X86.Stream.absorb) := by
+    (callWith rs6 "vg_keccak_absorb_scratch" Impl.Sha3.X86.Stream.absorb) := by
   refine absorb_piece' E1 L.sP L.dP L.WW L.rate L.ml hL.rate
     (fun s₀ hp => by have := hp.ml_lt; have := rate_lt hL.rate; omega) (fun s₀ s hp ⟨h, ha⟩ => ?_)
     (fun s₀ s₀' _ _ hq => ⟨hq.e1, hq.sP hL, hq.dP hL, by rw [Lay.WW, Lay.WW, hq.sP hL], hq.ml hL⟩)
@@ -325,7 +325,7 @@ structure A2 (L : Lay) (s₀ s : State) : Prop extends Ctx L s₀ s where
 
 theorem pad_call (hL : L.Ok) : Piece (Pre L) (PubP L)
     (fun s₀ s => A1 L s₀ s ∧ PadArgs s (L.sP s₀) (L.WW s₀) L.rate (L.ml s₀) 0x1f) (A2 L)
-    (callWith rs5 "vg_keccak_pad" Impl.Sha3.X86.Stream.pad) := by
+    (callWith rs5 "vg_keccak_pad_scratch" Impl.Sha3.X86.Stream.pad) := by
   refine pad_piece' E1 L.sP L.WW L.rate L.ml 0x1f hL.rate (fun s₀ hp => hp.ml_lt) (fun s₀ s hp ⟨h, ha⟩ => ?_)
     (fun s₀ s₀' _ _ hq => ⟨hq.e1, hq.sP hL, by rw [Lay.WW, Lay.WW, hq.sP hL], hq.ml hL⟩)
     (fun s₀ s s' hp ⟨h, _⟩ e₁ e₂ e₃ fr post => ?_)
@@ -360,7 +360,7 @@ structure Out (L : Lay) (s₀ s : State) : Prop extends Ctx L s₀ s where
 theorem squeeze_call (hL : L.Ok) : Piece (Pre L) (PubP L)
     (fun s₀ s => A2 L s₀ s ∧
       AbsArgs s (L.sP s₀) (L.sP s₀ + BitVec.ofNat 32 840) (L.WW s₀) L.rate 0 L.outlen) (Out L)
-    (callWith rs6 "vg_keccak_squeeze" Impl.Sha3.X86.Stream.squeeze) := by
+    (callWith rs6 "vg_keccak_squeeze_scratch" Impl.Sha3.X86.Stream.squeeze) := by
   have ho := hL.out
   refine squeeze_piece E1 L.sP (fun s₀ => L.sP s₀ + BitVec.ofNat 32 840) L.WW L.rate 0 L.outlen hL.rate
     (by omega) (by omega) (fun s₀ s hp ⟨h, ha⟩ => ?_)

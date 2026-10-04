@@ -1367,6 +1367,76 @@ pub(crate) unsafe extern "C" fn vg_keccak_f1600(state: *mut [u64; 25], scratch: 
 ///
 /// Contract: `VG.Spec.Sha3.absorbContract`. Constant time: only the pointers, `rate`, `pos` and `len` may affect timing, not the state or the data.
 ///
+/// The function saves its return address in its working space.
+///
+/// # Safety
+///
+/// * `state` must be valid for reads and writes of 200 bytes.
+/// * `data` must be valid for reads of `len` bytes.
+/// * `rate` must be 72, 104, 136, 144 or 168, and `pos` less than `rate`.
+/// * `state` must not overlap `data` or the arguments on the stack (distinct Rust objects never do).
+/// * Neither `state` nor `data` may overlap the 656 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_keccak_absorb(state: *mut [u64; 25], rate: usize, pos: usize, data: *const u8, len: usize) -> usize {
+    core::arch::naked_asm!(
+        "sub sp, sp, #656",
+        "add r12, sp, #0",
+        "str lr, [r12, #8]",
+        "ldr lr, [sp, #656]",
+        "str lr, [r12, #0]",
+        "add lr, sp, #12",
+        "str lr, [r12, #4]",
+        "ldr lr, [sp, #8]",
+        "ldr r12, [sp, #4]",
+        "str r4, [r12, #512]",
+        "str r5, [r12, #516]",
+        "str r6, [r12, #520]",
+        "str r7, [r12, #524]",
+        "str lr, [r12, #528]",
+        "mov r4, r1",
+        "mov r1, r12",
+        "mov r5, r2",
+        "mov r6, r3",
+        "ldr r7, [sp, #0]",
+        "cmp r7, #0",
+        "beq 20f",
+        "22:",
+        "ldrb r2, [r6, #0]",
+        "add r3, r0, r5",
+        "ldrb r12, [r3, #0]",
+        "eor r2, r2, r12",
+        "strb r2, [r3, #0]",
+        "add r6, r6, #1",
+        "add r5, r5, #1",
+        "sub r7, r7, #1",
+        "cmp r5, r4",
+        "beq 23f",
+        "b 24f",
+        "23:",
+        "mov r5, #0",
+        "bl {vg_keccak_f1600}",
+        "24:",
+        "cmp r7, #0",
+        "bne 22b",
+        "b 21f",
+        "20:",
+        "21:",
+        "mov r0, r5",
+        "ldr r4, [r1, #512]",
+        "ldr r5, [r1, #516]",
+        "ldr r6, [r1, #520]",
+        "ldr r7, [r1, #524]",
+        "ldr lr, [r1, #528]",
+        "add sp, sp, #656",
+        "bx lr",
+        vg_keccak_f1600 = sym super::sha3::vg_keccak_f1600,
+    )
+}
+
+/// `vg_keccak_absorb`, with its working space in `*scratch`.
+///
+/// Contract: `VG.Spec.Sha3.absorbScratchContract`. Constant time: only the pointers, `rate`, `pos` and `len` may affect timing, not the state or the data.
+///
 /// The function uses no stack: it saves its return address in `scratch`.
 ///
 /// # Safety
@@ -1379,7 +1449,7 @@ pub(crate) unsafe extern "C" fn vg_keccak_f1600(state: *mut [u64; 25], scratch: 
 /// * `state` and `scratch` must not overlap each other, `data` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `state`, `data` and `scratch` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_keccak_absorb(state: *mut [u64; 25], rate: usize, pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize {
+pub(crate) unsafe extern "C" fn vg_keccak_absorb_scratch(state: *mut [u64; 25], rate: usize, pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize {
     core::arch::naked_asm!(
         "ldr r12, [sp, #4]",
         "str r4, [r12, #512]",
@@ -1430,6 +1500,46 @@ pub(crate) unsafe extern "C" fn vg_keccak_absorb(state: *mut [u64; 25], rate: us
 ///
 /// Contract: `VG.Spec.Sha3.padContract`. Constant time: only the pointers, `rate`, `pos` and `suffix` may affect timing, not the state.
 ///
+/// The function saves its return address in its working space.
+///
+/// # Safety
+///
+/// * `state` must be valid for reads and writes of 200 bytes.
+/// * `rate` must be 72, 104, 136, 144 or 168, and `pos` less than `rate`.
+/// * `state` must not overlap the 656 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_keccak_pad(state: *mut [u64; 25], rate: usize, pos: usize, suffix: u32) {
+    core::arch::naked_asm!(
+        "sub sp, sp, #656",
+        "add r12, sp, #0",
+        "str lr, [r12, #4]",
+        "add lr, sp, #8",
+        "str lr, [r12, #0]",
+        "ldr lr, [sp, #4]",
+        "ldr r12, [sp, #0]",
+        "str lr, [r12, #512]",
+        "add r2, r0, r2",
+        "ldrb lr, [r2, #0]",
+        "eor lr, lr, r3",
+        "strb lr, [r2, #0]",
+        "add r2, r0, r1",
+        "sub r2, r2, #1",
+        "ldrb lr, [r2, #0]",
+        "eor lr, lr, #128",
+        "strb lr, [r2, #0]",
+        "mov r1, r12",
+        "bl {vg_keccak_f1600}",
+        "ldr lr, [r1, #512]",
+        "add sp, sp, #656",
+        "bx lr",
+        vg_keccak_f1600 = sym super::sha3::vg_keccak_f1600,
+    )
+}
+
+/// `vg_keccak_pad`, with its working space in `*scratch`.
+///
+/// Contract: `VG.Spec.Sha3.padScratchContract`. Constant time: only the pointers, `rate`, `pos` and `suffix` may affect timing, not the state.
+///
 /// The function uses no stack: it saves its return address in `scratch`.
 ///
 /// # Safety
@@ -1441,7 +1551,7 @@ pub(crate) unsafe extern "C" fn vg_keccak_absorb(state: *mut [u64; 25], rate: us
 /// * `state` and `scratch` must not overlap each other or the arguments on the stack (distinct Rust objects never do).
 /// * Neither `state` nor `scratch` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_keccak_pad(state: *mut [u64; 25], rate: usize, pos: usize, suffix: u32, scratch: *mut [u64; 80]) {
+pub(crate) unsafe extern "C" fn vg_keccak_pad_scratch(state: *mut [u64; 25], rate: usize, pos: usize, suffix: u32, scratch: *mut [u64; 80]) {
     core::arch::naked_asm!(
         "ldr r12, [sp, #0]",
         "str lr, [r12, #512]",
@@ -1466,6 +1576,73 @@ pub(crate) unsafe extern "C" fn vg_keccak_pad(state: *mut [u64; 25], rate: usize
 ///
 /// Contract: `VG.Spec.Sha3.squeezeContract`. Constant time: only the pointers, `rate`, `pos` and `outlen` may affect timing, not the state.
 ///
+/// The function saves its return address in its working space.
+///
+/// # Safety
+///
+/// * `state` must be valid for reads and writes of 200 bytes.
+/// * `out` must be valid for reads and writes of `outlen` bytes.
+/// * `rate` must be 72, 104, 136, 144 or 168, and `pos` at most `rate`.
+/// * `state` and `out` must not overlap each other or the arguments on the stack (distinct Rust objects never do).
+/// * Neither `state` nor `out` may overlap the 656 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_keccak_squeeze(state: *mut [u64; 25], rate: usize, pos: usize, out: *mut u8, outlen: usize) -> usize {
+    core::arch::naked_asm!(
+        "sub sp, sp, #656",
+        "add r12, sp, #0",
+        "str lr, [r12, #8]",
+        "ldr lr, [sp, #656]",
+        "str lr, [r12, #0]",
+        "add lr, sp, #12",
+        "str lr, [r12, #4]",
+        "ldr lr, [sp, #8]",
+        "ldr r12, [sp, #4]",
+        "str r4, [r12, #512]",
+        "str r5, [r12, #516]",
+        "str r6, [r12, #520]",
+        "str r7, [r12, #524]",
+        "str lr, [r12, #528]",
+        "mov r4, r1",
+        "mov r1, r12",
+        "mov r5, r2",
+        "mov r6, r3",
+        "ldr r7, [sp, #0]",
+        "cmp r7, #0",
+        "beq 20f",
+        "22:",
+        "cmp r5, r4",
+        "beq 23f",
+        "b 24f",
+        "23:",
+        "mov r5, #0",
+        "bl {vg_keccak_f1600}",
+        "24:",
+        "add r3, r0, r5",
+        "ldrb r2, [r3, #0]",
+        "strb r2, [r6, #0]",
+        "add r6, r6, #1",
+        "add r5, r5, #1",
+        "subs r7, r7, #1",
+        "bne 22b",
+        "b 21f",
+        "20:",
+        "21:",
+        "mov r0, r5",
+        "ldr r4, [r1, #512]",
+        "ldr r5, [r1, #516]",
+        "ldr r6, [r1, #520]",
+        "ldr r7, [r1, #524]",
+        "ldr lr, [r1, #528]",
+        "add sp, sp, #656",
+        "bx lr",
+        vg_keccak_f1600 = sym super::sha3::vg_keccak_f1600,
+    )
+}
+
+/// `vg_keccak_squeeze`, with its working space in `*scratch`.
+///
+/// Contract: `VG.Spec.Sha3.squeezeScratchContract`. Constant time: only the pointers, `rate`, `pos` and `outlen` may affect timing, not the state.
+///
 /// The function uses no stack: it saves its return address in `scratch`.
 ///
 /// # Safety
@@ -1478,7 +1655,7 @@ pub(crate) unsafe extern "C" fn vg_keccak_pad(state: *mut [u64; 25], rate: usize
 /// * `state`, `out` and `scratch` must not overlap each other or the arguments on the stack (distinct Rust objects never do).
 /// * None of `state`, `out` and `scratch` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_keccak_squeeze(state: *mut [u64; 25], rate: usize, pos: usize, out: *mut u8, outlen: usize, scratch: *mut [u64; 80]) -> usize {
+pub(crate) unsafe extern "C" fn vg_keccak_squeeze_scratch(state: *mut [u64; 25], rate: usize, pos: usize, out: *mut u8, outlen: usize, scratch: *mut [u64; 80]) -> usize {
     core::arch::naked_asm!(
         "ldr r12, [sp, #4]",
         "str r4, [r12, #512]",
