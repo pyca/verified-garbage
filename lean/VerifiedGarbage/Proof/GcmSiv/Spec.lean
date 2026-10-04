@@ -12,6 +12,8 @@ a counter (`le4_le32`); and the message keys of `derive_keys` as the first
 8 bytes of each block, one after the other (`halves`, `deriveKeys_eq`).
 -/
 
+set_option linter.unusedSimpArgs false
+
 namespace VG.Proof.GcmSiv
 
 open VG
