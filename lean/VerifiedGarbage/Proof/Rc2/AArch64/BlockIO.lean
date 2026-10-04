@@ -67,31 +67,44 @@ theorem blockLoad_ok (s : State)
     (readable : InRegions (s.rd ++ s.wr) (s.gpr .x1) 8) :
     WP isa (.block blockLoad) s (fun s' =>
       Words s' (Spec.Rc2.decodeBlock (Spec.Rc2.blockAt s.mem (s.gpr .x1))) ∧
-      Keep roundWrites s s') := by
+      Keep (.x9 :: roundWrites) s s') := by
   rw [blockLoad, WP.block_append_iff]
-  let s₁ := s.write .x .x8 (s.mem.readW (s.gpr .x1) 64)
+  let s₀ := s.write .x .x9 (BitVec.ofNat 64 65535)
+  let s₁ := s₀.write .x .x8 (s₀.mem.readW (s₀.gpr .x1) 64)
+  have r₀ : InRegions (s₀.rd ++ s₀.wr) (s₀.gpr .x1 + BitVec.ofNat 64 0) 8 := by
+    simpa [s₀, gpr_write, rd_write, wr_write] using readable
   refine WP.of_runBlock ⟨s₁, ?_, ?_⟩
-  · simp only [runBlock_cons, exec_ldr_x _ _ _ 0 (by decide) (by simpa using readable),
-      runStep_some, runBlock_nil, BitVec.add_zero]
+  · simp only [runBlock_cons, exec_imm _ _ _ (by decide : 65535 < 65536), runStep_some]
+    rw [exec_ldr_x _ _ _ 0 (by decide) r₀]
+    simp only [runStep_some, runBlock_nil, BitVec.add_zero]
     rfl
   apply WP.mono (unpackWords_ok (List.range 4) (fun i hi => List.mem_range.mp hi) s₁)
   intro s₂ h₂
+  have x1₁ : s₁.gpr .x1 = s.gpr .x1 := by simp [s₁, s₀, gpr_write]
+  have m₁ : s₁.mem = s.mem := rfl
   constructor
-  · intro i hi
-    rw [h₂.1 i (List.mem_range.mpr hi), decode_read64 _ _ i hi]
-    rfl
-  · have keep₁ : Keep roundWrites s s₁ := by
+  · refine ⟨fun i hi => ?_, ?_⟩
+    · rw [h₂.1 i (List.mem_range.mpr hi), decode_read64 _ _ i hi]
+      rfl
+    · rw [h₂.2.reg .x9 (by
+        intro hm
+        obtain ⟨i, _, he⟩ := List.mem_map.mp hm
+        exact wordReg_ne9 i he)]
+      simp [s₁, s₀, gpr_write]
+  · have keep₁ : Keep (.x9 :: roundWrites) s s₁ := by
       constructor
       · intro r hr
-        exact gpr_write_of_ne _ _ _ (fun he => hr (he ▸ (by decide)))
-      · exact mem_write _ _ _ _
-      · exact rd_write _ _ _ _
-      · exact wr_write _ _ _ _
+        have h9 : r ≠ .x9 := fun he => hr (he ▸ List.mem_cons_self)
+        have h8 : r ≠ .x8 := fun he => hr (he ▸ List.mem_cons_of_mem _ (by decide))
+        simp [s₁, s₀, gpr_write, h8, h9]
+      · rfl
+      · rfl
+      · rfl
     apply keep₁.trans
     exact h₂.2.weaken (by
       intro r hr
       obtain ⟨i, _, he⟩ := List.mem_map.mp hr
-      subst r; exact wordReg_mem_roundWrites i)
+      subst r; exact List.mem_cons_of_mem _ (wordReg_mem_roundWrites i))
 
 theorem packWord_ok (s : State) (i : Nat) (hi : 1 ≤ i) (hi' : i < 4) :
     ∃ s', runBlock isa (packWord i) s = some s' ∧
@@ -134,7 +147,7 @@ theorem packWords_ok (is : List Nat) (hi : ∀ i ∈ is, 1 ≤ i ∧ i < 4)
     apply WP.mono (ih (fun j hj => hi j (List.mem_cons_of_mem _ hj)) s₁ (hv.preserve keepTemps))
     intro s₂ h₂
     refine ⟨?_, keep₁.trans h₂.2⟩
-    rw [h₂.1, out₁, hv i bound.2]
+    rw [h₂.1, out₁, hv.1 i bound.2]
     rfl
 
 /-- The block store changes exactly the data word, plus two caller-saved
@@ -171,7 +184,7 @@ theorem blockStore_ok (s : State) (v : Spec.Rc2.State) (hv : Words s v)
     change ((s.gpr (wordReg 0) ||| ((v.getD 1 0).setWidth 64).rotateRight 48) |||
       ((v.getD 2 0).setWidth 64).rotateRight 32) |||
       ((v.getD 3 0).setWidth 64).rotateRight 16 = _
-    rw [hv 0 (by decide)]
+    rw [hv.1 0 (by decide)]
     exact (pack_eq v).symm
   refine WP.of_runBlock ⟨{s₂ with mem := s₂.mem.writeW (s₂.gpr .x1) (s₂.gpr .x8)}, ?_, ?_⟩
   · have valid : InRegions s₂.wr (s₂.gpr .x1) 8 := by rw [keep.wr, ptr₂]; exact writable

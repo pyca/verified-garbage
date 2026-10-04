@@ -25,9 +25,12 @@ takes its first `nn` bytes to the digest. The count the caller passes to
 included.
 
 `update` and `finalize` take the number of bytes of stack below the stack
-pointer that an implementation's calls use (`stack`, see `Sig.contract`), 0
-for one that makes no call: it depends on the target, and on which functions
-the implementation calls. `scratch` is working space, sized with room for
+pointer that an implementation's calls and frames use (`stack`, see
+`Sig.contract`), 0 for one that uses none: it depends on the target, and on
+which functions the implementation calls. They keep their working space
+there; `update_scratch` and `finalize_scratch` are the same functions with
+their working space passed in `scratch`, for functions that call them with
+theirs (Argon2's). `scratch` is working space, sized with room for
 vectorized implementations: the streaming functions pass theirs to the
 compression function, so theirs have room for its scratch and for what they
 keep across its calls.
@@ -99,23 +102,23 @@ def initBApi : Api where
     `keylen` may affect timing, not the key."
   safety := ["`outlen` must be between 1 and 64, and `keylen` at most 64."]
 
-/-- `vg_blake2b_update(state: *mut [u8; 192], count: u64, data: *const u8, len: usize, scratch: *mut [u64; 72])`.
-`count` is public; `scratch` is working space: room for the compression
-function's (`compressBSig`, 512 bytes) and the function's own spills (64
-bytes). -/
+/-- `vg_blake2b_update(state: *mut [u8; 192], count: u64, data: *const u8, len: usize)`.
+`count` is public. -/
 def updateBSig : Sig where
   params := [("state", .array true .u8 192), ("count", .int .u64 true),
-    ("data", .slice false .u8 "len"), ("scratch", .array true .u64 72)]
+    ("data", .slice false .u8 "len")]
 
 /-- If the streaming state at `state` represents data `d` of `count` bytes
 (modulo 2⁶⁴), hashed from any initial state, and `d` followed by the `len`
 bytes at `data` is shorter than 2⁶⁴ bytes, then afterwards it represents that,
-from the same initial state. The state and the data are secret. -/
+from the same initial state. -/
+def updateBPost (pb : Nat) : updateBSig.Post pb := fun state count data len m m' _ =>
+  ∀ h0 d, Repr b h0 m state d → count = BitVec.ofNat 64 d.length →
+    d.length + len.toNat < 2 ^ 64 → Repr b h0 m' state (d ++ bytesAt m data len.toNat)
+
+/-- `updateBPost`. The state and the data are secret. -/
 def updateBContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  updateBSig.contract A (post := fun state count data len _scratch m m' _ =>
-    ∀ h0 d, Repr b h0 m state d → count = BitVec.ofNat 64 d.length →
-      d.length + len.toNat < 2 ^ 64 → Repr b h0 m' state (d ++ bytesAt m data len.toNat))
-    (stack := stack)
+  updateBSig.contract A (post := updateBPost A.ptrBits) (stack := stack)
 
 /-- `vg_blake2b_update` on every target. -/
 def updateBApi : Api where
@@ -129,25 +132,54 @@ def updateBApi : Api where
     may affect timing, not the state or the data."
   safety := [
     "`count` must be the exact length of the data so far (the key block included), and `count + \
+      len` less than 2⁶⁴."]
+
+/-- `vg_blake2b_update_scratch(state: *mut [u8; 192], count: u64, data: *const u8, len: usize, scratch: *mut [u64; 72])`:
+`vg_blake2b_update` with its working space passed in `scratch`, for
+functions that call it with theirs (Argon2's): room for the compression
+function's (`compressBSig`, 512 bytes) and the function's own spills (64
+bytes). -/
+def updateBScratchSig : Sig where
+  params := [("state", .array true .u8 192), ("count", .int .u64 true),
+    ("data", .slice false .u8 "len"), ("scratch", .array true .u64 72)]
+
+/-- `updateBPost`, whatever `scratch` is. The state and the data are secret. -/
+def updateBScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
+  updateBScratchSig.contract A
+    (post := fun state count data len _scratch => updateBPost A.ptrBits state count data len)
+    (stack := stack)
+
+/-- `vg_blake2b_update_scratch` on every target. -/
+def updateBScratchApi : Api where
+  module := "blake2b"
+  name := "vg_blake2b_update_scratch"
+  sig := updateBScratchSig
+  contracts := some fun A stack => updateBScratchContract A stack
+  summary := "`vg_blake2b_update`, with its working space in `*scratch`.\n\n\
+    Contract: `VG.Spec.Blake2.updateBScratchContract`. Constant time: only the pointers, `count` \
+    and `len` may affect timing, not the state or the data."
+  safety := [
+    "`count` must be the exact length of the data so far (the key block included), and `count + \
       len` less than 2⁶⁴.",
     "The contents of `scratch` on return are unspecified."]
 
-/-- `vg_blake2b_finalize(state: *mut [u8; 192], count: u64, out: *mut [u8; 64], scratch: *mut [u64; 72])`.
-`count` is public; `state` is left unspecified, and `scratch` is working
-space, as for `updateBSig`. -/
+/-- `vg_blake2b_finalize(state: *mut [u8; 192], count: u64, out: *mut [u8; 64])`.
+`count` is public; `state` is left unspecified. -/
 def finalizeBSig : Sig where
   params := [("state", .array true .u8 192), ("count", .int .u64 true),
-    ("out", .array true .u8 64), ("scratch", .array true .u64 72)]
+    ("out", .array true .u8 64)]
 
 /-- If the streaming state at `state` represents data `d` of `count` bytes,
 fewer than 2⁶⁴, hashed from the initial state `h0`, writes the final state of
 `d` from `h0` (64 bytes; `finalHash b h0 d`) to `out`. The digest of `nn`
-bytes is its first `nn` bytes. The state is secret. -/
+bytes is its first `nn` bytes. -/
+def finalizeBPost (pb : Nat) : finalizeBSig.Post pb := fun state count out m m' _ =>
+  ∀ h0 d, Repr b h0 m state d → d.length < 2 ^ 64 → count = BitVec.ofNat 64 d.length →
+    bytesAt m' out 64 = finalHash b h0 d
+
+/-- `finalizeBPost`. The state is secret. -/
 def finalizeBContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  finalizeBSig.contract A (post := fun state count out _scratch m m' _ =>
-    ∀ h0 d, Repr b h0 m state d → d.length < 2 ^ 64 → count = BitVec.ofNat 64 d.length →
-      bytesAt m' out 64 = finalHash b h0 d)
-    (stack := stack)
+  finalizeBSig.contract A (post := finalizeBPost A.ptrBits) (stack := stack)
 
 /-- `vg_blake2b_finalize` on every target. -/
 def finalizeBApi : Api where
@@ -160,6 +192,32 @@ def finalizeBApi : Api where
     `*out`. The digest of `outlen` bytes (`init`'s) is its first `outlen` bytes.\n\n\
     Contract: `VG.Spec.Blake2.finalizeBContract`. Constant time: only the pointers and `count` may \
     affect timing, not the state."
+  safety := [
+    "`count` must be the exact length of the data (the key block included), less than 2⁶⁴.",
+    "The contents of `state` on return are unspecified."]
+
+/-- `vg_blake2b_finalize_scratch(state: *mut [u8; 192], count: u64, out: *mut [u8; 64], scratch: *mut [u64; 72])`:
+`vg_blake2b_finalize` with its working space passed in `scratch` (as for
+`updateBScratchSig`), for functions that call it with theirs (Argon2's). -/
+def finalizeBScratchSig : Sig where
+  params := [("state", .array true .u8 192), ("count", .int .u64 true),
+    ("out", .array true .u8 64), ("scratch", .array true .u64 72)]
+
+/-- `finalizeBPost`, whatever `scratch` is. The state is secret. -/
+def finalizeBScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
+  finalizeBScratchSig.contract A
+    (post := fun state count out _scratch => finalizeBPost A.ptrBits state count out)
+    (stack := stack)
+
+/-- `vg_blake2b_finalize_scratch` on every target. -/
+def finalizeBScratchApi : Api where
+  module := "blake2b"
+  name := "vg_blake2b_finalize_scratch"
+  sig := finalizeBScratchSig
+  contracts := some fun A stack => finalizeBScratchContract A stack
+  summary := "`vg_blake2b_finalize`, with its working space in `*scratch`.\n\n\
+    Contract: `VG.Spec.Blake2.finalizeBScratchContract`. Constant time: only the pointers and \
+    `count` may affect timing, not the state."
   safety := [
     "`count` must be the exact length of the data (the key block included), less than 2⁶⁴.",
     "The contents of `state` on return are unspecified.",
@@ -228,23 +286,23 @@ def initSApi : Api where
     `keylen` may affect timing, not the key."
   safety := ["`outlen` must be between 1 and 32, and `keylen` at most 32."]
 
-/-- `vg_blake2s_update(state: *mut [u8; 96], count: u64, data: *const u8, len: usize, scratch: *mut [u64; 72])`.
-`count` is public; `scratch` is working space: room for the compression
-function's (`compressSSig`, 512 bytes) and the function's own spills (64
-bytes). -/
+/-- `vg_blake2s_update(state: *mut [u8; 96], count: u64, data: *const u8, len: usize)`.
+`count` is public. -/
 def updateSSig : Sig where
   params := [("state", .array true .u8 96), ("count", .int .u64 true),
-    ("data", .slice false .u8 "len"), ("scratch", .array true .u64 72)]
+    ("data", .slice false .u8 "len")]
 
 /-- If the streaming state at `state` represents data `d` of `count` bytes
 (modulo 2⁶⁴), hashed from any initial state, and `d` followed by the `len`
 bytes at `data` is shorter than 2⁶⁴ bytes, then afterwards it represents that,
-from the same initial state. The state and the data are secret. -/
+from the same initial state. -/
+def updateSPost (pb : Nat) : updateSSig.Post pb := fun state count data len m m' _ =>
+  ∀ h0 d, Repr s h0 m state d → count = BitVec.ofNat 64 d.length →
+    d.length + len.toNat < 2 ^ 64 → Repr s h0 m' state (d ++ bytesAt m data len.toNat)
+
+/-- `updateSPost`. The state and the data are secret. -/
 def updateSContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  updateSSig.contract A (post := fun state count data len _scratch m m' _ =>
-    ∀ h0 d, Repr s h0 m state d → count = BitVec.ofNat 64 d.length →
-      d.length + len.toNat < 2 ^ 64 → Repr s h0 m' state (d ++ bytesAt m data len.toNat))
-    (stack := stack)
+  updateSSig.contract A (post := updateSPost A.ptrBits) (stack := stack)
 
 /-- `vg_blake2s_update` on every target. -/
 def updateSApi : Api where
@@ -258,25 +316,54 @@ def updateSApi : Api where
     may affect timing, not the state or the data."
   safety := [
     "`count` must be the exact length of the data so far (the key block included), and `count + \
+      len` less than 2⁶⁴."]
+
+/-- `vg_blake2s_update_scratch(state: *mut [u8; 96], count: u64, data: *const u8, len: usize, scratch: *mut [u64; 72])`:
+`vg_blake2s_update` with its working space passed in `scratch`, for
+functions that call it with theirs (Argon2's): room for the compression
+function's (`compressSSig`, 512 bytes) and the function's own spills (64
+bytes). -/
+def updateSScratchSig : Sig where
+  params := [("state", .array true .u8 96), ("count", .int .u64 true),
+    ("data", .slice false .u8 "len"), ("scratch", .array true .u64 72)]
+
+/-- `updateSPost`, whatever `scratch` is. The state and the data are secret. -/
+def updateSScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
+  updateSScratchSig.contract A
+    (post := fun state count data len _scratch => updateSPost A.ptrBits state count data len)
+    (stack := stack)
+
+/-- `vg_blake2s_update_scratch` on every target. -/
+def updateSScratchApi : Api where
+  module := "blake2s"
+  name := "vg_blake2s_update_scratch"
+  sig := updateSScratchSig
+  contracts := some fun A stack => updateSScratchContract A stack
+  summary := "`vg_blake2s_update`, with its working space in `*scratch`.\n\n\
+    Contract: `VG.Spec.Blake2.updateSScratchContract`. Constant time: only the pointers, `count` \
+    and `len` may affect timing, not the state or the data."
+  safety := [
+    "`count` must be the exact length of the data so far (the key block included), and `count + \
       len` less than 2⁶⁴.",
     "The contents of `scratch` on return are unspecified."]
 
-/-- `vg_blake2s_finalize(state: *mut [u8; 96], count: u64, out: *mut [u8; 32], scratch: *mut [u64; 72])`.
-`count` is public; `state` is left unspecified, and `scratch` is working
-space, as for `updateSSig`. -/
+/-- `vg_blake2s_finalize(state: *mut [u8; 96], count: u64, out: *mut [u8; 32])`.
+`count` is public; `state` is left unspecified. -/
 def finalizeSSig : Sig where
   params := [("state", .array true .u8 96), ("count", .int .u64 true),
-    ("out", .array true .u8 32), ("scratch", .array true .u64 72)]
+    ("out", .array true .u8 32)]
 
 /-- If the streaming state at `state` represents data `d` of `count` bytes,
 fewer than 2⁶⁴, hashed from the initial state `h0`, writes the final state of
 `d` from `h0` (32 bytes; `finalHash s h0 d`) to `out`. The digest of `nn`
-bytes is its first `nn` bytes. The state is secret. -/
+bytes is its first `nn` bytes. -/
+def finalizeSPost (pb : Nat) : finalizeSSig.Post pb := fun state count out m m' _ =>
+  ∀ h0 d, Repr s h0 m state d → d.length < 2 ^ 64 → count = BitVec.ofNat 64 d.length →
+    bytesAt m' out 32 = finalHash s h0 d
+
+/-- `finalizeSPost`. The state is secret. -/
 def finalizeSContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  finalizeSSig.contract A (post := fun state count out _scratch m m' _ =>
-    ∀ h0 d, Repr s h0 m state d → d.length < 2 ^ 64 → count = BitVec.ofNat 64 d.length →
-      bytesAt m' out 32 = finalHash s h0 d)
-    (stack := stack)
+  finalizeSSig.contract A (post := finalizeSPost A.ptrBits) (stack := stack)
 
 /-- `vg_blake2s_finalize` on every target. -/
 def finalizeSApi : Api where
@@ -289,6 +376,32 @@ def finalizeSApi : Api where
     `*out`. The digest of `outlen` bytes (`init`'s) is its first `outlen` bytes.\n\n\
     Contract: `VG.Spec.Blake2.finalizeSContract`. Constant time: only the pointers and `count` may \
     affect timing, not the state."
+  safety := [
+    "`count` must be the exact length of the data (the key block included), less than 2⁶⁴.",
+    "The contents of `state` on return are unspecified."]
+
+/-- `vg_blake2s_finalize_scratch(state: *mut [u8; 96], count: u64, out: *mut [u8; 32], scratch: *mut [u64; 72])`:
+`vg_blake2s_finalize` with its working space passed in `scratch` (as for
+`updateSScratchSig`), for functions that call it with theirs (Argon2's). -/
+def finalizeSScratchSig : Sig where
+  params := [("state", .array true .u8 96), ("count", .int .u64 true),
+    ("out", .array true .u8 32), ("scratch", .array true .u64 72)]
+
+/-- `finalizeSPost`, whatever `scratch` is. The state is secret. -/
+def finalizeSScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
+  finalizeSScratchSig.contract A
+    (post := fun state count out _scratch => finalizeSPost A.ptrBits state count out)
+    (stack := stack)
+
+/-- `vg_blake2s_finalize_scratch` on every target. -/
+def finalizeSScratchApi : Api where
+  module := "blake2s"
+  name := "vg_blake2s_finalize_scratch"
+  sig := finalizeSScratchSig
+  contracts := some fun A stack => finalizeSScratchContract A stack
+  summary := "`vg_blake2s_finalize`, with its working space in `*scratch`.\n\n\
+    Contract: `VG.Spec.Blake2.finalizeSScratchContract`. Constant time: only the pointers and \
+    `count` may affect timing, not the state."
   safety := [
     "`count` must be the exact length of the data (the key block included), less than 2⁶⁴.",
     "The contents of `state` on return are unspecified.",

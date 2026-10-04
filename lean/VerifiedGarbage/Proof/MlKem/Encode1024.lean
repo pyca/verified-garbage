@@ -48,54 +48,48 @@ section
 variable (f : Poly) {g : Nat} (hg : g < 32)
 include hg
 
-omit hg in
-private theorem c5_lt (i : Nat) : compress 5 f[i]! < 32 := compress_lt 5 _
-
-omit hg in
-private theorem c5_lts (g : Nat) : compress 5 f[8 * g]! < 32 ∧ compress 5 f[8 * g + 1]! < 32 ∧
-    compress 5 f[8 * g + 2]! < 32 ∧ compress 5 f[8 * g + 3]! < 32 ∧
-    compress 5 f[8 * g + 4]! < 32 ∧ compress 5 f[8 * g + 5]! < 32 ∧
-    compress 5 f[8 * g + 6]! < 32 ∧ compress 5 f[8 * g + 7]! < 32 :=
-  ⟨c5_lt f _, c5_lt f _, c5_lt f _, c5_lt f _, c5_lt f _, c5_lt f _, c5_lt f _, c5_lt f _⟩
-
 theorem compressEncode5_0 :
     (compressEncode 5 f)[5 * g]! =
       BitVec.ofNat 8 (compress 5 f[8 * g]! + 32 * (compress 5 f[8 * g + 1]! % 8)) := by
-  have h := compressEncode5_group f hg (j := 0) (by decide)
+  have h := compressEncode_group (d := 5) (c := 8) (b := 5) (g := g) (j := 0) (by decide) (by decide) f (by omega) (by decide)
   rw [Nat.add_zero] at h
-  rw [h]
-  have := c5_lts f g
-  exact ofNat8_eq (by omega)
+  rw [h, ofNat8_digits (map_compress_lt f _ _ _)]
+  simp only [range8, List.map_cons, List.map_nil]
+  win_eval
 
 theorem compressEncode5_1 :
     (compressEncode 5 f)[5 * g + 1]! =
       BitVec.ofNat 8 (compress 5 f[8 * g + 1]! / 8 + 4 * compress 5 f[8 * g + 2]! +
         128 * (compress 5 f[8 * g + 3]! % 2)) := by
-  rw [compressEncode5_group f hg (by decide)]
-  have := c5_lts f g
-  exact ofNat8_eq (by omega)
+  rw [compressEncode_group (d := 5) (c := 8) (b := 5) (g := g) (j := 1) (by decide) (by decide) f (by omega) (by decide),
+    ofNat8_digits (map_compress_lt f _ _ _)]
+  simp only [range8, List.map_cons, List.map_nil]
+  win_eval
 
 theorem compressEncode5_2 :
     (compressEncode 5 f)[5 * g + 2]! =
       BitVec.ofNat 8 (compress 5 f[8 * g + 3]! / 2 + 16 * (compress 5 f[8 * g + 4]! % 16)) := by
-  rw [compressEncode5_group f hg (by decide)]
-  have := c5_lts f g
-  exact ofNat8_eq (by omega)
+  rw [compressEncode_group (d := 5) (c := 8) (b := 5) (g := g) (j := 2) (by decide) (by decide) f (by omega) (by decide),
+    ofNat8_digits (map_compress_lt f _ _ _)]
+  simp only [range8, List.map_cons, List.map_nil]
+  win_eval
 
 theorem compressEncode5_3 :
     (compressEncode 5 f)[5 * g + 3]! =
       BitVec.ofNat 8 (compress 5 f[8 * g + 4]! / 16 + 2 * compress 5 f[8 * g + 5]! +
         64 * (compress 5 f[8 * g + 6]! % 4)) := by
-  rw [compressEncode5_group f hg (by decide)]
-  have := c5_lts f g
-  exact ofNat8_eq (by omega)
+  rw [compressEncode_group (d := 5) (c := 8) (b := 5) (g := g) (j := 3) (by decide) (by decide) f (by omega) (by decide),
+    ofNat8_digits (map_compress_lt f _ _ _)]
+  simp only [range8, List.map_cons, List.map_nil]
+  win_eval
 
 theorem compressEncode5_4 :
     (compressEncode 5 f)[5 * g + 4]! =
       BitVec.ofNat 8 (compress 5 f[8 * g + 6]! / 4 + 8 * compress 5 f[8 * g + 7]!) := by
-  rw [compressEncode5_group f hg (by decide)]
-  have := c5_lts f g
-  exact ofNat8_eq (by omega)
+  rw [compressEncode_group (d := 5) (c := 8) (b := 5) (g := g) (j := 4) (by decide) (by decide) f (by omega) (by decide),
+    ofNat8_digits (map_compress_lt f _ _ _)]
+  simp only [range8, List.map_cons, List.map_nil]
+  win_eval
 
 end
 
@@ -119,90 +113,90 @@ section
 variable (f : Poly) {g : Nat} (hg : g < 32)
 include hg
 
-omit hg in
-private theorem c11_lt (i : Nat) : compress 11 f[i]! < 2048 := compress_lt 11 _
-
-omit hg in
-private theorem c11_lts (g : Nat) : compress 11 f[8 * g]! < 2048 ∧ compress 11 f[8 * g + 1]! < 2048 ∧
-    compress 11 f[8 * g + 2]! < 2048 ∧ compress 11 f[8 * g + 3]! < 2048 ∧
-    compress 11 f[8 * g + 4]! < 2048 ∧ compress 11 f[8 * g + 5]! < 2048 ∧
-    compress 11 f[8 * g + 6]! < 2048 ∧ compress 11 f[8 * g + 7]! < 2048 :=
-  ⟨c11_lt f _, c11_lt f _, c11_lt f _, c11_lt f _, c11_lt f _, c11_lt f _, c11_lt f _, c11_lt f _⟩
-
 theorem compressEncode11_0 :
     (compressEncode 11 f)[11 * g]! = BitVec.ofNat 8 (compress 11 f[8 * g]! % 256) := by
-  have h := compressEncode11_group f hg (j := 0) (by decide)
+  have h := compressEncode_group (d := 11) (c := 8) (b := 11) (g := g) (j := 0) (by decide) (by decide) f (by omega) (by decide)
   rw [Nat.add_zero] at h
-  rw [h]
-  have := c11_lts f g
-  exact ofNat8_eq (by omega)
+  rw [h, ofNat8_digits (map_compress_lt f _ _ _)]
+  simp only [range8, List.map_cons, List.map_nil]
+  win_eval
 
 theorem compressEncode11_1 :
     (compressEncode 11 f)[11 * g + 1]! =
       BitVec.ofNat 8 (compress 11 f[8 * g]! / 256 + 8 * (compress 11 f[8 * g + 1]! % 32)) := by
-  rw [compressEncode11_group f hg (by decide)]
-  have := c11_lts f g
-  exact ofNat8_eq (by omega)
+  rw [compressEncode_group (d := 11) (c := 8) (b := 11) (g := g) (j := 1) (by decide) (by decide) f (by omega) (by decide),
+    ofNat8_digits (map_compress_lt f _ _ _)]
+  simp only [range8, List.map_cons, List.map_nil]
+  win_eval
 
 theorem compressEncode11_2 :
     (compressEncode 11 f)[11 * g + 2]! =
       BitVec.ofNat 8 (compress 11 f[8 * g + 1]! / 32 + 64 * (compress 11 f[8 * g + 2]! % 4)) := by
-  rw [compressEncode11_group f hg (by decide)]
-  have := c11_lts f g
-  exact ofNat8_eq (by omega)
+  rw [compressEncode_group (d := 11) (c := 8) (b := 11) (g := g) (j := 2) (by decide) (by decide) f (by omega) (by decide),
+    ofNat8_digits (map_compress_lt f _ _ _)]
+  simp only [range8, List.map_cons, List.map_nil]
+  win_eval
 
 theorem compressEncode11_3 :
     (compressEncode 11 f)[11 * g + 3]! = BitVec.ofNat 8 (compress 11 f[8 * g + 2]! / 4 % 256) := by
-  rw [compressEncode11_group f hg (by decide)]
-  have := c11_lts f g
-  exact ofNat8_eq (by omega)
+  rw [compressEncode_group (d := 11) (c := 8) (b := 11) (g := g) (j := 3) (by decide) (by decide) f (by omega) (by decide),
+    ofNat8_digits (map_compress_lt f _ _ _)]
+  simp only [range8, List.map_cons, List.map_nil]
+  win_eval
 
 theorem compressEncode11_4 :
     (compressEncode 11 f)[11 * g + 4]! =
       BitVec.ofNat 8 (compress 11 f[8 * g + 2]! / 1024 + 2 * (compress 11 f[8 * g + 3]! % 128)) := by
-  rw [compressEncode11_group f hg (by decide)]
-  have := c11_lts f g
-  exact ofNat8_eq (by omega)
+  rw [compressEncode_group (d := 11) (c := 8) (b := 11) (g := g) (j := 4) (by decide) (by decide) f (by omega) (by decide),
+    ofNat8_digits (map_compress_lt f _ _ _)]
+  simp only [range8, List.map_cons, List.map_nil]
+  win_eval
 
 theorem compressEncode11_5 :
     (compressEncode 11 f)[11 * g + 5]! =
       BitVec.ofNat 8 (compress 11 f[8 * g + 3]! / 128 + 16 * (compress 11 f[8 * g + 4]! % 16)) := by
-  rw [compressEncode11_group f hg (by decide)]
-  have := c11_lts f g
-  exact ofNat8_eq (by omega)
+  rw [compressEncode_group (d := 11) (c := 8) (b := 11) (g := g) (j := 5) (by decide) (by decide) f (by omega) (by decide),
+    ofNat8_digits (map_compress_lt f _ _ _)]
+  simp only [range8, List.map_cons, List.map_nil]
+  win_eval
 
 theorem compressEncode11_6 :
     (compressEncode 11 f)[11 * g + 6]! =
       BitVec.ofNat 8 (compress 11 f[8 * g + 4]! / 16 + 128 * (compress 11 f[8 * g + 5]! % 2)) := by
-  rw [compressEncode11_group f hg (by decide)]
-  have := c11_lts f g
-  exact ofNat8_eq (by omega)
+  rw [compressEncode_group (d := 11) (c := 8) (b := 11) (g := g) (j := 6) (by decide) (by decide) f (by omega) (by decide),
+    ofNat8_digits (map_compress_lt f _ _ _)]
+  simp only [range8, List.map_cons, List.map_nil]
+  win_eval
 
 theorem compressEncode11_7 :
     (compressEncode 11 f)[11 * g + 7]! = BitVec.ofNat 8 (compress 11 f[8 * g + 5]! / 2 % 256) := by
-  rw [compressEncode11_group f hg (by decide)]
-  have := c11_lts f g
-  exact ofNat8_eq (by omega)
+  rw [compressEncode_group (d := 11) (c := 8) (b := 11) (g := g) (j := 7) (by decide) (by decide) f (by omega) (by decide),
+    ofNat8_digits (map_compress_lt f _ _ _)]
+  simp only [range8, List.map_cons, List.map_nil]
+  win_eval
 
 theorem compressEncode11_8 :
     (compressEncode 11 f)[11 * g + 8]! =
       BitVec.ofNat 8 (compress 11 f[8 * g + 5]! / 512 + 4 * (compress 11 f[8 * g + 6]! % 64)) := by
-  rw [compressEncode11_group f hg (by decide)]
-  have := c11_lts f g
-  exact ofNat8_eq (by omega)
+  rw [compressEncode_group (d := 11) (c := 8) (b := 11) (g := g) (j := 8) (by decide) (by decide) f (by omega) (by decide),
+    ofNat8_digits (map_compress_lt f _ _ _)]
+  simp only [range8, List.map_cons, List.map_nil]
+  win_eval
 
 theorem compressEncode11_9 :
     (compressEncode 11 f)[11 * g + 9]! =
       BitVec.ofNat 8 (compress 11 f[8 * g + 6]! / 64 + 32 * (compress 11 f[8 * g + 7]! % 8)) := by
-  rw [compressEncode11_group f hg (by decide)]
-  have := c11_lts f g
-  exact ofNat8_eq (by omega)
+  rw [compressEncode_group (d := 11) (c := 8) (b := 11) (g := g) (j := 9) (by decide) (by decide) f (by omega) (by decide),
+    ofNat8_digits (map_compress_lt f _ _ _)]
+  simp only [range8, List.map_cons, List.map_nil]
+  win_eval
 
 theorem compressEncode11_10 :
     (compressEncode 11 f)[11 * g + 10]! = BitVec.ofNat 8 (compress 11 f[8 * g + 7]! / 8) := by
-  rw [compressEncode11_group f hg (by decide)]
-  have := c11_lts f g
-  exact ofNat8_eq (by omega)
+  rw [compressEncode_group (d := 11) (c := 8) (b := 11) (g := g) (j := 10) (by decide) (by decide) f (by omega) (by decide),
+    ofNat8_digits (map_compress_lt f _ _ _)]
+  simp only [range8, List.map_cons, List.map_nil]
+  win_eval
 
 end
 
@@ -225,73 +219,74 @@ section
 variable (B : List Byte) (hB : B.length = 160) {g : Nat} (hg : g < 32)
 include hB hg
 
-omit hB hg in
-private theorem bytes5_lt' : (B.getD (5 * g) 0).toNat < 256 ∧ (B.getD (5 * g + 1) 0).toNat < 256 ∧
-    (B.getD (5 * g + 2) 0).toNat < 256 ∧ (B.getD (5 * g + 3) 0).toNat < 256 ∧
-    (B.getD (5 * g + 4) 0).toNat < 256 :=
-  ⟨byte_lt _, byte_lt _, byte_lt _, byte_lt _, byte_lt _⟩
-
 theorem decodeDecompress5_0 :
     (decodeDecompress 5 B)[8 * g]! = decompress 5 ((B.getD (5 * g) 0).toNat % 32) := by
-  have h := decodeDecompress5_group B hB hg (e := 0) (by decide)
+  have h := decodeDecompress_group (d := 5) (c := 8) (b := 5) (g := g) (e := 0) (by decide) (by decide) B (by omega) (by decide)
+    (by rw [n_eq]; omega)
   rw [Nat.add_zero] at h
-  rw [h]
-  refine congrArg (decompress 5) ?_
-  have := bytes5_lt' B (g := g)
-  omega
+  rw [h, digits_window (map_getD_lt B _ _)]
+  simp only [range5, List.map_cons, List.map_nil]
+  win_eval
 
 theorem decodeDecompress5_1 :
     (decodeDecompress 5 B)[8 * g + 1]! = decompress 5 ((B.getD (5 * g) 0).toNat / 32 +
       8 * ((B.getD (5 * g + 1) 0).toNat % 4)) := by
-  rw [decodeDecompress5_group B hB hg (by decide)]
-  refine congrArg (decompress 5) ?_
-  have := bytes5_lt' B (g := g)
-  omega
+  rw [decodeDecompress_group (d := 5) (c := 8) (b := 5) (g := g) (e := 1) (by decide) (by decide) B (by omega) (by decide)
+    (by rw [n_eq]; omega),
+    digits_window (map_getD_lt B _ _)]
+  simp only [range5, List.map_cons, List.map_nil]
+  win_eval
 
 theorem decodeDecompress5_2 :
     (decodeDecompress 5 B)[8 * g + 2]! = decompress 5 ((B.getD (5 * g + 1) 0).toNat / 4 % 32) := by
-  rw [decodeDecompress5_group B hB hg (by decide)]
-  refine congrArg (decompress 5) ?_
-  have := bytes5_lt' B (g := g)
-  omega
+  rw [decodeDecompress_group (d := 5) (c := 8) (b := 5) (g := g) (e := 2) (by decide) (by decide) B (by omega) (by decide)
+    (by rw [n_eq]; omega),
+    digits_window (map_getD_lt B _ _)]
+  simp only [range5, List.map_cons, List.map_nil]
+  win_eval
 
 theorem decodeDecompress5_3 :
     (decodeDecompress 5 B)[8 * g + 3]! = decompress 5 ((B.getD (5 * g + 1) 0).toNat / 128 +
       2 * ((B.getD (5 * g + 2) 0).toNat % 16)) := by
-  rw [decodeDecompress5_group B hB hg (by decide)]
-  refine congrArg (decompress 5) ?_
-  have := bytes5_lt' B (g := g)
-  omega
+  rw [decodeDecompress_group (d := 5) (c := 8) (b := 5) (g := g) (e := 3) (by decide) (by decide) B (by omega) (by decide)
+    (by rw [n_eq]; omega),
+    digits_window (map_getD_lt B _ _)]
+  simp only [range5, List.map_cons, List.map_nil]
+  win_eval
 
 theorem decodeDecompress5_4 :
     (decodeDecompress 5 B)[8 * g + 4]! = decompress 5 ((B.getD (5 * g + 2) 0).toNat / 16 +
       16 * ((B.getD (5 * g + 3) 0).toNat % 2)) := by
-  rw [decodeDecompress5_group B hB hg (by decide)]
-  refine congrArg (decompress 5) ?_
-  have := bytes5_lt' B (g := g)
-  omega
+  rw [decodeDecompress_group (d := 5) (c := 8) (b := 5) (g := g) (e := 4) (by decide) (by decide) B (by omega) (by decide)
+    (by rw [n_eq]; omega),
+    digits_window (map_getD_lt B _ _)]
+  simp only [range5, List.map_cons, List.map_nil]
+  win_eval
 
 theorem decodeDecompress5_5 :
     (decodeDecompress 5 B)[8 * g + 5]! = decompress 5 ((B.getD (5 * g + 3) 0).toNat / 2 % 32) := by
-  rw [decodeDecompress5_group B hB hg (by decide)]
-  refine congrArg (decompress 5) ?_
-  have := bytes5_lt' B (g := g)
-  omega
+  rw [decodeDecompress_group (d := 5) (c := 8) (b := 5) (g := g) (e := 5) (by decide) (by decide) B (by omega) (by decide)
+    (by rw [n_eq]; omega),
+    digits_window (map_getD_lt B _ _)]
+  simp only [range5, List.map_cons, List.map_nil]
+  win_eval
 
 theorem decodeDecompress5_6 :
     (decodeDecompress 5 B)[8 * g + 6]! = decompress 5 ((B.getD (5 * g + 3) 0).toNat / 64 +
       4 * ((B.getD (5 * g + 4) 0).toNat % 8)) := by
-  rw [decodeDecompress5_group B hB hg (by decide)]
-  refine congrArg (decompress 5) ?_
-  have := bytes5_lt' B (g := g)
-  omega
+  rw [decodeDecompress_group (d := 5) (c := 8) (b := 5) (g := g) (e := 6) (by decide) (by decide) B (by omega) (by decide)
+    (by rw [n_eq]; omega),
+    digits_window (map_getD_lt B _ _)]
+  simp only [range5, List.map_cons, List.map_nil]
+  win_eval
 
 theorem decodeDecompress5_7 :
     (decodeDecompress 5 B)[8 * g + 7]! = decompress 5 ((B.getD (5 * g + 4) 0).toNat / 8) := by
-  rw [decodeDecompress5_group B hB hg (by decide)]
-  refine congrArg (decompress 5) ?_
-  have := bytes5_lt' B (g := g)
-  omega
+  rw [decodeDecompress_group (d := 5) (c := 8) (b := 5) (g := g) (e := 7) (by decide) (by decide) B (by omega) (by decide)
+    (by rw [n_eq]; omega),
+    digits_window (map_getD_lt B _ _)]
+  simp only [range5, List.map_cons, List.map_nil]
+  win_eval
 
 end
 
@@ -327,81 +322,78 @@ section
 variable (B : List Byte) (hB : B.length = 352) {g : Nat} (hg : g < 32)
 include hB hg
 
-omit hB hg in
-private theorem bytes11_lt : (B.getD (11 * g) 0).toNat < 256 ∧ (B.getD (11 * g + 1) 0).toNat < 256 ∧
-    (B.getD (11 * g + 2) 0).toNat < 256 ∧ (B.getD (11 * g + 3) 0).toNat < 256 ∧
-    (B.getD (11 * g + 4) 0).toNat < 256 ∧ (B.getD (11 * g + 5) 0).toNat < 256 ∧
-    (B.getD (11 * g + 6) 0).toNat < 256 ∧ (B.getD (11 * g + 7) 0).toNat < 256 ∧
-    (B.getD (11 * g + 8) 0).toNat < 256 ∧ (B.getD (11 * g + 9) 0).toNat < 256 ∧
-    (B.getD (11 * g + 10) 0).toNat < 256 :=
-  ⟨byte_lt _, byte_lt _, byte_lt _, byte_lt _, byte_lt _, byte_lt _, byte_lt _, byte_lt _,
-    byte_lt _, byte_lt _, byte_lt _⟩
-
 theorem decodeDecompress11_0 :
     (decodeDecompress 11 B)[8 * g]! = decompress 11 ((B.getD (11 * g) 0).toNat +
       256 * ((B.getD (11 * g + 1) 0).toNat % 8)) := by
-  have h := decodeDecompress11_group B hB hg (e := 0) (by decide)
+  have h := decodeDecompress_group (d := 11) (c := 8) (b := 11) (g := g) (e := 0) (by decide) (by decide) B (by omega) (by decide)
+    (by rw [n_eq]; omega)
   rw [Nat.add_zero] at h
-  rw [h]
-  refine congrArg (decompress 11) ?_
-  have := bytes11_lt B (g := g)
-  omega
+  rw [h, digits_window (map_getD_lt B _ _)]
+  simp only [range11, List.map_cons, List.map_nil]
+  win_eval
 
 theorem decodeDecompress11_1 :
     (decodeDecompress 11 B)[8 * g + 1]! = decompress 11 ((B.getD (11 * g + 1) 0).toNat / 8 +
       32 * ((B.getD (11 * g + 2) 0).toNat % 64)) := by
-  rw [decodeDecompress11_group B hB hg (by decide)]
-  refine congrArg (decompress 11) ?_
-  have := bytes11_lt B (g := g)
-  omega
+  rw [decodeDecompress_group (d := 11) (c := 8) (b := 11) (g := g) (e := 1) (by decide) (by decide) B (by omega) (by decide)
+    (by rw [n_eq]; omega),
+    digits_window (map_getD_lt B _ _)]
+  simp only [range11, List.map_cons, List.map_nil]
+  win_eval
 
 theorem decodeDecompress11_2 :
     (decodeDecompress 11 B)[8 * g + 2]! = decompress 11 ((B.getD (11 * g + 2) 0).toNat / 64 +
       4 * (B.getD (11 * g + 3) 0).toNat + 1024 * ((B.getD (11 * g + 4) 0).toNat % 2)) := by
-  rw [decodeDecompress11_group B hB hg (by decide)]
-  refine congrArg (decompress 11) ?_
-  have := bytes11_lt B (g := g)
-  omega
+  rw [decodeDecompress_group (d := 11) (c := 8) (b := 11) (g := g) (e := 2) (by decide) (by decide) B (by omega) (by decide)
+    (by rw [n_eq]; omega),
+    digits_window (map_getD_lt B _ _)]
+  simp only [range11, List.map_cons, List.map_nil]
+  win_eval
 
 theorem decodeDecompress11_3 :
     (decodeDecompress 11 B)[8 * g + 3]! = decompress 11 ((B.getD (11 * g + 4) 0).toNat / 2 +
       128 * ((B.getD (11 * g + 5) 0).toNat % 16)) := by
-  rw [decodeDecompress11_group B hB hg (by decide)]
-  refine congrArg (decompress 11) ?_
-  have := bytes11_lt B (g := g)
-  omega
+  rw [decodeDecompress_group (d := 11) (c := 8) (b := 11) (g := g) (e := 3) (by decide) (by decide) B (by omega) (by decide)
+    (by rw [n_eq]; omega),
+    digits_window (map_getD_lt B _ _)]
+  simp only [range11, List.map_cons, List.map_nil]
+  win_eval
 
 theorem decodeDecompress11_4 :
     (decodeDecompress 11 B)[8 * g + 4]! = decompress 11 ((B.getD (11 * g + 5) 0).toNat / 16 +
       16 * ((B.getD (11 * g + 6) 0).toNat % 128)) := by
-  rw [decodeDecompress11_group B hB hg (by decide)]
-  refine congrArg (decompress 11) ?_
-  have := bytes11_lt B (g := g)
-  omega
+  rw [decodeDecompress_group (d := 11) (c := 8) (b := 11) (g := g) (e := 4) (by decide) (by decide) B (by omega) (by decide)
+    (by rw [n_eq]; omega),
+    digits_window (map_getD_lt B _ _)]
+  simp only [range11, List.map_cons, List.map_nil]
+  win_eval
 
 theorem decodeDecompress11_5 :
     (decodeDecompress 11 B)[8 * g + 5]! = decompress 11 ((B.getD (11 * g + 6) 0).toNat / 128 +
       2 * (B.getD (11 * g + 7) 0).toNat + 512 * ((B.getD (11 * g + 8) 0).toNat % 4)) := by
-  rw [decodeDecompress11_group B hB hg (by decide)]
-  refine congrArg (decompress 11) ?_
-  have := bytes11_lt B (g := g)
-  omega
+  rw [decodeDecompress_group (d := 11) (c := 8) (b := 11) (g := g) (e := 5) (by decide) (by decide) B (by omega) (by decide)
+    (by rw [n_eq]; omega),
+    digits_window (map_getD_lt B _ _)]
+  simp only [range11, List.map_cons, List.map_nil]
+  win_eval
 
 theorem decodeDecompress11_6 :
     (decodeDecompress 11 B)[8 * g + 6]! = decompress 11 ((B.getD (11 * g + 8) 0).toNat / 4 +
       64 * ((B.getD (11 * g + 9) 0).toNat % 32)) := by
-  rw [decodeDecompress11_group B hB hg (by decide)]
-  refine congrArg (decompress 11) ?_
-  have := bytes11_lt B (g := g)
-  omega
+  rw [decodeDecompress_group (d := 11) (c := 8) (b := 11) (g := g) (e := 6) (by decide) (by decide) B (by omega) (by decide)
+    (by rw [n_eq]; omega),
+    digits_window (map_getD_lt B _ _)]
+  simp only [range11, List.map_cons, List.map_nil]
+  win_eval
 
 theorem decodeDecompress11_7 :
     (decodeDecompress 11 B)[8 * g + 7]! = decompress 11 ((B.getD (11 * g + 9) 0).toNat / 32 +
       8 * (B.getD (11 * g + 10) 0).toNat) := by
-  rw [decodeDecompress11_group B hB hg (by decide)]
-  refine congrArg (decompress 11) ?_
-  have := bytes11_lt B (g := g)
-  omega
+  rw [decodeDecompress_group (d := 11) (c := 8) (b := 11) (g := g) (e := 7) (by decide) (by decide) B (by omega) (by decide)
+    (by rw [n_eq]; omega),
+    digits_window (map_getD_lt B _ _)]
+  simp only [range11, List.map_cons, List.map_nil]
+  win_eval
 
 end
 

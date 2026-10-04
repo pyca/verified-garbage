@@ -179,7 +179,7 @@ theorem verified : Verified target eq (Spec.Ct.eqContract abi) := by
   apply Verified.of_correct (k := contract)
   · intro s hp
     obtain ⟨tr, t, he, hm, ho⟩ := correct s hp
-    refine ⟨tr, t, he, ⟨?_, Exec.sp he, Exec.preservedV he⟩, ho⟩
+    refine ⟨tr, t, he, ⟨?_, Exec.sp he, Exec.preservedV he (by lit_decide)⟩, ho⟩
     intro r hr
     have hc := instrs_keeps (c := eq) (rs := preserved) (by decide +kernel)
     apply Exec.gpr (fun i hi => ?_) he

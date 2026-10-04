@@ -5,6 +5,7 @@ import VerifiedGarbage.Proof.Sha512.X86_64.Stream.Init
 import VerifiedGarbage.Proof.Hmac.Generic.Common
 import VerifiedGarbage.Spec.Sha512.Contract
 import VerifiedGarbage.TCB.X86_64.Target
+import VerifiedGarbage.Proof.Framework.TaintBatch
 
 /-!
 # The SHA-512 family on x86-64, as Merkle–Damgård hash functions
@@ -55,45 +56,44 @@ def coreH (D : Nat) : Hash :=
   ⟨Impl.Sha512.X86_64.Stream.params, D, 234, "", .block [], "", .block [], "", "", "", "", ""⟩
 
 theorem coreOK (D : Nat) (hD : D = 28 ∨ D = 32 ∨ D = 48 ∨ D = 64) : CoreOK (coreH D) := by
-  rcases hD with rfl | rfl | rfl | rfl <;> exact {
-      pbk := ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩,
-        ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩,
-        ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩,
-        ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩
-      iter := ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩,
-        ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩
+  rcases hD with rfl | rfl | rfl | rfl <;> refine {
+      pbk := ⟨⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩,
+        ⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩,
+        ⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩,
+        ⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩⟩
+      iter := ⟨⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩,
+        ⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩⟩
       hinit := {
-        pro := ⟨_, by taint_decide⟩
-        argI := by
-          simp only [List.mem_cons, List.not_mem_nil, or_false]
-          rintro st (rfl | rfl) <;> exact ⟨_, by taint_decide⟩
-        keys := ⟨_, by taint_decide⟩
-        mid := ⟨_, by taint_decide⟩
-        restore := ⟨_, by taint_decide⟩ }
-      hfin := ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩
-      pbkMx := by decide +kernel
-      pbkSp := by decide +kernel
-      hinitMx := by decide +kernel
-      hinitSp := by decide +kernel
-      hinitNs := by decide +kernel
-      hinitD := by decide +kernel
-      hfinMx := by decide +kernel
-      hfinSp := by decide +kernel
-      hfinNs := by decide +kernel
-      hfinD := by decide +kernel
-      iterMx := by decide +kernel
-      iterSp := by decide +kernel
-      iterNs := by decide +kernel
-      iterD := by decide +kernel
-      updMx := by decide +kernel
-      updNs := by decide +kernel
-      updD := by decide +kernel
-      finMx := by decide +kernel
-      finNs := by decide +kernel
-      finD := by decide +kernel
-      fitI := by decide
-      fitF := by decide
+        pro := ⟨?_, ?_⟩
+        argI := List.forall_mem_cons.mpr ⟨⟨?_, ?_⟩, List.forall_mem_cons.mpr ⟨⟨?_, ?_⟩, List.forall_mem_nil _⟩⟩
+        keys := ⟨?_, ?_⟩
+        mid := ⟨?_, ?_⟩
+        restore := ⟨?_, ?_⟩ }
+      hfin := ⟨⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩⟩
+      pbkMx := ?_
+      pbkSp := ?_
+      hinitMx := ?_
+      hinitSp := ?_
+      hinitNs := ?_
+      hinitD := ?_
+      hfinMx := ?_
+      hfinSp := ?_
+      hfinNs := ?_
+      hfinD := ?_
+      iterMx := ?_
+      iterSp := ?_
+      iterNs := ?_
+      iterD := ?_
+      updMx := ?_
+      updNs := ?_
+      updD := ?_
+      finMx := ?_
+      finNs := ?_
+      finD := ?_
+      fitI := ?_
+      fitF := ?_
   }
+  taint_decide_all
 
 /-- The initial hash values of the family. -/
 abbrev IVs (iv : Spec.Sha512.HashValue) : Prop := iv = H0_384 ∨ iv = H0_512 ∨ iv = H0_512_224 ∨ iv = H0_512_256

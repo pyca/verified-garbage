@@ -425,7 +425,7 @@ def satState : State where
 theorem block_correct (s : State) (hs : Proof.ChaCha20.blockAArch64.pre s) :
     ∃ t s', Exec isa block s t s' ∧ abiPreserved s s' ∧ Proof.ChaCha20.blockAArch64.post s s' := by
   obtain ⟨t, s', he, h₁, h₂⟩ := correct (pre_of s hs)
-  exact ⟨t, s', he, ⟨h₁, Exec.sp he, Exec.preservedV he⟩, h₂⟩
+  exact ⟨t, s', he, ⟨h₁, Exec.sp he, Exec.preservedV he (by lit_decide)⟩, h₂⟩
 
 theorem block_ct : ConstantTime isa Proof.ChaCha20.blockAArch64.pre Proof.ChaCha20.blockAArch64.pub
     Impl.ChaCha20.AArch64.block := by

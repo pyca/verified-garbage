@@ -20,16 +20,18 @@ Each function needs the CPU features of the implementations it calls:
 their `_aesni` or `_pclmul` instances are the baseline code under another
 name, which keeps every instance of a combination callable together).
 
-`seal` and `open` encrypt or decrypt and absorb the whole blocks of the
-data in one call of the instance of `vg_aes_gcm_encrypt_blocks` or
-`vg_aes_gcm_decrypt_blocks` for the same combination, which interleaves the
-two for the implementations that allow it (`GcmImpl.stitch`).
+`seal`, `open`, `stream_encrypt` and `stream_decrypt` encrypt or decrypt
+and absorb the whole blocks of the data in one call of the instance of
+`vg_aes_gcm_encrypt_blocks` or `vg_aes_gcm_decrypt_blocks` for the same
+combination, which interleaves the two for the implementations that allow
+it (`GcmImpl.stitch`).
 
-The stack is 8 bytes for every function but `seal` and `open`: the return
-address of a call of `vg_aes_expand_key`, `vg_aes_ctr32` or `vg_ghash`, which
-make no calls. `seal` and `open` need 24: the argument they pass on the
-stack, the return address of their call of `vg_aes_gcm_encrypt_blocks` or
-`vg_aes_gcm_decrypt_blocks`, and that of its calls.
+The stack is 8 bytes for the other functions: the return address of a call
+of `vg_aes_expand_key`, `vg_aes_ctr32` or `vg_ghash`, which make no calls.
+`seal`, `open`, `stream_encrypt` and `stream_decrypt` need 24: the argument
+they pass on the stack, the return address of their call of
+`vg_aes_gcm_encrypt_blocks` or `vg_aes_gcm_decrypt_blocks`, and that of its
+calls.
 -/
 
 namespace VG.Generic.AesGcm.X86_64.AesGcm
@@ -127,8 +129,8 @@ def artifacts (v : GcmImpl) : List Artifact := [
     target := X86_64.target
     doc := Spec.Gcm.streamEncryptApi.doc (notes := [note v])
     code := Impl.AesGcm.X86_64.streamEncrypt v.callees
-    contract := Spec.Gcm.streamEncryptContract X86_64.abi 8
-    stack := 8
+    contract := Spec.Gcm.streamEncryptContract X86_64.abi 24
+    stack := 24
     verified := streamEncrypt_verified v
     spSafe := streamEncrypt_spSafe v
     features := v.features },
@@ -137,8 +139,8 @@ def artifacts (v : GcmImpl) : List Artifact := [
     target := X86_64.target
     doc := Spec.Gcm.streamDecryptApi.doc (notes := [note v])
     code := Impl.AesGcm.X86_64.streamDecrypt v.callees
-    contract := Spec.Gcm.streamDecryptContract X86_64.abi 8
-    stack := 8
+    contract := Spec.Gcm.streamDecryptContract X86_64.abi 24
+    stack := 24
     verified := streamDecrypt_verified v
     spSafe := streamDecrypt_spSafe v
     features := v.features },

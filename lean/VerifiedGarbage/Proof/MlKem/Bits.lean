@@ -95,6 +95,44 @@ theorem digits_bit {w : Nat} (hw : 0 < w) : ∀ {L : List Nat}, (∀ a ∈ L, a 
         show p / w = (p - w) / w + 1 from Nat.div_eq_sub_div hw (by omega), List.getD_cons_succ,
         show p % w = (p - w) % w from Nat.mod_eq_sub_mod (by omega)]
 
+/-- Bits `p … p + n - 1` of the number whose base-`2ʷ` digits are `L`, digit
+by digit (`digits_window`): a function of literals that `simp only [win]`
+evaluates to the digits involved, so that a field or byte of the number is
+an expression in two or three digits rather than in all of them. -/
+def win (w : Nat) : List Nat → Nat → Nat → Nat
+  | [], _, _ => 0
+  | a :: L, p, n =>
+    if w ≤ p then win w L (p - w) n
+    else if n < w - p then a / 2 ^ p % 2 ^ n
+    else a / 2 ^ p + 2 ^ (w - p) * win w L 0 (n - (w - p))
+
+theorem digits_window {w : Nat} : ∀ {L : List Nat}, (∀ a ∈ L, a < 2 ^ w) → ∀ p n,
+    digits w L / 2 ^ p % 2 ^ n = win w L p n
+  | [], _, p, n => by simp [digits, win]
+  | a :: L, h, p, n => by
+    have ha := h a (List.mem_cons_self ..)
+    have hL : ∀ b ∈ L, b < 2 ^ w := fun b hb => h b (List.mem_cons_of_mem _ hb)
+    rw [digits_cons, win]
+    by_cases hp : w ≤ p
+    · simp only [hp, ↓reduceIte]
+      rw [show p = w + (p - w) by omega, Nat.pow_add, ← Nat.div_div_eq_div_mul,
+        add_pow_mul_div ha, Nat.add_sub_cancel_left, digits_window hL]
+    · simp only [hp, ↓reduceIte]
+      have e : 2 ^ w = 2 ^ p * 2 ^ (w - p) := by rw [← Nat.pow_add]; congr 1; omega
+      rw [e, Nat.mul_assoc, Nat.add_mul_div_left _ _ (Nat.two_pow_pos p)]
+      by_cases hn : n < w - p
+      · simp only [hn, ↓reduceIte]
+        have e' : 2 ^ (w - p) = 2 ^ n * 2 ^ (w - p - n) := by rw [← Nat.pow_add]; congr 1; omega
+        rw [e', Nat.mul_assoc, Nat.add_mul_mod_self_left]
+      · simp only [hn, ↓reduceIte]
+        have hlt : a / 2 ^ p < 2 ^ (w - p) := by
+          rw [Nat.div_lt_iff_lt_mul (Nat.two_pow_pos p), Nat.mul_comm, ← e]; exact ha
+        have e' : 2 ^ n = 2 ^ (w - p) * 2 ^ (n - (w - p)) := by rw [← Nat.pow_add]; congr 1; omega
+        have := digits_window hL 0 (n - (w - p))
+        rw [Nat.pow_zero, Nat.div_one] at this
+        rw [e', Nat.mod_mul, Nat.add_mul_mod_self_left, Nat.mod_eq_of_lt hlt,
+          add_pow_mul_div hlt, this]
+
 /-- The sum of the bits `j < w` of `M`, each times `2ʲ`, is `M mod 2ʷ`. -/
 theorem sum_bits (M : Nat) : ∀ w, ((List.range w).map fun j => M / 2 ^ j % 2 * 2 ^ j).sum = M % 2 ^ w
   | 0 => by simp [Nat.mod_one]

@@ -1,5 +1,6 @@
 import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.Instances
 import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.Sha256
+import VerifiedGarbage.Proof.Framework.TaintBatch
 
 /-!
 # PBKDF2-HMAC-SHA-256 on 32-bit ARM, the whole derivation
@@ -18,7 +19,8 @@ open VG.Proof.Pbkdf2.Stream.Arm (sha256OK)
 def sha256F : Fns := fnsOf Spec.Hmac.sha256I Md.Arm.sha256Md
 
 theorem sha256_checks : Checks sha256F := by
-  constructor <;> exact ⟨_, by taint_decide⟩
+  constructor <;> refine ⟨?_, ?_⟩
+  taint_decide_all
 
 def sha256OKF : FnsOK sha256F where
   hH := sha256OK

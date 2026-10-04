@@ -1,6 +1,7 @@
 import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 import VerifiedGarbage.Proof.Framework.AArch64.Spill
 import VerifiedGarbage.Proof.Rc2.AArch64.Cbc.Contract
+import VerifiedGarbage.Proof.Rc2.AArch64.Cbc.Phase
 
 /-! # Verified RC2-CBC encryption and decryption -/
 
@@ -8,18 +9,23 @@ namespace VG.Proof.Rc2.AArch64.Cbc
 
 open VG VG.AArch64 VG.Impl.Rc2.AArch64
 
-theorem cbc_body_correct (d : Spec.Rc2.Direction) (s : State) (hs : (contract d).pre s) :
-    WP isa (Impl.Rc2.AArch64.Cbc.cbc d) s (fun s' => (∀ r ∈ preserved, s'.gpr r = s.gpr r) ∧ (contract d).post s s') := by
+/-- The save, the setup, the blocks (`mid`, as the loop over them), and the restore. -/
+theorem cbc_body_correct (d : Spec.Rc2.Direction) (mid : Prog isa)
+    (hmid : ∀ s n, 8 * n ≤ 2 ^ 64 → StepPre s n → s.gpr .x24 = BitVec.ofNat 64 n →
+      WP isa mid s (LoopPost d s n))
+    (s : State) (hs : (contract d).pre s) :
+    WP isa (.seq (.block (Impl.Rc2.AArch64.Cbc.save ++ Impl.Rc2.AArch64.Cbc.setup))
+      (.seq mid (.block Impl.Rc2.AArch64.Cbc.restore))) s
+      (fun s' => (∀ r ∈ preserved, s'.gpr r = s.gpr r) ∧ (contract d).post s s') := by
   obtain ⟨hrd, hwr, keyIv, keyData, keyBuf, ivData, ivBuf, dataBuf,
     fit⟩ := hs
   have writes (i : Nat) (hi : i + 8 ≤ 512) : InRegions s.wr (s.gpr .x4 + BitVec.ofNat 64 i) 8 := by
     rw [hwr]
     exact ⟨⟨s.gpr .x4, 512⟩, by simp, Offset.contains_base _ hi (by omega)⟩
-  rw [Impl.Rc2.AArch64.Cbc.cbc]
   apply WP.seq
   rw [save_eq]
   refine Spill.save_ok (by decide) (fun p hp => writes p.2 (by revert p; decide)) ?_
-  obtain ⟨s₂, run₂, iv₂, count₂, data₂, buf₂, flag₂, keep₂⟩ := setup_ok { s with mem := savedMem s }
+  obtain ⟨s₂, run₂, iv₂, count₂, data₂, buf₂, -, keep₂⟩ := setup_ok { s with mem := savedMem s }
   refine WP.of_runBlock ⟨s₂, run₂, ?_⟩
   have key₂ : s₂.gpr .x0 = s.gpr .x0 := keep₂.reg .x0 (by decide)
   have rd₂ : s₂.rd = s.rd := keep₂.rd
@@ -43,8 +49,7 @@ theorem cbc_body_correct (d : Spec.Rc2.Direction) (s : State) (hs : (contract d)
     · simpa only [ivR, bufR, iv₂, buf₂] using ivBuf
     · simpa only [dataR, bufR, data₂, buf₂] using dataBuf
   apply WP.seq
-  apply WP.mono (maybeLoop_ok d s₂ (s.gpr .x3).toNat (by omega) hp₂
-    (by simpa using count₂) (by rw [count₂]; exact flag₂))
+  apply WP.mono (hmid s₂ (s.gpr .x3).toNat (by omega) hp₂ (by simpa using count₂))
   intro s₃ h₃
   have rd₃ := h₃.rd.trans rd₂
   have wr₃ := h₃.wr.trans wr₂
@@ -92,16 +97,18 @@ def satState : State where
 theorem encrypt_correct (s : State) (hs : (contract .encrypt).pre s) :
     ∃ t s', Exec isa Impl.Rc2.AArch64.Cbc.encrypt s t s' ∧ abiPreserved s s' ∧
       (contract .encrypt).post s s' := by
-  obtain ⟨t, s', he, ha, hp⟩ := cbc_body_correct .encrypt s hs
+  obtain ⟨t, s', he, ha, hp⟩ := cbc_body_correct .encrypt _
+    (fun s n bound hp count => maybeLoop_ok .encrypt s n bound hp count) s hs
   change Exec isa Impl.Rc2.AArch64.Cbc.encrypt s t s' at he
-  exact ⟨t, s', he, ⟨ha, (VG.AArch64.Exec.regions he rfl).2.2.1, VG.AArch64.Exec.preservedV he⟩, hp⟩
+  exact ⟨t, s', he, ⟨ha, (VG.AArch64.Exec.regions he rfl).2.2.1, VG.AArch64.Exec.preservedV he (by lit_decide)⟩, hp⟩
 
 theorem decrypt_correct (s : State) (hs : (contract .decrypt).pre s) :
     ∃ t s', Exec isa Impl.Rc2.AArch64.Cbc.decrypt s t s' ∧ abiPreserved s s' ∧
       (contract .decrypt).post s s' := by
-  obtain ⟨t, s', he, ha, hp⟩ := cbc_body_correct .decrypt s hs
+  obtain ⟨t, s', he, ha, hp⟩ := cbc_body_correct .decrypt _
+    (fun s n bound hp count => phaseLoop_ok s n bound hp count) s hs
   change Exec isa Impl.Rc2.AArch64.Cbc.decrypt s t s' at he
-  exact ⟨t, s', he, ⟨ha, (VG.AArch64.Exec.regions he rfl).2.2.1, VG.AArch64.Exec.preservedV he⟩, hp⟩
+  exact ⟨t, s', he, ⟨ha, (VG.AArch64.Exec.regions he rfl).2.2.1, VG.AArch64.Exec.preservedV he (by lit_decide)⟩, hp⟩
 
 theorem publicRegs_five (s₁ s₂ : State) : PublicRegs [.x0, .x1, .x2, .x3, .x4] s₁ s₂ ↔
     s₁.sp = s₂.sp ∧ s₁.gpr .x0 = s₂.gpr .x0 ∧ s₁.gpr .x1 = s₂.gpr .x1 ∧ s₁.gpr .x2 = s₂.gpr .x2 ∧

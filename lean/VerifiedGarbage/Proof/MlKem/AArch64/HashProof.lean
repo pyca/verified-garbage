@@ -412,7 +412,7 @@ theorem zeroState_ok {sc : Reg} {st wk rate : Nat} {s₀ : State} (hS : HSetup s
         ⟨_, List.mem_singleton_self _, contains_off (by omega) (by decide)⟩
       exact ⟨r, hr, hc⟩
   refine WP.mono (WP.preservedV (zstores_ok _ 25 (by decide) (by rw [e₂]; rfl)
-    (by rw [h₂.get .x0, e₁, hg.cs sc hS.hsc.1 hS.hsc.2]) hin) (hc := by decide +kernel)) fun s' ⟨⟨g', r', w', p', z', f'⟩, hv⟩ => ?_
+    (by rw [h₂.get .x0, e₁, hg.cs sc hS.hsc.1 hS.hsc.2]) hin) (hc := by lit_decide)) fun s' ⟨⟨g', r', w', p', z', f'⟩, hv⟩ => ?_
   have k₂ := (h₁.trans h₂).keep
   refine ⟨⟨fun r hr h30 => ?_, by rw [p', k₂.sp], by rw [r', k₂.rd], by rw [w', k₂.wr], ?_, fun r hr => (hv r hr).trans (k₂.vcs r hr)⟩,
     stateAt_zero' fun k hk => z' k hk⟩

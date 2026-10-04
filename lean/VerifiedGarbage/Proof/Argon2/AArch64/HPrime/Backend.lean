@@ -13,8 +13,8 @@ open VG VG.AArch64 VG.Impl.Argon2.AArch64.HPrime
 
 structure HashOk (h : Hash) : Prop where
   init : Verified AArch64.target h.init (Spec.Blake2.initBContract AArch64.abi)
-  update : Verified AArch64.target h.update (Spec.Blake2.updateBContract AArch64.abi 16)
-  finalize : Verified AArch64.target h.finalize (Spec.Blake2.finalizeBContract AArch64.abi 16)
+  update : Verified AArch64.target h.update (Spec.Blake2.updateBScratchContract AArch64.abi 16)
+  finalize : Verified AArch64.target h.finalize (Spec.Blake2.finalizeBScratchContract AArch64.abi 16)
   initNoFrames : h.init.noFrames = true
   initDepth : h.init.aarch64Depth = 0
   updateDepth : h.update.aarch64Depth = 1
@@ -61,9 +61,9 @@ def scalar : Backend where
   hash := {
     initName := Spec.Blake2.initBApi.name
     init := Impl.Blake2.AArch64.Stream.init Spec.Blake2.b
-    updateName := Spec.Blake2.updateBApi.name
+    updateName := Spec.Blake2.updateBScratchApi.name
     update := Impl.Blake2.AArch64.Stream.update Spec.Blake2.b
-    finalizeName := Spec.Blake2.finalizeBApi.name
+    finalizeName := Spec.Blake2.finalizeBScratchApi.name
     finalize := Impl.Blake2.AArch64.Stream.finalize Spec.Blake2.b }
   ok := ⟨Proof.Blake2.AArch64.Stream.initB_verified,
     Proof.Blake2.AArch64.Stream.updateB_verified, Proof.Blake2.AArch64.Stream.finalizeB_verified,

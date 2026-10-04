@@ -1,4 +1,5 @@
 import VerifiedGarbage.Proof.MlKem.X86_64.VLay
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # ML-KEM on x86-64: the layers of the NTT and its inverse with `len` = 4 and 2
@@ -19,7 +20,7 @@ theorem word_punpckldq (a b : BitVec 128) {i : Nat} (hi : i < 8) :
     word (XBinOp.eval .punpckldq a b) i =
       if i / 2 % 2 = 0 then word a (2 * (i / 4) + i % 2) else word b (2 * (i / 4) + i % 2) := by
   rw [dword_punpckldq, word_eq_dword _ hi]
-  rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7) with
+  rcases (by bdd_omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7) with
     rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
   simp (disch := decide) only [Nat.reduceDiv, Nat.reduceMod, Nat.reduceMul, Nat.reduceAdd, ite_true,
     ite_false, Nat.reduceEqDiff, dword_ofDwords_0, dword_ofDwords_1, dword_ofDwords_2, dword_ofDwords_3,
@@ -29,7 +30,7 @@ theorem word_punpckhdq (a b : BitVec 128) {i : Nat} (hi : i < 8) :
     word (XBinOp.eval .punpckhdq a b) i =
       if i / 2 % 2 = 0 then word a (4 + 2 * (i / 4) + i % 2) else word b (4 + 2 * (i / 4) + i % 2) := by
   rw [dword_punpckhdq, word_eq_dword _ hi]
-  rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7) with
+  rcases (by bdd_omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7) with
     rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
   simp (disch := decide) only [Nat.reduceDiv, Nat.reduceMod, Nat.reduceMul, Nat.reduceAdd, ite_true,
     ite_false, Nat.reduceEqDiff, dword_ofDwords_0, dword_ofDwords_1, dword_ofDwords_2, dword_ofDwords_3,
@@ -43,14 +44,14 @@ structure GKeep (rs : List Reg) (s s' : State) : Prop where
   mxcsr : s'.mxcsr = s.mxcsr
 
 theorem sel_d8 (j : Nat) (hj : j < 4) : sel 0xD8 j = [0, 2, 1, 3][j]! := by
-  rcases (by omega : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3) with rfl | rfl | rfl | rfl <;> decide
+  rcases (by bdd_omega : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3) with rfl | rfl | rfl | rfl <;> decide
 
 /-- The words of `X` that `pshufd` with `0xD8` puts in the lower half, then in the upper half. -/
 theorem word_d8 (x : BitVec 128) {e : Nat} (he : e < 8) :
     word (shufDwords x 0xD8) e = word x (if e < 4 then 4 * (e / 2) + e % 2 else 4 * ((e - 4) / 2) + 2 + e % 2) := by
-  rw [word_shufDwords _ _ he, sel_d8 _ (by omega)]
+  rw [word_shufDwords _ _ he, sel_d8 _ (by bdd_omega)]
   congr 1
-  rcases (by omega : e = 0 ∨ e = 1 ∨ e = 2 ∨ e = 3 ∨ e = 4 ∨ e = 5 ∨ e = 6 ∨ e = 7) with
+  rcases (by bdd_omega : e = 0 ∨ e = 1 ∨ e = 2 ∨ e = 3 ∨ e = 4 ∨ e = 5 ∨ e = 6 ∨ e = 7) with
     rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
 
 /-! ## The layer with `len = 4` -/
@@ -81,8 +82,8 @@ theorem vstep4 {sP : Addr} {i kz : Nat} (hi : i < 16) (o : BitVec 8) (dz : BitVe
       S16 s'.mem (spW sP) (layF blk F 4 zi (2 * (i + 1))) ∧ s'.gpr .rdx = wAddr (spW sP) (16 * (i + 1)) ∧
       s'.gpr .r8 = s.gpr .r8 + BitVec.signExtend 64 dz ∧ s'.gpr .rcx = s.gpr .rcx - 1 ∧
       s'.zf = some (s.gpr .rcx - 1 == 0) ∧ BInv sP s s' := by
-  have j0 : 16 * i + 8 ≤ 256 := by omega
-  have j1 : 16 * i + 8 + 8 ≤ 256 := by omega
+  have j0 : 16 * i + 8 ≤ 256 := by bdd_omega
+  have j1 : 16 * i + 8 + 8 ≤ 256 := by bdd_omega
   have a1 : wAddr (spW sP) (16 * i) + BitVec.ofNat 64 16 = wAddr (spW sP) (16 * i + 8) := wAddr_add _ _ 8
   have r0 := sp_in (List.mem_append_right s.rd hw) j0
   have r1 := sp_in (List.mem_append_right s.rd hw) j1
@@ -112,15 +113,15 @@ theorem vstep4 {sP : Addr} {i kz : Nat} (hi : i < 16) (o : BitVec 8) (dz : BitVe
     · intro e he
       rw [word_punpcklqdq _ _ he]
       split
-      · rw [lx e he]; dsimp only; rw [show 16 * i + e + 4 * (e / 4) = 16 * i + e by omega]
-      · rw [ly (e - 4) (by omega)]; dsimp only
-        rw [show 16 * i + e + 4 * (e / 4) = 16 * i + 8 + (e - 4) by omega]
+      · rw [lx e he]; dsimp only; rw [show 16 * i + e + 4 * (e / 4) = 16 * i + e by bdd_omega]
+      · rw [ly (e - 4) (by bdd_omega)]; dsimp only
+        rw [show 16 * i + e + 4 * (e / 4) = 16 * i + 8 + (e - 4) by bdd_omega]
     · intro e he
       rw [word_movdqa, word_punpckhqdq _ _ he, word_movdqa]
       split
-      · rw [lx (4 + e) (by omega)]; dsimp only
-        rw [show 16 * i + 4 + e + 4 * (e / 4) = 16 * i + (4 + e) by omega]
-      · rw [ly e he]; dsimp only; rw [show 16 * i + 4 + e + 4 * (e / 4) = 16 * i + 8 + e by omega]
+      · rw [lx (4 + e) (by bdd_omega)]; dsimp only
+        rw [show 16 * i + 4 + e + 4 * (e / 4) = 16 * i + (4 + e) by bdd_omega]
+      · rw [ly e he]; dsimp only; rw [show 16 * i + 4 + e + 4 * (e / 4) = 16 * i + 8 + e by bdd_omega]
     · intro e he
       rw [lz e he]; dsimp only; rw [hsel e he]
   rw [WP.block_append_iff]
@@ -138,7 +139,7 @@ theorem vstep4 {sP : Addr} {i kz : Nat} (hi : i < 16) (o : BitVec 8) (dz : BitVe
   refine ⟨?_, by rw [show (32 : BitVec 64) = BitVec.ofNat 64 (2 * 16) from rfl, wAddr_add, Nat.mul_succ], r81,
     by rw [rc1], by rw [rc1], ?_⟩
   · -- the words stored
-    refine s16_write2 hS j0 j1 (by omega)
+    refine s16_write2 hS j0 j1 (by bdd_omega)
       (a := fun e => if e < 4 then (op G[16 * i + e]! G[16 * i + 4 + e]! (zeta (zi (2 * i)))).1
         else (op G[16 * i + (e - 4)]! G[16 * i + 4 + (e - 4)]! (zeta (zi (2 * i)))).2)
       (b := fun e => if e < 4 then (op G[16 * i + 8 + e]! G[16 * i + 12 + e]! (zeta (zi (2 * i + 1)))).1
@@ -147,44 +148,44 @@ theorem vstep4 {sP : Addr} {i kz : Nat} (hi : i < 16) (o : BitVec 8) (dz : BitVe
     · rw [word_punpcklqdq _ _ he]
       split
       · rw [a0 e he]; dsimp only
-        rw [ite_eq_left (by omega), show 16 * i + e + 4 * (e / 4) = 16 * i + e by omega,
-          show 16 * i + 4 + e + 4 * (e / 4) = 16 * i + 4 + e by omega, show 2 * i + e / 4 = 2 * i by omega]
-      · rw [a3 (e - 4) (by omega)]; dsimp only
-        rw [ite_eq_right (by omega), show 16 * i + (e - 4) + 4 * ((e - 4) / 4) = 16 * i + (e - 4) by omega,
-          show 16 * i + 4 + (e - 4) + 4 * ((e - 4) / 4) = 16 * i + 4 + (e - 4) by omega,
-          show 2 * i + (e - 4) / 4 = 2 * i by omega]
+        rw [ite_eq_left (by bdd_omega), show 16 * i + e + 4 * (e / 4) = 16 * i + e by bdd_omega,
+          show 16 * i + 4 + e + 4 * (e / 4) = 16 * i + 4 + e by bdd_omega, show 2 * i + e / 4 = 2 * i by bdd_omega]
+      · rw [a3 (e - 4) (by bdd_omega)]; dsimp only
+        rw [ite_eq_right (by bdd_omega), show 16 * i + (e - 4) + 4 * ((e - 4) / 4) = 16 * i + (e - 4) by bdd_omega,
+          show 16 * i + 4 + (e - 4) + 4 * ((e - 4) / 4) = 16 * i + 4 + (e - 4) by bdd_omega,
+          show 2 * i + (e - 4) / 4 = 2 * i by bdd_omega]
     · rw [word_punpckhqdq _ _ he, word_movdqa]
       split
-      · rw [a0 (4 + e) (by omega)]; dsimp only
-        rw [ite_eq_left (by omega), show 16 * i + (4 + e) + 4 * ((4 + e) / 4) = 16 * i + 8 + e by omega,
-          show 16 * i + 4 + (4 + e) + 4 * ((4 + e) / 4) = 16 * i + 12 + e by omega,
-          show 2 * i + (4 + e) / 4 = 2 * i + 1 by omega]
+      · rw [a0 (4 + e) (by bdd_omega)]; dsimp only
+        rw [ite_eq_left (by bdd_omega), show 16 * i + (4 + e) + 4 * ((4 + e) / 4) = 16 * i + 8 + e by bdd_omega,
+          show 16 * i + 4 + (4 + e) + 4 * ((4 + e) / 4) = 16 * i + 12 + e by bdd_omega,
+          show 2 * i + (4 + e) / 4 = 2 * i + 1 by bdd_omega]
       · rw [a3 e he]; dsimp only
-        rw [ite_eq_right (by omega), show 16 * i + e + 4 * (e / 4) = 16 * i + 8 + (e - 4) by omega,
-          show 16 * i + 4 + e + 4 * (e / 4) = 16 * i + 12 + (e - 4) by omega,
-          show 2 * i + e / 4 = 2 * i + 1 by omega]
+        rw [ite_eq_right (by bdd_omega), show 16 * i + e + 4 * (e / 4) = 16 * i + 8 + (e - 4) by bdd_omega,
+          show 16 * i + 4 + e + 4 * (e / 4) = 16 * i + 12 + (e - 4) by bdd_omega,
+          show 2 * i + e / 4 = 2 * i + 1 by bdd_omega]
     · -- the specification: two blocks
-      rw [← hG, show 2 * (i + 1) = 2 * i + 1 + 1 by omega, layF, foldl_range_succ, foldl_range_succ, ← layF,
-        hG, show 2 * 4 * (2 * i) = 16 * i by omega, show 2 * 4 * (2 * i + 1) = 16 * i + 8 by omega]
+      rw [← hG, show 2 * (i + 1) = 2 * i + 1 + 1 by bdd_omega, layF, foldl_range_succ, foldl_range_succ, ← layF,
+        hG, show 2 * 4 * (2 * i) = 16 * i by bdd_omega, show 2 * 4 * (2 * i + 1) = 16 * i + 8 by bdd_omega]
       have hn : ∀ j, j < 256 → j < n := fun j h => by rw [n_eq]; exact h
       rw [hblk.get _ _ _ _ _ (by decide) (by decide) (by rw [n_eq]; omega) _ (hn j hj)]
       have p2 := fun j (h : j < 256) => hblk.get G 4 (zi (2 * i)) (16 * i) 4 (by decide) (by decide)
         (by rw [n_eq]; omega) j (hn j h)
-      rcases (by omega : j < 16 * i ∨ (16 * i ≤ j ∧ j < 16 * i + 4) ∨ (16 * i + 4 ≤ j ∧ j < 16 * i + 8) ∨
+      rcases (by bdd_omega : j < 16 * i ∨ (16 * i ≤ j ∧ j < 16 * i + 4) ∨ (16 * i + 4 ≤ j ∧ j < 16 * i + 8) ∨
           (16 * i + 8 ≤ j ∧ j < 16 * i + 12) ∨ (16 * i + 12 ≤ j ∧ j < 16 * i + 16) ∨ 16 * i + 16 ≤ j) with
         h | h | h | h | h | h
-      · simp (disch := omega) only [ite_eq_left, ite_eq_right, p2 j hj]
-      · simp (disch := omega) only [ite_eq_left, ite_eq_right, p2 j hj]
-        rw [show 16 * i + (j - 16 * i) = j by omega, show 16 * i + 4 + (j - 16 * i) = j + 4 by omega]
-      · simp (disch := omega) only [ite_eq_left, ite_eq_right, p2 j hj]
-        rw [show 16 * i + (j - 16 * i - 4) = j - 4 by omega, show 16 * i + 4 + (j - 16 * i - 4) = j by omega]
-      · simp (disch := omega) only [ite_eq_left, ite_eq_right, p2 j hj, p2 (j + 4) (by omega)]
-        rw [show 16 * i + 8 + (j - (16 * i + 8)) = j by omega,
-          show 16 * i + 12 + (j - (16 * i + 8)) = j + 4 by omega]
-      · simp (disch := omega) only [ite_eq_left, ite_eq_right, p2 j hj, p2 (j - 4) (by omega)]
-        rw [show 16 * i + 8 + (j - (16 * i + 8) - 4) = j - 4 by omega,
-          show 16 * i + 12 + (j - (16 * i + 8) - 4) = j by omega]
-      · simp (disch := omega) only [ite_eq_left, ite_eq_right, p2 j hj]
+      · simp (disch := bdd_omega) only [ite_eq_left, ite_eq_right, p2 j hj]
+      · simp (disch := bdd_omega) only [ite_eq_left, ite_eq_right, p2 j hj]
+        rw [show 16 * i + (j - 16 * i) = j by bdd_omega, show 16 * i + 4 + (j - 16 * i) = j + 4 by bdd_omega]
+      · simp (disch := bdd_omega) only [ite_eq_left, ite_eq_right, p2 j hj]
+        rw [show 16 * i + (j - 16 * i - 4) = j - 4 by bdd_omega, show 16 * i + 4 + (j - 16 * i - 4) = j by bdd_omega]
+      · simp (disch := bdd_omega) only [ite_eq_left, ite_eq_right, p2 j hj, p2 (j + 4) (by bdd_omega)]
+        rw [show 16 * i + 8 + (j - (16 * i + 8)) = j by bdd_omega,
+          show 16 * i + 12 + (j - (16 * i + 8)) = j + 4 by bdd_omega]
+      · simp (disch := bdd_omega) only [ite_eq_left, ite_eq_right, p2 j hj, p2 (j - 4) (by bdd_omega)]
+        rw [show 16 * i + 8 + (j - (16 * i + 8) - 4) = j - 4 by bdd_omega,
+          show 16 * i + 12 + (j - (16 * i + 8) - 4) = j by bdd_omega]
+      · simp (disch := bdd_omega) only [ite_eq_left, ite_eq_right, p2 j hj]
   · -- what the step keeps
     refine ⟨⟨fun r hr => ?_, by simp only [RegUpd.rd_setReg, RegUpd.rd_setFlags],
       by simp only [RegUpd.wr_setReg, RegUpd.wr_setFlags]⟩, frame_write2 (Frame.refl _ _) j0 j1 _ _, ⟨?_, ?_⟩,
@@ -204,7 +205,7 @@ theorem vpre42 {sP : Addr} (k : Nat) (hk : k < 128) {s : State} (hsi : s.gpr .rs
     WP isa (.block (leaR .rdx .rsi oS ++ leaR .r8 .rsi (2 * k))) s fun w =>
       w.gpr .rdx = spW sP ∧ w.gpr .r8 = wAddr sP k ∧ GOnly [.rdx, .r8] s w := by
   simp only [leaR, oS]
-  vrunm [sx_ofNat (show 256 < 2 ^ 31 by decide), sx_ofNat (show 2 * k < 2 ^ 31 by omega), hsi]
+  vrunm [sx_ofNat (show 256 < 2 ^ 31 by decide), sx_ofNat (show 2 * k < 2 ^ 31 by bdd_omega), hsi]
   gonly
 
 theorem vlay4_ok {sP : Addr} (k : Nat) (o : BitVec 8) (dz : BitVec 32) (zi kz : Nat → Nat) (hkz0 : kz 0 = k)
@@ -258,19 +259,19 @@ theorem layF2_get (F : Poly) (zi : Nat → Nat) {b : Nat} (hb : b ≤ 64) {j : N
       (if j % 4 < 2 then (op F[j]! F[j + 2]! (zeta (zi (j / 4)))).1
         else (op F[j - 2]! F[j]! (zeta (zi (j / 4)))).2) else F[j]! := by
   induction b generalizing j with
-  | zero => rw [ite_eq_right (by omega)]; rfl
+  | zero => rw [ite_eq_right (by bdd_omega)]; rfl
   | succ b ih =>
     rw [layF, foldl_range_succ, ← layF,
       hblk.get _ 2 _ _ 2 (by decide) (by decide) (by rw [n_eq]; omega) j (by rw [n_eq]; exact hj)]
     by_cases h1 : 2 * 2 * b ≤ j ∧ j < 2 * 2 * b + 2
-    · rw [ite_eq_left h1, ih (by omega) hj, ih (by omega) (by omega), show j / 4 = b by omega]
-      simp (disch := omega) only [ite_eq_left, ite_eq_right]
+    · rw [ite_eq_left h1, ih (by bdd_omega) hj, ih (by bdd_omega) (by bdd_omega), show j / 4 = b by bdd_omega]
+      simp (disch := bdd_omega) only [ite_eq_left, ite_eq_right]
     · rw [ite_eq_right h1]
       by_cases h2 : 2 * 2 * b + 2 ≤ j ∧ j < 2 * 2 * b + 2 + 2
-      · rw [ite_eq_left h2, ih (by omega) (by omega), ih (by omega) hj, show j / 4 = b by omega]
-        simp (disch := omega) only [ite_eq_left, ite_eq_right]
-      · rw [ite_eq_right h2, ih (by omega) hj]
-        by_cases h3 : j < 4 * b <;> simp (disch := omega) only [ite_eq_left, ite_eq_right]
+      · rw [ite_eq_left h2, ih (by bdd_omega) (by bdd_omega), ih (by bdd_omega) hj, show j / 4 = b by bdd_omega]
+        simp (disch := bdd_omega) only [ite_eq_left, ite_eq_right]
+      · rw [ite_eq_right h2, ih (by bdd_omega) hj]
+        by_cases h3 : j < 4 * b <;> simp (disch := bdd_omega) only [ite_eq_left, ite_eq_right]
 
 theorem vstep2 {sP : Addr} {i kz : Nat} (hi : i < 16) (o : BitVec 8) (dz : BitVec 32) (zi : Nat → Nat)
     (hk : ∀ j < 4, kz + sel o j < 128) (hsel : ∀ e < 8, kz + sel o (e / 2) = zi (4 * i + e / 2))
@@ -281,8 +282,8 @@ theorem vstep2 {sP : Addr} {i kz : Nat} (hi : i < 16) (o : BitVec 8) (dz : BitVe
       S16 s'.mem (spW sP) (layF blk F 2 zi (4 * (i + 1))) ∧ s'.gpr .rdx = wAddr (spW sP) (16 * (i + 1)) ∧
       s'.gpr .r8 = s.gpr .r8 + BitVec.signExtend 64 dz ∧ s'.gpr .rcx = s.gpr .rcx - 1 ∧
       s'.zf = some (s.gpr .rcx - 1 == 0) ∧ BInv sP s s' := by
-  have j0 : 16 * i + 8 ≤ 256 := by omega
-  have j1 : 16 * i + 8 + 8 ≤ 256 := by omega
+  have j0 : 16 * i + 8 ≤ 256 := by bdd_omega
+  have j1 : 16 * i + 8 + 8 ≤ 256 := by bdd_omega
   have a1 : wAddr (spW sP) (16 * i) + BitVec.ofNat 64 16 = wAddr (spW sP) (16 * i + 8) := wAddr_add _ _ 8
   have r0 := sp_in (List.mem_append_right s.rd hw) j0
   have r1 := sp_in (List.mem_append_right s.rd hw) j1
@@ -312,18 +313,18 @@ theorem vstep2 {sP : Addr} {i kz : Nat} (hi : i < 16) (o : BitVec 8) (dz : BitVe
     · intro e he
       rw [word_punpcklqdq _ _ he]
       split
-      · rw [word_d8 _ he, ite_eq_left (by omega), lx _ (by omega)]; dsimp only
-        rw [show 16 * i + (4 * (e / 2) + e % 2) = 16 * i + 4 * (e / 2) + e % 2 by omega]
-      · rw [word_d8 _ (by omega), ite_eq_left (by omega), ly _ (by omega)]; dsimp only
-        rw [show 16 * i + 8 + (4 * ((e - 4) / 2) + (e - 4) % 2) = 16 * i + 4 * (e / 2) + e % 2 by omega]
+      · rw [word_d8 _ he, ite_eq_left (by bdd_omega), lx _ (by bdd_omega)]; dsimp only
+        rw [show 16 * i + (4 * (e / 2) + e % 2) = 16 * i + 4 * (e / 2) + e % 2 by bdd_omega]
+      · rw [word_d8 _ (by bdd_omega), ite_eq_left (by bdd_omega), ly _ (by bdd_omega)]; dsimp only
+        rw [show 16 * i + 8 + (4 * ((e - 4) / 2) + (e - 4) % 2) = 16 * i + 4 * (e / 2) + e % 2 by bdd_omega]
     · intro e he
       rw [word_punpckhqdq _ _ he]
       simp only [word_movdqa]
       split
-      · rw [word_d8 _ (by omega), ite_eq_right (by omega), lx _ (by omega)]; dsimp only
-        rw [show 16 * i + (4 * ((4 + e - 4) / 2) + 2 + (4 + e) % 2) = 16 * i + 4 * (e / 2) + 2 + e % 2 by omega]
-      · rw [word_d8 _ he, ite_eq_right (by omega), ly _ (by omega)]; dsimp only
-        rw [show 16 * i + 8 + (4 * ((e - 4) / 2) + 2 + e % 2) = 16 * i + 4 * (e / 2) + 2 + e % 2 by omega]
+      · rw [word_d8 _ (by bdd_omega), ite_eq_right (by bdd_omega), lx _ (by bdd_omega)]; dsimp only
+        rw [show 16 * i + (4 * ((4 + e - 4) / 2) + 2 + (4 + e) % 2) = 16 * i + 4 * (e / 2) + 2 + e % 2 by bdd_omega]
+      · rw [word_d8 _ he, ite_eq_right (by bdd_omega), ly _ (by bdd_omega)]; dsimp only
+        rw [show 16 * i + 8 + (4 * ((e - 4) / 2) + 2 + e % 2) = 16 * i + 4 * (e / 2) + 2 + e % 2 by bdd_omega]
     · intro e he
       rw [lz e he]; dsimp only; rw [hsel e he]
   rw [WP.block_append_iff]
@@ -342,47 +343,47 @@ theorem vstep2 {sP : Addr} {i kz : Nat} (hi : i < 16) (o : BitVec 8) (dz : BitVe
   refine ⟨?_, by rw [show (32 : BitVec 64) = BitVec.ofNat 64 (2 * 16) from rfl, wAddr_add, Nat.mul_succ], r81,
     by rw [rc1], by rw [rc1], ?_⟩
   · -- the words stored
-    refine s16_write2 hS j0 j1 (by omega)
+    refine s16_write2 hS j0 j1 (by bdd_omega)
       (a := fun e => (layF blk F 2 zi (4 * (i + 1)))[16 * i + e]!)
       (b := fun e => (layF blk F 2 zi (4 * (i + 1)))[16 * i + 8 + e]!)
       (fun e he => ?_) (fun e he => ?_) (fun j hj => ?_)
     · rw [word_punpckldq _ _ he]
       split
-      · rw [a0 (2 * (e / 4) + e % 2) (by omega)]; dsimp only
-        rw [show 16 * i + 4 * ((2 * (e / 4) + e % 2) / 2) + (2 * (e / 4) + e % 2) % 2 = 16 * i + e by omega,
-          show 16 * i + 4 * ((2 * (e / 4) + e % 2) / 2) + 2 + (2 * (e / 4) + e % 2) % 2 = 16 * i + e + 2 by omega,
-          show 4 * i + (2 * (e / 4) + e % 2) / 2 = (16 * i + e) / 4 by omega, ← hG]
-        simp (disch := omega) only [lg, ite_eq_left, ite_eq_right]
-      · rw [a3 (2 * (e / 4) + e % 2) (by omega)]; dsimp only
-        rw [show 16 * i + 4 * ((2 * (e / 4) + e % 2) / 2) + (2 * (e / 4) + e % 2) % 2 = 16 * i + e - 2 by omega,
-          show 16 * i + 4 * ((2 * (e / 4) + e % 2) / 2) + 2 + (2 * (e / 4) + e % 2) % 2 = 16 * i + e by omega,
-          show 4 * i + (2 * (e / 4) + e % 2) / 2 = (16 * i + e) / 4 by omega, ← hG]
-        simp (disch := omega) only [lg, ite_eq_left, ite_eq_right]
+      · rw [a0 (2 * (e / 4) + e % 2) (by bdd_omega)]; dsimp only
+        rw [show 16 * i + 4 * ((2 * (e / 4) + e % 2) / 2) + (2 * (e / 4) + e % 2) % 2 = 16 * i + e by bdd_omega,
+          show 16 * i + 4 * ((2 * (e / 4) + e % 2) / 2) + 2 + (2 * (e / 4) + e % 2) % 2 = 16 * i + e + 2 by bdd_omega,
+          show 4 * i + (2 * (e / 4) + e % 2) / 2 = (16 * i + e) / 4 by bdd_omega, ← hG]
+        simp (disch := bdd_omega) only [lg, ite_eq_left, ite_eq_right]
+      · rw [a3 (2 * (e / 4) + e % 2) (by bdd_omega)]; dsimp only
+        rw [show 16 * i + 4 * ((2 * (e / 4) + e % 2) / 2) + (2 * (e / 4) + e % 2) % 2 = 16 * i + e - 2 by bdd_omega,
+          show 16 * i + 4 * ((2 * (e / 4) + e % 2) / 2) + 2 + (2 * (e / 4) + e % 2) % 2 = 16 * i + e by bdd_omega,
+          show 4 * i + (2 * (e / 4) + e % 2) / 2 = (16 * i + e) / 4 by bdd_omega, ← hG]
+        simp (disch := bdd_omega) only [lg, ite_eq_left, ite_eq_right]
     · rw [word_punpckhdq _ _ he]
       simp only [word_movdqa]
       split
-      · rw [a0 (4 + 2 * (e / 4) + e % 2) (by omega)]; dsimp only
+      · rw [a0 (4 + 2 * (e / 4) + e % 2) (by bdd_omega)]; dsimp only
         rw [show 16 * i + 4 * ((4 + 2 * (e / 4) + e % 2) / 2) + (4 + 2 * (e / 4) + e % 2) % 2 = 16 * i + 8 + e by
             omega,
           show 16 * i + 4 * ((4 + 2 * (e / 4) + e % 2) / 2) + 2 + (4 + 2 * (e / 4) + e % 2) % 2 =
-            16 * i + 8 + e + 2 by omega,
-          show 4 * i + (4 + 2 * (e / 4) + e % 2) / 2 = (16 * i + 8 + e) / 4 by omega, ← hG]
-        simp (disch := omega) only [lg, ite_eq_left, ite_eq_right]
-      · rw [a3 (4 + 2 * (e / 4) + e % 2) (by omega)]; dsimp only
+            16 * i + 8 + e + 2 by bdd_omega,
+          show 4 * i + (4 + 2 * (e / 4) + e % 2) / 2 = (16 * i + 8 + e) / 4 by bdd_omega, ← hG]
+        simp (disch := bdd_omega) only [lg, ite_eq_left, ite_eq_right]
+      · rw [a3 (4 + 2 * (e / 4) + e % 2) (by bdd_omega)]; dsimp only
         rw [show 16 * i + 4 * ((4 + 2 * (e / 4) + e % 2) / 2) + (4 + 2 * (e / 4) + e % 2) % 2 =
-            16 * i + 8 + e - 2 by omega,
+            16 * i + 8 + e - 2 by bdd_omega,
           show 16 * i + 4 * ((4 + 2 * (e / 4) + e % 2) / 2) + 2 + (4 + 2 * (e / 4) + e % 2) % 2 = 16 * i + 8 + e by
             omega,
-          show 4 * i + (4 + 2 * (e / 4) + e % 2) / 2 = (16 * i + 8 + e) / 4 by omega, ← hG]
-        simp (disch := omega) only [lg, ite_eq_left, ite_eq_right]
-    · rcases (by omega : (16 * i ≤ j ∧ j < 16 * i + 8) ∨ (16 * i + 8 ≤ j ∧ j < 16 * i + 16) ∨
+          show 4 * i + (4 + 2 * (e / 4) + e % 2) / 2 = (16 * i + 8 + e) / 4 by bdd_omega, ← hG]
+        simp (disch := bdd_omega) only [lg, ite_eq_left, ite_eq_right]
+    · rcases (by bdd_omega : (16 * i ≤ j ∧ j < 16 * i + 8) ∨ (16 * i + 8 ≤ j ∧ j < 16 * i + 16) ∨
           j < 16 * i ∨ 16 * i + 16 ≤ j) with h | h | h | h
-      · rw [ite_eq_left h, show 16 * i + (j - 16 * i) = j by omega]
-      · rw [ite_eq_right (by omega), ite_eq_left h, show 16 * i + 8 + (j - (16 * i + 8)) = j by omega]
-      · rw [ite_eq_right (by omega), ite_eq_right (by omega), ← hG]
-        simp (disch := omega) only [lg, ite_eq_left]
-      · rw [ite_eq_right (by omega), ite_eq_right (by omega), ← hG]
-        simp (disch := omega) only [lg, ite_eq_left, ite_eq_right]
+      · rw [ite_eq_left h, show 16 * i + (j - 16 * i) = j by bdd_omega]
+      · rw [ite_eq_right (by bdd_omega), ite_eq_left h, show 16 * i + 8 + (j - (16 * i + 8)) = j by bdd_omega]
+      · rw [ite_eq_right (by bdd_omega), ite_eq_right (by bdd_omega), ← hG]
+        simp (disch := bdd_omega) only [lg, ite_eq_left]
+      · rw [ite_eq_right (by bdd_omega), ite_eq_right (by bdd_omega), ← hG]
+        simp (disch := bdd_omega) only [lg, ite_eq_left, ite_eq_right]
   · -- what the step keeps
     refine ⟨⟨fun r hr => ?_, by simp only [RegUpd.rd_setReg, RegUpd.rd_setFlags],
       by simp only [RegUpd.wr_setReg, RegUpd.wr_setFlags]⟩, frame_write2 (Frame.refl _ _) j0 j1 _ _, ⟨?_, ?_⟩,

@@ -7,14 +7,6 @@ namespace VG.Proof.Rc4.X86
 open VG VG.X86 VG.Impl.Rc4.X86 VG.Spec.Rc4 VG.Proof.Rc4
 open VG.Proof.MlDsa.X86.Pack (Keep WP.keep writesOnly addr_of_fit)
 
-theorem sep_of_sub {R₁ R₂ : Region} (h : R₁.Disjoint R₂) {a b : Addr} {n k : Nat}
-    (h₁ : R₁.Contains a n) (h₂ : R₂.Contains b k) : Mem.Sep a n b k :=
-  fun x hx hy => h x (h₁.byte hx) (h₂.byte hy)
-
-theorem contains_prefix (p : Addr) {n k : Nat} (h : n ≤ k) : (⟨p, k⟩ : Region).Contains p n := by
-  simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero, Nat.zero_add]
-  exact h
-
 /-- `vg_rc4_apply(ctx, data, len, scratch)`: what its proof needs on entry. -/
 structure ApplyPre (s : State) (P D L Sc : BitVec 32) : Prop where
   aP : arg s 0 = P
@@ -168,15 +160,6 @@ theorem step_other {m : Mem} {p q d x : Addr} {ii jj : Byte} {v : BitVec 32} {w 
   unfold Mem.writeW
   rw [Mem.write_apply hS]
   exact swap_frame m p ii jj x hT
-
-theorem data_ne {D : BitVec 32} {L : BitVec 32} {x k : Nat}
-    (hx : x < L.toNat) (hk : k < L.toNat) (hne : x ≠ k) :
-    D.setWidth 64 + BitVec.ofNat 64 x ≠ D.setWidth 64 + BitVec.ofNat 64 k := by
-  intro h
-  have h' := congrArg (fun y => (y - D.setWidth 64).toNat) h
-  simp only [Offset.add_sub_cancel_left, BitVec.toNat_ofNat] at h'
-  rw [Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)] at h'
-  exact hne h'
 
 /-- The concrete stream iteration realizes the abstract PRGA transition. -/
 theorem apply_step_table (t : State) (i j : Byte) (P D L Sc : BitVec 32) (k : Nat)

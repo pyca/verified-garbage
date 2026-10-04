@@ -29,11 +29,13 @@ namespace VG.Proof.Sha256.X86.Variants
 open VG.X86
 
 /-- SHA-256's streaming functions, with a backend's `update` and `finalize`
-(`updC`, `finC`), named with its suffix: a 96-byte state, 20 words of working
+(`updC`, `finC`), which take their working space as an argument, named
+`update_scratch` and `finalize_scratch` with its suffix: a 96-byte state, 20 words of working
 space and a 32-byte digest. -/
 def hmacHash (suffix : String) (updC finC : Prog isa) : Impl.Pbkdf2.Stream.X86.Hash :=
   ⟨64, 96, 32, 32, 20, Spec.Sha256.initApi.name, Impl.Sha256.X86.Stream.init,
-    Spec.Sha256.updateApi.name ++ suffix, updC, Spec.Sha256.finalizeApi.name ++ suffix, finC⟩
+    Spec.Sha256.updateScratchApi.name ++ suffix, updC, Spec.Sha256.finalizeScratchApi.name ++ suffix,
+    finC⟩
 
 /-- SHA-256 as a Merkle–Damgård hash function, with a backend's compression
 function `cmpN`/`cmpC` and the streaming functions calling it: a 32-byte hash
@@ -59,7 +61,8 @@ def fns (suffix cmpN : String) (cmpC updC finC : Prog isa) : Impl.Pbkdf2.Whole.X
 32 bytes `finalize` writes. -/
 def hmacHash224 (suffix : String) (updC finC : Prog isa) : Impl.Pbkdf2.Stream.X86.Hash :=
   ⟨64, 96, 28, 32, 20, Spec.Sha256.init224Api.name, Impl.Sha256.X86.Stream.init224,
-    Spec.Sha256.updateApi.name ++ suffix, updC, Spec.Sha256.finalizeApi.name ++ suffix, finC⟩
+    Spec.Sha256.updateScratchApi.name ++ suffix, updC, Spec.Sha256.finalizeScratchApi.name ++ suffix,
+    finC⟩
 
 /-- SHA-224 as a Merkle–Damgård hash function, with a backend's SHA-256
 compression function `cmpN`/`cmpC` and the streaming functions calling it:

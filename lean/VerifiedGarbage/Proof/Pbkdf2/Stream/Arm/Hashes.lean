@@ -23,7 +23,7 @@ open VG.Proof.Hmac.Generic.Common (sha1_repr md5_repr sha512_repr finalHash_leng
 /-! ## SHA-1 -/
 
 def sha1H : Hash := ⟨64, 84, 20, 20, 20, "vg_sha1_init", Impl.Sha1.Arm.Stream.init,
-  "vg_sha1_update", Impl.Sha1.Arm.Stream.update, "vg_sha1_finalize", Impl.Sha1.Arm.Stream.finalize⟩
+  "vg_sha1_update_scratch", Impl.Sha1.Arm.Stream.update, "vg_sha1_finalize_scratch", Impl.Sha1.Arm.Stream.finalize⟩
 
 def sha1OK : HashOK sha1H where
   SH := Spec.Hmac.sha1S
@@ -58,7 +58,7 @@ def sha1OK : HashOK sha1H where
 /-! ## MD5 -/
 
 def md5H : Hash := ⟨64, 80, 16, 16, 14, "vg_md5_init", Impl.Md5.Arm.Stream.init,
-  "vg_md5_update", Impl.Md5.Arm.Stream.update, "vg_md5_finalize", Impl.Md5.Arm.Stream.finalize⟩
+  "vg_md5_update_scratch", Impl.Md5.Arm.Stream.update, "vg_md5_finalize_scratch", Impl.Md5.Arm.Stream.finalize⟩
 
 def md5OK : HashOK md5H where
   SH := Spec.Hmac.md5S
