@@ -50,6 +50,10 @@ theorem stateAt_of_statesAt {m m' : Mem} {D : Addr} {n : Nat} {g : Spec.Aes.Stat
   have := congrArg (·[i]?) h
   simpa [Spec.Aes.statesAt, hi] using this
 
+theorem blockAtMem_frame {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {p : Addr}
+    (hd : ∀ r ∈ rs, (⟨p, 16⟩ : Region).Disjoint r) : blockAtMem m' p = blockAtMem m p := by
+  rw [blockAtMem, blockAtMem, bytesAt_frame hf hd (by decide)]
+
 /-! ## `vg_aes_encrypt_blocks` and `vg_aes_decrypt_blocks` -/
 
 /-- What a call of `vg_aes_encrypt_blocks` or `vg_aes_decrypt_blocks` needs:
