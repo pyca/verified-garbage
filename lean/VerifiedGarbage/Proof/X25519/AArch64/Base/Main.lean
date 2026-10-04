@@ -1,5 +1,5 @@
 import VerifiedGarbage.Proof.X25519.AArch64.Base.Engine
-import VerifiedGarbage.Proof.X25519.AArch64.Base.Lit
+import VerifiedGarbage.Proof.X25519.AArch64.Base.Erase
 import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarBaseMain
 import VerifiedGarbage.Spec.X25519.Contract
 
@@ -28,7 +28,8 @@ def baseLocal : Contract isa where
 
 theorem x25519Base_correct {s : State} (hs : baseLocal.pre s) :
     WP isa x25519Base s fun t => abiPreserved s t ∧ baseLocal.post s t := by
-  apply WP.withPreservedV (hc := by lit_decide)
+  apply WP.withPreservedV
+    (hc := Code.allInstrs_keepsV_of_eraseImm x25519Base_eraseImm (by lit_decide))
   obtain ⟨hr, hw, hd, hn⟩ := hs
   have hws : (⟨s.gpr .x2, 8192⟩ : Region) ∈ s.wr := by rw [hw]; simp
   rw [x25519Base]

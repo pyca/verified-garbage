@@ -147,12 +147,22 @@ theorem step_mono {τ σ τ' : T} (i : Instr) (h : taint.le τ σ = true) (hs : 
 
 theorem le_refl (τ : T) : taint.le τ τ = true := le_iff.mpr ⟨RegSet.subset_refl _, RegSet.subset_refl _⟩
 
-/-- An instruction keeps what is public of `F`, a set of general-purpose
-registers it does not write (and no vector register). -/
-def keeps (F : T) (i : Instr) : Bool := F.2.bits == 0 && Taint.keepsI F.1 i
+/-- What of the vector registers `F` an instruction keeps public: a `dup` all
+but its destination, a `umov` and a scalar instruction all of them, any other
+instruction none. -/
+def vkeeps (F : RegSet VReg) : Instr → Bool
+  | .vop (.dup _ d _) => !F.mem d
+  | .umov .. => true
+  | i => scalar i
 
-theorem keeps_vec {F : T} {i : Instr} (h : keeps F i = true) : F.2.bits = 0 := by
-  simp only [keeps, Bool.and_eq_true, beq_iff_eq] at h; exact h.1
+/-- An instruction keeps what is public of `F`, a set of general-purpose
+registers it does not write, and of vector registers it does not write
+(`vkeeps`). -/
+def keeps (F : T) (i : Instr) : Bool := (F.2.bits == 0 || vkeeps F.2 i) && Taint.keepsI F.1 i
+
+theorem keeps_vec {F : T} {i : Instr} (h : keeps F i = true) :
+    F.2.bits = 0 ∨ vkeeps F.2 i = true := by
+  simp only [keeps, Bool.and_eq_true, Bool.or_eq_true, beq_iff_eq] at h; exact h.1
 
 theorem keeps_gpr {F : T} {i : Instr} (h : keeps F i = true) : Taint.keepsI F.1 i = true := by
   simp only [keeps, Bool.and_eq_true] at h; exact h.2
@@ -166,25 +176,42 @@ theorem vec_sub {Φ F : T} (hΦF : taint.le Φ F = true) (h0 : F.2.bits = 0) (s 
 
 theorem step_keeps {F Φ σ σ' : T} (i : Instr) (hk : keeps F i = true) (hΦF : taint.le Φ F = true)
     (hΦ : taint.le Φ σ = true) (hs : step σ i = some σ') : taint.le Φ σ' = true := by
-  have hv := vec_sub hΦF (keeps_vec hk)
+  have hk' := keeps_vec hk
   have hg := keeps_gpr hk
   have hΦF' := (le_iff.mp hΦF).1
   have hΦ' := (le_iff.mp hΦ).1
+  have hΦv := (le_iff.mp hΦ).2
   have ordinary : (Taint.step σ.1 i).map (fun g => (g, afterV σ.2 i)) = some σ' →
-      taint.le Φ σ' = true := fun hs => by
+      Φ.2.subset (afterV σ.2 i) = true → taint.le Φ σ' = true := fun hs hv => by
     obtain ⟨g, hg', rfl⟩ := Option.map_eq_some_iff.mp hs
-    exact le_iff.mpr ⟨Taint.step_keeps i hg hΦF' hΦ' hg', hv _⟩
+    exact le_iff.mpr ⟨Taint.step_keeps i hg hΦF' hΦ' hg', hv⟩
+  -- An instruction that keeps no vector register: `F` has none.
+  have none : vkeeps F.2 i = false → Φ.2.subset (afterV σ.2 i) = true := fun hn => by
+    rcases hk' with h0 | hv
+    · exact vec_sub hΦF h0 _
+    · rw [hn] at hv; cases hv
+  -- A scalar instruction keeps every vector register.
+  have keepsAll : scalar i = true → Φ.2.subset (afterV σ.2 i) = true := fun hsc => by
+    simp only [afterV, hsc, ↓reduceIte]; exact hΦv
   cases i with
   | vop op =>
-    cases op <;> try exact ordinary hs
+    cases op
     case dup a d n =>
       simp only [step, Option.some.injEq] at hs; subst hs
-      exact le_iff.mpr ⟨hΦ', hv _⟩
+      refine le_iff.mpr ⟨hΦ', ?_⟩
+      rcases hk' with h0 | hv
+      · exact vec_sub hΦF h0 _
+      · simp only [vkeeps, Bool.not_eq_true'] at hv
+        unfold setV; split
+        · exact RegSet.subset_insert_of hΦv d
+        · exact RegSet.subset_erase_of (le_iff.mp hΦF).2 hΦv hv
+    all_goals exact ordinary hs (none rfl)
   | umov sz d n k =>
     simp only [step, Option.some.injEq] at hs; subst hs
     simp only [Taint.keepsI, Taint.gprDst, Bool.not_eq_true'] at hg
-    exact le_iff.mpr ⟨Taint.set_keeps hΦF' hΦ' hg _, hv _⟩
-  | _ => exact ordinary hs
+    exact le_iff.mpr ⟨Taint.set_keeps hΦF' hΦ' hg _, hΦv⟩
+  | ldrq => exact ordinary hs (none rfl)
+  | _ => exact ordinary hs (keepsAll rfl)
 
 /-- A call writes `x16`, `x17` and `x30`. -/
 def keepsCall (F : T) : Bool :=
@@ -278,5 +305,8 @@ instance : VG.Taint.LeFrame taint where
     · exact hΦ
 
 end AArch64.VectorTaint
+
+/-- Equality of AArch64 code, for summaries of code that is not a call. -/
+instance : VG.Taint.CodeEq AArch64.isa := ⟨@VG.Taint.codeBeq AArch64.Instr AArch64.Cond _ _⟩
 
 end VG

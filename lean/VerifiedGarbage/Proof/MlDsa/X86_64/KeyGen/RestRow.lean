@@ -224,19 +224,20 @@ theorem bp_ok {A : Nat → Poly} {S : Nat → IPoly} {R : BitVec 64} {s : State}
   have hkl := hF.kl; have hl := hF.l; have hk := hF.k
   have S₀ := h.kc.site hF hp
   have L := S₀.lay
-  rcases hF.eta with ⟨_, hlen⟩ | ⟨_, hlen⟩ <;>
+  have hlen : lenS p = 96 ∨ lenS p = 128 := hF.eta.imp And.right And.right
   refine WP.mono (bpAt_ok (by decide) (by decide) (tP0_ok hF)
-    ⟨by simp only [oT0, hlen]; omega, show Reg.r13 ∉ MlKem.X86_64.argRegs by decide⟩ (by lay [hF.pk, hF.sk, hlen])
-    (by lay [hF.pk, hF.sk, hlen]) hP.bitPack S₀ (packIn_t0 h0)) fun s' ⟨hP', hx, hb⟩ => ?_ <;>
-  · have hP'' : PPostB s s' [((.r13, oT0 p + 416 * i), 416)] := hP'.b
-    have hk' := h.keep hF hp hP'' hx (hP'.cs .r15 (by decide)) (chk_bp hF hi)
-    refine ⟨hk'.kc, hk'.r15, hk'.good, hk'.small, hk'.aS, hk'.s2, hk'.s1, hk'.pk0, hk'.sk0, hk'.sk1, hk'.packs,
-      fun i' hi' => ?_⟩
-    rcases (by omega : i' < i ∨ i' = i) with hi' | rfl
-    · exact hk'.rows i' hi'
-    · refine ⟨by rw [L.keepBytes hP'' (by lay [hF.pk, hF.sk, hlen])]; exact h1, ?_⟩
-      rw [hP''.pa (p := (.r13, oT0 p + 416 * i')) (show Reg.r13 ∈ bases by decide), hb, h0.2, modPm_t0]
-      rfl
+    ⟨by rcases hlen with hl | hl <;> simp only [oT0, hl] <;> omega,
+      show Reg.r13 ∉ MlKem.X86_64.argRegs by decide⟩ (by lay [hF.pk, hF.sk])
+    (by lay [hF.pk, hF.sk]) hP.bitPack S₀ (packIn_t0 h0)) fun s' ⟨hP', hx, hb⟩ => ?_
+  have hP'' : PPostB s s' [((.r13, oT0 p + 416 * i), 416)] := hP'.b
+  have hk' := h.keep hF hp hP'' hx (hP'.cs .r15 (by decide)) (chk_bp hF hi)
+  refine ⟨hk'.kc, hk'.r15, hk'.good, hk'.small, hk'.aS, hk'.s2, hk'.s1, hk'.pk0, hk'.sk0, hk'.sk1, hk'.packs,
+    fun i' hi' => ?_⟩
+  rcases (by omega : i' < i ∨ i' = i) with hi' | rfl
+  · exact hk'.rows i' hi'
+  · refine ⟨by rw [L.keepBytes hP'' (by lay [hF.pk, hF.sk])]; exact h1, ?_⟩
+    rw [hP''.pa (p := (.r13, oT0 p + 416 * i')) (show Reg.r13 ∈ bases by decide), hb, h0.2, modPm_t0]
+    rfl
 
 end
 
@@ -350,10 +351,11 @@ theorem bp_piece : Piece p (RowI p i (sbpIs p i)) (KRx p (p.ℓ + p.k) p.ℓ (i 
     PackIn y.mem (pa y (t0P p)) 4095 4096) ?_
     fun _ _ _ _ p₁ p₂ pub ⟨_, _, _, h₁, t₁⟩ ⟨_, _, _, h₂, t₂⟩ =>
       ⟨kc_two hF p₁ p₂ pub h₁.kc h₂.kc, packIn_t0 t₁.1, packIn_t0 t₂.1⟩
-  rcases hF.eta with ⟨_, hlen⟩ | ⟨_, hlen⟩ <;>
+  have hlen : lenS p = 96 ∨ lenS p = 128 := hF.eta.imp And.right And.right
   exact bpAt_tr (by decide) (by decide) (tP0_ok hF)
-    ⟨by simp only [oT0, hlen]; omega, show Reg.r13 ∉ MlKem.X86_64.argRegs by decide⟩ (by lay [hF.pk, hF.sk, hlen])
-    (by lay [hF.pk, hF.sk, hlen]) hP.bitPack (show Reg.rbx ∈ kgRegs by decide) (show Reg.r13 ∈ kgRegs by decide)
+    ⟨by rcases hlen with hl | hl <;> simp only [oT0, hl] <;> omega,
+      show Reg.r13 ∉ MlKem.X86_64.argRegs by decide⟩ (by lay [hF.pk, hF.sk])
+    (by lay [hF.pk, hF.sk]) hP.bitPack (show Reg.rbx ∈ kgRegs by decide) (show Reg.r13 ∈ kgRegs by decide)
 
 end
 

@@ -97,7 +97,7 @@ def aChk (p : Params) (e : Nat) : Bool :=
     (List.range 4).all (fun k => keepB (vB p) wsB (sc (oSB4 + 34 * k)) 32 &&
       keepB (vB p) (wsA e) (sc (oSB4 + 34 * k)) 32)
 
-theorem aChk_all : ∀ p ∈ params, ∀ e < p.k * p.ℓ, aChk p e = true := by decide
+theorem aChk_all : ∀ p ∈ params, ∀ e < p.k * p.ℓ, aChk p e = true := by decide +kernel
 
 
 theorem keepChk_spec {p : Params} {ws : List (Ptr × Nat)} (h : keepChk p ws = true) :
@@ -276,7 +276,7 @@ def gChk (p : Params) (e : Nat) : Bool :=
     inB (vB p) (pS (20 + e)) 4096 && inB (vW p) (pS (20 + e)) 4096 &&
     s3Chk p e (inGrp p.ℓ e) [(pS (20 + e), 4096), (sc (oR4 p), 8192)] && decide (e + 4 ≤ p.k * p.ℓ)
 
-theorem gChk_all : ∀ p ∈ params, ∀ g < p.k * p.ℓ / 4, gChk p (4 * g) = true := by decide
+theorem gChk_all : ∀ p ∈ params, ∀ g < p.k * p.ℓ / 4, gChk p (4 * g) = true := by decide +kernel
 
 theorem pa_poly4 (s : State) (e k : Nat) : poly4 (pa s (pS (20 + e))) k = pa s (pS (20 + (e + k))) := by
   unfold poly4
@@ -378,7 +378,7 @@ def sChk (p : Params) : Bool :=
     inB (vB p) pC 1024 && inB (vW p) pC 1024 &&
     (List.range p.k).all (fun r => (List.range p.ℓ).all fun c => keepB (vB p) wsC (pA p.ℓ r c) 1024)
 
-theorem sChk_all : ∀ p ∈ params, sChk p = true := by decide
+theorem sChk_all : ∀ p ∈ params, sChk p = true := by decide +kernel
 
 /-- After `ρ` is copied to `SB` and the first `j` seeds of `SB4`. -/
 structure RhoS (p : Params) (h : List (Vector Bool n)) (j : Nat) (σ st : State) : Prop where
@@ -410,7 +410,7 @@ def rChk (p : Params) (j : Nat) : Bool :=
     keepChk p [(sc (oSB4 + 34 * j), 32)] && keepB (vB p) [(sc (oSB4 + 34 * j), 32)] (sc oSB) 32 &&
     (List.range j).all (fun k => keepB (vB p) [(sc (oSB4 + 34 * j), 32)] (sc (oSB4 + 34 * k)) 32)
 
-theorem rChk_all : ∀ p ∈ params, ∀ j < 4, rChk p j = true := by decide
+theorem rChk_all : ∀ p ∈ params, ∀ j < 4, rChk p j = true := by decide +kernel
 
 theorem copyK_ok {p : Params} (hp : p ∈ params) {σ : State} (hv : VPre p σ) {h : List (Vector Bool n)} {j : Nat}
     (hj : j < 4) {s : State} (hs : RhoS p h j σ s) :

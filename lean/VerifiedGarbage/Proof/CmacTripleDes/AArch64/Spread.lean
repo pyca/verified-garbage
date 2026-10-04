@@ -103,7 +103,12 @@ theorem spreadV_ok (s : State) (hG : s.v .v5 = ofVBytes gatherIndex) (hM : s.v .
     simp only [s₅, s₄, s₃, s₂, s₁, v_setV_of_ne _ _ (by decide : VReg.v7 ≠ .v4),
       v_setV_of_ne _ _ (by decide : VReg.v7 ≠ .v3), v_setV_of_ne _ _ (by decide : VReg.v7 ≠ .v2),
       v_setV_of_ne _ _ (by decide : VReg.v7 ≠ .v1), hO]
-  refine ⟨s₆, ?_, ?_, fun w h1 h2 h3 h4 => ?_, rfl⟩
+  -- Only `v` changes (`rfl` would unify the states field by field, trying eta on each).
+  have hv : ∀ (t : State) (r : VReg) (y : BitVec 128), t = { s with v := t.v } →
+      t.setV r y = { s with v := (t.setV r y).v } := by
+    intro t r y h; rw [h]; rfl
+  refine ⟨s₆, ?_, ?_, fun w h1 h2 h3 h4 => ?_,
+    hv _ _ _ (hv _ _ _ (hv _ _ _ (hv _ _ _ (hv _ _ _ (hv _ _ _ rfl)))))⟩
   · rw [spreadV]
     rfl
   · have a₆ : s₆.v .v4 = s₅.v .v4 ^^^ s₅.v .v7 := v_setV_self _ _ _

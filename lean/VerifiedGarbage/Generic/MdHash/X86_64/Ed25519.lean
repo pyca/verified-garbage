@@ -2,7 +2,7 @@ import VerifiedGarbage.TCB.X86_64.Target
 import VerifiedGarbage.Proof.Ed25519.X86_64.PublicKey.Verified
 import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyMessage.Verified
 import VerifiedGarbage.Proof.Ed25519.X86_64.SignCached.Verified
-import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyLit
+import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyCode
 import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.Window
 
 /-!
@@ -89,11 +89,14 @@ def artifacts (v : Proof.Pbkdf2.Md.X86_64.MdHash) : List Artifact :=
   match v.sha512 with
   | none => []
   | some c => withField c Impl.X25519.X86_64.baseline "" []
-        ⟨by lit_decide, by lit_decide, by lit_decide, Code.all_of_allInstrs (by lit_decide)⟩ ++
+        ⟨Proof.Ed25519.X86_64.VerifyCode.baseline_mx, by lit_decide, by lit_decide,
+          Proof.Ed25519.X86_64.VerifyCode.baseline_spSafe⟩ ++
       withField c Impl.X25519.X86_64.adx "_adx" ["bmi2", "adx"]
-        ⟨by lit_decide, by lit_decide, by lit_decide, Code.all_of_allInstrs (by lit_decide)⟩ ++
+        ⟨Proof.Ed25519.X86_64.VerifyCode.adx_mx, by lit_decide, by lit_decide,
+          Proof.Ed25519.X86_64.VerifyCode.adx_spSafe⟩ ++
       [verifyWith c Impl.X25519.X86_64.adx Impl.Ed25519.X86_64.Ifma.double4 "_ifma"
         ["avx", "avx2", "bmi2", "adx", "avx512ifma", "avx512vl"]
-        ⟨by lit_decide, by lit_decide, by lit_decide, Code.all_of_allInstrs (by lit_decide)⟩]
+        ⟨Proof.Ed25519.X86_64.VerifyCode.ifma_mx, by lit_decide, by lit_decide,
+          Proof.Ed25519.X86_64.VerifyCode.ifma_spSafe⟩]
 
 end VG.Generic.MdHash.X86_64.Ed25519

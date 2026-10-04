@@ -301,7 +301,7 @@ theorem hPart_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv mx : BitVec
     simp only [hm, hm₆, hT₅, hT₃, hY₂, hq₅, hq₄, hct, ↓reduceIte]
   · by_cases h : r = .rdi
     · subst h; rw [hdi, hg.rdi]
-    · exact kall.1 r (by simp only [mmRegs, List.mem_cons, List.mem_append] at hr ⊢; simp_all)
+    · exact (kall.mono (rs' := .rdi :: mmRegs) (by decide)).1 r (by rw [List.mem_cons, not_or]; exact ⟨h, hr⟩)
 
 /-- What `p`'s phase changes in the modulus' workspace. -/
 def pRanges (w : Nat) : List (Nat × Nat) := gRanges w ++ [(slot w Public.aX, 8 * (w + 2))]
@@ -543,6 +543,6 @@ theorem pPhase_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv mx mq : Bi
   refine ⟨hg', hws', hX', hlt', hh', f₀₅.trans (hsub sx fx'), ⟨fun r hr => ?_, kall.2⟩⟩
   by_cases h : r = .rdi
   · subst h; rw [hg'.rdi, hg.rdi]
-  · exact kall.1 r (by simp only [mmRegs, List.mem_cons, List.mem_append] at hr ⊢; simp_all)
+  · exact (kall.mono (rs' := .rdi :: mmRegs) (by decide)).1 r (by rw [List.mem_cons, not_or]; exact ⟨h, hr⟩)
 
 end VG.Proof.Bignum.X86_64
