@@ -27,6 +27,8 @@ DECIDE_SIMP_ALLOWED = {
     "VerifiedGarbage/Proof/Aes/X86_64/Ctr32.lean": 1,
     "VerifiedGarbage/Proof/Aes/X86_64/ExpandKey.lean": 3,
     "VerifiedGarbage/Proof/Aes/X86_64/Group.lean": 3,
+    "VerifiedGarbage/Proof/AesSiv/AArch64/CmacOf.lean": 2,
+    "VerifiedGarbage/Proof/AesSiv/AArch64/Enc.lean": 2,
     "VerifiedGarbage/Proof/AesSiv/X86_64/CmacOf.lean": 6,
     "VerifiedGarbage/Proof/AesSiv/X86_64/Crypt.lean": 1,
     "VerifiedGarbage/Proof/AesSiv/X86_64/Ctr.lean": 7,
