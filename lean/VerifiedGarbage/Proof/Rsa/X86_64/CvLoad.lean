@@ -34,6 +34,8 @@ structure CvIn where
   pb : List Byte
   qb : List Byte
   db : List Byte
+  W : List Region
+  sp : BitVec 64
 
 /-- What every piece of `main` keeps, from the memory `m₀` on entry to
 `main`. -/
@@ -45,18 +47,20 @@ structure CvS (I : CvIn) (m₀ : Mem) (s : State) : Prop where
   q : Src s I.B I.Z I.pQ I.qb
   d : Src s I.B I.Z I.pD I.db
   inScr : InScr I.B I.Z m₀ s.mem
+  wr : s.wr = I.W
+  rsp : s.gpr .rsp = I.sp
 
 theorem CvS.step {I : CvIn} {m₀ : Mem} {s t : State} (h : CvS I m₀ s) {rs : List (Nat × Nat)}
     (hf : Frm I.B rs s.mem t.mem) (hm : ∀ r ∈ rs, Mut r) (hz : ∀ r ∈ rs, r.1 + r.2 ≤ I.Z) {regs : List Reg}
-    (k : Keep regs s t) (hr : .rdi ∉ regs) : CvS I m₀ t :=
+    (k : Keep regs s t) (hr : .rdi ∉ regs ∧ .rsp ∉ regs) : CvS I m₀ t :=
   have hi : InScr I.B I.Z s.mem t.mem := InScr.of_frm hf hz
-  ⟨h.ws.congr hf hm k hr, h.args.congr (argSlot_frm hf hm), h.n.congrK hi k, h.p.congrK hi k, h.q.congrK hi k,
-    h.d.congrK hi k, h.inScr.trans hi⟩
+  ⟨h.ws.congr hf hm k hr.1, h.args.congr (argSlot_frm hf hm), h.n.congrK hi k, h.p.congrK hi k, h.q.congrK hi k,
+    h.d.congrK hi k, h.inScr.trans hi, k.2.2.trans h.wr, (k.gpr hr.2).trans h.rsp⟩
 
 /-- `CvS` after a piece that changes only array `j`'s first `n` bytes. -/
 theorem CvS.arr {I : CvIn} {m₀ : Mem} {s t : State} (h : CvS I m₀ s) {j n : Nat} (hj : j < 16)
     (hn : n ≤ 8 * (wk I.k + 2)) (ho : Outside I.B (slot (wk I.k) j) n s.mem t.mem) {regs : List Reg}
-    (k : Keep regs s t) (hr : .rdi ∉ regs) : CvS I m₀ t :=
+    (k : Keep regs s t) (hr : .rdi ∉ regs ∧ .rsp ∉ regs) : CvS I m₀ t :=
   h.step (Frm.of_outside ho (List.mem_singleton_self _)) (fun r hr => by
     rw [List.mem_singleton.mp hr]; exact Mut.ofSlot _ _ _) (fun r hr => by
     rw [List.mem_singleton.mp hr]; have := h.ws.sl hj; dsimp only; omega) k hr

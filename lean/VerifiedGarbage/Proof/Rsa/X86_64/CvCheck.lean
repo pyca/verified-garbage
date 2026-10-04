@@ -38,7 +38,7 @@ abbrev mword (m : Mem) (B : Addr) : BitVec 64 := word m B (8 * Impl.Bignum.X86_6
 /-- `CvS` and the mask, after a store to the mask's slot. -/
 theorem CvS.mask {I : CvIn} {m₀ : Mem} {s t : State} (h : CvS I m₀ s) {v : BitVec 64}
     (hm : t.mem = s.mem.writeW (off I.B (8 * Impl.Bignum.X86_64.Public.sMask)) v) {regs : List Reg}
-    (k : Keep regs s t) (hr : .rdi ∉ regs) : CvS I m₀ t ∧ mword t.mem I.B = v ∧
+    (k : Keep regs s t) (hr : .rdi ∉ regs ∧ .rsp ∉ regs) : CvS I m₀ t ∧ mword t.mem I.B = v ∧
       ∀ j < 16, wv t.mem I.B (slot (wk I.k) j) (wk I.k + 2) = wv s.mem I.B (slot (wk I.k) j) (wk I.k + 2) := by
   have hn := h.ws.scr.nowrap
   have h256 := h.ws.h256
