@@ -27,6 +27,13 @@ open VG.Impl.Ecdh.X86 (QY R2P BP QXM QYM W0 W1 W2 W3 PX PY)
 
 variable {c : Cfg}
 
+/-- The working-space ranges of a stage are in the working space. -/
+theorem le_append {W W' : List (Nat × Nat)} (h : ∀ w ∈ W, w.1 + w.2 ≤ size) (h' : ∀ w ∈ W', w.1 + w.2 ≤ size) :
+    ∀ w ∈ W ++ W', w.1 + w.2 ≤ size := fun w hw => by
+  rcases List.mem_append.mp hw with hw | hw
+  · exact h w hw
+  · exact h' w hw
+
 /-- `curveOps` on slot numbers. -/
 def curveN : List FOp :=
   [.mul W0 QYM QYM, .mul W1 QXM QXM, .mul W2 W1 QXM, .mul W1 AP QXM, .add W3 W2 W1,

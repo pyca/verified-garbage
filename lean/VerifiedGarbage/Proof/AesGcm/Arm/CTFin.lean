@@ -4,8 +4,9 @@ import VerifiedGarbage.Proof.AesGcm.Arm.StreamVerify
 /-!
 # AES-GCM on ARMv7: `finTag`, `vg_aes_gcm_stream_finish` and `vg_aes_gcm_stream_verify` are constant time
 
-Untrusted: everything here is checked by Lean. `verify` compares the tags
-without a branch: only the tag length decides which code runs.
+Untrusted: everything here is checked by Lean. `finish` copies the tag to
+`tag` through a pointer read from the stack (`tagOut_wp`); `verify` compares
+the tags without a branch: only the tag length decides which code runs.
 -/
 
 set_option linter.unusedSimpArgs false
@@ -143,16 +144,20 @@ theorem finTag_rel {na : Nat} (hna : 4 ≤ na) {o R : Nat} (ho : o = 0 ∨ o = 1
 
 end
 
-theorem fin_hw {n : Nat} {t : State} (ht : finPre n t) : ∀ r ∈ t.wr, (args t n).Disjoint r := by
-  obtain ⟨-, hwr, -, -, -, dsA, dWA, -⟩ := ht
-  intro r hr
-  rw [hwr] at hr
-  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl
-  · exact dsA.symm
-  · exact dWA.symm
+/-- `tagOut` in a run from `t₀`, with the tag at its stack argument 4: what follows needs only `r11`. -/
+theorem tagOut_wp {c st w sp k7 k8 : BitVec 32} (L : Lay c st w sp) {n : Nat} (hn : 5 ≤ n) {t₀ s : State}
+    (he : Env c st w sp k7 k8 s) (hk : ArgsKeep n t₀ s) (hf : t₀.sp.toNat + 4 * n ≤ 2 ^ 32)
+    (hin : args t₀ n ∈ t₀.rd) (hTw : (⟨State.addr (arg t₀ 4), 16⟩ : Region) ∈ t₀.wr)
+    (hTf : (arg t₀ 4).toNat + 16 ≤ 2 ^ 32) (hTd : (⟨State.addr (arg t₀ 4), 16⟩ : Region).Disjoint ⟨State.addr w, 16⟩) :
+    WP isa (.block tagOut) s fun s' => s'.gpr .r11 = w := by
+  obtain ⟨i4, v4⟩ := hk.at hf hin 4 (by omega) (show 4 * 4 = 16 from rfl)
+  obtain ⟨s', run, -, -, g, -⟩ := tagOut_ok L he i4 v4 (by rw [hk.wr]; exact covers_of_mem hTw) hTf hTd
+  exact WP.of_runBlock ⟨s', run, by rw [g _ (by decide) (by decide), he.r11]⟩
 
-theorem fin_entry_agree {n : Nat} {s₀ s₀' : State} (h0 : finPre n s₀) (h0' : finPre n s₀') (hq : finPub n s₀ s₀') :
+theorem fin_hw {n wi : Nat} {t : State} (ht : finPre n wi t) : ∀ r ∈ t.wr, (args t n).Disjoint r := ht.2.1.2.2
+
+theorem fin_entry_agree {n wi : Nat} {s₀ s₀' : State} (h0 : finPre n wi s₀) (h0' : finPre n wi s₀')
+    (hq : finPub n s₀ s₀') :
     ∀ s s', s = s₀ → s' = s₀' → VG.Arm.Taint.Agree (argTaint [.r0, .r1, .r2] (4 * n)) s s' := by
   obtain ⟨q₀, q₁, q₂, q₃, qa⟩ := hq
   intro s s' e e'
@@ -165,38 +170,51 @@ theorem fin_entry_agree {n : Nat} {s₀ s₀' : State} (h0 : finPre n s₀) (h0'
 theorem streamFinish_rel {s₀ s₀' : State} (h0 : streamFinishArm.pre s₀) (h0' : streamFinishArm.pre s₀')
     (hq : streamFinishArm.pub s₀ s₀') :
     RelCT isa (fun a b => a = s₀ ∧ b = s₀') streamFinish fun _ _ => True := by
-  have h0₅ : finPre 5 s₀ := h0
-  have h0₅' : finPre 5 s₀' := h0'
+  have h0₆ : finPre 6 5 s₀ := streamFinishPreArm.fin h0
+  have h0₆' : finPre 6 5 s₀' := streamFinishPreArm.fin h0'
   obtain ⟨q₀, q₁, q₂, q₃, qa⟩ := id hq
-  have L := finLay h0₅
-  have hR := h0₅.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2
-  have spf := h0₅.2.2.2.2.2.2.2.2.2.2.2.2.2.2.1
-  have a := rel_agree (F := fun s => s = s₀) (F' := fun s => s = s₀') (G := SF1 5 s₀) (G' := SF1 5 s₀')
-    (argTaint [.r0, .r1, .r2] (4 * 5)) (c := .block finEntry) (fin_entry_agree h0₅ h0₅' hq) ⟨_, by taint_decide⟩
-    (fun s e => by rw [e]; exact fin1_wp h0₅ (by decide) fun _ h => h)
-    (fun s e => by rw [e]; exact fin1_wp h0₅' (by decide) fun _ h => h)
-  let G : State → Prop := fun s => ∃ k7 k8, Env (s₀.gpr .r0) (s₀.gpr .r2) (arg s₀ 4) s₀.sp k7 k8 s
-  have tg : ∀ {t₀ : State}, finPre 5 t₀ → t₀.sp = s₀.sp → arg t₀ 4 = arg s₀ 4 → t₀.gpr .r0 = s₀.gpr .r0 →
-      t₀.gpr .r2 = s₀.gpr .r2 → ∀ s, SF1 5 t₀ s → WP isa (finTag 0) s G := fun {t₀} ht e0 e4 er0 er2 s h1 =>
+  have L := finLay h0₆
+  have hR := h0₆.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2
+  have spf := h0₆.2.2.2.2.2.2.2.2.2.2.2.2.2.2.1
+  have spf' := h0₆'.2.2.2.2.2.2.2.2.2.2.2.2.2.2.1
+  have a := rel_agree (F := fun s => s = s₀) (F' := fun s => s = s₀') (G := SF1 6 5 s₀) (G' := SF1 6 5 s₀')
+    (argTaint [.r0, .r1, .r2] (4 * 6)) (c := .block (finEntry 20)) (fin_entry_agree h0₆ h0₆' hq) ⟨_, by taint_decide⟩
+    (fun s e => by rw [e]; exact fin1_wp h0₆ (by decide) (by decide) fun _ h => h)
+    (fun s e => by rw [e]; exact fin1_wp h0₆' (by decide) (by decide) fun _ h => h)
+  let G : State → State → Prop := fun t₀ s =>
+    (∃ k7 k8, Env (s₀.gpr .r0) (s₀.gpr .r2) (arg s₀ 5) s₀.sp k7 k8 s) ∧ ArgsKeep 6 t₀ s
+  have tg : ∀ {t₀ : State}, finPre 6 5 t₀ → t₀.sp = s₀.sp → arg t₀ 5 = arg s₀ 5 → t₀.gpr .r0 = s₀.gpr .r0 →
+      t₀.gpr .r2 = s₀.gpr .r2 → ∀ s, SF1 6 5 t₀ s → WP isa (finTag 0) s (G t₀) := fun {t₀} ht e0 e4 er0 er2 s h1 =>
     WP.mono (fin_tag ht (by decide) h1 (.inl rfl) (a := List.replicate ((arg t₀ 0).toNat % 16) 0)
       (ct := List.replicate (arg t₀ 3 ++ arg t₀ 2).toNat 0) (by simp) (by simp)) fun s' h => by
       obtain ⟨k7, he⟩ := h.env
       rw [e0, e4, er0, er2] at he
-      exact ⟨k7, _, he⟩
+      exact ⟨⟨k7, _, he⟩, h.args⟩
   have e1 : BitVec.ofNat 32 (s₀.gpr .r1).toNat = s₀.gpr .r1 := by simp
-  have b := rel_wp (F := SF1 5 s₀) (F' := SF1 5 s₀') (G := G) (G' := G)
-    (finTag_rel L (na := 5) (by decide) (o := 0) (.inl rfl) hR spf q₀ qa (fin_hw h0₅) (fin_hw h0₅')
-      (by rw [h0₅.1]; simp) (by rw [h0₅'.1]; simp) (fin_argsTag h0₅ (.inl rfl))
-      (by have := fin_argsTag h0₅' (o := 0) (.inl rfl); rwa [← q₃, ← qa 4 (by decide), ← q₀] at this) |>.mono
+  have b := rel_wp (F := SF1 6 5 s₀) (F' := SF1 6 5 s₀') (G := G s₀) (G' := G s₀')
+    (finTag_rel L (na := 6) (by decide) (o := 0) (.inl rfl) hR spf q₀ qa (fin_hw h0₆) (fin_hw h0₆')
+      h0₆.1.2 h0₆'.1.2 (fin_argsTag h0₆ (.inl rfl))
+      (by have := fin_argsTag h0₆' (o := 0) (.inl rfl); rwa [← q₃, ← qa 5 (by decide), ← q₀] at this) |>.mono
       (fun s s' ⟨h₁, h₂⟩ => ⟨⟨_, by rw [e1]; exact h₁.env, h₁.args⟩, ⟨_, by
-        have := h₂.env; rw [← q₁, ← q₂, ← q₃, ← qa 4 (by decide), ← q₀] at this; rw [e1]; exact this, h₂.args⟩⟩)
+        have := h₂.env; rw [← q₁, ← q₂, ← q₃, ← qa 5 (by decide), ← q₀] at this; rw [e1]; exact this, h₂.args⟩⟩)
       fun _ _ h => h)
-    (tg h0₅ rfl rfl rfl rfl) (tg h0₅' q₀.symm (qa 4 (by decide)).symm q₁.symm q₃.symm)
+    (tg h0₆ rfl rfl rfl rfl) (tg h0₆' q₀.symm (qa 5 (by decide)).symm q₁.symm q₃.symm)
+  -- the tag copied out
+  let W : State → Prop := fun s => s.gpr .r11 = arg s₀ 5
+  obtain ⟨hrd, hwr, -, -, -, -, -, -, tW, -, -, -, -, -, -, -, -, fT, -⟩ := h0
+  obtain ⟨-, hwr', -, -, -, -, -, -, tW', -, -, -, -, -, -, -, -, fT', -⟩ := h0'
+  have c := rel_agree (F := G s₀) (F' := G s₀') (G := W) (G' := W) (argTaint [.r11] (4 * 6)) (c := .block tagOut)
+    (fun s s' ⟨⟨_, _, he⟩, hk⟩ ⟨⟨_, _, he'⟩, hk'⟩ => hk.agree hk' q₀ spf qa (fin_hw h0₆) (fin_hw h0₆') fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr; rw [he.r11, he'.r11]) ⟨_, by taint_decide⟩
+    (fun s ⟨⟨_, _, he⟩, hk⟩ => tagOut_wp L (by decide) he hk spf h0₆.1.2 (by rw [hwr]; simp) fT
+      (tW.sub_right (Region.sub_prefix (by decide))))
+    (fun s ⟨⟨_, _, he⟩, hk⟩ => tagOut_wp L (by decide) he hk spf' h0₆'.1.2 (by rw [hwr']; simp) fT'
+      (by rw [qa 5 (by decide)]; exact tW'.sub_right (Region.sub_prefix (by decide))))
   obtain ⟨_, hB⟩ : ∃ h, (taint.check (Taint.ofRegs [.r11]) (.block restore) h).isSome = true := ⟨_, by taint_decide⟩
-  have c := RelCT.taint (A := taint) (P := fun s₁ s₂ => G s₁ ∧ G s₂) (c := .block restore) (Taint.ofRegs [.r11])
-    (fun s₁ s₂ ⟨⟨_, _, h₁⟩, ⟨_, _, h₂⟩⟩ => Taint.agree_ofRegs fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; rw [h₁.r11, h₂.r11]) hB
-  exact a.seq (b.seq c)
+  have d := RelCT.taint (A := taint) (P := fun s₁ s₂ => W s₁ ∧ W s₂) (c := .block restore) (Taint.ofRegs [.r11])
+    (fun s₁ s₂ ⟨h₁, h₂⟩ => Taint.agree_ofRegs fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr; rw [h₁, h₂]) hB
+  exact a.seq (b.seq (c.seq d))
 
 theorem streamFinish_ct : ConstantTime isa streamFinishArm.pre streamFinishArm.pub streamFinish :=
   fun _ _ _ _ _ _ h₁ h₂ hq e₁ e₂ => (streamFinish_rel h₁ h₂ hq _ _ _ _ _ _ ⟨rfl, rfl⟩ e₁ e₂).1

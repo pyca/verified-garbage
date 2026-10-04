@@ -431,7 +431,9 @@ def Instr.dst : Instr → Option Reg
 
 /-- Intel SDM Vol. 2's "CPUID Feature Flag" column: PSHUFB/PALIGNR need
 SSSE3, SHA256MSG1/MSG2/RNDS2 and SHA1MSG1/MSG2/NEXTE/RNDS4 need SHA,
-AESENC/AESENCLAST/AESKEYGENASSIST need AES, and PCLMULQDQ needs PCLMULQDQ.
+AESENC/AESENCLAST/AESDEC/AESDECLAST/AESIMC/AESKEYGENASSIST need AES
+(`66 0F 38 DC /r`, `66 0F 38 DD /r`, `66 0F 38 DE /r`, `66 0F 38 DF /r`,
+`66 0F 38 DB /r`, `66 0F 3A DF /r ib`), and PCLMULQDQ needs PCLMULQDQ.
 The remaining legacy instructions (among them PADDQ, PSHUFLW, PSHUFHW and
 MOVQ) are SSE2, and the MMX instructions MMX or SSE2, all already in this
 target's i686 baseline. -/
@@ -440,8 +442,8 @@ def Instr.requires : Instr → List String
   | .xop (.bin .sha256msg1 ..) | .xop (.bin .sha256msg2 ..)
     | .xop (.sha256rnds2 ..) | .xop (.bin .sha1msg1 ..) | .xop (.bin .sha1msg2 ..)
     | .xop (.bin .sha1nexte ..) | .xop (.sha1rnds4 ..) => ["sha"]
-  | .xop (.bin .aesenc ..) | .xop (.bin .aesenclast ..)
-    | .xop (.aeskeygenassist ..) => ["aes"]
+  | .xop (.bin .aesenc ..) | .xop (.bin .aesenclast ..) | .xop (.bin .aesdec ..)
+    | .xop (.bin .aesdeclast ..) | .xop (.bin .aesimc ..) | .xop (.aeskeygenassist ..) => ["aes"]
   | .xop (.pclmulqdq ..) => ["pclmulqdq"]
   | _ => []
 

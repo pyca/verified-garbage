@@ -1,4 +1,5 @@
-import VerifiedGarbage.Proof.ChaCha20.X86.Stream.Bytes
+import VerifiedGarbage.Proof.ChaCha20.X86.Stream.Init
+import VerifiedGarbage.Proof.ChaCha20.X86.Variant
 import VerifiedGarbage.Proof.Framework.X86.CallWith
 
 /-!
@@ -55,7 +56,7 @@ namespace VG.Proof.ChaCha20.X86.Stream
 
 open VG VG.X86 VG.Impl.ChaCha20.X86.Stream
 open VG.Impl.ChaCha20.X86 (at_)
-open VG.Proof.ChaCha20.X86 (contains_off)
+open VG.Proof.ChaCha20.X86 (contains_off XorImpl)
 open VG.Spec.ChaCha20 (keyAt restAt leftAt bytesAt stateAt keystream serialize block)
 
 /-! ## The entry state -/
@@ -131,7 +132,7 @@ theorem eaS {d : Nat} (hd : d < 768) : (ST s₀ + BitVec.ofNat 32 d).setWidth 64
 
 theorem sNat {d : Nat} (hd : d < 768) : (ST s₀ + BitVec.ofNat 32 d).toNat = (ST s₀).toNat + d := by
   have := hp.st_fit
-  rw [BitVec.toNat_add, Proof.ChaCha20.X86.Xor.toNat_ofNat_lt32 (by omega), Nat.mod_eq_of_lt (by omega)]
+  rw [BitVec.toNat_add, Proof.ChaCha20.X86.Bytes.toNat_ofNat_lt32 (by omega), Nat.mod_eq_of_lt (by omega)]
 
 theorem eaD {d : Nat} (hd : d < L s₀) : (DP s₀ + BitVec.ofNat 32 d).setWidth 64 = dp s₀ + BitVec.ofNat 64 d :=
   addr_eq (by have := hp.d_fit; omega)
@@ -139,7 +140,7 @@ theorem eaD {d : Nat} (hd : d < L s₀) : (DP s₀ + BitVec.ofNat 32 d).setWidth
 theorem dNat {d : Nat} (hd : d < L s₀) : (DP s₀ + BitVec.ofNat 32 d).toNat = (DP s₀).toNat + d := by
   have := hp.d_fit
   have := L_lt s₀
-  rw [BitVec.toNat_add, Proof.ChaCha20.X86.Xor.toNat_ofNat_lt32 (by omega), Nat.mod_eq_of_lt (by omega)]
+  rw [BitVec.toNat_add, Proof.ChaCha20.X86.Bytes.toNat_ofNat_lt32 (by omega), Nat.mod_eq_of_lt (by omega)]
 
 theorem w_st {d n : Nat} (h : d + n ≤ 768) : InRegions s₀.wr (st s₀ + BitVec.ofNat 64 d) n :=
   ⟨stR s₀, by rw [hp.wr]; exact List.mem_cons_self .., contains_off h (by omega)⟩
@@ -229,9 +230,7 @@ theorem within {r : Region} {rs' : List Region} (r' : Region) (hr' : r' ∈ rs')
   ⟨r', hr', o, hb, hl⟩
 
 theorem block_nosp : NoSp Impl.ChaCha20.X86.block := NoSp.of_all (by lit_decide)
-theorem xor_nosp : NoSp Impl.ChaCha20.X86.Xor.xor := NoSp.of_all (by lit_decide)
 theorem block_stack : stackUse Impl.ChaCha20.X86.block = 0 := by lit_decide
-theorem xor_stack : stackUse Impl.ChaCha20.X86.Xor.xor = 12 := by lit_decide
 
 /-! ## `vg_chacha20_block` -/
 
@@ -341,7 +340,7 @@ theorem xor_pre {s₀ s : State} (hp : APre s₀) (h : At s₀ s) (hnb : 0 < NB 
   have ed := hp.d_fit
   have es : (E s₀ - BitVec.ofNat 32 20).setWidth 64 - 12 = (E s₀ - BitVec.ofNat 32 32).setWidth 64 := by
     rw [hp.E64 (by decide), hp.E64 (by decide), BitVec.sub_sub]; rfl
-  have hn : (BitVec.ofNat 32 (64 * NB s₀)).toNat = 64 * NB s₀ := Proof.ChaCha20.X86.Xor.toNat_ofNat_lt32 (by omega)
+  have hn : (BitVec.ofNat 32 (64 * NB s₀)).toNat = 64 * NB s₀ := Proof.ChaCha20.X86.Bytes.toNat_ofNat_lt32 (by omega)
   refine ⟨?_, ?_, ?_⟩
   · simp only [Proof.ChaCha20.xorX86, State.withRegions_rd, State.withRegions_wr,
       State.withRegions_gpr, arg_withRegions, argAddr_withRegions, a0, a1, a2, a3, h.argAddr0,
@@ -379,7 +378,7 @@ theorem xor_pre {s₀ s : State} (hp : APre s₀) (h : At s₀ s) (hnb : 0 < NB 
     · exact within (stR s₀) (by simp) 256 rfl (by show 256 + 320 ≤ 768; omega)
     · exact within (below (E s₀) 16) (by simp) 0 (by simp) (by simp)
 
-theorem xor_call {s₀ s : State} (hp : APre s₀) (h : At s₀ s) (hnb : 0 < NB s₀)
+theorem xor_call (v : XorImpl) {s₀ s : State} (hp : APre s₀) (h : At s₀ s) (hnb : 0 < NB s₀)
     (hedx : s.gpr .edx = ST s₀ + BitVec.ofNat 32 192) (hesi : s.gpr .esi = DP s₀ + BitVec.ofNat 32 (H s₀))
     (hecx : s.gpr .ecx = BitVec.ofNat 32 (64 * NB s₀)) (heax : s.gpr .eax = ST s₀ + BitVec.ofNat 32 256)
     {Q : State → Prop}
@@ -388,16 +387,16 @@ theorem xor_call {s₀ s : State} (hp : APre s₀) (h : At s₀ s) (hnb : 0 < NB
       bytesAt s'.mem (dp s₀ + BitVec.ofNat 64 (H s₀)) (64 * NB s₀) =
         List.zipWith (· ^^^ ·) (bytesAt s.mem (dp s₀ + BitVec.ofNat 64 (H s₀)) (64 * NB s₀))
           (keystream (stateAt s.mem (st s₀ + BitVec.ofNat 64 192)) (64 * NB s₀)) → Q s') :
-    WP isa callXor s Q := by
+    WP isa (callXor v.callee) s Q := by
   have hk : [Reg.eax, .ecx, .esi, .edx].length ≤ 4 := by decide
   have fit := h.fit hp hk
   have e := hp.sp_lo
   have hHNB := HNB_le s₀
   have hL := L_lt s₀
-  refine WP.callWith Proof.ChaCha20.X86.Xor.xor_correct xor_nosp (by simp) (by decide)
-    (by rw [xor_stack, h.esp]; simp only [List.length_cons, List.length_nil]; omega)
+  refine WP.callWith v.ok v.nosp (by simp) (by decide)
+    (by rw [v.stack, h.esp]; simp only [List.length_cons, List.length_nil]; omega)
     (xor_pre hp h hnb hedx hesi hecx heax) fun s' rd' wr' cs' f' ⟨s₂, m₂, post⟩ => ?_
-  rw [xor_stack, h.esp] at f'
+  rw [v.stack, h.esp] at f'
   refine hQ s' (h.ret rd' wr' cs') cs' (f'.sub fun r hr => ?_) ?_
   · simp only [wrXor, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false,
       List.length_cons, List.length_nil] at hr
@@ -414,7 +413,7 @@ theorem xor_call {s₀ s : State} (hp : APre s₀) (h : At s₀ s) (hnb : 0 < NB
     have a2 : arg (pushed [.eax, .ecx, .esi, .edx] s).callEntry 2 = BitVec.ofNat 32 (64 * NB s₀) := by
       rw [callEntry_arg fit (by decide) (by decide)]; exact hecx
     have hn : (BitVec.ofNat 32 (64 * NB s₀)).toNat = 64 * NB s₀ :=
-      Proof.ChaCha20.X86.Xor.toNat_ofNat_lt32 (by omega)
+      Proof.ChaCha20.X86.Bytes.toNat_ofNat_lt32 (by omega)
     simp only [Proof.ChaCha20.xorX86, arg_withRegions, State.withRegions_mem, a0, a1, a2,
       hp.eaS (d := 192) (by decide), hp.eaD (d := H s₀) (by omega), hn, m₂] at post
     have ef := h.entry_frame hp hk (by decide)

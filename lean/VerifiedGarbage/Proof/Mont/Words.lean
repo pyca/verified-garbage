@@ -112,8 +112,29 @@ theorem writeW8_self (m : Mem) (a : Addr) (v : BitVec 8) : (m.writeW a v) a = v 
 
 /-! ## The modulus -/
 
+/-- The value of the words `ws`, little-endian. -/
+def mwVal : List MWord → Nat
+  | [] => 0
+  | w :: ws => w.val + 2 ^ 64 * mwVal ws
+
+/-- A word the code can multiply by: a power `2^k` with `0 < k < 64`, or a
+word below `2⁶⁴`. -/
+def _root_.VG.Impl.Mont.MWord.ok : MWord → Bool
+  | .pow2 k => 0 < k && k < 64
+  | .gen v => v < 2 ^ 64
+  | _ => true
+
+/-- What a reduction needs of the modulus `m` of `n` words: nothing for
+`general`; for `friendly ws`, `m ≡ -1 (mod 2⁶⁴)` and `ws` the `n` words of
+`(m + 1) / 2⁶⁴`. -/
+def _root_.VG.Impl.Mont.Red.ok : Red → Nat → Nat → Bool
+  | .general, _, _ => true
+  | .friendly ws, n, m => ws.length == n && m % 2 ^ 64 == 2 ^ 64 - 1 &&
+      mwVal ws == (m + 1) / 2 ^ 64 && ws.all MWord.ok
+
 /-- The modulus `m`: its `n` words at `M.mo`, the temporary area at `M.tmp`,
-in the working space and apart, and `M.minv = -m⁻¹ mod 2⁶⁴`. -/
+in the working space and apart, `M.minv = -m⁻¹ mod 2⁶⁴`, and what its
+reduction needs (`Red.ok`). -/
 structure ModOk (M : Mod) (size m : Nat) (mem : Mem) (base : Addr) : Prop where
   n0 : 0 < M.n
   n7 : M.n < 7
@@ -122,6 +143,7 @@ structure ModOk (M : Mod) (size m : Nat) (mem : Mem) (base : Addr) : Prop where
   sep : M.mo + 8 * M.n ≤ M.tmp ∨ M.tmp + 8 * M.n ≤ M.mo
   val : wordsVal mem base M.mo M.n = m
   inv : (m * M.minv.toNat + 1) % 2 ^ 64 = 0
+  red : M.red.ok M.n m = true
 
 /-! ## Slots -/
 

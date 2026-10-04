@@ -16,7 +16,7 @@ set_option linter.unusedSimpArgs false
 namespace VG.Proof.AesCcm.X86_64
 
 open VG VG.X86_64 VG.Impl.AesCcm.X86_64
-open VG.Impl.AesGcm.X86_64 (at_ imm ptr recv cmp)
+open VG.Impl.AesGcm.X86_64 (at_ imm ptr cmp)
 open VG.Proof.Aes.X86_64 (Ctr32Impl)
 
 theorem openCmp_check : ∃ hc, (taint.check (ccmT [])
