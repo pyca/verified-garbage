@@ -262,4 +262,25 @@ theorem init_framed :
     (wa := true) (stack := 48) (bytes := 2580) (init_verified v) (by decide) (init_noEsp v)
     (init_stackUse v) (Proof.AesSiv.initPre_local _) (Proof.AesSiv.initPost_local _) initFrameSat_pre
 
+/-! ## The stack pointer -/
+
+theorem init_spSafe : (initCore v.expand v.callee v.suffix).all (fun i => !isa.writesSp i) = true := by
+  simp only [initCore, Impl.CmacAes.Stream.X86.call4, Code.all, v.expandSpSafe, Proof.CmacAes.X86.subkeys_spSafe v,
+    Bool.and_true]
+  decide +kernel
+
+theorem encrypt_spSafe : (encrypt v.callee v.suffix).all (fun i => !isa.writesSp i) = true := by
+  simp only [encrypt, encS2v, sivEntry, Impl.AesGcm.X86.entry, start, s2vAds, cmacOf, cmacPre, updCall, finCall,
+    Impl.CmacAes.Stream.X86.call6, finish, shortTail, copyN, shortMac, longTail, longMac, ctr, ctrWhole, ctrTail,
+    ctrCall, Code.all, Proof.CmacAes.X86.update_spSafe v, Proof.CmacAes.X86.finalize_spSafe v, v.spSafe,
+    Bool.and_true]
+  decide +kernel
+
+theorem decrypt_spSafe : (decrypt v.callee v.suffix).all (fun i => !isa.writesSp i) = true := by
+  simp only [decrypt, encS2v, sivEntry, Impl.AesGcm.X86.entry, start, s2vAds, cmacOf, cmacPre, updCall, finCall,
+    Impl.CmacAes.Stream.X86.call6, finish, shortTail, copyN, shortMac, longTail, longMac, ctr, ctrWhole, ctrTail,
+    ctrCall, mask, Code.all, Proof.CmacAes.X86.update_spSafe v, Proof.CmacAes.X86.finalize_spSafe v, v.spSafe,
+    Bool.and_true]
+  decide +kernel
+
 end VG.Proof.AesSiv.X86

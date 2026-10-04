@@ -49,8 +49,8 @@ theorem ctrWhole_ct (v : Ctr32Impl) {C W SP : BitVec 32} (L : Lay C W SP) {R : N
         ax, cx, dx, bx, by rw [g₂ _ (by decide) (by decide) (by decide) (by decide), di₁]⟩
 
 theorem tailArgs_ct {W : BitVec 32} {I : State → Prop} (hI : ∀ s, I s → s.gpr .ebp = W) :
-    CT I (.block (zero4 ksOff ++ ctrArgs ++ [.mov .ebx (.reg .ebp), .alu .add .ebx (imm ksOff),
-      .mov .edi (imm 1)])) :=
+    CT I (.block (zero4 ksOff ++ ctrArgs ++ ([.mov .ebx (.reg .ebp), .alu .add .ebx (imm ksOff),
+      .mov .edi (imm 1)] : List Instr))) :=
   CT.taint [.ebp] (pin_ebp hI) (by taint_decide)
 
 theorem ctrTail_ct (v : Ctr32Impl) {C W SP : BitVec 32} (L : Lay C W SP) {R : Nat}

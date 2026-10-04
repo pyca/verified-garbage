@@ -84,8 +84,8 @@ theorem kBranch_wp {s : State} {k : Nat} (hax : s.gpr .eax = BitVec.ofNat 32 0)
 theorem xorEnd_ok {C W SP : BitVec 32} (L : Lay C W SP) {s : State} (E : Env C W SP s) {k b t : Nat}
     (hk : slotv s.mem W slenO = BitVec.ofNat 32 k) (hb : slotv s.mem W nbO = BitVec.ofNat 32 b)
     (ht : t = k - b) (hbk : b ≤ k) (hk32 : k < 2 ^ 32) (h16 : 16 ≤ t) (h32 : t ≤ 32) :
-    ∃ s', runBlock isa ([.mov .edx (.reg .ebp), .alu .add .edx (slot slenO), .alu .sub .edx (slot nbO)] ++
-        xorInto dOff (tailOff - 16)) s = some s' ∧
+    ∃ s', runBlock isa (([.mov .edx (.reg .ebp), .alu .add .edx (slot slenO), .alu .sub .edx (slot nbO)] :
+        List Instr) ++ xorInto dOff (tailOff - 16)) s = some s' ∧
       s'.mem = Cmac.xor4Mem s.mem (w64 W + BitVec.ofNat 64 (t + 16)) (w64 W + BitVec.ofNat 64 dOff)
         (w64 W + BitVec.ofNat 64 (t + 16)) ∧
       s'.gpr .ebp = W ∧ s'.gpr .esp = SP ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by

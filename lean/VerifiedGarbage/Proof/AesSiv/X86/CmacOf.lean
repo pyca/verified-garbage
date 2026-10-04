@@ -138,8 +138,8 @@ theorem cmacB_ok {s : State} {k : Nat} (hax : s.gpr .eax = BitVec.ofNat 32 k) (h
 theorem cmacC_ok {C W SP : BitVec 32} (L : Lay C W SP) {R : Nat} {P : BitVec 32} {s : State}
     (E : Env C W SP s) (hc : slotv s.mem W ctxO = C) (hr : slotv s.mem W roundsO = BitVec.ofNat 32 R)
     (hp : slotv s.mem W strO = P) {c : Nat} (hcl : c < 2 ^ 32) (hcx : s.gpr .ecx = BitVec.ofNat 32 c) :
-    ∃ s', runBlock isa ([.store (at_ .ebp nbO) .ecx, .mov .esi (.reg .ecx), .shift .shr .esi 4,
-        .mov .ebx (slot strO)] ++ macArgs stOff) s = some s' ∧
+    ∃ s', runBlock isa (([.store (at_ .ebp nbO) .ecx, .mov .esi (.reg .ecx), .shift .shr .esi 4,
+        .mov .ebx (slot strO)] : List Instr) ++ macArgs stOff) s = some s' ∧
       s'.mem = s.mem.writeW (w64 W + BitVec.ofNat 64 nbO) (BitVec.ofNat 32 c) ∧
       s'.gpr .eax = C ∧ s'.gpr .ecx = BitVec.ofNat 32 R ∧ s'.gpr .edx = W + BitVec.ofNat 32 144 ∧
       s'.gpr .ebx = P ∧ s'.gpr .esi = BitVec.ofNat 32 (c / 16) ∧ s'.gpr .edi = W + BitVec.ofNat 32 256 ∧

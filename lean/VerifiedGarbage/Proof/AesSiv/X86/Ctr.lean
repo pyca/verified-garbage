@@ -104,7 +104,7 @@ theorem whole1_ok {C W SP : BitVec 32} (L : Lay C W SP) {s : State} (E : Env C W
 theorem ctrArgs_ok {C W SP : BitVec 32} (L : Lay C W SP) {R : Nat} {s : State} (E : Env C W SP s)
     (hc : slotv s.mem W ctxO = C) (hr : slotv s.mem W roundsO = BitVec.ofNat 32 R) {D : BitVec 32}
     (hd : slotv s.mem W dataO = D) :
-    ∃ s', runBlock isa (ctrArgs ++ [.mov .ebx (slot dataO)]) s = some s' ∧
+    ∃ s', runBlock isa (ctrArgs ++ ([.mov .ebx (slot dataO)] : List Instr)) s = some s' ∧
       s'.gpr .eax = C + BitVec.ofNat 32 272 ∧ s'.gpr .ecx = BitVec.ofNat 32 R ∧
       s'.gpr .edx = W + BitVec.ofNat 32 cbOff ∧ s'.gpr .ebx = D ∧
       (∀ r, r ≠ .eax → r ≠ .ecx → r ≠ .edx → r ≠ .ebx → s'.gpr r = s.gpr r) ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧
@@ -135,8 +135,8 @@ theorem tail1_ok {C W SP : BitVec 32} (L : Lay C W SP) {s : State} (E : Env C W 
 
 theorem tailArgs_ok' {C W SP : BitVec 32} (L : Lay C W SP) {R : Nat} {s : State} (E : Env C W SP s)
     (hc : slotv s.mem W ctxO = C) (hr : slotv s.mem W roundsO = BitVec.ofNat 32 R) :
-    ∃ s', runBlock isa (zero4 ksOff ++ ctrArgs ++ [.mov .ebx (.reg .ebp), .alu .add .ebx (imm ksOff),
-        .mov .edi (imm 1)]) s = some s' ∧
+    ∃ s', runBlock isa (zero4 ksOff ++ ctrArgs ++ ([.mov .ebx (.reg .ebp), .alu .add .ebx (imm ksOff),
+        .mov .edi (imm 1)] : List Instr)) s = some s' ∧
       s'.mem = Cmac.zero4 s.mem (w64 W + BitVec.ofNat 64 ksOff) ∧
       s'.gpr .eax = C + BitVec.ofNat 32 272 ∧ s'.gpr .ecx = BitVec.ofNat 32 R ∧
       s'.gpr .edx = W + BitVec.ofNat 32 cbOff ∧ s'.gpr .ebx = W + BitVec.ofNat 32 ksOff ∧
