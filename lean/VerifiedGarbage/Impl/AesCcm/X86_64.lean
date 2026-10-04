@@ -17,27 +17,28 @@ of `vg_cmac_aes_update` made with it).
 `work` (`W`, 2560 bytes): `[0, 16)` the tag (the received one, for `open`),
 `[32, 48)` a block `B`: `B₀`, the first block of the associated data or a
 last block padded with zeros, `[48, 64)` the counter block `Ctr₀`,
-`[64, 80)` the counter block passed to `vg_aes_ctr32` (`Ctr₁` first),
-`[80, 96)` a keystream block, `[96, 112)` the MAC `open` computes,
-`[112, 160)` our caller's `rbx, rbp, r12–r15`, `[160, 240)` the arguments
-and other public values kept across calls, `[240, 272)` the two tags `open`
-compares, padded with zeros (`cmp`, `recv`), and `[384, 2560)` the working
-space of the functions called.
+`[64, 80)` the counter block passed to `vg_aes_ctr32`, `[80, 96)` a
+keystream block, `[96, 112)` the MAC `open` computes, `[112, 160)` our
+caller's `rbx, rbp, r12–r15`, `[160, 240)` the arguments and other public
+values kept across calls, `[240, 272)` the two tags `open` compares, padded
+with zeros (`cmp`, `recv`), and `[384, 2560)` the working space of the
+functions called.
 
 ## Registers
 
 `r15` holds `W` and `r13` the key schedule throughout; the functions called
 preserve them. The pieces take their arguments in `r12` (a pointer), `rbp`
-(a length) and `rbx`; the number of rounds is kept in `W` and loaded before
-each call.
+(a length), `rbx` and `r14`; the number of rounds is kept in `W` and loaded
+before each call.
 
 ## The pieces
 
-* `ctrs`: `Ctr₀ = [q − 1]₈ ‖ N ‖ 0⁸q` and `Ctr₁` (A.3), for `q = 15 − n`.
-* `b0 y`: `B₀ = flags ‖ N ‖ [p]₈q` (A.2.1), from `Ctr₀`: its first byte
-  replaced by the flags, and `[p]₆₄` ORed into its last 8 bytes (the bytes
-  of `[p]₆₄` before the last `q` are zero, as `p < 2^(8q)`); then the MAC
-  state at `W + y` zeroed and `B₀` chained into it.
+* `ctrs`: `Ctr₀ = [q − 1]₈ ‖ N ‖ 0⁸q` (A.3), for `q = 15 − n`; `ctrAt` makes
+  any `Ctrᵢ` from it by ORing `[i]₆₄` into its last 8 bytes (the bytes of
+  `[i]₆₄` before the last `q` are zero, as `i < 2^(8q)`).
+* `b0 y`: `B₀ = flags ‖ N ‖ [p]₈q` (A.2.1), likewise from `Ctr₀`, its first
+  byte replaced by the flags; then the MAC state at `W + y` zeroed and `B₀`
+  chained into it.
 * `aad y`: if there is associated data, its first block, the encoding of its
   length (A.2.2, `header`) followed by as many of its bytes as fit
   (`aadHead`), then the rest (`absorbPad`).
@@ -47,13 +48,13 @@ each call.
   `W + y` holds `Yᵣ`.
 * `tag y`: `Yᵣ ⊕ CIPH_K(Ctr₀)` at `W + y`, by `vg_aes_ctr32` on it.
 * `ctr`: the data XORed with the keystream from `Ctr₁`: its whole blocks by
-  `vg_aes_ctr32`, in chunks that stop where the low 32 bits of the counter
-  wrap around (`ctrChunk`), after which the counter's next 32 bits are
-  incremented, since CCM's counter (A.3) is `q` bytes, up to 8, and
-  `vg_aes_ctr32` increments only the low 32 bits; then the last bytes with a
-  keystream block. How many blocks a chunk has depends only on the length:
-  the low 32 bits of the counter `Ctrᵢ` are `i` modulo 2³² when `q ≥ 4`, and
-  never wrap when `q < 4`, as `i < 2^(8q)`.
+  `vg_aes_ctr32`, in chunks (`ctrChunk`), each from `Ctrⱼ` for its first
+  block `j` and ending where the low 32 bits of the counter would wrap
+  around, since CCM's counter (A.3) is `q` bytes, up to 8, and
+  `vg_aes_ctr32` increments only the low 32 bits; then the last bytes with
+  a keystream block. How many blocks a chunk has depends only on the
+  length: the low 32 bits of `Ctrⱼ` are `j` modulo 2³² when `q ≥ 4`, and
+  never wrap around when `q < 4`, as `j < 2^(8q)`.
 * `mask`: every byte of the data ANDed with `0 − ok`, for `ok` the result
   of `cmp`.
 
@@ -164,27 +165,32 @@ def aad (y : Nat) : Prog isa :=
   .seq (.block [.mov .r12 (.mem (at_ .r15 aadO)), .mov .rbp (.mem (at_ .r15 alenO)), .alu .test .rbp (.reg .rbp)])
     (.ite .e (.block []) (.seq (aadHead c sfx y) (absorbPad c sfx y)))
 
-/-- `Ctr₀` at `W + 48` and `Ctr₁` at `W + 64`. -/
+/-- `Ctr₀ = [q − 1]₈ ‖ N ‖ 0⁸q` (A.3) at `W + 48`. -/
 def ctrs : Prog isa :=
   .seq (.block (zero16 c0O ++ [.mov32 .rax (imm 14), .alu .sub .rax (.mem (at_ .r15 nlenO)),
       .store8 (at_ .r15 c0O) .rax, .mov .rsi (.mem (at_ .r15 nonceO)), .mov .rcx (.mem (at_ .r15 nlenO))] ++
       ptr .rdi .r15 (c0O + 1)))
-  (.seq copyLoop
-    (.block [.mov .rax (.mem (at_ .r15 c0O)), .store (at_ .r15 c1O) .rax, .mov .rax (.mem (at_ .r15 (c0O + 8))),
-      .store (at_ .r15 (c1O + 8)) .rax, .mov32 .rax (imm 1), .store8 (at_ .r15 (c1O + 15)) .rax]))
+    copyLoop
 
-/-- `B₀` (A.2.1) in `B`, from `Ctr₀`, and chained into the MAC state at
-`W + y`, zeroed first. The flags are `64 [a > 0] + 8 ((t − 2) / 2) + q − 1`,
-and `8 ((t − 2) / 2) = 4 (t − 2)` for the even `t`. -/
+/-- The counter block `Ctrᵢ` (A.3), for `i < 2^(8q)` in `rax`, at `W + 64`:
+`Ctr₀` with `[i]₆₄` ORed into its last 8 bytes (whose bytes before the last
+`q` are zero). -/
+def ctrAt : List Instr :=
+  [.mov .rcx (.mem (at_ .r15 c0O)), .store (at_ .r15 c1O) .rcx, .bswap .rax, .alu .or .rax (.mem (at_ .r15 (c0O + 8))),
+    .store (at_ .r15 (c1O + 8)) .rax]
+
+/-- `B₀` (A.2.1) in `B`, from `Ctr₀`: its first byte replaced by the flags
+`64 [a > 0] + 8 ((t − 2) / 2) + q − 1` (and `8 ((t − 2) / 2) = 4 (t − 2)`
+for the even `t`), and `[p]₆₄` ORed into its last 8 bytes; then the MAC
+state at `W + y` zeroed and `B₀` chained into it. -/
 def b0 (y : Nat) : Prog isa :=
-  .seq (.block [.mov .rax (.mem (at_ .r15 c0O)), .store (at_ .r15 bO) .rax, .mov .rax (.mem (at_ .r15 (c0O + 8))),
-      .store (at_ .r15 (bO + 8)) .rax, .mov .rax (.mem (at_ .r15 tlO)), .alu .sub .rax (imm 2), .alu .add .rax (.reg .rax),
-      .alu .add .rax (.reg .rax),
-      .mov32 .rcx (imm 14), .alu .sub .rcx (.mem (at_ .r15 nlenO)), .alu .add .rax (.reg .rcx),
-      .mov .rcx (.mem (at_ .r15 alenO)), .alu .test .rcx (.reg .rcx)])
+  .seq (.block [.mov .rax (.mem (at_ .r15 tlO)), .alu .sub .rax (imm 2), .alu .add .rax (.reg .rax),
+      .alu .add .rax (.reg .rax), .mov32 .rcx (imm 14), .alu .sub .rcx (.mem (at_ .r15 nlenO)),
+      .alu .add .rax (.reg .rcx), .mov .rcx (.mem (at_ .r15 alenO)), .alu .test .rcx (.reg .rcx)])
   (.seq (.ite .e (.block []) (.block [.alu .add .rax (imm 64)]))
-  (.seq (.block ([.store8 (at_ .r15 bO) .rax, .mov .rax (.mem (at_ .r15 lenO)), .bswap .rax,
-      .alu .or .rax (.mem (at_ .r15 (bO + 8))), .store (at_ .r15 (bO + 8)) .rax] ++ zero16 y))
+  (.seq (.block ([.mov .rcx (.mem (at_ .r15 c0O)), .store (at_ .r15 bO) .rcx, .store8 (at_ .r15 bO) .rax,
+      .mov .rax (.mem (at_ .r15 lenO)), .bswap .rax, .alu .or .rax (.mem (at_ .r15 (c0O + 8))),
+      .store (at_ .r15 (bO + 8)) .rax] ++ zero16 y))
     (updBlock c sfx y)))
 
 /-- `Yᵣ`, the CBC-MAC of the formatted nonce, associated data and payload
@@ -195,33 +201,31 @@ def mac (y : Nat) : Prog isa :=
   (.seq (.block [.mov .r12 (.mem (at_ .r15 dataO)), .mov .rbp (.mem (at_ .r15 lenO))])
     (absorbPad c sfx y)))
 
-/-- `Yᵣ ⊕ CIPH_K(Ctr₀)` at `W + y`. -/
+/-- `Yᵣ ⊕ CIPH_K(Ctr₀)` at `W + y`, by `vg_aes_ctr32` on it with a copy of
+`Ctr₀` (which it increments). -/
 def tag (y : Nat) : Prog isa :=
-  .seq (.block ([.mov .rdi (.reg .r13), .mov .rsi (.mem (at_ .r15 roundsO))] ++ ptr .rdx .r15 c0O ++
-      ptr .rcx .r15 y ++ [.mov32 .r8 (imm 1)] ++ ptr .r9 .r15 scrO))
+  .seq (.block ([.mov32 .rax (imm 0)] ++ ctrAt ++ [.mov .rdi (.reg .r13), .mov .rsi (.mem (at_ .r15 roundsO))] ++
+      ptr .rdx .r15 c1O ++ ptr .rcx .r15 y ++ [.mov32 .r8 (imm 1)] ++ ptr .r9 .r15 scrO))
     (callCtr c)
 
 /-! ## Counter mode -/
 
-/-- With `rbx` whole blocks left at `r12` and the low 32 bits of the counter
-`r14`: `min (rbx, 2³² − r14)` of them by `vg_aes_ctr32`, after which `r12`,
-`rbx` and `r14` are past them, and if the low 32 bits wrapped around, `r14`
-is 0 and the counter's bytes 8–11 are incremented as a big-endian integer
-(ZF set when no block is left). -/
+/-- With `rbx` whole blocks left at `r12` and the next counter `j` in `r14`:
+`k = min (rbx, 2³² − (j mod 2³²))` of them by `vg_aes_ctr32` from `Ctrⱼ`,
+which increments only the low 32 bits of the counter block, and so gives
+`Ctrⱼ, …, Ctrⱼ₊ₖ₋₁` as long as they do not wrap around; then `r12`, `rbx`
+and `r14` are past them (ZF set when no block is left). -/
 def ctrChunk : Prog isa :=
-  .seq (.block [.movImm64 .r8 0x100000000, .alu .sub .r8 (.reg .r14), .alu .cmp .rbx (.reg .r8)])
-  (.seq (.ite .b (.block [.mov .r8 (.reg .rbx)]) (.block []))
-  (.seq (.block ([.store (at_ .r15 kO) .r8, .mov .rdi (.reg .r13), .mov .rsi (.mem (at_ .r15 roundsO))] ++
-      ptr .rdx .r15 c1O ++ [.mov .rcx (.reg .r12)] ++ ptr .r9 .r15 scrO))
+  .seq (.block [.mov32 .r8 (.reg .r14), .movImm64 .rcx 0x100000000, .alu .sub .rcx (.reg .r8),
+      .mov .r8 (.reg .rbx), .alu .cmp .rbx (.reg .rcx)])
+  (.seq (.ite .b (.block []) (.block [.mov .r8 (.reg .rcx)]))
+  (.seq (.block ([.store (at_ .r15 kO) .r8, .mov .rax (.reg .r14)] ++ ctrAt ++
+      [.mov .rdi (.reg .r13), .mov .rsi (.mem (at_ .r15 roundsO))] ++ ptr .rdx .r15 c1O ++ [.mov .rcx (.reg .r12)] ++
+      ptr .r9 .r15 scrO))
   (.seq (callCtr c)
-  (.seq (.block [.mov .rax (.mem (at_ .r15 kO)), .alu .sub .rbx (.reg .rax), .alu .add .r14 (.reg .rax),
+    (.block [.mov .rax (.mem (at_ .r15 kO)), .alu .sub .rbx (.reg .rax), .alu .add .r14 (.reg .rax),
       .alu .add .rax (.reg .rax), .alu .add .rax (.reg .rax), .alu .add .rax (.reg .rax), .alu .add .rax (.reg .rax),
-      .alu .add .r12 (.reg .rax), .movImm64 .rax 0x100000000, .alu .cmp .r14 (.reg .rax)])
-  (.seq (.ite .e
-      (.block [.mov32 .r14 (imm 0), .mov32 .rax (.mem (at_ .r15 (c1O + 8))), .bswap32 .rax,
-        .alu32 .add .rax (imm 1), .bswap32 .rax, .store32 (at_ .r15 (c1O + 8)) .rax])
-      (.block []))
-    (.block [.alu .test .rbx (.reg .rbx)]))))))
+      .alu .add .r12 (.reg .rax), .alu .test .rbx (.reg .rbx)]))))
 
 /-- The data XORed with the keystream from `Ctr₁` (§6.1 steps 5–8, §6.2
 steps 3–5): its whole blocks by `ctrChunk`, then its last `len mod 16` bytes
@@ -232,8 +236,9 @@ def ctr : Prog isa :=
   (.seq (.ite .e (.block []) (.loop (ctrChunk c) .ne))
   (.seq (.block [.mov .rbp (.mem (at_ .r15 lenO)), .alu .and .rbp (imm 15), .alu .test .rbp (.reg .rbp)])
     (.ite .e (.block [])
-      (.seq (.block (zero16 ksO ++ [.mov .rdi (.reg .r13), .mov .rsi (.mem (at_ .r15 roundsO))] ++
-          ptr .rdx .r15 c1O ++ ptr .rcx .r15 ksO ++ [.mov32 .r8 (imm 1)] ++ ptr .r9 .r15 scrO))
+      (.seq (.block (zero16 ksO ++ [.mov .rax (.reg .r14)] ++ ctrAt ++
+          [.mov .rdi (.reg .r13), .mov .rsi (.mem (at_ .r15 roundsO))] ++ ptr .rdx .r15 c1O ++ ptr .rcx .r15 ksO ++
+          [.mov32 .r8 (imm 1)] ++ ptr .r9 .r15 scrO))
       (.seq (callCtr c)
         (.seq (.block ([.mov .rdi (.reg .r12)] ++ ptr .rsi .r15 ksO ++ [.mov .rcx (.reg .rbp)])) xorLoop))))))
 
