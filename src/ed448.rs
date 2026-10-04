@@ -10,7 +10,12 @@
 //! Keccak permutation, and calls the one the SHA-3 functions use
 //! (`crate::hashes::sha3::Backend`).
 
-#![cfg(any(target_arch = "x86_64", target_arch = "aarch64", target_arch = "arm"))]
+#![cfg(any(
+    target_arch = "x86_64",
+    target_arch = "aarch64",
+    target_arch = "arm",
+    target_arch = "x86"
+))]
 
 #[cfg(all(target_arch = "aarch64", feature = "cpu-features-env"))]
 use crate::arch::ed448::{
