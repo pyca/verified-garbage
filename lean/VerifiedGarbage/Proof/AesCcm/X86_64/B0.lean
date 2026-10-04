@@ -41,7 +41,8 @@ theorem b0_ok (v : Ctr32Impl) {K W SP : Addr} {s : State} (L : Lay K W SP) (E : 
     (hc0 : bytesAt s.mem (W + BitVec.ofNat 64 48) 16 = Spec.Ccm.ctrBlock nonce 0) {y : Nat} (hy : y = 0 ∨ y = 96) :
     WP isa (b0 v.callee v.suffix y) s fun s' => Env K W SP s' ∧ Frame (macR W SP y) s.mem s'.mem ∧
       bytesAt s'.mem (W + BitVec.ofNat 64 y) 16 =
-        Spec.Cmac.chain (Spec.Ccm.ctxCiph s.mem K R) (Spec.Cmac.zeros 16) [Spec.Ccm.b0 tl nonce al n] := by
+        Spec.Cmac.chain (Spec.Ccm.ctxCiph s.mem K R) (Spec.Cmac.zeros 16) [Spec.Ccm.b0 tl nonce al n] ∧
+      s'.rd = s.rd ∧ s'.wr = s.wr := by
   have h15 := E.r15
   have rt := E.perm.wR (show 208 + 8 ≤ 2560 by decide)
   have rn := E.perm.wR (show 168 + 8 ≤ 2560 by decide)
@@ -159,7 +160,8 @@ theorem b0_ok (v : Ctr32Impl) {K W SP : Addr} {s : State} (L : Lay K W SP) (E : 
     · exact L.w_w (.inr (by omega)) (by omega) (by omega)
   have hRo₃ : s₃.mem.readW (W + BitVec.ofNat 64 232) 64 = BitVec.ofNat 64 R := by
     rw [kept 232 8 ⟨Nat.le_refl _, by decide⟩]; exact S.rounds
-  refine WP.mono (updBlock_ok v L E₃ hR hRo₃ hy) fun s₄ ⟨E₄, _, _, _, f₄, h₄⟩ => ⟨E₄, ?_, ?_⟩
+  refine WP.mono (updBlock_ok v L E₃ hR hRo₃ hy) fun s₄ ⟨E₄, _, hrd₄, hwr₄, f₄, h₄⟩ =>
+    ⟨E₄, ?_, ?_, by rw [hrd₄, hrd₃, hrd₂], by rw [hwr₄, hwr₃, hwr₂]⟩
   · refine (f₃.sub fun r hr => ?_).trans (f₄.sub fun r hr => ?_)
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
