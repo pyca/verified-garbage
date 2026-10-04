@@ -202,11 +202,16 @@ theorem startPre_ok {C W SP : BitVec 32} (L : Lay C W SP) {R : Nat} {s : State} 
   · cregs [E.esp]
   all_goals cmems []
 
+/-- What `start` writes: the zero block, `D` and the working space of the
+function it calls, and the stack below `SP`. -/
+abbrev startR (W SP : BitVec 32) : List Region :=
+  [⟨w64 W + BitVec.ofNat 64 16, 16⟩, ⟨w64 W + BitVec.ofNat 64 256, 2320⟩, below SP 56]
+
 /-- `start`: `D = AES-CMAC(K1, <zero>)`, S2V's first state. -/
 theorem start_ok (v : Ctr32Impl) {s₀ : State} {C W SP : BitVec 32} {R : Nat} {D : BitVec 32} {n : Nat}
     (L : Lay C W SP) (hR : R = 10 ∨ R = 12 ∨ R = 14) {s : State} (h : Kept s₀ C W SP R D n [] s) :
     WP isa (start v.callee v.suffix) s fun s' => Kept s₀ C W SP R D n [] s' ∧
-      Frame (wR W SP) s.mem s'.mem ∧
+      Frame (startR W SP) s.mem s'.mem ∧
       bytesAt s'.mem (w64 W + BitVec.ofNat 64 dOff) 16 = Spec.Siv.s2vStart (Spec.Siv.ctxMac s₀.mem (w64 C) R) := by
   have hRb : 16 * (R + 1) ≤ 240 := by rcases hR with h | h | h <;> omega
   obtain ⟨s₁, run₁, m₁, ax₁, cx₁, dx₁, bx₁, si₁, di₁, bp₁, sp₁, rd₁, wr₁⟩ :=
@@ -221,19 +226,23 @@ theorem start_ok (v : Ctr32Impl) {s₀ : State} {C W SP : BitVec 32} {R : Nat} {
     (l := 16) (Nat.le_refl _) (srcW L E₁.perm (t := 16) (k := 16) (by decide))
     (by rw [L.aW (o := 16) (by decide)]; exact Lay.w_w (.inl (by decide)) (by decide) (by decide))
     ax₁ cx₁ dx₁ bx₁ si₁ di₁) fun s₂ ⟨E₂, rd₂, wr₂, _, f₂, o₂⟩ => ?_
-  have f₁₂ : Frame (wR W SP) s.mem s₂.mem := by
+  have f₁₂ : Frame (startR W SP) s.mem s₂.mem := by
     refine (f₁.sub fun r hr => ?_).trans (f₂.sub fun r hr => ?_)
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
-      · exact ⟨wA W, by simp, Offset.sub_base _ (by decide)⟩
-      · exact ⟨wC W, by simp, Offset.sub _ (by decide) (by decide)⟩
+      · exact ⟨_, by simp, fun _ h => h⟩
+      · exact ⟨⟨w64 W + BitVec.ofNat 64 256, 2320⟩, by simp, Offset.sub _ (by decide) (by decide)⟩
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl
-      · exact ⟨wC W, by simp, Offset.sub _ (by decide) (by decide)⟩
-      · exact ⟨wC W, by simp, Offset.sub _ (by decide) (by decide)⟩
+      · exact ⟨⟨w64 W + BitVec.ofNat 64 256, 2320⟩, by simp, Offset.sub _ (by decide) (by decide)⟩
+      · exact ⟨⟨w64 W + BitVec.ofNat 64 256, 2320⟩, by simp, Offset.sub _ (by decide) (by decide)⟩
       · exact ⟨below SP 56, by simp, fun _ h => h⟩
-  refine ⟨h.step L (by simp) E₂ (by rw [rd₂, rd₁]) (by rw [wr₂, wr₁]) f₁₂ fun r hr => .inl ⟨r, hr, fun _ h => h⟩,
-    f₁₂, ?_⟩
+  refine ⟨h.step L (by simp) E₂ (by rw [rd₂, rd₁]) (by rw [wr₂, wr₁]) f₁₂ fun r hr => .inl ?_, f₁₂, ?_⟩
+  · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl
+    · exact ⟨wA W, by simp, Offset.sub_base _ (by decide)⟩
+    · exact ⟨wC W, by simp, fun _ h => h⟩
+    · exact ⟨below SP 56, by simp, fun _ h => h⟩
   simp only [zOff, dOff] at m₁
   have fz : Frame [⟨w64 W + BitVec.ofNat 64 2560, 16⟩] (Cmac.zero4 s.mem (w64 W + BitVec.ofNat 64 16))
       s₁.mem := by rw [m₁]; exact Cmac.frame_store4 _ _ _ _ _
