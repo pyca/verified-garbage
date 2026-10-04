@@ -16,9 +16,6 @@ open VG.Proof.AesGcm.X86_64 (LoopPre copyLoop_ok)
 open VG.Spec.Aes (bytesAt)
 open VG.Proof.Cmac (le8)
 
-theorem be_zero (k : Nat) : Spec.Ccm.be k 0 = Spec.Ccm.zeros k := by
-  simp [Spec.Ccm.be, Spec.Ccm.zeros, List.map_const']
-
 theorem sub_low_byte {nl : Nat} (h : nl ≤ 14) :
     ((BitVec.ofNat 64 14 - BitVec.ofNat 64 nl).setWidth 8 : Byte) = BitVec.ofNat 8 (15 - nl - 1) := by
   apply BitVec.eq_of_toNat_eq

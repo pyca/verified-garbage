@@ -1,6 +1,7 @@
 import VerifiedGarbage.Proof.AesCcm.X86_64.Callee
 import VerifiedGarbage.Proof.Cmac.Mem
 import VerifiedGarbage.Proof.Cmac.Mem32
+import VerifiedGarbage.Proof.Framework.Bswap
 
 /-!
 # AES-CCM on x86-64: the bytes of a buffer after writes
@@ -112,5 +113,93 @@ theorem bytesAt_writeW8_base (m : Mem) (p : Addr) {n : Nat} (b : Byte) (h : 1 �
     bytesAt (m.writeW p b) p n = b :: (bytesAt m p n).drop 1 := by
   have := bytesAt_writeW8_at m p (o := 0) b h hn
   simpa using this
+
+/-! ## Words as bytes -/
+
+theorem le8_or (a b : BitVec 64) : le8 (a ||| b) = List.zipWith (· ||| ·) (le8 a) (le8 b) := by
+  apply List.ext_getElem (by simp [le8])
+  intro k h₁ h₂
+  simp only [le8, List.getElem_map, List.getElem_range, List.getElem_zipWith]
+  ext j hj
+  simp
+
+theorem bswap64_bytes (x : BitVec 64) :
+    (List.range 8).map (fun j => (bswap64 x).extractLsb' (8 * j) 8) =
+      (List.range 8).reverse.map (fun i => x.extractLsb' (8 * i) 8) := by
+  simp only [List.range_succ, List.range_zero, List.nil_append, List.map_cons, List.map_nil,
+    List.cons_append, List.reverse_cons, List.reverse_nil, List.cons.injEq, and_true]
+  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;>
+  · simp (disch := decide) only [bswap64, Nat.mul_zero, Nat.reduceMul, extractLsb'_append_byte_lo,
+      extractLsb'_append_byte_hi, Nat.reduceSub, BitVec.extractLsb'_eq_self]
+
+theorem le8_bswap64 (x : BitVec 64) : le8 (bswap64 x) = (le8 x).reverse := by
+  simp only [le8]
+  rw [bswap64_bytes, List.map_reverse]
+
+/-- The bytes of `[v]₆₄`, the most significant first. -/
+theorem le8_bswap64_ofNat {v : Nat} (hv : v < 2 ^ 64) : le8 (bswap64 (BitVec.ofNat 64 v)) = Spec.Ccm.be 8 v := by
+  rw [le8_bswap64]
+  apply List.ext_getElem (by simp [le8, Proof.AesCcm.length_be])
+  intro k h₁ h₂
+  have hk : k < 8 := by simpa [le8] using h₁
+  simp only [List.getElem_reverse, le8, List.getElem_map, List.getElem_range, List.length_map,
+    List.length_range, Spec.Ccm.be]
+  apply BitVec.eq_of_toNat_eq
+  simp only [BitVec.extractLsb'_toNat, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow]
+  rw [Nat.mod_eq_of_lt hv, show 8 - 1 - k = 7 - k by omega, show 2 ^ (8 * (7 - k)) = 256 ^ (7 - k) by
+    rw [Nat.pow_mul]]
+
+theorem be_zero (k : Nat) : Spec.Ccm.be k 0 = Spec.Ccm.zeros k := by
+  simp [Spec.Ccm.be, Spec.Ccm.zeros, List.map_const']
+
+/-- `[v]₈ₖ` for `v < 2^(8q)` and `k ≥ q`: zeros, then `[v]₈q`. -/
+theorem be_split {q k v : Nat} (hqk : q ≤ k) (hv : v < 256 ^ q) :
+    Spec.Ccm.be k v = Spec.Ccm.zeros (k - q) ++ Spec.Ccm.be q v := by
+  induction k with
+  | zero => rw [show q = 0 by omega]; simp [Spec.Ccm.zeros, Spec.Ccm.be]
+  | succ k ih =>
+    rcases Nat.lt_or_ge k q with h | h
+    · rw [show q = k + 1 by omega]; simp [Spec.Ccm.zeros]
+    · rw [Proof.AesCcm.be_succ, ih h, show k + 1 - q = (k - q) + 1 by omega, Spec.Ccm.zeros, Spec.Ccm.zeros,
+        List.replicate_succ, List.cons_append]
+      congr 1
+      rw [Nat.div_eq_of_lt (Nat.lt_of_lt_of_le hv (Nat.pow_le_pow_right (by decide) h))]
+      rfl
+
+/-- The last 8 bytes of `Ctrᵢ`: the nonce's bytes after its first 7, then `[i]₈q`. -/
+theorem ctrBlock_drop8 {nonce : List Byte} (h7 : 7 ≤ nonce.length) (i : Nat) :
+    (Spec.Ccm.ctrBlock nonce i).drop 8 = nonce.drop 7 ++ Spec.Ccm.be (15 - nonce.length) i := by
+  simp [Spec.Ccm.ctrBlock, List.drop_append_of_le_length (show 7 ≤ nonce.length from h7)]
+
+theorem ctrBlock_take8 {nonce : List Byte} (h7 : 7 ≤ nonce.length) (i : Nat) :
+    (Spec.Ccm.ctrBlock nonce i).take 8 = BitVec.ofNat 8 (15 - nonce.length - 1) :: nonce.take 7 := by
+  simp [Spec.Ccm.ctrBlock, List.take_append_of_le_length (show 7 ≤ nonce.length from h7)]
+
+theorem zipWith_or_zeros_right (xs : List Byte) {n : Nat} (h : xs.length = n) :
+    List.zipWith (· ||| ·) xs (Spec.Ccm.zeros n) = xs := by
+  subst h
+  apply List.ext_getElem (by simp [Spec.Ccm.zeros])
+  intro k h₁ h₂
+  simp [Spec.Ccm.zeros]
+
+theorem zipWith_or_zeros_left (ys : List Byte) {n : Nat} (h : ys.length = n) :
+    List.zipWith (· ||| ·) (Spec.Ccm.zeros n) ys = ys := by
+  subst h
+  apply List.ext_getElem (by simp [Spec.Ccm.zeros])
+  intro k h₁ h₂
+  simp [Spec.Ccm.zeros]
+
+/-- `Ctrᵢ`'s last 8 bytes, from `Ctr₀`'s and `[i]₆₄`. -/
+theorem ctr_or {nonce : List Byte} (h7 : 7 ≤ nonce.length) (h13 : nonce.length ≤ 13) {w : BitVec 64}
+    (hw : le8 w = (Spec.Ccm.ctrBlock nonce 0).drop 8) {i : Nat} (hi : i < 256 ^ (15 - nonce.length)) :
+    le8 (bswap64 (BitVec.ofNat 64 i) ||| w) = (Spec.Ccm.ctrBlock nonce i).drop 8 := by
+  have hi64 : i < 2 ^ 64 := Nat.lt_of_lt_of_le hi (by
+    rw [show 2 ^ 64 = 256 ^ 8 from rfl]; exact Nat.pow_le_pow_right (by decide) (by omega))
+  rw [le8_or, le8_bswap64_ofNat hi64, hw, ctrBlock_drop8 h7, ctrBlock_drop8 h7, be_zero,
+    be_split (q := 15 - nonce.length) (by omega) hi,
+    List.zipWith_comm_of_comm (f := (· ||| ·)) (fun a b => BitVec.or_comm a b)]
+  have hd : (nonce.drop 7).length = 8 - (15 - nonce.length) := by rw [List.length_drop]; omega
+  rw [List.zipWith_append (by rw [hd]; simp [Spec.Ccm.zeros]), zipWith_or_zeros_right _ hd,
+    zipWith_or_zeros_left _ (Proof.AesCcm.length_be _ _)]
 
 end VG.Proof.AesCcm.X86_64
