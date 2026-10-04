@@ -22,6 +22,8 @@ frame of `bytes` bytes and lays out in it what `c` expects to find at and
 above `rsp` on entry: a quadword standing for the return address, a copy of
 the `m` stack arguments, and the address of the buffer, which is the rest of
 the frame. It passes them through `rax`, which no argument is in.
+`withStackArgScratchWiped bytes m words c` is the same, zeroing the first
+`words` quadwords of the buffer after the code (`wipeAt`).
 -/
 
 namespace VG.Impl.StackScratch.X86_64
@@ -62,5 +64,17 @@ def setArgs (bytes m : Nat) : List Instr :=
 arguments, with the buffer in a frame of `bytes` bytes on the stack. -/
 def withStackArgScratch (bytes m : Nat) (c : Prog isa) : Prog isa :=
   .frame (.alloc bytes) (.seq (.block (setArgs bytes m)) c) (.free bytes)
+
+/-- `mov qword [rsp + off + 8k], r11` for each `k < words`. -/
+def wipeStoresAt (off words : Nat) : List Instr :=
+  (List.range words).map fun k => .store { base := .rsp, disp := ((off + 8 * k : Nat) : Int) } .r11
+
+/-- Zeroes the `words` quadwords at `rsp + off`, through `r11`. -/
+def wipeAt (off words : Nat) : List Instr := .mov32 .r11 (.imm 0) :: wipeStoresAt off words
+
+/-- `withStackArgScratch`, zeroing the first `words` quadwords of the buffer
+(at `rsp + 16 + 8m`) after the code. -/
+def withStackArgScratchWiped (bytes m words : Nat) (c : Prog isa) : Prog isa :=
+  withStackArgScratch bytes m (.seq c (.block (wipeAt (16 + 8 * m) words)))
 
 end VG.Impl.StackScratch.X86_64
