@@ -124,7 +124,7 @@ theorem ifmaMain_ok (M : Mont) {s : State} {B : Addr} {Z k : Nat} {op np ip pp q
     (WP.ite _ zf (fun hb => ?_) (fun hb => ?_)) fun t₂ ⟨hp, mx₂⟩ => ?_
   · simp only [decide_eq_true_eq] at hb
     obtain ⟨hw, hp, hq⟩ := hb
-    exact wp_seqs_append (by simp [CrtIfma.pre, Crt.gPow]) (by simp [CrtIfma.post, copyArr])
+    exact wp_seqs_append (by simp [CrtIfma.pre, CrtIfma.prep]) (by simp [CrtIfma.post])
       (WP.mono (branchA_ok M h hv hr₁ rfl hw hp hq (ifmaZ_of h.zk hw hp) hpre) fun t ⟨hd, mxa⟩ =>
         WP.mono (branchB_ok M h hv hd rfl hw hp hq hpost) fun t' ⟨hd', mxb⟩ =>
           ⟨hd', by rw [mxb, mxa, mx_ffff, mx₁, mx₀]⟩)

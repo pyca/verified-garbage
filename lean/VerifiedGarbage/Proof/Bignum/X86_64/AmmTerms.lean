@@ -9,10 +9,12 @@ for any `i` (`expReg`), and checked against the run for each `i < 5`
 
 For each prime `p` (0 or 1, at `D p` from each base): `bT` the limb of the
 second operand, broadcast; `a1` the accumulator of role `k` plus the low
-halves of `a b`; `uT` the factor `u`, broadcast; `a2` plus the low halves of
+halves of `a b`; `a1h` plus, for `k ≥ 1`, the high halves of role `k - 1`
+of `a b`; `uT` the factor `u`, broadcast; `a2` plus the low halves of
 `u m`; `cT` the carry of role 0's lane 0, in lane 0; `nT` role `k` after the
 shift (role `k + 1`, with the carry for role 0, and role 0's lanes shifted
-down for role 4); `hT` plus the high halves.
+down for role 4); `hT` plus the high halves of `u m` (and, for role 4, of
+`a b`).
 -/
 
 namespace VG.Proof.Bignum.X86_64.AmmSym
@@ -28,14 +30,19 @@ def regOf (p k i : Nat) : Nat := 5 * p + (k + i) % 5
 
 def bT (p i : Nat) : A := .bc (.lane0 (.ld .r9 (D * p + 32 * i)))
 def a1T (p k i : Nat) : A := .mad false (.reg (regOf p k i)) (bT p i) (.ld .r8 (D * p + 32 * k))
+/-- Role `k` plus the high halves of `a b` of role `k - 1` (for `k ≥ 1`). -/
+def a1hT (p k i : Nat) : A :=
+  if k = 0 then a1T p 0 i else .mad true (a1T p k i) (bT p i) (.ld .r8 (D * p + 32 * (k - 1)))
 def uT (p i : Nat) : A := .bc (.mad false .zero (a1T p 0 i) (.ld .r10 (D * p + oK0)))
-def a2T (p k i : Nat) : A := .mad false (a1T p k i) (uT p i) (.ld .r10 (D * p + oM + 32 * k))
+def a2T (p k i : Nat) : A := .mad false (a1hT p k i) (uT p i) (.ld .r10 (D * p + oM + 32 * k))
 def cT (p i : Nat) : A := .blend (.reg 14) (.shr (a2T p 0 i) 52) 3
 def nT (p k i : Nat) : A :=
   if k = 4 then .blend (.perm (a2T p 0 i) 57) (.reg 14) 192
   else if k = 0 then .add (a2T p 1 i) (cT p i) else a2T p (k + 1) i
 def hT (p k i : Nat) : A :=
-  .mad true (.mad true (nT p k i) (bT p i) (.ld .r8 (D * p + 32 * k))) (uT p i) (.ld .r10 (D * p + oM + 32 * k))
+  if k = 4 then
+    .mad true (.mad true (nT p 4 i) (bT p i) (.ld .r8 (D * p + 128))) (uT p i) (.ld .r10 (D * p + oM + 128))
+  else .mad true (nT p k i) (uT p i) (.ld .r10 (D * p + oM + 32 * k))
 
 /-- The role at step `i + 1` of register `r % 5`. -/
 def roleOf (r i : Nat) : Nat := (r % 5 + 5 - (i + 1) % 5) % 5

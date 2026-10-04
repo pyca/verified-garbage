@@ -55,8 +55,8 @@ theorem prePre_of {s t₀ : State} {B : Addr} {Z k : Nat} {op np ip pp qp dpp dq
   have qxv := hr.qxv
   rw [hpl] at pws pxv
   rw [hql] at qws qxv
-  exact ⟨mp, mq, _, _, C, hr.good, by omega, by omega, le_refl _, by rw [hoq]; rfl, by omega, by decide, by omega,
-    hr.wsP, hr.wsQ, pws, qws, hr.nv, hodd, hN1, hr.xm, pxv, hP'.1, hP'.2, qxv, hQ'.1, hQ'.2⟩
+  exact ⟨mp, mq, _, _, C, hr.good, by omega, le_refl _, by rw [hoq]; rfl, by omega, by decide, by omega,
+    hr.wsP, hr.wsQ, pws, qws, hr.nv, hr.xm, pxv, hP'.1, hP'.2, qxv, hQ'.1, hQ'.2⟩
 
 /-- `ifma`'s hypotheses, after `pre` (as `branchA2_ok` runs it). -/
 theorem ifPre_of {s t₀ s₁ : State} {B : Addr} {Z k : Nat} {op np ip pp qp dpp dqp qip : Addr}
@@ -98,7 +98,7 @@ theorem ifPre_of {s t₀ s₁ : State} {B : Addr} {Z k : Nat} {op np ip pp qp dp
     unfold offQ; rw [hpl]
   rw [hql] at hZq
   have hh₀ : ∀ i < 32, hFixed i = true → word t₀.mem B (8 * i) = word s.mem B (8 * i) := hr.hfix
-  obtain ⟨hg₁, hN₁, rp, rq, hXl, hXv, f₁, k₁, mk₁⟩ := hA
+  obtain ⟨hg₁, hN₁, rp, rq, f₁, k₁, mk₁⟩ := hA
   have ns₁ := preRanges_nsafe (w := (k + 7) / 8) (wp := 16) (wq := 16) (le_refl (offP ((k + 7) / 8)))
     (show slot ((k + 7) / 8) 8 ≤ offQ ((k + 7) / 8) pl by rw [hoq]; omega)
   have hpr : ∀ r ∈ preRanges ((k + 7) / 8) (offP ((k + 7) / 8)) 16 (offQ ((k + 7) / 8) pl) 16,
@@ -140,8 +140,7 @@ theorem postPre_of {s t₁ : State} {B : Addr} {Z k : Nat} {op np ip pp qp dpp d
     (hMk : Mk = keyMask (decide (Spec.Rsa.os2ip xb < Spec.Rsa.os2ip nb)) (Spec.Rsa.os2ip nb) (Spec.Rsa.os2ip pb)
       (Spec.Rsa.os2ip qb) (Spec.Rsa.os2ip qib))
     (hw32 : (k + 7) / 8 = 32) (hpl : wsWords pl = 16) (hql : wsWords ql = 16) :
-    PostPre ⟨B, Z, (k + 7) / 8, offP ((k + 7) / 8), wsWords pl, offQ ((k + 7) / 8) pl, wsWords ql, qip, pl⟩
-      t₁ := by
+    PostPre ⟨B, Z, (k + 7) / 8, offP ((k + 7) / 8), wsWords pl, offQ ((k + 7) / 8) pl, qip, pl⟩ t₁ := by
   obtain ⟨hodd, hN1, hPN, hQN⟩ := crt_bounds h hv
   have hk1 := h.k1
   have hpl1 := h.pl1
@@ -161,23 +160,12 @@ theorem postPre_of {s t₁ : State} {B : Addr} {Z k : Nat} {op np ip pp qp dpp d
   have hoq : offQ ((k + 7) / 8) pl = slot ((k + 7) / 8) 8 + slot (wsWords pl) 8 + tabBytes (wsWords pl) := rfl
   have hW8 : 256 ≤ slot (wsWords pl) 8 := by unfold slot hdrBytes; omega
   have hm := hd.im
-  obtain ⟨x0, hx0⟩ := exists_mont' (VG.Proof.Bignum.coprime_pow2 hP'.2 (64 * wsWords pl)) hP'.1
-    (wv t₁.mem (off B (offP ((k + 7) / 8))) (slot (wsWords pl) Public.aY) (wsWords pl))
-  refine ⟨minv, mp, mq, N, _, if Mk then C ^ Spec.Rsa.os2ip dpb else x0, qib, Mk, hd.good, by omega, by omega,
-    hd.nv, hodd, hd.xl, by rw [hpl]; exact hd.xv, hm.wsQ, by rw [hql]; exact hm.qws, hZq, by rw [hql]; omega,
-    by rw [hql]; omega, le_refl _, by rw [hoq, hop], by rw [hpl]; decide, by rw [hpl]; omega, hm.wsP,
-    by rw [hpl]; exact hm.pws, by rw [hpl]; exact ⟨hm.pn, hm.pinv, hm.pone⟩, hP'.1, hP'.2,
-    by rw [hpl]; exact hd.plt, fun _ => ?_, hm.pmk,
-    fun hm' => by obtain ⟨_, hpq, _⟩ := hMk' hm'; simp only [hm', ↓reduceIte]; exact ⟨Q, hpq.symm⟩, hd.qi,
-    by rw [hqil]; exact hm.pl, h.qi.congrK hd.iscr hd.keep, by rw [hqil]; exact hpl1, by rw [hqil]; omega,
-    by rw [hqil, hpl]; omega,
+  exact ⟨minv, mp, mq, _, qib, Mk, hd.good, by omega, by rw [hpl]; omega, hm.wsQ, by rw [hpl]; exact hm.qws,
+    by have := hZq; rw [hql] at this; rw [hpl]; exact this, le_refl _, by rw [hoq, hop], by rw [hpl]; decide,
+    hm.wsP, by rw [hpl]; exact hm.pws, by rw [hpl]; exact ⟨hm.pn, hm.pinv, hm.pone⟩, hP'.1,
+    by rw [hpl]; exact hd.plt, hm.pmk, hd.qi, by rw [hqil]; exact hm.pl, h.qi.congrK hd.iscr hd.keep,
+    by rw [hqil]; exact hpl1, by rw [hqil]; omega, by rw [hqil, hpl]; omega,
     fun hm' => by obtain ⟨_, _, hqi⟩ := hMk' hm'; simp only [hm', ↓reduceIte, hQIe]; exact hqi, hqil⟩
-  by_cases hmk : Mk
-  · simp only [hmk, ↓reduceIte]
-    rw [hpl]
-    exact hd.pval hmk
-  · simp only [hmk, Bool.false_eq_true, ↓reduceIte] at hx0 ⊢
-    exact hx0
 
 /-- `pre`, from the checks: what `pre_ok` leaves. -/
 theorem pre_apost (M : Mont) {s t₀ : State} {B : Addr} {Z k : Nat} {op np ip pp qp dpp dqp qip : Addr}
@@ -212,9 +200,8 @@ theorem pre_apost (M : Mont) {s t₀ : State} {B : Addr} {Z k : Nat} {op np ip p
   have qxv := hr.qxv
   rw [hpl] at pws pxv
   rw [hql] at qws qxv
-  exact pre_ok M (wp := 16) hr.good (by omega) (by omega) (le_refl _) (by rw [hoq]; exact Nat.le_refl _) (by omega)
-    (by decide)
-    (by omega) hr.wsP hr.wsQ pws qws hr.nv hodd hN1 hr.xm pxv hP'.1 hP'.2 qxv hQ'.1 hQ'.2
+  exact pre_ok M (wp := 16) hr.good (by omega) (le_refl _) (by rw [hoq]; exact Nat.le_refl _) (by omega)
+    (by decide) (by omega) hr.wsP hr.wsQ pws qws hr.nv hr.xm pxv hP'.1 hP'.2 qxv hQ'.1 hQ'.2
 
 /-! ## The stages of the IFMA branch -/
 
@@ -236,9 +223,9 @@ def RID : StageRel := fun p σ xb pb qb dpb dqb qib t => ∃ (minv mp mq : BitVe
     (Spec.Rsa.os2ip xb) (Spec.Rsa.os2ip pb) (Spec.Rsa.os2ip qb) p.dpp p.dqp p.qip p.pl p.ql dpb dqb
     (p.mask xb pb qb qib) ∧ p.w = 32 ∧ wsWords p.pl = 16 ∧ wsWords p.ql = 16
 
-theorem preS_ct (M : Mont) (hG : GPowCT M sWsQ) (hR : RedcCT M Public.aY) :
+theorem preS_ct (M : Mont) (hR2 : RedcCT M Public.aR2) (hXm : RedcCT M Public.aXm) :
     RelCT isa (Two (Stage R3I)) (seqs (CrtIfma.pre M.mm)) (Two (Stage RAp)) :=
-  stage_step ((pre_ct M hG hR).mono (fun _ _ h => two_stage (fun p minv => (⟨p.B, p.Z, p.w, minv, p.N, offP p.w,
+  stage_step ((pre_ct M hR2 hXm).mono (fun _ _ h => two_stage (fun p minv => (⟨p.B, p.Z, p.w, minv, p.N, offP p.w,
     offQ p.w p.pl, 16⟩ : PrePub)) (fun _ _ _ _ _ _ _ _ _ h hv ⟨⟨minv, _, _, hr⟩, hw, hp, hq⟩ =>
       ⟨minv, hr.nv, prePre_of h hv hr rfl hw hp hq⟩) h) fun _ _ h => h)
     fun _ _ _ _ _ _ _ _ t h hv ⟨⟨minv, mp, mq, hr⟩, hw, hp, hq⟩ =>
@@ -253,11 +240,11 @@ theorem ifmaS_ct : RelCT isa (Two (Stage RAp)) (seqs CrtIfma.ifma) (Two (Stage R
       WP.mono (branchA2_ok h hv hr rfl hw hp hq (ifmaZ_of h.zk hw hp) hA) fun _ ⟨hd, _⟩ =>
         ⟨minv, mp, mq, hd, hw, hp, hq⟩
 
-theorem postS_ct (M : Mont) (hR : RedcCT M Public.aX) (hL : LoadCT aChunk sQinv sPlen)
+theorem postS_ct (M : Mont) (hR2 : RedcCT M Public.aR2) (hL : LoadCT aChunk sQinv sPlen)
     (hpost : (seqs (CrtIfma.post M.mm)).allInstrs (fun i => !loadsMxcsr i) = true) :
     RelCT isa (Two (Stage RID)) (seqs (CrtIfma.post M.mm)) (Two (Stage R5)) :=
-  stage_step ((post_ct M hR hL).mono (fun _ _ h => two_stage (fun p _ => (⟨p.B, p.Z, p.w, offP p.w,
-    wsWords p.pl, offQ p.w p.pl, wsWords p.ql, p.qip, p.pl⟩ : PostPub))
+  stage_step ((post_ct M hR2 hL).mono (fun _ _ h => two_stage (fun p _ => (⟨p.B, p.Z, p.w, offP p.w,
+    wsWords p.pl, offQ p.w p.pl, p.qip, p.pl⟩ : PostPub))
     (fun _ _ _ _ _ _ _ _ _ h hv ⟨minv, _, _, hd, hw, hp, hq⟩ =>
       ⟨minv, hd.nv, postPre_of h hv hd rfl hw hp hq⟩) h) fun _ _ h => h)
     fun _ _ _ _ _ _ _ _ _ h hv ⟨minv, mp, mq, hd, hw, hp, hq⟩ =>
@@ -284,24 +271,24 @@ theorem sizesS_ct : RelCT isa (Two (Stage R3)) (.block CrtIfma.sizes) (Two (Stag
         fun t' ⟨zf, me, k⟩ => ⟨⟨minv, mp, mq, hr.of_regs me k⟩, zf⟩
 
 /-- The IFMA branch. -/
-theorem ifmaB_ct (M : Mont) (hG : GPowCT M sWsQ) (hRY : RedcCT M Public.aY) (hRX : RedcCT M Public.aX)
+theorem ifmaB_ct (M : Mont) (hR2 : RedcCT M Public.aR2) (hXm : RedcCT M Public.aXm)
     (hL : LoadCT aChunk sQinv sPlen)
     (hpost : (seqs (CrtIfma.post M.mm)).allInstrs (fun i => !loadsMxcsr i) = true) :
     RelCT isa (Two (Stage R3I)) (seqs (CrtIfma.pre M.mm ++ CrtIfma.ifma ++ CrtIfma.post M.mm))
       (Two (Stage R5)) := by
   rw [List.append_assoc]
-  refine RelCT.seqs_append (by simp [CrtIfma.pre, Crt.gPow]) (by simp [CrtIfma.ifma])
-    (RelCT.seq (preS_ct M hG hRY) ?_)
-  exact RelCT.seqs_append (by simp [CrtIfma.ifma]) (by simp [CrtIfma.post, copyArr])
-    (RelCT.seq ifmaS_ct (postS_ct M hRX hL hpost))
+  refine RelCT.seqs_append (by simp [CrtIfma.pre, CrtIfma.prep]) (by simp [CrtIfma.ifma])
+    (RelCT.seq (preS_ct M hR2 hXm) ?_)
+  exact RelCT.seqs_append (by simp [CrtIfma.ifma]) (by simp [CrtIfma.post])
+    (RelCT.seq ifmaS_ct (postS_ct M hR2 hL hpost))
 
 /-! ## `main` -/
 
 /-- `main` leaks the same in runs that agree on the public data, given that
 its parts do. -/
 theorem ifmaMain_ct (M : Mont) (hS : SetupCT) (hC : ChecksCT) (hQ : QPhaseCT M) (hP : PPhaseCT M)
-    (hF : RelCT isa (Two (Stage R5)) (seqs finish) fun _ _ => True) (hG : GPowCT M sWsQ)
-    (hRY : RedcCT M Public.aY) (hRX : RedcCT M Public.aX) (hL : LoadCT aChunk sQinv sPlen)
+    (hF : RelCT isa (Two (Stage R5)) (seqs finish) fun _ _ => True) (hR2 : RedcCT M Public.aR2)
+    (hXm : RedcCT M Public.aXm) (hL : LoadCT aChunk sQinv sPlen)
     (hpost : (seqs (CrtIfma.post M.mm)).allInstrs (fun i => !loadsMxcsr i) = true) :
     RelCT isa (Two (Stage R0)) (CrtIfma.main M.mm) fun _ _ => True := by
   rw [ifmaMain_eq]
@@ -317,7 +304,7 @@ theorem ifmaMain_ct (M : Mont) (hS : SetupCT) (hC : ChecksCT) (hQ : QPhaseCT M) 
   · obtain ⟨_, _, _, _, _, _, _, _, _, _, z₁⟩ := h₁
     obtain ⟨_, _, _, _, _, _, _, _, _, _, z₂⟩ := h₂
     simp only [eval, z₁, z₂]
-  · refine (ifmaB_ct M hG hRY hRX hL hpost).mono (fun _ _ h => two_mono (fun p s h => ?_) h) fun _ _ h => h
+  · refine (ifmaB_ct M hR2 hXm hL hpost).mono (fun _ _ h => two_mono (fun p s h => ?_) h) fun _ _ h => h
     obtain ⟨⟨σ, xb, pb, qb, dpb, dqb, qib, hσ, hv, hr, hz⟩, he⟩ := h
     simp only [eval, hz, Option.some.injEq, decide_eq_true_eq] at he
     exact ⟨σ, xb, pb, qb, dpb, dqb, qib, hσ, hv, hr, he⟩

@@ -20,8 +20,8 @@ variable (M : Mont)
 /-- `vg_rsa_private_crt_ifma` leaks the same in runs that agree on the public
 data, given that `main`'s parts do. -/
 theorem ifmaCode_ct (hS : SetupCT) (hC : ChecksCT) (hQ : QPhaseCT M) (hP : PPhaseCT M)
-    (hF : RelCT isa (Two (Stage R5)) (seqs finish) fun _ _ => True) (hG : GPowCT M sWsQ)
-    (hRY : RedcCT M Public.aY) (hRX : RedcCT M Public.aX) (hL : LoadCT aChunk sQinv sPlen)
+    (hF : RelCT isa (Two (Stage R5)) (seqs finish) fun _ _ => True) (hR2 : RedcCT M Public.aR2)
+    (hXm : RedcCT M Public.aXm) (hL : LoadCT aChunk sQinv sPlen)
     (hpost : (seqs (CrtIfma.post M.mm)).allInstrs (fun i => !loadsMxcsr i) = true) :
     RelCT isa (Two CCRel) (CrtIfma.code M.mm) fun _ _ => True := by
   unfold CrtIfma.code
@@ -97,16 +97,16 @@ theorem ifmaCode_ct (hS : SetupCT) (hC : ChecksCT) (hQ : QPhaseCT M) (hP : PPhas
       have hv : Spec.Rsa.modulusValid p.m.N p.m.k = true := by
         simp only [eval, hz] at he; simpa using he
       exact ⟨t, xb, pb, qb, dpb, dqb, qib, hpre, hv, rfl⟩
-    exact (ifmaMain_ct M hS hC hQ hP hF hG hRY hRX hL hpost).mono (fun _ _ h => two_bind (fun p t₁ t₂ h₁ h₂ =>
+    exact (ifmaMain_ct M hS hC hQ hP hF hR2 hXm hL hpost).mono (fun _ _ h => two_bind (fun p t₁ t₂ h₁ h₂ =>
       ⟨p.m, toM p t₁ h₁, toM p t₂ h₂⟩) h) fun _ _ h => h
 
 /-- `vg_rsa_private_crt_ifma` is constant time but for `n`. -/
 theorem ifmaCode_constantTime_of (hS : SetupCT) (hC : ChecksCT) (hQ : QPhaseCT M) (hP : PPhaseCT M)
-    (hF : RelCT isa (Two (Stage R5)) (seqs finish) fun _ _ => True) (hG : GPowCT M sWsQ)
-    (hRY : RedcCT M Public.aY) (hRX : RedcCT M Public.aX) (hL : LoadCT aChunk sQinv sPlen)
+    (hF : RelCT isa (Two (Stage R5)) (seqs finish) fun _ _ => True) (hR2 : RedcCT M Public.aR2)
+    (hXm : RedcCT M Public.aXm) (hL : LoadCT aChunk sQinv sPlen)
     (hpost : (seqs (CrtIfma.post M.mm)).allInstrs (fun i => !loadsMxcsr i) = true) :
     ConstantTime isa crtContract.pre crtContract.pub (CrtIfma.code M.mm) := by
-  refine RelCT.constantTime ((ifmaCode_ct M hS hC hQ hP hF hG hRY hRX hL hpost).mono (fun s₁ s₂ ⟨h₁, h₂, hp⟩ => ⟨ccPubOf s₁, ?_, ?_⟩)
+  refine RelCT.constantTime ((ifmaCode_ct M hS hC hQ hP hF hR2 hXm hL hpost).mono (fun s₁ s₂ ⟨h₁, h₂, hp⟩ => ⟨ccPubOf s₁, ?_, ?_⟩)
     fun _ _ h => h)
   · exact ⟨h₁, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl⟩
   · obtain ⟨hr, a0, a1, a2, a3, a4, -, a6, -, a8, -, a10, a11, hn⟩ := hp

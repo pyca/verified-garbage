@@ -13,11 +13,14 @@ modulus of 32 words and primes of 16 words each, whose two exponentiations
 * `amm`: two almost-Montgomery multiplications at once, `a b 2⁻¹⁰⁴⁰` modulo
   `p` and modulo `q` (below `2 p` and `2 q` for inputs below them), each in
   five registers. For each limb `b_i` of the second operand: the low halves
-  of `a b_i` into the accumulator; `u = acc₀ k₀ mod 2⁵²` (`k₀ = -m⁻¹ mod
-  2⁵²`); the low halves of `u m`; the carry of limb 0 into limb 1; the
-  accumulator shifted down a limb, which in the stride layout is a change
-  of the registers' roles and a lane shift of the register of limb 0; and
-  the high halves of `a b_i` and `u m`. Five limbs make a block, after
+  of `a b_i` into the accumulator, and the high halves of those that stay in
+  their lane after the shift below (limbs 0–3 of each lane, into the next
+  limb), which keeps the multipliers busy while `u` is computed;
+  `u = acc₀ k₀ mod 2⁵²` (`k₀ = -m⁻¹ mod 2⁵²`); the low halves of `u m`; the
+  carry of limb 0 into limb 1; the accumulator shifted down a limb, which in
+  the stride layout is a change of the registers' roles and a lane shift of
+  the register of limb 0; and the high halves of `u m` and of the rest of
+  `a b_i`. Five limbs make a block, after
   which the roles are back where they started. The result is carried
   limb by limb into twenty limbs below `2⁵²`.
 * The two exponentiations: the bases and 1 in Montgomery form (`R = 2¹⁰⁴⁰`)
@@ -88,25 +91,29 @@ def tReg : XReg := .xmm15
 
 /-- Step `i` (0–4) of a block, for `p` (0) and `q` (1) in turn at each
 stage: `r8` the first operand, `r9` the second plus 8 per block, `r10` the
-region (the modulus and `k₀`). -/
+region (the modulus and `k₀`). Ordered so that the chain through `u` and
+the shift starts first: the low halves into roles 0 and 1, `u`, what role
+1 needs before the shift, the shift, then the rest limb by limb. -/
 def ammStep (i : Nat) : List Instr :=
   let ps := [0, 1]
+  let loA (p k : Nat) : Instr := .vpmadd52Load false (acc p k i) (bReg p) (at_ .r8 (D * p + 32 * k))
+  let hiA (p k : Nat) : Instr := .vpmadd52Load true (acc p (k + 1) i) (bReg p) (at_ .r8 (D * p + 32 * k))
+  let loM (p k : Nat) : Instr := .vpmadd52Load false (acc p k i) (uReg p) (at_ .r10 (D * p + oM + 32 * k))
+  let hiM (p k : Nat) : Instr := .vpmadd52Load true (acc p k (i + 1)) (uReg p) (at_ .r10 (D * p + oM + 32 * k))
   ps.flatMap (fun p => [.mov .rax (.mem (at_ .r9 (D * p + 32 * i))), .vop (.vmovq (bReg p) .rax),
     .vop (.vpbroadcastq .l256 (bReg p) (bReg p))]) ++
-  ps.flatMap (fun p => (List.range 5).map fun k =>
-    .vpmadd52Load false (acc p k i) (bReg p) (at_ .r8 (D * p + 32 * k))) ++
+  ps.flatMap (fun p => [loA p 0, loA p 1]) ++
   ps.flatMap (fun p => [.vop (.vbin .vpxor .l256 tReg tReg tReg),
     .vpmadd52Load false tReg (acc p 0 i) (at_ .r10 (D * p + oK0)),
     .vop (.vpbroadcastq .l256 (uReg p) tReg)]) ++
-  ps.flatMap (fun p => (List.range 5).map fun k =>
-    .vpmadd52Load false (acc p k i) (uReg p) (at_ .r10 (D * p + oM + 32 * k))) ++
+  ps.flatMap (fun p => [hiA p 0, loM p 0, loM p 1]) ++
   ps.flatMap (fun p => [.vop (.vshift .psrlq .l256 tReg (acc p 0 i) 52),
     .vop (.vpblendd .l256 tReg zReg tReg 0x03), .vop (.vbin .vpaddq .l256 (acc p 1 i) (acc p 1 i) tReg),
     .vop (.vpermq (acc p 0 i) (acc p 0 i) 0x39),
     .vop (.vpblendd .l256 (acc p 0 i) (acc p 0 i) zReg 0xC0)]) ++
-  ps.flatMap (fun p => (List.range 5).flatMap fun k =>
-    [.vpmadd52Load true (acc p k (i + 1)) (bReg p) (at_ .r8 (D * p + 32 * k)),
-     .vpmadd52Load true (acc p k (i + 1)) (uReg p) (at_ .r10 (D * p + oM + 32 * k))])
+  ps.flatMap (fun p => [hiM p 0]) ++
+  ps.flatMap (fun p => (List.range 3).flatMap fun j => [loA p (j + 2), hiA p (j + 1), loM p (j + 2), hiM p (j + 1)]) ++
+  ps.flatMap (fun p => [.vpmadd52Load true (acc p 4 (i + 1)) (bReg p) (at_ .r8 (D * p + 128)), hiM p 4])
 
 /-- A block: five steps, then the next block's limbs of the second operand
 and the count of blocks. -/
@@ -289,15 +296,17 @@ def result (p : Nat) : List (Prog isa) :=
 
 /-! ## The phases -/
 
-/-- `q`'s and `p`'s bases (`x R_X mod X` in `aXc`, `R_X mod X` in `aY`).
-Both primes have 16 words, so `G = 2^E mod n` is the same for both: it is
-computed once, kept in `n`'s `aX` (for `p`'s, and for after the
-exponentiations). -/
+/-- A prime's bases, in its workspace (`rdi := [sl]`), from `n`'s `R_n² mod
+n` and `c R_n mod n` (`R_n = R_X²`, as `n` has twice the prime's words):
+`aY := R_X² mod X` (`redc`, which multiplies by `R_X⁻²`), `aXc := c mod X`,
+then `aXc := c R_X mod X` (through `aT`) and `aY := R_X mod X`. -/
+def prep (mul : Nat → Nat → Nat → Prog isa) (sl : Nat) : List (Prog isa) :=
+  [.block [.mov .rdi (.mem (hdr sl))]] ++ redc mul aR2 ++ copyArr aY aXc ++ redc mul aXm ++ [mul aT aY aXc] ++
+    copyArr aXc aT ++ [mul aY aY aOne, .block [leave]]
+
+/-- `q`'s and `p`'s bases (`x R_X mod X` in `aXc`, `R_X mod X` in `aY`). -/
 def pre (mul : Nat → Nat → Nat → Prog isa) : List (Prog isa) :=
-  gPow mul sWsQ ++ copyArr aX aY ++ [.block [enterQ]] ++ redc mul aY ++ copyArr aY aXc ++
-    [.block [leave], mul aY aXm aY, .block [enterQ]] ++ redc mul aY ++ [.block [leave]] ++
-  copyArr aY aX ++ [.block [enterP]] ++ redc mul aY ++ copyArr aY aXc ++
-    [.block [leave], mul aY aXm aY, .block [enterP]] ++ redc mul aY ++ [.block [leave]]
+  prep mul sWsQ ++ prep mul sWsP
 
 /-- The IFMA area after `q`'s workspace, its base into both prime
 workspaces; the regions; the vector code; the results. -/
@@ -308,12 +317,14 @@ def ifma : List (Prog isa) :=
   [.block [.mov .rbx (.mem (hdr sIfma))], vec] ++
   result 1 ++ [.block [leave, enterP]] ++ result 0 ++ [.block [leave]]
 
-/-- `p`'s phase after its exponentiation, as `pPhase`: `m_q R_p`, `h`. -/
+/-- `p`'s phase after its exponentiation: `aXc := R_p² mod p` as in `prep`,
+`m_q` (`q`'s `aY`, of as many words) into `aChunk` and `aXc := m_q R_p mod
+p` (through `aChunk`); then `h = (m_p - m_q) qInv mod p` into `aY`, as `pPhase` computes it. -/
 def post (mul : Nat → Nat → Nat → Prog isa) : List (Prog isa) :=
-  copyArr aY aX ++ [zeroArr aX,
-    .block [.mov .rax (.mem (hdr sWsQ)), .mov .rsi (.mem (ws .rax (sArr aY))), .mov .r12 (.mem (ws .rax sW)),
-      .mov .rbx (.mem (hdr (sArr aX)))],
-    copyWords, mul aX aX aR2, mul aX aX aY, .block [enterP]] ++ redc mul aX ++
+  [.block [enterP]] ++ redc mul aR2 ++
+  [.block [.mov .rax (.mem (hdr sLink)), .mov .rax (.mem (ws .rax sWsQ)), .mov .rsi (.mem (ws .rax (sArr aY))),
+      .mov .r12 (.mem (hdr sW)), .mov .rbx (.mem (hdr (sArr aChunk)))],
+    copyWords, mul aChunk aChunk aXc] ++ copyArr aXc aChunk ++
   subModArr aT aY aXc ++ loadArr aChunk sQinv sPlen ++ maskArr aChunk ++ [mul aY aT aChunk, .block [leave]]
 
 /-- Whether `n` has 32 words and `p` and `q` 16 (`(len + 7) / 8` of their

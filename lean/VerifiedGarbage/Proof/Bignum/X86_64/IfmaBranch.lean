@@ -80,8 +80,6 @@ structure IDone (s t : State) (B : Addr) (Z w op oq a : Nat) (minv mp mq : BitVe
     (dpp dqp qip : Addr) (pl ql : Nat) (dpb dqb : List Byte) (Mk : Bool) : Prop where
   good : Good t B Z w minv
   nv : NVals t B w minv N
-  xl : wv t.mem B (slot w Public.aX) w < N
-  xv : wv t.mem B (slot w Public.aX) w % N = 2 ^ (64 * 16 * (nChunks w 16 + 1)) % N
   msk : word t.mem B (8 * Public.sMask) = mask Mk
   im : IMem t.mem B w op oq a minv mp mq (mask Mk) (if Mk then P else 3) (if Mk then Q else 3) dpp dqp pl ql
   qlt : wv t.mem (off B oq) (slot 16 Public.aY) 16 < if Mk then Q else 3
@@ -114,8 +112,6 @@ theorem ifmaR_ge {op oq a : Nat} (hpq : op ≤ oq) (hqa : oq ≤ a) : ∀ r ∈ 
 /-- What `pre` leaves (`pre_ok`), from `s`. -/
 def APost (s t : State) (B : Addr) (Z w op oq wp : Nat) (minv mp mq : BitVec 64) (N P Q C : Nat) : Prop :=
   Good t B Z w minv ∧ NVals t B w minv N ∧ PrimeRdy t B op wp mp N P C ∧ PrimeRdy t B oq wp mq N Q C ∧
-    wv t.mem B (slot w Public.aX) w < N ∧
-    wv t.mem B (slot w Public.aX) w % N = 2 ^ (64 * wp * (nChunks w wp + 1)) % N ∧
     Frm B (preRanges w op wp oq wp) s.mem t.mem ∧ Keep mmRegs s t ∧
     word t.mem (off B op) (8 * sMaskX) = word s.mem (off B op) (8 * sMaskX)
 
@@ -167,7 +163,7 @@ theorem branchA2_ok {s t₀ s₁ : State} {B : Addr} {Z k : Nat} {op np ip pp qp
   rw [hpl] at pws pxv
   rw [hql] at qws qxv
   have hh₀ : ∀ i < 32, hFixed i = true → word t₀.mem B (8 * i) = word s.mem B (8 * i) := hr.hfix
-  obtain ⟨hg₁, hN₁, rp, rq, hXl, hXv, f₁, k₁, mk₁⟩ := hA
+  obtain ⟨hg₁, hN₁, rp, rq, f₁, k₁, mk₁⟩ := hA
   have ns₁ := preRanges_nsafe (w := (k + 7) / 8) (wp := 16) (wq := 16) (le_refl (offP ((k + 7) / 8)))
     (show slot ((k + 7) / 8) 8 ≤ offQ ((k + 7) / 8) pl by rw [hoq]; omega)
   have hz : slot ((k + 7) / 8) 8 ≤ 2 ^ 64 := by omega
@@ -229,10 +225,6 @@ theorem branchA2_ok {s t₀ s₁ : State} {B : Addr} {Z k : Nat} {op np ip pp qp
     exact ⟨⟨Q, hpq.symm⟩, ⟨P, by rw [← hpq, Nat.mul_comm]⟩⟩
   rw [h.dpl, h.dql] at m₂
   refine ⟨⟨⟨hg₁.scr.congr k₂.2.2, d₂, m₂.nh⟩, hN₁.of_nsafe f₂ (above_nsafe (le_refl _) hge) hz (by omega),
-    by rw [wv_below_frm f₂ hge (by have := slot_le (w := (k + 7) / 8) (show Public.aX < 8 by decide); omega)
-      (by omega)]; exact hXl,
-    by rw [wv_below_frm f₂ hge (by have := slot_le (w := (k + 7) / 8) (show Public.aX < 8 by decide); omega)
-      (by omega)]; exact hXv,
     by rw [hb₂ _ (by unfold Public.sMask sFn; omega), hb₁ _ (by decide) (by decide) (by decide)]; exact hr.msk,
     m₂, qlt, fun hm => ?_, plt, fun hm => ?_,
     by rw [hb₂ _ (by unfold sQinv sFn; omega), hf₁ _ (by decide) (by decide)]; exact h.hQi,
@@ -291,9 +283,9 @@ theorem branchA_ok (M : Mont) {s t₀ : State} {B : Addr} {Z k : Nat} {op np ip 
   rw [hql] at qws qxv
   have hh₀ : ∀ i < 32, hFixed i = true → word t₀.mem B (8 * i) = word s.mem B (8 * i) := hr.hfix
   -- `pre`.
-  refine wp_seqs_append (by simp [CrtIfma.pre, Crt.gPow]) (by simp [CrtIfma.ifma]) (WP.mono_mx hpre
-    (pre_ok M (wp := 16) hr.good (by omega) (by omega) (le_refl _) (by rw [hoq]) (by omega) (by decide)
-      (by omega) hr.wsP hr.wsQ pws qws hr.nv hodd hN1 hr.xm pxv hP'.1 hP'.2 qxv hQ'.1 hQ'.2)
+  refine wp_seqs_append (by simp [CrtIfma.pre, CrtIfma.prep]) (by simp [CrtIfma.ifma]) (WP.mono_mx hpre
+    (pre_ok M (wp := 16) hr.good (by omega) (le_refl _) (by rw [hoq]) (by omega) (by decide)
+      (by omega) hr.wsP hr.wsQ pws qws hr.nv hr.xm pxv hP'.1 hP'.2 qxv hQ'.1 hQ'.2)
     fun s₁ hA mx₁ => WP.mono (hA2 s₁ hA) fun t ⟨hd, mx⟩ =>
       ⟨hd, by rw [mx, mx₁]⟩)
 
@@ -341,11 +333,11 @@ theorem branchB_ok (M : Mont) {s t₁ : State} {B : Addr} {Z k : Nat} {op np ip 
   -- The multiplier of `R_p` in `p`'s `aY`: `C^dp` for a key that passed the checks.
   obtain ⟨x0, hx0⟩ := exists_mont' (VG.Proof.Bignum.coprime_pow2 hP'.2 (64 * wsWords pl)) hP'.1
     (wv t₁.mem (off B (offP ((k + 7) / 8))) (slot (wsWords pl) Public.aY) (wsWords pl))
-  refine WP.mono_mx hpost (post_ok M (wx := wsWords pl) (wq := wsWords ql) (op := offP ((k + 7) / 8))
+  refine WP.mono_mx hpost (post_ok M (wx := wsWords pl) (op := offP ((k + 7) / 8))
     (oq := offQ ((k + 7) / 8) pl) (mx := mp) (mq := mq) (X := if Mk then P else 3)
-    (m1 := if Mk then C ^ Spec.Rsa.os2ip dpb else x0) (c := Mk) (qib := qib) hd.good (by omega) (by omega) hd.nv
-    hodd hd.xl (by rw [hpl]; exact hd.xv) hm.wsQ (by rw [hql]; exact hm.qws) hZq (by rw [hql]; omega)
-    (by rw [hql]; omega) (le_refl _) (by rw [hoq, hop]) (by rw [hpl]; decide) (by rw [hpl]; omega) hm.wsP
+    (m1 := if Mk then C ^ Spec.Rsa.os2ip dpb else x0) (c := Mk) (qib := qib) hd.good (by omega) hd.nv
+    (by rw [hpl]; omega) hm.wsQ (by rw [hpl]; exact hm.qws) (by have := hZq; rw [hql] at this; rw [hpl]; exact this)
+    (le_refl _) (by rw [hoq, hop]) (by rw [hpl]; decide) hm.wsP
     (by rw [hpl]; exact hm.pws) (by rw [hpl]; exact ⟨hm.pn, hm.pinv, hm.pone⟩) hP'.1 hP'.2
     (by rw [hpl]; exact hd.plt) (fun _ => ?_) hm.pmk
     (fun hm' => by obtain ⟨_, hpq, _⟩ := hMk' hm'; simp only [hm', ↓reduceIte]; exact ⟨Q, hpq.symm⟩) hd.qi
@@ -406,8 +398,8 @@ theorem branchB_ok (M : Mont) {s t₁ : State} {B : Addr} {Z k : Nat} {op np ip 
     (hd.keep.trans k').mono (by simp [mmRegs])⟩, mx'⟩
   obtain ⟨a, b, ha, hb, hbP, hh⟩ := hh' hmk
   simp only [hmk, ↓reduceIte] at ha hb hbP hh
-  rw [show wv t₁.mem (off B (offQ ((k + 7) / 8) pl)) (slot (wsWords ql) Public.aY) (wsWords ql) =
-    wv t₁.mem (off B (offQ ((k + 7) / 8) pl)) (slot 16 Public.aY) 16 by rw [hql], hd.qval hmk] at hb
+  rw [show wv t₁.mem (off B (offQ ((k + 7) / 8) pl)) (slot (wsWords pl) Public.aY) (wsWords pl) =
+    wv t₁.mem (off B (offQ ((k + 7) / 8) pl)) (slot 16 Public.aY) 16 by rw [hpl], hd.qval hmk] at hb
   exact ⟨a, b, ha, hb, hbP, by rw [hh, hQIe]⟩
 
 end VG.Proof.Bignum.X86_64
