@@ -176,7 +176,7 @@ theorem pkFinish_ok {c : Cfg} (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr
   · rw [k₆.mem, R₅.mem, bytesAt_add, show 16 * c.n = 8 * c.n + 8 * c.n by omega, bytesAt_add, lead, first,
       BitVec.add_assoc, BitVec.ofNat_add_ofNat, e₄, y₃]
     cases b
-    · simp only [Bool.false_eq_true, ite_false, List.replicate_add]; rfl
+    · simp only [Bool.false_eq_true, ite_false, ← List.replicate_append_replicate]; rfl
     · simp only [ite_true]; rfl
   · have hx3 : Reg.x3 ∉ Cfg.saved.map Prod.fst := by decide
     rw [e₆, R₅.other _ hx3, hx3₄, mask_bit]
@@ -408,7 +408,7 @@ theorem args_ok (s : State) :
 
 /-- `vg_ec_<curve>_public_key` computes the specification's public key and
 restores the callee-saved registers. -/
-theorem publicKey_ok (hc : CfgOk c) (hC : Good c.C) {s₀ : State} (hp : PkPre c s₀) :
+theorem publicKey_ok (hc : CfgOk c) (hC : Law c.C) {s₀ : State} (hp : PkPre c s₀) :
     WP isa (Impl.EcKey.AArch64.Cfg.publicKey c) s₀ fun s' =>
       (∀ r ∈ Cfg.saved.map Prod.fst, s'.gpr r = s₀.gpr r) ∧ PkPost c s₀ s' := by
   have h0 := hc.n0
