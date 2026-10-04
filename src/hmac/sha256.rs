@@ -53,6 +53,5 @@ super::streaming_hmac!(
             (vg_hmac_sha256_init_avx2, vg_hmac_sha256_finalize_avx2),
     },
     state: 96,
-    scratch: 104,
     output: 32,
 );

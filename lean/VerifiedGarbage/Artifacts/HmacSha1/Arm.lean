@@ -1,5 +1,6 @@
 import VerifiedGarbage.TCB.Arm.Target
 import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.Instances
+import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.Frame
 
 /-!
 # HMAC-SHA-1 (RFC 2104) on ARMv7
@@ -15,6 +16,10 @@ compression function.
 compression function (`vg_sha1_compress`), on a block laid out at fixed
 offsets in `scratch`. It pushes 8 bytes of stack (the stack arguments of
 `finalize`); `stack` is that of the shared contract, 16 bytes.
+
+`init` and `finalize` keep their working space in a frame of their own
+(`Proof/Pbkdf2/Md/Arm/Frame.lean`); `init_scratch` and `finalize_scratch`, the
+same code with it as an argument, are what PBKDF2's code calls.
 -/
 
 namespace VG.Artifacts.HmacSha1.Arm
@@ -23,18 +28,38 @@ def artifacts : List Artifact := [
   { Spec.Hmac.sha1I.initApi with
     target := Arm.target
     doc := Spec.Hmac.sha1I.initApi.doc
-    code := Proof.Pbkdf2.Md.Arm.sha1Md.hmacInit
-    contract := Spec.Hmac.sha1I.initContract Arm.abi 16
+    code := Impl.StackScratch.Arm.withStackScratch (Proof.Pbkdf2.Md.Arm.frame Spec.Hmac.sha1I) 0 Proof.Pbkdf2.Md.Arm.sha1Md.hmacInit
+    contract := Spec.Hmac.sha1I.initContract Arm.abi (16 + Proof.Pbkdf2.Md.Arm.frame Spec.Hmac.sha1I)
     ofSig := ⟨_, _, _, by unfold Spec.Hmac.Instance.initContract; rfl⟩
-    stack := 16
-    verified := Proof.Pbkdf2.Md.Arm.Instances.sha1_init
+    stack := 16 + Proof.Pbkdf2.Md.Arm.frame Spec.Hmac.sha1I
+    verified := Proof.Pbkdf2.Md.Arm.initFramed Proof.Pbkdf2.Md.Arm.Instances.sha1_init (by decide)
+      Proof.Pbkdf2.Md.Arm.sha1_initFrameSat
     spSafe := Code.all_of_forall (fun _ => rfl) _ },
   { Spec.Hmac.sha1I.finalizeApi with
     target := Arm.target
     doc := Spec.Hmac.sha1I.finalizeApi.doc
-    code := Proof.Pbkdf2.Md.Arm.sha1Md.hmacFin
-    contract := Spec.Hmac.sha1I.finalizeContract Arm.abi 16
+    code := Impl.StackScratch.Arm.withStackScratch (Proof.Pbkdf2.Md.Arm.frame Spec.Hmac.sha1I) 1 Proof.Pbkdf2.Md.Arm.sha1Md.hmacFin
+    contract := Spec.Hmac.sha1I.finalizeContract Arm.abi (16 + Proof.Pbkdf2.Md.Arm.frame Spec.Hmac.sha1I)
     ofSig := ⟨_, _, _, by unfold Spec.Hmac.Instance.finalizeContract; rfl⟩
+    stack := 16 + Proof.Pbkdf2.Md.Arm.frame Spec.Hmac.sha1I
+    verified := Proof.Pbkdf2.Md.Arm.finFramed Proof.Pbkdf2.Md.Arm.Instances.sha1_finalize (by decide)
+      Proof.Hmac.sha1_local (by decide) Proof.Pbkdf2.Md.Arm.sha1_finFrameSat
+    spSafe := Code.all_of_forall (fun _ => rfl) _ },
+  { Spec.Hmac.sha1I.initScratchApi with
+    target := Arm.target
+    doc := Spec.Hmac.sha1I.initScratchApi.doc
+    code := Proof.Pbkdf2.Md.Arm.sha1Md.hmacInit
+    contract := Spec.Hmac.sha1I.initScratchContract Arm.abi 16
+    ofSig := ⟨_, _, _, by unfold Spec.Hmac.Instance.initScratchContract; rfl⟩
+    stack := 16
+    verified := Proof.Pbkdf2.Md.Arm.Instances.sha1_init
+    spSafe := Code.all_of_forall (fun _ => rfl) _ },
+  { Spec.Hmac.sha1I.finalizeScratchApi with
+    target := Arm.target
+    doc := Spec.Hmac.sha1I.finalizeScratchApi.doc
+    code := Proof.Pbkdf2.Md.Arm.sha1Md.hmacFin
+    contract := Spec.Hmac.sha1I.finalizeScratchContract Arm.abi 16
+    ofSig := ⟨_, _, _, by unfold Spec.Hmac.Instance.finalizeScratchContract; rfl⟩
     stack := 16
     verified := Proof.Pbkdf2.Md.Arm.Instances.sha1_finalize
     spSafe := Code.all_of_forall (fun _ => rfl) _ }]

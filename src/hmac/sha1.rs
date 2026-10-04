@@ -45,6 +45,5 @@ super::streaming_hmac!(
             (vg_hmac_sha1_init_shani, vg_hmac_sha1_finalize_shani),
     },
     state: 84,
-    scratch: 56,
     output: 20,
 );

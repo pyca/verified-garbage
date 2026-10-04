@@ -11,13 +11,250 @@
 /// * `inner` must be valid for reads and writes of 80 bytes.
 /// * `outer` must be valid for reads and writes of 80 bytes.
 /// * `key` must be valid for reads of `key_len` bytes.
+/// * `key_len` must be at most 64.
+/// * `inner` and `outer` must not overlap each other or `key` (distinct Rust objects never do).
+/// * None of `inner`, `outer` and `key` may overlap the 400 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_hmac_md5_init(inner: *mut [u8; 80], outer: *mut [u8; 80], key: *const u8, key_len: usize) {
+    core::arch::naked_asm!(
+        "sub sp, sp, #384",
+        "add x4, sp, #0",
+        "str x19, [x4, #112]",
+        "str x20, [x4, #120]",
+        "str x21, [x4, #128]",
+        "str x22, [x4, #136]",
+        "str x24, [x4, #144]",
+        "str x30, [x4, #152]",
+        "str x23, [x4, #160]",
+        "add x19, x0, #0",
+        "add x20, x4, #0",
+        "add x21, x1, #0",
+        "add x22, x2, #0",
+        "add x23, x4, #0",
+        "add x24, x3, #0",
+        "add x0, x19, #0",
+        "bl {vg_md5_init}",
+        "add x0, x21, #0",
+        "bl {vg_md5_init}",
+        "movz w14, #13878, lsl #0",
+        "movk w14, #13878, lsl #16",
+        "str w14, [x19, #16]",
+        "str w14, [x19, #20]",
+        "str w14, [x19, #24]",
+        "str w14, [x19, #28]",
+        "str w14, [x19, #32]",
+        "str w14, [x19, #36]",
+        "str w14, [x19, #40]",
+        "str w14, [x19, #44]",
+        "str w14, [x19, #48]",
+        "str w14, [x19, #52]",
+        "str w14, [x19, #56]",
+        "str w14, [x19, #60]",
+        "str w14, [x19, #64]",
+        "str w14, [x19, #68]",
+        "str w14, [x19, #72]",
+        "str w14, [x19, #76]",
+        "movz x10, #0, lsl #0",
+        "cbz x24, 20f",
+        "22:",
+        "add x13, x22, x10",
+        "ldrb w9, [x13, #0]",
+        "eor x9, x9, x14",
+        "add x12, x19, x10",
+        "strb w9, [x12, #16]",
+        "add x10, x10, #1",
+        "sub x11, x24, x10",
+        "cbnz x11, 22b",
+        "b 21f",
+        "20:",
+        "21:",
+        "movz w15, #27242, lsl #0",
+        "movk w15, #27242, lsl #16",
+        "ldr w9, [x19, #16]",
+        "eor x9, x9, x15",
+        "str w9, [x21, #16]",
+        "ldr w9, [x19, #20]",
+        "eor x9, x9, x15",
+        "str w9, [x21, #20]",
+        "ldr w9, [x19, #24]",
+        "eor x9, x9, x15",
+        "str w9, [x21, #24]",
+        "ldr w9, [x19, #28]",
+        "eor x9, x9, x15",
+        "str w9, [x21, #28]",
+        "ldr w9, [x19, #32]",
+        "eor x9, x9, x15",
+        "str w9, [x21, #32]",
+        "ldr w9, [x19, #36]",
+        "eor x9, x9, x15",
+        "str w9, [x21, #36]",
+        "ldr w9, [x19, #40]",
+        "eor x9, x9, x15",
+        "str w9, [x21, #40]",
+        "ldr w9, [x19, #44]",
+        "eor x9, x9, x15",
+        "str w9, [x21, #44]",
+        "ldr w9, [x19, #48]",
+        "eor x9, x9, x15",
+        "str w9, [x21, #48]",
+        "ldr w9, [x19, #52]",
+        "eor x9, x9, x15",
+        "str w9, [x21, #52]",
+        "ldr w9, [x19, #56]",
+        "eor x9, x9, x15",
+        "str w9, [x21, #56]",
+        "ldr w9, [x19, #60]",
+        "eor x9, x9, x15",
+        "str w9, [x21, #60]",
+        "ldr w9, [x19, #64]",
+        "eor x9, x9, x15",
+        "str w9, [x21, #64]",
+        "ldr w9, [x19, #68]",
+        "eor x9, x9, x15",
+        "str w9, [x21, #68]",
+        "ldr w9, [x19, #72]",
+        "eor x9, x9, x15",
+        "str w9, [x21, #72]",
+        "ldr w9, [x19, #76]",
+        "eor x9, x9, x15",
+        "str w9, [x21, #76]",
+        "add x1, x19, #16",
+        "add x0, x19, #0",
+        "movz x2, #1, lsl #0",
+        "add x3, x20, #0",
+        "bl {vg_md5_compress}",
+        "add x19, x21, #0",
+        "add x1, x21, #16",
+        "add x0, x19, #0",
+        "movz x2, #1, lsl #0",
+        "add x3, x20, #0",
+        "bl {vg_md5_compress}",
+        "ldr x19, [x23, #112]",
+        "ldr x20, [x23, #120]",
+        "ldr x21, [x23, #128]",
+        "ldr x22, [x23, #136]",
+        "ldr x24, [x23, #144]",
+        "ldr x30, [x23, #152]",
+        "ldr x23, [x23, #160]",
+        "add sp, sp, #384",
+        "ret",
+        vg_md5_init = sym super::md5::vg_md5_init,
+        vg_md5_compress = sym super::md5::vg_md5_compress,
+    )
+}
+
+/// Finishes an HMAC-MD5 computation: if, for a 64-byte key `K₀` and a text of fewer than 2⁶⁴ − 64 bytes, the MD5 streaming state `*inner` represents `(K₀ ⊕ ipad) ‖ text`, of `count` bytes, and `*outer` represents `K₀ ⊕ opad`, writes the HMAC-MD5 of the text under `K₀` (16 bytes) to `*out`.
+///
+/// Contract: `VG.Spec.Hmac.Instance.finalizeContract` of `VG.Spec.Hmac.md5I`. Constant time: only the pointers and `count` may affect timing, not the states.
+///
+/// # Safety
+///
+/// * `inner` must be valid for reads and writes of 80 bytes.
+/// * `outer` must be valid for reads of 80 bytes.
+/// * `out` must be valid for reads and writes of 16 bytes.
+/// * The contents of `inner` on return are unspecified.
+/// * `inner` and `out` must not overlap each other or `outer` (distinct Rust objects never do).
+/// * None of `inner`, `outer` and `out` may overlap the 400 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_hmac_md5_finalize(inner: *mut [u8; 80], outer: *const [u8; 80], count: u64, out: *mut [u8; 16]) {
+    core::arch::naked_asm!(
+        "sub sp, sp, #384",
+        "add x4, sp, #0",
+        "str x19, [x4, #112]",
+        "str x20, [x4, #120]",
+        "str x21, [x4, #128]",
+        "str x22, [x4, #136]",
+        "str x24, [x4, #144]",
+        "str x30, [x4, #152]",
+        "str x23, [x4, #160]",
+        "add x19, x0, #0",
+        "add x20, x1, #0",
+        "add x21, x3, #0",
+        "add x23, x4, #0",
+        "add x1, x2, #0",
+        "add x2, x23, #168",
+        "add x3, x23, #0",
+        "bl {vg_md5_finalize_scratch}",
+        "ldr w9, [x20, #0]",
+        "str w9, [x19, #0]",
+        "ldr w9, [x20, #4]",
+        "str w9, [x19, #4]",
+        "ldr w9, [x20, #8]",
+        "str w9, [x19, #8]",
+        "ldr w9, [x20, #12]",
+        "str w9, [x19, #12]",
+        "ldr w9, [x23, #168]",
+        "str w9, [x19, #16]",
+        "ldr w9, [x23, #172]",
+        "str w9, [x19, #20]",
+        "ldr w9, [x23, #176]",
+        "str w9, [x19, #24]",
+        "ldr w9, [x23, #180]",
+        "str w9, [x19, #28]",
+        "add x24, x21, #0",
+        "add x21, x19, #16",
+        "add x20, x23, #0",
+        "movz x9, #128, lsl #0",
+        "str w9, [x21, #16]",
+        "movz x9, #0, lsl #0",
+        "str w9, [x21, #20]",
+        "str w9, [x21, #24]",
+        "str w9, [x21, #28]",
+        "str w9, [x21, #32]",
+        "str w9, [x21, #36]",
+        "str w9, [x21, #40]",
+        "str w9, [x21, #44]",
+        "str w9, [x21, #48]",
+        "str w9, [x21, #52]",
+        "movz x22, #80, lsl #0",
+        "add x9, x22, x22",
+        "add x9, x9, x9",
+        "add x9, x9, x9",
+        "str x9, [x19, #72]",
+        "add x1, x21, #0",
+        "add x0, x19, #0",
+        "movz x2, #1, lsl #0",
+        "add x3, x20, #0",
+        "bl {vg_md5_compress}",
+        "add x21, x24, #0",
+        "ldr w9, [x19, #0]",
+        "str w9, [x21, #0]",
+        "ldr w9, [x19, #4]",
+        "str w9, [x21, #4]",
+        "ldr w9, [x19, #8]",
+        "str w9, [x21, #8]",
+        "ldr w9, [x19, #12]",
+        "str w9, [x21, #12]",
+        "ldr x19, [x23, #112]",
+        "ldr x20, [x23, #120]",
+        "ldr x21, [x23, #128]",
+        "ldr x22, [x23, #136]",
+        "ldr x24, [x23, #144]",
+        "ldr x30, [x23, #152]",
+        "ldr x23, [x23, #160]",
+        "add sp, sp, #384",
+        "ret",
+        vg_md5_finalize_scratch = sym super::md5::vg_md5_finalize_scratch,
+        vg_md5_compress = sym super::md5::vg_md5_compress,
+    )
+}
+
+/// `vg_hmac_md5_init`, with its working space in `*scratch`.
+///
+/// Contract: `VG.Spec.Hmac.Instance.initScratchContract` of `VG.Spec.Hmac.md5I`. Constant time: only the pointers and `key_len` may affect timing, not the key.
+///
+/// # Safety
+///
+/// * `inner` must be valid for reads and writes of 80 bytes.
+/// * `outer` must be valid for reads and writes of 80 bytes.
+/// * `key` must be valid for reads of `key_len` bytes.
 /// * `scratch` must be valid for reads and writes of 384 bytes.
 /// * `key_len` must be at most 64.
 /// * The contents of `scratch` on return are unspecified.
 /// * `inner`, `outer` and `scratch` must not overlap each other or `key` (distinct Rust objects never do).
 /// * None of `inner`, `outer`, `key` and `scratch` may overlap the 16 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_hmac_md5_init(inner: *mut [u8; 80], outer: *mut [u8; 80], key: *const u8, key_len: usize, scratch: *mut [u64; 48]) {
+pub(crate) unsafe extern "C" fn vg_hmac_md5_init_scratch(inner: *mut [u8; 80], outer: *mut [u8; 80], key: *const u8, key_len: usize, scratch: *mut [u64; 48]) {
     core::arch::naked_asm!(
         "str x19, [x4, #112]",
         "str x20, [x4, #120]",
@@ -142,9 +379,9 @@ pub(crate) unsafe extern "C" fn vg_hmac_md5_init(inner: *mut [u8; 80], outer: *m
     )
 }
 
-/// Finishes an HMAC-MD5 computation: if, for a 64-byte key `K₀` and a text of fewer than 2⁶⁴ − 64 bytes, the MD5 streaming state `*inner` represents `(K₀ ⊕ ipad) ‖ text`, of `count` bytes, and `*outer` represents `K₀ ⊕ opad`, writes the HMAC-MD5 of the text under `K₀` (16 bytes) to `*out`.
+/// `vg_hmac_md5_finalize`, with its working space in `*scratch`.
 ///
-/// Contract: `VG.Spec.Hmac.Instance.finalizeContract` of `VG.Spec.Hmac.md5I`. Constant time: only the pointers and `count` may affect timing, not the states.
+/// Contract: `VG.Spec.Hmac.Instance.finalizeScratchContract` of `VG.Spec.Hmac.md5I`. Constant time: only the pointers and `count` may affect timing, not the states.
 ///
 /// # Safety
 ///
@@ -157,7 +394,7 @@ pub(crate) unsafe extern "C" fn vg_hmac_md5_init(inner: *mut [u8; 80], outer: *m
 /// * `inner`, `out` and `scratch` must not overlap each other or `outer` (distinct Rust objects never do).
 /// * None of `inner`, `outer`, `out` and `scratch` may overlap the 16 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_hmac_md5_finalize(inner: *mut [u8; 80], outer: *const [u8; 80], count: u64, out: *mut [u8; 16], scratch: *mut [u64; 48]) {
+pub(crate) unsafe extern "C" fn vg_hmac_md5_finalize_scratch(inner: *mut [u8; 80], outer: *const [u8; 80], count: u64, out: *mut [u8; 16], scratch: *mut [u64; 48]) {
     core::arch::naked_asm!(
         "str x19, [x4, #112]",
         "str x20, [x4, #120]",

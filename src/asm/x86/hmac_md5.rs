@@ -13,13 +13,305 @@
 /// * `inner` must be valid for reads and writes of 80 bytes.
 /// * `outer` must be valid for reads and writes of 80 bytes.
 /// * `key` must be valid for reads of `key_len` bytes.
+/// * `key_len` must be at most 64.
+/// * `inner` and `outer` must not overlap each other or `key` (distinct Rust objects never do).
+/// * None of `inner`, `outer` and `key` may overlap the arguments on the stack, overlap the return address on the stack or the 456 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_hmac_md5_init(inner: *mut [u8; 80], outer: *mut [u8; 80], key: *const u8, key_len: usize) {
+    core::arch::naked_asm!(
+        "lea esp, [esp-408]",
+        "mov eax, DWORD PTR [esp+412]",
+        "mov DWORD PTR [esp+4], eax",
+        "mov eax, DWORD PTR [esp+416]",
+        "mov DWORD PTR [esp+8], eax",
+        "mov eax, DWORD PTR [esp+420]",
+        "mov DWORD PTR [esp+12], eax",
+        "mov eax, DWORD PTR [esp+424]",
+        "mov DWORD PTR [esp+16], eax",
+        "mov eax, esp",
+        "add eax, 24",
+        "mov DWORD PTR [esp+20], eax",
+        "mov eax, DWORD PTR [esp+20]",
+        "mov DWORD PTR [eax+112], ebx",
+        "mov DWORD PTR [eax+116], esi",
+        "mov DWORD PTR [eax+120], edi",
+        "mov DWORD PTR [eax+124], ebp",
+        "mov ebp, eax",
+        "mov ebx, DWORD PTR [esp+4]",
+        "mov esi, DWORD PTR [esp+8]",
+        "push ebx",
+        "call {vg_md5_init}",
+        "pop eax",
+        "push esi",
+        "call {vg_md5_init}",
+        "pop eax",
+        "mov ecx, 909522486",
+        "mov DWORD PTR [ebx+16], ecx",
+        "mov DWORD PTR [ebx+20], ecx",
+        "mov DWORD PTR [ebx+24], ecx",
+        "mov DWORD PTR [ebx+28], ecx",
+        "mov DWORD PTR [ebx+32], ecx",
+        "mov DWORD PTR [ebx+36], ecx",
+        "mov DWORD PTR [ebx+40], ecx",
+        "mov DWORD PTR [ebx+44], ecx",
+        "mov DWORD PTR [ebx+48], ecx",
+        "mov DWORD PTR [ebx+52], ecx",
+        "mov DWORD PTR [ebx+56], ecx",
+        "mov DWORD PTR [ebx+60], ecx",
+        "mov DWORD PTR [ebx+64], ecx",
+        "mov DWORD PTR [ebx+68], ecx",
+        "mov DWORD PTR [ebx+72], ecx",
+        "mov DWORD PTR [ebx+76], ecx",
+        "mov edi, DWORD PTR [esp+12]",
+        "mov ecx, DWORD PTR [esp+16]",
+        "mov edx, ebx",
+        "add edx, 16",
+        "test ecx, ecx",
+        "je 20f",
+        "22:",
+        "movzx eax, BYTE PTR [edi]",
+        "xor eax, 54",
+        "mov BYTE PTR [edx], al",
+        "add edi, 1",
+        "add edx, 1",
+        "sub ecx, 1",
+        "jne 22b",
+        "jmp 21f",
+        "20:",
+        "21:",
+        "mov eax, DWORD PTR [ebx+16]",
+        "xor eax, 1785358954",
+        "mov DWORD PTR [esi+16], eax",
+        "mov eax, DWORD PTR [ebx+20]",
+        "xor eax, 1785358954",
+        "mov DWORD PTR [esi+20], eax",
+        "mov eax, DWORD PTR [ebx+24]",
+        "xor eax, 1785358954",
+        "mov DWORD PTR [esi+24], eax",
+        "mov eax, DWORD PTR [ebx+28]",
+        "xor eax, 1785358954",
+        "mov DWORD PTR [esi+28], eax",
+        "mov eax, DWORD PTR [ebx+32]",
+        "xor eax, 1785358954",
+        "mov DWORD PTR [esi+32], eax",
+        "mov eax, DWORD PTR [ebx+36]",
+        "xor eax, 1785358954",
+        "mov DWORD PTR [esi+36], eax",
+        "mov eax, DWORD PTR [ebx+40]",
+        "xor eax, 1785358954",
+        "mov DWORD PTR [esi+40], eax",
+        "mov eax, DWORD PTR [ebx+44]",
+        "xor eax, 1785358954",
+        "mov DWORD PTR [esi+44], eax",
+        "mov eax, DWORD PTR [ebx+48]",
+        "xor eax, 1785358954",
+        "mov DWORD PTR [esi+48], eax",
+        "mov eax, DWORD PTR [ebx+52]",
+        "xor eax, 1785358954",
+        "mov DWORD PTR [esi+52], eax",
+        "mov eax, DWORD PTR [ebx+56]",
+        "xor eax, 1785358954",
+        "mov DWORD PTR [esi+56], eax",
+        "mov eax, DWORD PTR [ebx+60]",
+        "xor eax, 1785358954",
+        "mov DWORD PTR [esi+60], eax",
+        "mov eax, DWORD PTR [ebx+64]",
+        "xor eax, 1785358954",
+        "mov DWORD PTR [esi+64], eax",
+        "mov eax, DWORD PTR [ebx+68]",
+        "xor eax, 1785358954",
+        "mov DWORD PTR [esi+68], eax",
+        "mov eax, DWORD PTR [ebx+72]",
+        "xor eax, 1785358954",
+        "mov DWORD PTR [esi+72], eax",
+        "mov eax, DWORD PTR [ebx+76]",
+        "xor eax, 1785358954",
+        "mov DWORD PTR [esi+76], eax",
+        "mov eax, ebx",
+        "add eax, 16",
+        "mov ecx, 1",
+        "push ebp",
+        "push ecx",
+        "push eax",
+        "push ebx",
+        "call {vg_md5_compress}",
+        "pop eax",
+        "pop eax",
+        "pop eax",
+        "pop eax",
+        "mov ebx, esi",
+        "mov eax, ebx",
+        "add eax, 16",
+        "mov ecx, 1",
+        "push ebp",
+        "push ecx",
+        "push eax",
+        "push ebx",
+        "call {vg_md5_compress}",
+        "pop eax",
+        "pop eax",
+        "pop eax",
+        "pop eax",
+        "mov eax, ebp",
+        "mov ebx, DWORD PTR [eax+112]",
+        "mov esi, DWORD PTR [eax+116]",
+        "mov edi, DWORD PTR [eax+120]",
+        "mov ebp, DWORD PTR [eax+124]",
+        "lea esp, [esp+408]",
+        "ret",
+        ".p2align 6",
+        vg_md5_init = sym super::md5::vg_md5_init,
+        vg_md5_compress = sym super::md5::vg_md5_compress,
+    )
+}
+
+/// Finishes an HMAC-MD5 computation: if, for a 64-byte key `K₀` and a text of fewer than 2⁶⁴ − 64 bytes, the MD5 streaming state `*inner` represents `(K₀ ⊕ ipad) ‖ text`, of `count` bytes, and `*outer` represents `K₀ ⊕ opad`, writes the HMAC-MD5 of the text under `K₀` (16 bytes) to `*out`.
+///
+/// Contract: `VG.Spec.Hmac.Instance.finalizeContract` of `VG.Spec.Hmac.md5I`. Constant time: only the pointers and `count` may affect timing, not the states.
+///
+/// The function may overwrite the arguments on the stack, as the calling convention lets it.
+///
+/// # Safety
+///
+/// * `inner` must be valid for reads and writes of 80 bytes.
+/// * `outer` must be valid for reads of 80 bytes.
+/// * `out` must be valid for reads and writes of 16 bytes.
+/// * The contents of `inner` on return are unspecified.
+/// * `inner` and `out` must not overlap each other or `outer` (distinct Rust objects never do).
+/// * None of `inner`, `outer` and `out` may overlap the arguments on the stack, overlap the return address on the stack or the 460 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_hmac_md5_finalize(inner: *mut [u8; 80], outer: *const [u8; 80], count: u64, out: *mut [u8; 16]) {
+    core::arch::naked_asm!(
+        "lea esp, [esp-412]",
+        "mov eax, DWORD PTR [esp+416]",
+        "mov DWORD PTR [esp+4], eax",
+        "mov eax, DWORD PTR [esp+420]",
+        "mov DWORD PTR [esp+8], eax",
+        "mov eax, DWORD PTR [esp+424]",
+        "mov DWORD PTR [esp+12], eax",
+        "mov eax, DWORD PTR [esp+428]",
+        "mov DWORD PTR [esp+16], eax",
+        "mov eax, DWORD PTR [esp+432]",
+        "mov DWORD PTR [esp+20], eax",
+        "mov eax, esp",
+        "add eax, 28",
+        "mov DWORD PTR [esp+24], eax",
+        "mov eax, DWORD PTR [esp+24]",
+        "mov DWORD PTR [eax+112], ebx",
+        "mov DWORD PTR [eax+116], esi",
+        "mov DWORD PTR [eax+120], edi",
+        "mov DWORD PTR [eax+124], ebp",
+        "mov ebp, eax",
+        "mov ebx, DWORD PTR [esp+4]",
+        "mov esi, DWORD PTR [esp+8]",
+        "mov edi, DWORD PTR [esp+20]",
+        "mov eax, DWORD PTR [esp+12]",
+        "mov ecx, DWORD PTR [esp+16]",
+        "mov edx, ebp",
+        "add edx, 128",
+        "push ebp",
+        "push edx",
+        "push ecx",
+        "push eax",
+        "push ebx",
+        "call {vg_md5_finalize_scratch}",
+        "pop eax",
+        "pop eax",
+        "pop eax",
+        "pop eax",
+        "pop eax",
+        "mov ecx, DWORD PTR [esi]",
+        "mov DWORD PTR [ebx], ecx",
+        "mov ecx, DWORD PTR [esi+4]",
+        "mov DWORD PTR [ebx+4], ecx",
+        "mov ecx, DWORD PTR [esi+8]",
+        "mov DWORD PTR [ebx+8], ecx",
+        "mov ecx, DWORD PTR [esi+12]",
+        "mov DWORD PTR [ebx+12], ecx",
+        "mov ecx, DWORD PTR [ebp+128]",
+        "mov DWORD PTR [ebx+16], ecx",
+        "mov ecx, DWORD PTR [ebp+132]",
+        "mov DWORD PTR [ebx+20], ecx",
+        "mov ecx, DWORD PTR [ebp+136]",
+        "mov DWORD PTR [ebx+24], ecx",
+        "mov ecx, DWORD PTR [ebp+140]",
+        "mov DWORD PTR [ebx+28], ecx",
+        "mov ecx, 128",
+        "mov DWORD PTR [ebx+32], ecx",
+        "mov ecx, 0",
+        "mov DWORD PTR [ebx+36], ecx",
+        "mov ecx, 0",
+        "mov DWORD PTR [ebx+40], ecx",
+        "mov ecx, 0",
+        "mov DWORD PTR [ebx+44], ecx",
+        "mov ecx, 0",
+        "mov DWORD PTR [ebx+48], ecx",
+        "mov ecx, 0",
+        "mov DWORD PTR [ebx+52], ecx",
+        "mov ecx, 0",
+        "mov DWORD PTR [ebx+56], ecx",
+        "mov ecx, 0",
+        "mov DWORD PTR [ebx+60], ecx",
+        "mov ecx, 0",
+        "mov DWORD PTR [ebx+64], ecx",
+        "mov ecx, 0",
+        "mov DWORD PTR [ebx+68], ecx",
+        "mov ecx, 640",
+        "mov DWORD PTR [ebx+72], ecx",
+        "mov ecx, 0",
+        "mov DWORD PTR [ebx+76], ecx",
+        "mov eax, ebx",
+        "add eax, 16",
+        "mov ecx, 1",
+        "push ebp",
+        "push ecx",
+        "push eax",
+        "push ebx",
+        "call {vg_md5_compress}",
+        "pop eax",
+        "pop eax",
+        "pop eax",
+        "pop eax",
+        "mov eax, edi",
+        "mov ecx, DWORD PTR [ebx]",
+        "mov DWORD PTR [eax], ecx",
+        "mov ecx, DWORD PTR [ebx+4]",
+        "mov DWORD PTR [eax+4], ecx",
+        "mov ecx, DWORD PTR [ebx+8]",
+        "mov DWORD PTR [eax+8], ecx",
+        "mov ecx, DWORD PTR [ebx+12]",
+        "mov DWORD PTR [eax+12], ecx",
+        "mov eax, ebp",
+        "mov ebx, DWORD PTR [eax+112]",
+        "mov esi, DWORD PTR [eax+116]",
+        "mov edi, DWORD PTR [eax+120]",
+        "mov ebp, DWORD PTR [eax+124]",
+        "lea esp, [esp+412]",
+        "ret",
+        ".p2align 6",
+        vg_md5_finalize_scratch = sym super::md5::vg_md5_finalize_scratch,
+        vg_md5_compress = sym super::md5::vg_md5_compress,
+    )
+}
+
+/// `vg_hmac_md5_init`, with its working space in `*scratch`.
+///
+/// Contract: `VG.Spec.Hmac.Instance.initScratchContract` of `VG.Spec.Hmac.md5I`. Constant time: only the pointers and `key_len` may affect timing, not the key.
+///
+/// The function may overwrite the arguments on the stack, as the calling convention lets it.
+///
+/// # Safety
+///
+/// * `inner` must be valid for reads and writes of 80 bytes.
+/// * `outer` must be valid for reads and writes of 80 bytes.
+/// * `key` must be valid for reads of `key_len` bytes.
 /// * `scratch` must be valid for reads and writes of 384 bytes.
 /// * `key_len` must be at most 64.
 /// * The contents of `scratch` on return are unspecified.
 /// * `inner`, `outer` and `scratch` must not overlap each other or `key` (distinct Rust objects never do).
 /// * None of `inner`, `outer`, `key` and `scratch` may overlap the arguments on the stack, overlap the return address on the stack or the 48 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_hmac_md5_init(inner: *mut [u8; 80], outer: *mut [u8; 80], key: *const u8, key_len: usize, scratch: *mut [u64; 48]) {
+pub(crate) unsafe extern "C" fn vg_hmac_md5_init_scratch(inner: *mut [u8; 80], outer: *mut [u8; 80], key: *const u8, key_len: usize, scratch: *mut [u64; 48]) {
     core::arch::naked_asm!(
         "mov eax, DWORD PTR [esp+20]",
         "mov DWORD PTR [eax+112], ebx",
@@ -154,9 +446,9 @@ pub(crate) unsafe extern "C" fn vg_hmac_md5_init(inner: *mut [u8; 80], outer: *m
     )
 }
 
-/// Finishes an HMAC-MD5 computation: if, for a 64-byte key `K₀` and a text of fewer than 2⁶⁴ − 64 bytes, the MD5 streaming state `*inner` represents `(K₀ ⊕ ipad) ‖ text`, of `count` bytes, and `*outer` represents `K₀ ⊕ opad`, writes the HMAC-MD5 of the text under `K₀` (16 bytes) to `*out`.
+/// `vg_hmac_md5_finalize`, with its working space in `*scratch`.
 ///
-/// Contract: `VG.Spec.Hmac.Instance.finalizeContract` of `VG.Spec.Hmac.md5I`. Constant time: only the pointers and `count` may affect timing, not the states.
+/// Contract: `VG.Spec.Hmac.Instance.finalizeScratchContract` of `VG.Spec.Hmac.md5I`. Constant time: only the pointers and `count` may affect timing, not the states.
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -171,7 +463,7 @@ pub(crate) unsafe extern "C" fn vg_hmac_md5_init(inner: *mut [u8; 80], outer: *m
 /// * `inner`, `out` and `scratch` must not overlap each other or `outer` (distinct Rust objects never do).
 /// * None of `inner`, `outer`, `out` and `scratch` may overlap the arguments on the stack, overlap the return address on the stack or the 48 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_hmac_md5_finalize(inner: *mut [u8; 80], outer: *const [u8; 80], count: u64, out: *mut [u8; 16], scratch: *mut [u64; 48]) {
+pub(crate) unsafe extern "C" fn vg_hmac_md5_finalize_scratch(inner: *mut [u8; 80], outer: *const [u8; 80], count: u64, out: *mut [u8; 16], scratch: *mut [u64; 48]) {
     core::arch::naked_asm!(
         "mov eax, DWORD PTR [esp+24]",
         "mov DWORD PTR [eax+112], ebx",

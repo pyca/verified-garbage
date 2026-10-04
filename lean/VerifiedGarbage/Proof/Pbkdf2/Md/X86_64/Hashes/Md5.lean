@@ -33,8 +33,8 @@ def hash : Hash where
   initC := Impl.Md5.X86_64.Stream.init
   updN := Spec.Md5.updateScratchApi.name
   finN := Spec.Md5.finalizeScratchApi.name
-  hmacInitN := Spec.Hmac.md5I.initApi.name
-  hmacFinN := Spec.Hmac.md5I.finalizeApi.name
+  hmacInitN := Spec.Hmac.md5I.initScratchApi.name
+  hmacFinN := Spec.Hmac.md5I.finalizeScratchApi.name
   iterN := Spec.Hmac.md5I.iterateApi.name
 
 /-- `hash` without the functions it calls. -/
@@ -66,6 +66,8 @@ theorem coreOK : CoreOK coreH := by
     hfinSp := ?_
     hfinNs := ?_
     hfinD := ?_
+    hinitXD := ?_
+    hfinXD := ?_
     iterMx := ?_
     iterSp := ?_
     iterNs := ?_
@@ -89,6 +91,8 @@ theorem callees : Callees hash where
   iSp := by simp only [hash] <;> decide +kernel
   iNs := by simp only [hash] <;> decide +kernel
   iD := by simp only [hash] <;> decide +kernel
+  cXD := by simp only [hash]; lit_decide
+  iXD := by simp only [hash] <;> decide +kernel
 
 def ok : HashOK hash where
   md := Proof.Md5.md
@@ -132,13 +136,13 @@ def ok : HashOK hash where
   updDepth := Callees.updD callees coreOK
   finDepth := Callees.finD callees coreOK
 
-theorem satI : ∃ s, (Spec.Hmac.md5I.initContract X86_64.abi 16).pre s := by
-  inst_sat [Spec.Hmac.Instance.initContract, Spec.Hmac.md5I, Spec.Hmac.initContract, Spec.Hmac.initSig,
+theorem satI : ∃ s, (Spec.Hmac.md5I.initScratchContract X86_64.abi 16).pre s := by
+  inst_sat [Spec.Hmac.Instance.initScratchContract, Spec.Hmac.md5I, Spec.Hmac.initScratchContract, Spec.Hmac.initScratchSig, Spec.Hmac.initPre, Spec.Hmac.initPost,
     Spec.Hmac.md5S, Spec.Hmac.md5, X86_64.abi, X86_64.argRegs] using initSat 80 48
 
-theorem satF : ∃ s, (Spec.Hmac.md5I.finalizeContract X86_64.abi 16).pre s := by
-  inst_sat [Spec.Hmac.Instance.finalizeContract, Spec.Hmac.md5I, Spec.Hmac.finalizeContract,
-    Spec.Hmac.finalizeSig, Spec.Hmac.md5S, Spec.Hmac.md5, X86_64.abi, X86_64.argRegs] using finSat 80 16 48
+theorem satF : ∃ s, (Spec.Hmac.md5I.finalizeScratchContract X86_64.abi 16).pre s := by
+  inst_sat [Spec.Hmac.Instance.finalizeScratchContract, Spec.Hmac.md5I, Spec.Hmac.finalizeScratchContract,
+    Spec.Hmac.finalizeScratchSig, Spec.Hmac.finalizePost, Spec.Hmac.md5S, Spec.Hmac.md5, X86_64.abi, X86_64.argRegs] using finSat 80 16 48
 
 theorem satT : ∃ s, (Spec.Hmac.md5I.iterateContract X86_64.abi 8).pre s := by
   inst_sat [Spec.Hmac.Instance.iterateContract, Spec.Hmac.md5I, Spec.Pbkdf2.iterateContract,
@@ -151,6 +155,13 @@ theorem satP : ∃ s, (Spec.Hmac.md5I.pbkdf2Contract X86_64.abi 24).pre s := by
 
 /-- MD5, as a variant of `MdHash`. -/
 def variant : MdHash :=
-  MdHash.of ok coreOK callees rfl rfl satI satF satT satP "" [] []
+  MdHash.of ok coreOK callees rfl rfl satI satF satT satP (by decide)
+    (by
+      unfold Spec.Hmac.Instance.initContract Spec.Hmac.initContract
+      exact X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (Nat.le_of_ble_eq_true rfl))
+    (by
+      unfold Spec.Hmac.Instance.finalizeContract Spec.Hmac.finalizeContract
+      exact X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
+    "" [] []
 
 end VG.Proof.Pbkdf2.Md.X86_64.Md5

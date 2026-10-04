@@ -436,7 +436,7 @@ pub(crate) unsafe extern "C" fn vg_pbkdf2_hmac_sha384(password: *const u8, passw
         "push edx",
         "push esi",
         "push edi",
-        "call {vg_hmac_sha384_init}",
+        "call {vg_hmac_sha384_init_scratch}",
         "pop eax",
         "pop eax",
         "pop eax",
@@ -527,7 +527,7 @@ pub(crate) unsafe extern "C" fn vg_pbkdf2_hmac_sha384(password: *const u8, passw
         "push eax",
         "push esi",
         "push edx",
-        "call {vg_hmac_sha384_finalize}",
+        "call {vg_hmac_sha384_finalize_scratch}",
         "pop eax",
         "pop eax",
         "pop eax",
@@ -608,8 +608,8 @@ pub(crate) unsafe extern "C" fn vg_pbkdf2_hmac_sha384(password: *const u8, passw
         vg_sha384_init = sym super::sha512::vg_sha384_init,
         vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch,
         vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch,
-        vg_hmac_sha384_init = sym super::hmac_sha384::vg_hmac_sha384_init,
-        vg_hmac_sha384_finalize = sym super::hmac_sha384::vg_hmac_sha384_finalize,
+        vg_hmac_sha384_init_scratch = sym super::hmac_sha384::vg_hmac_sha384_init_scratch,
+        vg_hmac_sha384_finalize_scratch = sym super::hmac_sha384::vg_hmac_sha384_finalize_scratch,
         vg_pbkdf2_hmac_sha384_iterate = sym super::pbkdf2_sha384::vg_pbkdf2_hmac_sha384_iterate,
     )
 }

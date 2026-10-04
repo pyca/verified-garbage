@@ -29,8 +29,8 @@ structure FnsOK (F : Fns) where
   Wi : Nat
   Wf : Nat
   Wt : Nat
-  hi : Sound F.hiC (Spec.Hmac.initContract hH.SH Wi X86.abi 48)
-  hf : Sound F.hfC (Spec.Hmac.finalizeContract hH.SH Wf X86.abi 48)
+  hi : Sound F.hiC (Spec.Hmac.initScratchContract hH.SH Wi X86.abi 48)
+  hf : Sound F.hfC (Spec.Hmac.finalizeScratchContract hH.SH Wf X86.abi 48)
   it : Sound F.itC (Spec.Pbkdf2.iterateContract hH.SH Wt X86.abi 48)
   hiSp : NoSp F.hiC
   hfSp : NoSp F.hfC
