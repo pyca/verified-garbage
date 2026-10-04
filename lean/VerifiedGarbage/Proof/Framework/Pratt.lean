@@ -16,8 +16,9 @@ kernel evaluates the modular powers with `powMod`, a binary exponentiation on
 Lucas's theorem is proven here on `Nat`, by counting the powers of `a`
 modulo `p`, rather than taken from `Mathlib.NumberTheory.LucasPrimality`,
 whose algebra (`ZMod`, orders in groups) every module that imports a curve's
-prime proof would load (`ci/check_lean_speed.py`). `PrattZMod.lean` casts
-`powMod` to `ZMod` for the proofs that need it.
+prime proof would load (`ci/check_lean_speed.py`). A proof that computes a
+power in `ZMod p` with `powMod` casts `powMod_eq`'s `b ^ e % p` there
+(`ZMod.natCast_mod`, `Nat.cast_pow`).
 -/
 
 namespace VG.Proof.Pratt

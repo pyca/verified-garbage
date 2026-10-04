@@ -10,7 +10,8 @@ first six arguments in registers, the others on the stack.
 
 The working space holds three workspaces, each a header and eight arrays as
 `vg_rsa_public`'s (`Impl/Bignum/X86_64.lean`): one for `n` (`w` words), at
-`scratch`, then one for `p` and one for `q` (`max(2, ⌈len / 8⌉)` words each).
+`scratch`, then one for `p` and one for `q` (`max(2, ⌈len / 8⌉)` words each),
+each followed by 16 more arrays, the exponentiation's table.
 The code runs in one at a time, its base in `rdi`; the headers of `p`'s and
 `q`'s link back to `n`'s.
 
@@ -26,8 +27,8 @@ The code runs in one at a time, its base in `rdi`; the headers of `p`'s and
    `E = 64 w_X (K + 1)` and `K = ⌈w / w_X⌉` (by squarings and doublings
    mod `n`), then `x G mod n` reduced by `K` Montgomery steps mod `X`
    (`redc`): `x R_X mod X`.
-4. `m_X = c^d_X mod X` by squaring and multiplying at every bit of `d_X`,
-   the product selected by the bit (`expLoop`); `h = (m_p - m_q) qInv mod p`
+4. `m_X = c^d_X mod X` by a fixed window of 4 bits, with a table of the 16
+   powers after the prime's arrays, read by masked selections (`expLoop`); `h = (m_p - m_q) qInv mod p`
    and `m = m_q + q h`, written out masked.
 -/
 
@@ -65,6 +66,12 @@ def sV : Nat := sFn 5
 def sRem : Nat := sFn 6
 def sSrc : Nat := sFn 7
 def sMaskX : Nat := sFn 8
+/-- The window's table: its first entry, the entry being written or read,
+the window's value and the entry's index. -/
+def sTab : Nat := sFn 9
+def sEnt : Nat := sFn 10
+def sNib : Nat := sFn 11
+def sJ : Nat := sFn 12
 
 /-- The arrays of `p`'s and `q`'s workspaces, besides `X` (`aN`), the
 accumulator and the temporary: `redc`'s chunk and `qInv` (1), `x R_X`
@@ -125,6 +132,12 @@ def wsEnd : List Instr :=
   [.mov .rax (.mem (ws .rdx (sArr aOne))), .mov .rdx (.mem (ws .rdx sW)), .alu .add .rdx (.imm 2),
     .alu .add .rdx (.reg .rdx), .alu .add .rdx (.reg .rdx), .alu .add .rdx (.reg .rdx), .alu .add .rax (.reg .rdx)]
 
+/-- `rax := ` the end of a prime's workspace at `rdx`: its arrays, then the
+16 entries of the window's table (`8 (w + 2)` bytes each). -/
+def wsEndT : List Instr :=
+  wsEnd ++ [.alu .add .rdx (.reg .rdx), .alu .add .rdx (.reg .rdx), .alu .add .rdx (.reg .rdx),
+    .alu .add .rdx (.reg .rdx), .alu .add .rax (.reg .rdx)]
+
 /-- A workspace at `rax` (its base stored in slot `slotWs`) for a number of
 the byte length in slot `slotLen`: `w = max(2, ⌈len / 8⌉)`, its arrays'
 bases, and its link to `n`'s; `rdi` stays `n`'s. -/
@@ -155,7 +168,7 @@ def leave : Instr := .mov .rdi (.mem (hdr sLink))
 /-- The workspaces, `p`, `q` and `qInv` (into `p`'s chunk array). -/
 def primesSetup : List (Prog isa) :=
   [.block ([.mov .rdx (.reg .rdi)] ++ wsEnd)] ++ wsNew sWsP sPlen ++
-  [.block ([.mov .rdx (.mem (hdr sWsP))] ++ wsEnd)] ++ wsNew sWsQ sQlen ++
+  [.block ([.mov .rdx (.mem (hdr sWsP))] ++ wsEndT)] ++ wsNew sWsQ sQlen ++
   [.block [enterP]] ++ loadArr aN sP sPlen ++ loadArr aChunk sQinv sPlen ++ [.block [leave, enterQ]] ++
   loadArr aN sQ sQlen ++ [.block [leave]]
 
@@ -292,30 +305,67 @@ def gPow (mul : Nat → Nat → Nat → Prog isa) (slotWs : Nat) : List (Prog is
     .ite .ne (double aN aAcc aTmp aY) (.block []),
     .block [.mov .rax (.mem (hdr sCnt)), .shift .shr .rax 1, .store (hdr sCnt) .rax, .alu .test .rax (.reg .rax)]]) .ne]
 
-/-! ## The exponentiation -/
+/-! ## The exponentiation
 
-/-- One bit of the exponent: `Y := Y² R⁻¹`, `T := Y [aXc] R⁻¹`, and
-`Y := T` if the bit (the top of the byte in `sV`) is set. -/
-def expBit (mul : Nat → Nat → Nat → Prog isa) : List (Prog isa) := [
-  mul aY aY aY,
-  mul aT aY aXc,
-  .block [.mov .rdx (.mem (hdr sV)), .mov .rax (.reg .rdx), .alu .add .rax (.reg .rax), .store (hdr sV) .rax,
-    .shift .shr .rdx 7, .alu .and .rdx (.imm 1), .mov32 .rbp (.imm 0), .alu .sub .rbp (.reg .rdx),
-    .mov .r12 (.mem (hdr sW)), .mov .r8 (.mem (hdr (sArr aT))), .mov .rsi (.mem (hdr (sArr aY))),
-    .mov .rbx (.mem (hdr (sArr aY)))],
-  selectAcc,
-  .block [.mov .rax (.mem (hdr sBit)), .alu .sub .rax (.imm 1), .store (hdr sBit) .rax]]
+By a fixed window of 4 bits: `Y := Y¹⁶ T_v` for each 4 bits `v` of the
+exponent, from its top, with the table `T_i = x^i` in Montgomery form
+(`T_0 = Y`, which is 1 in Montgomery form). The entry is read by a masked
+selection from every entry, so the addresses do not depend on `v`. -/
 
-/-- `Y := Y^d` (`Y` and `[aXc]` in Montgomery form) for the exponent whose
+/-- `rax := [sEnt] + 8 (w + 2)`, into `sEnt`: the next entry. -/
+def nextEnt : Prog isa :=
+  .block [.mov .rax (.mem (hdr sEnt)), .mov .rdx (.mem (hdr sW)), .alu .add .rdx (.imm 2), .alu .add .rdx (.reg .rdx),
+    .alu .add .rdx (.reg .rdx), .alu .add .rdx (.reg .rdx), .alu .add .rax (.reg .rdx), .store (hdr sEnt) .rax]
+
+/-- `[sEnt] := [a]` over `w` words. -/
+def toEnt (a : Nat) : List (Prog isa) :=
+  [.block [.mov .r12 (.mem (hdr sW)), .mov .rsi (.mem (hdr (sArr a))), .mov .rbx (.mem (hdr sEnt))], copyWords]
+
+/-- The table, after the workspace's last array: `T_0 := Y`, `T_1 := [aXc]`,
+and `T_i := T_(i-1) [aXc] R⁻¹` (in `aT`) for `i` from 2 to 15. -/
+def tabBuild (mul : Nat → Nat → Nat → Prog isa) : List (Prog isa) :=
+  [.block [.mov .rax (.mem (hdr (sArr aOne))), .mov .rdx (.mem (hdr sW)), .alu .add .rdx (.imm 2),
+    .alu .add .rdx (.reg .rdx), .alu .add .rdx (.reg .rdx), .alu .add .rdx (.reg .rdx), .alu .add .rax (.reg .rdx),
+    .store (hdr sTab) .rax, .store (hdr sEnt) .rax]] ++
+  toEnt aY ++ [nextEnt] ++ toEnt aXc ++ copyArr aT aXc ++
+  [.block [.mov32 .rax (.imm 14), .store (hdr sBit) .rax],
+    .loop (seqs ([mul aT aT aXc, nextEnt] ++ toEnt aT ++
+      [.block [.mov .rax (.mem (hdr sBit)), .alu .sub .rax (.imm 1), .store (hdr sBit) .rax]])) .ne]
+
+/-- `[aT] := T_v`, `v` in `sNib`: for each entry `j`, `[aT] := T_j` under the
+mask of `j = v`. -/
+def tabSelect : List (Prog isa) :=
+  [.block [.mov .rax (.mem (hdr sTab)), .store (hdr sEnt) .rax, .mov32 .rax (.imm 0), .store (hdr sJ) .rax],
+    .loop (seqs [
+      .block [.mov .rax (.mem (hdr sJ)), .alu .xor .rax (.mem (hdr sNib)), .alu .cmp .rax (.imm 1),
+        .alu .sbb .rbp (.reg .rbp), .mov .r12 (.mem (hdr sW)), .mov .r8 (.mem (hdr sEnt)),
+        .mov .rsi (.mem (hdr (sArr aT))), .mov .rbx (.mem (hdr (sArr aT)))],
+      selectAcc,
+      nextEnt,
+      .block [.mov .rax (.mem (hdr sJ)), .alu .add .rax (.imm 1), .store (hdr sJ) .rax, .alu .cmp .rax (.imm 16)]]) .ne]
+
+/-- One window: `Y := Y¹⁶ T_v R⁻¹` for `v` the top 4 bits of the byte in
+`sV`, which moves up 4 bits. -/
+def expWin (mul : Nat → Nat → Nat → Prog isa) : List (Prog isa) :=
+  [mul aY aY aY, mul aY aY aY, mul aY aY aY, mul aY aY aY,
+    .block [.mov .rdx (.mem (hdr sV)), .mov .rax (.reg .rdx), .alu .add .rax (.reg .rax), .alu .add .rax (.reg .rax),
+      .alu .add .rax (.reg .rax), .alu .add .rax (.reg .rax), .store (hdr sV) .rax, .shift .shr .rdx 4,
+      .alu .and .rdx (.imm 15), .store (hdr sNib) .rdx]] ++
+  tabSelect ++
+  [mul aY aY aT,
+    .block [.mov .rax (.mem (hdr sBit)), .alu .sub .rax (.imm 1), .store (hdr sBit) .rax]]
+
+/-- `Y := Y^d` (`Y` 1 and `[aXc]` in Montgomery form) for the exponent whose
 pointer and length are in `n`'s header slots `slotPtr` and `slotLen`, its
-bytes most significant first. -/
+bytes most significant first, two windows a byte. -/
 def expLoop (mul : Nat → Nat → Nat → Prog isa) (slotPtr slotLen : Nat) : List (Prog isa) := [
   .block [.mov .rax (.mem (hdr sLink)), .mov .rdx (.mem (ws .rax slotPtr)), .store (hdr sExp) .rdx,
-    .mov .rdx (.mem (ws .rax slotLen)), .store (hdr sExpLen) .rdx, .mov32 .rdx (.imm 0), .store (hdr sI) .rdx],
+    .mov .rdx (.mem (ws .rax slotLen)), .store (hdr sExpLen) .rdx, .mov32 .rdx (.imm 0), .store (hdr sI) .rdx]] ++
+  tabBuild mul ++ [
   .loop (seqs [
     .block [.mov .rax (.mem (hdr sExp)), .mov .rcx (.mem (hdr sI)), .movzx8 .rax { base := .rax, index := some .rcx },
-      .store (hdr sV) .rax, .mov32 .rax (.imm 8), .store (hdr sBit) .rax],
-    .loop (seqs (expBit mul)) .ne,
+      .store (hdr sV) .rax, .mov32 .rax (.imm 2), .store (hdr sBit) .rax],
+    .loop (seqs (expWin mul)) .ne,
     .block [.mov .rax (.mem (hdr sI)), .alu .add .rax (.imm 1), .store (hdr sI) .rax,
       .alu .cmp .rax (.mem (hdr sExpLen))]]) .ne]
 

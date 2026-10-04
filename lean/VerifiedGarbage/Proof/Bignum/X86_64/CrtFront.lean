@@ -20,7 +20,7 @@ structure CrtPre (s : State) (B : Addr) (Z k : Nat) (op np ip pp qp dpp dqp qip 
     (nb xb pb qb dpb dqb qib : List Byte) : Prop where
   scr : Scr s B Z
   rdi : s.gpr .rdi = B
-  z : offQ ((k + 7) / 8) pl + slot (wsWords ql) 8 ≤ Z
+  z : offQ ((k + 7) / 8) pl + slot (wsWords ql) 8 + tabBytes (wsWords ql) ≤ Z
   k1 : 64 ≤ k
   k2 : k ≤ 1024
   hO : word s.mem B (8 * Public.sOut) = op
@@ -195,7 +195,7 @@ theorem setupPart_ok {s t₃ : State} {B : Addr} {Z k : Nat} {op np ip pp qp dpp
     (by rw [hh₃ _ (by decide) (by decide)]; exact h.hQi) (h.p.congrK hr.iscr hr.keep) (h.q.congrK hr.iscr hr.keep)
     (h.qi.congrK hr.iscr hr.keep) h.pbl h.qbl h.qil h.pl1 (by have := h.pl2; omega) h.ql1 (by have := h.ql2; omega))
     fun t₄ ⟨hg₄, hsP₄, hsQ₄, ⟨mp, hwp₄⟩, ⟨mq, hwq₄⟩, hp₄, hc₄, hq₄, f₄, k₄⟩ => ?_
-  have kf₄ : ∀ r ∈ [(8 * sWsP, 8), (8 * sWsQ, 8), (offP ((k + 7) / 8), slot (wsWords pl) 8 + slot (wsWords ql) 8)],
+  have kf₄ : ∀ r ∈ [(8 * sWsP, 8), (8 * sWsQ, 8), (offP ((k + 7) / 8), slot (wsWords pl) 8 + tabBytes (wsWords pl) + slot (wsWords ql) 8)],
       KeepsHdr r ∧ r.1 + r.2 ≤ Z ∧ (slot ((k + 7) / 8) 8 ≤ r.1 ∨ r.1 + r.2 ≤ 8 * 31) := by
     simp only [List.mem_cons, List.not_mem_nil, or_false]
     rintro _ (rfl | rfl | rfl)

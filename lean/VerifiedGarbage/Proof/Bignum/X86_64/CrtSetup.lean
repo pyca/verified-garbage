@@ -21,7 +21,7 @@ structure WsAt (m : Mem) (B : Addr) (o wx : Nat) (minv : BitVec 64) : Prop where
 /-- Entering a prime's workspace from the modulus'. -/
 theorem SubCtx.mk' {t : State} {B : Addr} {Z o w wx : Nat} {minvN minv : BitVec 64}
     (hs : Scr t B Z) (hH : Hdr t.mem B w minvN) (hws : WsAt t.mem B o wx minv) (hdi : t.gpr .rdi = off B o)
-    (hlo : slot w 8 ≤ o) (hhi : o + slot wx 8 ≤ Z) : SubCtx t B Z o w wx minv :=
+    (hlo : slot w 8 ≤ o) (hhi : o + slot wx 8 + tabBytes wx ≤ Z) : SubCtx t B Z o w wx minv :=
   ⟨hs, hdi, hws.hdr, hws.link, hH.hw, hH.harr, hlo, hhi⟩
 
 /-- What a load into an array of the workspace at `off B o` changes, at `B`:
@@ -57,13 +57,13 @@ theorem wsWords_le {len w : Nat} (h : len < 8 * w) (hw : 2 ≤ w) : wsWords len 
 
 /-- The workspaces' layout: `p`'s after the modulus', `q`'s after `p`'s. -/
 def offP (w : Nat) : Nat := slot w 8
-def offQ (w pl : Nat) : Nat := slot w 8 + slot (wsWords pl) 8
+def offQ (w pl : Nat) : Nat := slot w 8 + slot (wsWords pl) 8 + tabBytes (wsWords pl)
 
 /-- `primesSetup`: the primes' workspaces, `p` and `qInv` into `p`'s (arrays
 `aN` and `aChunk`), and `q` into `q`'s. -/
 theorem primesSetup_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} {pl ql : Nat} {pp qp ip : Addr}
     {pb qb ib : List Byte} (hg : Good s B Z w minv) (hw : 8 ≤ w) (hw30 : w < 2 ^ 28)
-    (hZ : offQ w pl + slot (wsWords ql) 8 ≤ Z)
+    (hZ : offQ w pl + slot (wsWords ql) 8 + tabBytes (wsWords ql) ≤ Z)
     (hpl : word s.mem B (8 * sPlen) = BitVec.ofNat 64 pl) (hql : word s.mem B (8 * sQlen) = BitVec.ofNat 64 ql)
     (hpp : word s.mem B (8 * sP) = pp) (hqp : word s.mem B (8 * sQ) = qp) (hip : word s.mem B (8 * sQinv) = ip)
     (hpb : Src s B Z pp pb) (hqb : Src s B Z qp qb) (hib : Src s B Z ip ib)
@@ -75,7 +75,8 @@ theorem primesSetup_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} {pl
       wv t.mem (off B (offP w)) (slot (wsWords pl) Public.aN) (wsWords pl) = Spec.Rsa.os2ip pb ∧
       wv t.mem (off B (offP w)) (slot (wsWords pl) aChunk) (wsWords pl) = Spec.Rsa.os2ip ib ∧
       wv t.mem (off B (offQ w pl)) (slot (wsWords ql) Public.aN) (wsWords ql) = Spec.Rsa.os2ip qb ∧
-      Frm B [(8 * sWsP, 8), (8 * sWsQ, 8), (offP w, slot (wsWords pl) 8 + slot (wsWords ql) 8)] s.mem t.mem ∧
+      Frm B [(8 * sWsP, 8), (8 * sWsQ, 8), (offP w, slot (wsWords pl) 8 + tabBytes (wsWords pl) + slot (wsWords ql) 8)]
+        s.mem t.mem ∧
       Keep mmRegs s t := by
   have hn := hg.scr.nowrap
   have hs := hg.scr
@@ -112,12 +113,12 @@ theorem primesSetup_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} {pl
       · simp only; unfold offP; omega) (by omega), hm02]
   -- `q`'s workspace.
   refine wp_seqs_append (by simp) (by simp) ?_
-  show WP isa (.block (_ ++ wsEnd)) s₃ _
+  show WP isa (.block (_ ++ wsEndT)) s₃ _
   rw [WP.block_append_iff]
   refine WP.mono (WP.keep [.rdx] (Q := fun t => t.gpr .rdx = off B (offP w) ∧ t.mem = s₃.mem)
     (by xrun [State.ea, hdr, hdi₃, hdrOff, hs₃.ld (d := 8 * sWsP) (by unfold sWsP sFn; omega), hWsP₃]) rfl)
     fun s₄ ⟨⟨hdx₄, hm₄⟩, k₄⟩ => ?_
-  refine WP.mono (wsEnd_ok (wx := wsWords pl) ((hs.congr ((k02.trans k₃).trans k₄).2.2).sub
+  refine WP.mono (wsEndT_ok (wx := wsWords pl) ((hs.congr ((k02.trans k₃).trans k₄).2.2).sub
     (o := offP w) (n := slot (wsWords pl) 8) (by unfold offP; omega) (by omega)) hdx₄
     (by rw [hm₄]; exact hwP₃) (by rw [hm₄]; exact haP₃ _ (by decide)) (Nat.le_refl _))
     fun s₅ ⟨hax₅, hm₅, k₅⟩ => ?_
@@ -126,20 +127,22 @@ theorem primesSetup_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} {pl
   have hm35 : s₅.mem = s₃.mem := hm₅.trans hm₄
   refine wp_seqs_append (by simp [wsNew]) (by simp) ?_
   refine WP.mono (wsNew_ok (o := offQ w pl) (len := ql) (hs.congr k05.2.2) ((k05.gpr (by decide)).trans hg.rdi)
-    (by rw [hax₅]; rfl) (by decide) (by decide) (by decide)
+    (by rw [hax₅]; exact congrArg (off B) (by unfold offQ offP; omega)) (by decide) (by decide) (by decide)
     (by rw [hm35, hb₃ _ (by decide) (by decide)]; exact hql) (by omega) (by unfold offQ; omega)
     (by unfold offQ; omega)) fun s₆ ⟨hWsQ₆, hlQ₆, hwQ₆, haQ₆, hdi₆, f₆, k₆⟩ => ?_
   have k06 := k05.trans k₆
   have hs₆ := hs.congr k06.2.2
   have hoq : offP w + 256 ≤ offQ w pl := by unfold offP offQ; omega
-  have f36 : Frm B [(8 * sWsQ, 8), (offP w + 256, slot (wsWords pl) 8 - 256 + slot (wsWords ql) 8)] s₃.mem s₆.mem := by
+  have f36 : Frm B [(8 * sWsQ, 8), (offP w + 256, slot (wsWords pl) 8 + tabBytes (wsWords pl) - 256 +
+      slot (wsWords ql) 8)] s₃.mem s₆.mem := by
     rw [← hm35]
     refine f₆.widen fun r hr => ?_
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · exact ⟨_, List.mem_cons_self, Nat.le_refl _, Nat.le_refl _⟩
-    · refine ⟨(offP w + 256, slot (wsWords pl) 8 - 256 + slot (wsWords ql) 8), by simp, hoq, ?_⟩
-      show offQ w pl + 8 * 17 ≤ offP w + 256 + (slot (wsWords pl) 8 - 256 + slot (wsWords ql) 8)
+    · refine ⟨(offP w + 256, slot (wsWords pl) 8 + tabBytes (wsWords pl) - 256 + slot (wsWords ql) 8), by simp,
+        hoq, ?_⟩
+      show offQ w pl + 8 * 17 ≤ offP w + 256 + (slot (wsWords pl) 8 + tabBytes (wsWords pl) - 256 + slot (wsWords ql) 8)
       unfold offQ offP; omega
   -- Into `p`'s workspace.
   refine wp_seqs_append (by simp) (by simp [loadArr]) ?_
@@ -200,8 +203,8 @@ theorem primesSetup_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} {pl
     (sp := sP) (sl := sPlen) (by decide) (by decide) (by rw [hb₆ _ (by decide) (by decide) (by decide)]; exact hpp)
     (by rw [hb₆ _ (by decide) (by decide) (by decide), hpbl]; exact hpl) (hpb.congrK i07 k07) (by omega)
     (by omega) (by unfold wsWords; omega)) fun s₈ ⟨hcP₈, hpv₈, ho₈, k₈⟩ => ?_
-  have hPZ : offP w + slot (wsWords pl) 8 ≤ Z := by unfold offP; omega
-  have hQZ : offQ w pl + slot (wsWords ql) 8 ≤ Z := by unfold offQ; omega
+  have hPZ : offP w + slot (wsWords pl) 8 + tabBytes (wsWords pl) ≤ Z := by unfold offP; omega
+  have hQZ : offQ w pl + slot (wsWords ql) 8 + tabBytes (wsWords ql) ≤ Z := by unfold offQ; omega
   have fl8 : Frm B [(offP w + 256, slot (wsWords pl) 8 - 256)] s₇.mem s₈.mem :=
     Frm.of_load ho₈ (by decide) (by omega) (by simp)
   have hb₈ : ∀ i < 32, word s₈.mem B (8 * i) = word s₇.mem B (8 * i) := fun i hi =>
@@ -310,8 +313,9 @@ theorem primesSetup_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} {pl
     have f710 : Frm B [(offP w + 256, slot (wsWords pl) 8 - 256)] s₆.mem s₁₀.mem := by
       rw [hm₁₀, ← hm₇]; exact fl8.trans fl9
     refine (((f02.append f36').append f710).append fl11).widen fun r hr => ?_
-    have hP : (offP w, slot (wsWords pl) 8 + slot (wsWords ql) 8) ∈
-        [(8 * sWsP, 8), (8 * sWsQ, 8), (offP w, slot (wsWords pl) 8 + slot (wsWords ql) 8)] := by simp
+    have hP : (offP w, slot (wsWords pl) 8 + tabBytes (wsWords pl) + slot (wsWords ql) 8) ∈
+        [(8 * sWsP, 8), (8 * sWsQ, 8), (offP w, slot (wsWords pl) 8 + tabBytes (wsWords pl) + slot (wsWords ql) 8)] := by
+      simp
     simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl
     · exact ⟨_, List.mem_cons_self, Nat.le_refl _, Nat.le_refl _⟩

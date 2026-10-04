@@ -32,7 +32,7 @@ bytes whose pointer and length are in the modulus' header slots `sd` and
 `slen`. Ends in the prime's workspace. -/
 theorem powPhase_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv mx : BitVec 64} {N X C : Nat}
     {sl o wx sd slen : Nat} {ep : Addr} {eb : List Byte}
-    (hg : Good s B Z w minv) (hw28 : w < 2 ^ 28) (hlo : slot w 8 ≤ o) (hhi : o + slot wx 8 ≤ Z)
+    (hg : Good s B Z w minv) (hw28 : w < 2 ^ 28) (hlo : slot w 8 ≤ o) (hhi : o + slot wx 8 + tabBytes wx ≤ Z)
     (hwx2 : 2 ≤ wx) (hwx : wx ≤ w) (hsl : sl < 32) (hslv : word s.mem B (8 * sl) = off B o)
     (hws : WsAt s.mem B o wx mx) (hX : XVals s B o wx mx X) (hX1 : 1 < X) (hXodd : X % 2 = 1)
     (hnY : wv s.mem B (slot w Public.aY) w % N = C * 2 ^ (64 * wx * (nChunks w wx + 1)) % N)
@@ -78,37 +78,29 @@ theorem powPhase_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv mx : Bit
     rw [← hm₁] at *
     exact InScr.of_frm fx₂ fun r hr => by rw [List.mem_singleton.mp hr]; simp only [xRange]; omega)
     ((k₁.trans k₂).mono (by decide))
-  -- The exponent's base and the start, in Montgomery form (any, if `X` does not divide `N`).
-  obtain ⟨x, y, hxc, hyc', hval⟩ : ∃ x y : Nat,
-      wv s₂.mem (off B o) (slot wx aXc) wx % X = x * 2 ^ (64 * wx) % X ∧
-      wv s₂.mem (off B o) (slot wx Public.aY) wx % X = y * 2 ^ (64 * wx) % X ∧
-      (X ∣ N → x = C ∧ y = 1) := by
-    by_cases hd : X ∣ N
-    · refine ⟨C, 1, ?_, by rw [hY₂, hyc hd, Nat.one_mul], fun _ => ⟨rfl, rfl⟩⟩
-      apply VG.Proof.Bignum.redc_cancel hR
-      rw [Nat.pow_mul] at hv₂
-      rw [hv₂, hm₁, ← Nat.mod_mod_of_dvd _ hd, hnY, Nat.mod_mod_of_dvd _ hd, ← Nat.pow_mul]
-    · obtain ⟨x, hx⟩ := VG.Proof.Bignum.exists_mont hR (by omega) (wv s₂.mem (off B o) (slot wx aXc) wx)
-      obtain ⟨y, hy⟩ := VG.Proof.Bignum.exists_mont hR (by omega)
-        (wv s₂.mem (off B o) (slot wx Public.aY) wx)
-      exact ⟨x, y, hx, hy, fun h => absurd h hd⟩
-  refine WP.mono (crtExpLoop_ok M hc₂ hwx2 hwx (by omega) hX₂.n hX₂.inv hXodd hlt₂ hxc
-    (by rw [hY₂]; exact hyl) hyc' hsd hsln (by rw [hb₂ _ (by omega)]; exact hep)
+  -- The exponent's base and the start, in Montgomery form if `X` divides `N`.
+  have hxc : X ∣ N → wv s₂.mem (off B o) (slot wx aXc) wx % X = C * 2 ^ (64 * wx) % X := fun hd => by
+    apply VG.Proof.Bignum.redc_cancel hR
+    rw [Nat.pow_mul] at hv₂
+    rw [hv₂, hm₁, ← Nat.mod_mod_of_dvd _ hd, hnY, Nat.mod_mod_of_dvd _ hd, ← Nat.pow_mul]
+  refine WP.mono (crtExpLoop_ok M (Q := X ∣ N) hc₂ hwx2 hwx (by omega) hX₂.n hX₂.inv hXodd hlt₂ hxc
+    (by rw [hY₂]; exact hyl) (fun hd => by rw [hY₂]; exact hyc hd) hsd hsln (by rw [hb₂ _ (by omega)]; exact hep)
     (by rw [hb₂ _ (by omega)]; exact hel) hL1 hL2 hsrc₂) fun t ⟨hc, hlt, hv, f₃, k₃⟩ => ?_
   refine ⟨hc, hX₂.of_exp f₃ (by have := hc₂.good.scr.nowrap; omega), hlt, fun hd => ?_, ?_, ?_,
     ((k₁.trans k₂).trans k₃).mono (by decide)⟩
-  · obtain ⟨rfl, rfl⟩ := hval hd
-    rw [hv, Nat.one_pow, Nat.one_mul]
+  · exact hv hd
   · rw [f₃.word_eq (fun r hr => by
-      simp only [crtExpRanges, crtBitRanges, List.mem_cons, List.not_mem_nil, or_false] at hr
+      simp only [crtExpRanges, crtWinRanges, List.mem_cons, List.not_mem_nil, or_false] at hr
       have := hdr_lt_slot wx Public.aAcc (show 31 < 32 by decide)
       have := hdr_lt_slot wx Public.aTmp (show 31 < 32 by decide)
       have := hdr_lt_slot wx Public.aY (show 31 < 32 by decide)
       have := hdr_lt_slot wx aT (show 31 < 32 by decide)
-      rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
-        simp only [sMaskX, Crt.sExp, Crt.sExpLen, Crt.sI, Crt.sV, Crt.sBit, sFn] <;> omega)
+      have := hdr_lt_slot wx 8 (show 31 < 32 by decide)
+      rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
+        simp only [sMaskX, Crt.sExp, Crt.sExpLen, Crt.sI, Crt.sTab, Crt.sV, Crt.sBit, Crt.sNib, Crt.sEnt, Crt.sJ,
+          sFn] <;> omega)
       (by unfold sMaskX sFn; omega), f₂.word_eq (sMaskX_redc wx) (by unfold sMaskX sFn; omega), hm₁]
   · rw [← hm₁]
-    exact fx₂.trans (f₃.to_x (crtExpRanges_ok wx) hoL (List.mem_singleton_self _))
+    exact fx₂.trans (f₃.to_xT (crtExpRanges_ok wx) (by omega) (List.mem_singleton_self _))
 
 end VG.Proof.Bignum.X86_64

@@ -1,5 +1,6 @@
 import VerifiedGarbage.TCB.X86_64.Target
 import VerifiedGarbage.Proof.AesGcm.X86_64.Verified
+import VerifiedGarbage.Proof.AesGcm.X86_64.GhashImpls
 
 /-!
 # AES-GCM (NIST SP 800-38D) on x86-64
@@ -55,7 +56,8 @@ def blocksNote (v : GcmImpl) : String :=
   else
     "This implementation calls `" ++ v.ctr.callee.name ++ "` and `" ++ v.gh.fn.name ++ "`."
 
-def artifacts (v : GcmImpl) : List Artifact := [
+/-- The artifacts calling the implementations `v`. -/
+def artifactsOf (v : GcmImpl) : List Artifact := [
   { Spec.Gcm.encryptBlocksApi with
     name := Spec.Gcm.encryptBlocksApi.name ++ v.suffix
     target := X86_64.target
@@ -166,5 +168,8 @@ def artifacts (v : GcmImpl) : List Artifact := [
     verified := streamVerify_verified v
     spSafe := streamVerify_spSafe v
     features := (v.ctr.features ++ v.gh.features).dedup }]
+
+/-- The artifacts of a variant, from the implementations it names. -/
+def artifacts (v : GcmVariant) : List Artifact := artifactsOf v.impl
 
 end VG.Generic.AesGcm.X86_64.AesGcm

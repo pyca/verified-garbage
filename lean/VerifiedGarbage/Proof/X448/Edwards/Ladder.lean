@@ -30,8 +30,8 @@ open VG.Proof.X448 (ladderAfter ladderAfter_step ladderAfter_448 ladderAfter_swa
 
 /-! ## The field facts -/
 
-private theorem one_sub_d_pow : Pratt.powMod PZ 449 39082 ((P - 1) / 2) = PZ - 1 := by
-  decide +kernel
+private theorem one_sub_d_pow : 39082 ^ ((P - 1) / 2) % PZ = PZ - 1 := by
+  rw [← Pratt.powMod_eq PZ (by decide +kernel) 449 _ _ (by decide +kernel)]; decide +kernel
 
 theorem one_sub_dZ : (1 : ZMod PZ) - dZ = ((39082 : Nat) : ZMod PZ) := by
   rw [dZ, show Spec.Ed448.d = 0 - 39081 from rfl, toZ_neg, sub_neg_eq_add]
@@ -41,7 +41,7 @@ theorem one_sub_dZ : (1 : ZMod PZ) - dZ = ((39082 : Nat) : ZMod PZ) := by
   push_cast; ring
 
 theorem one_sub_dZ_pow : (1 - dZ) ^ ((P - 1) / 2) = -1 := by
-  rw [one_sub_dZ, ← Pratt.powMod_cast PZ 449 _ _ (by decide +kernel), one_sub_d_pow,
+  rw [one_sub_dZ, ← Nat.cast_pow, ← ZMod.natCast_mod, one_sub_d_pow,
     Nat.cast_sub (by decide +kernel), ZMod.natCast_self, Nat.cast_one, zero_sub]
 
 /-- `1 - d` is not a square in `ZMod PZ`. -/

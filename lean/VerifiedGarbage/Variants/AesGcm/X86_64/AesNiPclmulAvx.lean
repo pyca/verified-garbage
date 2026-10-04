@@ -1,5 +1,5 @@
 import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx.Ok
-import VerifiedGarbage.Proof.AesGcm.X86_64.GhashImpls
+import VerifiedGarbage.Proof.AesGcm.X86_64.Callee
 
 /-!
 # The functions AES-GCM calls on x86-64: AesNiPclmulAvx
@@ -21,6 +21,6 @@ def stitch : Proof.AesGcm.X86_64.StitchImpl where
   encP := ⟨by decide +kernel, by decide +kernel, by decide +kernel, by decide, ⟨_, by taint_decide⟩⟩
   decP := ⟨by decide +kernel, by decide +kernel, by decide +kernel, by decide, ⟨_, by taint_decide⟩⟩
 
-def variant : Proof.AesGcm.X86_64.GcmImpl := ⟨.aesni, .aesni, .pclmul, some stitch⟩
+def variant : Proof.AesGcm.X86_64.GcmVariant := ⟨.aesni, .aesni, .pclmul, some stitch⟩
 
 end VG.Variants.AesGcm.X86_64.AesNiPclmulAvx
