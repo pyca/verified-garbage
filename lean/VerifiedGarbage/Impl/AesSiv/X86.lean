@@ -125,9 +125,9 @@ def initCore : Prog isa :=
           (.seq (.block initMid₂)
             (.seq (call4 e.name e.code) (.block (Impl.CmacAes.Stream.X86.restore 3)))))))
 
-/-- `vg_aes_siv_init(key, key_len, ctx)`: `initCore` with 2324 bytes of
+/-- `vg_aes_siv_init(key, key_len, ctx)`: `initCore` with 2580 bytes of
 working space on the stack, its fourth argument. -/
-def init : Prog isa := Impl.StackScratch.X86.withStackScratch 2324 3 (initCore e c sfx)
+def init : Prog isa := Impl.StackScratch.X86.withStackScratch 2580 3 (initCore e c sfx)
 
 end
 
