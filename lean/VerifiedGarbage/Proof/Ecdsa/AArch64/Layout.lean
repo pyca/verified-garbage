@@ -45,6 +45,9 @@ structure CfgOk (c : Cfg) : Prop where
   p_lt_2n : c.C.p < 2 * c.C.n
   minv_p : (c.C.p * (BitVec.ofNat 64 (minv c.C.p)).toNat + 1) % 2 ^ 64 = 0
   minv_n : (c.C.n * (BitVec.ofNat 64 (minv c.C.n)).toNat + 1) % 2 ^ 64 = 0
+  red_p : (Red.ofModulus c.n c.C.p).ok c.n c.C.p = true
+  red_n : (Red.ofModulus c.n c.C.n).ok c.n c.C.n = true
+  tbl_len : c.tbl.length = 16 * c.n
   len : c.C.len = 8 * c.n
   hash : 64 * c.n ≤ Spec.Ecdsa.nBits c.C
 

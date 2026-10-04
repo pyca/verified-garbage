@@ -45,7 +45,7 @@ theorem saved_lt : ∀ p ∈ Cfg.saved, p.2 + 4 ≤ 16 := by decide
 
 theorem finish_eq (c : Cfg) : c.finish = .mov .ecx (.mem (sc (c.sl FLAG))) :: .mov .ebx (.mem (Cfg.argOp 0)) ::
     (storeBE c.n .ebx 0 (c.sl RR) ++ (storeBE c.n .ebx (8 * c.n) (c.sl SS) ++
-    (.mov .eax (.reg .ecx) :: .alu .and .eax (.imm 1) :: Cfg.restore))) := by
+    (([.mov .eax (.reg .ecx), .alu .and .eax (.imm 1)] : List Instr) ++ Cfg.restore))) := by
   simp only [Cfg.finish, List.append_assoc, List.cons_append, List.nil_append]
 
 /-- `r = [edx + d]`, with `edx = edi`. -/
@@ -55,6 +55,64 @@ theorem restoreLd {s : State} {base : Addr} {size : Nat} (hs : Scr s base size)
   show s.load32 _ = _
   rw [hs.ea_reg (k := 0) (by rw [hx, BitVec.add_zero]) (by omega), Nat.zero_add, State.load32,
     ite_eq_left_iff.mpr fun h => absurd (hs.read hd) h]
+
+/-- The flag's low bit (the mask in `ecx`) to `eax`, and the callee-saved
+registers restored from the working space. -/
+theorem tail_ok {base : Addr} {s : State} (hs : Scr s base size) {g : Reg → BitVec 32}
+    (hsv : ∀ rd ∈ Cfg.saved, s.mem.readW (off base rd.2) 32 = g rd.1) (b : Bool)
+    (hc : s.gpr .ecx = mask32 (b = true)) :
+    WP isa (.block (([.mov .eax (.reg .ecx), .alu .and .eax (.imm 1)] : List Instr) ++ Cfg.restore)) s
+      fun s' => s'.mem = s.mem ∧ s'.gpr .eax = (if b then 1 else 0) ∧
+        (∀ rd ∈ Cfg.saved, s'.gpr rd.1 = g rd.1) ∧
+        (∀ r, r ∉ [.eax, .ebx, .edx, .esi, .edi, .ebp] → s'.gpr r = s.gpr r) := by
+  have hsz : size = 8192 := rfl
+  refine wp_movS rfl fun s₅ u₅ _ => ?_
+  refine wp_logicS (.inl rfl) rfl fun s₆ u₆ => ?_
+  have k₆ : Keeps [.eax] s s₆ := u₅.keeps.trans u₆.keeps
+  have hs₆ := hs.of_keeps k₆ (by decide)
+  have eax₆ : s₆.gpr .eax = if b then 1 else 0 := by
+    rw [u₆.gpr, u₅.gpr, hc]
+    simp only [ite_true]
+    exact mask_bit b
+  have hm₆ : s₆.mem = s.mem := by rw [u₆.mem, u₅.mem]
+  simp only [Cfg.restore]
+  refine wp_movS rfl fun s₇ u₇ _ => ?_
+  have hs₇ := hs₆.of_keeps u₇.keeps (by decide)
+  have hx₇ : s₇.gpr .edx = s₇.gpr .edi := by rw [u₇.gpr, u₇.other _ (by decide)]
+  refine wp_movS (restoreLd hs₇ hx₇ (d := 0) (by omega)) fun s₈ u₈ _ => ?_
+  have hs₈ := hs₇.of_keeps u₈.keeps (by decide)
+  have hx₈ : s₈.gpr .edx = s₈.gpr .edi := by rw [u₈.other _ (by decide), u₈.other _ (by decide), hx₇]
+  refine wp_movS (restoreLd hs₈ hx₈ (d := 4) (by omega)) fun s₉ u₉ _ => ?_
+  have hs₉ := hs₈.of_keeps u₉.keeps (by decide)
+  have hx₉ : s₉.gpr .edx = s₉.gpr .edi := by rw [u₉.other _ (by decide), u₉.other _ (by decide), hx₈]
+  refine wp_movS (restoreLd hs₉ hx₉ (d := 12) (by omega)) fun s₁₀ u₁₀ _ => ?_
+  have hs₁₀ := hs₉.of_keeps u₁₀.keeps (by decide)
+  have hx₁₀ : s₁₀.gpr .edx = s₁₀.gpr .edi := by
+    rw [u₁₀.other _ (by decide), u₁₀.other _ (by decide), hx₉]
+  refine wp_movS (restoreLd hs₁₀ hx₁₀ (d := 8) (by omega)) fun s₁₁ u₁₁ _ => WP.block_nil ?_
+  have hm₁₀ : s₁₀.mem = s.mem := by rw [u₁₀.mem, u₉.mem, u₈.mem, u₇.mem, hm₆]
+  refine ⟨by rw [u₁₁.mem, hm₁₀], ?_, fun rd hrd => ?_, fun r hr => ?_⟩
+  · rw [u₁₁.other _ (by decide), u₁₀.other _ (by decide), u₉.other _ (by decide), u₈.other _ (by decide),
+      u₇.other _ (by decide), eax₆]
+  · have hsv' := fun rd (h : rd ∈ Cfg.saved) => (congrArg (fun m => Mem.readW m (off base rd.2) 32) hm₁₀).trans
+      (hsv rd h)
+    simp only [Cfg.saved, List.mem_cons, List.not_mem_nil, or_false] at hrd
+    rcases hrd with rfl | rfl | rfl | rfl
+    · rw [u₁₁.other _ (by decide), u₁₀.other _ (by decide), u₉.other _ (by decide), u₈.gpr, u₇.mem]
+      exact (congrArg (fun m => Mem.readW m _ 32) (show s₆.mem = s₁₀.mem by rw [hm₁₀, hm₆])).trans
+        (hsv' (.ebx, 0) (by simp [Cfg.saved]))
+    · rw [u₁₁.other _ (by decide), u₁₀.other _ (by decide), u₉.gpr, u₈.mem, u₇.mem]
+      exact (congrArg (fun m => Mem.readW m _ 32) (show s₆.mem = s₁₀.mem by rw [hm₁₀, hm₆])).trans
+        (hsv' (.esi, 4) (by simp [Cfg.saved]))
+    · rw [u₁₁.gpr, u₁₀.mem, u₉.mem, u₈.mem, u₇.mem]
+      exact (congrArg (fun m => Mem.readW m _ 32) (show s₆.mem = s₁₀.mem by rw [hm₁₀, hm₆])).trans
+        (hsv' (.edi, 8) (by simp [Cfg.saved]))
+    · rw [u₁₁.other _ (by decide), u₁₀.gpr, u₉.mem, u₈.mem, u₇.mem]
+      exact (congrArg (fun m => Mem.readW m _ 32) (show s₆.mem = s₁₀.mem by rw [hm₁₀, hm₆])).trans
+        (hsv' (.ebp, 12) (by simp [Cfg.saved]))
+  · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+    obtain ⟨h1, h2, h3, h4, h5, h6⟩ := hr
+    rw [u₁₁.other _ h5, u₁₀.other _ h6, u₉.other _ h4, u₈.other _ h2, u₇.other _ h3, k₆.1 _ (by simp [h1])]
 
 /-- The result, the return value and the callee-saved registers. -/
 theorem finish_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size) {o32 : BitVec 32}
@@ -133,61 +191,17 @@ theorem finish_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size
     have h16 : ∀ w ∈ [(size, 2 ^ 64)], rd.2 + 4 ≤ w.1 ∨ w.1 + w.2 ≤ rd.2 := fun w hw => by
       simp only [List.mem_singleton] at hw; subst hw; exact .inl (by omega)
     rw [Unch.readW32 U₄ h16 (by omega), Unch.readW32 U₃ h16 (by omega), hm₂, hsv rd hrd]
-  -- The return value.
-  refine wp_movS rfl fun s₅ u₅ _ => ?_
-  refine wp_logicS (.inl rfl) rfl fun s₆ u₆ => ?_
-  have k₆ : Keeps [.eax] s₄ s₆ := u₅.keeps.trans u₆.keeps
-  have hs₆ := hs₄.of_keeps k₆ (by decide)
-  have eax₆ : s₆.gpr .eax = if b then 1 else 0 := by
-    rw [u₆.gpr, u₅.gpr, k₄.1 _ (by decide), hc₃]
-    simp only [ite_true]
-    exact mask_bit b
-  have hm₆ : s₆.mem = s₄.mem := by rw [u₆.mem, u₅.mem]
-  -- The callee-saved registers.
-  simp only [Cfg.restore]
-  refine wp_movS rfl fun s₇ u₇ _ => ?_
-  have hs₇ := hs₆.of_keeps u₇.keeps (by decide)
-  have hx₇ : s₇.gpr .edx = s₇.gpr .edi := by rw [u₇.gpr, u₇.other _ (by decide)]
-  refine wp_movS (restoreLd hs₇ hx₇ (d := 0) (by omega)) fun s₈ u₈ _ => ?_
-  have hs₈ := hs₇.of_keeps u₈.keeps (by decide)
-  have hx₈ : s₈.gpr .edx = s₈.gpr .edi := by rw [u₈.other _ (by decide), u₈.other _ (by decide), hx₇]
-  refine wp_movS (restoreLd hs₈ hx₈ (d := 4) (by omega)) fun s₉ u₉ _ => ?_
-  have hs₉ := hs₈.of_keeps u₉.keeps (by decide)
-  have hx₉ : s₉.gpr .edx = s₉.gpr .edi := by rw [u₉.other _ (by decide), u₉.other _ (by decide), hx₈]
-  refine wp_movS (restoreLd hs₉ hx₉ (d := 12) (by omega)) fun s₁₀ u₁₀ _ => ?_
-  have hs₁₀ := hs₉.of_keeps u₁₀.keeps (by decide)
-  have hx₁₀ : s₁₀.gpr .edx = s₁₀.gpr .edi := by
-    rw [u₁₀.other _ (by decide), u₁₀.other _ (by decide), hx₉]
-  refine wp_movS (restoreLd hs₁₀ hx₁₀ (d := 8) (by omega)) fun s₁₁ u₁₁ _ => WP.block_nil ?_
-  have hm₁₀ : s₁₀.mem = s₄.mem := by rw [u₁₀.mem, u₉.mem, u₈.mem, u₇.mem, hm₆]
-  refine ⟨?_, ?_, fun rd hrd => ?_, fun r hr => ?_, ?_⟩
-  · rw [u₁₁.mem, hm₁₀, show 16 * c.n = 8 * c.n + 8 * c.n by omega, bytesAt_add, first, e₄, ss₃]
+  refine WP.mono (tail_ok hs₄ hsv₄ b (by rw [k₄.1 _ (by decide), hc₃]))
+    fun s' ⟨hm', eax', saved', others'⟩ => ⟨?_, eax', saved', fun r hr => ?_, ?_⟩
+  · rw [hm', show 16 * c.n = 8 * c.n + 8 * c.n by omega, bytesAt_add, first, e₄, ss₃]
     cases b
     · simp only [Bool.false_eq_true, ite_false, List.replicate_append_replicate]
     · simp only [ite_true]
-  · rw [u₁₁.other _ (by decide), u₁₀.other _ (by decide), u₉.other _ (by decide), u₈.other _ (by decide),
-      u₇.other _ (by decide), eax₆]
-  · have hsv' := fun rd (h : rd ∈ Cfg.saved) => (congrArg (fun m => Mem.readW m (off base rd.2) 32) hm₁₀).trans
-      (hsv₄ rd h)
-    simp only [Cfg.saved, List.mem_cons, List.not_mem_nil, or_false] at hrd
-    rcases hrd with rfl | rfl | rfl | rfl
-    · rw [u₁₁.other _ (by decide), u₁₀.other _ (by decide), u₉.other _ (by decide), u₈.gpr, u₇.mem]
-      exact (congrArg (fun m => Mem.readW m _ 32) (show s₆.mem = s₁₀.mem by rw [hm₁₀, hm₆])).trans
-        (hsv' (.ebx, 0) (by simp [Cfg.saved]))
-    · rw [u₁₁.other _ (by decide), u₁₀.other _ (by decide), u₉.gpr, u₈.mem, u₇.mem]
-      exact (congrArg (fun m => Mem.readW m _ 32) (show s₆.mem = s₁₀.mem by rw [hm₁₀, hm₆])).trans
-        (hsv' (.esi, 4) (by simp [Cfg.saved]))
-    · rw [u₁₁.gpr, u₁₀.mem, u₉.mem, u₈.mem, u₇.mem]
-      exact (congrArg (fun m => Mem.readW m _ 32) (show s₆.mem = s₁₀.mem by rw [hm₁₀, hm₆])).trans
-        (hsv' (.edi, 8) (by simp [Cfg.saved]))
-    · rw [u₁₁.other _ (by decide), u₁₀.gpr, u₉.mem, u₈.mem, u₇.mem]
-      exact (congrArg (fun m => Mem.readW m _ 32) (show s₆.mem = s₁₀.mem by rw [hm₁₀, hm₆])).trans
-        (hsv' (.ebp, 12) (by simp [Cfg.saved]))
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     obtain ⟨h1, h2, h3, h4, h5, h6, h7'⟩ := hr
-    rw [u₁₁.other _ h6, u₁₀.other _ h7', u₉.other _ h5, u₈.other _ h2, u₇.other _ h4, k₆.1 _ (by simp [h1]),
-      k₄.1 _ (by simp [h1]), k₃.1 _ (by simp [h1]), k₂.1 _ (by simp [h2, h3])]
-  · rw [u₁₁.mem, hm₁₀, ← hm₂]
+    rw [others' _ (by simp [h1, h2, h4, h5, h6, h7']), k₄.1 _ (by simp [h1]),
+      k₃.1 _ (by simp [h1]), k₂.1 _ (by simp [h2, h3])]
+  · rw [hm', ← hm₂]
     exact ((O₃.shift (by omega)).mono (Nat.zero_le _) (by omega)).trans
       ((O₄.shift (by omega)).mono (Nat.zero_le _) (by omega))
 

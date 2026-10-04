@@ -35,9 +35,11 @@ theorem post_of {s s' : State} (h : PkPost p256 s s') : pkAArch64.post s s' := b
   rw [show Spec.EcKey.publicKey p256.C (dk p256 s) = pk s.mem (s.gpr .x1) from rfl, hq]
   rcases q with _ | _ | ⟨x, y⟩ <;> exact id
 
-theorem pk_a64 (hL : Weierstrass.Law Spec.P256.curve) (s : State) (hs : pkAArch64.pre s) :
+theorem pk_a64 (hL : Weierstrass.Law Spec.P256.curve)
+    (hT : Weierstrass.CombOk Spec.P256.curve 64 Impl.P256.p256Comb Impl.P256.p256CombStart) (s : State)
+    (hs : pkAArch64.pre s) :
     ∃ t s', Exec isa publicKeyP256 s t s' ∧ abiPreserved s s' ∧ pkAArch64.post s s' := by
-  obtain ⟨t, s', he, hsv, hpost⟩ := publicKey_ok p256_ok hL (pre_of hs)
+  obtain ⟨t, s', he, hsv, hpost⟩ := publicKey_ok p256_ok hL hT (pre_of hs)
   exact ⟨t, s', he, abiPreserved_of he (by lit_decide) (by lit_decide) (by lit_decide) hsv, post_of hpost⟩
 
 theorem pk_ct : ConstantTime isa pkAArch64.pre pkAArch64.pub publicKeyP256 :=
@@ -49,8 +51,9 @@ theorem pk_ct : ConstantTime isa pkAArch64.pre pkAArch64.pub publicKeyP256 :=
       · exact h1
       · exact h2⟩) (by taint_decide)
 
-theorem pk_verified (hL : Weierstrass.Law Spec.P256.curve) :
+theorem pk_verified (hL : Weierstrass.Law Spec.P256.curve)
+    (hT : Weierstrass.CombOk Spec.P256.curve 64 Impl.P256.p256Comb Impl.P256.p256CombStart) :
     Verified AArch64.target publicKeyP256 (Spec.EcKey.P256.inst.publicKeyContract AArch64.abi) :=
-  Verified.of_correct (pk_a64 hL) pk_ct implies
+  Verified.of_correct (pk_a64 hL hT) pk_ct implies
 
 end VG.Proof.EcKey.AArch64

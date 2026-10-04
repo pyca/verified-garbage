@@ -1,5 +1,6 @@
 import VerifiedGarbage.TCB.AArch64.Target
 import VerifiedGarbage.Proof.P256.Curve
+import VerifiedGarbage.Proof.P256.Comb
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Sha256
 
 /-!
@@ -28,11 +29,11 @@ def artifacts (v : Proof.Pbkdf2.Md.AArch64.MdHash) : List Artifact :=
     { Spec.Ecdsa.Rfc6979.P256Sha256.signApi with
       name := Spec.Ecdsa.Rfc6979.P256Sha256.signApi.name ++ c.suffix
       target := AArch64.target
-      doc := Spec.Ecdsa.Rfc6979.P256Sha256.signApi.doc (notes := [signNotes (cfgOf (pack Proof.P256.law c)).H])
-      code := (cfgOf (pack Proof.P256.law c)).sign
+      doc := Spec.Ecdsa.Rfc6979.P256Sha256.signApi.doc (notes := [signNotes (cfgOf (pack Proof.P256.law Proof.P256.combOk c)).H])
+      code := (cfgOf (pack Proof.P256.law Proof.P256.combOk c)).sign
       contract := Spec.Ecdsa.Rfc6979.P256Sha256.inst.signContract AArch64.abi 240
       stack := 240
-      verified := sign_verified Proof.P256.law c
+      verified := sign_verified Proof.P256.law Proof.P256.combOk c
       spSafe := Code.all_of_forall (fun _ => rfl) _
       features := c.features }]
 

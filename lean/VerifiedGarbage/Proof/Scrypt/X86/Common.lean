@@ -142,24 +142,69 @@ theorem xor_mem4 (m : Mem) {d x y : Addr} {n k : Nat} (hk : k < n) (hlt : 4 * n 
   rw [e, Nat.mul_succ, bytesAt_add, bytesAt_add, xorBytes, xorBytes, xorBytes,
     List.zipWith_append (by simp [bytesAt])]
 
+/-! ## Blocks of bytes -/
+
+theorem writeW_xor128 (m m' : Mem) (d a b : Addr) :
+    m.writeW d (m'.readW a 128 ^^^ m'.readW b 128) =
+      writeBytes m d (xorBytes (bytesAt m' a 16) (bytesAt m' b 16)) := by
+  simp only [Mem.writeW, Mem.readW]
+  rw [show (128 : Nat) / 8 = 16 from rfl, BitVec.setWidth_eq, BitVec.setWidth_eq, BitVec.setWidth_eq,
+    Proof.Sha256.Stream.write_eq_writeBytes]
+  congr 1
+  apply List.ext_getElem (by simp [xorBytes, bytesAt])
+  intro j h₁ h₂
+  simp only [List.length_map, List.length_range] at h₁
+  simp only [xorBytes, bytesAt, List.getElem_map, List.getElem_range, List.getElem_zipWith]
+  rw [BitVec.extractLsb'_xor, Mem.extractLsb'_read _ _ h₁,
+    Mem.extractLsb'_read _ _ h₁]
+
+/-- Sixteen more bytes of `[d] ← [x] xor [y]`. -/
+theorem xor_mem16 (m : Mem) {d x y : Addr} {n k : Nat} (hk : k < n) (hlt : 16 * n < 2 ^ 64)
+    (hdx : Region.Disjoint ⟨d, 16 * n⟩ ⟨x, 16 * n⟩) (hdy : Region.Disjoint ⟨d, 16 * n⟩ ⟨y, 16 * n⟩) :
+    (writeBytes m d (xorBytes (bytesAt m x (16 * k)) (bytesAt m y (16 * k)))).writeW
+      (d + BitVec.ofNat 64 (16 * k))
+      ((writeBytes m d (xorBytes (bytesAt m x (16 * k)) (bytesAt m y (16 * k)))).readW
+          (x + BitVec.ofNat 64 (16 * k)) 128 ^^^
+        (writeBytes m d (xorBytes (bytesAt m x (16 * k)) (bytesAt m y (16 * k)))).readW
+          (y + BitVec.ofNat 64 (16 * k)) 128) =
+      writeBytes m d (xorBytes (bytesAt m x (16 * (k + 1))) (bytesAt m y (16 * (k + 1)))) := by
+  have hl : (xorBytes (bytesAt m x (16 * k)) (bytesAt m y (16 * k))).length = 16 * k := by
+    rw [xorBytes_length _ _ (by simp [bytesAt]), bytesAt_length]
+  have sx : Region.Disjoint ⟨x + BitVec.ofNat 64 (16 * k), 16⟩
+      ⟨d, (xorBytes (bytesAt m x (16 * k)) (bytesAt m y (16 * k))).length⟩ := by
+    rw [hl]; exact (hdx.symm.sub_left (sub_off (by omega) (by omega))).sub_right
+      (Region.sub_prefix (by omega))
+  have sy : Region.Disjoint ⟨y + BitVec.ofNat 64 (16 * k), 16⟩
+      ⟨d, (xorBytes (bytesAt m x (16 * k)) (bytesAt m y (16 * k))).length⟩ := by
+    rw [hl]; exact (hdy.symm.sub_left (sub_off (by omega) (by omega))).sub_right
+      (Region.sub_prefix (by omega))
+  rw [writeW_xor128, bytesAt_writeBytes_sep _ _ sx (by omega),
+    bytesAt_writeBytes_sep _ _ sy (by omega)]
+  have e := writeBytes_append m d _ (xorBytes (bytesAt m (x + BitVec.ofNat 64 (16 * k)) 16)
+    (bytesAt m (y + BitVec.ofNat 64 (16 * k)) 16))
+    (by rw [hl, xorBytes_length _ _ (by simp [bytesAt]), bytesAt_length]; omega)
+  rw [hl] at e
+  rw [e, Nat.mul_succ, bytesAt_add, bytesAt_add, xorBytes, xorBytes, xorBytes,
+    List.zipWith_append (by simp [bytesAt])]
+
 /-! ## The 64-byte exclusive-or -/
 
-/-- The first `n` words of `[dst] ← [x] xor [src]`, for 64-byte blocks at
-`d`, `x`, `y`, where `d` overlaps neither of the others. The code uses
-`eax`. -/
+/-- The first `n` sixteen-byte blocks of `[dst] ← [x] xor [src]`, for 64-byte
+blocks at `d`, `x`, `y`, where `d` overlaps neither of the others. The code
+uses `xmm0` and `xmm1`. -/
 theorem xor64_ok {dR xR sR : Reg} (hd : dR ≠ .eax) (hx : xR ≠ .eax) (hs : sR ≠ .eax)
     {d x y : BitVec 32} (fd : d.toNat + 64 ≤ 2 ^ 32) (fx : x.toNat + 64 ≤ 2 ^ 32)
     (fy : y.toNat + 64 ≤ 2 ^ 32)
     (hdx : Region.Disjoint ⟨d.setWidth 64, 64⟩ ⟨x.setWidth 64, 64⟩)
     (hdy : Region.Disjoint ⟨d.setWidth 64, 64⟩ ⟨y.setWidth 64, 64⟩) :
-    ∀ n ≤ 16, ∀ (rest : List Instr) (s : State) (Q : State → Prop),
+    ∀ n ≤ 4, ∀ (rest : List Instr) (s : State) (Q : State → Prop),
     s.gpr dR = d → s.gpr xR = x → s.gpr sR = y →
-    (∀ k < 16, InRegions (s.rd ++ s.wr) (x.setWidth 64 + BitVec.ofNat 64 (4 * k)) 4) →
-    (∀ k < 16, InRegions (s.rd ++ s.wr) (y.setWidth 64 + BitVec.ofNat 64 (4 * k)) 4) →
-    (∀ k < 16, InRegions s.wr (d.setWidth 64 + BitVec.ofNat 64 (4 * k)) 4) →
+    (∀ k < 4, InRegions (s.rd ++ s.wr) (x.setWidth 64 + BitVec.ofNat 64 (16 * k)) 16) →
+    (∀ k < 4, InRegions (s.rd ++ s.wr) (y.setWidth 64 + BitVec.ofNat 64 (16 * k)) 16) →
+    (∀ k < 4, InRegions s.wr (d.setWidth 64 + BitVec.ofNat 64 (16 * k)) 16) →
     (∀ s', (∀ r, r ≠ .eax → s'.gpr r = s.gpr r) → s'.rd = s.rd → s'.wr = s.wr →
       s'.mem = writeBytes s.mem (d.setWidth 64)
-        (xorBytes (bytesAt s.mem (x.setWidth 64) (4 * n)) (bytesAt s.mem (y.setWidth 64) (4 * n))) →
+        (xorBytes (bytesAt s.mem (x.setWidth 64) (16 * n)) (bytesAt s.mem (y.setWidth 64) (16 * n))) →
       WP isa (.block rest) s' Q) →
     WP isa (.block ((List.range n).flatMap (xorW dR xR sR) ++ rest)) s Q := by
   intro n
@@ -172,19 +217,20 @@ theorem xor64_ok {dR xR sR : Reg} (hd : dR ≠ .eax) (hx : xR ≠ .eax) (hs : sR
     rw [List.range_succ, List.flatMap_append, List.flatMap_singleton, List.append_assoc]
     refine ih (by omega) _ s Q gd gx gy hinx hiny hout fun s₁ g₁ rd₁ wr₁ m₁ => ?_
     simp only [xorW, List.cons_append, List.nil_append]
-    refine wp_movm (a := x.setWidth 64 + BitVec.ofNat 64 (4 * n))
+    refine wp_ldq (a := x.setWidth 64 + BitVec.ofNat 64 (16 * n))
       (by rw [ea_at, g₁ _ hx, gx]; exact addr_eq (by omega)) (by rw [rd₁, wr₁]; exact hinx n (by omega))
-      fun s₂ u₂ => ?_
-    refine wp_xorm (a := y.setWidth 64 + BitVec.ofNat 64 (4 * n))
-      (by rw [ea_at, u₂.other _ hs, g₁ _ hs, gy]; exact addr_eq (by omega))
-      (by rw [u₂.rd, u₂.wr, rd₁, wr₁]; exact hiny n (by omega)) fun s₃ u₃ => ?_
-    refine wp_store (a := d.setWidth 64 + BitVec.ofNat 64 (4 * n))
-      (by rw [ea_at, u₃.other _ hd, u₂.other _ hd, g₁ _ hd, gd]; exact addr_eq (by omega))
-      (by rw [u₃.wr, u₂.wr, wr₁]; exact hout n (by omega))
-      fun s₄ u₄ => k s₄ (fun r h => by rw [u₄.gpr, u₃.other r h, u₂.other r h, g₁ r h])
-        (by rw [u₄.rd, u₃.rd, u₂.rd, rd₁]) (by rw [u₄.wr, u₃.wr, u₂.wr, wr₁]) ?_
-    rw [u₄.mem, u₃.gpr, u₃.mem, u₂.gpr, u₂.mem, m₁]
-    exact xor_mem4 s.mem (n := 16) (by omega) (by omega) hdx hdy
+      fun s₂ R₂ m₂ x₂ _ => ?_
+    refine wp_ldq (a := y.setWidth 64 + BitVec.ofNat 64 (16 * n))
+      (by rw [ea_at, R₂.gpr, g₁ _ hs, gy]; exact addr_eq (by omega))
+      (by rw [R₂.rd, R₂.wr, rd₁, wr₁]; exact hiny n (by omega)) fun s₃ R₃ m₃ x₃ o₃ => ?_
+    refine wp_xbin fun s₄ R₄ m₄ x₄ _ => ?_
+    refine wp_stq (a := d.setWidth 64 + BitVec.ofNat 64 (16 * n))
+      (by rw [ea_at, R₄.gpr, R₃.gpr, R₂.gpr, g₁ _ hd, gd]; exact addr_eq (by omega))
+      (by rw [R₄.wr, R₃.wr, R₂.wr, wr₁]; exact hout n (by omega))
+      fun s₅ R₅ m₅ _ => k s₅ (fun r h => by rw [R₅.gpr, R₄.gpr, R₃.gpr, R₂.gpr, g₁ r h])
+        (by rw [R₅.rd, R₄.rd, R₃.rd, R₂.rd, rd₁]) (by rw [R₅.wr, R₄.wr, R₃.wr, R₂.wr, wr₁]) ?_
+    rw [m₅, x₄, o₃ .xmm0 (by decide), x₂, x₃, m₄, m₃, m₂, m₁]
+    exact xor_mem16 s.mem (n := 4) (by omega) (by omega) hdx hdy
 
 /-! ## Counted loops -/
 

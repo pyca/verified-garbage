@@ -1,7 +1,7 @@
 //! The elliptic curves of [`ecdsa`](crate::ecdsa) and [`ecdh`](crate::ecdh):
 //! the encodings of their keys and signatures.
 
-#![cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
+#![cfg(any(target_arch = "x86_64", target_arch = "x86", target_arch = "aarch64"))]
 
 mod sealed {
     pub trait Sealed {}

@@ -30,14 +30,22 @@ open VG.Proof.Gcm (Absorbed Ctr xorKs lensBlock)
 abbrev oRes (p : BitVec 32 × (Nat → BitVec 32)) (s₀ : State) : Option (List Byte) :=
   openResult (ctxCiph s₀.mem (w64 (p.2 0)) (p.2 1).toNat) (ctxH s₀.mem (w64 (p.2 0))) (p.2 9).toNat
     (bytesAt s₀.mem (w64 (p.2 2)) (p.2 3).toNat) (bytesAt s₀.mem (w64 (p.2 6)) (p.2 7).toNat)
-    (bytesAt s₀.mem (w64 (p.2 4)) (p.2 5).toNat) (bytesAt s₀.mem (w64 (p.2 8)) (p.2 9).toNat)
+    (bytesAt s₀.mem (w64 (p.2 4)) (p.2 5).toNat) (bytesAt s₀.mem (w64 (p.2 10)) (p.2 9).toNat)
 
-theorem openRes_eq {s₀ : State} {p : BitVec 32 × (Nat → BitVec 32)} (hp : pubOf 10 s₀ = p) :
+/-- The arguments of `open`, in its public data (`W` at 8, `tag` at 10). -/
+theorem open_arg {s₀ : State} {p : BitVec 32 × (Nat → BitVec 32)} (hp : pubSw 11 8 s₀ = p) {i : Nat}
+    (hi : i < 8 ∨ i = 9) : arg s₀ i = p.2 i :=
+  pubSw_arg hp (by omega) (by omega) (by omega)
+
+theorem open_tag {s₀ : State} {p : BitVec 32 × (Nat → BitVec 32)} (hp : pubSw 11 8 s₀ = p) : arg s₀ 8 = p.2 10 :=
+  pubSw_last hp (by decide) rfl
+
+theorem openRes_eq {s₀ : State} {p : BitVec 32 × (Nat → BitVec 32)} (hp : pubSw 11 8 s₀ = p) :
     openRes s₀ = oRes p s₀ := by
-  simp only [openRes, oRes, pubOf_arg hp (i := 0) (by decide), pubOf_arg hp (i := 1) (by decide),
-    pubOf_arg hp (i := 2) (by decide), pubOf_arg hp (i := 3) (by decide), pubOf_arg hp (i := 4) (by decide),
-    pubOf_arg hp (i := 5) (by decide), pubOf_arg hp (i := 6) (by decide), pubOf_arg hp (i := 7) (by decide),
-    pubOf_arg hp (i := 8) (by decide), pubOf_arg hp (i := 9) (by decide)]
+  simp only [openRes, oRes, open_arg hp (i := 0) (by decide), open_arg hp (i := 1) (by decide),
+    open_arg hp (i := 2) (by decide), open_arg hp (i := 3) (by decide), open_arg hp (i := 4) (by decide),
+    open_arg hp (i := 5) (by decide), open_arg hp (i := 6) (by decide), open_arg hp (i := 7) (by decide),
+    open_tag hp, open_arg hp (i := 9) (by decide)]
 
 /-- The tag of the message, and the tag received. -/
 abbrev tagOf (p : BitVec 32 × (Nat → BitVec 32)) (s₀ : State) : List Byte :=
@@ -46,7 +54,7 @@ abbrev tagOf (p : BitVec 32 × (Nat → BitVec 32)) (s₀ : State) : List Byte :
     (bytesAt s₀.mem (w64 (p.2 6)) (p.2 7).toNat)
 
 abbrev rcvOf (p : BitVec 32 × (Nat → BitVec 32)) (s₀ : State) : List Byte :=
-  bytesAt s₀.mem (w64 (p.2 8)) (p.2 9).toNat
+  bytesAt s₀.mem (w64 (p.2 10)) (p.2 9).toNat
 
 theorem oRes_ok {p : BitVec 32 × (Nat → BitVec 32)} {s₀ : State} (ht : Spec.Gcm.tagLenOk (p.2 9).toNat = true) :
     oRes p s₀ = if (tagOf p s₀).take (p.2 9).toNat = rcvOf p s₀ then
@@ -61,8 +69,8 @@ theorem oRes_bad {p : BitVec 32 × (Nat → BitVec 32)} {s₀ : State} (ht : Spe
 /-- What is fixed of a run of `open` for the index `q`: the public data, and
 whether it returns 1. -/
 structure IX (q : (BitVec 32 × (Nat → BitVec 32)) × Bool) (s₀ : State) : Prop where
-  pre : onePre 10 s₀
-  pub : pubOf 10 s₀ = q.1
+  pre : openPre s₀
+  pub : pubSw 11 8 s₀ = q.1
   res : (oRes q.1 s₀).isSome = q.2
 
 theorem IX.q2 {q : (BitVec 32 × (Nat → BitVec 32)) × Bool} {s₀ : State} (h : IX q s₀)
@@ -87,10 +95,11 @@ theorem OEnt.same {s₀ s s' : State} (h : OEnt p s₀ s) (hm : s'.mem = s.mem) 
     (hsi : s'.gpr .esi = s.gpr .esi) (hsp : s'.gpr .esp = s.gpr .esp) (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr) :
     OEnt p s₀ s' :=
   ⟨h.o.frame G (by rw [hm]; exact Frame.refl _ _) hbp hsi hsp hrd hwr, by rw [hm]; exact h.dO,
-    by rw [hm]; exact h.nO, by rw [hm]; exact h.iv, by rw [hm]; exact h.data, by rw [hm]; exact h.w0⟩
+    by rw [hm]; exact h.nO, by rw [hm]; exact h.iv, by rw [hm]; exact h.data, by rw [hm]; exact h.frame⟩
 
 /-- A kept slot, apart from the tag at `W + o` and what the pieces write. -/
-theorem kept_woF {o n o' : Nat} (h₁ : 128 ≤ o) (h₂ : o + n ≤ auxO ∨ (auxO + 4 ≤ o ∧ o + n ≤ rO))
+theorem kept_woF {o n o' : Nat} (h₁ : 128 ≤ o)
+    (h₂ : o + n ≤ auxO ∨ (auxO + 4 ≤ o ∧ o + n ≤ rO) ∨ (rO + 16 ≤ o ∧ o + n ≤ 240))
     (ho' : o' + 16 ≤ 128) :
     ∀ r ∈ ⟨w64 (p.2 8) + BitVec.ofNat 64 o', 16⟩ :: oF p,
       (⟨w64 (p.2 8) + BitVec.ofNat 64 o, n⟩ : Region).Disjoint r := by
@@ -100,29 +109,19 @@ theorem kept_woF {o n o' : Nat} (h₁ : 128 ≤ o) (h₂ : o + n ≤ auxO ∨ (a
     exact Lay.w_w (.inr (by omega)) (by omega) (by omega)
   · exact slot_oF G h₁ h₂ r (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ hr))
 
-/-- The first block of `W` (the received tag), apart from what the pieces write. -/
-theorem w0_oF : ∀ r ∈ oF p, (⟨w64 (p.2 8), 16⟩ : Region).Disjoint r := by
+omit G in
+/-- A region apart from `W` and the stack the calls use, apart from what the pieces write. -/
+theorem t_woF {o : Nat} (ho : o + 16 ≤ 2560) {T : Region} (tw : T.Disjoint ⟨w64 (p.2 8), 2560⟩)
+    (kt : (below p.1 28).Disjoint T) : ∀ r ∈ ⟨w64 (p.2 8) + BitVec.ofNat 64 o, 16⟩ :: oF p, T.Disjoint r := by
   intro r hr
-  have : ∀ {d k : Nat}, 16 ≤ d → d + k ≤ 2560 →
-      (⟨w64 (p.2 8), 16⟩ : Region).Disjoint ⟨w64 (p.2 8) + BitVec.ofNat 64 d, k⟩ := fun h₁ h₂ => by
-    have := Lay.w_w (W := p.2 8) (a := 0) (n := 16) (.inl h₁) (by decide) h₂
-    rwa [BitVec.add_zero] at this
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl | rfl
-  · exact this (by decide) (by decide)
-  · exact this (by decide) (by decide)
-  · exact this (by decide) (by decide)
-  · exact this (by decide) (by decide)
-  · have := (G.L.stk_w (a := 0) (n := 16) (by decide)).symm
-    rwa [BitVec.add_zero] at this
-
-theorem w0_woF {o : Nat} (ho : 16 ≤ o) (ho' : o + 16 ≤ 2560) :
-    ∀ r ∈ ⟨w64 (p.2 8) + BitVec.ofNat 64 o, 16⟩ :: oF p, (⟨w64 (p.2 8), 16⟩ : Region).Disjoint r := by
-  intro r hr
-  rcases List.mem_cons.mp hr with rfl | hr
-  · have := Lay.w_w (W := p.2 8) (a := 0) (n := 16) (.inl ho) (by decide) ho'
-    rwa [BitVec.add_zero] at this
-  · exact w0_oF G r hr
+  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl
+  · exact tw.sub_right (Lay.wSub ho)
+  · exact tw.sub_right (Lay.wSub (by decide))
+  · exact tw.sub_right (Lay.wSub (by decide))
+  · exact tw.sub_right (Lay.wSub (by decide))
+  · exact tw.sub_right (Lay.wSub (by decide))
+  · exact kt.symm
 
 /-- The counter block, apart from a part of `W` from `W + 80` on. -/
 theorem st48_w {o k : Nat} (h : 80 ≤ o) (hk : o + k ≤ 2560) :
@@ -149,38 +148,45 @@ structure OD (q : (BitVec 32 × (Nat → BitVec 32)) × Bool) (s₀ s : State) :
     gctr (ctxCiph s₀.mem (w64 (q.1.2 0)) (q.1.2 1).toNat) (inc32 (jOf q.1 s₀))
       (bytesAt s₀.mem (w64 (q.1.2 6)) (q.1.2 7).toNat) else bytesAt s₀.mem (w64 (q.1.2 6)) (q.1.2 7).toNat
 
-theorem open_eq : («open» vg.callees) = .seq (oneEntry (keep 9 tglO)) (.seq tagLenOk (.seq (.ite .e (.block [.mov .eax (imm 0)])
+theorem open_eq : («open» vg.callees) = .seq (oneEntry 10 ([(8, tpO), (9, tglO)].flatMap
+    (fun (p : Nat × Nat) => keep p.1 p.2))) (.seq tagLenOk (.seq (.ite .e (.block [.mov .eax (imm 0)])
     (.seq (oneAad vg.callees) (.seq (oneTag vg.callees uO) (.seq recv (.seq (cmp uO)
       (.seq (.block [.store (at_ .ebp auxO) .eax, .alu .test .eax (.reg .eax)])
       (.seq (.ite .e (.block []) (oneCrypt vg.callees)) (.block [.mov .eax (slot auxO)]))))))))
     (.block restore))) := rfl
 
 theorem open_pc (q : (BitVec 32 × (Nat → BitVec 32)) × Bool) :
-    Pc (fun (s₀ : State) s => onePre 10 s₀ ∧ (pubOf 10 s₀, (openRes s₀).isSome) = q ∧ s = s₀) («open» vg.callees)
+    Pc (fun (s₀ : State) s => openPre s₀ ∧ (pubSw 11 8 s₀, (openRes s₀).isSome) = q ∧ s = s₀) («open» vg.callees)
       (fun s₀ s' => abiPreserved s₀ s' ∧ openX86.post s₀ s') := by
-  by_cases hex : ∃ s₀, onePre 10 s₀ ∧ (pubOf 10 s₀, (openRes s₀).isSome) = q
+  by_cases hex : ∃ s₀, openPre s₀ ∧ (pubSw 11 8 s₀, (openRes s₀).isSome) = q
   swap
   · exact Pc.vacuous fun a s ⟨h₁, h₂, _⟩ => hex ⟨a, h₁, h₂⟩
   obtain ⟨z, hz, hzq⟩ := hex
-  have hzp : pubOf 10 z = q.1 := by rw [← hzq]
-  have G : OL q.1 := (op_of hz).ol (by decide) hzp
+  have hzp : pubSw 11 8 z = q.1 := by rw [← hzq]
+  have G : OL q.1 := (op_of_open hz).ol rfl (by decide) hzp
   have L := G.L
+  obtain ⟨-, ftg, tw, kt⟩ := openPre_tag hz
+  rw [open_tag hzp, open_arg hzp (i := 9) (by decide)] at ftg
+  rw [open_tag hzp, open_arg hzp (i := 9) (by decide), pubSw_W hzp (m := 10) (by decide) rfl] at tw
+  rw [open_tag hzp, open_arg hzp (i := 9) (by decide), pubSw_esp hzp] at kt
   have ht32 : (q.1.2 9).toNat < 2 ^ 32 := (q.1.2 9).isLt
   generalize hok : Spec.Gcm.tagLenOk (q.1.2 9).toNat = ok
   rw [open_eq]
   -- The entry.
-  refine Pc.seq (Pc.mono (oneEntry_pc 10 (.inr rfl) (keep 9 tglO) (.inr rfl) (fun _ => rfl)
-    (fun s₀ => onePre 10 s₀ ∧ (openRes s₀).isSome = q.2) (fun _ h => op_of h.1) q.1 G (by taint_decide))
+  refine Pc.seq (Pc.mono (oneEntry_pc 11 10 rfl (by decide) [(8, tpO), (9, tglO)] (by decide) (by decide) (by simp)
+    (fun s₀ => openPre s₀ ∧ (openRes s₀).isSome = q.2) (fun _ h => op_of_open h.1) q.1 G (by taint_decide)
+    (by taint_decide))
     (fun s₀ s ⟨h₁, hq, hs⟩ => ⟨⟨h₁, by rw [← hq]⟩, by rw [← hq], hs⟩) (fun _ _ h => h)) ?_
   -- The tag length.
   refine Pc.seq (Q := fun s₀ s => OEnt q.1 s₀ s ∧
       slotv s.mem (q.1.2 8) tglO = BitVec.ofNat 32 (q.1.2 9).toNat ∧ IX q s₀ ∧ s.zf = some (!ok))
-    (Pc.mono (Pc.lift (tagLenOk_pc (W := q.1.2 8) ht32) (fun _ s => s) fun s₀ s ⟨h, ht, _, _⟩ =>
+    (Pc.mono (Pc.lift (tagLenOk_pc (W := q.1.2 8) ht32) (fun _ s => s) fun s₀ s ⟨h, ht, hp, _⟩ =>
       ⟨rfl, h.o.env.ebp, L.aW (by decide), h.o.env.wIn' (by decide), by
-        rw [ht (by simp [keep]), ofNat_toNat32]⟩) (fun _ _ h => h)
+        rw [ht (9, tglO) (by simp), open_arg hp (i := 9) (by decide), ofNat_toNat32]⟩) (fun _ _ h => h)
       fun s₀ s ⟨s₁, ⟨h, ht, hp, hpre, hres⟩, ⟨tl, hzf⟩, _, _⟩ =>
         ⟨h.same G tl.mem (tl.other _ (by decide) (by decide)) (tl.other _ (by decide) (by decide))
-          (tl.other _ (by decide) (by decide)) tl.rd tl.wr, by rw [tl.mem, ht (by simp [keep]), ofNat_toNat32],
+          (tl.other _ (by decide) (by decide)) tl.rd tl.wr,
+          by rw [tl.mem, ht (9, tglO) (by simp), open_arg hp (i := 9) (by decide), ofNat_toNat32],
           ⟨hpre, hp, by rw [← openRes_eq hp]; exact hres⟩, by rw [hzf, hok]⟩) ?_
   refine Pc.seq (Q := fun s₀ s => OEnv q.1 s₀ s ∧ IX q s₀ ∧ PostO q.1 s₀ s)
     (Pc.ite (!ok) (fun _ _ h => h.2.2.2) (fun hb => ?_) (fun hb => ?_)) ?_
@@ -214,14 +220,18 @@ theorem open_pc (q : (BitVec 32 × (Nat → BitVec 32)) × Bool) :
         (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ hr)), ← slotv_eq]
     exact hs
   refine Pc.seq (Pc.of (I := fun s => WEnv (q.1.2 8) s ∧
-      slotv s.mem (q.1.2 8) tglO = BitVec.ofNat 32 (q.1.2 9).toNat)
+      slotv s.mem (q.1.2 8) tglO = BitVec.ofNat 32 (q.1.2 9).toNat ∧ slotv s.mem (q.1.2 8) tpO = q.1.2 10 ∧
+      Covers [⟨w64 (q.1.2 10), (q.1.2 9).toNat⟩] (s.rd ++ s.wr))
     (R := fun s s' => bytesAt s'.mem (w64 (q.1.2 8) + BitVec.ofNat 64 rO) 16 =
-        bytesAt s.mem (w64 (q.1.2 8)) (q.1.2 9).toNat ++ zeros (16 - (q.1.2 9).toNat) ∧
+        bytesAt s.mem (w64 (q.1.2 10)) (q.1.2 9).toNat ++ zeros (16 - (q.1.2 9).toNat) ∧
       Frame [⟨w64 (q.1.2 8) + BitVec.ofNat 64 rO, 16⟩] s.mem s'.mem ∧ s'.gpr .ebp = s.gpr .ebp ∧
       s'.gpr .esi = s.gpr .esi ∧ s'.gpr .esp = s.gpr .esp ∧ s'.rd = s.rd ∧ s'.wr = s.wr)
-    (fun s hs => recv_ok hs.1 hs.2 t1 t16) (recv_ct fun s hs => hs) _
-    (fun s₀ s₃ ⟨s₂, ⟨sA, ⟨_, hs, _⟩, ⟨_, fA⟩, _⟩, ⟨o₃, _, fT⟩, _⟩ =>
-      ⟨⟨o₃.env.ebp, o₃.env.wW, L.fw⟩, tgl hs fA fT⟩)) ?_
+    (fun s hs => recv_ok hs.1 hs.2.1 hs.2.2.1 hs.2.2.2 ftg tw t1 t16)
+    (recv_ct fun s hs => ⟨hs.1, hs.2.1, hs.2.2.1⟩) _
+    (fun s₀ s₃ ⟨s₂, ⟨sA, ⟨_, hs, hx, _⟩, ⟨_, fA⟩, _⟩, ⟨o₃, _, fT⟩, _⟩ =>
+      ⟨⟨o₃.env.ebp, o₃.env.wW, L.fw⟩, tgl hs fA fT, by rw [o₃.tp, open_tag hx.pub], by
+        rw [o₃.rd, o₃.wr, ← open_tag hx.pub, ← open_arg hx.pub (i := 9) (by decide)]
+        exact (openPre_tag hx.pre).1⟩)) ?_
   -- Compared.
   have rR_tgl : ∀ {s s' : State}, Frame [⟨w64 (q.1.2 8) + BitVec.ofNat 64 rO, 16⟩] s.mem s'.mem →
       slotv s'.mem (q.1.2 8) tglO = slotv s.mem (q.1.2 8) tglO := fun f => by
@@ -263,13 +273,15 @@ theorem open_pc (q : (BitVec 32 × (Nat → BitVec 32)) × Bool) :
       rw [← bytesAt_take _ _ t16, bytesAt_frame f₄ (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
         exact Lay.w_w (.inl (by decide)) (by decide) (by decide)) (by decide), hT₃]
-    have hw₃ : bytesAt s₃.mem (w64 (q.1.2 8)) 16 = bytesAt s₀.mem (w64 (q.1.2 8)) 16 := by
-      rw [bytesAt_frame (oT_oF fT) (w0_woF G (by decide) (by decide)) (by decide),
-        bytesAt_frame fA (w0_oF G) (by decide)]
-      exact hE.w0
+    have hw₃ : bytesAt s₃.mem (w64 (q.1.2 10)) (q.1.2 9).toNat = rcvOf q.1 s₀ := by
+      have ht₁ : (q.1.2 9).toNat ≤ 2 ^ 64 := by omega
+      rw [bytesAt_frame (oT_oF fT) (t_woF (by decide) tw kt) ht₁,
+        bytesAt_frame fA (fun r hr => t_woF (o := 0) (by decide) tw kt r (List.mem_cons_of_mem _ hr)) ht₁,
+        bytesAt_frame hE.frame (fun r hr => by
+          simp only [List.mem_singleton] at hr; subst hr; exact tw.sub_right (Lay.wSub (by decide))) ht₁]
     have hR₄ : bytesAt s₄.mem (w64 (q.1.2 8) + BitVec.ofNat 64 rO) 16 =
         rcvOf q.1 s₀ ++ zeros (16 - (q.1.2 9).toNat) := by
-      rw [b₄, ← bytesAt_take _ _ t16, hw₃, bytesAt_take _ _ t16]
+      rw [b₄, hw₃]
     have hq2 := hx.q2 hT'
     have a₅' : s₅.gpr .eax = BitVec.ofNat 32 (if q.2 = true then 1 else 0) := by
       rw [a₅, hT₄, hR₄, hq2]
@@ -348,19 +360,19 @@ theorem open_pc (q : (BitVec 32 × (Nat → BitVec 32)) × Bool) :
   -- The exit.
   refine Pc.taint [.ebp] (fun s₀ s ⟨o, hx, hpost⟩ => ?_) (fun _ _ s₁ s₂ ⟨o₁, _⟩ ⟨o₂, _⟩ r hr => by
       simp only [List.mem_singleton] at hr; subst hr; rw [o₁.env.ebp, o₂.env.ebp]) (by taint_decide)
-  have esp := pubOf_esp hx.pub
+  have esp := pubSw_esp hx.pub
   refine WP.mono (exit_ok o.env.ebp (by rw [o.env.esp, esp]) (covers_left o.env.wW) L.fw o.saved
     (by rw [esp]; exact o.ret)) fun s' ⟨abi, m', ax, _, _⟩ => ⟨abi, ?_⟩
   simp only [openX86, ret32_eq]
-  rw [openRes_eq hx.pub, pubOf_arg hx.pub (i := 6) (by decide), pubOf_arg hx.pub (i := 7) (by decide), m', ax]
+  rw [openRes_eq hx.pub, open_arg hx.pub (i := 6) (by decide), open_arg hx.pub (i := 7) (by decide), m', ax]
   exact hpost
 
 theorem open_correct (s : State) (hs : openX86.pre s) :
     ∃ t s', Exec isa («open» vg.callees) s t s' ∧ abiPreserved s s' ∧ openX86.post s s' :=
-  (open_pc (pubOf 10 s, (openRes s).isSome)).wp s s ⟨hs, rfl, rfl⟩
+  (open_pc (pubSw 11 8 s, (openRes s).isSome)).wp s s ⟨hs, rfl, rfl⟩
 
 theorem open_ct : ConstantTime isa openX86.pre openX86.pub («open» vg.callees) :=
-  Pc.constantTime (fun s => (pubOf 10 s, (openRes s).isSome))
-    (fun _ _ _ _ h => by rw [pubOf_eq h.1, h.2]) open_pc fun _ hs => ⟨hs, rfl, rfl⟩
+  Pc.constantTime (fun s => (pubSw 11 8 s, (openRes s).isSome))
+    (fun _ _ _ _ h => by rw [pubSw_eq (by decide) h.1, h.2]) open_pc fun _ hs => ⟨hs, rfl, rfl⟩
 
 end VG.Proof.AesGcm.X86

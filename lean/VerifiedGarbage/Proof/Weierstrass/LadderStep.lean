@@ -7,8 +7,8 @@ import VerifiedGarbage.Proof.Weierstrass.Ladder
 From a representative over `Fin p` of `[k >>> (j + 1)]P`, the complete
 addition gives representatives of `D = R + R` and `T = D + P`, and selecting
 `T` if bit `j` of `k` is set, else `D`, represents `[k >>> j]P`
-(`Good.ladder_step`). With the rest of `Complete.lean`, this makes the group
-law's interface for the proofs of the code (`Good.law`).
+(`Good.ladder_step`). With the rest of `Complete.lean` and `Group.lean`, this
+makes the group law's interface for the proofs of the code (`Good.law`).
 -/
 
 namespace VG.Proof.Weierstrass
@@ -32,13 +32,5 @@ theorem Good.ladder_step (hC : Good C) {P : Point C} (hP : onCurve C P = true) {
   by_cases hb : k.testBit j <;> simp only [hb, ite_true, ite_false, Bool.false_eq_true]
   · exact hT
   · exact hD
-
-theorem Good.law (hC : Good C) : Law C where
-  one_ne_zero := hC.one_ne_zero_fe
-  add := hC.rep_add
-  onCurve_mul := hC.onCurve_mul
-  step := hC.ladder_step
-  x_eq := hC.rep_x_eq
-  y_eq := hC.rep_y_eq
 
 end VG.Proof.Weierstrass

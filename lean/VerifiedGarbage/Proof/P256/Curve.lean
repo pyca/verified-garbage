@@ -1,7 +1,7 @@
 import VerifiedGarbage.Proof.Framework.PowLit
 import VerifiedGarbage.Proof.P256.Prime
 import VerifiedGarbage.Proof.P256.Point
-import VerifiedGarbage.Proof.Weierstrass.LadderStep
+import VerifiedGarbage.Proof.Weierstrass.Group
 import VerifiedGarbage.Proof.Weierstrass.Cubic
 
 /-!

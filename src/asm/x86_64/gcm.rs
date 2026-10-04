@@ -1861,7 +1861,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_init_aesni(key: *const u8, key_l
 /// The CPU features `vg_aes_gcm_seal_aesni` requires (`Artifact.features`).
 pub(crate) const VG_AES_GCM_SEAL_AESNI_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes", "ssse3"]);
 
-/// AES-GCM authenticated encryption (NIST SP 800-38D §7.1, GCM-AE, with a 128-bit tag): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, encrypts the `len` bytes at `data` in place, under the IV the `nonce_len` bytes at `nonce`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to the first 16 bytes of `*work`. The rest of `*work` is working space, unspecified on return. A shorter tag is the first bytes of this one.
+/// AES-GCM authenticated encryption (NIST SP 800-38D §7.1, GCM-AE, with a 128-bit tag): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, encrypts the `len` bytes at `data` in place, under the IV the `nonce_len` bytes at `nonce`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`. A shorter tag is the first bytes of this one.
 ///
 /// The function checks no length. GCM is secure only for a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of data and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must ensure; and a nonce must never be used twice with the same key.
 ///
@@ -1875,15 +1875,25 @@ pub(crate) const VG_AES_GCM_SEAL_AESNI_FEATURES: crate::cpu::Features = crate::c
 /// * `nonce` must be valid for reads of `nonce_len` bytes.
 /// * `aad` must be valid for reads of `aad_len` bytes.
 /// * `data` must be valid for reads and writes of `len` bytes.
-/// * `work` must be valid for reads and writes of 2560 bytes.
+/// * `tag` must be valid for reads and writes of 16 bytes.
 /// * `rounds` must be 10, 12 or 14.
-/// * `data` and `work` must not overlap each other, `ctx`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `aad`, `data` and `work` may overlap the return address on the stack or the 24 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `data` and `tag` must not overlap each other, `ctx`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 2624 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` and `ssse3` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal_aesni(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, work: *mut [u64; 320]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal_aesni(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        "mov rax, QWORD PTR [rsp+24]",
+        "lea rsp, [rsp-2600]",
+        "mov rax, QWORD PTR [rsp+2608]",
+        "mov QWORD PTR [rsp+8], rax",
+        "mov rax, QWORD PTR [rsp+2616]",
+        "mov QWORD PTR [rsp+16], rax",
+        "mov rax, QWORD PTR [rsp+2624]",
+        "mov QWORD PTR [rsp+24], rax",
+        "mov rax, rsp",
+        "add rax, 40",
+        "mov QWORD PTR [rsp+32], rax",
+        "mov rax, QWORD PTR [rsp+32]",
         "mov QWORD PTR [rax+128], rbx",
         "mov QWORD PTR [rax+136], rbp",
         "mov QWORD PTR [rax+144], r12",
@@ -2458,12 +2468,18 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal_aesni(ctx: *const [u64; 32]
         "mov r9, r15",
         "add r9, 512",
         "call {vg_aes_ctr32_aesni}",
+        "mov rdi, QWORD PTR [rsp+24]",
+        "mov rax, QWORD PTR [r15]",
+        "mov rdx, QWORD PTR [r15+8]",
+        "mov QWORD PTR [rdi], rax",
+        "mov QWORD PTR [rdi+8], rdx",
         "mov rbx, QWORD PTR [r15+128]",
         "mov rbp, QWORD PTR [r15+136]",
         "mov r12, QWORD PTR [r15+144]",
         "mov r13, QWORD PTR [r15+152]",
         "mov r14, QWORD PTR [r15+160]",
         "mov r15, QWORD PTR [r15+168]",
+        "lea rsp, [rsp+2600]",
         "ret",
         ".p2align 6",
         vg_ghash = sym super::gcm::vg_ghash,
@@ -2475,7 +2491,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal_aesni(ctx: *const [u64; 32]
 /// The CPU features `vg_aes_gcm_open_aesni` requires (`Artifact.features`).
 pub(crate) const VG_AES_GCM_OPEN_AESNI_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes", "ssse3"]);
 
-/// AES-GCM authenticated decryption (NIST SP 800-38D §7.2, GCM-AD): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag in the first `tag_len` bytes of `*work`, returns 1 if `tag_len` is 4, 8, 12, 13, 14, 15 or 16 (§5.2.1.2) and the tag is the first `tag_len` bytes of that of the `len` bytes of ciphertext at `data` and the `aad_len` bytes of additional data at `aad`, under the IV the `nonce_len` bytes at `nonce`, having then decrypted the ciphertext in place; otherwise returns 0, and the bytes at `data` are unchanged. The rest of `*work` is working space, unspecified on return. The tags are compared without a branch.
+/// AES-GCM authenticated decryption (NIST SP 800-38D §7.2, GCM-AD): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, returns 1 if `tag_len` is 4, 8, 12, 13, 14, 15 or 16 (§5.2.1.2) and the tag is the first `tag_len` bytes of that of the `len` bytes of ciphertext at `data` and the `aad_len` bytes of additional data at `aad`, under the IV the `nonce_len` bytes at `nonce`, having then decrypted the ciphertext in place; otherwise returns 0, and the bytes at `data` are unchanged. The tags are compared without a branch.
 ///
 /// The function checks no other length: GCM requires a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of ciphertext and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must check.
 ///
@@ -2489,15 +2505,27 @@ pub(crate) const VG_AES_GCM_OPEN_AESNI_FEATURES: crate::cpu::Features = crate::c
 /// * `nonce` must be valid for reads of `nonce_len` bytes.
 /// * `aad` must be valid for reads of `aad_len` bytes.
 /// * `data` must be valid for reads and writes of `len` bytes.
-/// * `work` must be valid for reads and writes of 2560 bytes.
+/// * `tag` must be valid for reads of `tag_len` bytes.
 /// * `rounds` must be 10, 12 or 14.
-/// * `data` and `work` must not overlap each other, `ctx`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `aad`, `data` and `work` may overlap the return address on the stack or the 24 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `data` must not overlap `ctx`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 2632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` and `ssse3` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_open_aesni(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, work: *mut [u64; 320], tag_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_open_aesni(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "mov rax, QWORD PTR [rsp+24]",
+        "lea rsp, [rsp-2608]",
+        "mov rax, QWORD PTR [rsp+2616]",
+        "mov QWORD PTR [rsp+8], rax",
+        "mov rax, QWORD PTR [rsp+2624]",
+        "mov QWORD PTR [rsp+16], rax",
+        "mov rax, QWORD PTR [rsp+2632]",
+        "mov QWORD PTR [rsp+24], rax",
+        "mov rax, QWORD PTR [rsp+2640]",
+        "mov QWORD PTR [rsp+32], rax",
+        "mov rax, rsp",
+        "add rax, 48",
+        "mov QWORD PTR [rsp+40], rax",
+        "mov rax, QWORD PTR [rsp+40]",
         "mov QWORD PTR [rax+128], rbx",
         "mov QWORD PTR [rax+136], rbp",
         "mov QWORD PTR [rax+144], r12",
@@ -3015,12 +3043,12 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_open_aesni(ctx: *const [u64; 32]
         "add r9, 512",
         "call {vg_aes_ctr32_aesni}",
         "mov rbx, QWORD PTR [r15+224]",
+        "mov rsi, QWORD PTR [rsp+24]",
         "mov eax, 0",
         "mov QWORD PTR [r15+256], rax",
         "mov QWORD PTR [r15+264], rax",
         "mov rdi, r15",
         "add rdi, 256",
-        "mov rsi, r15",
         "mov rcx, rbx",
         "mov r10d, 0",
         "265:",
@@ -3174,6 +3202,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_open_aesni(ctx: *const [u64; 32]
         "mov r13, QWORD PTR [r15+152]",
         "mov r14, QWORD PTR [r15+160]",
         "mov r15, QWORD PTR [r15+168]",
+        "lea rsp, [rsp+2608]",
         "ret",
         ".p2align 6",
         vg_ghash = sym super::gcm::vg_ghash,
@@ -4897,7 +4926,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_decrypt_aesni(ctx: *const
 /// The CPU features `vg_aes_gcm_stream_finish_aesni` requires (`Artifact.features`).
 pub(crate) const VG_AES_GCM_STREAM_FINISH_AESNI_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes", "ssse3"]);
 
-/// Finishes an incremental AES-GCM encryption or decryption (NIST SP 800-38D §7.1 steps 5–6, §7.2 steps 6–7): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, writes its 128-bit tag to the first 16 bytes of `*work`. The rest of `*work` is working space, unspecified on return. A shorter tag is the first bytes of this one; to check a received tag, use `vg_aes_gcm_stream_verify`.
+/// Finishes an incremental AES-GCM encryption or decryption (NIST SP 800-38D §7.1 steps 5–6, §7.2 steps 6–7): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, writes its 128-bit tag to `*tag`. A shorter tag is the first bytes of this one; to check a received tag, use `vg_aes_gcm_stream_verify`.
 ///
 /// Contract: `VG.Spec.Gcm.streamFinishContract`. Constant time: only the pointers, `rounds`, `aad_len` and `text_len` may affect timing, not the key context or the state.
 ///
@@ -4907,27 +4936,33 @@ pub(crate) const VG_AES_GCM_STREAM_FINISH_AESNI_FEATURES: crate::cpu::Features =
 ///
 /// * `ctx` must be valid for reads of 256 bytes.
 /// * `state` must be valid for reads and writes of 80 bytes.
-/// * `work` must be valid for reads and writes of 2560 bytes.
+/// * `tag` must be valid for reads and writes of 16 bytes.
 /// * `rounds` must be 10, 12 or 14.
 /// * The contents of `state` on return are unspecified.
-/// * `state` and `work` must not overlap each other or `ctx` (distinct Rust objects never do).
-/// * None of `ctx`, `state` and `work` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `state` and `tag` must not overlap each other or `ctx` (distinct Rust objects never do).
+/// * None of `ctx`, `state` and `tag` may overlap the return address on the stack or the 2584 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` and `ssse3` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_finish_aesni(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, work: *mut [u64; 320]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_finish_aesni(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        "mov QWORD PTR [r9+128], rbx",
-        "mov QWORD PTR [r9+136], rbp",
-        "mov QWORD PTR [r9+144], r12",
-        "mov QWORD PTR [r9+152], r13",
-        "mov QWORD PTR [r9+160], r14",
-        "mov QWORD PTR [r9+168], r15",
-        "mov r15, r9",
+        "lea rsp, [rsp-2576]",
+        "mov rax, rsp",
+        "add rax, 16",
+        "mov QWORD PTR [rsp+8], rax",
+        "mov rax, QWORD PTR [rsp+8]",
+        "mov QWORD PTR [rax+128], rbx",
+        "mov QWORD PTR [rax+136], rbp",
+        "mov QWORD PTR [rax+144], r12",
+        "mov QWORD PTR [rax+152], r13",
+        "mov QWORD PTR [rax+160], r14",
+        "mov QWORD PTR [rax+168], r15",
+        "mov r15, rax",
         "mov r14, rdx",
         "mov r13, rdi",
         "mov QWORD PTR [r15+176], rsi",
         "mov QWORD PTR [r15+184], rcx",
         "mov QWORD PTR [r15+192], r8",
+        "mov QWORD PTR [r15+200], r9",
         "mov rbx, QWORD PTR [r15+192]",
         "mov rax, QWORD PTR [r15+184]",
         "test rbx, rbx",
@@ -5004,12 +5039,18 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_finish_aesni(ctx: *const 
         "mov r9, r15",
         "add r9, 512",
         "call {vg_aes_ctr32_aesni}",
+        "mov rdi, QWORD PTR [r15+200]",
+        "mov rax, QWORD PTR [r15]",
+        "mov rdx, QWORD PTR [r15+8]",
+        "mov QWORD PTR [rdi], rax",
+        "mov QWORD PTR [rdi+8], rdx",
         "mov rbx, QWORD PTR [r15+128]",
         "mov rbp, QWORD PTR [r15+136]",
         "mov r12, QWORD PTR [r15+144]",
         "mov r13, QWORD PTR [r15+152]",
         "mov r14, QWORD PTR [r15+160]",
         "mov r15, QWORD PTR [r15+168]",
+        "lea rsp, [rsp+2576]",
         "ret",
         ".p2align 6",
         vg_ghash = sym super::gcm::vg_ghash,
@@ -5020,7 +5061,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_finish_aesni(ctx: *const 
 /// The CPU features `vg_aes_gcm_stream_verify_aesni` requires (`Artifact.features`).
 pub(crate) const VG_AES_GCM_STREAM_VERIFY_AESNI_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes", "ssse3"]);
 
-/// Finishes an incremental AES-GCM decryption and checks its tag (NIST SP 800-38D §7.2 steps 6–8): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag in the first `tag_len` bytes of `*work`, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, returns 1 if `tag_len` is 4, 8, 12, 13, 14, 15 or 16 (§5.2.1.2) and the received tag is the first `tag_len` bytes of the message's 128-bit tag, which it then writes to the first 16 bytes of `*work`; otherwise returns 0 and writes 16 zero bytes there. The rest of `*work` is working space, unspecified on return. The tags are compared without a branch.
+/// Finishes an incremental AES-GCM decryption and checks its tag (NIST SP 800-38D §7.2 steps 6–8): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, returns 1 if `tag_len` is 4, 8, 12, 13, 14, 15 or 16 (§5.2.1.2) and the received tag is the first `tag_len` bytes of the message's 128-bit tag, and 0 otherwise. The tags are compared without a branch.
 ///
 /// Contract: `VG.Spec.Gcm.streamVerifyContract`. Constant time: only the pointers, `rounds`, `aad_len`, `text_len` and `tag_len` may affect timing, not the key context, the state or the tags.
 ///
@@ -5030,22 +5071,29 @@ pub(crate) const VG_AES_GCM_STREAM_VERIFY_AESNI_FEATURES: crate::cpu::Features =
 ///
 /// * `ctx` must be valid for reads of 256 bytes.
 /// * `state` must be valid for reads and writes of 80 bytes.
-/// * `work` must be valid for reads and writes of 2560 bytes.
+/// * `tag` must be valid for reads of `tag_len` bytes.
 /// * `rounds` must be 10, 12 or 14.
 /// * The contents of `state` on return are unspecified.
-/// * `state` and `work` must not overlap each other, `ctx` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `ctx`, `state` and `work` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `state` must not overlap `ctx`, `tag` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `state` and `tag` may overlap the return address on the stack or the 2592 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` and `ssse3` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_verify_aesni(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, work: *mut [u64; 320], tag_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_verify_aesni(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "mov QWORD PTR [r9+128], rbx",
-        "mov QWORD PTR [r9+136], rbp",
-        "mov QWORD PTR [r9+144], r12",
-        "mov QWORD PTR [r9+152], r13",
-        "mov QWORD PTR [r9+160], r14",
-        "mov QWORD PTR [r9+168], r15",
-        "mov r15, r9",
+        "lea rsp, [rsp-2584]",
+        "mov rax, QWORD PTR [rsp+2592]",
+        "mov QWORD PTR [rsp+8], rax",
+        "mov rax, rsp",
+        "add rax, 24",
+        "mov QWORD PTR [rsp+16], rax",
+        "mov rax, QWORD PTR [rsp+16]",
+        "mov QWORD PTR [rax+128], rbx",
+        "mov QWORD PTR [rax+136], rbp",
+        "mov QWORD PTR [rax+144], r12",
+        "mov QWORD PTR [rax+152], r13",
+        "mov QWORD PTR [rax+160], r14",
+        "mov QWORD PTR [rax+168], r15",
+        "mov r15, rax",
         "mov r14, rdx",
         "mov r13, rdi",
         "mov QWORD PTR [r15+176], rsi",
@@ -5053,6 +5101,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_verify_aesni(ctx: *const 
         "mov QWORD PTR [r15+192], r8",
         "mov rbx, QWORD PTR [rsp+8]",
         "mov QWORD PTR [r15+224], rbx",
+        "mov rsi, r9",
         "mov ecx, 0",
         "cmp rbx, 4",
         "je 20f",
@@ -5084,7 +5133,6 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_verify_aesni(ctx: *const 
         "mov QWORD PTR [r15+264], rax",
         "mov rdi, r15",
         "add rdi, 256",
-        "mov rsi, r15",
         "mov rcx, rbx",
         "mov r10d, 0",
         "210:",
@@ -5193,19 +5241,9 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_verify_aesni(ctx: *const 
         "cmp rax, 1",
         "mov eax, 0",
         "adc eax, 0",
-        "mov ecx, 0",
-        "sub rcx, rax",
-        "mov rdx, QWORD PTR [r15]",
-        "and rdx, rcx",
-        "mov QWORD PTR [r15], rdx",
-        "mov rdx, QWORD PTR [r15+8]",
-        "and rdx, rcx",
-        "mov QWORD PTR [r15+8], rdx",
         "jmp 29f",
         "28:",
         "mov eax, 0",
-        "mov QWORD PTR [r15], rax",
-        "mov QWORD PTR [r15+8], rax",
         "29:",
         "mov rbx, QWORD PTR [r15+128]",
         "mov rbp, QWORD PTR [r15+136]",
@@ -5213,6 +5251,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_verify_aesni(ctx: *const 
         "mov r13, QWORD PTR [r15+152]",
         "mov r14, QWORD PTR [r15+160]",
         "mov r15, QWORD PTR [r15+168]",
+        "lea rsp, [rsp+2584]",
         "ret",
         ".p2align 6",
         vg_ghash = sym super::gcm::vg_ghash,
@@ -5415,7 +5454,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_init_aesni_pclmul(key: *const u8
 /// The CPU features `vg_aes_gcm_seal_aesni_pclmul` requires (`Artifact.features`).
 pub(crate) const VG_AES_GCM_SEAL_AESNI_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes", "pclmulqdq", "ssse3"]);
 
-/// AES-GCM authenticated encryption (NIST SP 800-38D §7.1, GCM-AE, with a 128-bit tag): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, encrypts the `len` bytes at `data` in place, under the IV the `nonce_len` bytes at `nonce`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to the first 16 bytes of `*work`. The rest of `*work` is working space, unspecified on return. A shorter tag is the first bytes of this one.
+/// AES-GCM authenticated encryption (NIST SP 800-38D §7.1, GCM-AE, with a 128-bit tag): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, encrypts the `len` bytes at `data` in place, under the IV the `nonce_len` bytes at `nonce`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`. A shorter tag is the first bytes of this one.
 ///
 /// The function checks no length. GCM is secure only for a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of data and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must ensure; and a nonce must never be used twice with the same key.
 ///
@@ -5429,15 +5468,25 @@ pub(crate) const VG_AES_GCM_SEAL_AESNI_PCLMUL_FEATURES: crate::cpu::Features = c
 /// * `nonce` must be valid for reads of `nonce_len` bytes.
 /// * `aad` must be valid for reads of `aad_len` bytes.
 /// * `data` must be valid for reads and writes of `len` bytes.
-/// * `work` must be valid for reads and writes of 2560 bytes.
+/// * `tag` must be valid for reads and writes of 16 bytes.
 /// * `rounds` must be 10, 12 or 14.
-/// * `data` and `work` must not overlap each other, `ctx`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `aad`, `data` and `work` may overlap the return address on the stack or the 24 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `data` and `tag` must not overlap each other, `ctx`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 2624 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `pclmulqdq` and `ssse3` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal_aesni_pclmul(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, work: *mut [u64; 320]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal_aesni_pclmul(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        "mov rax, QWORD PTR [rsp+24]",
+        "lea rsp, [rsp-2600]",
+        "mov rax, QWORD PTR [rsp+2608]",
+        "mov QWORD PTR [rsp+8], rax",
+        "mov rax, QWORD PTR [rsp+2616]",
+        "mov QWORD PTR [rsp+16], rax",
+        "mov rax, QWORD PTR [rsp+2624]",
+        "mov QWORD PTR [rsp+24], rax",
+        "mov rax, rsp",
+        "add rax, 40",
+        "mov QWORD PTR [rsp+32], rax",
+        "mov rax, QWORD PTR [rsp+32]",
         "mov QWORD PTR [rax+128], rbx",
         "mov QWORD PTR [rax+136], rbp",
         "mov QWORD PTR [rax+144], r12",
@@ -6012,12 +6061,18 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal_aesni_pclmul(ctx: *const [u
         "mov r9, r15",
         "add r9, 512",
         "call {vg_aes_ctr32_aesni}",
+        "mov rdi, QWORD PTR [rsp+24]",
+        "mov rax, QWORD PTR [r15]",
+        "mov rdx, QWORD PTR [r15+8]",
+        "mov QWORD PTR [rdi], rax",
+        "mov QWORD PTR [rdi+8], rdx",
         "mov rbx, QWORD PTR [r15+128]",
         "mov rbp, QWORD PTR [r15+136]",
         "mov r12, QWORD PTR [r15+144]",
         "mov r13, QWORD PTR [r15+152]",
         "mov r14, QWORD PTR [r15+160]",
         "mov r15, QWORD PTR [r15+168]",
+        "lea rsp, [rsp+2600]",
         "ret",
         ".p2align 6",
         vg_ghash_pclmul = sym super::gcm::vg_ghash_pclmul,
@@ -6029,7 +6084,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal_aesni_pclmul(ctx: *const [u
 /// The CPU features `vg_aes_gcm_open_aesni_pclmul` requires (`Artifact.features`).
 pub(crate) const VG_AES_GCM_OPEN_AESNI_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes", "pclmulqdq", "ssse3"]);
 
-/// AES-GCM authenticated decryption (NIST SP 800-38D §7.2, GCM-AD): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag in the first `tag_len` bytes of `*work`, returns 1 if `tag_len` is 4, 8, 12, 13, 14, 15 or 16 (§5.2.1.2) and the tag is the first `tag_len` bytes of that of the `len` bytes of ciphertext at `data` and the `aad_len` bytes of additional data at `aad`, under the IV the `nonce_len` bytes at `nonce`, having then decrypted the ciphertext in place; otherwise returns 0, and the bytes at `data` are unchanged. The rest of `*work` is working space, unspecified on return. The tags are compared without a branch.
+/// AES-GCM authenticated decryption (NIST SP 800-38D §7.2, GCM-AD): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, returns 1 if `tag_len` is 4, 8, 12, 13, 14, 15 or 16 (§5.2.1.2) and the tag is the first `tag_len` bytes of that of the `len` bytes of ciphertext at `data` and the `aad_len` bytes of additional data at `aad`, under the IV the `nonce_len` bytes at `nonce`, having then decrypted the ciphertext in place; otherwise returns 0, and the bytes at `data` are unchanged. The tags are compared without a branch.
 ///
 /// The function checks no other length: GCM requires a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of ciphertext and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must check.
 ///
@@ -6043,15 +6098,27 @@ pub(crate) const VG_AES_GCM_OPEN_AESNI_PCLMUL_FEATURES: crate::cpu::Features = c
 /// * `nonce` must be valid for reads of `nonce_len` bytes.
 /// * `aad` must be valid for reads of `aad_len` bytes.
 /// * `data` must be valid for reads and writes of `len` bytes.
-/// * `work` must be valid for reads and writes of 2560 bytes.
+/// * `tag` must be valid for reads of `tag_len` bytes.
 /// * `rounds` must be 10, 12 or 14.
-/// * `data` and `work` must not overlap each other, `ctx`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `aad`, `data` and `work` may overlap the return address on the stack or the 24 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `data` must not overlap `ctx`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 2632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `pclmulqdq` and `ssse3` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_open_aesni_pclmul(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, work: *mut [u64; 320], tag_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_open_aesni_pclmul(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "mov rax, QWORD PTR [rsp+24]",
+        "lea rsp, [rsp-2608]",
+        "mov rax, QWORD PTR [rsp+2616]",
+        "mov QWORD PTR [rsp+8], rax",
+        "mov rax, QWORD PTR [rsp+2624]",
+        "mov QWORD PTR [rsp+16], rax",
+        "mov rax, QWORD PTR [rsp+2632]",
+        "mov QWORD PTR [rsp+24], rax",
+        "mov rax, QWORD PTR [rsp+2640]",
+        "mov QWORD PTR [rsp+32], rax",
+        "mov rax, rsp",
+        "add rax, 48",
+        "mov QWORD PTR [rsp+40], rax",
+        "mov rax, QWORD PTR [rsp+40]",
         "mov QWORD PTR [rax+128], rbx",
         "mov QWORD PTR [rax+136], rbp",
         "mov QWORD PTR [rax+144], r12",
@@ -6569,12 +6636,12 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_open_aesni_pclmul(ctx: *const [u
         "add r9, 512",
         "call {vg_aes_ctr32_aesni}",
         "mov rbx, QWORD PTR [r15+224]",
+        "mov rsi, QWORD PTR [rsp+24]",
         "mov eax, 0",
         "mov QWORD PTR [r15+256], rax",
         "mov QWORD PTR [r15+264], rax",
         "mov rdi, r15",
         "add rdi, 256",
-        "mov rsi, r15",
         "mov rcx, rbx",
         "mov r10d, 0",
         "265:",
@@ -6728,6 +6795,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_open_aesni_pclmul(ctx: *const [u
         "mov r13, QWORD PTR [r15+152]",
         "mov r14, QWORD PTR [r15+160]",
         "mov r15, QWORD PTR [r15+168]",
+        "lea rsp, [rsp+2608]",
         "ret",
         ".p2align 6",
         vg_ghash_pclmul = sym super::gcm::vg_ghash_pclmul,
@@ -8459,7 +8527,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_decrypt_aesni_pclmul(ctx:
 /// The CPU features `vg_aes_gcm_stream_finish_aesni_pclmul` requires (`Artifact.features`).
 pub(crate) const VG_AES_GCM_STREAM_FINISH_AESNI_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes", "pclmulqdq", "ssse3"]);
 
-/// Finishes an incremental AES-GCM encryption or decryption (NIST SP 800-38D §7.1 steps 5–6, §7.2 steps 6–7): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, writes its 128-bit tag to the first 16 bytes of `*work`. The rest of `*work` is working space, unspecified on return. A shorter tag is the first bytes of this one; to check a received tag, use `vg_aes_gcm_stream_verify`.
+/// Finishes an incremental AES-GCM encryption or decryption (NIST SP 800-38D §7.1 steps 5–6, §7.2 steps 6–7): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, writes its 128-bit tag to `*tag`. A shorter tag is the first bytes of this one; to check a received tag, use `vg_aes_gcm_stream_verify`.
 ///
 /// Contract: `VG.Spec.Gcm.streamFinishContract`. Constant time: only the pointers, `rounds`, `aad_len` and `text_len` may affect timing, not the key context or the state.
 ///
@@ -8469,27 +8537,33 @@ pub(crate) const VG_AES_GCM_STREAM_FINISH_AESNI_PCLMUL_FEATURES: crate::cpu::Fea
 ///
 /// * `ctx` must be valid for reads of 256 bytes.
 /// * `state` must be valid for reads and writes of 80 bytes.
-/// * `work` must be valid for reads and writes of 2560 bytes.
+/// * `tag` must be valid for reads and writes of 16 bytes.
 /// * `rounds` must be 10, 12 or 14.
 /// * The contents of `state` on return are unspecified.
-/// * `state` and `work` must not overlap each other or `ctx` (distinct Rust objects never do).
-/// * None of `ctx`, `state` and `work` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `state` and `tag` must not overlap each other or `ctx` (distinct Rust objects never do).
+/// * None of `ctx`, `state` and `tag` may overlap the return address on the stack or the 2584 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `pclmulqdq` and `ssse3` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_finish_aesni_pclmul(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, work: *mut [u64; 320]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_finish_aesni_pclmul(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        "mov QWORD PTR [r9+128], rbx",
-        "mov QWORD PTR [r9+136], rbp",
-        "mov QWORD PTR [r9+144], r12",
-        "mov QWORD PTR [r9+152], r13",
-        "mov QWORD PTR [r9+160], r14",
-        "mov QWORD PTR [r9+168], r15",
-        "mov r15, r9",
+        "lea rsp, [rsp-2576]",
+        "mov rax, rsp",
+        "add rax, 16",
+        "mov QWORD PTR [rsp+8], rax",
+        "mov rax, QWORD PTR [rsp+8]",
+        "mov QWORD PTR [rax+128], rbx",
+        "mov QWORD PTR [rax+136], rbp",
+        "mov QWORD PTR [rax+144], r12",
+        "mov QWORD PTR [rax+152], r13",
+        "mov QWORD PTR [rax+160], r14",
+        "mov QWORD PTR [rax+168], r15",
+        "mov r15, rax",
         "mov r14, rdx",
         "mov r13, rdi",
         "mov QWORD PTR [r15+176], rsi",
         "mov QWORD PTR [r15+184], rcx",
         "mov QWORD PTR [r15+192], r8",
+        "mov QWORD PTR [r15+200], r9",
         "mov rbx, QWORD PTR [r15+192]",
         "mov rax, QWORD PTR [r15+184]",
         "test rbx, rbx",
@@ -8566,12 +8640,18 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_finish_aesni_pclmul(ctx: 
         "mov r9, r15",
         "add r9, 512",
         "call {vg_aes_ctr32_aesni}",
+        "mov rdi, QWORD PTR [r15+200]",
+        "mov rax, QWORD PTR [r15]",
+        "mov rdx, QWORD PTR [r15+8]",
+        "mov QWORD PTR [rdi], rax",
+        "mov QWORD PTR [rdi+8], rdx",
         "mov rbx, QWORD PTR [r15+128]",
         "mov rbp, QWORD PTR [r15+136]",
         "mov r12, QWORD PTR [r15+144]",
         "mov r13, QWORD PTR [r15+152]",
         "mov r14, QWORD PTR [r15+160]",
         "mov r15, QWORD PTR [r15+168]",
+        "lea rsp, [rsp+2576]",
         "ret",
         ".p2align 6",
         vg_ghash_pclmul = sym super::gcm::vg_ghash_pclmul,
@@ -8582,7 +8662,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_finish_aesni_pclmul(ctx: 
 /// The CPU features `vg_aes_gcm_stream_verify_aesni_pclmul` requires (`Artifact.features`).
 pub(crate) const VG_AES_GCM_STREAM_VERIFY_AESNI_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes", "pclmulqdq", "ssse3"]);
 
-/// Finishes an incremental AES-GCM decryption and checks its tag (NIST SP 800-38D §7.2 steps 6–8): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag in the first `tag_len` bytes of `*work`, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, returns 1 if `tag_len` is 4, 8, 12, 13, 14, 15 or 16 (§5.2.1.2) and the received tag is the first `tag_len` bytes of the message's 128-bit tag, which it then writes to the first 16 bytes of `*work`; otherwise returns 0 and writes 16 zero bytes there. The rest of `*work` is working space, unspecified on return. The tags are compared without a branch.
+/// Finishes an incremental AES-GCM decryption and checks its tag (NIST SP 800-38D §7.2 steps 6–8): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, returns 1 if `tag_len` is 4, 8, 12, 13, 14, 15 or 16 (§5.2.1.2) and the received tag is the first `tag_len` bytes of the message's 128-bit tag, and 0 otherwise. The tags are compared without a branch.
 ///
 /// Contract: `VG.Spec.Gcm.streamVerifyContract`. Constant time: only the pointers, `rounds`, `aad_len`, `text_len` and `tag_len` may affect timing, not the key context, the state or the tags.
 ///
@@ -8592,22 +8672,29 @@ pub(crate) const VG_AES_GCM_STREAM_VERIFY_AESNI_PCLMUL_FEATURES: crate::cpu::Fea
 ///
 /// * `ctx` must be valid for reads of 256 bytes.
 /// * `state` must be valid for reads and writes of 80 bytes.
-/// * `work` must be valid for reads and writes of 2560 bytes.
+/// * `tag` must be valid for reads of `tag_len` bytes.
 /// * `rounds` must be 10, 12 or 14.
 /// * The contents of `state` on return are unspecified.
-/// * `state` and `work` must not overlap each other, `ctx` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `ctx`, `state` and `work` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `state` must not overlap `ctx`, `tag` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `state` and `tag` may overlap the return address on the stack or the 2592 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `pclmulqdq` and `ssse3` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_verify_aesni_pclmul(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, work: *mut [u64; 320], tag_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_verify_aesni_pclmul(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "mov QWORD PTR [r9+128], rbx",
-        "mov QWORD PTR [r9+136], rbp",
-        "mov QWORD PTR [r9+144], r12",
-        "mov QWORD PTR [r9+152], r13",
-        "mov QWORD PTR [r9+160], r14",
-        "mov QWORD PTR [r9+168], r15",
-        "mov r15, r9",
+        "lea rsp, [rsp-2584]",
+        "mov rax, QWORD PTR [rsp+2592]",
+        "mov QWORD PTR [rsp+8], rax",
+        "mov rax, rsp",
+        "add rax, 24",
+        "mov QWORD PTR [rsp+16], rax",
+        "mov rax, QWORD PTR [rsp+16]",
+        "mov QWORD PTR [rax+128], rbx",
+        "mov QWORD PTR [rax+136], rbp",
+        "mov QWORD PTR [rax+144], r12",
+        "mov QWORD PTR [rax+152], r13",
+        "mov QWORD PTR [rax+160], r14",
+        "mov QWORD PTR [rax+168], r15",
+        "mov r15, rax",
         "mov r14, rdx",
         "mov r13, rdi",
         "mov QWORD PTR [r15+176], rsi",
@@ -8615,6 +8702,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_verify_aesni_pclmul(ctx: 
         "mov QWORD PTR [r15+192], r8",
         "mov rbx, QWORD PTR [rsp+8]",
         "mov QWORD PTR [r15+224], rbx",
+        "mov rsi, r9",
         "mov ecx, 0",
         "cmp rbx, 4",
         "je 20f",
@@ -8646,7 +8734,6 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_verify_aesni_pclmul(ctx: 
         "mov QWORD PTR [r15+264], rax",
         "mov rdi, r15",
         "add rdi, 256",
-        "mov rsi, r15",
         "mov rcx, rbx",
         "mov r10d, 0",
         "210:",
@@ -8755,19 +8842,9 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_verify_aesni_pclmul(ctx: 
         "cmp rax, 1",
         "mov eax, 0",
         "adc eax, 0",
-        "mov ecx, 0",
-        "sub rcx, rax",
-        "mov rdx, QWORD PTR [r15]",
-        "and rdx, rcx",
-        "mov QWORD PTR [r15], rdx",
-        "mov rdx, QWORD PTR [r15+8]",
-        "and rdx, rcx",
-        "mov QWORD PTR [r15+8], rdx",
         "jmp 29f",
         "28:",
         "mov eax, 0",
-        "mov QWORD PTR [r15], rax",
-        "mov QWORD PTR [r15+8], rax",
         "29:",
         "mov rbx, QWORD PTR [r15+128]",
         "mov rbp, QWORD PTR [r15+136]",
@@ -8775,6 +8852,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_verify_aesni_pclmul(ctx: 
         "mov r13, QWORD PTR [r15+152]",
         "mov r14, QWORD PTR [r15+160]",
         "mov r15, QWORD PTR [r15+168]",
+        "lea rsp, [rsp+2584]",
         "ret",
         ".p2align 6",
         vg_ghash_pclmul = sym super::gcm::vg_ghash_pclmul,
@@ -11655,7 +11733,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_init_aesni_pclmul_avx(key: *cons
 /// The CPU features `vg_aes_gcm_seal_aesni_pclmul_avx` requires (`Artifact.features`).
 pub(crate) const VG_AES_GCM_SEAL_AESNI_PCLMUL_AVX_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes", "pclmulqdq", "ssse3", "avx"]);
 
-/// AES-GCM authenticated encryption (NIST SP 800-38D §7.1, GCM-AE, with a 128-bit tag): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, encrypts the `len` bytes at `data` in place, under the IV the `nonce_len` bytes at `nonce`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to the first 16 bytes of `*work`. The rest of `*work` is working space, unspecified on return. A shorter tag is the first bytes of this one.
+/// AES-GCM authenticated encryption (NIST SP 800-38D §7.1, GCM-AE, with a 128-bit tag): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, encrypts the `len` bytes at `data` in place, under the IV the `nonce_len` bytes at `nonce`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`. A shorter tag is the first bytes of this one.
 ///
 /// The function checks no length. GCM is secure only for a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of data and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must ensure; and a nonce must never be used twice with the same key.
 ///
@@ -11669,15 +11747,25 @@ pub(crate) const VG_AES_GCM_SEAL_AESNI_PCLMUL_AVX_FEATURES: crate::cpu::Features
 /// * `nonce` must be valid for reads of `nonce_len` bytes.
 /// * `aad` must be valid for reads of `aad_len` bytes.
 /// * `data` must be valid for reads and writes of `len` bytes.
-/// * `work` must be valid for reads and writes of 2560 bytes.
+/// * `tag` must be valid for reads and writes of 16 bytes.
 /// * `rounds` must be 10, 12 or 14.
-/// * `data` and `work` must not overlap each other, `ctx`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `aad`, `data` and `work` may overlap the return address on the stack or the 24 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `data` and `tag` must not overlap each other, `ctx`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 2624 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `pclmulqdq`, `ssse3` and `avx` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal_aesni_pclmul_avx(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, work: *mut [u64; 320]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal_aesni_pclmul_avx(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        "mov rax, QWORD PTR [rsp+24]",
+        "lea rsp, [rsp-2600]",
+        "mov rax, QWORD PTR [rsp+2608]",
+        "mov QWORD PTR [rsp+8], rax",
+        "mov rax, QWORD PTR [rsp+2616]",
+        "mov QWORD PTR [rsp+16], rax",
+        "mov rax, QWORD PTR [rsp+2624]",
+        "mov QWORD PTR [rsp+24], rax",
+        "mov rax, rsp",
+        "add rax, 40",
+        "mov QWORD PTR [rsp+32], rax",
+        "mov rax, QWORD PTR [rsp+32]",
         "mov QWORD PTR [rax+128], rbx",
         "mov QWORD PTR [rax+136], rbp",
         "mov QWORD PTR [rax+144], r12",
@@ -12252,12 +12340,18 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal_aesni_pclmul_avx(ctx: *cons
         "mov r9, r15",
         "add r9, 512",
         "call {vg_aes_ctr32_aesni}",
+        "mov rdi, QWORD PTR [rsp+24]",
+        "mov rax, QWORD PTR [r15]",
+        "mov rdx, QWORD PTR [r15+8]",
+        "mov QWORD PTR [rdi], rax",
+        "mov QWORD PTR [rdi+8], rdx",
         "mov rbx, QWORD PTR [r15+128]",
         "mov rbp, QWORD PTR [r15+136]",
         "mov r12, QWORD PTR [r15+144]",
         "mov r13, QWORD PTR [r15+152]",
         "mov r14, QWORD PTR [r15+160]",
         "mov r15, QWORD PTR [r15+168]",
+        "lea rsp, [rsp+2600]",
         "ret",
         ".p2align 6",
         vg_ghash_pclmul = sym super::gcm::vg_ghash_pclmul,
@@ -12269,7 +12363,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal_aesni_pclmul_avx(ctx: *cons
 /// The CPU features `vg_aes_gcm_open_aesni_pclmul_avx` requires (`Artifact.features`).
 pub(crate) const VG_AES_GCM_OPEN_AESNI_PCLMUL_AVX_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes", "pclmulqdq", "ssse3", "avx"]);
 
-/// AES-GCM authenticated decryption (NIST SP 800-38D §7.2, GCM-AD): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag in the first `tag_len` bytes of `*work`, returns 1 if `tag_len` is 4, 8, 12, 13, 14, 15 or 16 (§5.2.1.2) and the tag is the first `tag_len` bytes of that of the `len` bytes of ciphertext at `data` and the `aad_len` bytes of additional data at `aad`, under the IV the `nonce_len` bytes at `nonce`, having then decrypted the ciphertext in place; otherwise returns 0, and the bytes at `data` are unchanged. The rest of `*work` is working space, unspecified on return. The tags are compared without a branch.
+/// AES-GCM authenticated decryption (NIST SP 800-38D §7.2, GCM-AD): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, returns 1 if `tag_len` is 4, 8, 12, 13, 14, 15 or 16 (§5.2.1.2) and the tag is the first `tag_len` bytes of that of the `len` bytes of ciphertext at `data` and the `aad_len` bytes of additional data at `aad`, under the IV the `nonce_len` bytes at `nonce`, having then decrypted the ciphertext in place; otherwise returns 0, and the bytes at `data` are unchanged. The tags are compared without a branch.
 ///
 /// The function checks no other length: GCM requires a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of ciphertext and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must check.
 ///
@@ -12283,15 +12377,27 @@ pub(crate) const VG_AES_GCM_OPEN_AESNI_PCLMUL_AVX_FEATURES: crate::cpu::Features
 /// * `nonce` must be valid for reads of `nonce_len` bytes.
 /// * `aad` must be valid for reads of `aad_len` bytes.
 /// * `data` must be valid for reads and writes of `len` bytes.
-/// * `work` must be valid for reads and writes of 2560 bytes.
+/// * `tag` must be valid for reads of `tag_len` bytes.
 /// * `rounds` must be 10, 12 or 14.
-/// * `data` and `work` must not overlap each other, `ctx`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `aad`, `data` and `work` may overlap the return address on the stack or the 24 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `data` must not overlap `ctx`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 2632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `pclmulqdq`, `ssse3` and `avx` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_open_aesni_pclmul_avx(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, work: *mut [u64; 320], tag_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_open_aesni_pclmul_avx(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "mov rax, QWORD PTR [rsp+24]",
+        "lea rsp, [rsp-2608]",
+        "mov rax, QWORD PTR [rsp+2616]",
+        "mov QWORD PTR [rsp+8], rax",
+        "mov rax, QWORD PTR [rsp+2624]",
+        "mov QWORD PTR [rsp+16], rax",
+        "mov rax, QWORD PTR [rsp+2632]",
+        "mov QWORD PTR [rsp+24], rax",
+        "mov rax, QWORD PTR [rsp+2640]",
+        "mov QWORD PTR [rsp+32], rax",
+        "mov rax, rsp",
+        "add rax, 48",
+        "mov QWORD PTR [rsp+40], rax",
+        "mov rax, QWORD PTR [rsp+40]",
         "mov QWORD PTR [rax+128], rbx",
         "mov QWORD PTR [rax+136], rbp",
         "mov QWORD PTR [rax+144], r12",
@@ -12809,12 +12915,12 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_open_aesni_pclmul_avx(ctx: *cons
         "add r9, 512",
         "call {vg_aes_ctr32_aesni}",
         "mov rbx, QWORD PTR [r15+224]",
+        "mov rsi, QWORD PTR [rsp+24]",
         "mov eax, 0",
         "mov QWORD PTR [r15+256], rax",
         "mov QWORD PTR [r15+264], rax",
         "mov rdi, r15",
         "add rdi, 256",
-        "mov rsi, r15",
         "mov rcx, rbx",
         "mov r10d, 0",
         "265:",
@@ -12968,6 +13074,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_open_aesni_pclmul_avx(ctx: *cons
         "mov r13, QWORD PTR [r15+152]",
         "mov r14, QWORD PTR [r15+160]",
         "mov r15, QWORD PTR [r15+168]",
+        "lea rsp, [rsp+2608]",
         "ret",
         ".p2align 6",
         vg_ghash_pclmul = sym super::gcm::vg_ghash_pclmul,
@@ -14699,7 +14806,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_decrypt_aesni_pclmul_avx(
 /// The CPU features `vg_aes_gcm_stream_finish_aesni_pclmul_avx` requires (`Artifact.features`).
 pub(crate) const VG_AES_GCM_STREAM_FINISH_AESNI_PCLMUL_AVX_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes", "pclmulqdq", "ssse3"]);
 
-/// Finishes an incremental AES-GCM encryption or decryption (NIST SP 800-38D §7.1 steps 5–6, §7.2 steps 6–7): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, writes its 128-bit tag to the first 16 bytes of `*work`. The rest of `*work` is working space, unspecified on return. A shorter tag is the first bytes of this one; to check a received tag, use `vg_aes_gcm_stream_verify`.
+/// Finishes an incremental AES-GCM encryption or decryption (NIST SP 800-38D §7.1 steps 5–6, §7.2 steps 6–7): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, writes its 128-bit tag to `*tag`. A shorter tag is the first bytes of this one; to check a received tag, use `vg_aes_gcm_stream_verify`.
 ///
 /// Contract: `VG.Spec.Gcm.streamFinishContract`. Constant time: only the pointers, `rounds`, `aad_len` and `text_len` may affect timing, not the key context or the state.
 ///
@@ -14709,27 +14816,33 @@ pub(crate) const VG_AES_GCM_STREAM_FINISH_AESNI_PCLMUL_AVX_FEATURES: crate::cpu:
 ///
 /// * `ctx` must be valid for reads of 256 bytes.
 /// * `state` must be valid for reads and writes of 80 bytes.
-/// * `work` must be valid for reads and writes of 2560 bytes.
+/// * `tag` must be valid for reads and writes of 16 bytes.
 /// * `rounds` must be 10, 12 or 14.
 /// * The contents of `state` on return are unspecified.
-/// * `state` and `work` must not overlap each other or `ctx` (distinct Rust objects never do).
-/// * None of `ctx`, `state` and `work` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `state` and `tag` must not overlap each other or `ctx` (distinct Rust objects never do).
+/// * None of `ctx`, `state` and `tag` may overlap the return address on the stack or the 2584 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `pclmulqdq` and `ssse3` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_finish_aesni_pclmul_avx(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, work: *mut [u64; 320]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_finish_aesni_pclmul_avx(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        "mov QWORD PTR [r9+128], rbx",
-        "mov QWORD PTR [r9+136], rbp",
-        "mov QWORD PTR [r9+144], r12",
-        "mov QWORD PTR [r9+152], r13",
-        "mov QWORD PTR [r9+160], r14",
-        "mov QWORD PTR [r9+168], r15",
-        "mov r15, r9",
+        "lea rsp, [rsp-2576]",
+        "mov rax, rsp",
+        "add rax, 16",
+        "mov QWORD PTR [rsp+8], rax",
+        "mov rax, QWORD PTR [rsp+8]",
+        "mov QWORD PTR [rax+128], rbx",
+        "mov QWORD PTR [rax+136], rbp",
+        "mov QWORD PTR [rax+144], r12",
+        "mov QWORD PTR [rax+152], r13",
+        "mov QWORD PTR [rax+160], r14",
+        "mov QWORD PTR [rax+168], r15",
+        "mov r15, rax",
         "mov r14, rdx",
         "mov r13, rdi",
         "mov QWORD PTR [r15+176], rsi",
         "mov QWORD PTR [r15+184], rcx",
         "mov QWORD PTR [r15+192], r8",
+        "mov QWORD PTR [r15+200], r9",
         "mov rbx, QWORD PTR [r15+192]",
         "mov rax, QWORD PTR [r15+184]",
         "test rbx, rbx",
@@ -14806,12 +14919,18 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_finish_aesni_pclmul_avx(c
         "mov r9, r15",
         "add r9, 512",
         "call {vg_aes_ctr32_aesni}",
+        "mov rdi, QWORD PTR [r15+200]",
+        "mov rax, QWORD PTR [r15]",
+        "mov rdx, QWORD PTR [r15+8]",
+        "mov QWORD PTR [rdi], rax",
+        "mov QWORD PTR [rdi+8], rdx",
         "mov rbx, QWORD PTR [r15+128]",
         "mov rbp, QWORD PTR [r15+136]",
         "mov r12, QWORD PTR [r15+144]",
         "mov r13, QWORD PTR [r15+152]",
         "mov r14, QWORD PTR [r15+160]",
         "mov r15, QWORD PTR [r15+168]",
+        "lea rsp, [rsp+2576]",
         "ret",
         ".p2align 6",
         vg_ghash_pclmul = sym super::gcm::vg_ghash_pclmul,
@@ -14822,7 +14941,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_finish_aesni_pclmul_avx(c
 /// The CPU features `vg_aes_gcm_stream_verify_aesni_pclmul_avx` requires (`Artifact.features`).
 pub(crate) const VG_AES_GCM_STREAM_VERIFY_AESNI_PCLMUL_AVX_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes", "pclmulqdq", "ssse3"]);
 
-/// Finishes an incremental AES-GCM decryption and checks its tag (NIST SP 800-38D §7.2 steps 6–8): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag in the first `tag_len` bytes of `*work`, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, returns 1 if `tag_len` is 4, 8, 12, 13, 14, 15 or 16 (§5.2.1.2) and the received tag is the first `tag_len` bytes of the message's 128-bit tag, which it then writes to the first 16 bytes of `*work`; otherwise returns 0 and writes 16 zero bytes there. The rest of `*work` is working space, unspecified on return. The tags are compared without a branch.
+/// Finishes an incremental AES-GCM decryption and checks its tag (NIST SP 800-38D §7.2 steps 6–8): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, returns 1 if `tag_len` is 4, 8, 12, 13, 14, 15 or 16 (§5.2.1.2) and the received tag is the first `tag_len` bytes of the message's 128-bit tag, and 0 otherwise. The tags are compared without a branch.
 ///
 /// Contract: `VG.Spec.Gcm.streamVerifyContract`. Constant time: only the pointers, `rounds`, `aad_len`, `text_len` and `tag_len` may affect timing, not the key context, the state or the tags.
 ///
@@ -14832,22 +14951,29 @@ pub(crate) const VG_AES_GCM_STREAM_VERIFY_AESNI_PCLMUL_AVX_FEATURES: crate::cpu:
 ///
 /// * `ctx` must be valid for reads of 256 bytes.
 /// * `state` must be valid for reads and writes of 80 bytes.
-/// * `work` must be valid for reads and writes of 2560 bytes.
+/// * `tag` must be valid for reads of `tag_len` bytes.
 /// * `rounds` must be 10, 12 or 14.
 /// * The contents of `state` on return are unspecified.
-/// * `state` and `work` must not overlap each other, `ctx` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `ctx`, `state` and `work` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `state` must not overlap `ctx`, `tag` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `state` and `tag` may overlap the return address on the stack or the 2592 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `pclmulqdq` and `ssse3` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_verify_aesni_pclmul_avx(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, work: *mut [u64; 320], tag_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_verify_aesni_pclmul_avx(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "mov QWORD PTR [r9+128], rbx",
-        "mov QWORD PTR [r9+136], rbp",
-        "mov QWORD PTR [r9+144], r12",
-        "mov QWORD PTR [r9+152], r13",
-        "mov QWORD PTR [r9+160], r14",
-        "mov QWORD PTR [r9+168], r15",
-        "mov r15, r9",
+        "lea rsp, [rsp-2584]",
+        "mov rax, QWORD PTR [rsp+2592]",
+        "mov QWORD PTR [rsp+8], rax",
+        "mov rax, rsp",
+        "add rax, 24",
+        "mov QWORD PTR [rsp+16], rax",
+        "mov rax, QWORD PTR [rsp+16]",
+        "mov QWORD PTR [rax+128], rbx",
+        "mov QWORD PTR [rax+136], rbp",
+        "mov QWORD PTR [rax+144], r12",
+        "mov QWORD PTR [rax+152], r13",
+        "mov QWORD PTR [rax+160], r14",
+        "mov QWORD PTR [rax+168], r15",
+        "mov r15, rax",
         "mov r14, rdx",
         "mov r13, rdi",
         "mov QWORD PTR [r15+176], rsi",
@@ -14855,6 +14981,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_verify_aesni_pclmul_avx(c
         "mov QWORD PTR [r15+192], r8",
         "mov rbx, QWORD PTR [rsp+8]",
         "mov QWORD PTR [r15+224], rbx",
+        "mov rsi, r9",
         "mov ecx, 0",
         "cmp rbx, 4",
         "je 20f",
@@ -14886,7 +15013,6 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_verify_aesni_pclmul_avx(c
         "mov QWORD PTR [r15+264], rax",
         "mov rdi, r15",
         "add rdi, 256",
-        "mov rsi, r15",
         "mov rcx, rbx",
         "mov r10d, 0",
         "210:",
@@ -14995,19 +15121,9 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_verify_aesni_pclmul_avx(c
         "cmp rax, 1",
         "mov eax, 0",
         "adc eax, 0",
-        "mov ecx, 0",
-        "sub rcx, rax",
-        "mov rdx, QWORD PTR [r15]",
-        "and rdx, rcx",
-        "mov QWORD PTR [r15], rdx",
-        "mov rdx, QWORD PTR [r15+8]",
-        "and rdx, rcx",
-        "mov QWORD PTR [r15+8], rdx",
         "jmp 29f",
         "28:",
         "mov eax, 0",
-        "mov QWORD PTR [r15], rax",
-        "mov QWORD PTR [r15+8], rax",
         "29:",
         "mov rbx, QWORD PTR [r15+128]",
         "mov rbp, QWORD PTR [r15+136]",
@@ -15015,6 +15131,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_verify_aesni_pclmul_avx(c
         "mov r13, QWORD PTR [r15+152]",
         "mov r14, QWORD PTR [r15+160]",
         "mov r15, QWORD PTR [r15+168]",
+        "lea rsp, [rsp+2584]",
         "ret",
         ".p2align 6",
         vg_ghash_pclmul = sym super::gcm::vg_ghash_pclmul,
@@ -15217,7 +15334,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_init_aesni_vpclmul(key: *const u
 /// The CPU features `vg_aes_gcm_seal_aesni_vpclmul` requires (`Artifact.features`).
 pub(crate) const VG_AES_GCM_SEAL_AESNI_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes", "avx", "avx2", "pclmulqdq", "ssse3", "vpclmulqdq"]);
 
-/// AES-GCM authenticated encryption (NIST SP 800-38D §7.1, GCM-AE, with a 128-bit tag): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, encrypts the `len` bytes at `data` in place, under the IV the `nonce_len` bytes at `nonce`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to the first 16 bytes of `*work`. The rest of `*work` is working space, unspecified on return. A shorter tag is the first bytes of this one.
+/// AES-GCM authenticated encryption (NIST SP 800-38D §7.1, GCM-AE, with a 128-bit tag): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, encrypts the `len` bytes at `data` in place, under the IV the `nonce_len` bytes at `nonce`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`. A shorter tag is the first bytes of this one.
 ///
 /// The function checks no length. GCM is secure only for a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of data and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must ensure; and a nonce must never be used twice with the same key.
 ///
@@ -15231,15 +15348,25 @@ pub(crate) const VG_AES_GCM_SEAL_AESNI_VPCLMUL_FEATURES: crate::cpu::Features = 
 /// * `nonce` must be valid for reads of `nonce_len` bytes.
 /// * `aad` must be valid for reads of `aad_len` bytes.
 /// * `data` must be valid for reads and writes of `len` bytes.
-/// * `work` must be valid for reads and writes of 2560 bytes.
+/// * `tag` must be valid for reads and writes of 16 bytes.
 /// * `rounds` must be 10, 12 or 14.
-/// * `data` and `work` must not overlap each other, `ctx`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `aad`, `data` and `work` may overlap the return address on the stack or the 24 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `data` and `tag` must not overlap each other, `ctx`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 2624 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal_aesni_vpclmul(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, work: *mut [u64; 320]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal_aesni_vpclmul(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        "mov rax, QWORD PTR [rsp+24]",
+        "lea rsp, [rsp-2600]",
+        "mov rax, QWORD PTR [rsp+2608]",
+        "mov QWORD PTR [rsp+8], rax",
+        "mov rax, QWORD PTR [rsp+2616]",
+        "mov QWORD PTR [rsp+16], rax",
+        "mov rax, QWORD PTR [rsp+2624]",
+        "mov QWORD PTR [rsp+24], rax",
+        "mov rax, rsp",
+        "add rax, 40",
+        "mov QWORD PTR [rsp+32], rax",
+        "mov rax, QWORD PTR [rsp+32]",
         "mov QWORD PTR [rax+128], rbx",
         "mov QWORD PTR [rax+136], rbp",
         "mov QWORD PTR [rax+144], r12",
@@ -15814,12 +15941,18 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal_aesni_vpclmul(ctx: *const [
         "mov r9, r15",
         "add r9, 512",
         "call {vg_aes_ctr32_aesni}",
+        "mov rdi, QWORD PTR [rsp+24]",
+        "mov rax, QWORD PTR [r15]",
+        "mov rdx, QWORD PTR [r15+8]",
+        "mov QWORD PTR [rdi], rax",
+        "mov QWORD PTR [rdi+8], rdx",
         "mov rbx, QWORD PTR [r15+128]",
         "mov rbp, QWORD PTR [r15+136]",
         "mov r12, QWORD PTR [r15+144]",
         "mov r13, QWORD PTR [r15+152]",
         "mov r14, QWORD PTR [r15+160]",
         "mov r15, QWORD PTR [r15+168]",
+        "lea rsp, [rsp+2600]",
         "ret",
         ".p2align 6",
         vg_ghash_vpclmul = sym super::gcm::vg_ghash_vpclmul,
@@ -15831,7 +15964,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal_aesni_vpclmul(ctx: *const [
 /// The CPU features `vg_aes_gcm_open_aesni_vpclmul` requires (`Artifact.features`).
 pub(crate) const VG_AES_GCM_OPEN_AESNI_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes", "avx", "avx2", "pclmulqdq", "ssse3", "vpclmulqdq"]);
 
-/// AES-GCM authenticated decryption (NIST SP 800-38D §7.2, GCM-AD): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag in the first `tag_len` bytes of `*work`, returns 1 if `tag_len` is 4, 8, 12, 13, 14, 15 or 16 (§5.2.1.2) and the tag is the first `tag_len` bytes of that of the `len` bytes of ciphertext at `data` and the `aad_len` bytes of additional data at `aad`, under the IV the `nonce_len` bytes at `nonce`, having then decrypted the ciphertext in place; otherwise returns 0, and the bytes at `data` are unchanged. The rest of `*work` is working space, unspecified on return. The tags are compared without a branch.
+/// AES-GCM authenticated decryption (NIST SP 800-38D §7.2, GCM-AD): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, returns 1 if `tag_len` is 4, 8, 12, 13, 14, 15 or 16 (§5.2.1.2) and the tag is the first `tag_len` bytes of that of the `len` bytes of ciphertext at `data` and the `aad_len` bytes of additional data at `aad`, under the IV the `nonce_len` bytes at `nonce`, having then decrypted the ciphertext in place; otherwise returns 0, and the bytes at `data` are unchanged. The tags are compared without a branch.
 ///
 /// The function checks no other length: GCM requires a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of ciphertext and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must check.
 ///
@@ -15845,15 +15978,27 @@ pub(crate) const VG_AES_GCM_OPEN_AESNI_VPCLMUL_FEATURES: crate::cpu::Features = 
 /// * `nonce` must be valid for reads of `nonce_len` bytes.
 /// * `aad` must be valid for reads of `aad_len` bytes.
 /// * `data` must be valid for reads and writes of `len` bytes.
-/// * `work` must be valid for reads and writes of 2560 bytes.
+/// * `tag` must be valid for reads of `tag_len` bytes.
 /// * `rounds` must be 10, 12 or 14.
-/// * `data` and `work` must not overlap each other, `ctx`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `aad`, `data` and `work` may overlap the return address on the stack or the 24 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `data` must not overlap `ctx`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 2632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_open_aesni_vpclmul(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, work: *mut [u64; 320], tag_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_open_aesni_vpclmul(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "mov rax, QWORD PTR [rsp+24]",
+        "lea rsp, [rsp-2608]",
+        "mov rax, QWORD PTR [rsp+2616]",
+        "mov QWORD PTR [rsp+8], rax",
+        "mov rax, QWORD PTR [rsp+2624]",
+        "mov QWORD PTR [rsp+16], rax",
+        "mov rax, QWORD PTR [rsp+2632]",
+        "mov QWORD PTR [rsp+24], rax",
+        "mov rax, QWORD PTR [rsp+2640]",
+        "mov QWORD PTR [rsp+32], rax",
+        "mov rax, rsp",
+        "add rax, 48",
+        "mov QWORD PTR [rsp+40], rax",
+        "mov rax, QWORD PTR [rsp+40]",
         "mov QWORD PTR [rax+128], rbx",
         "mov QWORD PTR [rax+136], rbp",
         "mov QWORD PTR [rax+144], r12",
@@ -16371,12 +16516,12 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_open_aesni_vpclmul(ctx: *const [
         "add r9, 512",
         "call {vg_aes_ctr32_aesni}",
         "mov rbx, QWORD PTR [r15+224]",
+        "mov rsi, QWORD PTR [rsp+24]",
         "mov eax, 0",
         "mov QWORD PTR [r15+256], rax",
         "mov QWORD PTR [r15+264], rax",
         "mov rdi, r15",
         "add rdi, 256",
-        "mov rsi, r15",
         "mov rcx, rbx",
         "mov r10d, 0",
         "265:",
@@ -16530,6 +16675,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_open_aesni_vpclmul(ctx: *const [
         "mov r13, QWORD PTR [r15+152]",
         "mov r14, QWORD PTR [r15+160]",
         "mov r15, QWORD PTR [r15+168]",
+        "lea rsp, [rsp+2608]",
         "ret",
         ".p2align 6",
         vg_ghash_vpclmul = sym super::gcm::vg_ghash_vpclmul,
@@ -18261,7 +18407,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_decrypt_aesni_vpclmul(ctx
 /// The CPU features `vg_aes_gcm_stream_finish_aesni_vpclmul` requires (`Artifact.features`).
 pub(crate) const VG_AES_GCM_STREAM_FINISH_AESNI_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes", "avx", "avx2", "pclmulqdq", "ssse3", "vpclmulqdq"]);
 
-/// Finishes an incremental AES-GCM encryption or decryption (NIST SP 800-38D §7.1 steps 5–6, §7.2 steps 6–7): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, writes its 128-bit tag to the first 16 bytes of `*work`. The rest of `*work` is working space, unspecified on return. A shorter tag is the first bytes of this one; to check a received tag, use `vg_aes_gcm_stream_verify`.
+/// Finishes an incremental AES-GCM encryption or decryption (NIST SP 800-38D §7.1 steps 5–6, §7.2 steps 6–7): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, writes its 128-bit tag to `*tag`. A shorter tag is the first bytes of this one; to check a received tag, use `vg_aes_gcm_stream_verify`.
 ///
 /// Contract: `VG.Spec.Gcm.streamFinishContract`. Constant time: only the pointers, `rounds`, `aad_len` and `text_len` may affect timing, not the key context or the state.
 ///
@@ -18271,27 +18417,33 @@ pub(crate) const VG_AES_GCM_STREAM_FINISH_AESNI_VPCLMUL_FEATURES: crate::cpu::Fe
 ///
 /// * `ctx` must be valid for reads of 256 bytes.
 /// * `state` must be valid for reads and writes of 80 bytes.
-/// * `work` must be valid for reads and writes of 2560 bytes.
+/// * `tag` must be valid for reads and writes of 16 bytes.
 /// * `rounds` must be 10, 12 or 14.
 /// * The contents of `state` on return are unspecified.
-/// * `state` and `work` must not overlap each other or `ctx` (distinct Rust objects never do).
-/// * None of `ctx`, `state` and `work` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `state` and `tag` must not overlap each other or `ctx` (distinct Rust objects never do).
+/// * None of `ctx`, `state` and `tag` may overlap the return address on the stack or the 2584 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_finish_aesni_vpclmul(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, work: *mut [u64; 320]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_finish_aesni_vpclmul(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        "mov QWORD PTR [r9+128], rbx",
-        "mov QWORD PTR [r9+136], rbp",
-        "mov QWORD PTR [r9+144], r12",
-        "mov QWORD PTR [r9+152], r13",
-        "mov QWORD PTR [r9+160], r14",
-        "mov QWORD PTR [r9+168], r15",
-        "mov r15, r9",
+        "lea rsp, [rsp-2576]",
+        "mov rax, rsp",
+        "add rax, 16",
+        "mov QWORD PTR [rsp+8], rax",
+        "mov rax, QWORD PTR [rsp+8]",
+        "mov QWORD PTR [rax+128], rbx",
+        "mov QWORD PTR [rax+136], rbp",
+        "mov QWORD PTR [rax+144], r12",
+        "mov QWORD PTR [rax+152], r13",
+        "mov QWORD PTR [rax+160], r14",
+        "mov QWORD PTR [rax+168], r15",
+        "mov r15, rax",
         "mov r14, rdx",
         "mov r13, rdi",
         "mov QWORD PTR [r15+176], rsi",
         "mov QWORD PTR [r15+184], rcx",
         "mov QWORD PTR [r15+192], r8",
+        "mov QWORD PTR [r15+200], r9",
         "mov rbx, QWORD PTR [r15+192]",
         "mov rax, QWORD PTR [r15+184]",
         "test rbx, rbx",
@@ -18368,12 +18520,18 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_finish_aesni_vpclmul(ctx:
         "mov r9, r15",
         "add r9, 512",
         "call {vg_aes_ctr32_aesni}",
+        "mov rdi, QWORD PTR [r15+200]",
+        "mov rax, QWORD PTR [r15]",
+        "mov rdx, QWORD PTR [r15+8]",
+        "mov QWORD PTR [rdi], rax",
+        "mov QWORD PTR [rdi+8], rdx",
         "mov rbx, QWORD PTR [r15+128]",
         "mov rbp, QWORD PTR [r15+136]",
         "mov r12, QWORD PTR [r15+144]",
         "mov r13, QWORD PTR [r15+152]",
         "mov r14, QWORD PTR [r15+160]",
         "mov r15, QWORD PTR [r15+168]",
+        "lea rsp, [rsp+2576]",
         "ret",
         ".p2align 6",
         vg_ghash_vpclmul = sym super::gcm::vg_ghash_vpclmul,
@@ -18384,7 +18542,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_finish_aesni_vpclmul(ctx:
 /// The CPU features `vg_aes_gcm_stream_verify_aesni_vpclmul` requires (`Artifact.features`).
 pub(crate) const VG_AES_GCM_STREAM_VERIFY_AESNI_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes", "avx", "avx2", "pclmulqdq", "ssse3", "vpclmulqdq"]);
 
-/// Finishes an incremental AES-GCM decryption and checks its tag (NIST SP 800-38D §7.2 steps 6–8): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag in the first `tag_len` bytes of `*work`, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, returns 1 if `tag_len` is 4, 8, 12, 13, 14, 15 or 16 (§5.2.1.2) and the received tag is the first `tag_len` bytes of the message's 128-bit tag, which it then writes to the first 16 bytes of `*work`; otherwise returns 0 and writes 16 zero bytes there. The rest of `*work` is working space, unspecified on return. The tags are compared without a branch.
+/// Finishes an incremental AES-GCM decryption and checks its tag (NIST SP 800-38D §7.2 steps 6–8): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, returns 1 if `tag_len` is 4, 8, 12, 13, 14, 15 or 16 (§5.2.1.2) and the received tag is the first `tag_len` bytes of the message's 128-bit tag, and 0 otherwise. The tags are compared without a branch.
 ///
 /// Contract: `VG.Spec.Gcm.streamVerifyContract`. Constant time: only the pointers, `rounds`, `aad_len`, `text_len` and `tag_len` may affect timing, not the key context, the state or the tags.
 ///
@@ -18394,22 +18552,29 @@ pub(crate) const VG_AES_GCM_STREAM_VERIFY_AESNI_VPCLMUL_FEATURES: crate::cpu::Fe
 ///
 /// * `ctx` must be valid for reads of 256 bytes.
 /// * `state` must be valid for reads and writes of 80 bytes.
-/// * `work` must be valid for reads and writes of 2560 bytes.
+/// * `tag` must be valid for reads of `tag_len` bytes.
 /// * `rounds` must be 10, 12 or 14.
 /// * The contents of `state` on return are unspecified.
-/// * `state` and `work` must not overlap each other, `ctx` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `ctx`, `state` and `work` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `state` must not overlap `ctx`, `tag` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `state` and `tag` may overlap the return address on the stack or the 2592 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_verify_aesni_vpclmul(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, work: *mut [u64; 320], tag_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_verify_aesni_vpclmul(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "mov QWORD PTR [r9+128], rbx",
-        "mov QWORD PTR [r9+136], rbp",
-        "mov QWORD PTR [r9+144], r12",
-        "mov QWORD PTR [r9+152], r13",
-        "mov QWORD PTR [r9+160], r14",
-        "mov QWORD PTR [r9+168], r15",
-        "mov r15, r9",
+        "lea rsp, [rsp-2584]",
+        "mov rax, QWORD PTR [rsp+2592]",
+        "mov QWORD PTR [rsp+8], rax",
+        "mov rax, rsp",
+        "add rax, 24",
+        "mov QWORD PTR [rsp+16], rax",
+        "mov rax, QWORD PTR [rsp+16]",
+        "mov QWORD PTR [rax+128], rbx",
+        "mov QWORD PTR [rax+136], rbp",
+        "mov QWORD PTR [rax+144], r12",
+        "mov QWORD PTR [rax+152], r13",
+        "mov QWORD PTR [rax+160], r14",
+        "mov QWORD PTR [rax+168], r15",
+        "mov r15, rax",
         "mov r14, rdx",
         "mov r13, rdi",
         "mov QWORD PTR [r15+176], rsi",
@@ -18417,6 +18582,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_verify_aesni_vpclmul(ctx:
         "mov QWORD PTR [r15+192], r8",
         "mov rbx, QWORD PTR [rsp+8]",
         "mov QWORD PTR [r15+224], rbx",
+        "mov rsi, r9",
         "mov ecx, 0",
         "cmp rbx, 4",
         "je 20f",
@@ -18448,7 +18614,6 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_verify_aesni_vpclmul(ctx:
         "mov QWORD PTR [r15+264], rax",
         "mov rdi, r15",
         "add rdi, 256",
-        "mov rsi, r15",
         "mov rcx, rbx",
         "mov r10d, 0",
         "210:",
@@ -18557,19 +18722,9 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_verify_aesni_vpclmul(ctx:
         "cmp rax, 1",
         "mov eax, 0",
         "adc eax, 0",
-        "mov ecx, 0",
-        "sub rcx, rax",
-        "mov rdx, QWORD PTR [r15]",
-        "and rdx, rcx",
-        "mov QWORD PTR [r15], rdx",
-        "mov rdx, QWORD PTR [r15+8]",
-        "and rdx, rcx",
-        "mov QWORD PTR [r15+8], rdx",
         "jmp 29f",
         "28:",
         "mov eax, 0",
-        "mov QWORD PTR [r15], rax",
-        "mov QWORD PTR [r15+8], rax",
         "29:",
         "mov rbx, QWORD PTR [r15+128]",
         "mov rbp, QWORD PTR [r15+136]",
@@ -18577,6 +18732,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_verify_aesni_vpclmul(ctx:
         "mov r13, QWORD PTR [r15+152]",
         "mov r14, QWORD PTR [r15+160]",
         "mov r15, QWORD PTR [r15+168]",
+        "lea rsp, [rsp+2584]",
         "ret",
         ".p2align 6",
         vg_ghash_vpclmul = sym super::gcm::vg_ghash_vpclmul,
@@ -18775,7 +18931,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_init_pclmul(key: *const u8, key_
 /// The CPU features `vg_aes_gcm_seal_pclmul` requires (`Artifact.features`).
 pub(crate) const VG_AES_GCM_SEAL_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["pclmulqdq", "ssse3"]);
 
-/// AES-GCM authenticated encryption (NIST SP 800-38D §7.1, GCM-AE, with a 128-bit tag): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, encrypts the `len` bytes at `data` in place, under the IV the `nonce_len` bytes at `nonce`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to the first 16 bytes of `*work`. The rest of `*work` is working space, unspecified on return. A shorter tag is the first bytes of this one.
+/// AES-GCM authenticated encryption (NIST SP 800-38D §7.1, GCM-AE, with a 128-bit tag): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, encrypts the `len` bytes at `data` in place, under the IV the `nonce_len` bytes at `nonce`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`. A shorter tag is the first bytes of this one.
 ///
 /// The function checks no length. GCM is secure only for a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of data and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must ensure; and a nonce must never be used twice with the same key.
 ///
@@ -18789,15 +18945,25 @@ pub(crate) const VG_AES_GCM_SEAL_PCLMUL_FEATURES: crate::cpu::Features = crate::
 /// * `nonce` must be valid for reads of `nonce_len` bytes.
 /// * `aad` must be valid for reads of `aad_len` bytes.
 /// * `data` must be valid for reads and writes of `len` bytes.
-/// * `work` must be valid for reads and writes of 2560 bytes.
+/// * `tag` must be valid for reads and writes of 16 bytes.
 /// * `rounds` must be 10, 12 or 14.
-/// * `data` and `work` must not overlap each other, `ctx`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `aad`, `data` and `work` may overlap the return address on the stack or the 24 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `data` and `tag` must not overlap each other, `ctx`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 2624 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `pclmulqdq` and `ssse3` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal_pclmul(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, work: *mut [u64; 320]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal_pclmul(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        "mov rax, QWORD PTR [rsp+24]",
+        "lea rsp, [rsp-2600]",
+        "mov rax, QWORD PTR [rsp+2608]",
+        "mov QWORD PTR [rsp+8], rax",
+        "mov rax, QWORD PTR [rsp+2616]",
+        "mov QWORD PTR [rsp+16], rax",
+        "mov rax, QWORD PTR [rsp+2624]",
+        "mov QWORD PTR [rsp+24], rax",
+        "mov rax, rsp",
+        "add rax, 40",
+        "mov QWORD PTR [rsp+32], rax",
+        "mov rax, QWORD PTR [rsp+32]",
         "mov QWORD PTR [rax+128], rbx",
         "mov QWORD PTR [rax+136], rbp",
         "mov QWORD PTR [rax+144], r12",
@@ -19372,12 +19538,18 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal_pclmul(ctx: *const [u64; 32
         "mov r9, r15",
         "add r9, 512",
         "call {vg_aes_ctr32}",
+        "mov rdi, QWORD PTR [rsp+24]",
+        "mov rax, QWORD PTR [r15]",
+        "mov rdx, QWORD PTR [r15+8]",
+        "mov QWORD PTR [rdi], rax",
+        "mov QWORD PTR [rdi+8], rdx",
         "mov rbx, QWORD PTR [r15+128]",
         "mov rbp, QWORD PTR [r15+136]",
         "mov r12, QWORD PTR [r15+144]",
         "mov r13, QWORD PTR [r15+152]",
         "mov r14, QWORD PTR [r15+160]",
         "mov r15, QWORD PTR [r15+168]",
+        "lea rsp, [rsp+2600]",
         "ret",
         ".p2align 6",
         vg_ghash_pclmul = sym super::gcm::vg_ghash_pclmul,
@@ -19389,7 +19561,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal_pclmul(ctx: *const [u64; 32
 /// The CPU features `vg_aes_gcm_open_pclmul` requires (`Artifact.features`).
 pub(crate) const VG_AES_GCM_OPEN_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["pclmulqdq", "ssse3"]);
 
-/// AES-GCM authenticated decryption (NIST SP 800-38D §7.2, GCM-AD): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag in the first `tag_len` bytes of `*work`, returns 1 if `tag_len` is 4, 8, 12, 13, 14, 15 or 16 (§5.2.1.2) and the tag is the first `tag_len` bytes of that of the `len` bytes of ciphertext at `data` and the `aad_len` bytes of additional data at `aad`, under the IV the `nonce_len` bytes at `nonce`, having then decrypted the ciphertext in place; otherwise returns 0, and the bytes at `data` are unchanged. The rest of `*work` is working space, unspecified on return. The tags are compared without a branch.
+/// AES-GCM authenticated decryption (NIST SP 800-38D §7.2, GCM-AD): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, returns 1 if `tag_len` is 4, 8, 12, 13, 14, 15 or 16 (§5.2.1.2) and the tag is the first `tag_len` bytes of that of the `len` bytes of ciphertext at `data` and the `aad_len` bytes of additional data at `aad`, under the IV the `nonce_len` bytes at `nonce`, having then decrypted the ciphertext in place; otherwise returns 0, and the bytes at `data` are unchanged. The tags are compared without a branch.
 ///
 /// The function checks no other length: GCM requires a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of ciphertext and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must check.
 ///
@@ -19403,15 +19575,27 @@ pub(crate) const VG_AES_GCM_OPEN_PCLMUL_FEATURES: crate::cpu::Features = crate::
 /// * `nonce` must be valid for reads of `nonce_len` bytes.
 /// * `aad` must be valid for reads of `aad_len` bytes.
 /// * `data` must be valid for reads and writes of `len` bytes.
-/// * `work` must be valid for reads and writes of 2560 bytes.
+/// * `tag` must be valid for reads of `tag_len` bytes.
 /// * `rounds` must be 10, 12 or 14.
-/// * `data` and `work` must not overlap each other, `ctx`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `aad`, `data` and `work` may overlap the return address on the stack or the 24 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `data` must not overlap `ctx`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 2632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `pclmulqdq` and `ssse3` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_open_pclmul(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, work: *mut [u64; 320], tag_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_open_pclmul(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "mov rax, QWORD PTR [rsp+24]",
+        "lea rsp, [rsp-2608]",
+        "mov rax, QWORD PTR [rsp+2616]",
+        "mov QWORD PTR [rsp+8], rax",
+        "mov rax, QWORD PTR [rsp+2624]",
+        "mov QWORD PTR [rsp+16], rax",
+        "mov rax, QWORD PTR [rsp+2632]",
+        "mov QWORD PTR [rsp+24], rax",
+        "mov rax, QWORD PTR [rsp+2640]",
+        "mov QWORD PTR [rsp+32], rax",
+        "mov rax, rsp",
+        "add rax, 48",
+        "mov QWORD PTR [rsp+40], rax",
+        "mov rax, QWORD PTR [rsp+40]",
         "mov QWORD PTR [rax+128], rbx",
         "mov QWORD PTR [rax+136], rbp",
         "mov QWORD PTR [rax+144], r12",
@@ -19929,12 +20113,12 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_open_pclmul(ctx: *const [u64; 32
         "add r9, 512",
         "call {vg_aes_ctr32}",
         "mov rbx, QWORD PTR [r15+224]",
+        "mov rsi, QWORD PTR [rsp+24]",
         "mov eax, 0",
         "mov QWORD PTR [r15+256], rax",
         "mov QWORD PTR [r15+264], rax",
         "mov rdi, r15",
         "add rdi, 256",
-        "mov rsi, r15",
         "mov rcx, rbx",
         "mov r10d, 0",
         "265:",
@@ -20088,6 +20272,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_open_pclmul(ctx: *const [u64; 32
         "mov r13, QWORD PTR [r15+152]",
         "mov r14, QWORD PTR [r15+160]",
         "mov r15, QWORD PTR [r15+168]",
+        "lea rsp, [rsp+2608]",
         "ret",
         ".p2align 6",
         vg_ghash_pclmul = sym super::gcm::vg_ghash_pclmul,
@@ -21819,7 +22004,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_decrypt_pclmul(ctx: *cons
 /// The CPU features `vg_aes_gcm_stream_finish_pclmul` requires (`Artifact.features`).
 pub(crate) const VG_AES_GCM_STREAM_FINISH_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["pclmulqdq", "ssse3"]);
 
-/// Finishes an incremental AES-GCM encryption or decryption (NIST SP 800-38D §7.1 steps 5–6, §7.2 steps 6–7): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, writes its 128-bit tag to the first 16 bytes of `*work`. The rest of `*work` is working space, unspecified on return. A shorter tag is the first bytes of this one; to check a received tag, use `vg_aes_gcm_stream_verify`.
+/// Finishes an incremental AES-GCM encryption or decryption (NIST SP 800-38D §7.1 steps 5–6, §7.2 steps 6–7): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, writes its 128-bit tag to `*tag`. A shorter tag is the first bytes of this one; to check a received tag, use `vg_aes_gcm_stream_verify`.
 ///
 /// Contract: `VG.Spec.Gcm.streamFinishContract`. Constant time: only the pointers, `rounds`, `aad_len` and `text_len` may affect timing, not the key context or the state.
 ///
@@ -21829,27 +22014,33 @@ pub(crate) const VG_AES_GCM_STREAM_FINISH_PCLMUL_FEATURES: crate::cpu::Features 
 ///
 /// * `ctx` must be valid for reads of 256 bytes.
 /// * `state` must be valid for reads and writes of 80 bytes.
-/// * `work` must be valid for reads and writes of 2560 bytes.
+/// * `tag` must be valid for reads and writes of 16 bytes.
 /// * `rounds` must be 10, 12 or 14.
 /// * The contents of `state` on return are unspecified.
-/// * `state` and `work` must not overlap each other or `ctx` (distinct Rust objects never do).
-/// * None of `ctx`, `state` and `work` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `state` and `tag` must not overlap each other or `ctx` (distinct Rust objects never do).
+/// * None of `ctx`, `state` and `tag` may overlap the return address on the stack or the 2584 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `pclmulqdq` and `ssse3` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_finish_pclmul(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, work: *mut [u64; 320]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_finish_pclmul(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        "mov QWORD PTR [r9+128], rbx",
-        "mov QWORD PTR [r9+136], rbp",
-        "mov QWORD PTR [r9+144], r12",
-        "mov QWORD PTR [r9+152], r13",
-        "mov QWORD PTR [r9+160], r14",
-        "mov QWORD PTR [r9+168], r15",
-        "mov r15, r9",
+        "lea rsp, [rsp-2576]",
+        "mov rax, rsp",
+        "add rax, 16",
+        "mov QWORD PTR [rsp+8], rax",
+        "mov rax, QWORD PTR [rsp+8]",
+        "mov QWORD PTR [rax+128], rbx",
+        "mov QWORD PTR [rax+136], rbp",
+        "mov QWORD PTR [rax+144], r12",
+        "mov QWORD PTR [rax+152], r13",
+        "mov QWORD PTR [rax+160], r14",
+        "mov QWORD PTR [rax+168], r15",
+        "mov r15, rax",
         "mov r14, rdx",
         "mov r13, rdi",
         "mov QWORD PTR [r15+176], rsi",
         "mov QWORD PTR [r15+184], rcx",
         "mov QWORD PTR [r15+192], r8",
+        "mov QWORD PTR [r15+200], r9",
         "mov rbx, QWORD PTR [r15+192]",
         "mov rax, QWORD PTR [r15+184]",
         "test rbx, rbx",
@@ -21926,12 +22117,18 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_finish_pclmul(ctx: *const
         "mov r9, r15",
         "add r9, 512",
         "call {vg_aes_ctr32}",
+        "mov rdi, QWORD PTR [r15+200]",
+        "mov rax, QWORD PTR [r15]",
+        "mov rdx, QWORD PTR [r15+8]",
+        "mov QWORD PTR [rdi], rax",
+        "mov QWORD PTR [rdi+8], rdx",
         "mov rbx, QWORD PTR [r15+128]",
         "mov rbp, QWORD PTR [r15+136]",
         "mov r12, QWORD PTR [r15+144]",
         "mov r13, QWORD PTR [r15+152]",
         "mov r14, QWORD PTR [r15+160]",
         "mov r15, QWORD PTR [r15+168]",
+        "lea rsp, [rsp+2576]",
         "ret",
         ".p2align 6",
         vg_ghash_pclmul = sym super::gcm::vg_ghash_pclmul,
@@ -21942,7 +22139,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_finish_pclmul(ctx: *const
 /// The CPU features `vg_aes_gcm_stream_verify_pclmul` requires (`Artifact.features`).
 pub(crate) const VG_AES_GCM_STREAM_VERIFY_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["pclmulqdq", "ssse3"]);
 
-/// Finishes an incremental AES-GCM decryption and checks its tag (NIST SP 800-38D §7.2 steps 6–8): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag in the first `tag_len` bytes of `*work`, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, returns 1 if `tag_len` is 4, 8, 12, 13, 14, 15 or 16 (§5.2.1.2) and the received tag is the first `tag_len` bytes of the message's 128-bit tag, which it then writes to the first 16 bytes of `*work`; otherwise returns 0 and writes 16 zero bytes there. The rest of `*work` is working space, unspecified on return. The tags are compared without a branch.
+/// Finishes an incremental AES-GCM decryption and checks its tag (NIST SP 800-38D §7.2 steps 6–8): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, returns 1 if `tag_len` is 4, 8, 12, 13, 14, 15 or 16 (§5.2.1.2) and the received tag is the first `tag_len` bytes of the message's 128-bit tag, and 0 otherwise. The tags are compared without a branch.
 ///
 /// Contract: `VG.Spec.Gcm.streamVerifyContract`. Constant time: only the pointers, `rounds`, `aad_len`, `text_len` and `tag_len` may affect timing, not the key context, the state or the tags.
 ///
@@ -21952,22 +22149,29 @@ pub(crate) const VG_AES_GCM_STREAM_VERIFY_PCLMUL_FEATURES: crate::cpu::Features 
 ///
 /// * `ctx` must be valid for reads of 256 bytes.
 /// * `state` must be valid for reads and writes of 80 bytes.
-/// * `work` must be valid for reads and writes of 2560 bytes.
+/// * `tag` must be valid for reads of `tag_len` bytes.
 /// * `rounds` must be 10, 12 or 14.
 /// * The contents of `state` on return are unspecified.
-/// * `state` and `work` must not overlap each other, `ctx` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `ctx`, `state` and `work` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `state` must not overlap `ctx`, `tag` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `state` and `tag` may overlap the return address on the stack or the 2592 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `pclmulqdq` and `ssse3` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_verify_pclmul(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, work: *mut [u64; 320], tag_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_verify_pclmul(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "mov QWORD PTR [r9+128], rbx",
-        "mov QWORD PTR [r9+136], rbp",
-        "mov QWORD PTR [r9+144], r12",
-        "mov QWORD PTR [r9+152], r13",
-        "mov QWORD PTR [r9+160], r14",
-        "mov QWORD PTR [r9+168], r15",
-        "mov r15, r9",
+        "lea rsp, [rsp-2584]",
+        "mov rax, QWORD PTR [rsp+2592]",
+        "mov QWORD PTR [rsp+8], rax",
+        "mov rax, rsp",
+        "add rax, 24",
+        "mov QWORD PTR [rsp+16], rax",
+        "mov rax, QWORD PTR [rsp+16]",
+        "mov QWORD PTR [rax+128], rbx",
+        "mov QWORD PTR [rax+136], rbp",
+        "mov QWORD PTR [rax+144], r12",
+        "mov QWORD PTR [rax+152], r13",
+        "mov QWORD PTR [rax+160], r14",
+        "mov QWORD PTR [rax+168], r15",
+        "mov r15, rax",
         "mov r14, rdx",
         "mov r13, rdi",
         "mov QWORD PTR [r15+176], rsi",
@@ -21975,6 +22179,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_verify_pclmul(ctx: *const
         "mov QWORD PTR [r15+192], r8",
         "mov rbx, QWORD PTR [rsp+8]",
         "mov QWORD PTR [r15+224], rbx",
+        "mov rsi, r9",
         "mov ecx, 0",
         "cmp rbx, 4",
         "je 20f",
@@ -22006,7 +22211,6 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_verify_pclmul(ctx: *const
         "mov QWORD PTR [r15+264], rax",
         "mov rdi, r15",
         "add rdi, 256",
-        "mov rsi, r15",
         "mov rcx, rbx",
         "mov r10d, 0",
         "210:",
@@ -22115,19 +22319,9 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_verify_pclmul(ctx: *const
         "cmp rax, 1",
         "mov eax, 0",
         "adc eax, 0",
-        "mov ecx, 0",
-        "sub rcx, rax",
-        "mov rdx, QWORD PTR [r15]",
-        "and rdx, rcx",
-        "mov QWORD PTR [r15], rdx",
-        "mov rdx, QWORD PTR [r15+8]",
-        "and rdx, rcx",
-        "mov QWORD PTR [r15+8], rdx",
         "jmp 29f",
         "28:",
         "mov eax, 0",
-        "mov QWORD PTR [r15], rax",
-        "mov QWORD PTR [r15+8], rax",
         "29:",
         "mov rbx, QWORD PTR [r15+128]",
         "mov rbp, QWORD PTR [r15+136]",
@@ -22135,6 +22329,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_verify_pclmul(ctx: *const
         "mov r13, QWORD PTR [r15+152]",
         "mov r14, QWORD PTR [r15+160]",
         "mov r15, QWORD PTR [r15+168]",
+        "lea rsp, [rsp+2584]",
         "ret",
         ".p2align 6",
         vg_ghash_pclmul = sym super::gcm::vg_ghash_pclmul,
@@ -22322,7 +22517,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_init(key: *const u8, key_len: us
     )
 }
 
-/// AES-GCM authenticated encryption (NIST SP 800-38D §7.1, GCM-AE, with a 128-bit tag): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, encrypts the `len` bytes at `data` in place, under the IV the `nonce_len` bytes at `nonce`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to the first 16 bytes of `*work`. The rest of `*work` is working space, unspecified on return. A shorter tag is the first bytes of this one.
+/// AES-GCM authenticated encryption (NIST SP 800-38D §7.1, GCM-AE, with a 128-bit tag): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, encrypts the `len` bytes at `data` in place, under the IV the `nonce_len` bytes at `nonce`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`. A shorter tag is the first bytes of this one.
 ///
 /// The function checks no length. GCM is secure only for a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of data and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must ensure; and a nonce must never be used twice with the same key.
 ///
@@ -22336,14 +22531,24 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_init(key: *const u8, key_len: us
 /// * `nonce` must be valid for reads of `nonce_len` bytes.
 /// * `aad` must be valid for reads of `aad_len` bytes.
 /// * `data` must be valid for reads and writes of `len` bytes.
-/// * `work` must be valid for reads and writes of 2560 bytes.
+/// * `tag` must be valid for reads and writes of 16 bytes.
 /// * `rounds` must be 10, 12 or 14.
-/// * `data` and `work` must not overlap each other, `ctx`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `aad`, `data` and `work` may overlap the return address on the stack or the 24 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `data` and `tag` must not overlap each other, `ctx`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 2624 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, work: *mut [u64; 320]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        "mov rax, QWORD PTR [rsp+24]",
+        "lea rsp, [rsp-2600]",
+        "mov rax, QWORD PTR [rsp+2608]",
+        "mov QWORD PTR [rsp+8], rax",
+        "mov rax, QWORD PTR [rsp+2616]",
+        "mov QWORD PTR [rsp+16], rax",
+        "mov rax, QWORD PTR [rsp+2624]",
+        "mov QWORD PTR [rsp+24], rax",
+        "mov rax, rsp",
+        "add rax, 40",
+        "mov QWORD PTR [rsp+32], rax",
+        "mov rax, QWORD PTR [rsp+32]",
         "mov QWORD PTR [rax+128], rbx",
         "mov QWORD PTR [rax+136], rbp",
         "mov QWORD PTR [rax+144], r12",
@@ -22918,12 +23123,18 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal(ctx: *const [u64; 32], roun
         "mov r9, r15",
         "add r9, 512",
         "call {vg_aes_ctr32}",
+        "mov rdi, QWORD PTR [rsp+24]",
+        "mov rax, QWORD PTR [r15]",
+        "mov rdx, QWORD PTR [r15+8]",
+        "mov QWORD PTR [rdi], rax",
+        "mov QWORD PTR [rdi+8], rdx",
         "mov rbx, QWORD PTR [r15+128]",
         "mov rbp, QWORD PTR [r15+136]",
         "mov r12, QWORD PTR [r15+144]",
         "mov r13, QWORD PTR [r15+152]",
         "mov r14, QWORD PTR [r15+160]",
         "mov r15, QWORD PTR [r15+168]",
+        "lea rsp, [rsp+2600]",
         "ret",
         ".p2align 6",
         vg_ghash = sym super::gcm::vg_ghash,
@@ -22932,7 +23143,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal(ctx: *const [u64; 32], roun
     )
 }
 
-/// AES-GCM authenticated decryption (NIST SP 800-38D §7.2, GCM-AD): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag in the first `tag_len` bytes of `*work`, returns 1 if `tag_len` is 4, 8, 12, 13, 14, 15 or 16 (§5.2.1.2) and the tag is the first `tag_len` bytes of that of the `len` bytes of ciphertext at `data` and the `aad_len` bytes of additional data at `aad`, under the IV the `nonce_len` bytes at `nonce`, having then decrypted the ciphertext in place; otherwise returns 0, and the bytes at `data` are unchanged. The rest of `*work` is working space, unspecified on return. The tags are compared without a branch.
+/// AES-GCM authenticated decryption (NIST SP 800-38D §7.2, GCM-AD): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, returns 1 if `tag_len` is 4, 8, 12, 13, 14, 15 or 16 (§5.2.1.2) and the tag is the first `tag_len` bytes of that of the `len` bytes of ciphertext at `data` and the `aad_len` bytes of additional data at `aad`, under the IV the `nonce_len` bytes at `nonce`, having then decrypted the ciphertext in place; otherwise returns 0, and the bytes at `data` are unchanged. The tags are compared without a branch.
 ///
 /// The function checks no other length: GCM requires a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of ciphertext and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must check.
 ///
@@ -22946,14 +23157,26 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal(ctx: *const [u64; 32], roun
 /// * `nonce` must be valid for reads of `nonce_len` bytes.
 /// * `aad` must be valid for reads of `aad_len` bytes.
 /// * `data` must be valid for reads and writes of `len` bytes.
-/// * `work` must be valid for reads and writes of 2560 bytes.
+/// * `tag` must be valid for reads of `tag_len` bytes.
 /// * `rounds` must be 10, 12 or 14.
-/// * `data` and `work` must not overlap each other, `ctx`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `aad`, `data` and `work` may overlap the return address on the stack or the 24 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `data` must not overlap `ctx`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 2632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_open(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, work: *mut [u64; 320], tag_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_open(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "mov rax, QWORD PTR [rsp+24]",
+        "lea rsp, [rsp-2608]",
+        "mov rax, QWORD PTR [rsp+2616]",
+        "mov QWORD PTR [rsp+8], rax",
+        "mov rax, QWORD PTR [rsp+2624]",
+        "mov QWORD PTR [rsp+16], rax",
+        "mov rax, QWORD PTR [rsp+2632]",
+        "mov QWORD PTR [rsp+24], rax",
+        "mov rax, QWORD PTR [rsp+2640]",
+        "mov QWORD PTR [rsp+32], rax",
+        "mov rax, rsp",
+        "add rax, 48",
+        "mov QWORD PTR [rsp+40], rax",
+        "mov rax, QWORD PTR [rsp+40]",
         "mov QWORD PTR [rax+128], rbx",
         "mov QWORD PTR [rax+136], rbp",
         "mov QWORD PTR [rax+144], r12",
@@ -23471,12 +23694,12 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_open(ctx: *const [u64; 32], roun
         "add r9, 512",
         "call {vg_aes_ctr32}",
         "mov rbx, QWORD PTR [r15+224]",
+        "mov rsi, QWORD PTR [rsp+24]",
         "mov eax, 0",
         "mov QWORD PTR [r15+256], rax",
         "mov QWORD PTR [r15+264], rax",
         "mov rdi, r15",
         "add rdi, 256",
-        "mov rsi, r15",
         "mov rcx, rbx",
         "mov r10d, 0",
         "265:",
@@ -23630,6 +23853,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_open(ctx: *const [u64; 32], roun
         "mov r13, QWORD PTR [r15+152]",
         "mov r14, QWORD PTR [r15+160]",
         "mov r15, QWORD PTR [r15+168]",
+        "lea rsp, [rsp+2608]",
         "ret",
         ".p2align 6",
         vg_ghash = sym super::gcm::vg_ghash,
@@ -25342,7 +25566,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_decrypt(ctx: *const [u64;
     )
 }
 
-/// Finishes an incremental AES-GCM encryption or decryption (NIST SP 800-38D §7.1 steps 5–6, §7.2 steps 6–7): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, writes its 128-bit tag to the first 16 bytes of `*work`. The rest of `*work` is working space, unspecified on return. A shorter tag is the first bytes of this one; to check a received tag, use `vg_aes_gcm_stream_verify`.
+/// Finishes an incremental AES-GCM encryption or decryption (NIST SP 800-38D §7.1 steps 5–6, §7.2 steps 6–7): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, writes its 128-bit tag to `*tag`. A shorter tag is the first bytes of this one; to check a received tag, use `vg_aes_gcm_stream_verify`.
 ///
 /// Contract: `VG.Spec.Gcm.streamFinishContract`. Constant time: only the pointers, `rounds`, `aad_len` and `text_len` may affect timing, not the key context or the state.
 ///
@@ -25352,26 +25576,32 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_decrypt(ctx: *const [u64;
 ///
 /// * `ctx` must be valid for reads of 256 bytes.
 /// * `state` must be valid for reads and writes of 80 bytes.
-/// * `work` must be valid for reads and writes of 2560 bytes.
+/// * `tag` must be valid for reads and writes of 16 bytes.
 /// * `rounds` must be 10, 12 or 14.
 /// * The contents of `state` on return are unspecified.
-/// * `state` and `work` must not overlap each other or `ctx` (distinct Rust objects never do).
-/// * None of `ctx`, `state` and `work` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `state` and `tag` must not overlap each other or `ctx` (distinct Rust objects never do).
+/// * None of `ctx`, `state` and `tag` may overlap the return address on the stack or the 2584 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_finish(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, work: *mut [u64; 320]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_finish(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        "mov QWORD PTR [r9+128], rbx",
-        "mov QWORD PTR [r9+136], rbp",
-        "mov QWORD PTR [r9+144], r12",
-        "mov QWORD PTR [r9+152], r13",
-        "mov QWORD PTR [r9+160], r14",
-        "mov QWORD PTR [r9+168], r15",
-        "mov r15, r9",
+        "lea rsp, [rsp-2576]",
+        "mov rax, rsp",
+        "add rax, 16",
+        "mov QWORD PTR [rsp+8], rax",
+        "mov rax, QWORD PTR [rsp+8]",
+        "mov QWORD PTR [rax+128], rbx",
+        "mov QWORD PTR [rax+136], rbp",
+        "mov QWORD PTR [rax+144], r12",
+        "mov QWORD PTR [rax+152], r13",
+        "mov QWORD PTR [rax+160], r14",
+        "mov QWORD PTR [rax+168], r15",
+        "mov r15, rax",
         "mov r14, rdx",
         "mov r13, rdi",
         "mov QWORD PTR [r15+176], rsi",
         "mov QWORD PTR [r15+184], rcx",
         "mov QWORD PTR [r15+192], r8",
+        "mov QWORD PTR [r15+200], r9",
         "mov rbx, QWORD PTR [r15+192]",
         "mov rax, QWORD PTR [r15+184]",
         "test rbx, rbx",
@@ -25448,12 +25678,18 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_finish(ctx: *const [u64; 
         "mov r9, r15",
         "add r9, 512",
         "call {vg_aes_ctr32}",
+        "mov rdi, QWORD PTR [r15+200]",
+        "mov rax, QWORD PTR [r15]",
+        "mov rdx, QWORD PTR [r15+8]",
+        "mov QWORD PTR [rdi], rax",
+        "mov QWORD PTR [rdi+8], rdx",
         "mov rbx, QWORD PTR [r15+128]",
         "mov rbp, QWORD PTR [r15+136]",
         "mov r12, QWORD PTR [r15+144]",
         "mov r13, QWORD PTR [r15+152]",
         "mov r14, QWORD PTR [r15+160]",
         "mov r15, QWORD PTR [r15+168]",
+        "lea rsp, [rsp+2576]",
         "ret",
         ".p2align 6",
         vg_ghash = sym super::gcm::vg_ghash,
@@ -25461,7 +25697,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_finish(ctx: *const [u64; 
     )
 }
 
-/// Finishes an incremental AES-GCM decryption and checks its tag (NIST SP 800-38D §7.2 steps 6–8): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag in the first `tag_len` bytes of `*work`, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, returns 1 if `tag_len` is 4, 8, 12, 13, 14, 15 or 16 (§5.2.1.2) and the received tag is the first `tag_len` bytes of the message's 128-bit tag, which it then writes to the first 16 bytes of `*work`; otherwise returns 0 and writes 16 zero bytes there. The rest of `*work` is working space, unspecified on return. The tags are compared without a branch.
+/// Finishes an incremental AES-GCM decryption and checks its tag (NIST SP 800-38D §7.2 steps 6–8): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, returns 1 if `tag_len` is 4, 8, 12, 13, 14, 15 or 16 (§5.2.1.2) and the received tag is the first `tag_len` bytes of the message's 128-bit tag, and 0 otherwise. The tags are compared without a branch.
 ///
 /// Contract: `VG.Spec.Gcm.streamVerifyContract`. Constant time: only the pointers, `rounds`, `aad_len`, `text_len` and `tag_len` may affect timing, not the key context, the state or the tags.
 ///
@@ -25471,21 +25707,28 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_finish(ctx: *const [u64; 
 ///
 /// * `ctx` must be valid for reads of 256 bytes.
 /// * `state` must be valid for reads and writes of 80 bytes.
-/// * `work` must be valid for reads and writes of 2560 bytes.
+/// * `tag` must be valid for reads of `tag_len` bytes.
 /// * `rounds` must be 10, 12 or 14.
 /// * The contents of `state` on return are unspecified.
-/// * `state` and `work` must not overlap each other, `ctx` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `ctx`, `state` and `work` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `state` must not overlap `ctx`, `tag` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `state` and `tag` may overlap the return address on the stack or the 2592 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_verify(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, work: *mut [u64; 320], tag_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_verify(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "mov QWORD PTR [r9+128], rbx",
-        "mov QWORD PTR [r9+136], rbp",
-        "mov QWORD PTR [r9+144], r12",
-        "mov QWORD PTR [r9+152], r13",
-        "mov QWORD PTR [r9+160], r14",
-        "mov QWORD PTR [r9+168], r15",
-        "mov r15, r9",
+        "lea rsp, [rsp-2584]",
+        "mov rax, QWORD PTR [rsp+2592]",
+        "mov QWORD PTR [rsp+8], rax",
+        "mov rax, rsp",
+        "add rax, 24",
+        "mov QWORD PTR [rsp+16], rax",
+        "mov rax, QWORD PTR [rsp+16]",
+        "mov QWORD PTR [rax+128], rbx",
+        "mov QWORD PTR [rax+136], rbp",
+        "mov QWORD PTR [rax+144], r12",
+        "mov QWORD PTR [rax+152], r13",
+        "mov QWORD PTR [rax+160], r14",
+        "mov QWORD PTR [rax+168], r15",
+        "mov r15, rax",
         "mov r14, rdx",
         "mov r13, rdi",
         "mov QWORD PTR [r15+176], rsi",
@@ -25493,6 +25736,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_verify(ctx: *const [u64; 
         "mov QWORD PTR [r15+192], r8",
         "mov rbx, QWORD PTR [rsp+8]",
         "mov QWORD PTR [r15+224], rbx",
+        "mov rsi, r9",
         "mov ecx, 0",
         "cmp rbx, 4",
         "je 20f",
@@ -25524,7 +25768,6 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_verify(ctx: *const [u64; 
         "mov QWORD PTR [r15+264], rax",
         "mov rdi, r15",
         "add rdi, 256",
-        "mov rsi, r15",
         "mov rcx, rbx",
         "mov r10d, 0",
         "210:",
@@ -25633,19 +25876,9 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_verify(ctx: *const [u64; 
         "cmp rax, 1",
         "mov eax, 0",
         "adc eax, 0",
-        "mov ecx, 0",
-        "sub rcx, rax",
-        "mov rdx, QWORD PTR [r15]",
-        "and rdx, rcx",
-        "mov QWORD PTR [r15], rdx",
-        "mov rdx, QWORD PTR [r15+8]",
-        "and rdx, rcx",
-        "mov QWORD PTR [r15+8], rdx",
         "jmp 29f",
         "28:",
         "mov eax, 0",
-        "mov QWORD PTR [r15], rax",
-        "mov QWORD PTR [r15+8], rax",
         "29:",
         "mov rbx, QWORD PTR [r15+128]",
         "mov rbp, QWORD PTR [r15+136]",
@@ -25653,6 +25886,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_verify(ctx: *const [u64; 
         "mov r13, QWORD PTR [r15+152]",
         "mov r14, QWORD PTR [r15+160]",
         "mov r15, QWORD PTR [r15+168]",
+        "lea rsp, [rsp+2584]",
         "ret",
         ".p2align 6",
         vg_ghash = sym super::gcm::vg_ghash,
@@ -25855,7 +26089,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_init_vaes(key: *const u8, key_le
 /// The CPU features `vg_aes_gcm_seal_vaes` requires (`Artifact.features`).
 pub(crate) const VG_AES_GCM_SEAL_VAES_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes", "avx", "avx2", "ssse3", "vaes"]);
 
-/// AES-GCM authenticated encryption (NIST SP 800-38D §7.1, GCM-AE, with a 128-bit tag): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, encrypts the `len` bytes at `data` in place, under the IV the `nonce_len` bytes at `nonce`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to the first 16 bytes of `*work`. The rest of `*work` is working space, unspecified on return. A shorter tag is the first bytes of this one.
+/// AES-GCM authenticated encryption (NIST SP 800-38D §7.1, GCM-AE, with a 128-bit tag): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, encrypts the `len` bytes at `data` in place, under the IV the `nonce_len` bytes at `nonce`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`. A shorter tag is the first bytes of this one.
 ///
 /// The function checks no length. GCM is secure only for a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of data and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must ensure; and a nonce must never be used twice with the same key.
 ///
@@ -25869,15 +26103,25 @@ pub(crate) const VG_AES_GCM_SEAL_VAES_FEATURES: crate::cpu::Features = crate::cp
 /// * `nonce` must be valid for reads of `nonce_len` bytes.
 /// * `aad` must be valid for reads of `aad_len` bytes.
 /// * `data` must be valid for reads and writes of `len` bytes.
-/// * `work` must be valid for reads and writes of 2560 bytes.
+/// * `tag` must be valid for reads and writes of 16 bytes.
 /// * `rounds` must be 10, 12 or 14.
-/// * `data` and `work` must not overlap each other, `ctx`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `aad`, `data` and `work` may overlap the return address on the stack or the 24 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `data` and `tag` must not overlap each other, `ctx`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 2624 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `avx`, `avx2`, `ssse3` and `vaes` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal_vaes(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, work: *mut [u64; 320]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal_vaes(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        "mov rax, QWORD PTR [rsp+24]",
+        "lea rsp, [rsp-2600]",
+        "mov rax, QWORD PTR [rsp+2608]",
+        "mov QWORD PTR [rsp+8], rax",
+        "mov rax, QWORD PTR [rsp+2616]",
+        "mov QWORD PTR [rsp+16], rax",
+        "mov rax, QWORD PTR [rsp+2624]",
+        "mov QWORD PTR [rsp+24], rax",
+        "mov rax, rsp",
+        "add rax, 40",
+        "mov QWORD PTR [rsp+32], rax",
+        "mov rax, QWORD PTR [rsp+32]",
         "mov QWORD PTR [rax+128], rbx",
         "mov QWORD PTR [rax+136], rbp",
         "mov QWORD PTR [rax+144], r12",
@@ -26452,12 +26696,18 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal_vaes(ctx: *const [u64; 32],
         "mov r9, r15",
         "add r9, 512",
         "call {vg_aes_ctr32_vaes}",
+        "mov rdi, QWORD PTR [rsp+24]",
+        "mov rax, QWORD PTR [r15]",
+        "mov rdx, QWORD PTR [r15+8]",
+        "mov QWORD PTR [rdi], rax",
+        "mov QWORD PTR [rdi+8], rdx",
         "mov rbx, QWORD PTR [r15+128]",
         "mov rbp, QWORD PTR [r15+136]",
         "mov r12, QWORD PTR [r15+144]",
         "mov r13, QWORD PTR [r15+152]",
         "mov r14, QWORD PTR [r15+160]",
         "mov r15, QWORD PTR [r15+168]",
+        "lea rsp, [rsp+2600]",
         "ret",
         ".p2align 6",
         vg_ghash = sym super::gcm::vg_ghash,
@@ -26469,7 +26719,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal_vaes(ctx: *const [u64; 32],
 /// The CPU features `vg_aes_gcm_open_vaes` requires (`Artifact.features`).
 pub(crate) const VG_AES_GCM_OPEN_VAES_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes", "avx", "avx2", "ssse3", "vaes"]);
 
-/// AES-GCM authenticated decryption (NIST SP 800-38D §7.2, GCM-AD): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag in the first `tag_len` bytes of `*work`, returns 1 if `tag_len` is 4, 8, 12, 13, 14, 15 or 16 (§5.2.1.2) and the tag is the first `tag_len` bytes of that of the `len` bytes of ciphertext at `data` and the `aad_len` bytes of additional data at `aad`, under the IV the `nonce_len` bytes at `nonce`, having then decrypted the ciphertext in place; otherwise returns 0, and the bytes at `data` are unchanged. The rest of `*work` is working space, unspecified on return. The tags are compared without a branch.
+/// AES-GCM authenticated decryption (NIST SP 800-38D §7.2, GCM-AD): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, returns 1 if `tag_len` is 4, 8, 12, 13, 14, 15 or 16 (§5.2.1.2) and the tag is the first `tag_len` bytes of that of the `len` bytes of ciphertext at `data` and the `aad_len` bytes of additional data at `aad`, under the IV the `nonce_len` bytes at `nonce`, having then decrypted the ciphertext in place; otherwise returns 0, and the bytes at `data` are unchanged. The tags are compared without a branch.
 ///
 /// The function checks no other length: GCM requires a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of ciphertext and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must check.
 ///
@@ -26483,15 +26733,27 @@ pub(crate) const VG_AES_GCM_OPEN_VAES_FEATURES: crate::cpu::Features = crate::cp
 /// * `nonce` must be valid for reads of `nonce_len` bytes.
 /// * `aad` must be valid for reads of `aad_len` bytes.
 /// * `data` must be valid for reads and writes of `len` bytes.
-/// * `work` must be valid for reads and writes of 2560 bytes.
+/// * `tag` must be valid for reads of `tag_len` bytes.
 /// * `rounds` must be 10, 12 or 14.
-/// * `data` and `work` must not overlap each other, `ctx`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `aad`, `data` and `work` may overlap the return address on the stack or the 24 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `data` must not overlap `ctx`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 2632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `avx`, `avx2`, `ssse3` and `vaes` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_open_vaes(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, work: *mut [u64; 320], tag_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_open_vaes(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "mov rax, QWORD PTR [rsp+24]",
+        "lea rsp, [rsp-2608]",
+        "mov rax, QWORD PTR [rsp+2616]",
+        "mov QWORD PTR [rsp+8], rax",
+        "mov rax, QWORD PTR [rsp+2624]",
+        "mov QWORD PTR [rsp+16], rax",
+        "mov rax, QWORD PTR [rsp+2632]",
+        "mov QWORD PTR [rsp+24], rax",
+        "mov rax, QWORD PTR [rsp+2640]",
+        "mov QWORD PTR [rsp+32], rax",
+        "mov rax, rsp",
+        "add rax, 48",
+        "mov QWORD PTR [rsp+40], rax",
+        "mov rax, QWORD PTR [rsp+40]",
         "mov QWORD PTR [rax+128], rbx",
         "mov QWORD PTR [rax+136], rbp",
         "mov QWORD PTR [rax+144], r12",
@@ -27009,12 +27271,12 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_open_vaes(ctx: *const [u64; 32],
         "add r9, 512",
         "call {vg_aes_ctr32_vaes}",
         "mov rbx, QWORD PTR [r15+224]",
+        "mov rsi, QWORD PTR [rsp+24]",
         "mov eax, 0",
         "mov QWORD PTR [r15+256], rax",
         "mov QWORD PTR [r15+264], rax",
         "mov rdi, r15",
         "add rdi, 256",
-        "mov rsi, r15",
         "mov rcx, rbx",
         "mov r10d, 0",
         "265:",
@@ -27168,6 +27430,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_open_vaes(ctx: *const [u64; 32],
         "mov r13, QWORD PTR [r15+152]",
         "mov r14, QWORD PTR [r15+160]",
         "mov r15, QWORD PTR [r15+168]",
+        "lea rsp, [rsp+2608]",
         "ret",
         ".p2align 6",
         vg_ghash = sym super::gcm::vg_ghash,
@@ -28891,7 +29154,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_decrypt_vaes(ctx: *const 
 /// The CPU features `vg_aes_gcm_stream_finish_vaes` requires (`Artifact.features`).
 pub(crate) const VG_AES_GCM_STREAM_FINISH_VAES_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes", "avx", "avx2", "ssse3", "vaes"]);
 
-/// Finishes an incremental AES-GCM encryption or decryption (NIST SP 800-38D §7.1 steps 5–6, §7.2 steps 6–7): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, writes its 128-bit tag to the first 16 bytes of `*work`. The rest of `*work` is working space, unspecified on return. A shorter tag is the first bytes of this one; to check a received tag, use `vg_aes_gcm_stream_verify`.
+/// Finishes an incremental AES-GCM encryption or decryption (NIST SP 800-38D §7.1 steps 5–6, §7.2 steps 6–7): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, writes its 128-bit tag to `*tag`. A shorter tag is the first bytes of this one; to check a received tag, use `vg_aes_gcm_stream_verify`.
 ///
 /// Contract: `VG.Spec.Gcm.streamFinishContract`. Constant time: only the pointers, `rounds`, `aad_len` and `text_len` may affect timing, not the key context or the state.
 ///
@@ -28901,27 +29164,33 @@ pub(crate) const VG_AES_GCM_STREAM_FINISH_VAES_FEATURES: crate::cpu::Features = 
 ///
 /// * `ctx` must be valid for reads of 256 bytes.
 /// * `state` must be valid for reads and writes of 80 bytes.
-/// * `work` must be valid for reads and writes of 2560 bytes.
+/// * `tag` must be valid for reads and writes of 16 bytes.
 /// * `rounds` must be 10, 12 or 14.
 /// * The contents of `state` on return are unspecified.
-/// * `state` and `work` must not overlap each other or `ctx` (distinct Rust objects never do).
-/// * None of `ctx`, `state` and `work` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `state` and `tag` must not overlap each other or `ctx` (distinct Rust objects never do).
+/// * None of `ctx`, `state` and `tag` may overlap the return address on the stack or the 2584 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `avx`, `avx2`, `ssse3` and `vaes` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_finish_vaes(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, work: *mut [u64; 320]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_finish_vaes(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        "mov QWORD PTR [r9+128], rbx",
-        "mov QWORD PTR [r9+136], rbp",
-        "mov QWORD PTR [r9+144], r12",
-        "mov QWORD PTR [r9+152], r13",
-        "mov QWORD PTR [r9+160], r14",
-        "mov QWORD PTR [r9+168], r15",
-        "mov r15, r9",
+        "lea rsp, [rsp-2576]",
+        "mov rax, rsp",
+        "add rax, 16",
+        "mov QWORD PTR [rsp+8], rax",
+        "mov rax, QWORD PTR [rsp+8]",
+        "mov QWORD PTR [rax+128], rbx",
+        "mov QWORD PTR [rax+136], rbp",
+        "mov QWORD PTR [rax+144], r12",
+        "mov QWORD PTR [rax+152], r13",
+        "mov QWORD PTR [rax+160], r14",
+        "mov QWORD PTR [rax+168], r15",
+        "mov r15, rax",
         "mov r14, rdx",
         "mov r13, rdi",
         "mov QWORD PTR [r15+176], rsi",
         "mov QWORD PTR [r15+184], rcx",
         "mov QWORD PTR [r15+192], r8",
+        "mov QWORD PTR [r15+200], r9",
         "mov rbx, QWORD PTR [r15+192]",
         "mov rax, QWORD PTR [r15+184]",
         "test rbx, rbx",
@@ -28998,12 +29267,18 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_finish_vaes(ctx: *const [
         "mov r9, r15",
         "add r9, 512",
         "call {vg_aes_ctr32_vaes}",
+        "mov rdi, QWORD PTR [r15+200]",
+        "mov rax, QWORD PTR [r15]",
+        "mov rdx, QWORD PTR [r15+8]",
+        "mov QWORD PTR [rdi], rax",
+        "mov QWORD PTR [rdi+8], rdx",
         "mov rbx, QWORD PTR [r15+128]",
         "mov rbp, QWORD PTR [r15+136]",
         "mov r12, QWORD PTR [r15+144]",
         "mov r13, QWORD PTR [r15+152]",
         "mov r14, QWORD PTR [r15+160]",
         "mov r15, QWORD PTR [r15+168]",
+        "lea rsp, [rsp+2576]",
         "ret",
         ".p2align 6",
         vg_ghash = sym super::gcm::vg_ghash,
@@ -29014,7 +29289,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_finish_vaes(ctx: *const [
 /// The CPU features `vg_aes_gcm_stream_verify_vaes` requires (`Artifact.features`).
 pub(crate) const VG_AES_GCM_STREAM_VERIFY_VAES_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes", "avx", "avx2", "ssse3", "vaes"]);
 
-/// Finishes an incremental AES-GCM decryption and checks its tag (NIST SP 800-38D §7.2 steps 6–8): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag in the first `tag_len` bytes of `*work`, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, returns 1 if `tag_len` is 4, 8, 12, 13, 14, 15 or 16 (§5.2.1.2) and the received tag is the first `tag_len` bytes of the message's 128-bit tag, which it then writes to the first 16 bytes of `*work`; otherwise returns 0 and writes 16 zero bytes there. The rest of `*work` is working space, unspecified on return. The tags are compared without a branch.
+/// Finishes an incremental AES-GCM decryption and checks its tag (NIST SP 800-38D §7.2 steps 6–8): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, returns 1 if `tag_len` is 4, 8, 12, 13, 14, 15 or 16 (§5.2.1.2) and the received tag is the first `tag_len` bytes of the message's 128-bit tag, and 0 otherwise. The tags are compared without a branch.
 ///
 /// Contract: `VG.Spec.Gcm.streamVerifyContract`. Constant time: only the pointers, `rounds`, `aad_len`, `text_len` and `tag_len` may affect timing, not the key context, the state or the tags.
 ///
@@ -29024,22 +29299,29 @@ pub(crate) const VG_AES_GCM_STREAM_VERIFY_VAES_FEATURES: crate::cpu::Features = 
 ///
 /// * `ctx` must be valid for reads of 256 bytes.
 /// * `state` must be valid for reads and writes of 80 bytes.
-/// * `work` must be valid for reads and writes of 2560 bytes.
+/// * `tag` must be valid for reads of `tag_len` bytes.
 /// * `rounds` must be 10, 12 or 14.
 /// * The contents of `state` on return are unspecified.
-/// * `state` and `work` must not overlap each other, `ctx` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `ctx`, `state` and `work` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `state` must not overlap `ctx`, `tag` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `state` and `tag` may overlap the return address on the stack or the 2592 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `avx`, `avx2`, `ssse3` and `vaes` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_verify_vaes(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, work: *mut [u64; 320], tag_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_verify_vaes(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "mov QWORD PTR [r9+128], rbx",
-        "mov QWORD PTR [r9+136], rbp",
-        "mov QWORD PTR [r9+144], r12",
-        "mov QWORD PTR [r9+152], r13",
-        "mov QWORD PTR [r9+160], r14",
-        "mov QWORD PTR [r9+168], r15",
-        "mov r15, r9",
+        "lea rsp, [rsp-2584]",
+        "mov rax, QWORD PTR [rsp+2592]",
+        "mov QWORD PTR [rsp+8], rax",
+        "mov rax, rsp",
+        "add rax, 24",
+        "mov QWORD PTR [rsp+16], rax",
+        "mov rax, QWORD PTR [rsp+16]",
+        "mov QWORD PTR [rax+128], rbx",
+        "mov QWORD PTR [rax+136], rbp",
+        "mov QWORD PTR [rax+144], r12",
+        "mov QWORD PTR [rax+152], r13",
+        "mov QWORD PTR [rax+160], r14",
+        "mov QWORD PTR [rax+168], r15",
+        "mov r15, rax",
         "mov r14, rdx",
         "mov r13, rdi",
         "mov QWORD PTR [r15+176], rsi",
@@ -29047,6 +29329,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_verify_vaes(ctx: *const [
         "mov QWORD PTR [r15+192], r8",
         "mov rbx, QWORD PTR [rsp+8]",
         "mov QWORD PTR [r15+224], rbx",
+        "mov rsi, r9",
         "mov ecx, 0",
         "cmp rbx, 4",
         "je 20f",
@@ -29078,7 +29361,6 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_verify_vaes(ctx: *const [
         "mov QWORD PTR [r15+264], rax",
         "mov rdi, r15",
         "add rdi, 256",
-        "mov rsi, r15",
         "mov rcx, rbx",
         "mov r10d, 0",
         "210:",
@@ -29187,19 +29469,9 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_verify_vaes(ctx: *const [
         "cmp rax, 1",
         "mov eax, 0",
         "adc eax, 0",
-        "mov ecx, 0",
-        "sub rcx, rax",
-        "mov rdx, QWORD PTR [r15]",
-        "and rdx, rcx",
-        "mov QWORD PTR [r15], rdx",
-        "mov rdx, QWORD PTR [r15+8]",
-        "and rdx, rcx",
-        "mov QWORD PTR [r15+8], rdx",
         "jmp 29f",
         "28:",
         "mov eax, 0",
-        "mov QWORD PTR [r15], rax",
-        "mov QWORD PTR [r15+8], rax",
         "29:",
         "mov rbx, QWORD PTR [r15+128]",
         "mov rbp, QWORD PTR [r15+136]",
@@ -29207,6 +29479,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_verify_vaes(ctx: *const [
         "mov r13, QWORD PTR [r15+152]",
         "mov r14, QWORD PTR [r15+160]",
         "mov r15, QWORD PTR [r15+168]",
+        "lea rsp, [rsp+2584]",
         "ret",
         ".p2align 6",
         vg_ghash = sym super::gcm::vg_ghash,
@@ -29409,7 +29682,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_init_vaes_pclmul(key: *const u8,
 /// The CPU features `vg_aes_gcm_seal_vaes_pclmul` requires (`Artifact.features`).
 pub(crate) const VG_AES_GCM_SEAL_VAES_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes", "avx", "avx2", "vaes", "pclmulqdq", "ssse3"]);
 
-/// AES-GCM authenticated encryption (NIST SP 800-38D §7.1, GCM-AE, with a 128-bit tag): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, encrypts the `len` bytes at `data` in place, under the IV the `nonce_len` bytes at `nonce`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to the first 16 bytes of `*work`. The rest of `*work` is working space, unspecified on return. A shorter tag is the first bytes of this one.
+/// AES-GCM authenticated encryption (NIST SP 800-38D §7.1, GCM-AE, with a 128-bit tag): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, encrypts the `len` bytes at `data` in place, under the IV the `nonce_len` bytes at `nonce`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`. A shorter tag is the first bytes of this one.
 ///
 /// The function checks no length. GCM is secure only for a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of data and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must ensure; and a nonce must never be used twice with the same key.
 ///
@@ -29423,15 +29696,25 @@ pub(crate) const VG_AES_GCM_SEAL_VAES_PCLMUL_FEATURES: crate::cpu::Features = cr
 /// * `nonce` must be valid for reads of `nonce_len` bytes.
 /// * `aad` must be valid for reads of `aad_len` bytes.
 /// * `data` must be valid for reads and writes of `len` bytes.
-/// * `work` must be valid for reads and writes of 2560 bytes.
+/// * `tag` must be valid for reads and writes of 16 bytes.
 /// * `rounds` must be 10, 12 or 14.
-/// * `data` and `work` must not overlap each other, `ctx`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `aad`, `data` and `work` may overlap the return address on the stack or the 24 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `data` and `tag` must not overlap each other, `ctx`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 2624 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `avx`, `avx2`, `vaes`, `pclmulqdq` and `ssse3` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal_vaes_pclmul(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, work: *mut [u64; 320]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal_vaes_pclmul(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        "mov rax, QWORD PTR [rsp+24]",
+        "lea rsp, [rsp-2600]",
+        "mov rax, QWORD PTR [rsp+2608]",
+        "mov QWORD PTR [rsp+8], rax",
+        "mov rax, QWORD PTR [rsp+2616]",
+        "mov QWORD PTR [rsp+16], rax",
+        "mov rax, QWORD PTR [rsp+2624]",
+        "mov QWORD PTR [rsp+24], rax",
+        "mov rax, rsp",
+        "add rax, 40",
+        "mov QWORD PTR [rsp+32], rax",
+        "mov rax, QWORD PTR [rsp+32]",
         "mov QWORD PTR [rax+128], rbx",
         "mov QWORD PTR [rax+136], rbp",
         "mov QWORD PTR [rax+144], r12",
@@ -30006,12 +30289,18 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal_vaes_pclmul(ctx: *const [u6
         "mov r9, r15",
         "add r9, 512",
         "call {vg_aes_ctr32_vaes}",
+        "mov rdi, QWORD PTR [rsp+24]",
+        "mov rax, QWORD PTR [r15]",
+        "mov rdx, QWORD PTR [r15+8]",
+        "mov QWORD PTR [rdi], rax",
+        "mov QWORD PTR [rdi+8], rdx",
         "mov rbx, QWORD PTR [r15+128]",
         "mov rbp, QWORD PTR [r15+136]",
         "mov r12, QWORD PTR [r15+144]",
         "mov r13, QWORD PTR [r15+152]",
         "mov r14, QWORD PTR [r15+160]",
         "mov r15, QWORD PTR [r15+168]",
+        "lea rsp, [rsp+2600]",
         "ret",
         ".p2align 6",
         vg_ghash_pclmul = sym super::gcm::vg_ghash_pclmul,
@@ -30023,7 +30312,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal_vaes_pclmul(ctx: *const [u6
 /// The CPU features `vg_aes_gcm_open_vaes_pclmul` requires (`Artifact.features`).
 pub(crate) const VG_AES_GCM_OPEN_VAES_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes", "avx", "avx2", "vaes", "pclmulqdq", "ssse3"]);
 
-/// AES-GCM authenticated decryption (NIST SP 800-38D §7.2, GCM-AD): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag in the first `tag_len` bytes of `*work`, returns 1 if `tag_len` is 4, 8, 12, 13, 14, 15 or 16 (§5.2.1.2) and the tag is the first `tag_len` bytes of that of the `len` bytes of ciphertext at `data` and the `aad_len` bytes of additional data at `aad`, under the IV the `nonce_len` bytes at `nonce`, having then decrypted the ciphertext in place; otherwise returns 0, and the bytes at `data` are unchanged. The rest of `*work` is working space, unspecified on return. The tags are compared without a branch.
+/// AES-GCM authenticated decryption (NIST SP 800-38D §7.2, GCM-AD): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, returns 1 if `tag_len` is 4, 8, 12, 13, 14, 15 or 16 (§5.2.1.2) and the tag is the first `tag_len` bytes of that of the `len` bytes of ciphertext at `data` and the `aad_len` bytes of additional data at `aad`, under the IV the `nonce_len` bytes at `nonce`, having then decrypted the ciphertext in place; otherwise returns 0, and the bytes at `data` are unchanged. The tags are compared without a branch.
 ///
 /// The function checks no other length: GCM requires a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of ciphertext and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must check.
 ///
@@ -30037,15 +30326,27 @@ pub(crate) const VG_AES_GCM_OPEN_VAES_PCLMUL_FEATURES: crate::cpu::Features = cr
 /// * `nonce` must be valid for reads of `nonce_len` bytes.
 /// * `aad` must be valid for reads of `aad_len` bytes.
 /// * `data` must be valid for reads and writes of `len` bytes.
-/// * `work` must be valid for reads and writes of 2560 bytes.
+/// * `tag` must be valid for reads of `tag_len` bytes.
 /// * `rounds` must be 10, 12 or 14.
-/// * `data` and `work` must not overlap each other, `ctx`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `aad`, `data` and `work` may overlap the return address on the stack or the 24 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `data` must not overlap `ctx`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 2632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `avx`, `avx2`, `vaes`, `pclmulqdq` and `ssse3` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_open_vaes_pclmul(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, work: *mut [u64; 320], tag_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_open_vaes_pclmul(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "mov rax, QWORD PTR [rsp+24]",
+        "lea rsp, [rsp-2608]",
+        "mov rax, QWORD PTR [rsp+2616]",
+        "mov QWORD PTR [rsp+8], rax",
+        "mov rax, QWORD PTR [rsp+2624]",
+        "mov QWORD PTR [rsp+16], rax",
+        "mov rax, QWORD PTR [rsp+2632]",
+        "mov QWORD PTR [rsp+24], rax",
+        "mov rax, QWORD PTR [rsp+2640]",
+        "mov QWORD PTR [rsp+32], rax",
+        "mov rax, rsp",
+        "add rax, 48",
+        "mov QWORD PTR [rsp+40], rax",
+        "mov rax, QWORD PTR [rsp+40]",
         "mov QWORD PTR [rax+128], rbx",
         "mov QWORD PTR [rax+136], rbp",
         "mov QWORD PTR [rax+144], r12",
@@ -30563,12 +30864,12 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_open_vaes_pclmul(ctx: *const [u6
         "add r9, 512",
         "call {vg_aes_ctr32_vaes}",
         "mov rbx, QWORD PTR [r15+224]",
+        "mov rsi, QWORD PTR [rsp+24]",
         "mov eax, 0",
         "mov QWORD PTR [r15+256], rax",
         "mov QWORD PTR [r15+264], rax",
         "mov rdi, r15",
         "add rdi, 256",
-        "mov rsi, r15",
         "mov rcx, rbx",
         "mov r10d, 0",
         "265:",
@@ -30722,6 +31023,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_open_vaes_pclmul(ctx: *const [u6
         "mov r13, QWORD PTR [r15+152]",
         "mov r14, QWORD PTR [r15+160]",
         "mov r15, QWORD PTR [r15+168]",
+        "lea rsp, [rsp+2608]",
         "ret",
         ".p2align 6",
         vg_ghash_pclmul = sym super::gcm::vg_ghash_pclmul,
@@ -32453,7 +32755,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_decrypt_vaes_pclmul(ctx: 
 /// The CPU features `vg_aes_gcm_stream_finish_vaes_pclmul` requires (`Artifact.features`).
 pub(crate) const VG_AES_GCM_STREAM_FINISH_VAES_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes", "avx", "avx2", "vaes", "pclmulqdq", "ssse3"]);
 
-/// Finishes an incremental AES-GCM encryption or decryption (NIST SP 800-38D §7.1 steps 5–6, §7.2 steps 6–7): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, writes its 128-bit tag to the first 16 bytes of `*work`. The rest of `*work` is working space, unspecified on return. A shorter tag is the first bytes of this one; to check a received tag, use `vg_aes_gcm_stream_verify`.
+/// Finishes an incremental AES-GCM encryption or decryption (NIST SP 800-38D §7.1 steps 5–6, §7.2 steps 6–7): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, writes its 128-bit tag to `*tag`. A shorter tag is the first bytes of this one; to check a received tag, use `vg_aes_gcm_stream_verify`.
 ///
 /// Contract: `VG.Spec.Gcm.streamFinishContract`. Constant time: only the pointers, `rounds`, `aad_len` and `text_len` may affect timing, not the key context or the state.
 ///
@@ -32463,27 +32765,33 @@ pub(crate) const VG_AES_GCM_STREAM_FINISH_VAES_PCLMUL_FEATURES: crate::cpu::Feat
 ///
 /// * `ctx` must be valid for reads of 256 bytes.
 /// * `state` must be valid for reads and writes of 80 bytes.
-/// * `work` must be valid for reads and writes of 2560 bytes.
+/// * `tag` must be valid for reads and writes of 16 bytes.
 /// * `rounds` must be 10, 12 or 14.
 /// * The contents of `state` on return are unspecified.
-/// * `state` and `work` must not overlap each other or `ctx` (distinct Rust objects never do).
-/// * None of `ctx`, `state` and `work` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `state` and `tag` must not overlap each other or `ctx` (distinct Rust objects never do).
+/// * None of `ctx`, `state` and `tag` may overlap the return address on the stack or the 2584 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `avx`, `avx2`, `vaes`, `pclmulqdq` and `ssse3` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_finish_vaes_pclmul(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, work: *mut [u64; 320]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_finish_vaes_pclmul(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        "mov QWORD PTR [r9+128], rbx",
-        "mov QWORD PTR [r9+136], rbp",
-        "mov QWORD PTR [r9+144], r12",
-        "mov QWORD PTR [r9+152], r13",
-        "mov QWORD PTR [r9+160], r14",
-        "mov QWORD PTR [r9+168], r15",
-        "mov r15, r9",
+        "lea rsp, [rsp-2576]",
+        "mov rax, rsp",
+        "add rax, 16",
+        "mov QWORD PTR [rsp+8], rax",
+        "mov rax, QWORD PTR [rsp+8]",
+        "mov QWORD PTR [rax+128], rbx",
+        "mov QWORD PTR [rax+136], rbp",
+        "mov QWORD PTR [rax+144], r12",
+        "mov QWORD PTR [rax+152], r13",
+        "mov QWORD PTR [rax+160], r14",
+        "mov QWORD PTR [rax+168], r15",
+        "mov r15, rax",
         "mov r14, rdx",
         "mov r13, rdi",
         "mov QWORD PTR [r15+176], rsi",
         "mov QWORD PTR [r15+184], rcx",
         "mov QWORD PTR [r15+192], r8",
+        "mov QWORD PTR [r15+200], r9",
         "mov rbx, QWORD PTR [r15+192]",
         "mov rax, QWORD PTR [r15+184]",
         "test rbx, rbx",
@@ -32560,12 +32868,18 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_finish_vaes_pclmul(ctx: *
         "mov r9, r15",
         "add r9, 512",
         "call {vg_aes_ctr32_vaes}",
+        "mov rdi, QWORD PTR [r15+200]",
+        "mov rax, QWORD PTR [r15]",
+        "mov rdx, QWORD PTR [r15+8]",
+        "mov QWORD PTR [rdi], rax",
+        "mov QWORD PTR [rdi+8], rdx",
         "mov rbx, QWORD PTR [r15+128]",
         "mov rbp, QWORD PTR [r15+136]",
         "mov r12, QWORD PTR [r15+144]",
         "mov r13, QWORD PTR [r15+152]",
         "mov r14, QWORD PTR [r15+160]",
         "mov r15, QWORD PTR [r15+168]",
+        "lea rsp, [rsp+2576]",
         "ret",
         ".p2align 6",
         vg_ghash_pclmul = sym super::gcm::vg_ghash_pclmul,
@@ -32576,7 +32890,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_finish_vaes_pclmul(ctx: *
 /// The CPU features `vg_aes_gcm_stream_verify_vaes_pclmul` requires (`Artifact.features`).
 pub(crate) const VG_AES_GCM_STREAM_VERIFY_VAES_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes", "avx", "avx2", "vaes", "pclmulqdq", "ssse3"]);
 
-/// Finishes an incremental AES-GCM decryption and checks its tag (NIST SP 800-38D §7.2 steps 6–8): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag in the first `tag_len` bytes of `*work`, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, returns 1 if `tag_len` is 4, 8, 12, 13, 14, 15 or 16 (§5.2.1.2) and the received tag is the first `tag_len` bytes of the message's 128-bit tag, which it then writes to the first 16 bytes of `*work`; otherwise returns 0 and writes 16 zero bytes there. The rest of `*work` is working space, unspecified on return. The tags are compared without a branch.
+/// Finishes an incremental AES-GCM decryption and checks its tag (NIST SP 800-38D §7.2 steps 6–8): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, returns 1 if `tag_len` is 4, 8, 12, 13, 14, 15 or 16 (§5.2.1.2) and the received tag is the first `tag_len` bytes of the message's 128-bit tag, and 0 otherwise. The tags are compared without a branch.
 ///
 /// Contract: `VG.Spec.Gcm.streamVerifyContract`. Constant time: only the pointers, `rounds`, `aad_len`, `text_len` and `tag_len` may affect timing, not the key context, the state or the tags.
 ///
@@ -32586,22 +32900,29 @@ pub(crate) const VG_AES_GCM_STREAM_VERIFY_VAES_PCLMUL_FEATURES: crate::cpu::Feat
 ///
 /// * `ctx` must be valid for reads of 256 bytes.
 /// * `state` must be valid for reads and writes of 80 bytes.
-/// * `work` must be valid for reads and writes of 2560 bytes.
+/// * `tag` must be valid for reads of `tag_len` bytes.
 /// * `rounds` must be 10, 12 or 14.
 /// * The contents of `state` on return are unspecified.
-/// * `state` and `work` must not overlap each other, `ctx` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `ctx`, `state` and `work` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `state` must not overlap `ctx`, `tag` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `state` and `tag` may overlap the return address on the stack or the 2592 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `avx`, `avx2`, `vaes`, `pclmulqdq` and `ssse3` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_verify_vaes_pclmul(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, work: *mut [u64; 320], tag_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_verify_vaes_pclmul(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "mov QWORD PTR [r9+128], rbx",
-        "mov QWORD PTR [r9+136], rbp",
-        "mov QWORD PTR [r9+144], r12",
-        "mov QWORD PTR [r9+152], r13",
-        "mov QWORD PTR [r9+160], r14",
-        "mov QWORD PTR [r9+168], r15",
-        "mov r15, r9",
+        "lea rsp, [rsp-2584]",
+        "mov rax, QWORD PTR [rsp+2592]",
+        "mov QWORD PTR [rsp+8], rax",
+        "mov rax, rsp",
+        "add rax, 24",
+        "mov QWORD PTR [rsp+16], rax",
+        "mov rax, QWORD PTR [rsp+16]",
+        "mov QWORD PTR [rax+128], rbx",
+        "mov QWORD PTR [rax+136], rbp",
+        "mov QWORD PTR [rax+144], r12",
+        "mov QWORD PTR [rax+152], r13",
+        "mov QWORD PTR [rax+160], r14",
+        "mov QWORD PTR [rax+168], r15",
+        "mov r15, rax",
         "mov r14, rdx",
         "mov r13, rdi",
         "mov QWORD PTR [r15+176], rsi",
@@ -32609,6 +32930,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_verify_vaes_pclmul(ctx: *
         "mov QWORD PTR [r15+192], r8",
         "mov rbx, QWORD PTR [rsp+8]",
         "mov QWORD PTR [r15+224], rbx",
+        "mov rsi, r9",
         "mov ecx, 0",
         "cmp rbx, 4",
         "je 20f",
@@ -32640,7 +32962,6 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_verify_vaes_pclmul(ctx: *
         "mov QWORD PTR [r15+264], rax",
         "mov rdi, r15",
         "add rdi, 256",
-        "mov rsi, r15",
         "mov rcx, rbx",
         "mov r10d, 0",
         "210:",
@@ -32749,19 +33070,9 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_verify_vaes_pclmul(ctx: *
         "cmp rax, 1",
         "mov eax, 0",
         "adc eax, 0",
-        "mov ecx, 0",
-        "sub rcx, rax",
-        "mov rdx, QWORD PTR [r15]",
-        "and rdx, rcx",
-        "mov QWORD PTR [r15], rdx",
-        "mov rdx, QWORD PTR [r15+8]",
-        "and rdx, rcx",
-        "mov QWORD PTR [r15+8], rdx",
         "jmp 29f",
         "28:",
         "mov eax, 0",
-        "mov QWORD PTR [r15], rax",
-        "mov QWORD PTR [r15+8], rax",
         "29:",
         "mov rbx, QWORD PTR [r15+128]",
         "mov rbp, QWORD PTR [r15+136]",
@@ -32769,6 +33080,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_verify_vaes_pclmul(ctx: *
         "mov r13, QWORD PTR [r15+152]",
         "mov r14, QWORD PTR [r15+160]",
         "mov r15, QWORD PTR [r15+168]",
+        "lea rsp, [rsp+2584]",
         "ret",
         ".p2align 6",
         vg_ghash_pclmul = sym super::gcm::vg_ghash_pclmul,
@@ -34711,7 +35023,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_init_vaes_vpclmul(key: *const u8
 /// The CPU features `vg_aes_gcm_seal_vaes_vpclmul` requires (`Artifact.features`).
 pub(crate) const VG_AES_GCM_SEAL_VAES_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes", "vaes", "avx", "avx2", "pclmulqdq", "ssse3", "vpclmulqdq"]);
 
-/// AES-GCM authenticated encryption (NIST SP 800-38D §7.1, GCM-AE, with a 128-bit tag): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, encrypts the `len` bytes at `data` in place, under the IV the `nonce_len` bytes at `nonce`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to the first 16 bytes of `*work`. The rest of `*work` is working space, unspecified on return. A shorter tag is the first bytes of this one.
+/// AES-GCM authenticated encryption (NIST SP 800-38D §7.1, GCM-AE, with a 128-bit tag): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, encrypts the `len` bytes at `data` in place, under the IV the `nonce_len` bytes at `nonce`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`. A shorter tag is the first bytes of this one.
 ///
 /// The function checks no length. GCM is secure only for a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of data and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must ensure; and a nonce must never be used twice with the same key.
 ///
@@ -34725,15 +35037,25 @@ pub(crate) const VG_AES_GCM_SEAL_VAES_VPCLMUL_FEATURES: crate::cpu::Features = c
 /// * `nonce` must be valid for reads of `nonce_len` bytes.
 /// * `aad` must be valid for reads of `aad_len` bytes.
 /// * `data` must be valid for reads and writes of `len` bytes.
-/// * `work` must be valid for reads and writes of 2560 bytes.
+/// * `tag` must be valid for reads and writes of 16 bytes.
 /// * `rounds` must be 10, 12 or 14.
-/// * `data` and `work` must not overlap each other, `ctx`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `aad`, `data` and `work` may overlap the return address on the stack or the 24 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `data` and `tag` must not overlap each other, `ctx`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 2624 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `vaes`, `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal_vaes_vpclmul(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, work: *mut [u64; 320]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal_vaes_vpclmul(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        "mov rax, QWORD PTR [rsp+24]",
+        "lea rsp, [rsp-2600]",
+        "mov rax, QWORD PTR [rsp+2608]",
+        "mov QWORD PTR [rsp+8], rax",
+        "mov rax, QWORD PTR [rsp+2616]",
+        "mov QWORD PTR [rsp+16], rax",
+        "mov rax, QWORD PTR [rsp+2624]",
+        "mov QWORD PTR [rsp+24], rax",
+        "mov rax, rsp",
+        "add rax, 40",
+        "mov QWORD PTR [rsp+32], rax",
+        "mov rax, QWORD PTR [rsp+32]",
         "mov QWORD PTR [rax+128], rbx",
         "mov QWORD PTR [rax+136], rbp",
         "mov QWORD PTR [rax+144], r12",
@@ -35308,12 +35630,18 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal_vaes_vpclmul(ctx: *const [u
         "mov r9, r15",
         "add r9, 512",
         "call {vg_aes_ctr32_vaes}",
+        "mov rdi, QWORD PTR [rsp+24]",
+        "mov rax, QWORD PTR [r15]",
+        "mov rdx, QWORD PTR [r15+8]",
+        "mov QWORD PTR [rdi], rax",
+        "mov QWORD PTR [rdi+8], rdx",
         "mov rbx, QWORD PTR [r15+128]",
         "mov rbp, QWORD PTR [r15+136]",
         "mov r12, QWORD PTR [r15+144]",
         "mov r13, QWORD PTR [r15+152]",
         "mov r14, QWORD PTR [r15+160]",
         "mov r15, QWORD PTR [r15+168]",
+        "lea rsp, [rsp+2600]",
         "ret",
         ".p2align 6",
         vg_ghash_vpclmul = sym super::gcm::vg_ghash_vpclmul,
@@ -35325,7 +35653,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal_vaes_vpclmul(ctx: *const [u
 /// The CPU features `vg_aes_gcm_open_vaes_vpclmul` requires (`Artifact.features`).
 pub(crate) const VG_AES_GCM_OPEN_VAES_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes", "vaes", "avx", "avx2", "pclmulqdq", "ssse3", "vpclmulqdq"]);
 
-/// AES-GCM authenticated decryption (NIST SP 800-38D §7.2, GCM-AD): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag in the first `tag_len` bytes of `*work`, returns 1 if `tag_len` is 4, 8, 12, 13, 14, 15 or 16 (§5.2.1.2) and the tag is the first `tag_len` bytes of that of the `len` bytes of ciphertext at `data` and the `aad_len` bytes of additional data at `aad`, under the IV the `nonce_len` bytes at `nonce`, having then decrypted the ciphertext in place; otherwise returns 0, and the bytes at `data` are unchanged. The rest of `*work` is working space, unspecified on return. The tags are compared without a branch.
+/// AES-GCM authenticated decryption (NIST SP 800-38D §7.2, GCM-AD): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, returns 1 if `tag_len` is 4, 8, 12, 13, 14, 15 or 16 (§5.2.1.2) and the tag is the first `tag_len` bytes of that of the `len` bytes of ciphertext at `data` and the `aad_len` bytes of additional data at `aad`, under the IV the `nonce_len` bytes at `nonce`, having then decrypted the ciphertext in place; otherwise returns 0, and the bytes at `data` are unchanged. The tags are compared without a branch.
 ///
 /// The function checks no other length: GCM requires a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of ciphertext and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must check.
 ///
@@ -35339,15 +35667,27 @@ pub(crate) const VG_AES_GCM_OPEN_VAES_VPCLMUL_FEATURES: crate::cpu::Features = c
 /// * `nonce` must be valid for reads of `nonce_len` bytes.
 /// * `aad` must be valid for reads of `aad_len` bytes.
 /// * `data` must be valid for reads and writes of `len` bytes.
-/// * `work` must be valid for reads and writes of 2560 bytes.
+/// * `tag` must be valid for reads of `tag_len` bytes.
 /// * `rounds` must be 10, 12 or 14.
-/// * `data` and `work` must not overlap each other, `ctx`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `aad`, `data` and `work` may overlap the return address on the stack or the 24 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `data` must not overlap `ctx`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 2632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `vaes`, `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_open_vaes_vpclmul(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, work: *mut [u64; 320], tag_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_open_vaes_vpclmul(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "mov rax, QWORD PTR [rsp+24]",
+        "lea rsp, [rsp-2608]",
+        "mov rax, QWORD PTR [rsp+2616]",
+        "mov QWORD PTR [rsp+8], rax",
+        "mov rax, QWORD PTR [rsp+2624]",
+        "mov QWORD PTR [rsp+16], rax",
+        "mov rax, QWORD PTR [rsp+2632]",
+        "mov QWORD PTR [rsp+24], rax",
+        "mov rax, QWORD PTR [rsp+2640]",
+        "mov QWORD PTR [rsp+32], rax",
+        "mov rax, rsp",
+        "add rax, 48",
+        "mov QWORD PTR [rsp+40], rax",
+        "mov rax, QWORD PTR [rsp+40]",
         "mov QWORD PTR [rax+128], rbx",
         "mov QWORD PTR [rax+136], rbp",
         "mov QWORD PTR [rax+144], r12",
@@ -35865,12 +36205,12 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_open_vaes_vpclmul(ctx: *const [u
         "add r9, 512",
         "call {vg_aes_ctr32_vaes}",
         "mov rbx, QWORD PTR [r15+224]",
+        "mov rsi, QWORD PTR [rsp+24]",
         "mov eax, 0",
         "mov QWORD PTR [r15+256], rax",
         "mov QWORD PTR [r15+264], rax",
         "mov rdi, r15",
         "add rdi, 256",
-        "mov rsi, r15",
         "mov rcx, rbx",
         "mov r10d, 0",
         "265:",
@@ -36024,6 +36364,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_open_vaes_vpclmul(ctx: *const [u
         "mov r13, QWORD PTR [r15+152]",
         "mov r14, QWORD PTR [r15+160]",
         "mov r15, QWORD PTR [r15+168]",
+        "lea rsp, [rsp+2608]",
         "ret",
         ".p2align 6",
         vg_ghash_vpclmul = sym super::gcm::vg_ghash_vpclmul,
@@ -37755,7 +38096,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_decrypt_vaes_vpclmul(ctx:
 /// The CPU features `vg_aes_gcm_stream_finish_vaes_vpclmul` requires (`Artifact.features`).
 pub(crate) const VG_AES_GCM_STREAM_FINISH_VAES_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes", "vaes", "avx", "avx2", "pclmulqdq", "ssse3", "vpclmulqdq"]);
 
-/// Finishes an incremental AES-GCM encryption or decryption (NIST SP 800-38D §7.1 steps 5–6, §7.2 steps 6–7): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, writes its 128-bit tag to the first 16 bytes of `*work`. The rest of `*work` is working space, unspecified on return. A shorter tag is the first bytes of this one; to check a received tag, use `vg_aes_gcm_stream_verify`.
+/// Finishes an incremental AES-GCM encryption or decryption (NIST SP 800-38D §7.1 steps 5–6, §7.2 steps 6–7): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, writes its 128-bit tag to `*tag`. A shorter tag is the first bytes of this one; to check a received tag, use `vg_aes_gcm_stream_verify`.
 ///
 /// Contract: `VG.Spec.Gcm.streamFinishContract`. Constant time: only the pointers, `rounds`, `aad_len` and `text_len` may affect timing, not the key context or the state.
 ///
@@ -37765,27 +38106,33 @@ pub(crate) const VG_AES_GCM_STREAM_FINISH_VAES_VPCLMUL_FEATURES: crate::cpu::Fea
 ///
 /// * `ctx` must be valid for reads of 256 bytes.
 /// * `state` must be valid for reads and writes of 80 bytes.
-/// * `work` must be valid for reads and writes of 2560 bytes.
+/// * `tag` must be valid for reads and writes of 16 bytes.
 /// * `rounds` must be 10, 12 or 14.
 /// * The contents of `state` on return are unspecified.
-/// * `state` and `work` must not overlap each other or `ctx` (distinct Rust objects never do).
-/// * None of `ctx`, `state` and `work` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `state` and `tag` must not overlap each other or `ctx` (distinct Rust objects never do).
+/// * None of `ctx`, `state` and `tag` may overlap the return address on the stack or the 2584 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `vaes`, `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_finish_vaes_vpclmul(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, work: *mut [u64; 320]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_finish_vaes_vpclmul(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        "mov QWORD PTR [r9+128], rbx",
-        "mov QWORD PTR [r9+136], rbp",
-        "mov QWORD PTR [r9+144], r12",
-        "mov QWORD PTR [r9+152], r13",
-        "mov QWORD PTR [r9+160], r14",
-        "mov QWORD PTR [r9+168], r15",
-        "mov r15, r9",
+        "lea rsp, [rsp-2576]",
+        "mov rax, rsp",
+        "add rax, 16",
+        "mov QWORD PTR [rsp+8], rax",
+        "mov rax, QWORD PTR [rsp+8]",
+        "mov QWORD PTR [rax+128], rbx",
+        "mov QWORD PTR [rax+136], rbp",
+        "mov QWORD PTR [rax+144], r12",
+        "mov QWORD PTR [rax+152], r13",
+        "mov QWORD PTR [rax+160], r14",
+        "mov QWORD PTR [rax+168], r15",
+        "mov r15, rax",
         "mov r14, rdx",
         "mov r13, rdi",
         "mov QWORD PTR [r15+176], rsi",
         "mov QWORD PTR [r15+184], rcx",
         "mov QWORD PTR [r15+192], r8",
+        "mov QWORD PTR [r15+200], r9",
         "mov rbx, QWORD PTR [r15+192]",
         "mov rax, QWORD PTR [r15+184]",
         "test rbx, rbx",
@@ -37862,12 +38209,18 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_finish_vaes_vpclmul(ctx: 
         "mov r9, r15",
         "add r9, 512",
         "call {vg_aes_ctr32_vaes}",
+        "mov rdi, QWORD PTR [r15+200]",
+        "mov rax, QWORD PTR [r15]",
+        "mov rdx, QWORD PTR [r15+8]",
+        "mov QWORD PTR [rdi], rax",
+        "mov QWORD PTR [rdi+8], rdx",
         "mov rbx, QWORD PTR [r15+128]",
         "mov rbp, QWORD PTR [r15+136]",
         "mov r12, QWORD PTR [r15+144]",
         "mov r13, QWORD PTR [r15+152]",
         "mov r14, QWORD PTR [r15+160]",
         "mov r15, QWORD PTR [r15+168]",
+        "lea rsp, [rsp+2576]",
         "ret",
         ".p2align 6",
         vg_ghash_vpclmul = sym super::gcm::vg_ghash_vpclmul,
@@ -37878,7 +38231,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_finish_vaes_vpclmul(ctx: 
 /// The CPU features `vg_aes_gcm_stream_verify_vaes_vpclmul` requires (`Artifact.features`).
 pub(crate) const VG_AES_GCM_STREAM_VERIFY_VAES_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes", "vaes", "avx", "avx2", "pclmulqdq", "ssse3", "vpclmulqdq"]);
 
-/// Finishes an incremental AES-GCM decryption and checks its tag (NIST SP 800-38D §7.2 steps 6–8): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag in the first `tag_len` bytes of `*work`, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, returns 1 if `tag_len` is 4, 8, 12, 13, 14, 15 or 16 (§5.2.1.2) and the received tag is the first `tag_len` bytes of the message's 128-bit tag, which it then writes to the first 16 bytes of `*work`; otherwise returns 0 and writes 16 zero bytes there. The rest of `*work` is working space, unspecified on return. The tags are compared without a branch.
+/// Finishes an incremental AES-GCM decryption and checks its tag (NIST SP 800-38D §7.2 steps 6–8): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, returns 1 if `tag_len` is 4, 8, 12, 13, 14, 15 or 16 (§5.2.1.2) and the received tag is the first `tag_len` bytes of the message's 128-bit tag, and 0 otherwise. The tags are compared without a branch.
 ///
 /// Contract: `VG.Spec.Gcm.streamVerifyContract`. Constant time: only the pointers, `rounds`, `aad_len`, `text_len` and `tag_len` may affect timing, not the key context, the state or the tags.
 ///
@@ -37888,22 +38241,29 @@ pub(crate) const VG_AES_GCM_STREAM_VERIFY_VAES_VPCLMUL_FEATURES: crate::cpu::Fea
 ///
 /// * `ctx` must be valid for reads of 256 bytes.
 /// * `state` must be valid for reads and writes of 80 bytes.
-/// * `work` must be valid for reads and writes of 2560 bytes.
+/// * `tag` must be valid for reads of `tag_len` bytes.
 /// * `rounds` must be 10, 12 or 14.
 /// * The contents of `state` on return are unspecified.
-/// * `state` and `work` must not overlap each other, `ctx` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `ctx`, `state` and `work` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `state` must not overlap `ctx`, `tag` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `state` and `tag` may overlap the return address on the stack or the 2592 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `vaes`, `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_verify_vaes_vpclmul(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, work: *mut [u64; 320], tag_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_verify_vaes_vpclmul(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "mov QWORD PTR [r9+128], rbx",
-        "mov QWORD PTR [r9+136], rbp",
-        "mov QWORD PTR [r9+144], r12",
-        "mov QWORD PTR [r9+152], r13",
-        "mov QWORD PTR [r9+160], r14",
-        "mov QWORD PTR [r9+168], r15",
-        "mov r15, r9",
+        "lea rsp, [rsp-2584]",
+        "mov rax, QWORD PTR [rsp+2592]",
+        "mov QWORD PTR [rsp+8], rax",
+        "mov rax, rsp",
+        "add rax, 24",
+        "mov QWORD PTR [rsp+16], rax",
+        "mov rax, QWORD PTR [rsp+16]",
+        "mov QWORD PTR [rax+128], rbx",
+        "mov QWORD PTR [rax+136], rbp",
+        "mov QWORD PTR [rax+144], r12",
+        "mov QWORD PTR [rax+152], r13",
+        "mov QWORD PTR [rax+160], r14",
+        "mov QWORD PTR [rax+168], r15",
+        "mov r15, rax",
         "mov r14, rdx",
         "mov r13, rdi",
         "mov QWORD PTR [r15+176], rsi",
@@ -37911,6 +38271,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_verify_vaes_vpclmul(ctx: 
         "mov QWORD PTR [r15+192], r8",
         "mov rbx, QWORD PTR [rsp+8]",
         "mov QWORD PTR [r15+224], rbx",
+        "mov rsi, r9",
         "mov ecx, 0",
         "cmp rbx, 4",
         "je 20f",
@@ -37942,7 +38303,6 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_verify_vaes_vpclmul(ctx: 
         "mov QWORD PTR [r15+264], rax",
         "mov rdi, r15",
         "add rdi, 256",
-        "mov rsi, r15",
         "mov rcx, rbx",
         "mov r10d, 0",
         "210:",
@@ -38051,19 +38411,9 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_verify_vaes_vpclmul(ctx: 
         "cmp rax, 1",
         "mov eax, 0",
         "adc eax, 0",
-        "mov ecx, 0",
-        "sub rcx, rax",
-        "mov rdx, QWORD PTR [r15]",
-        "and rdx, rcx",
-        "mov QWORD PTR [r15], rdx",
-        "mov rdx, QWORD PTR [r15+8]",
-        "and rdx, rcx",
-        "mov QWORD PTR [r15+8], rdx",
         "jmp 29f",
         "28:",
         "mov eax, 0",
-        "mov QWORD PTR [r15], rax",
-        "mov QWORD PTR [r15+8], rax",
         "29:",
         "mov rbx, QWORD PTR [r15+128]",
         "mov rbp, QWORD PTR [r15+136]",
@@ -38071,6 +38421,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_verify_vaes_vpclmul(ctx: 
         "mov r13, QWORD PTR [r15+152]",
         "mov r14, QWORD PTR [r15+160]",
         "mov r15, QWORD PTR [r15+168]",
+        "lea rsp, [rsp+2584]",
         "ret",
         ".p2align 6",
         vg_ghash_vpclmul = sym super::gcm::vg_ghash_vpclmul,
@@ -39596,7 +39947,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_init_vaes_vpclmul_avx512(key: *c
 /// The CPU features `vg_aes_gcm_seal_vaes_vpclmul_avx512` requires (`Artifact.features`).
 pub(crate) const VG_AES_GCM_SEAL_VAES_VPCLMUL_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes", "vaes", "avx", "avx2", "pclmulqdq", "ssse3", "vpclmulqdq", "avx512f", "avx512bw"]);
 
-/// AES-GCM authenticated encryption (NIST SP 800-38D §7.1, GCM-AE, with a 128-bit tag): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, encrypts the `len` bytes at `data` in place, under the IV the `nonce_len` bytes at `nonce`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to the first 16 bytes of `*work`. The rest of `*work` is working space, unspecified on return. A shorter tag is the first bytes of this one.
+/// AES-GCM authenticated encryption (NIST SP 800-38D §7.1, GCM-AE, with a 128-bit tag): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, encrypts the `len` bytes at `data` in place, under the IV the `nonce_len` bytes at `nonce`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`. A shorter tag is the first bytes of this one.
 ///
 /// The function checks no length. GCM is secure only for a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of data and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must ensure; and a nonce must never be used twice with the same key.
 ///
@@ -39610,15 +39961,25 @@ pub(crate) const VG_AES_GCM_SEAL_VAES_VPCLMUL_AVX512_FEATURES: crate::cpu::Featu
 /// * `nonce` must be valid for reads of `nonce_len` bytes.
 /// * `aad` must be valid for reads of `aad_len` bytes.
 /// * `data` must be valid for reads and writes of `len` bytes.
-/// * `work` must be valid for reads and writes of 2560 bytes.
+/// * `tag` must be valid for reads and writes of 16 bytes.
 /// * `rounds` must be 10, 12 or 14.
-/// * `data` and `work` must not overlap each other, `ctx`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `aad`, `data` and `work` may overlap the return address on the stack or the 24 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `data` and `tag` must not overlap each other, `ctx`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 2624 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `vaes`, `avx`, `avx2`, `pclmulqdq`, `ssse3`, `vpclmulqdq`, `avx512f` and `avx512bw` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal_vaes_vpclmul_avx512(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, work: *mut [u64; 320]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal_vaes_vpclmul_avx512(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        "mov rax, QWORD PTR [rsp+24]",
+        "lea rsp, [rsp-2600]",
+        "mov rax, QWORD PTR [rsp+2608]",
+        "mov QWORD PTR [rsp+8], rax",
+        "mov rax, QWORD PTR [rsp+2616]",
+        "mov QWORD PTR [rsp+16], rax",
+        "mov rax, QWORD PTR [rsp+2624]",
+        "mov QWORD PTR [rsp+24], rax",
+        "mov rax, rsp",
+        "add rax, 40",
+        "mov QWORD PTR [rsp+32], rax",
+        "mov rax, QWORD PTR [rsp+32]",
         "mov QWORD PTR [rax+128], rbx",
         "mov QWORD PTR [rax+136], rbp",
         "mov QWORD PTR [rax+144], r12",
@@ -40193,12 +40554,18 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal_vaes_vpclmul_avx512(ctx: *c
         "mov r9, r15",
         "add r9, 512",
         "call {vg_aes_ctr32_vaes}",
+        "mov rdi, QWORD PTR [rsp+24]",
+        "mov rax, QWORD PTR [r15]",
+        "mov rdx, QWORD PTR [r15+8]",
+        "mov QWORD PTR [rdi], rax",
+        "mov QWORD PTR [rdi+8], rdx",
         "mov rbx, QWORD PTR [r15+128]",
         "mov rbp, QWORD PTR [r15+136]",
         "mov r12, QWORD PTR [r15+144]",
         "mov r13, QWORD PTR [r15+152]",
         "mov r14, QWORD PTR [r15+160]",
         "mov r15, QWORD PTR [r15+168]",
+        "lea rsp, [rsp+2600]",
         "ret",
         ".p2align 6",
         vg_ghash_vpclmul = sym super::gcm::vg_ghash_vpclmul,
@@ -40210,7 +40577,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal_vaes_vpclmul_avx512(ctx: *c
 /// The CPU features `vg_aes_gcm_open_vaes_vpclmul_avx512` requires (`Artifact.features`).
 pub(crate) const VG_AES_GCM_OPEN_VAES_VPCLMUL_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes", "vaes", "avx", "avx2", "pclmulqdq", "ssse3", "vpclmulqdq", "avx512f", "avx512bw"]);
 
-/// AES-GCM authenticated decryption (NIST SP 800-38D §7.2, GCM-AD): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag in the first `tag_len` bytes of `*work`, returns 1 if `tag_len` is 4, 8, 12, 13, 14, 15 or 16 (§5.2.1.2) and the tag is the first `tag_len` bytes of that of the `len` bytes of ciphertext at `data` and the `aad_len` bytes of additional data at `aad`, under the IV the `nonce_len` bytes at `nonce`, having then decrypted the ciphertext in place; otherwise returns 0, and the bytes at `data` are unchanged. The rest of `*work` is working space, unspecified on return. The tags are compared without a branch.
+/// AES-GCM authenticated decryption (NIST SP 800-38D §7.2, GCM-AD): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, returns 1 if `tag_len` is 4, 8, 12, 13, 14, 15 or 16 (§5.2.1.2) and the tag is the first `tag_len` bytes of that of the `len` bytes of ciphertext at `data` and the `aad_len` bytes of additional data at `aad`, under the IV the `nonce_len` bytes at `nonce`, having then decrypted the ciphertext in place; otherwise returns 0, and the bytes at `data` are unchanged. The tags are compared without a branch.
 ///
 /// The function checks no other length: GCM requires a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of ciphertext and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must check.
 ///
@@ -40224,15 +40591,27 @@ pub(crate) const VG_AES_GCM_OPEN_VAES_VPCLMUL_AVX512_FEATURES: crate::cpu::Featu
 /// * `nonce` must be valid for reads of `nonce_len` bytes.
 /// * `aad` must be valid for reads of `aad_len` bytes.
 /// * `data` must be valid for reads and writes of `len` bytes.
-/// * `work` must be valid for reads and writes of 2560 bytes.
+/// * `tag` must be valid for reads of `tag_len` bytes.
 /// * `rounds` must be 10, 12 or 14.
-/// * `data` and `work` must not overlap each other, `ctx`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `aad`, `data` and `work` may overlap the return address on the stack or the 24 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `data` must not overlap `ctx`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 2632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `vaes`, `avx`, `avx2`, `pclmulqdq`, `ssse3`, `vpclmulqdq`, `avx512f` and `avx512bw` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_open_vaes_vpclmul_avx512(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, work: *mut [u64; 320], tag_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_open_vaes_vpclmul_avx512(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "mov rax, QWORD PTR [rsp+24]",
+        "lea rsp, [rsp-2608]",
+        "mov rax, QWORD PTR [rsp+2616]",
+        "mov QWORD PTR [rsp+8], rax",
+        "mov rax, QWORD PTR [rsp+2624]",
+        "mov QWORD PTR [rsp+16], rax",
+        "mov rax, QWORD PTR [rsp+2632]",
+        "mov QWORD PTR [rsp+24], rax",
+        "mov rax, QWORD PTR [rsp+2640]",
+        "mov QWORD PTR [rsp+32], rax",
+        "mov rax, rsp",
+        "add rax, 48",
+        "mov QWORD PTR [rsp+40], rax",
+        "mov rax, QWORD PTR [rsp+40]",
         "mov QWORD PTR [rax+128], rbx",
         "mov QWORD PTR [rax+136], rbp",
         "mov QWORD PTR [rax+144], r12",
@@ -40750,12 +41129,12 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_open_vaes_vpclmul_avx512(ctx: *c
         "add r9, 512",
         "call {vg_aes_ctr32_vaes}",
         "mov rbx, QWORD PTR [r15+224]",
+        "mov rsi, QWORD PTR [rsp+24]",
         "mov eax, 0",
         "mov QWORD PTR [r15+256], rax",
         "mov QWORD PTR [r15+264], rax",
         "mov rdi, r15",
         "add rdi, 256",
-        "mov rsi, r15",
         "mov rcx, rbx",
         "mov r10d, 0",
         "265:",
@@ -40909,6 +41288,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_open_vaes_vpclmul_avx512(ctx: *c
         "mov r13, QWORD PTR [r15+152]",
         "mov r14, QWORD PTR [r15+160]",
         "mov r15, QWORD PTR [r15+168]",
+        "lea rsp, [rsp+2608]",
         "ret",
         ".p2align 6",
         vg_ghash_vpclmul = sym super::gcm::vg_ghash_vpclmul,
@@ -42640,7 +43020,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_decrypt_vaes_vpclmul_avx5
 /// The CPU features `vg_aes_gcm_stream_finish_vaes_vpclmul_avx512` requires (`Artifact.features`).
 pub(crate) const VG_AES_GCM_STREAM_FINISH_VAES_VPCLMUL_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes", "vaes", "avx", "avx2", "pclmulqdq", "ssse3", "vpclmulqdq"]);
 
-/// Finishes an incremental AES-GCM encryption or decryption (NIST SP 800-38D §7.1 steps 5–6, §7.2 steps 6–7): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, writes its 128-bit tag to the first 16 bytes of `*work`. The rest of `*work` is working space, unspecified on return. A shorter tag is the first bytes of this one; to check a received tag, use `vg_aes_gcm_stream_verify`.
+/// Finishes an incremental AES-GCM encryption or decryption (NIST SP 800-38D §7.1 steps 5–6, §7.2 steps 6–7): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, writes its 128-bit tag to `*tag`. A shorter tag is the first bytes of this one; to check a received tag, use `vg_aes_gcm_stream_verify`.
 ///
 /// Contract: `VG.Spec.Gcm.streamFinishContract`. Constant time: only the pointers, `rounds`, `aad_len` and `text_len` may affect timing, not the key context or the state.
 ///
@@ -42650,27 +43030,33 @@ pub(crate) const VG_AES_GCM_STREAM_FINISH_VAES_VPCLMUL_AVX512_FEATURES: crate::c
 ///
 /// * `ctx` must be valid for reads of 256 bytes.
 /// * `state` must be valid for reads and writes of 80 bytes.
-/// * `work` must be valid for reads and writes of 2560 bytes.
+/// * `tag` must be valid for reads and writes of 16 bytes.
 /// * `rounds` must be 10, 12 or 14.
 /// * The contents of `state` on return are unspecified.
-/// * `state` and `work` must not overlap each other or `ctx` (distinct Rust objects never do).
-/// * None of `ctx`, `state` and `work` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `state` and `tag` must not overlap each other or `ctx` (distinct Rust objects never do).
+/// * None of `ctx`, `state` and `tag` may overlap the return address on the stack or the 2584 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `vaes`, `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_finish_vaes_vpclmul_avx512(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, work: *mut [u64; 320]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_finish_vaes_vpclmul_avx512(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        "mov QWORD PTR [r9+128], rbx",
-        "mov QWORD PTR [r9+136], rbp",
-        "mov QWORD PTR [r9+144], r12",
-        "mov QWORD PTR [r9+152], r13",
-        "mov QWORD PTR [r9+160], r14",
-        "mov QWORD PTR [r9+168], r15",
-        "mov r15, r9",
+        "lea rsp, [rsp-2576]",
+        "mov rax, rsp",
+        "add rax, 16",
+        "mov QWORD PTR [rsp+8], rax",
+        "mov rax, QWORD PTR [rsp+8]",
+        "mov QWORD PTR [rax+128], rbx",
+        "mov QWORD PTR [rax+136], rbp",
+        "mov QWORD PTR [rax+144], r12",
+        "mov QWORD PTR [rax+152], r13",
+        "mov QWORD PTR [rax+160], r14",
+        "mov QWORD PTR [rax+168], r15",
+        "mov r15, rax",
         "mov r14, rdx",
         "mov r13, rdi",
         "mov QWORD PTR [r15+176], rsi",
         "mov QWORD PTR [r15+184], rcx",
         "mov QWORD PTR [r15+192], r8",
+        "mov QWORD PTR [r15+200], r9",
         "mov rbx, QWORD PTR [r15+192]",
         "mov rax, QWORD PTR [r15+184]",
         "test rbx, rbx",
@@ -42747,12 +43133,18 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_finish_vaes_vpclmul_avx51
         "mov r9, r15",
         "add r9, 512",
         "call {vg_aes_ctr32_vaes}",
+        "mov rdi, QWORD PTR [r15+200]",
+        "mov rax, QWORD PTR [r15]",
+        "mov rdx, QWORD PTR [r15+8]",
+        "mov QWORD PTR [rdi], rax",
+        "mov QWORD PTR [rdi+8], rdx",
         "mov rbx, QWORD PTR [r15+128]",
         "mov rbp, QWORD PTR [r15+136]",
         "mov r12, QWORD PTR [r15+144]",
         "mov r13, QWORD PTR [r15+152]",
         "mov r14, QWORD PTR [r15+160]",
         "mov r15, QWORD PTR [r15+168]",
+        "lea rsp, [rsp+2576]",
         "ret",
         ".p2align 6",
         vg_ghash_vpclmul = sym super::gcm::vg_ghash_vpclmul,
@@ -42763,7 +43155,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_finish_vaes_vpclmul_avx51
 /// The CPU features `vg_aes_gcm_stream_verify_vaes_vpclmul_avx512` requires (`Artifact.features`).
 pub(crate) const VG_AES_GCM_STREAM_VERIFY_VAES_VPCLMUL_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes", "vaes", "avx", "avx2", "pclmulqdq", "ssse3", "vpclmulqdq"]);
 
-/// Finishes an incremental AES-GCM decryption and checks its tag (NIST SP 800-38D §7.2 steps 6–8): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag in the first `tag_len` bytes of `*work`, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, returns 1 if `tag_len` is 4, 8, 12, 13, 14, 15 or 16 (§5.2.1.2) and the received tag is the first `tag_len` bytes of the message's 128-bit tag, which it then writes to the first 16 bytes of `*work`; otherwise returns 0 and writes 16 zero bytes there. The rest of `*work` is working space, unspecified on return. The tags are compared without a branch.
+/// Finishes an incremental AES-GCM decryption and checks its tag (NIST SP 800-38D §7.2 steps 6–8): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, returns 1 if `tag_len` is 4, 8, 12, 13, 14, 15 or 16 (§5.2.1.2) and the received tag is the first `tag_len` bytes of the message's 128-bit tag, and 0 otherwise. The tags are compared without a branch.
 ///
 /// Contract: `VG.Spec.Gcm.streamVerifyContract`. Constant time: only the pointers, `rounds`, `aad_len`, `text_len` and `tag_len` may affect timing, not the key context, the state or the tags.
 ///
@@ -42773,22 +43165,29 @@ pub(crate) const VG_AES_GCM_STREAM_VERIFY_VAES_VPCLMUL_AVX512_FEATURES: crate::c
 ///
 /// * `ctx` must be valid for reads of 256 bytes.
 /// * `state` must be valid for reads and writes of 80 bytes.
-/// * `work` must be valid for reads and writes of 2560 bytes.
+/// * `tag` must be valid for reads of `tag_len` bytes.
 /// * `rounds` must be 10, 12 or 14.
 /// * The contents of `state` on return are unspecified.
-/// * `state` and `work` must not overlap each other, `ctx` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `ctx`, `state` and `work` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `state` must not overlap `ctx`, `tag` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `state` and `tag` may overlap the return address on the stack or the 2592 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `vaes`, `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_verify_vaes_vpclmul_avx512(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, work: *mut [u64; 320], tag_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_verify_vaes_vpclmul_avx512(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "mov QWORD PTR [r9+128], rbx",
-        "mov QWORD PTR [r9+136], rbp",
-        "mov QWORD PTR [r9+144], r12",
-        "mov QWORD PTR [r9+152], r13",
-        "mov QWORD PTR [r9+160], r14",
-        "mov QWORD PTR [r9+168], r15",
-        "mov r15, r9",
+        "lea rsp, [rsp-2584]",
+        "mov rax, QWORD PTR [rsp+2592]",
+        "mov QWORD PTR [rsp+8], rax",
+        "mov rax, rsp",
+        "add rax, 24",
+        "mov QWORD PTR [rsp+16], rax",
+        "mov rax, QWORD PTR [rsp+16]",
+        "mov QWORD PTR [rax+128], rbx",
+        "mov QWORD PTR [rax+136], rbp",
+        "mov QWORD PTR [rax+144], r12",
+        "mov QWORD PTR [rax+152], r13",
+        "mov QWORD PTR [rax+160], r14",
+        "mov QWORD PTR [rax+168], r15",
+        "mov r15, rax",
         "mov r14, rdx",
         "mov r13, rdi",
         "mov QWORD PTR [r15+176], rsi",
@@ -42796,6 +43195,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_verify_vaes_vpclmul_avx51
         "mov QWORD PTR [r15+192], r8",
         "mov rbx, QWORD PTR [rsp+8]",
         "mov QWORD PTR [r15+224], rbx",
+        "mov rsi, r9",
         "mov ecx, 0",
         "cmp rbx, 4",
         "je 20f",
@@ -42827,7 +43227,6 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_verify_vaes_vpclmul_avx51
         "mov QWORD PTR [r15+264], rax",
         "mov rdi, r15",
         "add rdi, 256",
-        "mov rsi, r15",
         "mov rcx, rbx",
         "mov r10d, 0",
         "210:",
@@ -42936,19 +43335,9 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_verify_vaes_vpclmul_avx51
         "cmp rax, 1",
         "mov eax, 0",
         "adc eax, 0",
-        "mov ecx, 0",
-        "sub rcx, rax",
-        "mov rdx, QWORD PTR [r15]",
-        "and rdx, rcx",
-        "mov QWORD PTR [r15], rdx",
-        "mov rdx, QWORD PTR [r15+8]",
-        "and rdx, rcx",
-        "mov QWORD PTR [r15+8], rdx",
         "jmp 29f",
         "28:",
         "mov eax, 0",
-        "mov QWORD PTR [r15], rax",
-        "mov QWORD PTR [r15+8], rax",
         "29:",
         "mov rbx, QWORD PTR [r15+128]",
         "mov rbp, QWORD PTR [r15+136]",
@@ -42956,6 +43345,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_verify_vaes_vpclmul_avx51
         "mov r13, QWORD PTR [r15+152]",
         "mov r14, QWORD PTR [r15+160]",
         "mov r15, QWORD PTR [r15+168]",
+        "lea rsp, [rsp+2584]",
         "ret",
         ".p2align 6",
         vg_ghash_vpclmul = sym super::gcm::vg_ghash_vpclmul,
@@ -43154,7 +43544,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_init_vpclmul(key: *const u8, key
 /// The CPU features `vg_aes_gcm_seal_vpclmul` requires (`Artifact.features`).
 pub(crate) const VG_AES_GCM_SEAL_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2", "pclmulqdq", "ssse3", "vpclmulqdq"]);
 
-/// AES-GCM authenticated encryption (NIST SP 800-38D §7.1, GCM-AE, with a 128-bit tag): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, encrypts the `len` bytes at `data` in place, under the IV the `nonce_len` bytes at `nonce`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to the first 16 bytes of `*work`. The rest of `*work` is working space, unspecified on return. A shorter tag is the first bytes of this one.
+/// AES-GCM authenticated encryption (NIST SP 800-38D §7.1, GCM-AE, with a 128-bit tag): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, encrypts the `len` bytes at `data` in place, under the IV the `nonce_len` bytes at `nonce`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`. A shorter tag is the first bytes of this one.
 ///
 /// The function checks no length. GCM is secure only for a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of data and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must ensure; and a nonce must never be used twice with the same key.
 ///
@@ -43168,15 +43558,25 @@ pub(crate) const VG_AES_GCM_SEAL_VPCLMUL_FEATURES: crate::cpu::Features = crate:
 /// * `nonce` must be valid for reads of `nonce_len` bytes.
 /// * `aad` must be valid for reads of `aad_len` bytes.
 /// * `data` must be valid for reads and writes of `len` bytes.
-/// * `work` must be valid for reads and writes of 2560 bytes.
+/// * `tag` must be valid for reads and writes of 16 bytes.
 /// * `rounds` must be 10, 12 or 14.
-/// * `data` and `work` must not overlap each other, `ctx`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `aad`, `data` and `work` may overlap the return address on the stack or the 24 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `data` and `tag` must not overlap each other, `ctx`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 2624 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal_vpclmul(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, work: *mut [u64; 320]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal_vpclmul(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        "mov rax, QWORD PTR [rsp+24]",
+        "lea rsp, [rsp-2600]",
+        "mov rax, QWORD PTR [rsp+2608]",
+        "mov QWORD PTR [rsp+8], rax",
+        "mov rax, QWORD PTR [rsp+2616]",
+        "mov QWORD PTR [rsp+16], rax",
+        "mov rax, QWORD PTR [rsp+2624]",
+        "mov QWORD PTR [rsp+24], rax",
+        "mov rax, rsp",
+        "add rax, 40",
+        "mov QWORD PTR [rsp+32], rax",
+        "mov rax, QWORD PTR [rsp+32]",
         "mov QWORD PTR [rax+128], rbx",
         "mov QWORD PTR [rax+136], rbp",
         "mov QWORD PTR [rax+144], r12",
@@ -43751,12 +44151,18 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal_vpclmul(ctx: *const [u64; 3
         "mov r9, r15",
         "add r9, 512",
         "call {vg_aes_ctr32}",
+        "mov rdi, QWORD PTR [rsp+24]",
+        "mov rax, QWORD PTR [r15]",
+        "mov rdx, QWORD PTR [r15+8]",
+        "mov QWORD PTR [rdi], rax",
+        "mov QWORD PTR [rdi+8], rdx",
         "mov rbx, QWORD PTR [r15+128]",
         "mov rbp, QWORD PTR [r15+136]",
         "mov r12, QWORD PTR [r15+144]",
         "mov r13, QWORD PTR [r15+152]",
         "mov r14, QWORD PTR [r15+160]",
         "mov r15, QWORD PTR [r15+168]",
+        "lea rsp, [rsp+2600]",
         "ret",
         ".p2align 6",
         vg_ghash_vpclmul = sym super::gcm::vg_ghash_vpclmul,
@@ -43768,7 +44174,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal_vpclmul(ctx: *const [u64; 3
 /// The CPU features `vg_aes_gcm_open_vpclmul` requires (`Artifact.features`).
 pub(crate) const VG_AES_GCM_OPEN_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2", "pclmulqdq", "ssse3", "vpclmulqdq"]);
 
-/// AES-GCM authenticated decryption (NIST SP 800-38D §7.2, GCM-AD): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag in the first `tag_len` bytes of `*work`, returns 1 if `tag_len` is 4, 8, 12, 13, 14, 15 or 16 (§5.2.1.2) and the tag is the first `tag_len` bytes of that of the `len` bytes of ciphertext at `data` and the `aad_len` bytes of additional data at `aad`, under the IV the `nonce_len` bytes at `nonce`, having then decrypted the ciphertext in place; otherwise returns 0, and the bytes at `data` are unchanged. The rest of `*work` is working space, unspecified on return. The tags are compared without a branch.
+/// AES-GCM authenticated decryption (NIST SP 800-38D §7.2, GCM-AD): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, returns 1 if `tag_len` is 4, 8, 12, 13, 14, 15 or 16 (§5.2.1.2) and the tag is the first `tag_len` bytes of that of the `len` bytes of ciphertext at `data` and the `aad_len` bytes of additional data at `aad`, under the IV the `nonce_len` bytes at `nonce`, having then decrypted the ciphertext in place; otherwise returns 0, and the bytes at `data` are unchanged. The tags are compared without a branch.
 ///
 /// The function checks no other length: GCM requires a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of ciphertext and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must check.
 ///
@@ -43782,15 +44188,27 @@ pub(crate) const VG_AES_GCM_OPEN_VPCLMUL_FEATURES: crate::cpu::Features = crate:
 /// * `nonce` must be valid for reads of `nonce_len` bytes.
 /// * `aad` must be valid for reads of `aad_len` bytes.
 /// * `data` must be valid for reads and writes of `len` bytes.
-/// * `work` must be valid for reads and writes of 2560 bytes.
+/// * `tag` must be valid for reads of `tag_len` bytes.
 /// * `rounds` must be 10, 12 or 14.
-/// * `data` and `work` must not overlap each other, `ctx`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `aad`, `data` and `work` may overlap the return address on the stack or the 24 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `data` must not overlap `ctx`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 2632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_open_vpclmul(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, work: *mut [u64; 320], tag_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_open_vpclmul(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "mov rax, QWORD PTR [rsp+24]",
+        "lea rsp, [rsp-2608]",
+        "mov rax, QWORD PTR [rsp+2616]",
+        "mov QWORD PTR [rsp+8], rax",
+        "mov rax, QWORD PTR [rsp+2624]",
+        "mov QWORD PTR [rsp+16], rax",
+        "mov rax, QWORD PTR [rsp+2632]",
+        "mov QWORD PTR [rsp+24], rax",
+        "mov rax, QWORD PTR [rsp+2640]",
+        "mov QWORD PTR [rsp+32], rax",
+        "mov rax, rsp",
+        "add rax, 48",
+        "mov QWORD PTR [rsp+40], rax",
+        "mov rax, QWORD PTR [rsp+40]",
         "mov QWORD PTR [rax+128], rbx",
         "mov QWORD PTR [rax+136], rbp",
         "mov QWORD PTR [rax+144], r12",
@@ -44308,12 +44726,12 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_open_vpclmul(ctx: *const [u64; 3
         "add r9, 512",
         "call {vg_aes_ctr32}",
         "mov rbx, QWORD PTR [r15+224]",
+        "mov rsi, QWORD PTR [rsp+24]",
         "mov eax, 0",
         "mov QWORD PTR [r15+256], rax",
         "mov QWORD PTR [r15+264], rax",
         "mov rdi, r15",
         "add rdi, 256",
-        "mov rsi, r15",
         "mov rcx, rbx",
         "mov r10d, 0",
         "265:",
@@ -44467,6 +44885,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_open_vpclmul(ctx: *const [u64; 3
         "mov r13, QWORD PTR [r15+152]",
         "mov r14, QWORD PTR [r15+160]",
         "mov r15, QWORD PTR [r15+168]",
+        "lea rsp, [rsp+2608]",
         "ret",
         ".p2align 6",
         vg_ghash_vpclmul = sym super::gcm::vg_ghash_vpclmul,
@@ -46198,7 +46617,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_decrypt_vpclmul(ctx: *con
 /// The CPU features `vg_aes_gcm_stream_finish_vpclmul` requires (`Artifact.features`).
 pub(crate) const VG_AES_GCM_STREAM_FINISH_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2", "pclmulqdq", "ssse3", "vpclmulqdq"]);
 
-/// Finishes an incremental AES-GCM encryption or decryption (NIST SP 800-38D §7.1 steps 5–6, §7.2 steps 6–7): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, writes its 128-bit tag to the first 16 bytes of `*work`. The rest of `*work` is working space, unspecified on return. A shorter tag is the first bytes of this one; to check a received tag, use `vg_aes_gcm_stream_verify`.
+/// Finishes an incremental AES-GCM encryption or decryption (NIST SP 800-38D §7.1 steps 5–6, §7.2 steps 6–7): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, writes its 128-bit tag to `*tag`. A shorter tag is the first bytes of this one; to check a received tag, use `vg_aes_gcm_stream_verify`.
 ///
 /// Contract: `VG.Spec.Gcm.streamFinishContract`. Constant time: only the pointers, `rounds`, `aad_len` and `text_len` may affect timing, not the key context or the state.
 ///
@@ -46208,27 +46627,33 @@ pub(crate) const VG_AES_GCM_STREAM_FINISH_VPCLMUL_FEATURES: crate::cpu::Features
 ///
 /// * `ctx` must be valid for reads of 256 bytes.
 /// * `state` must be valid for reads and writes of 80 bytes.
-/// * `work` must be valid for reads and writes of 2560 bytes.
+/// * `tag` must be valid for reads and writes of 16 bytes.
 /// * `rounds` must be 10, 12 or 14.
 /// * The contents of `state` on return are unspecified.
-/// * `state` and `work` must not overlap each other or `ctx` (distinct Rust objects never do).
-/// * None of `ctx`, `state` and `work` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `state` and `tag` must not overlap each other or `ctx` (distinct Rust objects never do).
+/// * None of `ctx`, `state` and `tag` may overlap the return address on the stack or the 2584 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_finish_vpclmul(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, work: *mut [u64; 320]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_finish_vpclmul(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        "mov QWORD PTR [r9+128], rbx",
-        "mov QWORD PTR [r9+136], rbp",
-        "mov QWORD PTR [r9+144], r12",
-        "mov QWORD PTR [r9+152], r13",
-        "mov QWORD PTR [r9+160], r14",
-        "mov QWORD PTR [r9+168], r15",
-        "mov r15, r9",
+        "lea rsp, [rsp-2576]",
+        "mov rax, rsp",
+        "add rax, 16",
+        "mov QWORD PTR [rsp+8], rax",
+        "mov rax, QWORD PTR [rsp+8]",
+        "mov QWORD PTR [rax+128], rbx",
+        "mov QWORD PTR [rax+136], rbp",
+        "mov QWORD PTR [rax+144], r12",
+        "mov QWORD PTR [rax+152], r13",
+        "mov QWORD PTR [rax+160], r14",
+        "mov QWORD PTR [rax+168], r15",
+        "mov r15, rax",
         "mov r14, rdx",
         "mov r13, rdi",
         "mov QWORD PTR [r15+176], rsi",
         "mov QWORD PTR [r15+184], rcx",
         "mov QWORD PTR [r15+192], r8",
+        "mov QWORD PTR [r15+200], r9",
         "mov rbx, QWORD PTR [r15+192]",
         "mov rax, QWORD PTR [r15+184]",
         "test rbx, rbx",
@@ -46305,12 +46730,18 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_finish_vpclmul(ctx: *cons
         "mov r9, r15",
         "add r9, 512",
         "call {vg_aes_ctr32}",
+        "mov rdi, QWORD PTR [r15+200]",
+        "mov rax, QWORD PTR [r15]",
+        "mov rdx, QWORD PTR [r15+8]",
+        "mov QWORD PTR [rdi], rax",
+        "mov QWORD PTR [rdi+8], rdx",
         "mov rbx, QWORD PTR [r15+128]",
         "mov rbp, QWORD PTR [r15+136]",
         "mov r12, QWORD PTR [r15+144]",
         "mov r13, QWORD PTR [r15+152]",
         "mov r14, QWORD PTR [r15+160]",
         "mov r15, QWORD PTR [r15+168]",
+        "lea rsp, [rsp+2576]",
         "ret",
         ".p2align 6",
         vg_ghash_vpclmul = sym super::gcm::vg_ghash_vpclmul,
@@ -46321,7 +46752,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_finish_vpclmul(ctx: *cons
 /// The CPU features `vg_aes_gcm_stream_verify_vpclmul` requires (`Artifact.features`).
 pub(crate) const VG_AES_GCM_STREAM_VERIFY_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2", "pclmulqdq", "ssse3", "vpclmulqdq"]);
 
-/// Finishes an incremental AES-GCM decryption and checks its tag (NIST SP 800-38D §7.2 steps 6–8): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag in the first `tag_len` bytes of `*work`, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, returns 1 if `tag_len` is 4, 8, 12, 13, 14, 15 or 16 (§5.2.1.2) and the received tag is the first `tag_len` bytes of the message's 128-bit tag, which it then writes to the first 16 bytes of `*work`; otherwise returns 0 and writes 16 zero bytes there. The rest of `*work` is working space, unspecified on return. The tags are compared without a branch.
+/// Finishes an incremental AES-GCM decryption and checks its tag (NIST SP 800-38D §7.2 steps 6–8): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, returns 1 if `tag_len` is 4, 8, 12, 13, 14, 15 or 16 (§5.2.1.2) and the received tag is the first `tag_len` bytes of the message's 128-bit tag, and 0 otherwise. The tags are compared without a branch.
 ///
 /// Contract: `VG.Spec.Gcm.streamVerifyContract`. Constant time: only the pointers, `rounds`, `aad_len`, `text_len` and `tag_len` may affect timing, not the key context, the state or the tags.
 ///
@@ -46331,22 +46762,29 @@ pub(crate) const VG_AES_GCM_STREAM_VERIFY_VPCLMUL_FEATURES: crate::cpu::Features
 ///
 /// * `ctx` must be valid for reads of 256 bytes.
 /// * `state` must be valid for reads and writes of 80 bytes.
-/// * `work` must be valid for reads and writes of 2560 bytes.
+/// * `tag` must be valid for reads of `tag_len` bytes.
 /// * `rounds` must be 10, 12 or 14.
 /// * The contents of `state` on return are unspecified.
-/// * `state` and `work` must not overlap each other, `ctx` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `ctx`, `state` and `work` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `state` must not overlap `ctx`, `tag` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `state` and `tag` may overlap the return address on the stack or the 2592 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_verify_vpclmul(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, work: *mut [u64; 320], tag_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_verify_vpclmul(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "mov QWORD PTR [r9+128], rbx",
-        "mov QWORD PTR [r9+136], rbp",
-        "mov QWORD PTR [r9+144], r12",
-        "mov QWORD PTR [r9+152], r13",
-        "mov QWORD PTR [r9+160], r14",
-        "mov QWORD PTR [r9+168], r15",
-        "mov r15, r9",
+        "lea rsp, [rsp-2584]",
+        "mov rax, QWORD PTR [rsp+2592]",
+        "mov QWORD PTR [rsp+8], rax",
+        "mov rax, rsp",
+        "add rax, 24",
+        "mov QWORD PTR [rsp+16], rax",
+        "mov rax, QWORD PTR [rsp+16]",
+        "mov QWORD PTR [rax+128], rbx",
+        "mov QWORD PTR [rax+136], rbp",
+        "mov QWORD PTR [rax+144], r12",
+        "mov QWORD PTR [rax+152], r13",
+        "mov QWORD PTR [rax+160], r14",
+        "mov QWORD PTR [rax+168], r15",
+        "mov r15, rax",
         "mov r14, rdx",
         "mov r13, rdi",
         "mov QWORD PTR [r15+176], rsi",
@@ -46354,6 +46792,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_verify_vpclmul(ctx: *cons
         "mov QWORD PTR [r15+192], r8",
         "mov rbx, QWORD PTR [rsp+8]",
         "mov QWORD PTR [r15+224], rbx",
+        "mov rsi, r9",
         "mov ecx, 0",
         "cmp rbx, 4",
         "je 20f",
@@ -46385,7 +46824,6 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_verify_vpclmul(ctx: *cons
         "mov QWORD PTR [r15+264], rax",
         "mov rdi, r15",
         "add rdi, 256",
-        "mov rsi, r15",
         "mov rcx, rbx",
         "mov r10d, 0",
         "210:",
@@ -46494,19 +46932,9 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_verify_vpclmul(ctx: *cons
         "cmp rax, 1",
         "mov eax, 0",
         "adc eax, 0",
-        "mov ecx, 0",
-        "sub rcx, rax",
-        "mov rdx, QWORD PTR [r15]",
-        "and rdx, rcx",
-        "mov QWORD PTR [r15], rdx",
-        "mov rdx, QWORD PTR [r15+8]",
-        "and rdx, rcx",
-        "mov QWORD PTR [r15+8], rdx",
         "jmp 29f",
         "28:",
         "mov eax, 0",
-        "mov QWORD PTR [r15], rax",
-        "mov QWORD PTR [r15+8], rax",
         "29:",
         "mov rbx, QWORD PTR [r15+128]",
         "mov rbp, QWORD PTR [r15+136]",
@@ -46514,6 +46942,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_verify_vpclmul(ctx: *cons
         "mov r13, QWORD PTR [r15+152]",
         "mov r14, QWORD PTR [r15+160]",
         "mov r15, QWORD PTR [r15+168]",
+        "lea rsp, [rsp+2584]",
         "ret",
         ".p2align 6",
         vg_ghash_vpclmul = sym super::gcm::vg_ghash_vpclmul,

@@ -47,7 +47,7 @@ theorem _root_.VG.Proof.Mont.ModOk.keepX86 {M M' : Mod} {m : Nat} {base : Addr} 
   ⟨hM.n0, hM.n7, hM.mo, hM.tmp, hM.sep, by
     have := sv_keep hM'n hM't h7 hn h hj hjo hjt
     simp only [sv] at this
-    rw [hmo, hMn, this, ← hMn, ← hmo]; exact hM.val, hM.inv⟩
+    rw [hmo, hMn, this, ← hMn, ← hmo]; exact hM.val, hM.inv, hM.red⟩
 
 /-- The operations' layout on numbered slots. -/
 theorem slLay {M : Mod} (hMn : M.n = c.n) (hmo : M.mo = c.sl MP ∨ M.mo = c.sl MN) (hMt : M.tmp = c.sl TMP)

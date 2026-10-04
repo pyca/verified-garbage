@@ -214,7 +214,7 @@ theorem ladderBody_ok {L : LadderCfg} {C : Curve} {base : Addr} {size k : Nat}
   · have hM := A.mod
     have hmo := hL.lay.mo
     have hle := hL.lay.le
-    refine ⟨hM.n0, hM.n7, hM.mo, hM.tmp, hM.sep, ?_, hM.inv⟩
+    refine ⟨hM.n0, hM.n7, hM.mo, hM.tmp, hM.sep, ?_, hM.inv, hM.red⟩
     rw [U'.wordsVal (fun w hw => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
       rcases hw with rfl | rfl | rfl

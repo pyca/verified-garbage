@@ -1,4 +1,4 @@
-import VerifiedGarbage.Impl.Weierstrass.AArch64
+import VerifiedGarbage.Impl.Weierstrass.AArch64.Comb
 import VerifiedGarbage.Spec.Weierstrass
 
 /-!
@@ -15,7 +15,8 @@ scratch = x4) -> w0`, for a curve whose field elements and scalars are `n`
    Montgomery's ones in Montgomery form, `R² mod n`, and the exponents
    `p - 2` and `n - 2`) are stored as immediates;
 2. the bits of `k`, `p - 2` and `n - 2` are expanded into tables;
-3. `R = [k]G` by the ladder from `R = O = (0 : 1 : 0)`, then
+3. `R = [k]G` by the fixed-base comb (`Impl/Weierstrass/AArch64/Comb.lean`)
+   over the nibbles of `k`, from the curve's tables (`Cfg.tbl`), then
    `x = X Z^(p-2)` (Montgomery's form left by a multiplication by 1) and
    `r = x mod n` (a conditional subtraction, as `x < p < 2n`);
 4. `s = k^(n-2) (e + r d) mod n`, in Montgomery form modulo `n`, then left;
@@ -93,10 +94,14 @@ def nslots := 45
 /-- The table of the bits of `k` (`j = 0`), `p - 2` (1) and `n - 2` (2). -/
 def bitsAt (n j : Nat) : Nat := slot n nslots + 64 * n * j
 
-/-- A curve as the code has it: `n` words, and its parameters. -/
+/-- A curve as the code has it: `n` words, its parameters, and the fixed-base
+comb's tables for `G` (`tbl[j][k - 1]` is `[k 16^j]G`, affine, for `j < 16 n`
+and `k = 1 … 8`) and starting point `[8 Σ_j 16^j]G`. -/
 structure Cfg where
   n : Nat
   C : Spec.Weierstrass.Curve
+  tbl : List (List (Nat × Nat))
+  start : Nat × Nat
 
 namespace Cfg
 
@@ -110,8 +115,18 @@ def mont (x : Nat) : Nat := x * c.R % c.C.p
 
 def sl (i : Nat) : Nat := slot c.n i
 
-def MP' : Mod := { n := c.n, mo := c.sl MP, tmp := c.sl TMP, minv := BitVec.ofNat 64 (minv c.C.p) }
-def MN' : Mod := { n := c.n, mo := c.sl MN, tmp := c.sl TMP, minv := BitVec.ofNat 64 (minv c.C.n) }
+def MP' : Mod where
+  n := c.n
+  mo := c.sl MP
+  tmp := c.sl TMP
+  minv := BitVec.ofNat 64 (minv c.C.p)
+  red := Red.ofModulus c.n c.C.p
+def MN' : Mod where
+  n := c.n
+  mo := c.sl MN
+  tmp := c.sl TMP
+  minv := BitVec.ofNat 64 (minv c.C.n)
+  red := Red.ofModulus c.n c.C.n
 
 def pt (x y z : Nat) : Pt := ⟨c.sl x, c.sl y, c.sl z⟩
 
@@ -126,6 +141,20 @@ def ladderCfg : LadderCfg where
   T := c.pt TX TY TZ
   bits := bitsAt c.n 0
   nbits := 64 * c.n
+
+/-- The comb for `[k]G`, into `R`, from the table of the bits of `k`. -/
+def combCfg : CombCfg where
+  M := c.MP'
+  S := c.rcbSlots
+  A := c.pt RX RY RZ
+  E := c.pt TX TY TZ
+  D := c.pt DX DY DZ
+  neg := c.sl PT
+  zero := c.sl ZERO
+  bits := bitsAt c.n 0
+  tbl := c.tbl.map fun t => t.map fun (x, y) => (c.mont x, c.mont y)
+  start := (c.mont c.start.1, c.mont c.start.2)
+  one := c.mont 1
 
 def powP : PowCfg := ⟨c.MP', c.sl ACC, c.sl PT, c.sl RZ, c.sl ONEP, bitsAt c.n 1, 64 * c.n⟩
 def powN : PowCfg := ⟨c.MN', c.sl ACC, c.sl PT, c.sl KM, c.sl ONEN, bitsAt c.n 2, 64 * c.n⟩
@@ -209,7 +238,7 @@ def sign : Prog isa :=
   .seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n)) <|
   .seq (bits (c.sl EXPP) (bitsAt c.n 1) (8 * c.n)) <|
   .seq (bits (c.sl EXPN) (bitsAt c.n 2) (8 * c.n)) <|
-  .seq (ladder c.ladderCfg) <|
+  .seq (CombCfg.comb c.combCfg) <|
   .seq (pow c.powP) <|
   .seq c.middle <|
   .seq (pow c.powN) c.scalar

@@ -82,20 +82,43 @@ def block : Prog isa :=
 /-- `op dst, src` on XMM registers. -/
 def xb (op : XBinOp) (d r : XReg) : Instr := .xop (.bin op d r)
 
-/-- `x` rotated left by `k` (`0 < k < 32`) in each doubleword, through `xmm4`. -/
+/-- `x` rotated left by `k` (`0 < k < 32`) in each doubleword, through `xmm7`. -/
 def vrot (x : XReg) (k : Nat) : List Instr :=
-  [xb .movdqa .xmm4 x, .xop (.shift .pslld x (BitVec.ofNat 8 k)),
-   .xop (.shift .psrld .xmm4 (BitVec.ofNat 8 (32 - k))), xb .por x .xmm4]
+  [xb .movdqa .xmm7 x, .xop (.shift .pslld x (BitVec.ofNat 8 k)),
+   .xop (.shift .psrld .xmm7 (BitVec.ofNat 8 (32 - k))), xb .por x .xmm7]
 
-/-- The quarter round (RFC 8439 §2.1) on each doubleword of `xmm0, xmm1,
-xmm2, xmm3`, with `xmm4` as scratch (for the four-block code of `vg_chacha20_xor`): a rotation by 16 swaps the words of
-each doubleword (`pshuflw`, `pshufhw`), the others are two shifts and an
-`or`. -/
-def vqr : List Instr :=
-  [xb .paddd .xmm0 .xmm1, xb .pxor .xmm3 .xmm0, .xop (.pshuflw .xmm3 .xmm3 0xb1),
-   .xop (.pshufhw .xmm3 .xmm3 0xb1),
-   xb .paddd .xmm2 .xmm3, xb .pxor .xmm1 .xmm2] ++ vrot .xmm1 12 ++
-  [xb .paddd .xmm0 .xmm1, xb .pxor .xmm3 .xmm0] ++ vrot .xmm3 8 ++
-  [xb .paddd .xmm2 .xmm3, xb .pxor .xmm1 .xmm2] ++ vrot .xmm1 7
+/-- The quarter round (RFC 8439 §2.1) on each doubleword of `a, b, c, d`,
+with `xmm7` as scratch (for the four-block code of `vg_chacha20_xor`): a
+rotation by 16 swaps the words of each doubleword (`pshuflw`, `pshufhw`), the
+others are two shifts and an `or`. -/
+def vqr (a b c d : XReg) : List Instr :=
+  [xb .paddd a b, xb .pxor d a, .xop (.pshuflw d d 0xb1), .xop (.pshufhw d d 0xb1),
+   xb .paddd c d, xb .pxor b c] ++ vrot b 12 ++
+  [xb .paddd a b, xb .pxor d a] ++ vrot d 8 ++
+  [xb .paddd c d, xb .pxor b c] ++ vrot b 7
+
+/-- Where `vqr3` finds its `pshufb` controls in `buf` (through `edi`). -/
+def rot16Off : Nat := 288
+def rot8Off : Nat := 304
+
+/-- The `pshufb` controls that rotate each doubleword left by 16 and by 8
+bits (byte `j` of a doubleword from byte `(j + 2) % 4`, resp. `(j + 3) % 4`),
+as the words stored at `buf + rot16Off` and `buf + rot8Off`, and where. -/
+def maskWords : List (BitVec 32 × Nat) :=
+  [(0x01000302, 288), (0x05040706, 292), (0x09080b0a, 296), (0x0d0c0f0e, 300),
+   (0x02010003, 304), (0x06050407, 308), (0x0a09080b, 312), (0x0e0d0c0f, 316)]
+
+/-- The quarter round (RFC 8439 §2.1) on each doubleword of `a, b, c, d`
+with SSSE3, with `xmm7` as scratch: the rotations by 16 and 8 are `pshufb`
+with the controls at `buf + rot16Off` and `buf + rot8Off`, loaded into
+`xmm7`; the others are two shifts and an `or`. -/
+def vqr3 (a b c d : XReg) : List Instr :=
+  [xb .paddd a b, xb .pxor d a, .movdquLoad .xmm7 (at_ .edi rot16Off), xb .pshufb d .xmm7,
+   xb .paddd c d, xb .pxor b c] ++ vrot b 12 ++
+  [xb .paddd a b, xb .pxor d a, .movdquLoad .xmm7 (at_ .edi rot8Off), xb .pshufb d .xmm7,
+   xb .paddd c d, xb .pxor b c] ++ vrot b 7
+
+/-- Stores the controls of `vqr3` in `buf` (`edi`), through `eax`. -/
+def masks : List Instr := maskWords.flatMap fun p => [.mov .eax (.imm p.1), .store (at_ .edi p.2) .eax]
 
 end VG.Impl.ChaCha20.X86
