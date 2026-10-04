@@ -6,7 +6,7 @@
 ///
 /// Contract: `VG.Spec.Ecdsa.Rfc6979.Instance.signContract`. Constant time but for the number of candidates for `k` tried (almost always 1): timing may depend on the pointers and that number, not otherwise on the key or the hash.
 ///
-/// Computes `h = bits2octets(digest)` by a conditional subtraction of `n` from the digest's leftmost 32 bytes, and each HMAC with `vg_hmac_sha384_init`, `vg_sha512_update` and `vg_hmac_sha384_finalize`, using the start of `scratch` for HMAC's states and working space and the message. Each candidate `k`, the leftmost 32 bytes of `V`, is tried with `vg_ecdsa_p256_sign`, which uses all of `scratch`; whether to try another is computed without branches from its result and the count of candidates left, so the code branches only on that. `K`, `V`, `h`, the count and the pointers are kept in a 200-byte stack frame, whose secrets are cleared before it is popped; the calls use the 24 bytes below it.
+/// Computes `h = bits2octets(digest)` by a conditional subtraction of `n` from the digest's leftmost 32 bytes, and each HMAC with `vg_hmac_sha384_init`, `vg_sha512_update_scratch` and `vg_hmac_sha384_finalize`, using the start of `scratch` for HMAC's states and working space and the message. Each candidate `k`, the leftmost 32 bytes of `V`, is tried with `vg_ecdsa_p256_sign`, which uses all of `scratch`; whether to try another is computed without branches from its result and the count of candidates left, so the code branches only on that. `K`, `V`, `h`, the count and the pointers are kept in a 200-byte stack frame, whose secrets are cleared before it is popped; the calls use the 24 bytes below it.
 ///
 /// # Safety
 ///
@@ -155,7 +155,7 @@ pub(crate) unsafe extern "sysv64" fn vg_ecdsa_p256_sha384_sign(out: *mut [u8; 64
         "mov ecx, 113",
         "mov r8, QWORD PTR [rsp+168]",
         "add r8, 384",
-        "call {vg_sha512_update}",
+        "call {vg_sha512_update_scratch}",
         "mov rdi, QWORD PTR [rsp+168]",
         "add rdi, 0",
         "mov rsi, QWORD PTR [rsp+168]",
@@ -184,7 +184,7 @@ pub(crate) unsafe extern "sysv64" fn vg_ecdsa_p256_sha384_sign(out: *mut [u8; 64
         "mov ecx, 48",
         "mov r8, QWORD PTR [rsp+168]",
         "add r8, 384",
-        "call {vg_sha512_update}",
+        "call {vg_sha512_update_scratch}",
         "mov rdi, QWORD PTR [rsp+168]",
         "add rdi, 0",
         "mov rsi, QWORD PTR [rsp+168]",
@@ -245,7 +245,7 @@ pub(crate) unsafe extern "sysv64" fn vg_ecdsa_p256_sha384_sign(out: *mut [u8; 64
         "mov ecx, 113",
         "mov r8, QWORD PTR [rsp+168]",
         "add r8, 384",
-        "call {vg_sha512_update}",
+        "call {vg_sha512_update_scratch}",
         "mov rdi, QWORD PTR [rsp+168]",
         "add rdi, 0",
         "mov rsi, QWORD PTR [rsp+168]",
@@ -274,7 +274,7 @@ pub(crate) unsafe extern "sysv64" fn vg_ecdsa_p256_sha384_sign(out: *mut [u8; 64
         "mov ecx, 48",
         "mov r8, QWORD PTR [rsp+168]",
         "add r8, 384",
-        "call {vg_sha512_update}",
+        "call {vg_sha512_update_scratch}",
         "mov rdi, QWORD PTR [rsp+168]",
         "add rdi, 0",
         "mov rsi, QWORD PTR [rsp+168]",
@@ -306,7 +306,7 @@ pub(crate) unsafe extern "sysv64" fn vg_ecdsa_p256_sha384_sign(out: *mut [u8; 64
         "mov ecx, 48",
         "mov r8, QWORD PTR [rsp+168]",
         "add r8, 384",
-        "call {vg_sha512_update}",
+        "call {vg_sha512_update_scratch}",
         "mov rdi, QWORD PTR [rsp+168]",
         "add rdi, 0",
         "mov rsi, QWORD PTR [rsp+168]",
@@ -369,7 +369,7 @@ pub(crate) unsafe extern "sysv64" fn vg_ecdsa_p256_sha384_sign(out: *mut [u8; 64
         "mov ecx, 49",
         "mov r8, QWORD PTR [rsp+168]",
         "add r8, 384",
-        "call {vg_sha512_update}",
+        "call {vg_sha512_update_scratch}",
         "mov rdi, QWORD PTR [rsp+168]",
         "add rdi, 0",
         "mov rsi, QWORD PTR [rsp+168]",
@@ -398,7 +398,7 @@ pub(crate) unsafe extern "sysv64" fn vg_ecdsa_p256_sha384_sign(out: *mut [u8; 64
         "mov ecx, 48",
         "mov r8, QWORD PTR [rsp+168]",
         "add r8, 384",
-        "call {vg_sha512_update}",
+        "call {vg_sha512_update_scratch}",
         "mov rdi, QWORD PTR [rsp+168]",
         "add rdi, 0",
         "mov rsi, QWORD PTR [rsp+168]",
@@ -462,7 +462,7 @@ pub(crate) unsafe extern "sysv64" fn vg_ecdsa_p256_sha384_sign(out: *mut [u8; 64
         "ret",
         ".p2align 6",
         vg_hmac_sha384_init = sym super::hmac_sha384::vg_hmac_sha384_init,
-        vg_sha512_update = sym super::sha512::vg_sha512_update,
+        vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch,
         vg_hmac_sha384_finalize = sym super::hmac_sha384::vg_hmac_sha384_finalize,
         vg_ecdsa_p256_sign = sym super::ecdsa_p256::vg_ecdsa_p256_sign,
     )
@@ -475,7 +475,7 @@ pub(crate) const VG_ECDSA_P256_SHA384_SIGN_AVX2_FEATURES: crate::cpu::Features =
 ///
 /// Contract: `VG.Spec.Ecdsa.Rfc6979.Instance.signContract`. Constant time but for the number of candidates for `k` tried (almost always 1): timing may depend on the pointers and that number, not otherwise on the key or the hash.
 ///
-/// Computes `h = bits2octets(digest)` by a conditional subtraction of `n` from the digest's leftmost 32 bytes, and each HMAC with `vg_hmac_sha384_init_avx2`, `vg_sha512_update_avx2` and `vg_hmac_sha384_finalize_avx2`, using the start of `scratch` for HMAC's states and working space and the message. Each candidate `k`, the leftmost 32 bytes of `V`, is tried with `vg_ecdsa_p256_sign`, which uses all of `scratch`; whether to try another is computed without branches from its result and the count of candidates left, so the code branches only on that. `K`, `V`, `h`, the count and the pointers are kept in a 200-byte stack frame, whose secrets are cleared before it is popped; the calls use the 24 bytes below it.
+/// Computes `h = bits2octets(digest)` by a conditional subtraction of `n` from the digest's leftmost 32 bytes, and each HMAC with `vg_hmac_sha384_init_avx2`, `vg_sha512_update_scratch_avx2` and `vg_hmac_sha384_finalize_avx2`, using the start of `scratch` for HMAC's states and working space and the message. Each candidate `k`, the leftmost 32 bytes of `V`, is tried with `vg_ecdsa_p256_sign`, which uses all of `scratch`; whether to try another is computed without branches from its result and the count of candidates left, so the code branches only on that. `K`, `V`, `h`, the count and the pointers are kept in a 200-byte stack frame, whose secrets are cleared before it is popped; the calls use the 24 bytes below it.
 ///
 /// # Safety
 ///
@@ -625,7 +625,7 @@ pub(crate) unsafe extern "sysv64" fn vg_ecdsa_p256_sha384_sign_avx2(out: *mut [u
         "mov ecx, 113",
         "mov r8, QWORD PTR [rsp+168]",
         "add r8, 384",
-        "call {vg_sha512_update_avx2}",
+        "call {vg_sha512_update_scratch_avx2}",
         "mov rdi, QWORD PTR [rsp+168]",
         "add rdi, 0",
         "mov rsi, QWORD PTR [rsp+168]",
@@ -654,7 +654,7 @@ pub(crate) unsafe extern "sysv64" fn vg_ecdsa_p256_sha384_sign_avx2(out: *mut [u
         "mov ecx, 48",
         "mov r8, QWORD PTR [rsp+168]",
         "add r8, 384",
-        "call {vg_sha512_update_avx2}",
+        "call {vg_sha512_update_scratch_avx2}",
         "mov rdi, QWORD PTR [rsp+168]",
         "add rdi, 0",
         "mov rsi, QWORD PTR [rsp+168]",
@@ -715,7 +715,7 @@ pub(crate) unsafe extern "sysv64" fn vg_ecdsa_p256_sha384_sign_avx2(out: *mut [u
         "mov ecx, 113",
         "mov r8, QWORD PTR [rsp+168]",
         "add r8, 384",
-        "call {vg_sha512_update_avx2}",
+        "call {vg_sha512_update_scratch_avx2}",
         "mov rdi, QWORD PTR [rsp+168]",
         "add rdi, 0",
         "mov rsi, QWORD PTR [rsp+168]",
@@ -744,7 +744,7 @@ pub(crate) unsafe extern "sysv64" fn vg_ecdsa_p256_sha384_sign_avx2(out: *mut [u
         "mov ecx, 48",
         "mov r8, QWORD PTR [rsp+168]",
         "add r8, 384",
-        "call {vg_sha512_update_avx2}",
+        "call {vg_sha512_update_scratch_avx2}",
         "mov rdi, QWORD PTR [rsp+168]",
         "add rdi, 0",
         "mov rsi, QWORD PTR [rsp+168]",
@@ -776,7 +776,7 @@ pub(crate) unsafe extern "sysv64" fn vg_ecdsa_p256_sha384_sign_avx2(out: *mut [u
         "mov ecx, 48",
         "mov r8, QWORD PTR [rsp+168]",
         "add r8, 384",
-        "call {vg_sha512_update_avx2}",
+        "call {vg_sha512_update_scratch_avx2}",
         "mov rdi, QWORD PTR [rsp+168]",
         "add rdi, 0",
         "mov rsi, QWORD PTR [rsp+168]",
@@ -839,7 +839,7 @@ pub(crate) unsafe extern "sysv64" fn vg_ecdsa_p256_sha384_sign_avx2(out: *mut [u
         "mov ecx, 49",
         "mov r8, QWORD PTR [rsp+168]",
         "add r8, 384",
-        "call {vg_sha512_update_avx2}",
+        "call {vg_sha512_update_scratch_avx2}",
         "mov rdi, QWORD PTR [rsp+168]",
         "add rdi, 0",
         "mov rsi, QWORD PTR [rsp+168]",
@@ -868,7 +868,7 @@ pub(crate) unsafe extern "sysv64" fn vg_ecdsa_p256_sha384_sign_avx2(out: *mut [u
         "mov ecx, 48",
         "mov r8, QWORD PTR [rsp+168]",
         "add r8, 384",
-        "call {vg_sha512_update_avx2}",
+        "call {vg_sha512_update_scratch_avx2}",
         "mov rdi, QWORD PTR [rsp+168]",
         "add rdi, 0",
         "mov rsi, QWORD PTR [rsp+168]",
@@ -932,7 +932,7 @@ pub(crate) unsafe extern "sysv64" fn vg_ecdsa_p256_sha384_sign_avx2(out: *mut [u
         "ret",
         ".p2align 6",
         vg_hmac_sha384_init_avx2 = sym super::hmac_sha384::vg_hmac_sha384_init_avx2,
-        vg_sha512_update_avx2 = sym super::sha512::vg_sha512_update_avx2,
+        vg_sha512_update_scratch_avx2 = sym super::sha512::vg_sha512_update_scratch_avx2,
         vg_hmac_sha384_finalize_avx2 = sym super::hmac_sha384::vg_hmac_sha384_finalize_avx2,
         vg_ecdsa_p256_sign = sym super::ecdsa_p256::vg_ecdsa_p256_sign,
     )
@@ -945,7 +945,7 @@ pub(crate) const VG_ECDSA_P256_SHA384_SIGN_SHANI_FEATURES: crate::cpu::Features 
 ///
 /// Contract: `VG.Spec.Ecdsa.Rfc6979.Instance.signContract`. Constant time but for the number of candidates for `k` tried (almost always 1): timing may depend on the pointers and that number, not otherwise on the key or the hash.
 ///
-/// Computes `h = bits2octets(digest)` by a conditional subtraction of `n` from the digest's leftmost 32 bytes, and each HMAC with `vg_hmac_sha384_init_shani`, `vg_sha512_update_shani` and `vg_hmac_sha384_finalize_shani`, using the start of `scratch` for HMAC's states and working space and the message. Each candidate `k`, the leftmost 32 bytes of `V`, is tried with `vg_ecdsa_p256_sign`, which uses all of `scratch`; whether to try another is computed without branches from its result and the count of candidates left, so the code branches only on that. `K`, `V`, `h`, the count and the pointers are kept in a 200-byte stack frame, whose secrets are cleared before it is popped; the calls use the 24 bytes below it.
+/// Computes `h = bits2octets(digest)` by a conditional subtraction of `n` from the digest's leftmost 32 bytes, and each HMAC with `vg_hmac_sha384_init_shani`, `vg_sha512_update_scratch_shani` and `vg_hmac_sha384_finalize_shani`, using the start of `scratch` for HMAC's states and working space and the message. Each candidate `k`, the leftmost 32 bytes of `V`, is tried with `vg_ecdsa_p256_sign`, which uses all of `scratch`; whether to try another is computed without branches from its result and the count of candidates left, so the code branches only on that. `K`, `V`, `h`, the count and the pointers are kept in a 200-byte stack frame, whose secrets are cleared before it is popped; the calls use the 24 bytes below it.
 ///
 /// # Safety
 ///
@@ -1095,7 +1095,7 @@ pub(crate) unsafe extern "sysv64" fn vg_ecdsa_p256_sha384_sign_shani(out: *mut [
         "mov ecx, 113",
         "mov r8, QWORD PTR [rsp+168]",
         "add r8, 384",
-        "call {vg_sha512_update_shani}",
+        "call {vg_sha512_update_scratch_shani}",
         "mov rdi, QWORD PTR [rsp+168]",
         "add rdi, 0",
         "mov rsi, QWORD PTR [rsp+168]",
@@ -1124,7 +1124,7 @@ pub(crate) unsafe extern "sysv64" fn vg_ecdsa_p256_sha384_sign_shani(out: *mut [
         "mov ecx, 48",
         "mov r8, QWORD PTR [rsp+168]",
         "add r8, 384",
-        "call {vg_sha512_update_shani}",
+        "call {vg_sha512_update_scratch_shani}",
         "mov rdi, QWORD PTR [rsp+168]",
         "add rdi, 0",
         "mov rsi, QWORD PTR [rsp+168]",
@@ -1185,7 +1185,7 @@ pub(crate) unsafe extern "sysv64" fn vg_ecdsa_p256_sha384_sign_shani(out: *mut [
         "mov ecx, 113",
         "mov r8, QWORD PTR [rsp+168]",
         "add r8, 384",
-        "call {vg_sha512_update_shani}",
+        "call {vg_sha512_update_scratch_shani}",
         "mov rdi, QWORD PTR [rsp+168]",
         "add rdi, 0",
         "mov rsi, QWORD PTR [rsp+168]",
@@ -1214,7 +1214,7 @@ pub(crate) unsafe extern "sysv64" fn vg_ecdsa_p256_sha384_sign_shani(out: *mut [
         "mov ecx, 48",
         "mov r8, QWORD PTR [rsp+168]",
         "add r8, 384",
-        "call {vg_sha512_update_shani}",
+        "call {vg_sha512_update_scratch_shani}",
         "mov rdi, QWORD PTR [rsp+168]",
         "add rdi, 0",
         "mov rsi, QWORD PTR [rsp+168]",
@@ -1246,7 +1246,7 @@ pub(crate) unsafe extern "sysv64" fn vg_ecdsa_p256_sha384_sign_shani(out: *mut [
         "mov ecx, 48",
         "mov r8, QWORD PTR [rsp+168]",
         "add r8, 384",
-        "call {vg_sha512_update_shani}",
+        "call {vg_sha512_update_scratch_shani}",
         "mov rdi, QWORD PTR [rsp+168]",
         "add rdi, 0",
         "mov rsi, QWORD PTR [rsp+168]",
@@ -1309,7 +1309,7 @@ pub(crate) unsafe extern "sysv64" fn vg_ecdsa_p256_sha384_sign_shani(out: *mut [
         "mov ecx, 49",
         "mov r8, QWORD PTR [rsp+168]",
         "add r8, 384",
-        "call {vg_sha512_update_shani}",
+        "call {vg_sha512_update_scratch_shani}",
         "mov rdi, QWORD PTR [rsp+168]",
         "add rdi, 0",
         "mov rsi, QWORD PTR [rsp+168]",
@@ -1338,7 +1338,7 @@ pub(crate) unsafe extern "sysv64" fn vg_ecdsa_p256_sha384_sign_shani(out: *mut [
         "mov ecx, 48",
         "mov r8, QWORD PTR [rsp+168]",
         "add r8, 384",
-        "call {vg_sha512_update_shani}",
+        "call {vg_sha512_update_scratch_shani}",
         "mov rdi, QWORD PTR [rsp+168]",
         "add rdi, 0",
         "mov rsi, QWORD PTR [rsp+168]",
@@ -1402,7 +1402,7 @@ pub(crate) unsafe extern "sysv64" fn vg_ecdsa_p256_sha384_sign_shani(out: *mut [
         "ret",
         ".p2align 6",
         vg_hmac_sha384_init_shani = sym super::hmac_sha384::vg_hmac_sha384_init_shani,
-        vg_sha512_update_shani = sym super::sha512::vg_sha512_update_shani,
+        vg_sha512_update_scratch_shani = sym super::sha512::vg_sha512_update_scratch_shani,
         vg_hmac_sha384_finalize_shani = sym super::hmac_sha384::vg_hmac_sha384_finalize_shani,
         vg_ecdsa_p256_sign = sym super::ecdsa_p256::vg_ecdsa_p256_sign,
     )
