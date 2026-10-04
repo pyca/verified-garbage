@@ -106,7 +106,7 @@ theorem stage₂ (hc : CfgOk c) (hC : Law c.C) {s₀ : State} {base : Addr} {s :
     by rw [e₆ (by decide) (by decide) (by decide), hS.e],
     by rw [flag_unch U₆ h7 h0 hn (by decide), flag_unch U₅ h7 h0 hn (by decide), hS.flag], ?_, ?_, lt₆, ?_,
     ?_⟩
-  · rw [K₆.gpr _ (r14_not_powClob hc.n4), K₅.gpr _ (r14_not_powClob hc.n4), hS.r14]
+  · rw [K₆.gpr _ (rsi_not_powClob _), K₅.gpr _ (rsi_not_powClob _), hS.rsi]
   · intro t ht
     rw [tbl_unch U₆ h7 hn (j := 2) (by decide) ht (tbl_apart_slW (by decide) 2 t),
       tbl_unch U₅ h7 hn (j := 2) (by decide) ht (tbl_apart_slW (by decide) 2 t)]
@@ -189,7 +189,7 @@ theorem stage₃ (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State} (hS : S
     by rw [x₉]; exact Mp.x_lt,
     by rw [x₉, Mp.x, tR RX (by simp), tR RZ (by simp), hS.acc],
     by rw [rr₉, x₉]; exact Mp.rr, ?_, ?_⟩
-  · rw [K₉.gpr _ (r14_not_powClob hc.n4), k₈.gpr _ (by decide), Mp.gpr _ (r14_not_clob hc.n4), hS.r14]
+  · rw [K₉.gpr _ (rsi_not_powClob _), k₈.gpr _ (by decide), Mp.gpr _ (rsi_not_clob _), hS.rsi]
   · rw [flag_unch U₉ h7 h0 hn (by decide), f₈, flag_unch Mp.unch h7 h0 hn (by decide), hS.flag,
       e₇ (i := D) (by decide) (by decide), e₇ (i := K) (by decide) (by decide), hS.d, hS.k, Mp.rr, x₉]
   · refine v₉.trans ?_
@@ -241,11 +241,11 @@ theorem stage₄ (hc : CfgOk c) (hC : Law c.C) {s₀ : State} (hp : Pre c s₀) 
     rw [f₁₂, flag_unch U₁₁ h7 h0 hn (by decide), flag_unch U₁₀ h7 h0 hn (by decide), hS.flag,
       BitVec.allOnes_and, mask_and, mask_and, mask_and]
     simp only [mask, decide_eq_true_eq]
-  have hr14 : s₁₂.gpr .r14 = s₀.gpr .rdi := by
-    rw [k₁₂.gpr _ (by decide), g₁₁ _ (r14_not_clob hc.n4), g₁₀ _ (r14_not_clob hc.n4), hS.r14]
+  have hrsi : s₁₂.gpr .rsi = s₀.gpr .rdi := by
+    rw [k₁₂.gpr _ (by decide), g₁₁ _ (rsi_not_clob _), g₁₀ _ (rsi_not_clob _), hS.rsi]
   have hw : (⟨s₀.gpr .rdi, 16 * c.n⟩ : Region) ∈ s₁₂.wr := by
     rw [k₁₂.wr, wr₁₁, wr₁₀, hS.wr, hp.wr]; simp
-  refine WP.mono (finish_ok hc hs₁₂ hr14 hw (hb ▸ hp.out_sc) F₁₂.saved _ hflag)
+  refine WP.mono (finish_ok hc hs₁₂ hrsi hw (hb ▸ hp.out_sc) F₁₂.saved _ hflag)
     fun s' ⟨bytes, rax, saved, _⟩ => ⟨saved, ?_⟩
   -- The specification.
   have hsig := signWith_eq hC (C := c.C) (d := dv c s₀) (e := ev c s₀) (k := kv c s₀) hS.rep hS.x_lt hS.x

@@ -3,7 +3,12 @@
 //! `vg_ecdsa_p256_sign`), public keys (`vg_ec_p256_public_key`), and
 //! verification (`vg_ecdsa_p256_verify`).
 
-#![cfg(any(target_arch = "x86_64", target_arch = "x86", target_arch = "aarch64"))]
+#![cfg(any(
+    target_arch = "x86_64",
+    target_arch = "x86",
+    target_arch = "aarch64",
+    target_arch = "arm"
+))]
 
 use super::{Error, P256, SignatureHash, SigningKey, sealed};
 use crate::arch::ec_p256::vg_ec_p256_public_key;
@@ -60,7 +65,7 @@ type SignFn<const N: usize> = unsafe extern "sysv64" fn(
     *mut [u64; 1024],
 ) -> u32;
 /// A verified `vg_ecdsa_p256_<hash>_sign`, for a hash of `N` bytes.
-#[cfg(any(target_arch = "x86", target_arch = "aarch64"))]
+#[cfg(any(target_arch = "x86", target_arch = "aarch64", target_arch = "arm"))]
 type SignFn<const N: usize> =
     unsafe extern "C" fn(*mut [u8; 64], *const [u8; 32], *const [u8; N], *mut [u64; 1024]) -> u32;
 

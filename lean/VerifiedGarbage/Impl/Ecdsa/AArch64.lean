@@ -132,12 +132,14 @@ def MP' : Mod where
   tmp := c.sl TMP
   minv := BitVec.ofNat 64 (minv c.C.p)
   red := Red.ofModulus c.n c.C.p
+  tight := tightOk c.n c.C.p
 def MN' : Mod where
   n := c.n
   mo := c.sl MN
   tmp := c.sl TMP
   minv := BitVec.ofNat 64 (minv c.C.n)
   red := Red.ofModulus c.n c.C.n
+  tight := tightOk c.n c.C.n
 
 def pt (x y z : Nat) : Pt := ⟨c.sl x, c.sl y, c.sl z⟩
 

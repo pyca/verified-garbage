@@ -28,14 +28,12 @@ abbrev size : Nat := 8192
 and fit in `n` words (`n < 7`), `G` is on the curve, `p < 2n` (so `x mod n`
 is one conditional subtraction), the Montgomery constants are right,
 encodings are `8 n` bytes, and a hash of `8 n` bytes is not truncated.
-`n ≤ 4`: the code keeps `out` in `r14`, which the multiplications of more
-words use. The group law needs more (`Weierstrass.Law`, which a prime field
+The group law needs more (`Weierstrass.Law`, which a prime field
 and no point of order 2 give: `Weierstrass.Good.law`), which only the proofs
 of the results take. -/
 structure CfgOk (c : Cfg) : Prop where
   n0 : 0 < c.n
   n7 : c.n < 7
-  n4 : c.n ≤ 4
   onG : onCurve c.C (G c.C) = true
   p_odd : c.C.p % 2 = 1
   n_odd : c.C.n % 2 = 1
@@ -93,14 +91,14 @@ theorem Pre.setup {c : Cfg} {s : State} (hp : Pre c s) (h7 : c.n < 7) : SetupPre
 abbrev sv (c : Cfg) (base : Addr) (s : State) (i : Nat) : Nat := wordsVal s.mem base (c.sl i) c.n
 
 /-- What `setup` leaves, from the state `s₀` at entry, with the working space
-at `base = r8`: `rdi = base`, `out` in `r14`, the callee-saved registers in
+at `base = r8`: `rdi = base`, `out` in `rsi`, the callee-saved registers in
 `[0, 48)`, `k`, `d` and the hash in their slots, the constants in theirs,
-and the flag all ones; only `rax`, `rdi` and `r14` and the working space
-changed. -/
+and the flag all ones; only `rax`, `rdi`, `r14` and `rsi` and the working
+space changed. -/
 structure SetupPost (c : Cfg) (s₀ : State) (base : Addr) (s : State) : Prop where
   scr : Scr s base size
-  r14 : s.gpr .r14 = s₀.gpr .rdi
-  keep : KeepRegs [.rax, .rdi, .r14] s₀ s
+  rsi : s.gpr .rsi = s₀.gpr .rdi
+  keep : KeepRegs [.rax, .rdi, .r14, .rsi] s₀ s
   unch : Unch base [(0, size)] s₀.mem s.mem
   saved : Spill.Saved s.mem base s₀.gpr Cfg.saved
   k : sv c base s K = ofBytes (Spec.Ecdsa.bytesAt s₀.mem (s₀.gpr .rcx) (8 * c.n))

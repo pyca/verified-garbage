@@ -1,7 +1,6 @@
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Hmac
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Bytes
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Words32
 import VerifiedGarbage.Proof.Pbkdf2.Whole.Common
-import VerifiedGarbage.Proof.Weierstrass.Words32
 
 /-!
 # Deterministic ECDSA on x86 (32-bit): `h = bits2octets(digest)`
@@ -21,32 +20,6 @@ open VG.Proof.Mont.X86 (wp_movS wp_subS wp_sbbS wp_storeS)
 open VG.Impl.Pbkdf2.Stream.X86 (at_)
 
 /-! ## The arithmetic -/
-
-/-- The words of `n`, least significant first. -/
-def nW (j : Nat) : BitVec 32 := BitVec.ofNat 32 (Spec.P256.n >>> (32 * j))
-
-/-- The words `j < k` of a number, least significant first. -/
-def wsum (f : Nat → BitVec 32) : Nat → Nat
-  | 0 => 0
-  | k + 1 => (f k).toNat * 2 ^ (32 * k) + wsum f k
-
-theorem wsum_lt (f : Nat → BitVec 32) : ∀ k, wsum f k < 2 ^ (32 * k)
-  | 0 => by simp [wsum]
-  | k + 1 => by
-    have := wsum_lt f k
-    have := (f k).isLt
-    simp only [wsum]
-    rw [show 32 * (k + 1) = 32 + 32 * k by omega, Nat.pow_add]
-    have h1 : (f k).toNat * 2 ^ (32 * k) ≤ (2 ^ 32 - 1) * 2 ^ (32 * k) := Nat.mul_le_mul_right _ (by omega)
-    have h2 : (2 ^ 32 - 1) * 2 ^ (32 * k) + 2 ^ (32 * k) = 2 ^ 32 * 2 ^ (32 * k) := by
-      rw [Nat.sub_mul, Nat.one_mul, Nat.sub_add_cancel (Nat.le_mul_of_pos_left _ (by decide))]
-    omega
-
-theorem nW_sum : wsum nW 8 = Spec.P256.n := by
-  simp only [wsum, nW]
-  decide +kernel
-
-theorem n_ge : 2 ^ 255 ≤ Spec.P256.n := by decide +kernel
 
 /-- `sbb`'s borrow. -/
 theorem sbb32 (a b : BitVec 32) (c : Bool) :
@@ -84,31 +57,6 @@ theorem chain (m : Mem) (dg : Addr) : ∀ k,
     generalize (Xw m dg k).toNat = X at *
     generalize (nW k).toNat = N at *
     grind
-
-theorem sel_mask32 (x d : BitVec 32) (c : Bool) :
-    ((x ^^^ d) &&& (if c then BitVec.allOnes 32 else 0)) ^^^ d = if c then x else d := by
-  cases c
-  · simp
-  · simp only [ite_true, BitVec.and_allOnes, BitVec.xor_assoc, BitVec.xor_self, BitVec.xor_zero]
-
-theorem wsum_sel (f g : Nat → BitVec 32) (c : Bool) :
-    ∀ k, wsum (fun i => if c then f i else g i) k = if c then wsum f k else wsum g k := by
-  intro k; cases c <;> simp
-
-/-- The words of `4 k` bytes, each the byte reversal of a word, big-endian. -/
-theorem ofBytes_words (m : Mem) (f : Nat → BitVec 32) : ∀ (p : Addr) (k : Nat),
-    (∀ j < k, byteRev32 (m.readW (p + BitVec.ofNat 64 (4 * (k - 1 - j))) 32) = f j) →
-    Spec.Weierstrass.ofBytes (Spec.Ecdsa.bytesAt m p (4 * k)) = wsum f k
-  | _, 0, _ => rfl
-  | p, k + 1, h => by
-    have h0 := h k (by omega)
-    simp only [Nat.add_sub_cancel, Nat.sub_self, Nat.mul_zero, BitVec.add_zero] at h0
-    rw [show 4 * (k + 1) = 4 + 4 * k by omega, Proof.Weierstrass.bytesAt_add,
-      Proof.Weierstrass.ofBytes_append, Proof.Weierstrass.length_bytesAt,
-      ofBytes_words m f (p + BitVec.ofNat 64 4) k fun j hj => by
-        rw [Offset.add_add, show 4 + 4 * (k - 1 - j) = 4 * (k + 1 - 1 - j) by omega]; exact h j (by omega),
-      ← Proof.Weierstrass.byteRev32_ofBytes, h0, wsum, show (256 : Nat) ^ (4 * k) = 2 ^ (32 * k) by
-        rw [show (256 : Nat) = 2 ^ 8 from rfl, ← Nat.pow_mul]; congr 1; omega]
 
 /-! ## The code -/
 

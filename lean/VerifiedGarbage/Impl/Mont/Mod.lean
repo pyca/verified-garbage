@@ -59,14 +59,20 @@ def Red.ofModulus (n m : Nat) : Red :=
     .friendly ((List.range n).map fun j => MWord.ofNat ((m + 1) / 2 ^ 64 / 2 ^ (64 * j) % 2 ^ 64))
   else .general
 
+/-- `(2⁶⁴ + 1) m ≤ 2^(64 (n + 1))`: a number below `2m` plus a word times
+one below `m` fits in `n + 1` words (`m`'s top word is not all ones). -/
+def tightOk (n m : Nat) : Bool := (2 ^ 64 + 1) * m ≤ 2 ^ (64 * (n + 1))
+
 /-- A modulus: its number of words `n`, where it is (`mo`, `n` words), the
 working space's temporary area (`tmp`, `n` words), `minv = -m⁻¹ mod 2⁶⁴`,
-and its reduction (`red`, which only some targets use). -/
+its reduction (`red`), and whether it is `tightOk` (`tight`), which only
+some targets use. -/
 structure Mod where
   n : Nat
   mo : Nat
   tmp : Nat
   minv : BitVec 64
   red : Red := .general
+  tight : Bool := false
 
 end VG.Impl.Mont

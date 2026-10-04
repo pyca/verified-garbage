@@ -6,11 +6,13 @@ import VerifiedGarbage.Spec.Weierstrass
 
 `vg_ecdsa_<curve>_sign(out = rdi, d = rsi, digest = rdx, k = rcx,
 scratch = r8) -> eax`, for a curve whose field elements and scalars are `n`
-64-bit words (`n = 4` for the 256-bit curves), from the code of
+64-bit words (`n = 4` for the 256-bit curves, at most 6), from the code of
 `Impl/Weierstrass/X86_64.lean`:
 
 1. the callee-saved registers are saved in the working space, whose base is
-   then `rdi`, and `out` is kept in `r14`; `k`, `d` and the hash are read big-endian into slots,
+   then `rdi`, and `out` is kept in `rsi`, which the multiplications leave
+   (those of six words use every register from `r8` to `r15`); `k`, `d` and
+   the hash are read big-endian into slots,
    and the constants (the moduli, `a`, `3b`, `G` and Montgomery's ones in
    Montgomery form, `R² mod n`, and the exponents `p - 2` and `n - 2`) are
    stored as immediates;
@@ -138,15 +140,17 @@ def consts : List (Nat × Nat) :=
     (B3P, c.mont (3 * c.C.b)), (GX, c.mont c.C.gx), (GY, c.mont c.C.gy), (R2N, c.R * c.R % c.C.n),
     (ONEN, c.R % c.C.n), (EXPP, c.C.p - 2), (EXPN, c.C.n - 2), (RX, 0), (RY, c.mont 1), (RZ, 0)]
 
-/-- Saves them, with the working space in `r8`, which then goes to `rdi`,
-keeps `out` in `r14`; reads `k`, `d` and the hash; stores the constants; and sets
-`R = (0 : 1 : 0)` and the flag to all ones. -/
+/-- Saves them, with the working space in `r8`, which then goes to `rdi`
+(`out` going to `r14` meanwhile); reads `k`, `d` and the hash; stores the
+constants; sets `R = (0 : 1 : 0)` and the flag to all ones; and keeps `out`
+in `rsi`, which nothing after it writes (the multiplications of six words
+use `r14`). -/
 def setup : List Instr :=
   saved.map (fun (r, d) => .store { base := .r8, disp := (d : Int) } r) ++
   [.mov .r14 (.reg .rdi), .mov .rdi (.reg .r8)] ++
   loadBE c.n (c.sl K) .rcx ++ loadBE c.n (c.sl D) .rsi ++ loadBE c.n (c.sl E) .rdx ++
   c.consts.flatMap (fun (i, x) => setConst c.n (c.sl i) x) ++
-  setConst 1 (c.sl FLAG) (2 ^ 64 - 1)
+  setConst 1 (c.sl FLAG) (2 ^ 64 - 1) ++ [.mov .rsi (.reg .r14)]
 
 /-- The mask `rdx` of `[a] ≠ 0` (all ones if it is not zero). -/
 def nonzero (a : Nat) : List Instr :=
@@ -182,7 +186,7 @@ def middle : Prog isa :=
 callee-saved registers restored. -/
 def finish : List Instr :=
   [.mov .rcx (.mem (sc (c.sl FLAG)))] ++
-  storeBE c.n .r14 0 (c.sl RR) ++ storeBE c.n .r14 (8 * c.n) (c.sl SS) ++
+  storeBE c.n .rsi 0 (c.sl RR) ++ storeBE c.n .rsi (8 * c.n) (c.sl SS) ++
   [.mov .rax (.reg .rcx), .alu .and .rax (.imm 1)] ++
   saved.map (fun (r, d) => .mov r (.mem (sc d)))
 
