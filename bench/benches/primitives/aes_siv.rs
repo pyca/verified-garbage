@@ -8,7 +8,7 @@ pub const USES: &[&str] = &["aes_siv", "aes", "cmac_aes"];
 /// 32-byte key (AES-128 for each half) and one 16-byte associated-data
 /// component. OpenSSL's runs through its `AES-128-SIV` cipher (fetched from
 /// the default provider), which rust-openssl has no shortcut for.
-#[cfg(target_arch = "x86_64")]
+#[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
 pub fn bench(c: &mut Criterion) {
     use std::hint::black_box;
 
@@ -80,5 +80,5 @@ pub fn bench(c: &mut Criterion) {
     }
 }
 
-#[cfg(not(target_arch = "x86_64"))]
+#[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
 pub fn bench(_: &mut Criterion) {}
