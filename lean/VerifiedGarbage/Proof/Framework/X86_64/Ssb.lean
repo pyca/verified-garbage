@@ -288,9 +288,15 @@ The analysis keeps the taint of the current state (`base`) and the *young*
 public slots: `(sl, a)` means that `sl` may be public only in the memories
 less than `a` instructions old (it was stored `a` instructions ago). A public
 slot without such an entry is public in every memory up to `W` instructions
-old. Only stores add young slots, every instruction ages them, and they are
-forgotten once `W` old: in straight-line code far from a store there are
-none, and the analysis costs a check that the list is empty. -/
+old. Only a store of a public register adds a young slot, every instruction
+ages them, and they are forgotten once `W` old.
+
+The kernel evaluates `step` for every instruction, so its common case costs
+little more than `Taint.stepKD`: with nothing young (`stepFast`), one match on
+the instruction, which also adds the slot a public store creates. Otherwise
+only a load into a register is analysed a second time, on the slots the
+loads see (`specBase`); for any other instruction those do not matter
+(`stepKD_slots_irrel`). -/
 
 abbrev Slot := Nat × Nat × Nat
 
@@ -316,21 +322,109 @@ with no young entry. -/
 def specBase (σ : T) : Taint.T :=
   { σ.base with slots := KList.filter (old W σ) σ.base.slots }
 
-/-- The young slots one instruction later, adding the slots of `slots'` that
-are not public now. -/
-def aged (σ : T) (slots' : List Slot) (store : Bool) : List (Slot × Nat) :=
-  KList.append
-    (bif store then KList.map (fun sl => (sl, 0)) (KList.filter (fun sl => !Taint.mem3 sl σ.base.slots) slots')
-     else [])
+/-- The young entry of the slot a store added: a store keeps or removes
+slots, or adds one at the head (`stepKD_slots_cases`). -/
+def added (σ : T) (slots' : List Slot) : List (Slot × Nat) :=
+  match slots' with
+  | x :: _ => bif Taint.mem3 x σ.base.slots then [] else [(x, 0)]
+  | [] => []
+
+/-- The young slots one instruction later, with the slot it added if any. -/
+def aged (σ : T) (slots' : List Slot) : List (Slot × Nat) :=
+  KList.append (added σ slots')
     (KList.filter (fun p => Nat.blt p.2 W) (KList.map (fun p => (p.1, p.2 + 1)) σ.young))
 
+/-- Whether an instruction may add a public slot: a store of a public register. -/
+def mayAdd (τ : Taint.T) : Instr → Bool
+  | .store _ r | .store32 _ r | .store8 _ r => Taint.pub τ r
+  | _ => false
+
+section
+open _root_.VG.X86_64.Taint (srcOkK setK srcPub loadPubK movBasesK killK loPub storeStepKD aluStepK pub memPub
+  storeStepK mulStep mulxStepK adxStepK)
+
+/-- `step` when nothing is young (`stepFast_eq`): `Taint.stepKD` with the
+young entry of the slot a store of a public register may add, in one match on
+the instruction (most instructions take this path). -/
+def stepFast (σ : T) (τ : Taint.T) : Instr → Option T
+  | .mov d src =>
+    bif srcOkK τ src then
+      some { base := { τ with
+        regs := setK τ d (srcPub τ src || loadPubK τ 8 src), bases := movBasesK τ d src, lo := .empty } }
+    else none
+  | .mov32 d src =>
+    bif srcOkK τ src then
+      some { base := { τ with
+        regs := setK τ d (srcPub τ src || loadPubK τ 4 src || loPub τ src), bases := killK τ d, lo := .empty } }
+    else none
+  | .store m r => (storeStepKD τ m 8 (pub τ r)).map fun τ₀ =>
+    { base := τ₀, young := bif pub τ r then added σ τ₀.slots else [] }
+  | .store32 m r => (storeStepKD τ m 4 (pub τ r)).map fun τ₀ =>
+    { base := τ₀, young := bif pub τ r then added σ τ₀.slots else [] }
+  | .store8 m r => (storeStepKD τ m 1 (pub τ r)).map fun τ₀ =>
+    { base := τ₀, young := bif pub τ r then added σ τ₀.slots else [] }
+  | .alu op d src => (aluStepK τ op d src true).map fun τ₀ => { base := τ₀ }
+  | .alu32 op d src => (aluStepK τ op d src false).map fun τ₀ => { base := τ₀ }
+  | .shift32 _ d _ | .shift _ d _ =>
+    some { base := { τ with flags := τ.flags && pub τ d, bases := killK τ d, lo := .empty } }
+  | .bswap32 d | .bswap d => some { base := { τ with bases := killK τ d, lo := .empty } }
+  | .rorx32 d r _ | .rorx d r _ =>
+    some { base := { τ with regs := setK τ d (pub τ r), bases := killK τ d, lo := .empty } }
+  | .andn32 d a b | .andn d a b =>
+    let p := pub τ a && pub τ b
+    some { base := { τ with regs := setK τ d p, flags := p, bases := killK τ d, lo := .empty } }
+  | .movImm64 d _ => some { base := { τ with regs := setK τ d true, bases := killK τ d, lo := .empty } }
+  | .movzx8 d m =>
+    bif memPub τ m then some { base := { τ with regs := setK τ d false, bases := killK τ d, lo := .empty } } else none
+  | .vpmovmskb _ d _ => some { base := { τ with regs := setK τ d false, bases := killK τ d, lo := .empty } }
+  | .movdquLoad _ m => bif memPub τ m then some { base := τ } else none
+  | .movdquStore m _ => (storeStepK τ m 16 false).map fun τ₀ => { base := τ₀ }
+  | .xop _ | .vop _ => some { base := τ }
+  | .vmovdquLoad _ _ m | .vbroadcasti128 _ m => bif memPub τ m then some { base := τ } else none
+  | .vmovdquStore .l128 m _ => (storeStepK τ m 16 false).map fun τ₀ => { base := τ₀ }
+  | .vmovdquStore .l256 m _ => (storeStepK τ m 32 false).map fun τ₀ => { base := τ₀ }
+  | .zop _ => some { base := τ }
+  | .vmovdqu32Load _ m | .vbroadcasti32x4 _ m | .zbcst _ _ _ m =>
+    bif memPub τ m then some { base := τ } else none
+  | .vmovdqu32Store m _ => (storeStepK τ m 64 false).map fun τ₀ => { base := τ₀ }
+  | .stmxcsr m => (storeStepK τ m 4 false).map fun τ₀ => { base := τ₀ }
+  | .ldmxcsr m => bif memPub τ m then some { base := τ } else none
+  | .lfence => some { base := τ }
+  | .mul r => some { base := mulStep τ r }
+  | .mulx hi lo src => bif srcOkK τ src then some { base := mulxStepK τ hi lo src } else none
+  | .adcx d src | .adox d src => (adxStepK τ d src).map fun τ₀ => { base := τ₀ }
+  | .push _ | .pop .. | .alloc _ | .free _ => none
+
+
+end
+
+/-- The instructions whose taint depends on the public slots: loads into a
+general-purpose register. For the others, the slots the loads see do not
+matter (`stepKD_slots_irrel`). -/
+def readsSlots : Instr → Bool
+  | .mov _ (.mem _) | .mov32 _ (.mem _) => true
+  | _ => false
+
+inductive Kind | other | reads | fence
+  deriving DecidableEq
+
+/-- `readsSlots` and `fence` in one match on the instruction (`kind_reads`,
+`kind_fence`, `kind_other`). -/
+def kind : Instr → Kind
+  | .mov _ (.mem _) | .mov32 _ (.mem _) => .reads
+  | .lfence => .fence
+  | _ => .other
+
 def step (σ : T) (i : Instr) : Option T :=
-  (Taint.stepKD σ.base i).bind fun τ₀ =>
-    let young := bif fence i then [] else aged W σ τ₀.slots (writesMem i)
-    match σ.young with
-    | [] => some { base := τ₀, young }
-    | _ :: _ => (Taint.stepKD (specBase W σ) i).bind fun τv =>
-      if τv.lens = τ₀.lens then some { base := { τv with slots := τ₀.slots }, young } else none
+  match σ.young with
+  | [] => stepFast σ σ.base i
+  | _ :: _ => (Taint.stepKD σ.base i).bind fun τ₀ =>
+    match kind i with
+    | .reads => (Taint.stepKD (specBase W σ) i).bind fun τv =>
+      bif τv.lens == τ₀.lens then some { base := { τv with slots := τ₀.slots }, young := aged W σ τ₀.slots }
+      else none
+    | .fence => some { base := τ₀, young := [] }
+    | .other => some { base := τ₀, young := aged W σ τ₀.slots }
 
 def meet (σ₁ σ₂ : T) : T :=
   { base := Taint.meet σ₁.base σ₂.base, young := KList.append σ₁.young σ₂.young }
@@ -366,6 +460,63 @@ theorem stepKD_slots {τ τ' : Taint.T} {i : Instr} (hw : writesMem i = false)
   cases i <;> simp only [writesMem, Bool.true_eq_false] at hw <;>
     simp only [Taint.stepKD, Taint.aluStepK, Taint.adxStepK, Bool.cond_eq_ite] at h <;>
     (try split at h) <;> (try cases h) <;> rfl
+
+theorem storeSlotsKD_cases (τ : Taint.T) (m : MemOp) (w : Nat) (p : Bool) :
+    (∀ sl ∈ Taint.storeSlotsKD τ m w p, sl ∈ τ.slots) ∨
+      (p = true ∧ ∃ x, Taint.storeSlotsKD τ m w p = x :: τ.slots) := by
+  unfold Taint.storeSlotsKD
+  split
+  · cases Nat.ble _ _ <;> cases p <;> simp only [Bool.cond_false, Bool.cond_true]
+    · exact .inl fun _ h => by simp at h
+    · exact .inl fun _ h => h
+    · exact .inl fun _ h => by simp only [KList.filter_eq, List.mem_filter] at h; exact h.1
+    · cases Taint.mem3 _ _ <;> simp only [Bool.cond_false, Bool.cond_true]
+      · exact .inr ⟨by trivial, _, rfl⟩
+      · exact .inl fun _ h => h
+  · cases p <;> simp only [Bool.cond_false, Bool.cond_true]
+    · exact .inl fun _ h => by simp at h
+    · exact .inl fun _ h => h
+
+theorem storeSlotsK_false (τ : Taint.T) (m : MemOp) (w : Nat) :
+    ∀ sl ∈ Taint.storeSlotsK τ m w false, sl ∈ τ.slots := by
+  unfold Taint.storeSlotsK
+  split
+  · cases Nat.ble _ _ <;> simp only [Bool.cond_false, Bool.cond_true]
+    · intro _ h; simp at h
+    · intro _ h; simp only [KList.filter_eq, List.mem_filter] at h; exact h.1
+  · intro _ h; simp at h
+
+/-- A store keeps or removes slots, or adds one at the head; any other
+instruction keeps them. -/
+theorem stepKD_slots_cases {τ τ' : Taint.T} {i : Instr} (h : Taint.stepKD τ i = some τ') :
+    (∀ sl ∈ τ'.slots, sl ∈ τ.slots) ∨ (mayAdd τ i = true ∧ ∃ x, τ'.slots = x :: τ.slots) := by
+  cases hw : writesMem i
+  · exact .inl fun sl hs => stepKD_slots hw h ▸ hs
+  · have kd : ∀ {m w p}, Taint.storeStepKD τ m w p = some τ' →
+        (∀ sl ∈ τ'.slots, sl ∈ τ.slots) ∨ (p = true ∧ ∃ x, τ'.slots = x :: τ.slots) := by
+      intro m w p h
+      simp only [Taint.storeStepKD] at h
+      cases hm : Taint.memPub τ m <;> simp only [hm, Bool.cond_false, Bool.cond_true, reduceCtorEq,
+        Option.some.injEq] at h
+      subst h
+      rcases storeSlotsKD_cases τ m w p with h | h
+      · exact .inl h
+      · exact .inr h
+    have k : ∀ {m w}, Taint.storeStepK τ m w false = some τ' → ∀ sl ∈ τ'.slots, sl ∈ τ.slots := by
+      intro m w h
+      simp only [Taint.storeStepK] at h
+      cases hm : Taint.memPub τ m <;> simp only [hm, Bool.cond_false, Bool.cond_true, reduceCtorEq,
+        Option.some.injEq] at h
+      subst h
+      exact storeSlotsK_false τ m w
+    cases i <;> simp only [writesMem, reduceCtorEq] at hw <;> simp only [Taint.stepKD] at h
+    case store => exact kd h
+    case store32 => exact kd h
+    case store8 => exact kd h
+    case movdquStore => exact .inl (k h)
+    case vmovdquStore l _ _ => cases l <;> exact .inl (k h)
+    case vmovdqu32Store => exact .inl (k h)
+    case stmxcsr => exact .inl (k h)
 
 theorem mem_specBase {σ : T} {sl : Slot} (h : sl ∈ (specBase W σ).slots) :
     sl ∈ σ.base.slots ∧ ∀ p ∈ σ.young, p.1 = sl → W ≤ p.2 := by
@@ -410,20 +561,28 @@ theorem getD_shift0 {α} (x : α) (l : List α) (d : α) (hW : 0 < W) : ((x :: l
   obtain ⟨W', rfl⟩ : ∃ W', W = W' + 1 := ⟨W - 1, by omega⟩
   rfl
 
-/-- The young slots after an instruction with no store, or a store adding slots. -/
-theorem mem_aged {σ : T} {slots' : List Slot} {st : Bool} {sl : Slot} (hs : sl ∈ slots')
-    (hn : st = false → slots' = σ.base.slots) {k : Nat} (hW : k + 1 < W)
-    (hy : ∀ p ∈ aged W σ slots' st, p.1 = sl → k + 1 < p.2) :
-    sl ∈ σ.base.slots ∧ ∀ p ∈ σ.young, p.1 = sl → k < p.2 := by
-  have hin : sl ∈ σ.base.slots := by
-    cases st
-    · exact hn rfl ▸ hs
+/-- A slot of `slots'` that is not public now is young. -/
+theorem old_of_aged {σ : T} {slots' : List Slot} {sl : Slot} (hs : sl ∈ slots')
+    (hn : (∀ sl ∈ slots', sl ∈ σ.base.slots) ∨ ∃ x, slots' = x :: σ.base.slots)
+    {k : Nat} (hy : ∀ p ∈ aged W σ slots', p.1 = sl → k < p.2) : sl ∈ σ.base.slots := by
+  rcases hn with hn | ⟨x, rfl⟩
+  · exact hn sl hs
+  · rcases List.mem_cons.mp hs with rfl | hs
     · by_contra hc
       have := hy (sl, 0) (by
-        simp only [aged, KList.append_eq, KList.map_eq, KList.filter_eq, Bool.cond_true, List.mem_append,
-          List.mem_map, List.mem_filter, Bool.not_eq_true', Bool.eq_false_iff, ne_eq, mem3_iff]
-        exact .inl ⟨sl, ⟨hs, hc⟩, rfl⟩) rfl
+        have : Taint.mem3 sl σ.base.slots = false := by
+          rw [Bool.eq_false_iff, ne_eq, mem3_iff]; exact hc
+        simp only [aged, added, this, KList.append_eq, Bool.cond_false,
+          List.mem_append, List.mem_singleton, true_or]) rfl
       omega
+    · exact hs
+
+theorem mem_aged {σ : T} {slots' : List Slot} {sl : Slot} (hs : sl ∈ slots')
+    (hn : (∀ sl ∈ slots', sl ∈ σ.base.slots) ∨ ∃ x, slots' = x :: σ.base.slots)
+    {k : Nat} (hW : k + 1 < W)
+    (hy : ∀ p ∈ aged W σ slots', p.1 = sl → k + 1 < p.2) :
+    sl ∈ σ.base.slots ∧ ∀ p ∈ σ.young, p.1 = sl → k < p.2 := by
+  have hin : sl ∈ σ.base.slots := old_of_aged hs hn fun p hp he => by have := hy p hp he; omega
   refine ⟨hin, fun p hp he => ?_⟩
   by_cases hb : p.2 + 1 < W
   · have := hy (p.1, p.2 + 1) (by
@@ -434,24 +593,16 @@ theorem mem_aged {σ : T} {slots' : List Slot} {st : Bool} {sl : Slot} (hs : sl 
   · omega
 
 /-- The remembered memories after an instruction that keeps the regions. -/
-theorem Agree.shift {σ : T} {a b : SState} (ha : Agree W σ a b) {τ' : Taint.T} {st : Bool}
-    (hn : st = false → τ'.slots = σ.base.slots) {s₁ s₂ : State}
+theorem Agree.shift {σ : T} {a b : SState} (ha : Agree W σ a b) {τ' : Taint.T}
+    (hn : (∀ sl ∈ τ'.slots, sl ∈ σ.base.slots) ∨ ∃ x, τ'.slots = x :: σ.base.slots) {s₁ s₂ : State}
     (hw₁ : s₁.wr = a.arch.wr) (hw₂ : s₂.wr = b.arch.wr) :
-    HistAgree W { base := τ', young := aged W σ τ'.slots st } (next W a false s₁) (next W b false s₂) := by
+    HistAgree W { base := τ', young := aged W σ τ'.slots } (next W a false s₁) (next W b false s₂) := by
   intro sl hsl k hW hy j h₁ h₂
   have ba₁ : byteAddr s₁ sl.1 j = byteAddr a.arch sl.1 j := by simp only [byteAddr, region, hw₁]
   have ba₂ : byteAddr s₂ sl.1 j = byteAddr b.arch sl.1 j := by simp only [byteAddr, region, hw₂]
   simp only [next, Bool.false_eq_true, ite_false, ba₁, ba₂]
   rcases k with _ | k
-  · have hin : sl ∈ σ.base.slots := by
-      cases st
-      · exact hn rfl ▸ hsl
-      · by_contra hc
-        have := hy (sl, 0) (by
-          simp only [aged, KList.append_eq, KList.map_eq, KList.filter_eq, Bool.cond_true, List.mem_append,
-            List.mem_map, List.mem_filter, Bool.not_eq_true', Bool.eq_false_iff, ne_eq, mem3_iff]
-          exact .inl ⟨sl, ⟨hsl, hc⟩, rfl⟩) rfl
-        omega
+  · have hin : sl ∈ σ.base.slots := old_of_aged hsl hn hy
     rw [getD_shift0 _ _ _ hW, getD_shift0 _ _ _ hW]
     exact ha.base.slots sl hin j h₁ h₂
   · obtain ⟨hin, hy'⟩ := mem_aged hsl hn hW hy
@@ -462,20 +613,91 @@ theorem Agree.shift {σ : T} {a b : SState} (ha : Agree W σ a b) {τ' : Taint.T
 theorem length_shift {α} (a : List α) (x : α) (h : a.length = W) : ((x :: a).take W).length = W := by
   simp only [List.length_take, List.length_cons, h]; omega
 
+set_option hygiene false in
+/-- For `stepKD_slots_irrel` (on its hypothesis `h`): the analysis of an
+instruction, from a taint that differs only in its slots, differs only in its
+slots. -/
+local macro "irrel_tac" : tactic => `(tactic| (
+  simp only [Taint.stepKD, Taint.aluStepK, Taint.adxStepK, Taint.storeStepKD, Taint.storeStepK,
+    Bool.cond_eq_ite] at h ⊢
+  first
+  | (cases h; exact ⟨_, rfl, rfl⟩)
+  | cases h
+  | (split at h
+     · rename_i hc; cases h; exact ⟨_, ite_eq_left hc, rfl⟩
+     · cases h)))
+
+theorem stepKD_slots_irrel {τ τ₀ : Taint.T} {i : Instr} (hr : readsSlots i = false)
+    (h : Taint.stepKD τ i = some τ₀) (S : List Slot) :
+    ∃ τv, Taint.stepKD { τ with slots := S } i = some τv ∧ { τv with slots := τ₀.slots } = τ₀ := by
+  cases i
+  case vmovdquStore l _ _ => cases l <;> irrel_tac
+  case mov d src => cases src <;> simp only [readsSlots, reduceCtorEq] at hr <;> irrel_tac
+  case mov32 d src => cases src <;> simp only [readsSlots, reduceCtorEq] at hr <;> irrel_tac
+  all_goals irrel_tac
+
+theorem kind_reads {i : Instr} (h : kind i ≠ .reads) : readsSlots i = false := by
+  cases i <;> simp only [readsSlots]
+  all_goals first | rfl | (rename_i src; cases src <;> first | rfl | exact absurd rfl h)
+
+theorem kind_fence {i : Instr} : kind i = .fence → fence i = true := by
+  cases i <;> simp only [kind, fence, reduceCtorEq, imp_false, imp_self]
+  all_goals (rename_i src; cases src <;> simp only [reduceCtorEq, not_false_eq_true])
+
+theorem stepFast_eq (σ : T) (τ : Taint.T) (i : Instr) :
+    stepFast σ τ i = (Taint.stepKD τ i).map fun τ₀ =>
+      { base := τ₀, young := bif mayAdd τ i then added σ τ₀.slots else [] } := by
+  cases i
+  case vmovdquStore l _ _ => cases l <;> rfl
+  all_goals simp only [stepFast, Taint.stepKD, mayAdd, Bool.cond_eq_ite, Bool.false_eq_true,
+    ite_false] <;> (try split) <;> rfl
+
+theorem added_of_sub {σ : T} {s : List Slot} (h : ∀ sl ∈ s, sl ∈ σ.base.slots) : added σ s = [] := by
+  cases s with
+  | nil => rfl
+  | cons x _ =>
+    have : Taint.mem3 x σ.base.slots = true := mem3_iff.mpr (h x (List.mem_cons_self ..))
+    simp only [added, this, Bool.cond_true]
+
+theorem aged_nil {σ : T} (h : σ.young = []) (slots' : List Slot) : aged W σ slots' = added σ slots' := by
+  simp only [aged, h, KList.append_eq, KList.map_eq, KList.filter_eq, List.map_nil, List.filter_nil,
+    List.append_nil]
+
 theorem step_sound {σ σ' : T} {i : Instr} {a b a' b' : SState} (ha : Agree W σ a b)
     (hs : step W σ i = some σ') (e₁ : (isa W).exec i a = some a') (e₂ : (isa W).exec i b = some b') :
     (isa W).addrs i a = (isa W).addrs i b ∧ Agree W σ' a' b' := by
-  simp only [step, Option.bind_eq_some_iff] at hs
-  obtain ⟨τ₀, h₀, hs⟩ := hs
-  obtain ⟨τv, hv, hl, rfl⟩ : ∃ τv, Taint.stepKD (specBase W σ) i = some τv ∧ τv.lens = τ₀.lens ∧
-      σ' = { base := { τv with slots := τ₀.slots },
-             young := bif fence i then [] else aged W σ τ₀.slots (writesMem i) } := by
+  obtain ⟨τ₀, h₀, τv, hv, hl, y, hy, rfl⟩ : ∃ τ₀, Taint.stepKD σ.base i = some τ₀ ∧
+      ∃ τv, Taint.stepKD (specBase W σ) i = some τv ∧ τv.lens = τ₀.lens ∧
+      ∃ y, (fence i = false → y = aged W σ τ₀.slots) ∧
+      σ' = { base := { τv with slots := τ₀.slots }, young := y } := by
+    clear e₁ e₂
+    simp only [step] at hs
     split at hs
-    · rename_i hy; cases hs; exact ⟨τ₀, by rw [specBase_nil hy]; exact h₀, rfl, rfl⟩
+    · rename_i hy
+      rw [stepFast_eq, Option.map_eq_some_iff] at hs
+      obtain ⟨τ₀, h₀, rfl⟩ := hs
+      refine ⟨τ₀, h₀, τ₀, by rw [specBase_nil hy]; exact h₀, rfl, _, fun _ => ?_, rfl⟩
+      rw [aged_nil hy]
+      rcases stepKD_slots_cases h₀ with h | ⟨hm, -⟩
+      · rw [added_of_sub h]; cases mayAdd σ.base i <;> rfl
+      · rw [hm, Bool.cond_true]
     · simp only [Option.bind_eq_some_iff] at hs
-      obtain ⟨τv, hv, hs⟩ := hs
-      split at hs <;> [rename_i hl; cases hs]
-      cases hs; exact ⟨τv, hv, hl, rfl⟩
+      obtain ⟨τ₀, h₀, hs⟩ := hs
+      split at hs
+      · rename_i hk
+        simp only [Option.bind_eq_some_iff] at hs
+        obtain ⟨τv, hv, hs⟩ := hs
+        cases hl : τv.lens == τ₀.lens <;> simp only [hl, Bool.cond_false, Bool.cond_true, reduceCtorEq,
+          Option.some.injEq] at hs
+        subst hs
+        exact ⟨τ₀, h₀, τv, hv, beq_iff_eq.mp hl, _, fun _ => rfl, rfl⟩
+      · rename_i hk; cases hs
+        obtain ⟨τv, hv, he⟩ := stepKD_slots_irrel (kind_reads (by rw [hk]; decide)) h₀ (specBase W σ).slots
+        refine ⟨τ₀, h₀, τv, hv, (congrArg (·.lens) he :), [], fun hf => ?_, by rw [he]⟩
+        rw [kind_fence hk] at hf; cases hf
+      · rename_i hk; cases hs
+        obtain ⟨τv, hv, he⟩ := stepKD_slots_irrel (kind_reads (by rw [hk]; decide)) h₀ (specBase W σ).slots
+        exact ⟨τ₀, h₀, τv, hv, (congrArg (·.lens) he :), _, fun _ => rfl, by rw [he]⟩
   simp only [isa, spec, Option.bind_eq_some_iff, Option.map_eq_some_iff] at e₁ e₂
   obtain ⟨r₀₁, f₀₁, r₁, f₁, rfl⟩ := e₁
   obtain ⟨r₀₂, f₀₂, r₂, f₂, rfl⟩ := e₂
@@ -498,13 +720,14 @@ theorem step_sound {σ σ' : T} {i : Instr} {a b a' b' : SState} (ha : Agree W �
         simp only [byteAddr, region, w₁, w₂, w₀₁, w₀₂] at this ⊢
         exact this }
   refine ⟨hadd, ⟨base, ha.dirs, by simp only [next, ha.n], ?_, ?_, ?_⟩⟩ <;>
-    cases hf : fence i <;> simp only [next, Bool.false_eq_true, ite_false, ite_true, Bool.cond_false, Bool.cond_true]
+    cases hf : fence i <;> simp only [next, Bool.false_eq_true, ite_false, ite_true]
   · exact length_shift _ _ ha.len₁
   · exact List.length_replicate
   · exact length_shift _ _ ha.len₂
   · exact List.length_replicate
-  · exact ha.shift (τ' := { τv with slots := τ₀.slots }) (st := writesMem i)
-      (fun hw => stepKD_slots (τ' := τ₀) hw h₀) w₁ w₂
+  · rw [hy hf]
+    exact ha.shift (τ' := { τv with slots := τ₀.slots })
+      ((stepKD_slots_cases (τ' := τ₀) h₀).imp_right (·.2)) w₁ w₂
   · intro sl hsl k hW _ j h₁ h₂
     simp only [List.getD_eq_getElem?_getD, List.getElem?_replicate, hW, ite_true, Option.getD_some]
     have := a₀.slots sl hsl j h₁ h₂
@@ -565,7 +788,7 @@ theorem ret_wr {s₁ s₂ s' : State} (h : X86_64.ret s₁ s₂ = some s') : s'.
 def call (σ : T) : Option T := (Taint.callStep σ.base).map fun τ => { base := τ, young := [] }
 
 variable (W) in
-def ret (σ : T) : Option T := (Taint.retStep σ.base).map fun τ => { base := τ, young := aged W σ τ.slots false }
+def ret (σ : T) : Option T := (Taint.retStep σ.base).map fun τ => { base := τ, young := aged W σ τ.slots }
 
 theorem call_sound {σ σ' : T} {a b a' b' : SState} (ha : Agree W σ a b) (hs : call σ = some σ')
     (e₁ : (isa W).call a = some a') (e₂ : (isa W).call b = some b') :
@@ -595,7 +818,7 @@ theorem ret_sound {σ σ' : T} {a₁ a₂ b₁ b₂ c₁ c₂ : SState} (ha : Ag
   obtain ⟨s₂, f₂, rfl⟩ := e₂
   obtain ⟨hadd, h⟩ := Taint.ret_sound ha.base hτ f₁ f₂
   exact ⟨hadd, ⟨h, ha.dirs, by simp only [next, ha.n], length_shift _ _ ha.len₁, length_shift _ _ ha.len₂,
-    ha.shift (τ' := τ) (st := false) (fun _ => retStep_slots hτ) (ret_wr f₁) (ret_wr f₂)⟩⟩
+    ha.shift (τ' := τ) (.inl fun sl hs => retStep_slots hτ ▸ hs) (ret_wr f₁) (ret_wr f₂)⟩⟩
 
 variable (W) in
 /-- Taint tracking for speculative store bypass. Frames are not analysed (as
