@@ -121,7 +121,7 @@ theorem win_exp {E b j : Nat} (hb : b < 256) (hj : j < 2) (n : Nat) (hn : n = if
 theorem winStep_ok {t₀ t : State} {B : Addr} {M k x : Nat → Nat} {Q : Prop} {E bs : Nat → Nat} {j : Nat}
     (hj : j < 2) (hbs : ∀ p < 2, bs p < 256) (hB : t₀.gpr .rbx = B) (hs : Scr t₀ B (2 * D))
     (hR : ∀ p < 2, Nat.Coprime (2 ^ (52 * 20)) (M p)) (h : WinInv t₀ B M k x Q E bs j t) :
-    WP isa (VG.Impl.Bignum.X86_64.seqs (VG.Impl.Rsa.X86_64.CrtIfma.window ++ [.block [.alu .sub .r14 (.imm 1)]])) t
+    WP isa (VG.Impl.Bignum.X86_64.seqs (VG.Impl.Rsa.X86_64.CrtIfma.window ++ ([.block [.alu .sub .r14 (.imm 1)]] : List (Prog isa)))) t
       fun t' => WinInv t₀ B M k x Q E bs (j + 1) t' ∧ t'.zf = some (decide (j + 1 = 2)) := by
   have hBt : t.gpr .rbx = B := by
     rw [h.gpr _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
@@ -157,7 +157,7 @@ theorem winLoop_ok {t₀ : State} {B : Addr} {M k x : Nat → Nat} {Q : Prop} {E
     (hbs : ∀ p < 2, bs p < 256) (hB : t₀.gpr .rbx = B) (hs : Scr t₀ B (2 * D))
     (hR : ∀ p < 2, Nat.Coprime (2 ^ (52 * 20)) (M p)) {t : State} (h : WinInv t₀ B M k x Q E bs 0 t) :
     WP isa (.loop (VG.Impl.Bignum.X86_64.seqs (VG.Impl.Rsa.X86_64.CrtIfma.window ++
-      [.block [.alu .sub .r14 (.imm 1)]])) .ne) t (WinInv t₀ B M k x Q E bs 2) := by
+      ([.block [.alu .sub .r14 (.imm 1)]] : List (Prog isa)))) .ne) t (WinInv t₀ B M k x Q E bs 2) := by
   refine WP.loop (M := isa) (c := .ne) (Q := WinInv t₀ B M k x Q E bs 2)
     (fun n t => 1 ≤ n ∧ n ≤ 2 ∧ WinInv t₀ B M k x Q E bs (2 - n) t) ?_ 2 t ⟨by decide, Nat.le_refl _, by rw [Nat.sub_self]; exact h⟩
   intro n t ⟨h1, h2, hI⟩
@@ -225,7 +225,7 @@ theorem byteIter_ok {t₀ t : State} {B : Addr} {M k x : Nat → Nat} {Q : Prop}
         [.movzx8 .rax { base := .rbx, index := some .r13, disp := ((D * p + oE : Nat) : Int) },
           .shift .ror .rax 8, .store (VG.Impl.Rsa.X86_64.CrtIfma.at_ .rbx (D * p + oV)) .rax]),
       .block [.mov32 .r14 (.imm 2)],
-      .loop (VG.Impl.Bignum.X86_64.seqs (VG.Impl.Rsa.X86_64.CrtIfma.window ++ [.block [.alu .sub .r14 (.imm 1)]])) .ne,
+      .loop (VG.Impl.Bignum.X86_64.seqs (VG.Impl.Rsa.X86_64.CrtIfma.window ++ ([.block [.alu .sub .r14 (.imm 1)]] : List (Prog isa)))) .ne,
       .block [.alu .add .r13 (.imm 1), .alu .cmp .r13 (.imm 128)]]) t
       fun t' => ByteInv t₀ B M k x Q (i + 1) t' ∧ t'.zf = some (decide (i + 1 = 128)) := by
   have hn := hs.nowrap
@@ -309,7 +309,7 @@ theorem byteLoop_ok {t₀ : State} {B : Addr} {M k x : Nat → Nat} {Q : Prop}
         [.movzx8 .rax { base := .rbx, index := some .r13, disp := ((D * p + oE : Nat) : Int) },
           .shift .ror .rax 8, .store (VG.Impl.Rsa.X86_64.CrtIfma.at_ .rbx (D * p + oV)) .rax]),
       .block [.mov32 .r14 (.imm 2)],
-      .loop (VG.Impl.Bignum.X86_64.seqs (VG.Impl.Rsa.X86_64.CrtIfma.window ++ [.block [.alu .sub .r14 (.imm 1)]])) .ne,
+      .loop (VG.Impl.Bignum.X86_64.seqs (VG.Impl.Rsa.X86_64.CrtIfma.window ++ ([.block [.alu .sub .r14 (.imm 1)]] : List (Prog isa)))) .ne,
       .block [.alu .add .r13 (.imm 1), .alu .cmp .r13 (.imm 128)]]) .ne) t (ByteInv t₀ B M k x Q 128) := by
   intro n t h1 h128 hI
   refine WP.loop (M := isa) (c := .ne) (Q := ByteInv t₀ B M k x Q 128)
