@@ -7,7 +7,8 @@ import VerifiedGarbage.Proof.AesGcm.X86.Tag
 Untrusted: everything here is checked by Lean. `tagLenOk` decides the tag
 length (`tagLenOk_pc`), `recv` copies the received tag, padded with zeros
 (`recv_ok`), `cmp o` the computed one and compares them without a branch
-(`cmp_ok`), and `mask` zeroes the computed tag if they differ (`mask_ok`).
+(`cmp_ok`), and `tagOut o` copies a computed tag to the caller's buffer
+(`tagOut_ok`).
 -/
 
 set_option linter.unusedSimpArgs false
@@ -143,34 +144,33 @@ theorem bytesAt_pad (m : Mem) (p : Addr) (xs : List Byte) (hx : xs.length ≤ 16
   rwa [List.drop_left' (length_bytesAt _ _ _), show xs.length + (16 - xs.length) = 16 by omega, zeros,
     List.drop_replicate] at this
 
-/-- The copy of `t` bytes from `W + o` to `W + d`, zeroed first. -/
-theorem padLoop_ok {W : BitVec 32} {o d t : Nat} {m : Mem} {s : State} (he : WEnv W s)
-    (hm : s.mem = Cmac.zero4 m (w64 W + BitVec.ofNat 64 d)) (hdi : s.gpr .edi = W + BitVec.ofNat 32 o)
+/-- The copy of the `t` bytes at `S` to `W + d`, zeroed first. -/
+theorem padLoop_ok {W S : BitVec 32} {d t : Nat} {m : Mem} {s : State} (he : WEnv W s)
+    (hm : s.mem = Cmac.zero4 m (w64 W + BitVec.ofNat 64 d)) (hdi : s.gpr .edi = S)
     (hdx : s.gpr .edx = W + BitVec.ofNat 32 d) (hcx : s.gpr .ecx = BitVec.ofNat 32 t) (ht1 : 1 ≤ t)
-    (ht : t ≤ 16) (ho : o + 16 ≤ d ∨ d + 16 ≤ o) (hod : o + 16 ≤ 2560) (hd : d + 16 ≤ 2560) :
+    (ht : t ≤ 16) (sR : Covers [⟨w64 S, t⟩] (s.rd ++ s.wr)) (fS : S.toNat + t ≤ 2 ^ 32)
+    (sd : (⟨w64 S, t⟩ : Region).Disjoint ⟨w64 W + BitVec.ofNat 64 d, 16⟩) (hd : d + 16 ≤ 2560) :
     WP isa copyLoop s fun s' => bytesAt s'.mem (w64 W + BitVec.ofNat 64 d) 16 =
-        bytesAt m (w64 W + BitVec.ofNat 64 o) t ++ zeros (16 - t) ∧
+        bytesAt m (w64 S) t ++ zeros (16 - t) ∧
       Frame [⟨w64 W + BitVec.ofNat 64 d, 16⟩] m s'.mem ∧
       (∀ r, r ≠ .eax → r ≠ .edi → r ≠ .edx → r ≠ .ecx → s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
-  have eo := he.aW (o := o) (by omega)
   have ed := he.aW (o := d) (by omega)
   have hfw := he.fw
-  have c₁ : Covers [⟨w64 W + BitVec.ofNat 64 o, t⟩] (s.rd ++ s.wr) := covers_left (covers_off he.wW (by omega) (by decide))
   have c₂ : Covers [⟨w64 W + BitVec.ofNat 64 d, t⟩] s.wr := covers_off he.wW (by omega) (by decide)
-  have lp : LoopPre s (W + BitVec.ofNat 32 o) (W + BitVec.ofNat 32 d) t := by
-    refine ⟨hdi, hdx, hcx, ht1, by omega, by rw [toNat_add32 (by omega)]; omega,
-      by rw [toNat_add32 (by omega)]; omega, by rw [eo]; exact c₁, by rw [ed]; exact c₂, ?_⟩
-    rw [eo, ed]; exact Lay.w_w (by omega) (by omega) (by omega)
+  have sd' : (⟨w64 S, t⟩ : Region).Disjoint ⟨w64 W + BitVec.ofNat 64 d, t⟩ :=
+    sd.sub_right (Region.sub_prefix (by omega))
+  have lp : LoopPre s S (W + BitVec.ofNat 32 d) t := by
+    refine ⟨hdi, hdx, hcx, ht1, by omega, fS, by rw [toNat_add32 (by omega)]; omega, sR, by rw [ed]; exact c₂, ?_⟩
+    rw [ed]; exact sd'
   refine WP.mono (copyLoop_ok s lp) fun s' c => ?_
   have cm := c.mem
-  rw [eo, ed, hm] at cm
+  rw [ed, hm] at cm
   have fz : Frame [⟨w64 W + BitVec.ofNat 64 d, 16⟩] m (Cmac.zero4 m (w64 W + BitVec.ofNat 64 d)) :=
     Cmac.frame_store4 _ _ _ _ _
-  have hS : bytesAt (Cmac.zero4 m (w64 W + BitVec.ofNat 64 d)) (w64 W + BitVec.ofNat 64 o) t =
-      bytesAt m (w64 W + BitVec.ofNat 64 o) t :=
+  have hS : bytesAt (Cmac.zero4 m (w64 W + BitVec.ofNat 64 d)) (w64 S) t = bytesAt m (w64 S) t :=
     bytesAt_frame fz (fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact Lay.w_w (by omega) (by omega) (by omega)) (by omega)
-  have hlen := length_bytesAt (Cmac.zero4 m (w64 W + BitVec.ofNat 64 d)) (w64 W + BitVec.ofNat 64 o) t
+      simp only [List.mem_singleton] at hr; subst hr; exact sd) (by omega)
+  have hlen := length_bytesAt (Cmac.zero4 m (w64 W + BitVec.ofNat 64 d)) (w64 S) t
   refine ⟨?_, ?_, c.other, c.rd, c.wr⟩
   · rw [cm, bytesAt_pad _ _ _ (by rw [hlen]; exact ht), hS, length_bytesAt]
   · rw [cm]
@@ -259,40 +259,47 @@ theorem zero4_fold (m : Mem) (W : BitVec 32) (d : Nat) :
       (w64 W + BitVec.ofNat 64 (d + 12)) (BitVec.ofNat 32 0) = Cmac.zero4 m (w64 W + BitVec.ofNat 64 d) := by
   simp only [Cmac.zero4, Cmac.store4, add_ofNat_assoc]; rfl
 
-theorem recv_ok {W : BitVec 32} {t : Nat} {s : State} (he : WEnv W s) (hv : slotv s.mem W tglO = BitVec.ofNat 32 t)
-    (ht1 : 1 ≤ t) (ht : t ≤ 16) :
-    WP isa recv s fun s' => bytesAt s'.mem (w64 W + BitVec.ofNat 64 rO) 16 = bytesAt s.mem (w64 W) t ++ zeros (16 - t) ∧
+/-- `recv`: the `t` bytes at `T` (kept at `W + tpO`), padded, at `W + rO`. -/
+theorem recv_ok {W T : BitVec 32} {t : Nat} {s : State} (he : WEnv W s) (hv : slotv s.mem W tglO = BitVec.ofNat 32 t)
+    (hT : slotv s.mem W tpO = T) (tR : Covers [⟨w64 T, t⟩] (s.rd ++ s.wr)) (fT : T.toNat + t ≤ 2 ^ 32)
+    (tw : (⟨w64 T, t⟩ : Region).Disjoint ⟨w64 W, 2560⟩) (ht1 : 1 ≤ t) (ht : t ≤ 16) :
+    WP isa recv s fun s' => bytesAt s'.mem (w64 W + BitVec.ofNat 64 rO) 16 = bytesAt s.mem (w64 T) t ++ zeros (16 - t) ∧
       Frame [⟨w64 W + BitVec.ofNat 64 rO, 16⟩] s.mem s'.mem ∧ s'.gpr .ebp = s.gpr .ebp ∧ s'.gpr .esi = s.gpr .esi ∧
       s'.gpr .esp = s.gpr .esp ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   have aW : ∀ {o}, o < 2560 → w64 (W + BitVec.ofNat 32 o) = w64 W + BitVec.ofNat 64 o := fun ho => he.aW ho
   have wIn : ∀ {o}, o + 4 ≤ 2560 → InRegions s.wr (w64 W + BitVec.ofNat 64 o) 4 := fun ho => he.wIn ho
   have rIn : ∀ {o}, o + 4 ≤ 2560 → InRegions (s.rd ++ s.wr) (w64 W + BitVec.ofNat 64 o) 4 := fun ho => he.wIn' ho
-  rw [slotv_eq] at hv
-  simp only [tglO] at hv
+  rw [slotv_eq] at hv hT
+  simp only [tglO, tpO] at hv hT
   have hz := zero4_fold s.mem W 196
   simp only [Nat.reduceAdd] at hz
+  have fz : Frame [⟨w64 W + BitVec.ofNat 64 196, 16⟩] s.mem (Cmac.zero4 s.mem (w64 W + BitVec.ofNat 64 196)) :=
+    Cmac.frame_store4 _ _ _ _ _
   have hv' : (Cmac.zero4 s.mem (w64 W + BitVec.ofNat 64 196)).readW (w64 W + BitVec.ofNat 64 180) 32 =
       BitVec.ofNat 32 t := by
-    have fz : Frame [⟨w64 W + BitVec.ofNat 64 196, 16⟩] s.mem (Cmac.zero4 s.mem (w64 W + BitVec.ofNat 64 196)) :=
-      Cmac.frame_store4 _ _ _ _ _
     rw [slot_frame (W := W) (o := 180) fz (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
       exact Lay.w_w (W := W) (a := 180) (n := 4) (d := 196) (k := 16) (by decide) (by decide) (by decide))]
     exact hv
-  refine WP.seq (WP.of_runBlock ⟨_, by xrun [recv, zero4, he.ebp, aW, wIn, rIn, readW_writeW_off, hv, hz, hv'], ?_⟩)
-  refine WP.mono (padLoop_ok (o := 0) (d := 196) (t := t) (m := s.mem) (he.keep (by regs []) (by mems []))
-    (by mems []) (by regs [he.ebp]; exact (BitVec.add_zero W).symm) (by regs [he.ebp]) (by regs []) ht1 ht
-    (.inl (by decide)) (by decide) (by decide)) fun s' ⟨b, f, g, rd, wr⟩ => ⟨?_, f, ?_, ?_, ?_, ?_, ?_⟩
-  · simpa using b
+  have hT' : (Cmac.zero4 s.mem (w64 W + BitVec.ofNat 64 196)).readW (w64 W + BitVec.ofNat 64 212) 32 = T := by
+    rw [slot_frame (W := W) (o := 212) fz (fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr
+      exact Lay.w_w (W := W) (a := 212) (n := 4) (d := 196) (k := 16) (by decide) (by decide) (by decide))]
+    exact hT
+  refine WP.seq (WP.of_runBlock ⟨_, by xrun [recv, zero4, he.ebp, aW, wIn, rIn, readW_writeW_off, hv, hz, hv', hT'], ?_⟩)
+  refine WP.mono (padLoop_ok (S := T) (d := 196) (t := t) (m := s.mem) (he.keep (by regs []) (by mems []))
+    (by mems []) (by regs []) (by regs [he.ebp]) (by regs []) ht1 ht (by mems []; exact tR) fT
+    (tw.sub_right (Lay.wSub (by decide))) (by decide)) fun s' ⟨b, f, g, rd, wr⟩ => ⟨?_, f, ?_, ?_, ?_, ?_, ?_⟩
+  · exact b
   · rw [g _ (by decide) (by decide) (by decide) (by decide)]; regs []
   · rw [g _ (by decide) (by decide) (by decide) (by decide)]; regs []
   · rw [g _ (by decide) (by decide) (by decide) (by decide)]; regs []
   · rw [rd]; mems []
   · rw [wr]; mems []
 
-theorem recv_ct {I : State → Prop} {W : BitVec 32} {t : Nat}
-    (h : ∀ s, I s → WEnv W s ∧ slotv s.mem W tglO = BitVec.ofNat 32 t) : CT I recv := by
-  refine CT.seq (J := fun s => s.gpr .edi = W ∧ s.gpr .edx = W + BitVec.ofNat 32 rO ∧ s.gpr .ecx = BitVec.ofNat 32 t)
+theorem recv_ct {I : State → Prop} {W T : BitVec 32} {t : Nat}
+    (h : ∀ s, I s → WEnv W s ∧ slotv s.mem W tglO = BitVec.ofNat 32 t ∧ slotv s.mem W tpO = T) : CT I recv := by
+  refine CT.seq (J := fun s => s.gpr .edi = T ∧ s.gpr .edx = W + BitVec.ofNat 32 rO ∧ s.gpr .ecx = BitVec.ofNat 32 t)
     (CT.taint [.ebp] (fun s₁ s₂ h₁ h₂ r hr => by
       simp only [List.mem_singleton] at hr; subst hr; rw [(h _ h₁).1.ebp, (h _ h₂).1.ebp]) (by taint_decide))
     (fun s hs => ?_) (copyLoop_ct fun s₁ s₂ h₁ h₂ r hr => by
@@ -301,13 +308,13 @@ theorem recv_ct {I : State → Prop} {W : BitVec 32} {t : Nat}
       · rw [h₁.1, h₂.1]
       · rw [h₁.2.1, h₂.2.1]
       · rw [h₁.2.2, h₂.2.2])
-  obtain ⟨he, hv⟩ := h s hs
+  obtain ⟨he, hv, hT⟩ := h s hs
   have aW : ∀ {o}, o < 2560 → w64 (W + BitVec.ofNat 32 o) = w64 W + BitVec.ofNat 64 o := fun ho => he.aW ho
   have wIn : ∀ {o}, o + 4 ≤ 2560 → InRegions s.wr (w64 W + BitVec.ofNat 64 o) 4 := fun ho => he.wIn ho
   have rIn : ∀ {o}, o + 4 ≤ 2560 → InRegions (s.rd ++ s.wr) (w64 W + BitVec.ofNat 64 o) 4 := fun ho => he.wIn' ho
-  rw [slotv_eq] at hv
-  simp only [tglO] at hv
-  exact WP.of_runBlock ⟨_, by xrun [zero4, he.ebp, aW, wIn, rIn, readW_writeW_off, hv], by regs [he.ebp],
+  rw [slotv_eq] at hv hT
+  simp only [tglO, tpO] at hv hT
+  exact WP.of_runBlock ⟨_, by xrun [zero4, he.ebp, aW, wIn, rIn, readW_writeW_off, hv, hT], by regs [],
     by regs [he.ebp], by regs []⟩
 
 /-- `cmp o`: the first `t` bytes at `W + o`, padded, compared with the 16 at `W + rO`. -/
@@ -335,9 +342,12 @@ theorem cmp_ok {W : BitVec 32} {t o : Nat} {s : State} (he : WEnv W s) (hv : slo
       exact Lay.w_w (W := W) (a := 180) (n := 4) (d := 240) (k := 16) (by decide) (by decide) (by decide))]
     exact hv
   refine WP.seq (WP.of_runBlock ⟨_, by xrun [zero4, he.ebp, aW, wIn, rIn, readW_writeW_off, hv, hz, hv'], ?_⟩)
-  refine WP.seq (WP.mono (padLoop_ok (o := o) (d := 240) (t := t) (m := s.mem) (he.keep (by regs []) (by mems []))
-    (by mems []) (by regs [he.ebp]) (by regs [he.ebp]) (by regs []) ht1 ht
-    (.inl (by omega)) (by omega) (by decide)) fun s' ⟨b, f, g, rd, wr⟩ => ?_)
+  have eo := aW (o := o) (by omega)
+  refine WP.seq (WP.mono (padLoop_ok (S := W + BitVec.ofNat 32 o) (d := 240) (t := t) (m := s.mem)
+    (he.keep (by regs []) (by mems [])) (by mems []) (by regs [he.ebp]) (by regs [he.ebp]) (by regs []) ht1 ht
+    (by mems []; rw [eo]; exact covers_left (covers_off he.wW (by omega) (by decide)))
+    (by have := he.fw; rw [toNat_add32 (by omega)]; omega) (by rw [eo]; exact Lay.w_w (.inl (by omega)) (by omega) (by decide))
+    (by decide)) fun s' ⟨b, f, g, rd, wr⟩ => ?_)
   have he' : WEnv W s' := ⟨by rw [g _ (by decide) (by decide) (by decide) (by decide)]; regs [he.ebp],
     by rw [wr]; mems [he.wW], he.fw⟩
   refine WP.mono (cmpTail_ok he') fun s'' ⟨a, m, rd', wr', g'⟩ => ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
@@ -347,7 +357,7 @@ theorem cmp_ok {W : BitVec 32} {t o : Nat} {s : State} (he : WEnv W s) (hv : slo
         exact Lay.w_w (W := W) (a := 196) (n := 16) (d := 240) (k := 16) (by decide) (by decide) (by decide))
         (by decide)
     simp only [vO] at a
-    rw [a, b, hr]
+    rw [a, b, hr, eo]
   · rw [m]; exact f
   · rw [g' _ (by decide) (by decide), g _ (by decide) (by decide) (by decide) (by decide)]; regs []
   · rw [g' _ (by decide) (by decide), g _ (by decide) (by decide) (by decide) (by decide)]; regs []
@@ -380,38 +390,47 @@ theorem cmp_ct {I : State → Prop} {W : BitVec 32} {t o : Nat} (ho : o = 0 ∨ 
   exact WP.of_runBlock ⟨_, by xrun [zero4, he.ebp, aW, wIn, rIn, readW_writeW_off, hv], by regs [he.ebp],
     by regs [he.ebp], by regs [], by regs [he.ebp]⟩
 
-/-- `mask`: the tag at `W` kept if `eax` is 1, zeroed if it is 0. -/
-theorem mask_ok {W : BitVec 32} {b : Bool} {s : State} (he : WEnv W s)
-    (ha : s.gpr .eax = BitVec.ofNat 32 (if b then 1 else 0)) :
-    WP isa (.block mask) s fun s' => bytesAt s'.mem (w64 W) 16 = (if b then bytesAt s.mem (w64 W) 16 else zeros 16) ∧
-      Frame [⟨w64 W + BitVec.ofNat 64 0, 16⟩] s.mem s'.mem ∧ s'.gpr .eax = s.gpr .eax ∧ s'.gpr .ebp = s.gpr .ebp ∧
-      s'.gpr .esi = s.gpr .esi ∧ s'.gpr .esp = s.gpr .esp ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
+/-- `tagOut o`: the 16 bytes at `W + o` copied to `T` (kept at `W + tpO`). -/
+theorem tagOut_ok {W T : BitVec 32} {o : Nat} {s : State} (he : WEnv W s) (ho : o + 16 ≤ 2560)
+    (hT : slotv s.mem W tpO = T) (tW : Covers [⟨w64 T, 16⟩] s.wr) (fT : T.toNat + 16 ≤ 2 ^ 32) :
+    WP isa (tagOut o) s fun s' => bytesAt s'.mem (w64 T) 16 = bytesAt s.mem (w64 W + BitVec.ofNat 64 o) 16 ∧
+      Frame [⟨w64 T, 16⟩] s.mem s'.mem ∧ s'.gpr .ebp = s.gpr .ebp ∧ s'.gpr .esi = s.gpr .esi ∧
+      s'.gpr .esp = s.gpr .esp ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   have aW : ∀ {o}, o < 2560 → w64 (W + BitVec.ofNat 32 o) = w64 W + BitVec.ofNat 64 o := fun ho => he.aW ho
-  have wIn : ∀ {o}, o + 4 ≤ 2560 → InRegions s.wr (w64 W + BitVec.ofNat 64 o) 4 := fun ho => he.wIn ho
   have rIn : ∀ {o}, o + 4 ≤ 2560 → InRegions (s.rd ++ s.wr) (w64 W + BitVec.ofNat 64 o) 4 := fun ho => he.wIn' ho
-  have hs := store4_eq s.mem W 0
+  have aT : ∀ {k}, k < 16 → w64 (T + BitVec.ofNat 32 k) = w64 T + BitVec.ofNat 64 k := fun hk => w64_add (by omega)
+  have tIn : ∀ {k}, k + 4 ≤ 16 → InRegions s.wr (w64 T + BitVec.ofNat 64 k) 4 := fun hk => in_off tW hk (by decide)
+  rw [slotv_eq] at hT
+  simp only [tpO] at hT
+  have hs := store4_eq s.mem T 0
   simp only [Nat.reduceAdd] at hs
-  refine WP.of_runBlock ⟨_, by xrun [mask, he.ebp, aW, wIn, rIn, readW_writeW_off, ha], ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  refine WP.seq (WP.of_runBlock ⟨_, by xrun [he.ebp, aW, rIn, hT], ?_⟩)
+  refine WP.of_runBlock ⟨_, by xrun [aT, tIn], ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · mems [hs]
-    rw [show w64 W + 0#64 = w64 W from BitVec.add_zero _, Cmac.bytesAt_store4]
-    cases b
-    · simp only [Bool.false_eq_true, ↓reduceIte, BitVec.ofNat_eq_ofNat, BitVec.sub_zero, BitVec.and_zero,
-        Cmac.le4_zero]
-      rfl
-    · simp only [↓reduceIte, show (0#32 - BitVec.ofNat 32 1) = BitVec.allOnes 32 by decide, BitVec.and_allOnes,
-        Cmac.le4_readW]
-      rw [Cmac.bytesAt_split4]
+    rw [show w64 T + 0#64 = w64 T from BitVec.add_zero _, Cmac.bytesAt_store4, Cmac.bytesAt_split4, Cmac.le4_readW,
+      Cmac.le4_readW, Cmac.le4_readW, Cmac.le4_readW, add_ofNat_assoc, add_ofNat_assoc, add_ofNat_assoc]
   · mems [hs]
+    rw [show w64 T + 0#64 = w64 T from BitVec.add_zero _]
     exact Cmac.frame_store4 _ _ _ _ _
-  · regs []
   · regs []
   · regs []
   · regs []
   · mems []
   · mems []
 
-theorem mask_ct {I : State → Prop} (h : ∀ s₁ s₂, I s₁ → I s₂ → s₁.gpr .ebp = s₂.gpr .ebp) : CT I (.block mask) :=
-  CT.taint [.ebp] (fun s₁ s₂ h₁ h₂ r hr => by
-    simp only [List.mem_singleton] at hr; subst hr; exact h _ _ h₁ h₂) (by taint_decide)
+theorem tagOut_ct {I : State → Prop} {W T : BitVec 32} {o : Nat} (ho : o = 0)
+    (h : ∀ s, I s → WEnv W s ∧ slotv s.mem W tpO = T) : CT I (tagOut o) := by
+  subst ho
+  refine CT.seq (J := fun s => s.gpr .edi = T)
+    (CT.taint [.ebp] (fun s₁ s₂ h₁ h₂ r hr => by
+      simp only [List.mem_singleton] at hr; subst hr; rw [(h _ h₁).1.ebp, (h _ h₂).1.ebp]) (by taint_decide))
+    (fun s hs => ?_) (CT.taint [.edi] (fun s₁ s₂ h₁ h₂ r hr => by
+      simp only [List.mem_singleton] at hr; subst hr; rw [h₁, h₂]) (by taint_decide))
+  obtain ⟨he, hT⟩ := h s hs
+  have aW : ∀ {o}, o < 2560 → w64 (W + BitVec.ofNat 32 o) = w64 W + BitVec.ofNat 64 o := fun ho => he.aW ho
+  have rIn : ∀ {o}, o + 4 ≤ 2560 → InRegions (s.rd ++ s.wr) (w64 W + BitVec.ofNat 64 o) 4 := fun ho => he.wIn' ho
+  rw [slotv_eq] at hT
+  simp only [tpO] at hT
+  exact WP.of_runBlock ⟨_, by xrun [he.ebp, aW, rIn, hT], by regs []⟩
 
 end VG.Proof.AesGcm.X86
