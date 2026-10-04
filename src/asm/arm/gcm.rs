@@ -1703,14 +1703,30 @@ pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_aad(ctx: *const [u64; 32], sta
 /// * `ctx` must be valid for reads of 256 bytes.
 /// * `state` must be valid for reads and writes of 80 bytes.
 /// * `data` must be valid for reads and writes of `len` bytes.
-/// * `scratch` must be valid for reads and writes of 2560 bytes.
 /// * `rounds` must be 10, 12 or 14.
-/// * The contents of `scratch` on return are unspecified.
-/// * `state`, `data` and `scratch` must not overlap each other, `ctx` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `ctx`, `state`, `data` and `scratch` may overlap the 8 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * `state` and `data` must not overlap each other, `ctx` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `state` and `data` may overlap the 2600 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_encrypt(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize, scratch: *mut [u64; 320]) {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_encrypt(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
     core::arch::naked_asm!(
+        "sub sp, sp, #2592",
+        "add r12, sp, #0",
+        "str lr, [r12, #28]",
+        "ldr lr, [sp, #2592]",
+        "str lr, [r12, #0]",
+        "ldr lr, [sp, #2596]",
+        "str lr, [r12, #4]",
+        "ldr lr, [sp, #2600]",
+        "str lr, [r12, #8]",
+        "ldr lr, [sp, #2604]",
+        "str lr, [r12, #12]",
+        "ldr lr, [sp, #2608]",
+        "str lr, [r12, #16]",
+        "ldr lr, [sp, #2612]",
+        "str lr, [r12, #20]",
+        "add lr, sp, #32",
+        "str lr, [r12, #24]",
+        "ldr lr, [sp, #28]",
         "ldr r12, [sp, #24]",
         "str r4, [r12, #128]",
         "str r5, [r12, #132]",
@@ -1949,6 +1965,7 @@ pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_encrypt(ctx: *const [u64; 32],
         "ldr r10, [r11, #152]",
         "ldr lr, [r11, #160]",
         "ldr r11, [r11, #156]",
+        "add sp, sp, #2592",
         "bx lr",
         vg_aes_ctr32 = sym super::aes::vg_aes_ctr32,
         vg_ghash = sym super::gcm::vg_ghash,
@@ -1968,14 +1985,30 @@ pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_encrypt(ctx: *const [u64; 32],
 /// * `ctx` must be valid for reads of 256 bytes.
 /// * `state` must be valid for reads and writes of 80 bytes.
 /// * `data` must be valid for reads and writes of `len` bytes.
-/// * `scratch` must be valid for reads and writes of 2560 bytes.
 /// * `rounds` must be 10, 12 or 14.
-/// * The contents of `scratch` on return are unspecified.
-/// * `state`, `data` and `scratch` must not overlap each other, `ctx` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `ctx`, `state`, `data` and `scratch` may overlap the 8 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * `state` and `data` must not overlap each other, `ctx` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `state` and `data` may overlap the 2600 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_decrypt(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize, scratch: *mut [u64; 320]) {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_decrypt(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
     core::arch::naked_asm!(
+        "sub sp, sp, #2592",
+        "add r12, sp, #0",
+        "str lr, [r12, #28]",
+        "ldr lr, [sp, #2592]",
+        "str lr, [r12, #0]",
+        "ldr lr, [sp, #2596]",
+        "str lr, [r12, #4]",
+        "ldr lr, [sp, #2600]",
+        "str lr, [r12, #8]",
+        "ldr lr, [sp, #2604]",
+        "str lr, [r12, #12]",
+        "ldr lr, [sp, #2608]",
+        "str lr, [r12, #16]",
+        "ldr lr, [sp, #2612]",
+        "str lr, [r12, #20]",
+        "add lr, sp, #32",
+        "str lr, [r12, #24]",
+        "ldr lr, [sp, #28]",
         "ldr r12, [sp, #24]",
         "str r4, [r12, #128]",
         "str r5, [r12, #132]",
@@ -2214,6 +2247,7 @@ pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_decrypt(ctx: *const [u64; 32],
         "ldr r10, [r11, #152]",
         "ldr lr, [r11, #160]",
         "ldr r11, [r11, #156]",
+        "add sp, sp, #2592",
         "bx lr",
         vg_ghash = sym super::gcm::vg_ghash,
         vg_aes_ctr32 = sym super::aes::vg_aes_ctr32,

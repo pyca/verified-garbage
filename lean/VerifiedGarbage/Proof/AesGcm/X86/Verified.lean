@@ -100,7 +100,7 @@ def crSat : State where
   rd := [⟨0x1000, 256⟩]
   wr := [⟨0x3000, 80⟩, ⟨0x2000, 0⟩, ⟨0x4000, 2560⟩, ⟨0x8004, 40⟩]
 
-theorem streamEncrypt_verified : Verified X86.target (streamEncrypt vg.callees) (Spec.Gcm.streamEncryptContract X86.abi 28) :=
+theorem streamEncrypt_verified : Verified X86.target (streamEncrypt vg.callees) (Proof.AesGcm.streamEncryptScratchContract X86.abi 28) :=
   Verified.of_correct streamEncrypt_correct streamEncrypt_ct (by
     have a0 : arg crSat 0 = 0x1000 := by decide
     have a1 : arg crSat 1 = 10 := by decide
@@ -114,11 +114,11 @@ theorem streamEncrypt_verified : Verified X86.target (streamEncrypt vg.callees) 
     have a9 : arg crSat 9 = 0x4000 := by decide
     have e : argAddr crSat 0 = 0x8004 := by decide
     have esp : crSat.gpr .esp = 0x8000 := rfl
-    sig_implies [Spec.Gcm.streamEncryptContract, Spec.Gcm.streamCryptSig, streamEncryptX86, streamCryptPre, pubN,
+    sig_implies [Proof.AesGcm.streamEncryptScratchContract, Proof.AesGcm.streamCryptScratchSig, Spec.Gcm.streamTextPre, Spec.Gcm.streamEncryptPost, Spec.Gcm.streamDecryptPost, streamEncryptX86, streamCryptPre, pubN,
       roundsOk, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
       [a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, e, esp] using crSat)
 
-theorem streamDecrypt_verified : Verified X86.target (streamDecrypt vg.callees) (Spec.Gcm.streamDecryptContract X86.abi 28) :=
+theorem streamDecrypt_verified : Verified X86.target (streamDecrypt vg.callees) (Proof.AesGcm.streamDecryptScratchContract X86.abi 28) :=
   Verified.of_correct streamDecrypt_correct streamDecrypt_ct (by
     have a0 : arg crSat 0 = 0x1000 := by decide
     have a1 : arg crSat 1 = 10 := by decide
@@ -132,7 +132,7 @@ theorem streamDecrypt_verified : Verified X86.target (streamDecrypt vg.callees) 
     have a9 : arg crSat 9 = 0x4000 := by decide
     have e : argAddr crSat 0 = 0x8004 := by decide
     have esp : crSat.gpr .esp = 0x8000 := rfl
-    sig_implies [Spec.Gcm.streamDecryptContract, Spec.Gcm.streamCryptSig, streamDecryptX86, streamCryptPre, pubN,
+    sig_implies [Proof.AesGcm.streamDecryptScratchContract, Proof.AesGcm.streamCryptScratchSig, Spec.Gcm.streamTextPre, Spec.Gcm.streamEncryptPost, Spec.Gcm.streamDecryptPost, streamDecryptX86, streamCryptPre, pubN,
       roundsOk, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
       [a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, e, esp] using crSat)
 

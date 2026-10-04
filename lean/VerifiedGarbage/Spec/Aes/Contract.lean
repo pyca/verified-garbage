@@ -2,13 +2,15 @@ import VerifiedGarbage.Spec.Aes
 import VerifiedGarbage.TCB.Artifact
 
 /-!
-# AES: the contract of the key expansion, on every target
+# AES: the contracts of the key expansion and the block cipher, on every target
 
-**Trusted** (as every file in `Spec/`). The contract of
-`vg_aes_expand_key`, in terms of `Spec/Aes.lean`, for any target: `A` is
-the target's calling convention. The signature fixes where the arguments
-are, the memory the function may access, disjointness, and that the
-pointers and the key's length are public (see `TCB/Sig.lean`).
+**Trusted** (as every file in `Spec/`). The contracts of
+`vg_aes_expand_key`, `vg_aes_encrypt_blocks` and `vg_aes_decrypt_blocks`,
+in terms of `Spec/Aes.lean`, for any target: `A` is the target's calling
+convention. The signatures fix where the arguments are, the memory each
+function may access, disjointness, and that the pointers, the key's length,
+the number of rounds and the number of blocks are public (see
+`TCB/Sig.lean`).
 
 The key schedule is stored as plain bytes (the words `w[0] … w[4Nr + 3]` in
 order, each as its 4 bytes), which is also the layout AES-NI's round keys
@@ -52,6 +54,83 @@ def expandKeyApi : Api where
   safety := [
     "`key_len` must be 16, 24 or 32.",
     "The bytes of `schedule` after the key schedule are unspecified on return.",
+    "The contents of `scratch` on return are unspecified."]
+
+/-! ## The cipher and the inverse cipher on whole blocks -/
+
+/-- The 16 bytes at `p` as a state: byte `i` is `in[i]` (§3.4). -/
+def stateAt (m : Mem) (p : Addr) : State := Vector.ofFn fun i => m (p + BitVec.ofNat 64 i.1)
+
+/-- The `n` blocks of 16 bytes at `p`, as states. -/
+def statesAt (m : Mem) (p : Addr) (n : Nat) : List State :=
+  (List.range n).map fun i => stateAt m (p + BitVec.ofNat 64 (16 * i))
+
+/-- `vg_aes_encrypt_blocks(schedule: *const [u8; 240], rounds: usize, data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256])`,
+and `vg_aes_decrypt_blocks` with the same signature. `rounds` is public;
+`scratch` is working space. -/
+def blocksSig : Sig where
+  params := [("schedule", .array false .u8 240), ("rounds", .int .usize true),
+    ("data", .slice true (.array .u8 16) "n"), ("scratch", .array true .u64 256)]
+
+/-- For `rounds` of 10, 12 or 14, with the key schedule `w` in the first
+`16 (rounds + 1)` bytes at `schedule`: replaces each of the `n` blocks at
+`data` with `CIPHER(·, rounds, w)`. The key schedule and the data are
+secret. -/
+def encryptBlocksContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
+  blocksSig.contract A
+    (pre := fun _schedule rounds _data _n _scratch _ =>
+      rounds.toNat = 10 ∨ rounds.toNat = 12 ∨ rounds.toNat = 14)
+    (post := fun schedule rounds data n _scratch m m' _ =>
+      statesAt m' data n.toNat =
+        (statesAt m data n.toNat).map
+          (cipher rounds.toNat (bytesAt m schedule (16 * (rounds.toNat + 1)))))
+    (stack := stack)
+
+/-- For `rounds` of 10, 12 or 14, with the key schedule `w` in the first
+`16 (rounds + 1)` bytes at `schedule`: replaces each of the `n` blocks at
+`data` with `INVCIPHER(·, rounds, w)`. The key schedule and the data are
+secret. -/
+def decryptBlocksContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
+  blocksSig.contract A
+    (pre := fun _schedule rounds _data _n _scratch _ =>
+      rounds.toNat = 10 ∨ rounds.toNat = 12 ∨ rounds.toNat = 14)
+    (post := fun schedule rounds data n _scratch m m' _ =>
+      statesAt m' data n.toNat =
+        (statesAt m data n.toNat).map
+          (invCipher rounds.toNat (bytesAt m schedule (16 * (rounds.toNat + 1)))))
+    (stack := stack)
+
+/-- `vg_aes_encrypt_blocks` on every target. -/
+def encryptBlocksApi : Api where
+  module := "aes"
+  name := "vg_aes_encrypt_blocks"
+  sig := blocksSig
+  contracts := some fun A stack => encryptBlocksContract A stack
+  summary := "AES encryption of whole blocks (FIPS 197 §5.1, `CIPHER`): replaces each of the `n` \
+    16-byte blocks at `data` with its encryption by AES with `rounds` rounds and the key \
+    schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` \
+    writes it.\n\n\
+    Contract: `VG.Spec.Aes.encryptBlocksContract`. Constant time: only the pointers, `rounds` \
+    and `n` may affect timing, not the key schedule or the data."
+  safety := [
+    "`rounds` must be 10, 12 or 14.",
+    "The contents of `scratch` on return are unspecified."]
+
+/-- `vg_aes_decrypt_blocks` on every target. -/
+def decryptBlocksApi : Api where
+  module := "aes"
+  name := "vg_aes_decrypt_blocks"
+  sig := blocksSig
+  contracts := some fun A stack => decryptBlocksContract A stack
+  summary := "AES decryption of whole blocks (FIPS 197 §5.3, `INVCIPHER`): replaces each of the \
+    `n` 16-byte blocks at `data` with its decryption by AES with `rounds` rounds and the key \
+    schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` \
+    writes it (the forward cipher's schedule, which the inverse cipher uses in the reverse \
+    order).\n\n\
+    Contract: `VG.Spec.Aes.decryptBlocksContract`. Constant time: only the pointers, `rounds` \
+    and `n` may affect timing, not the key schedule or the data."
+  safety := [
+    "`rounds` must be 10, 12 or 14.",
     "The contents of `scratch` on return are unspecified."]
 
 end VG.Spec.Aes

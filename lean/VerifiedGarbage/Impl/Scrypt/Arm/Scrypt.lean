@@ -9,7 +9,7 @@ blen, v, vlen, scratch, slen, out, out_len)`, the last nine on the stack
 `p = blen / r`, as on the other targets (`Impl/Scrypt/X86_64/Scrypt.lean`):
 
 1. `B = PBKDF2-HMAC-SHA256 (P, S, 1, 128 blen)` into `b`, by a call of
-   `vg_pbkdf2_hmac_sha256` (or the implementation `pbk` of it given);
+   `vg_pbkdf2_hmac_sha256_scratch` (or the implementation `pbk` of it given);
 2. `vg_scrypt_romix` on each of the `p` blocks of `128 r` bytes of `b`, with
    `v` as `V` and the start of `scratch` (`r + 2` chunks) as its working space;
 3. `PBKDF2-HMAC-SHA256 (P, B, 1, out_len)` into `out`, by another call.
@@ -24,7 +24,7 @@ the others are saved. Across the calls, which preserve them, `r4` is the
 next block, `r5` the end of `b` (`b + 128 blen`), `r6` is `r`, `r7`
 `scratch`, `r8` the password and `r9` its length. Each call's stack
 arguments are pushed in a frame of their own (`push {r10, r11, r12, lr}` for
-PBKDF2, `push {r12, lr}` for ROMix, as `vg_pbkdf2_hmac_sha256` does), so
+PBKDF2, `push {r12, lr}` for ROMix, as `vg_pbkdf2_hmac_sha256_scratch` does), so
 that the stack pointer stays 8-byte aligned. PBKDF2 uses the 24 bytes below
 its frame; ROMix uses no stack.
 

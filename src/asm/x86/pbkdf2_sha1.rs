@@ -187,14 +187,30 @@ pub(crate) unsafe extern "C" fn vg_pbkdf2_hmac_sha1_iterate(key: *const [u8; 168
 /// * `password` must be valid for reads of `password_len` bytes.
 /// * `salt` must be valid for reads of `salt_len` bytes.
 /// * `out` must be valid for reads and writes of `out_len` bytes.
-/// * `scratch` must be valid for reads and writes of 1120 bytes.
 /// * `c` must be positive, and `out_len` at most `(2^32 - 1) * 20`.
-/// * The contents of `scratch` on return are unspecified.
-/// * `out` and `scratch` must not overlap each other, `password` or `salt` (distinct Rust objects never do).
-/// * None of `password`, `salt`, `out` and `scratch` may overlap the arguments on the stack, overlap the return address on the stack or the 76 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `out` must not overlap `password` or `salt` (distinct Rust objects never do).
+/// * None of `password`, `salt` and `out` may overlap the arguments on the stack, overlap the return address on the stack or the 1232 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_pbkdf2_hmac_sha1(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, c: u32, out: *mut u8, out_len: usize, scratch: *mut [u64; 140]) {
+pub(crate) unsafe extern "C" fn vg_pbkdf2_hmac_sha1(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, c: u32, out: *mut u8, out_len: usize) {
     core::arch::naked_asm!(
+        "lea esp, [esp-1156]",
+        "mov eax, DWORD PTR [esp+1160]",
+        "mov DWORD PTR [esp+4], eax",
+        "mov eax, DWORD PTR [esp+1164]",
+        "mov DWORD PTR [esp+8], eax",
+        "mov eax, DWORD PTR [esp+1168]",
+        "mov DWORD PTR [esp+12], eax",
+        "mov eax, DWORD PTR [esp+1172]",
+        "mov DWORD PTR [esp+16], eax",
+        "mov eax, DWORD PTR [esp+1176]",
+        "mov DWORD PTR [esp+20], eax",
+        "mov eax, DWORD PTR [esp+1180]",
+        "mov DWORD PTR [esp+24], eax",
+        "mov eax, DWORD PTR [esp+1184]",
+        "mov DWORD PTR [esp+28], eax",
+        "mov eax, esp",
+        "add eax, 36",
+        "mov DWORD PTR [esp+32], eax",
         "mov eax, DWORD PTR [esp+32]",
         "mov DWORD PTR [eax+448], ebx",
         "mov DWORD PTR [eax+452], esi",
@@ -424,6 +440,7 @@ pub(crate) unsafe extern "C" fn vg_pbkdf2_hmac_sha1(password: *const u8, passwor
         "mov esi, DWORD PTR [eax+452]",
         "mov edi, DWORD PTR [eax+456]",
         "mov ebp, DWORD PTR [eax+460]",
+        "lea esp, [esp+1156]",
         "ret",
         ".p2align 6",
         vg_sha1_init = sym super::sha1::vg_sha1_init,

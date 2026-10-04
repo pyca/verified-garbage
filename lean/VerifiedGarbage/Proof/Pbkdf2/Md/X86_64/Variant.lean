@@ -3,6 +3,8 @@ import VerifiedGarbage.Proof.Sha512.X86_64.Variant
 import VerifiedGarbage.Proof.Sha256.X86_64.Variant
 import VerifiedGarbage.TCB.Artifact
 import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
+import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratch
+import VerifiedGarbage.Proof.Pbkdf2.Scratch
 
 /-!
 # Merkle–Damgård hash functions on x86-64, as variants
@@ -56,6 +58,12 @@ structure StreamFn where
 instance `I`) keep their working space, for their `_scratch` forms. -/
 def hmacFrame (I : Spec.Hmac.Instance) : Nat := 8 + 8 * I.scratch
 
+/-- The bytes of the frame in which PBKDF2's `pbkdf2` (of instance `I`) keeps
+its working space, for its `_scratch` form: a quadword standing for the
+return address, a copy of `out_len` and the buffer's address (its stack
+arguments), then the buffer. -/
+def pbkdf2Frame (I : Spec.Hmac.Instance) : Nat := 24 + 8 * I.pbkdf2Scratch
+
 /-- A Merkle–Damgård hash function on x86-64, with one implementation of its
 compression function: its functions, verified against the contracts of its
 instance `I` (`Spec/Hmac/Generic.lean`, `Spec/Pbkdf2/Generic.lean`). -/
@@ -67,7 +75,7 @@ structure MdHash where
   hmacInit : Verified X86_64.target H.hmacInit (I.initScratchContract X86_64.abi 16)
   hmacFin : Verified X86_64.target H.hmacFin (I.finalizeScratchContract X86_64.abi 16)
   iterate : Verified X86_64.target H.iterate (I.iterateContract X86_64.abi 8)
-  pbkdf2 : Verified X86_64.target H.pbkdf2 (I.pbkdf2Contract X86_64.abi 24)
+  pbkdf2 : Verified X86_64.target H.pbkdf2 (I.pbkdf2ScratchContract X86_64.abi 24)
   hmacInitSp : H.hmacInit.all (fun i => !isa.writesSp i) = true
   hmacFinSp : H.hmacFin.all (fun i => !isa.writesSp i) = true
   iterateSp : H.iterate.all (fun i => !isa.writesSp i) = true
@@ -80,6 +88,11 @@ structure MdHash where
   hmacFinF : Verified X86_64.target
     (Impl.StackScratch.X86_64.withStackScratch (hmacFrame I) .r8 H.hmacFin)
     (I.finalizeContract X86_64.abi (16 + hmacFrame I))
+  /-- PBKDF2's `pbkdf2` with its working space in a frame of its own
+  (`pbkdf2` is its `_scratch` form). -/
+  pbkdf2F : Verified X86_64.target
+    (Impl.StackScratch.X86_64.withStackArgScratch (pbkdf2Frame I) 1 H.pbkdf2)
+    (I.pbkdf2Contract X86_64.abi (24 + pbkdf2Frame I))
   /-- What the names of the functions emitted for it end with (e.g.
   `_shani`; nothing for the baseline implementation). -/
   suffix : String
@@ -130,10 +143,10 @@ theorem iterate_of (hs : ∃ s, (I.iterateContract X86_64.abi 8).pre s) :
 theorem pbkdf2_of (hsI : ∃ s, (I.initScratchContract X86_64.abi 16).pre s)
     (hsF : ∃ s, (I.finalizeScratchContract X86_64.abi 16).pre s)
     (hsT : ∃ s, (I.iterateContract X86_64.abi 8).pre s)
-    (hs : ∃ s, (I.pbkdf2Contract X86_64.abi 24).pre s) :
-    Verified X86_64.target H.pbkdf2 (I.pbkdf2Contract X86_64.abi 24) := by
+    (hs : ∃ s, (I.pbkdf2ScratchContract X86_64.abi 24).pre s) :
+    Verified X86_64.target H.pbkdf2 (I.pbkdf2ScratchContract X86_64.abi 24) := by
   simp only [Spec.Hmac.Instance.initScratchContract, Spec.Hmac.Instance.finalizeScratchContract,
-    Spec.Hmac.Instance.iterateContract, Spec.Hmac.Instance.pbkdf2Contract,
+    Spec.Hmac.Instance.iterateContract, Spec.Hmac.Instance.pbkdf2ScratchContract,
     Spec.Hmac.Instance.pbkdf2Scratch, ← hSH, ← hW, hH.hS] at hsI hsF hsT hs ⊢
   exact pbkdf2_verified hH C K hsI hsF hsT hs
 
@@ -158,6 +171,23 @@ theorem hmacFinF_of (hsF : ∃ s, (I.finalizeScratchContract X86_64.abi 16).pre 
     (by simp only [hmacFrame, Elem.size]; omega) (by simp only [hmacFrame]; omega) (hmacFin_sp C K)
     (Callees.hmacFinXD K C) hsat rfl
 
+theorem pbkdf2F_of (hsI : ∃ s, (I.initScratchContract X86_64.abi 16).pre s)
+    (hsF : ∃ s, (I.finalizeScratchContract X86_64.abi 16).pre s)
+    (hsT : ∃ s, (I.iterateContract X86_64.abi 8).pre s)
+    (hsP : ∃ s, (I.pbkdf2ScratchContract X86_64.abi 24).pre s) (hp : I.pbkdf2Scratch < 509)
+    (hsat : ∃ s, (I.pbkdf2Contract X86_64.abi (24 + pbkdf2Frame I)).pre s) :
+    Verified X86_64.target (Impl.StackScratch.X86_64.withStackArgScratch (pbkdf2Frame I) 1 H.pbkdf2)
+      (I.pbkdf2Contract X86_64.abi (24 + pbkdf2Frame I)) :=
+  X86_64.Verified.stackArgScratch (sig := Spec.Pbkdf2.pbkdf2Sig) (nm := "scratch") (e := .u64)
+    (n := I.pbkdf2Scratch) (pre := Spec.Pbkdf2.pbkdf2Pre I.S X86_64.abi.ptrBits)
+    (post := Spec.Pbkdf2.pbkdf2Post I.S X86_64.abi.ptrBits) (wa := true) (stack := 24)
+    (bytes := pbkdf2Frame I) (pbkdf2_of hH C K hSH hW hsI hsF hsT hsP) (by decide)
+    (by
+      have : X86_64.nStack Spec.Pbkdf2.pbkdf2Sig = 1 := rfl
+      simp only [pbkdf2Frame, Elem.size]; omega)
+    (by simp only [pbkdf2Frame]; omega) (pbkdf2_sp C K) (Callees.pbkdf2XD K C)
+    (pbkdf2Pre_local I.S _) (pbkdf2Post_local I.S _) hsat
+
 end MdHash
 
 /-- The variant of hash function `H`, of instance `I`, from what the proofs
@@ -167,10 +197,12 @@ def MdHash.of {H : Hash} {I : Spec.Hmac.Instance} (hH : HashOK H) (C : CoreOK (c
     (hsI : ∃ s, (I.initScratchContract X86_64.abi 16).pre s)
     (hsF : ∃ s, (I.finalizeScratchContract X86_64.abi 16).pre s)
     (hsT : ∃ s, (I.iterateContract X86_64.abi 8).pre s)
-    (hsP : ∃ s, (I.pbkdf2Contract X86_64.abi 24).pre s)
+    (hsP : ∃ s, (I.pbkdf2ScratchContract X86_64.abi 24).pre s)
     (hs : I.scratch < 511)
     (hsIF : ∃ s, (I.initContract X86_64.abi (16 + hmacFrame I)).pre s)
     (hsFF : ∃ s, (I.finalizeContract X86_64.abi (16 + hmacFrame I)).pre s)
+    (hp : I.pbkdf2Scratch < 509)
+    (hsPF : ∃ s, (I.pbkdf2Contract X86_64.abi (24 + pbkdf2Frame I)).pre s)
     (suffix : String) (features : List String) (stream : List StreamFn) : MdHash where
   H := H
   I := I
@@ -184,6 +216,7 @@ def MdHash.of {H : Hash} {I : Spec.Hmac.Instance} (hH : HashOK H) (C : CoreOK (c
   pbkdf2Sp := pbkdf2_sp C K
   hmacInitF := MdHash.hmacInitF_of hH C K hSH hW hsI hs hsIF
   hmacFinF := MdHash.hmacFinF_of hH C K hSH hW hsF hs hsFF
+  pbkdf2F := MdHash.pbkdf2F_of hH C K hSH hW hsI hsF hsT hsP hp hsPF
   suffix := suffix
   features := features
   stream := stream
