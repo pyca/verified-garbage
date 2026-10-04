@@ -71,7 +71,7 @@ theorem fixedOk_flag : FixedOk c [(c.sl FLAG, 4)] := by
   rw [List.mem_singleton.mp hw]
   exact Or.inr (Nat.le_trans (Nat.le_add_right _ _) (sl_lt c (by decide)))
 
-theorem fixedOk_wk (M : Mod) : FixedOk c [(c.wk, accLen M)] := by
+theorem fixedOk_wk : FixedOk c [(c.wk, 16 * c.n + 4)] := by
   intro w hw
   rw [List.mem_singleton.mp hw]
   exact Or.inr (Nat.le_trans (Nat.le_add_right _ _) (sl_below_wk c (i := 12) (by decide)))
@@ -122,8 +122,8 @@ theorem apart_tbl {i : Nat} (hi : i < 45) (j : Nat) :
   rw [List.mem_singleton.mp hw]
   exact Or.inl (by have := sl_below_bits c hi j 0; omega)
 
-theorem apart_wk {i : Nat} (hi : i < 45) (M : Mod) :
-    ∀ w ∈ [(c.wk, accLen M)], c.sl i + 8 * c.n ≤ w.1 ∨ w.1 + w.2 ≤ c.sl i := by
+theorem apart_wk {i : Nat} (hi : i < 45) :
+    ∀ w ∈ [(c.wk, 16 * c.n + 4)], c.sl i + 8 * c.n ≤ w.1 ∨ w.1 + w.2 ≤ c.sl i := by
   intro w hw
   rw [List.mem_singleton.mp hw]
   exact Or.inl (sl_below_wk c hi)
@@ -161,8 +161,8 @@ theorem tbl_apart_slW {l : List Nat} (hl : ∀ i ∈ l, i < 45) (j t : Nat) :
   obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hw
   exact Or.inr (sl_below_bits c (hl i hi) j t)
 
-theorem tbl_apart_wk {j t : Nat} (hj : j < 3) (ht : t < 64 * c.n) (M : Mod) :
-    ∀ w ∈ [(c.wk, accLen M)], bitsAt c.n j + t + 1 ≤ w.1 ∨ w.1 + w.2 ≤ bitsAt c.n j + t := by
+theorem tbl_apart_wk {j t : Nat} (hj : j < 3) (ht : t < 64 * c.n) :
+    ∀ w ∈ [(c.wk, 16 * c.n + 4)], bitsAt c.n j + t + 1 ≤ w.1 ∨ w.1 + w.2 ≤ bitsAt c.n j + t := by
   intro w hw
   rw [List.mem_singleton.mp hw]
   have := bitsAt_below_wk c hj
