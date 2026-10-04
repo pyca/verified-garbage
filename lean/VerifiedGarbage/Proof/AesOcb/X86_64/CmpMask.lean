@@ -89,12 +89,12 @@ theorem cmp_ok {K W SP : Addr} {s : State} (E : Env K W SP s) {tl : Nat} (h1 : 1
   have r₀ := E.perm.wR (show 224 + 8 ≤ 2560 by decide)
   simp only [tlO] at htl
   obtain ⟨s₁, run₁, rdx₁, rcx₁, r12₁, m₁, g₁, rd₁, wr₁⟩ : ∃ s₁, runBlock isa
-      [.alu .xor .rdx (.reg .rdx), .alu .xor .rcx (.reg .rcx), ld .r12 .r15 tlO] s = some s₁ ∧
+      [.alu .xor .rdx (.reg .rdx), .mov .rcx (.imm 0), ld .r12 .r15 tlO] s = some s₁ ∧
       s₁.gpr .rdx = 0#64 ∧ s₁.gpr .rcx = BitVec.ofNat 64 0 ∧ s₁.gpr .r12 = BitVec.ofNat 64 tl ∧ s₁.mem = s.mem ∧
       (∀ r, r ≠ .rdx → r ≠ .rcx → r ≠ .r12 → s₁.gpr r = s.gpr r) ∧ s₁.rd = s.rd ∧ s₁.wr = s.wr := by
     refine ⟨_, by orun [E.r15, r₀, htl], ?_, ?_, ?_, ?_, fun r h₁ h₂ h₃ => ?_, ?_, ?_⟩
-    · simp only [gpr_setReg, gpr_arithFlags, ite_true, ite_false, reduceCtorEq, BitVec.xor_self]
-    · simp only [gpr_setReg, gpr_arithFlags, ite_true, ite_false, reduceCtorEq, BitVec.xor_self]
+    · simp only [gpr_setReg, gpr_arithFlags, ite_true, ite_false, reduceCtorEq, BitVec.xor_self, sext0]
+    · simp only [gpr_setReg, gpr_arithFlags, ite_true, ite_false, reduceCtorEq, BitVec.xor_self, sext0]
     · simp only [gpr_setReg, gpr_arithFlags, ite_true, ite_false, reduceCtorEq, htl]
     · rfl
     · simp only [gpr_setReg, gpr_arithFlags, h₁, h₂, h₃, ite_false]
@@ -215,7 +215,7 @@ theorem mask_ok {K W SP : Addr} {s : State} (E : Env K W SP s) {D : Addr} {n : N
   have hn := hD.lt
   obtain ⟨s₁, run₁, m₁, h3₁, h12₁, hdx₁, h1₁, zf₁, g₁, rd₁, wr₁⟩ : ∃ s₁, runBlock isa
       [ld .rbx .r15 dataO, ld .r12 .r15 lenO, .alu .xor .rdx (.reg .rdx),
-        .alu .sub .rdx (.mem (at_ .r15 tagO)), .alu .xor .rcx (.reg .rcx), .alu .test .r12 (.reg .r12)] s = some s₁ ∧
+        .alu .sub .rdx (.mem (at_ .r15 tagO)), .mov .rcx (.imm 0), .alu .test .r12 (.reg .r12)] s = some s₁ ∧
       s₁.mem = s.mem ∧ s₁.gpr .rbx = D ∧ s₁.gpr .r12 = BitVec.ofNat 64 n ∧
       s₁.gpr .rdx = 0 - (if c then 1#64 else 0#64) ∧ s₁.gpr .rcx = BitVec.ofNat 64 0 ∧
       s₁.zf = some (decide (n = 0)) ∧
@@ -224,8 +224,8 @@ theorem mask_ok {K W SP : Addr} {s : State} (E : Env K W SP s) {D : Addr} {n : N
     · rfl
     · simp only [gpr_setReg, gpr_arithFlags, ite_true, ite_false, reduceCtorEq]
     · simp only [gpr_setReg, gpr_arithFlags, ite_true, ite_false, reduceCtorEq]
-    · simp only [gpr_setReg, gpr_arithFlags, ite_true, ite_false, reduceCtorEq, BitVec.xor_self, hok]; rfl
-    · simp only [gpr_setReg, gpr_arithFlags, ite_true, ite_false, reduceCtorEq, BitVec.xor_self]
+    · simp only [gpr_setReg, gpr_arithFlags, ite_true, ite_false, reduceCtorEq, BitVec.xor_self, sext0, hok]; rfl
+    · simp only [gpr_setReg, gpr_arithFlags, ite_true, ite_false, reduceCtorEq, BitVec.xor_self, sext0]
     · simp only [zf_arithFlags, gpr_setReg, gpr_arithFlags, ite_true, ite_false, reduceCtorEq,
         Proof.AesCcm.X86_64.and_self_beq hn]
     · intro r hr; simp only [List.mem_cons, List.not_mem_nil, or_false] at hr

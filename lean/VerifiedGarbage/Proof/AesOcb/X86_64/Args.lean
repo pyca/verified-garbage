@@ -73,6 +73,8 @@ def ArgsOk (args : List Instr) (s : State) (D : Addr) (n : Nat) : Prop :=
 
 theorem sext1 : BitVec.signExtend 64 (1 : BitVec 32) = BitVec.ofNat 64 1 := by decide
 
+theorem sext0 : BitVec.signExtend 64 (0 : BitVec 32) = BitVec.ofNat 64 0 := by decide
+
 /-- One block at `W + d`. -/
 theorem oneBlock_ok {W : Addr} {s : State} (h15 : s.gpr .r15 = W) (d : Nat) (hd : d < 2 ^ 31) :
     ArgsOk (oneBlock d) s (W + BitVec.ofNat 64 d) 1 := by

@@ -102,7 +102,7 @@ theorem nonceBlock_ok {K W SP : Addr} (L : Lay K W SP) {s : State} (E : Env K W 
   -- the pointers and the count
   obtain ⟨s₂, run₂, rbx₂, r12₂, rsi₂, rcx₂, g₂, m₂, rd₂, wr₂⟩ : ∃ s₂, runBlock isa
       [ld .rbx .r15 nO, ld .r12 .r15 nlO, mvr .rsi .r15, addi .rsi (tmpO + 16), .alu .sub .rsi (.reg .r12),
-        .alu .xor .rcx (.reg .rcx)] s₁ = some s₂ ∧
+        .mov .rcx (.imm 0)] s₁ = some s₂ ∧
       s₂.gpr .rbx = N ∧ s₂.gpr .r12 = BitVec.ofNat 64 nl ∧ s₂.gpr .rsi = W + BitVec.ofNat 64 (128 - nl) ∧
       s₂.gpr .rcx = BitVec.ofNat 64 0 ∧
       (∀ r, r ≠ .rbx → r ≠ .r12 → r ≠ .rsi → r ≠ .rcx → s₂.gpr r = s₁.gpr r) ∧ s₂.mem = s₁.mem ∧
@@ -117,7 +117,7 @@ theorem nonceBlock_ok {K W SP : Addr} (L : Lay K W SP) {s : State} (E : Env K W 
     · simp only [gpr_setReg, gpr_arithFlags, ite_true, ite_false, reduceCtorEq]
     · simp only [gpr_setReg, gpr_arithFlags, ite_true, ite_false, reduceCtorEq, h15₁]
       exact Offset.add_ofNat_sub W (by omega)
-    · simp only [gpr_setReg, gpr_arithFlags, ite_true, BitVec.xor_self]
+    · simp only [gpr_setReg, gpr_arithFlags, ite_true, BitVec.xor_self, sext0]
     · simp only [gpr_setReg, gpr_arithFlags, h1, h2, h3, h4, ite_false]
     all_goals rfl
   have eN : bytesAt s₂.mem N nl = bytesAt s.mem N nl := by

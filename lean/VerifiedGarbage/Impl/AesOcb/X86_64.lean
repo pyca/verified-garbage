@@ -153,7 +153,7 @@ def copyLoop : Prog isa :=
 /-- `W + d ← pad(S)` (§4.1), `S` the `r12` bytes at `rbx` (`0 < r12 < 16`):
 zeros, the bytes copied, and `0x80` after them. -/
 def padTo (d : Nat) : Prog isa :=
-  .seq (.block (zero16 d ++ [mvr .rsi .r15, addi .rsi d, .alu .xor .rcx (.reg .rcx)]))
+  .seq (.block (zero16 d ++ [mvr .rsi .r15, addi .rsi d, .mov .rcx (.imm 0)]))
     (.seq copyLoop (.block [.mov .rax (.imm 0x80), .store8 { base := .rsi, index := some .rcx } .rax]))
 
 /-- The nonce block (§4.2), `num2str(TAGLEN mod 128, 7) ‖ zeros ‖ 1 ‖ N`, at
@@ -164,7 +164,7 @@ byte. Then `bottom` (its last 6 bits) to `W + botO`, and those bits
 cleared. -/
 def nonceBlock : Prog isa :=
   .seq (.block (zero16 tmpO ++ [ld .rbx .r15 nO, ld .r12 .r15 nlO, mvr .rsi .r15, addi .rsi (tmpO + 16),
-      .alu .sub .rsi (.reg .r12), .alu .xor .rcx (.reg .rcx)]))
+      .alu .sub .rsi (.reg .r12), .mov .rcx (.imm 0)]))
     (.seq copyLoop
       (.block [.mov .rax (.imm 1), .store8 { base := .rsi, disp := -1 } .rax,
         ld .rax .r15 tlO, .alu .and .rax (.imm 15), .alu .add .rax (.reg .rax),
@@ -222,7 +222,7 @@ def hashFill : Prog isa :=
        addi .rsi 16, addi .rbx 16, addi .rbp 1, addi .r13 1, .alu .cmp .r13 (.reg .r12)]))
 
 /-- `r13 ← 0`, `rsi ← W + bufO`. -/
-def bufStart : List Instr := [.alu .xor .r13 (.reg .r13), mvr .rsi .r15, addi .rsi bufO]
+def bufStart : List Instr := [.mov .r13 (.imm 0), mvr .rsi .r15, addi .rsi bufO]
 
 /-- Add the `r12` blocks at `W + bufO` to the sum. -/
 def hashSum : Prog isa :=
@@ -299,7 +299,7 @@ def padCk : Prog isa := .seq (padTo t2O) (.block (xor16 .r15 t2O ckO))
 
 /-- The `r12` bytes at `rbx` XORed with `Pad` at `W + tmpO`. -/
 def xorPad : Prog isa :=
-  .seq (.block [.alu .xor .rcx (.reg .rcx)])
+  .seq (.block [.mov .rcx (.imm 0)])
     (.loop (.block [.movzx8 .rax { base := .rbx, index := some .rcx },
         .movzx8 .rdx { base := .r15, index := some .rcx, disp := tmpO }, .alu .xor .rax (.reg .rdx),
         .store8 { base := .rbx, index := some .rcx } .rax, addi .rcx 1,
@@ -348,7 +348,7 @@ def «seal» : Prog isa :=
 /-- `open`'s comparison of the first `tag_len` bytes of the tags (at `W` and
 `W + t2O`), without a branch: `eax ← 1` if they are equal, else 0. -/
 def cmp : Prog isa :=
-  .seq (.block [.alu .xor .rdx (.reg .rdx), .alu .xor .rcx (.reg .rcx), ld .r12 .r15 tlO])
+  .seq (.block [.alu .xor .rdx (.reg .rdx), .mov .rcx (.imm 0), ld .r12 .r15 tlO])
     (.seq (.loop (.block [.movzx8 .rax { base := .r15, index := some .rcx },
         .movzx8 .r8 { base := .r15, index := some .rcx, disp := t2O }, .alu .xor .rax (.reg .r8),
         .alu .or .rdx (.reg .rax), addi .rcx 1, .alu .cmp .rcx (.reg .r12)]) .ne)
@@ -357,7 +357,7 @@ def cmp : Prog isa :=
 /-- The data (`len` bytes) masked with `0 − ok`, `ok` at `W + tagO`. -/
 def mask : Prog isa :=
   .seq (.block [ld .rbx .r15 dataO, ld .r12 .r15 lenO, .alu .xor .rdx (.reg .rdx),
-      .alu .sub .rdx (.mem (at_ .r15 tagO)), .alu .xor .rcx (.reg .rcx), .alu .test .r12 (.reg .r12)])
+      .alu .sub .rdx (.mem (at_ .r15 tagO)), .mov .rcx (.imm 0), .alu .test .r12 (.reg .r12)])
     (.ite .e (.block [])
       (.loop (.block [.movzx8 .rax { base := .rbx, index := some .rcx }, .alu .and .rax (.reg .rdx),
         .store8 { base := .rbx, index := some .rcx } .rax, addi .rcx 1,

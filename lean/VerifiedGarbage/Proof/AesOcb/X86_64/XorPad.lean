@@ -66,11 +66,11 @@ theorem xorPad_ok {K W SP : Addr} {s : State} (E : Env K W SP s) {P : Addr} {r :
     WP isa xorPad s fun t => t.mem = writeBytes s.mem P
         (Spec.Ocb.xor (bytesAt s.mem P r) (bytesAt s.mem (W + BitVec.ofNat 64 112) r)) ∧
       (∀ r, r ≠ .rax → r ≠ .rdx → r ≠ .rcx → t.gpr r = s.gpr r) ∧ t.rd = s.rd ∧ t.wr = s.wr := by
-  obtain ⟨s₁, run₁, rcx₁, g₁, m₁, rd₁, wr₁⟩ : ∃ s₁, runBlock isa [.alu .xor .rcx (.reg .rcx)] s = some s₁ ∧
+  obtain ⟨s₁, run₁, rcx₁, g₁, m₁, rd₁, wr₁⟩ : ∃ s₁, runBlock isa [.mov .rcx (.imm 0)] s = some s₁ ∧
       s₁.gpr .rcx = BitVec.ofNat 64 0 ∧ (∀ r, r ≠ .rcx → s₁.gpr r = s.gpr r) ∧ s₁.mem = s.mem ∧ s₁.rd = s.rd ∧
       s₁.wr = s.wr := by
     refine ⟨_, by orun [], ?_, fun r h => ?_, ?_, ?_, ?_⟩
-    · simp only [gpr_setReg, gpr_arithFlags, ite_true, BitVec.xor_self]
+    · simp only [gpr_setReg, gpr_arithFlags, ite_true, BitVec.xor_self, sext0]
     · simp only [gpr_setReg, gpr_arithFlags, h, ite_false]
     all_goals rfl
   unfold xorPad

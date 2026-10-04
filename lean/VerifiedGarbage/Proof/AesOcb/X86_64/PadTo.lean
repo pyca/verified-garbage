@@ -105,13 +105,13 @@ theorem padTo_ok {K W SP : Addr} {s : State} (E : Env K W SP s) {S : Addr} {n d 
   have h15 := E.r15
   obtain ⟨s₁, run₁, B₁⟩ := zero16_ok (s := s) (d := d) h15 (E.perm.wW (by omega)) (E.perm.wW (by omega))
   obtain ⟨s₂, run₂, rsi₂, rcx₂, g₂, m₂, rd₂, wr₂⟩ : ∃ s₂,
-      runBlock isa [mvr .rsi .r15, addi .rsi d, .alu .xor .rcx (.reg .rcx)] s₁ = some s₂ ∧
+      runBlock isa [mvr .rsi .r15, addi .rsi d, .mov .rcx (.imm 0)] s₁ = some s₂ ∧
       s₂.gpr .rsi = W + BitVec.ofNat 64 d ∧ s₂.gpr .rcx = BitVec.ofNat 64 0 ∧
       (∀ r, r ≠ .rsi → r ≠ .rcx → s₂.gpr r = s₁.gpr r) ∧ s₂.mem = s₁.mem ∧ s₂.rd = s₁.rd ∧ s₂.wr = s₁.wr := by
     have h15₁ : s₁.gpr .r15 = W := by rw [B₁.gpr _ (by decide), h15]
     refine ⟨_, by orun [h15₁], ?_, ?_, fun r h1 h2 => ?_, ?_, ?_, ?_⟩
     · simp only [gpr_setReg, gpr_arithFlags, ite_true, ite_false, reduceCtorEq, h15₁]
-    · simp only [gpr_setReg, gpr_arithFlags, ite_true, BitVec.xor_self]
+    · simp only [gpr_setReg, gpr_arithFlags, ite_true, BitVec.xor_self, sext0]
     · simp only [gpr_setReg, gpr_arithFlags, h1, h2, ite_false]
     all_goals rfl
   have hS₂ : Covers [⟨S, n⟩] (s₂.rd ++ s₂.wr) := by rw [rd₂, wr₂, B₁.rd, B₁.wr]; exact hS

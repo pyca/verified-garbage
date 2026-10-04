@@ -216,7 +216,7 @@ theorem bufStart_ok {W : Addr} {t : State} (h15 : t.gpr .r15 = W) :
       t'.gpr .rsi = W + BitVec.ofNat 64 (384 + 16 * 0) ∧
       (∀ r, r ≠ .r13 → r ≠ .rsi → t'.gpr r = t.gpr r) ∧ t'.mem = t.mem ∧ t'.rd = t.rd ∧ t'.wr = t.wr := by
   refine ⟨_, by orun [bufStart, h15], ?_, ?_, fun r h1 h2 => ?_, ?_, ?_, ?_⟩
-  · simp only [gpr_setReg, gpr_arithFlags, ite_true, ite_false, reduceCtorEq, BitVec.xor_self]
+  · simp only [gpr_setReg, gpr_arithFlags, ite_true, ite_false, reduceCtorEq, BitVec.xor_self, sext0]
   · simp only [gpr_setReg, gpr_arithFlags, ite_true, ite_false, reduceCtorEq, h15]
   · simp only [gpr_setReg, gpr_arithFlags, h1, h2, ite_false]
   all_goals rfl
