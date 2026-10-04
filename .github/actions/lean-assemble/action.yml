@@ -1,0 +1,118 @@
+name: Assemble the Lean build
+description: >
+  After `lean-setup` and `lean-mathlib`, with the shards' outputs (if any)
+  downloaded to `$RUNNER_TEMP/lean-build`: adds them to `lean/.lake/build`,
+  checks every proof (and the axiom audit), and that the generated Rust is up
+  to date. In the merge queue it uploads what it built, for the push to main
+  to reuse; on main it saves the build and its manifest. Several jobs may run
+  it in one run (see `lean-shard` in ci.yml): everything it does is
+  idempotent, and its artifacts are named after `id`.
+
+inputs:
+  id:
+    description: What runs it (a shard's name, or the job's), for its artifacts' names.
+    required: true
+  cache-hit:
+    description: Whether the restore of `lean/.lake/build` hit its primary key.
+    required: true
+  cache-key:
+    description: That restore's primary key, to save the build under.
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Add the shards' outputs to the build
+      shell: bash
+      working-directory: lean
+      run: |
+        mkdir -p .lake/build
+        for f in "$RUNNER_TEMP"/lean-build/*.tar.zst; do
+          [ -e "$f" ] || continue
+          tar --zstd -xf "$f" -C .lake/build
+        done
+    # With every shard's outputs this builds only what the plan left
+    # unbuilt (all of it, with no shards); anything else it builds (e.g. if
+    # a newer cache was restored here than in a shard) is checked here.
+    - name: Check every proof (and the axiom audit)
+      shell: bash
+      working-directory: lean
+      run: |
+        set -o pipefail
+        touch "$RUNNER_TEMP/before-assembly"
+        lake build 2>&1 | tee "$RUNNER_TEMP/assembly.log"
+    # In the merge queue, what this build built, for the push to main to reuse.
+    - name: Collect the outputs of this build
+      if: ${{ github.event_name == 'merge_group' }}
+      shell: bash
+      working-directory: lean
+      env:
+        ID: ${{ inputs.id }}
+      run: |
+        python3 ../ci/lean_shards.py times < "$RUNNER_TEMP/assembly.log" > "$RUNNER_TEMP/lean-times-final-$ID.json"
+        cd .lake/build
+        find . -type f -newer "$RUNNER_TEMP/before-assembly" -printf '%P\n' \
+          | tar --zstd -cf "$RUNNER_TEMP/lean-build-final-$ID.tar.zst" -T -
+    - if: ${{ github.event_name == 'merge_group' }}
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      with:
+        name: lean-build-final-${{ inputs.id }}
+        path: |
+          ${{ runner.temp }}/lean-build-final-${{ inputs.id }}.tar.zst
+          ${{ runner.temp }}/lean-times-final-${{ inputs.id }}.json
+        compression-level: 0
+        retention-days: 1
+        if-no-files-found: error
+    # Only main saves. A pull request restores its own branch's caches
+    # before main's, so an entry it saved would win over main's newer one
+    # after it merges main, and it would re-prove everything main changed
+    # since. (Merge queue runs each get their own branch, whose caches no
+    # other run can restore.)
+    - name: Restore the manifest of the last build
+      if: ${{ inputs.cache-hit != 'true' && github.ref == 'refs/heads/main' }}
+      uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: .lean-manifest
+        key: lean-manifest-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('lean/lean-toolchain', 'lean/lake-manifest.json') }}-${{ hashFiles('lean/lakefile.toml', 'lean/*.lean', 'lean/VerifiedGarbage/**', 'lean/VerifiedGarbageTest/**') }}
+        restore-keys: lean-manifest-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('lean/lean-toolchain', 'lean/lake-manifest.json') }}-
+    - name: Write the manifest of this build
+      id: manifest
+      if: ${{ inputs.cache-hit != 'true' && github.ref == 'refs/heads/main' }}
+      shell: bash
+      working-directory: lean
+      env:
+        KEY: ${{ inputs.cache-key }}
+      run: |
+        python3 ../ci/lean_shards.py times < "$RUNNER_TEMP/assembly.log" > "$RUNNER_TEMP/lean-times.json"
+        python3 ../ci/lean_shards.py manifest ../.lean-manifest/manifest.json \
+          "$RUNNER_TEMP"/lean-build/lean-times-*.json "$RUNNER_TEMP/lean-times.json" > "$RUNNER_TEMP/manifest.json"
+        mkdir -p ../.lean-manifest
+        mv "$RUNNER_TEMP/manifest.json" ../.lean-manifest/manifest.json
+        echo "key=lean-manifest-${KEY#lean-build-}" >> "$GITHUB_OUTPUT"
+    # Lake never deletes the outputs of a module that was deleted or
+    # renamed, and each build starts from the last one saved: without
+    # this, they would be saved again until the toolchain changes.
+    - name: Remove the outputs of modules that no longer exist
+      if: ${{ steps.manifest.outcome == 'success' }}
+      shell: bash
+      working-directory: lean
+      run: python3 ../ci/lean_shards.py prune .lake/build
+    # If two jobs both save, the second only warns that the key is taken.
+    - name: Save this project's build
+      if: ${{ steps.manifest.outcome == 'success' }}
+      uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: lean/.lake/build
+        key: ${{ inputs.cache-key }}
+    # After the build, so that a plan never finds a manifest without its
+    # build.
+    - name: Save the manifest of this build
+      if: ${{ steps.manifest.outcome == 'success' }}
+      uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: .lean-manifest
+        key: ${{ steps.manifest.outputs.key }}
+    - name: Check the generated Rust is up to date
+      shell: bash
+      working-directory: lean
+      run: lake env lean --run Emit.lean --check
