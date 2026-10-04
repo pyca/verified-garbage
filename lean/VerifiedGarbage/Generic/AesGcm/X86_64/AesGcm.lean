@@ -1,6 +1,10 @@
 import VerifiedGarbage.TCB.X86_64.Target
 import VerifiedGarbage.Proof.AesGcm.X86_64.Frame
+import VerifiedGarbage.Proof.AesGcm.X86_64.Variant
 import VerifiedGarbage.Proof.AesGcm.X86_64.GhashImpls
+import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Ok
+import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Ok
+import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx.Ok
 
 /-!
 # AES-GCM (NIST SP 800-38D) on x86-64
@@ -38,6 +42,28 @@ they pass on the stack, the return address of their call of
 `vg_aes_gcm_encrypt_blocks` or `vg_aes_gcm_decrypt_blocks`, and that of its
 calls.
 -/
+
+/-! The interleaved loops a variant names, with their proofs (which import the
+algebra of `Proof/Gcm/Poly.lean`, so that the variants need not), and the
+implementations a variant names, resolved. -/
+
+namespace VG.Proof.AesGcm.X86_64
+
+/-- The loops named `n` interleave counter mode and GHASH correctly. -/
+theorem StitchName.ok : (n : StitchName) → Proof.Gcm.X86_64.Stitch.StitchOk n.enc n.dec
+  | .vaes => Proof.Gcm.X86_64.Stitch.stitch_ok
+  | .vaesAvx512 => Proof.Gcm.X86_64.StitchZ.stitch_ok
+  | .aesniAvx => Proof.Gcm.X86_64.StitchAvx.stitch_ok
+
+/-- The loops `p` names, with their proof. -/
+def StitchPart.impl (p : StitchPart) : StitchImpl :=
+  ⟨p.suffix, p.features, p.name.enc, p.name.dec, p.name.ok, p.encP, p.decP⟩
+
+/-- The implementations a variant calls. -/
+def GcmVariant.impl (v : GcmVariant) : GcmImpl :=
+  ⟨v.ctr, v.key, v.gh.impl, v.stitch.map StitchPart.impl⟩
+
+end VG.Proof.AesGcm.X86_64
 
 namespace VG.Generic.AesGcm.X86_64.AesGcm
 
