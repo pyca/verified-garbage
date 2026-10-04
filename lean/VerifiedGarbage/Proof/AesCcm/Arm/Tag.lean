@@ -61,18 +61,19 @@ theorem ctrCall_of {s : State} (he : Env k w sp R q1 s) (hR : R = 10 ∨ R = 12 
   · rw [e64, e384]
     exact covers_cons (he.perm.wC (by decide)) (covers_cons wD (he.perm.wC (by decide)))
 
-/-- The MAC state at `W + y` XORed with `CIPH_K(Ctr₀)`. -/
-theorem tag_ok {s : State} (he : Env k w sp R q1 s) (hR : R = 10 ∨ R = 12 ∨ R = 14) {nonce : List Byte}
+/-- `Ctr₀` at `W + 64`, and the arguments of the call in `tag y`. -/
+theorem tagArgs_ok {s : State} (he : Env k w sp R q1 s) (hR : R = 10 ∨ R = 12 ∨ R = 14) {nonce : List Byte}
     (h7 : 7 ≤ nonce.length) (h13 : nonce.length ≤ 13)
     (hc0 : bytesAt s.mem (State.addr w + BitVec.ofNat 64 48) 16 = Spec.Ccm.ctrBlock nonce 0) {y : Nat}
     (hy : y = 0 ∨ y = 112) :
-    WP isa (tag y) s fun s' => Env k w sp R q1 s' ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
-      (∀ r ∈ preserved, r ≠ .lr → s'.gpr r = s.gpr r) ∧
-      Frame [⟨State.addr w + BitVec.ofNat 64 64, 16⟩, ⟨State.addr w + BitVec.ofNat 64 y, 16⟩, scrR w,
-        blw sp] s.mem s'.mem ∧
-      bytesAt s'.mem (State.addr w + BitVec.ofNat 64 y) 16 =
-        xorFrom (Spec.Ccm.ctxCiph s.mem (State.addr k) R) nonce 0
-          (bytesAt s.mem (State.addr w + BitVec.ofNat 64 y) 16) := by
+    ∃ s₃, runBlock isa ([.mov .r0 (VG.Impl.AesGcm.Arm.imm 0)] ++ ctrAt ++ ctrArgs ++
+        [VG.Impl.AesGcm.Arm.addI .r3 .r11 y, .mov .r12 (VG.Impl.AesGcm.Arm.imm 1)]) s = some s₃ ∧
+      CtrCall s₃ k (w + BitVec.ofNat 32 64) (w + BitVec.ofNat 32 y) (w + BitVec.ofNat 32 384) R 1 ∧
+      Env k w sp R q1 s₃ ∧
+      (∀ r, r ≠ .r0 → r ≠ .r1 → r ≠ .r2 → r ≠ .r3 → r ≠ .r12 → r ≠ .lr → s₃.gpr r = s.gpr r) ∧
+      s₃.rd = s.rd ∧ s₃.wr = s.wr ∧ s₃.sp = s.sp ∧
+      Frame [⟨State.addr w + BitVec.ofNat 64 64, 16⟩] s.mem s₃.mem ∧
+      bytesAt s₃.mem (State.addr w + BitVec.ofNat 64 64) 16 = Spec.Ccm.ctrBlock nonce 0 := by
   have h8 := he.r8; have h9 := he.r9; have h11 := he.r11
   -- `r0 := 0`.
   obtain ⟨s₁, run₁, h0₁, g₁, k₁⟩ : ∃ s₁, runBlock isa [.mov .r0 (VG.Impl.AesGcm.Arm.imm 0)] s = some s₁ ∧
@@ -120,18 +121,38 @@ theorem tag_ok {s : State} (he : Env k w sp R q1 s) (hR : R = 10 ∨ R = 12 ∨ 
     (by rw [eY]; exact L.k_w' (by omega)) (by rw [eY]; exact hqc)
     (by rw [eY]; exact L.w_w (.inl (by omega)) (by omega) (by decide))
     (by rw [eY]; exact L.stk_w' (by omega)) (by rw [eY]; exact he₃.perm.wC (by omega))
-  refine WP.seq (WP.of_runBlock ⟨s₃, by
+  refine ⟨s₃, by
     rw [show [.mov .r0 (VG.Impl.AesGcm.Arm.imm 0)] ++ ctrAt ++ ctrArgs ++
       [VG.Impl.AesGcm.Arm.addI .r3 .r11 y, .mov .r12 (VG.Impl.AesGcm.Arm.imm 1)] =
       [.mov .r0 (VG.Impl.AesGcm.Arm.imm 0)] ++ (ctrAt ++ (ctrArgs ++
       [VG.Impl.AesGcm.Arm.addI .r3 .r11 y, .mov .r12 (VG.Impl.AesGcm.Arm.imm 1)])) by simp]
-    exact runBlock_app_of run₁ (runBlock_app_of run₂ run₃), ?_⟩)
+    exact runBlock_app_of run₁ (runBlock_app_of run₂ run₃), C₃, he₃, fun r a b c d e f => by rw [g₃ r a b c d e f, g₂ r a b, g₁ r a],
+    by rw [k₃.2.1, rd₂, k₁.2.1], by rw [k₃.2.2.1, wr₂, k₁.2.2.1], by rw [k₃.2.2.2, sp₂, k₁.2.2.2],
+    by rw [k₃.1, ← k₁.1]; exact f₂, by rw [k₃.1]; exact hc₂⟩
+
+/-- The MAC state at `W + y` XORed with `CIPH_K(Ctr₀)`. -/
+theorem tag_ok {s : State} (he : Env k w sp R q1 s) (hR : R = 10 ∨ R = 12 ∨ R = 14) {nonce : List Byte}
+    (h7 : 7 ≤ nonce.length) (h13 : nonce.length ≤ 13)
+    (hc0 : bytesAt s.mem (State.addr w + BitVec.ofNat 64 48) 16 = Spec.Ccm.ctrBlock nonce 0) {y : Nat}
+    (hy : y = 0 ∨ y = 112) :
+    WP isa (tag y) s fun s' => Env k w sp R q1 s' ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
+      (∀ r ∈ preserved, r ≠ .lr → s'.gpr r = s.gpr r) ∧
+      Frame [⟨State.addr w + BitVec.ofNat 64 64, 16⟩, ⟨State.addr w + BitVec.ofNat 64 y, 16⟩, scrR w,
+        blw sp] s.mem s'.mem ∧
+      bytesAt s'.mem (State.addr w + BitVec.ofNat 64 y) 16 =
+        xorFrom (Spec.Ccm.ctxCiph s.mem (State.addr k) R) nonce 0
+          (bytesAt s.mem (State.addr w + BitVec.ofNat 64 y) 16) := by
+  obtain ⟨s₃, run₃, C₃, he₃, g₃, rd₃, wr₃, sp₃, f₀₃, hc₂⟩ := tagArgs_ok L he hR h7 h13 hc0 hy
+  have eY := L.wA (d := y) (by omega)
+  have hqc : (⟨State.addr w + BitVec.ofNat 64 64, 16⟩ : Region).Disjoint ⟨State.addr w + BitVec.ofNat 64 y, 16 * 1⟩ := by
+    rcases hy with rfl | rfl
+    · exact L.w_w (.inr (by decide)) (by decide) (by decide)
+    · exact L.w_w (.inl (by decide)) (by decide) (by decide)
+  refine WP.seq (WP.of_runBlock ⟨s₃, run₃, ?_⟩)
   refine WP.mono (ctr_call C₃) fun s₄ h => ?_
   have hsp₃ : s₃.sp = sp := he₃.sp
   have hRb : 16 * (R + 1) ≤ 240 := by rcases hR with rfl | rfl | rfl <;> decide
   -- Memory before the call: only `W + 64` changed.
-  have f₀₃ : Frame [⟨State.addr w + BitVec.ofNat 64 64, 16⟩] s.mem s₃.mem := by
-    rw [k₃.1, ← k₁.1]; exact f₂
   have hK₃ : Spec.Ccm.ctxCiph s₃.mem (State.addr k) R = Spec.Ccm.ctxCiph s.mem (State.addr k) R := by
     simp only [Spec.Ccm.ctxCiph]
     rw [bytesAt_frame f₀₃ (fun r hr => by
@@ -140,12 +161,11 @@ theorem tag_ok {s : State} (he : Env k w sp R q1 s) (hR : R = 10 ∨ R = 12 ∨ 
   have hY₃ : bytesAt s₃.mem (State.addr w + BitVec.ofNat 64 y) 16 = bytesAt s.mem (State.addr w + BitVec.ofNat 64 y) 16 :=
     bytesAt_frame f₀₃ (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact hqc.symm) (by decide)
-  refine ⟨he₃.of_saved h.saved h.sp h.rd h.wr, by rw [h.rd, k₃.2.1, rd₂, k₁.2.1],
-    by rw [h.wr, k₃.2.2.1, wr₂, k₁.2.2.1], fun r hr hlr => ?_, ?_, ?_⟩
+  refine ⟨he₃.of_saved h.saved h.sp h.rd h.wr, by rw [h.rd, rd₃], by rw [h.wr, wr₃], fun r hr hlr => ?_, ?_, ?_⟩
   · have a : r ≠ .r0 ∧ r ≠ .r1 ∧ r ≠ .r2 ∧ r ≠ .r3 ∧ r ≠ .r12 := by
       simp only [preserved, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
-    rw [h.saved r hr hlr, g₃ r a.1 a.2.1 a.2.2.1 a.2.2.2.1 a.2.2.2.2 hlr, g₂ r a.1 a.2.1, g₁ r a.1]
+    rw [h.saved r hr hlr, g₃ r a.1 a.2.1 a.2.2.1 a.2.2.2.1 a.2.2.2.2 hlr]
   · have f₄ := h.frame
     rw [hsp₃, State.addr, ← State.addr, show State.addr (w + BitVec.ofNat 32 64) = _ from L.wA (by decide),
       eY, show State.addr (w + BitVec.ofNat 32 384) = _ from L.wA (by decide)] at f₄
@@ -162,7 +182,7 @@ theorem tag_ok {s : State} (he : Env k w sp R q1 s) (hR : R = 10 ∨ R = 12 ∨ 
       (fun i hi => by
         rw [show i = 0 by omega, Nat.zero_add]
         show Spec.Gcm.ofBytes _ = _
-        rw [L.wA (by decide), k₃.1, hc₂]) h.out
+        rw [L.wA (by decide), hc₂]) h.out
     rw [Nat.mul_one, eY] at hc
     rw [hc, hK₃, hY₃]
 

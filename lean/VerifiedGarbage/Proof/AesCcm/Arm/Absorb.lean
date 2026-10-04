@@ -83,15 +83,12 @@ theorem updCall_of {s : State} (he : Env k w sp R q1 s) (hR : R = 10 ∨ R = 12 
   · rw [L.wN (by decide)]; have := L.ww; omega
   · rw [eY, e384]; exact covers_cons (he.perm.wC (by omega)) (he.perm.wC (by decide))
 
-/-- `B` (at `W + 32`) chained into the MAC state at `W + y`. -/
-theorem updBlock_ok {s : State} (he : Env k w sp R q1 s) (hR : R = 10 ∨ R = 12 ∨ R = 14) {y : Nat}
-    (hy : y = 0 ∨ y = 112) :
-    WP isa (updBlock y) s fun s' => Env k w sp R q1 s' ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
-      (∀ r ∈ preserved, r ≠ .lr → s'.gpr r = s.gpr r) ∧
-      Frame [⟨State.addr w + BitVec.ofNat 64 y, 16⟩, scrR w, blw sp] s.mem s'.mem ∧
-      bytesAt s'.mem (State.addr w + BitVec.ofNat 64 y) 16 =
-        Spec.Cmac.chain (Spec.Ccm.ctxCiph s.mem (State.addr k) R)
-          (bytesAt s.mem (State.addr w + BitVec.ofNat 64 y) 16) [bytesAt s.mem (State.addr w + BitVec.ofNat 64 32) 16] := by
+/-- The arguments of the call in `updBlock y`. -/
+theorem updBlockArgs_ok {s : State} (he : Env k w sp R q1 s) (hR : R = 10 ∨ R = 12 ∨ R = 14) {y : Nat}
+    (hy : y = 0 ∨ y = 112) : ∃ s₁, runBlock isa (updArgs y ++ [addI .r3 .r11 bO, .mov .r12 (imm 1)]) s = some s₁ ∧
+      UArgs s₁ k (w + BitVec.ofNat 32 y) (w + BitVec.ofNat 32 32) (w + BitVec.ofNat 32 384) R 1 ∧
+      Env k w sp R q1 s₁ ∧
+      (∀ r, r ≠ .r0 → r ≠ .r1 → r ≠ .r2 → r ≠ .r3 → r ≠ .r12 → r ≠ .lr → s₁.gpr r = s.gpr r) ∧ Keeps s s₁ := by
   have eo : encodable (BitVec.ofNat 32 y) = true := by rcases hy with rfl | rfl <;> decide
   obtain ⟨s₁, run₁, a0, a1, a2, a3, a12, alr, g₁, k₁⟩ : ∃ s₁, runBlock isa (updArgs y ++
       [addI .r3 .r11 bO, .mov .r12 (imm 1)]) s = some s₁ ∧
@@ -124,6 +121,20 @@ theorem updBlock_ok {s : State} (he : Env k w sp R q1 s) (hR : R = 10 ∨ R = 12
     (by rw [e32]; exact L.w_w (.inl (by decide)) (by decide) (by decide))
     (by rw [e32]; exact L.stk_w' (by decide)) (by rw [e32]; exact covers_left (he₁.perm.wC (by decide)))
     a0 a1 a2 a3 a12 alr
+  exact ⟨s₁, run₁, U, he₁, g₁, k₁⟩
+
+/-- `B` (at `W + 32`) chained into the MAC state at `W + y`. -/
+theorem updBlock_ok {s : State} (he : Env k w sp R q1 s) (hR : R = 10 ∨ R = 12 ∨ R = 14) {y : Nat}
+    (hy : y = 0 ∨ y = 112) :
+    WP isa (updBlock y) s fun s' => Env k w sp R q1 s' ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
+      (∀ r ∈ preserved, r ≠ .lr → s'.gpr r = s.gpr r) ∧
+      Frame [⟨State.addr w + BitVec.ofNat 64 y, 16⟩, scrR w, blw sp] s.mem s'.mem ∧
+      bytesAt s'.mem (State.addr w + BitVec.ofNat 64 y) 16 =
+        Spec.Cmac.chain (Spec.Ccm.ctxCiph s.mem (State.addr k) R)
+          (bytesAt s.mem (State.addr w + BitVec.ofNat 64 y) 16) [bytesAt s.mem (State.addr w + BitVec.ofNat 64 32) 16] := by
+  obtain ⟨s₁, run₁, U, he₁, g₁, k₁⟩ := updBlockArgs_ok L he hR hy
+  have e32 := L.wA (d := 32) (by decide)
+  have eY := L.wA (d := y) (by omega)
   refine WP.seq (WP.of_runBlock ⟨s₁, run₁, ?_⟩)
   refine WP.mono (upd_call U) fun s₂ h => ?_
   refine ⟨he₁.of_saved h.saved h.sp h.rd h.wr, by rw [h.rd, k₁.rd], by rw [h.wr, k₁.wr], fun r hr hlr => ?_,
@@ -144,6 +155,63 @@ omit L in
 theorem sub_mac {y : Nat} {r : Region} (hr : r ∈ macR w sp y) : ∃ r' ∈ macR w sp y, Region.Sub r r' :=
   ⟨r, hr, fun _ h => h⟩
 
+omit L in
+/-- `r12 = r5 / 16`, and `Z` for no whole blocks. -/
+theorem split16_ok {s : State} {len : Nat} (hl : len < 2 ^ 32) (h5 : s.gpr .r5 = BitVec.ofNat 32 len) :
+    ∃ s₁, runBlock isa [.mov .r12 (.shifted .r5 .lsr 4), .cmp .r12 (imm 0)] s = some s₁ ∧
+      s₁.gpr .r12 = BitVec.ofNat 32 (len / 16) ∧ s₁.z = decide (len / 16 = 0) ∧
+      (∀ r, r ≠ .r12 → s₁.gpr r = s.gpr r) ∧ Keeps s s₁ := by
+  refine ⟨_, by arun [], ?_, ?_, ?_, ?_⟩
+  · simp [gpr_setReg, h5, shr4 hl]
+  · simp only [z_subFlags, gpr_setReg, gpr_subFlags, ite_true, ite_false, reduceCtorEq, h5, shr4 hl]
+    rw [z_cmp (by omega) (by decide)]
+  · intro r a; simp [gpr_setReg, a]
+  · exact ⟨rfl, rfl, rfl, rfl⟩
+
+omit L in
+/-- `r6 = r5 mod 16`, and `Z` for no last bytes. -/
+theorem split15_ok {s : State} {len : Nat} (hl : len < 2 ^ 32) (h5 : s.gpr .r5 = BitVec.ofNat 32 len) :
+    ∃ s₁, runBlock isa [.dp .and .r6 .r5 (imm 15), .cmp .r6 (imm 0)] s = some s₁ ∧
+      s₁.gpr .r6 = BitVec.ofNat 32 (len % 16) ∧ s₁.z = decide (len % 16 = 0) ∧
+      (∀ r, r ≠ .r6 → s₁.gpr r = s.gpr r) ∧ Keeps s s₁ := by
+  have hand := and15 (BitVec.ofNat 32 len)
+  rw [toNat32 hl] at hand
+  refine ⟨_, by arun [], ?_, ?_, ?_, ?_⟩
+  · simp [gpr_setReg, h5, imm, hand]
+  · simp only [z_subFlags, gpr_setReg, gpr_subFlags, ite_true, ite_false, reduceCtorEq, h5, imm, hand]
+    rw [z_cmp (by omega) (by decide)]
+  · intro r a; simp [gpr_setReg, a]
+  · exact ⟨rfl, rfl, rfl, rfl⟩
+
+/-- The arguments of the call in `absorbWhole y`, for `nb` blocks at `P`. -/
+theorem absArgs_ok {s : State} (he : Env k w sp R q1 s) (hR : R = 10 ∨ R = 12 ∨ R = 14) {y : Nat}
+    (hy : y = 0 ∨ y = 112) {P : BitVec 32} {nb : Nat} (hq : Buf w sp s P (16 * nb)) (hn : 16 * nb < 2 ^ 32)
+    (h4 : s.gpr .r4 = P) (h12 : s.gpr .r12 = BitVec.ofNat 32 nb) :
+    ∃ s₂, runBlock isa (updArgs y ++ [.mov .r3 (.reg .r4)]) s = some s₂ ∧
+      UArgs s₂ k (w + BitVec.ofNat 32 y) P (w + BitVec.ofNat 32 384) R nb ∧ Env k w sp R q1 s₂ ∧
+      (∀ r, r ≠ .r0 → r ≠ .r1 → r ≠ .r2 → r ≠ .r3 → r ≠ .lr → s₂.gpr r = s.gpr r) ∧ Keeps s s₂ := by
+  obtain ⟨s₂, run₂, a0, a1, a2, a3, alr, g₂, k₂⟩ : ∃ s₂, runBlock isa (updArgs y ++ [.mov .r3 (.reg .r4)]) s =
+      some s₂ ∧ s₂.gpr .r0 = k ∧ s₂.gpr .r1 = BitVec.ofNat 32 R ∧ s₂.gpr .r2 = w + BitVec.ofNat 32 y ∧
+      s₂.gpr .r3 = P ∧ s₂.gpr .lr = w + BitVec.ofNat 32 384 ∧
+      (∀ r, r ≠ .r0 → r ≠ .r1 → r ≠ .r2 → r ≠ .r3 → r ≠ .lr → s₂.gpr r = s.gpr r) ∧ Keeps s s₂ := by
+    have eo : encodable (BitVec.ofNat 32 y) = true := by rcases hy with rfl | rfl <;> decide
+    refine ⟨_, by simp only [updArgs, scrO]; arun [he.r9, he.r8, he.r11, eo], ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+    · simp [gpr_setReg, he.r9]
+    · simp [gpr_setReg, he.r8]
+    · simp [gpr_setReg, he.r11]
+    · simp [gpr_setReg, h4]
+    · simp [gpr_setReg, he.r11]
+    · intro r a b c d e; simp [gpr_setReg, a, b, c, d, e]
+    · exact ⟨rfl, rfl, rfl, rfl⟩
+  have he₂ := he.keep (fun r hr => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl <;> exact g₂ _ (by decide) (by decide) (by decide) (by decide)
+      (by decide)) k₂.sp k₂.rd k₂.wr
+  exact ⟨s₂, run₂, updCall_of L he₂ hR (y := y) (by omega) (D := P) (n := nb) hn hq.fit
+    (hq.w.sub_right (Lay.wSub (by omega))) (hq.w.sub_right (Lay.wSub (by decide))) hq.stk
+    (by rw [k₂.rd, k₂.wr]; exact hq.rd) a0 a1 a2 a3
+    (by rw [g₂ _ (by decide) (by decide) (by decide) (by decide) (by decide), h12]) alr, he₂, g₂, k₂⟩
+
 /-- The whole blocks of the string. -/
 theorem absorbWhole_ok {s : State} (he : Env k w sp R q1 s) (hR : R = 10 ∨ R = 12 ∨ R = 14) {y : Nat}
     (hy : y = 0 ∨ y = 112) {P : BitVec 32} {len : Nat} (hP : len ≠ 0 → Buf w sp s P len) (hl : len < 2 ^ 32)
@@ -151,15 +219,7 @@ theorem absorbWhole_ok {s : State} (he : Env k w sp R q1 s) (hR : R = 10 ∨ R =
     WP isa (absorbWhole y) s (Absorbed k w sp R q1 s y P len
       (Spec.Cmac.chain (Spec.Ccm.ctxCiph s.mem (State.addr k) R) (bytesAt s.mem (State.addr w + BitVec.ofNat 64 y) 16)
         (Spec.Cmac.blocks 16 ((bytesAt s.mem (State.addr P) len).take (16 * (len / 16)))))) := by
-  obtain ⟨s₁, run₁, h12₁, hz, g₁, k₁⟩ : ∃ s₁, runBlock isa [.mov .r12 (.shifted .r5 .lsr 4), .cmp .r12 (imm 0)] s =
-      some s₁ ∧ s₁.gpr .r12 = BitVec.ofNat 32 (len / 16) ∧ s₁.z = decide (len / 16 = 0) ∧
-      (∀ r, r ≠ .r12 → s₁.gpr r = s.gpr r) ∧ Keeps s s₁ := by
-    refine ⟨_, by arun [], ?_, ?_, ?_, ?_⟩
-    · simp [gpr_setReg, h5, shr4 hl]
-    · simp only [z_subFlags, gpr_setReg, gpr_subFlags, ite_true, ite_false, reduceCtorEq, h5, shr4 hl]
-      rw [z_cmp (by omega) (by decide)]
-    · intro r a; simp [gpr_setReg, a]
-    · exact ⟨rfl, rfl, rfl, rfl⟩
+  obtain ⟨s₁, run₁, h12₁, hz, g₁, k₁⟩ := split16_ok hl h5
   refine WP.seq (WP.of_runBlock ⟨s₁, run₁, ?_⟩)
   have he₁ := he.keep (fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -170,30 +230,10 @@ theorem absorbWhole_ok {s : State} (he : Env k w sp R q1 s) (hR : R = 10 ∨ R =
       by rw [k₁.mem]; exact Frame.refl _ _, ?_, k₁.rd, k₁.wr⟩
     rw [k₁.mem, h0, Nat.mul_zero, List.take_zero]; rfl
   · have h0 : len / 16 ≠ 0 := by simpa using hf
-    obtain ⟨s₂, run₂, a0, a1, a2, a3, alr, g₂, k₂⟩ : ∃ s₂, runBlock isa (updArgs y ++ [.mov .r3 (.reg .r4)]) s₁ =
-        some s₂ ∧ s₂.gpr .r0 = k ∧ s₂.gpr .r1 = BitVec.ofNat 32 R ∧ s₂.gpr .r2 = w + BitVec.ofNat 32 y ∧
-        s₂.gpr .r3 = P ∧ s₂.gpr .lr = w + BitVec.ofNat 32 384 ∧
-        (∀ r, r ≠ .r0 → r ≠ .r1 → r ≠ .r2 → r ≠ .r3 → r ≠ .lr → s₂.gpr r = s₁.gpr r) ∧ Keeps s₁ s₂ := by
-      have eo : encodable (BitVec.ofNat 32 y) = true := by rcases hy with rfl | rfl <;> decide
-      refine ⟨_, by simp only [updArgs, scrO]; arun [he₁.r9, he₁.r8, he₁.r11, eo], ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
-      · simp [gpr_setReg, he₁.r9]
-      · simp [gpr_setReg, he₁.r8]
-      · simp [gpr_setReg, he₁.r11]
-      · simp [gpr_setReg, g₁ .r4 (by decide), h4]
-      · simp [gpr_setReg, he₁.r11]
-      · intro r a b c d e; simp [gpr_setReg, a, b, c, d, e]
-      · exact ⟨rfl, rfl, rfl, rfl⟩
-    refine WP.seq (WP.of_runBlock ⟨s₂, run₂, ?_⟩)
-    have he₂ := he₁.keep (fun r hr => by
-      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl | rfl <;> exact g₂ _ (by decide) (by decide) (by decide) (by decide)
-        (by decide)) k₂.sp k₂.rd k₂.wr
     have hb : 16 * (len / 16) ≤ len := Nat.mul_div_le len 16
-    have hq := (hP (by omega)).take hb
-    have U := updCall_of L he₂ hR (y := y) (by omega) (D := P) (n := len / 16) (by omega) hq.fit
-      (hq.w.sub_right (Lay.wSub (by omega))) (hq.w.sub_right (Lay.wSub (by decide))) hq.stk
-      (by rw [k₂.rd, k₂.wr, k₁.rd, k₁.wr]; exact hq.rd) a0 a1 a2 a3
-      (by rw [g₂ _ (by decide) (by decide) (by decide) (by decide) (by decide), h12₁]) alr
+    have hq := ((hP (by omega)).take hb).of_eq k₁.rd k₁.wr
+    obtain ⟨s₂, run₂, U, he₂, g₂, k₂⟩ := absArgs_ok L he₁ hR hy hq (by omega) (by rw [g₁ _ (by decide), h4]) h12₁
+    refine WP.seq (WP.of_runBlock ⟨s₂, run₂, ?_⟩)
     refine WP.mono (upd_call U) fun s₃ h => ⟨he₂.of_saved h.saved h.sp h.rd h.wr, ?_, ?_, ?_, ?_,
       by rw [h.rd, k₂.rd, k₁.rd], by rw [h.wr, k₂.wr, k₁.wr]⟩
     · rw [h.saved _ (by decide) (by decide), g₂ _ (by decide) (by decide) (by decide) (by decide) (by decide),
@@ -218,17 +258,7 @@ theorem absorbTail_ok {s : State} (he : Env k w sp R q1 s) (hR : R = 10 ∨ R = 
       (Spec.Cmac.chain (Spec.Ccm.ctxCiph s.mem (State.addr k) R) (bytesAt s.mem (State.addr w + BitVec.ofNat 64 y) 16)
         (tailBlocks (bytesAt s.mem (State.addr P) len)))) := by
   have hxl := length_bytesAt s.mem (State.addr P) len
-  have hand := and15 (BitVec.ofNat 32 len)
-  rw [toNat32 hl] at hand
-  obtain ⟨s₁, run₁, h6₁, hz, g₁, k₁⟩ : ∃ s₁, runBlock isa [.dp .and .r6 .r5 (imm 15), .cmp .r6 (imm 0)] s =
-      some s₁ ∧ s₁.gpr .r6 = BitVec.ofNat 32 (len % 16) ∧ s₁.z = decide (len % 16 = 0) ∧
-      (∀ r, r ≠ .r6 → s₁.gpr r = s.gpr r) ∧ Keeps s s₁ := by
-    refine ⟨_, by arun [], ?_, ?_, ?_, ?_⟩
-    · simp [gpr_setReg, h5, imm, hand]
-    · simp only [z_subFlags, gpr_setReg, gpr_subFlags, ite_true, ite_false, reduceCtorEq, h5, imm, hand]
-      rw [z_cmp (by omega) (by decide)]
-    · intro r a; simp [gpr_setReg, a]
-    · exact ⟨rfl, rfl, rfl, rfl⟩
+  obtain ⟨s₁, run₁, h6₁, hz, g₁, k₁⟩ := split15_ok hl h5
   refine WP.seq (WP.of_runBlock ⟨s₁, run₁, ?_⟩)
   have he₁ := he.keep (fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
