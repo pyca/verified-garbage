@@ -16,6 +16,14 @@ The function takes 4 KiB of working space (`scratch`), which it leaves
 unspecified, since the ladder's variables do not fit in the registers of any
 target.
 
+`vg_x25519` supports both public-key derivation using the base point and key
+exchange using a peer's public key. `vg_x25519_base` computes the first alone,
+`X25519(k, 9)`, with the same postcondition as `vg_x25519` with `point` the
+base point (`basePoint`), so that an implementation can compute it otherwise
+than with the ladder (e.g. as the u-coordinate `(1 + y) / (1 - y)` of a
+fixed-base multiplication on edwards25519, RFC 7748 §4.1). It takes 8 KiB of
+working space, as Ed25519's fixed-base multiplication does.
+
 The contract takes the number of bytes of stack below the stack pointer that
 an implementation's calls and frames use (`stack`, see `Sig.contract`), 0
 for one that uses none.
@@ -54,5 +62,32 @@ def x25519Api : Api where
     Contract: `VG.Spec.X25519.x25519Contract`. Constant time: only the pointers may affect \
     timing, not the scalar or the u-coordinate."
   safety := ["The contents of `scratch` on return are unspecified."]
+
+/-- `vg_x25519_base(out: *mut [u8; 32], scalar: *const [u8; 32], scratch: *mut [u64; 1024])`.
+`scratch` is working space. -/
+def x25519BaseSig : Sig where
+  params := [("out", .array true .u8 32), ("scalar", .array false .u8 32),
+    ("scratch", .array true .u64 1024)]
+
+/-- Writes `X25519(k, 9)` (the public key of `k`, RFC 7748 §6.1) to `out`, for
+the 32-byte scalar `k` at `scalar`. -/
+def x25519BaseContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
+  x25519BaseSig.contract A (post := fun out scalar _scratch m m' _ =>
+    bytesAt m' out 32 = x25519 (bytesAt m scalar 32) basePoint)
+    (stack := stack)
+
+/-- `vg_x25519_base` on every target. -/
+def x25519BaseApi : Api where
+  module := "x25519"
+  name := "vg_x25519_base"
+  sig := x25519BaseSig
+  contracts := some fun A stack => x25519BaseContract A stack
+  summary := "Computes an X25519 public key (RFC 7748 §6.1): writes `X25519(k, 9)`, the X25519 \
+    function of the 32-byte scalar `k` at `scalar` and the base point's u-coordinate 9, to \
+    `*out`. The scalar is decoded (clamped).\n\n\
+    Contract: `VG.Spec.X25519.x25519BaseContract`. Constant time: only the pointers may affect \
+    timing, not the scalar."
+  safety := ["The contents of `scratch` on return are unspecified and may contain secrets; \
+    the caller must destroy them after use."]
 
 end VG.Spec.X25519
