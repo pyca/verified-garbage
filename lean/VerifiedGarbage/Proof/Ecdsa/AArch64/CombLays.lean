@@ -103,7 +103,7 @@ theorem combVals (hc : CfgOk c) (hC : Law c.C) (hT : CombOk c.C (16 * c.n) c.tbl
     exact rep_affine' hC _ _
 
 theorem combClob_regs : ∀ n < 7, Reg.x0 ∉ combClob n ∧ Reg.x20 ∉ combClob n := by
-  unfold combClob CombCfg.maskRegs clob acc; decide
+  unfold combClob maskRegs clob acc; decide
 
 theorem x0_not_combClob {n : Nat} (hn : n < 7) : Reg.x0 ∉ combClob n := (combClob_regs n hn).1
 

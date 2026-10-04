@@ -38,12 +38,12 @@ def artifacts : List Artifact := [
       multiplication (CIOS, with `mul` and `umulh` and the multiplicand's words in registers; \
       modulo `p`, `p ≡ -1 (mod 2⁶⁴)`, so each step adds `t₀ (p + 1) / 2⁶⁴`, which takes two shifts \
       and one product) with a final conditional subtraction. The key is checked without branches \
-      (its first byte, both coordinates below `p`, and the curve's equation), and the ladder \
-      multiplies the key's point if it is valid, else `G`, so it always runs on a point of the \
-      curve. `s⁻¹` modulo `n` and `Z⁻¹` are Fermat's, by square-and-always-multiply; `[u]G` is the \
-      signature's comb over the nibbles of `u`, and `[v]Q` a double-and-add ladder over all 256 \
-      bits of `v`, with the complete addition formulas of Renes, Costello and Batina, which also \
-      add the two. The result is the conjunction of the checks (the key, `r` and `s` in `[1, \
+      (its first byte, both coordinates below `p`, and the curve's equation), and `[v]Q` is \
+      computed for the key's point if it is valid, else `G`, so always on a point of the curve. `s⁻¹` modulo `n` and `Z⁻¹` are Fermat's, by square-and-always-multiply; `[u]G` is the \
+      signature's comb over the nibbles of `u`, and `[v]Q` `vg_ecdh_p256`'s signed 4-bit windows \
+      (65 digits of `v + 8 Σ_{j<65} 16^j`, four doublings and a constant-time selection from a \
+      table of `[1 … 8]Q` each), with the complete addition formulas of Renes, Costello and \
+      Batina, which also add the two. The result is the conjunction of the checks (the key, `r` and `s` in `[1, \
       n-1]`, the sum not the point at infinity, and `x ≡ r` modulo `n`) as a mask, so the time \
       depends only on the pointers, although the contract would let every input affect it."])
     code := Impl.Ecdsa.Verify.AArch64.verifyP256

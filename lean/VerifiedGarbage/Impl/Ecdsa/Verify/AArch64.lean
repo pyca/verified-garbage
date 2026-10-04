@@ -17,14 +17,13 @@ on x86-64 (`Impl/Ecdsa/Verify/X86_64.lean`):
    use);
 2. ECDH's checks of the key (`peer`, `validate`): its first byte, `x < p`,
    `y < p` and the curve's equation, into the flag, and the key's point, or
-   `G` if the flag is clear, to the slots of ECDH's ladder;
+   `G` if the flag is clear, to the slots of ECDH's window method;
 3. the masks of `r` and `s` in `[1, n-1]` into the flag, and
    `w = s^(n-2)`, in Montgomery form modulo `n`;
 4. `u = e w` and `v = r w` modulo `n`, out of Montgomery's form;
 5. `[u]G` by the signature's comb (from the table of `u`'s bits), saved
-   to `U`, and `R` reset to `O`; then `[v]Q` by ECDH's ladder (from the
-   table of `v`'s bits) and `[u]G + [v]Q` by the complete addition, into
-   `R`;
+   to `U`, and `R` reset to `O`; then `[v]Q` by ECDH's window method and
+   `[u]G + [v]Q` by the complete addition, into `R`;
 6. `Z^(p-2)` by the signature's power, `x = X Z^(p-2)` out of Montgomery's
    form, and the masks of `Z ≠ 0` and `x R ≡ r R` modulo `n` into the
    flag, which is returned as 0 or 1.
@@ -37,6 +36,7 @@ namespace VG.Impl.Ecdsa.Verify.AArch64
 
 open VG.AArch64 VG.Impl.Mont.AArch64 VG.Impl.Mont VG.Impl.Weierstrass.AArch64 VG.Impl.Weierstrass
 open VG.Impl.Ecdsa.AArch64
+open VG.Impl.Ecdh.AArch64 (PX PY)
 
 /-! Slots of the signature's layout, as verification uses them, after ECDH's
 checks of the key: `K` holds `r`, `D` the hash and `PT` `s` (until the
@@ -113,11 +113,12 @@ def final : Prog isa :=
     Mont.AArch64.sub c.MN' (c.sl W) (c.sl XN) (c.sl RM'),
     c.checkNonzero (c.sl RZ) ++ Impl.Ecdh.AArch64.Cfg.checkZero c (c.sl W) ++ finish c]
 
-/-- `[u]G + [v]Q`, into `R`, from the tables of bits of `u` and `v`. -/
+/-- `[u]G + [v]Q`, into `R`: `[u]G` by the comb from the table of the bits of
+`u`, `[v]Q` by ECDH's window method. -/
 def points : Prog isa :=
   .seq (bits (c.sl U) (bitsAt c.n 0) (8 * c.n)) <| .seq (CombCfg.comb c.combCfg) <|
   .seq (.block (save c)) <|
-  .seq (bits (c.sl V) (bitsAt c.n 0) (8 * c.n)) <| .seq (ladder (Impl.Ecdh.AArch64.Cfg.ladderQ c)) (sum c)
+  .seq (c.winPrep (c.sl V)) <| .seq (WinCfg.window (c.winCfg PX PY)) (sum c)
 
 /-- Everything after the checks of the key. -/
 def back : Prog isa :=

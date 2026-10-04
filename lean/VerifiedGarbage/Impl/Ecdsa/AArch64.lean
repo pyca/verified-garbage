@@ -1,4 +1,4 @@
-import VerifiedGarbage.Impl.Weierstrass.AArch64.Comb
+import VerifiedGarbage.Impl.Weierstrass.AArch64.Window
 import VerifiedGarbage.Spec.Weierstrass
 
 /-!
@@ -94,6 +94,14 @@ def nslots := 45
 /-- The table of the bits of `k` (`j = 0`), `p - 2` (1) and `n - 2` (2). -/
 def bitsAt (n j : Nat) : Nat := slot n nslots + 64 * n * j
 
+/-- The window method's slots, past the tables of bits (which are slots
+`45 + 8 j`): `k + offset J` (`n + 1` words, two slots), the table of its bits
+(`64 (n + 1)` bytes, sixteen slots) and the table of points `[1 … 8]P` (24
+slots). -/
+def WK : Nat := 69
+def WB : Nat := 71
+def WT : Nat := 87
+
 /-- A curve as the code has it: `n` words, its parameters, and the fixed-base
 comb's tables for `G` (`tbl[j][k - 1]` is `[k 16^j]G`, affine, for `j < 16 n`
 and `k = 1 … 8`) and starting point `[8 Σ_j 16^j]G`. -/
@@ -132,16 +140,6 @@ def pt (x y z : Nat) : Pt := ⟨c.sl x, c.sl y, c.sl z⟩
 
 def rcbSlots : RcbSlots := ⟨c.sl AP, c.sl B3P, c.sl T0, c.sl T1, c.sl T2, c.sl T3, c.sl T4, c.sl T5⟩
 
-def ladderCfg : LadderCfg where
-  M := c.MP'
-  S := c.rcbSlots
-  G := c.pt GX GY ONEP
-  R := c.pt RX RY RZ
-  D := c.pt DX DY DZ
-  T := c.pt TX TY TZ
-  bits := bitsAt c.n 0
-  nbits := 64 * c.n
-
 /-- The comb for `[k]G`, into `R`, from the table of the bits of `k`. -/
 def combCfg : CombCfg where
   M := c.MP'
@@ -155,6 +153,32 @@ def combCfg : CombCfg where
   tbl := c.tbl.map fun t => t.map fun (x, y) => (c.mont x, c.mont y)
   start := (c.mont c.start.1, c.mont c.start.2)
   one := c.mont 1
+
+/-- The window method's areas. -/
+def winK : Nat := c.sl WK
+def winBits : Nat := c.sl WB
+def winTbl : Nat := c.sl WT
+
+/-- The window method for `[k]P`, `P` at `px`, `py`, `ONEP`, into `R`, from the
+scalar at `k`'s slot. -/
+def winCfg (px py : Nat) : WinCfg where
+  M := c.MP'
+  S := c.rcbSlots
+  P := c.pt px py ONEP
+  R := c.pt RX RY RZ
+  E := c.pt TX TY TZ
+  D := c.pt DX DY DZ
+  neg := c.sl PT
+  zero := c.sl ZERO
+  bits := c.winBits
+  tbl := c.winTbl
+  J := 16 * c.n + 1
+  one := c.mont 1
+
+/-- `k + offset J` and its bits. -/
+def winPrep (k : Nat) : Prog isa :=
+  .seq (.block (WinCfg.addConst c.n k c.winK (WinCfg.offset (16 * c.n + 1))))
+    (bits c.winK c.winBits (8 * (c.n + 1)))
 
 def powP : PowCfg := ⟨c.MP', c.sl ACC, c.sl PT, c.sl RZ, c.sl ONEP, bitsAt c.n 1, 64 * c.n⟩
 def powN : PowCfg := ⟨c.MN', c.sl ACC, c.sl PT, c.sl KM, c.sl ONEN, bitsAt c.n 2, 64 * c.n⟩

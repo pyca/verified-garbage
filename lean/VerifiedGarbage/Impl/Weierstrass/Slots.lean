@@ -108,4 +108,29 @@ structure CombCfg where
 /-- The number of the comb's tables (and of digits). -/
 def CombCfg.J (K : CombCfg) : Nat := K.tbl.length
 
+/-- What the window method needs: the field, the complete addition's slots,
+the point `P` (read only), the accumulator `R` (the result), the slots of the
+selected entry `E` and of the sum `D`, a slot for `-y` and one holding zero,
+the table of bits of the recoded scalar (`4 J` bytes), where the table of
+`[m]P` for `m = 1 … 8` goes (`tbl`: 8 points of three `n`-word slots), the
+number of digits `J`, and `R mod p`. -/
+structure WinCfg where
+  M : Mod
+  S : RcbSlots
+  P : Pt
+  R : Pt
+  E : Pt
+  D : Pt
+  neg : Nat
+  zero : Nat
+  bits : Nat
+  tbl : Nat
+  J : Nat
+  one : Nat
+
+/-- Entry `m` (`1 … 8`) of the window method's table of `[m]P`. -/
+def WinCfg.tblPt (K : WinCfg) (m : Nat) : Pt :=
+  ⟨K.tbl + 24 * K.M.n * (m - 1), K.tbl + 24 * K.M.n * (m - 1) + 8 * K.M.n,
+    K.tbl + 24 * K.M.n * (m - 1) + 16 * K.M.n⟩
+
 end VG.Impl.Weierstrass
