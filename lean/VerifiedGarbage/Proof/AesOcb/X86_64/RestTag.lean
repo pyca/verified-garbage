@@ -112,4 +112,149 @@ theorem restHead_ok (v : BlocksImpl) {K W SP : Addr} (L : Lay K W SP) {t : State
     have hn : r ∉ [Reg.rax, .rdx] := by simp [hr'.1, hr'.2]
     rw [P₃.saved r hr, B₂.gpr r hn, B₁.gpr r hn]
 
+theorem wp_seq_assoc {a b c : Prog isa} {s : State} {Q : State → Prop} (h : WP isa (.seq (.seq a b) c) s Q) :
+    WP isa (.seq a (.seq b c)) s Q :=
+  WP.seq (WP.mono (WP.seq_iff.mp (WP.seq_iff.mp h)) fun _ h => WP.seq h)
+
+theorem xor_append_right (xs ys zs : List Byte) (h : xs.length = ys.length) :
+    Spec.Ocb.xor xs (ys ++ zs) = Spec.Ocb.xor xs ys := by
+  simpa [Spec.Ocb.xor] using List.zipWith_append (f := fun x1 x2 : Byte => x1 ^^^ x2) (l₁' := []) (l₂' := zs) h
+
+/-- `r` bytes XORed with the first `r` bytes of a block. -/
+theorem xor_bytesAt_block (xs : List Byte) (m : Mem) (Q : Addr) {r : Nat} (hl : xs.length = r) (hr : r ≤ 16) :
+    Spec.Ocb.xor xs (bytesAt m Q r) = Spec.Ocb.xor xs (Spec.Ocb.toBytes (blockAtMem m Q)) := by
+  rw [blockAtMem, Proof.Ocb.toBytes_ofBytes (length_bytesAt _ _ _), show (16 : Nat) = r + (16 - r) by omega,
+    Proof.Ocb.bytesAt_append, xor_append_right _ _ _ (by rw [hl, length_bytesAt])]
+
+/-- What `rest` leaves: `Offset_*`, the data XORed with `Pad`, and the
+checksum with the padded plaintext (before the XOR for `seal`, after it for
+`open`). -/
+structure RestPost (enc : Bool) (K W SP : Addr) (R : Nat) (P : Addr) (r : Nat) (t t' : State) : Prop where
+  env : Env K W SP t'
+  frame : Frame [⟨W + BitVec.ofNat 64 ofsO, 16⟩, ⟨W + BitVec.ofNat 64 tmpO, 16⟩, ⟨W + BitVec.ofNat 64 t2O, 16⟩,
+    ⟨W + BitVec.ofNat 64 ckO, 16⟩, wC W, below SP 8, ⟨P, r⟩] t.mem t'.mem
+  ofs : blockAtMem t'.mem (W + BitVec.ofNat 64 ofsO) =
+    blockAtMem t.mem (W + BitVec.ofNat 64 ofsO) ^^^ Spec.Ocb.ctxLstar t.mem K
+  out : bytesAt t'.mem P r = Spec.Ocb.xor (bytesAt t.mem P r)
+    (Spec.Ocb.toBytes (ctxCiph t.mem K R (blockAtMem t.mem (W + BitVec.ofNat 64 ofsO) ^^^ Spec.Ocb.ctxLstar t.mem K)))
+  ck : blockAtMem t'.mem (W + BitVec.ofNat 64 ckO) =
+    blockAtMem t.mem (W + BitVec.ofNat 64 ckO) ^^^ pad (bytesAt (if enc then t.mem else t'.mem) P r)
+  saved : ∀ r ∈ calleeSaved, t'.gpr r = t.gpr r
+  rd : t'.rd = t.rd
+  wr : t'.wr = t.wr
+
+theorem rest_ok (v : BlocksImpl) (enc : Bool) {K W SP : Addr} (L : Lay K W SP) {t : State} (E : Env K W SP t)
+    {R : Nat} (hR : R = 10 ∨ R = 12 ∨ R = 14) (hrnd : t.mem.readW (W + BitVec.ofNat 64 232) 64 = BitVec.ofNat 64 R)
+    {P : Addr} {r : Nat} (hr : 0 < r) (hr' : r < 16) (h3 : t.gpr .rbx = P) (h12 : t.gpr .r12 = BitVec.ofNat 64 r)
+    (hP : DBuf K W SP t P r) :
+    WP isa (rest (callees v) enc) t (RestPost enc K W SP R P r t) := by
+  unfold rest
+  refine wp_seq_assoc (WP.seq (WP.mono (restHead_ok v L E hR hrnd) fun t₃ H => ?_))
+  have h3₃ : t₃.gpr .rbx = P := by rw [H.saved _ (by decide), h3]
+  have h12₃ : t₃.gpr .r12 = BitVec.ofNat 64 r := by rw [H.saved _ (by decide), h12]
+  have hP₃ : DBuf K W SP t₃ P r := hP.of_eq H.rd H.wr
+  have hS₃ : Covers [⟨P, r⟩] (t₃.rd ++ t₃.wr) := hP₃.rd
+  -- `P` is apart from what the pieces write in `W` and from the stack.
+  have dW : ∀ {d k : Nat}, d + k ≤ 2560 → (⟨P, r⟩ : Region).Disjoint ⟨W + BitVec.ofNat 64 d, k⟩ :=
+    fun h => hP.w.sub_right (Lay.wSub h)
+  have dH : ∀ q ∈ [(⟨W + BitVec.ofNat 64 ofsO, 16⟩ : Region), ⟨W + BitVec.ofNat 64 tmpO, 16⟩, wC W, below SP 8],
+      (⟨P, r⟩ : Region).Disjoint q := by
+    intro q hq
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
+    rcases hq with rfl | rfl | rfl | rfl
+    · exact dW (by decide)
+    · exact dW (by decide)
+    · exact dW (by decide)
+    · exact hP.stk.symm
+  have dT : ∀ q ∈ [(⟨W + BitVec.ofNat 64 t2O, 16⟩ : Region), ⟨W + BitVec.ofNat 64 ckO, 16⟩],
+      (⟨P, r⟩ : Region).Disjoint q := by
+    intro q hq
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
+    rcases hq with rfl | rfl <;> exact dW (by decide)
+  have dTmp : ∀ q ∈ [(⟨W + BitVec.ofNat 64 t2O, 16⟩ : Region), ⟨W + BitVec.ofNat 64 ckO, 16⟩],
+      (⟨W + BitVec.ofNat 64 tmpO, 16⟩ : Region).Disjoint q := by
+    intro q hq
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
+    rcases hq with rfl | rfl
+    · exact L.w_w (.inl (by decide)) (by decide) (by decide)
+    · exact L.w_w (.inr (by decide)) (by decide) (by decide)
+  have dOfs : ∀ q ∈ [(⟨W + BitVec.ofNat 64 t2O, 16⟩ : Region), ⟨W + BitVec.ofNat 64 ckO, 16⟩],
+      (⟨W + BitVec.ofNat 64 ofsO, 16⟩ : Region).Disjoint q := by
+    intro q hq
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
+    rcases hq with rfl | rfl <;> exact L.w_w (.inl (by decide)) (by decide) (by decide)
+  have pP₃ : bytesAt t₃.mem P r = bytesAt t.mem P r := bytesAt_frame H.frame dH (by omega)
+  have hl : (bytesAt t.mem P r).length = r := length_bytesAt _ _ _
+  have hlx : ∀ ys, (Spec.Ocb.xor (bytesAt t.mem P r) (Spec.Ocb.toBytes ys)).length = r := fun ys => by
+    simp [Spec.Ocb.xor, length_bytesAt, Proof.Ocb.toBytes_length]; omega
+  have fP : ∀ (m : Mem) (xs : List Byte), xs.length = r → Frame [⟨P, r⟩] m (writeBytes m P xs) :=
+    fun m xs h => writeBytes_frame _ _ _ (by rw [h]; exact Region.contains_self _ _)
+  -- What `xorPad` writes, from the state it starts in.
+  have xP : ∀ u : State, bytesAt u.mem P r = bytesAt t.mem P r →
+      blockAtMem u.mem (W + BitVec.ofNat 64 tmpO) = blockAtMem t₃.mem (W + BitVec.ofNat 64 tmpO) →
+      bytesAt (writeBytes u.mem P (Spec.Ocb.xor (bytesAt u.mem P r) (bytesAt u.mem (W + BitVec.ofNat 64 112) r))) P r =
+        Spec.Ocb.xor (bytesAt t.mem P r) (Spec.Ocb.toBytes
+          (ctxCiph t.mem K R (blockAtMem t.mem (W + BitVec.ofNat 64 ofsO) ^^^ Spec.Ocb.ctxLstar t.mem K))) := by
+    intro u hu ht
+    rw [hu, xor_bytesAt_block _ _ _ hl (by omega), show (112 : Nat) = tmpO from rfl, ht, H.tmp,
+      Proof.AesCcm.X86_64.bytesAt_writeBytes_base _ _ _ (by rw [hlx]) (by omega), hlx, List.drop_of_length_le
+        (by rw [length_bytesAt]), List.append_nil]
+  have dCk : ∀ q ∈ [(⟨W + BitVec.ofNat 64 ofsO, 16⟩ : Region), ⟨W + BitVec.ofNat 64 tmpO, 16⟩, wC W, below SP 8],
+      (⟨W + BitVec.ofNat 64 ckO, 16⟩ : Region).Disjoint q := by
+    intro q hq
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
+    rcases hq with rfl | rfl | rfl | rfl
+    · exact L.w_w (.inr (by decide)) (by decide) (by decide)
+    · exact L.w_w (.inl (by decide)) (by decide) (by decide)
+    · exact L.w_w (.inl (by decide)) (by decide) (by decide)
+    · exact (L.stk_w' (by decide)).symm
+  have ck₃ : blockAtMem t₃.mem (W + BitVec.ofNat 64 ckO) = blockAtMem t.mem (W + BitVec.ofNat 64 ckO) :=
+    blockAtMem_frame H.frame dCk
+  have pW : ∀ {d : Nat}, d + 16 ≤ 2560 → ∀ q ∈ [(⟨P, r⟩ : Region)], (⟨W + BitVec.ofNat 64 d, 16⟩ : Region).Disjoint q :=
+    fun h q hq => by simp only [List.mem_singleton] at hq; subst hq; exact (dW h).symm
+  have g7 : ∀ {u u' : State} (a b c d : Reg), (∀ r, r ≠ a → r ≠ b → r ≠ c → r ≠ d → u'.gpr r = u.gpr r) →
+      a ∉ calleeSaved → b ∉ calleeSaved → c ∉ calleeSaved → d ∉ calleeSaved →
+      ∀ r ∈ calleeSaved, u'.gpr r = u.gpr r :=
+    fun a b c d g ha hb hc hd r hr => g r (fun h => ha (h ▸ hr)) (fun h => hb (h ▸ hr)) (fun h => hc (h ▸ hr))
+      (fun h => hd (h ▸ hr))
+  have E' : ∀ {u : State}, (∀ r ∈ calleeSaved, u.gpr r = t₃.gpr r) → u.rd = t₃.rd → u.wr = t₃.wr → Env K W SP u :=
+    fun g hrd hwr => H.env.of_saved g hrd hwr
+  cases enc
+  · -- `open`: the XOR, then the checksum.
+    refine WP.seq (WP.mono (xorPad_ok H.env hr hr' h3₃ h12₃ hP₃) fun t₄ ⟨m₄, g₄, rd₄, wr₄⟩ => ?_)
+    have s₄ : ∀ r ∈ calleeSaved, t₄.gpr r = t₃.gpr r :=
+      g7 .rax .rdx .rcx .rax (fun r h1 h2 h3 _ => g₄ r h1 h2 h3) (by decide) (by decide) (by decide) (by decide)
+    have E₄ : Env K W SP t₄ := E' s₄ rd₄ wr₄
+    have fr₄ : Frame [⟨P, r⟩] t₃.mem t₄.mem := by rw [m₄]; exact fP _ _ (by simp [Spec.Ocb.xor, length_bytesAt])
+    refine WP.mono (padCk_ok L E₄ hr hr' (by rw [s₄ _ (by decide), h3₃]) (by rw [s₄ _ (by decide), h12₃])
+      (by rw [rd₄, wr₄]; exact hS₃) hP.w) fun t₅ ⟨fr₅, ck₅, g₅, rd₅, wr₅⟩ => ?_
+    have s₅ : ∀ r ∈ calleeSaved, t₅.gpr r = t₄.gpr r :=
+      g7 .rax .rcx .rsi .rdx g₅ (by decide) (by decide) (by decide) (by decide)
+    have p₅ : bytesAt t₅.mem P r = bytesAt t₄.mem P r := bytesAt_frame fr₅ dT (by omega)
+    refine ⟨E' (fun r hr => by rw [s₅ r hr, s₄ r hr]) (by rw [rd₅, rd₄]) (by rw [wr₅, wr₄]),
+      ((H.frame.mono (by simp)).trans (fr₄.mono (by simp))).trans (fr₅.mono (by simp)), ?_, ?_, ?_,
+      fun r hr => by rw [s₅ r hr, s₄ r hr, H.saved r hr], by rw [rd₅, rd₄, H.rd], by rw [wr₅, wr₄, H.wr]⟩
+    · rw [blockAtMem_frame fr₅ dOfs, blockAtMem_frame fr₄ (pW (by decide)), H.ofs]
+    · rw [p₅, m₄, xP t₃ pP₃ rfl]
+    · simp only [Bool.false_eq_true, ↓reduceIte]
+      rw [ck₅, p₅, blockAtMem_frame fr₄ (pW (by decide)), ck₃]
+  · -- `seal`: the checksum, then the XOR.
+    refine WP.seq (WP.mono (padCk_ok L H.env hr hr' h3₃ h12₃ hS₃ hP.w) fun t₄ ⟨fr₄, ck₄, g₄, rd₄, wr₄⟩ => ?_)
+    have s₄ : ∀ r ∈ calleeSaved, t₄.gpr r = t₃.gpr r :=
+      g7 .rax .rcx .rsi .rdx g₄ (by decide) (by decide) (by decide) (by decide)
+    have E₄ : Env K W SP t₄ := E' s₄ rd₄ wr₄
+    have p₄ : bytesAt t₄.mem P r = bytesAt t₃.mem P r := bytesAt_frame fr₄ dT (by omega)
+    refine WP.mono (xorPad_ok E₄ hr hr' (by rw [s₄ _ (by decide), h3₃]) (by rw [s₄ _ (by decide), h12₃])
+      (hP₃.of_eq rd₄ wr₄)) fun t₅ ⟨m₅, g₅, rd₅, wr₅⟩ => ?_
+    have s₅ : ∀ r ∈ calleeSaved, t₅.gpr r = t₄.gpr r :=
+      g7 .rax .rdx .rcx .rax (fun r h1 h2 h3 _ => g₅ r h1 h2 h3) (by decide) (by decide) (by decide) (by decide)
+    have fr₅ : Frame [⟨P, r⟩] t₄.mem t₅.mem := by rw [m₅]; exact fP _ _ (by simp [Spec.Ocb.xor, length_bytesAt])
+    refine ⟨E' (fun r hr => by rw [s₅ r hr, s₄ r hr]) (by rw [rd₅, rd₄]) (by rw [wr₅, wr₄]),
+      ((H.frame.mono (by simp)).trans (fr₄.mono (by simp))).trans (fr₅.mono (by simp)), ?_, ?_, ?_,
+      fun r hr => by rw [s₅ r hr, s₄ r hr, H.saved r hr], by rw [rd₅, rd₄, H.rd], by rw [wr₅, wr₄, H.wr]⟩
+    · rw [blockAtMem_frame fr₅ (pW (by decide)), blockAtMem_frame fr₄ dOfs, H.ofs]
+    · rw [m₅, xP t₄ (by rw [p₄, pP₃]) (blockAtMem_frame fr₄ dTmp)]
+    · simp only [↓reduceIte]
+      rw [blockAtMem_frame fr₅ (pW (by decide)), ck₄, ck₃, pP₃]
+
 end VG.Proof.AesOcb.X86_64
