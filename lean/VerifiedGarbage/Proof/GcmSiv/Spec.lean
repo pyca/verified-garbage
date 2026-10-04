@@ -203,4 +203,68 @@ theorem elems_pad16 (bs : List Byte) :
     have : bs.length - 16 * (bs.length / 16) = bs.length % 16 := by omega
     rw [this, Nat.mod_mod, Nat.mod_eq_of_lt (a := 16 - bs.length % 16) (by omega)]
 
+/-! ## The tag input -/
+
+open VG.Proof.Cmac (le8 le4 length_le8 length_le4)
+
+/-- The tag input of POLYVAL's result `s` (its bytes) and the nonce, as
+`tagInput` computes it. -/
+def tagOf (s nonce : List Byte) : List Byte :=
+  (List.range 16).map fun i =>
+    if i < 12 then s.getD i 0 ^^^ nonce.getD i 0
+    else if i = 15 then s.getD i 0 &&& 0x7f
+    else s.getD i 0
+
+theorem tagInput_eq (authKey nonce pt aad : List Byte) :
+    Spec.GcmSiv.tagInput authKey nonce pt aad =
+      tagOf (Spec.GcmSiv.toBytes (Spec.GcmSiv.polyval (Spec.GcmSiv.ofBytes authKey)
+        (Spec.GcmSiv.elems (Spec.GcmSiv.pad16 aad ++ Spec.GcmSiv.pad16 pt ++
+          (Spec.GcmSiv.le64 (8 * aad.length) ++ Spec.GcmSiv.le64 (8 * pt.length)))))) nonce := rfl
+
+theorem setWidth_byte_lo (w : BitVec 32) {j : Nat} (hj : j < 4) :
+    (w.setWidth 64).extractLsb' (8 * j) 8 = w.extractLsb' (8 * j) 8 := by
+  ext k hk
+  simp only [BitVec.getElem_extractLsb', BitVec.getLsbD_setWidth]
+  simp; omega
+
+theorem setWidth_byte_hi (w : BitVec 32) {j : Nat} (hj : 4 ≤ j) :
+    (w.setWidth 64).extractLsb' (8 * j) 8 = 0 := by
+  ext k hk
+  simp only [BitVec.getElem_extractLsb', BitVec.getLsbD_setWidth]
+  simp [BitVec.getLsbD_of_ge w (8 * j + k) (by omega)]
+
+theorem mask_bytes : ∀ j < 7, (0x7FFFFFFFFFFFFFFF#64).extractLsb' (8 * j) 8 = BitVec.allOnes 8 := by decide
+theorem mask_byte7 : (0x7FFFFFFFFFFFFFFF#64).extractLsb' (8 * 7) 8 = 0x7F#8 := by decide
+
+theorem and_255 (x : BitVec 8) : x &&& 255#8 = x := by
+  rw [show (255#8) = BitVec.allOnes 8 from rfl, BitVec.and_allOnes]
+
+theorem tagOf_words (a b n₀ : BitVec 64) (n₁ : BitVec 32) :
+    tagOf (le8 a ++ le8 b) (le8 n₀ ++ le4 n₁) =
+      le8 (a ^^^ n₀) ++ le8 ((b ^^^ n₁.setWidth 64) &&& 0x7FFFFFFFFFFFFFFF#64) := by
+  apply List.ext_getElem (by simp [tagOf, length_le8])
+  intro i h₁ h₂
+  have hi : i < 16 := by simpa [tagOf] using h₁
+  simp only [tagOf, List.getElem_map, List.getElem_range, List.getD_eq_getElem?_getD]
+  rcases (by omega : i < 8 ∨ 8 ≤ i ∧ i < 12 ∨ 12 ≤ i ∧ i < 15 ∨ i = 15) with h | h | h | h
+  · simp only [show i < 12 by omega, ↓reduceIte]
+    rw [List.getElem?_append_left (by simp [length_le8]; omega),
+      List.getElem?_append_left (by simp [length_le8]; omega), List.getElem_append_left (by simp [length_le8]; omega)]
+    simp [le8, h, BitVec.extractLsb'_xor]
+  · simp only [show i < 12 by omega, ↓reduceIte]
+    rw [List.getElem?_append_right (by simp [length_le8]; omega),
+      List.getElem?_append_right (by simp [length_le8]; omega), List.getElem_append_right (by simp [length_le8]; omega)]
+    simp only [length_le8]
+    have hj : i - 8 < 4 := by omega
+    simp [le8, le4, hj, BitVec.extractLsb'_xor, BitVec.extractLsb'_and, setWidth_byte_lo _ hj,
+      mask_bytes (i - 8) (by omega), show i - 8 < 8 by omega, and_255]
+  · simp only [show ¬ i < 12 by omega, show i ≠ 15 by omega, ↓reduceIte]
+    rw [List.getElem?_append_right (by simp [length_le8]; omega),
+      List.getElem_append_right (by simp [length_le8]; omega)]
+    simp only [length_le8]
+    simp [le8, BitVec.extractLsb'_xor, BitVec.extractLsb'_and, setWidth_byte_hi _ (show 4 ≤ i - 8 by omega),
+      mask_bytes (i - 8) (by omega), show i - 8 < 8 by omega, and_255]
+  · subst h
+    simp [le8, BitVec.extractLsb'_xor, BitVec.extractLsb'_and, setWidth_byte_hi _ (show 4 ≤ 7 by omega)]
+
 end VG.Proof.GcmSiv
