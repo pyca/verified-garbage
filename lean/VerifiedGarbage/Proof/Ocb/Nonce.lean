@@ -38,12 +38,15 @@ def nonceN (t : Nat) (nonce : List Byte) : Block :=
   (BitVec.ofNat 128 (8 * t % 128) <<< 121) ||| ((1 : Block) <<< (8 * nonce.length)) |||
     BitVec.ofNat 128 (nonce.foldl (fun acc b => 256 * acc + b.toNat) 0)
 
+/-- Byte `k` of `zeros ‖ 1 ‖ N`: the nonce at the end and a 1 before it. -/
+def nbase (nonce : List Byte) (k : Nat) : Byte :=
+  if k = 15 - nonce.length then 1
+  else if 16 - nonce.length ≤ k then nonce.getD (k - (16 - nonce.length)) 0 else 0
+
 /-- Byte `k` of `Nonce`, as an implementation writes it: the nonce at the end,
 a 1 before it, and `TAGLEN mod 128` in the top 7 bits. -/
 def nb (t : Nat) (nonce : List Byte) (k : Nat) : Byte :=
-  let base : Byte := if k = 15 - nonce.length then 1
-    else if 16 - nonce.length ≤ k then nonce.getD (k - (16 - nonce.length)) 0 else 0
-  if k = 0 then base ||| BitVec.ofNat 8 (16 * (t % 16)) else base
+  if k = 0 then nbase nonce k ||| BitVec.ofNat 8 (16 * (t % 16)) else nbase nonce k
 
 /-- The bits of 1. -/
 theorem getLsbD_one' {w : Nat} (hw : 0 < w) (i : Nat) : (1 : BitVec w).getLsbD i = decide (i = 0) := by
@@ -62,7 +65,7 @@ theorem nonceN_byte (t : Nat) (nonce : List Byte) (h1 : 1 ≤ nonce.length) (h15
   rw [testBit_beVal nonce (15 - k) hj]
   have e8 : 8 * t % 128 = (t % 16) * 2 ^ 3 := by omega
   rw [e8, Nat.testBit_mul_two_pow]
-  unfold nb
+  unfold nb nbase
   by_cases hk0 : k = 0
   · subst hk0
     have e16 : 16 * (t % 16) = 2 ^ 4 * (t % 16) := rfl
@@ -130,5 +133,22 @@ theorem offset0_eq (ciph : Cipher) (t : Nat) (nonce : List Byte) :
       let ktop := ciph (nonceN t nonce &&& ~~~(63 : Block))
       let stretch : BitVec 192 := ktop ++ (ktop.extractLsb' 64 64 ^^^ ktop.extractLsb' 56 64)
       stretch.extractLsb' (64 - ((nonceN t nonce).extractLsb' 0 6).toNat) 128 := rfl
+
+/-- The bytes `zeros ‖ 1 ‖ N`. -/
+theorem nbase_list (nonce : List Byte) (h1 : 1 ≤ nonce.length) (h15 : nonce.length ≤ 15) {k : Nat} (hk : k < 16) :
+    (zeros (15 - nonce.length) ++ [1] ++ nonce).getD k 0 = nbase nonce k := by
+  unfold nbase zeros
+  rw [List.getD_eq_getElem?_getD]
+  by_cases h₁ : k < 15 - nonce.length
+  · rw [List.getElem?_append_left (by simp; omega), List.getElem?_append_left (by simp; omega)]
+    simp [h₁, show k ≠ 15 - nonce.length by omega, show ¬ 16 - nonce.length ≤ k by omega]
+  · by_cases h₂ : k = 15 - nonce.length
+    · subst h₂
+      rw [List.getElem?_append_left (by simp), List.getElem?_append_right (by simp)]
+      simp
+    · rw [List.getElem?_append_right (by simp; omega)]
+      simp only [List.length_append, List.length_replicate, List.length_singleton, h₂, ↓reduceIte,
+        show 16 - nonce.length ≤ k by omega, List.getD_eq_getElem?_getD]
+      congr 2; omega
 
 end VG.Proof.Ocb
