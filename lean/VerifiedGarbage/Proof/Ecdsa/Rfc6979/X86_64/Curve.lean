@@ -4,6 +4,9 @@ import VerifiedGarbage.TCB.X86_64.Target
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Core
 import VerifiedGarbage.Proof.Framework.X86_64.Abi
+import VerifiedGarbage.Proof.Framework.X86_64.Taint
+import VerifiedGarbage.Impl.Ecdsa.Rfc6979.X86_64
+import VerifiedGarbage.Impl.Sha256.X86_64.Stream
 
 /-!
 # Deterministic ECDSA on x86-64: the curve
@@ -53,6 +56,16 @@ def coreK (E : Impl.Ecdsa.X86_64.Cfg) : Contract X86_64.isa where
   pub s₁ s₂ := s₁.gpr .rsp = s₂.gpr .rsp ∧ s₁.gpr .rdi = s₂.gpr .rdi ∧ s₁.gpr .rsi = s₂.gpr .rsi ∧
     s₁.gpr .rdx = s₂.gpr .rdx ∧ s₁.gpr .rcx = s₂.gpr .rcx ∧ s₁.gpr .r8 = s₂.gpr .r8
 
+/-- The code's blocks that depend on neither the hash function nor the
+compression function, for scalars of `E`. -/
+def cfgC (E : Impl.Ecdsa.X86_64.Cfg) : Impl.Ecdsa.Rfc6979.X86_64.Cfg where
+  H := ⟨Impl.Sha256.X86_64.Stream.params, 32, 104, "", .block [], "", .block [], "", "", "", "", ""⟩
+  w := E.n
+  n := E.C.n
+  tries := 8
+  coreN := ""
+  coreC := .block []
+
 /-- A curve, for RFC 6979 on x86-64. -/
 structure RfcCurve where
   /-- The curve, as the code of `vg_ecdsa_<curve>_sign` has it. -/
@@ -60,9 +73,8 @@ structure RfcCurve where
   /-- The instance of ECDSA. -/
   inst : Spec.Ecdsa.Instance
   curve : inst.curve = E.C
-  /-- Scalars of 4 to 6 words. -/
-  n4 : 4 ≤ E.n
-  n6 : E.n ≤ 6
+  /-- Scalars of 4 or 6 words. -/
+  n46 : E.n = 4 ∨ E.n = 6
   len : E.C.len = 8 * E.n
   /-- `n` has exactly `64 n` bits, and `2^(64 n) < 2 n`. -/
   nBits : nBits E.C = 64 * E.n
@@ -78,5 +90,18 @@ structure RfcCurve where
   coreSp : coreC.allInstrs (fun i => !isa.writesSp i) = true
   coreMx : coreC.allInstrs (fun i => !loadsMxcsr i) = true
   coreD : coreC.depth = 0
+  /-- `bits2octets` and the initial `K` and `V` address memory only from
+  `rsp` and `rsi` (the taint analysis, of the block for `n`'s words). -/
+  reduceT : ∃ hc, (taint.check (Taint.ofRegs [.rsp, .rsi])
+    (.block ((cfgC E).reduce ++ Impl.Ecdsa.Rfc6979.X86_64.Cfg.initKV)) hc).isSome = true
+  /-- None of its instructions writes `rsp` or loads MXCSR. -/
+  reduceSp : (Code.block ((cfgC E).reduce ++ Impl.Ecdsa.Rfc6979.X86_64.Cfg.initKV) : Prog isa).allInstrs
+    (fun i => !isa.writesSp i) = true
+  reduceMx : (Code.block ((cfgC E).reduce ++ Impl.Ecdsa.Rfc6979.X86_64.Cfg.initKV) : Prog isa).allInstrs
+    (fun i => !loadsMxcsr i) = true
+
+theorem RfcCurve.n4 (R : RfcCurve) : 4 ≤ R.E.n := by rcases R.n46 with h | h <;> omega
+
+theorem RfcCurve.n6 (R : RfcCurve) : R.E.n ≤ 6 := by rcases R.n46 with h | h <;> omega
 
 end VG.Proof.Ecdsa.Rfc6979.X86_64
