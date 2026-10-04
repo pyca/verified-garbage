@@ -37,21 +37,26 @@ pointers (`Impl.AesGcm.AArch64.copyLoop` and `xorLoop`).
 
 `[0, 16)`: the tag (out of `seal`; the received one, for `open`); then the
 offset, the checksum, the sum of `HASH`, `L_$`, `L_0`, the current
-`L_{ntz(i)}`, a block for one call, the computed tag of `open`, the offset
-of `HASH`, our caller's `x19`–`x28` and our return address `x30`, the public
-arguments, `bottom`, `Offset_0`; `[384, 512)`: 8 blocks of the associated
-data; `[512, 2560)`: the working space of the functions called. A call
-(`bl`) stores nothing in memory, so no stack is used.
+`L_{ntz(i)}`, a block for one call, the computed tag of `open` and the
+offset of `HASH`, to 160; our caller's `x19`–`x28` and our return address
+`x30` at `[160, 248)`; the public arguments kept in memory, `tag_len`,
+`aad`, `aad_len`, `nonce` and `nonce_len`, at `[248, 288)`, which nothing
+writes after the entry; `bottom` and `Offset_0` at `[288, 320)`;
+`[384, 512)`: 8 blocks of the associated data; `[512, 2560)`: the working
+space of the functions called. A call (`bl`) stores nothing in memory, so
+no stack is used.
 
 ## Registers
 
-`x19` holds `W`, `x20` the key context and `x22` the number of rounds
-throughout; the functions called preserve them, and `x23`–`x27`, which hold
-pointers and counts across calls: `x23` the data (or associated data)
-pointer, `x24` a count of blocks or bytes, `x25` the block index `i`, `x26`
-the number of whole blocks (or the count left in a chunk of `HASH`), `x27`
-the buffer pointer of `HASH`. Only the pointers, the lengths, `rounds` and
-`tag_len` (and for `open`, whether the tag is right) affect timing.
+`x19` holds `W`, `x20` the key context, `x21` the data, `x22` the number of
+rounds and `x28` the data's length throughout; the functions called
+preserve them, and `x23`–`x27`, which hold pointers and counts across calls:
+`x23` the data (or associated data) pointer, `x24` a count of blocks or
+bytes, `x25` the block index `i`, `x26` the number of whole blocks (of the
+data, or those of the associated data left), `x27` the buffer pointer of
+`HASH`; `x15` counts the blocks of a chunk of `HASH`. Only the pointers, the
+lengths, `rounds` and `tag_len` (and for `open`, whether the tag is right)
+affect timing.
 -/
 
 namespace VG.Impl.AesOcb.AArch64
@@ -82,15 +87,13 @@ def tmpO : Nat := 112
 def t2O : Nat := 128
 def ohO : Nat := 144
 def savO : Nat := 160
-def dataO : Nat := 248
-def lenO : Nat := 256
-def tlO : Nat := 264
-def aadO : Nat := 272
-def alenO : Nat := 280
+def tlO : Nat := 248
+def aadO : Nat := 256
+def alenO : Nat := 264
+def nO : Nat := 272
+def nlO : Nat := 280
 def botO : Nat := 288
-def nO : Nat := 296
-def nlO : Nat := 304
-def o0O : Nat := 320
+def o0O : Nat := 304
 def bufO : Nat := 384
 def scrO : Nat := 512
 
@@ -130,14 +133,14 @@ def dbl (b : Reg) (s d : Nat) : List Instr :=
    .lsl .x .x10 .x10 1, .logic .eor .x .x10 .x10 .x12,
    .rev .x9 .x9, st .x19 d .x9, .rev .x10 .x10, st .x19 (d + 8) .x10]
 
-/-- `x12 := x11 ∧ 1`. -/
-def low1 : List Instr := [imm .x14 1, .logic .and .x .x12 .x11 .x14]
+/-- `x12 := x14 ∧ 1`. -/
+def low1 : List Instr := [imm .x12 1, .logic .and .x .x12 .x14 .x12]
 
 /-- `W + lO ← L_{ntz(i)}` for `i ≥ 1` in `x25`: `L_0` doubled while the low
-bit of `x11` (from `i`, shifted right each time) is zero. -/
+bit of `x14` (from `i`, shifted right each time) is zero. -/
 def lNtz : Prog isa :=
-  .seq (.block (copy16 l0O lO ++ [mov .x11 .x25] ++ low1))
-    (.ite (.zero .x .x12) (.loop (.block (dbl .x19 lO lO ++ [.lsr .x .x11 .x11 1] ++ low1)) (.zero .x .x12))
+  .seq (.block (copy16 l0O lO ++ [mov .x14 .x25] ++ low1))
+    (.ite (.zero .x .x12) (.loop (.block (dbl .x19 lO lO ++ [.lsr .x .x14 .x14 1] ++ low1)) (.zero .x .x12))
       (.block []))
 
 /-! ## Calls -/
@@ -169,13 +172,14 @@ nonce's bytes copied to the end of the block, and `TAGLEN`'s bits in the
 top of the first byte. Then `bottom` (its last 6 bits) to `W + botO`, and
 those bits cleared. -/
 def nonceBlock : Prog isa :=
-  .seq (.block (zero16 tmpO ++ [ld .x12 .x19 nO, ld .x13 .x19 nlO, ptr .x11 .x19 (tmpO + 16),
-      .sub .x .x11 .x11 .x13, .subImm .x .x14 .x11 1, imm .x9 1, .strb .x9 .x14 0]))
+  .seq (.block (zero16 tmpO ++ [ld .x12 .x19 nO, ld .x13 .x19 nlO]))
+    (.seq (.block [ptr .x11 .x19 (tmpO + 16), .sub .x .x11 .x11 .x13, .subImm .x .x14 .x11 1, imm .x9 1,
+      .strb .x9 .x14 0])
     (.seq copyLoop
       (.block [ld .x10 .x19 tlO, imm .x11 15, .logic .and .x .x10 .x10 .x11, .lsl .x .x10 .x10 4,
         .ldrb .x9 .x19 tmpO, .logic .orr .x .x9 .x9 .x10, .strb .x9 .x19 tmpO,
         .ldrb .x9 .x19 (tmpO + 15), imm .x11 63, .logic .and .x .x10 .x9 .x11, st .x19 botO .x10,
-        imm .x11 0xc0, .logic .and .x .x9 .x9 .x11, .strb .x9 .x19 (tmpO + 15)]))
+        imm .x11 0xc0, .logic .and .x .x9 .x9 .x11, .strb .x9 .x19 (tmpO + 15)])))
 
 /-- One stage of the shift of `Stretch` (in `x9`, `x10`, `x11`, high to
 low): shifted left by `a` bits if bit `k` of `bottom` (in `x12`) is set.
@@ -213,35 +217,33 @@ def nonce : Prog isa :=
 /-! ## `HASH` -/
 
 /-- One block of the associated data (at `x23`) XORed with its offset to
-`x27` (from `W + bufO`, counting up, while `x26` counts down), `i` in
+`x27` (from `W + bufO`, counting up, while `x15` counts down), `i` in
 `x25`. -/
 def hashFill : Prog isa :=
   .seq lNtz
     (.block (xor16 .x19 lO ohO ++
       [ld .x9 .x23 0, ld .x10 .x23 8, ld .x11 .x19 ohO, ld .x12 .x19 (ohO + 8),
        .logic .eor .x .x9 .x9 .x11, .logic .eor .x .x10 .x10 .x12, st .x27 0 .x9, st .x27 8 .x10,
-       ptr .x27 .x27 16, ptr .x23 .x23 16, ptr .x25 .x25 1, .subImm .x .x26 .x26 1]))
+       ptr .x27 .x27 16, ptr .x23 .x23 16, ptr .x25 .x25 1, .subImm .x .x15 .x15 1]))
 
-/-- `x27 ← W + bufO`, `x26 ← x24`. -/
-def bufStart : List Instr := [ptr .x27 .x19 bufO, mov .x26 .x24]
+/-- `x27 ← W + bufO`, `x15 ← x24`. -/
+def bufStart : List Instr := [ptr .x27 .x19 bufO, mov .x15 .x24]
 
 /-- Add the `x24` blocks at `W + bufO` to the sum. -/
 def hashSum : Prog isa :=
   .seq (.block bufStart)
-    (.loop (.block (xor16 .x27 0 sumO ++ [ptr .x27 .x27 16, .subImm .x .x26 .x26 1]))
-      (.nonzero .x .x26))
+    (.loop (.block (xor16 .x27 0 sumO ++ [ptr .x27 .x27 16, .subImm .x .x15 .x15 1]))
+      (.nonzero .x .x15))
 
-/-- A chunk of up to 8 blocks: `x24 ← min(8, blocks left)`, fill, encipher,
-add; then on to the next (`x9`, the blocks left, is zero when none are
-left). The blocks left are in `W + alenO` (as blocks, while hashing). -/
+/-- A chunk of `x24 = min(8, x26)` blocks, `x26` the blocks left: fill,
+encipher, add; then on to the next (`x26` is zero when none are left). -/
 def hashChunk : Prog isa :=
-  .seq (.block [ld .x24 .x19 alenO, .subImm .x .x9 .x24 8, .lsr .x .x9 .x9 63])
+  .seq (.block [.subImm .x .x9 .x26 8, .lsr .x .x9 .x9 63, mov .x24 .x26])
     (.seq (.ite (.zero .x .x9) (.block [imm .x24 8]) (.block []))
       (.seq (.block bufStart)
-        (.seq (.loop hashFill (.nonzero .x .x26))
+        (.seq (.loop hashFill (.nonzero .x .x15))
           (.seq (callBlocks c.enc [ptr .x2 .x19 bufO, mov .x3 .x24])
-            (.seq hashSum
-              (.block [ld .x9 .x19 alenO, .sub .x .x9 .x9 .x24, st .x19 alenO .x9]))))))
+            (.seq hashSum (.block [.sub .x .x26 .x26 .x24]))))))
 
 /-- The rest of the associated data (`x24` bytes at `x23`), padded, XORed
 with the offset `⊕ L_*`, enciphered and added to the sum. -/
@@ -254,12 +256,11 @@ def hashRest : Prog isa :=
 /-- `HASH(K, A)` to `W + sumO`, with `aad` and `aad_len` in `W + aadO` and
 `W + alenO`. -/
 def hash : Prog isa :=
-  .seq (.block (zero16 sumO ++ zero16 ohO ++
-      [ld .x23 .x19 aadO, ld .x9 .x19 alenO, imm .x10 15, .logic .and .x .x11 .x9 .x10,
-       st .x19 tmpO .x11, .lsr .x .x9 .x9 4, st .x19 alenO .x9, imm .x25 1]))
-    (.seq (.ite (.zero .x .x9) (.block []) (.loop (hashChunk c) (.nonzero .x .x9)))
-      (.seq (.block [ld .x24 .x19 tmpO])
-        (.ite (.zero .x .x24) (.block []) (hashRest c))))
+  .seq (.block (zero16 sumO ++ zero16 ohO ++ [ld .x23 .x19 aadO, ld .x26 .x19 alenO]))
+    (.seq (.block [.lsr .x .x26 .x26 4, imm .x25 1])
+      (.seq (.ite (.zero .x .x26) (.block []) (.loop (hashChunk c) (.nonzero .x .x26)))
+        (.seq (.block [ld .x24 .x19 alenO, imm .x10 15, .logic .and .x .x24 .x24 .x10])
+          (.ite (.zero .x .x24) (.block []) (hashRest c)))))
 
 /-! ## The whole blocks -/
 
@@ -285,10 +286,10 @@ def pass (body : List Instr) : Prog isa :=
 /-- The whole blocks: `pre` (the first pass), `f` on all of them, `post` (the
 third pass, the offsets recomputed from `Offset_0`); `x26` their number. -/
 def whole (f : Impl.Aes.AArch64.Blocks) (pre post : List Instr) : Prog isa :=
-  .seq (.block [ld .x23 .x19 dataO, mov .x24 .x26, imm .x25 1])
+  .seq (.block [mov .x23 .x21, mov .x24 .x26, imm .x25 1])
     (.seq (pass pre)
-      (.seq (callBlocks f [ld .x2 .x19 dataO, mov .x3 .x26])
-        (.seq (.block (copy16 o0O ofsO ++ [ld .x23 .x19 dataO, mov .x24 .x26, imm .x25 1]))
+      (.seq (callBlocks f [mov .x2 .x21, mov .x3 .x26])
+        (.seq (.block (copy16 o0O ofsO ++ [mov .x23 .x21, mov .x24 .x26, imm .x25 1]))
           (pass post))))
 
 /-! ## The rest of the data and the tag -/
@@ -319,21 +320,22 @@ def tag (d : Nat) : Prog isa :=
 
 /-- The entry of `seal` and `open`: `(ctx = x0, rounds = x1, nonce = x2,
 nonce_len = x3, aad = x4, aad_len = x5, data = x6, len = x7, work = [sp],
-tag_len = [sp + 8])`: the registers saved in `W`, the arguments kept there,
+tag_len = [sp + 8])`: the registers saved in `W`, the data and its length in
+`x21` and `x28`, the other arguments kept in `W`,
 `L_$` and `L_0`, the checksum zeroed. -/
 def entry : List Instr :=
   [.ldrSp .x9 0] ++ save .x9 ++
-  [mov .x19 .x9, mov .x20 .x0, mov .x22 .x1, st .x19 nO .x2, st .x19 nlO .x3, st .x19 aadO .x4,
-   st .x19 alenO .x5, st .x19 dataO .x6, st .x19 lenO .x7, .ldrSp .x10 8, st .x19 tlO .x10] ++
+  [mov .x19 .x9, mov .x20 .x0, mov .x21 .x6, mov .x22 .x1, mov .x28 .x7, st .x19 nO .x2,
+   st .x19 nlO .x3, st .x19 aadO .x4, st .x19 alenO .x5, .ldrSp .x10 8, st .x19 tlO .x10] ++
   lsetup ++ zero16 ckO
 
 /-- The data: whole blocks, then the rest. -/
 def body (enc : Bool) : Prog isa :=
-  .seq (.block [ld .x26 .x19 lenO, .lsr .x .x26 .x26 4])
+  .seq (.block [.lsr .x .x26 .x28 4])
     (.seq (.ite (.zero .x .x26) (.block [])
         (if enc then whole c.enc (addCk ++ xorOfs) xorOfs else whole c.dec xorOfs (xorOfs ++ addCk)))
-      (.seq (.block [ld .x23 .x19 dataO, ld .x9 .x19 lenO, imm .x10 15, .logic .and .x .x24 .x9 .x10,
-          .sub .x .x9 .x9 .x24, .add .x .x23 .x23 .x9])
+      (.seq (.block [imm .x10 15, .logic .and .x .x24 .x28 .x10, .sub .x .x9 .x28 .x24,
+          .add .x .x23 .x21 .x9])
         (.ite (.zero .x .x24) (.block []) (rest c enc))))
 
 def «seal» : Prog isa :=
@@ -352,7 +354,7 @@ def cmp : Prog isa :=
 
 /-- The data (`len` bytes) masked with `0 − ok`, `ok` at `W + tagO`. -/
 def mask : Prog isa :=
-  .seq (.block [ld .x23 .x19 dataO, ld .x24 .x19 lenO, ld .x9 .x19 tagO, imm .x10 0,
+  .seq (.block [mov .x23 .x21, mov .x24 .x28, ld .x9 .x19 tagO, imm .x10 0,
       .sub .x .x10 .x10 .x9])
     (.ite (.zero .x .x24) (.block [])
       (.loop (.block [.ldrb .x9 .x23 0, .logic .and .w .x9 .x9 .x10, .strb .x9 .x23 0,
