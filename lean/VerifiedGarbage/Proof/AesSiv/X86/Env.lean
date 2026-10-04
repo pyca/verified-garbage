@@ -184,7 +184,7 @@ structure Slots (W C : BitVec 32) (R : Nat) (D : BitVec 32) (n : Nat) (m : Mem) 
 state and `dbl(D)` at `[144, 176)`, the descriptors' cursor and count at
 `[184, 192)`, the variables of the pieces at `[200, 256)`, and from `256` on
 (the working space of the functions called, and `D`). -/
-abbrev wA (W : BitVec 32) : Region := ⟨w64 W, 128⟩
+abbrev wA (W : BitVec 32) : Region := ⟨w64 W + BitVec.ofNat 64 16, 112⟩
 abbrev wB (W : BitVec 32) : Region := ⟨w64 W + BitVec.ofNat 64 144, 32⟩
 abbrev wV (W : BitVec 32) : Region := ⟨w64 W + BitVec.ofNat 64 184, 8⟩
 abbrev wS (W : BitVec 32) : Region := ⟨w64 W + BitVec.ofNat 64 200, 56⟩
@@ -203,7 +203,7 @@ theorem kept_mut {C W SP D : BitVec 32} {n : Nat} (L : Lay C W SP)
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl
-  · simpa using Lay.w_w (W := W) (a := d) (n := k) (d := 0) (k := 128) (.inr (by omega)) (by omega) (by decide)
+  · exact Lay.w_w (.inr (by omega)) (by omega) (by decide)
   · exact Lay.w_w (by omega) (by omega) (by decide)
   · exact Lay.w_w (by omega) (by omega) (by decide)
   · exact Lay.w_w (.inl (by omega)) (by omega) (by decide)

@@ -71,12 +71,12 @@ structure Kept (s₀ : State) (C W SP : BitVec 32) (R : Nat) (D : BitVec 32) (n 
   wr : s.wr = s₀.wr
   slots : Slots W C R D n s.mem
   saved : SavedAt s.mem W s₀
-  big : Frame ([⟨w64 W, 2576⟩, below SP 56] ++ ext) s₀.mem s.mem
+  big : Frame ([⟨w64 W + BitVec.ofNat 64 16, 2560⟩, below SP 56] ++ ext) s₀.mem s.mem
 
 /-- A piece that writes parts of `W` the pieces write, the stack below `SP`,
 or the regions `ext` (apart from `W`) keeps `Kept`. -/
 theorem Kept.step {s₀ : State} {C W SP : BitVec 32} {R : Nat} {D : BitVec 32} {n : Nat} {ext : List Region}
-    (L : Lay C W SP) (hext : ∀ r ∈ ext, r.Disjoint ⟨w64 W, 2576⟩) {s s' : State}
+    (L : Lay C W SP) (hext : ∀ r ∈ ext, r.Disjoint ⟨w64 W + BitVec.ofNat 64 128, 2448⟩) {s s' : State}
     (h : Kept s₀ C W SP R D n ext s) (E : Env C W SP s') (rd : s'.rd = s.rd) (wr : s'.wr = s.wr)
     {rs : List Region} (hf : Frame rs s.mem s'.mem)
     (hs : ∀ r ∈ rs, (∃ r' ∈ wR W SP, Region.Sub r r') ∨ ∃ r' ∈ ext, Region.Sub r r') :
@@ -87,13 +87,13 @@ theorem Kept.step {s₀ : State} {C W SP : BitVec 32} {R : Nat} {D : BitVec 32} 
     · refine Region.Disjoint.sub_right ?_ hsub
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr'
       rcases hr' with rfl | rfl | rfl | rfl | rfl | rfl
-      · simpa using Lay.w_w (W := W) (n := k) (d := 0) (k := 128) (.inr (by omega)) (by omega) (by decide)
+      · exact Lay.w_w (.inr (by omega)) (by omega) (by decide)
       · exact Lay.w_w (by omega) (by omega) (by decide)
       · exact Lay.w_w (by omega) (by omega) (by decide)
       · exact Lay.w_w (.inl (by omega)) (by omega) (by decide)
       · exact Lay.w_w (.inl (by omega)) (by omega) (by decide)
       · exact (L.stk_w' (by omega)).symm
-    · exact ((hext r' hr').sub_right (Lay.wSub (by omega))).symm.sub_right hsub
+    · exact ((hext r' hr').sub_right (Offset.sub _ (by omega) (by omega))).symm.sub_right hsub
   have k : ∀ o, (128 ≤ o ∧ o + 4 ≤ 144 ∨ 176 ≤ o ∧ o + 4 ≤ 184 ∨ 192 ≤ o ∧ o + 4 ≤ 200) →
       slotv s'.mem W o = slotv s.mem W o := fun o ho =>
     hf.readW (r := ⟨w64 W + BitVec.ofNat 64 o, 4⟩) (Region.contains_self _ _) (kept ho) (by decide)
@@ -106,11 +106,11 @@ theorem Kept.step {s₀ : State} {C W SP : BitVec 32} {R : Nat} {D : BitVec 32} 
   · rcases hs r hr with ⟨r', hr', hsub⟩ | ⟨r', hr', hsub⟩
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr'
       rcases hr' with rfl | rfl | rfl | rfl | rfl | rfl
-      · exact ⟨_, by simp, fun _ h => Lay.wSub (W := w64 W) (d := 0) (n := 128) (by decide) _ (by simpa using hsub _ h)⟩
-      · exact ⟨_, by simp, fun _ h => Lay.wSub (by decide) _ (hsub _ h)⟩
-      · exact ⟨_, by simp, fun _ h => Lay.wSub (by decide) _ (hsub _ h)⟩
-      · exact ⟨_, by simp, fun _ h => Lay.wSub (by decide) _ (hsub _ h)⟩
-      · exact ⟨_, by simp, fun _ h => Lay.wSub (by decide) _ (hsub _ h)⟩
+      · exact ⟨⟨w64 W + BitVec.ofNat 64 16, 2560⟩, by simp, fun _ h => Region.sub_prefix (by decide) _ (hsub _ h)⟩
+      · exact ⟨⟨w64 W + BitVec.ofNat 64 16, 2560⟩, by simp, fun _ h => Offset.sub _ (by decide) (by decide) _ (hsub _ h)⟩
+      · exact ⟨⟨w64 W + BitVec.ofNat 64 16, 2560⟩, by simp, fun _ h => Offset.sub _ (by decide) (by decide) _ (hsub _ h)⟩
+      · exact ⟨⟨w64 W + BitVec.ofNat 64 16, 2560⟩, by simp, fun _ h => Offset.sub _ (by decide) (by decide) _ (hsub _ h)⟩
+      · exact ⟨⟨w64 W + BitVec.ofNat 64 16, 2560⟩, by simp, fun _ h => Offset.sub _ (by decide) (by decide) _ (hsub _ h)⟩
       · exact ⟨_, by simp, hsub⟩
     · exact ⟨r', List.mem_append_right _ hr', hsub⟩
 
@@ -123,7 +123,7 @@ theorem Kept.bytes {s₀ : State} {C W SP : BitVec 32} {R : Nat} {D : BitVec 32}
   Proof.AesGcm.X86.bytesAt_frame h.big (fun r hr => by
     simp only [List.cons_append, List.nil_append, List.mem_cons] at hr
     rcases hr with rfl | rfl | hr
-    · exact hw
+    · exact hw.sub_right (Lay.wSub (by decide))
     · exact hs.symm
     · exact he r hr) hk
 
@@ -159,7 +159,7 @@ theorem Kept.mac {s₀ : State} {C W SP : BitVec 32} {R : Nat} {D : BitVec 32} {
   ctxMac_frame h.big (fun r hr => by
     simp only [List.cons_append, List.nil_append, List.mem_cons] at hr
     rcases hr with rfl | rfl | hr
-    · exact L.c_w
+    · exact L.c_w.sub_right (Lay.wSub (by decide))
     · exact L.stk_c.symm
     · exact he r hr) (by omega)
 
@@ -240,7 +240,7 @@ theorem start_ok (v : Ctr32Impl) {s₀ : State} {C W SP : BitVec 32} {R : Nat} {
   refine ⟨h.step L (by simp) E₂ (by rw [rd₂, rd₁]) (by rw [wr₂, wr₁]) f₁₂ fun r hr => .inl ?_, f₁₂, ?_⟩
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
-    · exact ⟨wA W, by simp, Offset.sub_base _ (by decide)⟩
+    · exact ⟨wA W, by simp, Region.sub_prefix (by decide)⟩
     · exact ⟨wC W, by simp, fun _ h => h⟩
     · exact ⟨below SP 56, by simp, fun _ h => h⟩
   simp only [zOff, dOff] at m₁
@@ -445,7 +445,7 @@ theorem adNext_wp {s₀ : State} {C W SP A : BitVec 32} {R N : Nat} {D : BitVec 
       (by rw [← add_ofNat_assoc]; exact Offset.contains_base _ hd (by omega)) (fun r hr => by
         simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl
-        · exact dW
+        · exact dW.sub_right (Lay.wSub (by decide))
         · exact dS.symm) (by decide)
   have w0 := wd (d := 0) (by decide)
   have w4 := wd (d := 4) (by decide)

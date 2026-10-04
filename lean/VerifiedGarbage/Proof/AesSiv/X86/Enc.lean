@@ -93,7 +93,7 @@ theorem encS2v_ok (v : Ctr32Impl) {C W SP A D : BitVec 32} {R N n : Nat} {s : St
       saved := en.saved
       big := en.frame.sub fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
-        exact ⟨⟨w64 W, 2576⟩, by simp, Offset.sub_base _ (by decide)⟩ }
+        exact ⟨⟨w64 W + BitVec.ofNat 64 16, 2560⟩, by simp, Offset.sub _ (by decide) (by decide)⟩ }
   refine WP.seq (WP.mono (start_ok v L hR K₁) fun s₂ ⟨K₂, f₂, st₂⟩ => ?_)
   -- The descriptors' slots, after `start`.
   have k₂ : ∀ o, 176 ≤ o → o + 4 ≤ 200 → slotv s₂.mem W o = slotv s₁.mem W o := fun o h₁ h₂ =>
@@ -139,32 +139,45 @@ theorem encS2v_ok (v : Ctr32Impl) {C W SP A D : BitVec 32} {R N n : Nat} {s : St
 
 /-! ## `vg_aes_siv_encrypt` -/
 
-theorem Kept.widen {s₀ : State} {C W SP : BitVec 32} {R : Nat} {D : BitVec 32} {n : Nat} {s : State}
-    (h : Kept s₀ C W SP R D n [] s) (e : Region) : Kept s₀ C W SP R D n [e] s :=
-  { h with big := h.big.mono fun r hr => by rw [List.append_nil] at hr; exact List.mem_append_left _ hr }
+theorem Kept.widen {s₀ : State} {C W SP : BitVec 32} {R : Nat} {D : BitVec 32} {n : Nat} {ext : List Region}
+    {s : State} (h : Kept s₀ C W SP R D n ext s) (e : Region) : Kept s₀ C W SP R D n (ext ++ [e]) s :=
+  { h with big := h.big.mono fun r hr => by rw [← List.append_assoc]; exact List.mem_append_left _ hr }
 
-theorem finR_wR {W SP : BitVec 32} {out : Nat} (hout : out = 0 ∨ out = 112) :
-    ∀ r ∈ finR W SP out, (∃ r' ∈ wR W SP, Region.Sub r r') ∨ ∃ r' ∈ ([] : List Region), Region.Sub r r' := by
+/-- The IV at `W`, while no piece names it. -/
+theorem Kept.iv {s₀ : State} {C W SP : BitVec 32} {R : Nat} {D : BitVec 32} {n : Nat} {s : State}
+    (L : Lay C W SP) (h : Kept s₀ C W SP R D n [] s) : bytesAt s.mem (w64 W) 16 = bytesAt s₀.mem (w64 W) 16 :=
+  Proof.AesGcm.X86.bytesAt_frame h.big (fun r hr => by
+    simp only [List.append_nil, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl
+    · simpa using Lay.w_w (W := W) (a := 0) (n := 16) (.inl (by decide)) (by decide) (by decide)
+    · exact (L.stk_w.sub_right (Region.sub_prefix (by decide))).symm) (by decide)
+
+/-- What `finish out` writes: the IV at `W` (which the pieces name in `ext`) or
+the IV at `W + 112`, and parts of `W` the pieces write. -/
+theorem finR_wR {W SP : BitVec 32} {out : Nat} {ext : List Region}
+    (hout : out = 0 ∧ (⟨w64 W, 16⟩ : Region) ∈ ext ∨ out = 112) :
+    ∀ r ∈ finR W SP out, (∃ r' ∈ wR W SP, Region.Sub r r') ∨ ∃ r' ∈ ext, Region.Sub r r' := by
   intro r hr
-  left
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl | rfl
-  · exact ⟨wA W, by simp, Offset.sub_base _ (by omega)⟩
-  · exact ⟨wA W, by simp, Offset.sub_base _ (by decide)⟩
-  · exact ⟨wB W, by simp, fun _ h => h⟩
-  · exact ⟨wS W, by simp, fun _ h => h⟩
-  · exact ⟨wC W, by simp, Offset.sub _ (by decide) (by decide)⟩
-  · exact ⟨below SP 56, by simp, fun _ h => h⟩
+  · rcases hout with ⟨rfl, he⟩ | rfl
+    · exact .inr ⟨_, he, Offset.sub_base _ (by decide)⟩
+    · exact .inl ⟨wA W, by simp, Offset.sub _ (by decide) (by decide)⟩
+  · exact .inl ⟨wA W, by simp, Offset.sub _ (by decide) (by decide)⟩
+  · exact .inl ⟨wB W, by simp, fun _ h => h⟩
+  · exact .inl ⟨wS W, by simp, fun _ h => h⟩
+  · exact .inl ⟨wC W, by simp, Offset.sub _ (by decide) (by decide)⟩
+  · exact .inl ⟨below SP 56, by simp, fun _ h => h⟩
 
-theorem ctrR_wR {W SP D : BitVec 32} {n : Nat} :
-    ∀ r ∈ ctrR W SP D n, (∃ r' ∈ wR W SP, Region.Sub r r') ∨ ∃ r' ∈ [(⟨w64 D, n⟩ : Region)], Region.Sub r r' := by
+theorem ctrR_wR {W SP D : BitVec 32} {n : Nat} {ext : List Region} (he : (⟨w64 D, n⟩ : Region) ∈ ext) :
+    ∀ r ∈ ctrR W SP D n, (∃ r' ∈ wR W SP, Region.Sub r r') ∨ ∃ r' ∈ ext, Region.Sub r r' := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl
-  · exact .inl ⟨wA W, by simp, Offset.sub_base _ (by decide)⟩
+  · exact .inl ⟨wA W, by simp, Offset.sub _ (by decide) (by decide)⟩
   · exact .inl ⟨wC W, by simp, Offset.sub _ (by decide) (by decide)⟩
   · exact .inl ⟨below SP 56, by simp, fun _ h => h⟩
-  · exact .inr ⟨_, by simp, fun _ h => h⟩
+  · exact .inr ⟨_, he, fun _ h => h⟩
 
 /-- The counter block: written by `counter`, in `wA`. -/
 theorem counter_wR {W SP : BitVec 32} {e : List Region} :
@@ -172,7 +185,7 @@ theorem counter_wR {W SP : BitVec 32} {e : List Region} :
       (∃ r' ∈ wR W SP, Region.Sub r r') ∨ ∃ r' ∈ e, Region.Sub r r' := by
   intro r hr
   simp only [List.mem_singleton] at hr; subst hr
-  exact .inl ⟨wA W, by simp, Offset.sub_base _ (by decide)⟩
+  exact .inl ⟨wA W, by simp, Offset.sub _ (by decide) (by decide)⟩
 
 /-- `vg_aes_siv_encrypt`: the synthetic IV at `W` and the ciphertext in place. -/
 theorem encrypt_wp (v : Ctr32Impl) {C W SP A D : BitVec 32} {R N n : Nat} {s : State}
@@ -184,31 +197,41 @@ theorem encrypt_wp (v : Ctr32Impl) {C W SP A D : BitVec 32} {R N n : Nat} {s : S
   have L := h.ads.lay
   have hR := h.ads.rounds
   have hRb := rounds_le hR
-  have hDw : ∀ r ∈ [(⟨w64 D, n⟩ : Region)], r.Disjoint ⟨w64 W, 2576⟩ := fun r hr => by
-    simp only [List.mem_singleton] at hr; subst hr; exact h.data.buf.w
+  have hW16 : (⟨w64 W, 16⟩ : Region).Disjoint ⟨w64 W + BitVec.ofNat 64 128, 2448⟩ := by
+    simpa using Lay.w_w (W := W) (a := 0) (n := 16) (.inl (by decide)) (by decide) (by decide)
+  have hDw : (⟨w64 D, n⟩ : Region).Disjoint ⟨w64 W + BitVec.ofNat 64 128, 2448⟩ :=
+    h.data.buf.w.sub_right (Lay.wSub (by decide))
   refine WP.seq (WP.mono (encS2v_ok v h) fun s₁ O => ?_)
   have K₁ := O.kept
   refine WP.seq (WP.mono (finish_ok v L hR O.pre (out := 0) (.inl rfl)) fun s₂ F => ?_)
-  have K₂ : Kept s C W SP R D n [] s₂ := K₁.step L (by simp) F.env F.rd F.wr F.frame (finR_wR (.inl rfl))
+  have K₂ : Kept s C W SP R D n [⟨w64 W, 16⟩] s₂ := (K₁.widen ⟨w64 W, 16⟩).step L
+    (fun r hr => by simp only [List.nil_append, List.mem_singleton] at hr; subst hr; exact hW16)
+    F.env F.rd F.wr F.frame (finR_wR (.inl ⟨rfl, by simp⟩))
   obtain ⟨s₃, run₃, m₃, bp₃, sp₃, rd₃, wr₃⟩ := counter_ok L F.env
   refine WP.seq (WP.of_runBlock ⟨s₃, run₃, ?_⟩)
   have E₃ : Env C W SP s₃ := ⟨bp₃, sp₃, F.env.perm.of_eq rd₃ wr₃⟩
   have f₃ : Frame [⟨w64 W + BitVec.ofNat 64 cbOff, 16⟩] s₂.mem s₃.mem := by
     rw [m₃]; exact Proof.Cmac.frame_store4 _ _ _ _ _
-  have K₃ : Kept s C W SP R D n [] s₃ := K₂.step L (by simp) E₃ rd₃ wr₃ f₃ counter_wR
+  have K₃ : Kept s C W SP R D n [⟨w64 W, 16⟩] s₃ := K₂.step L
+    (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact hW16) E₃ rd₃ wr₃ f₃ counter_wR
   have hq : bytesAt s₃.mem (w64 W + BitVec.ofNat 64 cbOff) 16 = Spec.Siv.counter (bytesAt s₂.mem (w64 W) 16) := by
     rw [m₃]; exact counter_bytes _ _
   have hD₃ : Dat C W SP s₃ D n := h.data.of_eq K₃.rd K₃.wr
   refine WP.seq (WP.mono (ctr_ok v L hR E₃ hD₃ h.n32 K₃.slots.ctx K₃.slots.rounds K₃.slots.data K₃.slots.len hq
     (counter_low _)) fun s₄ ⟨E₄, rd₄, wr₄, f₄, d₄⟩ => ?_)
-  have K₄ : Kept s C W SP R D n [⟨w64 D, n⟩] s₄ := (K₃.widen _).step L hDw E₄ rd₄ wr₄ f₄ ctrR_wR
+  have K₄ : Kept s C W SP R D n [⟨w64 W, 16⟩, ⟨w64 D, n⟩] s₄ := (K₃.widen _).step L (fun r hr => by
+      simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · exact hW16
+      · exact hDw) E₄ rd₄ wr₄ f₄ (ctrR_wR (by simp))
   have hret : s₄.mem.readW (w64 (s.gpr .esp)) 32 = s.mem.readW (w64 (s.gpr .esp)) 32 := by
     rw [h.sp]
     exact K₄.big.readW (r := ⟨w64 SP, 4⟩) (Region.contains_self _ _) (fun r hr => by
       simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl
-      · exact h.ret
+      rcases hr with rfl | rfl | rfl | rfl
+      · exact h.ret.sub_right (Lay.wSub (by decide))
       · exact ret_below L.sp
+      · exact h.ret.sub_right (Region.sub_prefix (by decide))
       · exact h.retD) (by decide)
   refine WP.mono (exit_ok K₄.env.ebp (by rw [K₄.env.esp, h.sp]) (covers_left (fun a m ⟨r, hr, hc⟩ => by
       simp only [List.mem_singleton] at hr; subst hr
@@ -231,14 +254,19 @@ theorem encrypt_wp (v : Ctr32Impl) {C W SP A D : BitVec 32} {R N n : Nat} {s : S
   have mac₁ : Spec.Siv.ctxMac s₁.mem (w64 C) R = Spec.Siv.ctxMac s.mem (w64 C) R := K₁.mac L hR dc
   have ciph₃ : Spec.Siv.ctxCiph s₃.mem (w64 C) R = Spec.Siv.ctxCiph s.mem (w64 C) R :=
     ctxCiph_frame K₃.big (fun r hr => by
-      simp only [List.append_nil, List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl
-      · exact L.c_w
-      · exact L.stk_c.symm) hRb
-  have pD : ∀ {t : State}, Kept s C W SP R D n [] t → bytesAt t.mem (w64 D) n = bytesAt s.mem (w64 D) n :=
-    fun K => K.bytes h.data.buf.w h.data.buf.stk (by simp) (by have := h.data.buf.lt; omega)
+      simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl
+      · exact L.c_w.sub_right (Lay.wSub (by decide))
+      · exact L.stk_c.symm
+      · exact L.c_w.sub_right (Region.sub_prefix (by decide))) hRb
+  have dDW : (⟨w64 D, n⟩ : Region).Disjoint ⟨w64 W, 16⟩ := h.data.buf.w.sub_right (Region.sub_prefix (by decide))
+  have p₁ : bytesAt s₁.mem (w64 D) n = bytesAt s.mem (w64 D) n :=
+    K₁.bytes h.data.buf.w h.data.buf.stk (by simp) (by have := h.data.buf.lt; omega)
+  have p₃ : bytesAt s₃.mem (w64 D) n = bytesAt s.mem (w64 D) n :=
+    K₃.bytes h.data.buf.w h.data.buf.stk (fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr; exact dDW) (by have := h.data.buf.lt; omega)
   have o₂ := F.out
   rw [BitVec.add_zero] at o₂
-  rw [m₅, Spec.Siv.encryptWith_eq, Spec.Siv.sealWith, d₄, iv, o₂, mac₁, O.acc, pD K₁, ciph₃, pD K₃]
+  rw [m₅, Spec.Siv.encryptWith_eq, Spec.Siv.sealWith, d₄, iv, o₂, mac₁, O.acc, p₁, ciph₃, p₃]
 
 end VG.Proof.AesSiv.X86
