@@ -6,7 +6,7 @@
 //! 13 bytes), or, for a tag length Appendix A.1 does not allow, already by
 //! the type of the tag, which cannot be written.
 
-#![cfg(target_arch = "x86_64")]
+#![cfg(any(target_arch = "x86_64", target_arch = "arm"))]
 
 use serde::Deserialize;
 use verified_garbage::aes_ccm::{AesCcm, Error};

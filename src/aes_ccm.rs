@@ -24,17 +24,21 @@
 //! (`vg_aes_ctr32`, directly for counter mode and through
 //! `vg_cmac_aes_update` for the CBC-MAC), which have the same contracts: on
 //! x86-64, CPUs with AES-NI and SSSE3 run the `_aesni` instances, and CPUs
-//! with VAES and AVX2 too the `_vaes` ones (`crate::aes::Backend`). Only
-//! x86-64 has an implementation so far.
+//! with VAES and AVX2 too the `_vaes` ones (`crate::aes::Backend`). On
+//! ARMv7 there is only the constant-time scalar implementation.
 
-#![cfg(target_arch = "x86_64")]
+#![cfg(any(target_arch = "x86_64", target_arch = "arm"))]
 
 use crate::aes::Backend;
-use crate::arch::aes::{vg_aes_expand_key, vg_aes_expand_key_aesni};
+use crate::arch::aes::vg_aes_expand_key;
+#[cfg(target_arch = "x86_64")]
+use crate::arch::aes::vg_aes_expand_key_aesni;
+use crate::arch::aes_ccm::{vg_aes_ccm_open, vg_aes_ccm_seal};
+#[cfg(target_arch = "x86_64")]
 use crate::arch::aes_ccm::{
     VG_AES_CCM_OPEN_AESNI_FEATURES, VG_AES_CCM_OPEN_VAES_FEATURES, VG_AES_CCM_SEAL_AESNI_FEATURES,
-    VG_AES_CCM_SEAL_VAES_FEATURES, vg_aes_ccm_open, vg_aes_ccm_open_aesni, vg_aes_ccm_open_vaes,
-    vg_aes_ccm_seal, vg_aes_ccm_seal_aesni, vg_aes_ccm_seal_vaes,
+    VG_AES_CCM_SEAL_VAES_FEATURES, vg_aes_ccm_open_aesni, vg_aes_ccm_open_vaes,
+    vg_aes_ccm_seal_aesni, vg_aes_ccm_seal_vaes,
 };
 use crate::cpu::{Features, detected};
 use crate::zeroize::zeroize;
@@ -49,7 +53,9 @@ macro_rules! instance {
     ($backend:expr, $scalar:ident, $aesni:ident, $vaes:ident) => {
         match $backend {
             Backend::Scalar => $scalar,
+            #[cfg(target_arch = "x86_64")]
             Backend::AesNi => $aesni,
+            #[cfg(target_arch = "x86_64")]
             Backend::Vaes => $vaes,
         }
     };
@@ -57,6 +63,7 @@ macro_rules! instance {
 
 /// The best implementation of AES a CPU with the features `f` can run, with
 /// the AES-CCM functions for it.
+#[cfg(target_arch = "x86_64")]
 fn select(f: Features) -> Backend {
     const VAES: Features =
         Features::all(&[VG_AES_CCM_SEAL_VAES_FEATURES, VG_AES_CCM_OPEN_VAES_FEATURES]);
@@ -65,6 +72,12 @@ fn select(f: Features) -> Backend {
         VG_AES_CCM_OPEN_AESNI_FEATURES,
     ]);
     Backend::select_for(f, VAES, AESNI)
+}
+
+/// The only implementation of AES here, with the AES-CCM functions for it.
+#[cfg(target_arch = "arm")]
+fn select(f: Features) -> Backend {
+    Backend::select(f)
 }
 
 /// Fails to compile unless `T` is a tag length Appendix A.1 allows: 4, 6,
