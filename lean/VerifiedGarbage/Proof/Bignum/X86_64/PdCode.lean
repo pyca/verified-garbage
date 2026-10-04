@@ -249,7 +249,7 @@ theorem pdCtx_of {s : State} (h : pdContract.pre s) : PdCtx s := by
   obtain ⟨hk1, hk2⟩ := hk
   unfold Spec.Rsa.scratchWords at hsl
   unfold Spec.Rsa.precomputedWords Spec.Rsa.modulusWords at hpl
-  have hs : Scr s (stackArg s 2) ((stackArg s 3).toNat * 8) := ⟨by rw [hwr]; simp, wS⟩
+  have hs : Scr s (stackArg s 2) ((stackArg s 3).toNat * 8) := Scr.of_mem (by rw [hwr]; simp) wS
   have hn := hs.nowrap
   have hpre : (⟨s.gpr .rdx, (s.gpr .rcx).toNat * 8⟩ : Region) ∈ s.rd ++ s.wr := by rw [hrd]; simp
   refine ⟨hk1, hk2, hL1, hL2, hpl, by omega, hs,

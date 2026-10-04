@@ -57,8 +57,7 @@ theorem cmpStep_ok {s₀ : State} {B : Addr} {Z w eX eN : Nat}
     rw [pow64_succ]; rw [Nat.mul_add, Nat.mul_one] at this; omega
   · simp only [wv]
     rw [pow64_succ]
-    zify at hr hval ⊢
-    linear_combination hval + (2 ^ (64 * j) : ℤ) * hr
+    grind
 
 theorem lt_of_borrow {X N d P : Nat} {c : Bool} (hd : d < P)
     (h : d + N = X + P * c.toNat) : c = decide (X < N) := by

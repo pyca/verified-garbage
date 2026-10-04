@@ -113,7 +113,7 @@ def SqPre (L : Lay) (s : State) : Prop :=
 theorem sqs_ct (M : Mont) (n : Nat) : RelCT isa (Two SqPre) (seqs (List.replicate (n + 1) (M.mm aR2 aR2 aR2)))
     fun _ _ => True := by
   have one : RelCT isa (Two SqPre) (M.mm aR2 aR2 aR2) fun _ _ => True :=
-    two_map id (fun _ _ h => h.1) (M.ct (.inl ⟨rfl, rfl, rfl⟩))
+    two_map id (fun _ _ h => h.1) (M.ctL (.inl ⟨rfl, rfl, rfl⟩))
   induction n with
   | zero => exact one
   | succ n ih =>

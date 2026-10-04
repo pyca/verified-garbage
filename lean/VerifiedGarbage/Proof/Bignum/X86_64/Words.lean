@@ -99,31 +99,52 @@ theorem wv_single (m : Mem) (p : Addr) (d : Nat) {i : Nat} :
 
 /-! ## The working space -/
 
-/-- The working space: `size` bytes at `base`, writable, not wrapping
-around. -/
+/-- The working space: `size` bytes at `base`, within a writable region,
+not wrapping around. -/
 structure Scr (s : State) (base : Addr) (size : Nat) : Prop where
-  wr : (⟨base, size⟩ : Region) ∈ s.wr
+  wr : ∃ B₀ : Addr, ∃ o L : Nat, (⟨B₀, L⟩ : Region) ∈ s.wr ∧ base = off B₀ o ∧ o + size ≤ L ∧ L ≤ 2 ^ 64
   nowrap : base.toNat + size ≤ 2 ^ 64
 
-theorem Scr.contains {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {d n : Nat}
-    (h : d + n ≤ size) (hn : 0 < n) : (⟨base, size⟩ : Region).Contains (off base d) n :=
-  Offset.contains_base base h (by have := hs.nowrap; omega)
+/-- A writable region is a working space. -/
+theorem Scr.of_mem {s : State} {base : Addr} {size : Nat} (h : (⟨base, size⟩ : Region) ∈ s.wr)
+    (hn : base.toNat + size ≤ 2 ^ 64) : Scr s base size :=
+  ⟨⟨base, 0, size, h, by simp [off], by omega, by omega⟩, hn⟩
+
+/-- `size` bytes at offset `o` of a working space. -/
+theorem Scr.sub {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {o n : Nat}
+    (h : o + n ≤ size) (hn0 : 0 < n) : Scr s (off base o) n := by
+  obtain ⟨⟨B₀, o₀, L, hm, hb, hL, hL'⟩, hn⟩ := hs
+  refine ⟨⟨B₀, o₀ + o, L, hm, ?_, by omega, hL'⟩, ?_⟩
+  · subst hb; simp only [off, BitVec.add_assoc, BitVec.ofNat_add]
+  · rw [show (off base o).toNat = base.toNat + o by
+      simp only [off, BitVec.toNat_add, BitVec.toNat_ofNat]; rw [Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)]]
+    omega
+
+theorem Scr.region {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {d n : Nat}
+    (h : d + n ≤ size) (hn : 0 < n) : ∃ r ∈ s.wr, r.Contains (off base d) n := by
+  obtain ⟨⟨B₀, o, L, hm, hb, hL, hL'⟩, _⟩ := hs
+  refine ⟨_, hm, ?_⟩
+  rw [hb, show off (off B₀ o) d = off B₀ (o + d) by simp only [off, BitVec.add_assoc, BitVec.ofNat_add]]
+  exact Offset.contains_base B₀ (by omega) (by omega)
 
 theorem Scr.ld {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {d : Nat}
     (hd : d + 8 ≤ size) : InRegions (s.rd ++ s.wr) (off base d) 8 :=
-  ⟨_, List.mem_append_right _ hs.wr, hs.contains hd (by decide)⟩
+  let ⟨_, hm, hc⟩ := hs.region hd (by decide)
+  ⟨_, List.mem_append_right _ hm, hc⟩
 
 theorem Scr.st {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {d : Nat}
     (hd : d + 8 ≤ size) : InRegions s.wr (off base d) 8 :=
-  ⟨_, hs.wr, hs.contains hd (by decide)⟩
+  let ⟨_, hm, hc⟩ := hs.region hd (by decide)
+  ⟨_, hm, hc⟩
 
 theorem Scr.st8 {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {d : Nat}
     (hd : d + 1 ≤ size) : InRegions s.wr (off base d) 1 :=
-  ⟨_, hs.wr, hs.contains hd (by decide)⟩
+  let ⟨_, hm, hc⟩ := hs.region hd (by decide)
+  ⟨_, hm, hc⟩
 
 theorem Scr.congr {s s' : State} {base : Addr} {size : Nat} (hs : Scr s base size)
     (h : s'.wr = s.wr) : Scr s' base size :=
-  ⟨h ▸ hs.wr, hs.nowrap⟩
+  ⟨let ⟨B₀, o, L, hm, hb, hL, hL'⟩ := hs.wr; ⟨B₀, o, L, h ▸ hm, hb, hL, hL'⟩, hs.nowrap⟩
 
 /-! ## Addresses -/
 

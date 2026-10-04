@@ -131,7 +131,7 @@ theorem main_ok {s : State} {B : Addr} {Z k : Nat} {op np ep ip : Addr} {L : Nat
   have x₂ := Fixed.of_frm f₂ (r2Ranges_fixed _)
   have i₂ := InScr.of_frm f₂ (hZs (r2Ranges_le _))
   have x₁₂ := x₁.trans x₂
-  refine wp_seqs_append (by simp [expSteps]) (by simp [outSteps])
+  refine wp_seqs_append (by simp [expSteps]) (by simp [outSteps, outStepsArr])
     (WP.mono (expPhase_ok (X := Spec.Rsa.os2ip xb) hg₂ hZ (by omega) (by omega) hodd hN1
       (by rw [f₂.r2_wv hn' (by decide) (by decide) (by decide) (by decide)]; exact so.n)
       (by rw [f₂.r2_word hn' (by decide) (by decide) (by decide) (by decide)]; exact so.inv)
