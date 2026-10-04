@@ -525,13 +525,15 @@ jobs:
             arch: x86_64
             # AES-GCM's instances for AES's or GHASH's extension alone, which
             # no runner or chip has without the other; and AES-NI's and
-            # PCLMULQDQ's together (and AES-CMAC's AES-NI functions), which a
-            # runner with VAES and VPCLMULQDQ never chooses.
+            # PCLMULQDQ's together, without AVX and with it (and AES-CMAC's
+            # AES-NI functions), which a runner with VAES and VPCLMULQDQ never
+            # chooses.
             runs: |
               - | sha1 sha224 sha256 sha384 sha512 aes_gcm cmac chacha20 triple_des_ecb poly1305 mlkem mldsa scrypt x25519 x448 ed25519 rsa message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
               aes,ssse3 | aes_gcm cmac cpu
               pclmulqdq,ssse3 | aes_gcm cpu
               aes,pclmulqdq,ssse3 | aes_gcm cpu
+              aes,avx,pclmulqdq,ssse3 | aes_gcm cpu
           # x86 feature dispatch, natively in a 32-bit userspace. The baseline
           # implementations (`none`) are the `rust` job's, which runs every
           # test with them on x86. AES-GCM's instances for AES's or GHASH's
@@ -552,7 +554,8 @@ jobs:
             runs: |
               - | sha1 sha224 sha256 sha384 sha512 aes_gcm cmac chacha20 triple_des_ecb poly1305 mlkem mldsa scrypt x25519 x448 ed25519 message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
               bmi2,adx | ed25519 message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
-          # AVX2, but not AVX-512F or ADX.
+          # AVX2, but not AVX-512F or ADX; AES-NI and PCLMULQDQ with AVX, but
+          # not VAES or VPCLMULQDQ.
           - chip: hsw
             arch: x86_64
             runs: |
