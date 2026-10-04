@@ -338,13 +338,13 @@ pub(crate) unsafe extern "C" fn vg_poly1305_update(state: *mut [u64; 16], count:
 ///
 /// * `state` must be valid for reads and writes of 128 bytes.
 /// * `data` must be valid for reads of `len` bytes.
-/// * `scratch` must be valid for reads and writes of 128 bytes.
-/// * The contents of `scratch` on return are unspecified.
-/// * `state` and `scratch` must not overlap each other or `data` (distinct Rust objects never do).
-/// * None of `state`, `data` and `scratch` may wrap around the end of the address space (no Rust object does).
+/// * `state` must not overlap `data` (distinct Rust objects never do).
+/// * Neither `state` nor `data` may overlap the 128 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_poly1305_update_neon(state: *mut [u64; 16], count: u64, data: *const u8, len: usize, scratch: *mut [u64; 16]) {
+pub(crate) unsafe extern "C" fn vg_poly1305_update_neon(state: *mut [u64; 16], count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
+        "sub sp, sp, #128",
+        "add x4, sp, #0",
         "movz x16, #65535, lsl #0",
         "movk x16, #4095, lsl #16",
         "movk x16, #65532, lsl #32",
@@ -1056,6 +1056,7 @@ pub(crate) unsafe extern "C" fn vg_poly1305_update_neon(state: *mut [u64; 16], c
         "str x4, [x0, #0]",
         "str x5, [x0, #8]",
         "str x6, [x0, #16]",
+        "add sp, sp, #128",
         "ret",
     )
 }

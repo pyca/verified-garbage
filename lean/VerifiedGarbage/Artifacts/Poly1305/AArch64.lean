@@ -42,9 +42,10 @@ def artifacts : List Artifact := [
       least 128 bytes four at a time in NEON (AdvSIMD), and the rest one at a time. It is faster than \
       `vg_poly1305_update` on Apple's cores, and slower on Arm's Neoverse N2, whose two vector pipelines \
       the multiplications saturate."])
-    code := Impl.Poly1305.AArch64.Vector.update
-    contract := Spec.Poly1305.updateContract AArch64.abi
-    verified := Proof.Poly1305.AArch64.Vector.update_verified
+    code := Impl.StackScratch.AArch64.withStackScratch 128 .x4 Impl.Poly1305.AArch64.Vector.update
+    contract := Spec.Poly1305.updateContract AArch64.abi 128
+    stack := 128
+    verified := Proof.Poly1305.AArch64.Vector.update_framed
     spSafe := Code.all_of_forall (fun _ => rfl) _ },
   { Spec.Poly1305.finalizeApi with
     target := AArch64.target

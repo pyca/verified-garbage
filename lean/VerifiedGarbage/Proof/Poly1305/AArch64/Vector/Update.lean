@@ -1,5 +1,6 @@
 import VerifiedGarbage.Proof.Poly1305.AArch64.Vector.Vec
 import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Update
+import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Frame
 import VerifiedGarbage.Proof.Poly1305.AArch64.Vector.Lit
 
 /-!
@@ -203,23 +204,34 @@ theorem update_ct : ConstantTime isa Proof.Poly1305.updateAArch64.pre
   rcases hr with rfl | rfl | rfl | rfl <;> with_reducible assumption
 
 theorem update_verified :
-    Verified AArch64.target Impl.Poly1305.AArch64.Vector.update (Spec.Poly1305.updateContract AArch64.abi) :=
+    Verified AArch64.target Impl.Poly1305.AArch64.Vector.update
+      (Proof.Poly1305.updateScratchContract AArch64.abi) :=
   Verified.of_correct update_ok update_ct
     { pre := by
-        sig_implies_pre [Spec.Poly1305.updateContract, Spec.Poly1305.updateSig,
-          Proof.Poly1305.updateAArch64, AArch64.abi, AArch64.argRegs]
+        sig_implies_pre [Proof.Poly1305.updateScratchContract, Proof.Poly1305.updateScratchSig,
+          Spec.Poly1305.updatePost, Proof.Poly1305.updateAArch64, AArch64.abi, AArch64.argRegs]
       post := by
         intro s s' _ h
-        sig_eval [Spec.Poly1305.updateContract, Spec.Poly1305.updateSig, AArch64.abi,
-            AArch64.argRegs]
+        sig_eval [Proof.Poly1305.updateScratchContract, Proof.Poly1305.updateScratchSig,
+          Spec.Poly1305.updatePost, AArch64.abi, AArch64.argRegs]
         intro key msg hb hc
         exact h key msg hb (count_mod hc)
       pub := by
-        sig_implies_pub [Spec.Poly1305.updateContract, Spec.Poly1305.updateSig,
-          Proof.Poly1305.updateAArch64, AArch64.abi, AArch64.argRegs]
+        sig_implies_pub [Proof.Poly1305.updateScratchContract, Proof.Poly1305.updateScratchSig,
+          Spec.Poly1305.updatePost, Proof.Poly1305.updateAArch64, AArch64.abi, AArch64.argRegs]
       sat := by
-        sig_implies_sat [Spec.Poly1305.updateContract, Spec.Poly1305.updateSig, AArch64.abi,
-          AArch64.argRegs, Proof.Poly1305.AArch64.Vector.updateSat]
+        sig_implies_sat [Proof.Poly1305.updateScratchContract, Proof.Poly1305.updateScratchSig,
+          Spec.Poly1305.updatePost, AArch64.abi, AArch64.argRegs, Proof.Poly1305.AArch64.Vector.updateSat]
           [Proof.Poly1305.AArch64.Vector.updateSat] using Proof.Poly1305.AArch64.Vector.updateSat }
+
+/-- `vg_poly1305_update_neon`: the code in a frame of 128 bytes that allocates the working space, as
+`vg_poly1305_update`'s (`Radix64.update_framed`). -/
+theorem update_framed :
+    Verified AArch64.target
+      (Impl.StackScratch.AArch64.withStackScratch 128 .x4 Impl.Poly1305.AArch64.Vector.update)
+      (Spec.Poly1305.updateContract AArch64.abi 128) :=
+  AArch64.Verified.stackScratch (sig := Spec.Poly1305.updateSig) (nm := "scratch") (e := .u64)
+    (n := 16) (post := Spec.Poly1305.updatePost AArch64.abi.ptrBits) (wa := false) (stack := 0)
+    (bytes := 128) update_verified (by decide) (by decide) Radix64.updateFrameSat_pre
 
 end VG.Proof.Poly1305.AArch64.Vector

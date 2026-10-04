@@ -1,3 +1,4 @@
+import Mathlib.Tactic.Ring
 import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.Load
 import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Powers
 

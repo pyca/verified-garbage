@@ -82,7 +82,7 @@ theorem loadH_ok {s : State} (hax : (s.gpr .rax).toNat < 4) : WP isa (.block loa
       rw [hval, Limbs26.val, a0, a1, a2, a3, a4, hN]
       omega
     · simp only [hk0, ite_false, Nat.zero_mul, Nat.zero_mod, Nat.zero_div, Nat.or_self] at a0 a1 a2 a3 a4 ⊢
-      rw [hval, Limbs26.val, a0, a1, a2, a3, a4]; rfl
+      rw [hval, Limbs26.val, a0, a1, a2, a3, a4]
   · obtain ⟨a0, a1, a2, a3, a4⟩ := e k hk
     by_cases hk0 : k = 0
     · subst hk0
