@@ -1,22 +1,24 @@
-import VerifiedGarbage.Proof.Aes.Bitsliced
+import VerifiedGarbage.Proof.Aes.Ct32.Layers
 import VerifiedGarbage.Proof.Aes.InvRounds
 
 /-!
-# Bitsliced AES: the inverse round transformations
+# Bitsliced AES on 32-bit words: the inverse round transformations
 
-As `Bitsliced.lean` does for the cipher: the lemmas turning what each
-layer of the inverse cipher's code does to the bits into the transformation
-of FIPS 197 §5.3 it computes on the states, and what the layers compute
-on input words given as atoms, which the targets' proofs check their code
+As `Ct32/Bitsliced.lean` does for the cipher, and `Proof/Aes/InvBitsliced.lean`
+for the inverse cipher on 64-bit words: the lemmas turning what each layer
+of the inverse cipher's code does to the bits into the transformation of
+FIPS 197 §5.3 it computes on the states, and what the layers compute on
+input words given as atoms, which the targets' proofs check their code
 against. Nothing here depends on the target.
 -/
 
-namespace VG.Proof.Aes
+namespace VG.Proof.Aes.Ct32
 
 open VG VG.Bitslice VG.Spec.Aes
+open VG.Proof.Aes (mulBits bitsXor mulBits_lt invMcWords mul0e_bit mul0b_bit mul0d_bit mul09_bit)
 
-theorem bs_invSubBytes {Q Q' : Nat → BitVec 64} {S : Nat → State}
-    (h : ∀ j < 8, ∀ p < 64, (Q' j).getLsbD p = (invSbox (bsByte Q p)).getLsbD j) (hr : BsRel Q S) :
+theorem bs_invSubBytes {Q Q' : Nat → BitVec 32} {S : Nat → State}
+    (h : ∀ j < 8, ∀ p < 32, (Q' j).getLsbD p = (invSbox (bsByte Q p)).getLsbD j) (hr : BsRel Q S) :
     BsRel Q' fun b => invSubBytes (S b) := by
   intro b hb i hi
   have : bsByte Q' (pos b i) = invSbox (bsByte Q (pos b i)) :=
@@ -24,15 +26,15 @@ theorem bs_invSubBytes {Q Q' : Nat → BitVec 64} {S : Nat → State}
   rw [this, hr b hb i hi, getD_eq _ hi, getD_eq _ hi]
   simp only [invSubBytes, Vector.getElem_map]
 
-/-- InvShiftRows: position `16r + 4c + b` from `16r + 4((c − r) mod 4) + b`. -/
-def invSrSrc (p : Nat) : Nat := 16 * (p / 16) + 4 * ((p / 4 % 4 + 4 - p / 16) % 4) + p % 4
+/-- InvShiftRows: position `8r + 2c + b` from `8r + 2((c − r) mod 4) + b`. -/
+def invSrSrc (p : Nat) : Nat := 8 * (p / 8) + 2 * ((p / 2 % 4 + 4 - p / 8) % 4) + p % 2
 
-theorem invSrSrc_pos : ∀ b < 4, ∀ i < 16,
+theorem invSrSrc_pos : ∀ b < 2, ∀ i < 16,
     invSrSrc (pos b i) = pos b (i % 4 + 4 * ((i / 4 + 4 - i % 4) % 4)) := by
   decide
 
-theorem bs_invShiftRows {Q Q' : Nat → BitVec 64} {S : Nat → State}
-    (h : ∀ j < 8, ∀ p < 64, (Q' j).getLsbD p = (Q j).getLsbD (invSrSrc p)) (hr : BsRel Q S) :
+theorem bs_invShiftRows {Q Q' : Nat → BitVec 32} {S : Nat → State}
+    (h : ∀ j < 8, ∀ p < 32, (Q' j).getLsbD p = (Q j).getLsbD (invSrSrc p)) (hr : BsRel Q S) :
     BsRel Q' fun b => invShiftRows (S b) := by
   intro b hb i hi
   have : bsByte Q' (pos b i) = bsByte Q (pos b (i % 4 + 4 * ((i / 4 + 4 - i % 4) % 4))) :=
@@ -47,7 +49,7 @@ theorem bs_invShiftRows {Q Q' : Nat → BitVec 64} {S : Nat → State}
 /-- The bits `(w, k)` of `invMcWords`: bit `w` of the byte `k` rows down. -/
 def invMcTerms (j p : Nat) : List (Nat × Nat) := (invMcWords j).map fun wk => (wk.1, down p wk.2)
 
-theorem termsXor_append (Q : Nat → BitVec 64) (l₁ l₂ : List (Nat × Nat)) :
+theorem termsXor_append (Q : Nat → BitVec 32) (l₁ l₂ : List (Nat × Nat)) :
     termsXor Q (l₁ ++ l₂) = (termsXor Q l₁ ^^ termsXor Q l₂) := by
   induction l₁ with
   | nil => simp [termsXor]
@@ -56,7 +58,7 @@ theorem termsXor_append (Q : Nat → BitVec 64) (l₁ l₂ : List (Nat × Nat)) 
     rw [ih, Bool.xor_assoc]
 
 /-- The bits `ts` of the byte at `p`, read from the words when they hold it. -/
-theorem termsXor_row {Q : Nat → BitVec 64} {p : Nat} {a : Byte}
+theorem termsXor_row {Q : Nat → BitVec 32} {p : Nat} {a : Byte}
     (ha : ∀ w < 8, (Q w).getLsbD p = a.getLsbD w) {ts : List Nat} (hts : ∀ t ∈ ts, t < 8) :
     termsXor Q (ts.map fun t => (t, p)) = bitsXor a ts := by
   induction ts with
@@ -70,8 +72,8 @@ theorem invMcTerms_eq (j p : Nat) : invMcTerms j p =
       ((mulBits 0x0d j).map (fun t => (t, down p 2)) ++ (mulBits 0x09 j).map (fun t => (t, down p 3)))) := by
   simp [invMcTerms, invMcWords, List.map_map, Function.comp_def]
 
-theorem bs_invMixColumns {Q Q' : Nat → BitVec 64} {S : Nat → State}
-    (h : ∀ j < 8, ∀ p < 64, (Q' j).getLsbD p = termsXor Q (invMcTerms j p)) (hr : BsRel Q S) :
+theorem bs_invMixColumns {Q Q' : Nat → BitVec 32} {S : Nat → State}
+    (h : ∀ j < 8, ∀ p < 32, (Q' j).getLsbD p = termsXor Q (invMcTerms j p)) (hr : BsRel Q S) :
     BsRel Q' fun b => invMixColumns (S b) := by
   intro b hb i hi
   refine byte_ext fun j hj => ?_
@@ -91,9 +93,9 @@ theorem bs_invMixColumns {Q Q' : Nat → BitVec 64} {S : Nat → State}
 
 /-! ## As atoms -/
 
-def invSrG (j p : Nat) : List Nat := [64 * j + invSrSrc p]
+def invSrG (j p : Nat) : List Nat := [32 * j + invSrSrc p]
 
 /-- InvMixColumns: the bits `invMcTerms`, as atoms. -/
-def invMcG (j p : Nat) : List Nat := (invMcTerms j p).map fun wt => 64 * wt.1 + wt.2
+def invMcG (j p : Nat) : List Nat := (invMcTerms j p).map fun wt => 32 * wt.1 + wt.2
 
-end VG.Proof.Aes
+end VG.Proof.Aes.Ct32
