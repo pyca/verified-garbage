@@ -51,7 +51,7 @@ def upToPow : Prog isa :=
   .seq (bits (c.sl EXPP) (bitsAt c.n 1) (8 * c.n)) <|
   .seq (bits (c.sl EXPN) (bitsAt c.n 2) (8 * c.n)) <|
   .seq (CombCfg.comb c.combCfg) <|
-  .seq (pow c.powP) (.block [])
+  .seq (ChainCfg.pow c.powP) (.block [])
 
 /-- `04 ‖ x ‖ y` (or zeros) to `out`, `x19` and `x20` restored, and the
 flag's low bit to `x0`. -/

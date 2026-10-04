@@ -164,6 +164,65 @@ theorem tbl_apart_tbl {j j' t : Nat} (hjj : j ≠ j') (ht : t < 64 * c.n) :
     rw [Nat.mul_succ] at this
     omega
 
+/-- What a power writes: `ACC`, its table and the temporary area. -/
+abbrev chainWc (c : Cfg) : List (Nat × Nat) :=
+  [(c.sl ACC, 8 * c.n), (c.sl CT, 9 * (8 * c.n)), (c.sl TMP, 8 * c.n)]
+
+theorem chainWP_eq (c : Cfg) : chainW c.powP = chainWc c := rfl
+theorem chainWN_eq (c : Cfg) : chainW c.powN = chainWc c := rfl
+
+theorem fixedOk_chainWc : FixedOk c (chainWc c) := by
+  intro w hw
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
+  rcases hw with rfl | rfl | rfl
+  · exact Or.inr (Nat.le_trans (Nat.le_add_right _ _) (sl_lt c (show 12 < ACC by decide)))
+  · exact Or.inr (Nat.le_trans (Nat.le_add_right _ _) (sl_lt c (show 12 < CT by decide)))
+  · exact Or.inl ⟨rfl, rfl⟩
+
+/-- A slot but `ACC` and `TMP` is apart from what a power writes. -/
+theorem apart_chainWc {i : Nat} (hi : i < 45) (hl : i ∉ [ACC, TMP]) :
+    ∀ w ∈ chainWc c, c.sl i + 8 * c.n ≤ w.1 ∨ w.1 + w.2 ≤ c.sl i := by
+  intro w hw
+  simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hw hl
+  rcases hw with rfl | rfl | rfl
+  · exact sl_apart c hl.1
+  · exact Or.inl (sl_lt c (show i < CT by unfold CT; omega))
+  · exact sl_apart c hl.2
+
+/-- The tables of bits are apart from what a power writes. -/
+theorem tbl_apart_chainWc {j t : Nat} (hj : j < 3) (ht : t < 64 * c.n) :
+    ∀ w ∈ chainWc c, bitsAt c.n j + t + 1 ≤ w.1 ∨ w.1 + w.2 ≤ bitsAt c.n j + t := by
+  intro w hw
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
+  rcases hw with rfl | rfl | rfl
+  · exact Or.inr (sl_below_bits c (by decide) j t)
+  · refine Or.inl ?_
+    rw [bitsAt_eq, sl_eq]; unfold CT
+    have := Nat.mul_le_mul_left (64 * c.n) (show j ≤ 2 by omega)
+    omega
+  · exact Or.inr (sl_below_bits c (by decide) j t)
+
+/-- The flag survives a power and changes of other slots. -/
+theorem flag_unch_cw {base : Addr} {l : List Nat} {m m' : Mem} (hu : Unch base (chainWc c ++ slW c l) m m')
+    (h7 : c.n < 7) (h0 : 0 < c.n) (hn : base.toNat + size ≤ 2 ^ 64) (hl : FLAG ∉ l) :
+    word m' base (c.sl FLAG) = word m base (c.sl FLAG) := by
+  have hF := sl_le c h7 (i := FLAG) (by decide)
+  refine hu.word (fun w hw => ?_) (by omega)
+  rcases apart_append (apart_chainWc (c := c) (i := FLAG) (by decide) (by decide)) (apart_slW hl) w hw
+    with h | h
+  · exact Or.inl (by omega)
+  · exact Or.inr h
+
+/-- The flag survives a power. -/
+theorem flag_unch_chain {base : Addr} {m m' : Mem} (hu : Unch base (chainWc c) m m') (h7 : c.n < 7)
+    (h0 : 0 < c.n) (hn : base.toNat + size ≤ 2 ^ 64) :
+    word m' base (c.sl FLAG) = word m base (c.sl FLAG) := by
+  have hF := sl_le c h7 (i := FLAG) (by decide)
+  refine hu.word (fun w hw => ?_) (by omega)
+  rcases apart_chainWc (c := c) (i := FLAG) (by decide) (by decide) w hw with h | h
+  · exact Or.inl (by omega)
+  · exact Or.inr h
+
 /-- The moduli, from their slots. -/
 theorem modP_of (hc : CfgOk c) {base : Addr} {m : Mem} (h : wordsVal m base (c.sl MP) c.n = c.C.p) :
     ModOk c.MP' size c.C.p m base :=

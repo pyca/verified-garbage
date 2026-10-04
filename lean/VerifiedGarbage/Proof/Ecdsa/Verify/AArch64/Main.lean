@@ -37,8 +37,8 @@ theorem verify_eq'' (c : Cfg) : Impl.Ecdsa.Verify.AArch64.Cfg.verify c =
       (.seq (bits (c.sl EXPN) (bitsAt c.n 2) (8 * c.n)) (.block [])))))
       (.seq (.block (Impl.Ecdsa.Verify.AArch64.Cfg.loadS c)) (.seq (.block (Impl.Ecdh.AArch64.Cfg.peer c))
       (.seq (Impl.Ecdh.AArch64.Cfg.validate c) (.seq (Impl.Ecdsa.Verify.AArch64.Cfg.scalars c)
-      (.seq (pow c.powN) (.seq (Impl.Ecdsa.Verify.AArch64.Cfg.uv c)
-      (.seq (Impl.Ecdsa.Verify.AArch64.Cfg.points c) (.seq (pow c.powP)
+      (.seq (ChainCfg.pow c.powN) (.seq (Impl.Ecdsa.Verify.AArch64.Cfg.uv c)
+      (.seq (Impl.Ecdsa.Verify.AArch64.Cfg.points c) (.seq (ChainCfg.pow c.powP)
         (Impl.Ecdsa.Verify.AArch64.Cfg.final c)))))))))) := rfl
 
 /-- What the slots of `a`, `3b` and `G` stand for. -/
