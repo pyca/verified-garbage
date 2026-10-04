@@ -13,11 +13,14 @@ modulus of 32 words and primes of 16 words each, whose two exponentiations
 * `amm`: two almost-Montgomery multiplications at once, `a b 2⁻¹⁰⁴⁰` modulo
   `p` and modulo `q` (below `2 p` and `2 q` for inputs below them), each in
   five registers. For each limb `b_i` of the second operand: the low halves
-  of `a b_i` into the accumulator; `u = acc₀ k₀ mod 2⁵²` (`k₀ = -m⁻¹ mod
-  2⁵²`); the low halves of `u m`; the carry of limb 0 into limb 1; the
-  accumulator shifted down a limb, which in the stride layout is a change
-  of the registers' roles and a lane shift of the register of limb 0; and
-  the high halves of `a b_i` and `u m`. Five limbs make a block, after
+  of `a b_i` into the accumulator, and the high halves of those that stay in
+  their lane after the shift below (limbs 0–3 of each lane, into the next
+  limb), which keeps the multipliers busy while `u` is computed;
+  `u = acc₀ k₀ mod 2⁵²` (`k₀ = -m⁻¹ mod 2⁵²`); the low halves of `u m`; the
+  carry of limb 0 into limb 1; the accumulator shifted down a limb, which in
+  the stride layout is a change of the registers' roles and a lane shift of
+  the register of limb 0; and the high halves of `u m` and of the rest of
+  `a b_i`. Five limbs make a block, after
   which the roles are back where they started. The result is carried
   limb by limb into twenty limbs below `2⁵²`.
 * The two exponentiations: the bases and 1 in Montgomery form (`R = 2¹⁰⁴⁰`)
@@ -95,6 +98,8 @@ def ammStep (i : Nat) : List Instr :=
     .vop (.vpbroadcastq .l256 (bReg p) (bReg p))]) ++
   ps.flatMap (fun p => (List.range 5).map fun k =>
     .vpmadd52Load false (acc p k i) (bReg p) (at_ .r8 (D * p + 32 * k))) ++
+  ps.flatMap (fun p => (List.range 4).map fun k =>
+    .vpmadd52Load true (acc p (k + 1) i) (bReg p) (at_ .r8 (D * p + 32 * k))) ++
   ps.flatMap (fun p => [.vop (.vbin .vpxor .l256 tReg tReg tReg),
     .vpmadd52Load false tReg (acc p 0 i) (at_ .r10 (D * p + oK0)),
     .vop (.vpbroadcastq .l256 (uReg p) tReg)]) ++
@@ -104,9 +109,10 @@ def ammStep (i : Nat) : List Instr :=
     .vop (.vpblendd .l256 tReg zReg tReg 0x03), .vop (.vbin .vpaddq .l256 (acc p 1 i) (acc p 1 i) tReg),
     .vop (.vpermq (acc p 0 i) (acc p 0 i) 0x39),
     .vop (.vpblendd .l256 (acc p 0 i) (acc p 0 i) zReg 0xC0)]) ++
-  ps.flatMap (fun p => (List.range 5).flatMap fun k =>
-    [.vpmadd52Load true (acc p k (i + 1)) (bReg p) (at_ .r8 (D * p + 32 * k)),
-     .vpmadd52Load true (acc p k (i + 1)) (uReg p) (at_ .r10 (D * p + oM + 32 * k))])
+  ps.flatMap (fun p => (List.range 4).map (fun k =>
+      .vpmadd52Load true (acc p k (i + 1)) (uReg p) (at_ .r10 (D * p + oM + 32 * k))) ++
+    [.vpmadd52Load true (acc p 4 (i + 1)) (bReg p) (at_ .r8 (D * p + 128)),
+     .vpmadd52Load true (acc p 4 (i + 1)) (uReg p) (at_ .r10 (D * p + oM + 128))])
 
 /-- A block: five steps, then the next block's limbs of the second operand
 and the count of blocks. -/
