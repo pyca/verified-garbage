@@ -1,11 +1,6 @@
 import VerifiedGarbage.Impl.Ed25519.CombTable
 import VerifiedGarbage.Proof.Ed25519.BaseTable
 import VerifiedGarbage.Proof.Ed25519.Group.Extended
-import Mathlib.Algebra.Group.Basic
-import Mathlib.Tactic.Ring
-import Mathlib.Tactic.LinearCombination
-import Mathlib.Tactic.NormNum
-import Mathlib.Algebra.Module.NatInt
 
 /-! Merged from `Proof.Ed25519.CombConstants`. -/
 section

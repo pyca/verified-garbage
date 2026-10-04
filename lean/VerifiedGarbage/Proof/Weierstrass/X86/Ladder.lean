@@ -240,7 +240,7 @@ theorem ladderBody_ok {L : LadderCfg} {wk : Nat} {C : Curve} {base : Addr} {size
       · exact List.mem_append_left _ (mem_ladW_R w hw)
   · have hM := A.mod
     have hmo := hL.lay.mo
-    refine ⟨hM.n0, hM.n7, hM.mo, hM.tmp, hM.sep, ?_, hM.inv⟩
+    refine ⟨hM.n0, hM.n7, hM.mo, hM.tmp, hM.sep, ?_, hM.inv, hM.red⟩
     rw [f''.mem, U'.wordsVal (fun w hw => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
       rcases hw with rfl | rfl | rfl

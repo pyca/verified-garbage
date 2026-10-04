@@ -182,13 +182,13 @@ private theorem abi_trans {a b c : State} (h : abiPreserved a b) (k : abiPreserv
   ⟨fun r hr => (k.1 r hr).trans (h.1 r hr),k.2.1.trans h.2.1,
     fun r hr => (k.2.2 r hr).trans (h.2.2 r hr)⟩
 
-private theorem bulk_tail (v : Permutation)
-    (hb : ∀ b, BulkPre b → WP isa Impl.Sha3.AArch64.Sha3.Vector.Resident.bulk b (BulkPost b))
+private theorem bulk_tail (v : Permutation) (whole : Prog isa)
+    (hb : ∀ b, BulkPre b → WP isa whole b (BulkPost b))
     {a b : State} (hp : Proof.Sha3.absorbAArch64.pre a) (he : Entry a b)
     (hz : a.gpr .x2 = 0) (h6 : b.gpr .x6 = a.gpr .x1)
     (hen : rt a ≤ Stream.Absorb.len a) (hlt : Stream.Absorb.len a < 2^63 + rt a) :
     WP isa (.seq (.block [Impl.Sha3.AArch64.mov .x1 .x5])
-      (.seq Impl.Sha3.AArch64.Sha3.Vector.Resident.bulk
+      (.seq whole
         (.block [Impl.Sha3.AArch64.mov .x1 .x6]))) b fun r =>
       WP isa (Impl.Sha3.AArch64.Stream.absorbGenericWith v.callee) r fun q =>
         abiPreserved a q ∧ Proof.Sha3.absorbAArch64.post a q := by
@@ -249,12 +249,12 @@ open VG.Impl.Sha3.AArch64.Sha3.Vector.Resident
 
 /-- The public guards select either the proved resident prefix or the ordinary
 streaming tail. Every branch retains the same scalar-compatible contract. -/
-theorem correct (v : Permutation)
-    (hb : ∀ b, BulkPre b → WP isa bulk b (BulkPost b))
+theorem correct (v : Permutation) (whole : Prog isa)
+    (hb : ∀ b, BulkPre b → WP isa whole b (BulkPost b))
     (a : State) (hp : Proof.Sha3.absorbAArch64.pre a) :
-    WP isa (absorb v.callee) a fun q =>
+    WP isa (absorbWith whole v.callee) a fun q =>
       abiPreserved a q ∧ Proof.Sha3.absorbAArch64.post a q := by
-  unfold absorb bulkPrefix
+  unfold absorbWith bulkPrefixWith
   refine WP.seq (WP.ite (a.gpr .x2 == 0) (eval_zero _ _) (fun hz => ?_) (fun _ => ?_))
   · have hz' : a.gpr .x2 = 0 := eq_of_beq hz
     unfold test
@@ -270,23 +270,24 @@ theorem correct (v : Permutation)
       have hr := (Stream.Absorb.pre_of hp).1.rt_pos
       have hn := (enough_iff (a.gpr .x4).toNat (a.gpr .x1).toNat
         (a.gpr .x4).isLt hr.2).mp (by simpa only [BitVec.ofNat_toNat,BitVec.setWidth_eq] using heq)
-      exact bulk_tail v hb hp he hz' h6 hn.1 hn.2
+      exact bulk_tail v whole hb hp he hz' h6 hn.1 hn.2
     · exact wp_nil (generic_entry v hp he)
   · exact wp_nil (generic_entry v hp (Entry.refl a))
 
-theorem absorb_correct (v : Permutation)
-    (hb : ∀ b, BulkPre b → WP isa bulk b (BulkPost b))
+theorem absorb_correct (v : Permutation) (whole : Prog isa)
+    (hb : ∀ b, BulkPre b → WP isa whole b (BulkPost b))
     (a : State) (hp : Proof.Sha3.absorbAArch64.pre a) :
-    ∃ t q, Exec isa (absorb v.callee) a t q ∧ abiPreserved a q ∧
+    ∃ t q, Exec isa (absorbWith whole v.callee) a t q ∧ abiPreserved a q ∧
       Proof.Sha3.absorbAArch64.post a q := by
-  obtain ⟨t,q,he,hq⟩ := correct v hb a hp
+  obtain ⟨t,q,he,hq⟩ := correct v whole hb a hp
   exact ⟨t,q,he,hq⟩
 
 theorem bulk_depth : bulk.aarch64Depth = 0 := by rfl
 
-theorem absorb_depth (v : Permutation) : (absorb v.callee).aarch64Depth = 1 := by
-  change Nat.max 0 ((Impl.Sha3.AArch64.Stream.absorbMainWith v.callee).aarch64Depth + 1) = 1
-  rw [v.absorbMain_depth]
+theorem absorb_depth (v : Permutation) (whole : Prog isa) (hw : whole.aarch64Depth = 0) :
+    (absorbWith whole v.callee).aarch64Depth = 1 := by
+  simp only [absorbWith, bulkPrefixWith, Impl.Sha3.AArch64.Stream.absorbGenericWith, Code.aarch64Depth,
+    hw, v.absorbMain_depth, Instr.frameUnits]
   rfl
 
 end VG.Proof.Sha3.AArch64.Sha3.Vector.Resident
@@ -317,11 +318,11 @@ supplied to the generic outer composition proof. -/
 theorem hardware_absorb_correct (a : State) (hp : Proof.Sha3.absorbAArch64.pre a) :
     ∃ t q, Exec isa (Impl.Sha3.AArch64.Sha3.Vector.Resident.absorb Sha3.callee) a t q ∧
       abiPreserved a q ∧ Proof.Sha3.absorbAArch64.post a q :=
-  absorb_correct Sha3.backend bulk_correct a hp
+  absorb_correct Sha3.backend _ bulk_correct a hp
 
 theorem hardware_absorb_depth :
     (Impl.Sha3.AArch64.Sha3.Vector.Resident.absorb Sha3.callee).aarch64Depth = 1 :=
-  absorb_depth Sha3.backend
+  absorb_depth Sha3.backend _ bulk_depth
 
 #assert_standard_axioms hardware_absorb_correct
 

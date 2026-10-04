@@ -23,6 +23,7 @@ namespace VG.Proof.ChaCha20.X86.Stream
 open VG VG.X86 VG.Impl.ChaCha20.X86.Stream
 open VG.Impl.ChaCha20.X86 (at_)
 open VG.Spec.ChaCha20 (stateAt)
+open VG.Proof.ChaCha20.X86 (XorImpl)
 
 /-- Code the taint analysis proves constant time from the registers `rs`. -/
 theorem taintRel {P : State → State → Prop} {c : Prog isa} (rs : List Reg)
@@ -147,10 +148,11 @@ theorem part1_rel (hle : L a ≤ N a) :
       · rw [hx.esp, hy.esp, h.hesp]) (by taint_decide))
     fun x y ⟨hx, hy⟩ => ⟨rest1_ok h.pa hx, rest1_ok h.pb hy⟩
 
-theorem xor_rel (hnb : 0 < NB a) : RelCT isa (fun x y => Args a x ∧ Args b y) callXor fun _ _ => True := by
+theorem xor_rel (v : XorImpl) (hnb : 0 < NB a) :
+    RelCT isa (fun x y => Args a x ∧ Args b y) (callXor v.callee) fun _ _ => True := by
   have ew : wrXor b = wrXor a := by
     simp only [wrXor, cpR, blR, wkR, st, dp, E, h.hst, h.hdp, h.eqH, h.eqNB, h.hesp]
-  refine RelCT.callWith Proof.ChaCha20.X86.Xor.xor_correct Proof.ChaCha20.X86.Xor.xor_ct [] (wrXor a)
+  refine RelCT.callWith v.ok v.ct [] (wrXor a)
     fun x y ⟨hx, hy⟩ => ?_
   have px := xor_pre h.pa ⟨hx.esp, hx.rd, hx.wr⟩ hnb hx.edx hx.esi hx.ecx hx.eax
   have py := xor_pre h.pb ⟨hy.esp, hy.rd, hy.wr⟩ (by rw [← h.eqNB]; exact hnb) hy.edx hy.esi hy.ecx hy.eax
@@ -167,8 +169,9 @@ theorem xor_rel (hnb : 0 < NB a) : RelCT isa (fun x y => Args a x ∧ Args b y) 
     · rw [hx.edx, hy.edx, h.hst])
   exact ⟨px, py, hsp, p.1, fun i hi => p.2 i hi⟩
 
-theorem part2_rel : RelCT isa (fun x y => Q1 a x ∧ Q1 b y) part2 fun x y => Q2 a x ∧ Q2 b y := by
-  refine RelCT.post ?_ fun x y ⟨hx, hy⟩ => ⟨part2_ok h.pa hx, part2_ok h.pb hy⟩
+theorem part2_rel (v : XorImpl) :
+    RelCT isa (fun x y => Q1 a x ∧ Q1 b y) (part2 v.callee) fun x y => Q2 a x ∧ Q2 b y := by
+  refine RelCT.post ?_ fun x y ⟨hx, hy⟩ => ⟨part2_ok v h.pa hx, part2_ok v h.pb hy⟩
   rw [part2_eq]
   refine RelCT.ite (fun x y ⟨hx, hy⟩ => by show eval .e x = eval .e y; simp only [eval, hx.zf, hy.zf, h.eqNB])
     (taintRel [] (fun _ _ _ r hr => by simp at hr) (by taint_decide)) ?_
@@ -177,7 +180,7 @@ theorem part2_rel : RelCT isa (fun x y => Q1 a x ∧ Q1 b y) part2 fun x y => Q2
       simp only [show eval .e x = x.zf from rfl, hx.zf, h0, decide_true] at he
       exact absurd he (by decide)
   refine RelCT.seq (R := fun x y => Args a x ∧ Args b y) ?_
-    (RelCT.seq (xor_rel h (by omega)) (taintRel [] (fun _ _ _ r hr => by simp at hr) (by taint_decide)))
+    (RelCT.seq (xor_rel h v (by omega)) (taintRel [] (fun _ _ _ r hr => by simp at hr) (by taint_decide)))
   exact RelCT.post (taintRel [.ebx, .ecx, .esp] (fun x y ⟨⟨hx, hy⟩, _⟩ r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl
@@ -223,7 +226,7 @@ theorem part3_rel : RelCT isa (fun x y => Q2 a x ∧ Q2 b y) part3 fun x y => Q3
     · rw [hx.ebx, hy.ebx, h.hst])
   exact ⟨block_pre h.pa hx.at_ hx.ebx hx.eax, py, hsp, p.1, p.2 0 (by decide), p.2 1 (by decide)⟩
 
-theorem apply_rel : RelCT isa (fun x y => x = a ∧ y = b) apply fun _ _ => True := by
+theorem apply_rel (v : XorImpl) : RelCT isa (fun x y => x = a ∧ y = b) (apply v.callee) fun _ _ => True := by
   rw [apply_eq]
   refine RelCT.seq (load_rel h) (RelCT.seq (check_rel h) (RelCT.ite (fun x y ⟨hx, hy⟩ => by
       show eval .b x = eval .b y; simp only [eval, hx.cf, hy.cf, h.hleft, h.eqL])
@@ -234,7 +237,7 @@ theorem apply_rel : RelCT isa (fun x y => x = a ∧ y = b) apply fun _ _ => True
       exact absurd he (by decide)
   have hle : L a ≤ N a := by omega
   refine RelCT.seq (RelCT.mono (part1_rel h hle) (fun _ _ hp => hp.1) fun _ _ hq => hq)
-    (RelCT.seq (part2_rel h) (RelCT.seq (part3_rel h) ?_))
+    (RelCT.seq (part2_rel h v) (RelCT.seq (part3_rel h) ?_))
   exact taintRel [.ebx] (fun x y ⟨hx, hy⟩ r hr => by
     simp only [List.mem_singleton] at hr; subst hr; rw [hx.ebx, hy.ebx, h.hst]) (by taint_decide)
 
@@ -245,12 +248,13 @@ theorem Two.of {a b : State} (ha : Proof.ChaCha20.applyX86.pre a) (hb : Proof.Ch
   obtain ⟨p1, p2, p3, p4, p5⟩ := hq
   exact ⟨APre.of a ha, APre.of b hb, p1, p2, p3, p4, (List.cons.inj p5).1⟩
 
-theorem apply_ct : ConstantTime isa Proof.ChaCha20.applyX86.pre Proof.ChaCha20.applyX86.pub apply :=
-  fun _ _ _ _ _ _ h₁ h₂ hq e₁ e₂ => (apply_rel (Two.of h₁ h₂ hq) _ _ _ _ _ _ ⟨rfl, rfl⟩ e₁ e₂).1
+theorem apply_ct (v : XorImpl) :
+    ConstantTime isa Proof.ChaCha20.applyX86.pre Proof.ChaCha20.applyX86.pub (apply v.callee) :=
+  fun _ _ _ _ _ _ h₁ h₂ hq e₁ e₂ => (apply_rel (Two.of h₁ h₂ hq) v _ _ _ _ _ _ ⟨rfl, rfl⟩ e₁ e₂).1
 
-theorem apply_ok (s : State) (hs : Proof.ChaCha20.applyX86.pre s) :
-    ∃ t s', Exec isa apply s t s' ∧ abiPreserved s s' ∧ Proof.ChaCha20.applyX86.post s s' := by
-  obtain ⟨t, s', he, hf⟩ := apply_correct (APre.of s hs)
+theorem apply_ok (v : XorImpl) (s : State) (hs : Proof.ChaCha20.applyX86.pre s) :
+    ∃ t s', Exec isa (apply v.callee) s t s' ∧ abiPreserved s s' ∧ Proof.ChaCha20.applyX86.post s s' := by
+  obtain ⟨t, s', he, hf⟩ := apply_correct v (APre.of s hs)
   exact ⟨t, s', he, hf.1, hf.2⟩
 
 /-- The 32-bit result, as the ABI returns it in `edx:eax`. -/
@@ -273,8 +277,9 @@ def applySat : State where
   rd := []
   wr := [⟨0x1000, 768⟩, ⟨0x2000, 0⟩, ⟨0x4004, 12⟩]
 
-theorem apply_verified : Verified X86.target apply (Spec.ChaCha20.applyContract X86.abi 32) :=
-  Verified.of_correct apply_ok apply_ct (by
+theorem apply_verified (v : XorImpl) :
+    Verified X86.target (apply v.callee) (Spec.ChaCha20.applyContract X86.abi 32) :=
+  Verified.of_correct (apply_ok v) (apply_ct v) (by
     have a0 : arg applySat 0 = 0x1000 := by decide
     have a1 : arg applySat 1 = 0x2000 := by decide
     have a2 : arg applySat 2 = 0 := by decide
@@ -282,5 +287,9 @@ theorem apply_verified : Verified X86.target apply (Spec.ChaCha20.applyContract 
     have esp : applySat.gpr .esp = 0x4000 := rfl
     sig_implies [Spec.ChaCha20.applyContract, Spec.ChaCha20.applySig, X86.abi, X86.argSlots,
       X86.argVal, X86.argBytes, Proof.ChaCha20.applyX86, ret_eq] [a0, a1, a2, e, esp] using applySat)
+
+theorem apply_spSafe (v : XorImpl) : (apply v.callee).all (fun i => !X86.isa.writesSp i) = true := by
+  simp only [apply, part2, callXor, Code.all, v.spSafe, Bool.and_true]
+  lit_decide
 
 end VG.Proof.ChaCha20.X86.Stream

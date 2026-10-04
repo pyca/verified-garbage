@@ -78,7 +78,7 @@ theorem powBody_ok {P : PowCfg} {base : Addr} {size m e : Nat} [NeZero m] (hL : 
   have hbl := hL.bits
   have hM : ModOk P.M size m s.mem base :=
     ⟨hM₀.n0, hM₀.n7, hM₀.mo, hM₀.tmp, hM₀.sep,
-      by rw [hI.unch.wordsVal hmo (by omega)]; exact hM₀.val, hM₀.inv⟩
+      by rw [hI.unch.wordsVal hmo (by omega)]; exact hM₀.val, hM₀.inv, hM₀.red⟩
   have hBs : wordsVal s.mem base P.base P.M.n = wordsVal s₀.mem base P.base P.M.n :=
     hI.unch.wordsVal hbw (by omega)
   -- `sub rbx, 1` and `acc = acc²`.
@@ -97,7 +97,7 @@ theorem powBody_ok {P : PowCfg} {base : Addr} {size m e : Nat} [NeZero m] (hL : 
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
         rcases hw with rfl | rfl
         · exact hmo _ (by simp [powW])
-        · exact hmo _ (by simp [powW])) (by omega), hm₁]; exact hM.val, hM.inv⟩
+        · exact hmo _ (by simp [powW])) (by omega), hm₁]; exact hM.val, hM.inv, hM.red⟩
   have v₂ : toM m (2 ^ (64 * P.M.n)) (wordsVal s₂.mem base P.acc P.M.n) =
       toM m (2 ^ (64 * P.M.n)) (wordsVal s.mem base P.acc P.M.n) ^ 2 := by
     rw [toM_mul hm (e₂.trans (by rw [hm₁])), Lean.Grind.Semiring.pow_two]

@@ -2,8 +2,13 @@
 //! whole blocks (`vg_aes_encrypt_blocks`, `vg_aes_decrypt_blocks`), each
 //! implementation the CPU can run, against the NIST CAVP ECB known-answer
 //! tests, vendored unmodified under `vectors/nist-cavp/aes/`.
-#![cfg(any(target_arch = "arm", target_arch = "x86_64"))]
+#![cfg(any(target_arch = "aarch64", target_arch = "arm", target_arch = "x86_64"))]
 
+#[cfg(target_arch = "aarch64")]
+use crate::arch::aes::{
+    VG_AES_DECRYPT_BLOCKS_AES_FEATURES, VG_AES_ENCRYPT_BLOCKS_AES_FEATURES,
+    vg_aes_decrypt_blocks_aes, vg_aes_encrypt_blocks_aes,
+};
 #[cfg(target_arch = "x86_64")]
 use crate::arch::aes::{
     VG_AES_DECRYPT_BLOCKS_AESNI_FEATURES, VG_AES_ENCRYPT_BLOCKS_AESNI_FEATURES,
@@ -12,11 +17,11 @@ use crate::arch::aes::{
 use crate::arch::aes::{vg_aes_decrypt_blocks, vg_aes_encrypt_blocks, vg_aes_expand_key};
 use crate::cpu::Features;
 
-#[cfg(target_arch = "arm")]
-type Blocks = unsafe extern "C" fn(*const [u8; 240], usize, *mut [u8; 16], usize, *mut [u64; 256]);
 #[cfg(target_arch = "x86_64")]
 type Blocks =
     unsafe extern "sysv64" fn(*const [u8; 240], usize, *mut [u8; 16], usize, *mut [u64; 256]);
+#[cfg(any(target_arch = "aarch64", target_arch = "arm"))]
+type Blocks = unsafe extern "C" fn(*const [u8; 240], usize, *mut [u8; 16], usize, *mut [u64; 256]);
 
 /// Each implementation, encryption and decryption, with the features it needs.
 #[cfg(target_arch = "arm")]
@@ -25,6 +30,8 @@ const IMPLEMENTATIONS: [(Blocks, Blocks, Features); 1] = [(
     vg_aes_decrypt_blocks,
     Features::of(&[]),
 )];
+
+/// Each implementation, encryption and decryption, with the features it needs.
 #[cfg(target_arch = "x86_64")]
 const IMPLEMENTATIONS: [(Blocks, Blocks, Features); 2] = [
     (
@@ -38,6 +45,24 @@ const IMPLEMENTATIONS: [(Blocks, Blocks, Features); 2] = [
         Features::all(&[
             VG_AES_ENCRYPT_BLOCKS_AESNI_FEATURES,
             VG_AES_DECRYPT_BLOCKS_AESNI_FEATURES,
+        ]),
+    ),
+];
+
+/// Each implementation, encryption and decryption, with the features it needs.
+#[cfg(target_arch = "aarch64")]
+const IMPLEMENTATIONS: [(Blocks, Blocks, Features); 2] = [
+    (
+        vg_aes_encrypt_blocks,
+        vg_aes_decrypt_blocks,
+        Features::of(&[]),
+    ),
+    (
+        vg_aes_encrypt_blocks_aes,
+        vg_aes_decrypt_blocks_aes,
+        Features::all(&[
+            VG_AES_ENCRYPT_BLOCKS_AES_FEATURES,
+            VG_AES_DECRYPT_BLOCKS_AES_FEATURES,
         ]),
     ),
 ];

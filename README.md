@@ -66,7 +66,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅ AVX2</td>
+<td>✅ AVX-512F, AVX-512VL, AVX2</td>
 
 <td>✅</td>
 
@@ -164,7 +164,7 @@ yours to keep:
 
 <td>✅ lane complementing</td>
 
-<td>✅ SHA extensions; rounds unrolled, round constants as immediates</td>
+<td>✅ SHA extensions; rounds unrolled, round constants as immediates; whole blocks absorbed with the state in registers</td>
 
 <td>✅</td>
 
@@ -484,7 +484,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅</td>
+<td>✅ SSE2, SSSE3</td>
 
 </tr>
 
@@ -666,7 +666,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅ AVX-512F, AVX2</td>
+<td>✅ AVX-512F, AVX-512VL, AVX2</td>
 
 <td>✅</td>
 
@@ -682,7 +682,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅ AVX-512F, AVX2</td>
+<td>✅ AVX-512F, AVX-512VL, AVX2</td>
 
 <td>✅</td>
 
@@ -698,7 +698,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅ AVX-512F, AVX2</td>
+<td>✅ AVX-512F, AVX-512VL, AVX2</td>
 
 <td>✅</td>
 
@@ -940,7 +940,7 @@ yours to keep:
 
 <td>❌</td>
 
-<td>❌</td>
+<td>✅</td>
 
 </tr>
 
@@ -1086,7 +1086,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>❌</td>
+<td>✅ SHA extensions</td>
 
 <td>❌</td>
 

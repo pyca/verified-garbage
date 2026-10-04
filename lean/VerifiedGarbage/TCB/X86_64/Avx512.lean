@@ -148,16 +148,6 @@ def shuf4Lanes (a b : Nat → BitVec 128) (sel : BitVec 8) (j : Nat) : BitVec 12
   let k := (sel.extractLsb' (2 * j) 2).toNat
   if j < 2 then a k else b k
 
-/-- SDM Vol. 2, "VPRORD/VPRORVD/VPRORQ/VPRORVQ—Bit Rotate Right", for one
-lane: `RIGHT_ROTATE_QWORDS(SRC, COUNT_SRC) { COUNT := COUNT_SRC modulo 64;
-DEST[63:0] := (SRC >> COUNT) | (SRC << (64 - COUNT)); }` for each quadword
-(the "EVEX encoded versions" with an immediate count, no write mask and a
-register source: `DEST[i+63:i] := RIGHT_ROTATE_QWORDS(SRC1[i+63:i], imm8)`
-for each quadword `j`, `i := j * 64`). -/
-def rorQwords (x : BitVec 128) (n : BitVec 8) : BitVec 128 :=
-  let r (i : Nat) := (qword x i).rotateRight (n.toNat % 64)
-  r 1 ++ r 0
-
 /-- Semantics of an AVX-512 instruction that writes only vector registers.
 SDM Vol. 2 (no flags are affected; with 512-bit operands the whole of
 `DEST[511:0]` is written):
