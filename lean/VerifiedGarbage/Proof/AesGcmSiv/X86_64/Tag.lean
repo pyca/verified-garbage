@@ -43,10 +43,19 @@ structure TagPost (K W SP : Addr) (R o : Nat) (t t' : State) : Prop where
   out : bytesAt t'.mem (W + BitVec.ofNat 64 o) 16 =
     Spec.GcmSiv.ctxCiph t.mem (W + BitVec.ofNat 64 512) R (bytesAt t.mem (W + BitVec.ofNat 64 96) 16)
 
-theorem tag_ok (v : GcmImpl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} (hR : R = 10 ∨ R = 14) {t : State}
+/-- The arguments of `tag o`'s call. -/
+theorem tagArgs_ok {K W SP : Addr} (L : Lay K W SP) {R : Nat} {t : State}
     (E : Env K W SP t) {N A D : Addr} {al n : Nat} (S : Slots W R N A D al n t.mem) {o : Nat}
     (ho : o = 0 ∨ o = 128 ∨ o = 144) :
-    WP isa (tag v.callees o) t (TagPost K W SP R o t) := by
+    ∃ t₁ : State, runBlock isa
+    (copy16 cmO ccO ++ zero16 o ++ ptr .rdi .r15 skO ++ ctrArgs ++ ptr .rcx .r15 o) t = some t₁ ∧
+    t₁.mem = Proof.Cmac.zero2 ((t.mem.writeW (W + BitVec.ofNat 64 112) (t.mem.readW (W + BitVec.ofNat 64 96) 64)).writeW
+      (W + BitVec.ofNat 64 112 + BitVec.ofNat 64 8) (t.mem.readW (W + BitVec.ofNat 64 96 + BitVec.ofNat 64 8) 64))
+      (W + BitVec.ofNat 64 o) ∧
+    t₁.gpr .rdi = W + BitVec.ofNat 64 512 ∧ t₁.gpr .rsi = BitVec.ofNat 64 R ∧
+    t₁.gpr .rdx = W + BitVec.ofNat 64 112 ∧ t₁.gpr .rcx = W + BitVec.ofNat 64 o ∧
+    t₁.gpr .r8 = BitVec.ofNat 64 1 ∧ t₁.gpr .r9 = W + BitVec.ofNat 64 2048 ∧
+    (∀ r ∈ calleeSaved, t₁.gpr r = t.gpr r) ∧ t₁.rd = t.rd ∧ t₁.wr = t.wr := by
   have h15 := E.r15
   have hw := L.ww
   have rR := S.rounds
@@ -57,27 +66,25 @@ theorem tag_ok (v : GcmImpl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} (hR : R 
   have w₈ := E.perm.wW (show 120 + 8 ≤ 4096 by decide)
   have z₀ := E.perm.wW (show o + 8 ≤ 4096 by omega)
   have z₈ := E.perm.wW (show o + 8 + 8 ≤ 4096 by omega)
-  obtain ⟨t₁, run₁, hm₁, rdi, rsi, rdx, rcx, r8, r9, hg₁, hrd₁, hwr₁⟩ : ∃ t₁ : State, runBlock isa
-      (copy16 cmO ccO ++ zero16 o ++ ptr .rdi .r15 skO ++ ctrArgs ++ ptr .rcx .r15 o) t = some t₁ ∧
-      t₁.mem = Proof.Cmac.zero2 ((t.mem.writeW (W + BitVec.ofNat 64 112) (t.mem.readW (W + BitVec.ofNat 64 96) 64)).writeW
-        (W + BitVec.ofNat 64 112 + BitVec.ofNat 64 8) (t.mem.readW (W + BitVec.ofNat 64 96 + BitVec.ofNat 64 8) 64))
-        (W + BitVec.ofNat 64 o) ∧
-      t₁.gpr .rdi = W + BitVec.ofNat 64 512 ∧ t₁.gpr .rsi = BitVec.ofNat 64 R ∧
-      t₁.gpr .rdx = W + BitVec.ofNat 64 112 ∧ t₁.gpr .rcx = W + BitVec.ofNat 64 o ∧
-      t₁.gpr .r8 = BitVec.ofNat 64 1 ∧ t₁.gpr .r9 = W + BitVec.ofNat 64 2048 ∧
-      (∀ r ∈ calleeSaved, t₁.gpr r = t.gpr r) ∧ t₁.rd = t.rd ∧ t₁.wr = t.wr := by
-    rcases ho with rfl | rfl | rfl
-    all_goals
-      simp only [Nat.reduceAdd, BitVec.add_zero] at z₀ z₈
-      refine ⟨_, by srun [copy16, zero16, ctrArgs, h15, rR, rR', r₀, r₈, w₀, w₈, z₀, z₈, readW_writeW_W0], ?_, ?_, ?_, ?_, ?_, ?_, ?_,
-        ?_, ?_, ?_⟩
-      · simp only [mem_setReg, mem_arithFlags, Proof.Cmac.zero2, add_ofNat_assoc, BitVec.add_zero, Nat.reduceAdd]; rfl
-      all_goals try (simp only [gpr_arithFlags, gpr_setReg, ite_true, ite_false, reduceCtorEq, h15, rR,
-        BitVec.add_zero]; done)
-      · intro r hr; simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
-        rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
-          simp only [gpr_arithFlags, gpr_setReg, ite_true, ite_false, reduceCtorEq]
-      all_goals rfl
+  rcases ho with rfl | rfl | rfl
+  all_goals
+    simp only [Nat.reduceAdd, BitVec.add_zero] at z₀ z₈
+    refine ⟨_, by srun [copy16, zero16, ctrArgs, h15, rR, rR', r₀, r₈, w₀, w₈, z₀, z₈, readW_writeW_W0], ?_, ?_, ?_, ?_, ?_, ?_, ?_,
+      ?_, ?_, ?_⟩
+    · simp only [mem_setReg, mem_arithFlags, Proof.Cmac.zero2, add_ofNat_assoc, BitVec.add_zero, Nat.reduceAdd]; rfl
+    all_goals try (simp only [gpr_arithFlags, gpr_setReg, ite_true, ite_false, reduceCtorEq, h15, rR,
+      BitVec.add_zero]; done)
+    · intro r hr; simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
+        simp only [gpr_arithFlags, gpr_setReg, ite_true, ite_false, reduceCtorEq]
+    all_goals rfl
+
+theorem tag_ok (v : GcmImpl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} (hR : R = 10 ∨ R = 14) {t : State}
+    (E : Env K W SP t) {N A D : Addr} {al n : Nat} (S : Slots W R N A D al n t.mem) {o : Nat}
+    (ho : o = 0 ∨ o = 128 ∨ o = 144) :
+    WP isa (tag v.callees o) t (TagPost K W SP R o t) := by
+  have hw := L.ww
+  obtain ⟨t₁, run₁, hm₁, rdi, rsi, rdx, rcx, r8, r9, hg₁, hrd₁, hwr₁⟩ := tagArgs_ok L E S ho
   have E₁ : Env K W SP t₁ := E.of_saved hg₁ hrd₁ hwr₁
   have dO : (⟨W + BitVec.ofNat 64 o, 16⟩ : Region).Disjoint ⟨W + BitVec.ofNat 64 112, 16⟩ :=
     L.w_w (by omega) (by omega) (by decide)
