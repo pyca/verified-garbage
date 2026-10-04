@@ -102,10 +102,24 @@ theorem open_verified (v : GcmImpl) :
         Proof.AesGcmSiv.openResult, Proof.AesGcmSiv.openPost, Proof.AesGcmSiv.onePre, Proof.AesGcmSiv.onePub, X86_64.abi, Proof.AesGcmSiv.arg, Proof.AesGcmSiv.args,
         Proof.AesGcmSiv.stk8, Proof.AesGcmSiv.ret, Proof.AesGcmSiv.rounds, X86_64.stackArg, X86_64.stackArgAddr,
         List.getD, List.range, List.range.loop, VG.X86_64.below, X86_64.argRegs]
-      post := by sig_implies_post [Spec.GcmSiv.openContract, Spec.GcmSiv.openSig, Spec.GcmSiv.sealSig, Proof.AesGcmSiv.openX86_64,
+      -- `h` and the goal match on the same outcome of `decryptWith` with
+      -- different matchers (`openPost`'s and `openContract`'s): split on it
+      -- rather than have `exact h` unfold both to unify them (25 s).
+      post := by
+        intro s s' _ h
+        sig_post [Spec.GcmSiv.openContract, Spec.GcmSiv.openSig, Spec.GcmSiv.sealSig, Proof.AesGcmSiv.openX86_64,
         Proof.AesGcmSiv.openResult, Proof.AesGcmSiv.openPost, Proof.AesGcmSiv.onePre, Proof.AesGcmSiv.onePub, X86_64.abi, Proof.AesGcmSiv.arg, Proof.AesGcmSiv.args,
         Proof.AesGcmSiv.stk8, Proof.AesGcmSiv.ret, Proof.AesGcmSiv.rounds, X86_64.stackArg, X86_64.stackArgAddr,
         List.getD, List.range, List.range.loop, VG.X86_64.below, X86_64.argRegs]
+        sig_reduce [Spec.GcmSiv.openContract, Spec.GcmSiv.openSig, Spec.GcmSiv.sealSig, Proof.AesGcmSiv.openX86_64,
+        Proof.AesGcmSiv.openResult, Proof.AesGcmSiv.openPost, Proof.AesGcmSiv.onePre, Proof.AesGcmSiv.onePub, X86_64.abi, Proof.AesGcmSiv.arg, Proof.AesGcmSiv.args,
+        Proof.AesGcmSiv.stk8, Proof.AesGcmSiv.ret, Proof.AesGcmSiv.rounds, X86_64.stackArg, X86_64.stackArgAddr,
+        List.getD, List.range, List.range.loop, VG.X86_64.below, X86_64.argRegs] at h
+        sig_simp [Spec.GcmSiv.openContract, Spec.GcmSiv.openSig, Spec.GcmSiv.sealSig, Proof.AesGcmSiv.openX86_64,
+        Proof.AesGcmSiv.openResult, Proof.AesGcmSiv.openPost, Proof.AesGcmSiv.onePre, Proof.AesGcmSiv.onePub, X86_64.abi, Proof.AesGcmSiv.arg, Proof.AesGcmSiv.args,
+        Proof.AesGcmSiv.stk8, Proof.AesGcmSiv.ret, Proof.AesGcmSiv.rounds, X86_64.stackArg, X86_64.stackArgAddr,
+        List.getD, List.range, List.range.loop, VG.X86_64.below, X86_64.argRegs] [] at h
+        split at h <;> rename_i heq <;> rw [heq] <;> exact h
       pub := by
         intro s₁ s₂ _ _ h
         sig_pub [Spec.GcmSiv.openContract, Spec.GcmSiv.openSig, Spec.GcmSiv.sealSig, Proof.AesGcmSiv.openX86_64,

@@ -24,7 +24,9 @@ def artifacts : List Artifact := [
   { Spec.Sha1.compressApi with
     name := "vg_sha1_compress_sha2"
     target := AArch64.target
-    doc := Spec.Sha1.compressApi.doc (notes := ["Uses the AArch64 SHA-1 instructions."])
+    doc := Spec.Sha1.compressApi.doc (notes := ["Uses the AArch64 SHA-1 instructions. \
+      The four round constants are built in AdvSIMD registers once, before the first block, \
+      and the state stays in registers between blocks."])
     code := Impl.Sha1.AArch64.Sha2.compress
     contract := Spec.Sha1.compressContract AArch64.abi
     verified := Proof.Sha1.AArch64.Shared.compress_of Proof.Sha1.AArch64.Sha2.compress_verified
