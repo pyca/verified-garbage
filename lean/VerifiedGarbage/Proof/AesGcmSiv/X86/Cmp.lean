@@ -103,28 +103,47 @@ structure MaskPost (p : Prm) (c : Bool) (t t' : State) : Prop where
   eax : t'.gpr .eax = t.gpr .eax
   mem : t'.mem = writeBytes t.mem (w64 p.D) (if c then bytesAt t.mem (w64 p.D) p.n else Spec.GcmSiv.zeros p.n)
 
-/-- Every byte of the data ANDed with `0 − eax`, for `eax` 1 or 0. -/
-theorem mask_ok {p : Prm} (L : Lay p) {s : State} (E : Env p s) {c : Bool}
-    (hok : s.gpr .eax = BitVec.ofNat 32 (if c then 1 else 0)) : WP isa mask s (MaskPost p c s) := by
+/-- The test of `mask`: `ebx := 0 − eax`, and ZF set iff there is no data. -/
+theorem maskTest_ok {p : Prm} (L : Lay p) {s : State} (E : Env p s) :
+    ∃ s₁, runBlock isa
+      [.mov .ebx (imm 0), .alu .sub .ebx (.reg .eax), .mov .ecx (slot lenO), .alu .test .ecx (.reg .ecx)] s =
+        some s₁ ∧ s₁.mem = s.mem ∧ s₁.gpr .ebx = 0 - s.gpr .eax ∧
+      s₁.gpr .ecx = BitVec.ofNat 32 p.n ∧ s₁.zf = some (decide (p.n = 0)) ∧ s₁.gpr .eax = s.gpr .eax ∧
+      Env p s₁ ∧ s₁.rd = s.rd ∧ s₁.wr = s.wr := by
   have hn32 := L.n32
-  have hDp := E.slots.data
   have hlen := E.slots.len
-  simp only [slotv_eq, dataO, lenO] at hDp hlen
+  simp only [slotv_eq, lenO] at hlen
   obtain ⟨s₁, run₁, m₁, bx₁, cx₁, zf₁, ax₁, bp₁, sp₁, rd₁, wr₁⟩ : ∃ s₁, runBlock isa
       [.mov .ebx (imm 0), .alu .sub .ebx (.reg .eax), .mov .ecx (slot lenO), .alu .test .ecx (.reg .ecx)] s =
-        some s₁ ∧ s₁.mem = s.mem ∧ s₁.gpr .ebx = 0 - BitVec.ofNat 32 (if c then 1 else 0) ∧
+        some s₁ ∧ s₁.mem = s.mem ∧ s₁.gpr .ebx = 0 - s.gpr .eax ∧
       s₁.gpr .ecx = BitVec.ofNat 32 p.n ∧ s₁.zf = some (decide (p.n = 0)) ∧ s₁.gpr .eax = s.gpr .eax ∧
       s₁.gpr .ebp = p.W ∧ s₁.gpr .esp = p.SP ∧ s₁.rd = s.rd ∧ s₁.wr = s.wr := by
     refine ⟨_, by grun [E.ebp, L.aW, E.perm.wR, hlen], ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
     · rfl
-    · gregs [hok]; rfl
+    · gregs []; rfl
     · gregs [hlen]
     · gmems [hlen]; rw [and_self_beq32 hn32]
     · gregs []
     · gregs [E.ebp]
     · gregs [E.esp]
     all_goals gmems []
-  have E₁ : Env p s₁ := E.keep (by rw [bp₁, E.ebp]) (by rw [sp₁, E.esp]) rd₁ wr₁ m₁
+  exact ⟨s₁, run₁, m₁, bx₁, cx₁, zf₁, ax₁, E.keep (by rw [bp₁, E.ebp]) (by rw [sp₁, E.esp]) rd₁ wr₁ m₁, rd₁, wr₁⟩
+
+/-- The data's address in `edi`. -/
+theorem maskArgs_ok {p : Prm} (L : Lay p) {s₁ : State} (E₁ : Env p s₁) :
+    ∃ s₂, runBlock isa [.mov .edi (slot dataO)] s₁ = some s₂ ∧ s₂.mem = s₁.mem ∧ s₂.gpr .edi = p.D ∧
+      (∀ r, r ≠ .edi → s₂.gpr r = s₁.gpr r) ∧ s₂.rd = s₁.rd ∧ s₂.wr = s₁.wr := by
+  have hd₁ := E₁.slots.data
+  simp only [slotv_eq, dataO] at hd₁
+  exact ⟨_, by grun [E₁.ebp, L.aW, E₁.perm.wR, hd₁], by gmems [], by gregs [hd₁], fun r h => by gregs [h],
+    by gmems [], by gmems []⟩
+
+/-- Every byte of the data ANDed with `0 − eax`, for `eax` 1 or 0. -/
+theorem mask_ok {p : Prm} (L : Lay p) {s : State} (E : Env p s) {c : Bool}
+    (hok : s.gpr .eax = BitVec.ofNat 32 (if c then 1 else 0)) : WP isa mask s (MaskPost p c s) := by
+  have hn32 := L.n32
+  obtain ⟨s₁, run₁, m₁, bx₁, cx₁, zf₁, ax₁, E₁, rd₁, wr₁⟩ := maskTest_ok L E
+  rw [hok] at bx₁
   refine WP.seq (WP.of_runBlock ⟨s₁, run₁, ?_⟩)
   refine WP.ite (decide (p.n = 0)) (eval_e zf₁) (fun hb => WP.block_nil ?_) (fun hb => ?_)
   · have hn0 : p.n = 0 := of_decide_eq_true hb
@@ -132,11 +151,12 @@ theorem mask_ok {p : Prm} (L : Lay p) {s : State} (E : Env p s) {c : Bool}
     rw [m₁, hn0]
     cases c <;> simp [Spec.Aes.bytesAt, Spec.GcmSiv.zeros, writeBytes_nil]
   have hn0 : 0 < p.n := Nat.pos_of_ne_zero (of_decide_eq_false hb)
-  have hd₁ : s₁.mem.readW (w64 p.W + BitVec.ofNat 64 164) 32 = p.D := by rw [m₁]; exact hDp
-  obtain ⟨s₂, run₂, m₂, di₂, g₂, rd₂, wr₂⟩ : ∃ s₂, runBlock isa [.mov .edi (slot dataO)] s₁ = some s₂ ∧
-      s₂.mem = s.mem ∧ s₂.gpr .edi = p.D ∧ (∀ r, r ≠ .edi → s₂.gpr r = s₁.gpr r) ∧ s₂.rd = s.rd ∧ s₂.wr = s.wr :=
-    ⟨_, by grun [bp₁, L.aW, E₁.perm.wR, hd₁], by gmems [m₁], by gregs [hd₁], fun r h => by gregs [h],
-      by gmems [rd₁], by gmems [wr₁]⟩
+  obtain ⟨s₂, run₂, m₂, di₂, g₂, rd₂, wr₂⟩ := maskArgs_ok L E₁
+  rw [m₁] at m₂
+  rw [rd₁] at rd₂
+  rw [wr₁] at wr₂
+  have bp₁ := E₁.ebp
+  have sp₁ := E₁.esp
   refine WP.seq (WP.of_runBlock ⟨s₂, run₂, ?_⟩)
   have hfD := L.dw
   refine WP.loop (M := isa) (body := .block maskBody) (c := .ne)

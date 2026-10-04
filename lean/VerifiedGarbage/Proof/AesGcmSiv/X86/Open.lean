@@ -30,6 +30,28 @@ theorem decrypt_eq (hti : TagInputEq) (ciph : Spec.GcmSiv.Cipher) (kl : Nat) (no
   obtain ⟨a, e⟩ := dk
   simp only [hti]
 
+/-- Counter mode after the keys keeps what POLYVAL starts from. -/
+theorem keys_crypt {p : Prm} (L : Lay p) {σ s₂ s₃ : State} (Ky : KeysPost p σ s₂) (Cr : CryptPost p s₂ s₃) :
+    Spec.Gcm.blockAt s₃.mem (w64 p.W + BitVec.ofNat 64 64) =
+      GcmSiv.Words.hkeyOf (Spec.GcmSiv.ofBytes (bytesAt s₃.mem (w64 p.W + BitVec.ofNat 64 16) 16)) ∧
+    Spec.Gcm.blockAt s₃.mem (w64 p.W + BitVec.ofNat 64 80) = 0 ∧
+    bytesAt s₃.mem (w64 p.W + BitVec.ofNat 64 16) 16 = bytesAt s₂.mem (w64 p.W + BitVec.ofNat 64 16) 16 := by
+  have dCr : ∀ {d : Nat}, 16 ≤ d → d + 16 ≤ 96 → ∀ r ∈ cryR p,
+      (⟨w64 p.W + BitVec.ofNat 64 d, 16⟩ : Region).Disjoint r := fun h₁ h₂ r hr => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl | rfl | rfl
+    · exact Lay.w_w (.inl (by omega)) (by omega) (by decide)
+    · exact Lay.w_w (.inl (by omega)) (by omega) (by decide)
+    · exact Lay.w_w (.inl (by omega)) (by omega) (by decide)
+    · exact Lay.w_w (.inl (by omega)) (by omega) (by decide)
+    · exact (L.d_w' (by omega)).symm
+    · exact (L.bw' (by omega)).symm
+  have a₃ : bytesAt s₃.mem (w64 p.W + BitVec.ofNat 64 16) 16 = bytesAt s₂.mem (w64 p.W + BitVec.ofNat 64 16) 16 :=
+    Proof.AesGcm.X86.bytesAt_frame Cr.frame (dCr (by decide) (by decide)) (by decide)
+  refine ⟨?_, ?_, a₃⟩
+  · rw [Proof.AesGcm.X86.blockAt_frame Cr.frame (dCr (by decide) (by decide)), Ky.hkey, a₃]
+  · rw [Proof.AesGcm.X86.blockAt_frame Cr.frame (dCr (by decide) (by decide)), Ky.acc]
+
 /-- `vg_aes_gcm_siv_open`. -/
 theorem open_wp (v : GcmImpl) (hti : TagInputEq) {s : State} (h : onePre s) :
     WP isa («open» v.callees) s fun s' => abiPreserved s s' ∧ openX86.post s s' := by
@@ -44,24 +66,7 @@ theorem open_wp (v : GcmImpl) (hti : TagInputEq) {s : State} (h : onePre s) :
   -- Counter mode from the received tag.
   refine WP.seq (WP.mono (crypt_ok v L Ky.env) fun s₃ Cr => ?_)
   have f₃ := frame_toMut Cr.frame (inMut_cryR _)
-  have dCr : ∀ {d : Nat}, 16 ≤ d → d + 16 ≤ 96 → ∀ r ∈ cryR (prmOf s),
-      (⟨w64 (prmOf s).W + BitVec.ofNat 64 d, 16⟩ : Region).Disjoint r := fun h₁ h₂ r hr => by
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl | rfl | rfl
-    · exact Lay.w_w (.inl (by omega)) (by omega) (by decide)
-    · exact Lay.w_w (.inl (by omega)) (by omega) (by decide)
-    · exact Lay.w_w (.inl (by omega)) (by omega) (by decide)
-    · exact Lay.w_w (.inl (by omega)) (by omega) (by decide)
-    · exact (L.d_w' (by omega)).symm
-    · exact (L.bw' (by omega)).symm
-  have a₃ : bytesAt s₃.mem (w64 (prmOf s).W + BitVec.ofNat 64 16) 16 =
-      bytesAt s₂.mem (w64 (prmOf s).W + BitVec.ofNat 64 16) 16 :=
-    Proof.AesGcm.X86.bytesAt_frame Cr.frame (dCr (by decide) (by decide)) (by decide)
-  have hG₃ : Spec.Gcm.blockAt s₃.mem (w64 (prmOf s).W + BitVec.ofNat 64 64) =
-      GcmSiv.Words.hkeyOf (Spec.GcmSiv.ofBytes (bytesAt s₃.mem (w64 (prmOf s).W + BitVec.ofNat 64 16) 16)) := by
-    rw [Proof.AesGcm.X86.blockAt_frame Cr.frame (dCr (by decide) (by decide)), Ky.hkey, a₃]
-  have hY₃ : Spec.Gcm.blockAt s₃.mem (w64 (prmOf s).W + BitVec.ofNat 64 80) = 0 := by
-    rw [Proof.AesGcm.X86.blockAt_frame Cr.frame (dCr (by decide) (by decide)), Ky.acc]
+  obtain ⟨hG₃, hY₃, a₃⟩ := keys_crypt L Ky Cr
   -- POLYVAL of the plaintext and the tag input.
   refine WP.seq (WP.mono (polyval_ok v L Cr.env hG₃ hY₃) fun s₄ Po => ?_)
   have f₄ := frame_toMut Po.frame (inMut_polyR _)
