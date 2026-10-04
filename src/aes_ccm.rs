@@ -24,7 +24,8 @@
 //! (`vg_aes_ctr32`, directly for counter mode and through
 //! `vg_cmac_aes_update` for the CBC-MAC), which have the same contracts: on
 //! x86-64, CPUs with AES-NI and SSSE3 run the `_aesni` instances, and CPUs
-//! with VAES and AVX2 too the `_vaes` ones (`crate::aes::Backend`). On
+//! with VAES and AVX2 too the `_vaes` ones (`crate::aes::Backend`); on x86,
+//! CPUs with AES-NI run the `_aesni` instances. On
 //! AArch64, CPUs with the AES extension run the `_aes` instances, whose
 //! CBC-MAC is `vg_cmac_aes_update_aes` (calling `vg_aes_ctr32_aes` on one
 //! block at a time), or, when the associated data and the payload are longer
@@ -34,13 +35,18 @@
 //! `crate::cmac::aes`); both encrypt with `vg_aes_ctr32_aes`. On ARMv7 there
 //! is only the constant-time scalar implementation.
 
-#![cfg(any(target_arch = "x86_64", target_arch = "aarch64", target_arch = "arm"))]
+#![cfg(any(
+    target_arch = "x86",
+    target_arch = "x86_64",
+    target_arch = "aarch64",
+    target_arch = "arm"
+))]
 
 use crate::aes::Backend;
 use crate::arch::aes::vg_aes_expand_key;
 #[cfg(target_arch = "aarch64")]
 use crate::arch::aes::vg_aes_expand_key_aes;
-#[cfg(target_arch = "x86_64")]
+#[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
 use crate::arch::aes::vg_aes_expand_key_aesni;
 #[cfg(target_arch = "aarch64")]
 use crate::arch::aes_ccm::{
@@ -53,6 +59,11 @@ use crate::arch::aes_ccm::{
     VG_AES_CCM_OPEN_AESNI_FEATURES, VG_AES_CCM_OPEN_VAES_FEATURES, VG_AES_CCM_SEAL_AESNI_FEATURES,
     VG_AES_CCM_SEAL_VAES_FEATURES, vg_aes_ccm_open_aesni, vg_aes_ccm_open_vaes,
     vg_aes_ccm_seal_aesni, vg_aes_ccm_seal_vaes,
+};
+#[cfg(target_arch = "x86")]
+use crate::arch::aes_ccm::{
+    VG_AES_CCM_OPEN_AESNI_FEATURES, VG_AES_CCM_SEAL_AESNI_FEATURES, vg_aes_ccm_open_aesni,
+    vg_aes_ccm_seal_aesni,
 };
 use crate::arch::aes_ccm::{vg_aes_ccm_open, vg_aes_ccm_seal};
 use crate::cpu::{Features, detected};
@@ -67,7 +78,7 @@ macro_rules! instance {
      aarch64: [$aes:ident, $aes_cbc:ident]) => {
         match $backend {
             Backend::Scalar => $scalar,
-            #[cfg(target_arch = "x86_64")]
+            #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
             Backend::AesNi => $aesni,
             #[cfg(target_arch = "x86_64")]
             Backend::Vaes => $vaes,
@@ -94,6 +105,17 @@ fn select(f: Features) -> Backend {
         VG_AES_CCM_OPEN_AESNI_FEATURES,
     ]);
     Backend::select_for(f, VAES, AESNI)
+}
+
+/// The best implementation of AES a CPU with the features `f` can run, with
+/// the AES-CCM functions for it.
+#[cfg(target_arch = "x86")]
+fn select(f: Features) -> Backend {
+    const AESNI: Features = Features::all(&[
+        VG_AES_CCM_SEAL_AESNI_FEATURES,
+        VG_AES_CCM_OPEN_AESNI_FEATURES,
+    ]);
+    Backend::select_for(f, AESNI)
 }
 
 /// The best implementation of AES a CPU with the features `f` can run, with
@@ -201,6 +223,8 @@ impl AesCcm {
         // `_vaes` calls `vg_aes_expand_key_aesni`'s schedule.
         let expand = match k.backend {
             Backend::Scalar => vg_aes_expand_key,
+            #[cfg(target_arch = "x86")]
+            Backend::AesNi => vg_aes_expand_key_aesni,
             #[cfg(target_arch = "x86_64")]
             Backend::AesNi | Backend::Vaes => vg_aes_expand_key_aesni,
             #[cfg(target_arch = "aarch64")]
