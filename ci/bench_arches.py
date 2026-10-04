@@ -103,7 +103,8 @@ PLATFORMS = {
 # x86-64 and x86, AES-GCM's `_aesni` and `_pclmul`, which a runner with
 # both extensions never chooses, and on x86-64 its `_aesni_pclmul` and the
 # instances with VAES or VPCLMULQDQ alone or paired with the other's 128-bit
-# instruction, which a runner with both never chooses; on AArch64, ChaCha20's `_neon` instances,
+# instruction, which a runner with both never chooses, and with both in
+# 256-bit registers alone, which a runner with AVX512BW never chooses; on AArch64, ChaCha20's `_neon` instances,
 # which the SVE2 runner never chooses; no runner has the SHA512 extension,
 # whose variants only ci.yml tests, under SDE).
 CPU_FEATURES = {
@@ -119,6 +120,7 @@ CPU_FEATURES = {
         "avx,avx2,pclmulqdq,ssse3,vpclmulqdq",
         "aes,avx,avx2,pclmulqdq,ssse3,vaes",
         "aes,avx,avx2,pclmulqdq,ssse3,vpclmulqdq",
+        "aes,avx,avx2,pclmulqdq,ssse3,vaes,vpclmulqdq",
         "none",
     ],
     "aarch64": ["neon", "sha3", "none"],

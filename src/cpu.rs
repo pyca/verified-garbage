@@ -27,7 +27,7 @@ use core::sync::atomic::{AtomicU32, Ordering};
 
 /// The features detection knows, by their Rust `target_feature` names: bit
 /// `i` of a [`Features`] is `NAMES[i]`.
-pub(crate) const NAMES: [&str; 19] = [
+pub(crate) const NAMES: [&str; 20] = [
     "ssse3",
     "sha",
     "aes",
@@ -47,6 +47,7 @@ pub(crate) const NAMES: [&str; 19] = [
     "sve2",
     "vaes",
     "vpclmulqdq",
+    "avx512bw",
 ];
 
 /// Whether two names are equal (`==` on strings, which is not `const`).
@@ -184,7 +185,7 @@ fn parse(names: &str) -> Option<u32> {
 /// Intel SDM Vol. 2, "VSHA512RNDS2", "AESENC" and "PCLMULQDQ") also need the
 /// operating system to save the `ymm` registers: XCR0 bits 1 and 2, read with
 /// `xgetbv` only if OSXSAVE says it may be (Intel SDM Vol. 1, §14.3,
-/// "Detection of Intel AVX Instructions"); AVX512F, AVX512_IFMA and AVX512VL (whose instructions
+/// "Detection of Intel AVX Instructions"); AVX512F, AVX512_IFMA, AVX512VL and AVX512BW (whose instructions
 /// are EVEX-encoded) also need the opmask and `zmm` state, XCR0 bits 5, 6 and 7
 /// (§15.2, "Detection of AVX-512 Foundation Instructions", and §15.4 for the
 /// other AVX-512 instruction groups).
@@ -232,6 +233,7 @@ fn runtime() -> u32 {
         let avx512vl = (ebx >> 31) & avx & zmm;
         let vaes = (ecx7 >> 9) & avx;
         let vpclmulqdq = (ecx7 >> 10) & avx;
+        let avx512bw = (ebx >> 30) & avx & zmm;
         ssse3
             | (sha << 1)
             | (aes << 2)
@@ -247,6 +249,7 @@ fn runtime() -> u32 {
             | (avx512vl << 14)
             | (vaes << 17)
             | (vpclmulqdq << 18)
+            | (avx512bw << 19)
     }
 }
 
@@ -368,7 +371,7 @@ mod tests {
     #[test]
     #[should_panic(expected = "a CPU feature this library does not know")]
     fn of_unknown() {
-        Features::of(&["sha", "avx512bw"]);
+        Features::of(&["sha", "avx512vbmi"]);
     }
 
     /// Detection returns the CPU's features, restricted as
@@ -394,7 +397,8 @@ mod tests {
         assert_eq!(parse("neon,sve2"), Some((1 << 15) | (1 << 16)));
         assert_eq!(parse("sha2,sha3"), Some((1 << 10) | (1 << 11)));
         assert_eq!(parse("adx"), Some(1 << 12));
-        for bad in ["avx512bw", "aes,", "aes,none", " aes", "AES"] {
+        assert_eq!(parse("avx512bw"), Some(1 << 19));
+        for bad in ["avx512vbmi", "aes,", "aes,none", " aes", "AES"] {
             assert_eq!(parse(bad), None, "{bad}");
         }
     }
