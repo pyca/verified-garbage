@@ -109,7 +109,7 @@ theorem inputsN_succ (ρ : Role) (j n : Nat) :
     List.append_nil]
 
 theorem readSlot_lt : ∀ ρ : Role, ∀ j < 8, ∀ i < 6, stSlot (readWord ρ (eBit (inBit j i))) < 72 := by
-  intro ρ; cases ρ <;> decide +kernel
+  intro ρ; cases ρ <;> lit_decide
 
 theorem inputsN_ok (ρ : Role) {j : Nat} (hj : j < 8) {n : Nat} (hn : n ≤ 6) {s : State} (h : Room s) :
     ∃ s', runBlock isa (inputsN ρ j n) s = some s' ∧ s'.gpr .r15 = s.gpr .r15 <<< n ∧
@@ -153,7 +153,7 @@ def outPost (ρ : Role) (j : Nat) (e : Env Nat) : Bool :=
 
 theorem output_check : ∀ ρ : Role, ∀ j < 8,
     check (vars 64) varsCfg (fun _ => none) (outputCode ρ j) (varEnv outRegs) (outPost ρ j) = true := by
-  intro ρ; cases ρ <;> decide +kernel
+  intro ρ; cases ρ <;> lit_decide
 
 theorem outIdx_lt (ρ : Role) (j x i : Nat) (h : outIdx ρ j x = some i) : i < 4 := by
   have := List.mem_of_find?_eq_some h
@@ -161,7 +161,7 @@ theorem outIdx_lt (ρ : Role) (j x i : Nat) (h : outIdx ρ j x = some i) : i < 4
 
 theorem outputCode_r15 : ∀ ρ : Role, ∀ j < 8,
     ((outputCode ρ j).all fun i => i.dst != some .r15) = true := by
-  intro ρ; cases ρ <;> decide +kernel
+  intro ρ; cases ρ <;> lit_decide
 
 theorem outputs_ok (ρ : Role) {j : Nat} (hj : j < 8) {s : State} (h : Room s) :
     ∃ s', runBlock isa (outputCode ρ j) s = some s' ∧
@@ -265,9 +265,9 @@ def swapPost (e : Env Nat) : Bool :=
 
 theorem swap_check :
     check (vars 64) varsCfg (fun _ => none) swapHalves (varEnv []) swapPost = true := by
-  decide +kernel
+  lit_decide
 
-theorem swapSlot_lt : ∀ k < 128, swapSlot k < 128 := by decide +kernel
+theorem swapSlot_lt : ∀ k < 128, swapSlot k < 128 := by lit_decide
 
 theorem swapHalves_ok {s : State} (h : Room s) :
     ∃ s', runBlock isa swapHalves s = some s' ∧ (∀ x < 64, words s' x = swapW (words s) x) ∧

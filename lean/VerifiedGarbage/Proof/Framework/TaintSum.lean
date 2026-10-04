@@ -646,16 +646,40 @@ where
     | n + 1, σ => (body σ).bind fun (σ', h) =>
       if A.le σ σ' && A.condPub σ' c then some (σ', .loop σ h) else go c body n (A.meet σ σ')
 
-/-- The hint of `hintSum` (any hint, if the analysis fails). -/
-def hintSumOf [Frame A] (S : List (Summary M A.T)) (same : Prog M → Prog M → Bool) (τ : A.T)
-    (c : Prog M) : SHint A.T :=
-  ((hintSum A S same τ c).map (·.2)).getD (.block [])
-
 /-- The taint at the end of `hintSum` and its hint (`τ` and any hint, if the
 analysis fails). -/
 def postHintSumOf [Frame A] (S : List (Summary M A.T)) (same : Prog M → Prog M → Bool) (τ : A.T)
     (c : Prog M) : A.T × SHint A.T :=
   (hintSum A S same τ c).getD (τ, .block [])
+
+/-- The calls in `c` that its hint `h` analyses in full although a summary
+in `S` is of the same function, by its name or by its code (`body`): their
+names. Each is a summary that was meant to apply there and did not (its
+`pre` does not hold there, or it is stated about another name), which only
+costs time, so nothing else would notice. -/
+@[nospecialize] def missedCalls {T : Type} (S : List (Summary M T))
+    (body : Prog M → Prog M → Bool) : Prog M → SHint T → List String
+  | .seq c₁ c₂, .seq _ h₁ h₂ => missedCalls S body c₁ h₁ ++ missedCalls S body c₂ h₂
+  | .ite _ t e, .ite h₁ h₂ => missedCalls S body t h₁ ++ missedCalls S body e h₂
+  | .loop b _, .loop _ h => missedCalls S body b h
+  | .frame _ b _, .frame h => missedCalls S body b h
+  | .call n b, .call h =>
+    let same := S.any fun s => match s.1 with
+      | .call n' b' => n' == n || body b' b
+      | _ => false
+    (if same then [n] else []) ++ missedCalls S body b h
+  | _, _ => []
+
+/-- `postHintSumOf`, with the calls the hint analyses in full although a
+summary is of the same function (`missedCalls`). `TaintSum.hintChecked`
+evaluates it once per check, in a definition it compiles: `nospecialize`
+keeps the compiler from specializing the whole analysis to the instances and
+functions of each check, which cost more than it saves. -/
+@[nospecialize] def hintReport [Frame A] (S : List (Summary M A.T))
+    (same body : Prog M → Prog M → Bool) (τ : A.T) (c : Prog M) :
+    (A.T × SHint A.T) × List String :=
+  let ph := postHintSumOf A S same τ c
+  (ph, missedCalls S body c ph.2)
 
 end Taint
 
@@ -692,10 +716,41 @@ def sameFn (M : Expr) : MetaM Expr := do
     let P := mkApp (mkConst ``Prog) M
     return .lam `a P (.lam `b P (mkConst ``Bool.false) .default) .default
 
-/-- Evaluates `e : α` in compiled code, as an expression. -/
-def evalToExpr (α e : Expr) : MetaM Expr := do
-  let inst ← synthInstance (mkApp (mkConst ``ToExpr [0]) α)
-  unsafe evalExpr Expr (mkConst ``Expr) (mkApp3 (mkConst ``ToExpr.toExpr [0]) α inst e)
+/-- Structural equality of the code of `M` (`Taint.codeBeq`), with its
+instructions' and conditions' `BEq`, if it has them; otherwise none. -/
+def bodyFn (M : Expr) : MetaM Expr := do
+  let P := mkApp (mkConst ``Prog) M
+  try
+    let I ← whnfD (mkApp (mkConst ``ISA.Instr) M)
+    let C ← whnfD (mkApp (mkConst ``ISA.Cond) M)
+    let bi ← synthInstance (mkApp (mkConst ``BEq [0]) I)
+    let bc ← synthInstance (mkApp (mkConst ``BEq [0]) C)
+    return mkApp4 (mkConst ``Taint.codeBeq) I C bi bc
+  catch _ =>
+    return .lam `a P (.lam `b P (mkConst ``Bool.false) .default) .default
+
+/-- The analysis of `c` from `τ` with the summaries `names` (whose list is
+`S`), in compiled code: what it ends with and its hint (`postHintSumOf`).
+It fails if the hint analyses in full a call of a function that one of the
+summaries is of (by its name or its code: `Taint.missedCalls`), which would
+otherwise only cost time, silently. (A summary that is never used is not an
+error: callers share one list of summaries among several checks.) -/
+def hintChecked (who : String) (M A fr S τ c : Expr) : MetaM (Expr × Expr) := do
+  let T' ← whnfD (mkApp2 (mkConst ``Taint.T) M A)
+  let phTy ← mkAppM ``Prod #[T', mkApp (mkConst ``Taint.SHint) T']
+  let repTy := mkApp (mkConst ``List [0]) (mkConst ``String)
+  let r := mkAppN (mkConst ``Taint.hintReport) #[M, A, fr, S, ← sameFn M, ← bodyFn M, τ, c]
+  let e ← withLetDecl `r (← mkAppM ``Prod #[phTy, repTy]) r fun r => do
+    let ph ← mkAppM ``ToExpr.toExpr #[← mkAppM ``Prod.fst #[r]]
+    mkLetFVars #[r] (← mkAppM ``Prod.mk #[ph, ← mkAppM ``Prod.snd #[r]])
+  let ty ← mkAppM ``Prod #[mkConst ``Expr, repTy]
+  let (ph, missed) ← unsafe evalExpr (Expr × List String) ty e
+  unless missed.isEmpty do
+    throwError "{who}: the calls {missed.eraseDups} are analysed in full, although a summary \
+      of the same function (by its name or its code) is given: its `pre` does not hold \
+      there, or it is stated about another name or code"
+  unless ph.isAppOfArity ``Prod.mk 4 do throwError "{who}: unexpected {ph}"
+  return (ph.getArg! 2, ph.getArg! 3)
 
 /-- Proves the main goal `fill S c h = c` by the kernel's unfolding. The code
 is not rewritten to its literals: `fill` only unfolds `c` down to where the
@@ -710,17 +765,11 @@ def fillRfl : TacticM Unit := do
   replaceMainGoal []
 
 /-- Proves `p` (with summaries `S`, which `hS` proves): `p` applied to the
-hint, then to proofs of `check` (by `lit_decide`) and of `fill` (`fillRfl`). -/
-def proveWith (M A S hS τ c : Expr) (p : Name) (extra : Array Expr) (hint? : Option Expr := none) :
+hint (`hintChecked`), then to proofs of `check` (by `lit_decide`) and of
+`fill` (`fillRfl`). -/
+def proveWith (M A S hS c : Expr) (p : Name) (extra : Array Expr) (hint : Expr) :
     TacticM Unit := do
   let g ← getMainGoal
-  let T ← whnfD (mkApp2 (mkConst ``Taint.T) M A)
-  let fr ← synthInstance (mkApp2 (mkConst ``Taint.Frame) M A)
-  let hint ← match hint? with
-    | some h => pure h
-    | none => do
-      let same ← sameFn M
-      evalToExpr (mkApp (mkConst ``Taint.SHint) T) (mkApp7 (mkConst ``Taint.hintSumOf) M A fr S same τ c)
   let mono ← synthInstance (mkApp2 (mkConst ``Taint.Frame) M A)
   let e ← mkAppOptM p (#[some M, some A, some mono, some S, some hS, some c] ++
     extra.map some ++ #[some hint])
@@ -755,7 +804,11 @@ open Lean Meta Elab Tactic TaintSum in
 like `taint_decide`, but with the summaries `lᵢ : Taint.SumOk A (code, pre, post, F)`
 (`taint_summary`) in place of the analysis of each call that one of them
 applies to (the first call of the same name, or the first code equal to
-the summary's, from at least `pre` public). -/
+the summary's, from at least `pre` public). It fails if a call of a
+function that one of the summaries is of (by its name or its code) is
+analysed in full nonetheless (`Taint.missedCalls`): the summary's `pre` does
+not hold there, or it is stated about another name (e.g. the function was
+renamed), which would otherwise only cost time, unnoticed. -/
 elab "taint_decide_sum " "[" ls:ident,* "]" : tactic => withMainContext do
   let g ← getMainGoal
   let ty ← instantiateMVars (← g.getType)
@@ -769,7 +822,9 @@ elab "taint_decide_sum " "[" ls:ident,* "]" : tactic => withMainContext do
   let (M, A, τ, c) := (args[0]!, args[1]!, args[2]!, args[3]!)
   let names ← ls.getElems.mapM fun l => realizeGlobalConstNoOverloadWithInfo l
   let (S, hS) ← summaries M A names
-  proveWith M A S hS τ c ``Taint.exists_check_of_checkSum #[τ]
+  let fr ← synthInstance (mkApp2 (mkConst ``Taint.Frame) M A)
+  let (_, hint) ← hintChecked "taint_decide_sum" M A fr S τ c
+  proveWith M A S hS c ``Taint.exists_check_of_checkSum #[τ] hint
 
 open Lean Meta Elab Term Tactic TaintSum in
 /-- The theorem `N : Taint.SumOk A (c, τ, post)` of `taint_summary`. -/
@@ -795,15 +850,11 @@ def TaintSum.summaryCmd (id : Ident) (a τ c : Term) (f : Option Term) (ls : Arr
   let names ← ls.mapM fun l => realizeGlobalConstNoOverloadWithInfo l
   let (S, hS) ← summaries M A names
   -- The analysis, in compiled code, once: its result and its hint.
-  let T' ← whnfD T
-  let ph ← evalToExpr (← mkAppM ``Prod #[T', mkApp (mkConst ``Taint.SHint) T'])
-    (mkApp7 (mkConst ``Taint.postHintSumOf) M A fr S (← sameFn M) τ c)
-  unless ph.isAppOfArity ``Prod.mk 4 do throwError "taint_summary: unexpected {ph}"
-  let post := ph.getArg! 2
+  let (post, hint) ← hintChecked "taint_summary" M A fr S τ c
   let s ← mkAppM ``Prod.mk #[c, ← mkAppM ``Prod.mk #[τ, ← mkAppM ``Prod.mk #[post, F]]]
   let ty := mkApp4 (mkConst ``Taint.SumOk) M A fr s
   let mv ← mkFreshExprSyntheticOpaqueMVar ty
-  let gs ← Tactic.run mv.mvarId! (proveWith M A S hS τ c ``Taint.sumOk_of_checkSum #[τ, post, F] (ph.getArg! 3))
+  let gs ← Tactic.run mv.mvarId! (proveWith M A S hS c ``Taint.sumOk_of_checkSum #[τ, post, F] hint)
   unless gs.isEmpty do throwError "taint_summary: goals remain"
   let v ← instantiateMVars mv
   addDecl <| .thmDecl

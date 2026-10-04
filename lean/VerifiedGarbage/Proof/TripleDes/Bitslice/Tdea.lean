@@ -41,7 +41,7 @@ theorem pairs_keys_congr {key key' : Nat → BitVec 48} (n : Nat)
 
 theorem partner_lt : ∀ k < 128, ∀ y, partner k = some y → y < 64 := by
   intro k hk y h
-  have key : ∀ k < 128, (partner k).all (· < 64) = true := by decide +kernel
+  have key : ∀ k < 128, (partner k).all (· < 64) = true := by lit_decide
   have := key k hk
   rw [h] at this
   simpa using this

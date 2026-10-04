@@ -1,3 +1,4 @@
+import VerifiedGarbage.Proof.TripleDes.Bitslice.LayoutLit
 import VerifiedGarbage.Impl.TripleDes.X86_64.BitslicedAvx2
 import VerifiedGarbage.Proof.Framework.X86_64.Lit
 
@@ -6,6 +7,17 @@ import VerifiedGarbage.Proof.Framework.X86_64.Lit
 namespace VG.Impl.TripleDes.X86_64.BitsliceAvx2
 
 open VG.X86_64
+
+-- The circuits' code, once, which the literals below and the functions'
+-- literals (`Lit`) read rather than run the register allocator again.
+materialize_table sboxCode 8
+
+-- The transposition, once.
+materialize_value transpose
+
+-- A pair of rounds and the exchange of the halves, once for both directions.
+materialize_value roundPair
+materialize_value swapHalves
 
 def sbox0 : Prog isa := .block (sboxCode 0)
 def sbox1 : Prog isa := .block (sboxCode 1)
