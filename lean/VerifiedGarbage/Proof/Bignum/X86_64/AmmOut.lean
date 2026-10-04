@@ -155,7 +155,7 @@ def limbCode (j : Nat) : List Instr :=
    .alu .and .rcx (.reg .r12), .store (at_ .r11 (D + VG.Impl.Rsa.X86_64.CrtIfma.off j)) .rcx,
    .shift .shr .rsi 52]
 
-theorem carryOut_eq : carryOut = [.mov32 .rdx (.imm 0), .mov32 .rsi (.imm 0)] ++ (List.range 20).flatMap limbCode := rfl
+theorem carryOut_eq : carryOut = ([.mov32 .rdx (.imm 0), .mov32 .rsi (.imm 0)] : List Instr) ++ (List.range 20).flatMap limbCode := rfl
 
 theorem and_mask {y : Nat} (hy : y < 2 ^ 64) : BitVec.ofNat 64 y &&& mask52 = BitVec.ofNat 64 (y % 2 ^ 52) := by
   apply BitVec.eq_of_toNat_eq

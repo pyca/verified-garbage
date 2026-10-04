@@ -1,3 +1,5 @@
+import VerifiedGarbage.Proof.Framework.PowLit
+
 /-!
 # Almost Montgomery multiplication in radix `2⁵²`
 
