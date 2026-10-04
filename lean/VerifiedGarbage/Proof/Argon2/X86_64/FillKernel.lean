@@ -19,9 +19,9 @@ structure Done (s t : State) (p : Params) (pass lane slice index : Nat) : Prop w
   rd : t.rd = s.rd
   wr : t.wr = s.wr
   frame : Frame (writes s p lane slice index) s.mem t.mem
-  mxcsr : t.mxcsr = s.mxcsr
+  mxcsr : ctl t.mxcsr = ctl s.mxcsr
 
-theorem code_ok (s : State) (p : Params) (pass lane slice index : Nat)
+theorem code_ok [CompressImpl] (s : State) (p : Params) (pass lane slice index : Nat)
     (h : Ready p pass lane slice index s) :
     WP isa Impl.Argon2.X86_64.FillKernel.code s (Done s · p pass lane slice index) := by
   unfold Impl.Argon2.X86_64.FillKernel.code
@@ -37,7 +37,7 @@ theorem code_ok (s : State) (p : Params) (pass lane slice index : Nat)
     unfold FillCompress.pass
     rw [keeps.mem, keeps.regs .rbp (by decide)]
     exact h.passWord
-  refine ⟨?_, ?_, done.rd.trans keeps.rd, done.wr.trans keeps.wr, ?_, mx.trans keeps.mxcsr⟩
+  refine ⟨?_, ?_, done.rd.trans keeps.rd, done.wr.trans keeps.wr, ?_, mx.trans (ctl_eq_of keeps.mxcsr)⟩
   · have block := done.block
     rw [cur, prev, other, keeps.mem, counter] at block
     simp only [ReferenceMap.word_zero pass (Nat.lt_trans h.bounds.passBound (by decide))] at block

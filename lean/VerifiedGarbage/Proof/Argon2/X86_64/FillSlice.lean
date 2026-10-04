@@ -112,7 +112,7 @@ namespace VG.Proof.Argon2.X86_64.FillSlice
 
 open VG VG.X86_64 VG.Spec.Argon2
 
-theorem code_ok (s : State) (p : Params) (pass slice : Nat) (h : Ready p pass slice s) (state : FillState)
+theorem code_ok [CompressImpl] (s : State) (p : Params) (pass slice : Nat) (h : Ready p pass slice s) (state : FillState)
     (represented : Proof.Argon2.Represents s.mem (FillKernel.matrix s) p.blocks state.memory) :
     WP isa Impl.Argon2.X86_64.FillSlice.code s
       (FillLanes.Finished s · p pass slice (Proof.Argon2.lanes p pass slice 0 p.lanes state)) := by
@@ -129,7 +129,7 @@ theorem code_ok (s : State) (p : Params) (pass slice : Nat) (h : Ready p pass sl
   intro t finished
   refine ⟨finished.represented, finished.matrix.trans base, finished.work.trans work, finished.laneWord,
     finished.rd.trans prepared.keeps.rd, finished.wr.trans prepared.keeps.wr, ?_,
-    finished.mxcsr.trans prepared.keeps.mxcsr, ?_, finished.header⟩
+    finished.mxcsr.trans (ctl_eq_of prepared.keeps.mxcsr), ?_, finished.header⟩
   · have frame := finished.frame
     rw [FillBlock.writes, base, work, prepared.keeps.regs .rsp (by decide), bp, prepared.keeps.mem] at frame
     exact frame

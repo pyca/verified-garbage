@@ -4,6 +4,8 @@ import VerifiedGarbage.Impl.Argon2.X86_64.FillIteration
 
 namespace VG.Impl.Argon2.X86_64.FillIterations
 
+variable [Compressor]
+
 open VG.X86_64
 open VG.Impl.Argon2.X86_64 (at_)
 

@@ -2,7 +2,8 @@
 //!
 //! The complete derivation is verified assembly (`VG.Spec.Argon2.deriveContract`),
 //! including H₀, memory initialization, every filling pass and final H′. Hashing
-//! follows the selected BLAKE2b backend. Rust only validates arguments, checks
+//! follows the selected BLAKE2b backend, and every compression the selected
+//! implementation of G ([`CompressBackend`]). Rust only validates arguments, checks
 //! the memory limit and allocates the matrix and scratch (and, for
 //! [`verify`] and [`verify_keyed`], compares the derived key with the
 //! expected one).
@@ -29,7 +30,42 @@ use alloc::vec::Vec;
 use core::fmt;
 
 use crate::arch::argon2::vg_argon2;
+#[cfg(target_arch = "x86_64")]
+use crate::arch::argon2::{VG_ARGON2_COMPRESS_AVX2_FEATURES, vg_argon2_avx2};
+use crate::cpu::Features;
 use crate::hashes::blake2b::Blake2bBackend;
+
+/// The implementations of Argon2's compression function G
+/// (`vg_argon2_compress`), which every derivation calls, with each BLAKE2b
+/// backend (`vg_argon2` and its variants).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum CompressBackend {
+    /// Constant-time scalar code, for the target's baseline ISA.
+    Scalar,
+    /// AVX2: each row and column of G's permutations in four 256-bit
+    /// registers.
+    #[cfg(target_arch = "x86_64")]
+    Avx2,
+}
+
+impl CompressBackend {
+    /// The best implementation a CPU with the features `f` can run.
+    #[cfg(target_arch = "x86_64")]
+    pub(crate) fn select(f: Features) -> CompressBackend {
+        if f.contains(VG_ARGON2_COMPRESS_AVX2_FEATURES) {
+            CompressBackend::Avx2
+        } else {
+            CompressBackend::Scalar
+        }
+    }
+
+    /// The best implementation a CPU with the features `f` can run: there
+    /// is only one here.
+    #[cfg(not(target_arch = "x86_64"))]
+    pub(crate) fn select(_: Features) -> CompressBackend {
+        CompressBackend::Scalar
+    }
+}
 
 /// Argon2's addressing variant.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -296,8 +332,14 @@ impl<'a> Derivation<'a> {
             secret,
             associated_data,
         } = self.inputs;
-        let derive = match Blake2bBackend::select(crate::cpu::detected()) {
-            Blake2bBackend::Scalar => vg_argon2,
+        let features = crate::cpu::detected();
+        let derive = match (
+            Blake2bBackend::select(features),
+            CompressBackend::select(features),
+        ) {
+            (Blake2bBackend::Scalar, CompressBackend::Scalar) => vg_argon2,
+            #[cfg(target_arch = "x86_64")]
+            (Blake2bBackend::Scalar, CompressBackend::Avx2) => vg_argon2_avx2,
         };
         // SAFETY: `Derivation::new` validated the costs and the lengths of
         // the inputs and `out`, which establishes every numeric precondition
@@ -307,8 +349,9 @@ impl<'a> Derivation<'a> {
         // both allocations are distinct mutable objects. They do not overlap
         // each other, any input, the caller's stack arguments or the
         // assembly stack frame (344 bytes on x86-64, 400 on ARM64, 244 on x86,
-        // 240 on ARM), and no region wraps the address space. The selected
-        // BLAKE2b backend supplies every required CPU feature.
+        // 240 on ARM), and no region wraps the address space. The CPU has
+        // every feature the selected BLAKE2b backend and implementation of G
+        // need, and an instance needs exactly those of both.
         unsafe {
             derive(
                 variant as u32,
@@ -370,6 +413,29 @@ mod tests {
                 assert!(!valid(1, 8, 1, lengths));
             }
         }
+    }
+
+    /// The implementation of G chosen for each set of features, and the
+    /// features of the derivation calling it.
+    #[test]
+    fn select() {
+        #[cfg(target_arch = "x86_64")]
+        {
+            use crate::arch::argon2::VG_ARGON2_AVX2_FEATURES;
+            assert_eq!(VG_ARGON2_AVX2_FEATURES, VG_ARGON2_COMPRESS_AVX2_FEATURES);
+            assert_eq!(
+                CompressBackend::select(VG_ARGON2_COMPRESS_AVX2_FEATURES),
+                CompressBackend::Avx2
+            );
+            assert_eq!(
+                CompressBackend::select(Features::of(&["avx"])),
+                CompressBackend::Scalar
+            );
+        }
+        assert_eq!(
+            CompressBackend::select(Features::of(&[])),
+            CompressBackend::Scalar
+        );
     }
 
     #[test]

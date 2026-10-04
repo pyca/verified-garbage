@@ -1,12 +1,19 @@
-//! Machine-code checks for the internal Argon2 compression primitive.
-#![cfg(any(
-    target_arch = "x86_64",
-    target_arch = "aarch64",
-    target_arch = "x86",
-    target_arch = "arm"
+//! Machine-code checks for the internal Argon2 compression primitive, with
+//! the implementation `crate::argon2` selects.
+#![cfg(all(
+    any(
+        target_arch = "x86_64",
+        target_arch = "aarch64",
+        target_arch = "x86",
+        target_arch = "arm"
+    ),
+    feature = "alloc"
 ))]
 
 use crate::arch::argon2::vg_argon2_compress;
+#[cfg(target_arch = "x86_64")]
+use crate::arch::argon2::vg_argon2_compress_avx2;
+use crate::argon2::CompressBackend;
 
 #[repr(C)]
 struct Guard<const N: usize> {
@@ -35,8 +42,14 @@ fn compress(x: &[u64; 128], y: &[u64; 128], fill: u64) -> [u64; 128] {
     let original_y = *y;
     let mut out = Guard::<128>::new(fill);
     let mut scratch = Guard::<512>::new(!fill);
-    // SAFETY: correctly sized, separate allocations meet the emitted contract.
-    unsafe { vg_argon2_compress(x, y, &mut out.data, &mut scratch.data) };
+    let compress = match CompressBackend::select(crate::cpu::detected()) {
+        CompressBackend::Scalar => vg_argon2_compress,
+        #[cfg(target_arch = "x86_64")]
+        CompressBackend::Avx2 => vg_argon2_compress_avx2,
+    };
+    // SAFETY: correctly sized, separate allocations meet the emitted
+    // contract, and the CPU has the features of the implementation selected.
+    unsafe { compress(x, y, &mut out.data, &mut scratch.data) };
     assert_eq!(*x, original_x);
     assert_eq!(*y, original_y);
     out.check();

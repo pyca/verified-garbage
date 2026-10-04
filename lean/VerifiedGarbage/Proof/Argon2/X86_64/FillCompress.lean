@@ -20,14 +20,15 @@ structure Done (s t : State) : Prop where
   wr : t.wr = s.wr
   frame : Frame (writes s) s.mem t.mem
 
-theorem code_ok (s : State) (h : Ready s) : WP isa code s (Done s) := by
+theorem code_mx_ok [CompressImpl] (s : State) (h : Ready s) :
+    WP isa code s fun t => Done s t ∧ ctl t.mxcsr = ctl s.mxcsr := by
   unfold code
-  refine WP.seq ((setup_ok s h).mono ?_)
-  intro a prepared
+  refine WP.seq ((WP.with_mx (by lit_decide) (setup_ok s h)).mono ?_)
+  rintro a ⟨prepared, mx1⟩
   refine (operation_ok a prepared.ready).mono ?_
-  intro t done
-  refine ⟨?_, fun r hr => (done.regs r hr).trans (prepared.regs r hr),
-    done.rd.trans prepared.rd, done.wr.trans prepared.wr, ?_⟩
+  rintro t ⟨done, mx2⟩
+  refine ⟨⟨?_, fun r hr => (done.regs r hr).trans (prepared.regs r hr),
+    done.rd.trans prepared.rd, done.wr.trans prepared.wr, ?_⟩, by rw [mx2, mx1]⟩
   · have block := done.block
     rw [prepared.oldBlock, prepared.dest, prepared.counter, prepared.leftBlock,
       prepared.rightBlock] at block
@@ -44,9 +45,5 @@ theorem code_ok (s : State) (h : Ready s) : WP isa code s (Done s) := by
       subst r
       simp [writes])
     exact savedFrame.trans frame
-
-theorem code_mx_ok (s : State) (h : Ready s) :
-    WP isa code s fun t => Done s t ∧ t.mxcsr = s.mxcsr :=
-  WP.mono_mx (by lit_decide) (code_ok s h) (fun _ done mx => ⟨done, mx⟩)
 
 end VG.Proof.Argon2.X86_64.FillCompress

@@ -5,6 +5,8 @@ import VerifiedGarbage.Impl.Argon2.X86_64.Parameters
 
 namespace VG.Impl.Argon2.X86_64.Derive
 
+variable [Compressor]
+
 open VG VG.X86_64
 open VG.Impl.Argon2.X86_64.HPrime (at_)
 
