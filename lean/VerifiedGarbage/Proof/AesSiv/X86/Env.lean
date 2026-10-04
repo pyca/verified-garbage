@@ -90,6 +90,10 @@ theorem stk_c' {a n : Nat} (ha : a + n ≤ 512) : (below SP 56).Disjoint ⟨w64 
 theorem aW {o : Nat} (ho : o < 2576) : w64 (W + BitVec.ofNat 32 o) = w64 W + BitVec.ofNat 64 o :=
   w64_add (by have := L.fw; omega)
 
+/-- `aW` for `setWidth`, as the callees' arguments state it. -/
+theorem sW {o : Nat} (ho : o < 2576) : (W + BitVec.ofNat 32 o).setWidth 64 = w64 W + BitVec.ofNat 64 o :=
+  L.aW ho
+
 theorem nW {o : Nat} (ho : o < 2576) : (W + BitVec.ofNat 32 o).toNat = W.toNat + o :=
   toNat_add32 (by have := L.fw; omega)
 
