@@ -364,4 +364,42 @@ theorem limb_ok {B : Addr} {L : Nat → Nat → Nat} {m₀ : Mem} {s : State} {j
   · rw [u10.wr, wr9, u8.wr, u7.wr, u6.wr, wr₅]
   · rw [u10.mxcsr, x9, u8.mxcsr, u7.mxcsr, u6.mxcsr, u5.mxcsr, x4, u3.mxcsr, u2.mxcsr, u1.mxcsr]
 
+
+/-- The limbs from `j` on. -/
+theorem limbs_ok {B : Addr} {L : Nat → Nat → Nat} {m₀ : Mem}
+    (hL : ∀ p < 2, ∀ l < 20, L p l < 2 ^ 61) :
+    ∀ n j (s : State), j + n = 20 → (∀ d, d + 8 ≤ D + 160 → InRegions s.wr (off B d) 8) →
+      CarryInv B L m₀ s j →
+      WP isa (.block ((List.range' j n).flatMap limbCode)) s fun s' => CarryInv B L m₀ s' 20 ∧
+        (∀ r, r ≠ .rax → r ≠ .rcx → r ≠ .rdx → r ≠ .rsi → s'.gpr r = s.gpr r) ∧
+        s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.mxcsr = s.mxcsr
+  | 0, j, s, hn, _, h => WP.block_nil ⟨by rw [← hn]; exact h, fun _ _ _ _ _ => rfl, rfl, rfl, rfl⟩
+  | n + 1, j, s, hn, hw, h => by
+    rw [List.range'_succ, List.flatMap_cons]
+    refine WP.block_append (WP.mono (limb_ok (by omega) hL hw h) fun s₁ ⟨h₁, g₁, rd₁, wr₁, x₁⟩ =>
+      WP.mono (limbs_ok hL n (j + 1) s₁ (by omega) (fun d hd => wr₁ ▸ hw d hd) h₁)
+        fun s₂ ⟨h₂, g₂, rd₂, wr₂, x₂⟩ => ⟨h₂, fun r a b c d => (g₂ r a b c d).trans (g₁ r a b c d),
+          rd₂.trans rd₁, wr₂.trans wr₁, x₂.trans x₁⟩)
+
+/-- The carry pass, from the limbs `L p` stored. -/
+theorem carryOut_ok {B : Addr} {L : Nat → Nat → Nat} {s : State}
+    (hL : ∀ p < 2, ∀ l < 20, L p l < 2 ^ 61) (hw : ∀ d, d + 8 ≤ D + 160 → InRegions s.wr (off B d) 8)
+    (hr11 : s.gpr .r11 = B) (hr12 : s.gpr .r12 = mask52)
+    (hwords : ∀ p < 2, ∀ l < 20, word s.mem B (D * p + VG.Impl.Rsa.X86_64.CrtIfma.off l) = BitVec.ofNat 64 (L p l)) :
+    WP isa (.block carryOut) s fun s' => CarryInv B L s.mem s' 20 ∧
+      (∀ r, r ≠ .rax → r ≠ .rcx → r ≠ .rdx → r ≠ .rsi → s'.gpr r = s.gpr r) ∧
+      s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.mxcsr = s.mxcsr := by
+  have g2 : ∀ r, r ≠ .rdx → r ≠ .rsi → ((s.setReg .rdx 0).setReg .rsi 0).gpr r = s.gpr r :=
+    fun r a b => by rw [RegUpd.gpr_setReg_of_ne _ _ b, RegUpd.gpr_setReg_of_ne _ _ a]
+  rw [carryOut_eq, List.cons_append, WP.block_cons_iff]
+  refine ⟨s.setReg .rdx 0, rfl, ?_⟩
+  rw [List.cons_append, WP.block_cons_iff]
+  refine ⟨(s.setReg .rdx 0).setReg .rsi 0, rfl, ?_⟩
+  rw [List.nil_append, List.range_eq_range']
+  refine WP.mono (limbs_ok hL 20 0 _ rfl hw ⟨by rw [g2 _ (by decide) (by decide), hr11],
+    by rw [g2 _ (by decide) (by decide), hr12], ?_, by rw [RegUpd.gpr_setReg_self]; rfl,
+    fun p hp l hl => hwords p hp l hl, fun _ _ => rfl⟩) fun s' ⟨h, g, rd, wr, x⟩ =>
+    ⟨h, fun r a b c d => (g r a b c d).trans (g2 r c d), rd, wr, x⟩
+  rfl
+
 end VG.Proof.Bignum.X86_64.AmmSym
