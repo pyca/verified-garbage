@@ -1,0 +1,370 @@
+import VerifiedGarbage.Proof.AesSiv.X86.CmacOf
+
+/-!
+# AES-SIV on x86: S2V over the associated data
+
+Untrusted: everything here is checked by Lean. After the entry, every piece
+writes only parts of `W` (`wR`), the stack below `SP` and, from counter mode
+on, the data (`ext`): the slots, our caller's registers saved in `W`, and
+everything outside those keep their values (`Kept`). S2V starts with
+`D = AES-CMAC(K1, <zero>)` (`start_ok`); then, for each component `S` a
+descriptor at `A` lists (`compA`, `compL`), `D = dbl(D) ⊕ AES-CMAC(K1, S)`
+(`adBody_ok`), until none is left (`s2vAds_ok`, with the invariant `AInv`).
+-/
+
+set_option linter.unusedSimpArgs false
+
+namespace VG.Proof.AesSiv.X86
+
+open VG VG.X86 VG.X86.RegUpd VG.Impl.AesSiv.X86
+open VG.Spec.Aes (bytesAt)
+open VG.Proof.Aes.X86 (Ctr32Impl)
+open VG.Impl.AesGcm.X86 (at_ imm slot zero4)
+open VG.Proof.AesGcm.X86 (w64 toNat_ofNat32 toNat_add32 slotv zero4_fold length_bytesAt ofNat_sub32
+  readW_writeW_off SavedAt savedR CT covers_left)
+
+/-! ## The components of associated data -/
+
+/-- The address of the `i`-th component, from its descriptor at `A + 8 i`. -/
+abbrev compA (m : Mem) (A : BitVec 32) (i : Nat) : BitVec 32 := m.readW (w64 A + BitVec.ofNat 64 (8 * i)) 32
+
+/-- The length of the `i`-th component. -/
+abbrev compL (m : Mem) (A : BitVec 32) (i : Nat) : Nat := (m.readW (w64 A + BitVec.ofNat 64 (8 * i + 4)) 32).toNat
+
+theorem listed_getElem (m : Mem) (A : BitVec 32) {N i : Nat} (hi : i < N) :
+    (Sig.listed 32 m .u8 (w64 A) N)[i]'(by simp [Sig.listed, hi]) = ⟨w64 (compA m A i), compL m A i⟩ := by
+  simp only [Sig.listed, List.getElem_map, List.getElem_range, Elem.size, Nat.mul_one, compA, compL,
+    add_ofNat_assoc]
+  rw [Nat.mul_comm i 8]
+
+theorem comp_mem (m : Mem) (A : BitVec 32) {N i : Nat} (hi : i < N) :
+    (⟨w64 (compA m A i), compL m A i⟩ : Region) ∈ Sig.listed 32 m .u8 (w64 A) N := by
+  rw [← listed_getElem m A hi]; exact List.getElem_mem _
+
+theorem components_take_succ (m : Mem) (A : BitVec 32) {N i : Nat} (hi : i < N) :
+    (Spec.Siv.components 32 m (w64 A) N).take (i + 1) =
+      (Spec.Siv.components 32 m (w64 A) N).take i ++ [bytesAt m (w64 (compA m A i)) (compL m A i)] := by
+  have hl : i < (Spec.Siv.components 32 m (w64 A) N).length := by simp [Spec.Siv.components, Sig.listed, hi]
+  rw [List.take_add_one, List.getElem?_eq_getElem hl, Option.toList_some]
+  simp only [Spec.Siv.components, List.getElem_map, listed_getElem m A hi]
+
+theorem components_take_all (m : Mem) (A : BitVec 32) (N : Nat) :
+    (Spec.Siv.components 32 m (w64 A) N).take N = Spec.Siv.components 32 m (w64 A) N :=
+  List.take_of_length_le (by simp [Spec.Siv.components, Sig.listed])
+
+theorem s2vAcc_snoc (mac : List Byte → List Byte) (xs : List (List Byte)) (x : List Byte) :
+    Spec.Siv.s2vAcc mac (xs ++ [x]) = Spec.Siv.s2vStep mac (Spec.Siv.s2vAcc mac xs) x := by
+  simp [Spec.Siv.s2vAcc, List.foldl_append]
+
+/-! ## What the pieces keep -/
+
+/-- The parts of `W` the pieces write, and the stack below `SP`. -/
+abbrev wR (W SP : BitVec 32) : List Region := [wA W, wB W, wV W, wS W, wC W, below SP 56]
+
+/-- Since the entry from `s₀`: the environment, the slots and our caller's
+registers in `W`, and the memory outside `W`, the stack below `SP` and the
+regions `ext` as on entry. -/
+structure Kept (s₀ : State) (C W SP : BitVec 32) (R : Nat) (D : BitVec 32) (n : Nat) (ext : List Region)
+    (s : State) : Prop where
+  env : Env C W SP s
+  rd : s.rd = s₀.rd
+  wr : s.wr = s₀.wr
+  slots : Slots W C R D n s.mem
+  saved : SavedAt s.mem W s₀
+  big : Frame ([⟨w64 W, 2576⟩, below SP 56] ++ ext) s₀.mem s.mem
+
+/-- A piece that writes parts of `W` the pieces write, the stack below `SP`,
+or the regions `ext` (apart from `W`) keeps `Kept`. -/
+theorem Kept.step {s₀ : State} {C W SP : BitVec 32} {R : Nat} {D : BitVec 32} {n : Nat} {ext : List Region}
+    (L : Lay C W SP) (hext : ∀ r ∈ ext, r.Disjoint ⟨w64 W, 2576⟩) {s s' : State}
+    (h : Kept s₀ C W SP R D n ext s) (E : Env C W SP s') (rd : s'.rd = s.rd) (wr : s'.wr = s.wr)
+    {rs : List Region} (hf : Frame rs s.mem s'.mem)
+    (hs : ∀ r ∈ rs, (∃ r' ∈ wR W SP, Region.Sub r r') ∨ ∃ r' ∈ ext, Region.Sub r r') :
+    Kept s₀ C W SP R D n ext s' := by
+  have kept : ∀ {d k : Nat}, (128 ≤ d ∧ d + k ≤ 144 ∨ 176 ≤ d ∧ d + k ≤ 184 ∨ 192 ≤ d ∧ d + k ≤ 200) →
+      ∀ r ∈ rs, (⟨w64 W + BitVec.ofNat 64 d, k⟩ : Region).Disjoint r := fun {d k} hd r hr => by
+    rcases hs r hr with ⟨r', hr', hsub⟩ | ⟨r', hr', hsub⟩
+    · refine Region.Disjoint.sub_right ?_ hsub
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr'
+      rcases hr' with rfl | rfl | rfl | rfl | rfl | rfl
+      · simpa using Lay.w_w (W := W) (n := k) (d := 0) (k := 128) (.inr (by omega)) (by omega) (by decide)
+      · exact Lay.w_w (by omega) (by omega) (by decide)
+      · exact Lay.w_w (by omega) (by omega) (by decide)
+      · exact Lay.w_w (.inl (by omega)) (by omega) (by decide)
+      · exact Lay.w_w (.inl (by omega)) (by omega) (by decide)
+      · exact (L.stk_w' (by omega)).symm
+    · exact ((hext r' hr').sub_right (Lay.wSub (by omega))).symm.sub_right hsub
+  have k : ∀ o, (128 ≤ o ∧ o + 4 ≤ 144 ∨ 176 ≤ o ∧ o + 4 ≤ 184 ∨ 192 ≤ o ∧ o + 4 ≤ 200) →
+      slotv s'.mem W o = slotv s.mem W o := fun o ho =>
+    hf.readW (r := ⟨w64 W + BitVec.ofNat 64 o, 4⟩) (Region.contains_self _ _) (kept ho) (by decide)
+  refine ⟨E, by rw [rd, h.rd], by rw [wr, h.wr], ⟨?_, ?_, ?_, ?_⟩, ?_, h.big.trans (hf.sub fun r hr => ?_)⟩
+  · rw [k _ (by decide)]; exact h.slots.ctx
+  · rw [k _ (by decide)]; exact h.slots.rounds
+  · rw [k _ (by decide)]; exact h.slots.data
+  · rw [k _ (by decide)]; exact h.slots.len
+  · exact h.saved.frame hf fun r hr => kept (.inl ⟨Nat.le_refl _, Nat.le_refl _⟩) r hr
+  · rcases hs r hr with ⟨r', hr', hsub⟩ | ⟨r', hr', hsub⟩
+    · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr'
+      rcases hr' with rfl | rfl | rfl | rfl | rfl | rfl
+      · exact ⟨_, by simp, fun _ h => Lay.wSub (W := w64 W) (d := 0) (n := 128) (by decide) _ (by simpa using hsub _ h)⟩
+      · exact ⟨_, by simp, fun _ h => Lay.wSub (by decide) _ (hsub _ h)⟩
+      · exact ⟨_, by simp, fun _ h => Lay.wSub (by decide) _ (hsub _ h)⟩
+      · exact ⟨_, by simp, fun _ h => Lay.wSub (by decide) _ (hsub _ h)⟩
+      · exact ⟨_, by simp, fun _ h => Lay.wSub (by decide) _ (hsub _ h)⟩
+      · exact ⟨_, by simp, hsub⟩
+    · exact ⟨r', List.mem_append_right _ hr', hsub⟩
+
+/-- The bytes of a region apart from `W`, the stack below `SP` and `ext` are
+as on entry. -/
+theorem Kept.bytes {s₀ : State} {C W SP : BitVec 32} {R : Nat} {D : BitVec 32} {n : Nat} {ext : List Region}
+    {s : State} (h : Kept s₀ C W SP R D n ext s) {p : Addr} {k : Nat}
+    (hw : (⟨p, k⟩ : Region).Disjoint ⟨w64 W, 2576⟩) (hs : (below SP 56).Disjoint ⟨p, k⟩)
+    (he : ∀ r ∈ ext, (⟨p, k⟩ : Region).Disjoint r) (hk : k ≤ 2 ^ 64) : bytesAt s.mem p k = bytesAt s₀.mem p k :=
+  Proof.AesGcm.X86.bytesAt_frame h.big (fun r hr => by
+    simp only [List.cons_append, List.nil_append, List.mem_cons] at hr
+    rcases hr with rfl | rfl | hr
+    · exact hw
+    · exact hs.symm
+    · exact he r hr) hk
+
+/-- The context's PRF, after code that writes apart from its 512 bytes. -/
+theorem ctxMac_frame {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {C : Addr}
+    (hd : ∀ r ∈ rs, (⟨C, 512⟩ : Region).Disjoint r) {R : Nat} (hR : R ≤ 14) :
+    Spec.Siv.ctxMac m' C R = Spec.Siv.ctxMac m C R := by
+  have e : ∀ {d k : Nat}, d + k ≤ 512 → bytesAt m' (C + BitVec.ofNat 64 d) k = bytesAt m (C + BitVec.ofNat 64 d) k :=
+    fun hk => Proof.AesGcm.X86.bytesAt_frame hf (fun r hr => (hd r hr).sub_left (Offset.sub_base _ hk)) (by omega)
+  have s0 := e (d := 0) (k := 16 * (R + 1)) (by omega)
+  rw [BitVec.add_zero] at s0
+  simp only [Spec.Siv.ctxMac, Spec.Siv.schedCiph, s0]
+  rw [show (240 : Addr) = BitVec.ofNat 64 240 from rfl, show (256 : Addr) = BitVec.ofNat 64 256 from rfl,
+    e (by decide), e (by decide)]
+
+/-! ## S2V's first state -/
+
+/-- What S2V of the associated data needs of the entry state `s₀`: the `N`
+descriptors at `A` and the components they list, readable, apart from `W`
+and the stack below `SP`. -/
+structure AdCtx (s₀ : State) (C W SP A : BitVec 32) (R N : Nat) : Prop where
+  lay : Lay C W SP
+  rounds : R = 10 ∨ R = 12 ∨ R = 14
+  desc : Buf W SP s₀ A (8 * N)
+  comps : ∀ i < N, Buf W SP s₀ (compA s₀.mem A i) (compL s₀.mem A i)
+  N32 : N < 2 ^ 32
+
+/-- The context's PRF while `Kept` holds. -/
+theorem Kept.mac {s₀ : State} {C W SP : BitVec 32} {R : Nat} {D : BitVec 32} {n : Nat} {ext : List Region}
+    {s : State} (L : Lay C W SP) (hR : R = 10 ∨ R = 12 ∨ R = 14) (h : Kept s₀ C W SP R D n ext s)
+    (he : ∀ r ∈ ext, (⟨w64 C, 512⟩ : Region).Disjoint r) :
+    Spec.Siv.ctxMac s.mem (w64 C) R = Spec.Siv.ctxMac s₀.mem (w64 C) R :=
+  ctxMac_frame h.big (fun r hr => by
+    simp only [List.cons_append, List.nil_append, List.mem_cons] at hr
+    rcases hr with rfl | rfl | hr
+    · exact L.c_w
+    · exact L.stk_c.symm
+    · exact he r hr) (by omega)
+
+theorem zero_eq : Spec.Siv.zero = Spec.Cmac.zeros 16 := rfl
+
+/-- The CMAC of the zero block from the context's subkeys. -/
+theorem ctxMac_zero (m : Mem) (C : Addr) (R : Nat) :
+    Spec.Siv.ctxMac m C R Spec.Siv.zero = Spec.Cmac.aesWith R (bytesAt m C (16 * (R + 1)))
+      (Spec.Cmac.xor (Spec.Cmac.lastBlock 16 (bytesAt m (C + BitVec.ofNat 64 240) 16)
+        (bytesAt m (C + BitVec.ofNat 64 256) 16) (Spec.Cmac.zeros 16)) (Spec.Cmac.zeros 16)) := by
+  have := Siv.cmacWith_split (Spec.Siv.schedCiph m C R) (bytesAt m (C + 240) 16) (bytesAt m (C + 256) 16)
+    (msg := []) (last := Spec.Cmac.zeros 16) (by decide) (by decide) (.inl rfl)
+  simp only [List.nil_append] at this
+  rw [Spec.Siv.ctxMac, zero_eq, this, Proof.Cmac.xor_comm]
+  rfl
+
+/-- The registers and memory after the block before `start`'s call. -/
+theorem startPre_ok {C W SP : BitVec 32} (L : Lay C W SP) {R : Nat} {s : State} (E : Env C W SP s)
+    (hc : slotv s.mem W ctxO = C) (hr : slotv s.mem W roundsO = BitVec.ofNat 32 R) :
+    ∃ s', runBlock isa (zero4 zOff ++ zero4 dOff ++ macArgs dOff ++
+        ([.mov .ebx (.reg .ebp), .alu .add .ebx (imm zOff), .mov .esi (imm 16)] : List Instr)) s = some s' ∧
+      s'.mem = Cmac.zero4 (Cmac.zero4 s.mem (w64 W + BitVec.ofNat 64 zOff)) (w64 W + BitVec.ofNat 64 dOff) ∧
+      s'.gpr .eax = C ∧ s'.gpr .ecx = BitVec.ofNat 32 R ∧ s'.gpr .edx = W + BitVec.ofNat 32 2560 ∧
+      s'.gpr .ebx = W + BitVec.ofNat 32 16 ∧ s'.gpr .esi = BitVec.ofNat 32 16 ∧
+      s'.gpr .edi = W + BitVec.ofNat 32 256 ∧ s'.gpr .ebp = W ∧ s'.gpr .esp = SP ∧ s'.rd = s.rd ∧
+      s'.wr = s.wr := by
+  have z₁ := zero4_fold s.mem W zOff
+  have z₂ := zero4_fold (Cmac.zero4 s.mem (w64 W + BitVec.ofNat 64 zOff)) W dOff
+  simp only [Nat.reduceAdd, zOff, dOff] at z₁ z₂
+  refine ⟨_, by crun [zero4, macArgs, E.ebp, L.aW, E.perm.wW, E.perm.wR, hc, hr], ?_, ?_, ?_, ?_, ?_, ?_, ?_,
+    ?_, ?_, ?_, ?_⟩
+  · cmems [z₁, z₂]
+  · cregs [hc]
+  · cregs [hr]
+  · cregs [E.ebp]
+  · cregs [E.ebp]
+  · cregs []
+  · cregs [E.ebp]
+  · cregs [E.ebp]
+  · cregs [E.esp]
+  all_goals cmems []
+
+/-- `start`: `D = AES-CMAC(K1, <zero>)`, S2V's first state. -/
+theorem start_ok (v : Ctr32Impl) {s₀ : State} {C W SP : BitVec 32} {R : Nat} {D : BitVec 32} {n : Nat}
+    (L : Lay C W SP) (hR : R = 10 ∨ R = 12 ∨ R = 14) {s : State} (h : Kept s₀ C W SP R D n [] s) :
+    WP isa (start v.callee v.suffix) s fun s' => Kept s₀ C W SP R D n [] s' ∧
+      Frame (wR W SP) s.mem s'.mem ∧
+      bytesAt s'.mem (w64 W + BitVec.ofNat 64 dOff) 16 = Spec.Siv.s2vStart (Spec.Siv.ctxMac s₀.mem (w64 C) R) := by
+  have hRb : 16 * (R + 1) ≤ 240 := by rcases hR with h | h | h <;> omega
+  obtain ⟨s₁, run₁, m₁, ax₁, cx₁, dx₁, bx₁, si₁, di₁, bp₁, sp₁, rd₁, wr₁⟩ :=
+    startPre_ok L h.env h.slots.ctx h.slots.rounds
+  have E₁ : Env C W SP s₁ := ⟨bp₁, sp₁, h.env.perm.of_eq rd₁ wr₁⟩
+  refine WP.seq (WP.of_runBlock ⟨s₁, run₁, ?_⟩)
+  have f₁ : Frame [⟨w64 W + BitVec.ofNat 64 zOff, 16⟩, ⟨w64 W + BitVec.ofNat 64 dOff, 16⟩] s.mem s₁.mem := by
+    rw [m₁]
+    exact ((Cmac.frame_store4 _ _ _ _ _).sub fun r hr => ⟨r, by simp_all, fun _ h => h⟩).trans
+      ((Cmac.frame_store4 _ _ _ _ _).sub fun r hr => ⟨r, by simp_all, fun _ h => h⟩)
+  refine WP.mono (finCall_ok v L E₁ hR (y := 2560) (.inr ⟨by decide, by decide⟩) (P := W + BitVec.ofNat 32 16)
+    (l := 16) (Nat.le_refl _) (srcW L E₁.perm (t := 16) (k := 16) (by decide))
+    (by rw [L.aW (o := 16) (by decide)]; exact Lay.w_w (.inl (by decide)) (by decide) (by decide))
+    ax₁ cx₁ dx₁ bx₁ si₁ di₁) fun s₂ ⟨E₂, rd₂, wr₂, _, f₂, o₂⟩ => ?_
+  have f₁₂ : Frame (wR W SP) s.mem s₂.mem := by
+    refine (f₁.sub fun r hr => ?_).trans (f₂.sub fun r hr => ?_)
+    · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · exact ⟨wA W, by simp, Offset.sub_base _ (by decide)⟩
+      · exact ⟨wC W, by simp, Offset.sub _ (by decide) (by decide)⟩
+    · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl
+      · exact ⟨wC W, by simp, Offset.sub _ (by decide) (by decide)⟩
+      · exact ⟨wC W, by simp, Offset.sub _ (by decide) (by decide)⟩
+      · exact ⟨below SP 56, by simp, fun _ h => h⟩
+  refine ⟨h.step L (by simp) E₂ (by rw [rd₂, rd₁]) (by rw [wr₂, wr₁]) f₁₂ fun r hr => .inl ⟨r, hr, fun _ h => h⟩,
+    f₁₂, ?_⟩
+  simp only [zOff, dOff] at m₁
+  have fz : Frame [⟨w64 W + BitVec.ofNat 64 2560, 16⟩] (Cmac.zero4 s.mem (w64 W + BitVec.ofNat 64 16))
+      s₁.mem := by rw [m₁]; exact Cmac.frame_store4 _ _ _ _ _
+  have hz16 : bytesAt s₁.mem (w64 W + BitVec.ofNat 64 16) 16 = Spec.Cmac.zeros 16 := by
+    rw [Proof.AesGcm.X86.bytesAt_frame fz (fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr; exact Lay.w_w (.inl (by decide)) (by decide) (by decide))
+      (by decide)]
+    exact Cmac.zero4_bytes _ _
+  have hz : bytesAt s₁.mem (w64 W + BitVec.ofNat 64 2560) 16 = Spec.Cmac.zeros 16 := by
+    rw [m₁]; exact Cmac.zero4_bytes _ _
+  have hc₁ : Spec.Siv.ctxMac s₁.mem (w64 C) R = Spec.Siv.ctxMac s.mem (w64 C) R :=
+    ctxMac_frame f₁ (fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl <;> exact L.c_w.sub_right (Lay.wSub (by decide))) (by omega)
+  simp only [dOff] at o₂ ⊢
+  rw [o₂, Spec.Siv.s2vStart, ← h.mac L hR (by simp), ← hc₁, ctxMac_zero, L.aW (o := 16) (by decide), hz16, hz]
+
+/-! ## `dbl` in place -/
+
+/-- `dblAt o`: the block at `W + o` doubled in place; `ebp` is `W` again
+after it. -/
+theorem dblAt_wp {C W SP : BitVec 32} (L : Lay C W SP) {s : State} (E : Env C W SP s) {o : Nat}
+    (ho : o + 16 ≤ 2576) {is : List Instr} {Q : State → Prop}
+    (k : ∀ s', s'.gpr .ebp = W → s'.gpr .esp = SP →
+      s'.mem = Proof.CmacAes.X86.dblMem s.mem (w64 W + BitVec.ofNat 64 o) 0 0 → s'.rd = s.rd → s'.wr = s.wr →
+      WP isa (.block is) s' Q) :
+    WP isa (.block (dblAt o ++ is)) s Q := by
+  have hW := L.fw
+  rw [dblAt, List.append_assoc, List.append_assoc, WP.block_append_iff]
+  refine WP.of_runBlock ⟨_, by crun [E.ebp], ?_⟩
+  have aW : (W + BitVec.ofNat 32 o).setWidth 64 = w64 W + BitVec.ofNat 64 o := L.sW (by omega)
+  refine Proof.CmacAes.X86.dbl_wp (K := W + BitVec.ofNat 32 o) (src := 0) (dst := 0) (by cregs [E.ebp])
+    (by rw [L.nW (by omega)]; omega) (by rw [L.nW (by omega)]; omega)
+    (by cmems []; rw [aW, BitVec.add_zero]; exact covers_left (E.perm.wC ho))
+    (by cmems []; rw [aW, BitVec.add_zero]; exact E.perm.wC ho) fun s₁ g₁ m₁ rd₁ wr₁ => ?_
+  rw [WP.block_append_iff]
+  have bx₁ : s₁.gpr .ebx = W + BitVec.ofNat 32 o := by
+    rw [g₁ _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)]
+    cregs [E.ebp]
+  have sp₁ : s₁.gpr .esp = SP := by
+    rw [g₁ _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)]
+    cregs [E.esp]
+  refine WP.of_runBlock ⟨_, by crun [bx₁], k _ (by cregs [bx₁]; exact BitVec.add_sub_cancel _ _) (by cregs [sp₁])
+    (by cmems [m₁, aW]) (by cmems [rd₁]) (by cmems [wr₁])⟩
+
+/-! ## A step of S2V -/
+
+theorem add32_assoc (x : BitVec 32) (a b : Nat) :
+    x + BitVec.ofNat 32 a + BitVec.ofNat 32 b = x + BitVec.ofNat 32 (a + b) := by
+  rw [BitVec.add_assoc, ← BitVec.ofNat_add]
+
+/-- After `dbl`: the CMAC state XORed into `D`, then the next descriptor and
+one fewer left. -/
+theorem adTail_ok {C W SP : BitVec 32} (L : Lay C W SP) {s : State} (E : Env C W SP s) {a b : BitVec 32}
+    (ha : slotv s.mem W adsO = a) (hb : slotv s.mem W leftO = b) :
+    ∃ s', runBlock isa (([.mov .edx (.reg .ebp), .alu .add .edx (imm dOff)] : List Instr) ++ (xorInto stOff 0 ++
+        ([.mov .eax (slot adsO), .alu .add .eax (imm 8), .store (at_ .ebp adsO) .eax,
+          .mov .eax (slot leftO), .alu .sub .eax (imm 1), .store (at_ .ebp leftO) .eax] : List Instr))) s = some s' ∧
+      s'.mem = ((Cmac.xor4Mem s.mem (w64 W + BitVec.ofNat 64 dOff) (w64 W + BitVec.ofNat 64 stOff)
+        (w64 W + BitVec.ofNat 64 dOff)).writeW (w64 W + BitVec.ofNat 64 adsO) (a + BitVec.ofNat 32 8)).writeW
+        (w64 W + BitVec.ofNat 64 leftO) (b - BitVec.ofNat 32 1) ∧
+      s'.zf = some (b - BitVec.ofNat 32 1 == 0) ∧ s'.gpr .ebp = W ∧ s'.gpr .esp = SP ∧ s'.rd = s.rd ∧
+      s'.wr = s.wr := by
+  refine ⟨_, by crun [xorInto, E.ebp, L.aW, E.perm.wW, E.perm.wR, ha, hb, add32_assoc,
+    Proof.AesGcm.X86.add_zero32], ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · cmems [ha, hb, Cmac.xor4Mem, add_ofNat_assoc]
+  · cmems [ha, hb]
+  · cregs [E.ebp]
+  · cregs [E.esp]
+  all_goals cmems []
+
+/-- `adStep`: `D = dbl(D) ⊕` the CMAC state, the next descriptor and one
+fewer left. -/
+theorem adStep_wp {C W SP : BitVec 32} (L : Lay C W SP) {s : State} (E : Env C W SP s) {A : BitVec 32} {N i : Nat}
+    (hiN : i < N) (hN : N < 2 ^ 32) (hads : slotv s.mem W adsO = A + BitVec.ofNat 32 (8 * i))
+    (hleft : slotv s.mem W leftO = BitVec.ofNat 32 (N - i)) :
+    WP isa (.block adStep) s fun s' => Env C W SP s' ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
+      Frame [⟨w64 W + BitVec.ofNat 64 dOff, 16⟩, wV W] s.mem s'.mem ∧
+      bytesAt s'.mem (w64 W + BitVec.ofNat 64 dOff) 16 =
+        Spec.Cmac.xor (bytesAt s.mem (w64 W + BitVec.ofNat 64 stOff) 16)
+          (Spec.Cmac.dbl 16 (bytesAt s.mem (w64 W + BitVec.ofNat 64 dOff) 16)) ∧
+      slotv s'.mem W adsO = A + BitVec.ofNat 32 (8 * (i + 1)) ∧
+      slotv s'.mem W leftO = BitVec.ofNat 32 (N - (i + 1)) ∧ s'.zf = some (decide (i + 1 = N)) := by
+  have e : adStep = dblAt dOff ++ (([.mov .edx (.reg .ebp), .alu .add .edx (imm dOff)] : List Instr) ++
+      (xorInto stOff 0 ++ ([.mov .eax (slot adsO), .alu .add .eax (imm 8), .store (at_ .ebp adsO) .eax,
+        .mov .eax (slot leftO), .alu .sub .eax (imm 1), .store (at_ .ebp leftO) .eax] : List Instr))) := by
+    simp only [adStep, List.append_assoc]
+  rw [e]
+  refine dblAt_wp L E (o := dOff) (by decide) fun s₁ bp₁ sp₁ m₁ rd₁ wr₁ => ?_
+  have E₁ : Env C W SP s₁ := ⟨bp₁, sp₁, E.perm.of_eq rd₁ wr₁⟩
+  have fD : Frame [⟨w64 W + BitVec.ofNat 64 dOff, 16⟩] s.mem s₁.mem := by
+    rw [m₁]
+    have := Proof.CmacAes.X86.dblMem_frame s.mem (w64 W + BitVec.ofNat 64 dOff) 0 0
+    rwa [BitVec.add_zero] at this
+  have kD : ∀ o, o + 4 ≤ 2560 → slotv s₁.mem W o = slotv s.mem W o := fun o ho =>
+    fD.readW (r := ⟨w64 W + BitVec.ofNat 64 o, 4⟩) (Region.contains_self _ _) (fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr; exact Lay.w_w (.inl (by simp only [dOff]; omega)) (by omega)
+        (by decide)) (by decide)
+  obtain ⟨s₂, run₂, m₂, zf₂, bp₂, sp₂, rd₂, wr₂⟩ := adTail_ok L E₁ (a := A + BitVec.ofNat 32 (8 * i))
+    (b := BitVec.ofNat 32 (N - i)) (by rw [kD _ (by decide)]; exact hads) (by rw [kD _ (by decide)]; exact hleft)
+  refine WP.of_runBlock ⟨s₂, run₂, ⟨bp₂, sp₂, E₁.perm.of_eq rd₂ wr₂⟩, by rw [rd₂, rd₁], by rw [wr₂, wr₁], ?_, ?_,
+    ?_, ?_, ?_⟩
+  · -- What the step writes.
+    have fX : Frame [⟨w64 W + BitVec.ofNat 64 dOff, 16⟩, wV W] s₁.mem s₂.mem := by
+      rw [m₂]
+      exact (((Cmac.xor4Mem_frame _ _ _ _).sub fun r hr => ⟨r, by simp_all, fun _ h => h⟩).writeW (r := wV W)
+        (by simp) _ (Offset.contains _ (by decide) (by decide) (by decide))).writeW (r := wV W) (by simp) _
+        (Offset.contains _ (by decide) (by decide) (by decide))
+    exact (fD.sub fun r hr => ⟨r, by simp_all, fun _ h => h⟩).trans fX
+  · -- `D`.
+    have fC : Frame [wV W] (Cmac.xor4Mem s₁.mem (w64 W + BitVec.ofNat 64 dOff) (w64 W + BitVec.ofNat 64 stOff)
+        (w64 W + BitVec.ofNat 64 dOff)) s₂.mem := by
+      rw [m₂]
+      exact ((Frame.refl _ _).writeW (r := wV W) (by simp) _
+        (Offset.contains _ (by decide) (by decide) (by decide))).writeW (r := wV W) (by simp) _
+        (Offset.contains _ (by decide) (by decide) (by decide))
+    rw [Proof.AesGcm.X86.bytesAt_frame fC (fun r hr => by
+        simp only [List.mem_singleton] at hr; subst hr; exact Lay.w_w (.inr (by decide)) (by decide) (by decide))
+        (by decide),
+      Cmac.xor4Mem_bytes _ (Cmac.Sep4.of_disjoint (Lay.w_w (.inr (by decide)) (by decide) (by decide)))
+        (Cmac.Sep4.self _),
+      Proof.AesGcm.X86.bytesAt_frame fD (fun r hr => by
+        simp only [List.mem_singleton] at hr; subst hr; exact Lay.w_w (.inl (by decide)) (by decide) (by decide))
+        (by decide), m₁]
+    have := Proof.CmacAes.X86.dblMem_bytes s.mem (w64 W + BitVec.ofNat 64 dOff) 0 0
+    rw [BitVec.add_zero] at this
+    rw [this]
+  · rw [m₂, slotv, readW_writeW_off _ _ _ (by decide) (by decide) (by decide), Mem.readW_writeW_self32, add32_assoc]
+    congr 2
+  · rw [m₂]
+    exact (Mem.readW_writeW_self32 _ _ _).trans (Proof.AesGcm.X86.pred_count hiN hN)
+  · rw [zf₂, Proof.AesGcm.X86.pred_beq hiN hN]
+
+end VG.Proof.AesSiv.X86

@@ -128,4 +128,21 @@ theorem pin3 {I : State → Prop} {a b c : Reg} {x y z : BitVec 32}
   · rw [(h _ h₁).2.1, (h _ h₂).2.1]
   · rw [(h _ h₁).2.2, (h _ h₂).2.2]
 
+/-- A loop of `n` iterations, its body constant time and leaving the
+condition to loop back exactly while iterations are left. -/
+theorem CT.loopN {body : Prog isa} {c : Cond} (Inv : Nat → State → Prop)
+    (hb : ∀ n, Proof.AesGcm.X86.CT (Inv n) body)
+    (hw : ∀ n s, Inv n s → WP isa body s fun s' => 0 < n ∧ isa.eval c s' = some (decide (n ≠ 1)) ∧
+      (n ≠ 1 → Inv (n - 1) s'))
+    (n : Nat) : Proof.AesGcm.X86.CT (Inv n) (.loop body c) := by
+  refine RelCT.loop (M := isa) (Q := fun _ _ => True) (fun n (s₁ s₂ : State) => Inv n s₁ ∧ Inv n s₂) (fun n => ?_) n
+  have h := RelCT.wp (hb n) (F₁ := fun s' => 0 < n ∧ isa.eval c s' = some (decide (n ≠ 1)) ∧
+      (n ≠ 1 → Inv (n - 1) s')) (F₂ := fun s' => 0 < n ∧ isa.eval c s' = some (decide (n ≠ 1)) ∧
+      (n ≠ 1 → Inv (n - 1) s')) fun s₁ s₂ h => ⟨hw n s₁ h.1, hw n s₂ h.2⟩
+  refine RelCT.mono h (fun _ _ h => h) fun s₁ s₂ ⟨_, ⟨hn, c₁, i₁⟩, ⟨_, c₂, i₂⟩⟩ => ⟨by rw [c₁, c₂], fun _ => trivial,
+    fun ht => ?_⟩
+  rw [c₁] at ht
+  have h1 : n ≠ 1 := by simpa using ht
+  exact ⟨n - 1, by omega, i₁ h1, i₂ h1⟩
+
 end VG.Proof.AesSiv.X86

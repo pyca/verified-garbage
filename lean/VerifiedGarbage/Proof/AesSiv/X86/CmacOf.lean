@@ -23,7 +23,7 @@ open VG.Spec.Aes (bytesAt)
 open VG.Proof.Aes.X86 (Ctr32Impl)
 open VG.Impl.AesGcm.X86 (at_ imm slot zero4)
 open VG.Proof.AesGcm.X86 (w64 toNat_ofNat32 toNat_add32 slotv zero4_fold length_bytesAt shr4 ofNat_sub32
-  and_self_beq32 covers_left readW_writeW_off)
+  and_self_beq32 covers_left readW_writeW_off CT)
 
 /-! ## The length of the whole blocks -/
 
@@ -377,5 +377,102 @@ theorem cmacOf_ok (v : Ctr32Impl) {C W SP : BitVec 32} (L : Lay C W SP) {R : Nat
     rwa [← hsplit] at this
   rw [tk, dr, Proof.Cmac.xor_comm]
   rfl
+
+/-! ## Constant time -/
+
+/-- The slots `cmacOf` keeps. -/
+theorem cmacR_slot {C W SP : BitVec 32} (L : Lay C W SP) {m m' : Mem} (hf : Frame (cmacR W SP) m m') {o : Nat}
+    (h₁ : 176 ≤ o) (h₂ : o + 4 ≤ 208) : slotv m' W o = slotv m W o :=
+  hf.readW (r := ⟨w64 W + BitVec.ofNat 64 o, 4⟩) (Region.contains_self _ _) (fun r hr => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl
+    · exact Lay.w_w (.inr (by simp only [stOff]; omega)) (by omega) (by decide)
+    · exact Lay.w_w (.inl (by simp only [nbO]; omega)) (by omega) (by decide)
+    · exact Lay.w_w (.inl (by omega)) (by omega) (by decide)
+    · exact (L.stk_w' (by omega)).symm) (by decide)
+
+/-- After the update: what `cmacMid` and the finalization need. -/
+structure CmacAft (C W SP : BitVec 32) (R : Nat) (P : BitVec 32) (k : Nat) (s s₂ : State) : Prop where
+  env : Env C W SP s₂
+  rd : s₂.rd = s.rd
+  wr : s₂.wr = s.wr
+  frame : Frame (cmacR W SP) s.mem s₂.mem
+  nb : slotv s₂.mem W nbO = BitVec.ofNat 32 (Spec.Cmac.chainedLen 16 k)
+
+theorem cmacUpd_ok (v : Ctr32Impl) {C W SP : BitVec 32} (L : Lay C W SP) {R : Nat} (hR : R = 10 ∨ R = 12 ∨ R = 14)
+    {P : BitVec 32} {k : Nat} {s s₁ : State} (h : CmacPre C W SP R P k s) (M : CmacMid C W SP R P k s s₁) :
+    WP isa (updCall v.callee v.suffix) s₁ (CmacAft C W SP R P k s) := by
+  have hcl := chainedLen_le k
+  have B₁ : Buf W SP s₁ P (16 * (Spec.Cmac.chainedLen 16 k / 16)) :=
+    (h.buf.take (by rw [chainedLen_div]; exact hcl)).of_eq M.rd M.wr
+  refine WP.mono (updCall_ok v L M.env hR (y := 144) (.inl (by decide)) (srcBuf B₁)
+    (B₁.w.sub_right (Lay.wSub (by decide))) (by rw [chainedLen_div]; have := h.k32; omega) M.eax M.ecx M.edx M.ebx
+    M.esi M.edi) fun s₂ ⟨E₂, rd₂, wr₂, _, f₂, _⟩ => ⟨E₂, by rw [rd₂, M.rd], by rw [wr₂, M.wr], ?_, ?_⟩
+  · have fz : Frame [⟨w64 W + BitVec.ofNat 64 144, 16⟩, ⟨w64 W + BitVec.ofNat 64 nbO, 4⟩] s.mem s₁.mem := by
+      rw [M.mem]
+      exact ((Cmac.frame_store4 _ _ _ _ _).sub fun r hr => ⟨r, by simp_all, fun _ h => h⟩).writeW (by simp) _
+        (Region.contains_self _ _)
+    refine (fz.sub fun r hr => ?_).trans (f₂.sub fun r hr => ?_)
+    · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl <;> exact ⟨_, by simp, fun _ h => h⟩
+    · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl <;> exact ⟨_, by simp, fun _ h => h⟩
+  · rw [show slotv s₂.mem W nbO = slotv s₁.mem W nbO from f₂.readW (r := ⟨w64 W + BitVec.ofNat 64 nbO, 4⟩)
+      (Region.contains_self _ _) (fun r hr => by
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl | rfl
+        · exact Lay.w_w (.inr (by decide)) (by decide) (by decide)
+        · exact Lay.w_w (.inl (by decide)) (by decide) (by decide)
+        · exact (L.stk_w' (by decide)).symm) (by decide), M.mem]
+    exact Mem.readW_writeW_self32 _ _ _
+
+theorem roundDown_ct {I : State → Prop} :
+    CT I (.block [.mov .ecx (.reg .eax), .alu .sub .ecx (imm 1), .alu .and .ecx (imm 0xfffffff0)]) :=
+  CT.taint [] (fun _ _ _ _ r hr => by simp at hr) (by taint_decide)
+
+theorem cmacPre_ct {C W SP : BitVec 32} (L : Lay C W SP) {R : Nat} {P : BitVec 32} {k : Nat} :
+    CT (CmacPre C W SP R P k) (cmacPre stOff) := by
+  refine CT.block_seq [.ebp] (pin_ebp fun s h => h.env.ebp) (by taint_decide) (fun s hs => cmacA_ok L hs) ?_
+  refine CT.seq (J := fun s => s.gpr .ebp = W)
+    (CT.ite (decide (k = 0)) (fun _ ⟨_, _, _, _, _, zf, _⟩ => eval_e zf) (fun _ => CT.nil)
+      (fun _ => roundDown_ct))
+    (fun s₁ ⟨s, hs, _, _, ax, zf, bp, _⟩ => ?_) (CT.taint [.ebp] (pin_ebp fun _ h => h) (by taint_decide))
+  refine WP.ite (decide (k = 0)) (eval_e zf) (fun _ => WP.of_runBlock ⟨_, rfl, bp⟩) (fun hz => ?_)
+  have hk0 : 0 < k := Nat.pos_of_ne_zero (of_decide_eq_false hz)
+  obtain ⟨s₂, run₂, _, bp₂, _⟩ := cmacB_ok ax hk0 hs.k32
+  exact WP.of_runBlock ⟨s₂, run₂, by rw [bp₂, bp]⟩
+
+/-- `cmacOf` is constant time from what it starts from. -/
+theorem cmacOf_ct (v : Ctr32Impl) {C W SP : BitVec 32} (L : Lay C W SP) {R : Nat} (hR : R = 10 ∨ R = 12 ∨ R = 14)
+    {P : BitVec 32} {k : Nat} (hk : k < 2 ^ 32) : CT (CmacPre C W SP R P k) (cmacOf v.callee v.suffix stOff) := by
+  have hcl := chainedLen_le k
+  have hrest := chainedLen_rest k
+  refine CT.seq (J := fun s₁ => ∃ s, CmacPre C W SP R P k s ∧ CmacMid C W SP R P k s s₁) (cmacPre_ct L)
+    (fun s hs => WP.mono (cmacPre_ok L hs) fun s₁ M => ⟨s, hs, M⟩) ?_
+  refine CT.seq (J := fun s₂ => ∃ s, CmacPre C W SP R P k s ∧ CmacAft C W SP R P k s s₂)
+    (updCall_ct v L hR (y := 144) (.inl (by decide)) (Q := P) (n := Spec.Cmac.chainedLen 16 k / 16)
+      (by rw [chainedLen_div]; omega) fun s₁ ⟨s, hs, M⟩ => ?_)
+    (fun s₁ ⟨s, hs, M⟩ => WP.mono (cmacUpd_ok v L hR hs M) fun s₂ A => ⟨s, hs, A⟩) ?_
+  · have B₁ : Buf W SP s₁ P (16 * (Spec.Cmac.chainedLen 16 k / 16)) :=
+      (hs.buf.take (by rw [chainedLen_div]; exact hcl)).of_eq M.rd M.wr
+    exact ⟨M.env, srcBuf B₁, B₁.w.sub_right (Lay.wSub (by decide)), M.eax, M.ecx, M.edx, M.ebx, M.esi, M.edi⟩
+  refine CT.block_seq [.ebp] (pin_ebp fun s h => let ⟨_, _, A⟩ := h; A.env.ebp) (by taint_decide)
+    (fun s₂ ⟨s, hs, A⟩ => cmacMid_ok (C := C) (R := R) (P := P) (k := k) L A.env
+      (by rw [cmacR_slot L A.frame (by decide) (by decide)]; exact hs.ctx)
+      (by rw [cmacR_slot L A.frame (by decide) (by decide)]; exact hs.rounds)
+      (by rw [cmacR_slot L A.frame (by decide) (by decide)]; exact hs.str)
+      (by rw [cmacR_slot L A.frame (by decide) (by decide)]; exact hs.slen) A.nb hcl hs.k32) ?_
+  refine finCall_ct v L hR (y := 144) (.inl (by decide)) (P := P + BitVec.ofNat 32 (Spec.Cmac.chainedLen 16 k)) hrest fun s₃ ⟨s₂, ⟨s, hs, A⟩, m₃, ax, cx, dx, bx, si, di,
+    bp, sp, rd₃, wr₃⟩ => ?_
+  have hwc : P.toNat + Spec.Cmac.chainedLen 16 k < 2 ^ 32 := by
+    have := hs.buf.wrap
+    have := P.isLt
+    by_cases h0 : k = 0
+    · subst h0; simp only [Spec.Cmac.chainedLen]; omega
+    · have := chainedLen_lt (Nat.pos_of_ne_zero h0); omega
+  have B₃ : Buf W SP s₃ (P + BitVec.ofNat 32 (Spec.Cmac.chainedLen 16 k)) (k - Spec.Cmac.chainedLen 16 k) :=
+    (hs.buf.drop hcl hwc).of_eq (by rw [rd₃, A.rd]) (by rw [wr₃, A.wr])
+  exact ⟨⟨bp, sp, A.env.perm.of_eq rd₃ wr₃⟩, srcBuf B₃, B₃.w.sub_right (Lay.wSub (by decide)), ax, cx, dx, bx, si,
+    di⟩
 
 end VG.Proof.AesSiv.X86
