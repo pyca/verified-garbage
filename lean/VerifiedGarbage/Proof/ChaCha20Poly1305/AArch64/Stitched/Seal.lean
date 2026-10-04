@@ -65,14 +65,14 @@ theorem sealStitched_correct (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State}
     WP isa (sealStitched v.callee) s₀ fun s' => abiPreserved s₀ s' ∧ sealAArch64.post s₀ s' := by
   have hL' := (Nat.le_of_lt (s₀.gpr .x4).isLt)
   unfold sealStitched
-  refine WP.seq (WP.mono (WP.preservedV (prologue_ok hp)) fun s₁ ⟨h₁, v₁⟩ => ?_)
+  refine WP.seq (WP.mono (WP.preservedV (prologue_ok hp) (by lit_decide)) fun s₁ ⟨h₁, v₁⟩ => ?_)
   have hA : bytesAt s₁.mem (ad s₀) (AL s₀) = A s₀ :=
     bytesAt_frame h₁.inv.frame (by rdisj_all) (Nat.le_of_lt (s₀.gpr .x2).isLt)
   refine WP.seq (WP.mono (WP.preservedV (macPad_ok hp (p := .x24) (n := .x25) ⟨.inl rfl, .inl rfl⟩
-    (srcA hp) h₁.inv.x21 h₁.inv.rd h₁.inv.wr h₁.inv.x24 (by rw [h₁.inv.x25]; exact hRDX s₀)))
+    (srcA hp) h₁.inv.x21 h₁.inv.rd h₁.inv.wr h₁.inv.x24 (by rw [h₁.inv.x25]; exact hRDX s₀)) (by lit_decide))
     fun s₂ ⟨⟨k₂, r₂⟩, v₂⟩ => ?_)
   have i₂ := mac_inv h₁.inv k₂
-  refine WP.seq (WP.mono (WP.preservedV (lengths_ok hp i₂)) fun s₃ ⟨⟨i₃, k₃, len₃⟩, v₃⟩ => ?_)
+  refine WP.seq (WP.mono (WP.preservedV (lengths_ok hp i₂) (by lit_decide)) fun s₃ ⟨⟨i₃, k₃, len₃⟩, v₃⟩ => ?_)
   have st₃ : stateAt s₃.mem (off (cx s₀) 64) = Spec.ChaCha20.initState (K s₀) 0 (N s₀) := by
     rw [stateAt_frame k₃.frame (by rdisj_all), stateAt_frame k₂.frame (by rdisj_all), h₁.st]
   have D₃ : bytesAt s₃.mem (dp s₀) (L s₀) = D s₀ := by
@@ -89,13 +89,13 @@ theorem sealStitched_correct (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State}
   refine WP.seq (WP.mono (WP.preservedV (macPad_ok hp (p := .x22) (n := .x23) ⟨.inr rfl, .inr rfl⟩
     (srcAt hp (p := pre true T) (by omega)) i₅.x21 i₅.rd i₅.wr
     (by rw [k₅.cs _ (pres .x22) (pres30 .x22), hc.x22])
-    (by rw [k₅.cs _ (pres .x23) (pres30 .x23), hc.x23]))) fun s₆ ⟨⟨k₆, r₆⟩, v₆⟩ => ?_)
+    (by rw [k₅.cs _ (pres .x23) (pres30 .x23), hc.x23])) (by lit_decide)) fun s₆ ⟨⟨k₆, r₆⟩, v₆⟩ => ?_)
   have i₆ := mac_inv0 i₅ k₆
-  refine WP.seq (WP.mono (WP.preservedV (absorbLengths_ok0 hp i₆)) fun s₇ ⟨⟨i₇, k₇, r₇⟩, v₇⟩ => ?_)
-  refine WP.seq (WP.mono (WP.preservedV (finalizeTo_ok0 hp i₇ (out := 48) (.inl (by lit_omega))))
+  refine WP.seq (WP.mono (WP.preservedV (absorbLengths_ok0 hp i₆) (by lit_decide)) fun s₇ ⟨⟨i₇, k₇, r₇⟩, v₇⟩ => ?_)
+  refine WP.seq (WP.mono (WP.preservedV (finalizeTo_ok0 hp i₇ (out := 48) (.inl (by lit_omega))) (by lit_decide))
     fun s₈ ⟨⟨k₈, tag₈⟩, v₈⟩ => ?_)
   refine WP.mono (WP.preservedV (restore_ok hp (by rw [k₈.cs _ (pres .x21) (pres30 .x21), i₇.x21])
-    (i₇.saved.frame k₈.frame (by rdisj_all)) (by rw [k₈.rd, i₇.rd]) (by rw [k₈.wr, i₇.wr])))
+    (i₇.saved.frame k₈.frame (by rdisj_all)) (by rw [k₈.rd, i₇.rd]) (by rw [k₈.wr, i₇.wr])) (by lit_decide))
     fun s₉ ⟨⟨⟨rs₉, g₉, m₉⟩, sp₉⟩, v₉⟩ => ?_
   -- The message absorbed.
   have R₄ := hc.mac

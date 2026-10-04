@@ -11,18 +11,40 @@
 
 use crate::arch::blake2b::{vg_blake2b_finalize, vg_blake2b_init, vg_blake2b_update};
 
+/// `vg_blake2b_update`, which keeps its working space on its own stack,
+/// taking the empty working space `blake2!` passes.
+///
+/// # Safety
+///
+/// As for `vg_blake2b_update`.
+unsafe fn update(state: *mut [u8; 192], count: u64, data: *const u8, len: usize, _: *mut [u64; 0]) {
+    // SAFETY: the caller's obligations.
+    unsafe { vg_blake2b_update(state, count, data, len) }
+}
+
+/// `vg_blake2b_finalize`, which keeps its working space on its own stack,
+/// taking the empty working space `blake2!` passes.
+///
+/// # Safety
+///
+/// As for `vg_blake2b_finalize`.
+unsafe fn finalize(state: *mut [u8; 192], count: u64, out: *mut [u8; 64], _: *mut [u64; 0]) {
+    // SAFETY: the caller's obligations.
+    unsafe { vg_blake2b_finalize(state, count, out) }
+}
+
 pub use crate::hmac::InvalidMac;
 
 super::blake2::blake2!(
     /// An incremental BLAKE2b computation of an `N`-byte digest.
     Blake2b {
         state: 192,
-        scratch: 72,
+        scratch: 0,
         block: 128,
         max: 64,
         init: vg_blake2b_init,
         backends: Blake2bBackend {
-            Scalar => (vg_blake2b_update, vg_blake2b_finalize),
+            Scalar => (update, finalize),
         },
     }
 );

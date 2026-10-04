@@ -4,6 +4,7 @@ import VerifiedGarbage.Proof.Sha256.AArch64.Variant
 import VerifiedGarbage.Proof.Sha256.Md
 import VerifiedGarbage.Proof.Hmac.Generic.Common
 import VerifiedGarbage.TCB.AArch64.Target
+import VerifiedGarbage.Proof.Framework.TaintBatch
 
 /-!
 # SHA-224 on AArch64, as a Merkle–Damgård hash function
@@ -39,9 +40,9 @@ def hash (v : Compress) : Hash where
   compC := v.code
   initN := Spec.Sha256.init224Api.name
   initC := Impl.Sha256.AArch64.Stream.init224
-  updN := Spec.Sha256.updateApi.name ++ v.suffix
+  updN := Spec.Sha256.updateScratchApi.name ++ v.suffix
   updC := v.update
-  finN := Spec.Sha256.finalizeApi.name ++ v.suffix
+  finN := Spec.Sha256.finalizeScratchApi.name ++ v.suffix
   finC := v.finalize
   hmacInitN := Spec.Hmac.sha224I.initApi.name ++ v.suffix
   hmacFinN := Spec.Hmac.sha224I.finalizeApi.name ++ v.suffix
@@ -51,24 +52,24 @@ def hash (v : Compress) : Hash where
 def coreH : Hash := ⟨Impl.Pbkdf2.AArch64.ofMd Impl.Sha256.AArch64.Stream.params, 28, 104, "", .block [], "",
   .block [], "", .block [], "", .block [], "", "", ""⟩
 
-theorem coreOK : CoreOK coreH where
-  pbk := ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩,
-    ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩,
-    ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩,
-    ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩
-  iter := ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩,
-    ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩
-  hinit := {
-    pro := ⟨_, by taint_decide⟩
-    argI := by
-      simp only [List.mem_cons, List.not_mem_nil, or_false]
-      rintro st (rfl | rfl) <;> exact ⟨_, by taint_decide⟩
-    keys := ⟨_, by taint_decide⟩
-    mid := ⟨_, by taint_decide⟩
-    restore := ⟨_, by taint_decide⟩ }
-  hfin := ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩
-  fitI := by decide
-  fitF := by decide
+theorem coreOK : CoreOK coreH := by
+  refine {
+    pbk := ⟨⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩,
+      ⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩,
+      ⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩,
+      ⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩⟩
+    iter := ⟨⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩,
+      ⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩⟩
+    hinit := {
+      pro := ⟨?_, ?_⟩
+      argI := List.forall_mem_cons.mpr ⟨⟨?_, ?_⟩, List.forall_mem_cons.mpr ⟨⟨?_, ?_⟩, List.forall_mem_nil _⟩⟩
+      keys := ⟨?_, ?_⟩
+      mid := ⟨?_, ?_⟩
+      restore := ⟨?_, ?_⟩ }
+    hfin := ⟨⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩⟩
+    fitI := ?_
+    fitF := ?_ }
+  taint_decide_all
 
 /-- The representation moves with the state's bytes. -/
 theorem sha224_repr (m m' : Mem) (p q : Addr) (msg : List Byte)

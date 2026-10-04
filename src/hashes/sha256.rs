@@ -39,26 +39,80 @@ use crate::arch::sha256::{
 };
 use crate::arch::sha256::{vg_sha256_finalize, vg_sha256_init, vg_sha256_update};
 
+/// Defines `$update` and `$finalize`: `$vg_update` and `$vg_finalize`, which
+/// keep their working space on their own stack, taking the empty working
+/// space `streaming_hash!` passes (SHA-224's too, `super::sha224`).
+macro_rules! own_scratch {
+    ($(#[$cfg:meta])* $update:ident => $vg_update:ident, $finalize:ident => $vg_finalize:ident) => {
+        /// The `update` of a backend, which keeps its working space on its
+        /// own stack.
+        ///
+        /// # Safety
+        ///
+        /// As for the function it calls.
+        $(#[$cfg])*
+        pub(super) unsafe fn $update(
+            state: *mut [u8; 96],
+            count: u64,
+            data: *const u8,
+            len: usize,
+            _: *mut [u64; 0],
+        ) {
+            // SAFETY: the caller's obligations.
+            unsafe { $vg_update(state, count, data, len) }
+        }
+
+        /// The `finalize` of a backend, which keeps its working space on its
+        /// own stack.
+        ///
+        /// # Safety
+        ///
+        /// As for the function it calls.
+        $(#[$cfg])*
+        pub(super) unsafe fn $finalize(state: *mut [u8; 96], count: u64, out: *mut [u8; 32], _: *mut [u64; 0]) {
+            // SAFETY: the caller's obligations.
+            unsafe { $vg_finalize(state, count, out) }
+        }
+    };
+}
+
+own_scratch!(update => vg_sha256_update, finalize => vg_sha256_finalize);
+own_scratch!(
+    #[cfg(target_arch = "aarch64")]
+    update_sha2 => vg_sha256_update_sha2,
+    finalize_sha2 => vg_sha256_finalize_sha2
+);
+own_scratch!(
+    #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+    update_shani => vg_sha256_update_shani,
+    finalize_shani => vg_sha256_finalize_shani
+);
+own_scratch!(
+    #[cfg(target_arch = "x86_64")]
+    update_avx2 => vg_sha256_update_avx2,
+    finalize_avx2 => vg_sha256_finalize_avx2
+);
+
 super::streaming_hash!(
     /// An incremental SHA-256 computation.
     Sha256 {
         state: 96,
-        scratch: 76,
+        scratch: 0,
         block: 64,
         output: 32,
         final_hash: 32,
         init: vg_sha256_init,
         backends: Sha256Backend {
-            Scalar => (vg_sha256_update, vg_sha256_finalize),
+            Scalar => (update, finalize),
             #[cfg(target_arch = "aarch64")]
             Sha2 if [VG_SHA256_UPDATE_SHA2_FEATURES, VG_SHA256_FINALIZE_SHA2_FEATURES] =>
-                (vg_sha256_update_sha2, vg_sha256_finalize_sha2),
+                (update_sha2, finalize_sha2),
             #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
             ShaNi if [VG_SHA256_UPDATE_SHANI_FEATURES, VG_SHA256_FINALIZE_SHANI_FEATURES] =>
-                (vg_sha256_update_shani, vg_sha256_finalize_shani),
+                (update_shani, finalize_shani),
             #[cfg(target_arch = "x86_64")]
             Avx2 if [VG_SHA256_UPDATE_AVX2_FEATURES, VG_SHA256_FINALIZE_AVX2_FEATURES] =>
-                (vg_sha256_update_avx2, vg_sha256_finalize_avx2),
+                (update_avx2, finalize_avx2),
         },
     }
 );

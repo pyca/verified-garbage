@@ -191,7 +191,7 @@ pub(crate) unsafe extern "C" fn vg_hmac_sha224_finalize(inner: *mut [u8; 96], ou
         "push ecx",
         "push eax",
         "push ebx",
-        "call {vg_sha256_finalize}",
+        "call {vg_sha256_finalize_scratch}",
         "pop eax",
         "pop eax",
         "pop eax",
@@ -304,7 +304,7 @@ pub(crate) unsafe extern "C" fn vg_hmac_sha224_finalize(inner: *mut [u8; 96], ou
         "mov ebp, DWORD PTR [eax+172]",
         "ret",
         ".p2align 6",
-        vg_sha256_finalize = sym super::sha256::vg_sha256_finalize,
+        vg_sha256_finalize_scratch = sym super::sha256::vg_sha256_finalize_scratch,
         vg_sha256_compress = sym super::sha256::vg_sha256_compress,
     )
 }
@@ -506,7 +506,7 @@ pub(crate) unsafe extern "C" fn vg_hmac_sha224_finalize_shani(inner: *mut [u8; 9
         "push ecx",
         "push eax",
         "push ebx",
-        "call {vg_sha256_finalize_shani}",
+        "call {vg_sha256_finalize_scratch_shani}",
         "pop eax",
         "pop eax",
         "pop eax",
@@ -619,7 +619,7 @@ pub(crate) unsafe extern "C" fn vg_hmac_sha224_finalize_shani(inner: *mut [u8; 9
         "mov ebp, DWORD PTR [eax+172]",
         "ret",
         ".p2align 6",
-        vg_sha256_finalize_shani = sym super::sha256::vg_sha256_finalize_shani,
+        vg_sha256_finalize_scratch_shani = sym super::sha256::vg_sha256_finalize_scratch_shani,
         vg_sha256_compress_shani = sym super::sha256::vg_sha256_compress_shani,
     )
 }

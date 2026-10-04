@@ -41,8 +41,8 @@ def callWith (args : List Instr) (name : String) (code : Prog isa) : Prog isa :=
 
 def hash : Prog isa :=
   .seq (callWith initArgs Spec.Sha512.init512Api.name (Sha512.X86.Stream.init Spec.Sha512.H0_512))
-  (.seq (callWith updateArgs Spec.Sha512.updateApi.name Sha512.X86.Stream.update)
-    (callWith finalizeArgs Spec.Sha512.finalizeApi.name Sha512.X86.Stream.finalize))
+  (.seq (callWith updateArgs Spec.Sha512.updateScratchApi.name Sha512.X86.Stream.update)
+    (callWith finalizeArgs Spec.Sha512.finalizeScratchApi.name Sha512.X86.Stream.finalize))
 
 def body : Prog isa := .seq hash (.seq (.block prune)
   (.seq (callWith baseArgs "vg_ed25519_scalar_base" scalarBase) (.block wipe)))

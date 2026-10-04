@@ -125,7 +125,7 @@ theorem setup_ok {s₀ : State} (hp : APre s₀) {s : State} (h : Inv s₀ s) :
     exact ⟨by rw [m₂, m₁], by rw [g₂ _ (by decide), x0₁], by rw [g₂ _ (by decide), x1₁],
       by rw [g₂ _ (by decide), x2₁], by rw [g₂ _ (by decide), x3₁], by rw [x5₂, x2₁],
       k.cs _ (pres .x22) (pres30 .x22), k.cs _ (pres .x23) (pres30 .x23), k⟩
-  exact (WP.preservedV core).mono fun _ ⟨⟨a, b, c, d, e, f, g, i, k⟩, hv⟩ => ⟨a, b, c, d, e, f, g, i, k, hv⟩
+  exact (WP.preservedV core (by lit_decide)).mono fun _ ⟨⟨a, b, c, d, e, f, g, i, k⟩, hv⟩ => ⟨a, b, c, d, e, f, g, i, k, hv⟩
 
 /-- The ChaCha20 state after `cryptSetup`: counter 1. -/
 theorem setup_cnt {s₀ : State} {s : State}
