@@ -78,9 +78,9 @@ structure Env (s₀ : State) (a m : Nat → Nat → Nat) (k : Nat → Nat) (bl :
   mlt : ∀ p < 2, ∀ j < 20, m p j < 2 ^ 52
   klt : ∀ p < 2, k p < 2 ^ 52
   blt : ∀ p < 2, ∀ l < 20, bl p l < 2 ^ 52
-  rd8 : ∀ d n, d + n ≤ lim .r8 → InRegions (s₀.rd ++ s₀.wr) (s₀.gpr .r8 + BitVec.ofNat 64 d) n
-  rd9 : ∀ d n, d + n ≤ lim .r9 + 24 → InRegions (s₀.rd ++ s₀.wr) (s₀.gpr .r9 + BitVec.ofNat 64 d) n
-  rd10 : ∀ d n, d + n ≤ lim .r10 → InRegions (s₀.rd ++ s₀.wr) (s₀.gpr .r10 + BitVec.ofNat 64 d) n
+  rd8 : ∀ d n, 0 < n → d + n ≤ lim .r8 → InRegions (s₀.rd ++ s₀.wr) (s₀.gpr .r8 + BitVec.ofNat 64 d) n
+  rd9 : ∀ d n, 0 < n → d + n ≤ lim .r9 + 24 → InRegions (s₀.rd ++ s₀.wr) (s₀.gpr .r9 + BitVec.ofNat 64 d) n
+  rd10 : ∀ d n, 0 < n → d + n ≤ lim .r10 → InRegions (s₀.rd ++ s₀.wr) (s₀.gpr .r10 + BitVec.ofNat 64 d) n
 
 /-- The limbs of prime `p` after `n` steps. -/
 def lm (a m : Nat → Nat → Nat) (k : Nat → Nat) (bl : Nat → Nat → Nat) (p n : Nat) : Nat → Nat :=
@@ -129,11 +129,11 @@ theorem InBlk.stepIn {s₀ s : State} {a m : Nat → Nat → Nat} {k : Nat → N
   · intro b d n hn hdn
     rw [h.rd, h.wr]
     by_cases b8 : b = .r8
-    · subst b8; rw [h.r8]; exact e.rd8 d n hdn
+    · subst b8; rw [h.r8]; exact e.rd8 d n hn hdn
     by_cases b9 : b = .r9
-    · subst b9; rw [h.r9, ofNat_add64]; exact e.rd9 _ n (by rw [lim9] at hdn ⊢; omega)
+    · subst b9; rw [h.r9, ofNat_add64]; exact e.rd9 _ n hn (by rw [lim9] at hdn ⊢; omega)
     by_cases b10 : b = .r10
-    · subst b10; rw [h.r10]; exact e.rd10 d n hdn
+    · subst b10; rw [h.r10]; exact e.rd10 d n hn hdn
     · rw [lim_other b8 b9 b10] at hdn
       omega
 
