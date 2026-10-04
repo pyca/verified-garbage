@@ -414,12 +414,11 @@ structure AInv (s₀ : State) (C W SP A : BitVec 32) (R N : Nat) (D : BitVec 32)
 theorem sub_wS {W : BitVec 32} {d k : Nat} (h₁ : 200 ≤ d) (h₂ : d + k ≤ 256) :
     Region.Sub ⟨w64 W + BitVec.ofNat 64 d, k⟩ (wS W) := Offset.sub _ h₁ (by omega)
 
-/-- One component: its descriptor read (`adNext_ok`), its CMAC into the
-working space (`cmacOf_ok`) and the step of S2V (`adStep_wp`). -/
-theorem adBody_ok (v : Ctr32Impl) {s₀ : State} {C W SP A : BitVec 32} {R N : Nat} {D : BitVec 32} {n i : Nat}
+/-- The `i`-th descriptor read: what the component's CMAC starts from. -/
+theorem adNext_wp {s₀ : State} {C W SP A : BitVec 32} {R N : Nat} {D : BitVec 32} {n i : Nat}
     (hA : AdCtx s₀ C W SP A R N) (hiN : i < N) {s : State} (h : AInv s₀ C W SP A R N D n i s) :
-    WP isa (.seq (.block adNext) (.seq (cmacOf v.callee v.suffix stOff) (.block adStep))) s
-      fun s' => AInv s₀ C W SP A R N D n (i + 1) s' ∧ s'.zf = some (decide (i + 1 = N)) := by
+    WP isa (.block adNext) s fun s₁ => CmacPre C W SP R (compA s₀.mem A i) (compL s₀.mem A i) s₁ ∧
+      Kept s₀ C W SP R D n [] s₁ ∧ Frame [⟨w64 W + BitVec.ofNat 64 strO, 8⟩] s.mem s₁.mem := by
   have L := hA.lay
   have K := h.kept
   have hRb : R ≤ 14 := by rcases hA.rounds with h | h | h <;> omega
@@ -443,7 +442,6 @@ theorem adBody_ok (v : Ctr32Impl) {s₀ : State} {C W SP A : BitVec 32} {R N : N
   have w4 := wd (d := 4) (by decide)
   rw [Nat.add_zero] at w0
   obtain ⟨s₁, run₁, m₁, bp₁, sp₁, rd₁, wr₁⟩ := adNext_ok L K.env h.ads (by omega) rD dW
-  refine WP.seq (WP.of_runBlock ⟨s₁, run₁, ?_⟩)
   have E₁ : Env C W SP s₁ := ⟨bp₁, sp₁, K.env.perm.of_eq rd₁ wr₁⟩
   have f₁ : Frame [⟨w64 W + BitVec.ofNat 64 strO, 8⟩] s.mem s₁.mem := by
     rw [m₁]
@@ -454,12 +452,22 @@ theorem adBody_ok (v : Ctr32Impl) {s₀ : State} {C W SP A : BitVec 32} {R N : N
   have K₁ := K.step L (by simp) E₁ rd₁ wr₁ f₁ fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr; exact .inl ⟨wS W, by simp, sub_wS (by decide) (by decide)⟩
   have hc₁ := hA.comps i hiN
-  -- The component's CMAC.
-  have P₁ : CmacPre C W SP R (compA s₀.mem A i) (compL s₀.mem A i) s₁ :=
+  refine WP.of_runBlock ⟨s₁, run₁, ?_, K₁, f₁⟩
+  exact
     ⟨E₁, K₁.slots.ctx, K₁.slots.rounds,
       by rw [m₁, slotv, readW_writeW_off _ _ _ (by decide) (by decide) (by decide), Mem.readW_writeW_self32, w0],
       by rw [m₁, slotv, Mem.readW_writeW_self32, w4]; exact (Proof.AesGcm.X86.ofNat_toNat32 _).symm,
       BitVec.isLt _, hc₁.of_eq K₁.rd K₁.wr⟩
+
+/-- One component: its descriptor read (`adNext_wp`), its CMAC into the
+working space (`cmacOf_ok`) and the step of S2V (`adStep_wp`). -/
+theorem adBody_ok (v : Ctr32Impl) {s₀ : State} {C W SP A : BitVec 32} {R N : Nat} {D : BitVec 32} {n i : Nat}
+    (hA : AdCtx s₀ C W SP A R N) (hiN : i < N) {s : State} (h : AInv s₀ C W SP A R N D n i s) :
+    WP isa (.seq (.block adNext) (.seq (cmacOf v.callee v.suffix stOff) (.block adStep))) s
+      fun s' => AInv s₀ C W SP A R N D n (i + 1) s' ∧ s'.zf = some (decide (i + 1 = N)) := by
+  have L := hA.lay
+  have hc₁ := hA.comps i hiN
+  refine WP.seq (WP.mono (adNext_wp hA hiN h) fun s₁ ⟨P₁, K₁, f₁⟩ => ?_)
   refine WP.seq (WP.mono (cmacOf_ok v L hA.rounds P₁) fun s₂ M => ?_)
   have K₂ := K₁.step L (by simp) M.env M.rd M.wr M.frame fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -542,5 +550,82 @@ theorem s2vAds_ok (v : Ctr32Impl) {s₀ : State} {C W SP A : BitVec 32} {R N : N
       exact (congrArg (fun j => AInv s₀ C W SP A R N D n j t') he).mp ht'
     · right
       refine ⟨by rw [eval_ne hz']; simp [he], N - (i + 1), by omega, i + 1, rfl, by omega, ht'⟩
+
+/-! ## Constant time -/
+
+/-- `start` is constant time from the environment and the slots it reads. -/
+theorem start_ct (v : Ctr32Impl) {C W SP : BitVec 32} (L : Lay C W SP) {R : Nat} (hR : R = 10 ∨ R = 12 ∨ R = 14) :
+    CT (fun s => Env C W SP s ∧ slotv s.mem W ctxO = C ∧ slotv s.mem W roundsO = BitVec.ofNat 32 R)
+      (start v.callee v.suffix) := by
+  refine CT.block_seq [.ebp] (pin_ebp fun s h => h.1.ebp) (by taint_decide) (fun s hs => startPre_ok L hs.1 hs.2.1
+    hs.2.2) ?_
+  refine finCall_ct v L hR (y := 2560) (.inr ⟨by decide, by decide⟩) (P := W + BitVec.ofNat 32 16) (l := 16)
+    (Nat.le_refl _) fun s₁ ⟨s, hs, _, ax, cx, dx, bx, si, di, bp, sp, rd, wr⟩ => ?_
+  have E₁ : Env C W SP s₁ := ⟨bp, sp, hs.1.perm.of_eq rd wr⟩
+  exact ⟨E₁, srcW L E₁.perm (t := 16) (k := 16) (by decide),
+    by rw [L.aW (o := 16) (by decide)]; exact Lay.w_w (.inl (by decide)) (by decide) (by decide), ax, cx, dx, bx, si,
+    di⟩
+
+theorem CT.of_empty {I : State → Prop} {c : Prog isa} (h : ∀ s, ¬ I s) : CT I c :=
+  RelCT.of_false fun s₁ _ hp => h s₁ hp.1
+
+/-- `AInv` from some entry state whose descriptors list the public
+components `ca`, `cl`. -/
+def ACT (C W SP A : BitVec 32) (R N : Nat) (ca : Nat → BitVec 32) (cl : Nat → Nat) (i : Nat) (s : State) : Prop :=
+  ∃ s₀ D n, AdCtx s₀ C W SP A R N ∧ (∀ j < N, compA s₀.mem A j = ca j ∧ compL s₀.mem A j = cl j) ∧
+    AInv s₀ C W SP A R N D n i s
+
+/-- `adNext`, from the descriptor's address the slot holds. -/
+theorem adNext_ct {C W SP A : BitVec 32} (L : Lay C W SP) {R N : Nat} {ca : Nat → BitVec 32} {cl : Nat → Nat}
+    {i : Nat} : CT (ACT C W SP A R N ca cl i) (.block adNext) := by
+  have e : adNext = ([.mov .eax (slot adsO)] : List Instr) ++ [.mov .ecx (.mem (at_ .eax 0)),
+      .store (at_ .ebp strO) .ecx, .mov .ecx (.mem (at_ .eax 4)), .store (at_ .ebp slenO) .ecx] := rfl
+  rw [e]
+  refine RelCT.block_append (CT.seq (J := fun s => s.gpr .ebp = W ∧ s.gpr .eax = A + BitVec.ofNat 32 (8 * i))
+    (CT.taint [.ebp] (pin_ebp fun s ⟨_, _, _, _, _, h⟩ => h.kept.env.ebp) (by taint_decide))
+    (fun s ⟨_, _, _, _, _, h⟩ => WP.of_runBlock ⟨_, by crun [h.kept.env.ebp, L.aW, h.kept.env.perm.wR],
+      by cregs [h.kept.env.ebp], by cregs [h.ads]⟩)
+    (CT.taint [.ebp, .eax] (pin2 fun _ h => h) (by taint_decide)))
+
+theorem adBody_ct (v : Ctr32Impl) {C W SP A : BitVec 32} (L : Lay C W SP) {R N : Nat}
+    (hR : R = 10 ∨ R = 12 ∨ R = 14) {ca : Nat → BitVec 32} {cl : Nat → Nat} {i : Nat} (hiN : i < N)
+    (hcl : cl i < 2 ^ 32) :
+    CT (ACT C W SP A R N ca cl i) (.seq (.block adNext) (.seq (cmacOf v.callee v.suffix stOff) (.block adStep))) := by
+  refine CT.seq (J := CmacPre C W SP R (ca i) (cl i)) (adNext_ct L)
+    (fun s ⟨s₀, D, n, hA, hc, h⟩ => WP.mono (adNext_wp hA hiN h) fun s₁ ⟨P₁, _⟩ => by
+      rw [(hc i hiN).1, (hc i hiN).2] at P₁; exact P₁) ?_
+  exact CT.seq (J := fun s => s.gpr .ebp = W) (cmacOf_ct v L hR hcl)
+    (fun s hs => WP.mono (cmacOf_ok v L hR hs) fun s' M => M.env.ebp)
+    (CT.taint [.ebp] (pin_ebp fun _ h => h) (by taint_decide))
+
+/-- The loop over the components is constant time. -/
+theorem s2vLoop_ct (v : Ctr32Impl) {C W SP A : BitVec 32} (L : Lay C W SP) {R N : Nat}
+    (hR : R = 10 ∨ R = 12 ∨ R = 14) {ca : Nat → BitVec 32} {cl : Nat → Nat} (hcl : ∀ j < N, cl j < 2 ^ 32) (k : Nat) :
+    CT (fun s => ∃ i, k = N - i ∧ i < N ∧ ACT C W SP A R N ca cl i s)
+      (.loop (.seq (.block adNext) (.seq (cmacOf v.callee v.suffix stOff) (.block adStep))) .ne) := by
+  refine CT.loopN (fun k s => ∃ i, k = N - i ∧ i < N ∧ ACT C W SP A R N ca cl i s) (fun k => ?_)
+    (fun k s ⟨i, hk, hi, s₀, D, n, hA, hc, h⟩ => ?_) k
+  · by_cases hk : 0 < k ∧ k ≤ N
+    · exact (adBody_ct v L hR (A := A) (N := N) (ca := ca) (cl := cl) (i := N - k) (by omega) (hcl (N - k) (by omega))).mono fun s ⟨i, hk', hi, h⟩ => by
+        rw [show N - k = i by omega]; exact h
+    · exact CT.of_empty fun s ⟨i, hk', hi, _⟩ => hk ⟨by omega, by omega⟩
+  · refine WP.mono (adBody_ok v hA hi h) fun s' ⟨h', hz⟩ => ⟨by omega, by rw [eval_ne hz]; simp; omega,
+      fun hk1 => ⟨i + 1, by omega, by omega, s₀, D, n, hA, hc, h'⟩⟩
+
+/-- `s2vAds` is constant time. -/
+theorem s2vAds_ct (v : Ctr32Impl) {C W SP A : BitVec 32} (L : Lay C W SP) {R N : Nat}
+    (hR : R = 10 ∨ R = 12 ∨ R = 14) (hN : N < 2 ^ 32) {ca : Nat → BitVec 32} {cl : Nat → Nat}
+    (hcl : ∀ j < N, cl j < 2 ^ 32) :
+    CT (ACT C W SP A R N ca cl 0) (s2vAds v.callee v.suffix) := by
+  refine CT.seq (J := fun s => ACT C W SP A R N ca cl 0 s ∧ s.zf = some (decide (N = 0)))
+    (CT.taint [.ebp] (pin_ebp fun s ⟨_, _, _, _, _, h⟩ => h.kept.env.ebp) (by taint_decide))
+    (fun s ⟨s₀, D, n, hA, hc, h⟩ => ?_) ?_
+  · have l₀ := h.left
+    rw [Nat.sub_zero] at l₀
+    obtain ⟨s₁, run₁, m₁, zf₁, bp₁, sp₁, rd₁, wr₁⟩ := leftTest_ok L h.kept.env hN l₀
+    exact WP.of_runBlock ⟨s₁, run₁, ⟨s₀, D, n, hA, hc, h.keep L m₁ bp₁ sp₁ rd₁ wr₁⟩, zf₁⟩
+  refine CT.ite (decide (N = 0)) (fun s h => eval_e h.2) (fun _ => CT.nil) fun hz => ?_
+  have hN0 : N ≠ 0 := of_decide_eq_false hz
+  exact (s2vLoop_ct v L hR hcl N).mono fun s ⟨h, _⟩ => ⟨0, by omega, by omega, h⟩
 
 end VG.Proof.AesSiv.X86
