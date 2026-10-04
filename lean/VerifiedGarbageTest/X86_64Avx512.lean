@@ -9,7 +9,8 @@ instruction through its intrinsic (`_mm512_add_epi32`, `_mm512_rol_epi32`,
 legacy SSE instructions and `vzeroupper` leave in bits 511:256, and the
 unmasked EVEX.512 forms of VPADDQ, VPMULUDQ, VPANDQ, VPORQ, VPANDNQ, VPSLLQ,
 VPSRLQ, VPBROADCASTQ and VMOVDQA64, on an Intel Xeon (Cascade Lake), and
-of VPRORQ and VPERMQ (immediate forms), on an Intel Xeon (Emerald Rapids); and the
+of VPRORQ and VPERMQ (immediate forms) and the EVEX.256 and EVEX.128 forms of
+VPRORQ, on an Intel Xeon (Emerald Rapids); and the
 embedded-broadcast forms, run as the printed strings in Rust naked
 functions), and is compared with the model's result on the same inputs.
 -/
@@ -158,6 +159,31 @@ def permq (n : BitVec 8) : BitVec 512 := run (.vpermq .xmm5 .xmm0 n)
 #guard ((ZOp.vprorq .xmm5 .xmm0 24).exec s).zmm .xmm0 == A
 #guard ((ZOp.vpermq .xmm5 .xmm0 0x39).exec s).zmm .xmm1 == B
 
+/-! The `EVEX.256` and `EVEX.128` forms (AVX512VL), `vprorq ymm5, ymm0, n`
+and `vprorq xmm5, xmm0, n`, run as the printed strings in inline assembly on
+an Intel Xeon (Emerald Rapids) with all of `zmm5` set first: each quadword
+of the low 256 or 128 bits rotated, and the rest of `zmm5` zeroed. -/
+
+/-- `zmm5` after `vprorq ymm5, ymm0, n` (or its `EVEX.128` form). -/
+def vror (n : BitVec 8) (len : VLen := .l256) : BitVec 512 :=
+  ((VOp.vprorq len .xmm5 .xmm0 n).exec s).zmm .xmm5
+
+#guard vror 0 == 0x00000000000000000000000000000000000000000000000000000000000000000f1e2d3c4b5a6978c3d2e1f08796a5b489abcdef01234567fedcba9876543210#512
+#guard vror 1 == 0x0000000000000000000000000000000000000000000000000000000000000000078f169e25ad34bc61e970f843cb52dac4d5e6f78091a2b37f6e5d4c3b2a1908#512
+#guard vror 16 == 0x000000000000000000000000000000000000000000000000000000000000000069780f1e2d3c4b5aa5b4c3d2e1f08796456789abcdef01233210fedcba987654#512
+#guard vror 24 == 0x00000000000000000000000000000000000000000000000000000000000000005a69780f1e2d3c4b96a5b4c3d2e1f08723456789abcdef01543210fedcba9876#512
+#guard vror 32 == 0x00000000000000000000000000000000000000000000000000000000000000004b5a69780f1e2d3c8796a5b4c3d2e1f00123456789abcdef76543210fedcba98#512
+#guard vror 63 == 0x00000000000000000000000000000000000000000000000000000000000000001e3c5a7896b4d2f087a5c3e10f2d4b6913579bde02468acffdb97530eca86421#512
+#guard vror 64 == 0x00000000000000000000000000000000000000000000000000000000000000000f1e2d3c4b5a6978c3d2e1f08796a5b489abcdef01234567fedcba9876543210#512
+#guard vror 100 == 0x0000000000000000000000000000000000000000000000000000000000000000c4b5a69780f1e2d308796a5b4c3d2e1ff0123456789abcde876543210fedcba9#512
+#guard vror 255 == 0x00000000000000000000000000000000000000000000000000000000000000001e3c5a7896b4d2f087a5c3e10f2d4b6913579bde02468acffdb97530eca86421#512
+#guard vror 24 .l128 == 0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000023456789abcdef01543210fedcba9876#512
+#guard vror 63 .l128 == 0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000013579bde02468acffdb97530eca86421#512
+-- In place, and only the destination changes.
+#guard ((VOp.vprorq .l256 .xmm0 .xmm0 24).exec s).zmm .xmm0 == vror 24
+#guard ((VOp.vprorq .l256 .xmm5 .xmm0 24).exec s).zmm .xmm0 == A
+#guard ((VOp.vprorq .l256 .xmm5 .xmm0 24).exec s).zmm .xmm1 == B
+
 -- The destination may be a source, and only the destination changes.
 #guard ((ZOp.zbin .vpaddd .xmm0 .xmm0 .xmm1).exec s).zmm .xmm0 == bin .vpaddd
 #guard ((ZOp.zbin .vpaddd .xmm5 .xmm0 .xmm1).exec s).zmm .xmm0 == A
@@ -225,6 +251,8 @@ def bcst (op : ZBcstOp) (disp : Int) : Option (BitVec 512) :=
 #guard printer.instr (.zop (.vpbroadcastq .xmm12 .xmm13)) == ["vpbroadcastq zmm12, xmm13"]
 #guard printer.instr (.zop (.vmovdqa64 .xmm14 .xmm15)) == ["vmovdqa64 zmm14, zmm15"]
 #guard printer.instr (.zop (.vprorq .xmm1 .xmm14 63)) == ["vprorq zmm1, zmm14, 63"]
+#guard printer.instr (.vop (.vprorq .l256 .xmm1 .xmm14 63)) == ["vprorq ymm1, ymm14, 63"]
+#guard printer.instr (.vop (.vprorq .l128 .xmm15 .xmm2 24)) == ["vprorq xmm15, xmm2, 24"]
 #guard printer.instr (.zop (.vpermq .xmm15 .xmm2 0x93)) == ["vpermq zmm15, zmm2, 147"]
 #guard printer.instr (.vmovdqu32Load .xmm0 { base := .rsi, disp := 64 }) ==
   ["vmovdqu32 zmm0, ZMMWORD PTR [rsi+64]"]
@@ -243,6 +271,9 @@ def bcst (op : ZBcstOp) (disp : Int) : Option (BitVec 512) :=
 
 #guard isa.requires (.zop (.zbin .vpaddd .xmm0 .xmm1 .xmm2)) == ["avx512f"]
 #guard isa.requires (.zop (.vprold .xmm0 .xmm1 7)) == ["avx512f"]
+#guard isa.requires (.zop (.vprorq .xmm0 .xmm1 7)) == ["avx512f"]
+#guard isa.requires (.vop (.vprorq .l256 .xmm0 .xmm1 7)) == ["avx512f", "avx512vl"]
+#guard isa.requires (.vop (.vprorq .l128 .xmm0 .xmm1 7)) == ["avx512f", "avx512vl"]
 #guard isa.requires (.zop (.vpshufd .xmm0 .xmm1 0)) == ["avx512f"]
 #guard isa.requires (.zop (.vshufi32x4 .xmm0 .xmm1 .xmm2 0)) == ["avx512f"]
 #guard isa.requires (.zop (.zbin .vpmuludq .xmm0 .xmm1 .xmm2)) == ["avx512f"]
