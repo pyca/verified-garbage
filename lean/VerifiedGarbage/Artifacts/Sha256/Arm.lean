@@ -23,16 +23,32 @@ def artifacts : List Artifact := [
   { Spec.Sha256.updateApi with
     target := Arm.target
     doc := Spec.Sha256.updateApi.doc
-    code := Impl.Sha256.Arm.Stream.update
-    contract := Spec.Sha256.updateContract Arm.abi
+    code := Impl.StackScratch.Arm.withStackScratch 624 2 Impl.Sha256.Arm.Stream.update
+    contract := Spec.Sha256.updateContract Arm.abi 624
+    stack := 624
     verified := Proof.Sha256.Arm.Shared.update
     spSafe := Code.all_of_forall (fun _ => rfl) _ },
   { Spec.Sha256.finalizeApi with
     target := Arm.target
     doc := Spec.Sha256.finalizeApi.doc
-    code := Impl.Sha256.Arm.Stream.finalize
-    contract := Spec.Sha256.finalizeContract Arm.abi
+    code := Impl.StackScratch.Arm.withStackScratch 624 1 Impl.Sha256.Arm.Stream.finalize
+    contract := Spec.Sha256.finalizeContract Arm.abi 624
+    stack := 624
     verified := Proof.Sha256.Arm.Shared.finalize
+    spSafe := Code.all_of_forall (fun _ => rfl) _ },
+  { Spec.Sha256.updateScratchApi with
+    target := Arm.target
+    doc := Spec.Sha256.updateScratchApi.doc
+    code := Impl.Sha256.Arm.Stream.update
+    contract := Spec.Sha256.updateScratchContract Arm.abi
+    verified := Proof.Sha256.Arm.Shared.updateScratch
+    spSafe := Code.all_of_forall (fun _ => rfl) _ },
+  { Spec.Sha256.finalizeScratchApi with
+    target := Arm.target
+    doc := Spec.Sha256.finalizeScratchApi.doc
+    code := Impl.Sha256.Arm.Stream.finalize
+    contract := Spec.Sha256.finalizeScratchContract Arm.abi
+    verified := Proof.Sha256.Arm.Shared.finalizeScratch
     spSafe := Code.all_of_forall (fun _ => rfl) _ }]
 
 end VG.Artifacts.Sha256.Arm

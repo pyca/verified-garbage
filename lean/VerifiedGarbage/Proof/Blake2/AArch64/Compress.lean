@@ -127,10 +127,10 @@ theorem g_ok (hR : ROk P) {a b c d : Reg}
     List.nodup_nil, and_true] at hs hs'
   apply WP.of_runBlock
   simp only [Impl.Blake2.AArch64.g, sz_bits, ws_bits, T]
-  simp (config := {decide := true}) only [runBlock_cons, runStep_some, runBlock_nil,
+  simp only [↓reduceIte, and_self, runBlock_cons, runStep_some, runBlock_nil,
     exec_add, exec_logic, exec_ror h1, exec_ror h2, exec_ror h3, exec_ror h4, exec_ldr oj,
     exec_ldr ok, isa, State.read, RegUpd.gpr_write, RegUpd.mem_write, RegUpd.rd_write,
-    RegUpd.wr_write, ite_true, ite_false, hs, hs', ha, hb, hc, hd, hx1, hij, hik, hx, hy,
+    RegUpd.wr_write, hs, hs', ha, hb, hc, hd, hx1, hij, hik, hx, hy,
     ext_trunc, Option.some.injEq, exists_eq_left']
   refine ⟨rfl, rfl, rfl, rfl, ?_⟩
   and_intros
@@ -171,7 +171,7 @@ variable {z : Size} (P : Params z.bits)
 
 /-- The work vector `v` is in its registers. -/
 def Vars (s : State) (v : Work z.bits) : Prop :=
-  ∀ k (hk : k < 16), s.gpr (wreg k) = v[k].setWidth 64
+  ∀ k (hk : k < 16), s.gpr (wreg k) = (v[k]'(by omega)).setWidth 64
 
 /-- The rounds invariant, relative to the state `sB` at their start: the work
 vector `v` is in its registers, and nothing else has changed but `T`. -/
@@ -210,7 +210,7 @@ theorem gAt_ok (hR : ROk P) {x y c d : Nat} (hx : x < 16) (hy : y < 16) (hc : c 
       ⟨wreg_ne hc hd ncd, wreg_ne_T hc, wreg_ne_x1 hc⟩, ⟨wreg_ne_T hd, wreg_ne_x1 hd⟩, by decide⟩
   have sj := (Spec.Blake2.sigmaAt r (2 * i)).isLt
   have sk := (Spec.Blake2.sigmaAt r (2 * i + 1)).isLt
-  refine WP.mono (g_ok P hR hs sj sk s v[x] v[y] v[c] v[d] _ _ p (h.vars x hx) (h.vars y hy)
+  refine WP.mono (g_ok P hR hs sj sk s (v[x]'(by omega)) (v[y]'(by omega)) (v[c]'(by omega)) (v[d]'(by omega)) _ _ p (h.vars x hx) (h.vars y hy)
     (h.vars c hc) (h.vars d hd) hm.x1 (hm.inr _ sj) (hm.inr _ sk) (hm.word _ sj) (hm.word _ sk))
     fun s' ⟨ha, hb, hc', hd', ho, hmem, hrd, hwr⟩ => ⟨fun k hk => ?_, fun q hq hT => ?_,
       hmem.trans h.mem, hrd.trans h.rd, hwr.trans h.wr⟩
@@ -274,10 +274,10 @@ variable {z : Size} (P : Params z.bits)
 
 /-- Words `0 … n-1` of the work vector `v` are in their registers. -/
 def PVars (s : State) (v : Work z.bits) (n : Nat) : Prop :=
-  ∀ k (hk : k < 16), k < n → s.gpr (wreg k) = v[k].setWidth 64
+  ∀ k (hk : k < 16), k < n → s.gpr (wreg k) = (v[k]'(by omega)).setWidth 64
 
 theorem PVars.step {s s' : State} {v : Work z.bits} {n : Nat} (hn : n < 16) (h : PVars s v n)
-    (hw : s'.gpr (wreg n) = v[n].setWidth 64) (ho : ∀ q, q ≠ wreg n → s'.gpr q = s.gpr q) :
+    (hw : s'.gpr (wreg n) = (v[n]'(by omega)).setWidth 64) (ho : ∀ q, q ≠ wreg n → s'.gpr q = s.gpr q) :
     PVars s' v (n + 1) := by
   intro k hk hkn
   by_cases e : k = n
@@ -306,7 +306,7 @@ theorem ld_ok (n : Nat) (hn : n < 8) (s : State) (st : Addr) (hx0 : s.gpr .x0 = 
 theorem lds_ok (s : State) (st : Addr) (hx0 : s.gpr .x0 = st)
     (hin : ∀ k < 8, InRegions (s.rd ++ s.wr) (st + BitVec.ofNat 64 (z.bytes * k)) z.bytes)
     (v : Work z.bits)
-    (hv : ∀ k (hk : k < 8), s.mem.readW (st + BitVec.ofNat 64 (z.bytes * k)) z.bits = v[k]) :
+    (hv : ∀ k (hk : k < 8), s.mem.readW (st + BitVec.ofNat 64 (z.bytes * k)) z.bits = (v[k]'(by omega))) :
     ∀ n ≤ 8, WP isa (Impl.Blake2.AArch64.lds (w := z.bits) n) s fun s' =>
       PVars s' v n ∧ (∀ q, q ∉ wregs → s'.gpr q = s.gpr q) ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧
       s'.wr = s.wr := by
@@ -324,15 +324,15 @@ theorem lds_ok (s : State) (st : Addr) (hx0 : s.gpr .x0 = st)
 theorem iv_ok (d : Reg) (x : BitVec 64) (s : State) :
     WP isa (.block (movImm64 d x)) s fun s' => s'.gpr d = x ∧ Only d s s' := by
   apply WP.of_runBlock
-  simp (config := {decide := true}) only [movImm64, runBlock_cons, runStep_some, runBlock_nil, exec,
-    isa, State.read, RegUpd.gpr_write_self, Size.bits, ite_true, BitVec.setWidth_eq, Option.some.injEq, exists_eq_left']
+  simp only [↓reduceIte, Nat.reduceLT, Nat.reduceMul, movImm64, runBlock_cons, runStep_some, runBlock_nil, exec,
+    isa, State.read, RegUpd.gpr_write_self, Size.bits, BitVec.setWidth_eq, Option.some.injEq, exists_eq_left']
   refine ⟨movz_movk64' x, fun q hq => ?_, rfl, rfl, rfl⟩
   simp only [RegUpd.gpr_write_of_ne _ _ _ hq]
 
 theorem iv_getD {n : Nat} (hn : n < 8) : (P.IV.toList.getD n 0).setWidth 64 = P.IV[n].setWidth 64 := by
   simp [List.getD_eq_getElem?_getD, hn]
 
-theorem ivs_ok (s : State) (v : Work z.bits) (hv : ∀ k (hk : k < 8), v[k + 8] = P.IV[k]) (hp : PVars s v 8) :
+theorem ivs_ok (s : State) (v : Work z.bits) (hv : ∀ k (hk : k < 8), (v[k + 8]'(by omega)) = P.IV[k]) (hp : PVars s v 8) :
     ∀ n ≤ 8, WP isa (Impl.Blake2.AArch64.ivs P n) s fun s' =>
       PVars s' v (n + 8) ∧ (∀ q, q ∉ wregs → s'.gpr q = s.gpr q) ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧
       s'.wr = s.wr := by
@@ -370,10 +370,10 @@ theorem ctrLo_ok {scr : Addr} {N : Nat} {fl : BitVec 64} (s : State) (hs : Scr s
       s'.wr = s.wr := by
   simp only [wreg12] at ha ⊢
   apply WP.of_runBlock
-  simp (config := {decide := true}) only [Impl.Blake2.AArch64.ctrLo, sz_bits, wreg12, T,
+  simp only [reduceCtorEq, ↓reduceIte, and_self, Impl.Blake2.AArch64.ctrLo, sz_bits, wreg12, T,
     runBlock_cons, runStep_some, runBlock_nil, exec_ldr_x (show loOff % 8 = 0 ∧ loOff < 32768 by decide),
     exec_logic, isa, State.read, RegUpd.gpr_write, RegUpd.mem_write, RegUpd.rd_write, RegUpd.wr_write,
-    ext64, ite_true, ite_false, hs.x5, hs.inLo, hs.lo, ha, ext_trunc, trunc_ofNat,
+    ext64, hs.x5, hs.inLo, hs.lo, ha, ext_trunc, trunc_ofNat,
     Option.some.injEq, exists_eq_left']
   and_intros
   all_goals first | trivial | (intro q h1 h2; simp only [h1, h2, ite_false])
@@ -437,7 +437,7 @@ def initV (h : HashValue w) (t : Nat) (f : Bool) : Work w :=
 
 theorem F_eq (h : HashValue w) (m : Block w) (t : Nat) (f : Bool) :
     Spec.Blake2.F P h m t f =
-      Vector.ofFn fun i => h[i] ^^^ ((List.range P.r).foldl (Spec.Blake2.round P m) (initV P h t f))[i] ^^^
+      Vector.ofFn fun i => (h[i]'(by omega)) ^^^ ((List.range P.r).foldl (Spec.Blake2.round P m) (initV P h t f))[i] ^^^
         ((List.range P.r).foldl (Spec.Blake2.round P m) (initV P h t f))[i.val + 8] := rfl
 
 /-- The flag word. -/
@@ -470,7 +470,7 @@ theorem init_ok {scr st : Addr} {N : Nat} {f : Bool} (s : State) (hs : Scr scr N
     (hx0 : s.gpr .x0 = st)
     (hin : ∀ k < 8, InRegions (s.rd ++ s.wr) (st + BitVec.ofNat 64 (z.bytes * k)) z.bytes)
     (h : HashValue z.bits)
-    (hh : ∀ k (hk : k < 8), s.mem.readW (st + BitVec.ofNat 64 (z.bytes * k)) z.bits = h[k]) :
+    (hh : ∀ k (hk : k < 8), s.mem.readW (st + BitVec.ofNat 64 (z.bytes * k)) z.bits = (h[k]'(by omega))) :
     WP isa (Impl.Blake2.AArch64.init P) s fun s' =>
       Vars s' (initV P h N f) ∧ (∀ q, q ∉ wregs → q ≠ T → s'.gpr q = s.gpr q) ∧ s'.mem = s.mem ∧
       s'.rd = s.rd ∧ s'.wr = s.wr := by
@@ -569,10 +569,10 @@ theorem fin_ok (s : State) (st : Addr) (hx0 : s.gpr .x0 = st)
     (hin : ∀ k < 8, InRegions (s.rd ++ s.wr) (st + BitVec.ofNat 64 (z.bytes * k)) z.bytes)
     (hout : ∀ k < 8, InRegions s.wr (st + BitVec.ofNat 64 (z.bytes * k)) z.bytes)
     (v : Work z.bits) (hv : Vars s v) (h : HashValue z.bits)
-    (hh : ∀ k (hk : k < 8), s.mem.readW (st + BitVec.ofNat 64 (z.bytes * k)) z.bits = h[k]) :
+    (hh : ∀ k (hk : k < 8), s.mem.readW (st + BitVec.ofNat 64 (z.bytes * k)) z.bits = (h[k]'(by omega))) :
     ∀ n ≤ 8, WP isa (Impl.Blake2.AArch64.fin (w := z.bits) n) s fun s' =>
       (∀ k (hk : k < 8), s'.mem.readW (st + BitVec.ofNat 64 (z.bytes * k)) z.bits =
-        if k < n then h[k] ^^^ v[k] ^^^ v[k + 8] else h[k]) ∧
+        if k < n then (h[k]'(by omega)) ^^^ (v[k]'(by omega)) ^^^ (v[k + 8]'(by omega)) else (h[k]'(by omega))) ∧
       Frame [⟨st, 8 * z.bytes⟩] s.mem s'.mem ∧ (∀ q, q ≠ T → s'.gpr q = s.gpr q) ∧
       s'.rd = s.rd ∧ s'.wr = s.wr := by
   intro n hn
@@ -583,11 +583,11 @@ theorem fin_ok (s : State) (st : Addr) (hx0 : s.gpr .x0 = st)
   | succ n ih =>
     refine WP.seq (WP.mono (ih (by omega)) fun s₁ ⟨hm₁, hf₁, ho₁, hrd₁, hwr₁⟩ => ?_)
     refine WP.mono (fin_step n (by omega) s₁ st (by rw [ho₁ _ (by decide), hx0])
-      (by rw [hrd₁, hwr₁]; exact hin n (by omega)) (by rw [hwr₁]; exact hout n (by omega)) v[n] v[n + 8]
+      (by rw [hrd₁, hwr₁]; exact hin n (by omega)) (by rw [hwr₁]; exact hout n (by omega)) (v[n]'(by omega)) (v[n + 8]'(by omega))
       (by rw [ho₁ _ (wreg_ne_T (by omega))]; exact hv n (by omega))
       (by rw [ho₁ _ (wreg_ne_T (by omega))]; exact hv (n + 8) (by omega)))
       fun s₂ ⟨hm₂, ho₂, hrd₂, hwr₂⟩ => ?_
-    have e : s₁.mem.readW (st + BitVec.ofNat 64 (z.bytes * n)) z.bits = h[n] := by
+    have e : s₁.mem.readW (st + BitVec.ofNat 64 (z.bytes * n)) z.bits = (h[n]'(by omega)) := by
       rw [hm₁ n (by omega)]; simp
     refine ⟨fun k hk => ?_, ?_, fun q hq => (ho₂ q hq).trans (ho₁ q hq), hrd₂.trans hrd₁,
       hwr₂.trans hwr₁⟩
@@ -755,9 +755,9 @@ theorem restore_ok (s : State) (scr : Addr) (hx5 : s.gpr .x5 = scr)
       (∀ q, q ≠ .x25 → q ≠ .x26 → q ≠ .x27 → s'.gpr q = s.gpr q) ∧ s'.mem = s.mem := by
   have o0 := hi 0 (by decide); have o8 := hi 8 (by decide); have o16 := hi 16 (by decide)
   apply WP.of_runBlock
-  simp (config := {decide := true}) only [Impl.Blake2.AArch64.restore, saved, List.map_cons,
+  simp only [reduceCtorEq, ↓reduceIte, Nat.reduceLT, Nat.reduceMod, and_self, Impl.Blake2.AArch64.restore, saved, List.map_cons,
     List.map_nil, runBlock_cons, runStep_some, runBlock_nil, exec_ldr_x, isa, RegUpd.gpr_write,
-    RegUpd.mem_write, RegUpd.rd_write, RegUpd.wr_write, ite_true, ite_false, hx5, eq_self, o0, o8,
+    RegUpd.mem_write, RegUpd.rd_write, RegUpd.wr_write, hx5, eq_self, o0, o8,
     o16, ext64, Option.some.injEq, exists_eq_left']
   refine ⟨trivial, trivial, trivial, fun q h1 h2 h3 => ?_, trivial⟩
   simp only [h1, h2, h3, ite_false]
@@ -791,7 +791,7 @@ theorem stateAt_get' (z : Size) (m : Mem) (p : Addr) {k : Nat} (hk : k < 8) :
   simp only [Spec.Blake2.stateAt, Vector.getElem_ofFn, bits_div]
 
 theorem stateAt_eq' {z : Size} {m : Mem} {p : Addr} {v : HashValue z.bits}
-    (h : ∀ k (hk : k < 8), m.readW (p + BitVec.ofNat 64 (z.bytes * k)) z.bits = v[k]) :
+    (h : ∀ k (hk : k < 8), m.readW (p + BitVec.ofNat 64 (z.bytes * k)) z.bits = (v[k]'(by omega))) :
     Spec.Blake2.stateAt z.bits m p = v := by
   apply Vector.ext
   intro k hk

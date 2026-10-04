@@ -89,7 +89,7 @@ theorem run_step (V : Nat → Fe) :
       run stepOps V X1 = V X1 := by
   simp only [run, stepOps, opOut, opVal, Function.update_apply, X1, X2, Z2, X3, Z3, A, B, C, D, AA, BB,
     Impl.X25519.X86.E, DA, CB]
-  simp (config := {decide := true}) only [ite_true, ite_false]
+  simp only [↓reduceIte, Nat.reduceEqDiff, and_self]
 
 theorem stepOps_valid : ∀ op ∈ stepOps, opValid 288 op = true := by decide
 

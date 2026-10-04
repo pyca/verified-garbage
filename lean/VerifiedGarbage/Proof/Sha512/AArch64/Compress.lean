@@ -131,10 +131,10 @@ theorem schedule_ok (t : Nat) (s : State) (M : Block) (bp scr : Addr)
     have hb := hblk ht
     have ho : 8 * t % 8 = 0 ∧ 8 * t < 32768 := by omega
     simp only [Impl.Sha512.AArch64.schedule, ht, ite_true, T0, T1, T2, T3]
-    simp (config := {decide := true}) only [runBlock_cons, runStep_some,
+    simp only [reduceCtorEq, ↓reduceIte, runBlock_cons, runStep_some,
       runBlock_nil, exec_ldr_x ho, exec_str_x (slot_ok _),
-      exec_rev, isa, State.read, RegUpd.gpr_write, RegUpd.mem_write, RegUpd.rd_write, RegUpd.wr_write, Size.bits, hx1, hx3, hi, hout, ite_true,
-      ite_false, BitVec.setWidth_eq, hb,
+      exec_rev, isa, State.read, RegUpd.gpr_write, RegUpd.mem_write, RegUpd.rd_write, RegUpd.wr_write, Size.bits, hx1, hx3, hi, hout, 
+      BitVec.setWidth_eq, hb,
       Option.some.injEq, exists_eq_left']
     refine ⟨trivial, trivial, trivial, trivial, fun r h0 _ _ _ => ?_⟩
     simp [h0]
@@ -148,10 +148,10 @@ theorem schedule_ok (t : Nat) (s : State) (M : Block) (bp scr : Addr)
     rw [show slot (t - 15) = slot (t + 1) by simp only [slot]; omega] at e15
     rw [show slot (t - 16) = slot t by simp only [slot]; omega] at e16
     simp only [Impl.Sha512.AArch64.schedule, ht, ite_false, T0, T1, T2, T3]
-    simp (config := {decide := true}) only [runBlock_cons, runStep_some,
+    simp only [reduceCtorEq, ↓reduceIte, Nat.reduceLT, runBlock_cons, runStep_some,
       runBlock_nil, exec_ldr_x (slot_ok _),
       exec_str_x (slot_ok _), exec_add, exec_logic, exec_ror_x, exec_lsr_x, isa, State.read,
-      RegUpd.gpr_write, RegUpd.mem_write, RegUpd.rd_write, RegUpd.wr_write, Size.bits, hx3, hin, hout, ite_true, ite_false,
+      RegUpd.gpr_write, RegUpd.mem_write, RegUpd.rd_write, RegUpd.wr_write, Size.bits, hx3, hin, hout, 
       BitVec.setWidth_eq, e2, e7, e15, e16, Option.some.injEq, exists_eq_left']
     have hW := W_ge M (t := t) (by omega)
     refine ⟨by rw [hW]; rfl, by rw [hW]; rfl, trivial, trivial, fun r h0 h1 h2 h3 => ?_⟩

@@ -1,5 +1,6 @@
 import VerifiedGarbage.Impl.CmacTripleDes.AArch64
 import VerifiedGarbage.Spec.Cmac.TripleDesContract
+import VerifiedGarbage.Proof.Framework.PowLit
 
 /-!
 # TDEA-CMAC on AArch64: the contracts the proofs are written against

@@ -232,9 +232,9 @@ theorem mul_step {s₀ : State} (hp : Pre s₀) {t : Nat} (ht : t < 128) {s : St
     have := Nat.mul_lt_mul_of_lt_of_lt lf1 lg1; omega
   rw [mulBody, WP.block_append_iff]
   apply WP.of_runBlock
-  simp (config := {decide := true}) only [runBlock_cons, runStep_some, runBlock_nil, exec, execMul,
+  simp only [reduceCtorEq, ↓reduceIte, Nat.reducePow, runBlock_cons, runStep_some, runBlock_nil, exec, execMul,
     readSrc, State.ea, at_, State.load32, State.setReg, State.setFlags, Option.map_some, ea_f1, ea_g1,
-    in_f1, in_g1, vf1, vg1, ite_true, ite_false, Option.some.injEq, exists_eq_left']
+    in_f1, in_g1, vf1, vg1, Option.some.injEq, exists_eq_left']
   refine red_spec (r := .ecx) (by decide) (by decide) _ _ _ (x := F1.toNat * G1.toNat)
     (by simp only [ite_true, ite_false, reduceCtorEq]; exact toNat_ofNat32 p11)
     (by simp only [ite_true, ite_false, reduceCtorEq]; exact toNat_ofNat32 p11) fun s₁ o₁ v₁ => ?_
@@ -256,10 +256,10 @@ theorem mul_step {s₀ : State} (hp : Pre s₀) {t : Nat} (ht : t < 128) {s : St
     rw [q_eq]; omega
   rw [WP.block_append_iff]
   apply WP.of_runBlock
-  simp (config := {decide := true}) only [runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, execMul,
+  simp only [reduceCtorEq, ↓reduceIte, Nat.reducePow, runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, execMul,
     readSrc, State.ea, State.load32, State.setReg, arithFlags, State.setFlags, Option.bind_some,
     Option.map_some, esi₁, edi₁, ebp₁, cx₁, m₁, rd₁, wr₁, ea_z, ea_f0, ea_g0, in_z, in_f0, in_g0, vz, vf0,
-    vg0, ite_true, ite_false, Option.some.injEq, exists_eq_left']
+    vg0, Option.some.injEq, exists_eq_left']
   have p00 : F0.toNat * G0.toNat < 2 ^ 32 := by
     have := Nat.mul_lt_mul_of_lt_of_lt lf0 lg0; omega
   have ev2 : (BitVec.ofNat 32 ((BitVec.ofNat 32 (F1.toNat * G1.toNat % q)).toNat *
@@ -299,10 +299,10 @@ theorem mul_step {s₀ : State} (hp : Pre s₀) {t : Nat} (ht : t < 128) {s : St
     omega
   rw [WP.block_append_iff]
   apply WP.of_runBlock
-  simp (config := {decide := true}) only [runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, execMul,
+  simp only [reduceCtorEq, ↓reduceIte, Nat.reducePow, runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, execMul,
     readSrc, State.ea, State.load32, State.store32, State.setReg, arithFlags, State.setFlags,
     Option.bind_some, Option.map_some, esi₂, edi₂, ebx₂, cx₂, m₂, rd₂, wr₂, ea_h0, ea_f0, ea_g0, ea_f1,
-    ea_g1, in_h0, in_f0, in_g0, in_f1, in_g1, wf0, wf1, wg0, wg1, vf0, vg0, vf1, vg1, ite_true, ite_false,
+    ea_g1, in_h0, in_f0, in_g0, in_f1, in_g1, wf0, wf1, wg0, wg1, vf0, vg0, vf1, vg1, 
     Option.some.injEq, exists_eq_left']
   have ev3 : (BitVec.ofNat 32 (F0.toNat * G1.toNat) + BitVec.ofNat 32 (F1.toNat * G0.toNat)).toNat =
       F0.toNat * G1.toNat + F1.toNat * G0.toNat := by
@@ -330,10 +330,10 @@ theorem mul_step {s₀ : State} (hp : Pre s₀) {t : Nat} (ht : t < 128) {s : St
       Mem.readW_writeW_sep (hp.h_a.symm.sep (hp.arg_in (by decide)) (coeff_contains _ i0)) (by decide),
       h.slot]
   apply WP.of_runBlock
-  simp (config := {decide := true}) only [runBlock_cons, runStep_some, runBlock_nil, exec, execAlu,
+  simp only [reduceCtorEq, ↓reduceIte, Nat.reducePow, runBlock_cons, runStep_some, runBlock_nil, exec, execAlu,
     readSrc, State.ea, State.load32, State.store32, State.setReg, arithFlags, State.setFlags,
     Option.bind_some, esi₃, edi₃, ebx₃, ebp₃, esp₃, cx₃, m₃, rd₃, wr₃, ea_h1, ea_sl, in_h1, in_sl, sl₂,
-    ite_true, ite_false, Option.some.injEq, exists_eq_left']
+    Option.some.injEq, exists_eq_left']
   have v0 : H0 = V s₀ (2 * t) := by
     rw [← eH0, V, multiplyNTTs_even _ _ ht, mul_even, pf0, pg0, pf1, pg1, gamma_val ht, Nat.add_comm]
   have v1 : BitVec.ofNat 32 ((F0.toNat * G1.toNat + F1.toNat * G0.toNat) % q) = V s₀ (2 * t + 1) := by

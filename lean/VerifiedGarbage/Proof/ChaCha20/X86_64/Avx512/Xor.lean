@@ -142,7 +142,7 @@ theorem ctx_of {s₀ : State} (hp : APre s₀) {t : Nat} (hw : 1024 * t + 1024 �
     rcases (by omega : b = 0 ∨ b = 1 ∨ b = 2) with rfl | rfl | rfl <;>
       rcases (by omega : b' = 0 ∨ b' = 1 ∨ b' = 2) with rfl | rfl | rfl <;>
       simp only [r0, r1, r2] <;>
-      first | exact absurd rfl ne | assumption | exact d01.symm | exact d02.symm | exact d12.symm
+      first | exact absurd rfl ne | with_reducible assumption | exact d01.symm | exact d02.symm | exact d12.symm
 
 theorem incs_frame {s₀ : State} {m m' : Mem} {rs : List Region} (h : Incs m (ebp s₀))
     (hf : Frame rs m m') (hd : ∀ r ∈ rs, (incR s₀).Disjoint r) : Incs m' (ebp s₀) := by

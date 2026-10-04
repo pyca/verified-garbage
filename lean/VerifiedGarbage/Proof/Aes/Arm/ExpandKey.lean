@@ -1040,7 +1040,7 @@ theorem expandKey_ct : ConstantTime isa Proof.Aes.expandKeyArm.pre Proof.Aes.exp
     fun _ h => (List.not_mem_nil h).elim, fun _ h => (List.not_mem_nil h).elim,
     fun h => absurd h (by decide), fun k hk => absurd hk (by simp [ekτ₀])⟩
   · simp only [ekτ₀, RegSet.mem_ofList, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl <;> assumption
+    rcases hr with rfl | rfl | rfl | rfl <;> with_reducible assumption
   · rw [h₁.2.1, h₂.2.1, p2, p3]
 
 /-- A state satisfying the precondition. -/

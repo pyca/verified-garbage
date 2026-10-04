@@ -140,7 +140,7 @@ example : ¬(pubU32.contract AArch64.abi (post := fun _ _ _ _ => True)).pub
 /-! ## 32-bit ARM (AAPCS) -/
 
 open Arm in
--- `vg_sha256_update`: `count` skips `r1` for the pair `r2:r3`; the rest is on the stack.
+-- `vg_sha256_update_scratch`: `count` skips `r1` for the pair `r2:r3`; the rest is on the stack.
 #guard classify [32, 64, 32, 32, 32] 0 0 ==
   ([.reg .r0, .pair .r2 .r3, .stack 0 32, .stack 4 32, .stack 8 32], 12)
 

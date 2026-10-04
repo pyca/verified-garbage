@@ -329,8 +329,8 @@ theorem keySetup_ok (s : State) :
       (∀ r, r ≠ .x0 → r ≠ .x1 → r ≠ .x2 → r ≠ .x6 → s'.gpr r = s.gpr r) ∧
       s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   refine ⟨_, by
-    simp (config := {decide := true}) only [keySetup, q, sb, lastKey, runBlock_cons, runStep_some,
-      runBlock_nil, exec, ite_true]
+    simp only [↓reduceIte, Nat.reduceLT, keySetup, q, sb, lastKey, runBlock_cons, runStep_some,
+      exec]
     rfl, ?_⟩
   refine ⟨by simp [State.write, State.read], by simp [State.write, State.read],
     by simp [State.write, State.read, sb], fun r h1 h2 h3 h4 => by simp [State.write, h1, h2, h3, h4],
@@ -606,7 +606,7 @@ theorem ctr32_ct : ConstantTime isa Proof.Aes.ctr32AArch64.pre Proof.Aes.ctr32AA
   intro s₁ s₂ _ _ ⟨h1, h2, h3, h4, h5, h6, hsp⟩
   refine ⟨hsp, fun r hr => ?_⟩
   simp only [VG.AArch64.Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl <;> assumption
+  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption
 
 theorem ctr32_verified :
     Verified AArch64.target Impl.Aes.AArch64.ctr32 (Spec.Gcm.ctr32Contract AArch64.abi) :=

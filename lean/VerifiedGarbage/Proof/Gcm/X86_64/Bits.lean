@@ -12,8 +12,6 @@ What `add`, `adc` and `sbb` compute on the two halves of a 128-bit value
 (`Impl.Gcm.X86_64.hInv`), and big-endian blocks as two `bswap`ped loads.
 -/
 
-open VG.PowLit
-
 namespace VG.Proof.Gcm.X86_64
 
 open VG.Proof.Gcm

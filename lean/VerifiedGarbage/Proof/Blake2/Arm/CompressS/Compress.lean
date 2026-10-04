@@ -1,10 +1,28 @@
 import VerifiedGarbage.Proof.Blake2.Arm.CompressS.Block
 import VerifiedGarbage.Proof.Blake2.Arm.Contract
-import VerifiedGarbage.Proof.Blake2.Arm.LitS
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Spec.Blake2.Contract
+import VerifiedGarbage.Proof.Framework.Arm.Lit
+import VerifiedGarbage.Impl.Blake2.Arm.CompressS
+
+section
+
+/-!
+# BLAKE2s on ARMv7: the code as a literal
+
+The code of the compression function as a literal (`materialize_code`,
+`Proof/Framework/Lit.lean`).
+-/
+
+namespace VG
+
+materialize_code Impl.Blake2.Arm.S.compress
+
+end VG
+
+end
 
 /-!
 # BLAKE2s compression function on ARMv7: the whole function
@@ -300,11 +318,11 @@ def initV (h : Spec.Blake2.HashValue 32) (t : Nat) (f : Bool) : Spec.Blake2.Work
   if f then v.set 14 (v[14] ^^^ BitVec.allOnes 32) else v
 
 theorem initW_eq (h : Spec.Blake2.HashValue 32) (N : Nat) (f : Bool) {H X : Nat → BitVec 32}
-    (hH : ∀ k (hk : k < 8), H k = h[k]) (h12 : X 12 = BitVec.ofNat 32 N)
+    (hH : ∀ k (hk : k < 8), H k = (h[k]'(by omega))) (h12 : X 12 = BitVec.ofNat 32 N)
     (h13 : X 13 = BitVec.ofNat 32 (N / 2 ^ 32)) (h14 : X 14 = flagW f) (h15 : X 15 = 0) (k : Nat)
     (hk : k < 16) : initW H X k = (initV h N f)[k] := by
   have ha : ∀ j (hj : j < 16), (h ++ Spec.Blake2.s.IV)[j] =
-      if h8 : j < 8 then h[j] else Spec.Blake2.s.IV[j - 8] := fun j hj => Vector.getElem_append hj
+      if h8 : j < 8 then (h[j]'(by omega)) else Spec.Blake2.s.IV[j - 8] := fun j hj => Vector.getElem_append hj
   have hg : ∀ j (hj : j < 8), Spec.Blake2.s.IV.toList.getD j 0 = Spec.Blake2.s.IV[j] := fun j hj => by
     simp [List.getD_eq_getElem?_getD, hj]
   unfold initW initV
@@ -323,7 +341,7 @@ theorem initW_eq (h : Spec.Blake2.HashValue 32) (N : Nat) (f : Bool) {H X : Nat 
 
 theorem F_eq (h : HashValue 32) (m : Block 32) (t : Nat) (f : Bool) :
     Spec.Blake2.F Spec.Blake2.s h m t f =
-      Vector.ofFn fun i => h[i] ^^^ ((List.range 10).foldl (Spec.Blake2.round Spec.Blake2.s m) (initV h t f))[i] ^^^
+      Vector.ofFn fun i => (h[i]'(by omega)) ^^^ ((List.range 10).foldl (Spec.Blake2.round Spec.Blake2.s m) (initV h t f))[i] ^^^
         ((List.range 10).foldl (Spec.Blake2.round Spec.Blake2.s m) (initV h t f))[i.val + 8] := rfl
 
 theorem stateAt_get {st : BitVec 32} (hfit : st.toNat + 32 ≤ 2 ^ 32) (m : Mem) {k : Nat} (hk : k < 8) :
@@ -387,7 +405,7 @@ theorem body_ok {s₀ : State} (hp : Pre s₀) {i : Nat} (hi : i < nb s₀) {s :
   set H := Spec.Blake2.compressBlocks Spec.Blake2.s (H₀ s₀) s₀.mem (State.addr (bp s₀)) i (t₀ s₀) (fl s₀)
     with hH
   set M := Spec.Blake2.blockAt 32 s₀.mem (State.addr (blkAddr s₀ i)) with hM
-  have hHk : ∀ k (hk : k < 8), s.mem.readW (A (stp s₀) (4 * k)) 32 = H[k] := fun k hk => by
+  have hHk : ∀ k (hk : k < 8), s.mem.readW (A (stp s₀) (4 * k)) 32 = (H[k]'(by omega)) := fun k hk => by
     rw [← stateAt_get fitS _ hk, hL.state]
   have wV : ∀ o, o + 4 ≤ 512 → InRegions s.wr (A (scp s₀) o) 4 := by rw [hL.wr]; exact fun o ho => hp.out_scr ho
   have dScr : ∀ d, d + 4 ≤ 512 → Region.Disjoint ⟨State.addr (scp s₀) + BitVec.ofNat 64 d, 4⟩ (stR s₀) :=

@@ -531,7 +531,7 @@ theorem call_ok {s₀ : State} (hp : XPre s₀) {j : Nat} {s : State} (h : OInv 
       ∀ r ∈ [b256 s₀, stackR s₀], R.Disjoint r := by
     intro R h₁ h₂ r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl <;> assumption
+    rcases hr with rfl | rfl <;> with_reducible assumption
   have hst : stateAt s'.mem (st s₀) = stateAt s.mem (st s₀) :=
     stateAt_frame hF (hd _ (hp.st_b.sub_right (b256_sub s₀)) hp.stk_st.symm)
   have g : ∀ r ∈ calleeSaved, r ≠ .esp → r ≠ .eax → (popped .eax [Reg.edi, .ebx].length s').gpr r = s.gpr r := by

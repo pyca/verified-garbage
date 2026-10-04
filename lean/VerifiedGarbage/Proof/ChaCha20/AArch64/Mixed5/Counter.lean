@@ -28,8 +28,8 @@ theorem check_ok (s : State) :
       (∀ r, r ≠ .x5 → u.gpr r = s.gpr r) ∧
       u.mem = s.mem ∧ u.rd = s.rd ∧ u.wr = s.wr ∧ u.v = s.v ∧ u.sp = s.sp := by
   apply WP.of_runBlock
-  simp (config := {decide := true}) only [check, runBlock_cons, runBlock_nil, exec,
-    State.read, Size.bits, ite_true, isa, runStep_some, RegUpd.gpr_write,
+  simp only [↓reduceIte, Nat.reduceLT, check, runBlock_cons, runBlock_nil, exec,
+    State.read, Size.bits, isa, runStep_some, RegUpd.gpr_write,
     BitVec.setWidth_eq, Option.some.injEq, exists_eq_left']
   refine ⟨?_,fun r hr => by simp only [hr,ite_false],rfl,rfl,rfl,rfl,rfl⟩
   simpa only [BitVec.ofNat_toNat, BitVec.setWidth_eq] using less5 (s.gpr .x2).toNat (s.gpr .x2).isLt
@@ -44,8 +44,8 @@ theorem counter_ok (s : State) {n : Nat} (hn : n < 4096) (subtract : Bool)
       (∀ r, r ≠ .x4 → u.gpr r = s.gpr r) ∧
       u.rd = s.rd ∧ u.wr = s.wr ∧ u.v = s.v ∧ u.sp = s.sp := by
   cases subtract <;> apply WP.of_runBlock <;>
-    simp (config := {decide := true}) only [counter,
-      ite_true, ite_false, List.cons_append, List.nil_append, runBlock_cons, runBlock_nil,
+    simp only [reduceCtorEq, ↓reduceIte, Nat.reduceLT, Nat.reduceLeDiff, Nat.reduceMul, Nat.reduceMod, and_self, counter,
+      List.cons_append, List.nil_append, runBlock_cons, runBlock_nil,
       exec, addr, Size.bytes, State.load, hi, ho, State.store,
       State.read, Size.bits, hn, isa, runStep_some, RegUpd.gpr_write,
       RegUpd.mem_write, RegUpd.rd_write, RegUpd.wr_write, RegUpd.v_write, RegUpd.sp_write,

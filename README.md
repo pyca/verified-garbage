@@ -514,7 +514,7 @@ yours to keep:
 
 <td>✅ permutation kept in AdvSIMD registers</td>
 
-<td>❌</td>
+<td>✅</td>
 
 <td>✅</td>
 
@@ -1052,7 +1052,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>❌</td>
+<td>✅</td>
 
 <td>❌</td>
 

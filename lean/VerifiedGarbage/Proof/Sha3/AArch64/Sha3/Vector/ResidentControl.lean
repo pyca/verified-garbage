@@ -18,9 +18,9 @@ theorem advance_test_ok (s : State) (p : Addr) (n r : Nat)
   refine WP.cons rfl (WP.cons rfl (WP.cons rfl (WP.cons (exec_lsr_x (by decide)) (wp_nil ?_))))
   have hsub : BitVec.ofNat 64 n - BitVec.ofNat 64 r = BitVec.ofNat 64 (n-r) :=
     VG.Proof.Sha3.sub_ofNat hr
-  simp (config := {decide := true}) only [
+  simp only [reduceCtorEq, ↓reduceIte, 
     RegUpd.mem_write,RegUpd.rd_write,RegUpd.wr_write,RegUpd.sp_write,RegUpd.v_write,
-    RegUpd.gpr_write,ite_true,ite_false,State.read,Size.bits,BitVec.setWidth_eq,h3,h4,h6,hsub,
+    RegUpd.gpr_write,State.read,Size.bits,BitVec.setWidth_eq,h3,h4,h6,hsub,
     true_and]
   simp only [eval_zero,RegUpd.gpr_write_self,Size.bits,BitVec.setWidth_eq]
   congr 1

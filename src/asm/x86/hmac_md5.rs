@@ -191,7 +191,7 @@ pub(crate) unsafe extern "C" fn vg_hmac_md5_finalize(inner: *mut [u8; 80], outer
         "push ecx",
         "push eax",
         "push ebx",
-        "call {vg_md5_finalize}",
+        "call {vg_md5_finalize_scratch}",
         "pop eax",
         "pop eax",
         "pop eax",
@@ -265,7 +265,7 @@ pub(crate) unsafe extern "C" fn vg_hmac_md5_finalize(inner: *mut [u8; 80], outer
         "mov ebp, DWORD PTR [eax+124]",
         "ret",
         ".p2align 6",
-        vg_md5_finalize = sym super::md5::vg_md5_finalize,
+        vg_md5_finalize_scratch = sym super::md5::vg_md5_finalize_scratch,
         vg_md5_compress = sym super::md5::vg_md5_compress,
     )
 }

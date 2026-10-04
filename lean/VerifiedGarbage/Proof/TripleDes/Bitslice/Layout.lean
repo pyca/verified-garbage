@@ -1,4 +1,5 @@
 import VerifiedGarbage.Impl.TripleDes.BitsliceLayout
+import VerifiedGarbage.Proof.Framework.PowLit
 
 /-!
 # Facts about where bitsliced DES keeps each bit

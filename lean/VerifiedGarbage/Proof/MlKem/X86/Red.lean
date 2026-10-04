@@ -43,9 +43,9 @@ theorem red_spec {r : Reg} (h1 : r ≠ .eax) (h2 : r ≠ .edx) (is : List Instr)
   have h2' : Reg.edx ≠ r := fun e => h2 e.symm
   rw [WP.block_append_iff]
   apply WP.of_runBlock
-  simp (config := {decide := true}) only [red, csub, List.cons_append, List.nil_append, runBlock_cons,
+  simp only [reduceCtorEq, ↓reduceIte, Nat.reducePow, red, csub, List.cons_append, List.nil_append, runBlock_cons,
     runStep_some, runBlock_nil, exec, execAlu, execMul, readSrc, State.setReg, arithFlags, State.setFlags,
-    Option.bind_some, Option.map_some, ite_true, ite_false, Option.some.injEq, exists_eq_left', h1, h2,
+    Option.bind_some, Option.map_some, Option.some.injEq, exists_eq_left', h1, h2,
     h2']
   refine k _ ⟨fun q hq => ?_, rfl, rfl, rfl⟩ ?_
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hq

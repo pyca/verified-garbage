@@ -23,18 +23,34 @@ def artifacts : List Artifact := [
   { Spec.Md5.updateApi with
     target := AArch64.target
     doc := Spec.Md5.updateApi.doc
-    code := Impl.Md5.AArch64.Stream.update
-    contract := Spec.Md5.updateContract AArch64.abi 16
-    stack := 16
+    code := Impl.StackScratch.AArch64.withStackScratch 112 .x4 Impl.Md5.AArch64.Stream.update
+    contract := Spec.Md5.updateContract AArch64.abi (16 + 112)
+    stack := 16 + 112
     verified := Proof.Md5.AArch64.Shared.update
     spSafe := Code.all_of_forall (fun _ => rfl) _ },
   { Spec.Md5.finalizeApi with
     target := AArch64.target
     doc := Spec.Md5.finalizeApi.doc
-    code := Impl.Md5.AArch64.Stream.finalize
-    contract := Spec.Md5.finalizeContract AArch64.abi 16
-    stack := 16
+    code := Impl.StackScratch.AArch64.withStackScratch 112 .x3 Impl.Md5.AArch64.Stream.finalize
+    contract := Spec.Md5.finalizeContract AArch64.abi (16 + 112)
+    stack := 16 + 112
     verified := Proof.Md5.AArch64.Shared.finalize
+    spSafe := Code.all_of_forall (fun _ => rfl) _ },
+  { Spec.Md5.updateScratchApi with
+    target := AArch64.target
+    doc := Spec.Md5.updateScratchApi.doc
+    code := Impl.Md5.AArch64.Stream.update
+    contract := Spec.Md5.updateScratchContract AArch64.abi 16
+    stack := 16
+    verified := Proof.Md5.AArch64.Shared.updateScratch
+    spSafe := Code.all_of_forall (fun _ => rfl) _ },
+  { Spec.Md5.finalizeScratchApi with
+    target := AArch64.target
+    doc := Spec.Md5.finalizeScratchApi.doc
+    code := Impl.Md5.AArch64.Stream.finalize
+    contract := Spec.Md5.finalizeScratchContract AArch64.abi 16
+    stack := 16
+    verified := Proof.Md5.AArch64.Shared.finalizeScratch
     spSafe := Code.all_of_forall (fun _ => rfl) _ }]
 
 end VG.Artifacts.Md5.AArch64

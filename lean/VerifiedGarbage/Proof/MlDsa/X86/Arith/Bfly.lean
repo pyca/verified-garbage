@@ -108,7 +108,7 @@ theorem bfly_spec {s : State} {p : Addr} {G : Poly} {j len : Nat} {zA : Addr} {z
   · simp only [State.ea, at_, State.setReg, show Reg.ebp ≠ Reg.eax by decide, ite_false, h.ea_z]
     exact h.in_z
   · rw [execMul_pair]
-    simp (config := {decide := true}) only [State.setReg, ite_true, ite_false, State.ea, at_, h.ea_d, h.ea_z,
+    simp only [reduceCtorEq, ↓reduceIte, Nat.reducePow, State.setReg, State.ea, at_, h.ea_d, h.ea_z,
       hb, hzv]
     rw [hb', hz']
   have g₂ : ∀ r, r ≠ .eax → r ≠ .edx → r ≠ .ebx → s₂.gpr r = s.gpr r := fun r h1 h2 h3 => by
@@ -130,10 +130,10 @@ theorem bfly_spec {s : State} {p : Addr} {G : Poly} {j len : Nat} {zA : Addr} {z
   have ea_i := h.ea_i
   have ea_d := h.ea_d
   apply WP.of_runBlock
-  simp (config := {decide := true}) only [csubQ, List.cons_append, List.nil_append, runBlock_cons,
+  simp only [reduceCtorEq, ↓reduceIte, Nat.reducePow, csubQ, List.cons_append, List.nil_append, runBlock_cons,
     runStep_some, runBlock_nil, exec, execAlu, readSrc, State.ea, at_, State.load32, State.store32,
     State.setReg, arithFlags, State.setFlags, Option.bind_some, Option.map_some, esi₂, edi₂, ecx₂, m₂,
-    rd₂, wr₂, bx₂, ea_i, ea_d, inI, inD, inI', hrw, ha, ite_true, ite_false, Option.some.injEq,
+    rd₂, wr₂, bx₂, ea_i, ea_d, inI, inD, inI', hrw, ha, Option.some.injEq,
     exists_eq_left']
   have lt := Nat.mod_lt (b * zv) (show q > 0 by decide)
   rw [q_eq] at lt
@@ -211,10 +211,10 @@ theorem ibfly_spec {s : State} {p : Addr} {G : Poly} {j len : Nat} {zA : Addr} {
   have ea_z := h.ea_z
   rw [ibflyBody_eq, WP.block_append_iff]
   apply WP.of_runBlock
-  simp (config := {decide := true}) only [csubQ, List.cons_append, List.nil_append, runBlock_cons,
+  simp only [reduceCtorEq, ↓reduceIte, Nat.reducePow, csubQ, List.cons_append, List.nil_append, runBlock_cons,
     runStep_some, runBlock_nil, exec, execAlu, readSrc, State.ea, at_, State.load32,
     State.store32, State.setReg, arithFlags, State.setFlags, Option.bind_some, Option.map_some, ea_i, ea_d,
-    ea_z, inI, inI', inD', inZ, ha, hb, hrz, hzv, ite_true, ite_false, Option.some.injEq,
+    ea_z, inI, inI', inD', inZ, ha, hb, hrz, hzv, Option.some.injEq,
     exists_eq_left']
   have hsub : (BitVec.ofNat 32 a + qImm - BitVec.ofNat 32 b).toNat = a + q - b := by
     have hQ : (BitVec.ofNat 32 a + qImm).toNat = a + q := by
@@ -241,9 +241,9 @@ theorem ibfly_spec {s : State} {p : Addr} {G : Poly} {j len : Nat} {zA : Addr} {
   have ht : mont ((a + q - b) * (zv * 2 ^ 32 % q)) % q = (a + q - b) * zv % q := mont_mulR _ zv
   have bx₂ : s₂.gpr .ebx = BitVec.ofNat 32 ((a + q - b) * zv % q) := eq_ofNat_of_toNat (v₂.trans ht)
   apply WP.of_runBlock
-  simp (config := {decide := true}) only [runBlock_cons, runStep_some, runBlock_nil, exec, execAlu,
+  simp only [reduceCtorEq, ↓reduceIte, Nat.reducePow, runBlock_cons, runStep_some, runBlock_nil, exec, execAlu,
     readSrc, State.ea, State.store32, State.setReg, arithFlags, State.setFlags, Option.bind_some,
-    esi₂, edi₂, ecx₂, m₂, rd₂, wr₂, bx₂, ea_d, inD, ite_true, ite_false, Option.some.injEq,
+    esi₂, edi₂, ecx₂, m₂, rd₂, wr₂, bx₂, ea_d, inD, Option.some.injEq,
     exists_eq_left']
   have hv1 : BitVec.ofNat 32 ((a + b) % q) = BitVec.ofNat 32 ((G[j]! + G[j + len]!).val) := by
     rw [val_add', ea, eb]

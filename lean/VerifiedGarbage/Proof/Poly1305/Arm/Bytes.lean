@@ -26,8 +26,6 @@ the limbs of four 32-bit words (`mlimb`) and back (`toWords`); and the final
 reduction.
 -/
 
-open VG.PowLit
-
 namespace VG.Proof.Poly1305.Arm
 
 open VG.Spec.Poly1305 (P)
@@ -187,7 +185,7 @@ theorem row_wrap (r : Nat → Nat) {j : Nat} (hj : j < 10) :
   obtain rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl :
     j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 ∨ j = 6 ∨ j = 7 ∨ j = 8 ∨ j = 9 := by omega
   all_goals
-    simp (config := {decide := true}) only [val, wrap, rsum, coef, ite_true, ite_false, Nat.reduceSub,
+    simp only [↓reduceIte, Nat.reduceLeDiff, val, wrap, rsum, coef, Nat.reduceSub,
       Nat.reduceAdd, Nat.reduceMul, Nat.zero_add, Nat.add_zero, Nat.mul_zero, Nat.mul_add,
       ← Nat.mul_assoc, Nat.reducePow, Nat.mul_one, Nat.one_mul] <;>
     ac_rfl
@@ -498,7 +496,7 @@ theorem red_facts (E : Nat → Nat) (hE : ∀ j < 10, E j < 2 ^ 32 - 2 ^ 19) :
       (fun k hk => by simp only [redL]; rw [iteF (by omega_using [hk])]) (by simp only [redL, ↓reduceIte, Nat.reducePow])
     rw [hm, val_carryN _ 0 9 (by decide)]
     have e : val (redK' E) = val (redK E) + 5 * redC E := by
-      simp (config := {decide := true}) only [val, redK', iteT, ite_false]; omega_using []
+      simp only [reduceCtorEq, ↓reduceIte, Nat.reducePow, val, redK']; omega_using []
     rw [e, redC, reduce_eq (by omega_using [hvl, hvK, e]), hvK, hv]
   · simp only [redL]
     split
@@ -547,8 +545,6 @@ Facts about the registers the code uses, which registers a piece of code may
 change (`Keeps`), and WP rules for one instruction at a time that expose only
 what changes.
 -/
-
-open VG.PowLit
 
 namespace VG.Proof.Poly1305.Arm
 
@@ -992,8 +988,6 @@ carries them all into `fold` (`carryFold_ok`), and `reduce` reduces them fully
 (`reduceRegs_ok`).
 -/
 
-open VG.PowLit
-
 namespace VG.Proof.Poly1305.Arm
 
 open VG VG.Arm VG.Impl.Poly1305.Arm
@@ -1061,8 +1055,6 @@ end
 /-!
 # Poly1305 on 32-bit ARM: carrying all columns, the final reduction, and words
 -/
-
-open VG.PowLit
 
 namespace VG.Proof.Poly1305.Arm
 
@@ -1242,8 +1234,8 @@ theorem toWords_ok {L : Nat → Nat} {s : State} (hc : Cols L s) (hL : ∀ j < 9
   have l3 := hL 3 (by decide); have l4 := hL 4 (by decide); have l5 := hL 5 (by decide)
   have l6 := hL 6 (by decide); have l7 := hL 7 (by decide); have l8 := hL 8 (by decide)
   apply WP.of_runBlock
-  simp (config := {decide := true}) only [toWords, runBlock_cons, runStep_some, runBlock_nil, exec,
-    Op2.eval, isa, State.setReg, ite_true, ite_false, Option.map_some, Option.some.injEq,
+  simp only [reduceCtorEq, ↓reduceIte, Nat.reduceLeDiff, Nat.reducePow, and_self, toWords, runBlock_cons, runStep_some, runBlock_nil, exec,
+    Op2.eval, isa, State.setReg, Option.map_some, Option.some.injEq,
     exists_eq_left']
   refine ⟨?_, ?_, ?_, ?_, ?_, ⟨fun r hr => ?_, rfl, rfl, rfl, rfl⟩⟩
   · rw [add_shl2 (add_shl2 c0 c1 (by decide) l0) c2 (by decide) (fits l0 (modlt l1) (by decide)),
@@ -1283,8 +1275,6 @@ section
 row `j` loads `h j` (two limbs are packed in each word at `[0, 20)`) and adds
 its products with the limbs of `r` (at `rOff i`) to the columns (`mac_step`).
 -/
-
-open VG.PowLit
 
 namespace VG.Proof.Poly1305.Arm
 
@@ -1490,8 +1480,6 @@ end
 carries them into `h`, packs `h` into `[0, 20)` and multiplies it by `r`
 (`absorb_ok`).
 -/
-
-open VG.PowLit
 
 namespace VG.Proof.Poly1305.Arm
 
@@ -1738,8 +1726,6 @@ A run of stores of registers (words, or bytes) at distinct offsets from a base
 register (`stores_ok`), and a run of loads (`loads_ok`).
 -/
 
-open VG.PowLit
-
 namespace VG.Proof.Poly1305.Arm
 
 open VG VG.Arm VG.Impl.Poly1305.Arm
@@ -1839,8 +1825,6 @@ end
 /-!
 # Poly1305 on 32-bit ARM: saving registers, the limbs of `r`, and loading the accumulator
 -/
-
-open VG.PowLit
 
 namespace VG.Proof.Poly1305.Arm
 
@@ -2196,8 +2180,6 @@ Byte strings in memory as 32-bit little-endian words (`bytesAt_eq_of_words`,
 `leNum_bytesAt_words`), the clamped `r` of a stored key as limbs
 (`val_rlimb`), and regions of the state.
 -/
-
-open VG.PowLit
 
 namespace VG.Proof.Poly1305
 

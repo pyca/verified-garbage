@@ -286,7 +286,7 @@ theorem pro_ok {s₀ : State} (hp : APre s₀) (hbig : 40 ≤ nb s₀) {s : Stat
     simp only [Nat.mul_zero, blks_zero, Poly1305.absorbAll_nil, wsum]
     rw [L.h 0 (by decide), L.h 1 (by decide), L.h 2 (by decide), L.h 3 (by decide), L.h 4 (by decide),
       L.h 5 (by decide), L.h 6 (by decide), L.h 7 (by decide), hN₅]
-    simp (config := {decide := true}) only [Poly1305.lanes8, ite_true, ite_false, Nat.mul_zero,
+    simp only [reduceCtorEq, ↓reduceIte, Poly1305.lanes8, Nat.mul_zero,
       Nat.add_zero]
     exact Nat.ModEq.refl _
 
@@ -525,7 +525,7 @@ theorem blocksAvx512_ct : ConstantTime isa blocksAvx512X86_64.pre blocksAvx512X8
   intro s₁ s₂ _ _ ⟨⟨h1, h2, h3⟩, h4⟩
   refine Taint.agree_ofRegs fun r hr => ?_
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl <;> assumption
+  rcases hr with rfl | rfl | rfl | rfl <;> with_reducible assumption
 
 theorem blocksAvx512_verified :
     Verified X86_64.target blocksAvx512 (Spec.Poly1305.blocksContract X86_64.abi 16) :=

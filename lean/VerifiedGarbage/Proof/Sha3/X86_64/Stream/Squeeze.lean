@@ -451,7 +451,7 @@ theorem agree₀ {s₁ s₂ : State} (h₁ : Proof.Sha3.squeezeX86_64.pre s₁)
   refine ⟨⟨fun r hr => ?_, fun h => by cases h⟩, fun _ => ?_, wf _ h₁, wf _ h₂, ?_, ?_,
     X86_64.Taint.noLo⟩
   · simp only [τ₀, RegSet.mem_ofList, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> assumption
+    rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption
   · rw [h₁.2.1, h₂.2.1, p1, p4, p5, p6]
   · intro sl h; simp [τ₀] at h
   · intro sl h; simp [τ₀] at h

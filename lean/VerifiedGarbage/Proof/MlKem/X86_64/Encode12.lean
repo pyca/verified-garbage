@@ -107,7 +107,7 @@ theorem step {i : Nat} (hi : i < 128) {s : State} (hI : Inv s₀ i s) :
     refine (((Written.first _ _ _).snoc (by decide) _).snoc (by decide) _).congr fun j hj => ?_
     rw [encode12_group _ hi hj, ← hX, ← hW]
     rcases (by omega : j = 0 ∨ j = 1 ∨ j = 2) with rfl | rfl | rfl <;>
-      simp (config := { decide := true }) only [↓reduceIte, b8_eq, shr_toNat, Nat.div_div_eq_div_mul,
+      simp only [reduceCtorEq, Nat.reduceEqDiff, Nat.reduceAdd, ↓reduceIte, b8_eq, shr_toNat, Nat.div_div_eq_div_mul,
         Nat.reduceMul, Nat.reducePow, Nat.div_one]
   obtain ⟨hf', hd'⟩ := Written.step hI.frame hI.done hw (by omega) (by decide)
   refine ⟨?_, ?_, hk.2.1.trans hI.rd, hk.2.2.trans hI.wr, hf', fun k hk' => hd' k (by omega)⟩

@@ -34,8 +34,8 @@ theorem prologue_ok (s : State)
       hw 2088 (by decide) (by decide), hw 2096 (by decide) (by decide), hw 2104 (by decide) (by decide),
       ite_true, Option.map_some, execAlu, Option.bind_some]
     rfl, ?_⟩
-  simp (config := {decide := true}) only [gpr_setReg, gpr_arithFlags, zf_arithFlags, mem_setReg,
-    mem_arithFlags, rd_setReg, rd_arithFlags, wr_setReg, wr_arithFlags, ite_true, ite_false,
+  simp only [reduceCtorEq, ↓reduceIte, and_self, gpr_setReg, gpr_arithFlags, zf_arithFlags, mem_setReg,
+    mem_arithFlags, rd_setReg, rd_arithFlags, wr_setReg, wr_arithFlags, 
     BitVec.and_self]
   trivial
 
@@ -66,11 +66,11 @@ theorem chainIn_ok (s : State) {C P Q : Addr} (hc : s.gpr .r15 + BitVec.ofNat 64
   have hc' : s.gpr .r15 + BitVec.ofNat 64 2056 = C + BitVec.ofNat 64 8 := by
     rw [← hc, BitVec.add_assoc]; rfl
   refine ⟨_, by
-    simp (config := {decide := true}) only [chainIn, updArgs, ctrArgs, cOff, List.cons_append,
+    simp only [reduceCtorEq, ↓reduceIte, Nat.reduceAdd, Nat.reducePow, BitVec.reduceSignExtend, chainIn, updArgs, ctrArgs, cOff, List.cons_append,
       List.nil_append, runBlock_cons, runStep_some, runBlock_nil, at_, exec, readSrc, readSrc32,
       State.load64, State.store64, State.ea, offset_nat, execAlu, Option.bind_some, Option.map_some,
       gpr_setReg, gpr_arithFlags, mem_setReg, mem_arithFlags, rd_setReg, rd_arithFlags, wr_setReg,
-      wr_arithFlags, State.setReg32, ite_true, ite_false, hc, hc', hp, hq, BitVec.add_zero,
+      wr_arithFlags, State.setReg32, hc, hc', hp, hq, BitVec.add_zero,
       rp, rp8, rq, rq8, wc, wc8, wp, wp8]
     rfl, ?_⟩
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, rfl, rfl⟩

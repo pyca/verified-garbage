@@ -88,10 +88,10 @@ theorem round_ok (t : Nat) (s : State) (v : HashValue) (w : Word)
   simp only [T0, T1, T2, List.nodup_cons, List.mem_cons, List.not_mem_nil, List.reverse_cons,
     List.reverse_nil, List.nil_append, List.cons_append, or_false, not_or,
     List.nodup_nil, and_true] at hd hd' hw ⊢
-  simp (config := {decide := true}) only [runBlock_cons, runStep_some,
+  simp only [↓reduceIte, Nat.reduceLeDiff, Nat.reduceEqDiff, Nat.reducePow, and_self, runBlock_cons, runStep_some,
     runBlock_nil, exec, execAlu, execShift, readSrc,
     isa, RegUpd.gpr_setReg, RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg, RegUpd.gpr_arithFlags, RegUpd.mem_arithFlags, RegUpd.rd_arithFlags, RegUpd.wr_arithFlags,
-    RegUpd.gpr_setFlags, RegUpd.mem_setFlags, RegUpd.rd_setFlags, RegUpd.wr_setFlags, ite_true, ite_false, hd, hd',
+    RegUpd.gpr_setFlags, RegUpd.mem_setFlags, RegUpd.rd_setFlags, RegUpd.wr_setFlags, hd, hd',
     h0, h1, h2, h3, h4, h5, h6, h7, hw,
     Option.bind_some, Option.map_some, Option.some.injEq, exists_eq_left']
   refine ⟨⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, trivial, trivial, trivial, fun r hr => ?_⟩
@@ -125,10 +125,10 @@ theorem schedule_ok (t : Nat) (s : State) (M : Block) (bp scr : Addr)
   · have hi := hbin ht
     have hb := hblk ht
     simp only [Impl.Sha512.X86_64.schedule, ht, ite_true, slot, at_, T0, T1, T2]
-    simp (config := {decide := true}) only [runBlock_cons, runStep_some,
+    simp only [reduceCtorEq, ↓reduceIte, runBlock_cons, runStep_some,
       runBlock_nil, exec, readSrc, isa, State.ea,
-      State.load64, State.store64, RegUpd.gpr_setReg, RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg, hrsi, hrcx, hi, hout, ite_true,
-      ite_false, hb,
+      State.load64, State.store64, RegUpd.gpr_setReg, RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg, hrsi, hrcx, hi, hout, 
+      hb,
       Option.map_some, Option.some.injEq, exists_eq_left']
     refine ⟨trivial, trivial, trivial, trivial, fun r h0 h1 h2 => ?_⟩
     simp [h0]
@@ -142,10 +142,10 @@ theorem schedule_ok (t : Nat) (s : State) (M : Block) (bp scr : Addr)
     rw [show (t - 15) % 16 = (t + 1) % 16 by omega] at e15
     rw [show (t - 16) % 16 = t % 16 by omega] at e16
     simp only [Impl.Sha512.X86_64.schedule, ht, ite_false, slot, at_, T0, T1, T2]
-    simp (config := {decide := true}) only [runBlock_cons, runStep_some,
+    simp only [reduceCtorEq, ↓reduceIte, Nat.reduceLeDiff, Nat.reduceEqDiff, Nat.reduceSub, Nat.reducePow, and_self, runBlock_cons, runStep_some,
       runBlock_nil, exec, execAlu, execShift, readSrc,
       isa, State.ea, State.load64, State.store64, RegUpd.gpr_setReg, RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg, RegUpd.gpr_arithFlags, RegUpd.mem_arithFlags, RegUpd.rd_arithFlags, RegUpd.wr_arithFlags,
-      RegUpd.gpr_setFlags, RegUpd.mem_setFlags, RegUpd.rd_setFlags, RegUpd.wr_setFlags, hrcx, hin, hout, ite_true, ite_false, e2, e7, e15, e16,
+      RegUpd.gpr_setFlags, RegUpd.mem_setFlags, RegUpd.rd_setFlags, RegUpd.wr_setFlags, hrcx, hin, hout, e2, e7, e15, e16,
       Option.bind_some, Option.map_some, Option.some.injEq, exists_eq_left']
     have hW := W_ge M (t := t) (by omega)
     rw [ssig0_eq, ssig1_eq] at hW

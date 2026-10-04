@@ -54,7 +54,11 @@ def artifacts : List Artifact := [
   { Spec.Rc2.cbcDecryptApi with
     target := AArch64.target
     doc := Spec.Rc2.cbcDecryptApi.doc
-      (notes := ["Baseline AArch64, preserving the input ciphertext for the next IV."])
+      (notes := ["Baseline AArch64. Groups of eight blocks are decrypted together in AdvSIMD \
+        registers, each word of four blocks in the 32-bit lanes of one register, with the \
+        schedule in `v16`–`v23` for key-word broadcasts and the mashing's `tbl` lookups; the \
+        blocks left are decrypted one at a time by the block primitive, preserving the input \
+        ciphertext for the next IV."])
     code := Impl.Rc2.AArch64.Cbc.decrypt
     contract := Spec.Rc2.cbcDecryptContract AArch64.abi 0
     stack := 0

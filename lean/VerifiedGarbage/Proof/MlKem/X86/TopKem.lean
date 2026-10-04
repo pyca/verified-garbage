@@ -149,7 +149,7 @@ theorem ceK_piece (d : Nat) (hd : d = L.p.du ∨ d = L.p.dv) (fa fo oa oo : Nat)
         compressEncode d (polyAt s.mem (Buf.addr s₀ ⟨fa, fo, 1024⟩)) → B s₀ s') :
     Piece (TPre Y) (TPub Y lk) A B (ceK L Y.sc d ⟨fa, fo, 1024⟩ ⟨oa, oo, 32 * d⟩) := by
   obtain ⟨ws, hu, hv, F⟩ := CeOK.ce (L := L)
-  exact ceC_piece F d (by rcases hd with rfl | rfl <;> assumption) fa fo oa oo hc hN tt hA hQ
+  exact ceC_piece F d (by rcases hd with rfl | rfl <;> with_reducible assumption) fa fo oa oo hc hN tt hA hQ
 
 theorem ddK_piece (d : Nat) (hd : d = L.p.du ∨ d = L.p.dv) (ba bo fa fo : Nat)
     (hc : (Y.ok ⟨ba, bo, 32 * d⟩ && Y.okW ⟨fa, fo, 1024⟩ && Y.sep ⟨ba, bo, 32 * d⟩ ⟨fa, fo, 1024⟩) = true)
@@ -164,6 +164,6 @@ theorem ddK_piece (d : Nat) (hd : d = L.p.du ∨ d = L.p.dv) (ba bo fa fo : Nat)
         (decodeDecompress d (Spec.Sha3.bytesAt s.mem (Buf.addr s₀ ⟨ba, bo, 32 * d⟩) (32 * d))) → B s₀ s') :
     Piece (TPre Y) (TPub Y lk) A B (ddK L Y.sc d ⟨ba, bo, 32 * d⟩ ⟨fa, fo, 1024⟩) := by
   obtain ⟨ws, hu, hv, F⟩ := CeOK.dd (L := L)
-  exact ddC_piece F d (by rcases hd with rfl | rfl <;> assumption) ba bo fa fo hc hN tt hA hQ
+  exact ddC_piece F d (by rcases hd with rfl | rfl <;> with_reducible assumption) ba bo fa fo hc hN tt hA hQ
 
 end VG.Proof.MlKem.X86.Top

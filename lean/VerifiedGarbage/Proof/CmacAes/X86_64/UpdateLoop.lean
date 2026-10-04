@@ -111,8 +111,8 @@ theorem advance_ok (s : State) :
       s'.zf = some ((s.gpr .r14 - 1) == 0) ∧ (∀ r, r ≠ .r13 → r ≠ .r14 → s'.gpr r = s.gpr r) ∧
       s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   refine ⟨_, by
-    simp (config := {decide := true}) only [advance, runBlock_cons, runStep_some, runBlock_nil, exec,
-      execAlu, readSrc, Option.bind_some, gpr_setReg, gpr_arithFlags, ite_false]
+    simp only [reduceCtorEq, ↓reduceIte, Nat.reducePow, BitVec.reduceSignExtend, advance, runBlock_cons, runStep_some, runBlock_nil, exec,
+      execAlu, readSrc, Option.bind_some, gpr_setReg, gpr_arithFlags]
     rfl, ?_⟩
   refine ⟨?_, ?_, ?_, ?_, rfl, rfl, rfl⟩
   · simp [gpr_setReg]

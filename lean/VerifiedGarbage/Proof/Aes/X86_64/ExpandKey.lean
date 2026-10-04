@@ -77,8 +77,8 @@ theorem wordLoad_ok {s : State}
       s'.zf = some (s.gpr .rdi - s.gpr .rsi == 0) ∧
       (∀ r, r ≠ .rax → s'.gpr r = s.gpr r) ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   refine ⟨_, by
-    simp (config := {decide := true}) only [runBlock_cons, runStep_some, runBlock_nil, exec, execAlu,
-      readSrc, readSrc32, State.load32, State.ea, State.setReg32, State.setReg, ha, ite_true,
+    simp only [reduceCtorEq, ↓reduceIte, runBlock_cons, runStep_some, runBlock_nil, exec, execAlu,
+      readSrc, readSrc32, State.load32, State.ea, State.setReg32, State.setReg, ha, 
       Option.map_some, Option.bind_some]
     rfl, ?_⟩
   refine ⟨by simp [arithFlags, State.setFlags], by simp [arithFlags, State.setFlags],
@@ -126,9 +126,9 @@ theorem wordStore_ok {s : State}
     simp
   have e2 : s.gpr .rdx + BitVec.ofInt 64 ((0 : Nat) : Int) = s.gpr .rdx := by simp
   refine ⟨_, by
-    simp (config := {decide := true}) only [at_, runBlock_cons, runStep_some, runBlock_nil, exec, execAlu,
+    simp only [reduceCtorEq, ↓reduceIte, Nat.reduceLeDiff, Nat.reducePow, BitVec.reduceSignExtend, at_, runBlock_cons, runStep_some, runBlock_nil, exec, execAlu,
       execAlu32, readSrc, readSrc32, State.load32, State.store32, State.ea, e1, e2, State.setReg32,
-      State.setReg, State.setFlags, arithFlags, hr, hw, ite_true, ite_false, Option.bind_some,
+      State.setReg, State.setFlags, arithFlags, hr, hw, Option.bind_some,
       BitVec.setWidth_setWidth_of_le, BitVec.setWidth_eq]
     rfl, ?_⟩
   refine ⟨rfl, by simp, by simp, by simp, fun r h1 h2 h3 => by simp [h1, h2, h3], rfl, rfl⟩
@@ -920,7 +920,7 @@ theorem expandKey_ct : ConstantTime isa Proof.Aes.expandKeyX86_64.pre Proof.Aes.
   intro s₁ s₂ _ _ ⟨h1, h2, h3, h4, _⟩
   refine Taint.agree_ofRegs fun r hr => ?_
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl <;> assumption
+  rcases hr with rfl | rfl | rfl | rfl <;> with_reducible assumption
 
 theorem expandKey_verified :
     Verified X86_64.target Impl.Aes.X86_64.expandKey (Spec.Aes.expandKeyContract X86_64.abi) :=

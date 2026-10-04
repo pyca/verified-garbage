@@ -1,3 +1,4 @@
+import VerifiedGarbage.Proof.Framework.PowLit
 import VerifiedGarbage.Proof.P256.Prime
 import VerifiedGarbage.Proof.Weierstrass.Complete
 import VerifiedGarbage.Proof.Weierstrass.Cubic

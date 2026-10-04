@@ -1227,7 +1227,7 @@ theorem agree₀ {s₁ s₂ : State} (h₁ : Proof.Sha3.permuteArm.pre s₁) (h�
     fun _ h => (List.not_mem_nil h).elim, fun _ h => (List.not_mem_nil h).elim,
     fun h => absurd h (Nat.lt_irrefl 0), fun _ hk => absurd hk (Nat.not_lt_zero _)⟩
   · simp only [τ₀, RegSet.mem_ofList, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl <;> assumption
+    rcases hr with rfl | rfl <;> with_reducible assumption
   · rw [(pre_of s₁ h₁).wr, (pre_of s₂ h₂).wr, stp, scp, stp, scp, p0, p1]
 
 /-- A state satisfying the precondition. -/

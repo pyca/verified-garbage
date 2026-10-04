@@ -180,7 +180,7 @@ theorem loop_ok {s₀ : State} (hp : Pre s₀) :
     refine ⟨fun r hr => ?_, h.sp, ret_eq _ (by omega)⟩
     simp only [preserved, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
-      simp (config := {decide := true}) only [ite_false] <;> exact h.pres _ (by decide)
+      simp only [reduceCtorEq, ↓reduceIte] <;> exact h.pres _ (by decide)
 
 /-! ## Verified -/
 

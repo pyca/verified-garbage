@@ -1,4 +1,5 @@
 import VerifiedGarbage.Proof.Framework.Bitslice.Lanes
+import VerifiedGarbage.Proof.Framework.PowLit
 
 /-!
 # The ANF domain: XORs of ANDs of XORs of rotated words

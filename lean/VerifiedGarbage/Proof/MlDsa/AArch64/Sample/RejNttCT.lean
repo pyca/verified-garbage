@@ -73,7 +73,7 @@ theorem loop_ct : RelCT isa (Rel2 rnK.pre rnK.pub Z) rnLoop fun _ _ => True := b
 
 theorem regs3 {s₁ s₂ : State} {a b c : Reg} (ha : s₁.gpr a = s₂.gpr a) (hb : s₁.gpr b = s₂.gpr b)
     (hc : s₁.gpr c = s₂.gpr c) : ∀ r ∈ [a, b, c], s₁.gpr r = s₂.gpr r := fun r hr => by
-  rcases mem3 hr with rfl | rfl | rfl <;> assumption
+  rcases mem3 hr with rfl | rfl | rfl <;> with_reducible assumption
 
 theorem ctWith (v : Proof.Sha3.AArch64.Permutation) : ConstantTime isa rnK.pre rnK.pub (rejNTTWith v.callee) := by
   obtain ⟨hint, hhint⟩ := v.mldsaNttTaint

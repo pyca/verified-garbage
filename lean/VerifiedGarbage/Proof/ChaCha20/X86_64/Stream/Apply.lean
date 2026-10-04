@@ -134,7 +134,7 @@ theorem check_ok {s₀ : State} (hp : APre s₀) : WP isa (.block check) s₀ (Q
   have i₁ := hp.r_st (d := 128) (n := 8) (by decide)
   simp only [off] at i₁
   apply WP.of_runBlock
-  simp (config := {decide := true}) only [check, runBlock_cons, runStep_some, runBlock_nil, exec,
+  simp only [check, runBlock_cons, runStep_some, runBlock_nil, exec,
     ea_at, readSrc, execAlu, arithFlags, State.load64, State.setReg, State.setFlags, i₁, ite_true,
     Option.map_some, Option.bind_some, Option.some.injEq, exists_eq_left']
   have hn : s₀.mem.readW (st s₀ + BitVec.ofInt 64 ((128 : Nat) : Int)) 64 = BitVec.ofNat 64 (N s₀) := by
@@ -628,12 +628,12 @@ theorem blocks_ok (v : Proof.ChaCha20.X86_64.XorImpl) {s₀ : State} (hp : APre 
       R.Disjoint (stkR s₀) → ∀ r ∈ [cpR s₀, blR s₀, wkR s₀, stkR s₀], R.Disjoint r := by
     intro R h₁ h₂ h₃ h₄ r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl <;> assumption
+    rcases hr with rfl | rfl | rfl | rfl <;> with_reducible assumption
   have nc : ∀ R : Region, R.Disjoint ⟨st s₀, 64⟩ → R.Disjoint ⟨off (st s₀) 192, 64⟩ →
       ∀ r ∈ [⟨st s₀, 64⟩, ⟨off (st s₀) 192, 64⟩], R.Disjoint r := by
     intro R h₁ h₂ r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl <;> assumption
+    rcases hr with rfl | rfl <;> with_reducible assumption
   have fc := copyMem_frame s.mem (st s₀) (BitVec.ofNat 32 (NB s₀))
   rw [← m₁] at fc
   have stS : Region.Sub ⟨st s₀, 64⟩ (stR s₀) := prefix_sub _ (by omega)
@@ -1023,7 +1023,7 @@ set_option simprocs false in
 theorem fail_ok {s₀ : State} (hlt : N s₀ < L s₀) {s : State} (h : Q0 s₀ s) :
     WP isa (.block [.mov32 .rax (.imm 0)]) s (Final s₀) := by
   apply WP.of_runBlock
-  simp (config := {decide := true}) only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc32,
+  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc32,
     State.setReg, State.setReg32, Option.map_some, Option.some.injEq, exists_eq_left']
   refine ⟨⟨fun r hr => ?_, by dsimp only; rw [h.mem]⟩, ?_⟩
   · have : r ≠ .rax := by
@@ -1034,7 +1034,7 @@ theorem fail_ok {s₀ : State} (hlt : N s₀ < L s₀) {s : State} (h : Q0 s₀ 
     rw [ite_neg (show ¬ L s₀ ≤ N s₀ by omega)]
     dsimp only
     rw [h.mem]
-    exact ⟨rfl, by simp (config := {decide := true}), rfl, rfl⟩
+    exact ⟨rfl, by simp, rfl, rfl⟩
 
 theorem apply_eq (x : Impl.ChaCha20.X86_64.Callee) : apply x = .seq (.block check)
     (.ite .b (.block [.mov32 .rax (.imm 0)]) (.seq part1 (.seq (part2 x) (.seq part3 (.block finish))))) := rfl

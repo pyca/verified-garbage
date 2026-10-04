@@ -173,7 +173,7 @@ pub(crate) unsafe extern "C" fn vg_hmac_md5_finalize(inner: *mut [u8; 80], outer
         "add x1, x2, #0",
         "add x2, x23, #168",
         "add x3, x23, #0",
-        "bl {vg_md5_finalize}",
+        "bl {vg_md5_finalize_scratch}",
         "ldr w9, [x20, #0]",
         "str w9, [x19, #0]",
         "ldr w9, [x20, #4]",
@@ -232,7 +232,7 @@ pub(crate) unsafe extern "C" fn vg_hmac_md5_finalize(inner: *mut [u8; 80], outer
         "ldr x30, [x23, #152]",
         "ldr x23, [x23, #160]",
         "ret",
-        vg_md5_finalize = sym super::md5::vg_md5_finalize,
+        vg_md5_finalize_scratch = sym super::md5::vg_md5_finalize_scratch,
         vg_md5_compress = sym super::md5::vg_md5_compress,
     )
 }

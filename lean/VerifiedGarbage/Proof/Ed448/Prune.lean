@@ -1,3 +1,4 @@
+import VerifiedGarbage.Proof.Framework.PowLit
 /-!
 # Ed448: pruning a scalar, on 64-bit words
 

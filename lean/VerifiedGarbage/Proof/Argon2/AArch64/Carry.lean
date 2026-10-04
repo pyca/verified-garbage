@@ -1,4 +1,5 @@
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.PowLit
 
 /-! # Arithmetic facts for ARM64's subtraction carry -/
 namespace VG.Proof.Argon2.AArch64

@@ -30,7 +30,7 @@ theorem init_rel {s₀ s₀' : State} (h0 : initArm.pre s₀) (h0' : initArm.pre
       subst e e'
       refine Taint.agree_ofRegs fun r hr => ?_
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl | rfl <;> assumption) ⟨_, by taint_decide⟩
+      rcases hr with rfl | rfl | rfl | rfl <;> with_reducible assumption) ⟨_, by taint_decide⟩
     (fun s e => by rw [e]; exact is1_wp h0) (fun s e => by rw [e]; exact is1_wp h0')
   have b := rel_wp (F := IS1 s₀) (F' := IS1 s₀') (G := IS2 s₀) (G' := IS2 s₀')
     (key_rel fun s₁ s₂ h => ⟨_, _, _, _, init_kc h0 h.1, by have := init_kc h0' h.2; rwa [← q₁, ← q₂, ← q₃, ← q₄] at this⟩)

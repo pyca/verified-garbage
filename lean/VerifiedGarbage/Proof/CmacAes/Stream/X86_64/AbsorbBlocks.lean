@@ -225,13 +225,13 @@ theorem chain2_wp {s : State} {x : Nat} (hx : x < 2 ^ 64) (h14 : s.gpr .r14 = Bi
       exact ⟨nb16_bv (by omega) hx, fun r a b => by simp [a, b, g₁ r a], m₁, rd₁, wr₁⟩
   · obtain ⟨r12₂, g₂, m₂, rd₂, wr₂⟩ := h₂
     refine WP.of_runBlock ⟨_, by
-      simp (config := {decide := true}) only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc,
-        execAlu, execShift, Option.map_some, Option.bind_some, ite_true]
+      simp only [↓reduceIte, Nat.reduceLeDiff, Nat.reduceEqDiff, Nat.reduceSub, Nat.reducePow, and_self, BitVec.reduceSignExtend, runBlock_cons, runStep_some, runBlock_nil, exec, readSrc,
+        execAlu, execShift, Option.map_some, Option.bind_some]
       rfl, ?_⟩
     simp only [gpr_setReg, gpr_arithFlags, gpr_setFlags, mem_setReg, mem_arithFlags, mem_setFlags, rd_setReg,
       rd_arithFlags, rd_setFlags, wr_setReg, wr_arithFlags, wr_setFlags, ite_true, reduceCtorEq, ite_false,
       g₂ _ (by decide : Reg.rbx ≠ .r12) (by decide), g₂ _ (by decide : Reg.rbp ≠ .r12) (by decide),
-      g₂ _ (by decide : Reg.r13 ≠ .r12) (by decide), g₂ _ (by decide : Reg.r15 ≠ .r12) (by decide), sx272, r12₂]
+      g₂ _ (by decide : Reg.r13 ≠ .r12) (by decide), g₂ _ (by decide : Reg.r15 ≠ .r12) (by decide), r12₂]
     refine ⟨trivial, shr4 (by split <;> omega), trivial, trivial, trivial, trivial, trivial,
       fun r hr a => ?_, m₂, rd₂, wr₂⟩
     simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr

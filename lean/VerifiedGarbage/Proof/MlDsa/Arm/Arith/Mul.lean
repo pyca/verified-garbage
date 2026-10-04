@@ -427,7 +427,7 @@ theorem mul_verified : Verified Arm.target Impl.MlDsa.Arm.Arith.mul (Spec.MlDsa.
     obtain ⟨hsp, h0, h1, h2⟩ := h
     refine ⟨hsp, fun r hr => ?_⟩
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl <;> assumption
+    rcases hr with rfl | rfl | rfl <;> with_reducible assumption
   · refine ⟨satState, ?_⟩
     sig_apply_check
     · decide +kernel
@@ -452,7 +452,7 @@ theorem mulAdd_verified :
     obtain ⟨hsp, h0, h1, h2⟩ := h
     refine ⟨hsp, fun r hr => ?_⟩
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl <;> assumption
+    rcases hr with rfl | rfl | rfl <;> with_reducible assumption
   · refine ⟨satState, ?_⟩
     sig_apply_check
     · decide +kernel

@@ -155,7 +155,7 @@ theorem init_rel (v : GcmImpl) {s₀ s₀' : State} (hp : Proof.AesGcm.initX86_6
       (fun _ _ h r hr => by
         obtain ⟨rfl, rfl⟩ := h
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-        rcases hr with rfl | rfl | rfl | rfl | rfl <;> assumption) ⟨_, by taint_decide⟩)
+        rcases hr with rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption) ⟨_, by taint_decide⟩)
     (fun _ _ h => h) (G₁ := A₁) (G₂ := A₂) (fun s h => by subst h; exact hA₁) (fun s h => by subst h; exact hA₂)
   -- After the call of `vg_aes_expand_key`.
   let K₁ : State → Prop := fun s₃ => s₃.gpr .r15 = s₀.gpr .rcx ∧ s₃.gpr .r13 = s₀.gpr .rdx ∧
