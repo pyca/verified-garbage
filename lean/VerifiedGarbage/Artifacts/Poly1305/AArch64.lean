@@ -4,6 +4,7 @@ import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Blocks
 import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Finalize
 import VerifiedGarbage.Proof.Poly1305.AArch64.Init
 import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Update
+import VerifiedGarbage.Proof.Poly1305.AArch64.Vector.Update
 import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Lit
 import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Frame
 
@@ -33,6 +34,18 @@ def artifacts : List Artifact := [
     contract := Spec.Poly1305.updateContract AArch64.abi 128
     stack := 128
     verified := Proof.Poly1305.AArch64.Radix64.update_framed
+    spSafe := Code.all_of_forall (fun _ => rfl) _ },
+  { Spec.Poly1305.updateApi with
+    name := Spec.Poly1305.updateApi.name ++ "_neon"
+    target := AArch64.target
+    doc := Spec.Poly1305.updateApi.doc (notes := ["This implementation absorbs the whole blocks of data of at \
+      least 128 bytes four at a time in NEON (AdvSIMD), and the rest one at a time. It is faster than \
+      `vg_poly1305_update` on Apple's cores, and slower on Arm's Neoverse N2, whose two vector pipelines \
+      the multiplications saturate."])
+    code := Impl.StackScratch.AArch64.withStackScratch 128 .x4 Impl.Poly1305.AArch64.Vector.update
+    contract := Spec.Poly1305.updateContract AArch64.abi 128
+    stack := 128
+    verified := Proof.Poly1305.AArch64.Vector.update_framed
     spSafe := Code.all_of_forall (fun _ => rfl) _ },
   { Spec.Poly1305.finalizeApi with
     target := AArch64.target
