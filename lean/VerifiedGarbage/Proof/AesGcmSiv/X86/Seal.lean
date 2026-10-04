@@ -4,10 +4,11 @@ import VerifiedGarbage.Proof.AesGcmSiv.X86.TagIO
 # AES-GCM-SIV on x86: `vg_aes_gcm_siv_seal` (correctness)
 
 Untrusted: everything here is checked by Lean. The entry, the keys, POLYVAL
-and the tag input, the tag at `W`, counter mode on the data from it, and
-the restore compute `encryptWith` (RFC 8452 §4) of the arguments
-(`seal_wp`), given that the tag input computed with GHASH is the RFC's
-(`Proof.GcmSiv.Words.tagInputG`, related to it in `Verified.lean`). Each
+and the tag input, the tag at `W`, counter mode on the data from it, the tag
+copied out to `tag` and the restore compute `encryptWith` (RFC 8452 §4) of
+the arguments (`seal_wp`), given that the tag input computed with GHASH is
+the RFC's (`Proof.GcmSiv.Words.tagInputG`, related to it by
+`Proof.GcmSiv.Polyval.tagInput_eq_tagInputG`). Each
 piece writes only `mutR`, which keeps the slots, our caller's registers,
 the return address, the key schedule, the nonce and the additional data.
 -/

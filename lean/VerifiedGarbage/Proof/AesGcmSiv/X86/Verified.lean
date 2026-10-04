@@ -1,5 +1,4 @@
 import VerifiedGarbage.Proof.AesGcmSiv.X86.FnCT
-import VerifiedGarbage.Proof.GcmSiv.Polyval
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Spec.GcmSiv.Contract
 import VerifiedGarbage.Proof.AesGcmSiv.Scratch
@@ -9,9 +8,10 @@ import VerifiedGarbage.Proof.AesGcmSiv.Scratch
 
 Untrusted: everything here is checked by Lean. Correctness and constant time
 (for any implementations `v` of `vg_aes_ctr32`, `vg_aes_expand_key` and
-`vg_ghash`), with the tag input computed with GHASH equal to the RFC's
-(`tagInput_eq`, from `Proof.GcmSiv.Polyval`, imported here only so that the
-other proofs need not import its algebra), a state satisfying each
+`vg_ghash`), given that the tag input computed with GHASH is the RFC's
+(`TagInputEq`, which the registration file has from
+`Proof.GcmSiv.Polyval.tagInput_eq_tagInputG`, so that no proof here imports
+its algebra), a state satisfying each
 precondition, and the shared contracts with the working space as a last
 argument (`Proof/AesGcmSiv/Scratch.lean`), with 28 bytes of stack: a call of
 `vg_aes_ctr32` (its six arguments and return address), which makes no
@@ -24,11 +24,6 @@ namespace VG.Proof.AesGcmSiv.X86
 
 open VG VG.X86 VG.Impl.AesGcmSiv.X86
 open VG.Proof.AesGcm.X86 (GcmImpl)
-
-/-- RFC 8452 Appendix A: POLYVAL with `H` is GHASH with `H · x`. -/
-theorem tagInput_eq : TagInputEq := fun a n pt d => by
-  rw [GcmSiv.tagInput_eq, Spec.GcmSiv.polyval, GcmSiv.Polyval.polyvalFrom_eq]
-  rfl
 
 /-- The return value: the low word of `edx:eax`. -/
 theorem setWidth_ret (a b : BitVec 32) : (a ++ b).setWidth 32 = b := by
@@ -87,9 +82,9 @@ theorem openSat_args : arg openSat 0 = 0x1000 ∧ arg openSat 1 = 10 ∧ arg ope
     arg openSat 7 = 0x4000 ∧ arg openSat 8 = 0x5000 ∧ argAddr openSat 0 = 0x8004 :=
   sealSat_args
 
-theorem seal_verified (v : GcmImpl) :
+theorem seal_verified (v : GcmImpl) (hti : TagInputEq) :
     Verified X86.target («seal» v.callees) (Proof.AesGcmSiv.sealScratchContract X86.abi 352 28) :=
-  Verified.of_correct (fun _ hs => seal_wp v tagInput_eq hs) (seal_ct v) (by
+  Verified.of_correct (fun _ hs => seal_wp v hti hs) (seal_ct v) (by
     obtain ⟨a0, a1, a2, a3, a4, a5, a6, a7, a8, e⟩ := sealSat_args
     have esp : sealSat.gpr .esp = 0x8000 := rfl
     sig_implies [Proof.AesGcmSiv.sealScratchContract, Proof.AesGcmSiv.sealScratchSig, Spec.GcmSiv.sealPre,
@@ -97,9 +92,9 @@ theorem seal_verified (v : GcmImpl) :
       stackR, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
       [a0, a1, a2, a3, a4, a5, a6, a7, a8, e, esp] using sealSat)
 
-theorem open_verified (v : GcmImpl) :
+theorem open_verified (v : GcmImpl) (hti : TagInputEq) :
     Verified X86.target («open» v.callees) (Proof.AesGcmSiv.openScratchContract X86.abi 352 28) :=
-  Verified.of_correct (fun _ hs => open_wp v tagInput_eq hs) (open_ct v)
+  Verified.of_correct (fun _ hs => open_wp v hti hs) (open_ct v)
     { pre := by
         sig_implies_pre [Proof.AesGcmSiv.openScratchContract, Proof.AesGcmSiv.openScratchSig, Spec.GcmSiv.openPre,
           Spec.GcmSiv.openPost, Spec.GcmSiv.openLeak, openX86, openResult, openPost, openPre, oneLay, onePub,

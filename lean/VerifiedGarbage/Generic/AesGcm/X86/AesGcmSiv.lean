@@ -1,5 +1,6 @@
 import VerifiedGarbage.TCB.X86.Target
 import VerifiedGarbage.Proof.AesGcmSiv.X86.Frame
+import VerifiedGarbage.Proof.GcmSiv.Polyval
 import VerifiedGarbage.Generic.AesGcm.X86.AesGcm
 
 /-!
@@ -15,7 +16,9 @@ Each runs in a frame of 2856 bytes holding its working space and a copy of
 its eight stack arguments (`Proof/AesGcmSiv/X86/Frame.lean`), below which it
 uses 28 bytes: a call of `vg_aes_ctr32` (six arguments and the return
 address; the calls of the other two push fewer), which makes no calls;
-2884 bytes in all.
+2884 bytes in all. The proofs take the tag input computed with GHASH to be
+RFC 8452's (`Proof.GcmSiv.Polyval.tagInput_eq_tagInputG`), which this file
+imports, with its algebra, so that the proofs need not.
 -/
 
 namespace VG.Generic.AesGcm.X86.AesGcmSiv
@@ -37,7 +40,7 @@ def artifactsOf (v : GcmImpl) : List Artifact := [
     code := Impl.StackScratch.X86.withStackScratch 2856 8 (Impl.AesGcmSiv.X86.«seal» v.callees)
     contract := Spec.GcmSiv.sealContract X86.abi 2884
     stack := 2884
-    verified := seal_framed v
+    verified := seal_framed v VG.Proof.GcmSiv.Polyval.tagInput_eq_tagInputG
     spSafe := Proof.AesGcm.X86.withStackScratch_spSafe (by decide) (seal_spSafe v)
     features := v.features },
   { Spec.GcmSiv.openApi with
@@ -48,7 +51,7 @@ def artifactsOf (v : GcmImpl) : List Artifact := [
     code := Impl.StackScratch.X86.withStackScratch 2856 8 (Impl.AesGcmSiv.X86.«open» v.callees)
     contract := Spec.GcmSiv.openContract X86.abi 2884
     stack := 2884
-    verified := open_framed v
+    verified := open_framed v VG.Proof.GcmSiv.Polyval.tagInput_eq_tagInputG
     spSafe := Proof.AesGcm.X86.withStackScratch_spSafe (by decide) (open_spSafe v)
     features := v.features }]
 

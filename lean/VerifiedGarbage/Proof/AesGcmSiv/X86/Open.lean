@@ -3,10 +3,10 @@ import VerifiedGarbage.Proof.AesGcmSiv.X86.Seal
 /-!
 # AES-GCM-SIV on x86: `vg_aes_gcm_siv_open` (correctness)
 
-Untrusted: everything here is checked by Lean. The entry, the keys, counter
-mode on the data from the received tag at `W`, POLYVAL of the result and the
-tag input, its tag at `W + 240`, the comparison, the mask and the restore
-compute `decryptWith` (RFC 8452 §5) of the arguments (`open_wp`).
+Untrusted: everything here is checked by Lean. The entry, the received tag
+copied to `W`, the keys, counter mode on the data from it, POLYVAL of the
+result and the tag input, its tag at `W + 240`, the comparison, the mask and
+the restore compute `decryptWith` (RFC 8452 §5) of the arguments (`open_wp`).
 -/
 
 set_option linter.unusedSimpArgs false
