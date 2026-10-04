@@ -38,6 +38,8 @@ structure RfcHash where
   ecdsa : I.ecdsa = Spec.Ecdsa.P256.inst
   hash : I.hash = ok.hH.SH.H
   len : I.hashLen = F.H.D
+  /-- The hash function's digests have `F.H.D` bytes. -/
+  macLen : ∀ x, (ok.hH.SH.H.hash x).length = F.H.D
   tries : I.tries = 8
   /-- The sizes the frame and `scratch` hold: the output and block sizes of
   SHA-256, SHA-384 or SHA-512, and states and working space no larger than
