@@ -16,7 +16,7 @@ A negative digit adds the negation `(-x, y)` of the table entry `|d|`
 
 namespace VG.Proof.X448
 
-open VG.Impl.X448 VG.Proof.Ed448 VG.Proof.Ed448.Edwards
+open VG.Impl.X448 VG.Proof.Ed448 VG.Proof.EdwardsLaw
 open Spec.X448 (Fe)
 
 /-- Digit `i` of `S` in radix 16. -/

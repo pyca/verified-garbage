@@ -17,7 +17,7 @@ open VG.Proof.X448.AArch64.Weak (Index Env)
 open VG.Proof.X448.AArch64.Fast
 open VG.Proof.Curve448.AArch64.Fast (Mb Ib)
 open VG.Proof.Ed448 (Rep baseAff dZ)
-open VG.Proof.Ed448.Edwards (EPoint)
+open VG.Proof.EdwardsLaw (EPoint)
 open VG.Proof.X448 (addPt addPt_rep)
 open VG.Impl.X448.AArch64.Fast (codeOf)
 

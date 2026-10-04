@@ -13,7 +13,7 @@ import VerifiedGarbage.Proof.X448.Edwards.Ladder
 
 namespace VG.Proof.X448
 
-open VG.Spec.Ed448 VG.Proof.Ed448 VG.Proof.Ed448.Edwards
+open VG.Spec.Ed448 VG.Proof.Ed448 VG.Proof.EdwardsLaw
 open Spec.X448 (Fe a24)
 
 /-- The comb's addition of `p` and `q`. -/

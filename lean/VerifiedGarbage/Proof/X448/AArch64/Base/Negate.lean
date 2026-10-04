@@ -88,8 +88,9 @@ theorem subNeg_ok {s : State} {base : Addr} (hs : Scr s base) (hb : BEnv s.mem b
 
 theorem negate_eq (ox : Index) (n : Nat) :
     negate (slot ox.val) n (slot (10 : Index).val) =
-      VG.Impl.X448.AArch64.Fast.codeOf [.sub (slot (10 : Index).val) (slot (19 : Index).val) (slot ox.val)] ++
-        ([.lsl .x .x6 .x19 3, .add .x .x6 .x3 .x6, .ldrb .x6 .x6 (n + 3), .subImm .x .x6 .x6 1] ++
+      VG.Impl.X448.AArch64.Fast.codeOf ([.sub (slot (10 : Index).val) (slot (19 : Index).val) (slot ox.val)] :
+          List Impl.X448.AArch64.Fast.Op) ++
+        (([.lsl .x .x6 .x19 3, .add .x .x6 .x3 .x6, .ldrb .x6 .x6 (n + 3), .subImm .x .x6 .x6 1] : List Instr) ++
           VG.Impl.Curve448.AArch64.cswap (slot ox.val) (slot (10 : Index).val)) := by
   simp only [negate, List.append_assoc]; rfl
 

@@ -56,10 +56,10 @@ theorem addAffine_eq (x1 y1 z1 x2 y2 : Index) :
           .small (slot (10 : Index).val) (slot (10 : Index).val) (slot (15 : Index).val)])
         (mul2 (slot (16 : Index).val) (slot x1.val) (slot y2.val) (slot (17 : Index).val) (slot y1.val)
           (slot x2.val)) ++
-      codeOf [.addSub (slot (13 : Index).val) (slot (15 : Index).val) (slot (16 : Index).val)
+      codeOf ([.addSub (slot (13 : Index).val) (slot (15 : Index).val) (slot (16 : Index).val)
           (slot (17 : Index).val),
         .addSub (slot (16 : Index).val) (slot (17 : Index).val) (slot (12 : Index).val)
-          (slot (11 : Index).val)] ++
+          (slot (11 : Index).val)] : List Impl.X448.AArch64.Fast.Op) ++
       weave (codeOf [.mul (slot (18 : Index).val) (slot (14 : Index).val) (slot (10 : Index).val)])
         (mul2 (slot (11 : Index).val) (slot z1.val) (slot (14 : Index).val) (slot (12 : Index).val)
           (slot z1.val) (slot (10 : Index).val)) ++

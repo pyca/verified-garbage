@@ -13,7 +13,7 @@ The kernel evaluates it (`tables_check`).
 
 namespace VG.Proof.X448
 
-open VG.Spec.Ed448 VG.Impl.X448 VG.Proof.Ed448 VG.Proof.Ed448.Edwards
+open VG.Spec.Ed448 VG.Impl.X448 VG.Proof.Ed448 VG.Proof.EdwardsLaw
 open Spec.X448 (Fe)
 
 /-- The projective point `(x, y, 1)`. -/

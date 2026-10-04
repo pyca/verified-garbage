@@ -151,7 +151,7 @@ theorem block1_ok {s : State} {base : Addr} (hb : s.gpr .x2 = base) (hw : (⟨ba
   simp only [List.append_assoc]
   rw [← List.append_assoc (([.addImm .x .x3 .x2 0, .movz .x .x12 0xffff 0, .movk .x .x12 0x0fff 1,
         st .x19 0, st .x20 8, .addImm .x .x20 .x0 0] : List Instr)), WP.block_append_iff]
-  refine WP.mono (WP.preservedV (prefix_ok hb hw hn)) fun a ⟨⟨ha, sa, oa, xa, ka, outa⟩, va⟩ => ?_
+  refine WP.mono (WP.preservedV (prefix_ok hb hw hn) (by lit_decide)) fun a ⟨⟨ha, sa, oa, xa, ka, outa⟩, va⟩ => ?_
   rw [WP.block_append_iff]
   refine WP.mono (vsave_ok ha) fun b ⟨vb, ob, gb, rb, wb⟩ => ?_
   have hsb : Scr b base := ha.of_keeps (rs := []) ⟨fun r _ => congrFun gb r, rb, wb⟩ (by decide)
