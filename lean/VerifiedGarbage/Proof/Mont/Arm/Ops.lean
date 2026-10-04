@@ -402,12 +402,13 @@ theorem subK_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {a
 /-! ## The operations -/
 
 theorem add_eq (M : Mod) (acc o a b : Nat) : add M acc o a b =
-    [mask16, .mov .r3 (.imm 0)] ++ addK acc a b (words M) ++ [.str .r3 wb (acc + 4 * digits M)] ++ csub M acc o :=
+    ([mask16, .mov .r3 (.imm 0)] : List Instr) ++ addK acc a b (words M) ++
+      ([.str .r3 wb (acc + 4 * digits M)] : List Instr) ++ csub M acc o :=
   rfl
 
 theorem sub_eq (M : Mod) (acc o a b : Nat) : sub M acc o a b =
-    [mask16, .mov .r3 (.imm 1)] ++ subK acc a b M.mo (words M) ++
-      [.dp .sub .r3 .r3 (.imm 1), .str .r3 wb (acc + 4 * digits M)] ++ csub M acc o :=
+    ([mask16, .mov .r3 (.imm 1)] : List Instr) ++ subK acc a b M.mo (words M) ++
+      ([.dp .sub .r3 .r3 (.imm 1), .str .r3 wb (acc + 4 * digits M)] : List Instr) ++ csub M acc o :=
   rfl
 
 /-- `[o] = [a] [b] R⁻¹ mod m`. -/
