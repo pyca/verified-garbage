@@ -294,6 +294,10 @@ theorem step_upd (hr : τ.regs.subset r = true) (hf : τ.flags = true → f = tr
   | movdquStore _ _ => simp only [step, reduceCtorEq] at hs
   | movqLoad _ _ => simp only [step, reduceCtorEq] at hs
   | movqStore _ _ => simp only [step, reduceCtorEq] at hs
+  | mop _ => simp only [step, reduceCtorEq] at hs
+  | mmxStore _ _ => simp only [step, reduceCtorEq] at hs
+  | mmxEnter => simp only [step, reduceCtorEq] at hs
+  | emms => simp only [step, reduceCtorEq] at hs
   | xop _ => simp only [step, reduceCtorEq] at hs
 
 theorem LeR.sim {a a' b b' : T} (ha : Sim a' a) (hb : Sim b' b) (h : LeR a b) : LeR a' b' where
@@ -507,7 +511,7 @@ theorem step_bits {σ σ' : T} {i : Instr} (hs : step σ i = some σ') {j : Nat}
     (hr : σ.regs.bits.testBit j = true) : σ'.regs.bits.testBit j = true := by
   cases i
   case store | store8 => rw [storeStep_regs hs]; exact hr
-  case push | pop | alloc | free | movdquLoad | movdquStore | movqLoad | movqStore | xop => simp only [step, reduceCtorEq] at hs
+  case push | pop | alloc | free | movdquLoad | movdquStore | movqLoad | movqStore | xop | mop | mmxStore | mmxEnter | emms => simp only [step, reduceCtorEq] at hs
   case mul q =>
     simp only [step, Option.some.injEq, mulStep] at hs
     subst hs

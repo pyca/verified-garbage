@@ -46,6 +46,29 @@ def MemOp.str128 (m : MemOp) : String := s!"XMMWORD PTR {m.addr}"
 
 def MemOp.str64 (m : MemOp) : String := s!"QWORD PTR {m.addr}"
 
+def MReg.name : MReg → String
+  | .mm0 => "mm0" | .mm1 => "mm1" | .mm2 => "mm2" | .mm3 => "mm3"
+  | .mm4 => "mm4" | .mm5 => "mm5" | .mm6 => "mm6" | .mm7 => "mm7"
+
+def MSrc.str : MSrc → String
+  | .reg r => r.name
+  | .mem m => m.str64
+
+def MBinOp.name : MBinOp → String
+  | .paddq => "paddq" | .pxor => "pxor" | .por => "por" | .pand => "pand" | .pandn => "pandn"
+
+def MShiftOp.name : MShiftOp → String
+  | .psllq => "psllq" | .psrlq => "psrlq"
+
+def MOp.asm : MOp → String
+  | .bin op d s => s!"{op.name} {d.name}, {s.str}"
+  | .shift op d n => s!"{op.name} {d.name}, {n.toNat}"
+  | .movq d s => s!"movq {d.name}, {s.str}"
+  | .punpckldq d r => s!"punpckldq {d.name}, {r.name}"
+  | .movd d r => s!"movd {d.name}, {r.name}"
+  | .movq2dq d r => s!"movq2dq {d.name}, {r.name}"
+  | .movdq2q d r => s!"movdq2q {d.name}, {r.name}"
+
 def XBinOp.name : XBinOp → String
   | .movdqa => "movdqa" | .paddd => "paddd" | .pxor => "pxor" | .por => "por"
   | .pand => "pand" | .pandn => "pandn"
@@ -91,6 +114,11 @@ def Instr.asm : Instr → List String
   | .movqLoad d m => [s!"movq {d.name}, {m.str64}"]
   | .movqStore m r => [s!"movq {m.str64}, {r.name}"]
   | .xop op => [op.asm]
+  | .mop op => [op.asm]
+  | .mmxStore m r => [s!"movq {m.str64}, {r.name}"]
+  -- The push of an MMX frame is no instruction.
+  | .mmxEnter => []
+  | .emms => ["emms"]
 
 def Cond.name : Cond → String
   | .e => "e" | .ne => "ne" | .b => "b" | .ae => "ae"
