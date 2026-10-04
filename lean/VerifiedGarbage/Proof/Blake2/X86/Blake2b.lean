@@ -3,6 +3,8 @@ import VerifiedGarbage.Proof.Blake2.X86.CompressB.Verified
 import VerifiedGarbage.Proof.Blake2.X86.Stream.Verified
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Spec.Blake2.Contract
+import VerifiedGarbage.Proof.Blake2.Scratch
+import VerifiedGarbage.Proof.Framework.X86.StackScratch
 
 /-!
 # BLAKE2b on x86 (32-bit): the instance
@@ -76,14 +78,14 @@ theorem init_implies : (initX86 Spec.Blake2.b).Implies (Spec.Blake2.initBContrac
     Spec.Blake2.blockBytes, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
     [initSat, satWith, X86.arg, X86.argAddr, Mem.readW, Mem.read] using initSat
 
-theorem update_implies : (updateX86 Spec.Blake2.b).Implies (Spec.Blake2.updateBContract X86.abi 32) := by
-  sig_implies [Spec.Blake2.updateBContract, Spec.Blake2.updateBSig, updateX86, Proof.Blake2.countX86,
+theorem update_implies : (updateX86 Spec.Blake2.b).Implies (Spec.Blake2.updateBScratchContract X86.abi 32) := by
+  sig_implies [Spec.Blake2.updateBScratchContract, Spec.Blake2.updateBScratchSig, updateX86, Proof.Blake2.countX86,
     Proof.Blake2.bufOff, Spec.Blake2.blockBytes, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
     [updateSat, satWith, X86.arg, X86.argAddr, Mem.readW, Mem.read] using updateSat
 
 theorem finalize_implies :
-    (finalizeX86 Spec.Blake2.b).Implies (Spec.Blake2.finalizeBContract X86.abi 32) := by
-  sig_implies [Spec.Blake2.finalizeBContract, Spec.Blake2.finalizeBSig, finalizeX86,
+    (finalizeX86 Spec.Blake2.b).Implies (Spec.Blake2.finalizeBScratchContract X86.abi 32) := by
+  sig_implies [Spec.Blake2.finalizeBScratchContract, Spec.Blake2.finalizeBScratchSig, finalizeX86,
     Proof.Blake2.countX86, Proof.Blake2.bufOff, Spec.Blake2.blockBytes, X86.abi, X86.argSlots,
     X86.argVal, X86.argBytes]
     [finalizeSat, satWith, X86.arg, X86.argAddr, Mem.readW, Mem.read] using finalizeSat
@@ -97,13 +99,50 @@ theorem initB_verified :
 theorem updateB_verified :
     Verified X86.target
       (Impl.Blake2.X86.Stream.update 64 "vg_blake2b_compress" Impl.Blake2.X86.CompressB.compress)
-      (Spec.Blake2.updateBContract X86.abi 32) :=
+      (Spec.Blake2.updateBScratchContract X86.abi 32) :=
   (update_verified ok callee update_ct update_implies.sat_left).of_implies update_implies
 
 theorem finalizeB_verified :
     Verified X86.target
       (Impl.Blake2.X86.Stream.finalize 64 "vg_blake2b_compress" Impl.Blake2.X86.CompressB.compress)
-      (Spec.Blake2.finalizeBContract X86.abi 32) :=
+      (Spec.Blake2.finalizeBScratchContract X86.abi 32) :=
   (finalize_verified ok callee finalize_ct finalize_implies.sat_left).of_implies finalize_implies
+
+/-! ## `update` and `finalize` with their working space in a frame of their own
+
+The theorems above are of the streaming functions with their working space
+as an argument (`update_scratch`, `finalize_scratch`); `update` and
+`finalize` run them in a frame that allocates it (`Verified.stackScratch`).
+-/
+
+/-- `update(0x1000, 0, 0x2000, 0)`. -/
+def updateFrameSat : State :=
+  satWith (fun a => if a = 0x5005 then 0x10 else if a = 0x5011 then 0x20 else 0)
+    [⟨0x2000, 0⟩, ⟨0x5004, 20⟩] [⟨0x1000, 192⟩]
+
+/-- `finalize(0x1000, 0, 0x2000)`. -/
+def finalizeFrameSat : State :=
+  satWith (fun a => if a = 0x5005 then 0x10 else if a = 0x5011 then 0x20 else 0)
+    [⟨0x5004, 16⟩] [⟨0x1000, 192⟩, ⟨0x2000, 64⟩]
+
+theorem updateB_framed : Verified X86.target
+    (Impl.StackScratch.X86.withStackScratch 604 5 (Impl.Blake2.X86.Stream.update 64 "vg_blake2b_compress" Impl.Blake2.X86.CompressB.compress))
+    (Spec.Blake2.updateBContract X86.abi (32 + 604)) :=
+  X86.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 72) (stack := 32) (bytes := 604)
+    updateB_verified (by decide) (by lit_decide) (by lit_decide)
+    (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.Blake2.updateBPost_local _)
+    (by implies_sat [Spec.Blake2.updateBContract, Spec.Blake2.updateBSig, X86.abi, X86.argSlots, X86.argVal,
+        X86.argBytes]
+      [updateFrameSat, satWith, X86.arg, X86.argAddr, Mem.readW, Mem.read] using updateFrameSat)
+
+theorem finalizeB_framed : Verified X86.target
+    (Impl.StackScratch.X86.withStackScratch 600 4 (Impl.Blake2.X86.Stream.finalize 64 "vg_blake2b_compress" Impl.Blake2.X86.CompressB.compress))
+    (Spec.Blake2.finalizeBContract X86.abi (32 + 600)) :=
+  X86.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 72) (stack := 32) (bytes := 600)
+    finalizeB_verified (by decide) (by lit_decide) (by lit_decide)
+    (fun _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.Blake2.finalizeBPost_local _)
+    (by implies_sat [Spec.Blake2.finalizeBContract, Spec.Blake2.finalizeBSig, X86.abi, X86.argSlots,
+        X86.argVal, X86.argBytes]
+      [finalizeFrameSat, satWith, X86.arg, X86.argAddr, Mem.readW, Mem.read] using finalizeFrameSat)
 
 end VG.Proof.Blake2.X86.B

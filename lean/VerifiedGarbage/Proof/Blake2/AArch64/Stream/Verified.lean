@@ -4,6 +4,7 @@ import VerifiedGarbage.Proof.Blake2.AArch64.Stream.Init
 import VerifiedGarbage.Proof.Blake2.AArch64.Stream.Update
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Spec.Blake2.Contract
+import VerifiedGarbage.Proof.Framework.AArch64.StackScratch
 import VerifiedGarbage.Proof.Blake2.AArch64.Stream.Common
 import VerifiedGarbage.Proof.Framework.Range
 
@@ -471,17 +472,17 @@ theorem initB_verified :
 
 theorem updateB_verified :
     Verified AArch64.target (Impl.Blake2.AArch64.Stream.update b)
-      (Spec.Blake2.updateBContract AArch64.abi 16) :=
+      (Spec.Blake2.updateBScratchContract AArch64.abi 16) :=
   Verified.of_correct updateB_correct updateB_ct (by
-    sig_implies [Spec.Blake2.updateBContract, Spec.Blake2.updateBSig, Proof.Blake2.updateAArch64,
+    sig_implies [Spec.Blake2.updateBScratchContract, Spec.Blake2.updateBScratchSig, Proof.Blake2.updateAArch64,
       Spec.Blake2.bufOff, Spec.Blake2.blockBytes, AArch64.abi, AArch64.argRegs]
       [updateSat] using updateSat 64)
 
 theorem finalizeB_verified :
     Verified AArch64.target (Impl.Blake2.AArch64.Stream.finalize b)
-      (Spec.Blake2.finalizeBContract AArch64.abi 16) :=
+      (Spec.Blake2.finalizeBScratchContract AArch64.abi 16) :=
   Verified.of_correct finalizeB_correct finalizeB_ct (by
-    sig_implies [Spec.Blake2.finalizeBContract, Spec.Blake2.finalizeBSig,
+    sig_implies [Spec.Blake2.finalizeBScratchContract, Spec.Blake2.finalizeBScratchSig,
       Proof.Blake2.finalizeAArch64, Spec.Blake2.bufOff, Spec.Blake2.blockBytes, AArch64.abi,
       AArch64.argRegs]
       [finalizeSat] using finalizeSat 64)
@@ -513,19 +514,54 @@ theorem initS_verified :
 
 theorem updateS_verified :
     Verified AArch64.target (Impl.Blake2.AArch64.Stream.update s)
-      (Spec.Blake2.updateSContract AArch64.abi 16) :=
+      (Spec.Blake2.updateSScratchContract AArch64.abi 16) :=
   Verified.of_correct updateS_correct updateS_ct (by
-    sig_implies [Spec.Blake2.updateSContract, Spec.Blake2.updateSSig, Proof.Blake2.updateAArch64,
+    sig_implies [Spec.Blake2.updateSScratchContract, Spec.Blake2.updateSScratchSig, Proof.Blake2.updateAArch64,
       Spec.Blake2.bufOff, Spec.Blake2.blockBytes, AArch64.abi, AArch64.argRegs]
       [updateSat] using updateSat 32)
 
 theorem finalizeS_verified :
     Verified AArch64.target (Impl.Blake2.AArch64.Stream.finalize s)
-      (Spec.Blake2.finalizeSContract AArch64.abi 16) :=
+      (Spec.Blake2.finalizeSScratchContract AArch64.abi 16) :=
   Verified.of_correct finalizeS_correct finalizeS_ct (by
-    sig_implies [Spec.Blake2.finalizeSContract, Spec.Blake2.finalizeSSig,
+    sig_implies [Spec.Blake2.finalizeSScratchContract, Spec.Blake2.finalizeSScratchSig,
       Proof.Blake2.finalizeAArch64, Spec.Blake2.bufOff, Spec.Blake2.blockBytes, AArch64.abi,
       AArch64.argRegs]
       [finalizeSat] using finalizeSat 32)
+
+/-! ## `update` and `finalize` with their working space in a frame of their own
+
+The theorems above are of the streaming functions with their working space
+as an argument (`update_scratch`, `finalize_scratch`); `update` and
+`finalize` run them in a frame that allocates it (`Verified.stackScratch`).
+-/
+
+theorem updateB_framed : Verified AArch64.target
+    (Impl.StackScratch.AArch64.withStackScratch 576 .x4 (Impl.Blake2.AArch64.Stream.update b))
+    (Spec.Blake2.updateBContract AArch64.abi (16 + 576)) :=
+  AArch64.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 72) (stack := 16) (bytes := 576)
+    updateB_verified (by decide) (by decide)
+    (AArch64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
+
+theorem finalizeB_framed : Verified AArch64.target
+    (Impl.StackScratch.AArch64.withStackScratch 576 .x3 (Impl.Blake2.AArch64.Stream.finalize b))
+    (Spec.Blake2.finalizeBContract AArch64.abi (16 + 576)) :=
+  AArch64.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 72) (stack := 16) (bytes := 576)
+    finalizeB_verified (by decide) (by decide)
+    (AArch64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
+
+theorem updateS_framed : Verified AArch64.target
+    (Impl.StackScratch.AArch64.withStackScratch 576 .x4 (Impl.Blake2.AArch64.Stream.update s))
+    (Spec.Blake2.updateSContract AArch64.abi (16 + 576)) :=
+  AArch64.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 72) (stack := 16) (bytes := 576)
+    updateS_verified (by decide) (by decide)
+    (AArch64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
+
+theorem finalizeS_framed : Verified AArch64.target
+    (Impl.StackScratch.AArch64.withStackScratch 576 .x3 (Impl.Blake2.AArch64.Stream.finalize s))
+    (Spec.Blake2.finalizeSContract AArch64.abi (16 + 576)) :=
+  AArch64.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 72) (stack := 16) (bytes := 576)
+    finalizeS_verified (by decide) (by decide)
+    (AArch64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
 
 end VG.Proof.Blake2.AArch64.Stream
