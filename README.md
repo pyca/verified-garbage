@@ -580,7 +580,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅ AES-NI, VAES, PCLMULQDQ, VPCLMULQDQ, AVX2; GHASH with <code>mul</code>; 16 blocks at a time with VAES, 8 with VPCLMULQDQ; counter mode and GHASH in one pass with VAES and VPCLMULQDQ, or with AES-NI, PCLMULQDQ and AVX</td>
+<td>✅ AES-NI, VAES, PCLMULQDQ, VPCLMULQDQ, AVX-512F, AVX-512BW, AVX2; GHASH with <code>mul</code>; 16 blocks at a time with VAES, 8 with VPCLMULQDQ; counter mode and GHASH interleaved, in 256- or 512-bit registers</td>
 
 <td>✅ AES, PMULL</td>
 
