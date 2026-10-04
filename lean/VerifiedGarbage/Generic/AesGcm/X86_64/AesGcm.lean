@@ -36,7 +36,9 @@ for the frame that holds their working space.
 `seal`, `open`, `stream_encrypt` and `stream_decrypt` need 24: the argument
 they pass on the stack, the return address of their call of
 `vg_aes_gcm_encrypt_blocks` or `vg_aes_gcm_decrypt_blocks`, and that of its
-calls.
+calls. `stream_encrypt` and `stream_decrypt` need 2584 bytes more, for the
+frame that holds their working space, which was their second stack argument
+(`Verified.stackArgScratch`).
 -/
 
 namespace VG.Generic.AesGcm.X86_64.AesGcm
@@ -136,21 +138,21 @@ def artifactsOf (v : GcmImpl) : List Artifact := [
     name := Spec.Gcm.streamEncryptApi.name ++ v.suffix
     target := X86_64.target
     doc := Spec.Gcm.streamEncryptApi.doc (notes := [note v])
-    code := Impl.AesGcm.X86_64.streamEncrypt v.callees
-    contract := Spec.Gcm.streamEncryptContract X86_64.abi 24
-    stack := 24
-    verified := streamEncrypt_verified v
-    spSafe := streamEncrypt_spSafe v
+    code := Impl.StackScratch.X86_64.withStackArgScratch 2584 1 (Impl.AesGcm.X86_64.streamEncrypt v.callees)
+    contract := Spec.Gcm.streamEncryptContract X86_64.abi 2608
+    stack := 2608
+    verified := streamEncrypt_framed v
+    spSafe := X86_64.withStackArgScratch_spSafe (streamEncrypt_spSafe v)
     features := v.features },
   { Spec.Gcm.streamDecryptApi with
     name := Spec.Gcm.streamDecryptApi.name ++ v.suffix
     target := X86_64.target
     doc := Spec.Gcm.streamDecryptApi.doc (notes := [note v])
-    code := Impl.AesGcm.X86_64.streamDecrypt v.callees
-    contract := Spec.Gcm.streamDecryptContract X86_64.abi 24
-    stack := 24
-    verified := streamDecrypt_verified v
-    spSafe := streamDecrypt_spSafe v
+    code := Impl.StackScratch.X86_64.withStackArgScratch 2584 1 (Impl.AesGcm.X86_64.streamDecrypt v.callees)
+    contract := Spec.Gcm.streamDecryptContract X86_64.abi 2608
+    stack := 2608
+    verified := streamDecrypt_framed v
+    spSafe := X86_64.withStackArgScratch_spSafe (streamDecrypt_spSafe v)
     features := v.features },
   { Spec.Gcm.streamFinishApi with
     name := Spec.Gcm.streamFinishApi.name ++ v.suffix

@@ -60,6 +60,31 @@ def streamAadScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract
       streamAadPost A.ptrBits ctx state aadLen data len)
     (writeArgs := true) (stack := stack)
 
+/-- `vg_aes_gcm_stream_encrypt` and `vg_aes_gcm_stream_decrypt` with
+`scratch: *mut [u64; 320]`. -/
+def streamCryptScratchSig : Sig where
+  params := [("ctx", .array false .u64 32), ("rounds", .int .usize true),
+    ("state", .array true .u64 10), ("aad_len", .int .u64 true), ("text_len", .int .u64 true),
+    ("data", .slice true .u8 "len"), ("scratch", .array true .u64 320)]
+
+/-- `streamEncryptContract`, whatever `scratch` is. -/
+def streamEncryptScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
+  streamCryptScratchSig.contract A
+    (pre := fun ctx rounds state aadLen textLen data len _scratch =>
+      streamTextPre A.ptrBits ctx rounds state aadLen textLen data len)
+    (post := fun ctx rounds state aadLen textLen data len _scratch =>
+      streamEncryptPost A.ptrBits ctx rounds state aadLen textLen data len)
+    (writeArgs := true) (stack := stack)
+
+/-- `streamDecryptContract`, whatever `scratch` is. -/
+def streamDecryptScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
+  streamCryptScratchSig.contract A
+    (pre := fun ctx rounds state aadLen textLen data len _scratch =>
+      streamTextPre A.ptrBits ctx rounds state aadLen textLen data len)
+    (post := fun ctx rounds state aadLen textLen data len _scratch =>
+      streamDecryptPost A.ptrBits ctx rounds state aadLen textLen data len)
+    (writeArgs := true) (stack := stack)
+
 /-! ## Locality -/
 
 private theorem bytesAt_congr {m₁ m₂ : Mem} {p : Addr} {n : Nat}
@@ -87,6 +112,13 @@ theorem ctxH_congr {m₁ m₂ : Mem} {p : Addr}
     ctxH m₂ p = ctxH m₁ p := by
   simp only [ctxH]
   exact blockAt_congr_off (d := 240) (by omega) h
+
+/-- The cipher of a key context, for at most 15 rounds, is in its 256 bytes. -/
+theorem ctxCiph_congr {m₁ m₂ : Mem} {p : Addr} {nr : Nat} (hn : nr ≤ 15)
+    (h : ∀ i < 256, m₂ (p + BitVec.ofNat 64 i) = m₁ (p + BitVec.ofNat 64 i)) :
+    ctxCiph m₂ p nr = ctxCiph m₁ p nr := by
+  simp only [ctxCiph]
+  rw [bytesAt_congr fun i hi => h i (by omega)]
 
 /-- The streaming state represents a message by its 80 bytes alone. -/
 theorem streamRepr_congr {m₁ m₂ : Mem} {p : Addr} {ciph : Block → Block} {hk : Block}
@@ -120,6 +152,8 @@ private theorem agree_of {m₁ m₂ : Mem} {p : Addr} {n : Nat}
   · simp only [Region.Contains]
     have := (p + BitVec.ofNat 64 i - p).isLt
     omega
+
+private theorem le15 {n : Nat} (h : n = 10 ∨ n = 12 ∨ n = 14) : n ≤ 15 := by omega
 
 variable (pb : Nat)
 
@@ -187,5 +221,59 @@ theorem streamAadPost_local : ∀ vs m₁ m₂ m' r, vs.length = (streamAadSig.w
         rw [BitVec.toNat_setWidth] at hi; omega)]
     rw [ctxH_congr fun i hi => hc i (by omega)] at hr
     exact h ciph iv a (streamRepr_congr (fun i hi => (hs i (by omega)).symm) hr) hl
+
+theorem streamTextPre_local : ∀ vs m₁ m₂, vs.length = (streamCryptSig.words pb).length →
+    (∀ b ∈ Sig.bufs streamCryptSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply (streamCryptSig.words pb) (streamTextPre pb) vs m₁ →
+      Curry.apply (streamCryptSig.words pb) (streamTextPre pb) vs m₂
+  | [_, _, _, _, _, _, _], _, _, _, _, h => h
+
+theorem streamEncryptPost_local : ∀ vs m₁ m₂ m' r, vs.length = (streamCryptSig.words pb).length →
+    (∀ b ∈ Sig.bufs streamCryptSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply (streamCryptSig.words pb) (streamEncryptPost pb) vs m₁ m' r →
+      Curry.apply (streamCryptSig.words pb) (streamEncryptPost pb) vs m₂ m' r
+  | [ctx, rd, st, _, _, data, len], m₁, m₂, m', r, _, hb, h => by
+    simp only [streamCryptSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
+      forall_eq_or_imp, forall_eq, Elem.size, Nat.mul_one] at hb
+    have hc := agree_of hb.1
+    have hs := agree_of hb.2.1
+    have hd := agree_of hb.2.2
+    change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int 64, ArgWord.int 64,
+      ArgWord.addr, ArgWord.int pb] (streamEncryptPost pb) _ m₁ m' r at h
+    change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int 64, ArgWord.int 64,
+      ArgWord.addr, ArgWord.int pb] (streamEncryptPost pb) _ m₂ m' r
+    dsimp only [Curry.apply, streamEncryptPost, ArgWord.ofRaw] at h ⊢
+    intro hn iv a p hr hl ht
+    have := Nat.mod_le len.toNat (2 ^ pb)
+    have hn' := le15 hn
+    rw [ctxCiph_congr hn' fun i hi => hc i (by omega), ctxH_congr fun i hi => hc i (by omega),
+      bytesAt_congr (n := (len.setWidth pb).toNat) fun i hi => hd i (by
+        rw [BitVec.toNat_setWidth] at hi; omega)]
+    rw [ctxCiph_congr hn' fun i hi => hc i (by omega), ctxH_congr fun i hi => hc i (by omega)] at hr
+    exact h hn iv a p (streamRepr_congr (fun i hi => (hs i (by omega)).symm) hr) hl ht
+
+theorem streamDecryptPost_local : ∀ vs m₁ m₂ m' r, vs.length = (streamCryptSig.words pb).length →
+    (∀ b ∈ Sig.bufs streamCryptSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply (streamCryptSig.words pb) (streamDecryptPost pb) vs m₁ m' r →
+      Curry.apply (streamCryptSig.words pb) (streamDecryptPost pb) vs m₂ m' r
+  | [ctx, rd, st, _, _, data, len], m₁, m₂, m', r, _, hb, h => by
+    simp only [streamCryptSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
+      forall_eq_or_imp, forall_eq, Elem.size, Nat.mul_one] at hb
+    have hc := agree_of hb.1
+    have hs := agree_of hb.2.1
+    have hd := agree_of hb.2.2
+    change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int 64, ArgWord.int 64,
+      ArgWord.addr, ArgWord.int pb] (streamDecryptPost pb) _ m₁ m' r at h
+    change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int 64, ArgWord.int 64,
+      ArgWord.addr, ArgWord.int pb] (streamDecryptPost pb) _ m₂ m' r
+    dsimp only [Curry.apply, streamDecryptPost, ArgWord.ofRaw] at h ⊢
+    intro hn iv a c hr hl ht
+    have := Nat.mod_le len.toNat (2 ^ pb)
+    have hn' := le15 hn
+    rw [ctxCiph_congr hn' fun i hi => hc i (by omega), ctxH_congr fun i hi => hc i (by omega),
+      bytesAt_congr (n := (len.setWidth pb).toNat) fun i hi => hd i (by
+        rw [BitVec.toNat_setWidth] at hi; omega)]
+    rw [ctxCiph_congr hn' fun i hi => hc i (by omega), ctxH_congr fun i hi => hc i (by omega)] at hr
+    exact h hn iv a c (streamRepr_congr (fun i hi => (hs i (by omega)).symm) hr) hl ht
 
 end VG.Proof.AesGcm

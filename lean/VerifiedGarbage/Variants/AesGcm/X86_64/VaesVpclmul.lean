@@ -18,8 +18,10 @@ def stitch : Proof.AesGcm.X86_64.StitchImpl where
   enc := Impl.Gcm.X86_64.Stitch.enc
   dec := Impl.Gcm.X86_64.Stitch.dec
   ok := Proof.Gcm.X86_64.Stitch.stitch_ok
-  encP := ⟨by decide +kernel, by decide +kernel, by decide +kernel, by decide, ⟨_, by taint_decide⟩⟩
-  decP := ⟨by decide +kernel, by decide +kernel, by decide +kernel, by decide, ⟨_, by taint_decide⟩⟩
+  encP := ⟨by decide +kernel, by decide +kernel, by decide +kernel, by decide, by decide +kernel,
+    ⟨_, by taint_decide⟩⟩
+  decP := ⟨by decide +kernel, by decide +kernel, by decide +kernel, by decide, by decide +kernel,
+    ⟨_, by taint_decide⟩⟩
 
 def variant : Proof.AesGcm.X86_64.GcmVariant := ⟨.vaes, .aesni, .vpclmul, some stitch⟩
 

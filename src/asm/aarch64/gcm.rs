@@ -2117,16 +2117,16 @@ pub(crate) const VG_AES_GCM_STREAM_ENCRYPT_AES_FEATURES: crate::cpu::Features = 
 /// * `ctx` must be valid for reads of 256 bytes.
 /// * `state` must be valid for reads and writes of 80 bytes.
 /// * `data` must be valid for reads and writes of `len` bytes.
-/// * `scratch` must be valid for reads and writes of 2560 bytes.
 /// * `rounds` must be 10, 12 or 14.
-/// * The contents of `scratch` on return are unspecified.
-/// * `state`, `data` and `scratch` must not overlap each other or `ctx` (distinct Rust objects never do).
-/// * None of `ctx`, `state`, `data` and `scratch` may wrap around the end of the address space (no Rust object does).
+/// * `state` and `data` must not overlap each other or `ctx` (distinct Rust objects never do).
+/// * None of `ctx`, `state` and `data` may overlap the 2560 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` target feature.
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_encrypt_aes(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize, scratch: *mut [u64; 320]) {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_encrypt_aes(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
     core::arch::naked_asm!(
         ".arch_extension aes",
+        "sub sp, sp, #2560",
+        "add x7, sp, #0",
         "str x20, [x7, #136]",
         "str x21, [x7, #144]",
         "str x22, [x7, #152]",
@@ -2356,6 +2356,7 @@ pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_encrypt_aes(ctx: *const [u64; 
         "ldr x28, [x19, #200]",
         "ldr x30, [x19, #208]",
         "ldr x19, [x19, #128]",
+        "add sp, sp, #2560",
         "ret",
         ".arch_extension noaes",
         vg_ghash_aes = sym super::gcm::vg_ghash_aes,
@@ -2379,16 +2380,16 @@ pub(crate) const VG_AES_GCM_STREAM_DECRYPT_AES_FEATURES: crate::cpu::Features = 
 /// * `ctx` must be valid for reads of 256 bytes.
 /// * `state` must be valid for reads and writes of 80 bytes.
 /// * `data` must be valid for reads and writes of `len` bytes.
-/// * `scratch` must be valid for reads and writes of 2560 bytes.
 /// * `rounds` must be 10, 12 or 14.
-/// * The contents of `scratch` on return are unspecified.
-/// * `state`, `data` and `scratch` must not overlap each other or `ctx` (distinct Rust objects never do).
-/// * None of `ctx`, `state`, `data` and `scratch` may wrap around the end of the address space (no Rust object does).
+/// * `state` and `data` must not overlap each other or `ctx` (distinct Rust objects never do).
+/// * None of `ctx`, `state` and `data` may overlap the 2560 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` target feature.
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_decrypt_aes(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize, scratch: *mut [u64; 320]) {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_decrypt_aes(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
     core::arch::naked_asm!(
         ".arch_extension aes",
+        "sub sp, sp, #2560",
+        "add x7, sp, #0",
         "str x20, [x7, #136]",
         "str x21, [x7, #144]",
         "str x22, [x7, #152]",
@@ -2618,6 +2619,7 @@ pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_decrypt_aes(ctx: *const [u64; 
         "ldr x28, [x19, #200]",
         "ldr x30, [x19, #208]",
         "ldr x19, [x19, #128]",
+        "add sp, sp, #2560",
         "ret",
         ".arch_extension noaes",
         vg_ghash_aes = sym super::gcm::vg_ghash_aes,
@@ -4361,14 +4363,14 @@ pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_aad(ctx: *const [u64; 32], sta
 /// * `ctx` must be valid for reads of 256 bytes.
 /// * `state` must be valid for reads and writes of 80 bytes.
 /// * `data` must be valid for reads and writes of `len` bytes.
-/// * `scratch` must be valid for reads and writes of 2560 bytes.
 /// * `rounds` must be 10, 12 or 14.
-/// * The contents of `scratch` on return are unspecified.
-/// * `state`, `data` and `scratch` must not overlap each other or `ctx` (distinct Rust objects never do).
-/// * None of `ctx`, `state`, `data` and `scratch` may wrap around the end of the address space (no Rust object does).
+/// * `state` and `data` must not overlap each other or `ctx` (distinct Rust objects never do).
+/// * None of `ctx`, `state` and `data` may overlap the 2560 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_encrypt(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize, scratch: *mut [u64; 320]) {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_encrypt(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
     core::arch::naked_asm!(
+        "sub sp, sp, #2560",
+        "add x7, sp, #0",
         "str x20, [x7, #136]",
         "str x21, [x7, #144]",
         "str x22, [x7, #152]",
@@ -4598,6 +4600,7 @@ pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_encrypt(ctx: *const [u64; 32],
         "ldr x28, [x19, #200]",
         "ldr x30, [x19, #208]",
         "ldr x19, [x19, #128]",
+        "add sp, sp, #2560",
         "ret",
         vg_ghash = sym super::gcm::vg_ghash,
         vg_aes_ctr32 = sym super::aes::vg_aes_ctr32,
@@ -4617,14 +4620,14 @@ pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_encrypt(ctx: *const [u64; 32],
 /// * `ctx` must be valid for reads of 256 bytes.
 /// * `state` must be valid for reads and writes of 80 bytes.
 /// * `data` must be valid for reads and writes of `len` bytes.
-/// * `scratch` must be valid for reads and writes of 2560 bytes.
 /// * `rounds` must be 10, 12 or 14.
-/// * The contents of `scratch` on return are unspecified.
-/// * `state`, `data` and `scratch` must not overlap each other or `ctx` (distinct Rust objects never do).
-/// * None of `ctx`, `state`, `data` and `scratch` may wrap around the end of the address space (no Rust object does).
+/// * `state` and `data` must not overlap each other or `ctx` (distinct Rust objects never do).
+/// * None of `ctx`, `state` and `data` may overlap the 2560 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_decrypt(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize, scratch: *mut [u64; 320]) {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_decrypt(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
     core::arch::naked_asm!(
+        "sub sp, sp, #2560",
+        "add x7, sp, #0",
         "str x20, [x7, #136]",
         "str x21, [x7, #144]",
         "str x22, [x7, #152]",
@@ -4854,6 +4857,7 @@ pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_decrypt(ctx: *const [u64; 32],
         "ldr x28, [x19, #200]",
         "ldr x30, [x19, #208]",
         "ldr x19, [x19, #128]",
+        "add sp, sp, #2560",
         "ret",
         vg_ghash = sym super::gcm::vg_ghash,
         vg_aes_ctr32 = sym super::aes::vg_aes_ctr32,

@@ -21,8 +21,9 @@ Each function needs the CPU features of the implementations it calls:
 
 The functions' calls (`bl`) keep the return address in `x30`, which they
 save in the working space. `seal` and `open` read their last arguments from
-the stack. `init`, `stream_init` and `stream_aad` keep their working space
-in a frame of 2560 bytes; the others use no stack.
+the stack. `init`, `stream_init`, `stream_aad`, `stream_encrypt` and
+`stream_decrypt` keep their working space in a frame of 2560 bytes; the
+others use no stack.
 -/
 
 namespace VG.Generic.AesGcm.AArch64.AesGcm
@@ -88,18 +89,20 @@ def artifactsOf (v : GcmImpl) : List Artifact := [
     name := Spec.Gcm.streamEncryptApi.name ++ v.suffix
     target := AArch64.target
     doc := Spec.Gcm.streamEncryptApi.doc (notes := [note v])
-    code := Impl.AesGcm.AArch64.streamEncrypt v.callees
-    contract := Spec.Gcm.streamEncryptContract AArch64.abi
-    verified := streamEncrypt_verified v
+    code := Impl.StackScratch.AArch64.withStackScratch 2560 .x7 (Impl.AesGcm.AArch64.streamEncrypt v.callees)
+    contract := Spec.Gcm.streamEncryptContract AArch64.abi 2560
+    stack := 2560
+    verified := streamEncrypt_framed v
     spSafe := Code.all_of_forall (fun _ => rfl) _
     features := v.features },
   { Spec.Gcm.streamDecryptApi with
     name := Spec.Gcm.streamDecryptApi.name ++ v.suffix
     target := AArch64.target
     doc := Spec.Gcm.streamDecryptApi.doc (notes := [note v])
-    code := Impl.AesGcm.AArch64.streamDecrypt v.callees
-    contract := Spec.Gcm.streamDecryptContract AArch64.abi
-    verified := streamDecrypt_verified v
+    code := Impl.StackScratch.AArch64.withStackScratch 2560 .x7 (Impl.AesGcm.AArch64.streamDecrypt v.callees)
+    contract := Spec.Gcm.streamDecryptContract AArch64.abi 2560
+    stack := 2560
+    verified := streamDecrypt_framed v
     spSafe := Code.all_of_forall (fun _ => rfl) _
     features := v.features },
   { Spec.Gcm.streamFinishApi with

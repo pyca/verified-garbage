@@ -15,9 +15,10 @@ against the contract.
 
 Each function calls `vg_aes_ctr32` or `vg_ghash` in a frame that pushes
 their two stack arguments, so uses 8 bytes of stack (`init` also calls
-`vg_aes_expand_key`, which takes no stack arguments). `init`, `stream_init`
-and `stream_aad` also keep their working space in a frame of their own (2560
-bytes for `init`, 2576 for the others, `Proof/AesGcm/Arm/Frame.lean`).
+`vg_aes_expand_key`, which takes no stack arguments). `init`, `stream_init`,
+`stream_aad`, `stream_encrypt` and `stream_decrypt` also keep their working
+space in a frame of their own (2560 bytes for `init`, 2576 for `stream_init`
+and `stream_aad`, 2592 for the others, `Proof/AesGcm/Arm/Frame.lean`).
 -/
 
 namespace VG.Artifacts.AesGcm.Arm
@@ -78,18 +79,18 @@ def artifacts : List Artifact := [
   { Spec.Gcm.streamEncryptApi with
     target := Arm.target
     doc := Spec.Gcm.streamEncryptApi.doc (notes := [callNote])
-    code := Impl.AesGcm.Arm.streamEncrypt
-    contract := Spec.Gcm.streamEncryptContract Arm.abi 8
-    stack := 8
-    verified := streamEncrypt_verified
+    code := Impl.StackScratch.Arm.withStackScratch 2592 6 Impl.AesGcm.Arm.streamEncrypt
+    contract := Spec.Gcm.streamEncryptContract Arm.abi 2600
+    stack := 2600
+    verified := streamEncrypt_framed
     spSafe := Code.all_of_forall (fun _ => rfl) _ },
   { Spec.Gcm.streamDecryptApi with
     target := Arm.target
     doc := Spec.Gcm.streamDecryptApi.doc (notes := [callNote])
-    code := Impl.AesGcm.Arm.streamDecrypt
-    contract := Spec.Gcm.streamDecryptContract Arm.abi 8
-    stack := 8
-    verified := streamDecrypt_verified
+    code := Impl.StackScratch.Arm.withStackScratch 2592 6 Impl.AesGcm.Arm.streamDecrypt
+    contract := Spec.Gcm.streamDecryptContract Arm.abi 2600
+    stack := 2600
+    verified := streamDecrypt_framed
     spSafe := Code.all_of_forall (fun _ => rfl) _ },
   { Spec.Gcm.streamFinishApi with
     target := Arm.target
