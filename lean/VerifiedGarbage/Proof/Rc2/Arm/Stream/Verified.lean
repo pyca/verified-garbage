@@ -3,6 +3,7 @@ import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Rc2.Arm.Stream.Common
 import VerifiedGarbage.Proof.Rc2.PairMem
 import VerifiedGarbage.Proof.Rc2.Arm.Stream.Long
+import VerifiedGarbage.Proof.Rc2.Scratch
 
 section
 
@@ -1014,15 +1015,15 @@ namespace VG.Proof.Rc2.Arm.Stream
 
 open VG VG.Arm
 
-theorem init_verified : Verified target Impl.Rc2.Arm.Stream.init (Spec.Rc2.cbcInitContract abi 8) :=
+theorem init_verified : Verified target Impl.Rc2.Arm.Stream.init (Proof.Rc2.cbcInitScratchContract abi 8) :=
   Verified.of_correct init_correct init_constantTime init_implies
 
 theorem encryptUpdate_verified :
-    Verified target Impl.Rc2.Arm.Stream.encryptUpdate (Spec.Rc2.cbcEncryptUpdateContract abi 8) :=
+    Verified target Impl.Rc2.Arm.Stream.encryptUpdate (Proof.Rc2.cbcEncryptUpdateScratchContract abi 8) :=
   Verified.of_correct (update_correct .encrypt) (update_constantTime .encrypt) (update_implies .encrypt)
 
 theorem decryptUpdate_verified :
-    Verified target Impl.Rc2.Arm.Stream.decryptUpdate (Spec.Rc2.cbcDecryptUpdateContract abi 8) :=
+    Verified target Impl.Rc2.Arm.Stream.decryptUpdate (Proof.Rc2.cbcDecryptUpdateScratchContract abi 8) :=
   Verified.of_correct (update_correct .decrypt) (update_constantTime .decrypt) (update_implies .decrypt)
 
 end VG.Proof.Rc2.Arm.Stream

@@ -9,6 +9,7 @@ import VerifiedGarbage.Proof.Rc2.Arm.Cbc.Verified
 import VerifiedGarbage.Proof.Rc2.Arm.Key
 import VerifiedGarbage.Proof.Framework.Arm.Frame
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.Proof.Rc2.Scratch
 
 section
 
@@ -591,14 +592,14 @@ def updateSatState : State where
   rd := [⟨0x2000, 0⟩, ⟨0x6000, 12⟩]
   wr := [⟨0x1000, 144⟩, ⟨0x3000, 0⟩, ⟨0x4000, 576⟩]
 
-theorem init_implies : initContract.Implies (Spec.Rc2.cbcInitContract abi 8) := by
-  sig_implies [Spec.Rc2.cbcInitContract, Spec.Rc2.cbcInitSig, abi, argRegs,
+theorem init_implies : initContract.Implies (Proof.Rc2.cbcInitScratchContract abi 8) := by
+  sig_implies [Proof.Rc2.cbcInitScratchContract, Proof.Rc2.cbcInitScratchSig, Spec.Rc2.cbcInitPost, abi, argRegs,
     Arm.reduceClassify, Arm.Loc.val, State.addr, initContract]
     [initSatState, stackArg, stackArgAddr, Mem.readW, Mem.read] using initSatState
 
 theorem update_implies (d : Spec.Rc2.Direction) :
-    (updateContract d).Implies (Spec.Rc2.cbcUpdateContract abi d 8) := by
-  sig_implies [Spec.Rc2.cbcUpdateContract, Spec.Rc2.cbcUpdateSig, abi, argRegs,
+    (updateContract d).Implies (Proof.Rc2.cbcUpdateScratchContract abi d 8) := by
+  sig_implies [Proof.Rc2.cbcUpdateScratchContract, Proof.Rc2.cbcUpdateScratchSig, Spec.Rc2.cbcUpdatePre, Spec.Rc2.cbcUpdatePost, abi, argRegs,
     Arm.reduceClassify, Arm.Loc.val, State.addr, updateContract]
     [updateSatState, stackArg, stackArgAddr, Mem.readW, Mem.read] using updateSatState
 
