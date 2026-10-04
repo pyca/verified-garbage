@@ -22,7 +22,7 @@ callee-saved registers are restored from it, and the return address is kept.
 
 namespace VG.Proof.Ed448.X86_64
 
-open VG VG.X86_64 VG.Impl.Ed448.X86_64 VG.Proof.Ed448
+open VG VG.X86_64 VG.Impl.Ed448 VG.Impl.Ed448.X86_64 VG.Proof.Ed448
 open VG.Proof.X448.X86_64 (Scr Index Env E Keep FieldOk word off Outside Outside2 ofs Saved clob
   writeW_outside word_writeW_self contains_sc E_outside)
 open VG.Impl.X448.X86_64 (W w sc at_ slot BITS)

@@ -12,7 +12,7 @@ words, the counter and the registers `clob` change.
 
 namespace VG.Proof.Ed448.X86_64
 
-open VG VG.X86_64 VG.Impl.Ed448.X86_64
+open VG VG.X86_64 VG.Impl.Ed448 VG.Impl.Ed448.X86_64
 open VG.Proof.X448.X86_64 (Scr Index Env E Keep FieldOk off contains_sc mask cswapE opSwap ea_bits
   clob)
 open VG.Impl.X448.X86_64 (BITS slot cswap)
