@@ -204,4 +204,14 @@ theorem ctr_or {nonce : List Byte} (h7 : 7 ≤ nonce.length) (h13 : nonce.length
   rw [List.zipWith_append (by rw [hd]; simp [Spec.Ccm.zeros]), zipWith_or_zeros_right _ hd,
     zipWith_or_zeros_left _ (Proof.AesCcm.length_be _ _)]
 
+theorem bytesAt_prefix (m : Mem) (p : Addr) {a n : Nat} (h : a ≤ n) :
+    bytesAt m p a = (bytesAt m p n).take a := by
+  rw [show n = a + (n - a) by omega, Proof.Cmac.Stream.bytesAt_append, List.take_left' (length_bytesAt _ _ _)]
+
+theorem bytesAt_suffix (m : Mem) (p : Addr) {a n : Nat} (h : a ≤ n) :
+    bytesAt m (p + BitVec.ofNat 64 a) (n - a) = (bytesAt m p n).drop a := by
+  conv => rhs; rw [show n = a + (n - a) by omega, Proof.Cmac.Stream.bytesAt_append]
+  rw [List.drop_left' (length_bytesAt _ _ _)]
+
+
 end VG.Proof.AesCcm.X86_64

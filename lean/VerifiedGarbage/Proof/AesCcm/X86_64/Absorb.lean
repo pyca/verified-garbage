@@ -25,15 +25,6 @@ open VG.Proof.CmacAes.Stream.X86_64 (upd_call)
 theorem sub_mac {W SP : Addr} {y : Nat} {r : Region} (hr : r ∈ macR W SP y) :
     ∃ r' ∈ macR W SP y, Region.Sub r r' := ⟨r, hr, fun _ h => h⟩
 
-theorem bytesAt_prefix (m : Mem) (p : Addr) {a n : Nat} (h : a ≤ n) :
-    bytesAt m p a = (bytesAt m p n).take a := by
-  rw [show n = a + (n - a) by omega, Proof.Cmac.Stream.bytesAt_append, List.take_left' (length_bytesAt _ _ _)]
-
-theorem bytesAt_suffix (m : Mem) (p : Addr) {a n : Nat} (h : a ≤ n) :
-    bytesAt m (p + BitVec.ofNat 64 a) (n - a) = (bytesAt m p n).drop a := by
-  conv => rhs; rw [show n = a + (n - a) by omega, Proof.Cmac.Stream.bytesAt_append]
-  rw [List.drop_left' (length_bytesAt _ _ _)]
-
 /-- What `absorbPad`'s pieces keep: the environment, the registers holding
 the string, and what they write. -/
 structure Absorbed {K W SP : Addr} (s : State) (y : Nat) (P : Addr) (len : Nat) (Y : List Byte) (s' : State) :
