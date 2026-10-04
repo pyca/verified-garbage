@@ -32,9 +32,15 @@
 //! than 32 bytes together, the `_aes_cbc` ones, whose CBC-MAC keeps the
 //! round keys and the chaining value in vector registers across blocks
 //! (`vg_cmac_aes_update_aes_cbc`, as AES-CMAC chooses it in
-//! `crate::cmac::aes`); both encrypt with `vg_aes_ctr32_aes`.
+//! `crate::cmac::aes`); both encrypt with `vg_aes_ctr32_aes`. On ARMv7 there
+//! is only the constant-time scalar implementation.
 
-#![cfg(any(target_arch = "x86", target_arch = "x86_64", target_arch = "aarch64"))]
+#![cfg(any(
+    target_arch = "x86",
+    target_arch = "x86_64",
+    target_arch = "aarch64",
+    target_arch = "arm"
+))]
 
 use crate::aes::Backend;
 use crate::arch::aes::vg_aes_expand_key;
@@ -48,16 +54,16 @@ use crate::arch::aes_ccm::{
     VG_AES_CCM_SEAL_AES_CBC_FEATURES, VG_AES_CCM_SEAL_AES_FEATURES, vg_aes_ccm_open_aes,
     vg_aes_ccm_open_aes_cbc, vg_aes_ccm_seal_aes, vg_aes_ccm_seal_aes_cbc,
 };
-#[cfg(target_arch = "x86")]
-use crate::arch::aes_ccm::{
-    VG_AES_CCM_OPEN_AESNI_FEATURES, VG_AES_CCM_SEAL_AESNI_FEATURES, vg_aes_ccm_open_aesni,
-    vg_aes_ccm_seal_aesni,
-};
 #[cfg(target_arch = "x86_64")]
 use crate::arch::aes_ccm::{
     VG_AES_CCM_OPEN_AESNI_FEATURES, VG_AES_CCM_OPEN_VAES_FEATURES, VG_AES_CCM_SEAL_AESNI_FEATURES,
     VG_AES_CCM_SEAL_VAES_FEATURES, vg_aes_ccm_open_aesni, vg_aes_ccm_open_vaes,
     vg_aes_ccm_seal_aesni, vg_aes_ccm_seal_vaes,
+};
+#[cfg(target_arch = "x86")]
+use crate::arch::aes_ccm::{
+    VG_AES_CCM_OPEN_AESNI_FEATURES, VG_AES_CCM_SEAL_AESNI_FEATURES, vg_aes_ccm_open_aesni,
+    vg_aes_ccm_seal_aesni,
 };
 use crate::arch::aes_ccm::{vg_aes_ccm_open, vg_aes_ccm_seal};
 use crate::cpu::{Features, detected};
@@ -127,6 +133,13 @@ fn select(f: Features) -> Backend {
         VG_AES_CCM_OPEN_AES_CBC_FEATURES,
     ]);
     Backend::select_for(f, AES)
+}
+
+/// The only implementation of AES on ARMv7, with the AES-CCM functions for
+/// it.
+#[cfg(target_arch = "arm")]
+fn select(f: Features) -> Backend {
+    Backend::select(f)
 }
 
 /// Whether the AES extension's instances run the `_aes_cbc` CBC-MAC, for

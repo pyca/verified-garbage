@@ -1,4 +1,5 @@
-import VerifiedGarbage.Impl.Weierstrass.AArch64.Comb
+import VerifiedGarbage.Impl.Weierstrass.AArch64.Window
+import VerifiedGarbage.Impl.Weierstrass.AArch64.Chain
 import VerifiedGarbage.Spec.Weierstrass
 
 /-!
@@ -11,7 +12,7 @@ scratch = x4) -> w0`, for a curve whose field elements and scalars are `n`
 
 1. `x19` and `x20` are saved in the working space, whose base is then
    `x0`, and `out` is kept in `x20`; `k`, `d` and the hash are read
-   big-endian into slots, and the constants (the moduli, `a`, `3b`, `G` and
+   big-endian into slots, and the constants (the moduli, `a`, `b`, `G` and
    Montgomery's ones in Montgomery form, `R² mod n`, and the exponents
    `p - 2` and `n - 2`) are stored as immediates;
 2. the bits of `k`, `p - 2` and `n - 2` are expanded into tables;
@@ -50,7 +51,7 @@ def ZERO := 3
 def ONE := 4
 def ONEP := 5
 def AP := 6
-def B3P := 7
+def BM := 7
 def GX := 8
 def GY := 9
 def R2N := 10
@@ -94,6 +95,16 @@ def nslots := 45
 /-- The table of the bits of `k` (`j = 0`), `p - 2` (1) and `n - 2` (2). -/
 def bitsAt (n j : Nat) : Nat := slot n nslots + 64 * n * j
 
+/-- The window method's slots, past the tables of bits (which are slots
+`45 + 8 j`): `k + offset J` (`n + 1` words, two slots), the table of its bits
+(`64 (n + 1)` bytes, sixteen slots) and the table of points `[1 … 8]P` (24
+slots). -/
+def WK : Nat := 69
+def WB : Nat := 71
+def WT : Nat := 87
+/-- The powers' tables (nine slots). -/
+def CT : Nat := 69
+
 /-- A curve as the code has it: `n` words, its parameters, and the fixed-base
 comb's tables for `G` (`tbl[j][k - 1]` is `[k 16^j]G`, affine, for `j < 16 n`
 and `k = 1 … 8`) and starting point `[8 Σ_j 16^j]G`. -/
@@ -130,17 +141,7 @@ def MN' : Mod where
 
 def pt (x y z : Nat) : Pt := ⟨c.sl x, c.sl y, c.sl z⟩
 
-def rcbSlots : RcbSlots := ⟨c.sl AP, c.sl B3P, c.sl T0, c.sl T1, c.sl T2, c.sl T3, c.sl T4, c.sl T5⟩
-
-def ladderCfg : LadderCfg where
-  M := c.MP'
-  S := c.rcbSlots
-  G := c.pt GX GY ONEP
-  R := c.pt RX RY RZ
-  D := c.pt DX DY DZ
-  T := c.pt TX TY TZ
-  bits := bitsAt c.n 0
-  nbits := 64 * c.n
+def rcbSlots : RcbSlots := ⟨c.sl AP, c.sl BM, c.sl T0, c.sl T1, c.sl T2, c.sl T3, c.sl T4, c.sl T5⟩
 
 /-- The comb for `[k]G`, into `R`, from the table of the bits of `k`. -/
 def combCfg : CombCfg where
@@ -156,8 +157,36 @@ def combCfg : CombCfg where
   start := (c.mont c.start.1, c.mont c.start.2)
   one := c.mont 1
 
-def powP : PowCfg := ⟨c.MP', c.sl ACC, c.sl PT, c.sl RZ, c.sl ONEP, bitsAt c.n 1, 64 * c.n⟩
-def powN : PowCfg := ⟨c.MN', c.sl ACC, c.sl PT, c.sl KM, c.sl ONEN, bitsAt c.n 2, 64 * c.n⟩
+/-- The window method's areas. -/
+def winK : Nat := c.sl WK
+def winBits : Nat := c.sl WB
+def winTbl : Nat := c.sl WT
+
+/-- The window method for `[k]P`, `P` at `px`, `py`, `ONEP`, into `R`, from the
+scalar at `k`'s slot. -/
+def winCfg (px py : Nat) : WinCfg where
+  M := c.MP'
+  S := c.rcbSlots
+  P := c.pt px py ONEP
+  R := c.pt RX RY RZ
+  E := c.pt TX TY TZ
+  D := c.pt DX DY DZ
+  neg := c.sl PT
+  zero := c.sl ZERO
+  bits := c.winBits
+  tbl := c.winTbl
+  J := 16 * c.n + 1
+  one := c.mont 1
+
+/-- `k + offset J` and its bits. -/
+def winPrep (k : Nat) : Prog isa :=
+  .seq (.block (WinCfg.addConst c.n k c.winK (WinCfg.offset (16 * c.n + 1))))
+    (bits c.winK c.winBits (8 * (c.n + 1)))
+
+/-- `Z^(p-2)` and `k^(n-2)` into `ACC`, by sliding windows, their tables at
+slots `CT …` (the window method's, which no power overlaps in time). -/
+def powP : Weierstrass.ChainCfg := .ofExp c.MP' (c.sl ACC) (c.sl RZ) (c.sl CT) (c.C.p - 2)
+def powN : Weierstrass.ChainCfg := .ofExp c.MN' (c.sl ACC) (c.sl KM) (c.sl CT) (c.C.n - 2)
 
 /-- The callee-saved registers the code uses, and where they are saved. -/
 def saved : List (Reg × Nat) := [(.x19, 0), (.x20, 8)]
@@ -165,7 +194,7 @@ def saved : List (Reg × Nat) := [(.x19, 0), (.x20, 8)]
 /-- The constants, and `R = (0 : 1 : 0)`: slots and values. -/
 def consts : List (Nat × Nat) :=
   [(MP, c.C.p), (MN, c.C.n), (ZERO, 0), (ONE, 1), (ONEP, c.mont 1), (AP, c.mont c.C.a),
-    (B3P, c.mont (3 * c.C.b)), (GX, c.mont c.C.gx), (GY, c.mont c.C.gy), (R2N, c.R * c.R % c.C.n),
+    (BM, c.mont c.C.b), (GX, c.mont c.C.gx), (GY, c.mont c.C.gy), (R2N, c.R * c.R % c.C.n),
     (ONEN, c.R % c.C.n), (EXPP, c.C.p - 2), (EXPN, c.C.n - 2), (RX, 0), (RY, c.mont 1), (RZ, 0)]
 
 /-- Saves them, with the working space in `x4`, which then goes to `x0`,
@@ -239,9 +268,9 @@ def sign : Prog isa :=
   .seq (bits (c.sl EXPP) (bitsAt c.n 1) (8 * c.n)) <|
   .seq (bits (c.sl EXPN) (bitsAt c.n 2) (8 * c.n)) <|
   .seq (CombCfg.comb c.combCfg) <|
-  .seq (pow c.powP) <|
+  .seq (ChainCfg.pow c.powP) <|
   .seq c.middle <|
-  .seq (pow c.powN) c.scalar
+  .seq (ChainCfg.pow c.powN) c.scalar
 
 end Cfg
 

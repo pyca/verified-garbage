@@ -16,7 +16,9 @@ contract takes too, ignoring the buffer. Where the frame copies arguments into
 memory, the leak must read memory only within the function's buffers
 (`Sig.LeakLocal`, which holds of no leak), as the precondition and
 postcondition must; the two runs then agree on the code's leak if they agree
-on the function's (`leakAgree_withScratch`).
+on the function's (`leakAgree_withScratch`). Where the frame only passes the
+buffer in a register, the code reads the same memory as the function, and no
+locality is needed (`leakAgree_withScratch_same`).
 -/
 
 namespace VG
@@ -281,5 +283,24 @@ theorem leakAgree_withScratch {pb : Nat} {sig : Sig} {nm : String} {e : Elem} {n
     rw [Curry.apply_withScratch pb nm e n sig.params f vs₁ x₁ l₁,
       Curry.apply_withScratch pb nm e n sig.params f vs₂ x₂ l₂]
     exact (hleak vs₁ m₁' m₁ l₁ a₁).trans (h.trans (hleak vs₂ m₂' m₂ l₂ a₂).symm)
+
+/-- Two runs that agree on a leak agree on the leak of the contract with the
+buffer (`Sig.scratchContract`), from any buffer addresses, in the same
+memories. -/
+theorem leakAgree_withScratch_same {pb : Nat} {sig : Sig} {nm : String} {e : Elem} {n : Nat}
+    {leak : Option (Curry (sig.words pb) (Mem → List Nat))} {vs₁ vs₂ : List (BitVec 64)}
+    {m₁ m₂ : Mem} (x₁ x₂ : BitVec 64)
+    (l₁ : vs₁.length = (sig.words pb).length) (l₂ : vs₂.length = (sig.words pb).length)
+    (h : leakAgree leak vs₁ m₁ vs₂ m₂) :
+    leakAgree (ws := (sig.withScratch nm e n).words pb)
+      (leak.map (Curry.withScratch pb nm e n sig.params)) (vs₁ ++ [x₁]) m₁ (vs₂ ++ [x₂]) m₂ := by
+  cases leak with
+  | none => trivial
+  | some f =>
+    show Curry.apply _ (Curry.withScratch pb nm e n sig.params f) (vs₁ ++ [x₁]) m₁ =
+      Curry.apply _ (Curry.withScratch pb nm e n sig.params f) (vs₂ ++ [x₂]) m₂
+    rw [Curry.apply_withScratch pb nm e n sig.params f vs₁ x₁ l₁,
+      Curry.apply_withScratch pb nm e n sig.params f vs₂ x₂ l₂]
+    exact h
 
 end VG

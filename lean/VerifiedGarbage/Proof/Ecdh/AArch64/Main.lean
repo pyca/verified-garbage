@@ -1,6 +1,5 @@
-import VerifiedGarbage.Proof.Ecdh.AArch64.Validate
+import VerifiedGarbage.Proof.Ecdh.AArch64.Window
 import VerifiedGarbage.Proof.Ecdh.Exchange
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Rep
 
 /-!
 # ECDH on AArch64: the result, and the whole function
@@ -171,7 +170,7 @@ end VG.Proof.Ecdh.AArch64
 
 After `args`, the signature's setup and tables (`stage₁`, whose `SetupPre`
 the arguments meet as they are) read `d` and the peer's `x`; then `peer_ok`,
-`validate_ok`, `ladPow_ok` and `middle_ok`; `exchange_eq` connects what they
+`validate_ok`, `winPow_ok` and `middle_ok`; `exchange_eq` connects what they
 compute to the specification.
 -/
 
@@ -220,7 +219,7 @@ theorem args_ok (s : State) :
   simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
   simp only [RegUpd.gpr_write, hr.1, hr.2.1, hr.2.2.1, hr.2.2.2, ite_false]
 
-/-- The point the ladder multiplies: the peer's, if its key is valid as the
+/-- The point the window method multiplies: the peer's, if its key is valid as the
 code checks it, else `G`. -/
 def peerPt (c : Cfg) (b4 : Prop) [Decidable b4] (x y : Nat) : Point c.C :=
   if h : ((b4 ∧ x < c.C.p) ∧ y < c.C.p) ∧ OnCurve c (Fin.ofNat c.C.p x) (Fin.ofNat c.C.p y) then .affine ⟨x, h.1.1.2⟩ ⟨y, h.1.2⟩ else G c.C
@@ -262,7 +261,8 @@ theorem exchange_eq' (c : Cfg) : Impl.Ecdh.AArch64.Cfg.exchange c =
       (.seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n)) (.seq (bits (c.sl EXPP) (bitsAt c.n 1) (8 * c.n))
       (.seq (bits (c.sl EXPN) (bitsAt c.n 2) (8 * c.n)) (.block [])))))
     (.seq (.block (Impl.Ecdh.AArch64.Cfg.peer c)) (.seq (Impl.Ecdh.AArch64.Cfg.validate c)
-    (.seq (ladder (Impl.Ecdh.AArch64.Cfg.ladderQ c)) (.seq (pow c.powP) (Impl.Ecdh.AArch64.Cfg.middle c)))))) := rfl
+    (.seq (c.winPrep (c.sl K)) (.seq (WinCfg.window (winQ c)) (.seq (ChainCfg.pow c.powP)
+      (Impl.Ecdh.AArch64.Cfg.middle c))))))) := rfl
 
 /-- `vg_ecdh_<curve>` computes the specification's shared secret and restores
 the callee-saved registers. -/
@@ -327,40 +327,29 @@ theorem exchange_ok (hc : CfgOk c) (hC : Law c.C) {s₀ : State} (hp : EPre c s�
     fun hj t ht => by
       rw [tbl_unch U₄ h7 hj ht (apart_append (tbl_apart_slW (by decide) _ t) (tbl_apart_flag h0 _ t)),
         tbl_unch U₃ h7 hj ht (apart_append (tbl_apart_slW (by decide) _ t) (tbl_apart_flag h0 _ t))]
-  have hpk : sv c (s₀.gpr .x3) s₂ K < 2 ^ (64 * c.n) := wordsVal_lt _ _ _ _
   -- `[d]P`, then `Z^(p-2)`.
-  have hstep := step_rep (L := Impl.Ecdh.AArch64.Cfg.ladderQ c) (k := sv c (s₀.gpr .x3) s₂ K) hC
-    (peerPt_onCurve hc _ _ _)
-    (by
-      show toM c.C.p (2 ^ (64 * c.n)) (wordsVal s₄.mem _ (c.sl AP) c.n) = _
-      rw [F₄.ap]; exact toM_cmont hc _)
-    (by
-      show toM c.C.p (2 ^ (64 * c.n)) (wordsVal s₄.mem _ (c.sl B3P) c.n) = _
-      rw [F₄.b3p]; exact toM_cmont hc _)
+  have hk₄ : sv c (s₀.gpr .x3) s₄ K = dk c s₀ := by
+    rw [e₄ (by decide) (by decide) (by decide), e₃ (by decide) (by decide) (by decide), S₂.k]
+    simp only [kv, dk, k₁.mem, x3₁]
+  refine winPow_ok hc hC hs₄ F₄ (peerPt_onCurve hc _ _ _) px_lt py_lt
     (peerPt_rep hC _ _ _ px py |> fun h => by
       show Rep c.C (toM c.C.p (2 ^ (64 * c.n)) (sv c (s₀.gpr .x3) s₄ PX))
         (toM c.C.p (2 ^ (64 * c.n)) (sv c (s₀.gpr .x3) s₄ PY))
         (toM c.C.p (2 ^ (64 * c.n)) (wordsVal s₄.mem (s₀.gpr .x3) (c.sl ONEP) c.n)) _
       rw [F₄.onep, toM_one hpR]; exact h)
-  refine ladPow_ok hc hs₄ F₄ hstep
-    (by rw [shiftRight_eq_zero hpk, mul_zero_pt]; exact rep_infinity' hC)
-    px_lt py_lt
-    (by rw [e₄ (by decide) (by decide) (by decide), e₃ (by decide) (by decide) (by decide)]; exact S₂.rx)
-    (by rw [e₄ (by decide) (by decide) (by decide), e₃ (by decide) (by decide) (by decide)]; exact S₂.ry)
-    (by rw [e₄ (by decide) (by decide) (by decide), e₃ (by decide) (by decide) (by decide)]; exact S₂.rz)
-    (fun t ht => by rw [t₄ (j := 0) (by decide) t ht, S₂.t₀ t ht, S₂.k])
-    (fun t ht => by rw [t₄ (j := 1) (by decide) t ht, S₂.t₁ t ht]) fun s₅ L => ?_
+    fun s₅ L => ?_
   have hs₅ := L.scr
-  have F₅ := F₄.unch h7 hn ((fixedOk_slW (by decide)).append (fixedOk_slW (l := [ACC, PT, TMP]) (by decide)))
+  have F₅ := F₄.unch h7 hn (fixedOk_winX.append ((fixedOk_slW (by decide)).append fixedOk_chainWc))
     L.unch
-  have e₅ : ∀ {i}, i < 45 → i ∉ [RX, RY, RZ, T0, T1, T2, T3, T4, T5, DX, DY, DZ, T0, T1, T2, T3, T4, T5,
-      TX, TY, TZ, TMP] → i ∉ [ACC, PT, TMP] → sv c (s₀.gpr .x3) s₅ i = sv c (s₀.gpr .x3) s₄ i :=
-    fun hi h₁ h₂ => sv_unch L.unch h7 hn hi (apart_append (apart_slW h₁) (apart_slW h₂))
+  have e₅ : ∀ {i}, i < 45 → i ∉ otherI ++ tblI ++ [TMP] → i ∉ [ACC, TMP] →
+      sv c (s₀.gpr .x3) s₅ i = sv c (s₀.gpr .x3) s₄ i :=
+    fun hi h₁ h₂ => sv_unch L.unch h7 hn hi
+      (apart_append (apart_winX hi) (apart_append (apart_slW h₁) (apart_chainWc hi h₂)))
   have hflag₅ := f₄
-  rw [← flag_unch L.unch (l := [RX, RY, RZ, T0, T1, T2, T3, T4, T5, DX, DY, DZ, T0, T1, T2, T3, T4, T5,
-      TX, TY, TZ, TMP] ++ [ACC, PT, TMP]) h7 h0 hn (by decide)] at hflag₅
+  rw [← flag_unch_win L.unch h7 h0 hn (by decide)] at hflag₅
   have hx20₅ : s₅.gpr .x20 = s₀.gpr .x0 := by
-    rw [L.gpr _ (x20_not_powClob h7), g₄ _ (x20_not_clob h7), k₃.gpr _ (by decide), S₂.x20, x0₁]
+    rw [L.gpr _ (x20_not_combClob h7) (x20_not_powClob h7), g₄ _ (x20_not_clob h7), k₃.gpr _ (by decide),
+      S₂.x20, x0₁]
   have hw₅ : (⟨s₀.gpr .x0, 8 * c.n⟩ : Region) ∈ s₅.wr := by
     rw [L.wr, wr₄, k₃.wr, S₂.wr, k₁.wr, hp.wr]; simp
   refine WP.mono (middle_ok hc hs₅ F₅ L.acc_lt hflag₅ hx20₅ hw₅ hp.out_sc)
@@ -384,9 +373,8 @@ theorem exchange_ok (hc : CfgOk c) (hC : Law c.C) {s₀ : State} (hp : EPre c s�
       peerPt c (s₀.mem (s₀.gpr .x2) = 4) (sv c (s₀.gpr .x3) s₃ E) (sv c (s₀.gpr .x3) s₃ QY) =
         .affine ⟨_, h.2.1⟩ ⟨_, h.2.2.1⟩ := fun h => by
     unfold peerPt; rw [dite_eq_left ⟨⟨⟨h.1, h.2.1⟩, h.2.2.1⟩, h.2.2.2⟩]
-  have hk : sv c (s₀.gpr .x3) s₂ K = dk c s₀ := by rw [S₂.k]; simp only [kv, dk, k₁.mem, x3₁]
   have hR := L.q
-  rw [Nat.shiftRight_zero, hk] at hR
+  rw [hk₄] at hR
   have hxoX : Fin.ofNat c.C.p xv = tmv c.C c.n (s₀.gpr .x3) s₅ (c.sl RX) *
       tmv c.C c.n (s₀.gpr .x3) s₅ (c.sl RZ) ^ (c.C.p - 2) := by rw [hxv, L.acc]
   have hspec := exchange_eq hC hlen hb0 hxs hys hP' hR hxl hxoX

@@ -1,5 +1,7 @@
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Flags
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Ladder
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Chain
+import VerifiedGarbage.Proof.Weierstrass.Law3
 import VerifiedGarbage.Proof.Framework.AArch64.Spill
 
 /-!
@@ -29,7 +31,8 @@ abbrev size : Nat := 8192
 and fit in `n` words (`n < 7`: the multiplications accumulate in
 `x8`–`x15`), `G` is on the curve, `p < 2n` (so `x mod n` is one conditional
 subtraction), the Montgomery constants are right, encodings are `8 n`
-bytes, and a hash of `8 n` bytes is not truncated. The group law needs
+bytes, a hash of `8 n` bytes is not truncated, the chains of `p - 2` and
+`n - 2` are right, and `a = -3` (the complete formulas are those for it). The group law needs
 more (`Weierstrass.Law`, which a prime field and no point of order 2 give:
 `Weierstrass.Good.law`), which only the proofs of the results take. -/
 structure CfgOk (c : Cfg) : Prop where
@@ -50,6 +53,9 @@ structure CfgOk (c : Cfg) : Prop where
   tbl_len : c.tbl.length = 16 * c.n
   len : c.C.len = 8 * c.n
   hash : 64 * c.n ≤ Spec.Ecdsa.nBits c.C
+  chain_p : chainCheck (slide (c.C.p - 2)).1 (slide (c.C.p - 2)).2 (c.C.p - 2) = true
+  chain_n : chainCheck (slide (c.C.n - 2)).1 (slide (c.C.n - 2)).2 (c.C.n - 2) = true
+  am3 : AM3 c.C
 
 /-- The arguments: `out = x0` (`16 n` bytes), `d = x1`, `digest = x2`,
 `k = x3` (`8 n` bytes each) and `scratch = x4`, readable and writable as

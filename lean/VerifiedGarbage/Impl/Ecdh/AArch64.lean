@@ -17,9 +17,11 @@ on x86-64 (`Impl/Ecdh/X86_64.lean`):
    `04`, `x < p` and `y < p`;
 3. `x` and `y` into Montgomery's form, and the mask of `y² = x³ + a x + b`
    into the flag;
-4. the peer's point, or `G` if the flag is clear (so the ladder always runs
-   on a point of the curve), to the slots the ladder takes its point from;
-5. `[d]P` by the signature's ladder, and `Z^(p-2)` by its power;
+4. the peer's point, or `G` if the flag is clear (so the window method always runs
+   on a point of the curve), to the slots the window method takes its point from;
+5. `d + 8 Σ_{j<J} 16^j` and its bits, `[d]P` by the window method (`WinCfg.window`, its
+   table of `[1 … 8]P` past the signature's tables of bits), and `Z^(p-2)` by the
+   signature's power;
 6. `x = X Z^(p-2)`, out of Montgomery's form, and the masks of `d` in
    `[1, n-1]` and `Z ≠ 0` into the flag, which selects `x` or zeros for
    `out` (big-endian) and is returned as 0 or 1.
@@ -51,7 +53,7 @@ def W0 : Nat := KM
 def W1 : Nat := TT
 def W2 : Nat := SM
 def W3 : Nat := RM
-/-- The point the ladder multiplies: the peer's, or `G`. -/
+/-- The point the window method multiplies: the peer's, or `G`. -/
 def PX : Nat := RM
 def PY : Nat := SS
 
@@ -117,21 +119,18 @@ def curveOps : List FOp :=
     .add (c.sl W3) (c.sl W2) (c.sl W1), .add (c.sl W2) (c.sl W3) (c.sl BP),
     .sub (c.sl W1) (c.sl W0) (c.sl W2)]
 
-/-- The point to the ladder's slots: the peer's if the flag is set, else
+/-- The point to the window method's slots: the peer's if the flag is set, else
 `G`. -/
 def select : List Instr :=
   [ld .x3 (c.sl FLAG)] ++
   sel c.n (c.sl PX) (c.sl GX) (c.sl QXM) ++ sel c.n (c.sl PY) (c.sl GY) (c.sl QYM)
 
 /-- `x` and `y` into Montgomery's form, the check that the point is on the
-curve, and the point the ladder multiplies. -/
+curve, and the point the window method multiplies. -/
 def validate : Prog isa :=
   blocks ([Mont.AArch64.mul c.MP' (c.sl QXM) (c.sl E) (c.sl R2P),
     Mont.AArch64.mul c.MP' (c.sl QYM) (c.sl QY) (c.sl R2P)] ++
     (curveOps c).map (opCode c.MP') ++ [checkZero c (c.sl W1) ++ select c])
-
-/-- The ladder of the signature, from the point at `PX`, `PY`, `ONEP`. -/
-def ladderQ : LadderCfg := { c.ladderCfg with G := c.pt PX PY ONEP }
 
 /-- `x` (or zeros) to `out`, `x19` and `x20` restored, and the flag's low
 bit to `x0`. -/
@@ -150,7 +149,7 @@ def middle : Prog isa :=
 /-- `vg_ecdh_<curve>`. -/
 def exchange : Prog isa :=
   .seq (.block (args)) <| .seq (prefix' c) <| .seq (.block (peer c)) <| .seq (validate c) <|
-  .seq (ladder (ladderQ c)) <| .seq (pow c.powP) (middle c)
+  .seq (c.winPrep (c.sl K)) <| .seq (WinCfg.window (c.winCfg PX PY)) <| .seq (ChainCfg.pow c.powP) (middle c)
 
 end Cfg
 

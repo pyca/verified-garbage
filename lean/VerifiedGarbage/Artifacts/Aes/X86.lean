@@ -5,6 +5,7 @@ import VerifiedGarbage.Proof.Aes.X86.AesNi.Ctr32
 import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyBlocks
 import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyVerified
 import VerifiedGarbage.Proof.Aes.X86.BlocksCT
+import VerifiedGarbage.Proof.Aes.X86.AesNi.BlocksMain
 
 /-! # AES on x86 -/
 
@@ -71,6 +72,27 @@ def artifacts : List Artifact := [
     code := Impl.Aes.X86.decryptBlocks
     contract := Spec.Aes.decryptBlocksContract X86.abi
     verified := Proof.Aes.X86.decryptBlocks_verified
+    spSafe := Code.all_of_allInstrs (by decide +kernel) },
+  { Spec.Aes.encryptBlocksApi with
+    name := "vg_aes_encrypt_blocks_aesni"
+    target := X86.target
+    doc := Spec.Aes.encryptBlocksApi.doc
+      (notes := ["Uses AES-NI: six blocks at a time, then one at a time."])
+    code := Impl.Aes.X86.AesNi.encryptBlocks
+    contract := Spec.Aes.encryptBlocksContract X86.abi
+    verified := Proof.Aes.X86.AesNi.encryptBlocks_verified
+    features := ["aes"]
+    spSafe := Code.all_of_allInstrs (by decide +kernel) },
+  { Spec.Aes.decryptBlocksApi with
+    name := "vg_aes_decrypt_blocks_aesni"
+    target := X86.target
+    doc := Spec.Aes.decryptBlocksApi.doc
+      (notes := ["Uses AES-NI: the equivalent inverse cipher (FIPS 197 §5.3.5), with the round keys \
+        through `AESIMC` in the scratch buffer; six blocks at a time, then one at a time."])
+    code := Impl.Aes.X86.AesNi.decryptBlocks
+    contract := Spec.Aes.decryptBlocksContract X86.abi
+    verified := Proof.Aes.X86.AesNi.decryptBlocks_verified
+    features := ["aes"]
     spSafe := Code.all_of_allInstrs (by decide +kernel) }]
 
 end VG.Artifacts.Aes.X86

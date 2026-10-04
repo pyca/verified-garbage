@@ -1,8 +1,8 @@
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Ladder
+import VerifiedGarbage.Proof.Weierstrass.Arm.Ladder
 import VerifiedGarbage.Proof.Weierstrass.Law
 
 /-!
-# Short Weierstrass curves on AArch64: the ladder computes `[k]P`
+# Short Weierstrass curves on 32-bit ARM: the ladder computes `[k]P`
 
 The invariant of the group law for `ladder_ok`: `R` represents `[k >>> j]P`,
 for the point `P` that `G` represents, which an iteration keeps
@@ -10,9 +10,9 @@ for the point `P` that `G` represents, which an iteration keeps
 curve's.
 -/
 
-namespace VG.Proof.Weierstrass.AArch64
+namespace VG.Proof.Weierstrass.Arm
 
-open VG VG.AArch64 VG.Impl.Weierstrass.AArch64 VG.Impl.Weierstrass Spec.Weierstrass
+open VG VG.Arm VG.Impl.Weierstrass.Arm VG.Impl.Weierstrass Spec.Weierstrass
 
 theorem step_rep {L : LadderCfg} {C : Curve} {base : Addr} {s : State} {k : Nat} {P : Point C}
     (hC : Law C) (hP : onCurve C P = true)
@@ -24,4 +24,4 @@ theorem step_rep {L : LadderCfg} {C : Curve} {base : Addr} {s : State} {k : Nat}
   rw [ha, hb] at h2 h3
   exact ladder_step hC hP hG hQ h2 h3
 
-end VG.Proof.Weierstrass.AArch64
+end VG.Proof.Weierstrass.Arm

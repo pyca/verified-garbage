@@ -555,14 +555,15 @@ jobs:
               aes | aes_gcm cpu
               pclmulqdq,ssse3 | aes_gcm cpu
           # AVX-512F and AVX512VL (with Argon2's vg_argon2_compress_avx512
-          # and BLAKE2b's vg_blake2b_compress_avx512), BMI2 and ADX; BMI2 and
-          # ADX without AVX-512F; AVX-512F without AVX2, for Argon2 with G's
-          # AVX-512 code and BLAKE2b's baseline code; and AVX-512F without
-          # AVX512VL, for Argon2 with G's AVX-512 code and BLAKE2b's AVX2 code.
+          # and BLAKE2b's vg_blake2b_compress_avx512), BMI2 and ADX (with
+          # RSA's ADX functions); BMI2 and ADX without AVX-512F; AVX-512F
+          # without AVX2, for Argon2 with G's AVX-512 code and BLAKE2b's
+          # baseline code; and AVX-512F without AVX512VL, for Argon2 with G's
+          # AVX-512 code and BLAKE2b's AVX2 code.
           - chip: skx
             arch: x86_64
             runs: |
-              - | sha1 sha224 sha256 sha384 sha512 blake2 aes_gcm cmac chacha20 triple_des_ecb poly1305 mlkem mldsa scrypt argon2 rfc9106 x25519 x448 ed25519 message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
+              - | sha1 sha224 sha256 sha384 sha512 blake2 aes_gcm cmac chacha20 triple_des_ecb poly1305 mlkem mldsa scrypt argon2 rfc9106 x25519 x448 ed25519 rsa message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
               bmi2,adx | ed25519 message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
               avx,avx512f | argon2 rfc9106 cpu
               avx,avx2,avx512f | argon2 rfc9106 cpu
@@ -582,17 +583,17 @@ jobs:
             runs: |
               - | sha384 sha512 ed25519 message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
               avx,avx2,sha512 | ed25519 message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
-          # Ice Lake server: AVX512_IFMA and AVX512VL, for vg_x25519_ifma
-          # and Ed25519's IFMA variants; VAES, VPCLMULQDQ and AVX512BW, for
-          # vg_aes_ctr32_vaes, vg_ghash_vpclmul and the AES-GCM and AES-CMAC
-          # instances calling them (AES-GCM's with its 512-bit loops); and
-          # AES-GCM's instances with VAES or VPCLMULQDQ alone or paired with
-          # the other's 128-bit instruction, which no chip has without the
-          # other, and with both in 256-bit registers alone, which a chip
-          # with AVX512BW never chooses.
+          # Ice Lake server: AVX512_IFMA and AVX512VL, for vg_x25519_ifma,
+          # Ed25519's IFMA variants and vg_rsa_private_crt_ifma; VAES,
+          # VPCLMULQDQ and AVX512BW, for vg_aes_ctr32_vaes, vg_ghash_vpclmul
+          # and the AES-GCM and AES-CMAC instances calling them (AES-GCM's
+          # with its 512-bit loops); and AES-GCM's instances with VAES or
+          # VPCLMULQDQ alone or paired with the other's 128-bit instruction,
+          # which no chip has without the other, and with both in 256-bit
+          # registers alone, which a chip with AVX512BW never chooses.
           - chip: icx
             runs: |
-              - | x25519 ed25519 message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs aes_gcm cmac cpu
+              - | x25519 ed25519 rsa message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs aes_gcm cmac cpu
               avx,avx2,bmi2,adx,avx512ifma,avx512vl | ed25519 message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
               aes,avx,avx2,ssse3,vaes | aes_gcm cpu
               avx,avx2,pclmulqdq,ssse3,vpclmulqdq | aes_gcm cpu

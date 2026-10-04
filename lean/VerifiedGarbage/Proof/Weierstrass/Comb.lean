@@ -72,6 +72,14 @@ theorem onCurve_negPt {P : Point C} (hP : onCurve C P = true) : onCurve C (negPt
 theorem add_infinity (P : Point C) : Spec.Weierstrass.add P .infinity = P := by
   cases P <;> rfl
 
+/-- `[1]P = P`. -/
+theorem mul_one_pt (P : Point C) : mul 1 P = P := by
+  rw [Spec.Weierstrass.mul]
+  simp only [Nat.one_ne_zero, ↓reduceIte, Nat.reduceDiv, Nat.reduceMod, Nat.one_ne_zero]
+  rw [Spec.Weierstrass.mul]
+  simp only [↓reduceIte]
+  rfl
+
 /-- `[a]P + [b]P = [a + b]P`. -/
 theorem Law.add_mul_mul (hC : Law C) {P : Point C} (hP : onCurve C P = true) (a b : Nat) :
     Spec.Weierstrass.add (mul a P) (mul b P) = mul (a + b) P := by
