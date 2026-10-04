@@ -53,7 +53,7 @@ theorem mask_bit (b : Bool) :
   cases b <;> decide
 
 theorem finish_eq (c : Cfg) : c.finish = ([.mov .rcx (.mem (sc (c.sl FLAG)))] : List Instr) ++
-    (storeBE c.n .r14 0 (c.sl RR) ++ (storeBE c.n .r14 (8 * c.n) (c.sl SS) ++
+    (storeBE c.n .rsi 0 (c.sl RR) ++ (storeBE c.n .rsi (8 * c.n) (c.sl SS) ++
     (([.mov .rax (.reg .rcx), .alu .and .rax (.imm 1)] : List Instr) ++
     Spill.restoreCode .rdi Cfg.saved))) := by
   simp only [Cfg.finish, List.append_assoc]; rfl
@@ -68,7 +68,7 @@ theorem Saved.unch {base : Addr} {g : Reg → BitVec 64} {m m' : Mem}
 
 /-- The result, the return value and the callee-saved registers. -/
 theorem finish_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size) {out : Addr}
-    (hr14 : s.gpr .r14 = out) (hw : (⟨out, 16 * c.n⟩ : Region) ∈ s.wr)
+    (hrsi : s.gpr .rsi = out) (hw : (⟨out, 16 * c.n⟩ : Region) ∈ s.wr)
     (hd : Region.Disjoint ⟨out, 16 * c.n⟩ ⟨base, size⟩)
     {g : Reg → BitVec 64} (hsv : Spill.Saved s.mem base g Cfg.saved) (b : Bool)
     (hf : word s.mem base (c.sl FLAG) = if b then BitVec.allOnes 64 else 0) :
@@ -100,26 +100,26 @@ theorem finish_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size
   refine WP.mono (movRcx_mem_ok hs (d := c.sl FLAG) (by omega)) fun s₁ ⟨e₁, k₁⟩ => ?_
   have hs₁ := hs.of_keeps k₁ (by decide)
   have hm₁ : s₁.mem = s.mem := k₁.2.1
-  have hr14₁ : s₁.gpr .r14 = out := by rw [k₁.1 _ (by decide), hr14]
+  have hrsi₁ : s₁.gpr .rsi = out := by rw [k₁.1 _ (by decide), hrsi]
   rw [WP.block_append_iff]
-  refine WP.mono (storeBE_ok hs₁ (dst := .r14) (d := 0) (a := c.sl RR) (by decide) b
+  refine WP.mono (storeBE_ok hs₁ (dst := .rsi) (d := 0) (a := c.sl RR) (by decide) b
     (by rw [e₁, hf]) hRR (fun e he => ⟨_, by rw [k₁.2.2.2]; exact hw, by
-      rw [hr14₁, h0]; exact Offset.contains_base out (by omega) (by omega)⟩)
-    (by rw [hr14₁]; exact hdsc hRR (by omega))) fun s₂ ⟨e₂, k₂, O₂⟩ => ?_
-  rw [hr14₁] at e₂ O₂
+      rw [hrsi₁, h0]; exact Offset.contains_base out (by omega) (by omega)⟩)
+    (by rw [hrsi₁]; exact hdsc hRR (by omega))) fun s₂ ⟨e₂, k₂, O₂⟩ => ?_
+  rw [hrsi₁] at e₂ O₂
   have hs₂ := hs₁.of_keepRegs k₂ (by decide)
   have U₂ := O₂.unch_far (hscd (d := 0) (by omega))
-  have hr14₂ : s₂.gpr .r14 = out := by rw [k₂.gpr _ (by decide), hr14₁]
+  have hrsi₂ : s₂.gpr .rsi = out := by rw [k₂.gpr _ (by decide), hrsi₁]
   have hrcx₂ : s₂.gpr .rcx = if b then BitVec.allOnes 64 else 0 := by
     rw [k₂.gpr _ (by decide), e₁, hf]
   have ss₂ : wordsVal s₂.mem base (c.sl SS) c.n = sv c base s SS := by
     rw [U₂.wordsVal (fun w hw => by simp only [List.mem_singleton] at hw; subst hw; omega) (by omega), hm₁]
   rw [WP.block_append_iff]
-  refine WP.mono (storeBE_ok hs₂ (dst := .r14) (d := 8 * c.n) (a := c.sl SS) (by decide) b
+  refine WP.mono (storeBE_ok hs₂ (dst := .rsi) (d := 8 * c.n) (a := c.sl SS) (by decide) b
     hrcx₂ hSS (fun e he => ⟨_, by rw [k₂.wr, k₁.2.2.2]; exact hw, by
-      rw [hr14₂, h8]; exact Offset.contains_base out (by omega) (by omega)⟩)
-    (by rw [hr14₂]; exact hdsc hSS (by omega))) fun s₃ ⟨e₃, k₃, O₃⟩ => ?_
-  rw [hr14₂] at e₃ O₃
+      rw [hrsi₂, h8]; exact Offset.contains_base out (by omega) (by omega)⟩)
+    (by rw [hrsi₂]; exact hdsc hSS (by omega))) fun s₃ ⟨e₃, k₃, O₃⟩ => ?_
+  rw [hrsi₂] at e₃ O₃
   have hs₃ := hs₂.of_keepRegs k₃ (by decide)
   have U₃ := O₃.unch_far (hscd (d := 8 * c.n) (by omega))
   have hrcx₃ : s₃.gpr .rcx = if b then BitVec.allOnes 64 else 0 := by

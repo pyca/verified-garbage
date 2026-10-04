@@ -128,7 +128,7 @@ def ladderQ : LadderCfg := { c.ladderCfg with G := c.pt PX PY ONEP }
 /-- `x` (or zeros) to `out`, the flag's low bit to `rax`, and the
 callee-saved registers restored. -/
 def finish : List Instr :=
-  [.mov .rcx (.mem (sc (c.sl FLAG)))] ++ storeBE c.n .r14 0 (c.sl X) ++
+  [.mov .rcx (.mem (sc (c.sl FLAG)))] ++ storeBE c.n .rsi 0 (c.sl X) ++
   [.mov .rax (.reg .rcx), .alu .and .rax (.imm 1)] ++
   Impl.Ecdsa.X86_64.Cfg.saved.map (fun (r, d) => .mov r (.mem (sc d)))
 

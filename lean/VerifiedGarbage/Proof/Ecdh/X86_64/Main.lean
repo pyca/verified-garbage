@@ -23,14 +23,14 @@ open VG.Proof.X25519.X86_64 (Keeps)
 variable {c : Cfg}
 
 theorem finish_eq (c : Cfg) : Impl.Ecdh.X86_64.Cfg.finish c =
-    ([.mov .rcx (.mem (sc (c.sl FLAG)))] : List Instr) ++ (storeBE c.n .r14 0 (c.sl X) ++
+    ([.mov .rcx (.mem (sc (c.sl FLAG)))] : List Instr) ++ (storeBE c.n .rsi 0 (c.sl X) ++
     (([.mov .rax (.reg .rcx), .alu .and .rax (.imm 1)] : List Instr) ++
     Spill.restoreCode .rdi Cfg.saved)) := by
   simp only [Impl.Ecdh.X86_64.Cfg.finish, List.append_assoc]; rfl
 
 /-- `x` or zeros, the return value and the callee-saved registers. -/
 theorem ecFinish_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size) {out : Addr}
-    (hr14 : s.gpr .r14 = out) (hw : (⟨out, 8 * c.n⟩ : Region) ∈ s.wr)
+    (hrsi : s.gpr .rsi = out) (hw : (⟨out, 8 * c.n⟩ : Region) ∈ s.wr)
     (hd : Region.Disjoint ⟨out, 8 * c.n⟩ ⟨base, size⟩)
     {g : Reg → BitVec 64} (hsv : Spill.Saved s.mem base g Cfg.saved) (b : Bool)
     (hf : word s.mem base (c.sl FLAG) = if b then BitVec.allOnes 64 else 0) :
@@ -50,14 +50,14 @@ theorem ecFinish_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base si
   refine WP.mono (movRcx_mem_ok hs (d := c.sl FLAG) (by omega)) fun s₁ ⟨e₁, k₁⟩ => ?_
   have hs₁ := hs.of_keeps k₁ (by decide)
   have hm₁ : s₁.mem = s.mem := k₁.2.1
-  have hr14₁ : s₁.gpr .r14 = out := by rw [k₁.1 _ (by decide), hr14]
+  have hrsi₁ : s₁.gpr .rsi = out := by rw [k₁.1 _ (by decide), hrsi]
   rw [WP.block_append_iff]
-  refine WP.mono (storeBE_ok hs₁ (dst := .r14) (d := 0) (a := c.sl X) (by decide) b
+  refine WP.mono (storeBE_ok hs₁ (dst := .rsi) (d := 0) (a := c.sl X) (by decide) b
     (by rw [e₁, hf]) hX (fun e he => ⟨_, by rw [k₁.2.2.2]; exact hw, by
-      rw [hr14₁, h0]; exact Offset.contains_base out (by omega) (by omega)⟩)
-    (by rw [hr14₁, BitVec.add_zero]; exact (hd.symm.sub_left (Offset.sub_base base hX))))
+      rw [hrsi₁, h0]; exact Offset.contains_base out (by omega) (by omega)⟩)
+    (by rw [hrsi₁, BitVec.add_zero]; exact (hd.symm.sub_left (Offset.sub_base base hX))))
     fun s₂ ⟨e₂, k₂, O₂⟩ => ?_
-  rw [hr14₁, BitVec.add_zero] at e₂ O₂
+  rw [hrsi₁, BitVec.add_zero] at e₂ O₂
   have hs₂ := hs₁.of_keepRegs k₂ (by decide)
   have U₂ := O₂.unch_far hd.symm
   have hrcx₂ : s₂.gpr .rcx = if b then BitVec.allOnes 64 else 0 := by
@@ -93,7 +93,7 @@ abbrev ok (c : Cfg) (base : Addr) (s : State) (V : Prop) [Decidable V] : Bool :=
 theorem middle_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size)
     {g : Reg → BitVec 64} (F : Fixed c base g s.mem) (hacc : sv c base s ACC < c.C.p)
     {V : Prop} [Decidable V] (hflag : word s.mem base (c.sl FLAG) = mask V) {out : Addr}
-    (hr14 : s.gpr .r14 = out) (hw : (⟨out, 8 * c.n⟩ : Region) ∈ s.wr)
+    (hrsi : s.gpr .rsi = out) (hw : (⟨out, 8 * c.n⟩ : Region) ∈ s.wr)
     (hd : Region.Disjoint ⟨out, 8 * c.n⟩ ⟨base, size⟩) :
     WP isa (Impl.Ecdh.X86_64.Cfg.middle c) s fun s' => ∃ xv, xv < c.C.p ∧
       Fin.ofNat c.C.p xv =
@@ -149,11 +149,11 @@ theorem middle_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size
     rw [f₆, f₅, flag_unch U₂ h7 h0 hn (by decide), hflag, sv_flag O₅ h0 h7 hn (i := RZ) (by decide)
       (by decide), hMN, z₂, d₂, mask_and, mask_and]
     simp only [mask, decide_eq_true_eq, and_assoc]
-  have hr14₆ : s₆.gpr .r14 = out := by
-    rw [k₆.gpr _ (by decide), k₅.gpr _ (by decide), k₂.gpr _ (r14_not_clob hc.n4),
-      k₁.gpr _ (r14_not_clob hc.n4), hr14]
+  have hrsi₆ : s₆.gpr .rsi = out := by
+    rw [k₆.gpr _ (by decide), k₅.gpr _ (by decide), k₂.gpr _ (rsi_not_clob _),
+      k₁.gpr _ (rsi_not_clob _), hrsi]
   have hw₆ : (⟨out, 8 * c.n⟩ : Region) ∈ s₆.wr := by rw [k₆.wr, k₅.wr, k₂.wr, k₁.wr]; exact hw
-  refine WP.mono (ecFinish_ok hc hs₆ hr14₆ hw₆ hd F₆.saved _ hflag₆) fun s' ⟨bytes, rax, saved⟩ =>
+  refine WP.mono (ecFinish_ok hc hs₆ hrsi₆ hw₆ hd F₆.saved _ hflag₆) fun s' ⟨bytes, rax, saved⟩ =>
     ⟨_, lt₂, x₂, ?_, rax, saved⟩
   have x₆ : sv c base s₆ X = sv c base s₂ X := (sv_flag O₆ h0 h7 hn (i := X) (by decide) (by decide)).trans
     (sv_flag O₅ h0 h7 hn (i := X) (by decide) (by decide))
@@ -357,11 +357,11 @@ theorem exchange_ok (hc : CfgOk c) (hC : Law c.C) {s₀ : State} (hp : EPre c s�
   have hflag₅ := f₄
   rw [← flag_unch L.unch (l := [RX, RY, RZ, T0, T1, T2, T3, T4, T5, DX, DY, DZ, T0, T1, T2, T3, T4, T5,
       TX, TY, TZ, TMP] ++ [ACC, PT, TMP]) h7 h0 hn (by decide)] at hflag₅
-  have hr14₅ : s₅.gpr .r14 = s₀.gpr .rdi := by
-    rw [L.gpr _ (r14_not_powClob hc.n4), g₄ _ (r14_not_clob hc.n4), k₃.gpr _ (by decide), S₂.r14, rdi₁]
+  have hrsi₅ : s₅.gpr .rsi = s₀.gpr .rdi := by
+    rw [L.gpr _ (rsi_not_powClob _), g₄ _ (rsi_not_clob _), k₃.gpr _ (by decide), S₂.rsi, rdi₁]
   have hw₅ : (⟨s₀.gpr .rdi, 8 * c.n⟩ : Region) ∈ s₅.wr := by
     rw [L.wr, wr₄, k₃.wr, S₂.wr, k₁.2.2.2, hp.wr]; simp
-  refine WP.mono (middle_ok hc hs₅ F₅ L.acc_lt hflag₅ hr14₅ hw₅ hp.out_sc)
+  refine WP.mono (middle_ok hc hs₅ F₅ L.acc_lt hflag₅ hrsi₅ hw₅ hp.out_sc)
     fun s' ⟨xv, hxl, hxv, bytes, rax, saved⟩ => ⟨fun r hr => ?_, ?_⟩
   · have hsv : ∀ r ∈ Cfg.saved.map Prod.fst, r ∉ [Reg.r8, .r9, .rcx, .rdx] := by decide
     rw [saved r hr, k₁.1 r (hsv r hr)]

@@ -175,14 +175,20 @@ theorem modN_of (hc : CfgOk c) {base : Addr} {m : Mem} (h : wordsVal m base (c.s
   ⟨hc.n0, hc.n7, sl_le c hc.n7 (by decide), sl_le c hc.n7 (by decide), sl_apart c (by decide), h,
     hc.minv_n, rfl⟩
 
-theorem r14_not_clob {n : Nat} (h : n ≤ 4) : Reg.r14 ∉ clob n := by
-  have : ∀ n < 5, Reg.r14 ∉ clob n := by decide
-  exact this n (by omega)
+theorem rsi_not_clob (n : Nat) : Reg.rsi ∉ clob n := by
+  intro h
+  simp only [clob, List.mem_cons] at h
+  rcases h with h | h | h | h | h
+  · exact absurd h (by decide)
+  · exact absurd h (by decide)
+  · exact absurd h (by decide)
+  · exact absurd h (by decide)
+  · exact absurd (List.mem_of_mem_take h) (by decide)
 
-theorem r14_not_powClob {n : Nat} (h : n ≤ 4) : Reg.r14 ∉ powClob n := by
+theorem rsi_not_powClob (n : Nat) : Reg.rsi ∉ powClob n := by
   intro h'
   rcases List.mem_cons.mp h' with h' | h'
   · exact absurd h' (by decide)
-  · exact r14_not_clob h h'
+  · exact rsi_not_clob n h'
 
 end VG.Proof.Ecdsa.X86_64
