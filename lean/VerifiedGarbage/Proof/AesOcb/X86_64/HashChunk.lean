@@ -71,7 +71,7 @@ structure HCtx (K W SP D : Addr) (n R : Nat) (ciph : Cipher) (l : Block) (A : Ad
   kd : (⟨K, 256⟩ : Region).Disjoint ⟨D, n⟩
   dw : (⟨D, n⟩ : Region).Disjoint ⟨W, 2560⟩
   rnd : s₀.mem.readW (W + BitVec.ofNat 64 232) 64 = BitVec.ofNat 64 R
-  short : a.length < 2 ^ 60
+  short : a.length < 2 ^ 64
 
 namespace HCtx
 

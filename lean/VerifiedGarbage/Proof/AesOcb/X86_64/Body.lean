@@ -155,10 +155,25 @@ theorem restIte_ok (v : BlocksImpl) (enc : Bool) {K W SP : Addr} (L : Lay K W SP
     · rw [P.out, m₁]
     · rw [P.ck, m₁]
 
+/-- What `body` writes: the offset and the checksum, `L_{ntz(i)}`, `Pad` and
+`pad(·)`, the working space of the functions called, the stack and the data. -/
+abbrev bodyR (W SP D : Addr) (n : Nat) : List Region :=
+  [⟨W + BitVec.ofNat 64 16, 32⟩, ⟨W + BitVec.ofNat 64 96, 48⟩, wC W, below SP 8, ⟨D, n⟩]
+
+theorem bodyR_mut {W SP D : Addr} {n : Nat} {m m' : Mem} (h : Frame (bodyR W SP D n) m m') :
+    Frame (mutR W SP D n) m m' := h.sub fun r hr => by
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl | rfl | rfl
+  · exact ⟨_, List.mem_cons_self .., sub_wA (by decide)⟩
+  · exact ⟨_, List.mem_cons_self .., sub_wA (by decide)⟩
+  · exact ⟨_, by simp, fun _ h => h⟩
+  · exact ⟨_, by simp, fun _ h => h⟩
+  · exact ⟨_, by simp, fun _ h => h⟩
+
 /-- What `body` leaves: the data, the offset and the checksum. -/
 structure BodyPost (K W SP D : Addr) (n : Nat) (out : List Byte) (ofs ck : Block) (s t : State) : Prop where
   env : Env K W SP t
-  frame : Frame (mutR W SP D n) s.mem t.mem
+  frame : Frame (bodyR W SP D n) s.mem t.mem
   rd : t.rd = s.rd
   wr : t.wr = s.wr
   out : bytesAt t.mem D n = out
@@ -236,12 +251,12 @@ theorem disj_whole {W SP Q D : Addr} {k n : Nat} (hw : (⟨Q, k⟩ : Region).Dis
   · exact hp
 
 theorem wholeR_sub {W SP D : Addr} {k n : Nat} (hk : k ≤ n) :
-    ∀ r ∈ wholeR W SP D k, ∃ r' ∈ mutR W SP D n, Region.Sub r r' := by
+    ∀ r ∈ wholeR W SP D k, ∃ r' ∈ bodyR W SP D n, Region.Sub r r' := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl
-  · exact ⟨_, List.mem_cons_self .., sub_wA (by decide)⟩
-  · exact ⟨_, List.mem_cons_self .., sub_wA (by decide)⟩
+  · exact ⟨_, List.mem_cons_self .., fun _ h => h⟩
+  · exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_self ..), Offset.sub W (by decide) (by decide)⟩
   · exact ⟨_, by simp, fun _ h => h⟩
   · exact ⟨_, by simp, fun _ h => h⟩
   · exact ⟨_, by simp, Region.sub_prefix hk⟩
@@ -249,14 +264,14 @@ theorem wholeR_sub {W SP D : Addr} {k n : Nat} (hk : k ≤ n) :
 theorem tailR_sub {W SP D : Addr} {n a r : Nat} (h : a + r ≤ n) :
     ∀ x ∈ [(⟨W + BitVec.ofNat 64 ofsO, 16⟩ : Region), ⟨W + BitVec.ofNat 64 tmpO, 16⟩, ⟨W + BitVec.ofNat 64 t2O, 16⟩,
       ⟨W + BitVec.ofNat 64 ckO, 16⟩, wC W, below SP 8, ⟨D + BitVec.ofNat 64 a, r⟩],
-      ∃ r' ∈ mutR W SP D n, Region.Sub x r' := by
+      ∃ r' ∈ bodyR W SP D n, Region.Sub x r' := by
   intro x hx
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
   rcases hx with rfl | rfl | rfl | rfl | rfl | rfl | rfl
-  · exact ⟨_, List.mem_cons_self .., sub_wA (by decide)⟩
-  · exact ⟨_, List.mem_cons_self .., sub_wA (by decide)⟩
-  · exact ⟨_, List.mem_cons_self .., sub_wA (by decide)⟩
-  · exact ⟨_, List.mem_cons_self .., sub_wA (by decide)⟩
+  · exact ⟨_, List.mem_cons_self .., Offset.sub W (by decide) (by decide)⟩
+  · exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_self ..), Offset.sub W (by decide) (by decide)⟩
+  · exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_self ..), Offset.sub W (by decide) (by decide)⟩
+  · exact ⟨_, List.mem_cons_self .., Offset.sub W (by decide) (by decide)⟩
   · exact ⟨_, by simp, fun _ h => h⟩
   · exact ⟨_, by simp, fun _ h => h⟩
   · exact ⟨_, by simp, Offset.sub_base D h⟩

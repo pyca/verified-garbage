@@ -63,12 +63,22 @@ theorem Slots.of_mut {K W SP D : Addr} {n : Nat} (L : Lay K W SP) (hDW : (⟨D, 
   nonce := by rw [kept_read L hDW h (by decide), S.nonce]
   nlen := by rw [kept_read L hDW h (by decide), S.nlen]
 
+/-- What `nonce` writes: the parts of `W` the pieces write and the stack. -/
+abbrev nonceR (W SP : Addr) : List Region := [wA W, wB W, wC W, below SP 8]
+
+theorem nonceR_mut {W SP D : Addr} {n : Nat} {m m' : Mem} (h : Frame (nonceR W SP) m m') :
+    Frame (mutR W SP D n) m m' := h.sub fun r hr => ⟨r, by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
+      rcases hr with rfl | rfl | rfl | rfl <;> simp, fun _ h => h⟩
+
 /-- What `nonce` leaves. -/
 structure NonceOk (K W SP D : Addr) (n : Nat) (o : Block) (s s' : State) : Prop where
   env : Env K W SP s'
-  frame : Frame (mutR W SP D n) s.mem s'.mem
+  frame : Frame (nonceR W SP) s.mem s'.mem
   ofs : blockAtMem s'.mem (W + BitVec.ofNat 64 ofsO) = o
   o0 : blockAtMem s'.mem (W + BitVec.ofNat 64 o0O) = o
+  alen : s'.mem.readW (W + BitVec.ofNat 64 alenO) 64 = s.mem.readW (W + BitVec.ofNat 64 alenO) 64
+  keep : ∀ {d : Nat}, 32 ≤ d → d + 16 ≤ 112 → blockAtMem s'.mem (W + BitVec.ofNat 64 d) = blockAtMem s.mem (W + BitVec.ofNat 64 d)
   rd : s'.rd = s.rd
   wr : s'.wr = s.wr
 
@@ -87,17 +97,17 @@ theorem nonce_ok (v : BlocksImpl) {K W SP : Addr} (L : Lay K W SP) {s : State} (
     (by simp at hr; rcases hr with rfl | rfl | rfl <;> decide) (by simp at hr; rcases hr with rfl | rfl | rfl <;> decide)
     (by simp at hr; rcases hr with rfl | rfl | rfl <;> decide) (by simp at hr; rcases hr with rfl | rfl | rfl <;> decide))
     P₁.rd P₁.wr
-  have F₁ : Frame (mutR W SP D n) s.mem s₁.mem := mut_of P₁.frame fun r hr => by
+  have F₁ : Frame (nonceR W SP) s.mem s₁.mem := P₁.frame.sub fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · exact ⟨_, List.mem_cons_self .., sub_wA (by decide)⟩
     · exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_self ..), sub_wB (by decide) (by decide)⟩
   have hrnd₁ : s₁.mem.readW (W + BitVec.ofNat 64 232) 64 = BitVec.ofNat 64 R := by
-    rw [kept_read L hDW F₁ (by decide), hrnd]
+    rw [kept_read L hDW (nonceR_mut F₁) (by decide), hrnd]
   refine WP.seq (WP.mono (callBlocks_ok (f := Spec.Aes.cipher) (b := v.enc) v.encOk v.encNosp v.encDepth L E₁ hR
     hrnd₁ (oneBlock_ok E₁.r15 tmpO (by decide)) (dstW L E₁.perm (d := tmpO) (n := 1) (by decide))) fun s₂ P₂ => ?_)
   have E₂ : Env K W SP s₂ := E₁.of_saved P₂.saved P₂.rd P₂.wr
-  have F₂ : Frame (mutR W SP D n) s₁.mem s₂.mem := mut_of P₂.frame fun r hr => by
+  have F₂ : Frame (nonceR W SP) s₁.mem s₂.mem := P₂.frame.sub fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
     · exact ⟨_, List.mem_cons_self .., sub_wA (by decide)⟩
@@ -108,7 +118,7 @@ theorem nonce_ok (v : BlocksImpl) {K W SP : Addr} (L : Lay K W SP) {s : State} (
     have := P₂.enc (i := 0) (by decide)
     simp only [Nat.mul_zero, BitVec.ofNat_eq_ofNat, BitVec.add_zero] at this
     rw [this, P₁.blk]
-    exact congrFun (ctxCiph_mut L hKD F₁ hR) _
+    exact congrFun (ctxCiph_mut L hKD (nonceR_mut F₁) hR) _
   have hbv : ((Proof.Ocb.nonceN t (bytesAt s.mem N nl)).extractLsb' 0 6).toNat < 64 :=
     (BitVec.extractLsb' 0 6 _).isLt
   have bot₂ : s₂.mem.readW (W + BitVec.ofNat 64 botO) 64 =
@@ -126,7 +136,7 @@ theorem nonce_ok (v : BlocksImpl) {K W SP : Addr} (L : Lay K W SP) {s : State} (
       (by simp at hr; rcases hr with rfl | rfl | rfl <;> decide) (by simp at hr; rcases hr with rfl | rfl | rfl <;> decide)
       (by simp at hr; rcases hr with rfl | rfl | rfl <;> decide) (by simp at hr; rcases hr with rfl | rfl | rfl <;> decide)
       (by simp at hr; rcases hr with rfl | rfl | rfl <;> decide)) P₃.rd P₃.wr,
-    F₁.trans (F₂.trans (mut_of P₃.frame fun r hr => ?_)), ?_, ?_, by rw [P₃.rd, P₂.rd, P₁.rd],
+    F₁.trans (F₂.trans (P₃.frame.sub fun r hr => ?_)), ?_, ?_, ?_, fun {d} h₁ h₂ => ?_, by rw [P₃.rd, P₂.rd, P₁.rd],
     by rw [P₃.wr, P₂.wr, P₁.wr]⟩
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
@@ -134,6 +144,34 @@ theorem nonce_ok (v : BlocksImpl) {K W SP : Addr} (L : Lay K W SP) {s : State} (
     · exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_self ..), sub_wB (by decide) (by decide)⟩
   · rw [P₃.ofs, ktop, Proof.Ocb.offset0_eq]; rfl
   · rw [P₃.o0, ktop, Proof.Ocb.offset0_eq]; rfl
+  · have k : ∀ {rs : List Region} {m m' : Mem}, Frame rs m m' →
+        (∀ r ∈ rs, (⟨W + BitVec.ofNat 64 alenO, 8⟩ : Region).Disjoint r) →
+        m'.readW (W + BitVec.ofNat 64 alenO) 64 = m.readW (W + BitVec.ofNat 64 alenO) 64 :=
+      fun h hd => h.readW (r := ⟨W + BitVec.ofNat 64 alenO, 8⟩) (Region.contains_self _ _) hd (by decide)
+    rw [k P₃.frame (fun r hr => by
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl <;> exact L.w_w (by decide) (by decide) (by decide)),
+      k P₂.frame (fun r hr => by
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl | rfl
+        · exact L.w_w (by decide) (by decide) (by decide)
+        · exact L.w_w (by decide) (by decide) (by decide)
+        · rw [E₁.rsp]; exact (L.stk_w' (by decide)).symm),
+      k P₁.frame (fun r hr => by
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl <;> exact L.w_w (by decide) (by decide) (by decide))]
+  · rw [blockAtMem_frame P₃.frame (fun r hr => by
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl <;> exact L.w_w (by simp only [ofsO, o0O]; omega) (by omega) (by decide)),
+      blockAtMem_frame P₂.frame (fun r hr => by
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl | rfl
+        · exact L.w_w (by simp only [tmpO]; omega) (by omega) (by decide)
+        · exact L.w_w (by omega) (by omega) (by decide)
+        · rw [E₁.rsp]; exact (L.stk_w' (by omega)).symm),
+      blockAtMem_frame P₁.frame (fun r hr => by
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl <;> exact L.w_w (by simp only [tmpO, botO]; omega) (by omega) (by decide))]
 
 
 end VG.Proof.AesOcb.X86_64

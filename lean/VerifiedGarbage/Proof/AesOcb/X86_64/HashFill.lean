@@ -47,7 +47,7 @@ structure FillPost (W A : Addr) (l : Block) (j i c : Nat) (t t' : State) : Prop 
   wr : t'.wr = t.wr
 
 theorem hashFill_ok {K W SP : Addr} (L : Lay K W SP) {t : State} (E : Env K W SP t) {A : Addr} {l : Block}
-    {j i c : Nat} (hi : i < c) (hc : c ≤ 8) (hj : j + i + 2 < 2 ^ 60)
+    {j i c : Nat} (hi : i < c) (hc : c ≤ 8) (hj : j + i + 2 < 2 ^ 61)
     (hbp : t.gpr .rbp = BitVec.ofNat 64 (j + i + 1)) (hbx : t.gpr .rbx = A + BitVec.ofNat 64 (16 * (j + i)))
     (hsi : t.gpr .rsi = W + BitVec.ofNat 64 (384 + 16 * i)) (h13 : t.gpr .r13 = BitVec.ofNat 64 i)
     (h12 : t.gpr .r12 = BitVec.ofNat 64 c)
