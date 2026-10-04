@@ -1,0 +1,5 @@
+name = "RSASSA-PSS"
+family = "Signatures"
+specs = ["RsaPss", "Mgf1"]
+modules = ["src/rsa_pss.rs"]
+asm = []
