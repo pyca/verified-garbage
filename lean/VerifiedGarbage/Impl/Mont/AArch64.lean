@@ -262,11 +262,30 @@ def mulConst (M : Mod) : List Instr :=
     | some v => const64 .x6 (BitVec.ofNat 64 v)
     | none => []
 
+/-- The first row, into the cleared accumulator `ts` (`n + 1` words) for the
+multiplicand's words in the registers `bs`: the low words of `x b_j` straight
+into `ts`, and then a chain of the high words, one word up. -/
+def rowInit (x : Reg) (ts bs : List Reg) : List Instr :=
+  (ts.zip bs).map (fun (t, r) => .mul .x t x r) ++
+    chainSkip x ((ts.tail.zip bs).map fun (t, r) => (t, some (.hi (.reg r))))
+
+/-- The words a row of products adds to: the window, or its low `n + 1` words
+for a tight modulus, whose sum fits in them. -/
+def prodWins (M : Mod) (i : Nat) : List Reg :=
+  if M.tight then (wins M.n i).take (M.n + 1) else wins M.n i
+
+/-- `T += a_i [b]`: the first row straight into the cleared accumulator when
+`[b]` is in registers, else a row. -/
+def prodRow (M : Mod) (a b i : Nat) : List Instr :=
+  [ld .x1 (a + 8 * i)] ++
+    if i = 0 ∧ M.n ≤ 4 then rowInit .x1 ((wins M.n 0).take (M.n + 1)) (bRegs.take M.n)
+    else row .x1 (prodWins M i) (bWords b 0 M.n)
+
 /-- Round `i` of `mul o a b`: `T += a_i [b]`, then `T += u m` with
 `u = t₀ m' mod 2⁶⁴`, after which `t₀ = 0`; or, for a friendly modulus,
 `T = ⌊T / 2⁶⁴⌋ + t₀ m'` in the words above `t₀`, and `t₀ = 0`. -/
 def round (M : Mod) (a b i : Nat) : List Instr :=
-  [ld .x1 (a + 8 * i)] ++ row .x1 (wins M.n i) (bWords b 0 M.n) ++
+  prodRow M a b i ++
     match M.red with
     | .general => .mul .x .x1 (win M.n i 0) .x6 :: row .x1 (wins M.n i) (mWords M.mo 0 M.n)
     | .friendly ws =>
