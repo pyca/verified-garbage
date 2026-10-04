@@ -85,12 +85,12 @@ theorem getD_take {a : List Byte} {n k : Nat} (h : k < n) : (a.take n).getD k 0 
   simp [List.getD_eq_getElem?_getD, h]
 
 /-- The `n ≤ 16` bytes of block `i` in memory changed to their XOR with the
-keystream, and nothing else. -/
+keystream, and no other byte of the data. -/
 theorem ctrPart_step (ciph : Spec.GcmSiv.Cipher) (icb x : List Byte) {m m' : Mem} (P : Addr) {i n : Nat}
-    (hx : x.length < 2 ^ 64) (hn : n ≤ 16) (hin : 16 * i + n ≤ x.length)
+    (hn : n ≤ 16)
     (hk : (ksBlock ciph icb i).length = 16)
     (hd : bytesAt m P x.length = ctrPart ciph icb x (16 * i))
-    (hf : Frame [⟨P + BitVec.ofNat 64 (16 * i), n⟩] m m')
+    (hf : ∀ p < x.length, (p < 16 * i ∨ 16 * i + n ≤ p) → m' (P + BitVec.ofNat 64 p) = m (P + BitVec.ofNat 64 p))
     (hb : bytesAt m' (P + BitVec.ofNat 64 (16 * i)) n =
       Spec.Cmac.xor (bytesAt m (P + BitVec.ofNat 64 (16 * i)) n) ((ksBlock ciph icb i).take n)) :
     bytesAt m' P x.length = ctrPart ciph icb x (16 * i + n) := by
@@ -108,12 +108,7 @@ theorem ctrPart_step (ciph : Spec.GcmSiv.Cipher) (icb x : List Byte) {m m' : Mem
       Proof.Cmac.getD_bytesAt _ _ (by omega), getD_take (by omega)] at hb'
     rw [e, hb', ← e, hdk p hp, getD_ctrPart _ _ _ _ hp, ite_eq_right (by omega), ite_eq_left (by omega),
       show p / 16 = i by omega, show p % 16 = p - 16 * i by omega]
-  · have hout : m' (P + BitVec.ofNat 64 p) = m (P + BitVec.ofNat 64 p) :=
-      hf _ fun r hr hc => by
-        simp only [List.mem_singleton] at hr; subst hr
-        exact Offset.disjoint P (d := p) (n := 1) (by omega)
-          (by omega) (by omega) _ (Region.contains_self _ _) hc
-    rw [hout, hdk p hp, getD_ctrPart _ _ _ _ hp]
+  · rw [hf p hp (by omega), hdk p hp, getD_ctrPart _ _ _ _ hp]
     by_cases h₂ : p < 16 * i
     · rw [ite_eq_left h₂, ite_eq_left (by omega)]
     · rw [ite_eq_right h₂, ite_eq_right (by omega)]
