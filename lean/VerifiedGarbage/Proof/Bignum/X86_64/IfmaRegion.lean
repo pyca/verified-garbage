@@ -525,9 +525,9 @@ theorem regionA_ok {s : State} {B : Addr} {Z o w a p X : Nat} {mx : BitVec 64} (
     (hia : word s.mem (off B o) (8 * sIfma) = off B a) (hoa : o + slot 16 8 + tabBytes 16 ≤ a)
     (haZ : a + 2 * D + 8 ≤ Z) (hp : p < 2) (hN : wv s.mem (off B o) (slot 16 Public.aN) 16 = X)
     (hY : wv s.mem (off B o) (slot 16 Public.aY) 16 < X) :
-    WP isa (VG.Impl.Bignum.X86_64.seqs (CrtIfma.k1 ++ [.block (CrtIfma.arr52 p Public.aN oM),
+    WP isa (VG.Impl.Bignum.X86_64.seqs (CrtIfma.k1 ++ ([.block (CrtIfma.arr52 p Public.aN oM),
       .block (CrtIfma.arr52 p aT oK1), .block (CrtIfma.arr52 p aXc oX),
-      .block (CrtIfma.arr52 p Public.aY oY)])) s fun t =>
+      .block (CrtIfma.arr52 p Public.aY oY)] : List (Prog isa)))) s fun t =>
       Limbs t.mem (off B a) (D * p + oM) X ∧
       Limbs t.mem (off B a) (D * p + oK1) (2 ^ 32 * wv s.mem (off B o) (slot 16 Public.aY) 16 % X) ∧
       Limbs t.mem (off B a) (D * p + oX) (wv s.mem (off B o) (slot 16 aXc) 16) ∧
@@ -796,8 +796,8 @@ theorem tailR_bound {a p Z : Nat} (hp : p < 2) (haZ : a + 2 * D + 8 ≤ Z) :
 theorem regionB0_ok {u : State} {B : Addr} {Z o a sp sl : Nat} {mx : BitVec 64} {ep : Addr} {eb : List Byte}
     (hc : TCtx u B Z o a mx sp sl ep eb) (hoa : o + slot 16 8 + tabBytes 16 ≤ a) (haZ : a + 2 * D + 8 ≤ Z)
     (hsp : sp < 32) (hsl : sl < 32) (hL1 : 1 ≤ eb.length) (hL2 : eb.length ≤ 128) :
-    WP isa (VG.Impl.Bignum.X86_64.seqs ([.block (CrtIfma.arr52 0 Public.aY oFin), .block (CrtIfma.k0St 0),
-      .block CrtIfma.eZero] ++ CrtIfma.eCopy sp sl)) u fun u' =>
+    WP isa (VG.Impl.Bignum.X86_64.seqs (([.block (CrtIfma.arr52 0 Public.aY oFin), .block (CrtIfma.k0St 0),
+      .block CrtIfma.eZero] : List (Prog isa)) ++ CrtIfma.eCopy sp sl)) u fun u' =>
       Limbs u'.mem (off B a) (D * 0 + oFin) (wv u.mem (off B o) (slot 16 Public.aY) 16) ∧
       (∀ t < 4, word u'.mem (off B a) (D * 0 + oK0 + 8 * t) = mx &&& mask52) ∧
       (∀ i, i < 128 → u'.mem (off (off B a) (D * 0 + oE + i)) = (padE eb).getD i 0) ∧
@@ -851,8 +851,8 @@ theorem regionB0_ok {u : State} {B : Addr} {Z o a sp sl : Nat} {mx : BitVec 64} 
 theorem regionB1_ok {u : State} {B : Addr} {Z o a sp sl : Nat} {mx : BitVec 64} {ep : Addr} {eb : List Byte}
     (hc : TCtx u B Z o a mx sp sl ep eb) (hoa : o + slot 16 8 + tabBytes 16 ≤ a) (haZ : a + 2 * D + 8 ≤ Z)
     (hsp : sp < 32) (hsl : sl < 32) (hL1 : 1 ≤ eb.length) (hL2 : eb.length ≤ 128) (h12 : u.gpr .r12 = mask52) :
-    WP isa (VG.Impl.Bignum.X86_64.seqs ([.block (CrtIfma.k0St 1), .block CrtIfma.eZero, .block CrtIfma.finOne] ++
-      CrtIfma.eCopy sp sl)) u fun u' =>
+    WP isa (VG.Impl.Bignum.X86_64.seqs (([.block (CrtIfma.k0St 1), .block CrtIfma.eZero, .block CrtIfma.finOne] :
+      List (Prog isa)) ++ CrtIfma.eCopy sp sl)) u fun u' =>
       Limbs u'.mem (off B a) (D * 1 + oFin) 1 ∧
       (∀ t < 4, word u'.mem (off B a) (D * 1 + oK0 + 8 * t) = mx &&& mask52) ∧
       (∀ i, i < 128 → u'.mem (off (off B a) (D * 1 + oE + i)) = (padE eb).getD i 0) ∧
