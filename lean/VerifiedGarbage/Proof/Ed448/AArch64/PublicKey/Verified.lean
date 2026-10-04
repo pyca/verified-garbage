@@ -154,7 +154,7 @@ theorem body_ct (v : Proof.Sha3.AArch64.Permutation) (hb : Proof.Ed448.BaseLadde
   have z := setup_ct (g₁ := g₁) (g₂ := g₂) (v₁ := v₁) (v₂ := v₂) hL ha hb' zeroValues
     (by decide) (by simp [zeroValues, VG.Proof.Ed25519.AArch64.Whole.valid]) (by simp [zeroValues])
     (by simp [zeroValues, preserved]) (by taint_decide)
-  have a := callWith_ct (g₁ := g₁) (g₂ := g₂) (v₁ := v₁) (v₂ := v₂) (name := "vg_keccak_absorb" ++ v.callee.suffix)
+  have a := callWith_ct (g₁ := g₁) (g₂ := g₂) (v₁ := v₁) (v₂ := v₂) (name := "vg_keccak_absorb_scratch" ++ v.callee.suffix)
     hL ha hb' (args := absorbValues) (by decide)
     (by simp [absorbValues, VG.Proof.Ed25519.AArch64.Whole.valid, keccakScratch]) (by simp [absorbValues])
     (by simp [absorbValues, preserved]) (by taint_decide)
@@ -165,7 +165,7 @@ theorem body_ct (v : Proof.Sha3.AArch64.Permutation) (hb : Proof.Ed448.BaseLadde
       hg (.x3, .caller 1 0) (by simp [absorbValues]), hg (.x4, .const 57) (by simp [absorbValues]),
       hg (.x5, .caller 2 keccakScratch) (by simp [absorbValues]), hsp⟩)
     (by simp [absorbValues, linkRegs])
-  have p := callWith_ct (g₁ := g₁) (g₂ := g₂) (v₁ := v₁) (v₂ := v₂) (name := "vg_keccak_pad" ++ v.callee.suffix)
+  have p := callWith_ct (g₁ := g₁) (g₂ := g₂) (v₁ := v₁) (v₂ := v₂) (name := "vg_keccak_pad_scratch" ++ v.callee.suffix)
     hL ha hb' (args := padValues) (by decide)
     (by simp [padValues, VG.Proof.Ed25519.AArch64.Whole.valid, keccakScratch]) (by simp [padValues])
     (by simp [padValues, preserved]) (by taint_decide)
@@ -176,7 +176,7 @@ theorem body_ct (v : Proof.Sha3.AArch64.Permutation) (hb : Proof.Ed448.BaseLadde
       hg (.x4, .caller 2 keccakScratch) (by simp [padValues]), hsp⟩)
     (by simp [padValues, linkRegs])
   have q := callWith_ct (g₁ := g₁) (g₂ := g₂) (v₁ := v₁) (v₂ := v₂)
-    (name := "vg_keccak_squeeze" ++ v.callee.suffix)
+    (name := "vg_keccak_squeeze_scratch" ++ v.callee.suffix)
     hL ha hb' (args := squeezeValues) (by decide)
     (by simp [squeezeValues, VG.Proof.Ed25519.AArch64.Whole.valid, keccakScratch, hashAt])
     (by simp [squeezeValues]) (by simp [squeezeValues, preserved]) (by taint_decide)

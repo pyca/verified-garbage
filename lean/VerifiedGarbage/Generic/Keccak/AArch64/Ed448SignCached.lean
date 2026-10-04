@@ -22,9 +22,10 @@ def artifacts (v : Proof.Sha3.AArch64.Permutation) : List Artifact := [
     features := v.features
     target := AArch64.target
     doc := Spec.Ed448.signCachedApi.doc (notes := ["Uses baseline integer instructions, and \
-      those of the Keccak permutation it calls. Hashes with `vg_keccak_absorb`, `vg_keccak_pad` \
-      and `vg_keccak_squeeze` (SHAKE256, into its stack frame, with the Keccak state and the \
-      sponge functions' working space in `scratch`): the private key, whose first half, pruned, \
+      those of the Keccak permutation it calls. Hashes with `vg_keccak_absorb_scratch`, \
+      `vg_keccak_pad_scratch` and `vg_keccak_squeeze_scratch` (SHAKE256, into its stack frame, \
+      with the Keccak state and the sponge functions' working space in `scratch`): the private \
+      key, whose first half, pruned, \
       is the secret scalar s, kept in the frame; then dom4(0, C), the prefix and the message, \
       reduced modulo L with `vg_ed448_scalar_reduce` into the second half of `out` (r); \
       R = [r]B with `vg_ed448_scalar_base` into the first half of `out`; then dom4(0, C), R, \

@@ -80,7 +80,7 @@ theorem zeroSt_ok (hV : V.Ok) (hs : ScrOk V d scr) (hc : WCtx V g vec m₀ t) :
 
 /-! ## Absorbing -/
 
-/-- The arguments of `vg_keccak_absorb`. -/
+/-- The arguments of `vg_keccak_absorb_scratch`. -/
 abbrev absArgs (d : Nat) (src len pos : Src) : List (Reg × Src) :=
   [(.x2, pos), (.x0, .loc d 0), (.x1, .val (.const 136)), (.x3, src), (.x4, len), (.x5, .loc d 256)]
 

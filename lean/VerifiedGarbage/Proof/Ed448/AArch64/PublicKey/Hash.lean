@@ -178,7 +178,7 @@ theorem squeeze_pre (hL : L.Ok) {u : State} (hsp : u.sp = L.E)
 
 theorem absorb_step (v : Proof.Sha3.AArch64.Permutation) (hc : Ctx L g vec m₀ t) (hL : L.Ok)
     (ha : Arguments L m₀) (hz : stateAt t.mem L.scr = Spec.Sha3.zero) :
-    WP isa (callWith absorbArgs ("vg_keccak_absorb" ++ v.callee.suffix)
+    WP isa (callWith absorbArgs ("vg_keccak_absorb_scratch" ++ v.callee.suffix)
       (Impl.Sha3.AArch64.Stream.absorbWith v.callee)) t fun u =>
       Ctx L g vec m₀ u ∧ Spec.Sha3.Repr u.mem L.scr 136 (Spec.Sha3.bytesAt m₀ L.seed 57) := by
   refine WP.seq (WP.mono (setup_ok hc hL ha
@@ -217,7 +217,7 @@ theorem absorb_step (v : Proof.Sha3.AArch64.Permutation) (hc : Ctx L g vec m₀ 
 theorem pad_step (v : Proof.Sha3.AArch64.Permutation) (hc : Ctx L g vec m₀ t) (hL : L.Ok)
     (ha : Arguments L m₀) {msg : List Byte} (hr : Spec.Sha3.Repr t.mem L.scr 136 msg)
     (hl : msg.length = 57) :
-    WP isa (callWith padArgs ("vg_keccak_pad" ++ v.callee.suffix)
+    WP isa (callWith padArgs ("vg_keccak_pad_scratch" ++ v.callee.suffix)
       (Impl.Sha3.AArch64.Stream.padWith v.callee)) t fun u =>
       Ctx L g vec m₀ u ∧ stateAt u.mem L.scr =
         Spec.Sha3.absorb 136 (Spec.Sha3.pad 136 Spec.Sha3.shakeSuffix msg) := by
@@ -255,7 +255,7 @@ theorem pad_step (v : Proof.Sha3.AArch64.Permutation) (hc : Ctx L g vec m₀ t) 
 
 theorem squeeze_step (v : Proof.Sha3.AArch64.Permutation) (hc : Ctx L g vec m₀ t) (hL : L.Ok)
     (ha : Arguments L m₀) :
-    WP isa (callWith squeezeArgs ("vg_keccak_squeeze" ++ v.callee.suffix)
+    WP isa (callWith squeezeArgs ("vg_keccak_squeeze_scratch" ++ v.callee.suffix)
       (Impl.Sha3.AArch64.Stream.squeezeWith v.callee)) t fun u =>
       Ctx L g vec m₀ u ∧ Spec.Sha3.bytesAt u.mem (L.E + BitVec.ofNat 64 hashAt) 114 =
         Spec.Sha3.squeezeFrom 136 (stateAt t.mem L.scr) 0 114 := by

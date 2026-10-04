@@ -9,8 +9,9 @@ import VerifiedGarbage.Impl.Ed448.AArch64.Whole
 # Ed448 public-key derivation on AArch64
 
 `publicKeyWith c (out = x0, seed = x1, scratch = x2)` computes
-`SHAKE256(seed, 114)` with the sponge functions (`vg_keccak_absorb`,
-`vg_keccak_pad` and `vg_keccak_squeeze`, rate 136, with the permutation `c`),
+`SHAKE256(seed, 114)` with the sponge functions (`vg_keccak_absorb_scratch`,
+`vg_keccak_pad_scratch` and `vg_keccak_squeeze_scratch`, rate 136, with the
+permutation `c`),
 prunes the first 57 bytes of the hash (RFC 8032 §5.2.5) and encodes `[s]B`
 with `vg_ed448_scalar_base`.
 
@@ -58,9 +59,11 @@ def baseArgs : List Instr := setup [(.x0, .caller 0 0), (.x1, .frame 0), (.x2, .
 /-- `SHAKE256(seed, 114)` into the frame, with the permutation `c`. -/
 def hash (c : Impl.Sha3.AArch64.Callee) : Prog isa :=
   .seq (.block zeroArgs) <| .seq (.block zeroStores) <|
-  .seq (callWith absorbArgs ("vg_keccak_absorb" ++ c.suffix) (Impl.Sha3.AArch64.Stream.absorbWith c)) <|
-  .seq (callWith padArgs ("vg_keccak_pad" ++ c.suffix) (Impl.Sha3.AArch64.Stream.padWith c))
-    (callWith squeezeArgs ("vg_keccak_squeeze" ++ c.suffix) (Impl.Sha3.AArch64.Stream.squeezeWith c))
+  .seq (callWith absorbArgs ("vg_keccak_absorb_scratch" ++ c.suffix)
+    (Impl.Sha3.AArch64.Stream.absorbWith c)) <|
+  .seq (callWith padArgs ("vg_keccak_pad_scratch" ++ c.suffix) (Impl.Sha3.AArch64.Stream.padWith c))
+    (callWith squeezeArgs ("vg_keccak_squeeze_scratch" ++ c.suffix)
+      (Impl.Sha3.AArch64.Stream.squeezeWith c))
 
 /-- Pruning (`Spec.Ed448.prune`): the hash, pruned, as the scalar at the bottom of the frame. -/
 def prune : List Instr := Impl.Ed448.AArch64.Whole.pruneAt hashAt 0

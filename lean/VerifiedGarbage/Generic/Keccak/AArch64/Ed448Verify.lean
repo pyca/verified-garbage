@@ -24,9 +24,10 @@ def artifacts (v : Proof.Sha3.AArch64.Permutation) : List Artifact := [
     doc := Spec.Ed448.verifyApi.doc (notes := ["Uses baseline integer instructions, and \
       those of the Keccak permutation it calls. Returns 0 at once for a context of 256 bytes \
       or more. Otherwise writes the first ten bytes of dom4(0, C) into its stack frame, hashes \
-      them, the context, R, the public key and the message with `vg_keccak_absorb`, \
-      `vg_keccak_pad` and `vg_keccak_squeeze` (SHAKE256, with the Keccak state and the sponge \
-      functions' working space in `scratch`) into the frame, reduces the hash modulo L there \
+      them, the context, R, the public key and the message with `vg_keccak_absorb_scratch`, \
+      `vg_keccak_pad_scratch` and `vg_keccak_squeeze_scratch` (SHAKE256, with the Keccak state \
+      and the sponge functions' working space in `scratch`) into the frame, reduces the hash \
+      modulo L there \
       with `vg_ed448_scalar_reduce`, and returns `vg_ed448_verify_equation`'s result. The \
       frame (the hash and k) is not cleared: verification has no secrets. The function saves \
       `x30` and its arguments on the stack, and the functions it calls use 16 bytes below its \
