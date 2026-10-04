@@ -1,22 +1,21 @@
 import VerifiedGarbage.Proof.Framework.PowLit
 import VerifiedGarbage.Proof.Weierstrass.Affine
 import VerifiedGarbage.Proof.Weierstrass.Field
+import VerifiedGarbage.Proof.Weierstrass.Law
 
 /-!
 # The complete formulas compute the specification's group law
 
-`Rep C X Y Z P`: the projective triple `(X : Y : Z)` over `Fin C.p`, the
-specification's field, represents the point `P` of the specification (`O` is
-`(0 : Y : 0)` with `Y ≠ 0`, `(x, y)` is `(xZ : yZ : Z)` with `Z ≠ 0`). On a
+On a
 curve with no point of order 2 (`Good`), `rcbAdd` maps representatives of
 two points of the curve to a representative of their sum by the
 specification's `add` (`rcbAdd_rep`), whichever case of SEC 1's group law
 applies: the formulas are complete. The sum of two points of the curve is on
 the curve (`onCurve_add`).
 
-The proofs are in `ZMod C.p`, a field, with the triple's image there
-(`ZRep`); the proofs of the code state what they compute in `Fin C.p`, with
-Lean's core rings, and use only the results over `Fin C.p` (`Rep`), so that
+The proofs are in `ZMod C.p`, a field, with the image there (`ZRep`) of a
+triple over `Fin C.p` (`Rep`, `Law.lean`); the results over `Fin C.p` make
+`Good.law` (`LadderStep.lean`), which the proofs of the code take, so that
 they need none of Mathlib's algebra.
 -/
 
@@ -261,11 +260,6 @@ theorem rcbAdd_rep (hC : Good C) {P Q : Point C} (hP : onCurve C P = true)
 
 /-! ## Over `Fin p` -/
 
-/-- `(X : Y : Z)` represents `P`. -/
-def Rep (C : Curve) (X Y Z : Fe C) : Point C → Prop
-  | .infinity => X = 0 ∧ Y ≠ 0 ∧ Z = 0
-  | .affine x y => Z ≠ 0 ∧ X = x * Z ∧ Y = y * Z
-
 theorem rep_iff {X Y Z : Fe C} {P : Point C} : Rep C X Y Z P ↔ ZRep C (toF X) (toF Y) (toF Z) P := by
   cases P with
   | infinity => simp only [Rep, ZRep, ← toF_zero (m := C.p), ne_eq, toF_inj]
@@ -284,7 +278,7 @@ theorem toF_ab (C : Curve) : toF (Fin.ofNat C.p C.a) = (C.a : ZMod C.p) ∧
   exact ⟨rfl, rfl⟩
 
 /-- **Completeness**, over `Fin p`. -/
-theorem Rep.add (hC : Good C) {P Q : Point C} (hP : onCurve C P = true)
+theorem Good.rep_add (hC : Good C) {P Q : Point C} (hP : onCurve C P = true)
     (hQ : onCurve C Q = true) {X1 Y1 Z1 X2 Y2 Z2 X3 Y3 Z3 : Fe C}
     (h1 : Rep C X1 Y1 Z1 P) (h2 : Rep C X2 Y2 Z2 Q)
     (h : rcbAdd (Fin.ofNat C.p C.a) (Fin.ofNat C.p (3 * C.b)) X1 Y1 Z1 X2 Y2 Z2 = (X3, Y3, Z3)) :
@@ -293,39 +287,24 @@ theorem Rep.add (hC : Good C) {P Q : Point C} (hP : onCurve C P = true)
   refine rcbAdd_rep hC hP hQ h1 h2 ?_
   rw [← (toF_ab C).1, ← (toF_ab C).2, toF_rcbAdd, h]
 
-theorem one_ne_zero_fe (hC : Good C) : (1 : Fe C) ≠ 0 := by
+theorem Good.one_ne_zero_fe (hC : Good C) : (1 : Fe C) ≠ 0 := by
   have : Fact C.p.Prime := ⟨hC.prime⟩
   intro h
   have := congrArg toF h
   rw [toF_one, toF_zero] at this
   exact one_ne_zero this
 
-theorem rep_infinity' (hC : Good C) : Rep C 0 1 0 .infinity := ⟨rfl, one_ne_zero_fe hC, rfl⟩
-
-theorem rep_affine' (hC : Good C) (x y : Fe C) : Rep C x y 1 (.affine x y) :=
-  ⟨one_ne_zero_fe hC, (Lean.Grind.Semiring.mul_one _).symm, (Lean.Grind.Semiring.mul_one _).symm⟩
-
-theorem Rep.z_eq_zero_iff {X Y Z : Fe C} {P : Point C} (h : Rep C X Y Z P) :
-    Z = 0 ↔ P = .infinity := by
-  cases P with
-  | infinity => exact ⟨fun _ => rfl, fun _ => h.2.2⟩
-  | affine x y => exact ⟨fun h0 => absurd h0 h.1, fun h' => nomatch h'⟩
-
 /-- The affine `x` of a representative: `X / Z`, with the inverse by Fermat. -/
-theorem Rep.x_eq (hC : Good C) {X Y Z : Fe C} {x y : Fe C} (h : Rep C X Y Z (.affine x y)) :
+theorem Good.rep_x_eq (hC : Good C) {X Y Z : Fe C} {x y : Fe C} (h : Rep C X Y Z (.affine x y)) :
     x = X * Z ^ (C.p - 2) := by
   have : Fact C.p.Prime := ⟨hC.prime⟩
   rw [← toF_inj, toF_mul, toF_npow]
   exact (rep_iff.mp h).x_eq
 
-theorem Rep.y_eq (hC : Good C) {X Y Z : Fe C} {x y : Fe C} (h : Rep C X Y Z (.affine x y)) :
+theorem Good.rep_y_eq (hC : Good C) {X Y Z : Fe C} {x y : Fe C} (h : Rep C X Y Z (.affine x y)) :
     y = Y * Z ^ (C.p - 2) := by
   have : Fact C.p.Prime := ⟨hC.prime⟩
   rw [← toF_inj, toF_mul, toF_npow]
   exact (rep_iff.mp h).y_eq
-
-theorem Rep.infinity_x {X Y Z : Fe C} (h : Rep C X Y Z .infinity) : X * Z ^ (C.p - 2) = 0 := by
-  rw [h.1]
-  exact Lean.Grind.Semiring.zero_mul _
 
 end VG.Proof.Weierstrass

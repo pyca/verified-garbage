@@ -7,7 +7,7 @@ import VerifiedGarbage.Proof.Ecdh.X86_64.Main
 
 `verify_ok`: `Cfg.verify` returns 1 exactly if the specification's
 verification of the signature holds, for any curve the proof of the code
-supports (`CfgOk`) whose group law the proofs support (`Good`), and
+supports (`CfgOk`) whose group law the proofs support (`Law`), and
 restores the callee-saved registers. `front_ok`, `mid_ok`, `points_ok` (with
 the invariants of the group law for the two ladders, `step_rep`) and
 `tail_ok` compute what `verify_eq` connects to the specification.
@@ -57,7 +57,7 @@ theorem consts_tmv (hc : CfgOk c) {base : Addr} {g : Reg → BitVec 64} {s : Sta
 
 /-- `vg_ecdsa_<curve>_verify` returns whether the specification's
 verification holds, and restores the callee-saved registers. -/
-theorem verify_ok (hc : CfgOk c) (hC : Good c.C) {s₀ : State} (hp : VPre c s₀) :
+theorem verify_ok (hc : CfgOk c) (hC : Law c.C) {s₀ : State} (hp : VPre c s₀) :
     WP isa (Impl.Ecdsa.Verify.X86_64.Cfg.verify c) s₀ fun s' =>
       (∀ r ∈ Cfg.saved.map Prod.fst, s'.gpr r = s₀.gpr r) ∧ VPost c s₀ s' := by
   have hpR := unitMod_pow_two hc.p_odd (64 * c.n)
