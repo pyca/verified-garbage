@@ -243,4 +243,96 @@ theorem pre_wp (v : BlocksImpl) {s : State} {K W SP N A D : Addr} {R nl al n tl 
         · exact hd.w.sub_right (Lay.wSub (by decide))
         · exact hd.stk.symm) (by have := hd.lt; omega), eB hd.toBuf]
 
+/-- `body`'s frame misses a block of `W` outside the offset, the checksum and
+`[96, 144)`. -/
+theorem body_keep {K W SP D : Addr} {n : Nat} (L : Lay K W SP) (hD : (⟨D, n⟩ : Region).Disjoint ⟨W, 2560⟩) {m m' : Mem}
+    (h : Frame (bodyR W SP D n) m m') {d : Nat} (hd : d + 16 ≤ 16 ∨ (48 ≤ d ∧ d + 16 ≤ 96) ∨ (144 ≤ d ∧ d + 16 ≤ 384)) :
+    blockAtMem m' (W + BitVec.ofNat 64 d) = blockAtMem m (W + BitVec.ofNat 64 d) :=
+  blockAtMem_frame h fun r hr => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl | rfl
+    · exact L.w_w (by omega) (by omega) (by decide)
+    · exact L.w_w (by omega) (by omega) (by decide)
+    · exact L.w_w (by omega) (by omega) (by decide)
+    · exact (L.stk_w' (by omega)).symm
+    · exact (hD.sub_right (Lay.wSub (by omega))).symm
+
+/-- `vg_aes_ocb_seal`, for its arguments. -/
+theorem seal_wp' (v : BlocksImpl) {s : State} {K W SP N A D : Addr} {R nl al n tl : Nat}
+    (Ar : Args s K W SP N A D R nl al n tl) (hsp : s.gpr .rsp = SP)
+    (hD : s.mem.readW (SP + BitVec.ofNat 64 8) 64 = D) (hn : s.mem.readW (SP + BitVec.ofNat 64 16) 64 = BitVec.ofNat 64 n)
+    (hW : s.mem.readW (SP + BitVec.ofNat 64 24) 64 = W)
+    (htl : s.mem.readW (SP + BitVec.ofNat 64 32) 64 = BitVec.ofNat 64 tl)
+    (hdi : s.gpr .rdi = K) (hsi : s.gpr .rsi = BitVec.ofNat 64 R) (hdx : s.gpr .rdx = N)
+    (hcx : s.gpr .rcx = BitVec.ofNat 64 nl) (hr8 : s.gpr .r8 = A) (hr9 : s.gpr .r9 = BitVec.ofNat 64 al) :
+    WP isa («seal» (callees v)) s fun s' => gprPreserved s s' ∧
+      Spec.Ocb.encryptWith (ctxCiph s.mem K R) (ctxLstar s.mem K) tl (bytesAt s.mem N nl) (bytesAt s.mem A al)
+        (bytesAt s.mem D n) = (bytesAt s'.mem D n, bytesAt s'.mem W tl) := by
+  have L := Ar.lay
+  unfold «seal»
+  refine pre_wp v Ar hsp hD hn hW htl hdi hsi hdx hcx hr8 hr9 fun s₃ P₃ => ?_
+  have hD₃ : DBuf K W SP s₃ D n := Ar.data.of_eq P₃.rd P₃.wr
+  refine WP.seq (WP.mono (bodySeal_ok v L P₃.env Ar.rounds P₃.slots.rounds hD₃ P₃.slots.data P₃.slots.len P₃.ofs
+    P₃.o0 P₃.ck (by rw [P₃.l0, P₃.lstar])) fun s₄ B => ?_)
+  have F₄ : Frame (mutR W SP D n) s₃.mem s₄.mem := bodyR_mut B.frame
+  have cK₄ : ctxCiph s₄.mem K R = ctxCiph s.mem K R := (ctxCiph_mut L Ar.data.k F₄ Ar.rounds).trans P₃.ciph
+  have ld₄ : blockAtMem s₄.mem (W + BitVec.ofNat 64 ldO) = Spec.Ocb.lDollar (ctxLstar s.mem K) := by
+    rw [body_keep L Ar.data.w B.frame (d := ldO) (by decide), P₃.ld]
+  have sum₄ : blockAtMem s₄.mem (W + BitVec.ofNat 64 sumO) =
+      Spec.Ocb.hash (ctxCiph s.mem K R) (ctxLstar s.mem K) (bytesAt s.mem A al) := by
+    rw [body_keep L Ar.data.w B.frame (d := sumO) (by decide), P₃.sum]
+  -- The tag.
+  refine WP.seq (WP.mono (tag_ok v L B.env Ar.rounds ((kept_read L Ar.data.w F₄ (d := 232) (by decide)).trans
+    P₃.slots.rounds) (.inl rfl)) fun s₅ T => ?_)
+  have F₅ : Frame (mutR W SP D n) s₄.mem s₅.mem := tagR_mut (by decide) T.frame
+  -- `restore`.
+  obtain ⟨s₆, run₆, hg₆, hm₆, hsp₆, _⟩ := restore_ok T.env (saved_mut L Ar.data.w (F₄.trans F₅) P₃.saved)
+  refine WP.of_runBlock ⟨s₆, run₆, ⟨fun r hr => ?_, ?_⟩, ?_⟩
+  · simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl
+    · exact hg₆ (.rbx, savO) (by decide)
+    · exact hg₆ (.rbp, savO + 8) (by decide)
+    · rw [hsp₆, T.env.rsp, hsp]
+    · exact hg₆ (.r12, savO + 16) (by decide)
+    · exact hg₆ (.r13, savO + 24) (by decide)
+    · exact hg₆ (.r14, savO + 32) (by decide)
+    · exact hg₆ (.r15, savO + 40) (by decide)
+  · have fall : Frame (entryR W :: mutR W SP D n) s.mem s₅.mem :=
+      P₃.frame.trans ((F₄.trans F₅).sub fun r hr => ⟨r, List.mem_cons_of_mem _ hr, fun _ h => h⟩)
+    rw [hm₆, hsp]
+    exact fall.readW (r := ⟨SP, 8⟩) (Region.contains_self _ _) (ret_disj L Ar.retW Ar.retD) (by decide)
+  · -- The ciphertext and the tag.
+    have hout := B.out
+    rw [P₃.ciph, P₃.lstar, P₃.data] at hout
+    have hofs := B.ofs
+    rw [P₃.lstar] at hofs
+    have hck := B.ck
+    rw [P₃.data] at hck
+    have d₆ : bytesAt s₆.mem D n = bytesAt s₄.mem D n := by
+      rw [hm₆]
+      exact bytesAt_frame T.frame (fun r hr => by
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl | rfl | rfl
+        · exact Ar.data.w.sub_right (Lay.wSub (by decide))
+        · exact Ar.data.w.sub_right (Lay.wSub (by decide))
+        · exact Ar.data.w.sub_right (Lay.wSub (by decide))
+        · exact Ar.data.stk.symm) (by have := Ar.data.lt; omega)
+    have tv := T.val
+    rw [show W + BitVec.ofNat 64 tagO = W from BitVec.add_zero W] at tv
+    have t₆ : bytesAt s₆.mem W tl = (Spec.Ocb.toBytes (blockAtMem s₅.mem W)).take tl := by
+      rw [hm₆, bytesAt_take_block _ _ Ar.t16]
+    rw [Proof.Ocb.encryptWith_eq, d₆, hout, t₆, tv, hck, hofs, ld₄, sum₄, cK₄]
+    simp only [length_bytesAt, List.length_drop]
+    by_cases hr : 0 < n % 16
+    · have h' : n - 16 * (n / 16) > 0 := by omega
+      simp only [h', hr, ↓reduceIte]
+    · have h' : ¬ (n - 16 * (n / 16) > 0) := by omega
+      simp only [h', hr, ↓reduceIte]
+
+/-- `vg_aes_ocb_seal`. -/
+theorem seal_wp (v : BlocksImpl) {s : State} (h : onePre s) :
+    WP isa («seal» (callees v)) s fun s' => gprPreserved s s' ∧ sealX86_64.post s s' :=
+  seal_wp' v (args_of h) rfl rfl (ofNat_toNat64 _).symm rfl (ofNat_toNat64 _).symm rfl (ofNat_toNat64 _).symm rfl
+    (ofNat_toNat64 _).symm rfl (ofNat_toNat64 _).symm
+
 end VG.Proof.AesOcb.X86_64
