@@ -2,6 +2,7 @@ import VerifiedGarbage.Proof.Bignum.X86_64.CrtFrame
 import VerifiedGarbage.Proof.Bignum.X86_64.Exp
 import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtChecks
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 
 /-!
 # RSA with the CRT on x86-64: the exponentiation in a prime's workspace
@@ -21,48 +22,6 @@ namespace VG.Proof.Bignum.X86_64
 
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Bignum.X86_64.Public VG.Impl.Rsa.X86_64
 open VG.Proof.MlKem.X86_64
-
-/-- `selectAcc` in place: `[o] := lt ? [a] : [o]`. -/
-theorem selectAcc_self_ok {s : State} {B : Addr} {Z w eA eo : Nat} (hs : Scr s B Z)
-    (h8 : s.gpr .r8 = off B eA) (hsi : s.gpr .rsi = off B eo) (hbx : s.gpr .rbx = off B eo)
-    (h12 : s.gpr .r12 = BitVec.ofNat 64 w) {lt : Bool} (hbp : s.gpr .rbp = mask lt)
-    (hw : 1 ≤ w) (hw' : w < 2 ^ 31) (hA : eA + 8 * w ≤ Z) (ho : eo + 8 * w ≤ Z)
-    (sA : eo + 8 * w ≤ eA ∨ eA + 8 * w ≤ eo) :
-    WP isa selectAcc s fun t =>
-      wv t.mem B eo w = (if lt then wv s.mem B eA w else wv s.mem B eo w) ∧
-      Outside B eo (8 * w) s.mem t.mem ∧ Keep [.rax, .rdx, .r14] s t := by
-  have hn := hs.nowrap
-  unfold selectAcc
-  have h0 : ∀ t, t.gpr .r14 = BitVec.ofNat 64 0 → t.mem = s.mem → Keep [.r14] s t → t.cf = s.cf →
-      SelInv s B Z eA eo eo lt 0 t := fun t h14 hm k _ =>
-    ⟨hs.congr k.2.2, k.mono (by decide), h14, by rw [hm]; exact Outside.refl _ _ _ _, by
-      cases lt <;> rfl⟩
-  refine WP.mono (wordLoop_ok (start := 0) (N := w) (by omega) hw' (SelInv s B Z eA eo eo lt) h0 ?_)
-    fun t hI => ⟨hI.val, hI.out, hI.keep⟩
-  intro j _ hj t hI
-  have t8 : t.gpr .r8 = off B eA := (hI.keep.gpr (by decide)).trans h8
-  have tsi : t.gpr .rsi = off B eo := (hI.keep.gpr (by decide)).trans hsi
-  have tbx : t.gpr .rbx = off B eo := (hI.keep.gpr (by decide)).trans hbx
-  have t12 : t.gpr .r12 = BitVec.ofNat 64 w := (hI.keep.gpr (by decide)).trans h12
-  have tbp : t.gpr .rbp = mask lt := (hI.keep.gpr (by decide)).trans hbp
-  have hx : word t.mem B (eA + 8 * j) = word s.mem B (eA + 8 * j) := hI.out.word (by omega) (by omega)
-  have hy : word t.mem B (eo + 8 * j) = word s.mem B (eo + 8 * j) := hI.out.word (by omega) (by omega)
-  rw [WP.block_append_iff]
-  refine WP.mono (WP.keep [.rax, .rdx] (Q := fun t₁ => t₁.mem = t.mem.writeW (off B (eo + 8 * j))
-      (if lt then word s.mem B (eA + 8 * j) else word s.mem B (eo + 8 * j))) (by
-      xrun [State.ea, ix, addr0 t8 hI.r14, addr0 tsi hI.r14, addr0 tbx hI.r14, tbp,
-        hI.scr.ld (show eA + 8 * j + 8 ≤ Z by omega), hI.scr.ld (show eo + 8 * j + 8 ≤ Z by omega),
-        hI.scr.st (show eo + 8 * j + 8 ≤ Z by omega), hx, hy, select_mask]) rfl) fun t₁ ⟨hm, k₁⟩ => ?_
-  have t₁14 : t₁.gpr .r14 = BitVec.ofNat 64 j := (k₁.gpr (by decide)).trans hI.r14
-  have t₁12 : t₁.gpr .r12 = BitVec.ofNat 64 w := (k₁.gpr (by decide)).trans t12
-  refine WP.mono (count_ok t₁ t₁14 t₁12 (by omega) (by omega)) fun t' ⟨hz, h14, hm', k'⟩ => ⟨hz, ?_⟩
-  refine ⟨hI.scr.congr (k'.2.2.trans k₁.2.2), ((hI.keep.trans k₁).trans k').mono (by decide), h14, ?_, ?_⟩
-  · rw [hm', hm]
-    intro x hx'
-    rw [writeW_outside t.mem B _ (by omega) x (by omega)]
-    exact hI.out x (by omega)
-  · rw [hm', hm, wv_writeW_top _ _ _ _ _ (by omega), hI.val]
-    cases lt <;> simp [wv]
 
 /-! ## What the exponentiation changes -/
 
@@ -354,7 +313,7 @@ def selBody : List (Prog isa) :=
   [.block [.mov .rax (.mem (hdr Crt.sJ)), .alu .xor .rax (.mem (hdr Crt.sNib)), .alu .cmp .rax (.imm 1),
       .alu .sbb .rbp (.reg .rbp), .mov .r12 (.mem (hdr sW)), .mov .r8 (.mem (hdr Crt.sEnt)),
       .mov .rsi (.mem (hdr (sArr Crt.aT))), .mov .rbx (.mem (hdr (sArr Crt.aT)))],
-    selectAcc, Crt.nextEnt,
+    Crt.sseSelect, Crt.nextEnt,
     .block [.mov .rax (.mem (hdr Crt.sJ)), .alu .add .rax (.imm 1), .store (hdr Crt.sJ) .rax,
       .alu .cmp .rax (.imm 16)]]
 
@@ -376,7 +335,7 @@ theorem selStep_ok {t₀ t : State} {P : Addr} {wx : Nat} {minv : BitVec 64} {X 
   refine WP.seq (WP.mono (selHead_ok hc hj hv hI.idx hI.nib hI.ent)
     fun t₁ ⟨hbp, h12, h8, hsi, hbx, hm₁, k₁⟩ => ?_)
   have hs₁ := hc.scrT.congr k₁.2.2
-  refine WP.seq (WP.mono (selectAcc_self_ok hs₁ h8 hsi hbx h12 hbp (by omega) (by omega) (by omega) (by omega)
+  refine WP.seq (WP.mono (sseSelect_ok hs₁ h8 hbx h12 hbp (by omega) (by omega) (by omega) (by omega)
     (by omega)) fun t₂ ⟨hsel₂, o₂, k₂⟩ => ?_)
   have f₂ : Frm P (selRanges wx) t₁.mem t₂.mem :=
     Frm.of_outside (o₂.mono (o' := slot wx Crt.aT) (n' := 8 * (wx + 2)) (Nat.le_refl _) (by omega))
