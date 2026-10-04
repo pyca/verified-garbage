@@ -1,5 +1,6 @@
 import VerifiedGarbage.TCB.X86.Target
 import VerifiedGarbage.Proof.AesGcm.X86.Verified
+import VerifiedGarbage.Proof.AesGcm.X86.GhashImpls
 
 /-!
 # AES-GCM (NIST SP 800-38D) on x86
@@ -33,7 +34,8 @@ def callNote (v : GcmImpl) : String :=
     v.ctr.expand.name ++ "` for the block cipher, GHASH and the key schedule, with the arguments it \
     keeps in the working space."
 
-def artifacts (v : GcmImpl) : List Artifact := [
+/-- The artifacts calling the implementations `v`. -/
+def artifactsOf (v : GcmImpl) : List Artifact := [
   { Spec.Gcm.initApi with
     name := Spec.Gcm.initApi.name ++ v.suffix
     target := X86.target
@@ -124,5 +126,8 @@ def artifacts (v : GcmImpl) : List Artifact := [
     verified := open_verified (vg := v)
     spSafe := open_spSafe v
     features := v.features }]
+
+/-- The artifacts of a variant, from the implementations it names. -/
+def artifacts (v : GcmVariant) : List Artifact := artifactsOf v.impl
 
 end VG.Generic.AesGcm.X86.AesGcm

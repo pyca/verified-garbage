@@ -533,4 +533,19 @@ theorem key_ct (v : GcmImpl) {I : State → Prop} {K C S E : BitVec 32} {L : Nat
   · rw [a2, b2]
   · rw [a3, b3]
 
+/-- The implementations of `vg_ghash`, by name, as the variants of `AesGcm`
+choose them (`GcmVariant`). `GhashName.impl`, in `GhashImpls.lean`, gives
+their `GhashImpl`s, whose proofs import the algebra of `Proof/Gcm/Poly.lean`,
+which the variants then need not import. -/
+inductive GhashName where
+  | scalar
+  | pclmul
+
+/-- A variant of `AesGcm` (see `TCB/Emit.lean`): a `GcmImpl` with its
+implementation of `vg_ghash` named (`GhashName`), which `GcmVariant.impl`
+(`GhashImpls.lean`) resolves. -/
+structure GcmVariant where
+  ctr : Proof.Aes.X86.Ctr32Impl
+  gh : GhashName
+
 end VG.Proof.AesGcm.X86
