@@ -15,15 +15,16 @@ pub(crate) const VG_AES_OCB_INIT_AESNI_FEATURES: crate::cpu::Features = crate::c
 ///
 /// * `key` must be valid for reads of `key_len` bytes.
 /// * `ctx` must be valid for reads and writes of 256 bytes.
-/// * `scratch` must be valid for reads and writes of 2560 bytes.
 /// * `key_len` must be 16, 24 or 32.
-/// * The contents of `scratch` on return are unspecified.
-/// * `ctx` and `scratch` must not overlap each other or `key` (distinct Rust objects never do).
-/// * None of `key`, `ctx` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `ctx` must not overlap `key` (distinct Rust objects never do).
+/// * Neither `key` nor `ctx` may overlap the return address on the stack or the 2576 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` target feature.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_ocb_init_aesni(key: *const u8, key_len: usize, ctx: *mut [u64; 32], scratch: *mut [u64; 320]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_ocb_init_aesni(key: *const u8, key_len: usize, ctx: *mut [u64; 32]) {
     core::arch::naked_asm!(
+        "lea rsp, [rsp-2568]",
+        "mov rcx, rsp",
+        "add rcx, 8",
         "mov QWORD PTR [rcx], rbx",
         "mov QWORD PTR [rcx+8], rbp",
         "mov QWORD PTR [rcx+16], r12",
@@ -48,6 +49,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_ocb_init_aesni(key: *const u8, key_l
         "mov rbx, QWORD PTR [r12]",
         "mov rbp, QWORD PTR [r12+8]",
         "mov r12, QWORD PTR [r12+16]",
+        "lea rsp, [rsp+2568]",
         "ret",
         ".p2align 6",
         vg_aes_expand_key_aesni = sym super::aes::vg_aes_expand_key_aesni,
@@ -58,7 +60,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_ocb_init_aesni(key: *const u8, key_l
 /// The CPU features `vg_aes_ocb_seal_aesni` requires (`Artifact.features`).
 pub(crate) const VG_AES_OCB_SEAL_AESNI_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes"]);
 
-/// AES-OCB authenticated encryption (RFC 7253 §4.2, `OCB-ENCRYPT`, with `TAGLEN = 8 * tag_len`): with the key context `*ctx` that `vg_aes_ocb_init` wrote for `rounds` rounds, encrypts the `len` bytes at `data` in place, under the `nonce_len`-byte nonce at `nonce`, and writes the tag of `tag_len` bytes, of the data and the `aad_len` bytes of associated data at `aad`, to the first `tag_len` bytes of `*work`. The RFC's ciphertext is the encrypted data followed by the tag. The rest of `*work` is working space, unspecified on return. A nonce must never be used twice with the same key.
+/// AES-OCB authenticated encryption (RFC 7253 §4.2, `OCB-ENCRYPT`, with `TAGLEN = 8 * tag_len`): with the key context `*ctx` that `vg_aes_ocb_init` wrote for `rounds` rounds, encrypts the `len` bytes at `data` in place, under the `nonce_len`-byte nonce at `nonce`, and writes the tag of `tag_len` bytes, of the data and the `aad_len` bytes of associated data at `aad`, to the `tag_len` bytes at `tag`. The RFC's ciphertext is the encrypted data followed by the tag. A nonce must never be used twice with the same key.
 ///
 /// Contract: `VG.Spec.Ocb.sealContract`. Constant time: only the pointers, `rounds`, the lengths and `tag_len` may affect timing, not the key context, the nonce, the associated data or the data.
 ///
@@ -70,16 +72,28 @@ pub(crate) const VG_AES_OCB_SEAL_AESNI_FEATURES: crate::cpu::Features = crate::c
 /// * `nonce` must be valid for reads of `nonce_len` bytes.
 /// * `aad` must be valid for reads of `aad_len` bytes.
 /// * `data` must be valid for reads and writes of `len` bytes.
-/// * `work` must be valid for reads and writes of 2560 bytes.
+/// * `tag` must be valid for reads and writes of `tag_len` bytes.
 /// * `rounds` must be 10, 12 or 14.
 /// * `tag_len` must be from 1 to 16, and `nonce_len` from 1 to 15 (RFC 7253 §3.1).
-/// * `data` and `work` must not overlap each other, `ctx`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `aad`, `data` and `work` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `data` and `tag` must not overlap each other, `ctx`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 2616 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` target feature.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_ocb_seal_aesni(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, work: *mut [u64; 320], tag_len: usize) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_ocb_seal_aesni(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut u8, tag_len: usize) {
     core::arch::naked_asm!(
-        "mov rax, QWORD PTR [rsp+24]",
+        "lea rsp, [rsp-2608]",
+        "mov rax, QWORD PTR [rsp+2616]",
+        "mov QWORD PTR [rsp+8], rax",
+        "mov rax, QWORD PTR [rsp+2624]",
+        "mov QWORD PTR [rsp+16], rax",
+        "mov rax, QWORD PTR [rsp+2632]",
+        "mov QWORD PTR [rsp+24], rax",
+        "mov rax, QWORD PTR [rsp+2640]",
+        "mov QWORD PTR [rsp+32], rax",
+        "mov rax, rsp",
+        "add rax, 48",
+        "mov QWORD PTR [rsp+40], rax",
+        "mov rax, QWORD PTR [rsp+40]",
         "mov QWORD PTR [rax+160], rbx",
         "mov QWORD PTR [rax+168], rbp",
         "mov QWORD PTR [rax+176], r12",
@@ -99,6 +113,8 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_ocb_seal_aesni(ctx: *const [u64; 32]
         "mov QWORD PTR [r15+216], rax",
         "mov rax, QWORD PTR [rsp+32]",
         "mov QWORD PTR [r15+224], rax",
+        "mov rax, QWORD PTR [rsp+24]",
+        "mov QWORD PTR [r15+304], rax",
         "mov rax, QWORD PTR [r14+240]",
         "bswap rax",
         "mov rdx, QWORD PTR [r14+248]",
@@ -754,12 +770,23 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_ocb_seal_aesni(ctx: *const [u64; 32]
         "xor rdx, QWORD PTR [r15+56]",
         "mov QWORD PTR [r15], rax",
         "mov QWORD PTR [r15+8], rdx",
+        "mov rbx, r15",
+        "mov rsi, QWORD PTR [r15+304]",
+        "mov r12, QWORD PTR [r15+224]",
+        "mov rcx, 0",
+        "228:",
+        "movzx eax, BYTE PTR [rbx+rcx*1]",
+        "mov BYTE PTR [rsi+rcx*1], al",
+        "add rcx, 1",
+        "cmp rcx, r12",
+        "jne 228b",
         "mov rbx, QWORD PTR [r15+160]",
         "mov rbp, QWORD PTR [r15+168]",
         "mov r12, QWORD PTR [r15+176]",
         "mov r13, QWORD PTR [r15+184]",
         "mov r14, QWORD PTR [r15+192]",
         "mov r15, QWORD PTR [r15+200]",
+        "lea rsp, [rsp+2608]",
         "ret",
         ".p2align 6",
         vg_aes_encrypt_blocks_aesni = sym super::aes::vg_aes_encrypt_blocks_aesni,
@@ -769,7 +796,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_ocb_seal_aesni(ctx: *const [u64; 32]
 /// The CPU features `vg_aes_ocb_open_aesni` requires (`Artifact.features`).
 pub(crate) const VG_AES_OCB_OPEN_AESNI_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes"]);
 
-/// AES-OCB authenticated decryption (RFC 7253 §4.3, `OCB-DECRYPT`, with `TAGLEN = 8 * tag_len`): with the key context `*ctx` that `vg_aes_ocb_init` wrote for `rounds` rounds and the received tag (the last `tag_len` bytes of the RFC's ciphertext) in the first `tag_len` bytes of `*work`, decrypts the `len` bytes of encrypted data at `data` in place, under the `nonce_len`-byte nonce at `nonce`, and returns 1 if the tag is that of the data and the `aad_len` bytes of associated data at `aad`; otherwise returns 0 and overwrites the `len` bytes at `data` with zeros. The rest of `*work` is working space, unspecified on return. The tags are compared without a branch.
+/// AES-OCB authenticated decryption (RFC 7253 §4.3, `OCB-DECRYPT`, with `TAGLEN = 8 * tag_len`): with the key context `*ctx` that `vg_aes_ocb_init` wrote for `rounds` rounds and the received tag (the last `tag_len` bytes of the RFC's ciphertext) the `tag_len` bytes at `tag`, decrypts the `len` bytes of encrypted data at `data` in place, under the `nonce_len`-byte nonce at `nonce`, and returns 1 if the tag is that of the data and the `aad_len` bytes of associated data at `aad`; otherwise returns 0 and overwrites the `len` bytes at `data` with zeros. The tags are compared without a branch.
 ///
 /// Contract: `VG.Spec.Ocb.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths, `tag_len` and whether the function returns 1 or 0 may affect timing, not the key context, the nonce, the associated data, the data or the tag.
 ///
@@ -783,16 +810,28 @@ pub(crate) const VG_AES_OCB_OPEN_AESNI_FEATURES: crate::cpu::Features = crate::c
 /// * `nonce` must be valid for reads of `nonce_len` bytes.
 /// * `aad` must be valid for reads of `aad_len` bytes.
 /// * `data` must be valid for reads and writes of `len` bytes.
-/// * `work` must be valid for reads and writes of 2560 bytes.
+/// * `tag` must be valid for reads of `tag_len` bytes.
 /// * `rounds` must be 10, 12 or 14.
 /// * `tag_len` must be from 1 to 16, and `nonce_len` from 1 to 15 (RFC 7253 §3.1).
-/// * `data` and `work` must not overlap each other, `ctx`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `aad`, `data` and `work` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `data` must not overlap `ctx`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 2616 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` target feature.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_ocb_open_aesni(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, work: *mut [u64; 320], tag_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_aes_ocb_open_aesni(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "mov rax, QWORD PTR [rsp+24]",
+        "lea rsp, [rsp-2608]",
+        "mov rax, QWORD PTR [rsp+2616]",
+        "mov QWORD PTR [rsp+8], rax",
+        "mov rax, QWORD PTR [rsp+2624]",
+        "mov QWORD PTR [rsp+16], rax",
+        "mov rax, QWORD PTR [rsp+2632]",
+        "mov QWORD PTR [rsp+24], rax",
+        "mov rax, QWORD PTR [rsp+2640]",
+        "mov QWORD PTR [rsp+32], rax",
+        "mov rax, rsp",
+        "add rax, 48",
+        "mov QWORD PTR [rsp+40], rax",
+        "mov rax, QWORD PTR [rsp+40]",
         "mov QWORD PTR [rax+160], rbx",
         "mov QWORD PTR [rax+168], rbp",
         "mov QWORD PTR [rax+176], r12",
@@ -812,6 +851,8 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_ocb_open_aesni(ctx: *const [u64; 32]
         "mov QWORD PTR [r15+216], rax",
         "mov rax, QWORD PTR [rsp+32]",
         "mov QWORD PTR [r15+224], rax",
+        "mov rax, QWORD PTR [rsp+24]",
+        "mov QWORD PTR [r15+304], rax",
         "mov rax, QWORD PTR [r14+240]",
         "bswap rax",
         "mov rdx, QWORD PTR [r14+248]",
@@ -1467,17 +1508,27 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_ocb_open_aesni(ctx: *const [u64; 32]
         "xor rdx, QWORD PTR [r15+56]",
         "mov QWORD PTR [r15+128], rax",
         "mov QWORD PTR [r15+136], rdx",
+        "mov rbx, QWORD PTR [r15+304]",
+        "mov rsi, r15",
+        "mov r12, QWORD PTR [r15+224]",
+        "mov rcx, 0",
+        "228:",
+        "movzx eax, BYTE PTR [rbx+rcx*1]",
+        "mov BYTE PTR [rsi+rcx*1], al",
+        "add rcx, 1",
+        "cmp rcx, r12",
+        "jne 228b",
         "xor rdx, rdx",
         "mov rcx, 0",
         "mov r12, QWORD PTR [r15+224]",
-        "228:",
+        "229:",
         "movzx eax, BYTE PTR [r15+rcx*1]",
         "movzx r8d, BYTE PTR [r15+rcx*1+128]",
         "xor rax, r8",
         "or rdx, rax",
         "add rcx, 1",
         "cmp rcx, r12",
-        "jne 228b",
+        "jne 229b",
         "sub rdx, 1",
         "shr rdx, 63",
         "mov QWORD PTR [r15], rdx",
@@ -1487,17 +1538,17 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_ocb_open_aesni(ctx: *const [u64; 32]
         "sub rdx, QWORD PTR [r15]",
         "mov rcx, 0",
         "test r12, r12",
-        "je 229f",
-        "231:",
+        "je 230f",
+        "232:",
         "movzx eax, BYTE PTR [rbx+rcx*1]",
         "and rax, rdx",
         "mov BYTE PTR [rbx+rcx*1], al",
         "add rcx, 1",
         "cmp rcx, r12",
-        "jne 231b",
-        "jmp 230f",
-        "229:",
+        "jne 232b",
+        "jmp 231f",
         "230:",
+        "231:",
         "mov rax, QWORD PTR [r15]",
         "mov rbx, QWORD PTR [r15+160]",
         "mov rbp, QWORD PTR [r15+168]",
@@ -1505,6 +1556,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_ocb_open_aesni(ctx: *const [u64; 32]
         "mov r13, QWORD PTR [r15+184]",
         "mov r14, QWORD PTR [r15+192]",
         "mov r15, QWORD PTR [r15+200]",
+        "lea rsp, [rsp+2608]",
         "ret",
         ".p2align 6",
         vg_aes_encrypt_blocks_aesni = sym super::aes::vg_aes_encrypt_blocks_aesni,
@@ -1522,14 +1574,15 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_ocb_open_aesni(ctx: *const [u64; 32]
 ///
 /// * `key` must be valid for reads of `key_len` bytes.
 /// * `ctx` must be valid for reads and writes of 256 bytes.
-/// * `scratch` must be valid for reads and writes of 2560 bytes.
 /// * `key_len` must be 16, 24 or 32.
-/// * The contents of `scratch` on return are unspecified.
-/// * `ctx` and `scratch` must not overlap each other or `key` (distinct Rust objects never do).
-/// * None of `key`, `ctx` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `ctx` must not overlap `key` (distinct Rust objects never do).
+/// * Neither `key` nor `ctx` may overlap the return address on the stack or the 2576 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_ocb_init(key: *const u8, key_len: usize, ctx: *mut [u64; 32], scratch: *mut [u64; 320]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_ocb_init(key: *const u8, key_len: usize, ctx: *mut [u64; 32]) {
     core::arch::naked_asm!(
+        "lea rsp, [rsp-2568]",
+        "mov rcx, rsp",
+        "add rcx, 8",
         "mov QWORD PTR [rcx], rbx",
         "mov QWORD PTR [rcx+8], rbp",
         "mov QWORD PTR [rcx+16], r12",
@@ -1554,6 +1607,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_ocb_init(key: *const u8, key_len: us
         "mov rbx, QWORD PTR [r12]",
         "mov rbp, QWORD PTR [r12+8]",
         "mov r12, QWORD PTR [r12+16]",
+        "lea rsp, [rsp+2568]",
         "ret",
         ".p2align 6",
         vg_aes_expand_key = sym super::aes::vg_aes_expand_key,
@@ -1561,7 +1615,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_ocb_init(key: *const u8, key_len: us
     )
 }
 
-/// AES-OCB authenticated encryption (RFC 7253 §4.2, `OCB-ENCRYPT`, with `TAGLEN = 8 * tag_len`): with the key context `*ctx` that `vg_aes_ocb_init` wrote for `rounds` rounds, encrypts the `len` bytes at `data` in place, under the `nonce_len`-byte nonce at `nonce`, and writes the tag of `tag_len` bytes, of the data and the `aad_len` bytes of associated data at `aad`, to the first `tag_len` bytes of `*work`. The RFC's ciphertext is the encrypted data followed by the tag. The rest of `*work` is working space, unspecified on return. A nonce must never be used twice with the same key.
+/// AES-OCB authenticated encryption (RFC 7253 §4.2, `OCB-ENCRYPT`, with `TAGLEN = 8 * tag_len`): with the key context `*ctx` that `vg_aes_ocb_init` wrote for `rounds` rounds, encrypts the `len` bytes at `data` in place, under the `nonce_len`-byte nonce at `nonce`, and writes the tag of `tag_len` bytes, of the data and the `aad_len` bytes of associated data at `aad`, to the `tag_len` bytes at `tag`. The RFC's ciphertext is the encrypted data followed by the tag. A nonce must never be used twice with the same key.
 ///
 /// Contract: `VG.Spec.Ocb.sealContract`. Constant time: only the pointers, `rounds`, the lengths and `tag_len` may affect timing, not the key context, the nonce, the associated data or the data.
 ///
@@ -1573,15 +1627,27 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_ocb_init(key: *const u8, key_len: us
 /// * `nonce` must be valid for reads of `nonce_len` bytes.
 /// * `aad` must be valid for reads of `aad_len` bytes.
 /// * `data` must be valid for reads and writes of `len` bytes.
-/// * `work` must be valid for reads and writes of 2560 bytes.
+/// * `tag` must be valid for reads and writes of `tag_len` bytes.
 /// * `rounds` must be 10, 12 or 14.
 /// * `tag_len` must be from 1 to 16, and `nonce_len` from 1 to 15 (RFC 7253 §3.1).
-/// * `data` and `work` must not overlap each other, `ctx`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `aad`, `data` and `work` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `data` and `tag` must not overlap each other, `ctx`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 2616 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_ocb_seal(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, work: *mut [u64; 320], tag_len: usize) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_ocb_seal(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut u8, tag_len: usize) {
     core::arch::naked_asm!(
-        "mov rax, QWORD PTR [rsp+24]",
+        "lea rsp, [rsp-2608]",
+        "mov rax, QWORD PTR [rsp+2616]",
+        "mov QWORD PTR [rsp+8], rax",
+        "mov rax, QWORD PTR [rsp+2624]",
+        "mov QWORD PTR [rsp+16], rax",
+        "mov rax, QWORD PTR [rsp+2632]",
+        "mov QWORD PTR [rsp+24], rax",
+        "mov rax, QWORD PTR [rsp+2640]",
+        "mov QWORD PTR [rsp+32], rax",
+        "mov rax, rsp",
+        "add rax, 48",
+        "mov QWORD PTR [rsp+40], rax",
+        "mov rax, QWORD PTR [rsp+40]",
         "mov QWORD PTR [rax+160], rbx",
         "mov QWORD PTR [rax+168], rbp",
         "mov QWORD PTR [rax+176], r12",
@@ -1601,6 +1667,8 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_ocb_seal(ctx: *const [u64; 32], roun
         "mov QWORD PTR [r15+216], rax",
         "mov rax, QWORD PTR [rsp+32]",
         "mov QWORD PTR [r15+224], rax",
+        "mov rax, QWORD PTR [rsp+24]",
+        "mov QWORD PTR [r15+304], rax",
         "mov rax, QWORD PTR [r14+240]",
         "bswap rax",
         "mov rdx, QWORD PTR [r14+248]",
@@ -2256,19 +2324,30 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_ocb_seal(ctx: *const [u64; 32], roun
         "xor rdx, QWORD PTR [r15+56]",
         "mov QWORD PTR [r15], rax",
         "mov QWORD PTR [r15+8], rdx",
+        "mov rbx, r15",
+        "mov rsi, QWORD PTR [r15+304]",
+        "mov r12, QWORD PTR [r15+224]",
+        "mov rcx, 0",
+        "228:",
+        "movzx eax, BYTE PTR [rbx+rcx*1]",
+        "mov BYTE PTR [rsi+rcx*1], al",
+        "add rcx, 1",
+        "cmp rcx, r12",
+        "jne 228b",
         "mov rbx, QWORD PTR [r15+160]",
         "mov rbp, QWORD PTR [r15+168]",
         "mov r12, QWORD PTR [r15+176]",
         "mov r13, QWORD PTR [r15+184]",
         "mov r14, QWORD PTR [r15+192]",
         "mov r15, QWORD PTR [r15+200]",
+        "lea rsp, [rsp+2608]",
         "ret",
         ".p2align 6",
         vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks,
     )
 }
 
-/// AES-OCB authenticated decryption (RFC 7253 §4.3, `OCB-DECRYPT`, with `TAGLEN = 8 * tag_len`): with the key context `*ctx` that `vg_aes_ocb_init` wrote for `rounds` rounds and the received tag (the last `tag_len` bytes of the RFC's ciphertext) in the first `tag_len` bytes of `*work`, decrypts the `len` bytes of encrypted data at `data` in place, under the `nonce_len`-byte nonce at `nonce`, and returns 1 if the tag is that of the data and the `aad_len` bytes of associated data at `aad`; otherwise returns 0 and overwrites the `len` bytes at `data` with zeros. The rest of `*work` is working space, unspecified on return. The tags are compared without a branch.
+/// AES-OCB authenticated decryption (RFC 7253 §4.3, `OCB-DECRYPT`, with `TAGLEN = 8 * tag_len`): with the key context `*ctx` that `vg_aes_ocb_init` wrote for `rounds` rounds and the received tag (the last `tag_len` bytes of the RFC's ciphertext) the `tag_len` bytes at `tag`, decrypts the `len` bytes of encrypted data at `data` in place, under the `nonce_len`-byte nonce at `nonce`, and returns 1 if the tag is that of the data and the `aad_len` bytes of associated data at `aad`; otherwise returns 0 and overwrites the `len` bytes at `data` with zeros. The tags are compared without a branch.
 ///
 /// Contract: `VG.Spec.Ocb.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths, `tag_len` and whether the function returns 1 or 0 may affect timing, not the key context, the nonce, the associated data, the data or the tag.
 ///
@@ -2282,15 +2361,27 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_ocb_seal(ctx: *const [u64; 32], roun
 /// * `nonce` must be valid for reads of `nonce_len` bytes.
 /// * `aad` must be valid for reads of `aad_len` bytes.
 /// * `data` must be valid for reads and writes of `len` bytes.
-/// * `work` must be valid for reads and writes of 2560 bytes.
+/// * `tag` must be valid for reads of `tag_len` bytes.
 /// * `rounds` must be 10, 12 or 14.
 /// * `tag_len` must be from 1 to 16, and `nonce_len` from 1 to 15 (RFC 7253 §3.1).
-/// * `data` and `work` must not overlap each other, `ctx`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `aad`, `data` and `work` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `data` must not overlap `ctx`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 2616 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_ocb_open(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, work: *mut [u64; 320], tag_len: usize) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_aes_ocb_open(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "mov rax, QWORD PTR [rsp+24]",
+        "lea rsp, [rsp-2608]",
+        "mov rax, QWORD PTR [rsp+2616]",
+        "mov QWORD PTR [rsp+8], rax",
+        "mov rax, QWORD PTR [rsp+2624]",
+        "mov QWORD PTR [rsp+16], rax",
+        "mov rax, QWORD PTR [rsp+2632]",
+        "mov QWORD PTR [rsp+24], rax",
+        "mov rax, QWORD PTR [rsp+2640]",
+        "mov QWORD PTR [rsp+32], rax",
+        "mov rax, rsp",
+        "add rax, 48",
+        "mov QWORD PTR [rsp+40], rax",
+        "mov rax, QWORD PTR [rsp+40]",
         "mov QWORD PTR [rax+160], rbx",
         "mov QWORD PTR [rax+168], rbp",
         "mov QWORD PTR [rax+176], r12",
@@ -2310,6 +2401,8 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_ocb_open(ctx: *const [u64; 32], roun
         "mov QWORD PTR [r15+216], rax",
         "mov rax, QWORD PTR [rsp+32]",
         "mov QWORD PTR [r15+224], rax",
+        "mov rax, QWORD PTR [rsp+24]",
+        "mov QWORD PTR [r15+304], rax",
         "mov rax, QWORD PTR [r14+240]",
         "bswap rax",
         "mov rdx, QWORD PTR [r14+248]",
@@ -2965,17 +3058,27 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_ocb_open(ctx: *const [u64; 32], roun
         "xor rdx, QWORD PTR [r15+56]",
         "mov QWORD PTR [r15+128], rax",
         "mov QWORD PTR [r15+136], rdx",
+        "mov rbx, QWORD PTR [r15+304]",
+        "mov rsi, r15",
+        "mov r12, QWORD PTR [r15+224]",
+        "mov rcx, 0",
+        "228:",
+        "movzx eax, BYTE PTR [rbx+rcx*1]",
+        "mov BYTE PTR [rsi+rcx*1], al",
+        "add rcx, 1",
+        "cmp rcx, r12",
+        "jne 228b",
         "xor rdx, rdx",
         "mov rcx, 0",
         "mov r12, QWORD PTR [r15+224]",
-        "228:",
+        "229:",
         "movzx eax, BYTE PTR [r15+rcx*1]",
         "movzx r8d, BYTE PTR [r15+rcx*1+128]",
         "xor rax, r8",
         "or rdx, rax",
         "add rcx, 1",
         "cmp rcx, r12",
-        "jne 228b",
+        "jne 229b",
         "sub rdx, 1",
         "shr rdx, 63",
         "mov QWORD PTR [r15], rdx",
@@ -2985,17 +3088,17 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_ocb_open(ctx: *const [u64; 32], roun
         "sub rdx, QWORD PTR [r15]",
         "mov rcx, 0",
         "test r12, r12",
-        "je 229f",
-        "231:",
+        "je 230f",
+        "232:",
         "movzx eax, BYTE PTR [rbx+rcx*1]",
         "and rax, rdx",
         "mov BYTE PTR [rbx+rcx*1], al",
         "add rcx, 1",
         "cmp rcx, r12",
-        "jne 231b",
-        "jmp 230f",
-        "229:",
+        "jne 232b",
+        "jmp 231f",
         "230:",
+        "231:",
         "mov rax, QWORD PTR [r15]",
         "mov rbx, QWORD PTR [r15+160]",
         "mov rbp, QWORD PTR [r15+168]",
@@ -3003,6 +3106,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_ocb_open(ctx: *const [u64; 32], roun
         "mov r13, QWORD PTR [r15+184]",
         "mov r14, QWORD PTR [r15+192]",
         "mov r15, QWORD PTR [r15+200]",
+        "lea rsp, [rsp+2608]",
         "ret",
         ".p2align 6",
         vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks,

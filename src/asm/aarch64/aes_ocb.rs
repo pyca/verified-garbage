@@ -15,16 +15,16 @@ pub(crate) const VG_AES_OCB_INIT_AES_FEATURES: crate::cpu::Features = crate::cpu
 ///
 /// * `key` must be valid for reads of `key_len` bytes.
 /// * `ctx` must be valid for reads and writes of 256 bytes.
-/// * `scratch` must be valid for reads and writes of 2560 bytes.
 /// * `key_len` must be 16, 24 or 32.
-/// * The contents of `scratch` on return are unspecified.
-/// * `ctx` and `scratch` must not overlap each other or `key` (distinct Rust objects never do).
-/// * None of `key`, `ctx` and `scratch` may wrap around the end of the address space (no Rust object does).
+/// * `ctx` must not overlap `key` (distinct Rust objects never do).
+/// * Neither `key` nor `ctx` may overlap the 2560 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` target feature.
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_aes_ocb_init_aes(key: *const u8, key_len: usize, ctx: *mut [u64; 32], scratch: *mut [u64; 320]) {
+pub(crate) unsafe extern "C" fn vg_aes_ocb_init_aes(key: *const u8, key_len: usize, ctx: *mut [u64; 32]) {
     core::arch::naked_asm!(
         ".arch_extension aes",
+        "sub sp, sp, #2560",
+        "add x3, sp, #0",
         "str x20, [x3, #168]",
         "str x21, [x3, #176]",
         "str x22, [x3, #184]",
@@ -62,6 +62,7 @@ pub(crate) unsafe extern "C" fn vg_aes_ocb_init_aes(key: *const u8, key_len: usi
         "ldr x28, [x19, #232]",
         "ldr x30, [x19, #240]",
         "ldr x19, [x19, #160]",
+        "add sp, sp, #2560",
         "ret",
         ".arch_extension noaes",
         vg_aes_expand_key_aes = sym super::aes::vg_aes_expand_key_aes,
@@ -72,7 +73,7 @@ pub(crate) unsafe extern "C" fn vg_aes_ocb_init_aes(key: *const u8, key_len: usi
 /// The CPU features `vg_aes_ocb_seal_aes` requires (`Artifact.features`).
 pub(crate) const VG_AES_OCB_SEAL_AES_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes"]);
 
-/// AES-OCB authenticated encryption (RFC 7253 §4.2, `OCB-ENCRYPT`, with `TAGLEN = 8 * tag_len`): with the key context `*ctx` that `vg_aes_ocb_init` wrote for `rounds` rounds, encrypts the `len` bytes at `data` in place, under the `nonce_len`-byte nonce at `nonce`, and writes the tag of `tag_len` bytes, of the data and the `aad_len` bytes of associated data at `aad`, to the first `tag_len` bytes of `*work`. The RFC's ciphertext is the encrypted data followed by the tag. The rest of `*work` is working space, unspecified on return. A nonce must never be used twice with the same key.
+/// AES-OCB authenticated encryption (RFC 7253 §4.2, `OCB-ENCRYPT`, with `TAGLEN = 8 * tag_len`): with the key context `*ctx` that `vg_aes_ocb_init` wrote for `rounds` rounds, encrypts the `len` bytes at `data` in place, under the `nonce_len`-byte nonce at `nonce`, and writes the tag of `tag_len` bytes, of the data and the `aad_len` bytes of associated data at `aad`, to the `tag_len` bytes at `tag`. The RFC's ciphertext is the encrypted data followed by the tag. A nonce must never be used twice with the same key.
 ///
 /// Contract: `VG.Spec.Ocb.sealContract`. Constant time: only the pointers, `rounds`, the lengths and `tag_len` may affect timing, not the key context, the nonce, the associated data or the data.
 ///
@@ -84,17 +85,25 @@ pub(crate) const VG_AES_OCB_SEAL_AES_FEATURES: crate::cpu::Features = crate::cpu
 /// * `nonce` must be valid for reads of `nonce_len` bytes.
 /// * `aad` must be valid for reads of `aad_len` bytes.
 /// * `data` must be valid for reads and writes of `len` bytes.
-/// * `work` must be valid for reads and writes of 2560 bytes.
+/// * `tag` must be valid for reads and writes of `tag_len` bytes.
 /// * `rounds` must be 10, 12 or 14.
 /// * `tag_len` must be from 1 to 16, and `nonce_len` from 1 to 15 (RFC 7253 §3.1).
-/// * `data` and `work` must not overlap each other, `ctx`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `aad`, `data` and `work` may wrap around the end of the address space (no Rust object does).
+/// * `data` and `tag` must not overlap each other, `ctx`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the 2592 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` target feature.
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_aes_ocb_seal_aes(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, work: *mut [u64; 320], tag_len: usize) {
+pub(crate) unsafe extern "C" fn vg_aes_ocb_seal_aes(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut u8, tag_len: usize) {
     core::arch::naked_asm!(
         ".arch_extension aes",
-        "ldr x9, [sp, #0]",
+        "sub sp, sp, #2592",
+        "add x16, sp, #0",
+        "ldr x17, [sp, #2592]",
+        "str x17, [x16, #0]",
+        "ldr x17, [sp, #2600]",
+        "str x17, [x16, #8]",
+        "add x17, sp, #32",
+        "str x17, [x16, #16]",
+        "ldr x9, [sp, #16]",
         "str x20, [x9, #168]",
         "str x21, [x9, #176]",
         "str x22, [x9, #184]",
@@ -727,6 +736,16 @@ pub(crate) unsafe extern "C" fn vg_aes_ocb_seal_aes(ctx: *const [u64; 32], round
         "eor x10, x10, x12",
         "str x9, [x19, #0]",
         "str x10, [x19, #8]",
+        "ldr x11, [sp, #0]",
+        "add x12, x19, #0",
+        "ldr x13, [x19, #248]",
+        "228:",
+        "ldrb w14, [x12, #0]",
+        "strb w14, [x11, #0]",
+        "add x12, x12, #1",
+        "add x11, x11, #1",
+        "sub x13, x13, #1",
+        "cbnz x13, 228b",
         "ldr x20, [x19, #168]",
         "ldr x21, [x19, #176]",
         "ldr x22, [x19, #184]",
@@ -738,6 +757,7 @@ pub(crate) unsafe extern "C" fn vg_aes_ocb_seal_aes(ctx: *const [u64; 32], round
         "ldr x28, [x19, #232]",
         "ldr x30, [x19, #240]",
         "ldr x19, [x19, #160]",
+        "add sp, sp, #2592",
         "ret",
         ".arch_extension noaes",
         vg_aes_encrypt_blocks_aes = sym super::aes::vg_aes_encrypt_blocks_aes,
@@ -747,7 +767,7 @@ pub(crate) unsafe extern "C" fn vg_aes_ocb_seal_aes(ctx: *const [u64; 32], round
 /// The CPU features `vg_aes_ocb_open_aes` requires (`Artifact.features`).
 pub(crate) const VG_AES_OCB_OPEN_AES_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes"]);
 
-/// AES-OCB authenticated decryption (RFC 7253 §4.3, `OCB-DECRYPT`, with `TAGLEN = 8 * tag_len`): with the key context `*ctx` that `vg_aes_ocb_init` wrote for `rounds` rounds and the received tag (the last `tag_len` bytes of the RFC's ciphertext) in the first `tag_len` bytes of `*work`, decrypts the `len` bytes of encrypted data at `data` in place, under the `nonce_len`-byte nonce at `nonce`, and returns 1 if the tag is that of the data and the `aad_len` bytes of associated data at `aad`; otherwise returns 0 and overwrites the `len` bytes at `data` with zeros. The rest of `*work` is working space, unspecified on return. The tags are compared without a branch.
+/// AES-OCB authenticated decryption (RFC 7253 §4.3, `OCB-DECRYPT`, with `TAGLEN = 8 * tag_len`): with the key context `*ctx` that `vg_aes_ocb_init` wrote for `rounds` rounds and the received tag (the last `tag_len` bytes of the RFC's ciphertext) the `tag_len` bytes at `tag`, decrypts the `len` bytes of encrypted data at `data` in place, under the `nonce_len`-byte nonce at `nonce`, and returns 1 if the tag is that of the data and the `aad_len` bytes of associated data at `aad`; otherwise returns 0 and overwrites the `len` bytes at `data` with zeros. The tags are compared without a branch.
 ///
 /// Contract: `VG.Spec.Ocb.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths, `tag_len` and whether the function returns 1 or 0 may affect timing, not the key context, the nonce, the associated data, the data or the tag.
 ///
@@ -761,17 +781,25 @@ pub(crate) const VG_AES_OCB_OPEN_AES_FEATURES: crate::cpu::Features = crate::cpu
 /// * `nonce` must be valid for reads of `nonce_len` bytes.
 /// * `aad` must be valid for reads of `aad_len` bytes.
 /// * `data` must be valid for reads and writes of `len` bytes.
-/// * `work` must be valid for reads and writes of 2560 bytes.
+/// * `tag` must be valid for reads of `tag_len` bytes.
 /// * `rounds` must be 10, 12 or 14.
 /// * `tag_len` must be from 1 to 16, and `nonce_len` from 1 to 15 (RFC 7253 §3.1).
-/// * `data` and `work` must not overlap each other, `ctx`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `aad`, `data` and `work` may wrap around the end of the address space (no Rust object does).
+/// * `data` must not overlap `ctx`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the 2592 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` target feature.
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_aes_ocb_open_aes(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, work: *mut [u64; 320], tag_len: usize) -> u32 {
+pub(crate) unsafe extern "C" fn vg_aes_ocb_open_aes(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
         ".arch_extension aes",
-        "ldr x9, [sp, #0]",
+        "sub sp, sp, #2592",
+        "add x16, sp, #0",
+        "ldr x17, [sp, #2592]",
+        "str x17, [x16, #0]",
+        "ldr x17, [sp, #2600]",
+        "str x17, [x16, #8]",
+        "add x17, sp, #32",
+        "str x17, [x16, #16]",
+        "ldr x9, [sp, #16]",
         "str x20, [x9, #168]",
         "str x21, [x9, #176]",
         "str x22, [x9, #184]",
@@ -1404,11 +1432,21 @@ pub(crate) unsafe extern "C" fn vg_aes_ocb_open_aes(ctx: *const [u64; 32], round
         "eor x10, x10, x12",
         "str x9, [x19, #128]",
         "str x10, [x19, #136]",
+        "add x11, x19, #0",
+        "ldr x12, [sp, #0]",
+        "ldr x13, [x19, #248]",
+        "228:",
+        "ldrb w14, [x12, #0]",
+        "strb w14, [x11, #0]",
+        "add x12, x12, #1",
+        "add x11, x11, #1",
+        "sub x13, x13, #1",
+        "cbnz x13, 228b",
         "movz x13, #0, lsl #0",
         "add x11, x19, #0",
         "add x12, x19, #128",
         "ldr x24, [x19, #248]",
-        "228:",
+        "229:",
         "ldrb w9, [x11, #0]",
         "ldrb w10, [x12, #0]",
         "eor x9, x9, x10",
@@ -1416,7 +1454,7 @@ pub(crate) unsafe extern "C" fn vg_aes_ocb_open_aes(ctx: *const [u64; 32], round
         "add x11, x11, #1",
         "add x12, x12, #1",
         "sub x24, x24, #1",
-        "cbnz x24, 228b",
+        "cbnz x24, 229b",
         "sub x13, x13, #1",
         "lsr x13, x13, #63",
         "str x13, [x19, #0]",
@@ -1425,17 +1463,17 @@ pub(crate) unsafe extern "C" fn vg_aes_ocb_open_aes(ctx: *const [u64; 32], round
         "ldr x9, [x19, #0]",
         "movz x10, #0, lsl #0",
         "sub x10, x10, x9",
-        "cbz x24, 229f",
-        "231:",
+        "cbz x24, 230f",
+        "232:",
         "ldrb w9, [x23, #0]",
         "and w9, w9, w10",
         "strb w9, [x23, #0]",
         "add x23, x23, #1",
         "sub x24, x24, #1",
-        "cbnz x24, 231b",
-        "b 230f",
-        "229:",
+        "cbnz x24, 232b",
+        "b 231f",
         "230:",
+        "231:",
         "ldr x0, [x19, #0]",
         "ldr x20, [x19, #168]",
         "ldr x21, [x19, #176]",
@@ -1448,6 +1486,7 @@ pub(crate) unsafe extern "C" fn vg_aes_ocb_open_aes(ctx: *const [u64; 32], round
         "ldr x28, [x19, #232]",
         "ldr x30, [x19, #240]",
         "ldr x19, [x19, #160]",
+        "add sp, sp, #2592",
         "ret",
         ".arch_extension noaes",
         vg_aes_encrypt_blocks_aes = sym super::aes::vg_aes_encrypt_blocks_aes,
@@ -1465,14 +1504,14 @@ pub(crate) unsafe extern "C" fn vg_aes_ocb_open_aes(ctx: *const [u64; 32], round
 ///
 /// * `key` must be valid for reads of `key_len` bytes.
 /// * `ctx` must be valid for reads and writes of 256 bytes.
-/// * `scratch` must be valid for reads and writes of 2560 bytes.
 /// * `key_len` must be 16, 24 or 32.
-/// * The contents of `scratch` on return are unspecified.
-/// * `ctx` and `scratch` must not overlap each other or `key` (distinct Rust objects never do).
-/// * None of `key`, `ctx` and `scratch` may wrap around the end of the address space (no Rust object does).
+/// * `ctx` must not overlap `key` (distinct Rust objects never do).
+/// * Neither `key` nor `ctx` may overlap the 2560 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_aes_ocb_init(key: *const u8, key_len: usize, ctx: *mut [u64; 32], scratch: *mut [u64; 320]) {
+pub(crate) unsafe extern "C" fn vg_aes_ocb_init(key: *const u8, key_len: usize, ctx: *mut [u64; 32]) {
     core::arch::naked_asm!(
+        "sub sp, sp, #2560",
+        "add x3, sp, #0",
         "str x20, [x3, #168]",
         "str x21, [x3, #176]",
         "str x22, [x3, #184]",
@@ -1510,13 +1549,14 @@ pub(crate) unsafe extern "C" fn vg_aes_ocb_init(key: *const u8, key_len: usize, 
         "ldr x28, [x19, #232]",
         "ldr x30, [x19, #240]",
         "ldr x19, [x19, #160]",
+        "add sp, sp, #2560",
         "ret",
         vg_aes_expand_key = sym super::aes::vg_aes_expand_key,
         vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks,
     )
 }
 
-/// AES-OCB authenticated encryption (RFC 7253 §4.2, `OCB-ENCRYPT`, with `TAGLEN = 8 * tag_len`): with the key context `*ctx` that `vg_aes_ocb_init` wrote for `rounds` rounds, encrypts the `len` bytes at `data` in place, under the `nonce_len`-byte nonce at `nonce`, and writes the tag of `tag_len` bytes, of the data and the `aad_len` bytes of associated data at `aad`, to the first `tag_len` bytes of `*work`. The RFC's ciphertext is the encrypted data followed by the tag. The rest of `*work` is working space, unspecified on return. A nonce must never be used twice with the same key.
+/// AES-OCB authenticated encryption (RFC 7253 §4.2, `OCB-ENCRYPT`, with `TAGLEN = 8 * tag_len`): with the key context `*ctx` that `vg_aes_ocb_init` wrote for `rounds` rounds, encrypts the `len` bytes at `data` in place, under the `nonce_len`-byte nonce at `nonce`, and writes the tag of `tag_len` bytes, of the data and the `aad_len` bytes of associated data at `aad`, to the `tag_len` bytes at `tag`. The RFC's ciphertext is the encrypted data followed by the tag. A nonce must never be used twice with the same key.
 ///
 /// Contract: `VG.Spec.Ocb.sealContract`. Constant time: only the pointers, `rounds`, the lengths and `tag_len` may affect timing, not the key context, the nonce, the associated data or the data.
 ///
@@ -1528,15 +1568,23 @@ pub(crate) unsafe extern "C" fn vg_aes_ocb_init(key: *const u8, key_len: usize, 
 /// * `nonce` must be valid for reads of `nonce_len` bytes.
 /// * `aad` must be valid for reads of `aad_len` bytes.
 /// * `data` must be valid for reads and writes of `len` bytes.
-/// * `work` must be valid for reads and writes of 2560 bytes.
+/// * `tag` must be valid for reads and writes of `tag_len` bytes.
 /// * `rounds` must be 10, 12 or 14.
 /// * `tag_len` must be from 1 to 16, and `nonce_len` from 1 to 15 (RFC 7253 §3.1).
-/// * `data` and `work` must not overlap each other, `ctx`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `aad`, `data` and `work` may wrap around the end of the address space (no Rust object does).
+/// * `data` and `tag` must not overlap each other, `ctx`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the 2592 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_aes_ocb_seal(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, work: *mut [u64; 320], tag_len: usize) {
+pub(crate) unsafe extern "C" fn vg_aes_ocb_seal(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut u8, tag_len: usize) {
     core::arch::naked_asm!(
-        "ldr x9, [sp, #0]",
+        "sub sp, sp, #2592",
+        "add x16, sp, #0",
+        "ldr x17, [sp, #2592]",
+        "str x17, [x16, #0]",
+        "ldr x17, [sp, #2600]",
+        "str x17, [x16, #8]",
+        "add x17, sp, #32",
+        "str x17, [x16, #16]",
+        "ldr x9, [sp, #16]",
         "str x20, [x9, #168]",
         "str x21, [x9, #176]",
         "str x22, [x9, #184]",
@@ -2169,6 +2217,16 @@ pub(crate) unsafe extern "C" fn vg_aes_ocb_seal(ctx: *const [u64; 32], rounds: u
         "eor x10, x10, x12",
         "str x9, [x19, #0]",
         "str x10, [x19, #8]",
+        "ldr x11, [sp, #0]",
+        "add x12, x19, #0",
+        "ldr x13, [x19, #248]",
+        "228:",
+        "ldrb w14, [x12, #0]",
+        "strb w14, [x11, #0]",
+        "add x12, x12, #1",
+        "add x11, x11, #1",
+        "sub x13, x13, #1",
+        "cbnz x13, 228b",
         "ldr x20, [x19, #168]",
         "ldr x21, [x19, #176]",
         "ldr x22, [x19, #184]",
@@ -2180,12 +2238,13 @@ pub(crate) unsafe extern "C" fn vg_aes_ocb_seal(ctx: *const [u64; 32], rounds: u
         "ldr x28, [x19, #232]",
         "ldr x30, [x19, #240]",
         "ldr x19, [x19, #160]",
+        "add sp, sp, #2592",
         "ret",
         vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks,
     )
 }
 
-/// AES-OCB authenticated decryption (RFC 7253 §4.3, `OCB-DECRYPT`, with `TAGLEN = 8 * tag_len`): with the key context `*ctx` that `vg_aes_ocb_init` wrote for `rounds` rounds and the received tag (the last `tag_len` bytes of the RFC's ciphertext) in the first `tag_len` bytes of `*work`, decrypts the `len` bytes of encrypted data at `data` in place, under the `nonce_len`-byte nonce at `nonce`, and returns 1 if the tag is that of the data and the `aad_len` bytes of associated data at `aad`; otherwise returns 0 and overwrites the `len` bytes at `data` with zeros. The rest of `*work` is working space, unspecified on return. The tags are compared without a branch.
+/// AES-OCB authenticated decryption (RFC 7253 §4.3, `OCB-DECRYPT`, with `TAGLEN = 8 * tag_len`): with the key context `*ctx` that `vg_aes_ocb_init` wrote for `rounds` rounds and the received tag (the last `tag_len` bytes of the RFC's ciphertext) the `tag_len` bytes at `tag`, decrypts the `len` bytes of encrypted data at `data` in place, under the `nonce_len`-byte nonce at `nonce`, and returns 1 if the tag is that of the data and the `aad_len` bytes of associated data at `aad`; otherwise returns 0 and overwrites the `len` bytes at `data` with zeros. The tags are compared without a branch.
 ///
 /// Contract: `VG.Spec.Ocb.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths, `tag_len` and whether the function returns 1 or 0 may affect timing, not the key context, the nonce, the associated data, the data or the tag.
 ///
@@ -2199,15 +2258,23 @@ pub(crate) unsafe extern "C" fn vg_aes_ocb_seal(ctx: *const [u64; 32], rounds: u
 /// * `nonce` must be valid for reads of `nonce_len` bytes.
 /// * `aad` must be valid for reads of `aad_len` bytes.
 /// * `data` must be valid for reads and writes of `len` bytes.
-/// * `work` must be valid for reads and writes of 2560 bytes.
+/// * `tag` must be valid for reads of `tag_len` bytes.
 /// * `rounds` must be 10, 12 or 14.
 /// * `tag_len` must be from 1 to 16, and `nonce_len` from 1 to 15 (RFC 7253 §3.1).
-/// * `data` and `work` must not overlap each other, `ctx`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `aad`, `data` and `work` may wrap around the end of the address space (no Rust object does).
+/// * `data` must not overlap `ctx`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the 2592 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_aes_ocb_open(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, work: *mut [u64; 320], tag_len: usize) -> u32 {
+pub(crate) unsafe extern "C" fn vg_aes_ocb_open(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "ldr x9, [sp, #0]",
+        "sub sp, sp, #2592",
+        "add x16, sp, #0",
+        "ldr x17, [sp, #2592]",
+        "str x17, [x16, #0]",
+        "ldr x17, [sp, #2600]",
+        "str x17, [x16, #8]",
+        "add x17, sp, #32",
+        "str x17, [x16, #16]",
+        "ldr x9, [sp, #16]",
         "str x20, [x9, #168]",
         "str x21, [x9, #176]",
         "str x22, [x9, #184]",
@@ -2840,11 +2907,21 @@ pub(crate) unsafe extern "C" fn vg_aes_ocb_open(ctx: *const [u64; 32], rounds: u
         "eor x10, x10, x12",
         "str x9, [x19, #128]",
         "str x10, [x19, #136]",
+        "add x11, x19, #0",
+        "ldr x12, [sp, #0]",
+        "ldr x13, [x19, #248]",
+        "228:",
+        "ldrb w14, [x12, #0]",
+        "strb w14, [x11, #0]",
+        "add x12, x12, #1",
+        "add x11, x11, #1",
+        "sub x13, x13, #1",
+        "cbnz x13, 228b",
         "movz x13, #0, lsl #0",
         "add x11, x19, #0",
         "add x12, x19, #128",
         "ldr x24, [x19, #248]",
-        "228:",
+        "229:",
         "ldrb w9, [x11, #0]",
         "ldrb w10, [x12, #0]",
         "eor x9, x9, x10",
@@ -2852,7 +2929,7 @@ pub(crate) unsafe extern "C" fn vg_aes_ocb_open(ctx: *const [u64; 32], rounds: u
         "add x11, x11, #1",
         "add x12, x12, #1",
         "sub x24, x24, #1",
-        "cbnz x24, 228b",
+        "cbnz x24, 229b",
         "sub x13, x13, #1",
         "lsr x13, x13, #63",
         "str x13, [x19, #0]",
@@ -2861,17 +2938,17 @@ pub(crate) unsafe extern "C" fn vg_aes_ocb_open(ctx: *const [u64; 32], rounds: u
         "ldr x9, [x19, #0]",
         "movz x10, #0, lsl #0",
         "sub x10, x10, x9",
-        "cbz x24, 229f",
-        "231:",
+        "cbz x24, 230f",
+        "232:",
         "ldrb w9, [x23, #0]",
         "and w9, w9, w10",
         "strb w9, [x23, #0]",
         "add x23, x23, #1",
         "sub x24, x24, #1",
-        "cbnz x24, 231b",
-        "b 230f",
-        "229:",
+        "cbnz x24, 232b",
+        "b 231f",
         "230:",
+        "231:",
         "ldr x0, [x19, #0]",
         "ldr x20, [x19, #168]",
         "ldr x21, [x19, #176]",
@@ -2884,6 +2961,7 @@ pub(crate) unsafe extern "C" fn vg_aes_ocb_open(ctx: *const [u64; 32], rounds: u
         "ldr x28, [x19, #232]",
         "ldr x30, [x19, #240]",
         "ldr x19, [x19, #160]",
+        "add sp, sp, #2592",
         "ret",
         vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks,
         vg_aes_decrypt_blocks = sym super::aes::vg_aes_decrypt_blocks,

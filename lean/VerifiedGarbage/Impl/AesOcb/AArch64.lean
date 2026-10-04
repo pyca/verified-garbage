@@ -4,8 +4,12 @@ import VerifiedGarbage.Impl.AesGcm.AArch64
 /-!
 # AES-OCB: AArch64 implementation
 
-`vg_aes_ocb_init`, `vg_aes_ocb_seal` and `vg_aes_ocb_open`
-(`Spec/Ocb/Contract.lean`), composed of calls of the verified
+`vg_aes_ocb_init(key = x0, key_len = x1, ctx = x2, scratch = x3)`,
+`vg_aes_ocb_seal(ctx = x0, rounds = x1, nonce = x2, nonce_len = x3, aad = x4, aad_len = x5, data = x6, len = x7, tag = [sp], tag_len = [sp + 8], work = [sp + 16])`
+and `vg_aes_ocb_open` with the same arguments (`Spec/Ocb/Contract.lean`),
+with the working space (`scratch`, `work`) as a last argument, which a frame
+on the stack allocates (`Impl.StackScratch.AArch64.withStackScratch` and
+`withStackArgScratch`), composed of calls of the verified
 `vg_aes_expand_key`, `vg_aes_encrypt_blocks` and `vg_aes_decrypt_blocks`,
 and generic over their implementations (`Callees`): each function is
 emitted once for each. As the x86-64 implementation (`X86_64.lean`):
@@ -26,8 +30,10 @@ emitted once for each. As the x86-64 implementation (`X86_64.lean`):
   where `bottom` is the last 6 bits of the nonce, which is secret: the
   192-bit `Stretch`, in three registers, is shifted left by 1, 2, 4, 8, 16
   and 32 bits, each shift kept or not by a mask from a bit of `bottom`.
-* `open` compares the tags without a branch and masks the data with
-  `0 − ok`.
+* `seal` computes the tag at `W` (`front`) and copies its first `tag_len`
+  bytes to `tag`, whose address it reads from the stack (`tagOut`).
+* `open` copies the received tag from `tag` to `W` (`recv`), compares the
+  tags without a branch and masks the data with `0 − ok`.
 
 The model has no flags or register-offset addressing: the branches are
 `cbz`/`cbnz` on counts, and bytes are copied and XORed through advancing
@@ -319,12 +325,12 @@ def tag (d : Nat) : Prog isa :=
 /-! ## The functions -/
 
 /-- The entry of `seal` and `open`: `(ctx = x0, rounds = x1, nonce = x2,
-nonce_len = x3, aad = x4, aad_len = x5, data = x6, len = x7, work = [sp],
-tag_len = [sp + 8])`: the registers saved in `W`, the data and its length in
-`x21` and `x28`, the other arguments kept in `W`,
-`L_$` and `L_0`, the checksum zeroed. -/
+nonce_len = x3, aad = x4, aad_len = x5, data = x6, len = x7, tag = [sp],
+tag_len = [sp + 8], work = [sp + 16])`: the registers saved in `W`, the data
+and its length in `x21` and `x28`, the other arguments but `tag` kept in
+`W`, `L_$` and `L_0`, the checksum zeroed. -/
 def entry : List Instr :=
-  [.ldrSp .x9 0] ++ save .x9 ++
+  [.ldrSp .x9 16] ++ save .x9 ++
   [mov .x19 .x9, mov .x20 .x0, mov .x21 .x6, mov .x22 .x1, mov .x28 .x7, st .x19 nO .x2,
    st .x19 nlO .x3, st .x19 aadO .x4, st .x19 alenO .x5, .ldrSp .x10 8, st .x19 tlO .x10] ++
   lsetup ++ zero16 ckO
@@ -338,10 +344,20 @@ def body (enc : Bool) : Prog isa :=
           .add .x .x23 .x21 .x9])
         (.ite (.zero .x .x24) (.block []) (rest c enc))))
 
-def «seal» : Prog isa :=
-  .seq (.block entry)
-    (.seq (nonce c)
-      (.seq (hash c) (.seq (body c true) (.seq (tag c tagO) (.block restore)))))
+/-- `seal` (`enc`) or `open` up to the tag, at `W + d`: the entry,
+`Offset_0`, `HASH`, the data and the tag. -/
+def front (enc : Bool) (d : Nat) : Prog isa :=
+  .seq (.block entry) (.seq (nonce c) (.seq (hash c) (.seq (body c enc) (tag c d))))
+
+/-- The first `tag_len` bytes of the tag at `W` copied to `tag`, whose
+address is at `[sp]`. -/
+def tagOut : Prog isa := .seq (.block [.ldrSp .x11 0, mov .x12 .x19, ld .x13 .x19 tlO]) copyLoop
+
+def «seal» : Prog isa := .seq (front c true tagO) (.seq tagOut (.block restore))
+
+/-- The received tag, the `tag_len` bytes at `tag` (whose address is at
+`[sp]`), copied to `W`. -/
+def recv : Prog isa := .seq (.block [mov .x11 .x19, .ldrSp .x12 0, ld .x13 .x19 tlO]) copyLoop
 
 /-- `open`'s comparison of the first `tag_len` bytes of the tags (at `W` and
 `W + t2O`), without a branch: `W + tagO ← 1` if they are equal, else 0. -/
@@ -361,10 +377,7 @@ def mask : Prog isa :=
         ptr .x23 .x23 1, .subImm .x .x24 .x24 1]) (.nonzero .x .x24)))
 
 def «open» : Prog isa :=
-  .seq (.block entry)
-    (.seq (nonce c)
-      (.seq (hash c) (.seq (body c false) (.seq (tag c t2O)
-        (.seq cmp (.seq mask (.block ([ld .x0 .x19 tagO] ++ restore))))))))
+  .seq (front c false t2O) (.seq recv (.seq cmp (.seq mask (.block ([ld .x0 .x19 tagO] ++ restore)))))
 
 /-! ## The key setup -/
 
