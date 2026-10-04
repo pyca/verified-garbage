@@ -304,11 +304,9 @@ impl PrivateKey {
         if p.is_empty() || p.len() >= k || q.is_empty() || q.len() >= k {
             return Err(Error::InvalidPrivateKey);
         }
-        let (Some(dp), Some(dq), Some(qinv)) = (
-            widen(dp, p.len()),
-            widen(dq, q.len()),
-            widen(qinv, p.len()),
-        ) else {
+        let (Some(dp), Some(dq), Some(qinv)) =
+            (widen(dp, p.len()), widen(dq, q.len()), widen(qinv, p.len()))
+        else {
             return Err(Error::InvalidPrivateKey);
         };
         let key = PrivateKey {
@@ -519,8 +517,14 @@ mod tests {
             PrivateKey::from_crt(n, p, q, dp, dq, qi).map(|_| ())
         };
         assert_eq!(new(&n, &p, &q, &[1], &[1], &[0]), Ok(()));
-        assert_eq!(new(&n[1..], &p, &q, &[1], &[1], &[0]), Err(Error::InvalidModulus));
-        assert_eq!(new(&[1; 1025], &p, &q, &[1], &[1], &[0]), Err(Error::InvalidModulus));
+        assert_eq!(
+            new(&n[1..], &p, &q, &[1], &[1], &[0]),
+            Err(Error::InvalidModulus)
+        );
+        assert_eq!(
+            new(&[1; 1025], &p, &q, &[1], &[1], &[0]),
+            Err(Error::InvalidModulus)
+        );
         let bad = Err(Error::InvalidPrivateKey);
         assert_eq!(new(&n, &[0; 3], &q, &[1], &[1], &[0]), bad);
         assert_eq!(new(&n, &p, &[], &[1], &[1], &[0]), bad);
@@ -538,7 +542,10 @@ mod tests {
         assert_eq!(new(&even[1..], &p, &q, &[1], &[1], &[0]), bad);
         let key = PrivateKey::from_crt(&n, &p, &q, &[1], &[1], &[0]).unwrap();
         let mut out = [0; 64];
-        assert_eq!(key.private_op(&[0; 63], &mut out), Err(Error::InvalidLength));
+        assert_eq!(
+            key.private_op(&[0; 63], &mut out),
+            Err(Error::InvalidLength)
+        );
         assert_eq!(
             key.private_op(&[0; 64], &mut out[..63]),
             Err(Error::InvalidLength)
