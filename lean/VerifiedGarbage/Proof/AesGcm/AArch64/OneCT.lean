@@ -156,36 +156,37 @@ theorem front_rel (v : GcmImpl) {k₁ k₂ : Reg → BitVec 64} {Np A D : Addr} 
 end
 
 
-/-- The load of `work`. -/
-theorem ldr9_ok {s : State} {W : Addr} (hW : stackArg s 0 = W)
-    (hsp : InRegions (s.rd ++ s.wr) (s.sp + BitVec.ofNat 64 0) 8) :
-    WP isa (.block [.ldrSp .x9 0]) s fun s' => s'.gpr .x9 = W ∧ (∀ r, r ≠ .x9 → s'.gpr r = s.gpr r) ∧
-      s'.sp = s.sp ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
-  refine WP.run ⟨_, by arun [hsp], rfl⟩ fun s' hs' => ?_
-  subst hs'
-  refine ⟨?_, fun r hr => by simp [gpr_write, hr], rfl, rfl, rfl⟩
-  rw [← hW]
-  simp [gpr_write, stackArg, stackArgAddr, Mem.readW]
+/-- The load of `work`, at `sp + k`. -/
+theorem ldr9_ok {s : State} {W : Addr} {k : Nat} (hk : k % 8 = 0 ∧ k < 32768)
+    (hW : s.mem.readW (s.sp + BitVec.ofNat 64 k) 64 = W)
+    (hsp : InRegions (s.rd ++ s.wr) (s.sp + BitVec.ofNat 64 k) 8) :
+    WP isa (.block [.ldrSp .x9 k]) s fun s' => s'.gpr .x9 = W ∧ (∀ r, r ≠ .x9 → s'.gpr r = s.gpr r) ∧
+      s'.sp = s.sp ∧ s'.rd = s.rd ∧ s'.wr = s.wr :=
+  let ⟨s', run, x9, g, sp, _, rd, wr⟩ := ldrSp_ok hk hW hsp
+  WP.of_runBlock ⟨s', run, x9, g, sp, rd, wr⟩
 
-/-- The entry of `seal` and `open` in two runs. -/
-theorem entry_rel {σ₁ σ₂ : State} {W : Addr} (hW₁ : stackArg σ₁ 0 = W) (hW₂ : stackArg σ₂ 0 = W)
-    (hsp₁ : InRegions (σ₁.rd ++ σ₁.wr) (σ₁.sp + BitVec.ofNat 64 0) 8)
-    (hsp₂ : InRegions (σ₂.rd ++ σ₂.wr) (σ₂.sp + BitVec.ofNat 64 0) 8)
+/-- The entry of `seal` and `open` in two runs, with `work` at `sp + k`. -/
+theorem entry_rel {σ₁ σ₂ : State} {W : Addr} {k : Nat} (hk : k = 8 ∨ k = 16)
+    (hW₁ : σ₁.mem.readW (σ₁.sp + BitVec.ofNat 64 k) 64 = W) (hW₂ : σ₂.mem.readW (σ₂.sp + BitVec.ofNat 64 k) 64 = W)
+    (hsp₁ : InRegions (σ₁.rd ++ σ₁.wr) (σ₁.sp + BitVec.ofNat 64 k) 8)
+    (hsp₂ : InRegions (σ₂.rd ++ σ₂.wr) (σ₂.sp + BitVec.ofNat 64 k) 8)
     (hw₁ : Covers [⟨W, 2560⟩] σ₁.wr) (hw₂ : Covers [⟨W, 2560⟩] σ₂.wr) (qsp : σ₁.sp = σ₂.sp)
     (hq : ∀ r ∈ [Reg.x0, .x1, .x2, .x3, .x4, .x5, .x6, .x7], σ₁.gpr r = σ₂.gpr r) :
-    RelCT isa (Eq2 σ₁ σ₂) (.block oneEntry) TT := by
-  have run : ∀ {σ : State}, stackArg σ 0 = W → InRegions (σ.rd ++ σ.wr) (σ.sp + BitVec.ofNat 64 0) 8 →
-      Covers [⟨W, 2560⟩] σ.wr →
-      WP isa (.block ([.ldrSp .x9 0] ++ save .x9)) σ fun s' => s'.gpr .x9 = W ∧
+    RelCT isa (Eq2 σ₁ σ₂) (.block (oneEntry k)) TT := by
+  have hk' : k % 8 = 0 ∧ k < 32768 := by rcases hk with rfl | rfl <;> decide
+  have run : ∀ {σ : State}, σ.mem.readW (σ.sp + BitVec.ofNat 64 k) 64 = W →
+      InRegions (σ.rd ++ σ.wr) (σ.sp + BitVec.ofNat 64 k) 8 → Covers [⟨W, 2560⟩] σ.wr →
+      WP isa (.block ([.ldrSp .x9 k] ++ save .x9)) σ fun s' => s'.gpr .x9 = W ∧
         (∀ r, r ≠ .x9 → s'.gpr r = σ.gpr r) ∧ s'.sp = σ.sp := fun hW hsp hw =>
-    WP.block_append (WP.mono (ldr9_ok hW hsp) fun s₁ ⟨x9₁, g₁, sp₁, rd₁, wr₁⟩ => by
+    WP.block_append (WP.mono (ldr9_ok hk' hW hsp) fun s₁ ⟨x9₁, g₁, sp₁, rd₁, wr₁⟩ => by
       obtain ⟨s₂, run₂, g₂, sp₂, _, _, _⟩ := save_ok s₁ .x9 x9₁ (by rw [wr₁]; exact hw)
       exact WP.of_runBlock ⟨s₂, run₂, by rw [g₂, x9₁], fun r hr => by rw [g₂, g₁ r hr], by rw [sp₂, sp₁]⟩)
-  have t₁ : ∃ h, (taint.check (Taint.ofRegs []) (.block [.ldrSp .x9 0]) h).isSome = true := ⟨_, by taint_decide⟩
+  have t₁ : ∃ h, (taint.check (Taint.ofRegs []) (.block [.ldrSp .x9 k]) h).isSome = true := by
+    rcases hk with rfl | rfl <;> exact ⟨_, by taint_decide⟩
   have t₂ : ∃ h, (taint.check (Taint.ofRegs [.x9]) (.block (save .x9)) h).isSome = true := ⟨_, by taint_decide⟩
-  show RelCT isa _ (.block ([.ldrSp .x9 0] ++ save .x9 ++ _)) _
+  show RelCT isa _ (.block ([.ldrSp .x9 k] ++ save .x9 ++ _)) _
   refine RelCT.block_split (rel_seq (RelCT.block_split (rel_seq (rel_taint [] qsp (by agree_tac []) t₁)
-      (ldr9_ok hW₁ hsp₁) (ldr9_ok hW₂ hsp₂)
+      (ldr9_ok hk' hW₁ hsp₁) (ldr9_ok hk' hW₂ hsp₂)
       fun τ₁ τ₂ ⟨x9₁, _, sp₁, _, _⟩ ⟨x9₂, _, sp₂, _, _⟩ =>
         rel_taint [.x9] (by rw [sp₁, sp₂, qsp]) (by agree_tac [x9₁, x9₂]) t₂))
     (run hW₁ hsp₁ hw₁) (run hW₂ hsp₂ hw₂) fun τ₁ τ₂ ⟨x9₁, g₁, sp₁⟩ ⟨x9₂, g₂, sp₂⟩ => ?_)

@@ -1935,7 +1935,7 @@ pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_decrypt_aesni(ctx: *const [u64
 /// The CPU features `vg_aes_gcm_stream_finish_aesni` requires (`Artifact.features`).
 pub(crate) const VG_AES_GCM_STREAM_FINISH_AESNI_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes"]);
 
-/// Finishes an incremental AES-GCM encryption or decryption (NIST SP 800-38D §7.1 steps 5–6, §7.2 steps 6–7): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, writes its 128-bit tag to the first 16 bytes of `*work`. The rest of `*work` is working space, unspecified on return. A shorter tag is the first bytes of this one; to check a received tag, use `vg_aes_gcm_stream_verify`.
+/// Finishes an incremental AES-GCM encryption or decryption (NIST SP 800-38D §7.1 steps 5–6, §7.2 steps 6–7): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, writes its 128-bit tag to `*tag`. A shorter tag is the first bytes of this one; to check a received tag, use `vg_aes_gcm_stream_verify`.
 ///
 /// Contract: `VG.Spec.Gcm.streamFinishContract`. Constant time: only the pointers, `rounds`, `aad_len` and `text_len` may affect timing, not the key context or the state.
 ///
@@ -1947,16 +1947,36 @@ pub(crate) const VG_AES_GCM_STREAM_FINISH_AESNI_FEATURES: crate::cpu::Features =
 ///
 /// * `ctx` must be valid for reads of 256 bytes.
 /// * `state` must be valid for reads and writes of 80 bytes.
-/// * `work` must be valid for reads and writes of 2560 bytes.
+/// * `tag` must be valid for reads and writes of 16 bytes.
 /// * `rounds` must be 10, 12 or 14.
 /// * The contents of `state` on return are unspecified.
-/// * `state` and `work` must not overlap each other or `ctx` (distinct Rust objects never do).
-/// * None of `ctx`, `state` and `work` may overlap the arguments on the stack, overlap the return address on the stack or the 28 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `state` and `tag` must not overlap each other or `ctx` (distinct Rust objects never do).
+/// * None of `ctx`, `state` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 2628 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` target feature.
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_finish_aesni(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, work: *mut [u64; 320]) {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_finish_aesni(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        "mov eax, DWORD PTR [esp+32]",
+        "lea esp, [esp-2600]",
+        "mov eax, DWORD PTR [esp+2604]",
+        "mov DWORD PTR [esp+4], eax",
+        "mov eax, DWORD PTR [esp+2608]",
+        "mov DWORD PTR [esp+8], eax",
+        "mov eax, DWORD PTR [esp+2612]",
+        "mov DWORD PTR [esp+12], eax",
+        "mov eax, DWORD PTR [esp+2616]",
+        "mov DWORD PTR [esp+16], eax",
+        "mov eax, DWORD PTR [esp+2620]",
+        "mov DWORD PTR [esp+20], eax",
+        "mov eax, DWORD PTR [esp+2624]",
+        "mov DWORD PTR [esp+24], eax",
+        "mov eax, DWORD PTR [esp+2628]",
+        "mov DWORD PTR [esp+28], eax",
+        "mov eax, DWORD PTR [esp+2632]",
+        "mov DWORD PTR [esp+32], eax",
+        "mov eax, esp",
+        "add eax, 40",
+        "mov DWORD PTR [esp+36], eax",
+        "mov eax, DWORD PTR [esp+36]",
         "mov DWORD PTR [eax+128], ebx",
         "mov DWORD PTR [eax+132], esi",
         "mov DWORD PTR [eax+136], edi",
@@ -1975,6 +1995,8 @@ pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_finish_aesni(ctx: *const [u64;
         "mov DWORD PTR [ebp+160], eax",
         "mov eax, DWORD PTR [esp+28]",
         "mov DWORD PTR [ebp+164], eax",
+        "mov eax, DWORD PTR [esp+32]",
+        "mov DWORD PTR [ebp+212], eax",
         "mov eax, DWORD PTR [ebp+160]",
         "mov ecx, DWORD PTR [ebp+152]",
         "mov edx, DWORD PTR [ebp+160]",
@@ -2107,10 +2129,20 @@ pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_finish_aesni(ctx: *const [u64;
         "pop eax",
         "pop eax",
         "sub ebp, 512",
+        "mov eax, DWORD PTR [ebp]",
+        "mov ecx, DWORD PTR [ebp+4]",
+        "mov edx, DWORD PTR [ebp+8]",
+        "mov ebx, DWORD PTR [ebp+12]",
+        "mov edi, DWORD PTR [ebp+212]",
+        "mov DWORD PTR [edi], eax",
+        "mov DWORD PTR [edi+4], ecx",
+        "mov DWORD PTR [edi+8], edx",
+        "mov DWORD PTR [edi+12], ebx",
         "mov ebx, DWORD PTR [ebp+128]",
         "mov esi, DWORD PTR [ebp+132]",
         "mov edi, DWORD PTR [ebp+136]",
         "mov ebp, DWORD PTR [ebp+140]",
+        "lea esp, [esp+2600]",
         "ret",
         ".p2align 6",
         vg_ghash = sym super::gcm::vg_ghash,
@@ -2121,7 +2153,7 @@ pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_finish_aesni(ctx: *const [u64;
 /// The CPU features `vg_aes_gcm_stream_verify_aesni` requires (`Artifact.features`).
 pub(crate) const VG_AES_GCM_STREAM_VERIFY_AESNI_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes"]);
 
-/// Finishes an incremental AES-GCM decryption and checks its tag (NIST SP 800-38D §7.2 steps 6–8): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag in the first `tag_len` bytes of `*work`, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, returns 1 if `tag_len` is 4, 8, 12, 13, 14, 15 or 16 (§5.2.1.2) and the received tag is the first `tag_len` bytes of the message's 128-bit tag, which it then writes to the first 16 bytes of `*work`; otherwise returns 0 and writes 16 zero bytes there. The rest of `*work` is working space, unspecified on return. The tags are compared without a branch.
+/// Finishes an incremental AES-GCM decryption and checks its tag (NIST SP 800-38D §7.2 steps 6–8): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, returns 1 if `tag_len` is 4, 8, 12, 13, 14, 15 or 16 (§5.2.1.2) and the received tag is the first `tag_len` bytes of the message's 128-bit tag, and 0 otherwise. The tags are compared without a branch.
 ///
 /// Contract: `VG.Spec.Gcm.streamVerifyContract`. Constant time: only the pointers, `rounds`, `aad_len`, `text_len` and `tag_len` may affect timing, not the key context, the state or the tags.
 ///
@@ -2133,16 +2165,38 @@ pub(crate) const VG_AES_GCM_STREAM_VERIFY_AESNI_FEATURES: crate::cpu::Features =
 ///
 /// * `ctx` must be valid for reads of 256 bytes.
 /// * `state` must be valid for reads and writes of 80 bytes.
-/// * `work` must be valid for reads and writes of 2560 bytes.
+/// * `tag` must be valid for reads of `tag_len` bytes.
 /// * `rounds` must be 10, 12 or 14.
 /// * The contents of `state` on return are unspecified.
-/// * `state` and `work` must not overlap each other or `ctx` (distinct Rust objects never do).
-/// * None of `ctx`, `state` and `work` may overlap the arguments on the stack, overlap the return address on the stack or the 28 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `state` must not overlap `ctx` or `tag` (distinct Rust objects never do).
+/// * None of `ctx`, `state` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 2632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` target feature.
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_verify_aesni(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, work: *mut [u64; 320], tag_len: usize) -> u32 {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_verify_aesni(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "mov eax, DWORD PTR [esp+32]",
+        "lea esp, [esp-2604]",
+        "mov eax, DWORD PTR [esp+2608]",
+        "mov DWORD PTR [esp+4], eax",
+        "mov eax, DWORD PTR [esp+2612]",
+        "mov DWORD PTR [esp+8], eax",
+        "mov eax, DWORD PTR [esp+2616]",
+        "mov DWORD PTR [esp+12], eax",
+        "mov eax, DWORD PTR [esp+2620]",
+        "mov DWORD PTR [esp+16], eax",
+        "mov eax, DWORD PTR [esp+2624]",
+        "mov DWORD PTR [esp+20], eax",
+        "mov eax, DWORD PTR [esp+2628]",
+        "mov DWORD PTR [esp+24], eax",
+        "mov eax, DWORD PTR [esp+2632]",
+        "mov DWORD PTR [esp+28], eax",
+        "mov eax, DWORD PTR [esp+2636]",
+        "mov DWORD PTR [esp+32], eax",
+        "mov eax, DWORD PTR [esp+2640]",
+        "mov DWORD PTR [esp+36], eax",
+        "mov eax, esp",
+        "add eax, 44",
+        "mov DWORD PTR [esp+40], eax",
+        "mov eax, DWORD PTR [esp+40]",
         "mov DWORD PTR [eax+128], ebx",
         "mov DWORD PTR [eax+132], esi",
         "mov DWORD PTR [eax+136], edi",
@@ -2161,6 +2215,8 @@ pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_verify_aesni(ctx: *const [u64;
         "mov DWORD PTR [ebp+160], eax",
         "mov eax, DWORD PTR [esp+28]",
         "mov DWORD PTR [ebp+164], eax",
+        "mov eax, DWORD PTR [esp+32]",
+        "mov DWORD PTR [ebp+212], eax",
         "mov eax, DWORD PTR [esp+36]",
         "mov DWORD PTR [ebp+180], eax",
         "mov ecx, 0",
@@ -2195,7 +2251,7 @@ pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_verify_aesni(ctx: *const [u64;
         "mov DWORD PTR [ebp+200], eax",
         "mov DWORD PTR [ebp+204], eax",
         "mov DWORD PTR [ebp+208], eax",
-        "mov edi, ebp",
+        "mov edi, DWORD PTR [ebp+212]",
         "mov edx, ebp",
         "add edx, 196",
         "mov ecx, DWORD PTR [ebp+180]",
@@ -2369,32 +2425,15 @@ pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_verify_aesni(ctx: *const [u64;
         "cmp eax, 1",
         "mov eax, 0",
         "adc eax, 0",
-        "mov ecx, 0",
-        "sub ecx, eax",
-        "mov edx, DWORD PTR [ebp]",
-        "and edx, ecx",
-        "mov DWORD PTR [ebp], edx",
-        "mov edx, DWORD PTR [ebp+4]",
-        "and edx, ecx",
-        "mov DWORD PTR [ebp+4], edx",
-        "mov edx, DWORD PTR [ebp+8]",
-        "and edx, ecx",
-        "mov DWORD PTR [ebp+8], edx",
-        "mov edx, DWORD PTR [ebp+12]",
-        "and edx, ecx",
-        "mov DWORD PTR [ebp+12], edx",
         "jmp 29f",
         "28:",
         "mov eax, 0",
-        "mov DWORD PTR [ebp], eax",
-        "mov DWORD PTR [ebp+4], eax",
-        "mov DWORD PTR [ebp+8], eax",
-        "mov DWORD PTR [ebp+12], eax",
         "29:",
         "mov ebx, DWORD PTR [ebp+128]",
         "mov esi, DWORD PTR [ebp+132]",
         "mov edi, DWORD PTR [ebp+136]",
         "mov ebp, DWORD PTR [ebp+140]",
+        "lea esp, [esp+2604]",
         "ret",
         ".p2align 6",
         vg_ghash = sym super::gcm::vg_ghash,
@@ -2405,7 +2444,7 @@ pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_verify_aesni(ctx: *const [u64;
 /// The CPU features `vg_aes_gcm_seal_aesni` requires (`Artifact.features`).
 pub(crate) const VG_AES_GCM_SEAL_AESNI_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes"]);
 
-/// AES-GCM authenticated encryption (NIST SP 800-38D §7.1, GCM-AE, with a 128-bit tag): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, encrypts the `len` bytes at `data` in place, under the IV the `nonce_len` bytes at `nonce`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to the first 16 bytes of `*work`. The rest of `*work` is working space, unspecified on return. A shorter tag is the first bytes of this one.
+/// AES-GCM authenticated encryption (NIST SP 800-38D §7.1, GCM-AE, with a 128-bit tag): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, encrypts the `len` bytes at `data` in place, under the IV the `nonce_len` bytes at `nonce`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`. A shorter tag is the first bytes of this one.
 ///
 /// The function checks no length. GCM is secure only for a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of data and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must ensure; and a nonce must never be used twice with the same key.
 ///
@@ -2421,15 +2460,37 @@ pub(crate) const VG_AES_GCM_SEAL_AESNI_FEATURES: crate::cpu::Features = crate::c
 /// * `nonce` must be valid for reads of `nonce_len` bytes.
 /// * `aad` must be valid for reads of `aad_len` bytes.
 /// * `data` must be valid for reads and writes of `len` bytes.
-/// * `work` must be valid for reads and writes of 2560 bytes.
+/// * `tag` must be valid for reads and writes of 16 bytes.
 /// * `rounds` must be 10, 12 or 14.
-/// * `data` and `work` must not overlap each other, `ctx`, `nonce` or `aad` (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `aad`, `data` and `work` may overlap the arguments on the stack, overlap the return address on the stack or the 28 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `data` and `tag` must not overlap each other, `ctx`, `nonce` or `aad` (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 2632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` target feature.
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_aes_gcm_seal_aesni(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, work: *mut [u64; 320]) {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_seal_aesni(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        "mov eax, DWORD PTR [esp+36]",
+        "lea esp, [esp-2604]",
+        "mov eax, DWORD PTR [esp+2608]",
+        "mov DWORD PTR [esp+4], eax",
+        "mov eax, DWORD PTR [esp+2612]",
+        "mov DWORD PTR [esp+8], eax",
+        "mov eax, DWORD PTR [esp+2616]",
+        "mov DWORD PTR [esp+12], eax",
+        "mov eax, DWORD PTR [esp+2620]",
+        "mov DWORD PTR [esp+16], eax",
+        "mov eax, DWORD PTR [esp+2624]",
+        "mov DWORD PTR [esp+20], eax",
+        "mov eax, DWORD PTR [esp+2628]",
+        "mov DWORD PTR [esp+24], eax",
+        "mov eax, DWORD PTR [esp+2632]",
+        "mov DWORD PTR [esp+28], eax",
+        "mov eax, DWORD PTR [esp+2636]",
+        "mov DWORD PTR [esp+32], eax",
+        "mov eax, DWORD PTR [esp+2640]",
+        "mov DWORD PTR [esp+36], eax",
+        "mov eax, esp",
+        "add eax, 44",
+        "mov DWORD PTR [esp+40], eax",
+        "mov eax, DWORD PTR [esp+40]",
         "mov DWORD PTR [eax+128], ebx",
         "mov DWORD PTR [eax+132], esi",
         "mov DWORD PTR [eax+136], edi",
@@ -2455,6 +2516,8 @@ pub(crate) unsafe extern "C" fn vg_aes_gcm_seal_aesni(ctx: *const [u64; 32], rou
         "mov DWORD PTR [ebp+168], eax",
         "mov eax, DWORD PTR [esp+32]",
         "mov DWORD PTR [ebp+172], eax",
+        "mov eax, DWORD PTR [esp+36]",
+        "mov DWORD PTR [ebp+212], eax",
         "mov eax, 0",
         "mov DWORD PTR [ebp+188], eax",
         "mov eax, DWORD PTR [ebp+192]",
@@ -3241,10 +3304,20 @@ pub(crate) unsafe extern "C" fn vg_aes_gcm_seal_aesni(ctx: *const [u64; 32], rou
         "pop eax",
         "pop eax",
         "sub ebp, 512",
+        "mov eax, DWORD PTR [ebp]",
+        "mov ecx, DWORD PTR [ebp+4]",
+        "mov edx, DWORD PTR [ebp+8]",
+        "mov ebx, DWORD PTR [ebp+12]",
+        "mov edi, DWORD PTR [ebp+212]",
+        "mov DWORD PTR [edi], eax",
+        "mov DWORD PTR [edi+4], ecx",
+        "mov DWORD PTR [edi+8], edx",
+        "mov DWORD PTR [edi+12], ebx",
         "mov ebx, DWORD PTR [ebp+128]",
         "mov esi, DWORD PTR [ebp+132]",
         "mov edi, DWORD PTR [ebp+136]",
         "mov ebp, DWORD PTR [ebp+140]",
+        "lea esp, [esp+2604]",
         "ret",
         ".p2align 6",
         vg_ghash = sym super::gcm::vg_ghash,
@@ -3255,7 +3328,7 @@ pub(crate) unsafe extern "C" fn vg_aes_gcm_seal_aesni(ctx: *const [u64; 32], rou
 /// The CPU features `vg_aes_gcm_open_aesni` requires (`Artifact.features`).
 pub(crate) const VG_AES_GCM_OPEN_AESNI_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes"]);
 
-/// AES-GCM authenticated decryption (NIST SP 800-38D §7.2, GCM-AD): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag in the first `tag_len` bytes of `*work`, returns 1 if `tag_len` is 4, 8, 12, 13, 14, 15 or 16 (§5.2.1.2) and the tag is the first `tag_len` bytes of that of the `len` bytes of ciphertext at `data` and the `aad_len` bytes of additional data at `aad`, under the IV the `nonce_len` bytes at `nonce`, having then decrypted the ciphertext in place; otherwise returns 0, and the bytes at `data` are unchanged. The rest of `*work` is working space, unspecified on return. The tags are compared without a branch.
+/// AES-GCM authenticated decryption (NIST SP 800-38D §7.2, GCM-AD): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, returns 1 if `tag_len` is 4, 8, 12, 13, 14, 15 or 16 (§5.2.1.2) and the tag is the first `tag_len` bytes of that of the `len` bytes of ciphertext at `data` and the `aad_len` bytes of additional data at `aad`, under the IV the `nonce_len` bytes at `nonce`, having then decrypted the ciphertext in place; otherwise returns 0, and the bytes at `data` are unchanged. The tags are compared without a branch.
 ///
 /// The function checks no other length: GCM requires a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of ciphertext and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must check.
 ///
@@ -3271,15 +3344,39 @@ pub(crate) const VG_AES_GCM_OPEN_AESNI_FEATURES: crate::cpu::Features = crate::c
 /// * `nonce` must be valid for reads of `nonce_len` bytes.
 /// * `aad` must be valid for reads of `aad_len` bytes.
 /// * `data` must be valid for reads and writes of `len` bytes.
-/// * `work` must be valid for reads and writes of 2560 bytes.
+/// * `tag` must be valid for reads of `tag_len` bytes.
 /// * `rounds` must be 10, 12 or 14.
-/// * `data` and `work` must not overlap each other, `ctx`, `nonce` or `aad` (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `aad`, `data` and `work` may overlap the arguments on the stack, overlap the return address on the stack or the 28 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `data` must not overlap `ctx`, `nonce`, `aad` or `tag` (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 2636 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` target feature.
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_aes_gcm_open_aesni(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, work: *mut [u64; 320], tag_len: usize) -> u32 {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_open_aesni(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "mov eax, DWORD PTR [esp+36]",
+        "lea esp, [esp-2608]",
+        "mov eax, DWORD PTR [esp+2612]",
+        "mov DWORD PTR [esp+4], eax",
+        "mov eax, DWORD PTR [esp+2616]",
+        "mov DWORD PTR [esp+8], eax",
+        "mov eax, DWORD PTR [esp+2620]",
+        "mov DWORD PTR [esp+12], eax",
+        "mov eax, DWORD PTR [esp+2624]",
+        "mov DWORD PTR [esp+16], eax",
+        "mov eax, DWORD PTR [esp+2628]",
+        "mov DWORD PTR [esp+20], eax",
+        "mov eax, DWORD PTR [esp+2632]",
+        "mov DWORD PTR [esp+24], eax",
+        "mov eax, DWORD PTR [esp+2636]",
+        "mov DWORD PTR [esp+28], eax",
+        "mov eax, DWORD PTR [esp+2640]",
+        "mov DWORD PTR [esp+32], eax",
+        "mov eax, DWORD PTR [esp+2644]",
+        "mov DWORD PTR [esp+36], eax",
+        "mov eax, DWORD PTR [esp+2648]",
+        "mov DWORD PTR [esp+40], eax",
+        "mov eax, esp",
+        "add eax, 48",
+        "mov DWORD PTR [esp+44], eax",
+        "mov eax, DWORD PTR [esp+44]",
         "mov DWORD PTR [eax+128], ebx",
         "mov DWORD PTR [eax+132], esi",
         "mov DWORD PTR [eax+136], edi",
@@ -3305,10 +3402,12 @@ pub(crate) unsafe extern "C" fn vg_aes_gcm_open_aesni(ctx: *const [u64; 32], rou
         "mov DWORD PTR [ebp+168], eax",
         "mov eax, DWORD PTR [esp+32]",
         "mov DWORD PTR [ebp+172], eax",
-        "mov eax, 0",
-        "mov DWORD PTR [ebp+188], eax",
+        "mov eax, DWORD PTR [esp+36]",
+        "mov DWORD PTR [ebp+212], eax",
         "mov eax, DWORD PTR [esp+40]",
         "mov DWORD PTR [ebp+180], eax",
+        "mov eax, 0",
+        "mov DWORD PTR [ebp+188], eax",
         "mov ecx, 0",
         "mov ebx, DWORD PTR [ebp+180]",
         "cmp ebx, 4",
@@ -3999,7 +4098,7 @@ pub(crate) unsafe extern "C" fn vg_aes_gcm_open_aesni(ctx: *const [u64; 32], rou
         "mov DWORD PTR [ebp+200], eax",
         "mov DWORD PTR [ebp+204], eax",
         "mov DWORD PTR [ebp+208], eax",
-        "mov edi, ebp",
+        "mov edi, DWORD PTR [ebp+212]",
         "mov edx, ebp",
         "add edx, 196",
         "mov ecx, DWORD PTR [ebp+180]",
@@ -4182,6 +4281,7 @@ pub(crate) unsafe extern "C" fn vg_aes_gcm_open_aesni(ctx: *const [u64; 32], rou
         "mov esi, DWORD PTR [ebp+132]",
         "mov edi, DWORD PTR [ebp+136]",
         "mov ebp, DWORD PTR [ebp+140]",
+        "lea esp, [esp+2608]",
         "ret",
         ".p2align 6",
         vg_ghash = sym super::gcm::vg_ghash,
@@ -5559,7 +5659,7 @@ pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_decrypt_aesni_pclmul(ctx: *con
 /// The CPU features `vg_aes_gcm_stream_finish_aesni_pclmul` requires (`Artifact.features`).
 pub(crate) const VG_AES_GCM_STREAM_FINISH_AESNI_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes", "pclmulqdq", "ssse3"]);
 
-/// Finishes an incremental AES-GCM encryption or decryption (NIST SP 800-38D §7.1 steps 5–6, §7.2 steps 6–7): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, writes its 128-bit tag to the first 16 bytes of `*work`. The rest of `*work` is working space, unspecified on return. A shorter tag is the first bytes of this one; to check a received tag, use `vg_aes_gcm_stream_verify`.
+/// Finishes an incremental AES-GCM encryption or decryption (NIST SP 800-38D §7.1 steps 5–6, §7.2 steps 6–7): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, writes its 128-bit tag to `*tag`. A shorter tag is the first bytes of this one; to check a received tag, use `vg_aes_gcm_stream_verify`.
 ///
 /// Contract: `VG.Spec.Gcm.streamFinishContract`. Constant time: only the pointers, `rounds`, `aad_len` and `text_len` may affect timing, not the key context or the state.
 ///
@@ -5571,16 +5671,36 @@ pub(crate) const VG_AES_GCM_STREAM_FINISH_AESNI_PCLMUL_FEATURES: crate::cpu::Fea
 ///
 /// * `ctx` must be valid for reads of 256 bytes.
 /// * `state` must be valid for reads and writes of 80 bytes.
-/// * `work` must be valid for reads and writes of 2560 bytes.
+/// * `tag` must be valid for reads and writes of 16 bytes.
 /// * `rounds` must be 10, 12 or 14.
 /// * The contents of `state` on return are unspecified.
-/// * `state` and `work` must not overlap each other or `ctx` (distinct Rust objects never do).
-/// * None of `ctx`, `state` and `work` may overlap the arguments on the stack, overlap the return address on the stack or the 28 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `state` and `tag` must not overlap each other or `ctx` (distinct Rust objects never do).
+/// * None of `ctx`, `state` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 2628 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `pclmulqdq` and `ssse3` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_finish_aesni_pclmul(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, work: *mut [u64; 320]) {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_finish_aesni_pclmul(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        "mov eax, DWORD PTR [esp+32]",
+        "lea esp, [esp-2600]",
+        "mov eax, DWORD PTR [esp+2604]",
+        "mov DWORD PTR [esp+4], eax",
+        "mov eax, DWORD PTR [esp+2608]",
+        "mov DWORD PTR [esp+8], eax",
+        "mov eax, DWORD PTR [esp+2612]",
+        "mov DWORD PTR [esp+12], eax",
+        "mov eax, DWORD PTR [esp+2616]",
+        "mov DWORD PTR [esp+16], eax",
+        "mov eax, DWORD PTR [esp+2620]",
+        "mov DWORD PTR [esp+20], eax",
+        "mov eax, DWORD PTR [esp+2624]",
+        "mov DWORD PTR [esp+24], eax",
+        "mov eax, DWORD PTR [esp+2628]",
+        "mov DWORD PTR [esp+28], eax",
+        "mov eax, DWORD PTR [esp+2632]",
+        "mov DWORD PTR [esp+32], eax",
+        "mov eax, esp",
+        "add eax, 40",
+        "mov DWORD PTR [esp+36], eax",
+        "mov eax, DWORD PTR [esp+36]",
         "mov DWORD PTR [eax+128], ebx",
         "mov DWORD PTR [eax+132], esi",
         "mov DWORD PTR [eax+136], edi",
@@ -5599,6 +5719,8 @@ pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_finish_aesni_pclmul(ctx: *cons
         "mov DWORD PTR [ebp+160], eax",
         "mov eax, DWORD PTR [esp+28]",
         "mov DWORD PTR [ebp+164], eax",
+        "mov eax, DWORD PTR [esp+32]",
+        "mov DWORD PTR [ebp+212], eax",
         "mov eax, DWORD PTR [ebp+160]",
         "mov ecx, DWORD PTR [ebp+152]",
         "mov edx, DWORD PTR [ebp+160]",
@@ -5731,10 +5853,20 @@ pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_finish_aesni_pclmul(ctx: *cons
         "pop eax",
         "pop eax",
         "sub ebp, 512",
+        "mov eax, DWORD PTR [ebp]",
+        "mov ecx, DWORD PTR [ebp+4]",
+        "mov edx, DWORD PTR [ebp+8]",
+        "mov ebx, DWORD PTR [ebp+12]",
+        "mov edi, DWORD PTR [ebp+212]",
+        "mov DWORD PTR [edi], eax",
+        "mov DWORD PTR [edi+4], ecx",
+        "mov DWORD PTR [edi+8], edx",
+        "mov DWORD PTR [edi+12], ebx",
         "mov ebx, DWORD PTR [ebp+128]",
         "mov esi, DWORD PTR [ebp+132]",
         "mov edi, DWORD PTR [ebp+136]",
         "mov ebp, DWORD PTR [ebp+140]",
+        "lea esp, [esp+2600]",
         "ret",
         ".p2align 6",
         vg_ghash_pclmul = sym super::gcm::vg_ghash_pclmul,
@@ -5745,7 +5877,7 @@ pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_finish_aesni_pclmul(ctx: *cons
 /// The CPU features `vg_aes_gcm_stream_verify_aesni_pclmul` requires (`Artifact.features`).
 pub(crate) const VG_AES_GCM_STREAM_VERIFY_AESNI_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes", "pclmulqdq", "ssse3"]);
 
-/// Finishes an incremental AES-GCM decryption and checks its tag (NIST SP 800-38D §7.2 steps 6–8): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag in the first `tag_len` bytes of `*work`, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, returns 1 if `tag_len` is 4, 8, 12, 13, 14, 15 or 16 (§5.2.1.2) and the received tag is the first `tag_len` bytes of the message's 128-bit tag, which it then writes to the first 16 bytes of `*work`; otherwise returns 0 and writes 16 zero bytes there. The rest of `*work` is working space, unspecified on return. The tags are compared without a branch.
+/// Finishes an incremental AES-GCM decryption and checks its tag (NIST SP 800-38D §7.2 steps 6–8): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, returns 1 if `tag_len` is 4, 8, 12, 13, 14, 15 or 16 (§5.2.1.2) and the received tag is the first `tag_len` bytes of the message's 128-bit tag, and 0 otherwise. The tags are compared without a branch.
 ///
 /// Contract: `VG.Spec.Gcm.streamVerifyContract`. Constant time: only the pointers, `rounds`, `aad_len`, `text_len` and `tag_len` may affect timing, not the key context, the state or the tags.
 ///
@@ -5757,16 +5889,38 @@ pub(crate) const VG_AES_GCM_STREAM_VERIFY_AESNI_PCLMUL_FEATURES: crate::cpu::Fea
 ///
 /// * `ctx` must be valid for reads of 256 bytes.
 /// * `state` must be valid for reads and writes of 80 bytes.
-/// * `work` must be valid for reads and writes of 2560 bytes.
+/// * `tag` must be valid for reads of `tag_len` bytes.
 /// * `rounds` must be 10, 12 or 14.
 /// * The contents of `state` on return are unspecified.
-/// * `state` and `work` must not overlap each other or `ctx` (distinct Rust objects never do).
-/// * None of `ctx`, `state` and `work` may overlap the arguments on the stack, overlap the return address on the stack or the 28 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `state` must not overlap `ctx` or `tag` (distinct Rust objects never do).
+/// * None of `ctx`, `state` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 2632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `pclmulqdq` and `ssse3` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_verify_aesni_pclmul(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, work: *mut [u64; 320], tag_len: usize) -> u32 {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_verify_aesni_pclmul(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "mov eax, DWORD PTR [esp+32]",
+        "lea esp, [esp-2604]",
+        "mov eax, DWORD PTR [esp+2608]",
+        "mov DWORD PTR [esp+4], eax",
+        "mov eax, DWORD PTR [esp+2612]",
+        "mov DWORD PTR [esp+8], eax",
+        "mov eax, DWORD PTR [esp+2616]",
+        "mov DWORD PTR [esp+12], eax",
+        "mov eax, DWORD PTR [esp+2620]",
+        "mov DWORD PTR [esp+16], eax",
+        "mov eax, DWORD PTR [esp+2624]",
+        "mov DWORD PTR [esp+20], eax",
+        "mov eax, DWORD PTR [esp+2628]",
+        "mov DWORD PTR [esp+24], eax",
+        "mov eax, DWORD PTR [esp+2632]",
+        "mov DWORD PTR [esp+28], eax",
+        "mov eax, DWORD PTR [esp+2636]",
+        "mov DWORD PTR [esp+32], eax",
+        "mov eax, DWORD PTR [esp+2640]",
+        "mov DWORD PTR [esp+36], eax",
+        "mov eax, esp",
+        "add eax, 44",
+        "mov DWORD PTR [esp+40], eax",
+        "mov eax, DWORD PTR [esp+40]",
         "mov DWORD PTR [eax+128], ebx",
         "mov DWORD PTR [eax+132], esi",
         "mov DWORD PTR [eax+136], edi",
@@ -5785,6 +5939,8 @@ pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_verify_aesni_pclmul(ctx: *cons
         "mov DWORD PTR [ebp+160], eax",
         "mov eax, DWORD PTR [esp+28]",
         "mov DWORD PTR [ebp+164], eax",
+        "mov eax, DWORD PTR [esp+32]",
+        "mov DWORD PTR [ebp+212], eax",
         "mov eax, DWORD PTR [esp+36]",
         "mov DWORD PTR [ebp+180], eax",
         "mov ecx, 0",
@@ -5819,7 +5975,7 @@ pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_verify_aesni_pclmul(ctx: *cons
         "mov DWORD PTR [ebp+200], eax",
         "mov DWORD PTR [ebp+204], eax",
         "mov DWORD PTR [ebp+208], eax",
-        "mov edi, ebp",
+        "mov edi, DWORD PTR [ebp+212]",
         "mov edx, ebp",
         "add edx, 196",
         "mov ecx, DWORD PTR [ebp+180]",
@@ -5993,32 +6149,15 @@ pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_verify_aesni_pclmul(ctx: *cons
         "cmp eax, 1",
         "mov eax, 0",
         "adc eax, 0",
-        "mov ecx, 0",
-        "sub ecx, eax",
-        "mov edx, DWORD PTR [ebp]",
-        "and edx, ecx",
-        "mov DWORD PTR [ebp], edx",
-        "mov edx, DWORD PTR [ebp+4]",
-        "and edx, ecx",
-        "mov DWORD PTR [ebp+4], edx",
-        "mov edx, DWORD PTR [ebp+8]",
-        "and edx, ecx",
-        "mov DWORD PTR [ebp+8], edx",
-        "mov edx, DWORD PTR [ebp+12]",
-        "and edx, ecx",
-        "mov DWORD PTR [ebp+12], edx",
         "jmp 29f",
         "28:",
         "mov eax, 0",
-        "mov DWORD PTR [ebp], eax",
-        "mov DWORD PTR [ebp+4], eax",
-        "mov DWORD PTR [ebp+8], eax",
-        "mov DWORD PTR [ebp+12], eax",
         "29:",
         "mov ebx, DWORD PTR [ebp+128]",
         "mov esi, DWORD PTR [ebp+132]",
         "mov edi, DWORD PTR [ebp+136]",
         "mov ebp, DWORD PTR [ebp+140]",
+        "lea esp, [esp+2604]",
         "ret",
         ".p2align 6",
         vg_ghash_pclmul = sym super::gcm::vg_ghash_pclmul,
@@ -6029,7 +6168,7 @@ pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_verify_aesni_pclmul(ctx: *cons
 /// The CPU features `vg_aes_gcm_seal_aesni_pclmul` requires (`Artifact.features`).
 pub(crate) const VG_AES_GCM_SEAL_AESNI_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes", "pclmulqdq", "ssse3"]);
 
-/// AES-GCM authenticated encryption (NIST SP 800-38D §7.1, GCM-AE, with a 128-bit tag): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, encrypts the `len` bytes at `data` in place, under the IV the `nonce_len` bytes at `nonce`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to the first 16 bytes of `*work`. The rest of `*work` is working space, unspecified on return. A shorter tag is the first bytes of this one.
+/// AES-GCM authenticated encryption (NIST SP 800-38D §7.1, GCM-AE, with a 128-bit tag): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, encrypts the `len` bytes at `data` in place, under the IV the `nonce_len` bytes at `nonce`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`. A shorter tag is the first bytes of this one.
 ///
 /// The function checks no length. GCM is secure only for a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of data and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must ensure; and a nonce must never be used twice with the same key.
 ///
@@ -6045,15 +6184,37 @@ pub(crate) const VG_AES_GCM_SEAL_AESNI_PCLMUL_FEATURES: crate::cpu::Features = c
 /// * `nonce` must be valid for reads of `nonce_len` bytes.
 /// * `aad` must be valid for reads of `aad_len` bytes.
 /// * `data` must be valid for reads and writes of `len` bytes.
-/// * `work` must be valid for reads and writes of 2560 bytes.
+/// * `tag` must be valid for reads and writes of 16 bytes.
 /// * `rounds` must be 10, 12 or 14.
-/// * `data` and `work` must not overlap each other, `ctx`, `nonce` or `aad` (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `aad`, `data` and `work` may overlap the arguments on the stack, overlap the return address on the stack or the 28 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `data` and `tag` must not overlap each other, `ctx`, `nonce` or `aad` (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 2632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `pclmulqdq` and `ssse3` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_aes_gcm_seal_aesni_pclmul(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, work: *mut [u64; 320]) {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_seal_aesni_pclmul(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        "mov eax, DWORD PTR [esp+36]",
+        "lea esp, [esp-2604]",
+        "mov eax, DWORD PTR [esp+2608]",
+        "mov DWORD PTR [esp+4], eax",
+        "mov eax, DWORD PTR [esp+2612]",
+        "mov DWORD PTR [esp+8], eax",
+        "mov eax, DWORD PTR [esp+2616]",
+        "mov DWORD PTR [esp+12], eax",
+        "mov eax, DWORD PTR [esp+2620]",
+        "mov DWORD PTR [esp+16], eax",
+        "mov eax, DWORD PTR [esp+2624]",
+        "mov DWORD PTR [esp+20], eax",
+        "mov eax, DWORD PTR [esp+2628]",
+        "mov DWORD PTR [esp+24], eax",
+        "mov eax, DWORD PTR [esp+2632]",
+        "mov DWORD PTR [esp+28], eax",
+        "mov eax, DWORD PTR [esp+2636]",
+        "mov DWORD PTR [esp+32], eax",
+        "mov eax, DWORD PTR [esp+2640]",
+        "mov DWORD PTR [esp+36], eax",
+        "mov eax, esp",
+        "add eax, 44",
+        "mov DWORD PTR [esp+40], eax",
+        "mov eax, DWORD PTR [esp+40]",
         "mov DWORD PTR [eax+128], ebx",
         "mov DWORD PTR [eax+132], esi",
         "mov DWORD PTR [eax+136], edi",
@@ -6079,6 +6240,8 @@ pub(crate) unsafe extern "C" fn vg_aes_gcm_seal_aesni_pclmul(ctx: *const [u64; 3
         "mov DWORD PTR [ebp+168], eax",
         "mov eax, DWORD PTR [esp+32]",
         "mov DWORD PTR [ebp+172], eax",
+        "mov eax, DWORD PTR [esp+36]",
+        "mov DWORD PTR [ebp+212], eax",
         "mov eax, 0",
         "mov DWORD PTR [ebp+188], eax",
         "mov eax, DWORD PTR [ebp+192]",
@@ -6865,10 +7028,20 @@ pub(crate) unsafe extern "C" fn vg_aes_gcm_seal_aesni_pclmul(ctx: *const [u64; 3
         "pop eax",
         "pop eax",
         "sub ebp, 512",
+        "mov eax, DWORD PTR [ebp]",
+        "mov ecx, DWORD PTR [ebp+4]",
+        "mov edx, DWORD PTR [ebp+8]",
+        "mov ebx, DWORD PTR [ebp+12]",
+        "mov edi, DWORD PTR [ebp+212]",
+        "mov DWORD PTR [edi], eax",
+        "mov DWORD PTR [edi+4], ecx",
+        "mov DWORD PTR [edi+8], edx",
+        "mov DWORD PTR [edi+12], ebx",
         "mov ebx, DWORD PTR [ebp+128]",
         "mov esi, DWORD PTR [ebp+132]",
         "mov edi, DWORD PTR [ebp+136]",
         "mov ebp, DWORD PTR [ebp+140]",
+        "lea esp, [esp+2604]",
         "ret",
         ".p2align 6",
         vg_ghash_pclmul = sym super::gcm::vg_ghash_pclmul,
@@ -6879,7 +7052,7 @@ pub(crate) unsafe extern "C" fn vg_aes_gcm_seal_aesni_pclmul(ctx: *const [u64; 3
 /// The CPU features `vg_aes_gcm_open_aesni_pclmul` requires (`Artifact.features`).
 pub(crate) const VG_AES_GCM_OPEN_AESNI_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes", "pclmulqdq", "ssse3"]);
 
-/// AES-GCM authenticated decryption (NIST SP 800-38D §7.2, GCM-AD): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag in the first `tag_len` bytes of `*work`, returns 1 if `tag_len` is 4, 8, 12, 13, 14, 15 or 16 (§5.2.1.2) and the tag is the first `tag_len` bytes of that of the `len` bytes of ciphertext at `data` and the `aad_len` bytes of additional data at `aad`, under the IV the `nonce_len` bytes at `nonce`, having then decrypted the ciphertext in place; otherwise returns 0, and the bytes at `data` are unchanged. The rest of `*work` is working space, unspecified on return. The tags are compared without a branch.
+/// AES-GCM authenticated decryption (NIST SP 800-38D §7.2, GCM-AD): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, returns 1 if `tag_len` is 4, 8, 12, 13, 14, 15 or 16 (§5.2.1.2) and the tag is the first `tag_len` bytes of that of the `len` bytes of ciphertext at `data` and the `aad_len` bytes of additional data at `aad`, under the IV the `nonce_len` bytes at `nonce`, having then decrypted the ciphertext in place; otherwise returns 0, and the bytes at `data` are unchanged. The tags are compared without a branch.
 ///
 /// The function checks no other length: GCM requires a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of ciphertext and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must check.
 ///
@@ -6895,15 +7068,39 @@ pub(crate) const VG_AES_GCM_OPEN_AESNI_PCLMUL_FEATURES: crate::cpu::Features = c
 /// * `nonce` must be valid for reads of `nonce_len` bytes.
 /// * `aad` must be valid for reads of `aad_len` bytes.
 /// * `data` must be valid for reads and writes of `len` bytes.
-/// * `work` must be valid for reads and writes of 2560 bytes.
+/// * `tag` must be valid for reads of `tag_len` bytes.
 /// * `rounds` must be 10, 12 or 14.
-/// * `data` and `work` must not overlap each other, `ctx`, `nonce` or `aad` (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `aad`, `data` and `work` may overlap the arguments on the stack, overlap the return address on the stack or the 28 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `data` must not overlap `ctx`, `nonce`, `aad` or `tag` (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 2636 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `pclmulqdq` and `ssse3` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_aes_gcm_open_aesni_pclmul(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, work: *mut [u64; 320], tag_len: usize) -> u32 {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_open_aesni_pclmul(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "mov eax, DWORD PTR [esp+36]",
+        "lea esp, [esp-2608]",
+        "mov eax, DWORD PTR [esp+2612]",
+        "mov DWORD PTR [esp+4], eax",
+        "mov eax, DWORD PTR [esp+2616]",
+        "mov DWORD PTR [esp+8], eax",
+        "mov eax, DWORD PTR [esp+2620]",
+        "mov DWORD PTR [esp+12], eax",
+        "mov eax, DWORD PTR [esp+2624]",
+        "mov DWORD PTR [esp+16], eax",
+        "mov eax, DWORD PTR [esp+2628]",
+        "mov DWORD PTR [esp+20], eax",
+        "mov eax, DWORD PTR [esp+2632]",
+        "mov DWORD PTR [esp+24], eax",
+        "mov eax, DWORD PTR [esp+2636]",
+        "mov DWORD PTR [esp+28], eax",
+        "mov eax, DWORD PTR [esp+2640]",
+        "mov DWORD PTR [esp+32], eax",
+        "mov eax, DWORD PTR [esp+2644]",
+        "mov DWORD PTR [esp+36], eax",
+        "mov eax, DWORD PTR [esp+2648]",
+        "mov DWORD PTR [esp+40], eax",
+        "mov eax, esp",
+        "add eax, 48",
+        "mov DWORD PTR [esp+44], eax",
+        "mov eax, DWORD PTR [esp+44]",
         "mov DWORD PTR [eax+128], ebx",
         "mov DWORD PTR [eax+132], esi",
         "mov DWORD PTR [eax+136], edi",
@@ -6929,10 +7126,12 @@ pub(crate) unsafe extern "C" fn vg_aes_gcm_open_aesni_pclmul(ctx: *const [u64; 3
         "mov DWORD PTR [ebp+168], eax",
         "mov eax, DWORD PTR [esp+32]",
         "mov DWORD PTR [ebp+172], eax",
-        "mov eax, 0",
-        "mov DWORD PTR [ebp+188], eax",
+        "mov eax, DWORD PTR [esp+36]",
+        "mov DWORD PTR [ebp+212], eax",
         "mov eax, DWORD PTR [esp+40]",
         "mov DWORD PTR [ebp+180], eax",
+        "mov eax, 0",
+        "mov DWORD PTR [ebp+188], eax",
         "mov ecx, 0",
         "mov ebx, DWORD PTR [ebp+180]",
         "cmp ebx, 4",
@@ -7623,7 +7822,7 @@ pub(crate) unsafe extern "C" fn vg_aes_gcm_open_aesni_pclmul(ctx: *const [u64; 3
         "mov DWORD PTR [ebp+200], eax",
         "mov DWORD PTR [ebp+204], eax",
         "mov DWORD PTR [ebp+208], eax",
-        "mov edi, ebp",
+        "mov edi, DWORD PTR [ebp+212]",
         "mov edx, ebp",
         "add edx, 196",
         "mov ecx, DWORD PTR [ebp+180]",
@@ -7806,6 +8005,7 @@ pub(crate) unsafe extern "C" fn vg_aes_gcm_open_aesni_pclmul(ctx: *const [u64; 3
         "mov esi, DWORD PTR [ebp+132]",
         "mov edi, DWORD PTR [ebp+136]",
         "mov ebp, DWORD PTR [ebp+140]",
+        "lea esp, [esp+2608]",
         "ret",
         ".p2align 6",
         vg_ghash_pclmul = sym super::gcm::vg_ghash_pclmul,
@@ -9179,7 +9379,7 @@ pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_decrypt_pclmul(ctx: *const [u6
 /// The CPU features `vg_aes_gcm_stream_finish_pclmul` requires (`Artifact.features`).
 pub(crate) const VG_AES_GCM_STREAM_FINISH_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["pclmulqdq", "ssse3"]);
 
-/// Finishes an incremental AES-GCM encryption or decryption (NIST SP 800-38D §7.1 steps 5–6, §7.2 steps 6–7): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, writes its 128-bit tag to the first 16 bytes of `*work`. The rest of `*work` is working space, unspecified on return. A shorter tag is the first bytes of this one; to check a received tag, use `vg_aes_gcm_stream_verify`.
+/// Finishes an incremental AES-GCM encryption or decryption (NIST SP 800-38D §7.1 steps 5–6, §7.2 steps 6–7): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, writes its 128-bit tag to `*tag`. A shorter tag is the first bytes of this one; to check a received tag, use `vg_aes_gcm_stream_verify`.
 ///
 /// Contract: `VG.Spec.Gcm.streamFinishContract`. Constant time: only the pointers, `rounds`, `aad_len` and `text_len` may affect timing, not the key context or the state.
 ///
@@ -9191,16 +9391,36 @@ pub(crate) const VG_AES_GCM_STREAM_FINISH_PCLMUL_FEATURES: crate::cpu::Features 
 ///
 /// * `ctx` must be valid for reads of 256 bytes.
 /// * `state` must be valid for reads and writes of 80 bytes.
-/// * `work` must be valid for reads and writes of 2560 bytes.
+/// * `tag` must be valid for reads and writes of 16 bytes.
 /// * `rounds` must be 10, 12 or 14.
 /// * The contents of `state` on return are unspecified.
-/// * `state` and `work` must not overlap each other or `ctx` (distinct Rust objects never do).
-/// * None of `ctx`, `state` and `work` may overlap the arguments on the stack, overlap the return address on the stack or the 28 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `state` and `tag` must not overlap each other or `ctx` (distinct Rust objects never do).
+/// * None of `ctx`, `state` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 2628 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `pclmulqdq` and `ssse3` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_finish_pclmul(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, work: *mut [u64; 320]) {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_finish_pclmul(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        "mov eax, DWORD PTR [esp+32]",
+        "lea esp, [esp-2600]",
+        "mov eax, DWORD PTR [esp+2604]",
+        "mov DWORD PTR [esp+4], eax",
+        "mov eax, DWORD PTR [esp+2608]",
+        "mov DWORD PTR [esp+8], eax",
+        "mov eax, DWORD PTR [esp+2612]",
+        "mov DWORD PTR [esp+12], eax",
+        "mov eax, DWORD PTR [esp+2616]",
+        "mov DWORD PTR [esp+16], eax",
+        "mov eax, DWORD PTR [esp+2620]",
+        "mov DWORD PTR [esp+20], eax",
+        "mov eax, DWORD PTR [esp+2624]",
+        "mov DWORD PTR [esp+24], eax",
+        "mov eax, DWORD PTR [esp+2628]",
+        "mov DWORD PTR [esp+28], eax",
+        "mov eax, DWORD PTR [esp+2632]",
+        "mov DWORD PTR [esp+32], eax",
+        "mov eax, esp",
+        "add eax, 40",
+        "mov DWORD PTR [esp+36], eax",
+        "mov eax, DWORD PTR [esp+36]",
         "mov DWORD PTR [eax+128], ebx",
         "mov DWORD PTR [eax+132], esi",
         "mov DWORD PTR [eax+136], edi",
@@ -9219,6 +9439,8 @@ pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_finish_pclmul(ctx: *const [u64
         "mov DWORD PTR [ebp+160], eax",
         "mov eax, DWORD PTR [esp+28]",
         "mov DWORD PTR [ebp+164], eax",
+        "mov eax, DWORD PTR [esp+32]",
+        "mov DWORD PTR [ebp+212], eax",
         "mov eax, DWORD PTR [ebp+160]",
         "mov ecx, DWORD PTR [ebp+152]",
         "mov edx, DWORD PTR [ebp+160]",
@@ -9351,10 +9573,20 @@ pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_finish_pclmul(ctx: *const [u64
         "pop eax",
         "pop eax",
         "sub ebp, 512",
+        "mov eax, DWORD PTR [ebp]",
+        "mov ecx, DWORD PTR [ebp+4]",
+        "mov edx, DWORD PTR [ebp+8]",
+        "mov ebx, DWORD PTR [ebp+12]",
+        "mov edi, DWORD PTR [ebp+212]",
+        "mov DWORD PTR [edi], eax",
+        "mov DWORD PTR [edi+4], ecx",
+        "mov DWORD PTR [edi+8], edx",
+        "mov DWORD PTR [edi+12], ebx",
         "mov ebx, DWORD PTR [ebp+128]",
         "mov esi, DWORD PTR [ebp+132]",
         "mov edi, DWORD PTR [ebp+136]",
         "mov ebp, DWORD PTR [ebp+140]",
+        "lea esp, [esp+2600]",
         "ret",
         ".p2align 6",
         vg_ghash_pclmul = sym super::gcm::vg_ghash_pclmul,
@@ -9365,7 +9597,7 @@ pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_finish_pclmul(ctx: *const [u64
 /// The CPU features `vg_aes_gcm_stream_verify_pclmul` requires (`Artifact.features`).
 pub(crate) const VG_AES_GCM_STREAM_VERIFY_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["pclmulqdq", "ssse3"]);
 
-/// Finishes an incremental AES-GCM decryption and checks its tag (NIST SP 800-38D §7.2 steps 6–8): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag in the first `tag_len` bytes of `*work`, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, returns 1 if `tag_len` is 4, 8, 12, 13, 14, 15 or 16 (§5.2.1.2) and the received tag is the first `tag_len` bytes of the message's 128-bit tag, which it then writes to the first 16 bytes of `*work`; otherwise returns 0 and writes 16 zero bytes there. The rest of `*work` is working space, unspecified on return. The tags are compared without a branch.
+/// Finishes an incremental AES-GCM decryption and checks its tag (NIST SP 800-38D §7.2 steps 6–8): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, returns 1 if `tag_len` is 4, 8, 12, 13, 14, 15 or 16 (§5.2.1.2) and the received tag is the first `tag_len` bytes of the message's 128-bit tag, and 0 otherwise. The tags are compared without a branch.
 ///
 /// Contract: `VG.Spec.Gcm.streamVerifyContract`. Constant time: only the pointers, `rounds`, `aad_len`, `text_len` and `tag_len` may affect timing, not the key context, the state or the tags.
 ///
@@ -9377,16 +9609,38 @@ pub(crate) const VG_AES_GCM_STREAM_VERIFY_PCLMUL_FEATURES: crate::cpu::Features 
 ///
 /// * `ctx` must be valid for reads of 256 bytes.
 /// * `state` must be valid for reads and writes of 80 bytes.
-/// * `work` must be valid for reads and writes of 2560 bytes.
+/// * `tag` must be valid for reads of `tag_len` bytes.
 /// * `rounds` must be 10, 12 or 14.
 /// * The contents of `state` on return are unspecified.
-/// * `state` and `work` must not overlap each other or `ctx` (distinct Rust objects never do).
-/// * None of `ctx`, `state` and `work` may overlap the arguments on the stack, overlap the return address on the stack or the 28 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `state` must not overlap `ctx` or `tag` (distinct Rust objects never do).
+/// * None of `ctx`, `state` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 2632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `pclmulqdq` and `ssse3` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_verify_pclmul(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, work: *mut [u64; 320], tag_len: usize) -> u32 {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_verify_pclmul(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "mov eax, DWORD PTR [esp+32]",
+        "lea esp, [esp-2604]",
+        "mov eax, DWORD PTR [esp+2608]",
+        "mov DWORD PTR [esp+4], eax",
+        "mov eax, DWORD PTR [esp+2612]",
+        "mov DWORD PTR [esp+8], eax",
+        "mov eax, DWORD PTR [esp+2616]",
+        "mov DWORD PTR [esp+12], eax",
+        "mov eax, DWORD PTR [esp+2620]",
+        "mov DWORD PTR [esp+16], eax",
+        "mov eax, DWORD PTR [esp+2624]",
+        "mov DWORD PTR [esp+20], eax",
+        "mov eax, DWORD PTR [esp+2628]",
+        "mov DWORD PTR [esp+24], eax",
+        "mov eax, DWORD PTR [esp+2632]",
+        "mov DWORD PTR [esp+28], eax",
+        "mov eax, DWORD PTR [esp+2636]",
+        "mov DWORD PTR [esp+32], eax",
+        "mov eax, DWORD PTR [esp+2640]",
+        "mov DWORD PTR [esp+36], eax",
+        "mov eax, esp",
+        "add eax, 44",
+        "mov DWORD PTR [esp+40], eax",
+        "mov eax, DWORD PTR [esp+40]",
         "mov DWORD PTR [eax+128], ebx",
         "mov DWORD PTR [eax+132], esi",
         "mov DWORD PTR [eax+136], edi",
@@ -9405,6 +9659,8 @@ pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_verify_pclmul(ctx: *const [u64
         "mov DWORD PTR [ebp+160], eax",
         "mov eax, DWORD PTR [esp+28]",
         "mov DWORD PTR [ebp+164], eax",
+        "mov eax, DWORD PTR [esp+32]",
+        "mov DWORD PTR [ebp+212], eax",
         "mov eax, DWORD PTR [esp+36]",
         "mov DWORD PTR [ebp+180], eax",
         "mov ecx, 0",
@@ -9439,7 +9695,7 @@ pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_verify_pclmul(ctx: *const [u64
         "mov DWORD PTR [ebp+200], eax",
         "mov DWORD PTR [ebp+204], eax",
         "mov DWORD PTR [ebp+208], eax",
-        "mov edi, ebp",
+        "mov edi, DWORD PTR [ebp+212]",
         "mov edx, ebp",
         "add edx, 196",
         "mov ecx, DWORD PTR [ebp+180]",
@@ -9613,32 +9869,15 @@ pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_verify_pclmul(ctx: *const [u64
         "cmp eax, 1",
         "mov eax, 0",
         "adc eax, 0",
-        "mov ecx, 0",
-        "sub ecx, eax",
-        "mov edx, DWORD PTR [ebp]",
-        "and edx, ecx",
-        "mov DWORD PTR [ebp], edx",
-        "mov edx, DWORD PTR [ebp+4]",
-        "and edx, ecx",
-        "mov DWORD PTR [ebp+4], edx",
-        "mov edx, DWORD PTR [ebp+8]",
-        "and edx, ecx",
-        "mov DWORD PTR [ebp+8], edx",
-        "mov edx, DWORD PTR [ebp+12]",
-        "and edx, ecx",
-        "mov DWORD PTR [ebp+12], edx",
         "jmp 29f",
         "28:",
         "mov eax, 0",
-        "mov DWORD PTR [ebp], eax",
-        "mov DWORD PTR [ebp+4], eax",
-        "mov DWORD PTR [ebp+8], eax",
-        "mov DWORD PTR [ebp+12], eax",
         "29:",
         "mov ebx, DWORD PTR [ebp+128]",
         "mov esi, DWORD PTR [ebp+132]",
         "mov edi, DWORD PTR [ebp+136]",
         "mov ebp, DWORD PTR [ebp+140]",
+        "lea esp, [esp+2604]",
         "ret",
         ".p2align 6",
         vg_ghash_pclmul = sym super::gcm::vg_ghash_pclmul,
@@ -9649,7 +9888,7 @@ pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_verify_pclmul(ctx: *const [u64
 /// The CPU features `vg_aes_gcm_seal_pclmul` requires (`Artifact.features`).
 pub(crate) const VG_AES_GCM_SEAL_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["pclmulqdq", "ssse3"]);
 
-/// AES-GCM authenticated encryption (NIST SP 800-38D §7.1, GCM-AE, with a 128-bit tag): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, encrypts the `len` bytes at `data` in place, under the IV the `nonce_len` bytes at `nonce`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to the first 16 bytes of `*work`. The rest of `*work` is working space, unspecified on return. A shorter tag is the first bytes of this one.
+/// AES-GCM authenticated encryption (NIST SP 800-38D §7.1, GCM-AE, with a 128-bit tag): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, encrypts the `len` bytes at `data` in place, under the IV the `nonce_len` bytes at `nonce`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`. A shorter tag is the first bytes of this one.
 ///
 /// The function checks no length. GCM is secure only for a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of data and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must ensure; and a nonce must never be used twice with the same key.
 ///
@@ -9665,15 +9904,37 @@ pub(crate) const VG_AES_GCM_SEAL_PCLMUL_FEATURES: crate::cpu::Features = crate::
 /// * `nonce` must be valid for reads of `nonce_len` bytes.
 /// * `aad` must be valid for reads of `aad_len` bytes.
 /// * `data` must be valid for reads and writes of `len` bytes.
-/// * `work` must be valid for reads and writes of 2560 bytes.
+/// * `tag` must be valid for reads and writes of 16 bytes.
 /// * `rounds` must be 10, 12 or 14.
-/// * `data` and `work` must not overlap each other, `ctx`, `nonce` or `aad` (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `aad`, `data` and `work` may overlap the arguments on the stack, overlap the return address on the stack or the 28 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `data` and `tag` must not overlap each other, `ctx`, `nonce` or `aad` (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 2632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `pclmulqdq` and `ssse3` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_aes_gcm_seal_pclmul(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, work: *mut [u64; 320]) {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_seal_pclmul(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        "mov eax, DWORD PTR [esp+36]",
+        "lea esp, [esp-2604]",
+        "mov eax, DWORD PTR [esp+2608]",
+        "mov DWORD PTR [esp+4], eax",
+        "mov eax, DWORD PTR [esp+2612]",
+        "mov DWORD PTR [esp+8], eax",
+        "mov eax, DWORD PTR [esp+2616]",
+        "mov DWORD PTR [esp+12], eax",
+        "mov eax, DWORD PTR [esp+2620]",
+        "mov DWORD PTR [esp+16], eax",
+        "mov eax, DWORD PTR [esp+2624]",
+        "mov DWORD PTR [esp+20], eax",
+        "mov eax, DWORD PTR [esp+2628]",
+        "mov DWORD PTR [esp+24], eax",
+        "mov eax, DWORD PTR [esp+2632]",
+        "mov DWORD PTR [esp+28], eax",
+        "mov eax, DWORD PTR [esp+2636]",
+        "mov DWORD PTR [esp+32], eax",
+        "mov eax, DWORD PTR [esp+2640]",
+        "mov DWORD PTR [esp+36], eax",
+        "mov eax, esp",
+        "add eax, 44",
+        "mov DWORD PTR [esp+40], eax",
+        "mov eax, DWORD PTR [esp+40]",
         "mov DWORD PTR [eax+128], ebx",
         "mov DWORD PTR [eax+132], esi",
         "mov DWORD PTR [eax+136], edi",
@@ -9699,6 +9960,8 @@ pub(crate) unsafe extern "C" fn vg_aes_gcm_seal_pclmul(ctx: *const [u64; 32], ro
         "mov DWORD PTR [ebp+168], eax",
         "mov eax, DWORD PTR [esp+32]",
         "mov DWORD PTR [ebp+172], eax",
+        "mov eax, DWORD PTR [esp+36]",
+        "mov DWORD PTR [ebp+212], eax",
         "mov eax, 0",
         "mov DWORD PTR [ebp+188], eax",
         "mov eax, DWORD PTR [ebp+192]",
@@ -10485,10 +10748,20 @@ pub(crate) unsafe extern "C" fn vg_aes_gcm_seal_pclmul(ctx: *const [u64; 32], ro
         "pop eax",
         "pop eax",
         "sub ebp, 512",
+        "mov eax, DWORD PTR [ebp]",
+        "mov ecx, DWORD PTR [ebp+4]",
+        "mov edx, DWORD PTR [ebp+8]",
+        "mov ebx, DWORD PTR [ebp+12]",
+        "mov edi, DWORD PTR [ebp+212]",
+        "mov DWORD PTR [edi], eax",
+        "mov DWORD PTR [edi+4], ecx",
+        "mov DWORD PTR [edi+8], edx",
+        "mov DWORD PTR [edi+12], ebx",
         "mov ebx, DWORD PTR [ebp+128]",
         "mov esi, DWORD PTR [ebp+132]",
         "mov edi, DWORD PTR [ebp+136]",
         "mov ebp, DWORD PTR [ebp+140]",
+        "lea esp, [esp+2604]",
         "ret",
         ".p2align 6",
         vg_ghash_pclmul = sym super::gcm::vg_ghash_pclmul,
@@ -10499,7 +10772,7 @@ pub(crate) unsafe extern "C" fn vg_aes_gcm_seal_pclmul(ctx: *const [u64; 32], ro
 /// The CPU features `vg_aes_gcm_open_pclmul` requires (`Artifact.features`).
 pub(crate) const VG_AES_GCM_OPEN_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["pclmulqdq", "ssse3"]);
 
-/// AES-GCM authenticated decryption (NIST SP 800-38D §7.2, GCM-AD): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag in the first `tag_len` bytes of `*work`, returns 1 if `tag_len` is 4, 8, 12, 13, 14, 15 or 16 (§5.2.1.2) and the tag is the first `tag_len` bytes of that of the `len` bytes of ciphertext at `data` and the `aad_len` bytes of additional data at `aad`, under the IV the `nonce_len` bytes at `nonce`, having then decrypted the ciphertext in place; otherwise returns 0, and the bytes at `data` are unchanged. The rest of `*work` is working space, unspecified on return. The tags are compared without a branch.
+/// AES-GCM authenticated decryption (NIST SP 800-38D §7.2, GCM-AD): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, returns 1 if `tag_len` is 4, 8, 12, 13, 14, 15 or 16 (§5.2.1.2) and the tag is the first `tag_len` bytes of that of the `len` bytes of ciphertext at `data` and the `aad_len` bytes of additional data at `aad`, under the IV the `nonce_len` bytes at `nonce`, having then decrypted the ciphertext in place; otherwise returns 0, and the bytes at `data` are unchanged. The tags are compared without a branch.
 ///
 /// The function checks no other length: GCM requires a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of ciphertext and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must check.
 ///
@@ -10515,15 +10788,39 @@ pub(crate) const VG_AES_GCM_OPEN_PCLMUL_FEATURES: crate::cpu::Features = crate::
 /// * `nonce` must be valid for reads of `nonce_len` bytes.
 /// * `aad` must be valid for reads of `aad_len` bytes.
 /// * `data` must be valid for reads and writes of `len` bytes.
-/// * `work` must be valid for reads and writes of 2560 bytes.
+/// * `tag` must be valid for reads of `tag_len` bytes.
 /// * `rounds` must be 10, 12 or 14.
-/// * `data` and `work` must not overlap each other, `ctx`, `nonce` or `aad` (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `aad`, `data` and `work` may overlap the arguments on the stack, overlap the return address on the stack or the 28 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `data` must not overlap `ctx`, `nonce`, `aad` or `tag` (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 2636 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `pclmulqdq` and `ssse3` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_aes_gcm_open_pclmul(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, work: *mut [u64; 320], tag_len: usize) -> u32 {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_open_pclmul(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "mov eax, DWORD PTR [esp+36]",
+        "lea esp, [esp-2608]",
+        "mov eax, DWORD PTR [esp+2612]",
+        "mov DWORD PTR [esp+4], eax",
+        "mov eax, DWORD PTR [esp+2616]",
+        "mov DWORD PTR [esp+8], eax",
+        "mov eax, DWORD PTR [esp+2620]",
+        "mov DWORD PTR [esp+12], eax",
+        "mov eax, DWORD PTR [esp+2624]",
+        "mov DWORD PTR [esp+16], eax",
+        "mov eax, DWORD PTR [esp+2628]",
+        "mov DWORD PTR [esp+20], eax",
+        "mov eax, DWORD PTR [esp+2632]",
+        "mov DWORD PTR [esp+24], eax",
+        "mov eax, DWORD PTR [esp+2636]",
+        "mov DWORD PTR [esp+28], eax",
+        "mov eax, DWORD PTR [esp+2640]",
+        "mov DWORD PTR [esp+32], eax",
+        "mov eax, DWORD PTR [esp+2644]",
+        "mov DWORD PTR [esp+36], eax",
+        "mov eax, DWORD PTR [esp+2648]",
+        "mov DWORD PTR [esp+40], eax",
+        "mov eax, esp",
+        "add eax, 48",
+        "mov DWORD PTR [esp+44], eax",
+        "mov eax, DWORD PTR [esp+44]",
         "mov DWORD PTR [eax+128], ebx",
         "mov DWORD PTR [eax+132], esi",
         "mov DWORD PTR [eax+136], edi",
@@ -10549,10 +10846,12 @@ pub(crate) unsafe extern "C" fn vg_aes_gcm_open_pclmul(ctx: *const [u64; 32], ro
         "mov DWORD PTR [ebp+168], eax",
         "mov eax, DWORD PTR [esp+32]",
         "mov DWORD PTR [ebp+172], eax",
-        "mov eax, 0",
-        "mov DWORD PTR [ebp+188], eax",
+        "mov eax, DWORD PTR [esp+36]",
+        "mov DWORD PTR [ebp+212], eax",
         "mov eax, DWORD PTR [esp+40]",
         "mov DWORD PTR [ebp+180], eax",
+        "mov eax, 0",
+        "mov DWORD PTR [ebp+188], eax",
         "mov ecx, 0",
         "mov ebx, DWORD PTR [ebp+180]",
         "cmp ebx, 4",
@@ -11243,7 +11542,7 @@ pub(crate) unsafe extern "C" fn vg_aes_gcm_open_pclmul(ctx: *const [u64; 32], ro
         "mov DWORD PTR [ebp+200], eax",
         "mov DWORD PTR [ebp+204], eax",
         "mov DWORD PTR [ebp+208], eax",
-        "mov edi, ebp",
+        "mov edi, DWORD PTR [ebp+212]",
         "mov edx, ebp",
         "add edx, 196",
         "mov ecx, DWORD PTR [ebp+180]",
@@ -11426,6 +11725,7 @@ pub(crate) unsafe extern "C" fn vg_aes_gcm_open_pclmul(ctx: *const [u64; 32], ro
         "mov esi, DWORD PTR [ebp+132]",
         "mov edi, DWORD PTR [ebp+136]",
         "mov ebp, DWORD PTR [ebp+140]",
+        "lea esp, [esp+2608]",
         "ret",
         ".p2align 6",
         vg_ghash_pclmul = sym super::gcm::vg_ghash_pclmul,
@@ -12780,7 +13080,7 @@ pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_decrypt(ctx: *const [u64; 32],
     )
 }
 
-/// Finishes an incremental AES-GCM encryption or decryption (NIST SP 800-38D §7.1 steps 5–6, §7.2 steps 6–7): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, writes its 128-bit tag to the first 16 bytes of `*work`. The rest of `*work` is working space, unspecified on return. A shorter tag is the first bytes of this one; to check a received tag, use `vg_aes_gcm_stream_verify`.
+/// Finishes an incremental AES-GCM encryption or decryption (NIST SP 800-38D §7.1 steps 5–6, §7.2 steps 6–7): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, writes its 128-bit tag to `*tag`. A shorter tag is the first bytes of this one; to check a received tag, use `vg_aes_gcm_stream_verify`.
 ///
 /// Contract: `VG.Spec.Gcm.streamFinishContract`. Constant time: only the pointers, `rounds`, `aad_len` and `text_len` may affect timing, not the key context or the state.
 ///
@@ -12792,15 +13092,35 @@ pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_decrypt(ctx: *const [u64; 32],
 ///
 /// * `ctx` must be valid for reads of 256 bytes.
 /// * `state` must be valid for reads and writes of 80 bytes.
-/// * `work` must be valid for reads and writes of 2560 bytes.
+/// * `tag` must be valid for reads and writes of 16 bytes.
 /// * `rounds` must be 10, 12 or 14.
 /// * The contents of `state` on return are unspecified.
-/// * `state` and `work` must not overlap each other or `ctx` (distinct Rust objects never do).
-/// * None of `ctx`, `state` and `work` may overlap the arguments on the stack, overlap the return address on the stack or the 28 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `state` and `tag` must not overlap each other or `ctx` (distinct Rust objects never do).
+/// * None of `ctx`, `state` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 2628 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_finish(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, work: *mut [u64; 320]) {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_finish(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        "mov eax, DWORD PTR [esp+32]",
+        "lea esp, [esp-2600]",
+        "mov eax, DWORD PTR [esp+2604]",
+        "mov DWORD PTR [esp+4], eax",
+        "mov eax, DWORD PTR [esp+2608]",
+        "mov DWORD PTR [esp+8], eax",
+        "mov eax, DWORD PTR [esp+2612]",
+        "mov DWORD PTR [esp+12], eax",
+        "mov eax, DWORD PTR [esp+2616]",
+        "mov DWORD PTR [esp+16], eax",
+        "mov eax, DWORD PTR [esp+2620]",
+        "mov DWORD PTR [esp+20], eax",
+        "mov eax, DWORD PTR [esp+2624]",
+        "mov DWORD PTR [esp+24], eax",
+        "mov eax, DWORD PTR [esp+2628]",
+        "mov DWORD PTR [esp+28], eax",
+        "mov eax, DWORD PTR [esp+2632]",
+        "mov DWORD PTR [esp+32], eax",
+        "mov eax, esp",
+        "add eax, 40",
+        "mov DWORD PTR [esp+36], eax",
+        "mov eax, DWORD PTR [esp+36]",
         "mov DWORD PTR [eax+128], ebx",
         "mov DWORD PTR [eax+132], esi",
         "mov DWORD PTR [eax+136], edi",
@@ -12819,6 +13139,8 @@ pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_finish(ctx: *const [u64; 32], 
         "mov DWORD PTR [ebp+160], eax",
         "mov eax, DWORD PTR [esp+28]",
         "mov DWORD PTR [ebp+164], eax",
+        "mov eax, DWORD PTR [esp+32]",
+        "mov DWORD PTR [ebp+212], eax",
         "mov eax, DWORD PTR [ebp+160]",
         "mov ecx, DWORD PTR [ebp+152]",
         "mov edx, DWORD PTR [ebp+160]",
@@ -12951,10 +13273,20 @@ pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_finish(ctx: *const [u64; 32], 
         "pop eax",
         "pop eax",
         "sub ebp, 512",
+        "mov eax, DWORD PTR [ebp]",
+        "mov ecx, DWORD PTR [ebp+4]",
+        "mov edx, DWORD PTR [ebp+8]",
+        "mov ebx, DWORD PTR [ebp+12]",
+        "mov edi, DWORD PTR [ebp+212]",
+        "mov DWORD PTR [edi], eax",
+        "mov DWORD PTR [edi+4], ecx",
+        "mov DWORD PTR [edi+8], edx",
+        "mov DWORD PTR [edi+12], ebx",
         "mov ebx, DWORD PTR [ebp+128]",
         "mov esi, DWORD PTR [ebp+132]",
         "mov edi, DWORD PTR [ebp+136]",
         "mov ebp, DWORD PTR [ebp+140]",
+        "lea esp, [esp+2600]",
         "ret",
         ".p2align 6",
         vg_ghash = sym super::gcm::vg_ghash,
@@ -12962,7 +13294,7 @@ pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_finish(ctx: *const [u64; 32], 
     )
 }
 
-/// Finishes an incremental AES-GCM decryption and checks its tag (NIST SP 800-38D §7.2 steps 6–8): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag in the first `tag_len` bytes of `*work`, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, returns 1 if `tag_len` is 4, 8, 12, 13, 14, 15 or 16 (§5.2.1.2) and the received tag is the first `tag_len` bytes of the message's 128-bit tag, which it then writes to the first 16 bytes of `*work`; otherwise returns 0 and writes 16 zero bytes there. The rest of `*work` is working space, unspecified on return. The tags are compared without a branch.
+/// Finishes an incremental AES-GCM decryption and checks its tag (NIST SP 800-38D §7.2 steps 6–8): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, returns 1 if `tag_len` is 4, 8, 12, 13, 14, 15 or 16 (§5.2.1.2) and the received tag is the first `tag_len` bytes of the message's 128-bit tag, and 0 otherwise. The tags are compared without a branch.
 ///
 /// Contract: `VG.Spec.Gcm.streamVerifyContract`. Constant time: only the pointers, `rounds`, `aad_len`, `text_len` and `tag_len` may affect timing, not the key context, the state or the tags.
 ///
@@ -12974,15 +13306,37 @@ pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_finish(ctx: *const [u64; 32], 
 ///
 /// * `ctx` must be valid for reads of 256 bytes.
 /// * `state` must be valid for reads and writes of 80 bytes.
-/// * `work` must be valid for reads and writes of 2560 bytes.
+/// * `tag` must be valid for reads of `tag_len` bytes.
 /// * `rounds` must be 10, 12 or 14.
 /// * The contents of `state` on return are unspecified.
-/// * `state` and `work` must not overlap each other or `ctx` (distinct Rust objects never do).
-/// * None of `ctx`, `state` and `work` may overlap the arguments on the stack, overlap the return address on the stack or the 28 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `state` must not overlap `ctx` or `tag` (distinct Rust objects never do).
+/// * None of `ctx`, `state` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 2632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_verify(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, work: *mut [u64; 320], tag_len: usize) -> u32 {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_verify(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "mov eax, DWORD PTR [esp+32]",
+        "lea esp, [esp-2604]",
+        "mov eax, DWORD PTR [esp+2608]",
+        "mov DWORD PTR [esp+4], eax",
+        "mov eax, DWORD PTR [esp+2612]",
+        "mov DWORD PTR [esp+8], eax",
+        "mov eax, DWORD PTR [esp+2616]",
+        "mov DWORD PTR [esp+12], eax",
+        "mov eax, DWORD PTR [esp+2620]",
+        "mov DWORD PTR [esp+16], eax",
+        "mov eax, DWORD PTR [esp+2624]",
+        "mov DWORD PTR [esp+20], eax",
+        "mov eax, DWORD PTR [esp+2628]",
+        "mov DWORD PTR [esp+24], eax",
+        "mov eax, DWORD PTR [esp+2632]",
+        "mov DWORD PTR [esp+28], eax",
+        "mov eax, DWORD PTR [esp+2636]",
+        "mov DWORD PTR [esp+32], eax",
+        "mov eax, DWORD PTR [esp+2640]",
+        "mov DWORD PTR [esp+36], eax",
+        "mov eax, esp",
+        "add eax, 44",
+        "mov DWORD PTR [esp+40], eax",
+        "mov eax, DWORD PTR [esp+40]",
         "mov DWORD PTR [eax+128], ebx",
         "mov DWORD PTR [eax+132], esi",
         "mov DWORD PTR [eax+136], edi",
@@ -13001,6 +13355,8 @@ pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_verify(ctx: *const [u64; 32], 
         "mov DWORD PTR [ebp+160], eax",
         "mov eax, DWORD PTR [esp+28]",
         "mov DWORD PTR [ebp+164], eax",
+        "mov eax, DWORD PTR [esp+32]",
+        "mov DWORD PTR [ebp+212], eax",
         "mov eax, DWORD PTR [esp+36]",
         "mov DWORD PTR [ebp+180], eax",
         "mov ecx, 0",
@@ -13035,7 +13391,7 @@ pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_verify(ctx: *const [u64; 32], 
         "mov DWORD PTR [ebp+200], eax",
         "mov DWORD PTR [ebp+204], eax",
         "mov DWORD PTR [ebp+208], eax",
-        "mov edi, ebp",
+        "mov edi, DWORD PTR [ebp+212]",
         "mov edx, ebp",
         "add edx, 196",
         "mov ecx, DWORD PTR [ebp+180]",
@@ -13209,32 +13565,15 @@ pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_verify(ctx: *const [u64; 32], 
         "cmp eax, 1",
         "mov eax, 0",
         "adc eax, 0",
-        "mov ecx, 0",
-        "sub ecx, eax",
-        "mov edx, DWORD PTR [ebp]",
-        "and edx, ecx",
-        "mov DWORD PTR [ebp], edx",
-        "mov edx, DWORD PTR [ebp+4]",
-        "and edx, ecx",
-        "mov DWORD PTR [ebp+4], edx",
-        "mov edx, DWORD PTR [ebp+8]",
-        "and edx, ecx",
-        "mov DWORD PTR [ebp+8], edx",
-        "mov edx, DWORD PTR [ebp+12]",
-        "and edx, ecx",
-        "mov DWORD PTR [ebp+12], edx",
         "jmp 29f",
         "28:",
         "mov eax, 0",
-        "mov DWORD PTR [ebp], eax",
-        "mov DWORD PTR [ebp+4], eax",
-        "mov DWORD PTR [ebp+8], eax",
-        "mov DWORD PTR [ebp+12], eax",
         "29:",
         "mov ebx, DWORD PTR [ebp+128]",
         "mov esi, DWORD PTR [ebp+132]",
         "mov edi, DWORD PTR [ebp+136]",
         "mov ebp, DWORD PTR [ebp+140]",
+        "lea esp, [esp+2604]",
         "ret",
         ".p2align 6",
         vg_ghash = sym super::gcm::vg_ghash,
@@ -13242,7 +13581,7 @@ pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_verify(ctx: *const [u64; 32], 
     )
 }
 
-/// AES-GCM authenticated encryption (NIST SP 800-38D §7.1, GCM-AE, with a 128-bit tag): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, encrypts the `len` bytes at `data` in place, under the IV the `nonce_len` bytes at `nonce`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to the first 16 bytes of `*work`. The rest of `*work` is working space, unspecified on return. A shorter tag is the first bytes of this one.
+/// AES-GCM authenticated encryption (NIST SP 800-38D §7.1, GCM-AE, with a 128-bit tag): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, encrypts the `len` bytes at `data` in place, under the IV the `nonce_len` bytes at `nonce`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`. A shorter tag is the first bytes of this one.
 ///
 /// The function checks no length. GCM is secure only for a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of data and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must ensure; and a nonce must never be used twice with the same key.
 ///
@@ -13258,14 +13597,36 @@ pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_verify(ctx: *const [u64; 32], 
 /// * `nonce` must be valid for reads of `nonce_len` bytes.
 /// * `aad` must be valid for reads of `aad_len` bytes.
 /// * `data` must be valid for reads and writes of `len` bytes.
-/// * `work` must be valid for reads and writes of 2560 bytes.
+/// * `tag` must be valid for reads and writes of 16 bytes.
 /// * `rounds` must be 10, 12 or 14.
-/// * `data` and `work` must not overlap each other, `ctx`, `nonce` or `aad` (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `aad`, `data` and `work` may overlap the arguments on the stack, overlap the return address on the stack or the 28 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `data` and `tag` must not overlap each other, `ctx`, `nonce` or `aad` (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 2632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_aes_gcm_seal(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, work: *mut [u64; 320]) {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_seal(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        "mov eax, DWORD PTR [esp+36]",
+        "lea esp, [esp-2604]",
+        "mov eax, DWORD PTR [esp+2608]",
+        "mov DWORD PTR [esp+4], eax",
+        "mov eax, DWORD PTR [esp+2612]",
+        "mov DWORD PTR [esp+8], eax",
+        "mov eax, DWORD PTR [esp+2616]",
+        "mov DWORD PTR [esp+12], eax",
+        "mov eax, DWORD PTR [esp+2620]",
+        "mov DWORD PTR [esp+16], eax",
+        "mov eax, DWORD PTR [esp+2624]",
+        "mov DWORD PTR [esp+20], eax",
+        "mov eax, DWORD PTR [esp+2628]",
+        "mov DWORD PTR [esp+24], eax",
+        "mov eax, DWORD PTR [esp+2632]",
+        "mov DWORD PTR [esp+28], eax",
+        "mov eax, DWORD PTR [esp+2636]",
+        "mov DWORD PTR [esp+32], eax",
+        "mov eax, DWORD PTR [esp+2640]",
+        "mov DWORD PTR [esp+36], eax",
+        "mov eax, esp",
+        "add eax, 44",
+        "mov DWORD PTR [esp+40], eax",
+        "mov eax, DWORD PTR [esp+40]",
         "mov DWORD PTR [eax+128], ebx",
         "mov DWORD PTR [eax+132], esi",
         "mov DWORD PTR [eax+136], edi",
@@ -13291,6 +13652,8 @@ pub(crate) unsafe extern "C" fn vg_aes_gcm_seal(ctx: *const [u64; 32], rounds: u
         "mov DWORD PTR [ebp+168], eax",
         "mov eax, DWORD PTR [esp+32]",
         "mov DWORD PTR [ebp+172], eax",
+        "mov eax, DWORD PTR [esp+36]",
+        "mov DWORD PTR [ebp+212], eax",
         "mov eax, 0",
         "mov DWORD PTR [ebp+188], eax",
         "mov eax, DWORD PTR [ebp+192]",
@@ -14077,10 +14440,20 @@ pub(crate) unsafe extern "C" fn vg_aes_gcm_seal(ctx: *const [u64; 32], rounds: u
         "pop eax",
         "pop eax",
         "sub ebp, 512",
+        "mov eax, DWORD PTR [ebp]",
+        "mov ecx, DWORD PTR [ebp+4]",
+        "mov edx, DWORD PTR [ebp+8]",
+        "mov ebx, DWORD PTR [ebp+12]",
+        "mov edi, DWORD PTR [ebp+212]",
+        "mov DWORD PTR [edi], eax",
+        "mov DWORD PTR [edi+4], ecx",
+        "mov DWORD PTR [edi+8], edx",
+        "mov DWORD PTR [edi+12], ebx",
         "mov ebx, DWORD PTR [ebp+128]",
         "mov esi, DWORD PTR [ebp+132]",
         "mov edi, DWORD PTR [ebp+136]",
         "mov ebp, DWORD PTR [ebp+140]",
+        "lea esp, [esp+2604]",
         "ret",
         ".p2align 6",
         vg_ghash = sym super::gcm::vg_ghash,
@@ -14088,7 +14461,7 @@ pub(crate) unsafe extern "C" fn vg_aes_gcm_seal(ctx: *const [u64; 32], rounds: u
     )
 }
 
-/// AES-GCM authenticated decryption (NIST SP 800-38D §7.2, GCM-AD): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag in the first `tag_len` bytes of `*work`, returns 1 if `tag_len` is 4, 8, 12, 13, 14, 15 or 16 (§5.2.1.2) and the tag is the first `tag_len` bytes of that of the `len` bytes of ciphertext at `data` and the `aad_len` bytes of additional data at `aad`, under the IV the `nonce_len` bytes at `nonce`, having then decrypted the ciphertext in place; otherwise returns 0, and the bytes at `data` are unchanged. The rest of `*work` is working space, unspecified on return. The tags are compared without a branch.
+/// AES-GCM authenticated decryption (NIST SP 800-38D §7.2, GCM-AD): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, returns 1 if `tag_len` is 4, 8, 12, 13, 14, 15 or 16 (§5.2.1.2) and the tag is the first `tag_len` bytes of that of the `len` bytes of ciphertext at `data` and the `aad_len` bytes of additional data at `aad`, under the IV the `nonce_len` bytes at `nonce`, having then decrypted the ciphertext in place; otherwise returns 0, and the bytes at `data` are unchanged. The tags are compared without a branch.
 ///
 /// The function checks no other length: GCM requires a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of ciphertext and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must check.
 ///
@@ -14104,14 +14477,38 @@ pub(crate) unsafe extern "C" fn vg_aes_gcm_seal(ctx: *const [u64; 32], rounds: u
 /// * `nonce` must be valid for reads of `nonce_len` bytes.
 /// * `aad` must be valid for reads of `aad_len` bytes.
 /// * `data` must be valid for reads and writes of `len` bytes.
-/// * `work` must be valid for reads and writes of 2560 bytes.
+/// * `tag` must be valid for reads of `tag_len` bytes.
 /// * `rounds` must be 10, 12 or 14.
-/// * `data` and `work` must not overlap each other, `ctx`, `nonce` or `aad` (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `aad`, `data` and `work` may overlap the arguments on the stack, overlap the return address on the stack or the 28 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `data` must not overlap `ctx`, `nonce`, `aad` or `tag` (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 2636 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_aes_gcm_open(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, work: *mut [u64; 320], tag_len: usize) -> u32 {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_open(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "mov eax, DWORD PTR [esp+36]",
+        "lea esp, [esp-2608]",
+        "mov eax, DWORD PTR [esp+2612]",
+        "mov DWORD PTR [esp+4], eax",
+        "mov eax, DWORD PTR [esp+2616]",
+        "mov DWORD PTR [esp+8], eax",
+        "mov eax, DWORD PTR [esp+2620]",
+        "mov DWORD PTR [esp+12], eax",
+        "mov eax, DWORD PTR [esp+2624]",
+        "mov DWORD PTR [esp+16], eax",
+        "mov eax, DWORD PTR [esp+2628]",
+        "mov DWORD PTR [esp+20], eax",
+        "mov eax, DWORD PTR [esp+2632]",
+        "mov DWORD PTR [esp+24], eax",
+        "mov eax, DWORD PTR [esp+2636]",
+        "mov DWORD PTR [esp+28], eax",
+        "mov eax, DWORD PTR [esp+2640]",
+        "mov DWORD PTR [esp+32], eax",
+        "mov eax, DWORD PTR [esp+2644]",
+        "mov DWORD PTR [esp+36], eax",
+        "mov eax, DWORD PTR [esp+2648]",
+        "mov DWORD PTR [esp+40], eax",
+        "mov eax, esp",
+        "add eax, 48",
+        "mov DWORD PTR [esp+44], eax",
+        "mov eax, DWORD PTR [esp+44]",
         "mov DWORD PTR [eax+128], ebx",
         "mov DWORD PTR [eax+132], esi",
         "mov DWORD PTR [eax+136], edi",
@@ -14137,10 +14534,12 @@ pub(crate) unsafe extern "C" fn vg_aes_gcm_open(ctx: *const [u64; 32], rounds: u
         "mov DWORD PTR [ebp+168], eax",
         "mov eax, DWORD PTR [esp+32]",
         "mov DWORD PTR [ebp+172], eax",
-        "mov eax, 0",
-        "mov DWORD PTR [ebp+188], eax",
+        "mov eax, DWORD PTR [esp+36]",
+        "mov DWORD PTR [ebp+212], eax",
         "mov eax, DWORD PTR [esp+40]",
         "mov DWORD PTR [ebp+180], eax",
+        "mov eax, 0",
+        "mov DWORD PTR [ebp+188], eax",
         "mov ecx, 0",
         "mov ebx, DWORD PTR [ebp+180]",
         "cmp ebx, 4",
@@ -14831,7 +15230,7 @@ pub(crate) unsafe extern "C" fn vg_aes_gcm_open(ctx: *const [u64; 32], rounds: u
         "mov DWORD PTR [ebp+200], eax",
         "mov DWORD PTR [ebp+204], eax",
         "mov DWORD PTR [ebp+208], eax",
-        "mov edi, ebp",
+        "mov edi, DWORD PTR [ebp+212]",
         "mov edx, ebp",
         "add edx, 196",
         "mov ecx, DWORD PTR [ebp+180]",
@@ -15014,6 +15413,7 @@ pub(crate) unsafe extern "C" fn vg_aes_gcm_open(ctx: *const [u64; 32], rounds: u
         "mov esi, DWORD PTR [ebp+132]",
         "mov edi, DWORD PTR [ebp+136]",
         "mov ebp, DWORD PTR [ebp+140]",
+        "lea esp, [esp+2608]",
         "ret",
         ".p2align 6",
         vg_ghash = sym super::gcm::vg_ghash,

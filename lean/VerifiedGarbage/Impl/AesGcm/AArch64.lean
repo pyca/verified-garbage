@@ -13,14 +13,16 @@ the same CPUs) and of `vg_ghash`.
 
 Every function has a buffer `W` of 2560 bytes (`scratch` or `work`):
 
-* `[0, 16)`: the tag (written by `finish`, `verify` and `seal`; the received
-  tag of `verify` and `open`);
+* `[0, 16)`: the tag `finish` and `seal` compute, which they then copy to
+  `tag`; the received tag of `verify` and `open`, copied from `tag` once its
+  length is checked;
 * `[16, 96)`: the streaming state of `seal` and `open`;
 * `[96, 112)`: a block `T`: a partial block padded with zeros, or the
   lengths block;
 * `[112, 128)`: the tag `verify` and `open` compute;
 * `[128, 216)`: our caller's `x19`–`x28` and our return address `x30`;
-* `[216, 256)`: arguments `seal` and `open` keep across calls;
+* `[216, 256)`: arguments `seal` and `open` keep across calls (`seal`'s
+  `tag` and `open`'s `tag_len` at 248);
 * `[256, 288)`: the two tags compared, padded with zeros;
 * `[512, 2560)`: the working space of the functions called.
 
@@ -32,8 +34,9 @@ A call (`bl`) stores nothing in memory, so no stack is used.
 the number of rounds throughout; the functions called preserve them. The
 pieces below (`absorb`, `crypt`, …) take their arguments in `x23` (a
 pointer), `x24` (a length) and `x25` (an offset), which the callees also
-preserve; `x26`–`x28` hold the lengths and the data pointer the functions
-keep.
+preserve; `x26`–`x28` hold the lengths, the data pointer, `tag` and
+`tag_len` the functions keep (`tag` is stashed at `W + 248` while `seal`
+needs `x28` for the data).
 
 ## The pieces
 
@@ -56,6 +59,8 @@ keep.
   bytes), and the state's accumulator and first counter block `inc₃₂(J₀)`.
 * `cmp`: the received tag (at `W`) and the computed one (at `W + 112`), each
   of `x28` bytes, padded with zeros and compared without a branch.
+* `tagIn`: the received tag, the `x28` bytes at `x12`, copied to `W`;
+  `tagOut`: the tag at `W` copied to `x28`.
 
 The model has no flags or register-offset addressing: the branches are
 `cbz`/`cbnz` on lengths, and bytes are copied through advancing pointers.
@@ -281,6 +286,13 @@ def cmpSeg : Prog isa :=
       .logic .orr .x .x9 .x9 .x10, imm .x11 0, .subImm .x .x12 .x11 1, .adds .x .x9 .x9 .x12,
       .adcs .x .x10 .x11 .x11]))))
 
+/-- The received tag (the `x28` bytes at `x12`) copied to `W`. -/
+def tagIn : Prog isa := .seq (.block [mov .x11 .x19, mov .x13 .x28]) copy
+
+/-- The tag at `W` copied to the 16 bytes at `x28`. -/
+def tagOut : List Instr :=
+  [.ldr .x .x9 .x19 0, .str .x .x9 .x28 0, .ldr .x .x9 .x19 8, .str .x .x9 .x28 8]
+
 /-- `x9 := 1` if `x28` is `k`. -/
 def tlTest (k : Nat) : Prog isa :=
   .seq (.block [.subImm .x .x10 .x28 k]) (.ite (.zero .x .x10) (.block [imm .x9 1]) (.block []))
@@ -367,9 +379,9 @@ def streamEncrypt : Prog isa := .seq (.block crEntry) (.seq (encBody c) (.block 
 def streamDecrypt : Prog isa := .seq (.block crEntry) (.seq (decBody c) (.block restore))
 
 /-- The entry of `finish` and `verify`: `(ctx = x0, rounds = x1, state = x2,
-aad_len = x3, text_len = x4, work = x5)`. -/
-def finEntry : List Instr :=
-  save .x5 ++ [mov .x19 .x5, mov .x20 .x2, mov .x21 .x0, mov .x22 .x1, mov .x26 .x3, mov .x27 .x4]
+aad_len = x3, text_len = x4, tag = x5, …)`, with `work` in `w`. -/
+def finEntry (w : Reg) : List Instr :=
+  save w ++ [mov .x19 w, mov .x20 .x2, mov .x21 .x0, mov .x22 .x1, mov .x26 .x3, mov .x27 .x4]
 
 /-- The buffered bytes (of the text, or of the additional data if there is
 no text) padded and absorbed, and the tag into `W + o`. -/
@@ -378,29 +390,27 @@ def finBody (o : Nat) : Prog isa :=
       (.block [imm .x9 15, .logic .and .x .x25 .x27 .x9]))
     (.seq (flush c 16) (tag c o))
 
-/-- `vg_aes_gcm_stream_finish`. -/
-def streamFinish : Prog isa := .seq (.block finEntry) (.seq (finBody c 0) (.block restore))
+/-- `vg_aes_gcm_stream_finish`, with `work = x6`; `x28` holds `tag`. -/
+def streamFinish : Prog isa :=
+  .seq (.block (finEntry .x6 ++ [mov .x28 .x5])) (.seq (finBody c 0) (.seq (.block tagOut) (.block restore)))
 
-/-- The computed tag (at `W + 112`) to `W`, if it is equal to the received
-one (`x10` is 0), else zeros; `x0` is 1 if they are equal, 0 if not. -/
-def verMask : List Instr :=
-  [.subImm .x .x11 .x10 1, .ldr .x .x9 .x19 uO, .logic .and .x .x9 .x9 .x11, .str .x .x9 .x19 0,
-    .ldr .x .x9 .x19 (uO + 8), .logic .and .x .x9 .x9 .x11, .str .x .x9 .x19 8, imm .x0 1,
-    .sub .x .x0 .x0 .x10]
+/-- `x0` is 1 if the tags are equal (`x10` is 0), 0 if not. -/
+def verRet : List Instr := [imm .x0 1, .sub .x .x0 .x0 .x10]
 
-/-- `vg_aes_gcm_stream_verify`, with `tag_len = x6`. -/
+/-- `vg_aes_gcm_stream_verify`, with `tag_len = x6` and `work = x7`; `x12`
+holds `tag` until `tagIn`. -/
 def streamVerify : Prog isa :=
-  .seq (.block (finEntry ++ [mov .x28 .x6]))
+  .seq (.block (finEntry .x7 ++ [mov .x28 .x6, mov .x12 .x5]))
   (.seq tagLenOk
-  (.seq (.ite (.zero .x .x9) (.block [imm .x9 0, .str .x .x9 .x19 0, .str .x .x9 .x19 8, imm .x0 0])
-      (.seq (finBody c uO) (.seq cmpSeg (.block verMask))))
+  (.seq (.ite (.zero .x .x9) (.block [imm .x0 0])
+      (.seq tagIn (.seq (finBody c uO) (.seq cmpSeg (.block verRet)))))
     (.block restore)))
 
 /-- The entry of `seal` and `open`: `(ctx = x0, rounds = x1, nonce = x2,
-nonce_len = x3, aad = x4, aad_len = x5, data = x6, len = x7, work = [sp])`.
-The state is at `W + 16`. -/
-def oneEntry : List Instr :=
-  [.ldrSp .x9 0] ++ save .x9 ++
+nonce_len = x3, aad = x4, aad_len = x5, data = x6, len = x7, …)`, with `work`
+at `[sp + w]`. The state is at `W + 16`. -/
+def oneEntry (w : Nat) : List Instr :=
+  [.ldrSp .x9 w] ++ save .x9 ++
     [mov .x19 .x9, ptr .x20 .x19 16, mov .x21 .x0, mov .x22 .x1, .str .x .x4 .x19 aadO,
       .str .x .x5 .x19 alenO, .str .x .x6 .x19 dataO, .str .x .x7 .x19 lenO, mov .x23 .x2,
       mov .x24 .x3, mov .x26 .x3, imm .x27 0]
@@ -417,16 +427,21 @@ def encPrep : List Instr :=
 /-- The arguments of `finBody`: the lengths. -/
 def finPrep : List Instr := [.ldr .x .x26 .x19 alenO, .ldr .x .x27 .x19 lenO]
 
-/-- `vg_aes_gcm_seal`. -/
+/-- The stack argument at `[sp + k]` kept at `W + 248` and in `x28`. -/
+def stashArg (k : Nat) : List Instr := [.ldrSp .x10 k, .str .x .x10 .x19 tlO, mov .x28 .x10]
+
+/-- `vg_aes_gcm_seal`, with `tag = [sp]` (kept at `W + 248`) and `work = [sp + 8]`. -/
 def «seal» : Prog isa :=
-  .seq (.block oneEntry)
+  .seq (.block (oneEntry 8 ++ stashArg 0))
   (.seq (j0 c)
   (.seq (oneAad c)
   (.seq (.block encPrep)
   (.seq (encBody c)
   (.seq (.block finPrep)
+  (.seq (.block [.ldr .x .x28 .x19 tlO])
   (.seq (finBody c 0)
-    (.block restore)))))))
+  (.seq (.block tagOut)
+    (.block restore)))))))))
 
 /-- The text decrypted, from the first counter block. -/
 def oneCrypt : Prog isa :=
@@ -446,11 +461,12 @@ def openMain : Prog isa :=
   (.seq (.ite (.zero .x .x27) (.block []) (oneCrypt c))
     (.block [mov .x0 .x27]))))))))))
 
-/-- `vg_aes_gcm_open`, with `tag_len = [sp + 8]`. -/
+/-- `vg_aes_gcm_open`, with `tag = [sp]` (in `x12` until `tagIn`),
+`tag_len = [sp + 8]` (kept at `W + 248`) and `work = [sp + 16]`. -/
 def «open» : Prog isa :=
-  .seq (.block (oneEntry ++ [.ldrSp .x10 8, .str .x .x10 .x19 tlO, mov .x28 .x10]))
+  .seq (.block (oneEntry 16 ++ stashArg 8 ++ [.ldrSp .x12 0]))
   (.seq tagLenOk
-  (.seq (.ite (.zero .x .x9) (.block [imm .x0 0]) (openMain c))
+  (.seq (.ite (.zero .x .x9) (.block [imm .x0 0]) (.seq tagIn (openMain c)))
     (.block restore)))
 
 end VG.Impl.AesGcm.AArch64

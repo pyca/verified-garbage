@@ -1,23 +1,21 @@
 import VerifiedGarbage.Proof.Aes.Ct32.Layers
-import VerifiedGarbage.Proof.Aes.InvBitsliced
+import VerifiedGarbage.Proof.Aes.InvRounds
 
 /-!
 # Bitsliced AES on 32-bit words: the inverse round transformations
 
 As `Ct32/Bitsliced.lean` does for the cipher, and `Proof/Aes/InvBitsliced.lean`
-for the 64-bit layout: the lemmas turning what each layer of the inverse
-cipher's code does to the bits into the transformation of FIPS 197 §5.3 it
-computes on the states, and what the linear layers compute on input words
-given as atoms, which the targets' proofs check their code against. The
-coefficients of InvMixColumns, bit by bit (`mulBits`, `invMcWords`), do not
-depend on the layout and come from the 64-bit file. Nothing here depends on
-the target.
+for the inverse cipher on 64-bit words: the lemmas turning what each layer
+of the inverse cipher's code does to the bits into the transformation of
+FIPS 197 §5.3 it computes on the states, and what the layers compute on
+input words given as atoms, which the targets' proofs check their code
+against. Nothing here depends on the target.
 -/
 
 namespace VG.Proof.Aes.Ct32
 
 open VG VG.Bitslice VG.Spec.Aes
-open VG.Proof.Aes (bitsXor mulBits mulBits_lt invMcWords mul0e_bit mul0b_bit mul0d_bit mul09_bit)
+open VG.Proof.Aes (mulBits bitsXor mulBits_lt invMcWords mul0e_bit mul0b_bit mul0d_bit mul09_bit)
 
 theorem bs_invSubBytes {Q Q' : Nat → BitVec 32} {S : Nat → State}
     (h : ∀ j < 8, ∀ p < 32, (Q' j).getLsbD p = (invSbox (bsByte Q p)).getLsbD j) (hr : BsRel Q S) :

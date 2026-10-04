@@ -58,7 +58,8 @@ theorem consts_tmv (hc : CfgOk c) {base : Addr} {g : Reg → BitVec 64} {s : Sta
 
 /-- `vg_ecdsa_<curve>_verify` returns whether the specification's
 verification holds, and restores the callee-saved registers. -/
-theorem verify_ok (hc : CfgOk c) (hC : Law c.C) {s₀ : State} (hp : VPre c s₀) :
+theorem verify_ok (hc : CfgOk c) (hC : Law c.C) (hT : CombOk c.C (16 * c.n) c.tbl c.start)
+    {s₀ : State} (hp : VPre c s₀) :
     WP isa (Impl.Ecdsa.Verify.AArch64.Cfg.verify c) s₀ fun s' =>
       (∀ r ∈ Cfg.saved.map Prod.fst, s'.gpr r = s₀.gpr r) ∧ VPost c s₀ s' := by
   have hpR := unitMod_pow_two hc.p_odd (64 * c.n)
@@ -85,8 +86,7 @@ theorem verify_ok (hc : CfgOk c) (hC : Law c.C) {s₀ : State} (hp : VPre c s₀
   refine points_ok hc hM
     (Q₁ := fun j X Y Z => Rep c.C X Y Z (mul (sv c (s₀.gpr .x3) s₂ U >>> j) (G c.C)))
     (Q₂ := fun j X Y Z => Rep c.C X Y Z (mul (sv c (s₀.gpr .x3) s₂ V >>> j) P))
-    (step_rep hC hc.onG ha hb hG)
-    (by rw [shiftRight_eq_zero hu, mul_zero_pt]; exact rep_infinity' hC)
+    hC hT (fun X Y Z h => by simp only [Nat.shiftRight_zero]; exact h)
     (step_rep hC hPc ha hb hQ)
     (by rw [shiftRight_eq_zero hv, mul_zero_pt]; exact rep_infinity' hC)
     fun s₃ hP => ?_
