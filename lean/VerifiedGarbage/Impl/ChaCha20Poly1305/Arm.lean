@@ -22,13 +22,13 @@ The context (1024 bytes, see `VG.Spec.ChaCha20Poly1305.sealContract`):
 * `[448, 464)`: the tag computed;
 * `[464, 480)`: the tag received (`open`);
 * `[480, 516)`: our caller's `r4`–`r11` and our return address `lr`;
-* `[640, 768)`: the working space of `vg_poly1305_finalize` (`scratch`).
+* `[640, 768)`: the working space of `vg_poly1305_finalize_scratch` (`scratch`).
 
 `r7` holds the context, `r8` the additional data, `r9` its length, `r10`
 the data and `r11` its length throughout: they are callee-saved, so every
 callee restores them. `r0`–`r3` and `r12` are temporaries.
 
-`vg_poly1305_finalize(state, count, out, scratch)` takes `out` and
+`vg_poly1305_finalize_scratch(state, count, out, scratch)` takes `out` and
 `scratch` on the stack: a frame pushes them (`push {r1, r12}`, `out` at
 `[sp]`), around the call, and its pop loads `out` back. So the functions use
 8 bytes of stack. `count` is the length of the message authenticated,
@@ -70,7 +70,7 @@ def tagOff : Nat := 448
 def rtagOff : Nat := 464
 /-- The saved registers. -/
 def savOff : Nat := 480
-/-- The working space of `vg_poly1305_finalize`. -/
+/-- The working space of `vg_poly1305_finalize_scratch`. -/
 def scrOff : Nat := 640
 
 /-! ## Saving and restoring the registers -/
@@ -176,7 +176,7 @@ def ceil16 (d t n : Reg) : List Instr :=
   [.mov d (.shifted n .lsr 4), .dp .and t n (.imm 15), .dp .add t t (.imm 15),
    .dp .add d d (.shifted t .lsr 4)]
 
-/-- The arguments of `vg_poly1305_finalize` (but those on the stack): the
+/-- The arguments of `vg_poly1305_finalize_scratch` (but those on the stack): the
 state (`r0`), the length of the message in `r2:r3`, and `out` (`r1`, the
 tag computed) and `scratch` (`r12`) to push. -/
 def finalizeArgs : List Instr :=
@@ -187,13 +187,13 @@ def finalizeArgs : List Instr :=
 
 /-- The tag computed: `out` and `scratch` pushed as the stack arguments. -/
 def finalize : Prog isa :=
-  .frame (.push [.r1, .r12]) (.call "vg_poly1305_finalize" Impl.Poly1305.Arm.finalize) (.pop .r1 8)
+  .frame (.push [.r1, .r12]) (.call "vg_poly1305_finalize_scratch" Impl.Poly1305.Arm.finalize) (.pop .r1 8)
 
 /-! ## Seal -/
 
 /-- Up to the tag: the registers saved, the one-time key, the data
 encrypted, and the MAC of the additional data, the ciphertext and the
-lengths, up to the arguments of `vg_poly1305_finalize`. -/
+lengths, up to the arguments of `vg_poly1305_finalize_scratch`. -/
 def sealMain : Prog isa :=
   .seq (.block (save ++ moves ++ initState))
   (.seq keyGen
@@ -213,7 +213,7 @@ def «seal» : Prog isa := .seq sealMain (.seq finalize (.block sealEnd))
 
 /-- Up to the tag: the registers saved, the tag received kept, the one-time
 key, and the MAC of the additional data, the ciphertext and the lengths, up
-to the arguments of `vg_poly1305_finalize`. -/
+to the arguments of `vg_poly1305_finalize_scratch`. -/
 def openMain : Prog isa :=
   .seq (.block (save ++ moves ++ copyWords 48 rtagOff 4 ++ initState))
   (.seq keyGen
