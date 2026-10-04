@@ -1,4 +1,5 @@
 import VerifiedGarbage.TCB.AArch64.Target
+import VerifiedGarbage.Proof.P256.Curve
 import VerifiedGarbage.Impl.Ecdsa.P256.AArch64
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Verified
 import VerifiedGarbage.Impl.Ecdsa.Verify.P256.AArch64
@@ -22,7 +23,7 @@ def artifacts : List Artifact := [
       depends only on the pointers."])
     code := Impl.Ecdsa.AArch64.signP256
     contract := Spec.Ecdsa.P256.inst.signContract AArch64.abi
-    verified := Proof.Ecdsa.AArch64.sign_verified
+    verified := Proof.Ecdsa.AArch64.sign_verified Proof.P256.law
     spSafe := Code.all_of_forall (fun _ => rfl) _ },
   { Spec.Ecdsa.P256.verifyApi with
     target := AArch64.target
@@ -42,7 +43,7 @@ def artifacts : List Artifact := [
       it."])
     code := Impl.Ecdsa.Verify.AArch64.verifyP256
     contract := Spec.Ecdsa.P256.inst.verifyContract AArch64.abi
-    verified := Proof.Ecdsa.Verify.AArch64.verify_verified
+    verified := Proof.Ecdsa.Verify.AArch64.verify_verified Proof.P256.law
     spSafe := Code.all_of_forall (fun _ => rfl) _ }]
 
 end VG.Artifacts.EcdsaP256.AArch64

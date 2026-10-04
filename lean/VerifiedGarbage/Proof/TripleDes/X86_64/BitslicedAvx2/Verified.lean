@@ -1,6 +1,7 @@
 import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedAvx2.Ecb
 import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedAvx2.ConstantTime
 import VerifiedGarbage.Proof.TripleDes.X86_64.Bitsliced.Verified
+import VerifiedGarbage.Proof.TripleDes.Scratch
 
 /-! # The AVX2 bitsliced ECB functions meet their contracts -/
 
@@ -24,17 +25,17 @@ theorem decrypt_correct (s : State) (hs : (contract .decrypt).pre s) :
   exact ⟨t, s', he, abiPreserved_of_exec (by lit_decide) he ha, hp⟩
 
 theorem encrypt_verified : Verified target Impl.TripleDes.X86_64.BitsliceAvx2.encrypt
-    (Spec.TripleDes.ecbEncryptContract abi) := by
+    (Proof.TripleDes.ecbEncryptScratchContract abi) := by
   refine Verified.of_correct encrypt_correct
     (encrypt_constantTime _ _ (ecbTaint_agree .encrypt)) ?_
-  sig_implies [Spec.TripleDes.ecbEncryptContract, Spec.TripleDes.ecbContract,
-    Spec.TripleDes.ecbSig, abi, argRegs, contract, publicRegs_five] [satState] using satState
+  sig_implies [Proof.TripleDes.ecbEncryptScratchContract, Proof.TripleDes.ecbScratchContract,
+    Proof.TripleDes.ecbScratchSig, Spec.TripleDes.ecbPost, abi, argRegs, contract, publicRegs_five] [satState] using satState
 
 theorem decrypt_verified : Verified target Impl.TripleDes.X86_64.BitsliceAvx2.decrypt
-    (Spec.TripleDes.ecbDecryptContract abi) := by
+    (Proof.TripleDes.ecbDecryptScratchContract abi) := by
   refine Verified.of_correct decrypt_correct
     (decrypt_constantTime _ _ (ecbTaint_agree .decrypt)) ?_
-  sig_implies [Spec.TripleDes.ecbDecryptContract, Spec.TripleDes.ecbContract,
-    Spec.TripleDes.ecbSig, abi, argRegs, contract, publicRegs_five] [satState] using satState
+  sig_implies [Proof.TripleDes.ecbDecryptScratchContract, Proof.TripleDes.ecbScratchContract,
+    Proof.TripleDes.ecbScratchSig, Spec.TripleDes.ecbPost, abi, argRegs, contract, publicRegs_five] [satState] using satState
 
 end VG.Proof.TripleDes.X86_64.BitslicedAvx2

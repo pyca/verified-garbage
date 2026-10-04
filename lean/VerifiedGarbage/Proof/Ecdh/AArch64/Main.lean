@@ -232,7 +232,7 @@ theorem peerPt_onCurve (hc : CfgOk c) (b4 : Prop) [Decidable b4] (x y : Nat) :
   · next h => exact (onCurve_iff _ _).mpr h.2
   · exact hc.onG
 
-theorem peerPt_rep (hC : Good c.C) (b4 : Prop) [Decidable b4] (x y : Nat) {X Y : Fe c.C}
+theorem peerPt_rep (hC : Law c.C) (b4 : Prop) [Decidable b4] (x y : Nat) {X Y : Fe c.C}
     (hX : X = if ((b4 ∧ x < c.C.p) ∧ y < c.C.p) ∧ OnCurve c (Fin.ofNat c.C.p x) (Fin.ofNat c.C.p y)
       then Fin.ofNat c.C.p x else Fin.ofNat c.C.p c.C.gx)
     (hY : Y = if ((b4 ∧ x < c.C.p) ∧ y < c.C.p) ∧ OnCurve c (Fin.ofNat c.C.p x) (Fin.ofNat c.C.p y)
@@ -266,7 +266,7 @@ theorem exchange_eq' (c : Cfg) : Impl.Ecdh.AArch64.Cfg.exchange c =
 
 /-- `vg_ecdh_<curve>` computes the specification's shared secret and restores
 the callee-saved registers. -/
-theorem exchange_ok (hc : CfgOk c) (hC : Good c.C) {s₀ : State} (hp : EPre c s₀) :
+theorem exchange_ok (hc : CfgOk c) (hC : Law c.C) {s₀ : State} (hp : EPre c s₀) :
     WP isa (Impl.Ecdh.AArch64.Cfg.exchange c) s₀ fun s' =>
       (∀ r ∈ Cfg.saved.map Prod.fst, s'.gpr r = s₀.gpr r) ∧ EPost c s₀ s' := by
   have h0 := hc.n0
@@ -388,7 +388,7 @@ theorem exchange_ok (hc : CfgOk c) (hC : Good c.C) {s₀ : State} (hp : EPre c s
   have hR := L.q
   rw [Nat.shiftRight_zero, hk] at hR
   have hxoX : Fin.ofNat c.C.p xv = tmv c.C c.n (s₀.gpr .x3) s₅ (c.sl RX) *
-      tmv c.C c.n (s₀.gpr .x3) s₅ (c.sl RZ) ^ (c.C.p - 2) := by rw [hxv, L.acc]; rfl
+      tmv c.C c.n (s₀.gpr .x3) s₅ (c.sl RZ) ^ (c.C.p - 2) := by rw [hxv, L.acc]
   have hspec := exchange_eq hC hlen hb0 hxs hys hP' hR hxl hxoX
   have hD₅ : sv c (s₀.gpr .x3) s₅ D = dk c s₀ := by
     rw [e₅ (by decide) (by decide) (by decide), e₄ (by decide) (by decide) (by decide),

@@ -89,9 +89,9 @@ HEAVY_MATHLIB = (
 )
 HEAVY_IMPORTERS = 40
 # Modules that import heavy algebra and more than `HEAVY_IMPORTERS` modules
-# import: the Edwards group law and each curve's bridge from its specification
-# to that group (the field's primality, `ZMod`) need it, once per curve.
-# Add nothing else.
+# import: the Edwards group law, each curve's bridge from its specification
+# to that group (the field's primality, `ZMod`), once per curve. Add nothing
+# else.
 HEAVY_HUBS_ALLOWED = {
     "VerifiedGarbage.Proof.Edwards.Group",
     "VerifiedGarbage.Proof.Ed448.Group.Projective",

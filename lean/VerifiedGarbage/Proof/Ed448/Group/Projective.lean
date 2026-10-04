@@ -1,5 +1,5 @@
 import VerifiedGarbage.Proof.Edwards.Group
-import VerifiedGarbage.Proof.Framework.PrattZMod
+import VerifiedGarbage.Proof.Framework.Pratt
 import Mathlib.Tactic.NormNum.Prime
 import VerifiedGarbage.Spec.X448
 import VerifiedGarbage.Spec.Ed448
@@ -480,11 +480,11 @@ noncomputable def dZ : ZMod PZ := toZ Spec.Ed448.d
 
 private theorem d_val : (Spec.Ed448.d : Fe).val = P - 39081 := by decide +kernel
 
-private theorem d_pow : Pratt.powMod PZ 449 (P - 39081) ((P - 1) / 2) = PZ - 1 := by
-  decide +kernel
+private theorem d_pow : (P - 39081) ^ ((P - 1) / 2) % PZ = PZ - 1 := by
+  rw [← Pratt.powMod_eq PZ (by decide +kernel) 449 _ _ (by decide +kernel)]; decide +kernel
 
 theorem dZ_pow : dZ ^ ((P - 1) / 2) = -1 := by
-  rw [dZ, toZ, d_val, ← Pratt.powMod_cast PZ 449 _ _ (by decide +kernel), d_pow,
+  rw [dZ, toZ, d_val, ← Nat.cast_pow, ← ZMod.natCast_mod, d_pow,
     Nat.cast_sub (by decide +kernel), ZMod.natCast_self, Nat.cast_one, zero_sub]
 
 theorem two_ne_zero' : (2 : ZMod PZ) ≠ 0 := by

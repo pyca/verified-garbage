@@ -73,8 +73,9 @@ def artifacts : List Artifact := [
         the result is stored masked. Each prime has its own working space, with its own \
         Montgomery multiplication (`vg_rsa_public`'s); the input is reduced modulo it by \
         Montgomery reduction of chunks of its size, and the exponents are scanned left to right \
-        over all their bits, a square and a multiplication per bit, the product kept or not by a \
-        mask of the bit."])
+        over all their bits by a fixed window of 4 bits: four squares and a multiplication by the \
+        window's power of the input, from a table of all 16 after the prime's working space, read \
+        by a masked selection from every entry."])
     code := Impl.Rsa.X86_64.Crt.code Proof.Bignum.X86_64.Mont.base.mm
     contract := Spec.Rsa.privateCrtContract X86_64.abi
     verified := Proof.Bignum.X86_64.crt_verified _ (by decide +kernel)

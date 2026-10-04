@@ -9,6 +9,10 @@ argument, without that argument: it allocates a frame of `bytes` bytes on the
 stack and lays out in it what `c` expects to find at and above `esp` on
 entry: a word standing for the return address, a copy of the function's
 arguments, and the address of the buffer, which is the rest of the frame.
+
+`withStackScratchWiped bytes n words c` is the same, but zeroes the first
+`words` doublewords of the buffer after its code (`wipe`), for a function
+whose working space may hold secrets that its caller would otherwise wipe.
 -/
 
 namespace VG.Impl.StackScratch.X86
@@ -30,5 +34,17 @@ def setArgs (bytes n : Nat) : List Instr :=
 /-- `c`, with its scratch buffer in a frame of `bytes` bytes on the stack. -/
 def withStackScratch (bytes n : Nat) (c : Prog isa) : Prog isa :=
   .frame (.alloc bytes) (.seq (.block (setArgs bytes n)) c) (.free bytes)
+
+/-- `mov [esp + off + 4k], ecx` for each `k < words`. -/
+def wipeStores (off words : Nat) : List Instr :=
+  (List.range words).map fun k => .store ⟨.esp, off + 4 * k⟩ .ecx
+
+/-- Zeroes the `words` doublewords at `esp + off`, through `ecx`. -/
+def wipe (off words : Nat) : List Instr := .mov .ecx (.imm 0) :: wipeStores off words
+
+/-- `withStackScratch`, zeroing the first `words` doublewords of the buffer
+(at `esp + 8 + 4n`) after the code. -/
+def withStackScratchWiped (bytes n words : Nat) (c : Prog isa) : Prog isa :=
+  withStackScratch bytes n (.seq c (.block (wipe (8 + 4 * n) words)))
 
 end VG.Impl.StackScratch.X86

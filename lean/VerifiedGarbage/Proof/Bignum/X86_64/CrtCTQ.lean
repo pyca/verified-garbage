@@ -35,7 +35,7 @@ theorem gRanges_le (w : Nat) : ∀ r ∈ gRanges w, r.1 + r.2 ≤ slot w 8 := by
   rintro _ (rfl | rfl | rfl | rfl | rfl) <;> simp only [Crt.sD, Public.sCnt, sFn] <;> omega
 
 theorem gxRanges_le {w o wx : Nat} (hlo : slot w 8 ≤ o) :
-    ∀ r ∈ gRanges w ++ [xRange o wx], r.1 + r.2 ≤ o + slot wx 8 := by
+    ∀ r ∈ gRanges w ++ [xRange o wx], r.1 + r.2 ≤ o + slot wx 8 + tabBytes wx := by
   have hX8 : 8 * 17 ≤ slot wx 8 := by unfold slot hdrBytes; omega
   intro r hr
   rcases List.mem_append.mp hr with hr | hr
@@ -89,12 +89,12 @@ theorem gPre {sl : Nat} {p : UPub} {s : State} (h : UPre sl p s) : GPre sl (gp p
   have hX8 : 256 ≤ slot p.wx 8 := by unfold slot hdrBytes; omega
   dsimp only [GPre, gp]
   exact ⟨hg, by omega, by omega, by omega, hN.n, hN.inv, hodd, hN1, hN.r2, hN.one, hsl, hslv, hws.hdr.hw,
-    (hs.sub (o := p.o) (n := slot p.wx 8) hhi (by omega)).ld (d := 8 * sW) (by unfold sW; omega), by omega, hwx⟩
+    (hs.sub (o := p.o) (n := slot p.wx 8) (by omega) (by omega)).ld (d := 8 * sW) (by unfold sW; omega), by omega, hwx⟩
 
 /-- After `gPow`. -/
 def U1 (sl : Nat) (p : UPub) (t : State) : Prop :=
   ∃ (mx : BitVec 64) (X : Nat), Good t p.B p.Z p.w p.minv ∧ p.w < 2 ^ 28 ∧ slot p.w 8 ≤ p.o ∧
-    p.o + slot p.wx 8 ≤ p.Z ∧ 2 ≤ p.wx ∧ p.wx ≤ p.w ∧ sl < 32 ∧ word t.mem p.B (8 * sl) = off p.B p.o ∧
+    p.o + slot p.wx 8 + tabBytes p.wx ≤ p.Z ∧ 2 ≤ p.wx ∧ p.wx ≤ p.w ∧ sl < 32 ∧ word t.mem p.B (8 * sl) = off p.B p.o ∧
     WsAt t.mem p.B p.o p.wx mx ∧ XVals t p.B p.o p.wx mx X ∧ 1 < X
 
 theorem gPow_u1 (M : Mont) {sl : Nat} {p : UPub} {s : State} (h : UPre sl p s) :
@@ -106,7 +106,7 @@ theorem gPow_u1 (M : Mont) {sl : Nat} {p : UPub} {s : State} (h : UPre sl p s) :
   have hX8 : 256 ≤ slot p.wx 8 := by unfold slot hdrBytes; omega
   have hoL : p.o + slot p.wx 8 ≤ 2 ^ 64 := by omega
   refine WP.mono (gPow_ok M hg (by omega) (by omega) (by omega) hN.n hN.inv hodd hN1 hN.r2 hN.one hsl hslv
-    hws.hdr.hw ((hs.sub (o := p.o) (n := slot p.wx 8) hhi (by omega)).ld (d := 8 * sW) (by unfold sW; omega))
+    hws.hdr.hw ((hs.sub (o := p.o) (n := slot p.wx 8) (by omega) (by omega)).ld (d := 8 * sW) (by unfold sW; omega))
     (by omega) hwx) fun s₁ ⟨hg₁, _, _, f₁, _⟩ => ?_
   have f₁' : Frm p.B (gRanges p.w) s.mem s₁.mem := f₁
   have fx : Frm p.B (gRanges p.w ++ [xRange p.o p.wx]) s.mem s₁.mem :=
@@ -265,7 +265,7 @@ theorem uPre {p : PhasePub} {s : State} (h : QPre p s) : UPre sWsQ (up p) s := b
 /-- After the start of `q`'s phase. -/
 def Q1 (p : PhasePub) (t : State) : Prop :=
   ∃ (mx : BitVec 64) (X : Nat) (eb : List Byte), Good t p.B p.Z p.w p.minv ∧ 8 ≤ p.w ∧ p.w < 2 ^ 28 ∧
-    slot p.w 8 ≤ p.o ∧ p.o + slot p.wx 8 ≤ p.Z ∧ 2 ≤ p.wx ∧ p.wx ≤ p.w ∧
+    slot p.w 8 ≤ p.o ∧ p.o + slot p.wx 8 + tabBytes p.wx ≤ p.Z ∧ 2 ≤ p.wx ∧ p.wx ≤ p.w ∧
     word t.mem p.B (8 * sWsQ) = off p.B p.o ∧ WsAt t.mem p.B p.o p.wx mx ∧ NVals t p.B p.w p.minv p.N ∧
     wv t.mem p.B (slot p.w Public.aY) p.w < p.N ∧ XVals t p.B p.o p.wx mx X ∧ 1 < X ∧ X % 2 = 1 ∧
     wv t.mem (off p.B p.o) (slot p.wx Public.aY) p.wx < X ∧ word t.mem p.B (8 * sDq) = p.ep ∧
@@ -354,7 +354,7 @@ theorem qPhase_ct (M : Mont) (hU : UnitCT M sWsQ) (hP : PowCT M sWsQ sDq sQlen) 
     (Ψ := fun p => PwPre sWsQ sDq sQlen (sp p))
     (two_map (fun p : PhasePub => (⟨p.B, p.Z, p.w⟩ : Ws))
       (fun _ _ ⟨_, _, _, hg, _, _, hlo, hhi, _⟩ =>
-        ⟨_, hg, Nat.le_trans hlo (Nat.le_trans (Nat.le_add_right _ _) hhi)⟩)
+        ⟨_, hg, by dsimp only; omega⟩)
       (M.ct (by unfold MmUse; decide))) fun _ _ h => mm_pwPre M h) ?_)
   exact RelCT.seqs_append (by simp [powSteps]) (by simp) (RelCT.seq (two_post (Ψ := Q3)
     (two_map sp (fun _ _ h => h) hP) fun _ _ h => pow_q3 M h) (mmLeave_ct M))

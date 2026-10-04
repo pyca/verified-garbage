@@ -1,4 +1,5 @@
 import VerifiedGarbage.TCB.AArch64.Target
+import VerifiedGarbage.Proof.P256.Curve
 import VerifiedGarbage.Impl.Ecdh.P256.AArch64
 import VerifiedGarbage.Proof.Ecdh.AArch64.Verified
 
@@ -23,7 +24,7 @@ def artifacts : List Artifact := [
       depends only on the pointers."])
     code := Impl.Ecdh.AArch64.exchangeP256
     contract := Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P256.inst AArch64.abi
-    verified := Proof.Ecdh.AArch64.ecdh_verified
+    verified := Proof.Ecdh.AArch64.ecdh_verified Proof.P256.law
     spSafe := Code.all_of_forall (fun _ => rfl) _ }]
 
 end VG.Artifacts.EcdhP256.AArch64

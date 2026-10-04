@@ -426,9 +426,6 @@ theorem step1 (H Y X₁ T₁ : Block) (h₁ : x * φ T₁ = φ H) :
 theorem ofInt_natCast (n : Nat) : BitVec.ofInt 64 (n : Int) = BitVec.ofNat 64 n := by
   apply BitVec.eq_of_toInt_eq; simp only [BitVec.ofInt_natCast]
 
-theorem toNat_ofNat_lt {n : Nat} (h : n < 2 ^ 64) : (BitVec.ofNat 64 n).toNat = n := by
-  rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt h
-
 theorem contains_offset {base : Addr} {len off n : Nat} (h : off + n ≤ len) (ho : off < 2 ^ 64) :
     (⟨base, len⟩ : Region).Contains (base + BitVec.ofNat 64 off) n := Offset.contains_base base h ho
 
@@ -534,10 +531,6 @@ theorem load_blk {s₀ : State} (hp : Pre s₀) {i j : Nat} (hij : i + j < nb s�
   refine WP.mono (ldrev_ok .xmm7 .rdx (16 * j) s (by decide) h0
     (by rw [hrd, hwr, hrdx]; exact hp.in_blk hij)) fun s' ⟨e, o⟩ => ⟨?_, o⟩
   rw [e, hrdx, hm, addr_add, Nat.mul_add]
-
-/-- `rcx − k`, for `rcx` counting blocks down. -/
-theorem ofNat_sub_ofNat {n k : Nat} (hk : k ≤ n) (_hn : n < 2 ^ 64) :
-    BitVec.ofNat 64 n - BitVec.ofNat 64 k = BitVec.ofNat 64 (n - k) := Offset.ofNat_sub_ofNat hk
 
 /-- `rdx + b`, for `rdx` at an offset `a` into the data. -/
 theorem add_ofNat_ofNat (p : Addr) {a b c : Nat} (h : a + b = c) :
