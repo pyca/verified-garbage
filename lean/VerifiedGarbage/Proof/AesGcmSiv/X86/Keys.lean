@@ -41,7 +41,7 @@ structure ExpPost (p : Prm) (t t' : State) : Prop where
   rd : t'.rd = t.rd
   wr : t'.wr = t.wr
   esi : t'.gpr .esi = t.gpr .esi
-  frame : Frame [⟨w64 p.W + BitVec.ofNat 64 512, 240⟩, ⟨w64 p.W + BitVec.ofNat 64 2048, 512⟩, stk p] t.mem t'.mem
+  frame : Frame [⟨w64 p.W + BitVec.ofNat 64 512, 240⟩, ⟨w64 p.W + BitVec.ofNat 64 768, 512⟩, stk p] t.mem t'.mem
   ciph : Spec.GcmSiv.ctxCiph t'.mem (w64 p.W + BitVec.ofNat 64 512) p.R =
     Spec.GcmSiv.aes (bytesAt t.mem (w64 p.W + BitVec.ofNat 64 32) (Spec.GcmSiv.keyLen p.R))
 
@@ -151,7 +151,7 @@ the calls use and the index, the encryption key's schedule, the working
 spaces and the stack below `SP`. -/
 abbrev keyR (p : Prm) : List Region :=
   [⟨w64 p.W + BitVec.ofNat 64 16, 112⟩, ⟨w64 p.W + BitVec.ofNat 64 176, 8⟩, ⟨w64 p.W + BitVec.ofNat 64 224, 16⟩,
-    ⟨w64 p.W + BitVec.ofNat 64 512, 3584⟩, stk p]
+    ⟨w64 p.W + BitVec.ofNat 64 512, 2304⟩, stk p]
 
 theorem inMut_keyR (p : Prm) : InMut p (keyR p) := by
   intro r hr
@@ -186,7 +186,7 @@ theorem keys_ok (v : GcmImpl) {p : Prm} (L : Lay p) {σ : State} (E : Env p σ) 
   have k0 : (⟨w64 p.W + BitVec.ofNat 64 16, 112⟩ : Region) ∈ keyR p := List.mem_cons_self
   have k1 : (⟨w64 p.W + BitVec.ofNat 64 176, 8⟩ : Region) ∈ keyR p := by simp
   have k2 : (⟨w64 p.W + BitVec.ofNat 64 224, 16⟩ : Region) ∈ keyR p := by simp
-  have k3 : (⟨w64 p.W + BitVec.ofNat 64 512, 3584⟩ : Region) ∈ keyR p := by simp
+  have k3 : (⟨w64 p.W + BitVec.ofNat 64 512, 2304⟩ : Region) ∈ keyR p := by simp
   have k4 : stk p ∈ keyR p := by simp
   have f₂ : Frame (keyR p) σ.mem t₂.mem := I.frame.sub fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -200,7 +200,7 @@ theorem keys_ok (v : GcmImpl) {p : Prm} (L : Lay p) {σ : State} (E : Env p σ) 
   refine WP.seq (WP.mono (expand_ok v L I.env) fun t₃ X => ?_)
   obtain ⟨t₄, run₄, hm₄, ebp₄, esp₄, esi₄, rd₄, wr₄⟩ := hkey_ok L X.env
   have dK : ∀ {d k : Nat}, d + k ≤ 64 → 16 ≤ d → ∀ r ∈ [(⟨w64 p.W + BitVec.ofNat 64 512, 240⟩ : Region),
-      ⟨w64 p.W + BitVec.ofNat 64 2048, 512⟩, stk p],
+      ⟨w64 p.W + BitVec.ofNat 64 768, 512⟩, stk p],
       (⟨w64 p.W + BitVec.ofNat 64 d, k⟩ : Region).Disjoint r := fun h₁ h₂ r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl

@@ -67,7 +67,7 @@ def sealSat : State where
   mem a := if a = 0x8005 then 0x10 else if a = 0x8008 then 10 else if a = 0x800d then 0x20
     else if a = 0x8011 then 0x21 else if a = 0x8019 then 0x30 else if a = 0x8021 then 0x50 else 0
   rd := [⟨0x1000, 240⟩, ⟨0x2000, 12⟩, ⟨0x2100, 0⟩]
-  wr := [⟨0x3000, 0⟩, ⟨0x5000, 4096⟩, ⟨0x8004, 32⟩]
+  wr := [⟨0x3000, 0⟩, ⟨0x5000, 2816⟩, ⟨0x8004, 32⟩]
 
 theorem sealSat_args : arg sealSat 0 = 0x1000 ∧ arg sealSat 1 = 10 ∧ arg sealSat 2 = 0x2000 ∧
     arg sealSat 3 = 0x2100 ∧ arg sealSat 4 = 0 ∧ arg sealSat 5 = 0x3000 ∧ arg sealSat 6 = 0 ∧

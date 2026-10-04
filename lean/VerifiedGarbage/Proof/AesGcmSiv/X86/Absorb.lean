@@ -164,7 +164,7 @@ theorem srcB {p : Prm} {s : State} (L : Lay p) (P : Perm p s) : Src p s (p.W + B
 
 /-- A buffer apart from `W` and the stack as a chunk's source. -/
 theorem srcBuf {p : Prm} {s : State} {Q : BitVec 32} {k : Nat} (hr : Covers [⟨w64 Q, k⟩] (s.rd ++ s.wr))
-    (hwrap : Q.toNat + k ≤ 2 ^ 32) (hw : (⟨w64 Q, k⟩ : Region).Disjoint ⟨w64 p.W, 4096⟩)
+    (hwrap : Q.toNat + k ≤ 2 ^ 32) (hw : (⟨w64 Q, k⟩ : Region).Disjoint ⟨w64 p.W, 2816⟩)
     (hb : (stk p).Disjoint ⟨w64 Q, k⟩) : Src p s Q k :=
   ⟨hr, hwrap, hw.sub_right (Lay.wSub (by decide)), hw.sub_right (Lay.wSub (by decide)),
     hw.sub_right (Lay.wSub (by decide)), hb⟩

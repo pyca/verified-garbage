@@ -12,12 +12,12 @@ are built from the environment:
 
 * `vg_aes_ctr32`: a key schedule (`KeyOk`: the key-generating key's, or the
   encryption key's at `W + 512`), the counter block's copy at `W + 112`,
-  `n` blocks at `D` (`Dst`), and the working space at `W + 2048`;
+  `n` blocks at `D` (`Dst`), and the working space at `W + 768`;
 * `vg_ghash`: GHASH's key at `W + 64`, the accumulator at `W + 80`, `n` (at
   most 64) reversed blocks at `W + 768` and the working space at
   `W + 1792`;
 * `vg_aes_expand_key`: the encryption key at `W + 32`, its schedule at
-  `W + 512` and the working space at `W + 2048`.
+  `W + 512` and the working space at `W + 768`.
 
 Each call writes only parts of `mutR`, so `Env` holds after it.
 -/
@@ -36,13 +36,13 @@ open VG.Proof.AesGcm.X86 (w64 toNat_ofNat32 toNat_add32 w64_add covers_left cove
 /-! ## `vg_aes_ctr32` -/
 
 /-- A key schedule of 240 bytes at `Q`, which the code may read, apart from
-the counter block's copy at `W + 112`, the working space at `W + 2048` and
+the counter block's copy at `W + 112`, the working space at `W + 768` and
 the stack the calls use. -/
 structure KeyOk (p : Prm) (s : State) (Q : BitVec 32) : Prop where
   rd : Covers [⟨w64 Q, 240⟩] (s.rd ++ s.wr)
   wrap : Q.toNat + 240 ≤ 2 ^ 32
   kc : (⟨w64 Q, 240⟩ : Region).Disjoint ⟨w64 p.W + BitVec.ofNat 64 112, 16⟩
-  ks : (⟨w64 Q, 240⟩ : Region).Disjoint ⟨w64 p.W + BitVec.ofNat 64 2048, 2048⟩
+  ks : (⟨w64 Q, 240⟩ : Region).Disjoint ⟨w64 p.W + BitVec.ofNat 64 768, 2048⟩
   stk : (stk p).Disjoint ⟨w64 Q, 240⟩
 
 theorem KeyOk.of_eq {p : Prm} {s s' : State} {Q : BitVec 32} (h : KeyOk p s Q) (hrd : s'.rd = s.rd)
@@ -69,7 +69,7 @@ structure Dst (p : Prm) (s : State) (Q D : BitVec 32) (k : Nat) : Prop where
   wrap : D.toNat + k ≤ 2 ^ 32
   dk : (⟨w64 Q, 240⟩ : Region).Disjoint ⟨w64 D, k⟩
   dc : (⟨w64 D, k⟩ : Region).Disjoint ⟨w64 p.W + BitVec.ofNat 64 112, 16⟩
-  ds : (⟨w64 D, k⟩ : Region).Disjoint ⟨w64 p.W + BitVec.ofNat 64 2048, 2048⟩
+  ds : (⟨w64 D, k⟩ : Region).Disjoint ⟨w64 p.W + BitVec.ofNat 64 768, 2048⟩
   stk : (stk p).Disjoint ⟨w64 D, k⟩
 
 theorem Dst.of_eq {p : Prm} {s s' : State} {Q D : BitVec 32} {k : Nat} (h : Dst p s Q D k) (hwr : s'.wr = s.wr) :
@@ -90,13 +90,13 @@ theorem dstW {p : Prm} {s : State} (L : Lay p) (P : Perm p s) {Q : BitVec 32} {q
 
 /-- The arguments of `vg_aes_ctr32`: the key schedule at `Q`, the counter
 block's copy at `W + 112`, `n` blocks at `D`, and the working space at
-`W + 2048` (where `ebp` is moved). -/
+`W + 768` (where `ebp` is moved). -/
 theorem cargs {p : Prm} {s : State} (L : Lay p) (esp : s.gpr .esp = p.SP) (P : Perm p s) {Q D : BitVec 32}
     {n : Nat} (hQ : KeyOk p s Q) (hD : Dst p s Q D (16 * n)) (eax : s.gpr .eax = Q)
     (ecx : s.gpr .ecx = BitVec.ofNat 32 p.R) (edx : s.gpr .edx = p.W + BitVec.ofNat 32 112)
     (ebx : s.gpr .ebx = D) (edi : s.gpr .edi = BitVec.ofNat 32 n)
-    (ebp : s.gpr .ebp = p.W + BitVec.ofNat 32 2048) :
-    CtrCall s Q (p.W + BitVec.ofNat 32 112) D (p.W + BitVec.ofNat 32 2048) p.R n := by
+    (ebp : s.gpr .ebp = p.W + BitVec.ofNat 32 768) :
+    CtrCall s Q (p.W + BitVec.ofNat 32 112) D (p.W + BitVec.ofNat 32 768) p.R n := by
   have hsp := L.sp
   refine ⟨eax, ecx, edx, ebx, edi, ebp, L.rounds3, by rw [esp]; omega, ?_, hD.dk, ?_, ?_, ?_, hD.ds.sub_right ?_,
     ?_, ?_, ?_, ?_, hQ.wrap, ?_, hD.wrap, ?_, hQ.rd, ?_⟩
@@ -121,7 +121,7 @@ structure CtrOut (p : Prm) (s : State) (Q D : BitVec 32) (n : Nat) (s' : State) 
   wr : s'.wr = s.wr
   saved : ∀ r ∈ [Reg.ebx, .esi, .edi], s'.gpr r = s.gpr r
   frame : Frame [⟨w64 p.W + BitVec.ofNat 64 112, 16⟩, ⟨w64 D, 16 * n⟩,
-    ⟨w64 p.W + BitVec.ofNat 64 2048, 2048⟩, stk p] s.mem s'.mem
+    ⟨w64 p.W + BitVec.ofNat 64 768, 2048⟩, stk p] s.mem s'.mem
   out : blocksAt s'.mem (w64 D) n =
     ctr32 (aesWith p.R (bytesAt s.mem (w64 Q) (16 * (p.R + 1)))) (blockAt s.mem (w64 p.W + BitVec.ofNat 64 112))
       (blocksAt s.mem (w64 D) n)
@@ -133,20 +133,20 @@ theorem callCtr_ok (v : GcmImpl) {p : Prm} {s : State} (L : Lay p) (E : Env p s)
     (eax : s.gpr .eax = Q) (ecx : s.gpr .ecx = BitVec.ofNat 32 p.R) (edx : s.gpr .edx = p.W + BitVec.ofNat 32 112)
     (ebx : s.gpr .ebx = D) (edi : s.gpr .edi = BitVec.ofNat 32 n) :
     WP isa (callCtr v.callees) s (CtrOut p s Q D n) := by
-  -- `ebp := W + 2048`.
+  -- `ebp := W + 768`.
   refine WP.seq (WP.of_runBlock ⟨_, by grun [], ?_⟩)
   -- The call.
-  have e2048 : s.gpr .ebp + BitVec.ofNat 32 2048 = p.W + BitVec.ofNat 32 2048 := by rw [E.ebp]
+  have e768 : s.gpr .ebp + BitVec.ofNat 32 768 = p.W + BitVec.ofNat 32 768 := by rw [E.ebp]
   refine WP.seq (WP.mono (Proof.AesGcm.X86.ctr_call v (cargs L (by gregs [E.esp])
     (E.perm.of_eq (by gmems []) (by gmems [])) (hQ.of_eq (by gmems []) (by gmems [])) (hD.of_eq (by gmems []))
-    (by gregs [eax]) (by gregs [ecx]) (by gregs [edx]) (by gregs [ebx]) (by gregs [edi]) (by gregs [e2048])))
+    (by gregs [eax]) (by gregs [ecx]) (by gregs [edx]) (by gregs [ebx]) (by gregs [edi]) (by gregs [e768])))
     fun s₂ P => ?_)
   -- `ebp := W`.
-  have hbp₂ : s₂.gpr .ebp = p.W + BitVec.ofNat 32 2048 := by
+  have hbp₂ : s₂.gpr .ebp = p.W + BitVec.ofNat 32 768 := by
     rw [P.saved _ (by decide)]; gregs [E.ebp]
   have hsp₂ : s₂.gpr .esp = p.SP := by rw [P.saved _ (by decide)]; gregs [E.esp]
   have f : Frame [⟨w64 p.W + BitVec.ofNat 64 112, 16⟩, ⟨w64 D, 16 * n⟩,
-      ⟨w64 p.W + BitVec.ofNat 64 2048, 2048⟩, stk p] s.mem s₂.mem := by
+      ⟨w64 p.W + BitVec.ofNat 64 768, 2048⟩, stk p] s.mem s₂.mem := by
     have f := P.frame
     rw [L.aW (by decide), L.aW (by decide)] at f
     simp only [mem_setReg, mem_arithFlags] at f
@@ -163,7 +163,7 @@ theorem callCtr_ok (v : GcmImpl) {p : Prm} {s : State} (L : Lay p) (E : Env p s)
     rcases hr with rfl | rfl | rfl | rfl
     · exact inMut_w p (d := 112) (k := 16) (.inl (by decide))
     · exact hm
-    · exact inMut_w p (d := 2048) (k := 2048) (.inr (.inr (.inr ⟨by decide, by decide⟩)))
+    · exact inMut_w p (d := 768) (k := 2048) (.inr (.inr (.inr ⟨by decide, by decide⟩)))
     · exact inMut_stk p
   refine WP.of_runBlock ⟨_, by grun [hbp₂], ?_⟩
   refine ⟨E.mut L (by gregs [hbp₂]; exact BitVec.add_sub_cancel _ _) (by gregs [hsp₂]) (by gmems [P.rd])
@@ -182,23 +182,23 @@ theorem callCtr_ct (v : GcmImpl) {p : Prm} (L : Lay p) {Q D : BitVec 32} {n : Na
       s.gpr .ecx = BitVec.ofNat 32 p.R ∧ s.gpr .edx = p.W + BitVec.ofNat 32 112 ∧ s.gpr .ebx = D ∧
       s.gpr .edi = BitVec.ofNat 32 n) :
     CT I (callCtr v.callees) := by
-  -- The state after `ebp := W + 2048`, as `CtrCall` needs it.
+  -- The state after `ebp := W + 768`, as `CtrCall` needs it.
   have call : ∀ s, I s → ∀ s', runBlock isa [.alu .add .ebp (imm scrO)] s = some s' →
-      CtrCall s' Q (p.W + BitVec.ofNat 32 112) D (p.W + BitVec.ofNat 32 2048) p.R n ∧ s'.gpr .esp = p.SP := by
+      CtrCall s' Q (p.W + BitVec.ofNat 32 112) D (p.W + BitVec.ofNat 32 768) p.R n ∧ s'.gpr .esp = p.SP := by
     intro s hs s' run
     obtain ⟨E, hQ, hD, eax, ecx, edx, ebx, edi⟩ := hI s hs
     have e := run
     simp (disch := first | decide | omega) only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, execAlu,
       imm, scrO, Option.bind_some, Option.some.injEq] at e
     subst e
-    have e2048 : s.gpr .ebp + BitVec.ofNat 32 2048 = p.W + BitVec.ofNat 32 2048 := by rw [E.ebp]
+    have e768 : s.gpr .ebp + BitVec.ofNat 32 768 = p.W + BitVec.ofNat 32 768 := by rw [E.ebp]
     exact ⟨cargs L (by gregs [E.esp]) (E.perm.of_eq (by gmems []) (by gmems [])) (hQ.of_eq (by gmems []) (by gmems []))
       (hD.of_eq (by gmems [])) (by gregs [eax]) (by gregs [ecx]) (by gregs [edx]) (by gregs [ebx]) (by gregs [edi])
-      (by gregs [e2048]), by gregs [E.esp]⟩
+      (by gregs [e768]), by gregs [E.esp]⟩
   refine CT.seq (J := fun s' => ∃ s, I s ∧ runBlock isa [.alu .add .ebp (imm scrO)] s = some s')
     (CT.taint [.ebp] (pin_ebp fun s h => (hI s h).1.ebp) (by taint_decide))
     (fun s hs => WP.of_runBlock ⟨_, by grun [], s, hs, by grun []⟩) ?_
-  refine CT.seq (J := fun s => s.gpr .ebp = p.W + BitVec.ofNat 32 2048)
+  refine CT.seq (J := fun s => s.gpr .ebp = p.W + BitVec.ofNat 32 768)
     (Proof.AesGcm.X86.ctr_ct v (E := p.SP) fun s ⟨s₀, h₀, run⟩ => call s₀ h₀ s run)
     (fun s ⟨s₀, h₀, run⟩ => WP.mono (Proof.AesGcm.X86.ctr_call v (call s₀ h₀ s run).1) fun s₁ g => by
       rw [g.saved .ebp (by decide), (call s₀ h₀ s run).1.ebp]) ?_
@@ -219,9 +219,9 @@ theorem gargs {p : Prm} {s : State} (L : Lay p) (esp : s.gpr .esp = p.SP) (P : P
   have b24 := L.stkSub (k := 24) (by decide)
   have ww := L.ww
   refine ⟨eax, edx, ebx, edi, ebp, by rw [esp]; omega, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;>
-    simp only [L.aW (show 64 < 4096 by decide), L.aW (show 80 < 4096 by decide), L.aW (show 768 < 4096 by decide),
-      L.aW (show 1792 < 4096 by decide), L.nW (show 64 < 4096 by decide), L.nW (show 80 < 4096 by decide),
-      L.nW (show 768 < 4096 by decide), L.nW (show 1792 < 4096 by decide), esp]
+    simp only [L.aW (show 64 < 2816 by decide), L.aW (show 80 < 2816 by decide), L.aW (show 768 < 2816 by decide),
+      L.aW (show 1792 < 2816 by decide), L.nW (show 64 < 2816 by decide), L.nW (show 80 < 2816 by decide),
+      L.nW (show 768 < 2816 by decide), L.nW (show 1792 < 2816 by decide), esp]
   · exact Lay.w_w (.inl (by decide)) (by decide) (by decide)
   · exact Lay.w_w (.inl (by decide)) (by decide) (by decide)
   · exact Lay.w_w (.inl (by omega)) (by decide) (by omega)
@@ -327,12 +327,12 @@ theorem keyLen_eq {R : Nat} (hR : R = 10 ∨ R = 14) :
   rcases hR with rfl | rfl <;> decide
 
 /-- The arguments of `vg_aes_expand_key`: the encryption key at `W + 32`,
-its schedule at `W + 512` and the working space at `W + 2048` (where `ebp`
+its schedule at `W + 512` and the working space at `W + 768` (where `ebp`
 is moved). -/
 theorem kargs {p : Prm} {s : State} (L : Lay p) (esp : s.gpr .esp = p.SP) (P : Perm p s)
     (eax : s.gpr .eax = p.W + BitVec.ofNat 32 32) (ecx : s.gpr .ecx = BitVec.ofNat 32 (Spec.GcmSiv.keyLen p.R))
-    (edx : s.gpr .edx = p.W + BitVec.ofNat 32 512) (ebp : s.gpr .ebp = p.W + BitVec.ofNat 32 2048) :
-    KeyCall s (p.W + BitVec.ofNat 32 32) (p.W + BitVec.ofNat 32 512) (p.W + BitVec.ofNat 32 2048)
+    (edx : s.gpr .edx = p.W + BitVec.ofNat 32 512) (ebp : s.gpr .ebp = p.W + BitVec.ofNat 32 768) :
+    KeyCall s (p.W + BitVec.ofNat 32 32) (p.W + BitVec.ofNat 32 512) (p.W + BitVec.ofNat 32 768)
       (Spec.GcmSiv.keyLen p.R) := by
   have hsp := L.sp
   have b20 := L.stkSub (k := 20) (by decide)
@@ -341,8 +341,8 @@ theorem kargs {p : Prm} {s : State} (L : Lay p) (esp : s.gpr .esp = p.SP) (P : P
     rcases L.rounds with h | h <;> rw [h] <;> decide
   have hk32 : Spec.GcmSiv.keyLen p.R ≤ 32 := by omega
   refine ⟨eax, ecx, edx, ebp, by omega, by rw [esp]; omega, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;>
-    simp only [L.aW (show 32 < 4096 by decide), L.aW (show 512 < 4096 by decide), L.aW (show 2048 < 4096 by decide),
-      L.nW (show 32 < 4096 by decide), L.nW (show 512 < 4096 by decide), L.nW (show 2048 < 4096 by decide), esp]
+    simp only [L.aW (show 32 < 2816 by decide), L.aW (show 512 < 2816 by decide), L.aW (show 768 < 2816 by decide),
+      L.nW (show 32 < 2816 by decide), L.nW (show 512 < 2816 by decide), L.nW (show 768 < 2816 by decide), esp]
   · exact Lay.w_w (.inl (by omega)) (by omega) (by decide)
   · exact Lay.w_w (.inl (by omega)) (by omega) (by decide)
   · exact Lay.w_w (.inl (by decide)) (by decide) (by decide)
@@ -361,7 +361,7 @@ structure KeyOut (p : Prm) (s : State) (s' : State) : Prop where
   rd : s'.rd = s.rd
   wr : s'.wr = s.wr
   saved : ∀ r ∈ [Reg.ebx, .esi, .edi], s'.gpr r = s.gpr r
-  frame : Frame [⟨w64 p.W + BitVec.ofNat 64 512, 240⟩, ⟨w64 p.W + BitVec.ofNat 64 2048, 512⟩, stk p] s.mem s'.mem
+  frame : Frame [⟨w64 p.W + BitVec.ofNat 64 512, 240⟩, ⟨w64 p.W + BitVec.ofNat 64 768, 512⟩, stk p] s.mem s'.mem
   out : bytesAt s'.mem (w64 p.W + BitVec.ofNat 64 512) (16 * (Spec.Aes.rounds (Spec.GcmSiv.keyLen p.R / 4) + 1)) =
     Spec.Aes.expandKey (bytesAt s.mem (w64 p.W + BitVec.ofNat 64 32) (Spec.GcmSiv.keyLen p.R))
 
@@ -371,14 +371,14 @@ theorem callKey_ok (v : GcmImpl) {p : Prm} {s : State} (L : Lay p) (E : Env p s)
     (edx : s.gpr .edx = p.W + BitVec.ofNat 32 512) :
     WP isa (callKey v.callees) s (KeyOut p s) := by
   refine WP.seq (WP.of_runBlock ⟨_, by grun [], ?_⟩)
-  have e2048 : s.gpr .ebp + BitVec.ofNat 32 2048 = p.W + BitVec.ofNat 32 2048 := by rw [E.ebp]
+  have e768 : s.gpr .ebp + BitVec.ofNat 32 768 = p.W + BitVec.ofNat 32 768 := by rw [E.ebp]
   refine WP.seq (WP.mono (Proof.AesGcm.X86.key_call v (kargs L (by gregs [E.esp])
-    (E.perm.of_eq (by gmems []) (by gmems [])) (by gregs [eax]) (by gregs [ecx]) (by gregs [edx]) (by gregs [e2048])))
+    (E.perm.of_eq (by gmems []) (by gmems [])) (by gregs [eax]) (by gregs [ecx]) (by gregs [edx]) (by gregs [e768])))
     fun s₂ P => ?_)
-  have hbp₂ : s₂.gpr .ebp = p.W + BitVec.ofNat 32 2048 := by
+  have hbp₂ : s₂.gpr .ebp = p.W + BitVec.ofNat 32 768 := by
     rw [P.saved _ (by decide)]; gregs [E.ebp]
   have hsp₂ : s₂.gpr .esp = p.SP := by rw [P.saved _ (by decide)]; gregs [E.esp]
-  have f : Frame [⟨w64 p.W + BitVec.ofNat 64 512, 240⟩, ⟨w64 p.W + BitVec.ofNat 64 2048, 512⟩, stk p]
+  have f : Frame [⟨w64 p.W + BitVec.ofNat 64 512, 240⟩, ⟨w64 p.W + BitVec.ofNat 64 768, 512⟩, stk p]
       s.mem s₂.mem := by
     have f := P.frame
     rw [L.aW (by decide), L.aW (by decide)] at f
@@ -394,7 +394,7 @@ theorem callKey_ok (v : GcmImpl) {p : Prm} {s : State} (L : Lay p) (E : Env p s)
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
     · exact inMut_w p (d := 512) (k := 240) (.inr (.inr (.inr ⟨by decide, by decide⟩)))
-    · exact inMut_w p (d := 2048) (k := 512) (.inr (.inr (.inr ⟨by decide, by decide⟩)))
+    · exact inMut_w p (d := 768) (k := 512) (.inr (.inr (.inr ⟨by decide, by decide⟩)))
     · exact inMut_stk p
   refine WP.of_runBlock ⟨_, by grun [hbp₂], ?_⟩
   refine ⟨E.mut L (by gregs [hbp₂]; exact BitVec.add_sub_cancel _ _) (by gregs [hsp₂]) (by gmems [P.rd])
@@ -413,7 +413,7 @@ theorem callKey_ct (v : GcmImpl) {p : Prm} (L : Lay p) {I : State → Prop}
       s.gpr .ecx = BitVec.ofNat 32 (Spec.GcmSiv.keyLen p.R) ∧ s.gpr .edx = p.W + BitVec.ofNat 32 512) :
     CT I (callKey v.callees) := by
   have call : ∀ s, I s → ∀ s', runBlock isa [.alu .add .ebp (imm scrO)] s = some s' →
-      KeyCall s' (p.W + BitVec.ofNat 32 32) (p.W + BitVec.ofNat 32 512) (p.W + BitVec.ofNat 32 2048)
+      KeyCall s' (p.W + BitVec.ofNat 32 32) (p.W + BitVec.ofNat 32 512) (p.W + BitVec.ofNat 32 768)
         (Spec.GcmSiv.keyLen p.R) ∧ s'.gpr .esp = p.SP := by
     intro s hs s' run
     obtain ⟨E, eax, ecx, edx⟩ := hI s hs
@@ -421,13 +421,13 @@ theorem callKey_ct (v : GcmImpl) {p : Prm} (L : Lay p) {I : State → Prop}
     simp (disch := first | decide | omega) only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, execAlu,
       imm, scrO, Option.bind_some, Option.some.injEq] at e
     subst e
-    have e2048 : s.gpr .ebp + BitVec.ofNat 32 2048 = p.W + BitVec.ofNat 32 2048 := by rw [E.ebp]
+    have e768 : s.gpr .ebp + BitVec.ofNat 32 768 = p.W + BitVec.ofNat 32 768 := by rw [E.ebp]
     exact ⟨kargs L (by gregs [E.esp]) (E.perm.of_eq (by gmems []) (by gmems [])) (by gregs [eax]) (by gregs [ecx])
-      (by gregs [edx]) (by gregs [e2048]), by gregs [E.esp]⟩
+      (by gregs [edx]) (by gregs [e768]), by gregs [E.esp]⟩
   refine CT.seq (J := fun s' => ∃ s, I s ∧ runBlock isa [.alu .add .ebp (imm scrO)] s = some s')
     (CT.taint [.ebp] (pin_ebp fun s h => (hI s h).1.ebp) (by taint_decide))
     (fun s hs => WP.of_runBlock ⟨_, by grun [], s, hs, by grun []⟩) ?_
-  refine CT.seq (J := fun s => s.gpr .ebp = p.W + BitVec.ofNat 32 2048)
+  refine CT.seq (J := fun s => s.gpr .ebp = p.W + BitVec.ofNat 32 768)
     (Proof.AesGcm.X86.key_ct v (E := p.SP) fun s ⟨s₀, h₀, run⟩ => call s₀ h₀ s run)
     (fun s ⟨s₀, h₀, run⟩ => WP.mono (Proof.AesGcm.X86.key_call v (call s₀ h₀ s run).1) fun s₁ g => by
       rw [g.saved .ebp (by decide), (call s₀ h₀ s run).1.ebp]) ?_

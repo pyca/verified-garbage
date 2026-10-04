@@ -10,8 +10,9 @@ import VerifiedGarbage.Impl.AesGcmSiv.X86
 
 Untrusted: everything here is checked by Lean. The public arguments
 (`Prm`): the key schedule of the key-generating key (240 bytes at `K`), the
-working space (4096 bytes at `W`), the nonce (12 bytes at `N`), the
-additional data (`al` bytes at `A`), the data (`n` bytes at `D`), the stack
+working space (2816 bytes at `W`), the nonce (12 bytes at `N`), the
+additional data (`al` bytes at `A`), the data (`n` bytes at `D`), the tag
+(16 bytes at `T`), the stack
 pointer and the number of rounds, all 32-bit; how their regions lie, apart
 from each other and from the 28 bytes below `SP` that the calls use
 (`Lay`); what a state may access (`Perm`); and `W` in `ebp`, the stack
@@ -54,6 +55,8 @@ structure Prm where
   A : BitVec 32
   /-- The data. -/
   D : BitVec 32
+  /-- The tag. -/
+  T : BitVec 32
   /-- The stack pointer. -/
   SP : BitVec 32
   /-- The number of rounds. -/
@@ -69,28 +72,33 @@ abbrev stk (p : Prm) : Region := below p.SP 28
 /-- How the regions lie. -/
 structure Lay (p : Prm) : Prop where
   kw : p.K.toNat + 240 ≤ 2 ^ 32
-  ww : p.W.toNat + 4096 ≤ 2 ^ 32
+  ww : p.W.toNat + 2816 ≤ 2 ^ 32
   nw : p.N.toNat + 12 ≤ 2 ^ 32
   aw : p.A.toNat + p.al ≤ 2 ^ 32
   dw : p.D.toNat + p.n ≤ 2 ^ 32
+  tw : p.T.toNat + 16 ≤ 2 ^ 32
   sp : 28 ≤ p.SP.toNat
-  k_w : (⟨w64 p.K, 240⟩ : Region).Disjoint ⟨w64 p.W, 4096⟩
+  k_w : (⟨w64 p.K, 240⟩ : Region).Disjoint ⟨w64 p.W, 2816⟩
   k_d : (⟨w64 p.K, 240⟩ : Region).Disjoint ⟨w64 p.D, p.n⟩
-  n_w : (⟨w64 p.N, 12⟩ : Region).Disjoint ⟨w64 p.W, 4096⟩
+  n_w : (⟨w64 p.N, 12⟩ : Region).Disjoint ⟨w64 p.W, 2816⟩
   n_d : (⟨w64 p.N, 12⟩ : Region).Disjoint ⟨w64 p.D, p.n⟩
-  a_w : (⟨w64 p.A, p.al⟩ : Region).Disjoint ⟨w64 p.W, 4096⟩
+  a_w : (⟨w64 p.A, p.al⟩ : Region).Disjoint ⟨w64 p.W, 2816⟩
   a_d : (⟨w64 p.A, p.al⟩ : Region).Disjoint ⟨w64 p.D, p.n⟩
-  d_w : (⟨w64 p.D, p.n⟩ : Region).Disjoint ⟨w64 p.W, 4096⟩
+  d_w : (⟨w64 p.D, p.n⟩ : Region).Disjoint ⟨w64 p.W, 2816⟩
+  t_w : (⟨w64 p.T, 16⟩ : Region).Disjoint ⟨w64 p.W, 2816⟩
+  t_d : (⟨w64 p.T, 16⟩ : Region).Disjoint ⟨w64 p.D, p.n⟩
   bk : (stk p).Disjoint ⟨w64 p.K, 240⟩
   bn : (stk p).Disjoint ⟨w64 p.N, 12⟩
   ba : (stk p).Disjoint ⟨w64 p.A, p.al⟩
   bd : (stk p).Disjoint ⟨w64 p.D, p.n⟩
-  bw : (stk p).Disjoint ⟨w64 p.W, 4096⟩
+  bw : (stk p).Disjoint ⟨w64 p.W, 2816⟩
+  bt : (stk p).Disjoint ⟨w64 p.T, 16⟩
   rounds : p.R = 10 ∨ p.R = 14
   al32 : p.al < 2 ^ 32
   n32 : p.n < 2 ^ 32
-  retW : (⟨w64 p.SP, 4⟩ : Region).Disjoint ⟨w64 p.W, 4096⟩
+  retW : (⟨w64 p.SP, 4⟩ : Region).Disjoint ⟨w64 p.W, 2816⟩
   retD : (⟨w64 p.SP, 4⟩ : Region).Disjoint ⟨w64 p.D, p.n⟩
+  retT : (⟨w64 p.SP, 4⟩ : Region).Disjoint ⟨w64 p.T, 16⟩
 
 /-- What a state may access. -/
 structure Perm (p : Prm) (s : State) : Prop where
@@ -98,13 +106,14 @@ structure Perm (p : Prm) (s : State) : Prop where
   non : Covers [⟨w64 p.N, 12⟩] (s.rd ++ s.wr)
   aad : Covers [⟨w64 p.A, p.al⟩] (s.rd ++ s.wr)
   d : Covers [⟨w64 p.D, p.n⟩] s.wr
-  w : Covers [⟨w64 p.W, 4096⟩] s.wr
+  w : Covers [⟨w64 p.W, 2816⟩] s.wr
+  t : Covers [⟨w64 p.T, 16⟩] (s.rd ++ s.wr)
 
 theorem Perm.of_eq {p : Prm} {s s' : State} (h : Perm p s) (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr) :
     Perm p s' := by
-  obtain ⟨a, b, c, d, e⟩ := h
+  obtain ⟨a, b, c, d, e, f⟩ := h
   exact ⟨by rw [hrd, hwr]; exact a, by rw [hrd, hwr]; exact b, by rw [hrd, hwr]; exact c, by rw [hwr]; exact d,
-    by rw [hwr]; exact e⟩
+    by rw [hwr]; exact e, by rw [hrd, hwr]; exact f⟩
 
 /-- The public values the entry keeps in `W`: all the arguments but `work`. -/
 structure Slots (p : Prm) (m : Mem) : Prop where
@@ -115,6 +124,7 @@ structure Slots (p : Prm) (m : Mem) : Prop where
   alen : slotv m p.W Impl.AesGcmSiv.X86.alenO = BitVec.ofNat 32 p.al
   data : slotv m p.W Impl.AesGcmSiv.X86.dataO = p.D
   len : slotv m p.W Impl.AesGcmSiv.X86.lenO = BitVec.ofNat 32 p.n
+  tp : slotv m p.W Impl.AesGcmSiv.X86.tpO = p.T
 
 /-- `W` in `ebp`, the stack pointer, what the state may access, and the
 slots. -/
@@ -126,11 +136,11 @@ structure Env (p : Prm) (s : State) : Prop where
 
 namespace Lay
 
-theorem wSub {W : Addr} {d n : Nat} (h : d + n ≤ 4096) : Region.Sub ⟨W + BitVec.ofNat 64 d, n⟩ ⟨W, 4096⟩ :=
+theorem wSub {W : Addr} {d n : Nat} (h : d + n ≤ 2816) : Region.Sub ⟨W + BitVec.ofNat 64 d, n⟩ ⟨W, 2816⟩ :=
   Offset.sub_base _ h
 
 /-- Parts of `W` are disjoint. -/
-theorem w_w {W : BitVec 32} {a n d k : Nat} (h : a + n ≤ d ∨ d + k ≤ a) (ha : a + n ≤ 4096) (hd : d + k ≤ 4096) :
+theorem w_w {W : BitVec 32} {a n d k : Nat} (h : a + n ≤ d ∨ d + k ≤ a) (ha : a + n ≤ 2816) (hd : d + k ≤ 2816) :
     (⟨w64 W + BitVec.ofNat 64 a, n⟩ : Region).Disjoint ⟨w64 W + BitVec.ofNat 64 d, k⟩ :=
   Offset.disjoint _ h (by omega) (by omega)
 
@@ -138,31 +148,31 @@ variable {p : Prm} (L : Lay p)
 include L
 
 /-- An offset into `W`, as a 64-bit address. -/
-theorem aW {o : Nat} (ho : o < 4096) : w64 (p.W + BitVec.ofNat 32 o) = w64 p.W + BitVec.ofNat 64 o :=
+theorem aW {o : Nat} (ho : o < 2816) : w64 (p.W + BitVec.ofNat 32 o) = w64 p.W + BitVec.ofNat 64 o :=
   w64_add (by have := L.ww; omega)
 
-theorem nW {o : Nat} (ho : o < 4096) : (p.W + BitVec.ofNat 32 o).toNat = p.W.toNat + o :=
+theorem nW {o : Nat} (ho : o < 2816) : (p.W + BitVec.ofNat 32 o).toNat = p.W.toNat + o :=
   toNat_add32 (by have := L.ww; omega)
 
 /-- An offset into the nonce. -/
 theorem aN {o : Nat} (ho : o < 12) : w64 (p.N + BitVec.ofNat 32 o) = w64 p.N + BitVec.ofNat 64 o :=
   w64_add (by have := L.nw; omega)
 
-theorem k_w' {d k : Nat} (hd : d + k ≤ 4096) : (⟨w64 p.K, 240⟩ : Region).Disjoint ⟨w64 p.W + BitVec.ofNat 64 d, k⟩ :=
+theorem k_w' {d k : Nat} (hd : d + k ≤ 2816) : (⟨w64 p.K, 240⟩ : Region).Disjoint ⟨w64 p.W + BitVec.ofNat 64 d, k⟩ :=
   L.k_w.sub_right (wSub hd)
 
-theorem n_w' {d k : Nat} (hd : d + k ≤ 4096) : (⟨w64 p.N, 12⟩ : Region).Disjoint ⟨w64 p.W + BitVec.ofNat 64 d, k⟩ :=
+theorem n_w' {d k : Nat} (hd : d + k ≤ 2816) : (⟨w64 p.N, 12⟩ : Region).Disjoint ⟨w64 p.W + BitVec.ofNat 64 d, k⟩ :=
   L.n_w.sub_right (wSub hd)
 
-theorem a_w' {d k : Nat} (hd : d + k ≤ 4096) :
+theorem a_w' {d k : Nat} (hd : d + k ≤ 2816) :
     (⟨w64 p.A, p.al⟩ : Region).Disjoint ⟨w64 p.W + BitVec.ofNat 64 d, k⟩ :=
   L.a_w.sub_right (wSub hd)
 
-theorem d_w' {d k : Nat} (hd : d + k ≤ 4096) :
+theorem d_w' {d k : Nat} (hd : d + k ≤ 2816) :
     (⟨w64 p.D, p.n⟩ : Region).Disjoint ⟨w64 p.W + BitVec.ofNat 64 d, k⟩ :=
   L.d_w.sub_right (wSub hd)
 
-theorem bw' {d k : Nat} (hd : d + k ≤ 4096) : (stk p).Disjoint ⟨w64 p.W + BitVec.ofNat 64 d, k⟩ :=
+theorem bw' {d k : Nat} (hd : d + k ≤ 2816) : (stk p).Disjoint ⟨w64 p.W + BitVec.ofNat 64 d, k⟩ :=
   L.bw.sub_right (wSub hd)
 
 /-- The stack below `SP` that a call uses, within the 28 bytes. -/
@@ -184,16 +194,16 @@ namespace Perm
 variable {p : Prm} {s : State} (P : Perm p s)
 include P
 
-theorem wW {d n : Nat} (h : d + n ≤ 4096) : InRegions s.wr (w64 p.W + BitVec.ofNat 64 d) n :=
+theorem wW {d n : Nat} (h : d + n ≤ 2816) : InRegions s.wr (w64 p.W + BitVec.ofNat 64 d) n :=
   in_off P.w h (by decide)
 
-theorem wR {d n : Nat} (h : d + n ≤ 4096) : InRegions (s.rd ++ s.wr) (w64 p.W + BitVec.ofNat 64 d) n :=
+theorem wR {d n : Nat} (h : d + n ≤ 2816) : InRegions (s.rd ++ s.wr) (w64 p.W + BitVec.ofNat 64 d) n :=
   in_left (P.wW h)
 
-theorem wC {d n : Nat} (h : d + n ≤ 4096) : Covers [⟨w64 p.W + BitVec.ofNat 64 d, n⟩] s.wr :=
+theorem wC {d n : Nat} (h : d + n ≤ 2816) : Covers [⟨w64 p.W + BitVec.ofNat 64 d, n⟩] s.wr :=
   covers_off P.w h (by decide)
 
-theorem wCR {d n : Nat} (h : d + n ≤ 4096) : Covers [⟨w64 p.W + BitVec.ofNat 64 d, n⟩] (s.rd ++ s.wr) :=
+theorem wCR {d n : Nat} (h : d + n ≤ 2816) : Covers [⟨w64 p.W + BitVec.ofNat 64 d, n⟩] (s.rd ++ s.wr) :=
   covers_left (P.wC h)
 
 /-- The first 2560 bytes of `W`, where AES-GCM's save area is. -/
@@ -211,7 +221,7 @@ variables at `[176, 184)`, the blocks at `[224, 256)`, and from `512` on. -/
 abbrev wA (W : BitVec 32) : Region := ⟨w64 W, 128⟩
 abbrev wV (W : BitVec 32) : Region := ⟨w64 W + BitVec.ofNat 64 176, 8⟩
 abbrev wB (W : BitVec 32) : Region := ⟨w64 W + BitVec.ofNat 64 224, 32⟩
-abbrev wC (W : BitVec 32) : Region := ⟨w64 W + BitVec.ofNat 64 512, 3584⟩
+abbrev wC (W : BitVec 32) : Region := ⟨w64 W + BitVec.ofNat 64 512, 2304⟩
 
 /-- What the pieces may change: those parts of `W`, the stack below `SP`
 and the data. -/
@@ -225,7 +235,7 @@ theorem frame_toMut {p : Prm} {rs : List Region} {m m' : Mem} (hf : Frame rs m m
 
 /-- A part of `W` in `wA`, `wV`, `wB` or `wC`. -/
 theorem inMut_w (p : Prm) {d k : Nat}
-    (h : d + k ≤ 128 ∨ 176 ≤ d ∧ d + k ≤ 184 ∨ 224 ≤ d ∧ d + k ≤ 256 ∨ 512 ≤ d ∧ d + k ≤ 4096) :
+    (h : d + k ≤ 128 ∨ 176 ≤ d ∧ d + k ≤ 184 ∨ 224 ≤ d ∧ d + k ≤ 256 ∨ 512 ≤ d ∧ d + k ≤ 2816) :
     ∃ r' ∈ mutR p, Region.Sub ⟨w64 p.W + BitVec.ofNat 64 d, k⟩ r' := by
   rcases h with h | h | h | h
   · exact ⟨wA p.W, by simp, Offset.sub_base _ h⟩
@@ -257,7 +267,7 @@ theorem Slots.mut {p : Prm} (L : Lay p) {m m' : Mem} (hf : Frame (mutR p) m m') 
   exact ⟨by rw [k _ (by decide)]; exact S.ctx, by rw [k _ (by decide)]; exact S.rounds,
     by rw [k _ (by decide)]; exact S.nonce, by rw [k _ (by decide)]; exact S.aad,
     by rw [k _ (by decide)]; exact S.alen, by rw [k _ (by decide)]; exact S.data,
-    by rw [k _ (by decide)]; exact S.len⟩
+    by rw [k _ (by decide)]; exact S.len, by rw [k _ (by decide)]; exact S.tp⟩
 
 /-- Our caller's registers saved at `W + 128`, after code that changes only
 `mutR`. -/
@@ -295,7 +305,7 @@ theorem ret_mut {p : Prm} (L : Lay p) {m m' : Mem} (hf : Frame (mutR p) m m') :
 
 /-- The bytes of a buffer apart from `mutR` but the data. -/
 theorem bytes_mut {p : Prm} {P : BitVec 32} {len : Nat}
-    (hw : (⟨w64 P, len⟩ : Region).Disjoint ⟨w64 p.W, 4096⟩) (hb : (stk p).Disjoint ⟨w64 P, len⟩)
+    (hw : (⟨w64 P, len⟩ : Region).Disjoint ⟨w64 p.W, 2816⟩) (hb : (stk p).Disjoint ⟨w64 P, len⟩)
     (hd : (⟨w64 P, len⟩ : Region).Disjoint ⟨w64 p.D, p.n⟩) (hl : len ≤ 2 ^ 64) {m m' : Mem}
     (hf : Frame (mutR p) m m') : bytesAt m' (w64 P) len = bytesAt m (w64 P) len :=
   Proof.AesGcm.X86.bytesAt_frame hf (fun r hr => by

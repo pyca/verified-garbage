@@ -123,7 +123,7 @@ structure TailI (p : Prm) (P : BitVec 32) (r : Nat) (s : State) : Prop where
   r16 : r < 16
   rd : Covers [⟨w64 P, r⟩] (s.rd ++ s.wr)
   wrap : P.toNat + r ≤ 2 ^ 32
-  w : (⟨w64 P, r⟩ : Region).Disjoint ⟨w64 p.W, 4096⟩
+  w : (⟨w64 P, r⟩ : Region).Disjoint ⟨w64 p.W, 2816⟩
 
 theorem absTailPre_ct {p : Prm} (L : Lay p) {P : BitVec 32} {r : Nat} : CT (TailI p P r) absTailPre := by
   have hw := L.ww
@@ -136,13 +136,13 @@ theorem absTailPre_ct {p : Prm} (L : Lay p) {P : BitVec 32} {r : Nat} : CT (Tail
       simp only [List.mem_singleton] at hq; subst hq; exact inMut_w p (.inr (.inr (.inl ⟨by decide, by decide⟩))))
     have dB : (⟨w64 P, r⟩ : Region).Disjoint ⟨w64 (p.W + BitVec.ofNat 32 224), r⟩ := by
       rw [L.aW (by decide)]
-      exact (T.w.sub_right (Lay.wSub (show 224 + 16 ≤ 4096 by decide))).sub_right
+      exact (T.w.sub_right (Lay.wSub (show 224 + 16 ≤ 2816 by decide))).sub_right
         (Region.sub_prefix (by have := T.r16; omega))
     have lp : LoopPre t₁ P (p.W + BitVec.ofNat 32 224) r := by
       refine ⟨di₁, dx₁, cx₁, T.r1, by have := T.r16; omega, T.wrap, ?_, by rw [rd₁, wr₁]; exact T.rd, ?_, dB⟩
       · rw [L.nW (by decide)]; have := T.r16; omega
       · rw [L.aW (by decide)]
-        exact covers_prefix (E₁.perm.wC (show 224 + 16 ≤ 4096 by decide)) (by have := T.r16; omega)
+        exact covers_prefix (E₁.perm.wC (show 224 + 16 ≤ 2816 by decide)) (by have := T.r16; omega)
     exact WP.of_runBlock ⟨t₁, run₁, lp, bp₁⟩
   refine CT.seq (J := fun s => s.gpr .ebp = p.W)
     (copyLoop_ct (pin3 fun s h => ⟨h.1.edi, h.1.edx, h.1.ecx⟩))
@@ -163,7 +163,7 @@ theorem absTail_ct (v : GcmImpl) {p : Prm} (L : Lay p) {P : BitVec 32} {r : Nat}
 structure AbsI (p : Prm) (Q : BitVec 32) (m : Nat) (s : State) : Prop where
   env : Env p s
   src : Src p s Q m
-  w : (⟨w64 Q, m⟩ : Region).Disjoint ⟨w64 p.W, 4096⟩
+  w : (⟨w64 Q, m⟩ : Region).Disjoint ⟨w64 p.W, 2816⟩
   esi : s.gpr .esi = Q
   n : slotv s.mem p.W nO = BitVec.ofNat 32 m
 

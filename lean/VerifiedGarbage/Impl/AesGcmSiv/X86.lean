@@ -37,18 +37,23 @@ x86's AES-GCM's (`Impl/AesGcm/X86.lean`):
 The model has no left shift: `x << 31` is `ror (x & 1), 1` and `x << 3`
 three additions.
 
-## The working space `W` (4096 bytes)
+## The working space `W` (2816 bytes)
 
-* `[0, 16)`: the tag; `[16, 32)`: the authentication key; `[32, 64)`: the
-  encryption key; `[64, 80)`: GHASH's key; `[80, 96)`: its accumulator;
-  `[96, 112)`: the counter block (or the tag input); `[112, 128)`: a copy of
-  it for a call; `[128, 144)`: our caller's `ebx`, `esi`, `edi`, `ebp`;
-  `[144, 172)`: the arguments but `work`, kept (`ctxO` … `lenO`);
-  `[176, 184)`: the variables of the pieces (`nO`, `iO`); `[224, 240)`: a
-  block; `[240, 256)`: the tag `open` computes;
+`work` is the ninth argument, which the frame of the artifacts allocates on
+the stack (`Proof/AesGcmSiv/X86/Frame.lean`).
+
+* `[0, 16)`: the tag (`seal` copies it out to `tag` at the end, `open` copies
+  the received one in at the start); `[16, 32)`: the authentication key;
+  `[32, 64)`: the encryption key; `[64, 80)`: GHASH's key; `[80, 96)`: its
+  accumulator; `[96, 112)`: the counter block (or the tag input);
+  `[112, 128)`: a copy of it for a call; `[128, 144)`: our caller's `ebx`,
+  `esi`, `edi`, `ebp`; `[144, 176)`: the arguments but `work`, kept
+  (`ctxO` … `tpO`); `[176, 184)`: the variables of the pieces (`nO`,
+  `iO`); `[224, 240)`: a block; `[240, 256)`: the tag `open` computes;
 * `[512, 752)`: the encryption key's schedule; `[768, 1792)`: the reversed
-  blocks; `[1792, 2048)`: `vg_ghash`'s working space; `[2048, 4096)`:
-  `vg_aes_ctr32`'s, and `vg_aes_expand_key`'s at its start.
+  blocks; `[1792, 2048)`: `vg_ghash`'s working space; `[768, 2816)`:
+  `vg_aes_ctr32`'s, and `vg_aes_expand_key`'s at its start, over the last
+  two, which are used only within POLYVAL, which calls neither.
 
 ## Registers
 
@@ -85,6 +90,8 @@ abbrev aadO : Nat := 156
 abbrev alenO : Nat := 160
 abbrev dataO : Nat := 164
 abbrev lenO : Nat := 168
+/-- The pointer to the tag. -/
+abbrev tpO : Nat := 172
 /-- The number of bytes left of the string a piece is on. -/
 abbrev nO : Nat := 176
 /-- A count: the message key `derive` is on, or the blocks of a chunk. -/
@@ -94,7 +101,7 @@ abbrev t2O : Nat := 240
 abbrev skO : Nat := 512
 abbrev revO : Nat := 768
 abbrev ghO : Nat := 1792
-abbrev scrO : Nat := 2048
+abbrev scrO : Nat := 768
 
 /-- The 16 bytes at `W + s` copied to `W + d`. -/
 def copy16 (s d : Nat) : List Instr :=
@@ -105,7 +112,7 @@ def copy16 (s d : Nat) : List Instr :=
 section
 variable (c : Callees)
 
-/-- `vg_aes_ctr32`, with the working space at `W + 2048`. -/
+/-- `vg_aes_ctr32`, with the working space at `W + 768`. -/
 def callCtr : Prog isa :=
   .seq (.block [.alu .add .ebp (imm scrO)]) (.seq (ctrCall c) (.block [.alu .sub .ebp (imm scrO)]))
 
@@ -338,23 +345,38 @@ def mask : Prog isa :=
 
 /-! ## The functions -/
 
-/-- Our caller's registers saved in `work` (the eighth argument),
-`ebp :=` `work`, and the other arguments kept. -/
+/-- Our caller's registers saved in `work` (the ninth argument), `ebp :=`
+`work`, and the other arguments kept. -/
 def sivEntry : Prog isa :=
-  entry 7 (keep 0 ctxO ++ keep 1 roundsO ++ keep 2 nonceO ++ keep 3 aadO ++ keep 4 alenO ++ keep 5 dataO ++
-    keep 6 lenO)
+  entry 8 (keep 0 ctxO ++ keep 1 roundsO ++ keep 2 nonceO ++ keep 3 aadO ++ keep 4 alenO ++ keep 5 dataO ++
+    keep 6 lenO ++ keep 7 tpO)
+
+/-- The received tag copied to `W`. -/
+def recvTag : Prog isa :=
+  .seq (.block [.mov .edi (slot tpO)])
+    (.block [.mov .eax (.mem (at_ .edi 0)), .mov .ecx (.mem (at_ .edi 4)), .mov .edx (.mem (at_ .edi 8)),
+      .mov .ebx (.mem (at_ .edi 12)), .store (at_ .ebp tagO) .eax, .store (at_ .ebp (tagO + 4)) .ecx,
+      .store (at_ .ebp (tagO + 8)) .edx, .store (at_ .ebp (tagO + 12)) .ebx])
+
+/-- The tag at `W` copied out. -/
+def tagOut : Prog isa :=
+  .seq (.block [.mov .eax (slot tagO), .mov .ecx (slot (tagO + 4)), .mov .edx (slot (tagO + 8)),
+      .mov .ebx (slot (tagO + 12)), .mov .edi (slot tpO)])
+    (.block [.store (at_ .edi 0) .eax, .store (at_ .edi 4) .ecx, .store (at_ .edi 8) .edx,
+      .store (at_ .edi 12) .ebx])
 
 section
 variable (c : Callees)
 
 /-- `vg_aes_gcm_siv_seal`. -/
 def «seal» : Prog isa :=
-  .seq sivEntry (.seq (keys c) (.seq (polyval c) (.seq (tag c tagO) (.seq (crypt c) (.block restore)))))
+  .seq sivEntry (.seq (keys c) (.seq (polyval c) (.seq (tag c tagO) (.seq (crypt c) (.seq tagOut
+    (.block restore))))))
 
 /-- `vg_aes_gcm_siv_open`. -/
 def «open» : Prog isa :=
-  .seq sivEntry (.seq (keys c) (.seq (crypt c) (.seq (polyval c) (.seq (tag c t2O)
-    (.seq (.block cmp) (.seq mask (.block restore)))))))
+  .seq sivEntry (.seq recvTag (.seq (keys c) (.seq (crypt c) (.seq (polyval c) (.seq (tag c t2O)
+    (.seq (.block cmp) (.seq mask (.block restore))))))))
 
 end
 

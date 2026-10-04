@@ -1,4 +1,4 @@
-import VerifiedGarbage.Proof.AesGcmSiv.X86.Cmp
+import VerifiedGarbage.Proof.AesGcmSiv.X86.TagIO
 
 /-!
 # AES-GCM-SIV on x86: `vg_aes_gcm_siv_seal` (correctness)
@@ -41,7 +41,7 @@ theorem entered_mut {s : State} {p : Prm} {s₁ : State} (L : Lay p) (En : Enter
       bytesAt s₁.mem (w64 p.D) p.n = bytesAt s.mem (w64 p.D) p.n ∧
       bytesAt s₁.mem (w64 p.W) 16 = bytesAt s.mem (w64 p.W) 16 := by
   have f := En.frame
-  have d : ∀ {P : Addr} {k : Nat}, (⟨P, k⟩ : Region).Disjoint ⟨w64 p.W, 4096⟩ →
+  have d : ∀ {P : Addr} {k : Nat}, (⟨P, k⟩ : Region).Disjoint ⟨w64 p.W, 2816⟩ →
       ∀ r ∈ [(⟨w64 p.W + BitVec.ofNat 64 128, 48⟩ : Region)], (⟨P, k⟩ : Region).Disjoint r := fun h r hr => by
     simp only [List.mem_singleton] at hr; subst hr; exact h.sub_right (Lay.wSub (by decide))
   refine ⟨Proof.AesGcm.X86.ret_kept f (d L.retW), ?_, Proof.AesGcm.X86.bytesAt_frame f (d L.n_w) (by decide),
@@ -56,8 +56,10 @@ theorem entered_mut {s : State} {p : Prm} {s₁ : State} (L : Lay p) (En : Enter
     (by have := L.rounds_le; omega)]
 
 /-- `vg_aes_gcm_siv_seal`. -/
-theorem seal_wp (v : GcmImpl) (hti : TagInputEq) {s : State} (h : onePre s) :
+theorem seal_wp (v : GcmImpl) (hti : TagInputEq) {s : State} (hs : sealPre s) :
     WP isa («seal» v.callees) s fun s' => abiPreserved s s' ∧ sealX86.post s s' := by
+  have h := onePre_seal hs
+  have tW : Covers [⟨w64 (prmOf s).T, 16⟩] s.wr := covers_of_mem (by rw [hs.2.1]; exact List.mem_cons_of_mem _ List.mem_cons_self)
   have L := lay_of h
   have hRb := L.rounds_le
   have hn := L.n32
@@ -71,19 +73,31 @@ theorem seal_wp (v : GcmImpl) (hti : TagInputEq) {s : State} (h : onePre s) :
   have f₃ := frame_toMut Po.frame (inMut_polyR _)
   -- The tag.
   refine WP.seq (WP.mono (tag_ok v L Po.env (o := 0) (by decide)) fun s₄ Tg => ?_)
-  have f₄ := frame_toMut Tg.frame (inMut_tagR _ (by decide))
+  have f₄ := frame_toMut Tg.frame (inMut_tagWr _ (by decide))
   -- Counter mode.
   refine WP.seq (WP.mono (crypt_ok v L Tg.env) fun s₅ Cr => ?_)
   have f₅ := frame_toMut Cr.frame (inMut_cryR _)
   have f₂₅ := (f₂.trans f₃).trans (f₄.trans f₅)
+  -- The tag copied out.
+  have tW₅ : Covers [⟨w64 (prmOf s).T, 16⟩] s₅.wr := by rw [Cr.wr, Tg.wr, Po.wr, Ky.wr, En.wr]; exact tW
+  refine WP.seq (WP.mono (tagOut_ok L Cr.env tW₅) fun s₆ ⟨tg₆, f₆, bp₆, sp₆, _, rd₆, wr₆⟩ => ?_)
+  have E₆ := Cr.env.tag L bp₆ sp₆ rd₆ wr₆ f₆
+  have sv₆ : SavedAt s₆.mem (prmOf s).W s :=
+    (SavedAt.mut L f₂₅ En.saved).frame f₆ (w_t L (d := 128) (k := 16) (by decide))
+  have rT : ∀ q ∈ [(⟨w64 (prmOf s).T, 16⟩ : Region)], (⟨w64 (prmOf s).SP, 4⟩ : Region).Disjoint q :=
+    fun q hq => by simp only [List.mem_singleton] at hq; subst hq; exact L.retT
+  have ret₆ : s₆.mem.readW (w64 (prmOf s).SP) 32 = s.mem.readW (w64 (prmOf s).SP) 32 := by
+    rw [Proof.AesGcm.X86.ret_kept f₆ rT, ret_mut L f₂₅, ret₁]
+  have d₆ : bytesAt s₆.mem (w64 (prmOf s).D) (prmOf s).n = bytesAt s₅.mem (w64 (prmOf s).D) (prmOf s).n :=
+    Proof.AesGcm.X86.bytesAt_frame f₆ (fun q hq => by
+      simp only [List.mem_singleton] at hq; subst hq; exact L.t_d.symm) (by omega)
   -- `restore`.
-  refine WP.mono (exit_ok L Cr.env rfl (SavedAt.mut L f₂₅ En.saved) (by rw [ret_mut L f₂₅, ret₁]))
-    fun s' ⟨ga, hm, _⟩ => ⟨ga, ?_⟩
+  refine WP.mono (exit_ok L E₆ rfl sv₆ ret₆) fun s' ⟨ga, hm, _⟩ => ⟨ga, ?_⟩
   show Spec.GcmSiv.encryptWith (Spec.GcmSiv.ctxCiph s.mem (w64 (prmOf s).K) (prmOf s).R)
       (Spec.GcmSiv.keyLen (prmOf s).R) (bytesAt s.mem (w64 (prmOf s).N) 12)
       (bytesAt s.mem (w64 (prmOf s).D) (prmOf s).n) (bytesAt s.mem (w64 (prmOf s).A) (prmOf s).al) =
-    (bytesAt s'.mem (w64 (prmOf s).D) (prmOf s).n, bytesAt s'.mem (w64 (prmOf s).W) 16)
-  rw [hm]
+    (bytesAt s'.mem (w64 (prmOf s).D) (prmOf s).n, bytesAt s'.mem (w64 (prmOf s).T) 16)
+  rw [hm, d₆, tg₆]
   -- What the pieces read.
   have n₂ : bytesAt s₂.mem (w64 (prmOf s).N) 12 = bytesAt s.mem (w64 (prmOf s).N) 12 := by
     rw [nonce_mut L f₂, n₁]

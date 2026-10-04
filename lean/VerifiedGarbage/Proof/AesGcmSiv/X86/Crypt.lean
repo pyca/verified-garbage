@@ -59,7 +59,7 @@ left, the block at `W + 224`, `vg_aes_ctr32`'s working space, the data and
 the stack below `SP`. -/
 abbrev cryR (p : Prm) : List Region :=
   [⟨w64 p.W + BitVec.ofNat 64 96, 32⟩, ⟨w64 p.W + BitVec.ofNat 64 176, 8⟩, ⟨w64 p.W + BitVec.ofNat 64 224, 16⟩,
-    ⟨w64 p.W + BitVec.ofNat 64 2048, 2048⟩, ⟨w64 p.D, p.n⟩, stk p]
+    ⟨w64 p.W + BitVec.ofNat 64 768, 2048⟩, ⟨w64 p.D, p.n⟩, stk p]
 
 theorem inMut_cryR (p : Prm) : InMut p (cryR p) := by
   intro r hr
@@ -166,12 +166,12 @@ theorem cryptBlock_ok (v : GcmImpl) {p : Prm} (L : Lay p) {t : State} (E : Env p
   have E₁ : Env p t₁ := E.mut L bp₁ sp₁ rd₁ wr₁ (frame_toMut f₁ fun q hq => by
     simp only [List.mem_singleton] at hq; subst hq; exact inMut_w p (.inl (by decide)))
   have eQ : w64 (p.D + BitVec.ofNat 32 (16 * j)) = w64 p.D + BitVec.ofNat 64 (16 * j) := L.dA (by omega)
-  have dQ : (⟨w64 p.D + BitVec.ofNat 64 (16 * j), 16⟩ : Region).Disjoint ⟨w64 p.W, 4096⟩ :=
+  have dQ : (⟨w64 p.D + BitVec.ofNat 64 (16 * j), 16⟩ : Region).Disjoint ⟨w64 p.W, 2816⟩ :=
     L.d_w.sub_left (Offset.sub_base _ (by omega))
   have hD : Dst p t₁ (p.W + BitVec.ofNat 32 512) (p.D + BitVec.ofNat 32 (16 * j)) (16 * 1) := by
     refine ⟨?_, by rw [L.dN (by omega)]; omega, ?_, ?_, ?_, ?_⟩ <;> rw [eQ]
     · exact covers_off E₁.perm.d (by omega) (by omega)
-    · rw [L.aW (by decide)]; exact (dQ.sub_right (Lay.wSub (show 512 + 240 ≤ 4096 by decide))).symm
+    · rw [L.aW (by decide)]; exact (dQ.sub_right (Lay.wSub (show 512 + 240 ≤ 2816 by decide))).symm
     · exact dQ.sub_right (Lay.wSub (by decide))
     · exact dQ.sub_right (Lay.wSub (by decide))
     · exact L.bd.sub_right (Offset.sub_base _ (by omega))
@@ -218,11 +218,11 @@ theorem cryptBlock_ok (v : GcmImpl) {p : Prm} (L : Lay p) {t : State} (E : Env p
     · exact .inr L.bd.symm
   -- What the first two pieces changed.
   have f₂' : Frame [⟨w64 p.W + BitVec.ofNat 64 112, 16⟩, ⟨w64 p.D + BitVec.ofNat 64 (16 * j), 16⟩,
-      ⟨w64 p.W + BitVec.ofNat 64 2048, 2048⟩, stk p] t.mem t₂.mem :=
+      ⟨w64 p.W + BitVec.ofNat 64 768, 2048⟩, stk p] t.mem t₂.mem :=
     (f₁.mono fun q hq => by simp only [List.mem_singleton] at hq; subst hq; simp).trans fc
   have dC : ∀ {d k : Nat}, (96 ≤ d ∧ d + k ≤ 112 ∨ 176 ≤ d ∧ d + k ≤ 184) →
       ∀ q ∈ [(⟨w64 p.W + BitVec.ofNat 64 112, 16⟩ : Region), ⟨w64 p.D + BitVec.ofNat 64 (16 * j), 16⟩,
-        ⟨w64 p.W + BitVec.ofNat 64 2048, 2048⟩, stk p], (⟨w64 p.W + BitVec.ofNat 64 d, k⟩ : Region).Disjoint q :=
+        ⟨w64 p.W + BitVec.ofNat 64 768, 2048⟩, stk p], (⟨w64 p.W + BitVec.ofNat 64 d, k⟩ : Region).Disjoint q :=
     fun h q hq => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
       rcases hq with rfl | rfl | rfl | rfl
@@ -348,7 +348,7 @@ theorem cryptTail_ok (v : GcmImpl) {p : Prm} (L : Lay p) {t : State} (E : Env p 
   have hw := L.ww
   refine WP.seq (WP.mono (tag_ok v L E (o := 224) (by decide)) fun t₂ T => ?_)
   have fT := T.frame
-  have dT : ∀ q ∈ tagR p 224, (⟨w64 p.D, p.n⟩ : Region).Disjoint q := fun q hq => by
+  have dT : ∀ q ∈ tagWr p 224, (⟨w64 p.D, p.n⟩ : Region).Disjoint q := fun q hq => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
     rcases hq with rfl | rfl | rfl | rfl
     · exact L.d_w' (by decide)
@@ -378,16 +378,16 @@ theorem cryptTail_ok (v : GcmImpl) {p : Prm} (L : Lay p) {t : State} (E : Env p 
       by gregs [hnr₂], by gmems [], by gregs [T.env.ebp], by gregs [T.env.esp], by gmems [], by gmems []⟩
   refine WP.seq (WP.of_runBlock ⟨t₃, run₃, ?_⟩)
   have eD := L.dA (j := 16 * b) (by omega)
-  have dQ : (⟨w64 p.D + BitVec.ofNat 64 (16 * b), r⟩ : Region).Disjoint ⟨w64 p.W, 4096⟩ :=
+  have dQ : (⟨w64 p.D + BitVec.ofNat 64 (16 * b), r⟩ : Region).Disjoint ⟨w64 p.W, 2816⟩ :=
     L.d_w.sub_left (Offset.sub_base _ (by omega))
   have lp : XorPre t₃ (p.W + BitVec.ofNat 32 224) (p.D + BitVec.ofNat 32 (16 * b)) r := by
     refine ⟨dx₃, di₃, cx₃, by omega, by omega, by rw [L.nW (by decide)]; omega, by rw [L.dN (by omega)]; omega,
       ?_, ?_, ?_⟩
     · rw [rd₃, wr₃, L.aW (by decide)]
-      exact covers_prefix (T.env.perm.wCR (show 224 + 16 ≤ 4096 by decide)) (by omega)
+      exact covers_prefix (T.env.perm.wCR (show 224 + 16 ≤ 2816 by decide)) (by omega)
     · rw [wr₃, eD]; exact covers_off T.env.perm.d (by omega) (by omega)
     · rw [eD, L.aW (by decide)]
-      exact ((dQ.sub_right (Lay.wSub (show 224 + 16 ≤ 4096 by decide))).sub_right (Region.sub_prefix (by omega))).symm
+      exact ((dQ.sub_right (Lay.wSub (show 224 + 16 ≤ 2816 by decide))).sub_right (Region.sub_prefix (by omega))).symm
   refine WP.mono (xorLoop_ok t₃ lp) fun t₄ O => ?_
   have hm₄ := O.mem
   rw [m₃, eD, L.aW (by decide)] at hm₄

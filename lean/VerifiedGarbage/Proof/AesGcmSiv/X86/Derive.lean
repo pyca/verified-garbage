@@ -32,7 +32,7 @@ theorem ofNat_add32 (a b : Nat) : BitVec.ofNat 32 a + BitVec.ofNat 32 b = BitVec
   rw [BitVec.ofNat_add]
 
 /-- The offset of the 8 bytes a step keeps, as the code computes it. -/
-theorem eaKeep {W : BitVec 32} {i k : Nat} (hw : W.toNat + 4096 ≤ 2 ^ 32) (hi : 8 * i + k < 4096) :
+theorem eaKeep {W : BitVec 32} {i k : Nat} (hw : W.toNat + 2816 ≤ 2 ^ 32) (hi : 8 * i + k < 2816) :
     w64 (BitVec.ofNat 32 i + BitVec.ofNat 32 i + (BitVec.ofNat 32 i + BitVec.ofNat 32 i) +
       (BitVec.ofNat 32 i + BitVec.ofNat 32 i + (BitVec.ofNat 32 i + BitVec.ofNat 32 i)) + W + BitVec.ofNat 32 k) =
       w64 W + BitVec.ofNat 64 (k + 8 * i) := by
@@ -200,7 +200,7 @@ theorem postMem_bytes (m : Mem) (W : Addr) {i : Nat} (hi : i ≤ 5) :
 /-- What `derive` writes. -/
 abbrev derR (p : Prm) : List Region :=
   [⟨w64 p.W + BitVec.ofNat 64 16, 48⟩, ⟨w64 p.W + BitVec.ofNat 64 112, 16⟩, ⟨w64 p.W + BitVec.ofNat 64 176, 8⟩,
-    ⟨w64 p.W + BitVec.ofNat 64 224, 16⟩, ⟨w64 p.W + BitVec.ofNat 64 2048, 2048⟩, stk p]
+    ⟨w64 p.W + BitVec.ofNat 64 224, 16⟩, ⟨w64 p.W + BitVec.ofNat 64 768, 2048⟩, stk p]
 
 theorem inMut_derR (p : Prm) : InMut p (derR p) := by
   intro r hr
@@ -275,7 +275,7 @@ theorem derStep_ok (v : GcmImpl) {p : Prm} (L : Lay p) {σ : State} {i : Nat} (h
       · exact Lay.w_w (.inl (by decide)) (by decide) (by decide)
   have fc := P.frame
   have hout := P.out
-  rw [L.aW (show 224 < 4096 by decide)] at fc hout
+  rw [L.aW (show 224 < 2816 by decide)] at fc hout
   obtain ⟨t₃, run₃, hm₃, z₃, ebp₃, esp₃, esi₃, rd₃, wr₃⟩ := derPost_ok L E₂ hi hix₂
   have f₃ : Frame [⟨w64 p.W + BitVec.ofNat 64 (16 + 8 * i), 8⟩, ⟨w64 p.W + BitVec.ofNat 64 180, 4⟩] t₂.mem t₃.mem := by
     rw [hm₃]; exact postMem_frame _ _ _ (by omega)
@@ -306,7 +306,7 @@ theorem derStep_ok (v : GcmImpl) {p : Prm} (L : Lay p) {σ : State} {i : Nat} (h
       · exact ⟨_, List.mem_cons_self, Offset.sub _ (by omega) (by omega)⟩
       · exact ⟨⟨w64 p.W + BitVec.ofNat 64 176, 8⟩, by simp, Offset.sub _ (by decide) (by decide)⟩
   · -- The bytes.
-    have dW : ∀ {d k : Nat}, d + k ≤ 4096 → 16 + 8 * i ≤ d ∨ d + k ≤ 16 →
+    have dW : ∀ {d k : Nat}, d + k ≤ 2816 → 16 + 8 * i ≤ d ∨ d + k ≤ 16 →
         (⟨w64 p.W + BitVec.ofNat 64 16, 8 * i⟩ : Region).Disjoint ⟨w64 p.W + BitVec.ofNat 64 d, k⟩ :=
       fun h₁ h₂ => Lay.w_w (by omega) (by omega) h₁
     have keep : bytesAt t₃.mem (w64 p.W + BitVec.ofNat 64 16) (8 * i) =

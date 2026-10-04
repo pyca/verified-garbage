@@ -42,11 +42,11 @@ theorem copyMem_bytes (m : Mem) (W : Addr) :
 abbrev TagO (o : Nat) : Prop := o = 0 ∨ o = 224 ∨ o = 240
 
 /-- What `tag o` writes. -/
-abbrev tagR (p : Prm) (o : Nat) : List Region :=
-  [⟨w64 p.W + BitVec.ofNat 64 112, 16⟩, ⟨w64 p.W + BitVec.ofNat 64 o, 16⟩, ⟨w64 p.W + BitVec.ofNat 64 2048, 2048⟩,
+abbrev tagWr (p : Prm) (o : Nat) : List Region :=
+  [⟨w64 p.W + BitVec.ofNat 64 112, 16⟩, ⟨w64 p.W + BitVec.ofNat 64 o, 16⟩, ⟨w64 p.W + BitVec.ofNat 64 768, 2048⟩,
     stk p]
 
-theorem inMut_tagR (p : Prm) {o : Nat} (ho : TagO o) : InMut p (tagR p o) := by
+theorem inMut_tagWr (p : Prm) {o : Nat} (ho : TagO o) : InMut p (tagWr p o) := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl
@@ -64,7 +64,7 @@ structure TagPost (p : Prm) (o : Nat) (t t' : State) : Prop where
   rd : t'.rd = t.rd
   wr : t'.wr = t.wr
   esi : t'.gpr .esi = t.gpr .esi
-  frame : Frame (tagR p o) t.mem t'.mem
+  frame : Frame (tagWr p o) t.mem t'.mem
   out : bytesAt t'.mem (w64 p.W + BitVec.ofNat 64 o) 16 =
     Spec.GcmSiv.ctxCiph t.mem (w64 p.W + BitVec.ofNat 64 512) p.R (bytesAt t.mem (w64 p.W + BitVec.ofNat 64 96) 16)
 
@@ -87,7 +87,7 @@ structure TagCall (p : Prm) (o : Nat) (t t₁ : State) : Prop where
 theorem tagArgs_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t) {o : Nat} (ho : TagO o) :
     ∃ t₁, runBlock isa (copy16 cbO ccO ++ zero4 o ++ ctrArgs o) t = some t₁ ∧ TagCall p o t t₁ := by
   have hw := L.ww
-  have o₁ : o + 16 ≤ 4096 := by omega
+  have o₁ : o + 16 ≤ 2816 := by omega
   have hR := E.slots.rounds
   simp only [slotv_eq, roundsO] at hR
   have hz := zero4_fold (copyMem t.mem (w64 p.W)) p.W o
@@ -130,7 +130,7 @@ theorem tagArgs_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t) {o : Nat} (ho
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
     rcases hq with rfl | rfl
     · exact inMut_w p (.inl (by decide))
-    · exact inMut_tagR p ho _ (by simp))
+    · exact inMut_tagWr p ho _ (by simp))
   have hD : Dst p t₁ (p.W + BitVec.ofNat 32 512) (p.W + BitVec.ofNat 32 o) (16 * 1) :=
     dstW L E₁.perm (q := o) (by rcases ho with rfl | rfl | rfl <;> decide)
       (by rw [L.aW (by decide)]; exact Lay.w_w (.inr (by omega)) (by decide) (by omega))
@@ -139,7 +139,7 @@ theorem tagArgs_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t) {o : Nat} (ho
 theorem tag_ok (v : GcmImpl) {p : Prm} (L : Lay p) {t : State} (E : Env p t) {o : Nat} (ho : TagO o) :
     WP isa (tag v.callees o) t (TagPost p o t) := by
   have hw := L.ww
-  have o₁ : o + 16 ≤ 4096 := by omega
+  have o₁ : o + 16 ≤ 2816 := by omega
   obtain ⟨t₁, run₁, ⟨hm₁, eax, ecx, edx, ebx, edi, si₁, rd₁, wr₁, f₁, E₁, hD⟩⟩ := tagArgs_ok L E ho
   have dO : (⟨w64 p.W + BitVec.ofNat 64 o, 16⟩ : Region).Disjoint ⟨w64 p.W + BitVec.ofNat 64 112, 16⟩ :=
     Lay.w_w (by omega) (by omega) (by decide)
@@ -158,7 +158,7 @@ theorem tag_ok (v : GcmImpl) {p : Prm} (L : Lay p) {t : State} (E : Env p t) {o 
       (by have := L.rounds_le; omega)]
   refine WP.seq (WP.of_runBlock ⟨t₁, run₁, ?_⟩)
   refine WP.mono (callCtr_ok v L E₁ (keyS L E₁.perm) hD
-    (by rw [L.aW (by omega)]; exact inMut_tagR p ho _ (by simp)) eax ecx edx ebx edi) fun t₂ P => ?_
+    (by rw [L.aW (by omega)]; exact inMut_tagWr p ho _ (by simp)) eax ecx edx ebx edi) fun t₂ P => ?_
   have fc := P.frame
   have hout := P.out
   rw [L.aW (by omega)] at fc hout

@@ -50,12 +50,12 @@ theorem blkCall_of {p : Prm} (L : Lay p) {t : State} (E : Env p t) {j : Nat} (hj
   have E₁ : Env p t₁ := E.mut L bp₁ sp₁ rd₁ wr₁ (frame_toMut f₁ fun q hq => by
     simp only [List.mem_singleton] at hq; subst hq; exact inMut_w p (.inl (by decide)))
   have eQ : w64 (p.D + BitVec.ofNat 32 (16 * j)) = w64 p.D + BitVec.ofNat 64 (16 * j) := L.dA (by omega)
-  have dQ : (⟨w64 p.D + BitVec.ofNat 64 (16 * j), 16⟩ : Region).Disjoint ⟨w64 p.W, 4096⟩ :=
+  have dQ : (⟨w64 p.D + BitVec.ofNat 64 (16 * j), 16⟩ : Region).Disjoint ⟨w64 p.W, 2816⟩ :=
     L.d_w.sub_left (Offset.sub_base _ (by omega))
   have hD : Dst p t₁ (p.W + BitVec.ofNat 32 512) (p.D + BitVec.ofNat 32 (16 * j)) (16 * 1) := by
     refine ⟨?_, by rw [L.dN (by omega)]; omega, ?_, ?_, ?_, ?_⟩ <;> rw [eQ]
     · exact covers_off E₁.perm.d (by omega) (by omega)
-    · rw [L.aW (by decide)]; exact (dQ.sub_right (Lay.wSub (show 512 + 240 ≤ 4096 by decide))).symm
+    · rw [L.aW (by decide)]; exact (dQ.sub_right (Lay.wSub (show 512 + 240 ≤ 2816 by decide))).symm
     · exact dQ.sub_right (Lay.wSub (by decide))
     · exact dQ.sub_right (Lay.wSub (by decide))
     · exact L.bd.sub_right (Offset.sub_base _ (by omega))
@@ -125,15 +125,15 @@ theorem cryptTail_ct (v : GcmImpl) {p : Prm} (L : Lay p) {b r : Nat} (hn : p.n =
     ⟨_, by grun [E.ebp, L.aW, E.perm.wR, n], by gregs [E.ebp], by gregs [si], by gregs [n], by gmems [], by gmems [],
       by gmems []⟩
   have eD := L.dA (j := 16 * b) (by omega)
-  have dQ : (⟨w64 p.D + BitVec.ofNat 64 (16 * b), r⟩ : Region).Disjoint ⟨w64 p.W, 4096⟩ :=
+  have dQ : (⟨w64 p.D + BitVec.ofNat 64 (16 * b), r⟩ : Region).Disjoint ⟨w64 p.W, 2816⟩ :=
     L.d_w.sub_left (Offset.sub_base _ (by omega))
   refine WP.of_runBlock ⟨t₃, run₃, dx₃, di₃, cx₃, by omega, by omega, by rw [L.nW (by decide)]; omega,
     by rw [L.dN (by omega)]; omega, ?_, ?_, ?_⟩
   · rw [rd₃, wr₃, L.aW (by decide)]
-    exact covers_prefix (E.perm.wCR (show 224 + 16 ≤ 4096 by decide)) (by omega)
+    exact covers_prefix (E.perm.wCR (show 224 + 16 ≤ 2816 by decide)) (by omega)
   · rw [wr₃, eD]; exact covers_off E.perm.d (by omega) (by omega)
   · rw [eD, L.aW (by decide)]
-    exact ((dQ.sub_right (Lay.wSub (show 224 + 16 ≤ 4096 by decide))).sub_right (Region.sub_prefix (by omega))).symm
+    exact ((dQ.sub_right (Lay.wSub (show 224 + 16 ≤ 2816 by decide))).sub_right (Region.sub_prefix (by omega))).symm
 
 /-! ## `crypt` -/
 

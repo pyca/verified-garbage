@@ -52,7 +52,7 @@ theorem chunkB_ok (v : GcmImpl) {p : Prm} (L : Lay p) {t : State} (E : Env p t)
       [Spec.GcmSiv.ofBytes (bytesAt t.mem (w64 p.W + BitVec.ofNat 64 224) 16)] t) :=
   WP.mono (chunk_ok v L E (m := 16) (by decide) (by decide) (srcB L E.perm) hsi hn) fun t' C => by
     have A := Absorbed.of_chunk C
-    simpa [elemsAt, L.aW (show 224 < 4096 by decide)] using A
+    simpa [elemsAt, L.aW (show 224 < 2816 by decide)] using A
 
 /-- What `absTailPre` leaves: the last bytes, padded, at `W + 224`, as the
 bytes to absorb. -/
@@ -92,7 +92,7 @@ theorem absTail1_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t) {P : BitVec 
 /-- `absTailPre`: the last `r` (1 to 15) bytes at `P`, padded with zeros. -/
 theorem absTailPre_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t) {P : BitVec 32} {r : Nat}
     (hr1 : 1 ≤ r) (hr : r < 16) (hc : Covers [⟨w64 P, r⟩] (t.rd ++ t.wr)) (hf : P.toNat + r ≤ 2 ^ 32)
-    (hd : (⟨w64 P, r⟩ : Region).Disjoint ⟨w64 p.W, 4096⟩) (hsi : t.gpr .esi = P)
+    (hd : (⟨w64 P, r⟩ : Region).Disjoint ⟨w64 p.W, 2816⟩) (hsi : t.gpr .esi = P)
     (hn : slotv t.mem p.W nO = BitVec.ofNat 32 r) :
     WP isa absTailPre t (TailPre p (w64 P) r t) := by
   have hw := L.ww
@@ -105,10 +105,10 @@ theorem absTailPre_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t) {P : BitVe
     simp only [List.mem_singleton] at hq; subst hq; exact inMut_w p (.inr (.inr (.inl ⟨by decide, by decide⟩))))
   have dB : (⟨w64 P, r⟩ : Region).Disjoint ⟨w64 (p.W + BitVec.ofNat 32 224), r⟩ := by
     rw [L.aW (by decide)]
-    exact (hd.sub_right (Lay.wSub (show 224 + 16 ≤ 4096 by decide))).sub_right (Region.sub_prefix (by omega))
+    exact (hd.sub_right (Lay.wSub (show 224 + 16 ≤ 2816 by decide))).sub_right (Region.sub_prefix (by omega))
   have lp : LoopPre t₁ P (p.W + BitVec.ofNat 32 224) r :=
     ⟨di₁, dx₁, cx₁, by omega, by omega, hf, by rw [L.nW (by decide)]; omega, by rw [rd₁, wr₁]; exact hc,
-      by rw [L.aW (by decide)]; exact covers_prefix (E₁.perm.wC (show 224 + 16 ≤ 4096 by decide)) (by omega), dB⟩
+      by rw [L.aW (by decide)]; exact covers_prefix (E₁.perm.wC (show 224 + 16 ≤ 2816 by decide)) (by omega), dB⟩
   refine WP.seq (WP.mono (copyLoop_ok t₁ lp) fun t₂ O => ?_)
   have hm₂ := O.mem
   rw [L.aW (by decide)] at hm₂
@@ -150,7 +150,7 @@ theorem absTailPre_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t) {P : BitVe
 /-- `absTail`: the last `r` (1 to 15) bytes at `P`, padded with zeros, absorbed. -/
 theorem absTail_ok (v : GcmImpl) {p : Prm} (L : Lay p) {t : State} (E : Env p t) {P : BitVec 32} {r : Nat}
     (hr1 : 1 ≤ r) (hr : r < 16) (hc : Covers [⟨w64 P, r⟩] (t.rd ++ t.wr)) (hf : P.toNat + r ≤ 2 ^ 32)
-    (hd : (⟨w64 P, r⟩ : Region).Disjoint ⟨w64 p.W, 4096⟩) (hsi : t.gpr .esi = P)
+    (hd : (⟨w64 P, r⟩ : Region).Disjoint ⟨w64 p.W, 2816⟩) (hsi : t.gpr .esi = P)
     (hn : slotv t.mem p.W nO = BitVec.ofNat 32 r) :
     WP isa (absTail v.callees) t
       (AbsPost p [Spec.GcmSiv.ofBytes (bytesAt t.mem (w64 P) r ++ Spec.GcmSiv.zeros (16 - r))] t) := by
@@ -212,7 +212,7 @@ theorem anyLeft_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t) {r : Nat} (hr
   · exact E.keep (by gregs []) (by gregs []) (by gmems []) (by gmems []) (by gmems [])
 
 theorem absorb_ok (v : GcmImpl) {p : Prm} (L : Lay p) {t : State} (E : Env p t) {Q : BitVec 32} {m : Nat}
-    (hm : m < 2 ^ 32) (hQ : Src p t Q m) (hd : (⟨w64 Q, m⟩ : Region).Disjoint ⟨w64 p.W, 4096⟩)
+    (hm : m < 2 ^ 32) (hQ : Src p t Q m) (hd : (⟨w64 Q, m⟩ : Region).Disjoint ⟨w64 p.W, 2816⟩)
     (hsi : t.gpr .esi = Q) (hn : slotv t.mem p.W nO = BitVec.ofNat 32 m) :
     WP isa (absorb v.callees) t (AbsPost p (Spec.GcmSiv.elems (Spec.GcmSiv.pad16 (bytesAt t.mem (w64 Q) m))) t) := by
   obtain ⟨t₁, run₁, z₁, E₁, si₁, m₁, rd₁, wr₁⟩ := wholeLeft_ok L E hm hn
@@ -234,7 +234,7 @@ theorem absorb_ok (v : GcmImpl) {p : Prm} (L : Lay p) {t : State} (E : Env p t) 
     simp only [h0, ite_false]
     have hs := hQ.slice (a := 16 * (m / 16)) (k := m % 16) (by omega) (by omega)
     have ea := hQ.addr (j := 16 * (m / 16)) (by omega)
-    have dT : (⟨w64 (Q + BitVec.ofNat 32 (16 * (m / 16))), m % 16⟩ : Region).Disjoint ⟨w64 p.W, 4096⟩ := by
+    have dT : (⟨w64 (Q + BitVec.ofNat 32 (16 * (m / 16))), m % 16⟩ : Region).Disjoint ⟨w64 p.W, 2816⟩ := by
       rw [ea]; exact hd.sub_left (Offset.sub_base _ (by omega))
     refine WP.mono (absTail_ok v L P₃.env (by omega) (by omega) (by rw [P₃.rd, P₃.wr]; exact hs.rd) hs.wrap dT
       (by rw [si₃, si₂]) (by rw [slotv_eq, m₃]; exact n₂)) fun t₄ T => ?_
@@ -375,7 +375,7 @@ structure PolyPost (p : Prm) (t t' : State) : Prop where
       (bytesAt t.mem (w64 p.D) p.n) (bytesAt t.mem (w64 p.A) p.al)
 
 /-- A buffer apart from `W` and the stack below `SP` misses what absorbing writes. -/
-theorem absorbR_buf {p : Prm} {P : Addr} {k : Nat} (hd : (⟨P, k⟩ : Region).Disjoint ⟨w64 p.W, 4096⟩)
+theorem absorbR_buf {p : Prm} {P : Addr} {k : Nat} (hd : (⟨P, k⟩ : Region).Disjoint ⟨w64 p.W, 2816⟩)
     (hb : (stk p).Disjoint ⟨P, k⟩) : ∀ r ∈ absorbR p, (⟨P, k⟩ : Region).Disjoint r := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -416,7 +416,7 @@ theorem polyval_ok (v : GcmImpl) {p : Prm} (L : Lay p) {t : State} (E : Env p t)
   obtain ⟨t₁, run₁, E₁, si₁, n₁, rd₁, wr₁, f₁⟩ := onStr_ok L E (s := aadO) (l := alenO) (by decide) (by decide)
     E.slots.aad E.slots.alen
   refine WP.seq (WP.of_runBlock ⟨t₁, run₁, ?_⟩)
-  have d176 : ∀ {P : Addr} {k : Nat}, (⟨P, k⟩ : Region).Disjoint ⟨w64 p.W, 4096⟩ →
+  have d176 : ∀ {P : Addr} {k : Nat}, (⟨P, k⟩ : Region).Disjoint ⟨w64 p.W, 2816⟩ →
       ∀ q ∈ [(⟨w64 p.W + BitVec.ofNat 64 176, 4⟩ : Region)], (⟨P, k⟩ : Region).Disjoint q := fun hd q hq => by
     simp only [List.mem_singleton] at hq; subst hq; exact hd.sub_right (Lay.wSub (by decide))
   have eA₁ : bytesAt t₁.mem (w64 p.A) p.al = bytesAt t.mem (w64 p.A) p.al :=
