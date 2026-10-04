@@ -7,7 +7,8 @@ import VerifiedGarbage.Spec.Rsa.Contract
 **Trusted** (as every file in `Spec/`). In the module `rsa_keygen`, the two
 parts of `RsaKeyGen.generate` that compute with secrets; the Rust that calls
 them runs the loops, counts the tries, supplies the randomness and runs the
-pairwise consistency test with `vg_rsa_private_crt` and `vg_rsa_public`:
+pairwise consistency test with `vg_rsa_private_checked` and
+`vg_rsa_public_checked`:
 
 * `vg_rsa_keygen_candidate`: one candidate for a prime
   (`RsaKeyGen.candidateStep`), from the random octets given;

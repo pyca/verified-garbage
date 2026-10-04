@@ -12,7 +12,8 @@ reads it. These tests check properties instead, on randomness from a fixed
 linear congruential generator:
 
 * Keys of 512, 768 and 1024 bits, with `e` = 65537, 3 and 2^32 − 1, pass
-  the key check and the pairwise consistency test, and their private
+  the key check (`Rsa.checkKey`) and the pairwise consistency test (with
+  `Rsa.privateChecked`), and their private
   operation inverts the public one; their primes have half the bits, the two
   most significant set, are probably prime by trial division to 8161, and
   are more than `2^(nlen/2 − 100)` apart, and `d > 2^(nlen/2)`.

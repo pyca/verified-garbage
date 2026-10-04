@@ -21,7 +21,10 @@ None of this depends on the primality test: the bounds hold of every
 candidate accepted, and the checks are part of the generation.
 -/
 
-namespace VG.Spec.RsaKeyGen
+namespace VG.Proof.RsaKeyGen
+
+open VG.Spec
+open VG.Spec.RsaKeyGen
 
 /-- An accepted candidate of `bits` bits: odd, below `2^bits`, with its two
 most significant bits set. -/
@@ -248,4 +251,4 @@ theorem generate_ok {bits e : Nat} {rand : Rand} {k : Key}
     obtain ⟨he, h1, h2, h3, h4⟩ := params_ok hp
     exact ⟨nlen, hp, he, h1, h2, h3, h4, generate_attempts_ok 4 rand h⟩
 
-end VG.Spec.RsaKeyGen
+end VG.Proof.RsaKeyGen

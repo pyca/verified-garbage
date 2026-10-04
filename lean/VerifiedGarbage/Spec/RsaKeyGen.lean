@@ -32,13 +32,14 @@ and `crypto/fipsmodule/bn/prime.cc.inc` (`BN_primality_test`,
   (steps 4.7 and 5.8).
 * `p` is the larger prime, `d = e⁻¹ mod lcm(p − 1, q − 1)`, and both primes
   are generated again if `d ≤ 2^(nlen/2)` (FIPS 186-5's lower bound on `d`).
-* The key is checked as `RSA_check_key` checks it (`keyValid`), and its
-  modulus must have `nlen` bits.
+* The key is checked as `RSA_check_key` checks it (`keyValid`, which is
+  `Rsa.checkKey`), and its modulus must have `nlen` bits.
 * A generation that fails for too many tries is started again, up to four
   times in all (`RSA_generate_key_ex_maybe_fips`).
 * Finally, beyond what `RSA_generate_key_ex` does, the key must pass the
   pairwise consistency test of BoringSSL's `RSA_check_fips` (`pairwiseOk`):
-  the signature of a fixed message with the private key verifies with the
+  the signature of a fixed message with the private key, by the private
+  operation checked against `e` (`Rsa.privateChecked`), verifies with the
   public key.
 
 The randomness is an explicit input, the octet string `rand`, read from the
@@ -296,20 +297,18 @@ structure Key where
   qInv : Nat
   deriving DecidableEq, Repr
 
-/-- What `RSA_check_key` checks of a key with every component: the public
-key as `rsa_check_public_key` checks it (`n` odd and from 512 to 8192 bits,
-`e` odd, from 2 to 33 bits), `d < n`, `p < n`, `q < n`, `n = p q`,
-`d e ≡ 1` modulo `p − 1` and `q − 1`, and that `dP`, `dQ` and `qInv` are
-below `p − 1`, `q − 1` and `p` and are the inverses of `e`, `e` and `q`
-modulo them. -/
+/-- The octets of the modulus `n`: `⌈bits / 8⌉`. -/
+def Key.len (k : Key) : Nat := (bitLength k.n + 7) / 8
+
+/-- An integer of the key as `k.len` octets, most significant first, as a
+private key is given to the private operations. -/
+def Key.octets (k : Key) (x : Nat) : List Byte := i2osp x k.len
+
+/-- The key check, `RSA_check_key` (`Rsa.checkKey`, which a private key
+must pass to be imported), of the key as octets. -/
 def keyValid (k : Key) : Bool :=
-  k.n % 2 == 1 && minBits ≤ bitLength k.n && bitLength k.n ≤ maxBits &&
-    k.e % 2 == 1 && 2 ≤ bitLength k.e && bitLength k.e ≤ 33 &&
-    k.d < k.n && k.p < k.n && k.q < k.n && k.p * k.q == k.n &&
-    k.d * k.e % (k.p - 1) == 1 && k.d * k.e % (k.q - 1) == 1 &&
-    k.dP < k.p - 1 && k.e * k.dP % (k.p - 1) == 1 &&
-    k.dQ < k.q - 1 && k.e * k.dQ % (k.q - 1) == 1 &&
-    k.qInv < k.p && k.q * k.qInv % k.p == 1
+  Rsa.checkKey (k.octets k.n) (k.octets k.e) (k.octets k.d) (k.octets k.p) (k.octets k.q)
+    (k.octets k.dP) (k.octets k.dQ) (k.octets k.qInv)
 
 /-- The rest of an iteration of `rsa_generate_key_impl`'s loop, and what
 follows it, from the primes of `nlen / 2` bits: make `p` the larger;
@@ -365,16 +364,14 @@ def pairwiseMessage (k : Nat) : List Byte :=
   [0x00, 0x01] ++ List.replicate (k - 3 - t.length) 0xff ++ [0x00] ++ t
 
 /-- The pairwise consistency test: the message representative, signed with
-the private key (RSASP1 with the CRT, which must pass the check against `e`
-of every private-key operation), verifies with the public key (RSAVP1). -/
+the private key by the private operation checked against `e`
+(`Rsa.privateChecked`), verifies with the public key (RSAVP1). -/
 def pairwiseOk (k : Key) : Bool :=
-  let len := (bitLength k.n + 7) / 8
-  let nB := i2osp k.n len
-  let em := pairwiseMessage len
-  match Rsa.privateCrt nB em (i2osp k.p len) (i2osp k.q len) (i2osp k.dP len)
-      (i2osp k.dQ len) (i2osp k.qInv len) with
-  | none => false
-  | some s => Rsa.publicOp nB (i2osp k.e len) s == some em
+  let em := pairwiseMessage k.len
+  match Rsa.privateChecked (k.octets k.n) (k.octets k.e) em (k.octets k.p) (k.octets k.q)
+      (k.octets k.dP) (k.octets k.dQ) (k.octets k.qInv) with
+  | .ok s => Rsa.publicOp (k.octets k.n) (k.octets k.e) s == some em
+  | .invalid | .fault => false
 
 /-! ## `generate` -/
 
