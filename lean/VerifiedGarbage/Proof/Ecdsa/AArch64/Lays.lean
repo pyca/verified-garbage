@@ -1,12 +1,11 @@
 import VerifiedGarbage.Proof.Ecdsa.AArch64.SlotOps
 
 /-!
-# ECDSA on AArch64: where the ladder's and the powers' slots are
+# ECDSA on AArch64: where the powers' slots are
 
-The slots of `c.ladderCfg`, `c.powP` and `c.powN` are numbered slots `c.sl i`
-for distinct `i`, so they are apart as `ladder_ok` and `pow_ok` need
-(`ladLay`, `powLayP`, `powLayN`): each fact is one about the numbers `i`,
-which `decide` checks.
+The slots of `c.powP` and `c.powN` are numbered slots `c.sl i` for distinct
+`i`, so they are apart as `pow_ok` needs (`powLayP`, `powLayN`): each fact is
+one about the numbers `i`, which `decide` checks.
 -/
 
 namespace VG.Proof.Ecdsa.AArch64
@@ -65,35 +64,6 @@ theorem rcbApart_of (hn : 0 < c.n) {S : RcbSlots} {p q o : Pt} {lw lr : List Nat
     (hd : ∀ i ∈ lr, i ∉ lw) : RcbApart S p q o :=
   ⟨hw ▸ map_sl_nodup hn hnd, by rw [hw, hr]; exact map_sl_disj hn hd⟩
 
-theorem ladLay (hc : CfgOk c) : LadLay c.ladderCfg size := by
-  have hn := hc.n0
-  have h7 := hc.n7
-  refine ⟨?_, rcbApart_of hn (lw := [T0, T1, T2, T3, T4, T5, DX, DY, DZ])
-      (lr := [AP, B3P, RX, RY, RZ, RX, RY, RZ]) rfl rfl (by decide) (by decide),
-    rcbApart_of hn (lw := [T0, T1, T2, T3, T4, T5, TX, TY, TZ])
-      (lr := [AP, B3P, DX, DY, DZ, GX, GY, ONEP]) rfl rfl (by decide) (by decide), ?_,
-    ⟨fun h => by have := sl_inj c hn h; exact absurd this (by decide),
-      fun h => by have := sl_inj c hn h; exact absurd this (by decide),
-      fun h => by have := sl_inj c hn h; exact absurd this (by decide)⟩, ?_,
-    ⟨show 1 ≤ 64 * c.n by omega, show 64 * c.n < 2 ^ 16 by omega⟩,
-    by have := bitsAt_le c h7 (j := 0) (by decide); show bitsAt c.n 0 + 64 * c.n ≤ 8192; omega, ?_⟩
-  · exact lay_map hc rfl rfl rfl (l := [AP, B3P, GX, GY, ONEP, RX, RY, RZ, T0, T1, T2, T3, T4, T5,
-      DX, DY, DZ, TX, TY, TZ]) (by decide)
-  · exact map_sl_disj hn (l₁ := [AP, B3P, GX, GY, ONEP])
-      (l₂ := [RX, RY, RZ, T0, T1, T2, T3, T4, T5, DX, DY, DZ, T0, T1, T2, T3, T4, T5, TX, TY, TZ])
-      (by decide)
-  · exact map_sl_disj hn (l₁ := [RX, RY, RZ]) (l₂ := [DX, DY, DZ, TX, TY, TZ]) (by decide)
-  · intro w hw
-    simp only [ladW, List.mem_append, List.mem_map, List.mem_singleton] at hw
-    rcases hw with ⟨y, hy, rfl⟩ | rfl
-    · have hy' : y ∈ [RX, RY, RZ, T0, T1, T2, T3, T4, T5, DX, DY, DZ, T0, T1, T2, T3, T4, T5, TX,
-          TY, TZ].map c.sl := hy
-      obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hy'
-      have hl : ∀ i ∈ [RX, RY, RZ, T0, T1, T2, T3, T4, T5, DX, DY, DZ, T0, T1, T2, T3, T4, T5, TX,
-          TY, TZ], i < 45 := by decide
-      exact Or.inr (sl_below_bits c (hl i hi) 0 0)
-    · exact Or.inr (sl_below_bits c (i := TMP) (by decide) 0 0)
-
 theorem powLay_of (hc : CfgOk c) {jm : Nat} (hjm : jm ∉ [ACC, PT, TMP])
     (minv : BitVec 64) {red : Red}
     {base one j : Nat} (hj : j < 3) (hb : base ∉ [ACC, PT, TMP]) (hb45 : base < 45) (ho : one ≠ ACC)
@@ -129,17 +99,6 @@ theorem powLayN (hc : CfgOk c) : PowLay c.powN size :=
     (one := ONEN) (by decide) (by decide)
 
 /-! ## Alignment -/
-
-theorem ladA (c : Cfg) (h0 : 0 < c.n) (h7 : c.n < 7) : LadA c.ladderCfg where
-  sl := by
-    have e : ladSlots c.ladderCfg = [AP, B3P, GX, GY, ONEP, RX, RY, RZ, T0, T1, T2, T3, T4, T5, DX, DY, DZ,
-      TX, TY, TZ].map c.sl := rfl
-    rw [e]
-    intro x hx
-    obtain ⟨i, -, rfl⟩ := List.mem_map.mp hx
-    exact sl_mod8 c i
-  mod := MP'_A c
-  bits := by have := bitsAt_le c h7 (j := 0) (by decide); show bitsAt c.n 0 < 4096; omega
 
 theorem powAP (c : Cfg) (h0 : 0 < c.n) (h7 : c.n < 7) : PowA c.powP :=
   ⟨sl_mod8 c ACC, sl_mod8 c PT, sl_mod8 c RZ, sl_mod8 c ONEP, MP'_A c,

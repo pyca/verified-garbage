@@ -1,6 +1,5 @@
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Stages
 import VerifiedGarbage.Proof.Ecdsa.AArch64.CombLays
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Rep
 import VerifiedGarbage.Proof.Ecdsa.Sign
 
 /-!

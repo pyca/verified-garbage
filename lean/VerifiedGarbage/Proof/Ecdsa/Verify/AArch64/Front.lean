@@ -9,7 +9,7 @@ import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64
 checks of the key (`peer_ok`, `validate_ok`) leave `r`, the hash and `s` in
 their slots, `R = O`, the tables of `p - 2` and `n - 2`, the flag of the
 key's validity as the code checks it (`KeyOk`), and the key's point, or `G`
-if it is not valid, for ECDH's ladder (`Front`).
+if it is not valid, for ECDH's window method (`Front`).
 -/
 
 namespace VG.Proof.Ecdsa.Verify.AArch64
