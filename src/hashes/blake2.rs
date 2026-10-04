@@ -23,9 +23,9 @@
 /// * `init(state: *mut [u8; STATE], outlen: usize, key: *const u8, keylen: usize)`
 ///   makes `state` represent the key block (none for an empty key), hashed
 ///   from the initial state for an `outlen`-byte digest;
-/// * `update(state, count: u64, data: *const u8, len: usize, scratch: *mut [u64; SCRATCH])`
+/// * `update(state, count: u64, data: *const u8, len: usize)`
 ///   absorbs `len` bytes into a state representing data of `count` bytes;
-/// * `finalize(state, count: u64, out: *mut [u8; MAX], scratch)` writes the
+/// * `finalize(state, count: u64, out: *mut [u8; MAX])` writes the
 ///   final hash value, whose first `outlen` bytes are the digest.
 ///
 /// Every region is a distinct Rust object, so none overlaps another, the
@@ -38,7 +38,6 @@ macro_rules! blake2 {
         $(#[$doc:meta])*
         $name:ident {
             state: $state:literal,
-            scratch: $scratch:literal,
             block: $block:literal,
             max: $max:literal,
             init: $init:path,
@@ -86,13 +85,12 @@ macro_rules! blake2 {
                 count: u64,
                 data: *const u8,
                 len: usize,
-                scratch: &mut [u64; $scratch],
             ) {
                 // SAFETY: the caller's obligations.
                 unsafe {
                     match self {
-                        Self::$base => $update(state, count, data, len, scratch),
-                        $($(#[$attr])* Self::$variant => $vupdate(state, count, data, len, scratch),)*
+                        Self::$base => $update(state, count, data, len),
+                        $($(#[$attr])* Self::$variant => $vupdate(state, count, data, len),)*
                     }
                 }
             }
@@ -108,13 +106,12 @@ macro_rules! blake2 {
                 state: &mut [u8; $state],
                 count: u64,
                 out: &mut [u8; $max],
-                scratch: &mut [u64; $scratch],
             ) {
                 // SAFETY: the caller's obligations.
                 unsafe {
                     match self {
-                        Self::$base => $finalize(state, count, out, scratch),
-                        $($(#[$attr])* Self::$variant => $vfinalize(state, count, out, scratch),)*
+                        Self::$base => $finalize(state, count, out),
+                        $($(#[$attr])* Self::$variant => $vfinalize(state, count, out),)*
                     }
                 }
             }
@@ -196,11 +193,9 @@ macro_rules! blake2 {
                     .length
                     .checked_add(data.len() as u64)
                     .expect("data too long");
-                let mut scratch = [0u64; $scratch];
                 // SAFETY: `self.state` is valid for reads and writes of its
-                // size, `data` for reads of `data.len()` bytes and `scratch`
-                // for reads and writes of its size; they are distinct
-                // objects, so they do not overlap each other, the return
+                // size and `data` for reads of `data.len()` bytes; they are
+                // distinct objects, so they do not overlap each other, the return
                 // address (on x86-64 and x86), the arguments on the stack
                 // (on 32-bit ARM and x86) or the stack below them that the
                 // call uses, and do not wrap around the end of the address
@@ -213,7 +208,6 @@ macro_rules! blake2 {
                         self.length,
                         data.as_ptr(),
                         data.len(),
-                        &mut scratch,
                     )
                 };
                 self.length = length;
@@ -222,17 +216,16 @@ macro_rules! blake2 {
             /// Returns the digest of the data.
             pub fn finalize(mut self) -> [u8; N] {
                 let mut out = [0; $max];
-                let mut scratch = [0u64; $scratch];
                 // SAFETY: `self.state` is valid for reads and writes of its
-                // size, `out` for writes of its size and `scratch` for reads
-                // and writes of its size; they are distinct objects, so they
+                // size and `out` for writes of its size; they are distinct
+                // objects, so they
                 // do not overlap each other, the return address (on x86-64
                 // and x86), the arguments on the stack (on 32-bit ARM and
                 // x86) or the stack below them that the call uses, and do not
                 // wrap around the end of the address space. `self.length` is
                 // the exact length, less than 2⁶⁴, of the data `self.state`
                 // represents.
-                unsafe { self.backend.finalize(&mut self.state, self.length, &mut out, &mut scratch) };
+                unsafe { self.backend.finalize(&mut self.state, self.length, &mut out) };
                 let mut digest = [0; N];
                 digest.copy_from_slice(&out[..N]);
                 digest

@@ -116,15 +116,15 @@ def zeroSt : Prog isa :=
 
 /-- Absorb `len` bytes at `src`, at the position `pos` of the block (rate 136). -/
 def kabs (src len pos : Arg) : Prog isa :=
-  callA "vg_keccak_absorb" Impl.Sha3.X86_64.Stream.absorb [aSt p, .imm 136, pos, src, len, aKs p]
+  callA "vg_keccak_absorb_scratch" Impl.Sha3.X86_64.Stream.absorb [aSt p, .imm 136, pos, src, len, aKs p]
 
 /-- Pad at the position `pos`, with the suffix of SHAKE. -/
 def kpad (pos : Arg) : Prog isa :=
-  callA "vg_keccak_pad" Impl.Sha3.X86_64.Stream.pad [aSt p, .imm 136, pos, .imm 0x1f, aKs p]
+  callA "vg_keccak_pad_scratch" Impl.Sha3.X86_64.Stream.pad [aSt p, .imm 136, pos, .imm 0x1f, aKs p]
 
 /-- Squeeze 64 bytes from position 0 to `μ`. -/
 def ksqz : Prog isa :=
-  callA "vg_keccak_squeeze" Impl.Sha3.X86_64.Stream.squeeze [aSt p, .imm 136, .imm 0, aMu p, .imm 64, aKs p]
+  callA "vg_keccak_squeeze_scratch" Impl.Sha3.X86_64.Stream.squeeze [aSt p, .imm 136, .imm 0, aMu p, .imm 64, aKs p]
 
 /-- `μ = H(tr ‖ 0 ‖ ctx_len ‖ ctx ‖ M, 64)`, for the 64 bytes `tr` at `tr`. -/
 def muHash (tr : Arg) : Prog isa :=

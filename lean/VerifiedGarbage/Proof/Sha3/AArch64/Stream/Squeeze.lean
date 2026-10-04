@@ -511,10 +511,10 @@ theorem squeeze_ct (v : Permutation) : ConstantTime isa Proof.Sha3.squeezeAArch6
     (fun _ _ _ _ hp => agree₀ hp) hhint
 
 theorem squeeze_verified (v : Permutation) :
-    Verified AArch64.target (Impl.Sha3.AArch64.Stream.squeezeWith v.callee) (Spec.Sha3.squeezeContract AArch64.abi
+    Verified AArch64.target (Impl.Sha3.AArch64.Stream.squeezeWith v.callee) (Spec.Sha3.squeezeScratchContract AArch64.abi
       16) :=
   Verified.of_correct (squeeze_correct v) (squeeze_ct v) (by
-    sig_implies [Spec.Sha3.squeezeContract, Spec.Sha3.squeezeSig, Proof.Sha3.squeezeAArch64,
+    sig_implies [Spec.Sha3.squeezeScratchContract, Spec.Sha3.squeezeScratchSig, Spec.Sha3.squeezePre, Spec.Sha3.squeezePost, Proof.Sha3.squeezeAArch64,
       AArch64.abi, AArch64.argRegs] [Proof.Sha3.AArch64.Stream.Squeeze.sat] using
       Proof.Sha3.AArch64.Stream.Squeeze.sat)
 

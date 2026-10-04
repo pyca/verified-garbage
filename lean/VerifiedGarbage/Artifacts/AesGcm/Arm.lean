@@ -1,5 +1,5 @@
 import VerifiedGarbage.TCB.Arm.Target
-import VerifiedGarbage.Proof.AesGcm.Arm.Verified
+import VerifiedGarbage.Proof.AesGcm.Arm.Frame
 
 /-!
 # AES-GCM (NIST SP 800-38D) on ARMv7
@@ -15,7 +15,9 @@ against the contract.
 
 Each function calls `vg_aes_ctr32` or `vg_ghash` in a frame that pushes
 their two stack arguments, so uses 8 bytes of stack (`init` also calls
-`vg_aes_expand_key`, which takes no stack arguments).
+`vg_aes_expand_key`, which takes no stack arguments). `init`, `stream_init`
+and `stream_aad` also keep their working space in a frame of their own (2560
+bytes for `init`, 2576 for the others, `Proof/AesGcm/Arm/Frame.lean`).
 -/
 
 namespace VG.Artifacts.AesGcm.Arm
@@ -36,10 +38,10 @@ def artifacts : List Artifact := [
   { Spec.Gcm.initApi with
     target := Arm.target
     doc := Spec.Gcm.initApi.doc (notes := [initNote])
-    code := Impl.AesGcm.Arm.init
-    contract := Spec.Gcm.initContract Arm.abi 8
-    stack := 8
-    verified := init_verified
+    code := Impl.StackScratch.Arm.withRegScratch 2560 .r3 Impl.AesGcm.Arm.init
+    contract := Spec.Gcm.initContract Arm.abi 2568
+    stack := 2568
+    verified := init_framed
     spSafe := Code.all_of_forall (fun _ => rfl) _ },
   { Spec.Gcm.sealApi with
     target := Arm.target
@@ -60,18 +62,18 @@ def artifacts : List Artifact := [
   { Spec.Gcm.streamInitApi with
     target := Arm.target
     doc := Spec.Gcm.streamInitApi.doc (notes := [ghashNote])
-    code := Impl.AesGcm.Arm.streamInit
-    contract := Spec.Gcm.streamInitContract Arm.abi 8
-    stack := 8
-    verified := streamInit_verified
+    code := Impl.StackScratch.Arm.withStackScratch 2576 0 Impl.AesGcm.Arm.streamInit
+    contract := Spec.Gcm.streamInitContract Arm.abi 2584
+    stack := 2584
+    verified := streamInit_framed
     spSafe := Code.all_of_forall (fun _ => rfl) _ },
   { Spec.Gcm.streamAadApi with
     target := Arm.target
     doc := Spec.Gcm.streamAadApi.doc (notes := [ghashNote])
-    code := Impl.AesGcm.Arm.streamAad
-    contract := Spec.Gcm.streamAadContract Arm.abi 8
-    stack := 8
-    verified := streamAad_verified
+    code := Impl.StackScratch.Arm.withStackScratch 2576 2 Impl.AesGcm.Arm.streamAad
+    contract := Spec.Gcm.streamAadContract Arm.abi 2584
+    stack := 2584
+    verified := streamAad_framed
     spSafe := Code.all_of_forall (fun _ => rfl) _ },
   { Spec.Gcm.streamEncryptApi with
     target := Arm.target

@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Spec.Poly1305.Contract
 import VerifiedGarbage.Proof.Framework.PowLit
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Poly1305.Scratch
 
 /-!
 # Poly1305 on AArch64: `update`
@@ -680,23 +681,23 @@ theorem update_ct : ConstantTime isa Proof.Poly1305.updateAArch64.pre
   rcases hr with rfl | rfl | rfl | rfl <;> with_reducible assumption
 
 theorem update_verified :
-    Verified AArch64.target Impl.Poly1305.AArch64.Radix64.update (Spec.Poly1305.updateContract AArch64.abi)
+    Verified AArch64.target Impl.Poly1305.AArch64.Radix64.update (Proof.Poly1305.updateScratchContract AArch64.abi)
       :=
   Verified.of_correct update_ok update_ct
     { pre := by
-        sig_implies_pre [Spec.Poly1305.updateContract, Spec.Poly1305.updateSig,
+        sig_implies_pre [Proof.Poly1305.updateScratchContract, Proof.Poly1305.updateScratchSig, Spec.Poly1305.updatePost,
           Proof.Poly1305.updateAArch64, AArch64.abi, AArch64.argRegs]
       post := by
         intro s s' _ h
-        sig_eval [Spec.Poly1305.updateContract, Spec.Poly1305.updateSig, AArch64.abi,
+        sig_eval [Proof.Poly1305.updateScratchContract, Proof.Poly1305.updateScratchSig, Spec.Poly1305.updatePost, AArch64.abi,
             AArch64.argRegs]
         intro key msg hb hc
         exact h key msg hb (count_mod hc)
       pub := by
-        sig_implies_pub [Spec.Poly1305.updateContract, Spec.Poly1305.updateSig,
+        sig_implies_pub [Proof.Poly1305.updateScratchContract, Proof.Poly1305.updateScratchSig, Spec.Poly1305.updatePost,
           Proof.Poly1305.updateAArch64, AArch64.abi, AArch64.argRegs]
       sat := by
-        sig_implies_sat [Spec.Poly1305.updateContract, Spec.Poly1305.updateSig, AArch64.abi,
+        sig_implies_sat [Proof.Poly1305.updateScratchContract, Proof.Poly1305.updateScratchSig, Spec.Poly1305.updatePost, AArch64.abi,
           AArch64.argRegs, Proof.Poly1305.AArch64.Radix64.updateSat]
           [Proof.Poly1305.AArch64.Radix64.updateSat] using Proof.Poly1305.AArch64.Radix64.updateSat }
 

@@ -47,7 +47,7 @@ def absorbsWith (c : Impl.Sha3.AArch64.Callee) (sc : Reg) (st wk rate : Nat) : B
   | first, p :: ps =>
     .seq (.block (keccakArgs sc st wk rate first .x5 ++ ptrTo .x3 p.base p.off ++
         ([.movz .x .x4 (BitVec.ofNat 16 p.len) 0] : List Instr)))
-      (.seq (.call ("vg_keccak_absorb" ++ c.suffix) (Impl.Sha3.AArch64.Stream.absorbWith c)) (absorbsWith c sc st wk rate false ps))
+      (.seq (.call ("vg_keccak_absorb_scratch" ++ c.suffix) (Impl.Sha3.AArch64.Stream.absorbWith c)) (absorbsWith c sc st wk rate false ps))
 
 /-- Squeeze into the pieces `ps`. -/
 def squeezesWith (c : Impl.Sha3.AArch64.Callee) (sc : Reg) (st wk rate : Nat) : Bool → List Piece → Prog isa
@@ -55,7 +55,7 @@ def squeezesWith (c : Impl.Sha3.AArch64.Callee) (sc : Reg) (st wk rate : Nat) : 
   | first, p :: ps =>
     .seq (.block (keccakArgs sc st wk rate first .x5 ++ ptrTo .x3 p.base p.off ++
         ([.movz .x .x4 (BitVec.ofNat 16 p.len) 0] : List Instr)))
-      (.seq (.call ("vg_keccak_squeeze" ++ c.suffix) (Impl.Sha3.AArch64.Stream.squeezeWith c)) (squeezesWith c sc st wk rate false ps))
+      (.seq (.call ("vg_keccak_squeeze_scratch" ++ c.suffix) (Impl.Sha3.AArch64.Stream.squeezeWith c)) (squeezesWith c sc st wk rate false ps))
 
 /-- The hash of the message `ins` (pieces, absorbed after one another) into
 `outs`, with the rate `rate` and the domain-separation suffix `sfx`. -/
@@ -63,7 +63,7 @@ def hashWith (c : Impl.Sha3.AArch64.Callee) (sc : Reg) (st wk rate sfx : Nat) (i
   .seq (.block (zeroState sc st)) <|
   .seq (absorbsWith c sc st wk rate true ins) <|
   .seq (.block (keccakArgs sc st wk rate false .x4 ++ ([.movz .x .x3 (BitVec.ofNat 16 sfx) 0] : List Instr)))
-    (.seq (.call ("vg_keccak_pad" ++ c.suffix) (Impl.Sha3.AArch64.Stream.padWith c)) (squeezesWith c sc st wk rate true outs))
+    (.seq (.call ("vg_keccak_pad_scratch" ++ c.suffix) (Impl.Sha3.AArch64.Stream.padWith c)) (squeezesWith c sc st wk rate true outs))
 
 def absorbs := absorbsWith .scalar
 def squeezes := squeezesWith .scalar

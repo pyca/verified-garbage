@@ -139,13 +139,13 @@ pub(crate) unsafe extern "C" fn vg_poly1305_blocks(state: *mut [u64; 16], blocks
 ///
 /// * `state` must be valid for reads and writes of 128 bytes.
 /// * `data` must be valid for reads of `len` bytes.
-/// * `scratch` must be valid for reads and writes of 128 bytes.
-/// * The contents of `scratch` on return are unspecified.
-/// * `state` and `scratch` must not overlap each other or `data` (distinct Rust objects never do).
-/// * None of `state`, `data` and `scratch` may wrap around the end of the address space (no Rust object does).
+/// * `state` must not overlap `data` (distinct Rust objects never do).
+/// * Neither `state` nor `data` may overlap the 128 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_poly1305_update(state: *mut [u64; 16], count: u64, data: *const u8, len: usize, scratch: *mut [u64; 16]) {
+pub(crate) unsafe extern "C" fn vg_poly1305_update(state: *mut [u64; 16], count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
+        "sub sp, sp, #128",
+        "add x4, sp, #0",
         "movz x16, #65535, lsl #0",
         "movk x16, #4095, lsl #16",
         "movk x16, #65532, lsl #32",
@@ -323,6 +323,7 @@ pub(crate) unsafe extern "C" fn vg_poly1305_update(state: *mut [u64; 16], count:
         "str x4, [x0, #0]",
         "str x5, [x0, #8]",
         "str x6, [x0, #16]",
+        "add sp, sp, #128",
         "ret",
     )
 }
@@ -335,13 +336,132 @@ pub(crate) unsafe extern "C" fn vg_poly1305_update(state: *mut [u64; 16], count:
 ///
 /// * `state` must be valid for reads and writes of 128 bytes.
 /// * `out` must be valid for reads and writes of 16 bytes.
+/// * The contents of `state` on return are unspecified.
+/// * `state` and `out` must not overlap each other (distinct Rust objects never do).
+/// * Neither `state` nor `out` may overlap the 128 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_poly1305_finalize(state: *mut [u64; 16], count: u64, out: *mut [u8; 16]) {
+    core::arch::naked_asm!(
+        "sub sp, sp, #128",
+        "add x3, sp, #0",
+        "add x3, x2, #0",
+        "movz x2, #15, lsl #0",
+        "and x2, x1, x2",
+        "movz x16, #65535, lsl #0",
+        "movk x16, #4095, lsl #16",
+        "movk x16, #65532, lsl #32",
+        "movk x16, #4095, lsl #48",
+        "ldr x7, [x0, #24]",
+        "and x7, x7, x16",
+        "movz x16, #65532, lsl #0",
+        "movk x16, #4095, lsl #16",
+        "movk x16, #65532, lsl #32",
+        "movk x16, #4095, lsl #48",
+        "ldr x8, [x0, #32]",
+        "and x8, x8, x16",
+        "lsr x17, x8, #2",
+        "add x17, x17, x8",
+        "ldr x4, [x0, #0]",
+        "ldr x5, [x0, #8]",
+        "ldr x6, [x0, #16]",
+        "cbz x2, 20f",
+        "movz x11, #0, lsl #0",
+        "add x9, x0, x2",
+        "movz x10, #16, lsl #0",
+        "sub x10, x10, x2",
+        "22:",
+        "strb w11, [x9, #56]",
+        "add x9, x9, #1",
+        "sub x10, x10, #1",
+        "cbnz x10, 22b",
+        "movz x11, #1, lsl #0",
+        "add x9, x0, x2",
+        "strb w11, [x9, #56]",
+        "add x1, x0, #56",
+        "ldr x13, [x1, #0]",
+        "ldr x14, [x1, #8]",
+        "movz x15, #0, lsl #0",
+        "adds x4, x4, x13",
+        "adcs x5, x5, x14",
+        "adc x6, x6, x15",
+        "mul x9, x4, x7",
+        "umulh x10, x4, x7",
+        "mul x13, x5, x17",
+        "umulh x14, x5, x17",
+        "adds x9, x9, x13",
+        "adc x10, x10, x14",
+        "mul x11, x4, x8",
+        "umulh x12, x4, x8",
+        "mul x13, x5, x7",
+        "umulh x14, x5, x7",
+        "adds x11, x11, x13",
+        "adc x12, x12, x14",
+        "mul x13, x6, x17",
+        "movz x14, #0, lsl #0",
+        "adds x11, x11, x13",
+        "adc x12, x12, x14",
+        "mul x13, x6, x7",
+        "adds x11, x11, x10",
+        "adc x12, x12, x13",
+        "add x4, x9, #0",
+        "add x5, x11, #0",
+        "movz x14, #3, lsl #0",
+        "and x6, x12, x14",
+        "sub x13, x12, x6",
+        "lsr x12, x12, #2",
+        "add x13, x13, x12",
+        "movz x14, #0, lsl #0",
+        "adds x4, x4, x13",
+        "adcs x5, x5, x14",
+        "adc x6, x6, x14",
+        "b 21f",
+        "20:",
+        "21:",
+        "movz x13, #5, lsl #0",
+        "movz x14, #0, lsl #0",
+        "adds x9, x4, x13",
+        "adcs x10, x5, x14",
+        "adc x11, x6, x14",
+        "lsr x12, x11, #2",
+        "movz x14, #0, lsl #0",
+        "sub x12, x14, x12",
+        "movz x14, #3, lsl #0",
+        "and x11, x11, x14",
+        "eor x13, x9, x4",
+        "and x13, x13, x12",
+        "eor x4, x4, x13",
+        "eor x13, x10, x5",
+        "and x13, x13, x12",
+        "eor x5, x5, x13",
+        "eor x13, x11, x6",
+        "and x13, x13, x12",
+        "eor x6, x6, x13",
+        "ldr x13, [x0, #40]",
+        "ldr x14, [x0, #48]",
+        "adds x4, x4, x13",
+        "adc x5, x5, x14",
+        "str x4, [x3, #0]",
+        "str x5, [x3, #8]",
+        "add sp, sp, #128",
+        "ret",
+    )
+}
+
+/// `vg_poly1305_finalize`, with its working space in `*scratch`.
+///
+/// Contract: `VG.Spec.Poly1305.finalizeScratchContract`. Constant time: only the pointers and `count` may affect timing, not the state.
+///
+/// # Safety
+///
+/// * `state` must be valid for reads and writes of 128 bytes.
+/// * `out` must be valid for reads and writes of 16 bytes.
 /// * `scratch` must be valid for reads and writes of 128 bytes.
 /// * The contents of `state` on return are unspecified.
 /// * The contents of `scratch` on return are unspecified.
 /// * `state`, `out` and `scratch` must not overlap each other (distinct Rust objects never do).
 /// * None of `state`, `out` and `scratch` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_poly1305_finalize(state: *mut [u64; 16], count: u64, out: *mut [u8; 16], scratch: *mut [u64; 16]) {
+pub(crate) unsafe extern "C" fn vg_poly1305_finalize_scratch(state: *mut [u64; 16], count: u64, out: *mut [u8; 16], scratch: *mut [u64; 16]) {
     core::arch::naked_asm!(
         "add x3, x2, #0",
         "movz x2, #15, lsl #0",
