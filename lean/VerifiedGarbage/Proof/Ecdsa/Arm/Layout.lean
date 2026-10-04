@@ -82,26 +82,37 @@ structure Pre (c : Cfg) (s : State) : Prop where
   sc_fit : (stackArg s 0).toNat + 8192 ≤ 2 ^ 32
   sp_fit : s.sp.toNat + 4 ≤ 2 ^ 32
 
+/-- The working space's base, from where `A` says. -/
+def scVal (A : Args) (s : State) : BitVec 32 :=
+  match A.sc with
+  | none => stackArg s 0
+  | some r => s.gpr r
+
+theorem scVal_sign (s : State) : scVal .sign s = stackArg s 0 := rfl
+
+/-- The working space's base, as an address. -/
+abbrev scBase (A : Args) (s : State) : Addr := State.addr (scVal A s)
+
 /-- The registers `A` names hold none of the working registers of the setup. -/
 def argsOk (A : Args) : Prop := A.k ∉ [.r4, .r12, .lr] ∧ A.d ∉ [.r4, .r12, .lr] ∧ A.e ∉ [.r4, .r12, .lr]
 
-/-- What `setupWith A` needs of its arguments: `scratch` readable and its
-`8192` bytes writable, `k`, `d` and the hash readable and apart from the
-working space, and nothing wrapping around `2³²`. -/
+/-- What `setupWith A` needs of its arguments: `scratch` readable (if on
+the stack) and its `8192` bytes writable, `k`, `d` and the hash readable and
+apart from the working space, and nothing wrapping around `2³²`. -/
 structure SetupPre (c : Cfg) (A : Args) (s : State) : Prop where
   args : argsOk A
-  sc_in : InRegions (s.rd ++ s.wr) (stackArgAddr s 0) 4
-  wr : (⟨scPtr s, 8192⟩ : Region) ∈ s.wr
+  sc_in : A.sc = none → InRegions (s.rd ++ s.wr) (stackArgAddr s 0) 4
+  wr : (⟨scBase A s, 8192⟩ : Region) ∈ s.wr
   k_in : ∀ e, e + 4 ≤ 8 * c.n → InRegions (s.rd ++ s.wr) (ptr s A.k + BitVec.ofNat 64 e) 4
   d_in : ∀ e, e + 4 ≤ 8 * c.n → InRegions (s.rd ++ s.wr) (ptr s A.d + BitVec.ofNat 64 e) 4
   e_in : ∀ e, e + 4 ≤ 8 * c.n → InRegions (s.rd ++ s.wr) (ptr s A.e + BitVec.ofNat 64 e) 4
-  k_sc : Region.Disjoint ⟨ptr s A.k, 8 * c.n⟩ ⟨scPtr s, size⟩
-  d_sc : Region.Disjoint ⟨ptr s A.d, 8 * c.n⟩ ⟨scPtr s, size⟩
-  e_sc : Region.Disjoint ⟨ptr s A.e, 8 * c.n⟩ ⟨scPtr s, size⟩
+  k_sc : Region.Disjoint ⟨ptr s A.k, 8 * c.n⟩ ⟨scBase A s, size⟩
+  d_sc : Region.Disjoint ⟨ptr s A.d, 8 * c.n⟩ ⟨scBase A s, size⟩
+  e_sc : Region.Disjoint ⟨ptr s A.e, 8 * c.n⟩ ⟨scBase A s, size⟩
   k_fit : (s.gpr A.k).toNat + 8 * c.n ≤ 2 ^ 32
   d_fit : (s.gpr A.d).toNat + 8 * c.n ≤ 2 ^ 32
   e_fit : (s.gpr A.e).toNat + 8 * c.n ≤ 2 ^ 32
-  sc_fit : (stackArg s 0).toNat + 8192 ≤ 2 ^ 32
+  sc_fit : (scVal A s).toNat + 8192 ≤ 2 ^ 32
 
 /-- The words of a region are accessible. -/
 theorem inRegions_words {rs : List Region} {p : Addr} {len : Nat} (h : (⟨p, len⟩ : Region) ∈ rs)
@@ -116,8 +127,8 @@ theorem sc_sub (s : State) : Region.Sub ⟨scPtr s, size⟩ (scR s) := Region.su
 
 theorem Pre.setup {c : Cfg} {s : State} (hp : Pre c s) (h7 : c.n < 7) : SetupPre c .sign s where
   args := by unfold argsOk; decide
-  sc_in := by rw [stackArgAddr0]; exact ⟨argsR s, by rw [hp.rd]; simp, Region.contains_self _ _⟩
-  wr := by rw [hp.wr]; simp
+  sc_in := fun _ => by rw [stackArgAddr0]; exact ⟨argsR s, by rw [hp.rd]; simp, Region.contains_self _ _⟩
+  wr := by show (⟨scPtr s, 8192⟩ : Region) ∈ s.wr; rw [hp.wr]; simp
   k_in := inRegions_words (by rw [hp.rd]; simp) (by omega)
   d_in := inRegions_words (by rw [hp.rd]; simp) (by omega)
   e_in := inRegions_words (by rw [hp.rd]; simp) (by omega)
