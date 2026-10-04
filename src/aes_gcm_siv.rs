@@ -13,10 +13,11 @@
 //! The functions are emitted once for each combination of the
 //! implementations of AES (`vg_aes_ctr32`, `vg_aes_expand_key`) and of GHASH
 //! (`vg_ghash`, with which POLYVAL is computed) that AES-GCM has, and are
-//! chosen as AES-GCM's are (`crate::aes_gcm`'s backends). x86-64 and AArch64
-//! have implementations so far.
+//! chosen as AES-GCM's are (`crate::aes_gcm`'s backends). x86-64, AArch64
+//! and 32-bit ARM (the baseline ISA's implementations alone) have
+//! implementations so far.
 
-#![cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
+#![cfg(any(target_arch = "x86_64", target_arch = "aarch64", target_arch = "arm"))]
 
 use crate::aes_gcm::{Backend, instance, select};
 use crate::arch::aes::vg_aes_expand_key;
@@ -49,7 +50,7 @@ const WORK: usize = 512;
 
 /// The longest plaintext and additional data, in bytes (§6: `P_MAX` and
 /// `A_MAX`, `2^36`).
-const MAX_LEN: usize = 1 << 36;
+const MAX_LEN: u64 = 1 << 36;
 
 /// Why an AES-GCM-SIV operation failed.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -84,7 +85,7 @@ impl Drop for AesGcmSiv {
 }
 
 /// Checks the lengths of §6: of the additional data and of the text.
-fn check(aad_len: usize, len: usize) -> Result<(), Error> {
+fn check(aad_len: u64, len: u64) -> Result<(), Error> {
     if len > MAX_LEN {
         return Err(Error::InvalidTextLength);
     }
@@ -144,7 +145,7 @@ impl AesGcmSiv {
         aad: &[u8],
         data: &mut [u8],
     ) -> Result<[u8; 16], Error> {
-        check(aad.len(), data.len())?;
+        check(aad.len() as u64, data.len() as u64)?;
         let seal = instance!(self.backend, vg_aes_gcm_siv_seal,
             x86_64: [vg_aes_gcm_siv_seal_aesni, vg_aes_gcm_siv_seal_pclmul, vg_aes_gcm_siv_seal_aesni_pclmul],
             vaes: [vg_aes_gcm_siv_seal_vaes, vg_aes_gcm_siv_seal_vpclmul, vg_aes_gcm_siv_seal_vaes_pclmul,
@@ -190,7 +191,7 @@ impl AesGcmSiv {
         data: &mut [u8],
         tag: &[u8; 16],
     ) -> Result<(), Error> {
-        check(aad.len(), data.len())?;
+        check(aad.len() as u64, data.len() as u64)?;
         let open = instance!(self.backend, vg_aes_gcm_siv_open,
             x86_64: [vg_aes_gcm_siv_open_aesni, vg_aes_gcm_siv_open_pclmul, vg_aes_gcm_siv_open_aesni_pclmul],
             vaes: [vg_aes_gcm_siv_open_vaes, vg_aes_gcm_siv_open_vpclmul, vg_aes_gcm_siv_open_vaes_pclmul,
