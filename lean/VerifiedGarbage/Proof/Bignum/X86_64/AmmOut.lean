@@ -402,4 +402,80 @@ theorem carryOut_ok {B : Addr} {L : Nat → Nat → Nat} {s : State}
     ⟨h, fun r a b c d => (g r a b c d).trans (g2 r c d), rd, wr, x⟩
   rfl
 
+
+/-! ## The whole multiplication -/
+
+/-- Writes of 32 bytes below `n` leave the rest. -/
+theorem wrList_outside (B : Addr) {n : Nat} (hn : n ≤ 2 ^ 63) :
+    ∀ (l : List (Nat × BitVec 256)) (m : Mem), (∀ x ∈ l, x.1 + 32 ≤ n) → Outside B 0 n m (wrList m B l)
+  | [], m, _ => Outside.refl B 0 n m
+  | (e, v) :: rest, m, h => by
+    have he := h (e, v) (List.mem_cons_self ..)
+    exact ((writeW256_outside m B v (by omega)).mono (by omega) (by omega)).trans
+      (wrList_outside B hn rest _ fun x hx => h x (List.mem_cons_of_mem _ hx))
+
+theorem accStores_lt : ∀ x ∈ accStores, x.1 + 32 ≤ D + 160 := by decide
+
+/-- `ammCore` from the operands `a` (at `r8`), `b` (at `r9`) and the modulus `m`
+with `k` (at `rbx`), into limbs at `r11 = B`: each prime's limbs carried, and
+its carry out. -/
+theorem ammCore_ok {s : State} {B : Addr} {a m : Nat → Nat → Nat} {k : Nat → Nat} {bl : Nat → Nat → Nat}
+    (e : Env (s.setReg .r10 (s.gpr .rbx)) a m k bl) (hB : s.gpr .r11 = B) (hs : Scr s B (D + 160)) :
+    WP isa VG.Impl.Rsa.X86_64.CrtIfma.ammCore s fun s' =>
+      (∀ p < 2, ∀ l < 20, word s'.mem B (D * p + VG.Impl.Rsa.X86_64.CrtIfma.off l) =
+        BitVec.ofNat 64 (carried (lm a m k bl p 20) l)) ∧
+      s'.gpr .rdx = BitVec.ofNat 64 (carryIn (lm a m k bl 0 20) 20) ∧
+      s'.gpr .rsi = BitVec.ofNat 64 (carryIn (lm a m k bl 1 20) 20) ∧
+      Outside B 0 (D + 160) s.mem s'.mem ∧
+      (∀ r, r ≠ .rax → r ≠ .rcx → r ≠ .rdx → r ≠ .rsi → r ≠ .r9 → r ≠ .r10 → r ≠ .r12 → s'.gpr r = s.gpr r) ∧
+      s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.mxcsr = s.mxcsr := by
+  have hD : D = 3872 := rfl
+  refine WP.seq ?_
+  rw [List.cons_append, WP.block_cons_iff]
+  refine ⟨s.setReg .r10 (s.gpr .rbx), rfl, ?_⟩
+  rw [List.cons_append, WP.block_cons_iff]
+  refine ⟨_, rfl, ?_⟩
+  refine WP.mono (zeros_ok (s := (s.setReg .r10 (s.gpr .rbx)).setReg32 .rcx 4)) fun s₁ ⟨hz, k₁⟩ => ?_
+  have g₁ : ∀ r, r ≠ .rax → r ≠ .rcx → s₁.gpr r = (s.setReg .r10 (s.gpr .rbx)).gpr r := fun r a c => by
+    rw [k₁.gpr r a]; exact RegUpd.gpr_setReg_of_ne _ _ c
+  have i₁ : InBlk (s.setReg .r10 (s.gpr .rbx)) s₁ a m k bl 0 0 :=
+    ⟨fun p hp kk hk t ht => by
+      rw [hz _ (by unfold regOf; omega) t ht]; rfl,
+     fun t ht => hz 14 (by decide) t ht, g₁ _ (by decide) (by decide),
+     by rw [g₁ _ (by decide) (by decide), Nat.mul_zero, BitVec.add_zero], g₁ _ (by decide) (by decide),
+     k₁.mem, k₁.rd, k₁.wr⟩
+  refine WP.seq (WP.mono (loop_ok e 4 s₁ (by decide) (by decide) i₁ (by rw [k₁.gpr _ (by decide)]; rfl))
+    fun s₂ ⟨i₂, g₂, x₂⟩ => ?_)
+  have hB₂ : s₂.gpr .r11 = B := by
+    rw [g₂ _ (by decide) (by decide) (by decide), g₁ _ (by decide) (by decide)]
+    exact (RegUpd.gpr_setReg_of_ne _ _ (by decide)).trans hB
+  have wr₂ : s₂.wr = s.wr := by rw [i₂.wr]; rfl
+  rw [accStores_code, List.append_assoc, WP.block_append_iff]
+  refine WP.mono (stores_gen accStores s₂ hB₂ fun x hx =>
+    wr₂ ▸ (let ⟨_, h, c⟩ := hs.region (accStores_lt x hx) (by decide); ⟨_, h, c⟩)) fun s₃ h₃ => ?_
+  subst h₃
+  rw [List.singleton_append, WP.block_cons_iff]
+  refine ⟨_, rfl, ?_⟩
+  have m₂ : s₂.mem = s.mem := i₂.mem
+  refine WP.mono (carryOut_ok (B := B) (L := fun p => lm a m k bl p 20) (fun p _ l hl => lm_lt (by decide) hl)
+    (fun d hd => by rw [RegUpd.wr_setReg, wr₂]; exact hs.st hd) (by rw [RegUpd.gpr_setReg_of_ne _ _ (by decide)]; exact hB₂)
+    (RegUpd.gpr_setReg_self _ _ _) fun p hp l hl => ?_) fun s' ⟨h, g, rd, wr, x⟩ => ?_
+  · have := read_stores s₂.mem B s₂ hp (k := l % 5) (t := l / 5) (Nat.mod_lt _ (by decide)) (by omega)
+    rw [i₂.lanes p hp _ (Nat.mod_lt _ (by decide)) _ (by omega), Nat.mod_add_div] at this
+    rw [RegUpd.mem_setReg, show D * p + VG.Impl.Rsa.X86_64.CrtIfma.off l = D * p + 32 * (l % 5) + 8 * (l / 5) by
+      unfold VG.Impl.Rsa.X86_64.CrtIfma.off; omega]
+    exact this
+  refine ⟨fun p hp l hl => by rw [h.words p hp l hl]; simp only [hl, ite_true], h.rdx, h.rsi, ?_, fun r r1 r2 r3 r4 r5 r6 r7 => ?_,
+    by rw [rd, RegUpd.rd_setReg, i₂.rd]; rfl, by rw [wr, RegUpd.wr_setReg, wr₂],
+    by rw [x, RegUpd.mxcsr_setReg, x₂, k₁.mxcsr]; rfl⟩
+  · have o := wrList_outside B (n := D + 160) (by omega) (accStores.map fun x => (x.1, s₂.ymm x.2)) s₂.mem
+      fun x hx => by
+        obtain ⟨y, hy, rfl⟩ := List.mem_map.1 hx
+        exact accStores_lt y hy
+    have hf : Outside B 0 (D + 160) (wrList s₂.mem B (accStores.map fun x => (x.1, s₂.ymm x.2))) s'.mem := h.frame
+    have o' : Outside B 0 (D + 160) s.mem (wrList s₂.mem B (accStores.map fun x => (x.1, s₂.ymm x.2))) :=
+      fun x hx => (o x hx).trans (congrFun m₂ x)
+    exact o'.trans hf
+  · rw [g r r1 r2 r3 r4, RegUpd.gpr_setReg_of_ne _ _ r7, g₂ r r1 r2 r5, g₁ r r1 r2, RegUpd.gpr_setReg_of_ne _ _ r6]
+
 end VG.Proof.Bignum.X86_64.AmmSym
