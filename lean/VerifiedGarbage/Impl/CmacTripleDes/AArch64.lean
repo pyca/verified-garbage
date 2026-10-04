@@ -9,13 +9,14 @@ and `vg_cmac_triple_des_finalize(key = x0, state = x1, last = x2, last_len = x3,
 (see `VG.Spec.Cmac.tdesInitContract` and the others), as on x86-64
 (`Impl/CmacTripleDes/X86_64.lean`). Each encrypts blocks with `block`
 (`AArch64/Round.lean`), inline: the block as a big-endian 64-bit integer in
-`x5`, the key schedule at `x14` and the scratch buffer at `x15`. They use
-only `x0`–`x17` and caller-saved vector registers, so they save nothing, and
-call nothing.
+`x5`, the key schedule at `x14` and the scratch buffer at `x15`. They call
+nothing; the block saves the callee-saved registers it uses (`x19`–`x27`)
+and restores them.
 
 The scratch buffer: slots 0–47 (bytes `[0, 384)`) are the block's spread
-round keys; slots 6–8 hold `init`'s three DES keys and slot 6 `finalize`'s
-last block `Mₙ` before the block runs.
+round keys and slots 48–56 the callee-saved registers it saves; slots 6–8
+hold `init`'s three DES keys and slot 6 `finalize`'s last block `Mₙ` before
+the block runs.
 
 * `init` reads the three DES keys (the third is the first for a 16-byte
   key) to slots 6–8, writes their round keys (`roundKeys`, 128 bytes each)
@@ -23,7 +24,8 @@ last block `Mₙ` before the block runs.
   (`L`) and doubles it twice, as a 64-bit integer: shifted left by one bit,
   and XORed with `0x1b` masked by the bit shifted out.
 * `update` keeps the state pointer in `x1`, the data pointer in `x2` and the
-  blocks left in `x3`; each block, `x5` is `C ⊕ Mᵢ`.
+  blocks left in `x3`; it runs `prep` once, then each block `enc` on
+  `x5 = C ⊕ Mᵢ`.
 * `finalize` forms `Mₙ` in `x5`: `Mₙ* ⊕ K1` for a complete block, else `Mₙ*`
   copied a byte at a time onto zeros in slot 6 (through advancing pointers:
   the model has no register-offset addressing), `0x80` after it, and XORed
@@ -77,11 +79,14 @@ def chainIn : List Instr :=
 def chainOut : List Instr :=
   [.rev .x5 .x5, .str .x .x5 .x1 0, .addImm .x .x2 .x2 8, .subImm .x .x3 .x3 1]
 
-def updBody : Prog isa := .seq (.block chainIn) (.seq block (.block chainOut))
+def updBody : Prog isa := .seq (.block chainIn) (.seq enc (.block chainOut))
 
+/-- The round keys, tables, constants and masks are set up once (`prep`)
+for all the blocks. -/
 def update : Prog isa :=
   .seq (.block [mov .x14 .x0, mov .x15 .x4])
-    (.ite (.zero .x .x3) (.block []) (.loop updBody (.nonzero .x .x3)))
+    (.ite (.zero .x .x3) (.block [])
+      (.seq prep (.seq (.loop updBody (.nonzero .x .x3)) (.block blockRestore))))
 
 /-! ## `vg_cmac_triple_des_finalize` -/
 
