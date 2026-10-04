@@ -206,4 +206,123 @@ theorem chunk_rel (v : Ctr32Impl) {K W SP : Addr} {R : Nat} {N A D : Addr} {nl a
         _, k₁, k₂⟩) chunkEnd_check
   exact rel_assoc3 (RelCT.seq r₁ (RelCT.seq r₂ (r₃.mono (fun _ _ h => h) fun _ _ h => h.2)))
 
+/-! ## The last bytes -/
+
+/-- Before the last bytes, in a run from `σ`: after the whole blocks, with
+`n mod 16` in `rbp`. -/
+def TailIn (K W SP : Addr) (R : Nat) (nonce : List Byte) (D : Addr) (n : Nat) (σ t₀ : State) : Prop :=
+  ∃ t, CtrInv K W SP σ R nonce D n (n / 16) t ∧ t₀.mem = t.mem ∧ (∀ r, r ≠ .rbp → t₀.gpr r = t.gpr r) ∧
+    t₀.gpr .rbp = BitVec.ofNat 64 (n % 16) ∧ t₀.rd = t.rd ∧ t₀.wr = t.wr
+
+/-- What the call for the last bytes is given. -/
+def TailArgs (K W SP : Addr) (R : Nat) (D : Addr) (n : Nat) (σ t : State) : Prop :=
+  CtrCall t K (W + BitVec.ofNat 64 64) (W + BitVec.ofNat 64 80) (W + BitVec.ofNat 64 384) R 1 ∧ Env K W SP t ∧
+    t.gpr .r12 = D + BitVec.ofNat 64 (16 * (n / 16)) ∧ t.gpr .rbp = BitVec.ofNat 64 (n % 16) ∧ t.rd = σ.rd ∧
+    t.wr = σ.wr ∧ Frame (ctrR W SP D n) σ.mem t.mem
+
+/-- What the call for the last bytes leaves. -/
+def TailCalled (K W SP : Addr) (D : Addr) (n : Nat) (σ t : State) : Prop :=
+  Env K W SP t ∧ t.gpr .r12 = D + BitVec.ofNat 64 (16 * (n / 16)) ∧ t.gpr .rbp = BitVec.ofNat 64 (n % 16) ∧
+    t.wr = σ.wr ∧ Frame (ctrR W SP D n) σ.mem t.mem
+
+theorem tailArgs_ok {K W SP : Addr} {σ : State} {R : Nat} {nonce : List Byte} {D : Addr} {n : Nat}
+    (C : CtrCtx K W SP σ R nonce D n) {t₀ : State} (h : TailIn K W SP R nonce D n σ t₀) (h0 : n % 16 ≠ 0) :
+    WP isa (.block ([.mov .rsi (.mem (at_ .r15 roundsO)), .mov .rax (.reg .r14)] ++ ctrAt ++ zero16 ksO ++
+      [.mov .rdi (.reg .r13)] ++ ptr .rdx .r15 c1O ++ ptr .rcx .r15 ksO ++
+      [.mov32 .r8 (imm 1)] ++ ptr .r9 .r15 scrO)) t₀ (TailArgs K W SP R D n σ) := by
+  obtain ⟨t, I, hm₀, hg₀, hbp, hrd₀, hwr₀⟩ := h
+  have L := C.lay
+  have E₀ : Env K W SP t₀ := I.env.keep (fun r hr => hg₀ r (by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr; rcases hr with rfl | rfl | rfl <;> decide)) hrd₀ hwr₀
+  obtain ⟨t₁, run₁, f₁, _, _, hdi, hsi, hdx, hcx, hr8, hr9, hg₁, hrd₁, hwr₁⟩ :=
+    tailSetup_ok E₀ (by rw [hm₀, C.readW_kept I.frame (by omega), C.ro]) C.h7 C.h13
+      (by rw [hm₀, C.bytes_kept I.frame (by omega), C.c0]) (j := 1 + n / 16) (by have := C.hn; omega)
+      (by rw [hg₀ _ (by decide), I.r14])
+  have E₁ : Env K W SP t₁ := E₀.keep (fun r hr => hg₁ r (by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr ⊢; rcases hr with rfl | rfl | rfl <;> simp)) hrd₁ hwr₁
+  have hq := srcW (s := t₁) L E₁.perm (t := 80) (k := 16 * 1) (by decide)
+  have hqc : (⟨W + BitVec.ofNat 64 80, 16 * 1⟩ : Region).Disjoint ⟨W + BitVec.ofNat 64 64, 16⟩ :=
+    L.w_w (.inr (by decide)) (by decide) (by decide)
+  have hqk : (⟨K, 240⟩ : Region).Disjoint ⟨W + BitVec.ofNat 64 80, 16 * 1⟩ := L.k_w.sub_right (Lay.wSub (by decide))
+  exact WP.of_runBlock ⟨t₁, run₁, cargs L E₁ C.rounds (c := 64) (by decide) hq hqc hqk
+    (E₁.perm.wC (d := 80) (n := 16 * 1) (by decide)) hdi hsi hdx hcx hr8 hr9, E₁,
+    by rw [hg₁ _ (by simp), hg₀ _ (by decide), I.r12], by rw [hg₁ _ (by simp), hbp],
+    by rw [hrd₁, hrd₀, I.rd], by rw [hwr₁, hwr₀, I.wr],
+    I.frame.trans (by rw [← hm₀]; exact f₁.sub fun r hr => ⟨r, by
+      simp only [List.mem_singleton] at hr; subst hr; simp, fun _ h => h⟩)⟩
+
+theorem tailCalled_ok (v : Ctr32Impl) {K W SP : Addr} {R : Nat} {D : Addr} {n : Nat} {σ t : State}
+    (h : TailArgs K W SP R D n σ t) :
+    WP isa (.call v.callee.name v.callee.code) t (TailCalled K W SP D n σ) := by
+  obtain ⟨cc, E, h12, hbp, _, wr, f⟩ := h
+  refine WP.mono (ctr_call v cc) fun t' p => ⟨E.of_saved p.saved p.rd p.wr, by rw [p.saved _ (by decide), h12],
+    by rw [p.saved _ (by decide), hbp], by rw [p.wr, wr], ?_⟩
+  have fc := p.frame
+  rw [E.rsp] at fc
+  exact f.trans (fc.sub fun r hr => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl
+    · exact ⟨⟨W + BitVec.ofNat 64 64, 32⟩, by simp, Region.sub_prefix (by decide)⟩
+    · exact ⟨⟨W + BitVec.ofNat 64 64, 32⟩, by simp, Offset.sub W (by decide) (by decide)⟩
+    · exact ⟨⟨W + BitVec.ofNat 64 384, 2176⟩, by simp, Region.sub_prefix (by decide)⟩
+    · exact ⟨below SP 16, by simp, below8_sub SP⟩)
+
+theorem tailArgs_check : ∃ hc, (taint.check (ccmT [.r12, .r14, .rbp])
+    (.block ([.mov .rsi (.mem (at_ .r15 roundsO)), .mov .rax (.reg .r14)] ++ ctrAt ++ zero16 ksO ++
+      [.mov .rdi (.reg .r13)] ++ ptr .rdx .r15 c1O ++ ptr .rcx .r15 ksO ++
+      [.mov32 .r8 (imm 1)] ++ ptr .r9 .r15 scrO)) hc).isSome = true := ⟨_, by taint_decide⟩
+
+theorem tailEnd_check : ∃ hc, (taint.check (ccmT [.r12, .rbp])
+    (.seq (.block ([.mov .rdi (.reg .r12)] ++ ptr .rsi .r15 ksO ++ [.mov .rcx (.reg .rbp)])) xorLoop) hc).isSome =
+      true := ⟨_, by taint_decide⟩
+
+/-- The last bytes, in two runs. -/
+theorem tail_rel (v : Ctr32Impl) {K W SP : Addr} {R : Nat} {N A D : Addr} {nl al n tl : Nat} {σ₁ σ₂ : State}
+    {nonce₁ nonce₂ : List Byte} (C₁ : CtrCtx K W SP σ₁ R nonce₁ D n) (C₂ : CtrCtx K W SP σ₂ R nonce₂ D n)
+    (O₁ : One K W SP R N A D nl al n tl σ₁) (O₂ : One K W SP R N A D nl al n tl σ₂) (h0 : n % 16 ≠ 0) :
+    RelCT isa (fun t₁ t₂ => TailIn K W SP R nonce₁ D n σ₁ t₁ ∧ TailIn K W SP R nonce₂ D n σ₂ t₂)
+      (.seq (.block ([.mov .rsi (.mem (at_ .r15 roundsO)), .mov .rax (.reg .r14)] ++ ctrAt ++ zero16 ksO ++
+          [.mov .rdi (.reg .r13)] ++ ptr .rdx .r15 c1O ++ ptr .rcx .r15 ksO ++
+          [.mov32 .r8 (imm 1)] ++ ptr .r9 .r15 scrO))
+        (.seq (callCtr v.callee)
+          (.seq (.block ([.mov .rdi (.reg .r12)] ++ ptr .rsi .r15 ksO ++ [.mov .rcx (.reg .rbp)])) xorLoop)))
+      fun _ _ => True := by
+  have L := C₁.lay
+  have hDW := C₁.buf.w
+  have hn : n ≤ 2 ^ 64 := Nat.le_of_lt C₁.buf.lt
+  have oneIn : ∀ {σ t₀ : State} {nonce : List Byte}, CtrCtx K W SP σ R nonce D n →
+      One K W SP R N A D nl al n tl σ → TailIn K W SP R nonce D n σ t₀ →
+      One K W SP R N A D nl al n tl t₀ ∧ t₀.gpr .r12 = D + BitVec.ofNat 64 (16 * (n / 16)) ∧
+        t₀.gpr .r14 = BitVec.ofNat 64 (1 + n / 16) ∧ t₀.gpr .rbp = BitVec.ofNat 64 (n % 16) :=
+    fun C O ⟨t, I, hm₀, hg₀, hbp, hrd₀, hwr₀⟩ =>
+      ⟨⟨I.env.keep (fun r hr => hg₀ r (by
+          simp only [List.mem_cons, List.not_mem_nil, or_false] at hr; rcases hr with rfl | rfl | rfl <;> decide))
+          hrd₀ hwr₀, hm₀ ▸ (I.one C O).sl, hwr₀.trans (I.one C O).wr⟩,
+        by rw [hg₀ _ (by decide), I.r12], by rw [hg₀ _ (by decide), I.r14], hbp⟩
+  have r₁ := (rel_taintC [.r12, .r14, .rbp] hDW hn (fun t₁ t₂ (h : TailIn K W SP R nonce₁ D n σ₁ t₁ ∧
+      TailIn K W SP R nonce₂ D n σ₂ t₂) => by
+    obtain ⟨o₁, a₁, b₁, c₁⟩ := oneIn C₁ O₁ h.1
+    obtain ⟨o₂, a₂, b₂, c₂⟩ := oneIn C₂ O₂ h.2
+    exact Both.of o₁ o₂ fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl
+      · rw [a₁, a₂]
+      · rw [b₁, b₂]
+      · rw [c₁, c₂]) tailArgs_check).wp (F₁ := TailArgs K W SP R D n σ₁) (F₂ := TailArgs K W SP R D n σ₂)
+    fun t₁ t₂ h => ⟨tailArgs_ok C₁ h.1 h0, tailArgs_ok C₂ h.2 h0⟩
+  have r₂ := (ctr_rel v (P := fun t₁ t₂ => True ∧ TailArgs K W SP R D n σ₁ t₁ ∧ TailArgs K W SP R D n σ₂ t₂)
+    fun t₁ t₂ h => ⟨_, _, _, _, _, _, h.2.1.1, h.2.2.1, by rw [h.2.1.2.1.rsp, h.2.2.2.1.rsp]⟩).wp
+    (F₁ := TailCalled K W SP D n σ₁) (F₂ := TailCalled K W SP D n σ₂)
+    fun t₁ t₂ h => ⟨tailCalled_ok v h.2.1, tailCalled_ok v h.2.2⟩
+  have r₃ := rel_taintC (K := K) (SP := SP) (R := R) (N := N) (A := A) (nl := nl) (al := al) (tl := tl)
+    (P := fun t₁ t₂ => True ∧ TailCalled K W SP D n σ₁ t₁ ∧ TailCalled K W SP D n σ₂ t₂)
+    [.r12, .rbp] hDW hn (fun t₁ t₂ ⟨_, ⟨E₁, a₁, b₁, w₁, f₁⟩, ⟨E₂, a₂, b₂, w₂, f₂⟩⟩ =>
+      Both.of ⟨E₁, slots_mut L hDW (f₁.sub (ctrR_mut W SP D n)) O₁.sl, w₁.trans O₁.wr⟩
+        ⟨E₂, slots_mut L hDW (f₂.sub (ctrR_mut W SP D n)) O₂.sl, w₂.trans O₂.wr⟩ fun r hr => by
+          simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+          rcases hr with rfl | rfl
+          · rw [a₁, a₂]
+          · rw [b₁, b₂]) tailEnd_check
+  exact RelCT.seq r₁ (RelCT.seq r₂ r₃)
+
 end VG.Proof.AesCcm.X86_64
