@@ -1762,13 +1762,242 @@ pub(crate) unsafe extern "sysv64" fn vg_blake2b_compress(state: *mut [u64; 8], b
 ///
 /// * `state` must be valid for reads and writes of 192 bytes.
 /// * `data` must be valid for reads of `len` bytes.
+/// * `count` must be the exact length of the data so far (the key block included), and `count + len` less than 2⁶⁴.
+/// * `state` must not overlap `data` (distinct Rust objects never do).
+/// * Neither `state` nor `data` may overlap the return address on the stack or the 592 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_blake2b_update(state: *mut [u8; 192], count: u64, data: *const u8, len: usize) {
+    core::arch::naked_asm!(
+        "lea rsp, [rsp-584]",
+        "mov r8, rsp",
+        "add r8, 8",
+        "mov QWORD PTR [r8+512], rbx",
+        "mov QWORD PTR [r8+520], rbp",
+        "mov QWORD PTR [r8+528], r12",
+        "mov QWORD PTR [r8+536], r13",
+        "mov QWORD PTR [r8+544], r14",
+        "mov QWORD PTR [r8+552], r15",
+        "mov rbx, rdi",
+        "mov r15, r8",
+        "mov rbp, rdx",
+        "mov r12, rcx",
+        "mov r14, rsi",
+        "mov r13, r14",
+        "sub r13, 1",
+        "and r13, 127",
+        "add r13, 1",
+        "test r14, r14",
+        "je 20f",
+        "jmp 21f",
+        "20:",
+        "mov r13d, 0",
+        "21:",
+        "test r12, r12",
+        "je 22f",
+        "test r13, r13",
+        "je 24f",
+        "mov eax, 128",
+        "sub rax, r13",
+        "cmp r12, rax",
+        "jb 26f",
+        "jmp 27f",
+        "26:",
+        "mov rax, r12",
+        "27:",
+        "sub r12, rax",
+        "add r14, rax",
+        "test rax, rax",
+        "je 28f",
+        "210:",
+        "movzx r9d, BYTE PTR [rbp]",
+        "mov BYTE PTR [rbx+r13*1+64], r9b",
+        "add rbp, 1",
+        "add r13, 1",
+        "sub rax, 1",
+        "jne 210b",
+        "jmp 29f",
+        "28:",
+        "29:",
+        "test r12, r12",
+        "je 211f",
+        "mov rdi, rbx",
+        "mov rsi, rbx",
+        "add rsi, 64",
+        "mov edx, 1",
+        "mov rcx, r14",
+        "mov r8d, 0",
+        "mov r9, r15",
+        "call {vg_blake2b_compress}",
+        "mov rbx, rdi",
+        "mov r15, r9",
+        "mov r13d, 0",
+        "jmp 212f",
+        "211:",
+        "212:",
+        "jmp 25f",
+        "24:",
+        "25:",
+        "test r12, r12",
+        "je 213f",
+        "mov rax, r12",
+        "sub rax, 1",
+        "shr rax, 7",
+        "test rax, rax",
+        "je 215f",
+        "mov rdi, rbx",
+        "mov rsi, rbp",
+        "mov rdx, rax",
+        "mov rcx, r14",
+        "add rcx, 128",
+        "mov r8d, 0",
+        "mov r9, r15",
+        "call {vg_blake2b_compress}",
+        "mov rbx, rdi",
+        "mov r15, r9",
+        "mov rax, r12",
+        "sub rax, 1",
+        "and rax, 127",
+        "add rax, 1",
+        "sub r12, rax",
+        "add rbp, r12",
+        "add r14, r12",
+        "mov r12, rax",
+        "jmp 216f",
+        "215:",
+        "216:",
+        "mov rax, r12",
+        "add r14, rax",
+        "mov r12d, 0",
+        "217:",
+        "movzx r9d, BYTE PTR [rbp]",
+        "mov BYTE PTR [rbx+r13*1+64], r9b",
+        "add rbp, 1",
+        "add r13, 1",
+        "sub rax, 1",
+        "jne 217b",
+        "jmp 214f",
+        "213:",
+        "214:",
+        "jmp 23f",
+        "22:",
+        "23:",
+        "mov rbx, QWORD PTR [r15+512]",
+        "mov rbp, QWORD PTR [r15+520]",
+        "mov r12, QWORD PTR [r15+528]",
+        "mov r13, QWORD PTR [r15+536]",
+        "mov r14, QWORD PTR [r15+544]",
+        "mov r15, QWORD PTR [r15+552]",
+        "lea rsp, [rsp+584]",
+        "ret",
+        ".p2align 6",
+        vg_blake2b_compress = sym super::blake2b::vg_blake2b_compress,
+    )
+}
+
+/// Finishes a BLAKE2b computation: if the streaming state `*state` represents data of `count` bytes, compresses its last block and writes the final state `h[0..7]` (64 bytes) to `*out`. The digest of `outlen` bytes (`init`'s) is its first `outlen` bytes.
+///
+/// Contract: `VG.Spec.Blake2.finalizeBContract`. Constant time: only the pointers and `count` may affect timing, not the state.
+///
+/// # Safety
+///
+/// * `state` must be valid for reads and writes of 192 bytes.
+/// * `out` must be valid for reads and writes of 64 bytes.
+/// * `count` must be the exact length of the data (the key block included), less than 2⁶⁴.
+/// * The contents of `state` on return are unspecified.
+/// * `state` and `out` must not overlap each other (distinct Rust objects never do).
+/// * Neither `state` nor `out` may overlap the return address on the stack or the 592 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_blake2b_finalize(state: *mut [u8; 192], count: u64, out: *mut [u8; 64]) {
+    core::arch::naked_asm!(
+        "lea rsp, [rsp-584]",
+        "mov rcx, rsp",
+        "add rcx, 8",
+        "mov QWORD PTR [rcx+512], rbx",
+        "mov QWORD PTR [rcx+520], rbp",
+        "mov QWORD PTR [rcx+528], r12",
+        "mov QWORD PTR [rcx+536], r13",
+        "mov QWORD PTR [rcx+544], r14",
+        "mov QWORD PTR [rcx+552], r15",
+        "mov rbx, rdi",
+        "mov r15, rcx",
+        "mov rbp, rdx",
+        "mov r14, rsi",
+        "mov r13, r14",
+        "sub r13, 1",
+        "and r13, 127",
+        "add r13, 1",
+        "test r14, r14",
+        "je 20f",
+        "jmp 21f",
+        "20:",
+        "mov r13d, 0",
+        "21:",
+        "mov r9d, 0",
+        "mov eax, 128",
+        "sub rax, r13",
+        "je 22f",
+        "24:",
+        "mov BYTE PTR [rbx+r13*1+64], r9b",
+        "add r13, 1",
+        "sub rax, 1",
+        "jne 24b",
+        "jmp 23f",
+        "22:",
+        "23:",
+        "mov rdi, rbx",
+        "mov rsi, rbx",
+        "add rsi, 64",
+        "mov edx, 1",
+        "mov rcx, r14",
+        "mov r8d, 1",
+        "mov r9, r15",
+        "call {vg_blake2b_compress}",
+        "mov rbx, rdi",
+        "mov r15, r9",
+        "mov rax, QWORD PTR [rbx]",
+        "mov QWORD PTR [rbp], rax",
+        "mov rax, QWORD PTR [rbx+8]",
+        "mov QWORD PTR [rbp+8], rax",
+        "mov rax, QWORD PTR [rbx+16]",
+        "mov QWORD PTR [rbp+16], rax",
+        "mov rax, QWORD PTR [rbx+24]",
+        "mov QWORD PTR [rbp+24], rax",
+        "mov rax, QWORD PTR [rbx+32]",
+        "mov QWORD PTR [rbp+32], rax",
+        "mov rax, QWORD PTR [rbx+40]",
+        "mov QWORD PTR [rbp+40], rax",
+        "mov rax, QWORD PTR [rbx+48]",
+        "mov QWORD PTR [rbp+48], rax",
+        "mov rax, QWORD PTR [rbx+56]",
+        "mov QWORD PTR [rbp+56], rax",
+        "mov rbx, QWORD PTR [r15+512]",
+        "mov rbp, QWORD PTR [r15+520]",
+        "mov r12, QWORD PTR [r15+528]",
+        "mov r13, QWORD PTR [r15+536]",
+        "mov r14, QWORD PTR [r15+544]",
+        "mov r15, QWORD PTR [r15+552]",
+        "lea rsp, [rsp+584]",
+        "ret",
+        ".p2align 6",
+        vg_blake2b_compress = sym super::blake2b::vg_blake2b_compress,
+    )
+}
+
+/// `vg_blake2b_update`, with its working space in `*scratch`.
+///
+/// Contract: `VG.Spec.Blake2.updateBScratchContract`. Constant time: only the pointers, `count` and `len` may affect timing, not the state or the data.
+///
+/// # Safety
+///
+/// * `state` must be valid for reads and writes of 192 bytes.
+/// * `data` must be valid for reads of `len` bytes.
 /// * `scratch` must be valid for reads and writes of 576 bytes.
 /// * `count` must be the exact length of the data so far (the key block included), and `count + len` less than 2⁶⁴.
 /// * The contents of `scratch` on return are unspecified.
 /// * `state` and `scratch` must not overlap each other or `data` (distinct Rust objects never do).
 /// * None of `state`, `data` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_blake2b_update(state: *mut [u8; 192], count: u64, data: *const u8, len: usize, scratch: *mut [u64; 72]) {
+pub(crate) unsafe extern "sysv64" fn vg_blake2b_update_scratch(state: *mut [u8; 192], count: u64, data: *const u8, len: usize, scratch: *mut [u64; 72]) {
     core::arch::naked_asm!(
         "mov QWORD PTR [r8+512], rbx",
         "mov QWORD PTR [r8+520], rbp",
@@ -1892,9 +2121,9 @@ pub(crate) unsafe extern "sysv64" fn vg_blake2b_update(state: *mut [u8; 192], co
     )
 }
 
-/// Finishes a BLAKE2b computation: if the streaming state `*state` represents data of `count` bytes, compresses its last block and writes the final state `h[0..7]` (64 bytes) to `*out`. The digest of `outlen` bytes (`init`'s) is its first `outlen` bytes.
+/// `vg_blake2b_finalize`, with its working space in `*scratch`.
 ///
-/// Contract: `VG.Spec.Blake2.finalizeBContract`. Constant time: only the pointers and `count` may affect timing, not the state.
+/// Contract: `VG.Spec.Blake2.finalizeBScratchContract`. Constant time: only the pointers and `count` may affect timing, not the state.
 ///
 /// # Safety
 ///
@@ -1907,7 +2136,7 @@ pub(crate) unsafe extern "sysv64" fn vg_blake2b_update(state: *mut [u8; 192], co
 /// * `state`, `out` and `scratch` must not overlap each other (distinct Rust objects never do).
 /// * None of `state`, `out` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_blake2b_finalize(state: *mut [u8; 192], count: u64, out: *mut [u8; 64], scratch: *mut [u64; 72]) {
+pub(crate) unsafe extern "sysv64" fn vg_blake2b_finalize_scratch(state: *mut [u8; 192], count: u64, out: *mut [u8; 64], scratch: *mut [u64; 72]) {
     core::arch::naked_asm!(
         "mov QWORD PTR [rcx+512], rbx",
         "mov QWORD PTR [rcx+520], rbp",

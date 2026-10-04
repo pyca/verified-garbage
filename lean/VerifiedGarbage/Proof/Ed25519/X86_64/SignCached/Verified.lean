@@ -576,7 +576,7 @@ theorem init_ct : RelCT isa (Two fun _ _ _ => True)
 theorem upd_ct (v : Compress) (count : Lay → BitVec 64) (p : Lay → Addr) (n : Lay → BitVec 64)
     (hi : ∀ L, L.Ok → Input L ⟨p L, (n L).toNat⟩) :
     RelCT isa (Two fun L _ => UpdArgs L (count L) (p L) (n L))
-      (.call (Spec.Sha512.updateApi.name ++ v.suffix) (Impl.Sha512.X86_64.Stream.update v.callee))
+      (.call (Spec.Sha512.updateScratchApi.name ++ v.suffix) (Impl.Sha512.X86_64.Stream.update v.callee))
       (Two fun _ _ _ => True) := by
   exact two_callP (upd_verified v).1 (upd_verified v).2.1 (upd_nosp v) (upd_depth v)
     (fun L => [⟨p L, (n L).toNat⟩]) updWr
@@ -591,12 +591,12 @@ theorem upd_ct (v : Compress) (count : Lay → BitVec 64) (p : Lay → Addr) (n 
 theorem finalize_ct (v : Compress) (prefixLen : Nat) (hp : prefixLen < 2 ^ 31) (withMessage : Bool)
     {hint : VG.Taint.Hint VG.X86_64.Taint.T}
     (ht : (taint.check (Taint.ofRegs [.rsp]) (.block (finalizeArgs prefixLen withMessage)) hint).isSome = true) : RelCT isa (Two fun _ _ _ => True)
-    (Impl.Ed25519.X86_64.callWith (finalizeArgs prefixLen withMessage) (Spec.Sha512.finalizeApi.name ++ v.suffix)
+    (Impl.Ed25519.X86_64.callWith (finalizeArgs prefixLen withMessage) (Spec.Sha512.finalizeScratchApi.name ++ v.suffix)
       (Impl.Sha512.X86_64.Stream.finalize v.callee)) (Two fun _ _ _ => True) := by
   have b : RelCT isa (Two fun _ _ _ => True) (.block (finalizeArgs prefixLen withMessage)) (Two fun L _ => FinArgs L (if withMessage then L.len + BitVec.ofNat 64 prefixLen else BitVec.ofNat 64 prefixLen)) :=
     two_blk ht fun _ _ _ _ _ _ hc _ =>
       WP.mono (finalizeArgs_ok hc prefixLen hp withMessage) fun _ ⟨hc', _, ha⟩ => ⟨hc', ha⟩
-  have c := two_callP (n := Spec.Sha512.finalizeApi.name ++ v.suffix) (Φ := fun L _ => FinArgs L (if withMessage then L.len + BitVec.ofNat 64 prefixLen else BitVec.ofNat 64 prefixLen))
+  have c := two_callP (n := Spec.Sha512.finalizeScratchApi.name ++ v.suffix) (Φ := fun L _ => FinArgs L (if withMessage then L.len + BitVec.ofNat 64 prefixLen else BitVec.ofNat 64 prefixLen))
     (fin_verified v).1 (fin_verified v).2.1 (fin_nosp v) (fin_depth v) (fun _ => []) finWr
     (fun _ _ _ _ _ hL hc ha => fin_pre hL hc ha)
     (fun L t₁ t₂ _ _ _ _ _ _ _ c₁ c₂ a₁ a₂ => by

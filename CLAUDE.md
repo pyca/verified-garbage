@@ -297,11 +297,15 @@ Avoid these patterns (each has cost tens of seconds in one proof):
 * **Satisfiability witnesses:** the regions of a concrete witness state are
   disjoint by `Region.disjoint_of_sep (by decide)`, not `bv_omega`.
 * **`decide := true` in `simp`:** `simp (config := {decide := true})` runs
-  `decide` on every proposition it visits, seconds per block on symbolic
-  states. Reduce closed facts with simprocs (`reduceCtorEq`, `↓reduceIte`,
-  `Nat.reduceLT`, `Nat.reduceEqDiff`, `and_self`, …) and discharge side
-  conditions with `(disch := decide)`; `ci/check_lean_speed.py` counts the
-  uses that remain.
+  `decide` on every closed proposition it visits: cheap for small facts
+  (register equalities, small `Nat` comparisons, where simprocs measured
+  slower), seconds per block when those facts evaluate expensive
+  definitions. There, reduce them with simprocs (`reduceCtorEq`,
+  `↓reduceIte`, `Nat.reduceLT`, `Nat.reduceEqDiff`, `and_self`, …) or
+  discharge side conditions with `(disch := decide)`. Measure both;
+  `ci/check_lean_speed.py` counts the uses per file
+  (`ci/lean_speed_allowed.py`). `set_option simprocs false` turns off every
+  simproc, even those listed in `simp only [...]`.
 * **`assumption` among facts about states:** `assumption` tries every
   hypothesis at default transparency, unfolding states and registers before
   each failed match; use `with_reducible assumption`, or name the hypothesis
@@ -414,8 +418,12 @@ chooses differently on a CPU that has those features: the runner's, or one
 Intel SDE presents (`rust-cpu-features` in `ci.yml`; SDE runs the SHA
 extensions' code very slowly, so the chips that have them run only the
 tests that need them); and benchmarks each with
-`VG_CPU_FEATURES` (`CPU_FEATURES` in `ci/bench_arches.py`). To test the
-baseline ISA's implementations:
+`VG_CPU_FEATURES` (`CPU_FEATURES` in `ci/bench_arches.py`). A configuration
+to test is a line of a CPU's `runs` in `rust-cpu-features`
+(`<VG_CPU_FEATURES> | <tests>`), never a step or job of its own, and
+each CPU has one line per value of `VG_CPU_FEATURES` (CI checks both), so
+a run never repeats another: add tests to a CPU's line for those features.
+To test the baseline ISA's implementations:
 
 ```sh
 VG_CPU_FEATURES=none WYCHEPROOF_ROOT=/path/to/wycheproof cargo test --features cpu-features-env

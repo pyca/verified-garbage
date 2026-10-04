@@ -196,7 +196,7 @@ theorem upd_call (v : Compress) (hL : L.Ok) {t : State} (hc : Ctx L g mx m₀ t)
     (ha : UpdArgs L count p n t) (hi : Input L ⟨p, n.toNat⟩)
     (hcount : count = BitVec.ofNat 64 prev.length)
     (hr : Spec.Sha512.Repr Spec.Sha512.H0_512 t.mem L.scr prev) :
-    WP isa (.call (Spec.Sha512.updateApi.name ++ v.suffix) (Impl.Sha512.X86_64.Stream.update v.callee)) t
+    WP isa (.call (Spec.Sha512.updateScratchApi.name ++ v.suffix) (Impl.Sha512.X86_64.Stream.update v.callee)) t
       fun t' => Ctx L g mx m₀ t' ∧
         Spec.Sha512.Repr Spec.Sha512.H0_512 t'.mem L.scr (prev ++ Spec.Ed25519.bytesAt t.mem p n.toNat) ∧
         Frame (updWr L ++ [⟨L.B, 16⟩]) t.mem t'.mem := by
@@ -248,7 +248,7 @@ theorem fin_call (v : Compress) (hL : L.Ok) {t : State} (hc : Ctx L g mx m₀ t)
     {message : List Byte} (hmess : message.length < 2 ^ 64)
     (hlen : count = BitVec.ofNat 64 message.length)
     (hr : Spec.Sha512.Repr Spec.Sha512.H0_512 t.mem L.scr message) :
-    WP isa (.call (Spec.Sha512.finalizeApi.name ++ v.suffix) (Impl.Sha512.X86_64.Stream.finalize v.callee)) t
+    WP isa (.call (Spec.Sha512.finalizeScratchApi.name ++ v.suffix) (Impl.Sha512.X86_64.Stream.finalize v.callee)) t
       fun t' => Ctx L g mx m₀ t' ∧ Spec.Sha512.bytesAt t'.mem (L.B + BitVec.ofNat 64 144) 64 =
         Spec.Sha512.sha512 message ∧ Frame (finWr L ++ [⟨L.B, 16⟩]) t.mem t'.mem := by
   refine call_ok hL (fin_verified v).1 (fin_nosp v) (fin_depth v) hc (fin_pre hL hc ha) ?_ ?_

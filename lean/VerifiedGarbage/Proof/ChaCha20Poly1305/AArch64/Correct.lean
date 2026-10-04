@@ -71,14 +71,14 @@ theorem seal_correct (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp : A
     WP isa (sealWith v.callee) s₀ fun s' => abiPreserved s₀ s' ∧ sealAArch64.post s₀ s' := by
   have hL' := (Nat.le_of_lt (s₀.gpr .x4).isLt)
   unfold sealWith
-  refine WP.seq (WP.mono (WP.preservedV (prologue_ok hp)) fun s₁ ⟨h₁, v₁⟩ => ?_)
+  refine WP.seq (WP.mono (WP.preservedV (prologue_ok hp) (by lit_decide)) fun s₁ ⟨h₁, v₁⟩ => ?_)
   have hA : bytesAt s₁.mem (ad s₀) (AL s₀) = A s₀ :=
     bytesAt_frame h₁.inv.frame (by rdisj_all) (Nat.le_of_lt (s₀.gpr .x2).isLt)
   refine WP.seq (WP.mono (WP.preservedV (macPad_ok hp (p := .x24) (n := .x25) ⟨.inl rfl, .inl rfl⟩ (srcA hp) h₁.inv.x21
-    h₁.inv.rd h₁.inv.wr h₁.inv.x24 (by rw [h₁.inv.x25]; exact hRDX s₀)))
+    h₁.inv.rd h₁.inv.wr h₁.inv.x24 (by rw [h₁.inv.x25]; exact hRDX s₀)) (by lit_decide))
     fun s₂ ⟨⟨k₂, r₂⟩, v₂⟩ => ?_)
   have i₂ := mac_inv h₁.inv k₂
-  refine WP.seq (WP.mono (WP.preservedV (lengths_ok hp i₂)) fun s₃ ⟨⟨i₃, k₃, len₃⟩, v₃⟩ => ?_)
+  refine WP.seq (WP.mono (WP.preservedV (lengths_ok hp i₂) (by lit_decide)) fun s₃ ⟨⟨i₃, k₃, len₃⟩, v₃⟩ => ?_)
   have st₃ : stateAt s₃.mem (off (cx s₀) 64) = Spec.ChaCha20.initState (K s₀) 0 (N s₀) := by
     rw [stateAt_frame k₃.frame (by rdisj_all), stateAt_frame k₂.frame (by rdisj_all), h₁.st]
   have D₃ : bytesAt s₃.mem (dp s₀) (L s₀) = D s₀ := by
@@ -87,14 +87,14 @@ theorem seal_correct (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp : A
   refine WP.seq (WP.mono (crypt_ok v hp i₃ st₃) fun s₄ ⟨v₄, i₄, k₄, ct₄⟩ => ?_)
   rw [D₃] at ct₄
   refine WP.seq (WP.mono (WP.preservedV (macPad_ok hp (p := .x22) (n := .x23) ⟨.inr rfl, .inr rfl⟩ (srcD hp) i₄.x21
-    i₄.rd i₄.wr i₄.x22 (by rw [i₄.x23]; exact hL s₀)))
+    i₄.rd i₄.wr i₄.x22 (by rw [i₄.x23]; exact hL s₀)) (by lit_decide))
     fun s₅ ⟨⟨k₅, r₅⟩, v₅⟩ => ?_)
   have i₅ := mac_inv i₄ k₅
-  refine WP.seq (WP.mono (WP.preservedV (absorbLengths_ok hp i₅)) fun s₆ ⟨⟨i₆, k₆, r₆⟩, v₆⟩ => ?_)
-  refine WP.seq (WP.mono (WP.preservedV (finalizeTo_ok hp i₆ (out := 48) (.inl (by lit_omega))))
+  refine WP.seq (WP.mono (WP.preservedV (absorbLengths_ok hp i₅) (by lit_decide)) fun s₆ ⟨⟨i₆, k₆, r₆⟩, v₆⟩ => ?_)
+  refine WP.seq (WP.mono (WP.preservedV (finalizeTo_ok hp i₆ (out := 48) (.inl (by lit_omega))) (by lit_decide))
     fun s₇ ⟨⟨k₇, tag₇⟩, v₇⟩ => ?_)
   refine WP.mono (WP.preservedV (restore_ok hp (by rw [k₇.cs _ (pres .x21) (pres30 .x21), i₆.x21])
-    (i₆.saved.frame k₇.frame (by rdisj_all)) (by rw [k₇.rd, i₆.rd]) (by rw [k₇.wr, i₆.wr])))
+    (i₆.saved.frame k₇.frame (by rdisj_all)) (by rw [k₇.rd, i₆.rd]) (by rw [k₇.wr, i₆.wr])) (by lit_decide))
     fun s₈ ⟨⟨⟨rs₈, g₈, m₈⟩, sp₈⟩, v₈⟩ => ?_
   have R₄ := Repr.frame k₄.frame (by rdisj_all) (Repr.frame k₃.frame (by rdisj_all) (r₂ (otk s₀) [] h₁.poly))
   have T₇ := tag₇ _ _ (r₆ _ _ (r₅ _ _ R₄))
@@ -119,33 +119,33 @@ theorem open_correct (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp : A
     WP isa (openWith v.callee) s₀ fun s' => abiPreserved s₀ s' ∧ openAArch64.post s₀ s' := by
   have hL' := (Nat.le_of_lt (s₀.gpr .x4).isLt)
   unfold openWith
-  refine WP.seq (WP.mono (WP.preservedV (prologue_ok hp)) fun s₁ ⟨h₁, v₁⟩ => ?_)
+  refine WP.seq (WP.mono (WP.preservedV (prologue_ok hp) (by lit_decide)) fun s₁ ⟨h₁, v₁⟩ => ?_)
   have hA : bytesAt s₁.mem (ad s₀) (AL s₀) = A s₀ :=
     bytesAt_frame h₁.inv.frame (by rdisj_all) (Nat.le_of_lt (s₀.gpr .x2).isLt)
   refine WP.seq (WP.mono (WP.preservedV (macPad_ok hp (p := .x24) (n := .x25) ⟨.inl rfl, .inl rfl⟩ (srcA hp) h₁.inv.x21
-    h₁.inv.rd h₁.inv.wr h₁.inv.x24 (by rw [h₁.inv.x25]; exact hRDX s₀)))
+    h₁.inv.rd h₁.inv.wr h₁.inv.x24 (by rw [h₁.inv.x25]; exact hRDX s₀)) (by lit_decide))
     fun s₂ ⟨⟨k₂, r₂⟩, v₂⟩ => ?_)
   have i₂ := mac_inv h₁.inv k₂
   have D₂ : bytesAt s₂.mem (dp s₀) (L s₀) = D s₀ := by
     rw [bytesAt_frame k₂.frame (by rdisj_all) hL', bytesAt_frame h₁.fine (by rdisj_all) hL']
   refine WP.seq (WP.mono (WP.preservedV (macPad_ok hp (p := .x22) (n := .x23) ⟨.inr rfl, .inr rfl⟩ (srcD hp) i₂.x21
-    i₂.rd i₂.wr i₂.x22 (by rw [i₂.x23]; exact hL s₀)))
+    i₂.rd i₂.wr i₂.x22 (by rw [i₂.x23]; exact hL s₀)) (by lit_decide))
     fun s₃ ⟨⟨k₃, r₃⟩, v₃⟩ => ?_)
   have i₃ := mac_inv i₂ k₃
-  refine WP.seq (WP.mono (WP.preservedV (lengths_ok hp i₃)) fun s₄ ⟨⟨i₄, k₄, len₄⟩, v₄⟩ => ?_)
-  refine WP.seq (WP.mono (WP.preservedV (absorbLengths_ok hp i₄)) fun s₅ ⟨⟨i₅, k₅, r₅⟩, v₅⟩ => ?_)
+  refine WP.seq (WP.mono (WP.preservedV (lengths_ok hp i₃) (by lit_decide)) fun s₄ ⟨⟨i₄, k₄, len₄⟩, v₄⟩ => ?_)
+  refine WP.seq (WP.mono (WP.preservedV (absorbLengths_ok hp i₄) (by lit_decide)) fun s₅ ⟨⟨i₅, k₅, r₅⟩, v₅⟩ => ?_)
   have st₅ : stateAt s₅.mem (off (cx s₀) 64) = Spec.ChaCha20.initState (K s₀) 0 (N s₀) := by
     rw [stateAt_frame k₅.frame (by rdisj_all), stateAt_frame k₄.frame (by rdisj_all),
       stateAt_frame k₃.frame (by rdisj_all), stateAt_frame k₂.frame (by rdisj_all), h₁.st]
   refine WP.seq (WP.mono (crypt_ok v hp i₅ st₅) fun s₆ ⟨v₆, i₆, k₆, pt₆⟩ => ?_)
-  refine WP.seq (WP.mono (WP.preservedV (finalizeTo_ok hp i₆ (out := 640) (.inr ⟨by omega, by omega⟩)))
+  refine WP.seq (WP.mono (WP.preservedV (finalizeTo_ok hp i₆ (out := 640) (.inr ⟨by omega, by omega⟩)) (by lit_decide))
     fun s₇ ⟨⟨k₇, tag₇⟩, v₇⟩ => ?_)
   have x21₇ : s₇.gpr .x21 = cx s₀ := by rw [k₇.cs _ (pres .x21) (pres30 .x21), i₆.x21]
-  refine WP.block_append (WP.mono (WP.preservedV (compare_ok hp x21₇ (by rw [k₇.rd, i₆.rd]) (by rw [k₇.wr, i₆.wr])))
+  refine WP.block_append (WP.mono (WP.preservedV (compare_ok hp x21₇ (by rw [k₇.rd, i₆.rd]) (by rw [k₇.wr, i₆.wr])) (by lit_decide))
     fun s₈ ⟨⟨rax₈, g₈, sp₈, m₈, rd₈, wr₈⟩, v₈⟩ => ?_)
   refine WP.mono (WP.preservedV (restore_ok hp (by rw [g₈ _ (pres .x21), x21₇])
     (by rw [m₈]; exact i₆.saved.frame k₇.frame (by rdisj_all))
-    (by rw [rd₈, k₇.rd, i₆.rd]) (by rw [wr₈, k₇.wr, i₆.wr]))) fun s₉ ⟨⟨⟨rs₉, g₉, m₉⟩, sp₉⟩, v₉⟩ => ?_
+    (by rw [rd₈, k₇.rd, i₆.rd]) (by rw [wr₈, k₇.wr, i₆.wr])) (by lit_decide)) fun s₉ ⟨⟨⟨rs₉, g₉, m₉⟩, sp₉⟩, v₉⟩ => ?_
   -- The tag computed, and the one received.
   have R₃ := r₃ _ _ (r₂ (otk s₀) [] h₁.poly)
   have T₇ := tag₇ _ _ (Repr.frame k₆.frame (by rdisj_all) (r₅ _ _ (Repr.frame k₄.frame (by rdisj_all) R₃)))

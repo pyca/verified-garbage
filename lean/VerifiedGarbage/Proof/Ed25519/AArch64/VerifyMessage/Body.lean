@@ -543,7 +543,7 @@ theorem body_depth (backend : Whole.Backend) : (body backend.code backend.suffix
   have hr := Whole.depth_zero_of_noFrames reduce_noFrames
   have he := Whole.depth_zero_of_noFrames equation_noFrames
   simp only [body,Impl.Ed25519.AArch64.VerifyMessage.hash,init,update,finalize,Impl.Ed25519.AArch64.Whole.callWith,
-    Code.aarch64Depth,Impl.Sha512.AArch64.Stream.init,hr,he]
+    Code.aarch64Depth, Nat.max_le,Impl.Sha512.AArch64.Stream.init,hr,he]
   omega
 
 end VG.Proof.Ed25519.AArch64.VerifyMessage

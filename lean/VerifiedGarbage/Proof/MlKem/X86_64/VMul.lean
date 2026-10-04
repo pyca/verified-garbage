@@ -1,6 +1,6 @@
 import VerifiedGarbage.Proof.MlKem.X86_64.VPack
+import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Impl.MlKem.X86_64.Mul
-import Mathlib.Tactic.LinearCombination
 
 /-!
 # ML-KEM on x86-64: `BaseCaseMultiply` on words
@@ -25,11 +25,11 @@ theorem mont_small {d z : BitVec 16} (hd1 : -(2 * 3329) < d.toInt) (hd2 : d.toIn
     -3329 < (montW d z).toInt ∧ (montW d z).toInt < 3329 ∧
       3329 ∣ (montW d z).toInt * 65536 - d.toInt * z.toInt := by
   have hn : (d.toInt * z.toInt).natAbs ≤ 6657 * 3328 := by
-    rw [Int.natAbs_mul]; exact Nat.mul_le_mul (by omega) (by omega)
+    rw [Int.natAbs_mul]; exact Nat.mul_le_mul (by bdd_omega) (by bdd_omega)
   have h1 := Int.le_natAbs (a := d.toInt * z.toInt)
   have h2 := Int.le_natAbs (a := -(d.toInt * z.toInt))
   rw [Int.natAbs_neg] at h2
-  obtain ⟨m1, m2, m3⟩ := montW_spec (d := d) (z := z) (by omega) (by omega)
+  obtain ⟨m1, m2, m3⟩ := montW_spec (d := d) (z := z) (by bdd_omega) (by bdd_omega)
   exact ⟨m1, m2, Int.dvd_of_emod_eq_zero m3⟩
 
 theorem toInt_lt_q {a : BitVec 16} {x : Zq} (h : a.toNat = x.val) : a.toInt = x.val ∧ 0 ≤ a.toInt ∧ a.toInt < 3329 := by
@@ -70,7 +70,7 @@ theorem baseW {a0 a1 b0 b1 g : BitVec 16} {x0 x1 y0 y1 γ : Zq} (ha0 : a0.toNat 
     rw [G]; exact ⟨Int.natCast_nonneg _, Int.ofNat_lt.mpr (Nat.mod_lt _ (by decide))⟩
   have hγ := γ.isLt
   have kG : ∃ k : Int, g.toInt - (γ.val : Int) * 65536 = 3329 * k :=
-    ⟨-((γ.val : Int) * 65536 / 3329), by rw [G]; push_cast; omega_using []⟩
+    ⟨-((γ.val : Int) * 65536 / 3329), by rw [G]; omega_using []⟩
   obtain ⟨kG, hkG⟩ := kG
   have r2l : -3329 < r2W.toInt ∧ r2W.toInt < 3329 := by rw [r2W_toInt]; decide
   -- the products
@@ -103,16 +103,16 @@ theorem baseW {a0 a1 b0 b1 g : BitVec 16} {x0 x1 y0 y1 γ : Zq} (ha0 : a0.toNat 
     generalize (montW a1 b1).toInt = M1 at *
     generalize g.toInt = Gi at *
     refine ⟨-3327 * M4 + 169 * k4 + 49 * (M3 + M2) + k3 + k2 + M1 * kG + γ.val * k1, ?_⟩
-    push_cast
-    linear_combination 169 * d4 + d3 + d2 + M1 * hkG + (γ.val : Int) * d1
-  · rw [val_add', val_mul, val_mul, val_mul, mulmod, ← Nat.add_mod]; push_cast; rfl
+    simp only [Int.natCast_add, Int.natCast_mul]
+    grind
+  · rw [val_add', val_mul, val_mul, val_mul, mulmod, ← Nat.add_mod]; exact Int.natCast_emod _ _
   · generalize (montW (montW a0 b1 + montW a1 b0) r2W).toInt = M4 at *
     generalize (montW a0 b1).toInt = N1 at *
     generalize (montW a1 b0).toInt = N2 at *
     refine ⟨-3327 * M4 + 169 * j4 + 49 * (N1 + N2) + j1 + j2, ?_⟩
-    push_cast
-    linear_combination 169 * e4 + e1 + e2
-  · rw [val_add', val_mul, val_mul, ← Nat.add_mod]; push_cast; rfl
+    simp only [Int.natCast_add, Int.natCast_mul]
+    grind
+  · rw [val_add', val_mul, val_mul, ← Nat.add_mod]; exact Int.natCast_emod _ _
 
 end VG.Proof.MlKem.X86_64.W
 
@@ -125,7 +125,7 @@ open VG.Spec.MlKem
 def r2V : BitVec 128 := 0x05490549054905490549054905490549#128
 
 theorem word_r2V {i : Nat} (hi : i < 8) : word r2V i = W.r2W := by
-  rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7) with
+  rcases (by bdd_omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7) with
     rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
 
 /-- `d ← mont(src, z)`. -/
@@ -271,15 +271,15 @@ theorem deint_lanes {l0 l1 l2 l3 : BitVec 128} {c : Nat → Nat}
   have sm : ∀ a b c d : BitVec 32, a.toNat < 32768 → b.toNat < 32768 → c.toNat < 32768 → d.toNat < 32768 →
       ∀ j < 4, (dword (ofDwords a b c d) j).toNat < 32768 := fun a b c d ha hb hc hd j hj => by
     rcases cases4 hj with rfl | rfl | rfl | rfl <;> simpa
-  have t0 : ∀ j < 4, (dword l0 j).toNat < 32768 := fun j hj => by rw [h0 j hj]; exact hs j (by omega)
-  have t1 : ∀ j < 4, (dword l1 j).toNat < 32768 := fun j hj => by rw [h1 j hj]; exact hs _ (by omega)
-  have t2 : ∀ j < 4, (dword l2 j).toNat < 32768 := fun j hj => by rw [h2 j hj]; exact hs _ (by omega)
-  have t3 : ∀ j < 4, (dword l3 j).toNat < 32768 := fun j hj => by rw [h3 j hj]; exact hs _ (by omega)
+  have t0 : ∀ j < 4, (dword l0 j).toNat < 32768 := fun j hj => by rw [h0 j hj]; exact hs j (by bdd_omega)
+  have t1 : ∀ j < 4, (dword l1 j).toNat < 32768 := fun j hj => by rw [h1 j hj]; exact hs _ (by bdd_omega)
+  have t2 : ∀ j < 4, (dword l2 j).toNat < 32768 := fun j hj => by rw [h2 j hj]; exact hs _ (by bdd_omega)
+  have t3 : ∀ j < 4, (dword l3 j).toNat < 32768 := fun j hj => by rw [h3 j hj]; exact hs _ (by bdd_omega)
   refine ⟨fun e he => ?_, fun e he => ?_⟩
   · rw [deE, lo, lo, word_packssdw_small _ _ he (sm _ _ _ _ (t0 0 (by decide)) (t0 2 (by decide))
       (t1 0 (by decide)) (t1 2 (by decide))) (sm _ _ _ _ (t2 0 (by decide)) (t2 2 (by decide))
       (t3 0 (by decide)) (t3 2 (by decide)))]
-    rcases (by omega : e = 0 ∨ e = 1 ∨ e = 2 ∨ e = 3 ∨ e = 4 ∨ e = 5 ∨ e = 6 ∨ e = 7) with
+    rcases (by bdd_omega : e = 0 ∨ e = 1 ∨ e = 2 ∨ e = 3 ∨ e = 4 ∨ e = 5 ∨ e = 6 ∨ e = 7) with
       rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
       simp only [Nat.reduceLT, ite_true, ite_false, Nat.reduceSub, dword_ofDwords_0, dword_ofDwords_1,
         dword_ofDwords_2, dword_ofDwords_3, h0 _ (by decide : 0 < 4), h0 _ (by decide : 2 < 4),
@@ -288,7 +288,7 @@ theorem deint_lanes {l0 l1 l2 l3 : BitVec 128} {c : Nat → Nat}
   · rw [deO, hi, hi, word_packssdw_small _ _ he (sm _ _ _ _ (t0 1 (by decide)) (t0 3 (by decide))
       (t1 1 (by decide)) (t1 3 (by decide))) (sm _ _ _ _ (t2 1 (by decide)) (t2 3 (by decide))
       (t3 1 (by decide)) (t3 3 (by decide)))]
-    rcases (by omega : e = 0 ∨ e = 1 ∨ e = 2 ∨ e = 3 ∨ e = 4 ∨ e = 5 ∨ e = 6 ∨ e = 7) with
+    rcases (by bdd_omega : e = 0 ∨ e = 1 ∨ e = 2 ∨ e = 3 ∨ e = 4 ∨ e = 5 ∨ e = 6 ∨ e = 7) with
       rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
       simp only [Nat.reduceLT, ite_true, ite_false, Nat.reduceSub, dword_ofDwords_0, dword_ofDwords_1,
         dword_ofDwords_2, dword_ofDwords_3, h0 _ (by decide : 1 < 4), h0 _ (by decide : 3 < 4),
@@ -322,7 +322,7 @@ theorem deintG_ok {s : State} (h0 : InRegions (s.rd ++ s.wr) (s.gpr .rdx) 16)
   exact ⟨rfl, rfl, by xonly⟩
 
 theorem off16 (H : Addr) (j t : Nat) : coeffAddr H j + BitVec.ofNat 64 (16 * t) = coeffAddr H (j + 4 * t) := by
-  rw [show 16 * t = 4 * (4 * t) by omega, coeffAddr_off]
+  rw [show 16 * t = 4 * (4 * t) by bdd_omega, coeffAddr_off]
 
 /-- Four stores of 16 bytes to coefficients `j, …, j + 15` of the polynomial at `H`. -/
 theorem store4 (m : Mem) (H : Addr) {j : Nat} (hj : j + 16 ≤ 256) (Y0 Y1 Y2 Y3 : BitVec 128) :
@@ -340,24 +340,24 @@ theorem store4 (m : Mem) (H : Addr) {j : Nat} (hj : j + 16 ≤ 256) (Y0 Y1 Y2 Y3
     show 4 * 3 = 12 from rfl] at a2 a3
   simp only [m', a1, a2, a3]
   refine ⟨fun k hk ho => ?_, fun k hk => ?_, ?_⟩
-  · rw [coeffAt_write128 _ _ (by omega) _ hk, coeffAt_write128 _ _ (by omega) _ hk,
-      coeffAt_write128 _ _ (by omega) _ hk, coeffAt_write128 _ _ (by omega) _ hk]
-    simp (disch := omega) only [ite_eq_right]
-  · rw [coeffAt_write128 _ _ (by omega) _ (by omega), coeffAt_write128 _ _ (by omega) _ (by omega),
-      coeffAt_write128 _ _ (by omega) _ (by omega), coeffAt_write128 _ _ (by omega) _ (by omega)]
-    rcases (by omega : k < 4 ∨ (4 ≤ k ∧ k < 8) ∨ (8 ≤ k ∧ k < 12) ∨ (12 ≤ k ∧ k < 16)) with h | h | h | h
-    · simp (disch := omega) only [ite_eq_left, ite_eq_right]
-      rw [show j + k - j = k % 4 by omega, show k / 4 = 0 by omega]; rfl
-    · simp (disch := omega) only [ite_eq_left, ite_eq_right]
-      rw [show j + k - (j + 4) = k % 4 by omega, show k / 4 = 1 by omega]; rfl
-    · simp (disch := omega) only [ite_eq_left, ite_eq_right]
-      rw [show j + k - (j + 8) = k % 4 by omega, show k / 4 = 2 by omega]; rfl
-    · simp (disch := omega) only [ite_eq_left]
-      rw [show j + k - (j + 12) = k % 4 by omega, show k / 4 = 3 by omega]; rfl
-  · exact (((Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Offset.contains_base _ (by omega) (by omega))).writeW
-      (List.mem_singleton_self _) _ (Offset.contains_base _ (by omega) (by omega))).writeW
-      (List.mem_singleton_self _) _ (Offset.contains_base _ (by omega) (by omega)) |>.writeW
-      (List.mem_singleton_self _) _ (Offset.contains_base _ (by omega) (by omega))
+  · rw [coeffAt_write128 _ _ (by bdd_omega) _ hk, coeffAt_write128 _ _ (by bdd_omega) _ hk,
+      coeffAt_write128 _ _ (by bdd_omega) _ hk, coeffAt_write128 _ _ (by bdd_omega) _ hk]
+    simp (disch := bdd_omega) only [ite_eq_right]
+  · rw [coeffAt_write128 _ _ (by bdd_omega) _ (by bdd_omega), coeffAt_write128 _ _ (by bdd_omega) _ (by bdd_omega),
+      coeffAt_write128 _ _ (by bdd_omega) _ (by bdd_omega), coeffAt_write128 _ _ (by bdd_omega) _ (by bdd_omega)]
+    rcases (by bdd_omega : k < 4 ∨ (4 ≤ k ∧ k < 8) ∨ (8 ≤ k ∧ k < 12) ∨ (12 ≤ k ∧ k < 16)) with h | h | h | h
+    · simp (disch := bdd_omega) only [ite_eq_left, ite_eq_right]
+      rw [show j + k - j = k % 4 by bdd_omega, show k / 4 = 0 by bdd_omega]; rfl
+    · simp (disch := bdd_omega) only [ite_eq_left, ite_eq_right]
+      rw [show j + k - (j + 4) = k % 4 by bdd_omega, show k / 4 = 1 by bdd_omega]; rfl
+    · simp (disch := bdd_omega) only [ite_eq_left, ite_eq_right]
+      rw [show j + k - (j + 8) = k % 4 by bdd_omega, show k / 4 = 2 by bdd_omega]; rfl
+    · simp (disch := bdd_omega) only [ite_eq_left]
+      rw [show j + k - (j + 12) = k % 4 by bdd_omega, show k / 4 = 3 by bdd_omega]; rfl
+  · exact (((Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Offset.contains_base _ (by bdd_omega) (by bdd_omega))).writeW
+      (List.mem_singleton_self _) _ (Offset.contains_base _ (by bdd_omega) (by bdd_omega))).writeW
+      (List.mem_singleton_self _) _ (Offset.contains_base _ (by bdd_omega) (by bdd_omega)) |>.writeW
+      (List.mem_singleton_self _) _ (Offset.contains_base _ (by bdd_omega) (by bdd_omega))
 
 /-- The words `vinter` interleaves, as the `u32` it stores for each. -/
 theorem inter_val (X1 X2 : BitVec 128) {k : Nat} (hk : k < 16) :
@@ -366,26 +366,26 @@ theorem inter_val (X1 X2 : BitVec 128) {k : Nat} (hk : k < 16) :
       XBinOp.eval .punpcklwd (XBinOp.eval .punpckhwd X1 X2) 0,
       XBinOp.eval .punpckhwd (XBinOp.eval .punpckhwd X1 X2) 0][k / 4]!) (k % 4)).toNat =
       (word (if k % 2 = 0 then X1 else X2) (k / 2)).toNat := by
-  rcases (by omega : k < 4 ∨ (4 ≤ k ∧ k < 8) ∨ (8 ≤ k ∧ k < 12) ∨ (12 ≤ k ∧ k < 16)) with h | h | h | h
-  · rw [show k / 4 = 0 by omega]
+  rcases (by bdd_omega : k < 4 ∨ (4 ≤ k ∧ k < 8) ∨ (8 ≤ k ∧ k < 12) ∨ (12 ≤ k ∧ k < 16)) with h | h | h | h
+  · rw [show k / 4 = 0 by bdd_omega]
     simp only [List.getElem!_cons_zero]
-    rw [dword_punpcklwd0 _ (by omega), word_punpcklwd _ _ (by omega), show k % 4 / 2 = k / 2 by omega,
-      show k % 4 % 2 = k % 2 by omega]
+    rw [dword_punpcklwd0 _ (by bdd_omega), word_punpcklwd _ _ (by bdd_omega), show k % 4 / 2 = k / 2 by bdd_omega,
+      show k % 4 % 2 = k % 2 by bdd_omega]
     split <;> rfl
-  · rw [show k / 4 = 1 by omega]
+  · rw [show k / 4 = 1 by bdd_omega]
     simp only [List.getElem!_cons_succ, List.getElem!_cons_zero]
-    rw [dword_punpckhwd0 _ (by omega), word_punpcklwd _ _ (by omega), show (4 + k % 4) / 2 = k / 2 by omega,
-      show (4 + k % 4) % 2 = k % 2 by omega]
+    rw [dword_punpckhwd0 _ (by bdd_omega), word_punpcklwd _ _ (by bdd_omega), show (4 + k % 4) / 2 = k / 2 by bdd_omega,
+      show (4 + k % 4) % 2 = k % 2 by bdd_omega]
     split <;> rfl
-  · rw [show k / 4 = 2 by omega]
+  · rw [show k / 4 = 2 by bdd_omega]
     simp only [List.getElem!_cons_succ, List.getElem!_cons_zero]
-    rw [dword_punpcklwd0 _ (by omega), word_punpckhwd _ _ (by omega), show 4 + k % 4 / 2 = k / 2 by omega,
-      show k % 4 % 2 = k % 2 by omega]
+    rw [dword_punpcklwd0 _ (by bdd_omega), word_punpckhwd _ _ (by bdd_omega), show 4 + k % 4 / 2 = k / 2 by bdd_omega,
+      show k % 4 % 2 = k % 2 by bdd_omega]
     split <;> rfl
-  · rw [show k / 4 = 3 by omega]
+  · rw [show k / 4 = 3 by bdd_omega]
     simp only [List.getElem!_cons_succ, List.getElem!_cons_zero]
-    rw [dword_punpckhwd0 _ (by omega), word_punpckhwd _ _ (by omega),
-      show 4 + (4 + k % 4) / 2 = k / 2 by omega, show (4 + k % 4) % 2 = k % 2 by omega]
+    rw [dword_punpckhwd0 _ (by bdd_omega), word_punpckhwd _ _ (by bdd_omega),
+      show 4 + (4 + k % 4) / 2 = k / 2 by bdd_omega, show (4 + k % 4) % 2 = k % 2 by bdd_omega]
     split <;> rfl
 
 theorem vinter_ok {s : State} {H : Addr} {j : Nat} (hj : j + 16 ≤ 256) (hdi : s.gpr .rdi = coeffAddr H j)
@@ -397,7 +397,7 @@ theorem vinter_ok {s : State} {H : Addr} {j : Nat} (hj : j + 16 ≤ 256) (hdi : 
       Frame [pR H] s.mem s'.mem ∧ s'.gpr = s.gpr ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.mxcsr = s.mxcsr ∧
       ∀ r, r ∉ [XReg.xmm1, .xmm3, .xmm4, .xmm5, .xmm6] → s'.xmm r = s.xmm r := by
   have w : ∀ t < 4, InRegions s.wr (coeffAddr H j + BitVec.ofNat 64 (16 * t)) 16 := fun t ht => by
-    rw [off16]; exact ⟨_, hw, Offset.contains_base _ (by omega) (by omega)⟩
+    rw [off16]; exact ⟨_, hw, Offset.contains_base _ (by bdd_omega) (by bdd_omega)⟩
   have w0 : InRegions s.wr (coeffAddr H j) 16 := by
     have := w 0 (by decide); rwa [Nat.mul_zero, add_ofNat_zero] at this
   simp only [vinter]

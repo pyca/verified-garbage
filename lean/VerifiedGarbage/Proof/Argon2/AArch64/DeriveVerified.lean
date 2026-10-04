@@ -1,7 +1,6 @@
 import VerifiedGarbage.Proof.Argon2.AArch64.DeriveAbi
 import VerifiedGarbage.Proof.Argon2.AArch64.DeriveFrame
 import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.RelCT
-import VerifiedGarbage.Proof.Argon2.AArch64.DeriveLit
 import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Correct
 import VerifiedGarbage.Proof.Argon2.AArch64.InitialLit
 import VerifiedGarbage.Proof.Argon2.AArch64.MemoryInitLit
@@ -14,6 +13,29 @@ import VerifiedGarbage.Proof.Argon2.AArch64.DeriveRegions
 import VerifiedGarbage.Proof.Argon2.AArch64.InitialBody
 import VerifiedGarbage.Impl.Argon2.AArch64.Parameters
 import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import VerifiedGarbage.Impl.Argon2.AArch64.Derive
+import VerifiedGarbage.Proof.Argon2.AArch64.FillCompressLit
+import VerifiedGarbage.Proof.Argon2.AArch64.ReferenceMap
+import VerifiedGarbage.Proof.Argon2.AArch64.FillPointersLit
+import VerifiedGarbage.Proof.Argon2.AArch64.AddressHeaderLit
+import VerifiedGarbage.Proof.Argon2.AArch64.ClearBlockLit
+import VerifiedGarbage.Proof.Argon2.AArch64.ReduceBlockLit
+import VerifiedGarbage.Proof.Framework.Lit
+
+section
+
+/-! Checked literals for the entry point's fixed instruction shapes. -/
+
+namespace VG
+
+materialize_code Impl.Argon2.AArch64.Derive.prepare
+materialize_code Impl.Argon2.AArch64.FillSetup.code
+materialize_code Impl.Argon2.AArch64.FillIterations.loop
+materialize_code Impl.Argon2.AArch64.FinalReduction.code
+
+end VG
+
+end
 
 /-! Merged from `Proof.Argon2.AArch64.ParametersLit`. -/
 section

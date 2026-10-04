@@ -4,6 +4,7 @@ import VerifiedGarbage.Proof.Sha512.AArch64.Compress
 import VerifiedGarbage.Proof.Sha512.AArch64.Stream.Init
 import VerifiedGarbage.Proof.Sha512.AArch64.Stream.Md
 import VerifiedGarbage.Spec.Sha512.Contract
+import VerifiedGarbage.Proof.Framework.AArch64.StackScratch
 
 /-!
 # Sha512 on AArch64: the shared contracts
@@ -17,6 +18,12 @@ bytes for `compress`, 1376 for `update` and `finalize`, sized for the x86-64
 AVX2 compression function): the per-target contracts are first widened to
 that scratch (`Verified.widen`, the same code running with the same trace and
 result), then moved to the shared ones.
+
+`update_of` and `finalize_of` keep the working space in a frame of their
+own: they are `updateScratch_of` and `finalizeScratch_of` (the shared
+contracts with the working space as an argument, which HMAC's, PBKDF2's and
+Ed25519's code calls) run in a frame that allocates it
+(`Verified.stackScratch`).
 -/
 
 namespace VG.Proof.Sha512.AArch64.Shared
@@ -120,19 +127,19 @@ theorem init (iv : Spec.Sha512.HashValue) :
       AArch64.abi, AArch64.argRegs]
       [Proof.Sha512.AArch64.Stream.initSat] using Proof.Sha512.AArch64.Stream.initSat)
 
-theorem update_of {code : Prog isa} (hv : Verified AArch64.target code Proof.Sha512.updateAArch64) :
-    Verified AArch64.target code (Spec.Sha512.updateContract AArch64.abi 16) := by
-  have hi : updateWide.Implies (Spec.Sha512.updateContract AArch64.abi 16) := by
-    contract_implies [Spec.Sha512.updateContract, Spec.Sha512.updateSig, updateWide,
+theorem updateScratch_of {code : Prog isa} (hv : Verified AArch64.target code Proof.Sha512.updateAArch64) :
+    Verified AArch64.target code (Spec.Sha512.updateScratchContract AArch64.abi 16) := by
+  have hi : updateWide.Implies (Spec.Sha512.updateScratchContract AArch64.abi 16) := by
+    contract_implies [Spec.Sha512.updateScratchContract, Spec.Sha512.updateScratchSig, updateWide,
       Proof.Sha512.updateAArch64, AArch64.abi, AArch64.argRegs]
       [updateSat, Proof.Sha512.AArch64.Stream.Update.sat, MdStream.AArch64.Update.sat,
         Impl.Sha512.AArch64.Stream.params] using updateSat
   exact (updateWide_of hv hi.sat_left).of_implies hi
 
-theorem finalize_of {code : Prog isa} (hv : Verified AArch64.target code Proof.Sha512.finalizeAArch64) :
-    Verified AArch64.target code (Spec.Sha512.finalizeContract AArch64.abi 16) := by
-  have hi : finalizeWide.Implies (Spec.Sha512.finalizeContract AArch64.abi 16) := by
-    contract_implies [Spec.Sha512.finalizeContract, Spec.Sha512.finalizeSig, finalizeWide,
+theorem finalizeScratch_of {code : Prog isa} (hv : Verified AArch64.target code Proof.Sha512.finalizeAArch64) :
+    Verified AArch64.target code (Spec.Sha512.finalizeScratchContract AArch64.abi 16) := by
+  have hi : finalizeWide.Implies (Spec.Sha512.finalizeScratchContract AArch64.abi 16) := by
+    contract_implies [Spec.Sha512.finalizeScratchContract, Spec.Sha512.finalizeScratchSig, finalizeWide,
       Proof.Sha512.finalizeAArch64, AArch64.abi, AArch64.argRegs]
       [finalizeSat, Proof.Sha512.AArch64.Stream.Finalize.sat, MdStream.AArch64.Finalize.sat,
         Impl.Sha512.AArch64.Stream.params] using finalizeSat
@@ -140,5 +147,21 @@ theorem finalize_of {code : Prog isa} (hv : Verified AArch64.target code Proof.S
 
 theorem compress : Verified AArch64.target Impl.Sha512.AArch64.compress (Spec.Sha512.compressContract AArch64.abi) :=
   compress_of Proof.Sha512.AArch64.compress_verified
+
+/-- `update`: `updateScratch_of` with its working space in a frame of its own. -/
+theorem update_of {code : Prog isa} (hv : Verified AArch64.target code Proof.Sha512.updateAArch64) :
+    Verified AArch64.target (Impl.StackScratch.AArch64.withStackScratch 1376 .x4 code)
+      (Spec.Sha512.updateContract AArch64.abi (16 + 1376)) :=
+  AArch64.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 172) (stack := 16) (bytes := 1376)
+    (updateScratch_of hv) (by decide) (by decide)
+    (AArch64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
+
+/-- `finalize`: `finalizeScratch_of` with its working space in a frame of its own. -/
+theorem finalize_of {code : Prog isa} (hv : Verified AArch64.target code Proof.Sha512.finalizeAArch64) :
+    Verified AArch64.target (Impl.StackScratch.AArch64.withStackScratch 1376 .x3 code)
+      (Spec.Sha512.finalizeContract AArch64.abi (16 + 1376)) :=
+  AArch64.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 172) (stack := 16) (bytes := 1376)
+    (finalizeScratch_of hv) (by decide) (by decide)
+    (AArch64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
 
 end VG.Proof.Sha512.AArch64.Shared

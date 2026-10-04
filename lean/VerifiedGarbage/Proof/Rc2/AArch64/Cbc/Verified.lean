@@ -100,7 +100,7 @@ theorem encrypt_correct (s : State) (hs : (contract .encrypt).pre s) :
   obtain ⟨t, s', he, ha, hp⟩ := cbc_body_correct .encrypt _
     (fun s n bound hp count => maybeLoop_ok .encrypt s n bound hp count) s hs
   change Exec isa Impl.Rc2.AArch64.Cbc.encrypt s t s' at he
-  exact ⟨t, s', he, ⟨ha, (VG.AArch64.Exec.regions he rfl).2.2.1, VG.AArch64.Exec.preservedV he⟩, hp⟩
+  exact ⟨t, s', he, ⟨ha, (VG.AArch64.Exec.regions he rfl).2.2.1, VG.AArch64.Exec.preservedV he (by lit_decide)⟩, hp⟩
 
 theorem decrypt_correct (s : State) (hs : (contract .decrypt).pre s) :
     ∃ t s', Exec isa Impl.Rc2.AArch64.Cbc.decrypt s t s' ∧ abiPreserved s s' ∧
@@ -108,7 +108,7 @@ theorem decrypt_correct (s : State) (hs : (contract .decrypt).pre s) :
   obtain ⟨t, s', he, ha, hp⟩ := cbc_body_correct .decrypt _
     (fun s n bound hp count => phaseLoop_ok s n bound hp count) s hs
   change Exec isa Impl.Rc2.AArch64.Cbc.decrypt s t s' at he
-  exact ⟨t, s', he, ⟨ha, (VG.AArch64.Exec.regions he rfl).2.2.1, VG.AArch64.Exec.preservedV he⟩, hp⟩
+  exact ⟨t, s', he, ⟨ha, (VG.AArch64.Exec.regions he rfl).2.2.1, VG.AArch64.Exec.preservedV he (by lit_decide)⟩, hp⟩
 
 theorem publicRegs_five (s₁ s₂ : State) : PublicRegs [.x0, .x1, .x2, .x3, .x4] s₁ s₂ ↔
     s₁.sp = s₂.sp ∧ s₁.gpr .x0 = s₂.gpr .x0 ∧ s₁.gpr .x1 = s₂.gpr .x1 ∧ s₁.gpr .x2 = s₂.gpr .x2 ∧

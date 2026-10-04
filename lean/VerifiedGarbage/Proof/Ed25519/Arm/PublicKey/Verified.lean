@@ -161,7 +161,7 @@ theorem update_covers (L : Lay) : Covers (Whole.updateRd L.E L.seed 32 ++ Whole.
 
 theorem update_step (hc : Ctx L g m₀ t) (hL : L.Ok) (ha : Arguments L m₀)
     (hh : Spec.Sha512.Repr Spec.Sha512.H0_512 t.mem (State.addr L.scr) []) :
-    WP isa (callWith updateArgs Spec.Sha512.updateApi.name Impl.Sha512.Arm.Stream.update) t fun u =>
+    WP isa (callWith updateArgs Spec.Sha512.updateScratchApi.name Impl.Sha512.Arm.Stream.update) t fun u =>
       Ctx L g m₀ u ∧ Spec.Sha512.Repr Spec.Sha512.H0_512 u.mem (State.addr L.scr)
         (Spec.Ed25519.bytesAt m₀ (State.addr L.seed) 32) := by
   refine WP.seq (WP.mono (setup_ok hc hL ha
@@ -216,7 +216,7 @@ theorem finalize_covers (hL : L.Ok) :
 theorem finalize_step (hc : Ctx L g m₀ t) (hL : L.Ok) (ha : Arguments L m₀)
     (hh : Spec.Sha512.Repr Spec.Sha512.H0_512 t.mem (State.addr L.scr)
       (Spec.Ed25519.bytesAt m₀ (State.addr L.seed) 32)) :
-    WP isa (callWith finalizeArgs Spec.Sha512.finalizeApi.name Impl.Sha512.Arm.Stream.finalize) t fun u =>
+    WP isa (callWith finalizeArgs Spec.Sha512.finalizeScratchApi.name Impl.Sha512.Arm.Stream.finalize) t fun u =>
       Ctx L g m₀ u ∧ Spec.Ed25519.bytesAt u.mem (State.addr L.E + 184) 64 =
         Spec.Sha512.sha512 (Spec.Ed25519.bytesAt m₀ (State.addr L.seed) 32) := by
   refine WP.seq (WP.mono (setup_ok hc hL ha
@@ -636,7 +636,7 @@ theorem init_ct (hL : L.Ok) : RelCT isa (Two L g₁ g₂ m₁ m₂ (Slots L init
   · simp [initValues, linkRegs]
 
 theorem update_ct (hL : L.Ok) : RelCT isa (Two L g₁ g₂ m₁ m₂ (Slots L updateValues updateStack))
-    (.call Spec.Sha512.updateApi.name Impl.Sha512.Arm.Stream.update) (Two L g₁ g₂ m₁ m₂ fun _ => True) := by
+    (.call Spec.Sha512.updateScratchApi.name Impl.Sha512.Arm.Stream.update) (Two L g₁ g₂ m₁ m₂ fun _ => True) := by
   apply call_ct Proof.Sha512.Arm.Stream.Update.update_verified.1 Proof.Sha512.Arm.Stream.Update.update_verified.2.1
     Whole.update_noFrames (fun _ he h => update_ready hL he h)
   · intro a b ar aw br bw hsp hg ht
@@ -644,7 +644,7 @@ theorem update_ct (hL : L.Ok) : RelCT isa (Two L g₁ g₂ m₁ m₂ (Slots L up
   · simp [updateValues, linkRegs]
 
 theorem finalize_ct (hL : L.Ok) : RelCT isa (Two L g₁ g₂ m₁ m₂ (Slots L finalizeValues finalizeStack))
-    (.call Spec.Sha512.finalizeApi.name Impl.Sha512.Arm.Stream.finalize) (Two L g₁ g₂ m₁ m₂ fun _ => True) := by
+    (.call Spec.Sha512.finalizeScratchApi.name Impl.Sha512.Arm.Stream.finalize) (Two L g₁ g₂ m₁ m₂ fun _ => True) := by
   apply call_ct Proof.Sha512.Arm.Stream.Finalize.finalize_verified.1 Proof.Sha512.Arm.Stream.Finalize.finalize_verified.2.1
     Whole.finalize_noFrames (fun _ he h => finalize_ready hL he h)
   · intro a b ar aw br bw hsp hg ht

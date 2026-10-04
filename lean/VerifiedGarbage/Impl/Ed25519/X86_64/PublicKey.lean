@@ -93,8 +93,8 @@ def callWith (args : List Instr) (name : String) (code : Prog isa) : Prog isa :=
 /-- The hash of the seed, into `scratch + 1568`. -/
 def pkHash (f : Callee) (suffix : String) : Prog isa :=
   .seq (callWith pkInitArgs Spec.Sha512.init512Api.name (Sha512.X86_64.Stream.init Spec.Sha512.H0_512))
-    (.seq (callWith pkUpdateArgs (Spec.Sha512.updateApi.name ++ suffix) (Sha512.X86_64.Stream.update f))
-      (callWith pkFinalizeArgs (Spec.Sha512.finalizeApi.name ++ suffix) (Sha512.X86_64.Stream.finalize f)))
+    (.seq (callWith pkUpdateArgs (Spec.Sha512.updateScratchApi.name ++ suffix) (Sha512.X86_64.Stream.update f))
+      (callWith pkFinalizeArgs (Spec.Sha512.finalizeScratchApi.name ++ suffix) (Sha512.X86_64.Stream.finalize f)))
 
 /-- The name of the base-point multiplication called, with the field
 multiplications' suffix `fs` (`_adx`, or none). -/

@@ -1,6 +1,7 @@
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.CT
 import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.Instances
+import VerifiedGarbage.Proof.Framework.TaintBatch
 
 /-!
 # PBKDF2-HMAC on 32-bit ARM, the whole derivation: the instances
@@ -57,31 +58,34 @@ def pbkSat (W : Nat) : State where
 def sha1F : Fns := fnsOf Spec.Hmac.sha1I Md.Arm.sha1Md
 
 theorem sha1_checks : Checks sha1F := by
-  constructor <;> exact ⟨_, by taint_decide⟩
+  constructor <;> refine ⟨?_, ?_⟩
+  taint_decide_all
 
-def sha1OKF : FnsOK sha1F where
-  hH := sha1OK
-  Wi := 56
-  Wf := 56
-  Wt := 56
-  hi := .of_verified Proof.Pbkdf2.Md.Arm.Instances.sha1_init
-  hf := .of_verified Proof.Pbkdf2.Md.Arm.Instances.sha1_finalize
-  it := .of_verified Proof.Pbkdf2.Md.Arm.Instances.sha1_iterate
-  hiSt := by decide +kernel
-  hfSt := by decide +kernel
-  itSt := by decide +kernel
-  hWi := by decide
-  hWf := by decide
-  hWt := by decide
-  hWH := by decide
-  hDB := by decide
-  hBS := by decide
-  fits := by decide
-  reach := by decide
-  encB1 := by decide
-  encB := by decide
-  encB4 := by decide
-  encD := by decide
+def sha1OKF : FnsOK sha1F := by
+  refine {
+    hH := sha1OK
+    Wi := 56
+    Wf := 56
+    Wt := 56
+    hi := .of_verified Proof.Pbkdf2.Md.Arm.Instances.sha1_init
+    hf := .of_verified Proof.Pbkdf2.Md.Arm.Instances.sha1_finalize
+    it := .of_verified Proof.Pbkdf2.Md.Arm.Instances.sha1_iterate
+    hiSt := ?_
+    hfSt := ?_
+    itSt := ?_
+    hWi := by decide
+    hWf := by decide
+    hWt := by decide
+    hWH := by decide
+    hDB := by decide
+    hBS := by decide
+    fits := by decide
+    reach := by decide
+    encB1 := by decide
+    encB := by decide
+    encB4 := by decide
+    encD := by decide }
+  taint_decide_all
 
 theorem sha1_sat : ∃ s, (Spec.Hmac.sha1I.pbkdf2Contract Arm.abi 24).pre s := by
   sig_implies_sat [Spec.Hmac.Instance.pbkdf2Contract, Spec.Pbkdf2.pbkdf2Contract, Spec.Pbkdf2.pbkdf2Sig,
@@ -96,31 +100,34 @@ theorem sha1 : Verified Arm.target sha1F.pbkdf2 (Spec.Hmac.sha1I.pbkdf2Contract 
 def md5F : Fns := fnsOf Spec.Hmac.md5I Md.Arm.md5Md
 
 theorem md5_checks : Checks md5F := by
-  constructor <;> exact ⟨_, by taint_decide⟩
+  constructor <;> refine ⟨?_, ?_⟩
+  taint_decide_all
 
-def md5OKF : FnsOK md5F where
-  hH := md5OK
-  Wi := 48
-  Wf := 48
-  Wt := 48
-  hi := .of_verified Proof.Pbkdf2.Md.Arm.Instances.md5_init
-  hf := .of_verified Proof.Pbkdf2.Md.Arm.Instances.md5_finalize
-  it := .of_verified Proof.Pbkdf2.Md.Arm.Instances.md5_iterate
-  hiSt := by decide +kernel
-  hfSt := by decide +kernel
-  itSt := by decide +kernel
-  hWi := by decide
-  hWf := by decide
-  hWt := by decide
-  hWH := by decide
-  hDB := by decide
-  hBS := by decide
-  fits := by decide
-  reach := by decide
-  encB1 := by decide
-  encB := by decide
-  encB4 := by decide
-  encD := by decide
+def md5OKF : FnsOK md5F := by
+  refine {
+    hH := md5OK
+    Wi := 48
+    Wf := 48
+    Wt := 48
+    hi := .of_verified Proof.Pbkdf2.Md.Arm.Instances.md5_init
+    hf := .of_verified Proof.Pbkdf2.Md.Arm.Instances.md5_finalize
+    it := .of_verified Proof.Pbkdf2.Md.Arm.Instances.md5_iterate
+    hiSt := ?_
+    hfSt := ?_
+    itSt := ?_
+    hWi := by decide
+    hWf := by decide
+    hWt := by decide
+    hWH := by decide
+    hDB := by decide
+    hBS := by decide
+    fits := by decide
+    reach := by decide
+    encB1 := by decide
+    encB := by decide
+    encB4 := by decide
+    encD := by decide }
+  taint_decide_all
 
 theorem md5_sat : ∃ s, (Spec.Hmac.md5I.pbkdf2Contract Arm.abi 24).pre s := by
   sig_implies_sat [Spec.Hmac.Instance.pbkdf2Contract, Spec.Pbkdf2.pbkdf2Contract, Spec.Pbkdf2.pbkdf2Sig,
@@ -135,31 +142,34 @@ theorem md5 : Verified Arm.target md5F.pbkdf2 (Spec.Hmac.md5I.pbkdf2Contract Arm
 def sha384F : Fns := fnsOf Spec.Hmac.sha384I Md.Arm.sha384Md
 
 theorem sha384_checks : Checks sha384F := by
-  constructor <;> exact ⟨_, by taint_decide⟩
+  constructor <;> refine ⟨?_, ?_⟩
+  taint_decide_all
 
-def sha384OKF : FnsOK sha384F where
-  hH := sha384OK
-  Wi := 234
-  Wf := 234
-  Wt := 234
-  hi := .of_verified Proof.Pbkdf2.Md.Arm.Instances.sha384_init
-  hf := .of_verified Proof.Pbkdf2.Md.Arm.Instances.sha384_finalize
-  it := .of_verified Proof.Pbkdf2.Md.Arm.Instances.sha384_iterate
-  hiSt := by decide +kernel
-  hfSt := by decide +kernel
-  itSt := by decide +kernel
-  hWi := by decide
-  hWf := by decide
-  hWt := by decide
-  hWH := by decide
-  hDB := by decide
-  hBS := by decide
-  fits := by decide
-  reach := by decide
-  encB1 := by decide
-  encB := by decide
-  encB4 := by decide
-  encD := by decide
+def sha384OKF : FnsOK sha384F := by
+  refine {
+    hH := sha384OK
+    Wi := 234
+    Wf := 234
+    Wt := 234
+    hi := .of_verified Proof.Pbkdf2.Md.Arm.Instances.sha384_init
+    hf := .of_verified Proof.Pbkdf2.Md.Arm.Instances.sha384_finalize
+    it := .of_verified Proof.Pbkdf2.Md.Arm.Instances.sha384_iterate
+    hiSt := ?_
+    hfSt := ?_
+    itSt := ?_
+    hWi := by decide
+    hWf := by decide
+    hWt := by decide
+    hWH := by decide
+    hDB := by decide
+    hBS := by decide
+    fits := by decide
+    reach := by decide
+    encB1 := by decide
+    encB := by decide
+    encB4 := by decide
+    encD := by decide }
+  taint_decide_all
 
 theorem sha384_sat : ∃ s, (Spec.Hmac.sha384I.pbkdf2Contract Arm.abi 24).pre s := by
   sig_implies_sat [Spec.Hmac.Instance.pbkdf2Contract, Spec.Pbkdf2.pbkdf2Contract, Spec.Pbkdf2.pbkdf2Sig,
@@ -174,31 +184,34 @@ theorem sha384 : Verified Arm.target sha384F.pbkdf2 (Spec.Hmac.sha384I.pbkdf2Con
 def sha512F : Fns := fnsOf Spec.Hmac.sha512I Md.Arm.sha512Md'
 
 theorem sha512_checks : Checks sha512F := by
-  constructor <;> exact ⟨_, by taint_decide⟩
+  constructor <;> refine ⟨?_, ?_⟩
+  taint_decide_all
 
-def sha512OKF : FnsOK sha512F where
-  hH := sha512OK
-  Wi := 234
-  Wf := 234
-  Wt := 234
-  hi := .of_verified Proof.Pbkdf2.Md.Arm.Instances.sha512_init
-  hf := .of_verified Proof.Pbkdf2.Md.Arm.Instances.sha512_finalize
-  it := .of_verified Proof.Pbkdf2.Md.Arm.Instances.sha512_iterate
-  hiSt := by decide +kernel
-  hfSt := by decide +kernel
-  itSt := by decide +kernel
-  hWi := by decide
-  hWf := by decide
-  hWt := by decide
-  hWH := by decide
-  hDB := by decide
-  hBS := by decide
-  fits := by decide
-  reach := by decide
-  encB1 := by decide
-  encB := by decide
-  encB4 := by decide
-  encD := by decide
+def sha512OKF : FnsOK sha512F := by
+  refine {
+    hH := sha512OK
+    Wi := 234
+    Wf := 234
+    Wt := 234
+    hi := .of_verified Proof.Pbkdf2.Md.Arm.Instances.sha512_init
+    hf := .of_verified Proof.Pbkdf2.Md.Arm.Instances.sha512_finalize
+    it := .of_verified Proof.Pbkdf2.Md.Arm.Instances.sha512_iterate
+    hiSt := ?_
+    hfSt := ?_
+    itSt := ?_
+    hWi := by decide
+    hWf := by decide
+    hWt := by decide
+    hWH := by decide
+    hDB := by decide
+    hBS := by decide
+    fits := by decide
+    reach := by decide
+    encB1 := by decide
+    encB := by decide
+    encB4 := by decide
+    encD := by decide }
+  taint_decide_all
 
 theorem sha512_sat : ∃ s, (Spec.Hmac.sha512I.pbkdf2Contract Arm.abi 24).pre s := by
   sig_implies_sat [Spec.Hmac.Instance.pbkdf2Contract, Spec.Pbkdf2.pbkdf2Contract, Spec.Pbkdf2.pbkdf2Sig,
@@ -213,31 +226,34 @@ theorem sha512 : Verified Arm.target sha512F.pbkdf2 (Spec.Hmac.sha512I.pbkdf2Con
 def sha512_224F : Fns := fnsOf Spec.Hmac.sha512_224I Md.Arm.sha512_224Md
 
 theorem sha512_224_checks : Checks sha512_224F := by
-  constructor <;> exact ⟨_, by taint_decide⟩
+  constructor <;> refine ⟨?_, ?_⟩
+  taint_decide_all
 
-def sha512_224OKF : FnsOK sha512_224F where
-  hH := sha512_224OK
-  Wi := 234
-  Wf := 234
-  Wt := 234
-  hi := .of_verified Proof.Pbkdf2.Md.Arm.Instances.sha512_224_init
-  hf := .of_verified Proof.Pbkdf2.Md.Arm.Instances.sha512_224_finalize
-  it := .of_verified Proof.Pbkdf2.Md.Arm.Instances.sha512_224_iterate
-  hiSt := by decide +kernel
-  hfSt := by decide +kernel
-  itSt := by decide +kernel
-  hWi := by decide
-  hWf := by decide
-  hWt := by decide
-  hWH := by decide
-  hDB := by decide
-  hBS := by decide
-  fits := by decide
-  reach := by decide
-  encB1 := by decide
-  encB := by decide
-  encB4 := by decide
-  encD := by decide
+def sha512_224OKF : FnsOK sha512_224F := by
+  refine {
+    hH := sha512_224OK
+    Wi := 234
+    Wf := 234
+    Wt := 234
+    hi := .of_verified Proof.Pbkdf2.Md.Arm.Instances.sha512_224_init
+    hf := .of_verified Proof.Pbkdf2.Md.Arm.Instances.sha512_224_finalize
+    it := .of_verified Proof.Pbkdf2.Md.Arm.Instances.sha512_224_iterate
+    hiSt := ?_
+    hfSt := ?_
+    itSt := ?_
+    hWi := by decide
+    hWf := by decide
+    hWt := by decide
+    hWH := by decide
+    hDB := by decide
+    hBS := by decide
+    fits := by decide
+    reach := by decide
+    encB1 := by decide
+    encB := by decide
+    encB4 := by decide
+    encD := by decide }
+  taint_decide_all
 
 theorem sha512_224_sat : ∃ s, (Spec.Hmac.sha512_224I.pbkdf2Contract Arm.abi 24).pre s := by
   sig_implies_sat [Spec.Hmac.Instance.pbkdf2Contract, Spec.Pbkdf2.pbkdf2Contract, Spec.Pbkdf2.pbkdf2Sig,
@@ -252,31 +268,34 @@ theorem sha512_224 : Verified Arm.target sha512_224F.pbkdf2 (Spec.Hmac.sha512_22
 def sha512_256F : Fns := fnsOf Spec.Hmac.sha512_256I Md.Arm.sha512_256Md
 
 theorem sha512_256_checks : Checks sha512_256F := by
-  constructor <;> exact ⟨_, by taint_decide⟩
+  constructor <;> refine ⟨?_, ?_⟩
+  taint_decide_all
 
-def sha512_256OKF : FnsOK sha512_256F where
-  hH := sha512_256OK
-  Wi := 234
-  Wf := 234
-  Wt := 234
-  hi := .of_verified Proof.Pbkdf2.Md.Arm.Instances.sha512_256_init
-  hf := .of_verified Proof.Pbkdf2.Md.Arm.Instances.sha512_256_finalize
-  it := .of_verified Proof.Pbkdf2.Md.Arm.Instances.sha512_256_iterate
-  hiSt := by decide +kernel
-  hfSt := by decide +kernel
-  itSt := by decide +kernel
-  hWi := by decide
-  hWf := by decide
-  hWt := by decide
-  hWH := by decide
-  hDB := by decide
-  hBS := by decide
-  fits := by decide
-  reach := by decide
-  encB1 := by decide
-  encB := by decide
-  encB4 := by decide
-  encD := by decide
+def sha512_256OKF : FnsOK sha512_256F := by
+  refine {
+    hH := sha512_256OK
+    Wi := 234
+    Wf := 234
+    Wt := 234
+    hi := .of_verified Proof.Pbkdf2.Md.Arm.Instances.sha512_256_init
+    hf := .of_verified Proof.Pbkdf2.Md.Arm.Instances.sha512_256_finalize
+    it := .of_verified Proof.Pbkdf2.Md.Arm.Instances.sha512_256_iterate
+    hiSt := ?_
+    hfSt := ?_
+    itSt := ?_
+    hWi := by decide
+    hWf := by decide
+    hWt := by decide
+    hWH := by decide
+    hDB := by decide
+    hBS := by decide
+    fits := by decide
+    reach := by decide
+    encB1 := by decide
+    encB := by decide
+    encB4 := by decide
+    encD := by decide }
+  taint_decide_all
 
 theorem sha512_256_sat : ∃ s, (Spec.Hmac.sha512_256I.pbkdf2Contract Arm.abi 24).pre s := by
   sig_implies_sat [Spec.Hmac.Instance.pbkdf2Contract, Spec.Pbkdf2.pbkdf2Contract, Spec.Pbkdf2.pbkdf2Sig,

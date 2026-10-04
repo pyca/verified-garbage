@@ -1,4 +1,5 @@
 import VerifiedGarbage.Proof.Blake2.X86_64.Stream.Verified
+import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
 
 /-!
 # BLAKE2b compression backends on x86-64
@@ -33,12 +34,20 @@ structure Backend where
     ⟨Spec.Blake2.compressBApi.name ++ suffix, code⟩).all (fun i => !isa.writesSp i) = true
   finalizeSpSafe : (Impl.Blake2.X86_64.Stream.finalize b
     ⟨Spec.Blake2.compressBApi.name ++ suffix, code⟩).all (fun i => !isa.writesSp i) = true
+  /-- The stack the streaming functions use, so that `update` and `finalize`
+  can keep their working space in a frame of their own. -/
+  updateDepth : (Impl.Blake2.X86_64.Stream.update b
+    ⟨Spec.Blake2.compressBApi.name ++ suffix, code⟩).x86_64Depth ≤ 8
+  finalizeDepth : (Impl.Blake2.X86_64.Stream.finalize b
+    ⟨Spec.Blake2.compressBApi.name ++ suffix, code⟩).x86_64Depth ≤ 8
 
 namespace Backend
 
 def compressName (v : Backend) : String := Spec.Blake2.compressBApi.name ++ v.suffix
-def updateName (v : Backend) : String := Spec.Blake2.updateBApi.name ++ v.suffix
-def finalizeName (v : Backend) : String := Spec.Blake2.finalizeBApi.name ++ v.suffix
+/-- The names of `update_scratch` and `finalize_scratch`, which Argon2's code
+calls. -/
+def updateName (v : Backend) : String := Spec.Blake2.updateBScratchApi.name ++ v.suffix
+def finalizeName (v : Backend) : String := Spec.Blake2.finalizeBScratchApi.name ++ v.suffix
 
 def hashCallee (v : Backend) : Impl.Blake2.X86_64.Stream.Callee := ⟨v.compressName, v.code⟩
 def init (_ : Backend) : Prog isa := Impl.Blake2.X86_64.Stream.init b
@@ -60,18 +69,34 @@ theorem finalize_correct (v : Backend) (st : State) (hs : (finalizeX86_64 b).pre
   exact ⟨t, s', he, abiPreserved_of_exec v.finalizeMxcsr he h.1, h.2⟩
 
 theorem update_verified (v : Backend) :
-    Verified X86_64.target v.update (Spec.Blake2.updateBContract abi 8) :=
+    Verified X86_64.target v.update (Spec.Blake2.updateBScratchContract abi 8) :=
   Verified.of_correct v.update_correct v.updateCT (by
-    sig_implies [Spec.Blake2.updateBContract, Spec.Blake2.updateBSig, Proof.Blake2.updateX86_64,
+    sig_implies [Spec.Blake2.updateBScratchContract, Spec.Blake2.updateBScratchSig, Proof.Blake2.updateX86_64,
       Spec.Blake2.bufOff, Spec.Blake2.blockBytes, X86_64.abi, X86_64.argRegs]
       [Stream.updateSat] using Stream.updateSat 64)
 
 theorem finalize_verified (v : Backend) :
-    Verified X86_64.target v.finalize (Spec.Blake2.finalizeBContract abi 8) :=
+    Verified X86_64.target v.finalize (Spec.Blake2.finalizeBScratchContract abi 8) :=
   Verified.of_correct v.finalize_correct v.finalizeCT (by
-    sig_implies [Spec.Blake2.finalizeBContract, Spec.Blake2.finalizeBSig,
+    sig_implies [Spec.Blake2.finalizeBScratchContract, Spec.Blake2.finalizeBScratchSig,
       Proof.Blake2.finalizeX86_64, Spec.Blake2.bufOff, Spec.Blake2.blockBytes, X86_64.abi,
       X86_64.argRegs] [Stream.finalizeSat] using Stream.finalizeSat 64)
+
+/-- `update`: `update_scratch` with its working space in a frame of its own. -/
+theorem update_framed (v : Backend) : Verified X86_64.target
+    (Impl.StackScratch.X86_64.withStackScratch 584 .r8 v.update)
+    (Spec.Blake2.updateBContract abi (8 + 584)) :=
+  X86_64.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 72) (stack := 8) (bytes := 584)
+    v.update_verified (by decide) (by decide) (by decide) v.updateSpSafe v.updateDepth
+    (X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
+
+/-- `finalize`: `finalize_scratch` with its working space in a frame of its own. -/
+theorem finalize_framed (v : Backend) : Verified X86_64.target
+    (Impl.StackScratch.X86_64.withStackScratch 584 .rcx v.finalize)
+    (Spec.Blake2.finalizeBContract abi (8 + 584)) :=
+  X86_64.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 72) (stack := 8) (bytes := 584)
+    v.finalize_verified (by decide) (by decide) (by decide) v.finalizeSpSafe v.finalizeDepth
+    (X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
 
 end Backend
 end VG.Proof.Blake2.X86_64

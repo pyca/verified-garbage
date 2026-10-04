@@ -134,6 +134,6 @@ theorem restArgs_ok {s₀ : State} {w : State} (hx21 : w.gpr .x21 = cx s₀) :
           by rw [u₄.wr, u₃.wr, u₂.wr, u₁.wr]⟩
   refine WP.preservedV (WP.mono (WP.kept core (by simp [mov, dstOf, preserved]))
     fun w' ⟨⟨h0, h1, h2, h3, hm, hrd, hwr⟩, hg, hsp⟩ =>
-      ⟨h0, h1, h2, h3, Kept.of hg hsp hrd hwr (by rw [hm]; exact Frame.refl _ _)⟩)
+      ⟨h0, h1, h2, h3, Kept.of hg hsp hrd hwr (by rw [hm]; exact Frame.refl _ _)⟩) (by lit_decide)
 
 end VG.Proof.ChaCha20Poly1305.AArch64

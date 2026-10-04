@@ -112,7 +112,7 @@ theorem setup_ok {s : State} {base p : Addr} (hc : s.gpr .x3 = base)
       SavedV base s.v t.mem := by
   have hV : VSAVE = 4736 := rfl
   rw [Impl.X448.AArch64.Fast.setup, WP.block_append_iff]
-  refine WP.mono (WP.preservedV (setup0_ok hc hw hn hp hr hd))
+  refine WP.mono (WP.preservedV (setup0_ok hc hw hn hp hr hd) (by lit_decide))
     fun u ⟨⟨us, ub, red, ux, uk, uo, sv, svx, u0, u1, u2, u3, u4, uw⟩, uv⟩ => ?_
   refine WP.mono (vsave_ok us) fun t ⟨tv, tO, tg, tr, tw⟩ => ?_
   have sl : ∀ i : Index, ∀ j < 8, limbs t.mem base (slot i.val) j = limbs u.mem base (slot i.val) j := by
