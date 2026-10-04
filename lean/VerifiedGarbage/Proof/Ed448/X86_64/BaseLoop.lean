@@ -1,18 +1,17 @@
 import VerifiedGarbage.Proof.Ed448.X86_64.BaseStep
-import VerifiedGarbage.Proof.Ed448.Group.Projective
 
 /-!
 # Ed448 base-point multiplication on x86-64: the loop over the bits
 
-After the bits above `n` (counting down from 456), `R` (slots 0–2)
-represents `[k >> n]B`, for `k` the scalar: each iteration doubles it and
-adds `B` when the next bit is set (`shift_step`). `Q` (slots 8–10) stays the
-base point and slot 11 `d`.
+After the bits above `n` (counting down from 456), `R` (slots 0–2) is the
+reference ladder's point after those bits (`Proof.Ed448.ladder`): each
+iteration doubles it and adds `B` when the next bit is set. `Q` (slots
+8–10) stays the base point and slot 11 `d`.
 -/
 
 namespace VG.Proof.Ed448.X86_64
 
-open VG VG.X86_64 VG.Impl.Ed448.X86_64 VG.Proof.Ed448 VG.Proof.EdwardsLaw
+open VG VG.X86_64 VG.Impl.Ed448.X86_64 VG.Proof.Ed448
 open VG.Proof.X448.X86_64 (Scr Index Env E Keep FieldOk off contains_sc mask opSwap clob Outside)
 open VG.Impl.X448.X86_64 (BITS slot)
 
@@ -27,28 +26,13 @@ theorem stepEnv_q (sw : Bool) (e : Env) : pt (stepEnv sw e) 8 9 10 = pt e 8 9 10
 theorem stepEnv_d (sw : Bool) (e : Env) : stepEnv sw e 11 = e 11 := by
   cases sw <;> rfl
 
-theorem shift_step (k t : Nat) : k >>> t = 2 * (k >>> (t + 1)) + ((k >>> t) &&& 1) := by
-  rw [Nat.shiftRight_succ, Nat.and_one_is_mod]
-  omega
-
-/-- One bit: `R` for `[k >> (t + 1)]B` becomes `R` for `[k >> t]B`. -/
-theorem rep_step {e : Env} {k t : Nat}
-    (hr : Rep (pt e 0 1 2) ((k >>> (t + 1)) • baseAff)) (hq : pt e 8 9 10 = Spec.Ed448.basePoint)
+/-- One bit: the ladder's point after the bits above `t`, then after bit `t`. -/
+theorem ladder_step {e : Env} {k t : Nat} (ht : t < 456)
+    (hr : pt e 0 1 2 = ladder k (456 - (t + 1))) (hq : pt e 8 9 10 = Spec.Ed448.basePoint)
     (hd : e 11 = Spec.Ed448.d) :
-    Rep (pt (stepEnv (decide ((k >>> t) &&& 1 = 1)) e) 0 1 2) ((k >>> t) • baseAff) := by
-  rw [stepEnv_pt, hd, hq, addWith_d]
-  have h2 := double_rep hr
-  have hb : (k >>> t) &&& 1 < 2 := Nat.lt_of_le_of_lt Nat.and_le_right (by decide)
-  have e1 : (k >>> t) • baseAff = (k >>> (t + 1)) • baseAff + (k >>> (t + 1)) • baseAff +
-      ((k >>> t) &&& 1) • baseAff := by
-    conv => lhs; rw [shift_step k t]
-    rw [add_nsmul, two_mul, add_nsmul]
-  rw [e1]
-  rcases (by omega : (k >>> t) &&& 1 = 0 ∨ (k >>> t) &&& 1 = 1) with h | h
-  · rw [h, zero_nsmul, add_zero, show decide ((0 : Nat) = 1) = false from rfl]
-    exact h2
-  · rw [h, one_nsmul, show decide ((1 : Nat) = 1) = true from rfl]
-    exact pointAdd_rep h2 basePoint_rep
+    pt (stepEnv (decide ((k >>> t) &&& 1 = 1)) e) 0 1 2 = ladder k (456 - t) := by
+  rw [stepEnv_pt, hd, hq, addWith_d, hr, ladder_bit k ht]
+  rfl
 
 /-- The loop's invariant, after the bits above `n` of `k`. -/
 structure MInv (base : Addr) (k : Nat) (s₀ : State) (n : Nat) (s : State) : Prop where
@@ -60,7 +44,7 @@ structure MInv (base : Addr) (k : Nat) (s₀ : State) (n : Nat) (s : State) : Pr
   mem : Outside base 64 1584 s₀.mem s.mem
   q : pt (E s.mem base) 8 9 10 = Spec.Ed448.basePoint
   d : E s.mem base 11 = Spec.Ed448.d
-  rep : Rep (pt (E s.mem base) 0 1 2) ((k >>> n) • baseAff)
+  rep : pt (E s.mem base) 0 1 2 = ladder k (456 - n)
 
 variable {fld : Impl.X448.X86_64.Field} (hf : FieldOk fld)
 
@@ -87,7 +71,7 @@ theorem loop_ok {s₀ : State} {base : Addr} {k : Nat}
       hi.mem.trans o', ?_, ?_, ?_⟩
     · rw [e', stepEnv_q]; exact hi.q
     · rw [e', stepEnv_d]; exact hi.d
-    · rw [e']; exact rep_step hi.rep hi.q hi.d
+    · rw [e']; exact ladder_step (by omega) hi.rep hi.q hi.d
   simp only [eval, z', Option.map_some]
   rcases Nat.eq_zero_or_pos t with h | h
   · subst h

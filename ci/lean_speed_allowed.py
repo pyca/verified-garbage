@@ -188,7 +188,7 @@ DECIDE_SIMP_ALLOWED = {
     "VerifiedGarbage/Proof/TripleDes/Arm/Key/Body.lean": 1,
     "VerifiedGarbage/Proof/TripleDes/Arm/Key/Load.lean": 1,
     "VerifiedGarbage/Proof/TripleDes/Arm/Key/Store.lean": 1,
-    "VerifiedGarbage/Proof/X25519/X86/Arith.lean": 1,
+    "VerifiedGarbage/Proof/X25519/X86/Arith.lean": 2,
     "VerifiedGarbage/Proof/X25519/X86/Column.lean": 1,
     "VerifiedGarbage/Proof/X25519/X86_64/Finish.lean": 2,
     "VerifiedGarbage/Proof/X25519/X86_64/Ifma/Arith.lean": 1,

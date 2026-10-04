@@ -28,7 +28,9 @@ carry `c` is folded in as `38 c` (`fold`, as `2²⁵⁶ ≡ 38`), and a last
 carry of that as 38 more, which cannot carry again. So:
 
 * `mul`: the 512-bit product by columns (product scanning) into `T`, then
-  `lo + 38 hi` (`linear`);
+  `lo + 38 hi` (`linear`); a square (`mul o a a`) is `sqr`, whose columns
+  multiply each pair of distinct words once and add the product doubled (36
+  multiplications rather than 64);
 * `add`: `a + b`; `sub`: `a + (2²⁵⁶ - 1 - b) + (2²⁵⁶ - 75) = a - b + 4p`, so
   that every term is a natural number; `mulSmall`: `121665 a`;
 * `cswap`: with the mask `-swap`, as RFC 7748 §5 describes;
@@ -38,7 +40,7 @@ carry of that as 38 more, which cannot carry again. So:
 The ladder follows RFC 7748 §5 operation by operation, over the bits of the
 scalar from 254 down to 0 (the counter `esi` is `t + 1`), and the inversion
 `z2^(p-2)` is the addition chain of ref10 (254 squarings and 11
-multiplications, each squaring a `mul`), its runs of squarings loops with
+multiplications), its runs of squarings loops with
 the counter `esi`.
 
 The only branches are on the loop counters, and every address is a pointer
@@ -87,6 +89,8 @@ def T : Nat := 864
 inductive Term
   /-- The product of the words at `[edi + x]` and `[edi + y]`. -/
   | mulM (x y : Nat)
+  /-- Twice the product of the words at `[edi + x]` and `[edi + y]`. -/
+  | mulM2 (x y : Nat)
   /-- The product of the word at `[edi + x]` and a constant. -/
   | mulI (x : Nat) (c : BitVec 32)
   /-- The word at `[edi + x]`. -/
@@ -106,9 +110,17 @@ def accMul (src : Src) : List Instr :=
   [.mov .edx src, .mul .edx, .alu .add .ebx (.reg .eax), .alu .adc .ecx (.reg .edx),
     .alu .adc .ebp (.imm 0)]
 
+/-- `ebx:ecx:ebp += 2 · eax · src`: the product `edx:eax` doubled in place, its
+carry out added to `ebp`, then added to the accumulator. -/
+def accMul2 (src : Src) : List Instr :=
+  [.mov .edx src, .mul .edx, .alu .add .eax (.reg .eax), .alu .adc .edx (.reg .edx),
+    .alu .adc .ebp (.imm 0), .alu .add .ebx (.reg .eax), .alu .adc .ecx (.reg .edx),
+    .alu .adc .ebp (.imm 0)]
+
 /-- Adding a term to the accumulator. -/
 def Term.code : Term → List Instr
   | .mulM x y => .mov .eax (.mem (sc x)) :: accMul (.mem (sc y))
+  | .mulM2 x y => .mov .eax (.mem (sc x)) :: accMul2 (.mem (sc y))
   | .mulI x c => .mov .eax (.mem (sc x)) :: accMul (.imm c)
   | .addM x => accAdd (.mem (sc x))
   | .addI c => accAdd (.imm c)
@@ -147,10 +159,20 @@ def linear (o : Nat) (ts : Nat → List Term) : List Instr :=
 def prodTerms (a b k : Nat) : List Term :=
   ((List.range 8).filter fun i => i ≤ k && k - i < 8).map fun i => .mulM (a + 4 * i) (b + 4 * (k - i))
 
-/-- `[o] = [a] · [b]` (`o` may be `a` or `b`). -/
+/-- The terms of column `k` of `a²`: the products `a_i a_j` with `i < j` and
+`i + j = k`, doubled, and `a_{k/2}²` for an even `k`. -/
+def sqrTerms (a k : Nat) : List Term :=
+  ((List.range 8).filter fun i => 2 * i < k && k - i < 8).map
+      (fun i => .mulM2 (a + 4 * i) (a + 4 * (k - i))) ++
+    if k % 2 == 0 && k < 16 then [.mulM (a + 4 * (k / 2)) (a + 4 * (k / 2))] else []
+
+/-- The product of 16 columns in `T`, reduced to `[o]`. -/
+def mulCols (o : Nat) (ts : Nat → List Term) : List Instr :=
+  zeroAcc ++ cols T 16 ts ++ linear o (fun k => [.mulI (T + 32 + 4 * k) 38, .addM (T + 4 * k)])
+
+/-- `[o] = [a] · [b]` (`o` may be `a` or `b`), by `a²`'s columns if `a = b`. -/
 def mul (o a b : Nat) : List Instr :=
-  zeroAcc ++ cols T 16 (prodTerms a b) ++
-  linear o (fun k => [.mulI (T + 32 + 4 * k) 38, .addM (T + 4 * k)])
+  if a = b then mulCols o (sqrTerms a) else mulCols o (prodTerms a b)
 
 /-- `[o] = 121665 · [a]`. -/
 def mulSmall (o a : Nat) : List Instr :=

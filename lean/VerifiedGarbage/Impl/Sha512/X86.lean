@@ -8,28 +8,33 @@ import VerifiedGarbage.TCB.X86.Isa
 `[esp + 4]`, `[esp + 8]`, `[esp + 12]` and `[esp + 16]`. SSE2 is this
 target's baseline, so this is the only implementation.
 
-* Each 64-bit word is the low quadword of an XMM register: a rotation is a
-  logical shift each way (`psrlq`, `psllq`) and `pxor`, an addition is
-  `paddq`, and the words in memory are loaded and stored with `movq`. The
-  shifts of each `Σ` and `σ` are chained: the copy shifted right is shifted
-  further right for the next term, and likewise left (`sig5`).
+* Each 64-bit word of the rounds is the low quadword of an XMM register: a
+  rotation is a logical shift each way (`psrlq`, `psllq`) and `pxor`, an
+  addition is `paddq`, and words in memory are loaded and stored with
+  `movq`. In each `Σ`, a copy of the word is shifted right for the right
+  terms, and the word's register itself left, after storing it, for the
+  left terms (`bigSig`).
 * The working variables `a … h` live in `scratch[0..64)`, renamed between
   the fully unrolled rounds (in round `t`, variable `k` is at `vOff t k`),
   but `a`, `e` and `b ⊕ c` are also in registers, in roles that two
   consecutive rounds swap (`xr`): a round computes the next `a`, `e` and
   `a ⊕ b` (the next round's `b ⊕ c`, for `Maj(a, b, c) = ((a ⊕ b) ∧ (b ⊕ c)) ⊕
-  b`) into the three registers the next round reads them from, and stores
-  its `a` and `e` into their slots last, so that every load of a round reads
-  memory as the round found it. `xmm6` and `xmm7` are temporaries. `Kₜ` is
-  made from two immediates with `movd` and `punpckldq` (the model has no
-  constant pool).
-* The 16-word message-schedule window is in `scratch[64..192)` (`wOff`):
-  the block's sixteen words are made first, each from its big-endian bytes
-  with `bswap` in general-purpose registers, and `Wₜ` for `t ≥ 16` replaces
-  `Wₜ₋₁₆` just before round `t`. The saved `ebx`, `esi`, `edi`, `ebp` are in
-  `scratch[192..208)`, the count of blocks left in `scratch[208..212)`.
-* `esi` points to the scratch buffer and `edi` to the current block; the
-  hash value's address is read from its argument slot when needed.
+  b`) into the three registers the next round reads them from. `xmm6` and
+  `xmm7` are temporaries.
+* `Kₜ` is made from two immediates with `movd` and `punpckldq` (the model has
+  no constant pool).
+* The message schedule is computed two words at a time, in both quadwords of
+  XMM registers. The 16-word window is in `scratch[64..192)` (`wOff`), with
+  a copy of its word `Wⱼ`, `j mod 16 = 0`, after it in `scratch[192..200)`,
+  so that any two consecutive words of the window are one unaligned 16-byte
+  load (`movdqu`). The block's sixteen words are made first, each from its
+  big-endian bytes with `bswap` in general-purpose registers, and
+  `(Wₜ, Wₜ₊₁)` for even `t ≥ 16` replaces `(Wₜ₋₁₆, Wₜ₋₁₅)` just before round
+  `t`.
+* The saved `ebx`, `esi`, `edi`, `ebp` are in `scratch[200..216)`, the count
+  of blocks left in `scratch[216..220)`. `esi` points to the scratch buffer
+  and `edi` to the current block; the hash value's address is read from its
+  argument slot when needed.
 * The pointers, the block count and `esp` are public; no address and no
   branch depends on anything else.
 -/
@@ -80,12 +85,16 @@ def add64m (dl dh : Reg) (off : Nat) : List Instr := [.alu .add dl (sc off), .al
 /-- The offset in the scratch buffer of `W[j mod 16]`. -/
 def wOff (j : Nat) : Nat := 64 + 8 * (j % 16)
 
+/-- A second copy of `W[j]` for `j mod 16 = 0`, after the window, so that
+every two consecutive words of the window are contiguous. -/
+def mirOff : Nat := 192
+
 /-- The offset in the scratch buffer of working variable `k` (`a = 0, …, h = 7`)
 at the start of round `t`. -/
 def vOff (t k : Nat) : Nat := 8 * ((k + 8 - t % 8) % 8)
 
 /-- Where the count of blocks left is. -/
-def cntOff : Nat := 208
+def cntOff : Nat := 216
 
 /-! ## SSE2 instructions -/
 
@@ -94,6 +103,12 @@ def ldq (x : XReg) (b : Reg) (d : Nat) : Instr := .movqLoad x (at_ b d)
 
 /-- `movq QWORD PTR [b + d], x` -/
 def stq (b : Reg) (d : Nat) (x : XReg) : Instr := .movqStore (at_ b d) x
+
+/-- `movdqu x, XMMWORD PTR [b + d]` -/
+def ldo (x : XReg) (b : Reg) (d : Nat) : Instr := .movdquLoad x (at_ b d)
+
+/-- `movdqu XMMWORD PTR [b + d], x` -/
+def sto (b : Reg) (d : Nat) (x : XReg) : Instr := .movdquStore (at_ b d) x
 
 def xb (op : XBinOp) (d r : XReg) : Instr := .xop (.bin op d r)
 
@@ -109,61 +124,71 @@ computes, which are roles 0, 1 and 2 in round `t + 1`. -/
 def xr (t k : Nat) : XReg :=
   [.xmm0, .xmm1, .xmm2, .xmm3, .xmm4, .xmm5].getD ((k + 3 * (t % 2)) % 6) .xmm0
 
-/-- `acc := x >>> r₁ ⊕ x <<< l₁ ⊕ x >>> (r₁ + r₂) ⊕ x <<< (l₁ + l₂) ⊕ x >>> (r₁ + r₂ + r₃)`,
-for `x` in `X`, leaving `x <<< (l₁ + l₂)` in `Y`. -/
+/-- `acc := x >>> r₁ ⊕ x <<< l₁ ⊕ x >>> (r₁ + r₂) ⊕ x <<< (l₁ + l₂) ⊕ x >>> (r₁ + r₂ + r₃)`
+in each quadword, for `x` in `X`, leaving `x <<< (l₁ + l₂)` in `Y`: `σ₀`, `σ₁`. -/
 def sig5 (acc : XReg) (r₁ l₁ r₂ l₂ r₃ : BitVec 8) : List Instr :=
   [xb .movdqa Y X, xs .psrlq X r₁, xs .psllq Y l₁, xb .movdqa acc X, xb .pxor acc Y,
    xs .psrlq X r₂, xb .pxor acc X, xs .psllq Y l₂, xb .pxor acc Y, xs .psrlq X r₃, xb .pxor acc X]
 
-/-- `sig5` of the register `src`, and the sixth term `x <<< (l₁ + l₂ + l₃)`:
-`Σ₀` or `Σ₁`. -/
-def bigSig (acc src : XReg) (r₁ l₁ r₂ l₂ r₃ l₃ : BitVec 8) : List Instr :=
-  xb .movdqa X src :: (sig5 acc r₁ l₁ r₂ l₂ r₃ ++ [xs .psllq Y l₃, xb .pxor acc Y])
+/-- `acc := Σ(x)` for `x` in `L`: the right shifts `r₁`, `r₁ + r₂`, `r₁ + r₂ + r₃`
+of a copy in `X` into `acc`, the left shifts `l₁`, `l₁ + l₂`, `l₁ + l₂ + l₃` of
+`L` itself into `Y`, and then `acc ⊕ Y`, two chains half as long as one. -/
+def bigSig (acc L : XReg) (r₁ r₂ r₃ l₁ l₂ l₃ : BitVec 8) : List Instr :=
+  [xb .movdqa X L, xs .psrlq X r₁, xb .movdqa acc X, xs .psrlq X r₂, xb .pxor acc X, xs .psrlq X r₃,
+   xb .pxor acc X, xs .psllq L l₁, xb .movdqa Y L, xs .psllq L l₂, xb .pxor Y L, xs .psllq L l₃,
+   xb .pxor Y L, xb .pxor acc Y]
 
 /-! ## Rounds -/
 
 /-- A round with the working variables `a`, `b`, `d`, `e`, `f`, `g`, `h` at
 `[esi + a]`, …, the message word at `[esi + w]` and the constant `k`; `a`,
 `e` and `b ⊕ c` in `A`, `E` and `BC`. It computes
-`T₁ = h + Kₜ + Wₜ + Ch(e, f, g) + Σ₁(e)` in `T`, the next `e = d + T₁` in
-`NE`, the next `a = T₁ + Σ₀(a) + Maj(a, b, c)` in `T` and `a ⊕ b` in `AB`,
-and then stores `a` and `e` into their slots. -/
+`U = h + Kₜ + Wₜ + Ch(e, f, g)` in `T` and `d + U` in `NE`, then `Σ₁(e)`, so
+that `T₁ = U + Σ₁(e)` in `T` and the next `e = d + T₁` in `NE` are one
+addition each after it; then `a ⊕ b` in `AB` and the next
+`a = T₁ + Maj(a, b, c) + Σ₀(a)` in `T`. It stores `e` and `a` into their
+slots before shifting their registers (no load of the round reads those
+slots), and leaves `A`, `E` and `BC` clobbered. -/
 def roundW (a b d e f g h w : Nat) (k : BitVec 64) (A E BC T NE AB : XReg) : List Instr :=
   [ldq T .esi h, .mov .eax (.imm (lo k)), .xop (.movd X .eax), .mov .eax (.imm (hi k)),
    .xop (.movd Y .eax), xb .punpckldq X Y, xb .paddq T X, ldq X .esi w, xb .paddq T X,
    -- Ch(e, f, g) = ((f ⊕ g) ∧ e) ⊕ g
-   ldq X .esi f, ldq Y .esi g, xb .pxor X Y, xb .pand X E, xb .pxor X Y, xb .paddq T X] ++
+   ldq X .esi f, ldq Y .esi g, xb .pxor X Y, xb .pand X E, xb .pxor X Y, xb .paddq T X,
+   stq .esi e E, ldq NE .esi d, xb .paddq NE T] ++
   -- Σ₁(e): right 14, 18, 41 and left 23, 46, 50
-  bigSig NE E 14 23 4 23 23 4 ++
-  [xb .paddq T NE, ldq NE .esi d, xb .paddq NE T] ++
-  -- Σ₀(a): right 28, 34, 39 and left 25, 30, 36
-  bigSig AB A 28 25 6 5 5 6 ++
-  [xb .paddq T AB,
+  bigSig AB E 14 4 23 23 23 4 ++
+  [xb .paddq T AB, xb .paddq NE AB,
    -- Maj(a, b, c) = ((a ⊕ b) ∧ (b ⊕ c)) ⊕ b
-   ldq X .esi b, xb .movdqa AB A, xb .pxor AB X, xb .pand BC AB, xb .pxor BC X,
-   xb .paddq T BC, stq .esi a A, stq .esi e E]
+   ldq X .esi b, xb .movdqa AB A, xb .pxor AB X, xb .pand BC AB, xb .pxor BC X, xb .paddq T BC,
+   stq .esi a A] ++
+  -- Σ₀(a): right 28, 34, 39 and left 25, 30, 36
+  bigSig BC A 28 6 5 25 5 6 ++
+  [xb .paddq T BC]
 
 /-- Round `t`. -/
 def round (t : Nat) : List Instr :=
   roundW (vOff t 0) (vOff t 1) (vOff t 3) (vOff t 4) (vOff t 5) (vOff t 6) (vOff t 7) (wOff t) (K t)
     (xr t 0) (xr t 1) (xr t 2) (xr t 3) (xr t 4) (xr t 5)
 
-/-- `Wₜ = σ₁(Wₜ₋₂) + Wₜ₋₇ + σ₀(Wₜ₋₁₅) + Wₜ₋₁₆` for `t ≥ 16`, with `Wₜ₋ᵢ` at
-`[esi + oᵢ]`, in place of `Wₜ₋₁₆`, with `T` and `NE` as temporaries. The
-additions are in the order of the specification. -/
-def scheduleW (o2 o7 o15 o16 : Nat) (T NE : XReg) : List Instr :=
+/-- `(Wₜ, Wₜ₊₁)`, `Wᵢ = σ₁(Wᵢ₋₂) + Wᵢ₋₇ + σ₀(Wᵢ₋₁₅) + Wᵢ₋₁₆`, for even
+`t ≥ 16`, with the pairs `(Wₜ₋ᵢ, Wₜ₋ᵢ₊₁)` at `[esi + oᵢ]`, in place of
+`(Wₜ₋₁₆, Wₜ₋₁₅)`, with `P` and `Q` as accumulators. The additions are in the
+order of the specification. -/
+def scheduleW (o2 o7 o15 o16 : Nat) (P Q : XReg) : List Instr :=
   -- σ₁: right 6, 19, 61 and left 3, 45
-  ldq X .esi o2 :: (sig5 T 6 3 13 42 42 ++ [ldq X .esi o7, xb .paddq T X] ++
+  ldo X .esi o2 :: (sig5 P 6 3 13 42 42 ++ [ldo X .esi o7, xb .paddq P X] ++
   -- σ₀: right 1, 7, 8 and left 56, 63
-  ldq X .esi o15 :: (sig5 NE 1 56 6 7 1 ++
-  [xb .paddq T NE, ldq X .esi o16, xb .paddq T X, stq .esi o16 T]))
+  ldo X .esi o15 :: (sig5 Q 1 56 6 7 1 ++
+  [xb .paddq P Q, ldo X .esi o16, xb .paddq P X, sto .esi o16 P]))
 
-/-- `Wₜ` for `t ≥ 16`, before round `t`, in the registers round `t` computes into. -/
+/-- `(Wₜ, Wₜ₊₁)` for even `t ≥ 16`, before round `t`, in the registers round
+`t` computes into, and the copy of `Wₜ` if `t mod 16 = 0`. -/
 def schedule (t : Nat) : List Instr :=
-  scheduleW (wOff (t + 14)) (wOff (t + 9)) (wOff (t + 1)) (wOff t) (xr t 3) (xr t 4)
+  scheduleW (wOff (t + 14)) (wOff (t + 9)) (wOff (t + 1)) (wOff t) (xr t 3) (xr t 4) ++
+    if t % 16 = 0 then [stq .esi mirOff (xr t 3)] else []
 
-/-- Round `t`, after computing `Wₜ` if `t ≥ 16`. -/
-def step (t : Nat) : List Instr := if t < 16 then round t else schedule t ++ round t
+/-- Round `t`, after computing `(Wₜ, Wₜ₊₁)` if `t ≥ 16` is even. -/
+def step (t : Nat) : List Instr := if t < 16 ∨ t % 2 = 1 then round t else schedule t ++ round t
 
 /-- Rounds `0 … n-1`. -/
 def rounds : Nat → Prog isa
@@ -176,8 +201,8 @@ def rounds : Nat → Prog isa
 def loadW (i o : Nat) : List Instr :=
   [.mov Z0 (.mem (at_ .edi (i + 4))), .mov Z1 (.mem (at_ .edi i)), .bswap Z0, .bswap Z1] ++ st Z0 Z1 o
 
-/-- The block's sixteen words. -/
-def loadWs : List Instr := (List.range 16).flatMap fun t => loadW (8 * t) (wOff t)
+/-- The block's sixteen words, and the copy of `W₀`. -/
+def loadWs : List Instr := (List.range 16).flatMap (fun t => loadW (8 * t) (wOff t)) ++ loadW 0 mirOff
 
 /-- Copy word `k` of the hash value at `ecx` to the working variables (`vOff 0 k = 8k`). -/
 def loadH (k : Nat) : List Instr := [ldq X .ecx (8 * k), stq .esi (8 * k) X]
@@ -207,8 +232,10 @@ def advance : List Instr :=
 def body : Prog isa :=
   .seq (.block (load ++ loadWs ++ enter)) (.seq (rounds 80) (.block (exit ++ update ++ advance)))
 
+/-! ## The function -/
+
 /-- The callee-saved registers we use, and where they are saved. -/
-def saved : List (Reg × Nat) := [(.ebx, 192), (.esi, 196), (.edi, 200), (.ebp, 204)]
+def saved : List (Reg × Nat) := [(.ebx, 200), (.esi, 204), (.edi, 208), (.ebp, 212)]
 
 /-- Save the callee-saved registers, load the arguments, and set ZF if there
 are no blocks. -/
@@ -220,7 +247,7 @@ def prologue : List Instr :=
 
 /-- Restore the callee-saved registers (`esi`, the base, last). -/
 def epilogue : List Instr :=
-  [.mov .ebx (sc 192), .mov .edi (sc 200), .mov .ebp (sc 204), .mov .esi (sc 196)]
+  [.mov .ebx (sc 200), .mov .edi (sc 208), .mov .ebp (sc 212), .mov .esi (sc 204)]
 
 def compress : Prog isa :=
   .seq (.block prologue) (.seq (.ite .e (.block []) (.loop body .ne)) (.block epilogue))

@@ -111,12 +111,6 @@ def decodeY (yo : Nat) : List Instr :=
     .alu .and .rdx (.imm 0x7f)] ++ (orBad ++
   (freeze (slot yo) ++ (diffWords (slot yo) ++ orBad)))))
 
-/-- From `y` in slot `yo` (with 1 in slot 10 and `d` in slot 11): `v` in
-slot 3, `u` in slot 13, `u³v` in slot `xo`, and `u⁵v³` in slot 12. -/
-def decodeUV (yo xo : Nat) : List FOp :=
-  [.sqr 12 yo, .sub 13 12 10, .mul 3 11 12, .sub 3 3 10, .mul 4 13 3, .sqr 4 4, .sqr 5 13,
-    .mul 5 5 13, .mul xo 5 3, .mul 12 xo 4]
-
 /-- `x` in slot `xo`, from `u³v` there and the root in slot 21, and the
 check `v x² = u`. -/
 def decodeX (F : Field) (xo : Nat) : List Instr :=
@@ -139,20 +133,6 @@ def decode (F : Field) (xo yo : Nat) : Prog isa :=
     .block (decodeX F xo ++ decodeSign F xo)
 
 /-! ## `[S]B + [k](-A)` -/
-
-/-- `R = 2R` in slots `x`, `y`, `z` (the doubling of `doubleOps`). -/
-def doubleAt (x y z : Nat) : List FOp := [
-  .add 12 x y, .sqr 12 12, .sqr 13 x, .sqr 14 y, .add 15 13 14, .sqr 16 z,
-  .add 17 16 16, .sub 17 15 17, .sub 18 12 15, .mul x 18 17, .sub 19 13 14, .mul y 15 19,
-  .mul z 15 17]
-
-/-- `T = R + (x : y : 1)` into slots 3–5 (the addition of `addOps`, with the
-second point in slots `x`, `y` and 10). -/
-def addAt (x y : Nat) : List FOp := [
-  .mul 12 2 10, .sqr 13 12, .mul 14 0 x, .mul 15 1 y, .mul 16 11 14, .mul 16 16 15,
-  .sub 17 13 16, .add 18 13 16, .add 19 0 1, .add 20 x y, .mul 19 19 20, .mul 20 12 17,
-  .sub 19 19 14, .sub 19 19 15, .mul 3 20 19, .mul 20 12 18, .sub 19 15 14, .mul 4 20 19,
-  .mul 5 17 18]
 
 /-- `rcx = -[rdi + o + rbx]`: the mask of bit `rbx` of the bits at `o`. -/
 def maskAt (o : Nat) : List Instr :=

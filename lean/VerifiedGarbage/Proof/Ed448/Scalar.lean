@@ -146,4 +146,15 @@ theorem sCheck_nat {y b r c : Nat} (hy : y < 2 ^ 448) (hr : r < 2 ^ 448) (hc : c
     subst this
     rcases (by omega : c = 0 ∨ c = 1) with rfl | rfl <;> omega
 
+theorem bytesAt_getD (m : Mem) (p : Addr) {n i : Nat} (hi : i < n) :
+    (bytesAt m p n).getD i 0 = m (p + BitVec.ofNat 64 i) := by
+  rw [bytesAt_eq]
+  simp [Spec.X25519.bytesAt, List.getD_eq_getElem?_getD, hi]
+
+/-- Bit `t` of the scalar is bit `t % 8` of its byte `t / 8`. -/
+theorem scalar_bit (m : Mem) (p : Addr) {t : Nat} (ht : t < 456) :
+    ((m (p + BitVec.ofNat 64 (t / 8))).toNat >>> (t % 8)) &&& 1 =
+      (decodeLE (bytesAt m p 57) >>> t) &&& 1 := by
+  rw [decodeLE_eq, Proof.X25519.leNum_bit, bytesAt_getD m p (by omega)]
+
 end VG.Proof.Ed448

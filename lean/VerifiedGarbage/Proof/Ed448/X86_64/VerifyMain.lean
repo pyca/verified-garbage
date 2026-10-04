@@ -3,7 +3,6 @@ import VerifiedGarbage.Proof.Ed448.X86_64.VerifyLoop
 import VerifiedGarbage.Proof.Ed448.X86_64.VerifyBits
 import VerifiedGarbage.Proof.Ed448.X86_64.BaseConst
 import VerifiedGarbage.Proof.Ed448.X86_64.BaseMain
-import VerifiedGarbage.Proof.Ed448.VerifyEq
 import VerifiedGarbage.TCB.X86_64.Target
 import VerifiedGarbage.Proof.Framework.X86_64.Abi
 import VerifiedGarbage.Proof.Ed448.X86_64.VerifyLocal
@@ -14,14 +13,16 @@ import VerifiedGarbage.Proof.Ed448.X86_64.VerifyLocal
 The correctness of `vg_ed448_verify_equation` against the contract the proof
 is written against (`verifyEquationLocal`, `VerifyLocal.lean`): `BAD` ends as the OR of
 the checks of `S`, of decoding `A` and `R`, and of the comparison of `[4]Q`
-with `[4]R`, for `Q` a representative of `[S]B + [k](-A)` when `A` decodes;
+with `[4]R`, for `Q` the reference ladder's `[S]B + [k](-A)` (`vladder`), which
+decides the equation when `A` and `R` decode (`VerifyEqOk`, as decoding
+`RecoverOk`, passed in by the registration files);
 every write is in the working space, so the inputs are read unchanged, the
 callee-saved registers are restored from it, and the return address is kept.
 -/
 
 namespace VG.Proof.Ed448.X86_64
 
-open VG VG.X86_64 VG.Impl.Ed448.X86_64 VG.Proof.Ed448 VG.Proof.EdwardsLaw
+open VG VG.X86_64 VG.Impl.Ed448 VG.Impl.Ed448.X86_64 VG.Proof.Ed448
 open VG.Proof.X448.X86_64 (Scr Index Env E Keep FieldOk word off Outside Outside2 ofs Saved clob
   writeW_outside word_writeW_self contains_sc E_outside)
 open VG.Impl.X448.X86_64 (W w sc at_ slot BITS)
@@ -42,9 +43,6 @@ theorem movRsi_ok {s : State} {base : Addr} (hs : Scr s base) {d : Nat} (hd : d 
   have rb : InRegions (s.rd ++ s.wr) (base + BitVec.ofNat 64 d) 8 := hs.read hd
   erun [hs.rdi, rb]
   exact fun r hr => by simp only [hr, ite_false]
-
-theorem evalOps_append (a b : List FOp) (e : Env) : evalOps (a ++ b) e = evalOps b (evalOps a e) :=
-  List.foldl_append ..
 
 /-- `[4]Q` and `[4]R`, doubling `Q` twice and then `R` twice. -/
 def vcompare : List FOp := doubleAt 0 1 2 ++ doubleAt 0 1 2 ++ doubleAt 8 9 10 ++ doubleAt 8 9 10
@@ -361,7 +359,8 @@ theorem vfinish_ok {s : State} {base : Addr} (hs : Scr s base) {g : Reg → BitV
 
 include hf in
 /-- `A` decoded and negated into slots 6, 7 and 10, `Q` the neutral point, `B` and `d`. -/
-theorem vdecodeA_ok {s : State} {base pk : Addr} (hs : Scr s base) (hpk : word s.mem base PPK = pk)
+theorem vdecodeA_ok (hR : RecoverOk) {s : State} {base pk : Addr} (hs : Scr s base)
+    (hpk : word s.mem base PPK = pk)
     (hr8 : ∀ i < 7, InRegions (s.rd ++ s.wr) (pk + BitVec.ofNat 64 (8 * i)) 8)
     (hr56 : InRegions (s.rd ++ s.wr) (pk + BitVec.ofNat 64 56) 1)
     (hfar : ∀ i < 57, 8192 ≤ ofs base (pk + BitVec.ofNat 64 i)) :
@@ -392,7 +391,7 @@ theorem vdecodeA_ok {s : State} {base pk : Addr} (hs : Scr s base) (hpk : word s
     exact List.map_congr_left fun i hi => by
       rw [m2, o1 _ (Or.inr (by have := hfar i (List.mem_range.mp hi); omega))]
   apply WP.seq
-  refine WP.mono (decode_ok hf hs2 hp2 6 7 (Or.inl ⟨rfl, rfl⟩) h10 h11 (by rw [rr2, ww2]; exact hr8)
+  refine WP.mono (decode_ok hf hR hs2 hp2 6 7 (Or.inl ⟨rfl, rfl⟩) h10 h11 (by rw [rr2, ww2]; exact hr8)
     (by rw [rr2, ww2]; exact hr56) hfar) fun s3 ⟨⟨c, hc, b3⟩, v3, k3, g3, rd3, wr3, o3⟩ => ?_
   have hs3 : Scr s3 base := ⟨(g3 _ (by decide)).trans hs2.rdi, wr3 ▸ hs2.wr, hs2.nowrap⟩
   rw [WP.block_append_iff]
@@ -434,7 +433,8 @@ theorem wide {base : Addr} {m m' : Mem} (h : Outside2 base 64 1584 BAD 80 m m') 
   h.outside (by decide) (by decide) (by decide) (by decide)
 
 include hf in
-theorem verifyEquation_correct {s : State} (hp : verifyEquationLocal.pre s) :
+theorem verifyEquation_correct (hR : RecoverOk) (hE : VerifyEqOk) {s : State}
+    (hp : verifyEquationLocal.pre s) :
     WP isa (verifyEquationWith fld) s fun t => gprPreserved s t ∧ verifyEquationLocal.post s t := by
   obtain ⟨hr, hw, hdk, hds, hdc, hret, hn⟩ := hp
   obtain ⟨base, hbase⟩ : ∃ b, s.gpr .rcx = b := ⟨_, rfl⟩
@@ -487,7 +487,7 @@ theorem verifyEquation_correct {s : State} (hp : verifyEquationLocal.pre s) :
   have O3 : Outside base 0 8192 s.mem s3.mem := O2.trans (o3.mono (by decide) (by decide))
   -- `A`, decoded and negated, and the constants.
   apply WP.seq
-  refine WP.mono (vdecodeA_ok hf hs3 pk3 (fun i hi => by rw [rr3]; exact rpk _ _ (by omega))
+  refine WP.mono (vdecodeA_ok hf hR hs3 pk3 (fun i hi => by rw [rr3]; exact rpk _ _ (by omega))
     (by rw [rr3]; exact rpk _ _ (by omega)) fpk)
     fun s4 ⟨⟨cA, hcA, b4⟩, na4, p4, q4, d4, g4, rd4, wr4, o4⟩ => ?_
   rw [far_bytes O3 fpk] at hcA na4
@@ -506,11 +506,10 @@ theorem verifyEquation_correct {s : State} (hp : verifyEquationLocal.pre s) :
     rw [m5, o4 _ (Or.inr (by rw [hofs]; omega)) (Or.inr (by rw [hofs]; simp only [BAD]; omega)),
       o3 _ (Or.inr (by rw [hofs]; simp only [KC]; omega))]
   have I5 : VInv base S K (pt (E s5.mem base) 6 7 10) s5 456 s5 := by
-    refine ⟨hs5, rbx5, fun _ _ => rfl, rfl, rfl, Outside.refl _ _ _ _, ?_, rfl, ?_, fun _ => ?_⟩
+    refine ⟨hs5, rbx5, fun _ _ => rfl, rfl, rfl, Outside.refl _ _ _ _, ?_, rfl, ?_, ?_⟩
     · rw [m5]; exact q4
     · rw [m5]; exact d4
-    · rw [← hS, ← hK, scalar_shift, scalar_shift, zero_nsmul, zero_nsmul, add_zero, m5, p4]
-      exact identity_rep
+    · rw [Nat.sub_self, m5, p4]; rfl
   refine WP.mono (vloop_ok hf (fun t ht => by rw [bits5 BITS (by decide) (by decide) t ht]; exact bs2 t ht)
     (fun t ht => by rw [bits5 KBITS (by decide) (by decide) t ht]; exact bk2 t ht)
     456 s5 (by decide) (by decide) I5) fun s6 I6 => ?_
@@ -532,7 +531,7 @@ theorem verifyEquation_correct {s : State} (hp : verifyEquationLocal.pre s) :
     rw [m7]; exact congrArg Spec.Ed448.Point.Z I6.q
   have h11 : E s7.mem base 11 = Spec.Ed448.d := by rw [m7]; exact I6.d
   apply WP.seq
-  refine WP.mono (decode_ok hf hs7 hsig7 8 9 (Or.inr ⟨rfl, rfl⟩) h10 h11
+  refine WP.mono (decode_ok hf hR hs7 hsig7 8 9 (Or.inr ⟨rfl, rfl⟩) h10 h11
     (fun i hi => by rw [rr7]; exact rsg _ _ (by omega)) (by rw [rr7]; exact rsg _ _ (by omega)) fsg)
     fun s8 ⟨⟨cR, hcR, b8⟩, v8, k8, g8, rd8, wr8, o8⟩ => ?_
   rw [far_bytes O7 fsg, ← bytesAt_take57] at hcR v8
@@ -579,26 +578,23 @@ theorem verifyEquation_correct {s : State} (hp : verifyEquationLocal.pre s) :
       | some r =>
         have cA0 : cA = 0 := hcA.mpr (by rw [ha]; rfl)
         have cR0 : cR = 0 := hcR.mpr (by rw [hR]; rfl)
-        have hva := decodePoint_valid ha
         have hA : pt (E s5.mem base) 6 7 10 = negPoint a := by rw [m5]; exact na4 a ha
         have k80 : ∀ i : Index, i = 0 ∨ i = 1 ∨ i = 2 → E s8.mem base i = E s6.mem base i := by
           rintro i (rfl | rfl | rfl) <;>
             rw [k8 _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide), m7]
-        have hQ : Rep (pt (E s8.mem base) 0 1 2) (Spec.Ed448.decodeLE
-            ((Spec.Ed448.bytesAt s.mem (s.gpr .rsi) 114).drop 57) • baseAff +
-            Spec.Ed448.decodeLE (Spec.Ed448.bytesAt s.mem (s.gpr .rdx) 57) • (-toAffine a)) := by
+        have hQ : pt (E s8.mem base) 0 1 2 = vladder (Spec.Ed448.decodeLE
+            ((Spec.Ed448.bytesAt s.mem (s.gpr .rsi) 114).drop 57))
+            (Spec.Ed448.decodeLE (Spec.Ed448.bytesAt s.mem (s.gpr .rdx) 57)) (negPoint a) 456 := by
           have := I6.rep
-          rw [Nat.shiftRight_zero, Nat.shiftRight_zero, hA, toAffine_negPoint hva] at this
+          rw [Nat.sub_zero, hA] at this
           rw [bytesAt_drop57, hS, hK, pt_congr (k80 0 (Or.inl rfl)) (k80 1 (Or.inr (Or.inl rfl)))
             (k80 2 (Or.inr (Or.inr rfl)))]
-          exact this (valid_negPoint hva)
-        have hRR : Rep (pt (E s8.mem base) 8 9 10) (toAffine r) := by
+          exact this
+        have hRR : pt (E s8.mem base) 8 9 10 = r := by
           obtain ⟨vx, vy, vz⟩ := v8 r hR
-          have : pt (E s8.mem base) 8 9 10 = r := by
-            show (⟨E s8.mem base 8, E s8.mem base 9, E s8.mem base 10⟩ : Spec.Ed448.Point) = r
-            rw [vx, vy, k8 10 (by decide) (by decide) (by decide) (by decide) (by decide) (by decide), h10, ← vz]
-          rw [this]; exact rep_toAffine (decodePoint_valid hR)
-        rw [verifyEquation_some (bytesAt57_len _ _) (bytesAt114_len _ _) (bytesAt57_len _ _) ha hR hQ hRR,
+          show (⟨E s8.mem base 8, E s8.mem base 9, E s8.mem base 10⟩ : Spec.Ed448.Point) = r
+          rw [vx, vy, k8 10 (by decide) (by decide) (by decide) (by decide) (by decide) (by decide), h10, ← vz]
+        rw [hE _ _ _ _ _ (bytesAt57_len _ _) (bytesAt114_len _ _) (bytesAt57_len _ _) ha hR, ← hQ, ← hRR,
           Bool.and_eq_true, decide_eq_true_iff, bytesAt_drop57, hS, cA0, cR0, hc0]
         exact ⟨fun h => ⟨h.1.1.1, h.2⟩, fun h => ⟨⟨⟨h.1, rfl⟩, rfl⟩, h.2⟩⟩
 

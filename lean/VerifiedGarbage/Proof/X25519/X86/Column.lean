@@ -22,6 +22,7 @@ abbrev acc (s : State) : Nat := v s .ebx + 2 ^ 32 * v s .ecx + 2 ^ 64 * v s .ebp
 /-- The value of a term, for the working space at `x`. -/
 def tval (m : Mem) (x : BitVec 32) : Term → Nat
   | .mulM a b => wv m x a * wv m x b
+  | .mulM2 a b => 2 * (wv m x a * wv m x b)
   | .mulI a c => wv m x a * c.toNat
   | .addM a => wv m x a
   | .addI c => c.toNat
@@ -30,6 +31,7 @@ def tval (m : Mem) (x : BitVec 32) : Term → Nat
 /-- The offsets of the words a term reads. -/
 def treads : Term → List Nat
   | .mulM a b => [a, b]
+  | .mulM2 a b => [a, b]
   | .mulI a _ => [a]
   | .addM a => [a]
   | .addI _ => []
@@ -42,6 +44,7 @@ theorem tval_congr {m m' : Mem} {x : BitVec 32} {t : Term} (h : ∀ d ∈ treads
     tval m' x t = tval m x t := by
   cases t with
   | mulM a b => simp only [tval, wv, h a (by simp [treads]), h b (by simp [treads])]
+  | mulM2 a b => simp only [tval, wv, h a (by simp [treads]), h b (by simp [treads])]
   | mulI a c => simp only [tval, wv, h a (by simp [treads])]
   | addM a => simp only [tval, wv, h a (by simp [treads])]
   | addI c => rfl
@@ -154,6 +157,31 @@ theorem accMul_ok {s : State} {src : Src} {y : BitVec 32} (hy : readSrc s src = 
   rw [← e]
   exact this
 
+theorem ofBool_toNat (c : Bool) : ((BitVec.ofBool c).setWidth 32).toNat = c.toNat := by
+  cases c <;> rfl
+
+theorem accMul2_ok {s : State} {src : Src} {y : BitVec 32} (hy : readSrc s src = some y) :
+    WP isa (.block (accMul2 src)) s fun s' =>
+      (acc s + 2 * (v s .eax * y.toNat) < 2 ^ 96 → acc s' = acc s + 2 * (v s .eax * y.toNat)) ∧
+        Keep s s' ∧ s'.mem = s.mem := by
+  apply WP.of_runBlock
+  simp only [accMul2, runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, execMul, hy,
+    readSrc_imm, readSrc_reg, Option.bind_some, Option.map_some, RegUpd.cf_setReg,
+    RegUpd.cf_arithFlags, Option.some.injEq, exists_eq_left']
+  refine ⟨fun hlt => ?_, ⟨?_, ?_, ?_, ?_, ?_⟩, ?_⟩ <;> regupd
+  simp only [acc, v] at hlt
+  have ha := (s.gpr .ebx).isLt; have hb := (s.gpr .ecx).isLt; have hc := (s.gpr .ebp).isLt
+  have e := toNat_mul_lo (s.gpr .eax) y
+  generalize (BitVec.ofNat 32 ((s.gpr .eax).toNat * y.toNat)) = lo at *
+  generalize (BitVec.ofNat 32 ((s.gpr .eax).toNat * y.toNat / 2 ^ 32)) = hi at *
+  have hl := lo.isLt; have hh := hi.isLt
+  simp only [BitVec.toNat_add, toNat_zero32, Nat.add_zero, ofBool_toNat]
+  simp (disch := omega) only [carry_toNat]
+  rw [← e]
+  generalize lo.toNat = l at *
+  generalize hi.toNat = h at *
+  omega
+
 open VG.X86.Wp in
 theorem readSrc_sc {x : BitVec 32} {s : State} (hc : Ctx W x s) {d : Nat} (hd : d + 4 ≤ 4096) :
     readSrc s (.mem (sc d)) = some (wd s.mem x d) :=
@@ -179,6 +207,13 @@ theorem term_ok {x : BitVec 32} {s : State} (hc : Ctx W x s) (t : Term) (hr : �
     refine wp_ldm hc.edi (hc.inRW4 ha (by decide)) fun s₁ u₁ => ?_
     have c₁ := (updKeep u₁).ctx hc
     refine WP.mono (accMul_ok (readSrc_sc c₁ hb)) fun s' ⟨h, k, m⟩ => ⟨fun hlt => ?_, (updKeep u₁).trans k,
+      m.trans u₁.mem⟩
+    rw [h (by rw [updAcc u₁, v, u₁.gpr, u₁.mem]; exact hlt), updAcc u₁, v, u₁.gpr, u₁.mem]; rfl
+  | mulM2 a b =>
+    have ha := hr a (by simp [treads]); have hb := hr b (by simp [treads])
+    refine wp_ldm hc.edi (hc.inRW4 ha (by decide)) fun s₁ u₁ => ?_
+    have c₁ := (updKeep u₁).ctx hc
+    refine WP.mono (accMul2_ok (readSrc_sc c₁ hb)) fun s' ⟨h, k, m⟩ => ⟨fun hlt => ?_, (updKeep u₁).trans k,
       m.trans u₁.mem⟩
     rw [h (by rw [updAcc u₁, v, u₁.gpr, u₁.mem]; exact hlt), updAcc u₁, v, u₁.gpr, u₁.mem]; rfl
   | mulI a c =>

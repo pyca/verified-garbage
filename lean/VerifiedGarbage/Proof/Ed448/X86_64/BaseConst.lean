@@ -57,8 +57,8 @@ theorem consts_eq : consts = constSlot (0 : Index).val 0 ++ (constSlot (1 : Inde
 /-- `consts`: `R` the neutral point, `Q` the base point, slot 11 `d`. -/
 theorem consts_ok {s : State} {base : Addr} (hs : Scr s base) :
     WP isa (.block consts) s fun t =>
-      Proof.Ed448.X86_64.pt (E t.mem base) 0 1 2 = Spec.Ed448.identity ∧
-      Proof.Ed448.X86_64.pt (E t.mem base) 8 9 10 = Spec.Ed448.basePoint ∧
+      Proof.Ed448.pt (E t.mem base) 0 1 2 = Spec.Ed448.identity ∧
+      Proof.Ed448.pt (E t.mem base) 8 9 10 = Spec.Ed448.basePoint ∧
       E t.mem base 11 = Spec.Ed448.d ∧ Outside base 64 1584 s.mem t.mem ∧
       (∀ r, r ∉ W → t.gpr r = s.gpr r) ∧ t.rd = s.rd ∧ t.wr = s.wr ∧
       (∀ i : Index, 3 ≤ i.val → i.val < 8 ∨ 12 ≤ i.val → E t.mem base i = E s.mem base i) := by

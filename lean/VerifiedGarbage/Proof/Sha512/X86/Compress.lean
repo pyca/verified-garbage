@@ -340,11 +340,11 @@ theorem blk_disj {i : Nat} (hi : i < nb s₀) :
 theorem st_work : (stR s₀).Disjoint (workR (scr s₀)) :=
   h.st_scr.sub_right (Region.sub_prefix (by bdd_omega))
 
-/-- The saved registers and the block count (at offsets `192 … 212` of the
+/-- The saved registers and the block count (at offsets `200 … 220` of the
 scratch buffer) are unchanged while only the working variables and the
 message schedule, or the hash value, are written. -/
 theorem high_frame {m m' : Mem} (hf : Frame [workR (scr s₀)] m m' ∨ Frame [stR s₀] m m') {d : Nat}
-    (hd : 192 ≤ d) (hd' : d + 4 ≤ 224) : m'.readW (addr (scr s₀) d) 32 = m.readW (addr (scr s₀) d) 32 := by
+    (hd : 200 ≤ d) (hd' : d + 4 ≤ 224) : m'.readW (addr (scr s₀) d) 32 = m.readW (addr (scr s₀) d) 32 := by
   have hc : (⟨addr (scr s₀) d, 4⟩ : Region).Contains (addr (scr s₀) d) (32 / 8) :=
     Region.contains_self _ _
   have := h.scr_fits
@@ -363,9 +363,9 @@ end Pre
 /-! ## The loop invariant -/
 
 /-- The callee-saved registers are saved in the scratch buffer. -/
-def compressSaved : Spill.Slots := [(.ebx, 192), (.esi, 196), (.edi, 200), (.ebp, 204)]
+def compressSaved : Spill.Slots := [(.ebx, 200), (.esi, 204), (.edi, 208), (.ebp, 212)]
 
-theorem compressSaved_fits : Spill.Fits 208 compressSaved := by decide
+theorem compressSaved_fits : Spill.Fits 216 compressSaved := by decide
 
 abbrev Saved (s₀ : State) (m : Mem) : Prop := Spill.Saved m (addr (scr s₀)) s₀.gpr compressSaved
 
@@ -505,7 +505,42 @@ theorem loadWs_ok {s : State} {bk : BitVec 32} {M : Block} (hesi : s.gpr .esi = 
         (.inr (by simp only [wOff]; omega)), rd64_eq_readW _ (by bdd_omega)]
       exact h₁.low o ho
     · rw [w₂.mem]
-      exact frame_write64 (N := 192) h₁.frame (by simp) (by bdd_omega) wl _
+      exact frame_write64 (N := 200) h₁.frame (by simp) (by bdd_omega) (by omega) _
+
+/-- The block's sixteen words, and the copy of `W₀` after the window. -/
+theorem loadWsMir_ok {s : State} {bk : BitVec 32} {M : Block} (hesi : s.gpr .esi = scr s₀)
+    (hwr : s.wr = s₀.wr) (hedi : s.gpr .edi = bk) (fitB : bk.toNat + 128 ≤ 2 ^ 32)
+    (disj : Region.Disjoint ⟨bk.setWidth 64, 128⟩ (workR (scr s₀)))
+    (hrd : ∀ o, o + 4 ≤ 128 → InRegions (s.rd ++ s.wr) (addr bk o) 4) (hM : Raw bk M s.mem) :
+    WP isa (.block loadWs) s fun s' =>
+      WInv (s₀ := s₀) s M 16 s' ∧ s'.mem.readW (addr (scr s₀) mirOff) 64 = W M 0 := by
+  have fV := hp.scr_fits
+  rw [loadWs, WP.block_append_iff]
+  refine WP.mono (loadWs_ok hp hesi hwr hedi fitB disj hrd hM 16 (Nat.le_refl _)) fun s₁ h₁ => ?_
+  rw [← List.append_nil (loadW _ _)]
+  have rdB : ∀ o, o + 4 ≤ 128 → s₁.mem.readW (addr bk o) 32 = s.mem.readW (addr bk o) 32 :=
+    fun o ho => h₁.frame.readW (contains_addr ho (by decide) fitB)
+      (fun r hr => by simp at hr; subst hr; exact disj) (by decide)
+  refine wp_loadW (N := 224) (o := mirOff) (by decide) (by rw [h₁.wr, hwr]; exact hp.accV rfl)
+    (by rw [h₁.gpr _ (by decide) (by decide), hesi]) (by rw [h₁.gpr _ (by decide) (by decide), hedi])
+    (by rw [h₁.rd, h₁.wr]; exact hrd _ (by bdd_omega)) (by rw [h₁.rd, h₁.wr]; exact hrd _ (by bdd_omega))
+    fun s₂ w₂ => WP.block_nil ?_
+  rw [rdB _ (by bdd_omega), rdB _ (by bdd_omega), show (0 : Nat) + 4 = 8 * 0 + 4 from rfl,
+    show (0 : Nat) = 8 * 0 from rfl, hM 0 (by decide)] at w₂
+  have mw : ∀ j, wOff j + 8 ≤ mirOff := fun j => by simp only [wOff, mirOff]; omega
+  refine ⟨⟨fun r h1 h2 => ?_, by rw [w₂.rd, h₁.rd], by rw [w₂.wr, h₁.wr], fun j hj => ?_,
+    fun o ho => ?_, ?_⟩, ?_⟩
+  · rw [w₂.gpr r (by simp [Z0, Z1, h1, h2]), h₁.gpr r h1 h2]
+  · have := wOff_lt j
+    rw [w₂.mem, ← rd64_eq_readW _ (by bdd_omega), rd64_write64_ne _ _ (by simp only [mirOff]; omega)
+      (by bdd_omega) (.inr (mw j)), rd64_eq_readW _ (by bdd_omega)]
+    exact h₁.win j hj
+  · rw [w₂.mem, ← rd64_eq_readW _ (by bdd_omega), rd64_write64_ne _ _ (by simp only [mirOff]; omega)
+      (by bdd_omega) (.inr (by simp only [mirOff]; omega)), rd64_eq_readW _ (by bdd_omega)]
+    exact h₁.low o ho
+  · rw [w₂.mem]
+    exact h₁.frame.trans (frame_write64 (N := 200) (Frame.refl _ _) (by simp) (by bdd_omega) (by decide) _)
+  · rw [w₂.mem, ← rd64_eq_readW _ (by simp only [mirOff]; omega), rd64_write64_self _ _ (by simp only [mirOff]; omega)]
 
 theorem enter_ok {s : State} {H : HashValue} (hesi : s.gpr .esi = scr s₀) (hwr : s.wr = s₀.wr)
     (hv : ∀ k (hk : k < 8), s.mem.readW (addr (scr s₀) (8 * k)) 64 = H[k]) :
@@ -677,11 +712,10 @@ theorem body_ok {s₀ : State} (hp : Pre s₀) {i : Nat} (hi : i < nb s₀) {s :
         hL.frame.readW (contains_addr ho (by bdd_omega) fitB) (hp.blk_disj hi) (by decide)]
     rw [e _ (by bdd_omega), e _ (by bdd_omega)]
     exact raw_block fitB s₀.mem j hj
-  refine WP.mono (loadWs_ok hp (by rw [h₁.gpr, esi₀]) (by rw [h₁.wr, wr₀])
+  refine WP.mono (loadWsMir_ok hp (by rw [h₁.gpr, esi₀]) (by rw [h₁.wr, wr₀])
     (by rw [h₁.gpr, u₀.other _ (by decide), hL.edi]) fitB
     ((hp.blk_scr.sub_left (hp.blk_sub hi)).sub_right (Region.sub_prefix (by bdd_omega)))
-    (fun o ho => by rw [h₁.rd, h₁.wr, u₀.rd, u₀.wr, hL.rd, hL.wr]; exact hp.blk_rd hi ho) hM 16
-    (Nat.le_refl _)) fun s₂ h₂ => ?_
+    (fun o ho => by rw [h₁.rd, h₁.wr, u₀.rd, u₀.wr, hL.rd, hL.wr]; exact hp.blk_rd hi ho) hM) fun s₂ ⟨h₂, mir₂⟩ => ?_
   have esi₂ : s₂.gpr .esi = scr s₀ := by rw [h₂.gpr _ (by decide) (by decide), h₁.gpr, esi₀]
   have wr₂ : s₂.wr = s₀.wr := by rw [h₂.wr, h₁.wr, wr₀]
   have hv : ∀ k (hk : k < 8), s₂.mem.readW (addr (scr s₀) (8 * k)) 64 = H[k] := fun k hk => by
@@ -692,9 +726,10 @@ theorem body_ok {s₀ : State} (hp : Pre s₀) {i : Nat} (hi : i < nb s₀) {s :
   have hI : RInv (scr s₀) H M s 0 0 s₃ := by
     refine ⟨fun k hk h0 h4 => ?_, by rw [Proof.Sha512.rounds_zero]; exact xa,
       by rw [Proof.Sha512.rounds_zero]; exact xe, by rw [Proof.Sha512.rounds_zero]; exact xbc,
-      fun j hj _ => ?_, fun r h1 h2 h3 => ?_, ?_, ?_, ?_⟩
+      fun j hj _ => ?_, fun j hj _ hj0 => ?_, fun r h1 h2 h3 => ?_, ?_, ?_, ?_⟩
     · rw [m₃, show vOff 0 k = 8 * k by simp only [vOff]; omega, hv k hk, Proof.Sha512.rounds_zero]
     · rw [m₃]; exact h₂.win j (by omega)
+    · rw [m₃, mir₂, show j = 0 by omega]
     · rw [g₃, h₂.gpr r h2 h3, h₁.gpr, u₀.other r h2]
     · rw [rd₃, h₂.rd, h₁.rd, u₀.rd]
     · rw [wr₃, h₂.wr, h₁.wr, u₀.wr]
@@ -767,7 +802,7 @@ theorem body_ok {s₀ : State} (hp : Pre s₀) {i : Nat} (hi : i < nb s₀) {s :
       refine saved_frame hp ?_ (.inr h₇.frame)
       rw [u₆.mem]
       exact saved_frame hp hL.saved (.inl m₂)
-    have e : ∀ d, 192 ≤ d → d + 4 ≤ 208 →
+    have e : ∀ d, 200 ≤ d → d + 4 ≤ 216 →
         s₈.mem.readW (addr (scr s₀) d) 32 = s₇.mem.readW (addr (scr s₀) d) 32 := fun d h1 h2 => by
       rw [m₈]
       exact Mem.readW_writeW_sep (Proof.Sha256.X86.Stream.addr_sep (by bdd_omega) (by simp [cntOff]; omega)
@@ -804,10 +839,10 @@ theorem body_ok {s₀ : State} (hp : Pre s₀) {i : Nat} (hi : i < nb s₀) {s :
 
 theorem prologue_eq : prologue = .mov .eax (.mem ⟨.esp, 16⟩) :: (Spill.saveCode .eax compressSaved ++
     ([.mov .esi (.reg .eax), .mov .edi (.mem ⟨.esp, 8⟩), .mov .eax (.mem ⟨.esp, 12⟩),
-      .store ⟨.esi, 208⟩ .eax, .alu .test .eax (.reg .eax)] : List Instr)) := rfl
+      .store ⟨.esi, 216⟩ .eax, .alu .test .eax (.reg .eax)] : List Instr)) := rfl
 
 theorem epilogue_eq :
-    epilogue = Spill.restoreCode .esi ([(.ebx, 192), (.edi, 200), (.ebp, 204)] ++ [(.esi, 196)]) ++ [] :=
+    epilogue = Spill.restoreCode .esi ([(.ebx, 200), (.edi, 208), (.ebp, 212)] ++ [(.esi, 204)]) ++ [] :=
   rfl
 
 /-- Reading an argument after writing the scratch buffer. -/
@@ -825,7 +860,7 @@ theorem readW_writeW_scr {s₀ : State} (hp : Pre s₀) (m : Mem) (v : BitVec 32
 
 /-- The memory after the prologue. -/
 def saveMem (s₀ : State) : Mem :=
-  (Spill.saveMem s₀.mem (addr (scr s₀)) s₀.gpr compressSaved).writeW (addr (scr s₀) 208) (arg s₀ 2)
+  (Spill.saveMem s₀.mem (addr (scr s₀)) s₀.gpr compressSaved).writeW (addr (scr s₀) 216) (arg s₀ 2)
 
 theorem compressSaved_contains {s₀ : State} (hp : Pre s₀) : ∀ p ∈ compressSaved, (scrR s₀).Contains (addr (scr s₀) p.2) 4 :=
   fun p h => contains_addr (by have := compressSaved_fits.1 p h; omega) (by bdd_omega) hp.scr_fits
@@ -880,7 +915,7 @@ theorem saveMem_cnt {s₀ : State} :
 
 theorem saveMem_frame {s₀ : State} (hp : Pre s₀) : Frame [scrR s₀] s₀.mem (saveMem s₀) :=
   (Spill.saveMem_frame List.mem_cons_self _ _ _ _ (compressSaved_contains hp)).writeW List.mem_cons_self _
-    (contains_addr (d := 208) (by bdd_omega) (by bdd_omega) hp.scr_fits)
+    (contains_addr (d := 216) (by bdd_omega) (by bdd_omega) hp.scr_fits)
 
 theorem common_zero {s₀ : State} (hp : Pre s₀) {s₁ : State} (hesi : s₁.gpr .esi = scr s₀)
     (hesp : s₁.gpr .esp = esp₀ s₀) (hrd : s₁.rd = s₀.rd) (hwr : s₁.wr = s₀.wr)
