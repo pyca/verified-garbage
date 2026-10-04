@@ -129,4 +129,78 @@ theorem le64_le8 (x : Nat) : Spec.GcmSiv.le64 x = Proof.Cmac.le8 (BitVec.ofNat 6
   rcases (by omega : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 ∨ j = 6 ∨ j = 7) with
     rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp <;> omega
 
+/-! ## POLYVAL's field elements of a string -/
+
+open VG.Spec.GcmSiv (elems ofBytes pad16 zeros)
+
+theorem elems_of_lt {bs : List Byte} (h : bs.length < 16) : elems bs = [] := by
+  simp [elems, Nat.div_eq_of_lt h]
+
+theorem elems_cons {bs : List Byte} (h : 16 ≤ bs.length) :
+    elems bs = ofBytes (bs.take 16) :: elems (bs.drop 16) := by
+  obtain ⟨n, hn⟩ : ∃ n, bs.length / 16 = n + 1 := ⟨bs.length / 16 - 1, by omega⟩
+  have hn' : (bs.drop 16).length / 16 = n := by simp only [List.length_drop]; omega
+  simp only [elems, hn, hn', List.range_succ_eq_map, List.map_cons, List.map_map]
+  refine congrArg _ (List.map_congr_left fun i _ => ?_)
+  simp only [Function.comp, List.drop_drop]
+  congr 3
+  omega
+
+theorem elems_append_aux (ys : List Byte) (n : Nat) :
+    ∀ xs : List Byte, xs.length = 16 * n → elems (xs ++ ys) = elems xs ++ elems ys := by
+  induction n with
+  | zero => intro xs hx; rw [List.eq_nil_of_length_eq_zero hx]; rfl
+  | succ n ih =>
+    intro xs hx
+    rw [elems_cons (bs := xs ++ ys) (by simp; omega), elems_cons (bs := xs) (by omega),
+      List.take_append_of_le_length (by omega), List.drop_append_of_le_length (by omega),
+      ih _ (by simp; omega), List.cons_append]
+
+theorem elems_append {xs ys : List Byte} (hx : xs.length % 16 = 0) : elems (xs ++ ys) = elems xs ++ elems ys :=
+  elems_append_aux ys (xs.length / 16) xs (by omega)
+
+theorem elems_single {bs : List Byte} (h : bs.length = 16) : elems bs = [ofBytes bs] := by
+  rw [elems_cons (by omega), List.take_of_length_le (by omega), elems_of_lt (by simp; omega)]
+
+/-- The field elements of the `n` blocks at `p`. -/
+theorem elems_bytesAt (m : Mem) (p : Addr) (n : Nat) :
+    elems (Spec.Aes.bytesAt m p (16 * n)) =
+      (List.range n).map fun i => ofBytes (Spec.Aes.bytesAt m (p + BitVec.ofNat 64 (16 * i)) 16) := by
+  simp only [elems, Proof.Cmac.bytesAt_length, Nat.mul_div_cancel_left _ (by decide : 0 < 16)]
+  refine List.map_congr_left fun i hi => ?_
+  have hi := List.mem_range.mp hi
+  congr 1
+  apply List.ext_getElem (by simp [Spec.Aes.bytesAt]; omega)
+  intro j h₁ h₂
+  simp only [Spec.Aes.bytesAt, List.length_map, List.length_range] at h₁
+  simp only [Spec.Aes.bytesAt, List.getElem_map, List.getElem_range, List.getElem_take, List.getElem_drop]
+  rw [BitVec.ofNat_add, BitVec.add_assoc]
+
+theorem length_pad16 (bs : List Byte) : (pad16 bs).length = bs.length + (16 - bs.length % 16) % 16 := by
+  simp [pad16, zeros]
+
+theorem pad16_mod (bs : List Byte) : (pad16 bs).length % 16 = 0 := by
+  rw [length_pad16]; omega
+
+/-- A string padded: its whole blocks, then its last bytes padded. -/
+theorem pad16_split (bs : List Byte) :
+    pad16 bs = bs.take (16 * (bs.length / 16)) ++ pad16 (bs.drop (16 * (bs.length / 16))) := by
+  simp only [pad16, List.length_drop, ← List.append_assoc, List.take_append_drop]
+  congr 3; omega
+
+/-- The field elements of a padded string. -/
+theorem elems_pad16 (bs : List Byte) :
+    elems (pad16 bs) = elems (bs.take (16 * (bs.length / 16))) ++
+      (if bs.length % 16 = 0 then [] else [ofBytes (bs.drop (16 * (bs.length / 16)) ++ zeros (16 - bs.length % 16))]) := by
+  rw [pad16_split, elems_append (by simp; omega)]
+  congr 1
+  split
+  · rename_i h
+    rw [List.drop_eq_nil_of_le (by omega)]; rfl
+  · rename_i h
+    rw [pad16, List.length_drop, elems_single (by simp [zeros]; omega)]
+    congr 3
+    have : bs.length - 16 * (bs.length / 16) = bs.length % 16 := by omega
+    rw [this, Nat.mod_mod, Nat.mod_eq_of_lt (a := 16 - bs.length % 16) (by omega)]
+
 end VG.Proof.GcmSiv
