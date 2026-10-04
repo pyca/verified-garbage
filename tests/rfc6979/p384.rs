@@ -35,11 +35,8 @@ fn p384_sha384() {
     let (_, x, _, signatures) = p384();
     let key = SigningKey::<P384>::from_bytes(&x);
     for (hash, message, rs) in &signatures {
-        assert_eq!(
-            sign(&key.clone(), message.as_bytes()),
-            [Ok(*rs); 2],
-            "{hash} {message}"
-        );
+        let signed = sign(&key.clone(), message.as_bytes());
+        assert_eq!(signed, [Ok(*rs); 2], "{hash} {message}");
     }
     assert_eq!(format!("{key:?}"), "SigningKey { .. }");
 }
@@ -57,11 +54,8 @@ fn p384_verify() {
     let other = VerifyingKey::<P384>::from_bytes(&other);
     let bad = Err(Error::InvalidSignature);
     for (hash, message, rs) in &signatures {
-        assert_eq!(
-            verify(&key.clone(), message.as_bytes(), rs),
-            [Ok(()); 2],
-            "{hash} {message}"
-        );
+        let verified = verify(&key.clone(), message.as_bytes(), rs);
+        assert_eq!(verified, [Ok(()); 2], "{hash} {message}");
         assert_eq!(verify(&key, b"other", rs), [bad; 2]);
         assert_eq!(verify(&other, message.as_bytes(), rs), [bad; 2]);
         let mut changed = *rs;
