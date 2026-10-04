@@ -98,6 +98,18 @@ def bitsAt (n j : Nat) : Nat := slot n nslots + 64 * n * j
 /-- The multiplications' accumulator: after the tables. -/
 def wkAt (n : Nat) : Nat := bitsAt n 3
 
+/-- The arguments the setup reads: the working space, `k`, `d` and the hash
+(the functions built on the signature's code read some of them from the same
+argument). -/
+structure Args where
+  sc : Nat
+  k : Nat
+  d : Nat
+  e : Nat
+
+/-- The signature's: `(out, d, digest, k, scratch)`. -/
+abbrev Args.sign : Args := ⟨4, 3, 1, 2⟩
+
 /-- A curve as the code has it: `n` words, and its parameters. -/
 structure Cfg where
   n : Nat
@@ -153,15 +165,19 @@ def argOp (i : Nat) : MemOp := at_ .esp (4 + 4 * i)
 def saveCode : List Instr := saved.map fun (r, d) => .store (at_ .eax d) r
 
 /-- Saves them through `eax`, with the working space from its argument, which
-then goes to `edi`; reads `k`, `d` and the hash through `ebx`; stores the
-constants; and sets `R = (0 : 1 : 0)` and the flag (a word) to all ones. -/
-def setup : List Instr :=
-  [.mov .eax (.mem (argOp 4))] ++ saveCode ++
-  [.mov .edi (.reg .eax), .mov .ebx (.mem (argOp 3))] ++ loadBE c.n (c.sl K) .ebx ++
-  [.mov .ebx (.mem (argOp 1))] ++ loadBE c.n (c.sl D) .ebx ++
-  [.mov .ebx (.mem (argOp 2))] ++ loadBE c.n (c.sl E) .ebx ++
+then goes to `edi`; reads `k`, `d` and the hash through `ebx` from the
+arguments `A` names; stores the constants; and sets `R = (0 : 1 : 0)` and the
+flag (a word) to all ones. -/
+def setupWith (A : Args) : List Instr :=
+  [.mov .eax (.mem (argOp A.sc))] ++ saveCode ++
+  [.mov .edi (.reg .eax), .mov .ebx (.mem (argOp A.k))] ++ loadBE c.n (c.sl K) .ebx ++
+  [.mov .ebx (.mem (argOp A.d))] ++ loadBE c.n (c.sl D) .ebx ++
+  [.mov .ebx (.mem (argOp A.e))] ++ loadBE c.n (c.sl E) .ebx ++
   c.consts.flatMap (fun (i, x) => setConst c.n (c.sl i) x) ++
   [.mov .eax (.imm (BitVec.allOnes 32)), .store (sc (c.sl FLAG)) .eax]
+
+/-- The setup of `sign`. -/
+def setup : List Instr := c.setupWith .sign
 
 /-- The mask `edx` of `[a] ≠ 0` (all ones if it is not zero), through `ecx`. -/
 def nonzero (a : Nat) : List Instr :=
