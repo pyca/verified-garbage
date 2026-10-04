@@ -54,7 +54,7 @@ structure St₁ (c : Cfg) (A : Args) (s₀ : State) (base : Addr) (s : State) : 
 
 /-- The setup, then the three tables. -/
 theorem stage₁ (hc : CfgOk c) {s₀ : State} (hp : SetupPre c A s₀) {rest : Prog isa} {Q : State → Prop}
-    (h : ∀ s, St₁ c A s₀ (scPtr s₀) s → WP isa rest s Q) :
+    (h : ∀ s, St₁ c A s₀ (scBase A s₀) s → WP isa rest s Q) :
     WP isa (.seq (.block (c.setupWith A)) (.seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n))
       (.seq (bits (c.sl EXPP) (bitsAt c.n 1) (8 * c.n))
       (.seq (bits (c.sl EXPN) (bitsAt c.n 2) (8 * c.n)) rest)))) s₀ Q := by
@@ -62,8 +62,8 @@ theorem stage₁ (hc : CfgOk c) {s₀ : State} (hp : SetupPre c A s₀) {rest : 
   have h7 := hc.n7
   refine WP.seq (WP.mono (setup_ok hc hp) fun s₁ P => ?_)
   have hn := P.scr.nowrap
-  have hc' : ∀ ix ∈ c.consts, sv c (scPtr s₀) s₁ ix.1 = ix.2 := P.consts
-  have fx : Fixed c (scPtr s₀) s₀.gpr s₁.mem :=
+  have hc' : ∀ ix ∈ c.consts, sv c (scBase A s₀) s₁ ix.1 = ix.2 := P.consts
+  have fx : Fixed c (scBase A s₀) s₀.gpr s₁.mem :=
     ⟨hc' (MP, c.C.p) (by simp [Cfg.consts]), hc' (MN, c.C.n) (by simp [Cfg.consts]),
       hc' (ZERO, 0) (by simp [Cfg.consts]), hc' (ONE, 1) (by simp [Cfg.consts]),
       (hc' (ONEP, c.mont 1) (by simp [Cfg.consts])).trans (by simp only [Cfg.mont, Cfg.R, Nat.one_mul]),
@@ -82,24 +82,24 @@ theorem stage₁ (hc : CfgOk c) {s₀ : State} (hp : SetupPre c A s₀) {rest : 
     (hsep (i := K) (by decide) 0) henc) fun s₂ ⟨b₂, k₂, O₂⟩ => ?_)
   have hs₂ := P.scr.of_rest k₂ (by decide)
   have u₂ := O₂.unch
-  have v₂ : ∀ {i}, i < 45 → sv c (scPtr s₀) s₂ i = sv c (scPtr s₀) s₁ i := fun hi =>
+  have v₂ : ∀ {i}, i < 45 → sv c (scBase A s₀) s₂ i = sv c (scBase A s₀) s₁ i := fun hi =>
     sv_unch u₂ h7 hn hi (apart_tbl hi 0)
   -- The table of `p - 2`.
   refine WP.seq (WP.mono (bits_ok hs₂ h0 (sl_le c h7 (i := EXPP) (by decide)) (hsz (j := 1) (by decide))
     (hsep (i := EXPP) (by decide) 1) henc) fun s₃ ⟨b₃, k₃, O₃⟩ => ?_)
   have hs₃ := hs₂.of_rest k₃ (by decide)
   have u₃ := O₃.unch
-  have v₃ : ∀ {i}, i < 45 → sv c (scPtr s₀) s₃ i = sv c (scPtr s₀) s₁ i := fun hi =>
+  have v₃ : ∀ {i}, i < 45 → sv c (scBase A s₀) s₃ i = sv c (scBase A s₀) s₁ i := fun hi =>
     (sv_unch u₃ h7 hn hi (apart_tbl hi 1)).trans (v₂ hi)
   -- The table of `n - 2`.
   refine WP.seq (WP.mono (bits_ok hs₃ h0 (sl_le c h7 (i := EXPN) (by decide)) (hsz (j := 2) (by decide))
     (hsep (i := EXPN) (by decide) 2) henc) fun s₄ ⟨b₄, k₄, O₄⟩ => h s₄ ?_)
   have u₄ := O₄.unch
-  have v₄ : ∀ {i}, i < 45 → sv c (scPtr s₀) s₄ i = sv c (scPtr s₀) s₁ i := fun hi =>
+  have v₄ : ∀ {i}, i < 45 → sv c (scBase A s₀) s₄ i = sv c (scBase A s₀) s₁ i := fun hi =>
     (sv_unch u₄ h7 hn hi (apart_tbl hi 2)).trans (v₃ hi)
-  have hk : (kv c A s₀) = sv c (scPtr s₀) s₁ K := P.k.symm
-  have hp2 : c.C.p - 2 = sv c (scPtr s₀) s₁ EXPP := (hc' (EXPP, c.C.p - 2) (by simp [Cfg.consts])).symm
-  have hn2 : c.C.n - 2 = sv c (scPtr s₀) s₁ EXPN := (hc' (EXPN, c.C.n - 2) (by simp [Cfg.consts])).symm
+  have hk : (kv c A s₀) = sv c (scBase A s₀) s₁ K := P.k.symm
+  have hp2 : c.C.p - 2 = sv c (scBase A s₀) s₁ EXPP := (hc' (EXPP, c.C.p - 2) (by simp [Cfg.consts])).symm
+  have hn2 : c.C.n - 2 = sv c (scBase A s₀) s₁ EXPN := (hc' (EXPN, c.C.n - 2) (by simp [Cfg.consts])).symm
   have K₂₄ : Rest work s₁ s₄ :=
     (k₂.mono (by decide)).trans ((k₃.mono (by decide)).trans (k₄.mono (by decide)))
   refine ⟨⟨hs₃.of_rest k₄ (by decide), (P.keep.mono (by decide)).trans (K₂₄.mono (by simp)),
@@ -110,7 +110,7 @@ theorem stage₁ (hc : CfgOk c) {s₀ : State} (hp : SetupPre c A s₀) {rest : 
     by rw [v₄ (by decide)]; exact hc' (RZ, 0) (by simp [Cfg.consts]), ?_, ?_, ?_, ?_⟩
   · exact (fx.unch h7 hn (fixedOk_tbl 0) u₂ |>.unch h7 hn (fixedOk_tbl 1) u₃).unch h7 hn (fixedOk_tbl 2) u₄
   · intro x hx
-    have hx' : size ≤ ofs (scPtr s₀) x := by have := hx _ (List.mem_singleton_self _); omega
+    have hx' : size ≤ ofs (scBase A s₀) x := by have := hx _ (List.mem_singleton_self _); omega
     rw [O₄ x (Or.inr (by have := bitsAt_le c h7 (j := 2) (by decide); omega)),
       O₃ x (Or.inr (by have := bitsAt_le c h7 (j := 1) (by decide); omega)),
       O₂ x (Or.inr (by have := bitsAt_le c h7 (j := 0) (by decide); omega)),

@@ -104,14 +104,16 @@ def wkAt (n : Nat) : Nat := bitsAt n 3
 
 /-- The registers holding the arguments the setup reads: `k`, `d` and the
 hash (the functions built on the signature's code read some of them from the
-same argument); the working space is the argument on the stack. -/
+same argument), and the working space's (`sc`), or `none` for the argument on
+the stack. -/
 structure Args where
   k : Reg
   d : Reg
   e : Reg
+  sc : Option Reg := none
 
-/-- The signature's: `(out, d, digest, k, scratch)`. -/
-abbrev Args.sign : Args := ⟨.r3, .r1, .r2⟩
+/-- The signature's: `(out, d, digest, k, scratch)`, `scratch` on the stack. -/
+abbrev Args.sign : Args := ⟨.r3, .r1, .r2, none⟩
 
 /-- A curve as the code has it: `n` words, and its parameters. -/
 structure Cfg where
@@ -165,12 +167,19 @@ def consts : List (Nat × Nat) :=
 /-- Saves them at `[r12]`. -/
 def saveCode : List Instr := saved.map fun (r, d) => .str r wb d
 
+/-- The working space's base to `r12`: from the stack argument, or from a
+register. -/
+def scStart (A : Args) : Instr :=
+  match A.sc with
+  | none => .ldrSp wb 0
+  | some r => .mov wb (.reg r)
+
 /-- The working space from its argument to `r12`; saves the callee-saved
 registers there and moves `out` to `lr`; reads `k`, `d` and the hash from the registers
 `A` names; stores the constants; and sets `R = (0 : 1 : 0)` and the flag (a
 word) to all ones. -/
 def setupWith (A : Args) : List Instr :=
-  [.ldrSp wb 0] ++ saveCode ++ [.mov .lr (.reg .r0)] ++
+  [scStart A] ++ saveCode ++ [.mov .lr (.reg .r0)] ++
   loadBE c.n (c.sl K) A.k ++ loadBE c.n (c.sl D) A.d ++ loadBE c.n (c.sl E) A.e ++
   c.consts.flatMap (fun (i, x) => setConst c.n (c.sl i) x) ++
   [.mov .r4 (.imm 0), .dp .sub .r4 .r4 (.imm 1), .str .r4 wb (c.sl FLAG)]

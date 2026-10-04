@@ -181,27 +181,38 @@ theorem saved_lt : ∀ p ∈ Cfg.saved, p.2 + 4 ≤ 36 := by decide
 
 theorem saved_r12 : ∀ p ∈ Cfg.saved, p.1 ≠ .r12 ∧ p.1 ≠ .r0 := by decide
 
-theorem setup_eq (c : Cfg) (A : Args) : c.setupWith A = .ldrSp wb 0 :: (Cfg.saveCode ++
+/-- The working space's base to `r12`. -/
+theorem scStart_ok {A : Args} {s : State} {is : List Instr} {Q : State → Prop}
+    (hin : A.sc = none → InRegions (s.rd ++ s.wr) (stackArgAddr s 0) 4)
+    (k : ∀ s₁, Upd s s₁ .r12 (scVal A s) → WP isa (.block is) s₁ Q) :
+    WP isa (.block (Cfg.scStart A :: is)) s Q := by
+  obtain ⟨ak, ad, ae, _ | r⟩ := A
+  · have ha : State.addr (s.sp + BitVec.ofNat 32 0) = stackArgAddr s 0 := by simp [stackArgAddr]
+    refine wp_ldrSp (by decide) (by rw [ha]; exact hin rfl) fun s₁ u₁ => k s₁ ?_
+    rw [ha] at u₁
+    exact u₁
+  · exact wp_mov (op2_reg _ _) fun s₁ u₁ => k s₁ u₁
+
+theorem setup_eq (c : Cfg) (A : Args) : c.setupWith A = Cfg.scStart A :: (Cfg.saveCode ++
     (.mov .lr (.reg .r0) :: (loadBE c.n (c.sl K) A.k ++ (loadBE c.n (c.sl D) A.d ++
     (loadBE c.n (c.sl E) A.e ++ (c.consts.flatMap (fun (i, x) => setConst c.n (c.sl i) x) ++
     ([.mov .r4 (.imm 0), .dp .sub .r4 .r4 (.imm 1), .str .r4 wb (c.sl FLAG)] : List Instr))))))) := by
   simp only [Cfg.setupWith, List.append_assoc, List.cons_append, List.nil_append]
 
 theorem setup_ok {c : Cfg} (hc : CfgOk c) {A : Args} {s : State} (hp : SetupPre c A s) :
-    WP isa (.block (c.setupWith A)) s (SetupPost c A s (scPtr s)) := by
+    WP isa (.block (c.setupWith A)) s (SetupPost c A s (scBase A s)) := by
   have h7 := hc.n7
   have h0 := hc.n0
   have hsz : size = 4096 := rfl
   have hfit := hp.sc_fit
   obtain ⟨hk4, hd4, he4⟩ := hp.args
   simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hk4 hd4 he4
-  have ha : State.addr (s.sp + BitVec.ofNat 32 0) = stackArgAddr s 0 := by simp [stackArgAddr]
   rw [setup_eq]
   -- The working space's base.
-  refine wp_ldrSp (by decide) (by rw [ha]; exact hp.sc_in) fun s₁ u₁ => ?_
-  have hb₁ : State.addr (s₁.gpr .r12) = scPtr s := by rw [u₁.gpr, ha]; rfl
-  have hs₁ : Scr s₁ (scPtr s) size := ⟨hb₁, ⟨8192, by decide, by decide, by rw [u₁.wr]; exact hp.wr⟩,
-    by simp only [scPtr, State.addr, BitVec.toNat_setWidth_of_le (by decide : 32 ≤ 64)]; omega, by decide⟩
+  refine scStart_ok hp.sc_in fun s₁ u₁ => ?_
+  have hb₁ : State.addr (s₁.gpr .r12) = scBase A s := by rw [u₁.gpr]
+  have hs₁ : Scr s₁ (scBase A s) size := ⟨hb₁, ⟨8192, by decide, by decide, by rw [u₁.wr]; exact hp.wr⟩,
+    by simp only [scBase, State.addr, BitVec.toNat_setWidth_of_le (by decide : 32 ≤ 64)]; omega, by decide⟩
   have hn := hs₁.nowrap
   -- The saves.
   rw [saveCode_eq]
@@ -213,11 +224,11 @@ theorem setup_ok {c : Cfg} (hc : CfgOk c) {A : Args} {s : State} (hp : SetupPre 
   have K₃ : Rest [.r12, .lr] s s₃ := (u₁.rest (by simp)).trans ((K₂.mono (by simp)).trans (u₃.rest (by simp)))
   have lr₃ : s₃.gpr .lr = s.gpr .r0 := by
     rw [u₃.gpr, K₂.gpr _ (by simp), u₁.other _ (by decide)]
-  have O₂' : Outside (scPtr s) 0 36 s₁.mem s₂.mem := fun x hx => O₂ x fun w hw => by
+  have O₂' : Outside (scBase A s) 0 36 s₁.mem s₂.mem := fun x hx => O₂ x fun w hw => by
     obtain ⟨p, hp', rfl⟩ := List.mem_map.mp hw
     have := saved_lt p hp'
     dsimp only; omega
-  have O₃ : Outside (scPtr s) 0 size s.mem s₃.mem := by
+  have O₃ : Outside (scBase A s) 0 size s.mem s₃.mem := by
     rw [← u₁.mem, u₃.mem]
     exact O₂'.mono (Nat.le_refl _) (by omega)
   have RW₃ : s₃.rd ++ s₃.wr = s.rd ++ s.wr := by rw [K₃.rd, K₃.wr]
@@ -226,7 +237,7 @@ theorem setup_ok {c : Cfg} (hc : CfgOk c) {A : Args} {s : State} (hp : SetupPre 
     (K₃.gpr _ (by simpa using hk4.2)) hp.k_fit (by rw [RW₃]; exact hp.k_in) hp.k_sc O₃) fun s₄ ⟨e₄, k₄, O₄⟩ => ?_
   have hs₄ := hs₃.of_rest k₄ (by decide)
   have K₄ : Rest [.r4, .r12, .lr] s s₄ := (K₃.mono (by simp)).trans (k₄.mono (by simp))
-  have O₄' : Outside (scPtr s) 0 size s.mem s₄.mem :=
+  have O₄' : Outside (scBase A s) 0 size s.mem s₄.mem :=
     O₃.trans (O₄.mono (Nat.zero_le _) (by have := sl_le c h7 (i := K) (by decide); omega))
   -- `d`
   refine VG.Proof.X25519.Arm.WP.append (setupLoad_ok hc (s := s) hs₄ (i := D) (by decide) hd4.1
@@ -234,7 +245,7 @@ theorem setup_ok {c : Cfg} (hc : CfgOk c) {A : Args} {s : State} (hp : SetupPre 
     fun s₅ ⟨e₅, k₅, O₅⟩ => ?_
   have hs₅ := hs₄.of_rest k₅ (by decide)
   have K₅ : Rest [.r4, .r12, .lr] s s₅ := K₄.trans (k₅.mono (by simp))
-  have O₅' : Outside (scPtr s) 0 size s.mem s₅.mem :=
+  have O₅' : Outside (scBase A s) 0 size s.mem s₅.mem :=
     O₄'.trans (O₅.mono (Nat.zero_le _) (by have := sl_le c h7 (i := D) (by decide); omega))
   -- the hash
   refine VG.Proof.X25519.Arm.WP.append (setupLoad_ok hc (s := s) hs₅ (i := E) (by decide) he4.1
@@ -246,7 +257,7 @@ theorem setup_ok {c : Cfg} (hc : CfgOk c) {A : Args} {s : State} (hp : SetupPre 
     fun s₇ ⟨e₇, k₇, U₇⟩ => ?_
   have hs₇ := hs₆.of_rest k₇ (by decide)
   have hsl0 : c.sl 0 = 64 := by rw [sl_eq]; omega
-  have O₇ : Outside (scPtr s) (c.sl 0) (8 * c.n * 17) s₆.mem s₇.mem := U₇.outside fun w hw => by
+  have O₇ : Outside (scBase A s) (c.sl 0) (8 * c.n * 17) s₆.mem s₇.mem := U₇.outside fun w hw => by
     obtain ⟨ix, hix, rfl⟩ := List.mem_map.mp hw
     have := sl_lt c (consts_bounds hc ix hix).1
     have : c.sl 0 ≤ c.sl ix.1 := by rw [hsl0, sl_eq]; omega
@@ -259,7 +270,7 @@ theorem setup_ok {c : Cfg} (hc : CfgOk c) {A : Args} {s : State} (hp : SetupPre 
   have hF := sl_le c h7 (i := FLAG) (by decide)
   refine wp_str (hs₁.off_lt (by omega)) (hs₉.ea (d := c.sl FLAG) (by omega))
     (hs₉.write (d := c.sl FLAG) (n := 4) (by omega)) fun s' m' => WP.block_nil ?_
-  have O' : Outside (scPtr s) (c.sl FLAG) 4 s₇.mem s'.mem := by
+  have O' : Outside (scBase A s) (c.sl FLAG) 4 s₇.mem s'.mem := by
     rw [m'.mem, u₉.mem, u₈.mem]; exact writeW32_outside _ _ _ (by omega)
   -- Everything after the saves writes only in `[64, size)`.
   have h17 := sl_le c h7 (i := 17) (by decide)
@@ -271,7 +282,7 @@ theorem setup_ok {c : Cfg} (hc : CfgOk c) {A : Args} {s : State} (hp : SetupPre 
   have hED := sl_lt c (i := D) (j := E) (by decide)
   have hFE := sl_lt c (i := E) (j := FLAG) (by decide)
   have h0' : c.sl 0 + 8 * c.n * 17 = c.sl 17 := by rw [sl_eq, sl_eq]; omega
-  have Ol : Outside (scPtr s) 64 (size - 64) s₃.mem s'.mem := by
+  have Ol : Outside (scBase A s) 64 (size - 64) s₃.mem s'.mem := by
     exact ((((O₄.mono (by omega) (by omega)).trans (O₅.mono (by omega) (by omega))).trans
       (O₆.mono (by omega) (by omega))).trans (O₇.mono (by omega) (by omega))).trans
       (O'.mono (by omega) (by omega))
