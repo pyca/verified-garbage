@@ -335,7 +335,7 @@ theorem xP_fit {s₀ : State} (hp : Pre s₀) {k : Nat} (hk : k < rr s₀) :
 
 theorem xP_in {s₀ : State} (hp : Pre s₀) {k : Nat} (hk : k < rr s₀) {s : State}
     (hrd : s.rd = [bR s₀, argR s₀]) (hwr : s.wr = [yR s₀, scR s₀]) :
-    ∀ i < 16, InRegions (s.rd ++ s.wr) (xP s₀ k + BitVec.ofNat 64 (4 * i)) 4 := by
+    ∀ i < 4, InRegions (s.rd ++ s.wr) (xP s₀ k + BitVec.ofNat 64 (16 * i)) 16 := by
   intro i hi
   rw [hrd, hwr]
   cases k with
@@ -404,7 +404,7 @@ theorem half_ok {c : Prog isa} (hS : SalsaSpec c) {s₀ : State} (hp : Pre s₀)
     (gd : s.gpr dR = yP s₀ + BitVec.ofNat 32 o) (gx : s.gpr xR = x)
     (gs : s.gpr sR = bP s₀ + BitVec.ofNat 32 ob)
     (hdx : Region.Disjoint (slot s₀ o) ⟨x.setWidth 64, 64⟩)
-    (hinx : ∀ i < 16, InRegions (s.rd ++ s.wr) (x.setWidth 64 + BitVec.ofNat 64 (4 * i)) 4)
+    (hinx : ∀ i < 4, InRegions (s.rd ++ s.wr) (x.setWidth 64 + BitVec.ofNat 64 (16 * i)) 16)
     {P : Prog isa} {Q : State → Prop}
     (hQ : ∀ s', s'.rd = s.rd → s'.wr = s.wr → (∀ r ∈ calleeSaved, s'.gpr r = s.gpr r) →
       Frame [slot s₀ o, ⟨scA s₀, 64⟩, stkR s₀] s.mem s'.mem →
@@ -418,13 +418,13 @@ theorem half_ok {c : Prog isa} (hS : SalsaSpec c) {s₀ : State} (hp : Pre s₀)
   have eb : (bP s₀ + BitVec.ofNat 32 ob).setWidth 64 = bA s₀ + BitVec.ofNat 64 ob := b_addr hp (by omega)
   rw [← List.append_nil (xor64 dR xR sR)]
   refine xor64_ok hd hx hs (y_fit hp ho) fx (b_fit hp hob) (by rw [ed]; exact hdx)
-    (by rw [ed, eb]; exact yb_disj hp ho hob) 16 (Nat.le_refl _) [] s _ gd gx gs hinx
+    (by rw [ed, eb]; exact yb_disj hp ho hob) 4 (Nat.le_refl _) [] s _ gd gx gs hinx
     (fun i hi => by
       rw [hrd, hwr, hp.rd, hp.wr, eb, add_ofNat]; exact InRegions.of_mem (by simp) (in_b hp (by omega)))
     (fun i hi => by
       rw [hwr, hp.wr, ed, add_ofNat]; exact InRegions.of_mem (by simp) (in_y hp (by omega)))
     fun s₁ g₁ rd₁ wr₁ m₁ => WP.block_nil ?_
-  rw [ed, eb, show 4 * 16 = 64 from rfl] at m₁
+  rw [ed, eb, show 16 * 4 = 64 from rfl] at m₁
   have l1 : (xorBytes (bytesAt s.mem (x.setWidth 64) 64)
       (bytesAt s.mem (bA s₀ + BitVec.ofNat 64 ob) 64)).length = 64 := by
     rw [xorBytes_length _ _ (by simp [bytesAt_length]), bytesAt_length]

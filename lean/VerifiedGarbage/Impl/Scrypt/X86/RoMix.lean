@@ -37,16 +37,17 @@ open VG.X86
 /-- The callee-saved registers, and where they are saved in `scratch`. -/
 def rmSaved : List (Reg × Nat) := [(.ebx, 128), (.esi, 132), (.edi, 136), (.ebp, 140)]
 
-/-- The words `[ecx] ← [eax]`, `edx` of them. -/
+/-- The 16-byte blocks `[ecx] ← [eax]`, `edx` of them, through `xmm0`. -/
 def copyLoop : Prog isa :=
-  .loop (.block [.mov .edi (.mem (at_ .eax 0)), .store (at_ .ecx 0) .edi, .alu .add .eax (.imm 4),
-    .alu .add .ecx (.imm 4), .alu .sub .edx (.imm 1)]) .ne
+  .loop (.block [.movdquLoad .xmm0 (at_ .eax 0), .movdquStore (at_ .ecx 0) .xmm0, .alu .add .eax (.imm 16),
+    .alu .add .ecx (.imm 16), .alu .sub .edx (.imm 1)]) .ne
 
-/-- The words `[edx] ← [eax] xor [ecx]`, `edi` of them. -/
+/-- The 16-byte blocks `[edx] ← [eax] xor [ecx]`, `edi` of them, through
+`xmm0` and `xmm1`. -/
 def xorLoop : Prog isa :=
-  .loop (.block [.mov .esi (.mem (at_ .eax 0)), .alu .xor .esi (.mem (at_ .ecx 0)),
-    .store (at_ .edx 0) .esi, .alu .add .eax (.imm 4), .alu .add .ecx (.imm 4), .alu .add .edx (.imm 4),
-    .alu .sub .edi (.imm 1)]) .ne
+  .loop (.block [.movdquLoad .xmm0 (at_ .eax 0), .movdquLoad .xmm1 (at_ .ecx 0), xb .pxor .xmm0 .xmm1,
+    .movdquStore (at_ .edx 0) .xmm0, .alu .add .eax (.imm 16), .alu .add .ecx (.imm 16),
+    .alu .add .edx (.imm 16), .alu .sub .edi (.imm 1)]) .ne
 
 /-- Saving our caller's registers; `eax = r`, `ecx = 1`, `edx = 2 vlen` for
 `nLoop`. -/
@@ -75,7 +76,7 @@ def blockMixTo (blockMix : Prog isa) : Prog isa :=
 
 /-- Step 2, once: `V[i] = X`, `X = scryptBlockMix (V[i])`, `esi = V[i + 1]`. -/
 def step2 (blockMix : Prog isa) : Prog isa :=
-  .seq (.block (timesR 32 ++ [.mov .edx (.reg .eax), .mov .eax (.mem (at_ .esp 4)), .mov .ecx (.reg .esi)])) <|
+  .seq (.block (timesR 8 ++ [.mov .edx (.reg .eax), .mov .eax (.mem (at_ .esp 4)), .mov .ecx (.reg .esi)])) <|
   .seq copyLoop <|
   .seq (blockMixTo blockMix)
     (.block (timesR 128 ++ [.alu .add .esi (.reg .eax), .alu .sub .ebx (.imm 1)]))
@@ -91,10 +92,10 @@ def jBlock : List Instr :=
     .alu .and .eax (.reg .ecx)]
 
 /-- `ecx = V[j] = v + j * 128 r`, and the other operands of `xorLoop`:
-`eax = X`, `edx = T`, `edi = 32 r` words. -/
+`eax = X`, `edx = T`, `edi = 8 r` blocks of 16 bytes. -/
 def vjBlock : List Instr :=
   [.mul .edi, .mov .ecx (.mem (at_ .esp 12)), .alu .add .ecx (.reg .eax), .mov .eax (.mem (at_ .esp 4)),
-    .mov .edx (.mem (at_ .esp 20)), .alu .add .edx (.imm 192), .shift .shr .edi 2]
+    .mov .edx (.mem (at_ .esp 20)), .alu .add .edx (.imm 192), .shift .shr .edi 4]
 
 /-- `esi = T`. -/
 def tBlock : List Instr := [.mov .esi (.mem (at_ .esp 20)), .alu .add .esi (.imm 192)]
