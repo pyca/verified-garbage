@@ -39,16 +39,16 @@ open VG.Arm
 /-- `vg_keccak_absorb(state = r0, rate = r1, pos = r2, data = r3, len = r12,
 scratch = lr)`. -/
 def absorbCall : Prog isa :=
-  .frame (.push [.r12, .lr]) (.call "vg_keccak_absorb" Impl.Sha3.Arm.Stream.absorb) (.pop .r12 8)
+  .frame (.push [.r12, .lr]) (.call "vg_keccak_absorb_scratch" Impl.Sha3.Arm.Stream.absorb) (.pop .r12 8)
 
 /-- `vg_keccak_pad(state = r0, rate = r1, pos = r2, suffix = r3, scratch = lr)`. -/
 def padCall : Prog isa :=
-  .frame (.push [.lr]) (.call "vg_keccak_pad" Impl.Sha3.Arm.Stream.pad) (.pop .r12 4)
+  .frame (.push [.lr]) (.call "vg_keccak_pad_scratch" Impl.Sha3.Arm.Stream.pad) (.pop .r12 4)
 
 /-- `vg_keccak_squeeze(state = r0, rate = r1, pos = r2, out = r3, outlen = r12,
 scratch = lr)`. -/
 def squeezeCall : Prog isa :=
-  .frame (.push [.r12, .lr]) (.call "vg_keccak_squeeze" Impl.Sha3.Arm.Stream.squeeze) (.pop .r12 8)
+  .frame (.push [.r12, .lr]) (.call "vg_keccak_squeeze_scratch" Impl.Sha3.Arm.Stream.squeeze) (.pop .r12 8)
 
 /-- The Keccak state at `[b]` zeroed, through `r12`. -/
 def zeroState (b : Reg) : List Instr :=

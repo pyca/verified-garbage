@@ -1,5 +1,5 @@
 import VerifiedGarbage.TCB.X86_64.Target
-import VerifiedGarbage.Proof.AesGcm.X86_64.Verified
+import VerifiedGarbage.Proof.AesGcm.X86_64.Frame
 import VerifiedGarbage.Proof.AesGcm.X86_64.GhashImpls
 
 /-!
@@ -29,8 +29,10 @@ and absorb the whole blocks of the data in one call of the instance of
 combination, which interleaves the two for the implementations that allow
 it (`GcmImpl.stitch`).
 
-The stack is 8 bytes for the other functions: the return address of a call
-of `vg_aes_expand_key`, `vg_aes_ctr32` or `vg_ghash`, which make no calls.
+The stack is 8 bytes for `stream_finish` and `stream_verify`: the return
+address of a call of `vg_aes_expand_key`, `vg_aes_ctr32` or `vg_ghash`, which
+make no calls. `init`, `stream_init` and `stream_aad` need 2568 bytes more,
+for the frame that holds their working space.
 `seal`, `open`, `stream_encrypt` and `stream_decrypt` need 24: the argument
 they pass on the stack, the return address of their call of
 `vg_aes_gcm_encrypt_blocks` or `vg_aes_gcm_decrypt_blocks`, and that of its
@@ -82,11 +84,11 @@ def artifactsOf (v : GcmImpl) : List Artifact := [
     name := Spec.Gcm.initApi.name ++ v.suffix
     target := X86_64.target
     doc := Spec.Gcm.initApi.doc (notes := [note v])
-    code := Impl.AesGcm.X86_64.init v.callees
-    contract := Spec.Gcm.initContract X86_64.abi 8
-    stack := 8
-    verified := init_verified v
-    spSafe := init_spSafe v
+    code := Impl.StackScratch.X86_64.withStackScratch 2568 .rcx (Impl.AesGcm.X86_64.init v.callees)
+    contract := Spec.Gcm.initContract X86_64.abi 2576
+    stack := 2576
+    verified := init_framed v
+    spSafe := X86_64.withStackScratch_spSafe (by decide) (init_spSafe v)
     features := (v.ctr.features ++ v.key.features).dedup },
   { Spec.Gcm.sealApi with
     name := Spec.Gcm.sealApi.name ++ v.suffix
@@ -112,21 +114,23 @@ def artifactsOf (v : GcmImpl) : List Artifact := [
     name := Spec.Gcm.streamInitApi.name ++ v.suffix
     target := X86_64.target
     doc := Spec.Gcm.streamInitApi.doc (notes := [note v])
-    code := Impl.AesGcm.X86_64.streamInit v.callees
-    contract := Spec.Gcm.streamInitContract X86_64.abi 8
-    stack := 8
-    verified := streamInit_verified v
-    spSafe := streamInit_spSafe v
+    code := Impl.StackScratch.X86_64.withStackScratch 2568 .r8
+      (Impl.AesGcm.X86_64.streamInit v.callees)
+    contract := Spec.Gcm.streamInitContract X86_64.abi 2576
+    stack := 2576
+    verified := streamInit_framed v
+    spSafe := X86_64.withStackScratch_spSafe (by decide) (streamInit_spSafe v)
     features := v.gh.features },
   { Spec.Gcm.streamAadApi with
     name := Spec.Gcm.streamAadApi.name ++ v.suffix
     target := X86_64.target
     doc := Spec.Gcm.streamAadApi.doc (notes := [note v])
-    code := Impl.AesGcm.X86_64.streamAad v.callees
-    contract := Spec.Gcm.streamAadContract X86_64.abi 8
-    stack := 8
-    verified := streamAad_verified v
-    spSafe := streamAad_spSafe v
+    code := Impl.StackScratch.X86_64.withStackScratch 2568 .r9
+      (Impl.AesGcm.X86_64.streamAad v.callees)
+    contract := Spec.Gcm.streamAadContract X86_64.abi 2576
+    stack := 2576
+    verified := streamAad_framed v
+    spSafe := X86_64.withStackScratch_spSafe (by decide) (streamAad_spSafe v)
     features := v.gh.features },
   { Spec.Gcm.streamEncryptApi with
     name := Spec.Gcm.streamEncryptApi.name ++ v.suffix

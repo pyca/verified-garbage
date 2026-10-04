@@ -13,6 +13,7 @@
     target_arch = "x86"
 ))]
 
+mod aes_ccm;
 mod aes_gcm;
 mod cmac_aes;
 mod cmac_triple_des;

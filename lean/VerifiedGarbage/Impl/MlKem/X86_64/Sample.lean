@@ -92,11 +92,11 @@ def snLoop (n : BitVec 32) : Prog isa :=
 /-- From the arguments of `absorb`: `n` iterations of the loop on the first
 `3 n` bytes of the XOF output. -/
 def snSample (n : BitVec 32) : Prog isa :=
-  .seq (.call "vg_keccak_absorb" Impl.Sha3.X86_64.Stream.absorb)
+  .seq (.call "vg_keccak_absorb_scratch" Impl.Sha3.X86_64.Stream.absorb)
     (.seq (.block snPadArgs)
-      (.seq (.call "vg_keccak_pad" Impl.Sha3.X86_64.Stream.pad)
+      (.seq (.call "vg_keccak_pad_scratch" Impl.Sha3.X86_64.Stream.pad)
         (.seq (.block (snSqzArgs (3 * n)))
-          (.seq (.call "vg_keccak_squeeze" Impl.Sha3.X86_64.Stream.squeeze) (snLoop n)))))
+          (.seq (.call "vg_keccak_squeeze_scratch" Impl.Sha3.X86_64.Stream.squeeze) (snLoop n)))))
 
 /-- If `j < 256`, the 280 iterations from the start. -/
 def snMore : Prog isa :=

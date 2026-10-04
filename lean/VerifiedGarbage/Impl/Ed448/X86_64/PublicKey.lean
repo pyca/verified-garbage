@@ -105,9 +105,9 @@ def callWith (args : List Instr) (name : String) (code : Prog isa) : Prog isa :=
 /-- `SHAKE256(seed, 114)`, into `scratch + 1024`. -/
 def pkHash : Prog isa :=
   .seq pkZeroState <|
-  .seq (callWith pkAbsorbArgs "vg_keccak_absorb" Impl.Sha3.X86_64.Stream.absorb) <|
-  .seq (callWith pkPadArgs "vg_keccak_pad" Impl.Sha3.X86_64.Stream.pad)
-    (callWith pkSqueezeArgs "vg_keccak_squeeze" Impl.Sha3.X86_64.Stream.squeeze)
+  .seq (callWith pkAbsorbArgs "vg_keccak_absorb_scratch" Impl.Sha3.X86_64.Stream.absorb) <|
+  .seq (callWith pkPadArgs "vg_keccak_pad_scratch" Impl.Sha3.X86_64.Stream.pad)
+    (callWith pkSqueezeArgs "vg_keccak_squeeze_scratch" Impl.Sha3.X86_64.Stream.squeeze)
 
 /-- The frame's body. -/
 def pkBody : Prog isa :=

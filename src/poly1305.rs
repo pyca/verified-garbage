@@ -7,8 +7,7 @@
 //! absorbed so far, with the message's last bytes that do not fill a block
 //! buffered in it (`VG.Spec.Poly1305.Buffered`), and compute the tag. This
 //! module only keeps that state together with the message length (modulo
-//! 2⁶⁴), which the contracts take as an argument, and gives them working
-//! space (`scratch`).
+//! 2⁶⁴), which the contracts take as an argument.
 //!
 //! `vg_poly1305_update` absorbs the whole blocks of the data with an
 //! implementation of `vg_poly1305_blocks`, and is emitted once for each
@@ -116,7 +115,6 @@ impl Poly1305 {
 
     /// Absorbs `data`.
     pub fn update(&mut self, data: &[u8]) {
-        let mut scratch = [0u64; 16];
         let update = match self.backend {
             Backend::Scalar => vg_poly1305_update,
             #[cfg(target_arch = "x86_64")]
@@ -124,37 +122,28 @@ impl Poly1305 {
             #[cfg(target_arch = "x86_64")]
             Backend::Avx512 => vg_poly1305_update_avx512,
         };
-        // SAFETY: `self.state` and `scratch` are valid for reads and writes of
-        // 128 bytes and `data` for reads of `data.len()` bytes; they are
-        // distinct objects, so they do not overlap each other or anything on
-        // the stack (the return address, any arguments, and the stack below
-        // the stack pointer the calls use), and do not wrap around the end of
-        // the address space. `self.state` represents a message of
-        // `self.count` bytes, modulo 2⁶⁴. The CPU has the features of the
-        // implementation selected (`Backend::select`).
-        unsafe {
-            update(
-                &mut self.state,
-                self.count,
-                data.as_ptr(),
-                data.len(),
-                &mut scratch,
-            )
-        };
+        // SAFETY: `self.state` is valid for reads and writes of 128 bytes and
+        // `data` for reads of `data.len()` bytes; they are distinct objects,
+        // so they do not overlap each other or anything on the stack (the
+        // return address, any arguments, and the stack below the stack
+        // pointer the calls use), and do not wrap around the end of the
+        // address space. `self.state` represents a message of `self.count`
+        // bytes, modulo 2⁶⁴. The CPU has the features of the implementation
+        // selected (`Backend::select`).
+        unsafe { update(&mut self.state, self.count, data.as_ptr(), data.len()) };
         self.count = self.count.wrapping_add(data.len() as u64);
     }
 
     /// Returns the tag of everything absorbed.
     pub fn finalize(mut self) -> [u8; 16] {
         let mut tag = [0; 16];
-        let mut scratch = [0u64; 16];
-        // SAFETY: `self.state` and `scratch` are valid for reads and writes of
-        // 128 bytes and `tag` for writes of 16 bytes; they are distinct
-        // objects, so they do not overlap each other or anything on the stack
-        // (the return address and any arguments), and do not wrap around the
-        // end of the address space. `self.state` represents a message of
-        // `self.count` bytes, modulo 2⁶⁴.
-        unsafe { vg_poly1305_finalize(&mut self.state, self.count, &mut tag, &mut scratch) };
+        // SAFETY: `self.state` is valid for reads and writes of 128 bytes and
+        // `tag` for writes of 16 bytes; they are distinct objects, so they do
+        // not overlap each other or anything on the stack (the return address
+        // and any arguments), and do not wrap around the end of the address
+        // space. `self.state` represents a message of `self.count` bytes,
+        // modulo 2⁶⁴.
+        unsafe { vg_poly1305_finalize(&mut self.state, self.count, &mut tag) };
         tag
     }
 

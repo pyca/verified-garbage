@@ -1,5 +1,6 @@
 import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Blocks
 import VerifiedGarbage.Impl.Poly1305.X86_64.Callee
+import VerifiedGarbage.Proof.Framework.X86_64.Depth
 
 /-!
 # Implementations of `vg_poly1305_blocks` on x86-64
@@ -51,6 +52,8 @@ structure BlocksImpl where
   stack : Nat
   stack_le : stack ≤ 16
   depth_le : code.depth ≤ 2
+  /-- The stack it uses below its return address. -/
+  xdepth : code.x86_64Depth ≤ stack
   /-- It is correct. -/
   ok : ∀ s, (blocksStack stack).pre s →
     ∃ t s', Exec isa code s t s' ∧ abiPreserved s s' ∧ (blocksStack stack).post s s'
@@ -84,6 +87,7 @@ def scalar : BlocksImpl where
   depth_le := by
     change Impl.Poly1305.X86_64.blocks.depth ≤ 2
     rw [Avx2.blocks_depth]; decide
+  xdepth := by change Impl.Poly1305.X86_64.blocks.x86_64Depth ≤ 0; lit_decide
   ok := scalar_ok
   ct := scalar_ct
   nosp := Avx2.blocks_nosp
@@ -107,6 +111,7 @@ def avx2 : BlocksImpl where
   depth_le := by
     change Impl.Poly1305.X86_64.Avx2.blocksAvx2.depth ≤ 2
     lit_decide
+  xdepth := by change Impl.Poly1305.X86_64.Avx2.blocksAvx2.x86_64Depth ≤ 8; lit_decide
   ok := Avx2.blocksAvx2_ok
   ct := Avx2.blocksAvx2_ct
   nosp := avx2_nosp

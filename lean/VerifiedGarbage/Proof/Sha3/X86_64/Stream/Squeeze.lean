@@ -479,9 +479,9 @@ theorem squeeze_ct : ConstantTime isa Proof.Sha3.squeezeX86_64.pre Proof.Sha3.sq
     (by taint_decide_weak VG.Proof.Sha3.X86_64.dropRC)
 
 theorem squeeze_verified :
-    Verified X86_64.target Impl.Sha3.X86_64.Stream.squeeze (Spec.Sha3.squeezeContract X86_64.abi 8) :=
+    Verified X86_64.target Impl.Sha3.X86_64.Stream.squeeze (Spec.Sha3.squeezeScratchContract X86_64.abi 8) :=
   Verified.of_correct squeeze_correct squeeze_ct (by
-    sig_implies [Spec.Sha3.squeezeContract, Spec.Sha3.squeezeSig, Proof.Sha3.squeezeX86_64,
+    sig_implies [Spec.Sha3.squeezeScratchContract, Spec.Sha3.squeezeScratchSig, Spec.Sha3.squeezePre, Spec.Sha3.squeezePost, Proof.Sha3.squeezeX86_64,
       X86_64.abi, X86_64.argRegs] [Proof.Sha3.X86_64.Stream.Squeeze.sat] using
       Proof.Sha3.X86_64.Stream.Squeeze.sat)
 

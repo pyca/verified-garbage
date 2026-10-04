@@ -60,11 +60,11 @@ def sqzArgs (rate outlen : BitVec 32) : List Instr :=
 `r8` bytes, to `rbx + 840`. -/
 def sponge (rate outlen : BitVec 32) : Prog isa :=
   .seq (.block (zeroSt ++ absArgs rate))
-    (.seq (.call "vg_keccak_absorb" Impl.Sha3.X86_64.Stream.absorb)
+    (.seq (.call "vg_keccak_absorb_scratch" Impl.Sha3.X86_64.Stream.absorb)
       (.seq (.block (padArgs rate))
-        (.seq (.call "vg_keccak_pad" Impl.Sha3.X86_64.Stream.pad)
+        (.seq (.call "vg_keccak_pad_scratch" Impl.Sha3.X86_64.Stream.pad)
           (.seq (.block (sqzArgs rate outlen))
-            (.call "vg_keccak_squeeze" Impl.Sha3.X86_64.Stream.squeeze)))))
+            (.call "vg_keccak_squeeze_scratch" Impl.Sha3.X86_64.Stream.squeeze)))))
 
 /-- `rbp`, `r12` and `rbx` restored. -/
 def epi : List Instr :=

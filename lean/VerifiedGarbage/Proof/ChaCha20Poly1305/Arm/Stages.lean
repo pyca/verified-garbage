@@ -335,7 +335,7 @@ Each call of a verified function, from its proof of `Verified` (with
 `WP.call`): what it needs of the state it is called from, and what holds when
 it returns. A call (`bl`) stores nothing in memory, so the callee changes
 memory only within the regions it may write; the frame around
-`vg_poly1305_finalize` also stores its stack arguments below the stack
+`vg_poly1305_finalize_scratch` also stores its stack arguments below the stack
 pointer.
 -/
 
@@ -507,7 +507,7 @@ theorem blocks_call {s : State} {P p : BitVec 32} {n : Nat} (h0 : s.gpr .r0 = P)
       h0, h1, h2, hn'] at hpost
     exact hpost key msg hr
 
-/-! ## `vg_poly1305_finalize`, in its frame -/
+/-! ## `vg_poly1305_finalize_scratch`, in its frame -/
 
 theorem storeWords_two (m : Mem) (a : BitVec 32) (x y : BitVec 32) :
     storeWords m a [x, y] = (m.writeW (State.addr a) x).writeW (State.addr (a + 4)) y := rfl
@@ -528,7 +528,7 @@ theorem addr_below {sp : BitVec 32} (h : 8 ≤ sp.toNat) :
     State.addr (sp - BitVec.ofNat 32 (4 * [Reg.r1, Reg.r12].length)) = State.addr sp - 8 :=
   addr_sub h
 
-/-- What the frame around `vg_poly1305_finalize` needs of the state it is
+/-- What the frame around `vg_poly1305_finalize_scratch` needs of the state it is
 entered in: the state at `P`, `out` at `O` and `scratch` at `Sc` in `r0`,
 `r1` and `r12`, disjoint, writable, and disjoint from the 8 bytes of stack the
 frame pushes. -/
@@ -548,11 +548,11 @@ structure FinArgs (s : State) (P O Sc : BitVec 32) : Prop where
   hS : Sc.toNat + 128 ≤ 2 ^ 32
   hw : Covers [⟨State.addr P, 128⟩, ⟨State.addr O, 16⟩, ⟨State.addr Sc, 128⟩] s.wr
 
-/-- The regions `vg_poly1305_finalize` is called with. -/
+/-- The regions `vg_poly1305_finalize_scratch` is called with. -/
 abbrev finRd (s : State) : List Region := [⟨State.addr s.sp - 8, 8⟩]
 abbrev finWr (P O Sc : BitVec 32) : List Region := [⟨State.addr P, 128⟩, ⟨State.addr O, 16⟩, ⟨State.addr Sc, 128⟩]
 
-/-- The state `vg_poly1305_finalize` runs from, with the permissions it is
+/-- The state `vg_poly1305_finalize_scratch` runs from, with the permissions it is
 given. -/
 abbrev finView (s : State) (P O Sc : BitVec 32) : State :=
   (pushed [.r1, .r12] s).callEntry.withRegions (finRd s) (finWr P O Sc)
@@ -1696,7 +1696,7 @@ end VG.Proof.ChaCha20Poly1305.Arm
 /-!
 # ChaCha20-Poly1305 on ARMv7: the other parts
 
-The encryption, the lengths block, the arguments of `vg_poly1305_finalize` and
+The encryption, the lengths block, the arguments of `vg_poly1305_finalize_scratch` and
 the tag, copying and comparing tags, and restoring the registers.
 -/
 

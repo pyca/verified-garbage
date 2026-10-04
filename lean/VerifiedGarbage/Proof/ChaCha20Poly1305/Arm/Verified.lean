@@ -10,7 +10,7 @@ section
 # ChaCha20-Poly1305 on ARMv7: correctness
 
 `seal` and `open`, from their parts: up to the arguments of
-`vg_poly1305_finalize` (`sealMain`, `openMain`), the frame around it
+`vg_poly1305_finalize_scratch` (`sealMain`, `openMain`), the frame around it
 (`finalize`), and the rest (`sealEnd`, `openEnd`). The constant-time proof
 runs the taint analysis on the first and the last, and relates the two runs of
 the frame by what these theorems say of the states between them.
@@ -415,13 +415,13 @@ Correctness (above), constant time, and a state satisfying the precondition.
 
 Constant time relates two runs from states that agree on the public data
 (`RelCT`), part by part. The taint analysis does not analyse frames, so it
-runs on the code before the frame around `vg_poly1305_finalize` (`sealMain`,
+runs on the code before the frame around `vg_poly1305_finalize_scratch` (`sealMain`,
 `openMain`) and after it (`sealEnd`, `openEnd`), through the callees' code:
 it knows `r7`–`r11` for public after each call because every callee saves
 them in memory at known offsets of the context, which it tracks, and
 restores them, and `r7` for the base of the context once it is set from the
 callee's pointer that the callee keeps. The frame itself leaks only
-addresses computed from the stack pointer, and `vg_poly1305_finalize` is
+addresses computed from the stack pointer, and `vg_poly1305_finalize_scratch` is
 constant time (`RelCT.frame`, `RelCT.call`), given what the correctness
 proof shows of the states on either side of it in each run (`RelCT.wp`):
 the same stack pointer and arguments, whose values are computed from public
@@ -486,13 +486,13 @@ theorem push_eq' {s a : State} (h : isa.push (.push [.r1, .r12]) s = some a) : a
     rename_i hc; exact hc.2)] at h
   exact (Option.some.inj h).symm
 
-/-- `vg_poly1305_finalize`'s view of the state after the push, with the
+/-- `vg_poly1305_finalize_scratch`'s view of the state after the push, with the
 regions given in terms of the stack pointer `sp`. -/
 theorem finView_eq {s : State} {sp : BitVec 32} (h : s.sp = sp) (P O Sc : BitVec 32) :
     (pushed [.r1, .r12] s).callEntry.withRegions [⟨State.addr sp - 8, 8⟩] (finWr P O Sc) = finView s P O Sc := by
   rw [← h]
 
-/-- The frame around `vg_poly1305_finalize`, in two runs whose states before
+/-- The frame around `vg_poly1305_finalize_scratch`, in two runs whose states before
 it are `x₁` and `x₂`, with the same stack pointer, pointers and message
 length. -/
 theorem frame_ct {s₁ s₂ : State} (hp₁ : APre s₁) (hp₂ : APre s₂) (hpub : pubArm s₁ s₂)

@@ -785,7 +785,7 @@ theorem xor_call {s₀ s : State} (hp : APre s₀) (h : At s₀ s) (heax : s.gpr
       VG.Proof.ChaCha20.X86.Xor.stateAt_frame ef (by
       simp only [List.mem_singleton, forall_eq]; exact (hp.stk_sub (by lit_omega)).symm)]
 
-/-! ## `vg_poly1305_finalize` -/
+/-! ## `vg_poly1305_finalize_scratch` -/
 
 /-- Its arguments: the Poly1305 state, `count = 0` (both words), `out` and
 its working space, `ctx[672, 800)`, pushed last to first. -/
@@ -854,7 +854,7 @@ theorem finalize_call {Q : State → Prop}
       Frame [sub s₀ 448 128, sub s₀ out 16, sub s₀ 672 128, stkR s₀] s.mem s'.mem →
       (∀ key msg, Repr s.mem (cx s₀ + BitVec.ofNat 64 448) key msg →
         bytesAt s'.mem (cx s₀ + BitVec.ofNat 64 out) 16 = mac key msg) → Q s') :
-    WP isa (callWith finRegs "vg_poly1305_finalize" Impl.Poly1305.X86.finalize) s Q := by
+    WP isa (callWith finRegs "vg_poly1305_finalize_scratch" Impl.Poly1305.X86.finalize) s Q := by
   have ho' : out + 16 ≤ 1024 := by unfold OutOk at ho; omega
   have hk : finRegs.length ≤ 5 := by decide
   have e := hp.sp_lo
@@ -1997,7 +1997,7 @@ theorem crypt_ok {s₀ : State} (hp : APre s₀) {s : State} (h : Inv s₀ s) :
 
 /-! ## The tag -/
 
-/-- Ready to call `vg_poly1305_finalize`. -/
+/-- Ready to call `vg_poly1305_finalize_scratch`. -/
 structure FiA (s₀ : State) (out : Nat) (s : State) : Prop where
   inv : Inv s₀ s
   ebx : s.gpr .ebx = C32 s₀ 672
@@ -2029,7 +2029,7 @@ theorem fiA_ok {s₀ : State} {s : State} (h : Inv s₀ s) (out : Nat) :
 
 theorem finalizeTo_eq (out : Nat) : finalizeTo out =
     .seq (.block (ptr .ebx .edi 672 ++ ptr .ecx .edi out ++ ([.mov .eax (.imm 0)] : List Instr) ++ ptr .esi .edi 448))
-      (callWith finRegs "vg_poly1305_finalize" Impl.Poly1305.X86.finalize) := rfl
+      (callWith finRegs "vg_poly1305_finalize_scratch" Impl.Poly1305.X86.finalize) := rfl
 
 /-- What the tag's computation keeps: enough to restore the registers. -/
 structure Fin (s₀ s : State) : Prop where
@@ -2040,7 +2040,7 @@ structure Fin (s₀ s : State) : Prop where
 theorem Inv.fin {s₀ s : State} (h : Inv s₀ s) : Fin s₀ s := ⟨h.at, h.edi, h.saved⟩
 
 theorem fiB_ok {s₀ : State} (hp : APre s₀) {out : Nat} (ho : OutOk out) {s : State} (h : FiA s₀ out s) :
-    WP isa (callWith finRegs "vg_poly1305_finalize" Impl.Poly1305.X86.finalize) s fun s' =>
+    WP isa (callWith finRegs "vg_poly1305_finalize_scratch" Impl.Poly1305.X86.finalize) s fun s' =>
       Fin s₀ s' ∧ Frame [sub s₀ 448 128, sub s₀ out 16, sub s₀ 672 128, stkR s₀] s.mem s'.mem ∧
       ∀ key msg, Repr s.mem (cx s₀ + BitVec.ofNat 64 448) key msg →
         bytesAt s'.mem (cx s₀ + BitVec.ofNat 64 out) 16 = mac key msg := by

@@ -40,86 +40,25 @@ use crate::arch::sha512::{
 };
 use crate::arch::sha512::{vg_sha512_finalize, vg_sha512_init, vg_sha512_update};
 
-/// Defines `$update` and `$finalize`: `$vg_update` and `$vg_finalize`, which
-/// keep their working space on their own stack, taking the empty working
-/// space `streaming_hash!` passes (SHA-384's, SHA-512/224's and SHA-512/256's
-/// too).
-macro_rules! own_scratch {
-    ($(#[$cfg:meta])* $update:ident => $vg_update:ident, $finalize:ident => $vg_finalize:ident) => {
-        /// The `update` of a backend, which keeps its working space on its
-        /// own stack.
-        ///
-        /// # Safety
-        ///
-        /// As for the function it calls.
-        $(#[$cfg])*
-        pub(super) unsafe fn $update(
-            state: *mut [u8; 192],
-            count: u64,
-            data: *const u8,
-            len: usize,
-            _: *mut [u64; 0],
-        ) {
-            // SAFETY: the caller's obligations.
-            unsafe { $vg_update(state, count, data, len) }
-        }
-
-        /// The `finalize` of a backend, which keeps its working space on its
-        /// own stack.
-        ///
-        /// # Safety
-        ///
-        /// As for the function it calls.
-        $(#[$cfg])*
-        pub(super) unsafe fn $finalize(
-            state: *mut [u8; 192],
-            count: u64,
-            out: *mut [u8; 64],
-            _: *mut [u64; 0],
-        ) {
-            // SAFETY: the caller's obligations.
-            unsafe { $vg_finalize(state, count, out) }
-        }
-    };
-}
-
-own_scratch!(update => vg_sha512_update, finalize => vg_sha512_finalize);
-own_scratch!(
-    #[cfg(target_arch = "aarch64")]
-    update_sha3 => vg_sha512_update_sha3,
-    finalize_sha3 => vg_sha512_finalize_sha3
-);
-own_scratch!(
-    #[cfg(target_arch = "x86_64")]
-    update_shani => vg_sha512_update_shani,
-    finalize_shani => vg_sha512_finalize_shani
-);
-own_scratch!(
-    #[cfg(target_arch = "x86_64")]
-    update_avx2 => vg_sha512_update_avx2,
-    finalize_avx2 => vg_sha512_finalize_avx2
-);
-
 super::streaming_hash!(
     /// An incremental SHA-512 computation (FIPS 180-4 §6.4).
     Sha512 {
         state: 192,
-        scratch: 0,
         block: 128,
         output: 64,
         final_hash: 64,
         init: vg_sha512_init,
         backends: Sha512Backend {
-            Scalar => (update, finalize),
+            Scalar => (vg_sha512_update, vg_sha512_finalize),
             #[cfg(target_arch = "aarch64")]
             Sha3 if [VG_SHA512_UPDATE_SHA3_FEATURES, VG_SHA512_FINALIZE_SHA3_FEATURES] =>
-                (update_sha3, finalize_sha3),
+                (vg_sha512_update_sha3, vg_sha512_finalize_sha3),
             #[cfg(target_arch = "x86_64")]
             ShaNi if [VG_SHA512_UPDATE_SHANI_FEATURES, VG_SHA512_FINALIZE_SHANI_FEATURES] =>
-                (update_shani, finalize_shani),
+                (vg_sha512_update_shani, vg_sha512_finalize_shani),
             #[cfg(target_arch = "x86_64")]
             Avx2 if [VG_SHA512_UPDATE_AVX2_FEATURES, VG_SHA512_FINALIZE_AVX2_FEATURES] =>
-                (update_avx2, finalize_avx2),
+                (vg_sha512_update_avx2, vg_sha512_finalize_avx2),
         },
     }
 );

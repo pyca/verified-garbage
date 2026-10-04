@@ -143,9 +143,8 @@ impl<H, const S: usize> Drop for StreamingHmacState<H, S> {
 /// `streaming_hash!`) an [`HmacHash`], with its verified
 /// `vg_hmac_<hash>_init` and `vg_hmac_<hash>_finalize` (contracts
 /// `VG.Spec.Hmac.Instance.initContract` and `finalizeContract` of the hash's
-/// `Instance`), given its streaming state size, the functions' working space
-/// (in 64-bit words) and its digest size. The text is absorbed by the hash's
-/// own `update`.
+/// `Instance`), given its streaming state size and its digest size. The text
+/// is absorbed by the hash's own `update`.
 ///
 /// `init` and `finalize` are listed for each implementation of the hash (its
 /// backend enum's variants, with the CPU features they need), and a
