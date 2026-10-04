@@ -192,7 +192,7 @@ theorem setNonce_ok (s : State) (hs : Proof.ChaCha20.setNonceAArch64.pre s) :
       fun d hd => ⟨_, by rw [hrd]; exact List.mem_append_left _ (List.mem_singleton_self _),
         Offset.contains_base _ hd (by omega)⟩⟩
   obtain ⟨t, s', he, hm, -, -, -⟩ := setNonce_exec hp
-  refine ⟨t, s', he, ⟨fun r hr => Exec.gpr (setNonce_untouched r hr) he, Exec.sp he, Exec.preservedV he⟩, ?_⟩
+  refine ⟨t, s', he, ⟨fun r hr => Exec.gpr (setNonce_untouched r hr) he, Exec.sp he, Exec.preservedV he (by lit_decide)⟩, ?_⟩
   simp only [Proof.ChaCha20.setNonceAArch64]; rw [hm]; exact nonceMem_post _ _ _
 
 theorem setNonce_ct :
@@ -226,7 +226,6 @@ def keyMem (m : Mem) (st kp : Addr) : Mem :=
     (m.readW (kp + BitVec.ofNat 64 8) 64)).writeW (st + BitVec.ofNat 64 32)
     (m.readW (kp + BitVec.ofNat 64 16) 64)).writeW (st + BitVec.ofNat 64 40) (m.readW (kp + BitVec.ofNat 64 24) 64)
 
-set_option simprocs false in
 theorem key_exec {s : State} {st kp : Addr} (hx0 : s.gpr .x0 = st) (hx1 : s.gpr .x1 = kp)
     (hw : ∀ d, d + 8 ≤ 768 → InRegions s.wr (st + BitVec.ofNat 64 d) 8)
     (hr : ∀ d, d + 8 ≤ 32 → InRegions (s.rd ++ s.wr) (kp + BitVec.ofNat 64 d) 8) :
@@ -237,14 +236,14 @@ theorem key_exec {s : State} {st kp : Addr} (hx0 : s.gpr .x0 = st) (hx1 : s.gpr 
   have i0 := hr 0 (by decide); have i8 := hr 8 (by decide)
   have i16 := hr 16 (by decide); have i24 := hr 24 (by decide)
   apply WP.of_runBlock
-  simp (config := {decide := true}) only [keyInstrs, Impl.ChaCha20.AArch64.Xor.mov, runBlock_cons,
+  simp only [keyInstrs, Impl.ChaCha20.AArch64.Xor.mov, runBlock_cons,
     runStep_some, runBlock_nil, exec, addr, Size.bytes, State.load, State.store, State.read, State.write,
     Size.bits, BitVec.setWidth_eq, Option.bind_some, Option.map_some, hx0, hx1, o16, o24, o32, o40, i0, i8,
-    i16, i24, ite_true, ite_false, Option.some.injEq, exists_eq_left']
+    i16, i24, Option.some.injEq, exists_eq_left', ↓reduceIte, reduceCtorEq, Nat.reduceMul, Nat.reduceMod, Nat.reduceLT, and_self]
   refine ⟨by simp [keyMem, Mem.writeW, Mem.readW], trivial, trivial, by simp, by simp, fun r hr => ?_⟩
   simp only [preserved, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
-    simp (config := {decide := true})
+    simp
 
 theorem keyMem_frame (m : Mem) (st kp : Addr) : Frame [⟨st, 768⟩] m (keyMem m st kp) := by
   simp only [keyMem]
@@ -290,7 +289,7 @@ theorem init_ok (s : State) (hs : Proof.ChaCha20.initAArch64.pre s) :
         by rw [rd₁, wr₁, hrd]; simp, Offset.contains_base _ hd (by omega)⟩⟩
     exact WP.mono (setNonce_exec hp) fun s' ⟨m', _, _, g'⟩ =>
       ⟨by rw [m', m₁], fun r hr => by rw [g' r hr, g₁ r hr]⟩
-  refine ⟨t, s', he, ⟨hpost, Exec.sp he, Exec.preservedV he⟩, ?_⟩
+  refine ⟨t, s', he, ⟨hpost, Exec.sp he, Exec.preservedV he (by lit_decide)⟩, ?_⟩
   obtain ⟨hk, hr⟩ := nonceMem_post (keyMem s.mem (s.gpr .x0) (s.gpr .x1)) (s.gpr .x0) (s.gpr .x2)
   have hn : bytesAt (keyMem s.mem (s.gpr .x0) (s.gpr .x1)) (s.gpr .x2) 16 = bytesAt s.mem (s.gpr .x2) 16 :=
     List.map_congr_left fun i hi => (keyMem_frame _ _ _).bytes (R := ⟨s.gpr .x2, 16⟩)

@@ -1,4 +1,5 @@
 import VerifiedGarbage.Proof.MlKem.X86_64.S4Tab
+import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.MlKem.X86_64.S4Vec
 
 /-!
@@ -24,16 +25,16 @@ open VG.Proof.MlKem (xofByte sampleAfter)
 
 /-- 16 bytes as two quadwords. -/
 theorem readW128_q (m : Mem) (a : Addr) : m.readW a 128 = m.readW (a + BitVec.ofNat 64 8) 64 ++ m.readW a 64 := by
-  have e1 := readW_extract m a (w := 128) (k := 8) (n := 8) (by omega)
-  have e0 := readW_extract m a (w := 128) (k := 0) (n := 8) (by omega)
+  have e1 := readW_extract m a (w := 128) (k := 8) (n := 8) (by bdd_omega)
+  have e0 := readW_extract m a (w := 128) (k := 0) (n := 8) (by bdd_omega)
   rw [add_ofNat_zero] at e0
   apply BitVec.eq_of_getLsbD_eq; intro j hj
   rw [BitVec.getLsbD_append]
   by_cases h : j < 64
   · rw [itT h, ← e0]; simp only [BitVec.getLsbD_extractLsb', h, decide_true, Bool.true_and]
-    exact congrArg _ (by omega)
-  · rw [itF h, ← e1]; simp only [BitVec.getLsbD_extractLsb', show j - 64 < 64 by omega, decide_true, Bool.true_and]
-    exact congrArg _ (by omega)
+    exact congrArg _ (by bdd_omega)
+  · rw [itF h, ← e1]; simp only [BitVec.getLsbD_extractLsb', show j - 64 < 64 by bdd_omega, decide_true, Bool.true_and]
+    exact congrArg _ (by bdd_omega)
 
 /-- Lane `l` of constant `c`, from the table. -/
 theorem cst_lane {σ : State} {m : Mem} (h : TabOK σ m) {c l : Nat} (hc : c < 6) (hl : l < 2) :
@@ -44,8 +45,8 @@ theorem cst_lane {σ : State} {m : Mem} (h : TabOK σ m) {c l : Nat} (hc : c < 6
     rw [at', Offset.add_add, Offset.add_add]; exact congrArg (fun x => scr σ + BitVec.ofNat 64 x) (by simp only [oCst]; omega)
   have a0 : at' σ (oCst + 32 * c) + BitVec.ofNat 64 (16 * l) = at' σ (8 * (256 + 4 * c + 2 * l)) := by
     rw [at', Offset.add_add]; exact congrArg (fun x => scr σ + BitVec.ofNat 64 x) (by simp only [oCst]; omega)
-  rw [show 128 * l = 8 * (16 * l) by omega, readW_extract _ _ (n := 16) (by omega), readW128_q, a1, a0,
-    h _ (by omega), h _ (by omega)]
+  rw [show 128 * l = 8 * (16 * l) by bdd_omega, readW_extract _ _ (n := 16) (by bdd_omega), readW128_q, a1, a0,
+    h _ (by bdd_omega), h _ (by bdd_omega)]
 
 theorem cst_vals : (tabQ 257 ++ tabQ 256 = shuf 0 ∧ tabQ 259 ++ tabQ 258 = shuf 1) ∧
     (tabQ 261 ++ tabQ 260 = shV ∧ tabQ 263 ++ tabQ 262 = shV) ∧
@@ -62,14 +63,14 @@ theorem tab_facts : ∀ m < 256, tabEntry m < 2 ^ 64 ∧ tabEntry m / 2 ^ 32 = (
   decide +kernel
 
 theorem setBits_length (m : Nat) : (setBits m).length ≤ 8 := by
-  unfold setBits; exact (List.length_filter_le _ _).trans (by simp)
+  unfold setBits; exact Nat.le_trans (List.length_filter_le _ _) (by simp)
 
 /-! ## The loop -/
 
 /-- The coefficients only grow. -/
 theorem Lt_mono (σ : State) (K t : Nat) : ∀ u, (Lt σ K t).length ≤ (Lt σ K (t + u)).length
   | 0 => Nat.le_refl _
-  | u + 1 => (Lt_mono σ K t u).trans (by
+  | u + 1 => Nat.le_trans (Lt_mono σ K t u) (by
       simp only [Lt]
       rw [← Nat.add_assoc, sampleAfter_succ]
       exact (Proof.MlKem.sampleStepCap_prefix _ _ _ _).length_le)
@@ -112,7 +113,7 @@ theorem setup_ok {K : Nat} (hK : K < 4) {s : State} (h : PInv σ K s) :
       s'.gpr .rsi = at' σ (oBuf + 504 * K) ∧ s'.gpr .rdi = 0 ∧ s'.gpr .rbp = poly4 (aP σ) K ∧
       s'.gpr .r10 = BitVec.ofNat 64 21)
     (by xrun [h.env.rbx, h.env.r13, sx_ofNat (show oBuf + 504 * K < 2 ^ 31 by simp only [oBuf]; omega),
-      sx_ofNat (show 1024 * K < 2 ^ 31 by omega)]; rfl) rfl) fun s₁ ⟨⟨hm, hsi, hdi, hbp, h10⟩, k₁⟩ => ?_
+      sx_ofNat (show 1024 * K < 2 ^ 31 by bdd_omega)]; rfl) rfl) fun s₁ ⟨⟨hm, hsi, hdi, hbp, h10⟩, k₁⟩ => ?_
   have l₁ : LAt σ K 0 s₁ := ⟨h.keep hm k₁ (by decide), by rw [hsi, Nat.mul_zero, add_ofNat_zero], by rw [hdi]; rfl,
     hbp, fun k hk => absurd hk (by simp [sampleAfter])⟩
   have hbx : s₁.gpr .rbx = scr σ := l₁.pinv.env.rbx
@@ -141,20 +142,20 @@ theorem setup_ok {K : Nat} (hK : K < 4) {s : State} (h : PInv σ K s) :
     by rw [g]; exact h10⟩
   · rw [u₇.other _ (by decide) l hl, u₆.other _ (by decide) l hl, u₅.other _ (by decide) l hl,
       u₄.other _ (by decide) l hl, u₃.other _ (by decide) l hl, u₂.val l hl, cl 0 (by decide) l hl]
-    rcases (by omega : l = 0 ∨ l = 1) with rfl | rfl; exacts [c0, c1]
+    rcases (by bdd_omega : l = 0 ∨ l = 1) with rfl | rfl; exacts [c0, c1]
   · rw [u₇.other _ (by decide) l hl, u₆.other _ (by decide) l hl, u₅.other _ (by decide) l hl,
       u₄.other _ (by decide) l hl, u₃.val l hl, u₂.mem, cl 1 (by decide) l hl]
-    rcases (by omega : l = 0 ∨ l = 1) with rfl | rfl; exacts [c2, c3]
+    rcases (by bdd_omega : l = 0 ∨ l = 1) with rfl | rfl; exacts [c2, c3]
   · rw [u₇.other _ (by decide) l hl, u₆.other _ (by decide) l hl, u₅.other _ (by decide) l hl,
       u₄.val l hl, u₃.mem, u₂.mem, cl 2 (by decide) l hl]
-    rcases (by omega : l = 0 ∨ l = 1) with rfl | rfl; exacts [c4, c5]
+    rcases (by bdd_omega : l = 0 ∨ l = 1) with rfl | rfl; exacts [c4, c5]
   · rw [u₇.other _ (by decide) l hl, u₆.other _ (by decide) l hl, u₅.val l hl, u₄.mem, u₃.mem, u₂.mem,
       cl 3 (by decide) l hl]
-    rcases (by omega : l = 0 ∨ l = 1) with rfl | rfl; exacts [c6, c7]
+    rcases (by bdd_omega : l = 0 ∨ l = 1) with rfl | rfl; exacts [c6, c7]
   · rw [u₇.other _ (by decide) l hl, u₆.val l hl, u₅.mem, u₄.mem, u₃.mem, u₂.mem, cl 4 (by decide) l hl]
-    rcases (by omega : l = 0 ∨ l = 1) with rfl | rfl; exacts [c8, c9]
+    rcases (by bdd_omega : l = 0 ∨ l = 1) with rfl | rfl; exacts [c8, c9]
   · rw [u₇.val l hl, u₆.mem, u₅.mem, u₄.mem, u₃.mem, u₂.mem, cl 5 (by decide) l hl]
-    rcases (by omega : l = 0 ∨ l = 1) with rfl | rfl; exacts [c10, c11]
+    rcases (by bdd_omega : l = 0 ∨ l = 1) with rfl | rfl; exacts [c10, c11]
 
 /-- Four iterations of `vg_mlkem_sample_ntt`'s loop. -/
 theorem sca_ok {K t : Nat} (hK : K < 4) (ht : t + 4 ≤ 168) {s : State} (h : LAt σ K t s) :
@@ -162,26 +163,26 @@ theorem sca_ok {K t : Nat} (hK : K < 4) (ht : t + 4 ≤ 168) {s : State} (h : LA
       LAt σ K (t + 4) s' ∧ s'.gpr .r10 = s.gpr .r10 :=
   wp_counted (N := 4) rfl (by decide) (fun u s' => LAt σ K (t + u) s' ∧ s'.gpr .r10 = s.gpr .r10)
     (fun s' hm k => ⟨h.same' hm k, k.gpr (by decide)⟩)
-    fun u hu s' ⟨hl, h10⟩ => WP.mono (WP.gpr (lat_step hp hK (by omega) hl) (r := .r10) (by decide))
+    fun u hu s' ⟨hl, h10⟩ => WP.mono (WP.gpr (lat_step hp hK (by bdd_omega) hl) (r := .r10) (by decide))
       fun s'' ⟨⟨hl', hc, hz⟩, h10'⟩ => ⟨⟨by rw [← Nat.add_assoc]; exact hl', h10'.trans h10⟩, hc, hz⟩
 
 omit hp in
 /-- The 12 bytes of the iterations `t` to `t + 3`. -/
 theorem vbytes {K t : Nat} (hK : K < 4) (ht : t + 4 ≤ 168) {s : State} (h : LAt σ K t s) {i : Nat} (hi : i < 12) :
     (byte (s.mem.readW (s.gpr .rsi) 128) i).toNat = (xofByte (B σ K) (3 * t + i)).toNat := by
-  rw [byte, byte_readW _ _ (by omega), out_byte hK h (by omega)]
+  rw [byte, byte_readW _ _ (by bdd_omega), out_byte hK h (by bdd_omega)]
 
 omit hp in
 theorem vcand_eq {K t : Nat} (hK : K < 4) (ht : t + 4 ≤ 168) {s : State} (h : LAt σ K t s) {k : Nat} (hk : k < 8) :
     candN (fun i => (byte (s.mem.readW (s.gpr .rsi) 128) i).toNat) k = cand4 (xofByte (B σ K)) (3 * t) k := by
   unfold candN cand4 cb
   dsimp only
-  rw [vbytes hK ht h (i := 3 * (k / 2) + k % 2) (by omega), vbytes hK ht h (i := 3 * (k / 2) + k % 2 + 1) (by omega)]
+  rw [vbytes hK ht h (i := 3 * (k / 2) + k % 2) (by bdd_omega), vbytes hK ht h (i := 3 * (k / 2) + k % 2 + 1) (by bdd_omega)]
   split
-  · rw [show 3 * t + (3 * (k / 2) + k % 2) = 3 * t + 3 * (k / 2) by omega,
-      show 3 * t + (3 * (k / 2) + k % 2 + 1) = 3 * t + 3 * (k / 2) + 1 by omega]
-  · rw [show 3 * t + (3 * (k / 2) + k % 2) = 3 * t + 3 * (k / 2) + 1 by omega,
-      show 3 * t + (3 * (k / 2) + k % 2 + 1) = 3 * t + 3 * (k / 2) + 2 by omega]
+  · rw [show 3 * t + (3 * (k / 2) + k % 2) = 3 * t + 3 * (k / 2) by bdd_omega,
+      show 3 * t + (3 * (k / 2) + k % 2 + 1) = 3 * t + 3 * (k / 2) + 1 by bdd_omega]
+  · rw [show 3 * t + (3 * (k / 2) + k % 2) = 3 * t + 3 * (k / 2) + 1 by bdd_omega,
+      show 3 * t + (3 * (k / 2) + k % 2 + 1) = 3 * t + 3 * (k / 2) + 2 by bdd_omega]
 
 /-- After the candidates and their mask, from iteration `t` with fewer than 249 coefficients. -/
 structure VI (σ : State) (K t : Nat) (s : State) : Prop where
@@ -221,42 +222,42 @@ theorem vec2_ok {K t : Nat} (hK : K < 4) (ht : t + 4 ≤ 168) {s₁ : State} (hi
     rw [hM]; exact setBits_bsum _
   obtain ⟨hE, hcnt, hnib⟩ := tab_facts M hM8
   have htab : s₁.mem.readW (at' σ (8 * M)) 64 = BitVec.ofNat 64 (tabEntry M) := by
-    rw [h.pinv.buf.2 M (by omega), tabQ, ite_eq_left hM8]
+    rw [h.pinv.buf.2 M (by bdd_omega), tabQ, ite_eq_left hM8]
   have hbx : s₁.gpr .rbx = scr σ := h.pinv.env.rbx
   have hbp : s₁.gpr .rbp = poly4 (aP σ) K := h.rbp
   have hlen : (Lt σ K t).length ≤ 256 := sampleAfter_length_le (a := []) (by simp) _ t
-  have hdi : (s₁.gpr .rdi).toNat = (Lt σ K t).length := by rw [h.rdi, ofNat64_toNat (by omega)]
+  have hdi : (s₁.gpr .rdi).toNat = (Lt σ K t).length := by rw [h.rdi, ofNat64_toNat (by bdd_omega)]
   have haddr : s₁.gpr .rbp + BitVec.ofNat 64 (4 * (s₁.gpr .rdi).toNat) = coeffAddr (poly4 (aP σ) K) (Lt σ K t).length := by
     rw [hbp, hdi]
   have hrd : s₁.rd ++ s₁.wr = [sdR σ, aR σ, scrR σ] := regs hp h.pinv.env
   have hout : InRegions s₁.wr (coeffAddr (poly4 (aP σ) K) (Lt σ K t).length) 32 := by
     rw [h.pinv.env.wr, hp.wr]
-    exact ⟨aR σ, by simp, by rw [coeffAddr, poly4, Offset.add_add]; exact Offset.contains_base _ (by omega) (by omega)⟩
+    exact ⟨aR σ, by simp, by rw [coeffAddr, poly4, Offset.add_add]; exact Offset.contains_base _ (by bdd_omega) (by bdd_omega)⟩
   have hsep : ∀ V : BitVec 256, (s₁.mem.writeW (coeffAddr (poly4 (aP σ) K) (Lt σ K t).length) V).readW
       (at' σ (8 * M + 4)) 32 = s₁.mem.readW (at' σ (8 * M + 4)) 32 := fun V =>
     ((Frame.refl _ _).writeW (List.mem_singleton_self (aR σ)) V (by
-        rw [coeffAddr, poly4, Offset.add_add]; exact Offset.contains_base _ (by omega) (by omega))).readW
-      (r := scrR σ) (Offset.contains_base _ (by omega) (by omega)) (by simpa using hp.a_scr.symm) (by decide)
+        rw [coeffAddr, poly4, Offset.add_add]; exact Offset.contains_base _ (by bdd_omega) (by bdd_omega))).readW
+      (r := scrR σ) (Offset.contains_base _ (by bdd_omega) (by bdd_omega)) (by simpa using hp.a_scr.symm) (by decide)
   refine WP.mono (vput_ok c₁ h0 hax
-    (by rw [hbx, hrd]; exact ⟨scrR σ, by simp, Offset.contains_base _ (by omega) (by omega)⟩)
-    (by rw [hbx, hrd]; exact ⟨scrR σ, by simp, Offset.contains_base _ (by omega) (by omega)⟩)
+    (by rw [hbx, hrd]; exact ⟨scrR σ, by simp, Offset.contains_base _ (by bdd_omega) (by bdd_omega)⟩)
+    (by rw [hbx, hrd]; exact ⟨scrR σ, by simp, Offset.contains_base _ (by bdd_omega) (by bdd_omega)⟩)
     (by rw [haddr]; exact hout) (by rw [haddr, hbx]; exact hsep))
     fun s₂ ⟨⟨V, hm₂, hV⟩, hdi₂, hsi₂, c₂, rd₂, wr₂, g₂⟩ => ?_
   rw [hbx] at hV hdi₂
   rw [haddr] at hm₂
   -- the table's entry
   have hlo : (dword (s₁.mem.readW (scr σ + BitVec.ofNat 64 (8 * M)) 128) 0).toNat = tabEntry M % 2 ^ 32 := by
-    have e := readW_extract s₁.mem (scr σ + BitVec.ofNat 64 (8 * M)) (w := 64) (k := 0) (n := 4) (by omega)
+    have e := readW_extract s₁.mem (scr σ + BitVec.ofNat 64 (8 * M)) (w := 64) (k := 0) (n := 4) (by bdd_omega)
     rw [add_ofNat_zero] at e
     rw [dword_readW _ _ (by decide), Nat.mul_zero, add_ofNat_zero, ← e, ← at', htab, BitVec.extractLsb'_toNat,
       BitVec.toNat_ofNat, Nat.shiftRight_zero, Nat.mod_eq_of_lt hE]
   have hhi : (s₁.mem.readW (scr σ + BitVec.ofNat 64 (8 * M + 4)) 32).toNat = (setBits M).length := by
-    have e := readW_extract s₁.mem (scr σ + BitVec.ofNat 64 (8 * M)) (w := 64) (k := 4) (n := 4) (by omega)
+    have e := readW_extract s₁.mem (scr σ + BitVec.ofNat 64 (8 * M)) (w := 64) (k := 4) (n := 4) (by bdd_omega)
     rw [Offset.add_add] at e
     rw [← e, ← at', htab, BitVec.extractLsb'_toNat, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow,
       Nat.mod_eq_of_lt hE, hcnt]
     have := setBits_length M
-    exact Nat.mod_eq_of_lt (by omega)
+    exact Nat.mod_eq_of_lt (by bdd_omega)
   -- the coefficients
   have hacc : acc4 (xofByte (B σ K)) (3 * t) = (setBits M).map fun k => ofNat (cand4 (xofByte (B σ K)) (3 * t) k) := by
     rw [acc4, hsb, q_eq]
@@ -266,7 +267,7 @@ theorem vec2_ok {K t : Nat} (hK : K < 4) (ht : t + 4 ≤ 168) {s₁ : State} (hi
     rw [hsb, List.mem_filter, List.mem_range, decide_eq_true_eq] at hk; exact hk
   have hst : Stored s₂.mem (poly4 (aP σ) K) (Lt σ K (t + 4)) := by
     rw [hL4, hm₂]
-    refine stored_write8 h.stored (by omega) (by rw [hacc, List.length_map]; exact setBits_length M) V fun i hi => ?_
+    refine stored_write8 h.stored (by bdd_omega) (by rw [hacc, List.length_map]; exact setBits_length M) V fun i hi => ?_
     rw [hacc, List.length_map] at hi
     have hp' := hmem ((setBits M).getD i 0) (by
       rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem hi]; exact List.getElem_mem hi)
@@ -278,7 +279,7 @@ theorem vec2_ok {K t : Nat} (hK : K < 4) (ht : t + 4 ≤ 168) {s₁ : State} (hi
       Fin.val_ofNat, Nat.mod_eq_of_lt (by rw [q_eq]; exact hp'.2)]
   have hf : Frame [pR (poly4 (aP σ) K)] s₁.mem s₂.mem := by
     rw [hm₂]
-    exact (Frame.refl _ _).writeW (List.mem_singleton_self _) V (Offset.contains_base _ (by omega) (by omega))
+    exact (Frame.refl _ _).writeW (List.mem_singleton_self _) V (Offset.contains_base _ (by bdd_omega) (by bdd_omega))
   have gk : ∀ r, r ≠ .rax → r ≠ .rdi → r ≠ .rsi → s₂.gpr r = s₁.gpr r := fun r _ h2 h3 => g₂ r h2 h3
   refine ⟨⟨h.pinv.poly hp hK hf rd₂ wr₂ fun r hr => gk r (by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr; rcases hr with rfl | rfl | rfl | rfl | rfl | rfl <;> decide)
@@ -286,7 +287,7 @@ theorem vec2_ok {K t : Nat} (hK : K < 4) (ht : t + 4 ≤ 168) {s₁ : State} (hi
       (by simp only [List.mem_cons, List.not_mem_nil, or_false] at hr; rcases hr with rfl | rfl | rfl | rfl | rfl | rfl <;> decide),
     ?_, ?_, by rw [gk _ (by decide) (by decide) (by decide), h.rbp], hst⟩, c₂, gk _ (by decide) (by decide) (by decide)⟩
   · rw [hsi₂, h.rsi, show (12 : BitVec 64) = BitVec.ofNat 64 12 from rfl, Offset.add_add]
-    exact congrArg (fun x => at' σ (oBuf + 504 * K) + BitVec.ofNat 64 x) (by omega)
+    exact congrArg (fun x => at' σ (oBuf + 504 * K) + BitVec.ofNat 64 x) (by bdd_omega)
   · rw [hdi₂, hL4, List.length_append, hacc, List.length_map]
     apply BitVec.eq_of_toNat_eq
     have := setBits_length M
@@ -319,7 +320,7 @@ theorem vgrp_ok {K t : Nat} (hK : K < 4) (ht : t + 4 ≤ 168) {s : State} (h : L
   refine WP.seq (WP.mono (cmp249_ok s) fun s₁ ⟨hcf, hm, hg, hrd, hwr, hl⟩ => ?_)
   have l₁ : LAt σ K t s₁ := h.lat.same hg hm hrd hwr
   have hlen : (Lt σ K t).length ≤ 256 := sampleAfter_length_le (a := []) (by simp) _ t
-  rw [h.lat.rdi, ofNat64_toNat (by omega)] at hcf
+  rw [h.lat.rdi, ofNat64_toNat (by bdd_omega)] at hcf
   refine WP.ite _ hcf (fun hb => ?_) fun hb => ?_
   · have hb' : (Lt σ K t).length < 249 := of_decide_eq_true hb
     exact WP.mono (vec_ok hp hK ht l₁ ((h.vc hb').same hl) hb') fun s' ⟨l', c', h10⟩ =>
@@ -342,10 +343,10 @@ theorem loop_ok {K : Nat} (hK : K < 4) {s : State} (h : LV σ K 0 s) (h10 : s.gp
   refine wp_countdown (cnt := .r10) (N := 21) (by decide) (by decide) (fun i s => LV σ K (8 * i) s)
     (fun i hi s hs _ => ?_) (fun _ h => h.lat) h h10
   unfold Sample4.vbody
-  refine WP.seq (WP.mono (vgrp_ok hp hK (by omega) hs) fun s₁ ⟨h₁, g₁⟩ =>
-    WP.seq (WP.mono (vgrp_ok hp hK (by omega) h₁) fun s₂ ⟨h₂, g₂⟩ =>
+  refine WP.seq (WP.mono (vgrp_ok hp hK (by bdd_omega) hs) fun s₁ ⟨h₁, g₁⟩ =>
+    WP.seq (WP.mono (vgrp_ok hp hK (by bdd_omega) h₁) fun s₂ ⟨h₂, g₂⟩ =>
       WP.mono (sub10_ok s₂) fun s₃ ⟨⟨hm, h10', hz, hl⟩, k⟩ => ?_))
-  have e : 8 * i + 4 + 4 = 8 * (i + 1) := by omega
+  have e : 8 * i + 4 + 4 = 8 * (i + 1) := by bdd_omega
   rw [e] at h₂
   exact ⟨⟨h₂.lat.same' hm k, fun h' => (h₂.vc h').same hl⟩, by rw [h10', g₂, g₁], by rw [hz, g₂, g₁]⟩
 

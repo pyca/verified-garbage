@@ -2,6 +2,7 @@ import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Lit
 import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.CT
 import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Instances
+import VerifiedGarbage.Proof.Framework.TaintBatch
 
 /-!
 # PBKDF2-HMAC on x86 (32-bit), the whole derivation: the instances
@@ -20,48 +21,52 @@ open VG.Proof.Pbkdf2.Stream.X86 (nosp_of sha1OK md5OK sha384OK sha512OK sha512_2
 
 /-! ## SHA-1 -/
 
-theorem sha1_checks : Checks sha1F where
-  pro := ⟨_, by taint_decide⟩
-  cmp := ⟨_, by taint_decide⟩
-  hk1 := ⟨_, by taint_decide⟩
-  hk3 := ⟨_, by taint_decide⟩
-  hk5 := ⟨_, by taint_decide⟩
-  hk7 := ⟨_, by taint_decide⟩
-  short := ⟨_, by taint_decide⟩
-  su1 := ⟨_, by taint_decide⟩
-  su3 := ⟨_, by taint_decide⟩
-  su4 := ⟨_, by taint_decide⟩
-  init := ⟨_, by taint_decide⟩
-  b1 := ⟨_, by taint_decide⟩
-  b2 := ⟨_, by taint_decide⟩
-  b4 := ⟨_, by taint_decide⟩
-  b6 := ⟨_, by taint_decide⟩
-  b7 := ⟨_, by taint_decide⟩
-  tail := ⟨_, by taint_decide⟩
-  restore := ⟨_, by taint_decide⟩
+theorem sha1_checks : Checks sha1F := by
+  refine {
+    pro := ⟨?_, ?_⟩
+    cmp := ⟨?_, ?_⟩
+    hk1 := ⟨?_, ?_⟩
+    hk3 := ⟨?_, ?_⟩
+    hk5 := ⟨?_, ?_⟩
+    hk7 := ⟨?_, ?_⟩
+    short := ⟨?_, ?_⟩
+    su1 := ⟨?_, ?_⟩
+    su3 := ⟨?_, ?_⟩
+    su4 := ⟨?_, ?_⟩
+    init := ⟨?_, ?_⟩
+    b1 := ⟨?_, ?_⟩
+    b2 := ⟨?_, ?_⟩
+    b4 := ⟨?_, ?_⟩
+    b6 := ⟨?_, ?_⟩
+    b7 := ⟨?_, ?_⟩
+    tail := ⟨?_, ?_⟩
+    restore := ⟨?_, ?_⟩ }
+  taint_decide_all
 
-def sha1OKF : FnsOK sha1F where
-  hH := sha1OK
-  Wi := 56
-  Wf := 56
-  Wt := 56
-  hi := .of_verified Proof.Pbkdf2.Md.X86.Instances.sha1_init
-  hf := .of_verified Proof.Pbkdf2.Md.X86.Instances.sha1_finalize
-  it := .of_verified Proof.Pbkdf2.Md.X86.Instances.sha1_iterate
-  hiSp := nosp_of (by lit_decide)
-  hfSp := nosp_of (by lit_decide)
-  itSp := nosp_of (by lit_decide)
-  hiSU := by lit_decide
-  hfSU := by lit_decide
-  itSU := by lit_decide
-  hWi := by decide
-  hWf := by decide
-  hWt := by decide
-  hWH := by decide
-  hW := by decide
-  hDB := by decide
-  hBS := by decide
-  fits := by decide
+def sha1OKF : FnsOK sha1F := by
+  refine {
+    hH := sha1OK
+    Wi := 56
+    Wf := 56
+    Wt := 56
+    hi := .of_verified Proof.Pbkdf2.Md.X86.Instances.sha1_init
+    hf := .of_verified Proof.Pbkdf2.Md.X86.Instances.sha1_finalize
+    it := .of_verified Proof.Pbkdf2.Md.X86.Instances.sha1_iterate
+    hiSp := nosp_of ?_
+    hfSp := nosp_of ?_
+    itSp := nosp_of ?_
+    hiSU := ?_
+    hfSU := ?_
+    itSU := ?_
+    hWi := by decide
+    hWf := by decide
+    hWt := by decide
+    hWH := by decide
+    hW := by decide
+    hDB := by decide
+    hBS := by decide
+    fits := by decide }
+  taint_decide_all
 
 theorem sha1_sat : ∃ s, (Spec.Hmac.sha1I.pbkdf2Contract X86.abi 76).pre s := by
   sig_implies_sat [Spec.Hmac.Instance.pbkdf2Contract, Spec.Pbkdf2.pbkdf2Contract, Spec.Pbkdf2.pbkdf2Sig,
@@ -73,48 +78,52 @@ theorem sha1 : Verified X86.target sha1F.pbkdf2 (Spec.Hmac.sha1I.pbkdf2Contract 
 
 /-! ## MD5 -/
 
-theorem md5_checks : Checks md5F where
-  pro := ⟨_, by taint_decide⟩
-  cmp := ⟨_, by taint_decide⟩
-  hk1 := ⟨_, by taint_decide⟩
-  hk3 := ⟨_, by taint_decide⟩
-  hk5 := ⟨_, by taint_decide⟩
-  hk7 := ⟨_, by taint_decide⟩
-  short := ⟨_, by taint_decide⟩
-  su1 := ⟨_, by taint_decide⟩
-  su3 := ⟨_, by taint_decide⟩
-  su4 := ⟨_, by taint_decide⟩
-  init := ⟨_, by taint_decide⟩
-  b1 := ⟨_, by taint_decide⟩
-  b2 := ⟨_, by taint_decide⟩
-  b4 := ⟨_, by taint_decide⟩
-  b6 := ⟨_, by taint_decide⟩
-  b7 := ⟨_, by taint_decide⟩
-  tail := ⟨_, by taint_decide⟩
-  restore := ⟨_, by taint_decide⟩
+theorem md5_checks : Checks md5F := by
+  refine {
+    pro := ⟨?_, ?_⟩
+    cmp := ⟨?_, ?_⟩
+    hk1 := ⟨?_, ?_⟩
+    hk3 := ⟨?_, ?_⟩
+    hk5 := ⟨?_, ?_⟩
+    hk7 := ⟨?_, ?_⟩
+    short := ⟨?_, ?_⟩
+    su1 := ⟨?_, ?_⟩
+    su3 := ⟨?_, ?_⟩
+    su4 := ⟨?_, ?_⟩
+    init := ⟨?_, ?_⟩
+    b1 := ⟨?_, ?_⟩
+    b2 := ⟨?_, ?_⟩
+    b4 := ⟨?_, ?_⟩
+    b6 := ⟨?_, ?_⟩
+    b7 := ⟨?_, ?_⟩
+    tail := ⟨?_, ?_⟩
+    restore := ⟨?_, ?_⟩ }
+  taint_decide_all
 
-def md5OKF : FnsOK md5F where
-  hH := md5OK
-  Wi := 48
-  Wf := 48
-  Wt := 48
-  hi := .of_verified Proof.Pbkdf2.Md.X86.Instances.md5_init
-  hf := .of_verified Proof.Pbkdf2.Md.X86.Instances.md5_finalize
-  it := .of_verified Proof.Pbkdf2.Md.X86.Instances.md5_iterate
-  hiSp := nosp_of (by lit_decide)
-  hfSp := nosp_of (by lit_decide)
-  itSp := nosp_of (by lit_decide)
-  hiSU := by lit_decide
-  hfSU := by lit_decide
-  itSU := by lit_decide
-  hWi := by decide
-  hWf := by decide
-  hWt := by decide
-  hWH := by decide
-  hW := by decide
-  hDB := by decide
-  hBS := by decide
-  fits := by decide
+def md5OKF : FnsOK md5F := by
+  refine {
+    hH := md5OK
+    Wi := 48
+    Wf := 48
+    Wt := 48
+    hi := .of_verified Proof.Pbkdf2.Md.X86.Instances.md5_init
+    hf := .of_verified Proof.Pbkdf2.Md.X86.Instances.md5_finalize
+    it := .of_verified Proof.Pbkdf2.Md.X86.Instances.md5_iterate
+    hiSp := nosp_of ?_
+    hfSp := nosp_of ?_
+    itSp := nosp_of ?_
+    hiSU := ?_
+    hfSU := ?_
+    itSU := ?_
+    hWi := by decide
+    hWf := by decide
+    hWt := by decide
+    hWH := by decide
+    hW := by decide
+    hDB := by decide
+    hBS := by decide
+    fits := by decide }
+  taint_decide_all
 
 theorem md5_sat : ∃ s, (Spec.Hmac.md5I.pbkdf2Contract X86.abi 76).pre s := by
   sig_implies_sat [Spec.Hmac.Instance.pbkdf2Contract, Spec.Pbkdf2.pbkdf2Contract, Spec.Pbkdf2.pbkdf2Sig,
@@ -126,48 +135,52 @@ theorem md5 : Verified X86.target md5F.pbkdf2 (Spec.Hmac.md5I.pbkdf2Contract X86
 
 /-! ## SHA-384 -/
 
-theorem sha384_checks : Checks sha384F where
-  pro := ⟨_, by taint_decide⟩
-  cmp := ⟨_, by taint_decide⟩
-  hk1 := ⟨_, by taint_decide⟩
-  hk3 := ⟨_, by taint_decide⟩
-  hk5 := ⟨_, by taint_decide⟩
-  hk7 := ⟨_, by taint_decide⟩
-  short := ⟨_, by taint_decide⟩
-  su1 := ⟨_, by taint_decide⟩
-  su3 := ⟨_, by taint_decide⟩
-  su4 := ⟨_, by taint_decide⟩
-  init := ⟨_, by taint_decide⟩
-  b1 := ⟨_, by taint_decide⟩
-  b2 := ⟨_, by taint_decide⟩
-  b4 := ⟨_, by taint_decide⟩
-  b6 := ⟨_, by taint_decide⟩
-  b7 := ⟨_, by taint_decide⟩
-  tail := ⟨_, by taint_decide⟩
-  restore := ⟨_, by taint_decide⟩
+theorem sha384_checks : Checks sha384F := by
+  refine {
+    pro := ⟨?_, ?_⟩
+    cmp := ⟨?_, ?_⟩
+    hk1 := ⟨?_, ?_⟩
+    hk3 := ⟨?_, ?_⟩
+    hk5 := ⟨?_, ?_⟩
+    hk7 := ⟨?_, ?_⟩
+    short := ⟨?_, ?_⟩
+    su1 := ⟨?_, ?_⟩
+    su3 := ⟨?_, ?_⟩
+    su4 := ⟨?_, ?_⟩
+    init := ⟨?_, ?_⟩
+    b1 := ⟨?_, ?_⟩
+    b2 := ⟨?_, ?_⟩
+    b4 := ⟨?_, ?_⟩
+    b6 := ⟨?_, ?_⟩
+    b7 := ⟨?_, ?_⟩
+    tail := ⟨?_, ?_⟩
+    restore := ⟨?_, ?_⟩ }
+  taint_decide_all
 
-def sha384OKF : FnsOK sha384F where
-  hH := sha384OK
-  Wi := 234
-  Wf := 234
-  Wt := 234
-  hi := .of_verified Proof.Pbkdf2.Md.X86.Instances.sha384_init
-  hf := .of_verified Proof.Pbkdf2.Md.X86.Instances.sha384_finalize
-  it := .of_verified Proof.Pbkdf2.Md.X86.Instances.sha384_iterate
-  hiSp := nosp_of (by lit_decide)
-  hfSp := nosp_of (by lit_decide)
-  itSp := nosp_of (by lit_decide)
-  hiSU := by lit_decide
-  hfSU := by lit_decide
-  itSU := by lit_decide
-  hWi := by decide
-  hWf := by decide
-  hWt := by decide
-  hWH := by decide
-  hW := by decide
-  hDB := by decide
-  hBS := by decide
-  fits := by decide
+def sha384OKF : FnsOK sha384F := by
+  refine {
+    hH := sha384OK
+    Wi := 234
+    Wf := 234
+    Wt := 234
+    hi := .of_verified Proof.Pbkdf2.Md.X86.Instances.sha384_init
+    hf := .of_verified Proof.Pbkdf2.Md.X86.Instances.sha384_finalize
+    it := .of_verified Proof.Pbkdf2.Md.X86.Instances.sha384_iterate
+    hiSp := nosp_of ?_
+    hfSp := nosp_of ?_
+    itSp := nosp_of ?_
+    hiSU := ?_
+    hfSU := ?_
+    itSU := ?_
+    hWi := by decide
+    hWf := by decide
+    hWt := by decide
+    hWH := by decide
+    hW := by decide
+    hDB := by decide
+    hBS := by decide
+    fits := by decide }
+  taint_decide_all
 
 theorem sha384_sat : ∃ s, (Spec.Hmac.sha384I.pbkdf2Contract X86.abi 76).pre s := by
   sig_implies_sat [Spec.Hmac.Instance.pbkdf2Contract, Spec.Pbkdf2.pbkdf2Contract, Spec.Pbkdf2.pbkdf2Sig,
@@ -179,48 +192,52 @@ theorem sha384 : Verified X86.target sha384F.pbkdf2 (Spec.Hmac.sha384I.pbkdf2Con
 
 /-! ## SHA-512 -/
 
-theorem sha512_checks : Checks sha512F where
-  pro := ⟨_, by taint_decide⟩
-  cmp := ⟨_, by taint_decide⟩
-  hk1 := ⟨_, by taint_decide⟩
-  hk3 := ⟨_, by taint_decide⟩
-  hk5 := ⟨_, by taint_decide⟩
-  hk7 := ⟨_, by taint_decide⟩
-  short := ⟨_, by taint_decide⟩
-  su1 := ⟨_, by taint_decide⟩
-  su3 := ⟨_, by taint_decide⟩
-  su4 := ⟨_, by taint_decide⟩
-  init := ⟨_, by taint_decide⟩
-  b1 := ⟨_, by taint_decide⟩
-  b2 := ⟨_, by taint_decide⟩
-  b4 := ⟨_, by taint_decide⟩
-  b6 := ⟨_, by taint_decide⟩
-  b7 := ⟨_, by taint_decide⟩
-  tail := ⟨_, by taint_decide⟩
-  restore := ⟨_, by taint_decide⟩
+theorem sha512_checks : Checks sha512F := by
+  refine {
+    pro := ⟨?_, ?_⟩
+    cmp := ⟨?_, ?_⟩
+    hk1 := ⟨?_, ?_⟩
+    hk3 := ⟨?_, ?_⟩
+    hk5 := ⟨?_, ?_⟩
+    hk7 := ⟨?_, ?_⟩
+    short := ⟨?_, ?_⟩
+    su1 := ⟨?_, ?_⟩
+    su3 := ⟨?_, ?_⟩
+    su4 := ⟨?_, ?_⟩
+    init := ⟨?_, ?_⟩
+    b1 := ⟨?_, ?_⟩
+    b2 := ⟨?_, ?_⟩
+    b4 := ⟨?_, ?_⟩
+    b6 := ⟨?_, ?_⟩
+    b7 := ⟨?_, ?_⟩
+    tail := ⟨?_, ?_⟩
+    restore := ⟨?_, ?_⟩ }
+  taint_decide_all
 
-def sha512OKF : FnsOK sha512F where
-  hH := sha512OK
-  Wi := 234
-  Wf := 234
-  Wt := 234
-  hi := .of_verified Proof.Pbkdf2.Md.X86.Instances.sha512_init
-  hf := .of_verified Proof.Pbkdf2.Md.X86.Instances.sha512_finalize
-  it := .of_verified Proof.Pbkdf2.Md.X86.Instances.sha512_iterate
-  hiSp := nosp_of (by lit_decide)
-  hfSp := nosp_of (by lit_decide)
-  itSp := nosp_of (by lit_decide)
-  hiSU := by lit_decide
-  hfSU := by lit_decide
-  itSU := by lit_decide
-  hWi := by decide
-  hWf := by decide
-  hWt := by decide
-  hWH := by decide
-  hW := by decide
-  hDB := by decide
-  hBS := by decide
-  fits := by decide
+def sha512OKF : FnsOK sha512F := by
+  refine {
+    hH := sha512OK
+    Wi := 234
+    Wf := 234
+    Wt := 234
+    hi := .of_verified Proof.Pbkdf2.Md.X86.Instances.sha512_init
+    hf := .of_verified Proof.Pbkdf2.Md.X86.Instances.sha512_finalize
+    it := .of_verified Proof.Pbkdf2.Md.X86.Instances.sha512_iterate
+    hiSp := nosp_of ?_
+    hfSp := nosp_of ?_
+    itSp := nosp_of ?_
+    hiSU := ?_
+    hfSU := ?_
+    itSU := ?_
+    hWi := by decide
+    hWf := by decide
+    hWt := by decide
+    hWH := by decide
+    hW := by decide
+    hDB := by decide
+    hBS := by decide
+    fits := by decide }
+  taint_decide_all
 
 theorem sha512_sat : ∃ s, (Spec.Hmac.sha512I.pbkdf2Contract X86.abi 76).pre s := by
   sig_implies_sat [Spec.Hmac.Instance.pbkdf2Contract, Spec.Pbkdf2.pbkdf2Contract, Spec.Pbkdf2.pbkdf2Sig,
@@ -232,48 +249,52 @@ theorem sha512 : Verified X86.target sha512F.pbkdf2 (Spec.Hmac.sha512I.pbkdf2Con
 
 /-! ## SHA-512/224 -/
 
-theorem sha512_224_checks : Checks sha512_224F where
-  pro := ⟨_, by taint_decide⟩
-  cmp := ⟨_, by taint_decide⟩
-  hk1 := ⟨_, by taint_decide⟩
-  hk3 := ⟨_, by taint_decide⟩
-  hk5 := ⟨_, by taint_decide⟩
-  hk7 := ⟨_, by taint_decide⟩
-  short := ⟨_, by taint_decide⟩
-  su1 := ⟨_, by taint_decide⟩
-  su3 := ⟨_, by taint_decide⟩
-  su4 := ⟨_, by taint_decide⟩
-  init := ⟨_, by taint_decide⟩
-  b1 := ⟨_, by taint_decide⟩
-  b2 := ⟨_, by taint_decide⟩
-  b4 := ⟨_, by taint_decide⟩
-  b6 := ⟨_, by taint_decide⟩
-  b7 := ⟨_, by taint_decide⟩
-  tail := ⟨_, by taint_decide⟩
-  restore := ⟨_, by taint_decide⟩
+theorem sha512_224_checks : Checks sha512_224F := by
+  refine {
+    pro := ⟨?_, ?_⟩
+    cmp := ⟨?_, ?_⟩
+    hk1 := ⟨?_, ?_⟩
+    hk3 := ⟨?_, ?_⟩
+    hk5 := ⟨?_, ?_⟩
+    hk7 := ⟨?_, ?_⟩
+    short := ⟨?_, ?_⟩
+    su1 := ⟨?_, ?_⟩
+    su3 := ⟨?_, ?_⟩
+    su4 := ⟨?_, ?_⟩
+    init := ⟨?_, ?_⟩
+    b1 := ⟨?_, ?_⟩
+    b2 := ⟨?_, ?_⟩
+    b4 := ⟨?_, ?_⟩
+    b6 := ⟨?_, ?_⟩
+    b7 := ⟨?_, ?_⟩
+    tail := ⟨?_, ?_⟩
+    restore := ⟨?_, ?_⟩ }
+  taint_decide_all
 
-def sha512_224OKF : FnsOK sha512_224F where
-  hH := sha512_224OK
-  Wi := 234
-  Wf := 234
-  Wt := 234
-  hi := .of_verified Proof.Pbkdf2.Md.X86.Instances.sha512_224_init
-  hf := .of_verified Proof.Pbkdf2.Md.X86.Instances.sha512_224_finalize
-  it := .of_verified Proof.Pbkdf2.Md.X86.Instances.sha512_224_iterate
-  hiSp := nosp_of (by lit_decide)
-  hfSp := nosp_of (by lit_decide)
-  itSp := nosp_of (by lit_decide)
-  hiSU := by lit_decide
-  hfSU := by lit_decide
-  itSU := by lit_decide
-  hWi := by decide
-  hWf := by decide
-  hWt := by decide
-  hWH := by decide
-  hW := by decide
-  hDB := by decide
-  hBS := by decide
-  fits := by decide
+def sha512_224OKF : FnsOK sha512_224F := by
+  refine {
+    hH := sha512_224OK
+    Wi := 234
+    Wf := 234
+    Wt := 234
+    hi := .of_verified Proof.Pbkdf2.Md.X86.Instances.sha512_224_init
+    hf := .of_verified Proof.Pbkdf2.Md.X86.Instances.sha512_224_finalize
+    it := .of_verified Proof.Pbkdf2.Md.X86.Instances.sha512_224_iterate
+    hiSp := nosp_of ?_
+    hfSp := nosp_of ?_
+    itSp := nosp_of ?_
+    hiSU := ?_
+    hfSU := ?_
+    itSU := ?_
+    hWi := by decide
+    hWf := by decide
+    hWt := by decide
+    hWH := by decide
+    hW := by decide
+    hDB := by decide
+    hBS := by decide
+    fits := by decide }
+  taint_decide_all
 
 theorem sha512_224_sat : ∃ s, (Spec.Hmac.sha512_224I.pbkdf2Contract X86.abi 76).pre s := by
   sig_implies_sat [Spec.Hmac.Instance.pbkdf2Contract, Spec.Pbkdf2.pbkdf2Contract, Spec.Pbkdf2.pbkdf2Sig,
@@ -285,48 +306,52 @@ theorem sha512_224 : Verified X86.target sha512_224F.pbkdf2 (Spec.Hmac.sha512_22
 
 /-! ## SHA-512/256 -/
 
-theorem sha512_256_checks : Checks sha512_256F where
-  pro := ⟨_, by taint_decide⟩
-  cmp := ⟨_, by taint_decide⟩
-  hk1 := ⟨_, by taint_decide⟩
-  hk3 := ⟨_, by taint_decide⟩
-  hk5 := ⟨_, by taint_decide⟩
-  hk7 := ⟨_, by taint_decide⟩
-  short := ⟨_, by taint_decide⟩
-  su1 := ⟨_, by taint_decide⟩
-  su3 := ⟨_, by taint_decide⟩
-  su4 := ⟨_, by taint_decide⟩
-  init := ⟨_, by taint_decide⟩
-  b1 := ⟨_, by taint_decide⟩
-  b2 := ⟨_, by taint_decide⟩
-  b4 := ⟨_, by taint_decide⟩
-  b6 := ⟨_, by taint_decide⟩
-  b7 := ⟨_, by taint_decide⟩
-  tail := ⟨_, by taint_decide⟩
-  restore := ⟨_, by taint_decide⟩
+theorem sha512_256_checks : Checks sha512_256F := by
+  refine {
+    pro := ⟨?_, ?_⟩
+    cmp := ⟨?_, ?_⟩
+    hk1 := ⟨?_, ?_⟩
+    hk3 := ⟨?_, ?_⟩
+    hk5 := ⟨?_, ?_⟩
+    hk7 := ⟨?_, ?_⟩
+    short := ⟨?_, ?_⟩
+    su1 := ⟨?_, ?_⟩
+    su3 := ⟨?_, ?_⟩
+    su4 := ⟨?_, ?_⟩
+    init := ⟨?_, ?_⟩
+    b1 := ⟨?_, ?_⟩
+    b2 := ⟨?_, ?_⟩
+    b4 := ⟨?_, ?_⟩
+    b6 := ⟨?_, ?_⟩
+    b7 := ⟨?_, ?_⟩
+    tail := ⟨?_, ?_⟩
+    restore := ⟨?_, ?_⟩ }
+  taint_decide_all
 
-def sha512_256OKF : FnsOK sha512_256F where
-  hH := sha512_256OK
-  Wi := 234
-  Wf := 234
-  Wt := 234
-  hi := .of_verified Proof.Pbkdf2.Md.X86.Instances.sha512_256_init
-  hf := .of_verified Proof.Pbkdf2.Md.X86.Instances.sha512_256_finalize
-  it := .of_verified Proof.Pbkdf2.Md.X86.Instances.sha512_256_iterate
-  hiSp := nosp_of (by lit_decide)
-  hfSp := nosp_of (by lit_decide)
-  itSp := nosp_of (by lit_decide)
-  hiSU := by lit_decide
-  hfSU := by lit_decide
-  itSU := by lit_decide
-  hWi := by decide
-  hWf := by decide
-  hWt := by decide
-  hWH := by decide
-  hW := by decide
-  hDB := by decide
-  hBS := by decide
-  fits := by decide
+def sha512_256OKF : FnsOK sha512_256F := by
+  refine {
+    hH := sha512_256OK
+    Wi := 234
+    Wf := 234
+    Wt := 234
+    hi := .of_verified Proof.Pbkdf2.Md.X86.Instances.sha512_256_init
+    hf := .of_verified Proof.Pbkdf2.Md.X86.Instances.sha512_256_finalize
+    it := .of_verified Proof.Pbkdf2.Md.X86.Instances.sha512_256_iterate
+    hiSp := nosp_of ?_
+    hfSp := nosp_of ?_
+    itSp := nosp_of ?_
+    hiSU := ?_
+    hfSU := ?_
+    itSU := ?_
+    hWi := by decide
+    hWf := by decide
+    hWt := by decide
+    hWH := by decide
+    hW := by decide
+    hDB := by decide
+    hBS := by decide
+    fits := by decide }
+  taint_decide_all
 
 theorem sha512_256_sat : ∃ s, (Spec.Hmac.sha512_256I.pbkdf2Contract X86.abi 76).pre s := by
   sig_implies_sat [Spec.Hmac.Instance.pbkdf2Contract, Spec.Pbkdf2.pbkdf2Contract, Spec.Pbkdf2.pbkdf2Sig,

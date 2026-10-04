@@ -1,4 +1,5 @@
 import VerifiedGarbage.Proof.MlKem.X86_64.VLanes
+import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.MlKem.Mem
 import VerifiedGarbage.Proof.MlKem.Ntt
 import VerifiedGarbage.Proof.Framework.X86_64.Avx
@@ -35,7 +36,7 @@ theorem wAddr_add (p : Addr) (j e : Nat) : wAddr p j + BitVec.ofNat 64 (2 * e) =
 
 theorem lanes_load {m : Mem} {p : Addr} {F : Poly} (h : S16 m p F) {j : Nat} (hj : j + 8 ≤ 256) :
     Lanes (m.readW (wAddr p j) 128) (fun e => F[j + e]!) := fun e he => by
-  rw [word_readW _ _ he, wAddr_add]; exact h _ (by omega)
+  rw [word_readW _ _ he, wAddr_add]; exact h _ (by bdd_omega)
 
 /-- Word `i` after storing `x` at word `j`. -/
 theorem wordAt_write128 (m : Mem) (p : Addr) {j : Nat} (hj : j + 8 ≤ 256) (x : BitVec 128) {i : Nat}
@@ -44,9 +45,9 @@ theorem wordAt_write128 (m : Mem) (p : Addr) {j : Nat} (hj : j + 8 ≤ 256) (x :
   split
   · rename_i h
     rw [wordAt, show wAddr p i = wAddr p j + BitVec.ofNat 64 (2 * (i - j)) by
-      rw [wAddr_add, show j + (i - j) = i by omega]]
-    exact readW_writeW128_16 _ _ _ (by omega)
-  · exact Mem.readW_writeW_sep (Offset.sep p (by omega) (by omega) (by omega)) (by decide)
+      rw [wAddr_add, show j + (i - j) = i by bdd_omega]]
+    exact readW_writeW128_16 _ _ _ (by bdd_omega)
+  · exact Mem.readW_writeW_sep (Offset.sep p (by bdd_omega) (by bdd_omega) (by bdd_omega)) (by decide)
 
 /-- Two vectors stored into the words of a polynomial, with the lanes `a` and `b`. -/
 theorem s16_write2 {m : Mem} {p : Addr} {P R : Poly} (hP : S16 m p P) {j j' : Nat}
@@ -57,19 +58,19 @@ theorem s16_write2 {m : Mem} {p : Addr} {P R : Poly} (hP : S16 m p P) {j j' : Na
     S16 ((m.writeW (wAddr p j) x).writeW (wAddr p j') y) p R := fun i hi => by
   rw [wordAt_write128 _ _ hj' _ hi, wordAt_write128 _ _ hj _ hi, hR i hi]
   by_cases h1 : j' ≤ i ∧ i < j' + 8
-  · rw [ite_eq_left_of_eq_true _ _ (eq_true h1), ite_eq_right_of_eq_false _ _ (eq_false (by omega)),
+  · rw [ite_eq_left_of_eq_true _ _ (eq_true h1), ite_eq_right_of_eq_false _ _ (eq_false (by bdd_omega)),
       ite_eq_left_of_eq_true _ _ (eq_true h1)]
-    exact hy _ (by omega)
+    exact hy _ (by bdd_omega)
   · rw [ite_eq_right_of_eq_false _ _ (eq_false h1)]
     by_cases h2 : j ≤ i ∧ i < j + 8
     · rw [ite_eq_left_of_eq_true _ _ (eq_true h2), ite_eq_left_of_eq_true _ _ (eq_true h2)]
-      exact hx _ (by omega)
+      exact hx _ (by bdd_omega)
     · rw [ite_eq_right_of_eq_false _ _ (eq_false h2), ite_eq_right_of_eq_false _ _ (eq_false h2),
         ite_eq_right_of_eq_false _ _ (eq_false h1)]
       exact hP i hi
 
 theorem sR_contains (p : Addr) {j : Nat} (hj : j + 8 ≤ 256) : (sR p).Contains (wAddr p j) 16 :=
-  Offset.contains_base p (by omega) (by omega)
+  Offset.contains_base p (by bdd_omega) (by bdd_omega)
 
 theorem frame_write2 {m m' : Mem} {p : Addr} (hf : Frame [sR p] m m') {j j' : Nat} (hj : j + 8 ≤ 256)
     (hj' : j' + 8 ≤ 256) (x y : BitVec 128) :
@@ -85,8 +86,8 @@ def T16 (m : Mem) (p : Addr) : Prop := ∀ k < 128, (wordAt m p k).toNat = (zeta
 /-- Writes to the polynomial's words, 256 bytes above the table, keep it. -/
 theorem T16.frame {m m' : Mem} {p : Addr} (h : T16 m p) (hf : Frame [sR (p + BitVec.ofNat 64 256)] m m') :
     T16 m' p := fun k hk => by
-  rw [wordAt, hf.readW (r := ⟨p, 256⟩) (Offset.contains_base p (by omega) (by omega))
-    (fun r hr => by rw [List.mem_singleton.mp hr]; exact Offset.base_disjoint p (by omega) (by omega))
+  rw [wordAt, hf.readW (r := ⟨p, 256⟩) (Offset.contains_base p (by bdd_omega) (by bdd_omega))
+    (fun r hr => by rw [List.mem_singleton.mp hr]; exact Offset.base_disjoint p (by bdd_omega) (by bdd_omega))
     (by decide)]
   exact h k hk
 
@@ -98,11 +99,11 @@ theorem sel_lt (o : BitVec 8) (j : Nat) : sel o j < 4 := by unfold sel; exact Bi
 theorem word_shufDwords (a : BitVec 128) (o : BitVec 8) {i : Nat} (hi : i < 8) :
     word (shufDwords a o) i = word a (2 * sel o (i / 2) + i % 2) := by
   have hs := sel_lt o (i / 2)
-  rw [word_eq_dword _ hi, dword_shufDwords _ _ (by omega)]
+  rw [word_eq_dword _ hi, dword_shufDwords _ _ (by bdd_omega)]
   change BitVec.extractLsb' _ 16 (dword a (sel o (i / 2))) = _
   generalize sel o (i / 2) = t at *
-  rw [word_eq_dword _ (show 2 * t + i % 2 < 8 by omega), show (2 * t + i % 2) / 2 = t by omega,
-    show (2 * t + i % 2) % 2 = i % 2 by omega]
+  rw [word_eq_dword _ (show 2 * t + i % 2 < 8 by bdd_omega), show (2 * t + i % 2) / 2 = t by bdd_omega,
+    show (2 * t + i % 2) % 2 = i % 2 by bdd_omega]
 
 /-- The zetas that `vzeta o` leaves in `xmm13`, from the words at `wAddr zP k`. -/
 theorem zeta_lanes (o : BitVec 8) {zP : Addr} {k : Nat} (hk : ∀ j < 4, k + sel o j < 128) {m : Mem}
@@ -111,11 +112,11 @@ theorem zeta_lanes (o : BitVec 8) {zP : Addr} {k : Nat} (hk : ∀ j < 4, k + sel
       (fun i => zeta (k + sel o (i / 2))) := fun i hi => by
   dsimp only
   have hs := sel_lt o (i / 2)
-  have hk' := hk (i / 2) (by omega)
+  have hk' := hk (i / 2) (by bdd_omega)
   rw [word_shufDwords _ _ hi]
   generalize sel o (i / 2) = t at *
-  rw [word_punpcklwd _ _ (by omega), ite_self, show (2 * t + i % 2) / 2 = t by omega,
-    word_readW _ _ (by omega), wAddr_add]
+  rw [word_punpcklwd _ _ (by bdd_omega), ite_self, show (2 * t + i % 2) / 2 = t by bdd_omega,
+    word_readW _ _ (by bdd_omega), wAddr_add]
   exact ht _ hk'
 
 theorem vzeta_ok (o : BitVec 8) {zP : Addr} {k : Nat} (hk : ∀ j < 4, k + sel o j < 128) {s : State}
@@ -129,11 +130,11 @@ theorem vzeta_ok (o : BitVec 8) {zP : Addr} {k : Nat} (hk : ∀ j < 4, k + sel o
   refine ⟨fun i hi => ?_, by xonly⟩
   simp only [xmm_setXmm, ite_true]
   have hs := sel_lt o (i / 2)
-  have hk' := hk (i / 2) (by omega)
+  have hk' := hk (i / 2) (by bdd_omega)
   rw [word_shufDwords _ _ hi]
   generalize sel o (i / 2) = t at *
-  rw [word_punpcklwd _ _ (by omega), ite_self, show (2 * t + i % 2) / 2 = t by omega,
-    word_readW _ _ (by omega), wAddr_add]
+  rw [word_punpcklwd _ _ (by bdd_omega), ite_self, show (2 * t + i % 2) / 2 = t by bdd_omega,
+    word_readW _ _ (by bdd_omega), wAddr_add]
   exact ht _ hk'
 
 end VG.Proof.MlKem.X86_64

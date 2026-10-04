@@ -116,3 +116,104 @@ lemmas about literal offsets are, once instantiated), and `omega` otherwise.
 a second or more deep in a proof about states; `decide` does not look at the
 context. -/
 macro "lit_omega" : tactic => `(tactic| first | decide | omega)
+
+/-! ## Index identities by evaluation
+
+Proofs about lanes and words are full of small identities between indices,
+with `/` and `%` by literals, about variables with literal bounds (`e < 8`,
+`l < 2`): `4 * ((e - 4) / 2) + 8 = 4 * (e / 2)` when `4 ≤ e`. `omega`
+proves each, but its proof of a division or remainder is a large term,
+which the kernel checks in tens of milliseconds every time.
+
+`bdd_omega` proves such a goal by evaluation instead: when every variable of
+the goal is a natural number with a literal bound among the hypotheses, it
+states the goal for all values below the bounds, assuming the hypotheses
+about those variables alone, and has the kernel evaluate it
+(`decide +kernel`). Otherwise, or if that fails, it is `omega`.
+-/
+
+namespace VG
+
+open Lean Meta Elab Tactic
+
+/-- The literal `n` of a hypothesis `x < n` (or `x ≤ n - 1` as `x ≤ n`), for the
+free variable `x`. -/
+private def litBound? (x : FVarId) (ty : Expr) : MetaM (Option Nat) := do
+  let ty ← instantiateMVars ty
+  match ty.getAppFnArgs with
+  | (``LT.lt, #[.const ``Nat [], _, a, b]) =>
+    if a.isFVarOf x then return (← getNatValue? b) else return none
+  | (``LE.le, #[.const ``Nat [], _, a, b]) =>
+    if a.isFVarOf x then return (← getNatValue? b).map (· + 1) else return none
+  | _ => return none
+where
+  getNatValue? (e : Expr) : MetaM (Option Nat) := do
+    let e ← instantiateMVars e
+    return e.nat? <|> e.rawNatLit?
+
+/-- Whether `ty` is an arithmetic fact `bdd_omega` may assume: a comparison of
+natural numbers, or its negation. -/
+private partial def isArith (ty : Expr) : Bool :=
+  match ty.getAppFnArgs with
+  | (``Not, #[p]) => isArith p
+  | (``LT.lt, #[.const ``Nat [], _, _, _]) | (``LE.le, #[.const ``Nat [], _, _, _]) => true
+  | (``Eq, #[.const ``Nat [], _, _]) | (``Ne, #[.const ``Nat [], _, _]) => true
+  | _ => false
+
+/-- Tries to prove the main goal by evaluation over the bounded variables (see
+"Index identities by evaluation"); returns whether it did. -/
+private def bddDecide (maxCases : Nat) : TacticM Bool := withMainContext do
+  let g ← getMainGoal
+  let tgt ← instantiateMVars (← g.getType)
+  if tgt.hasMVar then return false
+  let xs := (collectFVars {} tgt).fvarIds
+  if xs.isEmpty then return false
+  let lctx ← getLCtx
+  -- Each variable: a natural number with a literal bound.
+  let mut bounds : Array (FVarId × FVarId × Nat) := #[]
+  for x in xs do
+    let some d := lctx.find? x | return false
+    unless (← whnfR d.type).isConstOf ``Nat do return false
+    let mut best : Option (FVarId × Nat) := none
+    for h in lctx do
+      if h.isImplementationDetail then continue
+      if let some n ← litBound? x h.type then
+        if best.all (n < ·.2) then best := some (h.fvarId, n)
+    let some (h, n) := best | return false
+    bounds := bounds.push (x, h, n)
+  if bounds.foldl (fun p (_, _, n) => p * n) 1 > maxCases then return false
+  -- The other facts about these variables alone.
+  let xset := xs.foldl (fun s x => s.insert x) ({} : Std.HashSet FVarId)
+  let used := bounds.foldl (fun s (_, h, _) => s.insert h) ({} : Std.HashSet FVarId)
+  let mut facts : Array FVarId := #[]
+  for h in lctx do
+    if h.isImplementationDetail || used.contains h.fvarId || xset.contains h.fvarId then continue
+    let ty ← instantiateMVars h.type
+    unless isArith ty do continue
+    let fv := (collectFVars {} ty).fvarIds
+    if !fv.isEmpty && fv.all xset.contains then facts := facts.push h.fvarId
+  -- `∀ x₁, x₁ < n₁ → … → facts → goal`, by evaluation.
+  let binders := bounds.foldl (fun a (x, h, _) => a.push (.fvar x) |>.push (.fvar h)) #[]
+  let binders := binders ++ facts.map Expr.fvar
+  let stmt ← mkForallFVars binders tgt
+  if stmt.hasFVar then return false
+  let m ← mkFreshExprSyntheticOpaqueMVar stmt
+  let saved ← saveState
+  try
+    setGoals [m.mvarId!]
+    evalTactic (← `(tactic| decide +kernel))
+    let p ← instantiateMVars m
+    g.assign (mkAppN p binders)
+    setGoals []
+    return true
+  catch _ =>
+    saved.restore
+    return false
+
+/-- `omega`, or, for a goal whose variables all have literal bounds among the
+hypotheses (with at most `n` values in all, 64 if not given), the kernel's
+evaluation of the goal for every value (see "Index identities by evaluation"). -/
+elab "bdd_omega" n:(ppSpace num)? : tactic => do
+  unless ← bddDecide (n.map (·.getNat) |>.getD 64) do evalTactic (← `(tactic| omega))
+
+end VG

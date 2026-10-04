@@ -1,4 +1,5 @@
 import VerifiedGarbage.Proof.MlKem.X86_64.VLay42
+import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
 import VerifiedGarbage.Impl.MlKem.X86_64.NttAvx2
 
@@ -30,7 +31,7 @@ theorem layF_get (F : Poly) {len : Nat} (hl : 0 < len) (zi : Nat → Nat) {b : N
       (if j % (2 * len) < len then (op F[j]! F[j + len]! (zeta (zi (j / (2 * len))))).1
         else (op F[j - len]! F[j]! (zeta (zi (j / (2 * len))))).2) else F[j]! := by
   induction b generalizing j with
-  | zero => rw [ite_eq_right (by omega)]; rfl
+  | zero => rw [ite_eq_right (by bdd_omega)]; rfl
   | succ b ih =>
     have hb' : 2 * len * b + 2 * len ≤ 256 := by rw [Nat.mul_succ] at hb; exact hb
     rw [layF, foldl_range_succ, ← layF,
@@ -45,21 +46,21 @@ theorem layF_get (F : Poly) {len : Nat} (hl : 0 < len) (zi : Nat → Nat) {b : N
       have := Nat.div_add_mod i (2 * len)
       rw [e1] at this; omega
     by_cases h1 : 2 * len * b ≤ j ∧ j < 2 * len * b + len
-    · obtain ⟨d1, d2⟩ := hd j h1.1 (by omega)
-      rw [ite_eq_left_of_eq_true _ _ (eq_true h1), ih (by omega) hj, ih (by omega) (by omega), d1,
+    · obtain ⟨d1, d2⟩ := hd j h1.1 (by bdd_omega)
+      rw [ite_eq_left_of_eq_true _ _ (eq_true h1), ih (by bdd_omega) hj, ih (by bdd_omega) (by bdd_omega), d1,
         ite_eq_left_of_eq_true _ _ (eq_true (show j < 2 * len * (b + 1) by rw [Nat.mul_succ]; omega)),
-        ite_eq_left_of_eq_true _ _ (eq_true (show j % (2 * len) < len by omega)),
-        ite_eq_right_of_eq_false _ _ (eq_false (show ¬ j < 2 * len * b by omega)),
-        ite_eq_right_of_eq_false _ _ (eq_false (show ¬ j + len < 2 * len * b by omega))]
+        ite_eq_left_of_eq_true _ _ (eq_true (show j % (2 * len) < len by bdd_omega)),
+        ite_eq_right_of_eq_false _ _ (eq_false (show ¬ j < 2 * len * b by bdd_omega)),
+        ite_eq_right_of_eq_false _ _ (eq_false (show ¬ j + len < 2 * len * b by bdd_omega))]
     · rw [ite_eq_right_of_eq_false _ _ (eq_false h1)]
       by_cases h2 : 2 * len * b + len ≤ j ∧ j < 2 * len * b + len + len
-      · obtain ⟨d1, d2⟩ := hd j (by omega) (by omega)
-        rw [ite_eq_left_of_eq_true _ _ (eq_true h2), ih (by omega) (by omega), ih (by omega) hj, d1,
+      · obtain ⟨d1, d2⟩ := hd j (by bdd_omega) (by bdd_omega)
+        rw [ite_eq_left_of_eq_true _ _ (eq_true h2), ih (by bdd_omega) (by bdd_omega), ih (by bdd_omega) hj, d1,
           ite_eq_left_of_eq_true _ _ (eq_true (show j < 2 * len * (b + 1) by rw [Nat.mul_succ]; omega)),
-          ite_eq_right_of_eq_false _ _ (eq_false (show ¬ j % (2 * len) < len by omega)),
-          ite_eq_right_of_eq_false _ _ (eq_false (show ¬ j - len < 2 * len * b by omega)),
-          ite_eq_right_of_eq_false _ _ (eq_false (show ¬ j < 2 * len * b by omega))]
-      · rw [ite_eq_right_of_eq_false _ _ (eq_false h2), ih (by omega) hj]
+          ite_eq_right_of_eq_false _ _ (eq_false (show ¬ j % (2 * len) < len by bdd_omega)),
+          ite_eq_right_of_eq_false _ _ (eq_false (show ¬ j - len < 2 * len * b by bdd_omega)),
+          ite_eq_right_of_eq_false _ _ (eq_false (show ¬ j < 2 * len * b by bdd_omega))]
+      · rw [ite_eq_right_of_eq_false _ _ (eq_false h2), ih (by bdd_omega) hj]
         by_cases h3 : j < 2 * len * b
         · rw [ite_eq_left_of_eq_true _ _ (eq_true h3),
             ite_eq_left_of_eq_true _ _ (eq_true (show j < 2 * len * (b + 1) by rw [Nat.mul_succ]; omega))]
@@ -76,8 +77,8 @@ def TZ (m : Mem) (p : Addr) (z : Nat → Zq) : Prop := ∀ k < 128, (wordAt m p 
 /-- Writes to the polynomial's words, 256 bytes above the table, keep it. -/
 theorem TZ.frame {m m' : Mem} {p : Addr} {z : Nat → Zq} (h : TZ m p z) (hf : Frame [sR (p + BitVec.ofNat 64 256)] m m') :
     TZ m' p z := fun k hk => by
-  rw [wordAt, hf.readW (r := ⟨p, 256⟩) (Offset.contains_base p (by omega) (by omega))
-    (fun r hr => by rw [List.mem_singleton.mp hr]; exact Offset.base_disjoint p (by omega) (by omega))
+  rw [wordAt, hf.readW (r := ⟨p, 256⟩) (Offset.contains_base p (by bdd_omega) (by bdd_omega))
+    (fun r hr => by rw [List.mem_singleton.mp hr]; exact Offset.base_disjoint p (by bdd_omega) (by bdd_omega))
     (by decide)]
   exact h k hk
 
@@ -88,11 +89,11 @@ theorem zeta_lanesZ (o : BitVec 8) {zP : Addr} {k : Nat} {z : Nat → Zq} (hk : 
       (fun i => z (k + sel o (i / 2))) := fun i hi => by
   dsimp only
   have hs := sel_lt o (i / 2)
-  have hk' := hk (i / 2) (by omega)
+  have hk' := hk (i / 2) (by bdd_omega)
   rw [word_shufDwords _ _ hi]
   generalize sel o (i / 2) = t at *
-  rw [word_punpcklwd _ _ (by omega), ite_self, show (2 * t + i % 2) / 2 = t by omega,
-    word_readW _ _ (by omega), wAddr_add]
+  rw [word_punpcklwd _ _ (by bdd_omega), ite_self, show (2 * t + i % 2) / 2 = t by bdd_omega,
+    word_readW _ _ (by bdd_omega), wAddr_add]
   exact ht _ hk'
 
 /-! ## Words in both lanes -/
@@ -100,8 +101,8 @@ theorem zeta_lanesZ (o : BitVec 8) {zP : Addr} {k : Nat} {z : Nat → Zq} (hk : 
 /-- Lane `l` of a 256-bit load of the words of a polynomial. -/
 theorem lanes_loadY {m : Mem} {p : Addr} {F : Poly} (h : S16 m p F) {j : Nat} (hj : j + 16 ≤ 256) {l : Nat}
     (hl : l < 2) : Lanes (m.readW (wAddr p j + BitVec.ofNat 64 (16 * l)) 128) (fun e => F[j + 8 * l + e]!) := by
-  rw [show 16 * l = 2 * (8 * l) by omega, wAddr_add]
-  exact lanes_load h (by omega)
+  rw [show 16 * l = 2 * (8 * l) by bdd_omega, wAddr_add]
+  exact lanes_load h (by bdd_omega)
 
 /-- Word `e` of a 256-bit register, as stored. -/
 theorem word_ymm (s : State) (r : XReg) {e : Nat} (he : e < 16) :
@@ -110,10 +111,10 @@ theorem word_ymm (s : State) (r : XReg) {e : Nat} (he : e < 16) :
   simp only [State.ymm, State.lane, word, BitVec.getLsbD_extractLsb', BitVec.getLsbD_append,
     decide_eq_true hj, Bool.true_and]
   by_cases h : e < 8
-  · simp only [show 8 * (2 * e) + j < 128 by omega, ite_true, show e / 8 = 0 by omega]
-    exact congrArg _ (by omega)
-  · simp only [show ¬ 8 * (2 * e) + j < 128 by omega, ite_false, show e / 8 = 1 by omega, Nat.one_ne_zero]
-    exact congrArg _ (by omega)
+  · simp only [show 8 * (2 * e) + j < 128 by bdd_omega, ite_true, show e / 8 = 0 by bdd_omega]
+    exact congrArg _ (by bdd_omega)
+  · simp only [show ¬ 8 * (2 * e) + j < 128 by bdd_omega, ite_false, show e / 8 = 1 by bdd_omega, Nat.one_ne_zero]
+    exact congrArg _ (by bdd_omega)
 
 /-- Word `i` after storing `x` (256 bits) at word `j`. -/
 theorem wordAt_write256 (m : Mem) (p : Addr) {j : Nat} (hj : j + 16 ≤ 256) (x : BitVec 256) {i : Nat}
@@ -123,9 +124,9 @@ theorem wordAt_write256 (m : Mem) (p : Addr) {j : Nat} (hj : j + 16 ≤ 256) (x 
   split
   · rename_i h
     rw [wordAt, show wAddr p i = wAddr p j + BitVec.ofNat 64 (2 * (i - j)) by
-      rw [wAddr_add, show j + (i - j) = i by omega]]
-    exact readW_writeW_inside (k := 2 * (i - j)) (n := 2) _ _ _ (by omega) (by decide)
-  · exact Mem.readW_writeW_sep (Offset.sep p (by omega) (by omega) (by omega)) (by decide)
+      rw [wAddr_add, show j + (i - j) = i by bdd_omega]]
+    exact readW_writeW_inside (k := 2 * (i - j)) (n := 2) _ _ _ (by bdd_omega) (by decide)
+  · exact Mem.readW_writeW_sep (Offset.sep p (by bdd_omega) (by bdd_omega) (by bdd_omega)) (by decide)
 
 /-- Two registers stored into the words of a polynomial, with the lanes `a` and `b`. -/
 theorem s16_write2Y {m : Mem} {p : Addr} {P R : Poly} (hP : S16 m p P) {j j' : Nat}
@@ -137,21 +138,21 @@ theorem s16_write2Y {m : Mem} {p : Addr} {P R : Poly} (hP : S16 m p P) {j j' : N
     S16 ((m.writeW (wAddr p j) (s.ymm x)).writeW (wAddr p j') (s.ymm y)) p R := fun i hi => by
   rw [wordAt_write256 _ _ hj' _ hi, wordAt_write256 _ _ hj _ hi, hR i hi]
   by_cases h1 : j' ≤ i ∧ i < j' + 16
-  · rw [ite_eq_left_of_eq_true _ _ (eq_true h1), ite_eq_right_of_eq_false _ _ (eq_false (by omega)),
-      ite_eq_left_of_eq_true _ _ (eq_true h1), word_ymm _ _ (by omega)]
-    have := hy ((i - j') / 8) (by omega) ((i - j') % 8) (Nat.mod_lt _ (by omega))
-    rw [this]; exact congrArg _ (congrArg _ (by omega))
+  · rw [ite_eq_left_of_eq_true _ _ (eq_true h1), ite_eq_right_of_eq_false _ _ (eq_false (by bdd_omega)),
+      ite_eq_left_of_eq_true _ _ (eq_true h1), word_ymm _ _ (by bdd_omega)]
+    have := hy ((i - j') / 8) (by bdd_omega) ((i - j') % 8) (Nat.mod_lt _ (by bdd_omega))
+    rw [this]; exact congrArg _ (congrArg _ (by bdd_omega))
   · rw [ite_eq_right_of_eq_false _ _ (eq_false h1)]
     by_cases h2 : j ≤ i ∧ i < j + 16
-    · rw [ite_eq_left_of_eq_true _ _ (eq_true h2), ite_eq_left_of_eq_true _ _ (eq_true h2), word_ymm _ _ (by omega)]
-      have := hx ((i - j) / 8) (by omega) ((i - j) % 8) (Nat.mod_lt _ (by omega))
-      rw [this]; exact congrArg _ (congrArg _ (by omega))
+    · rw [ite_eq_left_of_eq_true _ _ (eq_true h2), ite_eq_left_of_eq_true _ _ (eq_true h2), word_ymm _ _ (by bdd_omega)]
+      have := hx ((i - j) / 8) (by bdd_omega) ((i - j) % 8) (Nat.mod_lt _ (by bdd_omega))
+      rw [this]; exact congrArg _ (congrArg _ (by bdd_omega))
     · rw [ite_eq_right_of_eq_false _ _ (eq_false h2), ite_eq_right_of_eq_false _ _ (eq_false h2),
         ite_eq_right_of_eq_false _ _ (eq_false h1)]
       exact hP i hi
 
 theorem sR_containsY (p : Addr) {j : Nat} (hj : j + 16 ≤ 256) : (sR p).Contains (wAddr p j) 32 :=
-  Offset.contains_base p (by omega) (by omega)
+  Offset.contains_base p (by bdd_omega) (by bdd_omega)
 
 theorem frame_write2Y {m m' : Mem} {p : Addr} (hf : Frame [sR p] m m') {j j' : Nat} (hj : j + 16 ≤ 256)
     (hj' : j' + 16 ≤ 256) (x y : BitVec 256) :
@@ -180,25 +181,25 @@ theorem perm31 (a b : Nat → BitVec 128) {l : Nat} (hl : l < 2) :
   rcases lane01 hl with rfl | rfl <;> rfl
 
 theorem q256lo (a b : BitVec 128) {i : Nat} (hi : i < 2) : qword256 (b ++ a) i = qword a i :=
-  BitVec.extractLsb'_append_eq_of_add_le (by omega)
+  BitVec.extractLsb'_append_eq_of_add_le (by bdd_omega)
 
 theorem q256hi (a b : BitVec 128) (i : Nat) : qword256 (b ++ a) (2 + i) = qword b i := by
-  rw [qword256, BitVec.extractLsb'_append_eq_of_le (by omega), show 64 * (2 + i) - 128 = 64 * i by omega]; rfl
+  rw [qword256, BitVec.extractLsb'_append_eq_of_le (by bdd_omega), show 64 * (2 + i) - 128 = 64 * i by bdd_omega]; rfl
 
 theorem lo4 (w x y z : BitVec 64) : (w ++ x ++ y ++ z).extractLsb' 0 128 = y ++ z := by
   apply BitVec.eq_of_getLsbD_eq; intro i hi
   simp only [BitVec.getLsbD_extractLsb', BitVec.getLsbD_append, hi, decide_true, Bool.true_and, Nat.zero_add]
   by_cases h : i < 64
   · simp only [h, ite_true]
-  · simp only [h, ite_false, show i - 64 < 64 by omega, ite_true]
+  · simp only [h, ite_false, show i - 64 < 64 by bdd_omega, ite_true]
 
 theorem hi4 (w x y z : BitVec 64) : (w ++ x ++ y ++ z).extractLsb' 128 128 = w ++ x := by
   apply BitVec.eq_of_getLsbD_eq; intro i hi
   simp only [BitVec.getLsbD_extractLsb', BitVec.getLsbD_append, hi, decide_true, Bool.true_and,
-    show ¬ 128 + i < 64 by omega, ite_false, show ¬ 128 + i - 64 < 64 by omega]
+    show ¬ 128 + i < 64 by bdd_omega, ite_false, show ¬ 128 + i - 64 < 64 by bdd_omega]
   by_cases h : i < 64
-  · simp only [h, ite_true, show 128 + i - 64 - 64 < 64 by omega]; exact congrArg _ (by omega)
-  · simp only [h, ite_false, show ¬ 128 + i - 64 - 64 < 64 by omega]; exact congrArg _ (by omega)
+  · simp only [h, ite_true, show 128 + i - 64 - 64 < 64 by bdd_omega]; exact congrArg _ (by bdd_omega)
+  · simp only [h, ite_false, show ¬ 128 + i - 64 - 64 < 64 by bdd_omega]; exact congrArg _ (by bdd_omega)
 
 theorem permD8 (a b : BitVec 128) :
     permQwords (b ++ a) 0xD8 = qword256 (b ++ a) (2 + 1) ++ qword256 (b ++ a) 1 ++
@@ -333,13 +334,13 @@ theorem word_z8 (x : BitVec 128) {l i : Nat} (hl : l < 2) (hi : i < 8) :
   · simp only [ite_true]
     rw [word_punpcklqdq _ _ hi]
     split
-    · rw [word_punpcklwd _ _ (by omega), ite_self]; congr 1; omega
-    · rw [word_punpckhwd _ _ (by omega), ite_self]; congr 1; omega
+    · rw [word_punpcklwd _ _ (by bdd_omega), ite_self]; congr 1; omega
+    · rw [word_punpckhwd _ _ (by bdd_omega), ite_self]; congr 1; omega
   · simp only [Nat.one_ne_zero, ite_false]
     rw [word_punpckhqdq _ _ hi]
     split
-    · rw [word_punpcklwd _ _ (by omega), ite_self]; congr 1; omega
-    · rw [word_punpckhwd _ _ (by omega), ite_self]; congr 1; omega
+    · rw [word_punpcklwd _ _ (by bdd_omega), ite_self]; congr 1; omega
+    · rw [word_punpckhwd _ _ (by bdd_omega), ite_self]; congr 1; omega
 
 theorem yzeta8_ok {zP : Addr} {k : Nat} {z : Nat → Zq} (hk : k + 8 ≤ 128) {s : State} (h8 : s.gpr .r8 = wAddr zP k)
     (hin : InRegions (s.rd ++ s.wr) (wAddr zP k) 16) (ht : TZ s.mem zP z) :
@@ -362,7 +363,7 @@ theorem yzeta8_ok {zP : Addr} {k : Nat} {z : Nat → Zq} (hk : k + 8 ≤ 128) {s
     rcases lane01 hl with rfl | rfl
     · rw [e0, ← hx]; exact (l2 0 (by decide)).1
     · rw [e1, ← hx]; exact (l2 1 (by decide)).2
-  rw [hw, word_z8 _ hl hi, word_readW _ _ (by omega), wAddr_add]
-  exact ht _ (by omega)
+  rw [hw, word_z8 _ hl hi, word_readW _ _ (by bdd_omega), wAddr_add]
+  exact ht _ (by bdd_omega)
 
 end VG.Proof.MlKem.X86_64
