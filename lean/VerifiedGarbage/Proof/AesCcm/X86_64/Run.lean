@@ -8,6 +8,8 @@ symbolically (`runBlock_cons`, `runStep_some`, the semantics of the
 instructions the code uses, and reads through the writes with `RegUpd`).
 -/
 
+set_option linter.unusedSimpArgs false
+
 namespace VG.Proof.AesCcm.X86_64
 
 open VG VG.X86_64 VG.X86_64.RegUpd VG.Impl.AesCcm.X86_64
@@ -31,5 +33,15 @@ macro "crun" "[" ts:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(tactic| (
 theorem add_ofNat_assoc (p : Addr) (a b : Nat) :
     p + BitVec.ofNat 64 a + BitVec.ofNat 64 b = p + BitVec.ofNat 64 (a + b) := by
   rw [BitVec.add_assoc, ofNat_add_ofNat]
+
+theorem runBlock_append (a b : List Instr) (s : State) :
+    runBlock isa (a ++ b) s = (runBlock isa a s).bind (runBlock isa b) := by
+  induction a generalizing s with
+  | nil => rfl
+  | cons i is ih =>
+    show (isa.exec i s).bind _ = ((isa.exec i s).bind _).bind _
+    cases isa.exec i s with
+    | none => rfl
+    | some s' => exact ih s'
 
 end VG.Proof.AesCcm.X86_64

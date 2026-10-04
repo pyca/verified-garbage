@@ -17,6 +17,8 @@ caller's registers saved in `W` and the arguments stay as the entry left
 them.
 -/
 
+set_option linter.unusedSimpArgs false
+
 namespace VG.Proof.AesCcm.X86_64
 
 open VG VG.X86_64

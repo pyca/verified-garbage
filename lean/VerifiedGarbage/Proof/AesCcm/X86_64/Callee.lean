@@ -16,6 +16,8 @@ the state or the counter block, the data or blocks of `W` as the data, and
 the working space at `W + 384`.
 -/
 
+set_option linter.unusedSimpArgs false
+
 namespace VG.Proof.AesCcm.X86_64
 
 open VG VG.X86_64

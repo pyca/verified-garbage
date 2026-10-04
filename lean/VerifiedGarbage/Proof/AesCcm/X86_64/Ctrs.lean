@@ -8,6 +8,8 @@ Untrusted: everything here is checked by Lean. `ctrs` zeroes the block at
 after it: `Ctr₀` (`ctrs_ok`).
 -/
 
+set_option linter.unusedSimpArgs false
+
 namespace VG.Proof.AesCcm.X86_64
 
 open VG VG.X86_64 VG.X86_64.RegUpd VG.Impl.AesCcm.X86_64 VG.WriteBytes

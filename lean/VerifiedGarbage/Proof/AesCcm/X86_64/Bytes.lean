@@ -13,6 +13,8 @@ pieces build their blocks (`Ctr₀`, `B₀`, the first block of the associated
 data, a last block padded) as lists.
 -/
 
+set_option linter.unusedSimpArgs false
+
 namespace VG.Proof.AesCcm.X86_64
 
 open VG VG.X86_64 VG.WriteBytes
