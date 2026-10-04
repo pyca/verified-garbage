@@ -507,4 +507,232 @@ theorem invFirst_ok {s : State} {B : Addr} {Z w : Nat} {iU iV iX₁ iX₂ iM iT 
       rintro r (rfl | rfl | rfl | rfl | rfl) <;> with_reducible assumption
     rw [f₃ x h3, o₂ x a, f₁ x h1]
 
+/-- `KeyMath.invStep` is the subtraction, then the halvings. -/
+theorem invStep_eq (m : Nat) (st : Nat × Nat × Nat × Nat) :
+    VG.Proof.Rsa.invStep m st = ((subState m st).1 / 2, (subState m st).2.1, halfMod m (subState m st).2.2.1,
+      (subState m st).2.2.2) := by
+  obtain ⟨u, v, x₁, x₂⟩ := st
+  unfold VG.Proof.Rsa.invStep subState
+  dsimp only
+  split
+  · split <;> rfl
+  · rfl
+
+/-- One step of `inverse`: `KeyMath.invStep`, while `x₁, x₂ < m` and the
+word `w` of `u` is zero. -/
+theorem invStepCode_ok {s : State} {B : Addr} {Z w k : Nat} {iU iV iX₁ iX₂ iM iT : Nat} (hs : Scr s B Z)
+    (hdi : s.gpr .rdi = B) (h12 : s.gpr .r12 = BitVec.ofNat 64 w) (h9 : s.gpr .r9 = BitVec.ofNat 64 (8 * (w + 2)))
+    (h13 : s.gpr .r13 = BitVec.ofNat 64 k) (h11 : s.gpr .r11 = BitVec.ofNat 64 (128 * w))
+    (hw1 : 1 ≤ w) (hw : w < 2 ^ 24) (hk : k < 128 * w) (hZ : slot w 16 ≤ Z)
+    (hU : iU < 16) (hV : iV < 16) (hX₁ : iX₁ < 16) (hX₂ : iX₂ < 16) (hM : iM < 16) (hT : iT < 16)
+    (dUV : iU ≠ iV) (dUX₁ : iU ≠ iX₁) (dUX₂ : iU ≠ iX₂) (dUM : iU ≠ iM) (dUT : iU ≠ iT) (dVX₁ : iV ≠ iX₁)
+    (dVX₂ : iV ≠ iX₂) (dVM : iV ≠ iM) (dVT : iV ≠ iT) (dX : iX₁ ≠ iX₂) (dX₁M : iX₁ ≠ iM) (dX₁T : iX₁ ≠ iT)
+    (dX₂M : iX₂ ≠ iM) (dX₂T : iX₂ ≠ iT) (dMT : iM ≠ iT) (hU0 : word s.mem B (slot w iU + 8 * w) = 0) :
+    WP isa (VG.Impl.Rsa.X86_64.Keys.invStep iU iV iX₁ iX₂ iM iT) s fun t =>
+      t.zf = some (decide (k + 1 = 128 * w)) ∧ t.gpr .r13 = BitVec.ofNat 64 (k + 1) ∧
+      t.gpr .r12 = BitVec.ofNat 64 w ∧
+      Frm B [(slot w iU, 8 * w), (slot w iV, 8 * w), (slot w iX₁, 8 * w), (slot w iX₂, 8 * w), ar w iT,
+        (8 * sMo, 8)] s.mem t.mem ∧ Keep stepRegs s t ∧
+      (wv s.mem B (slot w iX₁) w < wv s.mem B (slot w iM) w → wv s.mem B (slot w iX₂) w < wv s.mem B (slot w iM) w →
+        (wv t.mem B (slot w iU) w, wv t.mem B (slot w iV) w, wv t.mem B (slot w iX₁) w, wv t.mem B (slot w iX₂) w) =
+          VG.Proof.Rsa.invStep (wv s.mem B (slot w iM) w) (wv s.mem B (slot w iU) w, wv s.mem B (slot w iV) w,
+            wv s.mem B (slot w iX₁) w, wv s.mem B (slot w iX₂) w)) := by
+  have hn := hs.nowrap
+  have sU := Nat.le_trans (slot_lt (w := w) hU) hZ
+  have sV := Nat.le_trans (slot_lt (w := w) hV) hZ
+  have sX₁ := Nat.le_trans (slot_lt (w := w) hX₁) hZ
+  have sX₂ := Nat.le_trans (slot_lt (w := w) hX₂) hZ
+  have sM := Nat.le_trans (slot_lt (w := w) hM) hZ
+  have sT := Nat.le_trans (slot_lt (w := w) hT) hZ
+  have hU0' := hdr_lt_slot w iU (show sMo < 32 by decide)
+  have hX10 := hdr_lt_slot w iX₁ (show sMo < 32 by decide)
+  have hM0 := hdr_lt_slot w iM (show sMo < 32 by decide)
+  have hT0 := hdr_lt_slot w iT (show sMo < 32 by decide)
+  unfold VG.Impl.Rsa.X86_64.Keys.invStep
+  rw [show invSwapP iU iV iX₁ iX₂ ++ (invSubP iU iV iX₁ iX₂ iM iT ++ (invHalfP iU iX₁ iM iT ++ [.block countP])) =
+    (invSwapP iU iV iX₁ iX₂ ++ invSubP iU iV iX₁ iX₂ iM iT) ++ (invHalfUP iU ++ (invHalfXP iX₁ iM iT ++
+      [.block countP])) by simp [invHalfP]]
+  refine wp_seqs_append (by simp [invSwapP]) (by simp [invHalfUP]) (WP.mono (invFirst_ok hs hdi h12 h9 hw1 hw hZ hU hV
+    hX₁ hX₂ hM hT dUV dUX₁ dUX₂ dUM dUT dVX₁ dVX₂ dVM dVT dX dX₁M dX₁T dX₂M dX₂T dMT) fun s₁ ⟨hv₁, f₁, k₁⟩ => ?_)
+  have hU0₁ : word s₁.mem B (slot w iU + 8 * w) = 0 := by
+    rw [f₁.word_eq (fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl | rfl | rfl | rfl <;> dsimp only
+      · omega
+      · have := slot_far (w := w) dUV; omega
+      · have := slot_far (w := w) dUX₁; omega
+      · have := slot_far (w := w) dUX₂; omega
+      · have := slot_far (w := w) dUT; omega
+      · omega) (by omega)]
+    exact hU0
+  refine wp_seqs_append (by simp [invHalfUP]) (by simp [invHalfXP]) (WP.mono (invHalfU_ok (hs.congr k₁.2.2)
+    ((k₁.gpr (by decide)).trans hdi) ((k₁.gpr (by decide)).trans h12) ((k₁.gpr (by decide)).trans h9) hw1 hw hZ
+    hU hU0₁) fun s₂ ⟨hU₂, o₂, k₂⟩ => ?_)
+  have k12 := k₁.trans k₂
+  refine wp_seqs_append (by simp [invHalfXP]) (by simp) (WP.mono (invHalfX_ok (hs.congr k12.2.2)
+    ((k12.gpr (by decide)).trans hdi) ((k12.gpr (by decide)).trans h12) ((k12.gpr (by decide)).trans h9) hw1 hw hZ
+    hX₁ hM hT dX₁M dX₁T dMT) fun s₃ ⟨hX₃, f₃, k₃⟩ => ?_)
+  have k13 := k12.trans k₃
+  simp only [seqs]
+  refine WP.mono (WP.keep [.r13] (Q := fun t => t.zf = some (decide (k + 1 = 128 * w)) ∧
+      t.gpr .r13 = BitVec.ofNat 64 (k + 1) ∧ t.mem = s₃.mem) (by
+    unfold countP
+    xrun [(k13.gpr (by decide) : s₃.gpr .r13 = _), h13, (k13.gpr (by decide) : s₃.gpr .r11 = _), h11, ofNat_add_one,
+      ofNat_sub_beq (show k + 1 < 2 ^ 64 by omega) (show 128 * w < 2 ^ 64 by omega)]) rfl)
+    fun t ⟨⟨hz, h13t, mt⟩, k₄⟩ => ⟨hz, h13t, (k₄.gpr (by decide)).trans ((k13.gpr (by decide)).trans h12), ?_,
+      (k13.trans k₄).mono (by simp [stepRegs]), fun hx₁ hx₂ => ?_⟩
+  · intro x hx
+    have a := hx (slot w iU, 8 * w) (by simp)
+    have b := hx (slot w iV, 8 * w) (by simp)
+    have c := hx (slot w iX₁, 8 * w) (by simp)
+    have d := hx (slot w iX₂, 8 * w) (by simp)
+    have e := hx (ar w iT) (by simp)
+    have g := hx (8 * sMo, 8) (by simp)
+    dsimp only at a b c d e g
+    have h3 : ∀ r ∈ [(slot w iX₁, 8 * w), ar w iT], ofs B x < r.1 ∨ r.1 + r.2 ≤ ofs B x := by
+      simp only [List.mem_cons, List.not_mem_nil, or_false]
+      rintro r (rfl | rfl) <;> with_reducible assumption
+    have h1 : ∀ r ∈ [(slot w iU, 8 * w), (slot w iV, 8 * w), (slot w iX₁, 8 * w), (slot w iX₂, 8 * w),
+        (slot w iT, 8 * w), (8 * sMo, 8)], ofs B x < r.1 ∨ r.1 + r.2 ≤ ofs B x := by
+      simp only [List.mem_cons, List.not_mem_nil, or_false]
+      rintro r (rfl | rfl | rfl | rfl | rfl | rfl) <;> first | with_reducible assumption | (dsimp only; omega)
+    rw [mt, f₃ x h3, o₂ x a, f₁ x h1]
+  · have e := hv₁ hx₁ hx₂
+    rw [invStep_eq, ← e]
+    have eM₁ : wv s₁.mem B (slot w iM) w = wv s.mem B (slot w iM) w := f₁.wv_eq (fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl | rfl | rfl | rfl <;> dsimp only
+      · have := slot_far (w := w) dUM; omega
+      · have := slot_far (w := w) dVM; omega
+      · have := slot_far (w := w) dX₁M; omega
+      · have := slot_far (w := w) dX₂M; omega
+      · have := slot_far (w := w) dMT; omega
+      · omega) (by omega)
+    have eM₂ : wv s₂.mem B (slot w iM) w = wv s₁.mem B (slot w iM) w :=
+      o₂.wv (by have := slot_far (w := w) dUM; omega) (by omega)
+    have eX₂ : wv s₂.mem B (slot w iX₁) w = wv s₁.mem B (slot w iX₁) w :=
+      o₂.wv (by have := slot_far (w := w) dUX₁; omega) (by omega)
+    have f3 : ∀ i, i ≠ iX₁ → i ≠ iT → i < 16 → wv t.mem B (slot w i) w = wv s₂.mem B (slot w i) w := by
+      intro i h1 h2 hi
+      rw [mt]
+      exact f₃.wv_eq (fun r hr => by
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl <;> dsimp only
+        · have := slot_far (w := w) h1; omega
+        · have := slot_far (w := w) h2; omega) (by have := Nat.le_trans (slot_lt (w := w) hi) hZ; omega)
+    have o2 : ∀ i, i ≠ iU → i < 16 → wv s₂.mem B (slot w i) w = wv s₁.mem B (slot w i) w := by
+      intro i h1 hi
+      exact o₂.wv (by have := slot_far (w := w) h1; omega) (by have := Nat.le_trans (slot_lt (w := w) hi) hZ; omega)
+    rw [f3 iU dUX₁ dUT hU, hU₂, f3 iV dVX₁ dVT hV, o2 iV (Ne.symm dUV) hV, f3 iX₂ (Ne.symm dX) dX₂T hX₂,
+      o2 iX₂ (Ne.symm dUX₂) hX₂, mt, hX₃, eM₂, eM₁, eX₂]
+
+/-- The invariant of `inverse`'s loop after `j` steps from `s`. -/
+structure InvInv (s : State) (B : Addr) (Z w iU iV iX₁ iX₂ iT a m : Nat) (j : Nat) (t : State) : Prop where
+  scr : Scr t B Z
+  rdi : t.gpr .rdi = B
+  r12 : t.gpr .r12 = BitVec.ofNat 64 w
+  r9 : t.gpr .r9 = BitVec.ofNat 64 (8 * (w + 2))
+  r13 : t.gpr .r13 = BitVec.ofNat 64 j
+  r11 : t.gpr .r11 = BitVec.ofNat 64 (128 * w)
+  frm : Frm B [(slot w iU, 8 * w), (slot w iV, 8 * w), (slot w iX₁, 8 * w), (slot w iX₂, 8 * w), ar w iT,
+    (8 * sMo, 8)] s.mem t.mem
+  keep : Keep (.r9 :: .r11 :: stepRegs) s t
+  u0 : word t.mem B (slot w iU + 8 * w) = 0
+  val : m % 2 = 1 → 1 < m → (wv t.mem B (slot w iU) w, wv t.mem B (slot w iV) w, wv t.mem B (slot w iX₁) w,
+    wv t.mem B (slot w iX₂) w) = invIter m j (a, m, 1, 0)
+
+/-- `inverse`: from `(a, m, 1, 0)` in `[u], [v], [x₁], [x₂]` (the word `w`
+of `[u]` zero), `[m]` odd and above 1: `[v] = gcd(a, m)` and
+`[x₂] a ≡ [v] (mod m)`, `[x₂] < m`. -/
+theorem inverse_ok {s : State} {B : Addr} {Z w : Nat} {iU iV iX₁ iX₂ iM iT : Nat} (hs : Scr s B Z)
+    (hdi : s.gpr .rdi = B) (hW : word s.mem B (8 * sW) = BitVec.ofNat 64 w)
+    (hS : word s.mem B (8 * sStride) = BitVec.ofNat 64 (8 * (w + 2)))
+    (hw1 : 1 ≤ w) (hw : w < 2 ^ 24) (hZ : slot w 16 ≤ Z)
+    (hU : iU < 16) (hV : iV < 16) (hX₁ : iX₁ < 16) (hX₂ : iX₂ < 16) (hM : iM < 16) (hT : iT < 16)
+    (dUV : iU ≠ iV) (dUX₁ : iU ≠ iX₁) (dUX₂ : iU ≠ iX₂) (dUM : iU ≠ iM) (dUT : iU ≠ iT) (dVX₁ : iV ≠ iX₁)
+    (dVX₂ : iV ≠ iX₂) (dVM : iV ≠ iM) (dVT : iV ≠ iT) (dX : iX₁ ≠ iX₂) (dX₁M : iX₁ ≠ iM) (dX₁T : iX₁ ≠ iT)
+    (dX₂M : iX₂ ≠ iM) (dX₂T : iX₂ ≠ iT) (dMT : iM ≠ iT) (hU0 : word s.mem B (slot w iU + 8 * w) = 0)
+    (hVM : wv s.mem B (slot w iV) w = wv s.mem B (slot w iM) w) (hX1 : wv s.mem B (slot w iX₁) w = 1)
+    (hX2 : wv s.mem B (slot w iX₂) w = 0) :
+    WP isa (inverse iU iV iX₁ iX₂ iM iT) s fun t =>
+      t.gpr .rdi = B ∧
+      Frm B [(slot w iU, 8 * w), (slot w iV, 8 * w), (slot w iX₁, 8 * w), (slot w iX₂, 8 * w), ar w iT,
+        (8 * sMo, 8)] s.mem t.mem ∧ Keep (.r9 :: .r11 :: stepRegs) s t ∧
+      (wv s.mem B (slot w iM) w % 2 = 1 → 1 < wv s.mem B (slot w iM) w →
+        wv t.mem B (slot w iV) w = Nat.gcd (wv s.mem B (slot w iU) w) (wv s.mem B (slot w iM) w) ∧
+        ((wv s.mem B (slot w iM) w : Nat) : Int) ∣
+          (wv t.mem B (slot w iX₂) w : Int) * wv s.mem B (slot w iU) w - wv t.mem B (slot w iV) w ∧
+        wv t.mem B (slot w iX₂) w < wv s.mem B (slot w iM) w) := by
+  have hn := hs.nowrap
+  have sU := Nat.le_trans (slot_lt (w := w) hU) hZ
+  have sM := Nat.le_trans (slot_lt (w := w) hM) hZ
+  have hM0 := hdr_lt_slot w iM (show sMo < 32 by decide)
+  have h256 : 8 * 32 ≤ Z := by have := hdr_lt_slot w 16 (show 31 < 32 by decide); omega
+  unfold inverse
+  -- The registers.
+  have e₁ : WP isa (.block invInit) s fun (t : State) =>
+      t.gpr .rdi = B ∧ t.gpr .r12 = BitVec.ofNat 64 w ∧ t.gpr .r9 = BitVec.ofNat 64 (8 * (w + 2)) ∧
+      t.gpr .r11 = BitVec.ofNat 64 (128 * w) ∧ t.gpr .r13 = BitVec.ofNat 64 0 ∧ t.mem = s.mem ∧
+      Keep [.r12, .r9, .r11, .r13] s t := by
+    rw [invInit, WP.block_append_iff, WP.block_append_iff, WP.block_append_iff]
+    refine WP.mono (ws_ok hs hdi h256 hW hS) fun s₁ ⟨h12, h9, m₁, k₁⟩ => ?_
+    refine WP.mono (WP.keep [.r11] (Q := fun t => t.gpr .r11 = BitVec.ofNat 64 w ∧ t.mem = s₁.mem)
+      (by xrun [h12]) rfl) fun s₃ ⟨⟨h11, m₃⟩, k₃⟩ => ?_
+    refine WP.mono (WP.keep [.r11] (Q := fun t => t.gpr .r11 = BitVec.ofNat 64 (128 * w) ∧ t.mem = s₃.mem)
+      (by
+        xrun [h11, ofNat_dbl, List.replicate]
+        congr 1; omega) rfl) fun s₄ ⟨⟨h11', m₄⟩, k₄⟩ => ?_
+    refine WP.mono (WP.keep [.r13] (Q := fun t => t.gpr .r13 = BitVec.ofNat 64 0 ∧ t.mem = s₄.mem)
+      (by xrun) rfl) fun t ⟨⟨h13, m₅⟩, k₅⟩ => ?_
+    have kk := ((k₁.trans k₃).trans k₄).trans k₅
+    exact ⟨(kk.gpr (by decide)).trans hdi, ((k₃.trans k₄).trans k₅ |>.gpr (by decide)).trans h12,
+      ((k₃.trans k₄).trans k₅ |>.gpr (by decide)).trans h9, (k₅.gpr (by decide)).trans h11', h13,
+      by rw [m₅, m₄, m₃, m₁], kk.mono (by simp)⟩
+  refine WP.seq (WP.mono e₁ fun s₁ ⟨hdi₁, h12₁, h9₁, h11₁, h13₁, m₁, k₁⟩ => ?_)
+  have fM : ∀ {t : State}, Frm B [(slot w iU, 8 * w), (slot w iV, 8 * w), (slot w iX₁, 8 * w), (slot w iX₂, 8 * w),
+      ar w iT, (8 * sMo, 8)] s.mem t.mem → wv t.mem B (slot w iM) w = wv s.mem B (slot w iM) w := fun f =>
+    f.wv_eq (fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl | rfl | rfl | rfl <;> dsimp only
+      · have := slot_far (w := w) dUM; omega
+      · have := slot_far (w := w) dVM; omega
+      · have := slot_far (w := w) dX₁M; omega
+      · have := slot_far (w := w) dX₂M; omega
+      · have := slot_far (w := w) dMT; omega
+      · omega) (by omega)
+  refine wp_upto (a := 0) (N := 128 * w) (by omega)
+    (InvInv s B Z w iU iV iX₁ iX₂ iT (wv s.mem B (slot w iU) w) (wv s.mem B (slot w iM) w))
+    (fun j _ hj t hI => ?_) (fun t hI => ⟨hI.rdi, hI.frm, hI.keep, fun hodd h1 => ?_⟩)
+    ⟨hs.congr k₁.2.2, hdi₁, h12₁, h9₁, h13₁, h11₁, by rw [m₁]; exact Frm.refl _ _ _, k₁.mono (by simp [stepRegs]),
+      by rw [m₁]; exact hU0, fun _ _ => by rw [m₁, hVM, hX1, hX2]; rfl⟩
+  · refine WP.mono (invStepCode_ok hI.scr hI.rdi hI.r12 hI.r9 hI.r13 hI.r11 hw1 hw hj hZ hU hV hX₁ hX₂ hM hT dUV dUX₁
+      dUX₂ dUM dUT dVX₁ dVX₂ dVM dVT dX dX₁M dX₁T dX₂M dX₂T dMT hI.u0) fun t' ⟨hz, h13', h12', f', k', hv'⟩ =>
+      ⟨hz, hI.scr.congr k'.2.2, (k'.gpr (by decide)).trans hI.rdi, h12', (k'.gpr (by decide)).trans hI.r9, h13',
+        (k'.gpr (by decide)).trans hI.r11, hI.frm.trans f', (hI.keep.trans k').mono (by simp [stepRegs]), ?_,
+        fun hodd h1 => ?_⟩
+    · rw [f'.word_eq (fun r hr => by
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl | rfl | rfl | rfl | rfl <;> dsimp only
+        · omega
+        · have := slot_far (w := w) dUV; omega
+        · have := slot_far (w := w) dUX₁; omega
+        · have := slot_far (w := w) dUX₂; omega
+        · have := slot_far (w := w) dUT; omega
+        · have := hdr_lt_slot w iU (show sMo < 32 by decide); omega) (by omega)]
+      exact hI.u0
+    · have hv := hI.val hodd h1
+      have hinv := invIter_inv hodd (invI_start (a := wv s.mem B (slot w iU) w) hodd h1) j
+      rw [← hv] at hinv
+      rw [fM hI.frm] at hv'
+      rw [hv' hinv.x₁_lt hinv.x₂_lt, hv]
+      rfl
+  · have hv := hI.val hodd h1
+    have hd := invIter_done (a := wv s.mem B (slot w iU) w) (K := 128 * w) hodd (by
+      have := wv_lt s.mem B (slot w iU) w
+      have := wv_lt s.mem B (slot w iM) w
+      rw [show 128 * w = 64 * w + 64 * w by omega, Nat.pow_add]
+      exact Nat.mul_lt_mul'' (by omega) (by omega))
+    rw [Nat.mod_eq_of_lt h1, ← hv] at hd
+    exact ⟨hd.2.1, hd.2.2.1, hd.2.2.2⟩
+
 end VG.Proof.Rsa.X86_64

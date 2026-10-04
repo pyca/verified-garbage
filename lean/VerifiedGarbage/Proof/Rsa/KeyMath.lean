@@ -185,6 +185,10 @@ theorem invIter_size (m : Nat) (st : Nat × Nat × Nat × Nat) : ∀ k,
       _ ≤ (invIter m k st).1 * (invIter m k st).2.1 * 2 ^ k := Nat.mul_le_mul_right _ hs
       _ ≤ _ := ih
 
+/-- The invariant holds of `(a, m, 1, 0)`. -/
+theorem invI_start {a m : Nat} (hm : m % 2 = 1) (h1 : 1 < m) : InvI a m (a, m, 1, 0) :=
+  ⟨hm, h1, show 0 < m by omega, ⟨0, by simp⟩, by simp, rfl⟩
+
 /-- After enough steps: `u = 0`, `v = gcd(a, m)`, `x₂ a ≡ v (mod m)` and
 `x₂ < m`. -/
 theorem invIter_done {a m K : Nat} (hm : m % 2 = 1) (ha : a * m < 2 ^ K) :
