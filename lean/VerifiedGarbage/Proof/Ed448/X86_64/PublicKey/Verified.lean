@@ -194,7 +194,7 @@ theorem body_ct : RelCT isa (Two fun _ _ => True) pkBody fun _ _ => True := by
   have a₁ : RelCT isa (Two fun _ _ => True) (.block pkAbsorbArgs) (Two AbsArgs) :=
     two_blk [.rsp] rspOnly (by taint_decide) fun _ _ _ _ _ _ hc _ =>
       WP.mono (absArgs_ok hc) fun _ ⟨hc', _, ha⟩ => ⟨hc', ha⟩
-  have a₂ := two_callP (n := "vg_keccak_absorb") (Φ := AbsArgs)
+  have a₂ := two_callP (n := "vg_keccak_absorb_scratch") (Φ := AbsArgs)
     Proof.Sha3.X86_64.Stream.Absorb.absorb_correct Proof.Sha3.X86_64.Stream.Absorb.absorb_ct
     absorb_nosp absorb_depth absRd absWr (fun _ _ _ _ _ hL hc ha => abs_pre hL hc ha)
     (fun L t₁ t₂ _ _ _ _ _ _ c₁ c₂ a₁ a₂ => by
@@ -207,7 +207,7 @@ theorem body_ct : RelCT isa (Two fun _ _ => True) pkBody fun _ _ => True := by
   have p₁ : RelCT isa (Two fun _ _ => True) (.block pkPadArgs) (Two PadArgs) :=
     two_blk [.rsp] rspOnly (by taint_decide) fun _ _ _ _ _ _ hc _ =>
       WP.mono (padArgs_ok hc) fun _ ⟨hc', _, ha⟩ => ⟨hc', ha⟩
-  have p₂ := two_callP (n := "vg_keccak_pad") (Φ := PadArgs)
+  have p₂ := two_callP (n := "vg_keccak_pad_scratch") (Φ := PadArgs)
     Proof.Sha3.X86_64.Stream.Pad.pad_correct Proof.Sha3.X86_64.Stream.Pad.pad_ct
     pad_nosp pad_depth (fun _ => padRd) padWr (fun _ _ _ _ _ hL hc ha => pad_pre hL hc ha)
     (fun L t₁ t₂ _ _ _ _ _ _ c₁ c₂ a₁ a₂ => by
@@ -220,7 +220,7 @@ theorem body_ct : RelCT isa (Two fun _ _ => True) pkBody fun _ _ => True := by
   have q₁ : RelCT isa (Two fun _ _ => True) (.block pkSqueezeArgs) (Two SqzArgs) :=
     two_blk [.rsp] rspOnly (by taint_decide) fun _ _ _ _ _ _ hc _ =>
       WP.mono (sqzArgs_ok hc) fun _ ⟨hc', _, ha⟩ => ⟨hc', ha⟩
-  have q₂ := two_callP (n := "vg_keccak_squeeze") (Φ := SqzArgs)
+  have q₂ := two_callP (n := "vg_keccak_squeeze_scratch") (Φ := SqzArgs)
     Proof.Sha3.X86_64.Stream.Squeeze.squeeze_correct Proof.Sha3.X86_64.Stream.Squeeze.squeeze_ct
     squeeze_nosp squeeze_depth (fun _ => sqzRd) sqzWr (fun _ _ _ _ _ hL hc ha => sqz_pre hL hc ha)
     (fun L t₁ t₂ _ _ _ _ _ _ c₁ c₂ a₁ a₂ => by

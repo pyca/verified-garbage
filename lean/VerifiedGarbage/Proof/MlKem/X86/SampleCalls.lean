@@ -44,7 +44,7 @@ structure A1 (s₀ s : State) : Prop extends Ctx s₀ s where
   st : Repr s.mem ((SS s₀).setWidth 64) 168 (Bs s₀)
 
 theorem absorb_call : Piece Pre Pub (fun s₀ s => Z s₀ s ∧ AbsArgs s (SS s₀) (dP s₀) (WW s₀) 168 0 34) A1
-    (callWith rs6 "vg_keccak_absorb" Impl.Sha3.X86.Stream.absorb) := by
+    (callWith rs6 "vg_keccak_absorb_scratch" Impl.Sha3.X86.Stream.absorb) := by
   refine absorb_piece E1 SS dP WW 168 0 34 rate168 (by decide) (by decide) (fun s₀ s hp ⟨h, ha⟩ => ?_)
     (fun s₀ s₀' _ _ hq => ⟨hq.E1, by rw [SS, SS, hq.2.2.2.2], hq.2.2.1, by rw [WW, WW, hq.2.2.2.2]⟩)
     (fun s₀ s s' hp ⟨h, _⟩ e₁ e₂ e₃ fr post => ?_)
@@ -78,7 +78,7 @@ structure A2 (s₀ s : State) : Prop extends Ctx s₀ s where
   st : stateAt s.mem ((SS s₀).setWidth 64) = padded 168 shakeSuffix (Bs s₀)
 
 theorem pad_call : Piece Pre Pub (fun s₀ s => A1 s₀ s ∧ PadArgs s (SS s₀) (WW s₀) 168 34 0x1f) A2
-    (callWith rs5 "vg_keccak_pad" Impl.Sha3.X86.Stream.pad) := by
+    (callWith rs5 "vg_keccak_pad_scratch" Impl.Sha3.X86.Stream.pad) := by
   refine pad_piece E1 SS WW 168 34 0x1f rate168 (by decide) (fun s₀ s hp ⟨h, ha⟩ => ?_)
     (fun s₀ s₀' _ _ hq => ⟨hq.E1, by rw [SS, SS, hq.2.2.2.2], by rw [WW, WW, hq.2.2.2.2]⟩)
     (fun s₀ s s' hp ⟨h, _⟩ e₁ e₂ e₃ fr post => ?_)
@@ -105,7 +105,7 @@ structure Out (s₀ s : State) : Prop extends Ctx s₀ s where
   out : ∀ p < 840, s.mem (sA s₀ + BitVec.ofNat 64 p) = xofByte (Bs s₀) p
 
 theorem squeeze_call : Piece Pre Pub (fun s₀ s => A2 s₀ s ∧ AbsArgs s (SS s₀) (sP s₀) (WW s₀) 168 0 840) Out
-    (callWith rs6 "vg_keccak_squeeze" Impl.Sha3.X86.Stream.squeeze) := by
+    (callWith rs6 "vg_keccak_squeeze_scratch" Impl.Sha3.X86.Stream.squeeze) := by
   refine squeeze_piece E1 SS sP WW 168 0 840 rate168 (by decide) (by decide) (fun s₀ s hp ⟨h, ha⟩ => ?_)
     (fun s₀ s₀' _ _ hq => ⟨hq.E1, by rw [SS, SS, hq.2.2.2.2], hq.2.2.2.2, by rw [WW, WW, hq.2.2.2.2]⟩)
     (fun s₀ s s' hp ⟨h, _⟩ e₁ e₂ e₃ fr r₁ _ => ?_)

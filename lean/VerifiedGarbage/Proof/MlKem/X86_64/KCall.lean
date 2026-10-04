@@ -128,7 +128,7 @@ theorem absorb_call (h : AbsorbArgs s st dp scr rate pos len)
       (∀ msg, Spec.Sha3.Repr s.mem st rate msg → pos = msg.length % rate →
         Spec.Sha3.Repr s'.mem st rate (msg ++ bytesAt s.mem dp len)) →
       (s'.gpr .rax).toNat = (pos + len) % rate → Q s') :
-    WP isa (.call "vg_keccak_absorb" Impl.Sha3.X86_64.Stream.absorb) s Q := by
+    WP isa (.call "vg_keccak_absorb_scratch" Impl.Sha3.X86_64.Stream.absorb) s Q := by
   have hr := rate_lt h.hrate
   refine WP.call (k := Proof.Sha3.absorbX86_64) Proof.Sha3.X86_64.Stream.Absorb.absorb_correct absorb_nosp
     (by rw [absorb_depth]; decide) (absorb_pre h) hc hw ?_
@@ -178,7 +178,7 @@ theorem pad_call (h : PadArgs s st scr rate pos)
       Frame [⟨st, 200⟩, ⟨scr, 640⟩, below (s.gpr .rsp) 16] s.mem s'.mem →
       (∀ msg, Spec.Sha3.Repr s.mem st rate msg → pos = msg.length % rate →
         stateAt s'.mem st = absorb rate (pad rate ((s.gpr .rcx).setWidth 8) msg)) → Q s') :
-    WP isa (.call "vg_keccak_pad" Impl.Sha3.X86_64.Stream.pad) s Q := by
+    WP isa (.call "vg_keccak_pad_scratch" Impl.Sha3.X86_64.Stream.pad) s Q := by
   have hr := rate_lt h.hrate
   refine WP.call (k := Proof.Sha3.padX86_64) Proof.Sha3.X86_64.Stream.Pad.pad_correct pad_nosp
     (by rw [pad_depth]; decide) (pad_pre h) hc hw ?_
@@ -233,7 +233,7 @@ theorem squeeze_call (h : SqueezeArgs s st out scr rate pos len)
     (hQ : ∀ s', s'.rd = s.rd → s'.wr = s.wr → (∀ r ∈ calleeSaved, s'.gpr r = s.gpr r) →
       Frame [⟨st, 200⟩, ⟨out, len⟩, ⟨scr, 640⟩, below (s.gpr .rsp) 16] s.mem s'.mem →
       bytesAt s'.mem out len = squeezeFrom rate (stateAt s.mem st) pos len → Q s') :
-    WP isa (.call "vg_keccak_squeeze" Impl.Sha3.X86_64.Stream.squeeze) s Q := by
+    WP isa (.call "vg_keccak_squeeze_scratch" Impl.Sha3.X86_64.Stream.squeeze) s Q := by
   have hr := rate_lt h.hrate
   refine WP.call (k := Proof.Sha3.squeezeX86_64) Proof.Sha3.X86_64.Stream.Squeeze.squeeze_correct squeeze_nosp
     (by rw [squeeze_depth]; decide) (squeeze_pre h) hc hw ?_

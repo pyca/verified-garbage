@@ -167,6 +167,8 @@ def ZOp.asm : ZOp → String
   | .vpbroadcastq d r => s!"vpbroadcastq {d.zname}, {r.name}"
   | .vmovdqa64 d r => s!"vmovdqa64 {d.zname}, {r.zname}"
   | .vpternlogd d a b n => s!"vpternlogd {d.zname}, {a.zname}, {b.zname}, {n.toNat}"
+  | .vprorq d r n => s!"vprorq {d.zname}, {r.zname}, {n.toNat}"
+  | .vpermq d r o => s!"vpermq {d.zname}, {r.zname}, {o.toNat}"
 
 def Src.str : Src → String
   | .reg r => r.name

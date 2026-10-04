@@ -22,7 +22,7 @@ open Spec.Weierstrass Spec.EcKey Spec.Ecdsa VG.Proof.Weierstrass VG.Proof.EcKey 
 
 variable {C : Curve}
 
-theorem verify_eq (hC : Good C) {bs : List Byte} (hlen : bs.length = 2 * C.len + 1) {b0 : Byte}
+theorem verify_eq (hC : Law C) {bs : List Byte} (hlen : bs.length = 2 * C.len + 1) {b0 : Byte}
     (hb0 : bs.head? = some b0) {x y : Nat} (hxv : ofBytes ((bs.drop 1).take C.len) = x)
     (hyv : ofBytes (bs.drop (C.len + 1)) = y) {P : Point C}
     (hP : ∀ h : Valid C b0 x y, P = .affine ⟨x, h.2.1⟩ ⟨y, h.2.2.1⟩)

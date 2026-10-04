@@ -3,6 +3,7 @@ import VerifiedGarbage.Proof.Sha3.X86_64.Permute
 import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Absorb
 import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Pad
 import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Squeeze
+import VerifiedGarbage.Proof.Sha3.X86_64.Frame
 
 /-! # SHA-3 and SHAKE (FIPS 202) on x86-64 -/
 
@@ -19,24 +20,48 @@ def artifacts : List Artifact := [
   { Spec.Sha3.absorbApi with
     target := X86_64.target
     doc := Spec.Sha3.absorbApi.doc
+    code := Impl.StackScratch.X86_64.withStackScratch 648 .r9 Impl.Sha3.X86_64.Stream.absorb
+    contract := Spec.Sha3.absorbContract X86_64.abi 656
+    stack := 656
+    verified := Proof.Sha3.X86_64.Frame.absorb_framed
+    spSafe := Code.all_of_allInstrs (by lit_decide) },
+  { Spec.Sha3.absorbScratchApi with
+    target := X86_64.target
+    doc := Spec.Sha3.absorbScratchApi.doc
     code := Impl.Sha3.X86_64.Stream.absorb
-    contract := Spec.Sha3.absorbContract X86_64.abi 8
+    contract := Spec.Sha3.absorbScratchContract X86_64.abi 8
     stack := 8
     verified := Proof.Sha3.X86_64.Stream.Absorb.absorb_verified
     spSafe := Code.all_of_allInstrs (by lit_decide) },
   { Spec.Sha3.padApi with
     target := X86_64.target
     doc := Spec.Sha3.padApi.doc
+    code := Impl.StackScratch.X86_64.withStackScratch 648 .r8 Impl.Sha3.X86_64.Stream.pad
+    contract := Spec.Sha3.padContract X86_64.abi 656
+    stack := 656
+    verified := Proof.Sha3.X86_64.Frame.pad_framed
+    spSafe := Code.all_of_allInstrs (by lit_decide) },
+  { Spec.Sha3.padScratchApi with
+    target := X86_64.target
+    doc := Spec.Sha3.padScratchApi.doc
     code := Impl.Sha3.X86_64.Stream.pad
-    contract := Spec.Sha3.padContract X86_64.abi 8
+    contract := Spec.Sha3.padScratchContract X86_64.abi 8
     stack := 8
     verified := Proof.Sha3.X86_64.Stream.Pad.pad_verified
     spSafe := Code.all_of_allInstrs (by lit_decide) },
   { Spec.Sha3.squeezeApi with
     target := X86_64.target
     doc := Spec.Sha3.squeezeApi.doc
+    code := Impl.StackScratch.X86_64.withStackScratch 648 .r9 Impl.Sha3.X86_64.Stream.squeeze
+    contract := Spec.Sha3.squeezeContract X86_64.abi 656
+    stack := 656
+    verified := Proof.Sha3.X86_64.Frame.squeeze_framed
+    spSafe := Code.all_of_allInstrs (by lit_decide) },
+  { Spec.Sha3.squeezeScratchApi with
+    target := X86_64.target
+    doc := Spec.Sha3.squeezeScratchApi.doc
     code := Impl.Sha3.X86_64.Stream.squeeze
-    contract := Spec.Sha3.squeezeContract X86_64.abi 8
+    contract := Spec.Sha3.squeezeScratchContract X86_64.abi 8
     stack := 8
     verified := Proof.Sha3.X86_64.Stream.Squeeze.squeeze_verified
     spSafe := Code.all_of_allInstrs (by lit_decide) }]

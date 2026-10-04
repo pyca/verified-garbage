@@ -362,7 +362,7 @@ theorem crB_rel :
 
 theorem fiB_rel {out : Nat} (ho : OutOk out) :
     RelCT isa (fun x y => FiA a out x ∧ FiA b out y)
-      (callWith finRegs "vg_poly1305_finalize" Impl.Poly1305.X86.finalize) fun _ _ => True :=
+      (callWith finRegs "vg_poly1305_finalize_scratch" Impl.Poly1305.X86.finalize) fun _ _ => True :=
   RelCT.callWith Proof.Poly1305.X86.finalize_ok Proof.Poly1305.X86.finalize_ct (rdFin a)
     (wrFin a out) fun x y ⟨hx, hy⟩ => by
       have py := finalize_pre hb hy.inv.at ho hy.ebx hy.ecx hy.eax hy.esi

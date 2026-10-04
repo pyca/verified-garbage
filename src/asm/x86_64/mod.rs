@@ -5,7 +5,7 @@
 pub(crate) mod aes;
 
 #[rustfmt::skip]
-pub(crate) mod aes_gcm_siv;
+pub(crate) mod aes_ccm;
 
 #[rustfmt::skip]
 pub(crate) mod aes_siv;

@@ -55,6 +55,13 @@ inductive ZOp
   each bit of `zmm1` is the bit of `imm8` that the bits of `zmm1`, `zmm2`
   and `zmm3` there index (see `ternlog`). -/
   | vpternlogd (dst src1 src2 : XReg) (imm : BitVec 8)
+  /-- `vprorq zmm1, zmm2, imm8` (`EVEX.512.66.0F.W1 72 /0 ib`): each
+  quadword of `zmm2` rotated right by `imm8` modulo 64 (see `rorQwords`). -/
+  | vprorq (dst src : XReg) (count : BitVec 8)
+  /-- `vpermq zmm1, zmm2, imm8` (`EVEX.512.66.0F3A.W1 00 /r ib`): the
+  quadwords of each 256-bit half of `zmm2` permuted by `imm8` (see
+  `ZOp.exec`). -/
+  | vpermq (dst src : XReg) (order : BitVec 8)
   deriving DecidableEq, Repr
 
 /-- The legacy SSE instruction whose operation `op` applies to each lane:
@@ -141,6 +148,16 @@ def shuf4Lanes (a b : Nat → BitVec 128) (sel : BitVec 8) (j : Nat) : BitVec 12
   let k := (sel.extractLsb' (2 * j) 2).toNat
   if j < 2 then a k else b k
 
+/-- SDM Vol. 2, "VPRORD/VPRORVD/VPRORQ/VPRORVQ—Bit Rotate Right", for one
+lane: `RIGHT_ROTATE_QWORDS(SRC, COUNT_SRC) { COUNT := COUNT_SRC modulo 64;
+DEST[63:0] := (SRC >> COUNT) | (SRC << (64 - COUNT)); }` for each quadword
+(the "EVEX encoded versions" with an immediate count, no write mask and a
+register source: `DEST[i+63:i] := RIGHT_ROTATE_QWORDS(SRC1[i+63:i], imm8)`
+for each quadword `j`, `i := j * 64`). -/
+def rorQwords (x : BitVec 128) (n : BitVec 8) : BitVec 128 :=
+  let r (i : Nat) := (qword x i).rotateRight (n.toNat % 64)
+  r 1 ++ r 0
+
 /-- Semantics of an AVX-512 instruction that writes only vector registers.
 SDM Vol. 2 (no flags are affected; with 512-bit operands the whole of
 `DEST[511:0]` is written):
@@ -159,7 +176,17 @@ SDM Vol. 2 (no flags are affected; with 512-bit operands the whole of
 * VPTERNLOGD (EVEX.512 encoded version, register `SRC2`, no write mask):
   see `ternlog`, each lane (the SDM's loop over the sixteen doublewords of
   the 512-bit form, `KL, VL = 16, 512`, computes each bit from the same bits
-  of `DEST`, `SRC1` and `SRC2`, so lane by lane). -/
+  of `DEST`, `SRC1` and `SRC2`, so lane by lane).
+* VPRORQ (EVEX.512 encoded version, immediate count, register source, no
+  write mask): see `rorQwords`, each lane.
+* VPERMQ ("VPERMQ (EVEX - imm8 control forms)", `VL = 512`, register
+  source, no write mask): `TMP_DEST[63:0] := (TMP_SRC[255:0] >> (IMM8[1:0] *
+  64))[63:0]; …; TMP_DEST[255:192] := (TMP_SRC[255:0] >> (IMM8[7:6] *
+  64))[63:0]; IF VL >= 512 TMP_DEST[319:256] := (TMP_SRC[511:256] >>
+  (IMM8[1:0] * 64))[63:0]; …; TMP_DEST[511:448] := (TMP_SRC[511:256] >>
+  (IMM8[7:6] * 64))[63:0]`, with `TMP_SRC := SRC`: each 256-bit half of
+  `DEST` is the same half of `SRC` permuted as VEX.256 VPERMQ permutes a
+  register (`permQwords`). -/
 def ZOp.exec : ZOp → State → State
   | .zbin op d a b, s =>
     let f (i : Nat) := op.sse.eval (s.zlane a i) (s.zlane b i)
@@ -192,5 +219,13 @@ def ZOp.exec : ZOp → State → State
   | .vpternlogd d a b n, s =>
     let f (i : Nat) := ternlog (s.zlane d i) (s.zlane a i) (s.zlane b i) n
     s.setZ d (f 0) (f 1) (f 2) (f 3)
+  | .vprorq d r n, s =>
+    let f (i : Nat) := rorQwords (s.zlane r i) n
+    s.setZ d (f 0) (f 1) (f 2) (f 3)
+  | .vpermq d r o, s =>
+    let lo := permQwords (s.zlane r 1 ++ s.zlane r 0) o
+    let hi := permQwords (s.zlane r 3 ++ s.zlane r 2) o
+    s.setZ d (lo.extractLsb' 0 128) (lo.extractLsb' 128 128) (hi.extractLsb' 0 128)
+      (hi.extractLsb' 128 128)
 
 end VG.X86_64

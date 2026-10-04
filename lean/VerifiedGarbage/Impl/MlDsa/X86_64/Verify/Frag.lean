@@ -104,18 +104,18 @@ def kzero : List Instr := .mov32 .rax (.imm 0) :: Impl.MlKem.X86_64.zeroSt .rbx 
 
 /-- Absorb the `len` bytes at `src`, at position `pos` of the block of `rate` bytes. -/
 def kabs (src : Ptr) (len rate pos : Nat) : Prog isa :=
-  callAt "vg_keccak_absorb" Impl.Sha3.X86_64.Stream.absorb
+  callAt "vg_keccak_absorb_scratch" Impl.Sha3.X86_64.Stream.absorb
     [(.rdi, .ptr (sc 0)), (.rsi, .imm rate), (.rdx, .imm pos), (.rcx, .ptr src), (.r8, .imm len),
       (.r9, .ptr (sc 200))]
 
 /-- Pad, at position `pos`, with the suffix `suffix`. -/
 def kpad (rate pos suffix : Nat) : Prog isa :=
-  callAt "vg_keccak_pad" Impl.Sha3.X86_64.Stream.pad
+  callAt "vg_keccak_pad_scratch" Impl.Sha3.X86_64.Stream.pad
     [(.rdi, .ptr (sc 0)), (.rsi, .imm rate), (.rdx, .imm pos), (.rcx, .imm suffix), (.r8, .ptr (sc 200))]
 
 /-- Squeeze `len` bytes from position 0 to `dst`. -/
 def ksqz (rate : Nat) (dst : Ptr) (len : Nat) : Prog isa :=
-  callAt "vg_keccak_squeeze" Impl.Sha3.X86_64.Stream.squeeze
+  callAt "vg_keccak_squeeze_scratch" Impl.Sha3.X86_64.Stream.squeeze
     [(.rdi, .ptr (sc 0)), (.rsi, .imm rate), (.rdx, .imm 0), (.rcx, .ptr dst), (.r8, .imm len),
       (.r9, .ptr (sc 200))]
 

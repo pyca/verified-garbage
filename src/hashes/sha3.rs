@@ -105,25 +105,18 @@ impl<const RATE: usize> Sponge<RATE> {
     /// Absorbs `data`.
     fn absorb(&mut self, data: &[u8]) {
         let backend = self.backend();
-        let mut scratch = [0u64; 80];
         // SAFETY: `RATE` is one of the rates of FIPS 202 and `self.pos` is
         // less than it, and is the length modulo `RATE` of the message that
         // `self.state` represents. `self.state` is valid for reads and
-        // writes of 200 bytes, `data` for reads of `data.len()` bytes and
-        // `scratch` for reads and writes of 640 bytes; they are distinct
-        // objects, so they do not overlap each other or the stack below the
-        // stack pointer. The result is the new length modulo `RATE`. Backend
+        // writes of 200 bytes and `data` for reads of `data.len()` bytes;
+        // they are distinct objects, so they do not overlap each other or the
+        // stack below the stack pointer. The result is the new length modulo `RATE`. Backend
         // selection checks every CPU feature required by the hardware variant.
         self.pos = unsafe {
             match backend {
-                Backend::Scalar => vg_keccak_absorb(
-                    &mut self.state,
-                    RATE,
-                    self.pos,
-                    data.as_ptr(),
-                    data.len(),
-                    &mut scratch,
-                ),
+                Backend::Scalar => {
+                    vg_keccak_absorb(&mut self.state, RATE, self.pos, data.as_ptr(), data.len())
+                }
                 #[cfg(all(target_arch = "aarch64", feature = "cpu-features-env"))]
                 Backend::Sha3 => vg_keccak_absorb_sha3(
                     &mut self.state,
@@ -131,7 +124,6 @@ impl<const RATE: usize> Sponge<RATE> {
                     self.pos,
                     data.as_ptr(),
                     data.len(),
-                    &mut scratch,
                 ),
             }
         };
@@ -141,21 +133,16 @@ impl<const RATE: usize> Sponge<RATE> {
     /// to squeeze its output.
     fn pad(mut self, suffix: u32) -> Squeezer<RATE> {
         let backend = self.backend();
-        let mut scratch = [0u64; 80];
         // SAFETY: as in `absorb`: `RATE` is one of the rates of FIPS 202 and
         // `self.pos` is less than it, and is the length modulo `RATE` of the
-        // message `self.state` represents; `self.state` and `scratch` are
-        // distinct objects valid for reads and writes of their sizes. Backend
+        // message `self.state` represents; `self.state` is valid for reads
+        // and writes of its size. Backend
         // selection checked every CPU feature required by the chosen variant.
         unsafe {
             match backend {
-                Backend::Scalar => {
-                    vg_keccak_pad(&mut self.state, RATE, self.pos, suffix, &mut scratch)
-                }
+                Backend::Scalar => vg_keccak_pad(&mut self.state, RATE, self.pos, suffix),
                 #[cfg(all(target_arch = "aarch64", feature = "cpu-features-env"))]
-                Backend::Sha3 => {
-                    vg_keccak_pad_sha3(&mut self.state, RATE, self.pos, suffix, &mut scratch)
-                }
+                Backend::Sha3 => vg_keccak_pad_sha3(&mut self.state, RATE, self.pos, suffix),
             }
         };
         Squeezer {
@@ -194,24 +181,18 @@ impl<const RATE: usize> Drop for Squeezer<RATE> {
 impl<const RATE: usize> Squeezer<RATE> {
     /// Writes the next `out.len()` bytes of output to `out`.
     fn squeeze(&mut self, out: &mut [u8]) {
-        let mut scratch = [0u64; 80];
         // SAFETY: `RATE` is one of the rates of FIPS 202 and `self.pos` is at
         // most `RATE`. `self.state` is valid for reads and writes of 200
-        // bytes, `out` for writes of `out.len()` bytes and `scratch` for
-        // reads and writes of 640 bytes; they are distinct objects, so they
-        // do not overlap each other or the stack below the stack pointer.
+        // bytes and `out` for writes of `out.len()` bytes; they are distinct
+        // objects, so they do not overlap each other or the stack below the
+        // stack pointer.
         // The state left and the result continue the output. The backend was
         // selected only after checking every required CPU feature.
         self.pos = unsafe {
             match self.backend {
-                Backend::Scalar => vg_keccak_squeeze(
-                    &mut self.state,
-                    RATE,
-                    self.pos,
-                    out.as_mut_ptr(),
-                    out.len(),
-                    &mut scratch,
-                ),
+                Backend::Scalar => {
+                    vg_keccak_squeeze(&mut self.state, RATE, self.pos, out.as_mut_ptr(), out.len())
+                }
                 #[cfg(all(target_arch = "aarch64", feature = "cpu-features-env"))]
                 Backend::Sha3 => vg_keccak_squeeze_sha3(
                     &mut self.state,
@@ -219,7 +200,6 @@ impl<const RATE: usize> Squeezer<RATE> {
                     self.pos,
                     out.as_mut_ptr(),
                     out.len(),
-                    &mut scratch,
                 ),
             }
         };

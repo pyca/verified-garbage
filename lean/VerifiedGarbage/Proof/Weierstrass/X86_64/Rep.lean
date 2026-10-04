@@ -1,5 +1,5 @@
 import VerifiedGarbage.Proof.Weierstrass.X86_64.Ladder
-import VerifiedGarbage.Proof.Weierstrass.LadderStep
+import VerifiedGarbage.Proof.Weierstrass.Law
 
 /-!
 # Short Weierstrass curves on x86-64: the ladder computes `[k]P`
@@ -15,7 +15,7 @@ namespace VG.Proof.Weierstrass.X86_64
 open VG VG.X86_64 VG.Impl.Weierstrass.X86_64 VG.Impl.Weierstrass Spec.Weierstrass
 
 theorem step_rep {L : LadderCfg} {C : Curve} {base : Addr} {s : State} {k : Nat} {P : Point C}
-    (hC : Good C) (hP : onCurve C P = true)
+    (hC : Law C) (hP : onCurve C P = true)
     (ha : tmv C L.M.n base s L.S.a = Fin.ofNat C.p C.a)
     (hb : tmv C L.M.n base s L.S.b3 = Fin.ofNat C.p (3 * C.b))
     (hG : Rep C (tmv C L.M.n base s L.G.x) (tmv C L.M.n base s L.G.y) (tmv C L.M.n base s L.G.z) P) :

@@ -10,7 +10,7 @@
 //! hash value.
 //!
 //! The implementations of `update` and `finalize` are SHA-256's, chosen the
-//! same way, and called through the same adapters (see `super::sha256`).
+//! same way (see `super::sha256`).
 
 #![cfg(any(
     target_arch = "x86_64",
@@ -19,13 +19,6 @@
     target_arch = "x86"
 ))]
 
-use super::sha256::{finalize, update};
-#[cfg(target_arch = "x86_64")]
-use super::sha256::{finalize_avx2, update_avx2};
-#[cfg(target_arch = "aarch64")]
-use super::sha256::{finalize_sha2, update_sha2};
-#[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
-use super::sha256::{finalize_shani, update_shani};
 use crate::arch::sha256::vg_sha224_init;
 #[cfg(target_arch = "x86_64")]
 use crate::arch::sha256::{VG_SHA256_FINALIZE_AVX2_FEATURES, VG_SHA256_UPDATE_AVX2_FEATURES};
@@ -33,27 +26,33 @@ use crate::arch::sha256::{VG_SHA256_FINALIZE_AVX2_FEATURES, VG_SHA256_UPDATE_AVX
 use crate::arch::sha256::{VG_SHA256_FINALIZE_SHA2_FEATURES, VG_SHA256_UPDATE_SHA2_FEATURES};
 #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
 use crate::arch::sha256::{VG_SHA256_FINALIZE_SHANI_FEATURES, VG_SHA256_UPDATE_SHANI_FEATURES};
+use crate::arch::sha256::{vg_sha256_finalize, vg_sha256_update};
+#[cfg(target_arch = "x86_64")]
+use crate::arch::sha256::{vg_sha256_finalize_avx2, vg_sha256_update_avx2};
+#[cfg(target_arch = "aarch64")]
+use crate::arch::sha256::{vg_sha256_finalize_sha2, vg_sha256_update_sha2};
+#[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+use crate::arch::sha256::{vg_sha256_finalize_shani, vg_sha256_update_shani};
 
 super::streaming_hash!(
     /// An incremental SHA-224 computation (FIPS 180-4 §6.3).
     Sha224 {
         state: 96,
-        scratch: 0,
         block: 64,
         output: 28,
         final_hash: 32,
         init: vg_sha224_init,
         backends: Sha224Backend {
-            Scalar => (update, finalize),
+            Scalar => (vg_sha256_update, vg_sha256_finalize),
             #[cfg(target_arch = "aarch64")]
             Sha2 if [VG_SHA256_UPDATE_SHA2_FEATURES, VG_SHA256_FINALIZE_SHA2_FEATURES] =>
-                (update_sha2, finalize_sha2),
+                (vg_sha256_update_sha2, vg_sha256_finalize_sha2),
             #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
             ShaNi if [VG_SHA256_UPDATE_SHANI_FEATURES, VG_SHA256_FINALIZE_SHANI_FEATURES] =>
-                (update_shani, finalize_shani),
+                (vg_sha256_update_shani, vg_sha256_finalize_shani),
             #[cfg(target_arch = "x86_64")]
             Avx2 if [VG_SHA256_UPDATE_AVX2_FEATURES, VG_SHA256_FINALIZE_AVX2_FEATURES] =>
-                (update_avx2, finalize_avx2),
+                (vg_sha256_update_avx2, vg_sha256_finalize_avx2),
         },
     }
 );

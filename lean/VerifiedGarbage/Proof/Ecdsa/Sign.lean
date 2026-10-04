@@ -1,4 +1,4 @@
-import VerifiedGarbage.Proof.Weierstrass.Complete
+import VerifiedGarbage.Proof.Weierstrass.Law
 import VerifiedGarbage.Spec.Ecdsa
 
 /-!
@@ -18,7 +18,7 @@ open Spec.Weierstrass Spec.Ecdsa Proof.Weierstrass
 
 variable {C : Curve}
 
-theorem signWith_eq (hC : Good C) {d e k : Nat} {X Y Z : Fe C} (hR : Rep C X Y Z (mul k (G C)))
+theorem signWith_eq (hC : Law C) {d e k : Nat} {X Y Z : Fe C} (hR : Rep C X Y Z (mul k (G C)))
     {x : Nat} (hx : x < C.p) (hxX : Fin.ofNat C.p x = X * Z ^ (C.p - 2))
     {s : Nat} (hs : s < C.n)
     (hsv : Fin.ofNat C.n s =

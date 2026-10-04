@@ -9,6 +9,7 @@
 //! one must be rejected, and for an `acceptable` one either outcome is fine
 //! (but a result, if produced, must be the expected one).
 
+mod aes_ccm;
 mod aes_gcm;
 mod aes_gcm_siv;
 mod aes_siv;

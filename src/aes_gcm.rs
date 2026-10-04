@@ -413,16 +413,12 @@ impl AesGcm {
                 vg_aes_gcm_init_vaes_vpclmul_avx512],
             avx: [vg_aes_gcm_init_aesni_pclmul_avx],
             aarch64: [vg_aes_gcm_init_aes]);
-        let mut scratch = MaybeUninit::<[u64; 320]>::uninit();
         // SAFETY: `key` is valid for reads of `key.len()` bytes, which is 16,
-        // 24 or 32; `k.ctx` and `scratch` are valid for reads and writes of
-        // 256 and 2560 bytes. They are distinct objects, so no two overlap,
-        // nor do they overlap anything on the stack, or wrap around the end
-        // of the address space. The CPU has the features of the
-        // implementation selected. `scratch` is uninitialized: it is only
-        // working space, and the contract's result does not depend on what
-        // it holds.
-        unsafe { init(key.as_ptr(), key.len(), &mut k.ctx, scratch.as_mut_ptr()) };
+        // 24 or 32; `k.ctx` is valid for reads and writes of 256 bytes. They
+        // are distinct objects, so they do not overlap each other or anything
+        // on the stack, or wrap around the end of the address space. The CPU
+        // has the features of the implementation selected.
+        unsafe { init(key.as_ptr(), key.len(), &mut k.ctx) };
         Ok(k)
     }
 
@@ -617,24 +613,13 @@ impl<'a, const DECRYPT: bool> Stream<'a, DECRYPT> {
                 vg_aes_gcm_stream_init_vaes_vpclmul_avx512],
             avx: [vg_aes_gcm_stream_init_aesni_pclmul_avx],
             aarch64: [vg_aes_gcm_stream_init_aes]);
-        let mut scratch = MaybeUninit::<[u64; 320]>::uninit();
         // SAFETY: `key.ctx` is a key context (as in
         // `AesGcm::encrypt_in_place`), valid for reads of 256 bytes, `nonce`
-        // for reads of `nonce.len()`, and `s.state` and `scratch`
-        // (uninitialized working space, as in `AesGcm::new`) for reads and
-        // writes of 80 and 2560. They are distinct objects, so the writable
-        // ones overlap nothing else, nor anything on the stack, and none
-        // wraps around. The CPU has the features of the implementation
-        // selected.
-        unsafe {
-            init(
-                &key.ctx,
-                nonce.as_ptr(),
-                nonce.len(),
-                &mut s.state,
-                scratch.as_mut_ptr(),
-            )
-        };
+        // for reads of `nonce.len()`, and `s.state` for reads and writes of
+        // 80. They are distinct objects, so the writable one overlaps nothing
+        // else, nor anything on the stack, and none wraps around. The CPU has
+        // the features of the implementation selected.
+        unsafe { init(&key.ctx, nonce.as_ptr(), nonce.len(), &mut s.state) };
         Ok(s)
     }
 
@@ -654,7 +639,6 @@ impl<'a, const DECRYPT: bool> Stream<'a, DECRYPT> {
                 vg_aes_gcm_stream_aad_vaes_vpclmul_avx512],
             avx: [vg_aes_gcm_stream_aad_aesni_pclmul_avx],
             aarch64: [vg_aes_gcm_stream_aad_aes]);
-        let mut scratch = MaybeUninit::<[u64; 320]>::uninit();
         // SAFETY: as in `new`; `self.state` represents a message with
         // `self.aad_len` bytes of additional data and no text yet.
         unsafe {
@@ -664,7 +648,6 @@ impl<'a, const DECRYPT: bool> Stream<'a, DECRYPT> {
                 self.aad_len,
                 aad.as_ptr(),
                 aad.len(),
-                scratch.as_mut_ptr(),
             )
         };
         self.aad_len = aad_len;
@@ -700,7 +683,10 @@ impl<'a, const DECRYPT: bool> Stream<'a, DECRYPT> {
         };
         let mut scratch = MaybeUninit::<[u64; 320]>::uninit();
         // SAFETY: as in `new`, with `data` valid for reads and writes of
-        // `data.len()` bytes (a unique borrow, so it overlaps nothing else);
+        // `data.len()` bytes (a unique borrow, so it overlaps nothing else),
+        // and `scratch` (a local, so it overlaps nothing else either) of 2560
+        // bytes: it is only working space, and the contract's result does
+        // not depend on what it holds, so it may be uninitialized;
         // `self.state` represents a message with `self.aad_len` bytes of
         // additional data and `self.text_len` of text.
         unsafe {

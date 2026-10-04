@@ -33,6 +33,8 @@ open VG.Proof.Aes.X86_64 (Ctr32Impl)
 structure GhashImpl where
   fn : Fn
   depth : fn.code.depth = 0
+  /-- It uses no stack, so that its callers can say how much they use. -/
+  noStack : fn.code.x86_64Depth = 0 := by lit_decide
   ok : ∀ s, Proof.Gcm.ghashX86_64.pre s →
     ∃ t s', Exec isa fn.code s t s' ∧ abiPreserved s s' ∧ Proof.Gcm.ghashX86_64.post s s'
   ct : ConstantTime isa Proof.Gcm.ghashX86_64.pre Proof.Gcm.ghashX86_64.pub fn.code
@@ -46,6 +48,8 @@ structure GhashImpl where
 structure KeyImpl where
   fn : Fn
   depth : fn.code.depth = 0
+  /-- It uses no stack, so that its callers can say how much they use. -/
+  noStack : fn.code.x86_64Depth = 0 := by lit_decide
   ok : ∀ s, Proof.Aes.expandKeyX86_64.pre s →
     ∃ t s', Exec isa fn.code s t s' ∧ abiPreserved s s' ∧ Proof.Aes.expandKeyX86_64.post s s'
   ct : ConstantTime isa Proof.Aes.expandKeyX86_64.pre Proof.Aes.expandKeyX86_64.pub fn.code
