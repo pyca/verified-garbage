@@ -209,12 +209,13 @@ theorem base_wsub : ∀ r ∈ baseWr L, Within r L.OUT ∨ Within r L.SCR := by
   · exact .inl (within_base _ (by omega))
   · exact .inr (within_base _ (by omega))
 
-theorem base_ok (hL : L.Ok) {t : State} (hc : Ctx L g mx m₀ t) (ha : BaseArgs L t) {s : Nat}
+theorem base_ok (hb : Proof.Ed448.BaseLadderOk) (hL : L.Ok) {t : State} (hc : Ctx L g mx m₀ t)
+    (ha : BaseArgs L t) {s : Nat}
     (hs : Spec.Ed448.decodeLE (Spec.Ed448.bytesAt t.mem (L.B + BitVec.ofNat 64 16) 57) = s) :
     WP isa (.call "vg_ed448_scalar_base" scalarBase) t fun t' => Ctx L g mx m₀ t' ∧
       Spec.Ed448.bytesAt t'.mem L.out 57 =
         Spec.Ed448.encodePoint (Spec.Ed448.pointMul s Spec.Ed448.basePoint) := by
-  refine call_ok hL Proof.Ed448.X86_64.scalarBase_ok base_nosp base_depth hc
+  refine call_ok hL (Proof.Ed448.X86_64.scalarBase_ok hb) base_nosp base_depth hc
     (base_pre hL hc ha) base_sub base_wsub fun s' hc' _ _ ⟨s₂, hm, _, hpost⟩ => ⟨hc', ?_⟩
   obtain ⟨g1, g2, -⟩ := base_regs ha (baseRd L) (baseWr L)
   have h := hpost

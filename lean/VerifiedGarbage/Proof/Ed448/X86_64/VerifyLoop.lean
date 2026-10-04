@@ -1,6 +1,5 @@
 import VerifiedGarbage.Proof.Ed448.X86_64.VerifyField
 import VerifiedGarbage.Proof.Ed448.X86_64.BaseLoop
-import Mathlib.Tactic.Abel
 
 /-!
 # Ed448 verification's equation on x86-64: `[S]B + [k](-A)`
@@ -8,12 +7,13 @@ import Mathlib.Tactic.Abel
 One iteration of `vloop` (`vstep_ok`), for the bits `t` of `S` (at `BITS`)
 and of `k` (at `KBITS`): `Q` doubled, then `B` (slots 8–10) added and
 swapped in by the first bit, and `-A` (slots 6, 7 and 10) by the second. The
-loop's invariant (`VInv`): `Q` represents `[S >> n]B + [k >> n](-A)`.
+loop's invariant (`VInv`): `Q` is the reference ladder's point after the
+bits above `n` (`Proof.Ed448.vladder`).
 -/
 
 namespace VG.Proof.Ed448.X86_64
 
-open VG VG.X86_64 VG.Impl.Ed448.X86_64 VG.Proof.Ed448 VG.Proof.EdwardsLaw
+open VG VG.X86_64 VG.Impl.Ed448.X86_64 VG.Proof.Ed448
 open VG.Proof.X448.X86_64 (Scr Index Env E Keep FieldOk off contains_sc mask cswapE opSwap clob Outside)
 open VG.Impl.X448.X86_64 (BITS slot cswap)
 
@@ -189,40 +189,18 @@ theorem vstep_ok {s : State} {base : Addr} (hs : Scr s base) {t : Nat} (ht : t <
   · rw [m', e8, m7, e6, e5, m4, e3, e2, m1]
     rfl
 
-/-- One bit of both scalars: `Q` for `[S >> (t+1)]B + [k >> (t+1)]a` becomes `Q` for
-`[S >> t]B + [k >> t]a`. -/
-theorem rep_vstep {e : Env} {S K t : Nat} {a : EPoint dZ}
-    (hr : Rep (pt e 0 1 2) ((S >>> (t + 1)) • baseAff + (K >>> (t + 1)) • a))
-    (hq : pt e 8 9 10 = Spec.Ed448.basePoint) (ha : Rep (pt e 6 7 10) a) (hd : e 11 = Spec.Ed448.d) :
-    Rep (pt (vstepEnv (decide ((S >>> t) &&& 1 = 1)) (decide ((K >>> t) &&& 1 = 1)) e) 0 1 2)
-      ((S >>> t) • baseAff + (K >>> t) • a) := by
-  rw [vstepEnv_pt, hd, hq]
+/-- One bit of both scalars: the reference ladder's point after the bits above
+`t`, then after bit `t`. -/
+theorem vladder_step {e : Env} {S K t : Nat} {A : Spec.Ed448.Point} (ht : t < 456)
+    (hr : pt e 0 1 2 = vladder S K A (456 - (t + 1)))
+    (hq : pt e 8 9 10 = Spec.Ed448.basePoint) (ha : pt e 6 7 10 = A) (hd : e 11 = Spec.Ed448.d) :
+    pt (vstepEnv (decide ((S >>> t) &&& 1 = 1)) (decide ((K >>> t) &&& 1 = 1)) e) 0 1 2 =
+      vladder S K A (456 - t) := by
+  rw [vstepEnv_pt, hd, hq, ha, hr, vladder_bit S K A ht]
   simp only [addWith_d]
-  have h2 := double_rep hr
-  have hS : (S >>> t) &&& 1 < 2 := Nat.lt_of_le_of_lt Nat.and_le_right (by decide)
-  have hK : (K >>> t) &&& 1 < 2 := Nat.lt_of_le_of_lt Nat.and_le_right (by decide)
-  have e1 : (S >>> t) • baseAff + (K >>> t) • a =
-      ((S >>> (t + 1)) • baseAff + (K >>> (t + 1)) • a) + ((S >>> (t + 1)) • baseAff + (K >>> (t + 1)) • a) +
-        ((S >>> t) &&& 1) • baseAff + ((K >>> t) &&& 1) • a := by
-    conv => lhs; rw [shift_step S t, shift_step K t]
-    rw [add_nsmul, add_nsmul, two_mul, two_mul, add_nsmul, add_nsmul]
-    abel
-  rw [e1]
-  generalize (S >>> t) &&& 1 = bs at *
-  generalize (K >>> t) &&& 1 = bk at *
-  rcases (by omega : bs = 0 ∨ bs = 1) with rfl | rfl <;> rcases (by omega : bk = 0 ∨ bk = 1) with rfl | rfl
-  · simp only [zero_nsmul, add_zero, show decide ((0 : Nat) = 1) = false from rfl]; exact h2
-  · simp only [zero_nsmul, add_zero, one_nsmul, show decide ((0 : Nat) = 1) = false from rfl,
-      Bool.false_eq_true, ite_false]
-    exact pointAdd_rep h2 ha
-  · simp only [zero_nsmul, add_zero, one_nsmul, show decide ((0 : Nat) = 1) = false from rfl,
-      Bool.false_eq_true, ite_false]
-    exact pointAdd_rep h2 basePoint_rep
-  · simp only [one_nsmul]
-    exact pointAdd_rep (pointAdd_rep h2 basePoint_rep) ha
+  rfl
 
-/-- The loop's invariant, after the bits above `n` of `S` and `k`, with `-A` the point `A`
-(`Q`'s value only if `A` is a point of the curve: if decoding failed it is not). -/
+/-- The loop's invariant, after the bits above `n` of `S` and `k`, with `-A` the point `A`. -/
 structure VInv (base : Addr) (S K : Nat) (A : Spec.Ed448.Point) (s₀ : State) (n : Nat) (s : State) : Prop where
   scr : Scr s base
   rbx : s.gpr .rbx = BitVec.ofNat 64 n
@@ -233,7 +211,7 @@ structure VInv (base : Addr) (S K : Nat) (A : Spec.Ed448.Point) (s₀ : State) (
   q : pt (E s.mem base) 8 9 10 = Spec.Ed448.basePoint
   na : pt (E s.mem base) 6 7 10 = A
   d : E s.mem base 11 = Spec.Ed448.d
-  rep : Valid A → Rep (pt (E s.mem base) 0 1 2) ((S >>> n) • baseAff + (K >>> n) • toAffine A)
+  rep : pt (E s.mem base) 0 1 2 = vladder S K A (456 - n)
 
 include hf in
 theorem vloop_ok {s₀ : State} {base : Addr} {S K : Nat} {A : Spec.Ed448.Point}
@@ -268,7 +246,7 @@ theorem vloop_ok {s₀ : State} {base : Addr} {S K : Nat} {A : Spec.Ed448.Point}
     · rw [pt_congr (k' 8 (by decide)) (k' 9 (by decide)) (k' 10 (by decide))]; exact hi.q
     · rw [pt_congr (k' 6 (by decide)) (k' 7 (by decide)) (k' 10 (by decide))]; exact hi.na
     · rw [k' 11 (by decide)]; exact hi.d
-    · intro hA; rw [e']; exact rep_vstep (hi.rep hA) hi.q (by rw [hi.na]; exact rep_toAffine hA) hi.d
+    · rw [e']; exact vladder_step (by omega) hi.rep hi.q hi.na hi.d
   simp only [eval, z', Option.map_some]
   rcases Nat.eq_zero_or_pos t with h | h
   · subst h

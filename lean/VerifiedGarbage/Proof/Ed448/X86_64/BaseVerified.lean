@@ -7,7 +7,8 @@ import VerifiedGarbage.Spec.Ed448.Contract
 /-!
 # Ed448 base-point multiplication on x86-64: `Verified`
 
-Correctness including the ABI, constant time
+Correctness including the ABI, given that the reference ladder encodes `[k]B`
+(`BaseLadderOk`, which the registration files pass in), constant time
 (by taint tracking: the only branches are on the loop counters, and every
 address is an argument plus a constant or a counter), and a concrete state
 satisfying the signature's contract.
@@ -51,18 +52,18 @@ theorem scalarBase_agree {s₁ s₂ : State} (h₁ : scalarBaseLocal.pre s₁)
   · intro sl h; simp [scalarBaseτ] at h
   · intro sl h; simp [scalarBaseτ] at h
 
-theorem scalarBase_ok (s : State) (hs : scalarBaseLocal.pre s) :
+theorem scalarBase_ok (hL : Proof.Ed448.BaseLadderOk) (s : State) (hs : scalarBaseLocal.pre s) :
     ∃ t s', Exec isa scalarBase s t s' ∧ abiPreserved s s' ∧ scalarBaseLocal.post s s' := by
-  obtain ⟨t, s', he, h⟩ := scalarBase_correct Proof.X448.X86_64.baseline_ok hs
+  obtain ⟨t, s', he, h⟩ := scalarBase_correct Proof.X448.X86_64.baseline_ok hL hs
   exact ⟨t, s', he, abiPreserved_of_exec (by lit_decide) he h.1, h.2⟩
 
 theorem scalarBase_ct : ConstantTime isa scalarBaseLocal.pre scalarBaseLocal.pub scalarBase := by
   refine VG.Taint.constantTime (A := taint) scalarBaseτ
     (fun _ _ h₁ h₂ hp => scalarBase_agree h₁ h₂ hp) (by taint_decide)
 
-theorem scalarBase_verified : Verified X86_64.target scalarBase
+theorem scalarBase_verified (hL : Proof.Ed448.BaseLadderOk) : Verified X86_64.target scalarBase
     (Spec.Ed448.scalarBaseContract X86_64.abi) :=
-  Verified.of_correct scalarBase_ok scalarBase_ct (by
+  Verified.of_correct (scalarBase_ok hL) scalarBase_ct (by
     sig_implies [Spec.Ed448.scalarBaseContract, Spec.Ed448.scalarBaseSig,
       Spec.Ed448.scratchWords, X86_64.abi, X86_64.argRegs, scalarBaseLocal]
       [scalarBaseSat] using scalarBaseSat)

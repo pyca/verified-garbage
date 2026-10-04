@@ -7,11 +7,13 @@ import VerifiedGarbage.Spec.Ed448.Contract
 /-!
 # Ed448 verification's equation on x86-64: `Verified`
 
-Correctness including the ABI, constant time (by taint tracking: the only
-branches are on the loop counters, and every address is an argument plus a
-constant or a counter, or a pointer the code stored in the working space
-before any store at a counter's offset could change it), and a concrete state
-satisfying the signature's contract. The contract lets timing depend on the
+Correctness including the ABI, given the reference computations' agreement
+with the specification (`RecoverOk`, `VerifyEqOk`, which the registration
+files pass in), constant time (by taint tracking: the only branches are on
+the loop counters, and every address is an argument plus a constant or a
+counter, or a pointer the code stored in the working space before any store
+at a counter's offset could change it), and a concrete state satisfying the
+signature's contract. The contract lets timing depend on the
 inputs; the code's depends on the pointers alone.
 -/
 
@@ -52,9 +54,10 @@ theorem verifyEquation_agree {s₁ s₂ : State} (h₁ : verifyEquationLocal.pre
   · intro sl h; simp [verifyEquationτ] at h
   · intro sl h; simp [verifyEquationτ] at h
 
-theorem verifyEquation_ok (s : State) (hs : verifyEquationLocal.pre s) :
+theorem verifyEquation_ok (hR : Proof.Ed448.RecoverOk) (hE : Proof.Ed448.VerifyEqOk) (s : State)
+    (hs : verifyEquationLocal.pre s) :
     ∃ t s', Exec isa verifyEquation s t s' ∧ abiPreserved s s' ∧ verifyEquationLocal.post s s' := by
-  obtain ⟨t, s', he, h⟩ := verifyEquation_correct Proof.X448.X86_64.baseline_ok hs
+  obtain ⟨t, s', he, h⟩ := verifyEquation_correct Proof.X448.X86_64.baseline_ok hR hE hs
   exact ⟨t, s', he, abiPreserved_of_exec (by lit_decide) he h.1, h.2⟩
 
 theorem verifyEquation_ct :
@@ -84,8 +87,8 @@ theorem verifyEquation_implies :
     sig_implies_sat [Spec.Ed448.verifyEquationContract, Spec.Ed448.verifyEquationSig,
       Spec.Ed448.scratchWords, X86_64.abi, X86_64.argRegs] [verifyEquationSat] using verifyEquationSat
 
-theorem verifyEquation_verified : Verified X86_64.target verifyEquation
-    (Spec.Ed448.verifyEquationContract X86_64.abi) :=
-  Verified.of_correct verifyEquation_ok verifyEquation_ct verifyEquation_implies
+theorem verifyEquation_verified (hR : Proof.Ed448.RecoverOk) (hE : Proof.Ed448.VerifyEqOk) :
+    Verified X86_64.target verifyEquation (Spec.Ed448.verifyEquationContract X86_64.abi) :=
+  Verified.of_correct (verifyEquation_ok hR hE) verifyEquation_ct verifyEquation_implies
 
 end VG.Proof.Ed448.X86_64

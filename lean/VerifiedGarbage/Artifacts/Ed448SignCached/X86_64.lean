@@ -1,13 +1,15 @@
 import VerifiedGarbage.TCB.X86_64.Target
 import VerifiedGarbage.Proof.Ed448.X86_64.SignCached.Verified
 import VerifiedGarbage.Proof.Ed448.X86_64.BaseVerified
+import VerifiedGarbage.Proof.Ed448.Facts
 
 /-!
 # Ed448 signing with a cached public key on x86-64
 
 The signature and documentation come from the reviewed Ed448 API. The proof
 of `vg_ed448_scalar_base` is passed to the caller's here, so that only this
-file imports it.
+file imports it, with the reference ladder's agreement with the specification
+(`Proof/Ed448/Facts.lean`).
 -/
 
 namespace VG.Artifacts.Ed448SignCached.X86_64
@@ -27,7 +29,8 @@ def artifacts : List Artifact := [
     code := Impl.Ed448.X86_64.SignCached.signCached
     contract := Spec.Ed448.signCachedContract X86_64.abi 464
     stack := 464
-    verified := Proof.Ed448.X86_64.SignCached.signCached_verified Proof.Ed448.X86_64.scalarBase_ok
+    verified := Proof.Ed448.X86_64.SignCached.signCached_verified
+      (Proof.Ed448.X86_64.scalarBase_ok Proof.Ed448.baseLadder_ok)
       Proof.Ed448.X86_64.scalarBase_ct
     spSafe := Code.all_of_allInstrs (by lit_decide) }]
 

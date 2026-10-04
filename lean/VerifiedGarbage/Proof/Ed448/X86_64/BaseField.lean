@@ -1,6 +1,6 @@
 import VerifiedGarbage.Impl.Ed448.X86_64.ScalarBase
 import VerifiedGarbage.Proof.X448.X86_64.Env
-import VerifiedGarbage.Proof.Ed448.Group.Projective
+import VerifiedGarbage.Proof.Ed448.Ref
 
 /-!
 # Ed448 base-point multiplication on x86-64: field programs
