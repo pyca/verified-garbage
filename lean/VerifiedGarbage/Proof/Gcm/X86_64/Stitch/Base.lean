@@ -1,6 +1,5 @@
 import VerifiedGarbage.Impl.Gcm.X86_64.Stitch
 import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Spec
-import VerifiedGarbage.Proof.Gcm.X86_64.Vpclmul.Ghash
 import VerifiedGarbage.Proof.Aes.X86_64.Vaes.Ctr32
 
 /-!
