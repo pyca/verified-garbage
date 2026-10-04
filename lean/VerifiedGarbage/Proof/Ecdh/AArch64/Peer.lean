@@ -25,31 +25,11 @@ open VG.Proof.Mont.AArch64 VG.Proof.Mont VG.Proof.Weierstrass.AArch64 VG.Proof.W
 open VG.Proof.Ecdsa.AArch64
 open VG.Proof.Ed25519.AArch64 (Keeps Keeps.trans Keeps.mono read_x)
 
-theorem movz_ok (s : State) (r : Reg) (v : BitVec 16) :
-    WP isa (.block [.movz .x r v 0]) s fun s' => s'.gpr r = v.setWidth 64 ∧ Keeps [r] s s' := by
-  apply WP.of_runBlock
-  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, show 16 * 0 < Size.x.bits by decide,
-    ite_true, RegUpd.gpr_write_self, Option.some.injEq, exists_eq_left']
-  refine ⟨by simp, fun r' hr => ?_, rfl, rfl, rfl, rfl⟩
-  simp only [List.mem_singleton] at hr
-  exact RegUpd.gpr_write_of_ne _ _ _ hr
-
 /-- `x2` is all ones iff `x1 = 0`, with `x7 = 0`, through `x5` and `x16`. -/
 theorem isZero_ok (s : State) (hz : s.gpr .x7 = 0) :
     WP isa (.block Impl.Ecdh.AArch64.Cfg.isZero) s fun s' =>
-      s'.gpr .x2 = mask (s.gpr .x1 = 0) ∧ Keeps [.x2, .x5, .x16] s s' := by
-  rw [Impl.Ecdh.AArch64.Cfg.isZero, ← List.singleton_append, WP.block_append_iff]
-  refine WP.mono (movz_ok s .x5 1) fun s₁ ⟨e₁, k₁⟩ => ?_
-  rw [← List.singleton_append, WP.block_append_iff]
-  refine WP.mono (subc_ok s₁ .x16 .x1 .x5 true (c := true) rfl) fun s₂ ⟨_, c₂, k₂⟩ => ?_
-  refine WP.mono (sbcMask2_ok s₂ (by rw [k₂.gpr _ (by decide), k₁.gpr _ (by decide), hz]))
-    fun s₃ ⟨e₃, k₃⟩ => ⟨?_, ((k₁.mono (by sub_regs)).trans (k₂.mono (by sub_regs))).trans (k₃.mono (by sub_regs))⟩
-  rw [e₃, c₂, not_carryOut, e₁, k₁.gpr .x1 (by decide)]
-  have h1 : ((1 : BitVec 16).setWidth 64).toNat = 1 := rfl
-  simp only [h1, Bool.not_true, Bool.toNat_false, Nat.add_zero, Nat.lt_one_iff, decide_eq_true_eq]
-  simp only [mask]
-  congr 1
-  exact propext ⟨fun h => BitVec.eq_of_toNat_eq h, fun h => by rw [h]; rfl⟩
+      s'.gpr .x2 = mask (s.gpr .x1 = 0) ∧ Keeps [.x2, .x5, .x16] s s' :=
+  isZeroMask_ok s hz
 
 /-- The mask `x2` of the byte at `q = x6` being `04`. -/
 theorem lead_ok {s : State} {q : Addr} (hq : s.gpr .x6 = q) (hin : InRegions (s.rd ++ s.wr) q 1) :
@@ -134,31 +114,8 @@ theorem checkLead_ok (c : Cfg) {s : State} {base : Addr} {size : Nat} (hs : Scr 
 theorem zero_ok (c : Cfg) {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {a : Nat}
     (hn : 0 < c.n) (ha : a + 8 * c.n ≤ size) (ha8 : a % 8 = 0) :
     WP isa (.block (Impl.Ecdh.AArch64.Cfg.zero c a)) s fun s' =>
-      s'.gpr .x2 = mask (wordsVal s.mem base a c.n = 0) ∧ Keeps [.x1, .x2, .x5, .x7, .x16] s s' := by
-  rw [Impl.Ecdh.AArch64.Cfg.zero, List.append_assoc, WP.block_append_iff, ← List.singleton_append,
-    WP.block_append_iff]
-  refine WP.mono (zero7_ok s) fun s₀ ⟨z₀, k₀⟩ => ?_
-  have hs₀ := hs.of_keeps k₀ (by decide)
-  refine WP.mono (ld_ok hs₀ (d := a) (by omega) ha8 .x1) fun s₁ ⟨e₁, k₁, _⟩ => ?_
-  have hs₁ := hs₀.of_keeps k₁ (by decide)
-  rw [WP.block_append_iff]
-  refine WP.mono (ors_ok hs₁ ha8 (c.n - 1) (by omega)) fun s₂ ⟨e₂, k₂⟩ => ?_
-  rw [e₁, k₁.mem, k₀.mem] at e₂
-  have hz : s₂.gpr .x1 = 0 ↔ wordsVal s.mem base a c.n = 0 := by
-    rw [e₂, wordsVal_eq_zero_iff]
-    constructor
-    · intro ⟨h₀, h⟩ j hj
-      rcases j with _ | j
-      · simpa using h₀
-      · exact h j (by omega)
-    · intro h
-      exact ⟨by simpa using h 0 hn, fun j hj => h (j + 1) (by omega)⟩
-  have hz₂ : s₂.gpr .x7 = 0 := by rw [k₂.gpr _ (by decide), k₁.gpr _ (by decide), z₀]
-  refine WP.mono (isZero_ok s₂ hz₂) fun s₃ ⟨e₃, k₃⟩ => ⟨?_, ?_⟩
-  · rw [e₃]
-    simp only [mask, hz]
-  · exact (((k₀.mono (by sub_regs)).trans (k₁.mono (by sub_regs))).trans (k₂.mono (by sub_regs))).trans
-      (k₃.mono (by sub_regs))
+      s'.gpr .x2 = mask (wordsVal s.mem base a c.n = 0) ∧ Keeps [.x1, .x2, .x5, .x7, .x16] s s' :=
+  zeroMask_ok hs hn ha ha8
 
 /-- `checkZero a`: the flag `&=` the mask of `[a] = 0`. -/
 theorem checkZero_ok (c : Cfg) {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {a : Nat}
