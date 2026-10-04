@@ -6,7 +6,7 @@
 //! once by [`SigningKey::from_seed`]. This is Ed448 with a context (`dom4` with
 //! flag 0), not Ed448ph. Secret scratch values are cleared after use.
 
-#![cfg(target_arch = "x86_64")]
+#![cfg(any(target_arch = "x86_64", target_arch = "arm"))]
 
 use crate::arch::ed448::{vg_ed448_public_key, vg_ed448_sign_cached, vg_ed448_verify};
 use crate::zeroize::zeroize;
