@@ -60,6 +60,53 @@ def spectre : VG.Spectre isa where
     | .lfence => true
     | _ => false
 
+/-! ## `tstore` follows the model
+
+`tstore` lists the model's stores by hand. These two theorems fail to build
+if the model gains an instruction that writes memory without a case of
+`tstore` (which would then fault transiently out of bounds, hiding what it
+leaks), or if a store of `exec` and its case of `tstore` differ. -/
+
+/-- Every instruction that `tstore` does not list leaves memory unchanged. -/
+theorem mem_of_not_tstore {i : Instr} {s s' : State} (h : tstore i s = none)
+    (e : exec i s = some s') : s'.mem = s.mem := by
+  cases hd : Taint.dstOf i with
+  | some d => exact (Taint.exec_nonstore hd e).2.2.1
+  | none =>
+    cases i <;> simp only [tstore, reduceCtorEq] at h <;> simp only [Taint.dstOf, reduceCtorEq] at hd
+    case vmovdquStore len _ _ => cases len <;> cases h
+    case vmovdquLoad len _ _ =>
+      cases len <;> simp only [exec, Option.map_eq_some_iff] at e <;> obtain ⟨_, _, rfl⟩ := e <;> rfl
+    case xop op => simp only [exec, Option.some.injEq] at e; subst e; rw [Taint.XOp.exec_eq]
+    case vop op => simp only [exec, Option.some.injEq] at e; subst e; rw [Taint.VOp.exec_eq]
+    case zop op => simp only [exec, Option.some.injEq] at e; subst e; rw [Taint.ZOp.exec_eq]
+    case ldmxcsr m =>
+      simp only [exec, Option.bind_eq_some_iff] at e
+      obtain ⟨_, _, e⟩ := e
+      split at e <;> [(cases e; rfl); cases e]
+    case mulx hi lo src =>
+      simp only [exec, execMulx] at e
+      split at e
+      · cases e
+      · simp only [Option.map_eq_some_iff] at e; obtain ⟨_, _, rfl⟩ := e; rfl
+    all_goals simp only [exec, Option.map_eq_some_iff, Option.some.injEq, reduceCtorEq] at e
+    all_goals first
+      | (obtain ⟨_, _, rfl⟩ := e; rfl)
+      | (subst e; rfl)
+
+/-- Where a store is permitted, `tstore` is the store of `exec`. -/
+theorem tstore_exec {i : Instr} {s s₁ s₂ : State} (h : tstore i s = some s₁)
+    (e : exec i s = some s₂) : s₂ = s₁ := by
+  cases i <;> simp only [tstore, reduceCtorEq, Option.some.injEq] at h
+  case vmovdquStore len _ _ =>
+    cases len <;> simp only [Option.some.injEq] at h <;> subst h <;>
+      simp only [exec, State.store128, State.store256] at e <;> split at e <;>
+      [(cases e; rfl); cases e; (cases e; rfl); cases e]
+  all_goals subst h
+  all_goals simp only [exec, State.store64, State.store32, State.store8, State.store128,
+    State.store512] at e
+  all_goals split at e <;> [(cases e; rfl); cases e]
+
 theorem addrs_widen (i : Instr) (s : State) : isa.addrs i (widen s) = isa.addrs i s := by
   cases i <;> rfl
 
