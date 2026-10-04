@@ -125,6 +125,11 @@ theorem rel_flagsC {K W SP : Addr} {R : Nat} {N A D : Addr} {nl n tl : Nat} {P :
   obtain ⟨hcf, hzf, -, -⟩ := ha.rf.2 hs
   exact ⟨ht, hcf, hzf⟩
 
+/-- Runs related from each pair of states. -/
+theorem rel_of_pt {P Q : State → State → Prop} {c : Prog isa}
+    (h : ∀ σ₁ σ₂, P σ₁ σ₂ → RelCT isa (fun t₁ t₂ => t₁ = σ₁ ∧ t₂ = σ₂) c Q) : RelCT isa P c Q :=
+  fun _ _ _ _ _ _ hp e₁ e₂ => h _ _ hp _ _ _ _ _ _ ⟨rfl, rfl⟩ e₁ e₂
+
 /-- One run with the public arguments. -/
 structure One (K W SP : Addr) (R : Nat) (N A D : Addr) (nl n tl : Nat) (s : State) : Prop where
   env : Env K W SP s

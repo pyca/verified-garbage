@@ -44,6 +44,7 @@ structure Args (s : State) (K W SP N A D : Addr) (R nl al n tl : Nat) : Prop whe
   retD : (⟨SP, 8⟩ : Region).Disjoint ⟨D, n⟩
   args : Covers [⟨SP + BitVec.ofNat 64 8, 32⟩] (s.rd ++ s.wr)
   argsW : (⟨SP + BitVec.ofNat 64 8, 32⟩ : Region).Disjoint ⟨W, 2560⟩
+  wr : s.wr = [⟨D, n⟩, ⟨W, 2560⟩]
 
 theorem args_of {s : State} (h : onePre s) :
     Args s (s.gpr .rdi) (arg s 2) (s.gpr .rsp) (s.gpr .rdx) (s.gpr .r8) (arg s 0) (s.gpr .rsi).toNat
@@ -73,7 +74,8 @@ theorem args_of {s : State} (h : onePre s) :
     retW := d13
     retD := d12
     args := mrd (args s 4) (by simp)
-    argsW := d11.symm }
+    argsW := d11.symm
+    wr := hwr }
 
 theorem ofNat_toNat64 (x : BitVec 64) : BitVec.ofNat 64 x.toNat = x := by simp
 
@@ -167,15 +169,14 @@ theorem w16_disj {d k : Nat} (W : Addr) (h : 16 ≤ d) (hk : d + k ≤ 2560) :
   Offset.base_disjoint W h (by omega)
 
 /-- `entry`, `nonce` and `hash`. -/
-theorem pre_wp (v : BlocksImpl) {s : State} {K W SP N A D : Addr} {R nl al n tl : Nat}
+theorem pre_wp' (v : BlocksImpl) {s : State} {K W SP N A D : Addr} {R nl al n tl : Nat}
     (Ar : Args s K W SP N A D R nl al n tl) (hsp : s.gpr .rsp = SP)
     (hD : s.mem.readW (SP + BitVec.ofNat 64 8) 64 = D) (hn : s.mem.readW (SP + BitVec.ofNat 64 16) 64 = BitVec.ofNat 64 n)
     (hW : s.mem.readW (SP + BitVec.ofNat 64 24) 64 = W)
     (htl : s.mem.readW (SP + BitVec.ofNat 64 32) 64 = BitVec.ofNat 64 tl)
     (hdi : s.gpr .rdi = K) (hsi : s.gpr .rsi = BitVec.ofNat 64 R) (hdx : s.gpr .rdx = N)
-    (hcx : s.gpr .rcx = BitVec.ofNat 64 nl) (hr8 : s.gpr .r8 = A) (hr9 : s.gpr .r9 = BitVec.ofNat 64 al)
-    {k : Prog isa} {Q : State → Prop} (hk : ∀ s', Pre K W SP N A D R nl al n tl s s' → WP isa k s' Q) :
-    WP isa (.seq (.block entry) (.seq (nonce (callees v)) (.seq (hash (callees v)) k))) s Q := by
+    (hcx : s.gpr .rcx = BitVec.ofNat 64 nl) (hr8 : s.gpr .r8 = A) (hr9 : s.gpr .r9 = BitVec.ofNat 64 al) :
+    WP isa (.seq (.block entry) (.seq (nonce (callees v)) (hash (callees v)))) s (Pre K W SP N A D R nl al n tl s) := by
   have L := Ar.lay
   have hRb : 16 * (R + 1) ≤ 256 := by rcases Ar.rounds with h | h | h <;> subst h <;> decide
   obtain ⟨s₁, run₁, P₁⟩ := entry_ok L Ar.perm hsp Ar.args Ar.argsW hD hn hW htl hdi hsi hdx hcx hr8 hr9
@@ -208,8 +209,8 @@ theorem pre_wp (v : BlocksImpl) {s : State} {K W SP N A D : Addr} {R nl al n tl 
       ad := by rw [length_bytesAt]; exact Ar.ad
       kd := Ar.data.k, dw := Ar.data.w, rnd := S₂.rounds
       short := by rw [length_bytesAt]; exact Ar.aad.lt }
-  refine WP.seq (WP.mono (hash_ok v C P₂.env S₂.aad (by rw [P₂.alen, P₁.alen, length_bytesAt])
-    (by rw [P₂.keep (by decide) (by decide), P₁.l0])) fun s₃ ⟨E₃, F₃, sum₃, rd₃, wr₃⟩ => ?_)
+  refine WP.mono (hash_ok v C P₂.env S₂.aad (by rw [P₂.alen, P₁.alen, length_bytesAt])
+    (by rw [P₂.keep (by decide) (by decide), P₁.l0])) fun s₃ ⟨E₃, F₃, sum₃, rd₃, wr₃⟩ => ?_
   have F₃' : Frame (mutR W SP D n) s₂.mem s₃.mem := hashR_mut F₃
   have k₃ : ∀ {d : Nat}, (d + 16 ≤ 48 ∨ (64 ≤ d ∧ d + 16 ≤ 96) ∨ (256 ≤ d ∧ d + 16 ≤ 384)) →
       blockAtMem s₃.mem (W + BitVec.ofNat 64 d) = blockAtMem s₂.mem (W + BitVec.ofNat 64 d) := fun {d} hd =>
@@ -221,7 +222,7 @@ theorem pre_wp (v : BlocksImpl) {s : State} {K W SP N A D : Addr} {R nl al n tl 
       · exact L.w_w (by omega) (by omega) (by decide)
       · exact L.w_w (by omega) (by omega) (by decide)
       · exact (L.stk_w' (by omega)).symm
-  refine hk s₃ ⟨E₃, ?_, by rw [rd₃, P₂.rd, P₁.rd], by rw [wr₃, P₂.wr, P₁.wr], Slots.of_mut L Ar.data.w F₃' S₂,
+  refine ⟨E₃, ?_, by rw [rd₃, P₂.rd, P₁.rd], by rw [wr₃, P₂.wr, P₁.wr], Slots.of_mut L Ar.data.w F₃' S₂,
     saved_mut L Ar.data.w (F₂.trans F₃') P₁.saved, ?_, ?_, ?_, ?_, ?_, by rw [sum₃],
     (ctxCiph_mut L Ar.data.k F₃' Ar.rounds).trans c₂, (lstar_mut L Ar.data.k F₃').trans l₂, ?_, ?_⟩
   · exact (P₁.frame.sub fun r hr => by
@@ -266,6 +267,19 @@ theorem pre_wp (v : BlocksImpl) {s : State} {K W SP N A D : Addr} {R nl al n tl 
         · exact st16.symm) (by decide),
       bytesAt_frame P₁.frame (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr; exact w16_disj W (by decide) (by decide)) (by decide)]
+
+/-- `entry`, `nonce` and `hash`, then `k`. -/
+theorem pre_wp (v : BlocksImpl) {s : State} {K W SP N A D : Addr} {R nl al n tl : Nat}
+    (Ar : Args s K W SP N A D R nl al n tl) (hsp : s.gpr .rsp = SP)
+    (hD : s.mem.readW (SP + BitVec.ofNat 64 8) 64 = D) (hn : s.mem.readW (SP + BitVec.ofNat 64 16) 64 = BitVec.ofNat 64 n)
+    (hW : s.mem.readW (SP + BitVec.ofNat 64 24) 64 = W)
+    (htl : s.mem.readW (SP + BitVec.ofNat 64 32) 64 = BitVec.ofNat 64 tl)
+    (hdi : s.gpr .rdi = K) (hsi : s.gpr .rsi = BitVec.ofNat 64 R) (hdx : s.gpr .rdx = N)
+    (hcx : s.gpr .rcx = BitVec.ofNat 64 nl) (hr8 : s.gpr .r8 = A) (hr9 : s.gpr .r9 = BitVec.ofNat 64 al)
+    {k : Prog isa} {Q : State → Prop} (hk : ∀ s', Pre K W SP N A D R nl al n tl s s' → WP isa k s' Q) :
+    WP isa (.seq (.block entry) (.seq (nonce (callees v)) (.seq (hash (callees v)) k))) s Q :=
+  WP.seq (WP.mono (WP.seq_iff.mp (pre_wp' v Ar hsp hD hn hW htl hdi hsi hdx hcx hr8 hr9)) fun _ h₁ =>
+    wp_seq_assoc (WP.seq (WP.mono h₁ hk)))
 
 /-- `body`'s frame misses a block of `W` outside the offset, the checksum and
 `[96, 144)`. -/
