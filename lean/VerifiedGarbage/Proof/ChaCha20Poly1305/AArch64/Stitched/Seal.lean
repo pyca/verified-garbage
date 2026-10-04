@@ -16,26 +16,17 @@ open VG.Spec.Poly1305 (Repr bytesAt mac leBytes)
 open VG.Spec.ChaCha20 (stateAt)
 open VG.Spec.ChaCha20Poly1305 (pad16 macData polyKeyGen)
 
+variable {e : Bool}
+
 /-- The data from `p`. -/
-theorem srcAt {s₀ : State} (hp : APre s₀) {p : Nat} (hle : p ≤ L s₀) :
+theorem srcAt {s₀ : State} (hp : APre e s₀) {p : Nat} (hle : p ≤ L s₀) :
     Src s₀ (dp s₀ + BitVec.ofNat 64 p) (L s₀ - p) := by
-  have hL : L s₀ < 2 ^ 64 := (s₀.gpr .x4).isLt
+  have hL : L s₀ < 2 ^ 64 := (s₀.gpr .x5).isLt
   refine ⟨by omega, ?_, hp.c_d.sub_right (Offset.sub_base _ (by omega)),
     (srcD hp).cov_sub (a := p) (n := L s₀ - p) (by omega) rfl rfl⟩
   have := hp.wrap_d
   simp only [BitVec.toNat_add, BitVec.toNat_ofNat]
   omega
-
-theorem abi_of0 {s₀ s s₁ s' : State} (h : Inv0 s₀ s)
-    (hk : ∀ r ∈ preserved, r ≠ .x30 → s₁.gpr r = s.gpr r)
-    (hr : ∀ r ∈ [Reg.x21, .x22, .x23, .x24, .x25, .x30], s'.gpr r = s₀.gpr r)
-    (hg : ∀ r, r ∉ [Reg.x21, .x22, .x23, .x24, .x25, .x30] → s'.gpr r = s₁.gpr r)
-    (hsp : s'.sp = s.sp) : GprAbi s₀ s' := by
-  refine ⟨fun r hr' => ?_, by rw [hsp, h.sp]⟩
-  by_cases hm : r ∈ [Reg.x21, .x22, .x23, .x24, .x25, .x30]
-  · exact hr r hm
-  · have hu := preserved_split r hr' hm
-    rw [hg r hm, hk r hr' hu.2, h.un r hu.1]
 
 /-- The data absorbed in two parts, at a multiple of 16 bytes, padded. -/
 theorem split_pad {m : Mem} {p : Addr} {a n : Nat} (ha : a % 16 = 0) (hn : a ≤ n) :
@@ -47,7 +38,7 @@ theorem split_pad {m : Mem} {p : Addr} {a n : Nat} (ha : a % 16 = 0) (hn : a ≤
   rw [hp, ← List.append_assoc, ← VG.Proof.Poly1305.bytesAt_add, Nat.add_sub_cancel' hn]
 
 /-- The Poly1305 state after the chunks, from that before, through `rs`. -/
-theorem crypted_inv {enc : Bool} {s₀ : State} (hp : APre s₀) {s u : State} {key msg : List Byte} {T : Nat}
+theorem crypted_inv {enc : Bool} {s₀ : State} (hp : APre e s₀) {s u : State} {key msg : List Byte} {T : Nat}
     (hc : Crypted enc s₀ s key msg T u) {s' : State} (hk : Kept [sub s₀ 64 384, dR s₀] u s') :
     Inv0 s₀ s' :=
   hc.inv.step hk (fun r hr => by
@@ -61,13 +52,13 @@ theorem crypted_inv {enc : Bool} {s₀ : State} (hp : APre s₀) {s u : State} {
       · exact sub_disj s₀ (by lit_omega) (by lit_omega) (by lit_omega)
       · exact hp.c_d.sub_left (sub_ctx s₀ (by lit_omega)))
 
-theorem sealStitched_correct (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp : APre s₀) :
-    WP isa (sealStitched v.callee) s₀ fun s' => abiPreserved s₀ s' ∧ sealAArch64.post s₀ s' := by
-  have hL' := (Nat.le_of_lt (s₀.gpr .x4).isLt)
-  unfold sealStitched
+theorem sealStitchedMain_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp : APre true s₀) :
+    WP isa (sealStitchedMain v.callee) s₀ (MainS s₀) := by
+  have hL' := (Nat.le_of_lt (s₀.gpr .x5).isLt)
+  unfold sealStitchedMain
   refine WP.seq (WP.mono (WP.preservedV (prologue_ok hp) (by lit_decide)) fun s₁ ⟨h₁, v₁⟩ => ?_)
   have hA : bytesAt s₁.mem (ad s₀) (AL s₀) = A s₀ :=
-    bytesAt_frame h₁.inv.frame (by rdisj_all) (Nat.le_of_lt (s₀.gpr .x2).isLt)
+    bytesAt_frame h₁.inv.frame (by rdisj_all) (Nat.le_of_lt (s₀.gpr .x3).isLt)
   refine WP.seq (WP.mono (WP.preservedV (macPad_ok hp (p := .x24) (n := .x25) ⟨.inl rfl, .inl rfl⟩
     (srcA hp) h₁.inv.x21 h₁.inv.rd h₁.inv.wr h₁.inv.x24 (by rw [h₁.inv.x25]; exact hRDX s₀)) (by lit_decide))
     fun s₂ ⟨⟨k₂, r₂⟩, v₂⟩ => ?_)
@@ -91,12 +82,7 @@ theorem sealStitched_correct (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State}
     (by rw [k₅.cs _ (pres .x22) (pres30 .x22), hc.x22])
     (by rw [k₅.cs _ (pres .x23) (pres30 .x23), hc.x23])) (by lit_decide)) fun s₆ ⟨⟨k₆, r₆⟩, v₆⟩ => ?_)
   have i₆ := mac_inv0 i₅ k₆
-  refine WP.seq (WP.mono (WP.preservedV (absorbLengths_ok0 hp i₆) (by lit_decide)) fun s₇ ⟨⟨i₇, k₇, r₇⟩, v₇⟩ => ?_)
-  refine WP.seq (WP.mono (WP.preservedV (finalizeTo_ok0 hp i₇ (out := 48) (.inl (by lit_omega))) (by lit_decide))
-    fun s₈ ⟨⟨k₈, tag₈⟩, v₈⟩ => ?_)
-  refine WP.mono (WP.preservedV (restore_ok hp (by rw [k₈.cs _ (pres .x21) (pres30 .x21), i₇.x21])
-    (i₇.saved.frame k₈.frame (by rdisj_all)) (by rw [k₈.rd, i₇.rd]) (by rw [k₈.wr, i₇.wr])) (by lit_decide))
-    fun s₉ ⟨⟨⟨rs₉, g₉, m₉⟩, sp₉⟩, v₉⟩ => ?_
+  refine WP.mono (WP.preservedV (absorbLengths_ok0 hp i₆) (by lit_decide)) fun s₇ ⟨⟨i₇, k₇, r₇⟩, v₇⟩ => ?_
   -- The message absorbed.
   have R₄ := hc.mac
   simp only [↓reduceIte] at R₄
@@ -105,22 +91,20 @@ theorem sealStitched_correct (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State}
   rw [X₄] at R₄
   have R₆ := r₆ _ _ (Repr.frame k₅.frame (by rdisj_all) R₄)
   rw [List.append_assoc, split_pad (pre_mod true T) (by omega), ct₅] at R₆
-  have T₈ := tag₈ _ _ (r₇ _ _ R₆)
-  have L₆ : bytesAt s₆.mem (off (cx s₀) 656) 16 = leBytes 8 (AL s₀) ++ leBytes 8 (L s₀) := by
+  have R₇ := r₇ _ _ R₆
+  have L₆ : bytesAt s₆.mem (off (cx s₀) 0) 16 = leBytes 8 (AL s₀) ++ leBytes 8 (L s₀) := by
     rw [bytesAt_frame k₆.frame (by rdisj_all) (by lit_omega),
       bytesAt_frame k₅.frame (by rdisj_all) (by lit_omega),
       bytesAt_frame hc.frame (by rdisj_all) (by lit_omega), len₃]
-  have C₉ : bytesAt s₉.mem (dp s₀) (L s₀) = Spec.ChaCha20.encrypt (K s₀) 1 (N s₀) (D s₀) := by
-    rw [m₉, bytesAt_frame k₈.frame (by rdisj_all) hL', bytesAt_frame k₇.frame (by rdisj_all) hL',
-      bytesAt_frame k₆.frame (by rdisj_all) hL', ct₅]
-  have hg := abi_of0 i₇ k₈.cs rs₉ g₉ (by rw [sp₉, k₈.sp])
-  refine ⟨⟨hg.1, hg.2, fun r hr => ?_⟩, ?_⟩
-  · exact (v₉ r hr).trans ((v₈ r hr).trans ((v₇ r hr).trans ((v₆ r hr).trans
-      ((v₅ r hr).trans ((hc.vec r hr).trans ((v₃ r hr).trans ((v₂ r hr).trans (v₁ r hr))))))))
-  · show Spec.ChaCha20Poly1305.encrypt (K s₀) (N s₀) (A s₀) (D s₀) =
-      (bytesAt s₉.mem (dp s₀) (L s₀), bytesAt s₉.mem (cx s₀ + 48) 16)
-    rw [C₉, off48, m₉, T₈, L₆, hA]
-    simp only [Spec.ChaCha20Poly1305.encrypt, macData, List.nil_append,
-      List.append_assoc, VG.Proof.Poly1305.length_bytesAt, length_encrypt]
+  rw [L₆, hA] at R₇
+  refine ⟨i₇, fun r hr => (v₇ r hr).trans ((v₆ r hr).trans ((v₅ r hr).trans ((hc.vec r hr).trans
+      ((v₃ r hr).trans ((v₂ r hr).trans (v₁ r hr)))))), ?_, ?_⟩
+  · refine (congrArg (Repr s₇.mem (off (cx s₀) 448) (otk s₀)) ?_).mp R₇
+    simp only [macData, List.nil_append, List.append_assoc, VG.Proof.Poly1305.length_bytesAt, length_encrypt]
+  · rw [bytesAt_frame k₇.frame (by rdisj_all) hL', bytesAt_frame k₆.frame (by rdisj_all) hL', ct₅]
+
+theorem sealStitched_correct (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp : APre true s₀) :
+    WP isa (sealStitched v.callee) s₀ fun s' => abiPreserved s₀ s' ∧ sealAArch64.post s₀ s' :=
+  WP.seq (WP.mono (sealStitchedMain_ok v hp) fun _ h => sealTail_ok hp h)
 
 end VG.Proof.ChaCha20Poly1305.AArch64

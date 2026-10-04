@@ -4,29 +4,33 @@ import VerifiedGarbage.Impl.Poly1305.Arm
 /-!
 # ChaCha20-Poly1305: 32-bit ARM implementation
 
-`vg_chacha20_poly1305_seal(ctx = r0, aad = r1, aad_len = r2, data = r3, len = [sp])`
-and `vg_chacha20_poly1305_open` (the same arguments, returning `r0`), composed
-of calls of the verified ChaCha20 and Poly1305 functions.
+`vg_chacha20_poly1305_seal(key = r0, nonce = r1, aad = r2, aad_len = r3, data = [sp],
+len = [sp + 4], tag = [sp + 8], work = [sp + 12])` and `vg_chacha20_poly1305_open`
+(the same arguments, returning `r0`), composed of calls of the verified
+ChaCha20 and Poly1305 functions. `work` is the working space, which the
+artifact's frame allocates on the stack (`withStackScratchWiped`).
 
-The context (1024 bytes, see `VG.Spec.ChaCha20Poly1305.sealContract`):
+The working space (`workLen` = 632 bytes, called the context below):
 
-* `[0, 32)`: the key; `[32, 44)`: the nonce; `[48, 64)`: the tag;
-* `[0, 320)`, once the key, the nonce and the tag have been used: the
-  working space of `vg_chacha20_block` and `vg_chacha20_xor` (the first 32
-  bytes of the block with counter 0 are the one-time Poly1305 key), and then
-  the Poly1305 state (`[0, 128)`);
+* `[0, 320)`: the working space of `vg_chacha20_block` and `vg_chacha20_xor`
+  (the first 32 bytes of the block with counter 0 are the one-time Poly1305
+  key), and then the Poly1305 state (`[0, 128)`);
 * `[320, 384)`: the ChaCha20 state;
 * `[384, 416)`: the one-time key;
 * `[416, 432)`: the padded last block of the additional data or the data;
 * `[432, 448)`: the lengths block;
-* `[448, 464)`: the tag computed;
-* `[464, 480)`: the tag received (`open`);
-* `[480, 516)`: our caller's `r4`–`r11` and our return address `lr`;
-* `[640, 768)`: the working space of `vg_poly1305_finalize_scratch` (`scratch`).
+* `[448, 464)`: the tag computed by `open`;
+* `[464, 500)`: our caller's `r4`–`r11` and our return address `lr`;
+* `[500, 628)`: the working space of `vg_poly1305_finalize_scratch` (`scratch`);
+* `[628, 632)`: unused, as `work` is a whole number of 8-byte words.
 
 `r7` holds the context, `r8` the additional data, `r9` its length, `r10`
 the data and `r11` its length throughout: they are callee-saved, so every
-callee restores them. `r0`–`r3` and `r12` are temporaries.
+callee restores them. `r0`–`r3` and `r12` are temporaries. The ChaCha20
+state is built from the key and the nonce at `r0` and `r1`; `tag` is loaded
+from the stack where it is needed: `seal` passes it to
+`vg_poly1305_finalize_scratch` as `out`, and `open` compares the tag computed
+with it.
 
 `vg_poly1305_finalize_scratch(state, count, out, scratch)` takes `out` and
 `scratch` on the stack: a frame pushes them (`push {r1, r12}`, `out` at
@@ -64,30 +68,33 @@ def keyOff : Nat := 384
 def padOff : Nat := 416
 /-- The lengths block. -/
 def lenOff : Nat := 432
-/-- The tag computed. -/
+/-- The tag computed, in `open`. -/
 def tagOff : Nat := 448
-/-- The tag received, in `open`. -/
-def rtagOff : Nat := 464
 /-- The saved registers. -/
-def savOff : Nat := 480
+def savOff : Nat := 464
 /-- The working space of `vg_poly1305_finalize_scratch`. -/
-def scrOff : Nat := 640
+def scrOff : Nat := 500
+/-- The size of the working space, in bytes. -/
+def workLen : Nat := 632
 
 /-! ## Saving and restoring the registers -/
 
 /-- The registers saved in the context, and where. -/
 def saved : List (Reg × Nat) :=
-  [(.r4, 480), (.r5, 484), (.r6, 488), (.r7, 492), (.r8, 496), (.r9, 500), (.r10, 504), (.r11, 508),
-   (.lr, 512)]
+  [(.r4, 464), (.r5, 468), (.r6, 472), (.r7, 476), (.r8, 480), (.r9, 484), (.r10, 488), (.r11, 492),
+   (.lr, 496)]
 
-/-- Save them, with the context in `r0`. -/
-def save : List Instr := saved.map fun (r, d) => .str r .r0 d
+/-- Save them, with the context in `r12`. -/
+def save : List Instr := saved.map fun (r, d) => .str r .r12 d
 /-- Restore them, with the context in `r12`. -/
 def restore : List Instr := .mov .r12 (.reg .r7) :: saved.map fun (r, d) => .ldr r .r12 d
 
+/-- `work` into `r12`, from the stack. -/
+def entry : List Instr := [.ldrSp .r12 12]
+
 /-- The arguments moved to where they are kept. -/
 def moves : List Instr :=
-  [.mov .r7 (.reg .r0), .mov .r8 (.reg .r1), .mov .r9 (.reg .r2), .mov .r10 (.reg .r3), .ldrSp .r11 0]
+  [.mov .r7 (.reg .r12), .mov .r8 (.reg .r2), .mov .r9 (.reg .r3), .ldrSp .r10 0, .ldrSp .r11 4]
 
 /-! ## The ChaCha20 state -/
 
@@ -95,14 +102,14 @@ def moves : List Instr :=
 def consts : List (BitVec 32) := [0x61707865, 0x3320646e, 0x79622d32, 0x6b206574]
 
 /-- Word `k` of the ChaCha20 state for counter 0 into `r12`: a constant (0–3),
-the key (4–11), the counter (12) or the nonce (13–15). -/
+the key (4–11, at `r0`), the counter (12) or the nonce (13–15, at `r1`). -/
 def stSrc (k : Nat) : List Instr :=
   if k < 4 then
     let c := consts.getD k 0
     [.movw .r12 (c.extractLsb' 0 16), .movt .r12 (c.extractLsb' 16 16)]
-  else if k < 12 then [.ldr .r12 .r7 (4 * (k - 4))]
+  else if k < 12 then [.ldr .r12 .r0 (4 * (k - 4))]
   else if k = 12 then [.mov .r12 (.imm 0)]
-  else [.ldr .r12 .r7 (32 + 4 * (k - 13))]
+  else [.ldr .r12 .r1 (4 * (k - 13))]
 
 /-- Word `k` of the ChaCha20 state, at `r7 + stOff + 4k`. -/
 def stW (k : Nat) : List Instr := stSrc k ++ [.str .r12 .r7 (stOff + 4 * k)]
@@ -177,13 +184,14 @@ def ceil16 (d t n : Reg) : List Instr :=
    .dp .add d d (.shifted t .lsr 4)]
 
 /-- The arguments of `vg_poly1305_finalize_scratch` (but those on the stack): the
-state (`r0`), the length of the message in `r2:r3`, and `out` (`r1`, the
-tag computed) and `scratch` (`r12`) to push. -/
-def finalizeArgs : List Instr :=
+state (`r0`), the length of the message in `r2:r3`, and `out` (`r1`, which
+`out` sets: `tag` for `seal`, the tag computed for `open`) and `scratch`
+(`r12`) to push. -/
+def finalizeArgs (out : Instr) : List Instr :=
   ceil16 .r2 .r3 .r9 ++ ceil16 .r0 .r1 .r11 ++
   [.dp .add .r2 .r2 (.reg .r0), .dp .add .r2 .r2 (.imm 1), .mov .r3 (.shifted .r2 .lsr 28),
    .mov .r2 (.shifted .r2 .lsl 4), .mov .r0 (.reg .r7),
-   .dp .add .r1 .r7 (.imm (BitVec.ofNat 32 tagOff)), .dp .add .r12 .r7 (.imm (BitVec.ofNat 32 scrOff))]
+   out, .dp .add .r12 .r7 (.imm (BitVec.ofNat 32 scrOff))]
 
 /-- The tag computed: `out` and `scratch` pushed as the stack arguments. -/
 def finalize : Prog isa :=
@@ -195,41 +203,41 @@ def finalize : Prog isa :=
 encrypted, and the MAC of the additional data, the ciphertext and the
 lengths, up to the arguments of `vg_poly1305_finalize_scratch`. -/
 def sealMain : Prog isa :=
-  .seq (.block (save ++ moves ++ initState))
+  .seq (.block (entry ++ save ++ moves ++ initState))
   (.seq keyGen
   (.seq crypt
   (.seq polyInit
   (.seq (macPad .r8 .r9)
   (.seq (macPad .r10 .r11)
   (.seq lengths
-    (.block finalizeArgs)))))))
+    (.block (finalizeArgs (.ldrSp .r1 8)))))))))
 
-/-- The tag copied to `ctx[48, 64)`, and the registers restored. -/
-def sealEnd : List Instr := copyWords tagOff 48 4 ++ restore
+/-- The registers restored. -/
+def sealEnd : List Instr := restore
 
 def «seal» : Prog isa := .seq sealMain (.seq finalize (.block sealEnd))
 
 /-! ## Open -/
 
-/-- Up to the tag: the registers saved, the tag received kept, the one-time
-key, and the MAC of the additional data, the ciphertext and the lengths, up
-to the arguments of `vg_poly1305_finalize_scratch`. -/
+/-- Up to the tag: the registers saved, the one-time key, and the MAC of the
+additional data, the ciphertext and the lengths, up to the arguments of
+`vg_poly1305_finalize_scratch`. -/
 def openMain : Prog isa :=
-  .seq (.block (save ++ moves ++ copyWords 48 rtagOff 4 ++ initState))
+  .seq (.block (entry ++ save ++ moves ++ initState))
   (.seq keyGen
   (.seq polyInit
   (.seq (macPad .r8 .r9)
   (.seq (macPad .r10 .r11)
   (.seq lengths
-    (.block finalizeArgs))))))
+    (.block (finalizeArgs (.dp .add .r1 .r7 (.imm (BitVec.ofNat 32 tagOff))))))))))
 
 /-- `r0 = 1` if the tag computed (at `r7 + 448`) is the one received (at
-`r7 + 464`), else 0, without a branch: with `x` the OR of the XORs of their
-words, `(x | -x) >> 31` is 0 if `x = 0` and 1 otherwise. -/
+`tag`, loaded into `r3`), else 0, without a branch: with `x` the OR of the
+XORs of their words, `(x | -x) >> 31` is 0 if `x = 0` and 1 otherwise. -/
 def compare : List Instr :=
-  [.ldr .r0 .r7 tagOff, .ldr .r1 .r7 rtagOff, .dp .eor .r0 .r0 (.reg .r1)] ++
+  [.ldrSp .r3 8, .ldr .r0 .r7 tagOff, .ldr .r1 .r3 0, .dp .eor .r0 .r0 (.reg .r1)] ++
   (List.range 3).flatMap (fun i =>
-    [.ldr .r1 .r7 (tagOff + 4 * (i + 1)), .ldr .r2 .r7 (rtagOff + 4 * (i + 1)),
+    [.ldr .r1 .r7 (tagOff + 4 * (i + 1)), .ldr .r2 .r3 (4 * (i + 1)),
      .dp .eor .r1 .r1 (.reg .r2), .dp .orr .r0 .r0 (.reg .r1)]) ++
   [.mov .r1 (.imm 0), .dp .sub .r1 .r1 (.reg .r0), .dp .orr .r0 .r0 (.reg .r1),
    .mov .r0 (.shifted .r0 .lsr 31), .mov .r1 (.imm 1), .dp .sub .r0 .r1 (.reg .r0)]

@@ -12,7 +12,7 @@ and only the rest with those calls:
 
 * the counter is set to 1 and the stream's arguments to the data
   (`cryptSetup`); with fewer than 512 bytes, nothing more happens here;
-* otherwise `x27` and `x28` are saved in the context (`[800, 816)`), the
+* otherwise `x27` and `x28` are saved in the context (`[32, 48)`), the
   clamped key is stored where `Stitch.chunk` reads it (bytes 160–175 of the
   stream's working space) and the accumulator loaded into `x21`–`x23`
   (`polyIn`), the chunks run (`Stitch.bulk`), and the accumulator is reduced
@@ -44,7 +44,7 @@ def cryptSetup : List Instr :=
 /-- `x27` and `x28` saved, the clamped key stored at `ctx[288, 304)`, and the
 accumulator loaded into `x21`–`x23` (`x21`, the base, last). -/
 def polyIn : List Instr :=
-  [.str .x .x27 .x21 800, .str .x .x28 .x21 808] ++
+  [.str .x .x27 .x21 32, .str .x .x28 .x21 40] ++
   const64 .x24 0x0ffffffc0fffffff ++
   [.ldr .x .x25 .x21 472, .logic .and .x .x25 .x25 .x24, .str .x .x25 .x21 288] ++
   const64 .x24 0x0ffffffc0ffffffc ++
@@ -57,7 +57,7 @@ absorbed. -/
 def polyOut (enc : Bool) : List Instr :=
   [mov .x4 .x21, mov .x5 .x22, mov .x6 .x23] ++ VG.Impl.Poly1305.AArch64.Radix64.reduce ++
   [.subImm .x .x21 .x0 64, .str .x .x4 .x21 448, .str .x .x5 .x21 456, .str .x .x6 .x21 464,
-   .ldr .x .x27 .x21 800, .ldr .x .x28 .x21 808] ++
+   .ldr .x .x27 .x21 32, .ldr .x .x28 .x21 40] ++
   (if enc then [.subImm .x .x22 .x1 512, .addImm .x .x23 .x2 512] else [mov .x22 .x1, mov .x23 .x2])
 
 /-- The whole chunks. -/
@@ -72,18 +72,20 @@ def cryptRest (c : XorCallee) : Prog isa :=
   .seq (.block [.addImm .x .x0 .x21 64, mov .x1 .x22, mov .x2 .x23, .addImm .x .x3 .x21 128])
     (.call c.name c.code)
 
-def sealStitched (c : XorCallee) : Prog isa :=
+/-- `sealStitched` but for the tag. -/
+def sealStitchedMain (c : XorCallee) : Prog isa :=
   .seq prologue
   (.seq (macPad .x24 .x25)
   (.seq (.block lengths)
   (.seq (cryptStitched c.sve true)
   (.seq (.call c.name c.code)
   (.seq (macPad .x22 .x23)
-  (.seq absorbLengths
-  (.seq (finalizeTo 48)
-    (.block restore))))))))
+    absorbLengths)))))
 
-def openStitched (c : XorCallee) : Prog isa :=
+def sealStitched (c : XorCallee) : Prog isa := .seq (sealStitchedMain c) sealTail
+
+/-- `openStitched` up to the tag computed. -/
+def openStitchedMain (c : XorCallee) : Prog isa :=
   .seq prologue
   (.seq (macPad .x24 .x25)
   (.seq (.block lengths)
@@ -91,8 +93,9 @@ def openStitched (c : XorCallee) : Prog isa :=
   (.seq (macPad .x22 .x23)
   (.seq (cryptRest c)
   (.seq absorbLengths
-  (.seq (finalizeTo 640)
-    (.block (compare ++ restore)))))))))
+    (finalizeTo 48)))))))
+
+def openStitched (c : XorCallee) : Prog isa := .seq (openStitchedMain c) openTail
 
 /-- The code for a stream backend: stitched with the eight-block kernel or not. -/
 def sealCode (c : XorCallee) (stitched : Bool) : Prog isa :=
@@ -100,5 +103,13 @@ def sealCode (c : XorCallee) (stitched : Bool) : Prog isa :=
 
 def openCode (c : XorCallee) (stitched : Bool) : Prog isa :=
   if stitched then openStitched c else openWith c
+
+/-- The code up to the tag (`sealTail`, `openTail`), which the taint analysis
+checks on its own. -/
+def sealMainCode (c : XorCallee) (stitched : Bool) : Prog isa :=
+  if stitched then sealStitchedMain c else sealMain c
+
+def openMainCode (c : XorCallee) (stitched : Bool) : Prog isa :=
+  if stitched then openStitchedMain c else openMain c
 
 end VG.Impl.ChaCha20Poly1305.AArch64
