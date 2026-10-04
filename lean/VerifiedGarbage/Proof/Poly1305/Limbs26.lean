@@ -1,4 +1,3 @@
-import Mathlib.Tactic.Ring
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Poly1305.Spec
 
@@ -41,7 +40,7 @@ def pc (a b : Nat → Nat) : Nat :=
 
 theorem pd_val (a b : Nat → Nat) : val (pd a b) + P * pc a b = val a * val b := by
   simp only [val, pd, pc, P_eq]
-  ring
+  grind
 
 /-! ## Carrying -/
 

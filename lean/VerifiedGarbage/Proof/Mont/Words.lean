@@ -162,4 +162,43 @@ theorem Lay.grid {M : Mod} {size d lo hi imo itmp : Nat} (hmo : M.mo = d + 8 * M
   · rintro x ⟨i, hi, -, rfl⟩
     rw [htmp]; exact apart i itmp (by omega)
 
+/-- `t₀ + (t₀ m' mod 2⁶⁴) m ≡ 0 (mod 2⁶⁴)` when `m m' ≡ -1`. -/
+theorem mont_low (t0 minv m : Nat) (h : (m * minv + 1) % 2 ^ 64 = 0) :
+    (t0 + t0 * minv % 2 ^ 64 * m) % 2 ^ 64 = 0 := by
+  rw [Nat.add_mod, Nat.mul_mod (t0 * minv % 2 ^ 64), Nat.mod_mod, ← Nat.mul_mod,
+    ← Nat.add_mod, show t0 + t0 * minv * m = t0 * (m * minv + 1) by
+      rw [Nat.mul_add, Nat.mul_one, Nat.mul_assoc, Nat.mul_comm minv m]; omega,
+    Nat.mul_mod, h, Nat.mul_zero, Nat.zero_mod]
+
+theorem wordsVal_succ_top (m : Mem) (base : Addr) (d k : Nat) :
+    wordsVal m base d (k + 1) = wordsVal m base d k + 2 ^ (64 * k) * (word m base (d + 8 * k)).toNat := by
+  induction k generalizing d with
+  | zero => simp [wordsVal]
+  | succ k ih =>
+    rw [wordsVal, ih (d + 8), wordsVal, pow64_succ, Nat.mul_add, Nat.mul_assoc,
+      show d + 8 + 8 * k = d + 8 * (k + 1) by omega]
+    omega
+
+/-- What `csub` computes: the number `T + X top < 2m` below `m`, given its
+difference with `m`, `D + m = T + X b`, and the selection by the borrow. -/
+theorem csub_arith {T D top X m : Nat} {b : Bool} (hX : m < X) (hD : D < X)
+    (hV : T + X * top < 2 * m) (he : D + m = T + X * b.toNat) :
+    (if top < b.toNat then T else D) = (T + X * top) % m := by
+  have htop : top ≤ 1 := by
+    rcases Nat.lt_or_ge top 2 with h | h
+    · omega
+    · have : X * 2 ≤ X * top := Nat.mul_le_mul_left _ h
+      omega
+  rcases (by omega : top = 0 ∨ top = 1) with rfl | rfl <;> cases b <;>
+    simp only [Bool.toNat_false, Bool.toNat_true, Nat.mul_zero, Nat.mul_one, Nat.add_zero] at he hV ⊢
+  · simp only [Nat.lt_irrefl, ite_false]
+    rw [Nat.mod_eq_sub_mod (by omega), Nat.mod_eq_of_lt (by omega)]; omega
+  · simp only [Nat.zero_lt_one, ite_true]
+    rw [Nat.mod_eq_of_lt (by omega)]
+  · omega
+  · simp only [Nat.lt_irrefl, ite_false]
+    rw [Nat.mod_eq_sub_mod (by omega), Nat.mod_eq_of_lt (by omega)]; omega
+
+theorem m_pos {m B : Nat} (hB : B < m) : 0 < m := by omega
+
 end VG.Proof.Mont
