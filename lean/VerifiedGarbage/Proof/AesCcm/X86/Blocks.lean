@@ -22,9 +22,32 @@ open VG.Proof.Cmac (le4)
 open VG.Proof.Aes.X86 (Ctr32Impl)
 open VG.Impl.AesGcm.X86 (at_ imm slot copyLoop zero4)
 open VG.Proof.AesGcm.X86 (w64 toNat_ofNat32 toNat_add32 slotv LoopPre CopyPost copyLoop_ok zero4_fold zero4_bytes'
-  length_bytesAt)
+  length_bytesAt CT)
 
 /-! ## `Ctr₀` -/
+
+/-- `ctrs`'s block: `Ctr₀`'s first byte, and the copy's arguments. -/
+theorem ctrsBlk_ok {K W SP : BitVec 32} {s : State} (L : Lay K W SP) (E : Env K W SP s) {N : BitVec 32} {nl : Nat}
+    (hNp : slotv s.mem W nonceO = N) (hnl : slotv s.mem W nlenO = BitVec.ofNat 32 nl) (h13 : nl ≤ 13) :
+    ∃ s₁, runBlock isa
+      (zero4 c0O ++ [.mov .eax (imm 14), .alu .sub .eax (slot nlenO), .store8 (at_ .ebp c0O) .al,
+        .mov .edi (slot nonceO), .mov .edx (.reg .ebp), .alu .add .edx (imm (c0O + 1)), .mov .ecx (slot nlenO)]) s =
+        some s₁ ∧
+      s₁.mem = (Cmac.zero4 s.mem (w64 W + BitVec.ofNat 64 48)).writeW (w64 W + BitVec.ofNat 64 48)
+        (BitVec.ofNat 8 (15 - nl - 1)) ∧
+      s₁.gpr .edi = N ∧ s₁.gpr .edx = W + BitVec.ofNat 32 49 ∧ s₁.gpr .ecx = BitVec.ofNat 32 nl ∧
+      s₁.gpr .ebp = W ∧ s₁.gpr .esp = SP ∧ s₁.rd = s.rd ∧ s₁.wr = s.wr := by
+  have hz := zero4_fold s.mem W 48
+  simp only [Nat.reduceAdd] at hz
+  have hb := sub_low_byte32 (show nl ≤ 14 by omega)
+  refine ⟨_, by crun [zero4, E.ebp, L.aW, E.perm.wW, E.perm.wR, hnl, hNp], ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · cmems [hz, hb]
+  · cregs [hNp]
+  · cregs [E.ebp]
+  · cregs [hnl]
+  · cregs [E.ebp]
+  · cregs [E.esp]
+  all_goals rfl
 
 /-- `Ctr₀`, from the nonce `N` of `nl` bytes. -/
 theorem ctrs_ok {K W SP : BitVec 32} {s : State} (L : Lay K W SP) (E : Env K W SP s) {N : BitVec 32} {nl : Nat}
@@ -33,25 +56,7 @@ theorem ctrs_ok {K W SP : BitVec 32} {s : State} (L : Lay K W SP) (E : Env K W S
     WP isa ctrs s fun s' => Env K W SP s' ∧ Frame [⟨w64 W + BitVec.ofNat 64 48, 16⟩] s.mem s'.mem ∧
       bytesAt s'.mem (w64 W + BitVec.ofNat 64 48) 16 = Spec.Ccm.ctrBlock (bytesAt s.mem (w64 N) nl) 0 ∧
       s'.rd = s.rd ∧ s'.wr = s.wr := by
-  have hz := zero4_fold s.mem W 48
-  simp only [Nat.reduceAdd] at hz
-  have hb := sub_low_byte32 (show nl ≤ 14 by omega)
-  obtain ⟨s₁, run₁, hm₁, hdi, hdx, hcx, hbp, hsp, hrd₁, hwr₁⟩ : ∃ s₁, runBlock isa
-      (zero4 c0O ++ [.mov .eax (imm 14), .alu .sub .eax (slot nlenO), .store8 (at_ .ebp c0O) .al,
-        .mov .edi (slot nonceO), .mov .edx (.reg .ebp), .alu .add .edx (imm (c0O + 1)), .mov .ecx (slot nlenO)]) s =
-        some s₁ ∧
-      s₁.mem = (Cmac.zero4 s.mem (w64 W + BitVec.ofNat 64 48)).writeW (w64 W + BitVec.ofNat 64 48)
-        (BitVec.ofNat 8 (15 - nl - 1)) ∧
-      s₁.gpr .edi = N ∧ s₁.gpr .edx = W + BitVec.ofNat 32 49 ∧ s₁.gpr .ecx = BitVec.ofNat 32 nl ∧
-      s₁.gpr .ebp = W ∧ s₁.gpr .esp = SP ∧ s₁.rd = s.rd ∧ s₁.wr = s.wr := by
-    refine ⟨_, by crun [zero4, E.ebp, L.aW, E.perm.wW, E.perm.wR, hnl, hNp], ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
-    · cmems [hz, hb]
-    · cregs [hNp]
-    · cregs [E.ebp]
-    · cregs [hnl]
-    · cregs [E.ebp]
-    · cregs [E.esp]
-    all_goals rfl
+  obtain ⟨s₁, run₁, hm₁, hdi, hdx, hcx, hbp, hsp, hrd₁, hwr₁⟩ := ctrsBlk_ok L E hNp hnl h13
   refine WP.seq (WP.of_runBlock ⟨s₁, run₁, ?_⟩)
   have E₁ : Env K W SP s₁ := E.keep (by rw [hbp, E.ebp]) (by rw [hsp, E.esp]) hrd₁ hwr₁
   have a49 : w64 (W + BitVec.ofNat 32 49) = w64 W + BitVec.ofNat 64 49 := L.aW (by decide)
@@ -143,6 +148,25 @@ theorem ctrAt_ok {K W SP : BitVec 32} {s : State} (L : Lay K W SP) (E : Env K W 
 
 /-! ## Chaining `B` -/
 
+/-- The arguments of `updBlock y`'s call. -/
+theorem updBlockArgs_ok {K W SP : BitVec 32} {s : State} (L : Lay K W SP) (E : Env K W SP s) {R : Nat}
+    (hK : slotv s.mem W ctxO = K) (hRo : slotv s.mem W roundsO = BitVec.ofNat 32 R) (y : Nat) :
+    ∃ s₁, runBlock isa (keyArgs y ++ [.mov .ebx (.reg .ebp), .alu .add .ebx (imm blkO), .mov .esi (imm 1)] ++ updScr) s =
+      some s₁ ∧ s₁.mem = s.mem ∧ s₁.gpr .eax = K ∧ s₁.gpr .ecx = BitVec.ofNat 32 R ∧
+      s₁.gpr .edx = W + BitVec.ofNat 32 y ∧ s₁.gpr .ebx = W + BitVec.ofNat 32 32 ∧ s₁.gpr .esi = BitVec.ofNat 32 1 ∧
+      s₁.gpr .edi = W + BitVec.ofNat 32 384 ∧ s₁.gpr .ebp = W ∧ s₁.gpr .esp = SP ∧ s₁.rd = s.rd ∧ s₁.wr = s.wr := by
+  refine ⟨_, by crun [keyArgs, updScr, E.ebp, L.aW, E.perm.wR, hK, hRo], ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · rfl
+  · cregs [hK]
+  · cregs [hRo]
+  · cregs [E.ebp]
+  · cregs [E.ebp]
+  · cregs []
+  · cregs [E.ebp]
+  · cregs [E.ebp]
+  · cregs [E.esp]
+  all_goals rfl
+
 /-- `B` (at `W + 32`) chained into the MAC state at `W + y`. -/
 theorem updBlock_ok (v : Ctr32Impl) {K W SP : BitVec 32} {s : State} (L : Lay K W SP) (E : Env K W SP s) {R : Nat}
     (hR : R = 10 ∨ R = 12 ∨ R = 14) (hK : slotv s.mem W ctxO = K) (hRo : slotv s.mem W roundsO = BitVec.ofNat 32 R)
@@ -152,22 +176,7 @@ theorem updBlock_ok (v : Ctr32Impl) {K W SP : BitVec 32} {s : State} (L : Lay K 
       bytesAt s'.mem (w64 W + BitVec.ofNat 64 y) 16 =
         Spec.Cmac.chain (Spec.Ccm.ctxCiph s.mem (w64 K) R) (bytesAt s.mem (w64 W + BitVec.ofNat 64 y) 16)
           [bytesAt s.mem (w64 W + BitVec.ofNat 64 32) 16] := by
-  obtain ⟨s₁, run₁, hm₁, hax, hcx, hdx, hbx, hsi, hdi, hbp, hsp, hrd₁, hwr₁⟩ : ∃ s₁, runBlock isa
-      (keyArgs y ++ [.mov .ebx (.reg .ebp), .alu .add .ebx (imm blkO), .mov .esi (imm 1)] ++ updScr) s = some s₁ ∧
-      s₁.mem = s.mem ∧ s₁.gpr .eax = K ∧ s₁.gpr .ecx = BitVec.ofNat 32 R ∧ s₁.gpr .edx = W + BitVec.ofNat 32 y ∧
-      s₁.gpr .ebx = W + BitVec.ofNat 32 32 ∧ s₁.gpr .esi = BitVec.ofNat 32 1 ∧
-      s₁.gpr .edi = W + BitVec.ofNat 32 384 ∧ s₁.gpr .ebp = W ∧ s₁.gpr .esp = SP ∧ s₁.rd = s.rd ∧ s₁.wr = s.wr := by
-    refine ⟨_, by crun [keyArgs, updScr, E.ebp, L.aW, E.perm.wR, hK, hRo], ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
-    · rfl
-    · cregs [hK]
-    · cregs [hRo]
-    · cregs [E.ebp]
-    · cregs [E.ebp]
-    · cregs []
-    · cregs [E.ebp]
-    · cregs [E.ebp]
-    · cregs [E.esp]
-    all_goals rfl
+  obtain ⟨s₁, run₁, hm₁, hax, hcx, hdx, hbx, hsi, hdi, hbp, hsp, hrd₁, hwr₁⟩ := updBlockArgs_ok L E hK hRo y
   refine WP.seq (WP.of_runBlock ⟨s₁, run₁, ?_⟩)
   have E₁ : Env K W SP s₁ := E.keep (by rw [hbp, E.ebp]) (by rw [hsp, E.esp]) hrd₁ hwr₁
   have hq := srcW (s := s₁) L E₁.perm (t := 32) (k := 16 * 1) (by decide)
@@ -180,5 +189,41 @@ theorem updBlock_ok (v : Ctr32Impl) {K W SP : BitVec 32} {s : State} (L : Lay K 
     fun s₂ ⟨E₂, rd₂, wr₂, _, f₂, o₂⟩ => ⟨E₂, by rw [rd₂, hrd₁], by rw [wr₂, hwr₁], by rw [← hm₁]; exact f₂, ?_⟩
   rw [o₂, Proof.Cmac.Stream.blocksAt_eq, Nat.mul_one, Proof.Cmac.Stream.blocks_single
     (Proof.Cmac.bytesAt_length _ _ _), hm₁, L.aW (o := 32) (by decide)]
+
+/-- `updBlock y` is constant time. -/
+theorem updBlock_ct (v : Ctr32Impl) {K W SP : BitVec 32} (L : Lay K W SP) {R : Nat} (hR : R = 10 ∨ R = 12 ∨ R = 14)
+    {y : Nat} (hy : y = 0 ∨ y = 96) {I : State → Prop}
+    (hI : ∀ s, I s → Env K W SP s ∧ slotv s.mem W ctxO = K ∧ slotv s.mem W roundsO = BitVec.ofNat 32 R) :
+    CT I (updBlock v.callee v.suffix y) := by
+  have hqy : (⟨w64 (W + BitVec.ofNat 32 32), 16 * 1⟩ : Region).Disjoint ⟨w64 W + BitVec.ofNat 64 y, 16⟩ := by
+    rw [L.aW (o := 32) (by decide)]
+    rcases hy with rfl | rfl
+    · exact Lay.w_w (.inr (by decide)) (by decide) (by decide)
+    · exact Lay.w_w (.inl (by decide)) (by decide) (by decide)
+  refine CT.seq (J := fun s₁ => ∃ s, I s ∧ s₁.mem = s.mem ∧ s₁.gpr .eax = K ∧ s₁.gpr .ecx = BitVec.ofNat 32 R ∧
+      s₁.gpr .edx = W + BitVec.ofNat 32 y ∧ s₁.gpr .ebx = W + BitVec.ofNat 32 32 ∧ s₁.gpr .esi = BitVec.ofNat 32 1 ∧
+      s₁.gpr .edi = W + BitVec.ofNat 32 384 ∧ s₁.gpr .ebp = W ∧ s₁.gpr .esp = SP ∧ s₁.rd = s.rd ∧ s₁.wr = s.wr)
+    (by
+      have hr : ∀ s₁ s₂, I s₁ → I s₂ → ∀ r ∈ [Reg.ebp], s₁.gpr r = s₂.gpr r := fun s₁ s₂ h₁ h₂ r hr => by
+        simp only [List.mem_singleton] at hr; subst hr; rw [(hI _ h₁).1.ebp, (hI _ h₂).1.ebp]
+      rcases hy with rfl | rfl
+      · exact CT.taint [.ebp] hr (by taint_decide)
+      · exact CT.taint [.ebp] hr (by taint_decide))
+    (fun s hs => by
+      obtain ⟨E, hK, hRo⟩ := hI s hs
+      obtain ⟨s₁, run₁, h⟩ := updBlockArgs_ok L E hK hRo y
+      exact WP.of_runBlock ⟨s₁, run₁, s, hs, h⟩) ?_
+  refine updCall_ct v L hR (y := y) (Q := W + BitVec.ofNat 32 32) (n := 1)
+    (by rcases hy with rfl | rfl <;> decide) (by decide) fun s₁ ⟨s, hs, _, ax, cx, dx, bx, si, di, bp, sp, rd, wr⟩ => ?_
+  have E₁ : Env K W SP s₁ := ⟨bp, sp, (hI s hs).1.perm.of_eq rd wr⟩
+  exact ⟨E₁, srcW L E₁.perm (by decide), hqy, ax, cx, dx, bx, si, di⟩
+
+/-- `ctrs` is constant time. -/
+theorem ctrs_ct {K W SP : BitVec 32} (L : Lay K W SP) {N : BitVec 32} {nl : Nat} (h13 : nl ≤ 13) {I : State → Prop}
+    (hI : ∀ s, I s → Env K W SP s ∧ slotv s.mem W nonceO = N ∧ slotv s.mem W nlenO = BitVec.ofNat 32 nl) :
+    CT I ctrs :=
+  CT.block_seq [.ebp] (pin_ebp fun s h => (hI s h).1.ebp) (by taint_decide)
+    (fun s hs => ctrsBlk_ok L (hI s hs).1 (hI s hs).2.1 (hI s hs).2.2 h13)
+    (Proof.AesGcm.X86.copyLoop_ct (pin3 fun _ ⟨_, _, _, hdi, hdx, hcx, _⟩ => ⟨hdi, hdx, hcx⟩))
 
 end VG.Proof.AesCcm.X86

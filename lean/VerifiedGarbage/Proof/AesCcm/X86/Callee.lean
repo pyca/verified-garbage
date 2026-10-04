@@ -27,6 +27,7 @@ open VG.Impl.AesGcm.X86 (imm)
 open VG.Proof.AesGcm.X86 (w64 toNat_ofNat32 toNat_add32 w64_add covers_left covers_cons covers_nil CtrCall CtrPost
   GcmImpl GhashImpl gpr_setMem)
 open VG.Proof.CmacAes.Stream.X86 (UArgs UPost)
+open VG.Proof.AesGcm.X86 (CT)
 
 theorem below_sub56 {SP : BitVec 32} {k : Nat} (hk : k ≤ 56) (hs : 56 ≤ SP.toNat) :
     Region.Sub (below SP k) (below SP 56) :=
@@ -199,5 +200,72 @@ theorem ctrCall_ok (v : Ctr32Impl) {K W SP : BitVec 32} {s : State} (L : Lay K W
     rw [L.aW (o := c) (by omega)] at o
     cmems []
     exact o
+
+/-! ## Constant time -/
+
+/-- Calls of `vg_cmac_aes_update` with the same arguments are constant time. -/
+theorem updCall_ct (v : Ctr32Impl) {K W SP : BitVec 32} (L : Lay K W SP) {R : Nat} (hR : R = 10 ∨ R = 12 ∨ R = 14)
+    {y : Nat} (hy : y + 16 ≤ 384) {Q : BitVec 32} {n : Nat} (hn : 16 * n < 2 ^ 32) {I : State → Prop}
+    (hI : ∀ s, I s → Env K W SP s ∧ Src W SP s Q (16 * n) ∧
+      (⟨w64 Q, 16 * n⟩ : Region).Disjoint ⟨w64 W + BitVec.ofNat 64 y, 16⟩ ∧ s.gpr .eax = K ∧
+      s.gpr .ecx = BitVec.ofNat 32 R ∧ s.gpr .edx = W + BitVec.ofNat 32 y ∧ s.gpr .ebx = Q ∧
+      s.gpr .esi = BitVec.ofNat 32 n ∧ s.gpr .edi = W + BitVec.ofNat 32 384) :
+    CT I (updCall v.callee v.suffix) :=
+  Proof.CmacAes.Stream.X86.upd_rel v (E := SP) fun s₁ s₂ ⟨h₁, h₂⟩ => by
+    obtain ⟨E₁, q₁, y₁, a₁, c₁, d₁, b₁, i₁, j₁⟩ := hI s₁ h₁
+    obtain ⟨E₂, q₂, y₂, a₂, c₂, d₂, b₂, i₂, j₂⟩ := hI s₂ h₂
+    exact ⟨uargs L E₁ hR hy q₁ y₁ hn a₁ c₁ d₁ b₁ i₁ j₁, uargs L E₂ hR hy q₂ y₂ hn a₂ c₂ d₂ b₂ i₂ j₂, E₁.esp, E₂.esp⟩
+
+/-- Calls of `vg_aes_ctr32` with the same arguments are constant time. -/
+theorem ctrCall_ct (v : Ctr32Impl) {K W SP : BitVec 32} (L : Lay K W SP) {R : Nat} (hR : R = 10 ∨ R = 12 ∨ R = 14)
+    {c : Nat} (hc : c + 16 ≤ 384) {Q : BitVec 32} {n : Nat} {I : State → Prop}
+    (hI : ∀ s, I s → Env K W SP s ∧ Src W SP s Q (16 * n) ∧ Covers [⟨w64 Q, 16 * n⟩] s.wr ∧
+      (⟨w64 Q, 16 * n⟩ : Region).Disjoint ⟨w64 W + BitVec.ofNat 64 c, 16⟩ ∧
+      (⟨w64 K, 240⟩ : Region).Disjoint ⟨w64 Q, 16 * n⟩ ∧ s.gpr .eax = K ∧
+      s.gpr .ecx = BitVec.ofNat 32 R ∧ s.gpr .edx = W + BitVec.ofNat 32 c ∧ s.gpr .ebx = Q ∧
+      s.gpr .edi = BitVec.ofNat 32 n) :
+    CT I (ctrCall v.callee) := by
+  have hsp := L.sp
+  have b28 : Region.Sub (below SP 28) (below SP 56) := below_sub56 (by decide) hsp
+  -- The state after `ebp := W + 384`, as `CtrCall` needs it.
+  have call : ∀ s, I s → ∀ s', runBlock isa [.alu .add .ebp (imm scrO)] s = some s' →
+      CtrCall s' K (W + BitVec.ofNat 32 c) Q (W + BitVec.ofNat 32 384) R n ∧ s'.gpr .esp = SP := by
+    intro s hs s' run
+    obtain ⟨E, hq, hqw, hqc, hqk, eax, ecx, edx, ebx, edi⟩ := hI s hs
+    have e := run
+    simp (disch := first | decide | omega) only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, execAlu,
+      imm, scrO, Option.bind_some, Option.some.injEq] at e
+    subst e
+    have e384 : s.gpr .ebp + BitVec.ofNat 32 384 = W + BitVec.ofNat 32 384 := by rw [E.ebp]
+    refine ⟨⟨by cregs [eax], by cregs [ecx], by cregs [edx], by cregs [ebx], by cregs [edi], by cregs [e384], hR,
+      by cregs [E.esp]; omega, ?_, hqk, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, by cregs [E.esp]⟩
+    · rw [L.aW (o := c) (by omega)]; simpa using L.k_w' (a := 0) (n := 240) (d := c) (k := 16) (by decide) (by omega)
+    · rw [L.aW (o := 384) (by omega)]
+      simpa using L.k_w' (a := 0) (n := 240) (d := 384) (k := 2048) (by decide) (by decide)
+    · rw [L.aW (o := c) (by omega)]; exact hqc.symm
+    · rw [L.aW (o := c) (by omega), L.aW (o := 384) (by omega)]; exact Lay.w_w (.inl (by omega)) (by omega) (by decide)
+    · rw [L.aW (o := 384) (by omega)]; exact hq.qs.sub_right (Region.sub_prefix (by decide))
+    · cregs [E.esp]; exact L.stk_k.sub_left b28
+    · cregs [E.esp]; rw [L.aW (o := c) (by omega)]; exact (L.stk_w' (by omega)).sub_left b28
+    · cregs [E.esp]; exact hq.stk.sub_left b28
+    · cregs [E.esp]; rw [L.aW (o := 384) (by omega)]; exact (L.stk_w' (by decide)).sub_left b28
+    · have := L.fk; omega
+    · rw [L.nW (by omega)]; have := L.fw; omega
+    · exact hq.wrap
+    · rw [L.nW (by omega)]; have := L.fw; omega
+    · cmems []; exact covers_cons E.perm.k covers_nil
+    · cmems []; rw [L.aW (o := c) (by omega), L.aW (o := 384) (by omega)]
+      exact covers_cons (E.perm.wC (by omega)) (covers_cons hqw (covers_cons (E.perm.wC (by decide)) covers_nil))
+  refine CT.seq (J := fun s' => ∃ s, I s ∧ runBlock isa [.alu .add .ebp (imm scrO)] s = some s')
+    (CT.taint [.ebp] (fun s₁ s₂ h₁ h₂ r hr => by
+      simp only [List.mem_singleton] at hr; subst hr; rw [(hI _ h₁).1.ebp, (hI _ h₂).1.ebp]) (by taint_decide))
+    (fun s hs => WP.of_runBlock ⟨_, by crun [], s, hs, by crun []⟩) ?_
+  refine CT.seq (J := fun s => s.gpr .ebp = W + BitVec.ofNat 32 384)
+    ((Proof.AesGcm.X86.ctr_ct ⟨v, .scalar⟩ (E := SP) fun s ⟨s₀, h₀, run⟩ => call s₀ h₀ s run :
+      CT _ (.frame (.push [.ebp, .edi, .ebx, .edx, .ecx, .eax]) (.call v.callee.name v.callee.code) (.pop .eax 6))))
+    (fun s ⟨s₀, h₀, run⟩ => WP.mono (ctrFrame_ok v (call s₀ h₀ s run).1) fun s₁ g => by
+      rw [g.saved .ebp (by decide), (call s₀ h₀ s run).1.ebp]) ?_
+  exact CT.taint [.ebp] (fun s₁ s₂ h₁ h₂ r hr => by
+    simp only [List.mem_singleton] at hr; subst hr; rw [h₁, h₂]) (by taint_decide)
 
 end VG.Proof.AesCcm.X86

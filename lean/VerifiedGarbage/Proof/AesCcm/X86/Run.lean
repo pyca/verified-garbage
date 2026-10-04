@@ -18,7 +18,7 @@ namespace VG.Proof.AesCcm.X86
 open VG VG.X86 VG.X86.RegUpd VG.Impl.AesCcm.X86
 open VG.Impl.AesGcm.X86 (at_ imm slot argOp tglO rO vO tpO dO nO bO)
 open VG.Proof.AesGcm.X86 (store32_eq store8_eq gpr_setMem mem_setMem rd_setMem wr_setMem cf_setMem zf_setMem
-  readW_writeW_off)
+  readW_writeW_off CT)
 
 /-- A word at `p + a`, after a byte written at `p + b` elsewhere. -/
 theorem readW_writeB_off (m : Mem) (p : Addr) (v : BitVec 8) {a b : Nat} (h : a + 4 ≤ b ∨ b + 1 ≤ a)
@@ -69,5 +69,38 @@ theorem eval_b {s : State} {b : Bool} (h : s.cf = some b) : isa.eval .b s = some
 theorem seq_assoc {a b c : Prog isa} {s : State} {Q : State → Prop} (h : WP isa (.seq (.seq a b) c) s Q) :
     WP isa (.seq a (.seq b c)) s Q :=
   WP.seq (WP.mono (WP.seq_iff.mp (WP.seq_iff.mp h)) fun _ h => WP.seq h)
+
+/-- A block, then code: the block constant time by the taint analysis from
+the registers `rs`, which `I` pins, and the code from what the block leaves
+(`F`, from the state it started in). -/
+theorem CT.block_seq {I : State → Prop} {is : List Instr} {c : Prog isa} {F : State → State → Prop}
+    (rs : List Reg) (hr : ∀ s₁ s₂, I s₁ → I s₂ → ∀ r ∈ rs, s₁.gpr r = s₂.gpr r) {hc : Taint.Hint VG.X86.taint.T}
+    (h : (VG.X86.taint.check (τr rs) (.block is) hc).isSome = true)
+    (blk : ∀ s, I s → ∃ s', runBlock isa is s = some s' ∧ F s s') (h₂ : CT (fun s' => ∃ s, I s ∧ F s s') c) :
+    CT I (.seq (.block is) c) :=
+  CT.seq (CT.taint rs hr h) (fun s hs => let ⟨s', r, f⟩ := blk s hs; WP.of_runBlock ⟨s', r, s, hs, f⟩) h₂
+
+/-- `ebp` pinned. -/
+theorem pin_ebp {I : State → Prop} {W : BitVec 32} (h : ∀ s, I s → s.gpr .ebp = W) :
+    ∀ s₁ s₂, I s₁ → I s₂ → ∀ r ∈ [Reg.ebp], s₁.gpr r = s₂.gpr r := fun s₁ s₂ h₁ h₂ r hr => by
+  simp only [List.mem_singleton] at hr; subst hr; rw [h _ h₁, h _ h₂]
+
+/-- Two registers pinned. -/
+theorem pin2 {I : State → Prop} {a b : Reg} {x y : BitVec 32} (h : ∀ s, I s → s.gpr a = x ∧ s.gpr b = y) :
+    ∀ s₁ s₂, I s₁ → I s₂ → ∀ r ∈ [a, b], s₁.gpr r = s₂.gpr r := fun s₁ s₂ h₁ h₂ r hr => by
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl
+  · rw [(h _ h₁).1, (h _ h₂).1]
+  · rw [(h _ h₁).2, (h _ h₂).2]
+
+/-- Three registers pinned. -/
+theorem pin3 {I : State → Prop} {a b c : Reg} {x y z : BitVec 32}
+    (h : ∀ s, I s → s.gpr a = x ∧ s.gpr b = y ∧ s.gpr c = z) :
+    ∀ s₁ s₂, I s₁ → I s₂ → ∀ r ∈ [a, b, c], s₁.gpr r = s₂.gpr r := fun s₁ s₂ h₁ h₂ r hr => by
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl
+  · rw [(h _ h₁).1, (h _ h₂).1]
+  · rw [(h _ h₁).2.1, (h _ h₂).2.1]
+  · rw [(h _ h₁).2.2, (h _ h₂).2.2]
 
 end VG.Proof.AesCcm.X86
