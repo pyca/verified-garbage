@@ -6,9 +6,11 @@ import VerifiedGarbage.Proof.AesCcm.AArch64.CtrCT
 # AES-CCM on AArch64: `vg_aes_ccm_open` is constant time
 
 Untrusted: everything here is checked by Lean. As `seal_ct`, with the
-decryption first; then the comparison of the tags, the result and the mask
-of the data, whose branches and loops depend only on the tag length and the
-data's length, by the taint analysis. Whether the function returns 1 or 0
+decryption first; then the load of the address of the received tag from its
+slot, and the comparison of the tags, the result and the mask of the data,
+whose branches and loops depend only on the tag length and the data's length,
+by the taint analysis from that address, which correctness says both runs
+load. Whether the function returns 1 or 0
 leaks nothing: the comparison has no branch, and the mask writes every byte.
 -/
 
@@ -25,7 +27,7 @@ open VG.Proof.AesCcm (length_bytesAt)
 theorem open_ct (v : Proof.CmacAes.AArch64.UpdateImpl) :
     ConstantTime isa openAArch64.pre openAArch64.pub (Impl.AesCcm.AArch64.open v.callee v.ctr.callee) := by
   refine ct_of fun σ₁ σ₂ h₁ h₂ hq => ?_
-  obtain ⟨A₁, A₂⟩ := args_two h₁ h₂ hq.1
+  obtain ⟨A₁, A₂⟩ := args_two (args_of_open h₁) (args_of_open h₂) hq.1
   obtain ⟨q0, q1, q2, q3, q4, q5, q6, q7, -, -⟩ := hq.1
   have L := A₁.lay
   refine rel_seq (entry_rel A₁ A₂ (by agree_tac [q0, q1, q2, q3, q4, q5, q6, q7])) (entry_ok A₁) (entry_ok A₂)
@@ -48,7 +50,13 @@ theorem open_ct (v : Proof.CmacAes.AArch64.UpdateImpl) :
   have e₁ := (Proof.AesGcm.AArch64.bytesAt_frame M₁.frame (macR_c0 L (.inr rfl)) (by decide)).trans d₁
   have e₂ := (Proof.AesGcm.AArch64.bytesAt_frame M₂.frame (macR_c0 L (.inr rfl)) (by decide)).trans d₂
   refine rel_seq (tag_rel v.ctr L M₁.env M₂.env hn₁ hn₂ e₁ e₂ (.inr rfl))
-    (tag_ok v.ctr L M₁.env hn₁ e₁ (.inr rfl)) (tag_ok v.ctr L M₂.env hn₂ e₂ (.inr rfl)) fun ω₁ ω₂ G₁ G₂ => ?_
-  exact rel_env [] G₁.1 G₂.1 (by simp) ⟨_, by taint_decide⟩
+    (tag_ok v.ctr L M₁.env hn₁ e₁ (.inr rfl)) (tag_ok v.ctr L M₂.env hn₂ e₂ (.inr rfl))
+    fun ω₁ ω₂ ⟨G₁, _, _, k₁, _⟩ ⟨G₂, _, _, k₂, _⟩ => ?_
+  have T₁ := S₁.mut L ((M₁.frame.sub (macR_mut (.inr rfl))).trans (k₁.sub (tagR_mut _ (.inr rfl))))
+  have T₂ := S₂.mut L ((M₂.frame.sub (macR_mut (.inr rfl))).trans (k₂.sub (tagR_mut _ (.inr rfl))))
+  refine rel_seq (rel_env [] G₁ G₂ (by simp) ⟨_, by taint_decide⟩) (loadTag_ok G₁ T₁ .x12) (loadTag_ok G₂ T₂ .x12)
+    fun ρ₁ ρ₂ ⟨x₁, og₁, _, sp₁, rd₁, wr₁⟩ ⟨x₂, og₂, _, sp₂, rd₂, wr₂⟩ => ?_
+  exact rel_env [.x12] (G₁.others og₁ (by decide) sp₁ rd₁ wr₁) (G₂.others og₂ (by decide) sp₂ rd₂ wr₂)
+    (by agree_tac [x₁, x₂]) ⟨_, by taint_decide⟩
 
 end VG.Proof.AesCcm.AArch64

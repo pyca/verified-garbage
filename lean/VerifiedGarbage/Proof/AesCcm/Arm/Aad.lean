@@ -28,10 +28,10 @@ open VG.Proof.AesCcm (hdrLen headLen adataBlocks ctxCiph_frame bytesAt_prefix by
 /-- The stack arguments of `s` are those of the entry state `s₀`, apart from
 `W` and the stack below `sp`. -/
 structure Stk (w : BitVec 32) (s₀ s : State) : Prop where
-  keep : ArgsKeep 6 s₀ s
-  fit : s₀.sp.toNat + 4 * 6 ≤ 2 ^ 32
-  rd : args s₀ 6 ∈ s₀.rd
-  aw : (args s₀ 6).Disjoint ⟨State.addr w, 2560⟩
+  keep : ArgsKeep 7 s₀ s
+  fit : s₀.sp.toNat + 4 * 7 ≤ 2 ^ 32
+  rd : args s₀ 7 ∈ s₀.rd
+  aw : (args s₀ 7).Disjoint ⟨State.addr w, 2560⟩
 
 namespace Stk
 
@@ -39,13 +39,13 @@ variable {w : BitVec 32} {s₀ s : State} (h : Stk w s₀ s)
 include h
 
 /-- Argument `i`, at offset `4 i`. -/
-theorem «at» (i : Nat) {off : Nat} (hi : i < 6) (hoff : 4 * i = off) :
+theorem «at» (i : Nat) {off : Nat} (hi : i < 7) (hoff : 4 * i = off) :
     InRegions (s.rd ++ s.wr) (State.addr (s.sp + BitVec.ofNat 32 off)) 4 ∧
       s.mem.readW (State.addr (s.sp + BitVec.ofNat 32 off)) 32 = stackArg s₀ i :=
   h.keep.at h.fit h.rd i hi hoff
 
 /-- Argument `i` is apart from `W`. -/
-theorem slot_w (i : Nat) {off : Nat} (hi : i < 6) (hoff : 4 * i = off) {d n : Nat} (hd : d + n ≤ 2560) :
+theorem slot_w (i : Nat) {off : Nat} (hi : i < 7) (hoff : 4 * i = off) {d n : Nat} (hd : d + n ≤ 2560) :
     (⟨State.addr (s.sp + BitVec.ofNat 32 off), 4⟩ : Region).Disjoint ⟨State.addr w + BitVec.ofNat 64 d, n⟩ := by
   subst hoff
   have := h.fit
@@ -60,16 +60,16 @@ theorem of_eq {s' : State} (hm : s'.mem = s.mem) (hsp : s'.sp = s.sp) (hrd : s'.
 
 /-- After code that writes regions apart from the arguments. -/
 theorem frame {s' : State} {rs : List Region} (hfr : Frame rs s.mem s'.mem)
-    (hd : ∀ r ∈ rs, (args s₀ 6).Disjoint r) (hsp : s'.sp = s.sp) (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr) :
+    (hd : ∀ r ∈ rs, (args s₀ 7).Disjoint r) (hsp : s'.sp = s.sp) (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr) :
     Stk w s₀ s' :=
   { h with keep := h.keep.frame h.fit hfr hd hsp hrd hwr }
 
 /-- The stack below `sp` is apart from the arguments. -/
-theorem blw_args {sp : BitVec 32} (hsp : s₀.sp = sp) : (args s₀ 6).Disjoint (blw sp) := by
+theorem blw_args {sp : BitVec 32} (hsp : s₀.sp = sp) : (args s₀ 7).Disjoint (blw sp) := by
   have := h.fit
   subst hsp
   simp only [args, Proof.AesGcm.Arm.argAddr_zero]
-  exact Offset.base_disjoint_below (State.addr s₀.sp) (n := 16) (k := 4 * 6) (by omega)
+  exact Offset.base_disjoint_below (State.addr s₀.sp) (n := 16) (k := 4 * 7) (by omega)
 
 /-- After code that writes the MAC's regions. -/
 theorem mac {sp : BitVec 32} (hsp₀ : s₀.sp = sp) {y : Nat} (hy : y + 16 ≤ 2560) {s' : State}

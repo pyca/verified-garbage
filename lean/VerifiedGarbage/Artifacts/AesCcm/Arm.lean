@@ -1,5 +1,5 @@
 import VerifiedGarbage.TCB.Arm.Target
-import VerifiedGarbage.Proof.AesCcm.Arm.Verified
+import VerifiedGarbage.Proof.AesCcm.Arm.Frame
 
 /-!
 # AES-CCM (NIST SP 800-38C) on ARMv7
@@ -11,9 +11,11 @@ artifact made from a function's `Api` (in `Spec/`, reviewed with the
 contract) takes them from there, and this file adds only notes on the
 implementation.
 
-Both functions call `vg_cmac_aes_update` and `vg_aes_ctr32` in frames that
-push their two stack arguments, and `vg_cmac_aes_update`'s own frame for its
-call of `vg_aes_ctr32` pushes two more: 16 bytes of stack.
+Both functions run in a frame of 2592 bytes holding their working space
+(`Proof/AesCcm/Arm/Frame.lean`). In it they call `vg_cmac_aes_update` and
+`vg_aes_ctr32` in frames that push their two stack arguments, and
+`vg_cmac_aes_update`'s own frame for its call of `vg_aes_ctr32` pushes two
+more: 2608 bytes of stack in all.
 -/
 
 namespace VG.Artifacts.AesCcm.Arm
@@ -28,19 +30,19 @@ def artifacts : List Artifact := [
   { Spec.Ccm.sealApi with
     target := Arm.target
     doc := Spec.Ccm.sealApi.doc (notes := [callNote])
-    code := Impl.AesCcm.Arm.«seal»
-    contract := Spec.Ccm.sealContract Arm.abi 16
-    stack := 16
-    verified := seal_verified
+    code := Impl.StackScratch.Arm.withStackScratch 2592 6 Impl.AesCcm.Arm.«seal»
+    contract := Spec.Ccm.sealContract Arm.abi 2608
+    stack := 2608
+    verified := seal_framed
     spSafe := Code.all_of_forall (fun _ => rfl) _ },
   { Spec.Ccm.openApi with
     target := Arm.target
     doc := Spec.Ccm.openApi.doc (notes := [callNote,
       "It compares the tags and overwrites the data with zeros without a branch on the result."])
-    code := Impl.AesCcm.Arm.«open»
-    contract := Spec.Ccm.openContract Arm.abi 16
-    stack := 16
-    verified := open_verified
+    code := Impl.StackScratch.Arm.withStackScratch 2592 6 Impl.AesCcm.Arm.«open»
+    contract := Spec.Ccm.openContract Arm.abi 2608
+    stack := 2608
+    verified := open_framed
     spSafe := Code.all_of_forall (fun _ => rfl) _ }]
 
 end VG.Artifacts.AesCcm.Arm
