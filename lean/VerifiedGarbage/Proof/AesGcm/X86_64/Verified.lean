@@ -26,10 +26,6 @@ namespace VG.Proof.AesGcm.X86_64
 def GcmImpl.features (v : GcmImpl) : List String :=
   (v.ctr.features ++ v.gh.features ++ (v.stitch.map (·.features)).getD []).dedup
 
-/-- The CPU features of the functions calling `vg_aes_ctr32` and `vg_ghash`
-but not the interleaved loops. -/
-def GcmImpl.calleeFeatures (v : GcmImpl) : List String := (v.ctr.features ++ v.gh.features).dedup
-
 open VG VG.X86_64 VG.Impl.AesGcm.X86_64
 
 section
