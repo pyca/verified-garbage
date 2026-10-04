@@ -132,7 +132,7 @@ yours to keep:
 
 <td>✅ SHA extensions, AVX2, BMI1, BMI2</td>
 
-<td>✅ SHA extensions</td>
+<td>✅ SHA extensions; round constants built by the first block and kept in registers</td>
 
 <td>✅</td>
 
@@ -148,7 +148,7 @@ yours to keep:
 
 <td>✅ SHA extensions, AVX2, BMI1, BMI2</td>
 
-<td>✅ SHA extensions</td>
+<td>✅ SHA extensions; round constants built by the first block and kept in registers</td>
 
 <td>✅</td>
 
