@@ -75,12 +75,12 @@ impl Drop for AesGcmSiv {
     }
 }
 
-/// Checks the lengths of §6.
-fn check(aad: &[u8], len: usize) -> Result<(), Error> {
+/// Checks the lengths of §6: of the additional data and of the text.
+fn check(aad_len: usize, len: usize) -> Result<(), Error> {
     if len > MAX_LEN {
         return Err(Error::InvalidTextLength);
     }
-    if aad.len() > MAX_LEN {
+    if aad_len > MAX_LEN {
         return Err(Error::InvalidAadLength);
     }
     Ok(())
@@ -135,7 +135,7 @@ impl AesGcmSiv {
         aad: &[u8],
         data: &mut [u8],
     ) -> Result<[u8; 16], Error> {
-        check(aad, data.len())?;
+        check(aad.len(), data.len())?;
         let seal = instance!(self.backend, vg_aes_gcm_siv_seal,
             x86_64: [vg_aes_gcm_siv_seal_aesni, vg_aes_gcm_siv_seal_pclmul, vg_aes_gcm_siv_seal_aesni_pclmul],
             vaes: [vg_aes_gcm_siv_seal_vaes, vg_aes_gcm_siv_seal_vpclmul, vg_aes_gcm_siv_seal_vaes_pclmul,
@@ -181,7 +181,7 @@ impl AesGcmSiv {
         data: &mut [u8],
         tag: &[u8; 16],
     ) -> Result<(), Error> {
-        check(aad, data.len())?;
+        check(aad.len(), data.len())?;
         let open = instance!(self.backend, vg_aes_gcm_siv_open,
             x86_64: [vg_aes_gcm_siv_open_aesni, vg_aes_gcm_siv_open_pclmul, vg_aes_gcm_siv_open_aesni_pclmul],
             vaes: [vg_aes_gcm_siv_open_vaes, vg_aes_gcm_siv_open_vpclmul, vg_aes_gcm_siv_open_vaes_pclmul,
@@ -239,7 +239,7 @@ unsafe fn first_block(work: &MaybeUninit<[u64; WORK]>) -> [u8; 16] {
 
 #[cfg(test)]
 mod tests {
-    use super::{AesGcmSiv, Error};
+    use super::{AesGcmSiv, Error, MAX_LEN, check};
     use crate::aes_gcm::{Backend, instance};
     use crate::arch::aes_gcm_siv::{
         VG_AES_GCM_SIV_OPEN_AESNI_FEATURES, VG_AES_GCM_SIV_OPEN_AESNI_PCLMUL_AVX_FEATURES,
@@ -277,6 +277,14 @@ mod tests {
                 aarch64: [NONE]);
             assert!(need.contains(seal) && need.contains(open), "{b:?}");
         }
+    }
+
+    /// The lengths of §6, which no test can allocate.
+    #[test]
+    fn lengths() {
+        assert_eq!(check(MAX_LEN, MAX_LEN), Ok(()));
+        assert_eq!(check(0, MAX_LEN + 1), Err(Error::InvalidTextLength));
+        assert_eq!(check(MAX_LEN + 1, 0), Err(Error::InvalidAadLength));
     }
 
     #[test]
