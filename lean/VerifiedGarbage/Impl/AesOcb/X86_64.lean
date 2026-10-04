@@ -174,8 +174,8 @@ low): shifted left by `a` bits if bit `k` of `bottom` (in `rbx`) is set.
 `r8`–`r11` are temporaries. -/
 def stage (k a : Nat) : List Instr :=
   -- The mask: all ones if bit `k` is set.
-  [mvr .r9 .rbx, .shift .shr .r9 k, .alu .and .r9 (.imm 1), .alu .xor .r10 (.reg .r10),
-   .alu .sub .r10 (.reg .r9),
+  [mvr .r9 .rbx] ++ (if k = 0 then [] else [.shift .shr .r9 k]) ++
+  [.alu .and .r9 (.imm 1), .alu .xor .r10 (.reg .r10), .alu .sub .r10 (.reg .r9),
    -- `r11` keeps the bits above the `a` lowest.
    .movImm64 .r11 (BitVec.allOnes 64 <<< a)] ++
   -- Each word, from the high one: `x ← x ⊕ ((x' ⊕ x) ∧ mask)`, where
