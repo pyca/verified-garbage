@@ -1,5 +1,6 @@
 """Focused regressions for benchmark selection; no builds or measurements."""
 
+import contextlib
 import json
 import unittest
 from unittest import mock
@@ -88,11 +89,16 @@ class Selection(unittest.TestCase):
         return {r['arch']: r['modules'] for r in rows}
 
     def rows(self, paths, registered=('triple_des_ecb',)):
-        with mock.patch.object(planner, 'bench_catalog', return_value=self.catalog), \
-                mock.patch.object(planner, 'read', self.read), \
-                mock.patch.object(planner, 'rust_files', lambda root='.': sorted(
-                    p for p in self.files if p.startswith('src/'))), \
-                mock.patch.object(planner, 'registrations', return_value=set(registered)):
+        """The matrix for `paths`, with `registered` as what registrations
+        add (None: read them from the files)."""
+        with contextlib.ExitStack() as stack:
+            stack.enter_context(mock.patch.object(planner, 'bench_catalog', return_value=self.catalog))
+            stack.enter_context(mock.patch.object(planner, 'read', self.read))
+            stack.enter_context(mock.patch.object(planner, 'rust_files', lambda root='.': sorted(
+                p for p in self.files if p.startswith('src/'))))
+            if registered is not None:
+                stack.enter_context(mock.patch.object(planner, 'registrations',
+                                                      return_value=set(registered)))
             return planner.arches(paths, base='base')
 
     def configurations(self, rows, arch):
@@ -281,15 +287,102 @@ class Selection(unittest.TestCase):
         self.assertEqual(self.configurations(self.rows(['src/chacha.rs']), 'aarch64'), [''])
 
     def test_registration_edits_only(self):
-        def names(lines):
-            with mock.patch.object(planner.subprocess, 'check_output', return_value=lines):
-                return planner.registrations('src/lib.rs', 'base')
-        self.assertEqual(names('+++ b/src/lib.rs\n+pub mod triple_des_ecb;'), {'triple_des_ecb'})
-        self.assertEqual(names('+#[rustfmt::skip]\n+pub(crate) mod triple_des;'), {'triple_des'})
-        self.assertEqual(names('+(triple_des_ecb::USES, triple_des_ecb::bench),'), {'triple_des_ecb'})
-        self.assertIsNone(planner.registrations('src/lib.rs', None))
-        self.assertIsNone(names('+fn helper() {}'))
-        self.assertIsNone(names('+#[cfg(feature = "alloc")]\n+pub mod old;'))
+        def names(old, new, arch='x86_64'):
+            self.base_files['src/lib.rs'] = old
+            self.files['src/lib.rs'] = new
+            with mock.patch.object(planner, 'read', self.read):
+                return planner.registrations('src/lib.rs', 'base', arch)
+        lib = 'mod ct;\n'
+        self.assertEqual(names(lib, lib + 'pub mod triple_des_ecb;\n'), {'triple_des_ecb'})
+        self.assertEqual(names(lib, lib + '#[rustfmt::skip]\npub(crate) mod triple_des;\n'),
+                         {'triple_des'})
+        self.assertEqual(names(lib, lib + '// Its benchmark.\n(triple_des_ecb::USES, triple_des_ecb::bench),\n'),
+                         {'triple_des_ecb'})
+        self.assertIsNone(planner.registrations('src/lib.rs', None, 'x86_64'))
+        self.assertIsNone(names(lib, lib + 'fn helper() {}\n'))
+        self.assertIsNone(names(lib, lib + '#[cfg(feature = "alloc")]\npub mod old;\n'))
+        # Lines another architecture alone compiles are not there.
+        ppc = '#[cfg(target_arch = "powerpc64")]\nuse asm::powerpc64le as arch;\n'
+        self.assertEqual(names(lib, lib + ppc + 'pub mod x448;\n'), {'x448'})
+        x86 = '#[cfg(target_arch = "x86")]\nfn helper() {}\n'
+        self.assertEqual(names(lib, lib + x86), set())
+        self.assertIsNone(names(lib, lib + x86, 'x86'))
+
+    def test_code_other_architectures_compile_needs_nothing_here(self):
+        # As in bringing up PPC64LE: its module, its `arch`, a `cfg_attr`
+        # only it applies, and its entry in a module's list of architectures.
+        self.base_files.update({
+            'src/lib.rs': 'mod ct;\npub mod chacha;\n#[cfg(target_arch = "x86_64")]\nuse asm::x86_64 as arch;\n',
+            'src/asm/mod.rs': '#[cfg(target_arch = "x86_64")]\n#[rustfmt::skip]\npub(crate) mod x86_64;\n',
+            'src/ct.rs': '//! Helpers.\n#![cfg_attr(target_arch = "powerpc64", allow(dead_code))]\n'
+                         'pub(crate) fn eq() {}\n',
+            'src/chacha.rs': '#![cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]\nfn f() {}\n',
+        })
+        self.files.update({
+            'src/lib.rs': self.base_files['src/lib.rs']
+            + '#[cfg(all(target_arch = "powerpc64", target_endian = "little"))]\n'
+              'use asm::powerpc64le as arch;\n',
+            'src/asm/mod.rs': self.base_files['src/asm/mod.rs']
+            + '\n#[cfg(all(target_arch = "powerpc64", target_endian = "little"))]\n'
+              '#[rustfmt::skip]\npub(crate) mod powerpc64le {\n    fn f() -> [u8; 2] { [b\'}\', 0] }\n}\n',
+            'src/ct.rs': 'pub(crate) fn eq() {}\n',
+            'src/chacha.rs': '#![cfg(any(\n    target_arch = "x86_64",\n    target_arch = "aarch64",\n'
+                             '    target_arch = "powerpc64"\n))]\nfn f() {}\n',
+        })
+        paths = ['src/lib.rs', 'src/asm/mod.rs', 'src/ct.rs', 'src/chacha.rs']
+        self.assertEqual(self.rows(paths, registered=None), [])
+        # One architecture's code needs that architecture's benchmarks alone.
+        self.files['src/chacha.rs'] += '#[cfg(target_arch = "aarch64")]\nfn g() {}\n'
+        self.assertEqual(self.modules(self.rows(['src/chacha.rs'])), {'aarch64': 'chacha'})
+        # A module only some architectures compile, on those.
+        self.base_files['src/chacha.rs'] = self.files['src/chacha.rs'].replace('f()', 'f(x: u8)')
+        self.assertEqual(self.modules(self.rows(['src/chacha.rs'])),
+                         {'x86_64': 'chacha', 'aarch64': 'chacha'})
+
+    def test_cfg_evaluation(self):
+        value = planner.cfg_value
+        self.assertIs(value('target_arch = "x86"', 'x86'), True)
+        self.assertIs(value('not(target_arch = "x86")', 'x86'), False)
+        self.assertIs(value('all(target_arch = "powerpc64", target_endian = "little")', 'arm'), False)
+        self.assertIs(value('all(target_arch = "x86_64", target_endian = "little")', 'x86_64'), True)
+        # What depends on more than the architecture is unknown.
+        self.assertIsNone(value('all(target_arch = "x86_64", target_feature = "sse2")', 'x86_64'))
+        self.assertIs(value('all(target_arch = "x86", target_feature = "sse2")', 'arm'), False)
+        self.assertIsNone(value('any(test, target_arch = "x86")', 'arm'))
+        self.assertIs(value('any(test, target_arch = "x86")', 'x86'), True)
+        self.assertIsNone(value('not(test)', 'x86'))
+        for bad in ['not(a, b)', 'target_arch == "x86"']:
+            with self.assertRaises(planner.Unreadable):
+                value(bad, 'x86')
+
+    def test_compiled_lines(self):
+        lines = lambda text, arch='x86_64': planner.for_arch(text, arch)
+        # Comments go, and `cfg`s that hold; items whose `cfg` does not,
+        # whatever brackets their literals hold.
+        text = ('// A "{" comment.\n#[cfg(target_arch = "x86_64")]\nfn a() {}\n'
+                '#[cfg(target_arch = "arm")]\nfn b() -> char { let s = "}"; let r = r#"}"#; \'}\' }\n'
+                'match x {\n    #[cfg(target_arch = "arm")]\n    A => f(),\n'
+                '    #[cfg(target_arch = "arm")]\n    B => {}\n    C => g(\'a\'),\n}\n'
+                '/* gone */ fn c<\'a>() {}\n')
+        self.assertEqual(lines(text), ['fn a() {}', 'match x {', 'C => g(\'a\'),', '}', 'fn c<\'a>() {}'])
+        # A file whose inner `cfg` does not hold is empty, after inner attributes.
+        self.assertEqual(lines('#![allow(x)]\n#![cfg(target_arch = "arm")]\nfn a() {}\n'), [])
+        self.assertEqual(lines(None), [])
+        # A `cfg_attr` that holds or may stays.
+        self.assertEqual(lines('#[cfg_attr(test, allow(x))]\nfn a() {}\n'),
+                         ['#[cfg_attr(test, allow(x))]', 'fn a() {}'])
+        for bad in ['fn a() { "', '/* a', '#[cfg(a, b)]\nfn a() {}', 'fn a() {}\n#![cfg(target_arch = "arm")]',
+                    '#[cfg(target_arch = "arm")', '#[cfg(target_arch = "arm") x']:
+            with self.subTest(text=bad), self.assertRaises(planner.Unreadable):
+                lines(bad)
+
+    def test_unreadable_or_unchanged_rust_counts_everywhere(self):
+        self.base_files['src/chacha.rs'] = 'fn a() { "'
+        with mock.patch.object(planner, 'read', self.read):
+            self.assertEqual(planner.affected('src/chacha.rs', 'base'), list(planner.PLATFORMS))
+            # A file the same at both revisions (as here, without a base).
+            self.assertEqual(planner.affected('src/argon2.rs', 'base'), list(planner.PLATFORMS))
+            self.assertEqual(planner.affected('Cargo.lock', 'base'), list(planner.PLATFORMS))
 
     def test_comparison_filters_each_binary_without_full_suite_fallback(self):
         with mock.patch.object(bench_compare, 'bench_catalog', return_value={'old': {'old'}}):
