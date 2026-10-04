@@ -8,16 +8,19 @@ Untrusted: everything here is checked by Lean. The entry saves our caller's
 registers in `W` and keeps `W`, the key schedule and the rounds in
 registers (`entry_wp`); `Ctr₀` (`ctrs`) and `mac y` followed by `tag y`
 leave the MAC of the payload, encrypted, at `W + y` (`front_wp`); `seal` then
-encrypts the data (`ctr`) and restores the registers (`seal_wp`).
+encrypts the data (`ctr`), copies the tag to `tag` (`tagOut_ok`) and restores
+the registers (`seal_wp`).
 -/
 
 set_option linter.unusedSimpArgs false
 
 namespace VG.Proof.AesCcm.Arm
 
-open VG VG.Arm VG.Arm.RegUpd VG.Impl.AesCcm.Arm
+open VG VG.Arm VG.Arm.RegUpd VG.Impl.AesCcm.Arm VG.WriteBytes
 open VG.Spec.Aes (bytesAt)
-open VG.Proof.AesGcm.Arm (savedR SavedAt restore_ok entry_ok covers_left bytesAt_frame Keeps)
+open VG.Proof.AesGcm.Arm (savedR SavedAt restore_ok entry_ok covers_left bytesAt_frame Keeps LoopPre LoopOut
+  copyLoop_ok covers_prefix writeBytes_frame' bytesAt_writeBytes_prefix)
+open VG.Impl.AesGcm.Arm (copyLoop)
 open VG.Proof.AesCcm (ctxCiph_frame length_bytesAt xorFrom length_xorFrom crypt_eq take_xorFrom_zero mac_eq
   BlockCipher bytesAt_prefix)
 
@@ -60,13 +63,13 @@ theorem buf_wR {w sp : BitVec 32} {s : State} {P : BitVec 32} {len : Nat} (hP : 
 /-- The entry: our caller's registers saved in `W`, and `W`, the key schedule
 and the rounds in `r11`, `r9` and `r8`. -/
 theorem entry_wp {s₀ : State} {k w N A D : BitVec 32} {R nl al n tl : Nat} (Ar : Args s₀ k w N A D R nl al n tl)
-    (h0 : s₀.gpr .r0 = k) (h1 : s₀.gpr .r1 = BitVec.ofNat 32 R) (eW : stackArg s₀ 4 = w) :
+    (h0 : s₀.gpr .r0 = k) (h1 : s₀.gpr .r1 = BitVec.ofNat 32 R) (eW : stackArg s₀ 6 = w) :
     WP isa (.block entry) s₀ fun s₁ => Env k w s₀.sp R (s₁.gpr .r10).toNat s₁ ∧
       (∀ r, r ≠ .r8 → r ≠ .r9 → r ≠ .r11 → r ≠ .r12 → s₁.gpr r = s₀.gpr r) ∧
       s₁.rd = s₀.rd ∧ s₁.wr = s₀.wr ∧ SavedAt s₁.mem w s₀ ∧ Frame [savedR w] s₀.mem s₁.mem := by
-  obtain ⟨i4, v4⟩ := Ar.stk.at 4 (by decide) (show 4 * 4 = 16 from rfl)
+  obtain ⟨i4, v4⟩ := Ar.stk.at 6 (by decide) (show 4 * 6 = 24 from rfl)
   rw [eW] at v4
-  refine entry_ok (off := 16) (by decide) i4 (by rw [v4]; exact Ar.lay.ww) (by rw [v4]; exact Ar.perm.w)
+  refine entry_ok (off := 24) (by decide) i4 (by rw [v4]; exact Ar.lay.ww) (by rw [v4]; exact Ar.perm.w)
     fun s' g12 g rd wr sp sv fr => ?_
   rw [v4] at g12 sv fr
   refine WP.of_runBlock ⟨_, by arun [], ?_⟩
@@ -74,16 +77,51 @@ theorem entry_wp {s₀ : State} {k w N A D : BitVec 32} {R nl al n tl : Nat} (Ar
     by simp [gpr_setReg], by simp [gpr_setReg, g12], sp, Perm.of_eq Ar.perm rd wr⟩, ?_, rd, wr, sv, fr⟩
   intro r a b c d; simp [gpr_setReg, a, b, c, g r d]
 
+/-- `tagOut`: the first `tl` bytes at `W` copied to the tag at `T`, the
+stack argument at `sp + 16`. -/
+theorem tagOut_ok {k w sp : BitVec 32} {R q1 : Nat} (L : Lay k w sp) {s : State} (he : Env k w sp R q1 s)
+    {T : BitVec 32} {tl : Nat} (ht4 : 4 ≤ tl) (ht16 : tl ≤ 16)
+    (hTi : InRegions (s.rd ++ s.wr) (State.addr (s.sp + BitVec.ofNat 32 16)) 4)
+    (hTv : s.mem.readW (State.addr (s.sp + BitVec.ofNat 32 16)) 32 = T)
+    (hli : InRegions (s.rd ++ s.wr) (State.addr (s.sp + BitVec.ofNat 32 20)) 4)
+    (hlv : s.mem.readW (State.addr (s.sp + BitVec.ofNat 32 20)) 32 = BitVec.ofNat 32 tl)
+    (hTw : Covers [⟨State.addr T, tl⟩] s.wr) (hTf : T.toNat + tl ≤ 2 ^ 32)
+    (hTW : (⟨State.addr T, tl⟩ : Region).Disjoint ⟨State.addr w, 2560⟩) :
+    WP isa tagOut s fun s' => Env k w sp R q1 s' ∧
+      s'.mem = writeBytes s.mem (State.addr T) (bytesAt s.mem (State.addr w) tl) ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
+  obtain ⟨s₁, run₁, h1₁, h2₁, h3₁, g₁, k₁⟩ : ∃ s₁, runBlock isa [.mov .r1 (.reg .r11), .ldrSp .r2 16, .ldrSp .r3 20]
+      s = some s₁ ∧ s₁.gpr .r1 = w ∧ s₁.gpr .r2 = T ∧ s₁.gpr .r3 = BitVec.ofNat 32 tl ∧
+      (∀ r, r ≠ .r1 → r ≠ .r2 → r ≠ .r3 → s₁.gpr r = s.gpr r) ∧ Keeps s s₁ := by
+    refine ⟨_, by arun [hTi, hTv, hli, hlv], ?_, ?_, ?_, ?_, ?_⟩
+    · simp [gpr_setReg, he.r11]
+    · simp [gpr_setReg, hTv]
+    · simp [gpr_setReg, hlv]
+    · intro r a b c; simp [gpr_setReg, a, b, c]
+    · exact ⟨rfl, rfl, rfl, rfl⟩
+  refine WP.seq (WP.of_runBlock ⟨s₁, run₁, ?_⟩)
+  have he₁ := he.keep (fun r hr => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl <;> exact g₁ _ (by decide) (by decide) (by decide)) k₁.sp k₁.rd k₁.wr
+  have ww := L.ww
+  have lp : LoopPre s₁ w T tl :=
+    ⟨h1₁, h2₁, h3₁, by omega, by omega, by omega, hTf, covers_left (covers_prefix he₁.perm.w (by omega)),
+      by rw [k₁.wr]; exact hTw, (hTW.sub_right (Region.sub_prefix (by omega))).symm⟩
+  refine WP.mono (copyLoop_ok s₁ lp) fun s₂ ⟨hm₂, lo⟩ => ⟨he₁.keep (fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl | rfl <;> exact lo.other _ (by decide) (by decide) (by decide) (by decide)
+        (by decide)) lo.sp lo.rd lo.wr, by rw [hm₂, k₁.mem], by rw [lo.rd, k₁.rd], by rw [lo.wr, k₁.wr]⟩
+
 /-- `vg_aes_ccm_seal`, for its arguments. -/
-theorem seal_wp' {s₀ : State} {k w N A D : BitVec 32} {R nl al n tl : Nat} (Ar : Args s₀ k w N A D R nl al n tl)
+theorem seal_wp' {s₀ : State} {k w N A D T : BitVec 32} {R nl al n tl : Nat} (Ar : Args s₀ k w N A D R nl al n tl)
+    (Tb : TagB w s₀.sp D n T tl) (hTw : Covers [⟨State.addr T, tl⟩] s₀.wr)
     (h0 : s₀.gpr .r0 = k) (h1 : s₀.gpr .r1 = BitVec.ofNat 32 R) (h2 : s₀.gpr .r2 = N)
     (h3 : s₀.gpr .r3 = BitVec.ofNat 32 nl) (eA : stackArg s₀ 0 = A) (eal : stackArg s₀ 1 = BitVec.ofNat 32 al)
-    (eD : stackArg s₀ 2 = D) (en : stackArg s₀ 3 = BitVec.ofNat 32 n) (eW : stackArg s₀ 4 = w)
-    (etl : stackArg s₀ 5 = BitVec.ofNat 32 tl) :
+    (eD : stackArg s₀ 2 = D) (en : stackArg s₀ 3 = BitVec.ofNat 32 n) (eT : stackArg s₀ 4 = T)
+    (etl : stackArg s₀ 5 = BitVec.ofNat 32 tl) (eW : stackArg s₀ 6 = w) :
     WP isa «seal» s₀ fun s' => abiPreserved s₀ s' ∧
       Spec.Ccm.encryptWith (Spec.Ccm.ctxCiph s₀.mem (State.addr k) R) tl (bytesAt s₀.mem (State.addr N) nl)
         (bytesAt s₀.mem (State.addr D) n) (bytesAt s₀.mem (State.addr A) al) =
-        (bytesAt s'.mem (State.addr D) n, bytesAt s'.mem (State.addr w) tl) := by
+        (bytesAt s'.mem (State.addr D) n, bytesAt s'.mem (State.addr T) tl) := by
   have L := Ar.lay
   have hRb : 16 * (R + 1) ≤ 240 := by rcases Ar.rounds with h | h | h <;> subst h <;> decide
   have hsavedK : (⟨State.addr k, 240⟩ : Region).Disjoint (savedR w) := L.k_w' (by decide)
@@ -158,8 +196,22 @@ theorem seal_wp' {s₀ : State} {k w N A D : BitVec 32} {R nl al n tl : Nat} (Ar
   refine WP.seq (WP.mono (ctr_ok L he₄ hk₄ Ar.rounds h7 h13 c₄ eD en (Ar.data.of_eq rd₄' wr₄')
     (by rw [hnl]; exact Ar.hn) Ar.n32) fun s₅ ⟨he₅, rd₅, wr₅, _, f₅, o₅⟩ => ?_)
   have F₅ : Frame (mutR w s₀.sp D n) s₁.mem s₅.mem := F₄.trans (f₅.sub ctrR_mut)
+  -- The tag copied to `T`.
+  have hk₅ := hk₁.frame F₅ (args_mut Ar) (by rw [he₅.sp, he₁.sp]) (by rw [rd₅, rd₄', rd₁])
+    (by rw [wr₅, wr₄', wr₁])
+  obtain ⟨i4, v4⟩ := hk₅.at 4 (by decide) (show 4 * 4 = 16 from rfl)
+  obtain ⟨i5, v5⟩ := hk₅.at 5 (by decide) (show 4 * 5 = 20 from rfl)
+  rw [eT] at v4
+  rw [etl] at v5
+  refine WP.seq (WP.mono (tagOut_ok L he₅ Ar.t4 Ar.t16 i4 v4 i5 v5 (by rw [wr₅, wr₄']; exact hTw) Tb.wrap Tb.w)
+    fun s₆ ⟨he₆, hm₆, rd₆, wr₆⟩ => ?_)
+  have hx : (bytesAt s₅.mem (State.addr w) tl).length = tl := length_bytesAt _ _ _
+  have f₆ : Frame [⟨State.addr T, tl⟩] s₅.mem s₆.mem := by rw [hm₆]; exact writeBytes_frame' _ hx
   -- `restore`.
-  refine WP.mono (restore_ok he₅.r11 L.ww (covers_left he₅.perm.w) (sv₁.frame F₅ (saved_mut Ar)) he₅.sp)
+  refine WP.mono (restore_ok he₆.r11 L.ww (covers_left he₆.perm.w)
+    ((sv₁.frame F₅ (saved_mut Ar)).frame f₆ fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr
+      exact (Tb.w.sub_right (Lay.wSub (by decide))).symm) he₆.sp)
     fun s' ⟨ab, hm, _, _, _⟩ => ⟨ab, ?_⟩
   have hBC : ∀ m : Mem, BlockCipher (Spec.Ccm.ctxCiph m (State.addr k) R) := fun _ x =>
     Proof.Cmac.aesWith_length _ _ x
@@ -185,9 +237,15 @@ theorem seal_wp' {s₀ : State} {k w N A D : BitVec 32} {R nl al n tl : Nat} (Ar
   have hY := congrArg List.length o₄
   rw [length_bytesAt, length_xorFrom] at hY
   simp only [Spec.Ccm.encryptWith, Prod.mk.injEq]
+  have d₆ : bytesAt s₆.mem (State.addr D) n = bytesAt s₅.mem (State.addr D) n :=
+    bytesAt_frame f₆ (fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr; exact Tb.d.symm) (by have := Ar.n32; omega)
+  have t₆ : bytesAt s₆.mem (State.addr T) tl = bytesAt s₅.mem (State.addr w) tl := by
+    rw [hm₆, bytesAt_writeBytes_prefix _ _ _ (by rw [hx]) (by have := Ar.t16; omega), hx, Nat.sub_self]
+    simp [Spec.Aes.bytesAt]
   refine ⟨?_, ?_⟩
-  · rw [hm, o₅, cK F₄, d₄, crypt_eq (hBC _)]
-  · rw [hm, bytesAt_prefix s₅.mem (State.addr w) Ar.t16, w₅, o₄, take_xorFrom_zero (hBC _) _ hY.symm Ar.t16,
+  · rw [hm, d₆, o₅, cK F₄, d₄, crypt_eq (hBC _)]
+  · rw [hm, t₆, bytesAt_prefix s₅.mem (State.addr w) Ar.t16, w₅, o₄, take_xorFrom_zero (hBC _) _ hY.symm Ar.t16,
       mo, cK (f₂'.sub wR_mut), cK ((f₂'.sub wR_mut).trans (M.frame.sub (macR_mut (.inl rfl)))), a₂, d₂,
       ← mac_eq _ _ (by rw [hnl]; have := Ar.h13; omega)]
 
@@ -196,7 +254,8 @@ theorem ofNat_toNat32 (x : BitVec 32) : BitVec.ofNat 32 x.toNat = x := by simp
 /-- `vg_aes_ccm_seal`. -/
 theorem seal_wp {s : State} (h : sealArm.pre s) :
     WP isa «seal» s fun s' => abiPreserved s s' ∧ sealArm.post s s' :=
-  seal_wp' (args_of h) rfl (ofNat_toNat32 _).symm rfl (ofNat_toNat32 _).symm rfl (ofNat_toNat32 _).symm rfl
-    (ofNat_toNat32 _).symm rfl (ofNat_toNat32 _).symm
+  have A := args_of_seal h
+  seal_wp' A.1.1 A.1.2 A.2.1 rfl (ofNat_toNat32 _).symm rfl (ofNat_toNat32 _).symm rfl (ofNat_toNat32 _).symm rfl
+    (ofNat_toNat32 _).symm rfl (ofNat_toNat32 _).symm rfl
 
 end VG.Proof.AesCcm.Arm

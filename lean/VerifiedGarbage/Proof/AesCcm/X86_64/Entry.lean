@@ -4,7 +4,7 @@ import VerifiedGarbage.Proof.AesCcm.X86_64.Run
 # AES-CCM on x86-64: the entry and the exit (`entry`, `restore`)
 
 Untrusted: everything here is checked by Lean. `entry` reads the stack
-arguments, saves our caller's registers at `W + 112` and keeps the arguments
+arguments but `tag`, saves our caller's registers at `W + 112` and keeps the arguments
 in `W` (`entry_ok`); `restore` reads the registers back (`restore_ok`).
 -/
 
@@ -30,10 +30,10 @@ theorem readW_writeW_off {m : Mem} {W : Addr} {d e : Nat} (v : BitVec 64) (h : d
 
 /-- `entry`. -/
 theorem entry_ok {K W SP : Addr} {s : State} (P : Perm K W s) {R : Nat} {N A D : Addr}
-    {nl al n tl : Nat} (hsp : s.gpr .rsp = SP) (hargs : Covers [⟨SP + BitVec.ofNat 64 8, 32⟩] (s.rd ++ s.wr))
-    (hargsW : (⟨SP + BitVec.ofNat 64 8, 32⟩ : Region).Disjoint ⟨W, 2560⟩)
+    {nl al n tl : Nat} (hsp : s.gpr .rsp = SP) (hargs : Covers [⟨SP + BitVec.ofNat 64 8, 40⟩] (s.rd ++ s.wr))
+    (hargsW : (⟨SP + BitVec.ofNat 64 8, 40⟩ : Region).Disjoint ⟨W, 2560⟩)
     (hD : s.mem.readW (SP + BitVec.ofNat 64 8) 64 = D) (hn : s.mem.readW (SP + BitVec.ofNat 64 16) 64 = BitVec.ofNat 64 n)
-    (hW : s.mem.readW (SP + BitVec.ofNat 64 24) 64 = W)
+    (hW : s.mem.readW (SP + BitVec.ofNat 64 40) 64 = W)
     (htl : s.mem.readW (SP + BitVec.ofNat 64 32) 64 = BitVec.ofNat 64 tl)
     (hdi : s.gpr .rdi = K) (hsi : s.gpr .rsi = BitVec.ofNat 64 R) (hdx : s.gpr .rdx = N)
     (hcx : s.gpr .rcx = BitVec.ofNat 64 nl) (hr8 : s.gpr .r8 = A) (hr9 : s.gpr .r9 = BitVec.ofNat 64 al) :
@@ -41,11 +41,10 @@ theorem entry_ok {K W SP : Addr} {s : State} (P : Perm K W s) {R : Nat} {N A D :
       Saved s₁.mem W s.gpr ∧ Frame [entryR W] s.mem s₁.mem ∧ s₁.rd = s.rd ∧ s₁.wr = s.wr := by
   have a₈ := in_off (d := 0) (n := 8) hargs (by decide) (by decide)
   have a₁₆ := in_off (d := 8) (n := 8) hargs (by decide) (by decide)
-  have a₂₄ := in_off (d := 16) (n := 8) hargs (by decide) (by decide)
   have a₃₂ := in_off (d := 24) (n := 8) hargs (by decide) (by decide)
+  have a₄₀ := in_off (d := 32) (n := 8) hargs (by decide) (by decide)
   rw [add_ofNat_assoc, show 8 + 0 = 8 from rfl] at a₈
-  rw [add_ofNat_assoc] at a₁₆ a₂₄ a₃₂
-  have hW' : s.mem.readW (s.gpr .rsp + BitVec.ofNat 64 24) 64 = W := by rw [hsp]; exact hW
+  rw [add_ofNat_assoc] at a₁₆ a₃₂ a₄₀
   have w₁ := P.wW (show 112 + 8 ≤ 2560 by decide)
   have w₂ := P.wW (show 120 + 8 ≤ 2560 by decide)
   have w₃ := P.wW (show 128 + 8 ≤ 2560 by decide)
@@ -61,7 +60,7 @@ theorem entry_ok {K W SP : Addr} {s : State} (P : Perm K W s) {R : Nat} {N A D :
   have w₁₃ := P.wW (show 208 + 8 ≤ 2560 by decide)
   have w₁₄ := P.wW (show 232 + 8 ≤ 2560 by decide)
   obtain ⟨s₁, run₁, h⟩ : ∃ s₁, runBlock isa
-      ([.mov .rax (.mem (at_ .rsp 24)), .mov .r10 (.mem (at_ .rsp 8)), .mov .r11 (.mem (at_ .rsp 16))] ++ save .rax ++
+      ([.mov .rax (.mem (at_ .rsp 40)), .mov .r10 (.mem (at_ .rsp 8)), .mov .r11 (.mem (at_ .rsp 16))] ++ save .rax ++
         [.mov .r15 (.reg .rax), .mov .r13 (.reg .rdi), .store (at_ .r15 roundsO) .rsi,
           .store (at_ .r15 nonceO) .rdx, .store (at_ .r15 nlenO) .rcx, .store (at_ .r15 aadO) .r8,
           .store (at_ .r15 alenO) .r9, .store (at_ .r15 dataO) .r10, .store (at_ .r15 lenO) .r11]) s = some s₁ ∧
@@ -75,7 +74,7 @@ theorem entry_ok {K W SP : Addr} {s : State} (P : Perm K W s) {R : Nat} {N A D :
       s₁.mem.readW (W + BitVec.ofNat 64 200) 64 = BitVec.ofNat 64 n := by
     have cE : ∀ d, 112 ≤ d → d + 8 ≤ 240 → (entryR W).Contains (W + BitVec.ofNat 64 d) (64 / 8) :=
       fun d h₁ h₂ => Offset.contains W h₁ (by omega) (by decide)
-    refine ⟨_, by crun [save, saved, List.map_cons, List.map_nil, hW, hsp, hD, hn, a₈, a₁₆, a₂₄, w₁, w₂, w₃, w₄,
+    refine ⟨_, by crun [save, saved, List.map_cons, List.map_nil, hW, hsp, hD, hn, a₈, a₁₆, a₄₀, w₁, w₂, w₃, w₄,
       w₅, w₆, w₇, w₈, w₉, w₁₀, w₁₁, w₁₂, w₁₄], ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
     · simp only [gpr_setReg, ite_true, ite_false, reduceCtorEq, hsp]
     · simp only [gpr_setReg, ite_true, ite_false, reduceCtorEq]
@@ -118,7 +117,7 @@ theorem entry_ok {K W SP : Addr} {s : State} (P : Perm K W s) {R : Nat} {N A D :
       by rw [k (by omega) (by decide), s184], by rw [k (by omega) (by decide), s192],
       by rw [k (by omega) (by decide), s200], by rw [hm₂, Mem.readW_writeW_self64]⟩,
     fun p hp => ?_, ?_, by rw [hrd₂, hrd₁], by rw [hwr₂, hwr₁]⟩
-  · rw [show entry = ([.mov .rax (.mem (at_ .rsp 24)), .mov .r10 (.mem (at_ .rsp 8)),
+  · rw [show entry = ([.mov .rax (.mem (at_ .rsp 40)), .mov .r10 (.mem (at_ .rsp 8)),
         .mov .r11 (.mem (at_ .rsp 16))] ++ save .rax ++
         [.mov .r15 (.reg .rax), .mov .r13 (.reg .rdi), .store (at_ .r15 roundsO) .rsi,
           .store (at_ .r15 nonceO) .rdx, .store (at_ .r15 nlenO) .rcx, .store (at_ .r15 aadO) .r8,

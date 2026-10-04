@@ -5,22 +5,25 @@ import VerifiedGarbage.Impl.Aes.AArch64.Callee
 /-!
 # AES-CCM: AArch64 implementation
 
-`vg_aes_ccm_seal(schedule = x0, rounds = x1, nonce = x2, nonce_len = x3, aad = x4, aad_len = x5, data = x6, len = x7, work = [sp], tag_len = [sp + 8])`
+`vg_aes_ccm_seal(schedule = x0, rounds = x1, nonce = x2, nonce_len = x3, aad = x4, aad_len = x5, data = x6, len = x7, tag = [sp], tag_len = [sp + 8], work = [sp + 16])`
 and `vg_aes_ccm_open` with the same arguments (see `VG.Spec.Ccm.sealContract`
-and `openContract`), composed of calls of the verified `vg_cmac_aes_update`,
+and `openContract`), with the working space `work` as a last argument, which
+a frame on the stack allocates (`Impl.StackScratch.AArch64.withStackArgScratch`),
+composed of calls of the verified `vg_cmac_aes_update`,
 whose chaining (`Cᵢ = CIPH_K(Cᵢ₋₁ ⊕ Mᵢ)`) from a zero block is CCM's CBC-MAC
 (§6.1 steps 1–4), and `vg_aes_ctr32`. They are generic over the
 implementations of those they call (`u`, `c`).
 
 ## The working space
 
-`work` (`W`, 2560 bytes): `[0, 16)` the tag (the received one, for `open`),
-`[32, 48)` a block `B`: `B₀`, the first block of the associated data or a
+`work` (`W`, 2560 bytes): `[0, 16)` the tag `seal` computes, which it then
+copies to `tag`, `[32, 48)` a block `B`: `B₀`, the first block of the associated data or a
 last block padded with zeros, `[48, 64)` the counter block `Ctr₀`,
 `[64, 80)` the counter block passed to `vg_aes_ctr32`, `[80, 96)` a
 keystream block, `[96, 112)` the MAC `open` computes, `[128, 216)` our
-caller's `x19`–`x28` and our return address `x30`, `[216, 240)` the address
-and length of the associated data and the length of the nonce, `[256, 288)`
+caller's `x19`–`x28` and our return address `x30`, `[216, 248)` the address
+and length of the associated data, the length of the nonce and the address
+of `tag`, `[256, 288)`
 the two tags `open` compares, padded with zeros, and `[384, 2560)` the
 working space of the functions called. A call (`bl`) stores nothing in
 memory, so no stack is used.
@@ -56,14 +59,18 @@ preserve.
   `vg_aes_ctr32` increments only the low 32 bits; then the last bytes with
   a keystream block. How many blocks a chunk has depends only on the
   length.
-* `cmp`: the first `tag_len` bytes of the received tag (at `W`) and of the
-  computed one (at `W + 96`), padded with zeros, compared without a branch:
-  `x10` is 0 if they are equal and 1 if not.
+* `cmp`: the first `tag_len` bytes of the received tag (at `x12`: `tag`,
+  which `open` loads from `W`) and of the computed one (at `W + 96`), padded
+  with zeros, compared without a branch: `x10` is 0 if they are equal and 1
+  if not.
 * `mask`: every byte of the data ANDed with `x10 − 1`.
+* `tagOut`: the first `tag_len` bytes of the tag at `W` copied to `x11`:
+  `tag`, which `seal` loads from `W`.
 
-`seal` computes the MAC of the payload, the tag, then encrypts the payload;
-`open` decrypts it, computes the MAC of the plaintext and the tag at
-`W + 96`, compares them and masks the data.
+`seal` computes the MAC of the payload, the tag, then encrypts the payload
+and copies the tag to `tag`; `open` decrypts it, computes the MAC of the
+plaintext and the tag at `W + 96`, compares it with the received tag and
+masks the data.
 
 The model has no flags or register-offset addressing: the branches are
 `cbz`/`cbnz`, and bytes are copied through advancing pointers. Only the
@@ -87,6 +94,7 @@ def uO : Nat := 96
 def aadO : Nat := 216
 def alenO : Nat := 224
 def nlenO : Nat := 232
+def tagO : Nat := 240
 def vO : Nat := 256
 def rO : Nat := 272
 def scrO : Nat := 384
@@ -229,13 +237,13 @@ def ctr : Prog isa :=
 
 /-! ## Checking the tag -/
 
-/-- The first `x20` (at least 1) bytes of the received tag (at `W`) and of
+/-- The first `x20` (at least 1) bytes of the received tag (at `x12`) and of
 the computed one (at `W + 96`), padded with zeros at `W + 272` and
 `W + 256`, compared: `x10` is 0 if they are equal and 1 if not (the carry of
 adding all ones to their difference). -/
 def cmp : Prog isa :=
   .seq (.block [imm .x9 0, .str .x .x9 .x19 vO, .str .x .x9 .x19 (vO + 8), .str .x .x9 .x19 rO,
-      .str .x .x9 .x19 (rO + 8), ptr .x11 .x19 rO, mov .x12 .x19, mov .x13 .x20])
+      .str .x .x9 .x19 (rO + 8), ptr .x11 .x19 rO, mov .x13 .x20])
   (.seq copyLoop
   (.seq (.block [ptr .x11 .x19 vO, ptr .x12 .x19 uO, mov .x13 .x20])
   (.seq copyLoop
@@ -257,13 +265,13 @@ def mask : Prog isa :=
 
 /-! ## The functions -/
 
-/-- Loads `work` and the tag length from the stack, saves our caller's
+/-- Loads `work`, the tag length and `tag` from the stack, saves our caller's
 registers in `work`, and keeps the arguments in `x19`–`x22`, `x27`, `x28`
 and `W`. -/
 def entry : List Instr :=
-  [.ldrSp .x9 0, .ldrSp .x10 8] ++ save .x9 ++
+  [.ldrSp .x9 16, .ldrSp .x10 8, .ldrSp .x11 0] ++ save .x9 ++
     [mov .x19 .x9, mov .x20 .x10, mov .x21 .x0, mov .x22 .x1, .str .x .x4 .x19 aadO,
-      .str .x .x5 .x19 alenO, .str .x .x3 .x19 nlenO, mov .x27 .x6, mov .x28 .x7]
+      .str .x .x5 .x19 alenO, .str .x .x3 .x19 nlenO, .str .x .x11 .x19 tagO, mov .x27 .x6, mov .x28 .x7]
 
 /-- `Ctr₀ = [q − 1]₈ ‖ N ‖ 0⁸q` (A.3) at `W + 48`, for the `x3`-byte nonce at
 `x2`: the block zeroed, `14 − n` in its first byte, and the nonce copied
@@ -274,9 +282,13 @@ def ctrsSeg : List Instr :=
 
 def ctrs : Prog isa := .seq (.block ctrsSeg) copyLoop
 
+/-- The first `x20` bytes of the tag at `W` copied to `x11`. -/
+def tagOut : Prog isa := .seq (.block [mov .x12 .x19, mov .x13 .x20]) copyLoop
+
 /-- `vg_aes_ccm_seal`. -/
 def «seal» : Prog isa :=
-  .seq (.block entry) (.seq ctrs (.seq (mac u 0) (.seq (tag c 0) (.seq (ctr c) (.block restore)))))
+  .seq (.block entry) (.seq ctrs (.seq (mac u 0) (.seq (tag c 0) (.seq (ctr c)
+    (.seq (.block [.ldr .x .x11 .x19 tagO]) (.seq tagOut (.block restore)))))))
 
 /-- `vg_aes_ccm_open`. -/
 def «open» : Prog isa :=
@@ -285,9 +297,10 @@ def «open» : Prog isa :=
   (.seq (ctr c)
   (.seq (mac u uO)
   (.seq (tag c uO)
+  (.seq (.block [.ldr .x .x12 .x19 tagO])
   (.seq cmp
   (.seq (.block [imm .x0 1, .sub .x .x0 .x0 .x10])
   (.seq mask
-    (.block restore))))))))
+    (.block restore)))))))))
 
 end VG.Impl.AesCcm.AArch64
