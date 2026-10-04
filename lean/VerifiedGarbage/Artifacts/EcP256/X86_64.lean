@@ -1,4 +1,5 @@
 import VerifiedGarbage.TCB.X86_64.Target
+import VerifiedGarbage.Proof.P256.Curve
 import VerifiedGarbage.Impl.EcKey.P256.X86_64
 import VerifiedGarbage.Proof.EcKey.X86_64.Verified
 import VerifiedGarbage.Proof.EcKey.X86_64.Lit
@@ -22,7 +23,7 @@ def artifacts : List Artifact := [
       pointers."])
     code := Impl.EcKey.X86_64.publicKeyP256
     contract := Spec.EcKey.P256.inst.publicKeyContract X86_64.abi
-    verified := Proof.EcKey.X86_64.pk_verified
+    verified := Proof.EcKey.X86_64.pk_verified Proof.P256.law
     spSafe := Code.all_of_allInstrs (by lit_decide) }]
 
 end VG.Artifacts.EcP256.X86_64

@@ -1,6 +1,7 @@
 import VerifiedGarbage.Proof.Framework.PowLit
 import VerifiedGarbage.Proof.P256.Prime
-import VerifiedGarbage.Proof.Weierstrass.Complete
+import VerifiedGarbage.Proof.P256.Point
+import VerifiedGarbage.Proof.Weierstrass.LadderStep
 import VerifiedGarbage.Proof.Weierstrass.Cubic
 
 /-!
@@ -9,7 +10,8 @@ import VerifiedGarbage.Proof.Weierstrass.Cubic
 `p` is prime (`Prime.lean`), and `x³ - 3x + b` has no root modulo `p`, so the
 curve has no point of order 2 (a certificate for `noTwoTorsion_of_cert`:
 `g = x^p` and the inverse `v` of `g - x` modulo `x³ - 3x + b`, found by
-computer algebra and checked by the kernel). The base point is on the curve.
+computer algebra and checked by the kernel). So its group law is the one the
+proofs of the code take (`law`), which only the registration files import.
 -/
 
 namespace VG.Proof.P256
@@ -54,7 +56,6 @@ theorem good : Good Spec.P256.curve where
   gt3 := by decide +kernel
   noTwoTorsion := noTwoTorsion
 
-theorem onCurve_G : onCurve Spec.P256.curve (G Spec.P256.curve) = true := by
-  decide +kernel
+theorem law : Law Spec.P256.curve := good.law
 
 end VG.Proof.P256
