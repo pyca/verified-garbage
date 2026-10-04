@@ -1,19 +1,19 @@
-import VerifiedGarbage.Impl.Gcm.X86_64.Stitch
+import VerifiedGarbage.TCB.X86_64.Isa
 import VerifiedGarbage.Proof.Framework.X86_64.Frame
 import VerifiedGarbage.Spec.Gcm
 
 /-!
 # Interleaved counter mode and GHASH: what the loops need and do
 
-Untrusted: everything here is checked by Lean. The interleaved loops
-(`Impl.Gcm.X86_64.Stitch`) start from a state `s₀` whose registers hold the
+Untrusted: everything here is checked by Lean. Interleaved loops (such as
+`Impl.Gcm.X86_64.Stitch`) start from a state `s₀` whose registers hold the
 key context (`rdi`), the number of rounds (`rsi`), the counter (`rdx`), `Y`
 (`rcx`), the data (`r8`), the number of blocks (`r9`, a multiple of 16) and
 the working space (`r11`). `SPre s₀` is what they need of it, and `EPost`,
 `DPost` what they do (`StitchOk`). This module states them without the
 algebra their proofs need (`Proof/Gcm/Poly.lean`), so that the functions
-calling the loops are proven for any proof of `StitchOk`, which only the
-instances that use the loops import.
+calling the loops are proven for any loops and proof of `StitchOk`, which
+only the instances that use them import.
 -/
 
 namespace VG.Proof.Gcm.X86_64.Stitch
@@ -98,9 +98,8 @@ structure DPost (s₀ s : State) : Prop where
   rd : s.rd = s₀.rd
   wr : s.wr = s₀.wr
 
-/-- The interleaved loops meet their contracts. -/
-def StitchOk : Prop :=
-  (∀ s₀, SPre s₀ → WP isa Impl.Gcm.X86_64.Stitch.enc s₀ (EPost s₀)) ∧
-    (∀ s₀, SPre s₀ → WP isa Impl.Gcm.X86_64.Stitch.dec s₀ (DPost s₀))
+/-- Interleaved loops `enc` and `dec` meet these contracts. -/
+def StitchOk (enc dec : Prog isa) : Prop :=
+  (∀ s₀, SPre s₀ → WP isa enc s₀ (EPost s₀)) ∧ (∀ s₀, SPre s₀ → WP isa dec s₀ (DPost s₀))
 
 end VG.Proof.Gcm.X86_64.Stitch

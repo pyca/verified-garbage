@@ -18,7 +18,9 @@ against the contract.
 Each function needs the CPU features of the implementations it calls:
 `init` calls only AES's, `stream_init` and `stream_aad` only GHASH's (so
 their `_aesni` or `_pclmul` instances are the baseline code under another
-name, which keeps every instance of a combination callable together).
+name, which keeps every instance of a combination callable together), and
+`stream_finish` and `stream_verify` only both's (they do not call the
+interleaved loops, whose features `GcmImpl.features` adds).
 
 `seal`, `open`, `stream_encrypt` and `stream_decrypt` encrypt or decrypt
 and absorb the whole blocks of the data in one call of the instance of
@@ -45,7 +47,7 @@ def note (v : GcmImpl) : String :=
 
 /-- How an instance of `vg_aes_gcm_encrypt_blocks` or `_decrypt_blocks` works. -/
 def blocksNote (v : GcmImpl) : String :=
-  if v.stitch then
+  if v.stitch.isSome then
     "This implementation interleaves the AES rounds of 16 blocks at a time with GHASH's \
       multiplications of the 16 blocks before them, from the powers of the hash subkey it \
       computes in `scratch`, and handles the rest with `" ++ v.ctr.callee.name ++ "` and `" ++
@@ -61,7 +63,7 @@ def artifacts (v : GcmImpl) : List Artifact := [
     code := v.callees.enc.code
     contract := Spec.Gcm.encryptBlocksContract X86_64.abi 8
     stack := 8
-    verified := encryptBlocks_verified v v.stitch v.stitchOk
+    verified := encryptBlocks_verified v v.stitch
     spSafe := encryptBlocks_spSafe v v.stitch
     features := v.features },
   { Spec.Gcm.decryptBlocksApi with
@@ -71,7 +73,7 @@ def artifacts (v : GcmImpl) : List Artifact := [
     code := v.callees.dec.code
     contract := Spec.Gcm.decryptBlocksContract X86_64.abi 8
     stack := 8
-    verified := decryptBlocks_verified v v.stitch v.stitchOk
+    verified := decryptBlocks_verified v v.stitch
     spSafe := decryptBlocks_spSafe v v.stitch
     features := v.features },
   { Spec.Gcm.initApi with
@@ -153,7 +155,7 @@ def artifacts (v : GcmImpl) : List Artifact := [
     stack := 8
     verified := streamFinish_verified v
     spSafe := streamFinish_spSafe v
-    features := v.features },
+    features := (v.ctr.features ++ v.gh.features).dedup },
   { Spec.Gcm.streamVerifyApi with
     name := Spec.Gcm.streamVerifyApi.name ++ v.suffix
     target := X86_64.target
@@ -163,6 +165,6 @@ def artifacts (v : GcmImpl) : List Artifact := [
     stack := 8
     verified := streamVerify_verified v
     spSafe := streamVerify_spSafe v
-    features := v.features }]
+    features := (v.ctr.features ++ v.gh.features).dedup }]
 
 end VG.Generic.AesGcm.X86_64.AesGcm
