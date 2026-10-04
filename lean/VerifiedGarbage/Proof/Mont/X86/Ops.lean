@@ -190,7 +190,8 @@ def maskK (mo tmp k : Nat) : List Instr :=
 theorem masked_eq (M : Mod) : masked M = maskK M.mo M.tmp (words M) := rfl
 
 theorem maskK_succ (mo tmp k : Nat) : maskK mo tmp (k + 1) = maskK mo tmp k ++
-    [.mov .edx (.mem (sc (mo + 4 * k))), .alu .and .edx (.reg .eax), .store (sc (tmp + 4 * k)) .edx] := by
+    ([.mov .edx (.mem (sc (mo + 4 * k))), .alu .and .edx (.reg .eax), .store (sc (tmp + 4 * k)) .edx] :
+      List Instr) := by
   simp only [maskK, List.range_succ, List.flatMap_append, List.flatMap_cons, List.flatMap_nil, List.append_nil]
 
 /-- `[tmp] = [mo]` if `c`, else zero, under the mask `eax`. -/

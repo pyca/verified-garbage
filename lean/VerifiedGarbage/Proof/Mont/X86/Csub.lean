@@ -23,8 +23,8 @@ def selK (src o tmp k : Nat) : List Instr :=
 theorem selects_eq (M : Mod) (src o : Nat) : selects M src o = selK src o M.tmp (words M) := rfl
 
 theorem selK_succ (src o tmp k : Nat) : selK src o tmp (k + 1) = selK src o tmp k ++
-    [.mov .ebx (.mem (sc (src + 4 * k))), .mov .edx (.mem (sc (tmp + 4 * k))), .alu .xor .edx (.reg .ebx),
-      .alu .and .edx (.reg .eax), .alu .xor .ebx (.reg .edx), .store (sc (o + 4 * k)) .ebx] := by
+    ([.mov .ebx (.mem (sc (src + 4 * k))), .mov .edx (.mem (sc (tmp + 4 * k))), .alu .xor .edx (.reg .ebx),
+      .alu .and .edx (.reg .eax), .alu .xor .ebx (.reg .edx), .store (sc (o + 4 * k)) .ebx] : List Instr) := by
   simp only [selK, List.range_succ, List.flatMap_append, List.flatMap_cons, List.flatMap_nil, List.append_nil]
 
 /-- The selection of a word by a mask. -/
