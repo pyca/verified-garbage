@@ -184,23 +184,37 @@ def arr52 (p j o : Nat) : List Instr :=
   [.mov .rsi (.mem (hdr (sArr j))), .mov .r11 (.mem (hdr sIfma)),
     .alu .add .r11 (.imm (BitVec.ofNat 32 (D * p + o))), .movImm64 .r12 mask52] ++ to52
 
-/-- A prime's region (`p` 0 or 1): the modulus, `k₀`, `2¹⁰⁵⁶ mod X`, `x R`
-as `X`, `R` as `Y` (both still with `R = 2¹⁰²⁴`), the last multiplier, the padded exponent
-(pointer and length in `n`'s slots `slotPtr`, `slotLen`). -/
-def region (p slotPtr slotLen : Nat) : List (Prog isa) :=
-  k1 ++ [.block (arr52 p aN oM ++ arr52 p aT oK1 ++ arr52 p aXc oX ++ arr52 p aY oY ++
-    (if p = 0 then arr52 p aY oFin else []) ++
-    [.mov .r11 (.mem (hdr sIfma)), .alu .add .r11 (.imm (BitVec.ofNat 32 (D * p))),
-      .mov .rax (.mem (hdr sMinv)), .alu .and .rax (.reg .r12)] ++
-    (List.range 4).map (fun l => .store (at_ .r11 (oK0 + 8 * l)) .rax) ++
-    [.mov32 .rax (.imm 0)] ++ (List.range 16).map (fun l => .store (at_ .r11 (oE + 8 * l)) .rax) ++
-    (if p = 0 then [] else (List.range 20).map (fun j => .store (at_ .r11 (oFin + off j)) .rax) ++
-      [.mov32 .rax (.imm 1), .store (at_ .r11 oFin) .rax]) ++
-    [
-      .mov .rax (.mem (hdr sLink)), .mov .rsi (.mem (ws .rax slotPtr)), .mov .rcx (.mem (ws .rax slotLen)),
-      .alu .add .r11 (.imm (BitVec.ofNat 32 (oE + 128))), .alu .sub .r11 (.reg .rcx)]),
+/-- `k₀` (the low 52 bits of the inverse) in each quadword of `oK0`, `r11`
+the region (`r12` holds `2⁵² - 1`). -/
+def k0St (p : Nat) : List Instr :=
+  [.mov .r11 (.mem (hdr sIfma)), .alu .add .r11 (.imm (BitVec.ofNat 32 (D * p))),
+    .mov .rax (.mem (hdr sMinv)), .alu .and .rax (.reg .r12)] ++
+  (List.range 4).map (fun l => .store (at_ .r11 (oK0 + 8 * l)) .rax)
+
+/-- Zeros where the exponent goes. -/
+def eZero : List Instr :=
+  .mov32 .rax (.imm 0) :: (List.range 16).map (fun l => .store (at_ .r11 (oE + 8 * l)) .rax)
+
+/-- `q`'s last multiplier, 1 (`rax` is 0). -/
+def finOne : List Instr :=
+  (List.range 20).map (fun j => .store (at_ .r11 (oFin + off j)) .rax) ++
+    [.mov32 .rax (.imm 1), .store (at_ .r11 oFin) .rax]
+
+/-- The exponent's bytes (pointer and length in `n`'s slots `slotPtr`,
+`slotLen`) at the end of the 128 at `oE`. -/
+def eCopy (slotPtr slotLen : Nat) : List (Prog isa) :=
+  [.block [.mov .rax (.mem (hdr sLink)), .mov .rsi (.mem (ws .rax slotPtr)), .mov .rcx (.mem (ws .rax slotLen)),
+      .alu .add .r11 (.imm (BitVec.ofNat 32 (oE + 128))), .alu .sub .r11 (.reg .rcx)],
     .loop (.block [.movzx8 .rax (at0 .rsi), .store8 (at0 .r11) .rax, .alu .add .rsi (.imm 1),
       .alu .add .r11 (.imm 1), .alu .sub .rcx (.imm 1)]) .ne]
+
+/-- A prime's region (`p` 0 or 1): the modulus, `2¹⁰⁵⁶ mod X`, `x R` as `X`,
+`R` as `Y` (both still with `R = 2¹⁰²⁴`), the last multiplier, `k₀`, the
+padded exponent. -/
+def region (p slotPtr slotLen : Nat) : List (Prog isa) :=
+  k1 ++ [.block (arr52 p aN oM), .block (arr52 p aT oK1), .block (arr52 p aXc oX), .block (arr52 p aY oY)] ++
+    (if p = 0 then [.block (arr52 p aY oFin)] else []) ++ [.block (k0St p), .block eZero] ++
+    (if p = 0 then [] else [.block finOne]) ++ eCopy slotPtr slotLen
 
 /-! ## The vector code (`rbx` the area) -/
 
