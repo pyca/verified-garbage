@@ -3,3 +3,4 @@ family = "Key agreement"
 specs = ["X25519"]
 modules = ["src/x25519.rs"]
 asm = ["x25519"]
+optimized = { aarch64 = "public keys by a fixed-base comb on edwards25519" }
