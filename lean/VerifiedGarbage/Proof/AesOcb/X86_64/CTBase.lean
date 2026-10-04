@@ -1,4 +1,4 @@
-import VerifiedGarbage.Proof.AesOcb.X86_64.Args
+import VerifiedGarbage.Proof.AesOcb.X86_64.Nonce
 import VerifiedGarbage.Proof.AesCcm.X86_64.CTBase
 
 /-!
@@ -124,5 +124,47 @@ theorem rel_flagsC {K W SP : Addr} {R : Nat} {N A D : Addr} {nl n tl : Nat} {P :
   obtain ⟨ht, ha⟩ := VG.Taint.check_sound hc' (both_agree hDW hn (hP _ _ hp)) e₁ e₂
   obtain ⟨hcf, hzf, -, -⟩ := ha.rf.2 hs
   exact ⟨ht, hcf, hzf⟩
+
+/-- One run with the public arguments. -/
+structure One (K W SP : Addr) (R : Nat) (N A D : Addr) (nl n tl : Nat) (s : State) : Prop where
+  env : Env K W SP s
+  sl : Slots W R N A D nl n tl s.mem
+  wr : s.wr = [⟨D, n⟩, ⟨W, 2560⟩]
+
+theorem Both.of {K W SP : Addr} {R : Nat} {N A D : Addr} {nl n tl : Nat} {s₁ s₂ : State}
+    (o₁ : One K W SP R N A D nl n tl s₁) (o₂ : One K W SP R N A D nl n tl s₂) :
+    Both K W SP R N A D nl n tl [] [] s₁ s₂ :=
+  ⟨o₁.env, o₂.env, o₁.sl, o₂.sl, o₁.wr, o₂.wr, fun _ h => (nomatch h), fun _ h => (nomatch h)⟩
+
+/-- One run, after a frame within the parts the pieces write. -/
+theorem One.step {K W SP : Addr} {R : Nat} {N A D : Addr} {nl n tl : Nat} (L : Lay K W SP)
+    (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 2560⟩) {s s' : State} (o : One K W SP R N A D nl n tl s)
+    (E : Env K W SP s') (hw : s'.wr = s.wr) (f : Frame (mutR W SP D n) s.mem s'.mem) :
+    One K W SP R N A D nl n tl s' :=
+  ⟨E, Slots.of_mut L hDW f o.sl, hw.trans o.wr⟩
+
+/-- A call of `vg_aes_encrypt_blocks` or `vg_aes_decrypt_blocks` on the same
+`n` blocks at `D'` in both runs. -/
+theorem callBlocks_rel {f : Nat → List Byte → Spec.Aes.State → Spec.Aes.State} {b : Impl.Aes.X86_64.Blocks}
+    (ok : ∀ s, (Proof.Aes.blocksX86_64 f).pre s →
+      ∃ t s', Exec isa b.code s t s' ∧ abiPreserved s s' ∧ (Proof.Aes.blocksX86_64 f).post s s')
+    (ct : ConstantTime isa (Proof.Aes.blocksX86_64 f).pre (Proof.Aes.blocksX86_64 f).pub b.code)
+    {K W SP : Addr} (L : Lay K W SP) {R : Nat} (hR : R = 10 ∨ R = 12 ∨ R = 14) {N A D : Addr} {nl n tl : Nat}
+    (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 2560⟩) (hn : n ≤ 2 ^ 64) {args : List Instr} (rs : List Reg)
+    (ex : List Nat)
+    (hc : ∃ hc, (taint.check (ocbT rs ex)
+      (.block (args ++ [mvr .rdi .r14, ld .rsi .r15 rndO, mvr .r8 .r15, addi .r8 scrO])) hc).isSome = true)
+    {D' : Addr} {k : Nat} {P : State → State → Prop}
+    (hP : ∀ s₁ s₂, P s₁ s₂ → Both K W SP R N A D nl n tl rs ex s₁ s₂ ∧ ArgsOk args s₁ D' k ∧ ArgsOk args s₂ D' k ∧
+      Dst K W SP s₁ D' k ∧ Dst K W SP s₂ D' k) :
+    RelCT isa P (callBlocks b args) fun _ _ => True := by
+  unfold callBlocks
+  have a := (rel_taintC rs ex hDW hn (fun s₁ s₂ h => (hP s₁ s₂ h).1) hc).wp
+    (F₁ := fun (s : State) => BCall s K D' (W + BitVec.ofNat 64 512) R k ∧ s.gpr .rsp = SP)
+    (F₂ := fun (s : State) => BCall s K D' (W + BitVec.ofNat 64 512) R k ∧ s.gpr .rsp = SP) fun s₁ s₂ h => by
+      obtain ⟨B, a₁, a₂, d₁, d₂⟩ := hP s₁ s₂ h
+      exact ⟨WP.mono (callArgs_ok L B.e₁ hR B.sl₁.rounds a₁ d₁) fun _ q => ⟨q.1, q.2.1⟩,
+        WP.mono (callArgs_ok L B.e₂ hR B.sl₂.rounds a₂ d₂) fun _ q => ⟨q.1, q.2.1⟩⟩
+  exact RelCT.seq a (blk_rel ok ct fun s₁ s₂ h => ⟨K, D', _, R, k, h.2.1.1, h.2.2.1, h.2.1.2.trans h.2.2.2.symm⟩)
 
 end VG.Proof.AesOcb.X86_64

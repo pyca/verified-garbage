@@ -95,14 +95,12 @@ theorem BPost.congr {f : Nat → List Byte → Spec.Aes.State → Spec.Aes.State
   out := by rw [← hm]; exact h.out
 
 /-- A call of `b`, after `args`. -/
-theorem callBlocks_ok {f : Nat → List Byte → Spec.Aes.State → Spec.Aes.State} {b : Impl.Aes.X86_64.Blocks}
-    (ok : ∀ s, (Proof.Aes.blocksX86_64 f).pre s →
-      ∃ t s', Exec isa b.code s t s' ∧ abiPreserved s s' ∧ (Proof.Aes.blocksX86_64 f).post s s')
-    (nosp : NoSp b.code) (depth : b.code.depth = 0)
-    {K W SP : Addr} (L : Lay K W SP) {s : State} (E : Env K W SP s) {R : Nat} (hR : R = 10 ∨ R = 12 ∨ R = 14)
+theorem callArgs_ok {K W SP : Addr} (L : Lay K W SP) {s : State} (E : Env K W SP s) {R : Nat} (hR : R = 10 ∨ R = 12 ∨ R = 14)
     (hrnd : s.mem.readW (W + BitVec.ofNat 64 232) 64 = BitVec.ofNat 64 R)
     {args : List Instr} {D : Addr} {n : Nat} (ha : ArgsOk args s D n) (hD : Dst K W SP s D n) :
-    WP isa (callBlocks b args) s (BPost f s K D (W + BitVec.ofNat 64 512) R n) := by
+    WP isa (.block (args ++ [mvr .rdi .r14, ld .rsi .r15 rndO, mvr .r8 .r15, addi .r8 scrO])) s fun s₂ =>
+      BCall s₂ K D (W + BitVec.ofNat 64 512) R n ∧ s₂.gpr .rsp = SP ∧ s₂.mem = s.mem ∧ s₂.rd = s.rd ∧
+        s₂.wr = s.wr ∧ ∀ r ∈ calleeSaved, s₂.gpr r = s.gpr r := by
   obtain ⟨s₁, run₁, rdx₁, rcx₁, g₁, m₁, rd₁, wr₁⟩ := ha
   have r₁ : InRegions (s₁.rd ++ s₁.wr) (W + BitVec.ofNat 64 232) 8 := by
     rw [rd₁, wr₁]; exact E.perm.wR (by decide)
@@ -125,7 +123,6 @@ theorem callBlocks_ok {f : Nat → List Byte → Spec.Aes.State → Spec.Aes.Sta
     all_goals rfl
   have hs : s₂.gpr .rsp = SP := by
     rw [g₂ _ (by decide) (by decide) (by decide), g₁ _ (by decide) (by decide) (by decide), E.rsp]
-  refine WP.seq (WP.of_runBlock ⟨s₂, by rw [runBlock_append, run₁, Option.bind_some, run₂], ?_⟩)
   have hD₂ := hD.of_eq (s' := s₂) (by rw [rd₂, rd₁]) (by rw [wr₂, wr₁])
   have hc : BCall s₂ K D (W + BitVec.ofNat 64 512) R n :=
     { rdi := rdi₂, rsi := rsi₂, rdx := rdx₂, rcx := rcx₂, r8 := r8₂, rounds := hR, wrap := hD.wrap
@@ -139,8 +136,8 @@ theorem callBlocks_ok {f : Nat → List Byte → Spec.Aes.State → Spec.Aes.Sta
           (by decide)) covers_nil)
         (covers_cons hD₂.rd (covers_cons (covers_left (by rw [wr₂, wr₁]; exact E.perm.wC (by decide))) covers_nil))
       writes := covers_cons hD₂.wr (covers_cons (by rw [wr₂, wr₁]; exact E.perm.wC (by decide)) covers_nil) }
-  refine WP.mono (blk_call ok nosp depth hc) fun s' h => h.congr (by rw [m₂, m₁]) (by rw [rd₂, rd₁])
-    (by rw [wr₂, wr₁]) (fun r hr => ?_) (by rw [hs, E.rsp])
+  refine WP.of_runBlock ⟨s₂, by rw [runBlock_append, run₁, Option.bind_some, run₂], hc, hs, by rw [m₂, m₁],
+    by rw [rd₂, rd₁], by rw [wr₂, wr₁], fun r hr => ?_⟩
   simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
   rw [g₂ _ (by rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide)
       (by rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide)
@@ -148,5 +145,16 @@ theorem callBlocks_ok {f : Nat → List Byte → Spec.Aes.State → Spec.Aes.Sta
     g₁ _ (by rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide)
       (by rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide)
       (by rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide)]
+
+theorem callBlocks_ok {f : Nat → List Byte → Spec.Aes.State → Spec.Aes.State} {b : Impl.Aes.X86_64.Blocks}
+    (ok : ∀ s, (Proof.Aes.blocksX86_64 f).pre s →
+      ∃ t s', Exec isa b.code s t s' ∧ abiPreserved s s' ∧ (Proof.Aes.blocksX86_64 f).post s s')
+    (nosp : NoSp b.code) (depth : b.code.depth = 0)
+    {K W SP : Addr} (L : Lay K W SP) {s : State} (E : Env K W SP s) {R : Nat} (hR : R = 10 ∨ R = 12 ∨ R = 14)
+    (hrnd : s.mem.readW (W + BitVec.ofNat 64 232) 64 = BitVec.ofNat 64 R)
+    {args : List Instr} {D : Addr} {n : Nat} (ha : ArgsOk args s D n) (hD : Dst K W SP s D n) :
+    WP isa (callBlocks b args) s (BPost f s K D (W + BitVec.ofNat 64 512) R n) := by
+  exact WP.seq (WP.mono (callArgs_ok L E hR hrnd ha hD) fun s₂ ⟨hc, hs, m₂, rd₂, wr₂, g₂⟩ =>
+    WP.mono (blk_call ok nosp depth hc) fun s' h => h.congr m₂ rd₂ wr₂ g₂ (by rw [hs, E.rsp]))
 
 end VG.Proof.AesOcb.X86_64
