@@ -1,4 +1,4 @@
-import VerifiedGarbage.TCB.X86_64.Isa
+import VerifiedGarbage.Impl.Aes.X86_64.Callee
 
 /-!
 # AES-OCB: x86-64 implementation
@@ -47,17 +47,12 @@ namespace VG.Impl.AesOcb.X86_64
 
 open VG.X86_64
 
-/-- A function to call: its symbol and its code. -/
-structure Fn where
-  name : String
-  code : Prog isa
-
 /-- The implementations called: AES's encryption and decryption of whole
 blocks and its key expansion. -/
 structure Callees where
-  enc : Fn
-  dec : Fn
-  key : Fn
+  enc : Impl.Aes.X86_64.Blocks
+  dec : Impl.Aes.X86_64.Blocks
+  key : Impl.Aes.X86_64.ExpandKey
 
 def at_ (b : Reg) (d : Nat) : MemOp := { base := b, disp := d }
 def ld (r b : Reg) (d : Nat) : Instr := .mov r (.mem (at_ b d))
@@ -138,7 +133,7 @@ def lNtz : Prog isa :=
 /-- `ENCIPHER` (`c.enc`) or `DECIPHER` (`c.dec`) of the `rcx` blocks at `rdx`
 (set up by `args`), with the key context's schedule and the working space
 at `W + scrO`. -/
-def callBlocks (f : Fn) (args : List Instr) : Prog isa :=
+def callBlocks (f : Impl.Aes.X86_64.Blocks) (args : List Instr) : Prog isa :=
   .seq (.block (args ++ [mvr .rdi .r14, ld .rsi .r15 rndO, mvr .r8 .r15, addi .r8 scrO]))
     (.call f.name f.code)
 
@@ -150,18 +145,27 @@ def oneBlock (d : Nat) : List Instr := [mvr .rdx .r15, addi .rdx d, .mov .rcx (.
 /-- `L_$` and `L_0` from `L_*` (bytes 240–255 of the key context). -/
 def lsetup : List Instr := dbl .r14 240 ldO ++ dbl .r15 ldO l0O
 
+/-- The `r12` bytes at `rbx` copied to `rsi`, from `rcx = 0` (`r12 > 0`). -/
+def copyLoop : Prog isa :=
+  .loop (.block [.movzx8 .rax { base := .rbx, index := some .rcx },
+    .store8 { base := .rsi, index := some .rcx } .rax, addi .rcx 1, .alu .cmp .rcx (.reg .r12)]) .ne
+
+/-- `W + d ← pad(S)` (§4.1), `S` the `r12` bytes at `rbx` (`0 < r12 < 16`):
+zeros, the bytes copied, and `0x80` after them. -/
+def padTo (d : Nat) : Prog isa :=
+  .seq (.block (zero16 d ++ [mvr .rsi .r15, addi .rsi d, .alu .xor .rcx (.reg .rcx)]))
+    (.seq copyLoop (.block [.mov .rax (.imm 0x80), .store8 { base := .rsi, index := some .rcx } .rax]))
+
 /-- The nonce block (§4.2), `num2str(TAGLEN mod 128, 7) ‖ zeros ‖ 1 ‖ N`, at
 `W + tmpO`, with `nonce`, `nonce_len` and `tag_len` in `W + nO`, `W + nlO`
-and `W + tlO`: the nonce's bytes copied to the end of the block, from the last
-down (`rcx` counts them), the 1 in the byte before them, and `TAGLEN`'s
-bits in the top of the first byte. Then `bottom` (its last 6 bits) to
-`W + botO`, and those bits cleared. -/
+and `W + tlO`: zeros, the nonce's bytes copied to the end of the block, the
+1 in the byte before them, and `TAGLEN`'s bits in the top of the first
+byte. Then `bottom` (its last 6 bits) to `W + botO`, and those bits
+cleared. -/
 def nonceBlock : Prog isa :=
-  .seq (.block (zero16 tmpO ++ [ld .rdx .r15 nO, ld .rcx .r15 nlO, mvr .rsi .r15, addi .rsi (tmpO + 16),
-      .alu .sub .rsi (.reg .rcx)]))
-    (.seq (.loop (.block [.alu .sub .rcx (.imm 1),
-        .movzx8 .rax { base := .rdx, index := some .rcx },
-        .store8 { base := .rsi, index := some .rcx } .rax, .alu .test .rcx (.reg .rcx)]) .ne)
+  .seq (.block (zero16 tmpO ++ [ld .rbx .r15 nO, ld .r12 .r15 nlO, mvr .rsi .r15, addi .rsi (tmpO + 16),
+      .alu .sub .rsi (.reg .r12), .alu .xor .rcx (.reg .rcx)]))
+    (.seq copyLoop
       (.block [.mov .rax (.imm 1), .store8 { base := .rsi, disp := -1 } .rax,
         ld .rax .r15 tlO, .alu .and .rax (.imm 15), .alu .add .rax (.reg .rax),
         .alu .add .rax (.reg .rax), .alu .add .rax (.reg .rax), .alu .add .rax (.reg .rax),
@@ -243,13 +247,9 @@ def hashChunk : Prog isa :=
 /-- The rest of the associated data (`r12` bytes at `rbx`), padded, XORed
 with the offset `⊕ L_*`, enciphered and added to the sum. -/
 def hashRest : Prog isa :=
-  .seq (.block (xor16 .r14 240 ohO ++ zero16 bufO ++
-      [.alu .xor .rcx (.reg .rcx)]))
-    (.seq (.loop (.block [.movzx8 .rax { base := .rbx, index := some .rcx },
-        .store8 { base := .r15, index := some .rcx, disp := bufO } .rax, addi .rcx 1,
-        .alu .cmp .rcx (.reg .r12)]) .ne)
-      (.seq (.block ([.mov .rax (.imm 0x80), .store8 { base := .r15, index := some .rcx, disp := bufO } .rax] ++
-          xor16 .r15 ohO bufO))
+  .seq (.block (xor16 .r14 240 ohO))
+    (.seq (padTo bufO)
+      (.seq (.block (xor16 .r15 ohO bufO))
         (.seq (callBlocks c.enc (oneBlock bufO)) (.block (xor16 .r15 bufO sumO)))))
 
 /-- `HASH(K, A)` to `W + sumO`, with `aad` and `aad_len` in `W + aadO` and
@@ -287,7 +287,7 @@ def pass (body : List Instr) : Prog isa :=
 /-- The whole blocks: `pre` (the first pass), `f` on all of them, `post` (the
 third pass, the offsets recomputed from `Offset_0`); `rbx` the data, `r13`
 their number. -/
-def whole (f : Fn) (pre post : List Instr) : Prog isa :=
+def whole (f : Impl.Aes.X86_64.Blocks) (pre post : List Instr) : Prog isa :=
   .seq (.block [ld .rbx .r15 dataO, mvr .r12 .r13, .mov .rbp (.imm 1)])
     (.seq (pass pre)
       (.seq (callBlocks f [ld .rdx .r15 dataO, mvr .rcx .r13])
@@ -298,13 +298,7 @@ def whole (f : Fn) (pre post : List Instr) : Prog isa :=
 
 /-- `W + t2O ← pad(P_*)`, `P_*` the `r12` bytes at `rbx` (`0 < r12 < 16`),
 and add it to the checksum. -/
-def padCk : Prog isa :=
-  .seq (.block (zero16 t2O ++ [.alu .xor .rcx (.reg .rcx)]))
-    (.seq (.loop (.block [.movzx8 .rax { base := .rbx, index := some .rcx },
-        .store8 { base := .r15, index := some .rcx, disp := t2O } .rax, addi .rcx 1,
-        .alu .cmp .rcx (.reg .r12)]) .ne)
-      (.block ([.mov .rax (.imm 0x80), .store8 { base := .r15, index := some .rcx, disp := t2O } .rax] ++
-        xor16 .r15 t2O ckO)))
+def padCk : Prog isa := .seq (padTo t2O) (.block (xor16 .r15 t2O ckO))
 
 /-- The `r12` bytes at `rbx` XORed with `Pad` at `W + tmpO`. -/
 def xorPad : Prog isa :=
