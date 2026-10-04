@@ -179,7 +179,7 @@ theorem publicKey_ok {base' : Prog isa} (hB : CalleeOk scalarBaseLocal base') {s
   refine WP.frame (rs := List.replicate 64 .eax) (by simp) (by simp) (by decide)
     (by simp only [List.length_replicate]; have := h.below; omega) (body_nosp hB)
     (WP.mono (body_ok hB h (push_ctx hp.1 hp.2.1 h.below) (args_val s 3)) fun u ⟨hu, ho⟩ =>
-      ⟨pop_abi h.below hu (ret_out h), ?_⟩)
+      ⟨pop_abi (by decide) h.below hu (ret_out h), ?_⟩)
   change Spec.Ed448.bytesAt (popped .eax (List.replicate 64 .eax).length u).mem ((arg s 0).setWidth 64) 57 = _
   rw [popped_mem]
   exact ho

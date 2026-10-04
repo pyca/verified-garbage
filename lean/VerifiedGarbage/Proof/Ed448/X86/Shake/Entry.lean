@@ -97,15 +97,16 @@ theorem push_ctx {ins outs : List Region} (hrd : s.rd = ins) (hwr : s.wr = outs)
     exact below_sub (by simp) hb
 
 /-- After the pop, the callee-saved registers and the return address. -/
-theorem pop_abi {ins outs : List Region} {u : State} (hb : 280 ≤ (s.gpr .esp).toNat)
+theorem pop_abi {ins outs : List Region} {u : State} {q : Reg} (hq : q ∉ calleeSaved)
+    (hb : 280 ≤ (s.gpr .esp).toNat)
     (hu : Whole.Ctx (base s) s.gpr s.mem ins outs u) (hret : ∀ R ∈ outs, (RET s).Disjoint R) :
-    abiPreserved s (popped .eax (List.replicate 64 Reg.eax).length u) := by
+    abiPreserved s (popped q (List.replicate 64 Reg.eax).length u) := by
   refine ⟨fun r hr => ?_, ?_⟩
   · by_cases he : r = .esp
     · subst r
       rw [popped_esp, hu.esp, List.length_replicate]
       exact BitVec.sub_add_cancel _ _
-    · rw [popped_gpr _ _ _ he (by intro e; subst r; simp [calleeSaved] at hr), hu.cs r hr he]
+    · rw [popped_gpr _ _ _ he (by intro e; subst r; exact hq hr), hu.cs r hr he]
   · rw [popped_mem]
     refine hu.frame.readW (r := RET s) (Region.contains_self _ _) ?_ (by decide)
     intro R hR
@@ -116,5 +117,15 @@ theorem pop_abi {ins outs : List Region} {u : State} (hb : 280 ≤ (s.gpr .esp).
         ⟨(s.gpr .esp - BitVec.ofNat 32 280).setWidth 64, 280⟩
       rw [Taint.sub_setWidth hb]
       exact (Offset.below_disjoint _ (by decide)).symm
+
+/-- `abiPreserved` from a state that differs from the entry state only in
+registers that are not callee-saved. -/
+theorem abi_of {s' u : State} (hs : ∀ r ∈ calleeSaved, s'.gpr r = s.gpr r) (hm : s'.mem = s.mem)
+    (h : abiPreserved s' u) : abiPreserved s u := by
+  have he := hs .esp (by simp [calleeSaved])
+  refine ⟨fun r hr => (h.1 r hr).trans (hs r hr), ?_⟩
+  have := h.2
+  rw [he, hm] at this
+  exact this
 
 end VG.Proof.Ed448.X86.Shake
