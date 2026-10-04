@@ -82,7 +82,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅</td>
+<td>✅ AVX</td>
 
 <td>✅</td>
 
@@ -100,7 +100,7 @@ yours to keep:
 
 <td>✅ operations scheduled for latency</td>
 
-<td>✅</td>
+<td>✅ operations scheduled for latency</td>
 
 <td>✅</td>
 
@@ -116,7 +116,7 @@ yours to keep:
 
 <td>✅ SHA extensions</td>
 
-<td>✅ SHA extensions</td>
+<td>✅ SHA extensions; round constants and the state kept in registers across blocks</td>
 
 <td>✅</td>
 
@@ -132,7 +132,7 @@ yours to keep:
 
 <td>✅ SHA extensions, AVX2, BMI1, BMI2</td>
 
-<td>✅ SHA extensions</td>
+<td>✅ SHA extensions; round constants built by the first block and kept in registers</td>
 
 <td>✅</td>
 
@@ -148,7 +148,7 @@ yours to keep:
 
 <td>✅ SHA extensions, AVX2, BMI1, BMI2</td>
 
-<td>✅ SHA extensions</td>
+<td>✅ SHA extensions; round constants built by the first block and kept in registers</td>
 
 <td>✅</td>
 
@@ -164,7 +164,7 @@ yours to keep:
 
 <td>✅ lane complementing</td>
 
-<td>✅ SHA extensions</td>
+<td>✅ SHA extensions; rounds unrolled, round constants as immediates</td>
 
 <td>✅</td>
 
@@ -596,7 +596,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>❌</td>
+<td>✅ AES-NI</td>
 
 <td>❌</td>
 
@@ -968,7 +968,7 @@ yours to keep:
 
 <td>✅ AVX-512 IFMA, AVX-512VL, AVX2, BMI2, ADX</td>
 
-<td>✅</td>
+<td>✅ public keys by a fixed-base comb on edwards25519</td>
 
 <td>✅</td>
 

@@ -82,6 +82,7 @@ mod aes;
 pub mod aes_ccm;
 pub mod aes_gcm;
 pub mod aes_gcm_siv;
+pub mod aes_ocb;
 pub mod aes_siv;
 pub mod argon2;
 pub mod chacha20;
@@ -112,6 +113,9 @@ pub mod triple_des_ecb;
 pub mod x25519;
 pub mod x448;
 mod zeroize;
+
+#[cfg(test)]
+mod aes_blocks_tests;
 
 #[cfg(test)]
 mod argon2_compress_tests;

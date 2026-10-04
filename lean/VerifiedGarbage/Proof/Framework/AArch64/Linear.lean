@@ -22,6 +22,15 @@ open VG.Bitslice
 def linEnv (ins : List (Reg × Nat)) : Env (Nat × Nat) :=
   { reg := fun r => (ins.find? (·.1 == r)).map (inWord ·.2), slot := fun _ => none }
 
+/-- `linEnv`, with the registers `cs` holding known constants (which masks
+may then come from). -/
+def linEnvC (ins : List (Reg × Nat)) (cs : List (Reg × BitVec 64)) : Env (Nat × Nat) :=
+  { reg := fun r => match cs.find? (·.1 == r) with
+      | some c => some (c.2.toNat, 0)
+      | none => (ins.find? (·.1 == r)).map (inWord ·.2),
+    slot := fun _ => none,
+    cst := fun r => (cs.find? (·.1 == r)).map (·.2) }
+
 /-- External word `j` is input word `xb + j`. -/
 def linExt (xb j : Nat) : Option (Nat × Nat) := some (inWord (xb + j))
 
@@ -54,6 +63,49 @@ theorem linear_ok {k xb : Nat} {c : Cfg} {is : List Instr} {ins : List (Reg × N
     · simp only [linExt, Option.some.injEq] at h; subst h
       obtain ⟨h1, h2⟩ := hext j hj
       rw [← h2]; exact inWord_rel W h1
+  obtain ⟨s', hs', p⟩ := run lanes_sound hok hrel he
+  refine ⟨s', hs', fun r g hrg q hq => ?_, p.rd, p.wr, p.sp, fun r hr => p.other r (by simp [hr]), p.frame⟩
+  have h := List.all_eq_true.mp hpost (r, g) hrg
+  simp only [Bool.and_eq_true, beq_iff_eq, List.all_eq_true, List.mem_range, decide_eq_true_eq] at h
+  exact outWord_rel (fun p hp a ha => h.2 p hp a ha) (p.rel.reg r _ h.1) q hq
+
+/-- `linear_ok`, with the registers `cs` holding known constants. -/
+theorem linear_okC {k xb : Nat} {c : Cfg} {is : List Instr} {ins : List (Reg × Nat)}
+    {cs : List (Reg × BitVec 64)} {outs : List (Reg × (Nat → List Nat))}
+    (hchk : check (lanes 64 k) c (linExt xb) is (linEnvC ins cs) (linPost k outs) = true)
+    {s : State} (hok : Ok c s) (W : Nat → BitVec 64)
+    (hin : ∀ r i, (r, i) ∈ ins → 64 * i + 64 ≤ 2 ^ k ∧ W i = s.gpr r)
+    (hcs : ∀ r v, (r, v) ∈ cs → s.gpr r = v)
+    (hext : ∀ j < c.exts,
+      64 * (xb + j) + 64 ≤ 2 ^ k ∧ W (xb + j) = s.mem.readW (wordAddr (s.gpr c.ext) j) 64) :
+    ∃ s', runBlock isa is s = some s' ∧
+      (∀ r g, (r, g) ∈ outs → ∀ p < 64, (s'.gpr r).getLsbD p = xorBits W (g p)) ∧
+      s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp ∧
+      (∀ r, (is.all fun i => dstOf i != some r) = true → s'.gpr r = s.gpr r) ∧
+      Frame [slotRegion c s] s.mem s'.mem := by
+  obtain ⟨e', he, hpost⟩ := of_check _ _ _ hchk
+  have hrel : Rel (LaneRel k (assign W (2 ^ k))) c (linExt xb) (linEnvC ins cs) s := by
+    refine ⟨fun r a h => ?_, (fun _ _ _ h => by cases h), fun j a hj h => ?_, fun r v h => ?_⟩
+    · simp only [linEnvC] at h
+      split at h
+      · rename_i cv hf
+        simp only [Option.some.injEq] at h; subst h
+        have hr : cv.1 = r := by simpa using List.find?_some hf
+        rw [← hr, hcs cv.1 cv.2 (List.mem_of_find?_eq_some hf)]
+        exact lanes_sound.const rfl
+      · simp only [Option.map_eq_some_iff] at h
+        obtain ⟨⟨r', i⟩, hf, rfl⟩ := h
+        have hr : r' = r := by simpa using List.find?_some hf
+        subst hr
+        obtain ⟨h1, h2⟩ := hin r' i (List.mem_of_find?_eq_some hf)
+        rw [← h2]; exact inWord_rel W h1
+    · simp only [linExt, Option.some.injEq] at h; subst h
+      obtain ⟨h1, h2⟩ := hext j hj
+      rw [← h2]; exact inWord_rel W h1
+    · simp only [linEnvC, Option.map_eq_some_iff] at h
+      obtain ⟨cv, hf, rfl⟩ := h
+      have hr : cv.1 = r := by simpa using List.find?_some hf
+      rw [← hr]; exact hcs cv.1 cv.2 (List.mem_of_find?_eq_some hf)
   obtain ⟨s', hs', p⟩ := run lanes_sound hok hrel he
   refine ⟨s', hs', fun r g hrg q hq => ?_, p.rd, p.wr, p.sp, fun r hr => p.other r (by simp [hr]), p.frame⟩
   have h := List.all_eq_true.mp hpost (r, g) hrg

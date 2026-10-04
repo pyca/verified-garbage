@@ -29,7 +29,13 @@ pub(crate) mod cmac_triple_des;
 pub(crate) mod ct;
 
 #[rustfmt::skip]
+pub(crate) mod ecdsa_p256;
+
+#[rustfmt::skip]
 pub(crate) mod ed25519;
+
+#[rustfmt::skip]
+pub(crate) mod ed448;
 
 #[rustfmt::skip]
 pub(crate) mod gcm;

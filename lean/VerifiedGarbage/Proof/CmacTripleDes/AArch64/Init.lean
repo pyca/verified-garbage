@@ -354,12 +354,14 @@ theorem dbl_ok (s : State) (d : Nat) (hd : d % 8 = 0 ∧ d < 32768)
     simp [gpr_write, hr.1, hr.2.1, hr.2.2.1, hr.2.2.2]
 
 theorem init_wp {s₀ : State} (h0 : initAArch64.pre s₀) :
-    WP isa init s₀ fun s' => initAArch64.post s₀ s' := by
+    WP isa init s₀ fun s' => initAArch64.post s₀ s' ∧ ∀ r ∈ savedRegs, s'.gpr r = s₀.gpr r := by
   have hp := IPre.of h0
   have sw := hp.scr_wrap
   have ow := hp.out_wrap
-  refine WP.seq (WP.mono (initPre_wp hp) fun s₁ h₁ => ?_)
-  refine WP.seq (WP.mono (keys_ok hp h₁) fun s₂ h₂ => ?_)
+  refine WP.seq (WP.mono (WP.gprs (rs := savedRegs) (initPre_wp hp) (by lit_decide) (by lit_decide))
+    fun s₁ ⟨h₁, sv₁⟩ => ?_)
+  refine WP.seq (WP.mono (WP.gprs (rs := savedRegs) (keys_ok hp h₁) (by lit_decide) (by lit_decide))
+    fun s₂ ⟨h₂, sv₂⟩ => ?_)
   refine WP.seq (WP.of_runBlock ⟨_, by
     rw [runBlock_cons, exec_subImm_x (by decide), runStep_some, runBlock_cons, exec_movz_x (by decide),
       runStep_some, runBlock_nil], ?_⟩)
@@ -377,20 +379,19 @@ theorem init_wp {s₀ : State} (h0 : initAArch64.pre s₀) :
           show _ ∈ s₂.rd ++ s₂.wr
           rw [h₂.rd, h₂.wr, hp.rd, hp.wr]; simp, by rw [x14₃],
         by show 384 ≤ 400; decide, by show 400 < 2 ^ 64; decide⟩
-      scr := ⟨⟨Sc s₀, 640⟩, by show _ ∈ s₂.wr; rw [h₂.wr, hp.wr]; simp, by rw [x15₃], by show 384 ≤ 640; decide,
+      scr := ⟨⟨Sc s₀, 640⟩, by show _ ∈ s₂.wr; rw [h₂.wr, hp.wr]; simp, by rw [x15₃], by show 456 ≤ 640; decide,
         by show 640 < 2 ^ 64; decide⟩
       disj := by
         rw [x14₃, x15₃]
         exact (hp.out_scr.symm.sub_left (Region.sub_prefix (by decide))).sub_right (Region.sub_prefix (by decide)) }
-  refine WP.seq (WP.mono (block_ok bp) fun s₄ ⟨same₄, x14₄, ax₄⟩ => ?_)
+  refine WP.seq (WP.mono (block_ok bp) fun s₄ ⟨same₄, x14₄, ax₄, sv₄⟩ => ?_)
   -- The key schedule.
   have hsch₂ : Spec.TripleDes.scheduleAt s₂.mem (O s₀) = Spec.TripleDes.expandKey (keyB s₀) := by
     apply Vector.ext
     intro n hn
     rw [← vgetD _ hn 0, ← vgetD _ hn 0, scheduleAt_getD _ _ hn, h₂.sched n (by omega)]
-  have xR₃ : xR s₃ = ⟨Sc s₀, 384⟩ := by rw [xR, x15₃]
-  have f₄ : Frame [⟨Sc s₀, 384⟩] s₂.mem s₄.mem := by rw [← xR₃]; exact same₄.frame
-  have outX : ∀ r ∈ [(⟨Sc s₀, 384⟩ : Region)], (⟨O s₀, 384⟩ : Region).Disjoint r := fun r hr => by
+  have f₄ : Frame [⟨Sc s₀, 456⟩] s₂.mem s₄.mem := by rw [← x15₃]; exact same₄.frame
+  have outX : ∀ r ∈ [(⟨Sc s₀, 456⟩ : Region)], (⟨O s₀, 384⟩ : Region).Disjoint r := fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr
     exact (hp.out_scr.sub_left (Region.sub_prefix (by decide))).sub_right (Region.sub_prefix (by decide))
   have hsch₄ : Spec.TripleDes.scheduleAt s₄.mem (O s₀) = Spec.TripleDes.expandKey (keyB s₀) := by
@@ -414,7 +415,7 @@ theorem init_wp {s₀ : State} (h0 : initAArch64.pre s₀) :
   have f₆ : Frame [⟨O s₀ + BitVec.ofNat 64 384, 16⟩] s₄.mem s₆.mem := by
     rw [m₆, m₅, x2₅, x2₄]
     exact ((Frame.refl _ _).writeW (List.mem_singleton_self _) _ c0).writeW (List.mem_singleton_self _) _ c8
-  refine ⟨?_, ?_⟩
+  refine ⟨⟨?_, ?_⟩, fun r hr => ?_⟩
   · show Spec.TripleDes.scheduleAt s₆.mem (O s₀) = Spec.TripleDes.expandKey (keyB s₀)
     rw [scheduleAt_frame f₆ (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
@@ -426,5 +427,11 @@ theorem init_wp {s₀ : State} (h0 : initAArch64.pre s₀) :
     rw [subkeys_tdes, m₆, x2₅, ax₅, m₅, x2₄, ax₄, ax₃, hk,
       show O s₀ + BitVec.ofNat 64 384 + BitVec.ofNat 64 0 = O s₀ + BitVec.ofNat 64 384 from BitVec.add_zero _]
     exact bytesAt_store2 _ _ _ _
+  · obtain ⟨i, hi, e⟩ := mem_savedRegs hr
+    subst e
+    have : ∀ i < 9, savedReg i ∉ [Reg.x5, .x6, .x7, .x11] ∧ savedReg i ≠ .x5 ∧ savedReg i ≠ .x14 := by
+      decide
+    rw [g₆ _ (this i hi).1, g₅ _ (this i hi).1, sv₄ i hi, g₃ _ (this i hi).2.1 (this i hi).2.2,
+      sv₂ _ hr, sv₁ _ hr]
 
 end VG.Proof.CmacTripleDes.AArch64

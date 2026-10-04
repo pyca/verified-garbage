@@ -4,6 +4,7 @@ import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedSse.Verified
 import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedAvx2.Verified
 import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedAvx512.Verified
 import VerifiedGarbage.Proof.TripleDes.X86_64.Frame
+import VerifiedGarbage.Proof.TripleDes.X86_64.SpSafe
 
 namespace VG.Artifacts.TripleDes.X86_64
 
@@ -45,8 +46,8 @@ def artifacts : List Artifact := [
     stack := 1032
     ofSig := ⟨_, _, _, by unfold Spec.TripleDes.ecbEncryptContract Spec.TripleDes.ecbContract; rfl⟩
     verified := Proof.TripleDes.X86_64.ecb_framed Proof.TripleDes.X86_64.BitslicedSse.encrypt_verified
-      (Code.all_of_allInstrs (by lit_decide)) (by lit_decide)
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
+      (Code.all_of_allInstrs (Proof.TripleDes.X86_64.sse_ecb_sp .encrypt)) (by lit_decide)
+    spSafe := Proof.TripleDes.X86_64.ecb_spSafe (Proof.TripleDes.X86_64.sse_ecb_sp .encrypt) },
   { Spec.TripleDes.ecbDecryptApi with
     target := X86_64.target
     doc := Spec.TripleDes.ecbDecryptApi.doc
@@ -57,8 +58,8 @@ def artifacts : List Artifact := [
     stack := 1032
     ofSig := ⟨_, _, _, by unfold Spec.TripleDes.ecbDecryptContract Spec.TripleDes.ecbContract; rfl⟩
     verified := Proof.TripleDes.X86_64.ecb_framed Proof.TripleDes.X86_64.BitslicedSse.decrypt_verified
-      (Code.all_of_allInstrs (by lit_decide)) (by lit_decide)
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
+      (Code.all_of_allInstrs (Proof.TripleDes.X86_64.sse_ecb_sp .decrypt)) (by lit_decide)
+    spSafe := Proof.TripleDes.X86_64.ecb_spSafe (Proof.TripleDes.X86_64.sse_ecb_sp .decrypt) },
   { Spec.TripleDes.ecbEncryptApi with
     name := Spec.TripleDes.ecbEncryptApi.name ++ "_avx2"
     target := X86_64.target
@@ -70,9 +71,9 @@ def artifacts : List Artifact := [
     stack := 1032
     ofSig := ⟨_, _, _, by unfold Spec.TripleDes.ecbEncryptContract Spec.TripleDes.ecbContract; rfl⟩
     verified := Proof.TripleDes.X86_64.ecb_framed Proof.TripleDes.X86_64.BitslicedAvx2.encrypt_verified
-      (Code.all_of_allInstrs (by lit_decide)) (by lit_decide)
+      (Code.all_of_allInstrs (Proof.TripleDes.X86_64.avx2_ecb_sp .encrypt)) (by lit_decide)
     features := ["avx", "avx2"]
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
+    spSafe := Proof.TripleDes.X86_64.ecb_spSafe (Proof.TripleDes.X86_64.avx2_ecb_sp .encrypt) },
   { Spec.TripleDes.ecbDecryptApi with
     name := Spec.TripleDes.ecbDecryptApi.name ++ "_avx2"
     target := X86_64.target
@@ -84,9 +85,9 @@ def artifacts : List Artifact := [
     stack := 1032
     ofSig := ⟨_, _, _, by unfold Spec.TripleDes.ecbDecryptContract Spec.TripleDes.ecbContract; rfl⟩
     verified := Proof.TripleDes.X86_64.ecb_framed Proof.TripleDes.X86_64.BitslicedAvx2.decrypt_verified
-      (Code.all_of_allInstrs (by lit_decide)) (by lit_decide)
+      (Code.all_of_allInstrs (Proof.TripleDes.X86_64.avx2_ecb_sp .decrypt)) (by lit_decide)
     features := ["avx", "avx2"]
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
+    spSafe := Proof.TripleDes.X86_64.ecb_spSafe (Proof.TripleDes.X86_64.avx2_ecb_sp .decrypt) },
   { Spec.TripleDes.ecbEncryptApi with
     name := Spec.TripleDes.ecbEncryptApi.name ++ "_avx512"
     target := X86_64.target
@@ -98,9 +99,9 @@ def artifacts : List Artifact := [
     stack := 1032
     ofSig := ⟨_, _, _, by unfold Spec.TripleDes.ecbEncryptContract Spec.TripleDes.ecbContract; rfl⟩
     verified := Proof.TripleDes.X86_64.ecb_framed Proof.TripleDes.X86_64.BitslicedAvx512.encrypt_verified
-      (Code.all_of_allInstrs (by lit_decide)) (by lit_decide)
+      (Code.all_of_allInstrs (Proof.TripleDes.X86_64.avx512_ecb_sp .encrypt)) (by lit_decide)
     features := ["avx", "avx2", "avx512f"]
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
+    spSafe := Proof.TripleDes.X86_64.ecb_spSafe (Proof.TripleDes.X86_64.avx512_ecb_sp .encrypt) },
   { Spec.TripleDes.ecbDecryptApi with
     name := Spec.TripleDes.ecbDecryptApi.name ++ "_avx512"
     target := X86_64.target
@@ -112,8 +113,8 @@ def artifacts : List Artifact := [
     stack := 1032
     ofSig := ⟨_, _, _, by unfold Spec.TripleDes.ecbDecryptContract Spec.TripleDes.ecbContract; rfl⟩
     verified := Proof.TripleDes.X86_64.ecb_framed Proof.TripleDes.X86_64.BitslicedAvx512.decrypt_verified
-      (Code.all_of_allInstrs (by lit_decide)) (by lit_decide)
+      (Code.all_of_allInstrs (Proof.TripleDes.X86_64.avx512_ecb_sp .decrypt)) (by lit_decide)
     features := ["avx", "avx2", "avx512f"]
-    spSafe := Code.all_of_allInstrs (by lit_decide) }]
+    spSafe := Proof.TripleDes.X86_64.ecb_spSafe (Proof.TripleDes.X86_64.avx512_ecb_sp .decrypt) }]
 
 end VG.Artifacts.TripleDes.X86_64

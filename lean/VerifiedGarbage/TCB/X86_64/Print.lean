@@ -220,6 +220,8 @@ def Instr.asm : Instr → List String
   | .vmovdqu32Store m r => [s!"vmovdqu32 {m.str512}, {r.zname}"]
   | .vbroadcasti32x4 d m => [s!"vbroadcasti32x4 {d.zname}, {m.str128}"]
   | .zbcst op d a m => [s!"{op.name} {d.zname}, {a.zname}, {m.str}" ++ "{1to8}"]
+  | .vpmadd52Load hi d a m =>
+    [s!"vpmadd52{if hi then "h" else "l"}uq {d.vname .l256}, {a.vname .l256}, {m.strV .l256}"]
   | .stmxcsr m => [s!"stmxcsr {m.str32}"]
   | .ldmxcsr m => [s!"ldmxcsr {m.str32}"]
   | .lfence => ["lfence"]
@@ -257,7 +259,8 @@ def Instr.memOps : Instr → List MemOp
     s.memOps
   | .store m _ | .store32 m _ | .movzx8 _ m | .store8 m _ | .movdquLoad _ m | .movdquStore m _
   | .vmovdquLoad _ _ m | .vmovdquStore _ m _ | .vbroadcasti128 _ m | .vmovdqu32Load _ m
-  | .vmovdqu32Store m _ | .vbroadcasti32x4 _ m | .zbcst _ _ _ m | .stmxcsr m | .ldmxcsr m => [m]
+  | .vmovdqu32Store m _ | .vbroadcasti32x4 _ m | .zbcst _ _ _ m | .vpmadd52Load _ _ _ m
+  | .stmxcsr m | .ldmxcsr m => [m]
   | .shift32 .. | .bswap32 _ | .rorx32 .. | .andn32 .. | .rorx .. | .andn .. | .bswap _
   | .shift .. | .movImm64 .. | .xop _ | .vop _ | .vpmovmskb .. | .zop _ | .lfence | .mul _
   | .push _ | .pop .. | .alloc _ | .free _ => []
