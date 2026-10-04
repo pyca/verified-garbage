@@ -92,18 +92,18 @@ def zeroSt : List Instr := .mov .eax (.imm 0) :: (List.range 50).flatMap fun k =
 def kabs (src len pos : Arg) : Prog isa :=
   .seq (.block (setArgs [(.edx, pos), (.eax, .off oST), (.ecx, .imm 136), (.ebx, src), (.ebp, len),
       (.edi, .off oKS)]))
-    (callRet rs6 "vg_keccak_absorb" Impl.Sha3.X86.Stream.absorb)
+    (callRet rs6 "vg_keccak_absorb_scratch" Impl.Sha3.X86.Stream.absorb)
 
 /-- Pad at the position `pos`, with the suffix of SHAKE. -/
 def kpad (pos : Arg) : Prog isa :=
   .seq (.block (setArgs [(.edx, pos), (.eax, .off oST), (.ecx, .imm 136), (.ebx, .imm 0x1f), (.edi, .off oKS)]))
-    (callWith rs5 "vg_keccak_pad" Impl.Sha3.X86.Stream.pad)
+    (callWith rs5 "vg_keccak_pad_scratch" Impl.Sha3.X86.Stream.pad)
 
 /-- Squeeze 64 bytes from position 0 to `μ`. -/
 def ksqz : Prog isa :=
   .seq (.block (setArgs [(.eax, .off oST), (.ecx, .imm 136), (.edx, .imm 0), (.ebx, .off oMU), (.ebp, .imm 64),
       (.edi, .off oKS)]))
-    (callWith rs6 "vg_keccak_squeeze" Impl.Sha3.X86.Stream.squeeze)
+    (callWith rs6 "vg_keccak_squeeze_scratch" Impl.Sha3.X86.Stream.squeeze)
 
 /-- `μ = H(tr ‖ 0 ‖ ctx_len ‖ ctx ‖ M, 64)`, for the 64 bytes `tr` at `tr`. -/
 def muHash (tr : Arg) : Prog isa :=

@@ -94,11 +94,11 @@ def sampleSetup : List Instr := sampleRegs 280 ++ sampleRestore
 /-- Everything before the loop, squeezing `len` bytes, and `setup`. -/
 def sampleSqueezeNWith (c : Impl.Sha3.AArch64.Callee) (len : Nat) (setup : List Instr) : Prog isa :=
   .seq (.block samplePrologue) <|
-  .seq (.call ("vg_keccak_absorb" ++ c.suffix) (Impl.Sha3.AArch64.Stream.absorbWith c)) <|
+  .seq (.call ("vg_keccak_absorb_scratch" ++ c.suffix) (Impl.Sha3.AArch64.Stream.absorbWith c)) <|
   .seq (.block samplePadArgs) <|
-  .seq (.call ("vg_keccak_pad" ++ c.suffix) (Impl.Sha3.AArch64.Stream.padWith c)) <|
+  .seq (.call ("vg_keccak_pad_scratch" ++ c.suffix) (Impl.Sha3.AArch64.Stream.padWith c)) <|
   .seq (.block (sampleSqueezeArgs len)) <|
-  .seq (.call ("vg_keccak_squeeze" ++ c.suffix) (Impl.Sha3.AArch64.Stream.squeezeWith c)) <|
+  .seq (.call ("vg_keccak_squeeze_scratch" ++ c.suffix) (Impl.Sha3.AArch64.Stream.squeezeWith c)) <|
   .seq sampleZero (.block setup)
 
 /-- Everything before the loop of `sampleFull`. -/

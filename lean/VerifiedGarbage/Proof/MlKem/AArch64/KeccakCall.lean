@@ -58,7 +58,7 @@ theorem absorb_callWith (v : Proof.Sha3.AArch64.Permutation) {s : State} {st dt 
       (∀ msg, Repr s.mem st rate msg → pos = msg.length % rate →
         Repr s'.mem st rate (msg ++ bytesAt s.mem dt len)) →
       (s'.gpr .x0).toNat = (pos + len) % rate → Q s') :
-    WP isa (.call ("vg_keccak_absorb" ++ v.callee.suffix) (Impl.Sha3.AArch64.Stream.absorbWith v.callee)) s Q := by
+    WP isa (.call ("vg_keccak_absorb_scratch" ++ v.callee.suffix) (Impl.Sha3.AArch64.Stream.absorbWith v.callee)) s Q := by
   have c0 : s.callEntry.gpr .x0 = st := (gpr_entry s).trans h0
   have c1 : (s.callEntry.gpr .x1).toNat = rate := by rw [gpr_entry s]; exact h1
   have c2 : (s.callEntry.gpr .x2).toNat = pos := by rw [gpr_entry s]; exact h2
@@ -90,7 +90,7 @@ theorem absorb_call {s : State} {st dt sc : Addr} {rate pos len : Nat}
       (∀ msg, Repr s.mem st rate msg → pos = msg.length % rate →
         Repr s'.mem st rate (msg ++ bytesAt s.mem dt len)) →
       (s'.gpr .x0).toNat = (pos + len) % rate → Q s') :
-    WP isa (.call "vg_keccak_absorb" Impl.Sha3.AArch64.Stream.absorb) s Q :=
+    WP isa (.call "vg_keccak_absorb_scratch" Impl.Sha3.AArch64.Stream.absorb) s Q :=
   absorb_callWith .scalar h0 h1 h2 h3 h4 h5 hr hp d₁ d₂ d₃ hsp k₁ k₂ k₃ hc hw hQ
 
 /-- `vg_keccak_pad(st, rate, pos, suffix, sc)`. -/
@@ -104,7 +104,7 @@ theorem pad_callWith (v : Proof.Sha3.AArch64.Permutation) {s : State} {st sc : A
     (hQ : ∀ s', Kept [⟨st, 200⟩, ⟨sc, 640⟩, below s.sp 16] s s' →
       (∀ msg, Repr s.mem st rate msg → pos = msg.length % rate →
         stateAt s'.mem st = absorb rate (pad rate ((s.gpr .x3).setWidth 8) msg)) → Q s') :
-    WP isa (.call ("vg_keccak_pad" ++ v.callee.suffix) (Impl.Sha3.AArch64.Stream.padWith v.callee)) s Q := by
+    WP isa (.call ("vg_keccak_pad_scratch" ++ v.callee.suffix) (Impl.Sha3.AArch64.Stream.padWith v.callee)) s Q := by
   have c0 : s.callEntry.gpr .x0 = st := (gpr_entry s).trans h0
   have c1 : (s.callEntry.gpr .x1).toNat = rate := by rw [gpr_entry s]; exact h1
   have c2 : (s.callEntry.gpr .x2).toNat = pos := by rw [gpr_entry s]; exact h2
@@ -131,7 +131,7 @@ theorem pad_call {s : State} {st sc : Addr} {rate pos : Nat}
     (hQ : ∀ s', Kept [⟨st, 200⟩, ⟨sc, 640⟩, below s.sp 16] s s' →
       (∀ msg, Repr s.mem st rate msg → pos = msg.length % rate →
         stateAt s'.mem st = absorb rate (pad rate ((s.gpr .x3).setWidth 8) msg)) → Q s') :
-    WP isa (.call "vg_keccak_pad" Impl.Sha3.AArch64.Stream.pad) s Q :=
+    WP isa (.call "vg_keccak_pad_scratch" Impl.Sha3.AArch64.Stream.pad) s Q :=
   pad_callWith .scalar h0 h1 h2 h4 hr hp d₁ hsp k₁ k₃ hc hw hQ
 
 /-- `vg_keccak_squeeze(st, rate, pos, out, len, sc)`. -/
@@ -150,7 +150,7 @@ theorem squeeze_callWith (v : Proof.Sha3.AArch64.Permutation) {s : State} {st ou
       (s'.gpr .x0).toNat ≤ rate →
       (∀ d, squeezeFrom rate (stateAt s'.mem st) (s'.gpr .x0).toNat d =
         squeezeFrom rate (stateAt s.mem st) (pos + len) d) → Q s') :
-    WP isa (.call ("vg_keccak_squeeze" ++ v.callee.suffix) (Impl.Sha3.AArch64.Stream.squeezeWith v.callee)) s Q := by
+    WP isa (.call ("vg_keccak_squeeze_scratch" ++ v.callee.suffix) (Impl.Sha3.AArch64.Stream.squeezeWith v.callee)) s Q := by
   have c0 : s.callEntry.gpr .x0 = st := (gpr_entry s).trans h0
   have c1 : (s.callEntry.gpr .x1).toNat = rate := by rw [gpr_entry s]; exact h1
   have c2 : (s.callEntry.gpr .x2).toNat = pos := by rw [gpr_entry s]; exact h2
@@ -184,7 +184,7 @@ theorem squeeze_call {s : State} {st out sc : Addr} {rate pos len : Nat}
       (s'.gpr .x0).toNat ≤ rate →
       (∀ d, squeezeFrom rate (stateAt s'.mem st) (s'.gpr .x0).toNat d =
         squeezeFrom rate (stateAt s.mem st) (pos + len) d) → Q s') :
-    WP isa (.call "vg_keccak_squeeze" Impl.Sha3.AArch64.Stream.squeeze) s Q :=
+    WP isa (.call "vg_keccak_squeeze_scratch" Impl.Sha3.AArch64.Stream.squeeze) s Q :=
   squeeze_callWith .scalar h0 h1 h2 h3 h4 h5 hr hp d₁ d₂ d₃ hsp k₁ k₂ k₃ hc hw hQ
 
 end VG.Proof.MlKem.AArch64

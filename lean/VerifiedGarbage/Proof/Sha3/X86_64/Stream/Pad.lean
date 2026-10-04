@@ -133,9 +133,9 @@ theorem pad_ct : ConstantTime isa Proof.Sha3.padX86_64.pre Proof.Sha3.padX86_64.
   rcases hr with rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption
 
 theorem pad_verified :
-    Verified X86_64.target Impl.Sha3.X86_64.Stream.pad (Spec.Sha3.padContract X86_64.abi 8) :=
+    Verified X86_64.target Impl.Sha3.X86_64.Stream.pad (Spec.Sha3.padScratchContract X86_64.abi 8) :=
   Verified.of_correct pad_correct pad_ct (by
-    sig_implies [Spec.Sha3.padContract, Spec.Sha3.padSig, Proof.Sha3.padX86_64, X86_64.abi,
+    sig_implies [Spec.Sha3.padScratchContract, Spec.Sha3.padScratchSig, Spec.Sha3.padPre, Spec.Sha3.padPost, Proof.Sha3.padX86_64, X86_64.abi,
       X86_64.argRegs] [Proof.Sha3.X86_64.Stream.Pad.sat] using Proof.Sha3.X86_64.Stream.Pad.sat)
 
 end VG.Proof.Sha3.X86_64.Stream.Pad
