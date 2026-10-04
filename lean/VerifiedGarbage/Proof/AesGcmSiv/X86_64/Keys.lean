@@ -153,6 +153,32 @@ structure ExpPost (K W SP : Addr) (R : Nat) (t t' : State) : Prop where
   ciph : Spec.GcmSiv.ctxCiph t'.mem (W + BitVec.ofNat 64 512) R =
     Spec.GcmSiv.aes (bytesAt t.mem (W + BitVec.ofNat 64 32) (Spec.GcmSiv.keyLen R))
 
+/-- The arguments of `expand`'s call. -/
+theorem expArgs_ok {K W SP : Addr} {R : Nat} (hR : R = 10 ∨ R = 14) {N A D : Addr} {al n : Nat} {t : State}
+    (E : Env K W SP t) (S : Slots W R N A D al n t.mem) :
+    ∃ t₁ : State, runBlock isa
+      (ptr .rdi .r15 ekO ++ ([.mov .rsi (.mem (at_ .r15 roundsO)), .alu .sub .rsi (imm 6), .alu .add .rsi (.reg .rsi),
+        .alu .add .rsi (.reg .rsi)] : List Instr) ++ ptr .rdx .r15 skO ++ ptr .rcx .r15 scrO) t = some t₁ ∧
+      t₁.mem = t.mem ∧ t₁.gpr .rdi = W + BitVec.ofNat 64 32 ∧
+      t₁.gpr .rsi = BitVec.ofNat 64 (Spec.GcmSiv.keyLen R) ∧ t₁.gpr .rdx = W + BitVec.ofNat 64 512 ∧
+      t₁.gpr .rcx = W + BitVec.ofNat 64 2048 ∧ (∀ r ∈ calleeSaved, t₁.gpr r = t.gpr r) ∧
+      t₁.rd = t.rd ∧ t₁.wr = t.wr := by
+  have h15 := E.r15
+  have rR := S.rounds
+  have rr := E.perm.wR (show 272 + 8 ≤ 4096 by decide)
+  refine ⟨_, by srun [h15, rR, rr], ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · rfl
+  · simp only [gpr_setReg, gpr_arithFlags, ite_true, ite_false, reduceCtorEq, h15]
+  · simp only [gpr_setReg, gpr_arithFlags, ite_true, ite_false, reduceCtorEq]
+    rw [Proof.AesGcm.X86_64.ofNat_sub (by omega) (by omega), ofNat_add_ofNat, ofNat_add_ofNat]
+    congr 1; unfold Spec.GcmSiv.keyLen; omega
+  · simp only [gpr_setReg, gpr_arithFlags, ite_true, ite_false, reduceCtorEq, h15]
+  · simp only [gpr_setReg, gpr_arithFlags, ite_true, ite_false, reduceCtorEq, h15]
+  · intro r hr; simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
+      simp only [gpr_setReg, gpr_arithFlags, ite_true, ite_false, reduceCtorEq]
+  all_goals rfl
+
 theorem expand_ok (v : GcmImpl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} (hR : R = 10 ∨ R = 14)
     {N A D : Addr} {al n : Nat} {t : State} (E : Env K W SP t) (S : Slots W R N A D al n t.mem) :
     WP isa (expand v.callees) t (ExpPost K W SP R t) := by
@@ -160,25 +186,7 @@ theorem expand_ok (v : GcmImpl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} (hR :
   have rR := S.rounds
   have rr := E.perm.wR (show 272 + 8 ≤ 4096 by decide)
   have hl : Spec.GcmSiv.keyLen R = 16 ∨ Spec.GcmSiv.keyLen R = 32 := by unfold Spec.GcmSiv.keyLen; omega
-  obtain ⟨t₁, run₁, hm₁, rdi, rsi, rdx, rcx, hg₁, hrd₁, hwr₁⟩ : ∃ t₁ : State, runBlock isa
-      (ptr .rdi .r15 ekO ++ ([.mov .rsi (.mem (at_ .r15 roundsO)), .alu .sub .rsi (imm 6), .alu .add .rsi (.reg .rsi),
-        .alu .add .rsi (.reg .rsi)] : List Instr) ++ ptr .rdx .r15 skO ++ ptr .rcx .r15 scrO) t = some t₁ ∧
-      t₁.mem = t.mem ∧ t₁.gpr .rdi = W + BitVec.ofNat 64 32 ∧
-      t₁.gpr .rsi = BitVec.ofNat 64 (Spec.GcmSiv.keyLen R) ∧ t₁.gpr .rdx = W + BitVec.ofNat 64 512 ∧
-      t₁.gpr .rcx = W + BitVec.ofNat 64 2048 ∧ (∀ r ∈ calleeSaved, t₁.gpr r = t.gpr r) ∧
-      t₁.rd = t.rd ∧ t₁.wr = t.wr := by
-    refine ⟨_, by srun [h15, rR, rr], ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
-    · rfl
-    · simp only [gpr_setReg, gpr_arithFlags, ite_true, ite_false, reduceCtorEq, h15]
-    · simp only [gpr_setReg, gpr_arithFlags, ite_true, ite_false, reduceCtorEq]
-      rw [Proof.AesGcm.X86_64.ofNat_sub (by omega) (by omega), ofNat_add_ofNat, ofNat_add_ofNat]
-      congr 1; unfold Spec.GcmSiv.keyLen; omega
-    · simp only [gpr_setReg, gpr_arithFlags, ite_true, ite_false, reduceCtorEq, h15]
-    · simp only [gpr_setReg, gpr_arithFlags, ite_true, ite_false, reduceCtorEq, h15]
-    · intro r hr; simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
-        simp only [gpr_setReg, gpr_arithFlags, ite_true, ite_false, reduceCtorEq]
-    all_goals rfl
+  obtain ⟨t₁, run₁, hm₁, rdi, rsi, rdx, rcx, hg₁, hrd₁, hwr₁⟩ := expArgs_ok hR E S
   have E₁ : Env K W SP t₁ := E.of_saved hg₁ hrd₁ hwr₁
   refine WP.seq (WP.of_runBlock ⟨t₁, run₁, ?_⟩)
   refine WP.mono (key_call v.key (kargs L E₁ hl rdi rsi rdx rcx)) fun t₂ P => ?_
