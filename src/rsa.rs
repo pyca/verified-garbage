@@ -21,7 +21,10 @@
 //! on the modulus `n` and the lengths of `p` and `q`, but not on the input
 //! or on the private key's values. On a CPU with BMI2 and ADX,
 //! `vg_rsa_private_crt_adx` does the same with the faster Montgomery
-//! multiplication.
+//! multiplication; on one with AVX512_IFMA and AVX512VL too,
+//! `vg_rsa_private_crt_ifma` does the same, computing the two
+//! exponentiations of a 2048-bit key with primes of 1024 bits at once, in
+//! 256-bit vector registers.
 //!
 //! This module only checks the lengths and allocates the memory they work in.
 //!
@@ -36,10 +39,10 @@ use alloc::vec::Vec;
 use core::fmt;
 
 use crate::arch::rsa::{
-    VG_RSA_PRIVATE_CRT_ADX_FEATURES, VG_RSA_PUBLIC_PRECOMPUTE_ADX_FEATURES,
-    VG_RSA_PUBLIC_PRECOMPUTED_ADX_FEATURES, vg_rsa_private_crt, vg_rsa_private_crt_adx,
-    vg_rsa_public_precompute, vg_rsa_public_precompute_adx, vg_rsa_public_precomputed,
-    vg_rsa_public_precomputed_adx,
+    VG_RSA_PRIVATE_CRT_ADX_FEATURES, VG_RSA_PRIVATE_CRT_IFMA_FEATURES,
+    VG_RSA_PUBLIC_PRECOMPUTE_ADX_FEATURES, VG_RSA_PUBLIC_PRECOMPUTED_ADX_FEATURES,
+    vg_rsa_private_crt, vg_rsa_private_crt_adx, vg_rsa_private_crt_ifma, vg_rsa_public_precompute,
+    vg_rsa_public_precompute_adx, vg_rsa_public_precomputed, vg_rsa_public_precomputed_adx,
 };
 use crate::cpu::{Features, detected};
 
@@ -52,15 +55,20 @@ enum Backend {
     /// Montgomery multiplication with BMI2's `mulx` and ADX's `adcx` and
     /// `adox`.
     Adx,
+    /// `Adx`, and for the private-key operation, AVX512_IFMA's
+    /// multiplications for 2048-bit keys.
+    Ifma,
 }
 
 impl Backend {
     /// The best implementation a CPU with the features `f` can run.
     fn select(f: Features) -> Backend {
-        if f.contains(VG_RSA_PUBLIC_PRECOMPUTE_ADX_FEATURES)
+        let adx = f.contains(VG_RSA_PUBLIC_PRECOMPUTE_ADX_FEATURES)
             && f.contains(VG_RSA_PUBLIC_PRECOMPUTED_ADX_FEATURES)
-            && f.contains(VG_RSA_PRIVATE_CRT_ADX_FEATURES)
-        {
+            && f.contains(VG_RSA_PRIVATE_CRT_ADX_FEATURES);
+        if adx && f.contains(VG_RSA_PRIVATE_CRT_IFMA_FEATURES) {
+            Backend::Ifma
+        } else if adx {
             Backend::Adx
         } else {
             Backend::Baseline
@@ -143,7 +151,7 @@ impl PublicKey {
         let f = match Backend::select(detected()) {
             Backend::Baseline => vg_rsa_public_precompute,
             // `select` chose it because the CPU has the features it needs.
-            Backend::Adx => vg_rsa_public_precompute_adx,
+            Backend::Adx | Backend::Ifma => vg_rsa_public_precompute_adx,
         };
         // SAFETY: each pointer is valid for its length (`pre` and `scratch`
         // for writes), and none overlaps another or wraps around, as they are
@@ -192,7 +200,7 @@ impl PublicKey {
         let f = match Backend::select(detected()) {
             Backend::Baseline => vg_rsa_public_precomputed,
             // `select` chose it because the CPU has the features it needs.
-            Backend::Adx => vg_rsa_public_precomputed_adx,
+            Backend::Adx | Backend::Ifma => vg_rsa_public_precomputed_adx,
         };
         // SAFETY: each pointer is valid for its length (`out` for writes,
         // `scratch` too), and none overlaps another or wraps around, as they
@@ -347,8 +355,9 @@ impl PrivateKey {
         let mut scratch = vec![0u64; scratch_words(k)];
         let f = match Backend::select(detected()) {
             Backend::Baseline => vg_rsa_private_crt,
-            // `select` chose it because the CPU has the features it needs.
+            // `select` chose them because the CPU has the features they need.
             Backend::Adx => vg_rsa_private_crt_adx,
+            Backend::Ifma => vg_rsa_private_crt_ifma,
         };
         // SAFETY: each pointer is valid for its length (`out` for writes,
         // `scratch` too), and none overlaps another or wraps around, as they
@@ -448,6 +457,14 @@ mod tests {
         assert_eq!(
             Backend::select(VG_RSA_PRIVATE_CRT_ADX_FEATURES),
             Backend::Adx
+        );
+        assert_eq!(
+            Backend::select(VG_RSA_PRIVATE_CRT_IFMA_FEATURES),
+            Backend::Ifma
+        );
+        assert_eq!(
+            Backend::select(Features::of(&["avx", "avx2", "avx512ifma", "avx512vl"])),
+            Backend::Baseline
         );
     }
 

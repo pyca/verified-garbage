@@ -377,7 +377,7 @@ theorem dKeys_of_imc {s₀ s : State} {nr : Nat} {w : List Byte} (hK : Keys nr w
   · rw [hI.rd, hI.wr, hI.gpr, ofs]
     exact ⟨_, List.mem_append_right _ hscr, contains_offset (by omega) (by omega)⟩
   · rw [hI.gpr, hI.keys j (hS j h1 h2), st_aesimc]
-    congr 1
+    refine congrArg invMixColumns ?_
     apply st_ext; intro i hi
     rw [getD_st _ hi, hK.sched, byte_roundKey (L := 16 * (nr + 1)) _ _ (by omega) i hi]
     simp [rkState, Vector.getD, hi]

@@ -89,7 +89,8 @@ theorem sbp_chk : rwChk kgR (kgW p) (t1P p) 1024 (.x26, 32 + 320 * i) 320 = true
 
 theorem bp_chk : rwChk kgR (kgW p) (t0P p) 1024 (.x27, oT0 p + 416 * i) 416 = true := by
   have hkl := hF.kl; have hl := hF.l; have hk := hF.k; have hsc := scr_eq p
-  rcases hF.eta with ⟨_, hlen⟩ | ⟨_, hlen⟩ <;> (unfold rwChk; lay [hF.pk, hF.sk, hlen])
+  have hlen : lenS p = 96 ∨ lenS p = 128 := hF.eta.imp And.right And.right
+  unfold rwChk; lay [hF.pk, hF.sk]
 
 end
 
@@ -236,8 +237,8 @@ theorem bp_ok {A : Nat → Poly} {S : Nat → IPoly} {R : BitVec 64} {s : State}
   rcases (by omega : i' < i ∨ i' = i) with hi' | rfl
   · exact hk'.rows i' hi'
   · refine ⟨by
-      rcases hF.eta with ⟨_, hlen⟩ | ⟨_, hlen⟩ <;>
-      · rw [L.keepBytes hP' (by lay [hF.pk, hF.sk, hlen])]; exact h1, ?_⟩
+      have hlen : lenS p = 96 ∨ lenS p = 128 := hF.eta.imp And.right And.right
+      rw [L.keepBytes hP' (by lay [hF.pk, hF.sk])]; exact h1, ?_⟩
     rw [hP'.pa (show Reg.x27 ∈ keptRegs by decide), hb, h0.2, modPm_t0]
     rfl
 

@@ -209,7 +209,7 @@ theorem bitStep_ok {t s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} {N X 
   refine WP.mono (expBit_ok hI.ctx hZ hw hw' hR hXN hXc hY hYN hYc hI.v
     (by have := Nat.mul_le_mul_left v hp; omega) hI.b (by omega) (by omega))
     fun s' ⟨hc', ⟨Y', hY', hYN', hYc'⟩, hV', hb', hz', hfr', k'⟩ => ⟨?_, ⟨hc', ⟨Y', hY', hYN', ?_⟩, ?_, ?_,
-      hI.frm.trans hfr', (hI.keep.trans k').mono (by simp [mmRegs])⟩⟩
+      hI.frm.trans hfr', (hI.keep.trans k').mono (by decide)⟩⟩
   · rw [hz']; congr 1; exact decide_eq_decide.mpr (by omega)
   · rw [hYc', show 2 * (E * 2 ^ j + v / 2 ^ (8 - j)) + v * 2 ^ j / 128 % 2 =
       E * 2 ^ (j + 1) + v / 2 ^ (8 - (j + 1)) by

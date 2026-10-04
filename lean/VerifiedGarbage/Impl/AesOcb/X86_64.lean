@@ -3,8 +3,12 @@ import VerifiedGarbage.Impl.Aes.X86_64.Callee
 /-!
 # AES-OCB: x86-64 implementation
 
-`vg_aes_ocb_init`, `vg_aes_ocb_seal` and `vg_aes_ocb_open`
-(`Spec/Ocb/Contract.lean`), composed of calls of the verified
+`vg_aes_ocb_init(key = rdi, key_len = rsi, ctx = rdx, scratch = rcx)`,
+`vg_aes_ocb_seal(ctx = rdi, rounds = rsi, nonce = rdx, nonce_len = rcx, aad = r8, aad_len = r9, data = [rsp + 8], len = [rsp + 16], tag = [rsp + 24], tag_len = [rsp + 32], work = [rsp + 40])`
+and `vg_aes_ocb_open` with the same arguments (`Spec/Ocb/Contract.lean`),
+with the working space (`scratch`, `work`) as a last argument, which a frame
+on the stack allocates (`Impl.StackScratch.X86_64.withStackScratch` and
+`withStackArgScratch`), composed of calls of the verified
 `vg_aes_expand_key`, `vg_aes_encrypt_blocks` and `vg_aes_decrypt_blocks`,
 and generic over their implementations (`Callees`): each function is
 emitted once for each.
@@ -25,8 +29,10 @@ emitted once for each.
   where `bottom` is the last 6 bits of the nonce, which is secret: the
   192-bit `Stretch`, in three registers, is shifted left by 1, 2, 4, 8, 16
   and 32 bits, each shift kept or not by a mask from a bit of `bottom`.
-* `open` compares the tags without a branch and masks the data with
-  `0 − ok`.
+* `seal` computes the tag at `W` (`front`) and copies its first `tag_len`
+  bytes to `tag` (`tagOut`).
+* `open` copies the received tag from `tag` to `W` (`recv`), compares the
+  tags without a branch and masks the data with `0 − ok`.
 
 ## The working space `W` (`work`, 2560 bytes)
 
@@ -34,8 +40,9 @@ emitted once for each.
 offset, the checksum, the sum of `HASH`, `L_$`, `L_0`, the current
 `L_{ntz(i)}`, a block for one call, the computed tag of `open`, the offset
 of `HASH`, the callee-saved registers, the public arguments, `bottom`,
-`Offset_0`, `Stretch`; `[384, 512)`: 8 blocks of the associated data;
-`[512, 2560)`: the working space of the functions called.
+`Offset_0`, the nonce and its length, and the address of the tag;
+`[384, 512)`: 8 blocks of the associated data; `[512, 2560)`: the working
+space of the functions called.
 
 `r15` holds `W` and `r14` the key context throughout; the functions called
 preserve them, and `rbx`, `rbp`, `r12` and `r13`, which hold pointers and
@@ -83,6 +90,7 @@ def botO : Nat := 256
 def o0O : Nat := 272
 def nO : Nat := 288
 def nlO : Nat := 296
+def tgO : Nat := 304
 def bufO : Nat := 384
 def scrO : Nat := 512
 
@@ -325,11 +333,11 @@ def tag (d : Nat) : Prog isa :=
 registers saved, the arguments kept in `W`, `L_$` and `L_0`, the checksum
 zeroed. -/
 def entry : List Instr :=
-  [.mov .rax (.mem (at_ .rsp 24))] ++ save .rax ++
+  [.mov .rax (.mem (at_ .rsp 40))] ++ save .rax ++
   [mvr .r15 .rax, mvr .r14 .rdi, st .r15 rndO .rsi, st .r15 nO .rdx, st .r15 nlO .rcx,
    st .r15 aadO .r8, st .r15 alenO .r9,
    ld .rax .rsp 8, st .r15 dataO .rax, ld .rax .rsp 16, st .r15 lenO .rax, ld .rax .rsp 32,
-   st .r15 tlO .rax] ++ lsetup ++ zero16 ckO
+   st .r15 tlO .rax, ld .rax .rsp 24, st .r15 tgO .rax] ++ lsetup ++ zero16 ckO
 
 /-- The data: whole blocks, then the rest. -/
 def body (enc : Bool) : Prog isa :=
@@ -340,10 +348,20 @@ def body (enc : Bool) : Prog isa :=
           .alu .sub .rax (.reg .r12), .alu .add .rbx (.reg .rax), .alu .test .r12 (.reg .r12)])
         (.ite .e (.block []) (rest c enc))))
 
-def «seal» : Prog isa :=
-  .seq (.block entry)
-    (.seq (nonce c)
-      (.seq (hash c) (.seq (body c true) (.seq (tag c tagO) (.block restore)))))
+/-- `seal` (`enc`) or `open` up to the tag, at `W + d`: the entry,
+`Offset_0`, `HASH`, the data and the tag. -/
+def front (enc : Bool) (d : Nat) : Prog isa :=
+  .seq (.block entry) (.seq (nonce c) (.seq (hash c) (.seq (body c enc) (tag c d))))
+
+/-- The first `tag_len` bytes of the tag at `W` copied to `tag`. -/
+def tagOut : Prog isa :=
+  .seq (.block [mvr .rbx .r15, ld .rsi .r15 tgO, ld .r12 .r15 tlO, .mov .rcx (.imm 0)]) copyLoop
+
+def «seal» : Prog isa := .seq (front c true tagO) (.seq tagOut (.block restore))
+
+/-- The received tag, the `tag_len` bytes at `tag`, copied to `W`. -/
+def recv : Prog isa :=
+  .seq (.block [ld .rbx .r15 tgO, mvr .rsi .r15, ld .r12 .r15 tlO, .mov .rcx (.imm 0)]) copyLoop
 
 /-- `open`'s comparison of the first `tag_len` bytes of the tags (at `W` and
 `W + t2O`), without a branch: `eax ← 1` if they are equal, else 0. -/
@@ -364,10 +382,7 @@ def mask : Prog isa :=
         .alu .cmp .rcx (.reg .r12)]) .ne))
 
 def «open» : Prog isa :=
-  .seq (.block entry)
-    (.seq (nonce c)
-      (.seq (hash c) (.seq (body c false) (.seq (tag c t2O)
-        (.seq cmp (.seq mask (.block ([ld .rax .r15 tagO] ++ restore))))))))
+  .seq (front c false t2O) (.seq recv (.seq cmp (.seq mask (.block ([ld .rax .r15 tagO] ++ restore)))))
 
 /-! ## The key setup -/
 

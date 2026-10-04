@@ -142,6 +142,7 @@ def Instr.asm : Instr → List String
   | .sbcs sz d n m => [s!"sbcs {d.name sz}, {n.name sz}, {m.name sz}"]
   | .adc sz d n m => [s!"adc {d.name sz}, {n.name sz}, {m.name sz}"]
   | .sbc sz d n m => [s!"sbc {d.name sz}, {n.name sz}, {m.name sz}"]
+  | .csel sz d n m => [s!"csel {d.name sz}, {n.name sz}, {m.name sz}, hs"]
   | .addImm sz d n imm => [s!"add {d.name sz}, {n.name sz}, #{imm}"]
   | .subImm sz d n imm => [s!"sub {d.name sz}, {n.name sz}, #{imm}"]
   | .logic op sz d n m => [s!"{op.name} {d.name sz}, {n.name sz}, {m.name sz}"]

@@ -86,7 +86,7 @@ theorem keyIs_aesimc {k : BitVec 128} {rk : List Byte} (hk : KeyIs k rk) :
     KeyIs (aesInvMixColumns k) (imcKey rk) := by
   intro i hi
   rw [← getD_st _ hi, st_aesimc, getD_imcKey _ hi]
-  congr 2
+  refine congrArg (fun s => (invMixColumns s).getD i 0) ?_
   apply st_ext; intro j hj
   rw [getD_st _ hj, hk j hj]
   simp [rkState, Vector.getD, hj]

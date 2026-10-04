@@ -22,7 +22,8 @@ def artifacts : List Artifact := [
       `k_j - 8` from `-8` to `7`, `[k]G = [8 Σ 16^j]G + Σ [(k_j - 8) 16^j]G` from 64 constant \
       tables of `[m 16^j]G` (`m = 1 … 8`), each entry selected in constant time from immediates by \
       masks of the digit's magnitude and negated by a mask of its sign, and added by the complete \
-      addition formulas of Renes, Costello and Batina; the inversions modulo `p` and `n` are \
+      addition formulas of Renes, Costello and Batina for `a = -3` (Algorithm 4: 12 products and \
+      2 by `b`); the inversions modulo `p` and `n` are \
       Fermat's, by chains of sliding 4-bit windows over `p - 2` and `n - 2`, fixed by the code \
       (squarings and products by a table of odd powers). The signature \
       (or zeros) is selected by a mask, so the time depends only on the pointers."])
@@ -43,10 +44,11 @@ def artifacts : List Artifact := [
       computed for the key's point if it is valid, else `G`, so always on a point of the curve. \
       `s⁻¹` modulo `n` and `Z⁻¹` are Fermat's, by the signature's chains; `[u]G` is the \
       signature's comb over the nibbles of `u`, and `[v]Q` `vg_ecdh_p256`'s signed 4-bit windows \
-      (65 digits of `v + 8 Σ_{j<65} 16^j`, four doublings and a constant-time selection from a \
-      table of `[1 … 8]Q` each), with the complete addition formulas of Renes, Costello and \
-      Batina, which also add the two. The result is the conjunction of the checks (the key, `r` and `s` in `[1, \
-      n-1]`, the sum not the point at infinity, and `x ≡ r` modulo `n`) as a mask, so the time \
+      (65 digits of `v + 8 Σ_{j<65} 16^j`, four doublings in Jacobian coordinates and a \
+      constant-time selection from a \
+      table of `[1 … 8]Q` each), with the complete formulas of Renes, Costello and Batina for \
+      `a = -3`, which also add the two. The result is the conjunction of the checks (the key, \
+      `r` and `s` in `[1, n-1]`, the sum not the point at infinity, and `x ≡ r` modulo `n`) as a mask, so the time \
       depends only on the pointers, although the contract would let every input affect it."])
     code := Impl.Ecdsa.Verify.AArch64.verifyP256
     contract := Spec.Ecdsa.P256.inst.verifyContract AArch64.abi

@@ -180,10 +180,9 @@ abbrev keyAddr (b : BitVec 32) (R i : Nat) : BitVec 32 := b + BitVec.ofNat 32 (l
 /-- The key area of the scratch buffer at `b`. -/
 abbrev keyArea (b : BitVec 32) : Region := ⟨State.addr b + BitVec.ofNat 64 1024, 1024⟩
 
-/-- Before bitslicing round key `j`. -/
+/-- Before bitslicing round key `j` (the loop's counter aside). -/
 structure KInv (s₀ : State) (b sc : BitVec 32) (R : Nat) (w : List Byte) (j : Nat) (s : State) : Prop where
   hj : j ≤ R
-  lr : s.gpr .lr = BitVec.ofNat 32 (j + 1)
   r12 : s.gpr .r12 = sc + BitVec.ofNat 32 (16 * j)
   kp : s.gpr kp = keyAddr b R j
   rd : s.rd = s₀.rd
@@ -253,14 +252,19 @@ theorem keyAddr_pred (b : BitVec 32) {R j : Nat} (hR : R ≤ 14) (hj : 0 < j) (h
     ← BitVec.add_assoc]
   exact BitVec.add_sub_cancel _ _
 
-theorem keyBody_ok {s₀ : State} {b sc : BitVec 32} {R : Nat} {w : List Byte} (hk : KSetup s₀ b sc R w)
-    {j : Nat} {s : State} (hi : KInv s₀ b sc R w j s) :
-    WP isa (.block keyBody) s fun s' =>
-      (j = 0 ∧ Arm.eval .ne s' = some false ∧ KDone s₀ b R w s') ∨
-      (0 < j ∧ Arm.eval .ne s' = some true ∧ KInv s₀ b sc R w (j - 1) s') := by
+/-- The part of the loop's body before the step: load round key `j`,
+bitslice it and store it. -/
+theorem keyFront_ok {s₀ : State} {b sc : BitVec 32} {R : Nat} {w : List Byte} (hk : KSetup s₀ b sc R w)
+    {j : Nat} {s : State} (hi : KInv s₀ b sc R w j s) {rest : List Instr} {P : State → Prop}
+    (h : ∀ s₃, s₃.gpr .r12 = sc + BitVec.ofNat 32 (16 * j) → s₃.gpr kp = keyAddr b R j →
+      s₃.gpr .lr = s.gpr .lr → (∀ r, r ∉ keyWrites → s₃.gpr r = s₀.gpr r) →
+      s₃.rd = s₀.rd → s₃.wr = s₀.wr → s₃.sp = s₀.sp → Frame [keyArea b] s₀.mem s₃.mem →
+      (∀ i, j ≤ i → i ≤ R →
+        KeyRel (fun k => s₃.mem.readW (wordAddr (keyAddr b R i) k) 32) (roundKey w i)) →
+      WP isa (.block rest) s₃ P) :
+    WP isa (.block (keyLoad ++ ortho ++ keyStore ++ rest)) s P := by
   have hR := hk.rounds
   have hjR := hi.hj
-  simp only [keyBody]
   repeat rw [WP.block_append_iff (M := isa)]
   -- Load the round key.
   obtain ⟨s₁, hs₁, hq₁, hrd₁, hwr₁, hsp₁, hm₁, hoth₁⟩ := keyLoad_ok (b := sc) (off := 16 * j)
@@ -289,86 +293,83 @@ theorem keyBody_ok {s₀ : State} {b sc : BitVec 32} {R : Nat} {w : List Byte} (
     (off := lastKey - 32 * (R - j)) (by rw [hwr₂, hwr₁, hi.wr]; exact hk.scr) hk.fit hkp₂
     (by simp only [lastKey]; omega)
   refine WP.of_runBlock ⟨s₃, hs₃, ?_⟩
-  -- Step back.
-  obtain ⟨s₄, hs₄, hr12₄, hkp₄, hlr₄, hz₄, hoth₄, hm₄, hrd₄, hwr₄, hsp₄⟩ := keyStep_ok s₃
-  refine WP.of_runBlock ⟨s₄, hs₄, ?_⟩
   -- The region written now.
+  have e : State.addr (keyAddr b R j) = State.addr b + BitVec.ofNat 64 (lastKey - 32 * (R - j)) := by
+    simp only [keyAddr, lastKey]; rw [addr_add (by have := hk.fit; omega)]
   have hsubk : Region.Sub ⟨State.addr (keyAddr b R j), 32⟩ (keyArea b) := by
-    have e : State.addr (keyAddr b R j) = State.addr b + BitVec.ofNat 64 (lastKey - 32 * (R - j)) := by
-      simp only [keyAddr, lastKey]; rw [addr_add (by have := hk.fit; omega)]
     rw [e]
     exact off_sub _ (by simp only [lastKey]; omega) (by simp only [lastKey]; omega) (by decide)
-  -- What is kept.
-  have hkeep : ∀ r, r ∉ keyWrites → s₄.gpr r = s₀.gpr r := by
-    intro r hr
-    obtain ⟨h1, h2, h3, h4⟩ := keyWrites_not r hr
-    rw [hoth₄ r h2 h3 h4, hg₃, hoth₂ r h1, hoth₁ r h1, hi.keep r hr]
-  have hfr : Frame [keyArea b] s₀.mem s₄.mem := by
-    rw [hm₄]
-    refine hi.frame.trans ?_
+  refine h s₃ ?_ (by rw [hg₃, hkp₂]) ?_ (fun r hr => ?_) (by rw [hrd₃, hrd₂, hrd₁, hi.rd])
+    (by rw [hwr₃, hwr₂, hwr₁, hi.wr]) (by rw [hsp₃, hsp₂, hsp₁, hi.sp]) ?_ (fun i hji hiR => ?_)
+  · rw [hg₃, hoth₂ .r12 (by decide), hoth₁ .r12 (by decide), hi.r12]
+  · rw [hg₃, hoth₂ .lr (by decide), hoth₁ .lr (by decide)]
+  · obtain ⟨h1, -, -, -⟩ := keyWrites_not r hr
+    rw [hg₃, hoth₂ r h1, hoth₁ r h1, hi.keep r hr]
+  · refine hi.frame.trans ?_
     rw [← hm₁, ← hm₂]
     rw [hkp₂] at hfr₃
     exact hfr₃.sub fun r hr => ⟨_, List.mem_singleton_self _, by
       simp only [List.mem_singleton] at hr; subst hr; exact hsubk⟩
-  -- The keys stored before.
-  have hold : ∀ i, j < i → i ≤ R →
-      KeyRel (fun k => s₄.mem.readW (wordAddr (keyAddr b R i) k) 32) (roundKey w i) := by
-    intro i hji hiR
-    refine keyRel_congr (hi.done i hji hiR) fun k hk8 => ?_
-    rw [hm₄, keyWord_addr hk.fit hk8, hfr₃.readW (r := ⟨_, 4⟩) (Region.contains_self _ _) ?_
-      (by decide), hm₂, hm₁]
+  · by_cases hij : i = j
+    · subst hij
+      exact keyRel_congr (keyRel_of_bs hbs₂) fun k hk => by rw [← hkp₂, hst₃ k hk]
+    · refine keyRel_congr (hi.done i (by omega) hiR) fun k hk8 => ?_
+      rw [keyWord_addr hk.fit hk8, hfr₃.readW (r := ⟨_, 4⟩) (Region.contains_self _ _) ?_
+        (by decide), hm₂, hm₁]
+      intro r hr
+      simp only [List.mem_singleton] at hr; subst hr
+      rw [hkp₂, e]
+      exact off_disjoint _ (by simp only [lastKey]; omega) (by simp only [lastKey]; omega)
+        (by simp only [lastKey]; omega)
+
+theorem keyBody_ok {s₀ : State} {b sc : BitVec 32} {R : Nat} {w : List Byte} (hk : KSetup s₀ b sc R w)
+    {j : Nat} {s : State} (hi : KInv s₀ b sc R w j s) (hlr : s.gpr .lr = BitVec.ofNat 32 (j + 1)) :
+    WP isa (.block keyBody) s fun s' =>
+      (j = 0 ∧ Arm.eval .ne s' = some false ∧ KDone s₀ b R w s') ∨
+      (0 < j ∧ Arm.eval .ne s' = some true ∧ KInv s₀ b sc R w (j - 1) s' ∧
+        s'.gpr .lr = BitVec.ofNat 32 (j - 1 + 1)) := by
+  have hR := hk.rounds
+  have hjR := hi.hj
+  simp only [keyBody]
+  refine keyFront_ok hk hi fun s₃ hr12 hkp hlr₃ hkeep₃ hrd hwr hsp hfr hkeys => ?_
+  -- Step back.
+  obtain ⟨s₄, hs₄, hr12₄, hkp₄, hlr₄, hz₄, hoth₄, hm₄, hrd₄, hwr₄, hsp₄⟩ := keyStep_ok s₃
+  refine WP.of_runBlock ⟨s₄, hs₄, ?_⟩
+  have hkeep : ∀ r, r ∉ keyWrites → s₄.gpr r = s₀.gpr r := by
     intro r hr
-    simp only [List.mem_singleton] at hr; subst hr
-    rw [hkp₂]
-    have e : State.addr (keyAddr b R j) = State.addr b + BitVec.ofNat 64 (lastKey - 32 * (R - j)) := by
-      simp only [keyAddr, lastKey]; rw [addr_add (by have := hk.fit; omega)]
-    rw [e]
-    exact off_disjoint _ (by simp only [lastKey]; omega) (by simp only [lastKey]; omega)
-      (by simp only [lastKey]; omega)
-  -- The key stored now.
-  have hnew : KeyRel (fun k => s₄.mem.readW (wordAddr (keyAddr b R j) k) 32) (roundKey w j) :=
-    keyRel_congr (keyRel_of_bs hbs₂) fun k hk => by rw [hm₄, ← hkp₂, hst₃ k hk]
-  have hlr : s₃.gpr .lr = BitVec.ofNat 32 (j + 1) := by
-    rw [hg₃, hoth₂ .lr (by decide), hoth₁ .lr (by decide), hi.lr]
-  have hr12 : s₃.gpr .r12 = sc + BitVec.ofNat 32 (16 * j) := by
-    rw [hg₃, hoth₂ .r12 (by decide), hoth₁ .r12 (by decide), hi.r12]
-  have hkp : s₃.gpr kp = keyAddr b R j := by rw [hg₃, hkp₂]
-  have hrd : s₄.rd = s₀.rd := by rw [hrd₄, hrd₃, hrd₂, hrd₁, hi.rd]
-  have hwr : s₄.wr = s₀.wr := by rw [hwr₄, hwr₃, hwr₂, hwr₁, hi.wr]
-  have hsp : s₄.sp = s₀.sp := by rw [hsp₄, hsp₃, hsp₂, hsp₁, hi.sp]
+    obtain ⟨-, h2, h3, h4⟩ := keyWrites_not r hr
+    rw [hoth₄ r h2 h3 h4, hkeep₃ r hr]
   have hlr' : s₄.gpr .lr = BitVec.ofNat 32 j := by
-    rw [hlr₄, hlr]; bv_omega
+    rw [hlr₄, hlr₃, hlr]; bv_omega
   have hev : Arm.eval .ne s₄ = some (!(BitVec.ofNat 32 j == 0)) := by
-    simp only [Arm.eval, hz₄, hlr]
+    simp only [Arm.eval, hz₄, hlr₃, hlr]
     congr 3; bv_omega
+  rw [← hm₄] at hfr
+  have hkeys' : ∀ i, j ≤ i → i ≤ R →
+      KeyRel (fun k => s₄.mem.readW (wordAddr (keyAddr b R i) k) 32) (roundKey w i) := by
+    rw [hm₄]; exact hkeys
   by_cases h0 : j = 0
   · subst h0
-    refine .inl ⟨rfl, hev.trans (by decide), ⟨by rw [hkp₄, hkp], hrd, hwr, hsp, hkeep, hfr,
-      fun i hiR => ?_⟩⟩
-    by_cases hi0 : i = 0
-    · subst hi0; exact hnew
-    · exact hold i (by omega) hiR
+    exact .inl ⟨rfl, hev.trans (by decide), ⟨by rw [hkp₄, hkp], by rw [hrd₄, hrd], by rw [hwr₄, hwr],
+      by rw [hsp₄, hsp], hkeep, hfr, fun i hiR => hkeys' i (by omega) hiR⟩⟩
   · have hne : BitVec.ofNat 32 j ≠ 0 := by
       intro h; have := congrArg BitVec.toNat h
       rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)] at this
       simp at this; omega
     refine .inr ⟨by omega, hev.trans (by simpa using hne),
-      ⟨by omega, ?_, ?_, ?_, hrd, hwr, hsp, hkeep, hfr, ?_⟩⟩
-    · rw [hlr', show j - 1 + 1 = j by omega]
+      ⟨by have := hi.hj; omega, ?_, ?_, by rw [hrd₄, hrd], by rw [hwr₄, hwr], by rw [hsp₄, hsp], hkeep,
+        hfr, fun i hi' hiR => hkeys' i (by omega) hiR⟩, by rw [hlr', show j - 1 + 1 = j by omega]⟩
     · rw [hr12₄, hr12]; bv_omega
     · rw [hkp₄, hkp]; exact keyAddr_pred b hk.rounds (by omega) hi.hj
-    · intro i hi' hiR
-      by_cases hij : i = j
-      · subst hij; exact hnew
-      · exact hold i (by omega) hiR
 
 theorem keyLoop_ok {s₀ : State} {b sc : BitVec 32} {R : Nat} {w : List Byte} (hk : KSetup s₀ b sc R w)
-    {s : State} (hi : KInv s₀ b sc R w R s) :
+    {s : State} (hi : KInv s₀ b sc R w R s) (hlr : s.gpr .lr = BitVec.ofNat 32 (R + 1)) :
     WP isa (.loop (.block keyBody) .ne) s (KDone s₀ b R w) := by
-  refine WP.loop (M := isa) (KInv s₀ b sc R w) (fun n s hs => ?_) R s hi
-  refine WP.mono (keyBody_ok hk hs) fun s' h => ?_
-  rcases h with ⟨_, hev, hd⟩ | ⟨hn, hev, hi'⟩
+  refine WP.loop (M := isa) (fun n s => KInv s₀ b sc R w n s ∧ s.gpr .lr = BitVec.ofNat 32 (n + 1))
+    (fun n s hs => ?_) R s ⟨hi, hlr⟩
+  refine WP.mono (keyBody_ok hk hs.1 hs.2) fun s' h => ?_
+  rcases h with ⟨_, hev, hd⟩ | ⟨hn, hev, hi', hlr'⟩
   · exact .inl ⟨hev, hd⟩
-  · exact .inr ⟨hev, n - 1, by omega, hi'⟩
+  · exact .inr ⟨hev, n - 1, by omega, hi', hlr'⟩
 
 end VG.Proof.Aes.Arm

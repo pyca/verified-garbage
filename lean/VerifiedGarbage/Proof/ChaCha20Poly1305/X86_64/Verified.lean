@@ -1,30 +1,50 @@
 import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.CT
+import VerifiedGarbage.Proof.ChaCha20Poly1305.Scratch
 import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratchWipe
 import VerifiedGarbage.Spec.ChaCha20Poly1305.Contract
 
 /-!
 # ChaCha20-Poly1305 on x86-64: `Verified`
 
 Correctness and constant time (both from `CT.lean`), and a state satisfying
-the precondition, for any implementation `v` of `vg_chacha20_xor`.
+the precondition, for any implementation `v` of `vg_chacha20_xor`: of the
+code with its working space as its last argument
+(`sealScratchContract`, `openScratchContract`), and then of the functions,
+which allocate it in a frame on the stack and wipe it after the code
+(`Verified.stackArgScratchWiped`): `work` is passed on the stack after `tag`,
+so the frame holds a copy of `tag` and the address of `work`, and the 608
+bytes of `work`, 632 bytes in all. The code's calls use 24 bytes below it.
 -/
 
 namespace VG.Proof.ChaCha20Poly1305.X86_64
 
 open VG VG.X86_64 VG.Impl.ChaCha20Poly1305.X86_64
 
-/-- A state satisfying the precondition (with no additional data and no
-data). -/
-def sat : State where
+/-- A state satisfying `seal`'s precondition (with no additional data and no
+data, `tag` at `0x3000` and `work` at 0). -/
+def sealSat : State where
   gpr r := match r with
-    | .rdi => 0x1000 | .rsi => 0x2000 | .rcx => 0x3000 | .rsp => 0x5000 | _ => 0
+    | .rdi => 0x1000 | .rsi => 0x1100 | .rdx => 0x2000 | .r8 => 0x2100 | .rsp => 0x8000 | _ => 0
   cf := none
   zf := none
   sf := none
   of := none
-  mem _ := 0
-  rd := [⟨0x2000, 0⟩]
-  wr := [⟨0x1000, 1024⟩, ⟨0x3000, 0⟩]
+  mem a := if a = 0x8009 then 0x30 else 0
+  rd := [⟨0x1000, 32⟩, ⟨0x1100, 12⟩, ⟨0x2000, 0⟩, ⟨0x8008, 16⟩]
+  wr := [⟨0x2100, 0⟩, ⟨0x3000, 16⟩, ⟨0, 608⟩]
+
+/-- A state satisfying `open`'s precondition (as `sealSat`, with `tag` read). -/
+def openSat : State where
+  gpr r := match r with
+    | .rdi => 0x1000 | .rsi => 0x1100 | .rdx => 0x2000 | .r8 => 0x2100 | .rsp => 0x8000 | _ => 0
+  cf := none
+  zf := none
+  sf := none
+  of := none
+  mem a := if a = 0x8009 then 0x30 else 0
+  rd := [⟨0x1000, 32⟩, ⟨0x1100, 12⟩, ⟨0x2000, 0⟩, ⟨0x3000, 16⟩, ⟨0x8008, 16⟩]
+  wr := [⟨0x2100, 0⟩, ⟨0, 608⟩]
 
 /-- `seal` and `open` never write the stack pointer. -/
 theorem seal_spSafe (v : Proof.ChaCha20.X86_64.XorImpl) :
@@ -54,26 +74,30 @@ theorem open_ct (v : Proof.ChaCha20.X86_64.XorImpl) :
   fun _ _ _ _ _ _ h₁ h₂ hq e₁ e₂ => (open_rel v h₁ h₂ hq _ _ _ _ _ _ ⟨rfl, rfl⟩ e₁ e₂).1
 
 theorem seal_verified (v : Proof.ChaCha20.X86_64.XorImpl) :
-    Verified X86_64.target («seal» v.callee v.poly) (Spec.ChaCha20Poly1305.sealContract X86_64.abi 24) :=
+    Verified X86_64.target («seal» v.callee v.poly) (sealScratchContract X86_64.abi 76 24) :=
   Verified.of_correct (seal_ok v) (seal_ct v) (by
-    sig_implies [Spec.ChaCha20Poly1305.sealContract, Spec.ChaCha20Poly1305.sealSig,
-      Proof.ChaCha20Poly1305.sealX86_64, Proof.ChaCha20Poly1305.preX86_64,
-      Proof.ChaCha20Poly1305.pubX86_64, X86_64.abi, X86_64.argRegs]
-      [Proof.ChaCha20Poly1305.X86_64.sat] using Proof.ChaCha20Poly1305.X86_64.sat)
+    sig_implies [Proof.ChaCha20Poly1305.sealScratchContract, Proof.ChaCha20Poly1305.sealScratchSig,
+      Spec.ChaCha20Poly1305.sealPost, Proof.ChaCha20Poly1305.sealX86_64,
+      Proof.ChaCha20Poly1305.preX86_64, Proof.ChaCha20Poly1305.pubX86_64, X86_64.abi, X86_64.stackArg,
+      X86_64.stackArgAddr, List.getD, List.range, List.range.loop, VG.X86_64.below, X86_64.argRegs]
+      [sealSat] using sealSat)
 
 /-- The postconditions match on `decrypt` through different auxiliary
 functions, so the implication splits on it. -/
 theorem open_verified (v : Proof.ChaCha20.X86_64.XorImpl) :
-    Verified X86_64.target («open» v.callee v.poly) (Spec.ChaCha20Poly1305.openContract X86_64.abi 24) :=
+    Verified X86_64.target («open» v.callee v.poly) (openScratchContract X86_64.abi 76 24) :=
   Verified.of_correct (open_ok v) (open_ct v)
     { pre := by
-        sig_implies_pre [Spec.ChaCha20Poly1305.openContract, Spec.ChaCha20Poly1305.openSig,
+        sig_implies_pre [Proof.ChaCha20Poly1305.openScratchContract,
+          Proof.ChaCha20Poly1305.openScratchSig, Spec.ChaCha20Poly1305.openPost,
           Proof.ChaCha20Poly1305.openX86_64, Proof.ChaCha20Poly1305.preX86_64,
-          Proof.ChaCha20Poly1305.pubX86_64, X86_64.abi, X86_64.argRegs]
+          Proof.ChaCha20Poly1305.pubX86_64, X86_64.abi, X86_64.stackArg, X86_64.stackArgAddr, List.getD,
+          List.range, List.range.loop, VG.X86_64.below, X86_64.argRegs]
       post := by
         intro s s' _ h
-        sig_eval [Spec.ChaCha20Poly1305.openContract, Spec.ChaCha20Poly1305.openSig, X86_64.abi,
-          X86_64.argRegs]
+        sig_eval [Proof.ChaCha20Poly1305.openScratchContract, Proof.ChaCha20Poly1305.openScratchSig,
+          Spec.ChaCha20Poly1305.openPost, X86_64.abi, X86_64.stackArg, X86_64.stackArgAddr, List.getD,
+          List.range, List.range.loop, X86_64.argRegs]
         simp only [Proof.ChaCha20Poly1305.openX86_64] at h
         -- The two `decrypt` terms are equal only up to unfolding numerals.
         split at h
@@ -88,13 +112,78 @@ theorem open_verified (v : Proof.ChaCha20.X86_64.XorImpl) :
           next _ pt' e₂ => exact absurd (e₁.symm.trans e₂) (by simp)
           next _ e₂ => exact h
       pub := by
-        sig_implies_pub [Spec.ChaCha20Poly1305.openContract, Spec.ChaCha20Poly1305.openSig,
+        sig_implies_pub [Proof.ChaCha20Poly1305.openScratchContract,
+          Proof.ChaCha20Poly1305.openScratchSig, Spec.ChaCha20Poly1305.openPost,
           Proof.ChaCha20Poly1305.openX86_64, Proof.ChaCha20Poly1305.preX86_64,
-          Proof.ChaCha20Poly1305.pubX86_64, X86_64.abi, X86_64.argRegs]
+          Proof.ChaCha20Poly1305.pubX86_64, X86_64.abi, X86_64.stackArg, X86_64.stackArgAddr, List.getD,
+          List.range, List.range.loop, VG.X86_64.below, X86_64.argRegs]
       sat := by
-        sig_implies_sat [Spec.ChaCha20Poly1305.openContract, Spec.ChaCha20Poly1305.openSig,
+        sig_implies_sat [Proof.ChaCha20Poly1305.openScratchContract,
+          Proof.ChaCha20Poly1305.openScratchSig, Spec.ChaCha20Poly1305.openPost,
           Proof.ChaCha20Poly1305.openX86_64, Proof.ChaCha20Poly1305.preX86_64,
-          Proof.ChaCha20Poly1305.pubX86_64, X86_64.abi, X86_64.argRegs]
-          [Proof.ChaCha20Poly1305.X86_64.sat] using Proof.ChaCha20Poly1305.X86_64.sat }
+          Proof.ChaCha20Poly1305.pubX86_64, X86_64.abi, X86_64.stackArg, X86_64.stackArgAddr, List.getD,
+          List.range, List.range.loop, VG.X86_64.below, X86_64.argRegs]
+          [openSat] using openSat }
+
+/-! ## The frame -/
+
+theorem block_xdepth : Impl.ChaCha20.X86_64.block.x86_64Depth = 0 := by lit_decide
+theorem init_xdepth : Impl.Poly1305.X86_64.init.x86_64Depth = 0 := by lit_decide
+theorem finalize_xdepth : Impl.Poly1305.X86_64.finalize.x86_64Depth = 0 := by lit_decide
+
+theorem blocks_xdepth (b : Impl.Poly1305.X86_64.Blocks) : b.code.x86_64Depth ≤ 16 := by
+  cases b <;> lit_decide
+
+theorem seal_xdepth (v : Proof.ChaCha20.X86_64.XorImpl) : («seal» v.callee v.poly).x86_64Depth ≤ 24 := by
+  have hx := v.xdepth
+  have hb := blocks_xdepth v.poly
+  simp only [«seal», prologue, macPad, padTail, crypt, absorbLengths, finalizeTag, finalizeWith,
+    Code.x86_64Depth, block_xdepth, init_xdepth, finalize_xdepth, Nat.max_le]
+  omega
+
+theorem open_xdepth (v : Proof.ChaCha20.X86_64.XorImpl) : («open» v.callee v.poly).x86_64Depth ≤ 24 := by
+  have hx := v.xdepth
+  have hb := blocks_xdepth v.poly
+  simp only [«open», prologue, macPad, padTail, crypt, absorbLengths, finalizeTo, finalizeWith,
+    Code.x86_64Depth, block_xdepth, init_xdepth, finalize_xdepth, Nat.max_le]
+  omega
+
+/-- A state satisfying `seal`'s precondition, without the working space. -/
+def sealFrameSat : State :=
+  { sealSat with rd := [⟨0x1000, 32⟩, ⟨0x1100, 12⟩, ⟨0x2000, 0⟩, ⟨0x8008, 8⟩],
+                 wr := [⟨0x2100, 0⟩, ⟨0x3000, 16⟩] }
+
+theorem sealFrameSat_pre : ∃ s, (Spec.ChaCha20Poly1305.sealContract X86_64.abi 656).pre s := by
+  implies_sat [Spec.ChaCha20Poly1305.sealContract, Spec.ChaCha20Poly1305.sealSig,
+    Spec.ChaCha20Poly1305.sealPost, X86_64.abi, X86_64.argRegs] [sealFrameSat, sealSat] using sealFrameSat
+
+theorem seal_framed (v : Proof.ChaCha20.X86_64.XorImpl) :
+    Verified X86_64.target
+      (Impl.StackScratch.X86_64.withStackArgScratchWiped 632 1 76 («seal» v.callee v.poly))
+      (Spec.ChaCha20Poly1305.sealContract X86_64.abi 656) :=
+  X86_64.Verified.stackArgScratchWiped (sig := Spec.ChaCha20Poly1305.sealSig) (nm := "work") (e := .u64)
+    (n := 76) (post := Spec.ChaCha20Poly1305.sealPost X86_64.abi.ptrBits) (wa := true) (stack := 24)
+    (bytes := 632) (words := 76) (seal_verified v) (by decide) (by decide) (by decide)
+    (seal_spSafe v) (seal_xdepth v) (by decide) (pre_local _ _) (sealPost_local _) (sealPost_out _)
+    sealFrameSat_pre
+
+/-- A state satisfying `open`'s precondition, without the working space. -/
+def openFrameSat : State :=
+  { openSat with rd := [⟨0x1000, 32⟩, ⟨0x1100, 12⟩, ⟨0x2000, 0⟩, ⟨0x3000, 16⟩, ⟨0x8008, 8⟩],
+                 wr := [⟨0x2100, 0⟩] }
+
+theorem openFrameSat_pre : ∃ s, (Spec.ChaCha20Poly1305.openContract X86_64.abi 656).pre s := by
+  implies_sat [Spec.ChaCha20Poly1305.openContract, Spec.ChaCha20Poly1305.openSig,
+    Spec.ChaCha20Poly1305.openPost, X86_64.abi, X86_64.argRegs] [openFrameSat, openSat] using openFrameSat
+
+theorem open_framed (v : Proof.ChaCha20.X86_64.XorImpl) :
+    Verified X86_64.target
+      (Impl.StackScratch.X86_64.withStackArgScratchWiped 632 1 76 («open» v.callee v.poly))
+      (Spec.ChaCha20Poly1305.openContract X86_64.abi 656) :=
+  X86_64.Verified.stackArgScratchWiped (sig := Spec.ChaCha20Poly1305.openSig) (nm := "work") (e := .u64)
+    (n := 76) (post := Spec.ChaCha20Poly1305.openPost X86_64.abi.ptrBits) (wa := true) (stack := 24)
+    (bytes := 632) (words := 76) (open_verified v) (by decide) (by decide) (by decide)
+    (open_spSafe v) (open_xdepth v) (by decide) (pre_local _ _) (openPost_local _) (openPost_out _)
+    openFrameSat_pre
 
 end VG.Proof.ChaCha20Poly1305.X86_64

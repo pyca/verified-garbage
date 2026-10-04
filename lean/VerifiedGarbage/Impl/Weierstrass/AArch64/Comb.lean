@@ -13,7 +13,8 @@ Montgomery form. With the nibbles `k_j` of `k` and the digits
 
 the accumulator `A` starts at `[c]P` (a constant), and iteration `j` adds the
 entry of table `j` for `|d_j|` (or the point at infinity for `d_j = 0`),
-negated if `d_j < 0`, by the complete addition, for `j = J - 1` down to `0`:
+negated if `d_j < 0`, by the complete addition for `a = -3` (`rcb3`, with `b` in
+`S.b3`), for `j = J - 1` down to `0`:
 `J` additions, and no doublings.
 
 The digits are secret, so their entries are selected in constant time. The
@@ -120,7 +121,7 @@ def step : Prog isa :=
   .seq (.block (decCounter :: (digit K.bits))) <|
   .seq ((selectFrom K) (List.range K.J)) <|
   .seq (.block (negY K.M K.neg K.zero K.E.y K.bits)) <|
-  .seq (fprogB K.M (rcb K.S K.A K.E K.D)) <|
+  .seq (fprogB K.M (rcb3 K.S K.A K.E K.D)) <|
   .block (copyPt K.M.n K.A K.D)
 
 /-- `A = [c]P` and the counter. -/

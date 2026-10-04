@@ -1,5 +1,5 @@
 import VerifiedGarbage.TCB.X86_64.Target
-import VerifiedGarbage.Proof.AesCcm.X86_64.Verified
+import VerifiedGarbage.Proof.AesCcm.X86_64.Frame
 
 /-!
 # AES-CCM (NIST SP 800-38C) on x86-64
@@ -10,10 +10,13 @@ it, for the CBC-MAC, and directly for counter mode), are emitted once for
 each implementation (`Variants/AesCtr32/X86_64/`), named with its suffix
 (e.g. `vg_aes_ccm_seal_aesni`), and need its CPU features.
 
-The stack is 16 bytes for each: the return addresses of the call of
+The code of each uses 16 bytes of stack: the return addresses of the call of
 `vg_cmac_aes_update` (or of `vg_aes_ctr32`) and of its call of
 `vg_aes_ctr32`; both also read their arguments after the sixth, from the
-data to the tag's length, from the stack above their return address.
+data to the tag's length, from the stack above their return address. Each
+keeps its working space, its last argument, in a frame of 2608 bytes on the
+stack that also holds a copy of its four other stack arguments
+(`Verified.stackArgScratch`).
 -/
 
 namespace VG.Generic.AesCtr32.X86_64.AesCcm
@@ -30,22 +33,22 @@ def artifacts (v : Proof.Aes.X86_64.Ctr32Impl) : List Artifact := [
     name := Spec.Ccm.sealApi.name ++ v.suffix
     target := X86_64.target
     doc := Spec.Ccm.sealApi.doc (notes := [callNote v])
-    code := Impl.AesCcm.X86_64.seal v.callee v.suffix
-    contract := Spec.Ccm.sealContract X86_64.abi 16
-    stack := 16
-    verified := seal_verified v
-    spSafe := seal_spSafe v
+    code := Impl.StackScratch.X86_64.withStackArgScratch 2608 4 (Impl.AesCcm.X86_64.seal v.callee v.suffix)
+    contract := Spec.Ccm.sealContract X86_64.abi 2624
+    stack := 2624
+    verified := seal_framed v
+    spSafe := X86_64.withStackArgScratch_spSafe (seal_spSafe v)
     features := v.features },
   { Spec.Ccm.openApi with
     name := Spec.Ccm.openApi.name ++ v.suffix
     target := X86_64.target
     doc := Spec.Ccm.openApi.doc (notes := [callNote v,
       "It compares the tags and overwrites the data with zeros without a branch on the result."])
-    code := Impl.AesCcm.X86_64.open v.callee v.suffix
-    contract := Spec.Ccm.openContract X86_64.abi 16
-    stack := 16
-    verified := open_verified v
-    spSafe := open_spSafe v
+    code := Impl.StackScratch.X86_64.withStackArgScratch 2608 4 (Impl.AesCcm.X86_64.open v.callee v.suffix)
+    contract := Spec.Ccm.openContract X86_64.abi 2624
+    stack := 2624
+    verified := open_framed v
+    spSafe := X86_64.withStackArgScratch_spSafe (open_spSafe v)
     features := v.features }]
 
 end VG.Generic.AesCtr32.X86_64.AesCcm

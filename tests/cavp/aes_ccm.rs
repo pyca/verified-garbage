@@ -3,7 +3,12 @@
 //! payload (`VPT`) and of the tag (`VTT`), and decryption-verification
 //! (`DVPT`), for 128-, 192- and 256-bit keys.
 
-#![cfg(any(target_arch = "x86_64", target_arch = "aarch64", target_arch = "arm"))]
+#![cfg(any(
+    target_arch = "x86",
+    target_arch = "x86_64",
+    target_arch = "aarch64",
+    target_arch = "arm"
+))]
 
 use std::collections::HashMap;
 

@@ -240,7 +240,7 @@ theorem crtPre_of {s t₁ t : State} (c : CrtCtx s) (h : CrtHeadPost s t₁) (hm
       tabBytes (wsWords (stackArg s 3).toNat) ≤ (stackArg s 11).toNat * 8 := by
     unfold offQ slot wsWords hdrBytes tabBytes; omega
   exact
-    { scr := h.scr.congr k.2.2, rdi := hdi, z := hz, k1 := hk1, k2 := hk2, hO := (by rw [hm]; exact h.hO),
+    { scr := h.scr.congr k.2.2, rdi := hdi, z := hz, zk := hZ, k1 := hk1, k2 := hk2, hO := (by rw [hm]; exact h.hO),
       hN := (by rw [hm]; exact h.hN), hK := (by rw [hm]; exact h.hK), hIn := (by rw [hm]; exact h.hIn),
       hP := (by rw [hm]; exact h.hP), hPl := (by rw [hm]; exact h.hPl), hQ := (by rw [hm]; exact h.hQ),
       hQl := (by rw [hm]; exact h.hQl), hDp := (by rw [hm]; exact h.hDp), hDq := (by rw [hm]; exact h.hDq),

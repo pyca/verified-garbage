@@ -185,8 +185,18 @@ theorem Good.group (hC : Good C) :
   refine ⟨_, inferInstance, toW hC, ⟨toW_add hC, fun hP k => ?_, toW_neg hC, toW_inj hC⟩⟩
   rw [toW_mul hC hP, ← natCast_zsmul]
 
+theorem Good.mul_ne_zero (hC : Good C) {a b : Fe C} (ha : a ≠ 0) (hb : b ≠ 0) : a * b ≠ 0 := by
+  have : Fact C.p.Prime := ⟨hC.prime⟩
+  intro h
+  have h' : toF (a * b) = toF (0 : Fe C) := by rw [h]
+  rw [toF_mul, toF_zero] at h'
+  rcases _root_.mul_eq_zero.mp h' with h₀ | h₀
+  · exact ha (toF_injective (h₀.trans toF_zero.symm))
+  · exact hb (toF_injective (h₀.trans toF_zero.symm))
+
 theorem Good.law (hC : Good C) : Law C where
   one_ne_zero := hC.one_ne_zero_fe
+  mul_ne_zero := hC.mul_ne_zero
   add := hC.rep_add
   onCurve_add := hC.onCurve_add
   onCurve_mul := hC.onCurve_mul

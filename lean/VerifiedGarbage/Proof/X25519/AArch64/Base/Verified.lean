@@ -18,7 +18,8 @@ open VG.Proof.Ed25519.AArch64
 
 theorem engine_ct (base k : Addr) :
     CT (fun x y => BaseEnginePre base k x ∧ BaseEnginePre base k y) engine (fun _ _ => True) := by
-  apply CT.taint (Taint.ofRegs [.x0, .x1]) _ (by taint_decide)
+  apply CT.taint (Taint.ofRegs [.x0, .x1]) _
+    (Taint.isSome_check_of_eraseImm engine_eraseImm (by taint_decide))
   intro x y h
   apply agree_ofRegs
   intro r hr

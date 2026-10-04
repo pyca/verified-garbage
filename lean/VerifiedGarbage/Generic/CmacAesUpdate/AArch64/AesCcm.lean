@@ -1,5 +1,5 @@
 import VerifiedGarbage.TCB.AArch64.Target
-import VerifiedGarbage.Proof.AesCcm.AArch64.Verified
+import VerifiedGarbage.Proof.AesCcm.AArch64.Frame
 
 /-!
 # AES-CCM (NIST SP 800-38C) on AArch64
@@ -16,8 +16,11 @@ the contract; these artifacts are made from each function's `Api` (in
 implementation.
 
 The functions' calls (`bl`) keep the return address in `x30`, which they
-save in the working space, so they use no stack; they read their last two
-arguments, `work` and `tag_len`, from the stack.
+save in the working space, so their code uses no stack; it reads its last
+three arguments, `tag`, `tag_len` and `work`, from the stack. Each function
+keeps its working space, its last argument, in a frame of 2592 bytes on the
+stack that also holds a copy of `tag` and `tag_len`
+(`Verified.stackArgScratch`).
 -/
 
 namespace VG.Generic.CmacAesUpdate.AArch64.AesCcm
@@ -34,9 +37,10 @@ def artifacts (v : Proof.CmacAes.AArch64.UpdateImpl) : List Artifact := [
     name := Spec.Ccm.sealApi.name ++ v.suffix
     target := AArch64.target
     doc := Spec.Ccm.sealApi.doc (notes := [callNote v])
-    code := Impl.AesCcm.AArch64.seal v.callee v.ctr.callee
-    contract := Spec.Ccm.sealContract AArch64.abi
-    verified := seal_verified v
+    code := Impl.StackScratch.AArch64.withStackArgScratch 2592 2 (Impl.AesCcm.AArch64.seal v.callee v.ctr.callee)
+    contract := Spec.Ccm.sealContract AArch64.abi 2592
+    stack := 2592
+    verified := seal_framed v
     spSafe := Code.all_of_forall (fun _ => rfl) _
     features := v.features },
   { Spec.Ccm.openApi with
@@ -44,9 +48,10 @@ def artifacts (v : Proof.CmacAes.AArch64.UpdateImpl) : List Artifact := [
     target := AArch64.target
     doc := Spec.Ccm.openApi.doc (notes := [callNote v,
       "It compares the tags and overwrites the data with zeros without a branch on the result."])
-    code := Impl.AesCcm.AArch64.open v.callee v.ctr.callee
-    contract := Spec.Ccm.openContract AArch64.abi
-    verified := open_verified v
+    code := Impl.StackScratch.AArch64.withStackArgScratch 2592 2 (Impl.AesCcm.AArch64.open v.callee v.ctr.callee)
+    contract := Spec.Ccm.openContract AArch64.abi 2592
+    stack := 2592
+    verified := open_framed v
     spSafe := Code.all_of_forall (fun _ => rfl) _
     features := v.features }]
 

@@ -115,25 +115,25 @@ theorem nttS_ok {P : Prims} {S' : Nat} (hP : PrimsOk P S') {p : Params} (hF : PF
   rw [ifn (Nat.lt_irrefl j)] at hS
   unfold nttS nttAt
   refine WP.mono (ipAt_ok (t := ntt) hP.s64 hP.ntt L (nttS_chk hF hj) hS.1) fun s' ⟨hP', x', hb⟩ => ?_
-  rcases hF.eta with ⟨_, hlen⟩ | ⟨_, hlen⟩ <;>
-  exact ⟨h.kc.step hF hp hP' (by unfold kcChk; lay [hF.pk, hF.sk, hlen]), x'.trans h.x24, h.good,
-    h.small, fun e he => L.keepPoly hP' (by lay [hF.pk, hF.sk, hlen]) (h.aS e he),
-    fun i hi => L.keepPoly hP' (by lay [hF.pk, hF.sk, hlen]) (h.s2 i hi),
+  have hlen : lenS p = 96 ∨ lenS p = 128 := hF.eta.imp And.right And.right
+  exact ⟨h.kc.step hF hp hP' (by unfold kcChk; lay [hF.pk, hF.sk]), x'.trans h.x24, h.good,
+    h.small, fun e he => L.keepPoly hP' (by lay [hF.pk, hF.sk]) (h.aS e he),
+    fun i hi => L.keepPoly hP' (by lay [hF.pk, hF.sk]) (h.s2 i hi),
     fun j' hj' => if e : j' = j then by
         subst e; rw [ifp (Nat.lt_succ_self j'), hP'.pa (p := sP p j') (show Reg.x28 ∈ keptRegs by decide), ← hS.2]
         exact hb
       else by
-        have := L.keepPoly hP' (by lay [hF.pk, hF.sk, hlen]) (h.s1 j' hj')
+        have := L.keepPoly hP' (by lay [hF.pk, hF.sk]) (h.s1 j' hj')
         by_cases hlt : j' < j
         · rwa [ifp hlt, ← ifp (show j' < j + 1 by omega) (ntt (toRq (S j'))) (toRq (S j'))] at this
         · rwa [ifn hlt, ← ifn (show ¬ j' < j + 1 by omega) (ntt (toRq (S j'))) (toRq (S j'))] at this,
-    by rw [L.keepBytes hP' (by lay [hF.pk, hF.sk, hlen])]; exact h.pk0,
-    by rw [L.keepBytes hP' (by lay [hF.pk, hF.sk, hlen])]; exact h.sk0,
-    by rw [L.keepBytes hP' (by lay [hF.pk, hF.sk, hlen])]; exact h.sk1,
+    by rw [L.keepBytes hP' (by lay [hF.pk, hF.sk])]; exact h.pk0,
+    by rw [L.keepBytes hP' (by lay [hF.pk, hF.sk])]; exact h.sk0,
+    by rw [L.keepBytes hP' (by lay [hF.pk, hF.sk])]; exact h.sk1,
     fun r hr => by
       have : lenS p * r + lenS p ≤ lenS p * (p.ℓ + p.k) := by
         rw [← Nat.mul_succ]; exact Nat.mul_le_mul_left _ (by omega)
-      rw [L.keepBytes hP' (by lay [hF.pk, hF.sk, hlen])]; exact h.packs r hr,
+      rw [L.keepBytes hP' (by rcases hlen with hlen | hlen <;> lay [hF.pk, hF.sk, hlen])]; exact h.packs r hr,
     fun _ h => absurd h (Nat.not_lt_zero _)⟩
 
 theorem nttS_tr {P : Prims} {S' : Nat} (hP : PrimsOk P S') {p : Params} (hF : PFacts p) {j : Nat} (hj : j < p.ℓ) :

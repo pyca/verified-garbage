@@ -82,6 +82,15 @@ caller (the point at infinity). -/
 def ladder (L : LadderCfg) : Prog isa :=
   .seq (.block [.movz .x .x19 (BitVec.ofNat 16 L.nbits) 0]) (.loop (ladderBody L) (.nonzero .x .x19))
 
+/-- `x2` all ones iff `x1 = 0` (below 1), with `x7 = 0`, through `x5` and `x16`. -/
+def isZeroMask : List Instr := [.movz .x .x5 1 0, .subs .x .x16 .x1 .x5, .sbc .x .x2 .x7 .x7]
+
+/-- `x2` all ones iff the `n`-word number at `a` is zero: the `orr` of its words
+in `x1`, through `x2`. -/
+def zeroMask (n a : Nat) : List Instr :=
+  [zero7, ld .x1 a] ++ ((List.range (n - 1)).flatMap fun j =>
+    [ld .x2 (a + 8 * (j + 1)), .logic .orr .x .x1 .x1 .x2]) ++ isZeroMask
+
 /-- Byte `j` of the table at `dst` for byte `x19` of the number: bit `j` of
 `x1` (with `x5 = 1`), stored at `x17 + dst + j`, where `x17 = x0 + 8 x19`. -/
 def bitJ (dst j : Nat) : List Instr :=

@@ -5,7 +5,8 @@ import VerifiedGarbage.Proof.AesGcm.AArch64.Cmp
 # AES-CCM on AArch64: checking a received tag (`cmp`, `mask`)
 
 Untrusted: everything here is checked by Lean. `cmp` pads the `tl` bytes of
-the received tag at `W` and of the computed one at `W + 96` with zeros, and
+the received tag at `T` (in `x12`) and of the computed one at `W + 96` with
+zeros, and
 leaves 0 in `x10` if they are equal, 1 if not (`cmp_ok`), as AES-GCM's
 `cmpSeg` does; `mask` ANDs every byte of the data with `x10 − 1`: it keeps
 the data if the tags are equal, and overwrites it with zeros if not
@@ -25,11 +26,11 @@ open VG.Proof.AesGcm.AArch64 (LoopPre copyLoop_ok loopRegs Others add_ofNat_asso
 open VG.Proof.AesCcm (length_bytesAt)
 
 /-- `cmp`: 0 in `x10` iff the first `tl` bytes of the tag at `W + 96` are
-those at `W`. -/
-theorem cmp_ok {c : Cx} (L : Lay c) {s : State} (E : Env c s) :
+those at `T`, in `x12`. -/
+theorem cmp_ok {c : Cx} (L : Lay c) {s : State} (E : Env c s) (hx12 : s.gpr .x12 = c.T) :
     WP isa cmp s fun s' =>
       s'.gpr .x10 = BitVec.ofNat 64
-        (if bytesAt s.mem (c.W + BitVec.ofNat 64 96) c.tl = bytesAt s.mem c.W c.tl then 0 else 1) ∧
+        (if bytesAt s.mem (c.W + BitVec.ofNat 64 96) c.tl = bytesAt s.mem c.T c.tl then 0 else 1) ∧
       Env c s' ∧ Others [.x9, .x10, .x11, .x12, .x13, .x14, .x15] s s' ∧
       Frame [⟨c.W + BitVec.ofNat 64 256, 32⟩] s.mem s'.mem := by
   have ht4 := L.t4
@@ -37,17 +38,17 @@ theorem cmp_ok {c : Cx} (L : Lay c) {s : State} (E : Env c s) :
   have w (d : Nat) (h : d + 8 ≤ 2560) := E.perm.wW h
   obtain ⟨s₁, run₁, hm₁, x11₁, x12₁, x13₁, og₁, sp₁, rd₁, wr₁⟩ : ∃ s₁, runBlock isa [imm .x9 0,
       .str .x .x9 .x19 vO, .str .x .x9 .x19 (vO + 8), .str .x .x9 .x19 rO, .str .x .x9 .x19 (rO + 8),
-      ptr .x11 .x19 rO, mov .x12 .x19, mov .x13 .x20] s = some s₁ ∧
+      ptr .x11 .x19 rO, mov .x13 .x20] s = some s₁ ∧
       s₁.mem = (((s.mem.writeW (c.W + BitVec.ofNat 64 256) (0 : BitVec 64)).writeW (c.W + BitVec.ofNat 64 264)
         (0 : BitVec 64)).writeW (c.W + BitVec.ofNat 64 272) (0 : BitVec 64)).writeW (c.W + BitVec.ofNat 64 280)
           (0 : BitVec 64) ∧
-      s₁.gpr .x11 = c.W + BitVec.ofNat 64 272 ∧ s₁.gpr .x12 = c.W ∧ s₁.gpr .x13 = BitVec.ofNat 64 c.tl ∧
-      Others [.x9, .x11, .x12, .x13] s s₁ ∧ s₁.sp = s.sp ∧ s₁.rd = s.rd ∧ s₁.wr = s.wr := by
+      s₁.gpr .x11 = c.W + BitVec.ofNat 64 272 ∧ s₁.gpr .x12 = c.T ∧ s₁.gpr .x13 = BitVec.ofNat 64 c.tl ∧
+      Others [.x9, .x11, .x13] s s₁ ∧ s₁.sp = s.sp ∧ s₁.rd = s.rd ∧ s₁.wr = s.wr := by
     refine ⟨_, by carun [E.x19, w 256 (by decide), w 264 (by decide), w 272 (by decide), w 280 (by decide)], ?_⟩
     refine ⟨?_, ?_, ?_, ?_, ?_, rfl, rfl, rfl⟩
     · simp only [mem_write]; rfl
     · simp [gpr_write, E.x19]
-    · simp [gpr_write, E.x19, BitVec.add_zero]
+    · simp [gpr_write, hx12]
     · simp [gpr_write, E.x20]
     · intro r hr
       simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
@@ -55,10 +56,10 @@ theorem cmp_ok {c : Cx} (L : Lay c) {s : State} (E : Env c s) :
   refine WP.seq (WP.of_runBlock ⟨s₁, run₁, ?_⟩)
   refine WP.seq ?_
   have E₁ : Env c s₁ := E.others og₁ (by decide) sp₁ rd₁ wr₁
-  have dW : (⟨c.W, c.tl⟩ : Region).Disjoint ⟨c.W + BitVec.ofNat 64 272, c.tl⟩ :=
-    L.w0_w (by omega) (by omega)
-  have lp : LoopPre s₁ c.W (c.W + BitVec.ofNat 64 272) c.tl :=
-    ⟨by omega, by simpa using E₁.perm.wCR (d := 0) (n := c.tl) (by omega), E₁.perm.wC (by omega), dW⟩
+  have dW : (⟨c.T, c.tl⟩ : Region).Disjoint ⟨c.W + BitVec.ofNat 64 272, c.tl⟩ :=
+    L.t_w.sub_right (Lay.wSub (by omega))
+  have lp : LoopPre s₁ c.T (c.W + BitVec.ofNat 64 272) c.tl :=
+    ⟨by omega, E₁.perm.t, E₁.perm.wC (by omega), dW⟩
   refine WP.mono (copyLoop_ok s₁ x12₁ x11₁ x13₁ (by omega) lp) fun s₂ ⟨hm₂, _, _, og₂, sp₂, rd₂, wr₂⟩ => ?_
   have E₂ : Env c s₂ := E₁.others og₂ (by decide) sp₂ rd₂ wr₂
   refine WP.seq ?_
@@ -135,15 +136,15 @@ theorem cmp_ok {c : Cx} (L : Lay c) {s : State} (E : Env c s) :
     f₁.trans (f₂.sub fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact sR 272 c.tl (by decide) (by omega))
   have f₁₄ : Frame [⟨c.W + BitVec.ofNat 64 256, 32⟩] s.mem s₄.mem :=
     f₁₂.trans (f₄.sub fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact sR 256 c.tl (by decide) (by omega))
-  have hA : bytesAt s₁.mem c.W c.tl = bytesAt s.mem c.W c.tl :=
+  have hA : bytesAt s₁.mem c.T c.tl = bytesAt s.mem c.T c.tl :=
     Proof.AesGcm.AArch64.bytesAt_frame f₁ (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact L.w0_w (by omega) (by decide)) (by omega)
+      exact L.t_w.sub_right (Lay.wSub (by decide))) (by omega)
   have hB : bytesAt s₂.mem (c.W + BitVec.ofNat 64 96) c.tl = bytesAt s.mem (c.W + BitVec.ofNat 64 96) c.tl :=
     Proof.AesGcm.AArch64.bytesAt_frame f₁₂ (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
       exact L.w_w (.inl (by omega)) (by omega) (by decide)) (by omega)
-  have p₁ : bytesAt s₂.mem (c.W + BitVec.ofNat 64 272) 16 = bytesAt s.mem c.W c.tl ++ zeros (16 - c.tl) := by
+  have p₁ : bytesAt s₂.mem (c.W + BitVec.ofNat 64 272) 16 = bytesAt s.mem c.T c.tl ++ zeros (16 - c.tl) := by
     rw [hm₂, pad_bytes z₁ _ (by rw [length_bytesAt]; omega), length_bytesAt, hA]
     rfl
   have z₀' : bytesAt s₂.mem (c.W + BitVec.ofNat 64 256) 16 = zeros 16 := by
@@ -160,7 +161,7 @@ theorem cmp_ok {c : Cx} (L : Lay c) {s : State} (E : Env c s) :
       (by decide)
   have key : ((s₄.mem.readW (c.W + BitVec.ofNat 64 256) 64 ^^^ s₄.mem.readW (c.W + BitVec.ofNat 64 272) 64) |||
       (s₄.mem.readW (c.W + BitVec.ofNat 64 264) 64 ^^^ s₄.mem.readW (c.W + BitVec.ofNat 64 280) 64) = 0) ↔
-      bytesAt s.mem (c.W + BitVec.ofNat 64 96) c.tl = bytesAt s.mem c.W c.tl := by
+      bytesAt s.mem (c.W + BitVec.ofNat 64 96) c.tl = bytesAt s.mem c.T c.tl := by
     rw [show (264 : Nat) = 256 + 8 from rfl, show (280 : Nat) = 272 + 8 from rfl, e8 256, e8 272, words_eq, p₀,
       q₁, p₁]
     exact ⟨List.append_cancel_right, fun h => by rw [h]⟩
@@ -169,7 +170,7 @@ theorem cmp_ok {c : Cx} (L : Lay c) {s : State} (E : Env c s) :
     obtain ⟨h9, h10, h11, h12, h13, h14, h15⟩ := hr
     have hl : r ∉ loopRegs := by simp [loopRegs, h11, h12, h13, h14, h15]
     rw [og₅ r (by simp [h9, h10, h11, h12]), og₄ r hl, og₃ r (by simp [h11, h12, h13]), og₂ r hl,
-      og₁ r (by simp [h9, h11, h12, h13])]
+      og₁ r (by simp [h9, h11, h13])]
   refine ⟨by rw [x10₅]; simp only [key], E₄.others og₅ (by decide) sp₅ rd₅ wr₅, og, ?_⟩
   rw [m₅]; exact f₁₄
 

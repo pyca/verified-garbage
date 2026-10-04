@@ -329,6 +329,76 @@ theorem readsOk_rename (σ : Nat → Nat) : ∀ {ops : List FOp} {V : List Nat},
 
 theorem rcbN_reads : readsOk rcbN [9, 10, 11, 12, 13, 14, 15, 16] = true := by decide
 
+/-! ## Formulas on numbered slots
+
+A formula written on the slots `0 … 16` as `rcbN` numbers them (`0 … 5` the
+temporaries, `6 … 8` the result, `9`, `10` the constants, `11 … 13` and
+`14 … 16` the points), renamed to the slots of a sum (`ofN`): what `rcb`'s
+lemmas show, for any such formula that writes only the first nine and reads
+the others or what it wrote (`NumOk`). The formulas for `a = -3` are such
+(`rcb3N`, and Jacobian doubling's `dblJN`). -/
+
+/-- A formula on numbered slots, on the slots of `p`, `q` and `o`. -/
+def ofN (N : List FOp) (S : RcbSlots) (p q o : Pt) : List FOp := N.map (FOp.rename (rcbσ S p q o))
+
+/-- A formula on numbered slots writes only the first nine, among them the
+result's `6 … 8`, and reads the others or what it wrote. -/
+structure NumOk (N : List FOp) : Prop where
+  out : ∀ op ∈ N, op.out < 9
+  outs : ∀ i ∈ [6, 7, 8], i ∈ N.map FOp.out
+  reads : readsOk N [9, 10, 11, 12, 13, 14, 15, 16] = true
+
+theorem ofN_out {N : List FOp} (hN : NumOk N) {S : RcbSlots} {p q o : Pt} :
+    ∀ op ∈ ofN N S p q o, op.out ∈ rcbW S o := by
+  intro op hop
+  rw [ofN, List.mem_map] at hop
+  obtain ⟨op', h', rfl⟩ := hop
+  rw [FOp.out_rename]
+  exact rcbσ_out S p q o (hN.out op' h')
+
+theorem ofN_slots {N : List FOp} {S : RcbSlots} {p q o : Pt} :
+    ∀ op ∈ ofN N S p q o, ∀ x ∈ op.out :: op.ins, x ∈ rcbW S o ++ rcbR S p q := by
+  intro op hop
+  rw [ofN, List.mem_map] at hop
+  obtain ⟨op', _, rfl⟩ := hop
+  cases op' <;> simp only [FOp.rename, FOp.out, FOp.ins, List.mem_cons, List.not_mem_nil,
+    or_false] <;> rintro x (rfl | rfl | rfl) <;> exact rcbσ_mem ..
+
+theorem ofN_out_mem {N : List FOp} (hN : NumOk N) {S : RcbSlots} {p q o : Pt} {x : Nat}
+    (hx : x ∈ [o.x, o.y, o.z]) : x ∈ (ofN N S p q o).map FOp.out := by
+  have key : ∀ i ∈ [6, 7, 8], rcbσ S p q o i ∈ (ofN N S p q o).map FOp.out := fun i hi => by
+    obtain ⟨op, hop, h⟩ := List.mem_map.mp (hN.outs i hi)
+    rw [ofN, List.map_map]
+    exact List.mem_map.mpr ⟨op, hop, by rw [Function.comp_apply, FOp.out_rename, h]⟩
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
+  rcases hx with rfl | rfl | rfl
+  · exact key 6 (by simp)
+  · exact key 7 (by simp)
+  · exact key 8 (by simp)
+
+theorem ofN_readsOk {N : List FOp} (hN : NumOk N) (S : RcbSlots) (p q o : Pt) :
+    readsOk (ofN N S p q o) (rcbR S p q) = true :=
+  readsOk_rename _ hN.reads
+
+/-- A formula on numbered slots computes on the renamed slots what it computes
+on the numbered ones. -/
+theorem ofN_run {F : Type _} [Lean.Grind.CommRing F] {N : List FOp} (hN : NumOk N) {S : RcbSlots}
+    {p q o : Pt} (h : RcbApart S p q o) (e : Nat → F) (i : Nat) :
+    runOps (ofN N S p q o) e (rcbσ S p q o i) = runOps N (fun y => e (rcbσ S p q o y)) i := by
+  have key := runOps_rename (rcbσ S p q o) N e fun op hop => h.inj (hN.out op hop)
+  exact congrFun key i
+
+/-- Algorithm 4 on numbered slots. -/
+def rcb3N : List FOp := rcb3 ⟨9, 10, 0, 1, 2, 3, 4, 5⟩ ⟨11, 12, 13⟩ ⟨14, 15, 16⟩ ⟨6, 7, 8⟩
+
+theorem rcb3N_ok : NumOk rcb3N := ⟨by decide, by decide, by decide⟩
+
+theorem rcb3_eq (S : RcbSlots) (p q o : Pt) : rcb3 S p q o = ofN rcb3N S p q o := rfl
+
+theorem rcb3N_run {F : Type _} [Lean.Grind.CommRing F] (e : Nat → F) :
+    (runOps rcb3N e 6, runOps rcb3N e 7, runOps rcb3N e 8) =
+      VG.Proof.Weierstrass.rcbAdd3 (e 10) (e 11) (e 12) (e 13) (e 14) (e 15) (e 16) := rfl
+
 /-- A multiplication by `1` leaves Montgomery's form. -/
 theorem toM_one_mul {m R r A : Nat} [NeZero m] (hR : UnitMod m R) (h : r * R % m = A * 1 % m) :
     Fin.ofNat m r = toM m R A := by

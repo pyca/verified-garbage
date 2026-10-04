@@ -163,9 +163,25 @@ theorem setup_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {
     · rcases htake q hq with rfl | rfl | rfl | rfl <;> simp
     · simp only [List.mem_cons]; exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr hq)))))
 
+theorem dPool_clob {n : Nat} : ∀ r ∈ dPool, r ∈ clob n := by
+  intro r hr
+  have : ∀ r ∈ dPool, r ∈ [Reg.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x16, .x17] := by decide
+  exact List.mem_append_left _ (this r hr)
+
+/-- What `csubR` changes is in `clob`. -/
+theorem csubR_keep {n : Nat} (h7 : n < 7) {ts : List Reg} (hts : ∀ r ∈ ts, r ∈ acc n) :
+    ∀ r ∈ (.x2 :: .x17 :: ts ++ dRegs n), r ∈ clob n := by
+  intro r hr
+  simp only [List.cons_append, List.mem_cons, List.mem_append] at hr
+  rcases hr with rfl | rfl | h | h
+  · simp [clob]
+  · simp [clob]
+  · exact List.mem_append_right _ (hts r h)
+  · exact dPool_clob r ((dRegs_ok n h7).1.2 r h)
+
 theorem mul_eq (M : Mod) (o a b : Nat) :
     mul M o a b = mulSetup M b ++ ((List.range M.n).flatMap (round M a b) ++
-      (csub M ((List.range M.n).map (win M.n M.n)) (win M.n M.n M.n) ++
+      (csubR M ((List.range M.n).map (win M.n M.n)) (win M.n M.n M.n) ++
         stores ((List.range M.n).map (win M.n M.n)) o)) := by
   simp only [mul, List.append_assoc]
 
@@ -228,34 +244,25 @@ theorem mul_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M 
       omega
     rw [this, Nat.mul_zero, Nat.add_zero]
   rw [WP.block_append_iff]
-  refine WP.mono (csub_ok hs₂ (M := M) (m := m) hlowlen hM.n0 (fresh_low M.n h7) hM.mo hM.tmp hM.sep
-    hA.mo hA.tmp hz₂ (by rw [hmem₂]; exact hM.val) (by rw [hV]; exact hT)) fun s₃ ⟨e₃, k₃, O₃⟩ => ?_
-  have hs₃ := hs₂.of_keepRegs k₃ (by
-    intro h
-    simp only [List.mem_cons] at h
-    rcases h with h | h | h | h
-    · exact absurd h (by decide)
-    · exact absurd h (by decide)
-    · exact absurd h (by decide)
-    · exact (fresh_low' M.n h7).2 _ h (by simp))
+  have hlow_acc : ∀ r ∈ (List.range M.n).map (win M.n M.n), r ∈ acc M.n := fun r hr =>
+    wins_sub_acc h7 M.n r (by rw [hsplit]; exact List.mem_append_left _ hr)
+  refine WP.mono (csubR_ok hs₂ (M := M) (m := m) hlowlen hM.n0 h7 (fresh_low M.n h7) hM.mo
+    hA.mo hz₂ (by rw [hmem₂]; exact hM.val) (by rw [hV]; exact hT)) fun s₃ ⟨e₃, k₃⟩ => ?_
+  have hs₃ := hs₂.of_keeps k₃ (fun h => x0_not_clob M.n h7 (csubR_keep h7 hlow_acc _ h))
   refine WP.mono (stores_ok _ hs₃ (o := o) (by rw [hlowlen]; omega) ho8 (fresh_low' M.n h7).1)
     fun s₄ ⟨e₄, k₄, O₄⟩ => ?_
   rw [hlowlen] at e₄ O₄
-  have hlow_acc : ∀ r ∈ (List.range M.n).map (win M.n M.n), r ∈ acc M.n := fun r hr =>
-    wins_sub_acc h7 M.n r (by rw [hsplit]; exact List.mem_append_left _ hr)
   refine ⟨⟨fun r hr => ?_, ?_, ?_, ?_, fun x hx hx' => ?_⟩, ?_, ?_⟩
   · obtain ⟨hr₁, hr₂⟩ := not_mem_of_clob hr
     simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr₁
-    rw [k₄.gpr r (by simp), k₃.gpr r (by
-        simp only [List.mem_cons, not_or]
-        exact ⟨hr₁.2.1, hr₁.2.2.2.2.2.2.2.1, hr₁.2.2.2.2.2.2.2.2, fun h => hr₂ (hlow_acc r h)⟩),
+    rw [k₄.gpr r (by simp), k₃.gpr r (fun h => hr (csubR_keep h7 hlow_acc r h)),
       k₂.gpr r (by simp only [List.mem_cons, not_or]; exact ⟨hr₁.1, hr₁.2.1, hr₁.2.2.1, hr₂⟩),
       k₁.gpr r (by simp only [List.mem_cons, not_or]; exact ⟨hr₁.2.2.2.1, hr₁.2.2.2.2.1,
         hr₁.2.2.2.2.2.1, hr₁.2.2.2.2.2.2.1, hr₁.2.2.2.2.2.2.2.1, hr₁.2.2.2.2.2.2.2.2, hr₂⟩)]
   · rw [k₄.rd, k₃.rd, k₂.rd, k₁.rd]
   · rw [k₄.wr, k₃.wr, k₂.wr, k₁.wr]
   · rw [k₄.sp, k₃.sp, k₂.sp, k₁.sp]
-  · rw [O₄ x hx, O₃ x hx', hmem₂]
+  · rw [O₄ x hx, k₃.mem, hmem₂]
   · rw [e₄, e₃, hV]; exact Nat.mod_lt _ (m_pos hB)
   · rw [e₄, e₃, hV, Nat.mod_mul_mod, Nat.mul_comm, eU]
     simp only [Nat.add_mul_mod_self_right]
@@ -347,32 +354,24 @@ theorem add_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M 
   have hV : regsVal s₄ (low M.n) + 2 ^ (64 * M.n) * (s₄.gpr (top M.n)).toNat =
       wordsVal s.mem base a M.n + wordsVal s.mem base b M.n := by rw [hR₄, e₄, e₃, k₁.mem, k₀.mem, hl]
   rw [WP.block_append_iff]
-  refine WP.mono (csub_ok hs₄ (M := M) (m := m) hl hM.n0 hf hM.mo hM.tmp hM.sep hA.mo hA.tmp hz₄
-    (by rw [hmem₄]; exact hM.val) (by rw [hV]; exact hAB)) fun s₅ ⟨e₅, k₅, O₅⟩ => ?_
-  have hs₅ := hs₄.of_keepRegs k₅ (by
-    intro h
-    simp only [List.mem_cons] at h
-    rcases h with h | h | h | h
-    · exact absurd h (by decide)
-    · exact absurd h (by decide)
-    · exact absurd h (by decide)
-    · exact nf _ (List.mem_cons_of_mem _ h) (by simp))
+  have hlow : ∀ r ∈ low M.n, r ∈ acc M.n := fun r h => hsub r (List.mem_cons_of_mem _ h)
+  refine WP.mono (csubR_ok hs₄ (M := M) (m := m) hl hM.n0 h7 hf hM.mo hA.mo hz₄
+    (by rw [hmem₄]; exact hM.val) (by rw [hV]; exact hAB)) fun s₅ ⟨e₅, k₅⟩ => ?_
+  have hs₅ := hs₄.of_keeps k₅ (fun h => x0_not_clob M.n h7 (csubR_keep h7 hlow _ h))
   refine WP.mono (stores_ok _ hs₅ (o := o) (by rw [hl]; omega) ho8 hf.tail.1) fun s₆ ⟨e₆, k₆, O₆⟩ => ?_
   rw [hl] at e₆ O₆
   refine ⟨⟨fun r hr => ?_, ?_, ?_, ?_, fun x hx hx' => ?_⟩, ?_⟩
   · obtain ⟨hr₁, hr₂⟩ := not_mem_of_clob hr
     have hr' : r ∉ top M.n :: low M.n := fun h => hr₂ (hsub r h)
     simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr₁ hr'
-    rw [k₆.gpr r (by simp), k₅.gpr r (by
-        simp only [List.mem_cons, not_or]
-        exact ⟨hr₁.2.1, hr₁.2.2.2.2.2.2.2.1, hr₁.2.2.2.2.2.2.2.2, hr'.2⟩),
+    rw [k₆.gpr r (by simp), k₅.gpr r (fun h => hr (csubR_keep h7 hlow r h)),
       k₄.gpr r (by simpa using hr'.1),
       k₃.gpr r (by simp only [List.mem_cons, not_or]; exact ⟨hr₁.2.1, hr'.2⟩),
       k₁.gpr r hr'.2, k₀.gpr r (by simpa using hr₁.2.2.2.2.2.2.1)]
   · rw [k₆.rd, k₅.rd, k₄.rd, k₃.rd, k₁.rd, k₀.rd]
   · rw [k₆.wr, k₅.wr, k₄.wr, k₃.wr, k₁.wr, k₀.wr]
   · rw [k₆.sp, k₅.sp, k₄.sp, k₃.sp, k₁.sp, k₀.sp]
-  · rw [O₆ x hx, O₅ x hx', hmem₄]
+  · rw [O₆ x hx, k₅.mem, hmem₄]
   · rw [e₆, e₅, hV]
 
 /-- `t += ([mo] & x17) + c`: one word of the masked addition. -/

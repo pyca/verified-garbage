@@ -169,26 +169,50 @@ theorem round_eq (M : Block 32) (v : Work 32) (r : Nat) :
       diagStep (colStep v (fun i => msgW M r 0 (2 * i)) (fun i => msgW M r 0 (2 * i + 1)))
         (fun i => msgW M r 1 (2 * i)) (fun i => msgW M r 1 (2 * i + 1)) := rfl
 
+/-! Bounds of the indices of the work vector, which `get_elem_tactic` would
+prove by `omega` over every hypothesis of a long proof. -/
+
+theorem ix0 {i : Nat} (hi : i < 4) : i < 16 := by omega
+theorem ix4 {i : Nat} (hi : i < 4) : 4 + i < 16 := by omega
+theorem ix8 {i : Nat} (hi : i < 4) : 8 + i < 16 := by omega
+theorem ix12 {i : Nat} (hi : i < 4) : 12 + i < 16 := by omega
+theorem dx0 (i : Nat) : (i + 3) % 4 < 16 := by omega
+theorem dx4 (i : Nat) : 4 + (i + 1) % 4 < 16 := by omega
+theorem dx8 (i : Nat) : 8 + (i + 2) % 4 < 16 := by omega
+theorem dx12 (i : Nat) : 12 + (i + 3) % 4 < 16 := by omega
+
 /-- Column `i` after the column step is `G` on column `i`. -/
 theorem col_get (v : Work 32) (X Y : Nat → BitVec 32) {i : Nat} (hi : i < 4) :
-    (colStep v X Y)[i] = (mix Spec.Blake2.s v[i] v[4 + i] v[8 + i] v[12 + i] (X i) (Y i)).1 ∧
-    (colStep v X Y)[4 + i] = (mix Spec.Blake2.s v[i] v[4 + i] v[8 + i] v[12 + i] (X i) (Y i)).2.1 ∧
-    (colStep v X Y)[8 + i] = (mix Spec.Blake2.s v[i] v[4 + i] v[8 + i] v[12 + i] (X i) (Y i)).2.2.1 ∧
-    (colStep v X Y)[12 + i] = (mix Spec.Blake2.s v[i] v[4 + i] v[8 + i] v[12 + i] (X i) (Y i)).2.2.2 := by
+    (colStep v X Y)[i]'(ix0 hi) =
+      (mix Spec.Blake2.s (v[i]'(ix0 hi)) (v[4 + i]'(ix4 hi)) (v[8 + i]'(ix8 hi)) (v[12 + i]'(ix12 hi))
+        (X i) (Y i)).1 ∧
+    (colStep v X Y)[4 + i]'(ix4 hi) =
+      (mix Spec.Blake2.s (v[i]'(ix0 hi)) (v[4 + i]'(ix4 hi)) (v[8 + i]'(ix8 hi)) (v[12 + i]'(ix12 hi))
+        (X i) (Y i)).2.1 ∧
+    (colStep v X Y)[8 + i]'(ix8 hi) =
+      (mix Spec.Blake2.s (v[i]'(ix0 hi)) (v[4 + i]'(ix4 hi)) (v[8 + i]'(ix8 hi)) (v[12 + i]'(ix12 hi))
+        (X i) (Y i)).2.2.1 ∧
+    (colStep v X Y)[12 + i]'(ix12 hi) =
+      (mix Spec.Blake2.s (v[i]'(ix0 hi)) (v[4 + i]'(ix4 hi)) (v[8 + i]'(ix8 hi)) (v[12 + i]'(ix12 hi))
+        (X i) (Y i)).2.2.2 := by
   rcases cases4 hi with rfl | rfl | rfl | rfl <;>
     simp (disch := decide) only [G_get, Fin.getElem_fin, fin16_val, Nat.reduceMod, Nat.reduceAdd,
       Nat.reduceEqDiff, ↓reduceIte, and_self]
 
 /-- Diagonal `i` after the diagonal step is `G` on diagonal `i`. -/
 theorem diag_get (v : Work 32) (X Y : Nat → BitVec 32) {i : Nat} (hi : i < 4) :
-    (diagStep v X Y)[i] = (mix Spec.Blake2.s v[i] v[4 + (i + 1) % 4] v[8 + (i + 2) % 4]
-      v[12 + (i + 3) % 4] (X i) (Y i)).1 ∧
-    (diagStep v X Y)[4 + (i + 1) % 4] = (mix Spec.Blake2.s v[i] v[4 + (i + 1) % 4] v[8 + (i + 2) % 4]
-      v[12 + (i + 3) % 4] (X i) (Y i)).2.1 ∧
-    (diagStep v X Y)[8 + (i + 2) % 4] = (mix Spec.Blake2.s v[i] v[4 + (i + 1) % 4] v[8 + (i + 2) % 4]
-      v[12 + (i + 3) % 4] (X i) (Y i)).2.2.1 ∧
-    (diagStep v X Y)[12 + (i + 3) % 4] = (mix Spec.Blake2.s v[i] v[4 + (i + 1) % 4] v[8 + (i + 2) % 4]
-      v[12 + (i + 3) % 4] (X i) (Y i)).2.2.2 := by
+    (diagStep v X Y)[i]'(ix0 hi) =
+      (mix Spec.Blake2.s (v[i]'(ix0 hi)) (v[4 + (i + 1) % 4]'(dx4 i))
+      (v[8 + (i + 2) % 4]'(dx8 i)) (v[12 + (i + 3) % 4]'(dx12 i)) (X i) (Y i)).1 ∧
+    (diagStep v X Y)[4 + (i + 1) % 4]'(dx4 i) =
+      (mix Spec.Blake2.s (v[i]'(ix0 hi)) (v[4 + (i + 1) % 4]'(dx4 i))
+      (v[8 + (i + 2) % 4]'(dx8 i)) (v[12 + (i + 3) % 4]'(dx12 i)) (X i) (Y i)).2.1 ∧
+    (diagStep v X Y)[8 + (i + 2) % 4]'(dx8 i) =
+      (mix Spec.Blake2.s (v[i]'(ix0 hi)) (v[4 + (i + 1) % 4]'(dx4 i))
+      (v[8 + (i + 2) % 4]'(dx8 i)) (v[12 + (i + 3) % 4]'(dx12 i)) (X i) (Y i)).2.2.1 ∧
+    (diagStep v X Y)[12 + (i + 3) % 4]'(dx12 i) =
+      (mix Spec.Blake2.s (v[i]'(ix0 hi)) (v[4 + (i + 1) % 4]'(dx4 i))
+      (v[8 + (i + 2) % 4]'(dx8 i)) (v[12 + (i + 3) % 4]'(dx12 i)) (X i) (Y i)).2.2.2 := by
   rcases cases4 hi with rfl | rfl | rfl | rfl <;>
     simp (disch := decide) only [G_get, Fin.getElem_fin, fin16_val, Nat.reduceMod, Nat.reduceAdd,
       Nat.reduceEqDiff, ↓reduceIte, and_self]
@@ -335,8 +359,9 @@ theorem round_ok {v : Work 32} {s : State} (h : RS s₀ v s) (r : Nat) :
       (by rcases hq with rfl | rfl | rfl | rfl <;> decide)
   -- Doubleword `i` holds diagonal `j = i - 1` of `w`.
   have dg : ∀ i (hi : i < 4),
-      dw s₄ .xmm0 i = w[(i + 3) % 4] ∧ dw s₄ .xmm1 i = w[4 + ((i + 3) % 4 + 1) % 4] ∧
-      dw s₄ .xmm2 i = w[8 + ((i + 3) % 4 + 2) % 4] ∧ dw s₄ .xmm3 i = w[12 + ((i + 3) % 4 + 3) % 4] :=
+      dw s₄ .xmm0 i = w[(i + 3) % 4]'(dx0 i) ∧ dw s₄ .xmm1 i = w[4 + ((i + 3) % 4 + 1) % 4]'(dx4 _) ∧
+      dw s₄ .xmm2 i = w[8 + ((i + 3) % 4 + 2) % 4]'(dx8 _) ∧
+      dw s₄ .xmm3 i = w[12 + ((i + 3) % 4 + 3) % 4]'(dx12 _) :=
     fun i hi => ⟨by rw [dw, e₄ _ (by simp)]; exact (d0 i hi).trans (h₂.r0 _ (Nat.mod_lt _ (by decide))),
       by rw [dw, e₄ _ (by simp)]; exact (d1 i hi).trans ((h₂.r1 i hi).trans (getElem_congr_idx (by omega))),
       by rw [dw, e₄ _ (by simp)]
@@ -350,10 +375,10 @@ theorem round_ok {v : Work 32} {s : State} (h : RS s₀ v s) (r : Nat) :
     fun s₆ ⟨u0, u1, u2, u3, _, g₆, m₆, r₆, w₆⟩ => ?_
   rw [round_eq, ← hw]
   have hq : ∀ i (hi : i < 4),
-      dw s₅ .xmm0 i = (diagStep w (fun i => msgW M r 1 (2 * i)) (fun i => msgW M r 1 (2 * i + 1)))[(i + 3) % 4] ∧
-      dw s₅ .xmm1 i = (diagStep w (fun i => msgW M r 1 (2 * i)) (fun i => msgW M r 1 (2 * i + 1)))[4 + ((i + 3) % 4 + 1) % 4] ∧
-      dw s₅ .xmm2 i = (diagStep w (fun i => msgW M r 1 (2 * i)) (fun i => msgW M r 1 (2 * i + 1)))[8 + ((i + 3) % 4 + 2) % 4] ∧
-      dw s₅ .xmm3 i = (diagStep w (fun i => msgW M r 1 (2 * i)) (fun i => msgW M r 1 (2 * i + 1)))[12 + ((i + 3) % 4 + 3) % 4] := fun i hi => by
+      dw s₅ .xmm0 i = (diagStep w (fun i => msgW M r 1 (2 * i)) (fun i => msgW M r 1 (2 * i + 1)))[(i + 3) % 4]'(dx0 i) ∧
+      dw s₅ .xmm1 i = (diagStep w (fun i => msgW M r 1 (2 * i)) (fun i => msgW M r 1 (2 * i + 1)))[4 + ((i + 3) % 4 + 1) % 4]'(dx4 _) ∧
+      dw s₅ .xmm2 i = (diagStep w (fun i => msgW M r 1 (2 * i)) (fun i => msgW M r 1 (2 * i + 1)))[8 + ((i + 3) % 4 + 2) % 4]'(dx8 _) ∧
+      dw s₅ .xmm3 i = (diagStep w (fun i => msgW M r 1 (2 * i)) (fun i => msgW M r 1 (2 * i + 1)))[12 + ((i + 3) % 4 + 3) % 4]'(dx12 _) := fun i hi => by
     obtain ⟨a, b, c, d⟩ := q i hi
     obtain ⟨l0, l1, l2, l3⟩ := dg i hi
     obtain ⟨e0, e1, e2, e3⟩ := diag_get w (fun i => msgW M r 1 (2 * i)) (fun i => msgW M r 1 (2 * i + 1))

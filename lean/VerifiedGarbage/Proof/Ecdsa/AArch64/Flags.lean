@@ -1,4 +1,4 @@
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Bytes
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Zero
 import VerifiedGarbage.Impl.Ecdsa.AArch64
 
 /-!
@@ -19,41 +19,7 @@ open VG.Proof.Mont VG.Proof.Weierstrass VG.Proof.Weierstrass.AArch64
 open VG.Proof.Ed25519.AArch64 (Keeps Keeps.trans Keeps.mono read_x)
 open VG.Proof.Ed25519 (Word64.addCarry Word64.carryOut)
 
-theorem or_eq_zero (x y : BitVec 64) : x ||| y = 0 ↔ x = 0 ∧ y = 0 := BitVec.or_eq_zero_iff
-
 /-! ## Nonzero -/
-
-/-- The `orr`s of `nonzero`. -/
-theorem ors_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {a : Nat} (ha8 : a % 8 = 0) :
-    ∀ k, a + 8 * (k + 1) ≤ size →
-    WP isa (.block ((List.range k).flatMap fun j =>
-        [ld .x2 (a + 8 * (j + 1)), .logic .orr .x .x1 .x1 .x2])) s fun s' =>
-      (s'.gpr .x1 = 0 ↔ s.gpr .x1 = 0 ∧ ∀ j < k, word s.mem base (a + 8 * (j + 1)) = 0) ∧
-      Keeps [.x1, .x2] s s'
-  | 0, _ => WP.block_nil ⟨⟨fun h => ⟨h, fun _ hj => absurd hj (Nat.not_lt_zero _)⟩, fun h => h.1⟩,
-      fun _ _ => rfl, rfl, rfl, rfl, rfl⟩
-  | k + 1, hk => by
-    rw [List.range_succ, List.flatMap_append, List.flatMap_singleton, WP.block_append_iff]
-    refine WP.mono (ors_ok hs ha8 k (by omega)) fun s₁ ⟨e₁, k₁⟩ => ?_
-    have hs₁ := hs.of_keeps k₁ (by decide)
-    rw [← List.singleton_append, WP.block_append_iff]
-    refine WP.mono (ld_ok hs₁ (d := a + 8 * (k + 1)) (by omega) (by omega) .x2) fun s₂ ⟨l₂, k₂, _⟩ => ?_
-    apply WP.of_runBlock
-    simp only [runBlock_cons, runStep_some, runBlock_nil, exec, read_x, RegUpd.gpr_write_self,
-      BitVec.setWidth_eq, Option.some.injEq, exists_eq_left', or_eq_zero, l₂,
-      k₂.gpr .x1 (by decide), e₁, k₁.mem]
-    refine ⟨⟨fun ⟨⟨h₀, h⟩, hw⟩ => ⟨h₀, fun j hj => ?_⟩, fun ⟨h₀, h⟩ => ⟨⟨h₀, fun j hj => h j (by omega)⟩,
-      h k (by omega)⟩⟩, fun r hr => ?_, ?_, ?_, ?_, ?_⟩
-    · rcases Nat.lt_or_ge j k with hj' | hj'
-      · exact h j hj'
-      · obtain rfl : j = k := by omega
-        exact hw
-    · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
-      rw [RegUpd.gpr_write_of_ne _ _ _ hr.1, k₂.gpr r (by simpa using hr.2), k₁.gpr r (by simpa using hr)]
-    · rw [RegUpd.mem_write, k₂.mem, k₁.mem]
-    · rw [RegUpd.rd_write, k₂.rd, k₁.rd]
-    · rw [RegUpd.wr_write, k₂.wr, k₁.wr]
-    · rw [RegUpd.sp_write, k₂.sp, k₁.sp]
 
 /-- `x2` is all ones iff `x1 ≠ 0`, with `x7 = 0`, through `x16`. -/
 theorem nzMask_ok (s : State) (hz : s.gpr .x7 = 0) :
@@ -119,17 +85,6 @@ theorem ltN_eq (c : Cfg) (a : Nat) :
     c.ltN a = zero7 :: ((List.range c.n).flatMap (ltStep a (c.sl MN)) ++ ([.sbc .x .x2 .x7 .x7] : List Instr)) :=
   rfl
 
-/-- The borrow out of `x - y - b`, the complement of the carry. -/
-theorem not_carryOut (x y : BitVec 64) (c : Bool) :
-    (!Word64.carryOut x (~~~y) c) = decide (x.toNat < y.toNat + (!c).toNat) := by
-  have h := sub_borrow x y c
-  have := (Word64.addCarry x (~~~y) c).isLt
-  have := x.isLt
-  generalize Word64.carryOut x (~~~y) c = co at h ⊢
-  cases co <;> simp only [Bool.not_true, Bool.not_false, Bool.toNat_true, Bool.toNat_false] at h ⊢
-  · exact (decide_eq_true (by omega)).symm
-  · exact (decide_eq_false (by omega)).symm
-
 theorem ltStep_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {a m j : Nat}
     (first : Bool) {c : Bool} (hc : (if first then true else s.c) = c)
     (hcode : ltStep a m j = [ld .x1 (a + 8 * j), ld .x2 (m + 8 * j),
@@ -166,17 +121,6 @@ theorem ltSteps_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size)
       fun s₂ ⟨c₂, k₂⟩ => ⟨?_, (k₁.mono (by sub_regs)).trans (k₂.mono (by sub_regs))⟩
     rw [c₂, c₁, k₁.mem, wordsVal_succ_top s.mem base a (k + 1), wordsVal_succ_top s.mem base m (k + 1)]
     exact decide_eq_decide.mpr (lt_top (wordsVal_lt _ _ _ _) (wordsVal_lt _ _ _ _)).symm
-
-/-- `x2` is the mask of a borrow. -/
-theorem sbcMask2_ok (s : State) (hz : s.gpr .x7 = 0) :
-    WP isa (.block [.sbc .x .x2 .x7 .x7]) s fun s' =>
-      s'.gpr .x2 = mask ((!s.c) = true) ∧ Keeps [.x2] s s' := by
-  apply WP.of_runBlock
-  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, read_x, RegUpd.gpr_write_self,
-    BitVec.setWidth_eq, hz, Option.some.injEq, exists_eq_left']
-  refine ⟨by cases s.c <;> decide, fun r hr => ?_, rfl, rfl, rfl, rfl⟩
-  simp only [List.mem_singleton] at hr
-  exact RegUpd.gpr_write_of_ne _ _ _ hr
 
 /-- `x2` is all ones iff `[a] < [MN]`; `x1`, `x7` and `x16` change too. -/
 theorem ltN_ok (c : Cfg) {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {a : Nat}
