@@ -51,7 +51,7 @@ theorem bytes16_eq (m : Mem) (p q : Addr) :
     exact ⟨le8_inj h₁, le8_inj h₂⟩
   · rintro ⟨h₁, h₂⟩; rw [h₁, h₂]
 
-theorem cmp_ok {K W SP : Addr} (L : Lay K W SP) {t : State} (E : Env K W SP t) :
+theorem cmp_ok {K W SP : Addr} {t : State} (E : Env K W SP t) :
     ∃ t' : State, runBlock isa cmp t = some t' ∧
       t'.mem = t.mem.writeW (W + BitVec.ofNat 64 208)
         (if bytesAt t.mem W 16 = bytesAt t.mem (W + BitVec.ofNat 64 144) 16 then 1#64 else 0#64) ∧
