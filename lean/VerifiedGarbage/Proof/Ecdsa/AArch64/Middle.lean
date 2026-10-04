@@ -70,16 +70,16 @@ theorem midOps_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size
   refine WP.seq (WP.mono (slMul_ok (MP'_n c) h7 hs hMP (MP'_A c) (o := XM) (a := RX) (b := ACC) (by decide)
     (by decide) (by decide) hacc) fun s₁ ⟨k₁, _, e₁⟩ => ?_)
   have hs₁ := k₁.scr hs
-  have kP₁ := hMP.keep (j := MP) (by decide) rfl rfl rfl rfl h7 hn k₁ (by decide) (by decide)
-  have kN₁ := hMN.keep (j := MN) (by decide) rfl rfl rfl rfl h7 hn k₁ (by decide) (by decide)
+  have kP₁ := hMP.keepA64 (j := MP) (by decide) rfl rfl rfl rfl h7 hn k₁ (by decide) (by decide)
+  have kN₁ := hMN.keepA64 (j := MN) (by decide) rfl rfl rfl rfl h7 hn k₁ (by decide) (by decide)
   have one₁ : sv c base s₁ ONE = 1 :=
     (sv_keep (MP'_n c) rfl h7 hn k₁ (by decide) (by decide) (by decide)).trans hone
   -- `X = XM · 1`.
   refine WP.seq (WP.mono (slMul_ok (MP'_n c) h7 hs₁ kP₁ (MP'_A c) (o := X) (a := XM) (b := ONE) (by decide)
     (by decide) (by decide) (by omega)) fun s₂ ⟨k₂, lt₂, e₂⟩ => ?_)
   have hs₂ := k₂.scr hs₁
-  have kP₂ := kP₁.keep (j := MP) (by decide) rfl rfl rfl rfl h7 hn k₂ (by decide) (by decide)
-  have kN₂ := kN₁.keep (j := MN) (by decide) rfl rfl rfl rfl h7 hn k₂ (by decide) (by decide)
+  have kP₂ := kP₁.keepA64 (j := MP) (by decide) rfl rfl rfl rfl h7 hn k₂ (by decide) (by decide)
+  have kN₂ := kN₁.keepA64 (j := MN) (by decide) rfl rfl rfl rfl h7 hn k₂ (by decide) (by decide)
   have zero₂ : sv c base s₂ ZERO = 0 := by
     rw [sv_keep (MP'_n c) rfl h7 hn k₂ (by decide) (by decide) (by decide),
       sv_keep (MP'_n c) rfl h7 hn k₁ (by decide) (by decide) (by decide), hzero]
@@ -90,8 +90,8 @@ theorem midOps_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size
   refine WP.seq (WP.mono (slAdd_ok (MN'_n c) h7 hs₂ kN₂ (MN'_A c) (o := RR) (a := X) (b := ZERO) (by decide)
     (by decide) (by decide) (by omega)) fun s₃ ⟨k₃, e₃⟩ => ?_)
   have hs₃ := k₃.scr hs₂
-  have kP₃ := kP₂.keep (j := MP) (by decide) rfl rfl rfl rfl h7 hn k₃ (by decide) (by decide)
-  have kN₃ := kN₂.keep (j := MN) (by decide) rfl rfl rfl rfl h7 hn k₃ (by decide) (by decide)
+  have kP₃ := kP₂.keepA64 (j := MP) (by decide) rfl rfl rfl rfl h7 hn k₃ (by decide) (by decide)
+  have kN₃ := kN₂.keepA64 (j := MN) (by decide) rfl rfl rfl rfl h7 hn k₃ (by decide) (by decide)
   have r2₃ : sv c base s₃ R2N = 2 ^ (64 * c.n) * 2 ^ (64 * c.n) % c.C.n := by
     rw [sv_keep (MN'_n c) rfl h7 hn k₃ (by decide) (by decide) (by decide),
       sv_keep (MP'_n c) rfl h7 hn k₂ (by decide) (by decide) (by decide),
@@ -108,8 +108,8 @@ theorem midOps_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size
       sv_keep (MN'_n c) rfl h7 hn k₃ (by decide) (by decide) (by decide)]
   refine ⟨k₄.scr hs₃, fun r hr => ?_, by rw [k₄.rd, k₃.rd, k₂.rd, k₁.rd],
     by rw [k₄.wr, k₃.wr, k₂.wr, k₁.wr], ?_,
-    kP₃.keep (j := MP) (by decide) rfl rfl rfl rfl h7 hn k₄ (by decide) (by decide),
-    kN₃.keep (j := MN) (by decide) rfl rfl rfl rfl h7 hn k₄ (by decide) (by decide),
+    kP₃.keepA64 (j := MP) (by decide) rfl rfl rfl rfl h7 hn k₄ (by decide) (by decide),
+    kN₃.keepA64 (j := MN) (by decide) rfl rfl rfl rfl h7 hn k₄ (by decide) (by decide),
     by rw [X₄]; exact lt₂, by rw [X₄]; exact x₂, ?_, lt₄,
     by rw [toM_r2 hnR (by rw [e₄, r2₃]), K₃]⟩
   · rw [k₄.gpr r hr, k₃.gpr r hr, k₂.gpr r hr, k₁.gpr r hr]

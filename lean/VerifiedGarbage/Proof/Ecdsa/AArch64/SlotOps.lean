@@ -6,7 +6,7 @@ import VerifiedGarbage.Proof.Ecdsa.AArch64.Setup
 The Montgomery operations of `Proof/Mont/AArch64/Ops.lean` on the slots
 `c.sl i` of the working space, modulo `p` (`c.MP'`) or `n` (`c.MN'`): an
 operation writing slot `o` keeps every other slot but the temporary area's
-(`sv_keep`) and the moduli (`ModOk.keep`); and what a slot stands for after
+(`sv_keep`) and the moduli (`ModOk.keepA64`); and what a slot stands for after
 a multiplication by `1` or by `R² mod m` (`toM_one_mul`, `toM_r2`).
 -/
 
@@ -41,7 +41,7 @@ theorem sv_keep {M : Mod} (hMn : M.n = c.n) (hMt : M.tmp = c.sl TMP) (h7 : c.n <
   · rw [hMn, hMt]; exact sl_apart c hit
 
 /-- The modulus in slot `j` survives an operation writing another slot. -/
-theorem _root_.VG.Proof.Mont.ModOk.keep {M M' : Mod} {m : Nat} {base : Addr} {s s' : State}
+theorem _root_.VG.Proof.Mont.ModOk.keepA64 {M M' : Mod} {m : Nat} {base : Addr} {s s' : State}
     (hM : ModOk M size m s.mem base) {j : Nat} (hj : j < 45) (hmo : M.mo = c.sl j) (hMn : M.n = c.n)
     (hM'n : M'.n = c.n) (hM't : M'.tmp = c.sl TMP) (h7 : c.n < 7) (hn : base.toNat + size ≤ 2 ^ 64)
     {o : Nat} (h : OpKeep M' base (c.sl o) s s') (hjo : j ≠ o) (hjt : j ≠ TMP) :

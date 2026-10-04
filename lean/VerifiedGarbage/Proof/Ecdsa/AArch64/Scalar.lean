@@ -98,14 +98,14 @@ theorem scalarIn_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base si
   refine WP.seq (WP.mono (slMul_ok (MN'_n c) h7 hs hMN (MN'_A c) (o := RM) (a := RR) (b := R2N) (by decide)
     (by decide) (by decide) hr2lt) fun s₁ ⟨k₁, lt₁, e₁⟩ => ?_)
   have hs₁ := k₁.scr hs
-  have kN₁ := hMN.keep (j := MN) (by decide) rfl rfl rfl rfl h7 hn k₁ (by decide) (by decide)
+  have kN₁ := hMN.keepA64 (j := MN) (by decide) rfl rfl rfl rfl h7 hn k₁ (by decide) (by decide)
   have r₁ : sv c base s₁ R2N = sv c base s R2N := sv_keep (MN'_n c) rfl h7 hn k₁ (by decide) (by decide) (by decide)
   have d₁ : sv c base s₁ D = sv c base s D := sv_keep (MN'_n c) rfl h7 hn k₁ (by decide) (by decide) (by decide)
   have E₁ : sv c base s₁ E = sv c base s E := sv_keep (MN'_n c) rfl h7 hn k₁ (by decide) (by decide) (by decide)
   refine WP.seq (WP.mono (slMul_ok (MN'_n c) h7 hs₁ kN₁ (MN'_A c) (o := DM) (a := D) (b := R2N) (by decide)
     (by decide) (by decide) (by rw [r₁]; exact hr2lt)) fun s₂ ⟨k₂, lt₂, e₂⟩ => ?_)
   have hs₂ := k₂.scr hs₁
-  have kN₂ := kN₁.keep (j := MN) (by decide) rfl rfl rfl rfl h7 hn k₂ (by decide) (by decide)
+  have kN₂ := kN₁.keepA64 (j := MN) (by decide) rfl rfl rfl rfl h7 hn k₂ (by decide) (by decide)
   have r₂ : sv c base s₂ R2N = sv c base s R2N :=
     (sv_keep (MN'_n c) rfl h7 hn k₂ (by decide) (by decide) (by decide)).trans r₁
   have E₂ : sv c base s₂ E = sv c base s E :=
@@ -116,7 +116,7 @@ theorem scalarIn_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base si
   have rm₃ : sv c base s₃ RM = sv c base s₁ RM :=
     (sv_keep (MN'_n c) rfl h7 hn k₃ (by decide) (by decide) (by decide)).trans rm₂
   have dm₃ : sv c base s₃ DM = sv c base s₂ DM := sv_keep (MN'_n c) rfl h7 hn k₃ (by decide) (by decide) (by decide)
-  refine h s₃ (k₃.scr hs₂) (kN₂.keep (j := MN) (by decide) rfl rfl rfl rfl h7 hn k₃ (by decide) (by decide))
+  refine h s₃ (k₃.scr hs₂) (kN₂.keepA64 (j := MN) (by decide) rfl rfl rfl rfl h7 hn k₃ (by decide) (by decide))
     (fun r hr => by rw [k₃.gpr r hr, k₂.gpr r hr, k₁.gpr r hr]) (by rw [k₃.rd, k₂.rd, k₁.rd])
     (by rw [k₃.wr, k₂.wr, k₁.wr]) ?_ (by rw [rm₃]; exact lt₁) (by rw [dm₃]; exact lt₂) lt₃
     (by rw [rm₃, toM_r2 hnR (by rw [e₁, hr2])])
@@ -152,12 +152,12 @@ theorem scalarOut_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base s
   refine WP.seq (WP.mono (slMul_ok (MN'_n c) h7 hs hMN (MN'_A c) (o := TT) (a := RM) (b := DM) (by decide)
     (by decide) (by decide) hdm) fun s₁ ⟨k₁, lt₁, e₁⟩ => ?_)
   have hs₁ := k₁.scr hs
-  have kN₁ := hMN.keep (j := MN) (by decide) rfl rfl rfl rfl h7 hn k₁ (by decide) (by decide)
+  have kN₁ := hMN.keepA64 (j := MN) (by decide) rfl rfl rfl rfl h7 hn k₁ (by decide) (by decide)
   have em₁ : sv c base s₁ EM = sv c base s EM := sv_keep (MN'_n c) rfl h7 hn k₁ (by decide) (by decide) (by decide)
   refine WP.seq (WP.mono (slAdd_ok (MN'_n c) h7 hs₁ kN₁ (MN'_A c) (o := TT) (a := TT) (b := EM) (by decide)
     (by decide) (by decide) (by rw [em₁]; omega)) fun s₂ ⟨k₂, e₂⟩ => ?_)
   have hs₂ := k₂.scr hs₁
-  have kN₂ := kN₁.keep (j := MN) (by decide) rfl rfl rfl rfl h7 hn k₂ (by decide) (by decide)
+  have kN₂ := kN₁.keepA64 (j := MN) (by decide) rfl rfl rfl rfl h7 hn k₂ (by decide) (by decide)
   have acc₂ : sv c base s₂ ACC = sv c base s ACC := by
     rw [sv_keep (MN'_n c) rfl h7 hn k₂ (by decide) (by decide) (by decide),
       sv_keep (MN'_n c) rfl h7 hn k₁ (by decide) (by decide) (by decide)]
@@ -172,7 +172,7 @@ theorem scalarOut_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base s
   refine WP.seq (WP.mono (slMul_ok (MN'_n c) h7 hs₂ kN₂ (MN'_A c) (o := SM) (a := ACC) (b := TT) (by decide)
     (by decide) (by decide) ttlt) fun s₃ ⟨k₃, _, e₃⟩ => ?_)
   have hs₃ := k₃.scr hs₂
-  have kN₃ := kN₂.keep (j := MN) (by decide) rfl rfl rfl rfl h7 hn k₃ (by decide) (by decide)
+  have kN₃ := kN₂.keepA64 (j := MN) (by decide) rfl rfl rfl rfl h7 hn k₃ (by decide) (by decide)
   have one₃ : sv c base s₃ ONE = 1 :=
     (sv_keep (MN'_n c) rfl h7 hn k₃ (by decide) (by decide) (by decide)).trans one₂
   refine WP.seq (WP.mono (slMul_ok (MN'_n c) h7 hs₃ kN₃ (MN'_A c) (o := SS) (a := SM) (b := ONE) (by decide)
