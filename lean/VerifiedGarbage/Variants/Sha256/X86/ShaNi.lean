@@ -45,12 +45,14 @@ theorem compress_shared : Verified X86.target cmpC (Spec.Sha256.compressContract
     Proof.Sha256.X86.Shared.compressWide_implies.sat_left).of_implies
       Proof.Sha256.X86.Shared.compressWide_implies
 
-theorem update_shared : Verified X86.target sha256Update (Spec.Sha256.updateContract X86.abi 20) :=
+theorem updateScratch_shared :
+    Verified X86.target sha256Update (Spec.Sha256.updateScratchContract X86.abi 20) :=
   (Proof.Sha256.X86.Shared.updateWide_of (Proof.Sha256.X86.Stream.update_of callee update_ct)
     Proof.Sha256.X86.Shared.updateWide_implies.sat_left).of_implies
       Proof.Sha256.X86.Shared.updateWide_implies
 
-theorem finalize_shared : Verified X86.target sha256Finalize (Spec.Sha256.finalizeContract X86.abi 20) :=
+theorem finalizeScratch_shared :
+    Verified X86.target sha256Finalize (Spec.Sha256.finalizeScratchContract X86.abi 20) :=
   (Proof.Sha256.X86.Shared.finalizeWide_of (Proof.Sha256.X86.Stream.finalize_of callee finalize_ct)
     Proof.Sha256.X86.Shared.finalizeWide_implies.sat_left).of_implies
       Proof.Sha256.X86.Shared.finalizeWide_implies
@@ -93,18 +95,36 @@ def variant : Proof.Sha256.X86.Variants.Backend where
       ofApi := rfl
       spSafe := Code.all_of_allInstrs (by lit_decide) },
     { api := Spec.Sha256.updateApi
-      code := sha256Update
-      contract := Spec.Sha256.updateContract X86.abi 20
-      stack := 20
-      verified := update_shared
+      code := Impl.StackScratch.X86.withStackScratch 636 5 sha256Update
+      contract := Spec.Sha256.updateContract X86.abi (20 + 636)
+      stack := 20 + 636
+      verified := Proof.Sha256.X86.Shared.update_frame updateScratch_shared (by lit_decide)
+        (by lit_decide)
       ofSig := ⟨_, _, _, rfl⟩
       ofApi := rfl
       spSafe := Code.all_of_allInstrs (by lit_decide) },
     { api := Spec.Sha256.finalizeApi
-      code := sha256Finalize
-      contract := Spec.Sha256.finalizeContract X86.abi 20
+      code := Impl.StackScratch.X86.withStackScratch 632 4 sha256Finalize
+      contract := Spec.Sha256.finalizeContract X86.abi (20 + 632)
+      stack := 20 + 632
+      verified := Proof.Sha256.X86.Shared.finalize_frame finalizeScratch_shared (by lit_decide)
+        (by lit_decide)
+      ofSig := ⟨_, _, _, rfl⟩
+      ofApi := rfl
+      spSafe := Code.all_of_allInstrs (by lit_decide) },
+    { api := Spec.Sha256.updateScratchApi
+      code := sha256Update
+      contract := Spec.Sha256.updateScratchContract X86.abi 20
       stack := 20
-      verified := finalize_shared
+      verified := updateScratch_shared
+      ofSig := ⟨_, _, _, rfl⟩
+      ofApi := rfl
+      spSafe := Code.all_of_allInstrs (by lit_decide) },
+    { api := Spec.Sha256.finalizeScratchApi
+      code := sha256Finalize
+      contract := Spec.Sha256.finalizeScratchContract X86.abi 20
+      stack := 20
+      verified := finalizeScratch_shared
       ofSig := ⟨_, _, _, rfl⟩
       ofApi := rfl
       spSafe := Code.all_of_allInstrs (by lit_decide) }]
