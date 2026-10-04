@@ -151,21 +151,22 @@ theorem tail_ok (hL : L.Ok) {u : State} (hc : Ctx L g m₀ u) {D : Nat} (hD : D 
 /-- The message `V ‖ b` (`‖ d ‖ h` if `full`) at `scratch + 2256`, for `V` of `D` bytes. -/
 theorem msg_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) {b : Nat} (hb : b < 2) (full : Bool) {D : Nat}
     (hD : D ≤ 64) (hD4 : D % 4 = 0) :
-    WP isa (.block (Cfg.msg D b full)) t fun t' => Ctx L g m₀ t' ∧
+    WP isa (.block (Cfg.msg D b full)) t fun t' => Ctx L g m₀ t' ∧ t'.gpr .r9 = t.gpr .r9 ∧
       Frame [⟨msgA L, D + 65⟩] t.mem t'.mem ∧
       Spec.Sha256.bytesAt t'.mem (msgA L) (if full then D + 65 else D + 1) =
         vOf L D t.mem ++ [BitVec.ofNat 8 b] ++
           (if full then Spec.Sha256.bytesAt t.mem (State.addr L.d) 32 ++ hOf L t.mem else []) := by
   cases full
   · simp only [Cfg.msg, Bool.false_eq_true, ite_false, List.append_nil]
-    refine WP.mono (head_ok hL hc hb hD hD4) fun u ⟨hcu, _, hf, hb⟩ =>
-      ⟨hcu, hf.sub fun r hr => ⟨_, List.mem_singleton_self _, ?_⟩, hb⟩
+    refine WP.mono (head_ok hL hc hb hD hD4) fun u ⟨hcu, hg, hf, hb⟩ =>
+      ⟨hcu, hg _ (by decide), hf.sub fun r hr => ⟨_, List.mem_singleton_self _, ?_⟩, hb⟩
     simp only [List.mem_singleton] at hr; subst hr
     exact Region.sub_prefix (by omega)
   · simp only [Cfg.msg, ite_true]
     rw [WP.block_append_iff]
     refine WP.mono (head_ok hL hc hb hD hD4) fun u ⟨hcu, hg, hf, hb⟩ =>
-      WP.mono (tail_ok hL hcu hD) fun u' ⟨hcu', _, hf', hb'⟩ => ⟨hcu', ?_, ?_⟩
+      WP.mono (tail_ok hL hcu hD) fun u' ⟨hcu', hg', hf', hb'⟩ =>
+        ⟨hcu', (hg' _ (by decide)).trans (hg _ (by decide)), ?_, ?_⟩
     · refine (hf.sub fun r hr => ⟨_, List.mem_singleton_self _, ?_⟩).trans
         (hf'.sub fun r hr => ⟨_, List.mem_singleton_self _, ?_⟩)
       · simp only [List.mem_singleton] at hr; subst hr

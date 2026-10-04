@@ -36,6 +36,8 @@ structure RfcHash where
   ecdsa : I.ecdsa = Spec.Ecdsa.P256.inst
   hash : I.hash = ok.hH.SH.H
   len : I.hashLen = F.H.D
+  /-- The hash function's digests have `F.H.D` bytes. -/
+  macLen : ∀ x, (ok.hH.SH.H.hash x).length = F.H.D
   tries : I.tries = 8
   /-- The sizes the frame and `scratch` hold: the output and block sizes of
   SHA-256, SHA-384 or SHA-512. -/
@@ -63,6 +65,9 @@ theorem sizes : P.F.H.S ≤ 192 ∧ P.ok.Wi * 8 ≤ 1872 ∧ P.ok.Wf * 8 ≤ 187
     P.ok.hH.SH.H.blockSize = P.F.H.B := by
   refine ⟨P.hS, P.hWi, P.hWf, P.hWb, ?_, ?_, ?_, ?_, ?_, P.ok.hH.hS, P.ok.hH.hD, P.ok.hH.hB⟩ <;>
     rcases P.hDB with ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ <;> simp only [h, h'] <;> omega
+
+theorem mac_length (K t : List Byte) : (P.mac K t).length = P.F.H.D := by
+  simp only [mac, Spec.Hmac.hmac, Spec.Hmac.hmacBlockKey, P.macLen]
 
 /-- The digest is at least 32 bytes. -/
 theorem len32 : 32 ≤ P.I.hashLen := by
