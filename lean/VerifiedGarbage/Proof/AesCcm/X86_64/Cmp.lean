@@ -3,8 +3,9 @@ import VerifiedGarbage.Proof.AesCcm.X86_64.Run
 /-!
 # AES-CCM on x86-64: checking a received tag (`recv`, `cmp o`)
 
-Untrusted: everything here is checked by Lean. These are AES-GCM's pieces,
-with AES-CCM's working space: `recv` pads the `rbx` bytes of the received tag
+Untrusted: everything here is checked by Lean. These are AES-GCM's pieces
+(`recv` as it reads the received tag from the working space), with AES-CCM's
+working space: `recv` pads the `rbx` bytes of the received tag
 at `W` with zeros at `W + 256` (`recv_ok`); `cmp o` pads the first `rbx`
 bytes of the tag at `W + o` at `W + 240` and leaves 1 in `rax` if they are
 the received ones, 0 if not (`cmp_ok`).
@@ -15,7 +16,8 @@ set_option linter.unusedSimpArgs false
 namespace VG.Proof.AesCcm.X86_64
 
 open VG VG.X86_64 VG.X86_64.RegUpd VG.WriteBytes
-open VG.Impl.AesGcm.X86_64 (at_ imm ptr recv cmp vO rO copyLoop)
+open VG.Impl.AesGcm.X86_64 (at_ imm ptr cmp vO rO copyLoop)
+open VG.Impl.AesCcm.X86_64 (recv)
 open VG.Proof.AesGcm.X86_64 (LoopPre copyLoop_ok)
 open VG.Spec.Aes (bytesAt)
 open VG.Spec.Ccm (zeros)

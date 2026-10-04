@@ -149,7 +149,7 @@ theorem Inv.update {M : Mod} {base : Addr} {size m wk : Nat} [NeZero m] {Sl : Na
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
         subst hw; exact hL.apart x w hx ho hxo)
       (hL.tmp x hx) (hW.sl x hx)
-  refine ⟨hk.scr hI.scr, ⟨hM.n0, hM.n7, hM.mo, hM.tmp, hM.sep, ?_, hM.inv⟩, ?_, ?_, ?_⟩
+  refine ⟨hk.scr hI.scr, ⟨hM.n0, hM.n7, hM.mo, hM.tmp, hM.sep, ?_, hM.inv, hM.red⟩, ?_, ?_, ?_⟩
   · have := hW.mo
     rw [hk.wordsVal hn hM.mo (fun w hw => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hw

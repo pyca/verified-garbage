@@ -59,6 +59,10 @@ def bin (op : XBinOp) : BitVec 128 := ((XOp.bin op .xmm0 .xmm1).exec s).xmm .xmm
 #guard bin .sha1msg1 == 0x777777777777777701234567f6543210#128
 #guard bin .sha1msg2 == 0x13579bdefdb97530d9d1d9c1ca07539c#128
 #guard bin .sha1nexte == 0xe26af37a800000007fffffff12345678#128
+#guard bin .aesdec == 0xfafbac38e6a5c5c37f30df5470d1274c#128
+#guard bin .aesdeclast == 0xf06c979e72fdc00a76f15e1d1e06d604#128
+-- `aesimc` reads only its source.
+#guard bin .aesimc == 0xffffffff41f7daecbe082513851bd147#128
 
 
 /-- `xmm1` after `op xmm1, xmm0`. -/
@@ -236,6 +240,9 @@ def shufHi (order : BitVec 8) : BitVec 128 := ((XOp.pshufhw .xmm1 .xmm0 order).e
 #guard printer.instr (.xop (.bin .pandn .xmm2 .xmm3)) == ["pandn xmm2, xmm3"]
 #guard printer.instr (.xop (.bin .aesenc .xmm0 .xmm1)) == ["aesenc xmm0, xmm1"]
 #guard printer.instr (.xop (.bin .aesenclast .xmm2 .xmm3)) == ["aesenclast xmm2, xmm3"]
+#guard printer.instr (.xop (.bin .aesdec .xmm4 .xmm5)) == ["aesdec xmm4, xmm5"]
+#guard printer.instr (.xop (.bin .aesdeclast .xmm6 .xmm7)) == ["aesdeclast xmm6, xmm7"]
+#guard printer.instr (.xop (.bin .aesimc .xmm1 .xmm2)) == ["aesimc xmm1, xmm2"]
 #guard printer.instr (.xop (.aeskeygenassist .xmm3 .xmm4 0x36)) == ["aeskeygenassist xmm3, xmm4, 54"]
 #guard printer.instr (.xop (.pclmulqdq .xmm5 .xmm6 0x11)) == ["pclmulqdq xmm5, xmm6, 17"]
 #guard printer.instr (.xop (.shift .psllq .xmm7 1)) == ["psllq xmm7, 1"]
@@ -265,6 +272,8 @@ def shufHi (order : BitVec 8) : BitVec 128 := ((XOp.pshufhw .xmm1 .xmm0 order).e
 #guard isa.requires (.xop (.sha256rnds2 .xmm1 .xmm2)) == ["sha"]
 #guard isa.requires (.xop (.bin .aesenc .xmm1 .xmm2)) == ["aes"]
 #guard isa.requires (.xop (.bin .aesenclast .xmm1 .xmm2)) == ["aes"]
+#guard [XBinOp.aesdec, .aesdeclast, .aesimc].all fun op =>
+  isa.requires (.xop (.bin op .xmm1 .xmm2)) == ["aes"]
 #guard isa.requires (.xop (.aeskeygenassist .xmm1 .xmm2 1)) == ["aes"]
 #guard isa.requires (.xop (.pclmulqdq .xmm1 .xmm2 0)) == ["pclmulqdq"]
 #guard [XBinOp.sha1msg1, .sha1msg2, .sha1nexte].all fun op =>

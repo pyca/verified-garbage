@@ -2,14 +2,15 @@ import VerifiedGarbage.Proof.AesGcm.AArch64.J0
 import VerifiedGarbage.Proof.AesGcm.AArch64.Tag
 
 /-!
-# AES-GCM on AArch64: checking a received tag (`tagLenOk`, `cmpSeg`, `verMask`)
+# AES-GCM on AArch64: checking a received tag (`tagLenOk`, `cmpSeg`, `verRet`), moving tags
 
 Untrusted: everything here is checked by Lean. `tagLenOk` leaves 1 in `x9`
 iff §5.2.1.2 allows a tag of `x28` bytes, 0 if not (`tagLenOk_ok`);
 `cmpSeg` pads the `x28` bytes of the received tag at `W` and of the computed
 one at `W + 112` with zeros, and leaves 0 in `x10` if they are equal, 1 if
-not (`cmpSeg_ok`); `verMask` keeps the computed tag in `W` if they are, zeros
-if not, and returns 1 or 0 (`verMask_ok`).
+not (`cmpSeg_ok`); `verRet` returns 1 or 0 (`verRet_ok`). `tagIn` copies the
+received tag into `W` (`tagIn_ok`), and `tagOut` the computed one out of it
+(`tagOut_ok`).
 -/
 
 set_option linter.unusedSimpArgs false
@@ -294,54 +295,70 @@ theorem cmpSeg_ok {k : Reg → BitVec 64} {s : State} (he : Env Ctx St W SP s) (
     rcases hr with rfl | rfl | rfl <;> decide)) sp₅ rd₅ wr₅, hk.of_others og, by rw [og _ (by decide), h28], ?_⟩
   rw [m₅]; exact f₁₄
 
-omit L in
-theorem and_ones (x : BitVec 64) : x &&& (BitVec.ofNat 64 0 - BitVec.ofNat 64 1) = x := by
-  rw [show (BitVec.ofNat 64 0 - BitVec.ofNat 64 1 : BitVec 64) = BitVec.allOnes 64 by decide, BitVec.and_allOnes]
-
-/-- `verMask`: the computed tag at `W + 112` kept in `W` if `b`, zeros if
-not, and 1 or 0 returned. -/
-theorem verMask_ok {k : Reg → BitVec 64} {s : State} (he : Env Ctx St W SP s) (hk : Kept k s) {b : Bool}
-    (h10 : s.gpr .x10 = BitVec.ofNat 64 (if b then 0 else 1)) :
-    WP isa (.block verMask) s fun s' =>
-      s'.gpr .x0 = BitVec.ofNat 64 (if b then 1 else 0) ∧
-      bytesAt s'.mem W 16 = (if b then bytesAt s.mem (W + BitVec.ofNat 64 112) 16 else zeros 16) ∧
-      Env Ctx St W SP s' ∧ Kept k s' ∧ Others [.x0, .x9, .x11] s s' ∧ Frame [⟨W, 16⟩] s.mem s'.mem := by
-  have r₁ := he.perm.wR (show 112 + 8 ≤ 2560 by decide)
-  have r₂ := he.perm.wR (show 120 + 8 ≤ 2560 by decide)
-  have w₁ := he.perm.wW (show 0 + 8 ≤ 2560 by decide)
-  have w₂ := he.perm.wW (show 8 + 8 ≤ 2560 by decide)
-  have hd : (⟨W, 8⟩ : Region).Disjoint ⟨W + BitVec.ofNat 64 112 + BitVec.ofNat 64 8, 8⟩ := by
-    rw [add_ofNat_assoc]; simpa using L.w_w (a := 0) (n := 8) (d := 120) (k := 8) (.inl (by decide)) (by decide) (by decide)
-  have e8 : W + BitVec.ofNat 64 120 = W + BitVec.ofNat 64 112 + BitVec.ofNat 64 8 := (add_ofNat_assoc W 112 8).symm
-  cases b
-  · obtain ⟨s', run, hm, x0', og, sp', rd', wr'⟩ : ∃ s', runBlock isa verMask s = some s' ∧
-        s'.mem = (s.mem.writeW W (0 : BitVec 64)).writeW (W + BitVec.ofNat 64 8) (0 : BitVec 64) ∧
-        s'.gpr .x0 = BitVec.ofNat 64 0 ∧ Others [.x0, .x9, .x11] s s' ∧ s'.sp = s.sp ∧ s'.rd = s.rd ∧
-        s'.wr = s.wr := by
-      refine ⟨_, by simp only [verMask]; arun [he.x19, h10, r₁, r₂, w₁, w₂, BitVec.sub_self, BitVec.and_zero], ?_⟩
-      refine ⟨?_, by simp [gpr_write], by others_tac, rfl, rfl, rfl⟩
-      simp only [mem_write, Mem.writeW, BitVec.setWidth_eq, BitVec.add_zero]; rfl
-    refine WP.of_runBlock ⟨s', run, x0', ?_, he.keep (fun r hr => og r (by
-      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl <;> decide)) sp' rd' wr', hk.of_others og, og, ?_⟩
-    · rw [hm, Proof.Cmac.bytesAt_store2, Proof.Cmac.le8_zero]; rfl
-    · rw [hm]; exact Proof.Cmac.frame_store2 _ _ _
-  · obtain ⟨s', run, hm, x0', og, sp', rd', wr'⟩ : ∃ s', runBlock isa verMask s = some s' ∧
-        s'.mem = (s.mem.writeW W (s.mem.readW (W + BitVec.ofNat 64 112) 64)).writeW (W + BitVec.ofNat 64 8)
-          ((s.mem.writeW W (s.mem.readW (W + BitVec.ofNat 64 112) 64)).readW
-            (W + BitVec.ofNat 64 112 + BitVec.ofNat 64 8) 64) ∧
-        s'.gpr .x0 = BitVec.ofNat 64 1 ∧ Others [.x0, .x9, .x11] s s' ∧ s'.sp = s.sp ∧ s'.rd = s.rd ∧
-        s'.wr = s.wr := by
-      refine ⟨_, by simp only [verMask]; arun [he.x19, h10, r₁, r₂, w₁, w₂, and_ones], ?_⟩
-      refine ⟨?_, by simp [gpr_write], by others_tac, rfl, rfl, rfl⟩
-      simp only [mem_write, Mem.writeW, Mem.readW, BitVec.setWidth_eq, BitVec.add_zero, Nat.reduceMul, Nat.reduceDiv,
-        Nat.reduceAdd, and_ones, ← e8]
-    refine WP.of_runBlock ⟨s', run, x0', ?_, he.keep (fun r hr => og r (by
-      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl <;> decide)) sp' rd' wr', hk.of_others og, og, ?_⟩
-    · rw [hm, bytesAt_copy2 _ hd]; rfl
-    · rw [hm]; exact Proof.Cmac.frame_store2 _ _ _
-
 end
+
+/-- `verRet`: 1 if the tags are equal (`x10` is 0), 0 if not. -/
+theorem verRet_ok {s : State} {b : Bool} (h10 : s.gpr .x10 = BitVec.ofNat 64 (if b then 0 else 1)) :
+    WP isa (.block verRet) s fun s' => s'.gpr .x0 = BitVec.ofNat 64 (if b then 1 else 0) ∧ Regs [.x0] s s' := by
+  refine WP.run ⟨_, by simp only [verRet]; arun [], rfl⟩ fun s' hs' => ?_
+  subst hs'
+  refine ⟨?_, ⟨by others_tac, rfl, rfl, rfl, rfl⟩⟩
+  simp only [gpr_write, ite_true, ite_false, reduceCtorEq, BitVec.setWidth_eq, h10]
+  cases b <;> decide
+
+/-- `tagIn`: the received tag, the `t` bytes at `Tg`, copied to `W`. -/
+theorem tagIn_ok {s : State} {W Tg : Addr} {t : Nat} (h19 : s.gpr .x19 = W) (h12 : s.gpr .x12 = Tg)
+    (h28 : s.gpr .x28 = BitVec.ofNat 64 t) (h16 : t ≤ 16) (hr : Covers [⟨Tg, t⟩] (s.rd ++ s.wr))
+    (hw : Covers [⟨W, 2560⟩] s.wr) (hd : (⟨Tg, t⟩ : Region).Disjoint ⟨W, 16⟩) :
+    WP isa tagIn s fun s' => bytesAt s'.mem W t = bytesAt s.mem Tg t ∧ Frame [⟨W, 16⟩] s.mem s'.mem ∧
+      Others loopRegs s s' ∧ s'.sp = s.sp ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
+  obtain ⟨s₁, run₁, x11₁, x12₁, x13₁, og₁, m₁, sp₁, rd₁, wr₁⟩ : ∃ s₁, runBlock isa [mov .x11 .x19, mov .x13 .x28] s =
+      some s₁ ∧ s₁.gpr .x11 = W ∧ s₁.gpr .x12 = Tg ∧ s₁.gpr .x13 = BitVec.ofNat 64 t ∧
+      Others [.x11, .x13] s s₁ ∧ s₁.mem = s.mem ∧ s₁.sp = s.sp ∧ s₁.rd = s.rd ∧ s₁.wr = s.wr := by
+    refine ⟨_, by arun [], ?_⟩
+    refine ⟨?_, ?_, ?_, by others_tac, rfl, rfl, rfl, rfl⟩
+    · simp [gpr_write, h19]
+    · simp [gpr_write, h12]
+    · simp [gpr_write, h28]
+  refine WP.seq (WP.of_runBlock ⟨s₁, run₁, ?_⟩)
+  have lp : LoopPre s₁ Tg W t :=
+    ⟨by omega, by rw [rd₁, wr₁]; exact hr, covers_prefix (by rw [wr₁]; exact hw) (by omega),
+      hd.sub_right (Region.sub_prefix h16)⟩
+  refine WP.mono (copy_ok s₁ x12₁ x11₁ x13₁ lp) fun s₂ ⟨hm₂, og₂, sp₂, rd₂, wr₂⟩ => ⟨?_, ?_, ?_, by rw [sp₂, sp₁],
+    by rw [rd₂, rd₁], by rw [wr₂, wr₁]⟩
+  · have := bytesAt_writeBytes_self s₁.mem W (bytesAt s₁.mem Tg t) (by rw [length_bytesAt]; omega)
+    rw [length_bytesAt] at this
+    rw [hm₂, this, m₁]
+  · rw [hm₂, ← m₁]
+    exact (writeBytes_frame' _ (length_bytesAt _ _ _)).sub fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr
+      exact ⟨_, List.mem_singleton_self _, Region.sub_prefix h16⟩
+  · intro r hr
+    rw [og₂ r hr, og₁ r fun h => hr (by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at h ⊢; rcases h with rfl | rfl <;> simp)]
+
+/-- `tagOut`: the tag at `W` copied to the 16 bytes at `Tg`. -/
+theorem tagOut_ok {s : State} {W Tg : Addr} (h19 : s.gpr .x19 = W) (h28 : s.gpr .x28 = Tg)
+    (hr : Covers [⟨W, 2560⟩] (s.rd ++ s.wr)) (hw : Covers [⟨Tg, 16⟩] s.wr)
+    (hd : (⟨Tg, 16⟩ : Region).Disjoint ⟨W, 16⟩) :
+    WP isa (.block tagOut) s fun s' => bytesAt s'.mem Tg 16 = bytesAt s.mem W 16 ∧
+      Frame [⟨Tg, 16⟩] s.mem s'.mem ∧ Others [.x9] s s' ∧ s'.sp = s.sp ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
+  have r₁ := in_off hr (show 0 + 8 ≤ 2560 by decide) (by decide)
+  have r₂ := in_off hr (show 8 + 8 ≤ 2560 by decide) (by decide)
+  have w₁ := in_off hw (show 0 + 8 ≤ 16 by decide) (by decide)
+  have w₂ := in_off hw (show 8 + 8 ≤ 16 by decide) (by decide)
+  have hd' : (⟨Tg, 8⟩ : Region).Disjoint ⟨W + BitVec.ofNat 64 8, 8⟩ :=
+    hd.sub_left (Region.sub_prefix (by decide)) |>.sub_right (Offset.sub_base _ (by decide))
+  obtain ⟨s', run, hm, og, sp', rd', wr'⟩ : ∃ s', runBlock isa tagOut s = some s' ∧
+      s'.mem = (s.mem.writeW Tg (s.mem.readW W 64)).writeW (Tg + BitVec.ofNat 64 8)
+        ((s.mem.writeW Tg (s.mem.readW W 64)).readW (W + BitVec.ofNat 64 8) 64) ∧
+      Others [.x9] s s' ∧ s'.sp = s.sp ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
+    refine ⟨_, by simp only [tagOut]; arun [h19, h28, r₁, r₂, w₁, w₂], ?_⟩
+    refine ⟨?_, by others_tac, rfl, rfl, rfl⟩
+    simp only [mem_write, Mem.writeW, Mem.readW, BitVec.setWidth_eq, BitVec.add_zero, Nat.reduceMul, Nat.reduceDiv,
+      Nat.reduceAdd, gpr_write, ite_true, ite_false, reduceCtorEq, h19, h28]
+  refine WP.of_runBlock ⟨s', run, ?_, ?_, og, sp', rd', wr'⟩
+  · rw [hm, bytesAt_copy2 _ hd']
+  · rw [hm]; exact Proof.Cmac.frame_store2 _ _ _
 
 end VG.Proof.AesGcm.AArch64

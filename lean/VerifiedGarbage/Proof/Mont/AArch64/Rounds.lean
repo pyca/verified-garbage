@@ -41,39 +41,45 @@ theorem acc_regs_lt : ∀ n < 7, ∀ r ∈ acc n,
     r ∉ [Reg.x0, .x1, .x2, .x3, .x4, .x5, .x6, .x7, .x16, .x17] := by
   decide
 
-/-- `k` rounds, from a cleared accumulator, with `x7 = 0`. -/
+/-- `k` rounds, from a cleared accumulator, with `x7 = 0`, `[b]`'s words in
+`bRegs` and the reduction's constant in `x6`. -/
 theorem rounds_ok {M : Mod} (hn : M.n < 7) {a b m size : Nat}
     (ha : a + 8 * M.n ≤ size) (hb : b + 8 * M.n ≤ size) (hmo : M.mo + 8 * M.n ≤ size)
     (ha8 : a % 8 = 0) (hb8 : b % 8 = 0) (hmo8 : M.mo % 8 = 0)
-    (hinv : (m * M.minv.toNat + 1) % 2 ^ 64 = 0) :
+    (hinv : (m * M.minv.toNat + 1) % 2 ^ 64 = 0) (hred : M.red.ok M.n m = true) :
     ∀ k ≤ M.n, ∀ {s : State} {base : Addr}, Scr s base size → s.gpr .x7 = 0 →
-      wordsVal s.mem base M.mo M.n = m → wordsVal s.mem base b M.n < m →
-      regsVal s (wins M.n 0) = 0 →
+      wordsVal s.mem base M.mo M.n = m → BRegs s base b M.n → ConstOk M s →
+      wordsVal s.mem base b M.n < m → regsVal s (wins M.n 0) = 0 →
       WP isa (.block ((List.range k).flatMap (round M a b))) s fun s' =>
         (∃ U, 2 ^ (64 * k) * regsVal s' (wins M.n k) =
           wordsVal s.mem base a k * wordsVal s.mem base b M.n + U * m) ∧
         regsVal s' (wins M.n k) < 2 * m ∧
-        Keeps (.x1 :: .x2 :: .x3 :: .x4 :: .x5 :: .x6 :: acc M.n) s s'
-  | 0, _, s, _, _, _, _, hB, h0 => WP.block_nil ⟨⟨0, by simp [h0, wordsVal]⟩, by rw [h0]; omega,
+        Keeps (.x1 :: .x2 :: .x3 :: acc M.n) s s'
+  | 0, _, s, _, _, _, _, _, _, hB, h0 => WP.block_nil ⟨⟨0, by simp [h0, wordsVal]⟩, by rw [h0]; omega,
       fun _ _ => rfl, rfl, rfl, rfl, rfl⟩
-  | k + 1, hk, s, base, hs, hz, hm, hB, h0 => by
+  | k + 1, hk, s, base, hs, hz, hm, hBR, h6, hB, h0 => by
     rw [List.range_succ, List.flatMap_append, List.flatMap_singleton, WP.block_append_iff]
-    refine WP.mono (rounds_ok hn ha hb hmo ha8 hb8 hmo8 hinv k (by omega) hs hz hm hB h0)
+    refine WP.mono (rounds_ok hn ha hb hmo ha8 hb8 hmo8 hinv hred k (by omega) hs hz hm hBR h6 hB h0)
       fun s₁ ⟨⟨U, eU⟩, hT, k₁⟩ => ?_
     have hmem : s₁.mem = s.mem := k₁.mem
-    have nk : ∀ r ∈ [Reg.x0, .x7], r ∉ Reg.x1 :: Reg.x2 :: Reg.x3 :: Reg.x4 :: Reg.x5 :: Reg.x6 ::
-        acc M.n := by
+    have hacc := acc_regs_lt _ hn
+    have nk : ∀ r ∈ [Reg.x0, .x4, .x5, .x6, .x7, .x16, .x17],
+        r ∉ Reg.x1 :: Reg.x2 :: Reg.x3 :: acc M.n := by
       intro r hr h
-      by_cases hacc : r ∈ acc M.n
-      · have := acc_regs_lt _ hn _ hacc
-        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-        rcases hr with rfl | rfl <;> simp at this
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr h
-      rcases hr with rfl | rfl <;> simp_all
+      rcases h with h | h | h | h
+      · rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> exact absurd h (by decide)
+      · rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> exact absurd h (by decide)
+      · rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> exact absurd h (by decide)
+      · have := hacc r h
+        rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp at this
     have hs₁ := hs.of_keeps k₁ (nk .x0 (by simp))
     have hz₁ : s₁.gpr .x7 = 0 := by rw [k₁.gpr .x7 (nk .x7 (by simp)), hz]
+    have hBR₁ : BRegs s₁ base b M.n := hBR.keep hmem fun r hr => k₁.gpr r (nk r (by
+      rcases bRegs_regs r hr with rfl | rfl | rfl | rfl <;> simp))
+    have h6₁ : ConstOk M s₁ := h6.keep (k₁.gpr .x6 (nk .x6 (by simp)))
     refine WP.mono (round_ok hs₁ hn (i := k) (by omega) hb hmo ha8 hb8 hmo8 hz₁ (by rw [hmem, hm])
-      hinv (by rw [hmem]; exact hB) hT) fun s₂ ⟨⟨u, eu⟩, hT₂, k₂⟩ => ?_
+      hinv hred hBR₁ h6₁ (by rw [hmem]; exact hB) hT) fun s₂ ⟨⟨u, eu⟩, hT₂, k₂⟩ => ?_
     rw [hmem] at eu
     refine ⟨⟨U + 2 ^ (64 * k) * u, ?_⟩, hT₂, k₁.trans (k₂.mono fun q hq => ?_)⟩
     · calc 2 ^ (64 * (k + 1)) * regsVal s₂ (wins M.n (k + 1))
@@ -87,8 +93,8 @@ theorem rounds_ok {M : Mod} (hn : M.n < 7) {a b m size : Nat}
             rw [eU, Nat.add_mul, Nat.add_mul]; omega
         _ = _ := by rw [wordsVal_succ_top]
     · simp only [List.mem_cons] at hq ⊢
-      rcases hq with h | h | h | h | h | h | h
+      rcases hq with h | h | h | h
       any_goals simp only [h, true_or, or_true]
-      exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (wins_sub_acc hn k q h))))))
+      exact Or.inr (Or.inr (Or.inr (wins_sub_acc hn k q h)))
 
 end VG.Proof.Mont.AArch64

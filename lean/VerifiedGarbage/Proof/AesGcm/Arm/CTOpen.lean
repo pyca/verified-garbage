@@ -16,8 +16,8 @@ namespace VG.Proof.AesGcm.Arm
 
 open VG VG.Arm VG.Arm.RegUpd VG.Impl.AesGcm.Arm
 
-theorem one_entry_agree {n : Nat} {rs : List Reg} (hrs : ∀ r ∈ rs, r = .r0 ∨ r = .r1 ∨ r = .r2 ∨ r = .r3)
-    {s₀ s₀' : State} (h0 : onePre n s₀) (h0' : onePre n s₀') (hq : onePub n s₀ s₀') :
+theorem one_entry_agree {n wi : Nat} {rs : List Reg} (hrs : ∀ r ∈ rs, r = .r0 ∨ r = .r1 ∨ r = .r2 ∨ r = .r3)
+    {s₀ s₀' : State} (h0 : onePre n wi s₀) (h0' : onePre n wi s₀') (hq : onePub n s₀ s₀') :
     ∀ s s', s = s₀ → s' = s₀' → VG.Arm.Taint.Agree (argTaint rs (4 * n)) s s' := by
   obtain ⟨q₀, q₁, q₂, q₃, q₄, qa⟩ := hq
   intro s s' e e'
@@ -28,21 +28,37 @@ theorem one_entry_agree {n : Nat} {rs : List Reg} (hrs : ∀ r ∈ rs, r = .r0 �
 
 theorem seal_rel {s₀ s₀' : State} (h0 : sealArm.pre s₀) (h0' : sealArm.pre s₀') (hq : sealArm.pub s₀ s₀') :
     RelCT isa (fun a b => a = s₀ ∧ b = s₀') «seal» fun _ _ => True := by
-  have h5 : onePre 5 s₀ := h0
-  have h5' : onePre 5 s₀' := h0'
-  have hq5 : onePub 5 s₀ s₀' := hq
-  have a := rel_agree (F := fun s => s = s₀) (F' := fun s => s = s₀') (G := SO1 5 s₀) (G' := SO1 5 s₀')
-    (argTaint [.r0, .r1, .r2, .r3] (4 * 5)) (c := .block oneEntry)
-    (one_entry_agree (by simp) h5 h5' hq5) ⟨_, by taint_decide⟩
-    (fun s e => by rw [e]; exact one1_wp h5 (by decide) fun _ h => h)
-    (fun s e => by rw [e]; exact one1_wp h5' (by decide) fun _ h => h)
+  have h6 : onePre 6 5 s₀ := sealPreArm.one h0
+  have h6' : onePre 6 5 s₀' := sealPreArm.one h0'
+  have hq6 : onePub 6 s₀ s₀' := hq
+  obtain ⟨q₀, q₁, q₂, q₃, q₄, qa⟩ := id hq6
+  have L := oneLay h6
+  have spf := h6.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.1
+  have spf' := h6'.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.1
+  obtain ⟨-, hwr, -, -, -, -, -, -, -, -, -, -, -, -, tW, -, -, -, -, -, -, -, -, -, -, -, -, fT, -⟩ := h0
+  obtain ⟨-, hwr', -, -, -, -, -, -, -, -, -, -, -, -, tW', -, -, -, -, -, -, -, -, -, -, -, -, fT', -⟩ := h0'
+  have a := rel_agree (F := fun s => s = s₀) (F' := fun s => s = s₀') (G := SO1 6 5 s₀) (G' := SO1 6 5 s₀')
+    (argTaint [.r0, .r1, .r2, .r3] (4 * 6)) (c := .block (oneEntry 20))
+    (one_entry_agree (by simp) h6 h6' hq6) ⟨_, by taint_decide⟩
+    (fun s e => by rw [e]; exact one1_wp h6 (by decide) (by decide) fun _ h => h)
+    (fun s e => by rw [e]; exact one1_wp h6' (by decide) (by decide) fun _ h => h)
+  -- the tag copied out
+  let W : State → Prop := fun s => s.gpr .r11 = arg s₀ 5
+  have c := rel_agree (F := OF 6 5 s₀ s₀) (F' := OF 6 5 s₀ s₀') (G := W) (G' := W) (argTaint [.r11] (4 * 6))
+    (c := .block tagOut)
+    (fun s s' ⟨_, he, hk⟩ ⟨_, he', hk'⟩ => hk.agree hk' q₀ spf qa (one_hw h6) (one_hw h6') fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr; rw [he.r11, he'.r11]) ⟨_, by taint_decide⟩
+    (fun s ⟨_, he, hk⟩ => tagOut_wp L (by decide) he hk spf h6.1.2.2.2 (by rw [hwr]; simp) fT
+      (tW.sub_right (Region.sub_prefix (by decide))))
+    (fun s ⟨_, he, hk⟩ => tagOut_wp L (by decide) he hk spf' h6'.1.2.2.2 (by rw [hwr']; simp) fT'
+      (by rw [qa 5 (by decide)]; exact tW'.sub_right (Region.sub_prefix (by decide))))
   obtain ⟨_, hB⟩ : ∃ h, (taint.check (Taint.ofRegs [.r11]) (.block restore) h).isSome = true := ⟨_, by taint_decide⟩
-  have d := RelCT.taint (A := taint) (P := fun s₁ s₂ => OF 5 s₀ s₀ s₁ ∧ OF 5 s₀ s₀' s₂) (c := .block restore)
+  have d := RelCT.taint (A := taint) (P := fun s₁ s₂ => W s₁ ∧ W s₂) (c := .block restore)
     (Taint.ofRegs [.r11]) (fun s₁ s₂ h => Taint.agree_ofRegs fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      rw [h.1.choose_spec.1.r11, h.2.choose_spec.1.r11]) hB
-  exact a.seq ((oneAad_rel h5 h5' hq5 (by decide)).seq ((oneCrypt_rel h5 h5' hq5 (by decide)).seq
-    ((oneTag_rel h5 h5' hq5 (by decide) (.inl rfl)).seq d)))
+      rw [h.1, h.2]) hB
+  exact a.seq ((oneAad_rel h6 h6' hq6 (by decide) (by decide)).seq ((oneCrypt_rel h6 h6' hq6 (by decide) (by decide)).seq
+    ((oneTag_rel h6 h6' hq6 (by decide) (by decide) (.inl rfl)).seq (c.seq d))))
 
 theorem seal_ct : ConstantTime isa sealArm.pre sealArm.pub «seal» :=
   fun _ _ _ _ _ _ h₁ h₂ hq e₁ e₂ => (seal_rel h₁ h₂ hq _ _ _ _ _ _ ⟨rfl, rfl⟩ e₁ e₂).1
@@ -62,12 +78,12 @@ theorem openRes_isSome {t : State} (hok : Spec.Gcm.tagLenOk (arg t 5).toNat = tr
   · rw [ite_eq_left_of_eq_true _ _ (eq_true h), decide_eq_true h]; rfl
   · rw [ite_eq_right_of_eq_false _ _ (eq_false h), decide_eq_false h]; rfl
 
-theorem open1_wp {t₀ : State} (h : onePre 6 t₀) :
-    WP isa (.block (oneEntry ++ ([.ldrSp .r6 20] : List Instr))) t₀ fun s =>
-      SO1 6 t₀ s ∧ s.gpr .r6 = BitVec.ofNat 32 (arg t₀ 5).toNat := by
+theorem open1_wp {t₀ : State} (h : onePre 7 6 t₀) :
+    WP isa (.block (oneEntry 24 ++ ([.ldrSp .r6 20] : List Instr))) t₀ fun s =>
+      SO1 7 6 t₀ s ∧ s.gpr .r6 = BitVec.ofNat 32 (arg t₀ 5).toNat := by
   have spf := h.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.1
-  have hin : args t₀ 6 ∈ t₀.rd := by rw [h.1]; simp
-  refine WP.block_append (one1_wp h (by decide) fun s₁ h1 => ?_)
+  have hin : args t₀ 7 ∈ t₀.rd := h.1.2.2.2
+  refine WP.block_append (one1_wp h (by decide) (by decide) fun s₁ h1 => ?_)
   obtain ⟨i5, v5⟩ := h1.args.at spf hin 5 (by decide) (show 4 * 5 = 20 from rfl)
   refine WP.of_runBlock ⟨_, by arun [i5, v5], ?_⟩
   exact ⟨h1.keep (fun r _ b => by simp [gpr_setReg, b]) ⟨rfl, rfl, rfl, rfl⟩, by simp [gpr_setReg, v5]⟩
@@ -76,7 +92,7 @@ section
 variable {c st w sp : BitVec 32} {R : Nat} {t₀ : State}
 
 theorem blk_wp {s : State} (h : P7 c st w sp R t₀ s) :
-    WP isa (.block [.mov .r7 (.reg .r0), .cmp .r0 (imm 0)]) s (FT 6 t₀ c st w sp R) := by
+    WP isa (.block [.mov .r7 (.reg .r0), .cmp .r0 (imm 0)]) s (FT 7 t₀ c st w sp R) := by
   obtain ⟨⟨k7, he, hk⟩, -⟩ := h
   refine WP.of_runBlock ⟨_, by arun [], ?_⟩
   exact ⟨_, he.set7 rfl (fun r hr => by
@@ -87,35 +103,38 @@ theorem mov07_wp {s : State} (h : s.gpr .r11 = w) :
     WP isa (.block [.mov .r0 (.reg .r7)]) s fun s' => s'.gpr .r11 = w :=
   WP.of_runBlock ⟨_, by arun [], by simp [gpr_setReg, h]⟩
 
-theorem mov0_wp {s : State} (h : s.gpr .r11 = w) :
-    WP isa (.block [.mov .r0 (imm 0)]) s fun s' => s'.gpr .r11 = w :=
-  WP.of_runBlock ⟨_, by arun [], by simp [gpr_setReg, h]⟩
-
 end
 
 theorem open_rel {s₀ s₀' : State} (h0 : openArm.pre s₀) (h0' : openArm.pre s₀') (hq : openArm.pub s₀ s₀') :
     RelCT isa (fun a b => a = s₀ ∧ b = s₀') «open» fun _ _ => True := by
-  have h6 : onePre 6 s₀ := h0
-  have h6' : onePre 6 s₀' := h0'
-  have hq6 : onePub 6 s₀ s₀' := hq.1
+  have h6 : onePre 7 6 s₀ := openPreArm.one h0
+  have h6' : onePre 7 6 s₀' := openPreArm.one h0'
+  have hq6 : onePub 7 s₀ s₀' := hq.1
   obtain ⟨q₀, q₁, q₂, q₃, q₄, qa⟩ := id hq6
   have L := oneLay h6
   have spf := h6.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.1
   have spf' := h6'.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.1
-  have hin : args s₀ 6 ∈ s₀.rd := by rw [h6.1]; simp
-  have hin' : args s₀' 6 ∈ s₀'.rd := by rw [h6'.1]; simp
-  have e4 : arg s₀' 4 = arg s₀ 4 := (qa 4 (by decide)).symm
+  have hR : roundsOk s₀ := h6.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2
+  have hin : args s₀ 7 ∈ s₀.rd := h6.1.2.2.2
+  have hin' : args s₀' 7 ∈ s₀'.rd := h6'.1.2.2.2
+  have e4 : arg s₀' 6 = arg s₀ 6 := (qa 6 (by decide)).symm
+  have hrd := h0.1
+  have hrd' := h0'.1
+  have tW := h0.2.2.2.2.2.2.2.2.2.2.2.1
+  have tW' := h0'.2.2.2.2.2.2.2.2.2.2.2.1
+  have fT := h0.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.1
+  have fT' := h0'.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.1
   have h5' : (arg s₀' 5).toNat = (arg s₀ 5).toNat := by rw [qa 5 (by decide)]
-  let W : State → Prop := fun s => s.gpr .r11 = arg s₀ 4
-  have r11 : ∀ {t₀ s : State}, OF 6 s₀ t₀ s → W s := fun h => h.choose_spec.1.r11
+  let W : State → Prop := fun s => s.gpr .r11 = arg s₀ 6
+  have r11 : ∀ {t₀ s : State}, OF 7 6 s₀ t₀ s → W s := fun h => h.choose_spec.1.r11
   -- the entry, and the tag length
-  let G1 : State → State → Prop := fun t₀ s => SO1 6 t₀ s ∧ s.gpr .r6 = BitVec.ofNat 32 (arg s₀ 5).toNat
+  let G1 : State → State → Prop := fun t₀ s => SO1 7 6 t₀ s ∧ s.gpr .r6 = BitVec.ofNat 32 (arg s₀ 5).toNat
   have a := rel_agree (F := fun s => s = s₀) (F' := fun s => s = s₀') (G := G1 s₀) (G' := G1 s₀')
-    (argTaint [.r0, .r1, .r2, .r3] (4 * 6)) (c := .block (oneEntry ++ [.ldrSp .r6 20]))
+    (argTaint [.r0, .r1, .r2, .r3] (4 * 7)) (c := .block (oneEntry 24 ++ [.ldrSp .r6 20]))
     (one_entry_agree (by simp) h6 h6' hq6) ⟨_, by taint_decide⟩
     (fun s e => by rw [e]; exact open1_wp h6)
     (fun s e => by rw [e]; exact WP.mono (open1_wp h6') fun s' ⟨y₁, y₂⟩ => ⟨y₁, by rw [y₂, h5']⟩)
-  let G2 : State → State → Prop := fun t₀ s => SO1 6 t₀ s ∧ s.z = !Spec.Gcm.tagLenOk (arg s₀ 5).toNat
+  let G2 : State → State → Prop := fun t₀ s => SO1 7 6 t₀ s ∧ s.z = !Spec.Gcm.tagLenOk (arg s₀ 5).toNat
   have tl : ∀ {t₀ s : State}, G1 t₀ s → WP isa tagLenOk s (G2 t₀) := fun {t₀ s} ⟨h1, h6r⟩ =>
     WP.mono (tagLenOk_ok h6r (arg s₀ 5).isLt) fun s' ⟨hz, g, k⟩ => ⟨h1.keep (fun r a _ => g r a) k, hz⟩
   obtain ⟨_, hT⟩ : ∃ h, (taint.check (Taint.ofRegs [.r6]) tagLenOk h).isSome = true := ⟨_, by taint_decide⟩
@@ -144,49 +163,54 @@ theorem open_rel {s₀ s₀' : State} (h0 : openArm.pre s₀) (h0' : openArm.pre
       have hok' : Spec.Gcm.tagLenOk (arg s₀' 5).toNat = true := by rw [h5']; exact hok
       obtain ⟨t1, t16⟩ := tagLenOk_bounds hok
       have eZ : decide (¬openTagOk s₀') = decide (¬openTagOk s₀) := by
-        rw [decide_not, decide_not, ← openRes_isSome hok, ← openRes_isSome hok', hq.2]
+        rw [decide_not, decide_not, ← openRes_isSome hok, ← openRes_isSome hok', hq.2 hR]
       -- what each run reaches: whether the tags are equal
-      have pfx : ∀ {t₀ s : State}, onePre 6 t₀ → Spec.Gcm.tagLenOk (arg t₀ 5).toNat = true → SO1 6 t₀ s →
+      have pfx : ∀ {t₀ s : State}, openPreArm t₀ → Spec.Gcm.tagLenOk (arg t₀ 5).toNat = true → SO1 7 6 t₀ s →
           WP isa (.seq oneAad rest2) s (Z t₀) := fun ht hk h2 =>
         open_head ht h2 hk (T := .block []) fun s₈ om => WP.block_nil om.z
-      have y1 := rel_ghost (R := rest2) (Z := Z s₀) (Z' := Z s₀') (oneAad_rel h6 h6' hq6 (by decide))
+      have y1 := rel_ghost (R := rest2) (Z := Z s₀) (Z' := Z s₀') (oneAad_rel h6 h6' hq6 (by decide) (by decide))
       have y2 := rel_ghost (R := rest3) (Z := Z s₀) (Z' := Z s₀')
-        (oneTag_rel h6 h6' hq6 (by decide) (o := uO) (.inr rfl))
+        (oneTag_rel h6 h6' hq6 (by decide) (by decide) (o := uO) (.inr rfl))
       have y3 := rel_ghost (R := rest4) (Z := Z s₀) (Z' := Z s₀')
-        (rel_agree (F := OF 6 s₀ s₀) (F' := OF 6 s₀ s₀')
-          (G := P6 (s₀.gpr .r0) (oSt s₀) (arg s₀ 4) s₀.sp (s₀.gpr .r1).toNat (arg s₀ 5).toNat s₀)
-          (G' := P6 (s₀.gpr .r0) (oSt s₀) (arg s₀ 4) s₀.sp (s₀.gpr .r1).toNat (arg s₀ 5).toNat s₀')
-          (argTaint [] (4 * 6)) (c := .block [.ldrSp .r6 20])
+        (rel_agree (F := OF 7 6 s₀ s₀) (F' := OF 7 6 s₀ s₀')
+          (G := P6 (s₀.gpr .r0) (oSt s₀ 6) (arg s₀ 6) s₀.sp (s₀.gpr .r1).toNat (arg s₀ 5).toNat s₀)
+          (G' := P6 (s₀.gpr .r0) (oSt s₀ 6) (arg s₀ 6) s₀.sp (s₀.gpr .r1).toNat (arg s₀ 5).toNat s₀')
+          (argTaint [] (4 * 7)) (c := .block [.ldrSp .r6 20])
           (fun s s' h h' => h.choose_spec.2.agree h'.choose_spec.2 q₀ spf qa (one_hw h6) (one_hw h6') (rs := [])
             (by simp)) ⟨_, by taint_decide⟩
           (fun s h => ld6_wp spf hin rfl h) (fun s h => ld6_wp spf' hin' h5' h))
       have hD : ∀ {d k : Nat}, d + k ≤ 2560 →
-          (args s₀ 6).Disjoint ⟨State.addr (arg s₀ 4) + BitVec.ofNat 64 d, k⟩ :=
+          (args s₀ 7).Disjoint ⟨State.addr (arg s₀ 6) + BitVec.ofNat 64 d, k⟩ :=
         fun hd => (h6.2.2.2.2.2.2.2.2.2.2.1.sub_left (Lay.wSub hd)).symm
       have hD' : ∀ {d k : Nat}, d + k ≤ 2560 →
-          (args s₀' 6).Disjoint ⟨State.addr (arg s₀ 4) + BitVec.ofNat 64 d, k⟩ := fun hd => by
+          (args s₀' 7).Disjoint ⟨State.addr (arg s₀ 6) + BitVec.ofNat 64 d, k⟩ := fun hd => by
         rw [← e4]; exact (h6'.2.2.2.2.2.2.2.2.2.2.1.sub_left (Lay.wSub hd)).symm
-      obtain ⟨_, c4⟩ : ∃ h, (taint.check (Taint.ofRegs [.r6, .r11]) recv h).isSome = true := ⟨_, by taint_decide⟩
       have y4 := rel_ghost (R := rest5) (Z := Z s₀) (Z' := Z s₀')
-        (rel_wp
-          (F := P6 (s₀.gpr .r0) (oSt s₀) (arg s₀ 4) s₀.sp (s₀.gpr .r1).toNat (arg s₀ 5).toNat s₀)
-          (F' := P6 (s₀.gpr .r0) (oSt s₀) (arg s₀ 4) s₀.sp (s₀.gpr .r1).toNat (arg s₀ 5).toNat s₀')
-          (G := P6 (s₀.gpr .r0) (oSt s₀) (arg s₀ 4) s₀.sp (s₀.gpr .r1).toNat (arg s₀ 5).toNat s₀)
-          (G' := P6 (s₀.gpr .r0) (oSt s₀) (arg s₀ 4) s₀.sp (s₀.gpr .r1).toNat (arg s₀ 5).toNat s₀')
-          (RelCT.taint (A := taint) (Taint.ofRegs [.r6, .r11]) (fun s₁ s₂ h => Taint.agree_ofRegs fun r hr => by
-            simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-            rcases hr with rfl | rfl
-            · rw [h.1.2, h.2.2]
-            · rw [r11 h.1.1, r11 h.2.1]) c4)
-          (fun s h => recv_wp L spf (hD (by decide)) t1 t16 h) (fun s h => recv_wp L spf' (hD' (by decide)) t1 t16 h))
+        (rel_agree
+          (F := P6 (s₀.gpr .r0) (oSt s₀ 6) (arg s₀ 6) s₀.sp (s₀.gpr .r1).toNat (arg s₀ 5).toNat s₀)
+          (F' := P6 (s₀.gpr .r0) (oSt s₀ 6) (arg s₀ 6) s₀.sp (s₀.gpr .r1).toNat (arg s₀ 5).toNat s₀')
+          (G := P6 (s₀.gpr .r0) (oSt s₀ 6) (arg s₀ 6) s₀.sp (s₀.gpr .r1).toNat (arg s₀ 5).toNat s₀)
+          (G' := P6 (s₀.gpr .r0) (oSt s₀ 6) (arg s₀ 6) s₀.sp (s₀.gpr .r1).toNat (arg s₀ 5).toNat s₀')
+          (argTaint [.r6, .r11] (4 * 7)) (c := recv)
+          (fun s s' h h' => h.1.choose_spec.2.agree h'.1.choose_spec.2 q₀ spf qa (one_hw h6) (one_hw h6')
+            fun r hr => by
+              simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+              rcases hr with rfl | rfl
+              · rw [h.2, h'.2]
+              · rw [r11 h.1, r11 h'.1]) ⟨_, by taint_decide⟩
+          (fun s h => recv_wp L spf hin (hD (by decide)) (by rw [hrd]; simp) fT
+            (tW.sub_right (Lay.wSub (by decide))) t1 t16 h)
+          (fun s h => recv_wp L spf' hin' (hD' (by decide)) (by rw [hrd', h5']; simp)
+            (by rw [← h5']; exact fT') (by rw [← h5', ← e4]; exact tW'.sub_right (Lay.wSub (by decide)))
+            t1 t16 h))
       obtain ⟨_, c5⟩ : ∃ h, (taint.check (Taint.ofRegs [.r6, .r11]) (cmp uO) h).isSome = true :=
         ⟨_, by taint_decide⟩
       have y5 := rel_ghost (R := rest6) (Z := Z s₀) (Z' := Z s₀')
         (rel_wp
-          (F := P6 (s₀.gpr .r0) (oSt s₀) (arg s₀ 4) s₀.sp (s₀.gpr .r1).toNat (arg s₀ 5).toNat s₀)
-          (F' := P6 (s₀.gpr .r0) (oSt s₀) (arg s₀ 4) s₀.sp (s₀.gpr .r1).toNat (arg s₀ 5).toNat s₀')
-          (G := P7 (s₀.gpr .r0) (oSt s₀) (arg s₀ 4) s₀.sp (s₀.gpr .r1).toNat s₀)
-          (G' := P7 (s₀.gpr .r0) (oSt s₀) (arg s₀ 4) s₀.sp (s₀.gpr .r1).toNat s₀')
+          (F := P6 (s₀.gpr .r0) (oSt s₀ 6) (arg s₀ 6) s₀.sp (s₀.gpr .r1).toNat (arg s₀ 5).toNat s₀)
+          (F' := P6 (s₀.gpr .r0) (oSt s₀ 6) (arg s₀ 6) s₀.sp (s₀.gpr .r1).toNat (arg s₀ 5).toNat s₀')
+          (G := P7 (s₀.gpr .r0) (oSt s₀ 6) (arg s₀ 6) s₀.sp (s₀.gpr .r1).toNat s₀)
+          (G' := P7 (s₀.gpr .r0) (oSt s₀ 6) (arg s₀ 6) s₀.sp (s₀.gpr .r1).toNat s₀')
           (RelCT.taint (A := taint) (Taint.ofRegs [.r6, .r11]) (fun s₁ s₂ h => Taint.agree_ofRegs fun r hr => by
             simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
             rcases hr with rfl | rfl
@@ -197,18 +221,18 @@ theorem open_rel {s₀ s₀' : State} (h0 : openArm.pre s₀) (h0' : openArm.pre
       obtain ⟨_, c6⟩ : ∃ h, (taint.check (Taint.ofRegs [])
           (.block [.mov .r7 (.reg .r0), .cmp .r0 (imm 0)]) h).isSome = true := ⟨_, by taint_decide⟩
       have y6 := rel_ghost (R := .block []) (Z := Z s₀) (Z' := Z s₀')
-        (rel_wp (F := P7 (s₀.gpr .r0) (oSt s₀) (arg s₀ 4) s₀.sp (s₀.gpr .r1).toNat s₀)
-          (F' := P7 (s₀.gpr .r0) (oSt s₀) (arg s₀ 4) s₀.sp (s₀.gpr .r1).toNat s₀')
-          (G := OF 6 s₀ s₀) (G' := OF 6 s₀ s₀')
+        (rel_wp (F := P7 (s₀.gpr .r0) (oSt s₀ 6) (arg s₀ 6) s₀.sp (s₀.gpr .r1).toNat s₀)
+          (F' := P7 (s₀.gpr .r0) (oSt s₀ 6) (arg s₀ 6) s₀.sp (s₀.gpr .r1).toNat s₀')
+          (G := OF 7 6 s₀ s₀) (G' := OF 7 6 s₀ s₀')
           (RelCT.taint (A := taint) (Taint.ofRegs []) (fun s₁ s₂ h => Taint.agree_ofRegs fun r hr => by
             simp at hr) c6)
           (fun s h => blk_wp h) (fun s h => blk_wp h))
       -- the data decrypted only if the tags are equal, which is public
-      have y7 : RelCT isa (fun a b => (OF 6 s₀ s₀ a ∧ WP isa (.block []) a (Z s₀)) ∧
-          (OF 6 s₀ s₀' b ∧ WP isa (.block []) b (Z s₀'))) (.ite .eq (.block []) oneCrypt) fun a b => W a ∧ W b :=
+      have y7 : RelCT isa (fun a b => (OF 7 6 s₀ s₀ a ∧ WP isa (.block []) a (Z s₀)) ∧
+          (OF 7 6 s₀ s₀' b ∧ WP isa (.block []) b (Z s₀'))) (.ite .eq (.block []) oneCrypt) fun a b => W a ∧ W b :=
         rel_iteQ (decide (¬openTagOk s₀)) (fun s h => wp_nil h.2) (fun s h => (wp_nil h.2).trans eZ)
           (fun _ => RelCT.block_nil fun x y h => ⟨r11 h.1.1, r11 h.2.1⟩)
-          (fun _ => (oneCrypt_rel h6 h6' hq6 (by decide)).mono (fun _ _ h => ⟨h.1.1, h.2.1⟩)
+          (fun _ => (oneCrypt_rel h6 h6' hq6 (by decide) (by decide)).mono (fun _ _ h => ⟨h.1.1, h.2.1⟩)
             fun _ _ h => ⟨r11 h.1, r11 h.2⟩)
       obtain ⟨_, c8⟩ : ∃ h, (taint.check (Taint.ofRegs [.r11]) (.block [.mov .r0 (.reg .r7)]) h).isSome = true :=
         ⟨_, by taint_decide⟩
@@ -218,7 +242,7 @@ theorem open_rel {s₀ s₀' : State} (h0 : openArm.pre s₀) (h0' : openArm.pre
         (fun s h => mov07_wp h) (fun s h => mov07_wp h)
       refine RelCT.mono (y1.seq (y2.seq (y3.seq (y4.seq (y5.seq (y6.seq (y7.seq y8))))))) (fun s s' h => ?_)
         fun _ _ h => h
-      exact ⟨⟨h.1.1, pfx h6 hok h.1.1⟩, ⟨h.2.1, pfx h6' hok' h.2.1⟩⟩
+      exact ⟨⟨h.1.1, pfx h0 hok h.1.1⟩, ⟨h.2.1, pfx h0' hok' h.2.1⟩⟩
   obtain ⟨_, hB⟩ : ∃ h, (taint.check (Taint.ofRegs [.r11]) (.block restore) h).isSome = true := ⟨_, by taint_decide⟩
   have d := RelCT.taint (A := taint) (P := fun s₁ s₂ => W s₁ ∧ W s₂) (c := .block restore) (Taint.ofRegs [.r11])
     (fun s₁ s₂ h => Taint.agree_ofRegs fun r hr => by
