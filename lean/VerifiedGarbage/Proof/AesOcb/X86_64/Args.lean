@@ -71,6 +71,10 @@ def ArgsOk (args : List Instr) (s : State) (D : Addr) (n : Nat) : Prop :=
     (∀ r, r ≠ .rdx → r ≠ .rcx → r ≠ .rax → s₁.gpr r = s.gpr r) ∧ s₁.mem = s.mem ∧ s₁.rd = s.rd ∧
     s₁.wr = s.wr
 
+theorem wp_seq_assoc {a b c : Prog isa} {s : State} {Q : State → Prop} (h : WP isa (.seq (.seq a b) c) s Q) :
+    WP isa (.seq a (.seq b c)) s Q :=
+  WP.seq (WP.mono (WP.seq_iff.mp (WP.seq_iff.mp h)) fun _ h => WP.seq h)
+
 theorem sext1 : BitVec.signExtend 64 (1 : BitVec 32) = BitVec.ofNat 64 1 := by decide
 
 theorem sext0 : BitVec.signExtend 64 (0 : BitVec 32) = BitVec.ofNat 64 0 := by decide

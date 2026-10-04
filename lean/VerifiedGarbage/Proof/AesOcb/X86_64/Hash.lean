@@ -159,13 +159,16 @@ theorem hashTail_ok (v : BlocksImpl) {K W SP D : Addr} {n R : Nat} {ciph : Ciphe
   · exact hashRest_ok v C H₁ (by have := of_decide_eq_false hb; omega) r12₁
 
 /-- `HASH(K, A)` to `W + sumO`, with `aad` and `aad_len` in `W`. -/
-theorem hash_ok (v : BlocksImpl) {K W SP D : Addr} {n R : Nat} {ciph : Cipher} {l : Block} {A : Addr}
+theorem hashHead_ok {K W SP D : Addr} {n R : Nat} {ciph : Cipher} {l : Block} {A : Addr}
     {a : List Byte} {s₀ : State} (C : HCtx K W SP D n R ciph l A a s₀) (E : Env K W SP s₀)
     (haad : s₀.mem.readW (W + BitVec.ofNat 64 aadO) 64 = A)
     (halen : s₀.mem.readW (W + BitVec.ofNat 64 alenO) 64 = BitVec.ofNat 64 a.length)
     (hl0 : blockAtMem s₀.mem (W + BitVec.ofNat 64 l0O) = lAt l 0) :
-    WP isa (Impl.AesOcb.X86_64.hash (callees v)) s₀ fun t' => Env K W SP t' ∧ Frame (hashR W SP) s₀.mem t'.mem ∧
-      blockAtMem t'.mem (W + BitVec.ofNat 64 sumO) = Spec.Ocb.hash ciph l a ∧ t'.rd = s₀.rd ∧ t'.wr = s₀.wr := by
+    WP isa (.block (zero16 sumO ++ zero16 ohO ++
+      [ld .rbx .r15 aadO, ld .rax .r15 alenO, mvr .rcx .rax, .alu .and .rcx (.imm 15),
+       st .r15 tmpO .rcx, .shift .shr .rax 4, st .r15 alenO .rax, .mov .rbp (.imm 1),
+       .alu .test .rax (.reg .rax)])) s₀ fun s =>
+      HInv K W SP D n ciph l A a s₀ s 0 ∧ s.zf = some (decide (a.length / 16 = 0)) := by
   have L := C.lay
   have hs := C.short
   -- the sum, the offset, the counts
@@ -258,24 +261,39 @@ theorem hash_ok (v : BlocksImpl) {K W SP D : Addr} {n R : Nat} {ciph : Cipher} {
             simp only [List.mem_singleton] at hr; subst hr; exact L.w_w (.inl (by decide)) (by decide) (by decide)),
           blockAtMem_frame B₁.frame (fun r hr => by
             simp only [List.mem_singleton] at hr; subst hr; exact L.w_w (.inr (by decide)) (by decide) (by decide)), hl0] }
+  exact WP.of_runBlock ⟨s₃, by rw [runBlock_append, runBlock_append, run₁, Option.bind_some, run₂,
+    Option.bind_some, run₃], H₀, zf₃⟩
+
+/-- The chunks of `HASH`, from the first. -/
+theorem hashLoop_ok (v : BlocksImpl) {K W SP D : Addr} {n R : Nat} {ciph : Cipher} {l : Block} {A : Addr}
+    {a : List Byte} {s₀ : State} (C : HCtx K W SP D n R ciph l A a s₀) {t : State}
+    (H₀ : HInv K W SP D n ciph l A a s₀ t 0) (hm : 0 < a.length / 16) :
+    WP isa (.loop (hashChunk (callees v)) .ne) t fun u => HInv K W SP D n ciph l A a s₀ u (a.length / 16) := by
+  refine WP.loop (M := isa) (c := .ne)
+    (fun (k : Nat) (u : State) => ∃ j, k = a.length / 16 - j ∧ j < a.length / 16 ∧
+      HInv K W SP D n ciph l A a s₀ u j) ?_ (a.length / 16 - 0) _ ⟨0, rfl, hm, H₀⟩
+  rintro k u ⟨j, rfl, hj, H⟩
+  refine WP.mono (hashChunk_ok v C H hj) fun u' ⟨H', hz⟩ => ?_
+  by_cases he : a.length / 16 - (j + min 8 (a.length / 16 - j)) = 0
+  · left
+    have hje : j + min 8 (a.length / 16 - j) = a.length / 16 := by omega
+    exact ⟨(eval_ne hz).trans (by simp [he]), hje ▸ H'⟩
+  · right
+    exact ⟨(eval_ne hz).trans (by simp [he]), a.length / 16 - (j + min 8 (a.length / 16 - j)), by omega,
+      j + min 8 (a.length / 16 - j), rfl, by omega, H'⟩
+
+theorem hash_ok (v : BlocksImpl) {K W SP D : Addr} {n R : Nat} {ciph : Cipher} {l : Block} {A : Addr}
+    {a : List Byte} {s₀ : State} (C : HCtx K W SP D n R ciph l A a s₀) (E : Env K W SP s₀)
+    (haad : s₀.mem.readW (W + BitVec.ofNat 64 aadO) 64 = A)
+    (halen : s₀.mem.readW (W + BitVec.ofNat 64 alenO) 64 = BitVec.ofNat 64 a.length)
+    (hl0 : blockAtMem s₀.mem (W + BitVec.ofNat 64 l0O) = lAt l 0) :
+    WP isa (Impl.AesOcb.X86_64.hash (callees v)) s₀ fun t' => Env K W SP t' ∧ Frame (hashR W SP) s₀.mem t'.mem ∧
+      blockAtMem t'.mem (W + BitVec.ofNat 64 sumO) = Spec.Ocb.hash ciph l a ∧ t'.rd = s₀.rd ∧ t'.wr = s₀.wr := by
   unfold Impl.AesOcb.X86_64.hash
-  refine WP.seq (WP.of_runBlock ⟨s₃, by rw [runBlock_append, runBlock_append, run₁, Option.bind_some, run₂,
-    Option.bind_some, run₃], ?_⟩)
+  refine WP.seq (WP.mono (hashHead_ok C E haad halen hl0) fun s₃ ⟨H₀, zf₃⟩ => ?_)
   refine WP.seq (WP.ite (decide (a.length / 16 = 0)) (eval_e zf₃) (fun hb => WP.block_nil ?_) (fun hb => ?_))
   · have h0 : a.length / 16 = 0 := of_decide_eq_true hb
     exact hashTail_ok v C (h0 ▸ H₀)
-  · have hm : 0 < a.length / 16 := Nat.pos_of_ne_zero (of_decide_eq_false hb)
-    refine WP.loop (M := isa) (c := .ne)
-      (fun (k : Nat) (u : State) => ∃ j, k = a.length / 16 - j ∧ j < a.length / 16 ∧
-        HInv K W SP D n ciph l A a s₀ u j) ?_ (a.length / 16 - 0) _ ⟨0, rfl, hm, H₀⟩
-    rintro k u ⟨j, rfl, hj, H⟩
-    refine WP.mono (hashChunk_ok v C H hj) fun u' ⟨H', hz⟩ => ?_
-    by_cases he : a.length / 16 - (j + min 8 (a.length / 16 - j)) = 0
-    · left
-      have hje : j + min 8 (a.length / 16 - j) = a.length / 16 := by omega
-      exact ⟨(eval_ne hz).trans (by simp [he]), hashTail_ok v C (hje ▸ H')⟩
-    · right
-      exact ⟨(eval_ne hz).trans (by simp [he]), a.length / 16 - (j + min 8 (a.length / 16 - j)), by omega,
-        j + min 8 (a.length / 16 - j), rfl, by omega, H'⟩
+  · exact WP.mono (hashLoop_ok v C H₀ (Nat.pos_of_ne_zero (of_decide_eq_false hb))) fun u H => hashTail_ok v C H
 
 end VG.Proof.AesOcb.X86_64

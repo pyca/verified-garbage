@@ -112,10 +112,6 @@ theorem restHead_ok (v : BlocksImpl) {K W SP : Addr} (L : Lay K W SP) {t : State
     have hn : r ∉ [Reg.rax, .rdx] := by simp [hr'.1, hr'.2]
     rw [P₃.saved r hr, B₂.gpr r hn, B₁.gpr r hn]
 
-theorem wp_seq_assoc {a b c : Prog isa} {s : State} {Q : State → Prop} (h : WP isa (.seq (.seq a b) c) s Q) :
-    WP isa (.seq a (.seq b c)) s Q :=
-  WP.seq (WP.mono (WP.seq_iff.mp (WP.seq_iff.mp h)) fun _ h => WP.seq h)
-
 theorem xor_append_right (xs ys zs : List Byte) (h : xs.length = ys.length) :
     Spec.Ocb.xor xs (ys ++ zs) = Spec.Ocb.xor xs ys := by
   simpa [Spec.Ocb.xor] using List.zipWith_append (f := fun x1 x2 : Byte => x1 ^^^ x2) (l₁' := []) (l₂' := zs) h

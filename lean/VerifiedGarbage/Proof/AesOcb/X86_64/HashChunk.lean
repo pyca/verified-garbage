@@ -315,6 +315,34 @@ theorem bufArgs_ok {W : Addr} {t : State} (h15 : t.gpr .r15 = W) {c : Nat} (h12 
   · simp only [gpr_setReg, gpr_arithFlags, h1, h2, ite_false]
   all_goals rfl
 
+/-- The buffer of a chunk, with its `c` blocks in `r12`. -/
+theorem chunkFill_ok {K W SP D : Addr} {n R : Nat} {ciph : Cipher} {l : Block} {A : Addr}
+    {a : List Byte} {s₀ : State} (C : HCtx K W SP D n R ciph l A a s₀) {t : State} {j c : Nat}
+    (H : HInv K W SP D n ciph l A a s₀ t j) (hc0 : 0 < c) (hc : c ≤ 8) (hjc : j + c ≤ a.length / 16)
+    (h12 : t.gpr .r12 = BitVec.ofNat 64 c) :
+    WP isa (.seq (.block bufStart) (.loop hashFill .ne)) t fun t' => FillInv K W SP D n ciph l A a s₀ j c t' c := by
+  have L := C.lay
+  obtain ⟨t₁, run₁, r13₁, rsi₁, g₁, m₁, rd₁, wr₁⟩ := bufStart_ok (W := W) (t := t) H.env.r15
+  have F₀ : FillInv K W SP D n ciph l A a s₀ j c t₁ 0 :=
+    { env := H.env.keep (fun r hr => g₁ r (by simp at hr; rcases hr with rfl | rfl | rfl <;> decide)
+          (by simp at hr; rcases hr with rfl | rfl | rfl <;> decide)) rd₁ wr₁
+      frame := by rw [m₁]; exact H.frame
+      rd := by rw [rd₁, H.rd]
+      wr := by rw [wr₁, H.wr]
+      rbx := by rw [g₁ _ (by decide) (by decide), H.rbx]; rfl
+      rbp := by rw [g₁ _ (by decide) (by decide), H.rbp]
+      rsi := rsi₁
+      r13 := r13₁
+      r12 := by rw [g₁ _ (by decide) (by decide), h12]
+      oh := by rw [m₁, H.oh]; rfl
+      buf := fun k hk => absurd hk (Nat.not_lt_zero _)
+      sum := by rw [m₁, H.sum]
+      alen := by rw [m₁, H.alen]
+      rest := by rw [m₁, H.rest]
+      l0 := by rw [m₁, H.l0] }
+  refine WP.seq (WP.of_runBlock ⟨t₁, run₁, ?_⟩)
+  exact WP.mono (fill_ok C hc0 hc hjc F₀) fun _ F => F
+
 /-- A chunk from `bufStart` on, with its `c` blocks in `r12`. -/
 theorem chunkRest_ok (v : BlocksImpl) {K W SP D : Addr} {n R : Nat} {ciph : Cipher} {l : Block} {A : Addr}
     {a : List Byte} {s₀ : State} (C : HCtx K W SP D n R ciph l A a s₀) {t : State} {j c : Nat}
@@ -440,12 +468,11 @@ theorem chunkRest_ok (v : BlocksImpl) {K W SP D : Addr} {n R : Nat} {ciph : Ciph
     exact congrArg some (decide_eq_decide.mpr (by omega))
 
 /-- A chunk of `min(8, m − j)` blocks, after `j` of the `m` whole blocks. -/
-theorem hashChunk_ok (v : BlocksImpl) {K W SP D : Addr} {n R : Nat} {ciph : Cipher} {l : Block} {A : Addr}
+theorem chunkHead_ok {K W SP D : Addr} {n R : Nat} {ciph : Cipher} {l : Block} {A : Addr}
     {a : List Byte} {s₀ : State} (C : HCtx K W SP D n R ciph l A a s₀) {t : State} {j : Nat}
     (H : HInv K W SP D n ciph l A a s₀ t j) (hj : j < a.length / 16) :
-    WP isa (hashChunk (callees v)) t fun t' =>
-      HInv K W SP D n ciph l A a s₀ t' (j + min 8 (a.length / 16 - j)) ∧
-        t'.zf = some (decide (a.length / 16 - (j + min 8 (a.length / 16 - j)) = 0)) := by
+    WP isa (.seq (.block [ld .r12 .r15 alenO, .alu .cmp .r12 (.imm 8)]) (.ite .b (.block []) (.block [.mov .r12 (.imm 8)])))
+      t fun t' => HInv K W SP D n ciph l A a s₀ t' j ∧ t'.gpr .r12 = BitVec.ofNat 64 (min 8 (a.length / 16 - j)) := by
   have hs := C.short
   have h15 := H.env.r15
   have r₁ : InRegions (t.rd ++ t.wr) (W + BitVec.ofNat 64 248) 8 := H.env.perm.wR (by decide)
@@ -474,12 +501,11 @@ theorem hashChunk_ok (v : BlocksImpl) {K W SP D : Addr} {n R : Nat} {ciph : Ciph
       alen := by rw [m₁, H.alen]
       rest := by rw [m₁, H.rest]
       l0 := by rw [m₁, H.l0] }
-  unfold hashChunk
   refine WP.seq (WP.of_runBlock ⟨t₁, run₁, ?_⟩)
-  refine WP.seq (WP.ite (decide (a.length / 16 - j < 8)) (eval_b cf₁) (fun hb => WP.block_nil ?_) (fun hb => ?_))
+  refine WP.ite (decide (a.length / 16 - j < 8)) (eval_b cf₁) (fun hb => WP.block_nil ?_) (fun hb => ?_)
   · have hlt : a.length / 16 - j < 8 := of_decide_eq_true hb
     rw [show min 8 (a.length / 16 - j) = a.length / 16 - j by omega]
-    exact chunkRest_ok v C H₁ (by omega) (by omega) (by omega) r12₁
+    exact ⟨H₁, r12₁⟩
   · have hge : ¬ a.length / 16 - j < 8 := of_decide_eq_false hb
     obtain ⟨t₂, run₂, r12₂, g₂, m₂, rd₂, wr₂⟩ : ∃ t₂, runBlock isa [.mov .r12 (.imm 8)] t₁ = some t₂ ∧
         t₂.gpr .r12 = BitVec.ofNat 64 8 ∧ (∀ r, r ≠ .r12 → t₂.gpr r = t₁.gpr r) ∧ t₂.mem = t₁.mem ∧ t₂.rd = t₁.rd ∧
@@ -503,6 +529,16 @@ theorem hashChunk_ok (v : BlocksImpl) {K W SP D : Addr} {n R : Nat} {ciph : Ciph
         l0 := by rw [m₂, H₁.l0] }
     refine WP.of_runBlock ⟨t₂, run₂, ?_⟩
     rw [show min 8 (a.length / 16 - j) = 8 by omega]
-    exact chunkRest_ok v C H₂ (by decide) (by decide) (by omega) r12₂
+    exact ⟨H₂, r12₂⟩
+
+theorem hashChunk_ok (v : BlocksImpl) {K W SP D : Addr} {n R : Nat} {ciph : Cipher} {l : Block} {A : Addr}
+    {a : List Byte} {s₀ : State} (C : HCtx K W SP D n R ciph l A a s₀) {t : State} {j : Nat}
+    (H : HInv K W SP D n ciph l A a s₀ t j) (hj : j < a.length / 16) :
+    WP isa (hashChunk (callees v)) t fun t' =>
+      HInv K W SP D n ciph l A a s₀ t' (j + min 8 (a.length / 16 - j)) ∧
+        t'.zf = some (decide (a.length / 16 - (j + min 8 (a.length / 16 - j)) = 0)) := by
+  unfold hashChunk
+  refine wp_seq_assoc (WP.seq (WP.mono (chunkHead_ok C H hj) fun t₁ ⟨H₁, h12⟩ =>
+    chunkRest_ok v C H₁ (by omega) (by omega) (by omega) h12))
 
 end VG.Proof.AesOcb.X86_64
