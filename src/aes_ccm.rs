@@ -31,9 +31,10 @@
 //! than 32 bytes together, the `_aes_cbc` ones, whose CBC-MAC keeps the
 //! round keys and the chaining value in vector registers across blocks
 //! (`vg_cmac_aes_update_aes_cbc`, as AES-CMAC chooses it in
-//! `crate::cmac::aes`); both encrypt with `vg_aes_ctr32_aes`.
+//! `crate::cmac::aes`); both encrypt with `vg_aes_ctr32_aes`. On ARMv7 there
+//! is only the constant-time scalar implementation.
 
-#![cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
+#![cfg(any(target_arch = "x86_64", target_arch = "aarch64", target_arch = "arm"))]
 
 use crate::aes::Backend;
 use crate::arch::aes::vg_aes_expand_key;
@@ -110,6 +111,13 @@ fn select(f: Features) -> Backend {
         VG_AES_CCM_OPEN_AES_CBC_FEATURES,
     ]);
     Backend::select_for(f, AES)
+}
+
+/// The only implementation of AES on ARMv7, with the AES-CCM functions for
+/// it.
+#[cfg(target_arch = "arm")]
+fn select(f: Features) -> Backend {
+    Backend::select(f)
 }
 
 /// Whether the AES extension's instances run the `_aes_cbc` CBC-MAC, for

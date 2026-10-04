@@ -23,7 +23,8 @@ def artifacts : List Artifact := [
       `[1 … 8]P` is built in `scratch`, and each digit takes four doublings and the addition of its \
       entry, every entry loaded and masked and `y` negated by a mask of the digit's sign, all by \
       the complete addition formulas of Renes, Costello and Batina; `Z⁻¹` is Fermat's, by \
-      square-and-always-multiply. The result (or zeros) is selected by a mask of the checks, `d` \
+      a chain of sliding 4-bit windows over `p - 2` (fixed by the code: 252 squarings and 32 \
+      products by a table of odd powers). The result (or zeros) is selected by a mask of the checks, `d` \
       in `[1, n-1]` and `Z ≠ 0`, so the time depends only on the pointers."])
     code := Impl.Ecdh.AArch64.exchangeP256
     contract := Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P256.inst AArch64.abi

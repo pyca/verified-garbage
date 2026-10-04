@@ -7,7 +7,7 @@ pub const USES: &[&str] = &["aes_ccm", "aes", "cmac_aes"];
 /// One-shot AES-128-CCM encryption and decryption (key setup included), with
 /// a 12-byte nonce, 16 bytes of associated data and a 16-byte tag, as
 /// OpenSSL's `EVP_aes_128_ccm` does it (its lengths set first, as CCM needs).
-#[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
+#[cfg(any(target_arch = "x86_64", target_arch = "aarch64", target_arch = "arm"))]
 pub fn bench(c: &mut Criterion) {
     use std::hint::black_box;
 
@@ -91,5 +91,5 @@ pub fn bench(c: &mut Criterion) {
     }
 }
 
-#[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
+#[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64", target_arch = "arm")))]
 pub fn bench(_: &mut Criterion) {}
