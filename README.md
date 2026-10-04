@@ -1142,6 +1142,28 @@ yours to keep:
 
 </tr>
 
+</table>
+
+### RSA
+
+<table>
+
+<tr>
+
+<th>Algorithm</th>
+
+<th>Spec landed</th>
+
+<th>x86-64</th>
+
+<th>ARM64</th>
+
+<th>ARMv7</th>
+
+<th>x86</th>
+
+</tr>
+
 <tr>
 
 <td>RSASSA-PSS</td>
