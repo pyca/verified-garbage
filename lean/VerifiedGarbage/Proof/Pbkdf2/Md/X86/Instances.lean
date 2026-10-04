@@ -133,9 +133,9 @@ theorem md5_iterImp : (iterW Spec.Hmac.md5S 48).Implies (Spec.Hmac.md5I.iterateC
     X86.argBytes]
     [a0, a1, a2, a3, a4, e, esp, iterSat] using iterSat 80 16 48
 
-theorem md5_finImp : (finW Spec.Hmac.md5S 48).Implies (Spec.Hmac.md5I.finalizeContract X86.abi 48) := by
+theorem md5_finImp : (finW Spec.Hmac.md5S 48).Implies (Spec.Hmac.md5I.finalizeScratchContract X86.abi 48) := by
   obtain ⟨a0, a1, a2, a3, a4, a5, e, esp⟩ := finSat_args 80 16 48
-  sig_implies [Spec.Hmac.Instance.finalizeContract, Spec.Hmac.finalizeContract, Spec.Hmac.finalizeSig,
+  sig_implies [Spec.Hmac.Instance.finalizeScratchContract, Spec.Hmac.finalizeScratchContract, Spec.Hmac.finalizeScratchSig, Spec.Hmac.finalizePost,
     Spec.Hmac.md5I, Spec.Hmac.md5S, Spec.Hmac.md5, finW, finG, countF, X86.abi, X86.argSlots,
     X86.argVal, X86.argBytes]
     [a0, a1, a2, a3, a4, a5, e, esp, finSat] using finSat 80 16 48
@@ -143,7 +143,7 @@ theorem md5_finImp : (finW Spec.Hmac.md5S 48).Implies (Spec.Hmac.md5I.finalizeCo
 theorem md5_iterate : Verified X86.target md5M.iterate (Spec.Hmac.md5I.iterateContract X86.abi 48) :=
   (Iterate.verifiedW md5Ok md5_iterChecks (by decide) md5_iterImp.sat_left).of_implies md5_iterImp
 
-theorem md5_finalize : Verified X86.target md5M.hmacFin (Spec.Hmac.md5I.finalizeContract X86.abi 48) :=
+theorem md5_finalize : Verified X86.target md5M.hmacFin (Spec.Hmac.md5I.finalizeScratchContract X86.abi 48) :=
   (HmacFin.verifiedW md5Ok md5_finChecks (by decide) md5_finImp.sat_left).of_implies md5_finImp
 
 theorem md5_initChecks : HmacInit.Checks md5M := by
@@ -154,14 +154,14 @@ theorem md5_initChecks : HmacInit.Checks md5M := by
     restore := ⟨?_, ?_⟩ }
   taint_decide_all
 
-theorem md5_initImp : (initW Spec.Hmac.md5S 48).Implies (Spec.Hmac.md5I.initContract X86.abi 48) := by
+theorem md5_initImp : (initW Spec.Hmac.md5S 48).Implies (Spec.Hmac.md5I.initScratchContract X86.abi 48) := by
   obtain ⟨a0, a1, a2, a3, a4, e, esp⟩ := initSat_args 80 48
-  sig_implies [Spec.Hmac.Instance.initContract, Spec.Hmac.initContract, Spec.Hmac.initSig,
+  sig_implies [Spec.Hmac.Instance.initScratchContract, Spec.Hmac.initScratchContract, Spec.Hmac.initScratchSig, Spec.Hmac.initPre, Spec.Hmac.initPost,
     Spec.Hmac.md5I, Spec.Hmac.md5S, Spec.Hmac.md5, initW, initG, X86.abi, X86.argSlots, X86.argVal,
     X86.argBytes]
     [a0, a1, a2, a3, a4, e, esp, initSat] using initSat 80 48
 
-theorem md5_init : Verified X86.target md5M.hmacInit (Spec.Hmac.md5I.initContract X86.abi 48) :=
+theorem md5_init : Verified X86.target md5M.hmacInit (Spec.Hmac.md5I.initScratchContract X86.abi 48) :=
   (HmacInit.verifiedW md5Ok md5_initChecks (by decide) md5_initImp.sat_left).of_implies md5_initImp
 
 /-! ## SHA-1 -/
@@ -190,9 +190,9 @@ theorem sha1_iterImp : (iterW Spec.Hmac.sha1S 56).Implies (Spec.Hmac.sha1I.itera
     X86.argBytes]
     [a0, a1, a2, a3, a4, e, esp, iterSat] using iterSat 84 20 56
 
-theorem sha1_finImp : (finW Spec.Hmac.sha1S 56).Implies (Spec.Hmac.sha1I.finalizeContract X86.abi 48) := by
+theorem sha1_finImp : (finW Spec.Hmac.sha1S 56).Implies (Spec.Hmac.sha1I.finalizeScratchContract X86.abi 48) := by
   obtain ⟨a0, a1, a2, a3, a4, a5, e, esp⟩ := finSat_args 84 20 56
-  sig_implies [Spec.Hmac.Instance.finalizeContract, Spec.Hmac.finalizeContract, Spec.Hmac.finalizeSig,
+  sig_implies [Spec.Hmac.Instance.finalizeScratchContract, Spec.Hmac.finalizeScratchContract, Spec.Hmac.finalizeScratchSig, Spec.Hmac.finalizePost,
     Spec.Hmac.sha1I, Spec.Hmac.sha1S, Spec.Hmac.sha1, finW, finG, countF, X86.abi, X86.argSlots,
     X86.argVal, X86.argBytes]
     [a0, a1, a2, a3, a4, a5, e, esp, finSat] using finSat 84 20 56
@@ -200,7 +200,7 @@ theorem sha1_finImp : (finW Spec.Hmac.sha1S 56).Implies (Spec.Hmac.sha1I.finaliz
 theorem sha1_iterate : Verified X86.target sha1M.iterate (Spec.Hmac.sha1I.iterateContract X86.abi 48) :=
   (Iterate.verifiedW sha1Ok sha1_iterChecks (by decide) sha1_iterImp.sat_left).of_implies sha1_iterImp
 
-theorem sha1_finalize : Verified X86.target sha1M.hmacFin (Spec.Hmac.sha1I.finalizeContract X86.abi 48) :=
+theorem sha1_finalize : Verified X86.target sha1M.hmacFin (Spec.Hmac.sha1I.finalizeScratchContract X86.abi 48) :=
   (HmacFin.verifiedW sha1Ok sha1_finChecks (by decide) sha1_finImp.sat_left).of_implies sha1_finImp
 
 theorem sha1_initChecks : HmacInit.Checks sha1M := by
@@ -211,14 +211,14 @@ theorem sha1_initChecks : HmacInit.Checks sha1M := by
     restore := ⟨?_, ?_⟩ }
   taint_decide_all
 
-theorem sha1_initImp : (initW Spec.Hmac.sha1S 56).Implies (Spec.Hmac.sha1I.initContract X86.abi 48) := by
+theorem sha1_initImp : (initW Spec.Hmac.sha1S 56).Implies (Spec.Hmac.sha1I.initScratchContract X86.abi 48) := by
   obtain ⟨a0, a1, a2, a3, a4, e, esp⟩ := initSat_args 84 56
-  sig_implies [Spec.Hmac.Instance.initContract, Spec.Hmac.initContract, Spec.Hmac.initSig,
+  sig_implies [Spec.Hmac.Instance.initScratchContract, Spec.Hmac.initScratchContract, Spec.Hmac.initScratchSig, Spec.Hmac.initPre, Spec.Hmac.initPost,
     Spec.Hmac.sha1I, Spec.Hmac.sha1S, Spec.Hmac.sha1, initW, initG, X86.abi, X86.argSlots, X86.argVal,
     X86.argBytes]
     [a0, a1, a2, a3, a4, e, esp, initSat] using initSat 84 56
 
-theorem sha1_init : Verified X86.target sha1M.hmacInit (Spec.Hmac.sha1I.initContract X86.abi 48) :=
+theorem sha1_init : Verified X86.target sha1M.hmacInit (Spec.Hmac.sha1I.initScratchContract X86.abi 48) :=
   (HmacInit.verifiedW sha1Ok sha1_initChecks (by decide) sha1_initImp.sat_left).of_implies sha1_initImp
 
 /-! ## SHA-384 -/
@@ -247,9 +247,9 @@ theorem sha384_iterImp : (iterW Spec.Hmac.sha384S 234).Implies (Spec.Hmac.sha384
     X86.argBytes]
     [a0, a1, a2, a3, a4, e, esp, iterSat] using iterSat 192 48 234
 
-theorem sha384_finImp : (finW Spec.Hmac.sha384S 234).Implies (Spec.Hmac.sha384I.finalizeContract X86.abi 48) := by
+theorem sha384_finImp : (finW Spec.Hmac.sha384S 234).Implies (Spec.Hmac.sha384I.finalizeScratchContract X86.abi 48) := by
   obtain ⟨a0, a1, a2, a3, a4, a5, e, esp⟩ := finSat_args 192 48 234
-  sig_implies [Spec.Hmac.Instance.finalizeContract, Spec.Hmac.finalizeContract, Spec.Hmac.finalizeSig,
+  sig_implies [Spec.Hmac.Instance.finalizeScratchContract, Spec.Hmac.finalizeScratchContract, Spec.Hmac.finalizeScratchSig, Spec.Hmac.finalizePost,
     Spec.Hmac.sha384I, Spec.Hmac.sha384S, Spec.Hmac.sha384, finW, finG, countF, X86.abi, X86.argSlots,
     X86.argVal, X86.argBytes]
     [a0, a1, a2, a3, a4, a5, e, esp, finSat] using finSat 192 48 234
@@ -257,7 +257,7 @@ theorem sha384_finImp : (finW Spec.Hmac.sha384S 234).Implies (Spec.Hmac.sha384I.
 theorem sha384_iterate : Verified X86.target sha384M.iterate (Spec.Hmac.sha384I.iterateContract X86.abi 48) :=
   (Iterate.verifiedW sha384Ok sha384_iterChecks (by decide) sha384_iterImp.sat_left).of_implies sha384_iterImp
 
-theorem sha384_finalize : Verified X86.target sha384M.hmacFin (Spec.Hmac.sha384I.finalizeContract X86.abi 48) :=
+theorem sha384_finalize : Verified X86.target sha384M.hmacFin (Spec.Hmac.sha384I.finalizeScratchContract X86.abi 48) :=
   (HmacFin.verifiedW sha384Ok sha384_finChecks (by decide) sha384_finImp.sat_left).of_implies sha384_finImp
 
 theorem sha384_initChecks : HmacInit.Checks sha384M := by
@@ -268,14 +268,14 @@ theorem sha384_initChecks : HmacInit.Checks sha384M := by
     restore := ⟨?_, ?_⟩ }
   taint_decide_all
 
-theorem sha384_initImp : (initW Spec.Hmac.sha384S 234).Implies (Spec.Hmac.sha384I.initContract X86.abi 48) := by
+theorem sha384_initImp : (initW Spec.Hmac.sha384S 234).Implies (Spec.Hmac.sha384I.initScratchContract X86.abi 48) := by
   obtain ⟨a0, a1, a2, a3, a4, e, esp⟩ := initSat_args 192 234
-  sig_implies [Spec.Hmac.Instance.initContract, Spec.Hmac.initContract, Spec.Hmac.initSig,
+  sig_implies [Spec.Hmac.Instance.initScratchContract, Spec.Hmac.initScratchContract, Spec.Hmac.initScratchSig, Spec.Hmac.initPre, Spec.Hmac.initPost,
     Spec.Hmac.sha384I, Spec.Hmac.sha384S, Spec.Hmac.sha384, initW, initG, X86.abi, X86.argSlots, X86.argVal,
     X86.argBytes]
     [a0, a1, a2, a3, a4, e, esp, initSat] using initSat 192 234
 
-theorem sha384_init : Verified X86.target sha384M.hmacInit (Spec.Hmac.sha384I.initContract X86.abi 48) :=
+theorem sha384_init : Verified X86.target sha384M.hmacInit (Spec.Hmac.sha384I.initScratchContract X86.abi 48) :=
   (HmacInit.verifiedW sha384Ok sha384_initChecks (by decide) sha384_initImp.sat_left).of_implies sha384_initImp
 
 /-! ## SHA-512 -/
@@ -304,9 +304,9 @@ theorem sha512_iterImp : (iterW Spec.Hmac.sha512S 234).Implies (Spec.Hmac.sha512
     X86.argBytes]
     [a0, a1, a2, a3, a4, e, esp, iterSat] using iterSat 192 64 234
 
-theorem sha512_finImp : (finW Spec.Hmac.sha512S 234).Implies (Spec.Hmac.sha512I.finalizeContract X86.abi 48) := by
+theorem sha512_finImp : (finW Spec.Hmac.sha512S 234).Implies (Spec.Hmac.sha512I.finalizeScratchContract X86.abi 48) := by
   obtain ⟨a0, a1, a2, a3, a4, a5, e, esp⟩ := finSat_args 192 64 234
-  sig_implies [Spec.Hmac.Instance.finalizeContract, Spec.Hmac.finalizeContract, Spec.Hmac.finalizeSig,
+  sig_implies [Spec.Hmac.Instance.finalizeScratchContract, Spec.Hmac.finalizeScratchContract, Spec.Hmac.finalizeScratchSig, Spec.Hmac.finalizePost,
     Spec.Hmac.sha512I, Spec.Hmac.sha512S, Spec.Hmac.sha512, finW, finG, countF, X86.abi, X86.argSlots,
     X86.argVal, X86.argBytes]
     [a0, a1, a2, a3, a4, a5, e, esp, finSat] using finSat 192 64 234
@@ -314,7 +314,7 @@ theorem sha512_finImp : (finW Spec.Hmac.sha512S 234).Implies (Spec.Hmac.sha512I.
 theorem sha512_iterate : Verified X86.target sha512M'.iterate (Spec.Hmac.sha512I.iterateContract X86.abi 48) :=
   (Iterate.verifiedW sha512Ok' sha512_iterChecks (by decide) sha512_iterImp.sat_left).of_implies sha512_iterImp
 
-theorem sha512_finalize : Verified X86.target sha512M'.hmacFin (Spec.Hmac.sha512I.finalizeContract X86.abi 48) :=
+theorem sha512_finalize : Verified X86.target sha512M'.hmacFin (Spec.Hmac.sha512I.finalizeScratchContract X86.abi 48) :=
   (HmacFin.verifiedW sha512Ok' sha512_finChecks (by decide) sha512_finImp.sat_left).of_implies sha512_finImp
 
 theorem sha512_initChecks : HmacInit.Checks sha512M' := by
@@ -325,14 +325,14 @@ theorem sha512_initChecks : HmacInit.Checks sha512M' := by
     restore := ⟨?_, ?_⟩ }
   taint_decide_all
 
-theorem sha512_initImp : (initW Spec.Hmac.sha512S 234).Implies (Spec.Hmac.sha512I.initContract X86.abi 48) := by
+theorem sha512_initImp : (initW Spec.Hmac.sha512S 234).Implies (Spec.Hmac.sha512I.initScratchContract X86.abi 48) := by
   obtain ⟨a0, a1, a2, a3, a4, e, esp⟩ := initSat_args 192 234
-  sig_implies [Spec.Hmac.Instance.initContract, Spec.Hmac.initContract, Spec.Hmac.initSig,
+  sig_implies [Spec.Hmac.Instance.initScratchContract, Spec.Hmac.initScratchContract, Spec.Hmac.initScratchSig, Spec.Hmac.initPre, Spec.Hmac.initPost,
     Spec.Hmac.sha512I, Spec.Hmac.sha512S, Spec.Hmac.sha512, initW, initG, X86.abi, X86.argSlots, X86.argVal,
     X86.argBytes]
     [a0, a1, a2, a3, a4, e, esp, initSat] using initSat 192 234
 
-theorem sha512_init : Verified X86.target sha512M'.hmacInit (Spec.Hmac.sha512I.initContract X86.abi 48) :=
+theorem sha512_init : Verified X86.target sha512M'.hmacInit (Spec.Hmac.sha512I.initScratchContract X86.abi 48) :=
   (HmacInit.verifiedW sha512Ok' sha512_initChecks (by decide) sha512_initImp.sat_left).of_implies sha512_initImp
 
 /-! ## SHA-512/224 -/
@@ -361,9 +361,9 @@ theorem sha512_224_iterImp : (iterW Spec.Hmac.sha512_224S 234).Implies (Spec.Hma
     X86.argBytes]
     [a0, a1, a2, a3, a4, e, esp, iterSat] using iterSat 192 28 234
 
-theorem sha512_224_finImp : (finW Spec.Hmac.sha512_224S 234).Implies (Spec.Hmac.sha512_224I.finalizeContract X86.abi 48) := by
+theorem sha512_224_finImp : (finW Spec.Hmac.sha512_224S 234).Implies (Spec.Hmac.sha512_224I.finalizeScratchContract X86.abi 48) := by
   obtain ⟨a0, a1, a2, a3, a4, a5, e, esp⟩ := finSat_args 192 28 234
-  sig_implies [Spec.Hmac.Instance.finalizeContract, Spec.Hmac.finalizeContract, Spec.Hmac.finalizeSig,
+  sig_implies [Spec.Hmac.Instance.finalizeScratchContract, Spec.Hmac.finalizeScratchContract, Spec.Hmac.finalizeScratchSig, Spec.Hmac.finalizePost,
     Spec.Hmac.sha512_224I, Spec.Hmac.sha512_224S, Spec.Hmac.sha512_224, finW, finG, countF, X86.abi, X86.argSlots,
     X86.argVal, X86.argBytes]
     [a0, a1, a2, a3, a4, a5, e, esp, finSat] using finSat 192 28 234
@@ -371,7 +371,7 @@ theorem sha512_224_finImp : (finW Spec.Hmac.sha512_224S 234).Implies (Spec.Hmac.
 theorem sha512_224_iterate : Verified X86.target sha512_224M.iterate (Spec.Hmac.sha512_224I.iterateContract X86.abi 48) :=
   (Iterate.verifiedW sha512_224Ok sha512_224_iterChecks (by decide) sha512_224_iterImp.sat_left).of_implies sha512_224_iterImp
 
-theorem sha512_224_finalize : Verified X86.target sha512_224M.hmacFin (Spec.Hmac.sha512_224I.finalizeContract X86.abi 48) :=
+theorem sha512_224_finalize : Verified X86.target sha512_224M.hmacFin (Spec.Hmac.sha512_224I.finalizeScratchContract X86.abi 48) :=
   (HmacFin.verifiedW sha512_224Ok sha512_224_finChecks (by decide) sha512_224_finImp.sat_left).of_implies sha512_224_finImp
 
 theorem sha512_224_initChecks : HmacInit.Checks sha512_224M := by
@@ -382,14 +382,14 @@ theorem sha512_224_initChecks : HmacInit.Checks sha512_224M := by
     restore := ⟨?_, ?_⟩ }
   taint_decide_all
 
-theorem sha512_224_initImp : (initW Spec.Hmac.sha512_224S 234).Implies (Spec.Hmac.sha512_224I.initContract X86.abi 48) := by
+theorem sha512_224_initImp : (initW Spec.Hmac.sha512_224S 234).Implies (Spec.Hmac.sha512_224I.initScratchContract X86.abi 48) := by
   obtain ⟨a0, a1, a2, a3, a4, e, esp⟩ := initSat_args 192 234
-  sig_implies [Spec.Hmac.Instance.initContract, Spec.Hmac.initContract, Spec.Hmac.initSig,
+  sig_implies [Spec.Hmac.Instance.initScratchContract, Spec.Hmac.initScratchContract, Spec.Hmac.initScratchSig, Spec.Hmac.initPre, Spec.Hmac.initPost,
     Spec.Hmac.sha512_224I, Spec.Hmac.sha512_224S, Spec.Hmac.sha512_224, initW, initG, X86.abi, X86.argSlots, X86.argVal,
     X86.argBytes]
     [a0, a1, a2, a3, a4, e, esp, initSat] using initSat 192 234
 
-theorem sha512_224_init : Verified X86.target sha512_224M.hmacInit (Spec.Hmac.sha512_224I.initContract X86.abi 48) :=
+theorem sha512_224_init : Verified X86.target sha512_224M.hmacInit (Spec.Hmac.sha512_224I.initScratchContract X86.abi 48) :=
   (HmacInit.verifiedW sha512_224Ok sha512_224_initChecks (by decide) sha512_224_initImp.sat_left).of_implies sha512_224_initImp
 
 /-! ## SHA-512/256 -/
@@ -418,9 +418,9 @@ theorem sha512_256_iterImp : (iterW Spec.Hmac.sha512_256S 234).Implies (Spec.Hma
     X86.argBytes]
     [a0, a1, a2, a3, a4, e, esp, iterSat] using iterSat 192 32 234
 
-theorem sha512_256_finImp : (finW Spec.Hmac.sha512_256S 234).Implies (Spec.Hmac.sha512_256I.finalizeContract X86.abi 48) := by
+theorem sha512_256_finImp : (finW Spec.Hmac.sha512_256S 234).Implies (Spec.Hmac.sha512_256I.finalizeScratchContract X86.abi 48) := by
   obtain ⟨a0, a1, a2, a3, a4, a5, e, esp⟩ := finSat_args 192 32 234
-  sig_implies [Spec.Hmac.Instance.finalizeContract, Spec.Hmac.finalizeContract, Spec.Hmac.finalizeSig,
+  sig_implies [Spec.Hmac.Instance.finalizeScratchContract, Spec.Hmac.finalizeScratchContract, Spec.Hmac.finalizeScratchSig, Spec.Hmac.finalizePost,
     Spec.Hmac.sha512_256I, Spec.Hmac.sha512_256S, Spec.Hmac.sha512_256, finW, finG, countF, X86.abi, X86.argSlots,
     X86.argVal, X86.argBytes]
     [a0, a1, a2, a3, a4, a5, e, esp, finSat] using finSat 192 32 234
@@ -428,7 +428,7 @@ theorem sha512_256_finImp : (finW Spec.Hmac.sha512_256S 234).Implies (Spec.Hmac.
 theorem sha512_256_iterate : Verified X86.target sha512_256M.iterate (Spec.Hmac.sha512_256I.iterateContract X86.abi 48) :=
   (Iterate.verifiedW sha512_256Ok sha512_256_iterChecks (by decide) sha512_256_iterImp.sat_left).of_implies sha512_256_iterImp
 
-theorem sha512_256_finalize : Verified X86.target sha512_256M.hmacFin (Spec.Hmac.sha512_256I.finalizeContract X86.abi 48) :=
+theorem sha512_256_finalize : Verified X86.target sha512_256M.hmacFin (Spec.Hmac.sha512_256I.finalizeScratchContract X86.abi 48) :=
   (HmacFin.verifiedW sha512_256Ok sha512_256_finChecks (by decide) sha512_256_finImp.sat_left).of_implies sha512_256_finImp
 
 theorem sha512_256_initChecks : HmacInit.Checks sha512_256M := by
@@ -439,14 +439,14 @@ theorem sha512_256_initChecks : HmacInit.Checks sha512_256M := by
     restore := ⟨?_, ?_⟩ }
   taint_decide_all
 
-theorem sha512_256_initImp : (initW Spec.Hmac.sha512_256S 234).Implies (Spec.Hmac.sha512_256I.initContract X86.abi 48) := by
+theorem sha512_256_initImp : (initW Spec.Hmac.sha512_256S 234).Implies (Spec.Hmac.sha512_256I.initScratchContract X86.abi 48) := by
   obtain ⟨a0, a1, a2, a3, a4, e, esp⟩ := initSat_args 192 234
-  sig_implies [Spec.Hmac.Instance.initContract, Spec.Hmac.initContract, Spec.Hmac.initSig,
+  sig_implies [Spec.Hmac.Instance.initScratchContract, Spec.Hmac.initScratchContract, Spec.Hmac.initScratchSig, Spec.Hmac.initPre, Spec.Hmac.initPost,
     Spec.Hmac.sha512_256I, Spec.Hmac.sha512_256S, Spec.Hmac.sha512_256, initW, initG, X86.abi, X86.argSlots, X86.argVal,
     X86.argBytes]
     [a0, a1, a2, a3, a4, e, esp, initSat] using initSat 192 234
 
-theorem sha512_256_init : Verified X86.target sha512_256M.hmacInit (Spec.Hmac.sha512_256I.initContract X86.abi 48) :=
+theorem sha512_256_init : Verified X86.target sha512_256M.hmacInit (Spec.Hmac.sha512_256I.initScratchContract X86.abi 48) :=
   (HmacInit.verifiedW sha512_256Ok sha512_256_initChecks (by decide) sha512_256_initImp.sat_left).of_implies sha512_256_initImp
 
 end VG.Proof.Pbkdf2.Md.X86.Instances

@@ -126,7 +126,7 @@ scratch space. -/
 
 variable (S : StreamingHash) (W : Nat)
 
-/-- `init(inner, outer, key, key_len, scratch)`: `VG.Spec.Hmac.initContract`,
+/-- `init(inner, outer, key, key_len, scratch)`: `VG.Spec.Hmac.initScratchContract`,
 reading its arguments only. -/
 def initG : Contract isa where
   pre s :=
@@ -153,7 +153,7 @@ def initG : Contract isa where
   pub s₁ s₂ := s₁.gpr .esp = s₂.gpr .esp ∧ ∀ i < 5, arg s₁ i = arg s₂ i
 
 /-- `finalize(inner, outer, count, out, scratch)`:
-`VG.Spec.Hmac.finalizeContract`, reading its arguments only. -/
+`VG.Spec.Hmac.finalizeScratchContract`, reading its arguments only. -/
 def finG : Contract isa where
   pre s :=
     let inner : Region := ⟨(arg s 0).setWidth 64, S.stateBytes⟩
@@ -208,7 +208,7 @@ def iterG : Contract isa where
 
 /-! ## With the arguments writable -/
 
-/-- `initG`, with the arguments writable, as `VG.Spec.Hmac.initContract` has
+/-- `initG`, with the arguments writable, as `VG.Spec.Hmac.initScratchContract` has
 them. -/
 def initW : Contract isa where
   pre s :=
@@ -231,7 +231,7 @@ def initW : Contract isa where
   post := (initG S W).post
   pub := (initG S W).pub
 
-/-- `finG`, with the arguments writable, as `VG.Spec.Hmac.finalizeContract`
+/-- `finG`, with the arguments writable, as `VG.Spec.Hmac.finalizeScratchContract`
 has them. -/
 def finW : Contract isa where
   pre s :=

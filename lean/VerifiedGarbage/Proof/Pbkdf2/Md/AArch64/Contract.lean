@@ -9,8 +9,8 @@ import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Calls
 any streaming hash function and scratch space (`generic_implies`). Every
 argument is in a register, and the functions `pbkdf2` calls may use the 16
 bytes below the stack pointer. Likewise HMAC's `initG` and `finG`
-(`Calls.lean`) imply `VG.Spec.Hmac.initContract` and
-`VG.Spec.Hmac.finalizeContract` (`initImp`, `finImp`); `initSat` and `finSat`
+(`Calls.lean`) imply `VG.Spec.Hmac.initScratchContract` and
+`VG.Spec.Hmac.finalizeScratchContract` (`initImp`, `finImp`); `initSat` and `finSat`
 are states satisfying those contracts' preconditions, from which each hash
 function's instance shows them satisfiable.
 -/
@@ -81,16 +81,16 @@ def finSat (S D sc : Nat) : State where
 
 /-- `initG` implies the shared contract for any hash function and scratch space
 (`generic_implies`), given that the shared contract is satisfiable. -/
-theorem initImp (S : Spec.Hmac.StreamingHash) (W : Nat) (h : ∃ s, (Spec.Hmac.initContract S W AArch64.abi 16).pre s) :
-    (initG S W).Implies (Spec.Hmac.initContract S W AArch64.abi 16) := by
+theorem initImp (S : Spec.Hmac.StreamingHash) (W : Nat) (h : ∃ s, (Spec.Hmac.initScratchContract S W AArch64.abi 16).pre s) :
+    (initG S W).Implies (Spec.Hmac.initScratchContract S W AArch64.abi 16) := by
   generic_implies [
-    Spec.Hmac.initContract, Spec.Hmac.initSig, initG, stk, AArch64.abi, AArch64.argRegs] using h
+    Spec.Hmac.initScratchContract, Spec.Hmac.initScratchSig, Spec.Hmac.initPre, Spec.Hmac.initPost, initG, stk, AArch64.abi, AArch64.argRegs] using h
 
 /-- `finG` implies the shared contract for any hash function and scratch space
 (`generic_implies`), given that the shared contract is satisfiable. -/
-theorem finImp (S : Spec.Hmac.StreamingHash) (W : Nat) (h : ∃ s, (Spec.Hmac.finalizeContract S W AArch64.abi 16).pre s) :
-    (finG S W).Implies (Spec.Hmac.finalizeContract S W AArch64.abi 16) := by
+theorem finImp (S : Spec.Hmac.StreamingHash) (W : Nat) (h : ∃ s, (Spec.Hmac.finalizeScratchContract S W AArch64.abi 16).pre s) :
+    (finG S W).Implies (Spec.Hmac.finalizeScratchContract S W AArch64.abi 16) := by
   generic_implies [
-    Spec.Hmac.finalizeContract, Spec.Hmac.finalizeSig, finG, stk, AArch64.abi, AArch64.argRegs] using h
+    Spec.Hmac.finalizeScratchContract, Spec.Hmac.finalizeScratchSig, Spec.Hmac.finalizePost, finG, stk, AArch64.abi, AArch64.argRegs] using h
 
 end VG.Proof.Pbkdf2.Md.AArch64

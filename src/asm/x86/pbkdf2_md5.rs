@@ -236,7 +236,7 @@ pub(crate) unsafe extern "C" fn vg_pbkdf2_hmac_md5(password: *const u8, password
         "push edx",
         "push esi",
         "push edi",
-        "call {vg_hmac_md5_init}",
+        "call {vg_hmac_md5_init_scratch}",
         "pop eax",
         "pop eax",
         "pop eax",
@@ -327,7 +327,7 @@ pub(crate) unsafe extern "C" fn vg_pbkdf2_hmac_md5(password: *const u8, password
         "push eax",
         "push esi",
         "push edx",
-        "call {vg_hmac_md5_finalize}",
+        "call {vg_hmac_md5_finalize_scratch}",
         "pop eax",
         "pop eax",
         "pop eax",
@@ -408,8 +408,8 @@ pub(crate) unsafe extern "C" fn vg_pbkdf2_hmac_md5(password: *const u8, password
         vg_md5_init = sym super::md5::vg_md5_init,
         vg_md5_update_scratch = sym super::md5::vg_md5_update_scratch,
         vg_md5_finalize_scratch = sym super::md5::vg_md5_finalize_scratch,
-        vg_hmac_md5_init = sym super::hmac_md5::vg_hmac_md5_init,
-        vg_hmac_md5_finalize = sym super::hmac_md5::vg_hmac_md5_finalize,
+        vg_hmac_md5_init_scratch = sym super::hmac_md5::vg_hmac_md5_init_scratch,
+        vg_hmac_md5_finalize_scratch = sym super::hmac_md5::vg_hmac_md5_finalize_scratch,
         vg_pbkdf2_hmac_md5_iterate = sym super::pbkdf2_md5::vg_pbkdf2_hmac_md5_iterate,
     )
 }

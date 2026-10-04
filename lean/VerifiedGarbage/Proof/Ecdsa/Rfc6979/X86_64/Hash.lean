@@ -36,8 +36,8 @@ structure RfcHash where
   ok : HashOK H
   C : CoreOK (core H)
   K : Callees H
-  satI : ∃ s, (Spec.Hmac.initContract ok.SH H.W X86_64.abi 16).pre s
-  satF : ∃ s, (Spec.Hmac.finalizeContract ok.SH H.W X86_64.abi 16).pre s
+  satI : ∃ s, (Spec.Hmac.initScratchContract ok.SH H.W X86_64.abi 16).pre s
+  satF : ∃ s, (Spec.Hmac.finalizeScratchContract ok.SH H.W X86_64.abi 16).pre s
   /-- The instance is of P-256, with this hash function's HMAC, its output
   length and 8 candidates. -/
   ecdsa : I.ecdsa = Spec.Ecdsa.P256.inst

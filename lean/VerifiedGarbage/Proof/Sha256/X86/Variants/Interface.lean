@@ -117,10 +117,10 @@ abbrev F : Impl.Pbkdf2.Whole.X86.Fns := pbkdf2Fns v.stream v.cmpN v.cmpC
 call it. -/
 theorem comp : Proof.Pbkdf2.Md.X86.CompOk Proof.Sha256.md 112 v.cmpC := ⟨v.cmp, v.cmpSp, v.cmpStack⟩
 
-theorem hmacInit : Verified X86.target v.M.hmacInit (Spec.Hmac.sha256I.initContract X86.abi 48) :=
+theorem hmacInit : Verified X86.target v.M.hmacInit (Spec.Hmac.sha256I.initScratchContract X86.abi 48) :=
   Proof.Pbkdf2.Md.X86.Instances.sha256_init v.stream v.cmpN v.comp
 
-theorem hmacFin : Verified X86.target v.M.hmacFin (Spec.Hmac.sha256I.finalizeContract X86.abi 48) :=
+theorem hmacFin : Verified X86.target v.M.hmacFin (Spec.Hmac.sha256I.finalizeScratchContract X86.abi 48) :=
   Proof.Pbkdf2.Md.X86.Instances.sha256_finalize v.stream v.cmpN v.comp
 
 theorem iterate : Verified X86.target v.M.iterate (Spec.Hmac.sha256I.iterateContract X86.abi 48) :=
@@ -133,10 +133,10 @@ abbrev M224 : Impl.Pbkdf2.Md.X86.Hash := sha224M v.stream v.cmpN v.cmpC
 /-- The functions the whole of PBKDF2-HMAC-SHA-224 calls. -/
 abbrev F224 : Impl.Pbkdf2.Whole.X86.Fns := pbkdf2Fns224 v.stream v.cmpN v.cmpC
 
-theorem hmacInit224 : Verified X86.target v.M224.hmacInit (Spec.Hmac.sha224I.initContract X86.abi 48) :=
+theorem hmacInit224 : Verified X86.target v.M224.hmacInit (Spec.Hmac.sha224I.initScratchContract X86.abi 48) :=
   Proof.Pbkdf2.Md.X86.Instances.sha224_init v.stream v.cmpN v.comp
 
-theorem hmacFin224 : Verified X86.target v.M224.hmacFin (Spec.Hmac.sha224I.finalizeContract X86.abi 48) :=
+theorem hmacFin224 : Verified X86.target v.M224.hmacFin (Spec.Hmac.sha224I.finalizeScratchContract X86.abi 48) :=
   Proof.Pbkdf2.Md.X86.Instances.sha224_finalize v.stream v.cmpN v.comp
 
 theorem iterate224 : Verified X86.target v.M224.iterate (Spec.Hmac.sha224I.iterateContract X86.abi 48) :=

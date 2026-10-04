@@ -420,7 +420,7 @@ pub(crate) unsafe extern "C" fn vg_pbkdf2_hmac_sha512(password: *const u8, passw
         "add r1, r11, r12",
         "mov r12, r11",
         "push {{r12, lr}}",
-        "bl {vg_hmac_sha512_init}",
+        "bl {vg_hmac_sha512_init_scratch}",
         "ldr r12, [sp], #8",
         "mov r8, #0",
         "movw r9, #192",
@@ -481,7 +481,7 @@ pub(crate) unsafe extern "C" fn vg_pbkdf2_hmac_sha512(password: *const u8, passw
         "add r2, r6, #132",
         "mov r3, #0",
         "push {{r10, r12}}",
-        "bl {vg_hmac_sha512_finalize}",
+        "bl {vg_hmac_sha512_finalize_scratch}",
         "ldr r12, [sp], #8",
         "mov r8, #0",
         "movw r9, #64",
@@ -552,8 +552,8 @@ pub(crate) unsafe extern "C" fn vg_pbkdf2_hmac_sha512(password: *const u8, passw
         vg_sha512_init = sym super::sha512::vg_sha512_init,
         vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch,
         vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch,
-        vg_hmac_sha512_init = sym super::hmac_sha512::vg_hmac_sha512_init,
-        vg_hmac_sha512_finalize = sym super::hmac_sha512::vg_hmac_sha512_finalize,
+        vg_hmac_sha512_init_scratch = sym super::hmac_sha512::vg_hmac_sha512_init_scratch,
+        vg_hmac_sha512_finalize_scratch = sym super::hmac_sha512::vg_hmac_sha512_finalize_scratch,
         vg_pbkdf2_hmac_sha512_iterate = sym super::pbkdf2_sha512::vg_pbkdf2_hmac_sha512_iterate,
     )
 }

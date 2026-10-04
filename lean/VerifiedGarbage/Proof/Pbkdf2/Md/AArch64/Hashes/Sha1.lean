@@ -35,8 +35,8 @@ def hash (v : Compress) : Hash where
   updC := v.update
   finN := Spec.Sha1.finalizeScratchApi.name ++ v.suffix
   finC := v.finalize
-  hmacInitN := Spec.Hmac.sha1I.initApi.name ++ v.suffix
-  hmacFinN := Spec.Hmac.sha1I.finalizeApi.name ++ v.suffix
+  hmacInitN := Spec.Hmac.sha1I.initScratchApi.name ++ v.suffix
+  hmacFinN := Spec.Hmac.sha1I.finalizeScratchApi.name ++ v.suffix
   iterN := Spec.Hmac.sha1I.iterateApi.name ++ v.suffix
 
 /-- `hash` without the functions it calls. -/
@@ -130,13 +130,13 @@ def ok : HashOK (hash v) where
   L := by simp only [hash] <;> decide
   W := by simp only [hash] <;> decide
 
-theorem satI : ∃ s, (Spec.Hmac.sha1I.initContract AArch64.abi 16).pre s := by
-  inst_sat [Spec.Hmac.Instance.initContract, Spec.Hmac.sha1I, Spec.Hmac.initContract, Spec.Hmac.initSig,
+theorem satI : ∃ s, (Spec.Hmac.sha1I.initScratchContract AArch64.abi 16).pre s := by
+  inst_sat [Spec.Hmac.Instance.initScratchContract, Spec.Hmac.sha1I, Spec.Hmac.initScratchContract, Spec.Hmac.initScratchSig, Spec.Hmac.initPre, Spec.Hmac.initPost,
     Spec.Hmac.sha1S, Spec.Hmac.sha1, AArch64.abi, AArch64.argRegs] using initSat 84 56
 
-theorem satF : ∃ s, (Spec.Hmac.sha1I.finalizeContract AArch64.abi 16).pre s := by
-  inst_sat [Spec.Hmac.Instance.finalizeContract, Spec.Hmac.sha1I, Spec.Hmac.finalizeContract,
-    Spec.Hmac.finalizeSig, Spec.Hmac.sha1S, Spec.Hmac.sha1, AArch64.abi, AArch64.argRegs] using finSat 84 20 56
+theorem satF : ∃ s, (Spec.Hmac.sha1I.finalizeScratchContract AArch64.abi 16).pre s := by
+  inst_sat [Spec.Hmac.Instance.finalizeScratchContract, Spec.Hmac.sha1I, Spec.Hmac.finalizeScratchContract,
+    Spec.Hmac.finalizeScratchSig, Spec.Hmac.finalizePost, Spec.Hmac.sha1S, Spec.Hmac.sha1, AArch64.abi, AArch64.argRegs] using finSat 84 20 56
 
 theorem satT : ∃ s, (Spec.Hmac.sha1I.iterateContract AArch64.abi).pre s := by
   inst_sat [Spec.Hmac.Instance.iterateContract, Spec.Hmac.sha1I, Spec.Pbkdf2.iterateContract,
@@ -180,6 +180,13 @@ def stream : List StreamFn := [
 
 /-- Every construction follows the registered compression backend. -/
 def variant : MdHash :=
-  MdHash.of (ok v) coreOK rfl rfl satI satF satT satP v.suffix v.features (stream v)
+  MdHash.of (ok v) coreOK rfl rfl satI satF satT satP (by decide)
+    (by
+      unfold Spec.Hmac.Instance.initContract Spec.Hmac.initContract
+      exact AArch64.sat_regs (by decide) (by decide) (by decide +kernel) (Nat.le_of_ble_eq_true rfl))
+    (by
+      unfold Spec.Hmac.Instance.finalizeContract Spec.Hmac.finalizeContract
+      exact AArch64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
+    v.suffix v.features (stream v)
 
 end VG.Proof.Pbkdf2.Md.AArch64.Sha1

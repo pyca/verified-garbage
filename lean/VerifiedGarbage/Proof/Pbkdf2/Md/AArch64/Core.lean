@@ -102,11 +102,11 @@ section
 variable {H : Hash} (hH : HashOK H) (C : CoreOK (core H))
 include hH C
 
-theorem hmacInit_ok (hsat : ∃ s, (Spec.Hmac.initContract hH.SH H.W AArch64.abi 16).pre s) :
+theorem hmacInit_ok (hsat : ∃ s, (Spec.Hmac.initScratchContract hH.SH H.W AArch64.abi 16).pre s) :
     Verified AArch64.target H.hmacInit (initG hH.SH H.W) :=
   HmacInit.verified hH (HmacInit.Checks.of_core C.hinit) C.fitI (initImp _ _ hsat).sat_left
 
-theorem hmacFin_ok (hsat : ∃ s, (Spec.Hmac.finalizeContract hH.SH H.W AArch64.abi 16).pre s) :
+theorem hmacFin_ok (hsat : ∃ s, (Spec.Hmac.finalizeScratchContract hH.SH H.W AArch64.abi 16).pre s) :
     Verified AArch64.target H.hmacFin (finG hH.SH H.W) :=
   HmacFin.verified hH (HmacFin.Checks.of_core C.hfin) C.fitF
     (finImp _ _ hsat).sat_left
@@ -116,13 +116,13 @@ theorem iterate_ok (hsat : ∃ s, (Spec.Pbkdf2.iterateContract hH.SH H.W AArch64
   VG.Proof.Pbkdf2.AArch64.verified hH.iterOk C.iter hH.comp (iterImp _ _ hsat).sat_left
 
 /-- HMAC's `init`, verified against the shared contract. -/
-theorem hmacInit_verified (hsat : ∃ s, (Spec.Hmac.initContract hH.SH H.W AArch64.abi 16).pre s) :
-    Verified AArch64.target H.hmacInit (Spec.Hmac.initContract hH.SH H.W AArch64.abi 16) :=
+theorem hmacInit_verified (hsat : ∃ s, (Spec.Hmac.initScratchContract hH.SH H.W AArch64.abi 16).pre s) :
+    Verified AArch64.target H.hmacInit (Spec.Hmac.initScratchContract hH.SH H.W AArch64.abi 16) :=
   (hmacInit_ok hH C hsat).of_implies (initImp _ _ hsat)
 
 /-- HMAC's `finalize`, verified against the shared contract. -/
-theorem hmacFin_verified (hsat : ∃ s, (Spec.Hmac.finalizeContract hH.SH H.W AArch64.abi 16).pre s) :
-    Verified AArch64.target H.hmacFin (Spec.Hmac.finalizeContract hH.SH H.W AArch64.abi 16) :=
+theorem hmacFin_verified (hsat : ∃ s, (Spec.Hmac.finalizeScratchContract hH.SH H.W AArch64.abi 16).pre s) :
+    Verified AArch64.target H.hmacFin (Spec.Hmac.finalizeScratchContract hH.SH H.W AArch64.abi 16) :=
   (hmacFin_ok hH C hsat).of_implies (finImp _ _ hsat)
 
 /-- `iterate`, verified against the shared contract. -/
@@ -132,8 +132,8 @@ theorem iterate_verified (hsat : ∃ s, (Spec.Pbkdf2.iterateContract hH.SH H.W A
 
 /-- `pbkdf2`, verified against the shared contract. -/
 theorem pbkdf2_verified
-    (hsI : ∃ s, (Spec.Hmac.initContract hH.SH H.W AArch64.abi 16).pre s)
-    (hsF : ∃ s, (Spec.Hmac.finalizeContract hH.SH H.W AArch64.abi 16).pre s)
+    (hsI : ∃ s, (Spec.Hmac.initScratchContract hH.SH H.W AArch64.abi 16).pre s)
+    (hsF : ∃ s, (Spec.Hmac.finalizeScratchContract hH.SH H.W AArch64.abi 16).pre s)
     (hsT : ∃ s, (Spec.Pbkdf2.iterateContract hH.SH H.W AArch64.abi).pre s)
     (hsat : ∃ s, (Spec.Pbkdf2.pbkdf2Contract hH.SH (H.W + H.S) AArch64.abi 16).pre s) :
     Verified AArch64.target H.pbkdf2 (Spec.Pbkdf2.pbkdf2Contract hH.SH (H.W + H.S) AArch64.abi 16) :=

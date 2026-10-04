@@ -39,8 +39,8 @@ def hash (v : Compress) : Hash where
   initC := Impl.Sha1.X86_64.Stream.init
   updN := Spec.Sha1.updateScratchApi.name ++ v.suffix
   finN := Spec.Sha1.finalizeScratchApi.name ++ v.suffix
-  hmacInitN := Spec.Hmac.sha1I.initApi.name ++ v.suffix
-  hmacFinN := Spec.Hmac.sha1I.finalizeApi.name ++ v.suffix
+  hmacInitN := Spec.Hmac.sha1I.initScratchApi.name ++ v.suffix
+  hmacFinN := Spec.Hmac.sha1I.finalizeScratchApi.name ++ v.suffix
   iterN := Spec.Hmac.sha1I.iterateApi.name ++ v.suffix
 
 /-- `hash v` without the functions it calls, the same for every `v`. -/
@@ -72,6 +72,8 @@ theorem coreOK : CoreOK coreH := by
     hfinSp := ?_
     hfinNs := ?_
     hfinD := ?_
+    hinitXD := ?_
+    hfinXD := ?_
     iterMx := ?_
     iterSp := ?_
     iterNs := ?_
@@ -97,6 +99,8 @@ theorem callees : Callees (hash v) where
   iSp := by simp only [hash] <;> decide +kernel
   iNs := by simp only [hash] <;> decide +kernel
   iD := by simp only [hash] <;> decide +kernel
+  cXD := v.noStack
+  iXD := by simp only [hash] <;> decide +kernel
 
 def ok : HashOK (hash v) where
   md := Proof.Sha1.md
@@ -140,13 +144,13 @@ def ok : HashOK (hash v) where
   updDepth := Callees.updD (callees v) coreOK
   finDepth := Callees.finD (callees v) coreOK
 
-theorem satI : ∃ s, (Spec.Hmac.sha1I.initContract X86_64.abi 16).pre s := by
-  inst_sat [Spec.Hmac.Instance.initContract, Spec.Hmac.sha1I, Spec.Hmac.initContract, Spec.Hmac.initSig,
+theorem satI : ∃ s, (Spec.Hmac.sha1I.initScratchContract X86_64.abi 16).pre s := by
+  inst_sat [Spec.Hmac.Instance.initScratchContract, Spec.Hmac.sha1I, Spec.Hmac.initScratchContract, Spec.Hmac.initScratchSig, Spec.Hmac.initPre, Spec.Hmac.initPost,
     Spec.Hmac.sha1S, Spec.Hmac.sha1, X86_64.abi, X86_64.argRegs] using initSat 84 56
 
-theorem satF : ∃ s, (Spec.Hmac.sha1I.finalizeContract X86_64.abi 16).pre s := by
-  inst_sat [Spec.Hmac.Instance.finalizeContract, Spec.Hmac.sha1I, Spec.Hmac.finalizeContract,
-    Spec.Hmac.finalizeSig, Spec.Hmac.sha1S, Spec.Hmac.sha1, X86_64.abi, X86_64.argRegs] using finSat 84 20 56
+theorem satF : ∃ s, (Spec.Hmac.sha1I.finalizeScratchContract X86_64.abi 16).pre s := by
+  inst_sat [Spec.Hmac.Instance.finalizeScratchContract, Spec.Hmac.sha1I, Spec.Hmac.finalizeScratchContract,
+    Spec.Hmac.finalizeScratchSig, Spec.Hmac.finalizePost, Spec.Hmac.sha1S, Spec.Hmac.sha1, X86_64.abi, X86_64.argRegs] using finSat 84 20 56
 
 theorem satT : ∃ s, (Spec.Hmac.sha1I.iterateContract X86_64.abi 8).pre s := by
   inst_sat [Spec.Hmac.Instance.iterateContract, Spec.Hmac.sha1I, Spec.Pbkdf2.iterateContract,
@@ -190,6 +194,13 @@ def stream : List StreamFn := [
 
 /-- SHA-1 with the implementation `v` of its compression function. -/
 def variant : MdHash :=
-  MdHash.of (ok v) coreOK (callees v) rfl rfl satI satF satT satP v.suffix v.features (stream v)
+  MdHash.of (ok v) coreOK (callees v) rfl rfl satI satF satT satP (by decide)
+    (by
+      unfold Spec.Hmac.Instance.initContract Spec.Hmac.initContract
+      exact X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (Nat.le_of_ble_eq_true rfl))
+    (by
+      unfold Spec.Hmac.Instance.finalizeContract Spec.Hmac.finalizeContract
+      exact X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
+    v.suffix v.features (stream v)
 
 end VG.Proof.Pbkdf2.Md.X86_64.Sha1

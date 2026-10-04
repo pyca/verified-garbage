@@ -89,7 +89,7 @@ below its return address for its calls. -/
 
 variable (S : StreamingHash) (W : Nat)
 
-/-- `init(inner, outer, key, key_len, scratch)`: `VG.Spec.Hmac.initContract`. -/
+/-- `init(inner, outer, key, key_len, scratch)`: `VG.Spec.Hmac.initScratchContract`. -/
 def initG : Contract isa where
   pre s :=
     let inner : Region := ⟨s.gpr .rdi, S.stateBytes⟩
@@ -111,7 +111,7 @@ def initG : Contract isa where
     s₁.gpr .rdi = s₂.gpr .rdi ∧ s₁.gpr .rsi = s₂.gpr .rsi ∧ s₁.gpr .rdx = s₂.gpr .rdx ∧
     s₁.gpr .rcx = s₂.gpr .rcx ∧ s₁.gpr .r8 = s₂.gpr .r8 ∧ s₁.gpr .rsp = s₂.gpr .rsp
 
-/-- `finalize(inner, outer, count, out, scratch)`: `VG.Spec.Hmac.finalizeContract`. -/
+/-- `finalize(inner, outer, count, out, scratch)`: `VG.Spec.Hmac.finalizeScratchContract`. -/
 def finG : Contract isa where
   pre s :=
     let inner : Region := ⟨s.gpr .rdi, S.stateBytes⟩

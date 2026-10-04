@@ -21,6 +21,5 @@ super::streaming_hmac!(
         Scalar => (vg_hmac_md5_init, vg_hmac_md5_finalize),
     },
     state: 80,
-    scratch: 48,
     output: 16,
 );
