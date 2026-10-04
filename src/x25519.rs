@@ -9,7 +9,7 @@
 //! whose ladder does four field multiplications at once.
 //! This module gives it working space, and destroys what it leaves there.
 //!
-//! On AArch64, [`public_key`](PrivateKey::public_key) is the verified
+//! On AArch64 and x86, [`public_key`](PrivateKey::public_key) is the verified
 //! assembly `vg_x25519_base` (contract `VG.Spec.X25519.x25519BaseContract`):
 //! `X25519(k, 9)` computed as the u-coordinate of a fixed-base multiplication
 //! on edwards25519, with Ed25519's precomputed tables, rather than with the
@@ -27,7 +27,7 @@
 ))]
 
 use crate::arch::x25519::vg_x25519;
-#[cfg(target_arch = "aarch64")]
+#[cfg(any(target_arch = "aarch64", target_arch = "x86"))]
 use crate::arch::x25519::vg_x25519_base;
 #[cfg(target_arch = "x86_64")]
 use crate::arch::x25519::{
@@ -112,7 +112,7 @@ pub fn x25519(scalar: &[u8; 32], u: &[u8; 32]) -> [u8; 32] {
 }
 
 /// `X25519(scalar, 9)`, by `vg_x25519_base`.
-#[cfg(target_arch = "aarch64")]
+#[cfg(any(target_arch = "aarch64", target_arch = "x86"))]
 fn base(scalar: &[u8; 32]) -> [u8; 32] {
     let mut out = [0u8; 32];
     let mut scratch = [0u64; 1024];
@@ -126,7 +126,7 @@ fn base(scalar: &[u8; 32]) -> [u8; 32] {
 }
 
 /// `X25519(scalar, 9)`, with the ladder.
-#[cfg(not(target_arch = "aarch64"))]
+#[cfg(not(any(target_arch = "aarch64", target_arch = "x86")))]
 fn base(scalar: &[u8; 32]) -> [u8; 32] {
     x25519(scalar, &BASE_POINT)
 }
