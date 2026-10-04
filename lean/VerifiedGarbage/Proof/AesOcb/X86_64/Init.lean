@@ -58,11 +58,17 @@ theorem readW_writeW_off' {m : Mem} {a b : Addr} {r r' : Region} {v : BitVec 64}
     (m.writeW b v).readW a 64 = m.readW a 64 :=
   Mem.readW_writeW_sep (hd.sep ha hb) (by decide)
 
-/-- `vg_aes_ocb_init`, for its arguments. -/
-theorem init_wp' (v : BlocksImpl) {s : State} {Kp C S : Addr} {KL : Nat} (Ar : IArgs s Kp C S KL)
+/-- The registers saved and the arguments of the key expansion. -/
+theorem init1_ok {s : State} {Kp C S : Addr} {KL : Nat} (Ar : IArgs s Kp C S KL)
     (hdi : s.gpr .rdi = Kp) (hsi : s.gpr .rsi = BitVec.ofNat 64 KL) (hdx : s.gpr .rdx = C) (hcx : s.gpr .rcx = S) :
-    WP isa (init (callees v)) s fun s' => gprPreserved s s' ∧
-      Spec.Ocb.KeyRepr s'.mem C (bytesAt s.mem Kp KL) := by
+    ∃ s₁, runBlock isa
+      [st .rcx 0 .rbx, st .rcx 8 .rbp, st .rcx 16 .r12, mvr .rbx .rdx, mvr .rbp .rsi, .shift .shr .rbp 2,
+        addi .rbp 6, mvr .r12 .rcx, addi .rcx scrO] s = some s₁ ∧
+      s₁.gpr .rbx = C ∧ s₁.gpr .rbp = BitVec.ofNat 64 (KL / 4 + 6) ∧ s₁.gpr .r12 = S ∧
+      (∀ r, r ≠ .rbx → r ≠ .rbp → r ≠ .r12 → r ≠ .rcx → s₁.gpr r = s.gpr r) ∧
+      s₁.mem = ((s.mem.writeW (S + BitVec.ofNat 64 0) (s.gpr .rbx)).writeW (S + BitVec.ofNat 64 8) (s.gpr .rbp)).writeW
+        (S + BitVec.ofNat 64 16) (s.gpr .r12) ∧ s₁.rd = s.rd ∧ s₁.wr = s.wr ∧
+      KCall s₁ Kp C (S + BitVec.ofNat 64 512) KL ∧ s₁.gpr .rsp = s.gpr .rsp := by
   have hR := rounds_of Ar.klen
   have hKL : KL < 2 ^ 64 := by rcases Ar.klen with h | h | h <;> omega
   have inS : ∀ {d : Nat}, d + 8 ≤ 2560 → InRegions s.wr (S + BitVec.ofNat 64 d) 8 := fun h => by
@@ -126,15 +132,29 @@ theorem init_wp' (v : BlocksImpl) {s : State} {Kp C S : Addr} {KL : Nat} (Ar : I
         rcases hr with rfl | rfl
         · exact ⟨⟨C, 256⟩, by simp, 0, by simp, by simp⟩
         · exact ⟨⟨S, 2560⟩, by simp, 512, rfl, by simp⟩ }
-  unfold init
-  refine WP.seq (WP.of_runBlock ⟨s₁, run₁, ?_⟩)
-  refine WP.seq (WP.mono (key_call v K₁) fun s₂ P₂ => ?_)
-  have sv₂ : ∀ r ∈ calleeSaved, s₂.gpr r = s₁.gpr r := P₂.saved
+  exact ⟨s₁, run₁, rbx₁, rbp₁, r12₁, g₁, m₁, rd₁, wr₁, K₁, hsp₁⟩
+
+/-- A zero block at byte 240 of the key context and the arguments of its encipherment. -/
+theorem init3_ok {s : State} {Kp C S : Addr} {KL : Nat} (Ar : IArgs s Kp C S KL) {s₂ : State}
+    (h3 : s₂.gpr .rbx = C) (h5 : s₂.gpr .rbp = BitVec.ofNat 64 (KL / 4 + 6)) (h12 : s₂.gpr .r12 = S)
+    (hrd : s₂.rd = s.rd) (hwr : s₂.wr = s.wr) (hsp : s₂.gpr .rsp = s.gpr .rsp) :
+    ∃ s₃, runBlock isa
+      [.alu .xor .rax (.reg .rax), st .rbx 240 .rax, st .rbx 248 .rax, mvr .rdi .rbx, mvr .rsi .rbp,
+        mvr .rdx .rbx, addi .rdx 240, .mov .rcx (.imm 1), mvr .r8 .r12, addi .r8 scrO] s₂ = some s₃ ∧
+      (∀ r ∈ calleeSaved, s₃.gpr r = s₂.gpr r) ∧
+      s₃.mem = (s₂.mem.writeW (C + BitVec.ofNat 64 240) 0#64).writeW (C + BitVec.ofNat 64 248) 0#64 ∧
+      s₃.rd = s₂.rd ∧ s₃.wr = s₂.wr ∧
+      BCall s₃ C (C + BitVec.ofNat 64 240) (S + BitVec.ofNat 64 512) (KL / 4 + 6) 1 ∧ s₃.gpr .rsp = s.gpr .rsp := by
+  have hR := rounds_of Ar.klen
+  have sub_S : ∀ {d k : Nat}, d + k ≤ 2560 → Region.Sub ⟨S + BitVec.ofNat 64 d, k⟩ ⟨S, 2560⟩ :=
+    fun h => Offset.sub_base S h
+  have sub_C : ∀ {d k : Nat}, d + k ≤ 256 → Region.Sub ⟨C + BitVec.ofNat 64 d, k⟩ ⟨C, 256⟩ :=
+    fun h => Offset.sub_base C h
   -- `L_*`: a zero block at byte 240, enciphered.
   have w₁ : InRegions s₂.wr (C + BitVec.ofNat 64 240) 8 := by
-    rw [P₂.wr, wr₁, Ar.wr]; exact ⟨⟨C, 256⟩, by simp, Offset.contains_base _ (by decide) (by have := Ar.wC; omega)⟩
+    rw [hwr, Ar.wr]; exact ⟨⟨C, 256⟩, by simp, Offset.contains_base _ (by decide) (by have := Ar.wC; omega)⟩
   have w₂ : InRegions s₂.wr (C + BitVec.ofNat 64 248) 8 := by
-    rw [P₂.wr, wr₁, Ar.wr]; exact ⟨⟨C, 256⟩, by simp, Offset.contains_base _ (by decide) (by have := Ar.wC; omega)⟩
+    rw [hwr, Ar.wr]; exact ⟨⟨C, 256⟩, by simp, Offset.contains_base _ (by decide) (by have := Ar.wC; omega)⟩
   obtain ⟨s₃, run₃, rdi₃, rsi₃, rdx₃, rcx₃, r8₃, g₃, m₃, rd₃, wr₃⟩ : ∃ s₃, runBlock isa
       [.alu .xor .rax (.reg .rax), st .rbx 240 .rax, st .rbx 248 .rax, mvr .rdi .rbx, mvr .rsi .rbp,
         mvr .rdx .rbx, addi .rdx 240, .mov .rcx (.imm 1), mvr .r8 .r12, addi .r8 scrO] s₂ = some s₃ ∧
@@ -143,9 +163,6 @@ theorem init_wp' (v : BlocksImpl) {s : State} {Kp C S : Addr} {KL : Nat} (Ar : I
       (∀ r ∈ calleeSaved, s₃.gpr r = s₂.gpr r) ∧
       s₃.mem = (s₂.mem.writeW (C + BitVec.ofNat 64 240) 0#64).writeW (C + BitVec.ofNat 64 248) 0#64 ∧
       s₃.rd = s₂.rd ∧ s₃.wr = s₂.wr := by
-    have h3 : s₂.gpr .rbx = C := by rw [sv₂ _ (by decide), rbx₁]
-    have h5 : s₂.gpr .rbp = BitVec.ofNat 64 (KL / 4 + 6) := by rw [sv₂ _ (by decide), rbp₁]
-    have h12 : s₂.gpr .r12 = S := by rw [sv₂ _ (by decide), r12₁]
     refine ⟨_, by orun [h3, w₁, w₂], ?_, ?_, ?_, ?_, ?_, fun r hr => ?_, ?_, ?_, ?_⟩
     · simp only [gpr_setReg, gpr_arithFlags, ite_true, ite_false, reduceCtorEq, h3]
     · simp only [gpr_setReg, gpr_arithFlags, ite_true, ite_false, reduceCtorEq, h5]
@@ -157,7 +174,7 @@ theorem init_wp' (v : BlocksImpl) {s : State} {Kp C S : Addr} {KL : Nat} (Ar : I
         simp only [gpr_setReg, gpr_arithFlags, ite_true, ite_false, reduceCtorEq]
     · simp only [mem_setReg, mem_arithFlags, BitVec.xor_self]
     all_goals rfl
-  have hsp₃ : s₃.gpr .rsp = s.gpr .rsp := by rw [g₃ _ (by decide), sv₂ _ (by decide), hsp₁]
+  have hsp₃ : s₃.gpr .rsp = s.gpr .rsp := by rw [g₃ _ (by decide), hsp]
   have dC : (⟨C, 240⟩ : Region).Disjoint ⟨C + BitVec.ofNat 64 240, 16 * 1⟩ :=
     Offset.base_disjoint C (Nat.le_refl _) (by decide)
   have B₃ : BCall s₃ C (C + BitVec.ofNat 64 240) (S + BitVec.ofNat 64 512) (KL / 4 + 6) 1 :=
@@ -170,7 +187,7 @@ theorem init_wp' (v : BlocksImpl) {s : State} {Kp C S : Addr} {KL : Nat} (Ar : I
       stkD := by rw [hsp₃]; exact Ar.stkC.sub_right (sub_C (by decide))
       stkS := by rw [hsp₃]; exact Ar.stkS.sub_right (sub_S (by decide))
       reads := by
-        rw [rd₃, wr₃, P₂.rd, P₂.wr, rd₁, wr₁, Ar.rd, Ar.wr]
+        rw [rd₃, wr₃, hrd, hwr, Ar.rd, Ar.wr]
         refine Covers.of_sub fun r hr => ?_
         simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl | rfl
@@ -178,12 +195,41 @@ theorem init_wp' (v : BlocksImpl) {s : State} {Kp C S : Addr} {KL : Nat} (Ar : I
         · exact ⟨⟨C, 256⟩, by simp, 240, rfl, by simp⟩
         · exact ⟨⟨S, 2560⟩, by simp, 512, rfl, by simp⟩
       writes := by
-        rw [wr₃, P₂.wr, wr₁, Ar.wr]
+        rw [wr₃, hwr, Ar.wr]
         refine Covers.of_sub fun r hr => ?_
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl
         · exact ⟨⟨C, 256⟩, by simp, 240, rfl, by simp⟩
         · exact ⟨⟨S, 2560⟩, by simp, 512, rfl, by simp⟩ }
+  exact ⟨s₃, run₃, g₃, m₃, rd₃, wr₃, B₃, hsp₃⟩
+
+/-- `vg_aes_ocb_init`, for its arguments. -/
+theorem init_wp' (v : BlocksImpl) {s : State} {Kp C S : Addr} {KL : Nat} (Ar : IArgs s Kp C S KL)
+    (hdi : s.gpr .rdi = Kp) (hsi : s.gpr .rsi = BitVec.ofNat 64 KL) (hdx : s.gpr .rdx = C) (hcx : s.gpr .rcx = S) :
+    WP isa (init (callees v)) s fun s' => gprPreserved s s' ∧
+      Spec.Ocb.KeyRepr s'.mem C (bytesAt s.mem Kp KL) := by
+  have hR := rounds_of Ar.klen
+  have hKL : KL < 2 ^ 64 := by rcases Ar.klen with h | h | h <;> omega
+  have inS : ∀ {d : Nat}, d + 8 ≤ 2560 → InRegions s.wr (S + BitVec.ofNat 64 d) 8 := fun h => by
+    rw [Ar.wr]; exact ⟨⟨S, 2560⟩, by simp, Offset.contains_base _ h (by have := Ar.wS; omega)⟩
+  obtain ⟨s₁, run₁, rbx₁, rbp₁, r12₁, g₁, m₁, rd₁, wr₁, K₁, hsp₁⟩ := init1_ok Ar hdi hsi hdx hcx
+  have f₁ : Frame [⟨S, 24⟩] s.mem s₁.mem := by
+    have c : ∀ d, d + 8 ≤ 24 → (⟨S, 24⟩ : Region).Contains (S + BitVec.ofNat 64 d) (64 / 8) := fun d hd =>
+      Offset.contains_base _ hd (by have := Ar.wS; omega)
+    rw [m₁]
+    exact (((Frame.refl _ _).writeW (List.mem_singleton_self _) _ (c 0 (by decide))).writeW
+      (List.mem_singleton_self _) _ (c 8 (by decide))).writeW (List.mem_singleton_self _) _ (c 16 (by decide))
+  have sub_S : ∀ {d k : Nat}, d + k ≤ 2560 → Region.Sub ⟨S + BitVec.ofNat 64 d, k⟩ ⟨S, 2560⟩ :=
+    fun h => Offset.sub_base S h
+  have sub_C : ∀ {d k : Nat}, d + k ≤ 256 → Region.Sub ⟨C + BitVec.ofNat 64 d, k⟩ ⟨C, 256⟩ :=
+    fun h => Offset.sub_base C h
+  unfold init
+  refine WP.seq (WP.of_runBlock ⟨s₁, run₁, ?_⟩)
+  refine WP.seq (WP.mono (key_call v K₁) fun s₂ P₂ => ?_)
+  have sv₂ : ∀ r ∈ calleeSaved, s₂.gpr r = s₁.gpr r := P₂.saved
+  obtain ⟨s₃, run₃, g₃, m₃, rd₃, wr₃, B₃, hsp₃⟩ := init3_ok Ar (by rw [sv₂ _ (by decide), rbx₁])
+    (by rw [sv₂ _ (by decide), rbp₁]) (by rw [sv₂ _ (by decide), r12₁]) (by rw [P₂.rd, rd₁]) (by rw [P₂.wr, wr₁])
+    (by rw [sv₂ _ (by decide), hsp₁])
   refine WP.seq (WP.of_runBlock ⟨s₃, run₃, ?_⟩)
   refine WP.seq (WP.mono (blk_call v.encOk v.encNosp v.encDepth B₃) fun s₄ P₄ => ?_)
   -- The registers back.
