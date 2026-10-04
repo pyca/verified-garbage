@@ -213,6 +213,21 @@ class Selection(unittest.TestCase):
         self.base_files['src/lib.rs'] = 'mod argon2_tests;\n'
         self.assertEqual(len(self.rows(['src/argon2_tests.rs'])), self.full_matrix())
 
+    def test_new_and_removed_test_only_modules_need_nothing(self):
+        # Declared, with its file, only at head; or only at base.
+        tests = '#[cfg(test)]\nmod argon2_tests;\n'
+        for base, head in [('pub mod argon2;\n', tests + 'pub mod argon2;\n'),
+                           (tests + 'pub mod argon2;\n', 'pub mod argon2;\n')]:
+            with self.subTest(base=base):
+                self.base_files['src/lib.rs'], self.files['src/lib.rs'] = base, head
+                self.assertEqual(self.rows(['src/lib.rs', 'src/argon2_tests.rs'], registered=None), [])
+        # A new module compiled outside tests still counts.
+        self.files['src/lib.rs'] = 'mod argon2_tests;\npub mod argon2;\n'
+        self.assertEqual(len(self.rows(['src/argon2_tests.rs'])), self.full_matrix())
+        # One declared at neither is no module of the crate.
+        with mock.patch.object(planner, 'read', self.read):
+            self.assertFalse(planner.test_only('unknown', 'base'))
+
     def test_private_helpers_select_the_modules_using_them(self):
         self.files.update({
             'src/lib.rs': 'mod ct;\npub mod argon2;\n#[cfg(test)]\nmod argon2_tests;\nmod unused;\n',
@@ -307,6 +322,19 @@ class Selection(unittest.TestCase):
         x86 = '#[cfg(target_arch = "x86")]\nfn helper() {}\n'
         self.assertEqual(names(lib, lib + x86), set())
         self.assertIsNone(names(lib, lib + x86, 'x86'))
+        # A test module's declaration, added or removed with its attribute.
+        tests = '#[cfg(test)]\nmod aes_tests;\n'
+        self.assertEqual(names(lib, lib + tests), set())
+        self.assertEqual(names(lib + tests, lib), set())
+        self.assertEqual(names(lib + 'pub mod aes;\n', lib + '#[cfg(test)]\nmod aes;\n'), {'aes'})
+        # Before another test module, whose attribute a diff could pair with it.
+        other = '#[cfg(test)]\nmod argon2_tests;\n'
+        self.assertEqual(names(lib + other, lib + tests + other), set())
+        # The attribute alone, or on anything else, may change what compiles.
+        self.assertEqual(names(lib + tests, lib + 'mod aes_tests;\n'), {'aes_tests'})
+        self.assertIsNone(names(lib + tests, lib + 'mod aes_tests;\n#[cfg(test)]\n'))
+        self.assertIsNone(names(lib, lib + '#[cfg(test)]\n(aes::USES, aes::bench),\n'))
+        self.assertIsNone(names(lib, lib + '#[cfg(test)]\n#[cfg(test)]\nmod aes_tests;\n'))
 
     def test_code_other_architectures_compile_needs_nothing_here(self):
         # As in bringing up PPC64LE: its module, its `arch`, a `cfg_attr`

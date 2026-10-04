@@ -31,7 +31,8 @@ files changed:
   * a private module of the crate, `src/<helper>.rs` (`mod <helper>;` in
     `src/lib.rs`, used by none of the benchmarks, e.g. `ct`): the modules
     whose code names `crate::<helper>`;
-  * a module only tests compile (`#[cfg(test)] mod <name>;`): none;
+  * a module only tests compile (`#[cfg(test)] mod <name>;`), or its
+    declaration: none, also when it is new or removed;
   * `bench/benches/primitives/<name>.rs`, or its differential test
     `bench/tests/<name>.rs`: the modules in its `USES`, or for a helper
     without one (e.g. `mlkem.rs`, a macro), those of the benchmarks that
@@ -258,24 +259,45 @@ def tests_only(path, base):
 
 def registrations(path, base, arch):
     """Only changed module declarations/registry entries, as `arch` compiles
-    them; other code means all."""
+    them; other code means all. A declaration added or removed with its
+    `#[cfg(test)]` declares a module no benchmark compiles, which needs
+    nothing; the attribute alone may change what they compile."""
     if not base:
         return None
     try:
-        sides = [for_arch(read(path, base), arch), for_arch(read(path), arch)]
+        sides = [with_test_attributes(for_arch(read(path, r), arch)) for r in (base, None)]
     except Unreadable:
         return None
     names = set()
     matcher = difflib.SequenceMatcher(None, *sides, autojunk=False)
     for tag, i1, i2, j1, j2 in matcher.get_opcodes():
         for line in sides[0][i1:i2] + sides[1][j1:j2] if tag != "equal" else ():
-            if line == "#[rustfmt::skip]":
+            test = line.startswith(TEST_ATTRIBUTE + " ")
+            if test:
+                line = line[len(TEST_ATTRIBUTE) + 1:]
+            elif line == "#[rustfmt::skip]":
                 continue
             match = re.fullmatch(r"(?:pub(?:\(crate\))? )?mod (\w+);|\((\w+)::USES, \2::bench\),", line)
-            if not match:
+            if not match or (test and not match[1]):
                 return None
-            names.add(match[1] or match[2])
+            if not test:
+                names.add(match[1] or match[2])
     return names
+
+
+TEST_ATTRIBUTE = "#[cfg(test)]"
+
+
+def with_test_attributes(lines):
+    """`lines` with each `#[cfg(test)]` joined to the line after it, so that
+    a diff keeps them together."""
+    out = []
+    for line in lines:
+        if out and out[-1] == TEST_ATTRIBUTE:
+            out[-1] += " " + line
+        else:
+            out.append(line)
+    return out
 
 
 class Unreadable(Exception):
@@ -481,9 +503,10 @@ def lib_modules(revision=None, root="."):
 
 
 def test_only(module, base=None):
-    """Whether only tests compile `module` (at `base` too, if given), so no
-    benchmark can measure it."""
-    return all(lib_modules(r).get(module, (False,))[0] for r in ([base, None] if base else [None]))
+    """Whether only tests compile `module` (at `base` too, if given, or it
+    is new or removed there), so no benchmark can measure it."""
+    declared = [lib_modules(r).get(module) for r in ([base, None] if base else [None])]
+    return any(declared) and all(d is None or d[0] for d in declared)
 
 
 def users(family, known, root="."):
