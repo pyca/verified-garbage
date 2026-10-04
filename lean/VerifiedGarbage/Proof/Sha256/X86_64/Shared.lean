@@ -4,6 +4,7 @@ import VerifiedGarbage.Proof.Sha256.X86_64.ShaNi.Compress
 import VerifiedGarbage.Proof.Sha256.X86_64.Avx2.Compress
 import VerifiedGarbage.Proof.Sha256.X86_64.Stream.Md
 import VerifiedGarbage.Spec.Sha256.Contract
+import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
 import VerifiedGarbage.Proof.Sha256.X86_64.Stream.Common
 import VerifiedGarbage.Proof.Framework.Offset
 
@@ -112,6 +113,12 @@ The proofs are written against per-target contracts
 contracts of `Spec/Sha256/Contract.lean`, which the artifacts are emitted with.
 `update` and `finalize` hold for any implementation `f` of the compression
 function.
+
+`update` and `finalize` keep their working space in a frame of their own:
+they are `updateScratch` and `finalizeScratch` (the shared contracts with
+the working space as an argument, which HMAC's, PBKDF2's and ECDSA's code
+calls) run in a frame that allocates it (`Verified.stackScratch`), for an
+`f` that uses no stack.
 -/
 
 namespace VG.Proof.Sha256.X86_64.Shared
@@ -152,17 +159,18 @@ theorem init224 :
       [Proof.Sha256.X86_64.Stream.initSat] using Proof.Sha256.X86_64.Stream.initSat)
 
 open VG.Impl.Sha256.X86_64.Stream (Callee) in
-/-- `update`, for any compression function `f` (see `Variant.lean`). -/
-theorem update {f : Callee} (hf : f.Ok)
+/-- `updateScratch`, for any compression function `f` (see `Variant.lean`). -/
+theorem updateScratch {f : Callee} (hf : f.Ok)
     (hm : f.code.allInstrs (fun i => !X86_64.loadsMxcsr i) = true) :
-    Verified X86_64.target (Impl.Sha256.X86_64.Stream.update f) (Spec.Sha256.updateContract X86_64.abi 8) :=
+    Verified X86_64.target (Impl.Sha256.X86_64.Stream.update f)
+      (Spec.Sha256.updateScratchContract X86_64.abi 8) :=
   (Proof.Sha256.X86_64.Stream.Update.verified_of hf (by
     simp only [Impl.Sha256.X86_64.Stream.update, Impl.MdStream.X86_64.update, Impl.MdStream.X86_64.updateBody,
       Impl.MdStream.X86_64.updateTail, Impl.MdStream.X86_64.compressN, Impl.MdStream.X86_64.compressWith,
       Code.allInstrs, hm,
       Bool.true_and]
     decide +kernel)).of_implies (by
-    contract_implies [Spec.Sha256.updateContract, Spec.Sha256.updateSig, Proof.Sha256.updateX86_64,
+    contract_implies [Spec.Sha256.updateScratchContract, Spec.Sha256.updateScratchSig, Proof.Sha256.updateX86_64,
       X86_64.abi, X86_64.argRegs]
       [Proof.Sha256.X86_64.Stream.Update.sat,
         MdStream.X86_64.Update.sat, Impl.Sha256.X86_64.Stream.params] using Proof.Sha256.X86_64.Stream.Update.sat)
@@ -176,17 +184,17 @@ theorem update_spSafe {f : Callee} (h : f.code.all (fun i => !X86_64.isa.writesS
   decide +kernel
 
 open VG.Impl.Sha256.X86_64.Stream (Callee) in
-/-- `finalize`, for any compression function `f` (see `Variant.lean`). -/
-theorem finalize {f : Callee} (hf : f.Ok)
+/-- `finalizeScratch`, for any compression function `f` (see `Variant.lean`). -/
+theorem finalizeScratch {f : Callee} (hf : f.Ok)
     (hm : f.code.allInstrs (fun i => !X86_64.loadsMxcsr i) = true) :
     Verified X86_64.target (Impl.Sha256.X86_64.Stream.finalize f)
-      (Spec.Sha256.finalizeContract X86_64.abi 8) :=
+      (Spec.Sha256.finalizeScratchContract X86_64.abi 8) :=
   (Proof.Sha256.X86_64.Stream.Finalize.verified_of hf (by
     simp only [Impl.Sha256.X86_64.Stream.finalize, Impl.MdStream.X86_64.finalize,
       Impl.MdStream.X86_64.finalizeBody, Impl.MdStream.X86_64.compressAt, Impl.MdStream.X86_64.compressWith,
       Code.allInstrs, hm, Bool.true_and]
     decide +kernel)).of_implies (by
-    contract_implies [Spec.Sha256.finalizeContract, Spec.Sha256.finalizeSig,
+    contract_implies [Spec.Sha256.finalizeScratchContract, Spec.Sha256.finalizeScratchSig,
       Proof.Sha256.finalizeX86_64, X86_64.abi, X86_64.argRegs]
       [Proof.Sha256.X86_64.Stream.Finalize.sat,
         MdStream.X86_64.Finalize.sat, Impl.Sha256.X86_64.Stream.params] using Proof.Sha256.X86_64.Stream.Finalize.sat)
@@ -198,5 +206,45 @@ theorem finalize_spSafe {f : Callee} (h : f.code.all (fun i => !X86_64.isa.write
     Impl.MdStream.X86_64.finalizeBody, Impl.MdStream.X86_64.compressAt, Impl.MdStream.X86_64.compressWith,
     Code.all, h, Bool.true_and]
   decide +kernel
+
+open VG.Impl.Sha256.X86_64.Stream (Callee) in
+theorem update_depth {f : Callee} (h : f.code.x86_64Depth = 0) :
+    (Impl.Sha256.X86_64.Stream.update f).x86_64Depth ≤ 8 := by
+  simp only [Impl.Sha256.X86_64.Stream.update, Impl.MdStream.X86_64.update, Impl.MdStream.X86_64.updateBody,
+    Impl.MdStream.X86_64.updateTail, Impl.MdStream.X86_64.compressN, Impl.MdStream.X86_64.compressWith,
+    Code.x86_64Depth, h]
+  decide +kernel
+
+open VG.Impl.Sha256.X86_64.Stream (Callee) in
+theorem finalize_depth {f : Callee} (h : f.code.x86_64Depth = 0) :
+    (Impl.Sha256.X86_64.Stream.finalize f).x86_64Depth ≤ 8 := by
+  simp only [Impl.Sha256.X86_64.Stream.finalize, Impl.MdStream.X86_64.finalize,
+    Impl.MdStream.X86_64.finalizeBody, Impl.MdStream.X86_64.compressAt, Impl.MdStream.X86_64.compressWith,
+    Code.x86_64Depth, h]
+  decide +kernel
+
+open VG.Impl.Sha256.X86_64.Stream (Callee) in
+/-- `update`: `updateScratch` with its working space in a frame of its own. -/
+theorem update {f : Callee} (hf : f.Ok)
+    (hm : f.code.allInstrs (fun i => !X86_64.loadsMxcsr i) = true)
+    (hs : f.code.all (fun i => !X86_64.isa.writesSp i) = true) (hd : f.code.x86_64Depth = 0) :
+    Verified X86_64.target
+      (Impl.StackScratch.X86_64.withStackScratch 616 .r8 (Impl.Sha256.X86_64.Stream.update f))
+      (Spec.Sha256.updateContract X86_64.abi (8 + 616)) :=
+  X86_64.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 76) (stack := 8) (bytes := 616)
+    (updateScratch hf hm) (by decide) (by decide) (by decide) (update_spSafe hs) (update_depth hd)
+    (X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
+
+open VG.Impl.Sha256.X86_64.Stream (Callee) in
+/-- `finalize`: `finalizeScratch` with its working space in a frame of its own. -/
+theorem finalize {f : Callee} (hf : f.Ok)
+    (hm : f.code.allInstrs (fun i => !X86_64.loadsMxcsr i) = true)
+    (hs : f.code.all (fun i => !X86_64.isa.writesSp i) = true) (hd : f.code.x86_64Depth = 0) :
+    Verified X86_64.target
+      (Impl.StackScratch.X86_64.withStackScratch 616 .rcx (Impl.Sha256.X86_64.Stream.finalize f))
+      (Spec.Sha256.finalizeContract X86_64.abi (8 + 616)) :=
+  X86_64.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 76) (stack := 8) (bytes := 616)
+    (finalizeScratch hf hm) (by decide) (by decide) (by decide) (finalize_spSafe hs) (finalize_depth hd)
+    (X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
 
 end VG.Proof.Sha256.X86_64.Shared

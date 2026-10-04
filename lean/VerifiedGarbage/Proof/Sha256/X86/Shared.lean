@@ -11,6 +11,8 @@ import VerifiedGarbage.Proof.MdStream.X86.Words
 import VerifiedGarbage.Proof.Sha256.Md
 import VerifiedGarbage.Impl.Sha256.X86.Stream
 import VerifiedGarbage.Proof.Sha256.X86.Lit
+import VerifiedGarbage.Proof.Sha256.Scratch
+import VerifiedGarbage.Proof.Framework.X86.StackScratch
 
 /-!
 # Streaming SHA-256 on x86 (32-bit): `init`
@@ -262,6 +264,12 @@ that scratch (`Verified.widen`, the same code running with the same trace and
 result; `update`'s also to writable arguments, `Verified.narrowTo`), then
 moved to the shared ones. `update` and `finalize` call the compression
 function, using the 20 bytes of stack below the return address.
+
+`update` and `finalize` keep their working space in a frame of their own:
+they are `updateScratch` and `finalizeScratch` (the shared contracts with
+the working space as an argument, which HMAC's and PBKDF2's code calls) run
+in a frame that allocates it (`update_frame`, `finalize_frame`, for the
+streaming functions made with any compression function).
 -/
 
 namespace VG.Proof.Sha256.X86.Shared
@@ -442,25 +450,67 @@ theorem init224 :
       X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
       [Proof.Sha256.X86.Stream.initSat, Proof.Sha256.X86.Stream.initSatMem, X86.arg, X86.argAddr, Mem.readW, Mem.read] using Proof.Sha256.X86.Stream.initSat)
 
-theorem updateWide_implies : updateWide.Implies (Spec.Sha256.updateContract X86.abi 20) := by
-  contract_implies [Spec.Sha256.updateContract, Spec.Sha256.updateSig, updateWide,
+theorem updateWide_implies : updateWide.Implies (Spec.Sha256.updateScratchContract X86.abi 20) := by
+  contract_implies [Spec.Sha256.updateScratchContract, Spec.Sha256.updateScratchSig, updateWide,
     Proof.Sha256.updateX86, Proof.Sha256.countX86, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
     [updateSat, Proof.Sha256.X86.Stream.Update.sat, MdStream.X86.Update.sat, MdStream.X86.Update.sat₀,
       MdStream.X86.Update.satMem, X86.arg, X86.argAddr, Mem.readW, Mem.read] using updateSat
 
-theorem update :
-    Verified X86.target Impl.Sha256.X86.Stream.update (Spec.Sha256.updateContract X86.abi 20) :=
+theorem updateScratch :
+    Verified X86.target Impl.Sha256.X86.Stream.update (Spec.Sha256.updateScratchContract X86.abi 20) :=
   (updateWide_of Proof.Sha256.X86.Stream.Update.update_verified updateWide_implies.sat_left).of_implies updateWide_implies
 
-theorem finalizeWide_implies : finalizeWide.Implies (Spec.Sha256.finalizeContract X86.abi 20) := by
-  contract_implies [Spec.Sha256.finalizeContract, Spec.Sha256.finalizeSig, finalizeWide,
+theorem finalizeWide_implies : finalizeWide.Implies (Spec.Sha256.finalizeScratchContract X86.abi 20) := by
+  contract_implies [Spec.Sha256.finalizeScratchContract, Spec.Sha256.finalizeScratchSig, finalizeWide,
     Proof.Sha256.finalizeX86, Proof.Sha256.countX86, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
     [finalizeSat, Proof.Sha256.X86.Stream.Finalize.sat, MdStream.X86.Finalize.sat, MdStream.X86.Finalize.sat₀,
       MdStream.X86.Finalize.satMem, Proof.Sha256.X86.Stream.params, X86.arg, X86.argAddr, Mem.readW,
       Mem.read] using finalizeSat
 
-theorem finalize :
-    Verified X86.target Impl.Sha256.X86.Stream.finalize (Spec.Sha256.finalizeContract X86.abi 20) :=
+theorem finalizeScratch :
+    Verified X86.target Impl.Sha256.X86.Stream.finalize (Spec.Sha256.finalizeScratchContract X86.abi 20) :=
   (finalizeWide_of Proof.Sha256.X86.Stream.Finalize.finalize_verified finalizeWide_implies.sat_left).of_implies finalizeWide_implies
+
+/-- A state satisfying `update`'s precondition. -/
+def updateFrameSat : State :=
+  { MdStream.X86.Update.sat₀ with rd := [⟨0x2000, 0⟩], wr := [⟨0x1000, 96⟩, ⟨0x5004, 20⟩] }
+
+theorem updateFrameSat_pre : ∃ s, (Spec.Sha256.updateContract X86.abi (20 + 636)).pre s := by
+  implies_sat [Spec.Sha256.updateContract, Spec.Sha256.updateSig, X86.abi, X86.argSlots, X86.argVal,
+      X86.argBytes]
+    [updateFrameSat, MdStream.X86.Update.sat₀, MdStream.X86.Update.satMem, X86.arg, X86.argAddr,
+      Mem.readW, Mem.read] using updateFrameSat
+
+/-- `update`: an `update_scratch` with its working space in a frame of its
+own. -/
+theorem update_frame {code : Prog isa}
+    (h : Verified X86.target code (Spec.Sha256.updateScratchContract X86.abi 20))
+    (hsp : code.allInstrs (fun i => !Taint.clobbers i .esp) = true) (hd : stackUse code ≤ 20) :
+    Verified X86.target (Impl.StackScratch.X86.withStackScratch 636 5 code)
+      (Spec.Sha256.updateContract X86.abi (20 + 636)) :=
+  X86.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 76) (stack := 20) (bytes := 636)
+    h (by decide) hsp hd (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial)
+    (Proof.Sha256.updatePost_local _) updateFrameSat_pre
+
+/-- A state satisfying `finalize`'s precondition. -/
+def finalizeFrameSat : State :=
+  { MdStream.X86.Finalize.sat₀ with wr := [⟨0x1000, 96⟩, ⟨0x2000, 32⟩, ⟨0x5004, 16⟩] }
+
+theorem finalizeFrameSat_pre : ∃ s, (Spec.Sha256.finalizeContract X86.abi (20 + 632)).pre s := by
+  implies_sat [Spec.Sha256.finalizeContract, Spec.Sha256.finalizeSig, X86.abi, X86.argSlots,
+      X86.argVal, X86.argBytes]
+    [finalizeFrameSat, MdStream.X86.Finalize.sat₀, MdStream.X86.Finalize.satMem, X86.arg,
+      X86.argAddr, Mem.readW, Mem.read] using finalizeFrameSat
+
+/-- `finalize`: a `finalize_scratch` with its working space in a frame of its
+own. -/
+theorem finalize_frame {code : Prog isa}
+    (h : Verified X86.target code (Spec.Sha256.finalizeScratchContract X86.abi 20))
+    (hsp : code.allInstrs (fun i => !Taint.clobbers i .esp) = true) (hd : stackUse code ≤ 20) :
+    Verified X86.target (Impl.StackScratch.X86.withStackScratch 632 4 code)
+      (Spec.Sha256.finalizeContract X86.abi (20 + 632)) :=
+  X86.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 76) (stack := 20) (bytes := 632)
+    h (by decide) hsp hd (fun _ _ _ _ _ => by rw [Curry.apply_const]; trivial)
+    (Proof.Sha256.finalizePost_local _) finalizeFrameSat_pre
 
 end VG.Proof.Sha256.X86.Shared
