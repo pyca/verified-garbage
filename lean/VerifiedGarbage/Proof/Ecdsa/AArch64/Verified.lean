@@ -3,7 +3,7 @@ import VerifiedGarbage.Proof.Ecdsa.AArch64.Contract
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Lit
 import VerifiedGarbage.Proof.P256.Point
 import VerifiedGarbage.Proof.Framework.AArch64.Taint
-import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
 
 /-!
 # ECDSA over P-256 on AArch64: `Verified`
@@ -12,7 +12,7 @@ P-256 is a curve the proof supports (`p256_ok`, and `Law` for its group law,
 which the registration file supplies: `Proof.P256.law`), so `sign_ok` gives
 the contract's postcondition; `x19` and `x20` are restored, and no instruction
 writes the other callee-saved registers, `sp` or a SIMD register
-(`abiPreserved`). Constant time by taint tracking: the only branches are on
+(`abiPreserved_of`). Constant time by taint tracking: the only branches are on
 loop counters, and every address is an argument plus a constant or a counter.
 -/
 
@@ -48,29 +48,10 @@ theorem pre_of {s : State} (h : signAArch64.pre s) : Pre p256 s := by
   obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11⟩ := h
   exact ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11⟩
 
-/-- The callee-saved registers but `x19` and `x20`, which no instruction writes. -/
-abbrev untouched : List Reg := [.x21, .x22, .x23, .x24, .x25, .x26, .x27, .x28, .x30]
-
-theorem untouched_ok : ∀ i ∈ instrs signP256, ∀ r ∈ untouched, dstOf i ≠ some r := by
-  have h : signP256.allInstrs (fun i => (dstOf i).all fun r => !untouched.contains r) = true := by
-    lit_decide
-  rw [Code.allInstrs_eq, List.all_eq_true] at h
-  intro i hi r hr he
-  have := h i hi
-  rw [he] at this
-  simp only [Option.all_some, Bool.not_eq_true', List.contains_eq_mem, decide_eq_false_iff_not] at this
-  exact this hr
-
 theorem sign_a64 (hL : Weierstrass.Law Spec.P256.curve) (s : State) (hs : signAArch64.pre s) :
     ∃ t s', Exec isa signP256 s t s' ∧ abiPreserved s s' ∧ signAArch64.post s s' := by
   obtain ⟨t, s', he, hsv, hpost⟩ := sign_ok p256_ok hL (pre_of hs)
-  refine ⟨t, s', he, ⟨fun r hr => ?_, Exec.sp he, Exec.preservedV he (by lit_decide)⟩, hpost⟩
-  by_cases hu : r ∈ untouched
-  · exact Exec.gpr (fun i hi => untouched_ok i hi r hu) he
-  · refine hsv r ?_
-    revert hu
-    revert r
-    decide
+  exact ⟨t, s', he, abiPreserved_of he (by lit_decide) (by lit_decide) (by lit_decide) hsv, hpost⟩
 
 theorem sign_ct : ConstantTime isa signAArch64.pre signAArch64.pub signP256 :=
   VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0, .x1, .x2, .x3, .x4])
