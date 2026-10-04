@@ -143,6 +143,13 @@ theorem One.step {K W SP : Addr} {R : Nat} {N A D : Addr} {nl n tl : Nat} (L : L
     One K W SP R N A D nl n tl s' :=
   ⟨E, Slots.of_mut L hDW f o.sl, hw.trans o.wr⟩
 
+/-- The data, in a run with the public arguments. -/
+theorem DBuf.of_one {K W SP : Addr} {R : Nat} {N A D : Addr} {nl n tl : Nat} {s s' : State}
+    (h : DBuf K W SP s D n) (o : One K W SP R N A D nl n tl s') : DBuf K W SP s' D n where
+  toBuf := { h.toBuf with rd := Covers.right (by rw [o.wr]; exact Covers.of_mem fun r hr => by simp_all) }
+  wr := by rw [o.wr]; exact Covers.of_mem fun r hr => by simp_all
+  k := h.k
+
 /-- A call of `vg_aes_encrypt_blocks` or `vg_aes_decrypt_blocks` on the same
 `n` blocks at `D'` in both runs. -/
 theorem callBlocks_rel {f : Nat → List Byte → Spec.Aes.State → Spec.Aes.State} {b : Impl.Aes.X86_64.Blocks}
