@@ -4,7 +4,7 @@ import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Hash
 # Deterministic ECDSA on 32-bit ARM: addresses and registers
 
 The code that sets one register to an address in `scratch` or the frame
-(`scrAt_ok`, `addSp_ok`), and the addresses those registers hold.
+(`scrAt_ok`, `fpAdd_ok`), and the addresses those registers hold.
 -/
 
 namespace VG.Proof.Ecdsa.Rfc6979.Arm
@@ -62,13 +62,13 @@ theorem scrAt_ok {t : State} (hc : Ctx L g m₀ t) {d : Reg} (hd : d ∉ ptrRegs
   rw [u₂.gpr, u₁.gpr, u₁.other _ (by decide), hc.r11, movw_val ho]
   rfl
 
-/-- `d ← sp + o`, an address in the frame. -/
-theorem addSp_ok {t : State} (hc : Ctx L g m₀ t) {d : Reg} (hd : d ∉ ptrRegs) {o : Nat} (ho : o < 256)
-    {is : List Instr} {Q : State → Prop}
+/-- `d ← r8 + o`, an address in the frame. -/
+theorem fpAdd_ok {t : State} (hc : Ctx L g m₀ t) {d : Reg} (hd : d ∉ ptrRegs) {o : Nat}
+    (ho : encodable (BitVec.ofNat 32 o) = true) {is : List Instr} {Q : State → Prop}
     (k : ∀ t', Ctx L g m₀ t' → t'.mem = t.mem → t'.gpr d = L.fp + BitVec.ofNat 32 o →
       (∀ r, r ≠ d → t'.gpr r = t.gpr r) → WP isa (.block is) t' Q) :
-    WP isa (.block (.addSp d o :: is)) t Q :=
-  wp_addSp ho fun t₁ u₁ => k t₁ (hc.upd u₁ hd) u₁.mem (by rw [u₁.gpr, hc.sp]) u₁.other
+    WP isa (.block (.dp .add d .r8 (.imm (BitVec.ofNat 32 o)) :: is)) t Q :=
+  wp_dp (op2_imm ho) fun t₁ u₁ => k t₁ (hc.upd u₁ hd) u₁.mem (by rw [u₁.gpr, dpVal, hc.r8]) u₁.other
 
 /-- `d ← v`, a register set to a 16-bit constant. -/
 theorem movw_ok {t : State} (hc : Ctx L g m₀ t) {d : Reg} (hd : d ∉ ptrRegs) {v : Nat} (hv : v < 2 ^ 16)

@@ -124,7 +124,7 @@ theorem initArgs_ok {t : State} (hc : Ctx L g m₀ t) {D : Nat} (hD : D < 2 ^ 16
   simp only [Cfg.hmacArgs₁, List.append_assoc, List.cons_append, List.nil_append]
   refine scrAt_ok hc (d := .r0) (by decide) (o := sInner) (by decide) fun t₁ c₁ m₁ v₁ k₁ => ?_
   refine scrAt_ok c₁ (d := .r1) (by decide) (o := sOuter) (by decide) fun t₂ c₂ m₂ v₂ k₂ => ?_
-  refine addSp_ok c₂ (d := .r2) (by decide) (o := fK) (by decide) fun t₃ c₃ m₃ v₃ k₃ => ?_
+  refine fpAdd_ok c₂ (d := .r2) (by decide) (o := fK) (by decide) fun t₃ c₃ m₃ v₃ k₃ => ?_
   refine movw_ok c₃ (d := .r3) (by decide) hD fun t₄ c₄ m₄ v₄ k₄ => ?_
   rw [← List.append_nil (scrAt .r12 sWork)]
   refine scrAt_ok c₄ (d := .r12) (by decide) (o := sWork) (by decide) fun t₅ c₅ m₅ v₅ k₅ => ?_
@@ -395,7 +395,7 @@ theorem upd_step (hL : L.Ok) {t u : State} (hu : Inited P L g m₀ t u) {dataA :
 /-! ## HMAC's `finalize` -/
 
 theorem finArgs_ok {u : State} (hc : Ctx L g m₀ u) {B len dst : Nat} (hlen : B + len < 2 ^ 16)
-    (hdst : dst < 256) :
+    (he : encodable (BitVec.ofNat 32 dst) = true) :
     WP isa (.block (Cfg.hmacArgs₃ B len dst)) u fun u' => Ctx L g m₀ u' ∧ u'.mem = u.mem ∧
       u'.gpr .r0 = L.scr + BitVec.ofNat 32 0 ∧ u'.gpr .r1 = L.scr + BitVec.ofNat 32 192 ∧
       u'.gpr .r2 = BitVec.ofNat 32 (B + len) ∧ u'.gpr .r3 = 0 ∧ u'.gpr .r10 = L.fp + BitVec.ofNat 32 dst ∧
@@ -405,7 +405,7 @@ theorem finArgs_ok {u : State} (hc : Ctx L g m₀ u) {B len dst : Nat} (hlen : B
   refine scrAt_ok c₁ (d := .r1) (by decide) (o := sOuter) (by decide) fun t₂ c₂ m₂ v₂ k₂ => ?_
   refine movw_ok c₂ (d := .r2) (by decide) hlen fun t₃ c₃ m₃ v₃ k₃ => ?_
   refine mov0_ok c₃ (d := .r3) (by decide) fun t₄ c₄ m₄ v₄ k₄ => ?_
-  refine addSp_ok c₄ (d := .r10) (by decide) hdst fun t₅ c₅ m₅ v₅ k₅ => ?_
+  refine fpAdd_ok c₄ (d := .r10) (by decide) he fun t₅ c₅ m₅ v₅ k₅ => ?_
   rw [← List.append_nil (scrAt .r12 sWork)]
   refine scrAt_ok c₅ (d := .r12) (by decide) (o := sWork) (by decide) fun t₆ c₆ m₆ v₆ k₆ => ?_
   refine WP.block_nil ⟨c₆, by rw [m₆, m₅, m₄, m₃, m₂, m₁], ?_, ?_, ?_, ?_, ?_, v₆, ?_⟩
@@ -473,10 +473,10 @@ theorem reprOK : Proof.Pbkdf2.Whole.Arm.ReprOK P.ok.hH.SH := fun m m' p q msg hb
   P.ok.hH.repr m m' p q msg (fun i hi => hb i (by rw [P.ok.hH.hS]; exact hi))
 
 theorem fin_step (hL : L.Ok) {t u : State} {da : BitVec 32} {len dst : Nat} (hu : Updated P L g m₀ t da len u)
-    (hlen : len ≤ 192) (hdst : dst + P.F.H.D ≤ 128) :
+    (hlen : len ≤ 192) (hdst : dst + P.F.H.D ≤ 128) (he : encodable (BitVec.ofNat 32 dst) = true) :
     WP isa (.seq (.block (Cfg.hmacArgs₃ P.F.H.B len dst))
       (.frame (.push [.r10, .r12]) (.call P.F.hfN P.F.hfC) (.pop .r12 8))) u (Done P L g m₀ t da len dst) := by
-  refine WP.seq (WP.mono (finArgs_ok hu.ctx (B := P.F.H.B) (len := len) (by anums) (by omega))
+  refine WP.seq (WP.mono (finArgs_ok hu.ctx (B := P.F.H.B) (len := len) (by anums) he)
     fun w ⟨hcw, hmw, h0, h1, h2, h3, h10, h12, h9⟩ => ?_)
   refine hf_frame reprOK (by anums) P.ok.hf P.ok.hfSt (finA hL hcw hdst h0 h1 h10 h12) fun w' ha hpost => ?_
   obtain ⟨_, _, _, _, _, _, _, _, _, hS, hD, hB⟩ := P.sizes
@@ -520,9 +520,9 @@ theorem seq_seq {a b c : Prog isa} {s : State} {P Q : State → Prop} (h : WP is
 /-- `HMAC_K(data)`, for the key `K` in the frame, to the frame at `dst`. -/
 theorem hmac_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) {dataA : List Instr} {da : BitVec 32}
     {len dst : Nat} (hdA : DataA L g m₀ dataA da) (hd : DataOk L da len) (hlen : len ≤ 192)
-    (hdst : dst + P.F.H.D ≤ 128) :
+    (hdst : dst + P.F.H.D ≤ 128) (he : encodable (BitVec.ofNat 32 dst) = true) :
     WP isa ((cfgOf P).hmac dataA len dst) t (Done P L g m₀ t da len dst) :=
   seq_seq (init_step hL hc) fun _ hu => seq_seq (upd_step hL hu hdA hd hlen) fun _ hw =>
-    fin_step hL hw hlen hdst
+    fin_step hL hw hlen hdst he
 
 end VG.Proof.Ecdsa.Rfc6979.Arm

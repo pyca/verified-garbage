@@ -39,8 +39,8 @@ theorem done_kvw {dst : Nat} (h : dst + P.F.H.D ≤ 128) :
     · exact .inr (Offset.sub_base _ (by omega))
 
 /-- The data of `V = HMAC_K(V)`: `V`, in the frame. -/
-theorem dataV : DataA L g m₀ [.addSp .r1 fV] (L.fp + BitVec.ofNat 32 64) := fun _ _ _ hc k =>
-  addSp_ok hc (d := .r1) (by decide) (o := fV) (by decide) fun u' c' m' v' k' =>
+theorem dataV : DataA L g m₀ [.dp .add .r1 .r8 (.imm (BitVec.ofNat 32 fV))] (L.fp + BitVec.ofNat 32 64) := fun _ _ _ hc k =>
+  fpAdd_ok hc (d := .r1) (by decide) (o := fV) (by decide) fun u' c' m' v' k' =>
     k u' c' m' v' fun r h1 _ => k' r h1
 
 /-- The data of the other steps: the message, in `scratch`. -/
@@ -64,7 +64,7 @@ theorem hmacV_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) :
       kOf P L t'.mem = kOf P L t.mem ∧ vOfP P L t'.mem = P.mac (kOf P L t.mem) (vOfP P L t.mem) := by
   have hv : State.addr (L.fp + BitVec.ofNat 32 64) = L.B + BitVec.ofNat 64 88 := hL.fpA (by decide)
   refine WP.mono (hmac_ok (P := P) hL hc (da := L.fp + BitVec.ofNat 32 64) (len := P.F.H.D) (dst := 64)
-    dataV (.inl ⟨64, rfl, by anums⟩) (by anums) (by anums)) fun t' h => ?_
+    dataV (.inl ⟨64, rfl, by anums⟩) (by anums) (by anums) (by decide)) fun t' h => ?_
   have hm := h.mac
   rw [hv] at hm
   exact ⟨h.ctx, h.r9, h.frame.sub (done_kvw (by anums)),
@@ -77,7 +77,7 @@ theorem hmacK_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) {len : Nat} (hlen
       kOf P L t'.mem = P.mac (kOf P L t.mem) (Spec.Sha256.bytesAt t.mem (msgA L) len) := by
   have hm : State.addr (L.scr + BitVec.ofNat 32 2256) = msgA L := scrA hL (by decide)
   refine WP.mono (hmac_ok (P := P) hL hc (da := L.scr + BitVec.ofNat 32 2256) (len := len) (dst := 0)
-    dataM (.inr ⟨2256, rfl, by omega, by omega⟩) hlen (by anums)) fun t' h => ?_
+    dataM (.inr ⟨2256, rfl, by omega, by omega⟩) hlen (by anums) (by decide)) fun t' h => ?_
   have hmac := h.mac
   rw [hm] at hmac
   exact ⟨h.ctx, h.r9, h.frame.sub (done_kvw (by anums)),

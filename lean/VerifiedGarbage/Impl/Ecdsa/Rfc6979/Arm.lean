@@ -44,8 +44,9 @@ HMAC's inner and outer streaming states, the working space of HMAC's and
    number of candidates tried is all it reveals.
 
 `core` writes the signature or zeros to `out`, and its return value is ours.
-Every address is `sp`, the frame's base (in `r8`, and in `r12` for the
-prologue and the epilogue) or a pointer argument plus a constant.
+Every address is the frame's base (in `r8`, from `sp` in the prologue, and
+in `r12` for the prologue and the epilogue) or a pointer argument plus a
+constant.
 -/
 
 namespace VG.Impl.Ecdsa.Rfc6979.Arm
@@ -103,7 +104,7 @@ def epilogue : List Instr := saved.map fun p => .ldr p.1 .r12 p.2
 /-- The arguments of HMAC's `init`: the states, the key `K` of `D` bytes,
 and the working space (pushed). -/
 def hmacArgs₁ (D : Nat) : List Instr :=
-  scrAt .r0 sInner ++ scrAt .r1 sOuter ++ [.addSp .r2 fK, .movw .r3 (BitVec.ofNat 16 D)] ++ scrAt .r12 sWork
+  scrAt .r0 sInner ++ scrAt .r1 sOuter ++ [.dp .add .r2 .r8 (.imm (BitVec.ofNat 32 fK)), .movw .r3 (BitVec.ofNat 16 D)] ++ scrAt .r12 sWork
 
 /-- The arguments of the streaming `update`: the inner state, the `B` bytes
 it holds (`r2:r3`), and, pushed, the data (at the address `dataA` sets `r1`
@@ -117,7 +118,7 @@ inner one holds (`r2:r3`), and, pushed, the MAC's place in the frame (`r10`)
 and the working space (`r12`). -/
 def hmacArgs₃ (B len dst : Nat) : List Instr :=
   scrAt .r0 sInner ++ scrAt .r1 sOuter ++ [.movw .r2 (BitVec.ofNat 16 (B + len)), .mov .r3 (.imm 0),
-    .addSp .r10 dst] ++ scrAt .r12 sWork
+    .dp .add .r10 .r8 (.imm (BitVec.ofNat 32 dst))] ++ scrAt .r12 sWork
 
 /-- `HMAC_K(data)` into the frame at `dst`, for `len` bytes of `data` at the
 address `dataA` sets `r1` to: HMAC's `init` with the key `K`, `update` on
@@ -131,7 +132,7 @@ def hmac (dataA : List Instr) (len dst : Nat) : Prog isa :=
     (.frame (.push [.r10, .r12]) (.call c.F.hfN c.F.hfC) (.pop .r12 8))))))
 
 /-- `V = HMAC_K(V)`. -/
-def hmacV : Prog isa := c.hmac [.addSp .r1 fV] c.F.H.D fV
+def hmacV : Prog isa := c.hmac [.dp .add .r1 .r8 (.imm (BitVec.ofNat 32 fV))] c.F.H.D fV
 
 /-- The `4 k` bytes at `[src + so]` to `[dst + d]`, a word at a time through `r0`. -/
 def copyN (k : Nat) (src : Reg) (so : Nat) (dst : Reg) (d : Nat) : List Instr :=
@@ -203,7 +204,8 @@ def initCnt : List Instr := [.movw .r9 (BitVec.ofNat 16 c.tries)]
 
 /-- `core(out, d, digest, k = V, scratch)`'s arguments, `scratch` pushed. -/
 def coreArgs : List Instr :=
-  [.mov .r0 (.reg .r4), .mov .r1 (.reg .r5), .mov .r2 (.reg .r6), .addSp .r3 fV, .mov .r12 (.reg .r11)]
+  [.mov .r0 (.reg .r4), .mov .r1 (.reg .r5), .mov .r2 (.reg .r6), .dp .add .r3 .r8 (.imm (BitVec.ofNat 32 fV)),
+    .mov .r12 (.reg .r11)]
 
 /-- One candidate fewer, and `Z` clear iff the signature failed (`r0 = 0`)
 and candidates are left: `r7 = (C - 1) & count`, `C` the carry of `r0 - 1`

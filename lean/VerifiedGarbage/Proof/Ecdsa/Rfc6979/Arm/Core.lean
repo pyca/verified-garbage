@@ -44,7 +44,7 @@ theorem coreArgs_ok {t : State} (hc : Ctx L g m₀ t) :
   refine movr_ok hc (d := .r0) (r := .r4) (by decide) fun t₁ c₁ m₁ v₁ k₁ => ?_
   refine movr_ok c₁ (d := .r1) (r := .r5) (by decide) fun t₂ c₂ m₂ v₂ k₂ => ?_
   refine movr_ok c₂ (d := .r2) (r := .r6) (by decide) fun t₃ c₃ m₃ v₃ k₃ => ?_
-  refine addSp_ok c₃ (d := .r3) (by decide) (o := fV) (by decide) fun t₄ c₄ m₄ v₄ k₄ => ?_
+  refine fpAdd_ok c₃ (d := .r3) (by decide) (o := fV) (by decide) fun t₄ c₄ m₄ v₄ k₄ => ?_
   refine movr_ok c₄ (d := .r12) (r := .r11) (by decide) fun t₅ c₅ m₅ v₅ k₅ => WP.block_nil ?_
   refine ⟨c₅, by rw [m₅, m₄, m₃, m₂, m₁], ?_, ?_, ?_, ?_, by rw [v₅, c₄.r11], ?_⟩
   · rw [k₅ _ (by decide), k₄ _ (by decide), k₃ _ (by decide), k₂ _ (by decide), v₁, hc.r4]
