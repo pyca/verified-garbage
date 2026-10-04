@@ -100,7 +100,7 @@ yours to keep:
 
 <td>✅ operations scheduled for latency</td>
 
-<td>✅</td>
+<td>✅ operations scheduled for latency</td>
 
 <td>✅</td>
 
