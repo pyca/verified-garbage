@@ -24,16 +24,32 @@ def artifacts : List Artifact := [
   { Spec.Blake2.updateSApi with
     target := AArch64.target
     doc := Spec.Blake2.updateSApi.doc
-    code := Impl.Blake2.AArch64.Stream.update Spec.Blake2.s
-    contract := Spec.Blake2.updateSContract AArch64.abi 16
-    stack := 16
-    verified := Proof.Blake2.AArch64.Stream.updateS_verified
+    code := Impl.StackScratch.AArch64.withStackScratch 576 .x4 (Impl.Blake2.AArch64.Stream.update Spec.Blake2.s)
+    contract := Spec.Blake2.updateSContract AArch64.abi (16 + 576)
+    stack := 16 + 576
+    verified := Proof.Blake2.AArch64.Stream.updateS_framed
     spSafe := Code.all_of_forall (fun _ => rfl) _ },
   { Spec.Blake2.finalizeSApi with
     target := AArch64.target
     doc := Spec.Blake2.finalizeSApi.doc
+    code := Impl.StackScratch.AArch64.withStackScratch 576 .x3 (Impl.Blake2.AArch64.Stream.finalize Spec.Blake2.s)
+    contract := Spec.Blake2.finalizeSContract AArch64.abi (16 + 576)
+    stack := 16 + 576
+    verified := Proof.Blake2.AArch64.Stream.finalizeS_framed
+    spSafe := Code.all_of_forall (fun _ => rfl) _ },
+  { Spec.Blake2.updateSScratchApi with
+    target := AArch64.target
+    doc := Spec.Blake2.updateSScratchApi.doc
+    code := Impl.Blake2.AArch64.Stream.update Spec.Blake2.s
+    contract := Spec.Blake2.updateSScratchContract AArch64.abi 16
+    stack := 16
+    verified := Proof.Blake2.AArch64.Stream.updateS_verified
+    spSafe := Code.all_of_forall (fun _ => rfl) _ },
+  { Spec.Blake2.finalizeSScratchApi with
+    target := AArch64.target
+    doc := Spec.Blake2.finalizeSScratchApi.doc
     code := Impl.Blake2.AArch64.Stream.finalize Spec.Blake2.s
-    contract := Spec.Blake2.finalizeSContract AArch64.abi 16
+    contract := Spec.Blake2.finalizeSScratchContract AArch64.abi 16
     stack := 16
     verified := Proof.Blake2.AArch64.Stream.finalizeS_verified
     spSafe := Code.all_of_forall (fun _ => rfl) _ }]
