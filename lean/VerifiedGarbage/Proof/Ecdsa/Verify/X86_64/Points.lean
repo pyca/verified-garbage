@@ -181,7 +181,7 @@ theorem sum_ok (hc : CfgOk c) {s : State} {base : Addr} (hs : Scr s base size)
   refine ⟨hs₃.of_keepRegs k₄ (by decide), by rw [k₄.rd, k₃.rd, k₂.rd, k₁.rd],
     by rw [k₄.wr, k₃.wr, k₂.wr, k₁.wr], U₄, ?_, ?_, ?_⟩
   · have hM₁ := I₁.mod
-    refine ⟨hM₁.n0, hM₁.n7, hM₁.mo, hM₁.tmp, hM₁.sep, ?_, hM₁.inv⟩
+    refine ⟨hM₁.n0, hM₁.n7, hM₁.mo, hM₁.tmp, hM₁.sep, ?_, hM₁.inv, hM₁.red⟩
     rw [U₄.wordsVal (fun w hw => ?_) (by have := hM₁.mo; omega)]
     · exact hM.val
     · obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hw

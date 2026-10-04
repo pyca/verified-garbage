@@ -195,7 +195,7 @@ theorem sum_ok (hc : CfgOk c) {s : State} {base : Addr} (hs : Scr s base size)
     U₄, ?_, ?_, ?_⟩
   · rw [K₄.1 r (fun h => hr (by simp only [List.mem_singleton] at h; subst h; decide)), PK.gpr r hr]
   · have hM₁ := I₁.mod
-    refine ⟨hM₁.n0, hM₁.n7, hM₁.mo, hM₁.tmp, hM₁.sep, ?_, hM₁.inv⟩
+    refine ⟨hM₁.n0, hM₁.n7, hM₁.mo, hM₁.tmp, hM₁.sep, ?_, hM₁.inv, hM₁.red⟩
     rw [U₄.wordsVal (fun w hw => ?_) (by have := hM₁.mo; omega)]
     · exact hM.val
     · exact apart_slWk (c := c) (i := MP) (by decide) (by decide) w hw
