@@ -35,31 +35,33 @@ last block of what it has been given, even a complete one, since only
 `finalize` with no bytes only for the empty message. It truncates the MAC
 and compares MACs (§6.3).
 
-Each takes a `scratch` buffer of working space, sized for the target that
-needs the most (640 bytes), and the number of bytes of stack below the
-stack pointer that an implementation's calls and frames use (`stack`, see
-`Sig.contract`), 0 for one that uses none.
+Each takes the number of bytes of stack below the stack pointer that an
+implementation's calls and frames use (`stack`, see `Sig.contract`), where
+it keeps its working space.
 -/
 
 namespace VG.Spec.Cmac
 
-/-- `vg_cmac_triple_des_init(key: *const u8, key_len: usize, out: *mut [u8; 400], scratch: *mut [u64; 80])`.
-`key_len` is public; `scratch` is working space. -/
+/-- `vg_cmac_triple_des_init(key: *const u8, key_len: usize, out: *mut [u8; 400])`.
+`key_len` is public. -/
 def tdesInitSig : Sig where
-  params := [("key", .slice false .u8 "key_len"), ("out", .array true .u8 400),
-    ("scratch", .array true .u64 80)]
+  params := [("key", .slice false .u8 "key_len"), ("out", .array true .u8 400)]
 
-/-- For a 16- or 24-byte TDEA key at `key`: writes its key schedule
-(`TripleDes.expandKey`, in `TripleDes.scheduleAt`'s layout) to the first 384
-bytes at `out`, and TDEA's subkeys `K1 ‖ K2` for it (§6.1) to bytes
-384–399. -/
+/-- `init`'s precondition: a 16- or 24-byte key. -/
+def tdesInitPre (pb : Nat) : Curry (tdesInitSig.words pb) (Mem → Prop) :=
+  fun _key keyLen _out _ => TripleDes.validKey keyLen.toNat
+
+/-- Writes the key schedule of the key at `key` (`TripleDes.expandKey`, in
+`TripleDes.scheduleAt`'s layout) to the first 384 bytes at `out`, and TDEA's
+subkeys `K1 ‖ K2` for it (§6.1) to bytes 384–399. -/
+def tdesInitPost (pb : Nat) : tdesInitSig.Post pb := fun key keyLen out m m' _ =>
+  let k := TripleDes.expandKey (TripleDes.bytesAt m key keyLen.toNat)
+  let ks := subkeys (tdesWith k) 8
+  TripleDes.scheduleAt m' out = k ∧ Aes.bytesAt m' (out + 384) 16 = ks.1 ++ ks.2
+
+/-- For a 16- or 24-byte TDEA key at `key`: `tdesInitPost`. -/
 def tdesInitContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  tdesInitSig.contract A
-    (pre := fun _key keyLen _out _scratch _ => TripleDes.validKey keyLen.toNat)
-    (post := fun key keyLen out _scratch m m' _ =>
-      let k := TripleDes.expandKey (TripleDes.bytesAt m key keyLen.toNat)
-      let ks := subkeys (tdesWith k) 8
-      TripleDes.scheduleAt m' out = k ∧ Aes.bytesAt m' (out + 384) 16 = ks.1 ++ ks.2)
+  tdesInitSig.contract A (pre := tdesInitPre A.ptrBits) (post := tdesInitPost A.ptrBits)
     (stack := stack)
 
 /-- `vg_cmac_triple_des_init` on every target. -/
@@ -76,25 +78,23 @@ def tdesInitApi : Api where
     `R₆₄ = 0⁵⁹11011` if the leftmost bit of `L` is 1) and `K2` is `K1` doubled the same way.\n\n\
     Contract: `VG.Spec.Cmac.tdesInitContract`. Constant time: only the pointers and `key_len` \
     may affect timing, not the key, the key schedule or the subkeys."
-  safety := [
-    "`key_len` must be 16 or 24.",
-    "The contents of `scratch` on return are unspecified."]
+  safety := ["`key_len` must be 16 or 24."]
 
-/-- `vg_cmac_triple_des_update(schedule: *const [u8; 384], state: *mut [u8; 8], data: *const [u8; 8], n: usize, scratch: *mut [u64; 80])`.
-`scratch` is working space. -/
+/-- `vg_cmac_triple_des_update(schedule: *const [u8; 384], state: *mut [u8; 8], data: *const [u8; 8], n: usize)`. -/
 def tdesUpdateSig : Sig where
   params := [("schedule", .array false .u8 384), ("state", .array true .u8 8),
-    ("data", .slice false (.array .u8 8) "n"), ("scratch", .array true .u64 80)]
+    ("data", .slice false (.array .u8 8) "n")]
 
 /-- With the TDEA key schedule at `schedule`: replaces the block `C` at
 `state` with §6.2 step 6 continued from `C` over the `n` blocks at
 `data`. -/
+def tdesUpdatePost (pb : Nat) : tdesUpdateSig.Post pb := fun schedule state data n m m' _ =>
+  let ciph := tdesWith (TripleDes.scheduleAt m schedule)
+  Aes.bytesAt m' state 8 = chain ciph (Aes.bytesAt m state 8) (blocksAt m data 8 n.toNat)
+
+/-- `tdesUpdatePost`. -/
 def tdesUpdateContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  tdesUpdateSig.contract A
-    (post := fun schedule state data n _scratch m m' _ =>
-      let ciph := tdesWith (TripleDes.scheduleAt m schedule)
-      Aes.bytesAt m' state 8 = chain ciph (Aes.bytesAt m state 8) (blocksAt m data 8 n.toNat))
-    (stack := stack)
+  tdesUpdateSig.contract A (post := tdesUpdatePost A.ptrBits) (stack := stack)
 
 /-- `vg_cmac_triple_des_update` on every target. -/
 def tdesUpdateApi : Api where
@@ -108,30 +108,34 @@ def tdesUpdateApi : Api where
     three DES schedules at `*schedule`, as `vg_cmac_triple_des_init` writes them.\n\n\
     Contract: `VG.Spec.Cmac.tdesUpdateContract`. Constant time: only the pointers and `n` may \
     affect timing, not the key schedule, the chaining value or the data."
-  safety := ["The contents of `scratch` on return are unspecified."]
+  safety := []
 
-/-- `vg_cmac_triple_des_finalize(key: *const [u8; 400], state: *mut [u8; 8], last: *const u8, last_len: usize, scratch: *mut [u64; 80])`.
-`scratch` is working space. -/
+/-- `vg_cmac_triple_des_finalize(key: *const [u8; 400], state: *mut [u8; 8], last: *const u8, last_len: usize)`. -/
 def tdesFinalizeSig : Sig where
   params := [("key", .array false .u8 400), ("state", .array true .u8 8),
-    ("last", .slice false .u8 "last_len"), ("scratch", .array true .u64 80)]
+    ("last", .slice false .u8 "last_len")]
 
-/-- For `last_len` at most 8, with the TDEA key schedule in the first 384
-bytes at `key` and TDEA's subkeys `K1 ‖ K2` for it in bytes 384–399: if
-the block at `state` is the chaining value (§6.2 step 6, from `C₀ = 0⁶⁴`)
-of a message `msg` of whole blocks, and `last_len` is not 0 unless `msg` is
-empty (so that the `last_len` bytes at `last` are `Mₙ*`), replaces it with
-the CMAC `Cₙ` of `msg` followed by those bytes. -/
+/-- `finalize`'s precondition: at most a block of last bytes. -/
+def tdesFinalizePre (pb : Nat) : Curry (tdesFinalizeSig.words pb) (Mem → Prop) :=
+  fun _key _state _last lastLen _ => lastLen.toNat ≤ 8
+
+/-- With the TDEA key schedule in the first 384 bytes at `key` and TDEA's
+subkeys `K1 ‖ K2` for it in bytes 384–399: if the block at `state` is the
+chaining value (§6.2 step 6, from `C₀ = 0⁶⁴`) of a message `msg` of whole
+blocks, and `last_len` is not 0 unless `msg` is empty (so that the
+`last_len` bytes at `last` are `Mₙ*`), replaces it with the CMAC `Cₙ` of
+`msg` followed by those bytes. -/
+def tdesFinalizePost (pb : Nat) : tdesFinalizeSig.Post pb := fun key state last lastLen m m' _ =>
+  let ciph := tdesWith (TripleDes.scheduleAt m key)
+  let ks := subkeys ciph 8
+  Aes.bytesAt m (key + 384) 16 = ks.1 ++ ks.2 →
+  ∀ msg : List Byte, msg.length % 8 = 0 → (msg = [] ∨ 0 < lastLen.toNat) →
+    Aes.bytesAt m state 8 = chain ciph (zeros 8) (blocks 8 msg) →
+    Aes.bytesAt m' state 8 = macFull ciph 8 (msg ++ Aes.bytesAt m last lastLen.toNat)
+
+/-- For `last_len` at most 8: `tdesFinalizePost`. -/
 def tdesFinalizeContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  tdesFinalizeSig.contract A
-    (pre := fun _key _state _last lastLen _scratch _ => lastLen.toNat ≤ 8)
-    (post := fun key state last lastLen _scratch m m' _ =>
-      let ciph := tdesWith (TripleDes.scheduleAt m key)
-      let ks := subkeys ciph 8
-      Aes.bytesAt m (key + 384) 16 = ks.1 ++ ks.2 →
-      ∀ msg : List Byte, msg.length % 8 = 0 → (msg = [] ∨ 0 < lastLen.toNat) →
-        Aes.bytesAt m state 8 = chain ciph (zeros 8) (blocks 8 msg) →
-        Aes.bytesAt m' state 8 = macFull ciph 8 (msg ++ Aes.bytesAt m last lastLen.toNat))
+  tdesFinalizeSig.contract A (pre := tdesFinalizePre A.ptrBits) (post := tdesFinalizePost A.ptrBits)
     (stack := stack)
 
 /-- `vg_cmac_triple_des_finalize` on every target. -/
@@ -151,8 +155,6 @@ def tdesFinalizeApi : Api where
     Contract: `VG.Spec.Cmac.tdesFinalizeContract`. Constant time: only the pointers and \
     `last_len` may affect timing, not the key schedule, the subkeys, the chaining value or the \
     data."
-  safety := [
-    "`last_len` must be at most 8.",
-    "The contents of `scratch` on return are unspecified."]
+  safety := ["`last_len` must be at most 8."]
 
 end VG.Spec.Cmac
