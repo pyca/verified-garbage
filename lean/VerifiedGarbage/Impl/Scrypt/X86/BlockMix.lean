@@ -34,13 +34,15 @@ open VG.X86
 /-- The callee-saved registers, and where they are saved in `scratch`. -/
 def bmSaved : List (Reg × Nat) := [(.ebx, 64), (.esi, 68), (.edi, 72), (.ebp, 76)]
 
-/-- Word `k` of `[dst] ← [x] xor [src]`. -/
+/-- Bytes `16 k` to `16 k + 15` of `[dst] ← [x] xor [src]`, through `xmm0`
+and `xmm1`. -/
 def xorW (dst x src : Reg) (k : Nat) : List Instr :=
-  [.mov .eax (.mem (at_ x (4 * k))), .alu .xor .eax (.mem (at_ src (4 * k))),
-    .store (at_ dst (4 * k)) .eax]
+  [.movdquLoad .xmm0 (at_ x (16 * k)), .movdquLoad .xmm1 (at_ src (16 * k)), xb .pxor .xmm0 .xmm1,
+    .movdquStore (at_ dst (16 * k)) .xmm0]
 
-/-- The 64 bytes `[dst] ← [x] xor [src]`. -/
-def xor64 (dst x src : Reg) : List Instr := (List.range 16).flatMap (xorW dst x src)
+/-- The 64 bytes `[dst] ← [x] xor [src]`, 16 at a time: `vg_salsa20_8` loads
+them 16 bytes at a time, which a store of 4 could not forward to. -/
+def xor64 (dst x src : Reg) : List Instr := (List.range 4).flatMap (xorW dst x src)
 
 /-- `vg_salsa20_8(dst, scratch)`, its arguments pushed last to first. -/
 def salsaAt (salsa : Prog isa) (dst : Reg) : Prog isa :=
