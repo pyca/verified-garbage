@@ -316,11 +316,12 @@ def post (mul : Nat → Nat → Nat → Prog isa) : List (Prog isa) :=
     copyWords, mul aX aX aR2, mul aX aX aY, .block [enterP]] ++ redc mul aX ++
   subModArr aT aY aXc ++ loadArr aChunk sQinv sPlen ++ maskArr aChunk ++ [mul aY aT aChunk, .block [leave]]
 
-/-- Whether `n` has 32 words and `p` and `q` 16: ZF. -/
+/-- Whether `n` has 32 words and `p` and `q` 16 (`(len + 7) / 8` of their
+lengths in bytes): ZF. -/
 def sizes : List Instr :=
-  [.mov .rax (.mem (hdr sW)), .alu .xor .rax (.imm 32), .mov .rdx (.mem (hdr sWsP)), .mov .rdx (.mem (ws .rdx sW)),
-    .alu .xor .rdx (.imm 16), .alu .or .rax (.reg .rdx), .mov .rdx (.mem (hdr sWsQ)), .mov .rdx (.mem (ws .rdx sW)),
-    .alu .xor .rdx (.imm 16), .alu .or .rax (.reg .rdx)]
+  [.mov .rax (.mem (hdr sW)), .alu .xor .rax (.imm 32), .mov .rdx (.mem (hdr sPlen)), .alu .add .rdx (.imm 7),
+    .shift .shr .rdx 3, .alu .xor .rdx (.imm 16), .alu .or .rax (.reg .rdx), .mov .rdx (.mem (hdr sQlen)),
+    .alu .add .rdx (.imm 7), .shift .shr .rdx 3, .alu .xor .rdx (.imm 16), .alu .or .rax (.reg .rdx)]
 
 def main (mul : Nat → Nat → Nat → Prog isa) : Prog isa :=
   seqs (nSetup mul ++ primesSetup ++ checks ++ [.block sizes,

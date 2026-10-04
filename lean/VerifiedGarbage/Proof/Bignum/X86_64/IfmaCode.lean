@@ -54,9 +54,7 @@ theorem ifmaCode_correct (M : Mont)
         by rw [mx, mx₂, mx₁]⟩
   · have hv : Spec.Rsa.modulusValid (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (s.gpr .rdx) (s.gpr .rcx).toNat))
         (s.gpr .rcx).toNat = true := by simpa using hb
-    exact WP.mono (ifmaMain_ok M hpre' hv (fun hw hp hq => by
-      unfold offQ slot wsWords hdrBytes tabBytes CrtIfma.D at *; omega)
-      hfront hpre hpost hcrt) fun t ⟨⟨Mk, hp, hiff⟩, mx⟩ =>
+    exact WP.mono (ifmaMain_ok M hpre' hv hfront hpre hpost hcrt) fun t ⟨⟨Mk, hp, hiff⟩, mx⟩ =>
       ⟨crtCode_fin c h₁ hm₂ k₂ hp (fun _ => ⟨hiff, rfl⟩) fun h => absurd h (by rw [hv]; decide),
         by rw [mx, mx₂, mx₁]⟩
 
