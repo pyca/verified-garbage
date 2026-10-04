@@ -6,7 +6,8 @@ import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Polyval
 Untrusted: everything here is checked by Lean. `tag o` encrypts the tag
 input at `W + 96` with the encryption key's schedule at `W + 512` into the
 block at `W + o`, by `vg_aes_ctr32` of one zero block from a copy of it at
-`W + 112` (`tag_ok`).
+`W + 112` (`tag_ok`); counter mode's last block uses the same code for the
+keystream block at `W + 128`.
 -/
 
 set_option linter.unusedSimpArgs false
@@ -44,7 +45,7 @@ structure TagPost (K W SP : Addr) (R o : Nat) (t t' : State) : Prop where
 
 theorem tag_ok (v : GcmImpl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} (hR : R = 10 ∨ R = 14) {t : State}
     (E : Env K W SP t) {N A D : Addr} {al n : Nat} (S : Slots W R N A D al n t.mem) {o : Nat}
-    (ho : o = 0 ∨ o = 144) :
+    (ho : o = 0 ∨ o = 128 ∨ o = 144) :
     WP isa (tag v.callees o) t (TagPost K W SP R o t) := by
   have h15 := E.r15
   have hw := L.ww
@@ -65,7 +66,7 @@ theorem tag_ok (v : GcmImpl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} (hR : R 
       t₁.gpr .rdx = W + BitVec.ofNat 64 112 ∧ t₁.gpr .rcx = W + BitVec.ofNat 64 o ∧
       t₁.gpr .r8 = BitVec.ofNat 64 1 ∧ t₁.gpr .r9 = W + BitVec.ofNat 64 2048 ∧
       (∀ r ∈ calleeSaved, t₁.gpr r = t.gpr r) ∧ t₁.rd = t.rd ∧ t₁.wr = t.wr := by
-    rcases ho with rfl | rfl
+    rcases ho with rfl | rfl | rfl
     all_goals
       simp only [Nat.reduceAdd, BitVec.add_zero] at z₀ z₈
       refine ⟨_, by srun [copy16, zero16, ctrArgs, h15, rR, rR', r₀, r₈, w₀, w₈, z₀, z₈, readW_writeW_W0], ?_, ?_, ?_, ?_, ?_, ?_, ?_,
