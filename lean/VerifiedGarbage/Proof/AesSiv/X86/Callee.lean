@@ -244,55 +244,79 @@ theorem ctrFrame_ok (v : Ctr32Impl) {s : State} {K C D S : BitVec 32} {R n : Nat
       (CtrPost s K C D S R n) :=
   Proof.AesGcm.X86.ctr_call ⟨v, .scalar⟩ h
 
+/-- `k` bytes at `D` that `vg_aes_ctr32` may write: apart from the key
+context, the counter block at `W + c`, the working space of the functions
+called and the stack below `SP`. -/
+structure Dst (C W SP : BitVec 32) (s : State) (D : BitVec 32) (k c : Nat) : Prop where
+  wr : Covers [⟨w64 D, k⟩] s.wr
+  wrap : D.toNat + k ≤ 2 ^ 32
+  dk : (⟨w64 C, 512⟩ : Region).Disjoint ⟨w64 D, k⟩
+  dc : (⟨w64 D, k⟩ : Region).Disjoint ⟨w64 W + BitVec.ofNat 64 c, 16⟩
+  ds : (⟨w64 D, k⟩ : Region).Disjoint ⟨w64 W + BitVec.ofNat 64 256, 2048⟩
+  stk : (below SP 56).Disjoint ⟨w64 D, k⟩
+
+theorem Dst.of_eq {C W SP : BitVec 32} {s s' : State} {D : BitVec 32} {k c : Nat} (h : Dst C W SP s D k c)
+    (hwr : s'.wr = s.wr) : Dst C W SP s' D k c :=
+  { h with wr := by rw [hwr]; exact h.wr }
+
+/-- A block of `W` below 256 as `vg_aes_ctr32`'s data. -/
+theorem dstW {C W SP : BitVec 32} {s : State} (L : Lay C W SP) (P : Perm C W s) {c q : Nat} (hc : c + 16 ≤ 256)
+    (hq : q + 16 ≤ 256) (hqc : q + 16 ≤ c ∨ c + 16 ≤ q) : Dst C W SP s (W + BitVec.ofNat 32 q) 16 c where
+  wr := by rw [L.aW (o := q) (by omega)]; exact P.wC (by omega)
+  wrap := by rw [L.nW (o := q) (by omega)]; have := L.fw; omega
+  dk := by rw [L.aW (o := q) (by omega)]; exact L.c_w.sub_right (Lay.wSub (by omega))
+  dc := by rw [L.aW (o := q) (by omega)]; exact Lay.w_w hqc (by omega) (by omega)
+  ds := by rw [L.aW (o := q) (by omega)]; exact Lay.w_w (.inl (by omega)) (by omega) (by decide)
+  stk := by rw [L.aW (o := q) (by omega)]; exact L.stk_w' (by omega)
+
 /-- The arguments of `vg_aes_ctr32`: `K2`'s schedule at `C + 272`, the
-counter block at `W + c`, one block at `W + q`, and the working space at
+counter block at `W + c`, `n` blocks at `D`, and the working space at
 `W + 256` (where `ebp` is moved). -/
 theorem cargs {C W SP : BitVec 32} {s : State} (L : Lay C W SP) (P : Perm C W s) (esp : s.gpr .esp = SP) {R : Nat}
-    (hR : R = 10 ∨ R = 12 ∨ R = 14) {c q : Nat} (hc : c + 16 ≤ 256) (hq : q + 16 ≤ 256)
-    (hqc : q + 16 ≤ c ∨ c + 16 ≤ q) (eax : s.gpr .eax = C + BitVec.ofNat 32 272)
+    (hR : R = 10 ∨ R = 12 ∨ R = 14) {c : Nat} (hc : c + 16 ≤ 256) {D : BitVec 32} {n : Nat}
+    (hD : Dst C W SP s D (16 * n) c) (eax : s.gpr .eax = C + BitVec.ofNat 32 272)
     (ecx : s.gpr .ecx = BitVec.ofNat 32 R) (edx : s.gpr .edx = W + BitVec.ofNat 32 c)
-    (ebx : s.gpr .ebx = W + BitVec.ofNat 32 q) (edi : s.gpr .edi = BitVec.ofNat 32 1)
+    (ebx : s.gpr .ebx = D) (edi : s.gpr .edi = BitVec.ofNat 32 n)
     (ebp : s.gpr .ebp = W + BitVec.ofNat 32 256) :
-    CtrCall s (C + BitVec.ofNat 32 272) (W + BitVec.ofNat 32 c) (W + BitVec.ofNat 32 q) (W + BitVec.ofNat 32 256)
-      R 1 := by
+    CtrCall s (C + BitVec.ofNat 32 272) (W + BitVec.ofNat 32 c) D (W + BitVec.ofNat 32 256) R n := by
   have hsp := L.sp
   have b28 : Region.Sub (below SP 28) (below SP 56) := below_sub56 (by decide) hsp
-  refine ⟨eax, ecx, edx, ebx, edi, ebp, hR, by rw [esp]; omega, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_,
-    ?_, ?_⟩
+  refine ⟨eax, ecx, edx, ebx, edi, ebp, hR, by rw [esp]; omega, ?_, ?_, ?_, ?_, ?_, hD.ds.sub_right ?_, ?_, ?_, ?_,
+    ?_, ?_, ?_, hD.wrap, ?_, ?_, ?_⟩
   · rw [L.aC (o := 272) (by omega), L.aW (o := c) (by omega)]; exact L.c_w' (by decide) (by omega)
-  · rw [L.aC (o := 272) (by omega), L.aW (o := q) (by omega)]; exact L.c_w' (by decide) (by omega)
+  · rw [L.aC (o := 272) (by omega)]; exact hD.dk.sub_left (Lay.cSub (by decide))
   · rw [L.aC (o := 272) (by omega), L.aW (o := 256) (by omega)]; exact L.c_w' (by decide) (by decide)
-  · rw [L.aW (o := c) (by omega), L.aW (o := q) (by omega)]; exact Lay.w_w (by omega) (by omega) (by omega)
+  · rw [L.aW (o := c) (by omega)]; exact hD.dc.symm
   · rw [L.aW (o := c) (by omega), L.aW (o := 256) (by omega)]
     exact Lay.w_w (.inl (by omega)) (by omega) (by decide)
-  · rw [L.aW (o := q) (by omega), L.aW (o := 256) (by omega)]
-    exact Lay.w_w (.inl (by omega)) (by omega) (by decide)
+  · rw [L.aW (o := 256) (by omega)]; exact fun _ h => h
   · rw [esp, L.aC (o := 272) (by omega)]; exact (L.stk_c' (by decide)).sub_left b28
   · rw [esp, L.aW (o := c) (by omega)]; exact (L.stk_w' (by omega)).sub_left b28
-  · rw [esp, L.aW (o := q) (by omega)]; exact (L.stk_w' (by omega)).sub_left b28
+  · rw [esp]; exact hD.stk.sub_left b28
   · rw [esp, L.aW (o := 256) (by omega)]; exact (L.stk_w' (by decide)).sub_left b28
   · rw [L.nC (o := 272) (by omega)]; have := L.fc; omega
   · rw [L.nW (o := c) (by omega)]; have := L.fw; omega
-  · rw [L.nW (o := q) (by omega)]; have := L.fw; omega
   · rw [L.nW (o := 256) (by omega)]; have := L.fw; omega
   · rw [L.aC (o := 272) (by omega)]; exact P.cC (by decide)
-  · rw [L.aW (o := c) (by omega), L.aW (o := q) (by omega), L.aW (o := 256) (by omega)]
-    exact covers_cons (P.wC (by omega)) (covers_cons (P.wC (by omega)) (covers_cons (P.wC (by decide)) covers_nil))
+  · rw [L.aW (o := c) (by omega), L.aW (o := 256) (by omega)]
+    exact covers_cons (P.wC (by omega)) (covers_cons hD.wr (covers_cons (P.wC (by decide)) covers_nil))
 
-/-- A call of `vg_aes_ctr32` on the block at `W + q`, from the counter block
-at `W + c`, under `K2`. -/
+/-- A call of `vg_aes_ctr32` on `n` blocks at `D`, from the counter block at
+`W + c`, under `K2`. -/
 theorem ctrCall_ok (v : Ctr32Impl) {C W SP : BitVec 32} {s : State} (L : Lay C W SP) (E : Env C W SP s) {R : Nat}
-    (hR : R = 10 ∨ R = 12 ∨ R = 14) {c q : Nat} (hc : c + 16 ≤ 256) (hq : q + 16 ≤ 256)
-    (hqc : q + 16 ≤ c ∨ c + 16 ≤ q) (eax : s.gpr .eax = C + BitVec.ofNat 32 272)
+    (hR : R = 10 ∨ R = 12 ∨ R = 14) {c : Nat} (hc : c + 16 ≤ 256) {D : BitVec 32} {n : Nat}
+    (hD : Dst C W SP s D (16 * n) c) (eax : s.gpr .eax = C + BitVec.ofNat 32 272)
     (ecx : s.gpr .ecx = BitVec.ofNat 32 R) (edx : s.gpr .edx = W + BitVec.ofNat 32 c)
-    (ebx : s.gpr .ebx = W + BitVec.ofNat 32 q) (edi : s.gpr .edi = BitVec.ofNat 32 1) :
+    (ebx : s.gpr .ebx = D) (edi : s.gpr .edi = BitVec.ofNat 32 n) :
     WP isa (ctrCall v.callee) s fun s' => Env C W SP s' ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
       (∀ r ∈ [Reg.ebx, .esi, .edi], s'.gpr r = s.gpr r) ∧
-      Frame [⟨w64 W + BitVec.ofNat 64 c, 16⟩, ⟨w64 W + BitVec.ofNat 64 q, 16⟩,
+      Frame [⟨w64 W + BitVec.ofNat 64 c, 16⟩, ⟨w64 D, 16 * n⟩,
         ⟨w64 W + BitVec.ofNat 64 256, 2048⟩, below SP 56] s.mem s'.mem ∧
-      blocksAt s'.mem (w64 W + BitVec.ofNat 64 q) 1 =
+      blocksAt s'.mem (w64 D) n =
         ctr32 (aesWith R (bytesAt s.mem (w64 C + BitVec.ofNat 64 272) (16 * (R + 1))))
-          (blockAt s.mem (w64 W + BitVec.ofNat 64 c)) (blocksAt s.mem (w64 W + BitVec.ofNat 64 q) 1) := by
+          (blockAt s.mem (w64 W + BitVec.ofNat 64 c)) (blocksAt s.mem (w64 D) n) ∧
+      blockAt s'.mem (w64 W + BitVec.ofNat 64 c) =
+        Nat.repeat Spec.Gcm.inc32 n (blockAt s.mem (w64 W + BitVec.ofNat 64 c)) := by
   have hsp := L.sp
   have b28 : Region.Sub (below SP 28) (below SP 56) := below_sub56 (by decide) hsp
   -- `ebp := W + 256`.
@@ -300,20 +324,20 @@ theorem ctrCall_ok (v : Ctr32Impl) {C W SP : BitVec 32} {s : State} (L : Lay C W
   -- The call.
   have e256 : s.gpr .ebp + BitVec.ofNat 32 256 = W + BitVec.ofNat 32 256 := by rw [E.ebp]
   refine WP.seq (WP.mono (ctrFrame_ok v (cargs L (E.perm.of_eq (by cmems []) (by cmems [])) (by cregs [E.esp]) hR hc
-    hq hqc (by cregs [eax]) (by cregs [ecx]) (by cregs [edx]) (by cregs [ebx]) (by cregs [edi]) (by cregs [e256])))
-    fun s₂ P => ?_)
+    (hD.of_eq (by cmems [])) (by cregs [eax]) (by cregs [ecx]) (by cregs [edx]) (by cregs [ebx]) (by cregs [edi])
+    (by cregs [e256]))) fun s₂ P => ?_)
   -- `ebp := W`.
   have hbp₂ : s₂.gpr .ebp = W + BitVec.ofNat 32 256 := by
     rw [P.saved _ (by decide)]; cregs [E.ebp]
   have hsp₂ : s₂.gpr .esp = SP := by rw [P.saved _ (by decide)]; cregs [E.esp]
   refine WP.of_runBlock ⟨_, by crun [hbp₂], ?_⟩
   refine ⟨⟨by cregs [hbp₂]; exact BitVec.add_sub_cancel _ _, by cregs [hsp₂],
-    E.perm.of_eq (by cmems [P.rd]) (by cmems [P.wr])⟩, by cmems [P.rd], by cmems [P.wr], ?_, ?_, ?_⟩
+    E.perm.of_eq (by cmems [P.rd]) (by cmems [P.wr])⟩, by cmems [P.rd], by cmems [P.wr], ?_, ?_, ?_, ?_⟩
   · intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl <;> (cregs []; rw [P.saved _ (by decide)]; cregs [])
   · have f := P.frame
-    rw [L.aW (o := c) (by omega), L.aW (o := q) (by omega), L.aW (o := 256) (by omega)] at f
+    rw [L.aW (o := c) (by omega), L.aW (o := 256) (by omega)] at f
     cmems []
     refine f.sub fun r hr => ?_
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -324,30 +348,35 @@ theorem ctrCall_ok (v : Ctr32Impl) {C W SP : BitVec 32} {s : State} (L : Lay C W
     · refine ⟨below SP 56, by simp, ?_⟩
       simpa [gpr_setReg_of_ne, E.esp] using b28
   · have o := P.out
-    rw [L.aW (o := c) (by omega), L.aW (o := q) (by omega), L.aC (o := 272) (by omega)] at o
+    rw [L.aW (o := c) (by omega), L.aC (o := 272) (by omega)] at o
+    cmems []
+    exact o
+  · have o := P.ctr
+    rw [L.aW (o := c) (by omega)] at o
     cmems []
     exact o
 
 /-- Calls of `vg_aes_ctr32` with the same arguments are constant time. -/
 theorem ctrCall_ct (v : Ctr32Impl) {C W SP : BitVec 32} (L : Lay C W SP) {R : Nat} (hR : R = 10 ∨ R = 12 ∨ R = 14)
-    {c q : Nat} (hc : c + 16 ≤ 256) (hq : q + 16 ≤ 256) (hqc : q + 16 ≤ c ∨ c + 16 ≤ q) {I : State → Prop}
-    (hI : ∀ s, I s → Env C W SP s ∧ s.gpr .eax = C + BitVec.ofNat 32 272 ∧
-      s.gpr .ecx = BitVec.ofNat 32 R ∧ s.gpr .edx = W + BitVec.ofNat 32 c ∧ s.gpr .ebx = W + BitVec.ofNat 32 q ∧
-      s.gpr .edi = BitVec.ofNat 32 1) :
+    {c : Nat} (hc : c + 16 ≤ 256) {D : BitVec 32} {n : Nat} {I : State → Prop}
+    (hI : ∀ s, I s → Env C W SP s ∧ Dst C W SP s D (16 * n) c ∧ s.gpr .eax = C + BitVec.ofNat 32 272 ∧
+      s.gpr .ecx = BitVec.ofNat 32 R ∧ s.gpr .edx = W + BitVec.ofNat 32 c ∧ s.gpr .ebx = D ∧
+      s.gpr .edi = BitVec.ofNat 32 n) :
     CT I (ctrCall v.callee) := by
   -- The state after `ebp := W + 256`, as `CtrCall` needs it.
   have call : ∀ s, I s → ∀ s', runBlock isa [.alu .add .ebp (imm csOff)] s = some s' →
-      CtrCall s' (C + BitVec.ofNat 32 272) (W + BitVec.ofNat 32 c) (W + BitVec.ofNat 32 q) (W + BitVec.ofNat 32 256)
-        R 1 ∧ s'.gpr .esp = SP := by
+      CtrCall s' (C + BitVec.ofNat 32 272) (W + BitVec.ofNat 32 c) D (W + BitVec.ofNat 32 256) R n ∧
+        s'.gpr .esp = SP := by
     intro s hs s' run
-    obtain ⟨E, eax, ecx, edx, ebx, edi⟩ := hI s hs
+    obtain ⟨E, hD, eax, ecx, edx, ebx, edi⟩ := hI s hs
     have e := run
     simp (disch := first | decide | omega) only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, execAlu,
       imm, csOff, Option.bind_some, Option.some.injEq] at e
     subst e
     have e256 : s.gpr .ebp + BitVec.ofNat 32 256 = W + BitVec.ofNat 32 256 := by rw [E.ebp]
-    exact ⟨cargs L (E.perm.of_eq (by cmems []) (by cmems [])) (by cregs [E.esp]) hR hc hq hqc (by cregs [eax])
-      (by cregs [ecx]) (by cregs [edx]) (by cregs [ebx]) (by cregs [edi]) (by cregs [e256]), by cregs [E.esp]⟩
+    exact ⟨cargs L (E.perm.of_eq (by cmems []) (by cmems [])) (by cregs [E.esp]) hR hc (hD.of_eq (by cmems []))
+      (by cregs [eax]) (by cregs [ecx]) (by cregs [edx]) (by cregs [ebx]) (by cregs [edi]) (by cregs [e256]),
+      by cregs [E.esp]⟩
   refine CT.seq (J := fun s' => ∃ s, I s ∧ runBlock isa [.alu .add .ebp (imm csOff)] s = some s')
     (CT.taint [.ebp] (fun s₁ s₂ h₁ h₂ r hr => by
       simp only [List.mem_singleton] at hr; subst hr; rw [(hI _ h₁).1.ebp, (hI _ h₂).1.ebp]) (by taint_decide))

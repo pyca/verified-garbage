@@ -34,7 +34,7 @@ caller's `ebx`, `esi`, `edi` and `ebp` saved at `scratch + 2176`.
 * `[0, 16)`: the synthetic IV;
 * `[16, 32)`: a zero block;
 * `[32, 64)`: the last bytes of S2V's last string (`tail`);
-* `[64, 80)`: the counter `Q + i`;
+* `[64, 80)`: unused;
 * `[80, 96)`: a keystream block;
 * `[96, 112)`: the counter block passed to `vg_aes_ctr32`;
 * `[112, 128)`: the IV `decrypt` computes;
@@ -74,12 +74,15 @@ As on x86-64:
   the tail is the last `L − 16 k` bytes of `P` with `D` XORed into its last
   16, and the CMAC chains the `k` blocks of `P`, then the first `j` blocks of
   the tail, and finalizes the rest of the tail.
-* `counter src`: `Q`, the IV at `W + src` with bit 7 of its bytes 8 and 12
-  cleared.
-* `ctr`: each block of the data, `vg_aes_ctr32` on a zero block with the
-  counter block `Q + i` gives the keystream, whose first `min(16, left)`
-  bytes are XORed into the data, and the counter is incremented as a 128-bit
-  big-endian integer.
+* `counter src`: the counter block is `Q`, the IV at `W + src` with bit 7
+  of its bytes 8 and 12 cleared.
+* `ctr`, as on ARMv7: the whole blocks of the data in one call of
+  `vg_aes_ctr32`, which increments only the last 32 bits of the counter
+  block, as a big-endian integer; but `Q` clears their most significant bit
+  and `len < 2³²` gives fewer than `2²⁸` blocks, so they never wrap around,
+  and the counter is `Q + i`. Then `vg_aes_ctr32` on a zero block with the
+  counter it left gives the keystream of the last bytes, which are XORed
+  with it.
 * `compare`, `mask`: `ok = 1` if the IVs at `W` and `W + 112` are equal,
   else 0, without a branch, and every byte of the data ANDed with `0 − ok`.
 
@@ -135,7 +138,6 @@ end
 
 abbrev zOff : Nat := 16
 abbrev tailOff : Nat := 32
-abbrev cntOff : Nat := 64
 abbrev ksOff : Nat := 80
 abbrev cbOff : Nat := 96
 abbrev tOff : Nat := 112
@@ -313,57 +315,43 @@ def finish (out : Nat) : Prog isa :=
 
 /-! ## CTR -/
 
-/-- The counter `Q`: the IV at `W + src` with bit 7 of its bytes 8 and 12
-cleared, at `W + 64`. -/
+/-- The counter block at `W + 96` set to `Q`: the IV at `W + src` with bit 7
+of its bytes 8 and 12 (of its third and fourth words) cleared. -/
 def counter (src : Nat) : List Instr :=
-  [.mov .eax (slot src), .store (at_ .ebp cntOff) .eax, .mov .eax (slot (src + 4)),
-   .store (at_ .ebp (cntOff + 4)) .eax, .mov .eax (slot (src + 8)), .alu .and .eax (imm 0xffffff7f),
-   .store (at_ .ebp (cntOff + 8)) .eax, .mov .eax (slot (src + 12)), .alu .and .eax (imm 0xffffff7f),
-   .store (at_ .ebp (cntOff + 12)) .eax]
+  [.mov .eax (slot src), .store (at_ .ebp cbOff) .eax, .mov .eax (slot (src + 4)),
+   .store (at_ .ebp (cbOff + 4)) .eax, .mov .eax (slot (src + 8)), .alu .and .eax (imm 0xffffff7f),
+   .store (at_ .ebp (cbOff + 8)) .eax, .mov .eax (slot (src + 12)), .alu .and .eax (imm 0xffffff7f),
+   .store (at_ .ebp (cbOff + 12)) .eax]
 
-/-- The keystream block zeroed, the counter block `Q + i` passed to
-`vg_aes_ctr32`, and its arguments: `K2`'s schedule, the rounds, the counter
-block, the keystream block and one block. -/
-def ctrPre : List Instr :=
-  zero4 ksOff ++
-  [.mov .eax (slot cntOff), .store (at_ .ebp cbOff) .eax, .mov .eax (slot (cntOff + 4)),
-   .store (at_ .ebp (cbOff + 4)) .eax, .mov .eax (slot (cntOff + 8)), .store (at_ .ebp (cbOff + 8)) .eax,
-   .mov .eax (slot (cntOff + 12)), .store (at_ .ebp (cbOff + 12)) .eax,
-   .mov .eax (slot ctxO), .alu .add .eax (imm 272), .mov .ecx (slot roundsO), .mov .edx (.reg .ebp),
-   .alu .add .edx (imm cbOff), .mov .ebx (.reg .ebp), .alu .add .ebx (imm ksOff), .mov .edi (imm 1)]
+/-- The arguments of `vg_aes_ctr32` but the data and the number of blocks:
+`K2`'s schedule, the rounds and the counter block at `W + 96`. -/
+def ctrArgs : List Instr :=
+  [.mov .eax (slot ctxO), .alu .add .eax (imm 272), .mov .ecx (slot roundsO), .mov .edx (.reg .ebp),
+   .alu .add .edx (imm cbOff)]
 
-/-- `min(16, left)` in `ecx`, and the arguments of the XOR: the data in
-`edi`, the keystream in `edx`. -/
-def ctrMin : Prog isa :=
-  .seq (.block [.mov .ecx (imm 16), .mov .eax (slot slenO), .alu .cmp .eax (.reg .ecx)])
-    (.seq (.ite .b (.block [.mov .ecx (.reg .eax)]) (.block []))
-      (.block [.mov .edi (slot strO), .mov .edx (.reg .ebp), .alu .add .edx (imm ksOff),
-        .store (at_ .ebp nbO) .ecx]))
+/-- The whole blocks of the data, by `vg_aes_ctr32` from the counter block,
+which it leaves after them. -/
+def ctrWhole : Prog isa :=
+  .seq (.block [.mov .edi (slot lenO), .shift .shr .edi 4, .alu .test .edi (.reg .edi)])
+    (.ite .e (.block []) (.seq (.block (ctrArgs ++ [.mov .ebx (slot dataO)])) (ctrCall c)))
 
-/-- The counter incremented as a 128-bit big-endian integer; the data
-advanced past the block (ZF set when no data is left). -/
-def ctrPost : List Instr :=
-  [.mov .eax (slot (cntOff + 12)), .bswap .eax, .alu .add .eax (imm 1), .bswap .eax,
-   .store (at_ .ebp (cntOff + 12)) .eax,
-   .mov .eax (slot (cntOff + 8)), .bswap .eax, .alu .adc .eax (imm 0), .bswap .eax,
-   .store (at_ .ebp (cntOff + 8)) .eax,
-   .mov .eax (slot (cntOff + 4)), .bswap .eax, .alu .adc .eax (imm 0), .bswap .eax,
-   .store (at_ .ebp (cntOff + 4)) .eax,
-   .mov .eax (slot cntOff), .bswap .eax, .alu .adc .eax (imm 0), .bswap .eax,
-   .store (at_ .ebp cntOff) .eax,
-   .mov .eax (slot strO), .alu .add .eax (imm 16), .store (at_ .ebp strO) .eax,
-   .mov .eax (slot slenO), .alu .sub .eax (slot nbO), .store (at_ .ebp slenO) .eax]
+/-- The last `len mod 16` bytes of the data, XORed with the keystream block
+of the counter block, which `vg_aes_ctr32` computes on a zero block at
+`W + 80`. -/
+def ctrTail : Prog isa :=
+  .seq (.block [.mov .ecx (slot lenO), .alu .and .ecx (imm 15)])
+    (.ite .e (.block [])
+      (.seq (.block (zero4 ksOff ++ ctrArgs ++ [.mov .ebx (.reg .ebp), .alu .add .ebx (imm ksOff),
+          .mov .edi (imm 1)]))
+        (.seq (ctrCall c)
+          (.seq (.block [.mov .ecx (slot lenO), .alu .and .ecx (imm 15), .mov .edx (.reg .ebp),
+              .alu .add .edx (imm ksOff), .mov .edi (slot dataO), .alu .add .edi (slot lenO),
+              .alu .sub .edi (.reg .ecx)])
+            xorLoop))))
 
-/-- One block of CTR. -/
-def ctrBody : Prog isa :=
-  .seq (.block ctrPre) (.seq (ctrCall c) (.seq ctrMin (.seq xorLoop (.block ctrPost))))
-
-/-- The data (`W + strO`, `W + slenO` bytes) XORed with the keystream of CTR
-under `K2` from the counter at `W + 64`. -/
-def ctr : Prog isa :=
-  .seq (.block [.mov .eax (slot dataO), .store (at_ .ebp strO) .eax, .mov .eax (slot lenO),
-      .store (at_ .ebp slenO) .eax, .alu .test .eax (.reg .eax)])
-    (.ite .e (.block []) (.loop (ctrBody c) .ne))
+/-- The data (`W + dataO`, `W + lenO` bytes) XORed with the keystream of CTR
+under `K2` from the counter block at `W + 96`. -/
+def ctr : Prog isa := .seq (ctrWhole c) (ctrTail c)
 
 /-! ## Comparing the IVs and masking the data -/
 

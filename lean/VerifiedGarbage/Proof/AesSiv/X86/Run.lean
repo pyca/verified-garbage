@@ -35,7 +35,7 @@ rewrite the addresses and discharge the permissions. -/
 macro "crun" "[" ts:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(tactic| (
   simp (disch := first | decide | omega) only [runBlock_cons, runStep_some,
     runBlock_nil, exec, readSrc, execAlu, execShift, State.load32, store32_eq, State.load8, store8_eq,
-    State.ea, at_, imm, slot, argOp, zOff, tailOff, cntOff, ksOff, cbOff, tOff, stOff, dbOff, ctxO, roundsO, adsO, leftO,
+    State.ea, at_, imm, slot, argOp, zOff, tailOff, ksOff, cbOff, tOff, stOff, dbOff, ctxO, roundsO, adsO, leftO,
     dataO, lenO, strO, slenO, nbO, jO, okO, csOff, dOff, List.cons_append, List.nil_append, List.append_assoc,
     Option.bind_some, Option.map_some, readW_writeW_off, readW_writeB_off, gpr_setReg_self, gpr_setReg_of_ne, gpr_arithFlags, gpr_setFlags, mem_setReg,
     mem_arithFlags, mem_setFlags, rd_setReg, rd_arithFlags, rd_setFlags, wr_setReg, wr_arithFlags,
@@ -55,7 +55,7 @@ macro "cmems" "[" ts:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(tactic| (
   simp (disch := first | decide | omega) only [mem_setMem, mem_setReg, mem_arithFlags, mem_setFlags,
     rd_setMem, rd_setReg, rd_arithFlags, rd_setFlags, wr_setMem, wr_setReg, wr_arithFlags, wr_setFlags,
     zf_setMem, zf_setReg, zf_arithFlags, cf_setMem, cf_setReg, cf_arithFlags, gpr_setMem, gpr_setReg_self,
-    gpr_setReg_of_ne, gpr_arithFlags, gpr_setFlags, Mem.readW_writeW_self32, readW_writeW_off, readW_writeB_off, zOff, tailOff, cntOff,
+    gpr_setReg_of_ne, gpr_arithFlags, gpr_setFlags, Mem.readW_writeW_self32, readW_writeW_off, readW_writeB_off, zOff, tailOff,
     ksOff, cbOff, tOff, stOff, dbOff, ctxO, roundsO, adsO, leftO, dataO, lenO, strO, slenO, nbO, jO, okO, csOff, dOff,
     Nat.reduceAdd, Reg8.reg, eq_self_iff_true, and_self, $ts,*]))
 
