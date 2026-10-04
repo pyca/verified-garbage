@@ -150,14 +150,14 @@ def RedcCT (M : Mont) (j : Nat) : Prop :=
 
 /-- The public data of a byte string read from a prime's workspace: its
 pointer and length. -/
-structure SPub where
+structure BPub where
   x : XPub
   ptr : Addr
   len : Nat
 
 /-- `crtExpLoop_ok`'s hypotheses, for the exponent's pointer and length in
 `n`'s slots `sp` and `sl`. -/
-def EPre (sp sl : Nat) (p : SPub) (s : State) : Prop :=
+def EPre (sp sl : Nat) (p : BPub) (s : State) : Prop :=
   ∃ (minv : BitVec 64) (X x y : Nat) (eb : List Byte),
     SubCtx s p.x.B p.x.Z p.x.o p.x.w p.x.wx minv ∧ 2 ≤ p.x.wx ∧ p.x.wx ≤ p.x.w ∧ p.x.w < 2 ^ 30 ∧
     wv s.mem (off p.x.B p.x.o) (slot p.x.wx Public.aN) p.x.wx = X ∧
@@ -175,7 +175,7 @@ def ExpCT (M : Mont) (sp sl : Nat) : Prop :=
   RelCT isa (Two (EPre sp sl)) (seqs (Crt.expLoop M.mm sp sl)) fun _ _ => True
 
 /-- `primeLoad_ok`'s hypotheses. -/
-def LPre (j sp sl : Nat) (p : SPub) (s : State) : Prop :=
+def LPre (j sp sl : Nat) (p : BPub) (s : State) : Prop :=
   ∃ (minv : BitVec 64) (bs : List Byte), SubCtx s p.x.B p.x.Z p.x.o p.x.w p.x.wx minv ∧ 2 ≤ p.x.wx ∧
     p.x.wx ≤ p.x.w ∧ p.x.w < 2 ^ 30 ∧ j < 8 ∧ sp < 32 ∧ sl < 32 ∧ word s.mem p.x.B (8 * sp) = p.ptr ∧
     word s.mem p.x.B (8 * sl) = BitVec.ofNat 64 bs.length ∧ bs.length = p.len ∧ Src s p.x.B p.x.Z p.ptr bs ∧
@@ -262,7 +262,7 @@ def UnitCT (M : Mont) (sl : Nat) : Prop :=
 
 /-- `powPhase_ok`'s hypotheses, for the exponent's pointer and length in
 slots `sd` and `slen`. -/
-def PwPre (sl sd slen : Nat) (p : SPub) (s : State) : Prop :=
+def PwPre (sl sd slen : Nat) (p : BPub) (s : State) : Prop :=
   ∃ (minv mx : BitVec 64) (N X C : Nat) (eb : List Byte), Good s p.x.B p.x.Z p.x.w minv ∧ p.x.w < 2 ^ 28 ∧
     slot p.x.w 8 ≤ p.x.o ∧ p.x.o + slot p.x.wx 8 ≤ p.x.Z ∧ 2 ≤ p.x.wx ∧ p.x.wx ≤ p.x.w ∧ sl < 32 ∧
     word s.mem p.x.B (8 * sl) = off p.x.B p.x.o ∧ WsAt s.mem p.x.B p.x.o p.x.wx mx ∧

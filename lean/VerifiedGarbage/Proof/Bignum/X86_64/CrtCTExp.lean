@@ -134,17 +134,17 @@ theorem crtBits_ct (M : Mont) :
 /-! ## The bytes of the exponent -/
 
 /-- After `i` bytes of the exponent (at `a.ptr`, `a.len` bytes). -/
-def CBytesInv (a : SPub) (i : Nat) (s : State) : Prop :=
+def CBytesInv (a : BPub) (i : Nat) (s : State) : Prop :=
   ∃ (t₀ : State) (minv : BitVec 64) (X Xc y x : Nat) (eb : List Byte),
     CByteInv t₀ (off a.x.B a.x.o) a.x.wx minv X Xc y x a.ptr eb.length eb i s ∧ CFacts a.x.wx X Xc x ∧
     eb.length = a.len ∧ eb.length < 2 ^ 31 ∧ Src t₀ a.x.B a.x.Z a.ptr eb ∧
     ∀ i < eb.length, slot a.x.wx 8 ≤ ofs (off a.x.B a.x.o) (a.ptr + BitVec.ofNat 64 i)
 
 /-- After the loads of the byte's address. -/
-def CHeadMid (q : SPub × Nat) (s : State) : Prop :=
+def CHeadMid (q : BPub × Nat) (s : State) : Prop :=
   q.2 < q.1.len ∧ CBytesInv q.1 q.2 s ∧ s.gpr .rax = q.1.ptr ∧ s.gpr .rcx = BitVec.ofNat 64 q.2
 
-theorem pins_cBytes : Pins (fun (q : SPub × Nat) s => q.2 < q.1.len ∧ CBytesInv q.1 q.2 s) [.rdi] :=
+theorem pins_cBytes : Pins (fun (q : BPub × Nat) s => q.2 < q.1.len ∧ CBytesInv q.1 q.2 s) [.rdi] :=
   fun _ _ _ ⟨_, _, _, _, _, _, _, _, h₁, _⟩ ⟨_, _, _, _, _, _, _, _, h₂, _⟩ r hr => by
     simp only [List.mem_singleton] at hr; subst hr; rw [h₁.ctx.good.rdi, h₂.ctx.good.rdi]
 
@@ -158,7 +158,7 @@ theorem pins_cHeadMid : Pins CHeadMid [.rdi, .rax, .rcx] := by
 
 /-- One byte of the exponent leaks the same in runs with the same workspace
 and the same exponent's pointer and length. -/
-theorem crtByte_ct (M : Mont) : RelCT isa (Two fun (q : SPub × Nat) s => q.2 < q.1.len ∧ CBytesInv q.1 q.2 s)
+theorem crtByte_ct (M : Mont) : RelCT isa (Two fun (q : BPub × Nat) s => q.2 < q.1.len ∧ CBytesInv q.1 q.2 s)
     (seqs [.block [.mov .rax (.mem (hdr Crt.sExp)), .mov .rcx (.mem (hdr Crt.sI)),
         .movzx8 .rax { base := .rax, index := some .rcx }, .store (hdr Crt.sV) .rax, .mov32 .rax (.imm 8),
         .store (hdr Crt.sBit) .rax],
@@ -167,12 +167,12 @@ theorem crtByte_ct (M : Mont) : RelCT isa (Two fun (q : SPub × Nat) s => q.2 < 
         .alu .cmp .rax (.mem (hdr Crt.sExpLen))]]) fun _ _ => True := by
   simp only [seqs]
   rw [crtByteHead_eq]
-  have w₁ : ∀ (q : SPub × Nat) s, q.2 < q.1.len ∧ CBytesInv q.1 q.2 s →
+  have w₁ : ∀ (q : BPub × Nat) s, q.2 < q.1.len ∧ CBytesInv q.1 q.2 s →
       WP isa (.block [.mov .rax (.mem (hdr Crt.sExp)), .mov .rcx (.mem (hdr Crt.sI))]) s (CHeadMid q) := by
     rintro q s ⟨hi, t₀, minv, X, Xc, y, x, eb, hI, hrest⟩
     exact WP.mono (crtByteHead1_ok hI) fun t ⟨h1, h2, h3⟩ =>
       ⟨hi, ⟨t₀, minv, X, Xc, y, x, eb, h3, hrest⟩, h1, h2⟩
-  have w₂ : ∀ (q : SPub × Nat) s, CHeadMid q s →
+  have w₂ : ∀ (q : BPub × Nat) s, CHeadMid q s →
       WP isa (.block [.movzx8 .rax { base := .rax, index := some .rcx }, .store (hdr Crt.sV) .rax,
         .mov32 .rax (.imm 8), .store (hdr Crt.sBit) .rax]) s fun t => 0 < 8 ∧ CBitsInv q.1.x 0 t := by
     rintro q s ⟨hi, ⟨t₀, minv, X, Xc, y, x, eb, hI, hf, hL, -, he, hout⟩, hax, hcx⟩
@@ -186,7 +186,7 @@ theorem crtByte_ct (M : Mont) : RelCT isa (Two fun (q : SPub × Nat) s => q.2 < 
       simp only [List.mem_singleton] at hr; subst hr; rw [h₁.ctx.good.rdi, h₂.ctx.good.rdi]) (by taint_decide)
   exact RelCT.seq (RelCT.block_append (RelCT.seq (two_piece _ pins_cBytes (by taint_decide) w₁)
       (two_piece _ pins_cHeadMid (by taint_decide) w₂)))
-    (RelCT.seq (two_map (fun q : SPub × Nat => q.1.x) (fun _ _ h => h) (crtBits_ct M)) h₃)
+    (RelCT.seq (two_map (fun q : BPub × Nat => q.1.x) (fun _ _ h => h) (crtBits_ct M)) h₃)
 
 /-! ## The exponentiation -/
 
@@ -203,7 +203,7 @@ theorem pins_ePre (sp sl : Nat) : Pins (EPre sp sl) [.rdi] :=
     simp only [List.mem_singleton] at hr; subst hr; rw [h₁.rdi, h₂.rdi]
 
 /-- The link into `rax`: the modulus' workspace. -/
-theorem crtLink_ok {sp sl : Nat} {a : SPub} {s : State} (h : EPre sp sl a s) :
+theorem crtLink_ok {sp sl : Nat} {a : BPub} {s : State} (h : EPre sp sl a s) :
     WP isa (.block [.mov .rax (.mem (hdr Crt.sLink))]) s fun t =>
       t.gpr .rdi = off a.x.B a.x.o ∧ t.gpr .rax = a.x.B := by
   obtain ⟨minv, X, x, y, eb, hc, -⟩ := h
@@ -217,7 +217,7 @@ theorem crtLink_ok {sp sl : Nat} {a : SPub} {s : State} (h : EPre sp sl a s) :
     fun t ⟨h, k⟩ => ⟨(k.gpr (by decide)).trans hc.rdi, h⟩
 
 /-- `expLoop`'s start sets up the bytes' invariant. -/
-theorem crtExpInit_inv {sp sl : Nat} {a : SPub} {s : State} (h : EPre sp sl a s) :
+theorem crtExpInit_inv {sp sl : Nat} {a : BPub} {s : State} (h : EPre sp sl a s) :
     WP isa (.block [.mov .rax (.mem (hdr Crt.sLink)), .mov .rdx (.mem (Crt.ws .rax sp)),
       .store (hdr Crt.sExp) .rdx, .mov .rdx (.mem (Crt.ws .rax sl)), .store (hdr Crt.sExpLen) .rdx,
       .mov32 .rdx (.imm 0), .store (hdr Crt.sI) .rdx]) s fun t => 0 < a.len ∧ CBytesInv a 0 t := by
@@ -271,7 +271,7 @@ theorem crtExpLoop_ct (M : Mont) {sp sl : Nat} {hc : VG.Taint.Hint VG.X86_64.Tai
   simp only [Crt.expLoop, seqs]
   refine RelCT.seq (two_post (Ψ := fun a s => 0 < a.len ∧ CBytesInv a 0 s) ?_ fun _ _ h => crtExpInit_inv h) ?_
   · rw [crtExpInit_eq]
-    exact RelCT.block_append (RelCT.seq (two_piece (Ψ := fun (a : SPub) t => t.gpr .rdi = off a.x.B a.x.o ∧
+    exact RelCT.block_append (RelCT.seq (two_piece (Ψ := fun (a : BPub) t => t.gpr .rdi = off a.x.B a.x.o ∧
         t.gpr .rax = a.x.B) [.rdi] (pins_ePre sp sl) (by taint_decide) fun _ _ h => crtLink_ok h)
       (two_taint [.rdi, .rax] (pins_of (fun a r => if r = .rdi then off a.x.B a.x.o else a.x.B)
         fun a s h r hr => by
