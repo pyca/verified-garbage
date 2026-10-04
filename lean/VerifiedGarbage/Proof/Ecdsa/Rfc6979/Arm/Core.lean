@@ -39,18 +39,19 @@ abbrev coreWr {dn : Nat} (L : Lay dn) : List Region := [L.OUT, L.SCR]
 theorem coreArgs_ok {t : State} (hc : Ctx L g m₀ t) :
     WP isa (.block Cfg.coreArgs) t fun t' => Ctx L g m₀ t' ∧ t'.mem = t.mem ∧
       t'.gpr .r0 = L.out ∧ t'.gpr .r1 = L.d ∧ t'.gpr .r2 = L.dg ∧ t'.gpr .r3 = L.fp + BitVec.ofNat 32 64 ∧
-      t'.gpr .r12 = L.scr := by
+      t'.gpr .r12 = L.scr ∧ t'.gpr .r9 = t.gpr .r9 := by
   simp only [Cfg.coreArgs]
   refine movr_ok hc (d := .r0) (r := .r4) (by decide) fun t₁ c₁ m₁ v₁ k₁ => ?_
   refine movr_ok c₁ (d := .r1) (r := .r5) (by decide) fun t₂ c₂ m₂ v₂ k₂ => ?_
   refine movr_ok c₂ (d := .r2) (r := .r6) (by decide) fun t₃ c₃ m₃ v₃ k₃ => ?_
   refine addSp_ok c₃ (d := .r3) (by decide) (o := fV) (by decide) fun t₄ c₄ m₄ v₄ k₄ => ?_
   refine movr_ok c₄ (d := .r12) (r := .r11) (by decide) fun t₅ c₅ m₅ v₅ k₅ => WP.block_nil ?_
-  refine ⟨c₅, by rw [m₅, m₄, m₃, m₂, m₁], ?_, ?_, ?_, ?_, by rw [v₅, c₄.r11]⟩
+  refine ⟨c₅, by rw [m₅, m₄, m₃, m₂, m₁], ?_, ?_, ?_, ?_, by rw [v₅, c₄.r11], ?_⟩
   · rw [k₅ _ (by decide), k₄ _ (by decide), k₃ _ (by decide), k₂ _ (by decide), v₁, hc.r4]
   · rw [k₅ _ (by decide), k₄ _ (by decide), k₃ _ (by decide), v₂, c₁.r5]
   · rw [k₅ _ (by decide), k₄ _ (by decide), v₃, c₂.r6]
   · rw [k₅ _ (by decide), v₄]; rfl
+  · rw [k₅ _ (by decide), k₄ _ (by decide), k₃ _ (by decide), k₂ _ (by decide), k₁ _ (by decide)]
 
 /-- What a framed call of `core` needs of the registers. -/
 structure CoreRegs {dn : Nat} (L : Lay dn) (t : State) : Prop where
@@ -107,7 +108,7 @@ theorem core_covW {t : State} (hc : Ctx L g m₀ t) : Covers (coreWr L) (pushed 
 /-- `core(out, d, digest, V, scratch)`, in a frame of `{scratch, lr}`. -/
 theorem core_ok (hL : L.Ok) (hn : 32 ≤ dn) {t : State} (hc : Ctx L g m₀ t) (hr : CoreRegs L t) :
     WP isa (.frame (.push [.r12, .lr]) (.call (cfgOf P).coreN (cfgOf P).coreC) (.pop .r12 8)) t
-      fun t' => Ctx L g m₀ t' ∧ Frame [L.OUT, L.SCR, ⟨L.B, 24⟩] t.mem t'.mem ∧
+      fun t' => Ctx L g m₀ t' ∧ t'.gpr .r9 = t.gpr .r9 ∧ Frame [L.OUT, L.SCR, ⟨L.B, 24⟩] t.mem t'.mem ∧
       match coreSig L t.mem with
       | some rs => BitVec.setWidth 32 (t'.gpr .r1 ++ t'.gpr .r0) = 1 ∧
           Spec.Sha256.bytesAt t'.mem (State.addr L.out) 64 = Spec.Ecdsa.encode Spec.P256.curve rs
@@ -125,7 +126,7 @@ theorem core_ok (hL : L.Ok) (hn : 32 ≤ dn) {t : State} (hc : Ctx L g m₀ t) (
     · exact ⟨_, by simp, sub_refl _⟩
     · exact ⟨_, by simp, sub_refl _⟩
     · exact ⟨_, by simp, sub_refl _⟩
-  refine ⟨hc.after hL ha fun q hq => ?_, hf, ?_⟩
+  refine ⟨hc.after hL ha fun q hq => ?_, ha.cs .r9 (by decide) (by decide), hf, ?_⟩
   · simp only [coreWr, List.mem_cons, List.not_mem_nil, or_false] at hq
     rcases hq with rfl | rfl
     · exact .inl (sub_refl _)
