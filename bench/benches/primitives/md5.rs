@@ -1,10 +1,6 @@
 //! MD5.
 
 use criterion::Criterion;
-use openssl::hash::MessageDigest;
-use verified_garbage::hashes::md5::Md5;
-
-use crate::hash_group;
 
 pub const USES: &[&str] = &["md5"];
 
@@ -23,5 +19,10 @@ pub fn bench(_: &mut Criterion) {}
     target_arch = "x86"
 ))]
 pub fn bench(c: &mut Criterion) {
+    use openssl::hash::MessageDigest;
+    use verified_garbage::hashes::md5::Md5;
+
+    use crate::hash_group;
+
     hash_group(c, "md5", Md5::digest, MessageDigest::md5());
 }

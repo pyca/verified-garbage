@@ -1,12 +1,6 @@
 //! ChaCha20.
 
-use std::hint::black_box;
-
-use criterion::{BenchmarkId, Criterion, Throughput};
-use openssl::symm::{Cipher, Crypter, Mode};
-use verified_garbage::chacha20::ChaCha20;
-
-use crate::{OPENSSL, SIZES, VG};
+use criterion::Criterion;
 
 pub const USES: &[&str] = &["chacha20"];
 
@@ -25,6 +19,14 @@ pub fn bench(_: &mut Criterion) {}
     target_arch = "x86"
 ))]
 pub fn bench(c: &mut Criterion) {
+    use std::hint::black_box;
+
+    use criterion::{BenchmarkId, Throughput};
+    use openssl::symm::{Cipher, Crypter, Mode};
+    use verified_garbage::chacha20::ChaCha20;
+
+    use crate::{OPENSSL, SIZES, VG};
+
     let key = [0x42; 32];
     let nonce = [0x24; 16];
     let mut g = c.benchmark_group("chacha20");

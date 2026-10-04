@@ -1,10 +1,6 @@
 //! SHA-1.
 
 use criterion::Criterion;
-use openssl::hash::MessageDigest;
-use verified_garbage::hashes::sha1::Sha1;
-
-use crate::hash_group;
 
 pub const USES: &[&str] = &["sha1"];
 
@@ -23,5 +19,10 @@ pub fn bench(_: &mut Criterion) {}
     target_arch = "x86"
 ))]
 pub fn bench(c: &mut Criterion) {
+    use openssl::hash::MessageDigest;
+    use verified_garbage::hashes::sha1::Sha1;
+
+    use crate::hash_group;
+
     hash_group(c, "sha1", Sha1::digest, MessageDigest::sha1());
 }

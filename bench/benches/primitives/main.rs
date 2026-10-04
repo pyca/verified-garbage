@@ -9,6 +9,13 @@
 //! runs them (and does nothing on architectures the algorithm doesn't
 //! support yet), so that adding one adds a file.
 
+// No benchmark runs on PPC64LE until an algorithm's PR widens its gate, so
+// the helpers they share are unused there until then.
+#![cfg_attr(
+    all(target_arch = "powerpc64", target_endian = "little"),
+    allow(dead_code)
+)]
+
 use std::hint::black_box;
 
 use criterion::{BenchmarkId, Criterion, Throughput, criterion_group, criterion_main};
