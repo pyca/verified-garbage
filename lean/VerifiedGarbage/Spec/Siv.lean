@@ -23,9 +23,10 @@ blocks (`ciph`): `encryptWith`, `decryptWith`. `encrypt` and `decrypt` are
 SIV with a key. S2V is computed in steps (`s2vStart`, `s2vStep`, which
 absorbs one component of associated data, and `s2vFinish`, which absorbs
 the last component and returns `V`), and so is the whole AEAD
-(`sealWith`, `openWith` from the S2V state of the associated data): the
-contracts of the functions implemented in assembly, in
-`Spec/Siv/Contract.lean`, are these steps.
+(`sealWith`, `openWith` from the S2V state of the associated data), which
+`encryptWith_eq` and `decryptWith_eq` compose into `encryptWith` and
+`decryptWith`, the contracts of the functions implemented in assembly, in
+`Spec/Siv/Contract.lean`.
 
 The RFC limits the vector of associated data to 126 components (§2.6, §7),
 which the caller checks.
