@@ -82,20 +82,19 @@ def block : Prog isa :=
 /-- `op dst, src` on XMM registers. -/
 def xb (op : XBinOp) (d r : XReg) : Instr := .xop (.bin op d r)
 
-/-- `x` rotated left by `k` (`0 < k < 32`) in each doubleword, through `xmm4`. -/
+/-- `x` rotated left by `k` (`0 < k < 32`) in each doubleword, through `xmm7`. -/
 def vrot (x : XReg) (k : Nat) : List Instr :=
-  [xb .movdqa .xmm4 x, .xop (.shift .pslld x (BitVec.ofNat 8 k)),
-   .xop (.shift .psrld .xmm4 (BitVec.ofNat 8 (32 - k))), xb .por x .xmm4]
+  [xb .movdqa .xmm7 x, .xop (.shift .pslld x (BitVec.ofNat 8 k)),
+   .xop (.shift .psrld .xmm7 (BitVec.ofNat 8 (32 - k))), xb .por x .xmm7]
 
-/-- The quarter round (RFC 8439 §2.1) on each doubleword of `xmm0, xmm1,
-xmm2, xmm3`, with `xmm4` as scratch (for the four-block code of `vg_chacha20_xor`): a rotation by 16 swaps the words of
-each doubleword (`pshuflw`, `pshufhw`), the others are two shifts and an
-`or`. -/
-def vqr : List Instr :=
-  [xb .paddd .xmm0 .xmm1, xb .pxor .xmm3 .xmm0, .xop (.pshuflw .xmm3 .xmm3 0xb1),
-   .xop (.pshufhw .xmm3 .xmm3 0xb1),
-   xb .paddd .xmm2 .xmm3, xb .pxor .xmm1 .xmm2] ++ vrot .xmm1 12 ++
-  [xb .paddd .xmm0 .xmm1, xb .pxor .xmm3 .xmm0] ++ vrot .xmm3 8 ++
-  [xb .paddd .xmm2 .xmm3, xb .pxor .xmm1 .xmm2] ++ vrot .xmm1 7
+/-- The quarter round (RFC 8439 §2.1) on each doubleword of `a, b, c, d`,
+with `xmm7` as scratch (for the four-block code of `vg_chacha20_xor`): a
+rotation by 16 swaps the words of each doubleword (`pshuflw`, `pshufhw`), the
+others are two shifts and an `or`. -/
+def vqr (a b c d : XReg) : List Instr :=
+  [xb .paddd a b, xb .pxor d a, .xop (.pshuflw d d 0xb1), .xop (.pshufhw d d 0xb1),
+   xb .paddd c d, xb .pxor b c] ++ vrot b 12 ++
+  [xb .paddd a b, xb .pxor d a] ++ vrot d 8 ++
+  [xb .paddd c d, xb .pxor b c] ++ vrot b 7
 
 end VG.Impl.ChaCha20.X86

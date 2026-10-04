@@ -7,7 +7,7 @@ import VerifiedGarbage.Impl.ChaCha20.X86
 /-!
 # ChaCha20 on x86 (32-bit): the quarter round on XMM registers
 
-`vqr` computes the quarter round on each doubleword of `xmm0, …, xmm3`.
+`vqr a b c d` computes the quarter round on each doubleword of `a, b, c, d`.
 -/
 
 namespace VG.Proof.ChaCha20.X86
@@ -34,41 +34,40 @@ theorem pslld_7 (x : BitVec 128) {i : Nat} (hi : i < 4) :
 theorem psrld_25 (x : BitVec 128) {i : Nat} (hi : i < 4) :
     dword (XShiftOp.eval .psrld x (BitVec.ofNat 8 25)) i = dword x i >>> 25 := dword_psrld x _ (by decide) hi
 
-theorem vqr_eq : vqr =
-    [xb .paddd .xmm0 .xmm1, xb .pxor .xmm3 .xmm0, .xop (.pshuflw .xmm3 .xmm3 0xb1),
-     .xop (.pshufhw .xmm3 .xmm3 0xb1), xb .paddd .xmm2 .xmm3, xb .pxor .xmm1 .xmm2,
-     xb .movdqa .xmm4 .xmm1, .xop (.shift .pslld .xmm1 (BitVec.ofNat 8 12)),
-     .xop (.shift .psrld .xmm4 (BitVec.ofNat 8 20)), xb .por .xmm1 .xmm4,
-     xb .paddd .xmm0 .xmm1, xb .pxor .xmm3 .xmm0,
-     xb .movdqa .xmm4 .xmm3, .xop (.shift .pslld .xmm3 (BitVec.ofNat 8 8)),
-     .xop (.shift .psrld .xmm4 (BitVec.ofNat 8 24)), xb .por .xmm3 .xmm4,
-     xb .paddd .xmm2 .xmm3, xb .pxor .xmm1 .xmm2,
-     xb .movdqa .xmm4 .xmm1, .xop (.shift .pslld .xmm1 (BitVec.ofNat 8 7)),
-     .xop (.shift .psrld .xmm4 (BitVec.ofNat 8 25)), xb .por .xmm1 .xmm4] := rfl
-
 /-- Doubleword `l` of register `r`. -/
 abbrev dw (s : State) (r : XReg) (l : Nat) : Word := dword (s.xmm r) l
 
-theorem vqr_ok (s : State) :
-    WP isa (.block vqr) s fun s' =>
+/-- `vqr a b c d` computes the quarter round on each doubleword of `a, b, c,
+d` (four distinct registers other than `xmm7`), writing only them and `xmm7`. -/
+theorem vqr_ok {a b c d : XReg} (hab : a ≠ b) (hac : a ≠ c) (had : a ≠ d) (hbc : b ≠ c)
+    (hbd : b ≠ d) (hcd : c ≠ d) (ha : a ≠ .xmm7) (hb : b ≠ .xmm7) (hc : c ≠ .xmm7)
+    (hd : d ≠ .xmm7) (s : State) :
+    WP isa (.block (vqr a b c d)) s fun s' =>
       (∀ l, l < 4 →
-        dw s' .xmm0 l = (quarterRound (dw s .xmm0 l) (dw s .xmm1 l) (dw s .xmm2 l) (dw s .xmm3 l)).1 ∧
-        dw s' .xmm1 l = (quarterRound (dw s .xmm0 l) (dw s .xmm1 l) (dw s .xmm2 l) (dw s .xmm3 l)).2.1 ∧
-        dw s' .xmm2 l = (quarterRound (dw s .xmm0 l) (dw s .xmm1 l) (dw s .xmm2 l) (dw s .xmm3 l)).2.2.1 ∧
-        dw s' .xmm3 l = (quarterRound (dw s .xmm0 l) (dw s .xmm1 l) (dw s .xmm2 l) (dw s .xmm3 l)).2.2.2) ∧
-      (∀ r, r ≠ .xmm0 → r ≠ .xmm1 → r ≠ .xmm2 → r ≠ .xmm3 → r ≠ .xmm4 → s'.xmm r = s.xmm r) ∧
+        dw s' a l = (quarterRound (dw s a l) (dw s b l) (dw s c l) (dw s d l)).1 ∧
+        dw s' b l = (quarterRound (dw s a l) (dw s b l) (dw s c l) (dw s d l)).2.1 ∧
+        dw s' c l = (quarterRound (dw s a l) (dw s b l) (dw s c l) (dw s d l)).2.2.1 ∧
+        dw s' d l = (quarterRound (dw s a l) (dw s b l) (dw s c l) (dw s d l)).2.2.2) ∧
+      (∀ r, r ≠ a → r ≠ b → r ≠ c → r ≠ d → r ≠ .xmm7 → s'.xmm r = s.xmm r) ∧
       s'.gpr = s.gpr ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
-  rw [vqr_eq]
   apply WP.of_runBlock
-  simp only [xb, runBlock_cons, runStep_some, runBlock_nil, exec, XOp.exec,
-    RegUpd.gpr_setXmm, RegUpd.mem_setXmm, RegUpd.rd_setXmm, RegUpd.wr_setXmm,
-    Option.some.injEq, exists_eq_left']
+  simp only [vqr, vrot, xb, List.cons_append, List.nil_append, runBlock_cons, runStep_some,
+    runBlock_nil, exec, XOp.exec, RegUpd.gpr_setXmm, RegUpd.mem_setXmm, RegUpd.rd_setXmm,
+    RegUpd.wr_setXmm, Option.some.injEq, exists_eq_left']
   refine ⟨fun l hl => ?_, fun r h0 h1 h2 h3 h4 => ?_, trivial, trivial, trivial, trivial⟩
-  · simp only [dw, RegUpd.xmm_setXmm_self, RegUpd.xmm_setXmm_of_ne, reduceCtorEq, not_false_eq_true,
+  · simp only [dw, RegUpd.xmm_setXmm_self, RegUpd.xmm_setXmm_of_ne _ _ hab, RegUpd.xmm_setXmm_of_ne _ _ hac,
+      RegUpd.xmm_setXmm_of_ne _ _ had, RegUpd.xmm_setXmm_of_ne _ _ hbc, RegUpd.xmm_setXmm_of_ne _ _ hbd,
+      RegUpd.xmm_setXmm_of_ne _ _ hcd, RegUpd.xmm_setXmm_of_ne _ _ hab.symm,
+      RegUpd.xmm_setXmm_of_ne _ _ hac.symm, RegUpd.xmm_setXmm_of_ne _ _ had.symm,
+      RegUpd.xmm_setXmm_of_ne _ _ hbc.symm, RegUpd.xmm_setXmm_of_ne _ _ hbd.symm,
+      RegUpd.xmm_setXmm_of_ne _ _ hcd.symm, RegUpd.xmm_setXmm_of_ne _ _ ha, RegUpd.xmm_setXmm_of_ne _ _ hb,
+      RegUpd.xmm_setXmm_of_ne _ _ hc, RegUpd.xmm_setXmm_of_ne _ _ hd, RegUpd.xmm_setXmm_of_ne _ _ ha.symm,
+      RegUpd.xmm_setXmm_of_ne _ _ hb.symm, RegUpd.xmm_setXmm_of_ne _ _ hc.symm, RegUpd.xmm_setXmm_of_ne _ _ hd.symm,
       eval_movdqa]
     simp only [dword_paddd _ _ hl, dword_pxor, dword_por, dword_rot16 _ hl, pslld_12 _ hl,
       psrld_20 _ hl, pslld_8 _ hl, psrld_24 _ hl, pslld_7 _ hl, psrld_25 _ hl, rot12, rot8, rot7,
       quarterRound, and_self]
-  · simp only [RegUpd.xmm_setXmm_of_ne, h0, h1, h2, h3, h4, not_false_eq_true]
+  · simp only [RegUpd.xmm_setXmm_of_ne _ _ h0, RegUpd.xmm_setXmm_of_ne _ _ h1, RegUpd.xmm_setXmm_of_ne _ _ h2,
+      RegUpd.xmm_setXmm_of_ne _ _ h3, RegUpd.xmm_setXmm_of_ne _ _ h4]
 
 end VG.Proof.ChaCha20.X86
