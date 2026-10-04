@@ -15,15 +15,16 @@ pub(crate) const VG_AES_SIV_INIT_AESNI_FEATURES: crate::cpu::Features = crate::c
 ///
 /// * `key` must be valid for reads of `key_len` bytes.
 /// * `ctx` must be valid for reads and writes of 512 bytes.
-/// * `scratch` must be valid for reads and writes of 2560 bytes.
 /// * `key_len` must be 32, 48 or 64.
-/// * The contents of `scratch` on return are unspecified.
-/// * `ctx` and `scratch` must not overlap each other or `key` (distinct Rust objects never do).
-/// * None of `key`, `ctx` and `scratch` may overlap the return address on the stack or the 16 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `ctx` must not overlap `key` (distinct Rust objects never do).
+/// * Neither `key` nor `ctx` may overlap the return address on the stack or the 2584 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` and `ssse3` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_siv_init_aesni(key: *const u8, key_len: usize, ctx: *mut [u64; 64], scratch: *mut [u64; 320]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_siv_init_aesni(key: *const u8, key_len: usize, ctx: *mut [u64; 64]) {
     core::arch::naked_asm!(
+        "lea rsp, [rsp-2568]",
+        "mov rcx, rsp",
+        "add rcx, 8",
         "mov QWORD PTR [rcx+160], rbx",
         "mov QWORD PTR [rcx+168], rbp",
         "mov QWORD PTR [rcx+176], r12",
@@ -60,6 +61,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_siv_init_aesni(key: *const u8, key_l
         "mov r12, QWORD PTR [r13+176]",
         "mov r14, QWORD PTR [r13+192]",
         "mov r13, QWORD PTR [r13+184]",
+        "lea rsp, [rsp+2568]",
         "ret",
         ".p2align 6",
         vg_aes_expand_key_aesni = sym super::aes::vg_aes_expand_key_aesni,
@@ -854,14 +856,15 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_siv_decrypt_aesni(ctx: *const [u64; 
 ///
 /// * `key` must be valid for reads of `key_len` bytes.
 /// * `ctx` must be valid for reads and writes of 512 bytes.
-/// * `scratch` must be valid for reads and writes of 2560 bytes.
 /// * `key_len` must be 32, 48 or 64.
-/// * The contents of `scratch` on return are unspecified.
-/// * `ctx` and `scratch` must not overlap each other or `key` (distinct Rust objects never do).
-/// * None of `key`, `ctx` and `scratch` may overlap the return address on the stack or the 16 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `ctx` must not overlap `key` (distinct Rust objects never do).
+/// * Neither `key` nor `ctx` may overlap the return address on the stack or the 2584 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_siv_init(key: *const u8, key_len: usize, ctx: *mut [u64; 64], scratch: *mut [u64; 320]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_siv_init(key: *const u8, key_len: usize, ctx: *mut [u64; 64]) {
     core::arch::naked_asm!(
+        "lea rsp, [rsp-2568]",
+        "mov rcx, rsp",
+        "add rcx, 8",
         "mov QWORD PTR [rcx+160], rbx",
         "mov QWORD PTR [rcx+168], rbp",
         "mov QWORD PTR [rcx+176], r12",
@@ -898,6 +901,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_siv_init(key: *const u8, key_len: us
         "mov r12, QWORD PTR [r13+176]",
         "mov r14, QWORD PTR [r13+192]",
         "mov r13, QWORD PTR [r13+184]",
+        "lea rsp, [rsp+2568]",
         "ret",
         ".p2align 6",
         vg_aes_expand_key = sym super::aes::vg_aes_expand_key,
@@ -1687,15 +1691,16 @@ pub(crate) const VG_AES_SIV_INIT_VAES_FEATURES: crate::cpu::Features = crate::cp
 ///
 /// * `key` must be valid for reads of `key_len` bytes.
 /// * `ctx` must be valid for reads and writes of 512 bytes.
-/// * `scratch` must be valid for reads and writes of 2560 bytes.
 /// * `key_len` must be 32, 48 or 64.
-/// * The contents of `scratch` on return are unspecified.
-/// * `ctx` and `scratch` must not overlap each other or `key` (distinct Rust objects never do).
-/// * None of `key`, `ctx` and `scratch` may overlap the return address on the stack or the 16 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `ctx` must not overlap `key` (distinct Rust objects never do).
+/// * Neither `key` nor `ctx` may overlap the return address on the stack or the 2584 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `avx`, `avx2`, `ssse3` and `vaes` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_siv_init_vaes(key: *const u8, key_len: usize, ctx: *mut [u64; 64], scratch: *mut [u64; 320]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_siv_init_vaes(key: *const u8, key_len: usize, ctx: *mut [u64; 64]) {
     core::arch::naked_asm!(
+        "lea rsp, [rsp-2568]",
+        "mov rcx, rsp",
+        "add rcx, 8",
         "mov QWORD PTR [rcx+160], rbx",
         "mov QWORD PTR [rcx+168], rbp",
         "mov QWORD PTR [rcx+176], r12",
@@ -1732,6 +1737,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_siv_init_vaes(key: *const u8, key_le
         "mov r12, QWORD PTR [r13+176]",
         "mov r14, QWORD PTR [r13+192]",
         "mov r13, QWORD PTR [r13+184]",
+        "lea rsp, [rsp+2568]",
         "ret",
         ".p2align 6",
         vg_aes_expand_key_aesni = sym super::aes::vg_aes_expand_key_aesni,

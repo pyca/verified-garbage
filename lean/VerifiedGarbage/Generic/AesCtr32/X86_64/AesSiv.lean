@@ -1,5 +1,5 @@
 import VerifiedGarbage.TCB.X86_64.Target
-import VerifiedGarbage.Proof.AesSiv.X86_64.Verified
+import VerifiedGarbage.Proof.AesSiv.X86_64.Frame
 
 /-!
 # AES-SIV (RFC 5297) on x86-64
@@ -13,7 +13,9 @@ it, and directly for CTR), are emitted once for each implementation
 The stack is 16 bytes for each: the return addresses of the call of a CMAC
 function (or of `vg_aes_ctr32`) and of its call of `vg_aes_ctr32`; `encrypt`
 and `decrypt` also read their seventh argument, the working space's address,
-from the stack above their return address.
+from the stack above their return address. `init` keeps its working space
+in a frame of its own (`Proof/AesSiv/X86_64/Frame.lean`), below which its
+calls use those 16 bytes.
 -/
 
 namespace VG.Generic.AesCtr32.X86_64.AesSiv
@@ -32,11 +34,12 @@ def artifacts (v : Proof.Aes.X86_64.Ctr32Impl) : List Artifact := [
     doc := Spec.Siv.initApi.doc (notes := [
       "This implementation expands the keys with `" ++ v.expand.name ++ "` and computes the CMAC subkeys \
       with `" ++ Spec.Cmac.aesSubkeysApi.name ++ v.suffix ++ "`."])
-    code := Impl.AesSiv.X86_64.init v.expand v.callee v.suffix
-    contract := Spec.Siv.initContract X86_64.abi 16
-    stack := 16
-    verified := init_verified v
-    spSafe := init_spSafe v
+    code := Impl.StackScratch.X86_64.withStackScratch 2568 .rcx
+      (Impl.AesSiv.X86_64.init v.expand v.callee v.suffix)
+    contract := Spec.Siv.initContract X86_64.abi 2584
+    stack := 2584
+    verified := init_framed v
+    spSafe := X86_64.withStackScratch_spSafe (by decide) (init_spSafe v)
     features := v.features },
   { Spec.Siv.encryptApi with
     name := Spec.Siv.encryptApi.name ++ v.suffix

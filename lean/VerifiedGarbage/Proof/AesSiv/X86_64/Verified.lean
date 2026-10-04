@@ -3,6 +3,7 @@ import VerifiedGarbage.Proof.AesSiv.X86_64.EncCT
 import VerifiedGarbage.Proof.CmacAes.X86_64.Verified
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Spec.Siv.Contract
+import VerifiedGarbage.Proof.AesSiv.Scratch
 
 /-!
 # AES-SIV on x86-64: `Verified`
@@ -69,9 +70,10 @@ def initSat : State where
   wr := [⟨0x2000, 512⟩, ⟨0x4000, 2560⟩]
 
 theorem init_verified (v : Ctr32Impl) :
-    Verified X86_64.target (init v.expand v.callee v.suffix) (Spec.Siv.initContract X86_64.abi 16) :=
+    Verified X86_64.target (init v.expand v.callee v.suffix) (Proof.AesSiv.initScratchContract X86_64.abi 16) :=
   Verified.of_correct (init_correct v) (init_ct v) (by
-    sig_implies [Spec.Siv.initContract, Spec.Siv.initSig, initX86_64, X86_64.abi, X86_64.argRegs] [initSat]
+    sig_implies [Proof.AesSiv.initScratchContract, Proof.AesSiv.initScratchSig, Spec.Siv.initPre,
+      Spec.Siv.initPost, initX86_64, X86_64.abi, X86_64.argRegs] [initSat]
       using initSat)
 
 /-! ## `vg_aes_siv_encrypt` and `vg_aes_siv_decrypt`
