@@ -17,7 +17,7 @@ number of bytes of stack below the stack pointer that an implementation's
 calls and frames use (see `Sig.contract`), which depends on the target.
 
 `vg_scrypt` computes the whole of scrypt (`Scrypt.scrypt`): the two
-PBKDF2-HMAC-SHA-256 steps (`vg_pbkdf2_hmac_sha256`) and scryptROMix of each
+PBKDF2-HMAC-SHA-256 steps (`vg_pbkdf2_hmac_sha256_scratch`) and scryptROMix of each
 of the `p` blocks, composed from the verified functions by calls. The caller
 provides the memory, whose size depends on the parameters.
 
@@ -196,7 +196,7 @@ def scryptApi : Api where
   summary := "scrypt (RFC 7914 §6) with block size parameter `r`, cost parameter `N = vlen / r` \
     and parallelization parameter `p = blen / r`: writes the `out_len`-byte key derived from the \
     `password_len` bytes at `password` and the `salt_len` bytes at `salt` to `out`. Calls \
-    `vg_pbkdf2_hmac_sha256` for its two PBKDF2-HMAC-SHA256 steps and `vg_scrypt_romix` for each \
+    `vg_pbkdf2_hmac_sha256_scratch` for its two PBKDF2-HMAC-SHA256 steps and `vg_scrypt_romix` for each \
     of the `p` blocks.\n\n\
     Contract: `VG.Spec.Scrypt.scryptContract`. Not constant time in the indices: timing may \
     depend on the pointers, the lengths, `r`, `N`, `p` and the indices `j` of step 3 of each \

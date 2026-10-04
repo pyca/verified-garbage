@@ -1,6 +1,7 @@
 import VerifiedGarbage.TCB.X86.Target
 import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Instances
 import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Instances
+import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Frame
 
 /-!
 # PBKDF2-HMAC-MD5 (RFC 8018) on x86: the iteration and the whole derivation
@@ -13,10 +14,11 @@ values.
 
 The whole derivation, `pbkdf2`, is the one for every streaming hash function
 (`Impl/Pbkdf2/Whole/X86.lean`), calling the hash function's streaming
-functions, HMAC's `init` and `finalize` and the iteration above. `stack` is
+functions, HMAC's `init` and `finalize` and the iteration above, in a frame
+holding its working space (`Proof.Pbkdf2.Whole.X86.pbkFramed`). `stack` is
 that of the shared contracts: 48 bytes for the iteration, and 76 for
-`pbkdf2`, which pushes up to 24 bytes of arguments for the functions it
-calls, and their return address.
+`pbkdf2`'s code, which pushes up to 24 bytes of arguments for the functions
+it calls, and their return address, then its frame.
 -/
 
 namespace VG.Artifacts.Pbkdf2Md5.X86
@@ -36,11 +38,13 @@ def artifacts : List Artifact := [
   { Spec.Hmac.md5I.pbkdf2Api with
     target := X86.target
     doc := Spec.Hmac.md5I.pbkdf2Api.doc
-    code := Proof.Pbkdf2.Whole.X86.md5F.pbkdf2
-    contract := Spec.Hmac.md5I.pbkdf2Contract X86.abi 76
-    ofSig := ⟨_, _, _, by unfold Spec.Hmac.Instance.pbkdf2Contract; rfl⟩
-    stack := 76
-    verified := Proof.Pbkdf2.Whole.X86.md5
+    code := Impl.StackScratch.X86.withStackScratch (Proof.Pbkdf2.Whole.X86.pbkFrame Spec.Hmac.md5I) 7
+      Proof.Pbkdf2.Whole.X86.md5F.pbkdf2
+    contract := Spec.Hmac.md5I.pbkdf2Contract X86.abi (76 + Proof.Pbkdf2.Whole.X86.pbkFrame Spec.Hmac.md5I)
+    ofSig := ⟨_, _, _, by unfold Spec.Hmac.Instance.pbkdf2Contract Spec.Pbkdf2.pbkdf2Contract; rfl⟩
+    stack := 76 + Proof.Pbkdf2.Whole.X86.pbkFrame Spec.Hmac.md5I
+    verified := Proof.Pbkdf2.Whole.X86.pbkFramed Proof.Pbkdf2.Whole.X86.md5 (by decide) (by lit_decide)
+      (by lit_decide) Proof.Pbkdf2.Whole.X86.md5_pbkFrameSat
     spSafe := Code.all_of_allInstrs (by lit_decide) }]
 
 end VG.Artifacts.Pbkdf2Md5.X86

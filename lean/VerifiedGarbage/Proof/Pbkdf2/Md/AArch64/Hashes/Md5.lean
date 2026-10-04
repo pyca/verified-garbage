@@ -131,10 +131,16 @@ theorem satT : ∃ s, (Spec.Hmac.md5I.iterateContract AArch64.abi).pre s := by
     Spec.Pbkdf2.iterateSig, Spec.Hmac.md5S, Spec.Hmac.md5, AArch64.abi, AArch64.argRegs]
     using Pbkdf2.AArch64.iterSat 80 16 48
 
-theorem satP : ∃ s, (Spec.Hmac.md5I.pbkdf2Contract AArch64.abi 16).pre s := by
-  inst_sat [Spec.Hmac.Instance.pbkdf2Contract, Spec.Hmac.Instance.pbkdf2Scratch, Spec.Hmac.md5I,
-    Spec.Pbkdf2.pbkdf2Contract, Spec.Pbkdf2.pbkdf2Sig, Spec.Hmac.md5S, Spec.Hmac.md5, AArch64.abi,
+theorem satP : ∃ s, (Spec.Hmac.md5I.pbkdf2ScratchContract AArch64.abi 16).pre s := by
+  inst_sat [Spec.Hmac.Instance.pbkdf2ScratchContract, Spec.Hmac.Instance.pbkdf2Scratch, Spec.Hmac.md5I,
+    Spec.Pbkdf2.pbkdf2ScratchContract, Spec.Pbkdf2.pbkdf2ScratchSig, Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post, Spec.Hmac.md5S, Spec.Hmac.md5, AArch64.abi,
     AArch64.argRegs] using pbkSat 128
+
+theorem satPF :
+    ∃ s, (Spec.Hmac.md5I.pbkdf2Contract AArch64.abi (16 + pbkdf2Frame Spec.Hmac.md5I)).pre s := by
+  inst_sat [Spec.Hmac.Instance.pbkdf2Contract, pbkdf2Frame, Spec.Hmac.Instance.pbkdf2Scratch, Spec.Hmac.md5I,
+    Spec.Pbkdf2.pbkdf2Contract, Spec.Pbkdf2.pbkdf2Sig, Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post, Spec.Hmac.md5S, Spec.Hmac.md5, AArch64.abi,
+    AArch64.argRegs, pbkFrameSat, pbkSat] using pbkFrameSat
 
 /-- MD5 with its compression function. -/
 def variant : MdHash := MdHash.of ok coreOK rfl rfl satI satF satT satP (by decide)
@@ -144,6 +150,7 @@ def variant : MdHash := MdHash.of ok coreOK rfl rfl satI satF satT satP (by deci
     (by
       unfold Spec.Hmac.Instance.finalizeContract Spec.Hmac.finalizeContract
       exact AArch64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
+    (by decide) satPF
     "" []
 
 end VG.Proof.Pbkdf2.Md.AArch64.Md5
