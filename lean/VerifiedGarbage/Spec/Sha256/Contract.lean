@@ -20,9 +20,12 @@ SHA-224 and SHA-256 share `update` and `finalize`, which hold for a state
 hashed from any initial hash value; each has its own `init`.
 
 `update` and `finalize` take the number of bytes of stack below the stack pointer that
-an implementation's calls use (`stack`, see `Sig.contract`), 0 for one that
-makes no call: it depends on the target, and on which functions the
-implementation calls.
+an implementation's calls and frames use (`stack`, see `Sig.contract`), 0 for
+one that uses none: it depends on the target, and on which functions the
+implementation calls. They keep their working space there; `update_scratch`
+and `finalize_scratch` are the same functions with their working space
+passed in `scratch`, for functions that call them with theirs (HMAC's,
+PBKDF2's, ECDSA's).
 -/
 
 namespace VG.Spec.Sha256
@@ -95,22 +98,22 @@ def init224Api : Api where
     a buffered partial block (`VG.Spec.Sha256.ReprFrom`)."
   safety := []
 
-/-- `vg_sha256_update(state: *mut [u8; 96], count: u64, data: *const u8, len: usize, scratch: *mut [u64; 76])`.
-`count` is public; `scratch` is working space. -/
+/-- `vg_sha256_update(state: *mut [u8; 96], count: u64, data: *const u8, len: usize)`.
+`count` is public. -/
 def updateSig : Sig where
   params := [("state", .array true .u8 96), ("count", .int .u64 true),
-    ("data", .slice false .u8 "len"), ("scratch", .array true .u64 76)]
+    ("data", .slice false .u8 "len")]
 
 /-- If the streaming state at `state` represents a message `msg` of `count`
 bytes (modulo 2⁶⁴), hashed from any initial hash value, then afterwards it
-represents `msg` followed by the `len` bytes at `data`, from the same one.
-The state and the data are secret. -/
+represents `msg` followed by the `len` bytes at `data`, from the same one. -/
+def updatePost (pb : Nat) : updateSig.Post pb := fun state count data len m m' _ =>
+  ∀ iv msg, ReprFrom iv m state msg → count = BitVec.ofNat 64 msg.length →
+    ReprFrom iv m' state (msg ++ bytesAt m data len.toNat)
+
+/-- `updatePost`. The state and the data are secret. -/
 def updateContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  updateSig.contract A (post := fun state count data len _scratch m m' _ =>
-    ∀ iv msg, ReprFrom iv m state msg → count = BitVec.ofNat 64 msg.length →
-      ReprFrom iv m' state (msg ++ bytesAt m data len.toNat))
-    (writeArgs := true)
-    (stack := stack)
+  updateSig.contract A (post := updatePost A.ptrBits) (writeArgs := true) (stack := stack)
 
 /-- `vg_sha256_update` on every target. -/
 def updateApi : Api where
@@ -124,26 +127,51 @@ def updateApi : Api where
     by the `len` bytes at `data`.\n\n\
     Contract: `VG.Spec.Sha256.updateContract`. Constant time: only the pointers, `count` and `len` \
     may affect timing, not the state or the data."
+  safety := []
+
+/-- `vg_sha256_update_scratch(state: *mut [u8; 96], count: u64, data: *const u8, len: usize, scratch: *mut [u64; 76])`:
+`vg_sha256_update` with its working space passed in `scratch`, for functions
+that call it with theirs (HMAC's, PBKDF2's, ECDSA's). -/
+def updateScratchSig : Sig where
+  params := [("state", .array true .u8 96), ("count", .int .u64 true),
+    ("data", .slice false .u8 "len"), ("scratch", .array true .u64 76)]
+
+/-- `updatePost`, whatever `scratch` is. The state and the data are secret. -/
+def updateScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
+  updateScratchSig.contract A (post := fun state count data len _scratch => updatePost A.ptrBits state count data len)
+    (writeArgs := true)
+    (stack := stack)
+
+/-- `vg_sha256_update_scratch` on every target. -/
+def updateScratchApi : Api where
+  module := "sha256"
+  name := "vg_sha256_update_scratch"
+  sig := updateScratchSig
+  writeArgs := true
+  contracts := some fun A stack => updateScratchContract A stack
+  summary := "`vg_sha256_update`, with its working space in `*scratch`.\n\n\
+    Contract: `VG.Spec.Sha256.updateScratchContract`. Constant time: only the pointers, `count` \
+    and `len` may affect timing, not the state or the data."
   safety := ["The contents of `scratch` on return are unspecified."]
 
-/-- `vg_sha256_finalize(state: *mut [u8; 96], count: u64, out: *mut [u8; 32], scratch: *mut [u64; 76])`.
-`count` is public; `state` is left unspecified, and `scratch` is working
-space. -/
+/-- `vg_sha256_finalize(state: *mut [u8; 96], count: u64, out: *mut [u8; 32])`.
+`count` is public; `state` is left unspecified. -/
 def finalizeSig : Sig where
   params := [("state", .array true .u8 96), ("count", .int .u64 true),
-    ("out", .array true .u8 32), ("scratch", .array true .u64 76)]
+    ("out", .array true .u8 32)]
 
 /-- If the streaming state at `state` represents a message `msg` of `count`
 bytes (modulo 2⁶⁴), hashed from the initial hash value `iv`, writes the final
 hash value `H⁽ᴺ⁾` of `msg` from `iv` (32 bytes; `finalHash iv msg`) to `out`:
 the SHA-256 digest of `msg` if `iv` is `H0`, and the SHA-224 digest followed
-by four more bytes if `iv` is `H0_224`. The state is secret. -/
+by four more bytes if `iv` is `H0_224`. -/
+def finalizePost (pb : Nat) : finalizeSig.Post pb := fun state count out m m' _ =>
+  ∀ iv msg, ReprFrom iv m state msg → count = BitVec.ofNat 64 msg.length →
+    bytesAt m' out 32 = finalHash iv msg
+
+/-- `finalizePost`. The state is secret. -/
 def finalizeContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  finalizeSig.contract A (post := fun state count out _scratch m m' _ =>
-    ∀ iv msg, ReprFrom iv m state msg → count = BitVec.ofNat 64 msg.length →
-      bytesAt m' out 32 = finalHash iv msg)
-    (writeArgs := true)
-    (stack := stack)
+  finalizeSig.contract A (post := finalizePost A.ptrBits) (writeArgs := true) (stack := stack)
 
 /-- `vg_sha256_finalize` on every target. -/
 def finalizeApi : Api where
@@ -158,6 +186,31 @@ def finalizeApi : Api where
     it; the SHA-224 digest is its first 28 bytes.\n\n\
     Contract: `VG.Spec.Sha256.finalizeContract`. Constant time: only the pointers and `count` may \
     affect timing, not the state."
+  safety := ["The contents of `state` on return are unspecified."]
+
+/-- `vg_sha256_finalize_scratch(state: *mut [u8; 96], count: u64, out: *mut [u8; 32], scratch: *mut [u64; 76])`:
+`vg_sha256_finalize` with its working space passed in `scratch`, for
+functions that call it with theirs (HMAC's, PBKDF2's, ECDSA's). -/
+def finalizeScratchSig : Sig where
+  params := [("state", .array true .u8 96), ("count", .int .u64 true),
+    ("out", .array true .u8 32), ("scratch", .array true .u64 76)]
+
+/-- `finalizePost`, whatever `scratch` is. The state is secret. -/
+def finalizeScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
+  finalizeScratchSig.contract A (post := fun state count out _scratch => finalizePost A.ptrBits state count out)
+    (writeArgs := true)
+    (stack := stack)
+
+/-- `vg_sha256_finalize_scratch` on every target. -/
+def finalizeScratchApi : Api where
+  module := "sha256"
+  name := "vg_sha256_finalize_scratch"
+  sig := finalizeScratchSig
+  writeArgs := true
+  contracts := some fun A stack => finalizeScratchContract A stack
+  summary := "`vg_sha256_finalize`, with its working space in `*scratch`.\n\n\
+    Contract: `VG.Spec.Sha256.finalizeScratchContract`. Constant time: only the pointers and \
+    `count` may affect timing, not the state."
   safety := [
     "The contents of `state` on return are unspecified.",
     "The contents of `scratch` on return are unspecified."]

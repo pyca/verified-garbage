@@ -173,7 +173,7 @@ pub(crate) unsafe extern "C" fn vg_hmac_sha224_finalize(inner: *mut [u8; 96], ou
         "add x1, x2, #0",
         "add x2, x23, #216",
         "add x3, x23, #0",
-        "bl {vg_sha256_finalize}",
+        "bl {vg_sha256_finalize_scratch}",
         "ldr w9, [x20, #0]",
         "str w9, [x19, #0]",
         "ldr w9, [x20, #4]",
@@ -273,7 +273,7 @@ pub(crate) unsafe extern "C" fn vg_hmac_sha224_finalize(inner: *mut [u8; 96], ou
         "ldr x30, [x23, #200]",
         "ldr x23, [x23, #208]",
         "ret",
-        vg_sha256_finalize = sym super::sha256::vg_sha256_finalize,
+        vg_sha256_finalize_scratch = sym super::sha256::vg_sha256_finalize_scratch,
         vg_sha256_compress = sym super::sha256::vg_sha256_compress,
     )
 }
@@ -460,7 +460,7 @@ pub(crate) unsafe extern "C" fn vg_hmac_sha224_finalize_sha2(inner: *mut [u8; 96
         "add x1, x2, #0",
         "add x2, x23, #216",
         "add x3, x23, #0",
-        "bl {vg_sha256_finalize_sha2}",
+        "bl {vg_sha256_finalize_scratch_sha2}",
         "ldr w9, [x20, #0]",
         "str w9, [x19, #0]",
         "ldr w9, [x20, #4]",
@@ -561,7 +561,7 @@ pub(crate) unsafe extern "C" fn vg_hmac_sha224_finalize_sha2(inner: *mut [u8; 96
         "ldr x23, [x23, #208]",
         "ret",
         ".arch_extension nosha2",
-        vg_sha256_finalize_sha2 = sym super::sha256::vg_sha256_finalize_sha2,
+        vg_sha256_finalize_scratch_sha2 = sym super::sha256::vg_sha256_finalize_scratch_sha2,
         vg_sha256_compress_sha2 = sym super::sha256::vg_sha256_compress_sha2,
     )
 }

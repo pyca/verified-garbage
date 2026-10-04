@@ -208,12 +208,15 @@ example : Spec.Pbkdf2.pbkdf2Hmac Spec.Hmac.sha256S = Spec.Pbkdf2.pbkdf2HmacSha25
 open Spec.Hmac in
 /-- Each instance, with its Lean name and the `Api` of the `update` its code
 calls: the hash's `update`, or, for a hash whose `update` keeps its working
-space in a frame of its own (MD5's, SHA-512's), the same function with its working space
-as an argument (`_scratch`), which HMAC's code passes its own. -/
+space in a frame of its own (MD5's, SHA-256's, SHA-512's), the same function
+with its working space as an argument (`_scratch`), which HMAC's code passes
+its own. -/
 def instances : List (Spec.Hmac.Instance × String × Api) :=
-  [(sha256I, "sha256I", Spec.Sha256.updateApi), (sha224I, "sha224I", Spec.Sha256.updateApi),
+  [(sha256I, "sha256I", Spec.Sha256.updateScratchApi),
+    (sha224I, "sha224I", Spec.Sha256.updateScratchApi),
     (sha1I, "sha1I", Spec.Sha1.updateApi), (md5I, "md5I", Spec.Md5.updateScratchApi),
-    (sha384I, "sha384I", Spec.Sha512.updateScratchApi), (sha512I, "sha512I", Spec.Sha512.updateScratchApi),
+    (sha384I, "sha384I", Spec.Sha512.updateScratchApi),
+    (sha512I, "sha512I", Spec.Sha512.updateScratchApi),
     (sha512_224I, "sha512_224I", Spec.Sha512.updateScratchApi),
     (sha512_256I, "sha512_256I", Spec.Sha512.updateScratchApi)]
 
@@ -241,7 +244,7 @@ open Spec.Hmac in
 /-- Each instance, with the `Api` of the `finalize` its code calls (as for
 `instances`). -/
 def finalizes : List (Spec.Hmac.Instance × Api) :=
-  [(sha256I, Spec.Sha256.finalizeApi), (sha224I, Spec.Sha256.finalizeApi),
+  [(sha256I, Spec.Sha256.finalizeScratchApi), (sha224I, Spec.Sha256.finalizeScratchApi),
     (sha1I, Spec.Sha1.finalizeApi),
     (md5I, Spec.Md5.finalizeScratchApi), (sha384I, Spec.Sha512.finalizeScratchApi),
     (sha512I, Spec.Sha512.finalizeScratchApi), (sha512_224I, Spec.Sha512.finalizeScratchApi),

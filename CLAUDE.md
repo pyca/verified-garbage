@@ -414,8 +414,12 @@ chooses differently on a CPU that has those features: the runner's, or one
 Intel SDE presents (`rust-cpu-features` in `ci.yml`; SDE runs the SHA
 extensions' code very slowly, so the chips that have them run only the
 tests that need them); and benchmarks each with
-`VG_CPU_FEATURES` (`CPU_FEATURES` in `ci/bench_arches.py`). To test the
-baseline ISA's implementations:
+`VG_CPU_FEATURES` (`CPU_FEATURES` in `ci/bench_arches.py`). A configuration
+to test is a line of a CPU's `runs` in `rust-cpu-features`
+(`<VG_CPU_FEATURES> | <tests>`), never a step or job of its own, and
+each CPU has one line per value of `VG_CPU_FEATURES` (CI checks both), so
+a run never repeats another: add tests to a CPU's line for those features.
+To test the baseline ISA's implementations:
 
 ```sh
 VG_CPU_FEATURES=none WYCHEPROOF_ROOT=/path/to/wycheproof cargo test --features cpu-features-env
