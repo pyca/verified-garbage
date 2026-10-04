@@ -24,7 +24,7 @@ namespace VG.Proof.X448.Edwards
 open VG.Spec.X448
 open VG.Proof.Ed448 (toZ_add toZ_sub toZ_mul toZ_one toZ_zero toZ_inj toZ_ne_zero toZ_pow toZ_neg
   dZ baseAff PZ PZ_eq pow_P_sub_one two_ne_zero')
-open VG.Proof.Ed448.Edwards
+open VG.Proof.EdwardsLaw
 open VG.Proof.X448 (ladderAfter ladderAfter_step ladderAfter_448 ladderAfter_swap_le ladderStep_eq bit
   bit_le x448_eq toFe)
 

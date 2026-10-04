@@ -12,7 +12,7 @@ namespace VG.Proof.Ed448
 
 open Spec.X448 (Fe P)
 open Spec.Ed448 (Point)
-open Edwards
+open EdwardsLaw
 
 /-- `(d y² - 1) x² = y² - 1` is the curve's equation. -/
 theorem onCurve_of_root {x y : Fe}

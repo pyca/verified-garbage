@@ -1,4 +1,4 @@
-import VerifiedGarbage.Proof.Ed448.Group.Edwards
+import VerifiedGarbage.Proof.Edwards.Group
 import VerifiedGarbage.Proof.Ed448.Group.Prime
 import VerifiedGarbage.Spec.Ed448
 import Mathlib.FieldTheory.Finite.Basic
@@ -29,7 +29,7 @@ namespace VG.Proof.Ed448
 
 open Spec.X448 (Fe P)
 open Spec.Ed448 (Point)
-open Edwards
+open EdwardsLaw
 
 /-! ## The field -/
 
