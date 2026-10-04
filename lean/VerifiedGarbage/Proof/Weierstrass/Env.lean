@@ -336,7 +336,7 @@ temporaries, `6 … 8` the result, `9`, `10` the constants, `11 … 13` and
 `14 … 16` the points), renamed to the slots of a sum (`ofN`): what `rcb`'s
 lemmas show, for any such formula that writes only the first nine and reads
 the others or what it wrote (`NumOk`). The formulas for `a = -3` are such
-(`rcb3N`, `dbl3N`). -/
+(`rcb3N`, and Jacobian doubling's `dblJN`). -/
 
 /-- A formula on numbered slots, on the slots of `p`, `q` and `o`. -/
 def ofN (N : List FOp) (S : RcbSlots) (p q o : Pt) : List FOp := N.map (FOp.rename (rcbσ S p q o))
@@ -391,22 +391,13 @@ theorem ofN_run {F : Type _} [Lean.Grind.CommRing F] {N : List FOp} (hN : NumOk 
 /-- Algorithm 4 on numbered slots. -/
 def rcb3N : List FOp := rcb3 ⟨9, 10, 0, 1, 2, 3, 4, 5⟩ ⟨11, 12, 13⟩ ⟨14, 15, 16⟩ ⟨6, 7, 8⟩
 
-/-- Algorithm 6 on numbered slots. -/
-def dbl3N : List FOp := dbl3 ⟨9, 10, 0, 1, 2, 3, 4, 5⟩ ⟨11, 12, 13⟩ ⟨6, 7, 8⟩
-
 theorem rcb3N_ok : NumOk rcb3N := ⟨by decide, by decide, by decide⟩
-theorem dbl3N_ok : NumOk dbl3N := ⟨by decide, by decide, by decide⟩
 
 theorem rcb3_eq (S : RcbSlots) (p q o : Pt) : rcb3 S p q o = ofN rcb3N S p q o := rfl
-theorem dbl3_eq (S : RcbSlots) (p o : Pt) : dbl3 S p o = ofN dbl3N S p p o := rfl
 
 theorem rcb3N_run {F : Type _} [Lean.Grind.CommRing F] (e : Nat → F) :
     (runOps rcb3N e 6, runOps rcb3N e 7, runOps rcb3N e 8) =
       VG.Proof.Weierstrass.rcbAdd3 (e 10) (e 11) (e 12) (e 13) (e 14) (e 15) (e 16) := rfl
-
-theorem dbl3N_run {F : Type _} [Lean.Grind.CommRing F] (e : Nat → F) :
-    (runOps dbl3N e 6, runOps dbl3N e 7, runOps dbl3N e 8) =
-      VG.Proof.Weierstrass.rcbDbl3 (e 10) (e 11) (e 12) (e 13) := rfl
 
 /-- A multiplication by `1` leaves Montgomery's form. -/
 theorem toM_one_mul {m R r A : Nat} [NeZero m] (hR : UnitMod m R) (h : r * R % m = A * 1 % m) :

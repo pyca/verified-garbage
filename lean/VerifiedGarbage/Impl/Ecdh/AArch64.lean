@@ -90,13 +90,11 @@ def checkLtP (a : Nat) : List Instr := ltP c a ++ c.andFlag
 
 /-- The mask `x2` of `x1 = 0` (all ones if it is), with `x7 = 0`, through
 `x5` and `x16`. -/
-def isZero : List Instr := [.movz .x .x5 1 0, .subs .x .x16 .x1 .x5, .sbc .x .x2 .x7 .x7]
+def isZero : List Instr := isZeroMask
 
 /-- The mask `x2` of `[a] = 0` (all ones if it is), through `x1`, `x5`, `x7`
 and `x16`. -/
-def zero (a : Nat) : List Instr :=
-  [zero7, ld .x1 a] ++ ((List.range (c.n - 1)).flatMap fun j =>
-    [ld .x2 (a + 8 * (j + 1)), .logic .orr .x .x1 .x1 .x2]) ++ isZero
+def zero (a : Nat) : List Instr := zeroMask c.n a
 
 /-- `[a] = 0`: the flag `&=` its mask. -/
 def checkZero (a : Nat) : List Instr := zero c a ++ c.andFlag

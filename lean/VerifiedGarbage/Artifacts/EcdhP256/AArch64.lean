@@ -20,10 +20,11 @@ def artifacts : List Artifact := [
       byte, both coordinates below `p`, and the curve's equation), and the scalar multiplication \
       runs on the peer's point if it is valid, else `G`, so always on a point of the curve. `[d]P` \
       is by signed 4-bit windows: `d + 8 Σ_{j<65} 16^j` gives 65 digits in `[-8, 7]`, a table of \
-      `[1 … 8]P` is built in `scratch`, and each digit takes four doublings and the addition of its \
-      entry, every entry loaded and masked and `y` negated by a mask of the digit's sign, all by \
-      the complete formulas of Renes, Costello and Batina for `a = -3` (Algorithm 6 doubles, 4 \
-      adds); `Z⁻¹` is Fermat's, by \
+      `[1 … 8]P` is built in `scratch`, and each digit takes four doublings (in Jacobian \
+      coordinates, dbl-2001-b, with `Y = 1` where the result is the point at infinity) and the \
+      addition of its entry, every entry loaded and masked and `y` negated by a mask of the \
+      digit's sign, by the complete formula of Renes, Costello and Batina for `a = -3` \
+      (Algorithm 4); `Z⁻¹` is Fermat's, by \
       a chain of sliding 4-bit windows over `p - 2` (fixed by the code: 252 squarings and 32 \
       products by a table of odd powers). The result (or zeros) is selected by a mask of the checks, `d` \
       in `[1, n-1]` and `Z ≠ 0`, so the time depends only on the pointers."])
