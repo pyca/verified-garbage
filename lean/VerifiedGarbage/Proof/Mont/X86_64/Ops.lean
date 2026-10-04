@@ -27,8 +27,6 @@ structure OpKeep (M : Mod) (base : Addr) (o : Nat) (s s' : State) : Prop where
   mem : ∀ x, (ofs base x < o ∨ o + 8 * M.n ≤ ofs base x) →
     (ofs base x < M.tmp ∨ M.tmp + 8 * M.n ≤ ofs base x) → s'.mem x = s.mem x
 
-theorem m_pos {m B : Nat} (hB : B < m) : 0 < m := by omega
-
 theorem fresh_low (n : Nat) (hn : n < 7) :
     Fresh (win n n n :: (List.range n).map (win n n)) := by
   have h := fresh_wins hn n

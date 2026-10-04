@@ -64,11 +64,11 @@ def sqzArgs (rate outlen : Nat) : List Instr :=
 `x4` bytes, to `x25 + 840`. -/
 def spongeWith (c : Impl.Sha3.AArch64.Callee) (rate outlen : Nat) : Prog isa :=
   .seq (.block (zeroSt ++ absArgs rate))
-    (.seq (.call ("vg_keccak_absorb" ++ c.suffix) (Impl.Sha3.AArch64.Stream.absorbWith c))
+    (.seq (.call ("vg_keccak_absorb_scratch" ++ c.suffix) (Impl.Sha3.AArch64.Stream.absorbWith c))
       (.seq (.block (padArgs rate))
-        (.seq (.call ("vg_keccak_pad" ++ c.suffix) (Impl.Sha3.AArch64.Stream.padWith c))
+        (.seq (.call ("vg_keccak_pad_scratch" ++ c.suffix) (Impl.Sha3.AArch64.Stream.padWith c))
           (.seq (.block (sqzArgs rate outlen))
-            (.call ("vg_keccak_squeeze" ++ c.suffix) (Impl.Sha3.AArch64.Stream.squeezeWith c))))))
+            (.call ("vg_keccak_squeeze_scratch" ++ c.suffix) (Impl.Sha3.AArch64.Stream.squeezeWith c))))))
 
 def sponge := spongeWith .scalar
 

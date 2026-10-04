@@ -66,7 +66,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅</td>
+<td>✅ AVX-512F, AVX-512VL, AVX2</td>
 
 <td>✅</td>
 
@@ -82,7 +82,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅</td>
+<td>✅ AVX</td>
 
 <td>✅</td>
 
@@ -100,7 +100,7 @@ yours to keep:
 
 <td>✅ operations scheduled for latency</td>
 
-<td>✅</td>
+<td>✅ operations scheduled for latency</td>
 
 <td>✅</td>
 
@@ -116,11 +116,11 @@ yours to keep:
 
 <td>✅ SHA extensions</td>
 
+<td>✅ SHA extensions; round constants and the state kept in registers across blocks</td>
+
+<td>✅</td>
+
 <td>✅ SHA extensions</td>
-
-<td>✅</td>
-
-<td>✅</td>
 
 </tr>
 
@@ -132,7 +132,7 @@ yours to keep:
 
 <td>✅ SHA extensions, AVX2, BMI1, BMI2</td>
 
-<td>✅ SHA extensions</td>
+<td>✅ SHA extensions; round constants built by the first block and kept in registers</td>
 
 <td>✅</td>
 
@@ -148,7 +148,7 @@ yours to keep:
 
 <td>✅ SHA extensions, AVX2, BMI1, BMI2</td>
 
-<td>✅ SHA extensions</td>
+<td>✅ SHA extensions; round constants built by the first block and kept in registers</td>
 
 <td>✅</td>
 
@@ -164,7 +164,7 @@ yours to keep:
 
 <td>✅ lane complementing</td>
 
-<td>✅ SHA extensions</td>
+<td>✅ SHA extensions; rounds unrolled, round constants as immediates; whole blocks absorbed with the state in registers</td>
 
 <td>✅</td>
 
@@ -318,7 +318,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅</td>
+<td>✅ SHA extensions</td>
 
 </tr>
 
@@ -426,7 +426,7 @@ yours to keep:
 
 <td>✅ AVX-512F, AVX2</td>
 
-<td>✅</td>
+<td>✅ NEON, four blocks at a time, on Apple's cores</td>
 
 <td>✅</td>
 
@@ -484,7 +484,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅</td>
+<td>✅ SSE2, SSSE3</td>
 
 </tr>
 
@@ -548,9 +548,9 @@ yours to keep:
 
 <td>✅</td>
 
-<td>❌</td>
+<td>✅ AES-NI, VAES, AVX2</td>
 
-<td>❌</td>
+<td>✅ AES, PMULL</td>
 
 <td>❌</td>
 
@@ -564,9 +564,9 @@ yours to keep:
 
 <td>✅</td>
 
-<td>❌</td>
+<td>✅ AES-NI, VAES, PCLMULQDQ, VPCLMULQDQ, AVX2</td>
 
-<td>❌</td>
+<td>✅ AES, PMULL</td>
 
 <td>❌</td>
 
@@ -596,9 +596,9 @@ yours to keep:
 
 <td>✅</td>
 
-<td>❌</td>
+<td>✅ AES-NI</td>
 
-<td>❌</td>
+<td>✅ AES, PMULL</td>
 
 <td>❌</td>
 
@@ -614,7 +614,7 @@ yours to keep:
 
 <td>✅ AES-NI, VAES, AVX2</td>
 
-<td>❌</td>
+<td>✅ AES, PMULL</td>
 
 <td>❌</td>
 
@@ -666,7 +666,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅ AVX2</td>
+<td>✅ AVX-512F, AVX-512VL, AVX2</td>
 
 <td>✅</td>
 
@@ -682,7 +682,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅ AVX2</td>
+<td>✅ AVX-512F, AVX-512VL, AVX2</td>
 
 <td>✅</td>
 
@@ -698,7 +698,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅ AVX2</td>
+<td>✅ AVX-512F, AVX-512VL, AVX2</td>
 
 <td>✅</td>
 
@@ -736,7 +736,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅</td>
+<td>✅ SHA extensions</td>
 
 </tr>
 
@@ -936,6 +936,22 @@ yours to keep:
 
 <td>✅</td>
 
+<td>✅</td>
+
+<td>❌</td>
+
+<td>✅</td>
+
+</tr>
+
+<tr>
+
+<td>ECDH P-384</td>
+
+<td>✅</td>
+
+<td>❌</td>
+
 <td>❌</td>
 
 <td>❌</td>
@@ -952,7 +968,7 @@ yours to keep:
 
 <td>✅ AVX-512 IFMA, AVX-512VL, AVX2, BMI2, ADX</td>
 
-<td>✅</td>
+<td>✅ public keys by a fixed-base comb on edwards25519</td>
 
 <td>✅</td>
 
@@ -1022,6 +1038,22 @@ yours to keep:
 
 <td>✅ SHA extensions, SHA512, AVX2, BMI1, BMI2</td>
 
+<td>✅ SHA extensions</td>
+
+<td>❌</td>
+
+<td>✅ SHA extensions</td>
+
+</tr>
+
+<tr>
+
+<td>ECDSA P-384</td>
+
+<td>✅</td>
+
+<td>❌</td>
+
 <td>❌</td>
 
 <td>❌</td>
@@ -1054,9 +1086,9 @@ yours to keep:
 
 <td>✅</td>
 
-<td>❌</td>
+<td>✅ SHA extensions</td>
 
-<td>❌</td>
+<td>✅</td>
 
 <td>❌</td>
 

@@ -2,6 +2,7 @@ import VerifiedGarbage.Proof.Edwards.Group
 import VerifiedGarbage.Proof.Framework.Pratt
 import Mathlib.Tactic.NormNum.Prime
 import VerifiedGarbage.Spec.X448
+import VerifiedGarbage.Proof.Ed448.Ref
 import VerifiedGarbage.Spec.Ed448
 import Mathlib.FieldTheory.Finite.Basic
 
@@ -23,8 +24,8 @@ affine point `a`: `Z ≠ 0`, `X = xZ` and `Y = yZ`. Equivalently `Valid p`
 (`Z ≠ 0` and `(X/Z, Y/Z)` is on the curve) and `toAffine p = a` (`rep_iff`).
 The specification's addition, scalar multiplication, encoding and comparison
 only depend on the points represented, which is what lets an implementation
-compute other representatives of the same points. `double` is the doubling
-formula of RFC 8032 §5.2.4.
+compute other representatives of the same points. `double` (RFC 8032
+§5.2.4's doubling formulas, `Ref.lean`) doubles the point represented.
 -/
 
 /-! ## The field prime `2^448 - 2^224 - 1` is prime
@@ -480,11 +481,11 @@ noncomputable def dZ : ZMod PZ := toZ Spec.Ed448.d
 
 private theorem d_val : (Spec.Ed448.d : Fe).val = P - 39081 := by decide +kernel
 
-private theorem d_pow : Pratt.powMod PZ 449 (P - 39081) ((P - 1) / 2) = PZ - 1 := by
-  decide +kernel
+private theorem d_pow : (P - 39081) ^ ((P - 1) / 2) % PZ = PZ - 1 := by
+  rw [← Pratt.powMod_eq PZ (by decide +kernel) 449 _ _ (by decide +kernel)]; decide +kernel
 
 theorem dZ_pow : dZ ^ ((P - 1) / 2) = -1 := by
-  rw [dZ, toZ, d_val, ← Pratt.powMod_cast PZ 449 _ _ (by decide +kernel), d_pow,
+  rw [dZ, toZ, d_val, ← Nat.cast_pow, ← ZMod.natCast_mod, d_pow,
     Nat.cast_sub (by decide +kernel), ZMod.natCast_self, Nat.cast_one, zero_sub]
 
 theorem two_ne_zero' : (2 : ZMod PZ) ≠ 0 := by
@@ -590,9 +591,6 @@ theorem valid_scale {l : Fe} (h : Valid p) (hl : l ≠ 0) : Valid (scale l p) :=
 
 theorem toAffine_scale {l : Fe} (h : Valid p) (hl : l ≠ 0) : toAffine (scale l p) = toAffine p :=
   ((rep_toAffine h).scale hl).toAffine_eq
-
-/-- `⟨-X, Y, Z⟩`. -/
-def negPoint (p : Point) : Point := ⟨0 - p.X, p.Y, p.Z⟩
 
 theorem Rep.neg (h : Rep p a) : Rep (negPoint p) (-a) := by
   refine ⟨h.z, ?_, h.y⟩
@@ -725,30 +723,6 @@ theorem toAffine_pointMul (s : Nat) {p : Point} (hp : Valid p) :
   (pointMul_rep s (rep_toAffine hp)).toAffine_eq
 
 /-! ## Doubling (RFC 8032 §5.2.4) -/
-
-/-- `B = (X+Y)²`, `C = X²`, `D = Y²`, `E = C+D`, `H = Z²`, `J = E-2H`, and
-`((B-E)J, E(C-D), EJ)`. -/
-def double (p : Point) : Point :=
-  let b := (p.X + p.Y) * (p.X + p.Y)
-  let c := p.X * p.X
-  let dd := p.Y * p.Y
-  let e := c + dd
-  let h := p.Z * p.Z
-  let j := e - (h + h)
-  ⟨(b - e) * j, e * (c - dd), e * j⟩
-
-section
-variable (p : Point)
-
-theorem double_X : (double p).X = ((p.X + p.Y) * (p.X + p.Y) - (p.X * p.X + p.Y * p.Y)) *
-    (p.X * p.X + p.Y * p.Y - (p.Z * p.Z + p.Z * p.Z)) := rfl
-
-theorem double_Y : (double p).Y = (p.X * p.X + p.Y * p.Y) * (p.X * p.X - p.Y * p.Y) := rfl
-
-theorem double_Z : (double p).Z = (p.X * p.X + p.Y * p.Y) *
-    (p.X * p.X + p.Y * p.Y - (p.Z * p.Z + p.Z * p.Z)) := rfl
-
-end
 
 theorem double_rep {p : Point} {a : EPoint dZ} (h : Rep p a) : Rep (double p) (a + a) := by
   have hon : a.x ^ 2 + a.y ^ 2 = 1 + dZ * a.x ^ 2 * a.y ^ 2 := a.on

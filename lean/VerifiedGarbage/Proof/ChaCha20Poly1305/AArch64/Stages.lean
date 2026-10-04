@@ -139,7 +139,7 @@ theorem blocks_call {s : State} {P p : Addr} {n : Nat} (hx0 : s.gpr .x0 = P) (hx
       hx0, hx1, hx2, hn'] at hpost
     exact hpost key msg hr
 
-/-! ## `vg_poly1305_finalize` -/
+/-! ## `vg_poly1305_finalize_scratch` -/
 
 /-- With `count = 0`: the message is whole blocks, so nothing is buffered.
 The per-target contract does not use `scratch` (`x3`). -/
@@ -149,7 +149,7 @@ theorem finalize_call {s : State} {P O : Addr} (hx0 : s.gpr .x0 = P) (hx1 : s.gp
     {Q : State → Prop}
     (hQ : ∀ s', Kept [⟨P, 128⟩, ⟨O, 16⟩] s s' →
       (∀ key msg, Repr s.mem P key msg → bytesAt s'.mem O 16 = mac key msg) → Q s') :
-    WP isa (.call "vg_poly1305_finalize" Impl.Poly1305.AArch64.Radix64.finalize) s Q := by
+    WP isa (.call "vg_poly1305_finalize_scratch" Impl.Poly1305.AArch64.Radix64.finalize) s Q := by
   refine WP.call (k := Proof.Poly1305.finalizeAArch64) Proof.Poly1305.AArch64.Radix64.finalize_ok
     (rd := []) (wr := [⟨P, 128⟩, ⟨O, 16⟩]) ?_ hc hw ?_ finalize_noFrames
   · simp only [Proof.Poly1305.finalizeAArch64, State.withRegions_gpr, State.withRegions_wr,

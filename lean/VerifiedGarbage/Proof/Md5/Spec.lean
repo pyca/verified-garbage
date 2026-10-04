@@ -52,6 +52,21 @@ theorem I_eq (x y z : Word) : I x y z = (z ^^^ 0xffffffff ||| x) ^^^ y := by
   ext i; simp only [I, BitVec.getElem_xor, BitVec.getElem_or, BitVec.getElem_not]
   cases x[i] <;> cases y[i] <;> cases z[i] <;> rfl
 
+/-- `G` as the sum of its two terms, which have no bit in common. -/
+theorem G_add (x y z : Word) : G x y z = ((z ^^^ 0xffffffff) &&& y) + (z &&& x) := by
+  rw [show (0xffffffff : Word) = BitVec.allOnes 32 by decide, BitVec.xor_allOnes,
+    BitVec.add_eq_or_of_and_eq_zero]
+  · ext i; simp only [G, BitVec.getElem_and, BitVec.getElem_or, BitVec.getElem_not]
+    cases x[i] <;> cases y[i] <;> cases z[i] <;> rfl
+  · ext i; simp only [BitVec.getElem_and, BitVec.getElem_not, BitVec.getElem_zero]
+    cases x[i] <;> cases y[i] <;> cases z[i] <;> rfl
+
+theorem H_eq' (x y z : Word) : H x y z = y ^^^ z ^^^ x := by
+  simp only [H]; ac_rfl
+
+/-- The function's value is added last (the implementations scheduled for latency). -/
+theorem add_fn (a x T f : Word) : a + x + T + f = a + f + x + T := by ac_rfl
+
 theorem rotateLeft_eq (x : Word) {n : Nat} (h₁ : 1 ≤ n) (h₂ : n ≤ 31) :
     x.rotateLeft n = x.rotateRight (32 - n) := by
   ext i hi

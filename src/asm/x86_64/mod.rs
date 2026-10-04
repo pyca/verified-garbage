@@ -5,6 +5,15 @@
 pub(crate) mod aes;
 
 #[rustfmt::skip]
+pub(crate) mod aes_ccm;
+
+#[rustfmt::skip]
+pub(crate) mod aes_gcm_siv;
+
+#[rustfmt::skip]
+pub(crate) mod aes_ocb;
+
+#[rustfmt::skip]
 pub(crate) mod aes_siv;
 
 #[rustfmt::skip]

@@ -89,10 +89,6 @@ theorem toF_npow (x : Fin m) (e : Nat) : toF (x ^ e) = toF x ^ e := by
   | zero => rw [_root_.pow_zero, _root_.pow_zero, toF_one]
   | succ e ih => rw [_root_.pow_succ, _root_.pow_succ, toF_mul, ih]
 
-/-- The specification's `pow` is the power. -/
-theorem pow_eq_npow (x : Fin m) (e : Nat) : pow x e = x ^ e :=
-  toF_injective (by rw [toF_pow, toF_npow])
-
 /-- `pow` modulo any `m`, as a power in `ZMod m`. -/
 theorem val_pow (x : Fin m) (e : Nat) : ((pow x e).val : ZMod m) = (x.val : ZMod m) ^ e :=
   toF_pow x e

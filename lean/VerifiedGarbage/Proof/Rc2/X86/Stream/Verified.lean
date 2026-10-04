@@ -10,6 +10,7 @@ import VerifiedGarbage.Proof.Rc2.X86.Cbc.Correct
 import VerifiedGarbage.Proof.Rc2.X86.Cbc.Lit
 import VerifiedGarbage.Proof.Framework.X86.CallWith
 import VerifiedGarbage.Proof.Rc2.X86.Stream.UpdateLong
+import VerifiedGarbage.Proof.Rc2.Scratch
 
 section
 
@@ -592,8 +593,8 @@ section
 /-!
 # Streaming RC2-CBC on x86 (32-bit): the shared contracts
 
-The shared contracts (`Spec.Rc2.cbcInitContract`,
-`Spec.Rc2.cbcUpdateContract`) let the code write its arguments; `wideInit` and
+The shared contracts (`Proof.Rc2.cbcInitScratchContract`,
+`Proof.Rc2.cbcUpdateScratchContract`) let the code write its arguments; `wideInit` and
 `wideUpdate` are the per-target contracts with that permission, which imply
 the shared ones. `narrow*` drop it again, for the proofs against
 `initContract` and `updateContract`.
@@ -688,33 +689,33 @@ macro_rules
            | with_reducible assumption
            | with_reducible exact Region.Disjoint.symm ‹_›)))
 
-theorem init_implies : wideInit.Implies (Spec.Rc2.cbcInitContract abi 24) where
+theorem init_implies : wideInit.Implies (Proof.Rc2.cbcInitScratchContract abi 24) where
   pre := by
-    wide_pre [Spec.Rc2.cbcInitContract, Spec.Rc2.cbcInitSig, abi, argSlots, argVal, argBytes,
+    wide_pre [Proof.Rc2.cbcInitScratchContract, Proof.Rc2.cbcInitScratchSig, Spec.Rc2.cbcInitPost, abi, argSlots, argVal, argBytes,
       wideInit, initContract, below]
   post := by
-    sig_implies_post [Spec.Rc2.cbcInitContract, Spec.Rc2.cbcInitSig, abi, argSlots, argVal, argBytes,
+    sig_implies_post [Proof.Rc2.cbcInitScratchContract, Proof.Rc2.cbcInitScratchSig, Spec.Rc2.cbcInitPost, abi, argSlots, argVal, argBytes,
       wideInit, initContract, below]
   pub := by
-    sig_implies_pub [Spec.Rc2.cbcInitContract, Spec.Rc2.cbcInitSig, abi, argSlots, argVal, argBytes,
+    sig_implies_pub [Proof.Rc2.cbcInitScratchContract, Proof.Rc2.cbcInitScratchSig, Spec.Rc2.cbcInitPost, abi, argSlots, argVal, argBytes,
       wideInit, initContract, below]
   sat := by
-    sig_implies_sat [Spec.Rc2.cbcInitContract, Spec.Rc2.cbcInitSig, abi, argSlots, argVal, argBytes,
+    sig_implies_sat [Proof.Rc2.cbcInitScratchContract, Proof.Rc2.cbcInitScratchSig, Spec.Rc2.cbcInitPost, abi, argSlots, argVal, argBytes,
       wideInit, initContract, below] [initSat, arg, argAddr, Mem.readW, Mem.read] using initSat
 
 theorem update_implies (d : Spec.Rc2.Direction) :
-    (wideUpdate d).Implies (Spec.Rc2.cbcUpdateContract abi d 40) where
+    (wideUpdate d).Implies (Proof.Rc2.cbcUpdateScratchContract abi d 40) where
   pre := by
-    wide_pre [Spec.Rc2.cbcUpdateContract, Spec.Rc2.cbcUpdateSig, abi, argSlots, argVal, argBytes,
+    wide_pre [Proof.Rc2.cbcUpdateScratchContract, Proof.Rc2.cbcUpdateScratchSig, Spec.Rc2.cbcUpdatePre, Spec.Rc2.cbcUpdatePost, abi, argSlots, argVal, argBytes,
       wideUpdate, updateContract, below]
   post := by
-    sig_implies_post [Spec.Rc2.cbcUpdateContract, Spec.Rc2.cbcUpdateSig, abi, argSlots, argVal, argBytes,
+    sig_implies_post [Proof.Rc2.cbcUpdateScratchContract, Proof.Rc2.cbcUpdateScratchSig, Spec.Rc2.cbcUpdatePre, Spec.Rc2.cbcUpdatePost, abi, argSlots, argVal, argBytes,
       wideUpdate, updateContract, below]
   pub := by
-    sig_implies_pub [Spec.Rc2.cbcUpdateContract, Spec.Rc2.cbcUpdateSig, abi, argSlots, argVal, argBytes,
+    sig_implies_pub [Proof.Rc2.cbcUpdateScratchContract, Proof.Rc2.cbcUpdateScratchSig, Spec.Rc2.cbcUpdatePre, Spec.Rc2.cbcUpdatePost, abi, argSlots, argVal, argBytes,
       wideUpdate, updateContract, below]
   sat := by
-    sig_implies_sat [Spec.Rc2.cbcUpdateContract, Spec.Rc2.cbcUpdateSig, abi, argSlots, argVal, argBytes,
+    sig_implies_sat [Proof.Rc2.cbcUpdateScratchContract, Proof.Rc2.cbcUpdateScratchSig, Spec.Rc2.cbcUpdatePre, Spec.Rc2.cbcUpdatePost, abi, argSlots, argVal, argBytes,
       wideUpdate, updateContract, below] [updateSat, arg, argAddr, Mem.readW, Mem.read] using updateSat
 
 end VG.Proof.Rc2.X86.Stream
@@ -924,7 +925,7 @@ theorem wideUpdate_pre (d : Spec.Rc2.Direction) (s : State) (h : (wideUpdate d).
   narrow
   exact ⟨trivial, trivial, h⟩
 
-theorem init_verified : Verified target Impl.Rc2.X86.Stream.init (Spec.Rc2.cbcInitContract abi 24) := by
+theorem init_verified : Verified target Impl.Rc2.X86.Stream.init (Proof.Rc2.cbcInitScratchContract abi 24) := by
   have hsat := init_implies.sat_left
   have narrowSat : ∃ s, initContract.pre s := by
     obtain ⟨s, hs⟩ := hsat
@@ -956,7 +957,7 @@ theorem init_verified : Verified target Impl.Rc2.X86.Stream.init (Spec.Rc2.cbcIn
     exact h
 
 theorem update_verified (d : Spec.Rc2.Direction) :
-    Verified target (Impl.Rc2.X86.Stream.update d) (Spec.Rc2.cbcUpdateContract abi d 40) := by
+    Verified target (Impl.Rc2.X86.Stream.update d) (Proof.Rc2.cbcUpdateScratchContract abi d 40) := by
   have hsat := (update_implies d).sat_left
   have narrowSat : ∃ s, (updateContract d).pre s := by
     obtain ⟨s, hs⟩ := hsat
@@ -989,11 +990,11 @@ theorem update_verified (d : Spec.Rc2.Direction) :
     exact h
 
 theorem encryptUpdate_verified :
-    Verified target Impl.Rc2.X86.Stream.encryptUpdate (Spec.Rc2.cbcEncryptUpdateContract abi 40) :=
+    Verified target Impl.Rc2.X86.Stream.encryptUpdate (Proof.Rc2.cbcEncryptUpdateScratchContract abi 40) :=
   update_verified .encrypt
 
 theorem decryptUpdate_verified :
-    Verified target Impl.Rc2.X86.Stream.decryptUpdate (Spec.Rc2.cbcDecryptUpdateContract abi 40) :=
+    Verified target Impl.Rc2.X86.Stream.decryptUpdate (Proof.Rc2.cbcDecryptUpdateScratchContract abi 40) :=
   update_verified .decrypt
 
 end VG.Proof.Rc2.X86.Stream

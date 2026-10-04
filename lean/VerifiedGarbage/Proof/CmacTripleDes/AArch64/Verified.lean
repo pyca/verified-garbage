@@ -8,24 +8,32 @@ import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 # TDEA-CMAC on AArch64: `Verified`
 
 Correctness and constant time under this target's contracts (`Contract.lean`),
-and the shared
-contracts with the working space as an argument
+and the shared contracts with the working space as an argument
 (`Proof/CmacTripleDes/Scratch.lean`), which imply them, with no stack: the
-functions call nothing, and write only `x0`–`x17`.
+functions call nothing, and write only `x0`–`x17` and the callee-saved
+registers the block saves and restores (`block_ok`).
 -/
 
 namespace VG.Proof.CmacTripleDes.AArch64
 
 open VG VG.AArch64 VG.Impl.CmacTripleDes.AArch64
 
-/-- The ABI's obligations, for code that writes none of the registers it
-preserves and no vector register, and calls nothing. -/
-theorem abi_of {c : Prog isa} {s : State} {Q : State → Prop} (h : WP isa c s Q)
-    (hc : c.allInstrs (fun i => preserved.all fun r => dstOf i != some r) = true)
+/-- The registers the ABI preserves that the code never writes. -/
+def unsaved : List Reg := preserved.filter (· ∉ savedRegs)
+
+/-- The ABI's obligations, for code that keeps the registers of `savedRegs`,
+writes none of the others it preserves and no vector register, and calls
+nothing. -/
+theorem abi_of {c : Prog isa} {s : State} {Q : State → Prop}
+    (h : WP isa c s fun s' => Q s' ∧ ∀ r ∈ savedRegs, s'.gpr r = s.gpr r)
+    (hc : c.allInstrs (fun i => unsaved.all fun r => dstOf i != some r) = true)
     (hn : c.noCalls = true) (hv : c.allInstrs keepsV = true) :
     ∃ t s', Exec isa c s t s' ∧ abiPreserved s s' ∧ Q s' := by
-  obtain ⟨t, s', he, hq, hg⟩ := WP.gprs h hc hn
-  exact ⟨t, s', he, ⟨hg, Exec.sp he, Exec.preservedV he hv⟩, hq⟩
+  obtain ⟨t, s', he, ⟨hq, hsv⟩, hg⟩ := WP.gprs h hc hn
+  refine ⟨t, s', he, ⟨fun r hr => ?_, Exec.sp he, Exec.preservedV he hv⟩, hq⟩
+  by_cases hs : r ∈ savedRegs
+  · exact hsv r hs
+  · exact hg r (List.mem_filter.mpr ⟨hr, by simpa using hs⟩)
 
 theorem init_correct (s : State) (hs : initAArch64.pre s) :
     ∃ t s', Exec isa init s t s' ∧ abiPreserved s s' ∧ initAArch64.post s s' :=
@@ -33,7 +41,9 @@ theorem init_correct (s : State) (hs : initAArch64.pre s) :
 
 theorem update_correct (s : State) (hs : updateAArch64.pre s) :
     ∃ t s', Exec isa update s t s' ∧ abiPreserved s s' ∧ updateAArch64.post s s' :=
-  abi_of (update_wp hs) (by lit_decide) (by lit_decide) (by lit_decide)
+  abi_of (WP.mono (update_wp hs) fun _ ⟨h, sv⟩ => ⟨h, fun r hr => by
+    obtain ⟨i, hi, rfl⟩ := mem_savedRegs hr; exact sv i hi⟩) (by lit_decide) (by lit_decide)
+    (by lit_decide)
 
 theorem finalize_correct (s : State) (hs : finalizeAArch64.pre s) :
     ∃ t s', Exec isa finalize s t s' ∧ abiPreserved s s' ∧ finalizeAArch64.post s s' :=

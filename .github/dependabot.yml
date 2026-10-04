@@ -5,9 +5,18 @@ updates:
     schedule:
       interval: weekly
   - package-ecosystem: cargo
-    directory: /
+    # bench/ is its own workspace with a path dependency on the library, so
+    # its lock file must change in the same PR as the root one: list both
+    # directories and group them into one PR.
+    directories:
+      - /
+      - /bench
     schedule:
       interval: weekly
+    groups:
+      cargo:
+        patterns:
+          - "*"
   - package-ecosystem: pip
     directory: /ci
     schedule:

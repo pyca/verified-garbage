@@ -95,7 +95,18 @@ theorem inputStep_run {K : BitVec 64} {s : State} (h : Room s) (hk : KeyRegs K s
     rfl
   let s₅ := s₄.setV x (s₄.v x ^^^ s₄.v tmpReg)
   have e₅ : exec (.vop (.logic .eor x x tmpReg)) s₄ = some s₅ := rfl
-  refine ⟨s₅, ?_, ?_, fun y h1 h2 => ?_, rfl, rfl, rfl, rfl, rfl, rfl⟩
+  -- Through the writes one at a time (`rfl` would first try to unify the states).
+  refine ⟨s₅, ?_, ?_, fun y h1 h2 => ?_,
+    (gpr_setV _ _ _).trans <| (gpr_setV _ _ _).trans <| (gpr_setV _ _ _).trans <|
+      (gpr_setV _ _ _).trans <| gpr_setV _ _ _,
+    (mem_setV _ _ _).trans <| (mem_setV _ _ _).trans <| (mem_setV _ _ _).trans <|
+      (mem_setV _ _ _).trans <| mem_setV _ _ _,
+    (rd_setV _ _ _).trans <| (rd_setV _ _ _).trans <| (rd_setV _ _ _).trans <|
+      (rd_setV _ _ _).trans <| rd_setV _ _ _,
+    (wr_setV _ _ _).trans <| (wr_setV _ _ _).trans <| (wr_setV _ _ _).trans <|
+      (wr_setV _ _ _).trans <| wr_setV _ _ _,
+    (sp_setV _ _ _).trans <| (sp_setV _ _ _).trans <| (sp_setV _ _ _).trans <|
+      (sp_setV _ _ _).trans <| sp_setV _ _ _, rfl⟩
   · rw [runBlock_cons, e₁, runStep_some, runBlock_cons, e₂, runStep_some, runBlock_cons, e₃,
       runStep_some, runBlock_cons, e₄, runStep_some, runBlock_cons, e₅, runStep_some, runBlock_nil]
   · have hv₁ : ∀ q < 2, vdword v₁ q = K <<< (63 - b) := by
@@ -128,7 +139,7 @@ theorem inputsN_succ (ρ : Role) (j n : Nat) :
     List.append_nil]
 
 theorem readWord_lt : ∀ ρ : Role, ∀ j < 8, ∀ i < 6, readWord ρ (eBit (inBit j i)) < 64 := by
-  intro ρ; cases ρ <;> decide +kernel
+  intro ρ; cases ρ <;> lit_decide
 
 theorem inBit_lt' : ∀ j < 8, ∀ i < 6, inBit j i < 64 := by decide
 
@@ -279,13 +290,13 @@ def swapPost (e : Env Nat) : Bool :=
   (List.range 64).all fun k => e.slot k == some (2 ^ swapSlot k)
 
 theorem swap_check : check (vars 64) stateCfg swapHalves (varEnv [.v0, .v1]) swapPost = true := by
-  decide +kernel
+  lit_decide
 
-theorem swapSlot_lt : ∀ k < 64, swapSlot k < 64 := by decide +kernel
+theorem swapSlot_lt : ∀ k < 64, swapSlot k < 64 := by lit_decide
 
 theorem swap_regs : (swapHalves.all fun i => dstOf i == none && vdstOf i != some keyReg &&
     vdstOf i != some zeroReg) = true := by
-  decide +kernel
+  lit_decide
 
 theorem swapHalves_ok {s : State} (h : Room s) :
     ∃ s', runBlock isa swapHalves s = some s' ∧ (∀ x < 64, words s' x = swapW (words s) x) ∧

@@ -175,7 +175,7 @@ theorem absorb_call (sa so wa wo : Nat) (bD : Buf) (rate pos : Nat) (hr : rate �
       (∀ msg, Repr s.mem (Buf.addr s₀ ⟨sa, so, 200⟩) rate msg → pos = msg.length % rate →
         Repr s'.mem (Buf.addr s₀ ⟨sa, so, 200⟩) rate (msg ++ bytesAt s.mem (bD.addr s₀) bD.len)) →
       B s₀ s') :
-    Piece (TPre Y) (TPub Y lk) A B (callWith rs6 "vg_keccak_absorb" Impl.Sha3.X86.Stream.absorb) := by
+    Piece (TPre Y) (TPub Y lk) A B (callWith rs6 "vg_keccak_absorb_scratch" Impl.Sha3.X86.Stream.absorb) := by
   simp only [Bool.and_eq_true] at hc
   obtain ⟨⟨⟨⟨⟨hS, hW⟩, hD⟩, dSW⟩, dDS⟩, dDW⟩ := hc
   have hS' := (Lay.okW_iff.mp hS).1
@@ -205,7 +205,7 @@ theorem pad_call (sa so wa wo : Nat) (rate pos sfx : Nat) (hr : rate ∈ rates) 
       (∀ msg, Repr s.mem (Buf.addr s₀ ⟨sa, so, 200⟩) rate msg → pos = msg.length % rate →
         stateAt s'.mem (Buf.addr s₀ ⟨sa, so, 200⟩) =
           absorb rate (pad rate ((BitVec.ofNat 32 sfx).setWidth 8) msg)) → B s₀ s') :
-    Piece (TPre Y) (TPub Y lk) A B (callWith rs5 "vg_keccak_pad" Impl.Sha3.X86.Stream.pad) := by
+    Piece (TPre Y) (TPub Y lk) A B (callWith rs5 "vg_keccak_pad_scratch" Impl.Sha3.X86.Stream.pad) := by
   simp only [Bool.and_eq_true] at hc
   obtain ⟨⟨hS, hW⟩, dSW⟩ := hc
   have hS' := (Lay.okW_iff.mp hS).1
@@ -234,7 +234,7 @@ theorem squeeze_call (sa so wa wo : Nat) (bO : Buf) (rate pos : Nat) (hr : rate 
         squeezeFrom rate (stateAt s.mem (Buf.addr s₀ ⟨sa, so, 200⟩)) pos bO.len →
       (∃ pos' ≤ rate, ∀ d, squeezeFrom rate (stateAt s'.mem (Buf.addr s₀ ⟨sa, so, 200⟩)) pos' d =
         squeezeFrom rate (stateAt s.mem (Buf.addr s₀ ⟨sa, so, 200⟩)) (pos + bO.len) d) → B s₀ s') :
-    Piece (TPre Y) (TPub Y lk) A B (callWith rs6 "vg_keccak_squeeze" Impl.Sha3.X86.Stream.squeeze) := by
+    Piece (TPre Y) (TPub Y lk) A B (callWith rs6 "vg_keccak_squeeze_scratch" Impl.Sha3.X86.Stream.squeeze) := by
   simp only [Bool.and_eq_true] at hc
   obtain ⟨⟨⟨⟨⟨hS, hW⟩, hO⟩, dSW⟩, dSO⟩, dOW⟩ := hc
   have hS' := (Lay.okW_iff.mp hS).1

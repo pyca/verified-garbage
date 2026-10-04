@@ -1,4 +1,5 @@
 import VerifiedGarbage.TCB.X86_64.Target
+import VerifiedGarbage.Proof.P256.Curve
 import VerifiedGarbage.Impl.Ecdsa.P256.X86_64
 import VerifiedGarbage.Proof.Ecdsa.X86_64.Verified
 import VerifiedGarbage.Proof.Ecdsa.X86_64.Lit
@@ -23,7 +24,7 @@ def artifacts : List Artifact := [
       signature (or zeros) is selected by a mask, so the time depends only on the pointers."])
     code := Impl.Ecdsa.X86_64.signP256
     contract := Spec.Ecdsa.P256.inst.signContract X86_64.abi
-    verified := Proof.Ecdsa.X86_64.sign_verified
+    verified := Proof.Ecdsa.X86_64.sign_verified Proof.P256.law
     spSafe := Code.all_of_allInstrs (by lit_decide) },
   { Spec.Ecdsa.P256.verifyApi with
     target := X86_64.target
@@ -42,7 +43,7 @@ def artifacts : List Artifact := [
       although the contract would let every input affect it."])
     code := Impl.Ecdsa.Verify.X86_64.verifyP256
     contract := Spec.Ecdsa.P256.inst.verifyContract X86_64.abi
-    verified := Proof.Ecdsa.Verify.X86_64.verify_verified
+    verified := Proof.Ecdsa.Verify.X86_64.verify_verified Proof.P256.law
     spSafe := Code.all_of_allInstrs (by lit_decide) }]
 
 end VG.Artifacts.EcdsaP256.X86_64

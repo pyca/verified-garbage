@@ -31,7 +31,12 @@ use core::fmt;
 
 use crate::arch::argon2::vg_argon2;
 #[cfg(target_arch = "x86_64")]
-use crate::arch::argon2::{VG_ARGON2_COMPRESS_AVX2_FEATURES, vg_argon2_avx2};
+use crate::arch::argon2::{
+    VG_ARGON2_COMPRESS_AVX2_FEATURES, VG_ARGON2_COMPRESS_AVX512_FEATURES, vg_argon2_blake2b_avx2,
+    vg_argon2_blake2b_avx2_g_avx2, vg_argon2_blake2b_avx2_g_avx512, vg_argon2_blake2b_avx512,
+    vg_argon2_blake2b_avx512_g_avx2, vg_argon2_blake2b_avx512_g_avx512, vg_argon2_g_avx2,
+    vg_argon2_g_avx512,
+};
 use crate::cpu::Features;
 use crate::hashes::blake2b::Blake2bBackend;
 
@@ -46,13 +51,19 @@ pub(crate) enum CompressBackend {
     /// registers.
     #[cfg(target_arch = "x86_64")]
     Avx2,
+    /// AVX-512: two rows (or two columns) of G's permutations in each of
+    /// four 512-bit registers.
+    #[cfg(target_arch = "x86_64")]
+    Avx512,
 }
 
 impl CompressBackend {
     /// The best implementation a CPU with the features `f` can run.
     #[cfg(target_arch = "x86_64")]
     pub(crate) fn select(f: Features) -> CompressBackend {
-        if f.contains(VG_ARGON2_COMPRESS_AVX2_FEATURES) {
+        if f.contains(VG_ARGON2_COMPRESS_AVX512_FEATURES) {
+            CompressBackend::Avx512
+        } else if f.contains(VG_ARGON2_COMPRESS_AVX2_FEATURES) {
             CompressBackend::Avx2
         } else {
             CompressBackend::Scalar
@@ -339,7 +350,30 @@ impl<'a> Derivation<'a> {
         ) {
             (Blake2bBackend::Scalar, CompressBackend::Scalar) => vg_argon2,
             #[cfg(target_arch = "x86_64")]
-            (Blake2bBackend::Scalar, CompressBackend::Avx2) => vg_argon2_avx2,
+            (Blake2bBackend::Scalar, CompressBackend::Avx512) => vg_argon2_g_avx512,
+            #[cfg(target_arch = "x86_64")]
+            (Blake2bBackend::Avx2, CompressBackend::Avx2) => vg_argon2_blake2b_avx2_g_avx2,
+            #[cfg(target_arch = "x86_64")]
+            (Blake2bBackend::Avx2, CompressBackend::Avx512) => vg_argon2_blake2b_avx2_g_avx512,
+            #[cfg(target_arch = "x86_64")]
+            (Blake2bBackend::Avx512, CompressBackend::Avx512) => vg_argon2_blake2b_avx512_g_avx512,
+            // BLAKE2b's AVX2 backend and G's AVX2 implementation need the same
+            // features, AVX and AVX2, and G's is chosen whenever they are
+            // present and AVX-512F is not; BLAKE2b's AVX-512 backend needs
+            // AVX, AVX2, AVX-512F and AVX512VL, a superset of what G's AVX-512
+            // code needs (`select_pairs` checks it): a CPU never gets one of
+            // them without the other, and never BLAKE2b's AVX-512 backend
+            // without G's, so these are never chosen.
+            // NO-COVERAGE-START
+            #[cfg(target_arch = "x86_64")]
+            (Blake2bBackend::Scalar, CompressBackend::Avx2) => vg_argon2_g_avx2,
+            #[cfg(target_arch = "x86_64")]
+            (Blake2bBackend::Avx2, CompressBackend::Scalar) => vg_argon2_blake2b_avx2,
+            #[cfg(target_arch = "x86_64")]
+            (Blake2bBackend::Avx512, CompressBackend::Scalar) => vg_argon2_blake2b_avx512,
+            #[cfg(target_arch = "x86_64")]
+            (Blake2bBackend::Avx512, CompressBackend::Avx2) => vg_argon2_blake2b_avx512_g_avx2,
+            // NO-COVERAGE-END
         };
         // SAFETY: `Derivation::new` validated the costs and the lengths of
         // the inputs and `out`, which establishes every numeric precondition
@@ -421,11 +455,23 @@ mod tests {
     fn select() {
         #[cfg(target_arch = "x86_64")]
         {
-            use crate::arch::argon2::VG_ARGON2_AVX2_FEATURES;
-            assert_eq!(VG_ARGON2_AVX2_FEATURES, VG_ARGON2_COMPRESS_AVX2_FEATURES);
+            use crate::arch::argon2::{VG_ARGON2_G_AVX2_FEATURES, VG_ARGON2_G_AVX512_FEATURES};
+            assert_eq!(VG_ARGON2_G_AVX2_FEATURES, VG_ARGON2_COMPRESS_AVX2_FEATURES);
+            assert_eq!(
+                VG_ARGON2_G_AVX512_FEATURES,
+                VG_ARGON2_COMPRESS_AVX512_FEATURES
+            );
             assert_eq!(
                 CompressBackend::select(VG_ARGON2_COMPRESS_AVX2_FEATURES),
                 CompressBackend::Avx2
+            );
+            assert_eq!(
+                CompressBackend::select(VG_ARGON2_COMPRESS_AVX512_FEATURES),
+                CompressBackend::Avx512
+            );
+            assert_eq!(
+                CompressBackend::select(Features::of(&["avx", "avx2", "avx512f"])),
+                CompressBackend::Avx512
             );
             assert_eq!(
                 CompressBackend::select(Features::of(&["avx"])),
@@ -436,6 +482,30 @@ mod tests {
             CompressBackend::select(Features::of(&[])),
             CompressBackend::Scalar
         );
+    }
+
+    /// The pairs of a BLAKE2b backend and an implementation of G chosen
+    /// for each set of features: never BLAKE2b's AVX2 backend with scalar
+    /// G, nor G's AVX2 implementation with scalar BLAKE2b, nor BLAKE2b's
+    /// AVX-512 backend with G's scalar or AVX2 implementation.
+    #[test]
+    fn select_pairs() {
+        for bits in 0..(1 << crate::cpu::NAMES.len()) {
+            let f = Features(bits);
+            let pair = (Blake2bBackend::select(f), CompressBackend::select(f));
+            #[cfg(target_arch = "x86_64")]
+            {
+                let never = [
+                    (Blake2bBackend::Scalar, CompressBackend::Avx2),
+                    (Blake2bBackend::Avx2, CompressBackend::Scalar),
+                    (Blake2bBackend::Avx512, CompressBackend::Scalar),
+                    (Blake2bBackend::Avx512, CompressBackend::Avx2),
+                ];
+                assert!(!never.contains(&pair), "{bits:#b}");
+            }
+            #[cfg(not(target_arch = "x86_64"))]
+            assert_eq!(pair, (Blake2bBackend::Scalar, CompressBackend::Scalar));
+        }
     }
 
     #[test]

@@ -10,11 +10,11 @@
 //! key, and returns the x-coordinate of `dQ`, in constant time. The public
 //! key is one call too (`vg_ec_<curve>_public_key`).
 
-#![cfg(target_arch = "x86_64")]
+#![cfg(any(target_arch = "x86_64", target_arch = "x86", target_arch = "aarch64"))]
 
 mod p256;
 
-pub use crate::ecdsa::{Curve, P256};
+pub use crate::ec::{Curve, P256};
 
 use crate::zeroize::zeroize;
 

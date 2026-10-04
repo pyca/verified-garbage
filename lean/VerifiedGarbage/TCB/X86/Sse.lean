@@ -20,6 +20,8 @@ inductive XBinOp
   | movdqa | paddd | pxor | por | pand | pandn
   | punpckldq | punpckhdq | punpcklqdq | punpckhqdq
   | pshufb | sha256msg1 | sha256msg2 | aesenc | aesenclast
+  | paddq | sha1msg1 | sha1msg2 | sha1nexte
+  | aesdec | aesdeclast | aesimc
   deriving DecidableEq, Repr
 
 inductive XShiftOp | pslld | psrld | psllq | psrlq | pslldq | psrldq
@@ -29,9 +31,15 @@ inductive XOp
   | bin (op : XBinOp) (dst src : XReg)
   | shift (op : XShiftOp) (dst : XReg) (count : BitVec 8)
   | pshufd (dst src : XReg) (order : BitVec 8)
+  /-- `pshuflw xmm1, xmm2, imm8` -/
+  | pshuflw (dst src : XReg) (order : BitVec 8)
+  /-- `pshufhw xmm1, xmm2, imm8` -/
+  | pshufhw (dst src : XReg) (order : BitVec 8)
   | palignr (dst src : XReg) (shift : BitVec 8)
   /-- SHA256RNDS2 reads XMM0 implicitly. -/
   | sha256rnds2 (dst src : XReg)
+  /-- `sha1rnds4 xmm1, xmm2, imm8` -/
+  | sha1rnds4 (dst src : XReg) (func : BitVec 8)
   /-- MOVD xmm, r32: zero-extends to 128 bits, unlike the 64-bit MOVQ form. -/
   | movd (dst : XReg) (src : Reg)
   | aeskeygenassist (dst src : XReg) (rcon : BitVec 8)
@@ -49,6 +57,13 @@ def ofDwords (d0 d1 d2 d3 : BitVec 32) : BitVec 128 := d3 ++ d2 ++ d1 ++ d0
 
 /-- Byte `i` of `x`: bits `8i+7:8i`. -/
 def byte (x : BitVec 128) (i : Nat) : BitVec 8 := x.extractLsb' (8 * i) 8
+
+/-- Word `i` of `x`: bits `16i+15:16i`. -/
+def word (x : BitVec 128) (i : Nat) : BitVec 16 := x.extractLsb' (16 * i) 16
+
+/-- The 128-bit value whose word `i` (bits `16i+15:16i`) is `f i`. -/
+def ofWords (f : Nat → BitVec 16) : BitVec 128 :=
+  f 7 ++ f 6 ++ f 5 ++ f 4 ++ f 3 ++ f 2 ++ f 1 ++ f 0
 
 /-- The 128-bit value whose byte `i` (bits `8i+7:8i`) is `f i`. -/
 def ofBytes (f : Nat → BitVec 8) : BitVec 128 :=
@@ -93,6 +108,47 @@ def sha256Msg2 (src1 src2 : BitVec 128) : BitVec 128 :=
   let w19 := dword src1 3 + sha256Sigma1 w17
   ofDwords w16 w17 w18 w19
 
+/-! The SHA-1 functions and constants used, but not defined, by the SDM's
+pseudocode for SHA1RNDS4, which selects the function `f()` and constant `K`
+of one of the four groups of 20 rounds by `imm8[1:0]` (`f0()` and `K0` for
+rounds 0–19, …, `f3()` and `K3` for rounds 60–79): those of the SHA-1
+standard, FIPS 180-4 §4.1.1 and §4.2.1. -/
+
+/-- `fᵢ(x, y, z)` for group `i < 4` of 20 rounds, FIPS 180-4 §4.1.1:
+`Ch(x, y, z) = (x ∧ y) ⊕ (¬x ∧ z)` for group 0, `Parity(x, y, z) = x ⊕ y ⊕ z`
+for groups 1 and 3, and `Maj(x, y, z) = (x ∧ y) ⊕ (x ∧ z) ⊕ (y ∧ z)` for
+group 2. -/
+def sha1F (i : Nat) (x y z : BitVec 32) : BitVec 32 :=
+  match i with
+  | 0 => (x &&& y) ^^^ (~~~x &&& z)
+  | 1 => x ^^^ y ^^^ z
+  | 2 => (x &&& y) ^^^ (x &&& z) ^^^ (y &&& z)
+  | _ => x ^^^ y ^^^ z
+
+/-- `Kᵢ` for group `i < 4` of 20 rounds, FIPS 180-4 §4.2.1: `5a827999`,
+`6ed9eba1`, `8f1bbcdc`, `ca62c1d6`. -/
+def sha1K (i : Nat) : BitVec 32 :=
+  match i with
+  | 0 => 0x5a827999
+  | 1 => 0x6ed9eba1
+  | 2 => 0x8f1bbcdc
+  | _ => 0xca62c1d6
+
+/-- SDM Vol. 2, "SHA1MSG2": `W13 := SRC2[95:64]; W14 := SRC2[63:32]; W15 :=
+SRC2[31:0]; W16 := (SRC1[127:96] XOR W13) ROL 1; W17 := (SRC1[95:64] XOR
+W14) ROL 1; W18 := (SRC1[63:32] XOR W15) ROL 1; W19 := (SRC1[31:0] XOR W16)
+ROL 1; DEST[127:96] := W16; DEST[95:64] := W17; DEST[63:32] := W18;
+DEST[31:0] := W19`. -/
+def sha1Msg2 (src1 src2 : BitVec 128) : BitVec 128 :=
+  let w13 := dword src2 2
+  let w14 := dword src2 1
+  let w15 := dword src2 0
+  let w16 := (dword src1 3 ^^^ w13).rotateLeft 1
+  let w17 := (dword src1 2 ^^^ w14).rotateLeft 1
+  let w18 := (dword src1 1 ^^^ w15).rotateLeft 1
+  let w19 := (dword src1 0 ^^^ w16).rotateLeft 1
+  ofDwords w19 w18 w17 w16
+
 /-! The AES transformations used, but not defined, by the SDM's pseudocode
 for the AES instructions: those of the AES standard, FIPS 197 (§4 and §5).
 The state `s[r, c]` (FIPS 197 §3.4) is byte `r + 4c` of the 128-bit operand,
@@ -125,7 +181,15 @@ def aesSbox (b : BitVec 8) : BitVec 8 :=
   ofBits8 fun i => b.getLsbD i ^^ b.getLsbD ((i + 4) % 8) ^^ b.getLsbD ((i + 5) % 8) ^^
     b.getLsbD ((i + 6) % 8) ^^ b.getLsbD ((i + 7) % 8) ^^ c.getLsbD i
 
-/-- FIPS 197 §5.1.1 `SUBBYTES`: `f` applied to every byte. -/
+/-- FIPS 197 §5.3.2, the inverse S-box: the inverse of the affine
+transformation, `b'ᵢ = b₍ᵢ₊₂₎ mod 8 ⊕ b₍ᵢ₊₅₎ mod 8 ⊕ b₍ᵢ₊₇₎ mod 8 ⊕ dᵢ` with
+`d = {05}`, then `b ↦ b⁻¹`. -/
+def aesInvSbox (b : BitVec 8) : BitVec 8 :=
+  let d : BitVec 8 := 0x05
+  aesInv (ofBits8 fun i =>
+    b.getLsbD ((i + 2) % 8) ^^ b.getLsbD ((i + 5) % 8) ^^ b.getLsbD ((i + 7) % 8) ^^ d.getLsbD i)
+
+/-- FIPS 197 §5.1.1 `SUBBYTES` and §5.3.2 `INVSUBBYTES`: `f` applied to every byte. -/
 def aesMapBytes (f : BitVec 8 → BitVec 8) (x : BitVec 128) : BitVec 128 :=
   ofBytes fun i => f (byte x i)
 
@@ -133,7 +197,12 @@ def aesMapBytes (f : BitVec 8 → BitVec 8) (x : BitVec 128) : BitVec 128 :=
 def aesShiftRows (x : BitVec 128) : BitVec 128 :=
   ofBytes fun i => byte x (i % 4 + 4 * ((i / 4 + i % 4) % 4))
 
-/-- FIPS 197 §5.1.3 `MIXCOLUMNS` (with `m = [{02}, {03}, {01}, {01}]`):
+/-- FIPS 197 §5.3.1 `INVSHIFTROWS`: `s'[r, c] = s[r, (c − r) mod 4]`. -/
+def aesInvShiftRows (x : BitVec 128) : BitVec 128 :=
+  ofBytes fun i => byte x (i % 4 + 4 * ((i / 4 + 4 - i % 4) % 4))
+
+/-- FIPS 197 §5.1.3 `MIXCOLUMNS` (with `m = [{02}, {03}, {01}, {01}]`) and
+§5.3.3 `INVMIXCOLUMNS` (with `m = [{0e}, {0b}, {0d}, {09}]`):
 `s'[r, c] = m₀ • s[r, c] ⊕ m₁ • s[r + 1, c] ⊕ m₂ • s[r + 2, c] ⊕ m₃ • s[r + 3, c]`,
 rows modulo 4. -/
 def aesMixWith (m₀ m₁ m₂ m₃ : BitVec 8) (x : BitVec 128) : BitVec 128 :=
@@ -142,6 +211,8 @@ def aesMixWith (m₀ m₁ m₂ m₃ : BitVec 8) (x : BitVec 128) : BitVec 128 :=
     aesMul m₀ (a 0) ^^^ aesMul m₁ (a 1) ^^^ aesMul m₂ (a 2) ^^^ aesMul m₃ (a 3)
 
 def aesMixColumns : BitVec 128 → BitVec 128 := aesMixWith 0x02 0x03 0x01 0x01
+
+def aesInvMixColumns : BitVec 128 → BitVec 128 := aesMixWith 0x0e 0x0b 0x0d 0x09
 
 /-- The carry-less product of two quadwords. SDM Vol. 2, "PCLMULQDQ", defines
 bit `i` of the product as `TEMP1[0] AND TEMP2[i]` XOR … XOR `TEMP1[j] AND
@@ -156,8 +227,21 @@ bitwise (PANDN complements the old destination); PUNPCK interleaves the
 selected low/high elements. PSHUFB selects bytes by each source byte's low
 nibble, zeroing when bit 7 is set. SHA256MSG1 adds sigma0 of the next word
 (including source word 0); SHA256MSG2 is the dependent recurrence above.
+PADDQ: `DEST[63:0] := DEST[63:0] + SRC[63:0]; DEST[127:64] := DEST[127:64] +
+SRC[127:64]` (wrapping). SHA1MSG1: `W0 := SRC1[127:96]; W1 := SRC1[95:64];
+W2 := SRC1[63:32]; W3 := SRC1[31:0]; W4 := SRC2[127:96]; W5 :=
+SRC2[95:64]; DEST[127:96] := W2 XOR W0; DEST[95:64] := W3 XOR W1;
+DEST[63:32] := W4 XOR W2; DEST[31:0] := W5 XOR W3`. SHA1MSG2: see
+`sha1Msg2`. SHA1NEXTE: `TMP := (SRC1[127:96] ROL 30); DEST[127:96] :=
+SRC2[127:96] + TMP; DEST[95:64] := SRC2[95:64]; DEST[63:32] := SRC2[63:32];
+DEST[31:0] := SRC2[31:0]`.
 AESENC applies ShiftRows, SubBytes, MixColumns, then XORs the round key;
-AESENCLAST omits MixColumns (AESENC/AESENCLAST Operation pseudocode). -/
+AESENCLAST omits MixColumns (AESENC/AESENCLAST Operation pseudocode).
+AESDEC: `STATE := SRC1; RoundKey := SRC2; STATE := InvShiftRows(STATE);
+STATE := InvSubBytes(STATE); STATE := InvMixColumns(STATE); DEST[127:0] :=
+STATE XOR RoundKey`; AESDECLAST: as AESDEC, without `InvMixColumns`; AESIMC:
+`DEST[127:0] := InvMixColumns(SRC)` (AESDEC/AESDECLAST/AESIMC Operation
+pseudocode; `SRC1` is the destination, `SRC2` the source). -/
 def XBinOp.eval : XBinOp → BitVec 128 → BitVec 128 → BitVec 128
   | .movdqa, _, b => b
   | .paddd, a, b =>
@@ -180,6 +264,16 @@ def XBinOp.eval : XBinOp → BitVec 128 → BitVec 128 → BitVec 128
   | .pandn, a, b => ~~~a &&& b
   | .aesenc, a, b => aesMixColumns (aesMapBytes aesSbox (aesShiftRows a)) ^^^ b
   | .aesenclast, a, b => aesMapBytes aesSbox (aesShiftRows a) ^^^ b
+  | .paddq, a, b => (qword a 1 + qword b 1) ++ (qword a 0 + qword b 0)
+  | .sha1msg1, a, b =>
+    ofDwords (dword b 2 ^^^ dword a 0) (dword b 3 ^^^ dword a 1) (dword a 0 ^^^ dword a 2)
+      (dword a 1 ^^^ dword a 3)
+  | .sha1msg2, a, b => sha1Msg2 a b
+  | .sha1nexte, a, b =>
+    ofDwords (dword b 0) (dword b 1) (dword b 2) (dword b 3 + (dword a 3).rotateLeft 30)
+  | .aesdec, a, b => aesInvMixColumns (aesMapBytes aesInvSbox (aesInvShiftRows a)) ^^^ b
+  | .aesdeclast, a, b => aesMapBytes aesInvSbox (aesInvShiftRows a) ^^^ b
+  | .aesimc, _, b => aesInvMixColumns b
 /-- SDM Vol. 2 PSLLD/PSRLD/PSLLQ/PSRLQ: each element shifts logically,
 becoming zero for counts greater than its width minus one. PSLLDQ/PSRLDQ
 shift the whole register by bytes, becoming zero for counts at least 16.
@@ -204,6 +298,62 @@ No flags are affected. -/
 def shufDwords (a : BitVec 128) (order : BitVec 8) : BitVec 128 :=
   ofDwords (dword a (order.extractLsb' 0 2).toNat) (dword a (order.extractLsb' 2 2).toNat)
     (dword a (order.extractLsb' 4 2).toNat) (dword a (order.extractLsb' 6 2).toNat)
+
+/-- SDM Vol. 2, "PSHUFLW", 128-bit legacy SSE version: `DEST[15:0] := (SRC >>
+(ORDER[1:0] * 16))[15:0]; DEST[31:16] := (SRC >> (ORDER[3:2] * 16))[15:0];
+DEST[47:32] := (SRC >> (ORDER[5:4] * 16))[15:0]; DEST[63:48] := (SRC >>
+(ORDER[7:6] * 16))[15:0]; DEST[127:64] := SRC[127:64]`. No flags are
+affected. -/
+def shufLowWords (a : BitVec 128) (order : BitVec 8) : BitVec 128 :=
+  ofWords fun i => if i < 4 then word a (order.extractLsb' (2 * i) 2).toNat else word a i
+
+/-- SDM Vol. 2, "PSHUFHW", 128-bit legacy SSE version: `DEST[63:0] :=
+SRC[63:0]; DEST[79:64] := (SRC >> (imm[1:0] * 16))[79:64]; DEST[95:80] :=
+(SRC >> (imm[3:2] * 16))[79:64]; DEST[111:96] := (SRC >> (imm[5:4] *
+16))[79:64]; DEST[127:112] := (SRC >> (imm[7:6] * 16))[79:64]`. No flags are
+affected. -/
+def shufHighWords (a : BitVec 128) (order : BitVec 8) : BitVec 128 :=
+  ofWords fun i => if i < 4 then word a i else word a (4 + (order.extractLsb' (2 * (i - 4)) 2).toNat)
+
+/-- SDM Vol. 2, "SHA1RNDS4", where `SRC1` is the destination and `SRC2` the
+source: `f()` and `K` are `fᵢ()` and `Kᵢ` for `i = imm8[1:0]` (`sha1F`,
+`sha1K`); `A := SRC1[127:96]; B := SRC1[95:64]; C := SRC1[63:32]; D :=
+SRC1[31:0]; W0E := SRC2[127:96]; W1 := SRC2[95:64]; W2 := SRC2[63:32]; W3
+:= SRC2[31:0]; A_1 := f(B, C, D) + (A ROL 5) + W0E + K; B_1 := A; C_1 := B
+ROL 30; D_1 := C; E_1 := D; FOR i := 1 to 3 A_(i+1) := f(B_i, C_i, D_i) +
+(A_i ROL 5) + W_i + E_i + K; B_(i+1) := A_i; C_(i+1) := B_i ROL 30;
+D_(i+1) := C_i; E_(i+1) := D_i; ENDFOR DEST[127:96] := A_4; DEST[95:64] :=
+B_4; DEST[63:32] := C_4; DEST[31:0] := D_4`. No flags are affected. -/
+def sha1Rnds4 (src1 src2 : BitVec 128) (imm : BitVec 8) : BitVec 128 :=
+  let i := (imm.extractLsb' 0 2).toNat
+  let a0 := dword src1 3
+  let b0 := dword src1 2
+  let c0 := dword src1 1
+  let d0 := dword src1 0
+  let w0e := dword src2 3
+  let w1 := dword src2 2
+  let w2 := dword src2 1
+  let w3 := dword src2 0
+  let a1 := sha1F i b0 c0 d0 + a0.rotateLeft 5 + w0e + sha1K i
+  let b1 := a0
+  let c1 := b0.rotateLeft 30
+  let d1 := c0
+  let e1 := d0
+  let a2 := sha1F i b1 c1 d1 + a1.rotateLeft 5 + w1 + e1 + sha1K i
+  let b2 := a1
+  let c2 := b1.rotateLeft 30
+  let d2 := c1
+  let e2 := d1
+  let a3 := sha1F i b2 c2 d2 + a2.rotateLeft 5 + w2 + e2 + sha1K i
+  let b3 := a2
+  let c3 := b2.rotateLeft 30
+  let d3 := c2
+  let e3 := d2
+  let a4 := sha1F i b3 c3 d3 + a3.rotateLeft 5 + w3 + e3 + sha1K i
+  let b4 := a3
+  let c4 := b3.rotateLeft 30
+  let d4 := c3
+  ofDwords d4 c4 b4 a4
 
 /-- SDM Vol. 2, "PALIGNR", 128-bit legacy SSE version: `temp1[255:0] :=
 ((DEST[127:0] << 128) OR SRC[127:0])>>(imm8*8); DEST[127:0] :=
@@ -278,8 +428,11 @@ def XOp.exec : XOp → State → State
   | .bin op d r, s => s.setXmm d (op.eval (s.xmm d) (s.xmm r))
   | .shift op d n, s => s.setXmm d (op.eval (s.xmm d) n)
   | .pshufd d r o, s => s.setXmm d (shufDwords (s.xmm r) o)
+  | .pshuflw d r o, s => s.setXmm d (shufLowWords (s.xmm r) o)
+  | .pshufhw d r o, s => s.setXmm d (shufHighWords (s.xmm r) o)
   | .palignr d r n, s => s.setXmm d (alignRight (s.xmm d) (s.xmm r) n)
   | .sha256rnds2 d r, s => s.setXmm d (sha256Rnds2 (s.xmm d) (s.xmm r) (s.xmm .xmm0))
+  | .sha1rnds4 d r n, s => s.setXmm d (sha1Rnds4 (s.xmm d) (s.xmm r) n)
   | .movd d r, s => s.setXmm d ((0 : BitVec 96) ++ s.gpr r)
   | .aeskeygenassist d r n, s => s.setXmm d (aesKeygenAssist (s.xmm r) n)
   | .pclmulqdq d r n, s => s.setXmm d (pclmul (s.xmm d) (s.xmm r) n)

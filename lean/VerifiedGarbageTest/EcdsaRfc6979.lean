@@ -1,6 +1,7 @@
 import Lean.Elab.Command
 import VerifiedGarbage.Spec.Ecdsa.Rfc6979.P256Sha256
 import VerifiedGarbage.Spec.Ecdsa.Rfc6979.P256Sha384
+import VerifiedGarbageTest.Ec.Rfc6979
 import VerifiedGarbage.Spec.Sha1
 import VerifiedGarbage.Spec.Sha256
 import VerifiedGarbage.Spec.Sha512
@@ -17,40 +18,14 @@ From the byte-for-byte vendored RFC:
   of K-163 matters to the generation of `k`; the rest of the curve here is
   a placeholder.
 * The ten signatures of §A.2.5 (P-256; "sample" and "test" with SHA-1,
-  SHA-224, SHA-256, SHA-384 and SHA-512): the first candidate is the `k`
-  the RFC lists, `sign` gives the listed `(r, s)` after one candidate, and
-  the contracts' instances (`P256Sha256.inst`, `P256Sha384.inst`) agree for
-  SHA-256 and SHA-384.
+  SHA-224, SHA-256, SHA-384 and SHA-512), with the checks of
+  `Ec/Rfc6979.lean`: the contracts' instances are `P256Sha256.inst` and
+  `P256Sha384.inst`.
 -/
 
 namespace VG.Test.EcdsaRfc6979
 
-open Lean Elab Command Spec.Weierstrass Spec.Ecdsa Spec.Ecdsa.Rfc6979
-
-def hexDigit (c : Char) : Option Nat :=
-  if '0' ≤ c ∧ c ≤ '9' then some (c.toNat - '0'.toNat)
-  else if 'A' ≤ c ∧ c ≤ 'F' then some (c.toNat - 'A'.toNat + 10)
-  else none
-
-def hexNat (s : String) : Except String Nat :=
-  s.toList.foldlM (fun acc c => match hexDigit c with
-    | some d => pure (16 * acc + d)
-    | none => throw s!"invalid hexadecimal digit {c}") 0
-
-def trim (line : String) : String := String.ofList (line.toList.dropWhile (· == ' '))
-
-/-- `name = HEX` (or `name = 0xHEX`) on a line of its own, indented. -/
-def field (name : String) (line : String) : Option String :=
-  let t := trim line
-  if t.startsWith (name ++ " = ") then
-    let v := String.ofList (t.toList.drop (name.length + 3))
-    some (if v.startsWith "0x" then String.ofList (v.toList.drop 2) else v)
-  else none
-
-def one (lines : List String) (name : String) : Except String Nat := do
-  match lines.filterMap (field name) with
-  | [v] => hexNat v
-  | vs => throw s!"expected one {name}, got {vs.length}"
+open Spec.Weierstrass Spec.Ecdsa Spec.Ecdsa.Rfc6979 VG.Test.Ec
 
 /-- The octets listed under the line `label`: the following lines of
 space-separated pairs of hexadecimal digits. -/
@@ -63,11 +38,6 @@ def octets (lines : List String) (label : String) : Except String (List Byte) :=
   let ws := rows.flatMap fun l => (trim l).splitOn " " |>.filter (· ≠ "")
   if ws.isEmpty then throw s!"no octets under {label}"
   ws.mapM fun w => do return BitVec.ofNat 8 (← hexNat w)
-
-def sectionOf (text start stop : String) : List String :=
-  (((text.splitOn "\n").dropWhile (!·.startsWith start)).drop 1).takeWhile (!·.startsWith stop)
-
-def utf8 (s : String) : List Byte := s.toList.map fun c => BitVec.ofNat 8 c.toNat
 
 /-- K-163's order `q`, and a placeholder for the rest of the curve. -/
 def k163 (q : Nat) (h : q ≠ 0) : Curve :=
@@ -111,70 +81,7 @@ def checkDetailed (text : String) : Except String Unit := do
   let k3 := bits2int C T
   unless k3 == (← one lines "k") && k3 < q do throw "k3"
 
-structure Vector where
-  hash : String
-  message : String
-  k : Nat
-  r : Nat
-  s : Nat
-
-/-- Each hash function of §A.2.5: its HMAC hash function and output length. -/
-def hashes : List (String × Spec.Hmac.HashFunction × Nat) :=
-  [("SHA-1", Spec.Hmac.sha1, 20), ("SHA-224", Spec.Hmac.sha224, 28),
-    ("SHA-256", Spec.Hmac.sha256, 32), ("SHA-384", Spec.Hmac.sha384, 48),
-    ("SHA-512", Spec.Hmac.sha512, 64)]
-
-/-- The private key and the signatures of §A.2.5. -/
-def parse (text : String) : Except String (Nat × List Vector) := do
-  let lines := sectionOf text "A.2.5.  ECDSA, 256 Bits" "A.2.6."
-  let x ← one lines "x"
-  let mut vs : Array Vector := #[]
-  let mut header : Option (String × String) := none
-  let mut k : Option Nat := none
-  let mut r : Option Nat := none
-  for line in lines do
-    let t := trim line
-    if t.startsWith "With " then
-      match t.splitOn ", message = \"" with
-      | [h, m] => header := some (String.ofList (h.toList.drop 5), (m.splitOn "\"").headD "")
-      | _ => throw s!"unexpected line {t}"
-    else if let some v := field "k" line then k := some (← hexNat v)
-    else if let some v := field "r" line then r := some (← hexNat v)
-    else if let some v := field "s" line then
-      let (some (h, m), some kv, some rv) := (header, k, r) | throw "incomplete vector"
-      vs := vs.push { hash := h, message := m, k := kv, r := rv, s := ← hexNat v }
-      header := none; k := none; r := none
-  unless vs.size == 10 do throw s!"expected 10 signatures, got {vs.size}"
-  return (x, vs.toList)
-
-def C : Curve := Spec.P256.curve
-
-def checkVector (x : Nat) (v : Vector) : Except String Unit := do
-  let some (_, H, hlen) := hashes.find? (·.1 == v.hash) | throw s!"unknown hash {v.hash}"
-  let h1 := H.hash (utf8 v.message)
-  unless h1.length == hlen do throw s!"{v.hash}: output length"
-  -- The first candidate is the RFC's `k`.
-  let (K, V) := init C H hlen x h1
-  let (T, _) := genT H K (blocks C hlen) V
-  unless bits2int C T == v.k do throw s!"{v.hash}, {v.message}: k mismatch"
-  unless sign C H hlen 8 x h1 == (some (v.r, v.s), 1) do
-    throw s!"{v.hash}, {v.message}: signature mismatch"
-  let insts := [("SHA-256", Spec.Ecdsa.Rfc6979.P256Sha256.inst),
-    ("SHA-384", Spec.Ecdsa.Rfc6979.P256Sha384.inst)]
-  if let some (_, I) := insts.find? (·.1 == v.hash) then
-    unless I.hashLen == hlen && I.ecdsa.curve.n == C.n do throw s!"{v.hash}: instance"
-    unless sign I.ecdsa.curve I.hash I.hashLen I.tries x h1 == (some (v.r, v.s), 1) do
-      throw s!"{v.hash} instance, {v.message}: signature mismatch"
-
-/-- Keys outside `[1, n-1]` give no signature and no candidate; no
-candidate to try gives none. -/
-def checkEdges (x : Nat) : Except String Unit := do
-  let h1 := Spec.Sha256.hash (utf8 "sample")
-  for d in [0, C.n, C.n + 1] do
-    unless sign C H 32 8 d h1 == (none, 0) do throw s!"signed with d = {d}"
-  unless sign C H 32 0 x h1 == (none, 0) do throw "signed with no candidate"
-  unless rlen C == 32 do throw "rlen"
-
+open Lean Elab Command in
 run_cmd do
   let file ← IO.FS.realPath (← getFileName)
   let some root := file.parent >>= (·.parent) >>= (·.parent)
@@ -182,9 +89,9 @@ run_cmd do
   let text ← IO.FS.readFile (root / "vectors" / "rfc6979" / "rfc6979.txt")
   let result := do
     checkDetailed text
-    let (x, vs) ← parse text
-    for v in vs do checkVector x v
-    checkEdges x
+    VG.Test.Ec.Rfc6979.check Spec.P256.curve
+      [("SHA-256", Spec.Ecdsa.Rfc6979.P256Sha256.inst), ("SHA-384", Spec.Ecdsa.Rfc6979.P256Sha384.inst)]
+      "A.2.5.  ECDSA, 256 Bits" "A.2.6." text
   match result with
   | .ok () => pure ()
   | .error e => throwError "rfc6979.txt: {e}"

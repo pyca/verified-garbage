@@ -2853,7 +2853,7 @@ pub(crate) unsafe extern "C" fn vg_chacha20_poly1305_seal_neon(ctx: *mut [u64; 1
         "movz x1, #0, lsl #0",
         "add x2, x21, #48",
         "add x3, x21, #672",
-        "bl {vg_poly1305_finalize}",
+        "bl {vg_poly1305_finalize_scratch}",
         "ldr x22, [x21, #600]",
         "ldr x23, [x21, #608]",
         "ldr x24, [x21, #616]",
@@ -2865,7 +2865,7 @@ pub(crate) unsafe extern "C" fn vg_chacha20_poly1305_seal_neon(ctx: *mut [u64; 1
         vg_poly1305_init = sym super::poly1305::vg_poly1305_init,
         vg_poly1305_blocks = sym super::poly1305::vg_poly1305_blocks,
         vg_chacha20_xor_neon = sym super::chacha20::vg_chacha20_xor_neon,
-        vg_poly1305_finalize = sym super::poly1305::vg_poly1305_finalize,
+        vg_poly1305_finalize_scratch = sym super::poly1305::vg_poly1305_finalize_scratch,
     )
 }
 
@@ -4555,7 +4555,7 @@ pub(crate) unsafe extern "C" fn vg_chacha20_poly1305_open_neon(ctx: *mut [u64; 1
         "movz x1, #0, lsl #0",
         "add x2, x21, #640",
         "add x3, x21, #672",
-        "bl {vg_poly1305_finalize}",
+        "bl {vg_poly1305_finalize_scratch}",
         "ldr x9, [x21, #640]",
         "ldr x10, [x21, #48]",
         "eor x9, x9, x10",
@@ -4580,7 +4580,7 @@ pub(crate) unsafe extern "C" fn vg_chacha20_poly1305_open_neon(ctx: *mut [u64; 1
         vg_poly1305_init = sym super::poly1305::vg_poly1305_init,
         vg_poly1305_blocks = sym super::poly1305::vg_poly1305_blocks,
         vg_chacha20_xor_neon = sym super::chacha20::vg_chacha20_xor_neon,
-        vg_poly1305_finalize = sym super::poly1305::vg_poly1305_finalize,
+        vg_poly1305_finalize_scratch = sym super::poly1305::vg_poly1305_finalize_scratch,
     )
 }
 
@@ -4722,7 +4722,7 @@ pub(crate) unsafe extern "C" fn vg_chacha20_poly1305_seal(ctx: *mut [u64; 128], 
         "movz x1, #0, lsl #0",
         "add x2, x21, #48",
         "add x3, x21, #672",
-        "bl {vg_poly1305_finalize}",
+        "bl {vg_poly1305_finalize_scratch}",
         "ldr x22, [x21, #600]",
         "ldr x23, [x21, #608]",
         "ldr x24, [x21, #616]",
@@ -4734,7 +4734,7 @@ pub(crate) unsafe extern "C" fn vg_chacha20_poly1305_seal(ctx: *mut [u64; 128], 
         vg_poly1305_init = sym super::poly1305::vg_poly1305_init,
         vg_poly1305_blocks = sym super::poly1305::vg_poly1305_blocks,
         vg_chacha20_xor = sym super::chacha20::vg_chacha20_xor,
-        vg_poly1305_finalize = sym super::poly1305::vg_poly1305_finalize,
+        vg_poly1305_finalize_scratch = sym super::poly1305::vg_poly1305_finalize_scratch,
     )
 }
 
@@ -4876,7 +4876,7 @@ pub(crate) unsafe extern "C" fn vg_chacha20_poly1305_open(ctx: *mut [u64; 128], 
         "movz x1, #0, lsl #0",
         "add x2, x21, #640",
         "add x3, x21, #672",
-        "bl {vg_poly1305_finalize}",
+        "bl {vg_poly1305_finalize_scratch}",
         "ldr x9, [x21, #640]",
         "ldr x10, [x21, #48]",
         "eor x9, x9, x10",
@@ -4901,7 +4901,7 @@ pub(crate) unsafe extern "C" fn vg_chacha20_poly1305_open(ctx: *mut [u64; 128], 
         vg_poly1305_init = sym super::poly1305::vg_poly1305_init,
         vg_poly1305_blocks = sym super::poly1305::vg_poly1305_blocks,
         vg_chacha20_xor = sym super::chacha20::vg_chacha20_xor,
-        vg_poly1305_finalize = sym super::poly1305::vg_poly1305_finalize,
+        vg_poly1305_finalize_scratch = sym super::poly1305::vg_poly1305_finalize_scratch,
     )
 }
 
@@ -7473,7 +7473,7 @@ pub(crate) unsafe extern "C" fn vg_chacha20_poly1305_seal_sve2(ctx: *mut [u64; 1
         "movz x1, #0, lsl #0",
         "add x2, x21, #48",
         "add x3, x21, #672",
-        "bl {vg_poly1305_finalize}",
+        "bl {vg_poly1305_finalize_scratch}",
         "ldr x22, [x21, #600]",
         "ldr x23, [x21, #608]",
         "ldr x24, [x21, #616]",
@@ -7486,7 +7486,7 @@ pub(crate) unsafe extern "C" fn vg_chacha20_poly1305_seal_sve2(ctx: *mut [u64; 1
         vg_poly1305_init = sym super::poly1305::vg_poly1305_init,
         vg_poly1305_blocks = sym super::poly1305::vg_poly1305_blocks,
         vg_chacha20_xor_sve2 = sym super::chacha20::vg_chacha20_xor_sve2,
-        vg_poly1305_finalize = sym super::poly1305::vg_poly1305_finalize,
+        vg_poly1305_finalize_scratch = sym super::poly1305::vg_poly1305_finalize_scratch,
     )
 }
 
@@ -9037,7 +9037,7 @@ pub(crate) unsafe extern "C" fn vg_chacha20_poly1305_open_sve2(ctx: *mut [u64; 1
         "movz x1, #0, lsl #0",
         "add x2, x21, #640",
         "add x3, x21, #672",
-        "bl {vg_poly1305_finalize}",
+        "bl {vg_poly1305_finalize_scratch}",
         "ldr x9, [x21, #640]",
         "ldr x10, [x21, #48]",
         "eor x9, x9, x10",
@@ -9063,6 +9063,6 @@ pub(crate) unsafe extern "C" fn vg_chacha20_poly1305_open_sve2(ctx: *mut [u64; 1
         vg_poly1305_init = sym super::poly1305::vg_poly1305_init,
         vg_poly1305_blocks = sym super::poly1305::vg_poly1305_blocks,
         vg_chacha20_xor_sve2 = sym super::chacha20::vg_chacha20_xor_sve2,
-        vg_poly1305_finalize = sym super::poly1305::vg_poly1305_finalize,
+        vg_poly1305_finalize_scratch = sym super::poly1305::vg_poly1305_finalize_scratch,
     )
 }

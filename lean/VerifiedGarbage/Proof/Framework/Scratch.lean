@@ -10,6 +10,13 @@ frame (`Impl/StackScratch/`). Its contract without the argument,
 (`Sig.scratchContract`): the same `pre` and `post`, which ignore the buffer
 (`Curry.withScratch`), on the signature with one more, last, parameter
 (`Sig.withScratch`). Each target's `StackScratch.lean` proves the step.
+
+A contract may also declare a leak (`Sig.contract`'s `leak`), which the code's
+contract takes too, ignoring the buffer. Where the frame copies arguments into
+memory, the leak must read memory only within the function's buffers
+(`Sig.LeakLocal`, which holds of no leak), as the precondition and
+postcondition must; the two runs then agree on the code's leak if they agree
+on the function's (`leakAgree_withScratch`).
 -/
 
 namespace VG
@@ -68,14 +75,16 @@ theorem Curry.apply_withScratch {α : Type} (pb : Nat) (nm : String) (e : Elem) 
     exact Curry.apply_withScratch pb nm e n ps _ _ x hr
 
 /-- The contract of a function whose last argument is a scratch buffer of
-`n` elements `e`, working space that `pre` and `post` ignore: the contract
-that `sig.contract A pre post writeArgs stack` follows from, for a function
-that allocates the buffer itself. -/
+`n` elements `e`, working space that `pre`, `post` and `leak` ignore: the
+contract that `sig.contract A pre post writeArgs stack leak` follows from, for
+a function that allocates the buffer itself. -/
 def Sig.scratchContract {M : ISA} (A : Abi M) (sig : Sig) (nm : String) (e : Elem) (n : Nat)
     (pre : Curry (sig.words A.ptrBits) (Mem → Prop)) (post : sig.Post A.ptrBits)
-    (writeArgs : Bool) (stack : Nat) : Contract M :=
+    (writeArgs : Bool) (stack : Nat)
+    (leak : Option (Curry (sig.words A.ptrBits) (Mem → List Nat)) := none) : Contract M :=
   (sig.withScratch nm e n).contract A (Curry.withScratch A.ptrBits nm e n sig.params pre)
     (Curry.withScratch A.ptrBits nm e n sig.params post) writeArgs stack
+    (leak.map (Curry.withScratch A.ptrBits nm e n sig.params))
 
 theorem Sig.words_withScratch (sig : Sig) (nm : String) (e : Elem) (n : Nat) (pb : Nat) :
     (sig.withScratch nm e n).words pb = sig.words pb ++ ([.addr] : List ArgWord) := by
@@ -233,5 +242,44 @@ theorem Sig.descs_of_noLists (pb : Nat) :
 theorem Sig.noLists_withScratch {sig : Sig} (nm : String) (e : Elem) (n : Nat)
     (h : Sig.noLists sig.params = true) : Sig.noLists (sig.withScratch nm e n).params = true := by
   simpa [Sig.withScratch, Sig.noLists, List.all_append] using h
+
+/-! ## Leaks -/
+
+/-- What a contract's `leak` says of two runs, from their argument values and
+memory: that they agree on it, and nothing if there is none (as in
+`Sig.contract`'s `pub`). -/
+def leakAgree {ws : List ArgWord} : Option (Curry ws (Mem → List Nat)) → List (BitVec 64) → Mem →
+    List (BitVec 64) → Mem → Prop
+  | none, _, _, _, _ => True
+  | some f, vs₁, m₁, vs₂, m₂ => Curry.apply ws f vs₁ m₁ = Curry.apply ws f vs₂ m₂
+
+/-- A contract's leak reads memory only within the function's buffers: two
+memories that agree there give the same leak. No leak is local. -/
+def Sig.LeakLocal (pb : Nat) (sig : Sig) : Option (Curry (sig.words pb) (Mem → List Nat)) → Prop
+  | none => True
+  | some f => ∀ vs m₁ m₂, vs.length = (sig.words pb).length →
+      (∀ b ∈ Sig.bufs sig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+      Curry.apply _ f vs m₁ = Curry.apply _ f vs m₂
+
+/-- Two runs that agree on a local leak agree on the leak of the contract with
+the buffer (`Sig.scratchContract`), from any buffer addresses and memories
+that agree with theirs within the function's buffers. -/
+theorem leakAgree_withScratch {pb : Nat} {sig : Sig} {nm : String} {e : Elem} {n : Nat}
+    {leak : Option (Curry (sig.words pb) (Mem → List Nat))} (hleak : Sig.LeakLocal pb sig leak)
+    {vs₁ vs₂ : List (BitVec 64)} {m₁ m₂ m₁' m₂' : Mem} (x₁ x₂ : BitVec 64)
+    (l₁ : vs₁.length = (sig.words pb).length) (l₂ : vs₂.length = (sig.words pb).length)
+    (a₁ : ∀ b ∈ Sig.bufs sig.params vs₁, ∀ a, b.1.Contains a 1 → m₁' a = m₁ a)
+    (a₂ : ∀ b ∈ Sig.bufs sig.params vs₂, ∀ a, b.1.Contains a 1 → m₂' a = m₂ a)
+    (h : leakAgree leak vs₁ m₁ vs₂ m₂) :
+    leakAgree (ws := (sig.withScratch nm e n).words pb)
+      (leak.map (Curry.withScratch pb nm e n sig.params)) (vs₁ ++ [x₁]) m₁' (vs₂ ++ [x₂]) m₂' := by
+  cases leak with
+  | none => trivial
+  | some f =>
+    show Curry.apply _ (Curry.withScratch pb nm e n sig.params f) (vs₁ ++ [x₁]) m₁' =
+      Curry.apply _ (Curry.withScratch pb nm e n sig.params f) (vs₂ ++ [x₂]) m₂'
+    rw [Curry.apply_withScratch pb nm e n sig.params f vs₁ x₁ l₁,
+      Curry.apply_withScratch pb nm e n sig.params f vs₂ x₂ l₂]
+    exact (hleak vs₁ m₁' m₁ l₁ a₁).trans (h.trans (hleak vs₂ m₂' m₂ l₂ a₂).symm)
 
 end VG

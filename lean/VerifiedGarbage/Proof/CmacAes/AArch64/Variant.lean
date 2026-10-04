@@ -14,6 +14,12 @@ structure UpdateImpl where
   keepsV : callee.code.allInstrs AArch64.keepsV = true
   suffix : String
   features : List String
+  /-- The implementation of `vg_aes_ctr32` that goes with it, for callers
+  that also run counter mode (AES-CCM, AES-SIV): the one it is built on, or
+  for the chaining kept in registers, `vg_aes_ctr32_aes`. It needs the same
+  CPU features. -/
+  ctr : Proof.Aes.AArch64.Ctr32Impl
+  ctrFeatures : ctr.features = features
 
 /-- The existing generic CMAC chaining loop, for any CTR implementation. -/
 def UpdateImpl.ctr32 (v : Proof.Aes.AArch64.Ctr32Impl) : UpdateImpl where
@@ -25,6 +31,8 @@ def UpdateImpl.ctr32 (v : Proof.Aes.AArch64.Ctr32Impl) : UpdateImpl where
   keepsV := update_keepsV v
   suffix := v.suffix
   features := v.features
+  ctr := v
+  ctrFeatures := rfl
 
 /-- Round keys and chaining value stay in registers across all blocks. -/
 def UpdateImpl.aese : UpdateImpl where
@@ -35,4 +43,6 @@ def UpdateImpl.aese : UpdateImpl where
   keepsV := by decide +kernel
   suffix := "_aes_cbc"
   features := ["aes"]
+  ctr := .aese
+  ctrFeatures := rfl
 end VG.Proof.CmacAes.AArch64

@@ -100,7 +100,7 @@ theorem Inv.update {M : Mod} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat �
       have := hL.le x hx
       exact opKeep_wordsVal hk (by omega) (by omega) (by omega)
   refine ⟨⟨(hk.gpr _ (rdi_not_clob _)).trans hI.scr.rdi, hk.wr ▸ hI.scr.wr, hn⟩,
-    ⟨hM.n0, hM.n7, hM.mo, hM.tmp, hM.sep, ?_, hM.inv⟩, ?_, ?_, ?_⟩
+    ⟨hM.n0, hM.n7, hM.mo, hM.tmp, hM.sep, ?_, hM.inv, hM.red⟩, ?_, ?_, ?_⟩
   · have := hM.mo
     have := hM.sep
     rw [opKeep_wordsVal hk (by omega) (by omega) (by omega)]

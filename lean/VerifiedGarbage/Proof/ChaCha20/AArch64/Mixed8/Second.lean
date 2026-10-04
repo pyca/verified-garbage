@@ -41,7 +41,7 @@ theorem reload_ok {s₀ s : State} (hp : CP s₀) (h : Spilled s₀ s) :
     rw [source,hg _ (by decide),hm]
     change stateAt (s.mem.writeW (s.gpr .x0 + BitVec.ofNat 64 48)
       (s.mem.readW (s.gpr .x0 + BitVec.ofNat 64 48) 32 + BitVec.ofNat 32 1)) _ = _
-    rw [VG.Proof.ChaCha20.AArch64.Xor.stateAt_writeW_counter]
+    rw [VG.Proof.ChaCha20.AArch64.Xor.stateAt_writeW_ctr]
     change ctr (source s) 1 = _
     rw [h.cnt,VG.Proof.ChaCha20.AArch64.Neon4.ctr_add]
   have hf : Frame [sr s₀] s.mem a.mem := by

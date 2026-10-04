@@ -5,6 +5,18 @@
 pub(crate) mod aes;
 
 #[rustfmt::skip]
+pub(crate) mod aes_ccm;
+
+#[rustfmt::skip]
+pub(crate) mod aes_gcm_siv;
+
+#[rustfmt::skip]
+pub(crate) mod aes_ocb;
+
+#[rustfmt::skip]
+pub(crate) mod aes_siv;
+
+#[rustfmt::skip]
 pub(crate) mod argon2;
 
 #[rustfmt::skip]
@@ -27,6 +39,21 @@ pub(crate) mod cmac_triple_des;
 
 #[rustfmt::skip]
 pub(crate) mod ct;
+
+#[rustfmt::skip]
+pub(crate) mod ec_p256;
+
+#[rustfmt::skip]
+pub(crate) mod ecdh_p256;
+
+#[rustfmt::skip]
+pub(crate) mod ecdsa_p256;
+
+#[rustfmt::skip]
+pub(crate) mod ecdsa_p256_sha256;
+
+#[rustfmt::skip]
+pub(crate) mod ecdsa_p256_sha384;
 
 #[rustfmt::skip]
 pub(crate) mod ed25519;

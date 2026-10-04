@@ -7,6 +7,8 @@
 ))]
 
 use crate::arch::argon2::vg_argon2_hprime;
+#[cfg(target_arch = "x86_64")]
+use crate::arch::argon2::{vg_argon2_hprime_avx2, vg_argon2_hprime_avx512};
 use crate::hashes::blake2b::{Blake2b, Blake2bBackend};
 
 #[repr(C)]
@@ -28,18 +30,23 @@ fn check(input: &[u8], expected: &[u8]) {
         };
         let mut out = [0xa5; 4192];
         let result = &mut out[16..16 + expected.len()];
+        let hprime = match backend {
+            Blake2bBackend::Scalar => vg_argon2_hprime,
+            #[cfg(target_arch = "x86_64")]
+            Blake2bBackend::Avx2 => vg_argon2_hprime_avx2,
+            #[cfg(target_arch = "x86_64")]
+            Blake2bBackend::Avx512 => vg_argon2_hprime_avx512,
+        };
         // SAFETY: lengths satisfy H′'s bounds, allocations are separate,
         // scratch has 2048 words, and dispatch uses the detected backend.
         unsafe {
-            match backend {
-                Blake2bBackend::Scalar => vg_argon2_hprime(
-                    input.as_ptr(),
-                    input.len(),
-                    result.as_mut_ptr(),
-                    result.len(),
-                    &mut scratch.data,
-                ),
-            }
+            hprime(
+                input.as_ptr(),
+                input.len(),
+                result.as_mut_ptr(),
+                result.len(),
+                &mut scratch.data,
+            );
         }
         assert_eq!(result, expected);
         assert_eq!(&out[..16], &[0xa5; 16]);

@@ -365,7 +365,7 @@ theorem blockMix_correct (s : State) (hs : Proof.Scrypt.blockMixX86.pre s) :
 
 theorem blockMix_ct : ConstantTime isa Proof.Scrypt.blockMixX86.pre Proof.Scrypt.blockMixX86.pub
     Impl.Scrypt.X86.blockMix :=
-  VG.Taint.constantTime (A := VG.X86.taint) τ₀ (fun _ _ h₁ h₂ hp => agree₀ h₁ h₂ hp) (by taint_decide)
+  VG.Taint.constantTime (A := VG.X86.sseTaint) τ₀ (fun _ _ h₁ h₂ hp => agree₀ h₁ h₂ hp) (by taint_decide)
 
 /-! ## The shared contract -/
 

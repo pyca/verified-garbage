@@ -43,7 +43,7 @@ theorem implies :
           X86_64.abi, X86_64.argRegs, satState] [satState 48] using satState 48 }
 
 /-- SHA-384, with the implementation `v` of SHA-512's compression function. -/
-def pack (v : Compress) : RfcHash where
+def pack (hL : Weierstrass.Law Spec.P256.curve) (v : Compress) : RfcHash where
   I := Spec.Ecdsa.Rfc6979.P256Sha384.inst
   H := Proof.Pbkdf2.Md.X86_64.Sha512.sha384H v
   ok := Proof.Pbkdf2.Md.X86_64.Sha512.sha384OK v
@@ -59,13 +59,13 @@ def pack (v : Compress) : RfcHash where
   hS := Nat.le_of_ble_eq_true rfl
   hW := Nat.le_of_ble_eq_true rfl
   hWb := Nat.le_of_ble_eq_true rfl
-  coreX := Proof.Ecdsa.X86_64.sign_x86
+  coreX := Proof.Ecdsa.X86_64.sign_x86 hL
   coreCT := Proof.Ecdsa.X86_64.sign_ct
   updSp := show (Proof.Pbkdf2.Md.X86_64.Sha512.coreH 48).updC.allInstrs _ = true by decide +kernel
 
-theorem sign_verified (v : Compress) :
-    Verified X86_64.target (cfgOf (pack v)).sign
+theorem sign_verified (hL : Weierstrass.Law Spec.P256.curve) (v : Compress) :
+    Verified X86_64.target (cfgOf (pack hL v)).sign
       (Spec.Ecdsa.Rfc6979.P256Sha384.inst.signContract X86_64.abi 224) :=
-  X86_64.sign_verified (pack v) implies
+  X86_64.sign_verified (pack hL v) implies
 
 end VG.Proof.Ecdsa.Rfc6979.X86_64.Sha384

@@ -48,6 +48,10 @@ structure StreamFn where
 instance `I`) keep their working space, for their `_scratch` forms. -/
 def hmacFrame (I : Spec.Hmac.Instance) : Nat := 8 * I.scratch
 
+/-- The bytes of the frame in which PBKDF2's `pbkdf2` (of instance `I`) keeps
+its working space, for its `_scratch` form. -/
+def pbkdf2Frame (I : Spec.Hmac.Instance) : Nat := 8 * I.pbkdf2Scratch
+
 /-- A Merkle–Damgård hash function on AArch64, with one implementation of
 its compression function: its functions, verified against the contracts of
 its instance `I` (`Spec/Hmac/Generic.lean`, `Spec/Pbkdf2/Generic.lean`). -/
@@ -59,7 +63,7 @@ structure MdHash where
   hmacInit : Verified AArch64.target H.hmacInit (I.initScratchContract AArch64.abi 16)
   hmacFin : Verified AArch64.target H.hmacFin (I.finalizeScratchContract AArch64.abi 16)
   iterate : Verified AArch64.target H.iterate (I.iterateContract AArch64.abi)
-  pbkdf2 : Verified AArch64.target H.pbkdf2 (I.pbkdf2Contract AArch64.abi 16)
+  pbkdf2 : Verified AArch64.target H.pbkdf2 (I.pbkdf2ScratchContract AArch64.abi 16)
   /-- HMAC's `init` and `finalize` with their working space in a frame of
   their own (`hmacInit` and `hmacFin` are their `_scratch` forms). -/
   hmacInitF : Verified AArch64.target
@@ -68,6 +72,11 @@ structure MdHash where
   hmacFinF : Verified AArch64.target
     (Impl.StackScratch.AArch64.withStackScratch (hmacFrame I) .x4 H.hmacFin)
     (I.finalizeContract AArch64.abi (16 + hmacFrame I))
+  /-- PBKDF2's `pbkdf2` with its working space in a frame of its own
+  (`pbkdf2` is its `_scratch` form). -/
+  pbkdf2F : Verified AArch64.target
+    (Impl.StackScratch.AArch64.withStackScratch (pbkdf2Frame I) .x7 H.pbkdf2)
+    (I.pbkdf2Contract AArch64.abi (16 + pbkdf2Frame I))
   /-- What the names of the functions emitted for it end with (nothing for
   the baseline implementation). -/
   suffix : String
@@ -85,6 +94,11 @@ structure MdHash where
   made (`Generic/MdHash/AArch64/Scrypt.lean`); `none` for the other hash
   functions. -/
   sha256 : Option Proof.Sha256.AArch64.Compress := none
+  /-- For SHA-384's variants, the implementation of SHA-512's compression
+  function, from which the functions built on SHA-384 alone (deterministic
+  ECDSA's) are made (`Generic/MdHash/AArch64/EcdsaP256Sha384.lean`); `none`
+  for the other hash functions. -/
+  sha384 : Option Proof.Sha512.AArch64.Compress := none
 
 namespace MdHash
 
@@ -110,10 +124,10 @@ theorem iterate_of (hs : ∃ s, (I.iterateContract AArch64.abi).pre s) :
 theorem pbkdf2_of (hsI : ∃ s, (I.initScratchContract AArch64.abi 16).pre s)
     (hsF : ∃ s, (I.finalizeScratchContract AArch64.abi 16).pre s)
     (hsT : ∃ s, (I.iterateContract AArch64.abi).pre s)
-    (hs : ∃ s, (I.pbkdf2Contract AArch64.abi 16).pre s) :
-    Verified AArch64.target H.pbkdf2 (I.pbkdf2Contract AArch64.abi 16) := by
+    (hs : ∃ s, (I.pbkdf2ScratchContract AArch64.abi 16).pre s) :
+    Verified AArch64.target H.pbkdf2 (I.pbkdf2ScratchContract AArch64.abi 16) := by
   simp only [Spec.Hmac.Instance.initScratchContract, Spec.Hmac.Instance.finalizeScratchContract,
-    Spec.Hmac.Instance.iterateContract, Spec.Hmac.Instance.pbkdf2Contract,
+    Spec.Hmac.Instance.iterateContract, Spec.Hmac.Instance.pbkdf2ScratchContract,
     Spec.Hmac.Instance.pbkdf2Scratch, ← hSH, ← hW, hH.hS] at hsI hsF hsT hs ⊢
   exact pbkdf2_verified hH C hsI hsF hsT hs
 
@@ -138,6 +152,20 @@ theorem hmacFinF_of (hsF : ∃ s, (I.finalizeScratchContract AArch64.abi 16).pre
     (bytes := hmacFrame I) (hmacFin_of hH C hSH hW hsF) (by exact (by decide : 4 < 8))
     (by simp only [hmacFrame, Elem.size]; omega) hsat rfl
 
+theorem pbkdf2F_of (hsI : ∃ s, (I.initScratchContract AArch64.abi 16).pre s)
+    (hsF : ∃ s, (I.finalizeScratchContract AArch64.abi 16).pre s)
+    (hsT : ∃ s, (I.iterateContract AArch64.abi).pre s)
+    (hsP : ∃ s, (I.pbkdf2ScratchContract AArch64.abi 16).pre s)
+    (hp : 0 < I.pbkdf2Scratch ∧ I.pbkdf2Scratch < 512 ∧ I.pbkdf2Scratch % 2 = 0)
+    (hsat : ∃ s, (I.pbkdf2Contract AArch64.abi (16 + pbkdf2Frame I)).pre s) :
+    Verified AArch64.target (Impl.StackScratch.AArch64.withStackScratch (pbkdf2Frame I) .x7 H.pbkdf2)
+      (I.pbkdf2Contract AArch64.abi (16 + pbkdf2Frame I)) :=
+  AArch64.Verified.stackScratch (sig := Spec.Pbkdf2.pbkdf2Sig) (nm := "scratch") (e := .u64)
+    (n := I.pbkdf2Scratch) (pre := Spec.Pbkdf2.pbkdf2Pre I.S AArch64.abi.ptrBits)
+    (post := Spec.Pbkdf2.pbkdf2Post I.S AArch64.abi.ptrBits) (wa := true) (stack := 16)
+    (bytes := pbkdf2Frame I) (pbkdf2_of hH C hSH hW hsI hsF hsT hsP) (by exact (by decide : 7 < 8))
+    (by simp only [pbkdf2Frame, Elem.size]; omega) hsat rfl
+
 end MdHash
 
 /-- The variant of hash function `H`, of instance `I`, from what the proofs
@@ -147,10 +175,12 @@ def MdHash.of {H : Hash} {I : Spec.Hmac.Instance} (hH : HashOK H) (C : CoreOK (c
     (hsI : ∃ s, (I.initScratchContract AArch64.abi 16).pre s)
     (hsF : ∃ s, (I.finalizeScratchContract AArch64.abi 16).pre s)
     (hsT : ∃ s, (I.iterateContract AArch64.abi).pre s)
-    (hsP : ∃ s, (I.pbkdf2Contract AArch64.abi 16).pre s)
+    (hsP : ∃ s, (I.pbkdf2ScratchContract AArch64.abi 16).pre s)
     (hs : 0 < I.scratch ∧ I.scratch < 512 ∧ I.scratch % 2 = 0)
     (hsIF : ∃ s, (I.initContract AArch64.abi (16 + hmacFrame I)).pre s)
     (hsFF : ∃ s, (I.finalizeContract AArch64.abi (16 + hmacFrame I)).pre s)
+    (hp : 0 < I.pbkdf2Scratch ∧ I.pbkdf2Scratch < 512 ∧ I.pbkdf2Scratch % 2 = 0)
+    (hsPF : ∃ s, (I.pbkdf2Contract AArch64.abi (16 + pbkdf2Frame I)).pre s)
     (suffix : String) (features : List String) (stream : List StreamFn := []) : MdHash where
   H := H
   I := I
@@ -160,6 +190,7 @@ def MdHash.of {H : Hash} {I : Spec.Hmac.Instance} (hH : HashOK H) (C : CoreOK (c
   pbkdf2 := MdHash.pbkdf2_of hH C hSH hW hsI hsF hsT hsP
   hmacInitF := MdHash.hmacInitF_of hH C hSH hW hsI hs hsIF
   hmacFinF := MdHash.hmacFinF_of hH C hSH hW hsF hs hsFF
+  pbkdf2F := MdHash.pbkdf2F_of hH C hSH hW hsI hsF hsT hsP hp hsPF
   suffix := suffix
   features := features
   stream := stream

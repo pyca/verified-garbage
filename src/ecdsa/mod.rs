@@ -12,7 +12,8 @@
 //! (`vg_ecdsa_<curve>_sign`). It checks the key, and tries further
 //! candidates for `k` when one is unsuitable. It follows the implementation
 //! of the hash function that this CPU runs (e.g. on x86-64,
-//! `vg_ecdsa_p256_sha256_sign_shani` with the SHA extensions).
+//! `vg_ecdsa_p256_sha256_sign_shani` with the SHA extensions, or on
+//! AArch64 `vg_ecdsa_p256_sha256_sign_sha2` with the SHA-256 instructions).
 //!
 //! Signing is constant time except for the number of candidates for `k`
 //! that it tries, almost always one.
@@ -29,17 +30,15 @@
 //! that the key is valid (SP 800-56A §5.6.2.3.3). It runs in constant time,
 //! although nothing it handles is secret.
 
-#![cfg(target_arch = "x86_64")]
+#![cfg(any(target_arch = "x86_64", target_arch = "x86", target_arch = "aarch64"))]
 
 mod p256;
 
-pub use p256::P256;
+pub use crate::ec::{Curve, P256};
 
 use crate::zeroize::zeroize;
 
 mod sealed {
-    pub trait Sealed {}
-
     /// The verified functions of the curve `C` with a hash function: signing
     /// its hash `digest` with the private key `d`, and verifying a signature
     /// of it with the public key `q`.
@@ -51,20 +50,6 @@ mod sealed {
             signature: &C::Signature,
         ) -> Result<(), super::Error>;
     }
-}
-
-/// A curve that ECDSA signs over.
-pub trait Curve: sealed::Sealed {
-    /// The encoding of a private key: the integer `d` in `[1, n − 1]`, most
-    /// significant byte first (`[u8; 32]` for P-256).
-    type PrivateKey: AsMut<[u8]> + Clone;
-    /// The encoding of a public key: the uncompressed form of SEC 1 §2.3.3,
-    /// `04 ‖ x ‖ y`, each coordinate most significant byte first
-    /// (`[u8; 65]` for P-256).
-    type PublicKey: Clone + core::fmt::Debug + PartialEq + Eq;
-    /// The encoding of a signature: `r ‖ s`, each most significant byte
-    /// first (`[u8; 64]` for P-256).
-    type Signature;
 }
 
 /// A hash function that ECDSA signs with, and verifies signatures of, over

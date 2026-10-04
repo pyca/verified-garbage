@@ -1,10 +1,14 @@
 import VerifiedGarbage.TCB.X86_64.Target
 import VerifiedGarbage.Proof.Ed448.X86_64.VerifyVerified
+import VerifiedGarbage.Proof.Ed448.Facts
 
 /-!
 # Ed448 verification's equation on x86-64
 
-The signature and documentation come from the reviewed Ed448 API.
+The signature and documentation come from the reviewed Ed448 API. The
+reference computations' agreement with the specification
+(`Proof/Ed448/Facts.lean`) is passed to the proof here, so that only
+registration files import it.
 -/
 
 namespace VG.Artifacts.Ed448VerifyEquation.X86_64
@@ -23,7 +27,8 @@ def artifacts : List Artifact := [
       registers are saved in the first 48 bytes of `scratch`."])
     code := Impl.Ed448.X86_64.verifyEquation
     contract := Spec.Ed448.verifyEquationContract X86_64.abi
-    verified := Proof.Ed448.X86_64.verifyEquation_verified
+    verified := Proof.Ed448.X86_64.verifyEquation_verified Proof.Ed448.recover_ok
+      Proof.Ed448.verifyEq_ok
     spSafe := Code.all_of_allInstrs (by lit_decide) }]
 
 end VG.Artifacts.Ed448VerifyEquation.X86_64

@@ -18,7 +18,7 @@ pub const USES: &[&str] = &[
 /// and in OpenSSL with a random `k` (its default); and verifying a
 /// signature, with the public key decoded and checked in each verification,
 /// as the verified code does.
-#[cfg(target_arch = "x86_64")]
+#[cfg(any(target_arch = "x86_64", target_arch = "x86", target_arch = "aarch64"))]
 pub fn bench(c: &mut Criterion) {
     use std::hint::black_box;
 
@@ -63,7 +63,7 @@ pub fn bench(c: &mut Criterion) {
 
 /// Signing and verifying with the hash function `H`, named `name`, which
 /// OpenSSL calls `md`, with the private key `d`.
-#[cfg(target_arch = "x86_64")]
+#[cfg(any(target_arch = "x86_64", target_arch = "x86", target_arch = "aarch64"))]
 fn hash<H: verified_garbage::ecdsa::SignatureHash<verified_garbage::ecdsa::P256>>(
     c: &mut Criterion,
     name: &str,
@@ -143,5 +143,5 @@ fn hash<H: verified_garbage::ecdsa::SignatureHash<verified_garbage::ecdsa::P256>
     g.finish();
 }
 
-#[cfg(not(target_arch = "x86_64"))]
+#[cfg(not(any(target_arch = "x86_64", target_arch = "x86", target_arch = "aarch64")))]
 pub fn bench(_: &mut Criterion) {}

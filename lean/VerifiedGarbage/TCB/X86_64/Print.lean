@@ -140,6 +140,7 @@ def VOp.asm : VOp → String
   | .vpmadd52huq l d a b => s!"vpmadd52huq {d.vname l}, {a.vname l}, {b.vname l}"
   | .vprold l d r n => s!"vprold {d.vname l}, {r.vname l}, {n.toNat}"
   | .vpternlogd l d a b n => s!"vpternlogd {d.vname l}, {a.vname l}, {b.vname l}, {n.toNat}"
+  | .vprorq l d r n => s!"vprorq {d.vname l}, {r.vname l}, {n.toNat}"
 
 def ZBinOp.name : ZBinOp → String
   | .vpaddd => "vpaddd" | .vpxord => "vpxord"

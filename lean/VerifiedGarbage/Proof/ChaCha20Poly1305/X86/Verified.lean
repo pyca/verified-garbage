@@ -17,6 +17,7 @@ section
 namespace VG.Proof.ChaCha20Poly1305.X86
 
 open VG VG.X86 VG.Impl.ChaCha20Poly1305.X86
+open VG.Proof.ChaCha20.X86 (XorImpl)
 open VG.Spec.Poly1305 (Repr bytesAt mac leBytes)
 open VG.Spec.ChaCha20 (stateAt)
 open VG.Spec.ChaCha20Poly1305 (pad16 macData polyKeyGen)
@@ -64,12 +65,12 @@ theorem ret_kept {s₀ : State} (hp : APre s₀) {m₆ m' : Mem} (hi : Frame [wo
   have c : (retR s₀).Contains ((E s₀).setWidth 64) (32 / 8) := Region.contains_self _ _
   rw [hf.readW c (by rdisj_all) (by lit_omega), hi.readW c (by rdisj_all) (by lit_omega)]
 
-theorem seal_eq : «seal» =
-    .seq prologue (.seq (macPad (4 + 4 * 1) (8 + 4 * 1)) (.seq (.block lengths) (.seq crypt
+theorem seal_eq (v : Impl.ChaCha20.X86.Callee) : «seal» v =
+    .seq prologue (.seq (macPad (4 + 4 * 1) (8 + 4 * 1)) (.seq (.block lengths) (.seq (crypt v)
     (.seq (macPad (4 + 4 * 3) (8 + 4 * 3)) (.seq (absorbOne 656) (.seq (finalizeTo 48) (.block restore))))))) := rfl
 
-theorem seal_correct {s₀ : State} (hp : APre s₀) :
-    WP isa «seal» s₀ fun s' => abiPreserved s₀ s' ∧ sealX86.post s₀ s' := by
+theorem seal_correct (v : XorImpl) {s₀ : State} (hp : APre s₀) :
+    WP isa («seal» v.callee) s₀ fun s' => abiPreserved s₀ s' ∧ sealX86.post s₀ s' := by
   have hL' := hL s₀
   rw [seal_eq]
   refine WP.seq (WP.mono (prologue_ok hp) fun s₁ h₁ => ?_)
@@ -82,7 +83,7 @@ theorem seal_correct {s₀ : State} (hp : APre s₀) :
   have D₃ : bytesAt s₃.mem (dp s₀) (L s₀) = D s₀ := by
     rw [bytesAt_frame f₃ (by rdisj_all) hL', bytesAt_frame f₂ (by rdisj_all) hL',
       bytesAt_frame h₁.fine (by rdisj_all) hL']
-  refine WP.seq (WP.mono (crypt_ok hp i₃) fun s₄ ⟨i₄, f₄, ct₄⟩ => ?_)
+  refine WP.seq (WP.mono (crypt_ok v hp i₃) fun s₄ ⟨i₄, f₄, ct₄⟩ => ?_)
   have C₄ := ct₄ st₃
   rw [D₃] at C₄
   refine WP.seq (WP.mono (macPad_ok hp (i := 3) (by lit_omega) (srcD hp) i₄) fun s₅ ⟨i₅, f₅, r₅⟩ => ?_)
@@ -104,13 +105,13 @@ theorem seal_correct {s₀ : State} (hp : APre s₀) :
   simp only [Spec.ChaCha20Poly1305.encrypt, macData, List.nil_append,
     List.append_assoc, VG.Proof.Poly1305.length_bytesAt, length_encrypt]
 
-theorem open_eq : «open» =
+theorem open_eq (v : Impl.ChaCha20.X86.Callee) : «open» v =
     .seq prologue (.seq (macPad (4 + 4 * 1) (8 + 4 * 1)) (.seq (macPad (4 + 4 * 3) (8 + 4 * 3))
-    (.seq (.block lengths) (.seq (absorbOne 656) (.seq crypt (.seq (finalizeTo 640)
+    (.seq (.block lengths) (.seq (absorbOne 656) (.seq (crypt v) (.seq (finalizeTo 640)
       (.block (Impl.ChaCha20Poly1305.X86.compare ++ restore)))))))) := rfl
 
-theorem open_correct {s₀ : State} (hp : APre s₀) :
-    WP isa «open» s₀ fun s' => abiPreserved s₀ s' ∧ openX86.post s₀ s' := by
+theorem open_correct (v : XorImpl) {s₀ : State} (hp : APre s₀) :
+    WP isa («open» v.callee) s₀ fun s' => abiPreserved s₀ s' ∧ openX86.post s₀ s' := by
   have hL' := hL s₀
   rw [open_eq]
   refine WP.seq (WP.mono (prologue_ok hp) fun s₁ h₁ => ?_)
@@ -127,7 +128,7 @@ theorem open_correct {s₀ : State} (hp : APre s₀) :
       VG.Proof.ChaCha20.X86.Xor.stateAt_frame f₄ (by rdisj_all),
       VG.Proof.ChaCha20.X86.Xor.stateAt_frame f₃ (by rdisj_all),
       VG.Proof.ChaCha20.X86.Xor.stateAt_frame f₂ (by rdisj_all), h₁.st]
-  refine WP.seq (WP.mono (crypt_ok hp i₅) fun s₆ ⟨i₆, f₆, pt₆⟩ => ?_)
+  refine WP.seq (WP.mono (crypt_ok v hp i₅) fun s₆ ⟨i₆, f₆, pt₆⟩ => ?_)
   refine WP.seq (WP.mono (finalizeTo_ok hp i₆ (out := 640) (.inr rfl)) fun s₇ ⟨h₇, f₇, tag₇⟩ => ?_)
   refine WP.block_append (WP.mono (compare_ok hp h₇) fun s₈ ⟨rax₈, g₈, m₈, rd₈, wr₈⟩ => ?_)
   have h₈ : Fin s₀ s₈ := ⟨⟨by rw [g₈ _ (by decide) (by decide), h₇.at_.esp], by rw [rd₈, h₇.at_.rd],
@@ -183,6 +184,7 @@ satisfies between the pieces comes from the correctness proof
 namespace VG.Proof.ChaCha20Poly1305.X86
 
 open VG VG.X86 VG.Impl.ChaCha20Poly1305.X86
+open VG.Proof.ChaCha20.X86 (XorImpl)
 open VG.Impl.ChaCha20.X86 (at_)
 
 /-! ## Tools -/
@@ -340,10 +342,10 @@ theorem maB_rel {i : Nat} (hi : i + 1 < 5) (hsa : Src a (arg a i) (arg a (i + 1)
       exact ⟨blocks_pre ha hx.inv.at (by decide) (hsa.bsrc (Nat.mul_div_le _ _)) hx.ecx hx.ebx hx.eax, py,
         hq.at_ hx.inv.at hy.inv.at, p.1, p.2 0 (by decide), p.2 1 (by decide), p.2 2 (by decide)⟩
 
-theorem crB_rel :
+theorem crB_rel (v : XorImpl) :
     RelCT isa (fun x y => CrA a x ∧ CrA b y)
-      (callWith [.esi, .edx, .ecx, .eax] "vg_chacha20_xor" Impl.ChaCha20.X86.Xor.xor) fun _ _ => True :=
-  RelCT.callWith Proof.ChaCha20.X86.Xor.xor_correct Proof.ChaCha20.X86.Xor.xor_ct [] (wrXor a)
+      (callWith [.esi, .edx, .ecx, .eax] v.callee.name v.callee.code) fun _ _ => True :=
+  RelCT.callWith v.ok v.ct [] (wrXor a)
     fun x y ⟨hx, hy⟩ => by
       have py := xor_pre hb hy.inv.at hy.eax hy.ecx hy.edx hy.esi
       rw [show wrXor b = wrXor a by simp only [wrXor, sub, cx, CX, dR, dp, DP, L, LN, E, hq.cx, hq.a3, hq.a4,
@@ -362,7 +364,7 @@ theorem crB_rel :
 
 theorem fiB_rel {out : Nat} (ho : OutOk out) :
     RelCT isa (fun x y => FiA a out x ∧ FiA b out y)
-      (callWith finRegs "vg_poly1305_finalize" Impl.Poly1305.X86.finalize) fun _ _ => True :=
+      (callWith finRegs "vg_poly1305_finalize_scratch" Impl.Poly1305.X86.finalize) fun _ _ => True :=
   RelCT.callWith Proof.Poly1305.X86.finalize_ok Proof.Poly1305.X86.finalize_ct (rdFin a)
     (wrFin a out) fun x y ⟨hx, hy⟩ => by
       have py := finalize_pre hb hy.inv.at ho hy.ebx hy.ecx hy.eax hy.esi
@@ -488,12 +490,12 @@ theorem macPad_rel {i : Nat} (hi : i = 1 ∨ i = 3) (hsa : Src a (arg a i) (arg 
     intro h0; simp [eval, hx.zf, h0] at he
   exact padTail_rel ha hb hq hsa hsb hi' h0 x y t₁ t₂ x' y' ⟨hx, hy⟩ e₁ e₂
 
-theorem crypt_rel : RelCT isa (fun x y => Inv a x ∧ Inv b y) crypt fun _ _ => True := by
+theorem crypt_rel (v : XorImpl) : RelCT isa (fun x y => Inv a x ∧ Inv b y) (crypt v.callee) fun _ _ => True := by
   rw [crypt_eq]
   exact RelCT.seq (R := fun x y => CrA a x ∧ CrA b y)
     (RelCT.post (taintRel [.edi, .esp] (fun x y ⟨hx, hy⟩ => hq.inv hx hy) (by taint_decide))
       fun x y ⟨hx, hy⟩ => ⟨WP.mono (crA_ok ha hx) fun _ h => h.1, WP.mono (crA_ok hb hy) fun _ h => h.1⟩)
-    (crB_rel ha hb hq)
+    (crB_rel ha hb hq v)
 
 theorem finalizeTo_rel {out : Nat} (ho : OutOk out) :
     RelCT isa (fun x y => Inv a x ∧ Inv b y) (finalizeTo out) fun _ _ => True := by
@@ -513,14 +515,14 @@ theorem inv_rel {c : Prog isa} (h : RelCT isa (fun x y => Inv a x ∧ Inv b y) c
     RelCT isa (fun x y => Inv a x ∧ Inv b y) c fun x y => Inv a x ∧ Inv b y :=
   RelCT.post h fun x y ⟨hx, hy⟩ => ⟨hw a x ha hx, hw b y hb hy⟩
 
-theorem seal_rel : RelCT isa (fun x y => x = a ∧ y = b) «seal» fun _ _ => True := by
+theorem seal_rel (v : XorImpl) : RelCT isa (fun x y => x = a ∧ y = b) («seal» v.callee) fun _ _ => True := by
   rw [seal_eq]
   refine RelCT.seq (R := fun x y => Inv a x ∧ Inv b y) (RelCT.mono (prologue_rel ha hb hq) (fun _ _ h => h) fun x y ⟨hx, hy⟩ => ⟨hx.inv, hy.inv⟩) ?_
   refine RelCT.seq (inv_rel ha hb (macPad_rel ha hb hq (.inl rfl) (srcA ha) (srcA hb))
     (fun s₀ _ hp h => WP.mono (macPad_ok hp (by lit_omega) (srcA hp) h) fun _ h => h.1)) ?_
   refine RelCT.seq (inv_rel ha hb (taintRel [.edi, .esp] (fun x y ⟨hx, hy⟩ => hq.inv hx hy) (by taint_decide))
     (fun s₀ _ hp h => WP.mono (lengths_ok hp h) fun _ h => h.1)) ?_
-  refine RelCT.seq (inv_rel ha hb (crypt_rel ha hb hq) (fun s₀ _ hp h => WP.mono (crypt_ok hp h) fun _ h => h.1)) ?_
+  refine RelCT.seq (inv_rel ha hb (crypt_rel ha hb hq v) (fun s₀ _ hp h => WP.mono (crypt_ok v hp h) fun _ h => h.1)) ?_
   refine RelCT.seq (inv_rel ha hb (macPad_rel ha hb hq (.inr rfl) (srcD ha) (srcD hb))
     (fun s₀ _ hp h => WP.mono (macPad_ok hp (by lit_omega) (srcD hp) h) fun _ h => h.1)) ?_
   refine RelCT.seq (inv_rel ha hb (absorbOne_rel ha hb hq (.inr rfl))
@@ -530,7 +532,7 @@ theorem seal_rel : RelCT isa (fun x y => x = a ∧ y = b) «seal» fun _ _ => Tr
       WP.mono (finalizeTo_ok hb hy (.inl rfl)) fun _ h => h.1⟩) ?_
   exact taintRel [.edi, .esp] (fun x y ⟨hx, hy⟩ => hq.fin hx hy) (by taint_decide)
 
-theorem open_rel : RelCT isa (fun x y => x = a ∧ y = b) «open» fun _ _ => True := by
+theorem open_rel (v : XorImpl) : RelCT isa (fun x y => x = a ∧ y = b) («open» v.callee) fun _ _ => True := by
   rw [open_eq]
   refine RelCT.seq (R := fun x y => Inv a x ∧ Inv b y) (RelCT.mono (prologue_rel ha hb hq) (fun _ _ h => h) fun x y ⟨hx, hy⟩ => ⟨hx.inv, hy.inv⟩) ?_
   refine RelCT.seq (inv_rel ha hb (macPad_rel ha hb hq (.inl rfl) (srcA ha) (srcA hb))
@@ -541,7 +543,7 @@ theorem open_rel : RelCT isa (fun x y => x = a ∧ y = b) «open» fun _ _ => Tr
     (fun s₀ _ hp h => WP.mono (lengths_ok hp h) fun _ h => h.1)) ?_
   refine RelCT.seq (inv_rel ha hb (absorbOne_rel ha hb hq (.inr rfl))
     (fun s₀ _ hp h => WP.mono (absorbOne_ok hp h (.inr ⟨by omega, by omega⟩)) fun _ h => h.1)) ?_
-  refine RelCT.seq (inv_rel ha hb (crypt_rel ha hb hq) (fun s₀ _ hp h => WP.mono (crypt_ok hp h) fun _ h => h.1)) ?_
+  refine RelCT.seq (inv_rel ha hb (crypt_rel ha hb hq v) (fun s₀ _ hp h => WP.mono (crypt_ok v hp h) fun _ h => h.1)) ?_
   refine RelCT.seq (R := fun x y => Fin a x ∧ Fin b y) (RelCT.post (finalizeTo_rel ha hb hq (.inr rfl))
     fun x y ⟨hx, hy⟩ => ⟨WP.mono (finalizeTo_ok ha hx (.inr rfl)) fun _ h => h.1,
       WP.mono (finalizeTo_ok hb hy (.inr rfl)) fun _ h => h.1⟩) ?_
@@ -549,13 +551,13 @@ theorem open_rel : RelCT isa (fun x y => x = a ∧ y = b) «open» fun _ _ => Tr
 
 end
 
-theorem seal_ct : ConstantTime isa sealX86.pre sealX86.pub «seal» :=
+theorem seal_ct (v : XorImpl) : ConstantTime isa sealX86.pre sealX86.pub («seal» v.callee) :=
   fun _ _ _ _ _ _ h₁ h₂ hp e₁ e₂ =>
-    (seal_rel (APre.of _ h₁) (APre.of _ h₂) (Pub.of hp) _ _ _ _ _ _ ⟨rfl, rfl⟩ e₁ e₂).1
+    (seal_rel (APre.of _ h₁) (APre.of _ h₂) (Pub.of hp) v _ _ _ _ _ _ ⟨rfl, rfl⟩ e₁ e₂).1
 
-theorem open_ct : ConstantTime isa openX86.pre openX86.pub «open» :=
+theorem open_ct (v : XorImpl) : ConstantTime isa openX86.pre openX86.pub («open» v.callee) :=
   fun _ _ _ _ _ _ h₁ h₂ hp e₁ e₂ =>
-    (open_rel (APre.of _ h₁) (APre.of _ h₂) (Pub.of hp) _ _ _ _ _ _ ⟨rfl, rfl⟩ e₁ e₂).1
+    (open_rel (APre.of _ h₁) (APre.of _ h₂) (Pub.of hp) v _ _ _ _ _ _ ⟨rfl, rfl⟩ e₁ e₂).1
 
 end VG.Proof.ChaCha20Poly1305.X86
 
@@ -571,6 +573,7 @@ precondition.
 namespace VG.Proof.ChaCha20Poly1305.X86
 
 open VG VG.X86
+open VG.Proof.ChaCha20.X86 (XorImpl)
 
 /-- Memory whose five argument slots (at `0x5004`) hold `0x1000`, `0x2000`,
 `0`, `0x3000` and `0`. -/
@@ -590,16 +593,16 @@ def sat : State where
   rd := [⟨0x2000, 0⟩]
   wr := [⟨0x1000, 1024⟩, ⟨0x3000, 0⟩, ⟨0x5004, 20⟩]
 
-theorem seal_ok (s : State) (hs : sealX86.pre s) :
-    ∃ t s', Exec isa Impl.ChaCha20Poly1305.X86.«seal» s t s' ∧ abiPreserved s s' ∧
+theorem seal_ok (v : XorImpl) (s : State) (hs : sealX86.pre s) :
+    ∃ t s', Exec isa (Impl.ChaCha20Poly1305.X86.«seal» v.callee) s t s' ∧ abiPreserved s s' ∧
       sealX86.post s s' := by
-  obtain ⟨t, s', he, h, hpost⟩ := seal_correct (APre.of s hs)
+  obtain ⟨t, s', he, h, hpost⟩ := seal_correct v (APre.of s hs)
   exact ⟨t, s', he, h, hpost⟩
 
-theorem open_ok (s : State) (hs : openX86.pre s) :
-    ∃ t s', Exec isa Impl.ChaCha20Poly1305.X86.«open» s t s' ∧ abiPreserved s s' ∧
+theorem open_ok (v : XorImpl) (s : State) (hs : openX86.pre s) :
+    ∃ t s', Exec isa (Impl.ChaCha20Poly1305.X86.«open» v.callee) s t s' ∧ abiPreserved s s' ∧
       openX86.post s s' := by
-  obtain ⟨t, s', he, h, hpost⟩ := open_correct (APre.of s hs)
+  obtain ⟨t, s', he, h, hpost⟩ := open_correct v (APre.of s hs)
   exact ⟨t, s', he, h, hpost⟩
 
 /-- The return value, `eax`, is the low half of `edx:eax`. -/
@@ -610,10 +613,10 @@ theorem low32 (a b : BitVec 32) : (a ++ b).setWidth 32 = b := by
   rw [Nat.shiftLeft_eq, Nat.or_mod_two_pow]
   simp [Nat.mod_eq_of_lt this]
 
-theorem seal_verified :
-    Verified X86.target Impl.ChaCha20Poly1305.X86.«seal»
+theorem seal_verified (v : XorImpl) :
+    Verified X86.target (Impl.ChaCha20Poly1305.X86.«seal» v.callee)
       (Spec.ChaCha20Poly1305.sealContract X86.abi 32) :=
-  Verified.of_correct seal_ok seal_ct (by
+  Verified.of_correct (seal_ok v) (seal_ct v) (by
     have a0 : arg sat 0 = 0x1000 := by decide
     have a1 : arg sat 1 = 0x2000 := by decide
     have a2 : arg sat 2 = 0 := by decide
@@ -628,10 +631,10 @@ theorem seal_verified :
 
 /-- The postconditions match on `decrypt` through different auxiliary
 functions, so the implication splits on it. -/
-theorem open_verified :
-    Verified X86.target Impl.ChaCha20Poly1305.X86.«open»
+theorem open_verified (v : XorImpl) :
+    Verified X86.target (Impl.ChaCha20Poly1305.X86.«open» v.callee)
       (Spec.ChaCha20Poly1305.openContract X86.abi 32) :=
-  Verified.of_correct open_ok open_ct
+  Verified.of_correct (open_ok v) (open_ct v)
     { pre := by
         sig_implies_pre [Spec.ChaCha20Poly1305.openContract, Spec.ChaCha20Poly1305.openSig,
           Proof.ChaCha20Poly1305.openX86, Proof.ChaCha20Poly1305.preX86,
@@ -668,5 +671,16 @@ theorem open_verified :
           Proof.ChaCha20Poly1305.openX86, Proof.ChaCha20Poly1305.preX86,
           Proof.ChaCha20Poly1305.pubX86, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
           [a0, a1, a2, a3, a4, e, esp] using sat }
+
+/-- `seal` and `open` never write the stack pointer. -/
+theorem seal_spSafe (v : XorImpl) : (Impl.ChaCha20Poly1305.X86.«seal» v.callee).all (fun i => !X86.isa.writesSp i) = true := by
+  simp only [Impl.ChaCha20Poly1305.X86.«seal», Impl.ChaCha20Poly1305.X86.crypt,
+    Impl.ChaCha20Poly1305.X86.callWith, Code.all, v.spSafe, Bool.and_true]
+  lit_decide
+
+theorem open_spSafe (v : XorImpl) : (Impl.ChaCha20Poly1305.X86.«open» v.callee).all (fun i => !X86.isa.writesSp i) = true := by
+  simp only [Impl.ChaCha20Poly1305.X86.«open», Impl.ChaCha20Poly1305.X86.crypt,
+    Impl.ChaCha20Poly1305.X86.callWith, Code.all, v.spSafe, Bool.and_true]
+  lit_decide
 
 end VG.Proof.ChaCha20Poly1305.X86

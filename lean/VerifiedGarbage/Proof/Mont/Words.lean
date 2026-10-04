@@ -112,8 +112,29 @@ theorem writeW8_self (m : Mem) (a : Addr) (v : BitVec 8) : (m.writeW a v) a = v 
 
 /-! ## The modulus -/
 
+/-- The value of the words `ws`, little-endian. -/
+def mwVal : List MWord → Nat
+  | [] => 0
+  | w :: ws => w.val + 2 ^ 64 * mwVal ws
+
+/-- A word the code can multiply by: a power `2^k` with `0 < k < 64`, or a
+word below `2⁶⁴`. -/
+def _root_.VG.Impl.Mont.MWord.ok : MWord → Bool
+  | .pow2 k => 0 < k && k < 64
+  | .gen v => v < 2 ^ 64
+  | _ => true
+
+/-- What a reduction needs of the modulus `m` of `n` words: nothing for
+`general`; for `friendly ws`, `m ≡ -1 (mod 2⁶⁴)` and `ws` the `n` words of
+`(m + 1) / 2⁶⁴`. -/
+def _root_.VG.Impl.Mont.Red.ok : Red → Nat → Nat → Bool
+  | .general, _, _ => true
+  | .friendly ws, n, m => ws.length == n && m % 2 ^ 64 == 2 ^ 64 - 1 &&
+      mwVal ws == (m + 1) / 2 ^ 64 && ws.all MWord.ok
+
 /-- The modulus `m`: its `n` words at `M.mo`, the temporary area at `M.tmp`,
-in the working space and apart, and `M.minv = -m⁻¹ mod 2⁶⁴`. -/
+in the working space and apart, `M.minv = -m⁻¹ mod 2⁶⁴`, and what its
+reduction needs (`Red.ok`). -/
 structure ModOk (M : Mod) (size m : Nat) (mem : Mem) (base : Addr) : Prop where
   n0 : 0 < M.n
   n7 : M.n < 7
@@ -122,6 +143,7 @@ structure ModOk (M : Mod) (size m : Nat) (mem : Mem) (base : Addr) : Prop where
   sep : M.mo + 8 * M.n ≤ M.tmp ∨ M.tmp + 8 * M.n ≤ M.mo
   val : wordsVal mem base M.mo M.n = m
   inv : (m * M.minv.toNat + 1) % 2 ^ 64 = 0
+  red : M.red.ok M.n m = true
 
 /-! ## Slots -/
 
@@ -161,5 +183,44 @@ theorem Lay.grid {M : Mod} {size d lo hi imo itmp : Nat} (hmo : M.mo = d + 8 * M
     rw [hmo]; exact apart i imo (by omega)
   · rintro x ⟨i, hi, -, rfl⟩
     rw [htmp]; exact apart i itmp (by omega)
+
+/-- `t₀ + (t₀ m' mod 2⁶⁴) m ≡ 0 (mod 2⁶⁴)` when `m m' ≡ -1`. -/
+theorem mont_low (t0 minv m : Nat) (h : (m * minv + 1) % 2 ^ 64 = 0) :
+    (t0 + t0 * minv % 2 ^ 64 * m) % 2 ^ 64 = 0 := by
+  rw [Nat.add_mod, Nat.mul_mod (t0 * minv % 2 ^ 64), Nat.mod_mod, ← Nat.mul_mod,
+    ← Nat.add_mod, show t0 + t0 * minv * m = t0 * (m * minv + 1) by
+      rw [Nat.mul_add, Nat.mul_one, Nat.mul_assoc, Nat.mul_comm minv m]; omega,
+    Nat.mul_mod, h, Nat.mul_zero, Nat.zero_mod]
+
+theorem wordsVal_succ_top (m : Mem) (base : Addr) (d k : Nat) :
+    wordsVal m base d (k + 1) = wordsVal m base d k + 2 ^ (64 * k) * (word m base (d + 8 * k)).toNat := by
+  induction k generalizing d with
+  | zero => simp [wordsVal]
+  | succ k ih =>
+    rw [wordsVal, ih (d + 8), wordsVal, pow64_succ, Nat.mul_add, Nat.mul_assoc,
+      show d + 8 + 8 * k = d + 8 * (k + 1) by omega]
+    omega
+
+/-- What `csub` computes: the number `T + X top < 2m` below `m`, given its
+difference with `m`, `D + m = T + X b`, and the selection by the borrow. -/
+theorem csub_arith {T D top X m : Nat} {b : Bool} (hX : m < X) (hD : D < X)
+    (hV : T + X * top < 2 * m) (he : D + m = T + X * b.toNat) :
+    (if top < b.toNat then T else D) = (T + X * top) % m := by
+  have htop : top ≤ 1 := by
+    rcases Nat.lt_or_ge top 2 with h | h
+    · omega
+    · have : X * 2 ≤ X * top := Nat.mul_le_mul_left _ h
+      omega
+  rcases (by omega : top = 0 ∨ top = 1) with rfl | rfl <;> cases b <;>
+    simp only [Bool.toNat_false, Bool.toNat_true, Nat.mul_zero, Nat.mul_one, Nat.add_zero] at he hV ⊢
+  · simp only [Nat.lt_irrefl, ite_false]
+    rw [Nat.mod_eq_sub_mod (by omega), Nat.mod_eq_of_lt (by omega)]; omega
+  · simp only [Nat.zero_lt_one, ite_true]
+    rw [Nat.mod_eq_of_lt (by omega)]
+  · omega
+  · simp only [Nat.lt_irrefl, ite_false]
+    rw [Nat.mod_eq_sub_mod (by omega), Nat.mod_eq_of_lt (by omega)]; omega
+
+theorem m_pos {m B : Nat} (hB : B < m) : 0 < m := by omega
 
 end VG.Proof.Mont

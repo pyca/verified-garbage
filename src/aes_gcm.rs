@@ -132,7 +132,6 @@ use crate::arch::gcm::{
 };
 use crate::cpu::{Features, detected};
 use crate::zeroize::zeroize;
-use core::mem::MaybeUninit;
 
 /// A 16-byte block.
 type Block = [u8; 16];
@@ -151,7 +150,7 @@ const MAX_AAD: u64 = (1 << 61) - 1;
 /// any way; one enum of the instances keeps every `match` exhaustive over
 /// exactly the functions that exist.)
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum Backend {
+pub(crate) enum Backend {
     /// The baseline ISA: `vg_aes_ctr32`, `vg_aes_expand_key` and `vg_ghash`.
     Scalar,
     /// AES-NI for AES: the `_aesni` instances.
@@ -231,6 +230,9 @@ macro_rules! instance {
         }
     };
 }
+// `aes_gcm_siv` (on x86-64 and AArch64 so far) chooses its instances with it too.
+#[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
+pub(crate) use instance;
 
 /// The features of the baseline ISA: none.
 const BASELINE: Features = Features(0);
@@ -238,7 +240,7 @@ const BASELINE: Features = Features(0);
 impl Backend {
     /// Every implementation, best first, with the features it needs
     /// (computed at compile time, so that choosing one compares bit sets).
-    const ALL: &[(Backend, Features)] = &[
+    pub(crate) const ALL: &[(Backend, Features)] = &[
         #[cfg(target_arch = "x86_64")]
         (
             Backend::VaesVpclmulAvx512,
@@ -282,7 +284,7 @@ impl Backend {
 }
 
 /// The best implementation a CPU with the features `f` can run.
-fn select(f: Features) -> Backend {
+pub(crate) fn select(f: Features) -> Backend {
     let best = Backend::ALL.iter().find(|(_, need)| f.contains(*need));
     best.map_or(Backend::Scalar, |(b, _)| *b)
 }
@@ -335,37 +337,6 @@ macro_rules! assert_tag_length {
             )
         }
     };
-}
-
-/// Writes `tag` (at most 16 bytes) to the first bytes of `work`, where
-/// `open` and `stream_verify` take the received tag.
-fn put_tag(work: &mut MaybeUninit<[u64; 320]>, tag: &[u8]) {
-    let mut t = [0u8; 16];
-    t[..tag.len()].copy_from_slice(tag);
-    let w = work.as_mut_ptr().cast::<u64>();
-    // SAFETY: `work` is valid for writes of 320 words.
-    unsafe {
-        w.write(u64::from_le_bytes(t[..8].try_into().unwrap()));
-        w.add(1)
-            .write(u64::from_le_bytes(t[8..].try_into().unwrap()));
-    }
-}
-
-/// The first 16 bytes of `work`, where `seal`, `stream_finish` and
-/// `stream_verify` write the tag.
-///
-/// # Safety
-///
-/// They must have been written.
-unsafe fn tag_of(work: &MaybeUninit<[u64; 320]>) -> Block {
-    let w = work.as_ptr().cast::<u64>();
-    let mut tag = [0u8; 16];
-    // SAFETY: the first two words are initialized (the caller's guarantee).
-    unsafe {
-        tag[..8].copy_from_slice(&w.read().to_le_bytes());
-        tag[8..].copy_from_slice(&w.add(1).read().to_le_bytes());
-    }
-    tag
 }
 
 /// An AES-GCM key: its key context (the AES key schedule and the hash
@@ -445,17 +416,16 @@ impl AesGcm {
                 vg_aes_gcm_seal_vaes_vpclmul_avx512],
             avx: [vg_aes_gcm_seal_aesni_pclmul_avx],
             aarch64: [vg_aes_gcm_seal_aes]);
-        let mut work = MaybeUninit::<[u64; 320]>::uninit();
+        let mut tag: Block = [0; 16];
         // SAFETY: `self.ctx` is the key context `vg_aes_gcm_init` wrote for
         // `self.rounds` (10, 12 or 14) rounds (every implementation writes
         // the same one), valid for reads of 256 bytes; `nonce` and `aad` are
         // valid for reads and `data` for reads and writes of their lengths,
-        // and `work` (a local: working space, but for the tag written to it)
-        // for reads and writes of 2560 bytes. They are distinct objects
-        // (`data` a unique borrow), so the writable ones overlap nothing
-        // else, nor anything on the stack, and none wraps around the end of
-        // the address space. The CPU has the features of the implementation
-        // selected.
+        // and `tag` (a local) for reads and writes of 16 bytes. They are
+        // distinct objects (`data` a unique borrow), so the writable ones
+        // overlap nothing else, nor anything on the stack, and none wraps
+        // around the end of the address space. The CPU has the features of
+        // the implementation selected.
         unsafe {
             seal(
                 &self.ctx,
@@ -466,11 +436,10 @@ impl AesGcm {
                 aad.len(),
                 data.as_mut_ptr(),
                 data.len(),
-                work.as_mut_ptr(),
+                &mut tag,
             )
         };
-        // SAFETY: `seal` wrote the tag to the first 16 bytes of `work`.
-        Ok(unsafe { tag_of(&work) })
+        Ok(tag)
     }
 
     /// GCM-AD (§7.2): if the 16-byte `tag` authenticates the ciphertext in
@@ -524,10 +493,8 @@ impl AesGcm {
                 vg_aes_gcm_open_vaes_vpclmul_avx512],
             avx: [vg_aes_gcm_open_aesni_pclmul_avx],
             aarch64: [vg_aes_gcm_open_aes]);
-        let mut work = MaybeUninit::<[u64; 320]>::uninit();
-        put_tag(&mut work, tag);
-        // SAFETY: as in `encrypt_in_place`, with the received tag in the
-        // first `tag.len()` bytes of `work`.
+        // SAFETY: as in `encrypt_in_place`, with the received tag `tag`
+        // valid for reads of its length.
         let ok = unsafe {
             open(
                 &self.ctx,
@@ -538,7 +505,7 @@ impl AesGcm {
                 aad.len(),
                 data.as_mut_ptr(),
                 data.len(),
-                work.as_mut_ptr(),
+                tag.as_ptr(),
                 tag.len(),
             )
         };
@@ -680,12 +647,8 @@ impl<'a, const DECRYPT: bool> Stream<'a, DECRYPT> {
                 avx: [vg_aes_gcm_stream_encrypt_aesni_pclmul_avx],
                 aarch64: [vg_aes_gcm_stream_encrypt_aes])
         };
-        let mut scratch = MaybeUninit::<[u64; 320]>::uninit();
         // SAFETY: as in `new`, with `data` valid for reads and writes of
-        // `data.len()` bytes (a unique borrow, so it overlaps nothing else),
-        // and `scratch` (a local, so it overlaps nothing else either) of 2560
-        // bytes: it is only working space, and the contract's result does
-        // not depend on what it holds, so it may be uninitialized;
+        // `data.len()` bytes (a unique borrow, so it overlaps nothing else);
         // `self.state` represents a message with `self.aad_len` bytes of
         // additional data and `self.text_len` of text.
         unsafe {
@@ -697,7 +660,6 @@ impl<'a, const DECRYPT: bool> Stream<'a, DECRYPT> {
                 self.text_len,
                 data.as_mut_ptr(),
                 data.len(),
-                scratch.as_mut_ptr(),
             )
         };
         self.text_len = text_len;
@@ -717,10 +679,10 @@ impl Stream<'_, false> {
                 vg_aes_gcm_stream_finish_vaes_vpclmul_avx512],
             avx: [vg_aes_gcm_stream_finish_aesni_pclmul_avx],
             aarch64: [vg_aes_gcm_stream_finish_aes]);
-        let mut work = MaybeUninit::<[u64; 320]>::uninit();
-        // SAFETY: as in `update`, with `work` (a local: working space, but
-        // for the tag written to it) valid for reads and writes of 2560
-        // bytes. `update_aad` and `update` checked the lengths (§5.2.1.1).
+        let mut tag: Block = [0; 16];
+        // SAFETY: as in `update`, with `tag` (a local) valid for reads and
+        // writes of 16 bytes. `update_aad` and `update` checked the lengths
+        // (§5.2.1.1).
         unsafe {
             f(
                 &self.key.ctx,
@@ -728,12 +690,10 @@ impl Stream<'_, false> {
                 &mut self.state,
                 self.aad_len,
                 self.text_len,
-                work.as_mut_ptr(),
+                &mut tag,
             )
         };
-        // SAFETY: `stream_finish` wrote the tag to the first 16 bytes of
-        // `work`.
-        unsafe { tag_of(&work) }
+        tag
     }
 }
 
@@ -752,10 +712,8 @@ impl Stream<'_, true> {
                 vg_aes_gcm_stream_verify_vaes_vpclmul_avx512],
             avx: [vg_aes_gcm_stream_verify_aesni_pclmul_avx],
             aarch64: [vg_aes_gcm_stream_verify_aes]);
-        let mut work = MaybeUninit::<[u64; 320]>::uninit();
-        put_tag(&mut work, tag);
-        // SAFETY: as in `finish`, with the received tag in the first
-        // `tag.len()` bytes of `work`.
+        // SAFETY: as in `finish`, with the received tag `tag` valid for
+        // reads of its length.
         let ok = unsafe {
             f(
                 &self.key.ctx,
@@ -763,7 +721,7 @@ impl Stream<'_, true> {
                 &mut self.state,
                 self.aad_len,
                 self.text_len,
-                work.as_mut_ptr(),
+                tag.as_ptr(),
                 tag.len(),
             )
         };

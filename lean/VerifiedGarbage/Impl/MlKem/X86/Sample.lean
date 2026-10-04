@@ -99,11 +99,11 @@ def sampleNTT : Prog isa :=
   .seq (.block [.mov .esi (.mem (at_ .esp 28))]) <|
   .seq (zeroSt smpSt) <|
   .seq (.block smpAbsorbArgs) <|
-  .seq (callWith [.edi, .ebp, .ebx, .edx, .ecx, .eax] "vg_keccak_absorb" Impl.Sha3.X86.Stream.absorb) <|
+  .seq (callWith [.edi, .ebp, .ebx, .edx, .ecx, .eax] "vg_keccak_absorb_scratch" Impl.Sha3.X86.Stream.absorb) <|
   .seq (.block smpPadArgs) <|
-  .seq (callWith [.edi, .ebx, .edx, .ecx, .eax] "vg_keccak_pad" Impl.Sha3.X86.Stream.pad) <|
+  .seq (callWith [.edi, .ebx, .edx, .ecx, .eax] "vg_keccak_pad_scratch" Impl.Sha3.X86.Stream.pad) <|
   .seq (.block smpSqueezeArgs) <|
-  .seq (callWith [.edi, .ebp, .ebx, .edx, .ecx, .eax] "vg_keccak_squeeze" Impl.Sha3.X86.Stream.squeeze) <|
+  .seq (callWith [.edi, .ebp, .ebx, .edx, .ecx, .eax] "vg_keccak_squeeze_scratch" Impl.Sha3.X86.Stream.squeeze) <|
   .seq (.block smpLoopInit) <|
   .seq (.loop smpBody .ne) (.block smpEnd)
 

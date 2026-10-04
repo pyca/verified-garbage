@@ -5,6 +5,7 @@ import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Spec.Blake2.Contract
 import VerifiedGarbage.Proof.Blake2.Scratch
 import VerifiedGarbage.Proof.Framework.X86.StackScratch
+import VerifiedGarbage.Proof.Framework.X86.SseTaint
 
 /-!
 # BLAKE2s on x86 (32-bit): the instance
@@ -25,7 +26,7 @@ theorem ok : Ok Spec.Blake2.s := ⟨by decide, .inr rfl⟩
 
 theorem compress_ct : ConstantTime isa (compressX86 s).pre (compressX86 s).pub
     Impl.Blake2.X86.CompressS.compress :=
-  VG.Taint.constantTime (A := taint) CompressS.τ₀ (fun _ _ h₁ h₂ hp => CompressS.agree₀ h₁ h₂ hp)
+  VG.Taint.constantTime (A := sseTaint) CompressS.τ₀ (fun _ _ h₁ h₂ hp => CompressS.agree₀ h₁ h₂ hp)
     (by taint_decide)
 
 theorem init_ct : ConstantTime isa (initX86 s).pre (initX86 s).pub (Impl.Blake2.X86.Stream.init s) :=
@@ -34,12 +35,12 @@ theorem init_ct : ConstantTime isa (initX86 s).pre (initX86 s).pub (Impl.Blake2.
 
 theorem update_ct : ConstantTime isa (updateX86 s).pre (updateX86 s).pub
     (Impl.Blake2.X86.Stream.update 32 "vg_blake2s_compress" Impl.Blake2.X86.CompressS.compress) :=
-  VG.Taint.constantTime (A := taint) (τUpdate 32) (fun _ _ h₁ h₂ hp => update_agree ok h₁ h₂ hp)
+  VG.Taint.constantTime (A := sseTaint) (τUpdate 32) (fun _ _ h₁ h₂ hp => update_agree ok h₁ h₂ hp)
     (by taint_decide)
 
 theorem finalize_ct : ConstantTime isa (finalizeX86 s).pre (finalizeX86 s).pub
     (Impl.Blake2.X86.Stream.finalize 32 "vg_blake2s_compress" Impl.Blake2.X86.CompressS.compress) :=
-  VG.Taint.constantTime (A := taint) (τFinalize 32) (fun _ _ h₁ h₂ hp => finalize_agree ok h₁ h₂ hp)
+  VG.Taint.constantTime (A := sseTaint) (τFinalize 32) (fun _ _ h₁ h₂ hp => finalize_agree ok h₁ h₂ hp)
     (by taint_decide)
 
 /-! ## States satisfying the preconditions -/

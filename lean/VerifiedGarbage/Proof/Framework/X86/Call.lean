@@ -107,6 +107,7 @@ theorem pop_mem {j : Instr} {s₁ s₂ s' : State} (h : isa.pop j s₁ s₂ = so
   cases j <;> simp only [isa, pop, reduceCtorEq] at h
   case pop => split at h <;> cases h; exact (popReg_rest _ _ _).1
   case free => split at h <;> cases h; rfl
+  case emms => split at h <;> cases h; rfl
 
 @[simp] theorem pushed_rd (rs : List Reg) (s : State) : (pushed rs s).rd = s.rd :=
   (pushRegs_eq s rs).1
@@ -180,6 +181,9 @@ theorem push_frame {i : Instr} {s s₁ : State} (h : isa.push i s = some s₁) :
     split at h <;> cases h
     rename_i hc
     exact ⟨by simp [State.setReg, frameBytes], rfl, hc.2.2.2, Frame.refl _ _⟩
+  case mmxEnter =>
+    split at h <;> cases h
+    exact ⟨by simp [frameBytes], by simp [below, frameBytes], by simp [frameBytes], Frame.refl _ _⟩
 
 /-- Code that never writes `esp` changes memory only within the regions it
 may write, and within the `stackUse` bytes below `esp` (its calls' return

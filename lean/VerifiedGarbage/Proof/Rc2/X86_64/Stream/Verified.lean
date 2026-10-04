@@ -3,6 +3,7 @@ import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Rc2.X86_64.Stream.Lit
 import VerifiedGarbage.Proof.Rc2.X86_64.Stream.Steps
 import VerifiedGarbage.Proof.Rc2.X86_64.Stream.Long
+import VerifiedGarbage.Proof.Rc2.Scratch
 
 section
 
@@ -724,15 +725,15 @@ namespace VG.Proof.Rc2.X86_64.Stream
 
 open VG VG.X86_64 VG.Impl.Rc2.X86_64.Stream
 
-theorem init_verified : Verified target init (Spec.Rc2.cbcInitContract abi 8) :=
+theorem init_verified : Verified target init (Proof.Rc2.cbcInitScratchContract abi 8) :=
   Verified.of_correct init_correct init_constantTime init_implies
 
 theorem encryptUpdate_verified :
-    Verified target encryptUpdate (Spec.Rc2.cbcEncryptUpdateContract abi 16) :=
+    Verified target encryptUpdate (Proof.Rc2.cbcEncryptUpdateScratchContract abi 16) :=
   Verified.of_correct (update_correct .encrypt) (update_constantTime .encrypt) (update_implies .encrypt)
 
 theorem decryptUpdate_verified :
-    Verified target decryptUpdate (Spec.Rc2.cbcDecryptUpdateContract abi 16) :=
+    Verified target decryptUpdate (Proof.Rc2.cbcDecryptUpdateScratchContract abi 16) :=
   Verified.of_correct (update_correct .decrypt) (update_constantTime .decrypt) (update_implies .decrypt)
 
 end VG.Proof.Rc2.X86_64.Stream

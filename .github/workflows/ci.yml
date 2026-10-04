@@ -426,10 +426,13 @@ jobs:
         env:
           RUSTFLAGS: -D warnings
         run: |
-          # Containers run as root, without sudo.
-          if [ "$(id -u)" != 0 ]; then sudo=sudo; fi
-          $sudo apt-get update -qq
-          $sudo apt-get install -qq -y --no-install-recommends libssl-dev pkg-config
+          # GitHub's runner images have OpenSSL's headers and pkg-config;
+          # only the containers need them installed (as root, without sudo).
+          if ! pkg-config --exists openssl 2>/dev/null; then
+            if [ "$(id -u)" != 0 ]; then sudo=sudo; fi
+            $sudo apt-get update -qq
+            $sudo apt-get install -qq -y --no-install-recommends libssl-dev pkg-config
+          fi
           cargo fmt --check
           cargo clippy --all-targets --locked
       - run: rustc -vV
@@ -524,20 +527,22 @@ jobs:
             # AES-GCM's instances for AES's or GHASH's extension alone, which
             # no runner or chip has without the other; AES-NI's and
             # PCLMULQDQ's together, without AVX and with it (and AES-CMAC's
-            # AES-NI functions), which a runner with VAES and VPCLMULQDQ never
-            # chooses; and VAES's and VPCLMULQDQ's 256-bit ones, which a
-            # runner with AVX512BW too never chooses.
+            # AES-NI functions, and AES-OCB's through `Backend::AesNi`), which
+            # a runner with VAES and VPCLMULQDQ never chooses; and VAES's and
+            # VPCLMULQDQ's 256-bit ones, which a runner with AVX512BW too
+            # never chooses.
             runs: |
-              - | sha1 sha224 sha256 sha384 sha512 aes_gcm cmac chacha20 triple_des_ecb poly1305 mlkem mldsa scrypt argon2 rfc9106 x25519 x448 ed25519 rsa message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
-              aes,ssse3 | aes_gcm cmac cpu
+              - | sha1 sha224 sha256 sha384 sha512 blake2 aes_gcm aes_ocb cmac chacha20 triple_des_ecb poly1305 mlkem mldsa scrypt argon2 rfc9106 x25519 x448 ed25519 rsa message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
+              aes,ssse3 | aes_gcm aes_ocb cmac cpu
               pclmulqdq,ssse3 | aes_gcm cpu
               aes,pclmulqdq,ssse3 | aes_gcm cpu
               aes,avx,pclmulqdq,ssse3 | aes_gcm cpu
               aes,avx,avx2,pclmulqdq,ssse3,vaes,vpclmulqdq | aes_gcm cpu
           # x86 feature dispatch, natively in a 32-bit userspace, with the
-          # runner's features and every test with the baseline
-          # implementations; and AES-GCM's instances for AES's or GHASH's
-          # extension alone, as on x86-64.
+          # runner's features (ChaCha20's and ChaCha20-Poly1305's SSSE3
+          # instances) and every test with the baseline implementations; and
+          # AES-GCM's instances for AES's or GHASH's extension alone, as on
+          # x86-64.
           - chip: native
             arch: x86
             container:
@@ -545,28 +550,34 @@ jobs:
               options: --platform linux/386
             install-amd64-libc: true
             runs: |
-              - | sha1 sha224 sha256 sha384 sha512 aes_gcm cmac chacha20 mlkem scrypt x25519 ed25519 cpu
+              - | sha1 sha224 sha256 sha384 sha512 aes_gcm cmac chacha20 mlkem scrypt x25519 ed25519 ecdsa p256_sha cpu
               none | all
               aes | aes_gcm cpu
               pclmulqdq,ssse3 | aes_gcm cpu
-          # AVX-512F, BMI2 and ADX (and RSA's ADX functions, whichever the
-          # runner chooses); and BMI2 and ADX without AVX-512F.
+          # AVX-512F and AVX512VL (with Argon2's vg_argon2_compress_avx512
+          # and BLAKE2b's vg_blake2b_compress_avx512), BMI2 and ADX (with
+          # RSA's ADX functions); BMI2 and ADX without AVX-512F; AVX-512F
+          # without AVX2, for Argon2 with G's AVX-512 code and BLAKE2b's
+          # baseline code; and AVX-512F without AVX512VL, for Argon2 with G's
+          # AVX-512 code and BLAKE2b's AVX2 code.
           - chip: skx
             arch: x86_64
             runs: |
-              - | sha1 sha224 sha256 sha384 sha512 aes_gcm cmac chacha20 triple_des_ecb poly1305 mlkem mldsa scrypt x25519 x448 ed25519 rsa message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
+              - | sha1 sha224 sha256 sha384 sha512 blake2 aes_gcm cmac chacha20 triple_des_ecb poly1305 mlkem mldsa scrypt argon2 rfc9106 x25519 x448 ed25519 rsa message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
               bmi2,adx | ed25519 message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
+              avx,avx512f | argon2 rfc9106 cpu
+              avx,avx2,avx512f | argon2 rfc9106 cpu
           # AVX2, but not AVX-512F or ADX; AES-NI and PCLMULQDQ with AVX, but
           # not VAES or VPCLMULQDQ.
           - chip: hsw
             arch: x86_64
             runs: |
-              - | sha1 sha224 sha256 sha384 sha512 aes_gcm cmac chacha20 triple_des_ecb poly1305 mlkem mldsa scrypt argon2 rfc9106 x25519 x448 ed25519 message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
+              - | sha1 sha224 sha256 sha384 sha512 blake2 aes_gcm cmac chacha20 triple_des_ecb poly1305 mlkem mldsa scrypt argon2 rfc9106 x25519 x448 ed25519 message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
           # Nothing beyond x86-64's baseline, not even CPUID leaf 7.
           - chip: p4p
             arch: x86_64
             runs: |
-              - | sha1 sha224 sha256 sha384 sha512 aes_gcm cmac chacha20 triple_des_ecb poly1305 mlkem mldsa scrypt argon2 rfc9106 x25519 x448 ed25519 rsa message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
+              - | sha1 sha224 sha256 sha384 sha512 blake2 aes_gcm aes_ocb cmac chacha20 triple_des_ecb poly1305 mlkem mldsa scrypt argon2 rfc9106 x25519 x448 ed25519 rsa message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
           # Arrow Lake: the SHA512 extension, which no runner has.
           - chip: arl
             runs: |
@@ -596,15 +607,19 @@ jobs:
               - | ed25519 message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
           # The runner has SVE2, so the unrestricted run tests the `_sve2`
           # instances; `neon` and `none` test ChaCha20's NEON and scalar ones,
-          # and `sha3` and `none` the SHA-3 prototype and its scalar fallback.
+          # `sha3` and `none` the SHA-3 prototype and its scalar fallback (and
+          # the instances of ML-KEM, ML-DSA and Ed448 calling each),
+          # `none` deterministic ECDSA with the scalar SHA-256 and SHA-512
+          # and AES-CCM with the scalar AES, and the unrestricted run and
+          # `none` AES-GCM-SIV's and AES-OCB's `_aes` and scalar instances.
           - chip: native
             arch: aarch64
             os: ubuntu-24.04-arm
             runs: |
-              - | aes_gcm cmac sha1 sha224 sha256 sha384 sha512 sha3 shake mlkem mldsa scrypt chacha20 ed25519 message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
+              - | aes_gcm aes_gcm_siv aes_ocb aes_siv aes_ccm cmac sha1 sha224 sha256 sha384 sha512 sha3 shake mlkem mldsa ed448 scrypt chacha20 ed25519 message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
               neon | chacha20
-              sha3 | sha3 shake mlkem mldsa
-              none | chacha20 sha3 shake mlkem mldsa
+              sha3 | sha3 shake mlkem mldsa ed448
+              none | aes_siv chacha20 sha3 shake mlkem mldsa ecdsa p256_sha ed448 aes_gcm_siv aes_ccm aes_ocb
     name: Rust (${{ matrix.os && format('native, {0}', matrix.os) || matrix.chip == 'native' && 'native' || format('sde -{0}', matrix.chip) }}${{ matrix.arch && format(', {0}', matrix.arch) || '' }})
     runs-on: ${{ matrix.os || 'ubuntu-latest' }}
     container:
@@ -666,12 +681,22 @@ jobs:
         env:
           CHIP: ${{ matrix.chip }}
       # Only the tests of what depends on CPU features, once per line of
-      # `runs`, each in a log group of its own; every line runs, and the step
-      # fails at the end, naming the lines that failed.
+      # `runs`. The lines run at the same time, as many as the runner has
+      # cores: each `cargo test` starts every test binary, under SDE a second
+      # or more each on one core, whether or not its filter selects any test,
+      # so that one line at a time left the other cores idle. (Cargo holds the
+      # build directory's lock only while building, which the first command
+      # does for all of them; the coverage files are named by process.) Each
+      # line's output is printed afterwards in a log group of its own; every
+      # line runs, and the step fails at the end, naming the lines that
+      # failed.
       - name: Test the implementations
         shell: bash
         run: |
-          failed=()
+          cargo test --locked --features cpu-features-env --no-run
+          logs=$RUNNER_TEMP/runs
+          mkdir -p "$logs"
+          names=()
           declare -A seen
           while IFS='|' read -r -u 3 features tests; do
             features=$(echo $features) tests=$(echo $tests)
@@ -681,11 +706,24 @@ jobs:
             [ "$features" = - ] && features=
             filter=$tests
             [ "$tests" = all ] && filter=
-            echo "::group::VG_CPU_FEATURES=$features: $tests"
-            VG_CPU_FEATURES=$features cargo test --locked --features cpu-features-env -- $filter \
-              || failed+=("VG_CPU_FEATURES=$features: $tests")
-            echo "::endgroup::"
+            while [ "$(jobs -rp | wc -l)" -ge "$(nproc)" ]; do wait -n || true; done
+            log=$logs/${#names[@]}
+            (
+              status=0
+              VG_CPU_FEATURES=$features cargo test --locked --features cpu-features-env -- $filter \
+                > "$log" 2>&1 || status=$?
+              echo "$status" > "$log.status"
+            ) &
+            names+=("VG_CPU_FEATURES=$features: $tests")
           done 3<<< "$RUNS"
+          wait
+          failed=()
+          for i in "${!names[@]}"; do
+            echo "::group::${names[$i]}"
+            cat "$logs/$i"
+            echo "::endgroup::"
+            [ "$(cat "$logs/$i.status")" = 0 ] || failed+=("${names[$i]}")
+          done
           for f in "${failed[@]}"; do echo "::error::Failed with $f"; done
           [ ${#failed[@]} -eq 0 ]
         env:

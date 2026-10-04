@@ -11,10 +11,27 @@ namespace VG.Test.X86_64TripleDes
 
 open VG VG.X86_64
 
-/-- A bounded interpreter for model smoke tests, omitting leakage traces. -/
+/-- The general-purpose registers, each at the index of its constructor. -/
+def regs : Array Reg :=
+  #[.rax, .rcx, .rdx, .rbx, .rsp, .rbp, .rsi, .rdi,
+    .r8, .r9, .r10, .r11, .r12, .r13, .r14, .r15]
+
+-- `flattenRegs` reads each register back from its own entry.
+example (r : Reg) : regs[r.ctorIdx]! = r := by cases r <;> decide
+
+/-- The same state, with the registers read once into an array. `State.setReg`
+wraps `gpr` in a closure per write, so without this a register read would go
+back through every write since the start: quadratic in the number of
+instructions run, which was most of this test's time. -/
+def flattenRegs (s : State) : State :=
+  let values := regs.map s.gpr
+  { s with gpr := fun r => values[r.ctorIdx]! }
+
+/-- A bounded interpreter for model smoke tests, omitting leakage traces. A
+block's registers are flattened after it runs. -/
 def evaluate : Nat → Prog isa → State → Option State
   | 0, _, _ => none
-  | _ + 1, .block is, s => runBlock isa is s
+  | _ + 1, .block is, s => flattenRegs <$> runBlock isa is s
   | fuel + 1, .seq a b, s => (evaluate fuel a s).bind (evaluate fuel b)
   | fuel + 1, .ite c a b, s => do
     let taken ← isa.eval c s

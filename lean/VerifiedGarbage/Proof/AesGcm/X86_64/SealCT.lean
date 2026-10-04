@@ -5,7 +5,9 @@ import VerifiedGarbage.Proof.AesGcm.X86_64.OneBlocks.CT
 
 Untrusted: everything here is checked by Lean. After the entry, which loads
 `work` from the stack first, both runs go through the same pieces with the
-same public data (`oneAad_rel`, `oneBlocksE_rel`, `oneCrypt_rel`, `oneTag_rel`).
+same public data (`oneAad_rel`, `oneBlocksE_rel`, `oneCrypt_rel`, `oneTag_rel`),
+and copy the tag to the same address, `tag`, which correctness says is still
+on the stack (`sealRun_ok`, `tagOut_rel`).
 -/
 
 namespace VG.Proof.AesGcm.X86_64
@@ -13,22 +15,15 @@ namespace VG.Proof.AesGcm.X86_64
 open VG VG.X86_64 VG.X86_64.RegUpd VG.Impl.AesGcm.X86_64
 open VG.Spec.Gcm (Block blockAt)
 
-/-- What the entry of `seal` and `open` leaves, for `oneAad`. -/
-def OneIn (s₀ : State) (k : Nat) (s : State) : Prop :=
-  OneS (s₀.gpr .rdi) (stackArg s₀ 2) (s₀.gpr .rsp) (s₀.gpr .rsi).toNat (s₀.gpr .r8) (s₀.gpr .r9).toNat
-      (stackArg s₀ 0) (stackArg s₀ 1).toNat none s ∧ s.gpr .r12 = s₀.gpr .rdx ∧
-    s.gpr .rbp = BitVec.ofNat 64 (s₀.gpr .rcx).toNat ∧
-    DataOk (stackArg s₀ 2 + BitVec.ofNat 64 16) (stackArg s₀ 2) (s₀.gpr .rsp) s (s₀.gpr .rdx) (s₀.gpr .rcx).toNat ∧
-    k = k
-
-theorem OneEntry.oneIn {k : Nat} {s₀ s : State}
-    (C : OneCtx s₀ k (s₀.gpr .rdi) (stackArg s₀ 2) (s₀.gpr .rsp) (s₀.gpr .rdx) (s₀.gpr .r8) (stackArg s₀ 0)
-      (s₀.gpr .rcx).toNat (s₀.gpr .r9).toNat (stackArg s₀ 1).toNat)
-    (E : OneEntry s₀ (s₀.gpr .rdi) (stackArg s₀ 2) (s₀.gpr .rsp) (s₀.gpr .r8) (stackArg s₀ 0) (stackArg s₀ 1).toNat s) :
-    OneIn s₀ k s :=
-  ⟨⟨E.env, E.rounds, E.aad, by rw [E.alen, BitVec.ofNat_toNat, BitVec.setWidth_eq], E.dat, E.len,
-    C.aad.of_eq E.rd E.wr, C.data.of_eq E.rd E.wr, fun _ h => nomatch h⟩, E.r12, by rw [E.rbp, BitVec.ofNat_toNat, BitVec.setWidth_eq],
-    C.nonce.of_eq E.rd E.wr, rfl⟩
+/-- `oneAad`'s precondition, after the entry. -/
+theorem OneEntry.aadPre {s₀ s : State} {k : Nat} {Ctx W SP Np A D : Addr} {nl al n R : Nat}
+    (C : OneCtx s₀ k Ctx W SP Np A D nl al n) (E : OneEntry s₀ Ctx W SP A D n s) (hNp : s₀.gpr .rdx = Np)
+    (hnl : (s₀.gpr .rcx).toNat = nl) (hal : (s₀.gpr .r9).toNat = al) (hR : (s₀.gpr .rsi).toNat = R) :
+    OneS Ctx W SP R A al D n none s ∧ s.gpr .r12 = Np ∧ s.gpr .rbp = BitVec.ofNat 64 nl ∧
+      DataOk (W + BitVec.ofNat 64 16) W SP s Np nl :=
+  ⟨⟨E.env, hR ▸ E.rounds, E.aad, by rw [E.alen, ← hal, BitVec.ofNat_toNat, BitVec.setWidth_eq], E.dat, E.len,
+    C.aad.of_eq E.rd E.wr, C.data.of_eq E.rd E.wr, fun _ h => nomatch h⟩, by rw [E.r12, hNp],
+    by rw [E.rbp, ← hnl, BitVec.ofNat_toNat, BitVec.setWidth_eq], C.nonce.of_eq E.rd E.wr⟩
 
 theorem one_pub {k : Nat} {s₀ s₀' : State} (hq : Proof.AesGcm.onePub k s₀ s₀') :
     ∀ r ∈ [Reg.rdi, .rsi, .rdx, .rcx, .r8, .r9, .rsp], s₀.gpr r = s₀'.gpr r := by
@@ -37,66 +32,89 @@ theorem one_pub {k : Nat} {s₀ s₀' : State} (hq : Proof.AesGcm.onePub k s₀ 
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption
 
-theorem oneIn_pub {k : Nat} (hk : 3 ≤ k) {s₀ s₀' : State} (hq : Proof.AesGcm.onePub k s₀ s₀') {s : State}
-    (h : OneIn s₀' k s) : OneIn s₀ k s := by
-  obtain ⟨q₁, q₂, q₃, q₄, q₅, q₆, q₇, qa⟩ := hq
-  have a₀ := qa 0 (by omega); have a₁ := qa 1 (by omega); have a₂ := qa 2 (by omega)
-  simp only [Proof.AesGcm.arg] at a₀ a₁ a₂
-  unfold OneIn
-  rw [q₁, q₂, q₃, q₄, q₅, q₆, q₇, a₀, a₁, a₂]
-  exact h
-
-/-- `e; (a; (b; (c; (d; f))))`, related as `e; ((a; (b; (c; d))); f)`. -/
-theorem rel_reassoc_inner4 {P Q : State → State → Prop} {e a b c d f : Prog isa}
-    (h : RelCT isa P (.seq e (.seq (.seq a (.seq b (.seq c d))) f)) Q) :
-    RelCT isa P (.seq e (.seq a (.seq b (.seq c (.seq d f))))) Q := by
+/-- `e; (a; (b; (c; ((d; o); f))))`, related as `e; (((a; (b; (c; d))); o); f)`. -/
+theorem rel_reassoc_seal {P Q : State → State → Prop} {e a b c d o f : Prog isa}
+    (h : RelCT isa P (.seq e (.seq (.seq (.seq a (.seq b (.seq c d))) o) f)) Q) :
+    RelCT isa P (.seq e (.seq a (.seq b (.seq c (.seq (.seq d o) f))))) Q := by
   intro s₁ s₂ t₁ t₂ s₁' s₂' hp e₁ e₂
   cases e₁ with | seq x₁ e₁ => cases e₁ with | seq a₁ e₁ => cases e₁ with | seq b₁ e₁ => cases e₁ with
-    | seq c₁ e₁ => cases e₁ with | seq d₁ f₁ =>
+    | seq c₁ e₁ => cases e₁ with | seq e₁ f₁ => cases e₁ with | seq d₁ o₁ =>
   cases e₂ with | seq x₂ e₂ => cases e₂ with | seq a₂ e₂ => cases e₂ with | seq b₂ e₂ => cases e₂ with
-    | seq c₂ e₂ => cases e₂ with | seq d₂ f₂ =>
-  obtain ⟨ht, hq⟩ := h _ _ _ _ _ _ hp (.seq x₁ (.seq (.seq a₁ (.seq b₁ (.seq c₁ d₁))) f₁))
-    (.seq x₂ (.seq (.seq a₂ (.seq b₂ (.seq c₂ d₂))) f₂))
-  simp only [List.append_assoc] at ht
+    | seq c₂ e₂ => cases e₂ with | seq e₂ f₂ => cases e₂ with | seq d₂ o₂ =>
+  obtain ⟨ht, hq⟩ := h _ _ _ _ _ _ hp (.seq x₁ (.seq (.seq (.seq a₁ (.seq b₁ (.seq c₁ d₁))) o₁) f₁))
+    (.seq x₂ (.seq (.seq (.seq a₂ (.seq b₂ (.seq c₂ d₂))) o₂) f₂))
+  simp only [List.append_assoc] at ht ⊢
   exact ⟨ht, hq⟩
 
 theorem seal_rel (v : GcmImpl) {s₀ s₀' : State} (hp : Proof.AesGcm.sealX86_64.pre s₀)
     (hp' : Proof.AesGcm.sealX86_64.pre s₀') (hq : Proof.AesGcm.sealX86_64.pub s₀ s₀') :
     RelCT isa (fun s₁ s₂ => s₁ = s₀ ∧ s₂ = s₀') («seal» v.callees) fun _ _ => True := by
-  have C := OneCtx.of hp
-  have C' := OneCtx.of hp'
+  have C := (OneCtx.ofSeal hp).1
+  have C' := (OneCtx.ofSeal hp').1
   have L := C.lay
-  have hE : ∀ {s : State} (hp : Proof.AesGcm.sealX86_64.pre s), WP isa (.block oneEntry) s (OneIn s 3) := fun hp =>
-    WP.mono (oneEntry_ok (Nat.le_refl _) (OneCtx.of hp) rfl rfl rfl rfl rfl rfl) fun _ E => E.oneIn (OneCtx.of hp)
-  have hE₁ := hE hp
-  have hE₂ := WP.mono (hE hp') fun _ h => oneIn_pub (Nat.le_refl _) hq h
-  have hw : stackArg s₀ 2 = stackArg s₀' 2 := hq.2.2.2.2.2.2.2 2 (by decide)
+  have hq' := hq
+  obtain ⟨q₁, q₂, q₃, q₄, q₅, q₆, q₇, qa⟩ := hq'
+  have a₀ := qa 0 (by decide); have a₁ := qa 1 (by decide); have a₂ := qa 2 (by decide)
+  have a₃ := qa 3 (by decide)
+  simp only [Proof.AesGcm.arg] at a₀ a₁ a₂ a₃
+  have ha₃ := C.args 3 (by decide); have ha₃' := C'.args 3 (by decide)
+  have hw32 : s₀.mem.readW (s₀.gpr .rsp + BitVec.ofNat 64 32) 64 =
+      s₀'.mem.readW (s₀'.gpr .rsp + BitVec.ofNat 64 32) 64 := a₃
+  have hT₁ : s₀.mem.readW (s₀.gpr .rsp + BitVec.ofNat 64 24) 64 = stackArg s₀ 2 := rfl
+  have hT₂ : s₀'.mem.readW (s₀.gpr .rsp + BitVec.ofNat 64 24) 64 = stackArg s₀ 2 := by rw [q₇, a₂]; rfl
+  rw [← q₁, ← q₃, ← q₄, ← q₅, ← q₆, ← q₇, ← a₀, ← a₁, ← a₃] at C'
+  have hE : ∀ {s : State} (C : OneCtx s 4 (s₀.gpr .rdi) (stackArg s₀ 3) (s₀.gpr .rsp) (s₀.gpr .rdx) (s₀.gpr .r8)
+      (stackArg s₀ 0) (s₀.gpr .rcx).toNat (s₀.gpr .r9).toNat (stackArg s₀ 1).toNat),
+      s.gpr .rdi = s₀.gpr .rdi → s.gpr .rsp = s₀.gpr .rsp → s.gpr .r8 = s₀.gpr .r8 →
+      stackArg s 0 = stackArg s₀ 0 → (stackArg s 1).toNat = (stackArg s₀ 1).toNat →
+      s.mem.readW (s₀.gpr .rsp + BitVec.ofNat 64 32) 64 = stackArg s₀ 3 →
+      InRegions (s.rd ++ s.wr) (s₀.gpr .rsp + BitVec.ofNat 64 32) 8 →
+      WP isa (.block (oneEntry 32)) s
+        (OneEntry s (s₀.gpr .rdi) (stackArg s₀ 3) (s₀.gpr .rsp) (s₀.gpr .r8) (stackArg s₀ 0) (stackArg s₀ 1).toNat) :=
+    fun C h₁ h₂ h₃ h₄ h₅ h₆ h₇ => oneEntry_ok (by decide) C h₁ h₂ h₃ h₄ h₅ h₆ h₇
+  have hE₁ := hE C rfl rfl rfl rfl rfl rfl ha₃
+  have hE₂ := hE C' q₁.symm q₇.symm q₅.symm a₀.symm (by rw [a₁]) (by rw [q₇, a₃]; rfl) (by rw [q₇]; exact ha₃')
   rw [oneEntry, List.append_assoc, List.append_assoc, List.append_assoc] at hE₁ hE₂
   rw [«seal», oneEntry, List.append_assoc, List.append_assoc, List.append_assoc]
-  have ha₂ := C.args 2 (by decide); have ha₂' := C'.args 2 (by decide)
-  refine rel_reassoc_inner4 (fn_rel₂ (Ctx := s₀.gpr .rdi) (St := stackArg s₀ 2 + BitVec.ofNat 64 16)
-    (W := stackArg s₀ 2) (SP := s₀.gpr .rsp) (k := 24) [.rdi, .rsi, .rdx, .rcx, .r8, .r9, .rsp] (by simp)
-    ⟨_, by taint_decide⟩ (one_pub hq) hw (by simpa [hp.2.2.1] using ha₂) (by simpa using ha₂')
-    ⟨_, by taint_decide⟩ hE₁ hE₂ ?_)
+  refine rel_reassoc_seal (fn_rel₂ (Ctx := s₀.gpr .rdi) (St := stackArg s₀ 3 + BitVec.ofNat 64 16)
+    (W := stackArg s₀ 3) (SP := s₀.gpr .rsp) (k := 32) [.rdi, .rsi, .rdx, .rcx, .r8, .r9, .rsp] (by simp)
+    ⟨_, by taint_decide⟩ (one_pub hq) hw32 ha₃ ha₃' ⟨_, by taint_decide⟩ hE₁ hE₂ ?_)
   have hDW := C.dE
   have hn := C.data.ok.lt
-  have a := (oneAad_rel v L hDW (T := none)).mono (P' := fun (s₁ s₂ : State) => True ∧ OneIn s₀ 3 s₁ ∧ OneIn s₀ 3 s₂)
-    (fun _ _ h => ⟨⟨h.2.1.1, h.2.1.2.1, h.2.1.2.2.1, h.2.1.2.2.2.1⟩,
-    ⟨h.2.2.1, h.2.2.2.1, h.2.2.2.2.1, h.2.2.2.2.2.1⟩⟩) fun _ _ h => h
-  have bl := oneBlocksE_rel v L (R := (s₀.gpr .rsi).toNat) (A := s₀.gpr .r8) (al := (s₀.gpr .r9).toNat) (T := none)
-    C.t_c C.t_w C.t_d C.sp24
   have hDW' := C.dE.sub_left (Offset.sub_base (stackArg s₀ 0) (d := 16 * ((stackArg s₀ 1).toNat / 16))
     (n := (stackArg s₀ 1).toNat - 16 * ((stackArg s₀ 1).toNat / 16)) (by omega))
-  have hT : ∀ s, OneS (s₀.gpr .rdi) (stackArg s₀ 2) (s₀.gpr .rsp) (s₀.gpr .rsi).toNat (s₀.gpr .r8) (s₀.gpr .r9).toNat
-      (stackArg s₀ 0 + BitVec.ofNat 64 (16 * ((stackArg s₀ 1).toNat / 16)))
-      ((stackArg s₀ 1).toNat - 16 * ((stackArg s₀ 1).toNat / 16)) (some (stackArg s₀ 1).toNat) s →
-      WP isa (oneTag v.callees 0) s
-        (Env (s₀.gpr .rdi) (stackArg s₀ 2 + BitVec.ofNat 64 16) (stackArg s₀ 2) (s₀.gpr .rsp)) := fun s h =>
-    WP.mono (oneTag_ok v L (.inl rfl) (x := []) (by decide) h.env rfl h.rounds h.dat h.len (h.tlen _ rfl) hn h.alen
-      h.dD.ok hDW' h.dD.ctx) fun _ o => o.1
-  have t := rel_wp (oneTag_rel v L (.inl rfl) hDW') (fun _ _ h => h) hT hT
-  exact RelCT.seq a (RelCT.seq bl (RelCT.seq (oneCrypt_rel v L hDW')
-    (t.mono (fun _ _ h => h) fun _ _ h => h.2)))
+  have a := (oneAad_rel v L hDW (T := none) (R := (s₀.gpr .rsi).toNat)).mono
+    (P' := fun (s₁ s₂ : State) => True ∧
+      OneEntry s₀ (s₀.gpr .rdi) (stackArg s₀ 3) (s₀.gpr .rsp) (s₀.gpr .r8) (stackArg s₀ 0) (stackArg s₀ 1).toNat s₁ ∧
+      OneEntry s₀' (s₀.gpr .rdi) (stackArg s₀ 3) (s₀.gpr .rsp) (s₀.gpr .r8) (stackArg s₀ 0) (stackArg s₀ 1).toNat s₂)
+    (fun _ _ h => ⟨h.2.1.aadPre C rfl rfl rfl rfl,
+      h.2.2.aadPre C' q₃.symm (by rw [q₄]) (by rw [q₆]) (by rw [q₂])⟩) fun _ _ h => h
+  have bl := oneBlocksE_rel v L (R := (s₀.gpr .rsi).toNat) (A := s₀.gpr .r8) (al := (s₀.gpr .r9).toNat) (T := none)
+    C.t_c C.t_w C.t_d C.sp24
+  have t := oneTag_rel v L (.inl rfl) hDW' (N := (stackArg s₀ 1).toNat) (R := (s₀.gpr .rsi).toNat)
+    (A := s₀.gpr .r8) (al := (s₀.gpr .r9).toNat)
+  -- The address of `tag`, at `[SP + 24]`, after the tag: by correctness.
+  have dA := C.arg24 (by decide)
+  have hW : ∀ {s₀'' s : State} (C : OneCtx s₀'' 4 (s₀.gpr .rdi) (stackArg s₀ 3) (s₀.gpr .rsp) (s₀.gpr .rdx)
+      (s₀.gpr .r8) (stackArg s₀ 0) (s₀.gpr .rcx).toNat (s₀.gpr .r9).toNat (stackArg s₀ 1).toNat),
+      s₀''.gpr .rdx = s₀.gpr .rdx → (s₀''.gpr .rcx).toNat = (s₀.gpr .rcx).toNat →
+      (s₀''.gpr .r9).toNat = (s₀.gpr .r9).toNat →
+      s₀''.mem.readW (s₀.gpr .rsp + BitVec.ofNat 64 24) 64 = stackArg s₀ 2 →
+      OneEntry s₀'' (s₀.gpr .rdi) (stackArg s₀ 3) (s₀.gpr .rsp) (s₀.gpr .r8) (stackArg s₀ 0) (stackArg s₀ 1).toNat s →
+      WP isa (.seq (oneAad v.callees) (.seq (oneBlocks v.callees.enc) (.seq (oneCrypt v.callees)
+        (oneTag v.callees 0)))) s (TagAt (s₀.gpr .rdi) (stackArg s₀ 3 + BitVec.ofNat 64 16) (stackArg s₀ 3)
+          (s₀.gpr .rsp) .rsp 24 (stackArg s₀ 2)) :=
+    fun C h₁ h₂ h₃ hT E => WP.mono (sealRun_ok v C E h₁ h₂ h₃) fun _ ⟨he, hrd, hwr, _, f, _⟩ => ⟨he, by
+      rw [he.rsp, f.readW (r := ⟨s₀.gpr .rsp + BitVec.ofNat 64 24, 8⟩) (Region.contains_self _ _) (fun r hr => by
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl | rfl
+        · exact dA _ (.inl fun _ h => h)
+        · exact dA _ (.inr (.inl fun _ h => h))
+        · exact dA _ (.inr (.inr fun _ h => h))) (by decide), hT], by
+      rw [he.rsp, hrd, hwr]; exact C.args 2 (by decide)⟩
+  have m := rel_wp (RelCT.seq a (RelCT.seq bl (RelCT.seq (oneCrypt_rel v L hDW') t)))
+    (fun _ _ h => h.2) (fun _ h => hW C rfl rfl rfl hT₁ h) (fun _ h => hW C' q₃.symm (by rw [q₄]) (by rw [q₆]) hT₂ h)
+  exact RelCT.seq m (tagOut_rel (b := .rsp) (d := 24) (by simp) ⟨_, by taint_decide⟩ (fun _ _ h => h.2))
 
 theorem seal_ct (v : GcmImpl) :
     ConstantTime isa Proof.AesGcm.sealX86_64.pre Proof.AesGcm.sealX86_64.pub («seal» v.callees) :=

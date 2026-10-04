@@ -32,6 +32,7 @@ def avx512 : BlocksImpl where
   depth_le := by
     change Impl.Poly1305.X86_64.Avx512.blocksAvx512.depth ≤ 2
     lit_decide
+  xdepth := by change Impl.Poly1305.X86_64.Avx512.blocksAvx512.x86_64Depth ≤ 16; lit_decide
   ok := Avx512.blocksAvx512_ok
   ct := Avx512.blocksAvx512_ct
   nosp := avx512_nosp

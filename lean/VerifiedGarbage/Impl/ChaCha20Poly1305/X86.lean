@@ -1,4 +1,4 @@
-import VerifiedGarbage.Impl.ChaCha20.X86.Xor
+import VerifiedGarbage.Impl.ChaCha20.X86.Callee
 import VerifiedGarbage.Impl.Poly1305.X86
 
 /-!
@@ -20,14 +20,14 @@ The context (1024 bytes, see `VG.Spec.ChaCha20Poly1305.sealContract`):
 * `[592, 608)`: our caller's `ebx, esi, edi, ebp`;
 * `[640, 656)`: the tag computed by `open`;
 * `[656, 672)`: the lengths block;
-* `[672, 800)`: the working space of `vg_poly1305_finalize`.
+* `[672, 800)`: the working space of `vg_poly1305_finalize_scratch`.
 
 `edi` holds the context throughout: the callees are cdecl, so they preserve
 it. Every other argument is loaded from its slot on the stack when it is
 needed (the stack arguments are never written). Each call pushes its
 arguments in a frame of its own (`callWith`), popped into `eax` when it
 returns: with its return address, a call uses at most 24 bytes below `esp`
-(`vg_poly1305_finalize`, with five words of arguments), and
+(`vg_poly1305_finalize_scratch`, with five words of arguments), and
 `vg_chacha20_xor` 20, and 12 more below its own return address, so the
 functions use 32 bytes of stack below their return address.
 
@@ -114,23 +114,23 @@ def lengths : List Instr :=
    .store (at_ .edi 668) .eax]
 
 /-- The ChaCha20 counter set to 1, and the data encrypted or decrypted. -/
-def crypt : Prog isa :=
+def crypt (v : Impl.ChaCha20.X86.Callee) : Prog isa :=
   .seq (.block ([.mov .eax (.imm 1), .store (at_ .edi 112) .eax] ++ ptr .eax .edi 64 ++
     [.mov .ecx (.mem (at_ .esp 16)), .mov .edx (.mem (at_ .esp 20))] ++ ptr .esi .edi 128))
-    (callWith [.esi, .edx, .ecx, .eax] "vg_chacha20_xor" Impl.ChaCha20.X86.Xor.xor)
+    (callWith [.esi, .edx, .ecx, .eax] v.name v.code)
 
 /-- The tag written to `edi + out`: the message is whole blocks, so its
 length (`count`, both of whose words are `eax`) is 0 modulo 16, and nothing
 is buffered. -/
 def finalizeTo (out : Nat) : Prog isa :=
   .seq (.block (ptr .ebx .edi 672 ++ ptr .ecx .edi out ++ [.mov .eax (.imm 0)] ++ ptr .esi .edi 448))
-    (callWith [.ebx, .ecx, .eax, .eax, .esi] "vg_poly1305_finalize" Impl.Poly1305.X86.finalize)
+    (callWith [.ebx, .ecx, .eax, .eax, .esi] "vg_poly1305_finalize_scratch" Impl.Poly1305.X86.finalize)
 
-def «seal» : Prog isa :=
+def «seal» (v : Impl.ChaCha20.X86.Callee) : Prog isa :=
   .seq prologue
   (.seq (macPad 8 12)
   (.seq (.block lengths)
-  (.seq crypt
+  (.seq (crypt v)
   (.seq (macPad 16 20)
   (.seq (absorbOne 656)
   (.seq (finalizeTo 48)
@@ -149,13 +149,13 @@ def compare : List Instr :=
   diff .ecx 3 ++ [.alu .or .eax (.reg .ecx), .alu .cmp .eax (.imm 1), .mov .eax (.imm 0),
     .alu .adc .eax (.imm 0)]
 
-def «open» : Prog isa :=
+def «open» (v : Impl.ChaCha20.X86.Callee) : Prog isa :=
   .seq prologue
   (.seq (macPad 8 12)
   (.seq (macPad 16 20)
   (.seq (.block lengths)
   (.seq (absorbOne 656)
-  (.seq crypt
+  (.seq (crypt v)
   (.seq (finalizeTo 640)
     (.block (compare ++ restore))))))))
 

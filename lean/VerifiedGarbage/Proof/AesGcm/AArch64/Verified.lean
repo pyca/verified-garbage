@@ -17,8 +17,9 @@ import VerifiedGarbage.Proof.AesGcm.Scratch
 Untrusted: everything here is checked by Lean. Correctness and constant time
 (for any implementations `v` of `vg_aes_ctr32`, `vg_aes_expand_key` and
 `vg_ghash`), a state satisfying each precondition, and the shared contracts of
-`Spec/Gcm/Contract.lean` (with no stack: the calls keep the return address in
-`x30`, which each function saves in the scratch buffer).
+`Spec/Gcm/Contract.lean` with the working space as a last argument
+(`Proof/AesGcm/Scratch.lean`; with no stack: the calls keep the return
+address in `x30`, which each function saves in the working space).
 -/
 
 set_option linter.unusedSimpArgs false
@@ -60,7 +61,7 @@ theorem streamFinish_keepsV (v : GcmImpl) : (streamFinish v.callees).allInstrs k
     v.key.keepsV, v.gh.keepsV]; decide +kernel
 
 theorem streamVerify_keepsV (v : GcmImpl) : (streamVerify v.callees).allInstrs keepsV = true := by
-  simp only [streamVerify, tagLenOk, tlTest, cmpSeg, finBody, tag, crypt, crSeg1, crSeg2, crTail, ctrCall,
+  simp only [streamVerify, tagLenOk, tlTest, tagIn, cmpSeg, finBody, tag, crypt, crSeg1, crSeg2, crTail, ctrCall,
     ghCall, absorb, absSeg1, absTail, minK, copy, Impl.AesGcm.AArch64.xor, padSeg, flush, lens, GcmImpl.callees, Code.allInstrs,
     v.ctr.keepsV, v.key.keepsV, v.gh.keepsV]; decide +kernel
 
@@ -70,7 +71,7 @@ theorem seal_keepsV (v : GcmImpl) : («seal» v.callees).allInstrs keepsV = true
     Code.allInstrs, v.ctr.keepsV, v.key.keepsV, v.gh.keepsV]; decide +kernel
 
 theorem open_keepsV (v : GcmImpl) : («open» v.callees).allInstrs keepsV = true := by
-  simp only [«open», openMain, oneCrypt, tagLenOk, tlTest, cmpSeg, j0, j0hash, oneAad, decAbs, fo, textAbs,
+  simp only [«open», openMain, oneCrypt, tagLenOk, tlTest, tagIn, cmpSeg, j0, j0hash, oneAad, decAbs, fo, textAbs,
     finBody, tag, crypt, crSeg1, crSeg2, crTail, ctrCall, ghCall, absorb, absSeg1, absTail, minK, copy, Impl.AesGcm.AArch64.xor,
     padSeg, flush, lens, GcmImpl.callees, Code.allInstrs, v.ctr.keepsV, v.key.keepsV, v.gh.keepsV]
   decide +kernel
@@ -149,27 +150,37 @@ def streamCryptSat : State where
 
 def finSat : State where
   gpr r := match r with
-    | .x0 => 0x1000 | .x1 => 10 | .x2 => 0x3000 | .x5 => 0x4000 | _ => 0
+    | .x0 => 0x1000 | .x1 => 10 | .x2 => 0x3000 | .x5 => 0x5000 | .x6 => 0x4000 | _ => 0
   sp := 0x8000
   mem _ := 0
   rd := [⟨0x1000, 256⟩]
+  wr := [⟨0x3000, 80⟩, ⟨0x5000, 16⟩, ⟨0x4000, 2560⟩]
+
+def verSat : State where
+  gpr r := match r with
+    | .x0 => 0x1000 | .x1 => 10 | .x2 => 0x3000 | .x5 => 0x5000 | .x7 => 0x4000 | _ => 0
+  sp := 0x8000
+  mem _ := 0
+  rd := [⟨0x1000, 256⟩, ⟨0x5000, 0⟩]
   wr := [⟨0x3000, 80⟩, ⟨0x4000, 2560⟩]
 
+/-- `tag` at 0 and `work` at `0x5000` (`[sp + 8]`). -/
 def sealSat : State where
   gpr r := match r with
     | .x0 => 0x1000 | .x1 => 10 | .x2 => 0x2000 | .x4 => 0x3000 | .x6 => 0x4000 | _ => 0
   sp := 0x8000
-  mem _ := 0
-  rd := [⟨0x1000, 256⟩, ⟨0x2000, 0⟩, ⟨0x3000, 0⟩, ⟨0x8000, 8⟩]
-  wr := [⟨0x4000, 0⟩, ⟨0, 2560⟩]
+  mem a := if a = 0x8009 then 0x50 else 0
+  rd := [⟨0x1000, 256⟩, ⟨0x2000, 0⟩, ⟨0x3000, 0⟩, ⟨0x8000, 16⟩]
+  wr := [⟨0x4000, 0⟩, ⟨0, 16⟩, ⟨0x5000, 2560⟩]
 
+/-- `tag` at 0, `tag_len` 0 and `work` at `0x5000` (`[sp + 16]`). -/
 def openSat : State where
   gpr r := match r with
     | .x0 => 0x1000 | .x1 => 10 | .x2 => 0x2000 | .x4 => 0x3000 | .x6 => 0x4000 | _ => 0
   sp := 0x8000
-  mem _ := 0
-  rd := [⟨0x1000, 256⟩, ⟨0x2000, 0⟩, ⟨0x3000, 0⟩, ⟨0x8000, 16⟩]
-  wr := [⟨0x4000, 0⟩, ⟨0, 2560⟩]
+  mem a := if a = 0x8011 then 0x50 else 0
+  rd := [⟨0x1000, 256⟩, ⟨0x2000, 0⟩, ⟨0x3000, 0⟩, ⟨0, 0⟩, ⟨0x8000, 24⟩]
+  wr := [⟨0x4000, 0⟩, ⟨0x5000, 2560⟩]
 
 /-! ## The shared contracts -/
 
@@ -195,45 +206,50 @@ theorem streamAad_verified (v : GcmImpl) :
       [streamAadSat] using streamAadSat)
 
 theorem streamEncrypt_verified (v : GcmImpl) :
-    Verified AArch64.target (streamEncrypt v.callees) (Spec.Gcm.streamEncryptContract AArch64.abi) :=
+    Verified AArch64.target (streamEncrypt v.callees) (Proof.AesGcm.streamEncryptScratchContract AArch64.abi) :=
   Verified.of_correct (streamEncrypt_correct v) (streamEncrypt_ct v) (by
-    sig_implies [Spec.Gcm.streamEncryptContract, Spec.Gcm.streamCryptSig, streamEncryptAArch64, streamCryptPre, streamCryptPub, args, rounds, AArch64.abi,
+    sig_implies [Proof.AesGcm.streamEncryptScratchContract, Proof.AesGcm.streamCryptScratchSig, Spec.Gcm.streamTextPre, Spec.Gcm.streamEncryptPost, Spec.Gcm.streamDecryptPost, streamEncryptAArch64, streamCryptPre, streamCryptPub, args, rounds, AArch64.abi,
       AArch64.argRegs, AArch64.stackArg, AArch64.stackArgAddr, List.getD, List.range, List.range.loop]
       [streamCryptSat] using streamCryptSat)
 
 theorem streamDecrypt_verified (v : GcmImpl) :
-    Verified AArch64.target (streamDecrypt v.callees) (Spec.Gcm.streamDecryptContract AArch64.abi) :=
+    Verified AArch64.target (streamDecrypt v.callees) (Proof.AesGcm.streamDecryptScratchContract AArch64.abi) :=
   Verified.of_correct (streamDecrypt_correct v) (streamDecrypt_ct v) (by
-    sig_implies [Spec.Gcm.streamDecryptContract, Spec.Gcm.streamCryptSig, streamDecryptAArch64, streamCryptPre, streamCryptPub, args, rounds, AArch64.abi,
+    sig_implies [Proof.AesGcm.streamDecryptScratchContract, Proof.AesGcm.streamCryptScratchSig, Spec.Gcm.streamTextPre, Spec.Gcm.streamEncryptPost, Spec.Gcm.streamDecryptPost, streamDecryptAArch64, streamCryptPre, streamCryptPub, args, rounds, AArch64.abi,
       AArch64.argRegs, AArch64.stackArg, AArch64.stackArgAddr, List.getD, List.range, List.range.loop]
       [streamCryptSat] using streamCryptSat)
 
 theorem streamFinish_verified (v : GcmImpl) :
-    Verified AArch64.target (streamFinish v.callees) (Spec.Gcm.streamFinishContract AArch64.abi) :=
+    Verified AArch64.target (streamFinish v.callees) (Proof.AesGcm.streamFinishScratchContract AArch64.abi) :=
   Verified.of_correct (streamFinish_correct v) (streamFinish_ct v) (by
-    sig_implies [Spec.Gcm.streamFinishContract, Spec.Gcm.streamFinishSig, streamFinishAArch64, finPre, args, rounds, AArch64.abi,
+    sig_implies [Proof.AesGcm.streamFinishScratchContract, Proof.AesGcm.streamFinishScratchSig,
+      Spec.Gcm.streamFinishPre, Spec.Gcm.streamFinishPost, streamFinishAArch64, finPre, args, rounds, AArch64.abi,
       AArch64.argRegs, AArch64.stackArg, AArch64.stackArgAddr, List.getD, List.range, List.range.loop]
       [finSat] using finSat)
 
 theorem streamVerify_verified (v : GcmImpl) :
-    Verified AArch64.target (streamVerify v.callees) (Spec.Gcm.streamVerifyContract AArch64.abi) :=
+    Verified AArch64.target (streamVerify v.callees) (Proof.AesGcm.streamVerifyScratchContract AArch64.abi) :=
   Verified.of_correct (streamVerify_correct v) (streamVerify_ct v) (by
-    sig_implies [Spec.Gcm.streamVerifyContract, Spec.Gcm.streamVerifySig, streamVerifyAArch64, finPre, args, rounds, AArch64.abi,
+    sig_implies [Proof.AesGcm.streamVerifyScratchContract, Proof.AesGcm.streamVerifyScratchSig,
+      Spec.Gcm.streamVerifyPre, Spec.Gcm.streamVerifyPost, streamVerifyAArch64, verPre, args, rounds, AArch64.abi,
       AArch64.argRegs, AArch64.stackArg, AArch64.stackArgAddr, List.getD, List.range, List.range.loop]
-      [finSat] using finSat)
+      [verSat] using verSat)
 
 theorem seal_verified (v : GcmImpl) :
-    Verified AArch64.target («seal» v.callees) (Spec.Gcm.sealContract AArch64.abi) :=
+    Verified AArch64.target («seal» v.callees) (Proof.AesGcm.sealScratchContract AArch64.abi) :=
   Verified.of_correct (seal_correct v) (seal_ct v) (by
-    sig_implies [Spec.Gcm.sealContract, Spec.Gcm.sealSig, sealAArch64, onePre, onePub, args, rounds, AArch64.abi,
+    sig_implies [Proof.AesGcm.sealScratchContract, Proof.AesGcm.sealScratchSig, Spec.Gcm.sealPre,
+      Spec.Gcm.sealPost, sealAArch64, sealPre, onePub, args, rounds, AArch64.abi,
       AArch64.argRegs, AArch64.stackArg, AArch64.stackArgAddr, List.getD, List.range, List.range.loop]
       [sealSat, stackArg, stackArgAddr, Mem.readW, Mem.read] using sealSat)
 
 theorem open_verified (v : GcmImpl) :
-    Verified AArch64.target («open» v.callees) (Spec.Gcm.openContract AArch64.abi) :=
+    Verified AArch64.target («open» v.callees) (Proof.AesGcm.openScratchContract AArch64.abi) :=
   Verified.of_correct (open_correct v) (open_ct v) (by
-    sig_implies [Spec.Gcm.openContract, Spec.Gcm.openSig, openAArch64, onePre, onePub, openRes, args, rounds, AArch64.abi,
-      AArch64.argRegs, AArch64.stackArg, AArch64.stackArgAddr, List.getD, List.range, List.range.loop]
+    sig_implies [Proof.AesGcm.openScratchContract, Proof.AesGcm.openScratchSig, Spec.Gcm.openPre,
+      Spec.Gcm.openPost, Spec.Gcm.openLeak, openAArch64, openPre, onePub, openRes, openLeakOf, args, rounds,
+      AArch64.abi, AArch64.argRegs, AArch64.stackArg, AArch64.stackArgAddr, List.getD, List.range,
+      List.range.loop]
       [openSat, stackArg, stackArgAddr, Mem.readW, Mem.read] using openSat)
 
 end VG.Proof.AesGcm.AArch64

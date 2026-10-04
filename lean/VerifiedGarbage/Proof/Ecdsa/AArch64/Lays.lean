@@ -1,0 +1,111 @@
+import VerifiedGarbage.Proof.Ecdsa.AArch64.SlotOps
+
+/-!
+# ECDSA on AArch64: where the powers' slots are
+
+The slots of `c.powP` and `c.powN` are numbered slots `c.sl i` for distinct
+`i`, so they are apart as `pow_ok` needs (`powLayP`, `powLayN`): each fact is
+one about the numbers `i`, which `decide` checks.
+-/
+
+namespace VG.Proof.Ecdsa.AArch64
+
+open VG VG.AArch64 VG.Impl.Mont.AArch64 VG.Impl.Mont VG.Impl.Weierstrass.AArch64 VG.Impl.Weierstrass
+open VG.Impl.Ecdsa.AArch64
+open VG.Proof.Mont.AArch64 VG.Proof.Mont VG.Proof.Weierstrass.AArch64 VG.Proof.Weierstrass Spec.Weierstrass
+
+variable {c : Cfg}
+
+/-- `x` and `y`, `k` and `k'` bytes long, are apart. -/
+abbrev Apart (x k y k' : Nat) : Prop := x + k ≤ y ∨ y + k' ≤ x
+
+theorem sl_mem_map (hn : 0 < c.n) {i : Nat} {l : List Nat} : c.sl i ∈ l.map c.sl ↔ i ∈ l := by
+  constructor
+  · intro h
+    obtain ⟨j, hj, e⟩ := List.mem_map.mp h
+    exact sl_inj c hn e ▸ hj
+  · exact List.mem_map_of_mem
+
+theorem map_sl_disj (hn : 0 < c.n) {l₁ l₂ : List Nat} (h : ∀ i ∈ l₁, i ∉ l₂) :
+    ∀ x ∈ l₁.map c.sl, x ∉ l₂.map c.sl := by
+  intro x hx hx'
+  obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hx
+  exact h i hi ((sl_mem_map hn).mp hx')
+
+theorem map_sl_nodup (hn : 0 < c.n) {l : List Nat} (h : l.Nodup) : (l.map c.sl).Nodup :=
+  List.Pairwise.map c.sl (fun _ _ hab e => hab (sl_inj c hn e)) h
+
+/-- Numbered slots, apart from the modulus's and the temporary area. -/
+theorem lay_map (hc : CfgOk c) {M : Mod} (hmo : M.mo = c.sl MP) (htmp : M.tmp = c.sl TMP)
+    (hMn : M.n = c.n) {l : List Nat} (hl : ∀ i ∈ l, i < 45 ∧ i ≠ MP ∧ i ≠ TMP) :
+    Lay M size (· ∈ l.map c.sl) := by
+  have hn := hc.n0
+  refine ⟨fun x hx => ?_, fun x y hx hy hxy => ?_, fun x hx => ?_, fun x hx => ?_⟩
+  · obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hx
+    rw [hMn]; exact sl_le c hc.n7 (hl i hi).1
+  · obtain ⟨i, -, rfl⟩ := List.mem_map.mp hx
+    obtain ⟨j, -, rfl⟩ := List.mem_map.mp hy
+    rw [hMn]; exact sl_apart c fun h => hxy (h ▸ rfl)
+  · obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hx
+    rw [hMn, hmo]; exact sl_apart c (hl i hi).2.1
+  · obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hx
+    rw [hMn, htmp]; exact sl_apart c (hl i hi).2.2
+
+/-- A numbered slot below the tables is apart from them. -/
+theorem sl_below_bits (c : Cfg) {i : Nat} (hi : i < 45) (j t : Nat) :
+    c.sl i + 8 * c.n ≤ bitsAt c.n j + t := by
+  have := sl_lt c hi
+  rw [sl_eq c 45] at this
+  rw [bitsAt_eq]
+  omega
+
+theorem rcbApart_of (hn : 0 < c.n) {S : RcbSlots} {p q o : Pt} {lw lr : List Nat}
+    (hw : rcbW S o = lw.map c.sl) (hr : rcbR S p q = lr.map c.sl) (hnd : lw.Nodup)
+    (hd : ∀ i ∈ lr, i ∉ lw) : RcbApart S p q o :=
+  ⟨hw ▸ map_sl_nodup hn hnd, by rw [hw, hr]; exact map_sl_disj hn hd⟩
+
+theorem powLay_of (hc : CfgOk c) {jm : Nat} (hjm : jm ∉ [ACC, PT, TMP])
+    (minv : BitVec 64) {red : Red}
+    {base one j : Nat} (hj : j < 3) (hb : base ∉ [ACC, PT, TMP]) (hb45 : base < 45) (ho : one ≠ ACC)
+    (ho45 : one < 45) :
+    PowLay ⟨⟨c.n, c.sl jm, c.sl TMP, minv, red⟩, c.sl ACC, c.sl PT, c.sl base, c.sl one, bitsAt c.n j,
+      64 * c.n⟩ size := by
+  have hn := hc.n0
+  have h7 := hc.n7
+  have hw : ∀ i, i ∉ [ACC, PT, TMP] →
+      ∀ w ∈ powW ⟨⟨c.n, c.sl jm, c.sl TMP, minv, red⟩, c.sl ACC, c.sl PT, c.sl base, c.sl one,
+        bitsAt c.n j, 64 * c.n⟩, c.sl i + 8 * c.n ≤ w.1 ∨ w.1 + w.2 ≤ c.sl i := by
+    intro i hi w hw
+    simp only [powW, List.mem_cons, List.not_mem_nil, or_false] at hw
+    simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hi
+    rcases hw with rfl | rfl | rfl
+    · exact sl_apart c hi.1
+    · exact sl_apart c hi.2.1
+    · exact sl_apart c hi.2.2
+  refine ⟨sl_le c h7 (by decide), sl_le c h7 (by decide), sl_le c h7 hb45, sl_le c h7 ho45,
+    by have := bitsAt_le c h7 hj; show bitsAt c.n j + 64 * c.n ≤ 8192; omega, ⟨show 1 ≤ 64 * c.n by omega, show 64 * c.n < 2 ^ 16 by omega⟩,
+    sl_apart c (by decide), sl_apart c (by decide), sl_apart c (Ne.symm ho), hw base hb, ?_,
+    hw jm hjm⟩
+  intro w hw'
+  simp only [powW, List.mem_cons, List.not_mem_nil, or_false] at hw'
+  rcases hw' with rfl | rfl | rfl <;> exact Or.inr (sl_below_bits c (by decide) j 0)
+
+theorem powLayP (hc : CfgOk c) : PowLay c.powP size :=
+  powLay_of hc (jm := MP) (by decide) _ (j := 1) (by decide) (base := RZ) (by decide) (by decide)
+    (one := ONEP) (by decide) (by decide)
+
+theorem powLayN (hc : CfgOk c) : PowLay c.powN size :=
+  powLay_of hc (jm := MN) (by decide) _ (j := 2) (by decide) (base := KM) (by decide) (by decide)
+    (one := ONEN) (by decide) (by decide)
+
+/-! ## Alignment -/
+
+theorem powAP (c : Cfg) (h0 : 0 < c.n) (h7 : c.n < 7) : PowA c.powP :=
+  ⟨sl_mod8 c ACC, sl_mod8 c PT, sl_mod8 c RZ, sl_mod8 c ONEP, MP'_A c,
+    by have := bitsAt_le c h7 (j := 1) (by decide); show bitsAt c.n 1 < 4096; omega⟩
+
+theorem powAN (c : Cfg) (h0 : 0 < c.n) (h7 : c.n < 7) : PowA c.powN :=
+  ⟨sl_mod8 c ACC, sl_mod8 c PT, sl_mod8 c KM, sl_mod8 c ONEN, MN'_A c,
+    by have := bitsAt_le c h7 (j := 2) (by decide); show bitsAt c.n 2 < 4096; omega⟩
+
+end VG.Proof.Ecdsa.AArch64

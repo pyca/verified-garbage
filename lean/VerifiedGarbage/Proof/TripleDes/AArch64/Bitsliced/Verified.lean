@@ -88,13 +88,13 @@ theorem ecb_contract (d : Direction) (s : State) (hs : (contract d).pre s) :
 
 theorem encrypt_correct (s : State) (hs : (contract .encrypt).pre s) :
     ∃ t s', Exec isa encrypt s t s' ∧ abiPreserved s s' ∧ (contract .encrypt).post s s' := by
-  obtain ⟨t, s', he, hp, hg⟩ := WP.gprs (ecb_contract .encrypt s hs) (rs := preserved)
+  obtain ⟨t, s', he, hp, hg⟩ := WP.gprs (c := encrypt) (ecb_contract .encrypt s hs) (rs := preserved)
     (by lit_decide) (by lit_decide)
   exact ⟨t, s', he, ⟨hg, VG.AArch64.Exec.sp he, VG.AArch64.Exec.preservedV he (by lit_decide)⟩, hp⟩
 
 theorem decrypt_correct (s : State) (hs : (contract .decrypt).pre s) :
     ∃ t s', Exec isa decrypt s t s' ∧ abiPreserved s s' ∧ (contract .decrypt).post s s' := by
-  obtain ⟨t, s', he, hp, hg⟩ := WP.gprs (ecb_contract .decrypt s hs) (rs := preserved)
+  obtain ⟨t, s', he, hp, hg⟩ := WP.gprs (c := decrypt) (ecb_contract .decrypt s hs) (rs := preserved)
     (by lit_decide) (by lit_decide)
   exact ⟨t, s', he, ⟨hg, VG.AArch64.Exec.sp he, VG.AArch64.Exec.preservedV he (by lit_decide)⟩, hp⟩
 

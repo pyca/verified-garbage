@@ -102,7 +102,8 @@ def optimized(row, arch):
     shown = []
     for f in sorted(set(features), key=lambda f: (order.index(f) if f in order else len(order), f)):
         f = {**FEATURES, **ARCH_FEATURES.get(arch, {})}.get(f, f)
-        if f is not None:
+        # Several features may share a name (AArch64's SHA-2 and SHA-3).
+        if f is not None and f not in shown:
             shown.append(f)
     note = row.get("optimized", {}).get(arch)
     return ", ".join(shown) + ("; " if shown and note else "") + (note or "")

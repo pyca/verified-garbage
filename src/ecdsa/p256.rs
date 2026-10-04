@@ -3,32 +3,28 @@
 //! `vg_ecdsa_p256_sign`), public keys (`vg_ec_p256_public_key`), and
 //! verification (`vg_ecdsa_p256_verify`).
 
-#![cfg(target_arch = "x86_64")]
+#![cfg(any(target_arch = "x86_64", target_arch = "x86", target_arch = "aarch64"))]
 
-use super::{Curve, Error, SignatureHash, SigningKey, sealed};
+use super::{Error, P256, SignatureHash, SigningKey, sealed};
 use crate::arch::ec_p256::vg_ec_p256_public_key;
 use crate::arch::ecdsa_p256::vg_ecdsa_p256_verify;
-use crate::arch::ecdsa_p256_sha256::{
-    vg_ecdsa_p256_sha256_sign, vg_ecdsa_p256_sha256_sign_avx2, vg_ecdsa_p256_sha256_sign_shani,
-};
+use crate::arch::ecdsa_p256_sha256::vg_ecdsa_p256_sha256_sign;
+#[cfg(target_arch = "x86_64")]
+use crate::arch::ecdsa_p256_sha256::vg_ecdsa_p256_sha256_sign_avx2;
+#[cfg(target_arch = "aarch64")]
+use crate::arch::ecdsa_p256_sha256::vg_ecdsa_p256_sha256_sign_sha2;
+#[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+use crate::arch::ecdsa_p256_sha256::vg_ecdsa_p256_sha256_sign_shani;
+use crate::arch::ecdsa_p256_sha384::vg_ecdsa_p256_sha384_sign;
+#[cfg(target_arch = "aarch64")]
+use crate::arch::ecdsa_p256_sha384::vg_ecdsa_p256_sha384_sign_sha3;
+#[cfg(target_arch = "x86_64")]
 use crate::arch::ecdsa_p256_sha384::{
-    vg_ecdsa_p256_sha384_sign, vg_ecdsa_p256_sha384_sign_avx2, vg_ecdsa_p256_sha384_sign_shani,
+    vg_ecdsa_p256_sha384_sign_avx2, vg_ecdsa_p256_sha384_sign_shani,
 };
 use crate::hashes::sha256::{Sha256, Sha256Backend};
 use crate::hashes::sha384::{Sha384, Sha384Backend};
 use crate::zeroize::zeroize;
-
-/// The curve P-256 (FIPS 186-5's secp256r1; SP 800-186 §3.2.1.3).
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum P256 {}
-
-impl sealed::Sealed for P256 {}
-
-impl Curve for P256 {
-    type PrivateKey = [u8; 32];
-    type PublicKey = [u8; 65];
-    type Signature = [u8; 64];
-}
 
 impl SigningKey<P256> {
     /// The public key `Q = dG`, in the uncompressed form of SEC 1 §2.3.3:
@@ -56,12 +52,17 @@ impl SigningKey<P256> {
 }
 
 /// A verified `vg_ecdsa_p256_<hash>_sign`, for a hash of `N` bytes.
+#[cfg(target_arch = "x86_64")]
 type SignFn<const N: usize> = unsafe extern "sysv64" fn(
     *mut [u8; 64],
     *const [u8; 32],
     *const [u8; N],
     *mut [u64; 1024],
 ) -> u32;
+/// A verified `vg_ecdsa_p256_<hash>_sign`, for a hash of `N` bytes.
+#[cfg(any(target_arch = "x86", target_arch = "aarch64"))]
+type SignFn<const N: usize> =
+    unsafe extern "C" fn(*mut [u8; 64], *const [u8; 32], *const [u8; N], *mut [u64; 1024]) -> u32;
 
 /// The signature `r ‖ s` of `digest` with the key `d`, by `sign`.
 ///
@@ -111,7 +112,11 @@ impl sealed::Functions<P256> for Sha256 {
     fn sign(d: &[u8; 32], digest: &[u8; 32]) -> Result<[u8; 64], Error> {
         let sign = match Sha256Backend::select(crate::cpu::detected()) {
             Sha256Backend::Scalar => vg_ecdsa_p256_sha256_sign,
+            #[cfg(target_arch = "aarch64")]
+            Sha256Backend::Sha2 => vg_ecdsa_p256_sha256_sign_sha2,
+            #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
             Sha256Backend::ShaNi => vg_ecdsa_p256_sha256_sign_shani,
+            #[cfg(target_arch = "x86_64")]
             Sha256Backend::Avx2 => vg_ecdsa_p256_sha256_sign_avx2,
         };
         // SAFETY: `sign` needs no CPU feature that the implementation of
@@ -130,7 +135,11 @@ impl sealed::Functions<P256> for Sha384 {
     fn sign(d: &[u8; 32], digest: &[u8; 48]) -> Result<[u8; 64], Error> {
         let sign = match Sha384Backend::select(crate::cpu::detected()) {
             Sha384Backend::Scalar => vg_ecdsa_p256_sha384_sign,
+            #[cfg(target_arch = "aarch64")]
+            Sha384Backend::Sha3 => vg_ecdsa_p256_sha384_sign_sha3,
+            #[cfg(target_arch = "x86_64")]
             Sha384Backend::ShaNi => vg_ecdsa_p256_sha384_sign_shani,
+            #[cfg(target_arch = "x86_64")]
             Sha384Backend::Avx2 => vg_ecdsa_p256_sha384_sign_avx2,
         };
         // SAFETY: `sign` needs no CPU feature that the implementation of

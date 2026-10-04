@@ -3,3 +3,6 @@ family = "MACs"
 specs = ["Poly1305"]
 modules = ["src/poly1305.rs"]
 asm = ["poly1305"]
+
+[optimized]
+aarch64 = "NEON, four blocks at a time, on Apple's cores"

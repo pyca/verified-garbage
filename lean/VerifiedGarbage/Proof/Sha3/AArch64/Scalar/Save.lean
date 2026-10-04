@@ -28,7 +28,7 @@ theorem save_vectors_ok (orig : State) :
   · simp only [RegUpd.v_setV,savedVec_not_preserved i hi r hr,ite_false]
     exact hs.vec r hr
 
-theorem save_ok (orig : State) (_hp : VG.Proof.Sha3.AArch64.Pre orig) :
+theorem save_ok (orig : State) :
     WP isa (.block save) orig fun s => Keep orig s ∧ s.gpr = orig.gpr ∧
       s.mem = orig.mem ∧ SavedVector orig s ∧ Ptrs orig s ∧
       (∀ r ∈ preservedV, s.v r = orig.v r) := by

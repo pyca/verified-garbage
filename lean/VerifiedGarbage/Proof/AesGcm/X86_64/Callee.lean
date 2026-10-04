@@ -357,6 +357,8 @@ structure Piece (code : Prog isa) : Prop where
   spSafe : code.all (fun i => !X86_64.isa.writesSp i) = true
   nosp : code.allInstrs (fun i => !Taint.clobbers i .rsp) = true
   depth : code.depth = 0
+  /-- It uses no stack. -/
+  xdepth : code.x86_64Depth = 0
   ct : ∃ hc, ((taint.check (Taint.ofRegs [.r11, .rdi, .rsi, .rdx, .rcx, .r8, .r9, .rsp])
     (Blocks.stitchPart code) hc).map fun τ' => (RegSet.ofList [Reg.rsp]).subset τ'.regs &&
       (!false || τ'.flags)) = some true
@@ -398,6 +400,10 @@ theorem head_depth : (Blocks.head (st.map f)).depth = 0 := by
   rcases st with _ | i <;>
   simp only [Option.map, Blocks.head, Blocks.stitchPart, Code.depth, (hf _).depth] <;> decide
 
+theorem head_xdepth : (Blocks.head (st.map f)).x86_64Depth = 0 := by
+  rcases st with _ | i <;>
+  simp only [Option.map, Blocks.head, Blocks.stitchPart, Code.x86_64Depth, (hf _).xdepth] <;> decide
+
 end StitchImpl
 
 /-- What an AES-GCM function calls: an implementation of `vg_aes_ctr32`, the
@@ -427,21 +433,12 @@ def callees : Callees :=
 end GcmImpl
 
 /-- The implementations of `vg_ghash`, by name, as the variants of `AesGcm`
-choose them (`GcmVariant`). `GhashName.impl`, in `GhashImpls.lean`, gives
+choose them (`GcmVariant`, `Variant.lean`). `GhashName.impl`, in `GhashImpls.lean`, gives
 their `GhashImpl`s, whose proofs import the algebra of `Proof/Gcm/Poly.lean`,
 which the variants then need not import. -/
 inductive GhashName where
   | scalar
   | pclmul
   | vpclmul
-
-/-- A variant of `AesGcm` (see `TCB/Emit.lean`): a `GcmImpl` with its
-implementation of `vg_ghash` named (`GhashName`), which `GcmVariant.impl`
-(`GhashImpls.lean`) resolves. -/
-structure GcmVariant where
-  ctr : Ctr32Impl
-  key : KeyImpl
-  gh : GhashName
-  stitch : Option StitchImpl := none
 
 end VG.Proof.AesGcm.X86_64

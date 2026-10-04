@@ -63,14 +63,12 @@ message.
   which are public (as the hashes' callers keep `count`), and passes them.
 
 The data, the additional data and the IV are in buffers of their own; the
-data is encrypted or decrypted in place. The fixed-size secrets travel in
-buffers that are also working space, so that fewer arguments are passed in
-memory: the tags in the first 16 bytes of `work`. Each function's working
-space (`scratch` or `work`) has room for `vg_aes_ctr32`'s (2048 bytes) and
-512 bytes more, but that of `vg_aes_gcm_encrypt_blocks` and
-`vg_aes_gcm_decrypt_blocks`, which has 64 bytes more. `vg_aes_gcm_init`,
-`vg_aes_gcm_stream_init` and `vg_aes_gcm_stream_aad` keep theirs on the
-stack.
+data is encrypted or decrypted in place. A computed tag is written to a
+16-byte buffer `tag`, and a received tag is read from the `tag_len` bytes at
+`tag`. The primitives take their working space as an argument (`scratch`);
+`vg_aes_gcm_encrypt_blocks` and `vg_aes_gcm_decrypt_blocks` have room for
+`vg_aes_ctr32`'s (2048 bytes) and 64 bytes more. The functions of AES-GCM
+keep theirs on the stack.
 
 Every contract takes the number of bytes of stack below the stack pointer
 that an implementation's calls and frames use (`stack`, see `Sig.contract`),
@@ -265,25 +263,35 @@ def initApi : Api where
 
 /-! ## AES-GCM: one-shot -/
 
-/-- `vg_aes_gcm_seal(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, work: *mut [u64; 320])`.
-`rounds` is public; `work` is working space but for the tag it returns. -/
+/-- `vg_aes_gcm_seal(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16])`.
+`rounds` is public. -/
 def sealSig : Sig where
   params := [("ctx", .array false .u64 32), ("rounds", .int .usize true),
     ("nonce", .slice false .u8 "nonce_len"), ("aad", .slice false .u8 "aad_len"),
-    ("data", .slice true .u8 "len"), ("work", .array true .u64 320)]
+    ("data", .slice true .u8 "len"), ("tag", .array true .u8 16)]
+
+/-- `vg_aes_gcm_seal`'s precondition: `rounds` is 10, 12 or 14. -/
+def sealPre (pb : Nat) : Curry (sealSig.words pb) (Mem → Prop) :=
+  fun _ctx rounds _nonce _nonceLen _aad _aadLen _data _len _tag _ =>
+    rounds.toNat = 10 ∨ rounds.toNat = 12 ∨ rounds.toNat = 14
+
+/-- For `rounds` of 10, 12 or 14, with the key context at `ctx`: the `len`
+bytes at `data` are encrypted, with the IV the `nonce_len` bytes at `nonce`
+and the `aad_len` bytes of additional data at `aad` (GCM-AE, `encryptWith`),
+and the 16-byte tag is at `tag`. -/
+def sealPost (pb : Nat) : sealSig.Post pb :=
+  fun ctx rounds nonce nonceLen aad aadLen data len tag m m' _ =>
+    (rounds.toNat = 10 ∨ rounds.toNat = 12 ∨ rounds.toNat = 14) →
+    encryptWith (ctxCiph m ctx rounds.toNat) (ctxH m ctx) 16 (Aes.bytesAt m nonce nonceLen.toNat)
+        (Aes.bytesAt m data len.toNat) (Aes.bytesAt m aad aadLen.toNat) =
+      (Aes.bytesAt m' data len.toNat, Aes.bytesAt m' tag 16)
 
 /-- For `rounds` of 10, 12 or 14, with the key context at `ctx`: encrypts the
 `len` bytes at `data` in place, with the IV the `nonce_len` bytes at `nonce`
 and the `aad_len` bytes of additional data at `aad` (GCM-AE, `encryptWith`),
-and writes the 16-byte tag to the first 16 bytes of `work`. -/
+and writes the 16-byte tag to `tag`. -/
 def sealContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  sealSig.contract A
-    (pre := fun _ctx rounds _nonce _nonceLen _aad _aadLen _data _len _work _ =>
-      rounds.toNat = 10 ∨ rounds.toNat = 12 ∨ rounds.toNat = 14)
-    (post := fun ctx rounds nonce nonceLen aad aadLen data len work m m' _ =>
-      encryptWith (ctxCiph m ctx rounds.toNat) (ctxH m ctx) 16 (Aes.bytesAt m nonce nonceLen.toNat)
-          (Aes.bytesAt m data len.toNat) (Aes.bytesAt m aad aadLen.toNat) =
-        (Aes.bytesAt m' data len.toNat, Aes.bytesAt m' work 16))
+  sealSig.contract A (pre := sealPre A.ptrBits) (post := sealPost A.ptrBits)
     (writeArgs := true)
     (stack := stack)
 
@@ -298,8 +306,7 @@ def sealApi : Api where
     tag): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, \
     encrypts the `len` bytes at `data` in place, under the IV the `nonce_len` bytes at `nonce`, \
     and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` \
-    to the first 16 bytes of `*work`. The rest of `*work` is working space, unspecified on \
-    return. A shorter tag is the first bytes of this one.\n\n\
+    to `*tag`. A shorter tag is the first bytes of this one.\n\n\
     The function checks no length. GCM is secure only for a nonce of 1 to `2^61 - 1` bytes, \
     at most `2^36 - 32` bytes of data and at most `2^61 - 1` bytes of additional data \
     (§5.2.1.1), which the caller must ensure; and a nonce must never be used twice with the \
@@ -309,14 +316,12 @@ def sealApi : Api where
     data."
   safety := ["`rounds` must be 10, 12 or 14."]
 
-/-- `vg_aes_gcm_open(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, work: *mut [u64; 320], tag_len: usize) -> u32`.
-`rounds` and `tag_len` are public; `work` is working space but for the tag
-it is given. -/
+/-- `vg_aes_gcm_open(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32`.
+`rounds` and `tag_len` are public. -/
 def openSig : Sig where
   params := [("ctx", .array false .u64 32), ("rounds", .int .usize true),
     ("nonce", .slice false .u8 "nonce_len"), ("aad", .slice false .u8 "aad_len"),
-    ("data", .slice true .u8 "len"), ("work", .array true .u64 320),
-    ("tag_len", .int .usize true)]
+    ("data", .slice true .u8 "len"), ("tag", .slice false .u8 "tag_len")]
   ret := some .u32
 
 /-- What `vg_aes_gcm_open` computes: GCM-AD (`decryptWith`) for a tag of
@@ -325,30 +330,49 @@ def openResult (ciph : Block → Block) (h : Block) (tagLen : Nat) (iv c a tag :
     Option (List Byte) :=
   if tagLenOk tagLen then decryptWith ciph h tagLen iv c a tag else none
 
+/-- `vg_aes_gcm_open`'s precondition: `rounds` is 10, 12 or 14. -/
+def openPre (pb : Nat) : Curry (openSig.words pb) (Mem → Prop) :=
+  fun _ctx rounds _nonce _nonceLen _aad _aadLen _data _len _tag _tagLen _ =>
+    rounds.toNat = 10 ∨ rounds.toNat = 12 ∨ rounds.toNat = 14
+
 /-- For `rounds` of 10, 12 or 14, with the key context at `ctx` and the
-received tag in the first `tag_len` bytes of `work`: if `tag_len` is a tag
+received tag the `tag_len` bytes at `tag`: if `tag_len` is a tag length
+§5.2.1.2 allows and the tag is that of the `len` bytes of ciphertext at
+`data` and the `aad_len` bytes of additional data at `aad`, with the IV the
+`nonce_len` bytes at `nonce` (GCM-AD, `decryptWith`), the result is 1 and
+the plaintext is at `data`; otherwise the result is 0 and the bytes at
+`data` are as they were. -/
+def openPost (pb : Nat) : openSig.Post pb :=
+  fun ctx rounds nonce nonceLen aad aadLen data len tag tagLen m m' r =>
+    (rounds.toNat = 10 ∨ rounds.toNat = 12 ∨ rounds.toNat = 14) →
+    match openResult (ctxCiph m ctx rounds.toNat) (ctxH m ctx) tagLen.toNat
+        (Aes.bytesAt m nonce nonceLen.toNat) (Aes.bytesAt m data len.toNat)
+        (Aes.bytesAt m aad aadLen.toNat) (Aes.bytesAt m tag tagLen.toNat) with
+    | some pt => r = 1 ∧ Aes.bytesAt m' data len.toNat = pt
+    | none => r = 0 ∧ Aes.bytesAt m' data len.toNat = Aes.bytesAt m data len.toNat
+
+/-- What `vg_aes_gcm_open` may leak, for `rounds` of 10, 12 or 14: whether it
+returns 1 (`openResult`'s outcome). -/
+def openLeak (pb : Nat) : Curry (openSig.words pb) (Mem → List Nat) :=
+  fun ctx rounds nonce nonceLen aad aadLen data len tag tagLen m =>
+    if ¬(rounds.toNat = 10 ∨ rounds.toNat = 12 ∨ rounds.toNat = 14) then [] else
+    [if (openResult (ctxCiph m ctx rounds.toNat) (ctxH m ctx) tagLen.toNat
+        (Aes.bytesAt m nonce nonceLen.toNat) (Aes.bytesAt m data len.toNat)
+        (Aes.bytesAt m aad aadLen.toNat) (Aes.bytesAt m tag tagLen.toNat)).isSome
+      then 1 else 0]
+
+/-- For `rounds` of 10, 12 or 14, with the key context at `ctx` and the
+received tag the `tag_len` bytes at `tag`: if `tag_len` is a tag
 length §5.2.1.2 allows and the tag is that of the `len` bytes of ciphertext
 at `data` and the `aad_len` bytes of additional data at `aad`, with the IV
 the `nonce_len` bytes at `nonce` (GCM-AD, `decryptWith`), returns 1 and
 leaves the plaintext at `data`; otherwise returns 0 and leaves the bytes at
 `data` as they were. May leak which (`openResult`'s outcome). -/
 def openContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  openSig.contract A
-    (pre := fun _ctx rounds _nonce _nonceLen _aad _aadLen _data _len _work _tagLen _ =>
-      rounds.toNat = 10 ∨ rounds.toNat = 12 ∨ rounds.toNat = 14)
-    (post := fun ctx rounds nonce nonceLen aad aadLen data len work tagLen m m' r =>
-      match openResult (ctxCiph m ctx rounds.toNat) (ctxH m ctx) tagLen.toNat
-          (Aes.bytesAt m nonce nonceLen.toNat) (Aes.bytesAt m data len.toNat)
-          (Aes.bytesAt m aad aadLen.toNat) (Aes.bytesAt m work tagLen.toNat) with
-      | some pt => r = 1 ∧ Aes.bytesAt m' data len.toNat = pt
-      | none => r = 0 ∧ Aes.bytesAt m' data len.toNat = Aes.bytesAt m data len.toNat)
+  openSig.contract A (pre := openPre A.ptrBits) (post := openPost A.ptrBits)
     (writeArgs := true)
     (stack := stack)
-    (leak := some fun ctx rounds nonce nonceLen aad aadLen data len work tagLen m =>
-      [if (openResult (ctxCiph m ctx rounds.toNat) (ctxH m ctx) tagLen.toNat
-          (Aes.bytesAt m nonce nonceLen.toNat) (Aes.bytesAt m data len.toNat)
-          (Aes.bytesAt m aad aadLen.toNat) (Aes.bytesAt m work tagLen.toNat)).isSome
-        then 1 else 0])
+    (leak := some (openLeak A.ptrBits))
 
 /-- `vg_aes_gcm_open` on every target. -/
 def openApi : Api where
@@ -358,13 +382,13 @@ def openApi : Api where
   writeArgs := true
   contracts := some fun A stack => openContract A stack
   summary := "AES-GCM authenticated decryption (NIST SP 800-38D §7.2, GCM-AD): with the key \
-    context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag in \
-    the first `tag_len` bytes of `*work`, returns 1 if `tag_len` is 4, 8, 12, 13, 14, 15 or 16 \
+    context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the \
+    `tag_len` bytes at `tag`, returns 1 if `tag_len` is 4, 8, 12, 13, 14, 15 or 16 \
     (§5.2.1.2) and the tag is the first `tag_len` bytes of that of the `len` bytes of \
     ciphertext at `data` and the `aad_len` bytes of additional data at `aad`, under the IV the \
     `nonce_len` bytes at `nonce`, having then decrypted the ciphertext in place; otherwise \
-    returns 0, and the bytes at `data` are unchanged. The rest of `*work` is working space, \
-    unspecified on return. The tags are compared without a branch.\n\n\
+    returns 0, and the bytes at `data` are unchanged. The tags are compared without a \
+    branch.\n\n\
     The function checks no other length: GCM requires a nonce of 1 to `2^61 - 1` bytes, at \
     most `2^36 - 32` bytes of ciphertext and at most `2^61 - 1` bytes of additional data \
     (§5.2.1.1), which the caller must check.\n\n\
@@ -449,13 +473,18 @@ def streamAadApi : Api where
     `len` may affect timing, not the key context, the state or the data."
   safety := []
 
-/-- `vg_aes_gcm_stream_encrypt(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize, scratch: *mut [u64; 320])`,
+/-- `vg_aes_gcm_stream_encrypt(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize)`,
 and `vg_aes_gcm_stream_decrypt` with the same signature. `rounds`, `aad_len`
-and `text_len` are public; `scratch` is working space. -/
+and `text_len` are public. -/
 def streamCryptSig : Sig where
   params := [("ctx", .array false .u64 32), ("rounds", .int .usize true),
     ("state", .array true .u64 10), ("aad_len", .int .u64 true), ("text_len", .int .u64 true),
-    ("data", .slice true .u8 "len"), ("scratch", .array true .u64 320)]
+    ("data", .slice true .u8 "len")]
+
+/-- `rounds` is 10, 12 or 14. -/
+def streamTextPre (pb : Nat) : Curry (streamCryptSig.words pb) (Mem → Prop) :=
+  fun _ctx rounds _state _aadLen _textLen _data _len _ =>
+    rounds.toNat = 10 ∨ rounds.toNat = 12 ∨ rounds.toNat = 14
 
 /-- For `rounds` of 10, 12 or 14, with the key context at `ctx`: if the
 streaming state at `state` represents a message with the IV `iv`,
@@ -464,19 +493,20 @@ additional data `a` of `aad_len` bytes and the ciphertext of a plaintext
 represents the message with the ciphertext of `p` followed by the `len`
 bytes at `data`, whose encryption is written to `data`: the last `len`
 bytes of `GCTR_K(inc₃₂(J₀), p ‖ data)`. -/
+def streamEncryptPost (pb : Nat) : streamCryptSig.Post pb :=
+  fun ctx rounds state aadLen textLen data len m m' _ =>
+    (rounds.toNat = 10 ∨ rounds.toNat = 12 ∨ rounds.toNat = 14) →
+    let ciph := ctxCiph m ctx rounds.toNat
+    let h := ctxH m ctx
+    ∀ iv a p, StreamRepr m state ciph h iv a (gctr ciph (inc32 (j0 h iv)) p) →
+      aadLen = BitVec.ofNat 64 a.length → textLen.toNat = p.length →
+      let c := gctr ciph (inc32 (j0 h iv)) (p ++ Aes.bytesAt m data len.toNat)
+      StreamRepr m' state ciph h iv a c ∧ Aes.bytesAt m' data len.toNat = c.drop p.length
+
+/-- For `rounds` of 10, 12 or 14 (`streamTextPre`): `streamEncryptPost`. -/
 def streamEncryptContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  streamCryptSig.contract A
-    (pre := fun _ctx rounds _state _aadLen _textLen _data _len _scratch _ =>
-      rounds.toNat = 10 ∨ rounds.toNat = 12 ∨ rounds.toNat = 14)
-    (post := fun ctx rounds state aadLen textLen data len _scratch m m' _ =>
-      let ciph := ctxCiph m ctx rounds.toNat
-      let h := ctxH m ctx
-      ∀ iv a p, StreamRepr m state ciph h iv a (gctr ciph (inc32 (j0 h iv)) p) →
-        aadLen = BitVec.ofNat 64 a.length → textLen.toNat = p.length →
-        let c := gctr ciph (inc32 (j0 h iv)) (p ++ Aes.bytesAt m data len.toNat)
-        StreamRepr m' state ciph h iv a c ∧ Aes.bytesAt m' data len.toNat = c.drop p.length)
-    (writeArgs := true)
-    (stack := stack)
+  streamCryptSig.contract A (pre := streamTextPre A.ptrBits) (post := streamEncryptPost A.ptrBits)
+    (writeArgs := true) (stack := stack)
 
 /-- `vg_aes_gcm_stream_encrypt` on every target. -/
 def streamEncryptApi : Api where
@@ -496,9 +526,7 @@ def streamEncryptApi : Api where
     Contract: `VG.Spec.Gcm.streamEncryptContract`. Constant time: only the pointers, `rounds`, \
     `aad_len`, `text_len` and `len` may affect timing, not the key context, the state or the \
     data."
-  safety := [
-    "`rounds` must be 10, 12 or 14.",
-    "The contents of `scratch` on return are unspecified."]
+  safety := ["`rounds` must be 10, 12 or 14."]
 
 /-- For `rounds` of 10, 12 or 14, with the key context at `ctx`: if the
 streaming state at `state` represents a message with the IV `iv`,
@@ -507,20 +535,21 @@ bytes (exactly, and `aad_len` modulo 2⁶⁴) so far, then afterwards it represe
 with the ciphertext `c` followed by the `len` bytes at `data`, whose
 decryption is written to `data`: the last `len` bytes of
 `GCTR_K(inc₃₂(J₀), c ‖ data)`. -/
+def streamDecryptPost (pb : Nat) : streamCryptSig.Post pb :=
+  fun ctx rounds state aadLen textLen data len m m' _ =>
+    (rounds.toNat = 10 ∨ rounds.toNat = 12 ∨ rounds.toNat = 14) →
+    let ciph := ctxCiph m ctx rounds.toNat
+    let h := ctxH m ctx
+    ∀ iv a c, StreamRepr m state ciph h iv a c →
+      aadLen = BitVec.ofNat 64 a.length → textLen.toNat = c.length →
+      let c' := c ++ Aes.bytesAt m data len.toNat
+      StreamRepr m' state ciph h iv a c' ∧
+        Aes.bytesAt m' data len.toNat = (gctr ciph (inc32 (j0 h iv)) c').drop c.length
+
+/-- For `rounds` of 10, 12 or 14 (`streamTextPre`): `streamDecryptPost`. -/
 def streamDecryptContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  streamCryptSig.contract A
-    (pre := fun _ctx rounds _state _aadLen _textLen _data _len _scratch _ =>
-      rounds.toNat = 10 ∨ rounds.toNat = 12 ∨ rounds.toNat = 14)
-    (post := fun ctx rounds state aadLen textLen data len _scratch m m' _ =>
-      let ciph := ctxCiph m ctx rounds.toNat
-      let h := ctxH m ctx
-      ∀ iv a c, StreamRepr m state ciph h iv a c →
-        aadLen = BitVec.ofNat 64 a.length → textLen.toNat = c.length →
-        let c' := c ++ Aes.bytesAt m data len.toNat
-        StreamRepr m' state ciph h iv a c' ∧
-          Aes.bytesAt m' data len.toNat = (gctr ciph (inc32 (j0 h iv)) c').drop c.length)
-    (writeArgs := true)
-    (stack := stack)
+  streamCryptSig.contract A (pre := streamTextPre A.ptrBits) (post := streamDecryptPost A.ptrBits)
+    (writeArgs := true) (stack := stack)
 
 /-- `vg_aes_gcm_stream_decrypt` on every target. -/
 def streamDecryptApi : Api where
@@ -541,33 +570,41 @@ def streamDecryptApi : Api where
     Contract: `VG.Spec.Gcm.streamDecryptContract`. Constant time: only the pointers, `rounds`, \
     `aad_len`, `text_len` and `len` may affect timing, not the key context, the state or the \
     data."
-  safety := [
-    "`rounds` must be 10, 12 or 14.",
-    "The contents of `scratch` on return are unspecified."]
+  safety := ["`rounds` must be 10, 12 or 14."]
 
-/-- `vg_aes_gcm_stream_finish(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, work: *mut [u64; 320])`.
-`rounds`, `aad_len` and `text_len` are public; `state` is left unspecified,
-and `work` is working space but for the tag it returns. -/
+/-- `vg_aes_gcm_stream_finish(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *mut [u8; 16])`.
+`rounds`, `aad_len` and `text_len` are public; `state` is left unspecified. -/
 def streamFinishSig : Sig where
   params := [("ctx", .array false .u64 32), ("rounds", .int .usize true),
     ("state", .array true .u64 10), ("aad_len", .int .u64 true), ("text_len", .int .u64 true),
-    ("work", .array true .u64 320)]
+    ("tag", .array true .u8 16)]
+
+/-- `vg_aes_gcm_stream_finish`'s precondition: `rounds` is 10, 12 or 14. -/
+def streamFinishPre (pb : Nat) : Curry (streamFinishSig.words pb) (Mem → Prop) :=
+  fun _ctx rounds _state _aadLen _textLen _tag _ =>
+    rounds.toNat = 10 ∨ rounds.toNat = 12 ∨ rounds.toNat = 14
 
 /-- For `rounds` of 10, 12 or 14, with the key context at `ctx`: if the
 streaming state at `state` represents a message with the IV `iv`,
 additional data `a` of `aad_len` bytes and the ciphertext `c` of `text_len`
-bytes (exactly, and `aad_len` modulo 2⁶⁴), writes its 16-byte tag (`fullTag`) to the first 16
-bytes of `work`. -/
+bytes (exactly, and `aad_len` modulo 2⁶⁴), its 16-byte tag (`fullTag`) is
+at `tag`. -/
+def streamFinishPost (pb : Nat) : streamFinishSig.Post pb :=
+  fun ctx rounds state aadLen textLen tag m m' _ =>
+    (rounds.toNat = 10 ∨ rounds.toNat = 12 ∨ rounds.toNat = 14) →
+    let ciph := ctxCiph m ctx rounds.toNat
+    let h := ctxH m ctx
+    ∀ iv a c, StreamRepr m state ciph h iv a c →
+      aadLen = BitVec.ofNat 64 a.length → textLen.toNat = c.length →
+      Aes.bytesAt m' tag 16 = fullTag ciph h iv a c
+
+/-- For `rounds` of 10, 12 or 14, with the key context at `ctx`: if the
+streaming state at `state` represents a message with the IV `iv`,
+additional data `a` of `aad_len` bytes and the ciphertext `c` of `text_len`
+bytes (exactly, and `aad_len` modulo 2⁶⁴), writes its 16-byte tag
+(`fullTag`) to `tag`. -/
 def streamFinishContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  streamFinishSig.contract A
-    (pre := fun _ctx rounds _state _aadLen _textLen _work _ =>
-      rounds.toNat = 10 ∨ rounds.toNat = 12 ∨ rounds.toNat = 14)
-    (post := fun ctx rounds state aadLen textLen work m m' _ =>
-      let ciph := ctxCiph m ctx rounds.toNat
-      let h := ctxH m ctx
-      ∀ iv a c, StreamRepr m state ciph h iv a c →
-        aadLen = BitVec.ofNat 64 a.length → textLen.toNat = c.length →
-        Aes.bytesAt m' work 16 = fullTag ciph h iv a c)
+  streamFinishSig.contract A (pre := streamFinishPre A.ptrBits) (post := streamFinishPost A.ptrBits)
     (writeArgs := true)
     (stack := stack)
 
@@ -582,45 +619,55 @@ def streamFinishApi : Api where
     steps 5–6, §7.2 steps 6–7): with the key context `*ctx` that `vg_aes_gcm_init` wrote for \
     `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes \
     of additional data and exactly `text_len` bytes of ciphertext, writes its 128-bit \
-    tag to the first 16 bytes of `*work`. The rest of `*work` is working space, unspecified \
-    on return. A shorter tag is the first bytes of this one; to check a received tag, use \
-    `vg_aes_gcm_stream_verify`.\n\n\
+    tag to `*tag`. A shorter tag is the first bytes of this one; to check a received tag, \
+    use `vg_aes_gcm_stream_verify`.\n\n\
     Contract: `VG.Spec.Gcm.streamFinishContract`. Constant time: only the pointers, `rounds`, \
     `aad_len` and `text_len` may affect timing, not the key context or the state."
   safety := [
     "`rounds` must be 10, 12 or 14.",
     "The contents of `state` on return are unspecified."]
 
-/-- `vg_aes_gcm_stream_verify(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, work: *mut [u64; 320], tag_len: usize) -> u32`.
+/-- `vg_aes_gcm_stream_verify(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *const u8, tag_len: usize) -> u32`.
 `rounds`, `aad_len`, `text_len` and `tag_len` are public; `state` is left
-unspecified, and `work` is working space but for the tags. -/
+unspecified. -/
 def streamVerifySig : Sig where
   params := [("ctx", .array false .u64 32), ("rounds", .int .usize true),
     ("state", .array true .u64 10), ("aad_len", .int .u64 true), ("text_len", .int .u64 true),
-    ("work", .array true .u64 320), ("tag_len", .int .usize true)]
+    ("tag", .slice false .u8 "tag_len")]
   ret := some .u32
 
+/-- `vg_aes_gcm_stream_verify`'s precondition: `rounds` is 10, 12 or 14. -/
+def streamVerifyPre (pb : Nat) : Curry (streamVerifySig.words pb) (Mem → Prop) :=
+  fun _ctx rounds _state _aadLen _textLen _tag _tagLen _ =>
+    rounds.toNat = 10 ∨ rounds.toNat = 12 ∨ rounds.toNat = 14
+
 /-- For `rounds` of 10, 12 or 14, with the key context at `ctx` and the
-received tag in the first `tag_len` bytes of `work`: if the streaming state
-at `state` represents a message with the IV `iv`, additional data `a` of
+received tag the `tag_len` bytes at `tag`: if the streaming state at
+`state` represents a message with the IV `iv`, additional data `a` of
 `aad_len` bytes and the ciphertext `c` of `text_len` bytes (both modulo
-2⁶⁴), and `T` is its 16-byte tag (`fullTag`): if `tag_len` is a length
-§5.2.1.2 allows and the received tag is the first `tag_len` bytes of `T`
-(§7.2 step 8), returns 1 and writes `T` to the first 16 bytes of `work`;
-otherwise returns 0 and writes 16 zero bytes there. -/
+2⁶⁴), and `T` is its 16-byte tag (`fullTag`): the result is 1 if `tag_len`
+is a length §5.2.1.2 allows and the received tag is the first `tag_len`
+bytes of `T` (§7.2 step 8), and 0 otherwise. -/
+def streamVerifyPost (pb : Nat) : streamVerifySig.Post pb :=
+  fun ctx rounds state aadLen textLen tag tagLen m _ r =>
+    (rounds.toNat = 10 ∨ rounds.toNat = 12 ∨ rounds.toNat = 14) →
+    let ciph := ctxCiph m ctx rounds.toNat
+    let h := ctxH m ctx
+    ∀ iv a c, StreamRepr m state ciph h iv a c →
+      aadLen = BitVec.ofNat 64 a.length → textLen.toNat = c.length →
+      let t := fullTag ciph h iv a c
+      if tagLenOk tagLen.toNat ∧ t.take tagLen.toNat = Aes.bytesAt m tag tagLen.toNat then r = 1
+      else r = 0
+
+/-- For `rounds` of 10, 12 or 14, with the key context at `ctx` and the
+received tag the `tag_len` bytes at `tag`: if the streaming state at
+`state` represents a message with the IV `iv`, additional data `a` of
+`aad_len` bytes and the ciphertext `c` of `text_len` bytes (both modulo
+2⁶⁴), and `T` is its 16-byte tag (`fullTag`): returns 1 if `tag_len` is a
+length §5.2.1.2 allows and the received tag is the first `tag_len` bytes of
+`T` (§7.2 step 8), and 0 otherwise. -/
 def streamVerifyContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  streamVerifySig.contract A
-    (pre := fun _ctx rounds _state _aadLen _textLen _work _tagLen _ =>
-      rounds.toNat = 10 ∨ rounds.toNat = 12 ∨ rounds.toNat = 14)
-    (post := fun ctx rounds state aadLen textLen work tagLen m m' r =>
-      let ciph := ctxCiph m ctx rounds.toNat
-      let h := ctxH m ctx
-      ∀ iv a c, StreamRepr m state ciph h iv a c →
-        aadLen = BitVec.ofNat 64 a.length → textLen.toNat = c.length →
-        let t := fullTag ciph h iv a c
-        if tagLenOk tagLen.toNat ∧ t.take tagLen.toNat = Aes.bytesAt m work tagLen.toNat then
-          r = 1 ∧ Aes.bytesAt m' work 16 = t
-        else r = 0 ∧ Aes.bytesAt m' work 16 = zeros 16)
+  streamVerifySig.contract A (pre := streamVerifyPre A.ptrBits) (post := streamVerifyPost A.ptrBits)
     (writeArgs := true)
     (stack := stack)
 
@@ -633,13 +680,11 @@ def streamVerifyApi : Api where
   contracts := some fun A stack => streamVerifyContract A stack
   summary := "Finishes an incremental AES-GCM decryption and checks its tag (NIST SP 800-38D \
     §7.2 steps 6–8): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` \
-    rounds and the received tag in the first `tag_len` bytes of `*work`, if the streaming \
-    state `*state` represents a message with `aad_len` bytes of additional data and \
-    exactly `text_len` bytes of ciphertext, returns 1 if `tag_len` is 4, 8, 12, 13, 14, \
-    15 or 16 (§5.2.1.2) and the received tag is the first `tag_len` bytes of the message's \
-    128-bit tag, which it then writes to the first 16 bytes of `*work`; otherwise returns 0 \
-    and writes 16 zero bytes there. The rest of `*work` is working space, unspecified on \
-    return. The tags are compared without a branch.\n\n\
+    rounds and the received tag the `tag_len` bytes at `tag`, if the streaming state \
+    `*state` represents a message with `aad_len` bytes of additional data and exactly \
+    `text_len` bytes of ciphertext, returns 1 if `tag_len` is 4, 8, 12, 13, 14, 15 or 16 \
+    (§5.2.1.2) and the received tag is the first `tag_len` bytes of the message's 128-bit \
+    tag, and 0 otherwise. The tags are compared without a branch.\n\n\
     Contract: `VG.Spec.Gcm.streamVerifyContract`. Constant time: only the pointers, `rounds`, \
     `aad_len`, `text_len` and `tag_len` may affect timing, not the key context, the state or \
     the tags."

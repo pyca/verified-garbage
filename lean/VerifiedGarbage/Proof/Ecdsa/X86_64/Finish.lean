@@ -17,17 +17,6 @@ open VG.Proof.X25519.X86_64 (Keeps)
 
 variable {c : Cfg}
 
-/-- Bytes that changed only in a region apart from the working space. -/
-theorem _root_.VG.Proof.Mont.Outside.unch_far {q base : Addr} {len : Nat} {m m' : Mem}
-    (h : Outside q 0 len m m') (hd : Region.Disjoint ⟨base, size⟩ ⟨q, len⟩) :
-    Unch base [(size, 2 ^ 64)] m m' := by
-  intro x hx
-  have hx' := hx _ (List.mem_singleton_self _)
-  have hlt := (x - base).isLt
-  refine h x (Or.inr (Nat.le_of_not_lt fun hl => ?_))
-  simp only [ofs] at hx' hl
-  exact hd x (show (x - base).toNat + 1 ≤ size by omega) (show (x - q).toNat + 1 ≤ len by omega)
-
 /-- The bytes of a range apart from the one that changed. -/
 theorem bytesAt_keep {q p : Addr} {len k : Nat} {m m' : Mem} (h : Outside q 0 len m m')
     (hd : Region.Disjoint ⟨p, k⟩ ⟨q, len⟩) (hl : len ≤ 2 ^ 64) (hk : k ≤ 2 ^ 64) :

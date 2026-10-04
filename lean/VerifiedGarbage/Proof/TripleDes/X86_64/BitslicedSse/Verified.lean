@@ -15,14 +15,14 @@ theorem encrypt_correct (s : State) (hs : (contract .encrypt).pre s) :
       (contract .encrypt).post s s' := by
   obtain ⟨rd, wr, kd, kb, db, rdt, rb, fit⟩ := hs
   obtain ⟨t, s', he, ha, hp⟩ := ecb_ok .encrypt rd wr kd kb db rdt rb fit
-  exact ⟨t, s', he, abiPreserved_of_exec (by lit_decide) he ha, hp⟩
+  exact ⟨t, s', he, abiPreserved_of_exec (c := Impl.TripleDes.X86_64.BitsliceSse.encrypt) (by lit_decide) he ha, hp⟩
 
 theorem decrypt_correct (s : State) (hs : (contract .decrypt).pre s) :
     ∃ t s', Exec isa Impl.TripleDes.X86_64.BitsliceSse.decrypt s t s' ∧ abiPreserved s s' ∧
       (contract .decrypt).post s s' := by
   obtain ⟨rd, wr, kd, kb, db, rdt, rb, fit⟩ := hs
   obtain ⟨t, s', he, ha, hp⟩ := ecb_ok .decrypt rd wr kd kb db rdt rb fit
-  exact ⟨t, s', he, abiPreserved_of_exec (by lit_decide) he ha, hp⟩
+  exact ⟨t, s', he, abiPreserved_of_exec (c := Impl.TripleDes.X86_64.BitsliceSse.decrypt) (by lit_decide) he ha, hp⟩
 
 theorem encrypt_verified : Verified target Impl.TripleDes.X86_64.BitsliceSse.encrypt
     (Proof.TripleDes.ecbEncryptScratchContract abi) := by

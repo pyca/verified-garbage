@@ -1,5 +1,4 @@
-import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx.Ok
-import VerifiedGarbage.Proof.AesGcm.X86_64.Callee
+import VerifiedGarbage.Proof.AesGcm.X86_64.Variant
 
 /-!
 # The functions AES-GCM calls on x86-64: AesNiPclmulAvx
@@ -11,15 +10,13 @@ namespace VG.Variants.AesGcm.X86_64.AesNiPclmulAvx
 
 open VG VG.X86_64
 
-/-- The interleaved loops of `Impl.Gcm.X86_64.StitchAvx`, from their proof. -/
-def stitch : Proof.AesGcm.X86_64.StitchImpl where
+/-- The interleaved loops of `Impl.Gcm.X86_64.StitchAvx` (their proof is `StitchName.ok`). -/
+def stitch : Proof.AesGcm.X86_64.StitchPart where
+  name := .aesniAvx
   suffix := "_avx"
   features := ["avx"]
-  enc := Impl.Gcm.X86_64.StitchAvx.enc
-  dec := Impl.Gcm.X86_64.StitchAvx.dec
-  ok := Proof.Gcm.X86_64.StitchAvx.stitch_ok
-  encP := ⟨by decide +kernel, by decide +kernel, by decide +kernel, by decide, ⟨_, by taint_decide⟩⟩
-  decP := ⟨by decide +kernel, by decide +kernel, by decide +kernel, by decide, ⟨_, by taint_decide⟩⟩
+  encP := (⟨by decide +kernel, by decide +kernel, by decide +kernel, by decide, by decide +kernel, ⟨_, by taint_decide⟩⟩ : Proof.AesGcm.X86_64.Piece Impl.Gcm.X86_64.StitchAvx.enc)
+  decP := (⟨by decide +kernel, by decide +kernel, by decide +kernel, by decide, by decide +kernel, ⟨_, by taint_decide⟩⟩ : Proof.AesGcm.X86_64.Piece Impl.Gcm.X86_64.StitchAvx.dec)
 
 def variant : Proof.AesGcm.X86_64.GcmVariant := ⟨.aesni, .aesni, .pclmul, some stitch⟩
 

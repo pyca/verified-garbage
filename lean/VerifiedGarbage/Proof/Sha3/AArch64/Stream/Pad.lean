@@ -188,9 +188,9 @@ theorem pad_ct (v : Permutation) : ConstantTime isa Proof.Sha3.padAArch64.pre Pr
     (fun _ _ _ _ hp => agree₀ hp) hhint
 
 theorem pad_verified (v : Permutation) :
-    Verified AArch64.target (Impl.Sha3.AArch64.Stream.padWith v.callee) (Spec.Sha3.padContract AArch64.abi 16) :=
+    Verified AArch64.target (Impl.Sha3.AArch64.Stream.padWith v.callee) (Spec.Sha3.padScratchContract AArch64.abi 16) :=
   Verified.of_correct (pad_correct v) (pad_ct v) (by
-    sig_implies [Spec.Sha3.padContract, Spec.Sha3.padSig, Proof.Sha3.padAArch64, AArch64.abi,
+    sig_implies [Spec.Sha3.padScratchContract, Spec.Sha3.padScratchSig, Spec.Sha3.padPre, Spec.Sha3.padPost, Proof.Sha3.padAArch64, AArch64.abi,
       AArch64.argRegs] [Proof.Sha3.AArch64.Stream.Pad.sat] using Proof.Sha3.AArch64.Stream.Pad.sat)
 
 end VG.Proof.Sha3.AArch64.Stream.Pad

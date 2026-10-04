@@ -62,7 +62,7 @@ theorem decode_eq {bs : List Byte} (hlen : bs.length = 2 * C.len + 1) {b0 : Byte
   · have hV : ¬ Valid C b0 x y := fun h => h4 h.1
     simp only [h4, hV, dite_false, ite_false]
 
-theorem exchange_eq (hC : Good C) {d : Nat} {bs : List Byte} (hlen : bs.length = 2 * C.len + 1) {b0 : Byte}
+theorem exchange_eq (hC : Law C) {d : Nat} {bs : List Byte} (hlen : bs.length = 2 * C.len + 1) {b0 : Byte}
     (hb0 : bs.head? = some b0) {x y : Nat} (hxv : ofBytes ((bs.drop 1).take C.len) = x)
     (hyv : ofBytes (bs.drop (C.len + 1)) = y) {P : Point C}
     (hP : ∀ h : Valid C b0 x y, P = .affine ⟨x, h.2.1⟩ ⟨y, h.2.2.1⟩)

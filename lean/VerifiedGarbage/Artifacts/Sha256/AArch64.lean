@@ -24,7 +24,10 @@ def artifacts : List Artifact := [
   { Spec.Sha256.compressApi with
     name := "vg_sha256_compress_sha2"
     target := AArch64.target
-    doc := Spec.Sha256.compressApi.doc (notes := ["Uses the AArch64 SHA-256 instructions."])
+    doc := Spec.Sha256.compressApi.doc (notes := ["Uses the AArch64 SHA-256 instructions. \
+      The state stays in AdvSIMD registers between blocks; the first block builds the sixteen \
+      round-constant vectors, each just before its rounds, in `v16`–`v31`, where the later \
+      blocks find them."])
     code := Impl.Sha256.AArch64.Sha2.compress
     contract := Spec.Sha256.compressContract AArch64.abi
     verified := Proof.Sha256.AArch64.Shared.compress_of Proof.Sha256.AArch64.Sha2.compress_verified
