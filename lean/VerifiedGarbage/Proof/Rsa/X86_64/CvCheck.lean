@@ -237,18 +237,15 @@ theorem cvCheck_ok {I : CvIn} {m₀ : Mem} {s : State} (h : CvS I m₀ s) (L : C
     rw [wvw hj' (at' j hj'), wvw hj' (a₈ j hj'), m₇, outside_arr o₆ (Nat.le_refl _) e4 (by omega) hj' hZ hn,
       wvw hj' (a₅ j hj'), m₄, g₃ j hj' e1 e2 e3, g₂ j hj' e1]
 
-/-- `invPart`: `qInv` into `aX₂` and `gcd(q, p) = 1` and'ed into `sMask`,
-for a mask that is set only if `p` is odd and above 1. -/
-theorem cvInv_ok {I : CvIn} {m₀ : Mem} {s : State} (h : CvS I m₀ s) (L : CvLens I) {c : Bool}
-    (hc : mword s.mem I.B = mask c)
-    (hcP : c = true → wv s.mem I.B (slot (wk I.k) aP) (wk I.k) % 2 = 1 ∧ 1 < wv s.mem I.B (slot (wk I.k) aP) (wk I.k)) :
-    WP isa (seqs invPart) s fun t =>
-      CvS I m₀ t ∧ mword t.mem I.B = mask (c && decide (Nat.gcd (wv s.mem I.B (slot (wk I.k) aQ) (wk I.k))
-        (wv s.mem I.B (slot (wk I.k) aP) (wk I.k)) = 1)) ∧
-      (c = true → ((wv s.mem I.B (slot (wk I.k) aP) (wk I.k) : Nat) : Int) ∣
-          (wv t.mem I.B (slot (wk I.k) aX₂) (wk I.k) : Int) * wv s.mem I.B (slot (wk I.k) aQ) (wk I.k) -
-            Nat.gcd (wv s.mem I.B (slot (wk I.k) aQ) (wk I.k)) (wv s.mem I.B (slot (wk I.k) aP) (wk I.k)) ∧
-        wv t.mem I.B (slot (wk I.k) aX₂) (wk I.k) < wv s.mem I.B (slot (wk I.k) aP) (wk I.k)) ∧
+/-- `invSetup`: `inverse`'s start, `(u, v, x₁, x₂) := (q, p, 1, 0)`, with
+the word of `u` above its `w` zero. -/
+theorem invSetup_ok {I : CvIn} {m₀ : Mem} {s : State} (h : CvS I m₀ s) (L : CvLens I) :
+    WP isa (seqs invSetup) s fun t =>
+      CvS I m₀ t ∧ mword t.mem I.B = mword s.mem I.B ∧
+      Bignum.X86_64.word t.mem I.B (slot (wk I.k) aU + 8 * wk I.k) = 0 ∧
+      wv t.mem I.B (slot (wk I.k) aU) (wk I.k) = wv s.mem I.B (slot (wk I.k) aQ) (wk I.k) ∧
+      wv t.mem I.B (slot (wk I.k) aV) (wk I.k) = wv t.mem I.B (slot (wk I.k) aP) (wk I.k) ∧
+      wv t.mem I.B (slot (wk I.k) aX₁) (wk I.k) = 1 ∧ wv t.mem I.B (slot (wk I.k) aX₂) (wk I.k) = 0 ∧
       ∀ j, j = aP ∨ j = aQ ∨ j = aD → wv t.mem I.B (slot (wk I.k) j) (wk I.k) = wv s.mem I.B (slot (wk I.k) j) (wk I.k) := by
   have hn := h.ws.scr.nowrap
   have hZ := h.ws.hZ
@@ -274,7 +271,7 @@ theorem cvInv_ok {I : CvIn} {m₀ : Mem} {s : State} (h : CvS I m₀ s) (L : CvL
   have ot : ∀ {m m' : Mem} {j i Ln : Nat}, Outside I.B (slot (wk I.k) j) Ln m m' → Ln ≤ 8 * (wk I.k + 2) → i ≠ j →
       i < 16 → wv m' I.B (slot (wk I.k) i) (wk I.k) = wv m I.B (slot (wk I.k) i) (wk I.k) :=
     fun o hL hij hi => outside_arr o hL hij (by omega) hi hZ hn
-  simp only [invPart, List.cons_append, List.nil_append]
+  simp only [invSetup, seqs]
   -- `[u] := q`, `[v] := p`, `[x₁] := 1`, `[x₂] := 0`.
   refine WP.seq (WP.mono (zeroA_ok h.ws (j := aU) (by decide)) fun s₁ ⟨z₁, o₁, k₁⟩ => ?_)
   have h₁ := h.arr (by decide) (Nat.le_refl _) o₁ k₁ (by decide)
@@ -290,7 +287,7 @@ theorem cvInv_ok {I : CvIn} {m₀ : Mem} {s : State} (h : CvS I m₀ s) (L : CvL
   have o₆ := writeW_outside s₅.mem I.B (1 : BitVec 64) (d := slot (wk I.k) aX₁) (by have := h.ws.sl (j := aX₁) (by decide); omega)
   rw [← m₆] at o₆
   have h₆ := h₅.arr (by decide) (by omega) o₆ k₆ (by decide)
-  refine WP.seq (WP.mono (zeroA_ok h₆.ws (j := aX₂) (by decide)) fun s₇ ⟨z₇, o₇, k₇⟩ => ?_)
+  refine WP.mono (zeroA_ok h₆.ws (j := aX₂) (by decide)) fun s₇ ⟨z₇, o₇, k₇⟩ => ?_
   have h₇ := h₆.arr (by decide) (Nat.le_refl _) o₇ k₇ (by decide)
   -- The values the inverse starts from.
   have eP : ∀ {m : Mem}, m = s.mem → wv m I.B (slot (wk I.k) aP) (wk I.k) = wv s.mem I.B (slot (wk I.k) aP) (wk I.k) :=
@@ -337,6 +334,61 @@ theorem cvInv_ok {I : CvIn} {m₀ : Mem} {s : State} (h : CvS I m₀ s) (L : CvL
       r o₅ (Nat.le_refl _) (by decide) (by decide), r o₄ (by omega) (by decide) (by decide),
       r o₃ (Nat.le_refl _) (by decide) (by decide)]
     exact e1
+  refine ⟨h₇, (hmw o₇ (Nat.le_refl _)).trans ((hmw o₆ (by omega)).trans ((hmw o₅ (Nat.le_refl _)).trans
+    ((hmw o₄ (by omega)).trans ((hmw o₃ (Nat.le_refl _)).trans ((hmw o₂ (by omega)).trans
+      (hmw o₁ (Nat.le_refl _))))))), vU0, vU₇, vV₇, vX₁, vX₂, fun j hj => ?_⟩
+  rcases hj with rfl | rfl | rfl
+  · exact vP₇
+  · exact vQ₇
+  · rw [ot o₇ (Nat.le_refl _) (by decide) (by decide), ot o₆ (by omega) (by decide) (by decide),
+      ot o₅ (Nat.le_refl _) (by decide) (by decide), ot o₄ (by omega) (by decide) (by decide),
+      ot o₃ (Nat.le_refl _) (by decide) (by decide), ot o₂ (by omega) (by decide) (by decide),
+      ot o₁ (Nat.le_refl _) (by decide) (by decide)]
+
+/-- `invPart`: `qInv` into `aX₂` and `gcd(q, p) = 1` and'ed into `sMask`,
+for a mask that is set only if `p` is odd and above 1. -/
+theorem cvInv_ok {I : CvIn} {m₀ : Mem} {s : State} (h : CvS I m₀ s) (L : CvLens I) {c : Bool}
+    (hc : mword s.mem I.B = mask c)
+    (hcP : c = true → wv s.mem I.B (slot (wk I.k) aP) (wk I.k) % 2 = 1 ∧ 1 < wv s.mem I.B (slot (wk I.k) aP) (wk I.k)) :
+    WP isa (seqs invPart) s fun t =>
+      CvS I m₀ t ∧ mword t.mem I.B = mask (c && decide (Nat.gcd (wv s.mem I.B (slot (wk I.k) aQ) (wk I.k))
+        (wv s.mem I.B (slot (wk I.k) aP) (wk I.k)) = 1)) ∧
+      (c = true → ((wv s.mem I.B (slot (wk I.k) aP) (wk I.k) : Nat) : Int) ∣
+          (wv t.mem I.B (slot (wk I.k) aX₂) (wk I.k) : Int) * wv s.mem I.B (slot (wk I.k) aQ) (wk I.k) -
+            Nat.gcd (wv s.mem I.B (slot (wk I.k) aQ) (wk I.k)) (wv s.mem I.B (slot (wk I.k) aP) (wk I.k)) ∧
+        wv t.mem I.B (slot (wk I.k) aX₂) (wk I.k) < wv s.mem I.B (slot (wk I.k) aP) (wk I.k)) ∧
+      ∀ j, j = aP ∨ j = aQ ∨ j = aD → wv t.mem I.B (slot (wk I.k) j) (wk I.k) = wv s.mem I.B (slot (wk I.k) j) (wk I.k) := by
+  have hn := h.ws.scr.nowrap
+  have hZ := h.ws.hZ
+  have h256 := h.ws.h256
+  have k1 := L.k1
+  have eM : Impl.Bignum.X86_64.Public.sMask = 22 := rfl
+  have hmw : ∀ {m m' : Mem} {j L' : Nat}, Outside I.B (slot (wk I.k) j) L' m m' → L' ≤ 8 * (wk I.k + 2) →
+      mword m' I.B = mword m I.B := fun {_ _ j _} o _ =>
+    o.word (Or.inl (by have := hdr_lt_slot (wk I.k) j (show Impl.Bignum.X86_64.Public.sMask < 32 by decide); omega))
+      (by omega)
+  have wvw : ∀ {m m' : Mem} {j : Nat}, j < 16 →
+      wv m' I.B (slot (wk I.k) j) (wk I.k + 2) = wv m I.B (slot (wk I.k) j) (wk I.k + 2) →
+      wv m' I.B (slot (wk I.k) j) (wk I.k) = wv m I.B (slot (wk I.k) j) (wk I.k) := fun {m m' j} _ e => by
+    have e1 := wv_add m I.B (slot (wk I.k) j) (wk I.k) 2
+    have e2 := wv_add m' I.B (slot (wk I.k) j) (wk I.k) 2
+    have l1 := wv_lt m I.B (slot (wk I.k) j) (wk I.k)
+    have l2 := wv_lt m' I.B (slot (wk I.k) j) (wk I.k)
+    rw [e] at e2
+    have := congrArg (· % 2 ^ (64 * wk I.k)) (e1.symm.trans e2)
+    simp only [Nat.add_mul_mod_self_left, Nat.mod_eq_of_lt l1, Nat.mod_eq_of_lt l2] at this
+    exact this.symm
+  -- The arrays a piece leaves: `ot j` from an `Outside` of another.
+  have ot : ∀ {m m' : Mem} {j i Ln : Nat}, Outside I.B (slot (wk I.k) j) Ln m m' → Ln ≤ 8 * (wk I.k + 2) → i ≠ j →
+      i < 16 → wv m' I.B (slot (wk I.k) i) (wk I.k) = wv m I.B (slot (wk I.k) i) (wk I.k) :=
+    fun o hL hij hi => outside_arr o hL hij (by omega) hi hZ hn
+  simp only [invPart]
+  refine wp_seqs_append (by simp [invSetup]) (by simp) (WP.mono (invSetup_ok h L)
+    fun s₇ ⟨h₇, m₇, vU0, vU₇, vV₇, vX₁, vX₂, p₇⟩ => ?_)
+  have vP₇ := p₇ aP (.inl rfl)
+  have vQ₇ := p₇ aQ (.inr (.inl rfl))
+  have vD₇ := p₇ aD (.inr (.inr rfl))
+  simp only [List.cons_append, List.nil_append]
   -- The inverse.
   refine WP.seq (WP.mono (inverse_ok h₇.ws.scr h₇.ws.rdi h₇.ws.hw h₇.ws.hS (by have := h₇.ws.w1; omega) h₇.ws.w2 hZ
     (iU := aU) (iV := aV) (iX₁ := aX₁) (iX₂ := aX₂) (iM := aP) (iT := aT) (by decide) (by decide) (by decide) (by decide)
@@ -384,9 +436,7 @@ theorem cvInv_ok {I : CvIn} {m₀ : Mem} {s : State} (h : CvS I m₀ s) (L : CvL
       · have := hdr_lt_slot (wk I.k) aX₂ (show Impl.Bignum.X86_64.Public.sMask < 32 by decide); omega
       · have := hdr_lt_slot (wk I.k) aT (show Impl.Bignum.X86_64.Public.sMask < 32 by decide); omega
       · simp only [sMo, sFn]; omega) (by omega)
-    exact e8.trans ((hmw o₇ (Nat.le_refl _)).trans ((hmw o₆ (by omega)).trans ((hmw o₅ (Nat.le_refl _)).trans
-      ((hmw o₄ (by omega)).trans ((hmw o₃ (Nat.le_refl _)).trans ((hmw o₂ (by omega)).trans
-        ((hmw o₁ (Nat.le_refl _)).trans hc)))))))
+    exact e8.trans (m₇.trans hc)
   -- `[c] := 1`, and the mask of `[v] = 1`.
   refine WP.seq (WP.mono (zeroA_ok h₈.ws (j := aC) (by decide)) fun s₉ ⟨z₉, o₉, k₉⟩ => ?_)
   have h₉ := h₈.arr (by decide) (Nat.le_refl _) o₉ k₉ (by decide)
@@ -433,11 +483,26 @@ theorem cvInv_ok {I : CvIn} {m₀ : Mem} {s : State} (h : CvS I m₀ s) (L : CvL
     rcases hj with rfl | rfl | rfl
     · rw [f8 aP (by decide) (by decide) (by decide) (by decide) (by decide) (by decide), vP₇]
     · rw [f8 aQ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide), vQ₇]
-    · rw [f8 aD (by decide) (by decide) (by decide) (by decide) (by decide) (by decide),
-        ot o₇ (Nat.le_refl _) (by decide) (by decide), ot o₆ (by omega) (by decide) (by decide),
-        ot o₅ (Nat.le_refl _) (by decide) (by decide), ot o₄ (by omega) (by decide) (by decide),
-        ot o₃ (Nat.le_refl _) (by decide) (by decide), ot o₂ (by omega) (by decide) (by decide),
-        ot o₁ (Nat.le_refl _) (by decide) (by decide)]
+    · rw [f8 aD (by decide) (by decide) (by decide) (by decide) (by decide) (by decide), vD₇]
+
+/-- `decA j`: the low word of `[j]` minus one. -/
+theorem decA_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) {j : Nat} (hj : j < 16) :
+    WP isa (.block (decA j)) s fun t =>
+      t.mem = s.mem.writeW (off B (slot w j)) (Bignum.X86_64.word s.mem B (slot w j) - 1) ∧
+        Keep [.r12, .r9, .rbx, .rax] s t := by
+  have hn := h.scr.nowrap
+  have sj := h.sl hj
+  unfold decA
+  rw [List.append_assoc, WP.block_append_iff]
+  refine WP.mono h.ws_ok fun t₁ ⟨_, e9, n₁, j₁⟩ => WP.block_append_iff.mpr ?_
+  refine WP.mono (base_ok j (r := .rbx) (by decide) ((j₁.gpr (by decide)).trans h.rdi) e9)
+    fun t₂ ⟨hbx, n₂, j₂⟩ => ?_
+  have hs₂ := h.scr.congr (j₁.trans j₂).2.2
+  refine WP.mono (WP.keep [.rax] (Q := fun t => t.mem = s.mem.writeW (off B (slot w j))
+    (Bignum.X86_64.word s.mem B (slot w j) - 1)) (by
+    xrun [State.ea, at0, hbx, show BitVec.ofInt 64 0 = 0#64 from rfl, BitVec.add_zero,
+      hs₂.ld (d := slot w j) (by omega), hs₂.st (d := slot w j) (by omega), n₂, n₁]) rfl)
+    fun t ⟨mt, j₃⟩ => ⟨mt, ((j₁.trans j₂).trans j₃).mono (by simp)⟩
 
 /-- `divisor j ++ [divmod]`: `[aV] := d mod ([j] - 1)`, for an odd `[j]`. -/
 theorem cvDivPart_ok {I : CvIn} {m₀ : Mem} {s : State} (h : CvS I m₀ s) (L : CvLens I) {j : Nat} (hj : j = aP ∨ j = aQ) :
@@ -472,19 +537,7 @@ theorem cvDivPart_ok {I : CvIn} {m₀ : Mem} {s : State} (h : CvS I m₀ s) (L :
   rw [ot o₁ (Nat.le_refl _) hjC hj16] at c₂
   -- The low word.
   have sC := h.ws.sl (j := aC) (by decide)
-  refine WP.seq (WP.mono (Q := fun (t : State) => t.mem = s₂.mem.writeW (off I.B (slot (wk I.k) aC))
-      (Bignum.X86_64.word s₂.mem I.B (slot (wk I.k) aC) - 1) ∧ Keep [.r12, .r9, .rbx, .rax] s₂ t) ?_
-    fun s₃ ⟨m₃, k₃⟩ => ?_)
-  · rw [List.append_assoc, WP.block_append_iff]
-    refine WP.mono h₂.ws.ws_ok fun t₁ ⟨_, e9, n₁, j₁⟩ => WP.block_append_iff.mpr ?_
-    refine WP.mono (base_ok aC (r := .rbx) (by decide) ((j₁.gpr (by decide)).trans h₂.ws.rdi) e9)
-      fun t₂ ⟨hbx, n₂, j₂⟩ => ?_
-    have hs₂ := h₂.ws.scr.congr (j₁.trans j₂).2.2
-    refine WP.mono (WP.keep [.rax] (Q := fun t => t.mem = s₂.mem.writeW (off I.B (slot (wk I.k) aC))
-      (Bignum.X86_64.word s₂.mem I.B (slot (wk I.k) aC) - 1)) (by
-      xrun [State.ea, at0, hbx, show BitVec.ofInt 64 0 = 0#64 from rfl, BitVec.add_zero,
-        hs₂.ld (d := slot (wk I.k) aC) (by omega), hs₂.st (d := slot (wk I.k) aC) (by omega), n₂, n₁]) rfl)
-      fun t ⟨mt, j₃⟩ => ⟨mt, ((j₁.trans j₂).trans j₃).mono (by simp)⟩
+  refine WP.seq (WP.mono (decA_ok h₂.ws (j := aC) (by decide)) fun s₃ ⟨m₃, k₃⟩ => ?_)
   have o₃ := writeW_outside s₂.mem I.B (Bignum.X86_64.word s₂.mem I.B (slot (wk I.k) aC) - 1)
     (d := slot (wk I.k) aC) (by omega)
   rw [← m₃] at o₃

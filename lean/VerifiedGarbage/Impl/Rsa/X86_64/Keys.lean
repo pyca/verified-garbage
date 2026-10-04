@@ -211,6 +211,11 @@ def eqA (a b : Nat) : List (Prog isa) :=
 /-- `[j] := 1`, for `[j] = 0`. -/
 def setOneA (j : Nat) : List Instr := ws ++ base j .rbx ++ [.mov32 .rax (.imm 1), .store (at0 .rbx) .rax]
 
+/-- The low word of `[j]` minus one (`[j] - 1` for a `[j]` whose low word
+is not zero). -/
+def decA (j : Nat) : List Instr :=
+  ws ++ base j .rbx ++ [.mov .rax (.mem (at0 .rbx)), .alu .sub .rax (.imm 1), .store (at0 .rbx) .rax]
+
 /-! ## Bytes -/
 
 /-- `[j] := ` the number of the bytes whose pointer and length are in the
@@ -310,17 +315,17 @@ def pqCheck : List (Prog isa) :=
   [zeroA aU, copyA aU aN, divmod aU aV aP aT] ++ eqA aU aQ ++ [.block andZero, zeroA aC] ++ eqA aV aC ++
     [.block andZero, .block (andOdd aP)]
 
+/-- `inverse`'s start: `(u, v, x₁, x₂) := (q, p, 1, 0)`. -/
+def invSetup : List (Prog isa) :=
+  [zeroA aU, copyA aU aQ, zeroA aV, copyA aV aP, zeroA aX₁, .block (setOneA aX₁), zeroA aX₂]
+
 /-- `qInv = q⁻¹ mod p` into `aX₂`, and `gcd(q, p) = 1` and'ed into `sMask`. -/
 def invPart : List (Prog isa) :=
-  [zeroA aU, copyA aU aQ, zeroA aV, copyA aV aP, zeroA aX₁, .block (setOneA aX₁), zeroA aX₂,
-    inverse aU aV aX₁ aX₂ aP aT, zeroA aC, .block (setOneA aC)] ++ eqA aV aC ++ [.block andZero]
+  invSetup ++ ([inverse aU aV aX₁ aX₂ aP aT, zeroA aC, .block (setOneA aC)] ++ (eqA aV aC ++ [.block andZero]))
 
 /-- `[aC] := [j] - 1` (for an odd `[j]`, whose low word is not zero), then `[aU] := d`. -/
 def divisor (j : Nat) : List (Prog isa) :=
-  [zeroA aC, copyA aC j,
-    .block (ws ++ base aC .rbx ++ [.mov .rax (.mem (at0 .rbx)), .alu .sub .rax (.imm 1),
-      .store (at0 .rbx) .rax]),
-    zeroA aU, copyA aU aD]
+  [zeroA aC, copyA aC j, .block (decA aC), zeroA aU, copyA aU aD]
 
 /-- The computation, once `n` is known valid. -/
 def main : Prog isa := seqs ([
