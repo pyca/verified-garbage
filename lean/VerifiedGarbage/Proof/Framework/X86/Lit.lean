@@ -19,6 +19,11 @@ deriving instance Lean.ToExpr for XReg
 deriving instance Lean.ToExpr for XBinOp
 deriving instance Lean.ToExpr for XShiftOp
 deriving instance Lean.ToExpr for XOp
+deriving instance Lean.ToExpr for MReg
+deriving instance Lean.ToExpr for MSrc
+deriving instance Lean.ToExpr for MBinOp
+deriving instance Lean.ToExpr for MShiftOp
+deriving instance Lean.ToExpr for MOp
 deriving instance Lean.ToExpr for Instr
 deriving instance Lean.ToExpr for Cond
 
