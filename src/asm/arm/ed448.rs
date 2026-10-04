@@ -4,7 +4,7 @@
 
 /// Ed448 public-key derivation (RFC 8032 §5.2.5): writes the 57-byte public key to `*out`, from the 57-byte private key at `seed`, including SHAKE256 and pruning. Contract: `VG.Spec.Ed448.publicKeyContract`. Constant time: only pointers may affect timing.
 ///
-/// Uses baseline integer instructions. Hashes the private key with `vg_keccak_absorb`, `vg_keccak_pad` and `vg_keccak_squeeze` (SHAKE256, the Keccak state in `scratch`) into a stack frame, prunes the first 57 bytes of the hash there, encodes `[s]B` with `vg_ed448_scalar_base`, and clears the frame, the hash and the scalar with it, before returning. The Keccak state, and the base-point multiplication's working values, are left in `scratch`.
+/// Uses baseline integer instructions. Hashes the private key with `vg_keccak_absorb_scratch`, `vg_keccak_pad_scratch` and `vg_keccak_squeeze_scratch` (SHAKE256, the Keccak state in `scratch`) into a stack frame, prunes the first 57 bytes of the hash there, encodes `[s]B` with `vg_ed448_scalar_base`, and clears the frame, the hash and the scalar with it, before returning. The Keccak state, and the base-point multiplication's working values, are left in `scratch`.
 ///
 /// # Safety
 ///
@@ -94,7 +94,7 @@ pub(crate) unsafe extern "C" fn vg_ed448_public_key(out: *mut [u8; 57], seed: *c
         "movw r2, #0",
         "ldr r3, [sp, #252]",
         "add r3, r3, #0",
-        "bl {vg_keccak_absorb}",
+        "bl {vg_keccak_absorb_scratch}",
         "ldr r0, [sp, #256]",
         "add r0, r0, #208",
         "add r12, sp, #0",
@@ -104,7 +104,7 @@ pub(crate) unsafe extern "C" fn vg_ed448_public_key(out: *mut [u8; 57], seed: *c
         "movw r1, #136",
         "movw r2, #57",
         "movw r3, #31",
-        "bl {vg_keccak_pad}",
+        "bl {vg_keccak_pad_scratch}",
         "movw r0, #114",
         "add r12, sp, #0",
         "str r0, [r12, #0]",
@@ -117,7 +117,7 @@ pub(crate) unsafe extern "C" fn vg_ed448_public_key(out: *mut [u8; 57], seed: *c
         "movw r1, #136",
         "movw r2, #0",
         "add r3, sp, #24",
-        "bl {vg_keccak_squeeze}",
+        "bl {vg_keccak_squeeze_scratch}",
         "add r12, sp, #24",
         "ldrb r0, [r12, #0]",
         "and r0, r0, #252",
@@ -306,9 +306,9 @@ pub(crate) unsafe extern "C" fn vg_ed448_public_key(out: *mut [u8; 57], seed: *c
         "ldr r12, [sp], #4",
         "ldr lr, [sp], #4",
         "bx lr",
-        vg_keccak_absorb = sym super::sha3::vg_keccak_absorb,
-        vg_keccak_pad = sym super::sha3::vg_keccak_pad,
-        vg_keccak_squeeze = sym super::sha3::vg_keccak_squeeze,
+        vg_keccak_absorb_scratch = sym super::sha3::vg_keccak_absorb_scratch,
+        vg_keccak_pad_scratch = sym super::sha3::vg_keccak_pad_scratch,
+        vg_keccak_squeeze_scratch = sym super::sha3::vg_keccak_squeeze_scratch,
         vg_ed448_scalar_base = sym super::ed448::vg_ed448_scalar_base,
     )
 }

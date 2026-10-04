@@ -9,8 +9,8 @@ import VerifiedGarbage.Impl.Ed25519.Arm.Whole.Wipe
 # Ed448 public-key derivation on ARMv7
 
 `vg_ed448_public_key(out = r0, seed = r1, scratch = r2)` computes
-`SHAKE256(seed, 114)` with the sponge functions (`vg_keccak_absorb`,
-`vg_keccak_pad` and `vg_keccak_squeeze`, rate 136), prunes the first 57
+`SHAKE256(seed, 114)` with the sponge functions (`vg_keccak_absorb_scratch`,
+`vg_keccak_pad_scratch` and `vg_keccak_squeeze_scratch`, rate 136), prunes the first 57
 bytes of the hash (RFC 8032 §5.2.5) and encodes `[s]B` with
 `vg_ed448_scalar_base`.
 
@@ -63,9 +63,9 @@ def squeezeArgs : List Instr :=
 /-- `SHAKE256(seed, 114)` into the frame at `HASH`. -/
 def hash : Prog isa :=
   .seq zeroState <|
-  .seq (callWith absorbArgs Spec.Sha3.absorbApi.name Impl.Sha3.Arm.Stream.absorb) <|
-  .seq (callWith padArgs Spec.Sha3.padApi.name Impl.Sha3.Arm.Stream.pad)
-    (callWith squeezeArgs Spec.Sha3.squeezeApi.name Impl.Sha3.Arm.Stream.squeeze)
+  .seq (callWith absorbArgs Spec.Sha3.absorbScratchApi.name Impl.Sha3.Arm.Stream.absorb) <|
+  .seq (callWith padArgs Spec.Sha3.padScratchApi.name Impl.Sha3.Arm.Stream.pad)
+    (callWith squeezeArgs Spec.Sha3.squeezeScratchApi.name Impl.Sha3.Arm.Stream.squeeze)
 
 /-- Pruning (`Spec.Ed448.prune`), in place on the first 57 bytes of the
 hash, from `r12 = sp + 24`: bits 0–1 of byte 0 cleared, bit 7 of byte 55

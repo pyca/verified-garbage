@@ -9,7 +9,7 @@ import VerifiedGarbage.Proof.Sha512.Arm.Word64
 # Ed448 public-key derivation on ARMv7: `SHAKE256(seed, 114)`
 
 The Keccak state at `scratch` zeroed (`zero_ok`), and the calls of
-`vg_keccak_absorb`, `vg_keccak_pad` and `vg_keccak_squeeze` (rate 136),
+`vg_keccak_absorb_scratch`, `vg_keccak_pad_scratch` and `vg_keccak_squeeze_scratch` (rate 136),
 each through `Whole.call_ok` with its own contract (`Proof.Sha3.absorbArm`,
 …): `hash_ok` leaves `SHAKE256(seed, 114)` in the frame at `HASH`.
 -/
@@ -179,7 +179,7 @@ def absStack : List Value := [.const 57, .caller 2 KSCR]
 
 theorem abs_step (hc : Ctx L g m₀ t) (hL : L.Ok) (ha : Arguments L m₀)
     (hz : stateAt t.mem (State.addr L.scr) = Spec.Sha3.zero) :
-    WP isa (callWith absorbArgs Spec.Sha3.absorbApi.name Impl.Sha3.Arm.Stream.absorb) t fun u =>
+    WP isa (callWith absorbArgs Spec.Sha3.absorbScratchApi.name Impl.Sha3.Arm.Stream.absorb) t fun u =>
       Ctx L g m₀ u ∧ Spec.Sha3.Repr u.mem (State.addr L.scr) 136
         (Spec.Ed448.bytesAt m₀ (State.addr L.seed) 57) := by
   refine WP.seq (WP.mono (setup_ok hc hL ha (args := absValues) (stk := absStack)
@@ -258,7 +258,7 @@ theorem pad_covers (L : Lay) : Covers ([kArgs L 4] ++ kWr L) (L.inputs ++ Whole.
 
 theorem pad_step (hc : Ctx L g m₀ t) (hL : L.Ok) (ha : Arguments L m₀) {msg : List Byte}
     (hr : Spec.Sha3.Repr t.mem (State.addr L.scr) 136 msg) (hl : msg.length = 57) :
-    WP isa (callWith padArgs Spec.Sha3.padApi.name Impl.Sha3.Arm.Stream.pad) t fun u =>
+    WP isa (callWith padArgs Spec.Sha3.padScratchApi.name Impl.Sha3.Arm.Stream.pad) t fun u =>
       Ctx L g m₀ u ∧ stateAt u.mem (State.addr L.scr) =
         Spec.Sha3.absorb 136 (Spec.Sha3.pad 136 Spec.Sha3.shakeSuffix msg) := by
   refine WP.seq (WP.mono (setup_ok hc hL ha (args := padValues) (stk := padStack)
@@ -333,7 +333,7 @@ theorem sqz_covers (L : Lay) : Covers ([kArgs L 8] ++ sqzWr L) (L.inputs ++ Whol
     · exact ⟨R, by simp only [List.mem_append, List.mem_cons]; exact Or.inr (Or.inr hR), h⟩
 
 theorem sqz_step (hc : Ctx L g m₀ t) (hL : L.Ok) (ha : Arguments L m₀) :
-    WP isa (callWith squeezeArgs Spec.Sha3.squeezeApi.name Impl.Sha3.Arm.Stream.squeeze) t fun u =>
+    WP isa (callWith squeezeArgs Spec.Sha3.squeezeScratchApi.name Impl.Sha3.Arm.Stream.squeeze) t fun u =>
       Ctx L g m₀ u ∧ Spec.Ed448.bytesAt u.mem (State.addr L.E + BitVec.ofNat 64 HASH) 114 =
         Spec.Sha3.squeezeFrom 136 (stateAt t.mem (State.addr L.scr)) 0 114 := by
   refine WP.seq (WP.mono (setup_ok hc hL ha (args := sqzValues) (stk := sqzStack)

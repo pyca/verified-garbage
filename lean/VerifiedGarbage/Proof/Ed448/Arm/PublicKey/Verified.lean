@@ -127,7 +127,7 @@ def base_ready (hL : L.Ok) (hs : Slots L baseValues [] t) :
 end
 
 theorem abs_ct (hL : L.Ok) : RelCT isa (Two L g₁ g₂ m₁ m₂ (Slots L absValues absStack))
-    (.call Spec.Sha3.absorbApi.name Impl.Sha3.Arm.Stream.absorb) (Two L g₁ g₂ m₁ m₂ fun _ => True) := by
+    (.call Spec.Sha3.absorbScratchApi.name Impl.Sha3.Arm.Stream.absorb) (Two L g₁ g₂ m₁ m₂ fun _ => True) := by
   apply call_ct Proof.Sha3.Arm.Stream.Absorb.absorb_verified.1
     Proof.Sha3.Arm.Stream.Absorb.absorb_verified.2.1 absorb_noFrames (fun _ he h => abs_ready hL he h)
   · intro a b ar aw br bw hsp hg ht
@@ -137,7 +137,7 @@ theorem abs_ct (hL : L.Ok) : RelCT isa (Two L g₁ g₂ m₁ m₂ (Slots L absVa
   · simp [absValues, linkRegs]
 
 theorem pad_ct (hL : L.Ok) : RelCT isa (Two L g₁ g₂ m₁ m₂ (Slots L padValues padStack))
-    (.call Spec.Sha3.padApi.name Impl.Sha3.Arm.Stream.pad) (Two L g₁ g₂ m₁ m₂ fun _ => True) := by
+    (.call Spec.Sha3.padScratchApi.name Impl.Sha3.Arm.Stream.pad) (Two L g₁ g₂ m₁ m₂ fun _ => True) := by
   apply call_ct Proof.Sha3.Arm.Stream.Pad.pad_verified.1
     Proof.Sha3.Arm.Stream.Pad.pad_verified.2.1 pad_noFrames (fun _ he h => pad_ready hL he h)
   · intro a b ar aw br bw hsp hg ht
@@ -147,7 +147,7 @@ theorem pad_ct (hL : L.Ok) : RelCT isa (Two L g₁ g₂ m₁ m₂ (Slots L padVa
   · simp [padValues, linkRegs]
 
 theorem sqz_ct (hL : L.Ok) : RelCT isa (Two L g₁ g₂ m₁ m₂ (Slots L sqzValues sqzStack))
-    (.call Spec.Sha3.squeezeApi.name Impl.Sha3.Arm.Stream.squeeze) (Two L g₁ g₂ m₁ m₂ fun _ => True) := by
+    (.call Spec.Sha3.squeezeScratchApi.name Impl.Sha3.Arm.Stream.squeeze) (Two L g₁ g₂ m₁ m₂ fun _ => True) := by
   apply call_ct Proof.Sha3.Arm.Stream.Squeeze.squeeze_verified.1
     Proof.Sha3.Arm.Stream.Squeeze.squeeze_verified.2.1 squeeze_noFrames (fun _ he h => sqz_ready hL he h)
   · intro a b ar aw br bw hsp hg ht
