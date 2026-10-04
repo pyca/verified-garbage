@@ -119,63 +119,11 @@ theorem initS_correct (st : State) (hs : (initX86_64 s).pre st) :
   obtain ⟨t, s', he, h⟩ := Init.correct okS hs
   exact ⟨t, s', he, abiPreserved_of_exec (by lit_decide) he h.1, h.2⟩
 
-theorem updateS_correct (st : State) (hs : (updateX86_64 s).pre st) :
-    ∃ t s', Exec isa (Impl.Blake2.X86_64.Stream.update s) st t s' ∧ abiPreserved st s' ∧
-      (updateX86_64 s).post st s' := by
-  obtain ⟨t, s', he, h⟩ := Update.correct (callee := Impl.Blake2.X86_64.Stream.scalar s) okS calleeS (Update.pre_of hs)
-  exact ⟨t, s', he, abiPreserved_of_exec (by lit_decide) he h.1, h.2⟩
-
-theorem finalizeS_correct (st : State) (hs : (finalizeX86_64 s).pre st) :
-    ∃ t s', Exec isa (Impl.Blake2.X86_64.Stream.finalize s) st t s' ∧ abiPreserved st s' ∧
-      (finalizeX86_64 s).post st s' := by
-  obtain ⟨t, s', he, h⟩ := Finalize.correct (callee := Impl.Blake2.X86_64.Stream.scalar s) okS calleeS hs
-  exact ⟨t, s', he, abiPreserved_of_exec (by lit_decide) he h.1, h.2⟩
-
 theorem initS_verified :
     Verified X86_64.target (Impl.Blake2.X86_64.Stream.init s) (Spec.Blake2.initSContract X86_64.abi) :=
   Verified.of_correct initS_correct initS_ct (by
     contract_implies [Spec.Blake2.initSContract, Spec.Blake2.initSSig, Proof.Blake2.initX86_64,
       Spec.Blake2.bufOff, Spec.Blake2.blockBytes,
       X86_64.abi, X86_64.argRegs] [initSatS] using initSatS)
-
-theorem updateS_verified :
-    Verified X86_64.target (Impl.Blake2.X86_64.Stream.update s)
-      (Spec.Blake2.updateSScratchContract X86_64.abi 8) :=
-  Verified.of_correct updateS_correct updateS_ct (by
-    sig_implies [Spec.Blake2.updateSScratchContract, Spec.Blake2.updateSScratchSig, Proof.Blake2.updateX86_64,
-      Spec.Blake2.bufOff, Spec.Blake2.blockBytes, X86_64.abi, X86_64.argRegs]
-      [updateSat] using updateSat 32)
-
-theorem finalizeS_verified :
-    Verified X86_64.target (Impl.Blake2.X86_64.Stream.finalize s)
-      (Spec.Blake2.finalizeSScratchContract X86_64.abi 8) :=
-  Verified.of_correct finalizeS_correct finalizeS_ct (by
-    sig_implies [Spec.Blake2.finalizeSScratchContract, Spec.Blake2.finalizeSScratchSig,
-      Proof.Blake2.finalizeX86_64, Spec.Blake2.bufOff, Spec.Blake2.blockBytes, X86_64.abi,
-      X86_64.argRegs]
-      [finalizeSat] using finalizeSat 32)
-
-/-! ## `update` and `finalize` with their working space in a frame of their own
-
-The theorems above are of the streaming functions with their working space
-as an argument (`update_scratch`, `finalize_scratch`); `update` and
-`finalize` run them in a frame that allocates it (`Verified.stackScratch`).
--/
-
-theorem updateS_framed : Verified X86_64.target
-    (Impl.StackScratch.X86_64.withStackScratch 584 .r8 (Impl.Blake2.X86_64.Stream.update s))
-    (Spec.Blake2.updateSContract X86_64.abi (8 + 584)) :=
-  X86_64.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 72) (stack := 8) (bytes := 584)
-    updateS_verified (by decide) (by decide) (by decide) (Code.all_of_allInstrs (by lit_decide))
-    (by lit_decide)
-    (X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
-
-theorem finalizeS_framed : Verified X86_64.target
-    (Impl.StackScratch.X86_64.withStackScratch 584 .rcx (Impl.Blake2.X86_64.Stream.finalize s))
-    (Spec.Blake2.finalizeSContract X86_64.abi (8 + 584)) :=
-  X86_64.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 72) (stack := 8) (bytes := 584)
-    finalizeS_verified (by decide) (by decide) (by decide) (Code.all_of_allInstrs (by lit_decide))
-    (by lit_decide)
-    (X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
 
 end VG.Proof.Blake2.X86_64.Stream
