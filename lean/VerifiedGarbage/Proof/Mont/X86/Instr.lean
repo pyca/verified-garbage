@@ -93,6 +93,12 @@ theorem wp_logicS {op : AluOp} (hop : op = .and ∨ op = .xor) {d : Reg} {src : 
   · exact cons (by simp only [exec, execAlu, h, Option.bind_some]; rfl) (k _ (Upd.flags _ _ _ _ _ _))
   · exact cons (by simp only [exec, execAlu, h, Option.bind_some]; rfl) (k _ (Upd.flags _ _ _ _ _ _))
 
+/-- `or d, src`. -/
+theorem wp_orS {d : Reg} {src : Src} {v : BitVec 32} (h : readSrc s src = some v)
+    (k : ∀ t, Upd s t d (s.gpr d ||| v) → WP isa (.block is) t Q) :
+    WP isa (.block (.alu .or d src :: is)) s Q :=
+  cons (by simp only [exec, execAlu, h, Option.bind_some]; rfl) (k _ (Upd.flags _ _ _ _ _ _))
+
 /-- `cmp d, src`: ZF is `d = src`. -/
 theorem wp_cmpS {d : Reg} {src : Src} {v : BitVec 32} (h : readSrc s src = some v)
     (k : ∀ t, Fupd s t → t.zf = some (s.gpr d - v == 0) → WP isa (.block is) t Q) :

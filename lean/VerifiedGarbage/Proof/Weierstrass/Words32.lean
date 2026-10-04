@@ -105,4 +105,26 @@ theorem bytesAt_eq_toBytes32 (m m₀ : Mem) (base q : Addr) {a n : Nat} (c : Boo
         by omega,
       testBit_val32 _ _ _ _ _ _ (by omega) (by omega), BitVec.testBit_toNat]
 
+/-- A number is zero iff its words are. -/
+theorem val32_eq_zero_iff (m : Mem) (base : Addr) : ∀ (a n : Nat),
+    val32 m base a n = 0 ↔ ∀ j < n, w32 m base (a + 4 * j) = 0
+  | _, 0 => ⟨fun _ _ hj => absurd hj (Nat.not_lt_zero _), fun _ => rfl⟩
+  | a, n + 1 => by
+    rw [val32]
+    constructor
+    · intro h j hj
+      rcases j with _ | j
+      · rw [Nat.mul_zero, Nat.add_zero]; omega
+      · rw [show a + 4 * (j + 1) = a + 4 + 4 * j by omega]
+        refine (val32_eq_zero_iff m base (a + 4) n).mp ?_ j (by omega)
+        have : 2 ^ 32 * val32 m base (a + 4) n = 0 := by omega
+        rcases Nat.mul_eq_zero.mp this with h' | h'
+        · exact absurd h' (by decide)
+        · exact h'
+    · intro h
+      have h0 := h 0 (by omega)
+      rw [Nat.mul_zero, Nat.add_zero] at h0
+      rw [h0, (val32_eq_zero_iff m base (a + 4) n).mpr fun j hj => by
+        rw [show a + 4 + 4 * j = a + 4 * (j + 1) by omega]; exact h (j + 1) (by omega)]
+
 end VG.Proof.Weierstrass
