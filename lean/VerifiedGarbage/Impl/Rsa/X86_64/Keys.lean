@@ -1,4 +1,4 @@
-import VerifiedGarbage.Impl.Rsa.X86_64.Crt
+import VerifiedGarbage.Impl.Rsa.X86_64
 
 /-!
 # RSA private keys on x86-64: the shared routines and `vg_rsa_crt_values`
@@ -32,6 +32,8 @@ checks it (it is public); then `p q = n` gives a mask, `qInv` is computed
 by `inverse` (and'ing `gcd(q, p) = 1` into the mask), and `dP` and `dQ` by
 `divmod` (with the divisor `p` or `q` with its low bit cleared: `p - 1` for
 an odd `p`, which `p q = n` implies). Each result is written out masked.
+`p q = n` is checked by `divmod` too, as `n mod p = 0`, `n / p = q` and `p`
+odd.
 -/
 
 namespace VG.Impl.Rsa.X86_64.Keys
@@ -98,8 +100,9 @@ def cswapBody : List Instr :=
     .store (ix .rbx .r14) .rdx, .mov .rdx (.mem (ix .r10 .r14)), .alu .xor .rdx (.reg .rax),
     .store (ix .r10 .r14) .rdx]
 
-/-- `rbp |= [rbx]`. -/
-def orBody : List Instr := [.mov .rax (.mem (ix .rbx .r14)), .alu .or .rbp (.reg .rax)]
+/-- `rbp |= [rbx] ^ [r10]`. -/
+def xorBody : List Instr :=
+  [.mov .rax (.mem (ix .rbx .r14)), .alu .xor .rax (.mem (ix .r10 .r14)), .alu .or .rbp (.reg .rax)]
 
 /-! ## Division -/
 
@@ -199,6 +202,15 @@ def invInit : List Instr :=
 def inverse (iU iV iX₁ iX₂ iM iT : Nat) : Prog isa :=
   .seq (.block invInit) (.loop (invStep iU iV iX₁ iX₂ iM iT) .ne)
 
+/-! ## Masks -/
+
+/-- `rbp = 0` iff `[a] = [b]` over `w` words. -/
+def eqA (a b : Nat) : List (Prog isa) :=
+  [.block (ws ++ base a .rbx ++ base b .r10 ++ [.mov32 .rbp (.imm 0)]), wordLoop 0 xorBody]
+
+/-- `[j] := 1`, for `[j] = 0`. -/
+def setOneA (j : Nat) : List Instr := ws ++ base j .rbx ++ [.mov32 .rax (.imm 1), .store (at0 .rbx) .rax]
+
 /-! ## Bytes -/
 
 /-- `[j] := ` the number of the bytes whose pointer and length are in the
@@ -234,10 +246,10 @@ def sQ : Nat := sFn 9
 def sD : Nat := sFn 10
 def sDl : Nat := sFn 11
 
-/-- The arrays: `n` (0), `p` (1), the product `p q` (2 and 3, then
-`inverse`'s `u` and `v`, then `divmod`'s quotient and remainder), `q` (4),
-`d` (5), `inverse`'s `x₁` and `x₂` (6 and 7), the working array (8) and
-the divisor (9). -/
+/-- The arrays: `n` (0), `p` (1), `divmod`'s quotient and remainder or
+`inverse`'s `u` and `v` (2 and 3), `q` (4), `d` (5), `inverse`'s `x₁` and
+`x₂` (6 and 7), the working array (8) and a constant or the divisor (9,
+`aC`). -/
 def aP : Nat := 1
 def aQ : Nat := 4
 def aD : Nat := 5
@@ -246,7 +258,6 @@ def aV : Nat := 3
 def aX₁ : Nat := 6
 def aX₂ : Nat := 7
 def aT : Nat := 8
-def aDv : Nat := 9
 
 /-- The stack argument `i` (from 1). -/
 def stk (i : Nat) : MemOp := { base := .rsp, disp := 8 * i }
@@ -278,38 +289,43 @@ def head : List Instr :=
     .alu .add .rax (.reg .rax), .store (hdr sStride) .rax, .mov .rax (.imm (BitVec.ofInt 32 (-1))),
     .store (hdr sMask) .rax]
 
-/-- `p q` into the arrays 2 and 3 (`2 w + 2` words), then the mask of
-`p q = n` and'ed into `sMask`. -/
-def product : List (Prog isa) :=
-  Crt.zeroAccs ++ [.block (ws ++ base aP .r11 ++ base aU .r8 ++ base aQ .rax ++ [.mov .r9 (.reg .rax),
-      .mov .r10 (.reg .r12)]),
-    Crt.mulRows] ++ Crt.eqCheck
+/-- The constant array `aC` (9): zero, or one. -/
+def aC : Nat := 9
 
-/-- `[aV] = 1`'s mask and'ed into `sMask`: the OR of `[aV]`'s low word XOR 1
-and its other words, all ones if it is zero. -/
-def oneCheck : List (Prog isa) := [
-  .block (ws ++ base aV .rbx ++ [.mov .rbp (.mem (at0 .rbx)), .alu .xor .rbp (.imm 1)]),
-  wordLoop 1 orBody,
-  .block [.alu .cmp .rbp (.imm 1), .alu .sbb .rbp (.reg .rbp), .alu .and .rbp (.mem (hdr sMask)),
-    .store (hdr sMask) .rbp]]
+/-- The mask of `rbp = 0` and'ed into `sMask`. -/
+def andZero : List Instr :=
+  [.alu .cmp .rbp (.imm 1), .alu .sbb .rbp (.reg .rbp), .alu .and .rbp (.mem (hdr sMask)), .store (hdr sMask) .rbp]
 
-/-- `[aDv] := [j]` with its low bit cleared, then `[aU] := d`. -/
+/-- The mask of `[j]` odd and'ed into `sMask`. -/
+def andOdd (j : Nat) : List Instr :=
+  ws ++ base j .rbx ++ [.mov .rax (.mem (at0 .rbx)), .alu .and .rax (.imm 1), .mov32 .rdx (.imm 0),
+    .alu .sub .rdx (.reg .rax), .alu .and .rdx (.mem (hdr sMask)), .store (hdr sMask) .rdx]
+
+/-- The mask of `p q = n` and'ed into `sMask`, as `n mod p = 0`,
+`n / p = q` and `p` odd (which `p q = n` implies, `n` being odd). -/
+def pqCheck : List (Prog isa) :=
+  [zeroA aU, copyA aU aN, divmod aU aV aP aT] ++ eqA aU aQ ++ [.block andZero, zeroA aC] ++ eqA aV aC ++
+    [.block andZero, .block (andOdd aP)]
+
+/-- `qInv = q⁻¹ mod p` into `aX₂`, and `gcd(q, p) = 1` and'ed into `sMask`. -/
+def invPart : List (Prog isa) :=
+  [zeroA aU, copyA aU aQ, zeroA aV, copyA aV aP, zeroA aX₁, .block (setOneA aX₁), zeroA aX₂,
+    inverse aU aV aX₁ aX₂ aP aT, zeroA aC, .block (setOneA aC)] ++ eqA aV aC ++ [.block andZero]
+
+/-- `[aC] := [j]` with its low bit cleared, then `[aU] := d`. -/
 def divisor (j : Nat) : List (Prog isa) :=
-  [zeroA aDv, copyA aDv j,
-    .block (ws ++ base aDv .rbx ++ [.mov .rax (.mem (at0 .rbx)), .alu .and .rax (.imm (BitVec.ofInt 32 (-2))),
+  [zeroA aC, copyA aC j,
+    .block (ws ++ base aC .rbx ++ [.mov .rax (.mem (at0 .rbx)), .alu .and .rax (.imm (BitVec.ofInt 32 (-2))),
       .store (at0 .rbx) .rax]),
     zeroA aU, copyA aU aD]
 
 /-- The computation, once `n` is known valid. -/
 def main : Prog isa := seqs ([
-  .block head] ++ loadA aN sN sK ++ loadA aP sP sPl ++ loadA aQ sQ sQl ++ loadA aD sD sDl ++ product ++
-  -- `qInv = q⁻¹ mod p`, `gcd(q, p) = 1` and'ed into the mask.
-  [zeroA aU, copyA aU aQ, zeroA aV, copyA aV aP, zeroA aX₁, .block (ws ++ base aX₁ .rbx ++ [.mov32 .rax (.imm 1),
-    .store (at0 .rbx) .rax]), zeroA aX₂, inverse aU aV aX₁ aX₂ aP aT] ++ oneCheck ++
+  .block head] ++ loadA aN sN sK ++ loadA aP sP sPl ++ loadA aQ sQ sQl ++ loadA aD sD sDl ++ pqCheck ++ invPart ++
   storeA aX₂ sQi sPl sMask ++
   -- `dP = d mod (p - 1)` and `dQ = d mod (q - 1)`.
-  divisor aP ++ [divmod aU aV aDv aT] ++ storeA aV sDp sPl sMask ++
-  divisor aQ ++ [divmod aU aV aDv aT] ++ storeA aV sDq sQl sMask ++
+  divisor aP ++ [divmod aU aV aC aT] ++ storeA aV sDp sPl sMask ++
+  divisor aQ ++ [divmod aU aV aC aT] ++ storeA aV sDq sQl sMask ++
   [.block ([.mov .rax (.mem (hdr sMask)), .alu .and .rax (.imm 1)] ++ exit)])
 
 /-- `vg_rsa_crt_values`. -/
