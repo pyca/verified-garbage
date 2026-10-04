@@ -71,15 +71,6 @@ theorem InitPre.arg_sep {s : State} (hp : InitPre s) {i : Nat} (hi : i < 4) :
     Mem.Sep (argAddr s i) 4 ((arg s 2).setWidth 64) 256 := fun x h₁ h₂ =>
   hp.argsCtx x ((hp.arg_contains hi).byte h₁) (by simp only [Region.Contains]; omega)
 
-theorem frame_of_table {p : Addr} {m m' : Mem} (h : TableFrame p m m') :
-    Frame [⟨p, 258⟩] m m' := fun x hx =>
-  h x fun hlt => hx ⟨p, 258⟩ List.mem_cons_self (by simp only [Region.Contains]; omega)
-
-theorem frame_finish {p : Addr} {m m' : Mem} (h : Frame [⟨p, 258⟩] m m') (a b : Byte) :
-    Frame [⟨p, 258⟩] m ((m'.write (p + 256#64) 1 a).write (p + 257#64) 1 b) :=
-  (h.write List.mem_cons_self _ (Offset.contains_base _ (by decide) (by decide))).write
-    List.mem_cons_self _ (Offset.contains_base _ (by decide) (by decide))
-
 theorem init_finish (s : State) (hfit : (s.gpr .edi).toNat + 258 ≤ 2 ^ 32)
     (hp : InRegions s.wr ((s.gpr .edi).setWidth 64) 258) :
     WP isa (.block [.mov .eax (imm 0), .store8 (at_ .edi 256) .al, .store8 (at_ .edi 257) .al]) s

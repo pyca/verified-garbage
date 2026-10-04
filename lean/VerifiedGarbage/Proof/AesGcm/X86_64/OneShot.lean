@@ -1,5 +1,4 @@
 import VerifiedGarbage.Proof.AesGcm.X86_64.StreamVerify
-import VerifiedGarbage.Proof.AesGcm.X86_64.StreamCrypt
 
 /-!
 # AES-GCM on x86-64: what `seal` and `open` share

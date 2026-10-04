@@ -13,13 +13,6 @@ namespace VG.Proof.Rc4.X86
 open VG VG.X86 VG.Impl.Rc4.X86 VG.Spec.Rc4 VG.Proof.Rc4
 open VG.Proof.MlDsa.X86.Pack (Keep WP.keep writesOnly addr_of_fit)
 
-theorem ret_low (a b : BitVec 32) : BitVec.setWidth 32 (a ++ b) = b := by
-  apply BitVec.eq_of_toNat_eq
-  rw [BitVec.toNat_setWidth, BitVec.toNat_append, ← Nat.shiftLeft_add_eq_or_of_lt b.isLt,
-    Nat.shiftLeft_eq]
-  have := b.isLt
-  omega
-
 /-- The registers the code writes. -/
 def written : List Reg := [.eax, .ecx, .edx, .ebx, .esi, .edi, .ebp]
 

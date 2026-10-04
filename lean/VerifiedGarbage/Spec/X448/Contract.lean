@@ -13,10 +13,13 @@ Montgomery ladder. Its contents on return are unspecified and may contain
 secrets. `stack` is the number of bytes below the stack pointer used by an
 implementation's calls and frames.
 
-As with X25519, this single primitive supports public-key derivation using
-the base point and key exchange using a peer's public key. Key generation,
-byte import/export and the all-zero shared-secret check belong to the Rust
-wrapper. They need no separate assembly entry points.
+`vg_x448` supports both public-key derivation using the base point and key
+exchange using a peer's public key. `vg_x448_base` computes the first alone,
+`X448(k, 5)`, with the same contract as `vg_x448` with `point` the base point
+(`basePoint`), so that an implementation can compute it otherwise than with
+the ladder (e.g. as the u-coordinate of a fixed-base multiplication on
+edwards448, RFC 7748 §4.2). Key generation, byte import/export and the
+all-zero shared-secret check belong to the Rust wrapper.
 -/
 
 namespace VG.Spec.X448
@@ -51,6 +54,33 @@ def x448Api : Api where
     order), which the caller must check for if its protocol requires it (RFC 7748 §6.2).\n\n\
     Contract: `VG.Spec.X448.x448Contract`. Constant time: only the pointers may affect \
     timing, not the scalar or the u-coordinate."
+  safety := ["The contents of `scratch` on return are unspecified and may contain secrets; \
+    the caller must destroy them after use."]
+
+/-- `vg_x448_base(out: *mut [u8; 56], scalar: *const [u8; 56], scratch: *mut [u64; 1024])`.
+`scratch` is working space. -/
+def x448BaseSig : Sig where
+  params := [("out", .array true .u8 56), ("scalar", .array false .u8 56),
+    ("scratch", .array true .u64 1024)]
+
+/-- Writes `X448(k, 5)` (the public key of `k`, RFC 7748 §6.2) to `out`, for
+the 56-byte scalar `k` at `scalar`. -/
+def x448BaseContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
+  x448BaseSig.contract A (post := fun out scalar _scratch m m' _ =>
+    bytesAt m' out 56 = x448 (bytesAt m scalar 56) basePoint)
+    (stack := stack)
+
+/-- `vg_x448_base` on every target. -/
+def x448BaseApi : Api where
+  module := "x448"
+  name := "vg_x448_base"
+  sig := x448BaseSig
+  contracts := some fun A stack => x448BaseContract A stack
+  summary := "Computes an X448 public key (RFC 7748 §6.2): writes `X448(k, 5)`, the X448 \
+    function of the 56-byte scalar `k` at `scalar` and the base point's u-coordinate 5, to \
+    `*out`. The scalar is decoded (clamped).\n\n\
+    Contract: `VG.Spec.X448.x448BaseContract`. Constant time: only the pointers may affect \
+    timing, not the scalar."
   safety := ["The contents of `scratch` on return are unspecified and may contain secrets; \
     the caller must destroy them after use."]
 

@@ -36,7 +36,7 @@ include L
 theorem ob12_ok {R : Nat} {D : Addr} {n : Nat} {s : State} (h : ObPre Ctx W SP R D n s) :
     WP isa (.block obB1) s fun s₁ => s₁.zf = some (decide (n / 16 = 0)) ∧
       Env Ctx (W + BitVec.ofNat 64 16) W SP s₁ ∧
-      (n / 16 ≠ 0 → WP isa (.block obB2) s₁ (ObIn Ctx W SP R D n (n / 16))) := by
+      (n / 16 ≠ 0 → WP isa (.block obB2) s₁ (ObIn Ctx (W + BitVec.ofNat 64 16) W SP R D n (n / 16))) := by
   have hn : n < 2 ^ 64 := h.data.ok.lt
   have he := h.env
   obtain ⟨e176, e200, -, -, -, -, -, -, -⟩ := w192_eqs L h (BitVec.ofNat 64 n)
@@ -53,41 +53,41 @@ theorem ob12_ok {R : Nat} {D : Addr} {n : Nat} {s : State} (h : ObPre Ctx W SP R
     rcases hr with rfl | rfl | rfl | rfl <;> exact g₂ _ (by decide) (by decide) (by decide) (by decide)
       (by decide) (by decide) (by decide)) rd₂ wr₂
   exact ⟨he₂, h.data.of_eq (rd₂.trans rd₁) (wr₂.trans wr₁), by omega, h.t_c, h.t_w, h.t_d, h.sp24, a1, a2, a3, a4,
-    a5, by rw [a6, r₁], a7, h.rounds.2⟩
+    a5, by rw [a6, r₁], a7, h.rounds.2, h.t_w.sub_right (Lay.wSub (by decide))⟩
 
 /-- `oneBlocks` of a function whose frame (`hf`, `hw`) leaks the same in two
 runs with the same arguments. -/
 theorem oneBlocks_rel (f : Fn) {R : Nat} {A : Addr} {al : Nat} {D : Addr} {n : Nat} {T : Option Nat}
     (t_c : (below SP 24).Disjoint ⟨Ctx, 256⟩) (t_w : (below SP 24).Disjoint ⟨W, 2560⟩)
     (t_d : (below SP 24).Disjoint ⟨D, n⟩) (sp24 : 24 ≤ SP.toNat)
-    (hf : RelCT isa (fun s₁ s₂ => ObIn Ctx W SP R D n (n / 16) s₁ ∧ ObIn Ctx W SP R D n (n / 16) s₂)
+    (hf : RelCT isa (fun s₁ s₂ => ObIn Ctx (W + BitVec.ofNat 64 16) W SP R D n (n / 16) s₁ ∧ ObIn Ctx (W + BitVec.ofNat 64 16) W SP R D n (n / 16) s₂)
       (.frame (.push [.rax]) (.call f.name f.code) (.pop .rax 1)) fun _ _ => True)
-    (hw : ∀ s, ObIn Ctx W SP R D n (n / 16) s →
+    (hw : ∀ s, ObIn Ctx (W + BitVec.ofNat 64 16) W SP R D n (n / 16) s →
       WP isa (.frame (.push [.rax]) (.call f.name f.code) (.pop .rax 1)) s
         fun s' => ∀ r ∈ calleeSaved, s'.gpr r = s.gpr r) :
     RelCT isa (OneS₂ Ctx W SP R A al D n T) (oneBlocks f) fun _ _ => True := by
   have pre : ∀ s, OneS Ctx W SP R A al D n T s → ObPre Ctx W SP R D n s := fun s h =>
     ⟨h.env, h.rounds, h.dat, h.len, h.dD, t_c, t_w, t_d, sp24⟩
   let G₁ : State → Prop := fun s₁ => s₁.zf = some (decide (n / 16 = 0)) ∧
-    Env Ctx (W + BitVec.ofNat 64 16) W SP s₁ ∧ (n / 16 ≠ 0 → WP isa (.block obB2) s₁ (ObIn Ctx W SP R D n (n / 16)))
+    Env Ctx (W + BitVec.ofNat 64 16) W SP s₁ ∧ (n / 16 ≠ 0 → WP isa (.block obB2) s₁ (ObIn Ctx (W + BitVec.ofNat 64 16) W SP R D n (n / 16)))
   have a := rel_wp (rel_taint [.r13, .r14, .r15, .rsp] (fun _ _ h => OneS₂.env h) ⟨_, by taint_decide⟩)
     (fun _ _ h => h) (G₁ := G₁) (G₂ := G₁) (fun s h => ob12_ok L (pre s h)) (fun s h => ob12_ok L (pre s h))
   have t := rel_taint (P := fun s₁ s₂ => (True ∧ G₁ s₁ ∧ G₁ s₂) ∧ s₁.zf = some true) (c := .block [])
     [.r13, .r14, .r15, .rsp] (fun _ _ h => env_agree h.1.2.1.2.1 h.1.2.2.2.1) ⟨_, by taint_decide⟩
-  have hw₂ : ∀ s, G₁ s ∧ s.zf = some false → WP isa (.block obB2) s (ObIn Ctx W SP R D n (n / 16)) :=
+  have hw₂ : ∀ s, G₁ s ∧ s.zf = some false → WP isa (.block obB2) s (ObIn Ctx (W + BitVec.ofNat 64 16) W SP R D n (n / 16)) :=
     fun s h => h.1.2.2 fun hz => by have := h.1.1; rw [h.2] at this; simp [hz] at this
   have b := rel_wp (rel_taint (P := fun s₁ s₂ => (True ∧ G₁ s₁ ∧ G₁ s₂) ∧ s₁.zf = some false) (c := .block obB2)
       [.r13, .r14, .r15, .rsp] (fun _ _ h => env_agree h.1.2.1.2.1 h.1.2.2.2.1) ⟨_, by taint_decide⟩)
     (fun _ _ h => ⟨⟨h.1.2.1, h.2⟩, ⟨h.1.2.2, by rw [h.1.2.2.1, ← h.1.2.1.1, h.2]⟩⟩) hw₂ hw₂
   let G₃ : State → Prop := fun s => s.gpr .r13 = Ctx ∧ s.gpr .r14 = W + BitVec.ofNat 64 16 ∧ s.gpr .r15 = W ∧
     s.gpr .rsp = SP
-  have hw₃ : ∀ s, ObIn Ctx W SP R D n (n / 16) s →
+  have hw₃ : ∀ s, ObIn Ctx (W + BitVec.ofNat 64 16) W SP R D n (n / 16) s →
       WP isa (.frame (.push [.rax]) (.call f.name f.code) (.pop .rax 1)) s G₃ := fun s h =>
     WP.mono (hw s h) fun _ hc => ⟨by rw [hc .r13 (by decide)]; exact h.env.r13,
       by rw [hc .r14 (by decide)]; exact h.env.r14, by rw [hc .r15 (by decide)]; exact h.env.r15,
       by rw [hc .rsp (by decide)]; exact h.env.rsp⟩
-  have c := rel_wp (hf.mono (P' := fun s₁ s₂ => True ∧ ObIn Ctx W SP R D n (n / 16) s₁ ∧
-      ObIn Ctx W SP R D n (n / 16) s₂) (fun _ _ h => h.2) fun _ _ h => h) (fun _ _ h => h.2) hw₃ hw₃
+  have c := rel_wp (hf.mono (P' := fun s₁ s₂ => True ∧ ObIn Ctx (W + BitVec.ofNat 64 16) W SP R D n (n / 16) s₁ ∧
+      ObIn Ctx (W + BitVec.ofNat 64 16) W SP R D n (n / 16) s₂) (fun _ _ h => h.2) fun _ _ h => h) (fun _ _ h => h.2) hw₃ hw₃
   have d := rel_taint (P := fun s₁ s₂ => True ∧ G₃ s₁ ∧ G₃ s₂) (c := .block obB3) [.r13, .r14, .r15, .rsp]
     (fun _ _ h r hr => by
       obtain ⟨-, ⟨a₁, b₁, c₁, d₁⟩, ⟨a₂, b₂, c₂, d₂⟩⟩ := h
@@ -120,10 +120,10 @@ total length. -/
 theorem oneBlocks_oneS (f : Fn) {R : Nat} {A : Addr} {al : Nat} {D : Addr} {n : Nat} {T : Option Nat}
     (t_c : (below SP 24).Disjoint ⟨Ctx, 256⟩) (t_w : (below SP 24).Disjoint ⟨W, 2560⟩)
     (t_d : (below SP 24).Disjoint ⟨D, n⟩) (sp24 : 24 ≤ SP.toNat)
-    (hw : ∀ s, ObIn Ctx W SP R D n (n / 16) s →
+    (hw : ∀ s, ObIn Ctx (W + BitVec.ofNat 64 16) W SP R D n (n / 16) s →
       WP isa (.frame (.push [.rax]) (.call f.name f.code) (.pop .rax 1)) s fun s' =>
         (∀ r ∈ calleeSaved, s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
-        Frame (obFrame W SP D (n / 16)) s.mem s'.mem)
+        Frame (obFrame (W + BitVec.ofNat 64 16) W SP D (n / 16)) s.mem s'.mem)
     {s : State} (h : OneS Ctx W SP R A al D n T s) :
     WP isa (oneBlocks f) s (OneS Ctx W SP R A al (D + BitVec.ofNat 64 (16 * (n / 16))) (n - 16 * (n / 16)) (some n)) := by
   exact WP.mono (oneBlocks_core L f (Out := fun _ _ => True) ⟨h.env, h.rounds, h.dat, h.len, h.dD, t_c, t_w, t_d, sp24⟩
@@ -133,22 +133,28 @@ theorem oneBlocks_oneS (f : Fn) {R : Nat} {A : Addr} {al : Nat} {D : Addr} {n : 
 end
 
 section
-variable (v : GcmImpl) {Ctx W SP : Addr} (L : Lay Ctx (W + BitVec.ofNat 64 16) W SP)
+variable (v : GcmImpl) {Ctx St W SP : Addr} (L : Lay Ctx St W SP)
 include L
 
 theorem obFrameE_rel {R : Nat} {D : Addr} {n q : Nat} :
-    RelCT isa (fun s₁ s₂ => ObIn Ctx W SP R D n q s₁ ∧ ObIn Ctx W SP R D n q s₂)
+    RelCT isa (fun s₁ s₂ => ObIn Ctx St W SP R D n q s₁ ∧ ObIn Ctx St W SP R D n q s₂)
       (.frame (.push [.rax]) (.call v.callees.enc.name v.callees.enc.code) (.pop .rax 1)) fun _ _ => True :=
   RelCT.frame (fun _ _ h => by rw [h.1.env.rsp, h.2.env.rsp]) (blkE_rel v fun _ _ ⟨s₁, s₂, hp, ha, hb⟩ =>
     ⟨_, _, _, _, _, _, _, ha ▸ ObIn.call L hp.1, hb ▸ ObIn.call L hp.2,
       by rw [ha, hb, pushed_rsp, pushed_rsp, hp.1.env.rsp, hp.2.env.rsp]⟩)
 
 theorem obFrameD_rel {R : Nat} {D : Addr} {n q : Nat} :
-    RelCT isa (fun s₁ s₂ => ObIn Ctx W SP R D n q s₁ ∧ ObIn Ctx W SP R D n q s₂)
+    RelCT isa (fun s₁ s₂ => ObIn Ctx St W SP R D n q s₁ ∧ ObIn Ctx St W SP R D n q s₂)
       (.frame (.push [.rax]) (.call v.callees.dec.name v.callees.dec.code) (.pop .rax 1)) fun _ _ => True :=
   RelCT.frame (fun _ _ h => by rw [h.1.env.rsp, h.2.env.rsp]) (blkD_rel v fun _ _ ⟨s₁, s₂, hp, ha, hb⟩ =>
     ⟨_, _, _, _, _, _, _, ha ▸ ObIn.call L hp.1, hb ▸ ObIn.call L hp.2,
       by rw [ha, hb, pushed_rsp, pushed_rsp, hp.1.env.rsp, hp.2.env.rsp]⟩)
+
+end
+
+section
+variable (v : GcmImpl) {Ctx W SP : Addr} (L : Lay Ctx (W + BitVec.ofNat 64 16) W SP)
+include L
 
 /-- `oneBlocks` encrypting, in two runs: after it, what stays in `W`. -/
 theorem oneBlocksE_rel {R : Nat} {A : Addr} {al : Nat} {D : Addr} {n : Nat} {T : Option Nat}

@@ -234,6 +234,52 @@ class Selection(unittest.TestCase):
         self.files['bench/benches/primitives/x448.rs'] = ''
         self.assertEqual(len(self.rows(['bench/benches/primitives/kem.rs'])), self.full_matrix())
 
+    def test_shards_follow_the_number_of_benchmarks(self):
+        shards = lambda n: [r['shard'] for r in planner.platforms('arm', benchmarks=n)]
+        with mock.patch.object(planner, 'BENCHMARKS_PER_JOB', None):
+            self.assertEqual(shards(1000), [''])
+        per_job = 30
+        patch = mock.patch.object(planner, 'BENCHMARKS_PER_JOB', per_job)
+        patch.start()
+        self.addCleanup(patch.stop)
+        self.assertEqual(shards(0), [''])
+        self.assertEqual(shards(per_job), [''])
+        self.assertEqual(shards(per_job + 1), ['1/2', '2/2'])
+        self.assertEqual(shards(2 * per_job + 1), ['1/3', '2/3', '3/3'])
+        # Each configuration is sharded; the benchmarks counted are those
+        # the selected modules run (`hmac_sha256`'s and `poly`'s).
+        with mock.patch.object(planner, 'BENCHMARKS_PER_JOB', 1):
+            rows = self.rows(['src/hmac/mod.rs'])
+        self.assertEqual([(r['cpu-features'], r['shard']) for r in rows if r['arch'] == 'aarch64'],
+                         [('', '1/2'), ('', '2/2')])
+
+    def test_shards_deal_out_groups_by_size(self):
+        groups = {'a': 3, 'b': 3, 'c': 2, 'd': 1, 'e': 1}
+        parts = [bench_compare.shard_groups(groups, i, 2) for i in (1, 2)]
+        self.assertEqual(parts, [['a', 'c'], ['b', 'd', 'e']])
+        self.assertEqual(bench_compare.shard_groups(groups, 1, 1), sorted(groups))
+        # More shards than groups leaves some empty.
+        self.assertEqual(bench_compare.shard_groups({'a': 1}, 2, 2), [])
+
+    def test_changes_to_tests_alone_need_nothing(self):
+        code = 'fn f() {}\n'
+        tests = '#[cfg(test)]\nmod tests {\n    #[test]\n    fn a() {}\n}\n'
+        self.base_files['src/chacha.rs'] = code + tests
+        # A test added, or a test module where there was none.
+        self.files['src/chacha.rs'] = code + tests.replace('fn a() {}', 'fn a() {}\n    fn b() {}')
+        self.assertEqual(self.rows(['src/chacha.rs']), [])
+        self.base_files['src/chacha.rs'] = code
+        self.files['src/chacha.rs'] = code + tests
+        self.assertEqual(self.rows(['src/chacha.rs']), [])
+        # Any change outside the tests counts.
+        self.files['src/chacha.rs'] = 'fn f() { g() }\n' + tests
+        self.assertEqual({r['modules'] for r in self.rows(['src/chacha.rs'])}, {'chacha'})
+
+    def test_features_named_in_tests_alone_choose_nothing(self):
+        self.files['src/chacha.rs'] = ('fn f() {}\n#[cfg(test)]\nmod tests {\n'
+                                       '    const F: Features = Features::of(&["neon"]);\n}\n')
+        self.assertEqual(self.configurations(self.rows(['src/chacha.rs']), 'aarch64'), [''])
+
     def test_registration_edits_only(self):
         def names(lines):
             with mock.patch.object(planner.subprocess, 'check_output', return_value=lines):

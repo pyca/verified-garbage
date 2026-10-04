@@ -4,6 +4,8 @@ import VerifiedGarbage.Proof.Sha256.Arm.Compress
 import VerifiedGarbage.Proof.Sha256.Arm.Stream.Init
 import VerifiedGarbage.Proof.Sha256.Arm.Stream.Md
 import VerifiedGarbage.Spec.Sha256.Contract
+import VerifiedGarbage.Proof.Sha256.Scratch
+import VerifiedGarbage.Proof.Framework.Arm.StackScratch
 
 /-!
 # Sha256 on Arm: the shared contracts
@@ -18,6 +20,11 @@ bytes for `compress`, 608 for `update` and `finalize`, sized for the x86-64
 AVX2 compression function): the per-target contracts are first widened to
 that scratch (`Verified.widen`, the same code running with the same trace and
 result), then moved to the shared ones.
+
+`update` and `finalize` keep their working space in a frame of their own:
+they are `updateScratch` and `finalizeScratch` (the shared contracts with
+the working space as an argument, which HMAC's and PBKDF2's code calls) run
+in a frame that allocates it (`Verified.stackScratch`).
 -/
 
 namespace VG.Proof.Sha256.Arm.Shared
@@ -158,28 +165,59 @@ theorem init224 : Verified Arm.target Impl.Sha256.Arm.Stream.init224 (Spec.Sha25
       [Proof.Sha256.Arm.Stream.initSat, Arm.stackArg, Arm.stackArgAddr, Mem.readW,
       Mem.read] using Proof.Sha256.Arm.Stream.initSat)
 
-theorem updateWide_implies : updateWide.Implies (Spec.Sha256.updateContract Arm.abi) := by
-  contract_implies [Spec.Sha256.updateContract, Spec.Sha256.updateSig, updateWide,
+theorem updateWide_implies : updateWide.Implies (Spec.Sha256.updateScratchContract Arm.abi) := by
+  contract_implies [Spec.Sha256.updateScratchContract, Spec.Sha256.updateScratchSig, updateWide,
     Proof.Sha256.updateArm, Proof.Sha256.countArm, Arm.abi, Arm.argRegs, Arm.reduceClassify,
     Arm.Loc.val, Arm.State.addr]
     [updateSat, Proof.Sha256.Arm.Stream.Update.sat, MdStream.Arm.Update.sat,
     Impl.Sha256.Arm.Stream.params, Arm.stackArg, Arm.stackArgAddr, Mem.readW,
     Mem.read] using updateSat
 
-theorem update :
-    Verified Arm.target Impl.Sha256.Arm.Stream.update (Spec.Sha256.updateContract Arm.abi) :=
+theorem updateScratch :
+    Verified Arm.target Impl.Sha256.Arm.Stream.update (Spec.Sha256.updateScratchContract Arm.abi) :=
   (updateWide_verified updateWide_implies.sat_left).of_implies updateWide_implies
 
-theorem finalizeWide_implies : finalizeWide.Implies (Spec.Sha256.finalizeContract Arm.abi) := by
-  contract_implies [Spec.Sha256.finalizeContract, Spec.Sha256.finalizeSig, finalizeWide,
+theorem finalizeWide_implies : finalizeWide.Implies (Spec.Sha256.finalizeScratchContract Arm.abi) := by
+  contract_implies [Spec.Sha256.finalizeScratchContract, Spec.Sha256.finalizeScratchSig, finalizeWide,
     Proof.Sha256.finalizeArm, Proof.Sha256.countArm, Arm.abi, Arm.argRegs, Arm.reduceClassify,
     Arm.Loc.val, Arm.State.addr]
     [finalizeSat, Proof.Sha256.Arm.Stream.Finalize.sat, MdStream.Arm.Finalize.sat,
     MdStream.Arm.Finalize.satBase, Impl.Sha256.Arm.Stream.params, Arm.stackArg, Arm.stackArgAddr, Mem.readW,
     Mem.read] using finalizeSat
 
-theorem finalize :
-    Verified Arm.target Impl.Sha256.Arm.Stream.finalize (Spec.Sha256.finalizeContract Arm.abi) :=
+theorem finalizeScratch :
+    Verified Arm.target Impl.Sha256.Arm.Stream.finalize (Spec.Sha256.finalizeScratchContract Arm.abi) :=
   (finalizeWide_verified finalizeWide_implies.sat_left).of_implies finalizeWide_implies
+
+/-- A state satisfying `update`'s precondition. -/
+def updateFrameSat : State :=
+  { MdStream.Arm.Update.sat Impl.Sha256.Arm.Stream.params with
+    rd := [⟨0, 0⟩, ⟨0x4000, 8⟩], wr := [⟨0x1000, 96⟩] }
+
+theorem update : Verified Arm.target
+    (Impl.StackScratch.Arm.withStackScratch 624 2 Impl.Sha256.Arm.Stream.update)
+    (Spec.Sha256.updateContract Arm.abi 624) :=
+  Arm.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 76) (stack := 0) (bytes := 624) (m := 2)
+    updateScratch (by decide) (by decide) (by decide) (by decide)
+    (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.Sha256.updatePost_local _)
+    (by implies_sat [Spec.Sha256.updateContract, Spec.Sha256.updateSig, Arm.abi, Arm.argRegs,
+        Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
+      [updateFrameSat, MdStream.Arm.Update.sat, Impl.Sha256.Arm.Stream.params, Arm.stackArg,
+        Arm.stackArgAddr, Mem.readW, Mem.read] using updateFrameSat)
+
+/-- A state satisfying `finalize`'s precondition. -/
+def finalizeFrameSat : State :=
+  { MdStream.Arm.Finalize.satBase with rd := [⟨0x5000, 4⟩], wr := [⟨0x1000, 96⟩, ⟨0x2000, 32⟩] }
+
+theorem finalize : Verified Arm.target
+    (Impl.StackScratch.Arm.withStackScratch 624 1 Impl.Sha256.Arm.Stream.finalize)
+    (Spec.Sha256.finalizeContract Arm.abi 624) :=
+  Arm.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 76) (stack := 0) (bytes := 624) (m := 1)
+    finalizeScratch (by decide) (by decide) (by decide) (by decide)
+    (fun _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.Sha256.finalizePost_local _)
+    (by implies_sat [Spec.Sha256.finalizeContract, Spec.Sha256.finalizeSig, Arm.abi, Arm.argRegs,
+        Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
+      [finalizeFrameSat, MdStream.Arm.Finalize.satBase, Arm.stackArg, Arm.stackArgAddr, Mem.readW,
+        Mem.read] using finalizeFrameSat)
 
 end VG.Proof.Sha256.Arm.Shared

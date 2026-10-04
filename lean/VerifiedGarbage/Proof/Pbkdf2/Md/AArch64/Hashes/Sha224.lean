@@ -39,9 +39,9 @@ def hash (v : Compress) : Hash where
   compC := v.code
   initN := Spec.Sha256.init224Api.name
   initC := Impl.Sha256.AArch64.Stream.init224
-  updN := Spec.Sha256.updateApi.name ++ v.suffix
+  updN := Spec.Sha256.updateScratchApi.name ++ v.suffix
   updC := v.update
-  finN := Spec.Sha256.finalizeApi.name ++ v.suffix
+  finN := Spec.Sha256.finalizeScratchApi.name ++ v.suffix
   finC := v.finalize
   hmacInitN := Spec.Hmac.sha224I.initApi.name ++ v.suffix
   hmacFinN := Spec.Hmac.sha224I.finalizeApi.name ++ v.suffix

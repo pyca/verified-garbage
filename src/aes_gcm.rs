@@ -1099,13 +1099,10 @@ mod tests {
         }
     }
 
-    /// Streaming, with the additional data or the text split at every
-    /// point (around block boundaries), agrees with the one-shot functions,
-    /// in both directions, with one key for every message.
     /// One-shot encryption and decryption of whole blocks in one pass (from
     /// 16 blocks, interleaved on CPUs with VAES and VPCLMULQDQ) agree with
-    /// the streaming functions, which do the two in separate passes, and a
-    /// wrong tag leaves the ciphertext as it was.
+    /// the streaming functions, and a wrong tag leaves the ciphertext as it
+    /// was.
     #[test]
     fn long_one_shot() {
         let msg: [u8; 4111] = core::array::from_fn(|i| (i * 31 + 7) as u8);
@@ -1140,6 +1137,55 @@ mod tests {
         }
     }
 
+    /// Streaming a long message in three updates, split on and off block
+    /// boundaries (each update finishes the block the text so far left
+    /// partial, then takes its whole blocks in one pass), agrees with the
+    /// one-shot functions, in both directions.
+    #[test]
+    fn long_stream() {
+        let msg: [u8; 1100] = core::array::from_fn(|i| (i * 7 + 3) as u8);
+        let aad = [6u8; 13];
+        let nonce = [8u8; 12];
+        let k = AesGcm::new(&[0x24; 16]).unwrap();
+        let mut ct = msg;
+        let tag = k.encrypt_in_place(&nonce, &aad, &mut ct).unwrap();
+        let splits = [
+            (0, 1100),
+            (1, 300),
+            (15, 16),
+            (16, 529),
+            (17, 1099),
+            (255, 256),
+            (300, 1100),
+            (513, 514),
+        ];
+        for (a, b) in splits {
+            let mut e = k.encryptor(&nonce).unwrap();
+            e.update_aad(&aad).unwrap();
+            let mut buf = msg;
+            let (x, rest) = buf.split_at_mut(a);
+            let (y, z) = rest.split_at_mut(b - a);
+            e.update(x).unwrap();
+            e.update(y).unwrap();
+            e.update(z).unwrap();
+            assert_eq!(buf, ct);
+            assert_eq!(e.finalize(), tag);
+
+            let mut d = k.decryptor(&nonce).unwrap();
+            d.update_aad(&aad).unwrap();
+            let (x, rest) = buf.split_at_mut(a);
+            let (y, z) = rest.split_at_mut(b - a);
+            d.update(x).unwrap();
+            d.update(y).unwrap();
+            d.update(z).unwrap();
+            assert_eq!(buf, msg);
+            assert_eq!(d.finalize(&tag), Ok(()));
+        }
+    }
+
+    /// Streaming, with the additional data or the text split at every
+    /// point (around block boundaries), agrees with the one-shot functions,
+    /// in both directions, with one key for every message.
     #[test]
     fn stream() {
         let key = [7u8; 16];
