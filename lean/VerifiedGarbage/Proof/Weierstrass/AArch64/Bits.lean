@@ -232,7 +232,7 @@ structure BInv (base : Addr) (size src dst n : Nat) (s₀ s : State) (i : Nat) :
 `n`-word number at `src`. -/
 theorem bits_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {n src dst : Nat}
     (hn0 : 0 < n) (hn : n < 2 ^ 12) (hsrc : src + 8 * n ≤ size) (hdst : dst + 64 * n ≤ size)
-    (hsrc' : src < 4096) (hdst' : dst + 64 * n ≤ 4096)
+    (hsrc' : src < 4096) (hdst' : dst + 8 ≤ 4096)
     (hsep : src + 8 * n ≤ dst ∨ dst + 64 * n ≤ src) :
     WP isa (bits src dst (8 * n)) s fun s' =>
       (∀ t < 64 * n, s'.mem (off base (dst + t)) =

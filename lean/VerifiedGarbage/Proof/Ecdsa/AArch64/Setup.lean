@@ -20,12 +20,12 @@ open VG.Proof.Mont.AArch64 VG.Proof.Mont VG.Proof.Weierstrass.AArch64 VG.Proof.W
 
 /-! ## Saving the callee-saved registers -/
 
-theorem setupSaved_lt : ∀ rd ∈ Cfg.saved, rd.2 + 8 ≤ 16 := by decide
+theorem setupSaved_lt : ∀ rd ∈ Cfg.saved, rd.2 + 8 ≤ 56 := by decide
 
 theorem setupSaves_ok {s : State} {base : Addr} (hb : s.gpr .x4 = base)
     (hw : (⟨base, size⟩ : Region) ∈ s.wr) :
     WP isa (.block (Spill.saveCode .x4 Cfg.saved)) s fun s' =>
-      s'.gpr = s.gpr ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp ∧ Outside base 0 16 s.mem s'.mem ∧
+      s'.gpr = s.gpr ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp ∧ Outside base 0 56 s.mem s'.mem ∧
       Spill.Saved base s.gpr Cfg.saved s'.mem := by
   refine WP.mono (Spill.save_wp (by decide) fun p hp => ?_) fun s' h => ⟨h.gpr, h.rd, h.wr, h.sp, ?_, ?_⟩
   · have := setupSaved_lt p hp

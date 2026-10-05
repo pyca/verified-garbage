@@ -259,7 +259,7 @@ theorem points_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {g : Reg → BitVe
   refine WP.seq ?_
   -- The table of `u`.
   refine WP.seq (WP.mono_syms (bits_ok hM.scr h0 (by omega) (sl_le c h7 (i := U) (by decide))
-    (tbl_le h7) (sl_lt4096 h0 h7 (i := U) (by decide)) (bitsAt0_le c h7) (Or.inl (by have := sl_below_bits c (i := U) (by decide) 0 0; omega)))
+    (tbl_le h7) (sl_lt4096 h0 h7 (i := U) (by decide)) (by have := bitsAt0_le c h7; omega) (Or.inl (by have := sl_below_bits c (i := U) (by decide) 0 0; omega)))
     fun s₁ ⟨b₁, k₁, O₁⟩ sy₁ => ?_)
   have hs₁ := hM.scr.of_keepRegs k₁ (by decide)
   have U₁ : Unch base [(bitsAt c.n 0, 64 * c.n)] s.mem s₁.mem := O₁.unch
@@ -396,10 +396,13 @@ theorem points_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {g : Reg → BitVe
     · simp only [winX, List.mem_cons, List.not_mem_nil, or_false] at hw
       have := sl_le' c h7 (i := WT) (by decide)
       have e1 : c.sl WK + 16 * c.n ≤ c.sl WT := by rw [sl_eq, sl_eq]; unfold WK WT; omega
-      have e2 : c.sl WB + 128 * c.n ≤ c.sl WT := by rw [sl_eq, sl_eq]; unfold WB WT; omega
+      have e2 : c.sl WB + 64 * (c.n + 1) ≤ c.sl WT := by
+        rw [sl_eq, sl_eq]; unfold WB WT
+        have : 8 * c.n * 87 = 8 * c.n * 55 + 256 * c.n := by omega
+        omega
       rcases hw with rfl | rfl
       · show c.sl WK + 16 * c.n ≤ size; omega
-      · show c.sl WB + 128 * c.n ≤ size; omega
+      · show c.sl WB + 64 * (c.n + 1) ≤ size; omega
     · obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hw
       exact sl_le' c h7 ((show ∀ i ∈ ptsW ++ tblI, i < 112 by decide) i hi)
 

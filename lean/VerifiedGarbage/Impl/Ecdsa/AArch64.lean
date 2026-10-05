@@ -99,13 +99,13 @@ def nslots := 45
 /-- The table of the bits of `k` (`j = 0`), `p - 2` (1) and `n - 2` (2). -/
 def bitsAt (n j : Nat) : Nat := slot n nslots + 64 * n * j
 
-/-- The window method's slots: `k + offset J` (`n + 1` words, two slots)
-past the tables of bits (which are slots `45 + 8 j`), the table of its bits
-(`64 (n + 1)` bytes) where the tables of bits `j = 1` and `2`, which nothing
-uses, are (so that its offset is below `4096`, as `ldrb` and `strb` need, for
-up to nine words), and the table of points `[1 … 8]P` (24 slots). -/
-def WK : Nat := 69
-def WB : Nat := 53
+/-- The window method's slots: `k + offset J` (`n + 1` words, two slots) and
+the table of its bits (`64 (n + 1)` bytes), which `bits` and the digits read
+with `ldrb` and `strb`, in place of the tables of bits `j = 1` and `2`, which
+nothing uses (so that their offsets are below `4096` for up to nine words),
+and the table of points `[1 … 8]P` (24 slots). -/
+def WK : Nat := 53
+def WB : Nat := 55
 def WT : Nat := 87
 /-- The powers' tables (nine slots). -/
 def CT : Nat := 69

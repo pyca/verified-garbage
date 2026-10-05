@@ -4,7 +4,7 @@ import VerifiedGarbage.Proof.Ecdsa.AArch64.Lays
 # ECDSA on AArch64: what every phase keeps
 
 After `setup`, the slots below `12` but the temporary area's hold constants
-the code only reads, and `[0, 16)` the saved registers (`Fixed`); every
+the code only reads, and `[0, 56)` the saved registers (`Fixed`); every
 later phase writes only slots from `12` on, the temporary area, the flag
 and the tables (`FixedOk`), so it keeps them (`Fixed.unch`). A slot or a
 table byte apart from what a phase writes keeps its value too (`sv_unch`,
@@ -135,7 +135,7 @@ theorem tbl_unch {base : Addr} {W : List (Nat × Nat)} {m m' : Mem} (hu : Unch b
     (h7 : c.n < 10) {j t : Nat} (hj : j < 3) (ht : t < 64 * c.n)
     (hW : ∀ w ∈ W, bitsAt c.n j + t + 1 ≤ w.1 ∨ w.1 + w.2 ≤ bitsAt c.n j + t) :
     m' (off base (bitsAt c.n j + t)) = m (off base (bitsAt c.n j + t)) :=
-  hu.byte hW (by have := bitsAt_le c h7 hj; omega)
+  hu.byte hW (by have := bitsAt_le c h7 hj; have : size = 8192 := rfl; omega)
 
 theorem tbl_apart_slW {l : List Nat} (hl : ∀ i ∈ l, i < 45) (j t : Nat) :
     ∀ w ∈ slW c l, bitsAt c.n j + t + 1 ≤ w.1 ∨ w.1 + w.2 ≤ bitsAt c.n j + t := by

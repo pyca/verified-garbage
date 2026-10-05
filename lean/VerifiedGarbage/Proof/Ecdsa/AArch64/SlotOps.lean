@@ -41,7 +41,7 @@ theorem sv_keep {M : Mod} (hMn : M.n = c.n) (hMt : M.tmp = c.sl TMP) (h7 : c.n <
   · rw [hMn, hMt]; exact sl_apart c hit
 
 /-- The modulus in slot `j` survives an operation writing another slot. -/
-theorem _root_.VG.Proof.Mont.ModOkA.keepA64 {M M' : Mod} {m : Nat} {base : Addr} {s s' : State}
+theorem _root_.VG.Proof.Mont.AArch64.ModOkA.keepA64 {M M' : Mod} {m : Nat} {base : Addr} {s s' : State}
     (hM : ModOkA M size m s.mem base) {j : Nat} (hj : j < 45) (hmo : M.mo = c.sl j) (hMn : M.n = c.n)
     (hM'n : M'.n = c.n) (hM't : M'.tmp = c.sl TMP) (h7 : c.n < 10) (hn : base.toNat + size ≤ 2 ^ 64)
     {o : Nat} (h : OpKeep M' base (c.sl o) s s') (hjo : j ≠ o) (hjt : j ≠ TMP) :

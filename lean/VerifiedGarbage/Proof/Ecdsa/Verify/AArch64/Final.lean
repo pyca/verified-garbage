@@ -180,12 +180,12 @@ theorem tail_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {g : Reg → BitVec 
       rcases List.mem_append.mp hw with hw | hw
       · rcases List.mem_append.mp hw with hw | hw
         · simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
-          rcases hw with rfl | rfl | rfl <;> (show 16 ≤ c.sl _; rw [sl_eq]; omega)
+          rcases hw with rfl | rfl | rfl <;> (show 56 ≤ c.sl _; rw [sl_eq]; omega)
         · obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hw
-          show 16 ≤ c.sl i
+          show 56 ≤ c.sl i
           rw [sl_eq]; omega
       · rw [List.mem_singleton.mp hw]
-        show 16 ≤ c.sl FLAG
+        show 56 ≤ c.sl FLAG
         rw [sl_eq]; omega)
       U
   have z₆ : sv c base s₅ RZ = sv c base s RZ := by

@@ -6,7 +6,8 @@ import VerifiedGarbage.Proof.Weierstrass.AArch64.AddConst
 # ECDH on AArch64: `[d]P` by windows, and `Z^(p-2)`
 
 The window method's slots are numbered slots, the table of points slots
-`WT … WT + 23` past the signature's tables of bits (`winSlots_eq`), so they
+`WT … WT + 23` past the signature's tables of bits, and the recoded scalar
+and its bits where its unused tables `j = 1, 2` are (`winSlots_eq`), so they
 are apart as `window_ok` needs (`winLayQ`). `winPow_ok` recodes `d` into
 `d + 8 Σ_{j<J} 16^j` and its bits (`winPrep`), runs the window method on the
 peer's point (or `G`) and the signature's power, and leaves `R` representing
@@ -93,11 +94,11 @@ theorem winLayQ (hc : CfgOk c) : WinLay (winQ c) size := by
     have key : ∀ i ∈ roI ++ otherI, i < WT := by decide
     have := key i hi
     rw [hK, hMn]; exact Or.inl (sl_lt c this)
-  · rw [hb, hJ, sl_eq]; show 64 + 8 * c.n * 71 + _ ≤ 8192
-    have : 8 * c.n * 71 ≤ 8 * 9 * 71 := Nat.mul_le_mul_right _ (by omega)
+  · rw [hb, hJ, sl_eq]; show 64 + 8 * c.n * 55 + _ ≤ 8192
+    have : 8 * c.n * 55 ≤ 8 * 9 * 55 := Nat.mul_le_mul_right _ (by omega)
     omega
-  · rw [hb, sl_eq]; show 64 + 8 * c.n * 71 + 3 < 4096
-    have : 8 * c.n * 71 ≤ 8 * 9 * 71 := Nat.mul_le_mul_right _ (by omega)
+  · rw [hb, sl_eq]; show 64 + 8 * c.n * 55 + 3 < 4096
+    have : 8 * c.n * 55 ≤ 8 * 9 * 55 := Nat.mul_le_mul_right _ (by omega)
     omega
   · intro w hw
     rw [winW_eq] at hw
@@ -110,9 +111,9 @@ theorem winLayQ (hc : CfgOk c) : WinLay (winQ c) size := by
       have := Nat.mul_le_mul_left (8 * c.n) h
       dsimp only
       rw [sl_eq, sl_eq]
-      show 64 + 8 * c.n * 71 + 4 * (16 * c.n + 1) ≤ 64 + 8 * c.n * i
+      show 64 + 8 * c.n * 55 + 4 * (16 * c.n + 1) ≤ 64 + 8 * c.n * i
       have : 8 * c.n * 87 ≤ 8 * c.n * i := this
-      have : 8 * c.n * 87 = 8 * c.n * 71 + 128 * c.n := by omega
+      have : 8 * c.n * 87 = 8 * c.n * 55 + 256 * c.n := by omega
       omega
 
 theorem winAQ (c : Cfg) : WinA (winQ c) where
@@ -125,7 +126,7 @@ theorem winAQ (c : Cfg) : WinA (winQ c) where
 /-! ## The recoded scalar's areas -/
 
 /-- The areas of the recoded scalar and of its bits. -/
-def winX (c : Cfg) : List (Nat × Nat) := [(c.winK, 16 * c.n), (c.winBits, 128 * c.n)]
+def winX (c : Cfg) : List (Nat × Nat) := [(c.winK, 16 * c.n), (c.winBits, 64 * (c.n + 1))]
 
 theorem fixedOk_winX : FixedOk c (winX c) := by
   intro w hw
@@ -150,14 +151,6 @@ theorem bits_le_sl {j t i : Nat} (hj : j < 3) (ht : t < 64 * c.n) (hi : 69 ≤ i
   have := Nat.mul_le_mul_left (64 * c.n) (show j ≤ 2 by omega)
   have := Nat.mul_le_mul_left (8 * c.n) hi
   omega
-
-theorem tbl_apart_winX {j t : Nat} (hj : j < 3) (ht : t < 64 * c.n) :
-    ∀ w ∈ winX c, bitsAt c.n j + t + 1 ≤ w.1 ∨ w.1 + w.2 ≤ bitsAt c.n j + t := by
-  intro w hw
-  simp only [winX, List.mem_cons, List.not_mem_nil, or_false] at hw
-  rcases hw with rfl | rfl
-  · exact Or.inl (bits_le_sl hj ht (by decide))
-  · exact Or.inl (bits_le_sl hj ht (by decide))
 
 theorem tbl_apart_slW' {l : List Nat} (hl : ∀ i ∈ l, i < 45 ∨ 69 ≤ i) {j t : Nat} (hj : j < 3)
     (ht : t < 64 * c.n) :
@@ -241,10 +234,15 @@ theorem winMul_ok (hc : CfgOk c) (hC : Law c.C) {base : Addr} {s : State} (hs : 
   have hK : c.winK = c.sl WK := rfl
   have hB : c.winBits = c.sl WB := rfl
   have e69 : c.sl WK + 16 * c.n = c.sl WB := by rw [sl_eq, sl_eq]; unfold WK WB; omega
-  have hB4 : c.sl WB + 64 * (c.n + 1) ≤ 4096 := by
+  have hB4 : c.sl WB + 8 ≤ 4096 := by
     rw [sl_eq]; unfold WB
-    have : 8 * c.n * 71 ≤ 8 * 9 * 71 := Nat.mul_le_mul_right _ (by omega)
+    have : 8 * c.n * 55 ≤ 8 * 9 * 55 := Nat.mul_le_mul_right _ (by omega)
     omega
+  have hBs : c.sl WB + 64 * (c.n + 1) ≤ c.sl WT := by
+    rw [sl_eq, sl_eq]; unfold WB WT
+    have : 8 * c.n * 87 = 8 * c.n * 55 + 256 * c.n := by omega
+    omega
+  have hTs := sl_le' c h7 (i := WT) (by decide)
   rw [Cfg.winPrep]
   refine WP.seq (WP.seq ?_)
   rw [hK, offset_eq]
@@ -259,7 +257,7 @@ theorem winMul_ok (hc : CfgOk c) (hC : Law c.C) {base : Addr} {s : State} (hs : 
   rw [e₁] at b₂
   have U₂ : Unch base (winX c) s.mem s₂.mem :=
     ((O₁.mono (o' := c.sl WK) (n' := 16 * c.n) (Nat.le_refl _) (by omega)).unch.trans
-      ((O₂.mono (o' := c.sl WB) (n' := 128 * c.n) (Nat.le_refl _) (by omega)).unch)).mono
+      ((O₂.mono (o' := c.sl WB) (n' := 64 * (c.n + 1)) (Nat.le_refl _) (by omega)).unch)).mono
       (by intro w hw; simpa [winX, hK, hB] using hw)
   have F₂ := F.unch h7 hn fixedOk_winX U₂
   have e₂ : ∀ {i}, i < 45 → sv c base s₂ i = sv c base s i := fun hi =>

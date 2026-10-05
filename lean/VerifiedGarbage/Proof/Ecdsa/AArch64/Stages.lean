@@ -67,13 +67,13 @@ theorem stage₁ (hc : CfgOk c) {s₀ : State} (hp : SetupPre c s₀) {rest : Pr
   have hsep : ∀ {i : Nat}, i < 45 → ∀ j, c.sl i + 8 * c.n ≤ bitsAt c.n j ∨ bitsAt c.n j + 64 * c.n ≤ c.sl i :=
     fun hi j => Or.inl (by have := sl_below_bits c hi j 0; omega)
   have hS : size = 8192 := rfl
-  have hsz' : ∀ {j}, j < 3 → bitsAt c.n j + 64 * c.n ≤ 4096 := fun hj => bitsAt_le c h7 hj
-  have hsz : ∀ {j}, j < 3 → bitsAt c.n j + 64 * c.n ≤ size := fun hj => by have := hsz' hj; omega
+  have hsz' : bitsAt c.n 0 + 64 * c.n ≤ 4096 := by have := bitsAt0_le c h7; omega
+  have hsz : ∀ {j}, j < 3 → bitsAt c.n j + 64 * c.n ≤ size := fun hj => bitsAt_le c h7 hj
   have h4k : ∀ {i}, i < 45 → c.sl i < 4096 := fun hi => by
-    have := sl_below_bits c hi 0 0; have := hsz' (j := 0) (by decide); omega
+    have := sl_below_bits c hi 0 0; omega
   -- The table of `k`.
   refine WP.seq (WP.mono_syms (bits_ok P.scr h0 (by omega) (sl_le c h7 (i := K) (by decide)) (hsz (j := 0)
-    (by decide)) (h4k (by decide)) (hsz' (by decide)) (hsep (i := K) (by decide) 0)) fun s₂ ⟨b₂, k₂, O₂⟩ sy₂ => h s₂ ?_)
+    (by decide)) (h4k (by decide)) (by omega) (hsep (i := K) (by decide) 0)) fun s₂ ⟨b₂, k₂, O₂⟩ sy₂ => h s₂ ?_)
   have u₂ := O₂.unch
   have v₂ : ∀ {i}, i < 45 → sv c (s₀.gpr .x4) s₂ i = sv c (s₀.gpr .x4) s₁ i := fun hi =>
     sv_unch u₂ h7 hn hi (apart_tbl hi 0)

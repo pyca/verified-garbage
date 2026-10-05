@@ -35,8 +35,8 @@ subtraction), the Montgomery constants are right, encodings are `8 n`
 bytes, a hash of `8 n` bytes is not truncated, `n ≥ 4` words, the inversion
 modulo `p` sound (`InvSound`, which `p` prime gives) with its batches and
 constants right (`InvOk`), and modulo `n` too or the chain of `n - 2` right
-(`fastN`), `n` even (the comb's
-selection moves an entry's words in pairs), and `a = -3` (the complete formulas are those for it). The group law needs
+(`fastN`), `n` even or nine (the comb's
+selection moves an entry's words in pairs, or by thirds), and `a = -3` (the complete formulas are those for it). The group law needs
 more (`Weierstrass.Law`, which a prime field and no point of order 2 give:
 `Weierstrass.Good.law`), which only the proofs of the results take. -/
 structure CfgOk (c : Cfg) : Prop where
@@ -54,7 +54,7 @@ structure CfgOk (c : Cfg) : Prop where
   minv_n : (c.C.n * (BitVec.ofNat 64 (minv c.C.n)).toNat + 1) % 2 ^ 64 = 0
   red_p : c.MP'.ok c.C.p = true
   red_n : c.MN'.ok c.C.n = true
-  n2 : c.n % 2 = 0
+  n2 : c.n % 2 = 0 ∨ c.n = 9
   len : c.C.len = 8 * c.n
   hash : 64 * c.n ≤ Spec.Ecdsa.nBits c.C
   n4 : 4 ≤ c.n
@@ -119,7 +119,7 @@ theorem Pre.setup {c : Cfg} {s : State} (hp : Pre c s) (h7 : c.n < 10) : SetupPr
 abbrev sv (c : Cfg) (base : Addr) (s : State) (i : Nat) : Nat := wordsVal s.mem base (c.sl i) c.n
 
 /-- What `setup` leaves, from the state `s₀` at entry, with the working space
-at `base = x4`: `x0 = base`, `out` in `x20`, `x19` and `x20` in `[0, 16)`,
+at `base = x4`: `x0 = base`, `out` in `x20`, `x19`–`x25` in `[0, 56)`,
 `k`, `d` and the hash in their slots, the constants in theirs, and the flag
 all ones; only `x0`, `x1`, `x5` and `x20` and the working space changed. -/
 structure SetupPost (c : Cfg) (s₀ : State) (base : Addr) (s : State) : Prop where
@@ -183,9 +183,9 @@ theorem bitsAt_le (c : Cfg) (hn : c.n < 10) {j : Nat} (hj : j < 3) : bitsAt c.n 
   show _ ≤ 8192
   omega
 
-/-- The table of the scalar's bits is in the first `4096` bytes of the working
-space, where `ldrb` reaches. -/
-theorem bitsAt0_le (c : Cfg) (hn : c.n < 10) : bitsAt c.n 0 + 64 * c.n ≤ 4096 := by
+/-- The table of the scalar's bits, and a word past it, are in the first
+`4096` bytes of the working space, where `ldrb` reaches. -/
+theorem bitsAt0_le (c : Cfg) (hn : c.n < 10) : bitsAt c.n 0 + 64 * c.n + 64 ≤ 4096 := by
   rw [bitsAt_eq]
   have : 8 * c.n * 45 ≤ 8 * 9 * 45 := Nat.mul_le_mul_right _ (by omega)
   omega
