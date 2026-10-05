@@ -220,7 +220,7 @@ theorem redWords_ok (t0 : Reg) : ∀ (ws : List MWord) {s : State} {ts : List Re
 theorem redF_ok {s : State} {n i m : Nat} (hn : n < 7) {ws : List MWord}
     (hr : (Red.friendly ws).ok n m = true) (hm : m < 2 ^ (64 * n))
     (hb : regsVal s (wins n i) + (s.gpr (win n i 0)).toNat * m < 2 ^ 64 * (2 * m)) :
-    WP isa (.block (redWords (win n i 0) ws (wins n i).tail ++ [.mov32 (win n i 0) (.imm 0)])) s
+    WP isa (.block (redWords (win n i 0) ws (wins n i).tail ++ ([.mov32 (win n i 0) (.imm 0)] : List Instr))) s
       fun s' => 2 ^ 64 * regsVal s' (wins n (i + 1)) = regsVal s (wins n i) + (s.gpr (win n i 0)).toNat * m ∧
         Keeps (.rax :: .rdx :: wins n i) s s' := by
   simp only [Red.ok, Bool.and_eq_true, beq_iff_eq] at hr

@@ -49,7 +49,8 @@ def CombTbls (c : Cfg) : Prop :=
 /-- What the proof of the code needs of a curve: its field and order are odd
 and fit in `n` words (`n < 10`, so that the slots and tables fit in the
 working space), `G` is on the curve, `p < 2n` (so `x mod n` is one
-conditional subtraction), the Montgomery constants are right, encodings are
+conditional subtraction), the Montgomery constants (and the reduction's words
+of `(p + 1) / 2⁶⁴` if `p ≡ -1 (mod 2⁶⁴)`, `red_p`) are right, encodings are
 `len` bytes in `n` words (`8 (n - 1) < len ≤ 8 n`, at least one word), and
 the bits of a hash of `len` bytes that are not `e`'s (`c.sh`, 0 unless `n`
 has fewer than `8 len` bits) are fewer than 32, and for up to six words

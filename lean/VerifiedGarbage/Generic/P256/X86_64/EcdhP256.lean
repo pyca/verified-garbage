@@ -19,7 +19,8 @@ def artifacts (h : Proof.Weierstrass.X86_64.HasLawInv Spec.P256.curve) : List Ar
     doc := Spec.Ecdh.P256.exchangeApi.doc (notes := ["The function is `vg_ecdsa_p256_sign`'s setup, \
       field arithmetic and inversion, with the peer's point in place of `G`: it saves its \
       caller's callee-saved registers in `scratch`; field elements are four 64-bit words in \
-      Montgomery form, multiplied by word-by-word Montgomery multiplication (CIOS) with a final \
+      Montgomery form, multiplied by word-by-word Montgomery multiplication (CIOS; as `p ≡ -1 (mod 2⁶⁴)`, each reduction step modulo `p` adds `t₀ (p + 1) / 2⁶⁴` \
+      to the words above the low word `t₀`, two products) with a final \
       conditional subtraction. The peer's key is checked without branches (its first byte, both \
       coordinates below `p`, and the curve's equation), and `[d]P` is computed for the peer's \
       point if it is valid, else `G`, so it always runs on a point of the curve. `[d]P` is by \
