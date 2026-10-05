@@ -286,4 +286,12 @@ theorem verify_verified (hv : ∀ s, pubContract.pre s → ∃ t s', Exec isa pu
   Verified.of_correct (k := verifyK lk.G) (verify_correct hH K lk hv hC hdC)
     (verify_ct hv hct (safe_sp hC) hdC hH K lk hc) (verify_implies lk.G (verify_sat lk.G lk.mem))
 
+include hH K in
+/-- It writes `rsp` only in its frame's push and pop. -/
+theorem verify_spSafe (hC : pubC.allInstrs safeI = true) :
+    (verify H pubN pubC).all (fun i => !isa.writesSp i) = true := by
+  have h := verify_safe hH K (pubN := pubN) hC
+  rw [safeI_eq, allInstrs_and, Bool.and_eq_true] at h
+  exact Code.all_of_allInstrs h.1
+
 end VG.Proof.RsaPss.X86_64

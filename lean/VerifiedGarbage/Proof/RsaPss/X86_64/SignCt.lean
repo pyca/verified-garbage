@@ -245,7 +245,7 @@ theorem scall_pub {a s₁ s₂ t₁ t₂ : State} (S₁ : SSib G a s₁) (h₁ :
 variable {privN : String} {privC : Prog isa}
   (hv : ∀ s, chkContract.pre s → ∃ t s', Exec isa privC s t s' ∧ abiPreserved s s' ∧ chkContract.post s s')
   (hct : ConstantTime isa chkContract.pre chkContract.pub privC) (hspC : SpSafe privC)
-  (hdC : privC.x86_64Depth ≤ Rsa.X86_64.stackBytes - 8)
+  (hdC : privC.x86_64Depth ≤ Rsa.X86_64.stackBytes)
 
 include hv hct hspC hdC in
 theorem scall_ct : RelCT isa (Two (SAt G (SJP H))) (.call privN privC) (Two (SAt G (SJR H))) := by
@@ -313,9 +313,9 @@ theorem sign_ct : ConstantTime isa (signK lk.G).pre (signK lk.G).pub (sign H pri
 include hct hdC K hc in
 /-- `sign` meets `Spec.RsaPss.signContract`. -/
 theorem sign_verified (hv : ∀ s, chkContract.pre s → ∃ t s', Exec isa privC s t s' ∧ abiPreserved s s' ∧
-      chkContract.post s s') (hC : privC.allInstrs safeI = true) :
+      chkContract.post s s') (hC : SpSafe privC) :
     Verified X86_64.target (sign H privN privC) (Spec.RsaPss.signContract lk.G lk.G abi signStack) :=
   Verified.of_correct (k := signK lk.G) (sign_correct hH K lk hv hC hdC)
-    (sign_ct hv hct (safe_sp hC) hdC hH K lk hc) (sign_implies lk.G (sign_sat lk.G lk.mem))
+    (sign_ct hv hct hC hdC hH K lk hc) (sign_implies lk.G (sign_sat lk.G lk.mem))
 
 end VG.Proof.RsaPss.X86_64

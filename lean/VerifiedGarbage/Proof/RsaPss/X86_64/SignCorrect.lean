@@ -81,24 +81,26 @@ structure SDone (s t : State) : Prop where
   rbp : t.mem.readW (off (fb s) sRbp) 64 = s.gpr .rbp
   r12 : t.mem.readW (off (fb s) sR12) 64 = s.gpr .r12
   out : Spec.Rsa.writtenOutcome t.mem (s.gpr .rdi) (s.gpr .rcx).toNat ((t.gpr .rax).setWidth 32) (signOut G s)
+  /-- MXCSR's control bits. -/
+  mx : t.mxcsr.extractLsb' 6 10 = s.mxcsr.extractLsb' 6 10
 
 theorem fail_done {s t : State} (hp : SPre G s) {V : Nat → Byte} {W : Nat → BitVec 64}
     (L : Lay t (fb s) (stackArg s 13)) (R : Rep t.mem (fb s) (stackArg s 13) V W) (hw : t.wr = frR s :: s.wr)
     (hcs : ∀ r ∈ [Reg.r13, .r14, .r15], t.gpr r = s.gpr r)
     (h16 : W 16 = s.gpr .rdi) (h17 : W 17 = s.gpr .rcx) (h41 : W 41 = s.gpr .rbx) (h42 : W 42 = s.gpr .rbp)
-    (h43 : W 43 = s.gpr .r12) (hinv : signOut G s = .invalid) :
+    (h43 : W 43 = s.gpr .r12) (hinv : signOut G s = .invalid) (hmx : t.mxcsr.extractLsb' 6 10 = s.mxcsr.extractLsb' 6 10) :
     WP isa signFail t (SDone G s) := by
   have hk1 := hp.k1; have hk2 := hp.k2
   have hout : (⟨s.gpr .rdi, (s.gpr .rcx).toNat⟩ : Region) ∈ t.wr := by
     rw [hw, hp.hwr, ← hp.hsi]; simp
   have hO : (⟨s.gpr .rdi, (s.gpr .rcx).toNat⟩ : Region).Disjoint (stkR s) := by rw [← hp.hsi]; exact hp.dKo.symm
-  refine WP.mono (signFail_ok L R (out := s.gpr .rdi) (k := (s.gpr .rcx).toNat) h16
+  refine WP.mono_mx (by decide) (signFail_ok L R (out := s.gpr .rdi) (k := (s.gpr .rcx).toNat) h16
     (by rw [h17, BitVec.ofNat_toNat, BitVec.setWidth_eq]) (by omega) hk2 hout (by rw [← hp.hsi]; exact hp.wO)
     ((by rw [← hp.hsi]; exact hp.dOs : (⟨s.gpr .rdi, (s.gpr .rcx).toNat⟩ : Region).Disjoint
       ⟨stackArg s 13, (stackArg s 14).toNat * 8⟩).sub_right (Region.sub_prefix (by have := hp.hsl; unfold oRsa; omega)))
-    (hO.sub_right (frame_sub s))) fun t' ⟨L', k', R', hax, hz, _⟩ => ?_
+    (hO.sub_right (frame_sub s))) fun t' ⟨L', k', R', hax, hz, _⟩ hm => ?_
   refine ⟨L', k'.2.2.trans hw, fun r hr => (k'.gpr (by simp at hr ⊢; rcases hr with rfl | rfl | rfl <;> decide)).trans
-    (hcs r hr), ?_, ?_, ?_, ?_⟩
+    (hcs r hr), ?_, ?_, ?_, ?_, by rw [hm]; exact hmx⟩
   · rw [R'.rd (d := sRbx) 41 rfl (by decide), h41]
   · rw [R'.rd (d := sRbp) 42 rfl (by decide), h42]
   · rw [R'.rd (d := sR12) 43 rfl (by decide), h43]
@@ -126,7 +128,7 @@ include hH K in
 outcome. -/
 theorem main_done (lk : Pbkdf2.Md.X86_64.MgfLink H hH) {privN : String} {privC : Prog isa}
     (hv : ∀ s, chkContract.pre s → ∃ t s', Exec isa privC s t s' ∧ abiPreserved s s' ∧ chkContract.post s s')
-    (hspC : SpSafe privC) (hdC : privC.x86_64Depth ≤ Rsa.X86_64.stackBytes - 8)
+    (hspC : SpSafe privC) (hdC : privC.x86_64Depth ≤ Rsa.X86_64.stackBytes)
     {s u : State} (hp : SPre lk.G s) {V : Nat → Byte} {W : Nat → BitVec 64}
     (L : Lay u (fb s) (stackArg s 13)) (R : Rep u.mem (fb s) (stackArg s 13) V W) (hw : u.wr = frR s :: s.wr)
     (hrd : u.rd = s.rd) (hcs : ∀ r ∈ [Reg.r13, .r14, .r15], u.gpr r = s.gpr r) (hM : Frame (wrR s) s.mem u.mem)
@@ -149,7 +151,8 @@ theorem main_done (lk : Pbkdf2.Md.X86_64.MgfLink H hH) {privN : String} {privC :
       (Spec.Rsa.bytesAt s.mem (stackArg s 2) (stackArg s 3).toNat)
       (Spec.Rsa.bytesAt s.mem (stackArg s 4) (stackArg s 1).toNat)
       (Spec.Rsa.bytesAt s.mem (stackArg s 6) (stackArg s 3).toNat)
-      (Spec.Rsa.bytesAt s.mem (stackArg s 8) (stackArg s 1).toNat)) :
+      (Spec.Rsa.bytesAt s.mem (stackArg s 8) (stackArg s 1).toNat))
+    (hmx : u.mxcsr.extractLsb' 6 10 = s.mxcsr.extractLsb' 6 10) :
     WP isa (signMain H privN privC) u (SDone lk.G s) := by
   have hk1 := hp.k1; have hk2 := hp.k2
   have hD : H.D = lk.G.len := lk.len.symm
@@ -163,7 +166,7 @@ theorem main_done (lk : Pbkdf2.Md.X86_64.MgfLink H hH) {privN : String} {privC :
   rw [signMain]
   simp only [seqs]
   -- The encoding.
-  refine WP.seq (WP.mono (WP.keepIn (signEnc_safe hH K) (by rw [signEnc_xd K])
+  refine WP.seq (WP.mono_mx (safe_mx (signEnc_safe hH K)) (WP.keepIn (signEnc_safe hH K) (by rw [signEnc_xd K])
     (signEnc_ok hH K lk L R (k := (s.gpr .rcx).toNat) (lo := lo) (sl := (stackArg s 12).toNat) (c := c)
       (by rw [h17, BitVec.ofNat_toNat, BitVec.setWidth_eq]) h26 h25 h37 h39
       (by rw [h40, BitVec.ofNat_toNat, BitVec.setWidth_eq]) hk1 hk2 hlo hfit hax
@@ -179,29 +182,29 @@ theorem main_done (lk : Pbkdf2.Md.X86_64.MgfLink H hH) {privN : String} {privC :
         have := hp.outside lk.G hp.dOsa hp.dsas hp.dKsa (a := stackArg s 11 + BitVec.ofNat 64 i)
           (Offset.contains_base _ (by omega) (by omega))
         rwa [← hw] at this)))
-    fun u1 ⟨⟨L1, rd1, wr1, cs1, V1, W1, R1, hW1, hV1⟩, f1⟩ => ?_)
+    fun u1 ⟨⟨L1, rd1, wr1, cs1, V1, W1, R1, hW1, hV1⟩, f1⟩ hm1 => ?_)
   have hM1 := frame_keep hp hw L.rsp hM f1
   have hw1 : u1.wr = frR s :: s.wr := wr1.trans hw
   have g : ∀ j, j < nW → j < 23 → W1 j = W j := fun j hj h => hW1 j hj (.inl h)
   -- The private-key operation's arguments.
-  refine WP.seq (WP.mono (WP.keepIn (by decide) (by simp [Code.x86_64Depth])
+  refine WP.seq (WP.mono_mx (by decide) (WP.keepIn (by decide) (by simp [Code.x86_64Depth])
     (privArgs_ok hp L1 (rd1.trans hrd) (argsKept_of hp hM1) R1 ((g 16 (by decide) (by decide)).trans h16)
       ((g 17 (by decide) (by decide)).trans h17) ((g 18 (by decide) (by decide)).trans h18)
       ((g 19 (by decide) (by decide)).trans h19) ((g 20 (by decide) (by decide)).trans h20)
       ((g 22 (by decide) (by decide)).trans h22)))
-    fun u2 ⟨⟨k2, L2, ⟨W2, R2, hW2a, hW2b⟩, h2di, h2si, h2dx, h2cx, h2r8, h2r9⟩, f2⟩ => ?_)
+    fun u2 ⟨⟨k2, L2, ⟨W2, R2, hW2a, hW2b⟩, h2di, h2si, h2dx, h2cx, h2r8, h2r9⟩, f2⟩ hm2 => ?_)
   have hw2 : u2.wr = frR s :: s.wr := k2.2.2.trans hw1
   have hM2 := frame_keep hp hw1 L1.rsp hM1 f2
   -- The call.
   refine WP.mono (priv_call hv hspC hdC hp L2.rsp ((k2.2.1.trans rd1).trans hrd) hw2 hM2
     (fun i hi => (R2.fr i (by unfold nW frameBytes; omega)).trans (hW2a i hi)) h2di h2si h2dx h2cx h2r8 h2r9)
-    fun u3 ⟨rd3, wr3, cs3, _, _, hk3, hout3⟩ => ?_
+    fun u3 ⟨rd3, wr3, cs3, mx3, _, hk3, hout3⟩ => ?_
   have R3 : Rep u3.mem (fb s) (stackArg s 13) V1 W2 := R2.of_keep L2.geo fun x hx => hk3 x hx
   have L3 : Lay u3 (fb s) (stackArg s 13) :=
     L2.of_rep' R2 R3 rfl (cs3 .rsp (by decide)) wr3
   have w : ∀ j, 32 < j → j < nW → W2 j = W j := fun j h hj =>
     (hW2b j hj (by omega)).trans (hW1 j hj (.inr h))
-  refine ⟨L3, wr3.trans hw2, fun r hr => ?_, ?_, ?_, ?_, ?_⟩
+  refine ⟨L3, wr3.trans hw2, fun r hr => ?_, ?_, ?_, ?_, ?_, by rw [mx3, hm2, hm1]; exact hmx⟩
   · have hr3 : r = .r13 ∨ r = .r14 ∨ r = .r15 := by simpa using hr
     have h1 : r ∈ calleeSaved := by rcases hr3 with rfl | rfl | rfl <;> decide
     have h2 : r ∉ [Reg.rax, .rdi, .rsi, .rdx, .rcx, .r8, .r9] := by rcases hr3 with rfl | rfl | rfl <;> decide
@@ -264,14 +267,15 @@ theorem n0_ok {s t : State} (hp : SPre G s) (L : Lay t (fb s) (stackArg s 13)) {
 
 theorem restore_ok {s t : State} (hp : SPre G s) (D : SDone G s t) :
     WP isa (.block restoreRegs) t fun t' => t'.gpr .rsp = fb s ∧ t'.wr = (allocState frameBytes s).wr ∧
-      (∀ r ∈ calleeSaved, (freedF t').gpr r = s.gpr r) ∧ (signK G).post s (freedF t') := by
+      (∀ r ∈ calleeSaved, (freedF t').gpr r = s.gpr r) ∧ (signK G).post s (freedF t') ∧
+      (freedF t').mxcsr.extractLsb' 6 10 = s.mxcsr.extractLsb' 6 10 := by
   have hF := fb_toNat hp
-  refine WP.mono (WP.keep [.rbx, .rbp, .r12] (Q := fun t' => t'.mem = t.mem ∧ t'.gpr .rbx = s.gpr .rbx ∧
-      t'.gpr .rbp = s.gpr .rbp ∧ t'.gpr .r12 = s.gpr .r12) ?_ rfl) fun t' ⟨⟨hm, h1, h2, h3⟩, k⟩ => ?_
+  refine WP.mono_mx (by decide) (WP.keep [.rbx, .rbp, .r12] (Q := fun t' => t'.mem = t.mem ∧ t'.gpr .rbx = s.gpr .rbx ∧
+      t'.gpr .rbp = s.gpr .rbp ∧ t'.gpr .r12 = s.gpr .r12) ?_ rfl) fun t' ⟨⟨hm, h1, h2, h3⟩, k⟩ hmx => ?_
   · xrun [restoreRegs, ea_sp, D.L.rsp, D.L.ld (d := sRbx) (by decide), D.L.ld (d := sRbp) (by decide),
       D.L.ld (d := sR12) (by decide), D.rbx, D.rbp, D.r12]
   have hsp : t'.gpr .rsp = fb s := (k.gpr (by decide)).trans D.L.rsp
-  refine ⟨hsp, k.2.2.trans D.wr, fun r hr => ?_, ?_⟩
+  refine ⟨hsp, k.2.2.trans D.wr, fun r hr => ?_, ?_, by show t'.mxcsr.extractLsb' 6 10 = _; rw [hmx]; exact D.mx⟩
   · simp only [freedF, State.setReg]
     by_cases hr' : r = .rsp
     · subst hr'; simp only [ite_true, hsp, fb]; exact BitVec.sub_add_cancel _ _
@@ -316,9 +320,10 @@ theorem maskV_eq {n₀ : Byte} (rest : List Byte) (h0 : n₀ ≠ 0) :
 include hH K in
 theorem sign_ok (lk : Pbkdf2.Md.X86_64.MgfLink H hH) {privN : String} {privC : Prog isa}
     (hv : ∀ s, chkContract.pre s → ∃ t s', Exec isa privC s t s' ∧ abiPreserved s s' ∧ chkContract.post s s')
-    (hspC : SpSafe privC) (hdC : privC.x86_64Depth ≤ Rsa.X86_64.stackBytes - 8) {s : State}
+    (hspC : SpSafe privC) (hdC : privC.x86_64Depth ≤ Rsa.X86_64.stackBytes) {s : State}
     (h : (signK lk.G).pre s) :
-    WP isa (sign H privN privC) s fun s' => (∀ r ∈ calleeSaved, s'.gpr r = s.gpr r) ∧ (signK lk.G).post s s' := by
+    WP isa (sign H privN privC) s fun s' => (∀ r ∈ calleeSaved, s'.gpr r = s.gpr r) ∧ (signK lk.G).post s s' ∧
+      s'.mxcsr.extractLsb' 6 10 = s.mxcsr.extractLsb' 6 10 := by
   have hp := SPre.of lk.G h
   have hF := fb_toNat hp
   have hk1 := hp.k1; have hk2 := hp.k2
@@ -327,8 +332,8 @@ theorem sign_ok (lk : Pbkdf2.Md.X86_64.MgfLink H hH) {privN : String} {privC : P
   simp only [seqs]
   refine WP.seq ?_
   rw [WP.block_append_iff]
-  refine WP.mono (signPro_ok hp) fun t1 ⟨k1, L1, R1, f1⟩ => ?_
-  refine WP.mono (n0_ok hp L1 R1 (by simp [proW, upd]) k1.2.1 (frame_wrR f1)) fun t2 ⟨k2, hm2, hax2, hz2⟩ => ?_
+  refine WP.mono_mx (by decide) (signPro_ok hp) fun t1 ⟨k1, L1, R1, f1⟩ hx1 => ?_
+  refine WP.mono_mx (by decide) (n0_ok hp L1 R1 (by simp [proW, upd]) k1.2.1 (frame_wrR f1)) fun t2 ⟨k2, hm2, hax2, hz2⟩ hx2 => ?_
   have L2 : Lay t2 (fb s) (stackArg s 13) := L1.congr (k2.gpr (by decide)) k2.2.2 (by rw [hm2])
   have R2 : Rep t2.mem (fb s) (stackArg s 13) _ (proW s) := hm2 ▸ R1
   have hM2 : Frame (wrR s) s.mem t2.mem := hm2 ▸ frame_wrR f1
@@ -358,7 +363,8 @@ theorem sign_ok (lk : Pbkdf2.Md.X86_64.MgfLink H hH) {privN : String} {privC : P
       Rep t.mem (fb s) (stackArg s 13) V W → t.wr = frR s :: s.wr →
       (∀ r ∈ [Reg.r13, .r14, .r15], t.gpr r = s.gpr r) → W 16 = s.gpr .rdi → W 17 = s.gpr .rcx →
       W 41 = s.gpr .rbx → W 42 = s.gpr .rbp → W 43 = s.gpr .r12 → signOut lk.G s = .invalid →
-      WP isa signFail t (SDone lk.G s) := fun L R hw hcs a b c d e f => fail_done hp L R hw hcs a b c d e f
+      t.mxcsr = s.mxcsr →
+      WP isa signFail t (SDone lk.G s) := fun L R hw hcs a b c d e f hx => fail_done hp L R hw hcs a b c d e f (by rw [hx])
   have hz : ∀ b : Bool, t2.zf = some b → (b = true ↔ n₀.toNat = 0) := fun b hb => by
     rw [hz2] at hb; cases hb; simp
   refine WP.ite (M := isa) _ (show isa.eval .e t2 = _ from hz2) (fun hb => ?_) (fun hb => ?_)
@@ -366,7 +372,7 @@ theorem sign_ok (lk : Pbkdf2.Md.X86_64.MgfLink H hH) {privN : String} {privC : P
     rw [decide_eq_true_eq] at hb
     have h0 : n₀ = 0 := BitVec.eq_of_toNat_eq hb
     refine hfail L2 R2 hw2 hcs2 (by simp [proW, upd]) (by simp [proW, upd]) (by simp [proW, upd])
-      (by simp [proW, upd]) (by simp [proW, upd]) ?_
+      (by simp [proW, upd]) (by simp [proW, upd]) ?_ (by rw [hx2, hx1]; rfl)
     rw [hout, h0]; exact RsaPss.sign_zero ..
   rw [decide_eq_false_iff_not] at hb
   have h0 : n₀ ≠ 0 := fun h => hb (by rw [h]; rfl)
@@ -378,13 +384,13 @@ theorem sign_ok (lk : Pbkdf2.Md.X86_64.MgfLink H hH) {privN : String} {privC : P
   rw [hrl] at hEL
   have hlo : loV n₀.toNat ≤ 1 := by unfold loV; split <;> omega
   -- `smear(n₀ >> 1)`.
-  refine WP.seq (WP.mono (smear_ok t2 (x := n₀.toNat) n₀.isLt hb hax2) fun t3 ⟨k3, hm3, hdx3, hz3⟩ => ?_)
+  refine WP.seq (WP.mono_mx (by decide) (smear_ok t2 (x := n₀.toNat) n₀.isLt hb hax2) fun t3 ⟨k3, hm3, hdx3, hz3⟩ hx3 => ?_)
   have L3 : Lay t3 (fb s) (stackArg s 13) := L2.congr (k3.gpr (by decide)) k3.2.2 (by rw [hm3])
   have R3 : Rep t3.mem (fb s) (stackArg s 13) _ (proW s) := hm3 ▸ R2
   -- `emLen`, the mask and `lo`.
-  refine WP.seq (WP.mono (WP.keepIn (by safe_by [emLen]) (by simp [emLen, Code.x86_64Depth])
+  refine WP.seq (WP.mono_mx (safe_mx (by safe_by [emLen])) (WP.keepIn (by safe_by [emLen]) (by simp [emLen, Code.x86_64Depth])
     (emLen_ok (H := H) (by omega) L3 R3 (x := n₀.toNat) (k := (s.gpr .rcx).toNat)
-      (by simp [proW, upd]) (by omega) (by omega) hdx3 hz3)) fun t4 ⟨⟨L4, k4, R4, hax4, hc4⟩, f4⟩ => ?_)
+      (by simp [proW, upd]) (by omega) (by omega) hdx3 hz3)) fun t4 ⟨⟨L4, k4, R4, hax4, hc4⟩, f4⟩ hx4 => ?_)
   have hw4 : t4.wr = frR s :: s.wr := k4.2.2.trans (k3.2.2.trans hw2)
   have hM4 : Frame (wrR s) s.mem t4.mem :=
     frame_keep hp (k3.2.2.trans hw2) L3.rsp (hm3 ▸ hM2) f4
@@ -395,19 +401,19 @@ theorem sign_ok (lk : Pbkdf2.Md.X86_64.MgfLink H hH) {privN : String} {privC : P
   · -- `emLen < hLen + 2`: refused.
     rw [decide_eq_true_eq] at hb4
     refine hfail L4 R4 hw4 hcs4 (by simp [proW, upd]) (by simp [proW, upd]) (by simp [proW, upd])
-      (by simp [proW, upd]) (by simp [proW, upd]) ?_
+      (by simp [proW, upd]) (by simp [proW, upd]) ?_ (by rw [hx4, hx3, hx2, hx1]; rfl)
     rw [hout]
     exact RsaPss.sign_long _ _ _ _ _ _ _ _ _ (by rw [emLen_eq h0, hrl, hGl]; omega)
   rw [decide_eq_false_iff_not] at hb4
   -- The salt fits.
   refine WP.seq ?_
   rw [WP.block_append_iff]
-  refine WP.mono (WP.keep [.rdx] (Q := fun t => t.gpr .rdx = stackArg s 12 ∧ t.mem = t4.mem) (by
+  refine WP.mono_mx (by decide) (WP.keep [.rdx] (Q := fun t => t.gpr .rdx = stackArg s 12 ∧ t.mem = t4.mem) (by
     xrun [ea_sp, L4.rsp, L4.ld (d := sSaltLen) (by decide), R4.rd (d := sSaltLen) 40 rfl (by decide)]
-    simp [upd, proW]) rfl) fun t5 ⟨⟨hdx5, hm5⟩, k5⟩ => ?_
-  refine WP.mono (saltFits_ok (H := H) (by omega) t5 (a := (s.gpr .rcx).toNat - loV n₀.toNat)
+    simp [upd, proW]) rfl) fun t5 ⟨⟨hdx5, hm5⟩, k5⟩ hx5 => ?_
+  refine WP.mono_mx (safe_mx (by safe_by [saltFits])) (saltFits_ok (H := H) (by omega) t5 (a := (s.gpr .rcx).toNat - loV n₀.toNat)
     (b := stackArg s 12) (by omega) (by omega) (by rw [k5.gpr (by decide)]; exact hax4) hdx5)
-    fun t6 ⟨k6, hm6, hax6, hc6⟩ => ?_
+    fun t6 ⟨k6, hm6, hax6, hc6⟩ hx6 => ?_
   have L6 : Lay t6 (fb s) (stackArg s 13) := L4.congr ((k6.gpr (by decide)).trans (k5.gpr (by decide)))
     (k6.2.2.trans k5.2.2) (by rw [hm6, hm5])
   have hm65 : t6.mem = t4.mem := by rw [hm6, hm5]
@@ -420,7 +426,7 @@ theorem sign_ok (lk : Pbkdf2.Md.X86_64.MgfLink H hH) {privN : String} {privC : P
   · -- The salt does not fit: refused.
     rw [decide_eq_true_eq] at hb6
     refine hfail L6 R6 hw6 hcs6 (by simp [proW, upd]) (by simp [proW, upd]) (by simp [proW, upd])
-      (by simp [proW, upd]) (by simp [proW, upd]) ?_
+      (by simp [proW, upd]) (by simp [proW, upd]) ?_ (by rw [hx6, hx5, hx4, hx3, hx2, hx1]; rfl)
     rw [hout]
     exact RsaPss.sign_long _ _ _ _ _ _ _ _ _ (by rw [emLen_eq h0, hrl, hGl, bytesAt_length]; omega)
   rw [decide_eq_false_iff_not] at hb6
@@ -435,7 +441,7 @@ theorem sign_ok (lk : Pbkdf2.Md.X86_64.MgfLink H hH) {privN : String} {privC : P
     (by simp [proW, upd]) (by simp [proW, upd]) (by simp [proW, upd]) (by simp [proW, upd]) (by simp [proW, upd])
     (by simp [proW, upd]) (by simp only [upd, Nat.reduceEqDiff, ite_true, ite_false]; exact maskV_eq rest h0)
     (by simp [upd]) (by simp [proW, upd]) (by simp [proW, upd]) (by simp [proW, upd]) (by simp [proW, upd])
-    (by simp [proW, upd]) (by simp [proW, upd]) hlo hfit hax6 ?_
+    (by simp [proW, upd]) (by simp [proW, upd]) hlo hfit hax6 ?_ (by rw [hx6, hx5, hx4, hx3, hx2, hx1]; rfl)
   rw [hout, RsaPss.sign_eq lk.G (validG hH lk.hash lk.len) h0 (by rw [bytesAt_length]) rfl rfl hlo'
     (by rw [emLen_eq h0, hrl, hGl]) (by rw [emLen_eq h0, hrl, hGl, bytesAt_length]; omega), hnB, hrl, hGl,
     bytesAt_length]
