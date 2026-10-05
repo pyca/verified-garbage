@@ -1,0 +1,5 @@
+name = "RSAES-OAEP"
+family = "RSA"
+specs = ["RsaOaep", "Mgf1"]
+modules = ["src/rsa_oaep.rs"]
+asm = []
