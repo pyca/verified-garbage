@@ -49,7 +49,7 @@ def BlockMixSpec (c : Prog isa) : Prop :=
         bytesAt s'.mem dst (128 * r) = blockMix r (bytesAt s.mem src (128 * r)) → Q s') →
     WP isa (.call "vg_scrypt_blockmix" c) s Q
 
-theorem blockMix_depth : Impl.Scrypt.X86_64.blockMix.depth = 1 := by decide +kernel
+theorem blockMix_depth : Impl.Scrypt.X86_64.blockMix.depth = 0 := by decide +kernel
 
 theorem blockMix_nosp : NoSp Impl.Scrypt.X86_64.blockMix := by
   have : ((instrs Impl.Scrypt.X86_64.blockMix).all fun i => !Taint.clobbers i .rsp) = true := by
@@ -130,7 +130,8 @@ theorem blockMixSpec : BlockMixSpec Impl.Scrypt.X86_64.blockMix := by
     hne _ (by decide : Reg.rdi ≠ .rsp), hne _ (by decide : Reg.rsi ≠ .rsp),
     hne _ (by decide : Reg.rdx ≠ .rsp), hdi, hsi, hdx, hm₃, tr] at hpost
   rw [blockMix_depth] at hf
-  refine hQ s₂ hrd hwr hcs (by simpa using hf) ?_
+  refine hQ s₂ hrd hwr hcs (by
+    simpa using VG.X86_64.Frame.below_mono (b := 16) hf (by decide) (by decide)) ?_
   rw [hpost]
   congr 1
   exact Memory.bytesAt_congr fun i hi =>

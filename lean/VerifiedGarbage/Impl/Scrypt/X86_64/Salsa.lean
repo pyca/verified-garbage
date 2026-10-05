@@ -45,17 +45,18 @@ def line (i j k n : Nat) : List Instr :=
   if i < 12 then [.alu32 .xor (wreg i) (.reg .rax)]
   else [.alu32 .xor .rax (.mem (at_ .rsi (slotOff i))), .store32 (at_ .rsi (slotOff i)) .rax]
 
-/-- The lines `(i, j, k, n)` of a double round (a column round and a row
-round), in the order of RFC 7914 §3. -/
+/-- The lines `(i, j, k, n)` of a double round. The four independent
+quarter-round chains are interleaved at each rotation, first for the columns
+and then for the rows, to expose their instruction-level parallelism. -/
 def lines : List (Nat × Nat × Nat × Nat) := [
-  (4, 0, 12, 7), (8, 4, 0, 9), (12, 8, 4, 13), (0, 12, 8, 18),
-  (9, 5, 1, 7), (13, 9, 5, 9), (1, 13, 9, 13), (5, 1, 13, 18),
-  (14, 10, 6, 7), (2, 14, 10, 9), (6, 2, 14, 13), (10, 6, 2, 18),
-  (3, 15, 11, 7), (7, 3, 15, 9), (11, 7, 3, 13), (15, 11, 7, 18),
-  (1, 0, 3, 7), (2, 1, 0, 9), (3, 2, 1, 13), (0, 3, 2, 18),
-  (6, 5, 4, 7), (7, 6, 5, 9), (4, 7, 6, 13), (5, 4, 7, 18),
-  (11, 10, 9, 7), (8, 11, 10, 9), (9, 8, 11, 13), (10, 9, 8, 18),
-  (12, 15, 14, 7), (13, 12, 15, 9), (14, 13, 12, 13), (15, 14, 13, 18)]
+  (4, 0, 12, 7), (9, 5, 1, 7), (14, 10, 6, 7), (3, 15, 11, 7),
+  (8, 4, 0, 9), (13, 9, 5, 9), (2, 14, 10, 9), (7, 3, 15, 9),
+  (12, 8, 4, 13), (1, 13, 9, 13), (6, 2, 14, 13), (11, 7, 3, 13),
+  (0, 12, 8, 18), (5, 1, 13, 18), (10, 6, 2, 18), (15, 11, 7, 18),
+  (1, 0, 3, 7), (6, 5, 4, 7), (11, 10, 9, 7), (12, 15, 14, 7),
+  (2, 1, 0, 9), (7, 6, 5, 9), (8, 11, 10, 9), (13, 12, 15, 9),
+  (3, 2, 1, 13), (4, 7, 6, 13), (9, 8, 11, 13), (14, 13, 12, 13),
+  (0, 3, 2, 18), (5, 4, 7, 18), (10, 9, 8, 18), (15, 14, 13, 18)]
 
 def doubleRound : Prog isa := .block (lines.flatMap fun (i, j, k, n) => line i j k n)
 
