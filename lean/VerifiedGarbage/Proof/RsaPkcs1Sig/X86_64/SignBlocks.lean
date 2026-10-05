@@ -208,9 +208,9 @@ theorem copies_ok {s : State} (hp : PreS s) : ∀ (n : Nat), n ≤ 12 → ∀ (t
       exact hk₁ d (by omega) hd'
 
 theorem callArgs_eq : callArgs =
-    ([.mov .rdi (.mem (sp oOut)), .mov .rsi (.mem (sp oOl)), .mov .rdx (.mem (sp oN)), .mov .rcx (.mem (sp oK)),
-      .mov .r8 (.mem (sp oE)), .mov .r9 (.mem (sp oEl))] ++ lea .rax oEM ++
-      [.store (sp 0) .rax, .store (sp 8) .rcx]) ++ (List.range 12).flatMap copyArg := by
+    (([.mov .rdi (.mem (sp oOut)), .mov .rsi (.mem (sp oOl)), .mov .rdx (.mem (sp oN)), .mov .rcx (.mem (sp oK)),
+      .mov .r8 (.mem (sp oE)), .mov .r9 (.mem (sp oEl))] : List Instr) ++ lea .rax oEM ++
+      ([.store (sp 0) .rax, .store (sp 8) .rcx] : List Instr)) ++ (List.range 12).flatMap copyArg := by
   simp only [callArgs, List.append_assoc]
 
 /-- The arguments of `vg_rsa_private_checked`. -/
@@ -263,7 +263,7 @@ theorem callArgs_ok {s t : State} (hp : PreS s) (he : Env s t) :
 
 /-- The count and address of `EM`'s bytes, and the zero byte. -/
 theorem wipeHead_ok {s t : State} (hp : PreS s) (he : Env s t) :
-    WP isa (.block ([.mov .r11 (.mem (sp oK)), .mov32 .rdx (.imm 0)] ++ lea .r10 oEM)) t fun u =>
+    WP isa (.block (([.mov .r11 (.mem (sp oK)), .mov32 .rdx (.imm 0)] : List Instr) ++ lea .r10 oEM)) t fun u =>
       Keep [.r11, .rdx, .r10] t u ∧ u.mem = t.mem ∧ u.gpr .r11 = BitVec.ofNat 64 (s.gpr .rcx).toNat ∧
       u.gpr .rdx = 0 ∧ u.gpr .r10 = off (fb s) oEM := by
   have hs := he.scr hp

@@ -52,7 +52,7 @@ theorem compare_taint {Φ : State → State → Prop} (h : Pins Φ [.rdi, .rsi, 
     RelCT isa (Two Φ) compare fun _ _ => True := two_taint [.rdi, .rsi, .rcx] h (by taint_decide)
 
 theorem copyHead_taint {Φ : State → State → Prop} (h : Pins Φ [.rsp]) :
-    RelCT isa (Two Φ) (.block ([.mov .r8 (.mem (sp oOut)), .mov .rdi (.reg .r8), .mov .r9 (.mem (sp oOl))] ++ valPtr))
+    RelCT isa (Two Φ) (.block (([.mov .r8 (.mem (sp oOut)), .mov .rdi (.reg .r8), .mov .r9 (.mem (sp oOl))] : List Instr) ++ valPtr))
       fun _ _ => True := two_taint [.rsp] h (by taint_decide)
 
 theorem copyRest_taint {Φ : State → State → Prop} (h : Pins Φ [.rsi, .rdi, .r9]) :

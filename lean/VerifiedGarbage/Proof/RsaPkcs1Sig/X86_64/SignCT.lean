@@ -39,7 +39,7 @@ theorem callArgs_taint {Φ : State → State → Prop} (h : Pins Φ [.rsp]) :
     RelCT isa (Two Φ) (.block callArgs) fun _ _ => True := two_taint [.rsp] h (by taint_decide)
 
 theorem wipeHead_taint {Φ : State → State → Prop} (h : Pins Φ [.rsp]) :
-    RelCT isa (Two Φ) (.block ([.mov .r11 (.mem (sp oK)), .mov32 .rdx (.imm 0)] ++ lea .r10 oEM))
+    RelCT isa (Two Φ) (.block (([.mov .r11 (.mem (sp oK)), .mov32 .rdx (.imm 0)] : List Instr) ++ lea .r10 oEM))
       fun _ _ => True := two_taint [.rsp] h (by taint_decide)
 
 theorem wipeLoop_taint {Φ : State → State → Prop} (h : Pins Φ [.r10, .r11]) :

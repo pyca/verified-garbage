@@ -578,7 +578,7 @@ theorem valA_disjoint {s : State} (hp : PreR s) :
 
 /-- The head of `copyOut`. -/
 theorem copyHead_ok {s t : State} (hp : PreR s) (he : Env s t) (hcx : t.gpr .rcx = s.gpr .rcx) :
-    WP isa (.block ([.mov .r8 (.mem (sp oOut)), .mov .rdi (.reg .r8), .mov .r9 (.mem (sp oOl))] ++ valPtr)) t
+    WP isa (.block (([.mov .r8 (.mem (sp oOut)), .mov .rdi (.reg .r8), .mov .r9 (.mem (sp oOl))] : List Instr) ++ valPtr)) t
       fun u => Keep [.r8, .rdi, .r9, .rsi] t u ∧ u.mem = t.mem ∧ u.gpr .r8 = s.gpr .rdi ∧
         u.gpr .rdi = s.gpr .rdi ∧ u.gpr .r9 = s.gpr .rsi ∧ u.gpr .rsi = valA s := by
   have hs := he.scr hp
