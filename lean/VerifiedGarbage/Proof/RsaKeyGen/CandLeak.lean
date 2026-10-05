@@ -58,6 +58,42 @@ theorem draw_rest {n : Nat} {r : Rand} {x : Nat} {r' : Rand} (h : draw n r = som
   · cases h; simp
   · cases h
 
+/-- A step of Miller–Rabin's loop leaves at most the octets it was given. -/
+theorem mrStep_rest {c ch a m : Nat} : ∀ (s : Nat × Nat) (r : Rand) x r', mrStep c ch a m s r = some (x, r') →
+    r'.length ≤ r.length := by
+  intro s r x r' hs
+  obtain ⟨i, u⟩ := s
+  unfold mrStep at hs
+  simp only at hs
+  by_cases hg : i ≤ blindedChecks ∨ u < ch
+  · rw [ite_t hg] at hs
+    rcases hd : draw (witnessBytes c) r with _ | ⟨y, r₁⟩
+    · simp [hd] at hs
+    · simp only [hd, Option.bind_eq_bind, Option.bind_some] at hs
+      have := draw_rest hd
+      by_cases hm : mrIteration c a m (witness (c - 1) y).1 = true <;>
+        simp only [hm, ↓reduceIte, Option.pure_def, Option.some.injEq, Prod.mk.injEq, Bool.false_eq_true] at hs <;>
+        (obtain ⟨-, rfl⟩ := hs; exact this)
+  · rw [ite_f hg] at hs
+    simp only [Option.some.injEq, Prod.mk.injEq] at hs
+    obtain ⟨-, rfl⟩ := hs; exact Nat.le_refl _
+
+/-- Miller–Rabin's loop from a state that draws, at the offset `used`: what
+it leaves is after the next witness. -/
+theorem mrLoop_rest {c ch a m L : Nat} {r : Rand} {i uni used : Nat} (hgo : i ≤ blindedChecks ∨ uni < ch)
+    (hwb : witnessBytes c = L) (hL : 0 < L) {b : Bool} {rest : Rand}
+    (h : loop (mrStep c ch a m) (i, uni) (r.drop used) = some (b, rest)) : rest.length + (used + L) ≤ r.length := by
+  rw [mrLoop_step c ch a m L r i uni used hgo hwb hL] at h
+  split at h
+  · split at h
+    · have := loop_rest mrStep_rest _ _ _ _ h
+      simp only [List.length_drop] at this
+      omega
+    · simp only [Option.some.injEq, Prod.mk.injEq] at h
+      obtain ⟨-, rfl⟩ := h
+      simp only [List.length_drop]; omega
+  · cases h
+
 /-- Miller–Rabin leaves at most the octets it was given. -/
 theorem primalityTest_rest {c : Nat} {r : Rand} {b : Bool} {rest : Rand} (h : primalityTest c r = some (b, rest)) :
     rest.length ≤ r.length := by
@@ -210,5 +246,71 @@ theorem schedOf_eq {L e : Nat} {p₁ p₂ : Option Nat} {r₁ r₂ : List Byte} 
         · simp [leakOf] at h
         · simp only [leakOf, Option.map_some, ↓reduceIte, List.cons.injEq, true_and, and_true] at h ⊢
           omega
+
+/-! ## Miller–Rabin's iterations -/
+
+/-- The shape of a result: what became of it, and the octets it left. -/
+def shapeOf (res : Option (Bool × Rand)) : Option (Bool × Nat) := res.map fun x => (x.1, x.2.length)
+
+/-- The witnesses left to draw at offset `u`, of `L` octets each, for the
+shape `S` of the result, with `rl` octets in all. -/
+def itersOf (L rl : Nat) (S : Option (Bool × Nat)) (u : Nat) : Nat :=
+  match S with
+  | none => (rl - u) / L + 1
+  | some (_, n) => (rl - n - u) / L
+
+/-- Whether the witness at offset `u` passes, from the shape of the result. -/
+def passS (L rl : Nat) (S : Option (Bool × Nat)) (u : Nat) : Bool := !(S == some (false, rl - u - L))
+
+/-- The witness at offset `used` passes iff the result is not that it failed
+there. -/
+theorem mr_pass {c ch a m L : Nat} {r : Rand} {i uni used : Nat} (hgo : i ≤ blindedChecks ∨ uni < ch)
+    (hwb : witnessBytes c = L) (hL : 0 < L) (hav : used + L ≤ r.length) :
+    passS L r.length (shapeOf (loop (mrStep c ch a m) (i, uni) (r.drop used))) used =
+      mrIteration c a m (witness (c - 1) (os2ip (seg r used L))).1 := by
+  rw [mrLoop_step c ch a m L r i uni used hgo hwb hL, ite_t hav]
+  by_cases hm : mrIteration c a m (witness (c - 1) (os2ip (seg r used L))).1 = true
+  · rw [ite_t hm, hm]
+    unfold passS
+    generalize hn : i + 1 = i' at *
+    generalize hu : uni + (if (witness (c - 1) (os2ip (seg r used L))).2 = true then 1 else 0) = u' at *
+    by_cases hg : i' ≤ blindedChecks ∨ u' < ch
+    · rcases h : loop (mrStep c ch a m) (i', u') (r.drop (used + L)) with _ | ⟨b, rest⟩
+      · rfl
+      · have := mrLoop_rest hg hwb hL h
+        simp [shapeOf]
+        intro _; omega
+    · rw [mrLoop_done c ch a m _ i' u' hg]
+      simp [shapeOf]
+  · rw [ite_f hm]
+    simp only [Bool.not_eq_true] at hm
+    rw [hm]
+    simp [passS, shapeOf]
+    omega
+
+/-- An iteration that goes on, to the state `(i, uni)` that draws at offset
+`u`: one more iteration than from there, and at least one from there. -/
+theorem iters_cont {c ch a m L : Nat} {r : Rand} {i uni u : Nat} (hgo : i ≤ blindedChecks ∨ uni < ch)
+    (hwb : witnessBytes c = L) (hL : 0 < L) (hu : L ≤ u) (hul : u ≤ r.length) :
+    itersOf L r.length (shapeOf (loop (mrStep c ch a m) (i, uni) (r.drop u))) (u - L) =
+      itersOf L r.length (shapeOf (loop (mrStep c ch a m) (i, uni) (r.drop u))) u + 1 ∧
+    1 ≤ itersOf L r.length (shapeOf (loop (mrStep c ch a m) (i, uni) (r.drop u))) u := by
+  rcases h : loop (mrStep c ch a m) (i, uni) (r.drop u) with _ | ⟨b, rest⟩
+  · simp only [shapeOf, Option.map_none, itersOf]
+    refine ⟨?_, Nat.le_add_left 1 _⟩
+    rw [show r.length - (u - L) = r.length - u + L by omega, Nat.add_div_right _ hL]
+  · have := mrLoop_rest hgo hwb hL h
+    simp only [shapeOf, Option.map_some, itersOf]
+    refine ⟨?_, ?_⟩
+    · rw [show r.length - rest.length - (u - L) = r.length - rest.length - u + L by omega, Nat.add_div_right _ hL]
+    · exact (Nat.le_div_iff_mul_le hL).mpr (by omega)
+
+/-- The last iteration: one left. -/
+theorem iters_end_none {L rl u : Nat} (hL : 0 < L) (h : rl < u + L) : itersOf L rl none u = 1 := by
+  simp only [itersOf, Nat.add_eq_right, Nat.div_eq_zero_iff]; omega
+
+theorem iters_end_some {L rl u : Nat} {b : Bool} {n : Nat} (hL : 0 < L) (h : n + (u + L) = rl) :
+    itersOf L rl (some (b, n)) u = 1 := by
+  simp only [itersOf]; rw [show rl - n - u = L by omega, Nat.div_self hL]
 
 end VG.Proof.RsaKeyGen
