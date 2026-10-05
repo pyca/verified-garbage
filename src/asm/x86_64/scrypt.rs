@@ -6,6 +6,8 @@
 ///
 /// Contract: `VG.Spec.Scrypt.salsaContract`. Constant time: only the pointers may affect timing, not the data.
 ///
+/// The scalar rounds interleave four independent quarter-round chains.
+///
 /// # Safety
 ///
 /// * `b` must be valid for reads and writes of 64 bytes.
@@ -636,6 +638,8 @@ pub(crate) unsafe extern "sysv64" fn vg_salsa20_8(b: *mut [u8; 64], scratch: *mu
 /// scryptBlockMix (RFC 7914 §4) with block size parameter `r`: writes scryptBlockMix of the `128 * r` bytes at `b` to the `128 * ry` bytes at `y`. Calls `vg_salsa20_8` for each 64-byte block.
 ///
 /// Contract: `VG.Spec.Scrypt.blockMixContract`. Constant time: only the pointers and `r` may affect timing, not the data.
+///
+/// The scalar Salsa20/8 core is inlined into the BlockMix loop.
 ///
 /// # Safety
 ///
@@ -1970,6 +1974,8 @@ pub(crate) unsafe extern "sysv64" fn vg_scrypt_blockmix(b: *const [u8; 128], r: 
 ///
 /// Contract: `VG.Spec.Scrypt.roMixContract`. Not constant time in the indices: timing may depend on the pointers, `r`, `N` and the indices `j` of step 3 (`VG.Spec.Scrypt.roMixIndices`), which are derived from the data and so leak information about it (as in every scrypt that indexes `V` directly), but on nothing else.
 ///
+/// Table addresses use a scalar multiply; BlockMix inlines the scalar Salsa20/8 core.
+///
 /// # Safety
 ///
 /// * `b` must be valid for reads and writes of `128 * r` bytes.
@@ -2041,23 +2047,17 @@ pub(crate) unsafe extern "sysv64" fn vg_scrypt_romix(b: *mut [u8; 128], r: usize
         "and rax, rbp",
         "mov rdx, r12",
         "mov rcx, r14",
-        "24:",
-        "test rax, 1",
-        "jne 25f",
-        "jmp 26f",
-        "25:",
-        "add rdx, rcx",
-        "26:",
-        "add rcx, rcx",
-        "shr rax, 1",
-        "jne 24b",
+        "mov rdi, rdx",
+        "mul rcx",
+        "mov rdx, rdi",
+        "add rdx, rax",
         "mov rdi, rbx",
         "mov rsi, rdx",
         "mov r8, r13",
         "add r8, 192",
         "mov rcx, r14",
         "shr rcx, 3",
-        "27:",
+        "24:",
         "mov rax, QWORD PTR [rdi]",
         "xor rax, QWORD PTR [rsi]",
         "mov QWORD PTR [r8], rax",
@@ -2065,7 +2065,7 @@ pub(crate) unsafe extern "sysv64" fn vg_scrypt_romix(b: *mut [u8; 128], r: usize
         "add rsi, 8",
         "add r8, 8",
         "sub rcx, 1",
-        "jne 27b",
+        "jne 24b",
         "mov rdi, r13",
         "add rdi, 192",
         "mov rsi, r14",

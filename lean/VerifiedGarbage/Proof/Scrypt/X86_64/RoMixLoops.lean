@@ -1,3 +1,4 @@
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Scrypt.X86_64.Common
 import VerifiedGarbage.Impl.Scrypt.X86_64.RoMix
 import VerifiedGarbage.Proof.Scrypt.X86_64.Lit
@@ -6,7 +7,7 @@ import VerifiedGarbage.Proof.Scrypt.X86_64.Lit
 # scryptROMix on x86-64: the small loops
 
 The word copy (`copyLoop`), the word exclusive-or (`xorLoop`), the
-multiplication by shifts and adds (`mulLoop`) and the computation of `2 N` by
+direct address multiplication (`mulLoop`) and the computation of `2 N` by
 doubling (`nLoop`).
 -/
 
@@ -23,25 +24,6 @@ open VG.Proof.Scrypt.Memory (toNat_ofNat_lt add_ofNat copy_mem xor_mem dbl_pow)
 
 /-! ## Instructions and arithmetic -/
 
-section
-variable {is : List Instr} {s : State} {Q : State → Prop}
-
-/-- `test d, imm`: only ZF matters here. -/
-theorem wp_testi {d : Reg} {v : BitVec 32}
-    (k : ∀ s', s'.gpr = s.gpr → s'.mem = s.mem → s'.rd = s.rd → s'.wr = s.wr →
-      s'.zf = some (s.gpr d &&& v.signExtend 64 == 0) → WP isa (.block is) s' Q) :
-    WP isa (.block (.alu .test d (.imm v) :: is)) s Q :=
-  Proof.MdStream.X86_64.WP.cons rfl (k _ rfl rfl rfl rfl rfl)
-
-/-- `shr d, 1`. -/
-theorem wp_shr1 {d : Reg}
-    (k : ∀ s', Upd s s' d (s.gpr d >>> 1) → s'.zf = some (s.gpr d >>> 1 == 0) →
-      WP isa (.block is) s' Q) :
-    WP isa (.block (.shift .shr d 1 :: is)) s Q :=
-  Proof.MdStream.X86_64.WP.cons rfl
-    (k _ ⟨by simp [State.setReg], fun r h => by simp [State.setReg, State.setFlags, h], rfl, rfl, rfl⟩ rfl)
-
-end
 
 theorem ea_at0 (s : State) (b : Reg) : s.ea (at_ b 0) = s.gpr b := by
   rw [ea_at]; exact BitVec.add_zero _
@@ -208,90 +190,31 @@ theorem xorLoop_ok {s : State} {x y d : Addr} {n : Nat} (hn : 0 < n) (hlt : 8 * 
 
 /-! ## `mulLoop` -/
 
-/-- `rax = m`, and `rdx + rax * rcx` is still `a + j c`. -/
-structure MulInv (s : State) (j c : Nat) (a : Addr) (m : Nat) (t : State) : Prop where
-  rd : t.rd = s.rd
-  wr : t.wr = s.wr
-  mem : t.mem = s.mem
-  other : ∀ r, r ≠ .rax → r ≠ .rdx → r ≠ .rcx → t.gpr r = s.gpr r
-  lt : m < 2 ^ 64
-  rax : t.gpr .rax = BitVec.ofNat 64 m
-  sum : t.gpr .rdx + BitVec.ofNat 64 m * t.gpr .rcx = a + BitVec.ofNat 64 (j * c)
+/-- The low half of `mul` is multiplication modulo 2^64. -/
+theorem mul_low (s : State) :
+    (execMul .rcx s).gpr .rax = s.gpr .rax * s.gpr .rcx := by
+  simp only [execMul, RegUpd.gpr_setReg,
+    show Reg.rax ≠ Reg.rdx by decide, ↓reduceIte]
+  exact (BitVec.ofNat_mul _ _).trans (by simp)
 
-theorem and_one_beq {m : Nat} (h : m < 2 ^ 64) :
-    (BitVec.ofNat 64 m &&& (1 : BitVec 32).signExtend 64 == 0) = decide (m % 2 = 0) := by
-  have e : BitVec.ofNat 64 m &&& (1 : BitVec 32).signExtend 64 = BitVec.ofNat 64 (m % 2) := by
-    apply BitVec.eq_of_toNat_eq
-    rw [sx1, BitVec.toNat_and, toNat_ofNat_lt h, toNat_ofNat_lt (by omega),
-      show (1 : BitVec 64).toNat = 1 from rfl, Nat.and_one_is_mod]
-  rw [e, ofNat_beq_zero (by omega)]
-
-theorem shr_one {m : Nat} (h : m < 2 ^ 64) : BitVec.ofNat 64 m >>> 1 = BitVec.ofNat 64 (m / 2) := by
-  apply BitVec.eq_of_toNat_eq
-  rw [BitVec.toNat_ushiftRight, toNat_ofNat_lt h, toNat_ofNat_lt (by omega), Nat.shiftRight_eq_div_pow,
-    Nat.pow_one]
-
-/-- The invariant across one iteration: `rdx` gains `rcx` if `m` is odd. -/
-theorem mul_sum (d r : BitVec 64) (m : Nat) :
-    (d + (if m % 2 = 1 then r else 0)) + BitVec.ofNat 64 (m / 2) * (r + r) =
-      d + BitVec.ofNat 64 m * r := by
-  have e : BitVec.ofNat 64 m = BitVec.ofNat 64 (m / 2) + BitVec.ofNat 64 (m / 2) +
-      BitVec.ofNat 64 (m % 2) := by
-    rw [← BitVec.ofNat_add, ← BitVec.ofNat_add]; exact congrArg (BitVec.ofNat _) (by omega)
-  by_cases h : m % 2 = 1
-  · simp only [h, ↓reduceIte]
-    rw [e, h, show BitVec.ofNat 64 1 = 1 from rfl]; grind
-  · simp only [h, ↓reduceIte]
-    rw [e, show m % 2 = 0 by omega, show BitVec.ofNat 64 0 = 0 from rfl]; grind
-
-/-- The conditional add: `rdx ← rdx + rcx` if `rax` is odd. -/
-theorem mul_ite {m : Nat} (hm : m < 2 ^ 64) {t : State} (hax : t.gpr .rax = BitVec.ofNat 64 m)
-    (hz : t.zf = some (t.gpr .rax &&& (1 : BitVec 32).signExtend 64 == 0)) :
-    WP isa (.ite .ne (.block [.alu .add .rdx (.reg .rcx)]) (.block [])) t fun t' =>
-      Upd t t' .rdx (t.gpr .rdx + if m % 2 = 1 then t.gpr .rcx else 0) := by
-  refine WP.ite (!decide (m % 2 = 0)) (by simp only [eval, hz, hax, and_one_beq hm, Option.map_some])
-    (fun hb => wp_add fun t₁ u₁ => WP.block_nil ?_) (fun hb => WP.block_nil ?_)
-  · have : m % 2 = 1 := by simp only [Bool.not_eq_eq_eq_not, Bool.not_true, decide_eq_false_iff_not] at hb; omega
-    simp only [this, ↓reduceIte]; exact u₁
-  · have : ¬ m % 2 = 1 := by simp only [Bool.not_eq_eq_eq_not, Bool.not_false, decide_eq_true_eq] at hb; omega
-    simp only [this, ↓reduceIte]
-    rw [show t.gpr .rdx + 0 = t.gpr .rdx from BitVec.add_zero _]
-    exact ⟨rfl, fun _ _ => rfl, rfl, rfl, rfl⟩
-
-theorem mul_step {s : State} {j c : Nat} {a : Addr} {m : Nat} {t : State} (h : MulInv s j c a m t) :
-    WP isa (.seq (.block [.alu .test .rax (.imm 1)]) <|
-      .seq (.ite .ne (.block [.alu .add .rdx (.reg .rcx)]) (.block []))
-        (.block [.alu .add .rcx (.reg .rcx), .shift .shr .rax 1])) t
-      fun t' => MulInv s j c a (m / 2) t' ∧ t'.zf = some (decide (m / 2 = 0)) := by
-  refine WP.seq (wp_testi fun t₁ g₁ m₁ rd₁ wr₁ z₁ => WP.block_nil ?_)
-  have ax₁ : t₁.gpr .rax = BitVec.ofNat 64 m := by rw [g₁, h.rax]
-  refine WP.seq (WP.mono (mul_ite h.lt ax₁ (by rw [z₁, g₁])) fun t₂ u₂ => ?_)
-  refine wp_add fun t₃ u₃ => wp_shr1 fun t₄ u₄ z₄ => WP.block_nil ?_
-  have ax₃ : t₃.gpr .rax = BitVec.ofNat 64 m := by
-    rw [u₃.other _ (by decide), u₂.other _ (by decide), ax₁]
-  refine ⟨⟨by rw [u₄.rd, u₃.rd, u₂.rd, rd₁, h.rd], by rw [u₄.wr, u₃.wr, u₂.wr, wr₁, h.wr],
-    by rw [u₄.mem, u₃.mem, u₂.mem, m₁, h.mem], fun r ha hd hc => ?_, by have := h.lt; omega, ?_, ?_⟩, ?_⟩
-  · rw [u₄.other r ha, u₃.other r hc, u₂.other r hd, g₁, h.other r ha hd hc]
-  · rw [u₄.gpr, ax₃, shr_one h.lt]
-  · rw [u₄.other _ (by decide), u₄.other _ (by decide), u₃.gpr, u₃.other _ (by decide), u₂.gpr,
-      u₂.other _ (by decide), g₁, mul_sum, h.sum]
-  · rw [z₄, ax₃, shr_one h.lt, ofNat_beq_zero (by have := h.lt; omega)]
-
-/-- `mulLoop` adds `rax * rcx` to `rdx` (modulo 2^64), for any `rax`. -/
-theorem mulLoop_ok {s : State} {j c : Nat} {a : Addr} (hj : j < 2 ^ 64)
+/-- Add `rax * rcx` to `rdx`; `rdi` is a temporary and memory is unchanged. -/
+theorem mulLoop_ok {s : State} {j c : Nat} {a : Addr} (_hj : j < 2 ^ 64)
     (hax : s.gpr .rax = BitVec.ofNat 64 j) (hdx : s.gpr .rdx = a) (hcx : s.gpr .rcx = BitVec.ofNat 64 c) :
     WP isa mulLoop s fun s' => s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.mem = s.mem ∧
-      (∀ r, r ≠ .rax → r ≠ .rdx → r ≠ .rcx → s'.gpr r = s.gpr r) ∧
+      (∀ r, r ≠ .rax → r ≠ .rdx → r ≠ .rcx → r ≠ .rdi → s'.gpr r = s.gpr r) ∧
       s'.gpr .rdx = a + BitVec.ofNat 64 (j * c) := by
-  refine WP.loop (M := isa) (MulInv s j c a) ?_ j s
-    ⟨rfl, rfl, rfl, fun _ _ _ _ => rfl, hj, hax, by rw [hdx, hcx, BitVec.ofNat_mul]⟩
-  intro m t h
-  refine WP.mono (mul_step h) fun t' ⟨h', hz⟩ => ?_
-  by_cases hl : m / 2 = 0
-  · refine .inl ⟨by simp [eval, hz, hl], h'.rd, h'.wr, h'.mem, h'.other, ?_⟩
-    have := h'.sum
-    rwa [hl, BitVec.zero_mul, BitVec.add_zero] at this
-  · exact .inr ⟨by simp [eval, hz, hl], m / 2, by omega, h'⟩
+  unfold mulLoop
+  refine Proof.MdStream.X86_64.wp_mov fun t u _ _ => ?_
+  refine Proof.MdStream.X86_64.WP.cons (s' := execMul .rcx t) rfl ?_
+  refine Proof.MdStream.X86_64.wp_mov fun v uv _ _ => wp_add fun w uw => WP.block_nil ?_
+  refine ⟨by rw [uw.rd, uv.rd]; exact u.rd,
+    by rw [uw.wr, uv.wr]; exact u.wr,
+    by rw [uw.mem, uv.mem]; exact u.mem, ?_, ?_⟩
+  · intro r ha hd _ hi
+    rw [uw.other _ hd, uv.other _ hd, Taint.execMul_gpr _ _ ha hd, u.other _ hi]
+  · rw [uw.gpr, uv.gpr, Taint.execMul_gpr _ _ (by decide) (by decide), u.gpr,
+      uv.other _ (by decide), mul_low, u.other _ (by decide), u.other _ (by decide),
+      hdx, hax, hcx, ← BitVec.ofNat_mul]
 
 /-! ## `nLoop` -/
 

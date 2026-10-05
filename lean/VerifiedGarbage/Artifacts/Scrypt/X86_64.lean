@@ -17,6 +17,7 @@ def artifacts : List Artifact := [
   { Spec.Scrypt.salsaApi with
     target := X86_64.target
     doc := Spec.Scrypt.salsaApi.doc
+      (notes := ["The scalar rounds interleave four independent quarter-round chains."])
     code := Impl.Scrypt.X86_64.salsa
     contract := Spec.Scrypt.salsaContract X86_64.abi
     verified := Proof.Scrypt.X86_64.salsa_verified
@@ -24,6 +25,7 @@ def artifacts : List Artifact := [
   { Spec.Scrypt.blockMixApi with
     target := X86_64.target
     doc := Spec.Scrypt.blockMixApi.doc
+      (notes := ["The scalar Salsa20/8 core is inlined into the BlockMix loop."])
     code := Impl.Scrypt.X86_64.blockMix
     contract := Spec.Scrypt.blockMixContract X86_64.abi 8
     stack := 8
@@ -32,6 +34,7 @@ def artifacts : List Artifact := [
   { Spec.Scrypt.roMixApi with
     target := X86_64.target
     doc := Spec.Scrypt.roMixApi.doc
+      (notes := ["Table addresses use a scalar multiply; BlockMix inlines the scalar Salsa20/8 core."])
     code := Impl.Scrypt.X86_64.roMix
     contract := Spec.Scrypt.roMixContract X86_64.abi 16
     stack := 16

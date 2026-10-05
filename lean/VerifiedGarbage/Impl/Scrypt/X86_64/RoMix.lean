@@ -11,7 +11,7 @@ Step 2 runs `N` times: `V[i] = X` (a copy), then `X = scryptBlockMix (V[i])`.
 Step 3 runs `N` times: `j = Integerify (X) mod N` (the low 8 bytes of
 `X`'s last 64-byte block, masked with `N - 1`), then `T = X xor V[j]`, then
 `X = scryptBlockMix (T)`. The address of `V[j]` is `v + j * 128 r`, computed
-by shifting and adding over the bits of `j`.
+by a scalar unsigned multiply and addition.
 
 `scratch` (`128 (r + 2)` bytes) holds scryptBlockMix's working space
 (`[0, 128)`), our caller's `rbx, rbp, r12, r14, r15, r13` (`[128, 176)`),
@@ -44,11 +44,11 @@ def xorLoop : Prog isa :=
     .store (at_ .r8 0) .rax, .alu .add .rdi (.imm 8), .alu .add .rsi (.imm 8),
     .alu .add .r8 (.imm 8), .alu .sub .rcx (.imm 1)]) .ne
 
-/-- `rdx ← rdx + rax * rcx`, over the bits of `rax`. -/
+/-- `rdx ← rdx + rax * rcx`, using the low half of an unsigned multiply.
+`rdi` holds the base address across `mul`, which overwrites `rdx`. -/
 def mulLoop : Prog isa :=
-  .loop (.seq (.block [.alu .test .rax (.imm 1)]) <|
-    .seq (.ite .ne (.block [.alu .add .rdx (.reg .rcx)]) (.block []))
-      (.block [.alu .add .rcx (.reg .rcx), .shift .shr .rax 1])) .ne
+  .block [.mov .rdi (.reg .rdx), .mul .rcx, .mov .rdx (.reg .rdi),
+    .alu .add .rdx (.reg .rax)]
 
 /-- Saving our caller's registers; `rbx = b`, `r12 = v`, `r13 = scratch`,
 `r14 = 128 r`; `rax = 2 r`, `rdx = 2`, `rcx = 2 vlen` for `nLoop`. -/

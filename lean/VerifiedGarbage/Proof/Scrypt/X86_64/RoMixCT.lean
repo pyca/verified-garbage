@@ -1030,22 +1030,22 @@ theorem step3_ok {c : Prog isa} (hS : BlockMixSpec c) {s₀ : State} (hp : Pre s
   have k6 : ∀ r ∈ calleeSaved, g6.gpr r = s.gpr r := fun r hr => by
     obtain ⟨h1, h2, h3, h4, h5, h6⟩ := cs_ne hr
     rw [u6.other _ h4, u5.other _ h4, u4.other _ h6, u3.other _ h6, u2.other _ h3, u1.other _ h2,
-      gf _ h1 h5 h4, ue.other _ h4, ud.other _ h5, ub.other _ h1, ua.other _ h1]
+      gf _ h1 h5 h4 h2, ue.other _ h4, ud.other _ h5, ub.other _ h1, ua.other _ h1]
   have x6 : g6.gpr .r8 = tP s₀ := by
     rw [u6.other _ (by decide), u5.other _ (by decide), u4.gpr, u3.gpr, u2.other _ (by decide),
-      u1.other _ (by decide), gf _ (by decide) (by decide) (by decide), ue.other _ (by decide),
+      u1.other _ (by decide), gf _ (by decide) (by decide) (by decide) (by decide), ue.other _ (by decide),
       ud.other _ (by decide), ub.other _ (by decide), ua.other _ (by decide), h.r13, sx192]
   refine WP.seq (WP.mono (xorLoop_ok (x := bP s₀) (y := vAt s₀ (jOf s₀ s.mem)) (d := tP s₀)
     (n := 16 * rr s₀) (by omega) (by omega)
     (by rw [u6.other _ (by decide), u5.other _ (by decide), u4.other _ (by decide),
-      u3.other _ (by decide), u2.other _ (by decide), u1.gpr, gf _ (by decide) (by decide) (by decide),
+      u3.other _ (by decide), u2.other _ (by decide), u1.gpr, gf _ (by decide) (by decide) (by decide) (by decide),
       ue.other _ (by decide), ud.other _ (by decide), ub.other _ (by decide), ua.other _ (by decide),
       h.rbx])
     (by rw [u6.other _ (by decide), u5.other _ (by decide), u4.other _ (by decide),
       u3.other _ (by decide), u2.gpr, u1.other _ (by decide), hdx])
     x6
     (by rw [u6.gpr, u5.gpr, u4.other _ (by decide), u3.other _ (by decide), u2.other _ (by decide),
-      u1.other _ (by decide), gf _ (by decide) (by decide) (by decide), ue.other _ (by decide),
+      u1.other _ (by decide), gf _ (by decide) (by decide) (by decide) (by decide), ue.other _ (by decide),
       ud.other _ (by decide), ub.other _ (by decide), ua.other _ (by decide), h.r14,
       shr_ofNat _ lt]; exact congrArg (BitVec.ofNat _) (by omega))
     (fun k hk => by rw [rd6, wr6]; exact b_word hp hk)
@@ -1486,7 +1486,7 @@ theorem mul_wp {bp q : Addr} {s₀ : State} {s : State} (h : KR s₀ bp q s) {j 
     (hcx : s.gpr .rcx = BitVec.ofNat 64 (128 * rr s₀)) :
     WP isa mulLoop s fun s' => KR s₀ bp q s' ∧ s'.gpr .rdx = vAt s₀ j :=
   WP.mono (mulLoop_ok hj hax hdx hcx) fun _ ⟨rd, wr, _, g, dx⟩ =>
-    ⟨h.upd rd wr fun r h1 _ _ h4 h5 _ => g r h1 h5 h4, by rw [dx, Nat.mul_comm]⟩
+    ⟨h.upd rd wr fun r h1 h2 _ h4 h5 _ => g r h1 h5 h4 h2, by rw [dx, Nat.mul_comm]⟩
 
 theorem m2_wp {bp q : Addr} {s₀ : State} {s : State} (h : KR s₀ bp q s) (hp : Pre s₀) {j : Nat}
     (hdx : s.gpr .rdx = vAt s₀ j) :
