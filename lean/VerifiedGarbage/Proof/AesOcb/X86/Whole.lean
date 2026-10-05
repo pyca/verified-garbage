@@ -94,10 +94,10 @@ theorem whole_ok {f : Nat → List Byte → Spec.Aes.State → Spec.Aes.State} {
     (ho0 : blockAtMem t.mem (w64 p.W + BitVec.ofNat 64 o0O) = O0)
     (hck : blockAtMem t.mem (w64 p.W + BitVec.ofNat 64 ckO) = ckF1 0)
     (hl0 : blockAtMem t.mem (w64 p.W + BitVec.ofNat 64 l0O) = lAt l 0)
-    (hckF1 : ∀ i, ckF1 (i + 1) = fC1 (ckF1 i) (blockAtMem t.mem (w64 p.D + BitVec.ofNat 64 (16 * i)))
+    (hckF1 : ∀ i < m, ckF1 (i + 1) = fC1 (ckF1 i) (blockAtMem t.mem (w64 p.D + BitVec.ofNat 64 (16 * i)))
       (offAt O0 l (i + 1)))
     (hckF2₀ : ckF2 0 = ckF1 m)
-    (hckF2 : ∀ i, ckF2 (i + 1) = fC2 (ckF2 i)
+    (hckF2 : ∀ i < m, ckF2 (i + 1) = fC2 (ckF2 i)
       (G t.mem (blockAtMem t.mem (w64 p.D + BitVec.ofNat 64 (16 * i)) ^^^ offAt O0 l (i + 1))) (offAt O0 l (i + 1))) :
     WP isa (whole fn pre post) t (WholePost p m O0 l
       (fun k => G t.mem (blockAtMem t.mem (w64 p.D + BitVec.ofNat 64 (16 * k)) ^^^ offAt O0 l (k + 1)))
@@ -117,7 +117,7 @@ theorem whole_ok {f : Nat → List Byte → Spec.Aes.State → Spec.Aes.State} {
       gpr := fun _ _ _ _ _ _ _ => rfl }
   unfold whole
   refine WP.seq (WP.of_runBlock ⟨s₁, run₁, ?_⟩)
-  refine WP.seq (WP.mono (pass_ok L hB1 (fun i _ => by rw [hckF1, m₁]) hmn hm0 P₀) fun s₂ P₂ => ?_)
+  refine WP.seq (WP.mono (pass_ok L hB1 (fun i hi => by rw [hckF1 i hi, m₁]) hmn hm0 P₀) fun s₂ P₂ => ?_)
   have fP₂ : Frame (mutR p) s₁.mem s₂.mem := P₂.frame.sub fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl
@@ -221,7 +221,7 @@ theorem whole_ok {f : Nat → List Byte → Spec.Aes.State → Spec.Aes.State} {
           kP (by decide) (by decide), m₁, hl0]
       gpr := fun _ _ _ _ _ _ _ => rfl }
   refine WP.seq (WP.of_runBlock ⟨s₄, runBlock_app_of run₄a run₄, ?_⟩)
-  refine WP.mono (pass_ok L hB2 (fun i hi => by rw [hckF2, X₄ i hi]) hmn hm0 P₀') fun s₅ P₅ => ?_
+  refine WP.mono (pass_ok L hB2 (fun i hi => by rw [hckF2 i hi, X₄ i hi]) hmn hm0 P₀') fun s₅ P₅ => ?_
   have subP : ∀ r ∈ [(⟨w64 p.W + BitVec.ofNat 64 lO, 16⟩ : Region), ⟨w64 p.W + BitVec.ofNat 64 kO, 4⟩,
       ⟨w64 p.W + BitVec.ofNat 64 ofsO, 16⟩, ⟨w64 p.W + BitVec.ofNat 64 ckO, 16⟩, ⟨w64 p.D, 16 * m⟩],
       ∃ r' ∈ wholeR p, Region.Sub r r' := by
