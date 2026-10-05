@@ -292,7 +292,7 @@ structure Updated (P : RfcHash) {dn : Nat} (L : Lay dn) (g : Reg → BitVec 32) 
 
 /-- The arguments of the streaming `update`. -/
 theorem updA (hL : L.Ok) {w : State} (hcw : Ctx L g m₀ w) {dv : BitVec 32} {len : Nat} (hd : DataOk L dv len)
-    (hlen : len ≤ 192) (hdi : w.gpr .edi = L.a3 + BitVec.ofNat 32 0)
+    (hlen : len ≤ 256) (hdi : w.gpr .edi = L.a3 + BitVec.ofNat 32 0)
     (hsi : w.gpr .esi = BitVec.ofNat 32 P.F.H.B) (hax : w.gpr .eax = 0) (hdx : w.gpr .edx = dv)
     (hcx : w.gpr .ecx = BitVec.ofNat 32 len) (hbp : w.gpr .ebp = L.a3 + BitVec.ofNat 32 384) :
     UpdArgs P.ok.hH w .esi .edi (L.a3 + BitVec.ofNat 32 0) dv (L.a3 + BitVec.ofNat 32 384)
@@ -321,7 +321,7 @@ theorem updA (hL : L.Ok) {w : State} (hcw : Ctx L g m₀ w) {dv : BitVec 32} {le
 theorem upd_step (hL : L.Ok) (hw : L.wide = (cfgOf P).wide) {t u : State} (hu : Inited P L g m₀ t u)
     {dataA : List Instr} {dv : BitVec 32}
     {len : Nat} (hdA : ∀ u, Ctx L g m₀ u → WP isa (.block dataA) u (Upd L g m₀ u .edx dv))
-    (hd : DataOk L dv len) (hlen : len ≤ 192) :
+    (hd : DataOk L dv len) (hlen : len ≤ 256) :
     WP isa (.seq (.block (Cfg.hmacArgs₂ (cfgOf P).wide P.F.H.B dataA len))
       (.frame (.push [.ebp, .ecx, .edx, .eax, .esi, .edi]) (.call P.F.H.updN P.F.H.updC) (.pop .eax 6))) u
       (Updated P L g m₀ t dv len) := by
@@ -439,7 +439,7 @@ theorem finA (hL : L.Ok) {w : State} (hcw : Ctx L g m₀ w) {len dst : Nat} (hds
       nsc := by rw [hL.scrN (by omega)]; nums }
 
 theorem fin_step (hL : L.Ok) (hw : L.wide = (cfgOf P).wide) {t u : State} {dv : BitVec 32} {len dst : Nat}
-    (hu : Updated P L g m₀ t dv len u) (hlen : len ≤ 192) (hdst : dst + P.F.H.D ≤ 180) :
+    (hu : Updated P L g m₀ t dv len u) (hlen : len ≤ 256) (hdst : dst + P.F.H.D ≤ 180) :
     WP isa (.seq (.block (Cfg.hmacArgs₃ (cfgOf P).wide P.F.H.B len dst))
       (.frame (.push [.ebp, .edi, .ecx, .eax, .esi, .edx]) (.call P.F.hfN P.F.hfC) (.pop .eax 6))) u
       (Done P L g m₀ t dv len dst) := by
@@ -495,7 +495,7 @@ theorem seq_seq {a b c : Prog isa} {s : State} {P Q : State → Prop} (h : WP is
 /-- `HMAC_K(data)`, for the key `K` in the frame, to the frame at `dst`. -/
 theorem hmac_ok (hL : L.Ok) (hw : L.wide = (cfgOf P).wide) {t : State} (hc : Ctx L g m₀ t) {dataA : List Instr} {dv : BitVec 32} {len dst : Nat}
     (hdA : ∀ u, Ctx L g m₀ u → WP isa (.block dataA) u (Upd L g m₀ u .edx dv)) (hd : DataOk L dv len)
-    (hlen : len ≤ 192) (hdst : dst + P.F.H.D ≤ 180) :
+    (hlen : len ≤ 256) (hdst : dst + P.F.H.D ≤ 180) :
     WP isa ((cfgOf P).hmac dataA len dst) t (Done P L g m₀ t dv len dst) :=
   seq_seq (init_step hL hw hc) fun _ hu => seq_seq (upd_step hL hw hu hdA hd hlen) fun _ hu' =>
     fin_step hL hw hu' hlen hdst

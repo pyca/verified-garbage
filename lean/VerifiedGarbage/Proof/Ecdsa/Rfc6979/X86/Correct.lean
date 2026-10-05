@@ -19,10 +19,6 @@ open VG.Proof.Ecdsa.Rfc6979 (kvAt candAt step)
 
 variable {P : RfcHash} {L : Lay P.I.hashLen} {g : Reg → BitVec 32} {m₀ : Mem}
 
-/-- HMAC's output is the hash function's. -/
-theorem mac_length (P : RfcHash) (K t : List Byte) : (P.mac K t).length = P.F.H.D := by
-  simp only [RfcHash.mac, Spec.Hmac.hmac, Spec.Hmac.hmacBlockKey, P.macLen]
-
 /-! ## The loop -/
 
 theorem loop_ok (hL : L.Ok) (hq : L.q = 8 * P.w) {t : State} (hc : Ctx L g m₀ t) (h0 : LoopInv P L m₀ 0 t) :
