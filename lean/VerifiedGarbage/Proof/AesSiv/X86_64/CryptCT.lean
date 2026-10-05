@@ -32,7 +32,8 @@ theorem counter_ctrPre (h : Env s₀ C D P W R L) {s : State} (hs : SPre s₀ C 
   have fc : Frame (cntRegions W) s.mem s₁.mem := m₁ ▸ counter_frame _ _ _ _
   obtain ⟨hi, lo, e₁, e₂, e₃⟩ := counter_cnt s.mem W
   refine WP.of_runBlock ⟨s₁, run₁, hs.regs.keep (fun r hr => g₁ r (by rintro rfl; revert hr; decide)
-    (by rintro rfl; revert hr; decide)) rd₁ wr₁, ⟨hi, lo, _, by rw [m₁]; exact e₁, by rw [m₁]; exact e₂, e₃⟩, ?_, ?_⟩
+    (by rintro rfl; revert hr; decide)) rd₁ wr₁,
+    ⟨hi, lo, _, by rw [m₁]; exact e₁, by rw [m₁]; exact e₂, e₃, length_counter _, counter_low _⟩, ?_, ?_⟩
   · rw [fc.readW (Region.contains_self _ _) (cnt_dis (by decide) (by decide)) (by decide), hs.d208]
   · rw [fc.readW (Region.contains_self _ _) (cnt_dis (by decide) (by decide)) (by decide), hs.d216]
 

@@ -181,7 +181,8 @@ theorem sealTail_wp (v : Ctr32Impl) (h : Env s₀ C D P W R L) (hcp : (⟨C, 512
       s₃.mem.readW (W + BitVec.ofNat 64 (cntOff + 8)) 64 = bswap64 lo ∧
       (hi ++ lo : BitVec 128) = Spec.Gcm.ofBytes (Spec.Siv.counter (Spec.Aes.bytesAt s₂.mem W 16)) := by
     rw [m₃]; exact counter_cnt s₂.mem W
-  refine WP.seq (WP.mono (ctr_wp v h hcp hPw hr₃ hcnt h208 h216) fun s₄ h₄ => ?_)
+  refine WP.seq (WP.mono (ctr_wp v h hcp hPw hr₃ (length_counter _) (counter_low _) hcnt h208 h216)
+    fun s₄ h₄ => ?_)
   have f₄ := h₄.frame
   -- The saved registers.
   have hsv₄ : Spill.Saved s₄.mem W g saved := by
