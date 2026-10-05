@@ -147,15 +147,15 @@ def hashLabel (o : Nat) : Prog isa :=
 /-- MGF1's slots for masking `DB` (`k - hLen - 1` bytes at `EM + 1 + hLen`)
 with the seed (`hLen` bytes at `EM + 1`). -/
 def dbArgs : List Instr :=
-  scr .rax (oEm + 1 + H.D) ++ [.store (sp sDst) .rax, .mov .rax (.mem (sp sK)),
-    .alu .sub .rax (im (H.D + 1)), .store (sp sDstLen) .rax] ++
-  scr .rax (oEm + 1) ++ [.store (sp sSrc) .rax, .mov32 .rax (im H.D), .store (sp sSrcLen) .rax]
+  scr .rax (oEm + 1 + H.D) ++ [.mov .rdx (.mem (sp sK)), .alu .sub .rdx (im (H.D + 1))] ++ scr .rcx (oEm + 1) ++
+    [.mov32 .r9 (im H.D), .store (sp sDst) .rax, .store (sp sDstLen) .rdx, .store (sp sSrc) .rcx,
+      .store (sp sSrcLen) .r9]
 
 /-- MGF1's slots for masking the seed with `DB`. -/
 def seedArgs : List Instr :=
-  scr .rax (oEm + 1) ++ [.store (sp sDst) .rax, .mov32 .rax (im H.D), .store (sp sDstLen) .rax] ++
-  scr .rax (oEm + 1 + H.D) ++ [.store (sp sSrc) .rax, .mov .rax (.mem (sp sK)),
-    .alu .sub .rax (im (H.D + 1)), .store (sp sSrcLen) .rax]
+  scr .rax (oEm + 1) ++ [.mov32 .rdx (im H.D)] ++ scr .rcx (oEm + 1 + H.D) ++
+    [.mov .r9 (.mem (sp sK)), .alu .sub .r9 (im (H.D + 1)), .store (sp sDst) .rax, .store (sp sDstLen) .rdx,
+      .store (sp sSrc) .rcx, .store (sp sSrcLen) .r9]
 
 /-- `k` zeros to `out`. -/
 def zeroOut : Prog isa :=
