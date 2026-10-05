@@ -201,8 +201,7 @@ appended to the bytes held back (`repr_fill`); otherwise `repr_chain`.
 namespace VG.Proof.CmacAes.Stream.X86_64
 
 open VG VG.X86_64 VG.X86_64.RegUpd VG.Impl.CmacAes.Stream.X86_64 VG.WriteBytes
-open VG.Proof.Aes.X86_64 (Ctr32Impl)
-open VG.Proof.CmacAes.X86_64 (bytesAt_frame)
+open VG.Proof.CmacAes.X86_64 (UpdateImpl bytesAt_frame)
 open VG.Proof.Cmac.Stream (held held_le)
 
 /-- A region disjoint from every region of a frame is unchanged. -/
@@ -222,8 +221,8 @@ theorem blocksAt_one (m : Mem) (p : Addr) :
   simp [Spec.Cmac.blocksAt, k0]
 where k0 : p + BitVec.ofNat 64 0 = p := BitVec.add_zero p
 
-theorem absorb_wp (v : Ctr32Impl) {s₀ : State} (h0 : absorbX86_64.pre s₀) :
-    WP isa (absorb v.callee v.suffix) s₀ fun s' => gprPreserved s₀ s' ∧ absorbX86_64.post s₀ s' := by
+theorem absorb_wp (v : UpdateImpl) {s₀ : State} (h0 : absorbX86_64.pre s₀) :
+    WP isa (absorb v.callee) s₀ fun s' => gprPreserved s₀ s' ∧ absorbX86_64.post s₀ s' := by
   have hp := APre.of h0
   generalize s₀.gpr .rdi = St at hp
   generalize s₀.gpr .rcx = D at hp
@@ -240,7 +239,7 @@ theorem absorb_wp (v : Ctr32Impl) {s₀ : State} (h0 : absorbX86_64.pre s₀) :
   refine WP.seq (WP.mono (absorbPre_wp hp) fun s₅ h₅ => ?_)
   obtain ⟨args₅, rbx₅, rbp₅, r13₅, r14₅, r15₅, rsp₅, m₅, rd₅, wr₅⟩ := h₅
   rw [hc] at args₅ r13₅ r14₅ m₅
-  refine WP.seq (WP.mono (upd_call v _ args₅) fun s₆ h₆ => ?_)
+  refine WP.seq (WP.mono (upd_call v args₅) fun s₆ h₆ => ?_)
   have k₆ (r : Reg) (hr : r ∈ calleeSaved) : s₆.gpr r = s₅.gpr r := h₆.saved r hr
   refine WP.seq (WP.mono (chain2_wp (x := leftOf c L) (by unfold leftOf; omega)
     (by rw [k₆ _ (by simp [calleeSaved]), r14₅])) fun s₇ h₇ => ?_)
@@ -262,7 +261,7 @@ theorem absorb_wp (v : Ctr32Impl) {s₀ : State} (h0 : absorbX86_64.pre s₀) :
       · rw [h0]; have := (D + BitVec.ofNat 64 (fOf c L)).isLt; omega
       · have := hp.wD; rw [toNat_add_lt D hp.wD (by omega)]; omega)
     ⟨⟨D, L⟩, by simp, fOf c L, rfl, by simp; omega⟩
-  refine WP.seq (WP.mono (upd_call v _ args₇) fun s₈ h₈ => ?_)
+  refine WP.seq (WP.mono (upd_call v args₇) fun s₈ h₈ => ?_)
   have k₈ (r : Reg) (hr : r ∈ calleeSaved) : s₈.gpr r = s₇.gpr r := h₈.saved r hr
   obtain ⟨s₉, run₉, r13₉, r14₉, rdx₉, rcx₉, sv₉, m₉, rd₉, wr₉⟩ := rest_ok (s := s₈) (D := D) (a := fOf c L)
     (x := leftOf c L) (n := nbOf c L) (by unfold leftOf; omega)

@@ -16,6 +16,7 @@ open VG.Impl.CmacAes.X86_64 (at_)
 open VG.Proof.CmacAes.X86_64 (k0 zero2 frame_store2)
 open VG.Proof.CmacAes.Stream.X86_64 (UArgs FArgs toNat_ofNat upd_call upd_rel fin_rel)
 open VG.Proof.Aes.X86_64 (Ctr32Impl)
+open VG.Proof.CmacAes.X86_64 (UpdateImpl)
 
 variable {s₀ : State} {C D P W : Addr} {R L : Nat}
 
@@ -32,27 +33,27 @@ theorem FinPost.of_mem {s₁ s s' : State} {out : Nat} (hm : s₁.mem = s.mem) (
     FinPost s₀ C D P W R L out s s' :=
   ⟨h.regs, hm ▸ h.frame, hm ▸ h.out⟩
 
-theorem finish_wp (v : Ctr32Impl) (h : Env s₀ C D P W R L) {s : State} (hr : Regs s₀ C D P W R L s)
+theorem finish_wp (v : UpdateImpl) (h : Env s₀ C D P W R L) {s : State} (hr : Regs s₀ C D P W R L s)
     {out : Nat} (hout : out = 0 ∨ out = 112) :
-    WP isa (finish v.callee v.suffix out) s (FinPost s₀ C D P W R L out s) := by
+    WP isa (finish v.callee v.ctr.callee v.ctr.suffix out) s (FinPost s₀ C D P W R L out s) := by
   obtain ⟨s₁, run₁, cf₁, g₁, m₁, rd₁, wr₁⟩ := cmp16_ok hr.r14 h.lt
   have hr₁ : Regs s₀ C D P W R L s₁ := hr.keep (fun r _ => by rw [g₁]) rd₁ wr₁
   refine WP.seq (WP.of_runBlock ⟨s₁, run₁, ?_⟩)
   refine WP.ite (decide (L < 16)) cf₁ (fun hb => ?_) (fun hb => ?_)
-  · exact WP.mono (finishShort_wp v h hr₁ (of_decide_eq_true hb) hout) fun _ p => p.of_mem m₁
+  · exact WP.mono (finishShort_wp v.ctr h hr₁ (of_decide_eq_true hb) hout) fun _ p => p.of_mem m₁
   · exact WP.mono (finishLong_wp v h hr₁ (by have := of_decide_eq_false hb; omega) hout) fun _ p => p.of_mem m₁
 
 /-! ## Constant time -/
 
 /-- A slot of the working space below `W + 160`, apart from the state at
 `W + out`, keeps its value across an update. -/
-theorem upd_keep (v : Ctr32Impl) (h : Env s₀ C D P W R L) {s : State} (hr : Regs s₀ C D P W R L s) {out : Nat}
+theorem upd_keep (v : UpdateImpl) (h : Env s₀ C D P W R L) {s : State} (hr : Regs s₀ C D P W R L s) {out : Nat}
     (hout : out = 0 ∨ out = 112) {Q : Addr} {n : Nat}
-    (hu : UArgs s C (W + BitVec.ofNat 64 out) Q (W + BitVec.ofNat 64 256) R n) {nm : String}
+    (hu : UArgs s C (W + BitVec.ofNat 64 out) Q (W + BitVec.ofNat 64 256) R n)
     (S : Nat → Prop) (hS : ∀ d, S d → 144 ≤ d ∧ d + 8 ≤ 160) :
-    WP isa (.call nm (Impl.CmacAes.X86_64.update v.callee)) s fun s' => Regs s₀ C D P W R L s' ∧
+    WP isa (.call v.callee.name v.callee.code) s fun s' => Regs s₀ C D P W R L s' ∧
       ∀ d, S d → s'.mem.readW (W + BitVec.ofNat 64 d) 64 = s.mem.readW (W + BitVec.ofNat 64 d) 64 := by
-  refine WP.mono (upd_call v nm hu) fun s' h' => ⟨hr.keep h'.saved h'.rd h'.wr, fun d hd => ?_⟩
+  refine WP.mono (upd_call v hu) fun s' h' => ⟨hr.keep h'.saved h'.rd h'.wr, fun d hd => ?_⟩
   have := hS d hd
   have hwW := h.wW
   refine h'.frame.readW (Region.contains_self _ 8) (fun r hr' => ?_) (by decide)
@@ -110,9 +111,9 @@ theorem short_rel (v : Ctr32Impl) {s₀' : State} (h : Env s₀ C D P W R L) (h'
   exact (t₁.mono (fun _ _ h => h) fun _ _ h => h.2).seq ((t₂.mono (fun _ _ h => h) fun _ _ h => h.2).seq
     (t₃.mono (fun _ _ h => h) fun _ _ h => h.2))
 
-theorem long_rel (v : Ctr32Impl) {s₀' : State} (h : Env s₀ C D P W R L) (h' : Env s₀' C D P W R L)
+theorem long_rel (v : UpdateImpl) {s₀' : State} (h : Env s₀ C D P W R L) (h' : Env s₀' C D P W R L)
     (hq : s₀.gpr .rsp = s₀'.gpr .rsp) (hL16 : 16 ≤ L) {out : Nat} (hout : out = 0 ∨ out = 112) :
-    RelCT isa (RR s₀ s₀' C D P W R L) (.seq longTail (longMac v.callee v.suffix out)) (RR s₀ s₀' C D P W R L) := by
+    RelCT isa (RR s₀ s₀' C D P W R L) (.seq longTail (longMac v.callee v.ctr.callee v.ctr.suffix out)) (RR s₀ s₀' C D P W R L) := by
   have hlt := h.lt
   have hj1 := jOf_le L
   have hwW := h.wW
@@ -173,7 +174,7 @@ theorem long_rel (v : Ctr32Impl) {s₀' : State} (h : Env s₀ C D P W R L) (h' 
     exact ha
   have wU1 {σ x : State} (hσ : Env σ C D P W R L) (hx : Regs σ C D P W R L x)
       (hu : UArgs x C (W + BitVec.ofNat 64 out) P (W + BitVec.ofNat 64 256) R (kOf L)) (ha : A x) :
-      WP isa (.call ("vg_cmac_aes_update" ++ v.suffix) (Impl.CmacAes.X86_64.update v.callee)) x fun y => Regs σ C D P W R L y ∧ A y :=
+      WP isa (.call v.callee.name v.callee.code) x fun y => Regs σ C D P W R L y ∧ A y :=
     WP.mono (upd_keep v hσ hx hout hu (fun d => d = dbOff) (fun d hd => by subst hd; decide))
       fun _ p => ⟨p.1, (p.2 dbOff rfl).trans ha⟩
   have wM2 {σ x : State} (hx : Regs σ C D P W R L x) (ha : A x) :
@@ -207,7 +208,7 @@ theorem long_rel (v : Ctr32Impl) {s₀' : State} (h : Env s₀ C D P W R L) (h' 
   have wU2 {σ x : State} (hσ : Env σ C D P W R L) (hx : Regs σ C D P W R L x)
       (hu : UArgs x C (W + BitVec.ofNat 64 out) (W + BitVec.ofNat 64 32) (W + BitVec.ofNat 64 256) R (jOf L))
       (ha : A x) (hj : J x) :
-      WP isa (.call ("vg_cmac_aes_update" ++ v.suffix) (Impl.CmacAes.X86_64.update v.callee)) x fun y => Regs σ C D P W R L y ∧ A y ∧ J y :=
+      WP isa (.call v.callee.name v.callee.code) x fun y => Regs σ C D P W R L y ∧ A y ∧ J y :=
     WP.mono (upd_keep v hσ hx hout hu (fun d => d = dbOff ∨ d = dbOff + 8)
         (fun d hd => by rcases hd with rfl | rfl <;> decide))
       fun _ p => ⟨p.1, (p.2 dbOff (Or.inl rfl)).trans ha, (p.2 (dbOff + 8) (Or.inr rfl)).trans hj⟩
@@ -234,7 +235,7 @@ theorem long_rel (v : Ctr32Impl) {s₀' : State} (h : Env s₀ C D P W R L) (h' 
     (F₂ := fun (y : State) => Regs s₀' C D P W R L y ∧
       UArgs y C (W + BitVec.ofNat 64 out) P (W + BitVec.ofNat 64 256) R (kOf L) ∧ A y)
     fun a b hab => ⟨wM1 h hab.1.1 hab.1.2, wM1 h' hab.2.1 hab.2.2⟩
-  have rU1 := (upd_rel v ("vg_cmac_aes_update" ++ v.suffix)
+  have rU1 := (upd_rel v
     (P := fun (a b : State) => (Regs s₀ C D P W R L a ∧
       UArgs a C (W + BitVec.ofNat 64 out) P (W + BitVec.ofNat 64 256) R (kOf L) ∧ A a) ∧
       Regs s₀' C D P W R L b ∧ UArgs b C (W + BitVec.ofNat 64 out) P (W + BitVec.ofNat 64 256) R (kOf L) ∧ A b)
@@ -265,7 +266,7 @@ theorem long_rel (v : Ctr32Impl) {s₀' : State} (h : Env s₀ C D P W R L) (h' 
     (F₂ := fun (y : State) => Regs s₀' C D P W R L y ∧
       UArgs y C (W + BitVec.ofNat 64 out) (W + BitVec.ofNat 64 32) (W + BitVec.ofNat 64 256) R (jOf L) ∧ A y ∧ J y)
     fun a b hab => ⟨wM3 h hab.1.1 hab.1.2.1 hab.1.2.2, wM3 h' hab.2.1 hab.2.2.1 hab.2.2.2⟩
-  have rU2 := (upd_rel v ("vg_cmac_aes_update" ++ v.suffix)
+  have rU2 := (upd_rel v
     (P := fun (a b : State) => (Regs s₀ C D P W R L a ∧
       UArgs a C (W + BitVec.ofNat 64 out) (W + BitVec.ofNat 64 32) (W + BitVec.ofNat 64 256) R (jOf L) ∧ A a ∧ J a) ∧
       Regs s₀' C D P W R L b ∧
@@ -283,7 +284,7 @@ theorem long_rel (v : Ctr32Impl) {s₀' : State} (h : Env s₀ C D P W R L) (h' 
       FArgs y C (W + BitVec.ofNat 64 out) (W + BitVec.ofNat 64 (32 + 16 * jOf L)) (W + BitVec.ofNat 64 256)
         (L - 16 * kOf L - 16 * jOf L) R)
     fun a b hab => ⟨wM4 h hab.1.1 hab.1.2.1 hab.1.2.2, wM4 h' hab.2.1 hab.2.2.1 hab.2.2.2⟩
-  have rF := (fin_rel v ("vg_cmac_aes_finalize" ++ v.suffix)
+  have rF := (fin_rel v.ctr ("vg_cmac_aes_finalize" ++ v.ctr.suffix)
     (P := fun (a b : State) => (Regs s₀ C D P W R L a ∧
       FArgs a C (W + BitVec.ofNat 64 out) (W + BitVec.ofNat 64 (32 + 16 * jOf L)) (W + BitVec.ofNat 64 256)
         (L - 16 * kOf L - 16 * jOf L) R) ∧ Regs s₀' C D P W R L b ∧
@@ -291,17 +292,17 @@ theorem long_rel (v : Ctr32Impl) {s₀' : State} (h : Env s₀ C D P W R L) (h' 
         (L - 16 * kOf L - 16 * jOf L) R)
     fun a b hab => ⟨_, _, _, _, _, _, hab.1.2, hab.2.2, by rw [hab.1.1.rsp, hab.2.1.rsp, hq]⟩).wp
     (F₁ := Regs s₀ C D P W R L) (F₂ := Regs s₀' C D P W R L)
-    fun a b hab => ⟨WP.mono (finr_call v _ hab.1.2) fun _ p => hab.1.1.keep p.saved p.rd p.wr,
-      WP.mono (finr_call v _ hab.2.2) fun _ p => hab.2.1.keep p.saved p.rd p.wr⟩
+    fun a b hab => ⟨WP.mono (finr_call v.ctr _ hab.1.2) fun _ p => hab.1.1.keep p.saved p.rd p.wr,
+      WP.mono (finr_call v.ctr _ hab.2.2) fun _ p => hab.2.1.keep p.saved p.rd p.wr⟩
   exact (rT.mono (fun _ _ h => h) fun _ _ h => h.2).seq ((rM1.mono (fun _ _ h => h) fun _ _ h => h.2).seq
     ((rU1.mono (fun _ _ h => h) fun _ _ h => h.2).seq ((rM2.mono (fun _ _ h => h) fun _ _ h => h.2).seq
     ((rI.mono (fun _ _ h => h) fun _ _ h => h.2).seq ((rM3.mono (fun _ _ h => h) fun _ _ h => h.2).seq
     ((rU2.mono (fun _ _ h => h) fun _ _ h => h.2).seq ((rM4.mono (fun _ _ h => h) fun _ _ h => h.2).seq
     (rF.mono (fun _ _ h => h) fun _ _ h => h.2))))))))
 
-theorem finish_rel (v : Ctr32Impl) {s₀' : State} (h : Env s₀ C D P W R L) (h' : Env s₀' C D P W R L)
+theorem finish_rel (v : UpdateImpl) {s₀' : State} (h : Env s₀ C D P W R L) (h' : Env s₀' C D P W R L)
     (hq : s₀.gpr .rsp = s₀'.gpr .rsp) {out : Nat} (hout : out = 0 ∨ out = 112) :
-    RelCT isa (RR s₀ s₀' C D P W R L) (finish v.callee v.suffix out) (RR s₀ s₀' C D P W R L) := by
+    RelCT isa (RR s₀ s₀' C D P W R L) (finish v.callee v.ctr.callee v.ctr.suffix out) (RR s₀ s₀' C D P W R L) := by
   obtain ⟨_, hA⟩ : ∃ hc, (taint.check (Taint.ofRegs [.rbx, .rbp, .r12, .r13, .r14, .r15, .rsp])
       (.block [.alu .cmp .r14 (imm 16)]) hc).isSome = true := ⟨_, by taint_decide⟩
   have w {σ x : State} (hx : Regs σ C D P W R L x) :
@@ -315,7 +316,7 @@ theorem finish_rel (v : Ctr32Impl) {s₀' : State} (h : Env s₀ C D P W R L) (h
   refine (a.mono (fun _ _ h => h) fun _ _ h => h.2).seq (RelCT.ite (fun a b hab => by
     show a.cf = b.cf; rw [hab.1.2, hab.2.2]) ?_ ?_)
   · by_cases hL : L < 16
-    · exact (short_rel v h h' hq hL hout).mono (fun _ _ p => ⟨p.1.1.1, p.1.2.1⟩) fun _ _ p => p
+    · exact (short_rel v.ctr h h' hq hL hout).mono (fun _ _ p => ⟨p.1.1.1, p.1.2.1⟩) fun _ _ p => p
     · exact RelCT.of_false fun a b hab => by
         have e := hab.2; rw [show isa.eval .b a = a.cf from rfl, hab.1.1.2] at e; simp [hL] at e
   · by_cases hL : L < 16

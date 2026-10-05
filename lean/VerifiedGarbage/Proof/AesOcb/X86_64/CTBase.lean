@@ -26,7 +26,7 @@ open VG.Proof.AesCcm.X86_64 (word_byte add_ofNat_assoc runBlock_append)
 base of the working space (the second writable region), the slots of the
 public arguments `[208, 248)` and `[288, 304)` and the words at `ex` public. -/
 def ocbT (rs : List Reg) (ex : List Nat) : X86_64.Taint.T :=
-  { regs := .ofList (rs ++ [.r14, .r15, .rsp]), flags := false, lens := [0, 2560], bases := [(.r15, 1, 0)],
+  { regs := .ofList (rs ++ [.r14, .r15, .rsp]), flags := false, lens := [0, 3584], bases := [(.r15, 1, 0)],
     slots := [(1, 208, 40), (1, 288, 16)] ++ ex.map fun d => (1, d, 8) }
 
 /-- Two runs with the same public arguments: both in the environment, with
@@ -38,15 +38,15 @@ structure Both (K W SP : Addr) (R : Nat) (N A D : Addr) (nl n tl : Nat) (rs : Li
   e₂ : Env K W SP s₂
   sl₁ : Slots W R N A D nl n tl s₁.mem
   sl₂ : Slots W R N A D nl n tl s₂.mem
-  wr₁ : s₁.wr = [⟨D, n⟩, ⟨W, 2560⟩]
-  wr₂ : s₂.wr = [⟨D, n⟩, ⟨W, 2560⟩]
+  wr₁ : s₁.wr = [⟨D, n⟩, ⟨W, 3584⟩]
+  wr₂ : s₂.wr = [⟨D, n⟩, ⟨W, 3584⟩]
   agree : ∀ r ∈ rs, s₁.gpr r = s₂.gpr r
-  ex : ∀ d ∈ ex, d + 8 ≤ 2560 ∧ s₁.mem.readW (W + BitVec.ofNat 64 d) 64 = s₂.mem.readW (W + BitVec.ofNat 64 d) 64
+  ex : ∀ d ∈ ex, d + 8 ≤ 3584 ∧ s₁.mem.readW (W + BitVec.ofNat 64 d) 64 = s₂.mem.readW (W + BitVec.ofNat 64 d) 64
 
 theorem both_agree {K W SP : Addr} {R : Nat} {N A D : Addr} {nl n tl : Nat} {rs : List Reg} {ex : List Nat}
-    {s₁ s₂ : State} (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 2560⟩) (hn : n ≤ 2 ^ 64)
+    {s₁ s₂ : State} (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 3584⟩) (hn : n ≤ 2 ^ 64)
     (h : Both K W SP R N A D nl n tl rs ex s₁ s₂) : X86_64.Taint.Agree (ocbT rs ex) s₁ s₂ := by
-  have wf : ∀ {s : State}, Env K W SP s → s.wr = [⟨D, n⟩, ⟨W, 2560⟩] → X86_64.Taint.Wf (ocbT rs ex) s :=
+  have wf : ∀ {s : State}, Env K W SP s → s.wr = [⟨D, n⟩, ⟨W, 3584⟩] → X86_64.Taint.Wf (ocbT rs ex) s :=
     fun E hw => by
     refine ⟨fun _ => ⟨?_, ?_, ?_⟩, fun p hp => ?_⟩
     · rw [hw]; exact .cons (Nat.zero_le _) (.cons (Nat.le_refl _) .nil)
@@ -55,11 +55,11 @@ theorem both_agree {K W SP : Addr} {R : Nat} {N A D : Addr} {nl n tl : Nat} {rs 
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
       · exact hn
-      · show 2560 ≤ 2 ^ 64; decide
+      · show 3584 ≤ 2 ^ 64; decide
     · simp only [ocbT, List.mem_singleton] at hp; subst hp
       simp only [X86_64.Taint.region, hw, List.getD_cons_succ, List.getD_cons_zero]
       rw [E.r15, BitVec.add_zero]
-  have hb : ∀ s : State, s.wr = [⟨D, n⟩, ⟨W, 2560⟩] → ∀ k, X86_64.Taint.byteAddr s 1 k = W + BitVec.ofNat 64 k :=
+  have hb : ∀ s : State, s.wr = [⟨D, n⟩, ⟨W, 3584⟩] → ∀ k, X86_64.Taint.byteAddr s 1 k = W + BitVec.ofNat 64 k :=
     fun s hw k => by
       simp only [X86_64.Taint.byteAddr, X86_64.Taint.region, hw, List.getD_cons_succ, List.getD_cons_zero]
   have hw : ∀ {k : Nat} (d : Nat), d ≤ k → W + BitVec.ofNat 64 k = W + BitVec.ofNat 64 d + BitVec.ofNat 64 (k - d) :=
@@ -106,7 +106,7 @@ theorem both_agree {K W SP : Addr} {R : Nat} {N A D : Addr} {nl n tl : Nat} {rs 
 
 /-- Code the taint analysis checks from `ocbT rs ex`. -/
 theorem rel_taintC {K W SP : Addr} {R : Nat} {N A D : Addr} {nl n tl : Nat} {P : State → State → Prop}
-    {c : Prog isa} (rs : List Reg) (ex : List Nat) (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 2560⟩) (hn : n ≤ 2 ^ 64)
+    {c : Prog isa} (rs : List Reg) (ex : List Nat) (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 3584⟩) (hn : n ≤ 2 ^ 64)
     (hP : ∀ s₁ s₂, P s₁ s₂ → Both K W SP R N A D nl n tl rs ex s₁ s₂)
     (hc : ∃ hc, (taint.check (ocbT rs ex) c hc).isSome = true) : RelCT isa P c fun _ _ => True := by
   obtain ⟨_, hc⟩ := hc
@@ -114,7 +114,7 @@ theorem rel_taintC {K W SP : Addr} {R : Nat} {N A D : Addr} {nl n tl : Nat} {P :
 
 /-- Code the taint analysis checks from `ocbT rs ex`, leaving the flags public. -/
 theorem rel_flagsC {K W SP : Addr} {R : Nat} {N A D : Addr} {nl n tl : Nat} {P : State → State → Prop}
-    {c : Prog isa} (rs : List Reg) (ex : List Nat) (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 2560⟩) (hn : n ≤ 2 ^ 64)
+    {c : Prog isa} (rs : List Reg) (ex : List Nat) (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 3584⟩) (hn : n ≤ 2 ^ 64)
     (hP : ∀ s₁ s₂, P s₁ s₂ → Both K W SP R N A D nl n tl rs ex s₁ s₂)
     (hc : ∃ hc, ((taint.check (ocbT rs ex) c hc).map (·.flags)) = some true) :
     RelCT isa P c fun s₁ s₂ => s₁.cf = s₂.cf ∧ s₁.zf = s₂.zf := by
@@ -134,7 +134,7 @@ theorem rel_of_pt {P Q : State → State → Prop} {c : Prog isa}
 structure One (K W SP : Addr) (R : Nat) (N A D : Addr) (nl n tl : Nat) (s : State) : Prop where
   env : Env K W SP s
   sl : Slots W R N A D nl n tl s.mem
-  wr : s.wr = [⟨D, n⟩, ⟨W, 2560⟩]
+  wr : s.wr = [⟨D, n⟩, ⟨W, 3584⟩]
 
 theorem Both.of {K W SP : Addr} {R : Nat} {N A D : Addr} {nl n tl : Nat} {s₁ s₂ : State}
     (o₁ : One K W SP R N A D nl n tl s₁) (o₂ : One K W SP R N A D nl n tl s₂) :
@@ -143,7 +143,7 @@ theorem Both.of {K W SP : Addr} {R : Nat} {N A D : Addr} {nl n tl : Nat} {s₁ s
 
 /-- One run, after a frame within the parts the pieces write. -/
 theorem One.step {K W SP : Addr} {R : Nat} {N A D : Addr} {nl n tl : Nat} (L : Lay K W SP)
-    (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 2560⟩) {s s' : State} (o : One K W SP R N A D nl n tl s)
+    (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 3584⟩) {s s' : State} (o : One K W SP R N A D nl n tl s)
     (E : Env K W SP s') (hw : s'.wr = s.wr) (f : Frame (mutR W SP D n) s.mem s'.mem) :
     One K W SP R N A D nl n tl s' :=
   ⟨E, Slots.of_mut L hDW f o.sl, hw.trans o.wr⟩
@@ -162,7 +162,7 @@ theorem callBlocks_rel {f : Nat → List Byte → Spec.Aes.State → Spec.Aes.St
       ∃ t s', Exec isa b.code s t s' ∧ abiPreserved s s' ∧ (Proof.Aes.blocksX86_64 f).post s s')
     (ct : ConstantTime isa (Proof.Aes.blocksX86_64 f).pre (Proof.Aes.blocksX86_64 f).pub b.code)
     {K W SP : Addr} (L : Lay K W SP) {R : Nat} (hR : R = 10 ∨ R = 12 ∨ R = 14) {N A D : Addr} {nl n tl : Nat}
-    (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 2560⟩) (hn : n ≤ 2 ^ 64) {args : List Instr} (rs : List Reg)
+    (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 3584⟩) (hn : n ≤ 2 ^ 64) {args : List Instr} (rs : List Reg)
     (ex : List Nat)
     (hc : ∃ hc, (taint.check (ocbT rs ex)
       (.block (args ++ [mvr .rdi .r14, ld .rsi .r15 rndO, mvr .r8 .r15, addi .r8 scrO])) hc).isSome = true)

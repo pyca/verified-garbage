@@ -24,7 +24,13 @@
 //! (`vg_aes_ctr32`, directly for counter mode and through
 //! `vg_cmac_aes_update` for the CBC-MAC), which have the same contracts: on
 //! x86-64, CPUs with AES-NI and SSSE3 run the `_aesni` instances, and CPUs
-//! with VAES and AVX2 too the `_vaes` ones (`crate::aes::Backend`); on x86,
+//! with VAES and AVX2 too the `_vaes` ones (`crate::aes::Backend`), whose
+//! CBC-MAC calls `vg_aes_ctr32_aesni` (or `_vaes`) on one block at a time;
+//! when the associated data and the payload are longer than 32 bytes
+//! together, both run the `_aesni_cbc` ones instead, whose CBC-MAC keeps the
+//! round keys and the chaining value in SSE registers across blocks
+//! (`vg_cmac_aes_update_aesni_cbc`, as AES-CMAC chooses it in
+//! `crate::cmac::aes`), and which encrypt with `vg_aes_ctr32_aesni`. On x86,
 //! CPUs with AES-NI run the `_aesni` instances. On
 //! AArch64, CPUs with the AES extension run the `_aes` instances, whose
 //! CBC-MAC is `vg_cmac_aes_update_aes` (calling `vg_aes_ctr32_aes` on one
@@ -56,9 +62,11 @@ use crate::arch::aes_ccm::{
 };
 #[cfg(target_arch = "x86_64")]
 use crate::arch::aes_ccm::{
-    VG_AES_CCM_OPEN_AESNI_FEATURES, VG_AES_CCM_OPEN_VAES_FEATURES, VG_AES_CCM_SEAL_AESNI_FEATURES,
-    VG_AES_CCM_SEAL_VAES_FEATURES, vg_aes_ccm_open_aesni, vg_aes_ccm_open_vaes,
-    vg_aes_ccm_seal_aesni, vg_aes_ccm_seal_vaes,
+    VG_AES_CCM_OPEN_AESNI_CBC_FEATURES, VG_AES_CCM_OPEN_AESNI_FEATURES,
+    VG_AES_CCM_OPEN_VAES_FEATURES, VG_AES_CCM_SEAL_AESNI_CBC_FEATURES,
+    VG_AES_CCM_SEAL_AESNI_FEATURES, VG_AES_CCM_SEAL_VAES_FEATURES, vg_aes_ccm_open_aesni,
+    vg_aes_ccm_open_aesni_cbc, vg_aes_ccm_open_vaes, vg_aes_ccm_seal_aesni,
+    vg_aes_ccm_seal_aesni_cbc, vg_aes_ccm_seal_vaes,
 };
 #[cfg(target_arch = "x86")]
 use crate::arch::aes_ccm::{
@@ -69,18 +77,33 @@ use crate::arch::aes_ccm::{vg_aes_ccm_open, vg_aes_ccm_seal};
 use crate::cpu::{Features, detected};
 use crate::zeroize::zeroize;
 
-/// The instance of a function for `backend`; on AArch64, the `_aes_cbc` one
-/// rather than the `_aes` one if `cbc`.
+/// The instance of a function for `backend`; the `_aesni_cbc` one on x86-64
+/// (rather than the `_aesni` or `_vaes` one), and the `_aes_cbc` one on
+/// AArch64 (rather than the `_aes` one), if `cbc`.
 macro_rules! instance {
     ($backend:expr, $cbc:expr, $scalar:ident,
-     x86_64: [$aesni:ident, $vaes:ident],
+     x86_64: [$aesni:ident, $vaes:ident, $aesni_cbc:ident],
      aarch64: [$aes:ident, $aes_cbc:ident]) => {
         match $backend {
             Backend::Scalar => $scalar,
-            #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+            #[cfg(target_arch = "x86")]
             Backend::AesNi => $aesni,
             #[cfg(target_arch = "x86_64")]
-            Backend::Vaes => $vaes,
+            Backend::AesNi => {
+                if $cbc {
+                    $aesni_cbc
+                } else {
+                    $aesni
+                }
+            }
+            #[cfg(target_arch = "x86_64")]
+            Backend::Vaes => {
+                if $cbc {
+                    $aesni_cbc
+                } else {
+                    $vaes
+                }
+            }
             #[cfg(target_arch = "aarch64")]
             Backend::Aes => {
                 if $cbc {
@@ -97,11 +120,17 @@ macro_rules! instance {
 /// the AES-CCM functions for it.
 #[cfg(target_arch = "x86_64")]
 fn select(f: Features) -> Backend {
-    const VAES: Features =
-        Features::all(&[VG_AES_CCM_SEAL_VAES_FEATURES, VG_AES_CCM_OPEN_VAES_FEATURES]);
+    const VAES: Features = Features::all(&[
+        VG_AES_CCM_SEAL_VAES_FEATURES,
+        VG_AES_CCM_OPEN_VAES_FEATURES,
+        VG_AES_CCM_SEAL_AESNI_CBC_FEATURES,
+        VG_AES_CCM_OPEN_AESNI_CBC_FEATURES,
+    ]);
     const AESNI: Features = Features::all(&[
         VG_AES_CCM_SEAL_AESNI_FEATURES,
         VG_AES_CCM_OPEN_AESNI_FEATURES,
+        VG_AES_CCM_SEAL_AESNI_CBC_FEATURES,
+        VG_AES_CCM_OPEN_AESNI_CBC_FEATURES,
     ]);
     Backend::select_for(f, VAES, AESNI)
 }
@@ -137,12 +166,13 @@ fn select(f: Features) -> Backend {
     Backend::select(f)
 }
 
-/// Whether the AES extension's instances run the `_aes_cbc` CBC-MAC, for
-/// `aad_len` bytes of associated data and `len` bytes of payload: when they
-/// are longer than 32 bytes together (as `crate::cmac::aes` chooses for an
-/// update), where keeping the round keys and the chaining value in vector
-/// registers pays for loading them.
-#[cfg(target_arch = "aarch64")]
+/// Whether to run the instances whose CBC-MAC keeps the round keys and the
+/// chaining value in registers (`_aes_cbc` on AArch64, `_aesni_cbc` on
+/// x86-64), for `aad_len` bytes of associated data and `len` bytes of
+/// payload: when they are longer than 32 bytes together (as
+/// `crate::cmac::aes` chooses for an update), where that pays for loading
+/// the round keys.
+#[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
 fn cbc(aad_len: usize, len: usize) -> bool {
     aad_len.saturating_add(len) > 32
 }
@@ -259,7 +289,7 @@ impl AesCcm {
             self.backend,
             cbc(aad.len(), data.len()),
             vg_aes_ccm_seal,
-            x86_64: [vg_aes_ccm_seal_aesni, vg_aes_ccm_seal_vaes],
+            x86_64: [vg_aes_ccm_seal_aesni, vg_aes_ccm_seal_vaes, vg_aes_ccm_seal_aesni_cbc],
             aarch64: [vg_aes_ccm_seal_aes, vg_aes_ccm_seal_aes_cbc]
         );
         let mut tag = [0u8; T];
@@ -312,7 +342,7 @@ impl AesCcm {
             self.backend,
             cbc(aad.len(), data.len()),
             vg_aes_ccm_open,
-            x86_64: [vg_aes_ccm_open_aesni, vg_aes_ccm_open_vaes],
+            x86_64: [vg_aes_ccm_open_aesni, vg_aes_ccm_open_vaes, vg_aes_ccm_open_aesni_cbc],
             aarch64: [vg_aes_ccm_open_aes, vg_aes_ccm_open_aes_cbc]
         );
         // SAFETY: as in `encrypt_in_place`, with the received tag `tag`
@@ -346,9 +376,9 @@ impl AesCcm {
 mod tests {
     use super::{AesCcm, Error};
 
-    /// The `_aes_cbc` instances run for more than 32 bytes of associated
-    /// data and payload together, the `_aes` ones otherwise.
-    #[cfg(target_arch = "aarch64")]
+    /// The `_aes_cbc` (or `_aesni_cbc`) instances run for more than 32 bytes
+    /// of associated data and payload together, the others otherwise.
+    #[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
     #[test]
     fn cbc() {
         use super::cbc;

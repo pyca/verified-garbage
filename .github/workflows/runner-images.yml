@@ -1,0 +1,111 @@
+name: Runner images
+
+# Builds the images CI's x86 and ARMv7 jobs run in (ci/runner.Dockerfile),
+# each natively on a 64-bit runner of its architecture, and checks them;
+# pushes to main, and the weekly rebuild that picks up new packages and Rust
+# releases, publish them to GHCR.
+on:
+  workflow_dispatch:
+  schedule:
+    # Run once a week on Fridays
+    - cron: "0 0 * * FRI"
+  pull_request:
+    paths:
+      - .github/workflows/runner-images.yml
+      - ci/runner.Dockerfile
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/runner-images.yml
+      - ci/runner.Dockerfile
+
+permissions: {}
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        image:
+          - {tag: "verified-garbage-runner:i686", platform: "linux/386", os: ubuntu-latest}
+          - {tag: "verified-garbage-runner:armv7l", platform: "linux/arm/v7", os: ubuntu-24.04-arm}
+    name: ${{ matrix.image.tag }}
+    runs-on: ${{ matrix.image.os }}
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+      attestations: write
+    env:
+      IMAGE: ghcr.io/pyca/${{ matrix.image.tag }}
+      PLATFORM: ${{ matrix.image.platform }}
+      # Only main publishes; pull requests build into the local image store.
+      PUBLISH: ${{ github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && github.repository == 'pyca/verified-garbage' }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      # The previous image, for its layers; it fails until the first push.
+      - name: Pull existing image
+        if: ${{ github.event_name != 'schedule' && github.event_name != 'workflow_dispatch' }}
+        run: docker pull --platform "$PLATFORM" "$IMAGE" || true
+      - name: Get image name
+        id: image-name
+        run: echo "name=${IMAGE%%:*}" | tee -a "$GITHUB_OUTPUT"
+      - uses: docker/setup-buildx-action@594f3bf4285d9ea8dc53c9a0c9c4092420091003 # v4.4.0
+        with:
+          cache-binary: false
+      - name: Login to ghcr.io
+        if: ${{ env.PUBLISH == 'true' }}
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build (and push if main) the image
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        id: docker-build
+        with:
+          context: ci
+          file: ci/runner.Dockerfile
+          cache-from: ${{ env.IMAGE }}
+          tags: ${{ env.IMAGE }}
+          platforms: ${{ env.PLATFORM }}
+          pull: true
+          outputs: ${{ env.PUBLISH == 'true' && 'type=registry,compression=zstd' || 'type=docker' }}
+      # What CI's jobs need: the runner's Node (which GitHub Actions injects
+      # into the container for JS actions), a toolchain that builds and runs
+      # for the host and each installed target, and one that rustup can update
+      # in place (exercising the uninstall path even if stable has not changed
+      # since the image was built; this container is disposable).
+      - name: Check the image
+        env:
+          PULL: ${{ env.PUBLISH == 'true' && 'always' || 'never' }}
+        run: |
+          docker run --rm --platform "$PLATFORM" --pull="$PULL" \
+            -v "$(readlink -f "$(command -v node)")":/runner-node:ro \
+            "$IMAGE" \
+            sh -euxc '
+              /runner-node -e "console.log(process.version, process.arch)"
+              git --version
+              python3 -V
+              openssl version
+              pkg-config --exists openssl
+              zstd --version
+              rustc -vV
+              cargo clippy -V
+              cargo fmt --version
+              command -v "$(rustc --print sysroot)/lib/rustlib/$(rustc -vV | sed -n "s/^host: //p")/bin/llvm-cov"
+              cd /tmp && cargo new -q hello && cd hello
+              for target in $(rustup target list --installed); do
+                cargo run -q --target "$target"
+              done
+              rustup component remove cargo clippy llvm-tools rustc rust-std rustfmt
+            '
+      - uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        if: ${{ env.PUBLISH == 'true' }}
+        with:
+          subject-name: ${{ steps.image-name.outputs.name }}
+          subject-digest: ${{ steps.docker-build.outputs.digest }}
+          push-to-registry: true

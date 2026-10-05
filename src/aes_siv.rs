@@ -18,8 +18,14 @@
 //! (`vg_aes_expand_key` and `vg_aes_ctr32`, through the CMAC functions made
 //! with them, and directly for CTR), which have the same contracts: on
 //! x86-64, CPUs with AES-NI and SSSE3 run the `_aesni` instances, and CPUs
-//! with VAES and AVX2 too the `_vaes` ones (`crate::aes::Backend`); on x86,
-//! CPUs with AES-NI run the `_aesni` instances. On
+//! with VAES and AVX2 too the `_vaes` ones (`crate::aes::Backend`), and
+//! `vg_aes_siv_encrypt` and `vg_aes_siv_decrypt` follow the implementations
+//! of `vg_cmac_aes_update` too, as AES-CMAC does (`crate::cmac::aes`): when
+//! the associated-data components and the data total more than 32 bytes,
+//! both run the `_aesni_cbc` instances, whose CMAC chains whole blocks with
+//! the round keys and the chaining value kept in SSE registers, and which
+//! call the other CMAC functions and CTR made with `vg_aes_ctr32_aesni`
+//! (`chains_long`); on x86, CPUs with AES-NI run the `_aesni` instances. On
 //! AArch64, CPUs with the AES extension run `vg_aes_siv_init_aes`, and
 //! `vg_aes_siv_encrypt` and `vg_aes_siv_decrypt` follow the implementations
 //! of `vg_cmac_aes_update` too, as AES-CMAC does (`crate::cmac::aes`): when
@@ -46,11 +52,13 @@ use crate::arch::aes_siv::{
 };
 #[cfg(target_arch = "x86_64")]
 use crate::arch::aes_siv::{
-    VG_AES_SIV_DECRYPT_AESNI_FEATURES, VG_AES_SIV_DECRYPT_VAES_FEATURES,
+    VG_AES_SIV_DECRYPT_AESNI_CBC_FEATURES, VG_AES_SIV_DECRYPT_AESNI_FEATURES,
+    VG_AES_SIV_DECRYPT_VAES_FEATURES, VG_AES_SIV_ENCRYPT_AESNI_CBC_FEATURES,
     VG_AES_SIV_ENCRYPT_AESNI_FEATURES, VG_AES_SIV_ENCRYPT_VAES_FEATURES,
     VG_AES_SIV_INIT_AESNI_FEATURES, VG_AES_SIV_INIT_VAES_FEATURES, vg_aes_siv_decrypt_aesni,
-    vg_aes_siv_decrypt_vaes, vg_aes_siv_encrypt_aesni, vg_aes_siv_encrypt_vaes,
-    vg_aes_siv_init_aesni, vg_aes_siv_init_vaes,
+    vg_aes_siv_decrypt_aesni_cbc, vg_aes_siv_decrypt_vaes, vg_aes_siv_encrypt_aesni,
+    vg_aes_siv_encrypt_aesni_cbc, vg_aes_siv_encrypt_vaes, vg_aes_siv_init_aesni,
+    vg_aes_siv_init_vaes,
 };
 #[cfg(target_arch = "x86")]
 use crate::arch::aes_siv::{
@@ -66,19 +74,34 @@ use core::mem::MaybeUninit;
 /// A 16-byte block.
 type Block = [u8; 16];
 
-/// The instance of a function for `backend`; for `encrypt` and `decrypt` on
-/// AArch64 with the AES extension, `$aes_cbc` rather than `$aes` if `$long`
+/// The instance of a function for `backend`; for `encrypt` and `decrypt`,
+/// `$aesni_cbc` on x86-64 (rather than `$aesni` or `$vaes`) and `$aes_cbc`
+/// on AArch64 with the AES extension (rather than `$aes`) if `$long`
 /// (`chains_long`).
 macro_rules! instance {
     ($backend:expr, $long:expr, $scalar:ident,
-     x86_64: [$aesni:ident, $vaes:ident],
+     x86_64: [$aesni:ident, $vaes:ident, $aesni_cbc:ident],
      aarch64: [$aes:ident, $aes_cbc:ident]) => {
         match $backend {
             Backend::Scalar => $scalar,
-            #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+            #[cfg(target_arch = "x86")]
             Backend::AesNi => $aesni,
             #[cfg(target_arch = "x86_64")]
-            Backend::Vaes => $vaes,
+            Backend::AesNi => {
+                if $long {
+                    $aesni_cbc
+                } else {
+                    $aesni
+                }
+            }
+            #[cfg(target_arch = "x86_64")]
+            Backend::Vaes => {
+                if $long {
+                    $aesni_cbc
+                } else {
+                    $vaes
+                }
+            }
             #[cfg(target_arch = "aarch64")]
             Backend::Aes => {
                 if $long {
@@ -92,12 +115,12 @@ macro_rules! instance {
 }
 
 /// Whether `encrypt` and `decrypt` should run the `_aes_cbc` instances (on
-/// AArch64 with the AES extension), whose CMAC chains whole blocks with the
-/// round keys and the chaining value kept in vector registers, rather than
-/// the `_aes` ones: when the associated-data components `ads` and the `len`
-/// bytes of data total more than 32 bytes, as AES-CMAC's updates
-/// (`crate::cmac::aes`).
-#[cfg(target_arch = "aarch64")]
+/// AArch64 with the AES extension) or the `_aesni_cbc` ones (on x86-64 with
+/// AES-NI), whose CMAC chains whole blocks with the round keys and the
+/// chaining value kept in vector registers, rather than the others: when
+/// the associated-data components `ads` and the `len` bytes of data total
+/// more than 32 bytes, as AES-CMAC's updates (`crate::cmac::aes`).
+#[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
 fn chains_long(ads: &[&[u8]], len: usize) -> bool {
     ads.iter()
         .fold(len, |total, ad| total.saturating_add(ad.len()))
@@ -126,11 +149,15 @@ fn select(f: Features) -> Backend {
         VG_AES_SIV_INIT_VAES_FEATURES,
         VG_AES_SIV_ENCRYPT_VAES_FEATURES,
         VG_AES_SIV_DECRYPT_VAES_FEATURES,
+        VG_AES_SIV_ENCRYPT_AESNI_CBC_FEATURES,
+        VG_AES_SIV_DECRYPT_AESNI_CBC_FEATURES,
     ]);
     const AESNI: Features = Features::all(&[
         VG_AES_SIV_INIT_AESNI_FEATURES,
         VG_AES_SIV_ENCRYPT_AESNI_FEATURES,
         VG_AES_SIV_DECRYPT_AESNI_FEATURES,
+        VG_AES_SIV_ENCRYPT_AESNI_CBC_FEATURES,
+        VG_AES_SIV_DECRYPT_AESNI_CBC_FEATURES,
     ]);
     Backend::select_for(f, VAES, AESNI)
 }
@@ -210,7 +237,7 @@ impl AesSiv {
             k.backend,
             false,
             vg_aes_siv_init,
-            x86_64: [vg_aes_siv_init_aesni, vg_aes_siv_init_vaes],
+            x86_64: [vg_aes_siv_init_aesni, vg_aes_siv_init_vaes, vg_aes_siv_init_aesni],
             aarch64: [vg_aes_siv_init_aes, vg_aes_siv_init_aes]
         );
         // SAFETY: `key` is valid for reads of `key.len()` bytes, which is 32,
@@ -256,7 +283,7 @@ impl AesSiv {
             self.backend,
             chains_long(ads, data.len()),
             vg_aes_siv_encrypt,
-            x86_64: [vg_aes_siv_encrypt_aesni, vg_aes_siv_encrypt_vaes],
+            x86_64: [vg_aes_siv_encrypt_aesni, vg_aes_siv_encrypt_vaes, vg_aes_siv_encrypt_aesni_cbc],
             aarch64: [vg_aes_siv_encrypt_aes, vg_aes_siv_encrypt_aes_cbc]
         );
         // SAFETY: `self.ctx` is the key context `vg_aes_siv_init` wrote for
@@ -303,7 +330,7 @@ impl AesSiv {
             self.backend,
             chains_long(ads, data.len()),
             vg_aes_siv_decrypt,
-            x86_64: [vg_aes_siv_decrypt_aesni, vg_aes_siv_decrypt_vaes],
+            x86_64: [vg_aes_siv_decrypt_aesni, vg_aes_siv_decrypt_vaes, vg_aes_siv_decrypt_aesni_cbc],
             aarch64: [vg_aes_siv_decrypt_aes, vg_aes_siv_decrypt_aes_cbc]
         );
         // SAFETY: as in `encrypt_in_place`, with the received synthetic IV
@@ -335,9 +362,9 @@ impl AesSiv {
 mod tests {
     use super::{AesSiv, Error};
 
-    /// The `_aes_cbc` instances run when the components and the data total
-    /// more than 32 bytes, and the `_aes` ones otherwise.
-    #[cfg(target_arch = "aarch64")]
+    /// The `_aes_cbc` (or `_aesni_cbc`) instances run when the components
+    /// and the data total more than 32 bytes, and the others otherwise.
+    #[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
     #[test]
     fn chains_long() {
         use super::chains_long;

@@ -2,6 +2,128 @@
 //! Verified `cmac_aes` functions for `x86_64`.
 #![allow(dead_code)]
 
+/// The CPU features `vg_cmac_aes_update_aesni_cbc` requires (`Artifact.features`).
+pub(crate) const VG_CMAC_AES_UPDATE_AESNI_CBC_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes"]);
+
+/// CMAC's chaining (NIST SP 800-38B §6.2 step 6) for AES, over whole blocks: replaces the block `C₀` at `*state` with `Cₙ`, where `Cᵢ = CIPH_K(Cᵢ₋₁ ⊕ Mᵢ)` for the `n` 16-byte blocks `M₁ … Mₙ` starting at `data`. `CIPH_K` is AES (FIPS 197) with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it.
+///
+/// Contract: `VG.Spec.Cmac.aesUpdateContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule, the chaining value or the data.
+///
+/// This implementation keeps the round keys in SSE registers and the chaining value in `xmm0` across all blocks: it loads them once, and stores the chaining value once. The first round key is folded into the chaining value and the last one, so each block is one `pxor`, the `aesenc` rounds and one `aesenclast`; the number of rounds is selected once. It uses no stack and does not use `scratch`.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 240 bytes.
+/// * `state` must be valid for reads and writes of 16 bytes.
+/// * `data` must be valid for reads of `16 * n` bytes.
+/// * `scratch` must be valid for reads and writes of 2176 bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * The contents of `scratch` on return are unspecified.
+/// * `state` and `scratch` must not overlap each other, `schedule` or `data` (distinct Rust objects never do).
+/// * None of `schedule`, `state`, `data` and `scratch` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `aes` target feature.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_cmac_aes_update_aesni_cbc(schedule: *const [u8; 240], rounds: usize, state: *mut [u8; 16], data: *const [u8; 16], n: usize, scratch: *mut [u64; 272]) {
+    core::arch::naked_asm!(
+        "test r8, r8",
+        "je 20f",
+        "movdqu xmm1, XMMWORD PTR [rdi]",
+        "movdqu xmm0, XMMWORD PTR [rdx]",
+        "pxor xmm0, xmm1",
+        "movdqu xmm2, XMMWORD PTR [rdi+16]",
+        "movdqu xmm3, XMMWORD PTR [rdi+32]",
+        "movdqu xmm4, XMMWORD PTR [rdi+48]",
+        "movdqu xmm5, XMMWORD PTR [rdi+64]",
+        "movdqu xmm6, XMMWORD PTR [rdi+80]",
+        "movdqu xmm7, XMMWORD PTR [rdi+96]",
+        "movdqu xmm8, XMMWORD PTR [rdi+112]",
+        "movdqu xmm9, XMMWORD PTR [rdi+128]",
+        "movdqu xmm10, XMMWORD PTR [rdi+144]",
+        "movdqu xmm11, XMMWORD PTR [rdi+160]",
+        "movdqu xmm12, XMMWORD PTR [rdi+176]",
+        "movdqu xmm13, XMMWORD PTR [rdi+192]",
+        "movdqu xmm14, XMMWORD PTR [rdi+208]",
+        "cmp rsi, 10",
+        "je 22f",
+        "cmp rsi, 12",
+        "je 24f",
+        "movdqu xmm15, XMMWORD PTR [rdi+224]",
+        "pxor xmm15, xmm1",
+        "26:",
+        "movdqu xmm1, XMMWORD PTR [rcx]",
+        "pxor xmm0, xmm1",
+        "aesenc xmm0, xmm2",
+        "aesenc xmm0, xmm3",
+        "aesenc xmm0, xmm4",
+        "aesenc xmm0, xmm5",
+        "aesenc xmm0, xmm6",
+        "aesenc xmm0, xmm7",
+        "aesenc xmm0, xmm8",
+        "aesenc xmm0, xmm9",
+        "aesenc xmm0, xmm10",
+        "aesenc xmm0, xmm11",
+        "aesenc xmm0, xmm12",
+        "aesenc xmm0, xmm13",
+        "aesenc xmm0, xmm14",
+        "aesenclast xmm0, xmm15",
+        "add rcx, 16",
+        "sub r8, 1",
+        "jne 26b",
+        "jmp 25f",
+        "24:",
+        "movdqu xmm15, XMMWORD PTR [rdi+192]",
+        "pxor xmm15, xmm1",
+        "27:",
+        "movdqu xmm1, XMMWORD PTR [rcx]",
+        "pxor xmm0, xmm1",
+        "aesenc xmm0, xmm2",
+        "aesenc xmm0, xmm3",
+        "aesenc xmm0, xmm4",
+        "aesenc xmm0, xmm5",
+        "aesenc xmm0, xmm6",
+        "aesenc xmm0, xmm7",
+        "aesenc xmm0, xmm8",
+        "aesenc xmm0, xmm9",
+        "aesenc xmm0, xmm10",
+        "aesenc xmm0, xmm11",
+        "aesenc xmm0, xmm12",
+        "aesenclast xmm0, xmm15",
+        "add rcx, 16",
+        "sub r8, 1",
+        "jne 27b",
+        "25:",
+        "jmp 23f",
+        "22:",
+        "movdqu xmm15, XMMWORD PTR [rdi+160]",
+        "pxor xmm15, xmm1",
+        "28:",
+        "movdqu xmm1, XMMWORD PTR [rcx]",
+        "pxor xmm0, xmm1",
+        "aesenc xmm0, xmm2",
+        "aesenc xmm0, xmm3",
+        "aesenc xmm0, xmm4",
+        "aesenc xmm0, xmm5",
+        "aesenc xmm0, xmm6",
+        "aesenc xmm0, xmm7",
+        "aesenc xmm0, xmm8",
+        "aesenc xmm0, xmm9",
+        "aesenc xmm0, xmm10",
+        "aesenclast xmm0, xmm15",
+        "add rcx, 16",
+        "sub r8, 1",
+        "jne 28b",
+        "23:",
+        "movdqu xmm1, XMMWORD PTR [rdi]",
+        "pxor xmm0, xmm1",
+        "movdqu XMMWORD PTR [rdx], xmm0",
+        "jmp 21f",
+        "20:",
+        "21:",
+        "ret",
+        ".p2align 6",
+    )
+}
+
 /// The CPU features `vg_cmac_aes_subkeys_aesni` requires (`Artifact.features`).
 pub(crate) const VG_CMAC_AES_SUBKEYS_AESNI_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes", "ssse3"]);
 
@@ -290,139 +412,6 @@ pub(crate) unsafe extern "sysv64" fn vg_cmac_aes_init_aesni(state: *mut [u64; 38
         ".p2align 6",
         vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni,
         vg_cmac_aes_subkeys_aesni = sym super::cmac_aes::vg_cmac_aes_subkeys_aesni,
-    )
-}
-
-/// The CPU features `vg_cmac_aes_absorb_aesni` requires (`Artifact.features`).
-pub(crate) const VG_CMAC_AES_ABSORB_AESNI_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes", "ssse3"]);
-
-/// Absorbs data into an AES-CMAC computation (NIST SP 800-38B §6.2): if the streaming state `*state` represents a message of `count` bytes under an AES key with `rounds` rounds (as `vg_cmac_aes_init` set it up), it then represents that message followed by the `len` bytes at `data`, under the same key, provided that the two together are shorter than 2⁶⁴ bytes. It chains (step 6) every block of the message but its last bytes `Mₙ*` (step 3), which it holds back in the state, since only `vg_cmac_aes_finish` knows they are the last.
-///
-/// Contract: `VG.Spec.Cmac.aesAbsorbContract`. Constant time: only the pointers, `rounds`, `count` and `len` may affect timing, not the state or the data.
-///
-/// This implementation calls the CMAC functions made with `vg_aes_ctr32_aesni` (e.g. `vg_cmac_aes_update_aesni`).
-///
-/// # Safety
-///
-/// * `state` must be valid for reads and writes of 304 bytes.
-/// * `data` must be valid for reads of `len` bytes.
-/// * `rounds` must be 10, 12 or 14.
-/// * `state` must not overlap `data` (distinct Rust objects never do).
-/// * Neither `state` nor `data` may overlap the return address on the stack or the 2328 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `aes` and `ssse3` target features.
-#[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_cmac_aes_absorb_aesni(state: *mut [u64; 38], rounds: usize, count: u64, data: *const u8, len: usize) {
-    core::arch::naked_asm!(
-        "lea rsp, [rsp-2312]",
-        "mov r9, rsp",
-        "add r9, 8",
-        "mov QWORD PTR [r9+2176], rbx",
-        "mov QWORD PTR [r9+2184], rbp",
-        "mov QWORD PTR [r9+2192], r12",
-        "mov QWORD PTR [r9+2200], r13",
-        "mov QWORD PTR [r9+2208], r14",
-        "mov QWORD PTR [r9+2216], r15",
-        "mov rbx, rdi",
-        "mov rbp, rsi",
-        "mov r13, rcx",
-        "mov r14, r8",
-        "mov r15, r9",
-        "test rdx, rdx",
-        "je 20f",
-        "mov rax, rdx",
-        "sub rax, 1",
-        "and rax, 15",
-        "add rax, 1",
-        "jmp 21f",
-        "20:",
-        "mov eax, 0",
-        "21:",
-        "mov ecx, 16",
-        "sub rcx, rax",
-        "cmp r14, rcx",
-        "jb 22f",
-        "jmp 23f",
-        "22:",
-        "mov rcx, r14",
-        "23:",
-        "mov rdx, rbx",
-        "add rdx, 288",
-        "add rdx, rax",
-        "mov r10d, 0",
-        "test rcx, rcx",
-        "je 24f",
-        "26:",
-        "movzx eax, BYTE PTR [r13+r10*1]",
-        "mov BYTE PTR [rdx+r10*1], al",
-        "add r10, 1",
-        "cmp r10, rcx",
-        "jne 26b",
-        "jmp 25f",
-        "24:",
-        "25:",
-        "add r13, rcx",
-        "mov r8d, 0",
-        "sub r14, rcx",
-        "je 27f",
-        "mov r8d, 1",
-        "jmp 28f",
-        "27:",
-        "28:",
-        "mov rdi, rbx",
-        "mov rsi, rbp",
-        "mov rdx, rbx",
-        "add rdx, 272",
-        "mov rcx, rbx",
-        "add rcx, 288",
-        "mov r9, r15",
-        "call {vg_cmac_aes_update_aesni}",
-        "mov r12d, 0",
-        "test r14, r14",
-        "je 29f",
-        "mov r12, r14",
-        "sub r12, 1",
-        "mov rax, r12",
-        "and rax, 15",
-        "sub r12, rax",
-        "jmp 210f",
-        "29:",
-        "210:",
-        "mov r8, r12",
-        "shr r8, 4",
-        "mov rdi, rbx",
-        "mov rsi, rbp",
-        "mov rdx, rbx",
-        "add rdx, 272",
-        "mov rcx, r13",
-        "mov r9, r15",
-        "call {vg_cmac_aes_update_aesni}",
-        "add r13, r12",
-        "sub r14, r12",
-        "mov rdx, rbx",
-        "add rdx, 288",
-        "mov rcx, r14",
-        "mov r10d, 0",
-        "test rcx, rcx",
-        "je 211f",
-        "213:",
-        "movzx eax, BYTE PTR [r13+r10*1]",
-        "mov BYTE PTR [rdx+r10*1], al",
-        "add r10, 1",
-        "cmp r10, rcx",
-        "jne 213b",
-        "jmp 212f",
-        "211:",
-        "212:",
-        "mov rbx, QWORD PTR [r15+2176]",
-        "mov rbp, QWORD PTR [r15+2184]",
-        "mov r12, QWORD PTR [r15+2192]",
-        "mov r13, QWORD PTR [r15+2200]",
-        "mov r14, QWORD PTR [r15+2208]",
-        "mov r15, QWORD PTR [r15+2216]",
-        "lea rsp, [rsp+2312]",
-        "ret",
-        ".p2align 6",
-        vg_cmac_aes_update_aesni = sym super::cmac_aes::vg_cmac_aes_update_aesni,
     )
 }
 
@@ -747,135 +736,6 @@ pub(crate) unsafe extern "sysv64" fn vg_cmac_aes_init(state: *mut [u64; 38], key
         ".p2align 6",
         vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch,
         vg_cmac_aes_subkeys = sym super::cmac_aes::vg_cmac_aes_subkeys,
-    )
-}
-
-/// Absorbs data into an AES-CMAC computation (NIST SP 800-38B §6.2): if the streaming state `*state` represents a message of `count` bytes under an AES key with `rounds` rounds (as `vg_cmac_aes_init` set it up), it then represents that message followed by the `len` bytes at `data`, under the same key, provided that the two together are shorter than 2⁶⁴ bytes. It chains (step 6) every block of the message but its last bytes `Mₙ*` (step 3), which it holds back in the state, since only `vg_cmac_aes_finish` knows they are the last.
-///
-/// Contract: `VG.Spec.Cmac.aesAbsorbContract`. Constant time: only the pointers, `rounds`, `count` and `len` may affect timing, not the state or the data.
-///
-/// This implementation calls the CMAC functions made with `vg_aes_ctr32` (e.g. `vg_cmac_aes_update`).
-///
-/// # Safety
-///
-/// * `state` must be valid for reads and writes of 304 bytes.
-/// * `data` must be valid for reads of `len` bytes.
-/// * `rounds` must be 10, 12 or 14.
-/// * `state` must not overlap `data` (distinct Rust objects never do).
-/// * Neither `state` nor `data` may overlap the return address on the stack or the 2328 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_cmac_aes_absorb(state: *mut [u64; 38], rounds: usize, count: u64, data: *const u8, len: usize) {
-    core::arch::naked_asm!(
-        "lea rsp, [rsp-2312]",
-        "mov r9, rsp",
-        "add r9, 8",
-        "mov QWORD PTR [r9+2176], rbx",
-        "mov QWORD PTR [r9+2184], rbp",
-        "mov QWORD PTR [r9+2192], r12",
-        "mov QWORD PTR [r9+2200], r13",
-        "mov QWORD PTR [r9+2208], r14",
-        "mov QWORD PTR [r9+2216], r15",
-        "mov rbx, rdi",
-        "mov rbp, rsi",
-        "mov r13, rcx",
-        "mov r14, r8",
-        "mov r15, r9",
-        "test rdx, rdx",
-        "je 20f",
-        "mov rax, rdx",
-        "sub rax, 1",
-        "and rax, 15",
-        "add rax, 1",
-        "jmp 21f",
-        "20:",
-        "mov eax, 0",
-        "21:",
-        "mov ecx, 16",
-        "sub rcx, rax",
-        "cmp r14, rcx",
-        "jb 22f",
-        "jmp 23f",
-        "22:",
-        "mov rcx, r14",
-        "23:",
-        "mov rdx, rbx",
-        "add rdx, 288",
-        "add rdx, rax",
-        "mov r10d, 0",
-        "test rcx, rcx",
-        "je 24f",
-        "26:",
-        "movzx eax, BYTE PTR [r13+r10*1]",
-        "mov BYTE PTR [rdx+r10*1], al",
-        "add r10, 1",
-        "cmp r10, rcx",
-        "jne 26b",
-        "jmp 25f",
-        "24:",
-        "25:",
-        "add r13, rcx",
-        "mov r8d, 0",
-        "sub r14, rcx",
-        "je 27f",
-        "mov r8d, 1",
-        "jmp 28f",
-        "27:",
-        "28:",
-        "mov rdi, rbx",
-        "mov rsi, rbp",
-        "mov rdx, rbx",
-        "add rdx, 272",
-        "mov rcx, rbx",
-        "add rcx, 288",
-        "mov r9, r15",
-        "call {vg_cmac_aes_update}",
-        "mov r12d, 0",
-        "test r14, r14",
-        "je 29f",
-        "mov r12, r14",
-        "sub r12, 1",
-        "mov rax, r12",
-        "and rax, 15",
-        "sub r12, rax",
-        "jmp 210f",
-        "29:",
-        "210:",
-        "mov r8, r12",
-        "shr r8, 4",
-        "mov rdi, rbx",
-        "mov rsi, rbp",
-        "mov rdx, rbx",
-        "add rdx, 272",
-        "mov rcx, r13",
-        "mov r9, r15",
-        "call {vg_cmac_aes_update}",
-        "add r13, r12",
-        "sub r14, r12",
-        "mov rdx, rbx",
-        "add rdx, 288",
-        "mov rcx, r14",
-        "mov r10d, 0",
-        "test rcx, rcx",
-        "je 211f",
-        "213:",
-        "movzx eax, BYTE PTR [r13+r10*1]",
-        "mov BYTE PTR [rdx+r10*1], al",
-        "add r10, 1",
-        "cmp r10, rcx",
-        "jne 213b",
-        "jmp 212f",
-        "211:",
-        "212:",
-        "mov rbx, QWORD PTR [r15+2176]",
-        "mov rbp, QWORD PTR [r15+2184]",
-        "mov r12, QWORD PTR [r15+2192]",
-        "mov r13, QWORD PTR [r15+2200]",
-        "mov r14, QWORD PTR [r15+2208]",
-        "mov r15, QWORD PTR [r15+2216]",
-        "lea rsp, [rsp+2312]",
-        "ret",
-        ".p2align 6",
-        vg_cmac_aes_update = sym super::cmac_aes::vg_cmac_aes_update,
     )
 }
 
@@ -1215,6 +1075,450 @@ pub(crate) unsafe extern "sysv64" fn vg_cmac_aes_init_vaes(state: *mut [u64; 38]
     )
 }
 
+/// The CPU features `vg_cmac_aes_finish_vaes` requires (`Artifact.features`).
+pub(crate) const VG_CMAC_AES_FINISH_VAES_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes", "avx", "avx2", "ssse3", "vaes"]);
+
+/// Finishes an AES-CMAC computation (NIST SP 800-38B §6.2, with `Tlen = 128`): if the streaming state `*state` represents a message of `count` bytes, shorter than 2⁶⁴ bytes, under an AES key with `rounds` rounds (as `vg_cmac_aes_init` and `vg_cmac_aes_absorb` set it up), writes the MAC of that message under that key to `*out`: `Cₙ = CIPH_K(Cₙ₋₁ ⊕ Mₙ)`, where `Mₙ = K1 ⊕ Mₙ*` if the message's last bytes `Mₙ*` are a complete block, and `Mₙ = K2 ⊕ (Mₙ* ‖ 10ʲ)` otherwise (step 4). The caller truncates it (step 7) and compares it (§6.3).
+///
+/// Contract: `VG.Spec.Cmac.aesFinishContract`. Constant time: only the pointers, `rounds` and `count` may affect timing, not the state.
+///
+/// This implementation calls the CMAC functions made with `vg_aes_ctr32_vaes` (e.g. `vg_cmac_aes_update_vaes`).
+///
+/// # Safety
+///
+/// * `state` must be valid for reads and writes of 304 bytes.
+/// * `out` must be valid for reads and writes of 16 bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * The contents of `state` on return are unspecified.
+/// * `state` and `out` must not overlap each other (distinct Rust objects never do).
+/// * Neither `state` nor `out` may overlap the return address on the stack or the 2328 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `aes`, `avx`, `avx2`, `ssse3` and `vaes` target features.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_cmac_aes_finish_vaes(state: *mut [u64; 38], rounds: usize, count: u64, out: *mut [u8; 16]) {
+    core::arch::naked_asm!(
+        "lea rsp, [rsp-2312]",
+        "mov r8, rsp",
+        "add r8, 8",
+        "mov rax, QWORD PTR [rdi+272]",
+        "mov QWORD PTR [rcx], rax",
+        "mov rax, QWORD PTR [rdi+280]",
+        "mov QWORD PTR [rcx+8], rax",
+        "mov r9, r8",
+        "mov r8, rdx",
+        "mov rdx, rcx",
+        "mov rcx, rdi",
+        "add rcx, 288",
+        "test r8, r8",
+        "je 20f",
+        "sub r8, 1",
+        "and r8, 15",
+        "add r8, 1",
+        "jmp 21f",
+        "20:",
+        "21:",
+        "call {vg_cmac_aes_finalize_vaes}",
+        "lea rsp, [rsp+2312]",
+        "ret",
+        ".p2align 6",
+        vg_cmac_aes_finalize_vaes = sym super::cmac_aes::vg_cmac_aes_finalize_vaes,
+    )
+}
+
+/// The CPU features `vg_cmac_aes_absorb_aesni` requires (`Artifact.features`).
+pub(crate) const VG_CMAC_AES_ABSORB_AESNI_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes", "ssse3"]);
+
+/// Absorbs data into an AES-CMAC computation (NIST SP 800-38B §6.2): if the streaming state `*state` represents a message of `count` bytes under an AES key with `rounds` rounds (as `vg_cmac_aes_init` set it up), it then represents that message followed by the `len` bytes at `data`, under the same key, provided that the two together are shorter than 2⁶⁴ bytes. It chains (step 6) every block of the message but its last bytes `Mₙ*` (step 3), which it holds back in the state, since only `vg_cmac_aes_finish` knows they are the last.
+///
+/// Contract: `VG.Spec.Cmac.aesAbsorbContract`. Constant time: only the pointers, `rounds`, `count` and `len` may affect timing, not the state or the data.
+///
+/// This implementation chains blocks with `vg_cmac_aes_update_aesni`.
+///
+/// # Safety
+///
+/// * `state` must be valid for reads and writes of 304 bytes.
+/// * `data` must be valid for reads of `len` bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * `state` must not overlap `data` (distinct Rust objects never do).
+/// * Neither `state` nor `data` may overlap the return address on the stack or the 2328 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `aes` and `ssse3` target features.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_cmac_aes_absorb_aesni(state: *mut [u64; 38], rounds: usize, count: u64, data: *const u8, len: usize) {
+    core::arch::naked_asm!(
+        "lea rsp, [rsp-2312]",
+        "mov r9, rsp",
+        "add r9, 8",
+        "mov QWORD PTR [r9+2176], rbx",
+        "mov QWORD PTR [r9+2184], rbp",
+        "mov QWORD PTR [r9+2192], r12",
+        "mov QWORD PTR [r9+2200], r13",
+        "mov QWORD PTR [r9+2208], r14",
+        "mov QWORD PTR [r9+2216], r15",
+        "mov rbx, rdi",
+        "mov rbp, rsi",
+        "mov r13, rcx",
+        "mov r14, r8",
+        "mov r15, r9",
+        "test rdx, rdx",
+        "je 20f",
+        "mov rax, rdx",
+        "sub rax, 1",
+        "and rax, 15",
+        "add rax, 1",
+        "jmp 21f",
+        "20:",
+        "mov eax, 0",
+        "21:",
+        "mov ecx, 16",
+        "sub rcx, rax",
+        "cmp r14, rcx",
+        "jb 22f",
+        "jmp 23f",
+        "22:",
+        "mov rcx, r14",
+        "23:",
+        "mov rdx, rbx",
+        "add rdx, 288",
+        "add rdx, rax",
+        "mov r10d, 0",
+        "test rcx, rcx",
+        "je 24f",
+        "26:",
+        "movzx eax, BYTE PTR [r13+r10*1]",
+        "mov BYTE PTR [rdx+r10*1], al",
+        "add r10, 1",
+        "cmp r10, rcx",
+        "jne 26b",
+        "jmp 25f",
+        "24:",
+        "25:",
+        "add r13, rcx",
+        "mov r8d, 0",
+        "sub r14, rcx",
+        "je 27f",
+        "mov r8d, 1",
+        "jmp 28f",
+        "27:",
+        "28:",
+        "mov rdi, rbx",
+        "mov rsi, rbp",
+        "mov rdx, rbx",
+        "add rdx, 272",
+        "mov rcx, rbx",
+        "add rcx, 288",
+        "mov r9, r15",
+        "call {vg_cmac_aes_update_aesni}",
+        "mov r12d, 0",
+        "test r14, r14",
+        "je 29f",
+        "mov r12, r14",
+        "sub r12, 1",
+        "mov rax, r12",
+        "and rax, 15",
+        "sub r12, rax",
+        "jmp 210f",
+        "29:",
+        "210:",
+        "mov r8, r12",
+        "shr r8, 4",
+        "mov rdi, rbx",
+        "mov rsi, rbp",
+        "mov rdx, rbx",
+        "add rdx, 272",
+        "mov rcx, r13",
+        "mov r9, r15",
+        "call {vg_cmac_aes_update_aesni}",
+        "add r13, r12",
+        "sub r14, r12",
+        "mov rdx, rbx",
+        "add rdx, 288",
+        "mov rcx, r14",
+        "mov r10d, 0",
+        "test rcx, rcx",
+        "je 211f",
+        "213:",
+        "movzx eax, BYTE PTR [r13+r10*1]",
+        "mov BYTE PTR [rdx+r10*1], al",
+        "add r10, 1",
+        "cmp r10, rcx",
+        "jne 213b",
+        "jmp 212f",
+        "211:",
+        "212:",
+        "mov rbx, QWORD PTR [r15+2176]",
+        "mov rbp, QWORD PTR [r15+2184]",
+        "mov r12, QWORD PTR [r15+2192]",
+        "mov r13, QWORD PTR [r15+2200]",
+        "mov r14, QWORD PTR [r15+2208]",
+        "mov r15, QWORD PTR [r15+2216]",
+        "lea rsp, [rsp+2312]",
+        "ret",
+        ".p2align 6",
+        vg_cmac_aes_update_aesni = sym super::cmac_aes::vg_cmac_aes_update_aesni,
+    )
+}
+
+/// The CPU features `vg_cmac_aes_absorb_aesni_cbc` requires (`Artifact.features`).
+pub(crate) const VG_CMAC_AES_ABSORB_AESNI_CBC_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes"]);
+
+/// Absorbs data into an AES-CMAC computation (NIST SP 800-38B §6.2): if the streaming state `*state` represents a message of `count` bytes under an AES key with `rounds` rounds (as `vg_cmac_aes_init` set it up), it then represents that message followed by the `len` bytes at `data`, under the same key, provided that the two together are shorter than 2⁶⁴ bytes. It chains (step 6) every block of the message but its last bytes `Mₙ*` (step 3), which it holds back in the state, since only `vg_cmac_aes_finish` knows they are the last.
+///
+/// Contract: `VG.Spec.Cmac.aesAbsorbContract`. Constant time: only the pointers, `rounds`, `count` and `len` may affect timing, not the state or the data.
+///
+/// This implementation chains blocks with `vg_cmac_aes_update_aesni_cbc`.
+///
+/// # Safety
+///
+/// * `state` must be valid for reads and writes of 304 bytes.
+/// * `data` must be valid for reads of `len` bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * `state` must not overlap `data` (distinct Rust objects never do).
+/// * Neither `state` nor `data` may overlap the return address on the stack or the 2328 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `aes` target feature.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_cmac_aes_absorb_aesni_cbc(state: *mut [u64; 38], rounds: usize, count: u64, data: *const u8, len: usize) {
+    core::arch::naked_asm!(
+        "lea rsp, [rsp-2312]",
+        "mov r9, rsp",
+        "add r9, 8",
+        "mov QWORD PTR [r9+2176], rbx",
+        "mov QWORD PTR [r9+2184], rbp",
+        "mov QWORD PTR [r9+2192], r12",
+        "mov QWORD PTR [r9+2200], r13",
+        "mov QWORD PTR [r9+2208], r14",
+        "mov QWORD PTR [r9+2216], r15",
+        "mov rbx, rdi",
+        "mov rbp, rsi",
+        "mov r13, rcx",
+        "mov r14, r8",
+        "mov r15, r9",
+        "test rdx, rdx",
+        "je 20f",
+        "mov rax, rdx",
+        "sub rax, 1",
+        "and rax, 15",
+        "add rax, 1",
+        "jmp 21f",
+        "20:",
+        "mov eax, 0",
+        "21:",
+        "mov ecx, 16",
+        "sub rcx, rax",
+        "cmp r14, rcx",
+        "jb 22f",
+        "jmp 23f",
+        "22:",
+        "mov rcx, r14",
+        "23:",
+        "mov rdx, rbx",
+        "add rdx, 288",
+        "add rdx, rax",
+        "mov r10d, 0",
+        "test rcx, rcx",
+        "je 24f",
+        "26:",
+        "movzx eax, BYTE PTR [r13+r10*1]",
+        "mov BYTE PTR [rdx+r10*1], al",
+        "add r10, 1",
+        "cmp r10, rcx",
+        "jne 26b",
+        "jmp 25f",
+        "24:",
+        "25:",
+        "add r13, rcx",
+        "mov r8d, 0",
+        "sub r14, rcx",
+        "je 27f",
+        "mov r8d, 1",
+        "jmp 28f",
+        "27:",
+        "28:",
+        "mov rdi, rbx",
+        "mov rsi, rbp",
+        "mov rdx, rbx",
+        "add rdx, 272",
+        "mov rcx, rbx",
+        "add rcx, 288",
+        "mov r9, r15",
+        "call {vg_cmac_aes_update_aesni_cbc}",
+        "mov r12d, 0",
+        "test r14, r14",
+        "je 29f",
+        "mov r12, r14",
+        "sub r12, 1",
+        "mov rax, r12",
+        "and rax, 15",
+        "sub r12, rax",
+        "jmp 210f",
+        "29:",
+        "210:",
+        "mov r8, r12",
+        "shr r8, 4",
+        "mov rdi, rbx",
+        "mov rsi, rbp",
+        "mov rdx, rbx",
+        "add rdx, 272",
+        "mov rcx, r13",
+        "mov r9, r15",
+        "call {vg_cmac_aes_update_aesni_cbc}",
+        "add r13, r12",
+        "sub r14, r12",
+        "mov rdx, rbx",
+        "add rdx, 288",
+        "mov rcx, r14",
+        "mov r10d, 0",
+        "test rcx, rcx",
+        "je 211f",
+        "213:",
+        "movzx eax, BYTE PTR [r13+r10*1]",
+        "mov BYTE PTR [rdx+r10*1], al",
+        "add r10, 1",
+        "cmp r10, rcx",
+        "jne 213b",
+        "jmp 212f",
+        "211:",
+        "212:",
+        "mov rbx, QWORD PTR [r15+2176]",
+        "mov rbp, QWORD PTR [r15+2184]",
+        "mov r12, QWORD PTR [r15+2192]",
+        "mov r13, QWORD PTR [r15+2200]",
+        "mov r14, QWORD PTR [r15+2208]",
+        "mov r15, QWORD PTR [r15+2216]",
+        "lea rsp, [rsp+2312]",
+        "ret",
+        ".p2align 6",
+        vg_cmac_aes_update_aesni_cbc = sym super::cmac_aes::vg_cmac_aes_update_aesni_cbc,
+    )
+}
+
+/// Absorbs data into an AES-CMAC computation (NIST SP 800-38B §6.2): if the streaming state `*state` represents a message of `count` bytes under an AES key with `rounds` rounds (as `vg_cmac_aes_init` set it up), it then represents that message followed by the `len` bytes at `data`, under the same key, provided that the two together are shorter than 2⁶⁴ bytes. It chains (step 6) every block of the message but its last bytes `Mₙ*` (step 3), which it holds back in the state, since only `vg_cmac_aes_finish` knows they are the last.
+///
+/// Contract: `VG.Spec.Cmac.aesAbsorbContract`. Constant time: only the pointers, `rounds`, `count` and `len` may affect timing, not the state or the data.
+///
+/// This implementation chains blocks with `vg_cmac_aes_update`.
+///
+/// # Safety
+///
+/// * `state` must be valid for reads and writes of 304 bytes.
+/// * `data` must be valid for reads of `len` bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * `state` must not overlap `data` (distinct Rust objects never do).
+/// * Neither `state` nor `data` may overlap the return address on the stack or the 2328 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_cmac_aes_absorb(state: *mut [u64; 38], rounds: usize, count: u64, data: *const u8, len: usize) {
+    core::arch::naked_asm!(
+        "lea rsp, [rsp-2312]",
+        "mov r9, rsp",
+        "add r9, 8",
+        "mov QWORD PTR [r9+2176], rbx",
+        "mov QWORD PTR [r9+2184], rbp",
+        "mov QWORD PTR [r9+2192], r12",
+        "mov QWORD PTR [r9+2200], r13",
+        "mov QWORD PTR [r9+2208], r14",
+        "mov QWORD PTR [r9+2216], r15",
+        "mov rbx, rdi",
+        "mov rbp, rsi",
+        "mov r13, rcx",
+        "mov r14, r8",
+        "mov r15, r9",
+        "test rdx, rdx",
+        "je 20f",
+        "mov rax, rdx",
+        "sub rax, 1",
+        "and rax, 15",
+        "add rax, 1",
+        "jmp 21f",
+        "20:",
+        "mov eax, 0",
+        "21:",
+        "mov ecx, 16",
+        "sub rcx, rax",
+        "cmp r14, rcx",
+        "jb 22f",
+        "jmp 23f",
+        "22:",
+        "mov rcx, r14",
+        "23:",
+        "mov rdx, rbx",
+        "add rdx, 288",
+        "add rdx, rax",
+        "mov r10d, 0",
+        "test rcx, rcx",
+        "je 24f",
+        "26:",
+        "movzx eax, BYTE PTR [r13+r10*1]",
+        "mov BYTE PTR [rdx+r10*1], al",
+        "add r10, 1",
+        "cmp r10, rcx",
+        "jne 26b",
+        "jmp 25f",
+        "24:",
+        "25:",
+        "add r13, rcx",
+        "mov r8d, 0",
+        "sub r14, rcx",
+        "je 27f",
+        "mov r8d, 1",
+        "jmp 28f",
+        "27:",
+        "28:",
+        "mov rdi, rbx",
+        "mov rsi, rbp",
+        "mov rdx, rbx",
+        "add rdx, 272",
+        "mov rcx, rbx",
+        "add rcx, 288",
+        "mov r9, r15",
+        "call {vg_cmac_aes_update}",
+        "mov r12d, 0",
+        "test r14, r14",
+        "je 29f",
+        "mov r12, r14",
+        "sub r12, 1",
+        "mov rax, r12",
+        "and rax, 15",
+        "sub r12, rax",
+        "jmp 210f",
+        "29:",
+        "210:",
+        "mov r8, r12",
+        "shr r8, 4",
+        "mov rdi, rbx",
+        "mov rsi, rbp",
+        "mov rdx, rbx",
+        "add rdx, 272",
+        "mov rcx, r13",
+        "mov r9, r15",
+        "call {vg_cmac_aes_update}",
+        "add r13, r12",
+        "sub r14, r12",
+        "mov rdx, rbx",
+        "add rdx, 288",
+        "mov rcx, r14",
+        "mov r10d, 0",
+        "test rcx, rcx",
+        "je 211f",
+        "213:",
+        "movzx eax, BYTE PTR [r13+r10*1]",
+        "mov BYTE PTR [rdx+r10*1], al",
+        "add r10, 1",
+        "cmp r10, rcx",
+        "jne 213b",
+        "jmp 212f",
+        "211:",
+        "212:",
+        "mov rbx, QWORD PTR [r15+2176]",
+        "mov rbp, QWORD PTR [r15+2184]",
+        "mov r12, QWORD PTR [r15+2192]",
+        "mov r13, QWORD PTR [r15+2200]",
+        "mov r14, QWORD PTR [r15+2208]",
+        "mov r15, QWORD PTR [r15+2216]",
+        "lea rsp, [rsp+2312]",
+        "ret",
+        ".p2align 6",
+        vg_cmac_aes_update = sym super::cmac_aes::vg_cmac_aes_update,
+    )
+}
+
 /// The CPU features `vg_cmac_aes_absorb_vaes` requires (`Artifact.features`).
 pub(crate) const VG_CMAC_AES_ABSORB_VAES_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes", "avx", "avx2", "ssse3", "vaes"]);
 
@@ -1222,7 +1526,7 @@ pub(crate) const VG_CMAC_AES_ABSORB_VAES_FEATURES: crate::cpu::Features = crate:
 ///
 /// Contract: `VG.Spec.Cmac.aesAbsorbContract`. Constant time: only the pointers, `rounds`, `count` and `len` may affect timing, not the state or the data.
 ///
-/// This implementation calls the CMAC functions made with `vg_aes_ctr32_vaes` (e.g. `vg_cmac_aes_update_vaes`).
+/// This implementation chains blocks with `vg_cmac_aes_update_vaes`.
 ///
 /// # Safety
 ///
@@ -1345,54 +1649,5 @@ pub(crate) unsafe extern "sysv64" fn vg_cmac_aes_absorb_vaes(state: *mut [u64; 3
         "ret",
         ".p2align 6",
         vg_cmac_aes_update_vaes = sym super::cmac_aes::vg_cmac_aes_update_vaes,
-    )
-}
-
-/// The CPU features `vg_cmac_aes_finish_vaes` requires (`Artifact.features`).
-pub(crate) const VG_CMAC_AES_FINISH_VAES_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes", "avx", "avx2", "ssse3", "vaes"]);
-
-/// Finishes an AES-CMAC computation (NIST SP 800-38B §6.2, with `Tlen = 128`): if the streaming state `*state` represents a message of `count` bytes, shorter than 2⁶⁴ bytes, under an AES key with `rounds` rounds (as `vg_cmac_aes_init` and `vg_cmac_aes_absorb` set it up), writes the MAC of that message under that key to `*out`: `Cₙ = CIPH_K(Cₙ₋₁ ⊕ Mₙ)`, where `Mₙ = K1 ⊕ Mₙ*` if the message's last bytes `Mₙ*` are a complete block, and `Mₙ = K2 ⊕ (Mₙ* ‖ 10ʲ)` otherwise (step 4). The caller truncates it (step 7) and compares it (§6.3).
-///
-/// Contract: `VG.Spec.Cmac.aesFinishContract`. Constant time: only the pointers, `rounds` and `count` may affect timing, not the state.
-///
-/// This implementation calls the CMAC functions made with `vg_aes_ctr32_vaes` (e.g. `vg_cmac_aes_update_vaes`).
-///
-/// # Safety
-///
-/// * `state` must be valid for reads and writes of 304 bytes.
-/// * `out` must be valid for reads and writes of 16 bytes.
-/// * `rounds` must be 10, 12 or 14.
-/// * The contents of `state` on return are unspecified.
-/// * `state` and `out` must not overlap each other (distinct Rust objects never do).
-/// * Neither `state` nor `out` may overlap the return address on the stack or the 2328 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `aes`, `avx`, `avx2`, `ssse3` and `vaes` target features.
-#[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_cmac_aes_finish_vaes(state: *mut [u64; 38], rounds: usize, count: u64, out: *mut [u8; 16]) {
-    core::arch::naked_asm!(
-        "lea rsp, [rsp-2312]",
-        "mov r8, rsp",
-        "add r8, 8",
-        "mov rax, QWORD PTR [rdi+272]",
-        "mov QWORD PTR [rcx], rax",
-        "mov rax, QWORD PTR [rdi+280]",
-        "mov QWORD PTR [rcx+8], rax",
-        "mov r9, r8",
-        "mov r8, rdx",
-        "mov rdx, rcx",
-        "mov rcx, rdi",
-        "add rcx, 288",
-        "test r8, r8",
-        "je 20f",
-        "sub r8, 1",
-        "and r8, 15",
-        "add r8, 1",
-        "jmp 21f",
-        "20:",
-        "21:",
-        "call {vg_cmac_aes_finalize_vaes}",
-        "lea rsp, [rsp+2312]",
-        "ret",
-        ".p2align 6",
-        vg_cmac_aes_finalize_vaes = sym super::cmac_aes::vg_cmac_aes_finalize_vaes,
     )
 }

@@ -22,6 +22,7 @@ open VG.Impl.AesGcm.X86_64 (at_ imm ptr copyLoop)
 open VG.Proof.AesGcm.X86_64 (LoopPre copyLoop_ok)
 open VG.Spec.Aes (bytesAt)
 open VG.Proof.Aes.X86_64 (Ctr32Impl)
+open VG.Proof.CmacAes.X86_64 (UpdateImpl)
 
 /-- What `mac y` and `tag y` write. -/
 abbrev tagR (W SP : Addr) (y : Nat) : List Region :=
@@ -39,7 +40,7 @@ theorem tagR_wR (W SP : Addr) {y : Nat} (hy : y + 16 ≤ 112) : ∀ r ∈ tagR W
   · exact ⟨_, by simp, fun _ h => h⟩
 
 /-- The MAC of the payload at `D`, encrypted with `CIPH_K(Ctr₀)`, at `W + y`. -/
-theorem macTag_ok (v : Ctr32Impl) {K W SP : Addr} {s : State} (L : Lay K W SP) (E : Env K W SP s) {R : Nat}
+theorem macTag_ok (v : UpdateImpl) {K W SP : Addr} {s : State} (L : Lay K W SP) (E : Env K W SP s) {R : Nat}
     {N A D : Addr} {nl al n tl : Nat} (S : Slots W R N A D nl al n tl s.mem) (hR : R = 10 ∨ R = 12 ∨ R = 14)
     {nonce : List Byte} (hnl : nonce.length = nl) (h7 : 7 ≤ nl) (h13 : nl ≤ 13)
     (ht4 : 4 ≤ tl) (ht16 : tl ≤ 16) (hte : tl % 2 = 0) (hn : n < 256 ^ (15 - nl))
@@ -50,7 +51,7 @@ theorem macTag_ok (v : Ctr32Impl) {K W SP : Addr} {s : State} (L : Lay K W SP) (
       bytesAt s'.mem (W + BitVec.ofNat 64 y) 16 = xorFrom (Spec.Ccm.ctxCiph s.mem K R) nonce 0
         (Spec.Cmac.chain (Spec.Ccm.ctxCiph s.mem K R) (Spec.Cmac.zeros 16)
           (Spec.Ccm.format tl nonce (bytesAt s.mem A al) (bytesAt s.mem D n))) → Q s') :
-    WP isa (.seq (mac v.callee v.suffix y) (tag v.callee y)) s Q := by
+    WP isa (.seq (mac v.callee y) (tag v.ctr.callee y)) s Q := by
   have hy16 : y + 16 ≤ 112 := by omega
   have hRb : 16 * (R + 1) ≤ 240 := by rcases hR with h | h | h <;> subst h <;> decide
   refine WP.seq (WP.mono (mac_ok v L E S hR hnl h7 h13 ht4 ht16 hte hn hc0 hy hA hD) fun s₁ M => ?_)
@@ -69,7 +70,7 @@ theorem macTag_ok (v : Ctr32Impl) {K W SP : Addr} {s : State} (L : Lay K W SP) (
       · exact L.w_w (.inr (by decide)) (by decide) (by decide)
       · exact L.w_w (.inl (by decide)) (by decide) (by decide)
       · exact (L.stk_w' (by decide)).symm) (by decide), hc0]
-  refine WP.mono (tag_ok v L M.env hR hRo₁ (by omega) (by omega) hc₁ hy)
+  refine WP.mono (tag_ok v.ctr L M.env hR hRo₁ (by omega) (by omega) hc₁ hy)
     fun s₂ ⟨E₂, _, rd₂, wr₂, f₂, h₂⟩ => ?_
   refine hk s₂ E₂ (by rw [rd₂, M.rd]) (by rw [wr₂, M.wr]) (fy.trans (f₂.sub fun r hr => ?_)) ?_ ?_
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -134,7 +135,7 @@ theorem tagOut_ok {K W SP : Addr} {s : State} (E : Env K W SP s) {R : Nat} {N A 
     by rw [hrd₂, hrd₁], by rw [hwr₂, hwr₁], by rw [hm₂, hm₁]⟩
 
 /-- `vg_aes_ccm_seal`, for its arguments. -/
-theorem seal_wp' (v : Ctr32Impl) {s : State} {K W SP N A D T : Addr} {R nl al n tl : Nat}
+theorem seal_wp' (v : UpdateImpl) {s : State} {K W SP N A D T : Addr} {R nl al n tl : Nat}
     (Ar : Args s K W SP N A D R nl al n tl) (Tb : TagBuf W SP D n T tl) (hTw : Covers [⟨T, tl⟩] s.wr)
     (hTr : (⟨SP, 8⟩ : Region).Disjoint ⟨T, tl⟩) (hsp : s.gpr .rsp = SP)
     (hD : s.mem.readW (SP + BitVec.ofNat 64 8) 64 = D) (hn : s.mem.readW (SP + BitVec.ofNat 64 16) 64 = BitVec.ofNat 64 n)
@@ -143,7 +144,7 @@ theorem seal_wp' (v : Ctr32Impl) {s : State} {K W SP N A D T : Addr} {R nl al n 
     (hW : s.mem.readW (SP + BitVec.ofNat 64 40) 64 = W)
     (hdi : s.gpr .rdi = K) (hsi : s.gpr .rsi = BitVec.ofNat 64 R) (hdx : s.gpr .rdx = N)
     (hcx : s.gpr .rcx = BitVec.ofNat 64 nl) (hr8 : s.gpr .r8 = A) (hr9 : s.gpr .r9 = BitVec.ofNat 64 al) :
-    WP isa («seal» v.callee v.suffix) s fun s' => gprPreserved s s' ∧
+    WP isa («seal» v.callee v.ctr.callee) s fun s' => gprPreserved s s' ∧
       Spec.Ccm.encryptWith (Spec.Ccm.ctxCiph s.mem K R) tl (bytesAt s.mem N nl) (bytesAt s.mem D n)
         (bytesAt s.mem A al) = (bytesAt s'.mem D n, bytesAt s'.mem T tl) := by
   have L := Ar.lay
@@ -176,7 +177,7 @@ theorem seal_wp' (v : Ctr32Impl) {s : State} {K W SP N A D T : Addr} {R nl al n 
     ⟨L, Ar.rounds, S₃.rounds, by rw [length_bytesAt]; exact Ar.h7, by rw [length_bytesAt]; exact Ar.h13,
       by rw [length_bytesAt]; exact Ar.hn, c₃, Ar.data.of_eq (rd₃.trans (rd₂.trans rd₁)) (wr₃.trans (wr₂.trans wr₁)),
       by rw [wr₃, wr₂, wr₁]; exact Ar.dw, Ar.dk⟩
-  refine WP.mono (ctr_ok v C₃ E₃ S₃) fun s₄ ⟨E₄, rd₄, wr₄, f₄, h₄⟩ => ?_
+  refine WP.mono (ctr_ok v.ctr C₃ E₃ S₃) fun s₄ ⟨E₄, rd₄, wr₄, f₄, h₄⟩ => ?_
   have f₁₄ : Frame (mutR W SP D n) s₁.mem s₄.mem := (f₁₃.sub (wR_mut W SP D n)).trans (f₄.sub (ctrR_mut W SP D n))
   have fall : Frame (entryR W :: mutR W SP D n) s.mem s₄.mem :=
     (f₁.sub fun r hr => by
@@ -257,8 +258,8 @@ theorem seal_wp' (v : Ctr32Impl) {s : State} {K W SP N A D T : Addr} {R nl al n 
         ← mac_eq _ _ (by rw [length_bytesAt]; have := Ar.h13; omega), c₂', a₂, d₂]
 
 /-- `vg_aes_ccm_seal`. -/
-theorem seal_wp (v : Ctr32Impl) {s : State} (h : sealX86_64.pre s) :
-    WP isa («seal» v.callee v.suffix) s fun s' => gprPreserved s s' ∧ sealX86_64.post s s' :=
+theorem seal_wp (v : UpdateImpl) {s : State} (h : sealX86_64.pre s) :
+    WP isa («seal» v.callee v.ctr.callee) s fun s' => gprPreserved s s' ∧ sealX86_64.post s s' :=
   have A := args_of_seal h
   seal_wp' v A.1.1 A.1.2 A.2.1 A.2.2 rfl rfl (ofNat_toNat64 _).symm rfl (ofNat_toNat64 _).symm rfl rfl
     (ofNat_toNat64 _).symm rfl (ofNat_toNat64 _).symm rfl (ofNat_toNat64 _).symm

@@ -26,7 +26,7 @@ open VG.Proof.AesCcm.X86_64 (runBlock_append length_bytesAt bytesAt_frame)
 theorem recv_ok {K W SP : Addr} {s : State} (E : Env K W SP s) {T : Addr} {tl : Nat} (h1 : 1 ≤ tl) (h16 : tl ≤ 16)
     (htg : s.mem.readW (W + BitVec.ofNat 64 tgO) 64 = T)
     (htl : s.mem.readW (W + BitVec.ofNat 64 tlO) 64 = BitVec.ofNat 64 tl)
-    (hT : Covers [⟨T, tl⟩] (s.rd ++ s.wr)) (hTW : (⟨T, tl⟩ : Region).Disjoint ⟨W, 2560⟩) :
+    (hT : Covers [⟨T, tl⟩] (s.rd ++ s.wr)) (hTW : (⟨T, tl⟩ : Region).Disjoint ⟨W, 3584⟩) :
     WP isa recv s fun t => t.mem = writeBytes s.mem W (bytesAt s.mem T tl) ∧
       (∀ r ∈ [Reg.r14, .r15, .rsp], t.gpr r = s.gpr r) ∧ t.rd = s.rd ∧ t.wr = s.wr := by
   obtain ⟨s₁, run₁, rbx₁, rsi₁, r12₁, rcx₁, g₁, m₁, rd₁, wr₁⟩ := recvArgs_ok E htg htl
@@ -59,7 +59,7 @@ theorem open_wp' (v : BlocksImpl) {s : State} {K W SP N A D : Addr} {R nl al n t
   refine WP.seq (pre_wp v Ar hsp hD hn hT htl hW hdi hsi hdx hcx hr8 hr9 fun s₃ P₃ => ?_)
   have hD₃ : DBuf K W SP s₃ D n := Ar.data.of_eq P₃.rd P₃.wr
   refine WP.seq (WP.mono (bodyOpen_ok v L P₃.env Ar.rounds P₃.slots.rounds hD₃ P₃.slots.data P₃.slots.len P₃.ofs
-    P₃.o0 P₃.ck (by rw [P₃.l0, P₃.lstar])) fun s₄ B => ?_)
+    P₃.o0 P₃.ck (by rw [P₃.lstar]; exact P₃.tbl)) fun s₄ B => ?_)
   have F₄ : Frame (mutR W SP D n) s₃.mem s₄.mem := bodyR_mut B.frame
   have cK₄ : ctxCiph s₄.mem K R = ctxCiph s.mem K R := (ctxCiph_mut L Ar.data.k F₄ Ar.rounds).trans P₃.ciph
   have ld₄ : blockAtMem s₄.mem (W + BitVec.ofNat 64 ldO) = Spec.Ocb.lDollar (ctxLstar s.mem K) := by
@@ -92,7 +92,7 @@ theorem open_wp' (v : BlocksImpl) {s : State} {K W SP N A D : Addr} {R nl al n t
     (by simp at hr; rcases hr with rfl | rfl | rfl <;> decide)) rd₆ wr₆
   have F₆ : Frame [⟨W + BitVec.ofNat 64 tagO, 8⟩] s₅'.mem s₆.mem := by
     rw [m₆]; exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
-  have k₆ : ∀ {d : Nat}, 8 ≤ d → d + 8 ≤ 2560 →
+  have k₆ : ∀ {d : Nat}, 8 ≤ d → d + 8 ≤ 3584 →
       s₆.mem.readW (W + BitVec.ofNat 64 d) 64 = s₅'.mem.readW (W + BitVec.ofNat 64 d) 64 := fun {d} h₁ h₂ => by
     rw [m₆, readW_writeW_off _ (by simp only [tagO]; omega) (by omega) (by decide)]
   have hD₅ : DBuf K W SP s₅' D n := hD₃.of_eq (rdr.trans (T₅.rd.trans B.rd)) (wrr.trans (T₅.wr.trans B.wr))
@@ -162,12 +162,13 @@ theorem open_wp' (v : BlocksImpl) {s : State} {K W SP N A D : Addr} {R nl al n t
         rcases List.mem_cons.mp hr with rfl | hr
         · exact Ar.tag.w.sub_right (Lay.wSub (by decide))
         · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-          rcases hr with rfl | rfl | rfl | rfl | rfl
+          rcases hr with rfl | rfl | rfl | rfl | rfl | rfl
           · exact Ar.tag.w.sub_right (Region.sub_prefix (by decide))
           · exact Ar.tag.w.sub_right (Lay.wSub (by decide))
           · exact Ar.tag.w.sub_right (Lay.wSub (by decide))
           · exact Ar.tag.stk.symm
-          · exact Ar.td) (by omega)
+          · exact Ar.td
+          · exact Ar.tag.w.sub_right (Lay.wSub (by decide))) (by omega)
     have t2₅ : bytesAt s₅'.mem (W + BitVec.ofNat 64 t2O) tl = bytesAt s₅.mem (W + BitVec.ofNat 64 t2O) tl :=
       bytesAt_frame Fr (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr

@@ -26,6 +26,7 @@ namespace VG.Proof.AesSiv.X86_64
 
 open VG VG.X86_64 VG.Impl.AesSiv.X86_64
 open VG.Proof.Aes.X86_64 (Ctr32Impl)
+open VG.Proof.CmacAes.X86_64 (UpdateImpl)
 
 theorem init_xdepth (v : Ctr32Impl) : (init v.expand v.callee v.suffix).x86_64Depth ≤ 16 := by
   simp only [init, Impl.CmacAes.X86_64.subkeys, Code.x86_64Depth, v.noStack, v.expandNoStack]
@@ -48,18 +49,24 @@ theorem init_framed (v : Ctr32Impl) :
     (wa := true) (stack := 16) (bytes := 2568) (init_verified v) (by decide) (by decide) (by decide)
     (init_spSafe v) (init_xdepth v) initFrameSat_pre
 
-theorem encrypt_xdepth (v : Ctr32Impl) : (encrypt v.callee v.suffix).x86_64Depth ≤ 16 := by
+theorem encrypt_xdepth (v : UpdateImpl) : (encrypt v.callee v.ctr.callee v.ctr.suffix).x86_64Depth ≤ 16 := by
+  have := v.xdepth
   simp only [encrypt, encryptCore, encS2v, s2vAds, cmacOf, cmacPre, finish, shortTail, longTail, shortMac, longMac,
-    copy, ctr, ctrWhole, ctrBody, ctrMin, xorBytes, callUpdate, callFinalize, Impl.CmacAes.X86_64.update,
-    Impl.CmacAes.X86_64.finalize, Impl.CmacAes.X86_64.body, Impl.CmacAes.X86_64.finPre,
-    Impl.CmacAes.Stream.X86_64.copy, Code.x86_64Depth, v.noStack]
+    copy, ctr, ctrWhole, ctrBody, ctrMin, xorBytes, callUpdate, callFinalize,
+    Impl.CmacAes.X86_64.finalize, Impl.CmacAes.X86_64.finPre,
+    Impl.CmacAes.Stream.X86_64.copy, Code.x86_64Depth, v.ctr.noStack]
+  generalize v.callee.code.x86_64Depth = d at this ⊢
+  revert d
   decide +kernel
 
-theorem decrypt_xdepth (v : Ctr32Impl) : (decrypt v.callee v.suffix).x86_64Depth ≤ 16 := by
+theorem decrypt_xdepth (v : UpdateImpl) : (decrypt v.callee v.ctr.callee v.ctr.suffix).x86_64Depth ≤ 16 := by
+  have := v.xdepth
   simp only [decrypt, openTail, encS2v, s2vAds, cmacOf, cmacPre, finish, shortTail, longTail, shortMac, longMac,
-    copy, ctr, ctrWhole, ctrBody, ctrMin, xorBytes, maskData, callUpdate, callFinalize, Impl.CmacAes.X86_64.update,
-    Impl.CmacAes.X86_64.finalize, Impl.CmacAes.X86_64.body, Impl.CmacAes.X86_64.finPre,
-    Impl.CmacAes.Stream.X86_64.copy, Code.x86_64Depth, v.noStack]
+    copy, ctr, ctrWhole, ctrBody, ctrMin, xorBytes, maskData, callUpdate, callFinalize,
+    Impl.CmacAes.X86_64.finalize, Impl.CmacAes.X86_64.finPre,
+    Impl.CmacAes.Stream.X86_64.copy, Code.x86_64Depth, v.ctr.noStack]
+  generalize v.callee.code.x86_64Depth = d at this ⊢
+  revert d
   decide +kernel
 
 /-- A state satisfying `vg_aes_siv_encrypt`'s precondition, without the
@@ -72,9 +79,9 @@ theorem encFrameSat_pre : ∃ s, (Spec.Siv.encryptContract X86_64.abi 2616).pre 
     X86_64.stackArg, X86_64.stackArgAddr, List.getD, List.range, List.range.loop]
     [encFrameSat, encSat, Mem.readW, Mem.read] using encFrameSat
 
-theorem encrypt_framed (v : Ctr32Impl) :
+theorem encrypt_framed (v : UpdateImpl) :
     Verified X86_64.target
-      (Impl.StackScratch.X86_64.withStackArgScratch 2600 1 (encrypt v.callee v.suffix))
+      (Impl.StackScratch.X86_64.withStackArgScratch 2600 1 (encrypt v.callee v.ctr.callee v.ctr.suffix))
       (Spec.Siv.encryptContract X86_64.abi 2616) :=
   X86_64.Verified.stackArgScratchL (sig := Spec.Siv.encryptSig) (nm := "work") (e := .u64) (n := 322)
     (pre := Spec.Siv.encryptPre X86_64.abi.ptrBits) (post := Spec.Siv.encryptPost X86_64.abi.ptrBits)
@@ -92,9 +99,9 @@ theorem decFrameSat_pre : ∃ s, (Spec.Siv.decryptContract X86_64.abi 2616).pre 
     Spec.Siv.decryptLeak, X86_64.abi, X86_64.argRegs, X86_64.stackArg, X86_64.stackArgAddr, List.getD, List.range,
     List.range.loop] [decFrameSat, encSat, Mem.readW, Mem.read] using decFrameSat
 
-theorem decrypt_framed (v : Ctr32Impl) :
+theorem decrypt_framed (v : UpdateImpl) :
     Verified X86_64.target
-      (Impl.StackScratch.X86_64.withStackArgScratch 2600 1 (decrypt v.callee v.suffix))
+      (Impl.StackScratch.X86_64.withStackArgScratch 2600 1 (decrypt v.callee v.ctr.callee v.ctr.suffix))
       (Spec.Siv.decryptContract X86_64.abi 2616) :=
   X86_64.Verified.stackArgScratchL (sig := Spec.Siv.decryptSig) (nm := "work") (e := .u64) (n := 322)
     (pre := Spec.Siv.decryptPre X86_64.abi.ptrBits) (post := Spec.Siv.decryptPost X86_64.abi.ptrBits)

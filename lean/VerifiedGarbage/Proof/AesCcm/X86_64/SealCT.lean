@@ -28,6 +28,7 @@ open VG.Impl.AesGcm.X86_64 (at_ imm ptr copyLoop)
 open VG.Proof.AesGcm.X86_64 (LoopPre copyLoop_ok)
 open VG.Spec.Aes (bytesAt)
 open VG.Proof.Aes.X86_64 (Ctr32Impl)
+open VG.Proof.CmacAes.X86_64 (UpdateImpl)
 
 /-- Code the taint analysis checks from the registers `rs`, public. -/
 theorem rel_taintR {P : State → State → Prop} {c : Prog isa} (rs : List Reg)
@@ -71,10 +72,10 @@ theorem ctrs_mid {K W SP : Addr} (L : Lay K W SP) {R : Nat} {N A D T : Addr} {nl
     ⟨⟨E, slots_mut L hD.w f' o.sl, wr.trans o.wr⟩, ⟨_, length_bytesAt _ _ _, c⟩, hA.of_eq rd wr, hD.of_eq rd wr,
       hT.mut f' rd wr⟩
 
-theorem mac_mid (v : Ctr32Impl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} {N A D T : Addr} {nl al n tl : Nat}
+theorem mac_mid (v : UpdateImpl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} {N A D T : Addr} {nl al n tl : Nat}
     (hR : R = 10 ∨ R = 12 ∨ R = 14) (h7 : 7 ≤ nl) (h13 : nl ≤ 13) (ht4 : 4 ≤ tl) (ht16 : tl ≤ 16)
     (hte : tl % 2 = 0) (hn' : n < 256 ^ (15 - nl)) {y : Nat} (hy : y = 0 ∨ y = 96) {s : State}
-    (h : Mid K W SP R N A D nl al n tl T s) : WP isa (mac v.callee v.suffix y) s (Mid K W SP R N A D nl al n tl T) := by
+    (h : Mid K W SP R N A D nl al n tl T s) : WP isa (mac v.callee y) s (Mid K W SP R N A D nl al n tl T) := by
   obtain ⟨o, ⟨nonce, hl, c⟩, hA, hD, hT⟩ := h
   refine WP.mono (mac_ok v L o.env o.sl hR hl h7 h13 ht4 ht16 hte hn' c hy hA hD) fun s' M => ?_
   refine ⟨o.macR L hD.w (by omega) M.env M.frame M.wr, ⟨nonce, hl, ?_⟩, hA.of_eq M.rd M.wr, hD.of_eq M.rd M.wr,
@@ -151,13 +152,13 @@ theorem ctrs_check : ∃ hc, (taint.check (ccmT []) ctrs hc).isSome = true := �
 theorem restore_check : ∃ hc, (taint.check (ccmT []) (.block restore) hc).isSome = true := ⟨_, by taint_decide⟩
 
 /-- `seal` after its entry, up to the copy of the tag, in two runs. -/
-theorem sealFront_rel (v : Ctr32Impl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} {N A D T : Addr}
+theorem sealFront_rel (v : UpdateImpl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} {N A D T : Addr}
     {nl al n tl : Nat} (hR : R = 10 ∨ R = 12 ∨ R = 14) (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 2560⟩)
     (hn : n ≤ 2 ^ 64) (h7 : 7 ≤ nl) (h13 : nl ≤ 13) (ht4 : 4 ≤ tl) (ht16 : tl ≤ 16) (hte : tl % 2 = 0)
     (hal : al < 2 ^ 64) (hn' : n < 256 ^ (15 - nl)) (hdk : (⟨K, 240⟩ : Region).Disjoint ⟨D, n⟩)
     {P : State → State → Prop}
     (hP : ∀ s₁ s₂, P s₁ s₂ → Pre₀ K W SP R N A D nl al n tl T s₁ ∧ Pre₀ K W SP R N A D nl al n tl T s₂) :
-    RelCT isa P (sealFront v.callee v.suffix) fun s₁ s₂ =>
+    RelCT isa P (sealFront v.callee v.ctr.callee) fun s₁ s₂ =>
       True ∧ Mid K W SP R N A D nl al n tl T s₁ ∧ Mid K W SP R N A D nl al n tl T s₂ := by
   have r₁ := (rel_taintC [] hDW hn (fun s₁ s₂ h => by
       obtain ⟨⟨o₁, -⟩, ⟨o₂, -⟩⟩ := hP _ _ h; exact Both.of o₁ o₂ fun _ h => nomatch h) ctrs_check).wp
@@ -171,31 +172,31 @@ theorem sealFront_rel (v : Ctr32Impl) {K W SP : Addr} (L : Lay K W SP) {R : Nat}
     (F₁ := Mid K W SP R N A D nl al n tl T) (F₂ := Mid K W SP R N A D nl al n tl T)
     fun _ _ h => ⟨mac_mid v L hR h7 h13 ht4 ht16 hte hn' (.inl rfl) h.2.1,
       mac_mid v L hR h7 h13 ht4 ht16 hte hn' (.inl rfl) h.2.2⟩
-  have r₃ := (tag_rel v L hR hDW hn h7 h13 (y := 0) (.inl rfl)
+  have r₃ := (tag_rel v.ctr L hR hDW hn h7 h13 (y := 0) (.inl rfl)
     (Q := fun s₁ s₂ => True ∧ Mid K W SP R N A D nl al n tl T s₁ ∧ Mid K W SP R N A D nl al n tl T s₂)
     fun _ _ h => ⟨⟨h.2.1.1, h.2.1.2.1⟩, ⟨h.2.2.1, h.2.2.2.1⟩⟩).wp
     (F₁ := Mid K W SP R N A D nl al n tl T) (F₂ := Mid K W SP R N A D nl al n tl T)
-    fun _ _ h => ⟨tag_mid v L hR h7 h13 (.inl rfl) h.2.1, tag_mid v L hR h7 h13 (.inl rfl) h.2.2⟩
-  have r₄ := (rel_of_pt (c := ctr v.callee)
+    fun _ _ h => ⟨tag_mid v.ctr L hR h7 h13 (.inl rfl) h.2.1, tag_mid v.ctr L hR h7 h13 (.inl rfl) h.2.2⟩
+  have r₄ := (rel_of_pt (c := ctr v.ctr.callee)
     (P := fun s₁ s₂ => True ∧ Mid K W SP R N A D nl al n tl T s₁ ∧ Mid K W SP R N A D nl al n tl T s₂)
     fun σ₁ σ₂ h => by
       obtain ⟨_, C₁⟩ := h.2.1.ctx L hR h7 h13 hn' hdk
       obtain ⟨_, C₂⟩ := h.2.2.ctx L hR h7 h13 hn' hdk
-      exact crypt_rel v C₁ C₂ h.2.1.1 h.2.2.1).wp
+      exact crypt_rel v.ctr C₁ C₂ h.2.1.1 h.2.2.1).wp
     (F₁ := Mid K W SP R N A D nl al n tl T) (F₂ := Mid K W SP R N A D nl al n tl T)
-    fun _ _ h => ⟨ctr_mid v L hR h7 h13 hn' hdk h.2.1, ctr_mid v L hR h7 h13 hn' hdk h.2.2⟩
+    fun _ _ h => ⟨ctr_mid v.ctr L hR h7 h13 hn' hdk h.2.1, ctr_mid v.ctr L hR h7 h13 hn' hdk h.2.2⟩
   exact RelCT.seq r₁ (RelCT.seq r₂ (RelCT.seq r₃ (r₄.mono (fun _ _ h => h) fun _ _ h => ⟨trivial, h.2⟩)))
 
 /-- `seal` after its entry, up to the copy of the tag, in one run. -/
-theorem sealFront_mid (v : Ctr32Impl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} {N A D T : Addr}
+theorem sealFront_mid (v : UpdateImpl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} {N A D T : Addr}
     {nl al n tl : Nat} (hR : R = 10 ∨ R = 12 ∨ R = 14) (h7 : 7 ≤ nl) (h13 : nl ≤ 13) (ht4 : 4 ≤ tl)
     (ht16 : tl ≤ 16) (hte : tl % 2 = 0) (hn' : n < 256 ^ (15 - nl)) (hdk : (⟨K, 240⟩ : Region).Disjoint ⟨D, n⟩)
     {s : State} (h : Pre₀ K W SP R N A D nl al n tl T s) :
-    WP isa (sealFront v.callee v.suffix) s (Mid K W SP R N A D nl al n tl T) := by
+    WP isa (sealFront v.callee v.ctr.callee) s (Mid K W SP R N A D nl al n tl T) := by
   obtain ⟨o, hN, hA, hD, hT⟩ := h
   exact WP.seq (WP.mono (ctrs_mid L o hN hA hD hT h7 h13) fun _ h₁ =>
     WP.seq (WP.mono (mac_mid v L hR h7 h13 ht4 ht16 hte hn' (.inl rfl) h₁) fun _ h₂ =>
-    WP.seq (WP.mono (tag_mid v L hR h7 h13 (.inl rfl) h₂) fun _ h₃ => ctr_mid v L hR h7 h13 hn' hdk h₃)))
+    WP.seq (WP.mono (tag_mid v.ctr L hR h7 h13 (.inl rfl) h₂) fun _ h₃ => ctr_mid v.ctr L hR h7 h13 hn' hdk h₃)))
 
 /-! ## Moving the tag to the regions read only -/
 
@@ -403,15 +404,15 @@ theorem entry_seal_pub {s₀ s₀' : State} (hp' : sealX86_64.pre s₀') (hq : o
   exact entry_seal hp'
 
 /-- `vg_aes_ccm_seal`, in two runs with the same public arguments. -/
-theorem seal_rel (v : Ctr32Impl) {s₀ s₀' : State} (hp : sealX86_64.pre s₀) (hp' : sealX86_64.pre s₀')
+theorem seal_rel (v : UpdateImpl) {s₀ s₀' : State} (hp : sealX86_64.pre s₀) (hp' : sealX86_64.pre s₀')
     (hq : sealX86_64.pub s₀ s₀') :
-    RelCT isa (fun s₁ s₂ => s₁ = s₀ ∧ s₂ = s₀') («seal» v.callee v.suffix) fun _ _ => True := by
+    RelCT isa (fun s₁ s₂ => s₁ = s₀ ∧ s₂ = s₀') («seal» v.callee v.ctr.callee) fun _ _ => True := by
   have Ar := (args_of_seal hp).1.1
   have L := Ar.lay
   refine RelCT.seq (entry_rel (pub_regs hq) (hq.2.2.2.2.2.2.2 4 (by decide)) (argW_in Ar rfl)
     (argW_in (args_of_seal hp').1.1 rfl) (entry_seal hp) (entry_seal_pub hp' hq)) ?_
   have hn := Nat.le_of_lt Ar.data.lt
-  have front := rel_narrow (c := sealFront v.callee v.suffix)
+  have front := rel_narrow (c := sealFront v.callee v.ctr.callee)
     (P := fun s₁ s₂ => True ∧
       SealIn (s₀.gpr .rdi) (arg s₀ 4) (s₀.gpr .rsp) (s₀.gpr .rsi).toNat (s₀.gpr .rdx) (s₀.gpr .r8) (arg s₀ 0)
         (s₀.gpr .rcx).toNat (s₀.gpr .r9).toNat (arg s₀ 1).toNat (arg s₀ 3).toNat (arg s₀ 2) s₁ ∧
@@ -437,7 +438,7 @@ theorem seal_rel (v : Ctr32Impl) {s₀ s₀' : State} (hp : sealX86_64.pre s₀)
     obtain ⟨_, _, ⟨-, m₁, m₂⟩, ⟨g₁, h₁, c₁⟩, ⟨g₂, h₂, c₂⟩⟩ := h
     exact ⟨m₁.sealOut g₁ h₁ c₁, m₂.sealOut g₂ h₂ c₂⟩)
 
-theorem seal_ct (v : Ctr32Impl) : ConstantTime isa sealX86_64.pre sealX86_64.pub («seal» v.callee v.suffix) :=
+theorem seal_ct (v : UpdateImpl) : ConstantTime isa sealX86_64.pre sealX86_64.pub («seal» v.callee v.ctr.callee) :=
   fun _ _ _ _ _ _ h₁ h₂ hq e₁ e₂ => (seal_rel v h₁ h₂ hq _ _ _ _ _ _ ⟨rfl, rfl⟩ e₁ e₂).1
 
 end VG.Proof.AesCcm.X86_64

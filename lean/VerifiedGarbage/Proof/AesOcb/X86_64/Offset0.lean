@@ -96,9 +96,9 @@ theorem offset0_ok {K W SP : Addr} (L : Lay K W SP) {s : State} (E : Env K W SP 
       s₁.gpr .rbx = BitVec.ofNat 64 v ∧
       (∀ r, r ≠ .rax → r ≠ .rdx → r ≠ .rcx → r ≠ .rbx → r ≠ .r8 → s₁.gpr r = s.gpr r) ∧
       s₁.mem = s.mem ∧ s₁.rd = s.rd ∧ s₁.wr = s.wr := by
-    have r₀ := E.perm.wR (show 112 + 8 ≤ 2560 by decide)
-    have r₁ := E.perm.wR (show 120 + 8 ≤ 2560 by decide)
-    have r₂ := E.perm.wR (show 256 + 8 ≤ 2560 by decide)
+    have r₀ := E.perm.wR (show 112 + 8 ≤ 3584 by decide)
+    have r₁ := E.perm.wR (show 120 + 8 ≤ 3584 by decide)
+    have r₂ := E.perm.wR (show 256 + 8 ≤ 3584 by decide)
     have rm := ror_mask (bswap64 (s.mem.readW (W + BitVec.ofNat 64 112) 64)) (a := 8) (by decide) (by decide)
     simp only [show 64 - 8 = 56 from rfl] at rm
     refine ⟨_, by orun [h15, r₀, r₁, r₂, hbot], ?_, ?_, fun r h1 h2 h3 h4 h5 => ?_, ?_, ?_, ?_⟩
