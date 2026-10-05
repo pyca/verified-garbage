@@ -138,6 +138,6 @@ theorem roundPre_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {mi : BitVec 6
       (by have := slot_le (w := w) (show aR2 < 8 by decide); omega)]; exact hR2₁
   · rw [hf23.word_eq (d := 8 * kU) (by rng_disj) (by unfold kU sFn; omega)]; exact hu₁
   · rw [hf23.word_eq (d := 8 * kUsed) (by rng_disj) (by unfold kUsed sFn; omega)]; exact hus₁
-  · exact (hf₁.mono fun r hr => List.mem_append_left _ hr).trans (hf23.mono (by simp [preRanges, witRanges]))
+  · exact (hf₁.mono fun r hr => List.mem_append_left _ hr).trans (hf23.mono (by simp))
 
 end VG.Proof.RsaKeyGen.X86_64
