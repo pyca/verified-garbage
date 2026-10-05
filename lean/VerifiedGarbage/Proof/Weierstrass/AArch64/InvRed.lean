@@ -281,38 +281,6 @@ theorem mulx_ok (s : State) (d a b : Reg) :
   simp only [List.mem_singleton] at hr
   exact RegUpd.gpr_write_of_ne _ _ _ hr
 
-/-- A number's top word. -/
-theorem top_word (m : Mem) (base : Addr) (d n : Nat) :
-    (word m base (d + 8 * n)).toNat = wordsVal m base d (n + 1) / 2 ^ (64 * n) := by
-  rw [wordsVal_succ_top, Nat.add_mul_div_left _ _ (Nat.two_pow_pos _),
-    Nat.div_eq_of_lt (wordsVal_lt _ _ _ _), Nat.zero_add]
-
-/-- Its sign: the top half. -/
-theorem sgn_iff (m : Mem) (base : Addr) (d n : Nat) :
-    2 ^ 63 ≤ (word m base (d + 8 * n)).toNat ↔ 2 ^ (64 * n) * 2 ^ 63 ≤ wordsVal m base d (n + 1) := by
-  rw [top_word, Nat.le_div_iff_mul_le (Nat.two_pow_pos _), Nat.mul_comm (2 ^ 63)]
-
-theorem masked_sgn {m x : BitVec 64} (h : m.toNat = sgnW x) (v : Nat) :
-    masked m v = if 2 ^ 63 ≤ x.toNat then v else 0 := by
-  unfold masked sgnW at *
-  by_cases hx : 2 ^ 63 ≤ x.toNat
-  · rw [ite_eq_left_of_eq_true _ _ (eq_true hx)] at h ⊢
-    have : m = BitVec.allOnes 64 := BitVec.eq_of_toNat_eq (by rw [h, BitVec.toNat_allOnes])
-    rw [ite_eq_left_of_eq_true _ _ (eq_true this)]
-  · rw [ite_eq_right_of_eq_false _ _ (eq_false hx)] at h ⊢
-    have : m ≠ BitVec.allOnes 64 := fun e => by rw [e, BitVec.toNat_allOnes] at h; exact absurd h (by decide)
-    rw [ite_eq_right_of_eq_false _ _ (eq_false this)]
-
-theorem sgnW_top (m : Mem) (base : Addr) (d n : Nat) :
-    sgnW (word m base (d + 8 * n)) =
-      if 2 ^ (64 * n) * 2 ^ 63 ≤ wordsVal m base d (n + 1) then 2 ^ 64 - 1 else 0 := by
-  unfold sgnW; simp only [sgn_iff]
-
-theorem masked_top {x : BitVec 64} {m : Mem} {base : Addr} {d n : Nat}
-    (h : x.toNat = sgnW (word m base (d + 8 * n))) (v : Nat) :
-    masked x v = if 2 ^ (64 * n) * 2 ^ 63 ≤ wordsVal m base d (n + 1) then v else 0 := by
-  rw [masked_sgn h]; simp only [sgn_iff]
-
 theorem KeepRegs.of_st {rs : List Reg} {s u : State} {m' : Mem} (h : u = { s with mem := m' }) :
     KeepRegs rs s u := by
   subst h; exact ⟨fun _ _ => rfl, rfl, rfl, rfl⟩

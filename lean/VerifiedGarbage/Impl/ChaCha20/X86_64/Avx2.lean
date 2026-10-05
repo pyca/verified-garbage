@@ -1,4 +1,5 @@
 import VerifiedGarbage.Impl.ChaCha20.X86_64.Xor
+import VerifiedGarbage.Impl.ChaCha20.X86_64.Avx2Tail
 
 /-!
 # ChaCha20 keystream XOR: x86-64 implementation with AVX2
@@ -10,7 +11,7 @@ While at least 512 bytes of data remain, eight blocks of keystream (the
 counters `c, c + 1, …, c + 7` modulo 2³², `c` being word 12 of the state)
 are computed at once and XORed into the next 512 bytes of the data, and
 word 12 of the state is advanced by 8. The rest of the data (less than 512
-bytes) is then XORed by calling `vg_chacha20_xor`.
+bytes) is then XORed by `Avx2Tail.tail`, four blocks at a time.
 
 * Each of the sixteen words of the eight states is kept in an AVX register,
   lane `j` (doubleword `j % 4` of 128-bit lane `j / 4`) holding it for block
@@ -190,8 +191,7 @@ def next : List Instr :=
 def body : Prog isa := .seq (.block setup) (.seq (rounds 10) (.block (finish ++ next)))
 
 def xor : Prog isa :=
-  .seq (.block (consts ++ [.alu .cmp .rdx (.imm 512)]))
-  (.seq (.ite .b (.block []) (.loop body .ae))
-  (.seq (.block [.vop .vzeroupper]) (.call "vg_chacha20_xor" Xor.xor)))
+  .seq (.block (Avx2Tail.consts ++ consts ++ [.alu .cmp .rdx (.imm 512)]))
+  (.seq (.ite .b (.block []) (.loop body .ae)) Avx2Tail.tail)
 
 end VG.Impl.ChaCha20.X86_64.Avx2

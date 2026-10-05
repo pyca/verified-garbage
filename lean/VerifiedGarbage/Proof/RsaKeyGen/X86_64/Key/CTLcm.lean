@@ -383,8 +383,8 @@ theorem gcdSwap_k {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) :
     KF.of_frm hf fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
-      · exact ⟨.arr aU, by simp, by simp [Rc.range], by simp [Rc.range]⟩
-      · exact ⟨.arr aV, by simp, by simp [Rc.range], by simp [Rc.range]⟩
+      · exact ⟨.arr aU, by simp, by simp [Rc.range], by simp only [Rc.range]; omega⟩
+      · exact ⟨.arr aV, by simp, by simp [Rc.range], by simp only [Rc.range]; omega⟩
   refine ⟨h.step f₂ (all_mut_arrs (js := [aU, aV]) (by decide)) (k₁.trans k₂) (by decide), f₂, ?_,
     (k₁.trans k₂).mono (by decide)⟩
   dsimp only [atop]

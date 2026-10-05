@@ -1,9 +1,10 @@
 import VerifiedGarbage.Proof.Mont.Arm.Csub
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # Montgomery arithmetic on 32-bit ARM: the operations
 
-For a modulus `m` in the working space (`ModOk`) and an accumulator of
+For a modulus `m` in the working space (`ModOkW`) and an accumulator of
 `accLen M` bytes at `acc` apart from the numbers (`OpLay`): `mul acc o a b`
 writes `[a] [b] R⁻¹ mod m` to `[o]` (`mul_ok`), `add` writes
 `[a] + [b] mod m` (`add_ok`) and `sub` writes `[a] - [b] mod m` (`sub_ok`),
@@ -49,8 +50,8 @@ theorem m_pos_of_inv {m : Nat} {minv : Nat} (h : (m * minv + 1) % 2 ^ 64 = 0) : 
   · exact h'
 
 /-- The count of words, an immediate. -/
-theorem words_encodable {M : Mod} (h : M.n < 7) : encodable (BitVec.ofNat 32 (words M)) = true := by
-  have : ∀ n < 7, encodable (BitVec.ofNat 32 (2 * n)) = true := by decide
+theorem words_encodable {M : Mod} (h : M.n < 128) : encodable (BitVec.ofNat 32 (words M)) = true := by
+  have : ∀ n < 128, encodable (BitVec.ofNat 32 (2 * n)) = true := by decide
   exact this _ h
 
 /-! ## Clearing the accumulator -/
@@ -413,7 +414,7 @@ theorem sub_eq (M : Mod) (acc o a b : Nat) : sub M acc o a b =
 
 /-- `[o] = [a] [b] R⁻¹ mod m`. -/
 theorem mul_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M : Mod} {m : Nat}
-    (hM : ModOk M size m s.mem base) {acc o a b : Nat} (hL : OpLay M size acc o a b)
+    (hM : ModOkW M size m s.mem base) {acc o a b : Nat} (hL : OpLay M size acc o a b)
     (hB : wordsVal s.mem base b M.n < m) :
     WP isa (mul M acc o a b) s fun s' => OpKeep M base acc o s s' ∧
       wordsVal s'.mem base o M.n < m ∧
@@ -426,13 +427,13 @@ theorem mul_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M 
   have hacc : accLen M = 4 * (4 * W + 2) := by rw [accLen, hD]; omega
   have := hL.acc_le; have := hL.o_le; have := hL.a_le; have := hL.b_le; have := hL.acc_o; have := hL.acc_a
   have := hL.acc_b; have := hL.acc_mo; have := hL.acc_tmp; have := hL.o_tmp
-  have := hM.mo; have := hM.tmp; have := hM.sep; have := hM.n0; have := hM.n7
+  have := hM.mo; have := hM.tmp; have := hM.sep; have := hM.n0; have := hs.small
   have hm0 := m_pos_of_inv hM.inv
   have hmv : val32 s.mem base M.mo W = m := by rw [hW2, ← wordsVal_eq_val32]; exact hM.val
   have hBv : val32 s.mem base b W < m := by rw [hW2, ← wordsVal_eq_val32]; exact hB
   have hML : MulLay W size acc a b M.mo :=
     ⟨by omega, by omega, by omega, by omega, by omega, by omega, by omega⟩
-  have himm : encodable (BitVec.ofNat 32 W) = true := hW ▸ words_encodable hM.n7
+  have himm : encodable (BitVec.ofNat 32 W) = true := hW ▸ words_encodable (by omega)
   simp only [mul, hW, hD]
   refine WP.seq (zeros_ok hs (k := 2 * (2 * W) + 2) (by omega) fun s₁ O₁ Z₁ K₁ => ?_)
   refine wp_movw fun s₂ u₂ => ?_
@@ -480,8 +481,15 @@ theorem mul_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M 
     · have := Nat.mul_le_mul_right (2 ^ (16 * (2 * W + 1))) h
       omega
   have hV : dval t.mem base (acc + 4 * (2 * W)) (2 * W + 1) < 2 * m := htop ▸ I.lt
-  refine WP.mono (csub_ok ht hW hD (src := acc + 4 * (2 * W)) (o := o) (by omega) (by omega) (by omega)
-    (by omega) (by omega) (by omega) (by omega) (by omega) hmt hm0 (I.digs.mono (by omega)) hV)
+  refine WP.mono (csub_ok ht hW hD (src := acc + 4 * (2 * W)) (o := o)
+    (by omega_using [hacc, hL.acc_le])
+    (by omega_using [hW2, hL.o_le])
+    (by omega_using [hW2, hM.tmp])
+    (by omega_using [hW2, hM.mo])
+    (by omega_using [hW2, hacc, hL.acc_tmp])
+    (by omega_using [hW2, hM.sep])
+    (by omega_using [hW2, hacc, hL.acc_o])
+    (by omega_using [hW2, hL.o_tmp]) hmt hm0 (I.digs.mono (by omega)) hV)
     fun u ⟨O, V, K⟩ => ⟨⟨(K₅.trans I.rest).trans (K.mono (by simp [clob])), ?_⟩, ?_, ?_⟩
   · have O₅' : Outside base acc (accLen M) s.mem s₅.mem := by rw [hacc]; exact O₅
     have Ot : Outside base acc (accLen M) s₅.mem t.mem := by rw [hacc]; exact I.out
@@ -497,7 +505,7 @@ theorem mul_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M 
 
 /-- `[o] = [a] + [b] mod m`. -/
 theorem add_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M : Mod} {m : Nat}
-    (hM : ModOk M size m s.mem base) {acc o a b : Nat} (hL : OpLay M size acc o a b)
+    (hM : ModOkW M size m s.mem base) {acc o a b : Nat} (hL : OpLay M size acc o a b)
     (hAB : wordsVal s.mem base a M.n + wordsVal s.mem base b M.n < 2 * m) :
     WP isa (.block (add M acc o a b)) s fun s' => OpKeep M base acc o s s' ∧
       wordsVal s'.mem base o M.n = (wordsVal s.mem base a M.n + wordsVal s.mem base b M.n) % m := by
@@ -544,8 +552,15 @@ theorem add_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M 
     rw [hW2, ← wordsVal_eq_val32, ← wordsVal_eq_val32]; exact hAB
   have hm₄ : val32 s₄.mem base M.mo W = m := by
     rw [O₄.val32 (by omega) (by omega), hW2, ← wordsVal_eq_val32]; exact hM.val
-  refine WP.mono (csub_ok hs₄ hW hD (src := acc) (o := o) (by omega) (by omega) (by omega) (by omega) (by omega)
-    (by omega) (by omega) (by omega) hm₄ hm0 hd₄ (by rw [hsum]; exact hA)) fun u ⟨O, V, K⟩ => ⟨⟨?_, ?_⟩, ?_⟩
+  refine WP.mono (csub_ok hs₄ hW hD (src := acc) (o := o)
+    (by omega_using [hacc, hL.acc_le])
+    (by omega_using [hW2, hL.o_le])
+    (by omega_using [hW2, hM.tmp])
+    (by omega_using [hW2, hM.mo])
+    (by omega_using [hW2, hacc, hL.acc_tmp])
+    (by omega_using [hW2, hM.sep])
+    (by omega_using [hW2, hacc, hL.acc_o])
+    (by omega_using [hW2, hL.o_tmp]) hm₄ hm0 hd₄ (by rw [hsum]; exact hA)) fun u ⟨O, V, K⟩ => ⟨⟨?_, ?_⟩, ?_⟩
   · exact (K₂₃.trans (m₄.rest _)).trans (K.mono (by simp [clob]))
   · have O₄' : Outside base acc (accLen M) s.mem s₄.mem := O₄.mono (Nat.le_refl _) (by omega)
     refine (Outs.of_outside O₄' (by simp)).trans ?_
@@ -555,7 +570,7 @@ theorem add_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M 
 
 /-- `[o] = [a] - [b] mod m`. -/
 theorem sub_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M : Mod} {m : Nat}
-    (hM : ModOk M size m s.mem base) {acc o a b : Nat} (hL : OpLay M size acc o a b)
+    (hM : ModOkW M size m s.mem base) {acc o a b : Nat} (hL : OpLay M size acc o a b)
     (hA : wordsVal s.mem base a M.n < m) (hB : wordsVal s.mem base b M.n < m) :
     WP isa (.block (sub M acc o a b)) s fun s' => OpKeep M base acc o s s' ∧
       wordsVal s'.mem base o M.n = (wordsVal s.mem base a M.n + m - wordsVal s.mem base b M.n) % m := by
@@ -618,8 +633,15 @@ theorem sub_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M 
     · rw [low j h]; exact D₃ j h
     · rw [show j = 2 * W by omega, top]; omega
   have hm₅ : val32 s₅.mem base M.mo W = m := by rw [O₅.val32 (by omega) (by omega), hmv]
-  refine WP.mono (csub_ok hs₅ hW hD (src := acc) (o := o) (by omega) (by omega) (by omega) (by omega) (by omega)
-    (by omega) (by omega) (by omega) hm₅ hm0 hd₅ (by rw [hdiff]; omega)) fun u ⟨O, V, K⟩ => ⟨⟨?_, ?_⟩, ?_⟩
+  refine WP.mono (csub_ok hs₅ hW hD (src := acc) (o := o)
+    (by omega_using [hacc, hL.acc_le])
+    (by omega_using [hW2, hL.o_le])
+    (by omega_using [hW2, hM.tmp])
+    (by omega_using [hW2, hM.mo])
+    (by omega_using [hW2, hacc, hL.acc_tmp])
+    (by omega_using [hW2, hM.sep])
+    (by omega_using [hW2, hacc, hL.acc_o])
+    (by omega_using [hW2, hL.o_tmp]) hm₅ hm0 hd₅ (by rw [hdiff]; omega)) fun u ⟨O, V, K⟩ => ⟨⟨?_, ?_⟩, ?_⟩
   · exact (K₂₄.trans (m₅.rest _)).trans (K.mono (by simp [clob]))
   · have O₅' : Outside base acc (accLen M) s.mem s₅.mem := O₅.mono (Nat.le_refl _) (by omega)
     refine (Outs.of_outside O₅' (by simp)).trans ?_

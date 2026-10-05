@@ -32,7 +32,10 @@ theorem combIndex_ok (s : State) {base : Addr} (hs : Scr s base) {j : Nat} (hj :
   simp only [runBlock_cons, runStep_some, runBlock_nil, exec, read_x,
     show (3 : Nat) < Size.x.bits from by decide, ite_true, RegUpd.gpr_write, BitVec.setWidth_eq,
     hb, index_fact j hj, hs.x0, ite_false, reduceCtorEq, Option.some.injEq, exists_eq_left']
-  refine ⟨True.intro, ⟨fun r hr => ?_, rfl, rfl, rfl, rfl⟩⟩
+  refine ⟨True.intro, ⟨fun r hr => ?_, by simp only [RegUpd.mem_write],
+      by simp only [RegUpd.rd_write],
+      by simp only [RegUpd.wr_write],
+      by simp only [RegUpd.sp_write]⟩⟩
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   simp only [RegUpd.gpr_write, hr, ite_false]
 
@@ -80,7 +83,10 @@ theorem combNibble_ok {s : State} {base : Addr} (hs : Scr s base) {S i p o : Nat
     r0, r1, r2, r3, read_byte, v0, v1, v2, v3,
     ite_true, ite_false, reduceCtorEq, Option.map_some, Option.bind_some,
     Option.some.injEq, exists_eq_left']
-  refine ⟨?_, ⟨fun r hr => ?_, rfl, rfl, rfl, rfl⟩⟩
+  refine ⟨?_, ⟨fun r hr => ?_, by simp only [RegUpd.mem_write],
+      by simp only [RegUpd.rd_write],
+      by simp only [RegUpd.wr_write],
+      by simp only [RegUpd.sp_write]⟩⟩
   · rw [nib_bits]
     simp only [← BitVec.ofNat_add]
     congr 1
@@ -109,7 +115,10 @@ theorem combSign_ok (s : State) {n : Nat} (hn : n < 16) (hx : s.gpr .x2 = BitVec
     show 16 * 0 < 32 from by decide, Nat.mul_zero, BitVec.shiftLeft_zero,
     RegUpd.gpr_write, BitVec.setWidth_eq, hx, ite_true, ite_false, reduceCtorEq,
     Option.some.injEq, exists_eq_left']
-  refine ⟨(sign_fact n hn).1, (sign_fact n hn).2, ⟨fun r hr => ?_, rfl, rfl, rfl, rfl⟩⟩
+  refine ⟨(sign_fact n hn).1, (sign_fact n hn).2, ⟨fun r hr => ?_, by simp only [RegUpd.mem_write],
+      by simp only [RegUpd.rd_write],
+      by simp only [RegUpd.wr_write],
+      by simp only [RegUpd.sp_write]⟩⟩
   simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
   simp only [RegUpd.gpr_write, hr.1, hr.2.1, hr.2.2.1, hr.2.2.2, ite_false]
 
@@ -142,7 +151,10 @@ theorem masksOdd_ok (s : State) {a : Nat} (ha : a < 9) (hx : s.gpr .x2 = BitVec.
     show (63 : Nat) < 64 from by decide, show ∀ k < 9, k < 4096 from fun k hk => by omega,
     RegUpd.gpr_write, BitVec.setWidth_eq, hx, reduceCtorEq,
     Option.some.injEq, exists_eq_left']
-  refine ⟨fun k hk1 hk8 => ?_, (last_fact a ha).2, ⟨fun r hr => ?_, rfl, rfl, rfl, rfl⟩⟩
+  refine ⟨fun k hk1 hk8 => ?_, (last_fact a ha).2, ⟨fun r hr => ?_, by simp only [RegUpd.mem_write],
+      by simp only [RegUpd.rd_write],
+      by simp only [RegUpd.wr_write],
+      by simp only [RegUpd.sp_write]⟩⟩
   · have : k = 1 ∨ k = 2 ∨ k = 3 ∨ k = 4 ∨ k = 5 ∨ k = 6 ∨ k = 7 ∨ k = 8 := by omega
     rcases this with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
       simp only [List.getD_cons_zero, List.getD_cons_succ, Nat.reduceSub, ite_true, ite_false,
@@ -168,7 +180,10 @@ theorem masksEven_ok (s : State) {a : Nat} (ha : a < 9) (hx : s.gpr .x2 = BitVec
     show (63 : Nat) < 64 from by decide, show ∀ k < 9, k < 4096 from fun k hk => by omega,
     RegUpd.gpr_write, BitVec.setWidth_eq, hx, reduceCtorEq,
     Option.some.injEq, exists_eq_left']
-  refine ⟨fun k hk1 hk8 => ?_, (last_fact a ha).2, ⟨fun r hr => ?_, rfl, rfl, rfl, rfl⟩⟩
+  refine ⟨fun k hk1 hk8 => ?_, (last_fact a ha).2, ⟨fun r hr => ?_, by simp only [RegUpd.mem_write],
+      by simp only [RegUpd.rd_write],
+      by simp only [RegUpd.wr_write],
+      by simp only [RegUpd.sp_write]⟩⟩
   · have : k = 1 ∨ k = 2 ∨ k = 3 ∨ k = 4 ∨ k = 5 ∨ k = 6 ∨ k = 7 ∨ k = 8 := by omega
     rcases this with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
       simp only [List.getD_cons_zero, List.getD_cons_succ, Nat.reduceSub, ite_true, ite_false,

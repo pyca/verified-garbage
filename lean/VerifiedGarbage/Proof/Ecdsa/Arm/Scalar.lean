@@ -18,7 +18,7 @@ variable {c : Cfg}
 
 /-- A slot apart from the flag word keeps its number. -/
 theorem sv_flag {base : Addr} {m m' : Mem} (h : Outside base (c.sl FLAG) 4 m m') (h0 : 0 < c.n)
-    (h7 : c.n < 7) (hn : base.toNat + size ≤ 2 ^ 32) {i : Nat} (hi : i < 45) (hif : i ≠ FLAG) :
+    (h7 : c.n < 10) (hn : base.toNat + size ≤ 2 ^ 32) {i : Nat} (hi : i < 45) (hif : i ≠ FLAG) :
     wordsVal m' base (c.sl i) c.n = wordsVal m base (c.sl i) c.n := by
   have := sl_apart c hif
   have := sl_le c h7 hi
@@ -33,7 +33,7 @@ theorem checks_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size
           mask32 (0 < sv c base s K ∧ sv c base s K < c.C.n) &&& mask32 (sv c base s RR ≠ 0) ∧
         VG.Proof.X25519.Arm.Rest [.r3, .r4, .r5, .r6, .r7, .r8, .r9] s s' ∧ Outside base (c.sl FLAG) 4 s.mem s'.mem := by
   have h0 := hc.n0
-  have h7 := hc.n7
+  have h7 := hc.n10
   have hn := hs.nowrap
   have hf : c.sl FLAG + 4 ≤ size := by have := sl_le c h7 (i := FLAG) (by decide); omega
   rw [List.append_assoc]
@@ -74,10 +74,10 @@ structure ScPost (c : Cfg) (base : Addr) (s s' : State) : Prop where
 
 /-- The first three multiplications by `R² mod n`. -/
 theorem scalarIn_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size)
-    (hMN : ModOk c.MN' size c.C.n s.mem base)
+    (hMN : ModOkW c.MN' size c.C.n s.mem base)
     (hr2 : sv c base s R2N = 2 ^ (64 * c.n) * 2 ^ (64 * c.n) % c.C.n) {rest : Prog isa}
     {Q : State → Prop}
-    (h : ∀ s', Scr s' base size → ModOk c.MN' size c.C.n s'.mem base →
+    (h : ∀ s', Scr s' base size → ModOkW c.MN' size c.C.n s'.mem base →
       VG.Proof.X25519.Arm.Rest clob s s' →
       Unch base (slW c [RM, DM, EM, TT, SM, SS, TMP] ++ [(c.wk, 32 * c.n + 8)]) s.mem s'.mem →
       sv c base s' RM < c.C.n → sv c base s' DM < c.C.n → sv c base s' EM < c.C.n →
@@ -88,7 +88,7 @@ theorem scalarIn_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base si
     WP isa (.seq ((mul c.MN' c.wk (c.sl RM) (c.sl RR) (c.sl R2N)))
       (.seq ((mul c.MN' c.wk (c.sl DM) (c.sl D) (c.sl R2N)))
       (.seq ((mul c.MN' c.wk (c.sl EM) (c.sl E) (c.sl R2N))) rest))) s Q := by
-  have h7 := hc.n7
+  have h7 := hc.n10
   have hn := hs.nowrap
   have hnR := unitMod_pow_two hc.n_odd (64 * c.n)
   have hn3 := hc.n_ge
@@ -123,7 +123,7 @@ theorem scalarIn_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base si
 
 /-- The rest of the field operations: `s`, left Montgomery's form. -/
 theorem scalarOut_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size)
-    (hMN : ModOk c.MN' size c.C.n s.mem base) (hone : sv c base s ONE = 1)
+    (hMN : ModOkW c.MN' size c.C.n s.mem base) (hone : sv c base s ONE = 1)
     (hdm : sv c base s DM < c.C.n) (hem : sv c base s EM < c.C.n)
     {rest : Prog isa} {Q : State → Prop}
     (h : ∀ s', Scr s' base size → VG.Proof.X25519.Arm.Rest clob s s' →
@@ -137,7 +137,7 @@ theorem scalarOut_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base s
       (.seq (.block (add c.MN' c.wk (c.sl TT) (c.sl TT) (c.sl EM)))
       (.seq ((mul c.MN' c.wk (c.sl SM) (c.sl ACC) (c.sl TT)))
       (.seq ((mul c.MN' c.wk (c.sl SS) (c.sl SM) (c.sl ONE))) rest)))) s Q := by
-  have h7 := hc.n7
+  have h7 := hc.n10
   have hn := hs.nowrap
   have hnR := unitMod_pow_two hc.n_odd (64 * c.n)
   have hn3 := hc.n_ge

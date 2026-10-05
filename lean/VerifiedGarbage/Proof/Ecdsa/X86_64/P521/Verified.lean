@@ -56,6 +56,8 @@ theorem p521_ok : CfgOk p521 where
   len_hi := by decide
   sh := by rw [p521_sh]; decide
   comb d h := by cases h
+  inv h := absurd h (by decide)
+  inv_n h := absurd h (by decide)
 
 /-- P-521 has no comb: `[k]G` is by the ladder, and there are no tables. -/
 theorem p521_tbls : CombTbls p521 := fun d h => by cases h

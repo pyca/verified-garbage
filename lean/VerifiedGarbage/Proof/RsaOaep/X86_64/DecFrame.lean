@@ -1,3 +1,4 @@
+import VerifiedGarbage.Proof.Framework.KernelRfl
 import VerifiedGarbage.Proof.RsaOaep.X86_64.DecCtx
 import VerifiedGarbage.Proof.RsaOaep.X86_64.EncCorrect
 
@@ -225,7 +226,7 @@ theorem privArgs_eq : privArgs =
     (scr .rax oRsa ++ ([.store (sp 96) .rax] : List Instr)) ++
     ([.mov .rax (.mem (sp sScrLen)), .alu .sub .rax (.imm 1024), .store (sp 104) .rax] : List Instr) ++
     (scr .rdi oEm ++ ([.mov .rsi (.mem (sp sK)), .mov .rdx (.mem (sp sN)),
-      .mov .rcx (.mem (sp sK)), .mov .r8 (.mem (sp sE)), .mov .r9 (.mem (sp sEl))] : List Instr)) := rfl
+      .mov .rcx (.mem (sp sK)), .mov .r8 (.mem (sp sE)), .mov .r9 (.mem (sp sEl))] : List Instr)) := by kernel_rfl
 
 /-- A copy of a stack argument to the frame's word `k`, with `Rep`. -/
 theorem copyRep_ok {s : State} (hp : DPre s) {u : State} (L : Lay u (fb s) (stackArg s 15)) {V : Nat → Byte}

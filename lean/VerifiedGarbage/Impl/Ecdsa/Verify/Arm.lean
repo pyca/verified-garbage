@@ -65,7 +65,7 @@ def W : Nat := EM
 /-- Verification's arguments: `(public, digest, sig, scratch)`, with `k`
 the signature's `r` (at `sig`), `d` and the hash both `digest` (the key's
 `x` is read into the hash's slot after the setup), and `scratch` in `r3`. -/
-abbrev Args.verify : Args := ⟨.r2, .r1, .r1, some .r3⟩
+abbrev Args.verify : Args := ⟨.r2, .r1, .r1, some .r3, none⟩
 
 namespace Cfg
 

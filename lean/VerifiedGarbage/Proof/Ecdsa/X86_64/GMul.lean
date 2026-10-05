@@ -23,13 +23,6 @@ abbrev gW (c : Cfg) : List (Nat × Nat) :=
   slW c [RX, RY, RZ, TX, TY, TZ, PT, T0, T1, T2, T3, T4, T5, DX, DY, DZ, TMP] ++
     [(bitsAt c.n 0 + 64 * c.n, 8)]
 
-/-- Memory unchanged but in ranges each within one of `W'`. -/
-theorem _root_.VG.Proof.Weierstrass.Unch.cover {base : Addr} {W W' : List (Nat × Nat)} {m m' : Mem} (h : Unch base W m m')
-    (hW : ∀ w ∈ W, ∃ w' ∈ W', w'.1 ≤ w.1 ∧ w.1 + w.2 ≤ w'.1 + w'.2) : Unch base W' m m' :=
-  fun x hx => h x fun w hw => by
-    obtain ⟨w', hw', h1, h2⟩ := hW w hw
-    have := hx w' hw'; omega
-
 /-- A slot is apart from the word past the table of `k`'s bits. -/
 theorem apart_pad {i : Nat} (hi : i < 45) :
     ∀ w ∈ [(bitsAt c.n 0 + 64 * c.n, 8)], c.sl i + 8 * c.n ≤ w.1 ∨ w.1 + w.2 ≤ c.sl i := by

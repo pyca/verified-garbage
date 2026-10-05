@@ -133,7 +133,8 @@ theorem loadRow_ok {i : Nat} (hi : i < 8) {s : State} {p : Addr} (hs : Scratch s
     State.setV_rd, State.setV_wr, State.setV_gpr, State.setV_mem, hs.reg, r 0 (by decide),
     r 1 (by decide), r 2 (by decide), r 3 (by decide), ite_true, Option.map_some,
     Option.some.injEq, exists_eq_left']
-  refine ⟨?_, trivial, ⟨rfl, rfl, rfl, by simp only [State.setV_mxcsr]⟩,
+  refine ⟨?_, trivial, ⟨by simp only [State.setV_gpr], by simp only [State.setV_rd],
+      by simp only [State.setV_wr], by simp only [State.setV_mxcsr]⟩,
     (((hm.setV (by decide) (by decide)).setV (by decide) (by decide)).setV (by decide)
       (by decide)).setV (by decide) (by decide)⟩
   apply Vector.ext

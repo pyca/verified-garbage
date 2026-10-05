@@ -4,14 +4,14 @@ import VerifiedGarbage.Proof.Ecdsa.AArch64.Lit
 import VerifiedGarbage.Proof.P256.Point
 import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
-import VerifiedGarbage.Proof.Weierstrass.AArch64.HasLaw
+import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
 import VerifiedGarbage.Proof.P256.Prime
 
 /-!
 # ECDSA over P-256 on AArch64: `Verified`
 
 P-256 is a curve the proof supports (`p256_ok`, given the inversions' soundness `InvSounds`, and `Law` for its group
-law, which the registration file supplies: `Proof.P256.law` and `Proof.Weierstrass.AArch64.invSounds`), so `sign_ok` gives
+law, which the registration file supplies: `Proof.P256.law` and `invSound_of_toM`), so `sign_ok` gives
 the contract's postcondition; `x19`–`x25` are restored, and no instruction
 writes the other callee-saved registers, `sp` or a SIMD register
 (`abiPreserved_of`). Constant time by taint tracking: the only branches are on
