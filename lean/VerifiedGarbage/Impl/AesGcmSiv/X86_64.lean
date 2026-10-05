@@ -6,9 +6,11 @@ import VerifiedGarbage.Impl.AesGcm.X86_64
 `vg_aes_gcm_siv_seal(schedule = rdi, rounds = rsi, nonce = rdx, aad = rcx, aad_len = r8, data = r9, len = [rsp + 8], tag = [rsp + 16], work = [rsp + 24])`
 and `vg_aes_gcm_siv_open` with the same arguments (`Spec/GcmSiv/Contract.lean`),
 with the working space `work` as a last argument, which a frame on the stack
-allocates (`Impl.StackScratch.X86_64.withStackArgScratch`), composed of calls of the verified `vg_aes_ctr32`, `vg_aes_expand_key` and
-`vg_ghash`, and generic over their implementations as AES-GCM is
-(`Impl.AesGcm.X86_64.Callees`: only `ctr`, `key` and `gh` are called).
+allocates (`Impl.StackScratch.X86_64.withStackArgScratch`), composed of calls of the verified `vg_aes_ctr32`, `vg_aes_expand_key`,
+`vg_ghash` and `vg_aes_encrypt_blocks`, and generic over their
+implementations as AES-GCM is (`Impl.AesGcm.X86_64.Callees`: only `ctr`,
+`key` and `gh` are called), with the implementation of
+`vg_aes_encrypt_blocks` that goes with `ctr` (`e`).
 
 * The message keys (RFC 8452 §4): `CIPH_K(little_endian_uint32(i) ‖ nonce)`
   for `i` from 0 to `rounds / 2 - 2` (3 for 10 rounds, 5 for 14), each by
@@ -24,11 +26,14 @@ allocates (`Impl.StackScratch.X86_64.withStackArgScratch`), composed of calls of
 * The tag is `vg_aes_ctr32` of the tag input on a zero block (`tag`).
 * Counter mode (§4) increments the first 4 bytes of the counter block, as a
   little-endian number, which `vg_aes_ctr32` (which increments the last 4,
-  big-endian) does not: each block is encrypted by a call of its own from a
-  copy of the counter block, which is then incremented (`crypt`).
+  big-endian) does not: up to 64 whole blocks at a time, their counter
+  blocks are written to `W + 488` (`ctrGen`), encrypted in place by one call
+  of `vg_aes_encrypt_blocks` and XORed into the data (`ksXor`); the last
+  bytes are XORed with a keystream block from `vg_aes_ctr32` (`crypt`).
 * `seal` copies the tag from `W` to `tag` at the end (`tagOut`); `open`
   copies the received tag from `tag` to `W` first (`recv`), computes the tag of the plaintext at `W + 128` and compares the two
-  without a branch (`cmp`), then masks the data with `0 − ok` (`mask`).
+  without a branch (`cmp`), then masks the data with `0 − ok`, a word at a
+  time and then its last `len mod 8` bytes (`mask`).
 
 ## The working space `W` (3816 bytes)
 
@@ -40,8 +45,9 @@ allocates (`Impl.StackScratch.X86_64.withStackArgScratch`), composed of calls of
   caller's `rbx, rbp, r12–r15`; `[192, 200)`: `ok`; `[200, 248)`: the public
   arguments;
 * `[248, 488)`: the encryption key's schedule; `[488, 1512)`: the reversed
-  blocks; `[1512, 1768)`: `vg_ghash`'s working space; `[1768, 3816)`:
-  `vg_aes_ctr32`'s, and `vg_aes_expand_key`'s at its start.
+  blocks (or the counter blocks); `[1512, 1768)`: `vg_ghash`'s working
+  space; `[1768, 3816)`: `vg_aes_ctr32`'s and `vg_aes_encrypt_blocks`'s, and
+  `vg_aes_expand_key`'s at its start.
 
 `tag`'s address stays on the stack, at `[rsp + 16]`.
 
@@ -54,7 +60,7 @@ pointers and counts across calls. Only the pointers, the lengths and
 namespace VG.Impl.AesGcmSiv.X86_64
 
 open VG.X86_64
-open VG.Impl.AesGcm.X86_64 (at_ imm ptr copyLoop xorLoop Callees)
+open VG.Impl.AesGcm.X86_64 (at_ imm ptr copyLoop xorLoop Callees Fn maskTail)
 
 def tagO : Nat := 0
 def akO : Nat := 16
@@ -98,6 +104,11 @@ variable (c : Callees)
 def callCtr : Prog isa := .call c.ctr.name c.ctr.code
 def callKey : Prog isa := .call c.key.name c.key.code
 def callGh : Prog isa := .call c.gh.name c.gh.code
+
+variable (e : Fn)
+
+/-- The call of `vg_aes_encrypt_blocks`. -/
+def callEcb : Prog isa := .call e.name e.code
 
 /-- `vg_aes_ctr32`'s arguments but the key schedule: one block at `rcx`, the
 counter block at `W + ccO` and the working space. -/
@@ -206,13 +217,41 @@ def tag (o : Nat) : Prog isa :=
 
 /-! ## Counter mode -/
 
-/-- One block at `r12` encrypted from the counter block, which is then
-incremented; `r12` past it. -/
-def cryptBlock : Prog isa :=
-  .seq (.block (copy16 cmO ccO ++ ptr .rdi .r15 skO ++ ctrArgs ++ [.mov .rcx (.reg .r12)]))
-  (.seq (callCtr c)
-    (.block [.mov32 .rax (.mem (at_ .r15 cmO)), .alu32 .add .rax (imm 1), .store32 (at_ .r15 cmO) .rax,
-      .alu .add .r12 (imm 16), .alu .sub .rbx (imm 1)]))
+/-- The counter blocks `CB_j, …, CB_{j + r14 − 1}` written from `W + revO`:
+the counter block's first word in `r8`, its other three in `r9` and `rdx`,
+stored and the first word incremented `r14` times (`rcx` counting down);
+then the first word back at `W + cmO`. -/
+def ctrGen : Prog isa :=
+  .seq (.block ([.mov32 .r8 (.mem (at_ .r15 cmO)), .mov32 .r9 (.mem (at_ .r15 (cmO + 4))),
+      .mov .rdx (.mem (at_ .r15 (cmO + 8))), .mov .rcx (.reg .r14)] ++ ptr .rdi .r15 revO))
+    (.seq (.loop (.block [.store32 (at_ .rdi 0) .r8, .store32 (at_ .rdi 4) .r9, .store (at_ .rdi 8) .rdx,
+        .alu32 .add .r8 (imm 1), .alu .add .rdi (imm 16), .alu .sub .rcx (imm 1)]) .ne)
+      (.block [.store32 (at_ .r15 cmO) .r8]))
+
+/-- `vg_aes_encrypt_blocks`'s arguments: the encryption key's schedule, the
+`r14` counter blocks at `W + revO` and the working space. -/
+def ecbArgs : List Instr :=
+  ptr .rdi .r15 skO ++ [.mov .rsi (.mem (at_ .r15 roundsO))] ++ ptr .rdx .r15 revO ++
+    [.mov .rcx (.reg .r14)] ++ ptr .r8 .r15 scrO
+
+/-- The `r14` keystream blocks at `W + revO` XORed into the data at `r12`, a
+word at a time; `r12` past them. -/
+def ksXor : Prog isa :=
+  .seq (.block ([.mov .rcx (.reg .r14)] ++ ptr .rsi .r15 revO))
+    (.loop (.block [.mov .rax (.mem (at_ .r12 0)), .mov .rdx (.mem (at_ .r12 8)), .alu .xor .rax (.mem (at_ .rsi 0)),
+        .alu .xor .rdx (.mem (at_ .rsi 8)), .store (at_ .r12 0) .rax, .store (at_ .r12 8) .rdx,
+        .alu .add .r12 (imm 16), .alu .add .rsi (imm 16), .alu .sub .rcx (imm 1)]) .ne)
+
+/-- Up to 64 of the `rbx` whole blocks left at `r12` (`r14` of them)
+encrypted: their counter blocks, encrypted by `vg_aes_encrypt_blocks` in
+place, XORed into them; `rbx` fewer left (ZF set when none are). -/
+def cryptChunk : Prog isa :=
+  .seq (.block [.mov32 .r14 (imm 64), .alu .cmp .rbx (.reg .r14)])
+  (.seq (.ite .b (.block [.mov .r14 (.reg .rbx)]) (.block []))
+  (.seq ctrGen
+  (.seq (.block ecbArgs)
+  (.seq (callEcb e)
+  (.seq ksXor (.block [.alu .sub .rbx (.reg .r14)]))))))
 
 /-- The last `rbp` (1 to 15) bytes at `r12` XORed with the keystream block. -/
 def cryptTail : Prog isa :=
@@ -227,7 +266,7 @@ def crypt : Prog isa :=
       .movImm64 .rcx 0x8000000000000000, .alu .or .rax (.reg .rcx), .store (at_ .r15 (cmO + 8)) .rax,
       .mov .r12 (.mem (at_ .r15 dataO)), .mov .rbp (.mem (at_ .r15 lenO)), .mov .rbx (.reg .rbp),
       .shift .shr .rbx 4, .alu .and .rbp (imm 15), .alu .test .rbx (.reg .rbx)])
-  (.seq (.ite .e (.block []) (.loop (cryptBlock c) .ne))
+  (.seq (.ite .e (.block []) (.loop (cryptChunk e) .ne))
   (.seq (.block [.alu .test .rbp (.reg .rbp)])
     (.ite .e (.block []) (cryptTail c))))
 
@@ -240,15 +279,13 @@ def cmp : List Instr :=
     .alu .xor .rdx (.mem (at_ .r15 (bO + 8))), .alu .or .rax (.reg .rdx), .alu .cmp .rax (imm 1),
     .mov32 .rax (imm 0), .alu32 .adc .rax (imm 0), .store (at_ .r15 okO) .rax]
 
-def maskByte : MemOp := { base := .r12, index := some .r10 }
-
-/-- Every byte of the data ANDed with `0 − ok`. -/
+/-- Every byte of the data ANDed with `0 − ok` (`maskTail`): its whole
+words, then the rest. -/
 def mask : Prog isa :=
   .seq (.block [.mov .r12 (.mem (at_ .r15 dataO)), .mov .rbp (.mem (at_ .r15 lenO)), .mov32 .r11 (imm 0),
-      .alu .sub .r11 (.mem (at_ .r15 okO)), .mov32 .r10 (imm 0), .alu .test .rbp (.reg .rbp)])
-    (.ite .e (.block [])
-      (.loop (.block [.movzx8 .rax maskByte, .alu .and .rax (.reg .r11), .store8 maskByte .rax,
-        .alu .add .r10 (imm 1), .alu .cmp .r10 (.reg .rbp)]) .ne))
+      .alu .sub .r11 (.mem (at_ .r15 okO)), .mov32 .r10 (imm 0), .mov .rcx (.reg .rbp),
+      .shift .shr .rcx 3, .alu .test .rcx (.reg .rcx)])
+    maskTail
 
 /-! ## The functions -/
 
@@ -288,12 +325,12 @@ def polyval : Prog isa :=
 
 /-- `vg_aes_gcm_siv_seal`. -/
 def «seal» : Prog isa :=
-  .seq (.block entry) (.seq (keys c) (.seq (polyval c) (.seq (tag c tagO) (.seq (crypt c)
+  .seq (.block entry) (.seq (keys c) (.seq (polyval c) (.seq (tag c tagO) (.seq (crypt c e)
     (.block (tagOut ++ restore))))))
 
 /-- `vg_aes_gcm_siv_open`. -/
 def «open» : Prog isa :=
-  .seq (.block entry) (.seq (.block recv) (.seq (keys c) (.seq (crypt c) (.seq (polyval c) (.seq (tag c bO)
+  .seq (.block entry) (.seq (.block recv) (.seq (keys c) (.seq (crypt c e) (.seq (polyval c) (.seq (tag c bO)
     (.seq (.block cmp) (.seq mask (.block ([.mov .rax (.mem (at_ .r15 okO))] ++ restore)))))))))
 
 end VG.Impl.AesGcmSiv.X86_64
