@@ -98,6 +98,11 @@ theorem Verified.stackScratchWiped {c : Prog isa}
     Verified target (withStackScratchWiped bytes (slots sig) words c)
       (sig.contract abi pre post wa (stack + bytes) leak) := by
   obtain ⟨hcor, hct, -⟩ := h
+  have hpreL : ∀ vs m₁ m₂, vs.length = (sig.words abi.ptrBits).length →
+      (∀ b ∈ Sig.bufs sig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+      (∀ r ∈ Sig.lists abi.ptrBits m₁ sig.params vs, ∀ a, r.Contains a 1 → m₁ a = m₂ a) →
+      Curry.apply (sig.words abi.ptrBits) pre vs m₁ → Curry.apply (sig.words abi.ptrBits) pre vs m₂ :=
+    fun vs m₁ m₂ hl hb _ => hpre vs m₁ m₂ hl hb
   have hnsp : NoSp c := fun i hi => by
     rw [Code.allInstrs_eq, List.all_eq_true] at hsp
     simpa using hsp i hi
@@ -148,8 +153,8 @@ theorem Verified.stackScratchWiped {c : Prog isa}
       (popState bytes s s₄).gpr .eax = s₃.gpr .eax ∧ (popState bytes s s₄).gpr .edx = s₃.gpr .edx := by
     intro s hs
     obtain ⟨hR64, h0⟩ := hR s hs
-    obtain ⟨t, s₃, he, ha, hq⟩ := hcor _ (narrow_pre hb.1 hpre hs hl)
-    obtain ⟨hesp, -, -, -⟩ := narrow_facts (nm := "") hb.1 hs hl
+    obtain ⟨t, s₃, he, ha, hq⟩ := hcor _ (narrow_pre hb.1 hpreL hs)
+    obtain ⟨hesp, -, -, -⟩ := narrow_facts (nm := "") (e := e) (n := n) hb.1 hs
     have hesp₃ : s₃.gpr .esp = s.gpr .esp - BitVec.ofNat 32 bytes :=
       (ha.1 .esp (by simp [calleeSaved])).trans hesp
     have hwr₃ : s₃.wr = (narrow sig e n bytes wa s).wr := (Exec.rdwr he).2
@@ -176,7 +181,7 @@ theorem Verified.stackScratchWiped {c : Prog isa}
           (by decide)]
         have h2 := ha.2
         rwa [hesp, Taint.sub_setWidth (by omega)] at h2
-    obtain ⟨hex, habi, hm, heax, hedx⟩ := withStackScratch_run hb hnsp' hd' hs he' ha' hl
+    obtain ⟨hex, habi, hm, heax, hedx⟩ := withStackScratch_run hb hnsp' hd' hs he' ha'
     refine ⟨t, s₃, _, he, hq, hfr, hesp₃, hex, habi, hm, ?_, ?_⟩
     · rw [heax]; simp [State.setReg]
     · rw [hedx]; simp [State.setReg]
@@ -187,12 +192,12 @@ theorem Verified.stackScratchWiped {c : Prog isa}
     have hq' := (post_stack (sig := sig.withScratch nm e n)
       (pre := Curry.withScratch abi.ptrBits nm e n sig.params pre)
       (post := Curry.withScratch abi.ptrBits nm e n sig.params post)).mp hq
-    obtain ⟨-, -, hargs, -⟩ := narrow_facts (nm := nm) hb.1 hs hl
+    obtain ⟨-, -, hargs, -⟩ := narrow_facts (nm := nm) (e := e) (n := n) hb.1 hs
     rw [hargs] at hq'
     rw [hm, heax, hedx]
     have hq'' := Eq.mp (congrFun (congrFun (congrFun (Curry.apply_withScratch abi.ptrBits nm e n sig.params
       post _ _ (stackArgs_length sig s)) _) s₃.mem) _) hq'
-    have h₃ := hpost _ _ _ _ _ (stackArgs_length sig s) (narrow_agree hb.1 hs hl) hq''
+    have h₃ := hpost _ _ _ _ _ (stackArgs_length sig s) (narrow_agree hb.1 hs) hq''
     refine hpostOut _ _ _ _ _ (stackArgs_length sig s) (fun b hb' a ha' => ?_) h₃
     exact (hfr a fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
@@ -200,8 +205,8 @@ theorem Verified.stackScratchWiped {c : Prog isa}
   · obtain ⟨u₁, _, _, f₁, _, _, p₁, x₁, _⟩ := hrun s₁ h₁
     obtain ⟨u₂, _, _, f₂, _, _, p₂, x₂, _⟩ := hrun s₂ h₂
     rw [(Exec.det e₁ x₁).1, (Exec.det e₂ x₂).1, p₁, p₂, ((pubL_stack hl).mp hp).1.1,
-      hct _ _ _ _ _ _ (narrow_pre hb.1 hpre h₁ hl) (narrow_pre hb.1 hpre h₂ hl)
-        (narrow_pub hb.1 h₁ h₂ hp hl hleak) f₁ f₂]
+      hct _ _ _ _ _ _ (narrow_pre hb.1 hpreL h₁) (narrow_pre hb.1 hpreL h₂)
+        (narrow_pub hb.1 h₁ h₂ hp hleak.toL) f₁ f₂]
 
 end
 
