@@ -1,3 +1,4 @@
+import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Rej5Verified
 import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Backend
 import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.YNtt
 import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.YMul
@@ -42,8 +43,8 @@ def ArithImpl.avx2 : ArithImpl where
         (by decide +kernel)
       useHint := FnOk.of Round.useHintY_verified (by decide +kernel) (by decide +kernel) (by decide +kernel)
         (by decide +kernel)
-      rej4 := ⟨Rej4.rejNTT4Avx2_verified, Proof.MlKem.X86_64.nosp_of (by decide +kernel), by decide +kernel,
-        by decide +kernel, Code.all_of_allInstrs (by decide +kernel), fun _ _ _ => Rej4.rejNTT4Avx2_ret⟩
+      rej4 := ⟨Rej4.Segment.rejNTT4Avx2_verified, Proof.MlKem.X86_64.nosp_of (by decide +kernel), by decide +kernel,
+        by decide +kernel, Code.all_of_allInstrs (by decide +kernel), fun _ _ _ => Rej4.Segment.rejNTT4Avx2_ret⟩
       expandMask4 := ⟨Mask4.expandMask4Avx2_verified, Proof.MlKem.X86_64.nosp_of (by decide +kernel),
         by decide +kernel, by decide +kernel, Code.all_of_allInstrs (by decide +kernel)⟩ }
   features := ["avx", "avx2"]
