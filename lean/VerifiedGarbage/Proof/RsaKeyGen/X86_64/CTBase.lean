@@ -124,6 +124,12 @@ theorem RelCT.seqs_app {P Q : State → State → Prop} {a b : List (Prog isa)} 
     (h : RelCT isa P (.seq (seqs a) (seqs b)) Q) : RelCT isa P (seqs (a ++ b)) Q :=
   fun _ _ _ _ _ _ hp e₁ e₂ => h _ _ _ _ _ _ hp (exec_seqs_app ha hb e₁) (exec_seqs_app ha hb e₂)
 
+/-- Two runs related with the same `a` are related with the same `b`. -/
+theorem two_bind {α β : Type} {Φ : α → State → Prop} {Ψ : β → State → Prop}
+    (f : ∀ a s₁ s₂, Φ a s₁ → Φ a s₂ → ∃ b, Ψ b s₁ ∧ Ψ b s₂) {s₁ s₂ : State} (h : Two Φ s₁ s₂) :
+    Two Ψ s₁ s₂ :=
+  let ⟨a, h₁, h₂⟩ := h; f a s₁ s₂ h₁ h₂
+
 theorem pins_nil {α : Type} (Φ : α → State → Prop) : Pins Φ [] := fun _ _ _ _ _ _ hr => absurd hr (List.not_mem_nil)
 
 /-- `HP` survives changes to the arrays alone (past the header). -/
