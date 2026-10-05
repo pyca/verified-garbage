@@ -500,4 +500,121 @@ theorem shiftPass_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte}
       by rw [k''.gpr (by decide), hk'.gpr (by decide), J.rsi], by rw [k''.gpr (by decide), hk'.gpr (by decide), J.r9],
       h8'', R''⟩
 
+theorem nextPass_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {W : Nat → BitVec 64}
+    (R : Rep u.mem F S V W) {a d j : Nat} (ha : W 45 = BitVec.ofNat 64 a) (hd : W 46 = BitVec.ofNat 64 d)
+    (hj : W 44 = BitVec.ofNat 64 j) (ha' : a < 2 ^ 64) (hj1 : 1 ≤ j) (hj' : j < 2 ^ 64) :
+    WP isa (.block nextPass) u fun u' => Lay u' F S ∧ Keep [.rax] u u' ∧
+      Rep u'.mem F S V (upd (upd (upd W 45 (BitVec.ofNat 64 (a / 2))) 46 (BitVec.ofNat 64 (2 * d))) 44
+        (BitVec.ofNat 64 (j - 1))) ∧ u'.zf = some (decide (j - 1 = 0)) := by
+  have G' := L.geo
+  have R1 := R.wf G' (k := 45) (by decide) (BitVec.ofNat 64 (a / 2))
+  rw [show off F (8 * 45) = off F sA from rfl] at R1
+  have R2 := R1.wf G' (k := 46) (by decide) (BitVec.ofNat 64 (2 * d))
+  rw [show off F (8 * 46) = off F sD from rfl] at R2
+  have R3 := R2.wf G' (k := 44) (by decide) (BitVec.ofNat 64 (j - 1))
+  rw [show off F (8 * 44) = off F sJ from rfl] at R3
+  have e46 : (u.mem.writeW (off F sA) (BitVec.ofNat 64 (a / 2))).readW (off F sD) 64 = BitVec.ofNat 64 d := by
+    rw [R1.rd (d := sD) 46 rfl (by decide)]; simp [upd, hd]
+  have e44 : ((u.mem.writeW (off F sA) (BitVec.ofNat 64 (a / 2))).writeW (off F sD) (BitVec.ofNat 64 (2 * d))).readW
+      (off F sJ) 64 = BitVec.ofNat 64 j := by
+    rw [R2.rd (d := sJ) 44 rfl (by decide)]; simp [upd, hj]
+  refine WP.mono (WP.keep [.rax] (Q := fun u' => u'.mem = ((u.mem.writeW (off F sA) (BitVec.ofNat 64 (a / 2))).writeW
+      (off F sD) (BitVec.ofNat 64 (2 * d))).writeW (off F sJ) (BitVec.ofNat 64 (j - 1)) ∧
+      u'.zf = some (decide (j - 1 = 0))) ?_ rfl)
+    fun u' ⟨⟨hm, hz⟩, k⟩ => ⟨L.of_rep' R (hm ▸ R3) (by simp [upd]) (k.gpr (by decide)) k.2.2, k, hm ▸ R3, hz⟩
+  have hsh : BitVec.ofNat 64 a >>> 1 = BitVec.ofNat 64 (a / 2) := by rw [shr_ofNat 1 ha']
+  have hdd : BitVec.ofNat 64 d + BitVec.ofNat 64 d = BitVec.ofNat 64 (2 * d) := by
+    rw [BitVec.ofNat_add_ofNat]; congr 1; omega
+  xrun [nextPass, ea_sp, L.rsp, L.ld (d := sA) (by decide), L.st (d := sA) (by decide), L.ld (d := sD) (by decide),
+    L.st (d := sD) (by decide), L.ld (d := sJ) (by decide), L.st (d := sJ) (by decide),
+    R.rd (d := sA) 45 rfl (by decide), ha, hsh, e46, hdd, e44]
+  have hj1' : BitVec.ofNat 64 j - 1 = BitVec.ofNat 64 (j - 1) := by
+    rw [show (1 : BitVec 64) = BitVec.ofNat 64 1 from rfl, VG.Offset.ofNat_sub_ofNat hj1]
+  rw [hj1', ofNat_beq_zero (by omega)]
+  exact ⟨rfl, rfl⟩
+
+/-- `shift`'s state after `p` passes, from `a₀ = pos + 1`. -/
+structure PassI (u₀ : State) (F S : Addr) (V : Nat → Byte) (W : Nat → BitVec 64) (base db a₀ p : Nat)
+    (w : State) : Prop where
+  L : Lay w F S
+  keep : Keep [.rax, .rcx, .rsi, .r11, .r9, .r10, .r8, .rdi] u₀ w
+  rep : ∃ V' W', Rep w.mem F S V' W' ∧ W' 45 = BitVec.ofNat 64 (a₀ / 2 ^ p) ∧ W' 46 = BitVec.ofNat 64 (2 ^ p) ∧
+    W' 44 = BitVec.ofNat 64 (10 - p) ∧ (∀ k < nW, k ≠ 44 → k ≠ 45 → k ≠ 46 → W' k = W k) ∧
+    (∀ i < db, V' (base + i) = if i + a₀ % 2 ^ p < db then V (base + (i + a₀ % 2 ^ p)) else 0) ∧
+    (∀ x, ¬ (base ≤ x ∧ x < base + db) → V' x = V x)
+
+include hH in
+/-- `DB`'s place in `Y` shifted left by `pos + 1` bytes, zeros after it. -/
+theorem shift_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {W : Nat → BitVec 64}
+    (R : Rep u.mem F S V W) {pos db : Nat} (hpos : W 34 = BitVec.ofNat 64 pos) (hdb : W 24 = BitVec.ofNat 64 db)
+    (hp : pos + 1 < 1024) (hdb1 : 1 ≤ db) (hfit : 8 + H.D + db + 512 ≤ 2048)
+    (hz : ∀ j, db ≤ j → j < db + 512 → V (oY + 8 + H.D + j) = 0) :
+    WP isa (shift H) u fun u' => PassI u F S V W (oY + 8 + H.D) db (pos + 1) 10 u' := by
+  have hDN := hH.hDN
+  have hN := hH.N_le
+  have c7 : oY = 3584 := rfl
+  have c5 : oRsa = 8192 := rfl
+  have G' := L.geo
+  -- The first pass's slots.
+  have R1 := R.wf G' (k := 45) (by decide) (BitVec.ofNat 64 (pos + 1))
+  rw [show off F (8 * 45) = off F sA from rfl] at R1
+  have R2 := R1.wf G' (k := 46) (by decide) (BitVec.ofNat 64 1)
+  rw [show off F (8 * 46) = off F sD from rfl] at R2
+  have R3 := R2.wf G' (k := 44) (by decide) (BitVec.ofNat 64 10)
+  rw [show off F (8 * 44) = off F sJ from rfl] at R3
+  refine WP.seq (WP.mono (WP.keep [.rax] (Q := fun v => v.mem = ((u.mem.writeW (off F sA) (BitVec.ofNat 64 (pos + 1))).writeW
+      (off F sD) (BitVec.ofNat 64 1)).writeW (off F sJ) (BitVec.ofNat 64 10)) ?_ rfl) fun v ⟨hm, hk⟩ => ?_)
+  · xrun [shift, ea_sp, L.rsp, L.ld (d := sPos) (by decide), R.rd (d := sPos) 34 rfl (by decide), hpos,
+      L.st (d := sA) (by decide), L.st (d := sD) (by decide), L.st (d := sJ) (by decide), ofNat_add_lit]
+    rfl
+  have Rv : Rep v.mem F S V _ := hm ▸ R3
+  have Lv : Lay v F S := L.of_rep' R Rv (by simp [upd]) (hk.gpr (by decide)) hk.2.2
+  have I0 : PassI u F S V W (oY + 8 + H.D) db (pos + 1) 0 v :=
+    ⟨Lv, hk.mono (by decide), V, _, Rv, by simp [upd], by simp [upd], by simp [upd],
+      fun k _ h44 h45 h46 => by simp [upd, h44, h45, h46],
+      fun i hi => by simp only [Nat.pow_zero, Nat.mod_one, Nat.add_zero]; rw [ifp hi], fun _ _ => rfl⟩
+  refine WP.loop (M := isa) (fun n w => ∃ p, n = 10 - p ∧ p < 10 ∧ PassI u F S V W (oY + 8 + H.D) db (pos + 1) p w) ?_ (10 - 0) v
+    ⟨0, rfl, by decide, I0⟩
+  rintro n w ⟨p, rfl, hp10, I⟩
+  obtain ⟨V', W', R', h45, h46, h44, hW', hV', hO'⟩ := I.rep
+  have hpp : 2 ^ p ≤ 512 := by
+    calc 2 ^ p ≤ 2 ^ 9 := Nat.pow_le_pow_right (by decide) (by omega)
+      _ = 512 := rfl
+  have hp1 : 1 ≤ 2 ^ p := Nat.one_le_two_pow
+  have hdbW : W' 24 = BitVec.ofNat 64 db := by rw [hW' 24 (by decide) (by decide) (by decide) (by decide), hdb]
+  have ha' : (pos + 1) / 2 ^ p < 2 ^ 64 := by
+    have := Nat.div_le_self (pos + 1) (2 ^ p); omega
+  refine WP.seq (WP.mono (shiftPass_ok hH I.L R' h45 h46 hdbW ha' hp1 hdb1 (by omega)) fun x ⟨Lx, kx, Rx⟩ => ?_)
+  refine WP.mono (nextPass_ok Lx Rx h45 h46 h44 ha' (by omega) (by omega)) fun y ⟨Ly, ky, Ry, hzy⟩ => ?_
+  have I' : PassI u F S V W (oY + 8 + H.D) db (pos + 1) (p + 1) y := by
+    refine ⟨Ly, (I.keep.trans (kx.trans ky)).mono (by decide), _, _, Ry, ?_, ?_, ?_, ?_, ?_, ?_⟩
+    · simp only [upd, Nat.reduceEqDiff, ite_true, ite_false]
+      rw [Nat.pow_succ, Nat.div_div_eq_div_mul]
+    · simp only [upd, Nat.reduceEqDiff, ite_true, ite_false]
+      rw [Nat.pow_succ, Nat.mul_comm]
+    · simp only [upd, ite_true]; congr 1
+    · intro k hk h44 h45 h46
+      simp only [upd, h44, h45, h46, ite_false]; exact hW' k hk h44 h45 h46
+    · intro i hi
+      have hm := Nat.mod_pow_succ (b := 2) (x := (pos + 1)) (k := p)
+      simp only [shV, show (oY + 8 + H.D) ≤ (oY + 8 + H.D) + i ∧ (oY + 8 + H.D) + i < (oY + 8 + H.D) + db from ⟨by omega, by omega⟩, and_self, ite_true]
+      by_cases hc : (pos + 1) / 2 ^ p % 2 = 1
+      · rw [hc] at hm
+        simp only [hc, decide_true, ite_true]
+        by_cases hi' : i + 2 ^ p < db
+        · rw [show (oY + 8 + H.D) + i + 2 ^ p = (oY + 8 + H.D) + (i + 2 ^ p) by omega, hV' _ hi', hm,
+            show i + 2 ^ p + (pos + 1) % 2 ^ p = i + ((pos + 1) % 2 ^ p + 2 ^ p * 1) by omega]
+        · rw [hO' _ (by omega), show (oY + 8 + H.D) + i + 2 ^ p = oY + 8 + H.D + (i + 2 ^ p) from by omega,
+            hz _ (by omega) (by omega), ifn (show ¬ i + (pos + 1) % 2 ^ (p + 1) < db by omega)]
+      · have hc0 : (pos + 1) / 2 ^ p % 2 = 0 := by omega
+        rw [hc0] at hm
+        simp only [hc, decide_false, Bool.false_eq_true, ite_false]
+        rw [hV' i hi, hm, Nat.mul_zero]; simp only [Nat.add_zero]
+    · intro x hx
+      simp only [shV, hx, ite_false]; exact hO' x hx
+  by_cases hend : p + 1 = 10
+  · refine .inl ⟨by simp only [eval, hzy]; rw [show 10 - p - 1 = 0 by omega]; rfl, hend ▸ I'⟩
+  · refine .inr ⟨by simp only [eval, hzy]; rw [decide_eq_false (by omega)]; rfl, 10 - (p + 1), by omega,
+      p + 1, rfl, by omega, I'⟩
+
 end VG.Proof.RsaPss.X86_64
