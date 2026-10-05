@@ -149,4 +149,67 @@ theorem copy_ok {u₀ : State} {F S : Addr} (L : Lay u₀ F S) {V : Nat → Byte
       (I.keep.trans (k.trans k')).mono (by decide), h8'', R'', fun i hi => ?_⟩
     rw [hm', hm, VG.WriteBytes.writeW8_apply, ifn (hdis i hi j hj), I.src i hi]
 
+/-! ## XORing bytes -/
+
+/-- The `j` bytes at `b` XORed with those at `a`. -/
+def xorV (V : Nat → Byte) (a b j : Nat) (x : Nat) : Byte :=
+  if b ≤ x ∧ x < b + j then V x ^^^ V (a + (x - b)) else V x
+
+theorem trunc_xor (x y : Byte) : BitVec.setWidth 8 (BitVec.setWidth 64 x ^^^ BitVec.setWidth 64 y) = x ^^^ y := by
+  apply BitVec.eq_of_toNat_eq
+  simp only [BitVec.toNat_setWidth, BitVec.toNat_xor]
+  rw [Nat.mod_eq_of_lt (a := x.toNat) (by omega), Nat.mod_eq_of_lt (a := y.toNat) (by omega)]
+  exact Nat.mod_eq_of_lt (Nat.xor_lt_two_pow x.isLt y.isLt)
+
+structure XorI (u₀ : State) (F S : Addr) (V : Nat → Byte) (W : Nat → BitVec 64) (a b j : Nat)
+    (v : State) : Prop where
+  L : Lay v F S
+  keep : Keep [.rax, .rdx, .r8] u₀ v
+  r8 : v.gpr .r8 = BitVec.ofNat 64 j
+  R : Rep v.mem F S (xorV V a b j) W
+
+/-- The `n` bytes at `scratch + b` (`rdi`) XORed with those at
+`scratch + a` (`rcx`), separate from them. -/
+theorem xor_ok {u₀ : State} {F S : Addr} (L : Lay u₀ F S) {V : Nat → Byte} {W : Nat → BitVec 64}
+    (R : Rep u₀.mem F S V W) {a b n : Nat} {cnt : Src}
+    (hs : StepOk cnt n u₀ [.rax, .rdx, .r8]) (hn : 0 < n) (ha : a + n ≤ oRsa) (hb : b + n ≤ oRsa)
+    (hab : a + n ≤ b ∨ b + n ≤ a)
+    (hcx : u₀.gpr .rcx = off S a) (hdi : u₀.gpr .rdi = off S b) (h8 : u₀.gpr .r8 = BitVec.ofNat 64 0) :
+    WP isa (byteLoop [.movzx8 .rax (ix .rcx .r8), .movzx8 .rdx (ix .rdi .r8), .alu .xor .rdx (.reg .rax),
+        .store8 (ix .rdi .r8) .rdx] cnt) u₀ fun u' =>
+      Lay u' F S ∧ Keep [.rax, .rdx, .r8] u₀ u' ∧ Rep u'.mem F S (xorV V a b n) W := by
+  refine WP.mono (byteLoop_ok hn hs (XorI u₀ F S V W a b) ?_ (u := u₀)
+    ⟨L, Keep.refl _ _, h8, (congrArg (fun V' => Rep u₀.mem F S V' W) (funext fun x => by
+      simp only [xorV]; rw [ifn (by omega)])).mpr R⟩) fun u' I => ⟨I.L, I.keep, I.R⟩
+  intro j hj v I
+  have hcv : v.gpr .rcx = off S a := (I.keep.gpr (by decide)).trans hcx
+  have hdv : v.gpr .rdi = off S b := (I.keep.gpr (by decide)).trans hdi
+  have z : BitVec.ofNat 64 0 = 0#64 := rfl
+  have hea₁ : off S a + BitVec.ofNat 64 j + BitVec.ofNat 64 0 = off S (a + j) := by
+    rw [z, BitVec.add_zero, off_plus]
+  have hea₂ : off S b + BitVec.ofNat 64 j + BitVec.ofNat 64 0 = off S (b + j) := by
+    rw [z, BitVec.add_zero, off_plus]
+  have va : v.mem (off S (a + j)) = V (a + j) := by
+    rw [I.R.scr _ (by omega), xorV, ifn (by omega)]
+  have vb : v.mem (off S (b + j)) = V (b + j) := by
+    rw [I.R.scr _ (by omega), xorV, ifn (by omega)]
+  refine WP.mono (WP.keep [.rax, .rdx] (Q := fun v' => v'.gpr .r8 = BitVec.ofNat 64 j ∧
+      v'.mem = v.mem.writeW (off S (b + j)) (V (b + j) ^^^ V (a + j))) ?_ rfl)
+    fun v' ⟨⟨h8', hm⟩, k⟩ => ⟨(I.keep.trans k).mono (by decide), h8', fun v'' k' hm' h8'' => ?_⟩
+  · xrun [ea_ix, hcv, hdv, I.r8, hea₁, hea₂, I.L.sld8 (d := a + j) (by omega), I.L.sld8 (d := b + j) (by omega),
+      I.L.sst8 (d := b + j) (by omega), va, vb, trunc_xor]
+  · have R' := I.R.wb I.L.geo (o := b + j) (by omega) (V (b + j) ^^^ V (a + j))
+    rw [← hm, ← hm'] at R'
+    have R'' : Rep v''.mem F S (xorV V a b (j + 1)) W := by
+      refine (congrArg (fun V' => Rep v''.mem F S V' W) (funext fun x => ?_)).mp R'
+      simp only [upd, xorV]
+      by_cases hx : x = b + j
+      · subst hx; rw [ifp rfl, ifp (by omega), Nat.add_sub_cancel_left]
+      · rw [ifn hx]
+        by_cases h' : b ≤ x ∧ x < b + j
+        · rw [ifp h', ifp (by omega)]
+        · rw [ifn h', ifn (by omega)]
+    exact ⟨I.L.of_rep I.R R'' (by rw [k'.gpr (by decide), k.gpr (by decide)]) (k'.2.2.trans k.2.2),
+      (I.keep.trans (k.trans k')).mono (by decide), h8'', R''⟩
+
 end VG.Proof.RsaPss.X86_64

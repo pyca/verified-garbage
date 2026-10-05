@@ -21,6 +21,8 @@ theorem ifp {α : Sort _} {p : Prop} [Decidable p] (h : p) (a b : α) : (if p th
 theorem ifn {α : Sort _} {p : Prop} [Decidable p] (h : ¬ p) (a b : α) : (if p then a else b) = b :=
   ite_eq_right_of_eq_false a b (eq_false h)
 
+theorem i2osp_len (x k : Nat) : (Rsa.i2osp x k).length = k := by simp [Rsa.i2osp]
+
 /-- Byte `p` of the concatenation of `m` lists of `k` bytes. -/
 theorem flatMap_getD {k : Nat} (hk : 0 < k) (f : Nat → List Byte) (hf : ∀ c, (f c).length = k) :
     ∀ m p, ((List.range m).flatMap f).getD p 0 = if p / k < m then (f (p / k)).getD (p % k) 0 else 0
