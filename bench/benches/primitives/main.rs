@@ -64,6 +64,7 @@ mod rc2_cbc;
 mod rc4;
 mod rsa;
 mod rsa_keygen;
+mod rsa_oaep;
 mod rsa_pkcs1_enc;
 mod rsa_pkcs1_sig;
 mod rsa_pss;
@@ -290,6 +291,7 @@ const BENCHES: &[Bench] = &[
     (rc4::USES, rc4::bench),
     (rsa::USES, rsa::bench),
     (rsa_keygen::USES, rsa_keygen::bench),
+    (rsa_oaep::USES, rsa_oaep::bench),
     (rsa_pkcs1_enc::USES, rsa_pkcs1_enc::bench),
     (rsa_pkcs1_sig::USES, rsa_pkcs1_sig::bench),
     (rsa_pss::USES, rsa_pss::bench),
