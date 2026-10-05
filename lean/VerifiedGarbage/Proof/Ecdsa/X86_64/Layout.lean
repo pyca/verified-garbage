@@ -95,20 +95,32 @@ theorem Pre.setup {c : Cfg} {s : State} (hp : Pre c s) : SetupPre c s where
 /-- The number in slot `i`. -/
 abbrev sv (c : Cfg) (base : Addr) (s : State) (i : Nat) : Nat := wordsVal s.mem base (c.sl i) c.n
 
-/-- What `setup` leaves, from the state `s₀` at entry, with the working space
-at `base = r8`: `rdi = base`, `out` in `rsi`, the callee-saved registers in
-`[0, 48)`, `k`, `d` and the hash in their slots, the constants in theirs,
-and the flag all ones; only `rax`, `rdi`, `r14`, `rsi` and `rdx` and the working
-space changed. -/
-structure SetupPost (c : Cfg) (s₀ : State) (base : Addr) (s : State) : Prop where
+/-- The bits slot `i` is shifted right by when `setupWith hs` shifts slot
+`hs`: `sh` for that slot, 0 for the others. -/
+abbrev shAt (c : Cfg) (hs : Option Nat) (i : Nat) : Nat := if hs = some i then c.sh else 0
+
+theorem shAt_none (c : Cfg) (i : Nat) : shAt c none i = 0 := rfl
+theorem shAt_self (c : Cfg) (i : Nat) : shAt c (some i) i = c.sh := ite_eq_left_of_eq_true _ _ (eq_true rfl)
+theorem shAt_E_D (c : Cfg) : shAt c (some E) D = 0 := rfl
+theorem shAt_E_K (c : Cfg) : shAt c (some E) K = 0 := rfl
+theorem shAt_D_E (c : Cfg) : shAt c (some D) E = 0 := rfl
+theorem shAt_D_K (c : Cfg) : shAt c (some D) K = 0 := rfl
+
+/-- What `setupWith hs` leaves, from the state `s₀` at entry, with the
+working space at `base = r8`: `rdi = base`, `out` in `rsi`, the callee-saved
+registers in `[0, 48)`, `k`, `d` and the hash in their slots (the one in
+slot `hs` shifted right by `sh`), the constants in theirs, and the flag all
+ones; only `rax`, `rdi`, `r14`, `rsi` and `rdx` and the working space
+changed. -/
+structure SetupPost (c : Cfg) (hs : Option Nat) (s₀ : State) (base : Addr) (s : State) : Prop where
   scr : Scr s base size
   rsi : s.gpr .rsi = s₀.gpr .rdi
   keep : KeepRegs [.rax, .rdi, .r14, .rsi, .rdx] s₀ s
   unch : Unch base [(0, size)] s₀.mem s.mem
   saved : Spill.Saved s.mem base s₀.gpr Cfg.saved
   k : sv c base s K = ofBytes (Spec.Ecdsa.bytesAt s₀.mem (s₀.gpr .rcx) c.C.len)
-  d : sv c base s D = ofBytes (Spec.Ecdsa.bytesAt s₀.mem (s₀.gpr .rsi) c.C.len)
-  e : sv c base s E = ofBytes (Spec.Ecdsa.bytesAt s₀.mem (s₀.gpr .rdx) c.C.len) >>> c.sh
+  d : sv c base s D = ofBytes (Spec.Ecdsa.bytesAt s₀.mem (s₀.gpr .rsi) c.C.len) >>> shAt c hs D
+  e : sv c base s E = ofBytes (Spec.Ecdsa.bytesAt s₀.mem (s₀.gpr .rdx) c.C.len) >>> shAt c hs E
   consts : ∀ ix ∈ c.consts, sv c base s ix.1 = ix.2
   flag : word s.mem base (c.sl FLAG) = BitVec.allOnes 64
 

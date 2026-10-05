@@ -44,7 +44,7 @@ def args : List Instr := [.mov .r8 (.reg .rdx), .mov .rcx (.reg .rsi), .mov .rdx
 
 /-- The signature's code up to `Z^(p-2)`. -/
 def upToPow : Prog isa :=
-  .seq (.block c.setup) <|
+  .seq (.block (c.setupWith none)) <|
   .seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n)) <|
   .seq (bits (c.sl EXPP) (bitsAt c.n 1) (8 * c.n)) <|
   .seq (bits (c.sl EXPN) (bitsAt c.n 2) (8 * c.n)) <|
@@ -56,7 +56,7 @@ callee-saved registers restored. -/
 def finish : List Instr :=
   [.mov .rcx (.mem (sc (c.sl FLAG))), .mov32 .rax (.imm 4), .alu .and .rax (.reg .rcx),
     .store8 { base := .rsi, disp := 0 } .rax] ++
-  storeBE c.n .rsi 1 (c.sl X) ++ storeBE c.n .rsi (1 + 8 * c.n) (c.sl Y) ++
+  storeBytes c.C.len c.n .rsi 1 (c.sl X) ++ storeBytes c.C.len c.n .rsi (1 + c.C.len) (c.sl Y) ++
   [.mov .rax (.reg .rcx), .alu .and .rax (.imm 1)] ++
   Impl.Ecdsa.X86_64.Cfg.saved.map (fun (r, d) => .mov r (.mem (sc d)))
 
