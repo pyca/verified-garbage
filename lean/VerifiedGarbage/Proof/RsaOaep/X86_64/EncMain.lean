@@ -171,4 +171,119 @@ theorem encEm_ok {s t : State} (hp : EPre mH.G s) (he : EnvE s t) (L : Lay t (fb
       FrE.byte he4.fr hp.d_stk_ms hp.d_out_ms hp.d_ms_scr.symm (by have := hp.wM; omega) hi,
       bytesAt_getD _ _ hi]
 
+/-- `DB`, from `EM` before masking. -/
+theorem EmAt.db {V : Nat → Byte} {k D : Nat} {sd lh m : List Byte} {mLen : Nat} (h : EmAt V k D sd lh m mLen)
+    (hlh : lh.length = D) (hm : m.length = mLen) (hk : 2 * D + 2 + mLen ≤ k) :
+    ∀ i < k - D - 1, V (1 + D + i) = (lh ++ Spec.RsaOaep.zeros (k - mLen - 2 * D - 2) ++ 0x01 :: m).getD i 0 := by
+  intro i hi
+  have hz : (Spec.RsaOaep.zeros (k - mLen - 2 * D - 2)).length = k - mLen - 2 * D - 2 := by
+    simp [Spec.RsaOaep.zeros]
+  rw [Proof.Mgf1.getD_append, List.length_append, hlh, hz]
+  by_cases h1 : i < D + (k - mLen - 2 * D - 2)
+  · rw [ifp h1, Proof.Mgf1.getD_append, hlh]
+    by_cases h2 : i < D
+    · rw [ifp h2]; exact h.lh i h2
+    · rw [ifn h2, h.ps _ (by omega) (by omega)]
+      simp only [Spec.RsaOaep.zeros, List.getD_eq_getElem?_getD, List.getElem?_replicate]
+      rw [ifp (by omega)]; rfl
+  · rw [ifn h1]
+    by_cases h3 : i = D + (k - mLen - 2 * D - 2)
+    · subst h3; rw [Nat.sub_self, show 1 + D + (D + (k - mLen - 2 * D - 2)) = k - mLen - 1 by omega, h.one]; rfl
+    · obtain ⟨j, rfl⟩ : ∃ j, i = D + (k - mLen - 2 * D - 2) + 1 + j := ⟨i - (D + (k - mLen - 2 * D - 2) + 1), by omega⟩
+      rw [show D + (k - mLen - 2 * D - 2) + 1 + j - (D + (k - mLen - 2 * D - 2)) = j + 1 by omega,
+        show 1 + D + (D + (k - mLen - 2 * D - 2) + 1 + j) = k - mLen + j by omega, h.msg j (by omega)]
+      simp [List.getD_eq_getElem?_getD]
+
+theorem mixV_congr {V V' : Nat → Byte} (mk : List Byte) (e n : Nat) {o : Nat} (h : V o = V' o) :
+    mixV V mk e n o = mixV V' mk e n o := by simp only [mixV, h]
+
+/-- `EM`: `0x00 ‖ maskedSeed ‖ maskedDB`. -/
+def emOf (G : Spec.Mgf1.Hash) (D k mLen : Nat) (sd lh m : List Byte) : List Byte :=
+  let db := lh ++ Spec.RsaOaep.zeros (k - mLen - 2 * D - 2) ++ 0x01 :: m
+  let mdb := Spec.Mgf1.xorBytes db (Spec.Mgf1.mgf1 G sd (k - D - 1))
+  0 :: Spec.Mgf1.xorBytes sd (Spec.Mgf1.mgf1 G mdb D) ++ mdb
+
+include hH KH hG KG mH mG in
+theorem encMain_ok {s t : State} (hp : EPre mH.G s) (he : EnvE s t) (L : Lay t (fb s) (stackArg s 5))
+    {V : Nat → Byte} {W : Nat → BitVec 64} (R : Rep t.mem (fb s) (stackArg s 5) V W) (hW : ArgsW s W)
+    (hk : 2 * Hl.D + 2 + (stackArg s 3).toNat ≤ (s.gpr .rcx).toNat) :
+    WP isa (encMain Hl.stream Gm.stream pubChecked.name pubChecked.code) t fun t' => EnvE s t' ∧
+      Spec.Rsa.written t'.mem (s.gpr .rdi) (s.gpr .rcx).toNat ((t'.gpr .rax).setWidth 32)
+        (Spec.Rsa.publicOpChecked (Spec.Rsa.bytesAt s.mem (s.gpr .rdx) (s.gpr .rcx).toNat)
+          (Spec.Rsa.bytesAt s.mem (s.gpr .r8) (s.gpr .r9).toNat)
+          (emOf mG.G Hl.D (s.gpr .rcx).toNat (stackArg s 3).toNat (Spec.Rsa.bytesAt s.mem (stackArg s 4) mH.G.len)
+            (mH.G.hash (Spec.Rsa.bytesAt s.mem (stackArg s 0) (stackArg s 1).toNat))
+            (Spec.Rsa.bytesAt s.mem (stackArg s 2) (stackArg s 3).toNat))) := by
+  obtain ⟨w14, w21, w22, w23, w24, w25, w26, w27, w28, w29, w30, w31⟩ := hW.w
+  have hk1 := hp.k1; have hk2 := hp.k2
+  have hD := hH.hD0
+  have hsD : Hl.stream.D = Hl.D := rfl
+  have hgD : Gm.stream.D = Gm.D := rfl
+  have c0 : oEm = 0 := rfl
+  have cS : oSt = 3072 := rfl
+  have w23' : W 23 = BitVec.ofNat 64 (s.gpr .rcx).toNat := by rw [w23, BitVec.ofNat_toNat, BitVec.setWidth_eq]
+  unfold encMain seqs seqs seqs seqs seqs seqs
+  -- `EM` before masking.
+  refine WP.seq (WP.mono (encEm_ok hH KH mH hp he L R hW hk) fun t5 ⟨he5, L5, V5, R5, E⟩ => ?_)
+  -- `DB` masked.
+  refine WP.seq (WP.mono (wp_good (dbArgs_good _) (dbArgs_ok (H := Hl.stream) L5 R5 w23' (by omega) (by omega)))
+    fun t6 ⟨⟨L6, k6, R6⟩, sp6, mx6, f6⟩ => ?_)
+  have he6 : EnvE s t6 := he5.step k6.2.1 k6.2.2 sp6 (keep_cs3 k6 (by decide)) mx6 f6
+  refine WP.seq (WP.mono (wp_good (mgfXor_good (HGood.of hG KG)) (mgfXor_ok hG.stream mG.hash mG.len
+    (valid_of_link hG mG) L6 R6 ⟨by unfold oEm oSt; omega, by unfold oEm oSt; omega, by omega, by omega, by omega⟩
+    (mW_args _ _ _ _ _ _))) fun t7 ⟨⟨L7, rd7, wr7, cs7, V7, W7, R7, hW7, hV7⟩, sp7, mx7, f7⟩ => ?_)
+  have he7 : EnvE s t7 := he6.step rd7 wr7 sp7 (fun r hr _ => cs7 r hr) mx7 f7
+  have W7e : ∀ k, (k < 15 ∨ 18 < k) → k < nW → k ≠ 19 → k ≠ 20 → W7 k = W k := fun k h1 h2 h3 h4 =>
+    (hW7 k h2 h3 h4).trans (mW_other h1)
+  -- The seed masked.
+  refine WP.seq (WP.mono (wp_good (seedArgs_good _) (seedArgs_ok (H := Hl.stream) L7 R7
+    ((W7e 23 (by omega) (by decide) (by omega) (by omega)).trans w23') (by omega) (by omega)))
+    fun t8 ⟨⟨L8, k8, R8⟩, sp8, mx8, f8⟩ => ?_)
+  have he8 : EnvE s t8 := he7.step k8.2.1 k8.2.2 sp8 (keep_cs3 k8 (by decide)) mx8 f8
+  refine WP.seq (WP.mono (wp_good (mgfXor_good (HGood.of hG KG)) (mgfXor_ok hG.stream mG.hash mG.len
+    (valid_of_link hG mG) L8 R8 ⟨by unfold oEm oSt; omega, by unfold oEm oSt; omega, by omega, by omega, by omega⟩
+    (mW_args _ _ _ _ _ _))) fun t9 ⟨⟨L9, rd9, wr9, cs9, V9, W9, R9, hW9, hV9⟩, sp9, mx9, f9⟩ => ?_)
+  have he9 : EnvE s t9 := he8.step rd9 wr9 sp9 (fun r hr _ => cs9 r hr) mx9 f9
+  -- The call.
+  have W9e : ∀ k, 21 ≤ k → k ≤ 26 → W9 k = encW s k := fun k h1 h2 => by
+    rw [hW9 k (by unfold nW frameBytes; omega) (by omega) (by omega), mW_other (by omega),
+      W7e k (by omega) (by unfold nW frameBytes; omega) (by omega) (by omega)]
+    exact hW k (.inr ⟨h1, by omega⟩)
+  refine WP.seq (WP.mono (wp_good pubArgs_good (pubArgs_ok L9 R9 W9e))
+    fun t10 ⟨⟨L10, k10, R10, hdi, hsi, hdx, hcx, h8, h9⟩, sp10, mx10, f10⟩ => ?_)
+  have he10 : EnvE s t10 := he9.step k10.2.1 k10.2.2 sp10 (keep_cs3 k10 (by decide)) mx10 f10
+  refine WP.mono (encPub_call hp L10 R10 (he10.rd) he10.wr he10.fr (by simp [upd]) (by simp [upd]) (by simp [upd])
+    (by simp [upd]) hdi hsi hdx hcx h8 h9) fun t11 ⟨hout, rd11, wr11, cs11, mx11, f11⟩ => ?_
+  refine ⟨⟨(cs11 .rsp (by decide)).trans he10.rsp, rd11.trans he10.rd, wr11.trans he10.wr,
+    fun r hr h => (cs11 r hr).trans (he10.cs r hr h), mx11.trans he10.mx, f11⟩, ?_⟩
+  have e1 : (s.gpr .rcx).toNat - (Hl.D + 1) = (s.gpr .rcx).toNat - Hl.D - 1 := by omega
+  rw [hsD, e1] at hV7 hV9
+  have hm : ∀ o, o < (s.gpr .rcx).toNat → mOut o := fun o ho => (mOut_iff o).mpr (.inl (by omega))
+  have hlen : mH.G.len = Hl.D := mH.len
+  have hsdl : (Spec.Rsa.bytesAt s.mem (stackArg s 4) mH.G.len).length = Hl.D := by simp [Spec.Rsa.bytesAt, hlen]
+  have hlhl : (mH.G.hash (Spec.Rsa.bytesAt s.mem (stackArg s 0) (stackArg s 1).toNat)).length = Hl.D := by
+    rw [(valid_of_link hH mH).2, hlen]
+  have hml : (Spec.Rsa.bytesAt s.mem (stackArg s 2) (stackArg s 3).toNat).length = (stackArg s 3).toNat := by
+    simp [Spec.Rsa.bytesAt]
+  have hsrc : srcB V7 (oEm + 1 + Hl.D) ((s.gpr .rcx).toNat - Hl.D - 1) =
+      srcB (mixV V5 (Spec.Mgf1.mgf1 mG.G (srcB V5 1 Hl.D) ((s.gpr .rcx).toNat - Hl.D - 1)) (1 + Hl.D)
+        ((s.gpr .rcx).toNat - Hl.D - 1)) (1 + Hl.D) ((s.gpr .rcx).toNat - Hl.D - 1) :=
+    List.map_congr_left fun i hi => by
+      have := List.mem_range.mp hi
+      exact hV7 _ (by unfold oRsa; omega) (hm _ (by unfold oEm; omega))
+  have hlist : (List.range (s.gpr .rcx).toNat).map (fun i => V9 (oEm + i)) =
+      emOf mG.G Hl.D (s.gpr .rcx).toNat (stackArg s 3).toNat (Spec.Rsa.bytesAt s.mem (stackArg s 4) mH.G.len)
+        (mH.G.hash (Spec.Rsa.bytesAt s.mem (stackArg s 0) (stackArg s 1).toNat))
+        (Spec.Rsa.bytesAt s.mem (stackArg s 2) (stackArg s 3).toNat) := by
+    unfold emOf
+    rw [← em_mask (valid_of_link hG mG) (V₁ := V5) (by omega) hsdl (by
+        simp only [List.length_append, List.length_cons, hlhl, hml, Spec.RsaOaep.zeros, List.length_replicate]; omega)
+      E.z0 E.sd (E.db hlhl hml hk)]
+    refine List.map_congr_left fun i hi => ?_
+    have hi' := List.mem_range.mp hi
+    rw [show oEm + i = i by unfold oEm; omega, hV9 _ (by unfold oRsa; omega) (hm _ hi'), hsrc]
+    exact mixV_congr _ _ _ (hV7 _ (by unfold oRsa; omega) (hm _ hi'))
+  rw [hlist] at hout
+  exact hout
+
 end VG.Proof.RsaOaep.X86_64
