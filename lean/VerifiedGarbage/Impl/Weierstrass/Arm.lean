@@ -63,10 +63,15 @@ def copy : Nat → Nat → Nat → List Instr
   | 0, _, _ => []
   | k + 1, o, a => [.ldr .r4 wb a, .str .r4 wb o] ++ copy k (o + 4) (a + 4)
 
+/-- `r += 4096` if the offset `d` is past what a load or store reaches
+(`d ≥ 4096`), which then takes `d - 4096`. -/
+def far (r : Reg) (d : Nat) : List Instr := if d < 4096 then [] else [.dp .add r r (.imm 4096)]
+
 /-- The mask `r10 = -[r12 + r11 + d]` of the bit of iteration `r11`,
 through `r4` and `r5`. -/
 def bitMask (d : Nat) : List Instr :=
-  [.dp .add .r4 wb (.reg .r11), .ldrb .r4 .r4 d, .mov .r5 (.imm 0), .dp .sub .r10 .r5 (.reg .r4)]
+  [.dp .add .r4 wb (.reg .r11)] ++ far .r4 d ++ [.ldrb .r4 .r4 (d % 4096), .mov .r5 (.imm 0),
+    .dp .sub .r10 .r5 (.reg .r4)]
 
 /-- `r11 -= 1`. -/
 def decCounter : Instr := .dp .sub .r11 .r11 (.imm 1)
@@ -102,15 +107,15 @@ def pow (P : PowCfg) (wk : Nat) : Prog isa :=
 stored at `[r5 + dst + j]`, where `r5 = r12 + 8 r11`, through `r7`. -/
 def bitJ (dst j : Nat) : List Instr :=
   (if j = 0 then [.dp .and .r7 .r4 (.imm 1)] else [.mov .r7 (.shifted .r4 .lsr j), .dp .and .r7 .r7 (.imm 1)]) ++
-    [.strb .r7 .r5 (dst + j)]
+    [.strb .r7 .r5 (dst % 4096 + j)]
 
 /-- The table at `dst` of the bits of the `nbytes`-byte little-endian number at
 `src`: byte `8i + j` is bit `j` of byte `i` (so byte `t` is bit `t`), from
-the top byte down. -/
+the top byte down (`r5` past 4096 more if the table is: `far`). -/
 def bits (src dst nbytes : Nat) : Prog isa :=
   .seq (.block [.mov .r11 (.imm (BitVec.ofNat 32 nbytes))]) (.loop (.block (
     [decCounter, .dp .add .r4 wb (.reg .r11), .ldrb .r4 .r4 src, .dp .add .r5 wb (.shifted .r11 .lsl 3)] ++
-    (List.range 8).flatMap (bitJ dst) ++ [testCounter])) .ne)
+    far .r5 dst ++ (List.range 8).flatMap (bitJ dst) ++ [testCounter])) .ne)
 
 /-! ## Numbers as bytes -/
 
