@@ -1,23 +1,22 @@
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Regs
 import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.PbkCalls
 import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Core
-import VerifiedGarbage.Impl.Ecdsa.P256.AArch64
-import VerifiedGarbage.Proof.Ecdsa.AArch64.Contract
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Curve
 
 /-!
 # Deterministic ECDSA on AArch64: the hash function
 
 What the proof needs of the hash function, for any one of them (`RfcHash`),
-as on x86-64 (`Proof/Ecdsa/Rfc6979/X86_64/Hash.lean`): the instance of the
-contract it implements (P-256, the hash function's HMAC, its output length,
-8 candidates), its code (`Hash`), what PBKDF2's proofs know of it (`HashOK`,
-`CoreOK`, so that HMAC's `init`, `update` and `finalize` are verified), what
-is proven of `vg_ecdsa_p256_sign`, which each candidate calls (`coreX`,
-`coreCT`: its proof's heavy algebra stays out of the modules generic over
-the hash function), and the sizes the frame and `scratch` are laid out for:
-the output and block sizes of SHA-256, SHA-384 or SHA-512, and states and
-working space no larger than SHA-512's. Each hash function's file builds one
-for each implementation of its compression function.
+as on x86-64 (`Proof/Ecdsa/Rfc6979/X86_64/Hash.lean`): the curve (`R`, with
+what is proven of its `vg_ecdsa_<curve>_sign`, which each candidate calls),
+the instance of the contract it implements (the curve, the hash function's
+HMAC, its output length, 8 candidates), its code (`Hash`), what PBKDF2's
+proofs know of it (`HashOK`, `CoreOK`, so that HMAC's `init`, `update` and
+`finalize` are verified), and the sizes the frame and `scratch` are laid
+out for: the output and block sizes of SHA-256, SHA-384 or SHA-512, no
+shorter than the curve's scalars, and states and working space no larger
+than SHA-512's. Each hash function's file builds one for each
+implementation of its compression function.
 -/
 
 namespace VG.Proof.Ecdsa.Rfc6979.AArch64
@@ -26,8 +25,10 @@ open VG VG.AArch64 VG.Impl.Ecdsa.Rfc6979.AArch64
 open VG.Proof.Pbkdf2.Md.AArch64 (HashOK CoreOK core hmacInit_ok hmacFin_ok hmacInit_fdepth hmacFin_fdepth)
 open VG.Proof.Pbkdf2.Md.AArch64.Calls (initG finG)
 
-/-- A hash function, for RFC 6979 over P-256 on AArch64. -/
+/-- A curve and a hash function, for RFC 6979 on AArch64. -/
 structure RfcHash where
+  /-- The curve. -/
+  R : RfcCurve
   /-- The instance of the contract. -/
   I : Spec.Ecdsa.Rfc6979.Instance
   /-- The hash function's code. -/
@@ -36,9 +37,9 @@ structure RfcHash where
   C : CoreOK (core H)
   satI : ∃ s, (Spec.Hmac.initScratchContract ok.SH H.W AArch64.abi 16).pre s
   satF : ∃ s, (Spec.Hmac.finalizeScratchContract ok.SH H.W AArch64.abi 16).pre s
-  /-- The instance is of P-256, with this hash function's HMAC, its output
-  length and 8 candidates. -/
-  ecdsa : I.ecdsa = Spec.Ecdsa.P256.inst
+  /-- The instance is of the curve, with this hash function's HMAC, its
+  output length and 8 candidates. -/
+  ecdsa : I.ecdsa = R.inst
   hash : I.hash = ok.SH.H
   len : I.hashLen = H.D
   tries : I.tries = 8
@@ -48,11 +49,8 @@ structure RfcHash where
   hS : H.S ≤ 192
   hW : 8 * H.W ≤ 1872
   hWb : ok.stream.Wb ≤ 1872
-  /-- `vg_ecdsa_p256_sign` is correct and constant time. -/
-  coreX : ∀ s, Proof.Ecdsa.AArch64.signAArch64.pre s → ∃ t s', Exec isa Impl.Ecdsa.AArch64.signP256 s t s' ∧
-    abiPreserved s s' ∧ Proof.Ecdsa.AArch64.signAArch64.post s s'
-  coreCT : ConstantTime isa Proof.Ecdsa.AArch64.signAArch64.pre Proof.Ecdsa.AArch64.signAArch64.pub
-    Impl.Ecdsa.AArch64.signP256
+  /-- The hash is no shorter than the scalars. -/
+  hQ : 8 * R.E.n ≤ H.D
 
 namespace RfcHash
 
@@ -69,31 +67,41 @@ theorem hF : Verified AArch64.target P.H.hmacFin (finG P.ok.SH P.H.W) := hmacFin
 
 theorem hFd : P.H.hmacFin.aarch64Depth ≤ 1 := hmacFin_fdepth P.ok.stream.finDepth P.ok.comp.noFrames
 
+/-- The words of the curve's scalars. -/
+abbrev w : Nat := P.R.E.n
+
 /-- The sizes, as the proofs use them. -/
 theorem sizes : P.H.S ≤ 192 ∧ P.H.P.N + P.H.P.B ≤ 192 ∧ 8 * P.H.W ≤ 1872 ∧ P.ok.stream.Wb ≤ 1872 ∧
     P.H.stream.S ≤ 192 ∧ P.H.stream.D = P.H.D ∧ 32 ≤ P.H.D ∧ P.H.D ≤ 64 ∧ P.H.D % 8 = 0 ∧
-    P.H.D < P.H.P.B ∧ P.H.P.B ≤ 128 := by
+    P.H.D < P.H.P.B ∧ P.H.P.B ≤ 128 ∧ 4 ≤ P.w ∧ P.w ≤ 6 ∧ 8 * P.w ≤ P.H.D := by
   have hDL := P.ok.sizes.DN
-  refine ⟨P.hS, P.hS, P.hW, P.hWb, P.hS, rfl, ?_, ?_, ?_, ?_, ?_⟩ <;>
+  refine ⟨P.hS, P.hS, P.hW, P.hWb, P.hS, rfl, ?_, ?_, ?_, ?_, ?_, P.R.n4, P.R.n6, P.hQ⟩ <;>
     rcases P.hDB with ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ <;> simp only [h, h'] <;> omega
 
 /-- The digest is at least 32 bytes. -/
 theorem len32 : 32 ≤ P.I.hashLen := by
   rw [P.len]; rcases P.hDB with ⟨h, _⟩ | ⟨h, _⟩ | ⟨h, _⟩ <;> omega
 
+/-- The digest is at least the scalars' `8 w` bytes. -/
+theorem lenQ : 8 * P.w ≤ P.I.hashLen := by rw [P.len]; exact P.hQ
+
+/-- The curve's scalars are `8 w` bytes. -/
+theorem curveLen : P.I.ecdsa.curve.len = 8 * P.w := by rw [P.ecdsa, P.R.curve, P.R.len]
+
 end RfcHash
 
 /-- Facts about the sizes of the hash function `‹RfcHash›`'s states, working
 space, block and output, and the arithmetic they decide. -/
 macro "anums" : tactic => `(tactic| first | omega |
-  (obtain ⟨_, _, _, _, _, _, _, _, _, _, _⟩ := RfcHash.sizes ‹RfcHash›; omega))
+  (obtain ⟨_, _, _, _, _, _, _, _, _, _, _, _, _, _⟩ := RfcHash.sizes ‹RfcHash›; omega))
 
 /-- The code, with the hash function `P`. -/
 def cfgOf (P : RfcHash) : Cfg where
   H := P.H
-  n := Spec.P256.n
+  w := P.R.E.n
+  n := P.R.E.C.n
   tries := 8
-  coreN := Spec.Ecdsa.P256.signApi.name
-  coreC := Impl.Ecdsa.AArch64.signP256
+  coreN := P.R.coreN
+  coreC := P.R.coreC
 
 end VG.Proof.Ecdsa.Rfc6979.AArch64
