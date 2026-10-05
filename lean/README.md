@@ -165,7 +165,7 @@ With Docker and zstd installed, restore it from the repository root:
 docker pull ghcr.io/pyca/vg-lean-cache:latest
 container=$(docker create ghcr.io/pyca/vg-lean-cache:latest /unused)
 set -o pipefail
-docker cp "$container":/lean-cache.tar.zst - | tar -xOf - | zstd -dc | tar -xf - -C lean
+docker cp "$container":/lean-cache.tar.zst - | tar -xOf - | zstd -dc | tar --no-same-owner -xf - -C lean
 docker rm "$container"
 ```
 
@@ -174,6 +174,11 @@ separately; the image's `io.pyca.lean.toolchain` and
 `org.opencontainers.image.revision` labels identify the cached build. Lake
 rebuilds outputs that differ from the checkout. Private package access
 requires authenticating to GHCR before pulling.
+
+Keep `--no-same-owner`: the archive's files belong to CI's runner user, and
+`tar` run as root (as in a container) would keep that owner. Git then refuses
+the dependencies' checkouts in `.lake/packages` as owned by someone else, so
+Lake clones them again and builds Mathlib from source.
 
 Moving the cache to a different absolute path can also make Lake relink
 native libraries and rebuild affected native modules. A normal `lake build`

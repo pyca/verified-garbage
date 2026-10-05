@@ -1,6 +1,7 @@
 import VerifiedGarbage.Impl.X448.AArch64.Base
 import VerifiedGarbage.Proof.X448.AArch64.Fast.Phases
 import VerifiedGarbage.Proof.X448.AArch64.Fast.StepOps
+import VerifiedGarbage.Proof.X448.AArch64.Base.AddDefs
 
 /-!
 # X448 of the base point on AArch64: the addition of an affine entry
@@ -66,9 +67,6 @@ theorem addAffine_eq (x1 y1 z1 x2 y2 : Index) :
       weave (codeOf [.copy (slot z1.val) (slot (18 : Index).val)])
         (mul2 (slot x1.val) (slot (11 : Index).val) (slot (13 : Index).val) (slot y1.val)
           (slot (12 : Index).val) (slot (17 : Index).val)) := rfl
-
-/-- The temporaries. -/
-def temps : List Index := [10, 11, 12, 13, 14, 15, 16, 17, 18]
 
 theorem copyOp {s : State} {base : Addr} (hs : Scr s base) (hb : BEnv s.mem base) (o a : Index)
     {rest : List Impl.X448.AArch64.Fast.Op} {Q : State → Prop}
@@ -242,9 +240,6 @@ theorem part5_ok (x1 y1 z1 : Index) (hxy : x1 ≠ y1) (hzx : z1 ≠ x1) (hzy : z
   refine WP.mono (mul2E (tk.scr hs) tb x1 11 13 y1 12 17 hxy) fun u ⟨uk, ub, ux, uy, us, ue⟩ =>
     ⟨tk.trans uk, ub, ts.append us, ux, uy, us.bnd (by simp [hzx, hzy]) tz, ?_⟩
   rw [ue, te]
-
-theorem Same.mono {l l' : List Index} {m m' : Mem} (h : Same base l m m') (hl : ∀ i ∈ l, i ∈ l') :
-    Same base l' m m' := fun i hi j hj => h i (fun e => hi (hl i e)) j hj
 
 /-- **The addition of an affine entry**: `(x₂, y₂)` (slots `x2`, `y2`, any limbs below `Ib`)
 to `(X : Y : Z)` (slots `x1`, `y1`, `z1`), given zero's bound in slot 19 and the

@@ -84,16 +84,19 @@ theorem hmacK_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) {len : Nat} (hlen
     bytesAt_frame (p := L.B + BitVec.ofNat 64 (24 + 64)) h.frame (kv_disj (d := 64) (.inr rfl) hL) (by anums), hmac⟩
 
 /-- `K = HMAC_K(m)`, then `V = HMAC_K(V)`, for the message `m = V ‖ b (‖ d ‖ h)`. -/
-theorem rekey_gen (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) {b : Nat} (hb : b < 2) {full : Bool} {len : Nat}
-    (hlen : len = if full then P.F.H.D + 65 else P.F.H.D + 1) :
-    WP isa (.seq (.block (Cfg.msg P.F.H.D b full))
+theorem rekey_gen (hL : L.Ok) (hq : L.q = 8 * P.w) {t : State} (hc : Ctx L g m₀ t) {b : Nat} (hb : b < 2)
+    {full : Bool} {len : Nat} (hlen : len = if full then P.F.H.D + 8 * P.k + 1 else P.F.H.D + 1) :
+    WP isa (.seq (.block (Cfg.msg P.k P.F.H.D b full))
       (.seq ((cfgOf P).hmac (scrAt .r1 sMsg) len fK) (cfgOf P).hmacV)) t
       fun t' => Ctx L g m₀ t' ∧ t'.gpr .r9 = t.gpr .r9 ∧ Frame (KVW L) t.mem t'.mem ∧
         kOf P L t'.mem = P.mac (kOf P L t.mem) (vOfP P L t.mem ++ [BitVec.ofNat 8 b] ++
-          (if full then Spec.Sha256.bytesAt t.mem (State.addr L.d) 32 ++ hOf L t.mem else [])) ∧
+          (if full then Spec.Sha256.bytesAt t.mem (State.addr L.d) (8 * P.w) ++ hOf P L t.mem else [])) ∧
         vOfP P L t'.mem = P.mac (kOf P L t'.mem) (vOfP P L t.mem) := by
   have hD4 : P.F.H.D % 4 = 0 := by anums
-  refine WP.seq (WP.mono (msg_ok hL hc hb full (D := P.F.H.D) (by anums) hD4) fun u ⟨hcu, h9u, hfu, hbu⟩ => ?_)
+  refine WP.seq (WP.mono (msg_ok hL hc hb full (D := P.F.H.D) (by anums) hD4 (by rw [hq]; anums) (by anums))
+    fun u ⟨hcu, h9u, hfu, hbu⟩ => ?_)
+  have e4 : 4 * P.k = 8 * P.w := by anums
+  rw [e4] at hbu
   refine WP.seq (WP.mono (hmacK_ok (P := P) hL hcu (len := len)
     (by cases full <;> simp only [hlen, Bool.false_eq_true, ite_true, ite_false] <;> anums))
     fun w ⟨hcw, h9w, hfw, hvw, hkw⟩ => ?_)
@@ -111,20 +114,20 @@ theorem rekey_gen (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) {b : Nat} (hb : 
     rw [hv', hk', hvw, hvu]
 
 /-- `K = HMAC_K(V ‖ b ‖ d ‖ h)`, then `V = HMAC_K(V)` (steps d–e, f–g). -/
-theorem rekeyFull_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) {b : Nat} (hb : b < 2) :
+theorem rekeyFull_ok (hL : L.Ok) (hq : L.q = 8 * P.w) {t : State} (hc : Ctx L g m₀ t) {b : Nat} (hb : b < 2) :
     WP isa ((cfgOf P).rekeyFull b) t fun t' => Ctx L g m₀ t' ∧ t'.gpr .r9 = t.gpr .r9 ∧
       Frame (KVW L) t.mem t'.mem ∧
       kOf P L t'.mem = P.mac (kOf P L t.mem) (vOfP P L t.mem ++ [BitVec.ofNat 8 b] ++
-        (Spec.Sha256.bytesAt t.mem (State.addr L.d) 32 ++ hOf L t.mem)) ∧
+        (Spec.Sha256.bytesAt t.mem (State.addr L.d) (8 * P.w) ++ hOf P L t.mem)) ∧
       vOfP P L t'.mem = P.mac (kOf P L t'.mem) (vOfP P L t.mem) :=
-  rekey_gen (full := true) hL hc hb rfl
+  rekey_gen (full := true) hL hq hc hb rfl
 
 /-- `K = HMAC_K(V ‖ 0x00)`, then `V = HMAC_K(V)` (step h.3). -/
-theorem rekey_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) :
+theorem rekey_ok (hL : L.Ok) (hq : L.q = 8 * P.w) {t : State} (hc : Ctx L g m₀ t) :
     WP isa (cfgOf P).rekey t fun t' => Ctx L g m₀ t' ∧ t'.gpr .r9 = t.gpr .r9 ∧ Frame (KVW L) t.mem t'.mem ∧
       kOf P L t'.mem = P.mac (kOf P L t.mem) (vOfP P L t.mem ++ [0]) ∧
       vOfP P L t'.mem = P.mac (kOf P L t'.mem) (vOfP P L t.mem) :=
-  WP.mono (rekey_gen hL hc (b := 0) (by decide) (full := false) rfl) fun _ h => ⟨h.1, h.2.1, h.2.2.1, by
+  WP.mono (rekey_gen hL hq hc (b := 0) (by decide) (full := false) rfl) fun _ h => ⟨h.1, h.2.1, h.2.2.1, by
     rw [h.2.2.2.1]; simp, h.2.2.2.2⟩
 
 end VG.Proof.Ecdsa.Rfc6979.Arm

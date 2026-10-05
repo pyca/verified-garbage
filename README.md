@@ -1072,7 +1072,7 @@ yours to keep:
 
 <td>✅ SHA extensions</td>
 
-<td>❌</td>
+<td>✅</td>
 
 <td>✅</td>
 
@@ -1118,7 +1118,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅ SHA extensions; keys and signatures by a fixed-base comb</td>
+<td>✅ SHA extensions; keys and signatures by a fixed-base comb, verification by a comb and 4-bit windows</td>
 
 <td>✅</td>
 

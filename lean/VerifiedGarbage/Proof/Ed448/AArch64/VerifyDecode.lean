@@ -20,17 +20,36 @@ open VG.Proof.X448.AArch64.Weak (E BoundedEnv cswapE opSwap IKeep)
 open VG.Proof.Curve448.AArch64 (mask)
 open VG.Impl.X448.AArch64 (ld st slot X2 ACC)
 
-/-- What decoding writes: the slots and `CAN`, and the coefficients. -/
-abbrev DFrame (base : Addr) (m m' : Mem) : Prop := Outside2 base 64 2944 ACC 512 m m'
+/-- What decoding writes: the slots, the coefficients and `CAN`. -/
+def DFrame (base : Addr) (m m' : Mem) : Prop :=
+  ∀ x, (ofs base x < 64 ∨ 2880 ≤ ofs base x) → (ofs base x < ACC ∨ ACC + 512 ≤ ofs base x) →
+    (ofs base x < CAN ∨ CAN + 128 ≤ ofs base x) → m' x = m x
+
+theorem DFrame.trans {base : Addr} {m₁ m₂ m₃ : Mem} (h₁ : DFrame base m₁ m₂) (h₂ : DFrame base m₂ m₃) :
+    DFrame base m₁ m₃ := fun x a b c => (h₂ x a b c).trans (h₁ x a b c)
+
+theorem DFrame.of_outside2 {base : Addr} {m m' : Mem} {n : Nat} (hn : n ≤ 2816)
+    (h : Outside2 base 64 n ACC 512 m m') : DFrame base m m' := fun x a b _ => h x (by omega) b
+
+theorem DFrame.whole {base : Addr} {m m' : Mem} (h : DFrame base m m') : Outside base 0 8192 m m' :=
+  fun x hx => h x (by omega) (by simp only [ACC]; omega) (by simp only [CAN]; omega)
+
+theorem DFrame.word {base : Addr} {m m' : Mem} (h : DFrame base m m') {d : Nat}
+    (h1 : d + 8 ≤ 64 ∨ 2880 ≤ d) (h2 : d + 8 ≤ ACC ∨ ACC + 512 ≤ d) (h3 : d + 8 ≤ CAN ∨ CAN + 128 ≤ d)
+    (hd : d + 8 ≤ 8192) : word m' base d = word m base d :=
+  Mem.readW_congr fun i hi => h _ (by
+      simp only [ofs]; rw [Offset.add_add, Mem.sub_ofNat_toNat base (by omega)]; omega)
+    (by simp only [ofs]; rw [Offset.add_add, Mem.sub_ofNat_toNat base (by omega)]; omega)
+    (by simp only [ofs]; rw [Offset.add_add, Mem.sub_ofNat_toNat base (by omega)]; omega)
 
 theorem cframe_dframe {base : Addr} {m m' : Mem} (h : CFrame base m m') : DFrame base m m' :=
-  fun x h1 h2 => h x (by simp only [X2, slot] at *; omega) (by simp only [CAN] at *; omega) h2
+  fun x h1 h2 h3 => h x (by simp only [X2, slot] at *; omega) h3 h2
 
 theorem keep_dframe {base : Addr} {s t : State} (h : Keep base s t) : DFrame base s.mem t.mem :=
-  h.mem.mono (by decide) (Nat.le_refl _)
+  DFrame.of_outside2 (Nat.le_refl _) (h.mem.mono (Nat.le_refl _) (Nat.le_refl _))
 
 theorem ikeep_dframe {base : Addr} {s t : State} (h : IKeep base s t) : DFrame base s.mem t.mem :=
-  h.mem.mono (by decide) (Nat.le_refl _)
+  DFrame.of_outside2 (Nat.le_refl _) (h.mem.mono (Nat.le_refl _) (Nat.le_refl _))
 
 theorem bytesAt57_take (m : Mem) (p : Addr) :
     (Spec.Ed448.bytesAt m p 57).take 56 = Spec.Ed448.bytesAt m p 56 := by
@@ -201,10 +220,10 @@ theorem decode_ok (hR : RecoverOk) {s : State} {base : Addr} (hs : Scr s base) (
       (k4.regs.mono (by decide))).trans (k5.regs.mono (by decide))).trans (k6.regs.mono (by decide))).trans
       (k7.mono (by decide))).trans (k8.regs.mono (by decide))).trans ((k9.mono (by decide)).trans
       (kt.regs.mono (by decide)))
-  · have d1 : DFrame base s.mem s1.mem := fun x h1 _ =>
+  · have d1 : DFrame base s.mem s1.mem := fun x h1 _ _ =>
       o1 x (by have := yo.isLt; simp only [slot] at *; omega)
-    have d7 : DFrame base s6.mem s7.mem := by rw [mm7]; exact Outside2.refl _ _ _ _ _ _
-    have d9 : DFrame base s8.mem s9.mem := by rw [mm9]; exact Outside2.refl _ _ _ _ _ _
+    have d7 : DFrame base s6.mem s7.mem := by rw [mm7]; exact fun _ _ _ _ => rfl
+    have d9 : DFrame base s8.mem s9.mem := by rw [mm9]; exact fun _ _ _ _ => rfl
     exact ((((((((d1.trans (keep_dframe k2)).trans (ikeep_dframe k3)).trans (keep_dframe k4)).trans
       (cframe_dframe k5.mem)).trans (cframe_dframe k6.mem)).trans d7).trans (keep_dframe k8)).trans d9).trans
       (keep_dframe kt)
