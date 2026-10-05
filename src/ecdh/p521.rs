@@ -1,7 +1,7 @@
 //! ECDH over P-521 (`vg_ecdh_p521`), and public keys
 //! (`vg_ec_p521_public_key`).
 
-#![cfg(any(target_arch = "x86_64", target_arch = "x86"))]
+#![cfg(any(target_arch = "x86_64", target_arch = "x86", target_arch = "arm"))]
 
 use super::{Error, P521, PrivateKey};
 use crate::arch::ec_p521::vg_ec_p521_public_key;
