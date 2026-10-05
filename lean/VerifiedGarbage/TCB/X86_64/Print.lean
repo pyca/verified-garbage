@@ -208,6 +208,7 @@ def Instr.asm : Instr → List String
   | .shift op d n => [s!"{op.name} {d.name}, {n}"]
   -- `movabs` always selects the `REX.W + B8+rd io` encoding, whatever the value.
   | .movImm64 d v => [s!"movabs {d.name}, {v.toInt}"]
+  | .leaSym d name => [s!"lea {d.name}, [rip + {name}]"]
   | .movdquLoad d m => [s!"movdqu {d.name}, {m.str128}"]
   | .movdquStore m r => [s!"movdqu {m.str128}, {r.name}"]
   | .xop op => [op.asm]
@@ -263,7 +264,7 @@ def Instr.memOps : Instr → List MemOp
   | .vmovdqu32Store m _ | .vbroadcasti32x4 _ m | .zbcst _ _ _ m | .vpmadd52Load _ _ _ m
   | .stmxcsr m | .ldmxcsr m => [m]
   | .shift32 .. | .bswap32 _ | .rorx32 .. | .andn32 .. | .rorx .. | .andn .. | .bswap _
-  | .shift .. | .movImm64 .. | .xop _ | .vop _ | .vpmovmskb .. | .zop _ | .lfence | .mul _
+  | .shift .. | .movImm64 .. | .leaSym .. | .xop _ | .vop _ | .vpmovmskb .. | .zop _ | .lfence | .mul _
   | .push _ | .pop .. | .alloc _ | .free _ => []
 
 def printer : Printer isa where
@@ -272,6 +273,11 @@ def printer : Printer isa where
   jump l := s!"jmp {l}"
   ret := ["ret"]
   call := "call"
+  -- The static's RIP-relative address, which `TCB/Rust.lean` writes with
+  -- its symbol; `asm` gives the same text, for reading.
+  symLines
+    | .leaSym d name => some [.sym s!"lea {d.name}, " .ripRel name]
+    | _ => none
   /- Every function starts on a 64-byte boundary, a cache line: the unit
   AMD's op cache builds its entries from (Zen 4 Software Optimization Guide,
   57647, §2.9.1), and one of the 16- and 32-byte windows Intel's decoders and

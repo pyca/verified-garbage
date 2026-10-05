@@ -183,8 +183,9 @@ structure Abi (M : ISA) where
 
 An artifact may read tables of constants (`Artifact.consts`): the emitter
 writes each as a Rust `static` of its name, and the code forms its address
-from the name (on AArch64, `adrSym`: `adrp` and `add`, which the linker
-resolves to the static; see `TCB/Rust.lean`). `A.withConsts cs` is the
+from the name (on AArch64, `adrSym`: `adrp` and `add`; on x86-64,
+`leaSym`: `lea` of a RIP-relative operand), which the linker resolves to
+the static (see `TCB/Rust.lean`). `A.withConsts cs` is the
 calling convention as a contract for such code sees it: the state gives each
 table's address (`A.sym`), which is public, and the memory holds the table
 there; the code may read it (the tables come last in the regions it may

@@ -44,6 +44,8 @@ structure State where
   call stores and, on the ARM targets, what a linker veneer may leave in the
   intra-procedure-call scratch registers (see `TCB/Code.lean`). -/
   unknowns : Nat → BitVec 64 := fun _ => 0
+  /-- The address of each `static` the code can name (`leaSym`), by name. -/
+  syms : String → BitVec 64 := fun _ => 0
 
 /-- A memory operand `[base + index * scale + disp]`. -/
 structure MemOp where
