@@ -103,8 +103,8 @@ def extract (b : Nat) : List Instr :=
     [.mov .rax (.mem (at_ .rbx (32 * i + 8 * k))), .store (at_ .rbx (oBuf + 504 * k + 168 * b + 8 * i)) .rax]
 
 /-- Permute the states and squeeze block `b`. -/
-def squeeze4 (b : Nat) : Prog isa :=
-  .seq (.block permArgs) (.seq permute4 (.block (extract b)))
+def squeeze4 (b : Nat) (fast : Bool := false) : Prog isa :=
+  .seq (.block permArgs) (.seq (permute4 fast) (.block (extract b)))
 
 /-- If seed `k` has fewer than 256 coefficients: `vg_mlkem_sample_ntt` on
 it, and `r14 ← r14 ∧ result`. -/
@@ -207,9 +207,9 @@ def epi : List Instr :=
     [.mov .rbx (.mem (at_ .rbx oSave))]
 
 /-- `vg_mlkem_sample_ntt4_avx2`. -/
-def sampleNTT4Avx2 : Prog isa :=
+def sampleNTT4Avx2 (fast : Bool := false) : Prog isa :=
   .seq (.block (pro ++ rcTable .rbx (oRc / 32) ++ absorb4))
-    (.seq (squeeze4 0) (.seq (squeeze4 1) (.seq (squeeze4 2) (.seq (.block tabBuild)
+    (.seq (squeeze4 0 fast) (.seq (squeeze4 1 fast) (.seq (squeeze4 2 fast) (.seq (.block tabBuild)
       (.seq (parse 0) (.seq (parse 1) (.seq (parse 2) (.seq (parse 3) (.block epi)))))))))
 
 /-- `vg_mlkem_sample_ntt` on seed `k`, and `r14 ← r14 ∧ result`. -/

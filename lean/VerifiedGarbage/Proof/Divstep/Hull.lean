@@ -1,4 +1,5 @@
 import VerifiedGarbage.Proof.Divstep.Incl
+import VerifiedGarbage.Proof.Divstep.Steps
 
 /-!
 # The hulls of the divstep bound: transitions
@@ -60,12 +61,6 @@ theorem incl_at {I : Incl} (h : I.ok = true) {x y x' y' : ℚ} (hs : inP I.src x
   hx ▸ hy ▸ Incl.ok_sound h hs
 
 theorem s_ne : s ≠ 0 := ne_of_gt s_pos
-
-theorem ite_t {α : Sort _} {c : Prop} [Decidable c] (h : c) {x y : α} : (if c then x else y) = x := by
-  simp [h]
-
-theorem ite_f {α : Sort _} {c : Prop} [Decidable c] (h : ¬c) {x y : α} : (if c then x else y) = y := by
-  simp [h]
 
 /-- The fudge factor `32/33` of the scaled polygons. -/
 abbrev c32 : ℚ := 32 / 33

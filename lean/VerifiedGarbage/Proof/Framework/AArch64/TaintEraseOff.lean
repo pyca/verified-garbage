@@ -52,12 +52,12 @@ theorem checkBlock_eraseOff (τ : taint.T) (is : List isa.Instr) :
     show (step τ i.eraseOff).bind _ = (step τ i).bind _
     exact congr (congrArg Option.bind (step_eraseOff τ i)) (funext ih)
 
-theorem checkChunks_eraseOff (τ : taint.T) (is : List isa.Instr) (ms : List taint.T) :
-    taint.checkChunks τ (is.map Instr.eraseOff) ms = taint.checkChunks τ is ms := by
+theorem checkChunks_eraseOff {chunkSize : Nat} (τ : taint.T) (is : List isa.Instr) (ms : List taint.T) :
+    taint.checkChunks chunkSize τ (is.map Instr.eraseOff) ms = taint.checkChunks chunkSize τ is ms := by
   induction ms generalizing τ is with
   | nil => exact checkBlock_eraseOff τ is
   | cons m ms ih =>
-    simp only [VG.Taint.checkChunks, ← List.map_take, ← List.map_drop, ih]
+    simp only [VG.Taint.checkChunks, KList.take_eq, KList.drop_eq, ← List.map_take, ← List.map_drop, ih]
     exact congrArg (Option.bind · _) (checkBlock_eraseOff τ _)
 
 theorem check_eraseOff (τ : taint.T) (c : Prog isa) (h : VG.Taint.Hint taint.T) :

@@ -117,7 +117,7 @@ theorem candEnd_post {s t₃ t : State} (c : KCtx s)
       cases outv
       · rw [this]
         show List.map _ _ = _
-        rw [List.map_congr_left fun i hi => hz i (List.mem_range.mp hi)]; simp
+        rw [List.map_congr_left fun i hi => hz i (List.mem_range.mp hi)]; simp [List.map_const']
       · exact this
     · simp only [Spec.Rsa.wordsAt, List.range_one, List.map_cons, List.map_nil, Nat.mul_zero, BitVec.add_zero,
         hk.used]

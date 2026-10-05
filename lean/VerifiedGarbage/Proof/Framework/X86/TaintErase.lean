@@ -51,7 +51,7 @@ def noBases (τ : T) : Bool := τ.bases.isEmpty && τ.argBases.isEmpty
 
 /-- Every taint of the hint knows no region base. -/
 def hintNoBases : VG.Taint.Hint T → Bool
-  | .block ms => ms.all noBases
+  | .block ms _ => ms.all noBases
   | .seq m h₁ h₂ => noBases m && hintNoBases h₁ && hintNoBases h₂
   | .ite h₁ h₂ => hintNoBases h₁ && hintNoBases h₂
   | .loop σ h => noBases σ && hintNoBases h
@@ -101,12 +101,12 @@ theorem storeStepKD_erase (h : τ.bases = []) (m : MemOp) (w : Nat) (p : Bool) (
 theorem stepKD_erase (h : τ.bases = []) (ha : τ.argBases = []) (i : Instr) :
     stepKD τ i.erase = stepKD τ i := by
   cases i with
-  | mov d s => simp only [Instr.erase, stepKD, srcOkK_erase, srcPub_erase, loadPubK_erase h,
+  | mov d s => simp only [Instr.erase, stepKD, stepKDFn, srcOkK_erase, srcPub_erase, loadPubK_erase h,
       movBasesK_erase h ha]
-  | store m r => simp only [Instr.erase, stepKD, storeStepKD_erase h]
-  | alu op d s => simp only [Instr.erase, stepKD, srcOkK_erase, srcPub_erase]
-  | movzx8 d m => simp only [Instr.erase, stepKD, MemOp.erase_base]
-  | store8 m r => simp only [Instr.erase, stepKD, storeStepKD_erase h]
+  | store m r => simp only [Instr.erase, stepKD, stepKDFn, storeStepKD_erase h]
+  | alu op d s => simp only [Instr.erase, stepKD, stepKDFn, srcOkK_erase, srcPub_erase]
+  | movzx8 d m => simp only [Instr.erase, stepKD, stepKDFn, MemOp.erase_base]
+  | store8 m r => simp only [Instr.erase, stepKD, stepKDFn, storeStepKD_erase h]
   | _ => rfl
 
 theorem killK_nil (h : τ.bases = []) (d : Reg) : killK τ d = [] := by
@@ -177,16 +177,16 @@ theorem map_drop (is : List Instr) (n : Nat) :
     (KList.map Instr.erase is).drop n = KList.map Instr.erase (is.drop n) := by
   rw [KList.map_eq, KList.map_eq, List.map_drop]
 
-theorem checkChunks_erase (ms : List T) :
+theorem checkChunks_erase {chunkSize : Nat} (ms : List T) :
     ∀ (τ : T) (is : List Instr), noBases τ = true → ms.all noBases = true →
-      taint.checkChunks τ (KList.map Instr.erase is) ms = taint.checkChunks τ is ms := by
+      taint.checkChunks chunkSize τ (KList.map Instr.erase is) ms = taint.checkChunks chunkSize τ is ms := by
   induction ms with
   | nil => intro τ is hn _; exact checkBlock_erase is τ hn
   | cons m ms ih =>
     intro τ is hn hms
     simp only [List.all_cons, Bool.and_eq_true] at hms
-    simp only [VG.Taint.checkChunks, map_take, map_drop, checkBlock_erase _ τ hn]
-    cases taint.checkBlock τ (is.take VG.Taint.chunk) with
+    simp only [VG.Taint.checkChunks, KList.take_eq, KList.drop_eq, map_take, map_drop, checkBlock_erase _ τ hn]
+    cases taint.checkBlock τ (is.take chunkSize) with
     | none => rfl
     | some τ' =>
       simp only [Option.bind_some]
@@ -210,7 +210,7 @@ theorem check_erase (c : Prog isa) :
   | block is =>
     intro τ h hn hh
     cases h with
-    | block ms => exact checkChunks_erase ms τ is hn hh
+    | block ms chunkSize => exact checkChunks_erase ms τ is hn hh
     | _ => rfl
   | seq a b iha ihb =>
     intro τ h hn hh

@@ -78,7 +78,7 @@ def recSatState : State where
 theorem leak_eq3 {a b c a' b' c' : List Byte} (ha : a.length = a'.length) (hb : b.length = b'.length)
     (h : (a ++ b ++ c).map (·.toNat) = (a' ++ b' ++ c').map (·.toNat)) : a = a' ∧ b = b' ∧ c = c' := by
   have hi : a ++ b ++ c = a' ++ b' ++ c' :=
-    List.map_injective_iff.2 (fun _ _ h => BitVec.toNat_inj.1 h) h
+    (List.map_inj_right (fun _ _ h => BitVec.toNat_inj.1 h)).1 h
   obtain ⟨h₁, rfl⟩ := List.append_inj hi (by simp [ha, hb])
   obtain ⟨rfl, rfl⟩ := List.append_inj h₁ ha
   exact ⟨rfl, rfl, rfl⟩

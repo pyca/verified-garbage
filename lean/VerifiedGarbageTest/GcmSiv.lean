@@ -94,6 +94,44 @@ run_cmd do
       [Spec.GcmSiv.ofBytes x1, Spec.GcmSiv.ofBytes x2]) == (← get "POLYVAL(H, X_1, X_2) = ") do
     throwError "RFC 8452 Appendix A: the worked example of POLYVAL is wrong"
 
+private def aesCached (key : List Byte) :
+    {c : Spec.GcmSiv.Cipher // c = Spec.GcmSiv.aes key} :=
+  let nr := Spec.Aes.rounds (key.length / 4)
+  let w := Spec.Aes.expandKey key
+  ⟨fun x => (Test.Aes.Cached.cipherCached nr w (Vector.ofFn fun i => x.getD i 0)).toList, by
+    funext x
+    simp only [Test.Aes.Cached.cipherCached_eq]
+    rfl⟩
+
+private theorem aesCached_eq (key : List Byte) :
+    (aesCached key).val = Spec.GcmSiv.aes key := (aesCached key).property
+
+private def encryptWithCached (key nonce pt aad : List Byte) :
+    {r // r = Spec.GcmSiv.encryptWith (Spec.GcmSiv.aes key) key.length nonce pt aad} :=
+  ⟨let (authKey, encKey) := Spec.GcmSiv.deriveKeys (aesCached key).val key.length nonce
+   let ciph := (aesCached encKey).val
+   let tag := ciph (Spec.GcmSiv.tagInput authKey nonce pt aad)
+   (Spec.GcmSiv.ctr ciph (Spec.GcmSiv.initialCounter tag) pt, tag), by
+     simp only [aesCached_eq, Spec.GcmSiv.encryptWith]⟩
+
+private def encryptCached (key nonce pt aad : List Byte)
+    (enc : {r // r = Spec.GcmSiv.encryptWith (Spec.GcmSiv.aes key) key.length nonce pt aad}) :
+    {r // r = Spec.GcmSiv.encrypt key nonce pt aad} :=
+  ⟨if Spec.GcmSiv.supported pt.length aad.length then some (enc.val.1 ++ enc.val.2) else none, by
+    simp only [enc.property, Spec.GcmSiv.encrypt]⟩
+
+private def decryptCached (key nonce c aad : List Byte) :
+    {r // r = Spec.GcmSiv.decrypt key nonce c aad} :=
+  ⟨if c.length < 16 || !Spec.GcmSiv.supported (c.length - 16) aad.length then none
+   else
+     let ct := c.take (c.length - 16)
+     let tag := c.drop (c.length - 16)
+     let (authKey, encKey) := Spec.GcmSiv.deriveKeys (aesCached key).val key.length nonce
+     let ciph := (aesCached encKey).val
+     let pt := Spec.GcmSiv.ctr ciph (Spec.GcmSiv.initialCounter tag) ct
+     if ciph (Spec.GcmSiv.tagInput authKey nonce pt aad) = tag then some pt else none, by
+    simp only [aesCached_eq, Spec.GcmSiv.decrypt, Spec.GcmSiv.decryptWith]⟩
+
 -- Appendix C.
 run_cmd do
   let vs := vectors (← readFile ("rfc8452" / "rfc8452.txt"))
@@ -108,7 +146,7 @@ run_cmd do
     let key ← get "Key"
     let nonce ← get "Nonce"
     let result ← get "Result"
-    let ciph := Spec.GcmSiv.aes key
+    let ciph := (aesCached key).val
     let (authKey, encKey) := Spec.GcmSiv.deriveKeys ciph key.length nonce
     let keys := (← get "Record authentication key", ← get "Record encryption key")
     unless (authKey, encKey) == keys do
@@ -118,14 +156,15 @@ run_cmd do
       (Spec.GcmSiv.elems (Spec.GcmSiv.pad16 aad ++ Spec.GcmSiv.pad16 pt ++ lengthBlock))
     unless Spec.GcmSiv.toBytes s == (← get "POLYVAL result") do
       throwError "RFC 8452, vector {n}: POLYVAL is wrong"
-    unless (Spec.GcmSiv.encryptWith ciph key.length nonce pt aad).2 == (← get "Tag") do
+    let enc := encryptWithCached key nonce pt aad
+    unless enc.val.2 == (← get "Tag") do
       throwError "RFC 8452, vector {n}: the tag is wrong"
-    unless Spec.GcmSiv.encrypt key nonce pt aad == some result do
+    unless (encryptCached key nonce pt aad enc).val == some result do
       throwError "RFC 8452, vector {n}: encryption is wrong"
-    unless Spec.GcmSiv.decrypt key nonce result aad == some pt do
+    unless (decryptCached key nonce result aad).val == some pt do
       throwError "RFC 8452, vector {n}: decryption is wrong"
     let forged := result.set (result.length - 1) (result.getLast! ^^^ 1)
-    unless Spec.GcmSiv.decrypt key nonce forged aad == none do
+    unless (decryptCached key nonce forged aad).val == none do
       throwError "RFC 8452, vector {n}: decryption accepts a wrong tag"
     n := n + 1
     keyLens := key.length :: keyLens

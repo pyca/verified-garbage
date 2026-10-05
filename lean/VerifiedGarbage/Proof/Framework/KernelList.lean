@@ -17,6 +17,30 @@ namespace VG.KList
 
 variable {α β : Type}
 
+/-- List prefixes and suffixes evaluated through a direct natural-number recursor. -/
+def take {α : Type} (n : Nat) (xs : List α) : List α :=
+  Nat.rec (fun _ => []) (fun _ ih xs => match xs with
+    | [] => []
+    | x :: xs => x :: ih xs) n xs
+def drop {α : Type} (n : Nat) (xs : List α) : List α :=
+  Nat.rec (fun xs => xs) (fun _ ih xs => match xs with
+    | [] => []
+    | _ :: xs => ih xs) n xs
+theorem take_eq {α : Type} (n : Nat) (xs : List α) : take n xs = xs.take n := by
+  induction n generalizing xs with
+  | zero => rfl
+  | succ n ih =>
+    cases xs with
+    | nil => rfl
+    | cons x xs => exact congrArg (List.cons x) (ih xs)
+theorem drop_eq {α : Type} (n : Nat) (xs : List α) : drop n xs = xs.drop n := by
+  induction n generalizing xs with
+  | zero => rfl
+  | succ n ih =>
+    cases xs with
+    | nil => rfl
+    | cons x xs => exact ih xs
+
 def any (l : List α) (p : α → Bool) : Bool := List.rec false (fun a _ ih => p a || ih) l
 
 def all (l : List α) (p : α → Bool) : Bool := List.rec true (fun a _ ih => p a && ih) l

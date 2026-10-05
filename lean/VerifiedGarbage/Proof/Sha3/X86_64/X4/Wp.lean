@@ -119,6 +119,17 @@ theorem VUpd.vshift (op : XShiftOp) (s : State) (d a : XReg) (n : BitVec 8) {v :
 section
 variable {is : List Instr} {s : State} {Q : State → Prop}
 
+/-- Four independent quadword rotates with AVX-512VL. -/
+theorem wp_vror {d a : XReg} {n : Nat} (hn : n < 64)
+    (k : ∀ s', VUpd s s' d (fun i => (q4 s a i).rotateRight n) → WP isa (.block is) s' Q) :
+    WP isa (.block (.vop (.vprorq .l256 d a (BitVec.ofNat 8 n)) :: is)) s Q := by
+  have en : (BitVec.ofNat 8 n).toNat % 64 = n := by rw [BitVec.toNat_ofNat]; omega
+  refine WP.cons rfl (k _ ⟨fun j hj => ?_, fun r hr j hj => ?_,
+    VOp.exec_gpr _ _, VOp.exec_mem _ _, VOp.exec_rd _ _, VOp.exec_wr _ _⟩)
+  · rcases cases4 hj with rfl | rfl | rfl | rfl <;>
+      simp [q4, VOp.exec, State.lane_setV256, rorQwords]
+  · simp only [q4, VOp.exec, State.lane_setV256, ite_eq_right hr]
+
 theorem wp_vxor {d a b : XReg} (k : ∀ s', VUpd s s' d (fun i => q4 s a i ^^^ q4 s b i) → WP isa (.block is) s' Q) :
     WP isa (.block (vb .vpxor d a b :: is)) s Q :=
   WP.cons rfl (k _ (VUpd.vbin _ _ _ _ _ fun _ _ => by simp only [VBinOp.sse, XBinOp.eval, qword_xor]; rfl))

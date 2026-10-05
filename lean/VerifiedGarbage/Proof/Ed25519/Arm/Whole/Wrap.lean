@@ -178,6 +178,8 @@ open VG VG.Arm VG.Impl.Ed25519.Arm.Whole
 
 def finish (u : State) : State := popped .lr 4 (popped .r12 4 (freed 24 (freed 248 u)))
 
+attribute [local instance_reducible] freed
+
 theorem finish_mem (u : State) : (finish u).mem = u.mem := rfl
 theorem finish_sp (u : State) : (finish u).sp = u.sp + 280#32 := by
   change u.sp + 248#32 + 24#32 + 4#32 + 4#32 = _

@@ -19,15 +19,6 @@ open VG VG.AArch64 VG.Impl.Mont.AArch64 VG.Impl.Mont VG.Impl.Weierstrass.AArch64
 open VG.Proof.Mont.AArch64 VG.Proof.Mont VG.Proof.Weierstrass
 open VG.Proof.Ed25519.AArch64 (Keeps Keeps.trans Keeps.mono read_x)
 
-/-- `2^64 [x]` modulo `2^(64 K)` reads only `K - 1` of `[x]`'s words. -/
-theorem shifted_cong (m : Mem) (base : Addr) (x : Nat) {k K : Nat} (hk : K - 1 ≤ k) (hK : 1 ≤ K) :
-    ((2 ^ 64 * wordsVal m base x (K - 1) : Nat) : Int) % ((2 ^ (64 * K) : Nat) : Int) =
-      ((2 ^ 64 * wordsVal m base x k : Nat) : Int) % ((2 ^ (64 * K) : Nat) : Int) := by
-  obtain ⟨j, rfl⟩ : ∃ j, k = K - 1 + j := ⟨k - (K - 1), by omega⟩
-  rw [wordsVal_split, Nat.mul_add, ← Nat.mul_assoc, ← Nat.pow_add, show 64 + 64 * (K - 1) = 64 * K by omega]
-  push_cast
-  rw [Int.add_mul_emod_self_left]
-
 /-- `[T] = u [x] + v [y]` modulo `2^(64 K)`, for words `u`, `v` (signed) in `w`, `w'`. -/
 theorem linM_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) (h12 : s.gpr .x12 = 0)
     {w w' : Reg} (hw : w ∉ [Reg.x0, .x2, .x3, .x8, .x9, .x10, .x12, .x16, .x17])

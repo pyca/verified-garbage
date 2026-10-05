@@ -82,14 +82,6 @@ theorem slot_apart (P : ChainCfg) {i j : Nat} (h : i ≠ j) :
 theorem slot_mod8 (P : ChainCfg) (h : P.tbl % 8 = 0) (i : Nat) : P.slot i % 8 = 0 := by
   simp only [ChainCfg.slot]; rw [Nat.mul_assoc]; omega
 
-/-- A change within larger ranges. -/
-theorem _root_.VG.Proof.Weierstrass.Unch.cover {base : Addr} {W W' : List (Nat × Nat)} {m m' : Mem} (h : Unch base W m m')
-    (hW : ∀ w ∈ W, ∃ w' ∈ W', w'.1 ≤ w.1 ∧ w.1 + w.2 ≤ w'.1 + w'.2) : Unch base W' m m' :=
-  fun x hx => h x fun w hw => by
-    obtain ⟨w', hw', h₁, h₂⟩ := hW w hw
-    have := hx w' hw'
-    omega
-
 /-- An operation's writes, within what the chain writes. -/
 theorem op_cover {P : ChainCfg} {o : Nat}
     (ho : o = P.acc ∨ (P.tbl ≤ o ∧ o + 8 * P.M.n ≤ P.tbl + 9 * (8 * P.M.n))) :

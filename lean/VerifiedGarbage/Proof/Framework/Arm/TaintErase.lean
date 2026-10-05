@@ -54,7 +54,7 @@ theorem step_noBase {τ τ' : T} (h : NoBase τ) {i : Instr} (hs : stepKD τ i =
     NoBase τ' := by
   obtain ⟨regs, flags, lens, bases, slots, argLen, argBases⟩ := τ
   obtain ⟨rfl, rfl⟩ := h
-  cases i <;> simp only [stepKD, storeStepKD, Bool.cond_eq_ite] at hs <;>
+  cases i <;> simp only [stepKD, stepKDFn, storeStepKD, Bool.cond_eq_ite] at hs <;>
     first
     | (cases hs; exact ⟨rfl, rfl⟩)
     | (cases hs; exact ⟨by rename_i o; cases o <;> rfl, rfl⟩)
@@ -106,25 +106,26 @@ theorem checkBlock_eraseOff {τ : T} (h : NoBase τ) (is : List Instr) :
     rw [step_eraseOff h]
     exact bind_congr fun σ hσ => ih (step_noBase h hσ)
 
-theorem checkChunks_noBase {τ τ' : T} (h : NoBase τ) {is : List Instr} {ms : List T}
-    (hc : taint.checkChunks τ is ms = some τ') : NoBase τ' := by
+theorem checkChunks_noBase {chunkSize : Nat} {τ τ' : T} (h : NoBase τ) {is : List Instr} {ms : List T}
+    (hc : taint.checkChunks chunkSize τ is ms = some τ') : NoBase τ' := by
   induction ms generalizing τ is with
   | nil => exact checkBlock_noBase h hc
   | cons m ms ih =>
-    have hc : (taint.checkBlock τ (is.take VG.Taint.chunk)).bind (fun τ' =>
-        if taint.le m τ' then taint.checkChunks m (is.drop VG.Taint.chunk) ms else none) = some τ' := hc
+    have hc : (taint.checkBlock τ (is.take chunkSize)).bind (fun τ' =>
+        if taint.le m τ' then taint.checkChunks chunkSize m (is.drop chunkSize) ms else none) = some τ' := by
+      simpa only [VG.Taint.checkChunks, KList.take_eq, KList.drop_eq] using hc
     obtain ⟨σ, hσ, hc⟩ := Option.bind_eq_some_iff.mp hc
     split at hc
     · rename_i hl
       exact ih (le_noBase hl (checkBlock_noBase h hσ)) hc
     · cases hc
 
-theorem checkChunks_eraseOff {τ : T} (h : NoBase τ) (is : List Instr) (ms : List T) :
-    taint.checkChunks τ (is.map Instr.eraseOff) ms = taint.checkChunks τ is ms := by
+theorem checkChunks_eraseOff {chunkSize : Nat} {τ : T} (h : NoBase τ) (is : List Instr) (ms : List T) :
+    taint.checkChunks chunkSize τ (is.map Instr.eraseOff) ms = taint.checkChunks chunkSize τ is ms := by
   induction ms generalizing τ is with
   | nil => exact checkBlock_eraseOff h is
   | cons m ms ih =>
-    simp only [VG.Taint.checkChunks, ← List.map_take, ← List.map_drop, checkBlock_eraseOff h]
+    simp only [VG.Taint.checkChunks, KList.take_eq, KList.drop_eq, ← List.map_take, ← List.map_drop, checkBlock_eraseOff h]
     refine bind_congr fun σ hσ => ?_
     split
     · rename_i hl

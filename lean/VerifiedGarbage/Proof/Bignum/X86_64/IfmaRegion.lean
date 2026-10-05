@@ -406,7 +406,7 @@ theorem k1_ok {s : State} {W : Addr} {wx : Nat} {minv : BitVec 64} {X : Nat}
   · rw [hv, me₂, hN₁, hv₁]
   · exact (Frm.of_outside (ho₁.mono (o' := slot wx VG.Impl.Rsa.X86_64.Crt.aT) (n' := 8 * (wx + 2))
       (Nat.le_refl _) (by omega)) (by simp [k1Ranges])).trans (by rw [← me₂]; exact hf)
-  · exact ((k₁.trans k₂).trans k).mono (by simp [mmRegs])
+  · exact ((k₁.trans k₂).trans k).mono (by decide)
 
 /-! ## Facts about the area that the region's steps carry -/
 
@@ -590,7 +590,7 @@ theorem regionA_ok {s : State} {B : Addr} {Z o w a p X : Nat} {mx : BitVec 64} (
       (sep (by decide)) (by omega), (lK.of_frm e₃ (sep (by decide)) (by omega)).of_frm e₄ (sep (by decide))
       (by omega), lX.of_frm e₄ (sep (by decide)) (by omega), lY, f₁'.append g₄,
     w₄.trans k₁.2.2, d₄.trans hdi₁, ?_, h12, ?_, ?_⟩
-  · exact (k₁.trans (((k₁'.trans k₂).trans k₃).trans k₄)).mono (by simp [mmRegs])
+  · exact (k₁.trans (((k₁'.trans k₂).trans k₃).trans k₄)).mono (by decide)
   · exact hH₁.of_below g₄ (fun r hr => by
       rw [List.mem_singleton.mp hr]; unfold hdrBytes; unfold slot hdrBytes at h8; simp only; omega)
       (by unfold hdrBytes; unfold slot hdrBytes at h8; omega)
@@ -845,7 +845,7 @@ theorem regionB0_ok {u : State} {B : Addr} {Z o a sp sl : Nat} {mx : BitVec 64} 
     · exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_self ..), by simp only; omega⟩
     · exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_self ..)), by simp only; omega⟩
     · exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_self ..)), by simp only; omega⟩
-  · exact (((k₁.trans k₂).trans k₃).trans k₄).mono (by simp [mmRegs])
+  · exact (((k₁.trans k₂).trans k₃).trans k₄).mono (by decide)
 
 /-- `q`'s tail: `k₀`, 1 as the last multiplier, and the exponent. -/
 theorem regionB1_ok {u : State} {B : Addr} {Z o a sp sl : Nat} {mx : BitVec 64} {ep : Addr} {eb : List Byte}
@@ -899,7 +899,7 @@ theorem regionB1_ok {u : State} {B : Addr} {Z o a sp sl : Nat} {mx : BitVec 64} 
     · exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_self ..)), by simp only; omega⟩
     · exact ⟨_, List.mem_cons_self .., by simp only; omega⟩
     · exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_self ..)), by simp only; omega⟩
-  · exact (((k₁.trans k₂).trans k₃).trans k₄).mono (by simp [mmRegs])
+  · exact (((k₁.trans k₂).trans k₃).trans k₄).mono (by decide)
 
 /-! ## A region -/
 
@@ -1038,7 +1038,7 @@ theorem region_ok {s : State} {B : Addr} {Z o w a p X sp sl : Nat} {mx : BitVec 
       fun t ⟨lM, lK, lX, lY, fA, wA, dA, kA, _, hHA, iaA⟩ => ?_)
     refine WP.mono (regionB0_ok (TCtx.of_regionA hc hoa haZ hp hsp hsl hpv hlv he fA wA kA.2.1 dA hHA iaA) hoa haZ
       hsp hsl hL1 hL2) fun t' ⟨lF, hk, hE, fB, kB⟩ => ⟨⟨?_, ?_, ?_, ?_, ?_, hk, hE⟩,
-        fA.trans (fB.widen (hwide _ hp)), ?_, ?_, kA.trans kB |>.mono (by simp [mmRegs])⟩
+        fA.trans (fB.widen (hwide _ hp)), ?_, ?_, kA.trans kB |>.mono (by decide)⟩
     · exact lM.of_frm fB (tailR_disj (by omega)) (by omega)
     · exact lK.of_frm fB (tailR_disj (by omega)) (by omega)
     · exact lX.of_frm fB (tailR_disj (by omega)) (by omega)
@@ -1055,7 +1055,7 @@ theorem region_ok {s : State} {B : Addr} {Z o w a p X sp sl : Nat} {mx : BitVec 
       fun t ⟨lM, lK, lX, lY, fA, wA, dA, kA, r12, hHA, iaA⟩ => ?_)
     refine WP.mono (regionB1_ok (TCtx.of_regionA hc hoa haZ hp hsp hsl hpv hlv he fA wA kA.2.1 dA hHA iaA) hoa haZ
       hsp hsl hL1 hL2 r12) fun t' ⟨lF, hk, hE, fB, kB⟩ => ⟨⟨?_, ?_, ?_, ?_, lF, hk, hE⟩,
-        fA.trans (fB.widen (hwide _ hp)), ?_, ?_, kA.trans kB |>.mono (by simp [mmRegs])⟩
+        fA.trans (fB.widen (hwide _ hp)), ?_, ?_, kA.trans kB |>.mono (by decide)⟩
     · exact lM.of_frm fB (tailR_disj (by omega)) (by omega)
     · exact lK.of_frm fB (tailR_disj (by omega)) (by omega)
     · exact lX.of_frm fB (tailR_disj (by omega)) (by omega)
