@@ -399,4 +399,123 @@ theorem closeCheck_ct : RelCT isa (Two KSt) (seqs closeCheck) fun _ _ => True :=
         fun t ⟨_, ho, k⟩ => h.of_good ⟨hg.scr.congr k.2.2, (k.gpr (by decide)).trans hg.rdi,
           Hdr.outside hg.hdr ho (by unfold slot; omega)⟩ k.2.2
 
+/-! ## `gcdCheck` -/
+
+/-- `e` into `rbx` and `kG`, ZF from its low bit. -/
+theorem gcdFront_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hg : Good s B Z w minv)
+    (hZ : slot w 8 ≤ Z) {eP : Addr} {eB : List Byte} (hE : word s.mem B (8 * kE) = eP)
+    (hEl : word s.mem B (8 * kElen) = BitVec.ofNat 64 eB.length) (hl1 : 1 ≤ eB.length) (hl8 : eB.length ≤ 8)
+    (hsrc : Src s B Z eP eB) :
+    WP isa (.seq (seqs loadE) (.block [.store (hdr kG) .rbx, .mov .rax (.reg .rbx), .alu .and .rax (.imm 1)])) s
+      fun t => Good t B Z w minv ∧ t.wr = s.wr ∧ t.zf = some (decide (Spec.Rsa.os2ip eB % 2 = 0)) ∧
+        (t.gpr .rbx).toNat = Spec.Rsa.os2ip eB := by
+  have hn := hg.scr.nowrap
+  refine WP.seq (WP.mono (loadE_ok hg hZ hE hEl hl1 hl8 hsrc) fun s₁ ⟨hbx₁, hm₁, k₁⟩ => ?_)
+  have hg₁ : Good s₁ B Z w minv := ⟨hg.scr.congr k₁.2.2, (k₁.gpr (by decide)).trans hg.rdi, by rw [hm₁]; exact hg.hdr⟩
+  refine WP.mono (WP.keep [.rax] (Q := fun t => t.mem = s₁.mem.writeW (off B (8 * kG)) (s₁.gpr .rbx) ∧
+      t.zf = some (decide (Spec.Rsa.os2ip eB % 2 = 0)) ∧ t.gpr .rbx = s₁.gpr .rbx) (by
+    have hst : InRegions s₁.wr (off B (8 * kG)) 8 := by
+      rw [k₁.2.2]; exact hg.scr.st (by have := hdr_lt_slot w 8 (show kG < 32 by decide); omega)
+    xrun [State.ea, hdr, hg₁.rdi, hdrOff, hst, sx1]
+    rw [← hbx₁]
+    refine Bool.eq_iff_iff.mpr ?_
+    simp only [beq_iff_eq, decide_eq_true_eq]
+    rw [← BitVec.toNat_inj, and1_toNat]; rfl) rfl) fun t ⟨⟨hm, hz, hbx⟩, k⟩ => ⟨⟨hg₁.scr.congr k.2.2,
+      (k.gpr (by decide)).trans hg₁.rdi, by rw [hm]; exact hg₁.hdr.store (by decide) (by decide) _⟩,
+      k.2.2.trans k₁.2.2, hz, by rw [hbx, hbx₁]⟩
+
+theorem os2ip_lt64 {eB : List Byte} (h : eB.length ≤ 8) : Spec.Rsa.os2ip eB < 2 ^ 64 :=
+  Nat.lt_of_lt_of_le (os2ip_lt eB) (by
+    calc 256 ^ eB.length ≤ 256 ^ 8 := Nat.pow_le_pow_right (by decide) h
+      _ = 2 ^ 64 := by decide)
+
+/-- After `e`'s low bit: `Good`, and `e` in `rbx`. -/
+def GPub (q : FPub) (s : State) : Prop :=
+  GW q.tp s ∧ (s.gpr .rbx).toNat = Spec.Rsa.os2ip q.eB ∧ q.eB.length ≤ 8
+
+/-- `gcdCheck` leaks the same in runs that agree on the public data. -/
+theorem gcdCheck_ct {Φ : FPub → State → Prop} (hΦ : ∀ q s, Φ q s → KSt q s) :
+    RelCT isa (Two Φ) (seqs gcdCheck) fun _ _ => True := by
+  unfold gcdCheck loadE
+  simp only [seqs, List.cons_append, List.nil_append]
+  refine RelCT.assoc (RelCT.assoc (RelCT.seq (R := Two fun q s => GPub q s ∧
+      s.zf = some (decide (Spec.Rsa.os2ip q.eB % 2 = 0))) ?_ ?_))
+  · refine kt_piece (fun q : FPub => q.B) (fun q => q.wr) fS fvs [] (by decide) fvs_fst (fun _ _ h => (hΦ _ _ h).hp)
+      (pins_nil _) (by taint_decide) ?_
+    intro q s h
+    have h := hΦ q s h
+    obtain ⟨mi, -, -, hg, ha, -, -, he, -⟩ := h.cand
+    have hd := h.2.2.1
+    exact WP.mono (gcdFront_ok hg (by have := hd.z; unfold slot aTab at *; omega) (avsW_of ha).e (avsW_of ha).elen
+      hd.el1 hd.el8 he) fun t ⟨hgt, hw, hz, hbx⟩ => ⟨⟨h.gw.of_good hgt hw, hbx, hd.el8⟩, hz⟩
+  refine two_ite_seq (fun _ _ _ h₁ h₂ => by simp only [eval, h₁.2, h₂.2]) ?_ ?_
+  · exact kt_ct (fun q : FPub => q.B) (fun q => q.wr) gS (fun q => gvs q.B q.w) [] (by decide) (fun _ => gvs_fst _ _)
+      (fun _ _ h => h.1.1.1.hp) (pins_nil _) (by taint_decide)
+  refine RelCT.assoc_r ?_
+  refine RelCT.seq (R := Two fun q s => GPub q s ∧ s.zf = some (decide (Spec.Rsa.os2ip q.eB = 1))) ?_ ?_
+  · refine kt_piece (fun q : FPub => q.B) (fun q => q.wr) gS (fun q => gvs q.B q.w) [] (by decide)
+      (fun _ => gvs_fst _ _) (fun _ _ h => h.1.1.1.hp) (pins_nil _) (by taint_decide) ?_
+    rintro q s ⟨⟨⟨hgw, hbx, hl8⟩, -⟩, -⟩
+    have hE := os2ip_lt64 hl8
+    have hE64 : s.gpr .rbx = BitVec.ofNat 64 (Spec.Rsa.os2ip q.eB) := by
+      rw [← hbx, BitVec.ofNat_toNat, BitVec.setWidth_eq]
+    refine WP.mono (WP.keep [.rbx] (Q := fun t => t.zf = some (decide (Spec.Rsa.os2ip q.eB = 1)) ∧ t.mem = s.mem ∧
+        t.gpr .rbx = s.gpr .rbx) (by
+      xrun [sx1, hE64]
+      rw [show (1 : BitVec 64) = BitVec.ofNat 64 1 from rfl, ofNat_sub_beq hE (by decide)]) rfl)
+      fun t ⟨⟨hz, hm, hb⟩, k⟩ => ⟨⟨?_, by rw [hb]; exact hbx, hl8⟩, hz⟩
+    obtain ⟨hk, hw, hd, mi, hg⟩ := hgw
+    exact ⟨hk, k.2.2.trans hw, hd, mi, hg.scr.congr k.2.2, (k.gpr (by decide)).trans hg.rdi, by rw [hm]; exact hg.hdr⟩
+  refine two_ite_seq (fun _ _ _ h₁ h₂ => by simp only [eval, h₁.2, h₂.2]) ?_ ?_
+  · exact kt_ct (fun q : FPub => q.B) (fun q => q.wr) gS (fun q => gvs q.B q.w) [] (by decide) (fun _ => gvs_fst _ _)
+      (fun _ _ h => h.1.1.1.hp) (pins_nil _) (by taint_decide)
+  · exact kt_ct (fun q : FPub => q.B) (fun q => q.wr) gS (fun q => gvs q.B q.w) [] (by decide) (fun _ => gvs_fst _ _)
+      (fun _ _ h => h.1.1.1.hp) (pins_nil _) (by taint_decide)
+
+/-! ## After `loadC` -/
+
+theorem ne_false {s : State} {b : Bool} (hz : s.zf = some (!b)) (he : isa.eval .ne s = some false) : b = false := by
+  cases b <;> simp_all [eval]
+
+theorem trial_ct {Φ : FPub → State → Prop} (hΦ : ∀ q s, Φ q s → KSt q s) :
+    RelCT isa (Two Φ) (seqs trial) fun _ _ => True :=
+  kt_ct (fun q : FPub => q.B) (fun q => q.wr) fS fvs [] (by decide) fvs_fst (fun _ _ h => (hΦ _ _ h).hp) (pins_nil _)
+    (by taint_decide)
+
+theorem finUsed2_ct {Φ : FPub → State → Prop} (hΦ : ∀ q s, Φ q s → KSt q s) :
+    RelCT isa (Two Φ) (finUsed 2) fun _ _ => True :=
+  kt_ct (fun q : FPub => q.B) (fun q => q.wr) fS fvs [] (by decide) fvs_fst (fun _ _ h => (hΦ _ _ h).hp) (pins_nil _)
+    (by taint_decide)
+
+theorem finUsed3_ct {Φ : FPub → State → Prop} (hΦ : ∀ q s, Φ q s → KSt q s) :
+    RelCT isa (Two Φ) (finUsed 3) fun _ _ => True :=
+  kt_ct (fun q : FPub => q.B) (fun q => q.wr) fS fvs [] (by decide) fvs_fst (fun _ _ h => (hΦ _ _ h).hp) (pins_nil _)
+    (by taint_decide)
+
+/-- Everything after `loadC` leaks the same in runs that agree on the public
+data and the schedule. -/
+theorem afterLoad_ct (M : Mont) : RelCT isa (Two KSt) (seqs (closeCheck ++ [.ite .ne (finUsed 2) (seqs (trial ++
+    [.ite .ne (finUsed 3) (seqs (gcdCheck ++
+      [.ite .ne (finUsed 3) (seqs (montSetup M.mm ++ millerRabin M.mm ++ [mrResult]))]))]))])) fun _ _ => True := by
+  refine RelCT.seqs_app (by simp [closeCheck]) (by simp) (RelCT.seq (R := Two fun q s => KSt q s ∧
+    s.zf = some (!q.sch.close)) (two_post closeCheck_ct fun _ _ h => closeStage_ok h) ?_)
+  simp only [seqs]
+  refine two_ite (fun _ _ _ h₁ h₂ => by simp only [eval, h₁.2, h₂.2]) (finUsed2_ct fun _ _ h => h.1.1) ?_
+  refine RelCT.seqs_app (by simp [trial]) (by simp) (RelCT.seq (R := Two fun q s => (KSt q s ∧
+    s.zf = some (!q.sch.comp)) ∧ q.sch.close = false) (two_post (trial_ct fun _ _ h => h.1.1) fun q s h => ?_) ?_)
+  · have hcl := ne_false h.1.2 h.2
+    exact WP.mono (trialStage_ok h.1.1 hcl) fun t ht => ⟨ht, hcl⟩
+  simp only [seqs]
+  refine two_ite (fun _ _ _ h₁ h₂ => by simp only [eval, h₁.1.2, h₂.1.2]) (finUsed3_ct fun _ _ h => h.1.1.1) ?_
+  refine RelCT.seqs_app (by simp [gcdCheck, loadE]) (by simp) (RelCT.seq (R := Two fun q s => (KSt q s ∧
+    s.zf = some (!q.sch.gbad)) ∧ q.sch.close = false ∧ q.sch.comp = false)
+      (two_post (gcdCheck_ct fun _ _ h => h.1.1.1) fun q s h => ?_) ?_)
+  · have hco := ne_false h.1.1.2 h.2
+    exact WP.mono (gcdStage_ok h.1.1.1 h.1.2 hco) fun t ht => ⟨ht, h.1.2, hco⟩
+  simp only [seqs]
+  refine two_ite (fun _ _ _ h₁ h₂ => by simp only [eval, h₁.1.2, h₂.1.2]) (finUsed3_ct fun _ _ h => h.1.1.1) ?_
+  refine (tail_ct M).mono (fun _ _ h => two_bind (fun q _ _ h₁ h₂ =>
+    ⟨q.tp, tailPre h₁.1.1.1 h₁.1.2.1 h₁.1.2.2 (ne_false h₁.1.1.2 h₁.2),
+      tailPre h₂.1.1.1 h₂.1.2.1 h₂.1.2.2 (ne_false h₂.1.1.2 h₂.2)⟩) h) fun _ _ h => h
+
 end VG.Proof.RsaKeyGen.X86_64
