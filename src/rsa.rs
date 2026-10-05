@@ -168,7 +168,7 @@ fn precomputed_words(n_len: usize) -> usize {
 }
 
 /// `x` without its leading zero bytes.
-fn trim(x: &[u8]) -> &[u8] {
+pub(crate) fn trim(x: &[u8]) -> &[u8] {
     let z = x.iter().take_while(|&&b| b == 0).count();
     &x[z..]
 }
@@ -313,7 +313,7 @@ fn widen(x: &[u8], len: usize) -> Option<Vec<u8>> {
 pub struct PrivateKey {
     pub(crate) n: Vec<u8>,
     pub(crate) e: Vec<u8>,
-    d: Vec<u8>,
+    pub(crate) d: Vec<u8>,
     pub(crate) p: Vec<u8>,
     pub(crate) q: Vec<u8>,
     pub(crate) dp: Vec<u8>,
