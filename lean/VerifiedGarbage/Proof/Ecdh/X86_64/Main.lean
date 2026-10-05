@@ -264,7 +264,7 @@ theorem exchange_eq' (c : Cfg) : Impl.Ecdh.X86_64.Cfg.exchange c =
 
 /-- `vg_ecdh_<curve>` computes the specification's shared secret and restores
 the callee-saved registers. -/
-theorem exchange_ok (hc : CfgOk c) (hC : Law c.C) {s₀ : State} (hp : EPre c s₀) :
+theorem exchange_ok (hc : CfgOk c) (hL8 : c.C.len = 8 * c.n) (hsh : c.sh = 0) (hC : Law c.C) {s₀ : State} (hp : EPre c s₀) :
     WP isa (Impl.Ecdh.X86_64.Cfg.exchange c) s₀ fun s' =>
       (∀ r ∈ Cfg.saved.map Prod.fst, s'.gpr r = s₀.gpr r) ∧ EPost c s₀ s' := by
   have h0 := hc.n0
@@ -280,15 +280,15 @@ theorem exchange_ok (hc : CfgOk c) (hC : Law c.C) {s₀ : State} (hp : EPre c s�
   have hsp : SetupPre c s₁ := by
     refine ⟨by rw [k₁.2.2.2, hp.wr, r8₁]; simp, fun e he => ?_, fun e he => ?_, fun e he => ?_, ?_, ?_, ?_,
       by rw [r8₁]; exact hp.sc_fit⟩
-    · rw [rcx₁, hrd₁, hp.rd]
+    · rw [hL8] at he; rw [rcx₁, hrd₁, hp.rd]
       exact ⟨_, by simp, Offset.contains_base _ he (by omega)⟩
-    · rw [rsi₁, hrd₁, hp.rd]
+    · rw [hL8] at he; rw [rsi₁, hrd₁, hp.rd]
       exact ⟨_, by simp, Offset.contains_base _ he (by omega)⟩
-    · rw [rdx₁, hrd₁, hp.rd, BitVec.add_assoc, BitVec.ofNat_add_ofNat]
+    · rw [hL8] at he; rw [rdx₁, hrd₁, hp.rd, BitVec.add_assoc, BitVec.ofNat_add_ofNat]
       exact ⟨⟨s₀.gpr .rdx, 1 + 16 * c.n⟩, by simp, Offset.contains_base _ (by omega) (by omega)⟩
-    · rw [rsi₁, r8₁]; exact hp.d_sc
-    · rw [rdx₁, r8₁]; exact hp.peer_sc.sub_left (Offset.sub_base _ (by omega))
-    · rw [rcx₁, r8₁]; exact hp.d_sc
+    · rw [hL8, rsi₁, r8₁]; exact hp.d_sc
+    · rw [hL8, rdx₁, r8₁]; exact hp.peer_sc.sub_left (Offset.sub_base _ (by omega))
+    · rw [hL8, rcx₁, r8₁]; exact hp.d_sc
   refine WP.seq (WP.mono (stage₁ hc hsp (rest := .block []) (Q := St₁ c s₁ (s₁.gpr .r8))
     fun _ S => WP.block_nil S) fun s₂ S₂ => ?_)
   rw [r8₁] at S₂
@@ -367,22 +367,22 @@ theorem exchange_ok (hc : CfgOk c) (hC : Law c.C) {s₀ : State} (hp : EPre c s�
     rw [saved r hr, k₁.1 r (hsv r hr)]
   -- The specification.
   have hlen : (Spec.Ecdsa.bytesAt s₀.mem (s₀.gpr .rdx) (1 + 16 * c.n)).length = 2 * c.C.len + 1 := by
-    rw [length_bytesAt, hc.len]; omega
+    rw [length_bytesAt, hL8]; omega
   have hb0 : (Spec.Ecdsa.bytesAt s₀.mem (s₀.gpr .rdx) (1 + 16 * c.n)).head? = some (s₀.mem (s₀.gpr .rdx)) := by
     rw [peer_bytes]; rfl
   have hxs : ofBytes (((Spec.Ecdsa.bytesAt s₀.mem (s₀.gpr .rdx) (1 + 16 * c.n)).drop 1).take c.C.len) =
       sv c (s₀.gpr .rcx) s₃ E := by
-    rw [peer_bytes, List.drop_one, List.tail_cons, hc.len, List.take_left' (length_bytesAt _ _ _), x₃, S₂.e]
-    simp only [ev, k₁.2.1, rdx₁]
+    rw [peer_bytes, List.drop_one, List.tail_cons, hL8, List.take_left' (length_bytesAt _ _ _), x₃, S₂.e]
+    simp only [ev, k₁.2.1, rdx₁, hL8, hsh, Nat.shiftRight_zero]
   have hys : ofBytes ((Spec.Ecdsa.bytesAt s₀.mem (s₀.gpr .rdx) (1 + 16 * c.n)).drop (c.C.len + 1)) =
       sv c (s₀.gpr .rcx) s₃ QY := by
-    rw [peer_bytes, hc.len, List.drop_succ_cons, List.drop_left' (length_bytesAt _ _ _), y₃,
+    rw [peer_bytes, hL8, List.drop_succ_cons, List.drop_left' (length_bytesAt _ _ _), y₃,
       bytesAt_keep W₂ (hp.peer_sc.sub_left (Offset.sub_base _ (by omega))) (by omega) (by omega)]
   have hP' : ∀ h : Ecdh.Valid c.C (s₀.mem (s₀.gpr .rdx)) (sv c (s₀.gpr .rcx) s₃ E) (sv c (s₀.gpr .rcx) s₃ QY),
       peerPt c (s₀.mem (s₀.gpr .rdx) = 4) (sv c (s₀.gpr .rcx) s₃ E) (sv c (s₀.gpr .rcx) s₃ QY) =
         .affine ⟨_, h.2.1⟩ ⟨_, h.2.2.1⟩ := fun h => by
     unfold peerPt; rw [dite_eq_left ⟨⟨⟨h.1, h.2.1⟩, h.2.2.1⟩, h.2.2.2⟩]
-  have hk : sv c (s₀.gpr .rcx) s₂ K = dk c s₀ := by rw [S₂.k]; simp only [kv, dk, k₁.2.1, rcx₁]
+  have hk : sv c (s₀.gpr .rcx) s₂ K = dk c s₀ := by rw [S₂.k]; simp only [kv, dk, k₁.2.1, rcx₁, hL8]
   have hR := L.q
   rw [Nat.shiftRight_zero, hk] at hR
   have hxoX : Fin.ofNat c.C.p xv = tmv c.C c.n (s₀.gpr .rcx) s₅ (c.sl RX) *
@@ -391,7 +391,7 @@ theorem exchange_ok (hc : CfgOk c) (hC : Law c.C) {s₀ : State} (hp : EPre c s�
   have hD₅ : sv c (s₀.gpr .rcx) s₅ D = dk c s₀ := by
     rw [e₅ (by decide) (by decide) (by decide), e₄ (by decide) (by decide) (by decide),
       e₃ (by decide) (by decide) (by decide), S₂.d]
-    simp only [dv, dk, k₁.2.1, rsi₁]
+    simp only [dv, dk, k₁.2.1, rsi₁, hL8]
   have hz : tmv c.C c.n (s₀.gpr .rcx) s₅ (c.sl RZ) ≠ 0 ↔ sv c (s₀.gpr .rcx) s₅ RZ ≠ 0 :=
     not_congr (toM_eq_zero_iff hpR L.rz_lt)
   unfold EPost
@@ -406,7 +406,7 @@ theorem exchange_ok (hc : CfgOk c) (hC : Law c.C) {s₀ : State} (hp : EPre c s�
       · rw [hD₅]; exact hcond.1.1
       · rw [hD₅]; exact hcond.1.2
     rw [ite_eq_left hcond]
-    exact ⟨by rw [rax, hok]; rfl, by rw [bytes, hok, hc.len]; rfl⟩
+    exact ⟨by rw [rax, hok]; rfl, by rw [bytes, hok, hL8]; rfl⟩
   · have hok : ok c (s₀.gpr .rcx) s₅ (PeerOk c (s₀.gpr .rcx) s₃ ((s₀.mem (s₀.gpr .rdx) = 4 ∧
         sv c (s₀.gpr .rcx) s₃ E < c.C.p) ∧ sv c (s₀.gpr .rcx) s₃ QY < c.C.p)) = false := by
       refine decide_eq_false fun h => hcond ⟨⟨?_, ?_⟩, ⟨h.1.1.1.1.1, h.1.1.1.1.2, h.1.1.1.2, h.1.1.2⟩,

@@ -112,7 +112,7 @@ theorem flag_le (h0 : 0 < c.n) (h7 : c.n < 10) : ∀ w ∈ [(c.sl FLAG, 8)], w.1
   dsimp only; omega
 
 /-- `args`, the signature's setup and tables, `s`, and the checks of the key. -/
-theorem front_ok (hc : CfgOk c) {s₀ : State} (hp : VPre c s₀) {rest : Prog isa} {Q : State → Prop}
+theorem front_ok (hc : CfgOk c) (hL8 : c.C.len = 8 * c.n) (hsh : c.sh = 0) {s₀ : State} (hp : VPre c s₀) {rest : Prog isa} {Q : State → Prop}
     (h : ∀ g s, (∀ r ∈ Cfg.saved.map Prod.fst, g r = s₀.gpr r) → Front c s₀ (s₀.gpr .rcx) g s →
       WP isa rest s Q) :
     WP isa (.seq (.block (Impl.Ecdsa.Verify.X86_64.Cfg.args c)) (.seq (.seq (.block c.setup)
@@ -129,15 +129,15 @@ theorem front_ok (hc : CfgOk c) {s₀ : State} (hp : VPre c s₀) {rest : Prog i
   have hsp : SetupPre c s₁ := by
     refine ⟨by rw [k₁.2.2.2, hp.wr, r8₁]; simp, fun e he => ?_, fun e he => ?_, fun e he => ?_, ?_, ?_, ?_,
       by rw [r8₁]; exact hp.sc_fit⟩
-    · rw [rcx₁, hrd₁, hp.rd]
+    · rw [hL8] at he; rw [rcx₁, hrd₁, hp.rd]
       exact ⟨⟨s₀.gpr .rdx, 16 * c.n⟩, by simp, Offset.contains_base _ (by omega) (by omega)⟩
-    · rw [rsi₁, hrd₁, hp.rd]
+    · rw [hL8] at he; rw [rsi₁, hrd₁, hp.rd]
       exact ⟨_, by simp, Offset.contains_base _ he (by omega)⟩
-    · rw [rdx₁, hrd₁, hp.rd, BitVec.add_assoc, BitVec.ofNat_add_ofNat]
+    · rw [hL8] at he; rw [rdx₁, hrd₁, hp.rd, BitVec.add_assoc, BitVec.ofNat_add_ofNat]
       exact ⟨⟨s₀.gpr .rdi, 1 + 16 * c.n⟩, by simp, Offset.contains_base _ (by omega) (by omega)⟩
-    · rw [rsi₁, r8₁]; exact hp.dg_sc
-    · rw [rdx₁, r8₁]; exact hp.pk_sc.sub_left (Offset.sub_base _ (by omega))
-    · rw [rcx₁, r8₁]; exact hp.sig_sc.sub_left (Region.sub_prefix (by omega))
+    · rw [hL8, rsi₁, r8₁]; exact hp.dg_sc
+    · rw [hL8, rdx₁, r8₁]; exact hp.pk_sc.sub_left (Offset.sub_base _ (by omega))
+    · rw [hL8, rcx₁, r8₁]; exact hp.sig_sc.sub_left (Region.sub_prefix (by omega))
   refine WP.seq (WP.mono (stage₁ hc hsp (rest := .block []) (Q := St₁ c s₁ (s₁.gpr .r8))
     fun _ S => WP.block_nil S) fun s₂ S₂ => ?_)
   rw [r8₁] at S₂
@@ -179,7 +179,7 @@ theorem front_ok (hc : CfgOk c) {s₀ : State} (hp : VPre c s₀) {rest : Prog i
       exact ⟨Nat.zero_le _, hPT⟩))
   have x₄ : sv c (s₀.gpr .rcx) s₃ E = keyX c s₀ := by
     rw [v₃ (by decide) (by decide), S₂.e]
-    simp only [ev, k₁.2.1, rdx₁]
+    simp only [ev, k₁.2.1, rdx₁, hL8, hsh, Nat.shiftRight_zero]
   have hq0 : s₃.mem (s₀.gpr .rdi) = s₀.mem (s₀.gpr .rdi) := by
     have := keep_of_disjoint' W₃ hp.pk_sc (by omega) (i := 0) (by omega) (by omega)
     rwa [BitVec.add_zero] at this
@@ -214,9 +214,9 @@ theorem front_ok (hc : CfgOk c) {s₀ : State} (hp : VPre c s₀) {rest : Prog i
   rw [y₄'] at py
   refine ⟨hs₅, by rw [wr₅, k₄.wr, k₃.wr, S₂.wr, k₁.2.2.2], by rw [rd₅, k₄.rd, k₃.rd, S₂.rd, k₁.2.2.1], F₅,
     by rw [a₅ (i := K) (by decide) (by decide) (by decide) (by decide) (by decide), S₂.k]
-       simp only [kv, k₁.2.1, rcx₁],
+       simp only [kv, k₁.2.1, rcx₁, hL8],
     by rw [a₅ (i := D) (by decide) (by decide) (by decide) (by decide) (by decide), S₂.d]
-       simp only [dv, k₁.2.1, rsi₁],
+       simp only [dv, k₁.2.1, rsi₁, hL8],
     by rw [e₅ (i := PT) (by decide) (by decide) (by decide), e₄ (by decide) (by decide) (by decide), pt₃],
     by rw [a₅ (i := RX) (by decide) (by decide) (by decide) (by decide) (by decide), S₂.rx],
     by rw [a₅ (i := RY) (by decide) (by decide) (by decide) (by decide) (by decide), S₂.ry],

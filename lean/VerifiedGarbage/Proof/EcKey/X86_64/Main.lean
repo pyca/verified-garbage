@@ -391,7 +391,7 @@ theorem args_ok (s : State) :
 
 /-- `vg_ec_<curve>_public_key` computes the specification's public key and
 restores the callee-saved registers. -/
-theorem publicKey_ok (hc : CfgOk c) (hC : Law c.C) {s₀ : State} (hp : PkPre c s₀) :
+theorem publicKey_ok (hc : CfgOk c) (hlen : c.C.len = 8 * c.n) (hC : Law c.C) {s₀ : State} (hp : PkPre c s₀) :
     WP isa (Impl.EcKey.X86_64.Cfg.publicKey c) s₀ fun s' =>
       (∀ r ∈ Cfg.saved.map Prod.fst, s'.gpr r = s₀.gpr r) ∧ PkPost c s₀ s' := by
   have h0 := hc.n0
@@ -408,7 +408,7 @@ theorem publicKey_ok (hc : CfgOk c) (hC : Law c.C) {s₀ : State} (hp : PkPre c 
   have hsub : Region.Sub ⟨s₀.gpr .rdi, 16 * c.n⟩ ⟨s₀.gpr .rdi, 1 + 16 * c.n⟩ := Region.sub_prefix (by omega)
   have hpN : Pre c sN := by
     refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;>
-      simp only [g, rsi₁, rdi₁, rdx₁, rcx₁, r8₁]
+      simp only [g, rsi₁, rdi₁, rdx₁, rcx₁, r8₁, hlen, show 2 * (8 * c.n) = 16 * c.n by omega]
     · rw [hsN]; rfl
     · rw [hsN]; rfl
     · exact hp.out_sc.sub_left hsub
@@ -421,7 +421,7 @@ theorem publicKey_ok (hc : CfgOk c) (hC : Law c.C) {s₀ : State} (hp : PkPre c 
     · have := hp.out_fit; omega
     · exact hp.sc_fit
   have hb : sN.gpr .r8 = s₀.gpr .rdx := by rw [g, r8₁]
-  obtain ⟨t, s₂N, ex, S₂⟩ := stage₁ hc (hpN.setup hc.n10) (rest := .seq (ladder c.ladderCfg) (.seq (pow c.powP) (.block [])))
+  obtain ⟨t, s₂N, ex, S₂⟩ := stage₁ hc hpN.setup (rest := .seq (ladder c.ladderCfg) (.seq (pow c.powP) (.block [])))
     (Q := St₂ c sN (sN.gpr .r8)) fun _ S₁ => stage₂ hc hC S₁ fun _ S₂ => WP.block_nil S₂
   rw [hb] at S₂
   -- The same run, with the public key's regions.
@@ -464,8 +464,8 @@ theorem publicKey_ok (hc : CfgOk c) (hC : Law c.C) {s₀ : State} (hp : PkPre c 
   · have hsv : ∀ r ∈ Cfg.saved.map Prod.fst, r ∉ [Reg.r8, .rcx, .rdx] := by decide
     rw [saved r hr, g, k₁.1 r (hsv r hr)]
   -- The specification.
-  have hk : kv c sN = dk c s₀ := by simp only [kv, dk, mN, g, rcx₁]
-  have hD : sv c (s₀.gpr .rdx) s₂ D = dk c s₀ := by rw [sv₂, S₂.d]; simp only [dv, dk, mN, g, rsi₁]
+  have hk : kv c sN = dk c s₀ := by simp only [kv, dk, mN, g, rcx₁, hlen]
+  have hD : sv c (s₀.gpr .rdx) s₂ D = dk c s₀ := by rw [sv₂, S₂.d]; simp only [dv, dk, mN, g, rsi₁, hlen]
   have hR := S₂.rep
   rw [hk] at hR
   have hZ : ∀ {i}, tmv c.C c.n (s₀.gpr .rdx) s₂N (c.sl i) = toM c.C.p (2 ^ (64 * c.n)) (sv c (s₀.gpr .rdx) s₂ i) :=
@@ -491,7 +491,7 @@ theorem publicKey_ok (hc : CfgOk c) (hC : Law c.C) {s₀ : State} (hp : PkPre c 
       refine ⟨by rw [rax, hok]; rfl, ?_⟩
       rw [bytes, hok]
       show _ = 4 :: (toBytes c.C.len xv ++ toBytes c.C.len yv)
-      rw [hc.len]; rfl
+      rw [hlen]; rfl
   · have hok : ok c (s₀.gpr .rdx) s₂ = false := decide_eq_false (by rw [hD]; omega)
     rw [ite_eq_right_of_eq_false _ _ (eq_false hd)]
     exact ⟨by rw [rax, hok]; rfl, by rw [bytes, hok]; rfl⟩

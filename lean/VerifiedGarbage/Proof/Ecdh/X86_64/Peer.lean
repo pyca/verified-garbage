@@ -204,11 +204,11 @@ open VG.Impl.Ecdh.X86_64 (QY R2P BP)
 
 variable {c : Cfg}
 
-theorem signExtend_ofNat : ∀ k < 64, (BitVec.ofNat 32 k).signExtend 64 = BitVec.ofNat 64 k := by
+theorem signExtend_ofNat : ∀ k < 128, (BitVec.ofNat 32 k).signExtend 64 = BitVec.ofNat 64 k := by
   decide
 
 /-- `rdx = r9 + k`. -/
-theorem ptr_ok (s : State) {k : Nat} (hk : k < 64) :
+theorem ptr_ok (s : State) {k : Nat} (hk : k < 128) :
     WP isa (.block ([.mov .rdx (.reg .r9), .alu .add .rdx (.imm (BitVec.ofNat 32 k))] : List Instr)) s
       fun s' => s'.gpr .rdx = s.gpr .r9 + BitVec.ofNat 64 k ∧ Keeps [.rdx] s s' := by
   apply WP.of_runBlock
