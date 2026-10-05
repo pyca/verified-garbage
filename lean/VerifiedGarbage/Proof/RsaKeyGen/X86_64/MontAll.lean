@@ -19,7 +19,7 @@ scratch space (header words and arrays). -/
 macro "rng_disj" : tactic => `(tactic| (
   simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq, slot, hdrBytes, aN, aX, aAcc,
     aTmp, aR2, aXm, aY, aOne, aB, aR1, aRm1, aTab, kT0, kChecks, kE, sFn, sMinv, sW, sArr, kG, kV, kWords, kBits,
-    kFlag, kPlen, kI, kElen, kU, kUni, kP, kStat, kT1, kT2, kUsed]
+    kFlag, kPlen, kI, kElen, kU, kUni, kP, kStat, kT1, kT2, kUsed, kRand, kLen, kRandLen, kOut, kUsedP]
   and_intros <;> omega))
 
 /-- What `montSetup` changes. -/
