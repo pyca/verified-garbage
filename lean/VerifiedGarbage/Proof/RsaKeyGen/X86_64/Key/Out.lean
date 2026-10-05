@@ -108,7 +108,7 @@ theorem stores_ok {B : Addr} {Z w : Nat} {c : Bool} {Q : State → Prop} :
 /-- `kOk`'s low bit returned and the saved registers restored. -/
 theorem keyExit_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) {c : Bool}
     (hm : word s.mem B (8 * kOk) = mask c) :
-    WP isa (.block ([.mov .rax (.mem (hdr kOk)), .alu .and .rax (.imm 1)] ++ exit)) s
+    WP isa (.block (([.mov .rax (.mem (hdr kOk)), .alu .and .rax (.imm 1)] : List Instr) ++ exit)) s
       fun t => t.gpr .rax = BitVec.ofNat 64 c.toNat ∧ (∀ i < 6, t.gpr (saved.getD i .rax) = word s.mem B (8 * i)) ∧
         t.mem = s.mem ∧ Keep [.rax, .rbx, .rbp, .r12, .r13, .r14, .r15] s t := by
   have hs := h.scr

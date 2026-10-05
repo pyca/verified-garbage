@@ -37,7 +37,7 @@ theorem KS.hdrW {I : KIn} {m₀ : Mem} {s t : State} (h : KS I m₀ s) {i : Nat}
 theorem loads_k {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) (hpl : I.pb.length = I.pl)
     (hql : I.qb.length = I.pl) (hel : I.eb.length = I.el) (hpl1 : 1 ≤ I.pl) (hplW : I.pl ≤ 8 * I.W)
     (hel1 : 1 ≤ I.el) (hel8 : I.el ≤ 8) :
-    WP isa (seqs (loadA aPa kPp kPl ++ (loadA aQa kQp kPl ++ (loadE ++ [.block [.store (hdr kEv) .rbx]])))) s
+    WP isa (seqs (loadA aPa kPp kPl ++ (loadA aQa kQp kPl ++ (loadE ++ ([.block [.store (hdr kEv) .rbx]] : List (Prog isa)))))) s
       fun t => KS I m₀ t ∧ KF I.B I.W [.arr aPa, .arr aQa, .hdr kEv] s.mem t.mem ∧
         av I t.mem aPa = Spec.Rsa.os2ip I.pb ∧ av I t.mem aQa = Spec.Rsa.os2ip I.qb ∧
         word t.mem I.B (8 * kEv) = BitVec.ofNat 64 (Spec.Rsa.os2ip I.eb) := by

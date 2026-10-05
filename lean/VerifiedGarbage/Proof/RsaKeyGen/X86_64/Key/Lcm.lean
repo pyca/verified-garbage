@@ -64,11 +64,11 @@ theorem ite_not_odd {α : Sort _} (v : Nat) (a b : α) :
     (if (!decide (v % 2 = 1)) = true then a else b) = (if v % 2 = 0 then a else b) := by
   rcases Nat.mod_two_eq_zero_or_one v with h | h <;> simp [h]
 
-theorem gcdUV_eq : gcdUV = [.block (oddMask aV ++ [.mov .r15 (.reg .rax), .alu .xor .r15 (.imm (BitVec.ofInt 32 (-1)))] ++
-      base aU .rbx ++ base aV .r10), wordLoop 0 cswapBody] ++ (constA 2 ++ (ltA aV aC ++
-    ([.block [.store (hdr kOk) .rbp, .alu .xor .rbp (.imm (BitVec.ofInt 32 (-1)))]] ++ (constA 3 ++ (selC aV ++
+theorem gcdUV_eq : gcdUV = ([.block (oddMask aV ++ ([.mov .r15 (.reg .rax), .alu .xor .r15 (.imm (BitVec.ofInt 32 (-1)))] : List Instr) ++
+      base aU .rbx ++ base aV .r10), wordLoop 0 cswapBody] : List (Prog isa)) ++ (constA 2 ++ (ltA aV aC ++
+    (([.block [.store (hdr kOk) .rbp, .alu .xor .rbp (.imm (BitVec.ofInt 32 (-1)))]] : List (Prog isa)) ++ (constA 3 ++ (selC aV ++
     ([zeroA aM, copyA aM aV, zeroA aX₁, .block (setOneA aX₁), zeroA aX₂, inverse aU aV aX₁ aX₂ aM aT] ++
-    (constA 1 ++ ([.block [.mov .rbp (.mem (hdr kOk)), .alu .xor .rbp (.imm (BitVec.ofInt 32 (-1)))]] ++
+    (constA 1 ++ (([.block [.mov .rbp (.mem (hdr kOk)), .alu .xor .rbp (.imm (BitVec.ofInt 32 (-1)))]] : List (Prog isa)) ++
       selC aV)))))))) := by
   simp only [gcdUV, List.append_assoc]
 

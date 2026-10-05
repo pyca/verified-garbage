@@ -16,8 +16,8 @@ open VG.Impl.RsaKeyGen.X86_64.Candidate (loadE)
 open VG.Proof.MlKem.X86_64 VG.Proof.Bignum.X86_64 VG.Proof.Rsa.X86_64
 open VG.Spec.Rsa (bytesAt)
 
-theorem code_eq : code = seqs ([.block (entry ++ head)] ++
-    (((loadA aPa kPp kPl ++ (loadA aQa kQp kPl ++ (loadE ++ [.block [.store (hdr kEv) .rbx]]))) ++
+theorem code_eq : code = seqs (([.block (entry ++ head)] : List (Prog isa)) ++
+    (((loadA aPa kPp kPl ++ (loadA aQa kQp kPl ++ (loadE ++ ([.block [.store (hdr kEv) .rbx]] : List (Prog isa))))) ++
       (order ++ (decTo aPm aPa ++ (decTo aQm aQa ++ (lcmPart ++ ([dPart] ++ smallMask)))))) ++
     ([.ite .ne (zeros 2) keyPart] : List (Prog isa)))) := by
   simp only [code, List.append_assoc]

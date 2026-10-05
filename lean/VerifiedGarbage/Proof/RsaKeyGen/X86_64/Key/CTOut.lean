@@ -178,7 +178,7 @@ theorem zeros_ct : RelCT isa (Two (EG NF)) (zeros 2) fun _ _ => True := by
 
 theorem outputs_eq2 : outputs = storeA aQt kNo kNl kOk ++ (storeA aDd kDo kNl kOk ++ (storeA aPa kPp kPl kOk ++
     (storeA aQa kQp kPl kOk ++ (storeA aX₁ kDp kPl kOk ++ (storeA aV kDq kPl kOk ++ (storeA aX₂ kQi kPl kOk ++
-    [.block ([.mov .rax (.mem (hdr kOk)), .alu .and .rax (.imm 1)] ++ exit)])))))) := by
+    ([.block (([.mov .rax (.mem (hdr kOk)), .alu .and .rax (.imm 1)] : List Instr) ++ exit)] : List (Prog isa)))))))) := by
   simp only [outputs, List.append_assoc]
 
 theorem outputs_ct : RelCT isa (Two (EG KokM)) (seqs outputs) fun _ _ => True := by

@@ -163,7 +163,7 @@ abbrev OddE : KIn → State → Prop := fun I _ => I.E % 2 = 1
 theorem stab_oddE (cs : List Rc) (rs : List Reg) : Stab OddE cs rs := fun _ _ _ _ h _ _ => h
 
 theorem minvBlk_ok {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) (L : KLens I) (hev : EvOK I s)
-    (ho : OddE I s) : WP isa (.block ([.mov .rbx (.mem (hdr kEv))] ++ minv)) s fun t =>
+    (ho : OddE I s) : WP isa (.block (([.mov .rbx (.mem (hdr kEv))] : List Instr) ++ minv)) s fun t =>
       t.mem = s.mem ∧ Keep [.rbx, .rax, .rcx, .rdx, .rsi, .r15] s t := by
   have he64 : I.E < 2 ^ 64 :=
     Nat.lt_of_lt_of_le (lt_of_os2ip_len L.ebl) (Nat.pow_le_pow_right (by decide) (by have := L.el8; omega))
@@ -276,8 +276,8 @@ theorem dBlk3_k {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) (hz : Zero 
 
 theorem dOdd_eq2 : dOdd = loadEv ++ ([zeroA aQt, copyA aQt aL, divmod aQt aR aE aT] ++ ([zeroA aU, copyA aU aR] ++
     ((invFrom aE ++ [inverse aU aV aX₁ aX₂ aE aT]) ++ (lGe2 ++ (gcdIsOne ++
-    [.block ([.mov .rbx (.mem (hdr kEv))] ++ minv), .block (ws ++ dBlk2), zeroA aDd, .block (ws ++ dBlk3),
-      mulAddRow]))))) := by
+    ([.block (([.mov .rbx (.mem (hdr kEv))] : List Instr) ++ minv), .block (ws ++ dBlk2), zeroA aDd, .block (ws ++ dBlk3),
+      mulAddRow] : List (Prog isa))))))) := by
   simp only [dOdd, dBlk2, dBlk3, List.append_assoc, List.cons_append, List.nil_append]
 
 /-- `dOdd`, for an odd `e` in `kEv`. -/
@@ -356,9 +356,9 @@ theorem oBlk_k {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) {c : Bool} (
   exact ⟨ht, f, hbp, kk.mono (by simp)⟩
 
 theorem dEven_eq2 : dEven = loadEv ++ ([zeroA aM, copyA aM aL] ++ (constA 0 ++ (eqMask aL aC ++
-    ([.block [.mov .r15 (.reg .rbp)]] ++ (constA 1 ++ ([.block (ws ++ mBlk)] ++
+    (([.block [.mov .r15 (.reg .rbp)]] : List (Prog isa)) ++ (constA 1 ++ (([.block (ws ++ mBlk)] : List (Prog isa)) ++
     ([zeroA aQt, copyA aQt aE, divmod aQt aR aM aT] ++ ([zeroA aU, copyA aU aR] ++ (constA 3 ++ (ltA aL aC ++
-    ([.block ([.mov .rcx (.reg .rbp), .alu .xor .rcx (.imm (BitVec.ofInt 32 (-1)))] ++ (ws ++ oBlk))] ++
+    (([.block (([.mov .rcx (.reg .rbp), .alu .xor .rcx (.imm (BitVec.ofInt 32 (-1)))] : List Instr) ++ (ws ++ oBlk))] : List (Prog isa)) ++
     ([zeroA aM, copyA aM aL] ++ (selC aM ++ ((invFrom aM ++ [inverse aU aV aX₁ aX₂ aM aT]) ++ (gcdIsOne ++
     [zeroA aDd, copyA aDd aX₂]))))))))))))))) := by
   simp only [dEven, mBlk, oBlk, oddMask, List.append_assoc, List.cons_append, List.nil_append]

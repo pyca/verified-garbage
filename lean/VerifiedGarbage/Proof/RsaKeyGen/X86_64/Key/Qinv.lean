@@ -14,8 +14,8 @@ open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Rsa.X86_64.Keys VG.Impl.RsaKeyGe
 open VG.Proof.MlKem.X86_64 VG.Proof.Bignum.X86_64 VG.Proof.Rsa.X86_64
 
 theorem qinvPart_eq : qinvPart = [zeroA aU, copyA aU aQa] ++ (constA 3 ++ (ltA aPa aC ++
-    ([.block ([.mov .rcx (.reg .rbp), .alu .xor .rcx (.imm (BitVec.ofInt 32 (-1)))] ++ oddMask aPa ++
-        [.alu .and .rax (.reg .rcx), .mov .rbp (.reg .rax)]), zeroA aM, copyA aM aPa] ++
+    (([.block (([.mov .rcx (.reg .rbp), .alu .xor .rcx (.imm (BitVec.ofInt 32 (-1)))] : List Instr) ++ oddMask aPa ++
+        ([.alu .and .rax (.reg .rcx), .mov .rbp (.reg .rax)] : List Instr)), zeroA aM, copyA aM aPa] : List (Prog isa)) ++
     (selC aM ++ (invFrom aM ++ ([inverse aU aV aX₁ aX₂ aM aT] ++ gcdIsOne)))))) := by
   simp only [qinvPart, gcdIsOne, List.append_assoc]
 

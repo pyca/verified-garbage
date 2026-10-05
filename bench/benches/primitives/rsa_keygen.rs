@@ -84,7 +84,7 @@ pub fn bench(c: &mut Criterion) {
     for bits in [1024, 1536, 2048] {
         let prime = || {
             let mut p = BigNum::new().unwrap();
-            p.generate_prime(bits as i32, false, None, None).unwrap();
+            p.generate_prime(bits, false, None, None).unwrap();
             p
         };
         let (mut p, mut q) = (prime(), prime());

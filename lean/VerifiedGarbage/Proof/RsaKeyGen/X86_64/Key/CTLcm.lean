@@ -194,16 +194,16 @@ abbrev TwP (F : KIn → State → Prop) (n : Nat) : KIn → State → Prop := fu
   t.zf = some (decide (64 * I.W - n + 1 = 64 * I.W)) ∧ 0 < n ∧ n ≤ 64 * I.W
 
 theorem halfIf_eq (j : Nat) : seqs (halfIf j) = .seq (.block (ws ++ (base j .r8 ++ base aT .rsi)))
-    (.seq (wordLoop 0 shrBody) (.seq (.block ([.mov .rbp (.mem (hdr sMo)),
-      .alu .xor .rbp (.imm (BitVec.ofInt 32 (-1)))] ++ (base j .r8 ++ base aT .rsi))) (wordLoop 0 selBody))) := by
+    (.seq (wordLoop 0 shrBody) (.seq (.block (([.mov .rbp (.mem (hdr sMo)),
+      .alu .xor .rbp (.imm (BitVec.ofInt 32 (-1)))] : List Instr) ++ (base j .r8 ++ base aT .rsi))) (wordLoop 0 selBody))) := by
   simp only [halfIf, seqs, List.append_assoc]
 
 theorem halfIf_ct {F : KIn → State → Prop} {n j : Nat} (hj : j < 16) (hjT : j ≠ aT)
     (hF : Stab F [.arr aU, .arr aV, .arr aL, .arr aT, .hdr sMo] allR)
     (hjs : Rc.arr j ∈ [Rc.arr aU, Rc.arr aV, Rc.arr aL, Rc.arr aT, Rc.hdr sMo]) {hc : VG.Taint.Hint VG.X86_64.Taint.T}
     (ht : (taint.check (Taint.ofRegs [.rdi, .r12, .r9]) (.seq (.block (base j .r8 ++ base aT .rsi))
-      (.seq (wordLoop 0 shrBody) (.seq (.block ([.mov .rbp (.mem (hdr sMo)),
-      .alu .xor .rbp (.imm (BitVec.ofInt 32 (-1)))] ++ (base j .r8 ++ base aT .rsi))) (wordLoop 0 selBody)))) hc).isSome =
+      (.seq (wordLoop 0 shrBody) (.seq (.block (([.mov .rbp (.mem (hdr sMo)),
+      .alu .xor .rbp (.imm (BitVec.ofInt 32 (-1)))] : List Instr) ++ (base j .r8 ++ base aT .rsi))) (wordLoop 0 selBody)))) hc).isSome =
       true) :
     RelCT isa (Two (KG fun I t => TwF F n I t ∧ SmoM I t)) (seqs (halfIf j))
       (Two (KG fun I t => TwF F n I t ∧ SmoM I t)) := by
@@ -225,8 +225,8 @@ theorem halfIf_ct {F : KIn → State → Prop} {n j : Nat} (hj : j < 16) (hjT : 
   · exact hjs
   · simp
 
-theorem twoStep_eq : twoStep = seqs ([.block (ws ++ twoBlk)] ++ (halfIf aU ++ (halfIf aV ++ (halfIf aL ++
-    [.block countP])))) := by
+theorem twoStep_eq : twoStep = seqs (([.block (ws ++ twoBlk)] : List (Prog isa)) ++ (halfIf aU ++ (halfIf aV ++ (halfIf aL ++
+    ([.block countP] : List (Prog isa)))))) := by
   simp only [twoStep, twoBlk, List.append_assoc]
 
 theorem twoStep_ct {F : KIn → State → Prop} (n : Nat) (hF : Stab F [.arr aU, .arr aV, .arr aL, .arr aT, .hdr sMo] allR) :
@@ -392,10 +392,10 @@ theorem gcdSwap_k {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) :
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl <;> dsimp only <;> omega) (by omega)
 
-theorem gcdUV_eq2 : gcdUV = [.block (ws ++ gcdBlk), wordLoop 0 cswapBody] ++ (constA 2 ++ (ltA aV aC ++
-    ([.block [.store (hdr kOk) .rbp, .alu .xor .rbp (.imm (BitVec.ofInt 32 (-1)))]] ++ (constA 3 ++ (selC aV ++
+theorem gcdUV_eq2 : gcdUV = ([.block (ws ++ gcdBlk), wordLoop 0 cswapBody] : List (Prog isa)) ++ (constA 2 ++ (ltA aV aC ++
+    (([.block [.store (hdr kOk) .rbp, .alu .xor .rbp (.imm (BitVec.ofInt 32 (-1)))]] : List (Prog isa)) ++ (constA 3 ++ (selC aV ++
     ([zeroA aM, copyA aM aV, zeroA aX₁, .block (setOneA aX₁), zeroA aX₂, inverse aU aV aX₁ aX₂ aM aT] ++
-    (constA 1 ++ ([.block [.mov .rbp (.mem (hdr kOk)), .alu .xor .rbp (.imm (BitVec.ofInt 32 (-1)))]] ++
+    (constA 1 ++ (([.block [.mov .rbp (.mem (hdr kOk)), .alu .xor .rbp (.imm (BitVec.ofInt 32 (-1)))]] : List (Prog isa)) ++
       selC aV)))))))) := by
   simp only [gcdUV, gcdBlk, oddMask, List.append_assoc, List.cons_append, List.nil_append]
 

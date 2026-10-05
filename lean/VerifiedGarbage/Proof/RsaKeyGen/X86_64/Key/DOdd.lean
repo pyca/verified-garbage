@@ -25,14 +25,14 @@ abbrev csD : List Rc :=
 
 theorem dOdd_eq : dOdd = loadEv ++ ([zeroA aQt, copyA aQt aL, divmod aQt aR aE aT, zeroA aU, copyA aU aR] ++
     (invFrom aE ++ ([inverse aU aV aX₁ aX₂ aE aT] ++ (lGe2 ++ (gcdIsOne ++
-    [.block ([.mov .rbx (.mem (hdr kEv))] ++ minv),
+    ([.block (([.mov .rbx (.mem (hdr kEv))] : List Instr) ++ minv),
       .block (ws ++ base aX₂ .rbx ++ base aR .r10 ++
-        [.mov .rsi (.mem (hdr kEv)), .alu .sub .rsi (.mem (at0 .rbx)), .mov .rax (.mem (at0 .r10)), .mul .rsi,
-          .alu .add .rax (.imm 1), .mul .rcx, .mov .r15 (.reg .rax), .store (hdr sMo) .rsi]),
+        ([.mov .rsi (.mem (hdr kEv)), .alu .sub .rsi (.mem (at0 .rbx)), .mov .rax (.mem (at0 .r10)), .mul .rsi,
+          .alu .add .rax (.imm 1), .mul .rcx, .mov .r15 (.reg .rax), .store (hdr sMo) .rsi] : List Instr)),
       zeroA aDd,
-      .block (ws ++ base aDd .r8 ++ [.store (at0 .r8) .r15] ++ base aQt .rax ++
-        [.mov .r9 (.reg .rax), .mov .rcx (.mem (hdr sMo))]),
-      mulAddRow]))))) := by
+      .block (ws ++ base aDd .r8 ++ ([.store (at0 .r8) .r15] : List Instr) ++ base aQt .rax ++
+        ([.mov .r9 (.reg .rax), .mov .rcx (.mem (hdr sMo))] : List Instr)),
+      mulAddRow] : List (Prog isa))))))) := by
   simp only [dOdd, List.append_assoc]
 
 /-- A number below `2⁶⁴` is its low word. -/

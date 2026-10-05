@@ -62,13 +62,13 @@ theorem storeL_ok {I : KIn} {m₀ : Mem} {t : State} (h : KS I m₀ t) (L : KLen
   · exact st_ok h O (by decide) (by decide) (by decide) h.args.qi h.args.pl (by omega) (by omega) (by simp [outsL])
 
 theorem outputs_eq (I : KIn) : outputs = storesK (storeL I) ++
-    [.block ([.mov .rax (.mem (hdr kOk)), .alu .and .rax (.imm 1)] ++ exit)] := rfl
+    ([.block (([.mov .rax (.mem (hdr kOk)), .alu .and .rax (.imm 1)] : List Instr) ++ exit)] : List (Prog isa)) := rfl
 
 theorem zeros_eq (I : KIn) (st : Nat) : zeros st = seqs (zerosK (storeL I) ++
-    [.block ([.mov32 .rax (.imm (BitVec.ofNat 32 st))] ++ exit)]) := rfl
+    ([.block (([.mov32 .rax (.imm (BitVec.ofNat 32 st))] : List Instr) ++ exit)] : List (Prog isa))) := rfl
 
-theorem keyPart_eq (I : KIn) : keyPart = seqs (qinvPart ++ (crtPart ++ (nPart ++ ([.block finalMask] ++
-    (storesK (storeL I) ++ [.block ([.mov .rax (.mem (hdr kOk)), .alu .and .rax (.imm 1)] ++ exit)]))))) := by
+theorem keyPart_eq (I : KIn) : keyPart = seqs (qinvPart ++ (crtPart ++ (nPart ++ (([.block finalMask] : List (Prog isa)) ++
+    (storesK (storeL I) ++ ([.block (([.mov .rax (.mem (hdr kOk)), .alu .and .rax (.imm 1)] : List Instr) ++ exit)] : List (Prog isa))))))) := by
   rw [keyPart, ← outputs_eq I]; simp only [List.append_assoc]
 
 /-- A number below `2^(64 v)` read from `v ≤ W` words. -/
@@ -207,7 +207,7 @@ theorem keyPart_k {I : KIn} {m₀ : Mem} {s : State} (h : Front I m₀ s) (L : K
 
 /-- The status `st` returned and the saved registers restored. -/
 theorem stExit_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) (st : Nat) :
-    WP isa (.block ([.mov32 .rax (.imm (BitVec.ofNat 32 st))] ++ exit)) s
+    WP isa (.block (([.mov32 .rax (.imm (BitVec.ofNat 32 st))] : List Instr) ++ exit)) s
       fun t => t.gpr .rax = (BitVec.ofNat 32 st).setWidth 64 ∧
         (∀ i < 6, t.gpr (saved.getD i .rax) = word s.mem B (8 * i)) ∧
         t.mem = s.mem ∧ Keep [.rax, .rbx, .rbp, .r12, .r13, .r14, .r15] s t := by

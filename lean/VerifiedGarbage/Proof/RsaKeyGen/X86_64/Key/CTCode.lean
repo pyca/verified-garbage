@@ -52,7 +52,7 @@ theorem start_ct : RelCT isa (Two KRel) (.block (entry ++ head)) (Two (KG NF)) :
 
 /-- From the loads to `smallMask`. -/
 theorem front_ct : RelCT isa (Two (KG NF))
-    (seqs ((loadA aPa kPp kPl ++ (loadA aQa kQp kPl ++ (loadE ++ [.block [.store (hdr kEv) .rbx]]))) ++
+    (seqs ((loadA aPa kPp kPl ++ (loadA aQa kQp kPl ++ (loadE ++ ([.block [.store (hdr kEv) .rbx]] : List (Prog isa))))) ++
       (order ++ (decTo aPm aPa ++ (decTo aQm aQa ++ (lcmPart ++ ([dPart] ++ smallMask)))))))
     (Two (KG NF)) := by
   refine rs_app (R := Two (KG EvOK)) (by simp [loadA]) (by simp [order, ltA]) ?_ ?_

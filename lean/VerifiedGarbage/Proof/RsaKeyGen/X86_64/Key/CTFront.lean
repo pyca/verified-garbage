@@ -90,13 +90,13 @@ def eVal (pE : Addr) (el : Nat) : Reg → BitVec 64
   | .rcx => BitVec.ofNat 64 el
   | _ => 0
 
-theorem loadE_eq : seqs (loadE ++ [.block [.store (hdr kEv) .rbx]]) =
+theorem loadE_eq : seqs (loadE ++ ([.block [.store (hdr kEv) .rbx]] : List (Prog isa))) =
     .seq (.block [.mov .rsi (.mem (hdr kE)), .mov .rcx (.mem (hdr kElen)), .mov32 .rbx (.imm 0)])
       (.seq (.loop (.block [.shift .ror .rbx 56, .movzx8 .rax (at0 .rsi), .alu .add .rbx (.reg .rax),
         .alu .add .rsi (.imm 1), .alu .sub .rcx (.imm 1)]) .ne) (.block [.store (hdr kEv) .rbx])) := rfl
 
 /-- `e`'s load and its store into `kEv`. -/
-theorem loadE_ct : RelCT isa (Two (KG NF)) (seqs (loadE ++ [.block [.store (hdr kEv) .rbx]])) (Two (KG EvOK)) := by
+theorem loadE_ct : RelCT isa (Two (KG NF)) (seqs (loadE ++ ([.block [.store (hdr kEv) .rbx]] : List (Prog isa)))) (Two (KG EvOK)) := by
   rw [loadE_eq]
   refine pin_ct [.rdi] [.rdi, .rsi, .rcx]
     (fun p : KP => fun r => if r = .rdi then p.q.B else eVal p.q.pE p.q.el r) (pins_kg NF) (by taint_decide) ?_
@@ -151,7 +151,7 @@ theorem negR15_ok {s : State} {c : Bool} (h : s.gpr .rbp = mask c) :
     (by xrun [h, sxM1, maskNot]) rfl) fun t ⟨⟨h15, hm⟩, k⟩ => ⟨hm, k, h15⟩
 
 theorem decTo_eq (o j : Nat) : decTo o j = [zeroA o, copyA o j] ++ (constA 0 ++ (eqMask j aC ++
-    ([.block [.mov .r15 (.reg .rbp), .alu .xor .r15 (.imm (BitVec.ofInt 32 (-1)))]] ++ (constA 1 ++ subC o o)))) := by
+    (([.block [.mov .r15 (.reg .rbp), .alu .xor .r15 (.imm (BitVec.ofInt 32 (-1)))]] : List (Prog isa)) ++ (constA 1 ++ subC o o)))) := by
   simp only [decTo, subC, List.append_assoc]
 
 /-- `decTo o j`, for facts that its changes keep. -/

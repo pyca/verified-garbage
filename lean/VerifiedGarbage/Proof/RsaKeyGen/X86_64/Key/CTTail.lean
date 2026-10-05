@@ -47,8 +47,8 @@ theorem smallBlk_k {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) (L : KLe
   have f := KF.arr1 (I := I) (j := aC) o (by omega) (by omega)
   exact ⟨h.step f (all_mut_arr (by decide)) ((ku₁.trans ku₂).trans k) (by decide), f⟩
 
-theorem smallMask_eq : smallMask = constA 1 ++ ([.block (ws ++ smallBlk)] ++ (ltA aDd aC ++
-    [.block [.alu .and .rbp (.mem (hdr kOk)), .alu .test .rbp (.reg .rbp)]])) := by
+theorem smallMask_eq : smallMask = constA 1 ++ (([.block (ws ++ smallBlk)] : List (Prog isa)) ++ (ltA aDd aC ++
+    ([.block [.alu .and .rbp (.mem (hdr kOk)), .alu .test .rbp (.reg .rbp)]] : List (Prog isa)))) := by
   simp only [smallMask, smallBlk, List.append_assoc]
 
 theorem smallMask_ct : RelCT isa (Two (KG NF)) (seqs smallMask) (Two (KG NF)) := by
@@ -223,7 +223,7 @@ theorem gcdIsOneK_ct {F : KIn → State → Prop} (hF : Stab F [.arr aC, .hdr kO
     exact ⟨ht, hF I s t h.hZ hf (f.mono (by simp)) (k.mono (by decide)), _, hw⟩
 
 theorem qinvPart_eq2 : qinvPart = [zeroA aU, copyA aU aQa] ++ (constA 3 ++ (ltA aPa aC ++
-    ([.block ([.mov .rcx (.reg .rbp), .alu .xor .rcx (.imm (BitVec.ofInt 32 (-1)))] ++ (ws ++ qBlk))] ++
+    (([.block (([.mov .rcx (.reg .rbp), .alu .xor .rcx (.imm (BitVec.ofInt 32 (-1)))] : List Instr) ++ (ws ++ qBlk))] : List (Prog isa)) ++
     ([zeroA aM, copyA aM aPa] ++ (selC aM ++ ((invFrom aM ++ [inverse aU aV aX₁ aX₂ aM aT]) ++ gcdIsOne)))))) := by
   simp only [qinvPart, qBlk, oddMask, gcdIsOne, List.append_assoc, List.cons_append, List.nil_append]
 
@@ -292,7 +292,7 @@ theorem dvBlk_k {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) :
   exact ⟨ht, f, kk.mono (by simp)⟩
 
 theorem divisorOf_eq2 (j : Nat) : divisorOf j = [zeroA aM, copyA aM j] ++ (constA 0 ++ (eqMask j aC ++
-    [.block (ws ++ dvBlk)])) := by
+    ([.block (ws ++ dvBlk)] : List (Prog isa)))) := by
   simp only [divisorOf, dvBlk, List.append_assoc]
 
 /-- `divisorOf j`, for facts its changes keep. -/

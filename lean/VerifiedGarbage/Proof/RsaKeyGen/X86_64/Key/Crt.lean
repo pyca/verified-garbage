@@ -17,8 +17,8 @@ open VG.Proof.MlKem.X86_64 VG.Proof.Bignum.X86_64 VG.Proof.Rsa.X86_64
 abbrev dv (x : Nat) : Nat := if x = 0 then 1 else x
 
 theorem divisorOf_eq (j : Nat) : divisorOf j = [zeroA aM, copyA aM j] ++ (constA 0 ++ (eqMask j aC ++
-    [.block (ws ++ base aM .rbx ++ [.mov .rax (.mem (at0 .rbx)), .alu .and .rbp (.imm 1), .alu .or .rax (.reg .rbp),
-      .store (at0 .rbx) .rax])])) := by
+    ([.block (ws ++ base aM .rbx ++ ([.mov .rax (.mem (at0 .rbx)), .alu .and .rbp (.imm 1), .alu .or .rax (.reg .rbp),
+      .store (at0 .rbx) .rax] : List Instr))] : List (Prog isa)))) := by
   simp only [divisorOf, List.append_assoc]
 
 /-- `divisorOf j`. -/

@@ -13,13 +13,13 @@ open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Rsa.X86_64.Keys VG.Impl.RsaKeyGe
 open VG.Proof.MlKem.X86_64 VG.Proof.Bignum.X86_64 VG.Proof.Rsa.X86_64
 
 theorem dEven_eq : dEven = loadEv ++ ([zeroA aM, copyA aM aL] ++ (constA 0 ++ (eqMask aL aC ++
-    ([.block [.mov .r15 (.reg .rbp)]] ++ (constA 1 ++
-    ([.block (ws ++ base aM .rbx ++ base aC .r10 ++ [.mov .rax (.mem (at0 .rbx)), .mov .rdx (.reg .r15),
-        .alu .and .rdx (.imm 1), .alu .or .rax (.reg .rdx), .store (at0 .rbx) .rax]),
-      zeroA aQt, copyA aQt aE, divmod aQt aR aM aT, zeroA aU, copyA aU aR] ++ (constA 3 ++ (ltA aL aC ++
-    ([.block ([.mov .rcx (.reg .rbp), .alu .xor .rcx (.imm (BitVec.ofInt 32 (-1)))] ++ oddMask aL ++
-        [.alu .and .rax (.reg .rcx), .store (hdr kOk) .rax, .mov .rbp (.reg .rax)]),
-      zeroA aM, copyA aM aL] ++ (selC aM ++ (invFrom aM ++ ([inverse aU aV aX₁ aX₂ aM aT] ++ (gcdIsOne ++
+    (([.block [.mov .r15 (.reg .rbp)]] : List (Prog isa)) ++ (constA 1 ++
+    (([.block (ws ++ base aM .rbx ++ base aC .r10 ++ ([.mov .rax (.mem (at0 .rbx)), .mov .rdx (.reg .r15),
+        .alu .and .rdx (.imm 1), .alu .or .rax (.reg .rdx), .store (at0 .rbx) .rax] : List Instr)),
+      zeroA aQt, copyA aQt aE, divmod aQt aR aM aT, zeroA aU, copyA aU aR] : List (Prog isa)) ++ (constA 3 ++ (ltA aL aC ++
+    (([.block (([.mov .rcx (.reg .rbp), .alu .xor .rcx (.imm (BitVec.ofInt 32 (-1)))] : List Instr) ++ oddMask aL ++
+        ([.alu .and .rax (.reg .rcx), .store (hdr kOk) .rax, .mov .rbp (.reg .rax)] : List Instr)),
+      zeroA aM, copyA aM aL] : List (Prog isa)) ++ (selC aM ++ (invFrom aM ++ ([inverse aU aV aX₁ aX₂ aM aT] ++ (gcdIsOne ++
     [zeroA aDd, copyA aDd aX₂]))))))))))))) := by
   simp only [dEven, List.append_assoc]
 
