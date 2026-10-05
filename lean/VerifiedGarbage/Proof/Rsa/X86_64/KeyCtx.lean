@@ -26,6 +26,7 @@ structure KCtx (s t : State) (B : Addr) (Z w : Nat) (minv : BitVec 64) (N : Nat)
   wr : t.wr = s.wr
   n : wv t.mem B (slot w aN) w = N
   one : wv t.mem B (slot w aOne) w = 1
+  keep : Keep mmRegs s t
 
 section
 variable {s t t' : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} {N : Nat}
@@ -48,7 +49,8 @@ theorem KCtx.arr (h : KCtx s t B Z w minv N) {js : List Nat} (ha : Arrays B w js
     (hjs : ∀ j ∈ js, j < 8) (hN : aN ∉ js) (h1 : aOne ∉ js) (hk : Keep mmRegs t t') : KCtx s t' B Z w minv N := by
   have hn := h.good.scr.nowrap
   refine ⟨Good.of_arrays h.good ha hk hk.2.2, h.hZ, h.w1, h.w2, fun i hi hi' => ?_,
-    h.ins.trans (InScr.of_arrays ha h.hZ hjs), hk.2.1.trans h.rd, hk.2.2.trans h.wr, ?_, ?_⟩
+    h.ins.trans (InScr.of_arrays ha h.hZ hjs), hk.2.1.trans h.rd, hk.2.2.trans h.wr, ?_, ?_,
+    (h.keep.trans hk).mono (by decide)⟩
   · rw [ha.word_eq (fun j _ => .inl (hdr_lt_slot w j hi)) (by have := hdr_lt_slot w 8 hi; omega)]
     exact h.hdr i hi hi'
   · rw [Arrays.wv_other ha hN (by decide) h.hZ hn]; exact h.n
@@ -61,7 +63,8 @@ theorem KCtx.msk (h : KCtx s t B Z w minv N) (ho : Outside B (8 * sMask) 8 t.mem
   have h08 := slot_le (w := w) (show 0 < 8 by decide)
   have hZ := h.hZ
   refine ⟨Good.of_mask h.good ho hk, h.hZ, h.w1, h.w2, fun i hi hi' => ?_,
-    h.ins.trans (InScr.of_outside ho (by omega)), hk.2.1.trans h.rd, hk.2.2.trans h.wr, ?_, ?_⟩
+    h.ins.trans (InScr.of_outside ho (by omega)), hk.2.1.trans h.rd, hk.2.2.trans h.wr, ?_, ?_,
+    (h.keep.trans hk).mono (by decide)⟩
   · rw [ho.word (by unfold sMask sFn at hi' ⊢; omega) (by have := hdr_lt_slot w 8 hi; omega)]
     exact h.hdr i hi hi'
   · rw [Outside.wv_arr ho (by decide) h.hZ hn (by omega)]; exact h.n
