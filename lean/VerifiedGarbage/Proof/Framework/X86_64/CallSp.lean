@@ -1,0 +1,74 @@
+import VerifiedGarbage.Proof.Framework.X86_64.Depth
+
+/-!
+# Calling verified code with frames (x86-64)
+
+`WP.call_sp_mx` is `WP.call_mx` for a callee that writes `rsp` only in the
+pushes and pops of its frames (`SpSafe`) rather than never (`NoSp`): it
+changes memory below `rsp` within its depth in bytes (`Code.x86_64Depth`,
+`Exec.stackFrame`), which its frames' buffers and its calls' return
+addresses take.
+-/
+
+namespace VG.X86_64
+
+/-- Calling verified code that may have frames, as `WP.call_mx`. -/
+theorem WP.call_sp_mx {n : String} {c : Prog isa} {k : Contract isa}
+    (hv : ∀ s, k.pre s → ∃ t s', Exec isa c s t s' ∧ abiPreserved s s' ∧ k.post s s')
+    (hsp : SpSafe c) (hd : c.x86_64Depth + 16 < 2 ^ 64)
+    {s : State} {rd wr : List Region} (hpre : k.pre (s.callEntry.withRegions rd wr))
+    (hc : Covers (rd ++ wr) (s.rd ++ s.wr)) (hw : Covers wr s.wr) {Q : State → Prop}
+    (hQ : ∀ s', s'.rd = s.rd → s'.wr = s.wr → (∀ r ∈ calleeSaved, s'.gpr r = s.gpr r) →
+      Frame (wr ++ [below (s.gpr .rsp) (c.x86_64Depth + 8)]) s.mem s'.mem →
+      (∀ r, (∀ i ∈ instrs c, Taint.clobbers i r = false) → s'.gpr r = s.gpr r) →
+      (∃ s₂ : State, s₂.mem = s'.mem ∧ (∀ r, r ≠ .rsp → s₂.gpr r = s'.gpr r) ∧
+        k.post (s.callEntry.withRegions rd wr) s₂) →
+      s'.mxcsr.extractLsb' 6 10 = s.mxcsr.extractLsb' 6 10 → Q s') :
+    WP isa (.call n c) s Q := by
+  obtain ⟨t, s₁, he, habi, hpost⟩ := hv _ hpre
+  obtain ⟨hr, hwr⟩ := Exec.rdwr he
+  simp only [State.withRegions_rd, State.withRegions_wr] at hr hwr
+  have hf := Exec.stackFrame hsp he (by omega)
+  simp only [State.withRegions_wr, State.withRegions_gpr, State.withRegions_mem,
+    State.callEntry_rsp] at hf
+  have he' := Exec.widen he (rd := s.rd) (wr := s.wr) (by simpa using hc) (by simpa using hw)
+  simp only [State.withRegions_withRegions] at he'
+  rw [show s.callEntry.withRegions s.rd s.wr = s.callEntry from rfl] at he'
+  let s₂ := s₁.withRegions s.rd s.wr
+  have hs₂ : s₂ = s₁.withRegions s.rd s.wr := rfl
+  have hsp₂ : s₂.gpr .rsp = s.gpr .rsp - 8 := by
+    rw [hs₂, State.withRegions_gpr, habi.1 .rsp (by simp [calleeSaved])]; simp
+  have hret : isa.ret s.callEntry s₂ = some (s₂.setReg .rsp (s₂.gpr .rsp + 8)) := by
+    simp only [isa, ret]
+    refine ite_eq_left ⟨by rw [hsp₂, State.callEntry_rsp], ?_⟩
+    have := habi.2.1
+    simp only [State.withRegions_gpr, State.withRegions_mem, State.callEntry_rsp] at this
+    rw [hsp₂, State.callEntry_rsp]; exact this
+  have hrsp : (s₂.setReg .rsp (s₂.gpr .rsp + 8)).gpr .rsp = s.gpr .rsp := by
+    simp only [State.setReg, ite_true, hsp₂]; exact BitVec.sub_add_cancel _ _
+  have hkeep : ∀ r, r ≠ .rsp → (s₂.setReg .rsp (s₂.gpr .rsp + 8)).gpr r = s₂.gpr r :=
+    fun r h => by simp [State.setReg, h]
+  refine ⟨_, _, .call (call_callEntry s) he' hret, hQ _ rfl rfl (fun r hr' => ?_) ?_ (fun r h => ?_)
+    ⟨s₁, rfl, fun r h => (hkeep r h).symm, hpost⟩ habi.2.2⟩
+  · by_cases h : r = .rsp
+    · subst h; exact hrsp
+    · rw [hkeep r h, hs₂, State.withRegions_gpr, habi.1 r hr', State.withRegions_gpr,
+        State.callEntry_gpr _ h]
+  · -- The return address, then the callee.
+    have f₀ : Frame (wr ++ [below (s.gpr .rsp) (c.x86_64Depth + 8)]) s.mem s.callEntry.mem :=
+      Frame.writeW (Frame.refl _ _) (List.mem_append_right _ (List.mem_singleton_self _)) _
+        (below_call _ (by omega) (by omega))
+    have f₁ : Frame (wr ++ [below (s.gpr .rsp) (c.x86_64Depth + 8)]) s.callEntry.mem s₁.mem :=
+      Frame.sub hf fun r hr => by
+        rcases List.mem_append.mp hr with hr | hr
+        · exact ⟨r, List.mem_append_left _ hr, fun _ h => h⟩
+        · simp only [List.mem_singleton] at hr; subst hr
+          refine ⟨_, List.mem_append_right _ (List.mem_singleton_self _), ?_⟩
+          exact below_callee _ _
+    exact Frame.trans f₀ f₁
+  · by_cases hrs : r = .rsp
+    · subst hrs; exact hrsp
+    · rw [hkeep r hrs, Exec.gpr h he', State.callEntry_gpr _ hrs]
+
+
+end VG.X86_64
