@@ -32,10 +32,11 @@ structure Keep (c : Cfg) (s₀ : State) (base : Addr) (s : State) : Prop where
   fixed : Fixed c base s₀.gpr s.mem
 
 /-- After the setup and the tables. -/
-structure St₁ (c : Cfg) (s₀ : State) (base : Addr) (s : State) : Prop extends Keep c s₀ base s where
+structure St₁ (c : Cfg) (hs : Option Nat) (s₀ : State) (base : Addr) (s : State) : Prop
+    extends Keep c s₀ base s where
   k : sv c base s K = kv c s₀
-  d : sv c base s D = dv c s₀
-  e : sv c base s E = ev c s₀
+  d : sv c base s D = dv c s₀ >>> shAt c hs D
+  e : sv c base s E = ofBytes (Spec.Ecdsa.bytesAt s₀.mem (s₀.gpr .rdx) c.C.len) >>> shAt c hs E
   rx : sv c base s RX = 0
   ry : sv c base s RY = c.mont 1
   rz : sv c base s RZ = 0
@@ -48,14 +49,15 @@ structure St₁ (c : Cfg) (s₀ : State) (base : Addr) (s : State) : Prop extend
   rd : s.rd = s₀.rd
 
 /-- The setup, then the three tables. -/
-theorem stage₁ (hc : CfgOk c) {s₀ : State} (hp : SetupPre c s₀) {rest : Prog isa} {Q : State → Prop}
-    (h : ∀ s, St₁ c s₀ (s₀.gpr .r8) s → WP isa rest s Q) :
-    WP isa (.seq (.block c.setup) (.seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n))
+theorem stage₁ (hc : CfgOk c) {hs : Option Nat} (hhs : ShiftOk hs) {s₀ : State} (hp : SetupPre c s₀)
+    {rest : Prog isa} {Q : State → Prop}
+    (h : ∀ s, St₁ c hs s₀ (s₀.gpr .r8) s → WP isa rest s Q) :
+    WP isa (.seq (.block (c.setupWith hs)) (.seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n))
       (.seq (bits (c.sl EXPP) (bitsAt c.n 1) (8 * c.n))
       (.seq (bits (c.sl EXPN) (bitsAt c.n 2) (8 * c.n)) rest)))) s₀ Q := by
   have h0 := hc.n0
   have h7 := hc.n10
-  refine WP.seq (WP.mono (setup_ok hc hp) fun s₁ P => ?_)
+  refine WP.seq (WP.mono (setup_ok hc hhs hp) fun s₁ P => ?_)
   have hn := P.scr.nowrap
   have hc' : ∀ ix ∈ c.consts, sv c (s₀.gpr .r8) s₁ ix.1 = ix.2 := P.consts
   have fx : Fixed c (s₀.gpr .r8) s₀.gpr s₁.mem :=

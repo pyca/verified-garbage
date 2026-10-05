@@ -23,10 +23,11 @@ open VG.Proof.X25519.X86_64 (Keeps)
 variable {c : Cfg}
 
 /-- After `[k]G` and `Z^(p-2)`. -/
-structure St₂ (c : Cfg) (s₀ : State) (base : Addr) (s : State) : Prop extends Keep c s₀ base s where
+structure St₂ (c : Cfg) (hs : Option Nat) (s₀ : State) (base : Addr) (s : State) : Prop
+    extends Keep c s₀ base s where
   k : sv c base s K = kv c s₀
-  d : sv c base s D = dv c s₀
-  e : sv c base s E = ev c s₀
+  d : sv c base s D = dv c s₀ >>> shAt c hs D
+  e : sv c base s E = ofBytes (Spec.Ecdsa.bytesAt s₀.mem (s₀.gpr .rdx) c.C.len) >>> shAt c hs E
   flag : word s.mem base (c.sl FLAG) = BitVec.allOnes 64
   t₂ : ∀ t < 64 * c.n, s.mem (off base (bitsAt c.n 2 + t)) = if (c.C.n - 2).testBit t then 1 else 0
   rep : Rep c.C (tmv c.C c.n base s (c.sl RX)) (tmv c.C c.n base s (c.sl RY))
@@ -36,8 +37,9 @@ structure St₂ (c : Cfg) (s₀ : State) (base : Addr) (s : State) : Prop extend
   rz_lt : sv c base s RZ < c.C.p
 
 /-- `[k]G`, then `Z^(p-2)`. -/
-theorem stage₂ (hc : CfgOk c) (hC : Law c.C) {s₀ : State} {base : Addr} {s : State} (hS : St₁ c s₀ base s)
-    {rest : Prog isa} {Q : State → Prop} (h : ∀ s', St₂ c s₀ base s' → WP isa rest s' Q) :
+theorem stage₂ (hc : CfgOk c) (hC : Law c.C) {hs : Option Nat} {s₀ : State} {base : Addr} {s : State}
+    (hS : St₁ c hs s₀ base s)
+    {rest : Prog isa} {Q : State → Prop} (h : ∀ s', St₂ c hs s₀ base s' → WP isa rest s' Q) :
     WP isa (.seq (ladder c.ladderCfg) (.seq (pow c.powP) rest)) s Q := by
   have h0 := hc.n0
   have h7 := hc.n10
@@ -137,9 +139,11 @@ structure St₃ (c : Cfg) (s₀ : State) (base : Addr) (s : State) : Prop extend
   acc : toM c.C.n (2 ^ (64 * c.n)) (sv c base s ACC) = Fin.ofNat c.C.n (kv c s₀) ^ (c.C.n - 2)
 
 /-- `x`, `r`, `k R mod n` and the checks, then `k^(n-2)`. -/
-theorem stage₃ (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State} (hS : St₂ c s₀ base s)
+theorem stage₃ (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State} (hS : St₂ c (some E) s₀ base s)
     {rest : Prog isa} {Q : State → Prop} (h : ∀ s', St₃ c s₀ base s' → WP isa rest s' Q) :
     WP isa (.seq c.middle (.seq (pow c.powN) rest)) s Q := by
+  have hSd : sv c base s D = dv c s₀ := by rw [hS.d, shAt_E_D, Nat.shiftRight_zero]
+  have hSe : sv c base s E = ev c s₀ := by rw [hS.e, shAt_self]
   have h0 := hc.n0
   have h7 := hc.n10
   have hn := hS.scr.nowrap
@@ -183,15 +187,15 @@ theorem stage₃ (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State} (hS : S
     rcases hi with rfl | rfl | rfl <;> rw [a₉ (by decide) (by decide) (by decide) (by decide)]
   refine ⟨⟨hs₈.of_keepRegs K₉ (rdi_not_powClob _), ?_, by rw [K₉.wr, k₈.wr, Mp.wr, hS.wr],
     F₈.unch h7 hn (fixedOk_slW (by decide)) U₉⟩,
-    by rw [a₉ (i := D) (by decide) (by decide) (by decide) (by decide), hS.d],
-    by rw [a₉ (i := E) (by decide) (by decide) (by decide) (by decide), hS.e],
+    by rw [a₉ (i := D) (by decide) (by decide) (by decide) (by decide), hSd],
+    by rw [a₉ (i := E) (by decide) (by decide) (by decide) (by decide), hSe],
     by rw [tR RX (by simp), tR RY (by simp), tR RZ (by simp)]; exact hS.rep,
     by rw [x₉]; exact Mp.x_lt,
     by rw [x₉, Mp.x, tR RX (by simp), tR RZ (by simp), hS.acc],
     by rw [rr₉, x₉]; exact Mp.rr, ?_, ?_⟩
   · rw [K₉.gpr _ (rsi_not_powClob _), k₈.gpr _ (by decide), Mp.gpr _ (rsi_not_clob _), hS.rsi]
   · rw [flag_unch U₉ h7 h0 hn (by decide), f₈, flag_unch Mp.unch h7 h0 hn (by decide), hS.flag,
-      e₇ (i := D) (by decide) (by decide), e₇ (i := K) (by decide) (by decide), hS.d, hS.k, Mp.rr, x₉]
+      e₇ (i := D) (by decide) (by decide), e₇ (i := K) (by decide) (by decide), hSd, hS.k, Mp.rr, x₉]
   · refine v₉.trans ?_
     show toM c.C.n (2 ^ (64 * c.n)) (sv c base s₈ KM) ^ _ = _
     rw [e₈ (i := KM) (by decide) (by decide), Mp.km, hS.k]
@@ -278,7 +282,7 @@ restores the callee-saved registers. -/
 theorem sign_ok (hc : CfgOk c) (hC : Law c.C) {s₀ : State} (hp : Pre c s₀) :
     WP isa c.sign s₀ fun s' => (∀ r ∈ Cfg.saved.map Prod.fst, s'.gpr r = s₀.gpr r) ∧ SignPost c s₀ s' := by
   rw [sign_eq]
-  exact stage₁ hc hp.setup fun _ S₁ => stage₂ hc hC S₁ fun _ S₂ => stage₃ hc S₂ fun _ S₃ =>
+  exact stage₁ hc (Or.inr (Or.inr rfl)) hp.setup fun _ S₁ => stage₂ hc hC S₁ fun _ S₂ => stage₃ hc S₂ fun _ S₃ =>
     stage₄ hc hC hp rfl S₃
 
 end VG.Proof.Ecdsa.X86_64
