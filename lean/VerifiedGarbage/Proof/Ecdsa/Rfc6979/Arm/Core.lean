@@ -67,7 +67,7 @@ theorem core_pre (hL : L.Ok) (hq : L.q = 8 * P.w) (hn : 8 * P.w ≤ dn) {t : Sta
     (hr : CoreRegs L t) :
     (coreK P.R.E).pre ((pushed [.r12, .lr] t).callEntry.withRegions (coreRd P L) (coreWr P L)) := by
   have h24 := hc.sp24 hL
-  have hk : State.addr (L.fp + BitVec.ofNat 32 64) = L.B + BitVec.ofNat 64 88 := hL.fpA (by decide)
+  have hk : State.addr (L.fp + BitVec.ofNat 32 64) = L.B + BitVec.ofNat 64 88 := hL.fpA (by omega)
   have hsp := core_sp hL hc
   have := hL.nB; have := L.sp.isLt
   have h6 := P.R.n6
@@ -144,7 +144,7 @@ theorem core_ok (hL : L.Ok) (hq : L.q = 8 * P.w) (hn : 8 * P.w ≤ dn) {t : Stat
     rcases hq' with rfl | rfl
     · exact .inl (sub_refl _)
     · exact .inr (.inl (sub_refl _))
-  · have hk : State.addr (L.fp + BitVec.ofNat 32 64) = L.B + BitVec.ofNat 64 88 := hL.fpA (by decide)
+  · have hk : State.addr (L.fp + BitVec.ofNat 32 64) = L.B + BitVec.ofNat 64 88 := hL.fpA (by omega)
     have hs : coreSigOf P.R.E (pushed [.r12, .lr] t).mem (State.addr L.d) (State.addr L.dg)
         (L.B + BitVec.ofNat 64 88) = coreSig P L t.mem := by
       have d1 : (stk t).Disjoint ⟨State.addr L.d, 8 * P.R.E.n⟩ := by
