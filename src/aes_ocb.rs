@@ -23,10 +23,11 @@
 //! `vg_aes_decrypt_blocks`), which have the same contracts: on x86-64, CPUs
 //! with AES-NI and SSSE3 run the `_aesni` instances (`crate::aes::Backend`;
 //! there is no VAES implementation of whole blocks yet, so its CPUs run them
-//! too); on AArch64, CPUs with the AES instructions run the `_aes` ones.
-//! x86-64 and AArch64 have implementations so far.
+//! too); on x86, CPUs with AES-NI run the `_aesni` instances; on AArch64,
+//! CPUs with the AES instructions run the `_aes` ones. x86-64, x86 and
+//! AArch64 have implementations so far.
 
-#![cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
+#![cfg(any(target_arch = "x86", target_arch = "x86_64", target_arch = "aarch64"))]
 
 use crate::aes::Backend;
 #[cfg(target_arch = "aarch64")]
@@ -34,7 +35,7 @@ use crate::arch::aes_ocb::{
     VG_AES_OCB_INIT_AES_FEATURES, VG_AES_OCB_OPEN_AES_FEATURES, VG_AES_OCB_SEAL_AES_FEATURES,
     vg_aes_ocb_init_aes, vg_aes_ocb_open_aes, vg_aes_ocb_seal_aes,
 };
-#[cfg(target_arch = "x86_64")]
+#[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
 use crate::arch::aes_ocb::{
     VG_AES_OCB_INIT_AESNI_FEATURES, VG_AES_OCB_OPEN_AESNI_FEATURES, VG_AES_OCB_SEAL_AESNI_FEATURES,
     vg_aes_ocb_init_aesni, vg_aes_ocb_open_aesni, vg_aes_ocb_seal_aesni,
@@ -43,8 +44,8 @@ use crate::arch::aes_ocb::{vg_aes_ocb_init, vg_aes_ocb_open, vg_aes_ocb_seal};
 use crate::cpu::{Features, detected};
 use crate::zeroize::zeroize;
 
-/// The instance of a function for `backend`: the scalar one, x86-64's for
-/// AES-NI, or AArch64's for the AES instructions.
+/// The instance of a function for `backend`: the scalar one, x86-64's or
+/// x86's for AES-NI, or AArch64's for the AES instructions.
 macro_rules! instance {
     ($backend:expr, $scalar:ident, $aesni:ident, $aes:ident) => {
         match $backend {
@@ -52,6 +53,8 @@ macro_rules! instance {
             // No VAES implementation of whole blocks yet.
             #[cfg(target_arch = "x86_64")]
             Backend::AesNi | Backend::Vaes => $aesni,
+            #[cfg(target_arch = "x86")]
+            Backend::AesNi => $aesni,
             #[cfg(target_arch = "aarch64")]
             Backend::Aes => $aes,
         }
@@ -68,6 +71,18 @@ fn select(f: Features) -> Backend {
         VG_AES_OCB_OPEN_AESNI_FEATURES,
     ]);
     Backend::select_for(f, AESNI, AESNI)
+}
+
+/// The best implementation of AES a CPU with the features `f` can run, with
+/// the AES-OCB functions for it.
+#[cfg(target_arch = "x86")]
+fn select(f: Features) -> Backend {
+    const AESNI: Features = Features::all(&[
+        VG_AES_OCB_INIT_AESNI_FEATURES,
+        VG_AES_OCB_SEAL_AESNI_FEATURES,
+        VG_AES_OCB_OPEN_AESNI_FEATURES,
+    ]);
+    Backend::select_for(f, AESNI)
 }
 
 /// The best implementation of AES a CPU with the features `f` can run, with
