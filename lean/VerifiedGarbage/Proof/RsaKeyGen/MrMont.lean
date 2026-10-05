@@ -132,4 +132,42 @@ theorem mrPre_succ (c b T j : Nat) (P : Bool) (hj : j < T) :
   unfold mrPow
   rw [show T - (j + 1) = T - 1 - j by omega]
 
+theorem beq_dec (a b : Nat) : (a == b) = decide (a = b) := by
+  by_cases h : a = b <;> simp [h]
+
+/-- One bit of the exponentiation, for the bit `bt` of `c − 1` at `T − 1 − j`. -/
+theorem mr_step {c b T j : Nat} (P : Bool) {bt : Bool} (hj : j < T)
+    (hcond : ((c - 1) / 2 ^ (T - 1 - j) % 2 = 1) ↔ bt = true) :
+    mrPow c b T (j + 1) = mrPow c b T j * mrPow c b T j % c * (if bt then b else 1) % c ∧
+    mrPre c b T (j + 1) P = if bt then decide (mrPow c b T (j + 1) = 1) || decide (mrPow c b T (j + 1) = c - 1)
+      else mrPre c b T j P || decide (mrPow c b T (j + 1) = c - 1) := by
+  have e : ((c - 1) / 2 ^ (T - 1 - j) % 2 = 1) = (bt = true) := propext hcond
+  refine ⟨?_, ?_⟩
+  · rw [mrPow_succ c b T j hj]; simp only [e]
+  · rw [mrPre_succ c b T j P hj]; simp only [e, beq_dec]
+
+/-- The bits of an odd `c` and of `c − 1` agree but for bit 0. -/
+theorem odd_sub_one_div {c i : Nat} (hc : c % 2 = 1) (hi : 1 ≤ i) : (c - 1) / 2 ^ i = c / 2 ^ i := by
+  obtain ⟨i, rfl⟩ : ∃ i', i = i' + 1 := ⟨i - 1, by omega⟩
+  rw [Nat.pow_succ, Nat.mul_comm, ← Nat.div_div_eq_div_mul, ← Nat.div_div_eq_div_mul,
+    show (c - 1) / 2 = c / 2 by omega]
+
+theorem div_bit_iff (c i : Nat) : (c / 2 ^ i % 2 = 1) ↔ c.testBit i = true := by
+  rw [Nat.testBit_eq_decide_div_mod_eq]; simp
+
+/-- The top bit of `x` shifted left by `t ≤ 63`: bit `63 − t` of `x`. -/
+theorem shl_shr63 (x : BitVec 64) {t : Nat} (ht : t ≤ 63) :
+    (x <<< t) >>> 63 = BitVec.ofNat 64 (x.toNat.testBit (63 - t)).toNat := by
+  apply BitVec.eq_of_toNat_eq
+  have e1 : x.toNat * 2 ^ t % 2 ^ 64 / 2 ^ 63 = x.toNat * 2 ^ t / 2 ^ 63 % 2 := by
+    rw [show (2 : Nat) ^ 64 = 2 ^ 63 * 2 from rfl, Nat.mod_mul_right_div_self]
+  have e2 : x.toNat * 2 ^ t / 2 ^ 63 = x.toNat / 2 ^ (63 - t) := by
+    rw [show (2 : Nat) ^ 63 = 2 ^ t * 2 ^ (63 - t) by rw [← Nat.pow_add]; congr 1; omega,
+      ← Nat.div_div_eq_div_mul, Nat.mul_div_cancel _ (Nat.two_pow_pos t)]
+  have hb : (x.toNat.testBit (63 - t)).toNat < 2 ^ 64 := by cases x.toNat.testBit (63 - t) <;> decide
+  rw [BitVec.toNat_ushiftRight, BitVec.toNat_shiftLeft, BitVec.toNat_ofNat, Nat.shiftLeft_eq,
+    Nat.shiftRight_eq_div_pow, e1, e2, Nat.mod_eq_of_lt hb, Nat.testBit_eq_decide_div_mod_eq]
+  have := Nat.mod_lt (x.toNat / 2 ^ (63 - t)) (show 0 < 2 by decide)
+  rcases (by omega : x.toNat / 2 ^ (63 - t) % 2 = 0 ∨ x.toNat / 2 ^ (63 - t) % 2 = 1) with h | h <;> simp [h]
+
 end VG.Proof.RsaKeyGen
