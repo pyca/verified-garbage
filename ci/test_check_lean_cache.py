@@ -35,6 +35,8 @@ class LeanCachePublishingTests(unittest.TestCase):
                 "elif sys.argv[1] == 'login':\n"
                 " sys.stdin.read()\n"
                 " if os.environ['FAIL'] == 'login': sys.exit(1)\n"
+                "elif sys.argv[1] == 'logout':\n"
+                " pass\n"
                 "elif os.environ['ERROR']:\n"
                 " print(os.environ['ERROR'], file=sys.stderr)\n"
                 " sys.exit(1)\n"
@@ -70,7 +72,11 @@ class LeanCachePublishingTests(unittest.TestCase):
                 text=True,
                 capture_output=True,
             )
-            return result, output.read_text(), calls.read_text()
+            calls = calls.read_text()
+            # Later steps run third-party code: never leave them a credential.
+            if "docker login" in calls and fail != "login":
+                self.assertEqual(calls.splitlines()[-1], "docker logout ghcr.io")
+            return result, output.read_text(), calls
 
     def test_matching_cache_skips_publication(self):
         result, output, _ = self.check_publication(
