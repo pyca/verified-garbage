@@ -6,9 +6,9 @@ import VerifiedGarbage.Spec.Mgf1
 **Trusted** (as every file in `Spec/`). The signature scheme RSASSA-PSS of
 PKCS #1 v2.2 (RFC 8017): its encoding method EMSA-PSS (§9.1), with the hash
 function `H` and the mask generation function MGF1 (Appendix B.2.1) with the
-hash function `G`, and its verification operation (§8.1.2) with the public
-key `(n, e)`. Any of the library's hash functions (`Mgf1.hashes`) may be
-either.
+hash function `G`, its signature operation (§8.1.1) with the private key,
+and its verification operation (§8.1.2) with the public key `(n, e)`. Any
+of the library's hash functions (`Mgf1.hashes`) may be either.
 
 As in BoringSSL (`RSA_sign_pss_mgf1`, `RSA_verify_pss_mgf1`), the message is
 given as its digest `mHash = Hash(M)` (§9.1.1 step 2, §9.1.2 step 2), which
@@ -33,13 +33,17 @@ length `k` or, if `modBits - 1` is a multiple of 8, `k - 1`. The integer
 (`encodeK`) it is the input of RSASP1; RSAVP1 gives `k` octets, whose first
 `k - emLen` must be zero (I2OSP's error in §8.1.2 step 2.c).
 
-Signing (§8.1.1) is the private-key operation on `encodeK`.
+Signing (§8.1.1) is the private-key operation on `encodeK`, checked against
+the public exponent as BoringSSL checks every private-key operation
+(`Rsa.privateChecked`): the signature is released only if RSAVP1 takes it
+back to the encoding. Verification takes the public key within BoringSSL's
+limits (`Rsa.publicOpChecked`).
 -/
 
 namespace VG.Spec.RsaPss
 
 open Mgf1 (Hash xorBytes mgf1)
-open Rsa (os2ip publicOp)
+open Rsa (os2ip publicOpChecked privateChecked Outcome)
 
 /-- `n` zero octets. -/
 def zeros (n : Nat) : List Byte := List.replicate n 0
@@ -145,15 +149,28 @@ digest `mHash`, with the public key `(nB, eB)`, the hash function `H` and
 MGF1 with `G`, expecting the salt length `sLen` (or any, if `none`): whether
 the signature is valid. Step 1: `sB` is `k` octets; step 2: RSAVP1, and
 `EM = I2OSP(m, emLen)`, which requires the first `k - emLen` octets of `m`
-to be zero; step 3: `EMSA-PSS-VERIFY`. -/
+to be zero; step 3: `EMSA-PSS-VERIFY`. RSAVP1 is `publicOpChecked`, within
+BoringSSL's limits on the public key (`rsa_check_public_key`). -/
 def verify (nB eB mHash sB : List Byte) (sLen : Option Nat) : Bool :=
   let k := nB.length
   let emBits := bitLength (os2ip nB) - 1
   let emLen := emLength emBits
   sB.length == k &&
-    match publicOp nB eB sB with
+    match publicOpChecked nB eB sB with
     | some x => x.take (k - emLen) == zeros (k - emLen) &&
         verifyEncoding H G mHash (x.drop (k - emLen)) emBits sLen
     | none => false
+
+/-- `RSASSA-PSS-SIGN(K, M)` (§8.1.1) of the digest `mHash` with the salt
+`salt`, with the private key `(p, q, dP, dQ, qInv)` of the modulus `nB` and
+the public exponent `eB`, the hash function `H` and MGF1 with `G`: step 1,
+`encodeK`, then step 2, RSASP1 checked against `e` (`privateChecked`). The
+outcome is `ok` with the signature (`k` octets), `invalid` if the encoding
+fails or `privateChecked` refuses the key, or `fault` (the internal error)
+if the result fails the check against `e`. -/
+def sign (nB eB pB qB dPB dQB qInvB mHash salt : List Byte) : Outcome :=
+  match encodeK H G nB mHash salt with
+  | some em => privateChecked nB eB em pB qB dPB dQB qInvB
+  | none => .invalid
 
 end VG.Spec.RsaPss

@@ -16,7 +16,7 @@ open Spec Spec.RsaPss
 
 open Mgf1 (Hash)
 open Proof.Mgf1 (Valid)
-open Rsa (publicOp)
+open Rsa (publicOpChecked)
 
 variable {H G : Hash}
 
@@ -24,13 +24,13 @@ theorem verify_iff (hH : Valid H) (hG : Valid G) {nB eB mHash sB : List Byte}
     {sLen : Option Nat} :
     verify H G nB eB mHash sB sLen = true ↔
       sB.length = nB.length ∧ ∃ salt em, (sLen = none ∨ sLen = some salt.length) ∧
-        encodeK H G nB mHash salt = some em ∧ publicOp nB eB sB = some em := by
+        encodeK H G nB mHash salt = some em ∧ publicOpChecked nB eB sB = some em := by
   unfold verify encodeK
   dsimp only
   generalize nB.length - emLength (bitLength (Rsa.os2ip nB) - 1) = d
   simp only [Bool.and_eq_true, beq_iff_eq, and_congr_right_iff]
   intro _
-  cases publicOp nB eB sB with
+  cases publicOpChecked nB eB sB with
   | none => simp
   | some x =>
     simp only [Bool.and_eq_true, beq_iff_eq, verifyEncoding_iff hH hG]

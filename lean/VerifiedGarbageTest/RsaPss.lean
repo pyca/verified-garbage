@@ -20,7 +20,10 @@ embedded in this test.
   shorter.
 * Signature generation (`SigGenPSS_186-3.txt`, `..._TruncatedSHAs.txt`, which
   give `d` and the salt): `encodeK` of the message's digest with the salt is
-  `S^e mod n` as `k` octets, `verify` accepts `S`, and `S` is `EM^d mod n`.
+  `S^e mod n` as `k` octets, `verify` accepts `S`, `S` is `EM^d mod n`, and
+  `sign` gives `S` with the key in CRT form (its factors recovered from `d`
+  by `recoverPrimes`); it refuses a salt too long and a digest of the wrong
+  length.
 -/
 
 namespace VG.Test.RsaPss
@@ -118,6 +121,24 @@ def checkGen (v : Vector) : Except String Unit := do
   unless Rsa.i2osp (Rsa.powMod (Rsa.os2ip em) (Rsa.os2ip v.d) n) k == v.sig do
     throw "S is not EM^d mod n"
   unless verify H H v.n v.e mHash v.sig (some salt.length) do throw "verify"
+  -- Signing with the CRT form of the key, its factors recovered from `d`.
+  let e := Rsa.os2ip v.e
+  let (some (p, q), _) := Rsa.recoverPrimes n e (Rsa.os2ip v.d) | throw "factors not found"
+  let some (dP, dQ, qInv) := Rsa.crtValues p q (Rsa.os2ip v.d) | throw "no CRT values"
+  let pB := Rsa.i2osp p k
+  let qB := Rsa.i2osp q k
+  let key := (pB, qB, Rsa.i2osp dP k, Rsa.i2osp dQ k, Rsa.i2osp qInv k)
+  unless sign H H v.n v.e key.1 key.2.1 key.2.2.1 key.2.2.2.1 key.2.2.2.2 mHash salt ==
+      .ok v.sig do
+    throw "sign"
+  -- A salt too long for the modulus, and a digest of the wrong length.
+  let long := List.replicate (k - H.len - 1) 0
+  unless sign H H v.n v.e key.1 key.2.1 key.2.2.1 key.2.2.2.1 key.2.2.2.2 mHash long ==
+      .invalid do
+    throw "signed with a salt too long"
+  unless sign H H v.n v.e key.1 key.2.1 key.2.2.1 key.2.2.2.1 key.2.2.2.2 (0 :: mHash) salt ==
+      .invalid do
+    throw "signed a digest of the wrong length"
 
 /-- Checks every vector of a file; `count` is the number expected. -/
 def checkFile (root : System.FilePath) (name last : String) (count : Nat)
@@ -143,7 +164,8 @@ def checkMgf1 : Except String Unit := do
 
 #assert_standard_axioms Spec.RsaPss.encodeK
 #assert_standard_axioms Spec.RsaPss.verify
-#assert_no_compiler_overrides Spec.RsaPss.encodeK Spec.RsaPss.verify Spec.Mgf1.mgf1
+#assert_standard_axioms Spec.RsaPss.sign
+#assert_no_compiler_overrides Spec.RsaPss.encodeK Spec.RsaPss.verify Spec.RsaPss.sign Spec.Mgf1.mgf1
 #assert_spec_origin
 
 run_cmd do
