@@ -264,7 +264,9 @@ def copyH : Prog isa :=
 /-- The counter, big-endian, after `H` in `Y` (in `rcx`); the message's
 length, `hLen + 4`, and its `mgfNb` blocks, for `ctHash`. -/
 def counter : List Instr :=
-  [.mov .rax (.mem (sp sCtr)), .bswap32 .rax, .store32 (at_ .rcx H.D) .rax,
+  [.mov .rax (.mem (sp sCtr)), .store8 (at_ .rcx (H.D + 3)) .rax, .shift .shr .rax 8,
+    .store8 (at_ .rcx (H.D + 2)) .rax, .shift .shr .rax 8, .store8 (at_ .rcx (H.D + 1)) .rax,
+    .shift .shr .rax 8, .store8 (at_ .rcx H.D) .rax,
     .mov32 .rax (.imm (BitVec.ofNat 32 (H.D + 4))), .store (sp sL) .rax,
     .mov32 .rax (.imm (BitVec.ofNat 32 (mgfNb H))), .store (sp sNb) .rax]
 

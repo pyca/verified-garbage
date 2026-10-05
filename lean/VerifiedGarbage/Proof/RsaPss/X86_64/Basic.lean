@@ -397,4 +397,11 @@ theorem Lay.of_rep {u u' : State} {F S : Addr} (L : Lay u F S) {V V' : Nat → B
 
 theorem trunc_zext (b : Byte) : BitVec.setWidth 8 (BitVec.setWidth 64 b) = b := by simp
 
+theorem off_plus (p : Addr) (a b : Nat) : off p a + BitVec.ofNat 64 b = off p (a + b) := off_off p a b
+
+theorem zx32 {n : Nat} (h : n < 2 ^ 32) : (BitVec.ofNat 32 n).setWidth 64 = BitVec.ofNat 64 n := by
+  apply BitVec.eq_of_toNat_eq
+  simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
+  omega
+
 end VG.Proof.RsaPss.X86_64
