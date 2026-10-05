@@ -272,4 +272,98 @@ theorem posScan_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {
     xrun [ea_ix0, J.rdi, J.r8, J.rdx, J.rsi, J.r11, off_plus, l₁, r₁]
     exact scan_step (fun i => V (e + i)) j
 
+/-- `fnz` of a list's bytes is `lz`, if that is below `j`. -/
+theorem fnz_lz (l : List Byte) : ∀ j ≤ l.length, fnz (fun i => l.getD i 0) j = if lz l < j then some (lz l) else none
+  | 0, _ => by simp [fnz]
+  | j + 1, hj => by
+    have ih := fnz_lz l j (by omega)
+    simp only [fnz, ih]
+    by_cases h : lz l < j
+    · rw [ifp h]; exact (ifp (show lz l < j + 1 by omega) _ _).symm
+    · rw [ifn h]
+      by_cases h' : lz l = j
+      · subst h'
+        rw [ifn (getD_lz_ne (by omega)), ifp (by omega)]
+      · rw [ifp (getD_lt_lz (by omega)), ifn (by omega)]
+
+/-! ## `posCheck` -/
+
+/-- `acc` after `posCheck`: the first nonzero byte is `0x01`, there is one,
+and, if the salt's length is fixed, the salt after it has that length. -/
+def acc1V (acc : BitVec 64) (fd : Bool) (val : Byte) (fixed : Bool) (sl slen : BitVec 64) : BitVec 64 :=
+  (acc ||| ((BitVec.setWidth 64 val ^^^ 1#64) ||| ((if fd then BitVec.allOnes 64 else 0) ^^^ BitVec.allOnes 64))) |||
+    (if fixed then sl ^^^ slen else 0)
+
+theorem acc1V_eq_zero (acc : BitVec 64) (fd : Bool) (val : Byte) (fixed : Bool) (sl slen : BitVec 64) :
+    acc1V acc fd val fixed sl slen = 0 ↔ acc = 0 ∧ val = 1 ∧ fd = true ∧ (fixed = true → sl = slen) := by
+  unfold acc1V
+  rw [or_eq_zero64, or_eq_zero64, or_eq_zero64, xor_eq_zero, show (1#64 : BitVec 64) = BitVec.setWidth 64 (1 : Byte)
+    from rfl, zext_inj, xor_eq_zero]
+  cases fd <;> cases fixed <;> simp [and_assoc]
+
+include hH in
+theorem posCheck_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {W : Nat → BitVec 64}
+    (R : Rep u.mem F S V W) {db pos : Nat} {fd fixed : Bool} {val : Byte} (hdb : W 24 = BitVec.ofNat 64 db)
+    (hany : W 35 = if fixed then 0 else 1) (hpos : pos < db)
+    (hdx : u.gpr .rdx = if fd then BitVec.allOnes 64 else 0) (hsi : u.gpr .rsi = BitVec.ofNat 64 pos)
+    (h11 : u.gpr .r11 = BitVec.setWidth 64 val) :
+    WP isa (posCheck H) u fun u' => Lay u' F S ∧ Keep [.r11, .rdx, .rax, .rcx, .r9] u u' ∧
+      Rep u'.mem F S V (upd (upd (upd W 34 (BitVec.ofNat 64 pos)) 33
+        (acc1V (W 33) fd val fixed (BitVec.ofNat 64 (db - pos - 1)) (W 36))) 27
+        (BitVec.ofNat 64 (db - pos - 1 + (8 + H.D)))) := by
+  have hD := hH.hD0
+  have hDN := hH.hDN
+  have hN := hH.N_le
+  have G' := L.geo
+  have R1 := R.wf G' (k := 34) (by decide) (BitVec.ofNat 64 pos)
+  rw [show off F (8 * 34) = off F sPos from rfl] at R1
+  have hs : BitVec.signExtend 64 (4294967295 : BitVec 32) = BitVec.allOnes 64 := by decide
+  have hsub : BitVec.ofNat 64 db - BitVec.ofNat 64 pos - 1 = BitVec.ofNat 64 (db - pos - 1) := by
+    rw [VG.Offset.ofNat_sub_ofNat (show pos ≤ db by omega), show (1 : BitVec 64) = BitVec.ofNat 64 1 from rfl,
+      VG.Offset.ofNat_sub_ofNat (show 1 ≤ db - pos by omega)]
+  set a1 := W 33 ||| ((BitVec.setWidth 64 val ^^^ 1#64) ||| ((if fd then BitVec.allOnes 64 else 0) ^^^
+    BitVec.allOnes 64)) with ha1
+  refine WP.seq (WP.mono (WP.keep [.r11, .rdx, .rax, .rcx, .r9] (Q := fun v => v.gpr .rax = a1 ∧
+      v.gpr .rcx = BitVec.ofNat 64 (db - pos - 1) ∧ v.zf = some (decide (W 35 = 0)) ∧
+      v.mem = u.mem.writeW (off F sPos) (BitVec.ofNat 64 pos)) ?_ rfl) fun v ⟨⟨h₁, h₂, hz, hm⟩, hk⟩ => ?_)
+  · have e24 : (u.mem.writeW (off F sPos) (BitVec.ofNat 64 pos)).readW (off F sDb) 64 = BitVec.ofNat 64 db := by
+      rw [R1.rd (d := sDb) 24 rfl (by decide)]; simp [upd, hdb]
+    have e35 : (u.mem.writeW (off F sPos) (BitVec.ofNat 64 pos)).readW (off F sAny) 64 = W 35 := by
+      rw [R1.rd (d := sAny) 35 rfl (by decide)]; simp [upd]
+    xrun [ea_sp, L.rsp, L.ld (d := sAcc) (by decide), R.rd (d := sAcc) 33 rfl (by decide), L.st (d := sPos) (by decide),
+      L.ld (d := sDb) (by decide), L.ld (d := sAny) (by decide), e24, e35, hdx, hsi, h11, hs, hsub]
+    exact ⟨rfl, by rw [BitVec.and_self]; rfl⟩
+  have R1' : Rep v.mem F S V (upd W 34 (BitVec.ofNat 64 pos)) := hm ▸ R1
+  have Lv : Lay v F S := L.of_rep' R R1' (by simp [upd]) (hk.gpr (by decide)) hk.2.2
+  have hzf : v.zf = some fixed := by rw [hz, hany]; cases fixed <;> decide
+  set acc1 := acc1V (W 33) fd val fixed (BitVec.ofNat 64 (db - pos - 1)) (W 36) with hacc1
+  refine WP.seq (WP.mono (Q := fun (w : State) => Keep [.r9, .rax] v w ∧ w.mem = v.mem ∧ w.gpr .rax = acc1)
+    ?_ fun w ⟨kw, hmw, haxw⟩ => ?_)
+  · refine WP.ite (M := isa) _ (show isa.eval .e v = _ from hzf) (fun hb => ?_) (fun hb => ?_)
+    · subst hb
+      have e36 : v.mem.readW (off F sSlen) 64 = W 36 := by
+        rw [R1'.rd (d := sSlen) 36 rfl (by decide)]; simp [upd]
+      refine WP.mono (WP.keep [.r9, .rax] (Q := fun w => w.mem = v.mem ∧ w.gpr .rax = acc1) ?_ rfl)
+        fun w ⟨h, k'⟩ => ⟨k', h⟩
+      xrun [ea_sp, Lv.rsp, Lv.ld (d := sSlen) (by decide), e36, h₁, h₂]
+      simp only [hacc1, acc1V, ha1, ite_true]
+    · subst hb
+      refine WP.mono (WP.keep [] (Q := fun w => w = v) ?_ rfl) fun w ⟨hw, _⟩ => ?_
+      · xrun
+      · subst hw
+        refine ⟨Keep.refl _ _, rfl, ?_⟩
+        rw [h₁, hacc1, acc1V, ha1]; simp
+  have Lw : Lay w F S := Lv.congr (kw.gpr (by decide)) kw.2.2 (by rw [hmw])
+  have Rw : Rep w.mem F S V (upd W 34 (BitVec.ofNat 64 pos)) := hmw ▸ R1'
+  have R2 := (Rw.wf G' (k := 33) (by decide) acc1).wf G' (k := 27) (by decide)
+    (BitVec.ofNat 64 (db - pos - 1 + (8 + H.D)))
+  rw [show off F (8 * 33) = off F sAcc from rfl, show off F (8 * 27) = off F sL from rfl] at R2
+  refine WP.mono (WP.keep [.rcx] (Q := fun x => x.mem = (w.mem.writeW (off F sAcc) acc1).writeW (off F sL)
+      (BitVec.ofNat 64 (db - pos - 1 + (8 + H.D)))) ?_ rfl) fun x ⟨hmx, kx⟩ =>
+    ⟨Lw.of_rep' Rw (hmx ▸ R2) (by simp [upd]) (kx.gpr (by decide)) kx.2.2,
+      (hk.trans (kw.trans kx)).mono (by decide), hmx ▸ R2⟩
+  xrun [ea_sp, Lw.rsp, Lw.st (d := sAcc) (by decide), Lw.st (d := sL) (by decide), haxw,
+    (kw.gpr (by decide)).trans h₂, ofNat_add_lit, VG.Proof.MlKem.X86_64.sx_ofNat (show 8 + H.D < 2 ^ 31 by omega)]
+  rw [BitVec.ofNat_add_ofNat]
+
 end VG.Proof.RsaPss.X86_64
