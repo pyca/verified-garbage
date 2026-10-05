@@ -120,4 +120,19 @@ theorem xor16R_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t) {b : Reg} (hb 
   simp only [Nat.add_zero]
   rfl
 
+/-- `xor16 b 0 d`, `b` pointing at `W + e`, the blocks apart. -/
+theorem xor16P_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t) {b : Reg} (hb : b ≠ .eax) {e d : Nat}
+    (hbv : t.gpr b = p.W + BitVec.ofNat 32 e) (he : e + 16 ≤ 2560) (hd : d + 16 ≤ 2560)
+    (hed : e + 16 ≤ d ∨ d + 16 ≤ e) :
+    ∃ t', runBlock isa (xor16 b 0 d) t = some t' ∧ t'.mem = xorMem16 t.mem (w64 p.W) e (w64 p.W) d ∧
+      (∀ r, r ≠ .eax → t'.gpr r = t.gpr r) ∧ t'.rd = t.rd ∧ t'.wr = t.wr := by
+  have aE : ∀ {k : Nat}, k < 16 → w64 (p.W + BitVec.ofNat 32 e + BitVec.ofNat 32 k) = w64 p.W + BitVec.ofNat 64 (e + k) :=
+    fun hk => by rw [Proof.AesGcm.X86.add_ofNat_assoc32]; exact L.aW (by omega)
+  refine ⟨_, by grun [xor16, xorW, E.ebp, hbv, aE, L.aW, E.perm.wR, E.perm.wW], ?_, fun r h₁ => by gregs [h₁],
+    by gmems [], by gmems []⟩
+  gmems []
+  rw [Proof.AesGcm.X86.store4_eq]
+  simp only [Nat.add_zero, Nat.zero_add]
+  rfl
+
 end VG.Proof.AesOcb.X86
