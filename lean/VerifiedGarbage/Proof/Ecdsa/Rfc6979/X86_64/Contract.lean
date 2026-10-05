@@ -6,7 +6,7 @@ import VerifiedGarbage.Proof.Framework.Contract
 # Deterministic ECDSA on x86-64: the contract the proof is written against
 
 The facts of `I.signContract` for an instance `I` of a curve of `len`-byte
-scalars with a hash of `I.hashLen` bytes, for x86-64 and 240 bytes of stack,
+scalars with a hash of `I.hashLen` bytes, for x86-64 and `S` bytes of stack,
 by name: `vg_ecdsa_<curve>_<hash>_sign(out = rdi, d = rsi, digest = rdx,
 scratch = rcx)`, the result in `eax`. Each instance's file shows
 `I.signContract` implies it.
@@ -20,15 +20,15 @@ open VG VG.X86_64 Spec.Weierstrass Spec.Ecdsa
 abbrev result (I : Spec.Ecdsa.Rfc6979.Instance) (m : Mem) (d digest : Addr) : Option (Nat × Nat) × Nat :=
   I.result m d digest
 
-def rfcX86_64 (I : Spec.Ecdsa.Rfc6979.Instance) : Contract X86_64.isa where
+def rfcX86_64 (I : Spec.Ecdsa.Rfc6979.Instance) (S : Nat) : Contract X86_64.isa where
   pre s :=
     let out : Region := ⟨s.gpr .rdi, 2 * I.ecdsa.curve.len⟩
     let d : Region := ⟨s.gpr .rsi, I.ecdsa.curve.len⟩
     let digest : Region := ⟨s.gpr .rdx, I.hashLen⟩
     let scratch : Region := ⟨s.gpr .rcx, 8192⟩
     let ret : Region := ⟨s.gpr .rsp, 8⟩
-    let stk : Region := ⟨s.gpr .rsp - BitVec.ofNat 64 240, 240⟩
-    240 ≤ (s.gpr .rsp).toNat ∧ s.rd = [d, digest] ∧ s.wr = [out, scratch] ∧
+    let stk : Region := ⟨s.gpr .rsp - BitVec.ofNat 64 S, S⟩
+    S ≤ (s.gpr .rsp).toNat ∧ s.rd = [d, digest] ∧ s.wr = [out, scratch] ∧
       out.Disjoint d ∧ out.Disjoint digest ∧ out.Disjoint scratch ∧
       d.Disjoint scratch ∧ digest.Disjoint scratch ∧
       ret.Disjoint out ∧ ret.Disjoint d ∧ ret.Disjoint digest ∧ ret.Disjoint scratch ∧
