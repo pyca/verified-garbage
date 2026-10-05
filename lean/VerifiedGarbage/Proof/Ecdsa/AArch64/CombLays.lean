@@ -69,7 +69,9 @@ theorem tcombLay (hc : CfgOk c) : TCombLay c.combCfg size := by
   have hbits : c.combCfg.bits = bitsAt c.n 0 := rfl
   have hw : c.combCfg.w = 7 := rfl
   have hJ : c.combCfg.J = (64 * c.n + 6) / 7 := rfl
-  refine ⟨combLay hc, ⟨by rw [hw]; decide, by rw [hw]; decide⟩, ?_, ?_, ?_, ?_, ?_, ?_, by show c.n ≤ 8; omega, ⟨?_, ?_⟩⟩
+  have h2 := hc.n2
+  refine ⟨combLay hc, ⟨by rw [hw]; decide, by rw [hw]; decide⟩, ?_, ?_, ?_, ?_, ?_, ?_, by show c.n ≤ 8; omega,
+    h2, ⟨?_, ?_⟩, ⟨?_, ?_⟩⟩
   · rw [hk, hw, hJ]; omega
   · rw [hbits, hk]; show _ ≤ 8192; omega
   · rw [hbits, hk, ← hb0]; exact bitsAt_mod8 c 1
@@ -88,6 +90,8 @@ theorem tcombLay (hc : CfgOk c) : TCombLay c.combCfg size := by
       have : ∀ i ∈ [AP, BM, ZERO, RX, RY, RZ, TX, TY, TZ, PT, T0, T1, T2, T3, T4, T5, DX, DY, DZ],
         i < 45 := by decide
       exact Or.inr (sl_below_bits c (this i hi) 0 _)
+  · show (64 + 8 * c.n * 20) % 16 = 0; omega
+  · show (64 + 8 * c.n * 21) % 16 = 0; omega
   · show 16 * c.n * 2 ^ (7 - 1) ≤ 32768; omega
   · show 16 * c.n * 2 ^ (7 - 1) < 65536; omega
 
@@ -141,8 +145,7 @@ theorem tbl_of {s₀ s : State} {T base : Addr} (hp : TblPre c s₀ T base) (hrd
     have := hp.sc _ hc
     simp only [Region.Contains] at this
     unfold ofs; omega
-  refine ⟨⟨fun i hi => ⟨_, List.mem_append_left _ (hrd ▸ hp.rd),
-    Offset.contains_base T (by omega) (by omega)⟩, fun i hi => ?_⟩, hout⟩
+  refine ⟨⟨⟨_, List.mem_append_left _ (hrd ▸ hp.rd), by simp [Region.Contains]⟩, fun i hi => ?_⟩, hout⟩
   rw [← hp.held i hi]
   refine Mem.readW_congr fun b hb => (hu _ fun w hw => ?_)
   rw [List.mem_singleton.mp hw]

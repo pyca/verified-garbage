@@ -41,9 +41,11 @@ theorem noFrames_depth {c : Prog isa} (h : c.noFrames = true) : c.aarch64Depth â
   VG.Proof.Ed25519.AArch64.Whole.depth_of_noFrames h
 
 theorem reduce_noFrames : Impl.Ed448.AArch64.scalarReduce.noFrames = true := by lit_decide
-theorem base_noFrames : Impl.Ed448.AArch64.scalarBase.noFrames = true := by lit_decide
+theorem base_noFrames : Impl.Ed448.AArch64.scalarBase.noFrames = true :=
+  Proof.Ed448.AArch64.scalarBase_noFrames
 theorem mulAdd_noFrames : Impl.Ed448.AArch64.scalarMulAdd.noFrames = true := by lit_decide
-theorem equation_noFrames : Impl.Ed448.AArch64.verifyEquation.noFrames = true := by lit_decide
+theorem equation_noFrames : Impl.Ed448.AArch64.verifyEquation.noFrames = true :=
+  Proof.Ed448.AArch64.verifyEquation_noFrames
 
 /-! ## `vg_ed448_scalar_reduce(out, wide, scratch)` -/
 

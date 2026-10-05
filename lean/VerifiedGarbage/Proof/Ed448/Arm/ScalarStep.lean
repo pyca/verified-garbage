@@ -199,7 +199,8 @@ theorem fold_ok {o : Nat} (ho : Buf o) {s : State} (hc : Ctx8 b s) (h6 : s.gpr .
           have := L_lt
           have := Nat.mul_le_mul_left (2 ^ (16 * 28 : Nat)) h
           omega
-      rw [e]; simp only [hz, Nat.mul_zero, Nat.add_zero] at hval; exact hval
+      generalize (2 : Nat) ^ (16 * 28) = P at hval
+      rw [hz, Nat.mul_zero, Nat.add_zero, Nat.add_zero] at hval; exact e.trans hval
     refine ⟨(k1.mono (by decide)).trans (ht.rest.mono (by decide)), ?_, hlim, by rw [hV]; exact hlt,
       by rw [hV]; exact hmod⟩
     have := ht.frame; rw [r0, m1] at this; exact this

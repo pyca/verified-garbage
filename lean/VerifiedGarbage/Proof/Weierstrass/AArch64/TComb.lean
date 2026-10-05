@@ -1,4 +1,5 @@
 import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombTbl
+import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombSelectV
 import VerifiedGarbage.Proof.Weierstrass.CombW
 
 /-!
@@ -134,18 +135,18 @@ theorem tentry_ok {K : TCombCfg} {C : Curve} {base : Addr} {size k i : Nat} {T :
   have hwlt := combWin_lt K.w k i
   have hmag : magH K.H (combWin K.w k i) ≤ K.H := magH_le (by rw [← hH2]; exact hwlt)
   have hlen := tcombWords_length (n := K.M.n) (R := 2 ^ (64 * K.M.n)) (p := C.p) hV.len hV.lenH
-  have hreg : ∀ e < K.H, ∀ i' < 2 * K.M.n, InRegions (s₁.rd ++ s₁.wr)
-      (T + BitVec.ofNat 64 (i * K.tblBytes) + BitVec.ofNat 64 (16 * K.M.n * e + 8 * i')) 8 :=
-    fun e he i' hi' => by
-      rw [k₁.rd, k₁.wr, TCombCfg.tblBytes, tbl_addr]
-      refine hTM.rd _ ?_
-      rw [hlen]
-      have h1 : i * (K.H * (2 * K.M.n)) + e * (2 * K.M.n) + i' < i * (K.H * (2 * K.M.n)) + K.H * (2 * K.M.n) := by
-        have := Nat.mul_le_mul_right (2 * K.M.n) (show e + 1 ≤ K.H from he)
-        rw [Nat.succ_mul] at this; omega
-      have h2 := Nat.mul_le_mul_right (K.H * (2 * K.M.n)) (show i + 1 ≤ K.J from hi)
-      rw [Nat.succ_mul] at h2
-      omega
+  have hreg : InRegions (s₁.rd ++ s₁.wr) (T + BitVec.ofNat 64 (i * K.tblBytes)) (16 * K.M.n * K.H) := by
+    obtain ⟨r, hr, hc⟩ := hTM.rd
+    refine ⟨r, by rw [k₁.rd, k₁.wr]; exact hr, Region.contains_off hc ?_⟩
+    rw [hlen, TCombCfg.tblBytes]
+    have h2 := Nat.mul_le_mul_right (16 * K.M.n * K.H) (show i + 1 ≤ K.J from hi)
+    rw [Nat.succ_mul] at h2
+    have e : 16 * K.M.n * K.H = 8 * (K.H * (2 * K.M.n)) := by
+      rw [Nat.mul_comm K.H, ← Nat.mul_assoc, ← Nat.mul_assoc]
+    rw [Nat.mul_left_comm 8 K.J, ← e]
+    omega
+  have hHe : K.H % 2 = 0 := by
+    unfold TCombCfg.H; rw [show K.w - 1 = (K.w - 2) + 1 by omega, Nat.pow_succ]; omega
   have hout' : ∀ e < K.H, ∀ i' < 2 * K.M.n, ∀ b < 8, size ≤ ofs base
       (T + BitVec.ofNat 64 (i * K.tblBytes) + BitVec.ofNat 64 (16 * K.M.n * e + 8 * i') + BitVec.ofNat 64 b) :=
     fun e he i' hi' b hb => by
@@ -158,8 +159,8 @@ theorem tentry_ok {K : TCombCfg} {C : Curve} {base : Addr} {size k i : Nat} {T :
       have h2 := Nat.mul_le_mul_right (K.H * (2 * K.M.n)) (show i + 1 ≤ K.J from hi)
       rw [Nat.succ_mul] at h2
       omega
-  refine WP.mono (tselect_ok K hn4 hs₁ hx₁ m₁ hmag hL.tbl.1 hL.tbl.2 (by omega)
-    (by rw [sy₁]; exact hT) hE hap (Nat.lt_trans hV.one_lt hpn) hreg hout') fun s₂ h₂ => ?_
+  refine WP.mono (tselect_ok K hn4 hL.n2 hs₁ hx₁ m₁ hmag hHe hL.tbl.1 hL.tbl.2 (by omega)
+    (by rw [sy₁]; exact hT) hE hL.e16 hap (Nat.lt_trans hV.one_lt hpn) hreg hout') fun s₂ h₂ => ?_
   obtain ⟨ex₂, ey₂, ez₂, k₂, U₂⟩ := h₂
   rw [k₁.mem] at ex₂ ey₂ U₂
   generalize ha : magH K.H (combWin K.w k i) = a at ex₂ ey₂ ez₂ hmag

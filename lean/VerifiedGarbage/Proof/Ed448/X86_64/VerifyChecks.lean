@@ -97,21 +97,25 @@ open VG.Proof.X448.X86_64 (rv mv fe E Index Keeps freeze_ok stores_ok val7 mv7 r
 theorem val7_inj {f g : Nat → Nat} (hf : ∀ i < 7, f i < 2 ^ 64) (hg : ∀ i < 7, g i < 2 ^ 64) :
     val7 f = val7 g ↔ ∀ i < 7, f i = g i := by
   constructor
-  · intro h i hi
-    have := hf 0 (by decide); have := hf 1 (by decide); have := hf 2 (by decide)
-    have := hf 3 (by decide); have := hf 4 (by decide); have := hf 5 (by decide)
-    have := hf 6 (by decide); have := hg 0 (by decide); have := hg 1 (by decide)
-    have := hg 2 (by decide); have := hg 3 (by decide); have := hg 4 (by decide)
-    have := hg 5 (by decide); have := hg 6 (by decide)
+  · intro h
+    have d : ∀ {a b c e : Nat}, a < 2 ^ 64 → c < 2 ^ 64 → a + 2 ^ 64 * b = c + 2 ^ 64 * e →
+        a = c ∧ b = e := fun ha hc h => by omega
     simp only [val7] at h
+    obtain ⟨e0, h⟩ := d (hf 0 (by decide)) (hg 0 (by decide)) h
+    obtain ⟨e1, h⟩ := d (hf 1 (by decide)) (hg 1 (by decide)) h
+    obtain ⟨e2, h⟩ := d (hf 2 (by decide)) (hg 2 (by decide)) h
+    obtain ⟨e3, h⟩ := d (hf 3 (by decide)) (hg 3 (by decide)) h
+    obtain ⟨e4, h⟩ := d (hf 4 (by decide)) (hg 4 (by decide)) h
+    obtain ⟨e5, e6⟩ := d (hf 5 (by decide)) (hg 5 (by decide)) h
+    intro i hi
     match i, hi with
-    | 0, _ => omega
-    | 1, _ => omega
-    | 2, _ => omega
-    | 3, _ => omega
-    | 4, _ => omega
-    | 5, _ => omega
-    | 6, _ => omega
+    | 0, _ => exact e0
+    | 1, _ => exact e1
+    | 2, _ => exact e2
+    | 3, _ => exact e3
+    | 4, _ => exact e4
+    | 5, _ => exact e5
+    | 6, _ => exact e6
   · exact fun h => VG.Proof.X448.X86_64.val7_congr h
 
 theorem toFe_eq_iff (x y : Nat) : VG.Proof.X448.toFe x = VG.Proof.X448.toFe y ↔ x % Spec.X448.P = y % Spec.X448.P := by
@@ -213,9 +217,11 @@ theorem loadsS_ok (s : State) {p : Addr} (hp : s.gpr .rsi = p)
   have r3 := hr 3 (by decide); have r4 := hr 4 (by decide); have r5 := hr 5 (by decide)
   have r6 := hr 6 (by decide)
   erun [List.range_succ, List.range_zero, List.nil_append, List.map_append, List.map_cons, List.map_nil,
-    List.cons_append, w, W, hp, r0, r1, r2, r3, r4, r5, r6, List.getD_cons_succ, List.getD_cons_zero, rv, mv,
-    Keeps, Nat.reduceMul, Nat.reduceAdd, VG.Proof.X448.X86_64.word, off]
-  intro r hr
+    List.cons_append, w, W, hp, r0, r1, r2, r3, r4, r5, r6, List.getD_cons_succ, List.getD_cons_zero,
+    Keeps, Nat.reduceMul, Nat.reduceAdd]
+  refine ⟨?_, fun r hr => ?_⟩
+  · simp only [rv, mv, RegUpd.gpr_setReg, reduceCtorEq, ↓reduceIte, VG.Proof.X448.X86_64.word, off,
+      Nat.reduceAdd]
   simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
   obtain ⟨h1, h2, h3, h4, h5, h6, h7⟩ := hr
   simp only [h1, h2, h3, h4, h5, h6, h7, ite_false]
@@ -288,7 +294,7 @@ theorem sCheck_ok {s : State} {base p : Addr} (hs : Scr s base) (hp : s.gpr .rsi
       rw [← kWords_val, ← k1, k2.2.1]; rfl
     have hy : rv s2 W = Spec.Ed448.decodeLE (Spec.Ed448.bytesAt s.mem p 56) := by
       rw [v2, ← VG.Proof.X448.X86_64.leNum_bytesAt_mv, Proof.Ed448.decodeLE_eq]
-      congr 1
+      refine congrArg Proof.X25519.leNum ?_
       simp only [Spec.X448.bytesAt, Spec.Ed448.bytesAt, off, BitVec.add_zero]
       exact List.map_congr_left fun i hi => hb1 i (by simp at hi; omega)
     have hb : s3.mem (p + BitVec.ofNat 64 56) = s.mem (p + BitVec.ofNat 64 56) := by

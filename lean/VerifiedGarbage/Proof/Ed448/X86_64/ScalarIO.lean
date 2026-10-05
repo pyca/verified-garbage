@@ -246,7 +246,7 @@ theorem finish_ok {s : State} {base q : Addr} (hs : Scr s base) (hq : word s.mem
     rw [gt r (by simp [hr.2.2.1, hr.2.2.2.1, hr.2.2.2.2.1, hr.2.2.2.2.2.1, hr.2.2.2.2.2.2.1,
       hr.2.2.2.2.2.2.2]), gc r hr.2.1, gb, ka.1 r (by simp [hr.1])]
   rw [mt, bytesAt_57, mc, encodeLE_eq, leBytes_57 hlt]
-  congr 1
+  refine congrArg₂ (· ++ ·) ?_ ?_
   · have e : bytesAt (b.mem.writeW (q + BitVec.ofNat 64 56) (0 : Byte)) q 56 = bytesAt b.mem q 56 := by
       simp only [bytesAt]
       refine List.map_congr_left fun i hi => ?_

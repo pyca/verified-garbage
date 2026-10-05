@@ -1,4 +1,4 @@
-import VerifiedGarbage.Proof.Bignum.Math
+import VerifiedGarbage.Proof.Rsa.Octets
 import Mathlib.Data.Int.ModEq
 import Mathlib.FieldTheory.Finite.Basic
 
@@ -25,70 +25,6 @@ namespace VG.Proof.Rsa
 
 open VG.Spec.Rsa
 open VG.Proof.Bignum (powMod_eq)
-
-/-! ## Octet strings -/
-
-theorem os2ip_snoc (l : List Byte) (b : Byte) : os2ip (l ++ [b]) = 256 * os2ip l + b.toNat := by
-  simp only [os2ip, List.foldl_append, List.foldl_cons, List.foldl_nil]
-
-theorem i2osp_succ (x k : Nat) : i2osp x (k + 1) = i2osp (x / 256) k ++ [BitVec.ofNat 8 x] := by
-  simp only [i2osp, List.range_succ, List.map_append, List.map_cons, List.map_nil]
-  congr 1
-  · refine List.map_congr_left fun i hi => ?_
-    have hi := List.mem_range.mp hi
-    rw [Nat.div_div_eq_div_mul, ← Nat.pow_succ']
-    congr 3
-    omega
-  · rw [show k + 1 - 1 - k = 0 by omega, Nat.pow_zero, Nat.div_one]
-
-/-- I2OSP then OS2IP keeps the low `k` octets. -/
-theorem os2ip_i2osp (x k : Nat) : os2ip (i2osp x k) = x % 256 ^ k := by
-  induction k generalizing x with
-  | zero => simp [i2osp, os2ip, Nat.mod_one]
-  | succ k ih =>
-    rw [i2osp_succ, os2ip_snoc, ih, Nat.pow_succ', Nat.mod_mul, BitVec.toNat_ofNat]
-    omega
-
-theorem i2osp_length (x k : Nat) : (i2osp x k).length = k := by
-  simp [i2osp]
-
-/-- An integer of `k` octets is below `256^k`. -/
-theorem lt_of_os2ip (bs : List Byte) : os2ip bs < 256 ^ bs.length := by
-  induction bs using List.reverseRecOn with
-  | nil => simp [os2ip]
-  | append_singleton l b ih =>
-    rw [os2ip_snoc, List.length_append, List.length_singleton, Nat.pow_succ]
-    have := b.isLt
-    simp only [Nat.reducePow] at this
-    omega
-
-/-! ## The CRT -/
-
-/-- `h = (m₁ - m₂) qInv mod p` of `decryptCrt`, for `p > 0`, is below `p`. -/
-theorem crt_h_lt {p : Nat} (hp : 0 < p) (x : Int) : (x % (p : Int)).toNat < p := by
-  have h1 := Int.emod_nonneg x (by omega : (p : Int) ≠ 0)
-  have h2 := Int.emod_lt_of_pos x (by omega : (0 : Int) < p)
-  omega
-
-/-- The result of `decryptCrt` is below `n`. -/
-theorem decryptCrt_lt {n p q dP dQ qInv c m : Nat}
-    (h : decryptCrt n p q dP dQ qInv c = some m) : m < n := by
-  simp only [decryptCrt] at h
-  split at h
-  · rename_i hc
-    obtain ⟨hcn, hpq, -⟩ := hc
-    cases h
-    have hp : 0 < p := Nat.pos_of_ne_zero fun h0 => by subst h0; omega
-    have hq : 0 < q := Nat.pos_of_ne_zero fun h0 => by subst h0; simp at hpq; omega
-    have hm₂ : powMod c dQ q < q := by rw [powMod_eq]; exact Nat.mod_lt _ hq
-    have hh := crt_h_lt hp (((powMod c dP p : Nat) - (powMod c dQ q : Nat)) * (qInv : Int))
-    -- `m₂ + q h ≤ (q - 1) + q (p - 1) = p q - 1`.
-    have : q * (((powMod c dP p : Nat) - (powMod c dQ q : Nat)) * (qInv : Int) %
-        (p : Int)).toNat ≤ q * (p - 1) := Nat.mul_le_mul_left _ (by omega)
-    have : q * (p - 1) + q = p * q := by
-      rw [Nat.mul_sub_one, Nat.mul_comm q p]; have := Nat.le_mul_of_pos_left q hp; omega
-    omega
-  · simp at h
 
 /-! ## The checked private operation -/
 

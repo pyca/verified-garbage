@@ -1,5 +1,6 @@
 import VerifiedGarbage.Proof.Ed448.X86.VerifyMain
 import VerifiedGarbage.Proof.Ed448.X86.VerifyLit
+import VerifiedGarbage.Proof.Ed448.X86.RestCT
 import VerifiedGarbage.Proof.Framework.X86.Taint
 import VerifiedGarbage.Proof.Framework.X86.Inline
 import VerifiedGarbage.Proof.Framework.Contract
@@ -69,10 +70,12 @@ theorem verifyTaint_agree {s t : State} (hs : verifyEquationLocal.pre s) (ht : v
       Mem.readW_byte t.mem _ (Nat.mod_lt _ (by decide))]
     exact congrArg _ (ha ((k - 4) / 4) (by omega))
 
+/-- Constant time: the entry block from `verifyTaint`, and the rest from
+`fieldτ`, in one check with base-point multiplication's (`RestCT.lean`). -/
 theorem verifyEquation_ct :
     ConstantTime isa verifyEquationLocal.pre verifyEquationLocal.pub verifyEquation :=
-  VG.Taint.constantTime (A := taint) verifyTaint (fun _ _ hs ht hp => verifyTaint_agree hs ht hp)
-    (by taint_decide)
+  RelCT.constantTime (relCT_split rfl verifyTaint (fun _ _ h => verifyTaint_agree h.1 h.2.1 h.2.2)
+    (by taint_decide) verifyRest_ct)
 
 theorem verifyEquation_ok (hR : RecoverOk) (hE : VerifyEqOk) (s : State) (h : verifyEquationLocal.pre s) :
     ∃ tr t, Exec isa verifyEquation s tr t ∧ abiPreserved s t ∧ verifyEquationLocal.post s t := by
