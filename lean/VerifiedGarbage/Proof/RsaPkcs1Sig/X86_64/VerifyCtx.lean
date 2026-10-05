@@ -87,7 +87,7 @@ theorem leak_eq4 {a b c d a' b' c' d' : List Byte} (ha : a.length = a'.length) (
     (h : (a ++ b ++ c ++ d).map (·.toNat) = (a' ++ b' ++ c' ++ d').map (·.toNat)) :
     a = a' ∧ b = b' ∧ c = c' ∧ d = d' := by
   have hi : a ++ b ++ c ++ d = a' ++ b' ++ c' ++ d' :=
-    List.map_injective_iff.2 (fun _ _ h => BitVec.toNat_inj.1 h) h
+    (List.map_inj_right (fun _ _ h => BitVec.toNat_inj.1 h)).1 h
   obtain ⟨h₁, rfl⟩ := List.append_inj hi (by simp [ha, hb, hc])
   obtain ⟨h₂, rfl⟩ := List.append_inj h₁ (by simp [ha, hb])
   obtain ⟨rfl, rfl⟩ := List.append_inj h₂ ha

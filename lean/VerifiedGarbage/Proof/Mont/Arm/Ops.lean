@@ -1,4 +1,5 @@
 import VerifiedGarbage.Proof.Mont.Arm.Csub
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # Montgomery arithmetic on 32-bit ARM: the operations
@@ -480,8 +481,15 @@ theorem mul_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M 
     · have := Nat.mul_le_mul_right (2 ^ (16 * (2 * W + 1))) h
       omega
   have hV : dval t.mem base (acc + 4 * (2 * W)) (2 * W + 1) < 2 * m := htop ▸ I.lt
-  refine WP.mono (csub_ok ht hW hD (src := acc + 4 * (2 * W)) (o := o) (by omega) (by omega) (by omega)
-    (by omega) (by omega) (by omega) (by omega) (by omega) hmt hm0 (I.digs.mono (by omega)) hV)
+  refine WP.mono (csub_ok ht hW hD (src := acc + 4 * (2 * W)) (o := o)
+    (by omega_using [hacc, hL.acc_le])
+    (by omega_using [hW2, hL.o_le])
+    (by omega_using [hW2, hM.tmp])
+    (by omega_using [hW2, hM.mo])
+    (by omega_using [hW2, hacc, hL.acc_tmp])
+    (by omega_using [hW2, hM.sep])
+    (by omega_using [hW2, hacc, hL.acc_o])
+    (by omega_using [hW2, hL.o_tmp]) hmt hm0 (I.digs.mono (by omega)) hV)
     fun u ⟨O, V, K⟩ => ⟨⟨(K₅.trans I.rest).trans (K.mono (by simp [clob])), ?_⟩, ?_, ?_⟩
   · have O₅' : Outside base acc (accLen M) s.mem s₅.mem := by rw [hacc]; exact O₅
     have Ot : Outside base acc (accLen M) s₅.mem t.mem := by rw [hacc]; exact I.out
@@ -544,8 +552,15 @@ theorem add_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M 
     rw [hW2, ← wordsVal_eq_val32, ← wordsVal_eq_val32]; exact hAB
   have hm₄ : val32 s₄.mem base M.mo W = m := by
     rw [O₄.val32 (by omega) (by omega), hW2, ← wordsVal_eq_val32]; exact hM.val
-  refine WP.mono (csub_ok hs₄ hW hD (src := acc) (o := o) (by omega) (by omega) (by omega) (by omega) (by omega)
-    (by omega) (by omega) (by omega) hm₄ hm0 hd₄ (by rw [hsum]; exact hA)) fun u ⟨O, V, K⟩ => ⟨⟨?_, ?_⟩, ?_⟩
+  refine WP.mono (csub_ok hs₄ hW hD (src := acc) (o := o)
+    (by omega_using [hacc, hL.acc_le])
+    (by omega_using [hW2, hL.o_le])
+    (by omega_using [hW2, hM.tmp])
+    (by omega_using [hW2, hM.mo])
+    (by omega_using [hW2, hacc, hL.acc_tmp])
+    (by omega_using [hW2, hM.sep])
+    (by omega_using [hW2, hacc, hL.acc_o])
+    (by omega_using [hW2, hL.o_tmp]) hm₄ hm0 hd₄ (by rw [hsum]; exact hA)) fun u ⟨O, V, K⟩ => ⟨⟨?_, ?_⟩, ?_⟩
   · exact (K₂₃.trans (m₄.rest _)).trans (K.mono (by simp [clob]))
   · have O₄' : Outside base acc (accLen M) s.mem s₄.mem := O₄.mono (Nat.le_refl _) (by omega)
     refine (Outs.of_outside O₄' (by simp)).trans ?_
@@ -618,8 +633,15 @@ theorem sub_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M 
     · rw [low j h]; exact D₃ j h
     · rw [show j = 2 * W by omega, top]; omega
   have hm₅ : val32 s₅.mem base M.mo W = m := by rw [O₅.val32 (by omega) (by omega), hmv]
-  refine WP.mono (csub_ok hs₅ hW hD (src := acc) (o := o) (by omega) (by omega) (by omega) (by omega) (by omega)
-    (by omega) (by omega) (by omega) hm₅ hm0 hd₅ (by rw [hdiff]; omega)) fun u ⟨O, V, K⟩ => ⟨⟨?_, ?_⟩, ?_⟩
+  refine WP.mono (csub_ok hs₅ hW hD (src := acc) (o := o)
+    (by omega_using [hacc, hL.acc_le])
+    (by omega_using [hW2, hL.o_le])
+    (by omega_using [hW2, hM.tmp])
+    (by omega_using [hW2, hM.mo])
+    (by omega_using [hW2, hacc, hL.acc_tmp])
+    (by omega_using [hW2, hM.sep])
+    (by omega_using [hW2, hacc, hL.acc_o])
+    (by omega_using [hW2, hL.o_tmp]) hm₅ hm0 hd₅ (by rw [hdiff]; omega)) fun u ⟨O, V, K⟩ => ⟨⟨?_, ?_⟩, ?_⟩
   · exact (K₂₄.trans (m₅.rest _)).trans (K.mono (by simp [clob]))
   · have O₅' : Outside base acc (accLen M) s.mem s₅.mem := O₅.mono (Nat.le_refl _) (by omega)
     refine (Outs.of_outside O₅' (by simp)).trans ?_

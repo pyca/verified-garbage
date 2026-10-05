@@ -6,20 +6,18 @@ import VerifiedGarbage.TCB.Artifact
 
 **Trusted** (as every file in `Spec/`). In the module `rsa`:
 
-* `vg_rsa_public`: RSAEP and RSAVP1 (`Rsa.publicOp`);
 * `vg_rsa_public_precompute`: the values of a public key's modulus that
   RSAEP needs (`Rsa.publicPrecompute`), to be kept with the key;
-* `vg_rsa_public_precomputed`: RSAEP and RSAVP1 from those values, without
-  computing them again;
 * `vg_rsa_private_crt`: RSADP and RSASP1 with the private key
   `(p, q, dP, dQ, qInv)` (`Rsa.privateCrt`);
 * `vg_rsa_crt_values`: the CRT values `(dP, dQ, qInv)` of the private key
   `(p, q, d)` (`Rsa.crtKey`), for `vg_rsa_private_crt`;
 * `vg_rsa_recover_primes`: the prime factors `(p, q)` of the modulus of the
   private key `(n, e, d)` (`Rsa.primesKey`), for `vg_rsa_crt_values`;
-* `vg_rsa_public_checked` and `vg_rsa_public_precomputed_checked`:
-  `vg_rsa_public` and `vg_rsa_public_precomputed` within BoringSSL's limits
-  on the public exponent (`Rsa.publicOpChecked`);
+* `vg_rsa_public_checked` and `vg_rsa_public_precomputed_checked`: RSAEP
+  and RSAVP1 (`Rsa.publicOp`) within BoringSSL's limits on the public
+  exponent (`Rsa.publicOpChecked`), the second from the values
+  `vg_rsa_public_precompute` computed, without computing them again;
 * `vg_rsa_private_checked`: `vg_rsa_private_crt` given the public exponent
   too, releasing a result only if it passes BoringSSL's check against it
   (`Rsa.privateChecked`);
@@ -27,7 +25,7 @@ import VerifiedGarbage.TCB.Artifact
   `(n, e, d, p, q, dP, dQ, qInv)` (`Rsa.checkKey`).
 
 A private key is brought to the CRT form once, when it is loaded, and every
-operation is `vg_rsa_private_crt`.
+operation is `vg_rsa_private_checked`.
 
 Every number is a slice of octets, most significant first, with a length of
 its own (a `Sig` slice carries its own length). The modulus `n` is `n_len`
@@ -96,9 +94,9 @@ def scratchSafety : List String :=
     "The contents of `scratch` on return are unspecified and may contain secrets; the caller \
       must destroy them after use."]
 
-/-! ## `vg_rsa_public` -/
+/-! ## The public-key operation's signature -/
 
-/-- `vg_rsa_public(out: *mut u8, out_len: usize, n: *const u8, n_len: usize,
+/-- `vg_rsa_public_checked(out: *mut u8, out_len: usize, n: *const u8, n_len: usize,
 e: *const u8, e_len: usize, input: *const u8, input_len: usize,
 scratch: *mut u64, scratch_len: usize) -> u32`. -/
 def publicSig : Sig where
@@ -106,37 +104,6 @@ def publicSig : Sig where
     ("e", .slice false .u8 "e_len"), ("input", .slice false .u8 "input_len"),
     ("scratch", .slice true .u64 "scratch_len")]
   ret := some .u32
-
-/-- RSAEP of the input with the public key `(n, e)` (`publicOp`). Constant
-time but for the public key. -/
-def publicContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  publicSig.contract A
-    (pre := fun _out outLen _n nLen _e eLen _input inputLen _scratch scratchLen _ =>
-      lenValid nLen.toNat ∧ outLen.toNat = nLen.toNat ∧ inputLen.toNat = nLen.toNat ∧
-        1 ≤ eLen.toNat ∧ eLen.toNat ≤ nLen.toNat ∧ scratchWords nLen.toNat ≤ scratchLen.toNat)
-    (post := fun out _outLen n nLen e eLen input _inputLen _scratch _scratchLen m m' r =>
-      written m' out nLen.toNat r
-        (publicOp (bytesAt m n nLen.toNat) (bytesAt m e eLen.toNat) (bytesAt m input nLen.toNat)))
-    (writeArgs := true) (stack := stack)
-    (leak := some fun _out _outLen n nLen e eLen _input _inputLen _scratch _scratchLen m =>
-      (bytesAt m n nLen.toNat ++ bytesAt m e eLen.toNat).map (·.toNat))
-
-def publicApi : Api where
-  module := "rsa"
-  name := "vg_rsa_public"
-  sig := publicSig
-  writeArgs := true
-  contracts := some fun A stack => publicContract A stack
-  summary := "The RSA public-key operation: RSAEP (RFC 8017 §5.1.1), which is also RSAVP1 \
-    (§5.2.2). With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to \
-    8192 bits, its first byte not zero) and the public exponent `e` (`e_len` bytes, most \
-    significant first), writes `input^e mod n` (`n_len` bytes, most significant first) to \
-    `out` and returns 1; or writes zeros and returns 0 if `n` is not such a modulus or the \
-    input (`n_len` bytes, most significant first) is not below `n`.\n\n\
-    Contract: `VG.Spec.Rsa.publicContract`. Constant time but for the public key: timing may \
-    depend on the pointers, the lengths and the contents of `n` and `e`, not on the input."
-  safety := ["`n_len` must be in 64..=1024.", "`out_len` and `input_len` must be `n_len`.",
-    "`e_len` must be in 1..=`n_len`."] ++ scratchSafety
 
 /-! ## `vg_rsa_public_precompute` -/
 
@@ -168,8 +135,8 @@ def publicPrecomputeApi : Api where
   sig := publicPrecomputeSig
   writeArgs := true
   contracts := some fun A stack => publicPrecomputeContract A stack
-  summary := "The values of an RSA modulus that `vg_rsa_public_precomputed` takes, so that \
-    they are computed once per public key rather than once per operation. With the modulus \
+  summary := "The values of an RSA modulus that `vg_rsa_public_precomputed_checked` takes, \
+    so that they are computed once per public key rather than once per operation. With the modulus \
     `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte \
     not zero) of `w = ⌈n_len / 8⌉` words of 64 bits, writes `n` and then `R² mod n` for \
     `R = 2^(64 w)` to `pre` (`w` words each, least significant first) and returns 1; or \
@@ -179,9 +146,9 @@ def publicPrecomputeApi : Api where
   safety := ["`n_len` must be in 64..=1024.", "`pre_len` must be `2 * ⌈n_len / 8⌉`."] ++
     scratchSafety
 
-/-! ## `vg_rsa_public_precomputed` -/
+/-! ## The signature of the public-key operation from precomputed values -/
 
-/-- `vg_rsa_public_precomputed(out: *mut u8, out_len: usize, pre: *const u64,
+/-- `vg_rsa_public_precomputed_checked(out: *mut u8, out_len: usize, pre: *const u64,
 pre_len: usize, e: *const u8, e_len: usize, input: *const u8,
 input_len: usize, scratch: *mut u64, scratch_len: usize) -> u32`. -/
 def publicPrecomputedSig : Sig where
@@ -189,47 +156,6 @@ def publicPrecomputedSig : Sig where
     ("e", .slice false .u8 "e_len"), ("input", .slice false .u8 "input_len"),
     ("scratch", .slice true .u64 "scratch_len")]
   ret := some .u32
-
-/-- RSAEP of the input with the public key `(n, e)`, given `n` by its
-precomputed values (`publicPrecompute`): for whichever `n_len`-octet modulus
-`pre` holds the values of, as `publicContract`. If `pre` holds the values
-of no modulus, the result is unspecified (but memory safety and constant
-time are not). Constant time but for the public key. -/
-def publicPrecomputedContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  publicPrecomputedSig.contract A
-    (pre := fun _out outLen _pre preLen _e eLen _input inputLen _scratch scratchLen _ =>
-      lenValid outLen.toNat ∧ preLen.toNat = precomputedWords outLen.toNat ∧
-        inputLen.toNat = outLen.toNat ∧ 1 ≤ eLen.toNat ∧ eLen.toNat ≤ outLen.toNat ∧
-        scratchWords outLen.toNat ≤ scratchLen.toNat)
-    (post := fun out outLen pre preLen e eLen input _inputLen _scratch _scratchLen m m' r =>
-      ∀ nB : List Byte, nB.length = outLen.toNat →
-        publicPrecompute nB = some (wordsAt m pre preLen.toNat) →
-        written m' out outLen.toNat r
-          (publicOp nB (bytesAt m e eLen.toNat) (bytesAt m input outLen.toNat)))
-    (writeArgs := true) (stack := stack)
-    (leak := some fun _out _outLen pre preLen e eLen _input _inputLen _scratch _scratchLen m =>
-      (wordsAt m pre preLen.toNat).map (·.toNat) ++ (bytesAt m e eLen.toNat).map (·.toNat))
-
-def publicPrecomputedApi : Api where
-  module := "rsa"
-  name := "vg_rsa_public_precomputed"
-  sig := publicPrecomputedSig
-  writeArgs := true
-  contracts := some fun A stack => publicPrecomputedContract A stack
-  summary := "The RSA public-key operation, as `vg_rsa_public`, with the modulus given by \
-    the values `vg_rsa_public_precompute` wrote for it to `pre`. With those values of a \
-    modulus `n` of `out_len` bytes and the public exponent `e` (`e_len` bytes, most \
-    significant first), writes `input^e mod n` (`out_len` bytes, most significant first) \
-    to `out` and returns 1; or writes zeros and returns 0 if the input (`out_len` bytes, \
-    most significant first) is not below `n`.\n\n\
-    Contract: `VG.Spec.Rsa.publicPrecomputedContract`. Constant time but for the public \
-    key: timing may depend on the pointers, the lengths and the contents of `pre` and `e`, \
-    not on the input."
-  safety := ["`out_len` must be in 64..=1024.", "`input_len` must be `out_len`.",
-    "`pre_len` must be `2 * ⌈out_len / 8⌉`.", "`e_len` must be in 1..=`out_len`.",
-    "For the result to be RSAEP's, `pre` must hold what `vg_rsa_public_precompute` wrote \
-      for a modulus of `out_len` bytes (returning 1); otherwise it is unspecified."] ++
-    scratchSafety
 
 /-! ## `vg_rsa_private_crt` -/
 
@@ -401,9 +327,9 @@ def recoverPrimesApi : Api where
 /-! ## BoringSSL's checks
 
 The functions below check what BoringSSL checks (`Rsa.publicOpChecked`,
-`Rsa.privateChecked`, `Rsa.checkKey`). They take the place of
-`vg_rsa_public`, `vg_rsa_public_precomputed` and `vg_rsa_private_crt` once
-they are implemented. -/
+`Rsa.privateChecked`, `Rsa.checkKey`). The public-key operations without
+the check of `e` are retired; `vg_rsa_private_crt` remains, as the
+operation that `vg_rsa_private_checked` checks. -/
 
 /-- The public exponent and its limits, in the summaries. -/
 def exponentDoc : String :=

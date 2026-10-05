@@ -159,7 +159,7 @@ theorem sep_step {s t₂ : State} (hp : EPre s) (h : AfterPs s t₂) : WP isa (.
     rw [hm₃, byte_ww _ _ _ (by unfold oZ oEM at *; omega) (by omega) (by decide),
       byte_wb _ _ _ (by omega) (by omega) (by omega)]
   refine ⟨(k₃.gpr (by decide)).trans h.rsp, k₃.2.1.trans h.rd, k₃.2.2.trans h.wr, ?_, ?_,
-    by rw [hb₃ _ (le_refl _) (by omega)]; exact h.e0, by rw [hb₃ _ (by omega) (by omega)]; exact h.e1,
+    by rw [hb₃ _ (Nat.le_refl _) (by omega)]; exact h.e0, by rw [hb₃ _ (by omega) (by omega)]; exact h.e1,
     fun i hi => by rw [hb₃ _ (by omega) (by omega)]; exact h.ep i hi, ?_, ?_, hdi₃, hsi₃, hcx₃, h10₃, hz₃⟩
   · rw [hm₃]
     exact Outside.ww (Outside.wb h.out _ (by omega) (by omega) (by omega)) _ (by decide) (by decide) (by decide)

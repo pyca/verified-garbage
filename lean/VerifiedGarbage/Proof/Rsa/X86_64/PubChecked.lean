@@ -119,7 +119,6 @@ theorem publicChecked_implies : pubChkContract.Implies (Spec.Rsa.publicCheckedCo
     sig_reduce [Spec.Rsa.publicCheckedContract, Spec.Rsa.publicSig, abi, argRegs, pubChkContract, pubContract, stackArgs_four, List.append_eq]
     sig_and_intros
     sig_close
-    all_goals with_reducible assumption
   post := by sig_implies_post [Spec.Rsa.publicCheckedContract, Spec.Rsa.publicSig, abi, argRegs, pubChkContract, pubContract, stackArgs_four, List.append_eq]
   pub := by
     rintro s₁ s₂ - - h

@@ -86,7 +86,7 @@ theorem bytesAt_length (m : Mem) (p : Addr) (n : Nat) : (Spec.Rsa.bytesAt m p n)
   simp [Spec.Rsa.bytesAt]
 
 theorem i2osp_zero' (k : Nat) : Spec.Rsa.i2osp 0 k = List.replicate k 0 := by
-  rw [i2osp_zero]; simp
+  rw [i2osp_zero]; simp [List.map_const']
 
 theorem setWidth_flag (c : Bool) : (BitVec.ofNat 64 c.toNat).setWidth 32 = if c then 1 else 0 := by
   cases c <;> rfl

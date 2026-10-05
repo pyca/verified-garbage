@@ -1,5 +1,5 @@
 import VerifiedGarbage.TCB.AArch64.Target
-import VerifiedGarbage.Proof.Weierstrass.AArch64.HasLaw
+import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
 import VerifiedGarbage.Proof.P384.Comb7
 import VerifiedGarbage.Impl.Ecdsa.P384.AArch64
 import VerifiedGarbage.Proof.Ecdsa.AArch64.P384.Verified
@@ -15,7 +15,7 @@ A generic file (see `TCB/Emit.lean`) over P-384's group law `h`, the variant
 
 namespace VG.Generic.P384.AArch64.EcdsaP384
 
-def artifacts (h : Proof.Weierstrass.AArch64.HasLaw Spec.P384.curve) : List Artifact := [
+def artifacts (h : Proof.Weierstrass.AArch64.HasLawInv Spec.P384.curve) : List Artifact := [
   { Spec.Ecdsa.P384.signApi with
     target := AArch64.target
     doc := Spec.Ecdsa.P384.signApi.doc (notes := ["The function saves the callee-saved registers \

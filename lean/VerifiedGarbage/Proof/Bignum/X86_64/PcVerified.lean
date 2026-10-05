@@ -42,7 +42,7 @@ theorem precompute_implies : pcContract.Implies (Spec.Rsa.publicPrecomputeContra
     rintro s₁ s₂ - - h
     sig_pub [Spec.Rsa.publicPrecomputeContract, Spec.Rsa.publicPrecomputeSig, abi, argRegs, pcContract, List.append_eq] at h
     obtain ⟨hsp, hl, hdi, hsi, hdx, hcx, h8, h9⟩ := h
-    refine ⟨?_, List.map_injective_iff.2 (fun _ _ h => BitVec.toNat_inj.1 h) hl⟩
+    refine ⟨?_, (List.map_inj_right (fun _ _ h => BitVec.toNat_inj.1 h)).1 hl⟩
     simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]
     exact ⟨hdi, hsi, hdx, hcx, h8, h9, hsp⟩
   sat := by sig_implies_sat [Spec.Rsa.publicPrecomputeContract, Spec.Rsa.publicPrecomputeSig, abi, argRegs, pcContract, List.append_eq] [pcSatState] using pcSatState

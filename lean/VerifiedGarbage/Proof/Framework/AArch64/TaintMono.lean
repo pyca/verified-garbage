@@ -34,7 +34,7 @@ theorem step_mono {τ σ τ' : T} (i : Instr) (h : τ.subset σ = true) (hs : st
   have and2 : ∀ {a b : Reg}, (pub τ a && pub τ b) = true → (pub σ a && pub σ b) = true :=
     fun hab => by
       simp only [Bool.and_eq_true] at hab ⊢; exact ⟨pub_mono h hab.1, pub_mono h hab.2⟩
-  cases i <;> simp only [step, reduceCtorEq] at hs ⊢
+  cases i <;> simp only [step, stepFn, reduceCtorEq] at hs ⊢
   all_goals first
     | (cases hs; exact ⟨_, rfl, set_mono h _ and2⟩)
     | (cases hs; exact ⟨_, rfl, set_mono h _ (pub_mono h)⟩)
@@ -91,7 +91,7 @@ theorem set_keeps {Φ F σ : T} (hΦF : Φ.subset F = true) (hΦ : Φ.subset σ 
 
 theorem step_keeps {F Φ σ σ' : T} (i : Instr) (hk : keepsI F i = true) (hΦF : Φ.subset F = true)
     (hΦ : Φ.subset σ = true) (hs : step σ i = some σ') : Φ.subset σ' = true := by
-  cases i <;> simp only [step, reduceCtorEq] at hs <;>
+  cases i <;> simp only [step, stepFn, reduceCtorEq] at hs <;>
     simp only [keepsI, gprDst, Bool.not_eq_true'] at hk
   all_goals first
     | (cases hs; exact set_keeps hΦF hΦ hk _)

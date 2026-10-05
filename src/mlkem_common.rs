@@ -37,20 +37,21 @@ pub(crate) enum Backend {
     /// AVX2: four instances of SHAKE128 at once.
     #[cfg(target_arch = "x86_64")]
     Avx2,
+    /// Four-way SHAKE with AVX-512VL quadword rotates.
+    #[cfg(target_arch = "x86_64")]
+    Avx512,
 }
 
 impl Backend {
-    /// The best implementation, on a CPU with the features `f`, of functions
-    /// whose AVX2 instances need `avx2` and whose SHA-3 instances need
-    /// `sha3`: on AArch64, the Keccak implementation the SHA-3 functions use
-    /// (`crate::hashes::sha3::Backend::detected`, which chooses SHA-3 only
-    /// with the `cpu-features-env` feature, when `VG_CPU_FEATURES` asks for
-    /// `sha3`) if the CPU has `sha3`; on x86-64, AVX2 if it has `avx2`.
+    /// Select the best implementation supported by all three KEM operations.
+    /// On x86-64, prefer the AVX-512VL sampler, then AVX2. On AArch64,
+    /// follow the SHA-3 backend selected for the hash functions.
     // Each target uses only some of the arguments.
     #[allow(unused_variables)]
     pub(crate) fn select(
         f: crate::cpu::Features,
         avx2: crate::cpu::Features,
+        avx512: crate::cpu::Features,
         sha3: crate::cpu::Features,
     ) -> Backend {
         #[cfg(all(target_arch = "aarch64", feature = "cpu-features-env"))]
@@ -59,6 +60,10 @@ impl Backend {
         }
         match crate::hashes::sha3::Backend::detected() {
             crate::hashes::sha3::Backend::Scalar => {
+                #[cfg(target_arch = "x86_64")]
+                if f.contains(avx512) {
+                    return Backend::Avx512;
+                }
                 #[cfg(target_arch = "x86_64")]
                 if f.contains(avx2) {
                     return Backend::Avx2;
@@ -90,8 +95,11 @@ macro_rules! ml_kem {
         encaps_sha3: ($encaps_sha3:path, $encaps_sha3_features:path),
         decaps_sha3: ($decaps_sha3:path, $decaps_sha3_features:path),
         keygen_avx2: ($keygen_avx2:path, $keygen_avx2_features:path),
+        keygen_avx512: ($keygen_avx512:path, $keygen_avx512_features:path),
         encaps_avx2: ($encaps_avx2:path, $encaps_avx2_features:path),
+        encaps_avx512: ($encaps_avx512:path, $encaps_avx512_features:path),
         decaps_avx2: ($decaps_avx2:path, $decaps_avx2_features:path),
+        decaps_avx512: ($decaps_avx512:path, $decaps_avx512_features:path),
         ek: $ek:literal,
         dk: $dk:literal,
         ct: $ct:literal,
@@ -109,6 +117,11 @@ macro_rules! ml_kem {
                 &[$keygen_avx2_features, $encaps_avx2_features, $decaps_avx2_features];
             #[cfg(not(target_arch = "x86_64"))]
             const AVX2: &[$crate::cpu::Features] = &[];
+            #[cfg(target_arch = "x86_64")]
+            const AVX512: &[$crate::cpu::Features] =
+                &[$keygen_avx512_features, $encaps_avx512_features, $decaps_avx512_features];
+            #[cfg(not(target_arch = "x86_64"))]
+            const AVX512: &[$crate::cpu::Features] = &[];
             #[cfg(all(target_arch = "aarch64", feature = "cpu-features-env"))]
             const SHA3: &[$crate::cpu::Features] =
                 &[$keygen_sha3_features, $encaps_sha3_features, $decaps_sha3_features];
@@ -117,6 +130,7 @@ macro_rules! ml_kem {
             Backend::select(
                 $crate::cpu::detected(),
                 const { $crate::cpu::Features::all(AVX2) },
+                const { $crate::cpu::Features::all(AVX512) },
                 const { $crate::cpu::Features::all(SHA3) },
             )
         }
@@ -204,6 +218,8 @@ macro_rules! ml_kem {
                         Backend::Sha3 => $encaps_sha3(&self.bytes, m, &mut key, &mut ct, &mut scratch),
                         #[cfg(target_arch = "x86_64")]
                         Backend::Avx2 => $encaps_avx2(&self.bytes, m, &mut key, &mut ct, &mut scratch),
+                        #[cfg(target_arch = "x86_64")]
+                        Backend::Avx512 => $encaps_avx512(&self.bytes, m, &mut key, &mut ct, &mut scratch),
                     }
                 };
                 zeroize(&mut scratch);
@@ -273,6 +289,8 @@ macro_rules! ml_kem {
                         Backend::Sha3 => $keygen_sha3(seed, &mut key.ek.bytes, &mut key.dk, &mut scratch),
                         #[cfg(target_arch = "x86_64")]
                         Backend::Avx2 => $keygen_avx2(seed, &mut key.ek.bytes, &mut key.dk, &mut scratch),
+                        #[cfg(target_arch = "x86_64")]
+                        Backend::Avx512 => $keygen_avx512(seed, &mut key.ek.bytes, &mut key.dk, &mut scratch),
                     }
                 };
                 zeroize(&mut scratch);
@@ -318,6 +336,8 @@ macro_rules! ml_kem {
                         Backend::Sha3 => $decaps_sha3(&self.dk, ct, &mut key, &mut scratch),
                         #[cfg(target_arch = "x86_64")]
                         Backend::Avx2 => $decaps_avx2(&self.dk, ct, &mut key, &mut scratch),
+                        #[cfg(target_arch = "x86_64")]
+                        Backend::Avx512 => $decaps_avx512(&self.dk, ct, &mut key, &mut scratch),
                     }
                 };
                 zeroize(&mut scratch);
@@ -336,3 +356,33 @@ macro_rules! ml_kem {
 }
 
 pub(crate) use ml_kem;
+
+#[cfg(all(test, target_arch = "x86_64"))]
+mod tests {
+    use super::Backend;
+    use crate::cpu::Features;
+
+    #[test]
+    fn selects_complete_feature_sets() {
+        let avx2 = Features::of(&["avx", "avx2"]);
+        let avx512 = Features::of(&["avx", "avx2", "avx512f", "avx512vl"]);
+        let sha3 = Features::of(&[]);
+        assert_eq!(Backend::select(avx512, avx2, avx512, sha3), Backend::Avx512);
+        for features in [
+            avx2,
+            Features::of(&["avx", "avx2", "avx512f"]),
+            Features::of(&["avx", "avx2", "avx512vl"]),
+        ] {
+            assert_eq!(Backend::select(features, avx2, avx512, sha3), Backend::Avx2);
+        }
+        for features in [
+            Features::of(&[]),
+            Features::of(&["avx", "avx512f", "avx512vl"]),
+        ] {
+            assert_eq!(
+                Backend::select(features, avx2, avx512, sha3),
+                Backend::Scalar
+            );
+        }
+    }
+}

@@ -293,9 +293,9 @@ theorem prf_body {s : State} (hp : DPre s) {R : BitVec 64} {EM K : List Byte} {m
   · exact (h.keep.trans kh).widen fun p hp => by
       simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false, or_assoc] at hp
       rcases hp with rfl | rfl | rfl | rfl
-      · exact ⟨_, List.mem_cons_self .., le_refl _, le_refl _⟩
-      · exact ⟨_, List.mem_cons_of_mem _ (List.mem_singleton_self _), le_refl _, le_refl _⟩
-      · exact ⟨_, List.mem_cons_self .., le_refl _, le_refl _⟩
+      · exact ⟨_, List.mem_cons_self .., Nat.le_refl _, Nat.le_refl _⟩
+      · exact ⟨_, List.mem_cons_of_mem _ (List.mem_singleton_self _), Nat.le_refl _, Nat.le_refl _⟩
+      · exact ⟨_, List.mem_cons_self .., Nat.le_refl _, Nat.le_refl _⟩
       · exact ⟨(dst, 32 * N), List.mem_cons_of_mem _ (List.mem_singleton_self _), by simp, by simp; omega⟩
 
 

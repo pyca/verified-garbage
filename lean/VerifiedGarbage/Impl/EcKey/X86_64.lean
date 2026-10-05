@@ -49,7 +49,7 @@ def upToPow : Prog isa :=
   .seq (bits (c.sl EXPP) (bitsAt c.n 1) (8 * c.n)) <|
   .seq (bits (c.sl EXPN) (bitsAt c.n 2) (8 * c.n)) <|
   .seq c.gMul <|
-  .seq (pow c.powP) (.block [])
+  .seq c.pPow (.block [])
 
 /-- `04 ‖ x ‖ y` (or zeros) to `out`, the flag's low bit to `rax`, and the
 callee-saved registers restored. -/
