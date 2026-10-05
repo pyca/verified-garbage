@@ -214,7 +214,10 @@ fn encrypt_with<const L: usize>(
     zeroize(&mut seed);
     // `PublicKey::new` checked `n`, and the message's length is checked
     // above.
-    assert_eq!(r, 1, "vg_rsa_oaep_*_encrypt refused a valid key and message");
+    assert_eq!(
+        r, 1,
+        "vg_rsa_oaep_*_encrypt refused a valid key and message"
+    );
     Ok(out)
 }
 
@@ -311,7 +314,9 @@ fn decrypt_sha1_mgf1_sha1(h: Sha1Backend, crt: Backend) -> DecryptFn {
         (Sha1Backend::Scalar, Backend::Ifma) => vg_rsa_oaep_sha1_mgf1_sha1_decrypt_crt_ifma,
         (Sha1Backend::ShaNi, Backend::Baseline) => vg_rsa_oaep_sha1_mgf1_sha1_decrypt_sha1_shani,
         (Sha1Backend::ShaNi, Backend::Adx) => vg_rsa_oaep_sha1_mgf1_sha1_decrypt_sha1_shani_crt_adx,
-        (Sha1Backend::ShaNi, Backend::Ifma) => vg_rsa_oaep_sha1_mgf1_sha1_decrypt_sha1_shani_crt_ifma,
+        (Sha1Backend::ShaNi, Backend::Ifma) => {
+            vg_rsa_oaep_sha1_mgf1_sha1_decrypt_sha1_shani_crt_ifma
+        }
     }
 }
 
@@ -321,11 +326,21 @@ fn encrypt_sha224_mgf1_sha1(h: Sha224Backend, g: Sha1Backend) -> EncryptFn<28> {
     use crate::arch::rsa_oaep_sha224_mgf1_sha1::*;
     match (h, g) {
         (Sha224Backend::Scalar, Sha1Backend::Scalar) => vg_rsa_oaep_sha224_mgf1_sha1_encrypt,
-        (Sha224Backend::Scalar, Sha1Backend::ShaNi) => vg_rsa_oaep_sha224_mgf1_sha1_encrypt_mgf1_shani,
-        (Sha224Backend::ShaNi, Sha1Backend::Scalar) => vg_rsa_oaep_sha224_mgf1_sha1_encrypt_sha224_shani,
-        (Sha224Backend::ShaNi, Sha1Backend::ShaNi) => vg_rsa_oaep_sha224_mgf1_sha1_encrypt_sha224_shani_mgf1_shani,
-        (Sha224Backend::Avx2, Sha1Backend::Scalar) => vg_rsa_oaep_sha224_mgf1_sha1_encrypt_sha224_avx2,
-        (Sha224Backend::Avx2, Sha1Backend::ShaNi) => vg_rsa_oaep_sha224_mgf1_sha1_encrypt_sha224_avx2_mgf1_shani,
+        (Sha224Backend::Scalar, Sha1Backend::ShaNi) => {
+            vg_rsa_oaep_sha224_mgf1_sha1_encrypt_mgf1_shani
+        }
+        (Sha224Backend::ShaNi, Sha1Backend::Scalar) => {
+            vg_rsa_oaep_sha224_mgf1_sha1_encrypt_sha224_shani
+        }
+        (Sha224Backend::ShaNi, Sha1Backend::ShaNi) => {
+            vg_rsa_oaep_sha224_mgf1_sha1_encrypt_sha224_shani_mgf1_shani
+        }
+        (Sha224Backend::Avx2, Sha1Backend::Scalar) => {
+            vg_rsa_oaep_sha224_mgf1_sha1_encrypt_sha224_avx2
+        }
+        (Sha224Backend::Avx2, Sha1Backend::ShaNi) => {
+            vg_rsa_oaep_sha224_mgf1_sha1_encrypt_sha224_avx2_mgf1_shani
+        }
     }
 }
 
@@ -334,24 +349,60 @@ fn encrypt_sha224_mgf1_sha1(h: Sha224Backend, g: Sha1Backend) -> EncryptFn<28> {
 fn decrypt_sha224_mgf1_sha1(h: Sha224Backend, g: Sha1Backend, crt: Backend) -> DecryptFn {
     use crate::arch::rsa_oaep_sha224_mgf1_sha1::*;
     match (h, g, crt) {
-        (Sha224Backend::Scalar, Sha1Backend::Scalar, Backend::Baseline) => vg_rsa_oaep_sha224_mgf1_sha1_decrypt,
-        (Sha224Backend::Scalar, Sha1Backend::Scalar, Backend::Adx) => vg_rsa_oaep_sha224_mgf1_sha1_decrypt_crt_adx,
-        (Sha224Backend::Scalar, Sha1Backend::Scalar, Backend::Ifma) => vg_rsa_oaep_sha224_mgf1_sha1_decrypt_crt_ifma,
-        (Sha224Backend::Scalar, Sha1Backend::ShaNi, Backend::Baseline) => vg_rsa_oaep_sha224_mgf1_sha1_decrypt_mgf1_shani,
-        (Sha224Backend::Scalar, Sha1Backend::ShaNi, Backend::Adx) => vg_rsa_oaep_sha224_mgf1_sha1_decrypt_mgf1_shani_crt_adx,
-        (Sha224Backend::Scalar, Sha1Backend::ShaNi, Backend::Ifma) => vg_rsa_oaep_sha224_mgf1_sha1_decrypt_mgf1_shani_crt_ifma,
-        (Sha224Backend::ShaNi, Sha1Backend::Scalar, Backend::Baseline) => vg_rsa_oaep_sha224_mgf1_sha1_decrypt_sha224_shani,
-        (Sha224Backend::ShaNi, Sha1Backend::Scalar, Backend::Adx) => vg_rsa_oaep_sha224_mgf1_sha1_decrypt_sha224_shani_crt_adx,
-        (Sha224Backend::ShaNi, Sha1Backend::Scalar, Backend::Ifma) => vg_rsa_oaep_sha224_mgf1_sha1_decrypt_sha224_shani_crt_ifma,
-        (Sha224Backend::ShaNi, Sha1Backend::ShaNi, Backend::Baseline) => vg_rsa_oaep_sha224_mgf1_sha1_decrypt_sha224_shani_mgf1_shani,
-        (Sha224Backend::ShaNi, Sha1Backend::ShaNi, Backend::Adx) => vg_rsa_oaep_sha224_mgf1_sha1_decrypt_sha224_shani_mgf1_shani_crt_adx,
-        (Sha224Backend::ShaNi, Sha1Backend::ShaNi, Backend::Ifma) => vg_rsa_oaep_sha224_mgf1_sha1_decrypt_sha224_shani_mgf1_shani_crt_ifma,
-        (Sha224Backend::Avx2, Sha1Backend::Scalar, Backend::Baseline) => vg_rsa_oaep_sha224_mgf1_sha1_decrypt_sha224_avx2,
-        (Sha224Backend::Avx2, Sha1Backend::Scalar, Backend::Adx) => vg_rsa_oaep_sha224_mgf1_sha1_decrypt_sha224_avx2_crt_adx,
-        (Sha224Backend::Avx2, Sha1Backend::Scalar, Backend::Ifma) => vg_rsa_oaep_sha224_mgf1_sha1_decrypt_sha224_avx2_crt_ifma,
-        (Sha224Backend::Avx2, Sha1Backend::ShaNi, Backend::Baseline) => vg_rsa_oaep_sha224_mgf1_sha1_decrypt_sha224_avx2_mgf1_shani,
-        (Sha224Backend::Avx2, Sha1Backend::ShaNi, Backend::Adx) => vg_rsa_oaep_sha224_mgf1_sha1_decrypt_sha224_avx2_mgf1_shani_crt_adx,
-        (Sha224Backend::Avx2, Sha1Backend::ShaNi, Backend::Ifma) => vg_rsa_oaep_sha224_mgf1_sha1_decrypt_sha224_avx2_mgf1_shani_crt_ifma,
+        (Sha224Backend::Scalar, Sha1Backend::Scalar, Backend::Baseline) => {
+            vg_rsa_oaep_sha224_mgf1_sha1_decrypt
+        }
+        (Sha224Backend::Scalar, Sha1Backend::Scalar, Backend::Adx) => {
+            vg_rsa_oaep_sha224_mgf1_sha1_decrypt_crt_adx
+        }
+        (Sha224Backend::Scalar, Sha1Backend::Scalar, Backend::Ifma) => {
+            vg_rsa_oaep_sha224_mgf1_sha1_decrypt_crt_ifma
+        }
+        (Sha224Backend::Scalar, Sha1Backend::ShaNi, Backend::Baseline) => {
+            vg_rsa_oaep_sha224_mgf1_sha1_decrypt_mgf1_shani
+        }
+        (Sha224Backend::Scalar, Sha1Backend::ShaNi, Backend::Adx) => {
+            vg_rsa_oaep_sha224_mgf1_sha1_decrypt_mgf1_shani_crt_adx
+        }
+        (Sha224Backend::Scalar, Sha1Backend::ShaNi, Backend::Ifma) => {
+            vg_rsa_oaep_sha224_mgf1_sha1_decrypt_mgf1_shani_crt_ifma
+        }
+        (Sha224Backend::ShaNi, Sha1Backend::Scalar, Backend::Baseline) => {
+            vg_rsa_oaep_sha224_mgf1_sha1_decrypt_sha224_shani
+        }
+        (Sha224Backend::ShaNi, Sha1Backend::Scalar, Backend::Adx) => {
+            vg_rsa_oaep_sha224_mgf1_sha1_decrypt_sha224_shani_crt_adx
+        }
+        (Sha224Backend::ShaNi, Sha1Backend::Scalar, Backend::Ifma) => {
+            vg_rsa_oaep_sha224_mgf1_sha1_decrypt_sha224_shani_crt_ifma
+        }
+        (Sha224Backend::ShaNi, Sha1Backend::ShaNi, Backend::Baseline) => {
+            vg_rsa_oaep_sha224_mgf1_sha1_decrypt_sha224_shani_mgf1_shani
+        }
+        (Sha224Backend::ShaNi, Sha1Backend::ShaNi, Backend::Adx) => {
+            vg_rsa_oaep_sha224_mgf1_sha1_decrypt_sha224_shani_mgf1_shani_crt_adx
+        }
+        (Sha224Backend::ShaNi, Sha1Backend::ShaNi, Backend::Ifma) => {
+            vg_rsa_oaep_sha224_mgf1_sha1_decrypt_sha224_shani_mgf1_shani_crt_ifma
+        }
+        (Sha224Backend::Avx2, Sha1Backend::Scalar, Backend::Baseline) => {
+            vg_rsa_oaep_sha224_mgf1_sha1_decrypt_sha224_avx2
+        }
+        (Sha224Backend::Avx2, Sha1Backend::Scalar, Backend::Adx) => {
+            vg_rsa_oaep_sha224_mgf1_sha1_decrypt_sha224_avx2_crt_adx
+        }
+        (Sha224Backend::Avx2, Sha1Backend::Scalar, Backend::Ifma) => {
+            vg_rsa_oaep_sha224_mgf1_sha1_decrypt_sha224_avx2_crt_ifma
+        }
+        (Sha224Backend::Avx2, Sha1Backend::ShaNi, Backend::Baseline) => {
+            vg_rsa_oaep_sha224_mgf1_sha1_decrypt_sha224_avx2_mgf1_shani
+        }
+        (Sha224Backend::Avx2, Sha1Backend::ShaNi, Backend::Adx) => {
+            vg_rsa_oaep_sha224_mgf1_sha1_decrypt_sha224_avx2_mgf1_shani_crt_adx
+        }
+        (Sha224Backend::Avx2, Sha1Backend::ShaNi, Backend::Ifma) => {
+            vg_rsa_oaep_sha224_mgf1_sha1_decrypt_sha224_avx2_mgf1_shani_crt_ifma
+        }
     }
 }
 
@@ -374,12 +425,24 @@ fn decrypt_sha224_mgf1_sha224(h: Sha224Backend, crt: Backend) -> DecryptFn {
         (Sha224Backend::Scalar, Backend::Baseline) => vg_rsa_oaep_sha224_mgf1_sha224_decrypt,
         (Sha224Backend::Scalar, Backend::Adx) => vg_rsa_oaep_sha224_mgf1_sha224_decrypt_crt_adx,
         (Sha224Backend::Scalar, Backend::Ifma) => vg_rsa_oaep_sha224_mgf1_sha224_decrypt_crt_ifma,
-        (Sha224Backend::ShaNi, Backend::Baseline) => vg_rsa_oaep_sha224_mgf1_sha224_decrypt_sha224_shani,
-        (Sha224Backend::ShaNi, Backend::Adx) => vg_rsa_oaep_sha224_mgf1_sha224_decrypt_sha224_shani_crt_adx,
-        (Sha224Backend::ShaNi, Backend::Ifma) => vg_rsa_oaep_sha224_mgf1_sha224_decrypt_sha224_shani_crt_ifma,
-        (Sha224Backend::Avx2, Backend::Baseline) => vg_rsa_oaep_sha224_mgf1_sha224_decrypt_sha224_avx2,
-        (Sha224Backend::Avx2, Backend::Adx) => vg_rsa_oaep_sha224_mgf1_sha224_decrypt_sha224_avx2_crt_adx,
-        (Sha224Backend::Avx2, Backend::Ifma) => vg_rsa_oaep_sha224_mgf1_sha224_decrypt_sha224_avx2_crt_ifma,
+        (Sha224Backend::ShaNi, Backend::Baseline) => {
+            vg_rsa_oaep_sha224_mgf1_sha224_decrypt_sha224_shani
+        }
+        (Sha224Backend::ShaNi, Backend::Adx) => {
+            vg_rsa_oaep_sha224_mgf1_sha224_decrypt_sha224_shani_crt_adx
+        }
+        (Sha224Backend::ShaNi, Backend::Ifma) => {
+            vg_rsa_oaep_sha224_mgf1_sha224_decrypt_sha224_shani_crt_ifma
+        }
+        (Sha224Backend::Avx2, Backend::Baseline) => {
+            vg_rsa_oaep_sha224_mgf1_sha224_decrypt_sha224_avx2
+        }
+        (Sha224Backend::Avx2, Backend::Adx) => {
+            vg_rsa_oaep_sha224_mgf1_sha224_decrypt_sha224_avx2_crt_adx
+        }
+        (Sha224Backend::Avx2, Backend::Ifma) => {
+            vg_rsa_oaep_sha224_mgf1_sha224_decrypt_sha224_avx2_crt_ifma
+        }
     }
 }
 
@@ -389,11 +452,21 @@ fn encrypt_sha256_mgf1_sha1(h: Sha256Backend, g: Sha1Backend) -> EncryptFn<32> {
     use crate::arch::rsa_oaep_sha256_mgf1_sha1::*;
     match (h, g) {
         (Sha256Backend::Scalar, Sha1Backend::Scalar) => vg_rsa_oaep_sha256_mgf1_sha1_encrypt,
-        (Sha256Backend::Scalar, Sha1Backend::ShaNi) => vg_rsa_oaep_sha256_mgf1_sha1_encrypt_mgf1_shani,
-        (Sha256Backend::ShaNi, Sha1Backend::Scalar) => vg_rsa_oaep_sha256_mgf1_sha1_encrypt_sha256_shani,
-        (Sha256Backend::ShaNi, Sha1Backend::ShaNi) => vg_rsa_oaep_sha256_mgf1_sha1_encrypt_sha256_shani_mgf1_shani,
-        (Sha256Backend::Avx2, Sha1Backend::Scalar) => vg_rsa_oaep_sha256_mgf1_sha1_encrypt_sha256_avx2,
-        (Sha256Backend::Avx2, Sha1Backend::ShaNi) => vg_rsa_oaep_sha256_mgf1_sha1_encrypt_sha256_avx2_mgf1_shani,
+        (Sha256Backend::Scalar, Sha1Backend::ShaNi) => {
+            vg_rsa_oaep_sha256_mgf1_sha1_encrypt_mgf1_shani
+        }
+        (Sha256Backend::ShaNi, Sha1Backend::Scalar) => {
+            vg_rsa_oaep_sha256_mgf1_sha1_encrypt_sha256_shani
+        }
+        (Sha256Backend::ShaNi, Sha1Backend::ShaNi) => {
+            vg_rsa_oaep_sha256_mgf1_sha1_encrypt_sha256_shani_mgf1_shani
+        }
+        (Sha256Backend::Avx2, Sha1Backend::Scalar) => {
+            vg_rsa_oaep_sha256_mgf1_sha1_encrypt_sha256_avx2
+        }
+        (Sha256Backend::Avx2, Sha1Backend::ShaNi) => {
+            vg_rsa_oaep_sha256_mgf1_sha1_encrypt_sha256_avx2_mgf1_shani
+        }
     }
 }
 
@@ -402,24 +475,60 @@ fn encrypt_sha256_mgf1_sha1(h: Sha256Backend, g: Sha1Backend) -> EncryptFn<32> {
 fn decrypt_sha256_mgf1_sha1(h: Sha256Backend, g: Sha1Backend, crt: Backend) -> DecryptFn {
     use crate::arch::rsa_oaep_sha256_mgf1_sha1::*;
     match (h, g, crt) {
-        (Sha256Backend::Scalar, Sha1Backend::Scalar, Backend::Baseline) => vg_rsa_oaep_sha256_mgf1_sha1_decrypt,
-        (Sha256Backend::Scalar, Sha1Backend::Scalar, Backend::Adx) => vg_rsa_oaep_sha256_mgf1_sha1_decrypt_crt_adx,
-        (Sha256Backend::Scalar, Sha1Backend::Scalar, Backend::Ifma) => vg_rsa_oaep_sha256_mgf1_sha1_decrypt_crt_ifma,
-        (Sha256Backend::Scalar, Sha1Backend::ShaNi, Backend::Baseline) => vg_rsa_oaep_sha256_mgf1_sha1_decrypt_mgf1_shani,
-        (Sha256Backend::Scalar, Sha1Backend::ShaNi, Backend::Adx) => vg_rsa_oaep_sha256_mgf1_sha1_decrypt_mgf1_shani_crt_adx,
-        (Sha256Backend::Scalar, Sha1Backend::ShaNi, Backend::Ifma) => vg_rsa_oaep_sha256_mgf1_sha1_decrypt_mgf1_shani_crt_ifma,
-        (Sha256Backend::ShaNi, Sha1Backend::Scalar, Backend::Baseline) => vg_rsa_oaep_sha256_mgf1_sha1_decrypt_sha256_shani,
-        (Sha256Backend::ShaNi, Sha1Backend::Scalar, Backend::Adx) => vg_rsa_oaep_sha256_mgf1_sha1_decrypt_sha256_shani_crt_adx,
-        (Sha256Backend::ShaNi, Sha1Backend::Scalar, Backend::Ifma) => vg_rsa_oaep_sha256_mgf1_sha1_decrypt_sha256_shani_crt_ifma,
-        (Sha256Backend::ShaNi, Sha1Backend::ShaNi, Backend::Baseline) => vg_rsa_oaep_sha256_mgf1_sha1_decrypt_sha256_shani_mgf1_shani,
-        (Sha256Backend::ShaNi, Sha1Backend::ShaNi, Backend::Adx) => vg_rsa_oaep_sha256_mgf1_sha1_decrypt_sha256_shani_mgf1_shani_crt_adx,
-        (Sha256Backend::ShaNi, Sha1Backend::ShaNi, Backend::Ifma) => vg_rsa_oaep_sha256_mgf1_sha1_decrypt_sha256_shani_mgf1_shani_crt_ifma,
-        (Sha256Backend::Avx2, Sha1Backend::Scalar, Backend::Baseline) => vg_rsa_oaep_sha256_mgf1_sha1_decrypt_sha256_avx2,
-        (Sha256Backend::Avx2, Sha1Backend::Scalar, Backend::Adx) => vg_rsa_oaep_sha256_mgf1_sha1_decrypt_sha256_avx2_crt_adx,
-        (Sha256Backend::Avx2, Sha1Backend::Scalar, Backend::Ifma) => vg_rsa_oaep_sha256_mgf1_sha1_decrypt_sha256_avx2_crt_ifma,
-        (Sha256Backend::Avx2, Sha1Backend::ShaNi, Backend::Baseline) => vg_rsa_oaep_sha256_mgf1_sha1_decrypt_sha256_avx2_mgf1_shani,
-        (Sha256Backend::Avx2, Sha1Backend::ShaNi, Backend::Adx) => vg_rsa_oaep_sha256_mgf1_sha1_decrypt_sha256_avx2_mgf1_shani_crt_adx,
-        (Sha256Backend::Avx2, Sha1Backend::ShaNi, Backend::Ifma) => vg_rsa_oaep_sha256_mgf1_sha1_decrypt_sha256_avx2_mgf1_shani_crt_ifma,
+        (Sha256Backend::Scalar, Sha1Backend::Scalar, Backend::Baseline) => {
+            vg_rsa_oaep_sha256_mgf1_sha1_decrypt
+        }
+        (Sha256Backend::Scalar, Sha1Backend::Scalar, Backend::Adx) => {
+            vg_rsa_oaep_sha256_mgf1_sha1_decrypt_crt_adx
+        }
+        (Sha256Backend::Scalar, Sha1Backend::Scalar, Backend::Ifma) => {
+            vg_rsa_oaep_sha256_mgf1_sha1_decrypt_crt_ifma
+        }
+        (Sha256Backend::Scalar, Sha1Backend::ShaNi, Backend::Baseline) => {
+            vg_rsa_oaep_sha256_mgf1_sha1_decrypt_mgf1_shani
+        }
+        (Sha256Backend::Scalar, Sha1Backend::ShaNi, Backend::Adx) => {
+            vg_rsa_oaep_sha256_mgf1_sha1_decrypt_mgf1_shani_crt_adx
+        }
+        (Sha256Backend::Scalar, Sha1Backend::ShaNi, Backend::Ifma) => {
+            vg_rsa_oaep_sha256_mgf1_sha1_decrypt_mgf1_shani_crt_ifma
+        }
+        (Sha256Backend::ShaNi, Sha1Backend::Scalar, Backend::Baseline) => {
+            vg_rsa_oaep_sha256_mgf1_sha1_decrypt_sha256_shani
+        }
+        (Sha256Backend::ShaNi, Sha1Backend::Scalar, Backend::Adx) => {
+            vg_rsa_oaep_sha256_mgf1_sha1_decrypt_sha256_shani_crt_adx
+        }
+        (Sha256Backend::ShaNi, Sha1Backend::Scalar, Backend::Ifma) => {
+            vg_rsa_oaep_sha256_mgf1_sha1_decrypt_sha256_shani_crt_ifma
+        }
+        (Sha256Backend::ShaNi, Sha1Backend::ShaNi, Backend::Baseline) => {
+            vg_rsa_oaep_sha256_mgf1_sha1_decrypt_sha256_shani_mgf1_shani
+        }
+        (Sha256Backend::ShaNi, Sha1Backend::ShaNi, Backend::Adx) => {
+            vg_rsa_oaep_sha256_mgf1_sha1_decrypt_sha256_shani_mgf1_shani_crt_adx
+        }
+        (Sha256Backend::ShaNi, Sha1Backend::ShaNi, Backend::Ifma) => {
+            vg_rsa_oaep_sha256_mgf1_sha1_decrypt_sha256_shani_mgf1_shani_crt_ifma
+        }
+        (Sha256Backend::Avx2, Sha1Backend::Scalar, Backend::Baseline) => {
+            vg_rsa_oaep_sha256_mgf1_sha1_decrypt_sha256_avx2
+        }
+        (Sha256Backend::Avx2, Sha1Backend::Scalar, Backend::Adx) => {
+            vg_rsa_oaep_sha256_mgf1_sha1_decrypt_sha256_avx2_crt_adx
+        }
+        (Sha256Backend::Avx2, Sha1Backend::Scalar, Backend::Ifma) => {
+            vg_rsa_oaep_sha256_mgf1_sha1_decrypt_sha256_avx2_crt_ifma
+        }
+        (Sha256Backend::Avx2, Sha1Backend::ShaNi, Backend::Baseline) => {
+            vg_rsa_oaep_sha256_mgf1_sha1_decrypt_sha256_avx2_mgf1_shani
+        }
+        (Sha256Backend::Avx2, Sha1Backend::ShaNi, Backend::Adx) => {
+            vg_rsa_oaep_sha256_mgf1_sha1_decrypt_sha256_avx2_mgf1_shani_crt_adx
+        }
+        (Sha256Backend::Avx2, Sha1Backend::ShaNi, Backend::Ifma) => {
+            vg_rsa_oaep_sha256_mgf1_sha1_decrypt_sha256_avx2_mgf1_shani_crt_ifma
+        }
     }
 }
 
@@ -442,12 +551,24 @@ fn decrypt_sha256_mgf1_sha256(h: Sha256Backend, crt: Backend) -> DecryptFn {
         (Sha256Backend::Scalar, Backend::Baseline) => vg_rsa_oaep_sha256_mgf1_sha256_decrypt,
         (Sha256Backend::Scalar, Backend::Adx) => vg_rsa_oaep_sha256_mgf1_sha256_decrypt_crt_adx,
         (Sha256Backend::Scalar, Backend::Ifma) => vg_rsa_oaep_sha256_mgf1_sha256_decrypt_crt_ifma,
-        (Sha256Backend::ShaNi, Backend::Baseline) => vg_rsa_oaep_sha256_mgf1_sha256_decrypt_sha256_shani,
-        (Sha256Backend::ShaNi, Backend::Adx) => vg_rsa_oaep_sha256_mgf1_sha256_decrypt_sha256_shani_crt_adx,
-        (Sha256Backend::ShaNi, Backend::Ifma) => vg_rsa_oaep_sha256_mgf1_sha256_decrypt_sha256_shani_crt_ifma,
-        (Sha256Backend::Avx2, Backend::Baseline) => vg_rsa_oaep_sha256_mgf1_sha256_decrypt_sha256_avx2,
-        (Sha256Backend::Avx2, Backend::Adx) => vg_rsa_oaep_sha256_mgf1_sha256_decrypt_sha256_avx2_crt_adx,
-        (Sha256Backend::Avx2, Backend::Ifma) => vg_rsa_oaep_sha256_mgf1_sha256_decrypt_sha256_avx2_crt_ifma,
+        (Sha256Backend::ShaNi, Backend::Baseline) => {
+            vg_rsa_oaep_sha256_mgf1_sha256_decrypt_sha256_shani
+        }
+        (Sha256Backend::ShaNi, Backend::Adx) => {
+            vg_rsa_oaep_sha256_mgf1_sha256_decrypt_sha256_shani_crt_adx
+        }
+        (Sha256Backend::ShaNi, Backend::Ifma) => {
+            vg_rsa_oaep_sha256_mgf1_sha256_decrypt_sha256_shani_crt_ifma
+        }
+        (Sha256Backend::Avx2, Backend::Baseline) => {
+            vg_rsa_oaep_sha256_mgf1_sha256_decrypt_sha256_avx2
+        }
+        (Sha256Backend::Avx2, Backend::Adx) => {
+            vg_rsa_oaep_sha256_mgf1_sha256_decrypt_sha256_avx2_crt_adx
+        }
+        (Sha256Backend::Avx2, Backend::Ifma) => {
+            vg_rsa_oaep_sha256_mgf1_sha256_decrypt_sha256_avx2_crt_ifma
+        }
     }
 }
 
@@ -457,11 +578,21 @@ fn encrypt_sha384_mgf1_sha1(h: Sha384Backend, g: Sha1Backend) -> EncryptFn<48> {
     use crate::arch::rsa_oaep_sha384_mgf1_sha1::*;
     match (h, g) {
         (Sha384Backend::Scalar, Sha1Backend::Scalar) => vg_rsa_oaep_sha384_mgf1_sha1_encrypt,
-        (Sha384Backend::Scalar, Sha1Backend::ShaNi) => vg_rsa_oaep_sha384_mgf1_sha1_encrypt_mgf1_shani,
-        (Sha384Backend::ShaNi, Sha1Backend::Scalar) => vg_rsa_oaep_sha384_mgf1_sha1_encrypt_sha384_shani,
-        (Sha384Backend::ShaNi, Sha1Backend::ShaNi) => vg_rsa_oaep_sha384_mgf1_sha1_encrypt_sha384_shani_mgf1_shani,
-        (Sha384Backend::Avx2, Sha1Backend::Scalar) => vg_rsa_oaep_sha384_mgf1_sha1_encrypt_sha384_avx2,
-        (Sha384Backend::Avx2, Sha1Backend::ShaNi) => vg_rsa_oaep_sha384_mgf1_sha1_encrypt_sha384_avx2_mgf1_shani,
+        (Sha384Backend::Scalar, Sha1Backend::ShaNi) => {
+            vg_rsa_oaep_sha384_mgf1_sha1_encrypt_mgf1_shani
+        }
+        (Sha384Backend::ShaNi, Sha1Backend::Scalar) => {
+            vg_rsa_oaep_sha384_mgf1_sha1_encrypt_sha384_shani
+        }
+        (Sha384Backend::ShaNi, Sha1Backend::ShaNi) => {
+            vg_rsa_oaep_sha384_mgf1_sha1_encrypt_sha384_shani_mgf1_shani
+        }
+        (Sha384Backend::Avx2, Sha1Backend::Scalar) => {
+            vg_rsa_oaep_sha384_mgf1_sha1_encrypt_sha384_avx2
+        }
+        (Sha384Backend::Avx2, Sha1Backend::ShaNi) => {
+            vg_rsa_oaep_sha384_mgf1_sha1_encrypt_sha384_avx2_mgf1_shani
+        }
     }
 }
 
@@ -470,24 +601,60 @@ fn encrypt_sha384_mgf1_sha1(h: Sha384Backend, g: Sha1Backend) -> EncryptFn<48> {
 fn decrypt_sha384_mgf1_sha1(h: Sha384Backend, g: Sha1Backend, crt: Backend) -> DecryptFn {
     use crate::arch::rsa_oaep_sha384_mgf1_sha1::*;
     match (h, g, crt) {
-        (Sha384Backend::Scalar, Sha1Backend::Scalar, Backend::Baseline) => vg_rsa_oaep_sha384_mgf1_sha1_decrypt,
-        (Sha384Backend::Scalar, Sha1Backend::Scalar, Backend::Adx) => vg_rsa_oaep_sha384_mgf1_sha1_decrypt_crt_adx,
-        (Sha384Backend::Scalar, Sha1Backend::Scalar, Backend::Ifma) => vg_rsa_oaep_sha384_mgf1_sha1_decrypt_crt_ifma,
-        (Sha384Backend::Scalar, Sha1Backend::ShaNi, Backend::Baseline) => vg_rsa_oaep_sha384_mgf1_sha1_decrypt_mgf1_shani,
-        (Sha384Backend::Scalar, Sha1Backend::ShaNi, Backend::Adx) => vg_rsa_oaep_sha384_mgf1_sha1_decrypt_mgf1_shani_crt_adx,
-        (Sha384Backend::Scalar, Sha1Backend::ShaNi, Backend::Ifma) => vg_rsa_oaep_sha384_mgf1_sha1_decrypt_mgf1_shani_crt_ifma,
-        (Sha384Backend::ShaNi, Sha1Backend::Scalar, Backend::Baseline) => vg_rsa_oaep_sha384_mgf1_sha1_decrypt_sha384_shani,
-        (Sha384Backend::ShaNi, Sha1Backend::Scalar, Backend::Adx) => vg_rsa_oaep_sha384_mgf1_sha1_decrypt_sha384_shani_crt_adx,
-        (Sha384Backend::ShaNi, Sha1Backend::Scalar, Backend::Ifma) => vg_rsa_oaep_sha384_mgf1_sha1_decrypt_sha384_shani_crt_ifma,
-        (Sha384Backend::ShaNi, Sha1Backend::ShaNi, Backend::Baseline) => vg_rsa_oaep_sha384_mgf1_sha1_decrypt_sha384_shani_mgf1_shani,
-        (Sha384Backend::ShaNi, Sha1Backend::ShaNi, Backend::Adx) => vg_rsa_oaep_sha384_mgf1_sha1_decrypt_sha384_shani_mgf1_shani_crt_adx,
-        (Sha384Backend::ShaNi, Sha1Backend::ShaNi, Backend::Ifma) => vg_rsa_oaep_sha384_mgf1_sha1_decrypt_sha384_shani_mgf1_shani_crt_ifma,
-        (Sha384Backend::Avx2, Sha1Backend::Scalar, Backend::Baseline) => vg_rsa_oaep_sha384_mgf1_sha1_decrypt_sha384_avx2,
-        (Sha384Backend::Avx2, Sha1Backend::Scalar, Backend::Adx) => vg_rsa_oaep_sha384_mgf1_sha1_decrypt_sha384_avx2_crt_adx,
-        (Sha384Backend::Avx2, Sha1Backend::Scalar, Backend::Ifma) => vg_rsa_oaep_sha384_mgf1_sha1_decrypt_sha384_avx2_crt_ifma,
-        (Sha384Backend::Avx2, Sha1Backend::ShaNi, Backend::Baseline) => vg_rsa_oaep_sha384_mgf1_sha1_decrypt_sha384_avx2_mgf1_shani,
-        (Sha384Backend::Avx2, Sha1Backend::ShaNi, Backend::Adx) => vg_rsa_oaep_sha384_mgf1_sha1_decrypt_sha384_avx2_mgf1_shani_crt_adx,
-        (Sha384Backend::Avx2, Sha1Backend::ShaNi, Backend::Ifma) => vg_rsa_oaep_sha384_mgf1_sha1_decrypt_sha384_avx2_mgf1_shani_crt_ifma,
+        (Sha384Backend::Scalar, Sha1Backend::Scalar, Backend::Baseline) => {
+            vg_rsa_oaep_sha384_mgf1_sha1_decrypt
+        }
+        (Sha384Backend::Scalar, Sha1Backend::Scalar, Backend::Adx) => {
+            vg_rsa_oaep_sha384_mgf1_sha1_decrypt_crt_adx
+        }
+        (Sha384Backend::Scalar, Sha1Backend::Scalar, Backend::Ifma) => {
+            vg_rsa_oaep_sha384_mgf1_sha1_decrypt_crt_ifma
+        }
+        (Sha384Backend::Scalar, Sha1Backend::ShaNi, Backend::Baseline) => {
+            vg_rsa_oaep_sha384_mgf1_sha1_decrypt_mgf1_shani
+        }
+        (Sha384Backend::Scalar, Sha1Backend::ShaNi, Backend::Adx) => {
+            vg_rsa_oaep_sha384_mgf1_sha1_decrypt_mgf1_shani_crt_adx
+        }
+        (Sha384Backend::Scalar, Sha1Backend::ShaNi, Backend::Ifma) => {
+            vg_rsa_oaep_sha384_mgf1_sha1_decrypt_mgf1_shani_crt_ifma
+        }
+        (Sha384Backend::ShaNi, Sha1Backend::Scalar, Backend::Baseline) => {
+            vg_rsa_oaep_sha384_mgf1_sha1_decrypt_sha384_shani
+        }
+        (Sha384Backend::ShaNi, Sha1Backend::Scalar, Backend::Adx) => {
+            vg_rsa_oaep_sha384_mgf1_sha1_decrypt_sha384_shani_crt_adx
+        }
+        (Sha384Backend::ShaNi, Sha1Backend::Scalar, Backend::Ifma) => {
+            vg_rsa_oaep_sha384_mgf1_sha1_decrypt_sha384_shani_crt_ifma
+        }
+        (Sha384Backend::ShaNi, Sha1Backend::ShaNi, Backend::Baseline) => {
+            vg_rsa_oaep_sha384_mgf1_sha1_decrypt_sha384_shani_mgf1_shani
+        }
+        (Sha384Backend::ShaNi, Sha1Backend::ShaNi, Backend::Adx) => {
+            vg_rsa_oaep_sha384_mgf1_sha1_decrypt_sha384_shani_mgf1_shani_crt_adx
+        }
+        (Sha384Backend::ShaNi, Sha1Backend::ShaNi, Backend::Ifma) => {
+            vg_rsa_oaep_sha384_mgf1_sha1_decrypt_sha384_shani_mgf1_shani_crt_ifma
+        }
+        (Sha384Backend::Avx2, Sha1Backend::Scalar, Backend::Baseline) => {
+            vg_rsa_oaep_sha384_mgf1_sha1_decrypt_sha384_avx2
+        }
+        (Sha384Backend::Avx2, Sha1Backend::Scalar, Backend::Adx) => {
+            vg_rsa_oaep_sha384_mgf1_sha1_decrypt_sha384_avx2_crt_adx
+        }
+        (Sha384Backend::Avx2, Sha1Backend::Scalar, Backend::Ifma) => {
+            vg_rsa_oaep_sha384_mgf1_sha1_decrypt_sha384_avx2_crt_ifma
+        }
+        (Sha384Backend::Avx2, Sha1Backend::ShaNi, Backend::Baseline) => {
+            vg_rsa_oaep_sha384_mgf1_sha1_decrypt_sha384_avx2_mgf1_shani
+        }
+        (Sha384Backend::Avx2, Sha1Backend::ShaNi, Backend::Adx) => {
+            vg_rsa_oaep_sha384_mgf1_sha1_decrypt_sha384_avx2_mgf1_shani_crt_adx
+        }
+        (Sha384Backend::Avx2, Sha1Backend::ShaNi, Backend::Ifma) => {
+            vg_rsa_oaep_sha384_mgf1_sha1_decrypt_sha384_avx2_mgf1_shani_crt_ifma
+        }
     }
 }
 
@@ -510,12 +677,24 @@ fn decrypt_sha384_mgf1_sha384(h: Sha384Backend, crt: Backend) -> DecryptFn {
         (Sha384Backend::Scalar, Backend::Baseline) => vg_rsa_oaep_sha384_mgf1_sha384_decrypt,
         (Sha384Backend::Scalar, Backend::Adx) => vg_rsa_oaep_sha384_mgf1_sha384_decrypt_crt_adx,
         (Sha384Backend::Scalar, Backend::Ifma) => vg_rsa_oaep_sha384_mgf1_sha384_decrypt_crt_ifma,
-        (Sha384Backend::ShaNi, Backend::Baseline) => vg_rsa_oaep_sha384_mgf1_sha384_decrypt_sha384_shani,
-        (Sha384Backend::ShaNi, Backend::Adx) => vg_rsa_oaep_sha384_mgf1_sha384_decrypt_sha384_shani_crt_adx,
-        (Sha384Backend::ShaNi, Backend::Ifma) => vg_rsa_oaep_sha384_mgf1_sha384_decrypt_sha384_shani_crt_ifma,
-        (Sha384Backend::Avx2, Backend::Baseline) => vg_rsa_oaep_sha384_mgf1_sha384_decrypt_sha384_avx2,
-        (Sha384Backend::Avx2, Backend::Adx) => vg_rsa_oaep_sha384_mgf1_sha384_decrypt_sha384_avx2_crt_adx,
-        (Sha384Backend::Avx2, Backend::Ifma) => vg_rsa_oaep_sha384_mgf1_sha384_decrypt_sha384_avx2_crt_ifma,
+        (Sha384Backend::ShaNi, Backend::Baseline) => {
+            vg_rsa_oaep_sha384_mgf1_sha384_decrypt_sha384_shani
+        }
+        (Sha384Backend::ShaNi, Backend::Adx) => {
+            vg_rsa_oaep_sha384_mgf1_sha384_decrypt_sha384_shani_crt_adx
+        }
+        (Sha384Backend::ShaNi, Backend::Ifma) => {
+            vg_rsa_oaep_sha384_mgf1_sha384_decrypt_sha384_shani_crt_ifma
+        }
+        (Sha384Backend::Avx2, Backend::Baseline) => {
+            vg_rsa_oaep_sha384_mgf1_sha384_decrypt_sha384_avx2
+        }
+        (Sha384Backend::Avx2, Backend::Adx) => {
+            vg_rsa_oaep_sha384_mgf1_sha384_decrypt_sha384_avx2_crt_adx
+        }
+        (Sha384Backend::Avx2, Backend::Ifma) => {
+            vg_rsa_oaep_sha384_mgf1_sha384_decrypt_sha384_avx2_crt_ifma
+        }
     }
 }
 
@@ -525,11 +704,21 @@ fn encrypt_sha512_mgf1_sha1(h: Sha512Backend, g: Sha1Backend) -> EncryptFn<64> {
     use crate::arch::rsa_oaep_sha512_mgf1_sha1::*;
     match (h, g) {
         (Sha512Backend::Scalar, Sha1Backend::Scalar) => vg_rsa_oaep_sha512_mgf1_sha1_encrypt,
-        (Sha512Backend::Scalar, Sha1Backend::ShaNi) => vg_rsa_oaep_sha512_mgf1_sha1_encrypt_mgf1_shani,
-        (Sha512Backend::ShaNi, Sha1Backend::Scalar) => vg_rsa_oaep_sha512_mgf1_sha1_encrypt_sha512_shani,
-        (Sha512Backend::ShaNi, Sha1Backend::ShaNi) => vg_rsa_oaep_sha512_mgf1_sha1_encrypt_sha512_shani_mgf1_shani,
-        (Sha512Backend::Avx2, Sha1Backend::Scalar) => vg_rsa_oaep_sha512_mgf1_sha1_encrypt_sha512_avx2,
-        (Sha512Backend::Avx2, Sha1Backend::ShaNi) => vg_rsa_oaep_sha512_mgf1_sha1_encrypt_sha512_avx2_mgf1_shani,
+        (Sha512Backend::Scalar, Sha1Backend::ShaNi) => {
+            vg_rsa_oaep_sha512_mgf1_sha1_encrypt_mgf1_shani
+        }
+        (Sha512Backend::ShaNi, Sha1Backend::Scalar) => {
+            vg_rsa_oaep_sha512_mgf1_sha1_encrypt_sha512_shani
+        }
+        (Sha512Backend::ShaNi, Sha1Backend::ShaNi) => {
+            vg_rsa_oaep_sha512_mgf1_sha1_encrypt_sha512_shani_mgf1_shani
+        }
+        (Sha512Backend::Avx2, Sha1Backend::Scalar) => {
+            vg_rsa_oaep_sha512_mgf1_sha1_encrypt_sha512_avx2
+        }
+        (Sha512Backend::Avx2, Sha1Backend::ShaNi) => {
+            vg_rsa_oaep_sha512_mgf1_sha1_encrypt_sha512_avx2_mgf1_shani
+        }
     }
 }
 
@@ -538,24 +727,60 @@ fn encrypt_sha512_mgf1_sha1(h: Sha512Backend, g: Sha1Backend) -> EncryptFn<64> {
 fn decrypt_sha512_mgf1_sha1(h: Sha512Backend, g: Sha1Backend, crt: Backend) -> DecryptFn {
     use crate::arch::rsa_oaep_sha512_mgf1_sha1::*;
     match (h, g, crt) {
-        (Sha512Backend::Scalar, Sha1Backend::Scalar, Backend::Baseline) => vg_rsa_oaep_sha512_mgf1_sha1_decrypt,
-        (Sha512Backend::Scalar, Sha1Backend::Scalar, Backend::Adx) => vg_rsa_oaep_sha512_mgf1_sha1_decrypt_crt_adx,
-        (Sha512Backend::Scalar, Sha1Backend::Scalar, Backend::Ifma) => vg_rsa_oaep_sha512_mgf1_sha1_decrypt_crt_ifma,
-        (Sha512Backend::Scalar, Sha1Backend::ShaNi, Backend::Baseline) => vg_rsa_oaep_sha512_mgf1_sha1_decrypt_mgf1_shani,
-        (Sha512Backend::Scalar, Sha1Backend::ShaNi, Backend::Adx) => vg_rsa_oaep_sha512_mgf1_sha1_decrypt_mgf1_shani_crt_adx,
-        (Sha512Backend::Scalar, Sha1Backend::ShaNi, Backend::Ifma) => vg_rsa_oaep_sha512_mgf1_sha1_decrypt_mgf1_shani_crt_ifma,
-        (Sha512Backend::ShaNi, Sha1Backend::Scalar, Backend::Baseline) => vg_rsa_oaep_sha512_mgf1_sha1_decrypt_sha512_shani,
-        (Sha512Backend::ShaNi, Sha1Backend::Scalar, Backend::Adx) => vg_rsa_oaep_sha512_mgf1_sha1_decrypt_sha512_shani_crt_adx,
-        (Sha512Backend::ShaNi, Sha1Backend::Scalar, Backend::Ifma) => vg_rsa_oaep_sha512_mgf1_sha1_decrypt_sha512_shani_crt_ifma,
-        (Sha512Backend::ShaNi, Sha1Backend::ShaNi, Backend::Baseline) => vg_rsa_oaep_sha512_mgf1_sha1_decrypt_sha512_shani_mgf1_shani,
-        (Sha512Backend::ShaNi, Sha1Backend::ShaNi, Backend::Adx) => vg_rsa_oaep_sha512_mgf1_sha1_decrypt_sha512_shani_mgf1_shani_crt_adx,
-        (Sha512Backend::ShaNi, Sha1Backend::ShaNi, Backend::Ifma) => vg_rsa_oaep_sha512_mgf1_sha1_decrypt_sha512_shani_mgf1_shani_crt_ifma,
-        (Sha512Backend::Avx2, Sha1Backend::Scalar, Backend::Baseline) => vg_rsa_oaep_sha512_mgf1_sha1_decrypt_sha512_avx2,
-        (Sha512Backend::Avx2, Sha1Backend::Scalar, Backend::Adx) => vg_rsa_oaep_sha512_mgf1_sha1_decrypt_sha512_avx2_crt_adx,
-        (Sha512Backend::Avx2, Sha1Backend::Scalar, Backend::Ifma) => vg_rsa_oaep_sha512_mgf1_sha1_decrypt_sha512_avx2_crt_ifma,
-        (Sha512Backend::Avx2, Sha1Backend::ShaNi, Backend::Baseline) => vg_rsa_oaep_sha512_mgf1_sha1_decrypt_sha512_avx2_mgf1_shani,
-        (Sha512Backend::Avx2, Sha1Backend::ShaNi, Backend::Adx) => vg_rsa_oaep_sha512_mgf1_sha1_decrypt_sha512_avx2_mgf1_shani_crt_adx,
-        (Sha512Backend::Avx2, Sha1Backend::ShaNi, Backend::Ifma) => vg_rsa_oaep_sha512_mgf1_sha1_decrypt_sha512_avx2_mgf1_shani_crt_ifma,
+        (Sha512Backend::Scalar, Sha1Backend::Scalar, Backend::Baseline) => {
+            vg_rsa_oaep_sha512_mgf1_sha1_decrypt
+        }
+        (Sha512Backend::Scalar, Sha1Backend::Scalar, Backend::Adx) => {
+            vg_rsa_oaep_sha512_mgf1_sha1_decrypt_crt_adx
+        }
+        (Sha512Backend::Scalar, Sha1Backend::Scalar, Backend::Ifma) => {
+            vg_rsa_oaep_sha512_mgf1_sha1_decrypt_crt_ifma
+        }
+        (Sha512Backend::Scalar, Sha1Backend::ShaNi, Backend::Baseline) => {
+            vg_rsa_oaep_sha512_mgf1_sha1_decrypt_mgf1_shani
+        }
+        (Sha512Backend::Scalar, Sha1Backend::ShaNi, Backend::Adx) => {
+            vg_rsa_oaep_sha512_mgf1_sha1_decrypt_mgf1_shani_crt_adx
+        }
+        (Sha512Backend::Scalar, Sha1Backend::ShaNi, Backend::Ifma) => {
+            vg_rsa_oaep_sha512_mgf1_sha1_decrypt_mgf1_shani_crt_ifma
+        }
+        (Sha512Backend::ShaNi, Sha1Backend::Scalar, Backend::Baseline) => {
+            vg_rsa_oaep_sha512_mgf1_sha1_decrypt_sha512_shani
+        }
+        (Sha512Backend::ShaNi, Sha1Backend::Scalar, Backend::Adx) => {
+            vg_rsa_oaep_sha512_mgf1_sha1_decrypt_sha512_shani_crt_adx
+        }
+        (Sha512Backend::ShaNi, Sha1Backend::Scalar, Backend::Ifma) => {
+            vg_rsa_oaep_sha512_mgf1_sha1_decrypt_sha512_shani_crt_ifma
+        }
+        (Sha512Backend::ShaNi, Sha1Backend::ShaNi, Backend::Baseline) => {
+            vg_rsa_oaep_sha512_mgf1_sha1_decrypt_sha512_shani_mgf1_shani
+        }
+        (Sha512Backend::ShaNi, Sha1Backend::ShaNi, Backend::Adx) => {
+            vg_rsa_oaep_sha512_mgf1_sha1_decrypt_sha512_shani_mgf1_shani_crt_adx
+        }
+        (Sha512Backend::ShaNi, Sha1Backend::ShaNi, Backend::Ifma) => {
+            vg_rsa_oaep_sha512_mgf1_sha1_decrypt_sha512_shani_mgf1_shani_crt_ifma
+        }
+        (Sha512Backend::Avx2, Sha1Backend::Scalar, Backend::Baseline) => {
+            vg_rsa_oaep_sha512_mgf1_sha1_decrypt_sha512_avx2
+        }
+        (Sha512Backend::Avx2, Sha1Backend::Scalar, Backend::Adx) => {
+            vg_rsa_oaep_sha512_mgf1_sha1_decrypt_sha512_avx2_crt_adx
+        }
+        (Sha512Backend::Avx2, Sha1Backend::Scalar, Backend::Ifma) => {
+            vg_rsa_oaep_sha512_mgf1_sha1_decrypt_sha512_avx2_crt_ifma
+        }
+        (Sha512Backend::Avx2, Sha1Backend::ShaNi, Backend::Baseline) => {
+            vg_rsa_oaep_sha512_mgf1_sha1_decrypt_sha512_avx2_mgf1_shani
+        }
+        (Sha512Backend::Avx2, Sha1Backend::ShaNi, Backend::Adx) => {
+            vg_rsa_oaep_sha512_mgf1_sha1_decrypt_sha512_avx2_mgf1_shani_crt_adx
+        }
+        (Sha512Backend::Avx2, Sha1Backend::ShaNi, Backend::Ifma) => {
+            vg_rsa_oaep_sha512_mgf1_sha1_decrypt_sha512_avx2_mgf1_shani_crt_ifma
+        }
     }
 }
 
@@ -578,12 +803,24 @@ fn decrypt_sha512_mgf1_sha512(h: Sha512Backend, crt: Backend) -> DecryptFn {
         (Sha512Backend::Scalar, Backend::Baseline) => vg_rsa_oaep_sha512_mgf1_sha512_decrypt,
         (Sha512Backend::Scalar, Backend::Adx) => vg_rsa_oaep_sha512_mgf1_sha512_decrypt_crt_adx,
         (Sha512Backend::Scalar, Backend::Ifma) => vg_rsa_oaep_sha512_mgf1_sha512_decrypt_crt_ifma,
-        (Sha512Backend::ShaNi, Backend::Baseline) => vg_rsa_oaep_sha512_mgf1_sha512_decrypt_sha512_shani,
-        (Sha512Backend::ShaNi, Backend::Adx) => vg_rsa_oaep_sha512_mgf1_sha512_decrypt_sha512_shani_crt_adx,
-        (Sha512Backend::ShaNi, Backend::Ifma) => vg_rsa_oaep_sha512_mgf1_sha512_decrypt_sha512_shani_crt_ifma,
-        (Sha512Backend::Avx2, Backend::Baseline) => vg_rsa_oaep_sha512_mgf1_sha512_decrypt_sha512_avx2,
-        (Sha512Backend::Avx2, Backend::Adx) => vg_rsa_oaep_sha512_mgf1_sha512_decrypt_sha512_avx2_crt_adx,
-        (Sha512Backend::Avx2, Backend::Ifma) => vg_rsa_oaep_sha512_mgf1_sha512_decrypt_sha512_avx2_crt_ifma,
+        (Sha512Backend::ShaNi, Backend::Baseline) => {
+            vg_rsa_oaep_sha512_mgf1_sha512_decrypt_sha512_shani
+        }
+        (Sha512Backend::ShaNi, Backend::Adx) => {
+            vg_rsa_oaep_sha512_mgf1_sha512_decrypt_sha512_shani_crt_adx
+        }
+        (Sha512Backend::ShaNi, Backend::Ifma) => {
+            vg_rsa_oaep_sha512_mgf1_sha512_decrypt_sha512_shani_crt_ifma
+        }
+        (Sha512Backend::Avx2, Backend::Baseline) => {
+            vg_rsa_oaep_sha512_mgf1_sha512_decrypt_sha512_avx2
+        }
+        (Sha512Backend::Avx2, Backend::Adx) => {
+            vg_rsa_oaep_sha512_mgf1_sha512_decrypt_sha512_avx2_crt_adx
+        }
+        (Sha512Backend::Avx2, Backend::Ifma) => {
+            vg_rsa_oaep_sha512_mgf1_sha512_decrypt_sha512_avx2_crt_ifma
+        }
     }
 }
 
@@ -592,12 +829,24 @@ fn decrypt_sha512_mgf1_sha512(h: Sha512Backend, crt: Backend) -> DecryptFn {
 fn encrypt_sha512_224_mgf1_sha1(h: Sha512_224Backend, g: Sha1Backend) -> EncryptFn<28> {
     use crate::arch::rsa_oaep_sha512_224_mgf1_sha1::*;
     match (h, g) {
-        (Sha512_224Backend::Scalar, Sha1Backend::Scalar) => vg_rsa_oaep_sha512_224_mgf1_sha1_encrypt,
-        (Sha512_224Backend::Scalar, Sha1Backend::ShaNi) => vg_rsa_oaep_sha512_224_mgf1_sha1_encrypt_mgf1_shani,
-        (Sha512_224Backend::ShaNi, Sha1Backend::Scalar) => vg_rsa_oaep_sha512_224_mgf1_sha1_encrypt_sha512_224_shani,
-        (Sha512_224Backend::ShaNi, Sha1Backend::ShaNi) => vg_rsa_oaep_sha512_224_mgf1_sha1_encrypt_sha512_224_shani_mgf1_shani,
-        (Sha512_224Backend::Avx2, Sha1Backend::Scalar) => vg_rsa_oaep_sha512_224_mgf1_sha1_encrypt_sha512_224_avx2,
-        (Sha512_224Backend::Avx2, Sha1Backend::ShaNi) => vg_rsa_oaep_sha512_224_mgf1_sha1_encrypt_sha512_224_avx2_mgf1_shani,
+        (Sha512_224Backend::Scalar, Sha1Backend::Scalar) => {
+            vg_rsa_oaep_sha512_224_mgf1_sha1_encrypt
+        }
+        (Sha512_224Backend::Scalar, Sha1Backend::ShaNi) => {
+            vg_rsa_oaep_sha512_224_mgf1_sha1_encrypt_mgf1_shani
+        }
+        (Sha512_224Backend::ShaNi, Sha1Backend::Scalar) => {
+            vg_rsa_oaep_sha512_224_mgf1_sha1_encrypt_sha512_224_shani
+        }
+        (Sha512_224Backend::ShaNi, Sha1Backend::ShaNi) => {
+            vg_rsa_oaep_sha512_224_mgf1_sha1_encrypt_sha512_224_shani_mgf1_shani
+        }
+        (Sha512_224Backend::Avx2, Sha1Backend::Scalar) => {
+            vg_rsa_oaep_sha512_224_mgf1_sha1_encrypt_sha512_224_avx2
+        }
+        (Sha512_224Backend::Avx2, Sha1Backend::ShaNi) => {
+            vg_rsa_oaep_sha512_224_mgf1_sha1_encrypt_sha512_224_avx2_mgf1_shani
+        }
     }
 }
 
@@ -606,24 +855,60 @@ fn encrypt_sha512_224_mgf1_sha1(h: Sha512_224Backend, g: Sha1Backend) -> Encrypt
 fn decrypt_sha512_224_mgf1_sha1(h: Sha512_224Backend, g: Sha1Backend, crt: Backend) -> DecryptFn {
     use crate::arch::rsa_oaep_sha512_224_mgf1_sha1::*;
     match (h, g, crt) {
-        (Sha512_224Backend::Scalar, Sha1Backend::Scalar, Backend::Baseline) => vg_rsa_oaep_sha512_224_mgf1_sha1_decrypt,
-        (Sha512_224Backend::Scalar, Sha1Backend::Scalar, Backend::Adx) => vg_rsa_oaep_sha512_224_mgf1_sha1_decrypt_crt_adx,
-        (Sha512_224Backend::Scalar, Sha1Backend::Scalar, Backend::Ifma) => vg_rsa_oaep_sha512_224_mgf1_sha1_decrypt_crt_ifma,
-        (Sha512_224Backend::Scalar, Sha1Backend::ShaNi, Backend::Baseline) => vg_rsa_oaep_sha512_224_mgf1_sha1_decrypt_mgf1_shani,
-        (Sha512_224Backend::Scalar, Sha1Backend::ShaNi, Backend::Adx) => vg_rsa_oaep_sha512_224_mgf1_sha1_decrypt_mgf1_shani_crt_adx,
-        (Sha512_224Backend::Scalar, Sha1Backend::ShaNi, Backend::Ifma) => vg_rsa_oaep_sha512_224_mgf1_sha1_decrypt_mgf1_shani_crt_ifma,
-        (Sha512_224Backend::ShaNi, Sha1Backend::Scalar, Backend::Baseline) => vg_rsa_oaep_sha512_224_mgf1_sha1_decrypt_sha512_224_shani,
-        (Sha512_224Backend::ShaNi, Sha1Backend::Scalar, Backend::Adx) => vg_rsa_oaep_sha512_224_mgf1_sha1_decrypt_sha512_224_shani_crt_adx,
-        (Sha512_224Backend::ShaNi, Sha1Backend::Scalar, Backend::Ifma) => vg_rsa_oaep_sha512_224_mgf1_sha1_decrypt_sha512_224_shani_crt_ifma,
-        (Sha512_224Backend::ShaNi, Sha1Backend::ShaNi, Backend::Baseline) => vg_rsa_oaep_sha512_224_mgf1_sha1_decrypt_sha512_224_shani_mgf1_shani,
-        (Sha512_224Backend::ShaNi, Sha1Backend::ShaNi, Backend::Adx) => vg_rsa_oaep_sha512_224_mgf1_sha1_decrypt_sha512_224_shani_mgf1_shani_crt_adx,
-        (Sha512_224Backend::ShaNi, Sha1Backend::ShaNi, Backend::Ifma) => vg_rsa_oaep_sha512_224_mgf1_sha1_decrypt_sha512_224_shani_mgf1_shani_crt_ifma,
-        (Sha512_224Backend::Avx2, Sha1Backend::Scalar, Backend::Baseline) => vg_rsa_oaep_sha512_224_mgf1_sha1_decrypt_sha512_224_avx2,
-        (Sha512_224Backend::Avx2, Sha1Backend::Scalar, Backend::Adx) => vg_rsa_oaep_sha512_224_mgf1_sha1_decrypt_sha512_224_avx2_crt_adx,
-        (Sha512_224Backend::Avx2, Sha1Backend::Scalar, Backend::Ifma) => vg_rsa_oaep_sha512_224_mgf1_sha1_decrypt_sha512_224_avx2_crt_ifma,
-        (Sha512_224Backend::Avx2, Sha1Backend::ShaNi, Backend::Baseline) => vg_rsa_oaep_sha512_224_mgf1_sha1_decrypt_sha512_224_avx2_mgf1_shani,
-        (Sha512_224Backend::Avx2, Sha1Backend::ShaNi, Backend::Adx) => vg_rsa_oaep_sha512_224_mgf1_sha1_decrypt_sha512_224_avx2_mgf1_shani_crt_adx,
-        (Sha512_224Backend::Avx2, Sha1Backend::ShaNi, Backend::Ifma) => vg_rsa_oaep_sha512_224_mgf1_sha1_decrypt_sha512_224_avx2_mgf1_shani_crt_ifma,
+        (Sha512_224Backend::Scalar, Sha1Backend::Scalar, Backend::Baseline) => {
+            vg_rsa_oaep_sha512_224_mgf1_sha1_decrypt
+        }
+        (Sha512_224Backend::Scalar, Sha1Backend::Scalar, Backend::Adx) => {
+            vg_rsa_oaep_sha512_224_mgf1_sha1_decrypt_crt_adx
+        }
+        (Sha512_224Backend::Scalar, Sha1Backend::Scalar, Backend::Ifma) => {
+            vg_rsa_oaep_sha512_224_mgf1_sha1_decrypt_crt_ifma
+        }
+        (Sha512_224Backend::Scalar, Sha1Backend::ShaNi, Backend::Baseline) => {
+            vg_rsa_oaep_sha512_224_mgf1_sha1_decrypt_mgf1_shani
+        }
+        (Sha512_224Backend::Scalar, Sha1Backend::ShaNi, Backend::Adx) => {
+            vg_rsa_oaep_sha512_224_mgf1_sha1_decrypt_mgf1_shani_crt_adx
+        }
+        (Sha512_224Backend::Scalar, Sha1Backend::ShaNi, Backend::Ifma) => {
+            vg_rsa_oaep_sha512_224_mgf1_sha1_decrypt_mgf1_shani_crt_ifma
+        }
+        (Sha512_224Backend::ShaNi, Sha1Backend::Scalar, Backend::Baseline) => {
+            vg_rsa_oaep_sha512_224_mgf1_sha1_decrypt_sha512_224_shani
+        }
+        (Sha512_224Backend::ShaNi, Sha1Backend::Scalar, Backend::Adx) => {
+            vg_rsa_oaep_sha512_224_mgf1_sha1_decrypt_sha512_224_shani_crt_adx
+        }
+        (Sha512_224Backend::ShaNi, Sha1Backend::Scalar, Backend::Ifma) => {
+            vg_rsa_oaep_sha512_224_mgf1_sha1_decrypt_sha512_224_shani_crt_ifma
+        }
+        (Sha512_224Backend::ShaNi, Sha1Backend::ShaNi, Backend::Baseline) => {
+            vg_rsa_oaep_sha512_224_mgf1_sha1_decrypt_sha512_224_shani_mgf1_shani
+        }
+        (Sha512_224Backend::ShaNi, Sha1Backend::ShaNi, Backend::Adx) => {
+            vg_rsa_oaep_sha512_224_mgf1_sha1_decrypt_sha512_224_shani_mgf1_shani_crt_adx
+        }
+        (Sha512_224Backend::ShaNi, Sha1Backend::ShaNi, Backend::Ifma) => {
+            vg_rsa_oaep_sha512_224_mgf1_sha1_decrypt_sha512_224_shani_mgf1_shani_crt_ifma
+        }
+        (Sha512_224Backend::Avx2, Sha1Backend::Scalar, Backend::Baseline) => {
+            vg_rsa_oaep_sha512_224_mgf1_sha1_decrypt_sha512_224_avx2
+        }
+        (Sha512_224Backend::Avx2, Sha1Backend::Scalar, Backend::Adx) => {
+            vg_rsa_oaep_sha512_224_mgf1_sha1_decrypt_sha512_224_avx2_crt_adx
+        }
+        (Sha512_224Backend::Avx2, Sha1Backend::Scalar, Backend::Ifma) => {
+            vg_rsa_oaep_sha512_224_mgf1_sha1_decrypt_sha512_224_avx2_crt_ifma
+        }
+        (Sha512_224Backend::Avx2, Sha1Backend::ShaNi, Backend::Baseline) => {
+            vg_rsa_oaep_sha512_224_mgf1_sha1_decrypt_sha512_224_avx2_mgf1_shani
+        }
+        (Sha512_224Backend::Avx2, Sha1Backend::ShaNi, Backend::Adx) => {
+            vg_rsa_oaep_sha512_224_mgf1_sha1_decrypt_sha512_224_avx2_mgf1_shani_crt_adx
+        }
+        (Sha512_224Backend::Avx2, Sha1Backend::ShaNi, Backend::Ifma) => {
+            vg_rsa_oaep_sha512_224_mgf1_sha1_decrypt_sha512_224_avx2_mgf1_shani_crt_ifma
+        }
     }
 }
 
@@ -643,15 +928,33 @@ fn encrypt_sha512_224_mgf1_sha512_224(h: Sha512_224Backend) -> EncryptFn<28> {
 fn decrypt_sha512_224_mgf1_sha512_224(h: Sha512_224Backend, crt: Backend) -> DecryptFn {
     use crate::arch::rsa_oaep_sha512_224_mgf1_sha512_224::*;
     match (h, crt) {
-        (Sha512_224Backend::Scalar, Backend::Baseline) => vg_rsa_oaep_sha512_224_mgf1_sha512_224_decrypt,
-        (Sha512_224Backend::Scalar, Backend::Adx) => vg_rsa_oaep_sha512_224_mgf1_sha512_224_decrypt_crt_adx,
-        (Sha512_224Backend::Scalar, Backend::Ifma) => vg_rsa_oaep_sha512_224_mgf1_sha512_224_decrypt_crt_ifma,
-        (Sha512_224Backend::ShaNi, Backend::Baseline) => vg_rsa_oaep_sha512_224_mgf1_sha512_224_decrypt_sha512_224_shani,
-        (Sha512_224Backend::ShaNi, Backend::Adx) => vg_rsa_oaep_sha512_224_mgf1_sha512_224_decrypt_sha512_224_shani_crt_adx,
-        (Sha512_224Backend::ShaNi, Backend::Ifma) => vg_rsa_oaep_sha512_224_mgf1_sha512_224_decrypt_sha512_224_shani_crt_ifma,
-        (Sha512_224Backend::Avx2, Backend::Baseline) => vg_rsa_oaep_sha512_224_mgf1_sha512_224_decrypt_sha512_224_avx2,
-        (Sha512_224Backend::Avx2, Backend::Adx) => vg_rsa_oaep_sha512_224_mgf1_sha512_224_decrypt_sha512_224_avx2_crt_adx,
-        (Sha512_224Backend::Avx2, Backend::Ifma) => vg_rsa_oaep_sha512_224_mgf1_sha512_224_decrypt_sha512_224_avx2_crt_ifma,
+        (Sha512_224Backend::Scalar, Backend::Baseline) => {
+            vg_rsa_oaep_sha512_224_mgf1_sha512_224_decrypt
+        }
+        (Sha512_224Backend::Scalar, Backend::Adx) => {
+            vg_rsa_oaep_sha512_224_mgf1_sha512_224_decrypt_crt_adx
+        }
+        (Sha512_224Backend::Scalar, Backend::Ifma) => {
+            vg_rsa_oaep_sha512_224_mgf1_sha512_224_decrypt_crt_ifma
+        }
+        (Sha512_224Backend::ShaNi, Backend::Baseline) => {
+            vg_rsa_oaep_sha512_224_mgf1_sha512_224_decrypt_sha512_224_shani
+        }
+        (Sha512_224Backend::ShaNi, Backend::Adx) => {
+            vg_rsa_oaep_sha512_224_mgf1_sha512_224_decrypt_sha512_224_shani_crt_adx
+        }
+        (Sha512_224Backend::ShaNi, Backend::Ifma) => {
+            vg_rsa_oaep_sha512_224_mgf1_sha512_224_decrypt_sha512_224_shani_crt_ifma
+        }
+        (Sha512_224Backend::Avx2, Backend::Baseline) => {
+            vg_rsa_oaep_sha512_224_mgf1_sha512_224_decrypt_sha512_224_avx2
+        }
+        (Sha512_224Backend::Avx2, Backend::Adx) => {
+            vg_rsa_oaep_sha512_224_mgf1_sha512_224_decrypt_sha512_224_avx2_crt_adx
+        }
+        (Sha512_224Backend::Avx2, Backend::Ifma) => {
+            vg_rsa_oaep_sha512_224_mgf1_sha512_224_decrypt_sha512_224_avx2_crt_ifma
+        }
     }
 }
 
@@ -660,12 +963,24 @@ fn decrypt_sha512_224_mgf1_sha512_224(h: Sha512_224Backend, crt: Backend) -> Dec
 fn encrypt_sha512_256_mgf1_sha1(h: Sha512_256Backend, g: Sha1Backend) -> EncryptFn<32> {
     use crate::arch::rsa_oaep_sha512_256_mgf1_sha1::*;
     match (h, g) {
-        (Sha512_256Backend::Scalar, Sha1Backend::Scalar) => vg_rsa_oaep_sha512_256_mgf1_sha1_encrypt,
-        (Sha512_256Backend::Scalar, Sha1Backend::ShaNi) => vg_rsa_oaep_sha512_256_mgf1_sha1_encrypt_mgf1_shani,
-        (Sha512_256Backend::ShaNi, Sha1Backend::Scalar) => vg_rsa_oaep_sha512_256_mgf1_sha1_encrypt_sha512_256_shani,
-        (Sha512_256Backend::ShaNi, Sha1Backend::ShaNi) => vg_rsa_oaep_sha512_256_mgf1_sha1_encrypt_sha512_256_shani_mgf1_shani,
-        (Sha512_256Backend::Avx2, Sha1Backend::Scalar) => vg_rsa_oaep_sha512_256_mgf1_sha1_encrypt_sha512_256_avx2,
-        (Sha512_256Backend::Avx2, Sha1Backend::ShaNi) => vg_rsa_oaep_sha512_256_mgf1_sha1_encrypt_sha512_256_avx2_mgf1_shani,
+        (Sha512_256Backend::Scalar, Sha1Backend::Scalar) => {
+            vg_rsa_oaep_sha512_256_mgf1_sha1_encrypt
+        }
+        (Sha512_256Backend::Scalar, Sha1Backend::ShaNi) => {
+            vg_rsa_oaep_sha512_256_mgf1_sha1_encrypt_mgf1_shani
+        }
+        (Sha512_256Backend::ShaNi, Sha1Backend::Scalar) => {
+            vg_rsa_oaep_sha512_256_mgf1_sha1_encrypt_sha512_256_shani
+        }
+        (Sha512_256Backend::ShaNi, Sha1Backend::ShaNi) => {
+            vg_rsa_oaep_sha512_256_mgf1_sha1_encrypt_sha512_256_shani_mgf1_shani
+        }
+        (Sha512_256Backend::Avx2, Sha1Backend::Scalar) => {
+            vg_rsa_oaep_sha512_256_mgf1_sha1_encrypt_sha512_256_avx2
+        }
+        (Sha512_256Backend::Avx2, Sha1Backend::ShaNi) => {
+            vg_rsa_oaep_sha512_256_mgf1_sha1_encrypt_sha512_256_avx2_mgf1_shani
+        }
     }
 }
 
@@ -674,24 +989,60 @@ fn encrypt_sha512_256_mgf1_sha1(h: Sha512_256Backend, g: Sha1Backend) -> Encrypt
 fn decrypt_sha512_256_mgf1_sha1(h: Sha512_256Backend, g: Sha1Backend, crt: Backend) -> DecryptFn {
     use crate::arch::rsa_oaep_sha512_256_mgf1_sha1::*;
     match (h, g, crt) {
-        (Sha512_256Backend::Scalar, Sha1Backend::Scalar, Backend::Baseline) => vg_rsa_oaep_sha512_256_mgf1_sha1_decrypt,
-        (Sha512_256Backend::Scalar, Sha1Backend::Scalar, Backend::Adx) => vg_rsa_oaep_sha512_256_mgf1_sha1_decrypt_crt_adx,
-        (Sha512_256Backend::Scalar, Sha1Backend::Scalar, Backend::Ifma) => vg_rsa_oaep_sha512_256_mgf1_sha1_decrypt_crt_ifma,
-        (Sha512_256Backend::Scalar, Sha1Backend::ShaNi, Backend::Baseline) => vg_rsa_oaep_sha512_256_mgf1_sha1_decrypt_mgf1_shani,
-        (Sha512_256Backend::Scalar, Sha1Backend::ShaNi, Backend::Adx) => vg_rsa_oaep_sha512_256_mgf1_sha1_decrypt_mgf1_shani_crt_adx,
-        (Sha512_256Backend::Scalar, Sha1Backend::ShaNi, Backend::Ifma) => vg_rsa_oaep_sha512_256_mgf1_sha1_decrypt_mgf1_shani_crt_ifma,
-        (Sha512_256Backend::ShaNi, Sha1Backend::Scalar, Backend::Baseline) => vg_rsa_oaep_sha512_256_mgf1_sha1_decrypt_sha512_256_shani,
-        (Sha512_256Backend::ShaNi, Sha1Backend::Scalar, Backend::Adx) => vg_rsa_oaep_sha512_256_mgf1_sha1_decrypt_sha512_256_shani_crt_adx,
-        (Sha512_256Backend::ShaNi, Sha1Backend::Scalar, Backend::Ifma) => vg_rsa_oaep_sha512_256_mgf1_sha1_decrypt_sha512_256_shani_crt_ifma,
-        (Sha512_256Backend::ShaNi, Sha1Backend::ShaNi, Backend::Baseline) => vg_rsa_oaep_sha512_256_mgf1_sha1_decrypt_sha512_256_shani_mgf1_shani,
-        (Sha512_256Backend::ShaNi, Sha1Backend::ShaNi, Backend::Adx) => vg_rsa_oaep_sha512_256_mgf1_sha1_decrypt_sha512_256_shani_mgf1_shani_crt_adx,
-        (Sha512_256Backend::ShaNi, Sha1Backend::ShaNi, Backend::Ifma) => vg_rsa_oaep_sha512_256_mgf1_sha1_decrypt_sha512_256_shani_mgf1_shani_crt_ifma,
-        (Sha512_256Backend::Avx2, Sha1Backend::Scalar, Backend::Baseline) => vg_rsa_oaep_sha512_256_mgf1_sha1_decrypt_sha512_256_avx2,
-        (Sha512_256Backend::Avx2, Sha1Backend::Scalar, Backend::Adx) => vg_rsa_oaep_sha512_256_mgf1_sha1_decrypt_sha512_256_avx2_crt_adx,
-        (Sha512_256Backend::Avx2, Sha1Backend::Scalar, Backend::Ifma) => vg_rsa_oaep_sha512_256_mgf1_sha1_decrypt_sha512_256_avx2_crt_ifma,
-        (Sha512_256Backend::Avx2, Sha1Backend::ShaNi, Backend::Baseline) => vg_rsa_oaep_sha512_256_mgf1_sha1_decrypt_sha512_256_avx2_mgf1_shani,
-        (Sha512_256Backend::Avx2, Sha1Backend::ShaNi, Backend::Adx) => vg_rsa_oaep_sha512_256_mgf1_sha1_decrypt_sha512_256_avx2_mgf1_shani_crt_adx,
-        (Sha512_256Backend::Avx2, Sha1Backend::ShaNi, Backend::Ifma) => vg_rsa_oaep_sha512_256_mgf1_sha1_decrypt_sha512_256_avx2_mgf1_shani_crt_ifma,
+        (Sha512_256Backend::Scalar, Sha1Backend::Scalar, Backend::Baseline) => {
+            vg_rsa_oaep_sha512_256_mgf1_sha1_decrypt
+        }
+        (Sha512_256Backend::Scalar, Sha1Backend::Scalar, Backend::Adx) => {
+            vg_rsa_oaep_sha512_256_mgf1_sha1_decrypt_crt_adx
+        }
+        (Sha512_256Backend::Scalar, Sha1Backend::Scalar, Backend::Ifma) => {
+            vg_rsa_oaep_sha512_256_mgf1_sha1_decrypt_crt_ifma
+        }
+        (Sha512_256Backend::Scalar, Sha1Backend::ShaNi, Backend::Baseline) => {
+            vg_rsa_oaep_sha512_256_mgf1_sha1_decrypt_mgf1_shani
+        }
+        (Sha512_256Backend::Scalar, Sha1Backend::ShaNi, Backend::Adx) => {
+            vg_rsa_oaep_sha512_256_mgf1_sha1_decrypt_mgf1_shani_crt_adx
+        }
+        (Sha512_256Backend::Scalar, Sha1Backend::ShaNi, Backend::Ifma) => {
+            vg_rsa_oaep_sha512_256_mgf1_sha1_decrypt_mgf1_shani_crt_ifma
+        }
+        (Sha512_256Backend::ShaNi, Sha1Backend::Scalar, Backend::Baseline) => {
+            vg_rsa_oaep_sha512_256_mgf1_sha1_decrypt_sha512_256_shani
+        }
+        (Sha512_256Backend::ShaNi, Sha1Backend::Scalar, Backend::Adx) => {
+            vg_rsa_oaep_sha512_256_mgf1_sha1_decrypt_sha512_256_shani_crt_adx
+        }
+        (Sha512_256Backend::ShaNi, Sha1Backend::Scalar, Backend::Ifma) => {
+            vg_rsa_oaep_sha512_256_mgf1_sha1_decrypt_sha512_256_shani_crt_ifma
+        }
+        (Sha512_256Backend::ShaNi, Sha1Backend::ShaNi, Backend::Baseline) => {
+            vg_rsa_oaep_sha512_256_mgf1_sha1_decrypt_sha512_256_shani_mgf1_shani
+        }
+        (Sha512_256Backend::ShaNi, Sha1Backend::ShaNi, Backend::Adx) => {
+            vg_rsa_oaep_sha512_256_mgf1_sha1_decrypt_sha512_256_shani_mgf1_shani_crt_adx
+        }
+        (Sha512_256Backend::ShaNi, Sha1Backend::ShaNi, Backend::Ifma) => {
+            vg_rsa_oaep_sha512_256_mgf1_sha1_decrypt_sha512_256_shani_mgf1_shani_crt_ifma
+        }
+        (Sha512_256Backend::Avx2, Sha1Backend::Scalar, Backend::Baseline) => {
+            vg_rsa_oaep_sha512_256_mgf1_sha1_decrypt_sha512_256_avx2
+        }
+        (Sha512_256Backend::Avx2, Sha1Backend::Scalar, Backend::Adx) => {
+            vg_rsa_oaep_sha512_256_mgf1_sha1_decrypt_sha512_256_avx2_crt_adx
+        }
+        (Sha512_256Backend::Avx2, Sha1Backend::Scalar, Backend::Ifma) => {
+            vg_rsa_oaep_sha512_256_mgf1_sha1_decrypt_sha512_256_avx2_crt_ifma
+        }
+        (Sha512_256Backend::Avx2, Sha1Backend::ShaNi, Backend::Baseline) => {
+            vg_rsa_oaep_sha512_256_mgf1_sha1_decrypt_sha512_256_avx2_mgf1_shani
+        }
+        (Sha512_256Backend::Avx2, Sha1Backend::ShaNi, Backend::Adx) => {
+            vg_rsa_oaep_sha512_256_mgf1_sha1_decrypt_sha512_256_avx2_mgf1_shani_crt_adx
+        }
+        (Sha512_256Backend::Avx2, Sha1Backend::ShaNi, Backend::Ifma) => {
+            vg_rsa_oaep_sha512_256_mgf1_sha1_decrypt_sha512_256_avx2_mgf1_shani_crt_ifma
+        }
     }
 }
 
@@ -711,15 +1062,33 @@ fn encrypt_sha512_256_mgf1_sha512_256(h: Sha512_256Backend) -> EncryptFn<32> {
 fn decrypt_sha512_256_mgf1_sha512_256(h: Sha512_256Backend, crt: Backend) -> DecryptFn {
     use crate::arch::rsa_oaep_sha512_256_mgf1_sha512_256::*;
     match (h, crt) {
-        (Sha512_256Backend::Scalar, Backend::Baseline) => vg_rsa_oaep_sha512_256_mgf1_sha512_256_decrypt,
-        (Sha512_256Backend::Scalar, Backend::Adx) => vg_rsa_oaep_sha512_256_mgf1_sha512_256_decrypt_crt_adx,
-        (Sha512_256Backend::Scalar, Backend::Ifma) => vg_rsa_oaep_sha512_256_mgf1_sha512_256_decrypt_crt_ifma,
-        (Sha512_256Backend::ShaNi, Backend::Baseline) => vg_rsa_oaep_sha512_256_mgf1_sha512_256_decrypt_sha512_256_shani,
-        (Sha512_256Backend::ShaNi, Backend::Adx) => vg_rsa_oaep_sha512_256_mgf1_sha512_256_decrypt_sha512_256_shani_crt_adx,
-        (Sha512_256Backend::ShaNi, Backend::Ifma) => vg_rsa_oaep_sha512_256_mgf1_sha512_256_decrypt_sha512_256_shani_crt_ifma,
-        (Sha512_256Backend::Avx2, Backend::Baseline) => vg_rsa_oaep_sha512_256_mgf1_sha512_256_decrypt_sha512_256_avx2,
-        (Sha512_256Backend::Avx2, Backend::Adx) => vg_rsa_oaep_sha512_256_mgf1_sha512_256_decrypt_sha512_256_avx2_crt_adx,
-        (Sha512_256Backend::Avx2, Backend::Ifma) => vg_rsa_oaep_sha512_256_mgf1_sha512_256_decrypt_sha512_256_avx2_crt_ifma,
+        (Sha512_256Backend::Scalar, Backend::Baseline) => {
+            vg_rsa_oaep_sha512_256_mgf1_sha512_256_decrypt
+        }
+        (Sha512_256Backend::Scalar, Backend::Adx) => {
+            vg_rsa_oaep_sha512_256_mgf1_sha512_256_decrypt_crt_adx
+        }
+        (Sha512_256Backend::Scalar, Backend::Ifma) => {
+            vg_rsa_oaep_sha512_256_mgf1_sha512_256_decrypt_crt_ifma
+        }
+        (Sha512_256Backend::ShaNi, Backend::Baseline) => {
+            vg_rsa_oaep_sha512_256_mgf1_sha512_256_decrypt_sha512_256_shani
+        }
+        (Sha512_256Backend::ShaNi, Backend::Adx) => {
+            vg_rsa_oaep_sha512_256_mgf1_sha512_256_decrypt_sha512_256_shani_crt_adx
+        }
+        (Sha512_256Backend::ShaNi, Backend::Ifma) => {
+            vg_rsa_oaep_sha512_256_mgf1_sha512_256_decrypt_sha512_256_shani_crt_ifma
+        }
+        (Sha512_256Backend::Avx2, Backend::Baseline) => {
+            vg_rsa_oaep_sha512_256_mgf1_sha512_256_decrypt_sha512_256_avx2
+        }
+        (Sha512_256Backend::Avx2, Backend::Adx) => {
+            vg_rsa_oaep_sha512_256_mgf1_sha512_256_decrypt_sha512_256_avx2_crt_adx
+        }
+        (Sha512_256Backend::Avx2, Backend::Ifma) => {
+            vg_rsa_oaep_sha512_256_mgf1_sha512_256_decrypt_sha512_256_avx2_crt_ifma
+        }
     }
 }
 
@@ -728,18 +1097,48 @@ fn decrypt_sha512_256_mgf1_sha512_256(h: Sha512_256Backend, crt: Backend) -> Dec
 fn encrypt_impl(hash: Hash, mgf1_hash: Hash, f: Features) -> Option<Encrypt> {
     Some(match (hash, mgf1_hash) {
         (Hash::Sha1, Hash::Sha1) => Encrypt::L20(encrypt_sha1_mgf1_sha1(Sha1Backend::select(f))),
-        (Hash::Sha224, Hash::Sha1) => Encrypt::L28(encrypt_sha224_mgf1_sha1(Sha224Backend::select(f), Sha1Backend::select(f))),
-        (Hash::Sha224, Hash::Sha224) => Encrypt::L28(encrypt_sha224_mgf1_sha224(Sha224Backend::select(f))),
-        (Hash::Sha256, Hash::Sha1) => Encrypt::L32(encrypt_sha256_mgf1_sha1(Sha256Backend::select(f), Sha1Backend::select(f))),
-        (Hash::Sha256, Hash::Sha256) => Encrypt::L32(encrypt_sha256_mgf1_sha256(Sha256Backend::select(f))),
-        (Hash::Sha384, Hash::Sha1) => Encrypt::L48(encrypt_sha384_mgf1_sha1(Sha384Backend::select(f), Sha1Backend::select(f))),
-        (Hash::Sha384, Hash::Sha384) => Encrypt::L48(encrypt_sha384_mgf1_sha384(Sha384Backend::select(f))),
-        (Hash::Sha512, Hash::Sha1) => Encrypt::L64(encrypt_sha512_mgf1_sha1(Sha512Backend::select(f), Sha1Backend::select(f))),
-        (Hash::Sha512, Hash::Sha512) => Encrypt::L64(encrypt_sha512_mgf1_sha512(Sha512Backend::select(f))),
-        (Hash::Sha512_224, Hash::Sha1) => Encrypt::L28(encrypt_sha512_224_mgf1_sha1(Sha512_224Backend::select(f), Sha1Backend::select(f))),
-        (Hash::Sha512_224, Hash::Sha512_224) => Encrypt::L28(encrypt_sha512_224_mgf1_sha512_224(Sha512_224Backend::select(f))),
-        (Hash::Sha512_256, Hash::Sha1) => Encrypt::L32(encrypt_sha512_256_mgf1_sha1(Sha512_256Backend::select(f), Sha1Backend::select(f))),
-        (Hash::Sha512_256, Hash::Sha512_256) => Encrypt::L32(encrypt_sha512_256_mgf1_sha512_256(Sha512_256Backend::select(f))),
+        (Hash::Sha224, Hash::Sha1) => Encrypt::L28(encrypt_sha224_mgf1_sha1(
+            Sha224Backend::select(f),
+            Sha1Backend::select(f),
+        )),
+        (Hash::Sha224, Hash::Sha224) => {
+            Encrypt::L28(encrypt_sha224_mgf1_sha224(Sha224Backend::select(f)))
+        }
+        (Hash::Sha256, Hash::Sha1) => Encrypt::L32(encrypt_sha256_mgf1_sha1(
+            Sha256Backend::select(f),
+            Sha1Backend::select(f),
+        )),
+        (Hash::Sha256, Hash::Sha256) => {
+            Encrypt::L32(encrypt_sha256_mgf1_sha256(Sha256Backend::select(f)))
+        }
+        (Hash::Sha384, Hash::Sha1) => Encrypt::L48(encrypt_sha384_mgf1_sha1(
+            Sha384Backend::select(f),
+            Sha1Backend::select(f),
+        )),
+        (Hash::Sha384, Hash::Sha384) => {
+            Encrypt::L48(encrypt_sha384_mgf1_sha384(Sha384Backend::select(f)))
+        }
+        (Hash::Sha512, Hash::Sha1) => Encrypt::L64(encrypt_sha512_mgf1_sha1(
+            Sha512Backend::select(f),
+            Sha1Backend::select(f),
+        )),
+        (Hash::Sha512, Hash::Sha512) => {
+            Encrypt::L64(encrypt_sha512_mgf1_sha512(Sha512Backend::select(f)))
+        }
+        (Hash::Sha512_224, Hash::Sha1) => Encrypt::L28(encrypt_sha512_224_mgf1_sha1(
+            Sha512_224Backend::select(f),
+            Sha1Backend::select(f),
+        )),
+        (Hash::Sha512_224, Hash::Sha512_224) => Encrypt::L28(encrypt_sha512_224_mgf1_sha512_224(
+            Sha512_224Backend::select(f),
+        )),
+        (Hash::Sha512_256, Hash::Sha1) => Encrypt::L32(encrypt_sha512_256_mgf1_sha1(
+            Sha512_256Backend::select(f),
+            Sha1Backend::select(f),
+        )),
+        (Hash::Sha512_256, Hash::Sha512_256) => Encrypt::L32(encrypt_sha512_256_mgf1_sha512_256(
+            Sha512_256Backend::select(f),
+        )),
         _ => return None,
     })
 }
@@ -750,18 +1149,34 @@ fn decrypt_impl(hash: Hash, mgf1_hash: Hash, f: Features) -> Option<DecryptFn> {
     let crt = Backend::select(f);
     Some(match (hash, mgf1_hash) {
         (Hash::Sha1, Hash::Sha1) => decrypt_sha1_mgf1_sha1(Sha1Backend::select(f), crt),
-        (Hash::Sha224, Hash::Sha1) => decrypt_sha224_mgf1_sha1(Sha224Backend::select(f), Sha1Backend::select(f), crt),
+        (Hash::Sha224, Hash::Sha1) => {
+            decrypt_sha224_mgf1_sha1(Sha224Backend::select(f), Sha1Backend::select(f), crt)
+        }
         (Hash::Sha224, Hash::Sha224) => decrypt_sha224_mgf1_sha224(Sha224Backend::select(f), crt),
-        (Hash::Sha256, Hash::Sha1) => decrypt_sha256_mgf1_sha1(Sha256Backend::select(f), Sha1Backend::select(f), crt),
+        (Hash::Sha256, Hash::Sha1) => {
+            decrypt_sha256_mgf1_sha1(Sha256Backend::select(f), Sha1Backend::select(f), crt)
+        }
         (Hash::Sha256, Hash::Sha256) => decrypt_sha256_mgf1_sha256(Sha256Backend::select(f), crt),
-        (Hash::Sha384, Hash::Sha1) => decrypt_sha384_mgf1_sha1(Sha384Backend::select(f), Sha1Backend::select(f), crt),
+        (Hash::Sha384, Hash::Sha1) => {
+            decrypt_sha384_mgf1_sha1(Sha384Backend::select(f), Sha1Backend::select(f), crt)
+        }
         (Hash::Sha384, Hash::Sha384) => decrypt_sha384_mgf1_sha384(Sha384Backend::select(f), crt),
-        (Hash::Sha512, Hash::Sha1) => decrypt_sha512_mgf1_sha1(Sha512Backend::select(f), Sha1Backend::select(f), crt),
+        (Hash::Sha512, Hash::Sha1) => {
+            decrypt_sha512_mgf1_sha1(Sha512Backend::select(f), Sha1Backend::select(f), crt)
+        }
         (Hash::Sha512, Hash::Sha512) => decrypt_sha512_mgf1_sha512(Sha512Backend::select(f), crt),
-        (Hash::Sha512_224, Hash::Sha1) => decrypt_sha512_224_mgf1_sha1(Sha512_224Backend::select(f), Sha1Backend::select(f), crt),
-        (Hash::Sha512_224, Hash::Sha512_224) => decrypt_sha512_224_mgf1_sha512_224(Sha512_224Backend::select(f), crt),
-        (Hash::Sha512_256, Hash::Sha1) => decrypt_sha512_256_mgf1_sha1(Sha512_256Backend::select(f), Sha1Backend::select(f), crt),
-        (Hash::Sha512_256, Hash::Sha512_256) => decrypt_sha512_256_mgf1_sha512_256(Sha512_256Backend::select(f), crt),
+        (Hash::Sha512_224, Hash::Sha1) => {
+            decrypt_sha512_224_mgf1_sha1(Sha512_224Backend::select(f), Sha1Backend::select(f), crt)
+        }
+        (Hash::Sha512_224, Hash::Sha512_224) => {
+            decrypt_sha512_224_mgf1_sha512_224(Sha512_224Backend::select(f), crt)
+        }
+        (Hash::Sha512_256, Hash::Sha1) => {
+            decrypt_sha512_256_mgf1_sha1(Sha512_256Backend::select(f), Sha1Backend::select(f), crt)
+        }
+        (Hash::Sha512_256, Hash::Sha512_256) => {
+            decrypt_sha512_256_mgf1_sha512_256(Sha512_256Backend::select(f), crt)
+        }
         _ => return None,
     })
 }
@@ -776,7 +1191,11 @@ fn all_impls() -> (Vec<Encrypt>, Vec<DecryptFn>) {
             d.push(decrypt_sha1_mgf1_sha1(h, crt));
         }
     }
-    for h in [Sha224Backend::Scalar, Sha224Backend::ShaNi, Sha224Backend::Avx2] {
+    for h in [
+        Sha224Backend::Scalar,
+        Sha224Backend::ShaNi,
+        Sha224Backend::Avx2,
+    ] {
         for g in [Sha1Backend::Scalar, Sha1Backend::ShaNi] {
             e.push(Encrypt::L28(encrypt_sha224_mgf1_sha1(h, g)));
             for crt in [Backend::Baseline, Backend::Adx, Backend::Ifma] {
@@ -784,13 +1203,21 @@ fn all_impls() -> (Vec<Encrypt>, Vec<DecryptFn>) {
             }
         }
     }
-    for h in [Sha224Backend::Scalar, Sha224Backend::ShaNi, Sha224Backend::Avx2] {
+    for h in [
+        Sha224Backend::Scalar,
+        Sha224Backend::ShaNi,
+        Sha224Backend::Avx2,
+    ] {
         e.push(Encrypt::L28(encrypt_sha224_mgf1_sha224(h)));
         for crt in [Backend::Baseline, Backend::Adx, Backend::Ifma] {
             d.push(decrypt_sha224_mgf1_sha224(h, crt));
         }
     }
-    for h in [Sha256Backend::Scalar, Sha256Backend::ShaNi, Sha256Backend::Avx2] {
+    for h in [
+        Sha256Backend::Scalar,
+        Sha256Backend::ShaNi,
+        Sha256Backend::Avx2,
+    ] {
         for g in [Sha1Backend::Scalar, Sha1Backend::ShaNi] {
             e.push(Encrypt::L32(encrypt_sha256_mgf1_sha1(h, g)));
             for crt in [Backend::Baseline, Backend::Adx, Backend::Ifma] {
@@ -798,13 +1225,21 @@ fn all_impls() -> (Vec<Encrypt>, Vec<DecryptFn>) {
             }
         }
     }
-    for h in [Sha256Backend::Scalar, Sha256Backend::ShaNi, Sha256Backend::Avx2] {
+    for h in [
+        Sha256Backend::Scalar,
+        Sha256Backend::ShaNi,
+        Sha256Backend::Avx2,
+    ] {
         e.push(Encrypt::L32(encrypt_sha256_mgf1_sha256(h)));
         for crt in [Backend::Baseline, Backend::Adx, Backend::Ifma] {
             d.push(decrypt_sha256_mgf1_sha256(h, crt));
         }
     }
-    for h in [Sha384Backend::Scalar, Sha384Backend::ShaNi, Sha384Backend::Avx2] {
+    for h in [
+        Sha384Backend::Scalar,
+        Sha384Backend::ShaNi,
+        Sha384Backend::Avx2,
+    ] {
         for g in [Sha1Backend::Scalar, Sha1Backend::ShaNi] {
             e.push(Encrypt::L48(encrypt_sha384_mgf1_sha1(h, g)));
             for crt in [Backend::Baseline, Backend::Adx, Backend::Ifma] {
@@ -812,13 +1247,21 @@ fn all_impls() -> (Vec<Encrypt>, Vec<DecryptFn>) {
             }
         }
     }
-    for h in [Sha384Backend::Scalar, Sha384Backend::ShaNi, Sha384Backend::Avx2] {
+    for h in [
+        Sha384Backend::Scalar,
+        Sha384Backend::ShaNi,
+        Sha384Backend::Avx2,
+    ] {
         e.push(Encrypt::L48(encrypt_sha384_mgf1_sha384(h)));
         for crt in [Backend::Baseline, Backend::Adx, Backend::Ifma] {
             d.push(decrypt_sha384_mgf1_sha384(h, crt));
         }
     }
-    for h in [Sha512Backend::Scalar, Sha512Backend::ShaNi, Sha512Backend::Avx2] {
+    for h in [
+        Sha512Backend::Scalar,
+        Sha512Backend::ShaNi,
+        Sha512Backend::Avx2,
+    ] {
         for g in [Sha1Backend::Scalar, Sha1Backend::ShaNi] {
             e.push(Encrypt::L64(encrypt_sha512_mgf1_sha1(h, g)));
             for crt in [Backend::Baseline, Backend::Adx, Backend::Ifma] {
@@ -826,13 +1269,21 @@ fn all_impls() -> (Vec<Encrypt>, Vec<DecryptFn>) {
             }
         }
     }
-    for h in [Sha512Backend::Scalar, Sha512Backend::ShaNi, Sha512Backend::Avx2] {
+    for h in [
+        Sha512Backend::Scalar,
+        Sha512Backend::ShaNi,
+        Sha512Backend::Avx2,
+    ] {
         e.push(Encrypt::L64(encrypt_sha512_mgf1_sha512(h)));
         for crt in [Backend::Baseline, Backend::Adx, Backend::Ifma] {
             d.push(decrypt_sha512_mgf1_sha512(h, crt));
         }
     }
-    for h in [Sha512_224Backend::Scalar, Sha512_224Backend::ShaNi, Sha512_224Backend::Avx2] {
+    for h in [
+        Sha512_224Backend::Scalar,
+        Sha512_224Backend::ShaNi,
+        Sha512_224Backend::Avx2,
+    ] {
         for g in [Sha1Backend::Scalar, Sha1Backend::ShaNi] {
             e.push(Encrypt::L28(encrypt_sha512_224_mgf1_sha1(h, g)));
             for crt in [Backend::Baseline, Backend::Adx, Backend::Ifma] {
@@ -840,13 +1291,21 @@ fn all_impls() -> (Vec<Encrypt>, Vec<DecryptFn>) {
             }
         }
     }
-    for h in [Sha512_224Backend::Scalar, Sha512_224Backend::ShaNi, Sha512_224Backend::Avx2] {
+    for h in [
+        Sha512_224Backend::Scalar,
+        Sha512_224Backend::ShaNi,
+        Sha512_224Backend::Avx2,
+    ] {
         e.push(Encrypt::L28(encrypt_sha512_224_mgf1_sha512_224(h)));
         for crt in [Backend::Baseline, Backend::Adx, Backend::Ifma] {
             d.push(decrypt_sha512_224_mgf1_sha512_224(h, crt));
         }
     }
-    for h in [Sha512_256Backend::Scalar, Sha512_256Backend::ShaNi, Sha512_256Backend::Avx2] {
+    for h in [
+        Sha512_256Backend::Scalar,
+        Sha512_256Backend::ShaNi,
+        Sha512_256Backend::Avx2,
+    ] {
         for g in [Sha1Backend::Scalar, Sha1Backend::ShaNi] {
             e.push(Encrypt::L32(encrypt_sha512_256_mgf1_sha1(h, g)));
             for crt in [Backend::Baseline, Backend::Adx, Backend::Ifma] {
@@ -854,7 +1313,11 @@ fn all_impls() -> (Vec<Encrypt>, Vec<DecryptFn>) {
             }
         }
     }
-    for h in [Sha512_256Backend::Scalar, Sha512_256Backend::ShaNi, Sha512_256Backend::Avx2] {
+    for h in [
+        Sha512_256Backend::Scalar,
+        Sha512_256Backend::ShaNi,
+        Sha512_256Backend::Avx2,
+    ] {
         e.push(Encrypt::L32(encrypt_sha512_256_mgf1_sha512_256(h)));
         for crt in [Backend::Baseline, Backend::Adx, Backend::Ifma] {
             d.push(decrypt_sha512_256_mgf1_sha512_256(h, crt));
@@ -862,7 +1325,6 @@ fn all_impls() -> (Vec<Encrypt>, Vec<DecryptFn>) {
     }
     (e, d)
 }
-
 
 #[cfg(test)]
 mod tests {

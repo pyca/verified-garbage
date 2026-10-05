@@ -52,17 +52,19 @@ fn trim(x: &[u8]) -> &[u8] {
     &x[x.iter().take_while(|&&b| b == 0).count()..]
 }
 
+/// The hash functions by the vectors' names for them.
+const HASHES: [(&str, Hash); 7] = [
+    ("SHA-1", Hash::Sha1),
+    ("SHA-224", Hash::Sha224),
+    ("SHA-256", Hash::Sha256),
+    ("SHA-384", Hash::Sha384),
+    ("SHA-512", Hash::Sha512),
+    ("SHA-512/224", Hash::Sha512_224),
+    ("SHA-512/256", Hash::Sha512_256),
+];
+
 fn hash(name: &str) -> Hash {
-    match name {
-        "SHA-1" => Hash::Sha1,
-        "SHA-224" => Hash::Sha224,
-        "SHA-256" => Hash::Sha256,
-        "SHA-384" => Hash::Sha384,
-        "SHA-512" => Hash::Sha512,
-        "SHA-512/224" => Hash::Sha512_224,
-        "SHA-512/256" => Hash::Sha512_256,
-        _ => panic!("unknown hash function {name}"),
-    }
+    HASHES.iter().find(|(n, _)| *n == name).expect(name).1
 }
 
 /// Checks every vector of the file `name`; returns the numbers of
