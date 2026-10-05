@@ -205,10 +205,10 @@ def putMsg : Prog isa :=
 /-- The arguments of `vg_rsa_public_checked`: `out` (`k` bytes), `n`, `e`,
 `EM` as the input (`k` bytes), and the rest of `scratch`. -/
 def pubArgs : List Instr :=
-  scr .rax oEm ++ [.store (sp 0) .rax, .mov .rax (.mem (sp sK)), .store (sp 8) .rax] ++
-  scr .rax oRsa ++ [.store (sp 16) .rax, .mov .rax (.mem (sp sScrLen)), .alu .sub .rax (.imm 1024),
-    .store (sp 24) .rax] ++
-  [.mov .rdi (.mem (sp sOut)), .mov .rsi (.mem (sp sK)), .mov .rdx (.mem (sp sN)), .mov .rcx (.mem (sp sK)),
+  scr .rax oEm ++ [.mov .rdx (.mem (sp sK))] ++ scr .rcx oRsa ++
+  [.mov .r9 (.mem (sp sScrLen)), .alu .sub .r9 (.imm 1024), .store (sp 0) .rax, .store (sp 8) .rdx,
+    .store (sp 16) .rcx, .store (sp 24) .r9,
+    .mov .rdi (.mem (sp sOut)), .mov .rsi (.mem (sp sK)), .mov .rdx (.mem (sp sN)), .mov .rcx (.mem (sp sK)),
     .mov .r8 (.mem (sp sE)), .mov .r9 (.mem (sp sEl))]
 
 /-- `EM`, before masking. -/
