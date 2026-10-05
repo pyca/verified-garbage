@@ -87,21 +87,23 @@ abbrev openResult (s : State) : Option (List Byte) :=
     (bytesAt s.mem ((arg s 4).setWidth 64) (arg s 5).toNat) (bytesAt s.mem ((arg s 6).setWidth 64) (arg s 7).toNat)
     (bytesAt s.mem ((arg s 8).setWidth 64) (arg s 9).toNat)
 
-/-- What `vg_aes_ocb_open` leaves in `eax` and in the `n` bytes of data at
-`D`, for the result `r`. Irreducible, so that checking a state against it
-never evaluates `r`. -/
-@[irreducible] def openPost (r : Option (List Byte)) (s' : State) (D : Addr) (n : Nat) : Prop :=
+/-- The return value: the low word of `edx:eax`. -/
+theorem setWidth_ret (a b : BitVec 32) : (a ++ b).setWidth 32 = b := BitVec.setWidth_append_eq_right
+
+/-- What `vg_aes_ocb_open` leaves in `edx:eax` and in the `n` bytes of data
+at `D`, for the result `r`. -/
+def openPost (r : Option (List Byte)) (s' : State) (D : Addr) (n : Nat) : Prop :=
   match r with
-  | some pt => s'.gpr .eax = 1 ∧ bytesAt s'.mem D n = pt
-  | none => s'.gpr .eax = 0 ∧ bytesAt s'.mem D n = zeros n
+  | some pt => (s'.gpr .edx ++ s'.gpr .eax).setWidth 32 = 1 ∧ bytesAt s'.mem D n = pt
+  | none => (s'.gpr .edx ++ s'.gpr .eax).setWidth 32 = 0 ∧ bytesAt s'.mem D n = zeros n
 
 theorem openPost_some {r : Option (List Byte)} {pt : List Byte} {s' : State} {D : Addr} {n : Nat}
     (hr : r = some pt) (hax : s'.gpr .eax = 1) (hd : bytesAt s'.mem D n = pt) : openPost r s' D n := by
-  subst hr; unfold openPost; exact ⟨hax, hd⟩
+  subst hr; exact ⟨by rw [setWidth_ret, hax], hd⟩
 
 theorem openPost_none {r : Option (List Byte)} {s' : State} {D : Addr} {n : Nat}
     (hr : r = none) (hax : s'.gpr .eax = 0) (hd : bytesAt s'.mem D n = zeros n) : openPost r s' D n := by
-  subst hr; unfold openPost; exact ⟨hax, hd⟩
+  subst hr; exact ⟨by rw [setWidth_ret, hax], hd⟩
 
 /-- `vg_aes_ocb_open`. It does not branch on whether the tag is right, so
 its runs are related without the leak the shared contract allows. -/
