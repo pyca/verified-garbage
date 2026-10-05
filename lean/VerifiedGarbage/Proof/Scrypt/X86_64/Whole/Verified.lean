@@ -664,9 +664,7 @@ theorem scrypt_implies :
           X86_64.argRegs, _root_.List.range, _root_.List.range.loop, List.append_eq]
         sig_and_intros
         sig_close
-        all_goals first
-          | with_reducible assumption
-          | with_reducible exact Region.Disjoint.symm ‹_›
+        all_goals with_reducible assumption
       post := by
         rintro s s' - h
         sig_post [Spec.Scrypt.scryptContract, Spec.Scrypt.scryptSig, Proof.Scrypt.scryptX86_64,

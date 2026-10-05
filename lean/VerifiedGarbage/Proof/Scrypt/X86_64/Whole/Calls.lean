@@ -36,10 +36,7 @@ theorem pbk_pre {s : State} (h : pbkK.pre s) :
   simp only [pbkK, pbkG, Spec.Hmac.sha256S] at h
   sig_split h
   sig_and_intros
-  all_goals first
-    | with_reducible assumption
-    | with_reducible exact Region.Disjoint.symm ‹_›
-    | omega
+  all_goals with_reducible assumption
 
 theorem pbk_post {s s' : State} (h : (Spec.Hmac.sha256I.pbkdf2ScratchContract X86_64.abi 24).post s s') :
     pbkK.post s s' := by
