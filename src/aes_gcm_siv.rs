@@ -13,32 +13,39 @@
 //! The functions are emitted once for each combination of the
 //! implementations of AES (`vg_aes_ctr32`, `vg_aes_expand_key`) and of GHASH
 //! (`vg_ghash`, with which POLYVAL is computed) that AES-GCM has, and are
-//! chosen as AES-GCM's are (`crate::aes_gcm`'s backends). x86-64, AArch64
-//! and 32-bit ARM (the baseline ISA's implementations alone) have
+//! chosen as AES-GCM's are (`crate::aes_gcm`'s backends). x86-64, x86,
+//! AArch64 and 32-bit ARM (the baseline ISA's implementations alone) have
 //! implementations so far.
 
-#![cfg(any(target_arch = "x86_64", target_arch = "aarch64", target_arch = "arm"))]
+#![cfg(any(
+    target_arch = "x86_64",
+    target_arch = "x86",
+    target_arch = "aarch64",
+    target_arch = "arm"
+))]
 
 use crate::aes_gcm::{Backend, instance, select};
 use crate::arch::aes::vg_aes_expand_key;
 #[cfg(target_arch = "aarch64")]
 use crate::arch::aes::vg_aes_expand_key_aes;
-#[cfg(target_arch = "x86_64")]
+#[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
 use crate::arch::aes::vg_aes_expand_key_aesni;
 use crate::arch::aes_gcm_siv::{vg_aes_gcm_siv_open, vg_aes_gcm_siv_seal};
 #[cfg(target_arch = "aarch64")]
 use crate::arch::aes_gcm_siv::{vg_aes_gcm_siv_open_aes, vg_aes_gcm_siv_seal_aes};
+#[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+use crate::arch::aes_gcm_siv::{
+    vg_aes_gcm_siv_open_aesni, vg_aes_gcm_siv_open_aesni_pclmul, vg_aes_gcm_siv_open_pclmul,
+    vg_aes_gcm_siv_seal_aesni, vg_aes_gcm_siv_seal_aesni_pclmul, vg_aes_gcm_siv_seal_pclmul,
+};
 #[cfg(target_arch = "x86_64")]
 use crate::arch::aes_gcm_siv::{
-    vg_aes_gcm_siv_open_aesni, vg_aes_gcm_siv_open_aesni_pclmul,
     vg_aes_gcm_siv_open_aesni_pclmul_avx, vg_aes_gcm_siv_open_aesni_vpclmul,
-    vg_aes_gcm_siv_open_pclmul, vg_aes_gcm_siv_open_vaes, vg_aes_gcm_siv_open_vaes_pclmul,
-    vg_aes_gcm_siv_open_vaes_vpclmul, vg_aes_gcm_siv_open_vaes_vpclmul_avx512,
-    vg_aes_gcm_siv_open_vpclmul, vg_aes_gcm_siv_seal_aesni, vg_aes_gcm_siv_seal_aesni_pclmul,
+    vg_aes_gcm_siv_open_vaes, vg_aes_gcm_siv_open_vaes_pclmul, vg_aes_gcm_siv_open_vaes_vpclmul,
+    vg_aes_gcm_siv_open_vaes_vpclmul_avx512, vg_aes_gcm_siv_open_vpclmul,
     vg_aes_gcm_siv_seal_aesni_pclmul_avx, vg_aes_gcm_siv_seal_aesni_vpclmul,
-    vg_aes_gcm_siv_seal_pclmul, vg_aes_gcm_siv_seal_vaes, vg_aes_gcm_siv_seal_vaes_pclmul,
-    vg_aes_gcm_siv_seal_vaes_vpclmul, vg_aes_gcm_siv_seal_vaes_vpclmul_avx512,
-    vg_aes_gcm_siv_seal_vpclmul,
+    vg_aes_gcm_siv_seal_vaes, vg_aes_gcm_siv_seal_vaes_pclmul, vg_aes_gcm_siv_seal_vaes_vpclmul,
+    vg_aes_gcm_siv_seal_vaes_vpclmul_avx512, vg_aes_gcm_siv_seal_vpclmul,
 };
 use crate::cpu::detected;
 use crate::zeroize::zeroize;
@@ -226,17 +233,21 @@ mod tests {
     use crate::arch::aes_gcm_siv::{
         VG_AES_GCM_SIV_OPEN_AES_FEATURES, VG_AES_GCM_SIV_SEAL_AES_FEATURES,
     };
+    #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+    use crate::arch::aes_gcm_siv::{
+        VG_AES_GCM_SIV_OPEN_AESNI_FEATURES, VG_AES_GCM_SIV_OPEN_AESNI_PCLMUL_FEATURES,
+        VG_AES_GCM_SIV_OPEN_PCLMUL_FEATURES, VG_AES_GCM_SIV_SEAL_AESNI_FEATURES,
+        VG_AES_GCM_SIV_SEAL_AESNI_PCLMUL_FEATURES, VG_AES_GCM_SIV_SEAL_PCLMUL_FEATURES,
+    };
     #[cfg(target_arch = "x86_64")]
     use crate::arch::aes_gcm_siv::{
-        VG_AES_GCM_SIV_OPEN_AESNI_FEATURES, VG_AES_GCM_SIV_OPEN_AESNI_PCLMUL_AVX_FEATURES,
-        VG_AES_GCM_SIV_OPEN_AESNI_PCLMUL_FEATURES, VG_AES_GCM_SIV_OPEN_AESNI_VPCLMUL_FEATURES,
-        VG_AES_GCM_SIV_OPEN_PCLMUL_FEATURES, VG_AES_GCM_SIV_OPEN_VAES_FEATURES,
-        VG_AES_GCM_SIV_OPEN_VAES_PCLMUL_FEATURES, VG_AES_GCM_SIV_OPEN_VAES_VPCLMUL_AVX512_FEATURES,
+        VG_AES_GCM_SIV_OPEN_AESNI_PCLMUL_AVX_FEATURES, VG_AES_GCM_SIV_OPEN_AESNI_VPCLMUL_FEATURES,
+        VG_AES_GCM_SIV_OPEN_VAES_FEATURES, VG_AES_GCM_SIV_OPEN_VAES_PCLMUL_FEATURES,
+        VG_AES_GCM_SIV_OPEN_VAES_VPCLMUL_AVX512_FEATURES,
         VG_AES_GCM_SIV_OPEN_VAES_VPCLMUL_FEATURES, VG_AES_GCM_SIV_OPEN_VPCLMUL_FEATURES,
-        VG_AES_GCM_SIV_SEAL_AESNI_FEATURES, VG_AES_GCM_SIV_SEAL_AESNI_PCLMUL_AVX_FEATURES,
-        VG_AES_GCM_SIV_SEAL_AESNI_PCLMUL_FEATURES, VG_AES_GCM_SIV_SEAL_AESNI_VPCLMUL_FEATURES,
-        VG_AES_GCM_SIV_SEAL_PCLMUL_FEATURES, VG_AES_GCM_SIV_SEAL_VAES_FEATURES,
-        VG_AES_GCM_SIV_SEAL_VAES_PCLMUL_FEATURES, VG_AES_GCM_SIV_SEAL_VAES_VPCLMUL_AVX512_FEATURES,
+        VG_AES_GCM_SIV_SEAL_AESNI_PCLMUL_AVX_FEATURES, VG_AES_GCM_SIV_SEAL_AESNI_VPCLMUL_FEATURES,
+        VG_AES_GCM_SIV_SEAL_VAES_FEATURES, VG_AES_GCM_SIV_SEAL_VAES_PCLMUL_FEATURES,
+        VG_AES_GCM_SIV_SEAL_VAES_VPCLMUL_AVX512_FEATURES,
         VG_AES_GCM_SIV_SEAL_VAES_VPCLMUL_FEATURES, VG_AES_GCM_SIV_SEAL_VPCLMUL_FEATURES,
     };
     use crate::cpu::Features;

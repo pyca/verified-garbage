@@ -32,8 +32,8 @@ and fit in `n` words (`n < 7`: the multiplications accumulate in
 `x8`–`x15`), `G` is on the curve, `p < 2n` (so `x mod n` is one conditional
 subtraction), the Montgomery constants are right, encodings are `8 n`
 bytes, a hash of `8 n` bytes is not truncated, the chains of `p - 2` and
-`n - 2` are right, `n ≤ 4` (the comb's selection holds an entry in
-`x8`–`x15`), and `a = -3` (the complete formulas are those for it). The group law needs
+`n - 2` are right, `n` even (the comb's selection moves an entry's words
+in pairs), and `a = -3` (the complete formulas are those for it). The group law needs
 more (`Weierstrass.Law`, which a prime field and no point of order 2 give:
 `Weierstrass.Good.law`), which only the proofs of the results take. -/
 structure CfgOk (c : Cfg) : Prop where
@@ -51,7 +51,7 @@ structure CfgOk (c : Cfg) : Prop where
   minv_n : (c.C.n * (BitVec.ofNat 64 (minv c.C.n)).toNat + 1) % 2 ^ 64 = 0
   red_p : c.MP'.ok c.C.p = true
   red_n : c.MN'.ok c.C.n = true
-  n4 : c.n ≤ 4
+  n2 : c.n % 2 = 0
   len : c.C.len = 8 * c.n
   hash : 64 * c.n ≤ Spec.Ecdsa.nBits c.C
   chain_p : chainCheck (slide (c.C.p - 2)).1 (slide (c.C.p - 2)).2 (c.C.p - 2) = true

@@ -39,15 +39,15 @@ impl Curve for P256 {
 }
 
 /// The curve P-384 (FIPS 186-5's secp384r1; SP 800-186 §3.2.1.4), so far
-/// on x86-64.
-#[cfg(target_arch = "x86_64")]
+/// on x86-64, AArch64 and x86.
+#[cfg(any(target_arch = "x86_64", target_arch = "aarch64", target_arch = "x86"))]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum P384 {}
 
-#[cfg(target_arch = "x86_64")]
+#[cfg(any(target_arch = "x86_64", target_arch = "aarch64", target_arch = "x86"))]
 impl sealed::Sealed for P384 {}
 
-#[cfg(target_arch = "x86_64")]
+#[cfg(any(target_arch = "x86_64", target_arch = "aarch64", target_arch = "x86"))]
 impl Curve for P384 {
     type PrivateKey = [u8; 48];
     type PublicKey = [u8; 97];

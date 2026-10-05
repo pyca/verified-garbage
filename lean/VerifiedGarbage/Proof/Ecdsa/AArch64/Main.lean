@@ -63,7 +63,7 @@ theorem stage₂ (hc : CfgOk c) (hC : Law c.C) (hT : CombOkW c.C Cfg.combW (Cfg.
     (modP_of hc F.mp) hF
   refine WP.seq (WP.mono W fun s₅ h₅ => ?_)
   obtain ⟨K₅, U₅, M₅, L₅, R₅⟩ := h₅
-  have hs₅ := hS.scr.of_keepRegs K₅ (x0_not_tcombClob hc.n4)
+  have hs₅ := hS.scr.of_keepRegs K₅ (x0_not_tcombClob hc.n7)
   have F₅ := F.unch h7 hn fixedOk_tcombW U₅
   refine WP.seq (WP.mono (chainPow_ok (chainLayP hc) hpR hs₅ M₅
     (L₅ (c.sl RZ) (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_singleton_self _))))
@@ -82,7 +82,7 @@ theorem stage₂ (hc : CfgOk c) (hC : Law c.C) (hT : CombOkW c.C Cfg.combW (Cfg.
     by rw [e₆ (by decide) (by decide) (by decide), hS.e],
     by rw [flag_unch_chain U₆ h7 h0 hn, flag_unch_tcomb U₅ h7 h0 hn, hS.flag], ?_, lt₆, ?_,
     ?_⟩
-  · rw [K₆.gpr _ (x20_not_powClob h7), K₅.gpr _ (x20_not_tcombClob hc.n4), hS.x20]
+  · rw [K₆.gpr _ (x20_not_powClob h7), K₅.gpr _ (x20_not_tcombClob hc.n7), hS.x20]
   · show Rep c.C (toM _ _ (sv c base s₆ RX)) (toM _ _ (sv c base s₆ RY)) (toM _ _ (sv c base s₆ RZ)) _
     rw [r₆ (i := RX) (by decide) (by decide), r₆ (i := RY) (by decide) (by decide),
       r₆ (i := RZ) (by decide) (by decide)]

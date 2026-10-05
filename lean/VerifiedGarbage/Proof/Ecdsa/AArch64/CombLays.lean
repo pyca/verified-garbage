@@ -60,7 +60,6 @@ theorem combLay (hc : CfgOk c) : CombLay c.combCfg.toComb size := by
 theorem tcombLay (hc : CfgOk c) : TCombLay c.combCfg size := by
   have hn := hc.n0
   have h7 := hc.n7
-  have h4 := hc.n4
   have hb := bitsAt_le c h7 (j := 1) (by decide)
   have hb0 : bitsAt c.n 1 = bitsAt c.n 0 + 64 * c.n := by rw [bitsAt_eq, bitsAt_eq]; omega
   have hz := zw_le hn
@@ -70,7 +69,9 @@ theorem tcombLay (hc : CfgOk c) : TCombLay c.combCfg size := by
   have hbits : c.combCfg.bits = bitsAt c.n 0 := rfl
   have hw : c.combCfg.w = 7 := rfl
   have hJ : c.combCfg.J = (64 * c.n + 6) / 7 := rfl
-  refine ⟨combLay hc, ⟨by rw [hw]; decide, by rw [hw]; decide⟩, ?_, ?_, ?_, ?_, ?_, ?_, h4, ⟨?_, ?_⟩⟩
+  have h2 := hc.n2
+  refine ⟨combLay hc, ⟨by rw [hw]; decide, by rw [hw]; decide⟩, ?_, ?_, ?_, ?_, ?_, ?_, by show c.n ≤ 8; omega,
+    h2, ⟨?_, ?_⟩, ⟨?_, ?_⟩⟩
   · rw [hk, hw, hJ]; omega
   · rw [hbits, hk]; show _ ≤ 8192; omega
   · rw [hbits, hk, ← hb0]; exact bitsAt_mod8 c 1
@@ -89,6 +90,8 @@ theorem tcombLay (hc : CfgOk c) : TCombLay c.combCfg size := by
       have : ∀ i ∈ [AP, BM, ZERO, RX, RY, RZ, TX, TY, TZ, PT, T0, T1, T2, T3, T4, T5, DX, DY, DZ],
         i < 45 := by decide
       exact Or.inr (sl_below_bits c (this i hi) 0 _)
+  · show (64 + 8 * c.n * 20) % 16 = 0; omega
+  · show (64 + 8 * c.n * 21) % 16 = 0; omega
   · show 16 * c.n * 2 ^ (7 - 1) ≤ 32768; omega
   · show 16 * c.n * 2 ^ (7 - 1) < 65536; omega
 
@@ -142,8 +145,7 @@ theorem tbl_of {s₀ s : State} {T base : Addr} (hp : TblPre c s₀ T base) (hrd
     have := hp.sc _ hc
     simp only [Region.Contains] at this
     unfold ofs; omega
-  refine ⟨⟨fun i hi => ⟨_, List.mem_append_left _ (hrd ▸ hp.rd),
-    Offset.contains_base T (by omega) (by omega)⟩, fun i hi => ?_⟩, hout⟩
+  refine ⟨⟨⟨_, List.mem_append_left _ (hrd ▸ hp.rd), by simp [Region.Contains]⟩, fun i hi => ?_⟩, hout⟩
   rw [← hp.held i hi]
   refine Mem.readW_congr fun b hb => (hu _ fun w hw => ?_)
   rw [List.mem_singleton.mp hw]
@@ -189,11 +191,11 @@ theorem x0_not_combClob {n : Nat} (hn : n < 7) : Reg.x0 ∉ combClob n := (combC
 
 theorem x20_not_combClob {n : Nat} (hn : n < 7) : Reg.x20 ∉ combClob n := (combClob_regs n hn).2
 
-theorem tcombClob_regs : ∀ n ≤ 4, Reg.x0 ∉ tcombClob n ∧ Reg.x20 ∉ tcombClob n := by
-  unfold tcombClob entryRegs combClob maskRegs clob acc; decide
+theorem tcombClob_regs : ∀ n < 7, Reg.x0 ∉ tcombClob n ∧ Reg.x20 ∉ tcombClob n := by
+  unfold tcombClob entryRegs selRegs combClob maskRegs clob acc; decide
 
-theorem x0_not_tcombClob {n : Nat} (hn : n ≤ 4) : Reg.x0 ∉ tcombClob n := (tcombClob_regs n hn).1
+theorem x0_not_tcombClob {n : Nat} (hn : n < 7) : Reg.x0 ∉ tcombClob n := (tcombClob_regs n hn).1
 
-theorem x20_not_tcombClob {n : Nat} (hn : n ≤ 4) : Reg.x20 ∉ tcombClob n := (tcombClob_regs n hn).2
+theorem x20_not_tcombClob {n : Nat} (hn : n < 7) : Reg.x20 ∉ tcombClob n := (tcombClob_regs n hn).2
 
 end VG.Proof.Ecdsa.AArch64
