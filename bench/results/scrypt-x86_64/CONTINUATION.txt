@@ -1,0 +1,80 @@
+Continuation: SIMD memory loops, direct filling, retained scalar state
+====================================================================
+
+Completed and used by the public scrypt API:
+- b3e8572c: 16-byte SSE2 ROMix copy/XOR loops, including functional and
+  trace-equivalence proofs and Lean-generated assembly.
+- 1ce3ad2c: fill V directly with BlockMix, copying the initial X only once
+  and writing the final X back to b. Functional and trace-equivalence
+  proofs cover N=1 as well as subsequent iterations.
+
+Both revisions passed the targeted complete x86-64 scrypt Lean builds,
+emitter axiom/compiler-override/spec-origin audits, RFC 7914 tests (8,
+including the 1-GiB case), and 120 OpenSSL differential cases.
+
+Interleaved full public API measurements
+----------------------------------------
+Same VM/toolchain as RESULTS.txt. Three randomized/interleaved repetitions,
+CPU 0, Criterion 10 samples, 0.3 s warmup, 1 s measurement, r=8 p=1,
+64-byte derived key. Values below are medians of the three run means.
+Preserved binaries were used; compilation did not overlap measurement.
+
+SIMD experiment                 N=1024 ms   N=16384 ms
+Previous scalar/MUL                   1.923      34.879
+SSE2 copy/XOR                         1.897      32.584
+OpenSSL control, previous                       38.441
+OpenSSL control, SSE2                           38.435
+
+Direct-fill experiment          N=1024 ms   N=16384 ms
+SSE2 copy/XOR                         1.911      32.335
+SSE2 plus direct fill                 1.890      32.524
+OpenSSL control, SSE2                 2.219      41.268
+OpenSSL control, direct fill          2.303      42.005
+
+SSE2's N=16384 reduction is 6.6% in its matched experiment. Direct filling
+alone is inconclusive in these noisy full-API results; do not claim a
+measured independent gain. Reassess it with the finished fused BlockMix.
+The SIMD and direct runs were separate experiments, not one paired series.
+Raw run estimates and original Criterion samples are in simd-api-*.csv
+and direct-api-*.csv.
+
+Retained-state probe (NOT integrated or fully verified)
+------------------------------------------------------
+BlockMixFused.lean retains words 0..11 in GPRs and 12..15 in scratch across
+Salsa invocations. Scratch[16,48) holds loop metadata; [48,56) is a temporary;
+[64,112) holds saved caller registers. It avoids saving/restoring loop GPRs
+and reloading the previous X for every Salsa invocation.
+
+The Retained proof module proves the complete fused inner core's arithmetic,
+output words, memory frame, state retention, and trace equivalence. FusedLoop
+contains metadata preservation and byte-specification helper proofs.
+The full BlockMix loop/ABI proof and its production integration are NOT
+complete. There is no Verified artifact for blockMixFused. The public API
+continues to use the already verified inlined scalar BlockMix.
+
+Standalone Lean-printer probe, compared with direct-fill verified ROMix:
+21 randomized/interleaved paired rounds after warmup, CPU 0, r=8.
+N=1024: 20 calls per sample; N=16384: 3; N=65536: 1.
+Every output was compared with the verified version. Reused allocations;
+these are ROMix timings, excluding PBKDF2, allocation, cleansing and free.
+
+Median ROMix time              N=1024 ms   N=16384 ms   N=65536 ms
+Direct fill, existing BlockMix     1.794       31.749      133.385
+Direct fill, retained-state probe  1.654       30.052      123.164
+
+The reduction at N=16384 is 5.3%; at N=65536, 7.7%. These numbers are
+experimental, not timings of a fully verified retained-state public API.
+All samples are in fused-probe-romix-runs.csv.
+
+Workspace reproducibility drivers and logs remain under:
+/workspace/scratch/salsa-continuation/
+  bench-simd.py, bench-direct.py; *-measurements/ original Criterion JSON
+  EmitProbe.lean (Lean printer, experimental output only), probe.c, probe.S
+  direct-build.log, direct-emit.log, direct-rfc.log, direct-diff.log
+  verified-{mul,simd,direct}-bench
+
+Final continuation checks also passed: Lean import/speed rules, variant
+propagation, MCDT, architecture gates, vector provenance, generated algorithm
+tables, Rust formatting, and root all-target Clippy with warnings denied.
+The refactored fusedCore/fusedHalf printer output was byte-for-byte identical
+to the assembly used for the recorded probe. No TCB or specification changed.
