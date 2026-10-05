@@ -27,16 +27,16 @@ def p384 (hL : Weierstrass.Law Spec.P384.curve) : RfcCurve where
   E := Impl.Ecdsa.Arm.p384
   inst := Spec.Ecdsa.P384.inst
   curve := rfl
-  n46 := .inr rfl
-  len := rfl
-  nBits := p384_nBits
+  wide := false
+  sizes := ⟨.inr rfl, rfl, p384_nBits, by decide +kernel⟩
   n_lt := by decide +kernel
-  lt_2n := by decide +kernel
+  sh := 0
+  sh_eq := by show 8 * 48 - Spec.Ecdsa.nBits Spec.P384.curve = 0; rw [p384_nBits]
   coreN := Spec.Ecdsa.P384.signApi.name
   coreC := Impl.Ecdsa.Arm.signP384
   coreX := Proof.Ecdsa.Arm.P384.sign_arm hL
   coreCT := Proof.Ecdsa.Arm.P384.sign_ct
   coreStack := by lit_decide
-  reduceT := ⟨_, by taint_decide⟩
+  reduceT := Function.const _ ⟨_, by taint_decide⟩
 
 end VG.Proof.Ecdsa.Rfc6979.Arm

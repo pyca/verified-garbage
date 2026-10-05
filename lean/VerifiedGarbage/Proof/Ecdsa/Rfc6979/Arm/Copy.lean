@@ -9,6 +9,8 @@ word at a time through `r0`, when the two ranges are apart: each word
 written is the word read (`copyW_ok`), so the bytes written are the bytes
 read (`copyN_ok`, by induction on the words). The model's `ldr` and `str`
 take any address, as ARMv7's do, so the ranges need not be aligned.
+`copyBytes Q` copies `Q ≥ 4` bytes: the whole words, then the last four bytes
+again (`copyBytes_ok`).
 -/
 
 namespace VG.Proof.Ecdsa.Rfc6979.Arm
@@ -80,5 +82,67 @@ theorem copyN_ok {src dst : Reg} {S D : BitVec 32} {so d K : Nat} (hdr : dst ≠
         exact Offset.disjoint _ (by omega) (by omega) (by omega)) (by omega)
     · rw [hm₂]
       exact bytesAt_copied _ _ _
+
+/-- The first `n` of `k` bytes. -/
+theorem bytesAt_take (m : Mem) (p : Addr) {n k : Nat} (h : n ≤ k) :
+    Spec.Sha256.bytesAt m p n = (Spec.Sha256.bytesAt m p k).take n := by
+  rw [show k = n + (k - n) by omega, Proof.Hmac.Common.bytesAt_add, List.take_left']
+  simp [Spec.Sha256.bytesAt]
+
+theorem copyBytes_ok {src dst : Reg} {S D : BitVec 32} {so d Q : Nat} (hdr : dst ≠ .r0) (hsr : src ≠ .r0)
+    (hsep : Region.Disjoint ⟨State.addr S + BitVec.ofNat 64 so, Q⟩ ⟨State.addr D + BitVec.ofNat 64 d, Q⟩)
+    (hsn : S.toNat + so + Q ≤ 2 ^ 32) (hdn : D.toNat + d + Q ≤ 2 ^ 32) (hso : so + Q ≤ 4096)
+    (hdo : d + Q ≤ 4096) (h4 : 4 ≤ Q) {u : State} (hs : u.gpr src = S) (hd : u.gpr dst = D)
+    (hr : ∀ j, j + 4 ≤ Q → InRegions (u.rd ++ u.wr) (State.addr S + BitVec.ofNat 64 (so + j)) 4)
+    (hw : ∀ j, j + 4 ≤ Q → InRegions u.wr (State.addr D + BitVec.ofNat 64 (d + j)) 4) :
+    WP isa (.block (Cfg.copyBytes Q src so dst d)) u fun u' =>
+      u'.rd = u.rd ∧ u'.wr = u.wr ∧ u'.sp = u.sp ∧ (∀ r, r ≠ .r0 → u'.gpr r = u.gpr r) ∧
+      Frame [⟨State.addr D + BitVec.ofNat 64 d, Q⟩] u.mem u'.mem ∧
+      Spec.Sha256.bytesAt u'.mem (State.addr D + BitVec.ofNat 64 d) Q =
+        Spec.Sha256.bytesAt u.mem (State.addr S + BitVec.ofNat 64 so) Q := by
+  rw [Cfg.copyBytes, WP.block_append_iff]
+  have hK : 4 * (Q / 4) ≤ Q := Nat.mul_div_le Q 4
+  refine WP.mono (copyN_ok (S := S) (D := D) (so := so) (d := d) (K := Q / 4) hdr hsr
+      ((hsep.sub_left (Region.sub_prefix (by omega))).sub_right (Region.sub_prefix (by omega)))
+      (by omega) (by omega) (by omega) (by omega) (Q / 4) (Nat.le_refl _) u hs hd
+      (fun j hj => hr (4 * j) (by omega)) fun j hj => hw (4 * j) (by omega))
+    fun u₁ ⟨hrd₁, hwr₁, hsp₁, hg₁, hf₁, hb₁⟩ => ?_
+  have hf₁' : Frame [⟨State.addr D + BitVec.ofNat 64 d, Q⟩] u.mem u₁.mem :=
+    hf₁.sub fun r hr => ⟨_, List.mem_singleton_self _, by
+      simp only [List.mem_singleton] at hr; subst hr; exact Region.sub_prefix (by omega)⟩
+  by_cases hm : Q % 4 = 0
+  · simp only [hm, ite_true]
+    have e : 4 * (Q / 4) = Q := by omega
+    rw [e] at hb₁
+    exact WP.block_nil ⟨hrd₁, hwr₁, hsp₁, hg₁, hf₁', hb₁⟩
+  · simp only [hm, ite_false]
+    have eS : State.addr (S + BitVec.ofNat 32 (so + Q - 4)) =
+        (State.addr S + BitVec.ofNat 64 so) + BitVec.ofNat 64 (Q - 4) := by
+      rw [addr_add (by omega), Offset.add_add, show so + (Q - 4) = so + Q - 4 by omega]
+    have eD : State.addr (D + BitVec.ofNat 32 (d + Q - 4)) =
+        (State.addr D + BitVec.ofNat 64 d) + BitVec.ofNat 64 (Q - 4) := by
+      rw [addr_add (by omega), Offset.add_add, show d + (Q - 4) = d + Q - 4 by omega]
+    have hr' := hr (Q - 4) (by omega)
+    have hw' := hw (Q - 4) (by omega)
+    rw [← Offset.add_add] at hr' hw'
+    refine WP.mono (copyW_ok (u := u₁) (so := so + Q - 4) (d := d + Q - 4) (hg₁ _ hsr ▸ hs) (hg₁ _ hdr ▸ hd)
+      (by omega) (by omega) eS eD (by rw [hrd₁, hwr₁]; exact hr') (by rw [hwr₁]; exact hw') hdr)
+      fun u₂ ⟨hrd₂, hwr₂, hsp₂, hg₂, hm₂⟩ => ?_
+    have hf₂ : Frame [⟨(State.addr D + BitVec.ofNat 64 d) + BitVec.ofNat 64 (Q - 4), 4⟩] u₁.mem u₂.mem := by
+      rw [hm₂]; exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
+    refine ⟨hrd₂.trans hrd₁, hwr₂.trans hwr₁, hsp₂.trans hsp₁, fun r hr => (hg₂ r hr).trans (hg₁ r hr),
+      hf₁'.trans (hf₂.sub fun r hr => ⟨_, List.mem_singleton_self _, by
+        simp only [List.mem_singleton] at hr; subst hr; exact Offset.sub_base _ (by omega)⟩), ?_⟩
+    rw [show Q = (Q - 4) + 4 by omega, Proof.Hmac.Common.bytesAt_add, Proof.Hmac.Common.bytesAt_add]
+    congr 1
+    · rw [bytesAt_frame hf₂ (fun r hr => by
+          simp only [List.mem_singleton] at hr; subst hr
+          exact Offset.base_disjoint _ (by omega) (by omega)) (by omega),
+        bytesAt_take _ _ (k := 4 * (Q / 4)) (by omega), hb₁, ← bytesAt_take _ _ (by omega)]
+    · rw [hm₂, bytesAt_copied]
+      exact bytesAt_frame hf₁ (fun r hr => by
+        simp only [List.mem_singleton] at hr; subst hr
+        exact (hsep.sub_left (Offset.sub_base _ (by omega))).sub_right (Region.sub_prefix (by omega)))
+        (by omega)
 
 end VG.Proof.Ecdsa.Rfc6979.Arm

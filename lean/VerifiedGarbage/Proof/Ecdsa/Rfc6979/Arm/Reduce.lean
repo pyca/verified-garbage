@@ -239,7 +239,7 @@ theorem fr_sep (B : Addr) {x y : Nat} (h : x + 4 ≤ y ∨ y + 4 ≤ x) (hx : x 
 
 theorem fpA' (hL : L.Ok) {o e : Nat} (ho : o < 216) (he : 24 + o = e) :
     State.addr (L.fp + BitVec.ofNat 32 o) = L.B + BitVec.ofNat 64 e := by
-  rw [hL.fpA ho, he]
+  rw [hL.fpA (by omega), he]
 
 theorem subWord_ok (hL : L.Ok) (hn : 4 * P.k ≤ dn) (hk : P.k ≤ 12) {M : Mem} {u : State} {j : Nat}
     (hj : j < P.k) (h : SubInv P.R.E.C.n P.k L g m₀ M j u) :
@@ -419,12 +419,12 @@ theorem mask_val {c : BitVec 32} (h : c.toNat ≤ 1) :
   · rw [show c = 1 from BitVec.eq_of_toNat_eq (by rw [e]; rfl)]; decide
 
 /-- `h`: the digest modulo `n`, big-endian in the frame. -/
-theorem reduce_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) (hn : 4 * P.k ≤ dn) :
+theorem reduce_ok (hA : P.R.wide = false) (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) (hn : 4 * P.k ≤ dn) :
     WP isa (.block (cfgOf P).reduce) t fun t' => Ctx L g m₀ t' ∧
       Frame [⟨L.B + BitVec.ofNat 64 24, 176⟩] t.mem t'.mem ∧
       Spec.Weierstrass.ofBytes (Spec.Sha256.bytesAt t'.mem (L.B + BitVec.ofNat 64 152) (4 * P.k)) =
         Spec.Weierstrass.ofBytes (Spec.Sha256.bytesAt m₀ (State.addr L.dg) (4 * P.k)) % P.R.E.C.n := by
-  have hk : P.k ≤ 12 := by have := P.R.n6; simp only [RfcHash.k]; omega
+  have hk : P.k ≤ 12 := by have := (P.sizesA hA).2.1; simp only [RfcHash.k, RfcHash.w] at *; omega
   simp only [Cfg.reduce, w_cfgOf, List.append_assoc, List.cons_append, List.nil_append]
   refine wp_movw fun u₁ v₁ => wp_mov (op2_imm (by decide)) fun u₂ v₂ => ?_
   have hc₂ : Ctx L g m₀ u₂ := (hc.upd v₁ (by decide)).upd v₂ (by decide)
@@ -451,6 +451,6 @@ theorem reduce_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) (hn : 4 * P.k �
   change Spec.Weierstrass.ofBytes (Spec.Ecdsa.bytesAt _ _ (4 * P.k)) =
     Spec.Weierstrass.ofBytes (Spec.Ecdsa.bytesAt _ _ (4 * P.k)) % _
   rw [hH, hX]
-  exact reduce_math _ _ _ _ (by rw [e32]; exact P.R.n_lt) (by rw [e32]; exact P.R.lt_2n)
+  exact reduce_math _ _ _ _ (by rw [e32]; exact P.R.n_lt) (by rw [e32]; exact (P.R.sizesA hA).2.2.2)
 
 end VG.Proof.Ecdsa.Rfc6979.Arm

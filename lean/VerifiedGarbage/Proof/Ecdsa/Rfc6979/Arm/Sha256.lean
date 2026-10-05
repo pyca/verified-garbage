@@ -17,7 +17,7 @@ namespace VG.Proof.Ecdsa.Rfc6979.Arm.Sha256
 open VG VG.Arm
 
 theorem implies :
-    (rfcArm Spec.Ecdsa.Rfc6979.P256Sha256.inst).Implies
+    (rfcArm Spec.Ecdsa.Rfc6979.P256Sha256.inst 240).Implies
       (Spec.Ecdsa.Rfc6979.P256Sha256.inst.signContract Arm.abi 240) := by
   exact
     { pre := by

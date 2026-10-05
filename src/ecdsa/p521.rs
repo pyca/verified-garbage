@@ -2,7 +2,7 @@
 //! (`vg_ecdsa_p521_sha512_sign`, which calls `vg_ecdsa_p521_sign`), public
 //! keys (`vg_ec_p521_public_key`), and verification (`vg_ecdsa_p521_verify`).
 
-#![cfg(any(target_arch = "x86_64", target_arch = "x86"))]
+#![cfg(any(target_arch = "x86_64", target_arch = "x86", target_arch = "arm"))]
 
 use super::{Error, P521, SignatureHash, SigningKey, sealed};
 use crate::arch::ec_p521::vg_ec_p521_public_key;

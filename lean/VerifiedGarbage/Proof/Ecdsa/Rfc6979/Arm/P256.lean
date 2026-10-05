@@ -27,16 +27,16 @@ def p256 (hL : Weierstrass.Law Spec.P256.curve) : RfcCurve where
   E := Impl.Ecdsa.Arm.p256
   inst := Spec.Ecdsa.P256.inst
   curve := rfl
-  n46 := .inl rfl
-  len := rfl
-  nBits := p256_nBits
+  wide := false
+  sizes := ⟨.inl rfl, rfl, p256_nBits, by decide +kernel⟩
   n_lt := by decide +kernel
-  lt_2n := by decide +kernel
+  sh := 0
+  sh_eq := by show 8 * 32 - Spec.Ecdsa.nBits Spec.P256.curve = 0; rw [p256_nBits]
   coreN := Spec.Ecdsa.P256.signApi.name
   coreC := Impl.Ecdsa.Arm.signP256
   coreX := Proof.Ecdsa.Arm.sign_arm hL
   coreCT := Proof.Ecdsa.Arm.sign_ct
   coreStack := by lit_decide
-  reduceT := ⟨_, by taint_decide⟩
+  reduceT := Function.const _ ⟨_, by taint_decide⟩
 
 end VG.Proof.Ecdsa.Rfc6979.Arm
