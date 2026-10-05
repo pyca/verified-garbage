@@ -1212,6 +1212,22 @@ yours to keep:
 
 </tr>
 
+<tr>
+
+<td>RSASSA-PKCS1-v1_5</td>
+
+<td>✅</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+</tr>
+
 </table>
 
 <!-- END ci/algorithms_table.py -->
