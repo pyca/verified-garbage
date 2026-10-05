@@ -1,11 +1,12 @@
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Fixed
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Finish
+import VerifiedGarbage.Proof.Framework.AArch64.Syms
 
 /-!
 # ECDSA on AArch64: the setup and the tables of bits
 
 The first stage of `Cfg.sign` (`stage₁`), which ECDH and the public key run
-too: the setup and the tables of bits of `k`, `p - 2` and `n - 2`, and what
+too: the setup and the table of bits of `k`, and what
 the later stages share. None of it needs the group law, which only the
 proofs of the results (`Main.lean`) import.
 -/
@@ -31,7 +32,7 @@ structure Keep (c : Cfg) (s₀ : State) (base : Addr) (s : State) : Prop where
   wr : s.wr = s₀.wr
   fixed : Fixed c base s₀.gpr s.mem
 
-/-- After the setup and the tables. -/
+/-- After the setup and the table. -/
 structure St₁ (c : Cfg) (s₀ : State) (base : Addr) (s : State) : Prop extends Keep c s₀ base s where
   k : sv c base s K = kv c s₀
   d : sv c base s D = dv c s₀
@@ -41,21 +42,18 @@ structure St₁ (c : Cfg) (s₀ : State) (base : Addr) (s : State) : Prop extend
   rz : sv c base s RZ = 0
   flag : word s.mem base (c.sl FLAG) = BitVec.allOnes 64
   t₀ : ∀ t < 64 * c.n, s.mem (off base (bitsAt c.n 0 + t)) = if (kv c s₀).testBit t then 1 else 0
-  t₁ : ∀ t < 64 * c.n, s.mem (off base (bitsAt c.n 1 + t)) = if (c.C.p - 2).testBit t then 1 else 0
-  t₂ : ∀ t < 64 * c.n, s.mem (off base (bitsAt c.n 2 + t)) = if (c.C.n - 2).testBit t then 1 else 0
+  syms : s.syms = s₀.syms
   gpr : ∀ r, r ∉ [.x0, .x1, .x2, .x5, .x16, .x17, .x19, .x20] → s.gpr r = s₀.gpr r
   unch : Unch base [(0, size)] s₀.mem s.mem
   rd : s.rd = s₀.rd
 
-/-- The setup, then the three tables. -/
+/-- The setup, then the table. -/
 theorem stage₁ (hc : CfgOk c) {s₀ : State} (hp : SetupPre c s₀) {rest : Prog isa} {Q : State → Prop}
     (h : ∀ s, St₁ c s₀ (s₀.gpr .x4) s → WP isa rest s Q) :
-    WP isa (.seq (.block c.setup) (.seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n))
-      (.seq (bits (c.sl EXPP) (bitsAt c.n 1) (8 * c.n))
-      (.seq (bits (c.sl EXPN) (bitsAt c.n 2) (8 * c.n)) rest)))) s₀ Q := by
+    WP isa (.seq (.block c.setup) (.seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n)) rest)) s₀ Q := by
   have h0 := hc.n0
   have h7 := hc.n7
-  refine WP.seq (WP.mono (setup_ok hc hp) fun s₁ P => ?_)
+  refine WP.seq (WP.mono_syms (setup_ok hc hp) fun s₁ P sy₁ => ?_)
   have hn := P.scr.nowrap
   have hc' : ∀ ix ∈ c.consts, sv c (s₀.gpr .x4) s₁ ix.1 = ix.2 := P.consts
   have fx : Fixed c (s₀.gpr .x4) s₀.gpr s₁.mem :=
@@ -74,61 +72,39 @@ theorem stage₁ (hc : CfgOk c) {s₀ : State} (hp : SetupPre c s₀) {rest : Pr
   have h4k : ∀ {i}, i < 45 → c.sl i < 4096 := fun hi => by
     have := sl_below_bits c hi 0 0; have := hsz' (j := 0) (by decide); omega
   -- The table of `k`.
-  refine WP.seq (WP.mono (bits_ok P.scr h0 (by omega) (sl_le c h7 (i := K) (by decide)) (hsz (j := 0)
-    (by decide)) (h4k (by decide)) (hsz' (by decide)) (hsep (i := K) (by decide) 0)) fun s₂ ⟨b₂, k₂, O₂⟩ => ?_)
-  have hs₂ := P.scr.of_keepRegs k₂ (by decide)
+  refine WP.seq (WP.mono_syms (bits_ok P.scr h0 (by omega) (sl_le c h7 (i := K) (by decide)) (hsz (j := 0)
+    (by decide)) (h4k (by decide)) (hsz' (by decide)) (hsep (i := K) (by decide) 0)) fun s₂ ⟨b₂, k₂, O₂⟩ sy₂ => h s₂ ?_)
   have u₂ := O₂.unch
   have v₂ : ∀ {i}, i < 45 → sv c (s₀.gpr .x4) s₂ i = sv c (s₀.gpr .x4) s₁ i := fun hi =>
     sv_unch u₂ h7 hn hi (apart_tbl hi 0)
-  -- The table of `p - 2`.
-  refine WP.seq (WP.mono (bits_ok hs₂ h0 (by omega) (sl_le c h7 (i := EXPP) (by decide)) (hsz (j := 1)
-    (by decide)) (h4k (by decide)) (hsz' (by decide)) (hsep (i := EXPP) (by decide) 1)) fun s₃ ⟨b₃, k₃, O₃⟩ => ?_)
-  have hs₃ := hs₂.of_keepRegs k₃ (by decide)
-  have u₃ := O₃.unch
-  have v₃ : ∀ {i}, i < 45 → sv c (s₀.gpr .x4) s₃ i = sv c (s₀.gpr .x4) s₁ i := fun hi =>
-    (sv_unch u₃ h7 hn hi (apart_tbl hi 1)).trans (v₂ hi)
-  -- The table of `n - 2`.
-  refine WP.seq (WP.mono (bits_ok hs₃ h0 (by omega) (sl_le c h7 (i := EXPN) (by decide)) (hsz (j := 2)
-    (by decide)) (h4k (by decide)) (hsz' (by decide)) (hsep (i := EXPN) (by decide) 2)) fun s₄ ⟨b₄, k₄, O₄⟩ => h s₄ ?_)
-  have u₄ := O₄.unch
-  have v₄ : ∀ {i}, i < 45 → sv c (s₀.gpr .x4) s₄ i = sv c (s₀.gpr .x4) s₁ i := fun hi =>
-    (sv_unch u₄ h7 hn hi (apart_tbl hi 2)).trans (v₃ hi)
   have hk : (kv c s₀) = sv c (s₀.gpr .x4) s₁ K := P.k.symm
-  have hp2 : c.C.p - 2 = sv c (s₀.gpr .x4) s₁ EXPP := (hc' (EXPP, c.C.p - 2) (by simp [Cfg.consts])).symm
-  have hn2 : c.C.n - 2 = sv c (s₀.gpr .x4) s₁ EXPN := (hc' (EXPN, c.C.n - 2) (by simp [Cfg.consts])).symm
-  refine ⟨⟨hs₃.of_keepRegs k₄ (by decide), ?_, by rw [k₄.wr, k₃.wr, k₂.wr, P.keep.wr], ?_⟩,
-    by rw [v₄ (by decide), P.k], by rw [v₄ (by decide), P.d], by rw [v₄ (by decide), P.e],
-    by rw [v₄ (by decide)]; exact hc' (RX, 0) (by simp [Cfg.consts]),
-    by rw [v₄ (by decide)]; exact hc' (RY, c.mont 1) (by simp [Cfg.consts]),
-    by rw [v₄ (by decide)]; exact hc' (RZ, 0) (by simp [Cfg.consts]), ?_, ?_, ?_, ?_, ?_, ?_,
-    by rw [k₄.rd, k₃.rd, k₂.rd, P.keep.rd]⟩
-  · rw [k₄.gpr _ (by decide), k₃.gpr _ (by decide), k₂.gpr _ (by decide), P.x20]
-  · exact (fx.unch h7 hn (fixedOk_tbl 0) u₂ |>.unch h7 hn (fixedOk_tbl 1) u₃).unch h7 hn (fixedOk_tbl 2) u₄
-  · have hF := sl_le c h7 (i := FLAG) (by decide)
-    have ap : ∀ j, ∀ w ∈ [(bitsAt c.n j, 64 * c.n)], c.sl FLAG + 8 ≤ w.1 ∨ w.1 + w.2 ≤ c.sl FLAG :=
-      fun j w hw => by
-        rw [List.mem_singleton.mp hw]
-        have := sl_below_bits c (i := FLAG) (by decide) j 0
-        exact Or.inl (by dsimp only; omega)
-    rw [u₄.word (ap 2) (by omega), u₃.word (ap 1) (by omega), u₂.word (ap 0) (by omega), P.flag]
+  have hs₂ := P.scr.of_keepRegs k₂ (by decide)
+  have hF := sl_le c h7 (i := FLAG) (by decide)
+  have ap : ∀ {i}, i < 45 → ∀ w ∈ [(bitsAt c.n 0, 64 * c.n)], c.sl i + 8 ≤ w.1 ∨ w.1 + w.2 ≤ c.sl i :=
+    fun hi w hw => by
+      rw [List.mem_singleton.mp hw]
+      have := sl_below_bits c hi 0 0
+      have : 1 ≤ c.n := h0
+      exact Or.inl (by dsimp only; omega)
+  refine ⟨⟨hs₂, ?_, by rw [k₂.wr, P.keep.wr], ?_⟩,
+    by rw [v₂ (by decide), P.k], by rw [v₂ (by decide), P.d], by rw [v₂ (by decide), P.e],
+    by rw [v₂ (by decide)]; exact hc' (RX, 0) (by simp [Cfg.consts]),
+    by rw [v₂ (by decide)]; exact hc' (RY, c.mont 1) (by simp [Cfg.consts]),
+    by rw [v₂ (by decide)]; exact hc' (RZ, 0) (by simp [Cfg.consts]), ?_, ?_, ?_, ?_, ?_,
+    by rw [k₂.rd, P.keep.rd]⟩
+  · rw [k₂.gpr _ (by decide), P.x20]
+  · exact fx.unch h7 hn (fixedOk_tbl 0) u₂
+  · rw [u₂.word (ap (i := FLAG) (by decide)) (by omega), P.flag]
   · intro t ht
-    rw [tbl_unch u₄ h7 (j := 0) (by decide) ht (tbl_apart_tbl (by decide) ht),
-      tbl_unch u₃ h7 (j := 0) (by decide) ht (tbl_apart_tbl (by decide) ht), b₂ t ht, hk]
-  · intro t ht
-    rw [tbl_unch u₄ h7 (j := 1) (by decide) ht (tbl_apart_tbl (by decide) ht), b₃ t ht, hp2,
-      ← v₂ (by decide)]
-  · intro t ht
-    rw [b₄ t ht, hn2, ← v₃ (by decide)]
+    rw [b₂ t ht, hk]
+  · rw [sy₂, sy₁]
   · intro r hr
     have sub : ∀ {l : List Reg}, (∀ q ∈ l, q ∈ [Reg.x0, .x1, .x2, .x5, .x16, .x17, .x19, .x20]) → r ∉ l :=
       fun hl h => hr (hl _ h)
-    rw [k₄.gpr r (sub (by decide)), k₃.gpr r (sub (by decide)), k₂.gpr r (sub (by decide)),
-      P.keep.gpr r (sub (by decide))]
+    rw [k₂.gpr r (sub (by decide)), P.keep.gpr r (sub (by decide))]
   · intro x hx
     have hx' : size ≤ ofs (s₀.gpr .x4) x := by have := hx _ (List.mem_singleton_self _); omega
-    rw [O₄ x (Or.inr (by have := bitsAt_le c h7 (j := 2) (by decide); omega)),
-      O₃ x (Or.inr (by have := bitsAt_le c h7 (j := 1) (by decide); omega)),
-      O₂ x (Or.inr (by have := bitsAt_le c h7 (j := 0) (by decide); omega)),
+    rw [O₂ x (Or.inr (by have := bitsAt_le c h7 (j := 0) (by decide); omega)),
       P.unch x fun w hw => by rw [List.mem_singleton.mp hw]; exact Or.inr (by omega)]
 
 theorem toM_cmont (hc : CfgOk c) (x : Nat) : toM c.C.p (2 ^ (64 * c.n)) (c.mont x) = Fin.ofNat c.C.p x :=

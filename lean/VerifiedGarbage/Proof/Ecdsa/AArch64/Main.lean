@@ -34,17 +34,11 @@ structure St₂ (c : Cfg) (s₀ : State) (base : Addr) (s : State) : Prop extend
   acc : toM c.C.p (2 ^ (64 * c.n)) (sv c base s ACC) = tmv c.C c.n base s (c.sl RZ) ^ (c.C.p - 2)
   rz_lt : sv c base s RZ < c.C.p
 
-theorem kv_lt_comb (hc : CfgOk c) {s₀ : State} (h : kv c s₀ < 2 ^ (64 * c.n)) :
-    kv c s₀ < 16 ^ c.combCfg.J := by
-  rw [combJ hc, show (16 : Nat) ^ (16 * c.n) = 2 ^ (64 * c.n) by
-    rw [show (16 : Nat) = 2 ^ 4 by rfl, ← Nat.pow_mul]; congr 1; omega]
-  exact h
-
 /-- `[k]G` by the comb, then `Z^(p-2)`. -/
-theorem stage₂ (hc : CfgOk c) (hC : Law c.C) (hT : CombOk c.C (16 * c.n) c.tbl c.start) {s₀ : State}
-    {base : Addr} {s : State} (hS : St₁ c s₀ base s)
+theorem stage₂ (hc : CfgOk c) (hC : Law c.C) (hT : CombOkW c.C Cfg.combW (Cfg.combJ c.n) c.tbl c.start)
+    {s₀ : State} {base : Addr} (hTP : TblPre c s₀ (s₀.syms c.tsym) base) {s : State} (hS : St₁ c s₀ base s)
     {rest : Prog isa} {Q : State → Prop} (h : ∀ s', St₂ c s₀ base s' → WP isa rest s' Q) :
-    WP isa (.seq (CombCfg.comb c.combCfg) (.seq (ChainCfg.pow c.powP) rest)) s Q := by
+    WP isa (.seq (TCombCfg.comb c.combCfg) (.seq (ChainCfg.pow c.powP) rest)) s Q := by
   have h0 := hc.n0
   have h7 := hc.n7
   have hn := hS.scr.nowrap
@@ -52,8 +46,9 @@ theorem stage₂ (hc : CfgOk c) (hC : Law c.C) (hT : CombOk c.C (16 * c.n) c.tbl
   have hp3 := hc.p_ge
   have F := hS.fixed
   have hkl : kv c s₀ < 2 ^ (64 * c.n) := hS.k ▸ wordsVal_lt _ _ _ _
-  have hF : CombFixed c.combCfg c.C base s (kv c s₀) := by
-    refine ⟨?_, ?_, ?_, F.zero, ?_⟩
+  obtain ⟨hTM, hout⟩ := tbl_of hTP hS.rd hS.unch
+  have hF : TCombFixed c.combCfg c.C base size s (kv c s₀) (s₀.syms c.tsym) c.combWords := by
+    refine ⟨?_, ?_, ?_, F.zero, fun t ht => hS.t₀ t ht, hkl, by rw [hS.syms]; rfl, hTM, hout⟩
     · show toM c.C.p (2 ^ (64 * c.n)) (wordsVal s.mem base (c.sl AP) c.n) = _
       rw [F.ap]; exact toM_cmont hc _
     · show toM c.C.p (2 ^ (64 * c.n)) (wordsVal s.mem base (c.sl BM) c.n) = _
@@ -64,16 +59,12 @@ theorem stage₂ (hc : CfgOk c) (hC : Law c.C) (hT : CombOk c.C (16 * c.n) c.tbl
       · show wordsVal s.mem base (c.sl AP) c.n < _; rw [F.ap]; exact mont_lt hc _
       · show wordsVal s.mem base (c.sl BM) c.n < _; rw [F.bm]; exact mont_lt hc _
       · show wordsVal s.mem base (c.sl ZERO) c.n < _; rw [F.zero]; omega
-    · intro t ht
-      rw [combJ hc] at ht
-      exact hS.t₀ t (by omega)
-  have W := comb_ok (combLay hc) (combA c) hpR hC hc.am3 hc.onG (combVals hc hC hT) hc.p_lt hS.scr
-    (modP_of hc F.mp) hF (kv_lt_comb hc hkl)
+  have W := tcomb_ok (tcombLay hc) (combA c) hC hc.am3 hc.onG (tcombVals hc hC hT) hc.p_lt hS.scr
+    (modP_of hc F.mp) hF
   refine WP.seq (WP.mono W fun s₅ h₅ => ?_)
   obtain ⟨K₅, U₅, M₅, L₅, R₅⟩ := h₅
-  rw [combW_eq] at U₅
-  have hs₅ := hS.scr.of_keepRegs K₅ (x0_not_combClob h7)
-  have F₅ := F.unch h7 hn (fixedOk_slW (by decide)) U₅
+  have hs₅ := hS.scr.of_keepRegs K₅ (x0_not_tcombClob hc.n7)
+  have F₅ := F.unch h7 hn fixedOk_tcombW U₅
   refine WP.seq (WP.mono (chainPow_ok (chainLayP hc) hpR hs₅ M₅
     (L₅ (c.sl RZ) (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_singleton_self _))))
     (chainOkP hc)) fun s₆ ⟨K₆, U₆, lt₆, v₆⟩ => h s₆ ?_)
@@ -81,7 +72,7 @@ theorem stage₂ (hc : CfgOk c) (hC : Law c.C) (hT : CombOk c.C (16 * c.n) c.tbl
   have e₆ : ∀ {i}, i < 45 → i ∉ [ACC, TMP] →
       i ∉ [RX, RY, RZ, TX, TY, TZ, PT, T0, T1, T2, T3, T4, T5, DX, DY, DZ, TMP] →
       sv c base s₆ i = sv c base s i := fun hi h₁ h₂ =>
-    (sv_unch U₆ h7 hn hi (apart_chainWc hi h₁)).trans (sv_unch U₅ h7 hn hi (apart_slW h₂))
+    (sv_unch U₆ h7 hn hi (apart_chainWc hi h₁)).trans (sv_unch_tcomb U₅ h7 hn hi h₂)
   have r₆ : ∀ {i}, i < 45 → i ∉ [ACC, TMP] → sv c base s₆ i = sv c base s₅ i := fun hi h₁ =>
     sv_unch U₆ h7 hn hi (apart_chainWc hi h₁)
   refine ⟨⟨hs₅.of_keepRegs K₆ (x0_not_powClob h7), ?_, by rw [K₆.wr, K₅.wr, hS.wr],
@@ -89,9 +80,9 @@ theorem stage₂ (hc : CfgOk c) (hC : Law c.C) (hT : CombOk c.C (16 * c.n) c.tbl
     by rw [e₆ (by decide) (by decide) (by decide), hS.k],
     by rw [e₆ (by decide) (by decide) (by decide), hS.d],
     by rw [e₆ (by decide) (by decide) (by decide), hS.e],
-    by rw [flag_unch_chain U₆ h7 h0 hn, flag_unch U₅ h7 h0 hn (by decide), hS.flag], ?_, lt₆, ?_,
+    by rw [flag_unch_chain U₆ h7 h0 hn, flag_unch_tcomb U₅ h7 h0 hn, hS.flag], ?_, lt₆, ?_,
     ?_⟩
-  · rw [K₆.gpr _ (x20_not_powClob h7), K₅.gpr _ (x20_not_combClob h7), hS.x20]
+  · rw [K₆.gpr _ (x20_not_powClob h7), K₅.gpr _ (x20_not_tcombClob hc.n7), hS.x20]
   · show Rep c.C (toM _ _ (sv c base s₆ RX)) (toM _ _ (sv c base s₆ RY)) (toM _ _ (sv c base s₆ RZ)) _
     rw [r₆ (i := RX) (by decide) (by decide), r₆ (i := RY) (by decide) (by decide),
       r₆ (i := RZ) (by decide) (by decide)]
@@ -247,17 +238,16 @@ theorem stage₄ (hc : CfgOk c) (hC : Law c.C) {s₀ : State} (hp : Pre c s₀) 
     rw [bytes, hd]; rfl
 
 theorem sign_eq (c : Cfg) : c.sign = .seq (.block c.setup) (.seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n))
-    (.seq (bits (c.sl EXPP) (bitsAt c.n 1) (8 * c.n)) (.seq (bits (c.sl EXPN) (bitsAt c.n 2) (8 * c.n))
-    (.seq (CombCfg.comb c.combCfg) (.seq (ChainCfg.pow c.powP) (.seq c.middle (.seq (ChainCfg.pow c.powN) c.scalar))))))) :=
+    (.seq (TCombCfg.comb c.combCfg) (.seq (ChainCfg.pow c.powP) (.seq c.middle (.seq (ChainCfg.pow c.powN) c.scalar))))) :=
   rfl
 
 /-- `vg_ecdsa_<curve>_sign` computes the specification's signature and
 restores the callee-saved registers. -/
-theorem sign_ok (hc : CfgOk c) (hC : Law c.C) (hT : CombOk c.C (16 * c.n) c.tbl c.start) {s₀ : State}
-    (hp : Pre c s₀) :
+theorem sign_ok (hc : CfgOk c) (hC : Law c.C) (hT : CombOkW c.C Cfg.combW (Cfg.combJ c.n) c.tbl c.start)
+    {s₀ : State} (hp : Pre c s₀) :
     WP isa c.sign s₀ fun s' => (∀ r ∈ Cfg.saved.map Prod.fst, s'.gpr r = s₀.gpr r) ∧ SignPost c s₀ s' := by
   rw [sign_eq]
-  exact stage₁ hc (hp.setup hc.n7) fun _ S₁ => stage₂ hc hC hT S₁ fun _ S₂ => stage₃ hc S₂ fun _ S₃ =>
+  exact stage₁ hc (hp.setup hc.n7) fun _ S₁ => stage₂ hc hC hT hp.tbl S₁ fun _ S₂ => stage₃ hc S₂ fun _ S₃ =>
     stage₄ hc hC hp rfl S₃
 
 end VG.Proof.Ecdsa.AArch64

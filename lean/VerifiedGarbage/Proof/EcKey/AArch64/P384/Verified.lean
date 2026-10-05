@@ -20,8 +20,8 @@ open VG VG.AArch64 VG.Impl.Ecdsa.AArch64 VG.Impl.EcKey.AArch64
 open VG.Proof.Ecdsa.AArch64 VG.Proof.Ecdsa.AArch64.P384
 
 theorem pre_of {s : State} (h : pkAArch64.pre s) : PkPre p384 s := by
-  obtain ⟨h1, h2, h3, h4, h5, h6, h7⟩ := h
-  exact ⟨h1, h2, h3, h4, h5, h6, h7⟩
+  obtain ⟨h1, h2, h3, h4, h5, h6, h7, held, fit, hdw⟩ := h
+  exact ⟨h1, h2, h3, h4, h5, h6, h7, ⟨by rw [h1]; simp, held, fit, hdw _ (by simp)⟩⟩
 
 theorem post_of {s s' : State} (h : PkPost p384 s s') : pkAArch64.post s s' := by
   unfold PkPost at h
@@ -36,7 +36,8 @@ theorem post_of {s s' : State} (h : PkPost p384 s s') : pkAArch64.post s s' := b
   rcases q with _ | _ | ⟨x, y⟩ <;> exact id
 
 theorem pk_a64 (hL : Weierstrass.Law Spec.P384.curve)
-    (hT : Weierstrass.CombOk Spec.P384.curve 96 Impl.P384.p384Comb Impl.P384.p384CombStart) (s : State)
+    (hT : Weierstrass.CombOkW Spec.P384.curve 7 55 Impl.P384.p384Comb7 Impl.P384.p384Comb7Start)
+    (s : State)
     (hs : pkAArch64.pre s) :
     ∃ t s', Exec isa publicKeyP384 s t s' ∧ abiPreserved s s' ∧ pkAArch64.post s s' := by
   -- In steps: elaborated in one term, the unifier would compare P-384's
@@ -48,17 +49,19 @@ theorem pk_a64 (hL : Weierstrass.Law Spec.P384.curve)
   exact ⟨t, s', he, abiPreserved_of he hn hu hv hsv, post_of hpost⟩
 
 theorem pk_ct : ConstantTime isa pkAArch64.pre pkAArch64.pub publicKeyP384 :=
-  VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0, .x1, .x2])
-    (fun _ _ _ _ ⟨h0, h1, h2, hsp⟩ => ⟨hsp, fun r hr => by
+  VG.Taint.constantTime (A := taintS [p384.tsym]) (Taint.ofRegs [.x0, .x1, .x2])
+    (fun _ _ _ _ ⟨h0, h1, h2, hsp, hsy⟩ => ⟨⟨hsp, fun r hr => by
       simp only [Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl
       · exact h0
       · exact h1
-      · exact h2⟩) (by taint_decide)
+      · exact h2⟩, fun n hn => by
+      simp only [List.mem_singleton] at hn; subst hn; exact hsy⟩) (by taint_decide)
 
 theorem pk_verified (hL : Weierstrass.Law Spec.P384.curve)
-    (hT : Weierstrass.CombOk Spec.P384.curve 96 Impl.P384.p384Comb Impl.P384.p384CombStart) :
-    Verified AArch64.target publicKeyP384 (Spec.EcKey.P384.inst.publicKeyContract AArch64.abi) :=
+    (hT : Weierstrass.CombOkW Spec.P384.curve 7 55 Impl.P384.p384Comb7 Impl.P384.p384Comb7Start) :
+    Verified AArch64.target publicKeyP384
+      (Spec.EcKey.P384.inst.publicKeyContract (AArch64.abi.withConsts p384.combConsts)) :=
   Verified.of_correct (pk_a64 hL hT) pk_ct implies
 
 end VG.Proof.EcKey.AArch64.P384

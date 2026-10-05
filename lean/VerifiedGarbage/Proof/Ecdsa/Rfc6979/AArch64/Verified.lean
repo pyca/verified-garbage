@@ -55,8 +55,11 @@ def signNotes (H : Impl.Pbkdf2.Md.AArch64.Hash) : String :=
   frame, below the 16 bytes saving `x30`, and the secrets are cleared before it is freed; the calls use \
   the 16 bytes below it."
 
-theorem sign_verified (himp : (rfcAArch64 P.I).Implies (P.I.signContract AArch64.abi 240)) :
-    Verified AArch64.target (cfgOf P).sign (P.I.signContract AArch64.abi 240) :=
+theorem sign_verified
+    (himp : (rfcAArch64 P.I).Implies
+      (P.I.signContract (AArch64.abi.withConsts Impl.Ecdsa.AArch64.p256.combConsts) 240)) :
+    Verified AArch64.target (cfgOf P).sign
+      (P.I.signContract (AArch64.abi.withConsts Impl.Ecdsa.AArch64.p256.combConsts) 240) :=
   Verified.of_correct (sign_a64 P) sign_ct himp
 
 end VG.Proof.Ecdsa.Rfc6979.AArch64

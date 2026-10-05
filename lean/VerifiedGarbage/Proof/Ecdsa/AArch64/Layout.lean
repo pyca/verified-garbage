@@ -32,7 +32,8 @@ and fit in `n` words (`n < 7`: the multiplications accumulate in
 `x8`–`x15`), `G` is on the curve, `p < 2n` (so `x mod n` is one conditional
 subtraction), the Montgomery constants are right, encodings are `8 n`
 bytes, a hash of `8 n` bytes is not truncated, the chains of `p - 2` and
-`n - 2` are right, and `a = -3` (the complete formulas are those for it). The group law needs
+`n - 2` are right, `n ≤ 4` (the comb's selection holds an entry in
+`x8`–`x15`), and `a = -3` (the complete formulas are those for it). The group law needs
 more (`Weierstrass.Law`, which a prime field and no point of order 2 give:
 `Weierstrass.Good.law`), which only the proofs of the results take. -/
 structure CfgOk (c : Cfg) : Prop where
@@ -50,18 +51,27 @@ structure CfgOk (c : Cfg) : Prop where
   minv_n : (c.C.n * (BitVec.ofNat 64 (minv c.C.n)).toNat + 1) % 2 ^ 64 = 0
   red_p : c.MP'.ok c.C.p = true
   red_n : c.MN'.ok c.C.n = true
-  tbl_len : c.tbl.length = 16 * c.n
   len : c.C.len = 8 * c.n
   hash : 64 * c.n ≤ Spec.Ecdsa.nBits c.C
   chain_p : chainCheck (slide (c.C.p - 2)).1 (slide (c.C.p - 2)).2 (c.C.p - 2) = true
   chain_n : chainCheck (slide (c.C.n - 2)).1 (slide (c.C.n - 2)).2 (c.C.n - 2) = true
   am3 : AM3 c.C
 
+/-- The comb's tables (`Cfg.combWords`) at `T`: readable, held, not
+wrapping around, and apart from the working space at `base`. -/
+structure TblPre (c : Cfg) (s : State) (T base : Addr) : Prop where
+  rd : (⟨T, 8 * c.combWords.length⟩ : Region) ∈ s.rd
+  held : ∀ i < c.combWords.length, s.mem.readW (T + BitVec.ofNat 64 (8 * i)) 64 = c.combWords.getD i 0
+  fit : T.toNat + 8 * c.combWords.length ≤ 2 ^ 64
+  sc : Region.Disjoint ⟨T, 8 * c.combWords.length⟩ ⟨base, size⟩
+
 /-- The arguments: `out = x0` (`16 n` bytes), `d = x1`, `digest = x2`,
-`k = x3` (`8 n` bytes each) and `scratch = x4`, readable and writable as
-the contract says and apart from each other as it says. -/
+`k = x3` (`8 n` bytes each) and `scratch = x4`, and the comb's tables at
+the static `c.tsym` (`Artifact.consts`), readable and writable as the
+contract says and apart from each other as it says. -/
 structure Pre (c : Cfg) (s : State) : Prop where
-  rd : s.rd = [⟨s.gpr .x1, 8 * c.n⟩, ⟨s.gpr .x2, 8 * c.n⟩, ⟨s.gpr .x3, 8 * c.n⟩]
+  rd : s.rd = [⟨s.gpr .x1, 8 * c.n⟩, ⟨s.gpr .x2, 8 * c.n⟩, ⟨s.gpr .x3, 8 * c.n⟩,
+    ⟨s.syms c.tsym, 8 * c.combWords.length⟩]
   wr : s.wr = [⟨s.gpr .x0, 16 * c.n⟩, ⟨s.gpr .x4, size⟩]
   out_sc : Region.Disjoint ⟨s.gpr .x0, 16 * c.n⟩ ⟨s.gpr .x4, size⟩
   out_d : Region.Disjoint ⟨s.gpr .x0, 16 * c.n⟩ ⟨s.gpr .x1, 8 * c.n⟩
@@ -72,6 +82,7 @@ structure Pre (c : Cfg) (s : State) : Prop where
   k_sc : Region.Disjoint ⟨s.gpr .x3, 8 * c.n⟩ ⟨s.gpr .x4, size⟩
   out_fit : (s.gpr .x0).toNat + 16 * c.n ≤ 2 ^ 64
   sc_fit : (s.gpr .x4).toNat + size ≤ 2 ^ 64
+  tbl : TblPre c s (s.syms c.tsym) (s.gpr .x4)
 
 /-- What `setup` needs of its arguments (`Pre` gives it, and so can the
 arguments of other functions that run it): the working space `scratch = x4`
