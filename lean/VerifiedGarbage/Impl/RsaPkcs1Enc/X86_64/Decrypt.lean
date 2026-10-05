@@ -283,7 +283,8 @@ def validBlock : List Instr :=
     .mov .rsi (.reg .r9), .alu .sub .rsi (.reg .r10), .alu .sub .rsi (.imm 1),
     .mov .rdx (.reg .r11), .alu .xor .rdx (.reg .rsi), .alu .and .rdx (.reg .rax), .alu .xor .rdx (.reg .r11),
     .mov .r10 (.reg .rax),
-    .mov32 .r11 (.mem (sp oR)), .alu .xor .r11 (.imm 1), .alu .cmp .r11 (.imm 1), .alu .sbb .r11 (.reg .r11),
+    .mov .r11 (.mem (sp oR)), .mov32 .r11 (.reg .r11), .alu .xor .r11 (.imm 1), .alu .cmp .r11 (.imm 1),
+    .alu .sbb .r11 (.reg .r11),
     .mov .rsi (.reg .r9), .alu .sub .rsi (.reg .rdx), .alu .and .rdx (.reg .r11)]
 
 /-- `msg_len` in `r8`, and `AM` in `rcx`. -/
