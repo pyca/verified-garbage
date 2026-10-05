@@ -9,8 +9,7 @@ import VerifiedGarbage.Proof.Ecdh.X86_64.Main
 verification of the signature holds, for any curve the proof of the code
 supports (`CfgOk`) whose group law the proofs support (`Law`), with its
 comb's tables, if any, right (`CombTbls`), and restores the callee-saved
-registers. `front_ok`, `mid_ok`, `points_ok` (with the invariant of the group
-law for ECDH's ladder, `step_rep`) and `tail_ok` compute what `verify_eq`
+registers. `front_ok`, `mid_ok`, `points_ok` and `tail_ok` compute what `verify_eq`
 connects to the specification.
 -/
 
@@ -66,7 +65,7 @@ theorem verify_ok (hc : CfgOk c) (hC : Law c.C) (hT : CombTbls c) {s₀ : State}
   rw [verify_eq'']
   refine front_ok hc hp fun g s₁ hg hF => mid_ok hc hF fun s₂ hM => ?_
   have F₂ := hM.fixed
-  obtain ⟨ha, hb, h1⟩ := consts_tmv hc F₂
+  obtain ⟨-, -, h1⟩ := consts_tmv hc F₂
   -- The point the second ladder multiplies.
   let P := peerPt c (s₀.mem (s₀.gpr .rdi) = 4) (keyX c s₀) (keyY c s₀)
   have hPc : onCurve c.C P = true := peerPt_onCurve hc _ _ _
@@ -74,18 +73,12 @@ theorem verify_ok (hc : CfgOk c) (hC : Law c.C) (hT : CombTbls c) {s₀ : State}
       (tmv c.C c.n (s₀.gpr .rcx) s₂ (c.sl ONEP)) P := by
     rw [h1]
     exact peerPt_rep hC _ _ _ hM.px hM.py
-  have hv : sv c (s₀.gpr .rcx) s₂ V < 2 ^ (64 * c.n) := wordsVal_lt _ _ _ _
-  refine points_ok hc hC hT hM hp.tbls (by rw [hp.wr]; simp) (fun r hr => by rw [hp.rd]; simp [hr])
-    (Q₂ := fun j X Y Z => Rep c.C X Y Z (mul (sv c (s₀.gpr .rcx) s₂ V >>> j) P))
-    (step_rep hC hPc ha hb hQ)
-    (by rw [shiftRight_eq_zero hv, mul_zero_pt]; exact rep_infinity' hC)
+  refine points_ok hc hC hT hM hp.tbls (by rw [hp.wr]; simp) (fun r hr => by rw [hp.rd]; simp [hr]) hPc hQ
     fun s₃ hP => ?_
   refine WP.mono (tail_ok hc hP) fun s' ⟨saved, xo, hxo, hx, rax⟩ =>
     ⟨fun r hr => (saved r hr).trans (hg r hr), ?_⟩
   obtain ⟨X1, Y1, Z1, X2, Y2, Z2, q1, q2, hsum⟩ := hP.pt
-  have q2' : Rep c.C X2 Y2 Z2 (mul (sv c (s₀.gpr .rcx) s₂ V) P) := by
-    have := q2; simp only [Nat.shiftRight_zero] at this; exact this
-  have hR := Rep.add hC (hC.onCurve_mul hc.onG _) (hC.onCurve_mul hPc _) q1 q2' hsum.symm
+  have hR := Rep.add hC (hC.onCurve_mul hc.onG _) (hC.onCurve_mul hPc _) q1 q2 hsum.symm
   -- The arguments as the specification reads them.
   have hlen : (Spec.Ecdsa.bytesAt s₀.mem (s₀.gpr .rdi) (1 + 2 * c.C.len)).length = 2 * c.C.len + 1 := by
     rw [length_bytesAt]; omega

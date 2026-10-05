@@ -48,16 +48,18 @@ def artifacts (h : Proof.Weierstrass.X86_64.HasLawInv Spec.P384.curve) : List Ar
   { Spec.Ecdsa.P384.verifyApi with
     target := X86_64.target
     doc := Spec.Ecdsa.P384.verifyApi.doc (notes := ["The function is `vg_ecdsa_p384_sign`'s setup, \
-      field arithmetic, comb, ladder and inversions, with `vg_ecdh_p384`'s checks of the public \
-      key: it saves its caller's callee-saved registers in `scratch`; field elements and scalars \
+      field arithmetic, comb and inversions, with `vg_ecdh_p384`'s checks of the public \
+      key and its window method: it saves its caller's callee-saved registers in `scratch`; field elements and scalars \
       are six 64-bit words in Montgomery form, multiplied by word-by-word Montgomery \
       multiplication (CIOS) with a final conditional subtraction. The key is checked without \
-      branches (its first byte, both coordinates below `p`, and the curve's equation), and the \
-      ladder multiplies the key's point if it is valid, else `G`, so it always runs on a point of \
-      the curve. `s⁻¹` modulo `n` is Fermat's, by square-and-always-multiply, and `Z⁻¹` by the \
+      branches (its first byte, both coordinates below `p`, and the curve's equation), and \
+      `[v]Q` is computed for the key's point if it is valid, else `G`, so it always runs on a \
+      point of the curve. `s⁻¹` modulo `n` is Fermat's, by square-and-always-multiply, and `Z⁻¹` by the \
       signature's divsteps; `[u]G` is the signature's comb over the 7-bit windows of `u` (from the static `VG_P384_COMB`), and \
-      `[v]Q` a double-and-add ladder over all 384 bits of `v`, with the complete addition formulas \
-      of Renes, Costello and Batina, which also add the two. The result is the conjunction of the \
+      `[v]Q` by `vg_ecdh_p384`'s signed 4-bit windows (`v` recoded as `v + 8 Σ_{j<97} 16^j`, \
+      a table of `[1 … 8]Q` in `scratch`, four Jacobian doublings and a complete addition of \
+      the entry selected in constant time per digit); the two are added by the complete \
+      addition formulas of Renes, Costello and Batina. The result is the conjunction of the \
       checks (the key, `r` and `s` in `[1, n-1]`, the sum not the point at infinity, and `x ≡ r` \
       modulo `n`) as a mask, so the time depends only on the pointers, although the contract would \
       let every input affect it."])
