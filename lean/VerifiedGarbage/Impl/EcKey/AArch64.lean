@@ -57,7 +57,7 @@ def finish : List Instr :=
   [ld .x3 (c.sl FLAG), .movz .x .x1 4 0, .logic .and .x .x1 .x1 .x3, .strb .x1 .x20 0,
     .addImm .x .x6 .x20 1] ++
   storeBE c.n .x6 0 (c.sl X) ++ storeBE c.n .x6 (8 * c.n) (c.sl Y) ++
-  Impl.Ecdsa.AArch64.Cfg.saved.map (fun (r, d) => ld r d) ++
+  c.saved.map (fun (r, d) => ld r d) ++
   [.movz .x .x1 1 0, .logic .and .x .x0 .x3 .x1]
 
 /-- `x = X Z⁻¹` and `y = Y Z⁻¹`, with `Z⁻¹ R` in `ACC`, out of Montgomery

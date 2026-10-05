@@ -133,7 +133,7 @@ def validate : Prog isa :=
 bit to `x0`. -/
 def finish : List Instr :=
   [ld .x3 (c.sl FLAG)] ++ storeBE c.n .x20 0 (c.sl X) ++
-  Impl.Ecdsa.AArch64.Cfg.saved.map (fun (r, d) => ld r d) ++
+  c.saved.map (fun (r, d) => ld r d) ++
   [.movz .x .x1 1 0, .logic .and .x .x0 .x3 .x1]
 
 /-- `x = X Z⁻¹`, with `Z⁻¹ R` in `ACC`, out of Montgomery form, the checks

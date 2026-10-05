@@ -120,6 +120,46 @@ def storeBE (n : Nat) (dst : Reg) (d a : Nat) : List Instr :=
   (List.range n).flatMap fun j =>
     [ld .x1 (a + 8 * j), .logic .and .x .x1 .x1 .x3, .rev .x1 .x1, .str .x .x1 dst (d + 8 * (n - 1 - j))]
 
+/-- `[x0 + o] = ` the `len`-byte big-endian number at `[src]`, in `n` words
+(`8 (n - 1) < len ≤ 8 n`, `8 ≤ len`), through `x5` and `x6`: for `len = 8 n`,
+`loadBE`; otherwise word `j` is the byte reversal of the word at
+`src + len - 8 (j + 1)`, loaded from `x6 = src + len % 8` (as `ldr` takes
+offsets in words), and the top word the first eight bytes' reversal shifted
+right by `8 (8 n - len)` bits. -/
+def loadBytes (len n o : Nat) (src : Reg) : List Instr :=
+  if len = 8 * n then loadBE n o src else
+    .addImm .x .x6 src (len % 8) :: (List.range n).flatMap fun j =>
+      if 8 * (j + 1) ≤ len then
+        [.ldr .x .x5 .x6 (len - len % 8 - 8 * (j + 1)), .rev .x5 .x5, st .x5 (o + 8 * j)]
+      else
+        [.ldr .x .x5 src 0, .rev .x5 .x5, .lsr .x .x5 .x5 (8 * (8 * (j + 1) - len)), st .x5 (o + 8 * j)]
+
+/-- `[x0 + o] = [x0 + o] >> sh`, `n` words (`0 < sh < 64`), through `x1` and
+`x2`: word `j` shifted right, or'd with word `j + 1` shifted left by
+`64 - sh`. -/
+def shrWords (n o sh : Nat) : List Instr :=
+  (List.range n).flatMap fun j =>
+    [ld .x1 (o + 8 * j), .lsr .x .x1 .x1 sh] ++
+    (if j + 1 < n then [ld .x2 (o + 8 * (j + 1)), .lsl .x .x2 .x2 (64 - sh), .logic .orr .x .x1 .x1 .x2]
+      else []) ++
+    [st .x1 (o + 8 * j)]
+
+/-- `[dst + d] = ` the `n`-word number at `[x0 + a]` masked with `x3`, in
+`len` bytes big-endian (`8 (n - 1) < len ≤ 8 n`), through `x1`, `x2` and
+`x6`: for `len = 8 n`, `storeBE`; otherwise its whole words byte-reversed to
+`dst + d + len - 8 (j + 1)`, from `x6 = dst + d + len % 8`, and its top word
+a byte at a time. -/
+def storeBytes (len n : Nat) (dst : Reg) (d a : Nat) : List Instr :=
+  if len = 8 * n then storeBE n dst d a else
+    .addImm .x .x6 dst (d + len % 8) :: (List.range n).flatMap fun j =>
+      if 8 * (j + 1) ≤ len then
+        [ld .x1 (a + 8 * j), .logic .and .x .x1 .x1 .x3, .rev .x1 .x1,
+          .str .x .x1 .x6 (len - len % 8 - 8 * (j + 1))]
+      else
+        [ld .x1 (a + 8 * j), .logic .and .x .x1 .x1 .x3] ++
+        (List.range (len - 8 * j)).flatMap fun i =>
+          [.lsr .x .x2 .x1 (8 * (len - 8 * j - 1 - i)), .strb .x2 dst (d + i)]
+
 /-- `[x0 + o] = x`, `n` words, through `x1`. -/
 def setConst (n : Nat) (o x : Nat) : List Instr :=
   (List.range n).flatMap fun j => const64 .x1 (BitVec.ofNat 64 (x >>> (64 * j))) ++ [st .x1 (o + 8 * j)]

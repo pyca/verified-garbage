@@ -2,6 +2,7 @@ import VerifiedGarbage.Impl.Weierstrass.AArch64.Window
 import VerifiedGarbage.Impl.Weierstrass.AArch64.TComb
 import VerifiedGarbage.Impl.Weierstrass.AArch64.Chain
 import VerifiedGarbage.Spec.Weierstrass
+import VerifiedGarbage.Spec.Ecdsa
 
 /-!
 # ECDSA signing on AArch64
@@ -11,9 +12,12 @@ scratch = x4) -> w0`, for a curve whose field elements and scalars are `n`
 64-bit words (`n = 4` for the 256-bit curves), from the code of
 `Impl/Weierstrass/AArch64.lean`, as on x86-64 (`Impl/Ecdsa/X86_64.lean`):
 
-1. `x19` and `x20` are saved in the working space, whose base is then
-   `x0`, and `out` is kept in `x20`; `k`, `d` and the hash are read
-   big-endian into slots, and the constants (the moduli, `a`, `b`, `G` and
+1. `x19` and `x20` (and for more than six words `x21`–`x25`, which the
+   Montgomery arithmetic uses) are saved in the working space, whose base
+   is then `x0`, and `out` is kept in `x20`; `k`, `d` and the hash are read
+   from their `len` bytes, big-endian, into slots (the hash shifted right by
+   the `8 len - N` bits that are not `e`'s, for `N` the bits of `n`: none
+   but for P-521's 7), and the constants (the moduli, `a`, `b`, `G` and
    Montgomery's ones in Montgomery form, `R² mod n`, and the exponents
    `p - 2` and `n - 2`) are stored as immediates;
 2. the bits of `k`, `p - 2` and `n - 2` are expanded into tables;
@@ -23,7 +27,8 @@ scratch = x4) -> w0`, for a curve whose field elements and scalars are `n`
    `r = x mod n` (a conditional subtraction, as `x < p < 2n`);
 4. `s = k^(n-2) (e + r d) mod n`, in Montgomery form modulo `n`, then left;
 5. the flag: `d` and `k` in `[1, n-1]`, `r ≠ 0` and `s ≠ 0`, as a mask, which
-   selects `r ‖ s` or zeros for `out` (big-endian), and is returned as 0 or 1.
+   selects `r ‖ s` or zeros for `out` (`len` bytes each, big-endian), and is
+   returned as 0 or 1.
 
 `R = O` (impossible for `k` in `[1, n-1]`) gives `Z = 0`, so `x = 0` and
 `r = 0`, as the specification says. Everything is computed whatever the
@@ -126,6 +131,10 @@ variable (c : Cfg)
 /-- `R = 2^(64 n)`. -/
 def R : Nat := 2 ^ (64 * c.n)
 
+/-- The bits of the hash's `len` bytes that are not `e`'s: `8 len - N`, for
+`N` the bits of `n` (0 but for P-521's 7). -/
+def sh : Nat := 8 * c.C.len - Spec.Ecdsa.nBits c.C
+
 /-- `x R mod p`. -/
 def mont (x : Nat) : Nat := x * c.R % c.C.p
 
@@ -209,8 +218,12 @@ slots `CT …` (the window method's, which no power overlaps in time). -/
 def powP : Weierstrass.ChainCfg := .ofExp c.MP' (c.sl ACC) (c.sl RZ) (c.sl CT) (c.C.p - 2)
 def powN : Weierstrass.ChainCfg := .ofExp c.MN' (c.sl ACC) (c.sl KM) (c.sl CT) (c.C.n - 2)
 
-/-- The callee-saved registers the code uses, and where they are saved. -/
-def saved : List (Reg × Nat) := [(.x19, 0), (.x20, 8)]
+/-- The callee-saved registers the code uses, and where they are saved:
+`x19` and `x20`, and for more than six words `x21`–`x25`, which the
+Montgomery arithmetic uses too (`Impl/Mont/AArch64.lean`). -/
+def saved : List (Reg × Nat) :=
+  if c.n ≤ 6 then [(.x19, 0), (.x20, 8)]
+  else [(.x19, 0), (.x20, 8), (.x21, 16), (.x22, 24), (.x23, 32), (.x24, 40), (.x25, 48)]
 
 /-- The constants, and `R = (0 : 1 : 0)`: slots and values. -/
 def consts : List (Nat × Nat) :=
@@ -222,9 +235,11 @@ def consts : List (Nat × Nat) :=
 keeps `out` in `x20`; reads `k`, `d` and the hash; stores the constants; and sets
 `R = (0 : 1 : 0)` and the flag to all ones. -/
 def setup : List Instr :=
-  saved.map (fun (r, d) => .str .x r .x4 d) ++
+  c.saved.map (fun (r, d) => .str .x r .x4 d) ++
   [.addImm .x .x20 .x0 0, .addImm .x .x0 .x4 0] ++
-  loadBE c.n (c.sl K) .x3 ++ loadBE c.n (c.sl D) .x1 ++ loadBE c.n (c.sl E) .x2 ++
+  loadBytes c.C.len c.n (c.sl K) .x3 ++ loadBytes c.C.len c.n (c.sl D) .x1 ++
+  loadBytes c.C.len c.n (c.sl E) .x2 ++
+  (if c.sh = 0 then [] else shrWords c.n (c.sl E) c.sh) ++
   c.consts.flatMap (fun (i, x) => setConst c.n (c.sl i) x) ++
   setConst 1 (c.sl FLAG) (2 ^ 64 - 1)
 
@@ -267,8 +282,8 @@ def middle : Prog isa :=
 the flag's low bit to `x0`. -/
 def finish : List Instr :=
   [ld .x3 (c.sl FLAG)] ++
-  storeBE c.n .x20 0 (c.sl RR) ++ storeBE c.n .x20 (8 * c.n) (c.sl SS) ++
-  saved.map (fun (r, d) => ld r d) ++
+  storeBytes c.C.len c.n .x20 0 (c.sl RR) ++ storeBytes c.C.len c.n .x20 c.C.len (c.sl SS) ++
+  c.saved.map (fun (r, d) => ld r d) ++
   [.movz .x .x1 1 0, .logic .and .x .x0 .x3 .x1]
 
 /-- `s = k⁻¹ (e + r d) mod n`, with `k⁻¹ R` in `ACC`, and its check. -/
