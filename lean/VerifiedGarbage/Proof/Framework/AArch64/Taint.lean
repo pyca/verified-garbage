@@ -9,8 +9,9 @@ The abstract state is the set of registers known to be public; the stack
 pointer is always public. Memory is always secret: a loaded value is secret,
 and an address must be computed from public registers or the stack pointer.
 The vector registers are always secret too: a value moved from one to a
-general-purpose register (`umov`) is secret. (No modelled instruction
-touches the flags.)
+general-purpose register (`umov`) is secret. The flags are not tracked: an
+instruction that reads them (`adcs`, `csel`, `csneg`, …) writes a secret
+value, and branches never read them.
 -/
 
 namespace VG.AArch64.Taint
@@ -40,8 +41,11 @@ def step (τ : T) : Instr → Option T
   | .mul _ d n m | .umulh d n m =>
     some (set τ d (pub τ n && pub τ m))
   -- This register-only domain conservatively treats the carry as secret.
-  | .adcs _ d _ _ | .sbcs _ d _ _ | .adc _ d _ _ | .sbc _ d _ _ | .csel _ d _ _ =>
+  | .adcs _ d _ _ | .sbcs _ d _ _ | .adc _ d _ _ | .sbc _ d _ _ | .csel _ d _ _
+  | .cselc _ d _ _ _ | .csneg _ d _ _ _ =>
     some (set τ d false)
+  -- Writing only the flags.
+  | .tst .. | .ccmp .. => some τ
   -- Nor does it track the addresses of statics.
   | .adrSym d _ => some (set τ d false)
   | .madd _ d n m a => some (set τ d (pub τ n && pub τ m && pub τ a))
@@ -117,6 +121,22 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
     simp only [step, Option.some.injEq] at hs; subst hs
     simp only [exec, Option.some.injEq] at e₁ e₂; subst e₁ e₂
     exact ⟨rfl, ha.write sz d (p := false) (by simp)⟩
+  | cselc sz d n m cond | csneg sz d n m cond =>
+    simp only [step, Option.some.injEq] at hs; subst hs
+    simp only [exec, Option.some.injEq] at e₁ e₂; subst e₁ e₂
+    exact ⟨rfl, ha.write sz d (p := false) (by simp)⟩
+  | tst sz n m =>
+    simp only [step, Option.some.injEq] at hs; subst hs
+    simp only [exec, Option.some.injEq] at e₁ e₂; subst e₁ e₂
+    exact ⟨rfl, ha.1, ha.2⟩
+  | ccmp sz n imm nzcv cond =>
+    simp only [step, Option.some.injEq] at hs; subst hs
+    by_cases h : imm < 32 ∧ nzcv < 16
+    · simp only [exec, h, and_self, ↓reduceIte, Option.some.injEq] at e₁ e₂; subst e₁ e₂
+      refine ⟨rfl, ?_, fun r hr => ?_⟩
+      · split <;> split <;> exact ha.1
+      · split <;> split <;> exact ha.2 r hr
+    · simp only [exec, h, ↓reduceIte, reduceCtorEq] at e₁
   | adrSym d name =>
     simp only [step, Option.some.injEq] at hs; subst hs
     simp only [exec, Option.some.injEq] at e₁ e₂; subst e₁ e₂

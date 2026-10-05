@@ -17,6 +17,12 @@ def Reg.index : Reg → Nat
   | .x22 => 22 | .x23 => 23 | .x24 => 24 | .x25 => 25 | .x26 => 26 | .x27 => 27 | .x28 => 28
   | .x30 => 30
 
+/-- A condition code's mnemonic suffix. -/
+def CondCode.name : CondCode → String
+  | .eq => "eq" | .ne => "ne" | .hs => "hs" | .lo => "lo" | .mi => "mi" | .pl => "pl"
+  | .vs => "vs" | .vc => "vc" | .hi => "hi" | .ls => "ls" | .ge => "ge" | .lt => "lt"
+  | .gt => "gt" | .le => "le"
+
 /-- `w<n>` or `x<n>`. -/
 def Reg.name (sz : Size) (r : Reg) : String :=
   match sz with
@@ -143,6 +149,10 @@ def Instr.asm : Instr → List String
   | .adc sz d n m => [s!"adc {d.name sz}, {n.name sz}, {m.name sz}"]
   | .sbc sz d n m => [s!"sbc {d.name sz}, {n.name sz}, {m.name sz}"]
   | .csel sz d n m => [s!"csel {d.name sz}, {n.name sz}, {m.name sz}, hs"]
+  | .tst sz n m => [s!"tst {n.name sz}, {m.name sz}"]
+  | .ccmp sz n imm nzcv cond => [s!"ccmp {n.name sz}, #{imm}, #{nzcv}, {cond.name}"]
+  | .cselc sz d n m cond => [s!"csel {d.name sz}, {n.name sz}, {m.name sz}, {cond.name}"]
+  | .csneg sz d n m cond => [s!"csneg {d.name sz}, {n.name sz}, {m.name sz}, {cond.name}"]
   | .adrSym d name => [s!"adrp {d.name .x}, {name}", s!"add {d.name .x}, {d.name .x}, :lo12:{name}"]
   | .addImm sz d n imm => [s!"add {d.name sz}, {n.name sz}, #{imm}"]
   | .subImm sz d n imm => [s!"sub {d.name sz}, {n.name sz}, #{imm}"]
