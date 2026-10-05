@@ -1,5 +1,6 @@
 import VerifiedGarbage.Impl.Weierstrass.X86_64
 import VerifiedGarbage.Spec.Weierstrass
+import VerifiedGarbage.Spec.Ecdsa
 
 /-!
 # ECDSA signing on x86-64
@@ -106,6 +107,10 @@ variable (c : Cfg)
 /-- `R = 2^(64 n)`. -/
 def R : Nat := 2 ^ (64 * c.n)
 
+/-- The bits of the hash's `len` bytes that are not `e`'s: `8 len - N`, for
+`N` the bits of `n` (0 but for P-521's 7). -/
+def sh : Nat := 8 * c.C.len - Spec.Ecdsa.nBits c.C
+
 /-- `x R mod p`. -/
 def mont (x : Nat) : Nat := x * c.R % c.C.p
 
@@ -148,7 +153,9 @@ use `r14`). -/
 def setup : List Instr :=
   saved.map (fun (r, d) => .store { base := .r8, disp := (d : Int) } r) ++
   [.mov .r14 (.reg .rdi), .mov .rdi (.reg .r8)] ++
-  loadBE c.n (c.sl K) .rcx ++ loadBE c.n (c.sl D) .rsi ++ loadBE c.n (c.sl E) .rdx ++
+  loadBytes c.C.len c.n (c.sl K) .rcx ++ loadBytes c.C.len c.n (c.sl D) .rsi ++
+  loadBytes c.C.len c.n (c.sl E) .rdx ++
+  (if c.sh = 0 then [] else shrWords c.n (c.sl E) c.sh) ++
   c.consts.flatMap (fun (i, x) => setConst c.n (c.sl i) x) ++
   setConst 1 (c.sl FLAG) (2 ^ 64 - 1) ++ [.mov .rsi (.reg .r14)]
 
@@ -186,7 +193,7 @@ def middle : Prog isa :=
 callee-saved registers restored. -/
 def finish : List Instr :=
   [.mov .rcx (.mem (sc (c.sl FLAG)))] ++
-  storeBE c.n .rsi 0 (c.sl RR) ++ storeBE c.n .rsi (8 * c.n) (c.sl SS) ++
+  storeBytes c.C.len c.n .rsi 0 (c.sl RR) ++ storeBytes c.C.len c.n .rsi c.C.len (c.sl SS) ++
   [.mov .rax (.reg .rcx), .alu .and .rax (.imm 1)] ++
   saved.map (fun (r, d) => .mov r (.mem (sc d)))
 
