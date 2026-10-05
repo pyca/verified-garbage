@@ -83,8 +83,11 @@ def fSave : Nat := 180
 /-- If `wide`: the digest for `core`, and the candidate. -/
 def fX : Nat := 196
 def fKb : Nat := 268
+/-- The words at the frame's top: the digest for `core` and the candidate,
+if `wide`. -/
+def extra (wide : Bool) : Nat := if wide then 36 else 0
 /-- The frame's size, a multiple of 4. -/
-def frameBytes (wide : Bool) : Nat := if wide then 340 else 196
+def frameBytes (wide : Bool) : Nat := 196 + 4 * extra wide
 
 /-- Our argument `i` (`out`, `d`, `digest`, `scratch`), above the frame and
 the return address. -/
@@ -320,9 +323,6 @@ def tryOne : Prog isa :=
   (.seq (.frame (.push [.ebp, .ecx, .edx, .esi, .edi]) (.call c.coreN c.coreC) (.pop .ecx 5))
   (.seq (.block goOn)
     (.ite .ne (.seq c.rekey (.block again)) (.block stop)))))
-
-/-- The words at the frame's top. -/
-def extra (wide : Bool) : Nat := if wide then 36 else 0
 
 /-- `K`, `V` and `h` cleared, and the words at the frame's top (`eax`, the
 result, kept), and our caller's registers back. -/
