@@ -295,12 +295,21 @@ theorem sha512_satPF :
 
 theorem sha512_coreOK : CoreOK (coreH 64) := coreOK 64 (Or.inr (Or.inr (Or.inr rfl)))
 
+/-- SHA-512's functions, with the implementation `v` of the compression function. -/
+abbrev sha512H (v : Compress) : Hash := hash Spec.Hmac.sha512I 64 Spec.Sha512.init512Api.name H0_512 v
+
+theorem sha512K (v : Compress) : Callees (sha512H v) := callees (Or.inr (Or.inl rfl)) v
+
+/-- What the proofs know of SHA-512's functions. -/
+def sha512OK (v : Compress) : HashOK (sha512H v) :=
+  ok sha512_coreOK (sha512K v) rfl
+    (fun _ => (List.take_of_length_le (Nat.le_of_eq (Proof.Sha512.md.digest_length _))).symm) rfl rfl rfl
+    (Or.inr (Or.inr (Or.inr rfl))) rfl
+
 /-- SHA-512 with the implementation `v` of the compression function, which it
 carries for the functions built on SHA-512 alone (`MdHash.sha512`). -/
 def sha512 (v : Compress) (stream : List StreamFn := []) : MdHash :=
-  have C : CoreOK (core (hash Spec.Hmac.sha512I 64 Spec.Sha512.init512Api.name H0_512 v)) := sha512_coreOK
-  have K : Callees (hash Spec.Hmac.sha512I 64 Spec.Sha512.init512Api.name H0_512 v) := callees (Or.inr (Or.inl rfl)) v
-  { MdHash.of (ok C K rfl (fun _ => (List.take_of_length_le (Nat.le_of_eq (Proof.Sha512.md.digest_length _))).symm) rfl rfl rfl (Or.inr (Or.inr (Or.inr rfl))) rfl) C K ⟨Spec.Mgf1.sha512, by simp [mdHashes], fun _ => rfl, rfl⟩ pss_sha512 rfl rfl
+  { MdHash.of (sha512OK v) sha512_coreOK (sha512K v) ⟨Spec.Mgf1.sha512, by simp [mdHashes], fun _ => rfl, rfl⟩ pss_sha512 rfl rfl
       sha512_satI sha512_satF sha512_satT sha512_satP (by decide)
     (by
       unfold Spec.Hmac.Instance.initContract Spec.Hmac.initContract
