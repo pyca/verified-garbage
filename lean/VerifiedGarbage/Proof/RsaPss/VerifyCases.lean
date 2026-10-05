@@ -149,6 +149,37 @@ theorem verifyEncoding_bytes (hG : Valid G) {mHash em : List Byte} {emBits : Nat
   · rw [ifp (by rw [getLast?_eq hne, hl]; simpa using h1)]
     simp only [h1, false_and, Bool.false_eq_true]
 
+theorem publicOpChecked_zero (rest eB sB : List Byte) : Rsa.publicOpChecked (0 :: rest) eB sB = none := by
+  have := os2ip_lt' rest
+  simp only [Rsa.publicOpChecked, Rsa.publicOp, Rsa.modulusValid, os2ip_zero_cons, List.length_cons,
+    Nat.add_sub_cancel]
+  split
+  · rw [ifn]
+    simp only [Bool.and_eq_true, beq_iff_eq, decide_eq_true_eq]
+    intro ⟨⟨_, h⟩, _⟩; omega
+  · rfl
+
+/-- A modulus whose first octet is zero verifies nothing. -/
+theorem verify_zero (rest eB mHash sB : List Byte) (sLen : Option Nat) :
+    verify G G (0 :: rest) eB mHash sB sLen = false := by
+  unfold verify
+  rw [publicOpChecked_zero]
+  simp
+
+/-- Nor does an encoding too short for the digest and the salt. -/
+theorem verify_short {nB : List Byte} (eB mHash sB : List Byte) {sLen : Option Nat}
+    (h : emLength (bitLength (Rsa.os2ip nB) - 1) < G.len + sLen.getD 0 + 2) :
+    verify G G nB eB mHash sB sLen = false := by
+  unfold verify
+  cases Rsa.publicOpChecked nB eB sB with
+  | none => simp
+  | some x =>
+    have : verifyEncoding G G mHash (x.drop (nB.length - emLength (bitLength (Rsa.os2ip nB) - 1)))
+        (bitLength (Rsa.os2ip nB) - 1) sLen = false := by
+      unfold verifyEncoding
+      rw [ifp (Or.inr (Or.inr h))]
+    simp [this]
+
 theorem publicOpChecked_length' {nB eB sB x : List Byte} (h : Rsa.publicOpChecked nB eB sB = some x) :
     x.length = nB.length := by
   simp only [Rsa.publicOpChecked, Rsa.publicOp] at h
