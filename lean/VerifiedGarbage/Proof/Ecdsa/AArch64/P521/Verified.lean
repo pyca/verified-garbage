@@ -59,7 +59,12 @@ theorem p521_ok (hI : Weierstrass.InvToM) : CfgOk p521 where
   len_hi := by decide
   sh := by rw [p521_sh]; decide
   n4 := by decide
-  sound_p := @invSound_of_prime hI _ _ Proof.P521.p_prime
+  sound_p := @invSound_of_prime hI _ _ (by
+    show Nat.Prime Spec.P521.curve.p
+    rw [show Spec.P521.curve.p =
+      6864797660130609714981900799081393217269435300143305409394463459185543183397656052122559640661454554977296311391480858037121987999716643812574028291115057151
+      by decide +kernel]
+    exact Proof.P521.prime_6864797660130609714981900799081393217269435300143305409394463459185543183397656052122559640661454554977296311391480858037121987999716643812574028291115057151)
   inv_p := InvOk.ofMod (by decide +kernel) (by decide)
   inv_n := fun h => absurd h (by decide)
   chain_n := fun _ => by decide +kernel
