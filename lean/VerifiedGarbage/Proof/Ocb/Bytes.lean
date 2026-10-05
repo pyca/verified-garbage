@@ -6,7 +6,7 @@ import VerifiedGarbage.Proof.Ocb.Spec
 Untrusted: everything here is checked by Lean. A byte of memory as an
 element of the bytes read (`getD_bytesAt_eq`), an element of a list of 16
 with one byte replaced (`getD_set16`), and bytes XORed with the first bytes of
-a block (`xor_bytesAt_block`).
+a block (`xor_bytesAt_block`), and its first bytes (`bytesAt_take_block`).
 -/
 
 namespace VG.Proof.Ocb
@@ -42,5 +42,11 @@ theorem xor_bytesAt_block (xs : List Byte) (m : Mem) (Q : Addr) {r : Nat} (hl : 
     Spec.Ocb.xor xs (bytesAt m Q r) = Spec.Ocb.xor xs (Spec.Ocb.toBytes (Spec.Ocb.blockAtMem m Q)) := by
   rw [Spec.Ocb.blockAtMem, toBytes_ofBytes (Proof.Cmac.bytesAt_length _ _ _), show (16 : Nat) = r + (16 - r) by omega,
     bytesAt_append, xor_append_right _ _ _ (by rw [hl, Proof.Cmac.bytesAt_length])]
+
+/-- The first `t ≤ 16` bytes of a block. -/
+theorem bytesAt_take_block (m : Mem) (p : Addr) {t : Nat} (h : t ≤ 16) :
+    bytesAt m p t = (Spec.Ocb.toBytes (Spec.Ocb.blockAtMem m p)).take t := by
+  rw [Spec.Ocb.blockAtMem, toBytes_ofBytes (Proof.Cmac.bytesAt_length _ _ _), show (16 : Nat) = t + (16 - t) by omega,
+    bytesAt_append, List.take_left' (Proof.Cmac.bytesAt_length _ _ _)]
 
 end VG.Proof.Ocb
