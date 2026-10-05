@@ -4,14 +4,14 @@ import VerifiedGarbage.Proof.Ecdsa.AArch64.Lit
 import VerifiedGarbage.Proof.P256.Point
 import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
-import VerifiedGarbage.Proof.Weierstrass.AArch64.InvMain
+import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
 import VerifiedGarbage.Proof.P256.Prime
 
 /-!
 # ECDSA over P-256 on AArch64: `Verified`
 
-P-256 is a curve the proof supports (`p256_ok`, and `Law` for its group law,
-which the registration file supplies: `Proof.P256.law`), so `sign_ok` gives
+P-256 is a curve the proof supports (`p256_ok`, given the inversions' soundness `InvSounds`, and `Law` for its group
+law, which the registration file supplies: `Proof.P256.law` and `invSound_of_toM`), so `sign_ok` gives
 the contract's postcondition; `x19` and `x20` are restored, and no instruction
 writes the other callee-saved registers, `sp` or a SIMD register
 (`abiPreserved_of`). Constant time by taint tracking: the only branches are on
@@ -30,7 +30,7 @@ theorem p256_nBits : 64 * p256.n ≤ Spec.Ecdsa.nBits p256.C := by
     (Nat.le_log2 (by decide +kernel)).mpr (by decide +kernel)
   omega
 
-theorem p256_ok : CfgOk p256 where
+theorem p256_ok (hI : Weierstrass.AArch64.InvSounds) : CfgOk p256 where
   n0 := by decide
   n10 := by decide
   onG := Proof.P256.onCurve_G
@@ -51,9 +51,9 @@ theorem p256_ok : CfgOk p256 where
   len_hi := by decide
   sh := by have := p256_nBits; have : p256.n = 4 := rfl; have : p256.C.len = 32 := rfl; unfold Cfg.sh; omega
   n4 := by decide
-  sound_p := @invSound_of_prime _ _ Proof.P256.p_prime
+  sound_p := hI Proof.P256.p_prime
   inv_p := InvOk.ofMod (by decide +kernel) (by decide)
-  inv_n := fun _ => ⟨@invSound_of_prime _ _ Proof.P256.n_prime,
+  inv_n := fun _ => ⟨hI Proof.P256.n_prime,
     InvOk.ofMod (by decide +kernel) (by decide)⟩
   chain_n := fun h => absurd h (by decide)
   am3 := by unfold AM3; decide +kernel
@@ -63,11 +63,11 @@ theorem pre_of {s : State} (h : signAArch64.pre s) : Pre p256 s := by
   exact ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11,
     ⟨by rw [h1]; simp, held, fit, hdw _ (by simp)⟩⟩
 
-theorem sign_a64 (hL : Weierstrass.Law Spec.P256.curve)
+theorem sign_a64 (hL : Weierstrass.Law Spec.P256.curve) (hI : Weierstrass.AArch64.InvSounds)
     (hT : CombOkW Spec.P256.curve 7 37 Impl.P256.p256Comb7 Impl.P256.p256Comb7Start) (s : State)
     (hs : signAArch64.pre s) :
     ∃ t s', Exec isa signP256 s t s' ∧ abiPreserved s s' ∧ signAArch64.post s s' := by
-  obtain ⟨t, s', he, hsv, hpost⟩ := sign_ok p256_ok hL hT (pre_of hs)
+  obtain ⟨t, s', he, hsv, hpost⟩ := sign_ok (p256_ok hI) hL hT (pre_of hs)
   exact ⟨t, s', he, abiPreserved_of he (by lit_decide) (by lit_decide) (by lit_decide) hsv, hpost⟩
 
 theorem sign_ct : ConstantTime isa signAArch64.pre signAArch64.pub signP256 :=
@@ -82,10 +82,10 @@ theorem sign_ct : ConstantTime isa signAArch64.pre signAArch64.pub signP256 :=
       · exact h4⟩, fun n hn => by
       simp only [List.mem_singleton] at hn; subst hn; exact hsy⟩) (by taint_decide)
 
-theorem sign_verified (hL : Weierstrass.Law Spec.P256.curve)
+theorem sign_verified (hL : Weierstrass.Law Spec.P256.curve) (hI : Weierstrass.AArch64.InvSounds)
     (hT : CombOkW Spec.P256.curve 7 37 Impl.P256.p256Comb7 Impl.P256.p256Comb7Start) :
     Verified AArch64.target signP256
       (Spec.Ecdsa.P256.inst.signContract (AArch64.abi.withConsts p256.combConsts)) :=
-  Verified.of_correct (sign_a64 hL hT) sign_ct implies
+  Verified.of_correct (sign_a64 hL hI hT) sign_ct implies
 
 end VG.Proof.Ecdsa.AArch64
