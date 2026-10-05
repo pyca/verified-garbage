@@ -86,22 +86,17 @@ theorem padCk_ok {p : Prm} (L : Lay p) {s : State} (E : Env p s) {S : BitVec 32}
   rw [m₂, xorMem16_block, pad₁, Proof.Ocb.blockAtMem_frame fr₁ fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr; exact Lay.w_w (.inl (by decide)) (by decide) (by decide)]
 
-/-- What the head of `rest` leaves: `Offset_*` and `Pad`. -/
-structure RestHead (p : Prm) (t t' : State) : Prop where
-  env : Env p t'
-  frame : Frame [⟨w64 p.W + BitVec.ofNat 64 ofsO, 16⟩, ⟨w64 p.W + BitVec.ofNat 64 tmpO, 16⟩,
-    ⟨w64 p.W + BitVec.ofNat 64 scrO, 2048⟩, stk p] t.mem t'.mem
-  ofs : blockAtMem t'.mem (w64 p.W + BitVec.ofNat 64 ofsO) =
-    blockAtMem t.mem (w64 p.W + BitVec.ofNat 64 ofsO) ^^^ ctxLstar t.mem (w64 p.K)
-  tmp : blockAtMem t'.mem (w64 p.W + BitVec.ofNat 64 tmpO) =
-    ctxCiph t.mem (w64 p.K) p.R (blockAtMem t.mem (w64 p.W + BitVec.ofNat 64 ofsO) ^^^ ctxLstar t.mem (w64 p.K))
-  gpr : ∀ r, r ≠ .eax → r ≠ .ebx → r ≠ .ecx → r ≠ .edx → t'.gpr r = t.gpr r
-  rd : t'.rd = t.rd
-  wr : t'.wr = t.wr
-
-theorem restHead_ok (v : BlocksImpl) {p : Prm} (L : Lay p) {t : State} (E : Env p t) :
-    WP isa (.seq (.block ([.mov .ebx (slot ctxO)] ++ xor16 .ebx 240 ofsO ++ copy16 ofsO tmpO))
-      (callBlocks (callees v).enc (oneBlock tmpO))) t (RestHead p t) := by
+/-- The block of `rest`'s head: `Offset_* = Offset ⊕ L_*`, copied to
+`W + tmpO`. -/
+theorem restBlk_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t) :
+    ∃ t₃, runBlock isa ([.mov .ebx (slot ctxO)] ++ xor16 .ebx 240 ofsO ++ copy16 ofsO tmpO) t = some t₃ ∧
+      Env p t₃ ∧
+      Frame [⟨w64 p.W + BitVec.ofNat 64 ofsO, 16⟩, ⟨w64 p.W + BitVec.ofNat 64 tmpO, 16⟩] t.mem t₃.mem ∧
+      blockAtMem t₃.mem (w64 p.W + BitVec.ofNat 64 ofsO) =
+        blockAtMem t.mem (w64 p.W + BitVec.ofNat 64 ofsO) ^^^ ctxLstar t.mem (w64 p.K) ∧
+      blockAtMem t₃.mem (w64 p.W + BitVec.ofNat 64 tmpO) =
+        blockAtMem t.mem (w64 p.W + BitVec.ofNat 64 ofsO) ^^^ ctxLstar t.mem (w64 p.K) ∧
+      (∀ r, r ≠ .eax → r ≠ .ebx → t₃.gpr r = t.gpr r) ∧ t₃.rd = t.rd ∧ t₃.wr = t.wr := by
   have hc := E.slots.ctx
   simp only [slotv_eq] at hc
   obtain ⟨t₁, run₁, bx₁, g₁, m₁, rd₁, wr₁⟩ : ∃ t₁, runBlock isa [.mov .ebx (slot ctxO)] t = some t₁ ∧
@@ -128,12 +123,32 @@ theorem restHead_ok (v : BlocksImpl) {p : Prm} (L : Lay p) {t : State} (E : Env 
       blockAtMem t.mem (w64 p.W + BitVec.ofNat 64 ofsO) ^^^ ctxLstar t.mem (w64 p.K) := by
     rw [Proof.Ocb.blockAtMem_frame f₃ (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact Lay.w_w (.inl (by decide)) (by decide) (by decide)), ofs₂]
-  refine WP.seq (WP.of_runBlock ⟨t₃, runBlock_app_of (runBlock_app_of run₁ run₂) run₃, ?_⟩)
+  exact ⟨t₃, runBlock_app_of (runBlock_app_of run₁ run₂) run₃, E₃, fr₃, ofs₃, by rw [m₃, copyMem16_block, ofs₂],
+    fun r h₁ h₂ => by rw [g₃ r h₁, g₂ r h₁, g₁ r h₂], by rw [rd₃, rd₂, rd₁], by rw [wr₃, wr₂, wr₁]⟩
+
+/-- What the head of `rest` leaves: `Offset_*` and `Pad`. -/
+structure RestHead (p : Prm) (t t' : State) : Prop where
+  env : Env p t'
+  frame : Frame [⟨w64 p.W + BitVec.ofNat 64 ofsO, 16⟩, ⟨w64 p.W + BitVec.ofNat 64 tmpO, 16⟩,
+    ⟨w64 p.W + BitVec.ofNat 64 scrO, 2048⟩, stk p] t.mem t'.mem
+  ofs : blockAtMem t'.mem (w64 p.W + BitVec.ofNat 64 ofsO) =
+    blockAtMem t.mem (w64 p.W + BitVec.ofNat 64 ofsO) ^^^ ctxLstar t.mem (w64 p.K)
+  tmp : blockAtMem t'.mem (w64 p.W + BitVec.ofNat 64 tmpO) =
+    ctxCiph t.mem (w64 p.K) p.R (blockAtMem t.mem (w64 p.W + BitVec.ofNat 64 ofsO) ^^^ ctxLstar t.mem (w64 p.K))
+  gpr : ∀ r, r ≠ .eax → r ≠ .ebx → r ≠ .ecx → r ≠ .edx → t'.gpr r = t.gpr r
+  rd : t'.rd = t.rd
+  wr : t'.wr = t.wr
+
+theorem restHead_ok (v : BlocksImpl) {p : Prm} (L : Lay p) {t : State} (E : Env p t) :
+    WP isa (.seq (.block ([.mov .ebx (slot ctxO)] ++ xor16 .ebx 240 ofsO ++ copy16 ofsO tmpO))
+      (callBlocks (callees v).enc (oneBlock tmpO))) t (RestHead p t) := by
+  obtain ⟨t₃, run₃, E₃, fr₃, ofs₃, tmp₃, g₃, rd₃, wr₃⟩ := restBlk_ok L E
+  refine WP.seq (WP.of_runBlock ⟨t₃, run₃, ?_⟩)
   refine WP.mono (callBlocks_ok (f := Spec.Aes.cipher) v.encOk v.encNosp v.encStack L E₃ (oneBlock_ok E₃ tmpO)
     (DReg.w L E₃ (d := tmpO) (n := 1) (by decide) (.inl (by decide)))) fun t₄ P₄ => ?_
   have aT : w64 (p.W + BitVec.ofNat 32 tmpO) = w64 p.W + BitVec.ofNat 64 tmpO := L.aW (by decide)
-  refine ⟨P₄.env, (fr₃.mono (by simp)).trans ?_, ?_, ?_, fun r h₁ h₂ h₃ h₄ => ?_, by rw [P₄.rd, rd₃, rd₂, rd₁],
-    by rw [P₄.wr, wr₃, wr₂, wr₁]⟩
+  refine ⟨P₄.env, (fr₃.mono (by simp)).trans ?_, ?_, ?_, fun r h₁ h₂ h₃ h₄ => ?_, by rw [P₄.rd, rd₃],
+    by rw [P₄.wr, wr₃]⟩
   · have F := P₄.frame
     rw [aT, show 16 * 1 = 16 from rfl] at F
     exact F.mono fun r hr => by
@@ -149,8 +164,8 @@ theorem restHead_ok (v : BlocksImpl) {p : Prm} (L : Lay p) {t : State} (E : Env 
       BitVec.add_zero _] at this
     rw [this, ctxCiph_mut L (frame_toMut fr₃ fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl <;> exact inMut_w p (.inl (by decide))), m₃, copyMem16_block, ofs₂]
-  · rw [P₄.gpr r h₁ h₂ h₃ h₄, g₃ r h₁, g₂ r h₁, g₁ r h₂]
+      rcases hr with rfl | rfl <;> exact inMut_w p (.inl (by decide))), tmp₃]
+  · rw [P₄.gpr r h₁ h₂ h₃ h₄, g₃ r h₁ h₂]
 
 /-- What `rest` writes. -/
 abbrev restR (p : Prm) (P : BitVec 32) (r : Nat) : List Region :=
