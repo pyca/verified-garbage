@@ -6,8 +6,9 @@
 //!
 //! On a few inputs, RSAEP of each key's result gives back the input, and the
 //! keys loaded from `(n, e, d, p, q)` and from the CRT values the file gives
-//! agree with it. (Every key's public exponent, 3 or 65537, is within
-//! BoringSSL's limits.)
+//! agree with it. Every key passes `check_key`, and fails it with `d`, `dP`,
+//! `dQ` or `qInv` changed by one. (Every key's public exponent, 3 or 65537,
+//! is within BoringSSL's limits.)
 
 #![cfg(all(target_arch = "x86_64", feature = "alloc"))]
 
@@ -69,6 +70,7 @@ fn check_key(name: &str, k: &Key) -> bool {
     y[0] >>= 1;
     let key = PrivateKey::from_components(n, e, d).unwrap_or_else(|err| panic!("{name}: {err}"));
     assert_eq!(key.modulus_len(), len, "{name}");
+    assert!(key.check_key(), "{name}: from_components");
     // RSAEP of each result gives back the input.
     let expect: Vec<Vec<u8>> = [&x, &y]
         .iter()
@@ -83,6 +85,7 @@ fn check_key(name: &str, k: &Key) -> bool {
     let check = |key: &PrivateKey, how: &str| {
         assert_eq!(private(key, &x), expect[0], "{name}: {how}");
         assert_eq!(private(key, &y), expect[1], "{name}: {how}");
+        assert!(key.check_key(), "{name}: {how}");
     };
     let (Some(p), Some(q), Some(dp), Some(dq), Some(qi)) = (
         &k.prime1,
@@ -98,6 +101,20 @@ fn check_key(name: &str, k: &Key) -> bool {
     check(&key, "from_primes");
     let key = PrivateKey::from_crt(n, e, d, &p.0, &q.0, &dp.0, &dq.0, &qi.0).unwrap();
     check(&key, "from_crt");
+    // `d`, `dP`, `dQ` or `qInv` with its low bit flipped: `e d`, `e dP` and
+    // `e dQ` change by `e` and `q qInv` by `q`, none a multiple of the
+    // modulus they are checked against.
+    let flip = |x: &[u8]| {
+        let mut x = x.to_vec();
+        *x.last_mut().unwrap() ^= 1;
+        x
+    };
+    for (i, how) in ["d", "dP", "dQ", "qInv"].iter().enumerate() {
+        let mut v = [d.clone(), dp.0.clone(), dq.0.clone(), qi.0.clone()];
+        v[i] = flip(&v[i]);
+        let key = PrivateKey::from_crt(n, e, &v[0], &p.0, &q.0, &v[1], &v[2], &v[3]);
+        assert!(!key.is_ok_and(|key| key.check_key()), "{name}: {how}");
+    }
     true
 }
 
