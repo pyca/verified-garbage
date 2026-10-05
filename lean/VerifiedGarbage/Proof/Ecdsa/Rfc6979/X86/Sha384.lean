@@ -1,5 +1,5 @@
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Verified
-import VerifiedGarbage.Proof.Ecdsa.X86.Verified
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.P256
 import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Instances
 import VerifiedGarbage.Spec.Ecdsa.Rfc6979.P256Sha384
 
@@ -18,13 +18,13 @@ open VG VG.X86
 
 theorem implies :
     (rfcWide Spec.Ecdsa.Rfc6979.P256Sha384.inst).Implies
-      (Spec.Ecdsa.Rfc6979.P256Sha384.inst.signContract X86.abi 256) := by
-  have a0 : arg (satState 48) 0 = 0x1000 := by decide
-  have a1 : arg (satState 48) 1 = 0x2000 := by decide
-  have a2 : arg (satState 48) 2 = 0x3000 := by decide
-  have a3 : arg (satState 48) 3 = 0x8000 := by decide
-  have e : argAddr (satState 48) 0 = 0x20004 := by decide
-  have esp : (satState 48).gpr .esp = 0x20000 := rfl
+      (Spec.Ecdsa.Rfc6979.P256Sha384.inst.signContract X86.abi 272) := by
+  have a0 : arg (satState 32 48) 0 = 0x1000 := by decide
+  have a1 : arg (satState 32 48) 1 = 0x2000 := by decide
+  have a2 : arg (satState 32 48) 2 = 0x3000 := by decide
+  have a3 : arg (satState 32 48) 3 = 0x8000 := by decide
+  have e : argAddr (satState 32 48) 0 = 0x20004 := by decide
+  have esp : (satState 32 48).gpr .esp = 0x20000 := rfl
   exact
     { pre := by
         sig_implies_pre [Spec.Ecdsa.Rfc6979.P256Sha384.inst, Spec.Ecdsa.Rfc6979.Instance.signContract,
@@ -45,10 +45,11 @@ theorem implies :
         sig_implies_sat [Spec.Ecdsa.Rfc6979.P256Sha384.inst, Spec.Ecdsa.Rfc6979.Instance.signContract,
           Spec.Ecdsa.Rfc6979.Instance.signSig, Spec.Ecdsa.P256.inst, Spec.P256.curve, Spec.Ecdsa.scratchWords,
           X86.abi, X86.argSlots, X86.argVal, X86.argBytes, rfcWide, rfcX86] [a0, a1, a2, a3, e, esp]
-          using satState 48 }
+          using satState 32 48 }
 
 /-- SHA-384, for P-256's group law `hL`. -/
 def pack (hL : Weierstrass.Law Spec.P256.curve) : RfcHash where
+  R := p256 hL
   I := Spec.Ecdsa.Rfc6979.P256Sha384.inst
   F := Proof.Pbkdf2.Whole.X86.sha384F
   ok := Proof.Pbkdf2.Whole.X86.sha384OKF
@@ -63,11 +64,10 @@ def pack (hL : Weierstrass.Law Spec.P256.curve) : RfcHash where
   hS := Nat.le_of_ble_eq_true rfl
   hWi := Nat.le_of_ble_eq_true rfl
   hWf := Nat.le_of_ble_eq_true rfl
-  coreX := Proof.Ecdsa.X86.sign_x86 hL
-  coreCT := Proof.Ecdsa.X86.sign_ct
+  hQ := Nat.le_of_ble_eq_true rfl
 
 theorem sign_verified (hL : Weierstrass.Law Spec.P256.curve) :
-    Verified X86.target (cfgOf (pack hL)).sign (Spec.Ecdsa.Rfc6979.P256Sha384.inst.signContract X86.abi 256) :=
+    Verified X86.target (cfgOf (pack hL)).sign (Spec.Ecdsa.Rfc6979.P256Sha384.inst.signContract X86.abi 272) :=
   X86.sign_verified (pack hL) implies
 
 end VG.Proof.Ecdsa.Rfc6979.X86.Sha384
