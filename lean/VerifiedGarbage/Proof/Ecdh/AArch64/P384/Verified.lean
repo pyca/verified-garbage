@@ -7,7 +7,7 @@ import VerifiedGarbage.Proof.Ecdsa.AArch64.P384.Verified
 # ECDH over P-384 on AArch64: `Verified`
 
 P-384 is a curve the proof supports (`p384_ok`, given the inversions' soundness `InvSounds`, and `Law` for its group
-law, which the registration file supplies: `Proof.P384.law` and `Proof.Weierstrass.AArch64.invSounds`), so `exchange_ok`
+law, which the registration file supplies: `Proof.P384.law` and `invSound_of_toM`), so `exchange_ok`
 gives the contract's postcondition; `x19` and `x20` are restored, and no
 instruction writes the other callee-saved registers, `sp` or a SIMD register
 (`abiPreserved_of`). Constant time by taint tracking: the only branches are on

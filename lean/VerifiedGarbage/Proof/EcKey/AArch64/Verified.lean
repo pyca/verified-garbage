@@ -7,7 +7,7 @@ import VerifiedGarbage.Proof.Ecdsa.AArch64.Verified
 # P-256 public keys on AArch64: `Verified`
 
 P-256 is a curve the proof supports (`p256_ok`, given the inversions' soundness `InvSounds`, and `Law` for its group
-law, which the registration file supplies: `Proof.P256.law` and `Proof.Weierstrass.AArch64.invSounds`), so `publicKey_ok`
+law, which the registration file supplies: `Proof.P256.law` and `invSound_of_toM`), so `publicKey_ok`
 gives the contract's postcondition; `x19` and `x20` are restored, and no
 instruction writes the other callee-saved registers, `sp` or a SIMD register
 (`abiPreserved_of`). Constant time by taint tracking: the only branches are on
