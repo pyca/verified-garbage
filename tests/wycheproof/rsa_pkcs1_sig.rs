@@ -14,8 +14,9 @@
 use serde::Deserialize;
 use verified_garbage::hashes::HashFunction;
 use verified_garbage::hashes::{
-    sha1::Sha1, sha3::Sha3_224, sha3::Sha3_256, sha3::Sha3_384, sha3::Sha3_512, sha224::Sha224,
-    sha256::Sha256, sha384::Sha384, sha512::Sha512, sha512_224::Sha512_224, sha512_256::Sha512_256,
+    md5::Md5, sha1::Sha1, sha3::Sha3_224, sha3::Sha3_256, sha3::Sha3_384, sha3::Sha3_512,
+    sha224::Sha224, sha256::Sha256, sha384::Sha384, sha512::Sha512, sha512_224::Sha512_224,
+    sha512_256::Sha512_256,
 };
 use verified_garbage::rsa::{PrivateKey, PublicKey};
 use verified_garbage::rsa_pkcs1_sig::{Hash, recover, sign, verify};
@@ -80,7 +81,8 @@ fn trim(x: &[u8]) -> &[u8] {
     &x[x.iter().take_while(|&&b| b == 0).count()..]
 }
 
-const HASHES: [Hash; 11] = [
+const HASHES: [Hash; 12] = [
+    Hash::Md5,
     Hash::Sha1,
     Hash::Sha224,
     Hash::Sha256,
@@ -94,22 +96,28 @@ const HASHES: [Hash; 11] = [
     Hash::Sha3_512,
 ];
 
+/// The hash functions by the names the vectors give them.
+const NAMES: [(&str, Hash); 11] = [
+    ("SHA-1", Hash::Sha1),
+    ("SHA-224", Hash::Sha224),
+    ("SHA-256", Hash::Sha256),
+    ("SHA-384", Hash::Sha384),
+    ("SHA-512", Hash::Sha512),
+    ("SHA-512/224", Hash::Sha512_224),
+    ("SHA-512/256", Hash::Sha512_256),
+    ("SHA3-224", Hash::Sha3_224),
+    ("SHA3-256", Hash::Sha3_256),
+    ("SHA3-384", Hash::Sha3_384),
+    ("SHA3-512", Hash::Sha3_512),
+];
+
 /// The hash function a group's `sha` names.
 fn hash(sha: &str) -> Hash {
-    match sha {
-        "SHA-1" => Hash::Sha1,
-        "SHA-224" => Hash::Sha224,
-        "SHA-256" => Hash::Sha256,
-        "SHA-384" => Hash::Sha384,
-        "SHA-512" => Hash::Sha512,
-        "SHA-512/224" => Hash::Sha512_224,
-        "SHA-512/256" => Hash::Sha512_256,
-        "SHA3-224" => Hash::Sha3_224,
-        "SHA3-256" => Hash::Sha3_256,
-        "SHA3-384" => Hash::Sha3_384,
-        "SHA3-512" => Hash::Sha3_512,
-        _ => panic!("unknown hash function {sha}"),
-    }
+    NAMES
+        .iter()
+        .find(|(n, _)| *n == sha)
+        .expect("a known hash function")
+        .1
 }
 
 /// The hash value of `msg` with `h`.
@@ -126,7 +134,7 @@ fn digest(h: Hash, msg: &[u8]) -> Vec<u8> {
         Hash::Sha3_256 => <Sha3_256 as HashFunction>::digest(msg).as_ref().to_vec(),
         Hash::Sha3_384 => <Sha3_384 as HashFunction>::digest(msg).as_ref().to_vec(),
         Hash::Sha3_512 => <Sha3_512 as HashFunction>::digest(msg).as_ref().to_vec(),
-        Hash::Md5 => unreachable!("no vectors use MD5"),
+        Hash::Md5 => Md5::digest(msg).as_ref().to_vec(),
     }
 }
 
