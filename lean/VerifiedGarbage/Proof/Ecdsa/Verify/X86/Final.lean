@@ -46,7 +46,7 @@ theorem vfinish_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base siz
 /-- `[o] = ([a] - [b]) mod m`, on slots. -/
 theorem slSub_ok {M : Mod} {m : Nat} (hMn : M.n = c.n) (hmo : M.mo = c.sl MP ∨ M.mo = c.sl MN)
     (hMt : M.tmp = c.sl TMP) (h7 : c.n < 10) {base : Addr} {s : State}
-    (hs : Scr s base size) (hM : ModOk M size m s.mem base) {o a b : Nat} (ho : o < 45)
+    (hs : Scr s base size) (hM : ModOkW M size m s.mem base) {o a b : Nat} (ho : o < 45)
     (ha : a < 45) (hb : b < 45) (hot : o ≠ TMP) (hA : sv c base s a < m) (hB : sv c base s b < m) :
     WP isa (.block (sub M c.wk (c.sl o) (c.sl a) (c.sl b))) s fun s' => OpKeep M base c.wk (c.sl o) s s' ∧
       sv c base s' o = (sv c base s a + m - sv c base s b) % m := by

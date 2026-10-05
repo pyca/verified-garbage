@@ -29,9 +29,14 @@ theorem p256_nBits : 64 * p256.n ≤ Spec.Ecdsa.nBits p256.C := by
     (Nat.le_log2 (by decide +kernel)).mpr (by decide +kernel)
   omega
 
+/-- No bit of a hash of `32` bytes is dropped. -/
+theorem p256_sh : p256.sh = 0 := by
+  have h : 64 * 4 ≤ Spec.Ecdsa.nBits p256.C := p256_nBits
+  show 8 * 32 - Spec.Ecdsa.nBits p256.C = 0; omega
+
 theorem p256_ok : CfgOk p256 where
   n0 := by decide
-  n7 := by decide
+  n10 := by decide
   onG := Proof.P256.onCurve_G
   p_odd := by decide +kernel
   n_odd := by decide +kernel
@@ -42,8 +47,10 @@ theorem p256_ok : CfgOk p256 where
   p_lt_2n := by decide +kernel
   minv_p := by decide +kernel
   minv_n := by decide +kernel
-  len := rfl
-  hash := p256_nBits
+  len8 := by decide
+  len_lo := by decide
+  len_hi := by decide
+  sh := by rw [p256_sh]; decide
 
 theorem pre_of {s : State} (h : signX86.pre s) : Pre p256 s := by
   obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, h15, h16, h17, h18, h19⟩ := h
@@ -90,7 +97,7 @@ def τ₀ : VG.X86.Taint.T :=
 
 theorem wf₀ {s : State} (hp : Pre p256 s) : VG.X86.Taint.Wf τ₀ s := by
   have hsc := hp.sc_fit; have ho := hp.out_fit; have hs := hp.sp_fit
-  have hn4 : p256.n = 4 := rfl
+  have hn4 : p256.C.len = 32 := rfl
   rw [hn4] at ho
   refine VG.X86.Taint.Wf.entry rfl rfl ⟨fun _ => ⟨by simp [hp.wr, τ₀, hn4], by simpa [hp.wr, hn4] using hp.out_sc, ?_⟩,
     fun _ h => (List.not_mem_nil h).elim, fun _ h => (List.not_mem_nil h).elim,

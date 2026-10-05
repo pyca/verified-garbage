@@ -32,8 +32,8 @@ structure MidPost (c : Cfg) (base : Addr) (s s' : State) : Prop where
   rd : s'.rd = s.rd
   wr : s'.wr = s.wr
   unch : Unch base (slW c [XM, X, RR, KM, TMP] ++ [(c.wk, 16 * c.n + 4)]) s.mem s'.mem
-  modP : ModOk c.MP' size c.C.p s'.mem base
-  modN : ModOk c.MN' size c.C.n s'.mem base
+  modP : ModOkW c.MP' size c.C.p s'.mem base
+  modN : ModOkW c.MN' size c.C.n s'.mem base
   x_lt : sv c base s' X < c.C.p
   x : Fin.ofNat c.C.p (sv c base s' X) =
     toM c.C.p (2 ^ (64 * c.n)) (sv c base s RX) * toM c.C.p (2 ^ (64 * c.n)) (sv c base s ACC)
@@ -53,7 +53,7 @@ theorem unch_slots {base : Addr} {m₁ m₂ : Mem} {o : Nat} {l : List Nat} {M :
 
 /-- The four field operations of `middle`. -/
 theorem midOps_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size)
-    (hMP : ModOk c.MP' size c.C.p s.mem base) (hMN : ModOk c.MN' size c.C.n s.mem base)
+    (hMP : ModOkW c.MP' size c.C.p s.mem base) (hMN : ModOkW c.MN' size c.C.n s.mem base)
     (hacc : sv c base s ACC < c.C.p) (hone : sv c base s ONE = 1) (hzero : sv c base s ZERO = 0)
     (hr2 : sv c base s R2N = 2 ^ (64 * c.n) * 2 ^ (64 * c.n) % c.C.n) {rest : Prog isa}
     {Q : State → Prop} (h : ∀ s', MidPost c base s s' → WP isa rest s' Q) :

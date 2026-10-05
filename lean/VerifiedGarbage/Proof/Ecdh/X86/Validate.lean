@@ -64,14 +64,14 @@ structure MontPost (c : Cfg) (base : Addr) (s s' : State) : Prop where
   rd : s'.rd = s.rd
   wr : s'.wr = s.wr
   unch : Unch base (slWk c [QXM, QYM, TMP]) s.mem s'.mem
-  mod : ModOk c.MP' size c.C.p s'.mem base
+  mod : ModOkW c.MP' size c.C.p s'.mem base
   x_lt : sv c base s' QXM < c.C.p
   x : toM c.C.p (2 ^ (64 * c.n)) (sv c base s' QXM) = Fin.ofNat c.C.p (sv c base s E)
   y_lt : sv c base s' QYM < c.C.p
   y : toM c.C.p (2 ^ (64 * c.n)) (sv c base s' QYM) = Fin.ofNat c.C.p (sv c base s QY)
 
 theorem mont_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size)
-    (hM : ModOk c.MP' size c.C.p s.mem base) (hr2 : sv c base s R2P = c.R * c.R % c.C.p)
+    (hM : ModOkW c.MP' size c.C.p s.mem base) (hr2 : sv c base s R2P = c.R * c.R % c.C.p)
     {rest : Prog isa} {Q : State → Prop} (h : ∀ s', MontPost c base s s' → WP isa rest s' Q) :
     WP isa (.seq (mul c.MP' c.wk (c.sl QXM) (c.sl E) (c.sl R2P))
       (.seq (mul c.MP' c.wk (c.sl QYM) (c.sl QY) (c.sl R2P)) rest)) s Q := by
@@ -109,7 +109,7 @@ abbrev OnCurve (c : Cfg) (x y : Fe c.C) : Prop :=
 
 /-- `y² - (x³ + a x + b)` to `W1`, zero iff the point is on the curve. -/
 theorem curve_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size)
-    (hM : ModOk c.MP' size c.C.p s.mem base) (hx : sv c base s QXM < c.C.p) (hy : sv c base s QYM < c.C.p)
+    (hM : ModOkW c.MP' size c.C.p s.mem base) (hx : sv c base s QXM < c.C.p) (hy : sv c base s QYM < c.C.p)
     (hap : sv c base s AP = c.mont c.C.a) (hbp : sv c base s BP = c.mont c.C.b) :
     WP isa (fprog c.MP' c.wk (Impl.Ecdh.X86.Cfg.curveOps c)) s fun s' =>
       Scr s' base size ∧ (∀ r, r ∉ clob → s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧

@@ -53,7 +53,7 @@ structure OpsPost (c : Cfg) (base : Addr) (s s' : State) : Prop where
 
 /-- The four field operations of `middle`. -/
 theorem pkOps_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size)
-    (hMP : ModOk c.MP' size c.C.p s.mem base) (hacc : sv c base s ACC < c.C.p) (hone : sv c base s ONE = 1)
+    (hMP : ModOkW c.MP' size c.C.p s.mem base) (hacc : sv c base s ACC < c.C.p) (hone : sv c base s ONE = 1)
     {rest : Prog isa} {Q : State → Prop} (h : ∀ s', OpsPost c base s s' → WP isa rest s' Q) :
     WP isa (.seq (mul c.MP' c.wk (c.sl XM) (c.sl RX) (c.sl ACC))
       (.seq (mul c.MP' c.wk (c.sl X) (c.sl XM) (c.sl ONE))
@@ -201,6 +201,7 @@ theorem idx_publicKey {i : Nat} (hi : i ∈ Args.publicKey.idx) : i < 3 := by
   omega
 
 theorem PkPre.setup {s : State} (hp : PkPre c s) (h7 : c.n < 10) : SetupPre c Args.publicKey s where
+  shift := .inl rfl
   wr := by rw [hp.wr]; simp
   arg_in := fun i hi => ⟨_, by rw [hp.rd]; simp, arg_containsN (k := 3) (by have := hp.sp_fit; omega)
     (idx_publicKey hi)⟩

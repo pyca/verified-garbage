@@ -88,6 +88,7 @@ theorem idx_verify {i : Nat} (hi : i ∈ Args.verify.idx) : i < 4 := by
   omega
 
 theorem VPre.setup {s : State} (hp : VPre c s) (h7 : c.n < 10) : SetupPre c Args.verify s where
+  shift := .inl rfl
   wr := by rw [hp.wr]; simp
   arg_in := fun i hi => ⟨_, by rw [hp.rd]; simp, arg_containsN (k := 4) (by have := hp.sp_fit; omega)
     (idx_verify hi)⟩

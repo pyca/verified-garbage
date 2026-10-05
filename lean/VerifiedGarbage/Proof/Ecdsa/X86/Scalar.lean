@@ -75,10 +75,10 @@ structure ScPost (c : Cfg) (base : Addr) (s s' : State) : Prop where
 
 /-- The first three multiplications by `R² mod n`. -/
 theorem scalarIn_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size)
-    (hMN : ModOk c.MN' size c.C.n s.mem base)
+    (hMN : ModOkW c.MN' size c.C.n s.mem base)
     (hr2 : sv c base s R2N = 2 ^ (64 * c.n) * 2 ^ (64 * c.n) % c.C.n) {rest : Prog isa}
     {Q : State → Prop}
-    (h : ∀ s', Scr s' base size → ModOk c.MN' size c.C.n s'.mem base →
+    (h : ∀ s', Scr s' base size → ModOkW c.MN' size c.C.n s'.mem base →
       (∀ r, r ∉ clob → s'.gpr r = s.gpr r) → s'.rd = s.rd → s'.wr = s.wr →
       Unch base (slW c [RM, DM, EM, TT, SM, SS, TMP] ++ [(c.wk, 16 * c.n + 4)]) s.mem s'.mem →
       sv c base s' RM < c.C.n → sv c base s' DM < c.C.n → sv c base s' EM < c.C.n →
@@ -125,7 +125,7 @@ theorem scalarIn_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base si
 
 /-- The rest of the field operations: `s`, left Montgomery's form. -/
 theorem scalarOut_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size)
-    (hMN : ModOk c.MN' size c.C.n s.mem base) (hone : sv c base s ONE = 1)
+    (hMN : ModOkW c.MN' size c.C.n s.mem base) (hone : sv c base s ONE = 1)
     (hdm : sv c base s DM < c.C.n) (hem : sv c base s EM < c.C.n)
     {rest : Prog isa} {Q : State → Prop}
     (h : ∀ s', Scr s' base size → (∀ r, r ∉ clob → s'.gpr r = s.gpr r) → s'.rd = s.rd →

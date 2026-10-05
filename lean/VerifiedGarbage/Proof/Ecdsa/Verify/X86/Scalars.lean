@@ -70,10 +70,10 @@ theorem uv_eq (c : Cfg) : Impl.Ecdsa.Verify.X86.Cfg.uv c =
 /-- One multiplication modulo `n`, on numbered slots: it keeps the modulus and
 every other slot but the temporary area's. -/
 theorem mulN_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size)
-    (hMN : ModOk c.MN' size c.C.n s.mem base) {o a b : Nat} (ho : o < 45) (ha : a < 45) (hb : b < 45)
+    (hMN : ModOkW c.MN' size c.C.n s.mem base) {o a b : Nat} (ho : o < 45) (ha : a < 45) (hb : b < 45)
     (hB : sv c base s b < c.C.n) (hoN : o ≠ MN) (hot : o ≠ TMP) :
     WP isa (mul c.MN' c.wk (c.sl o) (c.sl a) (c.sl b)) s fun s' =>
-      Scr s' base size ∧ ModOk c.MN' size c.C.n s'.mem base ∧
+      Scr s' base size ∧ ModOkW c.MN' size c.C.n s'.mem base ∧
       (∀ r, r ∉ clob → s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
       Unch base (slWk c [o, TMP]) s.mem s'.mem ∧
       (∀ {i}, i < 45 → i ≠ o → i ≠ TMP → sv c base s' i = sv c base s i) ∧

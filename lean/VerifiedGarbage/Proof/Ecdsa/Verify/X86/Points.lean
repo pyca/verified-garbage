@@ -119,11 +119,11 @@ theorem sum_eq (c : Cfg) : Impl.Ecdsa.Verify.X86.Cfg.sum c =
 
 /-- `R = U + R`, by the complete addition. -/
 theorem sum_ok (hc : CfgOk c) {s : State} {base : Addr} (hs : Scr s base size)
-    (hM : ModOk c.MP' size c.C.p s.mem base) (hlt : ∀ i ∈ sumR, sv c base s i < c.C.p) :
+    (hM : ModOkW c.MP' size c.C.p s.mem base) (hlt : ∀ i ∈ sumR, sv c base s i < c.C.p) :
     WP isa (Impl.Ecdsa.Verify.X86.Cfg.sum c) s fun s' =>
       Scr s' base size ∧ (∀ r, r ∉ clob → s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
       Unch base (slWk c sumW) s.mem s'.mem ∧
-      ModOk c.MP' size c.C.p s'.mem base ∧ sv c base s' RZ < c.C.p ∧
+      ModOkW c.MP' size c.C.p s'.mem base ∧ sv c base s' RZ < c.C.p ∧
       (tmv c.C c.n base s' (c.sl RX), tmv c.C c.n base s' (c.sl RY), tmv c.C c.n base s' (c.sl RZ)) =
         rcbAdd (tmv c.C c.n base s (c.sl AP)) (tmv c.C c.n base s (c.sl B3P))
           (tmv c.C c.n base s (c.sl UX)) (tmv c.C c.n base s (c.sl UY)) (tmv c.C c.n base s (c.sl UZ))

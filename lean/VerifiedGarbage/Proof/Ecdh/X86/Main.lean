@@ -230,6 +230,7 @@ theorem idx_ecdh {i : Nat} (hi : i ∈ Args.ecdh.idx) : i < 4 := by
   omega
 
 theorem EPre.setup {s : State} (hp : EPre c s) (h7 : c.n < 10) : SetupPre c Args.ecdh s where
+  shift := .inl rfl
   wr := by rw [hp.wr]; simp
   arg_in := fun i hi => ⟨_, by rw [hp.rd]; simp, arg_containsN (k := 4) (by have := hp.sp_fit; omega)
     (idx_ecdh hi)⟩

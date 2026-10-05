@@ -135,10 +135,15 @@ theorem arg_containsN {s : State} {k i : Nat} (hfit : (s.gpr .esp).toNat + 4 + 4
   rw [e0, ei]
   exact Offset.contains_base _ (show 4 * i + 4 ≤ 4 * k by omega) (by omega)
 
-/-- What `setupWith A` needs of its arguments: the working space writable,
-the slots of the arguments `A` names and `k`, `d` and the hash (`len` bytes
+/-- Which slot `setupWith` may shift: none, `k`'s (verification reads the
+hash there) or the hash's. -/
+def ShiftOk (hs : Option Nat) : Prop := hs = none ∨ hs = some K ∨ hs = some E
+
+/-- What `setupWith A` needs of its arguments: the slot `A.hs` one it may
+shift, the working space writable, the slots of the arguments `A` names and `k`, `d` and the hash (`len` bytes
 each) readable, apart from it, and nothing wrapping around `2³²`. -/
 structure SetupPre (c : Cfg) (A : Args) (s : State) : Prop where
+  shift : ShiftOk A.hs
   wr : (⟨ptr s A.sc, size⟩ : Region) ∈ s.wr
   arg_in : ∀ i ∈ A.idx, InRegions (s.rd ++ s.wr) (argAddr s i) 4
   arg_sc : ∀ i ∈ A.idx, Region.Disjoint ⟨argAddr s i, 4⟩ ⟨ptr s A.sc, size⟩
@@ -164,6 +169,7 @@ theorem idx_sign {i : Nat} (hi : i ∈ Args.sign.idx) : i < 5 := by
   omega
 
 theorem Pre.setup {c : Cfg} {s : State} (hp : Pre c s) : SetupPre c .sign s where
+  shift := .inr (.inr rfl)
   wr := by rw [hp.wr]; simp
   arg_in := fun i hi => ⟨argsR s, by rw [hp.rd]; simp, arg_contains hp.sp_fit (idx_sign hi)⟩
   arg_sc := fun i hi => hp.args_sc.sub_left (arg_sub hp.sp_fit (idx_sign hi))
@@ -182,8 +188,8 @@ theorem Pre.setup {c : Cfg} {s : State} (hp : Pre c s) : SetupPre c .sign s wher
 /-- The number in slot `i`. -/
 abbrev sv (c : Cfg) (base : Addr) (s : State) (i : Nat) : Nat := wordsVal s.mem base (c.sl i) c.n
 
-/-- The bits slot `i` is shifted right by when `setupWith _ hs` reads it:
-`c.sh` for the slot `hs` holding a hash, 0 for the others. -/
+/-- The bits slot `i` is shifted right by when `setupWith` reads it, if `hs`
+is `A.hs`: `c.sh` for the slot `hs` holding a hash, 0 for the others. -/
 abbrev shAt (c : Cfg) (hs : Option Nat) (i : Nat) : Nat := if hs = some i then c.sh else 0
 
 theorem shAt_none (c : Cfg) (i : Nat) : shAt c none i = 0 := rfl
@@ -193,19 +199,19 @@ theorem shAt_E_K (c : Cfg) : shAt c (some E) K = 0 := rfl
 theorem shAt_K_D (c : Cfg) : shAt c (some K) D = 0 := rfl
 theorem shAt_K_E (c : Cfg) : shAt c (some K) E = 0 := rfl
 
-/-- What `setupWith A hs` leaves, from the state `s₀` at entry, with the
+/-- What `setupWith A` leaves, from the state `s₀` at entry, with the
 working space at `base`, the argument `A.sc`: `edi = base`, `ebx`, `esi`,
 `edi` and `ebp` in `[0, 16)`, `k`, `d` and the hash in their slots (the slot
-`hs` shifted, `shAt`), the constants in theirs, and the flag all ones; only
+`A.hs` shifted, `shAt`), the constants in theirs, and the flag all ones; only
 `eax`, `ebx`, `edx` and `edi` and the working space changed. -/
-structure SetupPost (c : Cfg) (A : Args) (hs : Option Nat) (s₀ : State) (base : Addr) (s : State) : Prop where
+structure SetupPost (c : Cfg) (A : Args) (s₀ : State) (base : Addr) (s : State) : Prop where
   scr : Scr s base size
   keep : Keeps [.eax, .ebx, .edx, .edi] s₀ s
   unch : Unch base [(0, size)] s₀.mem s.mem
   saved : ∀ rd ∈ Cfg.saved, s.mem.readW (off base rd.2) 32 = s₀.gpr rd.1
-  k : sv c base s K = ofBytes (Spec.Ecdsa.bytesAt s₀.mem (ptr s₀ A.k) c.C.len) >>> shAt c hs K
-  d : sv c base s D = ofBytes (Spec.Ecdsa.bytesAt s₀.mem (ptr s₀ A.d) c.C.len) >>> shAt c hs D
-  e : sv c base s E = ofBytes (Spec.Ecdsa.bytesAt s₀.mem (ptr s₀ A.e) c.C.len) >>> shAt c hs E
+  k : sv c base s K = ofBytes (Spec.Ecdsa.bytesAt s₀.mem (ptr s₀ A.k) c.C.len) >>> shAt c A.hs K
+  d : sv c base s D = ofBytes (Spec.Ecdsa.bytesAt s₀.mem (ptr s₀ A.d) c.C.len) >>> shAt c A.hs D
+  e : sv c base s E = ofBytes (Spec.Ecdsa.bytesAt s₀.mem (ptr s₀ A.e) c.C.len) >>> shAt c A.hs E
   consts : ∀ ix ∈ c.consts, sv c base s ix.1 = ix.2
   flag : flagW c base s = BitVec.allOnes 32
 

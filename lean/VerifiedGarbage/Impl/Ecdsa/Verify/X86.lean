@@ -63,7 +63,7 @@ def W : Nat := EM
 /-- Verification's arguments: `(public, digest, sig, scratch)`, with `k`
 the signature's `r` (at `sig`), and `d` and the hash both `digest` (the
 key's `x` is read into the hash's slot after the setup). -/
-abbrev Args.verify : Args := ⟨3, 2, 1, 1⟩
+abbrev Args.verify : Args := ⟨3, 2, 1, 1, none⟩
 
 namespace Cfg
 
@@ -71,7 +71,7 @@ variable (c : Impl.Ecdsa.X86.Cfg)
 
 /-- The signature's setup, with verification's arguments, and tables of bits. -/
 def prefix' : Prog isa :=
-  .seq (.block (c.setupWith Args.verify none)) <|
+  .seq (.block (c.setupWith Args.verify)) <|
   .seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n)) <|
   .seq (bits (c.sl EXPP) (bitsAt c.n 1) (8 * c.n)) <|
   .seq (bits (c.sl EXPN) (bitsAt c.n 2) (8 * c.n)) (.block [])

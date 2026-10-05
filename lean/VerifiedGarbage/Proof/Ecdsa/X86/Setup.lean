@@ -4,11 +4,11 @@ import VerifiedGarbage.Proof.Weierstrass.X86.BytesLen
 /-!
 # ECDSA on x86 (32-bit): the setup
 
-`Cfg.setupWith A hs` reads the working space's base from its argument `A.sc` and saves
+`Cfg.setupWith A` reads the working space's base from its argument `A.sc` and saves
 `ebx`, `esi`, `edi` and `ebp` at its start (`setupSaves_ok`), moves the base
 to `edi`, reads `k`, `d` and the hash (`len` bytes each) big-endian into
 their slots through `ebx` (`setupLoad_ok`, once each, after reading the
-pointer: `argLoad_ok`), shifts the slot `hs` holding a hash
+pointer: `argLoad_ok`), shifts the slot `A.hs` holding a hash
 (`setupShift_ok`), stores the constants (`setupConsts_ok`, by induction on the
 list) and sets the flag to all ones: `setup_ok`, the state `SetupPost`
 describes.
@@ -116,10 +116,6 @@ theorem setupLoad_ok {c : Cfg} (hc : CfgOk c) {s t : State} {base : Addr} {i : N
   rw [e, hp, hb]
 
 /-! ## The hash's shift -/
-
-/-- Which slot `setupWith _ hs` may shift: none, `k`'s (verification reads
-the hash there) or the hash's. -/
-def ShiftOk (hs : Option Nat) : Prop := hs = none ∨ hs = some K ∨ hs = some E
 
 /-- The shift of slot `hs`, if any, by the bits of a hash that are not
 `e`'s: only the slots of `k`, `d` and the hash change. -/
@@ -236,18 +232,17 @@ theorem consts_bounds {c : Cfg} (hc : CfgOk c) :
 
 /-! ## The whole setup -/
 
-theorem setup_eq (c : Cfg) (A : Args) (hs : Option Nat) : c.setupWith A hs =
+theorem setup_eq (c : Cfg) (A : Args) : c.setupWith A =
     .mov .eax (.mem (Cfg.argOp A.sc)) :: (Cfg.saveCode ++
     (.mov .edi (.reg .eax) :: .mov .ebx (.mem (Cfg.argOp A.k)) :: (loadBytes c.C.len c.n (c.sl K) .ebx ++
     (.mov .ebx (.mem (Cfg.argOp A.d)) :: (loadBytes c.C.len c.n (c.sl D) .ebx ++
-    (.mov .ebx (.mem (Cfg.argOp A.e)) :: (loadBytes c.C.len c.n (c.sl E) .ebx ++ (c.shiftCode hs ++
+    (.mov .ebx (.mem (Cfg.argOp A.e)) :: (loadBytes c.C.len c.n (c.sl E) .ebx ++ (c.shiftCode A.hs ++
     (c.consts.flatMap (fun (i, x) => setConst c.n (c.sl i) x) ++
     ([.mov .eax (.imm (BitVec.allOnes 32)), .store (sc (c.sl FLAG)) .eax] : List Instr)))))))))) := by
   simp only [Cfg.setupWith, List.append_assoc, List.cons_append, List.nil_append]
 
-theorem setup_ok {c : Cfg} (hc : CfgOk c) {A : Args} {hs : Option Nat} (hhs : ShiftOk hs) {s : State}
-    (hp : SetupPre c A s) :
-    WP isa (.block (c.setupWith A hs)) s (SetupPost c A hs s (ptr s A.sc)) := by
+theorem setup_ok {c : Cfg} (hc : CfgOk c) {A : Args} {s : State} (hp : SetupPre c A s) :
+    WP isa (.block (c.setupWith A)) s (SetupPost c A s (ptr s A.sc)) := by
   have h7 := hc.n10
   have h0 := hc.n0
   have hsz : size = 8192 := rfl
@@ -304,7 +299,7 @@ theorem setup_ok {c : Cfg} (hc : CfgOk c) {A : Args} {hs : Option Nat} (hhs : Sh
   rw [u₈.mem] at O₉
   have hs₉ := hs₈.of_keeps k₉ (by decide)
   -- the shift
-  refine WP.block_append (WP.mono (setupShift_ok hc hhs hs₉) fun sS ⟨fK, fD, fE, kS, OS⟩ => ?_)
+  refine WP.block_append (WP.mono (setupShift_ok hc hp.shift hs₉) fun sS ⟨fK, fD, fE, kS, OS⟩ => ?_)
   have hsS := hs₉.of_keeps kS (by decide)
   -- the constants
   refine WP.block_append (WP.mono (setupConsts_ok hc c.consts hsS (consts_bounds hc) (consts_nodup c))

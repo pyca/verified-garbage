@@ -101,15 +101,17 @@ def wkAt (n : Nat) : Nat := bitsAt n 3
 
 /-- The arguments the setup reads: the working space, `k`, `d` and the hash
 (the functions built on the signature's code read some of them from the same
-argument). -/
+argument), and the slot, if any, holding a hash to shift. -/
 structure Args where
   sc : Nat
   k : Nat
   d : Nat
   e : Nat
+  hs : Option Nat
 
-/-- The signature's: `(out, d, digest, k, scratch)`. -/
-abbrev Args.sign : Args := ⟨4, 3, 1, 2⟩
+/-- The signature's: `(out, d, digest, k, scratch)`, shifting the hash in
+`E`. -/
+abbrev Args.sign : Args := ⟨4, 3, 1, 2, some E⟩
 
 /-- A curve as the code has it: `n` words, and its parameters. -/
 structure Cfg where
@@ -177,20 +179,20 @@ def shiftCode : Option Nat → List Instr
 
 /-- Saves them through `eax`, with the working space from its argument, which
 then goes to `edi`; reads `k`, `d` and the hash (`len` bytes each) through
-`ebx` from the arguments `A` names, and shifts the slot `hs` holding a hash;
+`ebx` from the arguments `A` names, and shifts the slot `A.hs` holding a hash;
 stores the constants; and sets `R = (0 : 1 : 0)` and the flag (a word) to
 all ones. -/
-def setupWith (A : Args) (hs : Option Nat) : List Instr :=
+def setupWith (A : Args) : List Instr :=
   [.mov .eax (.mem (argOp A.sc))] ++ saveCode ++
   [.mov .edi (.reg .eax), .mov .ebx (.mem (argOp A.k))] ++ loadBytes c.C.len c.n (c.sl K) .ebx ++
   [.mov .ebx (.mem (argOp A.d))] ++ loadBytes c.C.len c.n (c.sl D) .ebx ++
   [.mov .ebx (.mem (argOp A.e))] ++ loadBytes c.C.len c.n (c.sl E) .ebx ++
-  c.shiftCode hs ++
+  c.shiftCode A.hs ++
   c.consts.flatMap (fun (i, x) => setConst c.n (c.sl i) x) ++
   [.mov .eax (.imm (BitVec.allOnes 32)), .store (sc (c.sl FLAG)) .eax]
 
-/-- The setup of `sign`, which shifts the hash in `E`. -/
-def setup : List Instr := c.setupWith .sign (some E)
+/-- The setup of `sign`. -/
+def setup : List Instr := c.setupWith .sign
 
 /-- The mask `edx` of `[a] ≠ 0` (all ones if it is not zero), through `ecx`. -/
 def nonzero (a : Nat) : List Instr :=
