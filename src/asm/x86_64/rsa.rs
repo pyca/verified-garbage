@@ -42484,3 +42484,452 @@ pub(crate) unsafe extern "sysv64" fn vg_rsa_private_crt_ifma(out: *mut u8, out_l
         ".p2align 6",
     )
 }
+
+/// The CPU features `vg_rsa_private_checked_adx` requires (`Artifact.features`).
+pub(crate) const VG_RSA_PRIVATE_CHECKED_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["bmi2", "adx"]);
+
+/// The RSA private-key operation: RSADP (RFC 8017 §5.1.2), which is also RSASP1 (§5.2.1), with the private key `(p, q, dP, dQ, qInv)` (§3.2's second form, with two primes), checked against the public exponent as BoringSSL checks it (`rsa_default_private_transform`). With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero) and the public exponent `e` (`e_len` bytes, most significant first, odd, from 3 to `2^33 - 1`: BoringSSL's limits), computes the result `m` of step 2.b for the input (`n_len` bytes, most significant first), and if `m^e mod n` is the input, writes `m` to `out` (`n_len` bytes, most significant first) and returns 1. Writes zeros and returns 0 if `n` or `e` is not such a number, the input is not below `n`, `p q ≠ n`, or `qInv ≥ p`; writes zeros and returns 2 (an internal error) if `m^e mod n` is not the input, which is the case for no input if `vg_rsa_check_key` accepts the key and `p` and `q` are prime: the result is never released unless it passes the check, so that a fault in its computation does not reveal the key. `p`, `dp` and `qinv` are `p_len` bytes, and `q` and `dq` are `q_len` bytes, all most significant first.
+///
+/// Contract: `VG.Spec.Rsa.privateCheckedContract`. Constant time but for the public key: timing may depend on the pointers, the lengths and the contents of `n` and `e`, not on the input or the private key.
+///
+/// This implementation computes the result `m` with `vg_rsa_private_crt_adx` into its frame, then `m^e mod n` with `vg_rsa_public_precompute_adx` and `vg_rsa_public_precomputed_checked_adx`, which also checks `e`. It compares that with the input in constant time, and copies `m` to `out` under a mask, which is clear unless the CRT and the public operation succeeded and the two match. The result, 1, 2 or 0, is computed from the mask without a branch. Then it overwrites the frame's copy of `m` with zeros.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of `out_len` bytes.
+/// * `n` must be valid for reads of `n_len` bytes.
+/// * `e` must be valid for reads of `e_len` bytes.
+/// * `input` must be valid for reads of `input_len` bytes.
+/// * `p` must be valid for reads of `p_len` bytes.
+/// * `q` must be valid for reads of `q_len` bytes.
+/// * `dp` must be valid for reads of `dp_len` bytes.
+/// * `dq` must be valid for reads of `dq_len` bytes.
+/// * `qinv` must be valid for reads of `qinv_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * `n_len` must be in 64..=1024.
+/// * `out_len` and `input_len` must be `n_len`.
+/// * `e_len` must be in 1..=`n_len`.
+/// * `p_len` and `q_len` must be in 1..`n_len`.
+/// * `dp_len` and `qinv_len` must be `p_len`, and `dq_len` must be `q_len`.
+/// * `scratch_len` must be at least `16 * n_len`.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `out` and `scratch` must not overlap each other, `n`, `e`, `input`, `p`, `q`, `dp`, `dq`, `qinv` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `out`, `n`, `e`, `input`, `p`, `q`, `dp`, `dq`, `qinv` and `scratch` may overlap the return address on the stack or the 3248 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `bmi2` and `adx` target features.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_rsa_private_checked_adx(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, input: *const u8, input_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+    core::arch::naked_asm!(
+        "lea rsp, [rsp-3240]",
+        "mov QWORD PTR [rsp+96], rdi",
+        "mov QWORD PTR [rsp+104], rdx",
+        "mov QWORD PTR [rsp+112], rcx",
+        "mov QWORD PTR [rsp+120], r8",
+        "mov QWORD PTR [rsp+128], r9",
+        "mov rax, QWORD PTR [rsp+3264]",
+        "mov QWORD PTR [rsp], rax",
+        "mov rax, QWORD PTR [rsp+3272]",
+        "mov QWORD PTR [rsp+8], rax",
+        "mov rax, QWORD PTR [rsp+3280]",
+        "mov QWORD PTR [rsp+16], rax",
+        "mov rax, QWORD PTR [rsp+3288]",
+        "mov QWORD PTR [rsp+24], rax",
+        "mov rax, QWORD PTR [rsp+3296]",
+        "mov QWORD PTR [rsp+32], rax",
+        "mov rax, QWORD PTR [rsp+3304]",
+        "mov QWORD PTR [rsp+40], rax",
+        "mov rax, QWORD PTR [rsp+3312]",
+        "mov QWORD PTR [rsp+48], rax",
+        "mov rax, QWORD PTR [rsp+3320]",
+        "mov QWORD PTR [rsp+56], rax",
+        "mov rax, QWORD PTR [rsp+3328]",
+        "mov QWORD PTR [rsp+64], rax",
+        "mov rax, QWORD PTR [rsp+3336]",
+        "mov QWORD PTR [rsp+72], rax",
+        "mov rax, QWORD PTR [rsp+3344]",
+        "mov QWORD PTR [rsp+80], rax",
+        "mov rax, QWORD PTR [rsp+3352]",
+        "mov QWORD PTR [rsp+88], rax",
+        "mov rdi, rsp",
+        "add rdi, 160",
+        "mov rsi, rcx",
+        "mov r8, QWORD PTR [rsp+3248]",
+        "mov r9, rcx",
+        "call {vg_rsa_private_crt_adx}",
+        "mov QWORD PTR [rsp+136], rax",
+        "mov rdi, rsp",
+        "add rdi, 1184",
+        "mov rsi, QWORD PTR [rsp+112]",
+        "add rsi, 7",
+        "shr rsi, 3",
+        "add rsi, rsi",
+        "mov rdx, QWORD PTR [rsp+104]",
+        "mov rcx, QWORD PTR [rsp+112]",
+        "mov r8, QWORD PTR [rsp+3344]",
+        "mov r9, QWORD PTR [rsp+3352]",
+        "call {vg_rsa_public_precompute_adx}",
+        "mov QWORD PTR [rsp+144], rax",
+        "mov rdi, QWORD PTR [rsp+96]",
+        "mov rsi, QWORD PTR [rsp+112]",
+        "mov rdx, rsp",
+        "add rdx, 1184",
+        "mov rcx, QWORD PTR [rsp+112]",
+        "add rcx, 7",
+        "shr rcx, 3",
+        "add rcx, rcx",
+        "mov r8, QWORD PTR [rsp+120]",
+        "mov r9, QWORD PTR [rsp+128]",
+        "mov rax, rsp",
+        "add rax, 160",
+        "mov QWORD PTR [rsp], rax",
+        "mov rax, QWORD PTR [rsp+112]",
+        "mov QWORD PTR [rsp+8], rax",
+        "mov rax, QWORD PTR [rsp+3344]",
+        "mov QWORD PTR [rsp+16], rax",
+        "mov rax, QWORD PTR [rsp+3352]",
+        "mov QWORD PTR [rsp+24], rax",
+        "call {vg_rsa_public_precomputed_checked_adx}",
+        "and rax, QWORD PTR [rsp+136]",
+        "and rax, QWORD PTR [rsp+144]",
+        "and rax, 1",
+        "mov r11, rax",
+        "mov rdi, QWORD PTR [rsp+96]",
+        "mov rsi, QWORD PTR [rsp+3248]",
+        "mov rcx, QWORD PTR [rsp+112]",
+        "mov r10d, 0",
+        "mov edx, 0",
+        "20:",
+        "movzx eax, BYTE PTR [rdi+r10*1]",
+        "movzx r9d, BYTE PTR [rsi+r10*1]",
+        "xor rax, r9",
+        "or rdx, rax",
+        "add r10, 1",
+        "cmp r10, rcx",
+        "jne 20b",
+        "cmp rdx, 1",
+        "sbb rdx, rdx",
+        "mov r9d, 0",
+        "sub r9, r11",
+        "mov rax, rdx",
+        "and rax, 1",
+        "mov r8d, 2",
+        "sub r8, rax",
+        "and r8, r9",
+        "and r9, rdx",
+        "mov r11, r8",
+        "mov r10d, 0",
+        "21:",
+        "movzx eax, BYTE PTR [rsp+r10*1+160]",
+        "and rax, r9",
+        "mov BYTE PTR [rdi+r10*1], al",
+        "mov eax, 0",
+        "mov BYTE PTR [rsp+r10*1+160], al",
+        "add r10, 1",
+        "cmp r10, rcx",
+        "jne 21b",
+        "mov rax, r11",
+        "lea rsp, [rsp+3240]",
+        "ret",
+        ".p2align 6",
+        vg_rsa_private_crt_adx = sym super::rsa::vg_rsa_private_crt_adx,
+        vg_rsa_public_precompute_adx = sym super::rsa::vg_rsa_public_precompute_adx,
+        vg_rsa_public_precomputed_checked_adx = sym super::rsa::vg_rsa_public_precomputed_checked_adx,
+    )
+}
+
+/// The RSA private-key operation: RSADP (RFC 8017 §5.1.2), which is also RSASP1 (§5.2.1), with the private key `(p, q, dP, dQ, qInv)` (§3.2's second form, with two primes), checked against the public exponent as BoringSSL checks it (`rsa_default_private_transform`). With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero) and the public exponent `e` (`e_len` bytes, most significant first, odd, from 3 to `2^33 - 1`: BoringSSL's limits), computes the result `m` of step 2.b for the input (`n_len` bytes, most significant first), and if `m^e mod n` is the input, writes `m` to `out` (`n_len` bytes, most significant first) and returns 1. Writes zeros and returns 0 if `n` or `e` is not such a number, the input is not below `n`, `p q ≠ n`, or `qInv ≥ p`; writes zeros and returns 2 (an internal error) if `m^e mod n` is not the input, which is the case for no input if `vg_rsa_check_key` accepts the key and `p` and `q` are prime: the result is never released unless it passes the check, so that a fault in its computation does not reveal the key. `p`, `dp` and `qinv` are `p_len` bytes, and `q` and `dq` are `q_len` bytes, all most significant first.
+///
+/// Contract: `VG.Spec.Rsa.privateCheckedContract`. Constant time but for the public key: timing may depend on the pointers, the lengths and the contents of `n` and `e`, not on the input or the private key.
+///
+/// This implementation computes the result `m` with `vg_rsa_private_crt` into its frame, then `m^e mod n` with `vg_rsa_public_precompute` and `vg_rsa_public_precomputed_checked`, which also checks `e`. It compares that with the input in constant time, and copies `m` to `out` under a mask, which is clear unless the CRT and the public operation succeeded and the two match. The result, 1, 2 or 0, is computed from the mask without a branch. Then it overwrites the frame's copy of `m` with zeros.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of `out_len` bytes.
+/// * `n` must be valid for reads of `n_len` bytes.
+/// * `e` must be valid for reads of `e_len` bytes.
+/// * `input` must be valid for reads of `input_len` bytes.
+/// * `p` must be valid for reads of `p_len` bytes.
+/// * `q` must be valid for reads of `q_len` bytes.
+/// * `dp` must be valid for reads of `dp_len` bytes.
+/// * `dq` must be valid for reads of `dq_len` bytes.
+/// * `qinv` must be valid for reads of `qinv_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * `n_len` must be in 64..=1024.
+/// * `out_len` and `input_len` must be `n_len`.
+/// * `e_len` must be in 1..=`n_len`.
+/// * `p_len` and `q_len` must be in 1..`n_len`.
+/// * `dp_len` and `qinv_len` must be `p_len`, and `dq_len` must be `q_len`.
+/// * `scratch_len` must be at least `16 * n_len`.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `out` and `scratch` must not overlap each other, `n`, `e`, `input`, `p`, `q`, `dp`, `dq`, `qinv` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `out`, `n`, `e`, `input`, `p`, `q`, `dp`, `dq`, `qinv` and `scratch` may overlap the return address on the stack or the 3248 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_rsa_private_checked(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, input: *const u8, input_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+    core::arch::naked_asm!(
+        "lea rsp, [rsp-3240]",
+        "mov QWORD PTR [rsp+96], rdi",
+        "mov QWORD PTR [rsp+104], rdx",
+        "mov QWORD PTR [rsp+112], rcx",
+        "mov QWORD PTR [rsp+120], r8",
+        "mov QWORD PTR [rsp+128], r9",
+        "mov rax, QWORD PTR [rsp+3264]",
+        "mov QWORD PTR [rsp], rax",
+        "mov rax, QWORD PTR [rsp+3272]",
+        "mov QWORD PTR [rsp+8], rax",
+        "mov rax, QWORD PTR [rsp+3280]",
+        "mov QWORD PTR [rsp+16], rax",
+        "mov rax, QWORD PTR [rsp+3288]",
+        "mov QWORD PTR [rsp+24], rax",
+        "mov rax, QWORD PTR [rsp+3296]",
+        "mov QWORD PTR [rsp+32], rax",
+        "mov rax, QWORD PTR [rsp+3304]",
+        "mov QWORD PTR [rsp+40], rax",
+        "mov rax, QWORD PTR [rsp+3312]",
+        "mov QWORD PTR [rsp+48], rax",
+        "mov rax, QWORD PTR [rsp+3320]",
+        "mov QWORD PTR [rsp+56], rax",
+        "mov rax, QWORD PTR [rsp+3328]",
+        "mov QWORD PTR [rsp+64], rax",
+        "mov rax, QWORD PTR [rsp+3336]",
+        "mov QWORD PTR [rsp+72], rax",
+        "mov rax, QWORD PTR [rsp+3344]",
+        "mov QWORD PTR [rsp+80], rax",
+        "mov rax, QWORD PTR [rsp+3352]",
+        "mov QWORD PTR [rsp+88], rax",
+        "mov rdi, rsp",
+        "add rdi, 160",
+        "mov rsi, rcx",
+        "mov r8, QWORD PTR [rsp+3248]",
+        "mov r9, rcx",
+        "call {vg_rsa_private_crt}",
+        "mov QWORD PTR [rsp+136], rax",
+        "mov rdi, rsp",
+        "add rdi, 1184",
+        "mov rsi, QWORD PTR [rsp+112]",
+        "add rsi, 7",
+        "shr rsi, 3",
+        "add rsi, rsi",
+        "mov rdx, QWORD PTR [rsp+104]",
+        "mov rcx, QWORD PTR [rsp+112]",
+        "mov r8, QWORD PTR [rsp+3344]",
+        "mov r9, QWORD PTR [rsp+3352]",
+        "call {vg_rsa_public_precompute}",
+        "mov QWORD PTR [rsp+144], rax",
+        "mov rdi, QWORD PTR [rsp+96]",
+        "mov rsi, QWORD PTR [rsp+112]",
+        "mov rdx, rsp",
+        "add rdx, 1184",
+        "mov rcx, QWORD PTR [rsp+112]",
+        "add rcx, 7",
+        "shr rcx, 3",
+        "add rcx, rcx",
+        "mov r8, QWORD PTR [rsp+120]",
+        "mov r9, QWORD PTR [rsp+128]",
+        "mov rax, rsp",
+        "add rax, 160",
+        "mov QWORD PTR [rsp], rax",
+        "mov rax, QWORD PTR [rsp+112]",
+        "mov QWORD PTR [rsp+8], rax",
+        "mov rax, QWORD PTR [rsp+3344]",
+        "mov QWORD PTR [rsp+16], rax",
+        "mov rax, QWORD PTR [rsp+3352]",
+        "mov QWORD PTR [rsp+24], rax",
+        "call {vg_rsa_public_precomputed_checked}",
+        "and rax, QWORD PTR [rsp+136]",
+        "and rax, QWORD PTR [rsp+144]",
+        "and rax, 1",
+        "mov r11, rax",
+        "mov rdi, QWORD PTR [rsp+96]",
+        "mov rsi, QWORD PTR [rsp+3248]",
+        "mov rcx, QWORD PTR [rsp+112]",
+        "mov r10d, 0",
+        "mov edx, 0",
+        "20:",
+        "movzx eax, BYTE PTR [rdi+r10*1]",
+        "movzx r9d, BYTE PTR [rsi+r10*1]",
+        "xor rax, r9",
+        "or rdx, rax",
+        "add r10, 1",
+        "cmp r10, rcx",
+        "jne 20b",
+        "cmp rdx, 1",
+        "sbb rdx, rdx",
+        "mov r9d, 0",
+        "sub r9, r11",
+        "mov rax, rdx",
+        "and rax, 1",
+        "mov r8d, 2",
+        "sub r8, rax",
+        "and r8, r9",
+        "and r9, rdx",
+        "mov r11, r8",
+        "mov r10d, 0",
+        "21:",
+        "movzx eax, BYTE PTR [rsp+r10*1+160]",
+        "and rax, r9",
+        "mov BYTE PTR [rdi+r10*1], al",
+        "mov eax, 0",
+        "mov BYTE PTR [rsp+r10*1+160], al",
+        "add r10, 1",
+        "cmp r10, rcx",
+        "jne 21b",
+        "mov rax, r11",
+        "lea rsp, [rsp+3240]",
+        "ret",
+        ".p2align 6",
+        vg_rsa_private_crt = sym super::rsa::vg_rsa_private_crt,
+        vg_rsa_public_precompute = sym super::rsa::vg_rsa_public_precompute,
+        vg_rsa_public_precomputed_checked = sym super::rsa::vg_rsa_public_precomputed_checked,
+    )
+}
+
+/// The CPU features `vg_rsa_private_checked_ifma` requires (`Artifact.features`).
+pub(crate) const VG_RSA_PRIVATE_CHECKED_IFMA_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2", "avx512ifma", "avx512vl", "bmi2", "adx"]);
+
+/// The RSA private-key operation: RSADP (RFC 8017 §5.1.2), which is also RSASP1 (§5.2.1), with the private key `(p, q, dP, dQ, qInv)` (§3.2's second form, with two primes), checked against the public exponent as BoringSSL checks it (`rsa_default_private_transform`). With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero) and the public exponent `e` (`e_len` bytes, most significant first, odd, from 3 to `2^33 - 1`: BoringSSL's limits), computes the result `m` of step 2.b for the input (`n_len` bytes, most significant first), and if `m^e mod n` is the input, writes `m` to `out` (`n_len` bytes, most significant first) and returns 1. Writes zeros and returns 0 if `n` or `e` is not such a number, the input is not below `n`, `p q ≠ n`, or `qInv ≥ p`; writes zeros and returns 2 (an internal error) if `m^e mod n` is not the input, which is the case for no input if `vg_rsa_check_key` accepts the key and `p` and `q` are prime: the result is never released unless it passes the check, so that a fault in its computation does not reveal the key. `p`, `dp` and `qinv` are `p_len` bytes, and `q` and `dq` are `q_len` bytes, all most significant first.
+///
+/// Contract: `VG.Spec.Rsa.privateCheckedContract`. Constant time but for the public key: timing may depend on the pointers, the lengths and the contents of `n` and `e`, not on the input or the private key.
+///
+/// This implementation computes the result `m` with `vg_rsa_private_crt_ifma` into its frame, then `m^e mod n` with `vg_rsa_public_precompute_adx` and `vg_rsa_public_precomputed_checked_adx`, which also checks `e`. It compares that with the input in constant time, and copies `m` to `out` under a mask, which is clear unless the CRT and the public operation succeeded and the two match. The result, 1, 2 or 0, is computed from the mask without a branch. Then it overwrites the frame's copy of `m` with zeros.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of `out_len` bytes.
+/// * `n` must be valid for reads of `n_len` bytes.
+/// * `e` must be valid for reads of `e_len` bytes.
+/// * `input` must be valid for reads of `input_len` bytes.
+/// * `p` must be valid for reads of `p_len` bytes.
+/// * `q` must be valid for reads of `q_len` bytes.
+/// * `dp` must be valid for reads of `dp_len` bytes.
+/// * `dq` must be valid for reads of `dq_len` bytes.
+/// * `qinv` must be valid for reads of `qinv_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * `n_len` must be in 64..=1024.
+/// * `out_len` and `input_len` must be `n_len`.
+/// * `e_len` must be in 1..=`n_len`.
+/// * `p_len` and `q_len` must be in 1..`n_len`.
+/// * `dp_len` and `qinv_len` must be `p_len`, and `dq_len` must be `q_len`.
+/// * `scratch_len` must be at least `16 * n_len`.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `out` and `scratch` must not overlap each other, `n`, `e`, `input`, `p`, `q`, `dp`, `dq`, `qinv` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `out`, `n`, `e`, `input`, `p`, `q`, `dp`, `dq`, `qinv` and `scratch` may overlap the return address on the stack or the 3248 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `avx`, `avx2`, `avx512ifma`, `avx512vl`, `bmi2` and `adx` target features.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_rsa_private_checked_ifma(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, input: *const u8, input_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+    core::arch::naked_asm!(
+        "lea rsp, [rsp-3240]",
+        "mov QWORD PTR [rsp+96], rdi",
+        "mov QWORD PTR [rsp+104], rdx",
+        "mov QWORD PTR [rsp+112], rcx",
+        "mov QWORD PTR [rsp+120], r8",
+        "mov QWORD PTR [rsp+128], r9",
+        "mov rax, QWORD PTR [rsp+3264]",
+        "mov QWORD PTR [rsp], rax",
+        "mov rax, QWORD PTR [rsp+3272]",
+        "mov QWORD PTR [rsp+8], rax",
+        "mov rax, QWORD PTR [rsp+3280]",
+        "mov QWORD PTR [rsp+16], rax",
+        "mov rax, QWORD PTR [rsp+3288]",
+        "mov QWORD PTR [rsp+24], rax",
+        "mov rax, QWORD PTR [rsp+3296]",
+        "mov QWORD PTR [rsp+32], rax",
+        "mov rax, QWORD PTR [rsp+3304]",
+        "mov QWORD PTR [rsp+40], rax",
+        "mov rax, QWORD PTR [rsp+3312]",
+        "mov QWORD PTR [rsp+48], rax",
+        "mov rax, QWORD PTR [rsp+3320]",
+        "mov QWORD PTR [rsp+56], rax",
+        "mov rax, QWORD PTR [rsp+3328]",
+        "mov QWORD PTR [rsp+64], rax",
+        "mov rax, QWORD PTR [rsp+3336]",
+        "mov QWORD PTR [rsp+72], rax",
+        "mov rax, QWORD PTR [rsp+3344]",
+        "mov QWORD PTR [rsp+80], rax",
+        "mov rax, QWORD PTR [rsp+3352]",
+        "mov QWORD PTR [rsp+88], rax",
+        "mov rdi, rsp",
+        "add rdi, 160",
+        "mov rsi, rcx",
+        "mov r8, QWORD PTR [rsp+3248]",
+        "mov r9, rcx",
+        "call {vg_rsa_private_crt_ifma}",
+        "mov QWORD PTR [rsp+136], rax",
+        "mov rdi, rsp",
+        "add rdi, 1184",
+        "mov rsi, QWORD PTR [rsp+112]",
+        "add rsi, 7",
+        "shr rsi, 3",
+        "add rsi, rsi",
+        "mov rdx, QWORD PTR [rsp+104]",
+        "mov rcx, QWORD PTR [rsp+112]",
+        "mov r8, QWORD PTR [rsp+3344]",
+        "mov r9, QWORD PTR [rsp+3352]",
+        "call {vg_rsa_public_precompute_adx}",
+        "mov QWORD PTR [rsp+144], rax",
+        "mov rdi, QWORD PTR [rsp+96]",
+        "mov rsi, QWORD PTR [rsp+112]",
+        "mov rdx, rsp",
+        "add rdx, 1184",
+        "mov rcx, QWORD PTR [rsp+112]",
+        "add rcx, 7",
+        "shr rcx, 3",
+        "add rcx, rcx",
+        "mov r8, QWORD PTR [rsp+120]",
+        "mov r9, QWORD PTR [rsp+128]",
+        "mov rax, rsp",
+        "add rax, 160",
+        "mov QWORD PTR [rsp], rax",
+        "mov rax, QWORD PTR [rsp+112]",
+        "mov QWORD PTR [rsp+8], rax",
+        "mov rax, QWORD PTR [rsp+3344]",
+        "mov QWORD PTR [rsp+16], rax",
+        "mov rax, QWORD PTR [rsp+3352]",
+        "mov QWORD PTR [rsp+24], rax",
+        "call {vg_rsa_public_precomputed_checked_adx}",
+        "and rax, QWORD PTR [rsp+136]",
+        "and rax, QWORD PTR [rsp+144]",
+        "and rax, 1",
+        "mov r11, rax",
+        "mov rdi, QWORD PTR [rsp+96]",
+        "mov rsi, QWORD PTR [rsp+3248]",
+        "mov rcx, QWORD PTR [rsp+112]",
+        "mov r10d, 0",
+        "mov edx, 0",
+        "20:",
+        "movzx eax, BYTE PTR [rdi+r10*1]",
+        "movzx r9d, BYTE PTR [rsi+r10*1]",
+        "xor rax, r9",
+        "or rdx, rax",
+        "add r10, 1",
+        "cmp r10, rcx",
+        "jne 20b",
+        "cmp rdx, 1",
+        "sbb rdx, rdx",
+        "mov r9d, 0",
+        "sub r9, r11",
+        "mov rax, rdx",
+        "and rax, 1",
+        "mov r8d, 2",
+        "sub r8, rax",
+        "and r8, r9",
+        "and r9, rdx",
+        "mov r11, r8",
+        "mov r10d, 0",
+        "21:",
+        "movzx eax, BYTE PTR [rsp+r10*1+160]",
+        "and rax, r9",
+        "mov BYTE PTR [rdi+r10*1], al",
+        "mov eax, 0",
+        "mov BYTE PTR [rsp+r10*1+160], al",
+        "add r10, 1",
+        "cmp r10, rcx",
+        "jne 21b",
+        "mov rax, r11",
+        "lea rsp, [rsp+3240]",
+        "ret",
+        ".p2align 6",
+        vg_rsa_private_crt_ifma = sym super::rsa::vg_rsa_private_crt_ifma,
+        vg_rsa_public_precompute_adx = sym super::rsa::vg_rsa_public_precompute_adx,
+        vg_rsa_public_precomputed_checked_adx = sym super::rsa::vg_rsa_public_precomputed_checked_adx,
+    )
+}

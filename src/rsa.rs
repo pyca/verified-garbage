@@ -118,7 +118,9 @@ impl fmt::Display for Error {
             Error::InvalidLength => "RSA input or output length is not the modulus length",
             Error::InputOutOfRange => "RSA input is not less than the modulus",
             Error::InvalidPrivateKey => "invalid RSA private key",
-            Error::Fault => "RSA private-key operation failed its check against the public exponent",
+            Error::Fault => {
+                "RSA private-key operation failed its check against the public exponent"
+            }
         })
     }
 }
@@ -149,7 +151,7 @@ fn trim(x: &[u8]) -> &[u8] {
 fn exponent(e: &[u8]) -> Result<&[u8], Error> {
     let e = trim(e);
     let v = e.iter().fold(0u64, |v, &b| v << 8 | u64::from(b));
-    if e.len() <= 5 && v & 1 == 1 && v >= 3 && v < 1 << 33 {
+    if e.len() <= 5 && v & 1 == 1 && (3..1 << 33).contains(&v) {
         Ok(e)
     } else {
         Err(Error::InvalidExponent)
@@ -628,7 +630,13 @@ mod tests {
     /// of leading zero bytes.
     #[test]
     fn exponents() {
-        let ok: [&[u8]; 5] = [&[3], &[0, 0, 3], &[1, 0, 1], &[1, 0xff, 0xff, 0xff, 0xff], &[0x41]];
+        let ok: [&[u8]; 5] = [
+            &[3],
+            &[0, 0, 3],
+            &[1, 0, 1],
+            &[1, 0xff, 0xff, 0xff, 0xff],
+            &[0x41],
+        ];
         for e in ok {
             assert_eq!(exponent(e), Ok(trim(e)));
         }
@@ -665,10 +673,7 @@ mod tests {
                 big[k - 9] = 0x80;
                 assert_eq!(op(&n, &[0, 71], &be(2, k)), Ok(big));
                 // The input `n - 1` with the longest exponent, of all ones.
-                assert_eq!(
-                    op(&n, &[1, 0xff, 0xff, 0xff, 0xff], &m1),
-                    Ok(m1.clone())
-                );
+                assert_eq!(op(&n, &[1, 0xff, 0xff, 0xff, 0xff], &m1), Ok(m1.clone()));
                 // Out of range.
                 assert_eq!(op(&n, &[3], &n), Err(Error::InputOutOfRange));
                 assert_eq!(op(&n, &[3], &vec![0xff; k]), Err(Error::InputOutOfRange));

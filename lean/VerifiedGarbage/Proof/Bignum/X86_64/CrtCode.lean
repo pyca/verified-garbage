@@ -48,10 +48,6 @@ theorem crtWritten_of {m : Mem} {out : Addr} {k : Nat} {rax : BitVec 64} {nb xb 
 
 /-! ## The precondition, as `main` uses it -/
 
-theorem stackArgAddr_eq (s : State) (j : Nat) : stackArgAddr s j = stackArgAddr s 0 + BitVec.ofNat 64 (8 * j) := by
-  simp only [stackArgAddr, BitVec.add_assoc, BitVec.ofNat_add_ofNat]
-  rw [show 8 * (0 + 1) + 8 * j = 8 * (j + 1) by omega]
-
 theorem stackArgAddr_add (s : State) (j b : Nat) :
     stackArgAddr s j + BitVec.ofNat 64 b = stackArgAddr s 0 + BitVec.ofNat 64 (8 * j + b) := by
   rw [stackArgAddr_eq, BitVec.add_assoc, BitVec.ofNat_add_ofNat]
