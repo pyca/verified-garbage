@@ -134,7 +134,7 @@ theorem wordFold_ok (s : State) (hr : rem s < L) :
       2 ^ 64 * 2 ^ 64 * 2 ^ 64 * 2 ^ 64 * 2 ^ 64 * 2 ^ 64 * 2 ^ 64 := by
     have : 2 * L < 2 ^ 64 * 2 ^ 64 * 2 ^ 64 * 2 ^ 64 * 2 ^ 64 * 2 ^ 64 * 2 ^ 64 := by
       decide +kernel
-    rw [ra, ac]; omega
+    rw [ra, ac]; exact Nat.lt_trans hlt this
   refine WP.mono (foldMul_ok a abp hb) fun t ⟨et, kt⟩ => ?_
   rw [et, ra, ac]
   refine ⟨hlt, ?_, (ka.mono (by decide)).trans (kt.mono (by decide))⟩

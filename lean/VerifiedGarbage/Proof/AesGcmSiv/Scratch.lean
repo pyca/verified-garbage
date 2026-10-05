@@ -1,5 +1,6 @@
 import VerifiedGarbage.Spec.GcmSiv.Contract
 import VerifiedGarbage.Proof.AesGcm.Scratch
+import VerifiedGarbage.Proof.Framework.Scratch
 
 /-!
 # AES-GCM-SIV with its working space as an argument
@@ -55,6 +56,19 @@ def openScratchContract {M : ISA} (A : Abi M) (n : Nat) (stack : Nat := 0) : Con
     (writeArgs := true) (stack := stack)
     (leak := some fun sch rounds nonce aad aadLen data len tag _work =>
       openLeak A.ptrBits sch rounds nonce aad aadLen data len tag)
+
+/-- `openScratchContract` is the shared scratch contract, proved once for any
+ABI: checking it on a target's instance unfolds `openPost` and evaluates
+`decryptWith` on symbolic memory (seconds). -/
+theorem openScratchContract_eq {M : ISA} (A : Abi M) (n stack : Nat) :
+    openScratchContract A n stack = Sig.scratchContract A openSig "work" .u64 n (openPre A.ptrBits)
+      (openPost A.ptrBits) true stack (some (openLeak A.ptrBits)) := rfl
+
+theorem Verified.of_openScratch {T : Target} {c : Prog T.isa} {A : Abi T.isa} {n stack : Nat}
+    (h : Verified T c (openScratchContract A n stack)) :
+    Verified T c (Sig.scratchContract A openSig "work" .u64 n (openPre A.ptrBits)
+      (openPost A.ptrBits) true stack (some (openLeak A.ptrBits))) :=
+  openScratchContract_eq A n stack ▸ h
 
 /-! ## Locality -/
 
@@ -134,11 +148,16 @@ theorem openPost_local : ∀ vs m₁ m₂ m' r, vs.length = (openSig.words pb).l
     change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.addr, ArgWord.int pb,
       ArgWord.addr, ArgWord.int pb, ArgWord.addr] (openPost pb) _ m₂ m' r
     dsimp only [Curry.apply, openPost, ArgWord.ofRaw, IntTy.bits] at h ⊢
+    -- `decryptWith` generalized: tactics that put the `match` on it in weak
+    -- head normal form would evaluate it on symbolic memory (seconds each).
+    generalize hd₂ : decryptWith (ctxCiph m₂ _ _) _ _ _ _ _ = d₂
+    generalize hd₁ : decryptWith (ctxCiph m₁ _ _) _ _ _ _ _ = d₁ at h
     intro hr
     obtain ⟨e₁, e₂, e₃, e₄, e₅⟩ := inputs_local (pb := pb) (le14 hr)
       (agree_of hb.1) (agree_of hb.2.1) (agree_of hb.2.2.1) (agree_of hb.2.2.2.1)
       (agree_of hb.2.2.2.2)
-    rw [e₁, e₂, e₃, e₄, e₅]
+    rw [e₁, e₂, e₃, e₄, e₅, hd₁] at hd₂
+    subst hd₂
     exact h hr
 
 theorem openLeak_local : ∀ vs m₁ m₂, vs.length = (openSig.words pb).length →

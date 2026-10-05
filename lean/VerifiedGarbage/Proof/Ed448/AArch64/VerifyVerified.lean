@@ -1,5 +1,5 @@
 import VerifiedGarbage.Proof.Ed448.AArch64.VerifyMain
-import VerifiedGarbage.Proof.Ed448.AArch64.VerifyLit
+import VerifiedGarbage.Proof.Ed448.AArch64.Erase
 import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 import VerifiedGarbage.Proof.Framework.AArch64.Taint
 import VerifiedGarbage.Proof.Framework.Contract
@@ -32,11 +32,19 @@ theorem verifyEquation_ok (hR : Proof.Ed448.RecoverOk) (hE : Proof.Ed448.VerifyE
     (hs : verifyEquationLocal.pre s) :
     ∃ t s', Exec isa verifyEquation s t s' ∧ abiPreserved s s' ∧ verifyEquationLocal.post s s' := by
   obtain ⟨t, s', he, h⟩ := verifyEquation_correct hR hE hs
-  exact ⟨t, s', he, ⟨h.1, Exec.sp he, Exec.preservedV he (by lit_decide)⟩, h.2⟩
+  exact ⟨t, s', he, ⟨h.1, Exec.sp he, Exec.preservedV he
+    (Code.allInstrs_keepsV_of_eraseOff_eq verifyEquation_eraseOff (by lit_decide))⟩, h.2⟩
+
+theorem verifyEquation_noFrames : verifyEquation.noFrames = true := by
+  rw [← Code.noFrames_eraseOff, verifyEquation_eraseOff, Code.noFrames_eraseOff]; decide +kernel
 
 theorem verifyEquation_ct :
     ConstantTime isa verifyEquationLocal.pre verifyEquationLocal.pub verifyEquation := by
-  refine VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0, .x1, .x2, .x3]) ?_ (by taint_decide)
+  refine VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0, .x1, .x2, .x3]) ?_
+    -- The hint keeps public only the pointers and the counter, which the addresses and
+    -- branches use: every field operation is then analysed from the same taint.
+    (Taint.isSome_check_of_eraseOff verifyEquation_eraseOff
+      (by taint_decide_weak fun τ => τ.inter (Taint.ofRegs [.x0, .x1, .x2, .x3, .x19, .x20])))
   intro s₁ s₂ _ _ ⟨hsp, h0, h1, h2, h3⟩
   refine ⟨hsp, fun r hr => ?_⟩
   simp only [Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr

@@ -16,10 +16,13 @@ point of the curve are on the curve; and a representative's affine
 coordinates are `X / Z` and `Y / Z`, with the inverse by Fermat; and the
 points of the curve form an abelian group (`GroupRep`, in Lean's core
 `IntModule`), so sums of points may be rearranged; and the checks of a
-comb's tables without inverses (`chordOk`, `tangentOk`) give sums. Its proof, `Good.law`
-(`Group.lean`), is in `ZMod C.p` with Mathlib's algebra and elliptic curves, which only a curve's own facts (e.g. `Proof/P256/Curve.lean`)
-import: the proofs of the code take `Law C` as a hypothesis, and only the
-registration files supply it, so none of them loads that algebra.
+comb's tables without inverses (`chordOk`, `tangentOk`) give sums. Its
+proof, `Good.law` (`Group.lean`), is in `ZMod C.p` with Mathlib's algebra and
+elliptic curves, which only a curve's own facts (e.g. `Proof/P256/Curve.lean`)
+import: the proofs of the code take `Law C` as a hypothesis, and the
+registration files are generic over it (`Generic/<Curve>/<Target>/`), so
+that only the variant files that supply it (`Variants/<Curve>/<Target>/Law.lean`)
+load that algebra.
 -/
 
 namespace VG.Proof.Weierstrass
@@ -172,5 +175,11 @@ theorem pow_eq_npow {m : Nat} [NeZero m] (x : Fin m) (e : Nat) : pow x e = x ^ e
       · simp only [h2, ite_false]
         rw [show x ^ e = x ^ (e / 2 + e / 2 + 1) from congrArg (x ^ ·) (by omega),
           Lean.Grind.Semiring.pow_succ, Lean.Grind.CommSemiring.mul_comm]
+
+/-- The group law of `C`, as a value: the variant of a curve's interface on
+each target (`Variants/<Curve>/<Target>/Law.lean`, see `TCB/Emit.lean`),
+whose type must be a `Type`, as the emitter lists the variants. -/
+structure HasLaw (C : Curve) : Type where
+  law : Law C
 
 end VG.Proof.Weierstrass

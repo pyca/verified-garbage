@@ -41,15 +41,16 @@ theorem prune_step (hc : Ctx L g vec m₀ t) {h : List Byte}
   · rw [hc.sp, BitVec.add_zero] at hp
     exact hp
 
-theorem base_noFrames : Impl.Ed448.AArch64.scalarBase.noFrames = true := by lit_decide
+theorem base_noFrames : Impl.Ed448.AArch64.scalarBase.noFrames = true :=
+  Proof.Ed448.AArch64.scalarBase_noFrames
 
 def baseValues : List (Reg × Value) := [(.x0, .caller 0 0), (.x1, .frame 0), (.x2, .caller 2 0)]
 
 theorem base_pre (hL : L.Ok) {u : State} (hs : ∀ p ∈ baseValues, u.gpr p.1 = argValue L p.2) :
     Proof.Ed448.AArch64.scalarBaseLocal.pre (u.callEntry.withRegions [⟨L.E, 57⟩] L.outputs) := by
-  have h0 := hs (.x0, .caller 0 0) (by simp [baseValues])
-  have h1 := hs (.x1, .frame 0) (by simp [baseValues])
-  have h2 := hs (.x2, .caller 2 0) (by simp [baseValues])
+  have h0 := hs (.x0, .caller 0 0) (List.mem_of_getElem? (i := 0) rfl)
+  have h1 := hs (.x1, .frame 0) (List.mem_of_getElem? (i := 1) rfl)
+  have h2 := hs (.x2, .caller 2 0) (List.mem_of_getElem? (i := 2) rfl)
   simp only [argValue, Lay.value, BitVec.add_zero] at h0 h1 h2
   simp only [Proof.Ed448.AArch64.scalarBaseLocal, State.withRegions_rd, State.withRegions_wr,
     State.withRegions_gpr, State.callEntry_gpr _ (by decide : Reg.x0 ∉ linkRegs),
@@ -76,7 +77,7 @@ theorem base_step (hb : Proof.Ed448.BaseLadderOk) (hc : Ctx L g vec m₀ t) (hL 
         Spec.Ed448.encodePoint (Spec.Ed448.pointMul n Spec.Ed448.basePoint) := by
   refine WP.seq (WP.mono (setup_ok hc hL ha
     (args := [(.x0, .caller 0 0), (.x1, .frame 0), (.x2, .caller 2 0)])
-    (by decide) (by simp [VG.Proof.Ed25519.AArch64.Whole.valid]) (by simp) (by simp [preserved]))
+    (by decide) (by simp [VG.Proof.Ed25519.AArch64.Whole.valid]) (by simp) (by decide))
     fun u ⟨hu, hm, hav⟩ => ?_)
   have h0 := hav (.x0, .caller 0 0) (by simp)
   have h1 := hav (.x1, .frame 0) (by simp)

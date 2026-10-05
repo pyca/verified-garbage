@@ -90,7 +90,7 @@ theorem decodeY_ok {s : State} {base p : Addr} (hs : Scr s base) (hp : s.gpr .rs
   refine WP.mono (orBad_ok hs6) fun t ⟨mt, gt, rdt, wrt⟩ => ?_
   have hy0 : mv s.mem p 0 7 = Spec.Ed448.decodeLE (Spec.Ed448.bytesAt s.mem p 56) := by
     rw [← VG.Proof.X448.X86_64.leNum_bytesAt_mv, Proof.Ed448.decodeLE_eq]
-    congr 1
+    refine congrArg Proof.X25519.leNum ?_
     simp only [Spec.X448.bytesAt, Spec.Ed448.bytesAt, off, BitVec.add_zero]
   have O23 : Outside base SIGN 8 s2.mem s3.mem := by rw [m3]; exact writeW_outside _ _ _ (by decide)
   have O34 : Outside base BAD 8 s3.mem s4.mem := by rw [m4]; exact writeW_outside _ _ _ (by decide)
