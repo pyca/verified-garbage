@@ -1,5 +1,5 @@
 import VerifiedGarbage.TCB.AArch64.Target
-import VerifiedGarbage.Proof.Weierstrass.Law
+import VerifiedGarbage.Proof.Weierstrass.HasLaw
 import VerifiedGarbage.Proof.P384.Comb7
 import VerifiedGarbage.Impl.Ecdsa.P384.AArch64
 import VerifiedGarbage.Proof.Ecdsa.AArch64.P384.Verified
@@ -46,7 +46,7 @@ def artifacts (h : Proof.Weierstrass.HasLaw Spec.P384.curve) : List Artifact := 
     consts := Impl.Ecdsa.AArch64.p384.combConsts
     code := Impl.Ecdsa.AArch64.signP384
     contract := Spec.Ecdsa.P384.inst.signContract (AArch64.abi.withConsts Impl.Ecdsa.AArch64.p384.combConsts)
-    verified := Proof.Ecdsa.AArch64.P384.sign_verified h.law (Proof.P384.combOk7 h.law)
+    verified := Proof.Ecdsa.AArch64.P384.sign_verified h.law h.inv (Proof.P384.combOk7 h.law)
     spSafe := Code.all_of_forall (fun _ => rfl) _ },
   { Spec.Ecdsa.P384.verifyApi with
     target := AArch64.target
@@ -71,7 +71,7 @@ def artifacts (h : Proof.Weierstrass.HasLaw Spec.P384.curve) : List Artifact := 
     consts := Impl.Ecdsa.AArch64.p384.combConsts
     code := Impl.Ecdsa.Verify.AArch64.verifyP384
     contract := Spec.Ecdsa.P384.inst.verifyContract (AArch64.abi.withConsts Impl.Ecdsa.AArch64.p384.combConsts)
-    verified := Proof.Ecdsa.Verify.AArch64.P384.verify_verified h.law (Proof.P384.combOk7 h.law)
+    verified := Proof.Ecdsa.Verify.AArch64.P384.verify_verified h.law h.inv (Proof.P384.combOk7 h.law)
     spSafe := Code.all_of_forall (fun _ => rfl) _ }]
 
 end VG.Generic.P384.AArch64.EcdsaP384
