@@ -6,7 +6,12 @@
 //! if not 97 bytes, cannot be passed), and the acceptable ones are
 //! compressed keys, which cannot be passed either.
 
-#![cfg(any(target_arch = "x86_64", target_arch = "aarch64", target_arch = "x86"))]
+#![cfg(any(
+    target_arch = "x86_64",
+    target_arch = "x86",
+    target_arch = "aarch64",
+    target_arch = "arm"
+))]
 
 use serde::Deserialize;
 use verified_garbage::ecdh::{Error, P384, PrivateKey};
