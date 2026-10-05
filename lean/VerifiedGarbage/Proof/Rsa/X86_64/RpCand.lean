@@ -211,7 +211,7 @@ theorem candBody_ok (M : Mont) {u : State} {B : Addr} {Z w : Nat} {minv : BitVec
   rw [show candBody M.mm = seqs ([.block gBlk, setWord aX .rcx, M.mm aXm aX aR2, copyA aG aXm, copyA aY aO,
       expLoop M.mm] ++ ((eqA aY aO ++ ([.block (eqStore sC2)] ++ (eqA aY aNg ++ [.block chkBlk]))) ++
         [.loop (sqBody M.mm) .ne, .block candNext])) by
-    simp only [candBody, List.append_assoc, List.singleton_append, List.cons_append, List.nil_append]]
+    simp only [candBody, List.append_assoc, List.cons_append, List.nil_append]]
   refine wp_seqs_append (by simp) (by simp) (WP.mono (candA_ok M hc hcand hc100) fun u₁ ⟨hf₁, k₁, hY₁⟩ => ?_)
   have hc₁ := hc.congr hf₁ (by decide) (by decide) k₁ (by decide)
   have hy0 : powMod (c + 2) r N < N := by rw [powMod_eq]; exact Nat.mod_lt _ hN

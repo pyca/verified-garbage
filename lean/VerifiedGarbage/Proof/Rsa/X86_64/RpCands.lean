@@ -32,7 +32,7 @@ theorem candLoop_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv : BitVec
     WP isa (candLoop M.mm) s fun u => ∃ res : Option Nat, ∃ cnt : Nat,
       recoverPrimes.go N t r recoverTries = (res.map (pqOf N), cnt) ∧
       word u.mem B (8 * sCand) = BitVec.ofNat 64 cnt ∧ word u.mem B (8 * sC3) = mask res.isSome ∧
-      (∀ y, res = some y → wv u.mem B (slot w aY) w = y * 2 ^ (64 * w) % N ∧ y < N) ∧
+      (∀ y, res = some y → wv u.mem B (slot w aY) w = y * 2 ^ (64 * w) % N ∧ y < N ∧ y * y % N = 1) ∧
       Frm B (rg w candJs candHs) s.mem u.mem ∧ Keep mmRegs s u := by
   have h256 := hc.ws.h256
   unfold candLoop
@@ -57,7 +57,7 @@ theorem candLoop_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv : BitVec
     rw [hres] at hz hc3 hgo
     refine .inl ⟨by simp [eval, hz], some y, c + 1, ?_, hcand, hc3, fun y' hy' => ?_, hfr, hk⟩
     · rw [hI.go, hgo]; rfl
-    · cases hy'; exact hy y hres
+    · cases hy'; exact ⟨(hy y hres).1, (hy y hres).2, VG.Proof.Rsa.recoverStep_some hres⟩
   | none =>
     rw [hres] at hz hc3 hgo
     by_cases hlast : c + 1 < recoverTries

@@ -200,6 +200,28 @@ theorem sq_result {n t r g K : Nat} (ht : 1 ≤ t) (hK : t ≤ K) :
   rw [hlate]
   exact (hI t (Nat.le_refl _)).1 hd
 
+/-- The `y` that `squarings` finds has `y² ≡ 1`. -/
+theorem squarings_some {n : Nat} : ∀ {j x y : Nat}, recoverStep.squarings n j x = some y → y * y % n = 1
+  | 0, x, y, h => by
+    simp only [recoverStep.squarings] at h
+    split at h
+    · cases h; assumption
+    · cases h
+  | j + 1, x, y, h => by
+    simp only [recoverStep.squarings] at h
+    split at h
+    · cases h; assumption
+    · split at h
+      · cases h
+      · exact squarings_some h
+
+/-- The `y` that `recoverStep` finds has `y² ≡ 1`. -/
+theorem recoverStep_some {n t r g y : Nat} (h : recoverStep n t r g = some y) : y * y % n = 1 := by
+  rw [recoverStep_eq] at h
+  split at h
+  · cases h
+  · exact squarings_some h
+
 /-! ## The candidates -/
 
 /-- `recoverPrimes.go` from candidate `c` (`g = c + 2`), all those before
