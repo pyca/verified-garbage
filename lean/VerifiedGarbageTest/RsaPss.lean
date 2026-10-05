@@ -109,8 +109,22 @@ def checkVer (v : Vector) : Except String Unit := do
       if sLen > 0 then
         unless !verify H H v.n v.e mHash v.sig (some (sLen - 1)) do throw "accepted sLen - 1"
 
-/-- Checks one signature generation vector. -/
-def checkGen (v : Vector) : Except String Unit := do
+/-- The CRT form derived from a vector's private key. -/
+abbrev CrtKey := List Byte × List Byte × List Byte × List Byte × List Byte
+
+def privateKey (v : Vector) : Except String CrtKey := do
+  -- Signing with the CRT form of the key, its factors recovered from `d`.
+  let n := Rsa.os2ip v.n
+  let k := v.n.length
+  let e := Rsa.os2ip v.e
+  let (some (p, q), _) := Rsa.recoverPrimes n e (Rsa.os2ip v.d) | throw "factors not found"
+  let some (dP, dQ, qInv) := Rsa.crtValues p q (Rsa.os2ip v.d) | throw "no CRT values"
+  let pB := Rsa.i2osp p k
+  let qB := Rsa.i2osp q k
+  return (pB, qB, Rsa.i2osp dP k, Rsa.i2osp dQ k, Rsa.i2osp qInv k)
+
+/-- Checks one signature generation vector with its recovered private key. -/
+def checkGen (v : Vector) (key : CrtKey) : Except String Unit := do
   let H ← hashOf v.alg
   let mHash := H.hash v.msg
   let some salt := v.salt | throw "no salt"
@@ -121,13 +135,6 @@ def checkGen (v : Vector) : Except String Unit := do
   unless Rsa.i2osp (Rsa.powMod (Rsa.os2ip em) (Rsa.os2ip v.d) n) k == v.sig do
     throw "S is not EM^d mod n"
   unless verify H H v.n v.e mHash v.sig (some salt.length) do throw "verify"
-  -- Signing with the CRT form of the key, its factors recovered from `d`.
-  let e := Rsa.os2ip v.e
-  let (some (p, q), _) := Rsa.recoverPrimes n e (Rsa.os2ip v.d) | throw "factors not found"
-  let some (dP, dQ, qInv) := Rsa.crtValues p q (Rsa.os2ip v.d) | throw "no CRT values"
-  let pB := Rsa.i2osp p k
-  let qB := Rsa.i2osp q k
-  let key := (pB, qB, Rsa.i2osp dP k, Rsa.i2osp dQ k, Rsa.i2osp qInv k)
   unless sign H H v.n v.e key.1 key.2.1 key.2.2.1 key.2.2.2.1 key.2.2.2.2 mHash salt ==
       .ok v.sig do
     throw "sign"
@@ -142,13 +149,26 @@ def checkGen (v : Vector) : Except String Unit := do
 
 /-- Checks every vector of a file; `count` is the number expected. -/
 def checkFile (root : System.FilePath) (name last : String) (count : Nat)
-    (check : Vector → Except String Unit) : IO (Except String Unit) := do
+    (generation : Bool) : IO (Except String Unit) := do
   let text ← IO.FS.readFile (root / "vectors" / "nist-cavp-rsa-pss" / name)
   return do
     let vs ← parse text last
     unless vs.length == count do throw s!"{name}: {vs.length} vectors"
+    -- Prime recovery and CRT conversion depend only on n, e and d, which
+    -- remain unchanged across each key's vectors. Reuse that exact setup;
+    -- every vector still runs all of its signature and rejection checks.
+    let mut cached : Option ((List Byte × List Byte × List Byte) × CrtKey) := none
     for (v, i) in vs.zipIdx do
-      match check v with
+      let result ← if generation then do
+        let identity := (v.n, v.e, v.d)
+        let key ← (match cached with
+          | some (previous, key) => if previous == identity then pure key else privateKey v
+          | none => privateKey v).mapError fun e =>
+            s!"{name}: vector {i} ({v.n.length * 8} bits, {v.alg}): {e}"
+        cached := some (identity, key)
+        pure (checkGen v key)
+      else pure (checkVer v)
+      match result with
       | .ok () => pure ()
       | .error e => throw s!"{name}: vector {i} ({v.n.length * 8} bits, {v.alg}): {e}"
 
@@ -174,12 +194,12 @@ run_cmd do
   match checkMgf1 with
   | .ok () => pure ()
   | .error e => throwError "MGF1: {e}"
-  for (name, last, count, check) in [
-      ("SigVerPSS_186-3.rsp", "Result", 270, checkVer),
-      ("SigVerPSS_186-3_TruncatedSHAs.rsp", "Result", 108, checkVer),
-      ("SigGenPSS_186-3.txt", "SaltVal", 80, checkGen),
-      ("SigGenPSS_186-3_TruncatedSHAs.txt", "SaltVal", 40, checkGen)] do
-    match ← checkFile root name last count check with
+  for (name, last, count, generation) in [
+      ("SigVerPSS_186-3.rsp", "Result", 270, false),
+      ("SigVerPSS_186-3_TruncatedSHAs.rsp", "Result", 108, false),
+      ("SigGenPSS_186-3.txt", "SaltVal", 80, true),
+      ("SigGenPSS_186-3_TruncatedSHAs.txt", "SaltVal", 40, true)] do
+    match ← checkFile root name last count generation with
     | .ok () => pure ()
     | .error e => throwError "{e}"
 

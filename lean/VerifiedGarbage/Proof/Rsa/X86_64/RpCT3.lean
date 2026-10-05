@@ -151,7 +151,7 @@ theorem montSet_ct : RelCT isa (Two MB) (setWord aOne .rcx) (Two MW1) := by
       (ri := .rcx) (by decide) (i := 0) (by omega) hcx) fun t ⟨hv, o, k⟩ => ?_
     rw [hdx, BitVec.toNat_ofNat] at hv
     have hf : Frm q.L.B (rg q.L.w [aOne] []) s.mem t.mem := Frm.rg_of_out o (Nat.le_refl _) _ _ (by decide)
-    exact ⟨hM.step hf (by decide) k (by decide), by rw [hv]; rfl⟩
+    exact ⟨hM.step hf (by decide) k (by decide), by rw [hv]⟩
 
 /-- `Y = R mod n`. -/
 theorem montY_ct (M : Mont) : RelCT isa (Two MW1) (M.mm aY aR2 aOne) (Two MW) :=

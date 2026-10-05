@@ -34,7 +34,7 @@ theorem vfinish_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base siz
     WP isa (.block (Impl.Ecdsa.Verify.Arm.Cfg.finish c)) s fun s' =>
       s'.mem = s.mem ∧ s'.gpr .r0 = (if b then 1 else 0) ∧
       (∀ rd ∈ Cfg.saved, s'.gpr rd.1 = g rd.1) ∧ s'.sp = s.sp := by
-  have hF := sl_le c hc.n7 (i := FLAG) (by decide)
+  have hF := sl_le c hc.n10 (i := FLAG) (by decide)
   have := hc.n0
   have hsz : size = 4096 := rfl
   rw [vfinish_eq]
@@ -53,8 +53,8 @@ theorem vfinish_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base siz
 
 /-- `[o] = ([a] - [b]) mod m`, on slots. -/
 theorem slSub_ok {M : Mod} {m : Nat} (hMn : M.n = c.n) (hmo : M.mo = c.sl MP ∨ M.mo = c.sl MN)
-    (hMt : M.tmp = c.sl TMP) (h7 : c.n < 7) {base : Addr} {s : State}
-    (hs : Scr s base size) (hM : ModOk M size m s.mem base) {o a b : Nat} (ho : o < 45)
+    (hMt : M.tmp = c.sl TMP) (h7 : c.n < 10) {base : Addr} {s : State}
+    (hs : Scr s base size) (hM : ModOkW M size m s.mem base) {o a b : Nat} (ho : o < 45)
     (ha : a < 45) (hb : b < 45) (hot : o ≠ TMP) (hA : sv c base s a < m) (hB : sv c base s b < m) :
     WP isa (.block (sub M c.wk (c.sl o) (c.sl a) (c.sl b))) s fun s' => OpKeep M base c.wk (c.sl o) s s' ∧
       sv c base s' o = (sv c base s a + m - sv c base s b) % m := by
@@ -79,13 +79,13 @@ theorem vtail_ok (hc : CfgOk c) {s₀ : State} {base : Addr}
     {Q₁ Q₂ : Nat → Fe c.C → Fe c.C → Fe c.C → Prop} {s : State} (hP : Pts c s₀ base Q₁ Q₂ s) :
     WP isa (.seq (pow c.powP c.wk) (Impl.Ecdsa.Verify.Arm.Cfg.final c)) s fun s' =>
       (∀ rd ∈ Cfg.saved, s'.gpr rd.1 = s₀.gpr rd.1) ∧ s'.sp = s₀.sp ∧
-      Unch base [(0, size)] s₀.mem s'.mem ∧ ∃ xo, xo < c.C.p ∧
+      Unch base [(0, 8192)] s₀.mem s'.mem ∧ ∃ xo, xo < c.C.p ∧
         Fin.ofNat c.C.p xo = tmv c.C c.n base s (c.sl RX) * tmv c.C c.n base s (c.sl RZ) ^ (c.C.p - 2) ∧
         s'.gpr .r0 = if (KeyOk c s₀ ∧ (0 < sigR c s₀ ∧ sigR c s₀ < c.C.n) ∧
           (0 < sigS c s₀ ∧ sigS c s₀ < c.C.n)) ∧ sv c base s RZ ≠ 0 ∧
           Fin.ofNat c.C.n xo = Fin.ofNat c.C.n (sigR c s₀) then 1 else 0 := by
   have h0 := hc.n0
-  have h7 := hc.n7
+  have h7 := hc.n10
   have hn := hP.scr.nowrap
   have hpR := unitMod_pow_two hc.p_odd (64 * c.n)
   have hnR := unitMod_pow_two hc.n_odd (64 * c.n)
@@ -94,11 +94,11 @@ theorem vtail_ok (hc : CfgOk c) {s₀ : State} {base : Addr}
   have F := hP.fixed
   have hf : c.sl FLAG + 4 ≤ size := by have := sl_le c h7 (i := FLAG) (by decide); omega
   have henc : encodable (BitVec.ofNat 32 (64 * c.n)) = true := by
-    have : ∀ n < 7, encodable (BitVec.ofNat 32 (64 * n)) = true := by decide
+    have : ∀ n < 10, encodable (BitVec.ofNat 32 (64 * n)) = true := by decide
     exact this _ h7
   -- `Z^(p-2)`.
-  refine WP.seq (WP.mono (pow_ok (P := c.powP) (e := c.C.p - 2) (powLayP hc) (powWkP hc) hpR hP.scr
-    (modP_of hc F.mp) hP.rz_lt F.onep hP.t₁ (show c.C.p - 2 < 2 ^ (64 * c.n) by have := hc.p_lt; omega) henc)
+  refine WP.seq (WP.mono (pow_ok (P := c.powP) (e := c.C.p - 2) (powLayP hc) (powWkP hc) hpR
+    (bitsAt_lt hc (j := 1) (by decide)) hP.scr hP.far (modP_of hc F.mp) hP.rz_lt F.onep hP.t₁ (show c.C.p - 2 < 2 ^ (64 * c.n) by have := hc.p_lt; omega) henc)
     fun s₁ ⟨K₁, U₁, lt₁, v₁⟩ => ?_)
   rw [powWxP_eq, accLen_MP'] at U₁
   have hs₁ := hP.scr.of_rest K₁ (by decide)

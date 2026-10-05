@@ -17,13 +17,12 @@ open VG.Proof.MlKem.X86_64
 theorem minv_unique {n : Nat} {a b : BitVec 64} (hn : n % 2 = 1) (ha : (n * a.toNat + 1) % 2 ^ 64 = 0)
     (hb : (n * b.toNat + 1) % 2 ^ 64 = 0) : a = b := by
   have hc : Nat.Coprime (2 ^ 64) n := VG.Proof.Bignum.coprime_pow2 hn 64
-  have h : n * a.toNat ≡ n * b.toNat [MOD 2 ^ 64] := by
-    have e1 : (n * a.toNat + 1) % 2 ^ 64 = (n * b.toNat + 1) % 2 ^ 64 := by rw [ha, hb]
-    exact Nat.ModEq.add_right_cancel' 1 e1
-  have := Nat.ModEq.cancel_left_of_coprime (hc : Nat.gcd (2 ^ 64) n = 1) h
+  have h : a.toNat * n % 2 ^ 64 = b.toNat * n % 2 ^ 64 := by
+    rw [Nat.mul_comm a.toNat, Nat.mul_comm b.toNat]
+    omega
+  have he := VG.Proof.Bignum.mont_cancel hc.symm h
   apply BitVec.eq_of_toNat_eq
-  rw [Nat.ModEq, Nat.mod_eq_of_lt a.isLt, Nat.mod_eq_of_lt b.isLt] at this
-  exact this
+  simpa only [Nat.mod_eq_of_lt a.isLt, Nat.mod_eq_of_lt b.isLt] using he
 
 /-! ## The loads -/
 
@@ -129,7 +128,7 @@ theorem setupLoad_ct : RelCT isa (Two SH) (seqs loadSteps) (Two S2) := by
       ⟨h.congr (Frm.of_arrays1 ha (List.mem_singleton_self _)) (fun r hr => ?_) (fun r hr => ?_) k (by decide),
         by rw [ha.hslot (by decide)]; exact hW, fun j hj => by rw [ha.hslot (by unfold sArr; omega)]; exact hb j hj,
         hv⟩
-    · rw [List.mem_singleton.mp hr]; exact this.trans hZ
+    · rw [List.mem_singleton.mp hr]; exact Nat.le_trans this hZ
     · rw [List.mem_singleton.mp hr]; exact arr_fixed _
   -- The input's registers.
   refine RelCT.seq (two_piece (Ψ := S3) _ (fun p s₁ s₂ h₁ h₂ => pins_SH p s₁ s₂ h₁.1 h₂.1) (by taint_decide)
@@ -158,7 +157,7 @@ theorem setupLoad_ct : RelCT isa (Two SH) (seqs loadSteps) (Two S2) := by
     ⟨h.congr (Frm.of_arrays1 ha (List.mem_singleton_self _)) (fun r hr => ?_) (fun r hr => ?_) k (by decide),
       by rw [ha.hslot (by decide)]; exact hW, fun j hj => by rw [ha.hslot (by unfold sArr; omega)]; exact hb j hj,
       by rw [ha.wv_of_not_mem (by decide) (by decide) hnw]; exact hv⟩
-  · rw [List.mem_singleton.mp hr]; exact hx8.trans hZ
+  · rw [List.mem_singleton.mp hr]; exact Nat.le_trans hx8 hZ
   · rw [List.mem_singleton.mp hr]; exact arr_fixed _
 
 /-! ## The comparison, `-m⁻¹` and the number 1 -/

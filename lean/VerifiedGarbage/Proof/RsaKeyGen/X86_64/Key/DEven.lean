@@ -271,7 +271,7 @@ theorem dEven_k {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) {e L : Nat}
       rw [hMe, hM₁e] at hg1
       rw [hg₂₂, hMe, hM₁e, hg1] at hdv₂₂
       rw [hMe] at hx₂₂
-      exact ⟨x, inverse_even (by omega) (by exact_mod_cast hdv₂₂) hx₂₂⟩
+      exact ⟨x, inverse_even hL3.1 (by exact_mod_cast hdv₂₂) hx₂₂⟩
   · intro d hd
     by_cases hc : L % 2 = 1 ∧ 3 ≤ L ∧ Nat.gcd (e % L) L = 1
     · have hok : ok0 = true := by rw [← hok0]; simp [hc.1]; omega
@@ -279,7 +279,7 @@ theorem dEven_k {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) {e L : Nat}
       have hM₁e : M₁ = L := by rw [← hM₁]; simp; omega
       rw [hg₂₂, hMe, hM₁e, hc.2.2] at hdv₂₂
       rw [hMe] at hx₂₂
-      rw [inverse_even (by omega) (by exact_mod_cast hdv₂₂) hx₂₂] at hd
+      rw [inverse_even hc.2.1 (by exact_mod_cast hdv₂₂) hx₂₂] at hd
       cases hd
       exact vDt
     · rw [inverse_even_none hee hc] at hd

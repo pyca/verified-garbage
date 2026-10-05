@@ -247,24 +247,24 @@ theorem RawPre.bpre {b : Addr} {n o wl : Nat} {s : State} (h : RawPre b n o wl s
   have := inRegions_sub h.out (off := 0) (l := 128 * m) (by omega) (lt64 h.so)
   rwa [add_ofNat_zero] at this
 
-theorem prfsX4_raw {b : Addr} {wl : Nat} :
+theorem prfsX4_raw {fast : Bool} {b : Addr} {wl : Nat} :
     ∀ (n N₀ o : Nat) (s : State), RawPre b n o wl s → N₀ + n + 4 ≤ 256 →
-      WP isa (prfsX4 N₀ n o wl) s fun s' => BEnv b wl o n s s' ∧
+      WP isa (prfsX4 (fast := fast) N₀ n o wl) s fun s' => BEnv b wl o n s s' ∧
         ∀ k < n, bytesAt s'.mem (b + BitVec.ofNat 64 (o + 128 * k)) 128 =
           prf 2 (sig b s) (BitVec.ofNat 8 (N₀ + k))
   | 0, _, _, _, _, _ => WP.block_nil ⟨BEnv.refl, fun _ h => absurd h (Nat.not_lt_zero _)⟩
   | 1, N₀, o, s, h, hN =>
-    show WP isa (batch N₀ 1 o wl) s _ from batch_ok (h.bpre (m := 1) (by decide) (by decide)) (by omega)
+    show WP isa (batch (fast := fast) N₀ 1 o wl) s _ from batch_ok (fast := fast) (h.bpre (m := 1) (by decide) (by decide)) (by omega)
   | 2, N₀, o, s, h, hN =>
-    show WP isa (batch N₀ 2 o wl) s _ from batch_ok (h.bpre (m := 2) (by decide) (by decide)) (by omega)
+    show WP isa (batch (fast := fast) N₀ 2 o wl) s _ from batch_ok (fast := fast) (h.bpre (m := 2) (by decide) (by decide)) (by omega)
   | 3, N₀, o, s, h, hN =>
-    show WP isa (batch N₀ 3 o wl) s _ from batch_ok (h.bpre (m := 3) (by decide) (by decide)) (by omega)
+    show WP isa (batch (fast := fast) N₀ 3 o wl) s _ from batch_ok (fast := fast) (h.bpre (m := 3) (by decide) (by decide)) (by omega)
   | n + 4, N₀, o, s, h, hN => by
-    show WP isa (.seq (batch N₀ 4 o wl) (prfsX4 (N₀ + 4) n (o + 512) wl)) s _
+    show WP isa (.seq (batch (fast := fast) N₀ 4 o wl) (prfsX4 (fast := fast) (N₀ + 4) n (o + 512) wl)) s _
     have so := h.so
     have hs4 : Region.Sub (oR b o 4) (oR b o (n + 4)) := Region.sub_prefix (by omega)
     have hsn : Region.Sub (oR b (o + 512) n) (oR b o (n + 4)) := Offset.sub _ (by omega) (by omega)
-    refine WP.seq (WP.mono (batch_ok (h.bpre (by decide) (by omega)) (by omega)) fun s₁ ⟨e₁, r₁⟩ => ?_)
+    refine WP.seq (WP.mono (batch_ok (fast := fast) (h.bpre (by decide) (by omega)) (by omega)) fun s₁ ⟨e₁, r₁⟩ => ?_)
     have hsig : sig b s₁ = sig b s := bytesAt_frame e₁.frame (by
       simpa using ⟨h.dWS.symm, (h.dOS.sub_left hs4).symm⟩) (by decide)
     have h₁ : RawPre b n (o + 512) wl s₁ := by
@@ -272,7 +272,7 @@ theorem prfsX4_raw {b : Addr} {wl : Nat} :
         h.dWO.sub_right hsn, h.dWS, h.dOS.sub_left hsn, h.small, by omega⟩
       have := inRegions_sub h.out (off := 512) (l := 128 * n) (by omega) (lt64 h.so)
       rw [e₁.wr, ← Offset.add_add]; exact this
-    refine WP.mono (prfsX4_raw n (N₀ + 4) (o + 512) s₁ h₁ (by omega)) fun s₂ ⟨e₂, r₂⟩ =>
+    refine WP.mono (prfsX4_raw (fast := fast) n (N₀ + 4) (o + 512) s₁ h₁ (by omega)) fun s₂ ⟨e₂, r₂⟩ =>
       ⟨⟨e₂.rd.trans e₁.rd, e₂.wr.trans e₁.wr, fun r hr => (e₂.cs r hr).trans (e₁.cs r hr),
         (e₁.frame.sub ?_).trans (e₂.frame.sub ?_)⟩, fun k hk => ?_⟩
     · intro r hr
@@ -297,27 +297,27 @@ theorem prfsX4_raw {b : Addr} {wl : Nat} :
         rwa [hsig, show o + 512 + 128 * (k - 4) = o + 128 * k by omega, show N₀ + 4 + (k - 4) = N₀ + k by omega]
           at this
 
-theorem prfsX4_rtr {wl : Nat} : ∀ (n N₀ o : Nat),
-    RelCT isa (fun x y => x.gpr .rbx = y.gpr .rbx) (prfsX4 N₀ n o wl) fun x y => x.gpr .rbx = y.gpr .rbx
+theorem prfsX4_rtr {fast : Bool} {wl : Nat} : ∀ (n N₀ o : Nat),
+    RelCT isa (fun x y => x.gpr .rbx = y.gpr .rbx) (prfsX4 (fast := fast) N₀ n o wl) fun x y => x.gpr .rbx = y.gpr .rbx
   | 0, _, _ => nil_tr
-  | 1, _, _ => batch_tr (m := 1) (fun _ _ h => h) _ _ _ (by decide)
-  | 2, _, _ => batch_tr (m := 2) (fun _ _ h => h) _ _ _ (by decide)
-  | 3, _, _ => batch_tr (m := 3) (fun _ _ h => h) _ _ _ (by decide)
-  | n + 4, N₀, o => RelCT.seq (batch_tr (m := 4) (fun _ _ h => h) _ _ _ (by decide)) (prfsX4_rtr n (N₀ + 4) (o + 512))
+  | 1, _, _ => batch_tr (fast := fast) (m := 1) (fun _ _ h => h) _ _ _ (by decide)
+  | 2, _, _ => batch_tr (fast := fast) (m := 2) (fun _ _ h => h) _ _ _ (by decide)
+  | 3, _, _ => batch_tr (fast := fast) (m := 3) (fun _ _ h => h) _ _ _ (by decide)
+  | n + 4, N₀, o => RelCT.seq (batch_tr (fast := fast) (m := 4) (fun _ _ h => h) _ _ _ (by decide)) (prfsX4_rtr (fast := fast) n (N₀ + 4) (o + 512))
 
-theorem prfsX4_ctl {wl : Nat} : ∀ (n N₀ o : Nat), ctlOk (prfsX4 N₀ n o wl) = true
+theorem prfsX4_ctl {fast : Bool} {wl : Nat} : ∀ (n N₀ o : Nat), ctlOk (prfsX4 (fast := fast) N₀ n o wl) = true
   | 0, _, _ => rfl
-  | 1, _, _ => by kernel_rfl
-  | 2, _, _ => by kernel_rfl
-  | 3, _, _ => by kernel_rfl
-  | n + 4, N₀, o => ctlOk_seq (by kernel_rfl) (prfsX4_ctl n (N₀ + 4) (o + 512))
+  | 1, _, _ => by cases fast <;> kernel_rfl
+  | 2, _, _ => by cases fast <;> kernel_rfl
+  | 3, _, _ => by cases fast <;> kernel_rfl
+  | n + 4, N₀, o => ctlOk_seq (by cases fast <;> kernel_rfl) (prfsX4_ctl (fast := fast) n (N₀ + 4) (o + 512))
 
-theorem prfsX4_sp {wl : Nat} : ∀ (n N₀ o : Nat), (prfsX4 N₀ n o wl).all (fun i => !isa.writesSp i) = true
+theorem prfsX4_sp {fast : Bool} {wl : Nat} : ∀ (n N₀ o : Nat), (prfsX4 (fast := fast) N₀ n o wl).all (fun i => !isa.writesSp i) = true
   | 0, _, _ => rfl
-  | 1, _, _ => by kernel_rfl
-  | 2, _, _ => by kernel_rfl
-  | 3, _, _ => by kernel_rfl
-  | n + 4, N₀, o => all_seq (by kernel_rfl) (prfsX4_sp n (N₀ + 4) (o + 512))
+  | 1, _, _ => by cases fast <;> kernel_rfl
+  | 2, _, _ => by cases fast <;> kernel_rfl
+  | 3, _, _ => by cases fast <;> kernel_rfl
+  | n + 4, N₀, o => all_seq (by cases fast <;> kernel_rfl) (prfsX4_sp (fast := fast) n (N₀ + 4) (o + 512))
 
 end Prf4
 
@@ -327,9 +327,9 @@ theorem cover_in {X : List Region} {a : Addr} {n : Nat} (h : Covers [⟨a, n⟩]
 theorem prfsLead_le (n : Nat) : prfsLead n ≤ n := by
   unfold prfsLead; split <;> omega
 
-theorem prfsAvx2_ok {s : State} (L : Lay rbs wbs s) (hcs : ∀ b ∈ rbs ++ wbs, b.1 ∈ bases) {N₀ n o wl : Nat}
+theorem prfsAvx2_ok {fast : Bool} {s : State} (L : Lay rbs wbs s) (hcs : ∀ b ∈ rbs ++ wbs, b.1 ∈ bases) {N₀ n o wl : Nat}
     (hN : N₀ + n + 4 ≤ 256) (hc : prfsChk (rbs ++ wbs) wbs n o wl = true) :
-    WP isa (prfsAvx2 N₀ n o wl) s (PrfsPost s N₀ n o wl) := by
+    WP isa (prfsAvx2 (fast := fast) N₀ n o wl) s (PrfsPost s N₀ n o wl) := by
   obtain ⟨hs, hw, ho, hsg, dwo, dws, dos, hsm⟩ := prfsChk_spec hc
   have hw' : inB wbs (sc (32 * wl)) 2368 = true := ((Bool.and_eq_true _ _).mp hw).2
   have ho' : inB wbs (sc o) (128 * n) = true := ((Bool.and_eq_true _ _).mp ho).2
@@ -356,7 +356,7 @@ theorem prfsAvx2_ok {s : State} (L : Lay rbs wbs s) (hcs : ∀ b ∈ rbs ++ wbs,
     rw [h₁.post.wr, ← Offset.add_add]; exact this
   have hsig : Prf4.sig (s.gpr .rbx) s₁ = bytesAt s.mem (pa s sigP) 32 := by
     rw [← h₁.sig]; simp only [Prf4.sig, Prf4.sS, pa, e₁]
-  refine WP.mono (Prf4.prfsX4_raw (n - r) (N₀ + r) (o + 128 * r) s₁ raw (by omega)) fun s' ⟨e, out⟩ =>
+  refine WP.mono (Prf4.prfsX4_raw (fast := fast) (n - r) (N₀ + r) (o + 128 * r) s₁ raw (by omega)) fun s' ⟨e, out⟩ =>
     ⟨PPost.trans h₁.post ⟨e.rd, e.wr, e.cs, e.frame.sub fun r' hr' => ?_⟩ (fun w hw => by
       simp only [prfsW, List.mem_cons, List.not_mem_nil, or_false] at hw
       rcases hw with rfl | rfl | rfl | rfl | rfl <;> exact rbx_cs) (fun w hw => hw) (fun w hw => hw), fun i hi => ?_⟩
@@ -381,20 +381,20 @@ theorem prfsAvx2_ok {s : State} (L : Lay rbs wbs s) (hcs : ∀ b ∈ rbs ++ wbs,
       rwa [hsig, show o + 128 * r + 128 * (i - r) = o + 128 * i by omega,
         show N₀ + r + (i - r) = N₀ + i by omega] at this
 
-theorem prfsAvx2_tr (hcs : ∀ b ∈ rbs ++ wbs, b.1 ∈ bases) {N₀ n o wl : Nat} (hN : N₀ + n + 4 ≤ 256)
+theorem prfsAvx2_tr {fast : Bool} (hcs : ∀ b ∈ rbs ++ wbs, b.1 ∈ bases) {N₀ n o wl : Nat} (hN : N₀ + n + 4 ≤ 256)
     (hc : prfsChk (rbs ++ wbs) wbs n o wl = true) :
-    RelCT isa (LRel rbs wbs) (prfsAvx2 N₀ n o wl) fun _ _ => True := by
+    RelCT isa (LRel rbs wbs) (prfsAvx2 (fast := fast) N₀ n o wl) fun _ _ => True := by
   obtain ⟨hs, -, -, hsg, -⟩ := prfsChk_spec hc
   have hr := prfsLead_le n
   unfold prfsAvx2
   generalize prfsLead n = r at hr ⊢
   exact RelCT.seq (prfsScalar_trL hcs (by omega) fun i hi => (hs i (by omega)).1)
-    (RelCT.mono (Prf4.prfsX4_rtr _ _ _) (fun _ _ h => h.eq (rdOk_in hsg)) fun _ _ _ => trivial)
+    (RelCT.mono (Prf4.prfsX4_rtr (fast := fast) _ _ _) (fun _ _ h => h.eq (rdOk_in hsg)) fun _ _ _ => trivial)
 
-theorem prfsAvx2_ctl (N₀ n o wl : Nat) : ctlOk (prfsAvx2 N₀ n o wl) = true :=
-  ctlOk_seq (prfsScalar_ctl _ _ _ _) (Prf4.prfsX4_ctl _ _ _)
+theorem prfsAvx2_ctl {fast : Bool} (N₀ n o wl : Nat) : ctlOk (prfsAvx2 (fast := fast) N₀ n o wl) = true :=
+  ctlOk_seq (prfsScalar_ctl _ _ _ _) (Prf4.prfsX4_ctl (fast := fast) _ _ _)
 
-theorem prfsAvx2_sp (N₀ n o wl : Nat) : (prfsAvx2 N₀ n o wl).all (fun i => !isa.writesSp i) = true :=
-  all_seq (prfsScalar_sp _ _ _ _) (Prf4.prfsX4_sp _ _ _)
+theorem prfsAvx2_sp {fast : Bool} (N₀ n o wl : Nat) : (prfsAvx2 (fast := fast) N₀ n o wl).all (fun i => !isa.writesSp i) = true :=
+  all_seq (prfsScalar_sp _ _ _ _) (Prf4.prfsX4_sp (fast := fast) _ _ _)
 
 end VG.Proof.MlKem.X86_64

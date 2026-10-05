@@ -14,11 +14,12 @@ or more per call; and preprocessing each fact about `/` and `%` introduces
 new variables and constraints, which every call pays for and the kernel
 checks. Two ways to run them on less:
 
-* `omega_arith` and `bv_omega_arith` first clear every hypothesis that is not
-  an (in)equation between natural numbers, integers or bit vectors, or a
-  propositional combination of such (they cannot use any other);
+* `omega_arith` selects (in)equations between natural numbers, integers or
+  bit vectors, and propositional combinations of them. `bv_omega_arith`
+  clears other hypotheses before preprocessing;
 * `omega_using [h₁, …, hₙ]` and `bv_omega_using [h₁, …, hₙ]` use only the
-  facts `h₁, …, hₙ` (any terms), with every other hypothesis cleared.
+  facts `h₁, …, hₙ` (any terms). `omega_using` passes them directly to
+  the solver; `bv_omega_using` clears other hypotheses before preprocessing.
 -/
 
 namespace VG.Omega
@@ -83,6 +84,51 @@ def keepOnly (hs : Array Term) : TacticM Unit := do
     pure g
   replaceMainGoal [g']
 
+/-- Run the arithmetic solver on these facts and the negation of the goal. -/
+def omegaFromFacts (facts : Array Expr) (exactTypeOnly := false) : TacticM Unit := do
+  recordExtraModUse (isMeta := false) `Init.Omega
+  liftMetaFinishingTactic fun g => g.withContext do
+    let target ← g.getType
+    for fact in facts do
+      let factType ← inferType fact
+      let sameType ← if exactTypeOnly then pure (factType == target)
+        else withReducibleAndInstances <| isDefEq factType target
+      if sameType then
+        g.assign fact
+        return
+    let oldCtx ← getLCtx
+    let some g ← g.falseOrByContra | return ()
+    g.withContext do
+      -- Include the negated goal and any hypotheses introduced from it.
+      let newFacts := (← getLocalHyps).filter fun h => !oldCtx.contains h.fvarId!
+      let type ← g.getType
+      let result ← mkFreshExprSyntheticOpaqueMVar type
+      Lean.Elab.Tactic.Omega.omega (facts.toList ++ newFacts.toList) result.mvarId!
+      -- Keep the same auxiliary-theorem boundary as Lean's `omega` tactic.
+      let proof ← mkAuxTheorem type (← instantiateMVarsProfiling result) (zetaDelta := true)
+      g.assign proof
+
+/-- Elaborate exactly the facts selected by the caller. -/
+def omegaWith (hs : Array Term) : TacticM Unit := do
+  let facts ← withMainContext do
+    hs.mapM fun h => do
+      let e ← Term.elabTerm h none
+      Term.synthesizeSyntheticMVarsNoPostponing
+      instantiateMVars e
+  omegaFromFacts facts
+
+/-- Select arithmetic hypotheses without repeatedly clearing the context. -/
+def omegaArith : TacticM Unit := do
+  let facts ← withMainContext do
+    (← getLocalHyps).filterM fun h => do isArithProp (← inferType h)
+  -- Most arithmetic goals need the solver, so avoid unifying every fact first.
+  -- Retry the original path for goals that need a definitionally equal fact.
+  let saved ← saveState
+  try omegaFromFacts facts (exactTypeOnly := true)
+  catch _ =>
+    saved.restore
+    omegaFromFacts facts
+
 /-- Clears every hypothesis `omega` cannot use. -/
 elab "clear_non_arith" : tactic => clearNonArith
 
@@ -90,9 +136,7 @@ elab "clear_non_arith" : tactic => clearNonArith
 syntax (name := omegaUsing) "omega_using " "[" term,* "]" : tactic
 
 elab_rules : tactic
-  | `(tactic| omega_using [$hs,*]) => do
-    keepOnly hs.getElems
-    evalTactic (← `(tactic| omega))
+  | `(tactic| omega_using [$hs,*]) => omegaWith hs.getElems
 
 /-- `bv_omega` using only the given facts, not the local context. -/
 syntax (name := bvOmegaUsing) "bv_omega_using " "[" term,* "]" : tactic
@@ -104,8 +148,8 @@ elab_rules : tactic
 
 end VG.Omega
 
-/-- `omega`, after clearing the hypotheses it cannot use. -/
-macro "omega_arith" : tactic => `(tactic| (clear_non_arith; omega))
+/-- `omega` using the arithmetic hypotheses in the local context. -/
+elab "omega_arith" : tactic => VG.Omega.omegaArith
 
 /-- `bv_omega`, after clearing the hypotheses it cannot use. -/
 macro "bv_omega_arith" : tactic => `(tactic| (clear_non_arith; bv_omega))

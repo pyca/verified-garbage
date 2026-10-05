@@ -126,8 +126,8 @@ theorem gcdUV_k {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) (hU0 : atop
     exact KF.of_frm hf fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
-      · exact ⟨.arr aU, by simp, by simp [Rc.range], by simp [Rc.range]⟩
-      · exact ⟨.arr aV, by simp, by simp [Rc.range], by simp [Rc.range]⟩
+      · exact ⟨.arr aU, by simp, by simp [Rc.range], by simp only [Rc.range]; omega⟩
+      · exact ⟨.arr aV, by simp, by simp [Rc.range], by simp only [Rc.range]; omega⟩
   have h₂ := h.step f₂ (all_mut_arrs (js := [aU, aV]) (by decide)) (k₁.trans k₂) (by decide)
   have tU₂ : atop I s₂.mem aU = 0 := by
     rw [← hU0]

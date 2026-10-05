@@ -2437,28 +2437,37 @@ def storeStepKD (τ : T) (m : MemOp) (w : Nat) (p : Bool) (nb : List Nat) : Opti
   bif pub τ m.base then some { τ with slots := storeSlotsKD τ m w p, wbases := storeWbasesK τ m w nb }
   else none
 
-/-- `stepK`, with stores that do not repeat a slot (written out, rather than
-calling `stepK`, so that the kernel matches on the instruction once). -/
-def stepKD (τ : T) : Instr → Option T
-  | .mov d src =>
+/-- An instruction transfer function, independent of the incoming taint. -/
+structure Step where
+  run : T → Option T
+
+/-- Classify an instruction before substituting its incoming taint, so the
+kernel can share the classification between checks from different taints.
+Stores retain the duplicate-slot optimization of `storeStepKD`. -/
+def stepKDFn : Instr → Step
+  | .mov d src => ⟨fun τ =>
     bif !regEq d .esp && srcOkK τ src then
       some { τ with regs := setK τ d (srcPub τ src || loadPubK τ src), bases := movBasesK τ d src }
-    else none
-  | .store m r => storeStepKD τ m 4 (pub τ r) (regBasesK τ r)
-  | .alu op d src =>
+    else none⟩
+  | .store m r => ⟨fun τ => storeStepKD τ m 4 (pub τ r) (regBasesK τ r)⟩
+  | .alu op d src => ⟨fun τ =>
     bif !regEq d .esp && srcOkK τ src then
       let p := pub τ d && srcPub τ src && (!usesCarry op || τ.flags)
       some { τ with regs := bif writes op then setK τ d p else τ.regs, flags := p, bases := killK τ d }
-    else none
-  | .shift _ d _ =>
-    bif !regEq d .esp then some { τ with flags := τ.flags && pub τ d, bases := killK τ d } else none
-  | .bswap d => bif !regEq d .esp then some { τ with bases := killK τ d } else none
-  | .movzx8 d m =>
+    else none⟩
+  | .shift _ d _ => ⟨fun τ =>
+    bif !regEq d .esp then some { τ with flags := τ.flags && pub τ d, bases := killK τ d } else none⟩
+  | .bswap d => ⟨fun τ => bif !regEq d .esp then some { τ with bases := killK τ d } else none⟩
+  | .movzx8 d m => ⟨fun τ =>
     bif !regEq d .esp && pub τ m.base then some { τ with regs := setK τ d false, bases := killK τ d }
-    else none
-  | .store8 m r => storeStepKD τ m 1 (pub τ r.reg) []
-  | .mul r => some (mulStep τ r)
-  | .push _ | .pop .. | .alloc _ | .free _ | .movdquLoad .. | .movdquStore .. | .movqLoad .. | .movqStore .. | .xop _ | .mop _ | .mmxStore .. | .mmxEnter | .emms => none
+    else none⟩
+  | .store8 m r => ⟨fun τ => storeStepKD τ m 1 (pub τ r.reg) []⟩
+  | .mul r => ⟨fun τ => some (mulStep τ r)⟩
+  | .push _ | .pop .. | .alloc _ | .free _ | .movdquLoad .. | .movdquStore .. | .movqLoad .. | .movqStore .. | .xop _ | .mop _ | .mmxStore .. | .mmxEnter | .emms => ⟨fun _ => none⟩
+
+/-- Apply the preclassified instruction to the incoming taint. -/
+def stepKD (τ : T) (i : Instr) : Option T := (stepKDFn i).run τ
+
 
 /-- The same taints, but for repeated slots. -/
 structure Sim (a b : T) : Prop where
