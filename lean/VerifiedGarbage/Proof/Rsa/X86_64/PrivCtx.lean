@@ -1,5 +1,7 @@
 import VerifiedGarbage.Proof.Rsa.X86_64.PubChecked
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtImplies
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtContract
+import VerifiedGarbage.Proof.Framework.Sig
+import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Bignum.X86_64.PcVerified
 import VerifiedGarbage.Impl.Rsa.X86_64.PrivChecked
 

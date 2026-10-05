@@ -1,5 +1,5 @@
 import VerifiedGarbage.Proof.Rsa.X86_64.PrivFrame
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtCode
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtContract
 
 /-!
 # Implementations of `vg_rsa_private_crt` on x86-64
