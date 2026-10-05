@@ -491,7 +491,7 @@ theorem narrowS_facts (hk : 6 ≤ (sig.words abi.ptrBits).length)
   obtain ⟨-, -, -, hmx, hg, hf, hargs, hlast⟩ := argsState_run hs hk hb hb1
   have hg' : ∀ q, q ≠ .rax → q ≠ .rsp → (narrowS sig e n bytes s).gpr q = s.gpr q :=
     fun q h₁ h₂ => (hg q h₁).trans (allocState_gpr' _ _ h₂)
-  refine ⟨(hg .rsp (by decide)).trans (allocState_rsp' _ _), hg', hmx, ?_, ?_⟩
+  refine ⟨(hg .rsp (by decide)).trans (allocState_rsp' _ _), hg', (by simpa only [narrowS, State.withRegions] using hmx), ?_, ?_⟩
   · rw [allArgs_withScratch sig nm e n hk s _ hg' fun j hj =>
       (stackArg_withRegions _ _ _ j).trans (hargs j hj)]
     exact congrArg (fun x => allArgs sig s ++ [x])

@@ -59,30 +59,57 @@ def finalized (ctx : Spec.TripleDes.Context) : Bool :=
 def incomplete (ctx : Spec.TripleDes.Context) : Bool :=
   match finalize ctx with | .error .incompleteBlock => true | _ => false
 
-def checkStream (ctx : Spec.TripleDes.Context) (input expected : List Byte) : Except String Unit := do
-  let empty := update ctx []
+/-- Every cached result carries its equality to the specification computation. -/
+private abbrev EcbInput := Schedule × Direction × List Block
+
+private def ecbBytes (key : EcbInput) : List Byte :=
+  (ecb key.1 key.2.1 key.2.2).flatMap Vector.toList
+
+private abbrev EcbCache := List ((key : EcbInput) × {out : List Byte // out = ecbBytes key})
+
+private def cachedEcb (key : EcbInput) : StateT EcbCache (Except String)
+    {out : List Byte // out = ecbBytes key} := do
+  for entry in (← getThe EcbCache) do
+    if h : entry.1 = key then
+      return ⟨entry.2.val, by rw [← h]; exact entry.2.property⟩
+  let result := ecbBytes key
+  modify (⟨key, ⟨result, rfl⟩⟩ :: ·)
+  return ⟨result, rfl⟩
+
+/-- Reuse only the ECB computation; buffering and every stream assertion still run. -/
+private def cachedUpdate (ctx : Spec.TripleDes.Context) (data : List Byte) :
+    StateT EcbCache (Except String) {result : Spec.TripleDes.Context × List Byte //
+      result = update ctx data} := do
+  let input := ctx.pending ++ data
+  let output ← cachedEcb (ctx.schedule, ctx.direction, blocks input)
+  return ⟨({ctx with pending := input.drop (8 * (input.length / 8))}, output.val),
+    congrArg (fun bytes => ({ctx with pending := input.drop (8 * (input.length / 8))}, bytes))
+      output.property⟩
+
+def checkStream (ctx : Spec.TripleDes.Context) (input expected : List Byte) : Except String Unit := (do
+  let empty := (← cachedUpdate ctx []).val
   unless empty.2.isEmpty && empty.1.schedule == ctx.schedule &&
       empty.1.direction == ctx.direction && empty.1.pending.isEmpty && finalized empty.1 do
     throw "empty initial update changed the context"
   for split in List.range (input.length + 1) do
-    let (first, a) := update ctx (input.take split)
+    let (first, a) := (← cachedUpdate ctx (input.take split)).val
     unless a.length == 8 * (split / 8) && first.pending.length == split % 8 do
       throw s!"wrong buffering at split {split}"
     if split % 8 != 0 then
       unless incomplete first do throw "accepted a partial block"
-    let (same, noOutput) := update first []
+    let (same, noOutput) := (← cachedUpdate first []).val
     unless noOutput.isEmpty && same.pending == first.pending &&
         same.schedule == first.schedule && same.direction == first.direction do
       throw "empty intermediate update changed the context"
-    let (last, b) := update same (input.drop split)
+    let (last, b) := (← cachedUpdate same (input.drop split)).val
     unless a ++ b == expected && finalized last do throw s!"wrong output at split {split}"
   let mut ctx := ctx
   let mut output := []
   for byte in input do
-    let (next, out) := update ctx [byte]
+    let (next, out) := (← cachedUpdate ctx [byte]).val
     ctx := next
     output := output ++ out
-  unless output == expected && finalized ctx do throw "byte-at-a-time streaming failed"
+  unless output == expected && finalized ctx do throw "byte-at-a-time streaming failed").run' []
 
 /-- KAT files use KEYs for three equal components; MMT files use KEY1–3. -/
 def checkResponse (text : String) (stream : Bool) : Except String Nat := do

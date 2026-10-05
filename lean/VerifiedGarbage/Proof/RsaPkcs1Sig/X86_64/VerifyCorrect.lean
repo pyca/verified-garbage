@@ -130,49 +130,45 @@ theorem verifyId_eq (nB eB : List Byte) (x : BitVec 32) (H sig : List Byte) (hs 
     rw [ite_eq_left hs]
     cases Spec.Rsa.publicOpChecked nB eB sig <;> cases Spec.RsaPkcs1Sig.encode h H nB.length <;> rfl
 
-theorem afterPub_ok {s t : State} (hp : PreV s) (he : Env s t)
-    (hw : Spec.Rsa.written t.mem (off (fb s) oEM1) (s.gpr .rsi).toNat ((t.gpr .rax).setWidth 32)
-      (Spec.Rsa.publicOpChecked (Spec.Rsa.bytesAt s.mem (s.gpr .rdi) (s.gpr .rsi).toNat)
-        (Spec.Rsa.bytesAt s.mem (s.gpr .rdx) (s.gpr .rcx).toNat)
-        (Spec.Rsa.bytesAt s.mem (stackArg s 1) (s.gpr .rsi).toNat))) :
+/-- The padding check, independent of the implementation of the public operation.
+`out` records failure or the recovered encoding; memory safety also holds for
+arbitrary encodings and nonzero return values. -/
+theorem afterPub_checked (out : Option (List Byte)) {s t : State} (hp : PreV s) (he : Env s t)
+    (hw : match out with
+      | none => (t.gpr .rax).setWidth 32 = 0
+      | some em => (t.gpr .rax).setWidth 32 ≠ 0 ∧
+          Spec.Rsa.bytesAt t.mem (off (fb s) oEM1) (s.gpr .rsi).toNat = em) :
     WP isa afterPub t fun u => Env s u ∧ (u.gpr .rax).setWidth 32 =
-      if verifyId (Spec.Rsa.bytesAt s.mem (s.gpr .rdi) (s.gpr .rsi).toNat)
-          (Spec.Rsa.bytesAt s.mem (s.gpr .rdx) (s.gpr .rcx).toNat) ((s.gpr .r8).setWidth 32).toNat
-          (Spec.Rsa.bytesAt s.mem (s.gpr .r9) (stackArg s 0).toNat)
-          (Spec.Rsa.bytesAt s.mem (stackArg s 1) (s.gpr .rsi).toNat) then 1 else 0 := by
+      (if (match (generalizing := false) out, encodeId ((s.gpr .r8).setWidth 32)
+          (Spec.Rsa.bytesAt s.mem (s.gpr .r9) (stackArg s 0).toNat) (s.gpr .rsi).toNat with
+        | some em, some em' => em == em' | _, _ => false) then 1 else 0) ∧ word u.mem (fb s) 0 = word t.mem (fb s) 0 := by
   have hk1 := hp.k1
   have hk2 := hp.k2
   have hF := fb_toNat hp
   set k := (s.gpr .rsi).toNat with hkdef
-  set nB := Spec.Rsa.bytesAt s.mem (s.gpr .rdi) k
-  set eB := Spec.Rsa.bytesAt s.mem (s.gpr .rdx) (s.gpr .rcx).toNat
-  set gB := Spec.Rsa.bytesAt s.mem (stackArg s 1) k
   set dB := Spec.Rsa.bytesAt s.mem (s.gpr .r9) (stackArg s 0).toNat
   set x := (s.gpr .r8).setWidth 32
-  have hnl : nB.length = k := bytesAt_length _ _ _
-  have hgl : gB.length = nB.length := by rw [hnl]; exact bytesAt_length _ _ _
-  rw [verifyId_eq nB eB x dB gB hgl, hnl]
   unfold afterPub
   refine WP.seq (WP.mono (test0_ok t) fun t₁ ⟨hs₁, hz₁⟩ => ?_)
   have he₁ : Env s t₁ := he.regs (by rw [hs₁.1]) hs₁.2.1 hs₁.2.2.1 hs₁.2.2.2
-  have hret0 : ∀ u, Env s u → (∀ o, Spec.Rsa.publicOpChecked nB eB gB = o →
+  have hret0 : ∀ u, Env s u → word u.mem (fb s) 0 = word t.mem (fb s) 0 → (∀ o, out = o →
       (match o, encodeId x dB k with | some em, some em' => em == em' | _, _ => false) = false) →
       WP isa ret0 u fun v => Env s v ∧ (v.gpr .rax).setWidth 32 =
-        if (match Spec.Rsa.publicOpChecked nB eB gB, encodeId x dB k with
-          | some em, some em' => em == em' | _, _ => false) = true then 1 else 0 := fun u hu hf =>
+        (if (match (generalizing := false) out, encodeId x dB k with
+          | some em, some em' => em == em' | _, _ => false) = true then 1 else 0) ∧ word v.mem (fb s) 0 = word t.mem (fb s) 0 := fun u hu hmem hf =>
     WP.mono (ret0_ok u) fun v ⟨hK, hm, hax⟩ => ⟨hu.regs (hK.gpr (by decide)) hm hK.2.1 hK.2.2, by
-      rw [hf _ rfl, hax]; rfl⟩
-  cases hpo : Spec.Rsa.publicOpChecked nB eB gB with
+      rw [hf _ rfl, hax]; rfl, by rw [hm]; exact hmem⟩
+  cases hpo : out with
   | none =>
     rw [hpo] at hw
-    obtain ⟨hr, -⟩ := hw
+    have hr := hw
     refine WP.ite true (by simp [eval, hz₁, hr]) (fun _ => ?_) (by simp)
-    refine WP.mono (hret0 t₁ he₁ fun o ho => ?_) fun v hv => by rw [hpo] at hv; exact hv
+    refine WP.mono (hret0 t₁ he₁ (by rw [hs₁.2.1]) fun o ho => ?_) fun v hv => by rw [hpo] at hv; exact hv
     rw [← ho, hpo]
   | some em =>
     rw [hpo] at hw
     obtain ⟨hr, hem⟩ := hw
-    refine WP.ite false (by simp [eval, hz₁, hr]) (by simp) (fun _ => ?_)
+    refine WP.ite false (by simp only [eval, hz₁, Option.some.injEq, beq_eq_false_iff_ne]; exact hr) (by simp) (fun _ => ?_)
     refine WP.seq (WP.mono (encArgs_ok hp he₁) fun t₂ ⟨hK₂, hm₂, h8₂, hcx₂, hdx₂, hsi₂, h9₂⟩ => ?_)
     have he₂ : Env s t₂ := he₁.regs (hK₂.gpr (by decide)) hm₂ hK₂.2.1 hK₂.2.2
     have sE2 : Region.Sub ⟨off (fb s) oEM2, k⟩ (stkR s) := frame_sub s (by unfold oEM2 frameBytes; omega)
@@ -186,7 +182,7 @@ theorem afterPub_ok {s t : State} (hp : PreV s) (he : Env s t)
       rd := fun j hj => by
         rw [hsi₂, he₂.rd, he₂.wr]
         rw [h9₂] at hj
-        exact ⟨⟨s.gpr .r9, (stackArg s 0).toNat⟩, List.mem_append_left _ (by rw [hp.hrd]; simp),
+        exact hp.hrd.left _ _ ⟨⟨s.gpr .r9, (stackArg s 0).toNat⟩, by simp,
           Offset.contains_base _ (by omega) (by omega)⟩
       sep := fun j hj i hi => by
         rw [hsi₂, h8₂]
@@ -206,7 +202,7 @@ theorem afterPub_ok {s t : State} (hp : PreV s) (he : Env s t)
       have he₄ : Env s t₄ := he₂.regs (by rw [hs₄.1, hK₃.gpr (by decide)]) (hs₄.2.1.trans hm₃)
         (hs₄.2.2.1.trans hK₃.2.1) (hs₄.2.2.2.trans hK₃.2.2)
       refine WP.ite true (by simp [eval, hz₄, hax]) (fun _ => ?_) (by simp)
-      refine WP.mono (hret0 t₄ he₄ fun o ho => ?_) fun v hv => by rw [hpo, hE] at hv; exact hv
+      refine WP.mono (hret0 t₄ he₄ (by rw [hs₄.2.1, hm₃, hm₂, hs₁.2.1]) fun o ho => ?_) fun v hv => by rw [hpo, hE] at hv; exact hv
       rw [← ho, hpo, hE]
     | some em' =>
       rw [hE] at hpost
@@ -231,7 +227,7 @@ theorem afterPub_ok {s t : State} (hp : PreV s) (he : Env s t)
         obtain ⟨r₂, h₂, c₂⟩ := frame_bytes hp (d := oEM2) (n := k) (by unfold oEM2 frameBytes; omega) i hi
         exact ⟨⟨r₁, List.mem_append_right _ h₁, c₁⟩, ⟨r₂, List.mem_append_right _ h₂, c₂⟩⟩
       refine WP.seq (WP.mono (compare_ok (by rw [hcx₅]) (by omega) hr5) fun t₆ ⟨hK₆, hm₆, hdx₆⟩ => ?_)
-      refine WP.mono (result_ok t₆) fun u ⟨hK, hm, hax'⟩ => ⟨?_, ?_⟩
+      refine WP.mono (result_ok t₆) fun u ⟨hK, hm, hax'⟩ => ⟨?_, ?_, ?_⟩
       · exact (he₅.regs (hK₆.gpr (by decide)) hm₆ hK₆.2.1 hK₆.2.2).regs (hK.gpr (by decide)) hm hK.2.1 hK.2.2
       · have sE1 : (⟨off (fb s) oEM1, k⟩ : Region).Disjoint ⟨off (fb s) oEM2, em'.length⟩ := by
           rw [hl']; exact Offset.disjoint _ (.inl (by unfold oEM1 oEM2; omega)) (by unfold oEM1 frameBytes at *; omega)
@@ -252,6 +248,32 @@ theorem afterPub_ok {s t : State} (hp : PreV s) (he : Env s t)
         rw [hax', hdx₆, hdi₅, hsi₅]
         simp only [setWidth_byte_eq_zero, VG.Proof.Ct.diff_zero, ← bytesAt_eq_iff, hm₅, hs₄.2.1, h1, h2]
         by_cases hq : em = em' <;> simp [hq]
+      · rw [hm, hm₆, hm₅, hs₄.2.1, hm₃, h8₂]
+        have hf := frame_writeBytes t₂.mem (off (fb s) oEM2) em'
+        rw [slot_keep hf (fun r hr => ?_), hm₂, hs₁.2.1]
+        rw [List.mem_singleton.mp hr, hl']
+        exact Offset.disjoint _ (.inl (by unfold oEM2; omega)) (by decide) (by unfold oEM2 at *; omega)
+
+theorem afterPub_ok {s t : State} (hp : PreV s) (he : Env s t)
+    (hw : Spec.Rsa.written t.mem (off (fb s) oEM1) (s.gpr .rsi).toNat ((t.gpr .rax).setWidth 32)
+      (Spec.Rsa.publicOpChecked (Spec.Rsa.bytesAt s.mem (s.gpr .rdi) (s.gpr .rsi).toNat)
+        (Spec.Rsa.bytesAt s.mem (s.gpr .rdx) (s.gpr .rcx).toNat)
+        (Spec.Rsa.bytesAt s.mem (stackArg s 1) (s.gpr .rsi).toNat))) :
+    WP isa afterPub t fun u => Env s u ∧ (u.gpr .rax).setWidth 32 =
+      if verifyId (Spec.Rsa.bytesAt s.mem (s.gpr .rdi) (s.gpr .rsi).toNat)
+          (Spec.Rsa.bytesAt s.mem (s.gpr .rdx) (s.gpr .rcx).toNat) ((s.gpr .r8).setWidth 32).toNat
+          (Spec.Rsa.bytesAt s.mem (s.gpr .r9) (stackArg s 0).toNat)
+          (Spec.Rsa.bytesAt s.mem (stackArg s 1) (s.gpr .rsi).toNat) then 1 else 0 := by
+  let nB := Spec.Rsa.bytesAt s.mem (s.gpr .rdi) (s.gpr .rsi).toNat
+  let eB := Spec.Rsa.bytesAt s.mem (s.gpr .rdx) (s.gpr .rcx).toNat
+  let gB := Spec.Rsa.bytesAt s.mem (stackArg s 1) (s.gpr .rsi).toNat
+  rw [verifyId_eq nB eB _ _ gB (by simp [nB, gB, bytesAt_length]), bytesAt_length]
+  refine WP.mono (afterPub_checked (Spec.Rsa.publicOpChecked nB eB gB) hp he ?_) (fun _ h => ⟨h.1, h.2.1⟩)
+  cases ho : Spec.Rsa.publicOpChecked nB eB gB with
+  | none => exact (show Spec.Rsa.written _ _ _ _ none from ho ▸ hw).1
+  | some em =>
+    have h := (show Spec.Rsa.written _ _ _ _ (some em) from ho ▸ hw)
+    exact ⟨by rw [h.1]; decide, h.2⟩
 
 /-! ## The arguments and the frame -/
 

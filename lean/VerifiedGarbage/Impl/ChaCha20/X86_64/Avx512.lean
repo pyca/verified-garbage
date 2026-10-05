@@ -1,4 +1,4 @@
-import VerifiedGarbage.Impl.ChaCha20.X86_64.Avx2
+import VerifiedGarbage.Impl.ChaCha20.X86_64.Avx512Tail
 
 /-!
 # ChaCha20 keystream XOR: x86-64 implementation with AVX-512
@@ -10,8 +10,7 @@ While at least 1024 bytes of data remain, sixteen blocks of keystream (the
 counters `c, c + 1, …, c + 15` modulo 2³², `c` being word 12 of the state)
 are computed at once and XORed into the next 1024 bytes of the data, and
 word 12 of the state is advanced by 16. The rest of the data (less than 1024
-bytes) is then XORed by calling `vg_chacha20_xor`, as `vg_chacha20_xor_avx2`
-does, so that it uses no more stack than that implementation.
+bytes) is then XORed by `Avx512Tail.tail`, eight or four blocks at a time.
 
 * Word `k` of the sixteen states is kept in `zmmk`, doubleword `j` holding it
   for block `j` (doubleword `j % 4` of 128-bit lane `j / 4`). With `vprold`
@@ -29,8 +28,8 @@ does, so that it uses no more stack than that implementation.
   transposed, then two transposed registers of the first row while the last
   row is.
 * `buf` holds the two saved registers (`[0, 128)`) and the counter
-  increments (`[128, 192)`), written once on entry. No callee-saved register
-  is written; `vzeroupper` precedes the call.
+  increments (`[128, 192)`), written once on entry, with those of the tail
+  (`[192, 320)`). No callee-saved register is written.
 
 The branches are on the length only, and every address is a pointer plus a
 constant, so only the pointers and the length can affect timing.
@@ -168,8 +167,7 @@ def next : List Instr :=
 def body : Prog isa := .seq (.block setup) (.seq (rounds 10) (.block (finish ++ next)))
 
 def xor : Prog isa :=
-  .seq (.block (consts ++ [.alu .cmp .rdx (.imm 1024)]))
-  (.seq (.ite .b (.block []) (.loop body .ae))
-  (.seq (.block [.vop .vzeroupper]) (.call "vg_chacha20_xor" Xor.xor)))
+  .seq (.block (Avx512Tail.consts ++ consts ++ [.alu .cmp .rdx (.imm 1024)]))
+  (.seq (.ite .b (.block []) (.loop body .ae)) Avx512Tail.tail)
 
 end VG.Impl.ChaCha20.X86_64.Avx512

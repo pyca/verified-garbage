@@ -1,5 +1,5 @@
 import VerifiedGarbage.TCB.AArch64.Target
-import VerifiedGarbage.Proof.Weierstrass.HasLaw
+import VerifiedGarbage.Proof.Weierstrass.Law
 import VerifiedGarbage.Proof.P256.Comb7
 import VerifiedGarbage.Impl.EcKey.P256.AArch64
 import VerifiedGarbage.Proof.EcKey.AArch64.Verified
@@ -36,7 +36,7 @@ def artifacts (h : Proof.Weierstrass.HasLaw Spec.P256.curve) : List Artifact := 
     consts := Impl.Ecdsa.AArch64.p256.combConsts
     code := Impl.EcKey.AArch64.publicKeyP256
     contract := Spec.EcKey.P256.inst.publicKeyContract (AArch64.abi.withConsts Impl.Ecdsa.AArch64.p256.combConsts)
-    verified := Proof.EcKey.AArch64.pk_verified h.law h.inv (Proof.P256.combOk7 h.law)
+    verified := Proof.EcKey.AArch64.pk_verified h.law (Proof.P256.combOk7 h.law)
     spSafe := Code.all_of_forall (fun _ => rfl) _ }]
 
 end VG.Generic.P256.AArch64.EcP256

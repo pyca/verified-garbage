@@ -16,7 +16,7 @@ open VG VG.AArch64 VG.Impl.Mont.AArch64 VG.Impl.Mont VG.Impl.Weierstrass.AArch64
 open VG.Proof.Mont.AArch64 VG.Proof.Mont VG.Proof.Weierstrass
 open VG.Proof.Ed25519.AArch64 (Keeps Keeps.trans Keeps.mono read_x)
 
-theorem entryRegs_regs : ∀ n ≤ 8, ∀ r ∈ entryRegs n,
+theorem entryRegs_regs : ∀ n ≤ 9, ∀ r ∈ entryRegs n,
     r ∉ [Reg.x0, .x1, .x2, .x3, .x4, .x5, .x6, .x7, .x16, .x17, .x19] := by decide
 
 /-- The carry after `subs _, x, 1` is set exactly if `x ≠ 0`. -/

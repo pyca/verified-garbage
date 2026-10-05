@@ -1,14 +1,13 @@
 import VerifiedGarbage.Proof.Weierstrass.AArch64.InvBatch
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Pow
-import VerifiedGarbage.Proof.Weierstrass.InvToM
+import VerifiedGarbage.Proof.Weierstrass.InvArith
+import VerifiedGarbage.Proof.Divstep.Iter
 
 /-!
 # Inversion by divsteps on AArch64: the whole inversion
 
 `InvCfg.inv P` leaves `[acc]` reading (in Montgomery form) as `[base]^(m - 2)`
-for a prime `m` (`invPow_ok`, as `chainPow_ok` for a chain of `m - 2`), given
-the arithmetic of the last step (`InvToM`, whose proof needs Mathlib's
-algebra, from the curve's variant): the
+for a prime `m` (`invPow_ok`, as `chainPow_ok` for a chain of `m - 2`): the
 start holds `(d, f, g, a, b) = (1, m, x, 0, 1)` (`init_ok`), each of the `B`
 batches takes it to the next `Divstep.invRun` (`batch_ok`), and the end
 multiplies `a` by `C` or `m - C` by the sign of `f = ±1` (`finish_ok`).
@@ -183,14 +182,6 @@ theorem loop_ok {P : InvCfg} {base : Addr} {size m : Nat} (hL : InvLay P size) {
   · intro w hw; simp only [batchW, List.mem_append, List.mem_cons, List.not_mem_nil, or_false, or_self] at hw ⊢
     exact hw
 
-/-- `c ^ ((c' ^ c) & m)` selects `c'` under a mask. -/
-theorem sel_eq {c c' m : BitVec 64} (hm : IsMask m) :
-    c ^^^ ((c' ^^^ c) &&& m) = if m = BitVec.allOnes 64 then c' else c := by
-  rcases hm with rfl | rfl
-  · simp only [show (0 : BitVec 64) ≠ BitVec.allOnes 64 by decide, ↓reduceIte]; simp
-  · simp only [BitVec.and_allOnes, ↓reduceIte]
-    rw [← BitVec.xor_assoc, BitVec.xor_comm c c', BitVec.xor_assoc, BitVec.xor_self, BitVec.xor_zero]
-
 /-- The selection's three instructions: `x2 = x9 ? x3 : x2`. -/
 theorem selIns_ok (s : State) (hm : IsMask (s.gpr .x9)) :
     WP isa (.block [.logic .eor .x .x3 .x3 .x2, .logic .and .x .x3 .x3 .x9, .logic .eor .x .x2 .x2 .x3]) s fun t =>
@@ -201,10 +192,6 @@ theorem selIns_ok (s : State) (hm : IsMask (s.gpr .x9)) :
   refine ⟨sel_eq hm, fun r hr => ?_, rfl, rfl, rfl, rfl⟩
   simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
   simp only [RegUpd.gpr_write, hr.1, hr.2, ↓reduceIte]
-
-/-- Word `i` of a constant: bits `64 i …`. -/
-theorem const_word (V i : Nat) : (BitVec.ofNat 64 (V >>> (64 * i))).toNat = V / 2 ^ (64 * i) % 2 ^ 64 := by
-  rw [BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow]
 
 /-- Words `0 … j - 1` of the constant `C` or `Cn`, by the mask in `x9`. -/
 theorem selRows_ok {P : InvCfg} {s : State} {base : Addr} {size : Nat} (hs : Scr s base size)
@@ -243,12 +230,6 @@ theorem selRows_ok {P : InvCfg} {s : State} {base : Addr} {size : Nat} (hs : Scr
     rw [wordsVal_succ_top, mt, word_writeW_self, Ot.wordsVal (by omega) (by omega), m₄, e₁, c₄, x9₃,
       k₃.gpr .x2 (by decide), c₂, c₃, pow64_succ, Nat.mul_comm (2 ^ 64), Nat.mod_mul]
     split <;> rw [const_word]
-
-/-- A number's low word, modulo `2^64`. -/
-theorem low_word (m : Mem) (base : Addr) (d L : Nat) (hL : 1 ≤ L) :
-    ((word m base d).toNat : Int) % 2 ^ 64 = (wordsVal m base d L : Int) % 2 ^ 64 := by
-  obtain ⟨k, rfl⟩ : ∃ k, L = k + 1 := ⟨L - 1, by omega⟩
-  rw [wordsVal]; push_cast; rw [Int.add_mul_emod_self_left]
 
 /-- The end: `[C] = C` or `Cn` by the sign of `f` (`±1`), and `acc = a [C] / R`. -/
 theorem finish_ok {P : InvCfg} {base : Addr} {size m : Nat} (hL : InvLay P size) {s : State} (hs : Scr s base size)
@@ -331,8 +312,7 @@ theorem finish_ok {P : InvCfg} {base : Addr} {size m : Nat} (hL : InvLay P size)
     rw [Kt.mem x h1 h3, O₄ x (by omega), m₃]
 
 /-- `[acc] = [base]^(m - 2)` in Montgomery form, for a prime `m > 2`. -/
-theorem invPow_ok (hI : InvToM) {P : InvCfg} {base : Addr} {size m : Nat} [NeZero m] (hpr : m.Prime)
-    (hL : InvLay P size)
+theorem invPow_ok {P : InvCfg} {base : Addr} {size m : Nat} [NeZero m] [Fact m.Prime] (hL : InvLay P size)
     (hm2 : 2 < m) (hR : UnitMod m (2 ^ (64 * P.M.n))) {s : State} (hs : Scr s base size)
     (hM : ModOk P.M size m s.mem base) (hX : wordsVal s.mem base P.base P.M.n < m) (hC : InvOk P m) :
     WP isa (InvCfg.inv P) s fun s' => KeepRegs (powClob P.M.n) s s' ∧ Unch base (invW P) s.mem s'.mem ∧
@@ -343,6 +323,7 @@ theorem invPow_ok (hI : InvToM) {P : InvCfg} {base : Addr} {size m : Nat} [NeZer
   obtain ⟨eL, eF, eG, eA, eB, eNF, eNG, eT⟩ := slots P
   have n4 := hL.n4; have n7 := hL.n7; have htbl := hL.tbl; have hmt := hL.mo_tbl; have hmo := hM.mo
   have hbt := hL.base_tbl; have hbase := hL.base
+  have hpr := (Fact.out : m.Prime)
   have hm2' : m % 2 = 1 := (hpr.eq_one_or_self_of_dvd 2 |>.mt (by omega) |> fun h => by
     rcases Nat.even_or_odd m with ⟨k, hk⟩ | ⟨k, hk⟩
     · exact absurd (hpr.eq_one_or_self_of_dvd 2 ⟨k, by omega⟩) (by omega)
@@ -393,13 +374,8 @@ theorem invPow_ok (hI : InvToM) {P : InvCfg} {base : Addr} {size m : Nat} [NeZer
     fun hX0 => Divstep.invRun_spec (N := 59) (B := P.B) (by decide) (by exact_mod_cast hm2') (by exact_mod_cast hpr.one_lt) hmi
       (done X (by omega) (by exact_mod_cast hX)) (by
         rw [Int.gcd_natCast_natCast]
-        rcases hpr.eq_one_or_self_of_dvd _ (Nat.gcd_dvd_left m X) with h | h
-        · exact h
-        · have hd := Nat.gcd_dvd_right m X
-          rw [h] at hd
-          have := Nat.le_of_dvd (by omega) hd
-          omega)
-  refine hI (K := 2 ^ (5 * P.B)) (f := I.f) (a := wordsVal s₂.mem base P.sA P.M.n) (Cs := Cs) hpr hm2 hR hX
+        exact Nat.coprime_of_lt_prime (by omega) hX hpr)
+  refine inv_toM (K := 2 ^ (5 * P.B)) (f := I.f) (a := wordsVal s₂.mem base P.sA P.M.n) (Cs := Cs) hm2 hR hX
     ?_ ?_ ?_ ev
   · intro hX0
     have h := (Divstep.invRun_zero (N := 59) (p := m) (m := P.M.minv.toNat) (by omega) P.B).2
@@ -425,7 +401,9 @@ theorem invPow_ok (hI : InvToM) {P : InvCfg} {base : Addr} {size m : Nat} [NeZer
       exact this
 
 /-- A prime modulus's inversion is sound. -/
-theorem invSound_of_prime (hI : InvToM) {m : Nat} [NeZero m] (hp : m.Prime) : InvSound m :=
-  fun hL hm2 hR _ hs hM hX hC => invPow_ok hI hp hL hm2 hR hs hM hX hC
+theorem invSound_of_prime {m : Nat} [NeZero m] (hp : m.Prime) : InvSound m := by
+  intro P base size hL hm2 hR s hs hM hX hC
+  haveI : Fact m.Prime := ⟨hp⟩
+  exact invPow_ok hL hm2 hR hs hM hX hC
 
 end VG.Proof.Weierstrass.AArch64

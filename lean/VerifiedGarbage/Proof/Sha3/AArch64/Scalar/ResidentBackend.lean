@@ -92,11 +92,11 @@ theorem absorbTaint : ∃ h, (VectorTaint.taint.check (VectorTaint.ofRegs [.x0, 
 
 theorem padTaint : ∃ h, (VectorTaint.taint.check (VectorTaint.ofRegs [.x0, .x1, .x2, .x4])
     (Impl.Sha3.AArch64.Stream.padWith callee) h).isSome = true :=
-  by sponge_taint_decide_resident
+  by exact VectorSlots.padTaint
 
 theorem squeezeTaint : ∃ h, (VectorTaint.taint.check (VectorTaint.ofRegs [.x0, .x1, .x2, .x3, .x4, .x5])
     (Impl.Sha3.AArch64.Stream.squeezeWith callee) h).isSome = true :=
-  by sponge_taint_decide_resident
+  by exact VectorSlots.squeezeTaint
 
 theorem sampleFullTaint : ∃ h, (VectorTaint.taint.check (VectorTaint.ofRegs [.x0, .x1, .x2])
     (Impl.MlKem.AArch64.sampleSqueezeWith callee) h).isSome = true :=

@@ -1,5 +1,5 @@
 import VerifiedGarbage.TCB.AArch64.Target
-import VerifiedGarbage.Proof.Weierstrass.HasLaw
+import VerifiedGarbage.Proof.Weierstrass.Law
 import VerifiedGarbage.Impl.Ecdh.P256.AArch64
 import VerifiedGarbage.Proof.Ecdh.AArch64.Verified
 
@@ -39,7 +39,7 @@ def artifacts (h : Proof.Weierstrass.HasLaw Spec.P256.curve) : List Artifact := 
       in `[1, n-1]` and `Z ≠ 0`, so the time depends only on the pointers."])
     code := Impl.Ecdh.AArch64.exchangeP256
     contract := Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P256.inst AArch64.abi
-    verified := Proof.Ecdh.AArch64.ecdh_verified h.law h.inv
+    verified := Proof.Ecdh.AArch64.ecdh_verified h.law
     spSafe := Code.all_of_forall (fun _ => rfl) _ }]
 
 end VG.Generic.P256.AArch64.EcdhP256

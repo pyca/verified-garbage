@@ -198,7 +198,6 @@ theorem mont_ok (M : Mont) {s : State} {B : Addr} {Z w N : Nat} (h : Ws s B Z w)
   have hOne₆ : wv t₆.mem B (slot w aOne) w = 1 := by
     rw [hf₆.rg_wv hZ16 (by simp) (by decide) (by decide) (by omega),
       hf₅.rg_wv hZ16 (by simp) (by decide) (by decide) (by omega), hv₄]
-    rfl
   refine ⟨hw₈, ?_, ?_, ?_, ?_, by omega, ?_, ?_⟩
   · rw [hf₈.rg_wv hZ16 (by simp) (by decide) (by decide) (by omega), hR2₆]; exact hlt
   · rw [hf₈.rg_wv hZ16 (by simp) (by decide) (by decide) (by omega), hR2₆]; exact hc
