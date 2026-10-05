@@ -35,14 +35,14 @@ theorem post_of {s s' : State} (h : EPost p384 s s') : ecdhArm.post s s' := by
   revert h
   generalize hq : ex s.mem (State.addr (s.gpr .r1)) (State.addr (s.gpr .r2)) = q
   rw [show Spec.Ecdh.exchange p384.C (dk p384 s)
-      (Spec.Ecdsa.bytesAt s.mem (ptr s .r2) (1 + 16 * p384.n)) =
+      (Spec.Ecdsa.bytesAt s.mem (ptr s .r2) (1 + 2 * p384.C.len)) =
         ex s.mem (State.addr (s.gpr .r1)) (State.addr (s.gpr .r2)) from rfl, hq]
   rcases q with _ | z <;> exact id
 
 theorem ecdh_arm (hL : Weierstrass.Law Spec.P384.curve) (s : State) (hs : ecdhArm.pre s) :
     ∃ t s', Exec isa exchangeP384 s t s' ∧ abiPreserved s s' ∧ ecdhArm.post s s' := by
   have hp := pre_of hs
-  obtain ⟨t, s', he, K, hpost⟩ := exchange_ok p384_ok rfl hL hp
+  obtain ⟨t, s', he, K, hpost⟩ := exchange_ok p384_ok hL hp
   refine ⟨t, s', he, ⟨fun r hr => ?_, K.sp⟩, post_of hpost⟩
   simp only [preserved, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl

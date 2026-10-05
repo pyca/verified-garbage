@@ -94,8 +94,8 @@ from its byte 1), and the checks of its first byte, `x` and `y` (also
 signature verification's, with its key). -/
 def peerAt (q : Reg) : List Instr :=
   (consts c).flatMap (fun (i, x) => setConst c.n (c.sl i) x) ++
-  [.dp .add .r6 q (.imm 1)] ++ loadBE c.n (c.sl E) .r6 ++
-  [.dp .add .r6 .r6 (.imm (BitVec.ofNat 32 (8 * c.n)))] ++ loadBE c.n (c.sl QY) .r6 ++
+  [.dp .add .r6 q (.imm 1)] ++ loadBytes c.C.len c.n (c.sl E) .r6 ++
+  [.dp .add .r6 .r6 (.imm (BitVec.ofNat 32 c.C.len))] ++ loadBytes c.C.len c.n (c.sl QY) .r6 ++
   checkLead c q ++ checkLtP c (c.sl E) ++ checkLtP c (c.sl QY)
 
 /-- The peer's key: `peerAt` its argument, `r2`. -/
@@ -127,7 +127,7 @@ def ladderQ : LadderCfg := { c.ladderCfg with G := c.pt PX PY ONEP }
 /-- `x` (or zeros) to `out` (in `lr`), the flag's low bit to `r0`, and the
 callee-saved registers restored. -/
 def finish : List Instr :=
-  [.ldr .r10 wb (c.sl FLAG)] ++ storeBE c.n .lr 0 (c.sl X) ++
+  [.ldr .r10 wb (c.sl FLAG)] ++ storeBytes c.C.len c.n .lr 0 (c.sl X) ++
   [.dp .and .r0 .r10 (.imm 1)] ++ Impl.Ecdsa.Arm.Cfg.restore
 
 /-- `x = X Z⁻¹`, with `Z⁻¹ R` in `ACC`, out of Montgomery form, the checks
