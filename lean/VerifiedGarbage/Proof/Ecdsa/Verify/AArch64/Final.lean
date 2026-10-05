@@ -33,7 +33,7 @@ theorem vfinish_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base siz
     WP isa (.block (Impl.Ecdsa.Verify.AArch64.Cfg.finish c)) s fun s' =>
       (s'.gpr .x0).setWidth 32 = (if b then 1 else 0) ∧
       (∀ r ∈ Cfg.saved.map Prod.fst, s'.gpr r = g r) := by
-  have hF := sl_le c hc.n7 (i := FLAG) (by decide)
+  have hF := sl_le c hc.n10 (i := FLAG) (by decide)
   rw [vfinish_eq, WP.block_append_iff]
   refine WP.mono (ld_ok hs (d := c.sl FLAG) (by have := hc.n0; omega) (sl_mod8 c FLAG) .x3)
     fun s₁ ⟨e₁, k₁, _⟩ => ?_
@@ -52,8 +52,8 @@ theorem vfinish_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base siz
     exact R₂.gpr p hp
 
 /-- `[o] = ([a] - [b]) mod m`, on slots. -/
-theorem slSub_ok {M : Mod} {m : Nat} (hMn : M.n = c.n) (h7 : c.n < 7) {base : Addr} {s : State}
-    (hs : Scr s base size) (hM : ModOk M size m s.mem base) (hMA : ModA M) {o a b : Nat} (ho : o < 45)
+theorem slSub_ok {M : Mod} {m : Nat} (hMn : M.n = c.n) (h7 : c.n < 10) {base : Addr} {s : State}
+    (hs : Scr s base size) (hM : ModOkA M size m s.mem base) (hMA : ModA M) {o a b : Nat} (ho : o < 45)
     (ha : a < 45) (hb : b < 45) (hA : sv c base s a < m) (hB : sv c base s b < m) :
     WP isa (.block (Impl.Mont.AArch64.sub M (c.sl o) (c.sl a) (c.sl b))) s fun s' =>
       OpKeep M base (c.sl o) s s' ∧ sv c base s' o = (sv c base s a + m - sv c base s b) % m := by
@@ -83,7 +83,7 @@ theorem tail_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {g : Reg → BitVec 
           (0 < sigS c s₀ ∧ sigS c s₀ < c.C.n)) ∧ sv c base s RZ ≠ 0 ∧
           Fin.ofNat c.C.n xo = Fin.ofNat c.C.n (sigR c s₀) then 1 else 0 := by
   have h0 := hc.n0
-  have h7 := hc.n7
+  have h7 := hc.n10
   have hn := hP.scr.nowrap
   have hpR := unitMod_pow_two hc.p_odd (64 * c.n)
   have hnR := unitMod_pow_two hc.n_odd (64 * c.n)

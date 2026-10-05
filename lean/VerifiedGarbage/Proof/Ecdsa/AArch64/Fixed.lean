@@ -64,7 +64,7 @@ theorem fixedOk_flag : FixedOk c [(c.sl FLAG, 8)] := by
   rw [List.mem_singleton.mp hw]
   exact Or.inr (Nat.le_trans (Nat.le_add_right _ _) (sl_lt c (by decide)))
 
-theorem fixedOk_whole (h7 : c.n < 7) : FixedOk c [(size, 2 ^ 64)] := by
+theorem fixedOk_whole (h7 : c.n < 10) : FixedOk c [(size, 2 ^ 64)] := by
   intro w hw
   rw [List.mem_singleton.mp hw]
   refine Or.inr ?_
@@ -81,7 +81,7 @@ theorem fixed_apart {W : List (Nat × Nat)} (hW : FixedOk c W) {i : Nat} (hi : i
   · exact Or.inl (Nat.le_trans (sl_lt c hi) h)
 
 theorem Fixed.unch {base : Addr} {g : Reg → BitVec 64} {m m' : Mem} (h : Fixed c base g m)
-    (h7 : c.n < 7) (hn : base.toNat + size ≤ 2 ^ 64) {W : List (Nat × Nat)} (hW : FixedOk c W)
+    (h7 : c.n < 10) (hn : base.toNat + size ≤ 2 ^ 64) {W : List (Nat × Nat)} (hW : FixedOk c W)
     (hu : Unch base W m m') : Fixed c base g m' := by
   have e : ∀ i, i < 12 → i ≠ TMP → wordsVal m' base (c.sl i) c.n = wordsVal m base (c.sl i) c.n :=
     fun i hi hit => hu.wordsVal (fixed_apart hW hi hit) (by have := sl_le c h7 (i := i) (by omega); omega)
@@ -125,14 +125,14 @@ theorem apart_append {W W' : List (Nat × Nat)} {x k : Nat}
 
 /-- A number in a slot apart from what changed. -/
 theorem sv_unch {base : Addr} {W : List (Nat × Nat)} {m m' : Mem} (hu : Unch base W m m')
-    (h7 : c.n < 7) (hn : base.toNat + size ≤ 2 ^ 64) {i : Nat} (hi : i < 45)
+    (h7 : c.n < 10) (hn : base.toNat + size ≤ 2 ^ 64) {i : Nat} (hi : i < 45)
     (hW : ∀ w ∈ W, c.sl i + 8 * c.n ≤ w.1 ∨ w.1 + w.2 ≤ c.sl i) :
     wordsVal m' base (c.sl i) c.n = wordsVal m base (c.sl i) c.n :=
   hu.wordsVal hW (by have := sl_le c h7 hi; omega)
 
 /-- A byte of table `j` apart from what changed. -/
 theorem tbl_unch {base : Addr} {W : List (Nat × Nat)} {m m' : Mem} (hu : Unch base W m m')
-    (h7 : c.n < 7) {j t : Nat} (hj : j < 3) (ht : t < 64 * c.n)
+    (h7 : c.n < 10) {j t : Nat} (hj : j < 3) (ht : t < 64 * c.n)
     (hW : ∀ w ∈ W, bitsAt c.n j + t + 1 ≤ w.1 ∨ w.1 + w.2 ≤ bitsAt c.n j + t) :
     m' (off base (bitsAt c.n j + t)) = m (off base (bitsAt c.n j + t)) :=
   hu.byte hW (by have := bitsAt_le c h7 hj; omega)
@@ -205,7 +205,7 @@ theorem tbl_apart_chainWc {j t : Nat} (hj : j < 3) (ht : t < 64 * c.n) :
 
 /-- The flag survives a power and changes of other slots. -/
 theorem flag_unch_cw {base : Addr} {l : List Nat} {m m' : Mem} (hu : Unch base (chainWc c ++ slW c l) m m')
-    (h7 : c.n < 7) (h0 : 0 < c.n) (hn : base.toNat + size ≤ 2 ^ 64) (hl : FLAG ∉ l) :
+    (h7 : c.n < 10) (h0 : 0 < c.n) (hn : base.toNat + size ≤ 2 ^ 64) (hl : FLAG ∉ l) :
     word m' base (c.sl FLAG) = word m base (c.sl FLAG) := by
   have hF := sl_le c h7 (i := FLAG) (by decide)
   refine hu.word (fun w hw => ?_) (by omega)
@@ -215,7 +215,7 @@ theorem flag_unch_cw {base : Addr} {l : List Nat} {m m' : Mem} (hu : Unch base (
   · exact Or.inr h
 
 /-- The flag survives a power. -/
-theorem flag_unch_chain {base : Addr} {m m' : Mem} (hu : Unch base (chainWc c) m m') (h7 : c.n < 7)
+theorem flag_unch_chain {base : Addr} {m m' : Mem} (hu : Unch base (chainWc c) m m') (h7 : c.n < 10)
     (h0 : 0 < c.n) (hn : base.toNat + size ≤ 2 ^ 64) :
     word m' base (c.sl FLAG) = word m base (c.sl FLAG) := by
   have hF := sl_le c h7 (i := FLAG) (by decide)
@@ -226,18 +226,18 @@ theorem flag_unch_chain {base : Addr} {m m' : Mem} (hu : Unch base (chainWc c) m
 
 /-- The moduli, from their slots. -/
 theorem modP_of (hc : CfgOk c) {base : Addr} {m : Mem} (h : wordsVal m base (c.sl MP) c.n = c.C.p) :
-    ModOk c.MP' size c.C.p m base :=
-  ⟨hc.n0, hc.n7, sl_le c hc.n7 (by decide), sl_le c hc.n7 (by decide), sl_apart c (by decide), h,
+    ModOkA c.MP' size c.C.p m base :=
+  ⟨hc.n0, hc.n10, sl_le c hc.n10 (by decide), sl_le c hc.n10 (by decide), sl_apart c (by decide), h,
     hc.minv_p, hc.red_p⟩
 
 theorem modN_of (hc : CfgOk c) {base : Addr} {m : Mem} (h : wordsVal m base (c.sl MN) c.n = c.C.n) :
-    ModOk c.MN' size c.C.n m base :=
-  ⟨hc.n0, hc.n7, sl_le c hc.n7 (by decide), sl_le c hc.n7 (by decide), sl_apart c (by decide), h,
+    ModOkA c.MN' size c.C.n m base :=
+  ⟨hc.n0, hc.n10, sl_le c hc.n10 (by decide), sl_le c hc.n10 (by decide), sl_apart c (by decide), h,
     hc.minv_n, hc.red_n⟩
 
 /-- `ACC = RZ^(p - 2)` (in Montgomery form), by divsteps. -/
 theorem pPow_ok (hc : CfgOk c) {s : State} {base : Addr} (hs : Scr s base size)
-    (hM : ModOk c.MP' size c.C.p s.mem base) (hB : wordsVal s.mem base (c.sl RZ) c.n < c.C.p) :
+    (hM : ModOkA c.MP' size c.C.p s.mem base) (hB : wordsVal s.mem base (c.sl RZ) c.n < c.C.p) :
     WP isa c.pPow s fun s' => KeepRegs (powClob c.n) s s' ∧ Unch base (chainWc c) s.mem s'.mem ∧
       wordsVal s'.mem base (c.sl ACC) c.n < c.C.p ∧
       toM c.C.p (2 ^ (64 * c.n)) (wordsVal s'.mem base (c.sl ACC) c.n) =
@@ -247,7 +247,7 @@ theorem pPow_ok (hc : CfgOk c) {s : State} {base : Addr} (hs : Scr s base size)
 
 /-- `ACC = KM^(n - 2)` (in Montgomery form), by divsteps or a chain. -/
 theorem nPow_ok (hc : CfgOk c) {s : State} {base : Addr} (hs : Scr s base size)
-    (hM : ModOk c.MN' size c.C.n s.mem base) (hB : wordsVal s.mem base (c.sl KM) c.n < c.C.n) :
+    (hM : ModOkA c.MN' size c.C.n s.mem base) (hB : wordsVal s.mem base (c.sl KM) c.n < c.C.n) :
     WP isa c.nPow s fun s' => KeepRegs (powClob c.n) s s' ∧ Unch base (chainWc c) s.mem s'.mem ∧
       wordsVal s'.mem base (c.sl ACC) c.n < c.C.n ∧
       toM c.C.n (2 ^ (64 * c.n)) (wordsVal s'.mem base (c.sl ACC) c.n) =
@@ -261,11 +261,11 @@ theorem nPow_ok (hc : CfgOk c) {s : State} {base : Addr} (hs : Scr s base size)
     exact WP.mono (chainPow_ok (chainLayN hc) (unitMod_pow_two hc.n_odd _) hs hM hB
       (chainOkN hc (by simpa using h))) fun s' ⟨K, U, lt, v⟩ => ⟨K, by rw [chainWN_eq] at U; exact U, lt, v⟩
 
-theorem x20_not_clob {n : Nat} (h : n < 7) : Reg.x20 ∉ clob n := by
-  have : ∀ n < 7, Reg.x20 ∉ clob n := by decide
+theorem x20_not_clob {n : Nat} (h : n < 10) : Reg.x20 ∉ clob n := by
+  have : ∀ n < 10, Reg.x20 ∉ clob n := by decide
   exact this n h
 
-theorem x20_not_powClob {n : Nat} (h : n < 7) : Reg.x20 ∉ powClob n := by
+theorem x20_not_powClob {n : Nat} (h : n < 10) : Reg.x20 ∉ powClob n := by
   intro h'
   rcases List.mem_cons.mp h' with h' | h'
   · exact absurd h' (by decide)

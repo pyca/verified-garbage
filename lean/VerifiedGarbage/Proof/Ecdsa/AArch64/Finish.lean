@@ -70,7 +70,7 @@ theorem finish_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size
       (s'.gpr .x0).setWidth 32 = (if b then 1 else 0) ∧
       (∀ r ∈ Cfg.saved.map Prod.fst, s'.gpr r = g r) ∧
       (∀ r, r ∉ [.x0, .x1, .x3, .x19, .x20] → s'.gpr r = s.gpr r) := by
-  have h7 := hc.n7
+  have h7 := hc.n10
   have hn0 := hc.n0
   have hn := hs.nowrap
   have hRR := sl_le c h7 (i := RR) (by decide)

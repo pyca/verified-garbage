@@ -353,7 +353,7 @@ theorem mredHead_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size
 
 /-- `[dst] = mred p m T` (`n` words), for `[t]` (`n + 1` words) holding `T`, `|T| ≤ 2^63 p`. -/
 theorem mredC_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M : Mod} {p : Nat}
-    (hM : ModOk M size p s.mem base) (hmo8 : M.mo % 8 = 0) (h12 : s.gpr .x12 = 0) {dst t : Nat}
+    (hM : ModOkA M size p s.mem base) (hmo8 : M.mo % 8 = 0) (h12 : s.gpr .x12 = 0) {dst t : Nat}
     (ht : t + 8 * (M.n + 2) ≤ size) (ht8 : t % 8 = 0) (hd : dst + 8 * M.n ≤ size) (hd8 : dst % 8 = 0)
     (htm : t + 8 * (M.n + 2) ≤ M.mo ∨ M.mo + 8 * M.n ≤ t) (hdt : dst + 8 * M.n ≤ t ∨ t + 8 * (M.n + 2) ≤ dst)
     {T : Int} (hT : |T| ≤ 2 ^ 63 * p)

@@ -37,9 +37,9 @@ theorem zw_le {c : Cfg} (hn : 0 < c.n) : 8 * c.combCfg.zw ≤ 64 * c.n := by
 
 theorem combLay (hc : CfgOk c) : CombLay c.combCfg.toComb size := by
   have hn := hc.n0
-  have h7 := hc.n7
+  have h7 := hc.n10
   have hJ : c.combCfg.toComb.J = Cfg.combJ c.n := by rw [TCombCfg.toComb_J]; rfl
-  have hb := bitsAt_le c h7 (j := 0) (by decide)
+  have hb := bitsAt0_le c h7
   refine ⟨?_, rcbApart_of hn (lw := [T0, T1, T2, T3, T4, T5, DX, DY, DZ])
       (lr := [AP, BM, RX, RY, RZ, TX, TY, TZ]) rfl rfl (by decide) (by decide), ?_,
     map_sl_nodup hn (l := [RX, RY, RZ, TX, TY, TZ, PT, T0, T1, T2, T3, T4, T5, DX, DY, DZ])
@@ -59,7 +59,7 @@ theorem combLay (hc : CfgOk c) : CombLay c.combCfg.toComb size := by
 
 theorem tcombLay (hc : CfgOk c) : TCombLay c.combCfg size := by
   have hn := hc.n0
-  have h7 := hc.n7
+  have h7 := hc.n10
   have hb := bitsAt_le c h7 (j := 1) (by decide)
   have hb0 : bitsAt c.n 1 = bitsAt c.n 0 + 64 * c.n := by rw [bitsAt_eq, bitsAt_eq]; omega
   have hz := zw_le hn
@@ -166,7 +166,7 @@ theorem fixedOk_tcombW : FixedOk c (tcombW c.combCfg) := by
 
 /-- The flag word apart from what the comb writes. -/
 theorem flag_unch_tcomb {base : Addr} {m m' : Mem} (hu : Unch base (tcombW c.combCfg) m m')
-    (h7 : c.n < 7) (h0 : 0 < c.n) (hn : base.toNat + size ≤ 2 ^ 64) :
+    (h7 : c.n < 10) (h0 : 0 < c.n) (hn : base.toNat + size ≤ 2 ^ 64) :
     word m' base (c.sl FLAG) = word m base (c.sl FLAG) := by
   have hF := sl_le c h7 (i := FLAG) (by decide)
   rw [tcombW_eq] at hu
@@ -178,24 +178,24 @@ theorem flag_unch_tcomb {base : Addr} {m m' : Mem} (hu : Unch base (tcombW c.com
 
 /-- A slot apart from what the comb writes. -/
 theorem sv_unch_tcomb {base : Addr} {m m' : Mem} (hu : Unch base (tcombW c.combCfg) m m')
-    (h7 : c.n < 7) (hn : base.toNat + size ≤ 2 ^ 64) {i : Nat} (hi : i < 45)
+    (h7 : c.n < 10) (hn : base.toNat + size ≤ 2 ^ 64) {i : Nat} (hi : i < 45)
     (hl : i ∉ [RX, RY, RZ, TX, TY, TZ, PT, T0, T1, T2, T3, T4, T5, DX, DY, DZ, TMP]) :
     wordsVal m' base (c.sl i) c.n = wordsVal m base (c.sl i) c.n := by
   rw [tcombW_eq] at hu
   exact sv_unch hu h7 hn hi (apart_append (apart_slW hl) (apart_zw hi))
 
-theorem combClob_regs : ∀ n < 7, Reg.x0 ∉ combClob n ∧ Reg.x20 ∉ combClob n := by
+theorem combClob_regs : ∀ n < 10, Reg.x0 ∉ combClob n ∧ Reg.x20 ∉ combClob n := by
   unfold combClob maskRegs clob acc; decide
 
-theorem x0_not_combClob {n : Nat} (hn : n < 7) : Reg.x0 ∉ combClob n := (combClob_regs n hn).1
+theorem x0_not_combClob {n : Nat} (hn : n < 10) : Reg.x0 ∉ combClob n := (combClob_regs n hn).1
 
-theorem x20_not_combClob {n : Nat} (hn : n < 7) : Reg.x20 ∉ combClob n := (combClob_regs n hn).2
+theorem x20_not_combClob {n : Nat} (hn : n < 10) : Reg.x20 ∉ combClob n := (combClob_regs n hn).2
 
-theorem tcombClob_regs : ∀ n < 7, Reg.x0 ∉ tcombClob n ∧ Reg.x20 ∉ tcombClob n := by
+theorem tcombClob_regs : ∀ n < 10, Reg.x0 ∉ tcombClob n ∧ Reg.x20 ∉ tcombClob n := by
   unfold tcombClob entryRegs selRegs combClob maskRegs clob acc; decide
 
-theorem x0_not_tcombClob {n : Nat} (hn : n < 7) : Reg.x0 ∉ tcombClob n := (tcombClob_regs n hn).1
+theorem x0_not_tcombClob {n : Nat} (hn : n < 10) : Reg.x0 ∉ tcombClob n := (tcombClob_regs n hn).1
 
-theorem x20_not_tcombClob {n : Nat} (hn : n < 7) : Reg.x20 ∉ tcombClob n := (tcombClob_regs n hn).2
+theorem x20_not_tcombClob {n : Nat} (hn : n < 10) : Reg.x20 ∉ tcombClob n := (tcombClob_regs n hn).2
 
 end VG.Proof.Ecdsa.AArch64

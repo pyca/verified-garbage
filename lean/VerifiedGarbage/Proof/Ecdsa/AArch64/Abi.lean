@@ -4,19 +4,19 @@ import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 /-!
 # The ABI of the curve functions on AArch64
 
-The functions built on ECDSA's code save and restore `x19` and `x20`, and
+The functions built on ECDSA's code save and restore `x19`–`x25`, and
 no instruction of theirs writes the other callee-saved registers
 (`untouched`), which one check of every instruction shows
-(`keeps_untouched`, by `lit_decide` on the code's literal); so with `x19`
-and `x20` restored they preserve what the ABI asks (`abiPreserved_of`).
+(`keeps_untouched`, by `lit_decide` on the code's literal); so with `x19`–`x25`
+restored they preserve what the ABI asks (`abiPreserved_of`).
 -/
 
 namespace VG.Proof.Ecdsa.AArch64
 
 open VG VG.AArch64
 
-/-- The callee-saved registers but `x19` and `x20`. -/
-abbrev untouched : List Reg := [.x21, .x22, .x23, .x24, .x25, .x26, .x27, .x28, .x30]
+/-- The callee-saved registers but `x19`–`x25`. -/
+abbrev untouched : List Reg := [.x26, .x27, .x28, .x30]
 
 /-- Whether no instruction writes a register of `untouched`. -/
 abbrev KeepsUntouched (c : Prog isa) : Prop :=
@@ -31,11 +31,11 @@ theorem keeps_untouched {c : Prog isa} (h : KeepsUntouched c) :
   simp only [Option.all_some, Bool.not_eq_true', List.contains_eq_mem, decide_eq_false_iff_not] at this
   exact this hr
 
-/-- A run that restores `x19` and `x20` and writes no other callee-saved
+/-- A run that restores `x19`–`x25` and writes no other callee-saved
 register, nor a SIMD register, and calls nothing, preserves what the ABI asks. -/
 theorem abiPreserved_of {c : Prog isa} {s s' : State} {t : List Leak} (he : Exec isa c s t s')
     (hn : c.noCalls = true) (hu : KeepsUntouched c) (hv : c.allInstrs keepsV = true)
-    (hsv : ∀ r ∈ [Reg.x19, .x20], s'.gpr r = s.gpr r) : abiPreserved s s' := by
+    (hsv : ∀ r ∈ [Reg.x19, .x20, .x21, .x22, .x23, .x24, .x25], s'.gpr r = s.gpr r) : abiPreserved s s' := by
   refine ⟨fun r hr => ?_, Exec.sp he, Exec.preservedV he hv⟩
   by_cases h : r ∈ untouched
   · exact Exec.gpr (fun i hi => keeps_untouched hu i hi r h) he (.inl hn)

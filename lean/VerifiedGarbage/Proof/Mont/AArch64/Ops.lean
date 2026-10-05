@@ -570,34 +570,34 @@ theorem sub_okW {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M
       omega
     · omega
 
-/-! ## For at most six words (`ModOk`) -/
+/-! ## For at most nine words (`ModOkA`) -/
 
 theorem mul_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M : Mod} {m : Nat}
-    (hM : ModOk M size m s.mem base) (hA : ModA M) {o a b : Nat} (ho : o + 8 * M.n ≤ size)
+    (hM : ModOkA M size m s.mem base) (hA : ModA M) {o a b : Nat} (ho : o + 8 * M.n ≤ size)
     (ha : a + 8 * M.n ≤ size) (hb : b + 8 * M.n ≤ size) (ho8 : o % 8 = 0) (ha8 : a % 8 = 0)
     (hb8 : b % 8 = 0) (hB : wordsVal s.mem base b M.n < m) :
     WP isa (.block (mul M o a b)) s fun s' => OpKeep M base o s s' ∧
       wordsVal s'.mem base o M.n < m ∧
       wordsVal s'.mem base o M.n * 2 ^ (64 * M.n) % m =
         wordsVal s.mem base a M.n * wordsVal s.mem base b M.n % m :=
-  mul_okW hs hM.toW (by have := hM.n7; omega) hA ho ha hb ho8 ha8 hb8 hB
+  mul_okW hs hM.toW hM.n10 hA ho ha hb ho8 ha8 hb8 hB
 
 theorem add_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M : Mod} {m : Nat}
-    (hM : ModOk M size m s.mem base) (hA : ModA M) {o a b : Nat} (ho : o + 8 * M.n ≤ size)
+    (hM : ModOkA M size m s.mem base) (hA : ModA M) {o a b : Nat} (ho : o + 8 * M.n ≤ size)
     (ha : a + 8 * M.n ≤ size) (hb : b + 8 * M.n ≤ size) (ho8 : o % 8 = 0) (ha8 : a % 8 = 0)
     (hb8 : b % 8 = 0)
     (hAB : wordsVal s.mem base a M.n + wordsVal s.mem base b M.n < 2 * m) :
     WP isa (.block (add M o a b)) s fun s' => OpKeep M base o s s' ∧
       wordsVal s'.mem base o M.n = (wordsVal s.mem base a M.n + wordsVal s.mem base b M.n) % m :=
-  add_okW hs hM.toW (by have := hM.n7; omega) hA ho ha hb ho8 ha8 hb8 hAB
+  add_okW hs hM.toW hM.n10 hA ho ha hb ho8 ha8 hb8 hAB
 
 theorem sub_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M : Mod} {m : Nat}
-    (hM : ModOk M size m s.mem base) (hMA : ModA M) {o a b : Nat} (ho : o + 8 * M.n ≤ size)
+    (hM : ModOkA M size m s.mem base) (hMA : ModA M) {o a b : Nat} (ho : o + 8 * M.n ≤ size)
     (ha : a + 8 * M.n ≤ size) (hb : b + 8 * M.n ≤ size) (ho8 : o % 8 = 0) (ha8 : a % 8 = 0)
     (hb8 : b % 8 = 0)
     (hA : wordsVal s.mem base a M.n < m) (hB : wordsVal s.mem base b M.n < m) :
     WP isa (.block (sub M o a b)) s fun s' => OpKeep M base o s s' ∧
       wordsVal s'.mem base o M.n = (wordsVal s.mem base a M.n + m - wordsVal s.mem base b M.n) % m :=
-  sub_okW hs hM.toW (by have := hM.n7; omega) hMA ho ha hb ho8 ha8 hb8 hA hB
+  sub_okW hs hM.toW hM.n10 hMA ho ha hb ho8 ha8 hb8 hA hB
 
 end VG.Proof.Mont.AArch64

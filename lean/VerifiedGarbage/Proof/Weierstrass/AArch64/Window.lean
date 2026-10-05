@@ -154,7 +154,7 @@ theorem winCopy_ok {K : WinCfg} {C : Curve} {base : Addr} {size : Nat} (hL : Win
 /-- `R = R + E` by Algorithm 4 into `D`, then copied. -/
 theorem winAdd_ok {K : WinCfg} {C : Curve} {base : Addr} {size : Nat} (hL : WinLay K size)
     (hA : WinA K) (hp : UnitMod C.p (2 ^ (64 * K.M.n))) {s : State} (hs : Scr s base size)
-    (hM : ModOk K.M size C.p s.mem base)
+    (hM : ModOkA K.M size C.p s.mem base)
     (hlt : ∀ x ∈ rcbR K.S K.R K.E, wordsVal s.mem base x K.M.n < C.p) :
     WP isa (.seq (fprogB K.M (rcb3 K.S K.R K.E K.D)) (.block (copyPt K.M.n K.R K.D))) s
       (SumPostW K C base size (VG.Proof.Weierstrass.rcbAdd3 (tmv C K.M.n base s K.S.b3)
@@ -197,7 +197,7 @@ theorem _root_.VG.Proof.Weierstrass.WinLay.ro_tmv {K : WinCfg} {C : Curve} {size
 
 /-- What the window method writes misses the modulus. -/
 theorem winW_mo {K : WinCfg} {size : Nat} (hL : WinLay K size) {m : Nat} {mem : Mem} {base : Addr}
-    (hM : ModOk K.M size m mem base) :
+    (hM : ModOkA K.M size m mem base) :
     ∀ w ∈ winW K, K.M.mo + 8 * K.M.n ≤ w.1 ∨ w.1 + w.2 ≤ K.M.mo := by
   intro w hw
   simp only [winW, List.mem_append, List.mem_map, List.mem_singleton] at hw
@@ -218,7 +218,7 @@ structure BuildInv (K : WinCfg) (C : Curve) (base : Addr) (size : Nat) (P : Poin
   scr : Scr s base size
   keep : KeepRegs (clob K.M.n) s₀ s
   unch : Unch base (winW K) s₀.mem s.mem
-  mod : ModOk K.M size C.p s.mem base
+  mod : ModOkA K.M size C.p s.mem base
   tbl : TblOk K C base P m s
 
 theorem tblPt_slots (K : WinCfg) {m : Nat} (h1 : 1 ≤ m) (h8 : m ≤ 8) :
@@ -379,7 +379,7 @@ theorem adds_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : WinL
 /-- The table `[1 … 8]P`. -/
 theorem build_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : WinLay K size)
     (hA : WinA K) (hp : UnitMod C.p (2 ^ (64 * K.M.n))) (hC : Law C) (hM3 : AM3 C) {P : Point C}
-    (hP : onCurve C P = true) {s : State} (hs : Scr s base size) (hM : ModOk K.M size C.p s.mem base)
+    (hP : onCurve C P = true) {s : State} (hs : Scr s base size) (hM : ModOkA K.M size C.p s.mem base)
     (hF : WinFixed K C base s P k) :
     WP isa (WinCfg.build K) s (BuildInv K C base size P s 8) := by
   have hn := hs.nowrap
@@ -510,7 +510,7 @@ negative digit. -/
 theorem winEntry_ok {K : WinCfg} {C : Curve} {base : Addr} {size k i : Nat} (hL : WinLay K size)
     (hA : WinA K) (hC : Law C) {P : Point C} (hpn : C.p < 2 ^ (64 * K.M.n)) (hone_lt : K.one < C.p)
     (hone : toM C.p (2 ^ (64 * K.M.n)) K.one = 1) {s : State} (hs : Scr s base size)
-    (hM : ModOk K.M size C.p s.mem base) (hi : i < K.J) (hx : s.gpr .x19 = BitVec.ofNat 64 i)
+    (hM : ModOkA K.M size C.p s.mem base) (hi : i < K.J) (hx : s.gpr .x19 = BitVec.ofNat 64 i)
     (hbits : ∀ t < 4 * K.J, s.mem (off base (K.bits + t)) = if k.testBit t then 1 else 0)
     (hz : wordsVal s.mem base K.zero K.M.n = 0) (hT : TblOk K C base P 8 s) :
     WP isa (.block (digit K.bits ++ WinCfg.select K ++ negY K.M K.neg K.zero K.E.y K.bits)) s
@@ -615,7 +615,7 @@ theorem winEntry_ok {K : WinCfg} {C : Curve} {base : Addr} {size k i : Nat} (hL 
     · exact Or.inr rfl
   have U₄' : Unch base (winW K) s.mem s₄.mem := U₄.mono fun w hw => hEW w (by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hw ⊢; rcases hw with h | h | h <;> simp [h])
-  have hM₄ : ModOk K.M size C.p s₄.mem base := hM.unch U₄' (winW_mo hL hM) hn
+  have hM₄ : ModOkA K.M size C.p s₄.mem base := hM.unch U₄' (winW_mo hL hM) hn
   have hz₄ : wordsVal s₄.mem base K.zero K.M.n = 0 := by
     rw [hL.ro_val U₄' hn (by simp [winRo]), hz]
   -- The entry's numbers, below `p`.
@@ -805,7 +805,7 @@ structure WinSt (K : WinCfg) (C : Curve) (base : Addr) (size : Nat) (P : Point C
   scr : Scr s base size
   keep : KeepRegs (combClob K.M.n) s₀ s
   unch : Unch base (winW K) s₀.mem s.mem
-  mod : ModOk K.M size C.p s.mem base
+  mod : ModOkA K.M size C.p s.mem base
   tbl : TblOk K C base P 8 s
 
 theorem clob_combClob {n : Nat} : ∀ r ∈ clob n, r ∈ combClob n := fun _ hr =>
@@ -1301,10 +1301,10 @@ theorem window_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : Wi
     (hA : WinA K) (hp : UnitMod C.p (2 ^ (64 * K.M.n))) (hC : Law C) (hM3 : AM3 C) {P : Point C}
     (hP : onCurve C P = true) (hpn : C.p < 2 ^ (64 * K.M.n)) (hone_lt : K.one < C.p)
     (hone : toM C.p (2 ^ (64 * K.M.n)) K.one = 1) {s : State} (hs : Scr s base size)
-    (hM : ModOk K.M size C.p s.mem base) (hF : WinFixed K C base s P k) (hk : k < 16 ^ K.J)
+    (hM : ModOkA K.M size C.p s.mem base) (hF : WinFixed K C base s P k) (hk : k < 16 ^ K.J)
     (hk8 : 8 * geom K.J ≤ k) :
     WP isa (WinCfg.window K) s fun s' => KeepRegs (combClob K.M.n) s s' ∧
-      Unch base (winW K) s.mem s'.mem ∧ ModOk K.M size C.p s'.mem base ∧
+      Unch base (winW K) s.mem s'.mem ∧ ModOkA K.M size C.p s'.mem base ∧
       (∀ x ∈ [K.R.x, K.R.y, K.R.z], wordsVal s'.mem base x K.M.n < C.p) ∧
       Rep C (tmv C K.M.n base s' K.R.x) (tmv C K.M.n base s' K.R.y) (tmv C K.M.n base s' K.R.z)
         (mul (k - 8 * geom K.J) P) := by

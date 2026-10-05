@@ -52,7 +52,7 @@ theorem stage₁ (hc : CfgOk c) {s₀ : State} (hp : SetupPre c s₀) {rest : Pr
     (h : ∀ s, St₁ c s₀ (s₀.gpr .x4) s → WP isa rest s Q) :
     WP isa (.seq (.block c.setup) (.seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n)) rest)) s₀ Q := by
   have h0 := hc.n0
-  have h7 := hc.n7
+  have h7 := hc.n10
   refine WP.seq (WP.mono_syms (setup_ok hc hp) fun s₁ P sy₁ => ?_)
   have hn := P.scr.nowrap
   have hc' : ∀ ix ∈ c.consts, sv c (s₀.gpr .x4) s₁ ix.1 = ix.2 := P.consts
@@ -104,7 +104,7 @@ theorem stage₁ (hc : CfgOk c) {s₀ : State} (hp : SetupPre c s₀) {rest : Pr
     rw [k₂.gpr r (sub (by decide)), P.keep.gpr r (sub (by decide))]
   · intro x hx
     have hx' : size ≤ ofs (s₀.gpr .x4) x := by have := hx _ (List.mem_singleton_self _); omega
-    rw [O₂ x (Or.inr (by have := bitsAt_le c h7 (j := 0) (by decide); omega)),
+    rw [O₂ x (Or.inr (by have := bitsAt0_le c h7; omega)),
       P.unch x fun w hw => by rw [List.mem_singleton.mp hw]; exact Or.inr (by omega)]
 
 theorem toM_cmont (hc : CfgOk c) (x : Nat) : toM c.C.p (2 ^ (64 * c.n)) (c.mont x) = Fin.ofNat c.C.p x :=
@@ -113,13 +113,13 @@ theorem toM_cmont (hc : CfgOk c) (x : Nat) : toM c.C.p (2 ^ (64 * c.n)) (c.mont 
 theorem mul_zero_pt (P : Point c.C) : Spec.Weierstrass.mul 0 P = .infinity := by
   rw [Spec.Weierstrass.mul]; simp
 
-theorem x0_not_powClob {n : Nat} (_hn : n < 7) : Reg.x0 ∉ powClob n := fun h =>
+theorem x0_not_powClob {n : Nat} (_hn : n < 10) : Reg.x0 ∉ powClob n := fun h =>
   (List.mem_cons.mp h).elim (fun h => absurd h (by decide)) (x0_not_clob n)
 
 
 /-- The flag word apart from numbered slots. -/
 theorem flag_unch {base : Addr} {l : List Nat} {m m' : Mem} (hu : Unch base (slW c l) m m')
-    (h7 : c.n < 7) (h0 : 0 < c.n) (hn : base.toNat + size ≤ 2 ^ 64) (hl : FLAG ∉ l) :
+    (h7 : c.n < 10) (h0 : 0 < c.n) (hn : base.toNat + size ≤ 2 ^ 64) (hl : FLAG ∉ l) :
     word m' base (c.sl FLAG) = word m base (c.sl FLAG) := by
   have hF := sl_le c h7 (i := FLAG) (by decide)
   refine hu.word (fun w hw => ?_) (by omega)

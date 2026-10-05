@@ -170,4 +170,9 @@ theorem divsteps_885 {f g : Int} (hf : f % 2 = 1) (hg : 0 ≤ g) (hgf : g ≤ f)
     (hn : 885 ≤ n) : (divsteps n (1, f, g)).2.2 = 0 ∧ (divsteps n (1, f, g)).2.1.natAbs = Int.gcd f g :=
   divsteps_bound hf hg hgf hf2 (pow_fuzz (by decide +kernel)) hn
 
+/-- 576-bit moduli (nine words): 1328 divsteps. -/
+theorem divsteps_1328 {f g : Int} (hf : f % 2 = 1) (hg : 0 ≤ g) (hgf : g ≤ f) (hf2 : f ≤ 2 ^ 576) {n : Nat}
+    (hn : 1328 ≤ n) : (divsteps n (1, f, g)).2.2 = 0 ∧ (divsteps n (1, f, g)).2.1.natAbs = Int.gcd f g :=
+  divsteps_bound hf hg hgf hf2 (pow_fuzz (by decide +kernel)) hn
+
 end VG.Proof.Divstep

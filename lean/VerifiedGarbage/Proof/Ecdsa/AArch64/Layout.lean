@@ -13,10 +13,10 @@ and of its arguments (`Pre`), for any curve of `n` words, and the state
 `setup` leaves (`SetupPost`), as on x86-64 (`Proof/Ecdsa/X86_64/Layout.lean`).
 
 The working space is the `8192` bytes at `scratch`: the saved registers in
-`[0, 16)`, the slots `c.sl i = 64 + 8 n i` of `n` words for `i < nslots`, and
+`[0, 56)`, the slots `c.sl i = 64 + 8 n i` of `n` words for `i < nslots`, and
 the tables of bits `bitsAt n j` (`64 n` bytes each, `j < 3`), which are
-slots `nslots + 8 j` to `nslots + 8 j + 7`. Every offset the tables are read
-at is below `4096`, as `ldrb` needs.
+slots `nslots + 8 j` to `nslots + 8 j + 7`. Every offset the scalar's table
+(`j = 0`) is read at is below `4096`, as `ldrb` needs.
 -/
 
 namespace VG.Proof.Ecdsa.AArch64
@@ -29,7 +29,7 @@ open VG.Proof.Mont.AArch64 VG.Proof.Mont VG.Proof.Weierstrass.AArch64 VG.Proof.W
 abbrev size : Nat := 8192
 
 /-- What the proof of the code needs of a curve: its field and order are odd
-and fit in `n` words (`n < 7`: the multiplications accumulate in
+and fit in `n` words (`n < 10`: the multiplications accumulate in
 `x8`–`x15`), `G` is on the curve, `p < 2n` (so `x mod n` is one conditional
 subtraction), the Montgomery constants are right, encodings are `8 n`
 bytes, a hash of `8 n` bytes is not truncated, `n ≥ 4` words, the inversion
@@ -41,7 +41,7 @@ more (`Weierstrass.Law`, which a prime field and no point of order 2 give:
 `Weierstrass.Good.law`), which only the proofs of the results take. -/
 structure CfgOk (c : Cfg) : Prop where
   n0 : 0 < c.n
-  n7 : c.n < 7
+  n10 : c.n < 10
   onG : onCurve c.C (G c.C) = true
   p_odd : c.C.p % 2 = 1
   n_odd : c.C.n % 2 = 1
@@ -105,7 +105,7 @@ structure SetupPre (c : Cfg) (s : State) : Prop where
   k_sc : Region.Disjoint ⟨s.gpr .x3, 8 * c.n⟩ ⟨s.gpr .x4, size⟩
   sc_fit : (s.gpr .x4).toNat + size ≤ 2 ^ 64
 
-theorem Pre.setup {c : Cfg} {s : State} (hp : Pre c s) (h7 : c.n < 7) : SetupPre c s where
+theorem Pre.setup {c : Cfg} {s : State} (hp : Pre c s) (h7 : c.n < 10) : SetupPre c s where
   wr := by rw [hp.wr]; simp
   k_in := inRegions_words (by rw [hp.rd]; simp) (by omega)
   d_in := inRegions_words (by rw [hp.rd]; simp) (by omega)
@@ -165,22 +165,29 @@ theorem sl_inj (c : Cfg) (hn : 0 < c.n) {i j : Nat} (h : c.sl i = c.sl j) : i = 
   omega
 
 /-- Every slot is in the working space. -/
-theorem sl_le (c : Cfg) (hn : c.n < 7) {i : Nat} (hi : i < 45) : c.sl i + 8 * c.n ≤ size := by
+theorem sl_le (c : Cfg) (hn : c.n < 10) {i : Nat} (hi : i < 45) : c.sl i + 8 * c.n ≤ size := by
   rw [sl_eq]
   have := Nat.mul_le_mul_left (8 * c.n) hi
   rw [Nat.mul_succ] at this
-  have : 8 * c.n * 45 ≤ 8 * 6 * 45 := Nat.mul_le_mul_right _ (by omega)
+  have : 8 * c.n * 45 ≤ 8 * 9 * 45 := Nat.mul_le_mul_right _ (by omega)
   show _ ≤ 8192
   omega
 
-/-- Every table is in the first `4096` bytes of the working space, where
-`ldrb` reaches. -/
-theorem bitsAt_le (c : Cfg) (hn : c.n < 7) {j : Nat} (hj : j < 3) : bitsAt c.n j + 64 * c.n ≤ 4096 := by
+/-- Every table is in the working space. -/
+theorem bitsAt_le (c : Cfg) (hn : c.n < 10) {j : Nat} (hj : j < 3) : bitsAt c.n j + 64 * c.n ≤ size := by
   rw [bitsAt_eq]
   have := Nat.mul_le_mul_left (64 * c.n) hj
   rw [Nat.mul_succ] at this
-  have : 8 * c.n * 45 ≤ 8 * 6 * 45 := Nat.mul_le_mul_right _ (by omega)
-  have : 64 * c.n * 3 ≤ 64 * 6 * 3 := Nat.mul_le_mul_right _ (by omega)
+  have : 8 * c.n * 45 ≤ 8 * 9 * 45 := Nat.mul_le_mul_right _ (by omega)
+  have : 64 * c.n * 3 ≤ 64 * 9 * 3 := Nat.mul_le_mul_right _ (by omega)
+  show _ ≤ 8192
+  omega
+
+/-- The table of the scalar's bits is in the first `4096` bytes of the working
+space, where `ldrb` reaches. -/
+theorem bitsAt0_le (c : Cfg) (hn : c.n < 10) : bitsAt c.n 0 + 64 * c.n ≤ 4096 := by
+  rw [bitsAt_eq]
+  have : 8 * c.n * 45 ≤ 8 * 9 * 45 := Nat.mul_le_mul_right _ (by omega)
   omega
 
 end VG.Proof.Ecdsa.AArch64

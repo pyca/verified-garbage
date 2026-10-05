@@ -64,8 +64,8 @@ theorem setupLoad_ok {c : Cfg} (hc : CfgOk c) {s t : State} {base p : Addr} {src
     WP isa (.block (loadBE c.n (c.sl i) src)) t fun t' =>
       wordsVal t'.mem base (c.sl i) c.n = ofBytes (Spec.Ecdsa.bytesAt s.mem p (8 * c.n)) ∧
       KeepRegs [.x5] t t' ∧ Outside base (c.sl i) (8 * c.n) t.mem t'.mem := by
-  have hl := sl_le c hc.n7 hi
-  have h7 := hc.n7
+  have hl := sl_le c hc.n10 hi
+  have h7 := hc.n10
   have hsz : size = 8192 := rfl
   refine WP.mono (loadBE_ok hs hsrc hl (sl_mod8 c i) (by omega) (by rw [hp]; exact hin)
     (by rw [hp]; exact hd.sub_right (Offset.sub_base base hl))) fun t' ⟨e, k, O⟩ => ⟨?_, k, O⟩
@@ -88,7 +88,7 @@ theorem setupConsts_ok {c : Cfg} (hc : CfgOk c) {base : Addr} : ∀ (l : List (N
   | (i, x) :: l, t, hs, hb, hnd => by
     rw [List.flatMap_cons, WP.block_append_iff]
     have hi := hb (i, x) List.mem_cons_self
-    have hl := sl_le c hc.n7 (i := i) (by omega)
+    have hl := sl_le c hc.n10 (i := i) (by omega)
     have hsz : size = 8192 := rfl
     refine WP.mono (setConst_ok hs hl (sl_mod8 c i) hi.2) fun t₁ ⟨e₁, k₁, O₁⟩ => ?_
     have hs₁ := hs.of_keepRegs k₁ (by decide)
@@ -146,7 +146,7 @@ theorem setupFlag_ok {c : Cfg} (hc : CfgOk c) {t : State} {base : Addr} (hs : Sc
     WP isa (.block (setConst 1 (c.sl FLAG) (2 ^ 64 - 1))) t fun t' =>
       word t'.mem base (c.sl FLAG) = BitVec.allOnes 64 ∧ KeepRegs [.x1] t t' ∧
       Outside base (c.sl FLAG) (8 * 1) t.mem t'.mem := by
-  have hl := sl_le c hc.n7 (i := FLAG) (by decide)
+  have hl := sl_le c hc.n10 (i := FLAG) (by decide)
   have := hc.n0
   refine WP.mono (setConst_ok hs (by omega) (sl_mod8 c FLAG) (by decide)) fun t' ⟨e, k, O⟩ => ⟨?_, k, O⟩
   have e' : (word t'.mem base (c.sl FLAG)).toNat = 2 ^ 64 - 1 := by
@@ -165,7 +165,7 @@ theorem setup_eq (c : Cfg) : c.setup = Spill.saveCode .x4 Cfg.saved ++
 
 theorem setup_ok {c : Cfg} (hc : CfgOk c) {s : State} (hp : SetupPre c s) :
     WP isa (.block c.setup) s (SetupPost c s (s.gpr .x4)) := by
-  have h7 := hc.n7
+  have h7 := hc.n10
   have h0 := hc.n0
   have hsz : size = 8192 := rfl
   have hw : (⟨s.gpr .x4, size⟩ : Region) ∈ s.wr := hp.wr
@@ -248,7 +248,7 @@ theorem setup_ok {c : Cfg} (hc : CfgOk c) {s : State} (hp : SetupPre c s) :
   · show wordsVal s'.mem _ _ _ = _
     rw [O'.wordsVal (by omega) (by omega), O₆.wordsVal (by omega) (by omega), e₅]
   · have := sl_lt c (consts_bounds hc ix hix).1
-    have := sl_le c hc.n7 (i := 17) (by decide)
+    have := sl_le c hc.n10 (i := 17) (by decide)
     show wordsVal s'.mem _ _ _ = _
     rw [O'.wordsVal (by omega) (by omega), e₆ ix hix]
 

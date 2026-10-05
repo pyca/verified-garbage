@@ -32,8 +32,8 @@ structure MidPost (c : Cfg) (base : Addr) (s s' : State) : Prop where
   rd : s'.rd = s.rd
   wr : s'.wr = s.wr
   unch : Unch base ([XM, X, RR, KM, TMP].map fun i => (c.sl i, 8 * c.n)) s.mem s'.mem
-  modP : ModOk c.MP' size c.C.p s'.mem base
-  modN : ModOk c.MN' size c.C.n s'.mem base
+  modP : ModOkA c.MP' size c.C.p s'.mem base
+  modN : ModOkA c.MN' size c.C.n s'.mem base
   x_lt : sv c base s' X < c.C.p
   x : Fin.ofNat c.C.p (sv c base s' X) =
     toM c.C.p (2 ^ (64 * c.n)) (sv c base s RX) * toM c.C.p (2 ^ (64 * c.n)) (sv c base s ACC)
@@ -52,7 +52,7 @@ theorem unch_slots {base : Addr} {m₁ m₂ : Mem} {o : Nat} {l : List Nat} {M :
 
 /-- The four field operations of `middle`. -/
 theorem midOps_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size)
-    (hMP : ModOk c.MP' size c.C.p s.mem base) (hMN : ModOk c.MN' size c.C.n s.mem base)
+    (hMP : ModOkA c.MP' size c.C.p s.mem base) (hMN : ModOkA c.MN' size c.C.n s.mem base)
     (hacc : sv c base s ACC < c.C.p) (hone : sv c base s ONE = 1) (hzero : sv c base s ZERO = 0)
     (hr2 : sv c base s R2N = 2 ^ (64 * c.n) * 2 ^ (64 * c.n) % c.C.n) {rest : Prog isa}
     {Q : State → Prop} (h : ∀ s', MidPost c base s s' → WP isa rest s' Q) :
@@ -60,7 +60,7 @@ theorem midOps_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size
       (.seq (.block (mul c.MP' (c.sl X) (c.sl XM) (c.sl ONE)))
       (.seq (.block (add c.MN' (c.sl RR) (c.sl X) (c.sl ZERO)))
       (.seq (.block (mul c.MN' (c.sl KM) (c.sl K) (c.sl R2N))) rest)))) s Q := by
-  have h7 := hc.n7
+  have h7 := hc.n10
   have hn := hs.nowrap
   have hpR := unitMod_pow_two hc.p_odd (64 * c.n)
   have hnR := unitMod_pow_two hc.n_odd (64 * c.n)

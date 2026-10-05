@@ -67,16 +67,16 @@ theorem uv_eq (c : Cfg) : Impl.Ecdsa.Verify.AArch64.Cfg.uv c =
 /-- One multiplication modulo `n`, on numbered slots: it keeps the modulus and
 every other slot but the temporary area's. -/
 theorem mulN_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size)
-    (hMN : ModOk c.MN' size c.C.n s.mem base) {o a b : Nat} (ho : o < 45) (ha : a < 45) (hb : b < 45)
+    (hMN : ModOkA c.MN' size c.C.n s.mem base) {o a b : Nat} (ho : o < 45) (ha : a < 45) (hb : b < 45)
     (hB : sv c base s b < c.C.n) (hoN : o ≠ MN) :
     WP isa (.block (Impl.Mont.AArch64.mul c.MN' (c.sl o) (c.sl a) (c.sl b))) s fun s' =>
-      Scr s' base size ∧ ModOk c.MN' size c.C.n s'.mem base ∧
+      Scr s' base size ∧ ModOkA c.MN' size c.C.n s'.mem base ∧
       (∀ r, r ∉ clob c.n → s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
       Unch base (slW c [o, TMP]) s.mem s'.mem ∧
       (∀ {i}, i < 45 → i ≠ o → i ≠ TMP → sv c base s' i = sv c base s i) ∧
       sv c base s' o < c.C.n ∧
       sv c base s' o * 2 ^ (64 * c.n) % c.C.n = sv c base s a * sv c base s b % c.C.n := by
-  have h7 := hc.n7
+  have h7 := hc.n10
   have hn := hs.nowrap
   exact WP.mono (slMul_ok (MN'_n c) h7 hs hMN (MN'_A c) ho ha hb hB) fun s' ⟨k, lt, e⟩ =>
     ⟨k.scr hs, hMN.keepA64 (j := MN) (by decide) rfl rfl rfl rfl h7 hn k (Ne.symm hoN) (by decide),
@@ -90,7 +90,7 @@ theorem mid_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {g : Reg → BitVec 6
     WP isa (.seq (Impl.Ecdsa.Verify.AArch64.Cfg.scalars c) (.seq c.nPow
       (.seq (Impl.Ecdsa.Verify.AArch64.Cfg.uv c) rest))) s Q := by
   have h0 := hc.n0
-  have h7 := hc.n7
+  have h7 := hc.n10
   have hn := hF.scr.nowrap
   have hnR := unitMod_pow_two hc.n_odd (64 * c.n)
   have hn3 := hc.n_ge
