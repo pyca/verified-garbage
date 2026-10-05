@@ -287,7 +287,7 @@ theorem prf_body {s : State} (hp : DPre s) {R : BitVec 64} {EM K : List Byte} {m
   have kh : KeepHi s ([(sMsg, 16)] ++ [(dst + 32 * i, 32)] ++ []) t.mem t₆.mem := (kh₂.trans kh₅).trans h₆.keep
   refine ⟨h₆.ctx, h₆.sI, by rw [h₆.sNB, fk₂₅ _ (by decide)]; exact h.sNB, ?_, ?_, ?_⟩
   · rw [kh _ _ (by decide) (by decide) (by simp; unfold sMsg sKDK at *; omega)]; exact h.key
-  · rw [show 32 * (i + 1) = 32 * i + 32 by ring_nf, bytesAt_add, kh _ _ (by unfold sMsg sKDK at *; omega)
+  · rw [show 32 * (i + 1) = 32 * i + 32 by omega, bytesAt_add, kh _ _ (by unfold sMsg sKDK at *; omega)
       (by omega) (by simp; omega), h.blk, scA, off_off, ← scA, h₆.keep _ _ (by unfold sMsg sKDK at *; omega)
       (by omega) (by simp), hb₅, List.range_succ, List.flatMap_append, List.flatMap_singleton]
   · exact (h.keep.trans kh).widen fun p hp => by
@@ -298,6 +298,52 @@ theorem prf_body {s : State} (hp : DPre s) {R : BitVec 64} {EM K : List Byte} {m
       · exact ⟨_, List.mem_cons_self .., le_refl _, le_refl _⟩
       · exact ⟨(dst, 32 * N), List.mem_cons_of_mem _ (List.mem_singleton_self _), by simp, by simp; omega⟩
 
+
+/-- One block, for constant time: what the loop's branch and the next
+block need. -/
+theorem prf_body_ctx {s : State} (hp : DPre s) {R : BitVec 64} {EM : List Byte}
+    {label : List Nat} {lenC : List Instr} {dst N : Nat} {count : Src}
+    (hL16 : label.length + 4 ≤ 16) (hd1 : sKDK + 32 ≤ dst) (hd2 : dst + 32 * N ≤ scrBytes)
+    (hmsg : ∀ t i, Ctx s R EM t → i < N → t.gpr .rdi = sc s → t.gpr .rax = BitVec.ofNat 64 i →
+      t.gpr .r9 = s.gpr .r8 → WP isa (.block (msgBytes label lenC)) t fun t' =>
+        Outside (sc s) sMsg 16 t.mem t'.mem ∧ Keep [.rdx] t t')
+    (hincr : ∀ t i, Ctx s R EM t → i < N → word t.mem (fb s) oI = BitVec.ofNat 64 i →
+      word t.mem (fb s) oNB = BitVec.ofNat 64 (nbOf s) → WP isa (.block (incr count)) t (Incr s R EM t i N))
+    {i : Nat} (hi : i < N) {t : State} (hc : Ctx s R EM t) (hI : word t.mem (fb s) oI = BitVec.ofNat 64 i)
+    (hNB : word t.mem (fb s) oNB = BitVec.ofNat 64 (nbOf s)) :
+    WP isa (prfBody (HH v) label lenC dst count) t fun t' =>
+      t'.zf = some (decide (i + 1 = N)) ∧ Ctx s R EM t' ∧ word t'.mem (fb s) oI = BitVec.ofNat 64 (i + 1) ∧
+        word t'.mem (fb s) oNB = BitVec.ofNat 64 (nbOf s) := by
+  have hhd : sMsg + 16 ≤ dst := by unfold sMsg sKDK at *; omega
+  refine WP.seq (WP.mono (prfStart_run hp hc hI) fun t₁ ⟨hc₁, hm₁, hdi₁, hax₁, h9₁⟩ => ?_)
+  refine WP.seq (WP.mono (hmsg t₁ i hc₁ hi hdi₁ hax₁ h9₁) fun t₂ ⟨ho₂, k₂⟩ => ?_)
+  have hf₂ : Frame [⟨scA s sMsg, 16⟩] t₁.mem t₂.mem := frame_of_out ho₂ (by decide)
+  have hc₂ : Ctx s R EM t₂ := hc₁.step hp k₂.2.1 k₂.2.2 (k₂.cs (by decide)) hf₂ fun r hr => by
+    rw [List.mem_singleton.mp hr]; exact scS (by decide)
+  have fk₂ : FrmKeep s t.mem t₂.mem := (FrmKeep.eq hm₁).trans (frmKeep_of_frame (lo := [(sMsg, 16)])
+    (ws := [⟨scA s sMsg, 16⟩]) (n := 0) hp (by decide) (hf₂.sub fun r hr => ⟨r, List.mem_append_left _ hr,
+      fun _ h => h⟩) fun r hr => ⟨sMsg, 16, List.mem_singleton.mp hr, by decide, .inr (List.mem_singleton_self _)⟩)
+  obtain ⟨h1, -⟩ := scr_len hp
+  refine mac_front hp hc₂ (kOff := sKDK) (by decide) (by decide) (fun _ hc => prfUpdArgs_run hp hc (by omega))
+    (Covers.of_sub fun r hr => ⟨scrR s, List.mem_append_right _ (by rw [hp.hwr]; simp [scrR]), sMsg,
+      by rw [List.mem_singleton.mp hr]; rfl, by rw [List.mem_singleton.mp hr]; dsimp only [scrR]; unfold scrBytes sMsg at *; omega⟩)
+    (fun a n han => scD (.inr han) (by unfold scrBytes sMsg; omega) (by unfold scrBytes sMsg at *; omega))
+    (stkD hp (by decide) (by unfold scrBytes sMsg; omega)) (by omega) fun t₃ h₃ => ?_
+  have hI₃ : word t₃.mem (fb s) oI = BitVec.ofNat 64 i := by
+    rw [h₃.frm _ (by decide), fk₂ _ (by decide)]; exact hI
+  refine WP.seq (WP.mono (prfFinArgs_run hp h₃.ctx (L := label.length + 4) (dst := dst) (by omega)
+    (by unfold scrBytes at hd2; omega) hI₃) fun t₄ ⟨hc₄, hm₄, hdi₄, hsi₄, hdx₄, hcx₄, h8₄⟩ => ?_)
+  have h₄ : MacMid v s R EM (Spec.Rsa.bytesAt t₂.mem (scA s sKDK) 32)
+      (Spec.Rsa.bytesAt t₂.mem (scA s sMsg) (label.length + 4)) t₂ t₄ :=
+    ⟨hc₄, by rw [hm₄]; exact h₃.inner, by rw [hm₄]; exact h₃.outer,
+      by rw [KeepHi, hm₄]; exact h₃.keep, by rw [FrmKeep, hm₄]; exact h₃.frm⟩
+  refine WP.seq (WP.mono (mac_fin hp h₄ (dOff := dst + 32 * i) (by unfold sMsg sKDK at *; omega)
+    (by omega) (blen _ _ _) hdi₄ hsi₄ (by rw [hdx₄, blen]) hcx₄ h8₄ (by rw [blen]; omega))
+    fun t₅ ⟨hc₅, _, _, fk₅⟩ => ?_)
+  have fk₂₅ := fk₂.trans fk₅
+  refine WP.mono (hincr t₅ i hc₅ hi (by rw [fk₂₅ _ (by decide)]; exact hI)
+    (by rw [fk₂₅ _ (by decide)]; exact hNB)) fun t₆ h₆ => ⟨h₆.zf, h₆.ctx, h₆.sI, ?_⟩
+  rw [h₆.sNB, fk₂₅ _ (by decide)]; exact hNB
 
 theorem msgCL_len (i : Nat) : (msgCL i).length = 10 := by
   simp [msgCL, Spec.Rsa.i2osp, Spec.RsaPkcs1Enc.ascii]
