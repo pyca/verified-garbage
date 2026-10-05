@@ -27,7 +27,7 @@ open VG VG.X86_64 VG.Impl.Mont.X86_64 VG.Impl.Mont VG.Impl.Weierstrass.X86_64 VG
 structure Inv (M : Mod) (base : Addr) (size m : Nat) [NeZero m] (Sl : Nat → Prop) (V : List Nat)
     (E : Nat → Fin m) (s : State) : Prop where
   scr : Scr s base size
-  mod : ModOk M size m s.mem base
+  mod : ModOkW M size m s.mem base
   sl : ∀ x ∈ V, Sl x
   lt : ∀ x ∈ V, wordsVal s.mem base x M.n < m
   val : ∀ x ∈ V, toM m (2 ^ (64 * M.n)) (wordsVal s.mem base x M.n) = E x
@@ -100,7 +100,7 @@ theorem Inv.update {M : Mod} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat �
       have := hL.le x hx
       exact opKeep_wordsVal hk (by omega) (by omega) (by omega)
   refine ⟨⟨(hk.gpr _ (rdi_not_clob _)).trans hI.scr.rdi, hk.wr ▸ hI.scr.wr, hn⟩,
-    ⟨hM.n0, hM.n7, hM.mo, hM.tmp, hM.sep, ?_, hM.inv, hM.red⟩, ?_, ?_, ?_⟩
+    ⟨hM.n0, hM.mo, hM.tmp, hM.sep, ?_, hM.inv, hM.red⟩, ?_, ?_, ?_⟩
   · have := hM.mo
     have := hM.sep
     rw [opKeep_wordsVal hk (by omega) (by omega) (by omega)]
@@ -132,7 +132,7 @@ theorem fop_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat → P
   | mul o a b =>
     simp only [FOp.out, FOp.ins, List.mem_cons, List.not_mem_nil, or_false,
       forall_eq_or_imp, forall_eq] at hS hR
-    refine WP.mono (mul_ok hI.scr hI.mod.toW (hL.le o hS.1) (hL.le a hS.2.1) (hL.le b hS.2.2)
+    refine WP.mono (mul_ok hI.scr hI.mod (hL.le o hS.1) (hL.le a hS.2.1) (hL.le b hS.2.2)
       (hL.tmp o hS.1) (hL.tmp a hS.2.1) (hL.tmp b hS.2.2) (hL.mo o hS.1) (hI.lt b hR.2)) fun s' ⟨hk, hlt, heq⟩ => ⟨hk, hI.update hL hS.1 hk hlt ?_⟩
     rw [toM_mul hm heq, hI.val a hR.1, hI.val b hR.2]
   | add o a b =>
@@ -140,7 +140,7 @@ theorem fop_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat → P
       forall_eq_or_imp, forall_eq] at hS hR
     have hA := hI.lt a hR.1
     have hB := hI.lt b hR.2
-    refine WP.mono (add_ok hI.scr hI.mod.toW (hL.le o hS.1) (hL.le a hS.2.1) (hL.le b hS.2.2)
+    refine WP.mono (add_ok hI.scr hI.mod (hL.le o hS.1) (hL.le a hS.2.1) (hL.le b hS.2.2)
       (hL.tmp o hS.1) (hL.tmp a hS.2.1) (hL.tmp b hS.2.2) (hL.mo o hS.1) (by omega)) fun s' ⟨hk, heq⟩ => ⟨hk, hI.update hL hS.1 hk ?_ ?_⟩
     · rw [heq]; exact Nat.mod_lt _ (by omega)
     · rw [heq, toM_add, hI.val a hR.1, hI.val b hR.2]
@@ -149,7 +149,7 @@ theorem fop_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat → P
       forall_eq_or_imp, forall_eq] at hS hR
     have hA := hI.lt a hR.1
     have hB := hI.lt b hR.2
-    refine WP.mono (sub_ok hI.scr hI.mod.toW (hL.le o hS.1) (hL.le a hS.2.1) (hL.le b hS.2.2)
+    refine WP.mono (sub_ok hI.scr hI.mod (hL.le o hS.1) (hL.le a hS.2.1) (hL.le b hS.2.2)
       (hL.tmp o hS.1) (hL.tmp a hS.2.1) (hL.tmp b hS.2.2) (hL.mo o hS.1) hA hB)
       fun s' ⟨hk, heq⟩ => ⟨hk, hI.update hL hS.1 hk ?_ ?_⟩
     · rw [heq]; exact Nat.mod_lt _ (by omega)

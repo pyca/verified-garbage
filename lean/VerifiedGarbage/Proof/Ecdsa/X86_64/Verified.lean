@@ -30,9 +30,14 @@ theorem p256_nBits : 64 * p256.n ≤ Spec.Ecdsa.nBits p256.C := by
     (Nat.le_log2 (by decide +kernel)).mpr (by decide +kernel)
   omega
 
+/-- No bit of a hash of `32` bytes is dropped. -/
+theorem p256_sh : p256.sh = 0 := by
+  have h : 64 * 4 ≤ Spec.Ecdsa.nBits p256.C := p256_nBits
+  show 8 * 32 - Spec.Ecdsa.nBits p256.C = 0; omega
+
 theorem p256_ok : CfgOk p256 where
   n0 := by decide
-  n7 := by decide
+  n10 := by decide
   onG := Proof.P256.onCurve_G
   p_odd := by decide +kernel
   n_odd := by decide +kernel
@@ -43,8 +48,10 @@ theorem p256_ok : CfgOk p256 where
   p_lt_2n := by decide +kernel
   minv_p := by decide +kernel
   minv_n := by decide +kernel
-  len := rfl
-  hash := p256_nBits
+  len8 := by decide
+  len_lo := by decide
+  len_hi := by decide
+  sh := by rw [p256_sh]; decide
 
 theorem pre_of {s : State} (h : signX86_64.pre s) : Pre p256 s := by
   obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, -, -, h12, h13⟩ := h

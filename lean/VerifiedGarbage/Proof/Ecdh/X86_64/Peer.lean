@@ -204,11 +204,11 @@ open VG.Impl.Ecdh.X86_64 (QY R2P BP)
 
 variable {c : Cfg}
 
-theorem signExtend_ofNat : ∀ k < 64, (BitVec.ofNat 32 k).signExtend 64 = BitVec.ofNat 64 k := by
+theorem signExtend_ofNat : ∀ k < 128, (BitVec.ofNat 32 k).signExtend 64 = BitVec.ofNat 64 k := by
   decide
 
 /-- `rdx = r9 + k`. -/
-theorem ptr_ok (s : State) {k : Nat} (hk : k < 64) :
+theorem ptr_ok (s : State) {k : Nat} (hk : k < 128) :
     WP isa (.block ([.mov .rdx (.reg .r9), .alu .add .rdx (.imm (BitVec.ofNat 32 k))] : List Instr)) s
       fun s' => s'.gpr .rdx = s.gpr .r9 + BitVec.ofNat 64 k ∧ Keeps [.rdx] s s' := by
   apply WP.of_runBlock
@@ -229,7 +229,7 @@ theorem peer_eq (c : Cfg) : Impl.Ecdh.X86_64.Cfg.peer c =
 
 /-- A slot apart from the one an operation wrote keeps its number. -/
 theorem sv_out {base : Addr} {m m' : Mem} {j : Nat} (h : Outside base (c.sl j) (8 * c.n) m m')
-    (h7 : c.n < 7) (hn : base.toNat + size ≤ 2 ^ 64) {i : Nat} (hi : i < 45) (hij : i ≠ j) :
+    (h7 : c.n < 10) (hn : base.toNat + size ≤ 2 ^ 64) {i : Nat} (hi : i < 45) (hij : i ≠ j) :
     wordsVal m' base (c.sl i) c.n = wordsVal m base (c.sl i) c.n := by
   have := sl_le c h7 hi
   exact h.wordsVal (sl_apart c hij) (by omega)
@@ -246,7 +246,7 @@ theorem peer_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size) 
       word s'.mem base (c.sl FLAG) = word s.mem base (c.sl FLAG) &&& mask (s.mem q = 4) &&&
         mask (sv c base s E < c.C.p) &&& mask (sv c base s' QY < c.C.p) := by
   have h0 := hc.n0
-  have h7 := hc.n7
+  have h7 := hc.n10
   have hn := hs.nowrap
   have hpl := hc.p_lt
   have hp3 := hc.p_ge
