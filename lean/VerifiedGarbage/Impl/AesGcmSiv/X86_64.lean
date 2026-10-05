@@ -27,13 +27,15 @@ implementations as AES-GCM is (`Impl.AesGcm.X86_64.Callees`: only `ctr`,
 * Counter mode (§4) increments the first 4 bytes of the counter block, as a
   little-endian number, which `vg_aes_ctr32` (which increments the last 4,
   big-endian) does not: up to 64 whole blocks at a time, their counter
-  blocks are written to `W + 488` (`ctrGen`), encrypted in place by one call
-  of `vg_aes_encrypt_blocks` and XORed into the data (`ksXor`); the last
-  bytes are XORed with a keystream block from `vg_aes_ctr32` (`crypt`).
+  blocks are written to `W + 488` from an SSE register whose first 32-bit
+  lane `paddd` increments (`ctrGen`), encrypted in place by one call of
+  `vg_aes_encrypt_blocks` and XORed into the data 16 bytes at a time
+  (`ksXor`); the last bytes are XORed with a keystream block from
+  `vg_aes_ctr32` (`crypt`).
 * `seal` copies the tag from `W` to `tag` at the end (`tagOut`); `open`
   copies the received tag from `tag` to `W` first (`recv`), computes the tag of the plaintext at `W + 128` and compares the two
-  without a branch (`cmp`), then masks the data with `0 − ok`, a word at a
-  time and then its last `len mod 8` bytes (`mask`).
+  without a branch (`cmp`), then masks the data with `0 − ok`, 16 bytes at
+  a time and then its last `len mod 16` bytes (`mask`).
 
 ## The working space `W` (3816 bytes)
 
@@ -218,15 +220,15 @@ def tag (o : Nat) : Prog isa :=
 /-! ## Counter mode -/
 
 /-- The counter blocks `CB_j, …, CB_{j + r14 − 1}` written from `W + revO`:
-the counter block's first word in `r8`, its other three in `r9` and `rdx`,
-stored and the first word incremented `r14` times (`rcx` counting down);
-then the first word back at `W + cmO`. -/
+the counter block in `xmm0`, stored and its first 32-bit word incremented
+(`paddd` of `xmm1`, which holds 1 in its first word and 0 in the others)
+`r14` times (`rcx` counting down); then the block back at `W + cmO`. -/
 def ctrGen : Prog isa :=
-  .seq (.block ([.mov32 .r8 (.mem (at_ .r15 cmO)), .mov32 .r9 (.mem (at_ .r15 (cmO + 4))),
-      .mov .rdx (.mem (at_ .r15 (cmO + 8))), .mov .rcx (.reg .r14)] ++ ptr .rdi .r15 revO))
-    (.seq (.loop (.block [.store32 (at_ .rdi 0) .r8, .store32 (at_ .rdi 4) .r9, .store (at_ .rdi 8) .rdx,
-        .alu32 .add .r8 (imm 1), .alu .add .rdi (imm 16), .alu .sub .rcx (imm 1)]) .ne)
-      (.block [.store32 (at_ .r15 cmO) .r8]))
+  .seq (.block ([.movdquLoad .xmm0 (at_ .r15 cmO), .mov32 .r8 (imm 1), .xop (.movq .xmm1 .r8),
+      .mov .rcx (.reg .r14)] ++ ptr .rdi .r15 revO))
+    (.seq (.loop (.block [.movdquStore (at_ .rdi 0) .xmm0, .xop (.bin .paddd .xmm0 .xmm1), .alu .add .rdi (imm 16),
+        .alu .sub .rcx (imm 1)]) .ne)
+      (.block [.movdquStore (at_ .r15 cmO) .xmm0]))
 
 /-- `vg_aes_encrypt_blocks`'s arguments: the encryption key's schedule, the
 `r14` counter blocks at `W + revO` and the working space. -/
@@ -234,13 +236,13 @@ def ecbArgs : List Instr :=
   ptr .rdi .r15 skO ++ [.mov .rsi (.mem (at_ .r15 roundsO))] ++ ptr .rdx .r15 revO ++
     [.mov .rcx (.reg .r14)] ++ ptr .r8 .r15 scrO
 
-/-- The `r14` keystream blocks at `W + revO` XORed into the data at `r12`, a
-word at a time; `r12` past them. -/
+/-- The `r14` keystream blocks at `W + revO` XORed into the data at `r12`,
+16 bytes at a time; `r12` past them. -/
 def ksXor : Prog isa :=
   .seq (.block ([.mov .rcx (.reg .r14)] ++ ptr .rsi .r15 revO))
-    (.loop (.block [.mov .rax (.mem (at_ .r12 0)), .mov .rdx (.mem (at_ .r12 8)), .alu .xor .rax (.mem (at_ .rsi 0)),
-        .alu .xor .rdx (.mem (at_ .rsi 8)), .store (at_ .r12 0) .rax, .store (at_ .r12 8) .rdx,
-        .alu .add .r12 (imm 16), .alu .add .rsi (imm 16), .alu .sub .rcx (imm 1)]) .ne)
+    (.loop (.block [.movdquLoad .xmm0 (at_ .r12 0), .movdquLoad .xmm1 (at_ .rsi 0), .xop (.bin .pxor .xmm0 .xmm1),
+        .movdquStore (at_ .r12 0) .xmm0, .alu .add .r12 (imm 16), .alu .add .rsi (imm 16),
+        .alu .sub .rcx (imm 1)]) .ne)
 
 /-- Up to 64 of the `rbx` whole blocks left at `r12` (`r14` of them)
 encrypted: their counter blocks, encrypted by `vg_aes_encrypt_blocks` in
@@ -280,11 +282,11 @@ def cmp : List Instr :=
     .mov32 .rax (imm 0), .alu32 .adc .rax (imm 0), .store (at_ .r15 okO) .rax]
 
 /-- Every byte of the data ANDed with `0 − ok` (`maskTail`): its whole
-words, then the rest. -/
+blocks, then the rest. -/
 def mask : Prog isa :=
   .seq (.block [.mov .r12 (.mem (at_ .r15 dataO)), .mov .rbp (.mem (at_ .r15 lenO)), .mov32 .r11 (imm 0),
       .alu .sub .r11 (.mem (at_ .r15 okO)), .mov32 .r10 (imm 0), .mov .rcx (.reg .rbp),
-      .shift .shr .rcx 3, .alu .test .rcx (.reg .rcx)])
+      .shift .shr .rcx 4, .alu .test .rcx (.reg .rcx)])
     maskTail
 
 /-! ## The functions -/

@@ -1,5 +1,10 @@
-import VerifiedGarbage.Proof.Divstep.Iter
+import VerifiedGarbage.Proof.Divstep.Steps
 import Mathlib.Data.Int.ModEq
+import Mathlib.Tactic.Linarith
+import Mathlib.Tactic.LinearCombination
+import Mathlib.Tactic.NormNum
+import Mathlib.Tactic.Positivity
+import Mathlib.Tactic.Ring
 
 /-!
 # Divsteps in batches
