@@ -335,17 +335,13 @@ theorem chunkHead_ok {p : Prm} {ciph : Cipher} {l : Block} {a : List Byte} {s₀
     rw [show min 8 (p.al / 16 - j) = 8 by omega]
     exact ⟨H₁.of_keep (fun r _ h₂ _ _ => g₂ r h₂) m₂ rd₂ wr₂, bx₂⟩
 
-/-- A chunk of `c` blocks from `ebx`. -/
-theorem chunkRest_ok (v : BlocksImpl) {p : Prm} {ciph : Cipher} {l : Block} {a : List Byte} {s₀ : State}
-    (C : HCtx p ciph l a s₀) {t : State} {j c : Nat} (H : HInv p ciph l a s₀ t j) (hc0 : 0 < c) (hc : c ≤ 8)
-    (hjc : j + c ≤ p.al / 16) (hbx : t.gpr .ebx = BitVec.ofNat 32 c) :
-    WP isa (.seq (.block [.store (at_ .ebp cntO) .ebx, .mov .eax (.reg .ebp), .alu .add .eax (imm bufO),
-          .store (at_ .ebp fpO) .eax])
-        (.seq (.loop hashFill .ne)
-          (.seq (callBlocks (callees v).enc [.mov .edx (.reg .ebp), .alu .add .edx (imm bufO), .mov .ebx (slot cntO)])
-            (.seq hashSum
-              (.block [.mov .eax (slot hlO), .alu .sub .eax (slot cntO), .store (at_ .ebp hlO) .eax]))))) t
-      fun t' => HInv p ciph l a s₀ t' (j + c) ∧ t'.zf = some (decide (p.al / 16 - (j + c) = 0)) := by
+/-- The start of a chunk of `c` blocks from `ebx`: its count and the buffer's
+start kept in `W`. -/
+theorem chunkStart_ok {p : Prm} {ciph : Cipher} {l : Block} {a : List Byte} {s₀ : State}
+    (C : HCtx p ciph l a s₀) {t : State} {j c : Nat} (H : HInv p ciph l a s₀ t j)
+    (hbx : t.gpr .ebx = BitVec.ofNat 32 c) :
+    ∃ t₁, runBlock isa [.store (at_ .ebp cntO) .ebx, .mov .eax (.reg .ebp), .alu .add .eax (imm bufO),
+      .store (at_ .ebp fpO) .eax] t = some t₁ ∧ FillInv p ciph l a s₀ j c t₁ 0 := by
   have L := C.lay
   have hal := L.al32
   have E := H.env
@@ -395,6 +391,22 @@ theorem chunkRest_ok (v : BlocksImpl) {p : Prm} {ciph : Cipher} {l : Block} {a :
       hl := by rw [kW₁ (.inl (by decide)) (by decide), H.hl]
       rest := by rw [kW₁ (.inr (by decide)) (by decide), H.rest]
       l0 := by rw [kB₁ (by decide), H.l0] }
+  exact ⟨t₁, run₁, F₀⟩
+
+/-- A chunk of `c` blocks from `ebx`. -/
+theorem chunkRest_ok (v : BlocksImpl) {p : Prm} {ciph : Cipher} {l : Block} {a : List Byte} {s₀ : State}
+    (C : HCtx p ciph l a s₀) {t : State} {j c : Nat} (H : HInv p ciph l a s₀ t j) (hc0 : 0 < c) (hc : c ≤ 8)
+    (hjc : j + c ≤ p.al / 16) (hbx : t.gpr .ebx = BitVec.ofNat 32 c) :
+    WP isa (.seq (.block [.store (at_ .ebp cntO) .ebx, .mov .eax (.reg .ebp), .alu .add .eax (imm bufO),
+          .store (at_ .ebp fpO) .eax])
+        (.seq (.loop hashFill .ne)
+          (.seq (callBlocks (callees v).enc [.mov .edx (.reg .ebp), .alu .add .edx (imm bufO), .mov .ebx (slot cntO)])
+            (.seq hashSum
+              (.block [.mov .eax (slot hlO), .alu .sub .eax (slot cntO), .store (at_ .ebp hlO) .eax]))))) t
+      fun t' => HInv p ciph l a s₀ t' (j + c) ∧ t'.zf = some (decide (p.al / 16 - (j + c) = 0)) := by
+  have L := C.lay
+  have hal := L.al32
+  obtain ⟨t₁, run₁, F₀⟩ := chunkStart_ok C H hbx
   refine WP.seq (WP.of_runBlock ⟨t₁, run₁, ?_⟩)
   refine WP.seq (WP.mono (fill_ok C hc0 hc hjc F₀) fun t₂ F => ?_)
   -- the call

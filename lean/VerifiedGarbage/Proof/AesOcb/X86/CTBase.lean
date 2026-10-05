@@ -151,4 +151,66 @@ theorem padTo_ct {I : State → Prop} {p : Prm} (L : Lay p) {S : BitVec 32} {n d
   · exact CT.seq (CT.taint [.ebp, .esi] (pin2 fun s h => ⟨(hI s h).1.ebp, (hI s h).2.1⟩) (by taint_decide)) hJ
       (CT.taint [.edi, .edx, .ecx] (pin3 fun _ h => h) (by taint_decide))
 
+/-! ## Loads of public slots -/
+
+/-- A block followed by code, as its two parts in sequence: it runs the same
+and leaks the same trace. -/
+theorem CT.block_split {I : State → Prop} {l₁ l₂ : List Instr} {c : Prog isa}
+    (h : CT I (.seq (.block l₁) (.seq (.block l₂) c))) : CT I (.seq (.block (l₁ ++ l₂)) c) := by
+  intro s₁ s₂ t₁ t₂ s₁' s₂' hp e₁ e₂
+  cases e₁ with
+  | seq b₁ k₁ =>
+    cases e₂ with
+    | seq b₂ k₂ =>
+      rw [Exec.block_iff, execBlock_append] at b₁ b₂
+      obtain ⟨⟨a₁, u₁⟩, ha₁, hb₁⟩ := Option.bind_eq_some_iff.mp b₁
+      obtain ⟨⟨c₁, w₁⟩, hc₁, he₁⟩ := Option.map_eq_some_iff.mp hb₁
+      obtain ⟨⟨a₂, u₂⟩, ha₂, hb₂⟩ := Option.bind_eq_some_iff.mp b₂
+      obtain ⟨⟨c₂, w₂⟩, hc₂, he₂⟩ := Option.map_eq_some_iff.mp hb₂
+      simp only [Prod.mk.injEq] at he₁ he₂
+      obtain ⟨rfl, rfl⟩ := he₁
+      obtain ⟨rfl, rfl⟩ := he₂
+      obtain ⟨ht, hq⟩ := h _ _ _ _ _ _ hp (.seq (.block ha₁) (.seq (.block hc₁) k₁))
+        (.seq (.block ha₂) (.seq (.block hc₂) k₂))
+      simp only [List.append_assoc]
+      exact ⟨ht, hq⟩
+
+/-- What a load of `v` into `r` leaves, from a state satisfying `I`. -/
+def Ld (I : State → Prop) (r : Reg) (v : BitVec 32) (s : State) : Prop :=
+  ∃ s₀, I s₀ ∧ s.gpr r = v ∧ (∀ q, q ≠ r → s.gpr q = s₀.gpr q) ∧ s.mem = s₀.mem ∧ s.rd = s₀.rd ∧ s.wr = s₀.wr
+
+/-- A block that starts with a load of a public slot, then code: the rest
+is constant time once the value is in its register. -/
+theorem load_ct {I : State → Prop} {p : Prm} (L : Lay p) {r : Reg} {o : Nat} (ho : o + 4 ≤ 2560) {v : BitVec 32}
+    {rest : List Instr} {c : Prog isa} (hI : ∀ s, I s → Env p s ∧ slotv s.mem p.W o = v)
+    (h₁ : CT (fun s => s.gpr .ebp = p.W) (.block [.mov r (slot o)]))
+    (h : CT (Ld I r v) (.seq (.block rest) c)) : CT I (.seq (.block (.mov r (slot o) :: rest)) c) := by
+  rw [← List.singleton_append]
+  refine CT.block_split (CT.seq (J := Ld I r v) (h₁.mono fun s hs => (hI s hs).1.ebp) (fun s hs => ?_) h)
+  obtain ⟨E, hv⟩ := hI s hs
+  simp only [slotv_eq] at hv
+  exact WP.of_runBlock ⟨_, by grun [E.ebp, L.aW, E.perm.wR ho, hv], s, hs, by gregs [hv],
+    fun q hq => by gregs [hq], by gmems [], by gmems [], by gmems []⟩
+
+/-- A block that starts with a load of a public slot. -/
+theorem load_blk_ct {I : State → Prop} {p : Prm} (L : Lay p) {r : Reg} {o : Nat} (ho : o + 4 ≤ 2560)
+    {v : BitVec 32} {rest : List Instr} (hI : ∀ s, I s → Env p s ∧ slotv s.mem p.W o = v)
+    (h₁ : CT (fun s => s.gpr .ebp = p.W) (.block [.mov r (slot o)]))
+    (h : CT (Ld I r v) (.block rest)) : CT I (.block (.mov r (slot o) :: rest)) := by
+  rw [← List.singleton_append]
+  refine RelCT.block_append (CT.seq (J := Ld I r v) (h₁.mono fun s hs => (hI s hs).1.ebp) (fun s hs => ?_) h)
+  obtain ⟨E, hv⟩ := hI s hs
+  simp only [slotv_eq] at hv
+  exact WP.of_runBlock ⟨_, by grun [E.ebp, L.aW, E.perm.wR ho, hv], s, hs, by gregs [hv],
+    fun q hq => by gregs [hq], by gmems [], by gmems [], by gmems []⟩
+
+/-- A register other than the one loaded keeps what `I` says of it. -/
+theorem Ld.reg {I : State → Prop} {r q : Reg} {v x : BitVec 32} (hq : q ≠ r) (h : ∀ s, I s → s.gpr q = x) :
+    ∀ s, Ld I r v s → s.gpr q = x := fun _ ⟨s₀, h₀, _, g, _⟩ => by rw [g q hq, h s₀ h₀]
+
+/-- The environment, across a load into a register other than `ebp` and `esp`. -/
+theorem Ld.env {I : State → Prop} {p : Prm} {r : Reg} {v : BitVec 32} (h1 : r ≠ .ebp) (h2 : r ≠ .esp)
+    (h : ∀ s, I s → Env p s) : ∀ s, Ld I r v s → Env p s := fun _ ⟨s₀, h₀, _, g, m, rd, wr⟩ =>
+  (h s₀ h₀).keep (g _ (Ne.symm h1)) (g _ (Ne.symm h2)) rd wr m
+
 end VG.Proof.AesOcb.X86
