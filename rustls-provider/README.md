@@ -58,8 +58,14 @@ WYCHEPROOF_ROOT=/path/to/wycheproof cargo test --release
 
 ## Benchmarks
 
+The patched rustls-bench takes `--provider verified-garbage`, and its
+`provider-primitives` binary times both providers' primitives through the
+rustls traits (key exchange, signing, verification, records, HKDF,
+tickets). Results and analysis: [`bench/RESULTS.md`](bench/RESULTS.md).
+
 ```sh
 (cd target/rustls && cargo build --profile=bench -p rustls-bench --features aws-lc-rs,verified-garbage)
-target/rustls/target/release/rustls-bench --provider verified-garbage
-target/rustls/target/release/rustls-bench --provider aws-lc-rs
+target/rustls/target/release/rustls-bench --provider verified-garbage --api buffered
+target/rustls/target/release/rustls-bench --provider aws-lc-rs --api buffered
+target/rustls/target/release/provider-primitives
 ```
