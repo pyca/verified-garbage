@@ -366,4 +366,138 @@ theorem posCheck_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} 
     (kw.gpr (by decide)).trans h₂, ofNat_add_lit, VG.Proof.MlKem.X86_64.sx_ofNat (show 8 + H.D < 2 ^ 31 by omega)]
   rw [BitVec.ofNat_add_ofNat]
 
+/-! ## `copyDb` and `verifyNb` -/
+
+/-- `DB`, the `db` bytes at `e`, after `mHash` in `Y`. -/
+theorem copyDb_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {W : Nat → BitVec 64}
+    (R : Rep u.mem F S V W) {e db : Nat} (he : W 23 = off S e) (hdb : W 24 = BitVec.ofNat 64 db)
+    (hcx : u.gpr .rcx = off S oY) (hdb1 : 1 ≤ db) (hfit : e + db ≤ oY) (hY : 8 + H.D + db ≤ 2048) :
+    WP isa (copyDb H) u fun u' => Lay u' F S ∧ Keep [.rsi, .r10, .rax, .r8] u u' ∧
+      Rep u'.mem F S (cpV V (fun i => V (e + i)) (oY + (8 + H.D)) db) W := by
+  have c7 : oY = 3584 := rfl
+  have c5 : oRsa = 8192 := rfl
+  refine WP.seq (WP.mono (WP.keep [.rsi, .r10, .r8] (Q := fun v => v.gpr .rsi = off S e ∧
+      v.gpr .r10 = BitVec.ofNat 64 db ∧ v.gpr .r8 = BitVec.ofNat 64 0 ∧ v.mem = u.mem) ?_ rfl)
+    fun v ⟨⟨h₁, h₁₀, h₂, hm⟩, hk⟩ => ?_)
+  · xrun [copyDb, ea_sp, L.rsp, L.ld (d := sEb) (by decide), L.ld (d := sDb) (by decide),
+      R.rd (d := sEb) 23 rfl (by decide), R.rd (d := sDb) 24 rfl (by decide), he, hdb]
+  have Lv : Lay v F S := L.congr (hk.gpr (by decide)) hk.2.2 (by rw [hm])
+  refine WP.mono (copy_ok Lv (hm ▸ R) (d := .rcx) (by decide) (p := off S e) (o := oY) (disp := 8 + H.D) (n := db)
+    (stepR_ok (by omega) v (show Reg.r10 ∉ [Reg.rax, .r8] by decide) (by decide) h₁₀) hdb1 (by omega) h₁
+    ((hk.gpr (by decide)).trans hcx) h₂ (fun i hi => by rw [off_plus]; exact Lv.sld8 (by omega))
+    (fun i hi j hj => by rw [off_plus]; exact Offset.add_ofNat_ne S (by omega) (by omega) (by omega)))
+    fun w ⟨Lw, kw, Rw⟩ => ⟨Lw, (hk.trans kw).mono (by decide), ?_⟩
+  refine (congrArg (fun V' => Rep w.mem F S V' W) (funext fun x => ?_)).mp Rw
+  simp only [cpV]
+  split
+  · rw [hm, off_plus, R.scr _ (by omega)]
+  · rfl
+
+include hH in
+theorem verifyNb_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {W : Nat → BitVec 64}
+    (R : Rep u.mem F S V W) {db : Nat} (hdb : W 24 = BitVec.ofNat 64 db) (hdb2 : db ≤ 1024) :
+    WP isa (.block (verifyNb H)) u fun u' => Lay u' F S ∧ Keep [.rax] u u' ∧
+      Rep u'.mem F S V (upd W 28 (BitVec.ofNat 64 ((db + (7 + H.D + H.P.L)) / H.P.B + 1))) := by
+  obtain ⟨hpow, hlg1, hlg2⟩ := lgB_spec hH
+  have hDN := hH.hDN
+  have hN := hH.N_le
+  have hL := hH.dims.L
+  have R1 := R.wf L.geo (k := 28) (by decide) (BitVec.ofNat 64 ((db + (7 + H.D + H.P.L)) / H.P.B + 1))
+  rw [show off F (8 * 28) = off F sNb from rfl] at R1
+  refine WP.mono (WP.keep [.rax] (Q := fun u' => u'.mem = u.mem.writeW (off F sNb)
+      (BitVec.ofNat 64 ((db + (7 + H.D + H.P.L)) / H.P.B + 1))) ?_ rfl)
+    fun u' ⟨hm, k⟩ => ⟨L.of_rep' R (hm ▸ R1) (by simp [upd]) (k.gpr (by decide)) k.2.2, k, hm ▸ R1⟩
+  have hsh : BitVec.ofNat 64 (db + (7 + H.D + H.P.L)) >>> lgB H = BitVec.ofNat 64 ((db + (7 + H.D + H.P.L)) / H.P.B) := by
+    rw [shr_ofNat (lgB H) (by omega), hpow]
+  xrun [verifyNb, ea_sp, L.rsp, L.ld (d := sDb) (by decide), L.st (d := sNb) (by decide),
+    R.rd (d := sDb) 24 rfl (by decide), hdb, VG.Proof.MlKem.X86_64.sx_ofNat (show 7 + H.D + H.P.L < 2 ^ 31 by omega),
+    BitVec.ofNat_add_ofNat, hsh, ofNat_add_lit, show 1 ≤ lgB H ∧ lgB H ≤ 63 from ⟨by omega, by omega⟩]
+
+/-! ## `shift` -/
+
+/-- The first `j` bytes from `base` replaced by those `d` after them, if `c`. -/
+def shV (V : Nat → Byte) (c : Bool) (d base j : Nat) (x : Nat) : Byte :=
+  if base ≤ x ∧ x < base + j then (if c then V (x + d) else V x) else V x
+
+theorem and_one (a : Nat) (ha : a < 2 ^ 64) :
+    BitVec.ofNat 64 a &&& 1 = BitVec.setWidth 64 (BitVec.ofBool (decide (a % 2 = 1))) := by
+  apply BitVec.eq_of_toNat_eq
+  rw [BitVec.toNat_and, BitVec.toNat_ofNat, Nat.mod_eq_of_lt ha, show BitVec.toNat (1 : BitVec 64) = 1 from rfl, Nat.and_one_is_mod]
+  by_cases h : a % 2 = 1
+  · simp [h]
+  · have : a % 2 = 0 := by omega
+    simp [this]
+
+structure ShI (u₀ : State) (F S : Addr) (V : Nat → Byte) (W : Nat → BitVec 64) (c : Bool) (d base : Nat)
+    (j : Nat) (v : State) : Prop where
+  L : Lay v F S
+  keep : Keep [.rcx, .rsi, .r11, .r9, .r8, .rax, .rdi] u₀ v
+  rcx : v.gpr .rcx = off S base
+  rsi : v.gpr .rsi = off S (base + d)
+  r9 : v.gpr .r9 = 0#64 - BitVec.setWidth 64 (BitVec.ofBool c)
+  r8 : v.gpr .r8 = BitVec.ofNat 64 j
+  R : Rep v.mem F S (shV V c d base j) W
+
+include hH in
+theorem shiftPass_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {W : Nat → BitVec 64}
+    (R : Rep u.mem F S V W) {a d db : Nat} (ha : W 45 = BitVec.ofNat 64 a) (hd : W 46 = BitVec.ofNat 64 d)
+    (hdb : W 24 = BitVec.ofNat 64 db) (ha' : a < 2 ^ 64) (hd1 : 1 ≤ d) (hdb1 : 1 ≤ db)
+    (hfit : oY + 8 + H.D + db + d ≤ oRsa) :
+    WP isa (shiftPass H) u fun u' => Lay u' F S ∧ Keep [.rcx, .rsi, .r11, .r9, .r10, .r8, .rax, .rdi] u u' ∧
+      Rep u'.mem F S (shV V (decide (a % 2 = 1)) d (oY + 8 + H.D) db) W := by
+  have hs := L.slot
+  simp only [Bignum.X86_64.word] at hs
+  have c7 : oY = 3584 := rfl
+  have c5 : oRsa = 8192 := rfl
+  have hDN := hH.hDN
+  have hN := hH.N_le
+  refine WP.seq (WP.mono (WP.keep [.rcx, .rsi, .r11, .r9, .r10, .r8] (Q := fun v => v.gpr .rcx = off S (oY + 8 + H.D) ∧
+      v.gpr .rsi = off S (oY + 8 + H.D + d) ∧ v.gpr .r9 = 0#64 - BitVec.setWidth 64 (BitVec.ofBool (decide (a % 2 = 1))) ∧
+      v.gpr .r10 = BitVec.ofNat 64 db ∧ v.gpr .r8 = BitVec.ofNat 64 0 ∧ v.mem = u.mem) ?_ rfl)
+    fun v ⟨⟨h₁, h₂, h₃, h₁₀, h₄, hm⟩, hk⟩ => ?_)
+  · xrun [shiftPass, scr, List.cons_append, List.nil_append, ea_sp, L.rsp, L.ld (d := sScr) (by decide), hs,
+      VG.Proof.MlKem.X86_64.sx_ofNat (show oY + 8 + H.D < 2 ^ 31 by omega), L.ld (d := sD) (by decide),
+      L.ld (d := sA) (by decide), L.ld (d := sDb) (by decide), R.rd (d := sD) 46 rfl (by decide),
+      R.rd (d := sA) 45 rfl (by decide), R.rd (d := sDb) 24 rfl (by decide), ha, hd, hdb, off_plus]
+    rw [and_one a ha']; rfl
+  set c := decide (a % 2 = 1)
+  set base := oY + 8 + H.D
+  have Lv : Lay v F S := L.congr (hk.gpr (by decide)) hk.2.2 (by rw [hm])
+  refine WP.mono (byteLoop_ok (n := db) hdb1 (stepR_ok (by omega) v
+      (show Reg.r10 ∉ [Reg.rcx, .rsi, .r11, .r9, .r8, .rax, .rdi] by decide) (by decide) h₁₀)
+    (ShI v F S V W c d base) ?_ (u := v) ⟨Lv, Keep.refl _ _, h₁, h₂, h₃, h₄,
+      hm ▸ (congrArg (fun V' => Rep u.mem F S V' W) (funext fun x => by
+        simp only [shV, Nat.add_zero]; rw [ifn (by omega)])).mpr R⟩)
+    fun w J => ⟨J.L, (hk.trans J.keep).mono (by decide), J.R⟩
+  intro j hj w J
+  have ea₁ : off S base + BitVec.ofNat 64 j = off S (base + j) := off_plus S base j
+  have ea₂ : off S (base + d) + BitVec.ofNat 64 j = off S (base + j + d) := by
+    rw [off_plus]; congr 1; omega
+  have l₁ := J.L.sld8 (d := base + j) (by omega)
+  have l₂ := J.L.sld8 (d := base + j + d) (by omega)
+  have s₁ := J.L.sst8 (d := base + j) (by omega)
+  have r₁ : w.mem (off S (base + j)) = V (base + j) := by
+    rw [J.R.scr _ (by omega)]; simp only [shV]; rw [ifn (by omega)]
+  have r₂ : w.mem (off S (base + j + d)) = V (base + j + d) := by
+    rw [J.R.scr _ (by omega)]; simp only [shV]; rw [ifn (by omega)]
+  refine WP.mono (WP.keep [.rax, .rdi] (Q := fun w' => w'.gpr .r8 = BitVec.ofNat 64 j ∧
+      w'.mem = w.mem.writeW (off S (base + j)) (if c then V (base + j + d) else V (base + j))) ?_ rfl)
+    fun w' ⟨⟨h8, hm'⟩, hk'⟩ => ⟨(J.keep.trans hk').mono (by decide), h8, fun w'' k'' hm'' h8'' => ?_⟩
+  · xrun [ea_ix0, J.rcx, J.rsi, J.r9, J.r8, ea₁, ea₂, l₁, l₂, s₁, r₁, r₂, sel_byte]
+  · have R' := J.R.wb J.L.geo (o := base + j) (by omega) (if c then V (base + j + d) else V (base + j))
+    rw [← hm', ← hm''] at R'
+    have R'' : Rep w''.mem F S (shV V c d base (j + 1)) W := by
+      refine (congrArg (fun V' => Rep w''.mem F S V' W) (funext fun x => ?_)).mp R'
+      simp only [upd, shV]
+      by_cases hx : x = base + j
+      · subst hx; rw [ifp rfl, ifp (show base ≤ base + j ∧ base + j < base + (j + 1) by omega)]
+      · rw [ifn hx]
+        by_cases h' : base ≤ x ∧ x < base + j
+        · rw [ifp h', ifp (show base ≤ x ∧ x < base + (j + 1) by omega)]
+        · rw [ifn h', ifn (show ¬(base ≤ x ∧ x < base + (j + 1)) by omega)]
+    exact ⟨J.L.of_rep J.R R'' (by rw [k''.gpr (by decide), hk'.gpr (by decide)]) (k''.2.2.trans hk'.2.2),
+      (J.keep.trans (hk'.trans k'')).mono (by decide), by rw [k''.gpr (by decide), hk'.gpr (by decide), J.rcx],
+      by rw [k''.gpr (by decide), hk'.gpr (by decide), J.rsi], by rw [k''.gpr (by decide), hk'.gpr (by decide), J.r9],
+      h8'', R''⟩
+
 end VG.Proof.RsaPss.X86_64
