@@ -61,13 +61,15 @@ use crate::arch::rsa::{
     vg_rsa_public_precompute_adx, vg_rsa_public_precomputed_checked,
     vg_rsa_public_precomputed_checked_adx, vg_rsa_recover_primes, vg_rsa_recover_primes_adx,
 };
+use crate::arch::rsa_pkcs1_sig::{VG_RSA_PKCS1_SIGN_ADX_FEATURES, VG_RSA_PKCS1_SIGN_IFMA_FEATURES};
 use crate::cpu::{Features, detected};
 
 /// The implementations of `vg_rsa_public_precompute`,
 /// `vg_rsa_public_precomputed_checked`, `vg_rsa_private_checked` and
-/// `vg_rsa_recover_primes`.
+/// `vg_rsa_recover_primes`, and of the functions built on them
+/// (`vg_rsa_pkcs1_sign`, `crate::rsa_pkcs1_sig`).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-enum Backend {
+pub(crate) enum Backend {
     /// The baseline ISA.
     Baseline,
     /// Montgomery multiplication with BMI2's `mulx` and ADX's `adcx` and
@@ -80,12 +82,16 @@ enum Backend {
 
 impl Backend {
     /// The best implementation a CPU with the features `f` can run.
-    fn select(f: Features) -> Backend {
+    pub(crate) fn select(f: Features) -> Backend {
         let adx = f.contains(VG_RSA_PUBLIC_PRECOMPUTE_ADX_FEATURES)
             && f.contains(VG_RSA_PUBLIC_PRECOMPUTED_CHECKED_ADX_FEATURES)
             && f.contains(VG_RSA_PRIVATE_CHECKED_ADX_FEATURES)
-            && f.contains(VG_RSA_RECOVER_PRIMES_ADX_FEATURES);
-        if adx && f.contains(VG_RSA_PRIVATE_CHECKED_IFMA_FEATURES) {
+            && f.contains(VG_RSA_RECOVER_PRIMES_ADX_FEATURES)
+            && f.contains(VG_RSA_PKCS1_SIGN_ADX_FEATURES);
+        if adx
+            && f.contains(VG_RSA_PRIVATE_CHECKED_IFMA_FEATURES)
+            && f.contains(VG_RSA_PKCS1_SIGN_IFMA_FEATURES)
+        {
             Backend::Ifma
         } else if adx {
             Backend::Adx
@@ -143,7 +149,7 @@ impl core::error::Error for Error {}
 
 /// The words of working space the operations need for an `n_len`-byte
 /// modulus (`VG.Spec.Rsa.scratchWords`).
-fn scratch_words(n_len: usize) -> usize {
+pub(crate) fn scratch_words(n_len: usize) -> usize {
     16 * n_len
 }
 
@@ -176,8 +182,8 @@ fn exponent(e: &[u8]) -> Result<&[u8], Error> {
 /// needs (`VG.Spec.Rsa.publicPrecompute`).
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct PublicKey {
-    n_len: usize,
-    e: Vec<u8>,
+    pub(crate) n: Vec<u8>,
+    pub(crate) e: Vec<u8>,
     pre: Vec<u64>,
 }
 
@@ -222,7 +228,7 @@ impl PublicKey {
             return Err(Error::InvalidModulus);
         }
         Ok(PublicKey {
-            n_len: k,
+            n: n.to_vec(),
             e: e.to_vec(),
             pre,
         })
@@ -231,14 +237,14 @@ impl PublicKey {
     /// The length of the modulus in bytes, which is that of every input and
     /// output.
     pub fn modulus_len(&self) -> usize {
-        self.n_len
+        self.n.len()
     }
 
     /// RSAEP (RSAVP1): writes `input^e mod n` to `out`, both big-endian and
     /// [`modulus_len`](Self::modulus_len) bytes long. The input must be
     /// less than `n`; on an error `out` is left as zeros.
     pub fn public_op(&self, input: &[u8], out: &mut [u8]) -> Result<(), Error> {
-        let k = self.n_len;
+        let k = self.n.len();
         if input.len() != k || out.len() != k {
             return Err(Error::InvalidLength);
         }
@@ -297,14 +303,14 @@ fn widen(x: &[u8], len: usize) -> Option<Vec<u8>> {
 /// of RFC 8017 §3.2, with its public key `(n, e)` and its private exponent
 /// `d`. Its private values are wiped when it is dropped.
 pub struct PrivateKey {
-    n: Vec<u8>,
-    e: Vec<u8>,
+    pub(crate) n: Vec<u8>,
+    pub(crate) e: Vec<u8>,
     d: Vec<u8>,
-    p: Vec<u8>,
-    q: Vec<u8>,
-    dp: Vec<u8>,
-    dq: Vec<u8>,
-    qinv: Vec<u8>,
+    pub(crate) p: Vec<u8>,
+    pub(crate) q: Vec<u8>,
+    pub(crate) dp: Vec<u8>,
+    pub(crate) dq: Vec<u8>,
+    pub(crate) qinv: Vec<u8>,
 }
 
 impl fmt::Debug for PrivateKey {
