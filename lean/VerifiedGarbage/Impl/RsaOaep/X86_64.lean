@@ -299,7 +299,7 @@ def copyT : Prog isa :=
 /-- One pass of the shift: each of the buffer's first 1024 bytes replaced by
 the one `d` (`sD`) bytes after it if bit 0 of `a` (`sA`) is set. -/
 def shiftPass : Prog isa :=
-  .seq (.block (scr .rcx oBuf ++ [.mov .rsi (.reg .rcx), .alu .add .rsi (.mem (sp sD)),
+  .seq (.block (scr .rcx oBuf ++ [.mov .rsi (.mem (sp sD)), .alu .add .rsi (.reg .rcx),
       .mov .r11 (.mem (sp sA)), .alu .and .r11 (.imm 1), .mov32 .r9 (.imm 0), .alu .sub .r9 (.reg .r11),
       .mov32 .r8 (.imm 0)]))
     (byteLoop [.movzx8 .rax (ix .rcx .r8), .movzx8 .rdi (ix .rsi .r8), .alu .xor .rdi (.reg .rax),
