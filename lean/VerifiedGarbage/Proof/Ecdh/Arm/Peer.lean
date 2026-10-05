@@ -115,8 +115,8 @@ open VG.Impl.Ecdh.Arm (QY R2P BP)
 
 theorem peer_eq (c : Cfg) (q : Reg) : Impl.Ecdh.Arm.Cfg.peerAt c q =
     setConst c.n (c.sl R2P) (c.R * c.R % c.C.p) ++ (setConst c.n (c.sl BP) (c.mont c.C.b) ++
-    (.dp .add .r6 q (.imm 1) :: (loadBE c.n (c.sl E) .r6 ++
-    (.dp .add .r6 .r6 (.imm (BitVec.ofNat 32 (8 * c.n))) :: (loadBE c.n (c.sl QY) .r6 ++
+    (.dp .add .r6 q (.imm 1) :: (loadBytes c.C.len c.n (c.sl E) .r6 ++
+    (.dp .add .r6 .r6 (.imm (BitVec.ofNat 32 c.C.len)) :: (loadBytes c.C.len c.n (c.sl QY) .r6 ++
     (Impl.Ecdh.Arm.Cfg.checkLead c q ++
     (Impl.Ecdh.Arm.Cfg.checkLtP c (c.sl E) ++ Impl.Ecdh.Arm.Cfg.checkLtP c (c.sl QY)))))))) := by
   simp only [Impl.Ecdh.Arm.Cfg.peerAt, Impl.Ecdh.Arm.Cfg.consts, List.flatMap_cons, List.flatMap_nil,
@@ -132,16 +132,16 @@ theorem sv_out {base : Addr} {m m' : Mem} {j : Nat} (h : Outside base (c.sl j) (
 /-- The constants, the key's `x` and `y`, and the checks of its first byte,
 `x` and `y`, for a key that `q` points to. -/
 theorem peer_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size) {q : Reg}
-    (hq4 : q ≠ .r4) (hq6 : q ≠ .r6) (hqfit : (s.gpr q).toNat + (1 + 16 * c.n) ≤ 2 ^ 32)
-    (hin : (⟨State.addr (s.gpr q), 1 + 16 * c.n⟩ : Region) ∈ s.rd ++ s.wr)
-    (hd : Region.Disjoint ⟨State.addr (s.gpr q), 1 + 16 * c.n⟩ ⟨base, size⟩) (hmp : sv c base s MP = c.C.p) :
+    (hq4 : q ≠ .r4) (hq6 : q ≠ .r6) (hqfit : (s.gpr q).toNat + (1 + 2 * c.C.len) ≤ 2 ^ 32)
+    (hin : (⟨State.addr (s.gpr q), 1 + 2 * c.C.len⟩ : Region) ∈ s.rd ++ s.wr)
+    (hd : Region.Disjoint ⟨State.addr (s.gpr q), 1 + 2 * c.C.len⟩ ⟨base, size⟩) (hmp : sv c base s MP = c.C.p) :
     WP isa (.block (Impl.Ecdh.Arm.Cfg.peerAt c q)) s fun s' =>
       Scr s' base size ∧ Rest [.r3, .r4, .r5, .r6, .r7, .r8] s s' ∧
       Unch base (slW c [R2P, BP, E, QY] ++ [(c.sl FLAG, 4)]) s.mem s'.mem ∧
       sv c base s' R2P = c.R * c.R % c.C.p ∧ sv c base s' BP = c.mont c.C.b ∧
-      sv c base s' E = ofBytes (Spec.Ecdsa.bytesAt s.mem (State.addr (s.gpr q) + BitVec.ofNat 64 1) (8 * c.n)) ∧
+      sv c base s' E = ofBytes (Spec.Ecdsa.bytesAt s.mem (State.addr (s.gpr q) + BitVec.ofNat 64 1) c.C.len) ∧
       sv c base s' QY =
-        ofBytes (Spec.Ecdsa.bytesAt s.mem (State.addr (s.gpr q) + BitVec.ofNat 64 (1 + 8 * c.n)) (8 * c.n)) ∧
+        ofBytes (Spec.Ecdsa.bytesAt s.mem (State.addr (s.gpr q) + BitVec.ofNat 64 (1 + c.C.len)) c.C.len) ∧
       flagW c base s' = flagW c base s &&& mask32 (s.mem (State.addr (s.gpr q)) = 4) &&&
         mask32 (sv c base s' E < c.C.p) &&& mask32 (sv c base s' QY < c.C.p) := by
   have h0 := hc.n0
@@ -149,6 +149,8 @@ theorem peer_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size) 
   have hn := hs.nowrap
   have hpl := hc.p_lt
   have hp3 := hc.p_ge
+  have hl8 := hc.len8
+  have hlhi := hc.len_hi
   have hF : c.sl FLAG + 4 ≤ size := by have := sl_le c h7 (i := FLAG) (by decide); omega
   have hR2 := sl_le c h7 (i := R2P) (by decide)
   have hB := sl_le c h7 (i := BP) (by decide)
@@ -182,7 +184,7 @@ theorem peer_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size) 
   have ht₃ : (s₃.gpr .r6).toNat = q32.toNat + 1 := by
     rw [hb₃, toNat_add_lt (by rw [toNat_imm (by decide)]; omega), toNat_imm (by decide)]
   -- `x`
-  refine VG.Proof.X25519.Arm.WP.append (loadBE_ok hs₃ (src := .r6) (by decide) hE (by omega)
+  refine VG.Proof.X25519.Arm.WP.append (loadBytes_ok hs₃ (src := .r6) (by decide) hE (by omega) (by omega) hlhi
     (fun e he => ⟨_, by rw [hrw₃]; exact hin, by
       rw [ha₃, Offset.add_add]; exact Offset.contains_base qa (by omega) (by omega)⟩)
     (by rw [ha₃]; exact (hd.sub_left (Offset.sub_base qa (by omega))).sub_right (Offset.sub_base base hE)))
@@ -190,20 +192,20 @@ theorem peer_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size) 
   rw [ha₃, hm₃] at e₄
   rw [hm₃] at O₄
   have hs₄ := hs₃.of_rest k₄ (by decide)
-  -- `peer + 1 + 8 n`
-  refine wp_dp (op2_imm (enc8n h7)) fun s₅ u₅ => ?_
+  -- `peer + 1 + len`
+  refine wp_dp (op2_imm (encLen hc)) fun s₅ u₅ => ?_
   have K₅ : Rest [.r4, .r6] s s₅ := (K₃.trans (k₄.mono (by simp))).trans (u₅.rest (by simp))
   have hs₅ := hs.of_rest K₅ (by decide)
   have hrw₅ : s₅.rd ++ s₅.wr = s.rd ++ s.wr := by rw [K₅.rd, K₅.wr]
-  have hb₅ : s₅.gpr .r6 = q32 + BitVec.ofNat 32 (1 + 8 * c.n) := by
+  have hb₅ : s₅.gpr .r6 = q32 + BitVec.ofNat 32 (1 + c.C.len) := by
     rw [u₅.gpr, k₄.gpr _ (by decide), hb₃]
     exact Offset.add_add _ _ _
-  have ha₅ : State.addr (s₅.gpr .r6) = qa + BitVec.ofNat 64 (1 + 8 * c.n) := by
+  have ha₅ : State.addr (s₅.gpr .r6) = qa + BitVec.ofNat 64 (1 + c.C.len) := by
     rw [hb₅, ← hq64]; exact ea (by omega)
-  have ht₅ : (s₅.gpr .r6).toNat = q32.toNat + (1 + 8 * c.n) := by
+  have ht₅ : (s₅.gpr .r6).toNat = q32.toNat + (1 + c.C.len) := by
     rw [hb₅, toNat_add_lt (by rw [toNat_imm (by omega)]; omega), toNat_imm (by omega)]
   -- `y`
-  refine VG.Proof.X25519.Arm.WP.append (loadBE_ok hs₅ (src := .r6) (by decide) hY (by omega)
+  refine VG.Proof.X25519.Arm.WP.append (loadBytes_ok hs₅ (src := .r6) (by decide) hY (by omega) (by omega) hlhi
     (fun e he => ⟨_, by rw [hrw₅]; exact hin, by
       rw [ha₅, Offset.add_add]; exact Offset.contains_base qa (by omega) (by omega)⟩)
     (by rw [ha₅]; exact (hd.sub_left (Offset.sub_base qa (by omega))).sub_right (Offset.sub_base base hY)))
@@ -219,7 +221,7 @@ theorem peer_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size) 
   -- the first byte
   refine VG.Proof.X25519.Arm.WP.append (checkLead_ok c hs₆ (q := q)
     ⟨_, by rw [hrw₆]; exact hin, by
-      have := Offset.contains_base qa (d := 0) (n := 1) (k := 1 + 16 * c.n) (by omega) (by omega)
+      have := Offset.contains_base qa (d := 0) (n := 1) (k := 1 + 2 * c.C.len) (by omega) (by omega)
       rw [BitVec.add_zero] at this; rw [hq₆]; exact this⟩ hF) fun s₇ ⟨f₇, k₇, O₇⟩ => ?_
   rw [hq₆] at f₇
   have hs₇ := hs₆.of_rest k₇ (by decide)
@@ -245,13 +247,13 @@ theorem peer_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size) 
       BitVec.eq_of_toNat_eq (O₁.w32 (hap (j := R2P) (by decide) (by decide)) (by omega))]
   have mp₆ : wordsVal s₆.mem base (c.sl MP) c.n = c.C.p :=
     (v₆ (i := MP) (by decide) (by decide) (by decide) (by decide) (by decide)).trans hmp
-  have xE : sv c base s₉ E = ofBytes (Spec.Ecdsa.bytesAt s.mem (qa + BitVec.ofNat 64 1) (8 * c.n)) := by
+  have xE : sv c base s₉ E = ofBytes (Spec.Ecdsa.bytesAt s.mem (qa + BitVec.ofNat 64 1) c.C.len) := by
     show wordsVal s₉.mem _ _ _ = _
     rw [v₉ (i := E) (by decide) (by decide), sv_out O₆ h7 hn (by decide) (by decide), e₄]
     exact congrArg Spec.Weierstrass.ofBytes (bytesAt_keep W₂ ((hd.sub_left (Offset.sub_base qa (by omega))))
       (by omega) (by omega))
   have yQ : sv c base s₉ QY =
-      ofBytes (Spec.Ecdsa.bytesAt s.mem (qa + BitVec.ofNat 64 (1 + 8 * c.n)) (8 * c.n)) := by
+      ofBytes (Spec.Ecdsa.bytesAt s.mem (qa + BitVec.ofNat 64 (1 + c.C.len)) c.C.len) := by
     show wordsVal s₉.mem _ _ _ = _
     rw [v₉ (i := QY) (by decide) (by decide), e₆]
     exact congrArg Spec.Weierstrass.ofBytes (bytesAt_keep (W₂.trans (O₄.mono (Nat.zero_le _) (by omega)))
