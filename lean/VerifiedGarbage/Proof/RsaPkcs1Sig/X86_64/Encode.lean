@@ -376,13 +376,15 @@ structure EPre (s₀ : State) (x : BitVec 32) (k : Nat) : Prop where
   sep : ∀ j < (s₀.gpr .r9).toNat, ∀ i < k,
     s₀.gpr .rsi + BitVec.ofNat 64 j ≠ s₀.gpr .r8 + BitVec.ofNat 64 i
 
-/-- The result of `encode`: 1 and the encoding in the buffer, or 0 and
-memory as it was. -/
+/-- The result `o` of `encode` in the state `t` it ends in: 1 and the
+encoding in the buffer, or 0 and memory as it was. -/
+def EOut (s₀ t : State) : Option (List Byte) → Prop
+  | some em => t.gpr .rax = 1 ∧ t.mem = writeBytes s₀.mem (s₀.gpr .r8) em
+  | none => t.gpr .rax = 0 ∧ t.mem = s₀.mem
+
+/-- The result of `encode`. -/
 def EPost (s₀ : State) (x : BitVec 32) (k : Nat) (t : State) : Prop :=
-  Keep clob s₀ t ∧
-    match encodeId x (Spec.Rsa.bytesAt s₀.mem (s₀.gpr .rsi) (s₀.gpr .r9).toNat) k with
-    | some em => t.gpr .rax = 1 ∧ t.mem = writeBytes s₀.mem (s₀.gpr .r8) em
-    | none => t.gpr .rax = 0 ∧ t.mem = s₀.mem
+  Keep clob s₀ t ∧ EOut s₀ t (encodeId x (Spec.Rsa.bytesAt s₀.mem (s₀.gpr .rsi) (s₀.gpr .r9).toNat) k)
 
 theorem bytesAt_length (m : Mem) (p : Addr) (n : Nat) : (Spec.Rsa.bytesAt m p n).length = n := by
   simp [Spec.Rsa.bytesAt]
