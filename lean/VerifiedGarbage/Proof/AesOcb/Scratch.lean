@@ -14,7 +14,7 @@ appended, whatever it holds.
 A frame that copies arguments passed on the stack needs the pre- and
 postconditions, and `open`'s leak, to read the memory on entry only within
 the function's buffers (`sealPost_local`, `openPost_local`,
-`openLeak_local`): the nonce, the associated data, the data, the tag and,
+`openLeak_local`, `initPost_local`): the nonce, the associated data, the data, the tag and,
 for `rounds` of 10, 12 or 14, the round keys and `L_*` in the key context's
 256 bytes (`ctxCiph_congr`, `ctxInv_congr`, `ctxLstar_congr`).
 -/
@@ -205,5 +205,26 @@ theorem openLeak_local : ∀ vs m₁ m₂, vs.length = (openSig.words pb).length
       simp only [e₁, e₂, e₃, e₄, e₅, e₆, e₇]
       rfl
     · simp only [hr, not_false_eq_true, ↓reduceIte]
+
+theorem initPre_local : ∀ vs m₁ m₂, vs.length = (initSig.words pb).length →
+    (∀ b ∈ Sig.bufs initSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply (initSig.words pb) (initPre pb) vs m₁ → Curry.apply (initSig.words pb) (initPre pb) vs m₂
+  | [_, _, _], _, _, _, _, h => h
+
+theorem initPost_local : ∀ vs m₁ m₂ m' r, vs.length = (initSig.words pb).length →
+    (∀ b ∈ Sig.bufs initSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply (initSig.words pb) (initPost pb) vs m₁ m' r →
+      Curry.apply (initSig.words pb) (initPost pb) vs m₂ m' r
+  | [key, kl, _], m₁, m₂, m', r, _, hb, h => by
+    simp only [initSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
+      forall_eq, Elem.size, Nat.mul_one] at hb
+    have hk := agree_of hb.1
+    change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr] (initPost pb) _ m₁ m' r at h
+    change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr] (initPost pb) _ m₂ m' r
+    dsimp only [Curry.apply, initPost, ArgWord.ofRaw] at h ⊢
+    have := Nat.mod_le kl.toNat (2 ^ pb)
+    rw [bytesAt_congr (n := (kl.setWidth pb).toNat) fun i hi => hk i (by
+      rw [BitVec.toNat_setWidth] at hi; omega)]
+    exact h
 
 end VG.Proof.AesOcb
