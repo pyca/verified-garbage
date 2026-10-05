@@ -182,9 +182,10 @@ theorem reduceK_ct {cnt : List Instr} (cn : Nat → Nat)
       WP isa (.block cnt) t fun t' => t'.gpr .r13 = BitVec.ofNat 64 (cn w) ∧ t'.mem = t.mem ∧ Keep [.r13] t t')
     (hok : ∀ p s, KK p s → WP isa (seqs (reduce cnt)) s (KK p))
     {hc₁ hc₂ : VG.Taint.Hint VG.X86_64.Taint.T}
-    (hT : (taint.check (Taint.ofRegs [.rdi]) (.block ([.mov .rbx (.mem (hdr (sArr aR))),
+    (hT : (taint.check (Taint.ofRegs [.rdi]) (.block (([.mov .rbx (.mem (hdr (sArr aR))),
       .mov .r10 (.mem (hdr (sArr aM))), .mov .r8 (.mem (hdr (sArr aX))), .mov .r12 (.mem (hdr sW)),
-      .mov .rsi (.mem (hdr (sArr aT))), .mov .r9 (.mem (hdr (sArr aAcc))), .mov .r13 (.reg .r12)] ++ cnt)) hc₁).isSome = true)
+      .mov .rsi (.mem (hdr (sArr aT))), .mov .r9 (.mem (hdr (sArr aAcc))), .mov .r13 (.reg .r12)] : List Instr) ++
+      cnt)) hc₁).isSome = true)
     (hB : (taint.check (Taint.ofRegs [.rbx, .r10, .r8, .r12, .rsi, .r9, .r13]) (.loop wordStep .ne) hc₂).isSome = true) :
     RelCT isa (Two KK) (seqs (reduce cnt)) (Two KK) := by
   refine kk_ct ?_ hok

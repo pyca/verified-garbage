@@ -166,15 +166,16 @@ theorem outK_ok {t : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hg : Good
   · exact h4
   · exact h5
 
-theorem main_eq : main = seqs ([.block VG.Impl.Rsa.X86_64.head, loadBE,
+theorem main_eq : main = seqs (([.block VG.Impl.Rsa.X86_64.head, loadBE,
     .block [.mov32 .rdx (.imm 1), .mov32 .rcx (.imm 0)], setWord aOne .rcx,
-    .block [.mov32 .rax (.imm 0), .alu .sub .rax (.imm 1), .store (hdr sMask) .rax]] ++
+    .block [.mov32 .rax (.imm 0), .alu .sub .rax (.imm 1), .store (hdr sMask) .rax]] : List (Prog isa)) ++
     ((loadNum aX sD sDlen ++ ltMask aX aN) ++
     ((loadNum aX sP sPlen ++ loadNum aR sQ sQlen ++ mulXR ++ VG.Impl.Rsa.X86_64.Crt.eqCheck) ++
     (modChecks sP sPlen sDP ++ (modChecks sQ sQlen sDQ ++
     ((loadNum aM sP sPlen ++ loadNum aX sQI sPlen ++ ltMask aX aM ++
       loadNum aR sQ sQlen ++ mulXR ++ reduce cntXR ++ eqOne) ++
-    [.block (([.mov .rax (.mem (hdr sMask)), .alu .and .rax (.imm 1)] : List Instr) ++ exit)])))))) := by
+    ([.block (([.mov .rax (.mem (hdr sMask)), .alu .and .rax (.imm 1)] : List Instr) ++ exit)] :
+      List (Prog isa)))))))) := by
   simp only [main, List.append_assoc]
 
 /-- `main`: `keyValid` returned as 1 or 0, and the saved registers

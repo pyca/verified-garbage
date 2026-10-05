@@ -1,6 +1,7 @@
 //! The RSA public-key operation (RSAEP) and private-key operation (RSADP with
-//! the CRT, checked against the public exponent), without padding, and the
-//! loading of a private key from `(n, e, d, p, q)` and from `(n, e, d)`.
+//! the CRT, checked against the public exponent), without padding, the
+//! loading of a private key from `(n, e, d, p, q)` and from `(n, e, d)`, and
+//! the check of a private key.
 
 use criterion::Criterion;
 
@@ -218,6 +219,34 @@ pub fn bench(c: &mut Criterion) {
         });
         g.bench_function(BenchmarkId::new(OPENSSL, k), |b| {
             b.iter(|| openssl_recover(black_box(key.n()), black_box(key.e()), black_box(key.d())))
+        });
+    }
+    g.finish();
+
+    let mut g = c.benchmark_group("rsa_check_key");
+    // The same sizes: each library's `RSA_check_key` of a key it holds.
+    // OpenSSL's also tests `p` and `q` for primality, which BoringSSL's (and
+    // `check_key`) does not.
+    for bits in [2048, 3072, 4096] {
+        let key = Rsa::generate(bits).unwrap();
+        let n = key.n().to_vec();
+        let k = n.len();
+        let vg_key = PrivateKey::from_crt(
+            &n,
+            &key.e().to_vec(),
+            &key.d().to_vec(),
+            &key.p().unwrap().to_vec(),
+            &key.q().unwrap().to_vec(),
+            &key.dmp1().unwrap().to_vec(),
+            &key.dmq1().unwrap().to_vec(),
+            &key.iqmp().unwrap().to_vec(),
+        )
+        .unwrap();
+        g.bench_function(BenchmarkId::new(VG, k), |b| {
+            b.iter(|| assert!(black_box(&vg_key).check_key()))
+        });
+        g.bench_function(BenchmarkId::new(OPENSSL, k), |b| {
+            b.iter(|| assert!(black_box(&key).check_key().unwrap()))
         });
     }
     g.finish();
