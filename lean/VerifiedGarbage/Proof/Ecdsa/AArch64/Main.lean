@@ -38,11 +38,10 @@ structure St₂ (c : Cfg) (s₀ : State) (base : Addr) (s : State) : Prop extend
 theorem stage₂ (hc : CfgOk c) (hC : Law c.C) (hT : CombOkW c.C Cfg.combW (Cfg.combJ c.n) c.tbl c.start)
     {s₀ : State} {base : Addr} (hTP : TblPre c s₀ (s₀.syms c.tsym) base) {s : State} (hS : St₁ c s₀ base s)
     {rest : Prog isa} {Q : State → Prop} (h : ∀ s', St₂ c s₀ base s' → WP isa rest s' Q) :
-    WP isa (.seq (TCombCfg.comb c.combCfg) (.seq (ChainCfg.pow c.powP) rest)) s Q := by
+    WP isa (.seq (TCombCfg.comb c.combCfg) (.seq c.pPow rest)) s Q := by
   have h0 := hc.n0
   have h7 := hc.n7
   have hn := hS.scr.nowrap
-  have hpR := unitMod_pow_two hc.p_odd (64 * c.n)
   have hp3 := hc.p_ge
   have F := hS.fixed
   have hkl : kv c s₀ < 2 ^ (64 * c.n) := hS.k ▸ wordsVal_lt _ _ _ _
@@ -65,10 +64,9 @@ theorem stage₂ (hc : CfgOk c) (hC : Law c.C) (hT : CombOkW c.C Cfg.combW (Cfg.
   obtain ⟨K₅, U₅, M₅, L₅, R₅⟩ := h₅
   have hs₅ := hS.scr.of_keepRegs K₅ (x0_not_tcombClob hc.n7)
   have F₅ := F.unch h7 hn fixedOk_tcombW U₅
-  refine WP.seq (WP.mono (chainPow_ok (chainLayP hc) hpR hs₅ M₅
-    (L₅ (c.sl RZ) (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_singleton_self _))))
-    (chainOkP hc)) fun s₆ ⟨K₆, U₆, lt₆, v₆⟩ => h s₆ ?_)
-  rw [chainWP_eq] at U₆
+  refine WP.seq (WP.mono (pPow_ok hc hs₅ M₅
+    (L₅ (c.sl RZ) (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_singleton_self _)))))
+    fun s₆ ⟨K₆, U₆, lt₆, v₆⟩ => h s₆ ?_)
   have e₆ : ∀ {i}, i < 45 → i ∉ [ACC, TMP] →
       i ∉ [RX, RY, RZ, TX, TY, TZ, PT, T0, T1, T2, T3, T4, T5, DX, DY, DZ, TMP] →
       sv c base s₆ i = sv c base s i := fun hi h₁ h₂ =>
@@ -111,7 +109,7 @@ structure St₃ (c : Cfg) (s₀ : State) (base : Addr) (s : State) : Prop extend
 /-- `x`, `r`, `k R mod n` and the checks, then `k^(n-2)`. -/
 theorem stage₃ (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State} (hS : St₂ c s₀ base s)
     {rest : Prog isa} {Q : State → Prop} (h : ∀ s', St₃ c s₀ base s' → WP isa rest s' Q) :
-    WP isa (.seq c.middle (.seq (ChainCfg.pow c.powN) rest)) s Q := by
+    WP isa (.seq c.middle (.seq c.nPow rest)) s Q := by
   have h0 := hc.n0
   have h7 := hc.n7
   have hn := hS.scr.nowrap
@@ -129,10 +127,9 @@ theorem stage₃ (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State} (hS : S
     sv_flag O₈ h0 h7 hn hi hf
   have e₇ : ∀ {i}, i < 45 → i ∉ [XM, X, RR, KM, TMP] → sv c base s₇ i = sv c base s i := fun hi hl =>
     sv_unch Mp.unch h7 hn hi (apart_slW hl)
-  refine WP.seq (WP.mono (chainPow_ok (chainLayN hc) hnR hs₈ (modN_of hc F₈.mn)
-    (lt_of_eq_of_lt (e₈ (i := KM) (by decide) (by decide)) Mp.km_lt) (chainOkN hc))
+  refine WP.seq (WP.mono (nPow_ok hc hs₈ (modN_of hc F₈.mn)
+    (lt_of_eq_of_lt (e₈ (i := KM) (by decide) (by decide)) Mp.km_lt))
     fun s₉ ⟨K₉, U₉, lt₉, v₉⟩ => h s₉ ?_)
-  rw [chainWN_eq] at U₉
   have e₉ : ∀ {i}, i < 45 → i ∉ [ACC, TMP] → sv c base s₉ i = sv c base s₈ i := fun hi hl =>
     sv_unch U₉ h7 hn hi (apart_chainWc hi hl)
   -- The slots `middle` and the power do not write.
@@ -238,7 +235,7 @@ theorem stage₄ (hc : CfgOk c) (hC : Law c.C) {s₀ : State} (hp : Pre c s₀) 
     rw [bytes, hd]; rfl
 
 theorem sign_eq (c : Cfg) : c.sign = .seq (.block c.setup) (.seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n))
-    (.seq (TCombCfg.comb c.combCfg) (.seq (ChainCfg.pow c.powP) (.seq c.middle (.seq (ChainCfg.pow c.powN) c.scalar))))) :=
+    (.seq (TCombCfg.comb c.combCfg) (.seq c.pPow (.seq c.middle (.seq c.nPow c.scalar))))) :=
   rfl
 
 /-- `vg_ecdsa_<curve>_sign` computes the specification's signature and

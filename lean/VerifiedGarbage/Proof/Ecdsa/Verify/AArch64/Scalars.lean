@@ -87,7 +87,7 @@ theorem mulN_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size)
 theorem mid_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {g : Reg → BitVec 64} {s : State}
     (hF : Front c s₀ base g s) {rest : Prog isa} {Q : State → Prop}
     (h : ∀ s', Mid c s₀ base g s' → WP isa rest s' Q) :
-    WP isa (.seq (Impl.Ecdsa.Verify.AArch64.Cfg.scalars c) (.seq (ChainCfg.pow c.powN)
+    WP isa (.seq (Impl.Ecdsa.Verify.AArch64.Cfg.scalars c) (.seq c.nPow
       (.seq (Impl.Ecdsa.Verify.AArch64.Cfg.uv c) rest))) s Q := by
   have h0 := hc.n0
   have h7 := hc.n7
@@ -131,9 +131,8 @@ theorem mid_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {g : Reg → BitVec 6
   have sm₃ : toM c.C.n (2 ^ (64 * c.n)) (sv c base s₃ SM') = Fin.ofNat c.C.n (sigS c s₀) := by
     rw [toM_r2 hnR (by rw [e₃, show sv c base s₂ R2N = _ from F₂.r2n]), v₂ (by decide) (by decide), hF.pt]
   -- `w = s^(n-2)`.
-  refine WP.seq (WP.mono_syms (chainPow_ok (chainLayN hc) hnR hs₃ M₃ lt₃ (chainOkN hc))
+  refine WP.seq (WP.mono_syms (nPow_ok hc hs₃ M₃ lt₃)
     fun s₄ ⟨K₄, U₄, lt₄, v₄⟩ sy₄ => ?_)
-  rw [chainWN_eq] at U₄
   have hs₄ := hs₃.of_keepRegs K₄ (x0_not_powClob h7)
   have F₄ := F₃.unch h7 hn fixedOk_chainWc U₄
   have e₄ : ∀ {i}, i < 45 → i ∉ [ACC, TMP] → sv c base s₄ i = sv c base s₃ i := fun hi hl =>

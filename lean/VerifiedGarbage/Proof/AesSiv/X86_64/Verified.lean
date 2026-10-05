@@ -19,38 +19,39 @@ namespace VG.Proof.AesSiv.X86_64
 
 open VG VG.X86_64 VG.Impl.AesSiv.X86_64
 open VG.Proof.Aes.X86_64 (Ctr32Impl)
+open VG.Proof.CmacAes.X86_64 (UpdateImpl)
 open VG.Proof.CmacAes.Stream.X86_64 (toNat_add_lt)
-open VG.Proof.CmacAes.X86_64 (update_mx subkeys_mx finalize_mx update_spSafe subkeys_spSafe finalize_spSafe)
+open VG.Proof.CmacAes.X86_64 (subkeys_mx finalize_mx subkeys_spSafe finalize_spSafe)
 
 theorem init_mx (v : Ctr32Impl) :
     (init v.expand v.callee v.suffix).allInstrs (fun i => !loadsMxcsr i) = true := by
   simp only [init, Code.allInstrs, v.expandMxcsr, subkeys_mx v]; decide +kernel
 
-theorem encrypt_mx (v : Ctr32Impl) : (encrypt v.callee v.suffix).allInstrs (fun i => !loadsMxcsr i) = true := by
+theorem encrypt_mx (v : UpdateImpl) : (encrypt v.callee v.ctr.callee v.ctr.suffix).allInstrs (fun i => !loadsMxcsr i) = true := by
   simp only [encrypt, encryptCore, sivOut, encS2v, s2vAds, cmacOf, cmacPre, finish, shortTail, longTail, shortMac, longMac, copy, ctr,
-    ctrWhole, ctrBody, ctrMin, xorBytes, callUpdate, callFinalize, Code.allInstrs, update_mx v, finalize_mx v, v.mxcsr]
+    ctrWhole, ctrBody, ctrMin, xorBytes, callUpdate, callFinalize, Code.allInstrs, v.mxcsr, finalize_mx v.ctr, v.ctr.mxcsr]
   decide +kernel
 
-theorem decrypt_mx (v : Ctr32Impl) : (decrypt v.callee v.suffix).allInstrs (fun i => !loadsMxcsr i) = true := by
+theorem decrypt_mx (v : UpdateImpl) : (decrypt v.callee v.ctr.callee v.ctr.suffix).allInstrs (fun i => !loadsMxcsr i) = true := by
   simp only [decrypt, openTail, sivIn, encS2v, s2vAds, cmacOf, cmacPre, finish, shortTail, longTail, shortMac, longMac, copy, ctr,
-    ctrWhole, ctrBody, ctrMin, xorBytes, maskData, callUpdate, callFinalize, Code.allInstrs, update_mx v, finalize_mx v,
-    v.mxcsr]
+    ctrWhole, ctrBody, ctrMin, xorBytes, maskData, callUpdate, callFinalize, Code.allInstrs, v.mxcsr, finalize_mx v.ctr,
+    v.ctr.mxcsr]
   decide +kernel
 
 theorem init_spSafe (v : Ctr32Impl) :
     (init v.expand v.callee v.suffix).all (fun i => !X86_64.isa.writesSp i) = true := by
   simp only [init, Code.all, v.expandSpSafe, subkeys_spSafe v]; decide +kernel
 
-theorem encrypt_spSafe (v : Ctr32Impl) : (encrypt v.callee v.suffix).all (fun i => !X86_64.isa.writesSp i) = true := by
+theorem encrypt_spSafe (v : UpdateImpl) : (encrypt v.callee v.ctr.callee v.ctr.suffix).all (fun i => !X86_64.isa.writesSp i) = true := by
   simp only [encrypt, encryptCore, sivOut, encS2v, s2vAds, cmacOf, cmacPre, finish, shortTail, longTail, shortMac, longMac, copy, ctr,
-    ctrWhole, ctrBody, ctrMin, xorBytes, callUpdate, callFinalize, Code.all, update_spSafe v, finalize_spSafe v,
-    v.spSafe]
+    ctrWhole, ctrBody, ctrMin, xorBytes, callUpdate, callFinalize, Code.all, v.spSafe, finalize_spSafe v.ctr,
+    v.ctr.spSafe]
   decide +kernel
 
-theorem decrypt_spSafe (v : Ctr32Impl) : (decrypt v.callee v.suffix).all (fun i => !X86_64.isa.writesSp i) = true := by
+theorem decrypt_spSafe (v : UpdateImpl) : (decrypt v.callee v.ctr.callee v.ctr.suffix).all (fun i => !X86_64.isa.writesSp i) = true := by
   simp only [decrypt, openTail, sivIn, encS2v, s2vAds, cmacOf, cmacPre, finish, shortTail, longTail, shortMac, longMac, copy, ctr,
-    ctrWhole, ctrBody, ctrMin, xorBytes, maskData, callUpdate, callFinalize, Code.all, update_spSafe v,
-    finalize_spSafe v, v.spSafe]
+    ctrWhole, ctrBody, ctrMin, xorBytes, maskData, callUpdate, callFinalize, Code.all, v.spSafe,
+    finalize_spSafe v.ctr, v.ctr.spSafe]
   decide +kernel
 
 theorem init_correct (v : Ctr32Impl) (s : State) (hs : initX86_64.pre s) :
@@ -149,24 +150,24 @@ theorem SivArgS.of_pub {s₁ s₂ : State} (h₂ : SivArgS s₂) (hq : encPub s�
   obtain ⟨-, -, -, -, q5, q6, q7, q8, -⟩ := hq
   rw [q5, q6, q7, q8]; exact h₂
 
-theorem encryptN_correct (v : Ctr32Impl) (s : State) (hs : encryptN.pre s) :
-    ∃ t s', Exec isa (encrypt v.callee v.suffix) s t s' ∧ abiPreserved s s' ∧ encryptN.post s s' := by
+theorem encryptN_correct (v : UpdateImpl) (s : State) (hs : encryptN.pre s) :
+    ∃ t s', Exec isa (encrypt v.callee v.ctr.callee v.ctr.suffix) s t s' ∧ abiPreserved s s' ∧ encryptN.post s s' := by
   obtain ⟨t, s', he, hg, hp⟩ := encrypt_wp v hs.1 hs.2.1 hs.2.2
   exact ⟨t, s', he, abiPreserved_of_exec (encrypt_mx v) he hg, hp⟩
 
-theorem decryptN_correct (v : Ctr32Impl) (s : State) (hs : decryptN.pre s) :
-    ∃ t s', Exec isa (decrypt v.callee v.suffix) s t s' ∧ abiPreserved s s' ∧ decryptN.post s s' := by
+theorem decryptN_correct (v : UpdateImpl) (s : State) (hs : decryptN.pre s) :
+    ∃ t s', Exec isa (decrypt v.callee v.ctr.callee v.ctr.suffix) s t s' ∧ abiPreserved s s' ∧ decryptN.post s s' := by
   obtain ⟨t, s', he, hg, hp⟩ := decrypt_wp v hs.1 hs.2
   exact ⟨t, s', he, abiPreserved_of_exec (decrypt_mx v) he hg, hp⟩
 
-theorem encryptN_ct (v : Ctr32Impl) :
-    ConstantTime isa encryptN.pre encryptN.pub (encrypt v.callee v.suffix) :=
+theorem encryptN_ct (v : UpdateImpl) :
+    ConstantTime isa encryptN.pre encryptN.pub (encrypt v.callee v.ctr.callee v.ctr.suffix) :=
   fun _ _ _ _ _ _ h₁ h₂ hq e₁ e₂ =>
     (encrypt_rel v h₁.1 (EPreS.of_pub h₂.1 hq) h₁.2.1 (SivArgS.of_pub h₂.2.1 hq) hq.2.2.2.2.2.2.2.2
       _ _ _ _ _ _ ⟨rfl, rfl⟩ e₁ e₂).1
 
-theorem decryptN_ct (v : Ctr32Impl) :
-    ConstantTime isa decryptN.pre decryptN.pub (decrypt v.callee v.suffix) :=
+theorem decryptN_ct (v : UpdateImpl) :
+    ConstantTime isa decryptN.pre decryptN.pub (decrypt v.callee v.ctr.callee v.ctr.suffix) :=
   fun _ _ _ _ _ _ h₁ h₂ hq e₁ e₂ =>
     (decrypt_rel v h₁.1 (EPreS.of_pub h₂.1 hq) h₁.2 (SivArgS.of_pub h₂.2 hq) hq.2.2.2.2.2.2.2.2
       _ _ _ _ _ _ ⟨rfl, rfl⟩ e₁ e₂).1
@@ -414,8 +415,8 @@ theorem decPub_of {s₁ s₂ : State} (hp : (Proof.AesSiv.decryptScratchContract
   rename_i q1 _ q2 q3 q4 q5 q6 q7 q8 q9
   exact ⟨q2, q3, q4, q5, q6, q7, q8, q9, q1, hp⟩
 
-theorem encrypt_verified (v : Ctr32Impl) :
-    Verified X86_64.target (encrypt v.callee v.suffix) (Proof.AesSiv.encryptScratchContract X86_64.abi 16) :=
+theorem encrypt_verified (v : UpdateImpl) :
+    Verified X86_64.target (encrypt v.callee v.ctr.callee v.ctr.suffix) (Proof.AesSiv.encryptScratchContract X86_64.abi 16) :=
   Verified.of_narrow (k := encryptN)
     ⟨encryptN_correct v, encryptN_ct v, encSat_pre.elim fun s hs => ⟨_, (encPre_of hs).1⟩⟩
     (fun s => s.withRegions s.rd (encWrE s)) (fun s s₁ => s₁.withRegions s.rd s.wr)
@@ -427,8 +428,8 @@ theorem encrypt_verified (v : Ctr32Impl) :
       exact fun _ => hq⟩)
     (fun s₁ s₂ _ _ hp => encPub_of hp) encSat_pre
 
-theorem decrypt_verified (v : Ctr32Impl) :
-    Verified X86_64.target (decrypt v.callee v.suffix) (Proof.AesSiv.decryptScratchContract X86_64.abi 16) :=
+theorem decrypt_verified (v : UpdateImpl) :
+    Verified X86_64.target (decrypt v.callee v.ctr.callee v.ctr.suffix) (Proof.AesSiv.decryptScratchContract X86_64.abi 16) :=
   Verified.of_narrow (k := decryptN)
     ⟨decryptN_correct v, decryptN_ct v, decSat_pre.elim fun s hs => ⟨_, (decPre_of hs).1⟩⟩
     (fun s => s.withRegions s.rd (encWrD s)) (fun s s₁ => s₁.withRegions s.rd s.wr)

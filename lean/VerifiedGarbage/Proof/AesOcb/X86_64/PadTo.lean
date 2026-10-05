@@ -97,7 +97,7 @@ theorem bytesAt_of_zero {m : Mem} {p : Addr} (h : blockAtMem m p = 0) : bytesAt 
 
 /-- `padTo d`: `W + d ← pad(S)`, for the `n` bytes `S` at `rbx`, `0 < n < 16`. -/
 theorem padTo_ok {K W SP : Addr} {s : State} (E : Env K W SP s) {S : Addr} {n d : Nat} (hn : 0 < n)
-    (hn' : n < 16) (hd : d + 16 ≤ 2560) (h3 : s.gpr .rbx = S) (h12 : s.gpr .r12 = BitVec.ofNat 64 n)
+    (hn' : n < 16) (hd : d + 16 ≤ 3584) (h3 : s.gpr .rbx = S) (h12 : s.gpr .r12 = BitVec.ofNat 64 n)
     (hS : Covers [⟨S, n⟩] (s.rd ++ s.wr)) (hSD : (⟨S, n⟩ : Region).Disjoint ⟨W + BitVec.ofNat 64 d, 16⟩) :
     WP isa (padTo d) s fun t => Frame [⟨W + BitVec.ofNat 64 d, 16⟩] s.mem t.mem ∧
       blockAtMem t.mem (W + BitVec.ofNat 64 d) = pad (bytesAt s.mem S n) ∧

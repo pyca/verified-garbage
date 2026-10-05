@@ -74,7 +74,7 @@ theorem Bits.dframe {base : Addr} {k : Nat} {m m' : Mem} (h : DFrame base m m') 
 /-- What `wfront` leaves, from the entry state `s`. -/
 structure FrontOut (s : State) (base : Addr) (t : State) : Prop where
   scr : Scr t base
-  bnd : BoundedEnv t.mem base
+  bnd : VG.Proof.X448.AArch64.Fast.BEnv t.mem base
   chk : ∃ c0 cA cR : BitVec 64, t.gpr .x20 = 0 ||| c0 ||| cA ||| cR ∧
     (c0 = 0 ↔ decodeLE (bytesAt s.mem (s.gpr .x1 + BitVec.ofNat 64 57) 57) < Spec.Ed448.L) ∧
     (cA = 0 ↔ (decodePoint (bytesAt s.mem (s.gpr .x0) 57)).isSome) ∧
@@ -204,7 +204,7 @@ theorem wfront_ok (hR : VG.Proof.Ed448.RecoverOk) {s : State} {base : Addr} (hb3
   have hs6 : Scr s6 base := hs5.of_keeps k6 (by decide)
   have rr6 : s6.rd ++ s6.wr = s.rd ++ s.wr := by rw [k6.2.1, k6.2.2, rr5]
   have O6 : Outside base 0 8192 s.mem s6.mem := by rw [m6]; exact O5
-  have b6 : BoundedEnv s6.mem base := fun i j hj => by
+  have b6 : VG.Proof.X448.AArch64.Fast.BEnv s6.mem base := VG.Proof.Ed448.AArch64.benv_of_weak fun i j hj => by
     rw [m6, o5.limbs (Or.inl (by have := i.isLt; simp only [slot, BITS]; omega)) (by have := i.isLt; simp only [slot]; omega)
       (by omega)]
     exact E4.bnd i j hj
@@ -212,10 +212,8 @@ theorem wfront_ok (hR : VG.Proof.Ed448.RecoverOk) {s : State} {base : Addr} (hb3
     rw [m6]; exact VG.Proof.X448.AArch64.Weak.E_outside o5 i (Or.inl (by have := i.isLt; simp only [slot, BITS]; omega))
   -- `A`, decoded and negated.
   refine WP.seq (WP.mono (vdecodeA_ok hR hs6 b6 (p := s.gpr .x0)
-    ((k6.1 _ (by decide)).trans ((g5 _ (by decide)).trans x0₄)) (by rw [e6]; exact E4.e0)
-    (by rw [show VG.Proof.Ed448.pt (E s6.mem base) 8 9 10 = VG.Proof.Ed448.pt (E s4.mem base) 8 9 10 by
-      simp only [VG.Proof.Ed448.pt, e6]]; exact E4.pB) (by rw [e6]; exact E4.d)
-    (fun j hj => by rw [rr6]; exact rpk _ hj) fpk) fun s7 ⟨⟨cA, hcA, x7'⟩, na7, _, pB7, d7, hs7, b7, k7, f7⟩ => ?_)
+    ((k6.1 _ (by decide)).trans ((g5 _ (by decide)).trans x0₄)) (by rw [e6]; exact E4.d)
+    (fun j hj => by rw [rr6]; exact rpk _ hj) fpk) fun s7 ⟨⟨cA, hcA, x7'⟩, na7, d7, hs7, b7, k7, f7⟩ => ?_)
   rw [far_bytes O6 fpk] at hcA na7
   have rr7 : s7.rd ++ s7.wr = s.rd ++ s.wr := by rw [k7.2.1, k7.2.2, rr6]
   have O7 : Outside base 0 8192 s.mem s7.mem := O6.trans f7.whole
@@ -223,12 +221,12 @@ theorem wfront_ok (hR : VG.Proof.Ed448.RecoverOk) {s : State} {base : Addr} (hb3
     rw [k7.1 _ (by decide), k6.1 _ (by decide), g5 _ (by decide), x1₄]
   -- `R`, decoded.
   refine WP.mono (decode_ok hR hs7 b7 (p := s.gpr .x1) x1₇ (Or.inr rfl) 8 9 (Or.inr ⟨rfl, rfl⟩)
-    (congrArg Spec.Ed448.Point.Z pB7) d7 (fun j hj => by rw [rr7]; exact rsg _ (by omega))
-    (fun j hj => fsg _ (by omega))) fun t ⟨⟨cR, hcR, xt⟩, vt, kt, bt, gt, ft⟩ => ?_
+    d7 (fun j hj => by rw [rr7]; exact rsg _ (by omega))
+    (fun j hj => fsg _ (by omega))) fun t ⟨⟨cR, hcR, xt⟩, vt, kt, _, bt, gt, ft⟩ => ?_
   rw [far_bytes O7 (fun i hi => fsg _ (by omega))] at hcR vt
-  have kk : ∀ i : Fin 22, i = 6 ∨ i = 7 ∨ i = 10 → E t.mem base i = E s7.mem base i := by
-    rintro i (rfl | rfl | rfl) <;>
-      exact kt _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
+  have kk : ∀ i : Fin 22, i = 6 ∨ i = 7 → E t.mem base i = E s7.mem base i := by
+    rintro i (rfl | rfl) <;>
+      exact kt _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
   have s4b : bytesAt s4.mem (s.gpr .x1 + BitVec.ofNat 64 57) 57 = bytesAt s.mem (s.gpr .x1 + BitVec.ofNat 64 57) 57 :=
     far_bytes E4.mem (fun i hi => by rw [Offset.add_add]; exact fsg _ (by omega))
   have o45 : Outside base BITS 456 s4.mem s5.mem := o5

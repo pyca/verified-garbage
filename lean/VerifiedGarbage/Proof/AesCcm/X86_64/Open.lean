@@ -21,6 +21,7 @@ open VG.Impl.AesGcm.X86_64 (at_ imm ptr recv cmp)
 open VG.Spec.Aes (bytesAt)
 open VG.Spec.Ccm (zeros)
 open VG.Proof.Aes.X86_64 (Ctr32Impl)
+open VG.Proof.CmacAes.X86_64 (UpdateImpl)
 
 /-- The tag length loaded into `rbx`, and the address of the received tag
 `T` into `rsi`. -/
@@ -158,7 +159,7 @@ theorem openTail_ok {K W SP : Addr} (L : Lay K W SP) {s : State} (E : Env K W SP
       (f₅.sub fun r hr => ⟨r, by simp at hr ⊢; simp [hr], fun _ h => h⟩)
 
 /-- `vg_aes_ccm_open`, for its arguments. -/
-theorem open_wp' (v : Ctr32Impl) {s : State} {K W SP N A D T : Addr} {R nl al n tl : Nat}
+theorem open_wp' (v : UpdateImpl) {s : State} {K W SP N A D T : Addr} {R nl al n tl : Nat}
     (Ar : Args s K W SP N A D R nl al n tl) (Tb : TagBuf W SP D n T tl) (hTc : Covers [⟨T, tl⟩] (s.rd ++ s.wr))
     (hsp : s.gpr .rsp = SP)
     (hD : s.mem.readW (SP + BitVec.ofNat 64 8) 64 = D) (hn : s.mem.readW (SP + BitVec.ofNat 64 16) 64 = BitVec.ofNat 64 n)
@@ -167,7 +168,7 @@ theorem open_wp' (v : Ctr32Impl) {s : State} {K W SP N A D T : Addr} {R nl al n 
     (hW : s.mem.readW (SP + BitVec.ofNat 64 40) 64 = W)
     (hdi : s.gpr .rdi = K) (hsi : s.gpr .rsi = BitVec.ofNat 64 R) (hdx : s.gpr .rdx = N)
     (hcx : s.gpr .rcx = BitVec.ofNat 64 nl) (hr8 : s.gpr .r8 = A) (hr9 : s.gpr .r9 = BitVec.ofNat 64 al) :
-    WP isa («open» v.callee v.suffix) s fun s' => gprPreserved s s' ∧
+    WP isa («open» v.callee v.ctr.callee) s fun s' => gprPreserved s s' ∧
       match Spec.Ccm.decryptWith (Spec.Ccm.ctxCiph s.mem K R) tl (bytesAt s.mem N nl) (bytesAt s.mem D n)
           (bytesAt s.mem A al) (bytesAt s.mem T tl) with
       | some pt => (s'.gpr .rax).setWidth 32 = 1 ∧ bytesAt s'.mem D n = pt
@@ -196,7 +197,7 @@ theorem open_wp' (v : Ctr32Impl) {s : State} {K W SP N A D T : Addr} {R nl al n 
     ⟨L, Ar.rounds, S₂.rounds, by rw [length_bytesAt]; exact Ar.h7, by rw [length_bytesAt]; exact Ar.h13,
       by rw [length_bytesAt]; exact Ar.hn, c₂, Ar.data.of_eq (rd₂.trans rd₁) (wr₂.trans wr₁),
       by rw [wr₂, wr₁]; exact Ar.dw, Ar.dk⟩
-  refine WP.seq (WP.mono (ctr_ok v C₂ E₂ S₂) fun s₃ ⟨E₃, rd₃, wr₃, f₃, h₃⟩ => ?_)
+  refine WP.seq (WP.mono (ctr_ok v.ctr C₂ E₂ S₂) fun s₃ ⟨E₃, rd₃, wr₃, f₃, h₃⟩ => ?_)
   have f₁₃ : Frame (mutR W SP D n) s₁.mem s₃.mem := (f₂'.sub (wR_mut W SP D n)).trans (f₃.sub (ctrR_mut W SP D n))
   have S₃ := slots_mut L Ar.data.w f₁₃ S₁
   have c₃ : bytesAt s₃.mem (W + BitVec.ofNat 64 48) 16 = Spec.Ccm.ctrBlock (bytesAt s.mem N nl) 0 := by
@@ -292,8 +293,8 @@ theorem open_wp' (v : Ctr32Impl) {s : State} {K W SP N A D T : Addr} {R nl al n 
       exact ⟨by rw [hax₅]; simp only [hk', ↓reduceIte]; rfl, by rw [hd₅]; simp only [hk', ↓reduceIte]⟩
 
 /-- `vg_aes_ccm_open`. -/
-theorem open_wp (v : Ctr32Impl) {s : State} (h : openX86_64.pre s) :
-    WP isa («open» v.callee v.suffix) s fun s' => gprPreserved s s' ∧ openX86_64.post s s' :=
+theorem open_wp (v : UpdateImpl) {s : State} (h : openX86_64.pre s) :
+    WP isa («open» v.callee v.ctr.callee) s fun s' => gprPreserved s s' ∧ openX86_64.post s s' :=
   have A := args_of_open h
   open_wp' v A.1.1 A.1.2 A.2 rfl rfl (ofNat_toNat64 _).symm rfl (ofNat_toNat64 _).symm rfl rfl
     (ofNat_toNat64 _).symm rfl (ofNat_toNat64 _).symm rfl (ofNat_toNat64 _).symm

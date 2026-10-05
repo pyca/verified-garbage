@@ -51,7 +51,7 @@ abbrev aData (s : State) : Region := ⟨arg s 0, (arg s 1).toNat⟩
 abbrev aTag (s : State) : Region := ⟨arg s 2, (arg s 3).toNat⟩
 
 /-- The working space. -/
-abbrev aWork (s : State) : Region := ⟨arg s 4, 2560⟩
+abbrev aWork (s : State) : Region := ⟨arg s 4, 3584⟩
 
 /-- What `vg_aes_ocb_seal` and `vg_aes_ocb_open` need of their arguments
 `(ctx = rdi, rounds = rsi, nonce = rdx, nonce_len = rcx, aad = r8,
@@ -68,7 +68,7 @@ def oneFacts (s : State) : Prop :=
     (s.gpr .rdi).toNat + 256 ≤ 2 ^ 64 ∧ (s.gpr .rdx).toNat + (s.gpr .rcx).toNat ≤ 2 ^ 64 ∧
     (s.gpr .r8).toNat + (s.gpr .r9).toNat ≤ 2 ^ 64 ∧ (arg s 0).toNat + (arg s 1).toNat ≤ 2 ^ 64 ∧
     (arg s 2).toNat + (arg s 3).toNat ≤ 2 ^ 64 ∧
-    (arg s 4).toNat + 2560 ≤ 2 ^ 64 ∧ 8 ≤ (s.gpr .rsp).toNat ∧ (s.gpr .rsp).toNat + 48 ≤ 2 ^ 64 ∧
+    (arg s 4).toNat + 3584 ≤ 2 ^ 64 ∧ 8 ≤ (s.gpr .rsp).toNat ∧ (s.gpr .rsp).toNat + 48 ≤ 2 ^ 64 ∧
     rounds s ∧ lengthsOk (arg s 3).toNat (s.gpr .rcx).toNat = true
 
 /-- What `vg_aes_ocb_seal` needs: it may write the data, the tag and the

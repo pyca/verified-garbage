@@ -447,7 +447,7 @@ theorem publicKey_ok (hc : CfgOk c) (hC : Law c.C)
     · exact hp.tbl.fit
     · exact hp.tbl.sc
   have hb : sN.gpr .x4 = s₀.gpr .x2 := by rw [g, x4₁]
-  obtain ⟨t, s₂N, ex, S₂⟩ := stage₁ hc (hpN.setup hc.n7) (rest := .seq (TCombCfg.comb c.combCfg) (.seq (ChainCfg.pow c.powP) (.block [])))
+  obtain ⟨t, s₂N, ex, S₂⟩ := stage₁ hc (hpN.setup hc.n7) (rest := .seq (TCombCfg.comb c.combCfg) (.seq c.pPow (.block [])))
     (Q := St₂ c sN (sN.gpr .x4)) fun _ S₁ => stage₂ hc hC hT hpN.tbl S₁ fun _ S₂ => WP.block_nil S₂
   rw [hb] at S₂
   -- The same run, with the public key's regions.

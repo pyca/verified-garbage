@@ -260,7 +260,7 @@ theorem exchange_eq' (c : Cfg) : Impl.Ecdh.AArch64.Cfg.exchange c =
     .seq (.block Impl.Ecdh.AArch64.Cfg.args) (.seq (.seq (.block c.setup)
       (.seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n)) (.block [])))
     (.seq (.block (Impl.Ecdh.AArch64.Cfg.peer c)) (.seq (Impl.Ecdh.AArch64.Cfg.validate c)
-    (.seq (c.winPrep (c.sl K)) (.seq (WinCfg.window (winQ c)) (.seq (ChainCfg.pow c.powP)
+    (.seq (c.winPrep (c.sl K)) (.seq (WinCfg.window (winQ c)) (.seq c.pPow
       (Impl.Ecdh.AArch64.Cfg.middle c))))))) := rfl
 
 /-- `vg_ecdh_<curve>` computes the specification's shared secret and restores

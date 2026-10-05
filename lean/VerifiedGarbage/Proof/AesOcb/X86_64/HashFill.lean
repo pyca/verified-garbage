@@ -5,8 +5,8 @@ import VerifiedGarbage.Proof.AesOcb.X86_64.LNtz
 # AES-OCB on x86-64: filling the buffer of `HASH` (`hashFill`)
 
 Untrusted: everything here is checked by Lean. `hashFill` computes the next
-offset of `HASH`, `Offset_{i+1} = Offset_i ⊕ L_{ntz(i+1)}` (`lNtz_ok`,
-`xor16_ok`), and writes the next block of the associated data XORed with it
+offset of `HASH`, `Offset_{i+1} = Offset_i ⊕ L_{ntz(i+1)}` (`lAddr_ok`, the
+table, `xor16_ok`), and writes the next block of the associated data XORed with it
 to the next slot of the buffer at `W + bufO` (`hashFill_ok`).
 -/
 
@@ -31,8 +31,7 @@ theorem ofNat_imm (a k : Nat) (hk : k < 2 ^ 31) :
 
 /-- What one `hashFill` leaves. -/
 structure FillPost (W A : Addr) (l : Block) (j i c : Nat) (t t' : State) : Prop where
-  frame : Frame [⟨W + BitVec.ofNat 64 lO, 16⟩, ⟨W + BitVec.ofNat 64 ohO, 16⟩,
-    ⟨W + BitVec.ofNat 64 (384 + 16 * i), 16⟩] t.mem t'.mem
+  frame : Frame [⟨W + BitVec.ofNat 64 ohO, 16⟩, ⟨W + BitVec.ofNat 64 (384 + 16 * i), 16⟩] t.mem t'.mem
   oh : blockAtMem t'.mem (W + BitVec.ofNat 64 ohO) = offAt 0 l (j + i + 1)
   buf : blockAtMem t'.mem (W + BitVec.ofNat 64 (384 + 16 * i)) =
     blockAtMem t.mem (A + BitVec.ofNat 64 (16 * (j + i))) ^^^ offAt 0 l (j + i + 1)
@@ -51,23 +50,25 @@ theorem hashFill_ok {K W SP : Addr} (L : Lay K W SP) {t : State} (E : Env K W SP
     (hbp : t.gpr .rbp = BitVec.ofNat 64 (j + i + 1)) (hbx : t.gpr .rbx = A + BitVec.ofNat 64 (16 * (j + i)))
     (hsi : t.gpr .rsi = W + BitVec.ofNat 64 (384 + 16 * i)) (h13 : t.gpr .r13 = BitVec.ofNat 64 i)
     (h12 : t.gpr .r12 = BitVec.ofNat 64 c)
-    (hl0 : blockAtMem t.mem (W + BitVec.ofNat 64 l0O) = lAt l 0)
+    {M : Nat} (T : Tbl W l M t.mem) (hM : j + i + 1 ≤ M)
     (hoh : blockAtMem t.mem (W + BitVec.ofNat 64 ohO) = offAt 0 l (j + i))
     (hA : Covers [⟨A + BitVec.ofNat 64 (16 * (j + i)), 16⟩] (t.rd ++ t.wr))
-    (hAW : (⟨A + BitVec.ofNat 64 (16 * (j + i)), 16⟩ : Region).Disjoint ⟨W, 2560⟩) :
+    (hAW : (⟨A + BitVec.ofNat 64 (16 * (j + i)), 16⟩ : Region).Disjoint ⟨W, 3584⟩) :
     WP isa hashFill t (FillPost W A l j i c t) := by
-  unfold hashFill
-  refine WP.seq (WP.mono (lNtz_ok E (by omega) (by omega) hbp hl0) fun t₁ P₁ => ?_)
-  have h15₁ : t₁.gpr .r15 = W := by rw [P₁.gpr _ (by decide) (by decide) (by decide) (by decide) (by decide), E.r15]
-  obtain ⟨t₂, run₂, B₂⟩ := xor16_ok (s := t₁) (b := .r15) (a := lO) (d := ohO) h15₁ h15₁ (by decide) (by decide)
-    (by rw [P₁.rd, P₁.wr]; exact E.perm.wR (by decide)) (by rw [P₁.rd, P₁.wr]; exact E.perm.wR (by decide))
-    (by rw [P₁.wr]; exact E.perm.wW (by decide)) (by rw [P₁.wr]; exact E.perm.wW (by decide))
+  have hM60 := T.lt
+  obtain ⟨t₁, run₁, h1₁, g₁, m₁, -, rd₁, wr₁⟩ := lAddr_ok E.r15 (i := j + i + 1) (by omega) (by omega) hbp
+  have hs := slot_lt (ntz (j + i + 1))
+  have h15₁ : t₁.gpr .r15 = W := by rw [g₁ _ (by decide) (by decide) (by decide), E.r15]
+  obtain ⟨t₂, run₂, B₂⟩ := xor16_ok (s := t₁) (b := .rcx) (a := tblO) (d := ohO) h15₁ h1₁ (by decide) (by decide)
+    (by rw [slot_addr, rd₁, wr₁]; exact E.perm.wR (by simp only [tblO]; omega))
+    (by rw [Offset.add_add, rd₁, wr₁, show 16 * slot (ntz (j + i + 1)) + (tblO + 8) =
+          tblO + 16 * slot (ntz (j + i + 1)) + 8 by omega]; exact E.perm.wR (by simp only [tblO]; omega))
+    (by rw [wr₁]; exact E.perm.wW (by decide)) (by rw [wr₁]; exact E.perm.wW (by decide))
   have oh₂ : blockAtMem t₂.mem (W + BitVec.ofNat 64 ohO) = offAt 0 l (j + i + 1) := by
-    rw [B₂.val, P₁.val, blockAtMem_frame P₁.frame (fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact L.w_w (.inr (by decide)) (by decide) (by decide)), hoh]
+    rw [B₂.val, slot_addr, m₁, T.ntz (by omega) hM, hoh]
     rfl
   have g₂ : ∀ r, r ≠ .rax → r ≠ .rdx → r ≠ .rcx → r ≠ .r8 → r ≠ .r11 → t₂.gpr r = t.gpr r := fun r h1 h2 h3 h4 h5 => by
-    rw [B₂.gpr r (by simp [h1, h2]), P₁.gpr r h1 h2 h3 h4 h5]
+    rw [B₂.gpr r (by simp [h1, h2]), g₁ r h1 h3 h2]
   have hbx₂ : t₂.gpr .rbx = A + BitVec.ofNat 64 (16 * (j + i)) := by
     rw [g₂ _ (by decide) (by decide) (by decide) (by decide) (by decide), hbx]
   have hsi₂ : t₂.gpr .rsi = W + BitVec.ofNat 64 (384 + 16 * i) := by
@@ -79,14 +80,12 @@ theorem hashFill_ok {K W SP : Addr} (L : Lay K W SP) {t : State} (E : Env K W SP
     rw [g₂ _ (by decide) (by decide) (by decide) (by decide) (by decide), h13]
   have h12₂ : t₂.gpr .r12 = BitVec.ofNat 64 c := by
     rw [g₂ _ (by decide) (by decide) (by decide) (by decide) (by decide), h12]
-  have rd₂ : t₂.rd = t.rd := by rw [B₂.rd, P₁.rd]
-  have wr₂ : t₂.wr = t.wr := by rw [B₂.wr, P₁.wr]
-  have fr₂ : Frame [⟨W + BitVec.ofNat 64 lO, 16⟩, ⟨W + BitVec.ofNat 64 ohO, 16⟩] t.mem t₂.mem :=
-    (P₁.frame.mono (by simp)).trans (B₂.frame.mono (by simp))
+  have rd₂ : t₂.rd = t.rd := by rw [B₂.rd, rd₁]
+  have wr₂ : t₂.wr = t.wr := by rw [B₂.wr, wr₁]
+  have fr₂ : Frame [⟨W + BitVec.ofNat 64 ohO, 16⟩] t.mem t₂.mem := by rw [← m₁]; exact B₂.frame
   have eA : blockAtMem t₂.mem (A + BitVec.ofNat 64 (16 * (j + i))) = blockAtMem t.mem (A + BitVec.ofNat 64 (16 * (j + i))) :=
     blockAtMem_frame fr₂ fun r hr => by
-      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl <;> exact hAW.sub_right (Lay.wSub (by decide))
+      simp only [List.mem_singleton] at hr; subst hr; exact hAW.sub_right (Lay.wSub (by decide))
   have ea0 : A + BitVec.ofNat 64 (16 * (j + i)) + BitVec.ofNat 64 0 = A + BitVec.ofNat 64 (16 * (j + i)) :=
     BitVec.add_zero _
   have ew0 : W + BitVec.ofNat 64 (384 + 16 * i) + BitVec.ofNat 64 0 = W + BitVec.ofNat 64 (384 + 16 * i) :=
@@ -100,8 +99,10 @@ theorem hashFill_ok {K W SP : Addr} (L : Lay K W SP) {t : State} (E : Env K W SP
   have wS₀ : InRegions t₂.wr (W + BitVec.ofNat 64 (384 + 16 * i)) 8 := by rw [wr₂]; exact E.perm.wW (by omega)
   have wS₈ : InRegions t₂.wr (W + BitVec.ofNat 64 (384 + 16 * i) + BitVec.ofNat 64 8) 8 := by
     rw [wr₂, Offset.add_add]; exact E.perm.wW (by omega)
-  refine WP.of_runBlock ⟨_, by rw [runBlock_append, run₂, Option.bind_some]; orun [hbx₂, hsi₂, h15₂, hbp₂, h13₂,
-    h12₂, ea0, ew0, rA₀, rA₈, rO₀, rO₈, wS₀, wS₈], ?_⟩
+  unfold hashFill
+  refine WP.of_runBlock ⟨_, by
+    rw [runBlock_append, runBlock_append, run₁, Option.bind_some, run₂, Option.bind_some]
+    orun [hbx₂, hsi₂, h15₂, hbp₂, h13₂, h12₂, ea0, ew0, rA₀, rA₈, rO₀, rO₈, wS₀, wS₈], ?_⟩
   have fs : ∀ (M : Mem) (v₀ v₁ : BitVec 64), Frame [⟨W + BitVec.ofNat 64 (384 + 16 * i), 16⟩] M
       ((M.writeW (W + BitVec.ofNat 64 (384 + 16 * i)) v₀).writeW (W + BitVec.ofNat 64 (384 + 16 * i) + 8#64) v₁) :=
     fun M v₀ v₁ => frame_store2 _ _ _ _

@@ -22,6 +22,7 @@ open VG.Impl.CmacAes.X86_64 (at_)
 open VG.Proof.CmacAes.X86_64 (offset_nat)
 open VG.Proof.CmacAes.Stream.X86_64 (FArgs fin_rel)
 open VG.Proof.Aes.X86_64 (Ctr32Impl)
+open VG.Proof.CmacAes.X86_64 (UpdateImpl)
 
 variable {s₀ s₀' : State} {C A P W D : Addr} {R N L : Nat}
 
@@ -127,10 +128,10 @@ theorem start_rel (v : Ctr32Impl) (h : EPre s₀ C A P W D R N L) (h' : EPre s�
   exact (blk.mono (fun _ _ p => p) fun _ _ p => p.2).seq (f.mono (fun _ _ p => p) fun _ _ p => p.2)
 
 /-- One component in both runs. -/
-theorem adBody_rel (v : Ctr32Impl) (h : EPre s₀ C A P W D R N L) (h' : EPre s₀' C A P W D R N L)
+theorem adBody_rel (v : UpdateImpl) (h : EPre s₀ C A P W D R N L) (h' : EPre s₀' C A P W D R N L)
     (hq : EPub s₀ s₀' A N) {i : Nat} (hiN : i < N) :
     RelCT isa (AA s₀ s₀' C A P W D R N L i)
-      (.seq (.block adNext) (.seq (cmacOf v.callee v.suffix stOff) (.block adStep)))
+      (.seq (.block adNext) (.seq (cmacOf v.callee v.ctr.callee v.ctr.suffix stOff) (.block adStep)))
       fun a b => (AInv s₀ C A P W D R N L (i + 1) a ∧ a.zf = some (decide (i + 1 = N))) ∧
         AInv s₀' C A P W D R N L (i + 1) b ∧ b.zf = some (decide (i + 1 = N)) := by
   have hQ := h.comps _ (comp_mem s₀.mem A hiN)
@@ -177,9 +178,9 @@ theorem adBody_rel (v : Ctr32Impl) (h : EPre s₀ C A P W D R N L) (h' : EPre s�
     (fun _ _ p => p) fun _ _ p => p.2
 
 /-- S2V over the components in both runs. -/
-theorem ads_rel (v : Ctr32Impl) (h : EPre s₀ C A P W D R N L) (h' : EPre s₀' C A P W D R N L)
+theorem ads_rel (v : UpdateImpl) (h : EPre s₀ C A P W D R N L) (h' : EPre s₀' C A P W D R N L)
     (hq : EPub s₀ s₀' A N) :
-    RelCT isa (AA s₀ s₀' C A P W D R N L 0) (s2vAds v.callee v.suffix) (AA s₀ s₀' C A P W D R N L N) := by
+    RelCT isa (AA s₀ s₀' C A P W D R N L 0) (s2vAds v.callee v.ctr.callee v.ctr.suffix) (AA s₀ s₀' C A P W D R N L N) := by
   obtain ⟨_, hH⟩ : ∃ hc, (taint.check (Taint.ofRegs [.rbx, .rbp, .r12, .r15, .rsp])
       (.block [.mov .rax (.mem (at_ .r15 leftOff)), .alu .test .rax (.reg .rax)]) hc).isSome = true :=
     ⟨_, by taint_decide⟩
@@ -216,9 +217,9 @@ theorem ads_rel (v : Ctr32Impl) (h : EPre s₀ C A P W D R N L) (h' : EPre s₀'
     exact ⟨N - (i + 1), by omega, i + 1, rfl, by omega, ha, hb⟩
 
 /-- S2V of the associated data in both runs. -/
-theorem encS2v_rel (v : Ctr32Impl) (h : EPre s₀ C A P W D R N L) (h' : EPre s₀' C A P W D R N L)
+theorem encS2v_rel (v : UpdateImpl) (h : EPre s₀ C A P W D R N L) (h' : EPre s₀' C A P W D R N L)
     (hq : EPub s₀ s₀' A N) :
-    RelCT isa (fun a b => a = s₀ ∧ b = s₀') (encS2v v.callee v.suffix)
+    RelCT isa (fun a b => a = s₀ ∧ b = s₀') (encS2v v.callee v.ctr.callee v.ctr.suffix)
       fun a b => SDone s₀ C A P W D R N L a ∧ SDone s₀' C A P W D R N L b := by
   obtain ⟨_, hE⟩ : ∃ hc, (taint.check (Taint.ofRegs [.r15])
       (.block [.mov .r13 (.mem (at_ .r15 dataOff)), .mov .r14 (.mem (at_ .r15 lenOff))]) hc).isSome = true :=
@@ -228,12 +229,12 @@ theorem encS2v_rel (v : Ctr32Impl) (h : EPre s₀ C A P W D R N L) (h' : EPre s�
       simp only [List.mem_singleton] at hr; subst hr; rw [hab.1.r15, hab.2.r15]) hE).wp
     (F₁ := SDone s₀ C A P W D R N L) (F₂ := SDone s₀' C A P W D R N L)
     fun a b hab => ⟨adsEnd_wp h hab.1, adsEnd_wp h' hab.2⟩
-  exact RelCT.assoc ((start_rel v h h' hq.rsp).seq ((ads_rel v h h' hq).seq
+  exact RelCT.assoc ((start_rel v.ctr h h' hq.rsp).seq ((ads_rel v h h' hq).seq
     (e.mono (fun _ _ p => p) fun _ _ p => p.2)))
 
-theorem encryptCore_rel (v : Ctr32Impl) (h : EPre s₀ C A P W D R N L) (h' : EPre s₀' C A P W D R N L)
+theorem encryptCore_rel (v : UpdateImpl) (h : EPre s₀ C A P W D R N L) (h' : EPre s₀' C A P W D R N L)
     (hq : EPub s₀ s₀' A N) :
-    RelCT isa (fun a b => a = s₀ ∧ b = s₀') (encryptCore v.callee v.suffix) fun _ _ => True :=
+    RelCT isa (fun a b => a = s₀ ∧ b = s₀') (encryptCore v.callee v.ctr.callee v.ctr.suffix) fun _ _ => True :=
   (encS2v_rel v h h' hq).seq ((sealTail_rel v h.env h'.env hq.rsp h.cp h.pw h'.pw).mono
     (fun _ _ p => ⟨p.1.spre, p.2.spre⟩) fun _ _ p => p)
 
@@ -262,9 +263,9 @@ theorem sivOut_rel {T : Addr} (q1 : s₀.gpr .rsp = s₀'.gpr .rsp) :
     rw [List.take_append_drop]]
   exact RelCT.block_append ((a.mono (fun _ _ p => p) fun _ _ p => p.2).seq b)
 
-theorem encrypt_rel (v : Ctr32Impl) (h : EPre s₀ C A P W D R N L) (h' : EPre s₀' C A P W D R N L)
+theorem encrypt_rel (v : UpdateImpl) (h : EPre s₀ C A P W D R N L) (h' : EPre s₀' C A P W D R N L)
     {T : Addr} (hT : SivArg s₀ P W D T L) (hT' : SivArg s₀' P W D T L) (hq : EPub s₀ s₀' A N) :
-    RelCT isa (fun a b => a = s₀ ∧ b = s₀') (encrypt v.callee v.suffix) fun _ _ => True :=
+    RelCT isa (fun a b => a = s₀ ∧ b = s₀') (encrypt v.callee v.ctr.callee v.ctr.suffix) fun _ _ => True :=
   ((encryptCore_rel v h h' hq).wp (F₁ := OutPre s₀ W T) (F₂ := OutPre s₀' W T)
     fun a b hab => by obtain ⟨rfl, rfl⟩ := hab; exact ⟨encryptCore_out v h hT, encryptCore_out v h' hT'⟩).seq
     ((sivOut_rel hq.rsp).mono (fun _ _ p => p.2) fun _ _ p => p)
@@ -302,9 +303,9 @@ theorem sivIn_rel (h : EPre s₀ C A P W D R N L) (h' : EPre s₀' C A P W D R N
       by rw [List.take_append_drop]; exact WP.mono (sivIn_wp h' hT' hab.2) (fun _ p => ⟨p.1, p.2.1⟩)⟩).mono
     (fun _ _ p => p) fun _ _ p => p.2
 
-theorem decrypt_rel (v : Ctr32Impl) (h : EPre s₀ C A P W D R N L) (h' : EPre s₀' C A P W D R N L)
+theorem decrypt_rel (v : UpdateImpl) (h : EPre s₀ C A P W D R N L) (h' : EPre s₀' C A P W D R N L)
     {T : Addr} (hT : SivArg s₀ P W D T L) (hT' : SivArg s₀' P W D T L) (hq : EPub s₀ s₀' A N) :
-    RelCT isa (fun a b => a = s₀ ∧ b = s₀') (decrypt v.callee v.suffix) fun _ _ => True :=
+    RelCT isa (fun a b => a = s₀ ∧ b = s₀') (decrypt v.callee v.ctr.callee v.ctr.suffix) fun _ _ => True :=
   (encS2v_rel v h h' hq).seq ((sivIn_rel h h' hT hT' hq.rsp).seq
     ((openTail_rel v h.env h'.env hq.rsp h.cp h.pw h'.pw).mono (fun _ _ p => ⟨p.1.1, p.2.1⟩) fun _ _ p => p))
 

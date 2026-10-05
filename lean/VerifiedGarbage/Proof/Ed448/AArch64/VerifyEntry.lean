@@ -1,4 +1,6 @@
-import VerifiedGarbage.Proof.Ed448.AArch64.BaseField
+import VerifiedGarbage.Impl.Ed448.AArch64.ScalarBase
+import VerifiedGarbage.Proof.X448.AArch64.Weak.Ops
+import VerifiedGarbage.Proof.Ed448.Formulas
 import VerifiedGarbage.Proof.X448.AArch64.Base.Const
 import VerifiedGarbage.Proof.X448.AArch64.Weak.Main
 import VerifiedGarbage.Impl.Ed448.AArch64.VerifyEquation
@@ -9,8 +11,7 @@ import VerifiedGarbage.Impl.Ed448.AArch64.VerifyEquation
 `ventry`: `x12 = 2^28 - 1`, `x19` and `x20` saved in the working space's
 first 16 bytes, `x20 = 0` (no check has failed), every slot zeroed, then `B`
 in slots 8–10 and `d` in slot 11, each from immediates (`constSlot`). A
-constant slot keeps every slot's limbs bounded (`constE_ok`), so `qInit`
-sets `Q` to the neutral point after decoding `A`.
+constant slot keeps every slot's limbs bounded (`constE_ok`).
 -/
 
 namespace VG.Proof.Ed448.AArch64
@@ -170,22 +171,5 @@ theorem ventry_ok {s : State} {base : Addr} (hb : s.gpr .x3 = base) (hw : (⟨ba
     (ka.trans (kb.mono (by simp))).trans (kt.mono (by simp)), ?_, e0, pB, dt⟩
   exact ((oa.mono (by omega) (by omega)).trans (ob.mono (by simp only [slot]; omega)
     (by simp only [slot]; omega))).trans (ot.mono (by omega) (by omega))
-
-/-- `Q` the neutral point: slots 1 and 2 set to 1 (slot 0 is zero). -/
-theorem qInit_ok {s : State} {base : Addr} (hs : Scr s base) (hb : BoundedEnv s.mem base)
-    (h0 : E s.mem base 0 = 0) :
-    WP isa (.block qInit) s fun t =>
-      BoundedEnv t.mem base ∧ pt (E t.mem base) 0 1 2 = Spec.Ed448.identity ∧
-      (∀ i : Fin 22, i ≠ 1 → i ≠ 2 → E t.mem base i = E s.mem base i) ∧
-      Outside base 192 192 s.mem t.mem ∧ Keeps [.x4] s t := by
-  rw [qInit, WP.block_append_iff]
-  refine WP.mono (constE_ok hs hb 1 1) fun t1 ⟨b1, v1, o1, m1, k1⟩ => ?_
-  refine WP.mono (constE_ok (hs.of_keeps k1 (by decide)) b1 2 1) fun t ⟨b2, v2, o2, m2, k2⟩ => ?_
-  refine ⟨b2, ?_, fun i h1 h2 => by rw [o2 i h2, o1 i h1], ?_, k1.trans k2⟩
-  · simp only [pt, Spec.Ed448.identity]
-    rw [o2 0 (by decide), o1 0 (by decide), h0, o2 1 (by decide), v1, v2]
-  · have m1' : Outside base 192 64 s.mem t1.mem := m1
-    have m2' : Outside base 320 64 t1.mem t.mem := m2
-    exact (m1'.mono (by decide) (by decide)).trans (m2'.mono (by decide) (by decide))
 
 end VG.Proof.Ed448.AArch64

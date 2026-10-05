@@ -51,10 +51,10 @@ theorem spec_pre {s : State}
     hdw _ (by simp), hdw _ (by simp), by rw [hrd]; rfl, hw, od, og, oc, dc, gc, ro, rd, rg, rc, ko, kd, kg, kc,
     no, nd, ng, nc⟩
 
-theorem sat_spec : (Spec.Ecdsa.Rfc6979.P384Sha384.inst.signContract (X86_64.abi.withConsts Impl.Ecdsa.X86_64.p384.combConsts) 240).pre (satState 48 48 satMem 337920) := by
+theorem sat_spec : (Spec.Ecdsa.Rfc6979.P384Sha384.inst.signContract (X86_64.abi.withConsts Impl.Ecdsa.X86_64.p384.combConsts) 240).pre (satState 48 48 satMem [⟨0x100000, 337920⟩]) := by
   have hl := p384W_length
-  have held : ∀ i < VG.Proof.Ecdsa.X86_64.P384.p384W.length, (satState 48 48 satMem 337920).mem.readW
-      ((satState 48 48 satMem 337920).syms "VG_P384_COMB" + BitVec.ofNat 64 (8 * i)) 64 = VG.Proof.Ecdsa.X86_64.P384.p384W.getD i 0 :=
+  have held : ∀ i < VG.Proof.Ecdsa.X86_64.P384.p384W.length, (satState 48 48 satMem [⟨0x100000, 337920⟩]).mem.readW
+      ((satState 48 48 satMem [⟨0x100000, 337920⟩]).syms "VG_P384_COMB" + BitVec.ofNat 64 (8 * i)) 64 = VG.Proof.Ecdsa.X86_64.P384.p384W.getD i 0 :=
     satMem_held
   refine spec_pre (by rw [hl]; rfl) rfl (Region.disjoint_of_sep (by decide))
     (Region.disjoint_of_sep (by decide)) (Region.disjoint_of_sep (by decide))

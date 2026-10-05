@@ -19,6 +19,7 @@ namespace VG.Proof.AesCcm.X86_64
 open VG VG.X86_64 VG.Impl.AesCcm.X86_64
 open VG.Impl.AesGcm.X86_64 (at_ imm ptr recv cmp)
 open VG.Proof.Aes.X86_64 (Ctr32Impl)
+open VG.Proof.CmacAes.X86_64 (UpdateImpl)
 
 theorem openLoad_check : ∃ hc, (taint.check (ccmT [])
     (.block [.mov .rbx (.mem (at_ .r15 tlO)), .mov .rsi (.mem (at_ .rsp 24))]) hc).isSome = true :=
@@ -62,28 +63,28 @@ theorem openCmp_one {K W SP : Addr} (L : Lay K W SP) {R : Nat} {N A D T : Addr} 
   · exact ⟨wC W, by simp, Offset.sub W (by decide) (by decide)⟩
 
 /-- `open` after its entry, up to the comparison, in one run. -/
-theorem openFront_mid (v : Ctr32Impl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} {N A D T : Addr}
+theorem openFront_mid (v : UpdateImpl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} {N A D T : Addr}
     {nl al n tl : Nat} (hR : R = 10 ∨ R = 12 ∨ R = 14) (h7 : 7 ≤ nl) (h13 : nl ≤ 13) (ht4 : 4 ≤ tl)
     (ht16 : tl ≤ 16) (hte : tl % 2 = 0) (hn' : n < 256 ^ (15 - nl)) (hdk : (⟨K, 240⟩ : Region).Disjoint ⟨D, n⟩)
     {s : State} (h : Pre₀ K W SP R N A D nl al n tl T s) :
-    WP isa (openFront v.callee v.suffix) s fun s' => Mid K W SP R N A D nl al n tl T s' ∧ s'.rd = s.rd ∧
+    WP isa (openFront v.callee v.ctr.callee) s fun s' => Mid K W SP R N A D nl al n tl T s' ∧ s'.rd = s.rd ∧
       s'.wr = s.wr := by
   obtain ⟨o, hN, hA, hD, hT⟩ := h
   obtain ⟨t, s', e, q⟩ := WP.seq (WP.mono (ctrs_mid L o hN hA hD hT h7 h13) fun _ h₁ =>
-    WP.seq (WP.mono (ctr_mid v L hR h7 h13 hn' hdk h₁) fun _ h₂ =>
+    WP.seq (WP.mono (ctr_mid v.ctr L hR h7 h13 hn' hdk h₁) fun _ h₂ =>
     WP.seq (WP.mono (mac_mid v L hR h7 h13 ht4 ht16 hte hn' (.inr rfl) h₂) fun _ h₃ =>
-    tag_mid v L hR h7 h13 (.inr rfl) h₃)))
+    tag_mid v.ctr L hR h7 h13 (.inr rfl) h₃)))
   exact ⟨t, s', e, q, Exec.rdwr e⟩
 
 /-- `open` after its entry, in two runs. -/
-theorem openBody_rel (v : Ctr32Impl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} {N A D T : Addr}
+theorem openBody_rel (v : UpdateImpl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} {N A D T : Addr}
     {nl al n tl : Nat} (hR : R = 10 ∨ R = 12 ∨ R = 14) (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 2560⟩)
     (hn : n ≤ 2 ^ 64) (h7 : 7 ≤ nl) (h13 : nl ≤ 13) (ht4 : 4 ≤ tl) (ht16 : tl ≤ 16) (hte : tl % 2 = 0)
     (hal : al < 2 ^ 64) (hn' : n < 256 ^ (15 - nl)) (hdk : (⟨K, 240⟩ : Region).Disjoint ⟨D, n⟩)
     {P : State → State → Prop}
     (hP : ∀ s₁ s₂, P s₁ s₂ → (Pre₀ K W SP R N A D nl al n tl T s₁ ∧ TagR W T tl s₁) ∧
       (Pre₀ K W SP R N A D nl al n tl T s₂ ∧ TagR W T tl s₂)) :
-    RelCT isa P (.seq (openFront v.callee v.suffix)
+    RelCT isa P (.seq (openFront v.callee v.ctr.callee)
       (.seq (.block [.mov .rbx (.mem (at_ .r15 tlO)), .mov .rsi (.mem (at_ .rsp 24))]) (.seq recv (.seq (cmp uO)
       (.seq (.block [.store (at_ .r15 okO) .rax]) (.seq mask
         (.block (([.mov .rax (.mem (at_ .r15 okO))] : List Instr) ++ restore)))))))) fun _ _ => True := by
@@ -93,25 +94,25 @@ theorem openBody_rel (v : Ctr32Impl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} 
     (F₁ := Mid K W SP R N A D nl al n tl T) (F₂ := Mid K W SP R N A D nl al n tl T) fun s₁ s₂ h => by
       obtain ⟨⟨⟨o₁, n₁, a₁, d₁, t₁⟩, -⟩, ⟨⟨o₂, n₂, a₂, d₂, t₂⟩, -⟩⟩ := hP _ _ h
       exact ⟨ctrs_mid L o₁ n₁ a₁ d₁ t₁ h7 h13, ctrs_mid L o₂ n₂ a₂ d₂ t₂ h7 h13⟩
-  have r₂ := (rel_of_pt (c := ctr v.callee)
+  have r₂ := (rel_of_pt (c := ctr v.ctr.callee)
     (P := fun s₁ s₂ => True ∧ Mid K W SP R N A D nl al n tl T s₁ ∧ Mid K W SP R N A D nl al n tl T s₂)
     fun σ₁ σ₂ h => by
       obtain ⟨_, C₁⟩ := h.2.1.ctx L hR h7 h13 hn' hdk
       obtain ⟨_, C₂⟩ := h.2.2.ctx L hR h7 h13 hn' hdk
-      exact crypt_rel v C₁ C₂ h.2.1.1 h.2.2.1).wp
+      exact crypt_rel v.ctr C₁ C₂ h.2.1.1 h.2.2.1).wp
     (F₁ := Mid K W SP R N A D nl al n tl T) (F₂ := Mid K W SP R N A D nl al n tl T)
-    fun _ _ h => ⟨ctr_mid v L hR h7 h13 hn' hdk h.2.1, ctr_mid v L hR h7 h13 hn' hdk h.2.2⟩
+    fun _ _ h => ⟨ctr_mid v.ctr L hR h7 h13 hn' hdk h.2.1, ctr_mid v.ctr L hR h7 h13 hn' hdk h.2.2⟩
   have r₃ := (mac_rel v L hR hDW hn h7 h13 ht4 ht16 hte hal hn' hy
     (Q := fun s₁ s₂ => True ∧ Mid K W SP R N A D nl al n tl T s₁ ∧ Mid K W SP R N A D nl al n tl T s₂)
     fun _ _ h => ⟨⟨h.2.1.1, h.2.1.2.1, h.2.1.2.2.1, h.2.1.2.2.2.1⟩,
       ⟨h.2.2.1, h.2.2.2.1, h.2.2.2.2.1, h.2.2.2.2.2.1⟩⟩).wp
     (F₁ := Mid K W SP R N A D nl al n tl T) (F₂ := Mid K W SP R N A D nl al n tl T)
     fun _ _ h => ⟨mac_mid v L hR h7 h13 ht4 ht16 hte hn' hy h.2.1, mac_mid v L hR h7 h13 ht4 ht16 hte hn' hy h.2.2⟩
-  have r₄ := (tag_rel v L hR hDW hn h7 h13 hy
+  have r₄ := (tag_rel v.ctr L hR hDW hn h7 h13 hy
     (Q := fun s₁ s₂ => True ∧ Mid K W SP R N A D nl al n tl T s₁ ∧ Mid K W SP R N A D nl al n tl T s₂)
     fun _ _ h => ⟨⟨h.2.1.1, h.2.1.2.1⟩, ⟨h.2.2.1, h.2.2.2.1⟩⟩).wp
     (F₁ := Mid K W SP R N A D nl al n tl T) (F₂ := Mid K W SP R N A D nl al n tl T)
-    fun _ _ h => ⟨tag_mid v L hR h7 h13 hy h.2.1, tag_mid v L hR h7 h13 hy h.2.2⟩
+    fun _ _ h => ⟨tag_mid v.ctr L hR h7 h13 hy h.2.1, tag_mid v.ctr L hR h7 h13 hy h.2.2⟩
   -- The pieces before the comparison keep the permissions, so the received tag stays readable.
   have front := (RelCT.seq r₁ (RelCT.seq r₂ (RelCT.seq r₃ r₄))).wp
     (F₁ := TagR W T tl) (F₂ := TagR W T tl) fun s₁ s₂ h => by
@@ -171,9 +172,9 @@ theorem entry_open_pub {s₀ s₀' : State} (hp' : openX86_64.pre s₀') (hq : o
   exact entry_open hp'
 
 /-- `vg_aes_ccm_open`, in two runs with the same public arguments. -/
-theorem open_rel (v : Ctr32Impl) {s₀ s₀' : State} (hp : openX86_64.pre s₀) (hp' : openX86_64.pre s₀')
+theorem open_rel (v : UpdateImpl) {s₀ s₀' : State} (hp : openX86_64.pre s₀) (hp' : openX86_64.pre s₀')
     (hq : onePub s₀ s₀') :
-    RelCT isa (fun s₁ s₂ => s₁ = s₀ ∧ s₂ = s₀') («open» v.callee v.suffix) fun _ _ => True := by
+    RelCT isa (fun s₁ s₂ => s₁ = s₀ ∧ s₂ = s₀') («open» v.callee v.ctr.callee) fun _ _ => True := by
   have A := args_of_open hp
   have Ar := A.1.1
   refine RelCT.seq (entry_rel (pub_regs hq) (hq.2.2.2.2.2.2.2 4 (by decide)) (argW_in Ar rfl)

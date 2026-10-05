@@ -156,6 +156,27 @@ def xorLoop : Prog isa :=
     (.loop (.block [.movzx8 .rax dstB, .movzx8 .r11 srcB, .alu .xor .rax (.reg .r11), .store8 dstB .rax,
       .alu .add .r10 (imm 1), .alu .cmp .r10 (.reg .rcx)]) .ne)
 
+/-- `[r12 + r10]`. -/
+def maskByte : MemOp := { base := .r12, index := some .r10 }
+
+/-- The `⌊n / 8⌋` whole words at `r12` (counted down in `rcx`) ANDed with the
+mask in `r11`, 8 bytes at a time from `r10`. -/
+def maskWords : Prog isa :=
+  .loop (.block [.mov .rax (.mem maskByte), .alu .and .rax (.reg .r11), .store maskByte .rax,
+    .alu .add .r10 (imm 8), .alu .sub .rcx (imm 1)]) .ne
+
+/-- The bytes at `r12` from `r10` to `rbp` ANDed with the mask in `r11`, one
+at a time. -/
+def maskBytes : Prog isa :=
+  .loop (.block [.movzx8 .rax maskByte, .alu .and .rax (.reg .r11), .store8 maskByte .rax,
+    .alu .add .r10 (imm 1), .alu .cmp .r10 (.reg .rbp)]) .ne
+
+/-- The `rbp` bytes at `r12` ANDed with the mask in `r11` (`0 − ok`): the
+whole words (`rcx = ⌊rbp / 8⌋` of them, ZF set if none), then the last
+`rbp mod 8` bytes, from `r10 = 0`. -/
+def maskTail : Prog isa :=
+  .seq (.ite .e (.block []) maskWords) (.seq (.block [.alu .cmp .r10 (.reg .rbp)]) (.ite .e (.block []) maskBytes))
+
 /-- `rcx := min (16 - rbx, rbp)`. -/
 def minLen : Prog isa :=
   .seq (.block [.mov32 .rcx (imm 16), .alu .sub .rcx (.reg .rbx), .alu .cmp .rbp (.reg .rcx)])

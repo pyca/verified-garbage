@@ -4,7 +4,7 @@ import VerifiedGarbage.Proof.Mont.X86.Csub
 /-!
 # Montgomery arithmetic on x86 (32-bit): the operations
 
-For a modulus `m` in the working space (`ModOk`) and an accumulator of
+For a modulus `m` in the working space (`ModOkW`) and an accumulator of
 `accLen M` bytes at `acc` apart from the numbers (`OpLay`): `mul acc o a b`
 writes `[a] [b] R⁻¹ mod m` to `[o]` (`mul_ok`), `add` writes
 `[a] + [b] mod m` (`add_ok`) and `sub` writes `[a] - [b] mod m` (`sub_ok`),
@@ -84,7 +84,7 @@ theorem m_pos_of_inv {m : Nat} {minv : Nat} (h : (m * minv + 1) % 2 ^ 64 = 0) : 
 
 /-- `[o] = [a] [b] R⁻¹ mod m`. -/
 theorem mul_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M : Mod} {m : Nat}
-    (hM : ModOk M size m s.mem base) {acc o a b : Nat} (hL : OpLay M size acc o a b)
+    (hM : ModOkW M size m s.mem base) {acc o a b : Nat} (hL : OpLay M size acc o a b)
     (hB : wordsVal s.mem base b M.n < m) :
     WP isa (mul M acc o a b) s fun s' => OpKeep M base acc o s s' ∧
       wordsVal s'.mem base o M.n < m ∧
@@ -137,7 +137,7 @@ theorem mul_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M 
 
 /-- `[o] = [a] + [b] mod m`. -/
 theorem add_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M : Mod} {m : Nat}
-    (hM : ModOk M size m s.mem base) {acc o a b : Nat} (hL : OpLay M size acc o a b)
+    (hM : ModOkW M size m s.mem base) {acc o a b : Nat} (hL : OpLay M size acc o a b)
     (hAB : wordsVal s.mem base a M.n + wordsVal s.mem base b M.n < 2 * m) :
     WP isa (.block (add M acc o a b)) s fun s' => OpKeep M base acc o s s' ∧
       wordsVal s'.mem base o M.n = (wordsVal s.mem base a M.n + wordsVal s.mem base b M.n) % m := by
@@ -246,7 +246,7 @@ theorem sub_arith {A B m X acc o : Nat} {c c' : Bool} (hA : A < m) (hB : B < m)
 
 /-- `[o] = [a] - [b] mod m`. -/
 theorem sub_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M : Mod} {m : Nat}
-    (hM : ModOk M size m s.mem base) {acc o a b : Nat} (hL : OpLay M size acc o a b)
+    (hM : ModOkW M size m s.mem base) {acc o a b : Nat} (hL : OpLay M size acc o a b)
     (hA : wordsVal s.mem base a M.n < m) (hB : wordsVal s.mem base b M.n < m) :
     WP isa (.block (sub M acc o a b)) s fun s' => OpKeep M base acc o s s' ∧
       wordsVal s'.mem base o M.n = (wordsVal s.mem base a M.n + m - wordsVal s.mem base b M.n) % m := by

@@ -33,6 +33,7 @@ mod ecdh_p384;
 mod ecdh_p521;
 mod ecdsa_p256;
 mod ecdsa_p384;
+mod ecdsa_p521;
 mod ed25519;
 mod ed448;
 mod hmac_md5;
@@ -63,6 +64,7 @@ mod rc2_cbc;
 mod rc4;
 mod rsa;
 mod rsa_keygen;
+mod rsa_oaep;
 mod rsa_pkcs1_enc;
 mod rsa_pkcs1_sig;
 mod rsa_pss;
@@ -289,6 +291,7 @@ const BENCHES: &[Bench] = &[
     (rc4::USES, rc4::bench),
     (rsa::USES, rsa::bench),
     (rsa_keygen::USES, rsa_keygen::bench),
+    (rsa_oaep::USES, rsa_oaep::bench),
     (rsa_pkcs1_enc::USES, rsa_pkcs1_enc::bench),
     (rsa_pkcs1_sig::USES, rsa_pkcs1_sig::bench),
     (rsa_pss::USES, rsa_pss::bench),
@@ -309,6 +312,7 @@ const BENCHES: &[Bench] = &[
     (ed448::USES, ed448::bench),
     (ecdsa_p256::USES, ecdsa_p256::bench),
     (ecdsa_p384::USES, ecdsa_p384::bench),
+    (ecdsa_p521::USES, ecdsa_p521::bench),
     (ecdh_p256::USES, ecdh_p256::bench),
     (ecdh_p384::USES, ecdh_p384::bench),
     (ecdh_p521::USES, ecdh_p521::bench),

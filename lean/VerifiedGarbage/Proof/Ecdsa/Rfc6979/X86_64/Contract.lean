@@ -58,9 +58,9 @@ def rfcX86_64 (cs : List (String × List (BitVec 64))) (I : Spec.Ecdsa.Rfc6979.I
     ∀ c ∈ cs, s₁.syms c.1 = s₂.syms c.1
 
 /-- A state satisfying the precondition, for scalars of `Q` bytes and a
-digest of `D` bytes, with the memory `m` holding a table of `TB` bytes at
-`0x100000`, every static's address. -/
-def satState (Q D : Nat) (m : Mem) (TB : Nat) : State where
+digest of `D` bytes, with the memory `m` and the further readable regions
+`T` (the tables, if any, at `0x100000`, every static's address). -/
+def satState (Q D : Nat) (m : Mem := fun _ => 0) (T : List Region := []) : State where
   gpr r := match r with
     | .rdi => 0x1000 | .rsi => 0x2000 | .rdx => 0x3000 | .rcx => 0x8000
     | .rsp => 0x20000 | _ => 0
@@ -69,7 +69,7 @@ def satState (Q D : Nat) (m : Mem) (TB : Nat) : State where
   sf := none
   of := none
   mem := m
-  rd := [⟨0x2000, Q⟩, ⟨0x3000, D⟩, ⟨0x100000, TB⟩]
+  rd := [⟨0x2000, Q⟩, ⟨0x3000, D⟩] ++ T
   wr := [⟨0x1000, 2 * Q⟩, ⟨0x8000, 8192⟩]
   syms _ := 0x100000
 

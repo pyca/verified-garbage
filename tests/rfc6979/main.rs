@@ -1,7 +1,7 @@
 //! Deterministic ECDSA known-answer tests from the vendored RFC 6979:
-//! §A.2.5 (P-256) and §A.2.6 (P-384), each the private key, its public key,
-//! and its signatures of "sample" and "test" with the hash functions the
-//! curve signs with here.
+//! §A.2.5 (P-256), §A.2.6 (P-384) and §A.2.7 (P-521), each the private
+//! key, its public key, and its signatures of "sample" and "test" with the
+//! hash functions the curve signs with here.
 
 #![cfg(any(
     target_arch = "x86_64",
@@ -12,6 +12,7 @@
 
 mod p256;
 mod p384;
+mod p521;
 
 const TEXT: &str = include_str!("../../vectors/rfc6979/rfc6979.txt");
 
@@ -24,8 +25,9 @@ fn unhex(s: &str) -> Vec<u8> {
 }
 
 /// The hex value of the first line from `lines[*i..]` that begins with
-/// `label`, continued on the lines after it that are only hex digits; `*i`
-/// moves past it.
+/// `label`, continued on the lines after it that are only hex digits, in
+/// `N` bytes (P-521's values have an odd number of digits); `*i` moves past
+/// it.
 fn value<const N: usize>(lines: &[&str], i: &mut usize, label: &str) -> [u8; N] {
     while !lines[*i].starts_with(label) {
         *i += 1;
@@ -36,7 +38,9 @@ fn value<const N: usize>(lines: &[&str], i: &mut usize, label: &str) -> [u8; N] 
         hex.push_str(lines[*i]);
         *i += 1;
     }
-    unhex(&hex).try_into().unwrap()
+    unhex(&format!("{hex:0>width$}", width = 2 * N))
+        .try_into()
+        .unwrap()
 }
 
 /// Each hash function, message and the `r ‖ s` of its signature.
