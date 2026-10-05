@@ -298,4 +298,33 @@ theorem prf_body {s : State} (hp : DPre s) {R : BitVec 64} {EM K : List Byte} {m
       · exact ⟨_, List.mem_cons_self .., le_refl _, le_refl _⟩
       · exact ⟨(dst, 32 * N), List.mem_cons_of_mem _ (List.mem_singleton_self _), by simp, by simp; omega⟩
 
+
+theorem msgCL_len (i : Nat) : (msgCL i).length = 10 := by
+  simp [msgCL, Spec.Rsa.i2osp, Spec.RsaPkcs1Enc.ascii]
+
+theorem msgAM_len (k i : Nat) : (msgAM k i).length = 11 := by
+  simp [msgAM, Spec.Rsa.i2osp, Spec.RsaPkcs1Enc.ascii]
+
+/-- The loop of IRPRF's blocks. -/
+theorem prf_loop {s : State} (hp : DPre s) {R : BitVec 64} {EM K : List Byte} {msg : Nat → List Byte}
+    {label : List Nat} {lenC : List Instr} {L dst N : Nat} {count : Src} {t₀ : State}
+    (hL : label.length + 4 = L) (hL16 : L ≤ 16) (hd1 : sKDK + 32 ≤ dst) (hd2 : dst + 32 * N ≤ scrBytes)
+    (hN0 : 0 < N) (hN : N ≤ 32) (hK : K.length = 32) (hml : ∀ i, (msg i).length = L)
+    (hmsg : ∀ t i, Ctx s R EM t → i < N → t.gpr .rdi = sc s → t.gpr .rax = BitVec.ofNat 64 i →
+      t.gpr .r9 = s.gpr .r8 → WP isa (.block (msgBytes label lenC)) t fun t' =>
+        Outside (sc s) sMsg 16 t.mem t'.mem ∧ Spec.Rsa.bytesAt t'.mem (scA s sMsg) L = msg i ∧ Keep [.rdx] t t')
+    (hincr : ∀ t i, Ctx s R EM t → i < N → word t.mem (fb s) oI = BitVec.ofNat 64 i →
+      word t.mem (fb s) oNB = BitVec.ofNat 64 (nbOf s) → WP isa (.block (incr count)) t (Incr s R EM t i N))
+    (h0 : PInv v s R EM K msg dst N t₀ 0 t₀) :
+    WP isa (.loop (prfBody (HH v) label lenC dst count) .ne) t₀ (PInv v s R EM K msg dst N t₀ N) :=
+  wp_upto (a := 0) (N := N) hN0 (PInv v s R EM K msg dst N t₀)
+    (fun _ _ hj _ hI => prf_body hp hL hL16 hd1 hd2 hN hK hml hmsg hincr hj hI) (fun _ h => h) h0
+
+/-- The start of a loop. -/
+theorem pinv0 {s : State} {R : BitVec 64} {EM K : List Byte} {msg : Nat → List Byte} {dst N : Nat} {t : State}
+    (hc : Ctx s R EM t) (hI : word t.mem (fb s) oI = BitVec.ofNat 64 0)
+    (hNB : word t.mem (fb s) oNB = BitVec.ofNat 64 (nbOf s)) (hk : Spec.Rsa.bytesAt t.mem (scA s sKDK) 32 = K) :
+    PInv v s R EM K msg dst N t 0 t :=
+  ⟨hc, hI, hNB, hk, by simp [Spec.Rsa.bytesAt], KeepHi.refl _ _ _⟩
+
 end VG.Proof.RsaPkcs1Enc.X86_64.Dec
