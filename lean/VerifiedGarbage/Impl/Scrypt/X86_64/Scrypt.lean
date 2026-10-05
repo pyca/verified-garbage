@@ -1,4 +1,4 @@
-import VerifiedGarbage.Impl.Scrypt.X86_64.RoMix
+import VerifiedGarbage.Impl.Scrypt.X86_64.RoMixDirect
 
 /-!
 # scrypt: x86-64 implementation
@@ -70,7 +70,7 @@ def pbk2Args : List Instr :=
 
 /-- ROMix on each block. -/
 def romixLoop : Prog isa :=
-  .loop (.seq (.block romixArgs) (.seq (.call "vg_scrypt_romix" roMix) (.block nextBlock))) .ne
+  .loop (.seq (.block romixArgs) (.seq (.call "vg_scrypt_romix" roMixDirect) (.block nextBlock))) .ne
 
 /-- A call of the implementation `pbk` of PBKDF2-HMAC-SHA256, named
 `pbkName`, after the moves `args` of its arguments. -/
