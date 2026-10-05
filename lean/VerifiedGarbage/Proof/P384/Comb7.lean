@@ -1,4 +1,4 @@
-import VerifiedGarbage.Proof.P384.Curve
+import VerifiedGarbage.Proof.P384.Point
 import VerifiedGarbage.Proof.Weierstrass.CombCheckW
 import VerifiedGarbage.Impl.P384.CombTable7
 
@@ -79,9 +79,8 @@ theorem combChecks7_p384 : combChecksW Spec.P384.curve.p Spec.P384.curve.a
     Impl.P384.p384Comb7Start = true := by
   decide +kernel
 
-instance fact_curve_p_prime : Fact (Nat.Prime Spec.P384.curve.p) := ⟨curve_p_prime⟩
-
-theorem combOk7 : CombOkW Spec.P384.curve 7 55 Impl.P384.p384Comb7 Impl.P384.p384Comb7Start :=
-  combOkW_of_check law (by decide +kernel) onCurve_G (by decide) combChecks7_p384
+theorem combOk7 (hL : Law Spec.P384.curve) :
+    CombOkW Spec.P384.curve 7 55 Impl.P384.p384Comb7 Impl.P384.p384Comb7Start :=
+  combOkW_of_check hL onCurve_G (by decide) combChecks7_p384
 
 end VG.Proof.P384

@@ -1,11 +1,11 @@
-import VerifiedGarbage.Proof.Weierstrass.CombCheck
+import VerifiedGarbage.Proof.Weierstrass.Law
 import VerifiedGarbage.Proof.Weierstrass.CombW
 
 /-!
 # Checking a `w`-bit comb's tables against the group law
 
-As `combOk_of_check` (`Proof/Weierstrass/CombCheck.lean`), for tables of
-`H = 2^(w-1) ≥ 2` entries: within table `j`, entry `m + 1` is entry `m` plus
+For tables of `H = 2^(w-1) ≥ 2` entries, from the group law's checks of
+chords and tangents without inverses (`Law.chord`, `Law.tangent`): within table `j`, entry `m + 1` is entry `m` plus
 entry `0` (by the tangent for `m = 0`, else by the chord); entry `0` of table
 `j + 1` is twice entry `H - 1` of table `j` (`2^(w(j+1)) = 2 H 2^(wj)`); and
 the start is the sum of the entries `H - 1`, through the given partial sums
@@ -18,11 +18,8 @@ open Spec.Weierstrass
 
 variable {C : Curve}
 
-section
-variable [Fact C.p.Prime]
-
 /-- `[m 2^(wj)]G` from the checks of row `j` (of `H` entries), given `[2^(wj)]G`. -/
-theorem rowW_mul (hC : Law C) (hp : 2 < C.p) (hG : onCurve C (G C) = true) {H : Nat}
+theorem rowW_mul (hC : Law C) (hG : onCurve C (G C) = true) {H : Nat}
     {row : List (Nat × Nat)} {b : Nat} (h0 : mul b (G C) = ptN C (row.getD 0 (0, 0)))
     (hlt : ∀ m < H, (row.getD m (0, 0)).1 < C.p ∧ (row.getD m (0, 0)).2 < C.p)
     (ht : 2 ≤ H → tangentOk C.p C.a (row.getD 0 (0, 0)).1 (row.getD 0 (0, 0)).2
@@ -40,12 +37,11 @@ theorem rowW_mul (hC : Law C) (hp : 2 < C.p) (hG : onCurve C (G C) = true) {H : 
     cases m with
     | zero =>
       rw [Nat.zero_add] at *
-      exact add_of_tangentOk hp (hlt 1 hm).1 (ht (by omega))
+      exact hC.tangent (hlt 1 hm).1 (ht (by omega))
     | succ m =>
-      exact add_of_chordOk hp (hlt _ (by omega)).1 (hlt 0 (by omega)).1 (hlt _ (by omega)).2
+      exact hC.chord (hlt _ (by omega)).1 (hlt 0 (by omega)).1 (hlt _ (by omega)).2
         (hlt _ (by omega)).1 (hc m (by omega))
 
-end
 
 /-- The checks of a comb's `J` tables of `H` entries and of its start, through
 the partial sums `sums` of the entries `H - 1`. -/
@@ -69,7 +65,7 @@ def combChecksW (p a : Nat) (g : Nat × Nat) (H J : Nat) (tbl : List (List (Nat 
   sums.getD (J - 1) (0, 0) == start
 
 /-- The checks give the facts the comb needs of its tables, for `w ≥ 2`. -/
-theorem combOkW_of_check [Fact C.p.Prime] (hC : Law C) (hp : 2 < C.p)
+theorem combOkW_of_check (hC : Law C)
     (hG : onCurve C (G C) = true) {w J : Nat} (hw : 2 ≤ w) {tbl : List (List (Nat × Nat))}
     {sums : List (Nat × Nat)} {start : Nat × Nat}
     (h : combChecksW C.p C.a (C.gx, C.gy) (2 ^ (w - 1)) J tbl sums start = true) :
@@ -87,14 +83,14 @@ theorem combOkW_of_check [Fact C.p.Prime] (hC : Law C) (hp : 2 < C.p)
     induction j with
     | zero =>
       intro hj
-      refine rowW_mul hC hp hG (row := tbl.getD 0 []) ?_ (hlt 0 hj) (fun _ => (hchk 0 hj).1.2)
+      refine rowW_mul hC hG (row := tbl.getD 0 []) ?_ (hlt 0 hj) (fun _ => (hchk 0 hj).1.2)
         (hchk 0 hj).2
       rw [Nat.mul_zero, Nat.pow_zero, mul_one_pt]
       show G C = ptN C (combAt tbl 0 0)
       rw [hg]; rfl
     | succ j ih =>
       intro hj
-      refine rowW_mul hC hp hG (row := tbl.getD (j + 1) []) ?_ (hlt _ hj)
+      refine rowW_mul hC hG (row := tbl.getD (j + 1) []) ?_ (hlt _ hj)
         (fun _ => (hchk _ hj).1.2) (hchk _ hj).2
       have h7 := ih (by omega) (2 ^ (w - 1) - 1) (by omega)
       have ht := (hchk (j + 1) hj).1.1
@@ -103,7 +99,7 @@ theorem combOkW_of_check [Fact C.p.Prime] (hC : Law C) (hp : 2 < C.p)
       rw [Nat.sub_add_cancel (Nat.two_pow_pos _)] at h7
       rw [pow_w_succ, hHw, Nat.mul_add, Nat.mul_comm (2 ^ (w * j)) (2 ^ (w - 1)),
         ← hC.add_mul_mul hG, h7]
-      exact add_of_tangentOk hp (hlt (j + 1) hj 0 (Nat.two_pow_pos _)).1 ht
+      exact hC.tangent (hlt (j + 1) hj 0 (Nat.two_pow_pos _)).1 ht
   have hlast' : ∀ j < J, mul (2 ^ (w - 1) * 2 ^ (w * j)) (G C) =
       ptN C (combAt tbl j (2 ^ (w - 1) - 1)) := fun j hj => by
     have := entries j hj (2 ^ (w - 1) - 1) (by omega)
@@ -127,7 +123,7 @@ theorem combOkW_of_check [Fact C.p.Prime] (hC : Law C) (hp : 2 < C.p)
       refine ⟨?_, hb1, hb2⟩
       rw [show geomW w (j + 1 + 1) = geomW w (j + 1) + 2 ^ (w * (j + 1)) from rfl, Nat.mul_add,
         ← hC.add_mul_mul hG, hm, hlast' (j + 1) hj]
-      exact add_of_chordOk hp hl1 (hlt (j + 1) hj _ (by omega)).1 hl2 hb1 hc
+      exact hC.chord hl1 (hlt (j + 1) hj _ (by omega)).1 hl2 hb1 hc
   have hst := hsum (J - 1) (by omega)
   rw [Nat.sub_add_cancel hJ, hlast] at hst
   exact ⟨hlen, fun j hj => (hrows j hj).1, hlt, entries, ⟨hst.2.1, hst.2.2⟩, hst.1⟩

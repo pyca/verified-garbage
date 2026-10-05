@@ -1,4 +1,4 @@
-import VerifiedGarbage.Proof.P256.Curve
+import VerifiedGarbage.Proof.P256.Point
 import VerifiedGarbage.Proof.Weierstrass.CombCheckW
 import VerifiedGarbage.Impl.P256.CombTable7
 
@@ -61,7 +61,8 @@ theorem combChecks7_p256 : combChecksW Spec.P256.curve.p Spec.P256.curve.a
     Impl.P256.p256Comb7Start = true := by
   decide +kernel
 
-theorem combOk7 : CombOkW Spec.P256.curve 7 37 Impl.P256.p256Comb7 Impl.P256.p256Comb7Start :=
-  combOkW_of_check law (by decide +kernel) onCurve_G (by decide) combChecks7_p256
+theorem combOk7 (hL : Law Spec.P256.curve) :
+    CombOkW Spec.P256.curve 7 37 Impl.P256.p256Comb7 Impl.P256.p256Comb7Start :=
+  combOkW_of_check hL onCurve_G (by decide) combChecks7_p256
 
 end VG.Proof.P256
