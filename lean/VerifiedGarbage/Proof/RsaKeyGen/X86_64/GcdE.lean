@@ -105,8 +105,9 @@ theorem modCopy_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hg : G
 `r := 0`. -/
 theorem modClear_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hg : Good s B Z w minv)
     (hZ : slot w 8 ≤ Z) (hw : 1 ≤ w) (hbx : s.gpr .rbx = off B (slot w aX)) :
-    WP isa (.block [.mov .rax (.mem (at0 .rbx)), .alu .and .rax (.imm (BitVec.ofInt 32 (-2))), .store (at0 .rbx) .rax,
-      .mov .rbx (.mem (hdr kG)), .mov .r8 (.mem (hdr (sArr aX))), .mov32 .rsi (.imm 0), .mov32 .r14 (.imm 0)]) s
+    WP isa (.block [.mov .r8 (.mem (hdr (sArr aX))), .mov .rax (.mem (at0 .rbx)),
+      .alu .and .rax (.imm (BitVec.ofInt 32 (-2))), .store (at0 .rbx) .rax, .mov .rbx (.mem (hdr kG)),
+      .mov32 .rsi (.imm 0), .mov32 .r14 (.imm 0)]) s
       fun t => t.mem = s.mem.writeW (off B (slot w aX)) (word s.mem B (slot w aX) &&& (BitVec.allOnes 64 - 1)) ∧
         t.gpr .rbx = word s.mem B (8 * kG) ∧ t.gpr .r8 = off B (slot w aX) ∧ t.gpr .rsi = 0 ∧
         t.gpr .r14 = BitVec.ofNat 64 0 ∧ Keep [.rax, .rbx, .r8, .rsi, .r14] s t := by
@@ -119,16 +120,13 @@ theorem modClear_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hg : 
   generalize hv : word s.mem B (slot w aX) &&& (BitVec.allOnes 64 - 1) = v
   have hGs : (s.mem.writeW (off B (slot w aX)) v).readW (off B (8 * kG)) 64 = word s.mem B (8 * kG) :=
     (writeW_outside _ _ _ (by omega)).word (by omega) (by omega)
-  have hXs : (s.mem.writeW (off B (slot w aX)) v).readW (off B (8 * sArr aX)) 64 = off B (slot w aX) :=
-    ((writeW_outside s.mem B v (by omega)).word (d := 8 * sArr aX) (by omega) (by omega)).trans
-      (hg.hdr.harr aX (by decide))
   refine WP.mono (WP.keep [.rax, .rbx, .r8, .rsi, .r14] (Q := fun t =>
       t.mem = s.mem.writeW (off B (slot w aX)) v ∧ t.gpr .rbx = word s.mem B (8 * kG) ∧
       t.gpr .r8 = off B (slot w aX) ∧ t.gpr .rsi = 0 ∧ t.gpr .r14 = BitVec.ofNat 64 0) ?_ rfl)
     fun t ⟨⟨h1, h2, h3, h4, h5⟩, k⟩ => ⟨h1, h2, h3, h4, h5, k⟩
   xrun [State.ea, at0, hdr, hg.rdi, hdrOff, hbx, hg.scr.ld (show slot w aX + 8 ≤ Z by omega),
     hg.scr.st (show slot w aX + 8 ≤ Z by omega), sx_m2, hl kG (by decide), hl (sArr aX) (by decide),
-    BitVec.ofInt_ofNat, BitVec.add_zero, hv, hGs, hXs]
+    BitVec.ofInt_ofNat, BitVec.add_zero, hv, hGs, hg.hdr.harr aX (by decide)]
 
 /-- The gcd's steps from `r = rsi < e`, `e` in `kG`: `gcd(r, e)` into `kG`. -/
 theorem gcdTail_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hg : Good s B Z w minv)

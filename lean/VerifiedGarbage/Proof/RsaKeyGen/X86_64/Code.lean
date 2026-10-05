@@ -169,7 +169,7 @@ theorem code_correct (M : Mont) (hmx : (VG.Impl.RsaKeyGen.X86_64.Candidate.code 
       have := c.ou.outZ j hj; rw [← he', ofs_off _ (by omega)] at this; omega
   have hdi₂ : t₂.gpr .rdi = arg s 3 := (k₂.gpr (by decide)).trans he.rdi
   have hl₂ : ∀ i < 32, InRegions (t₂.rd ++ t₂.wr) (off (arg s 3) (8 * i)) 8 := fun i hi => hs₂.ld (by omega)
-  refine WP.seq (WP.mono (WP.keep [.rax] (Q := fun t => t.cf = some (decide ((arg s 2).toNat < (s.gpr .rsi).toNat)) ∧
+  refine WP.seq (WP.mono (WP.keep [.rax, .rcx] (Q := fun t => t.cf = some (decide ((arg s 2).toNat < (s.gpr .rsi).toNat)) ∧
       t.mem = t₂.mem) (by
     xrun [State.ea, hdr, hdi₂, hdrOff, hl₂ kRandLen (by decide), hl₂ kLen (by decide), hw₂ kRandLen (by decide),
       hw₂ kLen (by decide), he.rlen, he.len]) rfl) fun t₃ ⟨⟨hcf, hm₃⟩, k₃⟩ => ?_)

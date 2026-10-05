@@ -177,7 +177,7 @@ theorem tlIter_ok {s₀ : State} {B : Addr} {Z w N : Nat} {minv : BitVec 64} (hZ
     (hf : word t.mem B (8 * kT2) = mask (anyPre (wv s₀.mem B (slot w aN) w) (4 * k))) :
     WP isa (seqs ([.block (extBase aTab .rbx ++ [.mov .rax (.mem (ix .rbx .r13)), .store (hdr kT1) .rax])] ++
       trialEntry 0 ++ trialEntry 1 ++ trialEntry 2 ++ trialEntry 3 ++
-      [.block [.alu .add .r13 (.imm 1), .alu .cmp .r13 (.mem (hdr kT0))]])) t fun t' =>
+      [.block [.alu .add .r13 (.imm 1), .mov .rax (.mem (hdr kT0)), .alu .cmp .r13 (.reg .rax)]])) t fun t' =>
       t'.zf = some (decide (k + 1 = N)) ∧ TLInv s₀ B Z w (slot w aTab) N minv (k + 1) t' ∧
       word t'.mem B (8 * kT2) = mask (anyPre (wv s₀.mem B (slot w aN) w) (4 * (k + 1))) := by
   have hT : 8 * kT2 + 8 ≤ slot w aTab := hdr_lt_slot w aTab (by decide)
@@ -198,7 +198,7 @@ theorem tlIter_ok {s₀ : State} {B : Addr} {Z w N : Nat} {minv : BitVec 64} (hZ
   have hl : InRegions (t₅.rd ++ t₅.wr) (off B (8 * kT0)) 8 :=
     hI₅.good.scr.ld (by have := hdr_lt_slot w 8 (show kT0 < 32 by decide); omega)
   simp only [seqs]
-  refine WP.mono (WP.keep [.r13] (Q := fun t' => t'.zf = some (decide (k + 1 = N)) ∧
+  refine WP.mono (WP.keep [.r13, .rax] (Q := fun t' => t'.zf = some (decide (k + 1 = N)) ∧
       t'.gpr .r13 = BitVec.ofNat 64 (k + 1) ∧ t'.mem = t₅.mem) (by
     xrun [State.ea, hdr, hI₅.good.rdi, hdrOff, hl, hI₅.n, hI₅.r13, ofNat_add_one,
       ofNat_sub_beq (show k + 1 < 2 ^ 64 by omega) (show N < 2 ^ 64 by omega)]) rfl) fun t' ⟨⟨hz, h13, hm⟩, k'⟩ =>
@@ -253,7 +253,7 @@ theorem trial_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hg : Goo
       WP isa (.seq (.block [.store (hdr kT0) .rax, .mov32 .rax (.imm 0), .store (hdr kT2) .rax, .mov32 .r13 (.imm 0)])
         (.seq (.loop (seqs ([.block (extBase aTab .rbx ++ [.mov .rax (.mem (ix .rbx .r13)), .store (hdr kT1) .rax])] ++
           trialEntry 0 ++ trialEntry 1 ++ trialEntry 2 ++ trialEntry 3 ++
-          [.block [.alu .add .r13 (.imm 1), .alu .cmp .r13 (.mem (hdr kT0))]])) .ne)
+          [.block [.alu .add .r13 (.imm 1), .mov .rax (.mem (hdr kT0)), .alu .cmp .r13 (.reg .rax)]])) .ne)
           (.block [.mov .rax (.mem (hdr kT2)), .alu .test .rax (.reg .rax)]))) t fun t =>
       t.zf = some (!trialAny N (wv s.mem B (slot w aN) w)) ∧ Good t B Z w minv ∧
       Frm B [(slot w aTab, 2048), (8 * kT0, 8), (8 * kT1, 8), (8 * kT2, 8)] s.mem t.mem ∧

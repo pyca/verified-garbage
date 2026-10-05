@@ -90,7 +90,8 @@ theorem mrIter_ok (M : Mont) {B : Addr} {Z w : Nat} {mi : BitVec 64} {c ch : Nat
     (hsh : VG.Proof.RsaKeyGen.PrimeShape (64 * w) c) (hrl : r.length < 2 ^ 64) (hch : ch < 2 ^ 62)
     (n : Nat) (s : State) (hI : MrSt B Z w mi c ch rp r s₀ res n s) :
     WP isa (seqs [
-      .block [.mov .rcx (.mem (hdr kRandLen)), .alu .sub .rcx (.mem (hdr kUsed)), .alu .cmp .rcx (.mem (hdr kLen))],
+      .block [.mov .rcx (.mem (hdr kRandLen)), .mov .rax (.mem (hdr kUsed)), .alu .sub .rcx (.reg .rax),
+        .mov .rax (.mem (hdr kLen)), .alu .cmp .rcx (.reg .rax)],
       .ite .b (.block [.mov32 .rax (.imm 0), .store (hdr kStat) .rax]) (seqs (mrRound M.mm)),
       .block [.mov .rax (.mem (hdr kStat)), .alu .cmp .rax (.imm 4)]]) s fun s' =>
       (isa.eval .e s' = some false ∧ MrEnd B Z w mi c r s₀ res s') ∨
@@ -111,7 +112,7 @@ theorem mrIter_ok (M : Mont) {B : Addr} {Z w : Nat} {mi : BitVec 64} {c ch : Nat
     ofNat_sub_ofNat' hul hrl
   have e2 : r.length - used < 2 ^ 64 := by omega
   have e3 : 8 * w < 2 ^ 64 := by have := hd.w64; omega
-  refine WP.seq (WP.mono (WP.keep [.rcx] (Q := fun t => t.cf = some (decide (r.length < used + 8 * w)) ∧
+  refine WP.seq (WP.mono (WP.keep [.rcx, .rax] (Q := fun t => t.cf = some (decide (r.length < used + 8 * w)) ∧
       t.mem = s.mem) (by
     xrun [State.ea, hdr, hg.rdi, hdrOff, hl kUsed (by decide), hl kLen (by decide), hl kRandLen (by decide), hus, hlen,
       hrlen, e1, BitVec.toNat_ofNat, Nat.mod_eq_of_lt e2, Nat.mod_eq_of_lt e3]

@@ -18,8 +18,8 @@ open VG.Proof.MlKem.X86_64
 def witRanges (w : Nat) : List (Nat × Nat) := [(slot w aX, 8 * (w + 2)), (8 * kUsed, 8), (8 * kU, 8)]
 
 theorem mrWitness_eq : mrWitness =
-    [.block [.mov .rsi (.mem (hdr kRand)), .alu .add .rsi (.mem (hdr kUsed)), .mov .rcx (.mem (hdr kLen)),
-        .mov .rbx (.mem (hdr (sArr aX))), .mov .rax (.mem (hdr kUsed)), .alu .add .rax (.reg .rcx),
+    [.block [.mov .rsi (.mem (hdr kRand)), .mov .rax (.mem (hdr kUsed)), .alu .add .rsi (.reg .rax),
+        .mov .rcx (.mem (hdr kLen)), .mov .rbx (.mem (hdr (sArr aX))), .alu .add .rax (.reg .rcx),
         .store (hdr kUsed) .rax], loadBE] ++
     ([.block [.mov .r12 (.mem (hdr sW)), .mov .rbx (.mem (hdr (sArr aX))), .mov .rbp (.mem (at0 .rbx)),
         .alu .and .rbp (.imm (BitVec.ofInt 32 (-2)))],

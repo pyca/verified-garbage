@@ -47,6 +47,10 @@ features) takes its modulus.
 
 `used` is written at the end: the octets read (`out_len` per number), or 0
 for the result 0.
+
+Header words that address memory or decide a branch are loaded into a
+register before they are compared or added, and before anything secret is
+stored into the arrays, so the taint analysis knows them public.
 -/
 
 namespace VG.Impl.RsaKeyGen.X86_64.Candidate
@@ -246,7 +250,7 @@ def trial : List (Prog isa) := [
   .block [.store (hdr kT0) .rax, .mov32 .rax (.imm 0), .store (hdr kT2) .rax, .mov32 .r13 (.imm 0)],
   .loop (seqs ([.block (extBase aTab .rbx ++ [.mov .rax (.mem (ix .rbx .r13)), .store (hdr kT1) .rax])] ++
       trialEntry 0 ++ trialEntry 1 ++ trialEntry 2 ++ trialEntry 3 ++
-      [.block [.alu .add .r13 (.imm 1), .alu .cmp .r13 (.mem (hdr kT0))]])) .ne,
+      [.block [.alu .add .r13 (.imm 1), .mov .rax (.mem (hdr kT0)), .alu .cmp .r13 (.reg .rax)]])) .ne,
   .block [.mov .rax (.mem (hdr kT2)), .alu .test .rax (.reg .rax)]]
 
 /-! ## `gcd(c − 1, e)` -/
@@ -275,8 +279,8 @@ def modWord : Prog isa :=
 def modLoop : List (Prog isa) := [
   .block [.mov .r12 (.mem (hdr sW)), .mov .rsi (.mem (hdr (sArr aN))), .mov .rbx (.mem (hdr (sArr aX)))],
   copyWords,
-  .block [.mov .rax (.mem (at0 .rbx)), .alu .and .rax (.imm (BitVec.ofInt 32 (-2))), .store (at0 .rbx) .rax,
-    .mov .rbx (.mem (hdr kG)), .mov .r8 (.mem (hdr (sArr aX))), .mov32 .rsi (.imm 0), .mov32 .r14 (.imm 0)],
+  .block [.mov .r8 (.mem (hdr (sArr aX))), .mov .rax (.mem (at0 .rbx)), .alu .and .rax (.imm (BitVec.ofInt 32 (-2))),
+    .store (at0 .rbx) .rax, .mov .rbx (.mem (hdr kG)), .mov32 .rsi (.imm 0), .mov32 .r14 (.imm 0)],
   .loop (.seq modWord (.block [.alu .add .r14 (.imm 1), .alu .cmp .r14 (.reg .r12)])) .ne]
 
 /-- One step of the binary gcd on `u = rsi` and the odd `v = rbx`: if `u`
@@ -383,8 +387,8 @@ def mrExpLoop (mul : Nat → Nat → Nat → Prog isa) : List (Prog isa) := [
 advanced; the mask of `2 ≤ x < c − 1` (`(x | 1) < c`) into `kU`; if it is
 clear, bit 1 set and the top bit cleared. -/
 def mrWitness : List (Prog isa) := [
-  .block [.mov .rsi (.mem (hdr kRand)), .alu .add .rsi (.mem (hdr kUsed)), .mov .rcx (.mem (hdr kLen)),
-    .mov .rbx (.mem (hdr (sArr aX))), .mov .rax (.mem (hdr kUsed)), .alu .add .rax (.reg .rcx),
+  .block [.mov .rsi (.mem (hdr kRand)), .mov .rax (.mem (hdr kUsed)), .alu .add .rsi (.reg .rax),
+    .mov .rcx (.mem (hdr kLen)), .mov .rbx (.mem (hdr (sArr aX))), .alu .add .rax (.reg .rcx),
     .store (hdr kUsed) .rax],
   loadBE,
   -- `rbp := (x & ~1) | x_1 | … | x_(w−1)`.
@@ -426,7 +430,8 @@ octets of `rand` are left (`rand_len − used`, which does not wrap). -/
 def millerRabin (mul : Nat → Nat → Nat → Prog isa) : List (Prog isa) := [
   .block [.mov32 .rax (.imm 1), .store (hdr kI) .rax, .mov32 .rax (.imm 0), .store (hdr kUni) .rax],
   .loop (seqs [
-    .block [.mov .rcx (.mem (hdr kRandLen)), .alu .sub .rcx (.mem (hdr kUsed)), .alu .cmp .rcx (.mem (hdr kLen))],
+    .block [.mov .rcx (.mem (hdr kRandLen)), .mov .rax (.mem (hdr kUsed)), .alu .sub .rcx (.reg .rax),
+      .mov .rax (.mem (hdr kLen)), .alu .cmp .rcx (.reg .rax)],
     .ite .b (.block [.mov32 .rax (.imm 0), .store (hdr kStat) .rax]) (seqs (mrRound mul)),
     .block [.mov .rax (.mem (hdr kStat)), .alu .cmp .rax (.imm 4)]]) .e]
 
@@ -446,7 +451,7 @@ def kMain (mul : Nat → Nat → Nat → Prog isa) : Prog isa :=
 /-- `vg_rsa_keygen_candidate`. -/
 def code (mul : Nat → Nat → Nat → Prog isa) : Prog isa :=
   seqs [.block kEntry, zeroOut,
-    .block [.mov .rax (.mem (hdr kRandLen)), .alu .cmp .rax (.mem (hdr kLen))],
+    .block [.mov .rax (.mem (hdr kRandLen)), .mov .rcx (.mem (hdr kLen)), .alu .cmp .rax (.reg .rcx)],
     .ite .b finNone (kMain mul)]
 
 end VG.Impl.RsaKeyGen.X86_64.Candidate

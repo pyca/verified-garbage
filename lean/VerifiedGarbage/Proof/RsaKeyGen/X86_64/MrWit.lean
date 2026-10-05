@@ -21,8 +21,8 @@ theorem witLoad_ok {s : State} {B : Addr} {Z w : Nat} {mi : BitVec 64} (hg : Goo
     (hw : 1 ≤ w) (hw' : w < 2 ^ 27) {rp : Addr} {u : Nat} {bs : List Byte} (hR : word s.mem B (8 * kRand) = rp)
     (hU : word s.mem B (8 * kUsed) = BitVec.ofNat 64 u) (hK : word s.mem B (8 * kLen) = BitVec.ofNat 64 (8 * w))
     (hsrc : Src s B Z (rp + BitVec.ofNat 64 u) bs) (hbl : bs.length = 8 * w) :
-    WP isa (seqs [.block [.mov .rsi (.mem (hdr kRand)), .alu .add .rsi (.mem (hdr kUsed)), .mov .rcx (.mem (hdr kLen)),
-        .mov .rbx (.mem (hdr (sArr aX))), .mov .rax (.mem (hdr kUsed)), .alu .add .rax (.reg .rcx),
+    WP isa (seqs [.block [.mov .rsi (.mem (hdr kRand)), .mov .rax (.mem (hdr kUsed)), .alu .add .rsi (.reg .rax),
+        .mov .rcx (.mem (hdr kLen)), .mov .rbx (.mem (hdr (sArr aX))), .alu .add .rax (.reg .rcx),
         .store (hdr kUsed) .rax], loadBE]) s fun t =>
       wv t.mem B (slot w aX) w = Spec.Rsa.os2ip bs ∧ word t.mem B (8 * kUsed) = BitVec.ofNat 64 (u + 8 * w) ∧
       Frm B [(slot w aX, 8 * (w + 2)), (8 * kUsed, 8)] s.mem t.mem ∧ Good t B Z w mi ∧
