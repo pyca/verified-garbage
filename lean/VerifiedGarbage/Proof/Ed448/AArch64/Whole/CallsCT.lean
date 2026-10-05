@@ -303,7 +303,7 @@ theorem mulAdd_ct (hV : V.Ok) (h₁ : M m₁) (h₂ : M m₂) {args : List (Reg 
     (fun _ _ hsp hg => ⟨hsp, entry_eq hg (hm .x0 (by simp)), entry_eq hg (hm .x1 (by simp)),
       entry_eq hg (hm .x2 (by simp)), entry_eq hg (hm .x3 (by simp)), entry_eq hg (hm .x4 (by simp))⟩) hok
 
-theorem equation_ct (hR : Proof.Ed448.RecoverOk) (hE : Proof.Ed448.VerifyEqOk) (hV : V.Ok)
+theorem equation_ct (hQ : Proof.Ed448.AArch64.EqOk) (hV : V.Ok)
     (h₁ : M m₁) (h₂ : M m₂) {args : List (Reg × Src)}
     (hn : (args.map Prod.fst).Nodup) (hv : ∀ p ∈ args, srcValid p.2) (hret : retOk args = true)
     (hr : ∀ p ∈ args, p.1 ∉ preserved) (hl : ∀ p ∈ args, p.1 ∉ linkRegs)
@@ -331,8 +331,8 @@ theorem equation_ct (hR : Proof.Ed448.RecoverOk) (hE : Proof.Ed448.VerifyEqOk) (
     simp only [List.mem_cons, List.not_mem_nil, or_false]
     rintro r (rfl | rfl | rfl)
     exacts [hrp, hrs, hrc]
-  exact callS_ct hV h₁ h₂ hn hv hret hr hl ht val hval (Proof.Ed448.AArch64.verifyEquation_ok hR hE)
-    Proof.Ed448.AArch64.verifyEquation_ct
+  exact callS_ct hV h₁ h₂ hn hv hret hr hl ht val hval (hQ.ok)
+    hQ.ct
     (fun _ hs => equation_pre (regs_get hs (hm .x0 (by simp))) (regs_get hs (hm .x1 (by simp)))
       (regs_get hs (hm .x2 (by simp))) (regs_get hs (hm .x3 (by simp))) hdp hds hdc hnc)
     (covers_rw hrd hw) hw

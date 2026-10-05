@@ -1,7 +1,7 @@
 import VerifiedGarbage.Proof.Ed448.AArch64.Whole.Ctx
 import VerifiedGarbage.Proof.Ed448.AArch64.ScalarVerified
 import VerifiedGarbage.Proof.Ed448.AArch64.BaseContract
-import VerifiedGarbage.Proof.Ed448.AArch64.VerifyVerified
+import VerifiedGarbage.Proof.Ed448.AArch64.VerifyLocal
 
 /-!
 # Ed448's complete operations on AArch64: calls of the Ed448 primitives
@@ -171,7 +171,7 @@ theorem equation_pre {pk sig ch scr : Addr} (h0 : u.gpr .x0 = pk) (h1 : u.gpr .x
     State.callEntry_gpr _ (by decide : Reg.x3 ∉ linkRegs), h0, h1, h2, h3]
   exact ⟨trivial, trivial, hp, hs, hc, hn⟩
 
-theorem equation_call (hR : Proof.Ed448.RecoverOk) (hE : Proof.Ed448.VerifyEqOk) (hV : V.Ok)
+theorem equation_call (hQ : Proof.Ed448.AArch64.EqOk) (hV : V.Ok)
     (hu : WCtx V g vec m₀ u) {pk sig ch scr : Addr}
     (h0 : u.gpr .x0 = pk) (h1 : u.gpr .x1 = sig) (h2 : u.gpr .x2 = ch) (h3 : u.gpr .x3 = scr)
     (hdp : Region.Disjoint ⟨pk, 57⟩ ⟨scr, 8192⟩) (hds : Region.Disjoint ⟨sig, 114⟩ ⟨scr, 8192⟩)
@@ -189,7 +189,7 @@ theorem equation_call (hR : Proof.Ed448.RecoverOk) (hE : Proof.Ed448.VerifyEqOk)
     simp only [List.mem_cons, List.not_mem_nil, or_false]
     rintro r (rfl | rfl | rfl)
     exacts [hrp, hrs, hrc]
-  refine wcall hV hu (Proof.Ed448.AArch64.verifyEquation_ok hR hE) (noFrames_depth equation_noFrames)
+  refine wcall hV hu (hQ.ok) (noFrames_depth equation_noFrames)
     (equation_pre h0 h1 h2 h3 hdp hds hdc hn) (covers_rw hrd hw) hw fun w hw' hf hp => ⟨hw', hf, ?_⟩
   change w.gpr .x0 = if Spec.Ed448.verifyEquation (Spec.Ed448.bytesAt u.mem (u.callEntry.gpr .x0) 57)
     (Spec.Ed448.bytesAt u.mem (u.callEntry.gpr .x1) 114)
