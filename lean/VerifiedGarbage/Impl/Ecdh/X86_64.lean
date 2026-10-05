@@ -18,7 +18,8 @@ for a curve of `n` 64-bit words, from the code of ECDSA's signature
    into the flag;
 4. the peer's point, or `G` if the flag is clear (so the ladder always runs
    on a point of the curve), to the slots the ladder takes its point from;
-5. `[d]P` by the signature's ladder, and `Z^(p-2)` by its power;
+5. `[d]P` by the signature's ladder, and `Z^(p-2)` by its inversion (or
+   power);
 6. `x = X Z^(p-2)`, out of Montgomery's form, and the masks of `d` in
    `[1, n-1]` and `Z ≠ 0` into the flag, which selects `x` or zeros for
    `out` (big-endian) and is returned as 0 or 1.
@@ -143,7 +144,7 @@ def middle : Prog isa :=
 /-- `vg_ecdh_<curve>`. -/
 def exchange : Prog isa :=
   .seq (.block (args)) <| .seq (prefix' c none) <| .seq (.block (peer c)) <| .seq (validate c) <|
-  .seq (ladder (ladderQ c)) <| .seq (pow c.powP) (middle c)
+  .seq (ladder (ladderQ c)) <| .seq c.pPow (middle c)
 
 end Cfg
 
