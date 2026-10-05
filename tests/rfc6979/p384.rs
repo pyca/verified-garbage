@@ -1,6 +1,11 @@
 //! RFC 6979 §A.2.6: P-384, with SHA-384.
 
-#![cfg(any(target_arch = "x86_64", target_arch = "x86", target_arch = "aarch64"))]
+#![cfg(any(
+    target_arch = "x86_64",
+    target_arch = "x86",
+    target_arch = "aarch64",
+    target_arch = "arm"
+))]
 
 use verified_garbage::ecdsa::{Error, P384, SigningKey, VerifyingKey};
 use verified_garbage::hashes::sha384::Sha384;

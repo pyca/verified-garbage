@@ -36,9 +36,6 @@ theorem sbb32 (a b : BitVec 32) (c : Bool) :
 abbrev Xw (k : Nat) (m : Mem) (dg : Addr) (j : Nat) : BitVec 32 :=
   bswap (m.readW (dg + BitVec.ofNat 64 (4 * (k - 1 - j))) 32)
 
-/-- The 32-bit words of `N`, least significant first. -/
-abbrev nWn (N j : Nat) : BitVec 32 := BitVec.ofNat 32 (N >>> (32 * j))
-
 /-- The borrows of the digest less `N`. -/
 def cb (N k : Nat) (m : Mem) (dg : Addr) : Nat → Bool
   | 0 => false
@@ -63,13 +60,6 @@ theorem chain (N k : Nat) (m : Mem) (dg : Addr) : ∀ i,
     generalize (Xw k m dg i).toNat = X at *
     generalize (nWn N i).toNat = M at *
     grind
-
-/-- The low `i` words of `N`. -/
-theorem wsum_nWn (N : Nat) : ∀ i, wsum (nWn N) i = N % 2 ^ (32 * i)
-  | 0 => by simp [wsum, Nat.mod_one]
-  | i + 1 => by
-    rw [wsum, wsum_nWn N i, show 32 * (i + 1) = 32 * i + 32 by omega, Nat.pow_add, Nat.mod_mul,
-      BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow, Nat.mul_comm, Nat.add_comm]
 
 /-! ## The code -/
 
