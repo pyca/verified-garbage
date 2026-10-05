@@ -22,7 +22,8 @@ def artifacts (h : Proof.Weierstrass.X86_64.HasLawInv Spec.P256.curve) : List Ar
     target := X86_64.target
     doc := Spec.Ecdsa.P256.signApi.doc (notes := ["The function saves its caller's callee-saved \
       registers in `scratch`. Field elements and scalars are four 64-bit words in Montgomery form, \
-      multiplied by word-by-word Montgomery multiplication (CIOS) with a final conditional \
+      multiplied by word-by-word Montgomery multiplication (CIOS; as `p ≡ -1 (mod 2⁶⁴)`, each reduction step modulo `p` adds `t₀ (p + 1) / 2⁶⁴` \
+      to the words above the low word `t₀`, two products) with a final conditional \
       subtraction. `[k]G` is a fixed-base comb of 7-bit signed digits: the 37 windows `k_j` of \
       `k`'s bits as digits `k_j - 64` from `-64` to `63`, `[k]G = [64 Σ 2^(7j)]G + Σ [(k_j - 64) \
       2^(7j)]G`, from 37 tables of `[m 2^(7j)]G` (`m = 1 … 64`, affine, in Montgomery form) in the \
@@ -51,7 +52,8 @@ def artifacts (h : Proof.Weierstrass.X86_64.HasLawInv Spec.P256.curve) : List Ar
       field arithmetic, comb and inversions, with `vg_ecdh_p256`'s checks of the public \
       key and its window method: it saves its caller's callee-saved registers in `scratch`; field elements and scalars \
       are four 64-bit words in Montgomery form, multiplied by word-by-word Montgomery \
-      multiplication (CIOS) with a final conditional subtraction. The key is checked without \
+      multiplication (CIOS; as `p ≡ -1 (mod 2⁶⁴)`, each reduction step modulo `p` adds `t₀ (p + 1) / 2⁶⁴` \
+      to the words above the low word `t₀`, two products) with a final conditional subtraction. The key is checked without \
       branches (its first byte, both coordinates below `p`, and the curve's equation), and \
       `[v]Q` is computed for the key's point if it is valid, else `G`, so it always runs on a \
       point of the curve. `s⁻¹` modulo `n` and `Z⁻¹` are by the signature's divsteps; `[u]G` is \

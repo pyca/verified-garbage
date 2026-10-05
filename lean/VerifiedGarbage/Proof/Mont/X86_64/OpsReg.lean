@@ -58,7 +58,7 @@ theorem mulR_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M
   have hs₁ := hs.of_keeps k₁ (fun h => (acc_regs_lt _ hM.n7 _ h).2.2.2.2 rfl)
   have h0 : regsVal s₁ (wins M.n 0) = 0 := regsVal_zero fun r hr => z₁ r (wins_sub_acc hM.n7 0 r hr)
   rw [WP.block_append_iff]
-  refine WP.mono (rounds_ok hM.n7 ha hb hM.mo hM.inv M.n (Nat.le_refl _) hs₁
+  refine WP.mono (rounds_ok hM.n7 ha hb hM.mo hM.inv (Mod.ok_red hM.red) M.n (Nat.le_refl _) hs₁
     (by rw [k₁.2.1]; exact hM.val) (by rw [k₁.2.1]; exact hB) h0) fun s₂ ⟨⟨U, eU⟩, hT, k₂⟩ => ?_
   have hs₂ := hs₁.of_keeps k₂ (by
     intro h
@@ -142,16 +142,6 @@ theorem low_ne_nil {n : Nat} (hn : n < 7) (h0 : 0 < n) : ∃ t ts, low n = t :: 
   cases h : low n with
   | nil => rw [h] at this; simp at this; omega
   | cons t ts => exact ⟨t, ts, rfl⟩
-
-theorem mov32zero_ok (s : State) (t : Reg) :
-    WP isa (.block [.mov32 t (.imm 0)]) s fun s' => s'.gpr t = 0 ∧ s'.cf = s.cf ∧ Keeps [t] s s' := by
-  apply WP.of_runBlock
-  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc32, Option.map_some,
-    State.setReg32, RegUpd.gpr_setReg, ite_true, Option.some.injEq, exists_eq_left',
-    RegUpd.cf_setReg]
-  refine ⟨rfl, trivial, fun r hr => ?_, rfl, rfl, rfl⟩
-  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  simp only [RegUpd.gpr_setReg, hr, ite_false]
 
 theorem adcZero_ok (s : State) (t : Reg) {c : Bool} (hc : s.cf = some c) (h0 : s.gpr t = 0) :
     WP isa (.block [.alu .adc t (.imm 0)]) s fun s' => (s'.gpr t).toNat = c.toNat ∧ Keeps [t] s s' := by
