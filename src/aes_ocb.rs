@@ -23,10 +23,11 @@
 //! `vg_aes_decrypt_blocks`), which have the same contracts: on x86-64, CPUs
 //! with AES-NI and SSSE3 run the `_aesni` instances (`crate::aes::Backend`;
 //! there is no VAES implementation of whole blocks yet, so its CPUs run them
-//! too); on AArch64, CPUs with the AES instructions run the `_aes` ones.
-//! x86-64 and AArch64 have implementations so far.
+//! too); on AArch64, CPUs with the AES instructions run the `_aes` ones. On
+//! ARMv7 there is only the constant-time scalar implementation. x86-64,
+//! AArch64 and ARMv7 have implementations so far.
 
-#![cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
+#![cfg(any(target_arch = "x86_64", target_arch = "aarch64", target_arch = "arm"))]
 
 use crate::aes::Backend;
 #[cfg(target_arch = "aarch64")]
@@ -80,6 +81,13 @@ fn select(f: Features) -> Backend {
         VG_AES_OCB_OPEN_AES_FEATURES,
     ]);
     Backend::select_for(f, AES)
+}
+
+/// The only implementation of AES on ARMv7, with the AES-OCB functions for
+/// it.
+#[cfg(target_arch = "arm")]
+fn select(f: Features) -> Backend {
+    Backend::select(f)
 }
 
 /// Fails to compile unless `T` is a tag length OCB allows: 1 to 16 bytes.
