@@ -46,8 +46,10 @@ theorem p256_ok : CfgOk p256 where
   red_p := by decide +kernel
   red_n := by decide +kernel
   n2 := by decide
-  len := rfl
-  hash := p256_nBits
+  len8 := by decide
+  len_lo := by decide
+  len_hi := by decide
+  sh := by have := p256_nBits; have : p256.n = 4 := rfl; have : p256.C.len = 32 := rfl; unfold Cfg.sh; omega
   n4 := by decide
   sound_p := @invSound_of_prime _ _ Proof.P256.p_prime
   inv_p := InvOk.ofMod (by decide +kernel) (by decide)

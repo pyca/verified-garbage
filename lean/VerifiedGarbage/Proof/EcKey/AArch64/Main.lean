@@ -410,7 +410,7 @@ theorem args_ok (s : State) :
 
 /-- `vg_ec_<curve>_public_key` computes the specification's public key and
 restores the callee-saved registers. -/
-theorem publicKey_ok (hc : CfgOk c) (hC : Law c.C)
+theorem publicKey_ok (hc : CfgOk c) (hl : c.C.len = 8 * c.n) (hC : Law c.C)
     (hT : CombOkW c.C Cfg.combW (Cfg.combJ c.n) c.tbl c.start) {s₀ : State} (hp : PkPre c s₀) :
     WP isa (Impl.EcKey.AArch64.Cfg.publicKey c) s₀ fun s' =>
       (∀ r ∈ Cfg.saved.map Prod.fst, s'.gpr r = s₀.gpr r) ∧ PkPost c s₀ s' := by
@@ -421,25 +421,29 @@ theorem publicKey_ok (hc : CfgOk c) (hC : Law c.C)
   have x0₁ : s₁.gpr .x0 = s₀.gpr .x0 := k₁.gpr _ (by decide)
   -- The signature's regions, `k`, `d` and the hash all at `d`.
   obtain ⟨sN, hsN⟩ : ∃ sN, sN = s₁.withRegions
-      [⟨s₀.gpr .x1, 8 * c.n⟩, ⟨s₀.gpr .x1, 8 * c.n⟩, ⟨s₀.gpr .x1, 8 * c.n⟩,
+      [⟨s₀.gpr .x1, c.C.len⟩, ⟨s₀.gpr .x1, c.C.len⟩, ⟨s₀.gpr .x1, c.C.len⟩,
         ⟨s₀.syms c.tsym, 8 * c.combWords.length⟩]
-      [⟨s₀.gpr .x0, 16 * c.n⟩, ⟨s₀.gpr .x2, size⟩] := ⟨_, rfl⟩
+      [⟨s₀.gpr .x0, 2 * c.C.len⟩, ⟨s₀.gpr .x2, size⟩] := ⟨_, rfl⟩
   have g : ∀ r, sN.gpr r = s₁.gpr r := fun r => by rw [hsN]; rfl
   have mN : sN.mem = s₀.mem := by rw [hsN]; exact k₁.mem
   have sN₁ : sN.syms = s₀.syms := by rw [hsN]; exact sy₁
-  have hsub : Region.Sub ⟨s₀.gpr .x0, 16 * c.n⟩ ⟨s₀.gpr .x0, 1 + 16 * c.n⟩ := Region.sub_prefix (by omega)
+  have hsub : Region.Sub ⟨s₀.gpr .x0, 2 * c.C.len⟩ ⟨s₀.gpr .x0, 1 + 16 * c.n⟩ := Region.sub_prefix (by omega)
+  have od : Region.Disjoint ⟨s₀.gpr .x0, 2 * c.C.len⟩ ⟨s₀.gpr .x1, c.C.len⟩ := by
+    have := hp.out_d.sub_left hsub; rwa [← hl] at this
+  have dsc : Region.Disjoint ⟨s₀.gpr .x1, c.C.len⟩ ⟨s₀.gpr .x2, size⟩ := by
+    have := hp.d_sc; rwa [← hl] at this
   have hpN : Pre c sN := by
     refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ⟨?_, ?_, ?_, ?_⟩⟩ <;>
       simp only [g, x1₁, x0₁, x2₁, x3₁, x4₁, mN, sN₁]
     · rw [hsN]; rfl
     · rw [hsN]; rfl
     · exact hp.out_sc.sub_left hsub
-    · exact hp.out_d.sub_left hsub
-    · exact hp.out_d.sub_left hsub
-    · exact hp.out_d.sub_left hsub
-    · exact hp.d_sc
-    · exact hp.d_sc
-    · exact hp.d_sc
+    · exact od
+    · exact od
+    · exact od
+    · exact dsc
+    · exact dsc
+    · exact dsc
     · have := hp.out_fit; omega
     · exact hp.sc_fit
     · rw [hsN]; simp
@@ -447,8 +451,9 @@ theorem publicKey_ok (hc : CfgOk c) (hC : Law c.C)
     · exact hp.tbl.fit
     · exact hp.tbl.sc
   have hb : sN.gpr .x4 = s₀.gpr .x2 := by rw [g, x4₁]
-  obtain ⟨t, s₂N, ex, S₂⟩ := stage₁ hc (hpN.setup hc.n10) (rest := .seq (TCombCfg.comb c.combCfg) (.seq c.pPow (.block [])))
-    (Q := St₂ c sN (sN.gpr .x4)) fun _ S₁ => stage₂ hc hC hT hpN.tbl S₁ fun _ S₂ => WP.block_nil S₂
+  obtain ⟨t, s₂N, ex, S₂⟩ := stage₁ hc (.inl rfl) (hpN.setup hc)
+    (rest := .seq (TCombCfg.comb c.combCfg) (.seq c.pPow (.block [])))
+    (Q := St₂ c none sN (sN.gpr .x4)) fun _ S₁ => stage₂ hc hC hT hpN.tbl S₁ fun _ S₂ => WP.block_nil S₂
   rw [hb] at S₂
   -- The same run, with the public key's regions.
   have hrd₁ : s₁.rd = [⟨s₀.gpr .x1, 8 * c.n⟩, ⟨s₀.syms c.tsym, 8 * c.combWords.length⟩] := by rw [k₁.rd, hp.rd]
@@ -459,13 +464,13 @@ theorem publicKey_ok (hc : CfgOk c) (hC : Law c.C)
       refine Covers.of_sub fun r hr => ?_
       simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl | rfl | rfl
-      · exact ⟨_, List.mem_cons_self .., 0, (BitVec.add_zero _).symm, Nat.le_of_eq (Nat.zero_add _)⟩
-      · exact ⟨_, List.mem_cons_self .., 0, (BitVec.add_zero _).symm, Nat.le_of_eq (Nat.zero_add _)⟩
-      · exact ⟨_, List.mem_cons_self .., 0, (BitVec.add_zero _).symm, Nat.le_of_eq (Nat.zero_add _)⟩
+      · exact ⟨_, List.mem_cons_self .., 0, (BitVec.add_zero _).symm, by show 0 + c.C.len ≤ 8 * c.n; omega⟩
+      · exact ⟨_, List.mem_cons_self .., 0, (BitVec.add_zero _).symm, by show 0 + c.C.len ≤ 8 * c.n; omega⟩
+      · exact ⟨_, List.mem_cons_self .., 0, (BitVec.add_zero _).symm, by show 0 + c.C.len ≤ 8 * c.n; omega⟩
       · exact ⟨⟨s₀.syms c.tsym, 8 * c.combWords.length⟩, by simp, 0, (BitVec.add_zero _).symm,
           Nat.le_of_eq (Nat.zero_add _)⟩
       · exact ⟨⟨s₀.gpr .x0, 1 + 16 * c.n⟩, by simp, 0, (BitVec.add_zero _).symm,
-          by show 0 + 16 * c.n ≤ 1 + 16 * c.n; omega⟩
+          by show 0 + 2 * c.C.len ≤ 1 + 16 * c.n; omega⟩
       · exact ⟨⟨s₀.gpr .x2, size⟩, by simp, 0, (BitVec.add_zero _).symm, Nat.le_of_eq (Nat.zero_add _)⟩)
     (by
       rw [hsN, State.withRegions_wr, hwr₁]
@@ -473,7 +478,7 @@ theorem publicKey_ok (hc : CfgOk c) (hC : Law c.C)
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
       · exact ⟨⟨s₀.gpr .x0, 1 + 16 * c.n⟩, List.mem_cons_self .., 0, (BitVec.add_zero _).symm,
-          by show 0 + 16 * c.n ≤ 1 + 16 * c.n; omega⟩
+          by show 0 + 2 * c.C.len ≤ 1 + 16 * c.n; omega⟩
       · exact ⟨⟨s₀.gpr .x2, size⟩, by simp, 0, (BitVec.add_zero _).symm, Nat.le_of_eq (Nat.zero_add _)⟩)
   rw [hsN, State.withRegions_withRegions, State.withRegions_self] at ex'
   obtain ⟨s₂, hs₂⟩ : ∃ s₂, s₂ = s₂N.withRegions s₁.rd s₁.wr := ⟨_, rfl⟩
@@ -492,8 +497,9 @@ theorem publicKey_ok (hc : CfgOk c) (hC : Law c.C)
   · have hsv : ∀ r ∈ Cfg.saved.map Prod.fst, r ∉ [Reg.x2, .x3, .x4] := by decide
     rw [saved r hr, g, k₁.gpr r (hsv r hr)]
   -- The specification.
-  have hk : kv c sN = dk c s₀ := by simp only [kv, dk, mN, g, x3₁]
-  have hD : sv c (s₀.gpr .x2) s₂ D = dk c s₀ := by rw [sv₂, S₂.d]; simp only [dv, dk, mN, g, x1₁]
+  have hk : kv c sN = dk c s₀ := by simp only [kv, dk, mN, g, x3₁, hl]
+  have hD : sv c (s₀.gpr .x2) s₂ D = dk c s₀ := by
+    rw [sv₂, S₂.d, shAt_none, Nat.shiftRight_zero]; simp only [dv, dk, mN, g, x1₁, hl]
   have hR := S₂.rep
   rw [hk] at hR
   have hZ : ∀ {i}, tmv c.C c.n (s₀.gpr .x2) s₂N (c.sl i) = toM c.C.p (2 ^ (64 * c.n)) (sv c (s₀.gpr .x2) s₂ i) :=
@@ -519,7 +525,7 @@ theorem publicKey_ok (hc : CfgOk c) (hC : Law c.C)
       refine ⟨by rw [rax, hok]; rfl, ?_⟩
       rw [bytes, hok]
       show _ = 4 :: (toBytes c.C.len xv ++ toBytes c.C.len yv)
-      rw [hc.len]; rfl
+      rw [hl]; rfl
   · have hok : ok c (s₀.gpr .x2) s₂ = false := decide_eq_false (by rw [hD]; omega)
     rw [ite_eq_right_of_eq_false _ _ (eq_false hd)]
     exact ⟨by rw [rax, hok]; rfl, by rw [bytes, hok]; rfl⟩

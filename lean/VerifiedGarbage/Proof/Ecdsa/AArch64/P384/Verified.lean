@@ -46,8 +46,10 @@ theorem p384_ok : CfgOk p384 where
   red_p := by decide +kernel
   red_n := by decide +kernel
   n2 := by decide
-  len := rfl
-  hash := p384_nBits
+  len8 := by decide
+  len_lo := by decide
+  len_hi := by decide
+  sh := by have := p384_nBits; have : p384.n = 6 := rfl; have : p384.C.len = 48 := rfl; unfold Cfg.sh; omega
   n4 := by decide
   sound_p := @invSound_of_prime _ _ (by
     show Nat.Prime Spec.P384.curve.p

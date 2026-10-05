@@ -114,7 +114,8 @@ theorem flag_le (h0 : 0 < c.n) (h7 : c.n < 10) : ∀ w ∈ [(c.sl FLAG, 8)], w.1
   dsimp only; omega
 
 /-- `args`, the signature's setup and tables, `s`, and the checks of the key. -/
-theorem front_ok (hc : CfgOk c) {s₀ : State} (hp : VPre c s₀) {rest : Prog isa} {Q : State → Prop}
+theorem front_ok (hc : CfgOk c) (hl : c.C.len = 8 * c.n) {s₀ : State} (hp : VPre c s₀) {rest : Prog isa}
+    {Q : State → Prop}
     (h : ∀ g s, (∀ r ∈ Cfg.saved.map Prod.fst, g r = s₀.gpr r) → Front c s₀ (s₀.gpr .x3) g s →
       WP isa rest s Q) :
     WP isa (.seq (.block (Impl.Ecdsa.Verify.AArch64.Cfg.args c)) (.seq (.seq (.block c.setup)
@@ -127,19 +128,20 @@ theorem front_ok (hc : CfgOk c) {s₀ : State} (hp : VPre c s₀) {rest : Prog i
   refine WP.seq (WP.mono_syms (args_ok c s₀ h7) fun s₁ ⟨x4₁, x6₁, x3₁, x8₁, x2₁, k₁⟩ sy₁ => ?_)
   have x1₁ : s₁.gpr .x1 = s₀.gpr .x1 := k₁.gpr _ (by decide)
   have hrd₁ : s₁.rd ++ s₁.wr = s₀.rd ++ s₀.wr := by rw [k₁.rd, k₁.wr]
+  have := hl
   have hsp : SetupPre c s₁ := by
     refine ⟨by rw [k₁.wr, hp.wr, x4₁]; simp, fun e he => ?_, fun e he => ?_, fun e he => ?_, ?_, ?_, ?_,
       by rw [x4₁]; exact hp.sc_fit⟩
     · rw [x3₁, hrd₁, hp.rd]
       exact ⟨⟨s₀.gpr .x2, 16 * c.n⟩, by simp, Offset.contains_base _ (by omega) (by omega)⟩
-    · rw [x1₁, hrd₁, hp.rd]
+    · rw [x1₁, hrd₁, hp.rd]; rw [hl] at he
       exact ⟨_, by simp, Offset.contains_base _ he (by omega)⟩
     · rw [x2₁, hrd₁, hp.rd, BitVec.add_assoc, BitVec.ofNat_add_ofNat]
       exact ⟨⟨s₀.gpr .x0, 1 + 16 * c.n⟩, by simp, Offset.contains_base _ (by omega) (by omega)⟩
-    · rw [x1₁, x4₁]; exact hp.dg_sc
+    · rw [x1₁, x4₁, hl]; exact hp.dg_sc
     · rw [x2₁, x4₁]; exact hp.pk_sc.sub_left (Offset.sub_base _ (by omega))
     · rw [x3₁, x4₁]; exact hp.sig_sc.sub_left (Region.sub_prefix (by omega))
-  refine WP.seq (WP.mono (stage₁ hc hsp (rest := .block []) (Q := St₁ c s₁ (s₁.gpr .x4))
+  refine WP.seq (WP.mono (stage₁ hc (.inl rfl) hsp (rest := .block []) (Q := St₁ c none s₁ (s₁.gpr .x4))
     fun _ S => WP.block_nil S) fun s₂ S₂ => ?_)
   rw [x4₁] at S₂
   have hn := S₂.scr.nowrap
@@ -179,8 +181,8 @@ theorem front_ok (hc : CfgOk c) {s₀ : State} (hp : VPre c s₀) {rest : Prog i
       simp only [List.map_cons, List.map_nil, List.mem_singleton] at hw; subst hw
       exact ⟨Nat.zero_le _, hPT⟩))
   have x₄ : sv c (s₀.gpr .x3) s₃ E = keyX c s₀ := by
-    rw [v₃ (by decide) (by decide), S₂.e]
-    simp only [ev, k₁.mem, x2₁]
+    rw [v₃ (by decide) (by decide), S₂.e, shAt_none, Nat.shiftRight_zero]
+    simp only [ev, k₁.mem, x2₁, hl]
   have hq0 : s₃.mem (s₀.gpr .x0) = s₀.mem (s₀.gpr .x0) := by
     have := keep_of_disjoint' W₃ hp.pk_sc (by omega) (i := 0) (by omega) (by omega)
     rwa [BitVec.add_zero] at this
@@ -209,9 +211,10 @@ theorem front_ok (hc : CfgOk c) {s₀ : State} (hp : VPre c s₀) {rest : Prog i
   rw [y₄'] at py
   refine ⟨hs₅, by rw [wr₅, k₄.wr, k₃.wr, S₂.wr, k₁.wr], by rw [rd₅, k₄.rd, k₃.rd, S₂.rd, k₁.rd], F₅,
     by rw [a₅ (i := K) (by decide) (by decide) (by decide) (by decide) (by decide), S₂.k]
-       simp only [kv, k₁.mem, x3₁],
-    by rw [a₅ (i := D) (by decide) (by decide) (by decide) (by decide) (by decide), S₂.d]
-       simp only [dv, k₁.mem, x1₁],
+       simp only [kv, k₁.mem, x3₁, hl],
+    by rw [a₅ (i := D) (by decide) (by decide) (by decide) (by decide) (by decide), S₂.d, shAt_none,
+         Nat.shiftRight_zero]
+       simp only [dv, k₁.mem, x1₁, hl],
     by rw [e₅ (i := PT) (by decide) (by decide) (by decide), e₄ (by decide) (by decide) (by decide), pt₃],
     by rw [a₅ (i := RX) (by decide) (by decide) (by decide) (by decide) (by decide), S₂.rx],
     by rw [a₅ (i := RY) (by decide) (by decide) (by decide) (by decide) (by decide), S₂.ry],

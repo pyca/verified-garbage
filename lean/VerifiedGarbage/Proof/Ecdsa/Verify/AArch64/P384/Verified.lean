@@ -36,7 +36,7 @@ theorem verify_a64 (hL : Weierstrass.Law Spec.P384.curve)
     (s : State)
     (hs : verifyAArch64.pre s) :
     ∃ t s', Exec isa verifyP384 s t s' ∧ abiPreserved s s' ∧ verifyAArch64.post s s' := by
-  obtain ⟨t, s', he, hsv, hpost⟩ := verify_ok p384_ok hL hT (pre_of hs)
+  obtain ⟨t, s', he, hsv, hpost⟩ := verify_ok p384_ok rfl p384_nBits hL hT (pre_of hs)
   exact ⟨t, s', he, abiPreserved_of he verify_noCalls verify_untouched verify_keepsV hsv, hpost⟩
 
 theorem verify_ct : ConstantTime isa verifyAArch64.pre verifyAArch64.pub verifyP384 :=

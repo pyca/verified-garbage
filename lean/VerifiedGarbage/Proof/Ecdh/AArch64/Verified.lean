@@ -38,7 +38,7 @@ theorem post_of {s s' : State} (h : EPost p256 s s') : ecdhAArch64.post s s' := 
 
 theorem ecdh_a64 (hL : Weierstrass.Law Spec.P256.curve) (s : State) (hs : ecdhAArch64.pre s) :
     ∃ t s', Exec isa exchangeP256 s t s' ∧ abiPreserved s s' ∧ ecdhAArch64.post s s' := by
-  obtain ⟨t, s', he, hsv, hpost⟩ := exchange_ok p256_ok hL (pre_of hs)
+  obtain ⟨t, s', he, hsv, hpost⟩ := exchange_ok p256_ok rfl hL (pre_of hs)
   exact ⟨t, s', he, abiPreserved_of he (by lit_decide) (by lit_decide) (by lit_decide) hsv, post_of hpost⟩
 
 theorem ecdh_ct : ConstantTime isa ecdhAArch64.pre ecdhAArch64.pub exchangeP256 :=
