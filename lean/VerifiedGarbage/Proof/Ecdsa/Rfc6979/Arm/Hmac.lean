@@ -74,14 +74,14 @@ theorem scr_toNat (hL : L.Ok) {o : Nat} (ho : o < 8192) : (L.scr + BitVec.ofNat 
   rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega : o < 2 ^ 32)]
   exact Nat.mod_eq_of_lt (by omega)
 
-theorem fp_toNat (hL : L.Ok) {o : Nat} (ho : o ≤ 200) : (L.fp + BitVec.ofNat 32 o).toNat = L.sp.toNat - 200 + o := by
+theorem fp_toNat (hL : L.Ok) {o : Nat} (ho : o ≤ 216) : (L.fp + BitVec.ofNat 32 o).toNat = L.sp.toNat - 216 + o := by
   have := hL.nB; have := L.sp.isLt
-  have hfp : L.fp.toNat = L.sp.toNat - 200 := VG.Arm.FrameStack.sub_toNat' (by omega)
+  have hfp : L.fp.toNat = L.sp.toNat - 216 := VG.Arm.FrameStack.sub_toNat' (by omega)
   rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega : o < 2 ^ 32), hfp]
   exact Nat.mod_eq_of_lt (by omega)
 
 /-- The stack below the frame and parts of it are apart from `scratch`. -/
-theorem low_scr (hL : L.Ok) {n e k : Nat} (hn : n ≤ 224) (h : e + k ≤ 8192) :
+theorem low_scr (hL : L.Ok) {n e k : Nat} (hn : n ≤ 240) (h : e + k ≤ 8192) :
     Region.Disjoint ⟨L.B, n⟩ ⟨State.addr L.scr + BitVec.ofNat 64 e, k⟩ :=
   (hL.kc.sub_left (Region.sub_prefix hn)).sub_right (Offset.sub_base _ h)
 
@@ -216,7 +216,7 @@ theorem init_step (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) :
 /-- Where the data may be: in the frame below `h`'s end, or in `scratch`
 above HMAC's working space. -/
 def DataOk {dn : Nat} (L : Lay dn) (da : BitVec 32) (len : Nat) : Prop :=
-  (∃ o, da = L.fp + BitVec.ofNat 32 o ∧ o + len ≤ 160) ∨
+  (∃ o, da = L.fp + BitVec.ofNat 32 o ∧ o + len ≤ 176) ∨
     (∃ o, da = L.scr + BitVec.ofNat 32 o ∧ 2256 ≤ o ∧ o + len < 8192)
 
 /-- Code that sets `r1` to the data's address `da`, changing nothing else but `r12`. -/
@@ -230,7 +230,7 @@ namespace DataOk
 variable {da : BitVec 32} {len : Nat}
 
 theorem addr (hd : DataOk L da len) (hL : L.Ok) :
-    (∃ o, State.addr da = L.B + BitVec.ofNat 64 o ∧ 24 ≤ o ∧ o + len ≤ 184) ∨
+    (∃ o, State.addr da = L.B + BitVec.ofNat 64 o ∧ 24 ≤ o ∧ o + len ≤ 200) ∨
       (∃ o, State.addr da = State.addr L.scr + BitVec.ofNat 64 o ∧ 2256 ≤ o ∧ o + len ≤ 8192) := by
   rcases hd with ⟨o, rfl, h⟩ | ⟨o, rfl, h₁, h₂⟩
   · exact .inl ⟨24 + o, hL.fpA (by omega), by omega, by omega⟩

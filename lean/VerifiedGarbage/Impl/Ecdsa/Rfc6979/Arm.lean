@@ -5,15 +5,15 @@ import VerifiedGarbage.Impl.Pbkdf2.Whole.Arm
 
 `sign R H core (out = r0, d = r1, digest = r2, scratch = r3) -> r0`, as on
 x86 and AArch64 (`Impl/Ecdsa/Rfc6979/AArch64.lean`): RFC 6979 §3.2 for a
-curve of 32-byte scalars and a Merkle–Damgård hash function `H` whose output
-is `D` bytes, `32 ≤ D ≤ 64`, a multiple of 8, with HMAC computed by calling
-`H`'s HMAC `init`, streaming `update` and HMAC `finalize`, and each
-candidate tried by calling `core`, the signature with a given `k`
-(`vg_ecdsa_<curve>_sign`), which reads the leftmost 32 bytes of `V` and of
-the digest.
+curve of `Q = 4 w` byte scalars (`w ≤ 12` words: 8 for P-256, 12 for P-384)
+and a Merkle–Damgård hash function `H` whose output is `D` bytes,
+`Q ≤ D ≤ 64`, a multiple of 8, with HMAC computed by calling `H`'s HMAC
+`init`, streaming `update` and HMAC `finalize`, and each candidate tried by
+calling `core`, the signature with a given `k` (`vg_ecdsa_<curve>_sign`),
+which reads the leftmost `Q` bytes of `V` and of the digest.
 
-A frame of 200 bytes is allocated: from `sp`, `K` and `V` (64 bytes each, of
-which the first `D` are used), `h` (32 bytes), a word unused, and our
+A frame of 216 bytes is allocated: from `sp`, `K` and `V` (64 bytes each, of
+which the first `D` are used), `h` (48 bytes), a word unused, and our
 caller's `r4`–`r11` and `lr` (the calls replace `lr`). The functions we call
 preserve `r4`–`r11`, which hold what lives across the calls: `out`, `d` and
 `digest` in `r4`–`r6`, the frame in `r8`, the number of candidates left in
@@ -30,9 +30,9 @@ and `h` are cleared before the frame is freed. In `scratch`, as on x86:
 HMAC's inner and outer streaming states, the working space of HMAC's and
 `H`'s functions, and the message of steps d, f and h.3.
 
-1. `h = bits2octets(digest)`: the leftmost 32 bytes, minus `n` if they are
-   at least `n` (a conditional subtraction, as `2^256 < 2n`): the bytes, as
-   eight 32-bit words, go to `h`'s place, and `h - n`, by 16-bit digits
+1. `h = bits2octets(digest)`: the leftmost `Q` bytes, minus `n` if they are
+   at least `n` (a conditional subtraction, as `2^(8 Q) < 2n`): the bytes, as
+   `w` 32-bit words, go to `h`'s place, and `h - n`, by 16-bit digits
    (the model's `adc` sets no flags), to `K`'s; the mask of the borrow
    selects between them, word by word, big-endian into `h`.
 2. Steps b to g: `V = 0x01…`, `K = 0x00…`, `K = HMAC_K(V ‖ 0x00 ‖ d ‖ h)`,
@@ -58,9 +58,9 @@ open VG.Impl.Pbkdf2.Stream.Arm (scrAt)
 def fK : Nat := 0
 def fV : Nat := 64
 def fH : Nat := 128
-def fSave : Nat := 164
+def fSave : Nat := 180
 /-- The frame's size, a multiple of 8. -/
-def frameBytes : Nat := 200
+def frameBytes : Nat := 216
 
 /-! Where things are in `scratch`. -/
 def sInner : Nat := 0
@@ -80,6 +80,8 @@ structure Cfg where
   `finalize` with their working space as an argument (the functions
   PBKDF2's code calls). -/
   F : Impl.Pbkdf2.Whole.Arm.Fns
+  /-- The 32-bit words of the curve's scalars. -/
+  w : Nat
   /-- The order of the curve's base point. -/
   n : Nat
   /-- The most candidates to try. -/
@@ -138,20 +140,20 @@ def hmacV : Prog isa := c.hmac [.dp .add .r1 .r8 (.imm (BitVec.ofNat 32 fV))] c.
 def copyN (k : Nat) (src : Reg) (so : Nat) (dst : Reg) (d : Nat) : List Instr :=
   (List.range k).flatMap fun j => [.ldr .r0 src (so + 4 * j), .str .r0 dst (d + 4 * j)]
 
-/-- The message `V ‖ b` (and `‖ d ‖ h` if `full`) at `scratch + sMsg`, for
-`V` of `D` bytes: `V` and `h` from the frame (`r8`), `b` a byte, `d` from
-`r5`. -/
-def msg (D b : Nat) (full : Bool) : List Instr :=
+/-- The message `V ‖ b` (and `‖ d ‖ h` if `full`, `w` words each) at
+`scratch + sMsg`, for `V` of `D` bytes: `V` and `h` from the frame (`r8`),
+`b` a byte, `d` from `r5`. -/
+def msg (w D b : Nat) (full : Bool) : List Instr :=
   copyN (D / 4) .r8 fV .r11 sMsg ++ [.mov .r0 (.imm (BitVec.ofNat 32 b)), .strb .r0 .r11 (sMsg + D)] ++
-    (if full then copyN 8 .r5 0 .r11 (sMsg + D + 1) ++ copyN 8 .r8 fH .r11 (sMsg + D + 33) else [])
+    (if full then copyN w .r5 0 .r11 (sMsg + D + 1) ++ copyN w .r8 fH .r11 (sMsg + D + 1 + 4 * w) else [])
 
 /-- `K = HMAC_K(V ‖ b ‖ d ‖ h)`, then `V = HMAC_K(V)` (steps d–e, f–g). -/
 def rekeyFull (b : Nat) : Prog isa :=
-  .seq (.block (msg c.F.H.D b true)) (.seq (c.hmac (scrAt .r1 sMsg) (c.F.H.D + 65) fK) c.hmacV)
+  .seq (.block (msg c.w c.F.H.D b true)) (.seq (c.hmac (scrAt .r1 sMsg) (c.F.H.D + 8 * c.w + 1) fK) c.hmacV)
 
 /-- `K = HMAC_K(V ‖ 0x00)`, then `V = HMAC_K(V)` (step h.3). -/
 def rekey : Prog isa :=
-  .seq (.block (msg c.F.H.D 0 false)) (.seq (c.hmac (scrAt .r1 sMsg) (c.F.H.D + 1) fK) c.hmacV)
+  .seq (.block (msg c.w c.F.H.D 0 false)) (.seq (c.hmac (scrAt .r1 sMsg) (c.F.H.D + 1) fK) c.hmacV)
 
 /-- The 32-bit words of `n`, least significant first. -/
 def nWord (j : Nat) : Nat := (c.n >>> (32 * j)) % 2 ^ 32
@@ -174,25 +176,25 @@ def subDigit (k : Nat) : List Instr :=
       .dp .sub .r3 .r3 (.reg .r12), .dp .add .r3 .r3 (.reg .r7), .mov .r7 (.shifted .r3 .lsr 16),
       .mov .r3 (.shifted .r3 .lsl 16)]
 
-/-- Word `j` (least significant first) of the 32 bytes at `digest` (`r6`),
+/-- Word `j` (least significant first) of the `Q` bytes at `digest` (`r6`),
 as a big-endian number, to `h`'s place, and that word of the difference
 with `n` to `K`'s: both at the offset of the word's bytes. -/
 def subWord (j : Nat) : List Instr :=
-  [.ldr .r0 .r6 (28 - 4 * j), .rev .r0 .r0, .str .r0 .r8 (fH + 28 - 4 * j)] ++ movImm (c.nWord j) ++
-    subDigit 0 ++ subDigit 1 ++ [.dp .orr .r2 .r2 (.reg .r3), .str .r2 .r8 (fK + 28 - 4 * j)]
+  [.ldr .r0 .r6 (4 * (c.w - 1 - j)), .rev .r0 .r0, .str .r0 .r8 (fH + 4 * (c.w - 1 - j))] ++ movImm (c.nWord j) ++
+    subDigit 0 ++ subDigit 1 ++ [.dp .orr .r2 .r2 (.reg .r3), .str .r2 .r8 (fK + 4 * (c.w - 1 - j))]
 
 /-- Word `j` of `h`: the difference's if subtracting `n` did not borrow (the
 mask in `r7`), the digest's number's if it did, big-endian into `h`. -/
 def selWord (j : Nat) : List Instr :=
-  [.ldr .r0 .r8 (fH + 28 - 4 * j), .ldr .r1 .r8 (fK + 28 - 4 * j),
+  [.ldr .r0 .r8 (fH + 4 * (c.w - 1 - j)), .ldr .r1 .r8 (fK + 4 * (c.w - 1 - j)),
     -- `x = d ^ ((x ^ d) & mask)`: the difference `x` if it did not borrow, `d` if it did.
     .dp .eor .r1 .r1 (.reg .r0), .dp .and .r1 .r1 (.reg .r7), .dp .eor .r0 .r0 (.reg .r1),
-    .rev .r0 .r0, .str .r0 .r8 (fH + 28 - 4 * j)]
+    .rev .r0 .r0, .str .r0 .r8 (fH + 4 * (c.w - 1 - j))]
 
-/-- `h`: the 32 bytes at `digest`, minus `n` if that does not borrow. -/
+/-- `h`: the `Q` bytes at `digest`, minus `n` if that does not borrow. -/
 def reduce : List Instr :=
-  [.movw .r10 0xffff, .mov .r7 (.imm 1)] ++ (List.range 8).flatMap c.subWord ++
-    [.mov .r12 (.imm 0), .dp .sub .r7 .r12 (.reg .r7)] ++ (List.range 8).flatMap selWord
+  [.movw .r10 0xffff, .mov .r7 (.imm 1)] ++ (List.range c.w).flatMap c.subWord ++
+    [.mov .r12 (.imm 0), .dp .sub .r7 .r12 (.reg .r7)] ++ (List.range c.w).flatMap c.selWord
 
 /-- `V = 0x01…`, `K = 0x00…`, all 64 bytes of each. -/
 def initKV : List Instr :=
@@ -229,8 +231,8 @@ def tryOne : Prog isa :=
   (.seq (.block goOn)
     (.ite .ne (.seq c.rekey (.block again)) (.block stop)))))
 
-/-- The 40 words of `K`, `V` and `h` (and the unused word), each from `r1`. -/
-def zeros : List (Reg × Nat) := (List.range 40).map fun j => (.r1, 4 * j)
+/-- The 44 words of `K`, `V` and `h`, each from `r1`. -/
+def zeros : List (Reg × Nat) := (List.range 44).map fun j => (.r1, 4 * j)
 
 /-- `K`, `V` and `h` cleared (`r0`, the result, kept), and our caller's
 registers back, through `r12` (the frame's base). -/
