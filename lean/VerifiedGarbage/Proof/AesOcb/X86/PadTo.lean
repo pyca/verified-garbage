@@ -28,6 +28,27 @@ structure SBuf (p : Prm) (s : State) (S : BitVec 32) (n : Nat) : Prop where
 theorem SBuf.of_eq {p : Prm} {s s' : State} {S : BitVec 32} {n : Nat} (h : SBuf p s S n) (hrd : s'.rd = s.rd)
     (hwr : s'.wr = s.wr) : SBuf p s' S n := ⟨h.fit, h.w, by rw [hrd, hwr]; exact h.rd⟩
 
+/-- The head of `padTo`: `W + d` zeroed, the copy's arguments. -/
+theorem padToHead_ok {p : Prm} (L : Lay p) {s : State} (E : Env p s) {S : BitVec 32} {n d cO : Nat}
+    (hd : d + 16 ≤ 2560) (hc : cO + 4 ≤ 2560) (hcd : cO + 4 ≤ d ∨ d + 16 ≤ cO)
+    (hsi : s.gpr .esi = S) (hcnt : slotv s.mem p.W cO = BitVec.ofNat 32 n) :
+    ∃ s₁, runBlock isa (zero4 d ++
+      ([.mov .edi (.reg .esi), .mov .edx (.reg .ebp), .alu .add .edx (imm d), .mov .ecx (slot cO)] : List Instr)) s =
+        some s₁ ∧
+      s₁.mem = Proof.Cmac.zero4 s.mem (w64 p.W + BitVec.ofNat 64 d) ∧ s₁.gpr .edi = S ∧
+      s₁.gpr .edx = p.W + BitVec.ofNat 32 d ∧ s₁.gpr .ecx = BitVec.ofNat 32 n ∧
+      (∀ r, r ≠ .eax → r ≠ .ecx → r ≠ .edx → r ≠ .edi → s₁.gpr r = s.gpr r) ∧ s₁.rd = s.rd ∧ s₁.wr = s.wr := by
+  have hz := zero4_fold s.mem p.W d
+  have hcnt' : (Proof.Cmac.zero4 s.mem (w64 p.W + BitVec.ofNat 64 d)).readW (w64 p.W + BitVec.ofNat 64 cO) 32 =
+      BitVec.ofNat 32 n := by
+    rw [← hcnt, slotv_eq]
+    exact (Proof.Cmac.frame_store4 _ _ _ _ _).readW (r := ⟨w64 p.W + BitVec.ofNat 64 cO, 4⟩)
+      (Region.contains_self _ _) (fun r hr => by
+        simp only [List.mem_singleton] at hr; subst hr; exact Lay.w_w hcd hc hd) (by decide)
+  exact ⟨_, by grun [zero4, E.ebp, L.aW, E.perm.wW, E.perm.wR, hsi, hcnt', hz], by gmems [hz], by gregs [hsi],
+    by gregs [E.ebp], by gregs [hcnt', hz], fun r h₁ h₂ h₃ h₄ => by gregs [h₁, h₂, h₃, h₄], by gmems [],
+    by gmems []⟩
+
 /-- `padTo d cO`: `W + d ← pad(S)`, for the `n` bytes `S` at `esi`, `0 < n < 16`. -/
 theorem padTo_ok {p : Prm} (L : Lay p) {s : State} (E : Env p s) {S : BitVec 32} {n d cO : Nat} (hn : 0 < n)
     (hn' : n < 16) (hd : d + 16 ≤ 2560) (hc : cO + 4 ≤ 2560) (hcd : cO + 4 ≤ d ∨ d + 16 ≤ cO)
@@ -35,23 +56,8 @@ theorem padTo_ok {p : Prm} (L : Lay p) {s : State} (E : Env p s) {S : BitVec 32}
     WP isa (padTo d cO) s fun t => Frame [⟨w64 p.W + BitVec.ofNat 64 d, 16⟩] s.mem t.mem ∧
       blockAtMem t.mem (w64 p.W + BitVec.ofNat 64 d) = pad (bytesAt s.mem (w64 S) n) ∧
       (∀ r, r ≠ .eax → r ≠ .ecx → r ≠ .edx → r ≠ .edi → t.gpr r = s.gpr r) ∧ t.rd = s.rd ∧ t.wr = s.wr := by
-  have hz := zero4_fold s.mem p.W d
   have aD : w64 (p.W + BitVec.ofNat 32 d) = w64 p.W + BitVec.ofNat 64 d := L.aW (by omega)
-  have hcnt' : (Proof.Cmac.zero4 s.mem (w64 p.W + BitVec.ofNat 64 d)).readW (w64 p.W + BitVec.ofNat 64 cO) 32 =
-      BitVec.ofNat 32 n := by
-    rw [← hcnt, slotv_eq]
-    exact (Proof.Cmac.frame_store4 _ _ _ _ _).readW (r := ⟨w64 p.W + BitVec.ofNat 64 cO, 4⟩)
-      (Region.contains_self _ _) (fun r hr => by
-        simp only [List.mem_singleton] at hr; subst hr; exact Lay.w_w hcd hc hd) (by decide)
-  obtain ⟨s₁, run₁, m₁, di₁, dx₁, cx₁, g₁, rd₁, wr₁⟩ : ∃ s₁, runBlock isa (zero4 d ++
-      ([.mov .edi (.reg .esi), .mov .edx (.reg .ebp), .alu .add .edx (imm d), .mov .ecx (slot cO)] : List Instr)) s =
-        some s₁ ∧
-      s₁.mem = Proof.Cmac.zero4 s.mem (w64 p.W + BitVec.ofNat 64 d) ∧ s₁.gpr .edi = S ∧
-      s₁.gpr .edx = p.W + BitVec.ofNat 32 d ∧ s₁.gpr .ecx = BitVec.ofNat 32 n ∧
-      (∀ r, r ≠ .eax → r ≠ .ecx → r ≠ .edx → r ≠ .edi → s₁.gpr r = s.gpr r) ∧ s₁.rd = s.rd ∧ s₁.wr = s.wr :=
-    ⟨_, by grun [zero4, E.ebp, L.aW, E.perm.wW, E.perm.wR, hsi, hcnt', hz], by gmems [hz], by gregs [hsi],
-      by gregs [E.ebp], by gregs [hcnt', hz], fun r h₁ h₂ h₃ h₄ => by gregs [h₁, h₂, h₃, h₄], by gmems [],
-      by gmems []⟩
+  obtain ⟨s₁, run₁, m₁, di₁, dx₁, cx₁, g₁, rd₁, wr₁⟩ := padToHead_ok L E hd hc hcd hsi hcnt
   have fr₁ : Frame [⟨w64 p.W + BitVec.ofNat 64 d, 16⟩] s.mem s₁.mem := by
     rw [m₁]; exact Proof.Cmac.frame_store4 _ _ _ _ _
   have eS : bytesAt s₁.mem (w64 S) n = bytesAt s.mem (w64 S) n :=

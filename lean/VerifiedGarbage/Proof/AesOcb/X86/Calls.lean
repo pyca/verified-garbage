@@ -64,14 +64,14 @@ structure CallPost (p : Prm) (f : Nat → List Byte → Spec.Aes.State → Spec.
   rd : s'.rd = s.rd
   wr : s'.wr = s.wr
 
-/-- The call, from the state after `args`. -/
-theorem blocksCall_ok {f : Nat → List Byte → Spec.Aes.State → Spec.Aes.State} {fn : Impl.AesGcm.X86.Fn}
-    (ok : ∀ s, (Proof.Aes.blocksX86 f).pre s →
-      ∃ t s', Exec isa fn.code s t s' ∧ abiPreserved s s' ∧ (Proof.Aes.blocksX86 f).post s s')
-    (nosp : NoSp fn.code) (stack : stackUse fn.code = 0) {p : Prm} (L : Lay p) {s : State} (E : Env p s)
-    {D : BitVec 32} {n : Nat} (hdx : s.gpr .edx = D) (hbx : s.gpr .ebx = BitVec.ofNat 32 n) (hD : DReg p s D n) :
-    WP isa (.seq (.block [.mov .eax (slot ctxO), .mov .ecx (slot rndO), .alu .add .ebp (imm scrO)])
-      (.seq (blocksFrame fn) (.block [.alu .sub .ebp (imm scrO)]))) s (CallPost p f D n s) := by
+/-- The arguments of `vg_aes_*_blocks` but the blocks: the key context, its
+rounds, and the working space at `W + scrO`. -/
+theorem callArgs_ok {p : Prm} (L : Lay p) {s : State} (E : Env p s) {D : BitVec 32} {n : Nat}
+    (hdx : s.gpr .edx = D) (hbx : s.gpr .ebx = BitVec.ofNat 32 n) (hD : DReg p s D n) :
+    ∃ s₁, runBlock isa [.mov .eax (slot ctxO), .mov .ecx (slot rndO), .alu .add .ebp (imm scrO)] s = some s₁ ∧
+      BCall s₁ p.K D (p.W + BitVec.ofNat 32 scrO) p.R n ∧ s₁.gpr .esp = p.SP ∧
+      (∀ r, r ≠ .eax → r ≠ .ecx → r ≠ .ebp → s₁.gpr r = s.gpr r) ∧ s₁.mem = s.mem ∧ s₁.rd = s.rd ∧
+      s₁.wr = s.wr := by
   have hc := E.slots.ctx
   have hr := E.slots.rounds
   simp only [slotv_eq] at hc hr
@@ -84,7 +84,7 @@ theorem blocksCall_ok {f : Nat → List Byte → Spec.Aes.State → Spec.Aes.Sta
       fun r h₁ h₂ h₃ => by gregs [h₁, h₂, h₃], by gmems [], by gmems [], by gmems []⟩
   have aS : w64 (p.W + BitVec.ofNat 32 scrO) = w64 p.W + BitVec.ofNat 64 scrO := L.aW (by decide)
   have hsp₁ : s₁.gpr .esp = p.SP := by rw [g₁ _ (by decide) (by decide) (by decide), E.esp]
-  have bc : BCall s₁ p.K D (p.W + BitVec.ofNat 32 scrO) p.R n := {
+  refine ⟨s₁, run₁, {
     eax := ax₁, ecx := cx₁, edx := by rw [g₁ _ (by decide) (by decide) (by decide), hdx],
     ebx := by rw [g₁ _ (by decide) (by decide) (by decide), hbx], ebp := bp₁, rounds := L.rounds,
     esp := by rw [hsp₁]; exact L.sp, kd := hD.kd,
@@ -99,7 +99,20 @@ theorem blocksCall_ok {f : Nat → List Byte → Spec.Aes.State → Spec.Aes.Sta
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
       · exact hD.wr a k ⟨_, List.mem_singleton_self _, hc⟩
-      · exact E.perm.wC (show scrO + 2048 ≤ 2560 by decide) a k ⟨_, List.mem_singleton_self _, hc⟩ }
+      · exact E.perm.wC (show scrO + 2048 ≤ 2560 by decide) a k ⟨_, List.mem_singleton_self _, hc⟩ },
+    hsp₁, g₁, m₁, rd₁, wr₁⟩
+
+/-- The call, from the state after `args`. -/
+theorem blocksCall_ok {f : Nat → List Byte → Spec.Aes.State → Spec.Aes.State} {fn : Impl.AesGcm.X86.Fn}
+    (ok : ∀ s, (Proof.Aes.blocksX86 f).pre s →
+      ∃ t s', Exec isa fn.code s t s' ∧ abiPreserved s s' ∧ (Proof.Aes.blocksX86 f).post s s')
+    (nosp : NoSp fn.code) (stack : stackUse fn.code = 0) {p : Prm} (L : Lay p) {s : State} (E : Env p s)
+    {D : BitVec 32} {n : Nat} (hdx : s.gpr .edx = D) (hbx : s.gpr .ebx = BitVec.ofNat 32 n) (hD : DReg p s D n) :
+    WP isa (.seq (.block [.mov .eax (slot ctxO), .mov .ecx (slot rndO), .alu .add .ebp (imm scrO)])
+      (.seq (blocksFrame fn) (.block [.alu .sub .ebp (imm scrO)]))) s (CallPost p f D n s) := by
+  obtain ⟨s₁, run₁, bc, hsp₁, g₁, m₁, rd₁, wr₁⟩ := callArgs_ok L E hdx hbx hD
+  have bp₁ := bc.ebp
+  have aS : w64 (p.W + BitVec.ofNat 32 scrO) = w64 p.W + BitVec.ofNat 64 scrO := L.aW (by decide)
   refine WP.seq (WP.of_runBlock ⟨s₁, run₁, ?_⟩)
   refine WP.seq (WP.mono (blk_call ok nosp stack bc) fun s₂ P₂ => ?_)
   have bp₂ : s₂.gpr .ebp = p.W + BitVec.ofNat 32 scrO := by rw [P₂.saved _ (by decide), bp₁]

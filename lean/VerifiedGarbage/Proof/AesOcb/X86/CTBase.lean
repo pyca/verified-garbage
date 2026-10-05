@@ -21,7 +21,7 @@ open VG VG.X86 VG.X86.RegUpd VG.Impl.AesOcb.X86
 open VG.Spec.Aes (bytesAt)
 open VG.Spec.Ocb (Block blockAtMem ntz)
 open VG.Proof.Aes.X86 (BlocksImpl)
-open VG.Impl.AesGcm.X86 (at_ imm slot copyLoop)
+open VG.Impl.AesGcm.X86 (at_ imm slot copyLoop zero4)
 open VG.Proof.AesGcm.X86 (CT w64 slotv slotv_eq copyLoop_ct)
 
 /-- One register pinned. -/
@@ -88,5 +88,67 @@ theorem lNtz_ct {I : State → Prop} {p : Prm} (L : Lay p) {i : Nat} (hi : 0 < i
     fun h1 => ⟨Et.mut L (by rw [g' _ (by decide) (by decide) (by decide), Et.ebp])
       (by rw [g' _ (by decide) (by decide) (by decide), Et.esp]) rd' wr' (frame_toMut fr (inMut_lNtzR p)),
       k / 2, by omega, hodd.mpr h1, by omega, by omega, kt'⟩⟩
+
+/-! ## Calls -/
+
+/-- `callBlocks`: `args` (constant time from `ebp`, `hct`), which leave the
+blocks' address and number public, then the call. -/
+theorem callBlocks_ct {f : Nat → List Byte → Spec.Aes.State → Spec.Aes.State} {fn : Impl.AesGcm.X86.Fn}
+    (ok : ∀ s, (Proof.Aes.blocksX86 f).pre s →
+      ∃ t s', Exec isa fn.code s t s' ∧ abiPreserved s s' ∧ (Proof.Aes.blocksX86 f).post s s')
+    (ct : ConstantTime isa (Proof.Aes.blocksX86 f).pre (Proof.Aes.blocksX86 f).pub fn.code)
+    (nosp : NoSp fn.code) (stack : stackUse fn.code = 0) {I : State → Prop} {p : Prm} (L : Lay p)
+    {args : List Instr} {D : BitVec 32} {n : Nat}
+    (hI : ∀ s, I s → Env p s ∧ DReg p s D n ∧ ∃ s₁, runBlock isa args s = some s₁ ∧ s₁.gpr .edx = D ∧
+      s₁.gpr .ebx = BitVec.ofNat 32 n ∧ (∀ r, r ≠ .eax → r ≠ .ebx → r ≠ .ecx → r ≠ .edx → s₁.gpr r = s.gpr r) ∧
+      s₁.mem = s.mem ∧ s₁.rd = s.rd ∧ s₁.wr = s.wr)
+    (hct : ∀ {J : State → Prop}, (∀ s, J s → s.gpr .ebp = p.W) →
+      CT J (.block (args ++ [.mov .eax (slot ctxO), .mov .ecx (slot rndO), .alu .add .ebp (imm scrO)]))) :
+    CT I (callBlocks fn args) := by
+  unfold callBlocks
+  refine CT.seq (J := fun s₁ => BCall s₁ p.K D (p.W + BitVec.ofNat 32 scrO) p.R n ∧ s₁.gpr .esp = p.SP)
+    (hct fun s h => (hI s h).1.ebp) (fun s hs => ?_)
+    (CT.seq (J := fun s => s.gpr .ebp = p.W + BitVec.ofNat 32 scrO) (blk_ct ok ct fun s h => h)
+      (fun s h => WP.mono (blk_call ok nosp stack h.1) fun s' P => by rw [P.saved _ (by decide), h.1.ebp])
+      (CT.taint [.ebp] (pin_ebp fun _ h => h) (by taint_decide)))
+  obtain ⟨E, hD, s₁, run₁, dx₁, bx₁, g₁, m₁, rd₁, wr₁⟩ := hI s hs
+  have E₁ : Env p s₁ := E.keep (by rw [g₁ _ (by decide) (by decide) (by decide) (by decide)])
+    (by rw [g₁ _ (by decide) (by decide) (by decide) (by decide)]) rd₁ wr₁ m₁
+  obtain ⟨s₂, run₂, bc, hsp, -⟩ := callArgs_ok L E₁ dx₁ bx₁ (hD.of_eq wr₁)
+  exact WP.of_runBlock ⟨s₂, Proof.AesGcm.X86.runBlock_app_of run₁ run₂, bc, hsp⟩
+
+/-- `callBlocks` of one block of `W`. -/
+theorem oneCall_ct {f : Nat → List Byte → Spec.Aes.State → Spec.Aes.State} {fn : Impl.AesGcm.X86.Fn}
+    (ok : ∀ s, (Proof.Aes.blocksX86 f).pre s →
+      ∃ t s', Exec isa fn.code s t s' ∧ abiPreserved s s' ∧ (Proof.Aes.blocksX86 f).post s s')
+    (ct : ConstantTime isa (Proof.Aes.blocksX86 f).pre (Proof.Aes.blocksX86 f).pub fn.code)
+    (nosp : NoSp fn.code) (stack : stackUse fn.code = 0) {I : State → Prop} {p : Prm} (L : Lay p) {d : Nat}
+    (hd : d = tmpO ∨ d = bufO) (hI : ∀ s, I s → Env p s) : CT I (callBlocks fn (oneBlock d)) := by
+  refine callBlocks_ct ok ct nosp stack L (fun s h => ⟨hI s h, DReg.w L (hI s h) (n := 1)
+    (by rcases hd with rfl | rfl <;> decide) (by rcases hd with rfl | rfl <;> decide), oneBlock_ok (hI s h) d⟩) fun hJ => ?_
+  rcases hd with rfl | rfl
+  · exact CT.taint [.ebp] (pin_ebp hJ) (by taint_decide)
+  · exact CT.taint [.ebp] (pin_ebp hJ) (by taint_decide)
+
+/-! ## `padTo` -/
+
+theorem padTo_ct {I : State → Prop} {p : Prm} (L : Lay p) {S : BitVec 32} {n d : Nat}
+    (hd : d = bufO ∨ d = t2O)
+    (hI : ∀ s, I s → Env p s ∧ s.gpr .esi = S ∧ slotv s.mem p.W restO = BitVec.ofNat 32 n) :
+    CT I (padTo d restO) := by
+  have hJ : ∀ s, I s → WP isa (.block (zero4 d ++ ([.mov .edi (.reg .esi), .mov .edx (.reg .ebp),
+      .alu .add .edx (imm d), .mov .ecx (slot restO)] : List Instr))) s
+      (fun t => t.gpr .edi = S ∧ t.gpr .edx = p.W + BitVec.ofNat 32 d ∧ t.gpr .ecx = BitVec.ofNat 32 n) :=
+    fun s hs => by
+      obtain ⟨E, hsi, hc⟩ := hI s hs
+      obtain ⟨s₁, run₁, -, di₁, dx₁, cx₁, -⟩ := padToHead_ok L E (S := S) (n := n) (d := d) (cO := restO)
+        (by rcases hd with rfl | rfl <;> decide) (by decide) (by rcases hd with rfl | rfl <;> decide) hsi hc
+      exact WP.of_runBlock ⟨s₁, run₁, di₁, dx₁, cx₁⟩
+  unfold padTo
+  rcases hd with rfl | rfl
+  · exact CT.seq (CT.taint [.ebp, .esi] (pin2 fun s h => ⟨(hI s h).1.ebp, (hI s h).2.1⟩) (by taint_decide)) hJ
+      (CT.taint [.edi, .edx, .ecx] (pin3 fun _ h => h) (by taint_decide))
+  · exact CT.seq (CT.taint [.ebp, .esi] (pin2 fun s h => ⟨(hI s h).1.ebp, (hI s h).2.1⟩) (by taint_decide)) hJ
+      (CT.taint [.edi, .edx, .ecx] (pin3 fun _ h => h) (by taint_decide))
 
 end VG.Proof.AesOcb.X86
