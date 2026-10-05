@@ -165,8 +165,8 @@ theorem ptr_ok (s : State) {k : Nat} (hk : k < 4096) :
 
 theorem peer_eq (c : Cfg) : Impl.Ecdh.AArch64.Cfg.peer c =
     setConst c.n (c.sl R2P) (c.R * c.R % c.C.p) ++ (setConst c.n (c.sl BP) (c.mont c.C.b) ++
-    (([.addImm .x .x2 .x6 (1 + 8 * c.n)] : List Instr) ++
-    (loadBE c.n (c.sl QY) .x2 ++ (Impl.Ecdh.AArch64.Cfg.checkLead c ++
+    (([.addImm .x .x2 .x6 (1 + c.C.len)] : List Instr) ++
+    (loadBytes c.C.len c.n (c.sl QY) .x2 ++ (Impl.Ecdh.AArch64.Cfg.checkLead c ++
     (Impl.Ecdh.AArch64.Cfg.checkLtP c (c.sl E) ++ Impl.Ecdh.AArch64.Cfg.checkLtP c (c.sl QY)))))) := by
   simp only [Impl.Ecdh.AArch64.Cfg.peer, Impl.Ecdh.AArch64.Cfg.consts, List.flatMap_cons, List.flatMap_nil,
     List.append_nil, List.append_assoc]
@@ -180,13 +180,13 @@ theorem sv_out {base : Addr} {m m' : Mem} {j : Nat} (h : Outside base (c.sl j) (
 
 /-- The constants, the peer's `y` and the checks of its first byte, `x` and `y`. -/
 theorem peer_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size) {q : Addr}
-    (hq : s.gpr .x6 = q) (hin : (⟨q, 1 + 16 * c.n⟩ : Region) ∈ s.rd ++ s.wr)
-    (hd : Region.Disjoint ⟨q, 1 + 16 * c.n⟩ ⟨base, size⟩) (hmp : sv c base s MP = c.C.p) :
+    (hq : s.gpr .x6 = q) (hin : (⟨q, 1 + 2 * c.C.len⟩ : Region) ∈ s.rd ++ s.wr)
+    (hd : Region.Disjoint ⟨q, 1 + 2 * c.C.len⟩ ⟨base, size⟩) (hmp : sv c base s MP = c.C.p) :
     WP isa (.block (Impl.Ecdh.AArch64.Cfg.peer c)) s fun s' =>
-      Scr s' base size ∧ KeepRegs [.x1, .x2, .x5, .x7, .x16] s s' ∧
+      Scr s' base size ∧ KeepRegs [.x1, .x2, .x5, .x7, .x16, .x17] s s' ∧
       Unch base (slW c [R2P, BP, QY] ++ [(c.sl FLAG, 8)]) s.mem s'.mem ∧
       sv c base s' R2P = c.R * c.R % c.C.p ∧ sv c base s' BP = c.mont c.C.b ∧
-      sv c base s' QY = ofBytes (Spec.Ecdsa.bytesAt s.mem (q + BitVec.ofNat 64 (1 + 8 * c.n)) (8 * c.n)) ∧
+      sv c base s' QY = ofBytes (Spec.Ecdsa.bytesAt s.mem (q + BitVec.ofNat 64 (1 + c.C.len)) c.C.len) ∧
       word s'.mem base (c.sl FLAG) = word s.mem base (c.sl FLAG) &&& mask (s.mem q = 4) &&&
         mask (sv c base s E < c.C.p) &&& mask (sv c base s' QY < c.C.p) := by
   have h0 := hc.n0
@@ -194,6 +194,9 @@ theorem peer_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size) 
   have hn := hs.nowrap
   have hpl := hc.p_lt
   have hp3 := hc.p_ge
+  have hl8 := hc.len8
+  have hlo := hc.len_lo
+  have hhi := hc.len_hi
   have hsz : size = 8192 := rfl
   have hF : c.sl FLAG + 8 ≤ size := by have := sl_le c h7 (i := FLAG) (by decide); omega
   have hR2 := sl_le c h7 (i := R2P) (by decide)
@@ -210,7 +213,7 @@ theorem peer_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size) 
     Nat.lt_trans (Nat.mod_lt _ (by omega)) hpl)) fun s₂ ⟨e₂, k₂, O₂⟩ => ?_
   have hs₂ := hs₁.of_keepRegs k₂ (by decide)
   rw [WP.block_append_iff]
-  refine WP.mono (ptr_ok s₂ (k := 1 + 8 * c.n) (by omega)) fun s₃ ⟨e₃, k₃⟩ => ?_
+  refine WP.mono (ptr_ok s₂ (k := 1 + c.C.len) (by omega)) fun s₃ ⟨e₃, k₃⟩ => ?_
   have hs₃ := hs₂.of_keeps k₃ (by decide)
   have hq₂ : s₂.gpr .x6 = q := by rw [k₂.gpr _ (by decide), k₁.gpr _ (by decide), hq]
   have hq₃ : s₃.gpr .x6 = q := by rw [k₃.gpr _ (by decide), hq₂]
@@ -219,7 +222,8 @@ theorem peer_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size) 
   rw [hq₂] at e₃
   -- `y`
   rw [WP.block_append_iff]
-  refine WP.mono (loadBE_ok hs₃ (src := .x2) (by decide) hY (sl_mod8 c QY) (by omega) (fun e he => ⟨_, by rw [hrw₃]; exact hin, by
+  refine WP.mono (loadBytes_ok hs₃ (src := .x2) (by decide) (by decide) hY (sl_mod8 c QY) hl8 hlo hhi (by omega)
+    (fun e he => ⟨_, by rw [hrw₃]; exact hin, by
       rw [e₃, BitVec.add_assoc, BitVec.ofNat_add_ofNat]
       exact Offset.contains_base q (by omega) (by omega)⟩)
     (by rw [e₃]; exact (hd.sub_left (Offset.sub_base q (by omega))).sub_right (Offset.sub_base base hY)))
@@ -238,7 +242,7 @@ theorem peer_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size) 
   -- the first byte
   rw [WP.block_append_iff]
   refine WP.mono (checkLead_ok c hs₄ hq₄ ⟨_, by rw [hrw₄]; exact hin, by
-      have := Offset.contains_base q (d := 0) (n := 1) (k := 1 + 16 * c.n) (by omega) (by omega)
+      have := Offset.contains_base q (d := 0) (n := 1) (k := 1 + 2 * c.C.len) (by omega) (by omega)
       rwa [BitVec.add_zero] at this⟩ hF (sl_mod8 c FLAG)) fun s₅ ⟨f₅, k₅, O₅⟩ => ?_
   have hs₅ := hs₄.of_keepRegs k₅ (by decide)
   -- `x < p`
@@ -263,7 +267,7 @@ theorem peer_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size) 
       O₁.word (hap (j := R2P) (by decide) (by decide)) (by omega)]
   refine ⟨hs₆.of_keepRegs k₇ (by decide), ?_, ?_, ?_, ?_, ?_, ?_⟩
   · exact ((((k₁.trans k₂).mono (by sub_regs)).trans ((Keeps.regs k₃).mono (by sub_regs))).trans
-      ((k₄.mono (by sub_regs)).trans (k₅.trans ((k₆.trans k₇).mono (by sub_regs)))))
+      ((k₄.mono (by sub_regs)).trans ((k₅.trans ((k₆.trans k₇).mono (by sub_regs))).mono (by sub_regs))))
   · have U := ((((O₁.unch.trans O₂.unch).trans O₄'.unch).trans O₅.unch).trans
       O₆.unch).trans O₇.unch
     refine U.mono fun w hw => ?_

@@ -51,12 +51,12 @@ def upToPow : Prog isa :=
   .seq (TCombCfg.comb c.combCfg) <|
   .seq c.pPow (.block [])
 
-/-- `04 ‖ x ‖ y` (or zeros) to `out`, `x19` and `x20` restored, and the
+/-- `04 ‖ x ‖ y` (or zeros, `len` bytes each) to `out`, `x19`–`x25` restored, and the
 flag's low bit to `x0`. -/
 def finish : List Instr :=
   [ld .x3 (c.sl FLAG), .movz .x .x1 4 0, .logic .and .x .x1 .x1 .x3, .strb .x1 .x20 0,
     .addImm .x .x6 .x20 1] ++
-  storeBE c.n .x6 0 (c.sl X) ++ storeBE c.n .x6 (8 * c.n) (c.sl Y) ++
+  storeBytes c.C.len c.n .x6 0 (c.sl X) ++ storeBytes c.C.len c.n .x6 c.C.len (c.sl Y) ++
   Impl.Ecdsa.AArch64.Cfg.saved.map (fun (r, d) => ld r d) ++
   [.movz .x .x1 1 0, .logic .and .x .x0 .x3 .x1]
 

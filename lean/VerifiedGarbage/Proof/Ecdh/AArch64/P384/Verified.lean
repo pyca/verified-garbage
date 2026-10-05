@@ -21,8 +21,8 @@ open VG VG.AArch64 VG.Impl.Ecdsa.AArch64 VG.Impl.Ecdh.AArch64
 open VG.Proof.Ecdsa.AArch64 VG.Proof.Ecdsa.AArch64.P384
 
 theorem pre_of {s : State} (h : ecdhAArch64.pre s) : EPre p384 s := by
-  obtain ⟨h1, h2, h3, -, -, h6, h7, -, h9⟩ := h
-  exact ⟨h1, h2, h3, h6, h7, h9⟩
+  obtain ⟨h1, h2, h3, -, -, h6, h7, h8, h9⟩ := h
+  exact ⟨h1, h2, h3, h6, h7, h8, h9⟩
 
 theorem post_of {s s' : State} (h : EPost p384 s s') : ecdhAArch64.post s s' := by
   unfold EPost at h
@@ -33,7 +33,7 @@ theorem post_of {s s' : State} (h : EPost p384 s s') : ecdhAArch64.post s s' := 
   revert h
   generalize hq : ex s.mem (s.gpr .x1) (s.gpr .x2) = q
   rw [show Spec.Ecdh.exchange p384.C (dk p384 s)
-      (Spec.Ecdsa.bytesAt s.mem (s.gpr .x2) (1 + 16 * p384.n)) = ex s.mem (s.gpr .x1) (s.gpr .x2) from rfl, hq]
+      (Spec.Ecdsa.bytesAt s.mem (s.gpr .x2) (1 + 2 * p384.C.len)) = ex s.mem (s.gpr .x1) (s.gpr .x2) from rfl, hq]
   rcases q with _ | z <;> exact id
 
 theorem ecdh_a64 (hL : Weierstrass.Law Spec.P384.curve) (s : State) (hs : ecdhAArch64.pre s) :
@@ -43,7 +43,7 @@ theorem ecdh_a64 (hL : Weierstrass.Law Spec.P384.curve) (s : State) (hs : ecdhAA
   have hn : exchangeP384.noCalls = true := by lit_decide
   have hu : KeepsUntouched exchangeP384 := by lit_decide
   have hv : exchangeP384.allInstrs keepsV = true := by lit_decide
-  obtain ⟨t, s', he, hsv, hpost⟩ := exchange_ok p384_ok rfl hL (pre_of hs)
+  obtain ⟨t, s', he, hsv, hpost⟩ := exchange_ok p384_ok hL (pre_of hs)
   exact ⟨t, s', he, abiPreserved_of he hn hu hv hsv, post_of hpost⟩
 
 theorem ecdh_ct : ConstantTime isa ecdhAArch64.pre ecdhAArch64.pub exchangeP384 :=

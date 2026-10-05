@@ -10,11 +10,11 @@ ECDSA's signature (`Impl/Ecdsa/AArch64.lean`) and of ECDH
 on x86-64 (`Impl/Ecdsa/Verify/X86_64.lean`):
 
 1. `scratch` to `x4`, `public` to `x6`, `sig` to `x3` (the signature's
-   `k`), `sig + 8 n` to `x8` and `public + 1` to `x2` (its hash); then
-   the signature's setup and tables of bits, unchanged: `r` is read into
-   the slot of `k`, the hash (`digest = x1`) into that of `d`, the key's
-   `x` into that of the hash; then `s` into `PT` (which only the powers
-   use);
+   `k`), `sig + len` to `x8` and `public + 1` to `x2` (its hash); then
+   the signature's setup and tables of bits: `r` is read into the slot of
+   `k`, the hash (`digest = x1`) into that of `d`, shifted right by the bits
+   of the digest that are not `e`'s, the key's `x` into that of the hash;
+   then `s` into `PT` (which only the powers use);
 2. ECDH's checks of the key (`peer`, `validate`): its first byte, `x < p`,
    `y < p` and the curve's equation, into the flag, and the key's point, or
    `G` if the flag is clear, to the slots of ECDH's window method;
@@ -64,15 +64,15 @@ namespace Cfg
 
 variable (c : Impl.Ecdsa.AArch64.Cfg)
 
-/-- `scratch` to `x4`, `public` to `x6`, `sig` to `x3`, `sig + 8 n` to
+/-- `scratch` to `x4`, `public` to `x6`, `sig` to `x3`, `sig + len` to
 `x8` and `public + 1` to `x2`: the signature's arguments, with `k` the
 signature's `r`, `d` the hash and the hash the key's `x`. -/
 def args : List Instr :=
-  [.addImm .x .x4 .x3 0, .addImm .x .x6 .x0 0, .addImm .x .x3 .x2 0, .addImm .x .x8 .x2 (8 * c.n),
+  [.addImm .x .x4 .x3 0, .addImm .x .x6 .x0 0, .addImm .x .x3 .x2 0, .addImm .x .x8 .x2 c.C.len,
     .addImm .x .x2 .x0 1]
 
 /-- `s`, into `PT`. -/
-def loadS : List Instr := loadBE c.n (c.sl PT) .x8
+def loadS : List Instr := loadBytes c.C.len c.n (c.sl PT) .x8
 
 /-- The checks of `r` and `s`, and `s R mod n`. -/
 def scalars : Prog isa :=
@@ -126,7 +126,7 @@ def back : Prog isa :=
 
 /-- `vg_ecdsa_<curve>_verify`. -/
 def verify : Prog isa :=
-  .seq (.block (args c)) <| .seq (Impl.Ecdh.AArch64.Cfg.prefix' c) <| .seq (.block (loadS c)) <|
+  .seq (.block (args c)) <| .seq (Impl.Ecdh.AArch64.Cfg.prefixWith c (some D)) <| .seq (.block (loadS c)) <|
   .seq (.block (Impl.Ecdh.AArch64.Cfg.peer c)) <| .seq (Impl.Ecdh.AArch64.Cfg.validate c) (back c)
 
 end Cfg

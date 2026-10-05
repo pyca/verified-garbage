@@ -40,7 +40,7 @@ theorem pk_a64 (hL : Weierstrass.Law Spec.P256.curve)
     (s : State)
     (hs : pkAArch64.pre s) :
     ∃ t s', Exec isa publicKeyP256 s t s' ∧ abiPreserved s s' ∧ pkAArch64.post s s' := by
-  obtain ⟨t, s', he, hsv, hpost⟩ := publicKey_ok p256_ok rfl hL hT (pre_of hs)
+  obtain ⟨t, s', he, hsv, hpost⟩ := publicKey_ok p256_ok hL hT (pre_of hs)
   exact ⟨t, s', he, abiPreserved_of he (by lit_decide) (by lit_decide) (by lit_decide) hsv, post_of hpost⟩
 
 theorem pk_ct : ConstantTime isa pkAArch64.pre pkAArch64.pub publicKeyP256 :=
