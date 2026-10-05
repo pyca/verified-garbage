@@ -119,6 +119,39 @@ theorem chkMsg_ok {Hm : Impl.Pbkdf2.Md.X86_64.Stream} {u : State} {F S : Addr} (
     VG.Offset.ofNat_sub_ofNat (show 2 * Hm.D + 2 ≤ k by omega)]
   rw [BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)]
 
+/-- The prologue and the check of `k`: in the frame, with the argument
+slots, `rax = k` and CF set if `k < 2 hLen + 2`. -/
+theorem encHead_ok {H : Spec.Mgf1.Hash} {Hm : Impl.Pbkdf2.Md.X86_64.Stream} {s : State} (hp : EPre H s)
+    (hD : Hm.D < 2 ^ 20) :
+    WP isa (.block (encPrologue ++ chkK Hm)) (allocState frameBytes s) fun t2 => EnvE s t2 ∧
+      Lay t2 (fb s) (stackArg s 5) ∧
+      Rep t2.mem (fb s) (stackArg s 5) (fun o => s.mem (off (stackArg s 5) o)) (encW s) ∧
+      t2.gpr .rax = BitVec.ofNat 64 (s.gpr .rcx).toNat ∧
+      t2.cf = some (decide ((s.gpr .rcx).toNat < 2 * Hm.D + 2)) := by
+  have hk1 := hp.k1; have hk2 := hp.k2
+  rw [WP.block_append_iff]
+  refine WP.mono (wp_good (block_good _ rfl) (encPro_ok hp)) fun t1 ⟨⟨k1, L1, R1, f1⟩, sp1, mx1, _⟩ => ?_
+  have hW : ArgsW s (encW s) := fun _ _ => rfl
+  obtain ⟨-, -, -, w23, -⟩ := hW.w
+  have w23' : encW s 23 = BitVec.ofNat 64 (s.gpr .rcx).toNat := by
+    rw [w23, BitVec.ofNat_toNat, BitVec.setWidth_eq]
+  refine WP.mono (wp_good (block_good _ rfl) (chkK_ok (Hm := Hm) L1 R1 w23' (by omega) hD))
+    fun t2 ⟨⟨k2, hm2, hax2, hcf2⟩, sp2, mx2, _⟩ => ?_
+  have he2 : EnvE s t2 :=
+    { rsp := (k2.gpr (by decide)).trans ((k1.gpr (by decide)).trans rfl)
+      rd := k2.2.1.trans k1.2.1
+      wr := k2.2.2.trans (k1.2.2.trans (EPre.wr hp))
+      cs := fun r hr h => by
+        rw [k2.gpr (cs_disj [.rax] (by decide) r hr), k1.gpr (cs_disj [.rax] (by decide) r hr)]
+        show (if r = .rsp then _ else s.gpr r) = s.gpr r
+        simp only [h, ↓reduceIte]
+      mx := by rw [mx2, mx1]; rfl
+      fr := by
+        rw [hm2]
+        exact Frame.sub f1 fun r hr => by
+          rw [List.mem_singleton.mp hr]; exact ⟨_, List.mem_cons_self .., frame_sub s⟩ }
+  exact ⟨he2, L1.congr (k2.gpr (by decide)) k2.2.2 (by rw [hm2]), hm2 ▸ R1, hax2, hcf2⟩
+
 variable {Hl Gm : Hash} (hH : HashOK Hl) (KH : Callees Hl) (hG : HashOK Gm) (KG : Callees Gm)
   (mH : MgfLink Hl hH) (mG : MgfLink Gm hG)
 
@@ -150,30 +183,9 @@ theorem enc_correct (s : State) (h : (encK mH.G mG.G).pre s) :
         (abiPreserved s (freed frameBytes s₂) ∧ (encK mH.G mG.G).post s (freed frameBytes s₂)) :=
     fun s₂ he hw => encEnd_ok hp he hw
   unfold encBody seqs seqs seqs
-  refine WP.seq ?_
-  rw [WP.block_append_iff]
-  refine WP.mono (wp_good (block_good _ rfl) (encPro_ok hp)) fun t1 ⟨⟨k1, L1, R1, f1⟩, sp1, mx1, _⟩ => ?_
   have hW : ArgsW s (encW s) := fun _ _ => rfl
   obtain ⟨w14, w21, w22, w23, w24, w25, w26, w27, w28, w29, w30, w31⟩ := hW.w
-  have w23' : encW s 23 = BitVec.ofNat 64 (s.gpr .rcx).toNat := by
-    rw [w23, BitVec.ofNat_toNat, BitVec.setWidth_eq]
-  refine WP.mono (wp_good (block_good _ rfl) (chkK_ok (Hm := Hl.stream) L1 R1 w23' (by omega) (by omega)))
-    fun t2 ⟨⟨k2, hm2, hax2, hcf2⟩, sp2, mx2, _⟩ => ?_
-  have he2 : EnvE s t2 :=
-    { rsp := (k2.gpr (by decide)).trans ((k1.gpr (by decide)).trans rfl)
-      rd := k2.2.1.trans k1.2.1
-      wr := k2.2.2.trans (k1.2.2.trans (EPre.wr hp))
-      cs := fun r hr h => by
-        rw [k2.gpr (cs_disj [.rax] (by decide) r hr), k1.gpr (cs_disj [.rax] (by decide) r hr)]
-        show (if r = .rsp then _ else s.gpr r) = s.gpr r
-        simp only [h, ↓reduceIte]
-      mx := by rw [mx2, mx1]; rfl
-      fr := by
-        rw [hm2]
-        exact Frame.sub f1 fun r hr => by
-          rw [List.mem_singleton.mp hr]; exact ⟨_, List.mem_cons_self .., frame_sub s⟩ }
-  have L2 : Lay t2 (fb s) (stackArg s 5) := L1.congr (k2.gpr (by decide)) k2.2.2 (by rw [hm2])
-  have R2 : Rep t2.mem (fb s) (stackArg s 5) (fun o => s.mem (off (stackArg s 5) o)) (encW s) := hm2 ▸ R1
+  refine WP.seq (WP.mono (encHead_ok (Hm := Hl.stream) hp (by omega)) fun t2 ⟨he2, L2, R2, hax2, hcf2⟩ => ?_)
   refine WP.ite (M := isa) _ (show isa.eval .b t2 = _ from hcf2) (fun hb => ?_) (fun hb => ?_)
   · rw [decide_eq_true_eq] at hb
     refine WP.mono (encFail_ok hp he2 L2 R2 hW) fun t' ⟨he', hw'⟩ => fin t' he' ?_
