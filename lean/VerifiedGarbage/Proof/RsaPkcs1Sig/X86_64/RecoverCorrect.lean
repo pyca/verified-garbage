@@ -539,4 +539,105 @@ theorem code_correct (v : PubImpl) (s : State) (h : recContract.pre s) :
       rwa [List.length_replicate] at this
     · rw [recover_len _ (by simp only [bytesAt_length]; intro h'; exact hsig (BitVec.eq_of_toNat_eq h'))]
 
+/-! ## Facts for constant time -/
+
+/-- After an encoding `em'` into `EM₂`: `Env`, `EM₁` kept, `EM₂` the encoding,
+and what lies apart from `EM₂` kept. -/
+theorem encDone {s t₂ t₃ : State} (hp : PreR s) (he₂ : Env s t₂) (hK₃ : Keep clob t₂ t₃)
+    (h8₂ : t₂.gpr .r8 = off (fb s) oEM2) {em' : List Byte} (hl' : em'.length = (s.gpr .rcx).toNat)
+    (hpost : EOut t₂ t₃ (some em')) :
+    Env s t₃ ∧ t₃.gpr .rax = 1 ∧ Spec.Rsa.bytesAt t₃.mem (off (fb s) oEM2) (s.gpr .rcx).toNat = em' ∧
+      ∀ {p : Addr} {n : Nat}, (⟨p, n⟩ : Region).Disjoint ⟨off (fb s) oEM2, (s.gpr .rcx).toNat⟩ → n ≤ 2 ^ 64 →
+        Spec.Rsa.bytesAt t₃.mem p n = Spec.Rsa.bytesAt t₂.mem p n := by
+  have hk2 := hp.k2
+  have hk1 := hp.k1
+  obtain ⟨hax, hm₃⟩ := hpost
+  refine ⟨Env.of he₂ hp (hK₃.gpr (by decide)) hK₃.2.1 hK₃.2.2 (hm₃ ▸ frame_writeBytes _ _ _)
+      fun r hr => .inl ⟨oEM2, (s.gpr .rcx).toNat, by rw [List.mem_singleton.mp hr, h8₂, hl'], by decide,
+        by unfold oEM2 frameBytes; omega⟩, hax, ?_, fun {p n} hd hn => ?_⟩
+  · have := bytesAt_writeBytes t₂.mem (off (fb s) oEM2) em' (by omega)
+    rw [hl'] at this
+    rw [hm₃, h8₂]; exact this
+  · rw [hm₃, h8₂]
+    simp only [Spec.Rsa.bytesAt]
+    exact List.map_congr_left fun i hi =>
+      (frame_writeBytes t₂.mem _ em').bytes (R := ⟨p, n⟩) (fun r hr => by
+        rw [List.mem_singleton.mp hr, hl']; exact hd) hn (List.mem_range.mp hi)
+
+theorem EM12_disjoint {s : State} (hp : PreR s) :
+    (⟨off (fb s) oEM1, (s.gpr .rcx).toNat⟩ : Region).Disjoint ⟨off (fb s) oEM2, (s.gpr .rcx).toNat⟩ := by
+  have hk2 := hp.k2; have := fb_toNat hp
+  exact Offset.disjoint _ (.inl (by unfold oEM1 oEM2; omega)) (by unfold oEM1 frameBytes at *; omega)
+    (by unfold oEM2 frameBytes at *; omega)
+
+theorem valA_disjoint {s : State} (hp : PreR s) :
+    (⟨valA s, (s.gpr .rsi).toNat⟩ : Region).Disjoint ⟨off (fb s) oEM2, (s.gpr .rcx).toNat⟩ := by
+  have hk2 := hp.k2; have hk1 := hp.k1; have ol := hp.ol; have := fb_toNat hp
+  exact Offset.disjoint _ (.inl (by unfold oEM1 oEM2; omega)) (by unfold oEM1 frameBytes at *; omega)
+    (by unfold oEM2 frameBytes at *; omega)
+
+/-- The head of `copyOut`. -/
+theorem copyHead_ok {s t : State} (hp : PreR s) (he : Env s t) (hcx : t.gpr .rcx = s.gpr .rcx) :
+    WP isa (.block ([.mov .r8 (.mem (sp oOut)), .mov .rdi (.reg .r8), .mov .r9 (.mem (sp oOl))] ++ valPtr)) t
+      fun u => Keep [.r8, .rdi, .r9, .rsi] t u ∧ u.mem = t.mem ∧ u.gpr .r8 = s.gpr .rdi ∧
+        u.gpr .rdi = s.gpr .rdi ∧ u.gpr .r9 = s.gpr .rsi ∧ u.gpr .rsi = valA s := by
+  have hs := he.scr hp
+  rw [WP.block_append_iff]
+  refine WP.mono (WP.keep [.r8, .rdi, .r9] (Q := fun u => u.mem = t.mem ∧ u.gpr .r8 = s.gpr .rdi ∧
+      u.gpr .rdi = s.gpr .rdi ∧ u.gpr .r9 = s.gpr .rsi) (by
+    xrun [ea_sp, he.rsp, hs.ld (d := oOut) (by decide), hs.ld (d := oOl) (by decide), he.sOut, he.sOl]) rfl)
+    fun t₀ ⟨⟨hm₀, h8₀, hdi₀, h9₀⟩, k₀⟩ => ?_
+  refine WP.mono (valPtr_ok hp ((k₀.gpr (by decide)).trans he.rsp) ((k₀.gpr (by decide)).trans hcx) h9₀)
+    fun u ⟨k, hm, hsi⟩ => ⟨(k₀.trans k).mono (by simp), hm.trans hm₀, by rw [k.gpr (by decide), h8₀],
+      by rw [k.gpr (by decide), hdi₀], by rw [k.gpr (by decide), h9₀], hsi⟩
+
+/-- The head of `zeroSlots`. -/
+theorem zeroHead_ok {s t : State} (hp : PreR s) (he : Env s t) :
+    WP isa (.block [.mov .rdi (.mem (sp oOut)), .mov .rsi (.mem (sp oOl))]) t
+      fun u => Keep [.rdi, .rsi] t u ∧ u.mem = t.mem ∧ u.gpr .rdi = s.gpr .rdi ∧ u.gpr .rsi = s.gpr .rsi := by
+  have hs := he.scr hp
+  refine WP.mono (WP.keep [.rdi, .rsi] (Q := fun u => u.mem = t.mem ∧ u.gpr .rdi = s.gpr .rdi ∧
+      u.gpr .rsi = s.gpr .rsi) (by
+    xrun [ea_sp, he.rsp, hs.ld (d := oOut) (by decide), hs.ld (d := oOl) (by decide), he.sOut, he.sOl]) rfl)
+    fun u ⟨h, k⟩ => ⟨k, h⟩
+
+/-- What `encode` needs, from `encArgs`. -/
+theorem encPre {s t₂ : State} (hp : PreR s) (he₂ : Env s t₂) (h8₂ : t₂.gpr .r8 = off (fb s) oEM2)
+    (hcx₂ : t₂.gpr .rcx = s.gpr .rcx) (hdx₂ : t₂.gpr .rdx = ((stackArg s 0).setWidth 32).setWidth 64)
+    (h9₂ : t₂.gpr .r9 = s.gpr .rsi) (hsi₂ : t₂.gpr .rsi = valA s) :
+    EPre t₂ ((stackArg s 0).setWidth 32) (s.gpr .rcx).toNat := by
+  have hk1 := hp.k1
+  have hk2 := hp.k2
+  have ol := hp.ol
+  have hF := fb_toNat hp
+  have hfr : (⟨fb s, frameBytes⟩ : Region) ∈ t₂.wr := by rw [he₂.wr]; exact List.mem_cons_self ..
+  exact {
+    rdx := by rw [hdx₂]; apply BitVec.eq_of_toNat_eq; simp
+    hk := by rw [hcx₂]
+    kle := hk2
+    buf := fun i hi => by
+      rw [h8₂, he₂.wr]; exact frame_bytes' hp (by unfold oEM2 frameBytes; omega) i hi
+    rd := fun j hj => by
+      rw [hsi₂]
+      rw [h9₂] at hj
+      exact ⟨_, List.mem_append_right _ hfr, by
+        rw [show valA s + BitVec.ofNat 64 j = off (fb s) (oEM1 + ((s.gpr .rcx).toNat - (s.gpr .rsi).toNat) + j)
+          from off_off _ _ _]
+        exact Offset.contains_base _ (by unfold oEM1 frameBytes; omega) (by unfold oEM1 frameBytes at *; omega)⟩
+    sep := fun j hj i hi => by
+      rw [hsi₂, h8₂]
+      rw [h9₂] at hj
+      exact ne_of_disjoint (valA_disjoint hp) (by omega) (by omega) hj hi }
+
+/-- The hash value's place in `EM₁` holds its last `out_len` bytes. -/
+theorem valBytes {s : State} (hp : PreR s) (m : Mem) :
+    Spec.Rsa.bytesAt m (valA s) (s.gpr .rsi).toNat =
+      (Spec.Rsa.bytesAt m (off (fb s) oEM1) (s.gpr .rcx).toNat).drop ((s.gpr .rcx).toNat - (s.gpr .rsi).toNat) := by
+  have hk1 := hp.k1
+  have ol := hp.ol
+  have := bytesAt_drop m (off (fb s) oEM1) ((s.gpr .rcx).toNat - (s.gpr .rsi).toNat) (s.gpr .rsi).toNat
+  rw [show (s.gpr .rcx).toNat - (s.gpr .rsi).toNat + (s.gpr .rsi).toNat = (s.gpr .rcx).toNat by omega] at this
+  rw [this]
+  exact congrArg (Spec.Rsa.bytesAt m · _) (off_off _ _ _).symm
+
 end VG.Proof.RsaPkcs1Sig.X86_64.Rec
