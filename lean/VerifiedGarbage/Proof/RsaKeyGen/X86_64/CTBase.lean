@@ -15,7 +15,7 @@ there, and each piece starts from what correctness says about the header
 
 namespace VG.Proof.RsaKeyGen.X86_64
 
-open VG VG.X86_64 VG.Proof.Bignum.X86_64
+open VG VG.X86_64 VG.Proof.Bignum.X86_64 VG.Impl.Bignum.X86_64
 
 /-- The taint of a piece: `rs` and `rdi` public, `rdi` the base of writable
 region 2 (the scratch space), whose header words `S` are public. -/
@@ -95,5 +95,50 @@ theorem kt_piece {α : Type} {Φ Ψ : α → State → Prop} {c : Prog isa} (B :
     {hc : VG.Taint.Hint VG.X86_64.Taint.T} (h : (taint.check (kT rs S) c hc).isSome = true)
     (hw : ∀ a s, Φ a s → WP isa c s (Ψ a)) : RelCT isa (Two Φ) c (Two Ψ) :=
   two_post (kt_ct B wr S vs rs hS hvs hΦ hpin h) hw
+
+theorem exec_seqs_app {a b : List (Prog isa)} (ha : a ≠ []) (hb : b ≠ []) {s s' : State} {t : List Leak}
+    (e : Exec isa (seqs (a ++ b)) s t s') : Exec isa (.seq (seqs a) (seqs b)) s t s' := by
+  induction a generalizing s t with
+  | nil => exact absurd rfl ha
+  | cons c a ih =>
+    cases a with
+    | nil =>
+      obtain ⟨d, rest, rfl⟩ := List.exists_cons_of_ne_nil hb
+      exact e
+    | cons d rest =>
+      change Exec isa (.seq c (seqs (d :: rest ++ b))) s t s' at e
+      change Exec isa (.seq (.seq c (seqs (d :: rest))) (seqs b)) s t s'
+      obtain ⟨t₁, t₂, s₁, rfl, e₁, e₂⟩ : ∃ t₁ t₂ s₁, t = t₁ ++ t₂ ∧ Exec isa c s t₁ s₁ ∧
+          Exec isa (seqs (d :: rest ++ b)) s₁ t₂ s' := by
+        cases e with
+        | seq e₁ e₂ => exact ⟨_, _, _, rfl, e₁, e₂⟩
+      obtain ⟨u₁, u₂, s₂, rfl, f₁, f₂⟩ : ∃ u₁ u₂ s₂, t₂ = u₁ ++ u₂ ∧ Exec isa (seqs (d :: rest)) s₁ u₁ s₂ ∧
+          Exec isa (seqs b) s₂ u₂ s' := by
+        cases ih (by simp) e₂ with
+        | seq f₁ f₂ => exact ⟨_, _, _, rfl, f₁, f₂⟩
+      rw [← List.append_assoc]
+      exact .seq (.seq e₁ f₁) f₂
+
+/-- A sequence in two parts. -/
+theorem RelCT.seqs_app {P Q : State → State → Prop} {a b : List (Prog isa)} (ha : a ≠ []) (hb : b ≠ [])
+    (h : RelCT isa P (.seq (seqs a) (seqs b)) Q) : RelCT isa P (seqs (a ++ b)) Q :=
+  fun _ _ _ _ _ _ hp e₁ e₂ => h _ _ _ _ _ _ hp (exec_seqs_app ha hb e₁) (exec_seqs_app ha hb e₂)
+
+theorem pins_nil {α : Type} (Φ : α → State → Prop) : Pins Φ [] := fun _ _ _ _ _ _ hr => absurd hr (List.not_mem_nil)
+
+/-- `HP` survives changes to the arrays alone (past the header). -/
+theorem HP.frm {B : Addr} {wr : List Region} {vs : List (Nat × BitVec 64)} {s t : State} {rs : List (Nat × Nat)}
+    (h : HP B wr vs s) (hf : Frm B rs s.mem t.mem) (hrs : ∀ r ∈ rs, 256 ≤ r.1) (hvs : ∀ e ∈ vs, e.1 < 32)
+    (hdi : t.gpr .rdi = B) (hw : t.wr = s.wr) : HP B wr vs t :=
+  ⟨hdi, hw.trans h.wr, fun e he => by
+    have := hvs e he
+    rw [hf.word_eq (fun r hr => Or.inl (by have := hrs r hr; omega)) (by omega)]; exact h.hdr e he⟩
+
+/-- Header words survive changes away from them. -/
+theorem hdr_frm {B : Addr} {rs : List (Nat × Nat)} {m m' : Mem} {vs : List (Nat × BitVec 64)} (hf : Frm B rs m m')
+    (hd : ∀ e ∈ vs, e.1 < 32 ∧ ∀ r ∈ rs, 8 * e.1 + 8 ≤ r.1 ∨ r.1 + r.2 ≤ 8 * e.1)
+    (h : ∀ e ∈ vs, word m B (8 * e.1) = e.2) : ∀ e ∈ vs, word m' B (8 * e.1) = e.2 := fun e he => by
+  have := hd e he
+  rw [hf.word_eq this.2 (by omega)]; exact h e he
 
 end VG.Proof.RsaKeyGen.X86_64
