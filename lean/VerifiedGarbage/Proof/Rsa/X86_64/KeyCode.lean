@@ -16,7 +16,7 @@ namespace VG.Proof.Rsa.X86_64
 
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Rsa.X86_64.CheckKey
 open VG.Proof.MlKem.X86_64 VG.Proof.Bignum.X86_64
-open VG.Impl.Bignum.X86_64.Public (sN sK sMask exit)
+open VG.Impl.Bignum.X86_64.Public (sN sK sMask exit invalid)
 
 /-! ## The contract on the registers and the stack -/
 
@@ -203,6 +203,171 @@ theorem sat_of_valid {x : Nat} (h : Spec.Rsa.exponentValid x = true) : sat x = x
   simp only [Spec.Rsa.exponentValid, Bool.and_eq_true, beq_iff_eq, decide_eq_true_eq] at h
   unfold sat; simp only [h.2, ↓reduceIte]
 
+/-! ## The steps -/
+
+/-- `e`'s bytes. -/
+abbrev keyE (s : State) : List Byte := Spec.Rsa.bytesAt s.mem (s.gpr .rdx) (s.gpr .rcx).toNat
+
+/-- `n`'s bytes. -/
+abbrev keyN (s : State) : List Byte := Spec.Rsa.bytesAt s.mem (s.gpr .rdi) (s.gpr .rsi).toNat
+
+/-- `expCheck`, after `entry`. -/
+theorem expK_ok {s t₁ : State} (c : KeyArgs s) (h₁ : EntryPost s (stackArg s 10) t₁) :
+    WP isa Impl.Rsa.X86_64.Checked.expCheck t₁ fun t₂ =>
+      t₂.zf = some (Spec.Rsa.exponentValid (Spec.Rsa.os2ip (keyE s))) ∧ t₂.mem = t₁.mem ∧
+      t₂.gpr .r11 = BitVec.ofNat 64 (sat (Spec.Rsa.os2ip (keyE s))) ∧ Keep [.rax, .r10, .r11] t₁ t₂ := by
+  have hZ := c.hZ
+  have := c.el2
+  have := c.k1
+  have := c.k2
+  have in₁ : InScr (stackArg s 10) ((stackArg s 11).toNat * 8) s.mem t₁.mem :=
+    InScr.of_outside h₁.out (by omega)
+  have eb₁ := c.eb.congrK in₁ h₁.keep
+  exact expCheckR_ok (s := t₁) (eb := keyE s) h₁.r8 (by rw [h₁.r9, ofNat_toNat64]) c.el1 (by omega)
+    (fun i hi => eb₁.rd i (by rw [bytesAt_length]; exact hi))
+    (by have := bytesAt_of_src eb₁; rw [bytesAt_length] at this; exact this.symm)
+
+/-- After `entry` and `expCheck`. -/
+structure AfterExp (s t₁ t₂ : State) : Prop where
+  h₁ : EntryPost s (stackArg s 10) t₁
+  mem : t₂.mem = t₁.mem
+  r11 : t₂.gpr .r11 = BitVec.ofNat 64 (sat (Spec.Rsa.os2ip (keyE s)))
+  keep : Keep [.rax, .r10, .r11] t₁ t₂
+
+theorem AfterExp.scr {s t₁ t₂ : State} (c : KeyArgs s) (h : AfterExp s t₁ t₂) :
+    Scr t₂ (stackArg s 10) ((stackArg s 11).toNat * 8) := (c.hs.congr h.h₁.keep.2.2).congr h.keep.2.2
+
+theorem AfterExp.rdi {s t₁ t₂ : State} (h : AfterExp s t₁ t₂) : t₂.gpr .rdi = stackArg s 10 :=
+  (h.keep.gpr (by decide)).trans h.h₁.rdi
+
+/-- The stores before the modulus' check. -/
+abbrev keyStores : List Instr := [.store (hdr sEv) .r11, .mov .rdx (.mem (hdr sN)), .mov .rcx (.mem (hdr sK))]
+
+theorem storesK_ok {s t₁ t₂ : State} (c : KeyArgs s) (h : AfterExp s t₁ t₂) :
+    WP isa (.block keyStores) t₂ fun t₃ => t₃.gpr .rdx = s.gpr .rdi ∧ t₃.gpr .rcx = s.gpr .rsi ∧
+      t₃.mem = t₂.mem.writeW (off (stackArg s 10) (8 * sEv)) (t₂.gpr .r11) ∧ Keep [.rdx, .rcx] t₂ t₃ := by
+  have hZ := c.hZ
+  have := c.k1
+  have hs₂ := h.scr c
+  have hEv := hs₂.st (d := 8 * sEv) (by unfold sEv sFn; omega)
+  have hN₃ : word (t₂.mem.writeW (off (stackArg s 10) (8 * sEv)) (t₂.gpr .r11)) (stackArg s 10) (8 * sN) =
+      s.gpr .rdi := by rw [hdrStore_hdr _ _ _ (by decide) (by decide) (by decide), h.mem, h.h₁.hN]
+  have hK₃ : word (t₂.mem.writeW (off (stackArg s 10) (8 * sEv)) (t₂.gpr .r11)) (stackArg s 10) (8 * sK) =
+      s.gpr .rsi := by rw [hdrStore_hdr _ _ _ (by decide) (by decide) (by decide), h.mem, h.h₁.hK]
+  exact WP.mono (WP.keep [.rdx, .rcx] (Q := fun t => t.gpr .rdx = s.gpr .rdi ∧ t.gpr .rcx = s.gpr .rsi ∧
+      t.mem = t₂.mem.writeW (off (stackArg s 10) (8 * sEv)) (t₂.gpr .r11)) (by
+    xrun [State.ea, hdr, h.rdi, hdrOff, hEv, hs₂.ld (d := 8 * sN) (by unfold sN sFn; omega),
+      hs₂.ld (d := 8 * sK) (by unfold sK sFn; omega), hN₃, hK₃]) rfl) fun t ⟨⟨a, b, m⟩, k⟩ => ⟨a, b, m, k⟩
+
+/-- After the modulus' check. -/
+structure AfterInv (s t₁ t₂ t₃ t₄ : State) : Prop where
+  e : AfterExp s t₁ t₂
+  m₃ : t₃.mem = t₂.mem.writeW (off (stackArg s 10) (8 * sEv)) (t₂.gpr .r11)
+  k₃ : Keep [.rdx, .rcx] t₂ t₃
+  m₄ : t₄.mem = t₃.mem
+  k₄ : Keep [.rax, .rbp, .rsi] t₃ t₄
+
+theorem AfterInv.inScr {s t₁ t₂ t₃ t₄ : State} (c : KeyArgs s) (h : AfterInv s t₁ t₂ t₃ t₄) :
+    InScr (stackArg s 10) ((stackArg s 11).toNat * 8) s.mem t₄.mem := by
+  have hZ := c.hZ
+  have := c.k1
+  rw [h.m₄, h.m₃, h.e.mem]
+  exact (InScr.of_outside h.e.h₁.out (by omega)).trans
+    (InScr.of_outside (writeW_outside (d := 8 * sEv) _ _ _ (by unfold sEv sFn; omega)) (by unfold sEv sFn; omega))
+
+theorem AfterInv.keep {s t₁ t₂ t₃ t₄ : State} (h : AfterInv s t₁ t₂ t₃ t₄) :
+    Keep [.r11, .rax, .rdi, .r8, .r9, .rax, .r10, .r11, .rdx, .rcx, .rax, .rbp, .rsi] s t₄ :=
+  ((h.e.h₁.keep.trans h.e.keep).trans h.k₃).trans h.k₄
+
+theorem AfterInv.rdi {s t₁ t₂ t₃ t₄ : State} (h : AfterInv s t₁ t₂ t₃ t₄) : t₄.gpr .rdi = stackArg s 10 :=
+  (h.k₄.gpr (by decide)).trans ((h.k₃.gpr (by decide)).trans h.e.rdi)
+
+theorem AfterInv.scr {s t₁ t₂ t₃ t₄ : State} (c : KeyArgs s) (h : AfterInv s t₁ t₂ t₃ t₄) :
+    Scr t₄ (stackArg s 10) ((stackArg s 11).toNat * 8) := ((h.e.scr c).congr h.k₃.2.2).congr h.k₄.2.2
+
+theorem AfterInv.hw {s t₁ t₂ t₃ t₄ : State} (h : AfterInv s t₁ t₂ t₃ t₄) {i : Nat} (hi : i < 32) (hne : i ≠ sEv) :
+    word t₄.mem (stackArg s 10) (8 * i) = word t₁.mem (stackArg s 10) (8 * i) := by
+  rw [h.m₄, h.m₃, hdrStore_hdr _ _ _ (by decide) hi (Ne.symm hne), h.e.mem]
+
+theorem AfterInv.saved {s t₁ t₂ t₃ t₄ : State} (h : AfterInv s t₁ t₂ t₃ t₄) :
+    ∀ i < 6, word t₄.mem (stackArg s 10) (8 * i) = word t₁.mem (stackArg s 10) (8 * i) :=
+  fun i hi => h.hw (by omega) (by unfold sEv sFn; omega)
+
+theorem invalidK_ok {s t₁ t₂ t₃ : State} (c : KeyArgs s) (h : AfterExp s t₁ t₂) (hdx : t₃.gpr .rdx = s.gpr .rdi)
+    (hcx : t₃.gpr .rcx = s.gpr .rsi) (hm₃ : t₃.mem = t₂.mem.writeW (off (stackArg s 10) (8 * sEv)) (t₂.gpr .r11))
+    (k₃ : Keep [.rdx, .rcx] t₂ t₃) :
+    WP isa (.block invalid) t₃ fun t₄ =>
+      t₄.zf = some (Spec.Rsa.modulusValid (Spec.Rsa.os2ip (keyN s)) (s.gpr .rsi).toNat) ∧ AfterInv s t₁ t₂ t₃ t₄ := by
+  have in₃ : InScr (stackArg s 10) ((stackArg s 11).toNat * 8) s.mem t₃.mem :=
+    (AfterInv.inScr c ⟨h, hm₃, k₃, rfl, Keep.refl _ _⟩ :)
+  have nb₃ := c.nb.congrK in₃ ((h.h₁.keep.trans h.keep).trans k₃)
+  exact WP.mono (invalid_ok (s := t₃) (nb := keyN s) hdx (by rw [hcx, ofNat_toNat64]) c.k1 c.k2
+    (bytesAt_length _ _ _) (fun i hi => nb₃.rd i (by rw [bytesAt_length]; exact hi)) (fun i hi => nb₃.val i _))
+    fun t₄ ⟨hz, hm₄, k₄⟩ => ⟨hz, h, hm₃, k₃, hm₄, k₄⟩
+
+/-- `main`'s hypotheses, after the checks of `e` and `n`. -/
+theorem AfterInv.mainPre {s t₁ t₂ t₃ t₄ : State} (c : KeyArgs s) (h : AfterInv s t₁ t₂ t₃ t₄)
+    (hv : Spec.Rsa.exponentValid (Spec.Rsa.os2ip (keyE s)) = true)
+    (hm : Spec.Rsa.modulusValid (Spec.Rsa.os2ip (keyN s)) (s.gpr .rsi).toNat = true) :
+    MainPre t₄ (stackArg s 10) ((stackArg s 11).toNat * 8) (s.gpr .rsi).toNat (s.gpr .rdi) (s.gpr .r8)
+      (stackArg s 0) (stackArg s 2) (stackArg s 4) (stackArg s 6) (stackArg s 8) (keyN s)
+      (Spec.Rsa.bytesAt s.mem (s.gpr .r8) (s.gpr .r9).toNat)
+      (Spec.Rsa.bytesAt s.mem (stackArg s 0) (stackArg s 1).toNat)
+      (Spec.Rsa.bytesAt s.mem (stackArg s 2) (stackArg s 3).toNat)
+      (Spec.Rsa.bytesAt s.mem (stackArg s 4) (stackArg s 1).toNat)
+      (Spec.Rsa.bytesAt s.mem (stackArg s 6) (stackArg s 3).toNat)
+      (Spec.Rsa.bytesAt s.mem (stackArg s 8) (stackArg s 1).toNat) (Spec.Rsa.os2ip (keyE s)) := by
+  have in₄ := h.inScr c
+  have kk := h.keep
+  have src : ∀ {p : Addr} {bs : List Byte}, Src s (stackArg s 10) ((stackArg s 11).toNat * 8) p bs →
+      Src t₄ (stackArg s 10) ((stackArg s 11).toNat * 8) p bs := fun h => h.congrK in₄ kk
+  have hlt : Spec.Rsa.os2ip (keyE s) < 2 ^ 33 := by
+    simp only [Spec.Rsa.exponentValid, Bool.and_eq_true, beq_iff_eq, decide_eq_true_eq] at hv; exact hv.2
+  have := c.dl1
+  have := c.dl2
+  have := c.pl1
+  have := c.pl2
+  have := c.ql1
+  have := c.ql2
+  have h₁ := h.e.h₁
+  exact
+    { scr := h.scr c
+      rdi := h.rdi
+      zk := c.hZ
+      k1 := c.k1
+      k2 := c.k2
+      nl := bytesAt_length _ _ _
+      dl1 := by rw [bytesAt_length]; omega
+      dl2 := by rw [bytesAt_length]; omega
+      pl1 := by rw [bytesAt_length]; omega
+      pl2 := by rw [bytesAt_length]; omega
+      ql1 := by rw [bytesAt_length]; omega
+      ql2 := by rw [bytesAt_length]; omega
+      dpl := by rw [bytesAt_length, bytesAt_length]
+      qil := by rw [bytesAt_length, bytesAt_length]
+      dql := by rw [bytesAt_length, bytesAt_length]
+      hK := by rw [h.hw (i := sK) (by decide) (by decide), h₁.hK, ofNat_toNat64]
+      hN := by rw [h.hw (i := sN) (by decide) (by decide), h₁.hN]
+      hD := by rw [h.hw (i := sD) (by decide) (by decide), h₁.hD]
+      hDl := by rw [h.hw (i := sDlen) (by decide) (by decide), h₁.hDl, bytesAt_length, ofNat_toNat64]
+      hP := by rw [h.hw (i := sP) (by decide) (by decide), h₁.hP]
+      hPl := by rw [h.hw (i := sPlen) (by decide) (by decide), h₁.hPl, bytesAt_length, ofNat_toNat64]
+      hQ := by rw [h.hw (i := sQ) (by decide) (by decide), h₁.hQ]
+      hQl := by rw [h.hw (i := sQlen) (by decide) (by decide), h₁.hQl, bytesAt_length, ofNat_toNat64]
+      hDP := by rw [h.hw (i := sDP) (by decide) (by decide), h₁.hDP]
+      hDQ := by rw [h.hw (i := sDQ) (by decide) (by decide), h₁.hDQ]
+      hQI := by rw [h.hw (i := sQI) (by decide) (by decide), h₁.hQI]
+      hEv := by
+          rw [h.m₄, h.m₃, word_writeW_self, h.e.r11, sat_of_valid hv, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+      srN := src c.nb
+      srD := src c.db
+      srP := src c.pb
+      srQ := src c.qb
+      srDP := src c.dpb
+      srDQ := src c.dqb
+      srQI := src c.qib
+      mv := hm }
+
 /-- `vg_rsa_check_key`, given that its code never loads MXCSR (which the
 registration file evaluates). -/
 theorem keyCode_correct (hmx : code.allInstrs (fun i => !loadsMxcsr i) = true) (s : State)
@@ -212,124 +377,39 @@ theorem keyCode_correct (hmx : code.allInstrs (fun i => !loadsMxcsr i) = true) (
   suffices hwp : WP isa code s fun s' => gprPreserved s s' ∧ keyContract.post s s' by
     obtain ⟨t, s', he, hg, hp⟩ := hwp
     exact ⟨t, s', he, abiPreserved_of_exec hmx he hg, hp⟩
-  have hk1 := c.k1
-  have hk2 := c.k2
   have hZ := c.hZ
-  have := c.el2
   have hn := c.hs.nowrap
+  have := c.k1
   have hw : ∀ i < 32, InRegions s.wr (off (stackArg s 10) (8 * i)) 8 := fun i hi => c.hs.st (by omega)
   unfold code
   refine WP.seq (WP.mono (keyEntry_ok rfl hw c.ha c.hsep) fun t₁ h₁ => ?_)
-  have hs₁ := c.hs.congr h₁.keep.2.2
+  refine WP.seq (WP.mono (expK_ok c h₁) fun t₂ ⟨hz₂, hm₂, h11₂, k₂⟩ => ?_)
+  have e : AfterExp s t₁ t₂ := ⟨h₁, hm₂, h11₂, k₂⟩
   have in₁ : InScr (stackArg s 10) ((stackArg s 11).toNat * 8) s.mem t₁.mem :=
     InScr.of_outside h₁.out (by omega)
-  have eb₁ := c.eb.congrK in₁ h₁.keep
-  refine WP.seq (WP.mono (expCheckR_ok (s := t₁) (eb := Spec.Rsa.bytesAt s.mem (s.gpr .rdx) (s.gpr .rcx).toNat)
-    h₁.r8 (by rw [h₁.r9, ofNat_toNat64]) c.el1 (by omega)
-    (fun i hi => eb₁.rd i (by rw [bytesAt_length]; exact hi))
-    (by have := bytesAt_of_src eb₁; rw [bytesAt_length] at this; exact this.symm))
-    fun t₂ ⟨hz₂, hm₂, h11₂, k₂⟩ => ?_)
-  have k12 := h₁.keep.trans k₂
-  have hdi₂ : t₂.gpr .rdi = stackArg s 10 := (k₂.gpr (by decide)).trans h₁.rdi
-  have hs₂ := hs₁.congr k₂.2.2
-  have hsv₂ : ∀ i < 6, word t₂.mem (stackArg s 10) (8 * i) = word t₁.mem (stackArg s 10) (8 * i) := by
-    intro i _; rw [hm₂]
-  refine WP.ite (!Spec.Rsa.exponentValid (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (s.gpr .rdx) (s.gpr .rcx).toNat)))
-    (by simp [eval, hz₂]) (fun hb => ?_) (fun hb => ?_)
-  · have hv : Spec.Rsa.exponentValid (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (s.gpr .rdx) (s.gpr .rcx).toNat)) =
-        false := by simpa using hb
-    refine WP.mono (failK_ok hs₂ hdi₂ (by omega)) fun t ⟨hax, hsv, hm, k⟩ =>
-      keyFin c h₁ hax (fun i hi => (hsv i hi).trans (hsv₂ i hi)) ((k.gpr (by decide)).trans (k12.gpr (by decide)))
-        (by rw [hm, hm₂]; exact in₁) ?_
+  refine WP.ite (!Spec.Rsa.exponentValid (Spec.Rsa.os2ip (keyE s))) (by simp [eval, hz₂]) (fun hb => ?_) (fun hb => ?_)
+  · have hv : Spec.Rsa.exponentValid (Spec.Rsa.os2ip (keyE s)) = false := by simpa using hb
+    refine WP.mono (failK_ok (e.scr c) e.rdi (by omega)) fun t ⟨hax, hsv, hm, k⟩ =>
+      keyFin c h₁ hax (fun i hi => (hsv i hi).trans (by rw [hm₂])) ((k.gpr (by decide)).trans
+        ((h₁.keep.trans k₂).gpr (by decide))) (by rw [hm, hm₂]; exact in₁) ?_
     simp only [keyOf, Spec.Rsa.checkKey, Spec.Rsa.keyValid, hv, Bool.and_false, Bool.false_and]
-  · have hv : Spec.Rsa.exponentValid (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (s.gpr .rdx) (s.gpr .rcx).toNat)) =
-        true := by simpa using hb
-    have hlt : Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (s.gpr .rdx) (s.gpr .rcx).toNat) < 2 ^ 33 := by
-      simp only [Spec.Rsa.exponentValid, Bool.and_eq_true, beq_iff_eq, decide_eq_true_eq] at hv; exact hv.2
-    have hEv := hs₂.st (d := 8 * sEv) (by unfold sEv sFn; omega)
-    have hwE : ∀ i < 32, i ≠ sEv → ∀ v, word (t₂.mem.writeW (off (stackArg s 10) (8 * sEv)) v) (stackArg s 10)
-        (8 * i) = word t₁.mem (stackArg s 10) (8 * i) := fun i hi hne v => by
-      rw [hdrStore_hdr _ _ _ (by decide) hi (Ne.symm hne), hm₂]
-    have hN₃ := hwE sN (by decide) (by decide) (t₂.gpr .r11)
-    have hK₃ := hwE sK (by decide) (by decide) (t₂.gpr .r11)
-    rw [h₁.hN] at hN₃
-    rw [h₁.hK] at hK₃
+  · have hv : Spec.Rsa.exponentValid (Spec.Rsa.os2ip (keyE s)) = true := by simpa using hb
     refine WP.seq ?_
     rw [WP.block_append_iff]
-    refine WP.mono (WP.keep [.rdx, .rcx] (Q := fun t => t.gpr .rdx = s.gpr .rdi ∧ t.gpr .rcx = s.gpr .rsi ∧
-        t.mem = t₂.mem.writeW (off (stackArg s 10) (8 * sEv)) (t₂.gpr .r11)) (by
-      xrun [State.ea, hdr, hdi₂, hdrOff, hEv, hs₂.ld (d := 8 * sN) (by unfold sN sFn; omega),
-        hs₂.ld (d := 8 * sK) (by unfold sK sFn; omega), hN₃, hK₃]) rfl)
-      fun t₃ ⟨⟨hdx₃, hcx₃, hm₃⟩, k₃⟩ => ?_
-    have in₃ : InScr (stackArg s 10) ((stackArg s 11).toNat * 8) s.mem t₃.mem := by
-      rw [hm₃, hm₂]; exact in₁.trans (InScr.of_outside (writeW_outside (d := 8 * sEv) _ _ _ (by unfold sEv sFn; omega))
-        (by unfold sEv sFn; omega))
-    have k13 := k12.trans k₃
-    have nb₃ := c.nb.congrK in₃ k13
-    refine WP.mono (invalid_ok (s := t₃) (nb := Spec.Rsa.bytesAt s.mem (s.gpr .rdi) (s.gpr .rsi).toNat) hdx₃
-      (by rw [hcx₃, ofNat_toNat64]) hk1 hk2 (bytesAt_length _ _ _)
-      (fun i hi => nb₃.rd i (by rw [bytesAt_length]; exact hi)) (fun i hi => nb₃.val i _))
-      fun t₄ ⟨hz₄, hm₄, k₄⟩ => ?_
-    have k14 := k13.trans k₄
-    have hs₄ := (hs₂.congr k₃.2.2).congr k₄.2.2
-    have hdi₄ : t₄.gpr .rdi = stackArg s 10 := (k₄.gpr (by decide)).trans ((k₃.gpr (by decide)).trans hdi₂)
-    have in₄ : InScr (stackArg s 10) ((stackArg s 11).toNat * 8) s.mem t₄.mem := by rw [hm₄]; exact in₃
-    have hw₄ : ∀ i < 32, i ≠ sEv → word t₄.mem (stackArg s 10) (8 * i) = word t₁.mem (stackArg s 10) (8 * i) :=
-      fun i hi hne => by rw [hm₄, hm₃]; exact hwE i hi hne _
-    have hsv₄ : ∀ i < 6, word t₄.mem (stackArg s 10) (8 * i) = word t₁.mem (stackArg s 10) (8 * i) :=
-      fun i hi => hw₄ i (by omega) (by unfold sEv sFn; omega)
-    refine WP.ite (!Spec.Rsa.modulusValid (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (s.gpr .rdi) (s.gpr .rsi).toNat))
-      (s.gpr .rsi).toNat) (by simp [eval, hz₄]) (fun hb => ?_) (fun hb => ?_)
-    · have hm : Spec.Rsa.modulusValid (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (s.gpr .rdi) (s.gpr .rsi).toNat))
-          (s.gpr .rsi).toNat = false := by simpa using hb
-      refine WP.mono (failK_ok hs₄ hdi₄ (by omega)) fun t ⟨hax, hsv, hmt, k⟩ =>
-        keyFin c h₁ hax (fun i hi => (hsv i hi).trans (hsv₄ i hi)) ((k.gpr (by decide)).trans (k14.gpr (by decide)))
-          (by rw [hmt]; exact in₄) ?_
+    refine WP.mono (storesK_ok c e) fun t₃ ⟨hdx₃, hcx₃, hm₃, k₃⟩ => ?_
+    refine WP.mono (invalidK_ok c e hdx₃ hcx₃ hm₃ k₃) fun t₄ ⟨hz₄, h₄⟩ => ?_
+    have rsp₄ : t₄.gpr .rsp = s.gpr .rsp := h₄.keep.gpr (by decide)
+    refine WP.ite (!Spec.Rsa.modulusValid (Spec.Rsa.os2ip (keyN s)) (s.gpr .rsi).toNat) (by simp [eval, hz₄])
+      (fun hb => ?_) (fun hb => ?_)
+    · have hm : Spec.Rsa.modulusValid (Spec.Rsa.os2ip (keyN s)) (s.gpr .rsi).toNat = false := by simpa using hb
+      refine WP.mono (failK_ok (h₄.scr c) h₄.rdi (by omega)) fun t ⟨hax, hsv, hmt, k⟩ =>
+        keyFin c h₁ hax (fun i hi => (hsv i hi).trans (h₄.saved i hi)) ((k.gpr (by decide)).trans rsp₄)
+          (by rw [hmt]; exact h₄.inScr c) ?_
       simp only [keyOf, Spec.Rsa.checkKey, Spec.Rsa.keyValid, bytesAt_length, hm, Bool.false_and]
-    · have hm : Spec.Rsa.modulusValid (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (s.gpr .rdi) (s.gpr .rsi).toNat))
-          (s.gpr .rsi).toNat = true := by simpa using hb
-      have src : ∀ {p : Addr} {bs : List Byte}, Src s (stackArg s 10) ((stackArg s 11).toNat * 8) p bs →
-          Src t₄ (stackArg s 10) ((stackArg s 11).toNat * 8) p bs := fun h => h.congrK in₄ k14
-      have := c.dl1
-      have := c.dl2
-      have := c.pl1
-      have := c.pl2
-      have := c.ql1
-      have := c.ql2
-      have hp : MainPre t₄ (stackArg s 10) ((stackArg s 11).toNat * 8) (s.gpr .rsi).toNat (s.gpr .rdi) (s.gpr .r8)
-          (stackArg s 0) (stackArg s 2) (stackArg s 4) (stackArg s 6) (stackArg s 8)
-          (Spec.Rsa.bytesAt s.mem (s.gpr .rdi) (s.gpr .rsi).toNat)
-          (Spec.Rsa.bytesAt s.mem (s.gpr .r8) (s.gpr .r9).toNat)
-          (Spec.Rsa.bytesAt s.mem (stackArg s 0) (stackArg s 1).toNat)
-          (Spec.Rsa.bytesAt s.mem (stackArg s 2) (stackArg s 3).toNat)
-          (Spec.Rsa.bytesAt s.mem (stackArg s 4) (stackArg s 1).toNat)
-          (Spec.Rsa.bytesAt s.mem (stackArg s 6) (stackArg s 3).toNat)
-          (Spec.Rsa.bytesAt s.mem (stackArg s 8) (stackArg s 1).toNat)
-          (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (s.gpr .rdx) (s.gpr .rcx).toNat)) :=
-        { scr := hs₄, rdi := hdi₄, zk := hZ, k1 := hk1, k2 := hk2, nl := bytesAt_length _ _ _,
-          dl1 := by rw [bytesAt_length]; omega, dl2 := by rw [bytesAt_length]; omega,
-          pl1 := by rw [bytesAt_length]; omega, pl2 := by rw [bytesAt_length]; omega,
-          ql1 := by rw [bytesAt_length]; omega, ql2 := by rw [bytesAt_length]; omega,
-          dpl := by rw [bytesAt_length, bytesAt_length], qil := by rw [bytesAt_length, bytesAt_length],
-          dql := by rw [bytesAt_length, bytesAt_length],
-          hK := by rw [hw₄ sK (by decide) (by decide), h₁.hK, ofNat_toNat64],
-          hN := by rw [hw₄ sN (by decide) (by decide), h₁.hN],
-          hD := by rw [hw₄ sD (by decide) (by decide), h₁.hD],
-          hDl := by rw [hw₄ sDlen (by decide) (by decide), h₁.hDl, bytesAt_length, ofNat_toNat64],
-          hP := by rw [hw₄ sP (by decide) (by decide), h₁.hP],
-          hPl := by rw [hw₄ sPlen (by decide) (by decide), h₁.hPl, bytesAt_length, ofNat_toNat64],
-          hQ := by rw [hw₄ sQ (by decide) (by decide), h₁.hQ],
-          hQl := by rw [hw₄ sQlen (by decide) (by decide), h₁.hQl, bytesAt_length, ofNat_toNat64],
-          hDP := by rw [hw₄ sDP (by decide) (by decide), h₁.hDP],
-          hDQ := by rw [hw₄ sDQ (by decide) (by decide), h₁.hDQ],
-          hQI := by rw [hw₄ sQI (by decide) (by decide), h₁.hQI],
-          hEv := by
-            rw [hm₄, hm₃, word_writeW_self, h11₂, sat_of_valid hv, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)],
-          srN := src c.nb, srD := src c.db, srP := src c.pb, srQ := src c.qb, srDP := src c.dpb,
-          srDQ := src c.dqb, srQI := src c.qib, mv := hm }
-      refine WP.mono (main_ok hp hv) fun t ⟨hax, hsv, hin, _, _, kk⟩ =>
-        keyFin c h₁ hax (fun i hi => (hsv i hi).trans (hsv₄ i hi)) ((kk.gpr (by decide)).trans (k14.gpr (by decide)))
-          (in₄.trans hin) ?_
+    · have hm : Spec.Rsa.modulusValid (Spec.Rsa.os2ip (keyN s)) (s.gpr .rsi).toNat = true := by simpa using hb
+      refine WP.mono (main_ok (h₄.mainPre c hv hm) hv) fun t ⟨hax, hsv, hin, _, _, kk⟩ =>
+        keyFin c h₁ hax (fun i hi => (hsv i hi).trans (h₄.saved i hi)) ((kk.gpr (by decide)).trans rsp₄)
+          ((h₄.inScr c).trans hin) ?_
       simp only [keyOf, Spec.Rsa.checkKey, bytesAt_length]
 
 end VG.Proof.Rsa.X86_64
