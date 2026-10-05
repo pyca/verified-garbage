@@ -1,6 +1,7 @@
 //! The RSA public-key operation (RSAEP) and private-key operation (RSADP with
-//! the CRT, checked against the public exponent), without padding, and the
-//! loading of a private key from `(n, e, d, p, q)` and from `(n, e, d)`.
+//! the CRT, checked against the public exponent), without padding, the
+//! loading of a private key from `(n, e, d, p, q)` and from `(n, e, d)`, and
+//! the check of a private key.
 
 use criterion::Criterion;
 
@@ -128,7 +129,9 @@ pub fn bench(c: &mut Criterion) {
         )
         .unwrap()
     }
-    fn openssl_recover(n: &BigNumRef, e: &BigNumRef, d: &BigNumRef) -> Rsa<Private> {
+    /// The primes of `(n, e, d)` with the candidates from 2, and the
+    /// candidate that found them.
+    fn openssl_recover_with(n: &BigNumRef, e: &BigNumRef, d: &BigNumRef) -> (Rsa<Private>, u32) {
         let mut ctx = BigNumContext::new().unwrap();
         let mut r = BigNum::new().unwrap();
         r.checked_mul(d, e, &mut ctx).unwrap();
@@ -154,7 +157,7 @@ pub fn bench(c: &mut Criterion) {
                 let mut x = BigNum::new().unwrap();
                 x.mod_sqr(&y, n, &mut ctx).unwrap();
                 if x == one {
-                    found = Some(y);
+                    found = Some((y, g));
                     break 'g;
                 }
                 if x == n1 || j + 1 == t {
@@ -163,13 +166,16 @@ pub fn bench(c: &mut Criterion) {
                 y = x;
             }
         }
-        let mut y1 = found.unwrap();
+        let (mut y1, g) = found.unwrap();
         y1.sub_word(1).unwrap();
         let mut p = BigNum::new().unwrap();
         p.gcd(&y1, n, &mut ctx).unwrap();
         let mut q = BigNum::new().unwrap();
         q.checked_div(n, &p, &mut ctx).unwrap();
-        openssl_crt(n, e, d, &p, &q)
+        (openssl_crt(n, e, d, &p, &q), g)
+    }
+    fn openssl_recover(n: &BigNumRef, e: &BigNumRef, d: &BigNumRef) -> Rsa<Private> {
+        openssl_recover_with(n, e, d).0
     }
 
     let mut g = c.benchmark_group("rsa_from_primes");
@@ -207,8 +213,16 @@ pub fn bench(c: &mut Criterion) {
 
     let mut g = c.benchmark_group("rsa_from_components");
     // The same sizes: the primes of `(n, e, d)`, their CRT values and the key.
+    // The recovery's time is that of the candidates it tries, so each size
+    // takes a key whose first candidate, 2, finds the primes (as most do):
+    // the time is then the same for every run's random key.
     for bits in [2048, 3072, 4096] {
-        let key = Rsa::generate(bits).unwrap();
+        let key = loop {
+            let key = Rsa::generate(bits).unwrap();
+            if openssl_recover_with(key.n(), key.e(), key.d()).1 == 2 {
+                break key;
+            }
+        };
         let (n, e, d) = (key.n().to_vec(), key.e().to_vec(), key.d().to_vec());
         let k = n.len();
         g.bench_function(BenchmarkId::new(VG, k), |b| {
@@ -218,6 +232,34 @@ pub fn bench(c: &mut Criterion) {
         });
         g.bench_function(BenchmarkId::new(OPENSSL, k), |b| {
             b.iter(|| openssl_recover(black_box(key.n()), black_box(key.e()), black_box(key.d())))
+        });
+    }
+    g.finish();
+
+    let mut g = c.benchmark_group("rsa_check_key");
+    // The same sizes: each library's `RSA_check_key` of a key it holds.
+    // OpenSSL's also tests `p` and `q` for primality, which BoringSSL's (and
+    // `check_key`) does not.
+    for bits in [2048, 3072, 4096] {
+        let key = Rsa::generate(bits).unwrap();
+        let n = key.n().to_vec();
+        let k = n.len();
+        let vg_key = PrivateKey::from_crt(
+            &n,
+            &key.e().to_vec(),
+            &key.d().to_vec(),
+            &key.p().unwrap().to_vec(),
+            &key.q().unwrap().to_vec(),
+            &key.dmp1().unwrap().to_vec(),
+            &key.dmq1().unwrap().to_vec(),
+            &key.iqmp().unwrap().to_vec(),
+        )
+        .unwrap();
+        g.bench_function(BenchmarkId::new(VG, k), |b| {
+            b.iter(|| assert!(black_box(&vg_key).check_key()))
+        });
+        g.bench_function(BenchmarkId::new(OPENSSL, k), |b| {
+            b.iter(|| assert!(black_box(&key).check_key().unwrap()))
         });
     }
     g.finish();

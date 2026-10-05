@@ -15,7 +15,7 @@ argument registers and four other stack arguments (`data`, `len`, `tag` and
 space, a copy of those four arguments, the word that stands for the return
 address and the address of the working space (`Verified.stackArgScratch`).
 The code's own calls use 8 bytes below the frame, the return address, as
-`vg_aes_encrypt_blocks`, `vg_aes_decrypt_blocks` and `vg_aes_expand_key` use
+`vg_aes_encrypt_blocks`, `vg_aes_decrypt_blocks` and `vg_aes_expand_key_scratch` use
 no stack. `open`'s leak, whether it succeeds, reads only its buffers
 (`openLeak_local`).
 -/

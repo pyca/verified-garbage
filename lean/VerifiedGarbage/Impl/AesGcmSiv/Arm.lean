@@ -127,7 +127,7 @@ def expandArgs : List Instr :=
    addI .r3 .r11 scrO]
 
 /-- The encryption key's schedule at `W + 192`. -/
-def expand : Prog isa := .seq (.block expandArgs) (.call "vg_aes_expand_key" Impl.Aes.Arm.expandKey)
+def expand : Prog isa := .seq (.block expandArgs) (.call "vg_aes_expand_key_scratch" Impl.Aes.Arm.expandKey)
 
 /-- GHASH's key, `H · x` for the authentication key `H` (as a little-endian
 number, in the words `r0`–`r3`), in GHASH's order at `W + 64`, and its

@@ -7,7 +7,7 @@ import VerifiedGarbage.Proof.CmacAes.Stream.Arm.Frame
 
 Each function calls `vg_aes_ctr32` in a frame that pushes its two stack
 arguments, so uses 8 bytes of stack. The streaming functions call those:
-`init` calls `vg_cmac_aes_subkeys` (and `vg_aes_expand_key`, which uses no
+`init` calls `vg_cmac_aes_subkeys` (and `vg_aes_expand_key_scratch`, which uses no
 stack), so uses 8 bytes; `absorb` and `finish` call `vg_cmac_aes_update`
 and `vg_cmac_aes_finalize` in a frame that pushes their two stack arguments,
 so use 16.
@@ -52,7 +52,7 @@ def artifacts : List Artifact := [
   { Spec.Cmac.aesInitApi with
     target := Arm.target
     doc := Spec.Cmac.aesInitApi.doc (notes := [
-      "This implementation expands the key with `vg_aes_expand_key` and derives the subkeys with \
+      "This implementation expands the key with `vg_aes_expand_key_scratch` and derives the subkeys with \
         `vg_cmac_aes_subkeys`."])
     code := Impl.StackScratch.Arm.withRegScratch 2304 .r3 Impl.CmacAes.Stream.Arm.init
     contract := Spec.Cmac.aesInitContract Arm.abi 2312

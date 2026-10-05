@@ -6,7 +6,7 @@ import VerifiedGarbage.Impl.Gcm.X86
 # AES-GCM: x86 (32-bit) implementation
 
 The AES-GCM functions of `Spec/Gcm/Contract.lean`, cdecl (every argument on
-the stack), composed of calls of the verified `vg_aes_expand_key`,
+the stack), composed of calls of the verified `vg_aes_expand_key_scratch`,
 `vg_aes_ctr32` and `vg_ghash`, as on x86-64 (`Impl/AesGcm/X86_64.lean`),
 whose algorithm and pieces these follow.
 
@@ -37,7 +37,7 @@ called preserve them. Everything else is reloaded from `W`: a piece takes
 its arguments from `W + 272` on (`dO`: a pointer, `nO`: a length, `bO`: an
 offset). Each call pushes its arguments (last to first) in a frame of its
 own, popped into `eax`: `vg_aes_ctr32` six, `vg_ghash` five and
-`vg_aes_expand_key` four, with the return address 28 bytes of stack at
+`vg_aes_expand_key_scratch` four, with the return address 28 bytes of stack at
 most. The working space of the callee, `W + 512`, is passed in `ebp`, which
 is moved there before the frame and back after it.
 
@@ -132,7 +132,7 @@ structure Fn where
   name : String
   code : Prog isa
 
-/-- The implementations of `vg_aes_ctr32`, `vg_aes_expand_key` and
+/-- The implementations of `vg_aes_ctr32`, `vg_aes_expand_key_scratch` and
 `vg_ghash` a set of AES-GCM functions calls. -/
 structure Callees where
   ctr : Fn
@@ -150,7 +150,7 @@ def ctrCall : Prog isa :=
 def ghCall : Prog isa :=
   .frame (.push [.ebp, .edi, .ebx, .edx, .eax]) (.call c.gh.name c.gh.code) (.pop .eax 5)
 
-/-- `vg_aes_expand_key(eax, ecx, edx, ebp)`. -/
+/-- `vg_aes_expand_key_scratch(eax, ecx, edx, ebp)`. -/
 def keyCall : Prog isa :=
   .frame (.push [.ebp, .edx, .ecx, .eax]) (.call c.key.name c.key.code) (.pop .eax 4)
 

@@ -391,7 +391,7 @@ pub(crate) const VG_CMAC_AES_INIT_AESNI_FEATURES: crate::cpu::Features = crate::
 ///
 /// This implementation calls the CMAC functions made with `vg_aes_ctr32_aesni` (e.g. `vg_cmac_aes_update_aesni`).
 ///
-/// It expands the key with `vg_aes_expand_key_aesni`.
+/// It expands the key with `vg_aes_expand_key_scratch_aesni`.
 ///
 /// # Safety
 ///
@@ -427,7 +427,7 @@ pub(crate) unsafe extern "C" fn vg_cmac_aes_init_aesni(state: *mut [u64; 38], ke
         "push edx",
         "push ecx",
         "push eax",
-        "call {vg_aes_expand_key_aesni}",
+        "call {vg_aes_expand_key_scratch_aesni}",
         "pop eax",
         "pop eax",
         "pop eax",
@@ -462,7 +462,7 @@ pub(crate) unsafe extern "C" fn vg_cmac_aes_init_aesni(state: *mut [u64; 38], ke
         "lea esp, [esp+2324]",
         "ret",
         ".p2align 6",
-        vg_aes_expand_key_aesni = sym super::aes::vg_aes_expand_key_aesni,
+        vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni,
         vg_cmac_aes_subkeys_aesni = sym super::cmac_aes::vg_cmac_aes_subkeys_aesni,
     )
 }
@@ -1110,7 +1110,7 @@ pub(crate) unsafe extern "C" fn vg_cmac_aes_finalize(key: *const [u8; 272], roun
 ///
 /// This implementation calls the CMAC functions made with `vg_aes_ctr32` (e.g. `vg_cmac_aes_update`).
 ///
-/// It expands the key with `vg_aes_expand_key`.
+/// It expands the key with `vg_aes_expand_key_scratch`.
 ///
 /// # Safety
 ///
@@ -1145,7 +1145,7 @@ pub(crate) unsafe extern "C" fn vg_cmac_aes_init(state: *mut [u64; 38], key: *co
         "push edx",
         "push ecx",
         "push eax",
-        "call {vg_aes_expand_key}",
+        "call {vg_aes_expand_key_scratch}",
         "pop eax",
         "pop eax",
         "pop eax",
@@ -1180,7 +1180,7 @@ pub(crate) unsafe extern "C" fn vg_cmac_aes_init(state: *mut [u64; 38], key: *co
         "lea esp, [esp+2324]",
         "ret",
         ".p2align 6",
-        vg_aes_expand_key = sym super::aes::vg_aes_expand_key,
+        vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch,
         vg_cmac_aes_subkeys = sym super::cmac_aes::vg_cmac_aes_subkeys,
     )
 }

@@ -4,7 +4,7 @@ import VerifiedGarbage.Proof.AesGcm.X86.Top
 # AES-GCM on x86: `vg_aes_gcm_init`
 
 Untrusted: everything here is checked by Lean. The key schedule
-(`vg_aes_expand_key`), then the hash subkey `CIPH_K(0¹²⁸)` (`vg_aes_ctr32`
+(`vg_aes_expand_key_scratch`), then the hash subkey `CIPH_K(0¹²⁸)` (`vg_aes_ctr32`
 on a zero block, with a zero counter block at `T`), as one `Pc`
 (`init_pc`): correct (`init_correct`) and constant time (`init_ct`).
 -/
@@ -71,7 +71,7 @@ theorem init_eq : init vg.callees = .seq (entry 3 (([.mov .esi (argOp 2)] : List
     (([] : List (Nat × Nat)).flatMap (fun p => keep p.1 p.2) ++ initTail)))
     (.seq (keyCall vg.callees) (.seq (.block initMid) (.seq (ctrCall vg.callees) (.block (unscr ++ restore))))) := rfl
 
-/-- After the entry: the arguments of `vg_aes_expand_key`. -/
+/-- After the entry: the arguments of `vg_aes_expand_key_scratch`. -/
 structure IEnt (p : BitVec 32 × (Nat → BitVec 32)) (s₀ s : State) : Prop where
   pre : initPre s₀
   pub : pubOf 4 s₀ = p

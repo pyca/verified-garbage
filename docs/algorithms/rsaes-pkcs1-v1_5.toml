@@ -1,5 +1,5 @@
 name = "RSAES-PKCS1-v1_5 (implicit rejection)"
 family = "RSA"
 specs = ["RsaPkcs1Enc"]
-modules = ["src/rsa/pkcs1_enc.rs"]
+modules = ["src/rsa_pkcs1_enc.rs"]
 asm = ["rsa_pkcs1_enc", "rsa"]

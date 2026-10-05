@@ -694,7 +694,7 @@ pub(crate) const VG_AES_GCM_INIT_AES_FEATURES: crate::cpu::Features = crate::cpu
 ///
 /// Contract: `VG.Spec.Gcm.initContract`. The key context is `VG.Spec.Gcm.KeyRepr`. Constant time: only the pointers and `key_len` may affect timing, not the key.
 ///
-/// This implementation encrypts with `vg_aes_ctr32_aes` (and expands keys with `vg_aes_expand_key_aes`) and hashes with `vg_ghash_aes`.
+/// This implementation encrypts with `vg_aes_ctr32_aes` (and expands keys with `vg_aes_expand_key_scratch_aes`) and hashes with `vg_ghash_aes`.
 ///
 /// # Safety
 ///
@@ -726,7 +726,7 @@ pub(crate) unsafe extern "C" fn vg_aes_gcm_init_aes(key: *const u8, key_len: usi
         "lsr x22, x1, #2",
         "add x22, x22, #6",
         "add x3, x19, #512",
-        "bl {vg_aes_expand_key_aes}",
+        "bl {vg_aes_expand_key_scratch_aes}",
         "movz x9, #0, lsl #0",
         "str x9, [x21, #240]",
         "str x9, [x21, #248]",
@@ -753,7 +753,7 @@ pub(crate) unsafe extern "C" fn vg_aes_gcm_init_aes(key: *const u8, key_len: usi
         "add sp, sp, #2560",
         "ret",
         ".arch_extension noaes",
-        vg_aes_expand_key_aes = sym super::aes::vg_aes_expand_key_aes,
+        vg_aes_expand_key_scratch_aes = sym super::aes::vg_aes_expand_key_scratch_aes,
         vg_aes_ctr32_aes = sym super::aes::vg_aes_ctr32_aes,
     )
 }
@@ -767,7 +767,7 @@ pub(crate) const VG_AES_GCM_SEAL_AES_FEATURES: crate::cpu::Features = crate::cpu
 ///
 /// Contract: `VG.Spec.Gcm.sealContract`. Constant time: only the pointers, `rounds` and the lengths may affect timing, not the key context, the nonce, the additional data or the data.
 ///
-/// This implementation encrypts with `vg_aes_ctr32_aes` (and expands keys with `vg_aes_expand_key_aes`) and hashes with `vg_ghash_aes`.
+/// This implementation encrypts with `vg_aes_ctr32_aes` (and expands keys with `vg_aes_expand_key_scratch_aes`) and hashes with `vg_ghash_aes`.
 ///
 /// # Safety
 ///
@@ -1267,7 +1267,7 @@ pub(crate) const VG_AES_GCM_OPEN_AES_FEATURES: crate::cpu::Features = crate::cpu
 ///
 /// Contract: `VG.Spec.Gcm.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths, `tag_len` and whether the function returns 1 or 0 may affect timing, not the key context, the nonce, the additional data, the data or the tag.
 ///
-/// This implementation encrypts with `vg_aes_ctr32_aes` (and expands keys with `vg_aes_expand_key_aes`) and hashes with `vg_ghash_aes`.
+/// This implementation encrypts with `vg_aes_ctr32_aes` (and expands keys with `vg_aes_expand_key_scratch_aes`) and hashes with `vg_ghash_aes`.
 ///
 /// # Safety
 ///
@@ -1879,7 +1879,7 @@ pub(crate) const VG_AES_GCM_STREAM_INIT_AES_FEATURES: crate::cpu::Features = cra
 ///
 /// Contract: `VG.Spec.Gcm.streamInitContract`. The streaming state is `J₀`, the GHASH accumulator, a partial block, the next counter block and a keystream block (`VG.Spec.Gcm.StreamRepr`). Constant time: only the pointers and `nonce_len` may affect timing, not the key context or the nonce.
 ///
-/// This implementation encrypts with `vg_aes_ctr32_aes` (and expands keys with `vg_aes_expand_key_aes`) and hashes with `vg_ghash_aes`.
+/// This implementation encrypts with `vg_aes_ctr32_aes` (and expands keys with `vg_aes_expand_key_scratch_aes`) and hashes with `vg_ghash_aes`.
 ///
 /// # Safety
 ///
@@ -2018,7 +2018,7 @@ pub(crate) const VG_AES_GCM_STREAM_AAD_AES_FEATURES: crate::cpu::Features = crat
 ///
 /// Contract: `VG.Spec.Gcm.streamAadContract`. Constant time: only the pointers, `aad_len` and `len` may affect timing, not the key context, the state or the data.
 ///
-/// This implementation encrypts with `vg_aes_ctr32_aes` (and expands keys with `vg_aes_expand_key_aes`) and hashes with `vg_ghash_aes`.
+/// This implementation encrypts with `vg_aes_ctr32_aes` (and expands keys with `vg_aes_expand_key_scratch_aes`) and hashes with `vg_ghash_aes`.
 ///
 /// # Safety
 ///
@@ -2148,7 +2148,7 @@ pub(crate) const VG_AES_GCM_STREAM_ENCRYPT_AES_FEATURES: crate::cpu::Features = 
 ///
 /// Contract: `VG.Spec.Gcm.streamEncryptContract`. Constant time: only the pointers, `rounds`, `aad_len`, `text_len` and `len` may affect timing, not the key context, the state or the data.
 ///
-/// This implementation encrypts with `vg_aes_ctr32_aes` (and expands keys with `vg_aes_expand_key_aes`) and hashes with `vg_ghash_aes`.
+/// This implementation encrypts with `vg_aes_ctr32_aes` (and expands keys with `vg_aes_expand_key_scratch_aes`) and hashes with `vg_ghash_aes`.
 ///
 /// # Safety
 ///
@@ -2411,7 +2411,7 @@ pub(crate) const VG_AES_GCM_STREAM_DECRYPT_AES_FEATURES: crate::cpu::Features = 
 ///
 /// Contract: `VG.Spec.Gcm.streamDecryptContract`. Constant time: only the pointers, `rounds`, `aad_len`, `text_len` and `len` may affect timing, not the key context, the state or the data.
 ///
-/// This implementation encrypts with `vg_aes_ctr32_aes` (and expands keys with `vg_aes_expand_key_aes`) and hashes with `vg_ghash_aes`.
+/// This implementation encrypts with `vg_aes_ctr32_aes` (and expands keys with `vg_aes_expand_key_scratch_aes`) and hashes with `vg_ghash_aes`.
 ///
 /// # Safety
 ///
@@ -2672,7 +2672,7 @@ pub(crate) const VG_AES_GCM_STREAM_FINISH_AES_FEATURES: crate::cpu::Features = c
 ///
 /// Contract: `VG.Spec.Gcm.streamFinishContract`. Constant time: only the pointers, `rounds`, `aad_len` and `text_len` may affect timing, not the key context or the state.
 ///
-/// This implementation encrypts with `vg_aes_ctr32_aes` (and expands keys with `vg_aes_expand_key_aes`) and hashes with `vg_ghash_aes`.
+/// This implementation encrypts with `vg_aes_ctr32_aes` (and expands keys with `vg_aes_expand_key_scratch_aes`) and hashes with `vg_ghash_aes`.
 ///
 /// # Safety
 ///
@@ -2797,7 +2797,7 @@ pub(crate) const VG_AES_GCM_STREAM_VERIFY_AES_FEATURES: crate::cpu::Features = c
 ///
 /// Contract: `VG.Spec.Gcm.streamVerifyContract`. Constant time: only the pointers, `rounds`, `aad_len`, `text_len` and `tag_len` may affect timing, not the key context, the state or the tags.
 ///
-/// This implementation encrypts with `vg_aes_ctr32_aes` (and expands keys with `vg_aes_expand_key_aes`) and hashes with `vg_ghash_aes`.
+/// This implementation encrypts with `vg_aes_ctr32_aes` (and expands keys with `vg_aes_expand_key_scratch_aes`) and hashes with `vg_ghash_aes`.
 ///
 /// # Safety
 ///
@@ -3023,7 +3023,7 @@ pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_verify_aes(ctx: *const [u64; 3
 ///
 /// Contract: `VG.Spec.Gcm.initContract`. The key context is `VG.Spec.Gcm.KeyRepr`. Constant time: only the pointers and `key_len` may affect timing, not the key.
 ///
-/// This implementation encrypts with `vg_aes_ctr32` (and expands keys with `vg_aes_expand_key`) and hashes with `vg_ghash`.
+/// This implementation encrypts with `vg_aes_ctr32` (and expands keys with `vg_aes_expand_key_scratch`) and hashes with `vg_ghash`.
 ///
 /// # Safety
 ///
@@ -3053,7 +3053,7 @@ pub(crate) unsafe extern "C" fn vg_aes_gcm_init(key: *const u8, key_len: usize, 
         "lsr x22, x1, #2",
         "add x22, x22, #6",
         "add x3, x19, #512",
-        "bl {vg_aes_expand_key}",
+        "bl {vg_aes_expand_key_scratch}",
         "movz x9, #0, lsl #0",
         "str x9, [x21, #240]",
         "str x9, [x21, #248]",
@@ -3079,7 +3079,7 @@ pub(crate) unsafe extern "C" fn vg_aes_gcm_init(key: *const u8, key_len: usize, 
         "ldr x19, [x19, #128]",
         "add sp, sp, #2560",
         "ret",
-        vg_aes_expand_key = sym super::aes::vg_aes_expand_key,
+        vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch,
         vg_aes_ctr32 = sym super::aes::vg_aes_ctr32,
     )
 }
@@ -3090,7 +3090,7 @@ pub(crate) unsafe extern "C" fn vg_aes_gcm_init(key: *const u8, key_len: usize, 
 ///
 /// Contract: `VG.Spec.Gcm.sealContract`. Constant time: only the pointers, `rounds` and the lengths may affect timing, not the key context, the nonce, the additional data or the data.
 ///
-/// This implementation encrypts with `vg_aes_ctr32` (and expands keys with `vg_aes_expand_key`) and hashes with `vg_ghash`.
+/// This implementation encrypts with `vg_aes_ctr32` (and expands keys with `vg_aes_expand_key_scratch`) and hashes with `vg_ghash`.
 ///
 /// # Safety
 ///
@@ -3584,7 +3584,7 @@ pub(crate) unsafe extern "C" fn vg_aes_gcm_seal(ctx: *const [u64; 32], rounds: u
 ///
 /// Contract: `VG.Spec.Gcm.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths, `tag_len` and whether the function returns 1 or 0 may affect timing, not the key context, the nonce, the additional data, the data or the tag.
 ///
-/// This implementation encrypts with `vg_aes_ctr32` (and expands keys with `vg_aes_expand_key`) and hashes with `vg_ghash`.
+/// This implementation encrypts with `vg_aes_ctr32` (and expands keys with `vg_aes_expand_key_scratch`) and hashes with `vg_ghash`.
 ///
 /// # Safety
 ///
@@ -4190,7 +4190,7 @@ pub(crate) unsafe extern "C" fn vg_aes_gcm_open(ctx: *const [u64; 32], rounds: u
 ///
 /// Contract: `VG.Spec.Gcm.streamInitContract`. The streaming state is `J₀`, the GHASH accumulator, a partial block, the next counter block and a keystream block (`VG.Spec.Gcm.StreamRepr`). Constant time: only the pointers and `nonce_len` may affect timing, not the key context or the nonce.
 ///
-/// This implementation encrypts with `vg_aes_ctr32` (and expands keys with `vg_aes_expand_key`) and hashes with `vg_ghash`.
+/// This implementation encrypts with `vg_aes_ctr32` (and expands keys with `vg_aes_expand_key_scratch`) and hashes with `vg_ghash`.
 ///
 /// # Safety
 ///
@@ -4323,7 +4323,7 @@ pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_init(ctx: *const [u64; 32], no
 ///
 /// Contract: `VG.Spec.Gcm.streamAadContract`. Constant time: only the pointers, `aad_len` and `len` may affect timing, not the key context, the state or the data.
 ///
-/// This implementation encrypts with `vg_aes_ctr32` (and expands keys with `vg_aes_expand_key`) and hashes with `vg_ghash`.
+/// This implementation encrypts with `vg_aes_ctr32` (and expands keys with `vg_aes_expand_key_scratch`) and hashes with `vg_ghash`.
 ///
 /// # Safety
 ///
@@ -4447,7 +4447,7 @@ pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_aad(ctx: *const [u64; 32], sta
 ///
 /// Contract: `VG.Spec.Gcm.streamEncryptContract`. Constant time: only the pointers, `rounds`, `aad_len`, `text_len` and `len` may affect timing, not the key context, the state or the data.
 ///
-/// This implementation encrypts with `vg_aes_ctr32` (and expands keys with `vg_aes_expand_key`) and hashes with `vg_ghash`.
+/// This implementation encrypts with `vg_aes_ctr32` (and expands keys with `vg_aes_expand_key_scratch`) and hashes with `vg_ghash`.
 ///
 /// # Safety
 ///
@@ -4704,7 +4704,7 @@ pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_encrypt(ctx: *const [u64; 32],
 ///
 /// Contract: `VG.Spec.Gcm.streamDecryptContract`. Constant time: only the pointers, `rounds`, `aad_len`, `text_len` and `len` may affect timing, not the key context, the state or the data.
 ///
-/// This implementation encrypts with `vg_aes_ctr32` (and expands keys with `vg_aes_expand_key`) and hashes with `vg_ghash`.
+/// This implementation encrypts with `vg_aes_ctr32` (and expands keys with `vg_aes_expand_key_scratch`) and hashes with `vg_ghash`.
 ///
 /// # Safety
 ///
@@ -4959,7 +4959,7 @@ pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_decrypt(ctx: *const [u64; 32],
 ///
 /// Contract: `VG.Spec.Gcm.streamFinishContract`. Constant time: only the pointers, `rounds`, `aad_len` and `text_len` may affect timing, not the key context or the state.
 ///
-/// This implementation encrypts with `vg_aes_ctr32` (and expands keys with `vg_aes_expand_key`) and hashes with `vg_ghash`.
+/// This implementation encrypts with `vg_aes_ctr32` (and expands keys with `vg_aes_expand_key_scratch`) and hashes with `vg_ghash`.
 ///
 /// # Safety
 ///
@@ -5078,7 +5078,7 @@ pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_finish(ctx: *const [u64; 32], 
 ///
 /// Contract: `VG.Spec.Gcm.streamVerifyContract`. Constant time: only the pointers, `rounds`, `aad_len`, `text_len` and `tag_len` may affect timing, not the key context, the state or the tags.
 ///
-/// This implementation encrypts with `vg_aes_ctr32` (and expands keys with `vg_aes_expand_key`) and hashes with `vg_ghash`.
+/// This implementation encrypts with `vg_aes_ctr32` (and expands keys with `vg_aes_expand_key_scratch`) and hashes with `vg_ghash`.
 ///
 /// # Safety
 ///

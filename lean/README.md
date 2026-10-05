@@ -148,3 +148,34 @@ lake env lean --run Emit.lean       # regenerate ../src/asm
 lake env lean --run Emit.lean --check
 lake env lean --run EmitOne.lean [--check] Rc2.AArch64   # one registration file
 ```
+
+## Restoring the CI build cache
+
+After CI passes on `main`, it publishes the Linux x86-64 project build and
+Mathlib dependencies to `ghcr.io/pyca/vg-lean-cache:latest`. The image contains
+one file, `/lean-cache.tar.zst`, with `.lake/build` and `.lake/packages`
+relative to `lean/`. Only the latest image version is retained. CI compares
+the checked build's cache key with the image's `io.pyca.lean.cache-key` label
+and skips packaging and publishing when it matches, so Rust- or docs-only
+changes do not create a new cache version.
+
+With Docker and zstd installed, restore it from the repository root:
+
+```sh
+docker pull ghcr.io/pyca/vg-lean-cache:latest
+container=$(docker create ghcr.io/pyca/vg-lean-cache:latest /unused)
+set -o pipefail
+docker cp "$container":/lean-cache.tar.zst - | tar -xOf - | zstd -dc | tar -xf - -C lean
+docker rm "$container"
+```
+
+The container never runs. Install the toolchain in `lean/lean-toolchain`
+separately; the image's `io.pyca.lean.toolchain` and
+`org.opencontainers.image.revision` labels identify the cached build. Lake
+rebuilds outputs that differ from the checkout. Private package access
+requires authenticating to GHCR before pulling.
+
+Moving the cache to a different absolute path can also make Lake relink
+native libraries and rebuild affected native modules. A normal `lake build`
+handles this; the restored cache need not pass `lake build --no-build` for
+every project target immediately after extraction.

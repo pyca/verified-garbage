@@ -7,7 +7,7 @@ import VerifiedGarbage.Impl.CmacAes.X86_64
 `vg_cmac_aes_absorb(state = rdi, rounds = rsi, count = rdx, data = rcx, len = r8, scratch = r9)`
 and `vg_cmac_aes_finish(state = rdi, rounds = rsi, count = rdx, out = rcx, scratch = r8)`
 (see `VG.Spec.Cmac.aesInitContract` and the others), composed of calls of
-the verified `vg_aes_expand_key`, `vg_cmac_aes_subkeys`, `vg_cmac_aes_update`
+the verified `vg_aes_expand_key_scratch`, `vg_cmac_aes_subkeys`, `vg_cmac_aes_update`
 and `vg_cmac_aes_finalize`. Like those, they are generic over the
 implementation of AES they call (`Ctr32`, the `ExpandKey` that goes with it,
 and `sfx`, the suffix of the names of the CMAC functions made with it): e.g.
@@ -55,7 +55,7 @@ def initSaved : List (Reg × Nat) := [(.rbx, sOff), (.rbp, sOff + 8), (.r12, sOf
 
 /-- Saves the registers, keeps the state in `rbx`, the scratch buffer in
 `rbp` and the rounds (`key_len / 4 + 6`) in `r12`, and sets up the arguments
-of `vg_aes_expand_key(key = rdi, key_len = rsi, schedule = rdx, scratch = rcx)`. -/
+of `vg_aes_expand_key_scratch(key = rdi, key_len = rsi, schedule = rdx, scratch = rcx)`. -/
 def initPre : List Instr :=
   initSaved.map (fun (r, d) => .store (at_ .rcx d) r) ++
   [.mov .rbx (.reg .rdi), .mov .rbp (.reg .rcx), .mov .r12 (.reg .rdx), .shift .shr .r12 2,

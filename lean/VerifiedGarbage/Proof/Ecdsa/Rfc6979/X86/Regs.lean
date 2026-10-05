@@ -50,20 +50,20 @@ variable {dn : Nat} {L : Lay dn} {g : Reg → BitVec 32} {m₀ : Mem}
 
 /-- Our arguments, in the frame's body. -/
 theorem Ctx.argv {u : State} (hc : Ctx L g m₀ u) {i : Nat} (hi : i < 4) :
-    u.mem.readW (L.B + BitVec.ofNat 64 (260 + 4 * i)) 32 = L.a i := by
+    u.mem.readW (L.B + BitVec.ofNat 64 (276 + 4 * i)) 32 = L.a i := by
   match i, hi with
   | 0, _ => exact hc.pOut
   | 1, _ => exact hc.pD
   | 2, _ => exact hc.pDg
   | 3, _ => exact hc.pScr
 
-theorem argM_eq (i : Nat) : argM i = .mem ⟨.esp, 184 + 4 * i⟩ := rfl
+theorem argM_eq (i : Nat) : argM i = .mem ⟨.esp, 200 + 4 * i⟩ := rfl
 
 /-- `argM i` reads our argument `i`. -/
 theorem Ctx.readArg {u : State} (hL : L.Ok) (hc : Ctx L g m₀ u) {i : Nat} (hi : i < 4) :
     readSrc u (argM i) = some (L.a i) := by
-  have e : addr L.F (184 + 4 * i) = L.B + BitVec.ofNat 64 (260 + 4 * i) := by
-    rw [hL.addrF (by omega), show 76 + (184 + 4 * i) = 260 + 4 * i by omega]
+  have e : addr L.F (200 + 4 * i) = L.B + BitVec.ofNat 64 (276 + 4 * i) := by
+    rw [hL.addrF (by omega), show 76 + (200 + 4 * i) = 276 + 4 * i by omega]
   rw [argM_eq, readSrc_mem hc.esp (by rw [e]; exact hc.inArgs hi hL), e, hc.argv hi]
 
 /-! ## Code that sets one register -/

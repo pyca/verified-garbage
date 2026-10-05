@@ -12,7 +12,7 @@ Untrusted: everything here is checked by Lean. Calls of
 they leave (`BPost`), and that two calls with the same arguments leak the
 same (`blk_rel`). A block the call transforms is `ENCIPHER` (or `DECIPHER`)
 of the key schedule (`BPost.enc`, `BPost.dec`), as OCB's blocks in memory
-(`blockAtMem`). `vg_aes_expand_key` is called as AES-GCM calls it
+(`blockAtMem`). `vg_aes_expand_key_scratch` is called as AES-GCM calls it
 (`keyImpl`, with `Proof.AesGcm.AArch64.key_call`).
 -/
 
@@ -28,7 +28,7 @@ open VG.Proof.AesGcm.AArch64 (toNat_ofNat_lt toNat_rounds callEntry_x0 callEntry
   callEntry_x4)
 open VG.Proof.Ocb (blockAtMem_of_state stateAt_of_statesAt)
 
-/-- The implementation of `vg_aes_expand_key` that goes with `v`, as AES-GCM's
+/-- The implementation of `vg_aes_expand_key_scratch` that goes with `v`, as AES-GCM's
 proofs take it. -/
 def keyImpl (v : BlocksImpl) : Proof.AesGcm.AArch64.KeyImpl where
   fn := ⟨v.expand.name, v.expand.code⟩

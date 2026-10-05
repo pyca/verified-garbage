@@ -101,14 +101,14 @@ end
 # Streaming AES-CMAC on x86: the calls
 
 A call, in a frame of its arguments, of each function the streaming functions
-call (`vg_aes_expand_key`, `vg_cmac_aes_subkeys`, `vg_cmac_aes_update` and
+call (`vg_aes_expand_key_scratch`, `vg_cmac_aes_subkeys`, `vg_cmac_aes_update` and
 `vg_cmac_aes_finalize`), from its contract (`WP.callWith`): what it needs
 (`…Args`: the registers pushed as its arguments, and the regions), what it
 leaves (`…Post`, in terms of the memory before the call), and that two calls
 with the same arguments and stack pointer leak the same (`…_rel`, by
 `RelCT.callWith`). A call of a function of six arguments uses the 56 bytes
 below `esp` (`push`, the return address and the callee's call of
-`vg_aes_ctr32`); `vg_cmac_aes_subkeys`, of four, 48; `vg_aes_expand_key`,
+`vg_aes_ctr32`); `vg_cmac_aes_subkeys`, of four, 48; `vg_aes_expand_key_scratch`,
 which calls nothing, 20.
 -/
 
@@ -570,9 +570,9 @@ theorem sub_rel {W K S E : BitVec 32} {R : Nat} {P : State → State → Prop}
   · rw [a2, b2]
   · rw [a3, b3]
 
-/-! ## `vg_aes_expand_key` -/
+/-! ## `vg_aes_expand_key_scratch` -/
 
-/-- What a call of `vg_aes_expand_key` needs: the key `Kp` of `KL` bytes,
+/-- What a call of `vg_aes_expand_key_scratch` needs: the key `Kp` of `KL` bytes,
 the schedule `W` and the working space `S`, in `eax`, `ecx`, `edx` and
 `ebx`. -/
 structure EArgs (s : State) (Kp W S : BitVec 32) (KL : Nat) : Prop where
@@ -594,7 +594,7 @@ structure EArgs (s : State) (Kp W S : BitVec 32) (KL : Nat) : Prop where
   reads : Covers [⟨Kp.setWidth 64, KL⟩] (s.rd ++ s.wr)
   writes : Covers [⟨W.setWidth 64, 240⟩, ⟨S.setWidth 64, 512⟩] s.wr
 
-/-- What a call of `vg_aes_expand_key` leaves. -/
+/-- What a call of `vg_aes_expand_key_scratch` leaves. -/
 structure EPost (s : State) (Kp W S : BitVec 32) (KL : Nat) (s' : State) : Prop where
   rd : s'.rd = s.rd
   wr : s'.wr = s.wr
@@ -603,7 +603,7 @@ structure EPost (s : State) (Kp W S : BitVec 32) (KL : Nat) (s' : State) : Prop 
   out : Spec.Aes.bytesAt s'.mem (W.setWidth 64) (16 * (Spec.Aes.rounds (KL / 4) + 1)) =
     Spec.Aes.expandKey (Spec.Aes.bytesAt s.mem (Kp.setWidth 64) KL)
 
-/-- The regions `vg_aes_expand_key` is called with. -/
+/-- The regions `vg_aes_expand_key_scratch` is called with. -/
 abbrev eRd (E Kp : BitVec 32) (KL : Nat) : List Region :=
   [⟨Kp.setWidth 64, KL⟩, ⟨(E - BitVec.ofNat 32 16).setWidth 64, 16⟩]
 abbrev eWr (W S : BitVec 32) : List Region := [⟨W.setWidth 64, 240⟩, ⟨S.setWidth 64, 512⟩]

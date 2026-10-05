@@ -5,6 +5,7 @@ import VerifiedGarbage.Proof.Aes.AArch64.Aese.Ctr32
 import VerifiedGarbage.Proof.Aes.AArch64.Aese.ExpandKey
 import VerifiedGarbage.Proof.Aes.AArch64.Blocks
 import VerifiedGarbage.Proof.Aes.AArch64.Aese.Blocks
+import VerifiedGarbage.Proof.Aes.AArch64.Frame
 
 /-! # AES on AArch64 -/
 
@@ -15,9 +16,20 @@ def artifacts : List Artifact := [
     target := AArch64.target
     doc := Spec.Aes.expandKeyApi.doc
       (notes := ["`SUBWORD` uses a constant-time bitsliced S-box, in the style of BearSSL's \
+        `aes_ct64` (Thomas Pornin, MIT licence). The working space is in a frame of 512 \
+        bytes on the stack, zeroed before returning."])
+    code := Impl.StackScratch.AArch64.withStackScratchWiped 512 .x3 64 Impl.Aes.AArch64.expandKey
+    contract := Spec.Aes.expandKeyContract AArch64.abi 512
+    stack := 512
+    verified := Proof.Aes.AArch64.expandKey_framed Proof.Aes.AArch64.expandKey_verified
+    spSafe := Code.all_of_forall (fun _ => rfl) _ },
+  { Spec.Aes.expandKeyScratchApi with
+    target := AArch64.target
+    doc := Spec.Aes.expandKeyScratchApi.doc
+      (notes := ["`SUBWORD` uses a constant-time bitsliced S-box, in the style of BearSSL's \
         `aes_ct64` (Thomas Pornin, MIT licence)."])
     code := Impl.Aes.AArch64.expandKey
-    contract := Spec.Aes.expandKeyContract AArch64.abi
+    contract := Spec.Aes.expandKeyScratchContract AArch64.abi
     verified := Proof.Aes.AArch64.expandKey_verified
     spSafe := Code.all_of_forall (fun _ => rfl) _ },
   { Spec.Gcm.ctr32Api with
@@ -34,9 +46,23 @@ def artifacts : List Artifact := [
     target := AArch64.target
     doc := Spec.Aes.expandKeyApi.doc
       (notes := ["Uses the Armv8 Cryptographic Extension: one word at a time, with AESE for \
+        `SUBWORD`. The working space is in a frame of 512 bytes on the stack, zeroed before \
+        returning."])
+    code := Impl.StackScratch.AArch64.withStackScratchWiped 512 .x3 64
+      Impl.Aes.AArch64.Aese.expandKey
+    contract := Spec.Aes.expandKeyContract AArch64.abi 512
+    stack := 512
+    verified := Proof.Aes.AArch64.expandKey_framed Proof.Aes.AArch64.Aese.Key.expandKey_verified
+    features := ["aes"]
+    spSafe := Code.all_of_forall (fun _ => rfl) _ },
+  { Spec.Aes.expandKeyScratchApi with
+    name := "vg_aes_expand_key_scratch_aes"
+    target := AArch64.target
+    doc := Spec.Aes.expandKeyScratchApi.doc
+      (notes := ["Uses the Armv8 Cryptographic Extension: one word at a time, with AESE for \
         `SUBWORD`."])
     code := Impl.Aes.AArch64.Aese.expandKey
-    contract := Spec.Aes.expandKeyContract AArch64.abi
+    contract := Spec.Aes.expandKeyScratchContract AArch64.abi
     verified := Proof.Aes.AArch64.Aese.Key.expandKey_verified
     features := ["aes"]
     spSafe := Code.all_of_forall (fun _ => rfl) _ },

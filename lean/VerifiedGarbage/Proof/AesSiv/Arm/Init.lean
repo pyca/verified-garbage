@@ -7,7 +7,7 @@ import VerifiedGarbage.Proof.Framework.Arm.Spill
 
 Untrusted: everything here is checked by Lean. `init` saves our caller's
 `r4`–`r6`, `r11` and `lr` in the scratch buffer, expands `K1` into the
-context with `vg_aes_expand_key`, derives its subkeys after the schedule
+context with `vg_aes_expand_key_scratch`, derives its subkeys after the schedule
 with `vg_cmac_aes_subkeys`, expands `K2` after them and restores the
 registers (`init_wp`): the context is then that of the key
 (`Proof.AesSiv.keyRepr_of`). The code between the calls is constant time
@@ -118,7 +118,7 @@ theorem IPre.wS (hp : IPre s₀ Kp Ct S KL) {d n : Nat} (h : d + n ≤ 2560) :
     ∃ r' ∈ s₀.wr, ∃ off, State.addr S + BitVec.ofNat 64 d = r'.base + BitVec.ofNat 64 off ∧ off + n ≤ r'.len :=
   ⟨⟨State.addr S, 2560⟩, by rw [hp.wr]; simp, d, rfl, h⟩
 
-/-- The arguments of a call of `vg_aes_expand_key`: half the key from byte
+/-- The arguments of a call of `vg_aes_expand_key_scratch`: half the key from byte
 `a`, into the context from byte `c`. -/
 theorem IPre.eargs (hp : IPre s₀ Kp Ct S KL) {s : State} {a c : Nat} (ha : a = 0 ∨ a = KL / 2)
     (hc : c = 0 ∨ c = 272) (hrd : s.rd = s₀.rd) (hwr : s.wr = s₀.wr)

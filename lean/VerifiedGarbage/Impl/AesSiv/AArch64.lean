@@ -4,9 +4,11 @@ import VerifiedGarbage.Impl.CmacAes.Stream.AArch64
 # AES-SIV: AArch64 implementation
 
 `vg_aes_siv_init(key = x0, key_len = x1, ctx = x2, scratch = x3)`,
-`vg_aes_siv_encrypt(ctx = x0, rounds = x1, ads = x2, ads_count = x3, data = x4, len = x5, work = x6)`
+`vg_aes_siv_encrypt(ctx = x0, rounds = x1, ads = x2, ads_count = x3, data = x4, len = x5, siv = x6, work = x7)`
 and `vg_aes_siv_decrypt` with the same arguments (see `VG.Spec.Siv.initContract`
-and the others), composed of calls of the verified `vg_aes_expand_key`,
+and the others), with the working space (`scratch` or `work`) as a last
+argument, which a frame on the stack allocates
+(`Impl.StackScratch.AArch64.withStackScratch`), composed of calls of the verified `vg_aes_expand_key_scratch`,
 `vg_cmac_aes_subkeys`, `vg_cmac_aes_update`, `vg_cmac_aes_finalize` and
 `vg_aes_ctr32`. `init` is generic over the implementation of AES it calls
 (`Ctr32`, the `ExpandKey` that goes with it, and `sfx`, the suffix of the
@@ -25,7 +27,8 @@ zero block, `[32, 64)` the last bytes of S2V's last string (`tail`),
 `[64, 80)` the counter `Q + i`, `[80, 96)` a keystream block, `[96, 112)` the
 counter block passed to `vg_aes_ctr32`, `[112, 128)` the IV `decrypt`
 computes, `[128, 144)` a CMAC state, `[144, 160)` `dbl(D)`, `[160, 248)` our
-caller's callee-saved registers and our return address, `[256, 2432)` the
+caller's callee-saved registers and our return address, `[248, 256)` the
+address of `siv`, `[256, 2432)` the
 working space of the functions called, and `[2560, 2576)` S2V's state `D`.
 A call (`bl`) stores nothing in memory, so no stack is used but `init`'s
 frame.
@@ -50,9 +53,11 @@ chains in `x28`, across the calls.
   each block, `vg_aes_ctr32` on a zero block with the counter block `Q + i`
   gives the keystream, whose first `min(16, left)` bytes are XORed into the
   data, and the counter is incremented as a 128-bit big-endian integer.
-* `decrypt` then decrypts with CTR from the IV it is given, finishes S2V with
-  the plaintext into `[112, 128)`, compares the two IVs without a branch and
-  ANDs every byte of the data with the mask of the result.
+  It then copies the IV to `siv` (`sivOut`).
+* `decrypt` then copies the IV it is given from `siv` to the working space
+  (`sivIn`), decrypts with CTR from it, finishes S2V with the plaintext into
+  `[112, 128)`, compares the two IVs without a branch and ANDs every byte of
+  the data with the mask of the result.
 
 `finish`, for a string `P` of `L` bytes: if `L < 16`, the tail is
 `pad(P) XOR dbl(D)` and its CMAC is that of one complete block; otherwise,
@@ -122,7 +127,7 @@ def initRestored : List (Reg × Nat) :=
 /-- Saves the registers and keeps the key in `x19`, the half length
 (`key_len / 2`) in `x20`, the context in `x21` and the scratch buffer in
 `x22`; the arguments of
-`vg_aes_expand_key(key = x0, key_len = x1, schedule = x2, scratch = x3)` for
+`vg_aes_expand_key_scratch(key = x0, key_len = x1, schedule = x2, scratch = x3)` for
 `K1` are then those but the length. -/
 def initPre : List Instr :=
   initSaved.map (fun (r, d) => .str .x r .x3 d) ++
@@ -133,7 +138,7 @@ the rounds `key_len / 8 + 6`. -/
 def initMid₁ : List Instr :=
   [mov .x0 .x21, .lsr .x .x1 .x20 2, .addImm .x .x1 .x1 6, .addImm .x .x2 .x21 240, mov .x3 .x22]
 
-/-- The arguments of `vg_aes_expand_key` for `K2`. -/
+/-- The arguments of `vg_aes_expand_key_scratch` for `K2`. -/
 def initMid₂ : List Instr :=
   [.add .x .x0 .x19 .x20, mov .x1 .x20, .addImm .x .x2 .x21 272, mov .x3 .x22]
 
@@ -150,10 +155,11 @@ def init (e : ExpandKey) (c : Ctr32) (sfx : String) : Prog isa :=
 /-! ## Saving the registers -/
 
 /-- The registers `encrypt` and `decrypt` save in the working space, and
-where. -/
+where: our caller's callee-saved registers and our return address, and the
+address of `siv` (`x6`), which they read back at the end. -/
 def saved : List (Reg × Nat) :=
   [(.x19, 160), (.x20, 168), (.x21, 176), (.x22, 184), (.x23, 192), (.x24, 200), (.x25, 208),
-   (.x26, 216), (.x27, 224), (.x28, 232), (.x30, 240)]
+   (.x26, 216), (.x27, 224), (.x28, 232), (.x30, 240), (.x6, 248)]
 
 /-- `saved` with `x19`, the base, last. -/
 def restored : List (Reg × Nat) :=
@@ -170,8 +176,8 @@ them: the working space in `x19`, the context in `x20`, the rounds in `x21`,
 the descriptors of the components and their number in `x24` and `x25`, and
 the data in `x26` (`x27` bytes). -/
 def encPre : List Instr :=
-  saved.map (fun (r, d) => .str .x r .x6 d) ++
-  [mov .x19 .x6, mov .x20 .x0, mov .x21 .x1, mov .x24 .x2, mov .x25 .x3, mov .x26 .x4, mov .x27 .x5]
+  saved.map (fun (r, d) => .str .x r .x7 d) ++
+  [mov .x19 .x7, mov .x20 .x0, mov .x21 .x1, mov .x24 .x2, mov .x25 .x3, mov .x26 .x4, mov .x27 .x5]
 
 /-- The zero block at `W + 16`, `D` zeroed, and the arguments of
 `vg_cmac_aes_finalize(key = x0, rounds = x1, state = x2, last = x3, last_len = x4, scratch = x5)`
@@ -379,14 +385,29 @@ def encS2v (u : Impl.CmacAes.AArch64.Update) (c : Ctr32) (sfx : String) : Prog i
   .seq (.block (encPre ++ startPre))
     (.seq (callFinalize c sfx) (.seq (s2vAds u c sfx) (.block [mov .x22 .x26, mov .x23 .x27])))
 
+/-- The IV, the first 16 bytes of the working space, copied to `siv`, whose
+address the save left at `W + 248`, through `x9` and `x10`. -/
+def sivOut : List Instr :=
+  [.ldr .x .x9 .x19 248, .ldr .x .x10 .x19 0, .str .x .x10 .x9 0, .ldr .x .x10 .x19 8, .str .x .x10 .x9 8]
+
 def encrypt (u : Impl.CmacAes.AArch64.Update) (c : Ctr32) (sfx : String) : Prog isa :=
   .seq (encS2v u c sfx)
-    (.seq (finish u c sfx 0) (.seq (.block (counter 0)) (.seq (ctr c) (.block restore))))
+    (.seq (finish u c sfx 0)
+      (.seq (.block (counter 0)) (.seq (ctr c) (.seq (.block sivOut) (.block restore)))))
+
+/-- The received IV at `siv`, whose address the save left at `W + 248`,
+copied to the first 16 bytes of the working space, through `x9` and `x10`. -/
+def sivIn : List Instr :=
+  [.ldr .x .x9 .x19 248, .ldr .x .x10 .x9 0, .str .x .x10 .x19 0, .ldr .x .x10 .x9 8, .str .x .x10 .x19 8]
+
+/-- `decrypt` from the received IV in the first 16 bytes of the working space
+on: CTR, S2V's end, the comparison, the mask and the restore. -/
+def openTail (u : Impl.CmacAes.AArch64.Update) (c : Ctr32) (sfx : String) : Prog isa :=
+  .seq (.block (counter 0))
+    (.seq (ctr c)
+      (.seq (finish u c sfx tOff) (.seq (.block compare) (.seq maskData (.block restore)))))
 
 def decrypt (u : Impl.CmacAes.AArch64.Update) (c : Ctr32) (sfx : String) : Prog isa :=
-  .seq (encS2v u c sfx)
-    (.seq (.block (counter 0))
-      (.seq (ctr c)
-        (.seq (finish u c sfx tOff) (.seq (.block compare) (.seq maskData (.block restore))))))
+  .seq (encS2v u c sfx) (.seq (.block sivIn) (openTail u c sfx))
 
 end VG.Impl.AesSiv.AArch64
