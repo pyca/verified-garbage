@@ -290,11 +290,11 @@ theorem core_ct {i : Nat} :
       fun _ _ => True :=
   AArch64.RelCT.callEx P.coreX P.coreCT
     fun _ _ ⟨⟨L, _, _, _, _⟩, hL, _, c₁, c₂, ⟨_, a₁⟩, ⟨_, a₂⟩⟩ =>
-    ⟨coreRd L, coreWr L, coreRd L, coreWr L, core_pre hL P.len32 a₁.x0 a₁.x1 a₁.x2 a₁.x3 a₁.x4,
-      core_pre hL P.len32 a₂.x0 a₂.x1 a₂.x2 a₂.x3 a₂.x4,
+    ⟨coreRd L, coreWr L, coreRd L, coreWr L, core_pre hL P.len32 c₁ a₁.x0 a₁.x1 a₁.x2 a₁.x3 a₁.x4,
+      core_pre hL P.len32 c₂ a₂.x0 a₂.x1 a₂.x2 a₂.x3 a₂.x4,
       ⟨ce_two (by decide) a₁.x0 a₂.x0 _ _ _ _, ce_two (by decide) a₁.x1 a₂.x1 _ _ _ _,
         ce_two (by decide) a₁.x2 a₂.x2 _ _ _ _, ce_two (by decide) a₁.x3 a₂.x3 _ _ _ _,
-        ce_two (by decide) a₁.x4 a₂.x4 _ _ _ _, ce_sp_two c₁ c₂ _ _ _ _⟩,
+        ce_two (by decide) a₁.x4 a₂.x4 _ _ _ _, ce_sp_two c₁ c₂ _ _ _ _, c₁.sy.trans c₂.sy.symm⟩,
       core_covers P.len32 c₁, core_coversW c₁, core_covers P.len32 c₂, core_coversW c₂⟩
 
 /-- Whether to go on agrees: in both runs, iff the candidate is before the one it stops at. -/
@@ -403,7 +403,7 @@ theorem save_blk : TaintOk [] Cfg.saveArgs := ⟨_, by taint_decide⟩
 
 /-- Saving the arguments: the runs have the same layout, and stop at the same candidate. -/
 theorem save_ct : RelCT isa (Entered P) (.block Cfg.saveArgs) (Two P fun _ _ _ => True) := by
-  intro a b ta tb a' b' ⟨s₁, s₂, h₁, h₂, ⟨hsp, h0, h1, h2, h3, hres⟩, ea, eb⟩ e₁ e₂
+  intro a b ta tb a' b' ⟨s₁, s₂, h₁, h₂, ⟨hsp, h0, h1, h2, h3, hres, hsy⟩, ea, eb⟩ e₁ e₂
   subst ea eb
   obtain ⟨_, hc⟩ := save_blk
   obtain ⟨ht, -⟩ := RelCT.taint (A := taint) (P := fun x y => x.sp = y.sp) (Taint.ofRegs [])
@@ -415,7 +415,7 @@ theorem save_ct : RelCT isa (Entered P) (.block Cfg.saveArgs) (Two P fun _ _ _ =
   obtain ⟨_, u₂, x₂, c₂⟩ := entry_ok h₂
   obtain ⟨-, rfl⟩ := Exec.det e₁ x₁
   obtain ⟨-, rfl⟩ := Exec.det e₂ x₂
-  have hl : lay P.I.hashLen s₁ = lay P.I.hashLen s₂ := by simp only [lay, hsp, h0, h1, h2, h3]
+  have hl : lay P.I.hashLen s₁ = lay P.I.hashLen s₂ := by simp only [lay, hsp, h0, h1, h2, h3, hsy]
   have hr : (result P.I s₁.mem (s₁.gpr .x1) (s₁.gpr .x2)).2 = (result P.I s₂.mem (s₁.gpr .x1) (s₁.gpr .x2)).2 := by
     rw [hres, h1, h2]
   refine ⟨ht, ⟨lay P.I.hashLen s₁, s₁.gpr, s₂.gpr, s₁.mem, s₂.mem⟩, lay_ok h₁,

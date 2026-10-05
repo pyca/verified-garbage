@@ -10,8 +10,9 @@ on x86-64 (`Impl/Ecdh/X86_64.lean`):
 
 1. `scratch` to `x4`, `peer` to `x6`, `d`'s pointer to `x3` (the
    signature's `k`) and `peer + 1` to `x2` (its hash); then the
-   signature's setup and tables of bits, unchanged: `d` is read into the
-   slots of `k` and `d`, the peer's `x` into that of the hash;
+   signature's setup and table of bits, unchanged: `d` is read into the
+   slots of `k` and `d`, the peer's `x` into that of the hash (and `x5`,
+   which ECDH does not use, into the slot of the comb's tables' address);
 2. `R² mod p` and `b R mod p` to slots of their own, the peer's `y` to
    another, and into the flag the masks of the peer's first byte being
    `04`, `x < p` and `y < p`;
@@ -20,7 +21,7 @@ on x86-64 (`Impl/Ecdh/X86_64.lean`):
 4. the peer's point, or `G` if the flag is clear (so the window method always runs
    on a point of the curve), to the slots the window method takes its point from;
 5. `d + 8 Σ_{j<J} 16^j` and its bits, `[d]P` by the window method (`WinCfg.window`, its
-   table of `[1 … 8]P` past the signature's tables of bits), and `Z^(p-2)` by the
+   table of `[1 … 8]P` past the signature's table of bits), and `Z^(p-2)` by the
    signature's power;
 6. `x = X Z^(p-2)`, out of Montgomery's form, and the masks of `d` in
    `[1, n-1]` and `Z ≠ 0` into the flag, which selects `x` or zeros for
@@ -67,12 +68,10 @@ and the hash the peer's `x`. -/
 def args : List Instr :=
   [.addImm .x .x4 .x3 0, .addImm .x .x6 .x2 0, .addImm .x .x3 .x1 0, .addImm .x .x2 .x2 1]
 
-/-- The signature's setup and tables of bits. -/
+/-- The signature's setup and table of bits. -/
 def prefix' : Prog isa :=
   .seq (.block c.setup) <|
-  .seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n)) <|
-  .seq (bits (c.sl EXPP) (bitsAt c.n 1) (8 * c.n)) <|
-  .seq (bits (c.sl EXPN) (bitsAt c.n 2) (8 * c.n)) (.block [])
+  .seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n)) (.block [])
 
 /-- The constants ECDH adds to the signature's. -/
 def consts : List (Nat × Nat) := [(R2P, c.R * c.R % c.C.p), (BP, c.mont c.C.b)]

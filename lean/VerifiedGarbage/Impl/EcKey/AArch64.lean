@@ -48,9 +48,7 @@ def args : List Instr := [.addImm .x .x4 .x2 0, .addImm .x .x3 .x1 0, .addImm .x
 def upToPow : Prog isa :=
   .seq (.block c.setup) <|
   .seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n)) <|
-  .seq (bits (c.sl EXPP) (bitsAt c.n 1) (8 * c.n)) <|
-  .seq (bits (c.sl EXPN) (bitsAt c.n 2) (8 * c.n)) <|
-  .seq (CombCfg.comb c.combCfg) <|
+  .seq (TCombCfg.comb c.combCfg) <|
   .seq (ChainCfg.pow c.powP) (.block [])
 
 /-- `04 ‖ x ‖ y` (or zeros) to `out`, `x19` and `x20` restored, and the
