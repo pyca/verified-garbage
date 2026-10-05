@@ -43,7 +43,7 @@ theorem ecdh_a64 (hL : Weierstrass.Law Spec.P384.curve) (hI : Weierstrass.AArch6
   have hn : exchangeP384.noCalls = true := by lit_decide
   have hu : KeepsUntouched exchangeP384 := by lit_decide
   have hv : exchangeP384.allInstrs keepsV = true := by lit_decide
-  obtain ⟨t, s', he, hsv, hpost⟩ := exchange_ok (p384_ok hI) hL (pre_of hs)
+  obtain ⟨t, s', he, hsv, hpost⟩ := exchange_ok (p384_ok hI) rfl hL (pre_of hs)
   exact ⟨t, s', he, abiPreserved_of he hn hu hv hsv, post_of hpost⟩
 
 theorem ecdh_ct : ConstantTime isa ecdhAArch64.pre ecdhAArch64.pub exchangeP384 :=

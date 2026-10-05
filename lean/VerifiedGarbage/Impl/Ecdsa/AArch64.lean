@@ -3,6 +3,7 @@ import VerifiedGarbage.Impl.Weierstrass.AArch64.TComb
 import VerifiedGarbage.Impl.Weierstrass.AArch64.Chain
 import VerifiedGarbage.Impl.Weierstrass.AArch64.Inv
 import VerifiedGarbage.Spec.Weierstrass
+import VerifiedGarbage.Spec.Ecdsa
 
 /-!
 # ECDSA signing on AArch64
@@ -130,6 +131,10 @@ variable (c : Cfg)
 /-- `R = 2^(64 n)`. -/
 def R : Nat := 2 ^ (64 * c.n)
 
+/-- The bits of the hash's `len` bytes that are not `e`'s: `8 len - N`, for
+`N` the bits of `n` (0 but for P-521's 7). -/
+def sh : Nat := 8 * c.C.len - Spec.Ecdsa.nBits c.C
+
 /-- `x R mod p`. -/
 def mont (x : Nat) : Nat := x * c.R % c.C.p
 
@@ -229,15 +234,27 @@ def consts : List (Nat × Nat) :=
     (BM, c.mont c.C.b), (GX, c.mont c.C.gx), (GY, c.mont c.C.gy), (R2N, c.R * c.R % c.C.n),
     (ONEN, c.R % c.C.n), (RX, 0), (RY, c.mont 1), (RZ, 0)]
 
+/-- The slot `hs` (if any) shifted right by the bits of a hash's `len` bytes
+that are not `e`'s (`sh`: none but for P-521's 7). -/
+def shiftCode : Option Nat → List Instr
+  | none => []
+  | some i => if c.sh = 0 then [] else shrWords c.n (c.sl i) c.sh
+
 /-- Saves them, with the working space in `x4`, which then goes to `x0`,
-keeps `out` in `x20`; reads `k`, `d` and the hash; stores the constants; and sets
+keeps `out` in `x20`; reads `k`, `d` and the hash (`len` bytes each), and
+shifts the slot `hs` holding a hash; stores the constants; and sets
 `R = (0 : 1 : 0)` and the flag to all ones. -/
-def setup : List Instr :=
+def setupWith (hs : Option Nat) : List Instr :=
   saved.map (fun (r, d) => .str .x r .x4 d) ++
   [.addImm .x .x20 .x0 0, .addImm .x .x0 .x4 0] ++
-  loadBE c.n (c.sl K) .x3 ++ loadBE c.n (c.sl D) .x1 ++ loadBE c.n (c.sl E) .x2 ++
+  loadBytes c.C.len c.n (c.sl K) .x3 ++ loadBytes c.C.len c.n (c.sl D) .x1 ++
+  loadBytes c.C.len c.n (c.sl E) .x2 ++ c.shiftCode hs ++
   c.consts.flatMap (fun (i, x) => setConst c.n (c.sl i) x) ++
   setConst 1 (c.sl FLAG) (2 ^ 64 - 1)
+
+/-- The setup of the functions built on the signature's, which shifts
+nothing. -/
+def setup : List Instr := c.setupWith none
 
 /-- The mask `x2` of `[a] ≠ 0` (all ones if it is not zero), through `x1`,
 `x7` and `x16`. -/
@@ -278,7 +295,7 @@ def middle : Prog isa :=
 the flag's low bit to `x0`. -/
 def finish : List Instr :=
   [ld .x3 (c.sl FLAG)] ++
-  storeBE c.n .x20 0 (c.sl RR) ++ storeBE c.n .x20 (8 * c.n) (c.sl SS) ++
+  storeBytes c.C.len c.n .x20 0 (c.sl RR) ++ storeBytes c.C.len c.n .x20 c.C.len (c.sl SS) ++
   saved.map (fun (r, d) => ld r d) ++
   [.movz .x .x1 1 0, .logic .and .x .x0 .x3 .x1]
 
@@ -295,7 +312,7 @@ def scalar : Prog isa :=
 
 /-- `vg_ecdsa_<curve>_sign`. -/
 def sign : Prog isa :=
-  .seq (.block c.setup) <|
+  .seq (.block (c.setupWith (some E))) <|
   .seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n)) <|
   .seq (TCombCfg.comb c.combCfg) <|
   .seq c.pPow <|

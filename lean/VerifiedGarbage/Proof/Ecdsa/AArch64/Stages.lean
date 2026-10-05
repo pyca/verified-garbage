@@ -20,9 +20,9 @@ open VG.Proof.Mont.AArch64 VG.Proof.Mont VG.Proof.Weierstrass.AArch64 VG.Proof.W
 variable {c : Cfg}
 
 /-- The arguments' numbers. -/
-abbrev kv (c : Cfg) (s₀ : State) : Nat := ofBytes (Spec.Ecdsa.bytesAt s₀.mem (s₀.gpr .x3) (8 * c.n))
-abbrev dv (c : Cfg) (s₀ : State) : Nat := ofBytes (Spec.Ecdsa.bytesAt s₀.mem (s₀.gpr .x1) (8 * c.n))
-abbrev ev (c : Cfg) (s₀ : State) : Nat := ofBytes (Spec.Ecdsa.bytesAt s₀.mem (s₀.gpr .x2) (8 * c.n))
+abbrev kv (c : Cfg) (s₀ : State) : Nat := ofBytes (Spec.Ecdsa.bytesAt s₀.mem (s₀.gpr .x3) c.C.len)
+abbrev dv (c : Cfg) (s₀ : State) : Nat := ofBytes (Spec.Ecdsa.bytesAt s₀.mem (s₀.gpr .x1) c.C.len)
+abbrev ev (c : Cfg) (s₀ : State) : Nat := ofBytes (Spec.Ecdsa.bytesAt s₀.mem (s₀.gpr .x2) c.C.len)
 
 /-- What the stages keep: the working space, `out` in `x20`, the regions,
 the constants and the saved registers. -/
@@ -32,11 +32,12 @@ structure Keep (c : Cfg) (s₀ : State) (base : Addr) (s : State) : Prop where
   wr : s.wr = s₀.wr
   fixed : Fixed c base s₀.gpr s.mem
 
-/-- After the setup and the table. -/
-structure St₁ (c : Cfg) (s₀ : State) (base : Addr) (s : State) : Prop extends Keep c s₀ base s where
+/-- After the setup (shifting the slot `hs`) and the table. -/
+structure St₁ (c : Cfg) (hs : Option Nat) (s₀ : State) (base : Addr) (s : State) : Prop
+    extends Keep c s₀ base s where
   k : sv c base s K = kv c s₀
-  d : sv c base s D = dv c s₀
-  e : sv c base s E = ev c s₀
+  d : sv c base s D = dv c s₀ >>> shAt c hs D
+  e : sv c base s E = ev c s₀ >>> shAt c hs E
   rx : sv c base s RX = 0
   ry : sv c base s RY = c.mont 1
   rz : sv c base s RZ = 0
@@ -48,12 +49,13 @@ structure St₁ (c : Cfg) (s₀ : State) (base : Addr) (s : State) : Prop extend
   rd : s.rd = s₀.rd
 
 /-- The setup, then the table. -/
-theorem stage₁ (hc : CfgOk c) {s₀ : State} (hp : SetupPre c s₀) {rest : Prog isa} {Q : State → Prop}
-    (h : ∀ s, St₁ c s₀ (s₀.gpr .x4) s → WP isa rest s Q) :
-    WP isa (.seq (.block c.setup) (.seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n)) rest)) s₀ Q := by
+theorem stage₁ (hc : CfgOk c) {hs : Option Nat} (hhs : ShiftOk hs) {s₀ : State} (hp : SetupPre c s₀)
+    {rest : Prog isa} {Q : State → Prop}
+    (h : ∀ s, St₁ c hs s₀ (s₀.gpr .x4) s → WP isa rest s Q) :
+    WP isa (.seq (.block (c.setupWith hs)) (.seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n)) rest)) s₀ Q := by
   have h0 := hc.n0
   have h7 := hc.n10
-  refine WP.seq (WP.mono_syms (setup_ok hc hp) fun s₁ P sy₁ => ?_)
+  refine WP.seq (WP.mono_syms (setup_ok hc hhs hp) fun s₁ P sy₁ => ?_)
   have hn := P.scr.nowrap
   have hc' : ∀ ix ∈ c.consts, sv c (s₀.gpr .x4) s₁ ix.1 = ix.2 := P.consts
   have fx : Fixed c (s₀.gpr .x4) s₀.gpr s₁.mem :=
@@ -77,7 +79,7 @@ theorem stage₁ (hc : CfgOk c) {s₀ : State} (hp : SetupPre c s₀) {rest : Pr
   have u₂ := O₂.unch
   have v₂ : ∀ {i}, i < 45 → sv c (s₀.gpr .x4) s₂ i = sv c (s₀.gpr .x4) s₁ i := fun hi =>
     sv_unch u₂ h7 hn hi (apart_tbl hi 0)
-  have hk : (kv c s₀) = sv c (s₀.gpr .x4) s₁ K := P.k.symm
+  have hk : (kv c s₀) = sv c (s₀.gpr .x4) s₁ K := by rw [P.k, shAt_K c hhs, Nat.shiftRight_zero]
   have hs₂ := P.scr.of_keepRegs k₂ (by decide)
   have hF := sl_le c h7 (i := FLAG) (by decide)
   have ap : ∀ {i}, i < 45 → ∀ w ∈ [(bitsAt c.n 0, 64 * c.n)], c.sl i + 8 ≤ w.1 ∨ w.1 + w.2 ≤ c.sl i :=
@@ -87,7 +89,7 @@ theorem stage₁ (hc : CfgOk c) {s₀ : State} (hp : SetupPre c s₀) {rest : Pr
       have : 1 ≤ c.n := h0
       exact Or.inl (by dsimp only; omega)
   refine ⟨⟨hs₂, ?_, by rw [k₂.wr, P.keep.wr], ?_⟩,
-    by rw [v₂ (by decide), P.k], by rw [v₂ (by decide), P.d], by rw [v₂ (by decide), P.e],
+    by rw [v₂ (by decide), ← hk], by rw [v₂ (by decide), P.d], by rw [v₂ (by decide), P.e],
     by rw [v₂ (by decide)]; exact hc' (RX, 0) (by simp [Cfg.consts]),
     by rw [v₂ (by decide)]; exact hc' (RY, c.mont 1) (by simp [Cfg.consts]),
     by rw [v₂ (by decide)]; exact hc' (RZ, 0) (by simp [Cfg.consts]), ?_, ?_, ?_, ?_, ?_,
@@ -127,12 +129,14 @@ theorem flag_unch {base : Addr} {l : List Nat} {m m' : Mem} (hu : Unch base (slW
   · exact Or.inl (by omega)
   · exact Or.inr h
 
-/-- A hash of `8 n` bytes is its number. -/
-theorem hashToInt_eq (hc : CfgOk c) (m : Mem) (q : Addr) :
-    Spec.Ecdsa.hashToInt c.C (Spec.Ecdsa.bytesAt m q (8 * c.n)) =
-      ofBytes (Spec.Ecdsa.bytesAt m q (8 * c.n)) := by
-  have := hc.hash
-  simp only [Spec.Ecdsa.hashToInt, length_bytesAt,
-    show 8 * (8 * c.n) ≤ Spec.Ecdsa.nBits c.C by omega, ite_true]
+/-- A hash of `len` bytes is its number without the bits that are not
+`e`'s. -/
+theorem hashToInt_eq (c : Cfg) (m : Mem) (q : Addr) :
+    Spec.Ecdsa.hashToInt c.C (Spec.Ecdsa.bytesAt m q c.C.len) =
+      ofBytes (Spec.Ecdsa.bytesAt m q c.C.len) >>> c.sh := by
+  simp only [Spec.Ecdsa.hashToInt, length_bytesAt, Cfg.sh]
+  split
+  · rw [show 8 * c.C.len - Spec.Ecdsa.nBits c.C = 0 by omega, Nat.shiftRight_zero]
+  · rfl
 
 end VG.Proof.Ecdsa.AArch64

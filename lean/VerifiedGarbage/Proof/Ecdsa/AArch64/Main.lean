@@ -22,11 +22,12 @@ open VG.Proof.Mont.AArch64 VG.Proof.Mont VG.Proof.Weierstrass.AArch64 VG.Proof.W
 
 variable {c : Cfg}
 
-/-- After `[k]G` and `Z^(p-2)`. -/
-structure St₂ (c : Cfg) (s₀ : State) (base : Addr) (s : State) : Prop extends Keep c s₀ base s where
+/-- After `[k]G` and `Z^(p-2)`, with the slot `hs` shifted by the setup. -/
+structure St₂ (c : Cfg) (hs : Option Nat) (s₀ : State) (base : Addr) (s : State) : Prop
+    extends Keep c s₀ base s where
   k : sv c base s K = kv c s₀
-  d : sv c base s D = dv c s₀
-  e : sv c base s E = ev c s₀
+  d : sv c base s D = dv c s₀ >>> shAt c hs D
+  e : sv c base s E = ev c s₀ >>> shAt c hs E
   flag : word s.mem base (c.sl FLAG) = BitVec.allOnes 64
   rep : Rep c.C (tmv c.C c.n base s (c.sl RX)) (tmv c.C c.n base s (c.sl RY))
     (tmv c.C c.n base s (c.sl RZ)) (mul (kv c s₀) (G c.C))
@@ -36,8 +37,8 @@ structure St₂ (c : Cfg) (s₀ : State) (base : Addr) (s : State) : Prop extend
 
 /-- `[k]G` by the comb, then `Z^(p-2)`. -/
 theorem stage₂ (hc : CfgOk c) (hC : Law c.C) (hT : CombOkW c.C Cfg.combW (Cfg.combJ c.n) c.tbl c.start)
-    {s₀ : State} {base : Addr} (hTP : TblPre c s₀ (s₀.syms c.tsym) base) {s : State} (hS : St₁ c s₀ base s)
-    {rest : Prog isa} {Q : State → Prop} (h : ∀ s', St₂ c s₀ base s' → WP isa rest s' Q) :
+    {s₀ : State} {base : Addr} (hTP : TblPre c s₀ (s₀.syms c.tsym) base) {hs : Option Nat} {s : State} (hS : St₁ c hs s₀ base s)
+    {rest : Prog isa} {Q : State → Prop} (h : ∀ s', St₂ c hs s₀ base s' → WP isa rest s' Q) :
     WP isa (.seq (TCombCfg.comb c.combCfg) (.seq c.pPow rest)) s Q := by
   have h0 := hc.n0
   have h7 := hc.n10
@@ -94,7 +95,7 @@ theorem stage₂ (hc : CfgOk c) (hC : Law c.C) (hT : CombOkW c.C Cfg.combW (Cfg.
 /-- After `x`, `r`, the checks and `k^(n-2)`. -/
 structure St₃ (c : Cfg) (s₀ : State) (base : Addr) (s : State) : Prop extends Keep c s₀ base s where
   d : sv c base s D = dv c s₀
-  e : sv c base s E = ev c s₀
+  e : sv c base s E = ev c s₀ >>> c.sh
   rep : Rep c.C (tmv c.C c.n base s (c.sl RX)) (tmv c.C c.n base s (c.sl RY))
     (tmv c.C c.n base s (c.sl RZ)) (mul (kv c s₀) (G c.C))
   x_lt : sv c base s X < c.C.p
@@ -107,7 +108,7 @@ structure St₃ (c : Cfg) (s₀ : State) (base : Addr) (s : State) : Prop extend
   acc : toM c.C.n (2 ^ (64 * c.n)) (sv c base s ACC) = Fin.ofNat c.C.n (kv c s₀) ^ (c.C.n - 2)
 
 /-- `x`, `r`, `k R mod n` and the checks, then `k^(n-2)`. -/
-theorem stage₃ (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State} (hS : St₂ c s₀ base s)
+theorem stage₃ (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State} (hS : St₂ c (some E) s₀ base s)
     {rest : Prog isa} {Q : State → Prop} (h : ∀ s', St₃ c s₀ base s' → WP isa rest s' Q) :
     WP isa (.seq c.middle (.seq c.nPow rest)) s Q := by
   have h0 := hc.n0
@@ -147,15 +148,16 @@ theorem stage₃ (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State} (hS : S
     rcases hi with rfl | rfl | rfl <;> rw [a₉ (by decide) (by decide) (by decide) (by decide)]
   refine ⟨⟨hs₈.of_keepRegs K₉ (x0_not_powClob h7), ?_, by rw [K₉.wr, k₈.wr, Mp.wr, hS.wr],
     F₈.unch h7 hn fixedOk_chainWc U₉⟩,
-    by rw [a₉ (i := D) (by decide) (by decide) (by decide) (by decide), hS.d],
-    by rw [a₉ (i := E) (by decide) (by decide) (by decide) (by decide), hS.e],
+    by rw [a₉ (i := D) (by decide) (by decide) (by decide) (by decide), hS.d, shAt_E_D, Nat.shiftRight_zero],
+    by rw [a₉ (i := E) (by decide) (by decide) (by decide) (by decide), hS.e, shAt_self],
     by rw [tR RX (by simp), tR RY (by simp), tR RZ (by simp)]; exact hS.rep,
     by rw [x₉]; exact Mp.x_lt,
     by rw [x₉, Mp.x, tR RX (by simp), tR RZ (by simp), hS.acc],
     by rw [rr₉, x₉]; exact Mp.rr, ?_, ?_⟩
   · rw [K₉.gpr _ (x20_not_powClob h7), k₈.gpr _ (by decide), Mp.gpr _ (x20_not_clob h7), hS.x20]
   · rw [flag_unch_chain U₉ h7 h0 hn, f₈, flag_unch Mp.unch h7 h0 hn (by decide), hS.flag,
-      e₇ (i := D) (by decide) (by decide), e₇ (i := K) (by decide) (by decide), hS.d, hS.k, Mp.rr, x₉]
+      e₇ (i := D) (by decide) (by decide), e₇ (i := K) (by decide) (by decide), hS.d, shAt_E_D,
+      Nat.shiftRight_zero, hS.k, Mp.rr, x₉]
   · refine v₉.trans ?_
     show toM c.C.n (2 ^ (64 * c.n)) (sv c base s₈ KM) ^ _ = _
     rw [e₈ (i := KM) (by decide) (by decide), Mp.km, hS.k]
@@ -164,11 +166,11 @@ theorem stage₃ (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State} (hS : S
 hash with `d` and `k`, big-endian, and `1`, or zeros and `0`. -/
 def SignPost (c : Cfg) (s₀ s' : State) : Prop :=
   match Spec.Ecdsa.signWith c.C (dv c s₀)
-      (Spec.Ecdsa.hashToInt c.C (Spec.Ecdsa.bytesAt s₀.mem (s₀.gpr .x2) (8 * c.n))) (kv c s₀) with
+      (Spec.Ecdsa.hashToInt c.C (Spec.Ecdsa.bytesAt s₀.mem (s₀.gpr .x2) c.C.len)) (kv c s₀) with
   | some rs => (s'.gpr .x0).setWidth 32 = 1 ∧
-      Spec.Ecdsa.bytesAt s'.mem (s₀.gpr .x0) (16 * c.n) = Spec.Ecdsa.encode c.C rs
+      Spec.Ecdsa.bytesAt s'.mem (s₀.gpr .x0) (2 * c.C.len) = Spec.Ecdsa.encode c.C rs
   | none => (s'.gpr .x0).setWidth 32 = 0 ∧
-      Spec.Ecdsa.bytesAt s'.mem (s₀.gpr .x0) (16 * c.n) = List.replicate (16 * c.n) 0
+      Spec.Ecdsa.bytesAt s'.mem (s₀.gpr .x0) (2 * c.C.len) = List.replicate (2 * c.C.len) 0
 
 /-- `s`, its check, and the result. -/
 theorem stage₄ (hc : CfgOk c) (hC : Law c.C) {s₀ : State} (hp : Pre c s₀) {base : Addr} (hb : base = s₀.gpr .x4)
@@ -208,16 +210,16 @@ theorem stage₄ (hc : CfgOk c) (hC : Law c.C) {s₀ : State} (hp : Pre c s₀) 
     simp only [mask, decide_eq_true_eq]
   have hx20 : s₁₂.gpr .x20 = s₀.gpr .x0 := by
     rw [k₁₂.gpr _ (by decide), g₁₁ _ (x20_not_clob h7), g₁₀ _ (x20_not_clob h7), hS.x20]
-  have hw : (⟨s₀.gpr .x0, 16 * c.n⟩ : Region) ∈ s₁₂.wr := by
+  have hw : (⟨s₀.gpr .x0, 2 * c.C.len⟩ : Region) ∈ s₁₂.wr := by
     rw [k₁₂.wr, wr₁₁, wr₁₀, hS.wr, hp.wr]; simp
-  refine WP.mono (finish_ok hc hs₁₂ hx20 hw (hb ▸ hp.out_sc) F₁₂.saved _ hflag)
+  refine WP.mono (finish_ok hc hs₁₂ hx20 hp.out_fit hw (hb ▸ hp.out_sc) F₁₂.saved _ hflag)
     fun s' ⟨bytes, ret, saved, _⟩ => ⟨saved, ?_⟩
   -- The specification.
-  have hsig := signWith_eq hC (C := c.C) (d := dv c s₀) (e := ev c s₀) (k := kv c s₀) hS.rep hS.x_lt hS.x
+  have hsig := signWith_eq hC (C := c.C) (d := dv c s₀) (e := ev c s₀ >>> c.sh) (k := kv c s₀) hS.rep hS.x_lt hS.x
     (s := wordsVal s₁₁.mem base (c.sl SS) c.n) ss_lt (by
       rw [ss, trm, tdm, tem, acc₁₀, hS.acc, hS.rr, hS.d, hS.e, Lean.Grind.AddCommMonoid.add_comm])
   unfold SignPost
-  rw [hashToInt_eq hc, hsig]
+  rw [hashToInt_eq c, hsig]
   rw [ss₁₂, rr₁₂, hS.rr] at bytes
   by_cases hP : 1 ≤ dv c s₀ ∧ dv c s₀ < c.C.n ∧ 1 ≤ kv c s₀ ∧ kv c s₀ < c.C.n ∧
       sv c base s X % c.C.n ≠ 0 ∧ wordsVal s₁₁.mem base (c.sl SS) c.n ≠ 0
@@ -226,7 +228,7 @@ theorem stage₄ (hc : CfgOk c) (hC : Law c.C) {s₀ : State} (hp : Pre c s₀) 
       simp only [decide_eq_true_eq]; omega
     rw [ite_eq_left_of_eq_true _ _ (eq_true hP)]
     refine ⟨by rw [ret, hd]; rfl, ?_⟩
-    rw [bytes, hd, ite_eq_left_of_eq_true _ _ (eq_true rfl), Spec.Ecdsa.encode, hc.len]
+    rw [bytes, hd, ite_eq_left_of_eq_true _ _ (eq_true rfl), Spec.Ecdsa.encode]
   · have hd : decide ((((0 < dv c s₀ ∧ dv c s₀ < c.C.n) ∧ (0 < kv c s₀ ∧ kv c s₀ < c.C.n)) ∧
         sv c base s X % c.C.n ≠ 0) ∧ wordsVal s₁₁.mem base (c.sl SS) c.n ≠ 0) = false := by
       simp only [decide_eq_false_iff_not]; omega
@@ -234,7 +236,7 @@ theorem stage₄ (hc : CfgOk c) (hC : Law c.C) {s₀ : State} (hp : Pre c s₀) 
     refine ⟨by rw [ret, hd]; rfl, ?_⟩
     rw [bytes, hd]; rfl
 
-theorem sign_eq (c : Cfg) : c.sign = .seq (.block c.setup) (.seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n))
+theorem sign_eq (c : Cfg) : c.sign = .seq (.block (c.setupWith (some E))) (.seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n))
     (.seq (TCombCfg.comb c.combCfg) (.seq c.pPow (.seq c.middle (.seq c.nPow c.scalar))))) :=
   rfl
 
@@ -244,7 +246,7 @@ theorem sign_ok (hc : CfgOk c) (hC : Law c.C) (hT : CombOkW c.C Cfg.combW (Cfg.c
     {s₀ : State} (hp : Pre c s₀) :
     WP isa c.sign s₀ fun s' => (∀ r ∈ Cfg.saved.map Prod.fst, s'.gpr r = s₀.gpr r) ∧ SignPost c s₀ s' := by
   rw [sign_eq]
-  exact stage₁ hc (hp.setup hc.n10) fun _ S₁ => stage₂ hc hC hT hp.tbl S₁ fun _ S₂ => stage₃ hc S₂ fun _ S₃ =>
+  exact stage₁ hc (.inr (.inr rfl)) (hp.setup hc) fun _ S₁ => stage₂ hc hC hT hp.tbl S₁ fun _ S₂ => stage₃ hc S₂ fun _ S₃ =>
     stage₄ hc hC hp rfl S₃
 
 end VG.Proof.Ecdsa.AArch64
