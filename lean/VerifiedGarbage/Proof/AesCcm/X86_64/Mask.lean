@@ -17,7 +17,7 @@ namespace VG.Proof.AesCcm.X86_64
 
 open VG VG.X86_64 VG.X86_64.RegUpd VG.Impl.AesCcm.X86_64 VG.WriteBytes
 open VG.Impl.AesGcm.X86_64 (at_ imm ptr)
-open VG.Proof.AesGcm.X86_64 (in_of_covers succ_ofNat MInv maskTail_wp ofNat_shr3)
+open VG.Proof.AesGcm.X86_64 (in_of_covers succ_ofNat MInv maskTail_wp ofNat_shr4)
 open VG.Spec.Aes (bytesAt)
 open VG.Spec.Ccm (zeros)
 
@@ -41,10 +41,10 @@ theorem mask_ok {K W SP : Addr} {s : State} (E : Env K W SP s) {R : Nat} {N A D 
   obtain ⟨s₁, run₁, m₁, h12₁, hbp₁, h11₁, r10₁, rcx₁, zf₁, g₁, rd₁, wr₁⟩ : ∃ s₁, runBlock isa
       [.mov .r12 (.mem (at_ .r15 dataO)), .mov .rbp (.mem (at_ .r15 lenO)), .mov32 .r11 (imm 0),
         .alu .sub .r11 (.mem (at_ .r15 okO)), .mov32 .r10 (imm 0), .mov .rcx (.reg .rbp),
-        .shift .shr .rcx 3, .alu .test .rcx (.reg .rcx)] s = some s₁ ∧
+        .shift .shr .rcx 4, .alu .test .rcx (.reg .rcx)] s = some s₁ ∧
       s₁.mem = s.mem ∧ s₁.gpr .r12 = D ∧ s₁.gpr .rbp = BitVec.ofNat 64 n ∧
       s₁.gpr .r11 = 0 - (if c then 1 else 0) ∧ s₁.gpr .r10 = BitVec.ofNat 64 0 ∧
-      s₁.gpr .rcx = BitVec.ofNat 64 (n / 8) ∧ s₁.zf = some (decide (n / 8 = 0)) ∧
+      s₁.gpr .rcx = BitVec.ofNat 64 (n / 16) ∧ s₁.zf = some (decide (n / 16 = 0)) ∧
       (∀ r ∈ [Reg.r13, .r15, .rsp], s₁.gpr r = s.gpr r) ∧ s₁.rd = s.rd ∧ s₁.wr = s.wr := by
     refine ⟨_, by crun [h15, r₁, r₂, r₃, execShift], ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
     · rfl
@@ -52,9 +52,9 @@ theorem mask_ok {K W SP : Addr} {s : State} (E : Env K W SP s) {R : Nat} {N A D 
     · simp only [gpr_setReg, gpr_arithFlags, gpr_setFlags, ite_true, ite_false, reduceCtorEq, hl]
     · simp only [gpr_setReg, gpr_arithFlags, gpr_setFlags, ite_true, ite_false, reduceCtorEq, hok]; rfl
     · simp only [gpr_setReg, gpr_arithFlags, gpr_setFlags, ite_true, ite_false, reduceCtorEq]
-    · simp only [gpr_setReg, gpr_arithFlags, gpr_setFlags, ite_true, ite_false, reduceCtorEq, hl, ofNat_shr3 hn]
+    · simp only [gpr_setReg, gpr_arithFlags, gpr_setFlags, ite_true, ite_false, reduceCtorEq, hl, ofNat_shr4 hn]
     · simp only [zf_arithFlags, gpr_setReg, gpr_arithFlags, gpr_setFlags, ite_true, ite_false,
-        reduceCtorEq, hl, ofNat_shr3 hn, and_self_beq (show n / 8 < 2 ^ 64 by omega)]
+        reduceCtorEq, hl, ofNat_shr4 hn, and_self_beq (show n / 16 < 2 ^ 64 by omega)]
     · intro r hr; simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl <;>
         simp only [gpr_setReg, gpr_arithFlags, gpr_setFlags, ite_true, ite_false, reduceCtorEq]
