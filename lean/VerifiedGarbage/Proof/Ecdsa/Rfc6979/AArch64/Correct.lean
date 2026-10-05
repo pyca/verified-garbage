@@ -16,13 +16,6 @@ open VG.Proof.Ecdsa.Rfc6979 (kvAt candAt step)
 
 variable {P : RfcHash} {L : Lay P.I.hashLen P.R.E} {g : Reg → BitVec 64} {m₀ : Mem}
 
-/-- HMAC's output is the hash function's. -/
-theorem mac_length (P : RfcHash) (K t : List Byte) : (P.mac K t).length = P.H.D := by
-  have := P.ok.sizes.DN
-  simp only [RfcHash.mac, Spec.Hmac.hmac, Spec.Hmac.hmacBlockKey, P.ok.hash, List.length_take,
-    Proof.MdStream.Md.hash, P.ok.md.digest_length]
-  omega
-
 /-! ## The loop -/
 
 theorem loop_ok (hL : L.Ok) (hq : L.q = 8 * P.w) {t : State} (hc : Ctx L g m₀ t) (h0 : LoopInv P L m₀ 0 t) :
@@ -168,7 +161,7 @@ theorem blocks_eq (P : RfcHash) : Spec.Ecdsa.Rfc6979.blocks P.R.E.C P.H.D = 1 :=
 theorem bits2int_cand (i : Nat) :
     Spec.Ecdsa.Rfc6979.bits2int P.R.E.C (candI P L m₀ i ++ []) =
       Spec.Weierstrass.ofBytes ((candI P L m₀ i).take (8 * P.w)) := by
-  have hl : (candI P L m₀ i).length = P.H.D := mac_length P _ _
+  have hl : (candI P L m₀ i).length = P.H.D := P.mac_length _ _
   have hB : Spec.Ecdsa.nBits P.R.E.C = 8 * (8 * P.w) := by rw [P.R.nBits]; show 64 * P.w = _; omega
   rw [List.append_nil, Spec.Ecdsa.Rfc6979.bits2int, hashToInt_takeQ hB (by rw [hl]; anums)]
 

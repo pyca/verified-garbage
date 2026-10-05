@@ -122,6 +122,13 @@ theorem len32 : 32 ≤ P.I.hashLen := by
 /-- The curve's scalars are `Q` bytes. -/
 theorem curveLen : P.I.ecdsa.curve.len = P.Q := by rw [P.ecdsa, P.R.curve]
 
+/-- HMAC's output is the hash function's. -/
+theorem mac_length (K t : List Byte) : (P.mac K t).length = P.H.D := by
+  have := P.ok.sizes.DN
+  simp only [RfcHash.mac, Spec.Hmac.hmac, Spec.Hmac.hmacBlockKey, P.ok.hash, List.length_take,
+    Proof.MdStream.Md.hash, P.ok.md.digest_length]
+  omega
+
 end RfcHash
 
 /-- Facts about the sizes of the hash function `‹RfcHash›`'s states, working
