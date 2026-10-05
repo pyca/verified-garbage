@@ -21,7 +21,10 @@ and a file this cannot follow counts as changed everywhere.
 Each platform's `modules` narrows its benchmarks to the modules whose own
 files changed:
 
-  * `src/asm/<arch>/<module>.rs`: `<module>`, on that architecture;
+  * `src/asm/<arch>/<module>.rs`: `<module>`, on that architecture, or
+    for a module no benchmark lists (e.g. `consts`, the tables of
+    constants), the modules of `src/asm/<arch>/` that use it (`super::`),
+    if no other Rust code does;
   * `src/<module>.rs` or `src/hashes/<module>.rs`: `<module>`, and
     `src/hashes/mod.rs` (`streaming_hash!`, `HashFunction`): every hash
     module in `src/hashes/` (benchmarks of code built on a hash, such as
@@ -537,6 +540,23 @@ def users(family, known, root="."):
     return names
 
 
+def asm_users(arch, module, root="."):
+    """The other modules of `src/asm/<arch>/` that use the generated module
+    `module` (e.g. `consts`, the tables of constants), or None if Rust code
+    outside them does (through `crate::arch` or `crate::asm`) or none does."""
+    names = set()
+    sibling = re.compile(rf"\bsuper::{module}\b")
+    outside = re.compile(rf"\b(?:arch|asm::{arch})::{module}\b")
+    for path in rust_files(root):
+        text = read(path, None, root) or ""
+        if not path.startswith(f"src/asm/{arch}/"):
+            if outside.search(text):
+                return None
+        elif (m := ASM.match(path)) and m[2] not in ("mod", module) and sibling.search(text):
+            names.add(m[2])
+    return names or None
+
+
 def helper_uses(name, catalog):
     """The `USES` of the benchmarks that call the helper
     `bench/benches/primitives/<name>.rs` (a module of `main.rs` without
@@ -624,6 +644,12 @@ def arches(changed, base=None):
         elif needed.get(arch, set()) is not ALL:
             needed.setdefault(arch, set()).add(module)
 
+    def need_asm(arch, module):
+        # A generated module no benchmark lists, such as `consts`, needs
+        # the modules of its architecture that use it.
+        for name in {module} if module in known else asm_users(arch, module) or {module}:
+            need(arch, name)
+
     for path in changed:
         asm, api, family = ASM.match(path), API.match(path), FAMILY.match(path)
         if path.startswith("src/") and not asm and tests_only(path, base):
@@ -643,6 +669,8 @@ def arches(changed, base=None):
                             needed[arch] = ALL
                         for module in uses:
                             need(arch, module)
+                    elif asm:
+                        need_asm(arch, name)
                     else:
                         need(arch, name)
         elif path == "src/cpu.rs":
@@ -660,7 +688,7 @@ def arches(changed, base=None):
                 for module in modules or ():
                     need(a, module)
         elif asm and asm[1] in PLATFORMS:
-            need(asm[1], asm[2])
+            need_asm(asm[1], asm[2])
         elif path == HASHES:
             for a in targets:
                 for name in hashes():
