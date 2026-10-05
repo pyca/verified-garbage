@@ -3,6 +3,7 @@ import VerifiedGarbage.Proof.Weierstrass.X86_64.Flags
 import VerifiedGarbage.Proof.Weierstrass.X86_64.BytesLen
 import VerifiedGarbage.Proof.Framework.X86_64.Spill
 import VerifiedGarbage.Proof.Weierstrass.CombW
+import VerifiedGarbage.Proof.Weierstrass.X86_64.InvSpec
 
 /-!
 # ECDSA on x86-64: the curve, the arguments and the working space
@@ -50,8 +51,9 @@ working space), `G` is on the curve, `p < 2n` (so `x mod n` is one
 conditional subtraction), the Montgomery constants are right, encodings are
 `len` bytes in `n` words (`8 (n - 1) < len ≤ 8 n`, at least one word), and
 the bits of a hash of `len` bytes that are not `e`'s (`c.sh`, 0 unless `n`
-has fewer than `8 len` bits) are fewer than 32.
-The group law needs more (`Weierstrass.Law`, which a prime field
+has fewer than `8 len` bits) are fewer than 32, and for up to six words
+(from four) the inversion by divsteps modulo `p` sound with its batches and
+constants right, and modulo `n` if `fastN`. The group law needs more (`Weierstrass.Law`, which a prime field
 and no point of order 2 give: `Weierstrass.Good.law`), which only the proofs
 of the results take. -/
 structure CfgOk (c : Cfg) : Prop where
@@ -73,6 +75,11 @@ structure CfgOk (c : Cfg) : Prop where
   sh : c.sh < 32
   /-- The comb, if the curve has one. -/
   comb : ∀ d, c.comb = some d → CombOk c d
+  /-- For up to six words, the inversion by divsteps modulo `p` sound
+  (`InvSound`, which a prime gives) with its batches and constants right
+  (`InvOk`), and modulo `n` too if `fastN`. -/
+  inv : c.n ≤ 6 → 4 ≤ c.n ∧ InvSound c.C.p ∧ InvOk c.invP c.C.p
+  inv_n : c.fastN = true → c.n ≤ 6 → InvSound c.C.n ∧ InvOk c.invN c.C.n
 
 /-- The comb's tables, if any, at the address of their static: held, not
 wrapping around, and apart from the regions `wr`, as `Abi.withConsts`

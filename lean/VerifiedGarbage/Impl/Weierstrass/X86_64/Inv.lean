@@ -28,7 +28,8 @@ clears the carry flag, the masked operands of a carry chain are copied out
 first (`maskCopy`). The multi-word sums are the wide Montgomery
 multiplication's rows (`memRow`, `chainW`). The registers are those of
 `pow` (`rbx` and the multiplication's for 4 words: `rax`, `rcx`, `rdx`,
-`rbp`, `r8`–`r13`); the batches' count is a word of the working area.
+`rbp`, `r8`–`r13`), and the batches' count in `r14`, which the callers free
+(the multiplications of six words use it too).
 -/
 
 namespace VG.Impl.Weierstrass.X86_64
@@ -164,8 +165,8 @@ variable (P : InvCfg)
 def L : Nat := P.M.n + 1
 
 /-- The slots (byte offsets): `f`, `g`, `a`, `b`, the staging `f'`, `g'`, the
-temporary `t` (`n + 2` words), the masked operands `U` (`n + 1`), the count
-of batches, and the constant `C` (in `f'`'s place). -/
+temporary `t` (`n + 2` words), the masked operands `U` (`n + 1`), and the
+constant `C` (in `f'`'s place); a word past them is unused. -/
 def sF : Nat := P.tbl
 def sG : Nat := P.tbl + 8 * P.L
 def sA : Nat := P.tbl + 16 * P.L
@@ -174,13 +175,12 @@ def sNF : Nat := P.sB + 8 * P.M.n
 def sNG : Nat := P.sNF + 8 * P.L
 def sT : Nat := P.sNG + 8 * P.L
 def sU : Nat := P.sT + 8 * (P.M.n + 2)
-def sCnt : Nat := P.sU + 8 * P.L
 def sC : Nat := P.sNF
 
-/-- `d = rbx = 1`, the count `B`; `f = p`, `g = x` (a zero word on top),
+/-- `d = rbx = 1`, the count `r14 = B`; `f = p`, `g = x` (a zero word on top),
 `a = 0`, `b = 1`. -/
 def init : List Instr :=
-  [.mov32 .rbx (.imm 1), .mov32 .rax (.imm (BitVec.ofNat 32 P.B)), .store (sc P.sCnt) .rax] ++
+  [.mov32 .rbx (.imm 1), .mov32 .r14 (.imm (BitVec.ofNat 32 P.B))] ++
   copy P.M.n P.sF P.M.mo ++ zeroTop P.sF P.M.n ++ copy P.M.n P.sG P.base ++ zeroTop P.sG P.M.n ++
   zeroWords P.M.n P.sA ++ zeroWords P.M.n P.sB ++ [.mov32 .r8 (.imm 1), .store (sc P.sB) .r8]
 
@@ -202,12 +202,11 @@ def abUpdate : List Instr :=
   copy P.M.n P.sA P.sNF
 
 /-- The count of batches less one, its zero flag for the loop. -/
-def batchEnd : List Instr :=
-  [.mov .rax (.mem (sc P.sCnt)), .alu .sub .rax (.imm 1), .store (sc P.sCnt) .rax]
+def batchEnd : List Instr := [.alu .sub .r14 (.imm 1)]
 
 /-- A batch. -/
 def batch : Prog isa :=
-  .seq (.block P.batchStart) (.seq (wsteps 59) (.block (P.fgUpdate ++ P.abUpdate ++ P.batchEnd)))
+  .seq (.block P.batchStart) (.seq (wsteps 59) (.block (P.fgUpdate ++ P.abUpdate ++ batchEnd)))
 
 /-- The end: `f = ±1`; `[C] = C` if `f > 0`, else `Cn = p - C`, and `acc = a [C] / R`. -/
 def finish : List Instr :=

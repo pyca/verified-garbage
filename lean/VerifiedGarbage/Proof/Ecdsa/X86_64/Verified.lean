@@ -6,6 +6,8 @@ import VerifiedGarbage.Proof.Framework.X86_64.Taint
 import VerifiedGarbage.Proof.Framework.X86_64.Abi
 import VerifiedGarbage.Proof.Framework.X86_64.Inline
 import VerifiedGarbage.Proof.Framework.X86_64.TaintSym
+import VerifiedGarbage.Proof.Weierstrass.X86_64.InvMain
+import VerifiedGarbage.Proof.P256.Prime
 
 /-!
 # ECDSA over P-256 on x86-64: `Verified`
@@ -55,6 +57,8 @@ theorem p256_ok : CfgOk p256 where
   len_hi := by decide
   sh := by rw [p256_sh]; decide
   comb d h := by cases h; exact ⟨by decide, by decide⟩
+  inv _ := ⟨by decide, @invSound_of_prime _ _ Proof.P256.p_prime, InvOk.ofMod (by decide +kernel) (by decide)⟩
+  inv_n _ _ := ⟨@invSound_of_prime _ _ Proof.P256.n_prime, InvOk.ofMod (by decide +kernel) (by decide)⟩
 
 theorem p256_tbls (hT : CombOkW Spec.P256.curve 7 37 Impl.P256.p256Comb7 Impl.P256.p256Comb7Start) :
     CombTbls p256 := fun d h => by cases h; exact hT

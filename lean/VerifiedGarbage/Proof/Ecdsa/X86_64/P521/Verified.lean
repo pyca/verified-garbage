@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.Framework.X86_64.Taint
 import VerifiedGarbage.Proof.Framework.X86_64.Abi
 import VerifiedGarbage.Proof.Framework.X86_64.Inline
 import VerifiedGarbage.Proof.P521.X86_64.TaintSums
+import VerifiedGarbage.Proof.Weierstrass.X86_64.InvMain
 
 /-!
 # ECDSA over P-521 on x86-64: `Verified`
@@ -56,6 +57,8 @@ theorem p521_ok : CfgOk p521 where
   len_hi := by decide
   sh := by rw [p521_sh]; decide
   comb d h := by cases h
+  inv h := absurd h (by decide)
+  inv_n h := absurd h (by decide)
 
 /-- P-521 has no comb: `[k]G` is by the ladder, and there are no tables. -/
 theorem p521_tbls : CombTbls p521 := fun d h => by cases h

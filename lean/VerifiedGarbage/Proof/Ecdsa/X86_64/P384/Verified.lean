@@ -6,6 +6,8 @@ import VerifiedGarbage.Proof.Framework.X86_64.Taint
 import VerifiedGarbage.Proof.Framework.X86_64.Abi
 import VerifiedGarbage.Proof.Framework.X86_64.Inline
 import VerifiedGarbage.Proof.Framework.X86_64.TaintSym
+import VerifiedGarbage.Proof.Weierstrass.X86_64.InvMain
+import VerifiedGarbage.Proof.P384.Prime
 
 /-!
 # ECDSA over P-384 on x86-64: `Verified`
@@ -55,6 +57,8 @@ theorem p384_ok : CfgOk p384 where
   len_hi := by decide
   sh := by rw [p384_sh]; decide
   comb d h := by cases h; exact ⟨by decide, by decide⟩
+  inv _ := ⟨by decide, @invSound_of_prime _ _ Proof.P384.p_prime, InvOk.ofMod (by decide +kernel) (by decide)⟩
+  inv_n h := absurd h (by decide)
 
 theorem p384_tbls (hT : CombOkW Spec.P384.curve 7 55 Impl.P384.p384Comb7 Impl.P384.p384Comb7Start) :
     CombTbls p384 := fun d h => by cases h; exact hT

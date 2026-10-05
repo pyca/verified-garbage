@@ -39,6 +39,9 @@ structure InvLay (P : InvCfg) (size : Nat) : Prop where
   mo_tbl : P.M.mo + 8 * P.M.n ≤ P.tbl ∨ P.tbl + invTbl P.M.n ≤ P.M.mo
   mo_tmp : P.M.mo + 8 * P.M.n ≤ P.M.tmp ∨ P.M.tmp + 8 * P.M.n ≤ P.M.mo
 
+/-- The registers the inversion changes: a power's, and the count of batches in `r14`. -/
+def invClob (n : Nat) : List Reg := .r14 :: powClob n
+
 /-- What the inversion writes: the result, the working area and the modulus's temporary area. -/
 def invW (P : InvCfg) : List (Nat × Nat) :=
   [(P.acc, 8 * P.M.n), (P.tbl, invTbl P.M.n), (P.M.tmp, 8 * P.M.n)]
@@ -59,7 +62,7 @@ def InvSound (m : Nat) [NeZero m] : Prop :=
   ∀ {P : InvCfg} {base : Addr} {size : Nat}, InvLay P size → 2 < m → UnitMod m (2 ^ (64 * P.M.n)) →
     ∀ {s : State}, Scr s base size → ModOk P.M size m s.mem base → wordsVal s.mem base P.base P.M.n < m →
       InvOk P m → WP isa (InvCfg.inv P) s fun s' =>
-        KeepRegs (powClob P.M.n) s s' ∧ Unch base (invW P) s.mem s'.mem ∧
+        KeepRegs (invClob P.M.n) s s' ∧ Unch base (invW P) s.mem s'.mem ∧
         wordsVal s'.mem base P.acc P.M.n < m ∧
         toM m (2 ^ (64 * P.M.n)) (wordsVal s'.mem base P.acc P.M.n) =
           toM m (2 ^ (64 * P.M.n)) (wordsVal s.mem base P.base P.M.n) ^ (m - 2)

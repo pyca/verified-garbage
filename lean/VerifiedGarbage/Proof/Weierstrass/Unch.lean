@@ -30,6 +30,13 @@ theorem Unch.mono {base : Addr} {W W' : List (Nat × Nat)} {m m' : Mem} (h : Unc
     (hW : ∀ w ∈ W, w ∈ W') : Unch base W' m m' :=
   fun x hx => h x fun w hw => hx w (hW w hw)
 
+/-- Memory unchanged but in ranges each within one of `W'`. -/
+theorem Unch.cover {base : Addr} {W W' : List (Nat × Nat)} {m m' : Mem} (h : Unch base W m m')
+    (hW : ∀ w ∈ W, ∃ w' ∈ W', w'.1 ≤ w.1 ∧ w.1 + w.2 ≤ w'.1 + w'.2) : Unch base W' m m' :=
+  fun x hx => h x fun w hw => by
+    obtain ⟨w', hw', h1, h2⟩ := hW w hw
+    have := hx w' hw'; omega
+
 theorem _root_.VG.Proof.Mont.Outside.unch {base : Addr} {o n : Nat} {m m' : Mem} (h : Outside base o n m m') :
     Unch base [(o, n)] m m' :=
   fun x hx => h x (hx _ (List.mem_singleton_self _))
