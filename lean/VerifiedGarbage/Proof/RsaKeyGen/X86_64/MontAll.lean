@@ -167,4 +167,64 @@ theorem montSetup_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {mi : BitVec 
       rw [hm]; exact Frm.of_outside (writeW_outside _ B _ (d := 8 * kChecks) (by unfold kChecks kE sFn; omega)) (by simp [msRanges])
     exact (((((f₁.trans f₂).trans f₃).trans f₄).trans f₅).trans f₆).trans f₇
 
+/-- The start of `montSetup`, up to `doubles`: `-c⁻¹`, the number 1, `R²`'s
+first value and the count of the doublings. -/
+theorem msFront_ok {s : State} {B : Addr} {Z w : Nat} {mi : BitVec 64} {N : Nat}
+    (hg : Good s B Z w mi) (hZ : slot w 8 ≤ Z) (hw : 4 ≤ w) (hw64 : w ≤ 64)
+    (hn : wv s.mem B (slot w aN) w = N) (hodd : N % 2 = 1) :
+    WP isa (seqs [.block (([.mov .r10 (.mem (hdr (sArr aN))), .mov .r12 (.mem (hdr sW)), .mov .rbx (.mem (at0 .r10))] :
+      List Instr) ++ minv ++ ([.store (hdr sMinv) .r15, .mov32 .rdx (.imm 1), .mov32 .rcx (.imm 0)] : List Instr)),
+      setWord aOne .rcx,
+      .block [.movImm64 .rdx (BitVec.ofNat 64 (2 ^ 63)), .mov .rcx (.reg .r12), .alu .sub .rcx (.imm 1)],
+      setWord aR2 .rcx,
+      .block [.mov .rcx (.mem (hdr sW)), .alu .add .rcx (.imm 1)]]) s fun t =>
+      ∃ mi' : BitVec 64, Good t B Z w mi' ∧ ((word t.mem B (slot w aN)).toNat * mi'.toNat + 1) % 2 ^ 64 = 0 ∧
+        wv t.mem B (slot w aN) w = N ∧ wv t.mem B (slot w aOne) w = 1 ∧
+        wv t.mem B (slot w aR2) w = 2 ^ 63 * 2 ^ (64 * (w - 1)) ∧ t.gpr .rcx = BitVec.ofNat 64 (w + 1) ∧
+        t.wr = s.wr := by
+  have hnw := hg.scr.nowrap
+  have hw' : w < 2 ^ 31 := by omega
+  have hn' : B.toNat + slot w 8 ≤ 2 ^ 64 := by omega
+  have hodd0 : (word s.mem B (slot w aN)).toNat % 2 = 1 := by
+    have := wv_low s.mem B (slot w aN) (w - 1)
+    rw [show w - 1 + 1 = w by omega, hn] at this; omega
+  simp only [seqs]
+  refine WP.seq (WP.mono (msHead_ok hg hZ hodd0) fun s₁ ⟨hg₁, hinv₁, hdx₁, hcx₁, h12₁, hm₁, k₁⟩ => ?_)
+  generalize hmi : s₁.gpr .r15 = mi' at hg₁ hinv₁ hm₁
+  have hn₁ : wv s₁.mem B (slot w aN) w = N := by
+    rw [hm₁, hdrStore_wv _ _ _ (by decide) (by decide) (by omega)]; exact hn
+  have hw0₁ : word s₁.mem B (slot w aN) = word s.mem B (slot w aN) := by
+    rw [hm₁, hdrStore_word _ _ _ (by decide) (by decide) (by omega)]
+  refine WP.seq (WP.mono (setWord_ok hg₁.scr hg₁.rdi hg₁.hdr hZ h12₁ (by omega) hw' (o := aOne) (by decide) (ri := .rcx)
+    (by decide) (i := 0) (by omega) hcx₁) fun s₂ ⟨hv₂, ho₂, k₂⟩ => ?_)
+  rw [hdx₁] at hv₂
+  have ha₂ : Arrays B w [aOne] s₁.mem s₂.mem :=
+    Arrays.of_outside (List.mem_singleton_self _) ho₂ (Nat.le_refl _) (Nat.le_refl _)
+  have hg₂ : Good s₂ B Z w mi' := ⟨hg₁.scr.congr k₂.2.2, (k₂.gpr (by decide)).trans hg₁.rdi, ha₂.hdr hg₁.hdr⟩
+  have h12₂ : s₂.gpr .r12 = BitVec.ofNat 64 w := (k₂.gpr (by decide)).trans h12₁
+  refine WP.seq (WP.mono (WP.keep [.rdx, .rcx] (Q := fun t => t.gpr .rdx = BitVec.ofNat 64 (2 ^ 63) ∧
+      t.gpr .rcx = BitVec.ofNat 64 (w - 1) ∧ t.mem = s₂.mem) (by
+    xrun [h12₂, ofNat64_pred (show 1 ≤ w by omega) (by omega)]) rfl) fun s₃ ⟨⟨hdx₃, hcx₃, hm₃⟩, k₃⟩ => ?_)
+  have hs₃ := hg₂.scr.congr k₃.2.2
+  have hH₃ : Hdr s₃.mem B w mi' := by rw [hm₃]; exact hg₂.hdr
+  have hdi₃ : s₃.gpr .rdi = B := (k₃.gpr (by decide)).trans hg₂.rdi
+  refine WP.seq (WP.mono (setWord_ok hs₃ hdi₃ hH₃ hZ ((k₃.gpr (by decide)).trans h12₂) (by omega) hw' (o := aR2)
+    (by decide) (ri := .rcx) (by decide) (i := w - 1) (by omega) hcx₃) fun s₄ ⟨hv₄, ho₄, k₄⟩ => ?_)
+  rw [hdx₃, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show 2 ^ 63 < 2 ^ 64 by decide)] at hv₄
+  have hs₄ := hs₃.congr k₄.2.2
+  have ha₄ : Arrays B w [aR2] s₃.mem s₄.mem :=
+    Arrays.of_outside (List.mem_singleton_self _) ho₄ (Nat.le_refl _) (Nat.le_refl _)
+  have hH₄ : Hdr s₄.mem B w mi' := ha₄.hdr hH₃
+  have hdi₄ : s₄.gpr .rdi = B := (k₄.gpr (by decide)).trans hdi₃
+  refine WP.mono (WP.keep [.rcx] (Q := fun t => t.gpr .rcx = BitVec.ofNat 64 (w + 1) ∧ t.mem = s₄.mem) (by
+    xrun [State.ea, hdr, hdi₄, hdrOff, hs₄.ld (d := 8 * sW) (by have := hdr_lt_slot w 8 (show sW < 32 by decide); omega),
+      hH₄.hw, sx1, ofNat_add_one]) rfl) fun t ⟨⟨hcx, hm⟩, k⟩ => ?_
+  have hN₂ : wv s₂.mem B (slot w aN) w = N := by rw [ha₂.wv_of_not_mem (by decide) (by decide) hn']; exact hn₁
+  have hN₄ : wv s₄.mem B (slot w aN) w = N := by rw [ha₄.wv_of_not_mem (by decide) (by decide) hn', hm₃]; exact hN₂
+  refine ⟨mi', ⟨hs₄.congr k.2.2, (k.gpr (by decide)).trans hdi₄, by rw [hm]; exact hH₄⟩, ?_, by rw [hm]; exact hN₄,
+    ?_, by rw [hm, hv₄], hcx, k.2.2.trans (k₄.2.2.trans (k₃.2.2.trans (k₂.2.2.trans k₁.2.2)))⟩
+  · rw [hm, ha₄.word0_of_not_mem (by decide) (by decide) hn' (by omega), hm₃,
+      ha₂.word0_of_not_mem (by decide) (by decide) hn' (by omega), hw0₁]; exact hinv₁
+  · rw [hm, ha₄.wv_of_not_mem (by decide) (by decide) hn', hm₃, hv₂]; rfl
+
 end VG.Proof.RsaKeyGen.X86_64
