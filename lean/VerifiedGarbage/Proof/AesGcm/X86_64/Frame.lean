@@ -9,7 +9,7 @@ import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratch
 working space as an argument (`Verified.lean`), in a frame of 2568 bytes that
 allocates it (`Verified.stackScratch`): the 2560 bytes of working space, and
 8 more to keep `rsp` aligned. Their own calls use 8 bytes below it, the
-return address, as `vg_aes_expand_key`, `vg_aes_ctr32` and `vg_ghash` use no
+return address, as `vg_aes_expand_key_scratch`, `vg_aes_ctr32` and `vg_ghash` use no
 stack (`KeyImpl.noStack`, `Ctr32Impl.noStack`, `GhashImpl.noStack`).
 
 The working space of the others is their last argument, passed on the stack

@@ -5,8 +5,8 @@ import VerifiedGarbage.Proof.AesGcmSiv.Arm.PolyvalCT
 
 Untrusted: everything here is checked by Lean. Two runs with the same
 public arguments (`onePub`) have the same `prmOf`; each piece of `seal` and
-`open` is related in the two runs by the lemmas of `KeysCT.lean` and
-`PolyvalCT.lean`, the counter mode's blocks by `vg_aes_ctr32`'s proof with
+`open` is related in the two runs by the lemmas of `PolyvalCT.lean`, the
+counter mode's blocks by `vg_aes_ctr32`'s proof with
 the same arguments in both runs, and the comparison, the mask and the
 restore by the taint analysis (`seal_ct`, `open_ct`).
 -/

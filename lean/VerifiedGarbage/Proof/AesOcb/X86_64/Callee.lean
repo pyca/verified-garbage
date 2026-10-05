@@ -7,7 +7,7 @@ import VerifiedGarbage.Proof.Aes.X86_64.BlocksVariant
 
 Untrusted: everything here is checked by Lean. Calls of
 `vg_aes_encrypt_blocks` and `vg_aes_decrypt_blocks` (of any implementation
-`v`) and of `vg_aes_expand_key` from their contracts (with `WP.call`): what
+`v`) and of `vg_aes_expand_key_scratch` from their contracts (with `WP.call`): what
 they need (`BCall`, `KCall`), what they leave (`BPost`, `KPost`), and that two
 calls with the same arguments leak the same (`blk_rel`, `key_rel`). A block
 the call transforms is `ENCIPHER` (or `DECIPHER`) of the key schedule
@@ -163,9 +163,9 @@ theorem blk_rel {f : Nat → List Byte → Spec.Aes.State → Spec.Aes.State} {n
     h₁.rdi, h₁.rsi, h₁.rdx, h₁.rcx, h₁.r8, h₂.rdi, h₂.rsi, h₂.rdx, h₂.rcx, h₂.r8, hsp]
   exact ⟨trivial, trivial, trivial, trivial, trivial, trivial⟩
 
-/-! ## `vg_aes_expand_key` -/
+/-! ## `vg_aes_expand_key_scratch` -/
 
-/-- What a call of `vg_aes_expand_key` needs: the key `Kp` of `KL` bytes,
+/-- What a call of `vg_aes_expand_key_scratch` needs: the key `Kp` of `KL` bytes,
 the schedule `C` and the working space `S`. -/
 structure KCall (s : State) (Kp C S : Addr) (KL : Nat) : Prop where
   rdi : s.gpr .rdi = Kp
@@ -182,7 +182,7 @@ structure KCall (s : State) (Kp C S : Addr) (KL : Nat) : Prop where
   reads : Covers ([⟨Kp, KL⟩] ++ [⟨C, 240⟩, ⟨S, 512⟩]) (s.rd ++ s.wr)
   writes : Covers [⟨C, 240⟩, ⟨S, 512⟩] s.wr
 
-/-- What a call of `vg_aes_expand_key` leaves. -/
+/-- What a call of `vg_aes_expand_key_scratch` leaves. -/
 structure KPost (s : State) (Kp C S : Addr) (KL : Nat) (s' : State) : Prop where
   rd : s'.rd = s.rd
   wr : s'.wr = s.wr

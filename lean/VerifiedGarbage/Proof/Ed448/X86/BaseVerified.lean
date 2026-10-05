@@ -1,5 +1,6 @@
 import VerifiedGarbage.Proof.Ed448.X86.BaseMain
 import VerifiedGarbage.Proof.Ed448.X86.BaseLit
+import VerifiedGarbage.Proof.Ed448.X86.RestCT
 import VerifiedGarbage.Proof.Ed448.X86.ScalarVerified
 
 /-!
@@ -37,10 +38,12 @@ theorem scalarBase_agree {s t : State} (hs : scalarBaseLocal.pre s) (ht : scalar
   rcases (by omega_using [hi] : i = 0 ∨ i = 1 ∨ i = 2) with rfl | rfl | rfl
   exacts [a0, a1, a2]
 
+/-- Constant time: the entry block from `scalarTaint 2 3`, and the rest from
+`fieldτ`, in one check with verification's (`RestCT.lean`). -/
 theorem scalarBase_ct :
     ConstantTime isa scalarBaseLocal.pre scalarBaseLocal.pub scalarBase :=
-  VG.Taint.constantTime (A := taint) (scalarTaint 2 3) (fun _ _ hs ht hp => scalarBase_agree hs ht hp)
-    (by taint_decide)
+  RelCT.constantTime (relCT_split rfl (scalarTaint 2 3) (fun _ _ h => scalarBase_agree h.1 h.2.1 h.2.2)
+    (by taint_decide) baseRest_ct)
 
 theorem scalarBase_ok (hl : BaseLadderOk) (s : State) (h : scalarBaseLocal.pre s) :
     ∃ tr t, Exec isa scalarBase s tr t ∧ abiPreserved s t ∧ scalarBaseLocal.post s t := by
@@ -112,8 +115,9 @@ theorem scalarBase_verified (hl : BaseLadderOk) :
   · intro s h a n ⟨r, hr, hc⟩
     rw [h.1, h.2.1]
     refine ⟨r, ?_, hc⟩
-    simpa only [scalarBaseRd, scalarBaseWr, List.mem_append, List.mem_cons, List.not_mem_nil,
-      or_false, or_assoc, or_left_comm, or_comm] using hr
+    simp only [scalarBaseRd, scalarBaseWr, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hr
+    simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false]
+    rcases hr with (rfl | rfl) | rfl | rfl <;> simp only [true_or, or_true]
   · intro s h a n ⟨r, hr, hc⟩
     rw [h.2.1]
     refine ⟨r, ?_, hc⟩

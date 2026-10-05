@@ -102,7 +102,7 @@ end
 /-!
 # Streaming AES-CMAC on ARMv7: the calls
 
-A call of each function the streaming functions call (`vg_aes_expand_key`,
+A call of each function the streaming functions call (`vg_aes_expand_key_scratch`,
 `vg_cmac_aes_subkeys`, and `vg_cmac_aes_update` and `vg_cmac_aes_finalize` in
 the frame that pushes their two stack arguments), from its contract: what it
 needs (`…Args`), what it leaves (`…Post`, in terms of the memory before the
@@ -640,9 +640,9 @@ theorem sub_rel {W K S sp₀ : BitVec 32} {R : Nat} {P : State → State → Pro
     h₁.r0, h₁.r1, h₁.r2, h₁.r3, h₂.r0, h₂.r1, h₂.r2, h₂.r3, e₁, e₂]
   exact ⟨trivial, trivial, trivial, trivial, trivial⟩
 
-/-! ## `vg_aes_expand_key` -/
+/-! ## `vg_aes_expand_key_scratch` -/
 
-/-- What a call of `vg_aes_expand_key` needs: the key `Kp` of `KL` bytes,
+/-- What a call of `vg_aes_expand_key_scratch` needs: the key `Kp` of `KL` bytes,
 the schedule `W` and the working space `S`. -/
 structure EArgs (s : State) (Kp W S : BitVec 32) (KL : Nat) : Prop where
   r0 : s.gpr .r0 = Kp
@@ -659,7 +659,7 @@ structure EArgs (s : State) (Kp W S : BitVec 32) (KL : Nat) : Prop where
   reads : Covers [⟨State.addr Kp, KL⟩] (s.rd ++ s.wr)
   writes : Covers [⟨State.addr W, 240⟩, ⟨State.addr S, 512⟩] s.wr
 
-/-- What a call of `vg_aes_expand_key` leaves. -/
+/-- What a call of `vg_aes_expand_key_scratch` leaves. -/
 structure EPost (s : State) (Kp W S : BitVec 32) (KL : Nat) (s' : State) : Prop where
   rd : s'.rd = s.rd
   wr : s'.wr = s.wr
@@ -682,7 +682,7 @@ theorem EArgs.pre {s : State} {Kp W S : BitVec 32} {KL : Nat} (h : EArgs s Kp W 
   exact ⟨trivial, trivial, h.kw, h.ks, h.ws, h.fK, h.fW, h.fS, h.klen⟩
 
 theorem ek_call {s : State} {Kp W S : BitVec 32} {KL : Nat} (h : EArgs s Kp W S KL) :
-    WP isa (.call "vg_aes_expand_key" Impl.Aes.Arm.expandKey) s (EPost s Kp W S KL) := by
+    WP isa (.call "vg_aes_expand_key_scratch" Impl.Aes.Arm.expandKey) s (EPost s Kp W S KL) := by
   refine WP.call (k := Proof.Aes.expandKeyArm) Proof.Aes.Arm.expandKey_correct h.pre
     (cov_app h.reads h.writes) h.writes fun s' hrd hwr hsp hf hcs _ hpost => ?_
   refine ⟨hrd, hwr, hsp, hcs, hf, ?_⟩
@@ -694,7 +694,7 @@ theorem ek_call {s : State} {Kp W S : BitVec 32} {KL : Nat} (h : EArgs s Kp W S 
 
 theorem ek_rel {Kp W S : BitVec 32} {KL : Nat} {P : State → State → Prop}
     (h : ∀ s₁ s₂, P s₁ s₂ → EArgs s₁ Kp W S KL ∧ EArgs s₂ Kp W S KL) :
-    RelCT isa P (.call "vg_aes_expand_key" Impl.Aes.Arm.expandKey) fun _ _ => True := by
+    RelCT isa P (.call "vg_aes_expand_key_scratch" Impl.Aes.Arm.expandKey) fun _ _ => True := by
   refine RelCT.call Proof.Aes.Arm.expandKey_correct Proof.Aes.Arm.expandKey_ct
     [⟨State.addr Kp, KL⟩] [⟨State.addr W, 240⟩, ⟨State.addr S, 512⟩] fun s₁ s₂ hp => ?_
   obtain ⟨h₁, h₂⟩ := h s₁ s₂ hp

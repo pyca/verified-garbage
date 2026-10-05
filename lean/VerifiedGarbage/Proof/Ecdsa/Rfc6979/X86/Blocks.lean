@@ -59,7 +59,7 @@ theorem kvN_ok (hL : L.Ok) {u : State} (hc : Ctx L g m₀ u) {a b : BitVec 32} (
     refine wp_stm (B := L.F) (by rw [v₂.gpr, esp₁]) (by rw [e₂, v₂.wr, hwr]; exact hc.inFrW (by omega) (by omega) hL)
       fun u₃ v₃ => WP.block_nil ?_
     rw [e₁, hg, ha] at v₂; rw [e₂, v₂.gpr, hg, hb] at v₃
-    have sep : ∀ x y, x + 4 ≤ y ∨ y + 4 ≤ x → x + 4 ≤ 276 → y + 4 ≤ 276 →
+    have sep : ∀ x y, x + 4 ≤ y ∨ y + 4 ≤ x → x + 4 ≤ 292 → y + 4 ≤ 292 →
         Mem.Sep (L.B + BitVec.ofNat 64 x) (32 / 8) (L.B + BitVec.ofNat 64 y) (32 / 8) :=
       fun x y h h₁ h₂ => Offset.sep _ h (by omega) (by omega)
     have hm₃ : u₃.mem = (u₁.mem.writeW (L.B + BitVec.ofNat 64 (140 + 4 * k)) a).writeW
@@ -116,18 +116,18 @@ theorem initKV_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) :
 /-! ## The number of candidates -/
 
 /-- The number of candidates left, in the frame. -/
-abbrev cnt {dn : Nat} (L : Lay dn) (m : Mem) : BitVec 32 := m.readW (L.B + BitVec.ofNat 64 236) 32
+abbrev cnt {dn : Nat} (L : Lay dn) (m : Mem) : BitVec 32 := m.readW (L.B + BitVec.ofNat 64 252) 32
 
-theorem cnt_addr (hL : L.Ok) : addr L.F fCnt = L.B + BitVec.ofNat 64 236 := hL.addrF (by decide)
+theorem cnt_addr (hL : L.Ok) : addr L.F fCnt = L.B + BitVec.ofNat 64 252 := hL.addrF (by decide)
 
 theorem initCnt_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) :
     WP isa (.block (cfgOf P).initCnt) t fun t' => Ctx L g m₀ t' ∧
-      Frame [⟨L.B + BitVec.ofNat 64 236, 4⟩] t.mem t'.mem ∧ cnt L t'.mem = BitVec.ofNat 32 8 := by
+      Frame [⟨L.B + BitVec.ofNat 64 252, 4⟩] t.mem t'.mem ∧ cnt L t'.mem = BitVec.ofNat 32 8 := by
   simp only [Cfg.initCnt, cfgOf, stk]
   refine wp_movi fun u₁ v₁ => wp_stm (B := L.F) (by rw [v₁.other _ (by decide), hc.esp])
     (by rw [cnt_addr hL, v₁.wr]; exact hc.inFrW (by omega) (by omega) hL) fun u₂ v₂ => WP.block_nil ?_
   rw [cnt_addr hL, v₁.gpr, v₁.mem] at v₂
-  have hf : Frame [⟨L.B + BitVec.ofNat 64 236, 4⟩] t.mem u₂.mem := by
+  have hf : Frame [⟨L.B + BitVec.ofNat 64 252, 4⟩] t.mem u₂.mem := by
     rw [v₂.mem]; exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
   refine ⟨hc.keep hL (by rw [v₂.rd, v₁.rd]) (by rw [v₂.wr, v₁.wr]) (by rw [v₂.gpr, v₁.other _ (by decide)]) hf
     (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact safe_low L (by omega)), hf, ?_⟩
@@ -176,7 +176,7 @@ theorem goOn_flag (a c : BitVec 32) :
 /-- One candidate fewer; `ZF` is clear iff the signature failed and candidates are left. -/
 theorem goOn_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) :
     WP isa (.block Cfg.goOn) t fun t' => Ctx L g m₀ t' ∧
-      Frame [⟨L.B + BitVec.ofNat 64 236, 4⟩] t.mem t'.mem ∧ cnt L t'.mem = cnt L t.mem - 1 ∧
+      Frame [⟨L.B + BitVec.ofNat 64 252, 4⟩] t.mem t'.mem ∧ cnt L t'.mem = cnt L t.mem - 1 ∧
       t'.gpr .eax = t.gpr .eax ∧
       t'.zf = some (!decide (t.gpr .eax = 0 ∧ cnt L t.mem - 1 ≠ 0)) := by
   simp only [Cfg.goOn, stk]
@@ -189,9 +189,9 @@ theorem goOn_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) :
   rw [cnt_addr hL] at v₁ v₃
   have eax₃ : u₃.gpr .eax = t.gpr .eax := by rw [v₃.gpr, v₂.other _ (by decide), v₁.other _ (by decide)]
   have cx₃ : u₃.gpr .ecx = cnt L t.mem - 1 := by rw [v₃.gpr, v₂.gpr, v₁.gpr]
-  have hm₃ : u₃.mem = t.mem.writeW (L.B + BitVec.ofNat 64 236) (cnt L t.mem - 1) := by
+  have hm₃ : u₃.mem = t.mem.writeW (L.B + BitVec.ofNat 64 252) (cnt L t.mem - 1) := by
     rw [v₃.mem, v₂.mem, v₁.mem, v₂.gpr, v₁.gpr]
-  have hf : Frame [⟨L.B + BitVec.ofNat 64 236, 4⟩] t.mem u₇.mem := by
+  have hf : Frame [⟨L.B + BitVec.ofNat 64 252, 4⟩] t.mem u₇.mem := by
     rw [v₇.mem, v₆.mem, v₅.mem, v₄.mem, hm₃]
     exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
   refine ⟨hc.keep hL (by rw [v₇.rd, v₆.rd, v₅.rd, v₄.rd, v₃.rd, v₂.rd, v₁.rd])
@@ -221,9 +221,9 @@ theorem stop_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) :
 /-! ## The wiping -/
 
 /-- `k` zero words stored at the frame's start: only `K`, `V` and `h` change. -/
-theorem zeroN_ok (hL : L.Ok) {u : State} (hc : Ctx L g m₀ u) : ∀ k ≤ 40,
+theorem zeroN_ok (hL : L.Ok) {u : State} (hc : Ctx L g m₀ u) : ∀ k ≤ 44,
     WP isa (.block ((List.range k).map fun j => .store (stk (4 * j)) .ecx)) u fun u' =>
-      u'.rd = u.rd ∧ u'.wr = u.wr ∧ u'.gpr = u.gpr ∧ Frame [⟨L.B + BitVec.ofNat 64 76, 160⟩] u.mem u'.mem
+      u'.rd = u.rd ∧ u'.wr = u.wr ∧ u'.gpr = u.gpr ∧ Frame [⟨L.B + BitVec.ofNat 64 76, 176⟩] u.mem u'.mem
   | 0, _ => WP.of_runBlock ⟨u, rfl, rfl, rfl, rfl, Frame.refl _ _⟩
   | k + 1, hk => by
     have nB := hL.nB
@@ -250,8 +250,8 @@ theorem restoreOne_ok (hL : L.Ok) {u : State} (hc : Ctx L g m₀ u) {r : Reg} {d
 theorem restore_ok (hL : L.Ok) {u : State} (hc : Ctx L g m₀ u) :
     WP isa (.block Cfg.restore) u fun u' => Ctx L g m₀ u' ∧ u'.mem = u.mem ∧ u'.gpr .eax = u.gpr .eax ∧
       ∀ p ∈ saved, u'.gpr p.1 = g p.1 := by
-  rw [show Cfg.restore = [.mov .ebx (.mem (stk 164))] ++ ([.mov .esi (.mem (stk 168))] ++
-    ([.mov .edi (.mem (stk 172))] ++ [.mov .ebp (.mem (stk 176))])) from rfl]
+  rw [show Cfg.restore = [.mov .ebx (.mem (stk 180))] ++ ([.mov .esi (.mem (stk 184))] ++
+    ([.mov .edi (.mem (stk 188))] ++ [.mov .ebp (.mem (stk 192))])) from rfl]
   refine WP.block_append (WP.mono (restoreOne_ok hL hc (by decide) (by decide)) fun u₁ h₁ => ?_)
   refine WP.block_append (WP.mono (restoreOne_ok hL h₁.ctx (by decide) (by decide)) fun u₂ h₂ => ?_)
   refine WP.block_append (WP.mono (restoreOne_ok hL h₂.ctx (by decide) (by decide)) fun u₃ h₃ => ?_)
@@ -268,11 +268,11 @@ theorem restore_ok (hL : L.Ok) {u : State} (hc : Ctx L g m₀ u) :
 /-- `K`, `V` and `h` cleared (`eax` kept), and our caller's registers back. -/
 theorem wipe_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) :
     WP isa (.block Cfg.wipe) t fun t' => Ctx L g m₀ t' ∧ t'.gpr .eax = t.gpr .eax ∧
-      Frame [⟨L.B + BitVec.ofNat 64 76, 160⟩] t.mem t'.mem ∧ ∀ p ∈ saved, t'.gpr p.1 = g p.1 := by
+      Frame [⟨L.B + BitVec.ofNat 64 76, 176⟩] t.mem t'.mem ∧ ∀ p ∈ saved, t'.gpr p.1 = g p.1 := by
   rw [Cfg.wipe]
   refine WP.block_append (WP.block_append (wp_movi fun u₁ v₁ => WP.block_nil ?_))
   have hc₁ := (Upd.of_wp hL hc (by decide) v₁).ctx
-  refine WP.mono (zeroN_ok hL hc₁ 40 (Nat.le_refl _)) fun u₂ ⟨hrd, hwr, hg, hf⟩ => ?_
+  refine WP.mono (zeroN_ok hL hc₁ 44 (Nat.le_refl _)) fun u₂ ⟨hrd, hwr, hg, hf⟩ => ?_
   have hc₂ : Ctx L g m₀ u₂ := hc₁.keep hL hrd hwr (by rw [hg]) hf (fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr; exact safe_low L (by omega))
   refine WP.mono (restore_ok hL hc₂) fun t' ⟨hc', hm', ha', hs'⟩ => ⟨hc', ?_, ?_, hs'⟩

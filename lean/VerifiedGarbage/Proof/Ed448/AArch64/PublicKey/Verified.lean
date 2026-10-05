@@ -6,8 +6,8 @@ import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.WrapCT
 # Ed448 public-key derivation on AArch64: `Verified`
 
 Correctness including the ABI (`publicKey_ok`), for any implementation `v`
-of the Keccak permutation, given `BaseLadderOk` (which the generic file
-passes in). Constant time: two runs whose pointers agree have the same
+of the Keccak permutation, given that `vg_ed448_scalar_base` meets
+its contract in constant time (`BaseOk`, which the generic file passes in). Constant time: two runs whose pointers agree have the same
 layout, so in the frame's body they are related by `Two`: both satisfy `Ctx`
 with that layout (and what the next block or call needs of the registers,
 `Slots`), whatever their secrets. The blocks address only the stack and
@@ -97,7 +97,7 @@ def zeroValues : List (Reg × Value) := [(.x15, .caller 2 0)]
 theorem zeroStores_ct : RelCT isa (Two L g₁ g₂ v₁ v₂ m₁ m₂ (Slots L zeroValues)) (.block zeroStores)
     (Two L g₁ g₂ v₁ v₂ m₁ m₂ fun _ => True) := by
   have h15 : ∀ {t : State}, Slots L zeroValues t → t.gpr .x15 = L.scr := fun hs => by
-    have h := hs (.x15, .caller 2 0) (by simp [zeroValues])
+    have h := hs (.x15, .caller 2 0) (List.mem_of_getElem? (i := 0) rfl)
     simp only [argValue, Lay.value, BitVec.add_zero] at h
     exact h
   refine VG.Proof.Ed25519.AArch64.Whole.rel_wp
@@ -147,62 +147,62 @@ def base_ready (hL : L.Ok) {t : State} (hs : Slots L baseValues t) :
     VG.Proof.Ed25519.AArch64.Whole.CallReady Proof.Ed448.AArch64.scalarBaseLocal L.E L.inputs L.outputs t :=
   ⟨[⟨L.E, 57⟩], L.outputs, base_pre hL hs, base_covers L, base_writes L⟩
 
-theorem body_ct (v : Proof.Sha3.AArch64.Permutation) (hb : Proof.Ed448.BaseLadderOk) (hL : L.Ok)
+theorem body_ct (v : Proof.Sha3.AArch64.Permutation) (hb : Proof.Ed448.AArch64.BaseOk) (hL : L.Ok)
     (ha : Arguments L m₁) (hb' : Arguments L m₂) :
     RelCT isa (Two L g₁ g₂ v₁ v₂ m₁ m₂ fun _ => True) (body v.callee)
       (Two L g₁ g₂ v₁ v₂ m₁ m₂ fun _ => True) := by
   have z := setup_ct (g₁ := g₁) (g₂ := g₂) (v₁ := v₁) (v₂ := v₂) hL ha hb' zeroValues
     (by decide) (by simp [zeroValues, VG.Proof.Ed25519.AArch64.Whole.valid]) (by simp [zeroValues])
-    (by simp [zeroValues, preserved]) (by taint_decide)
+    (by decide) (by taint_decide)
   have a := callWith_ct (g₁ := g₁) (g₂ := g₂) (v₁ := v₁) (v₂ := v₂) (name := "vg_keccak_absorb_scratch" ++ v.callee.suffix)
     hL ha hb' (args := absorbValues) (by decide)
     (by simp [absorbValues, VG.Proof.Ed25519.AArch64.Whole.valid, keccakScratch]) (by simp [absorbValues])
-    (by simp [absorbValues, preserved]) (by taint_decide)
+    (by decide) (by taint_decide)
     (Proof.Sha3.AArch64.Stream.Absorb.absorb_correct v) (Proof.Sha3.AArch64.Stream.Absorb.absorb_ct v)
     (Nat.le_of_eq v.absorb_depth) (fun _ hsp hs => absorb_ready hL hsp hs)
-    (fun _ _ _ _ _ _ hsp hg => ⟨hg (.x0, .caller 2 0) (by simp [absorbValues]),
-      hg (.x1, .const 136) (by simp [absorbValues]), hg (.x2, .const 0) (by simp [absorbValues]),
-      hg (.x3, .caller 1 0) (by simp [absorbValues]), hg (.x4, .const 57) (by simp [absorbValues]),
-      hg (.x5, .caller 2 keccakScratch) (by simp [absorbValues]), hsp⟩)
-    (by simp [absorbValues, linkRegs])
+    (fun _ _ _ _ _ _ hsp hg => ⟨hg (.x0, .caller 2 0) (List.mem_of_getElem? (i := 0) rfl),
+      hg (.x1, .const 136) (List.mem_of_getElem? (i := 1) rfl), hg (.x2, .const 0) (List.mem_of_getElem? (i := 2) rfl),
+      hg (.x3, .caller 1 0) (List.mem_of_getElem? (i := 3) rfl), hg (.x4, .const 57) (List.mem_of_getElem? (i := 4) rfl),
+      hg (.x5, .caller 2 keccakScratch) (List.mem_of_getElem? (i := 5) rfl), hsp⟩)
+    (by decide)
   have p := callWith_ct (g₁ := g₁) (g₂ := g₂) (v₁ := v₁) (v₂ := v₂) (name := "vg_keccak_pad_scratch" ++ v.callee.suffix)
     hL ha hb' (args := padValues) (by decide)
     (by simp [padValues, VG.Proof.Ed25519.AArch64.Whole.valid, keccakScratch]) (by simp [padValues])
-    (by simp [padValues, preserved]) (by taint_decide)
+    (by decide) (by taint_decide)
     (Proof.Sha3.AArch64.Stream.Pad.pad_correct v) (Proof.Sha3.AArch64.Stream.Pad.pad_ct v)
     (Nat.le_of_eq v.pad_depth) (fun _ hsp hs => pad_ready hL hsp hs)
-    (fun _ _ _ _ _ _ hsp hg => ⟨hg (.x0, .caller 2 0) (by simp [padValues]),
-      hg (.x1, .const 136) (by simp [padValues]), hg (.x2, .const 57) (by simp [padValues]),
-      hg (.x4, .caller 2 keccakScratch) (by simp [padValues]), hsp⟩)
-    (by simp [padValues, linkRegs])
+    (fun _ _ _ _ _ _ hsp hg => ⟨hg (.x0, .caller 2 0) (List.mem_of_getElem? (i := 0) rfl),
+      hg (.x1, .const 136) (List.mem_of_getElem? (i := 1) rfl), hg (.x2, .const 57) (List.mem_of_getElem? (i := 2) rfl),
+      hg (.x4, .caller 2 keccakScratch) (List.mem_of_getElem? (i := 4) rfl), hsp⟩)
+    (by decide)
   have q := callWith_ct (g₁ := g₁) (g₂ := g₂) (v₁ := v₁) (v₂ := v₂)
     (name := "vg_keccak_squeeze_scratch" ++ v.callee.suffix)
     hL ha hb' (args := squeezeValues) (by decide)
     (by simp [squeezeValues, VG.Proof.Ed25519.AArch64.Whole.valid, keccakScratch, hashAt])
-    (by simp [squeezeValues]) (by simp [squeezeValues, preserved]) (by taint_decide)
+    (by simp [squeezeValues]) (by decide) (by taint_decide)
     (Proof.Sha3.AArch64.Stream.Squeeze.squeeze_correct v) (Proof.Sha3.AArch64.Stream.Squeeze.squeeze_ct v)
     (Nat.le_of_eq v.squeeze_depth) (fun _ hsp hs => squeeze_ready hL hsp hs)
-    (fun _ _ _ _ _ _ hsp hg => ⟨hg (.x0, .caller 2 0) (by simp [squeezeValues]),
-      hg (.x1, .const 136) (by simp [squeezeValues]), hg (.x2, .const 0) (by simp [squeezeValues]),
-      hg (.x3, .frame hashAt) (by simp [squeezeValues]), hg (.x4, .const 114) (by simp [squeezeValues]),
-      hg (.x5, .caller 2 keccakScratch) (by simp [squeezeValues]), hsp⟩)
-    (by simp [squeezeValues, linkRegs])
+    (fun _ _ _ _ _ _ hsp hg => ⟨hg (.x0, .caller 2 0) (List.mem_of_getElem? (i := 0) rfl),
+      hg (.x1, .const 136) (List.mem_of_getElem? (i := 1) rfl), hg (.x2, .const 0) (List.mem_of_getElem? (i := 2) rfl),
+      hg (.x3, .frame hashAt) (List.mem_of_getElem? (i := 3) rfl), hg (.x4, .const 114) (List.mem_of_getElem? (i := 4) rfl),
+      hg (.x5, .caller 2 keccakScratch) (List.mem_of_getElem? (i := 5) rfl), hsp⟩)
+    (by decide)
   have b := callWith_ct (g₁ := g₁) (g₂ := g₂) (v₁ := v₁) (v₂ := v₂) (name := "vg_ed448_scalar_base")
     hL ha hb' (args := baseValues) (by decide)
     (by simp [baseValues, VG.Proof.Ed25519.AArch64.Whole.valid]) (by simp [baseValues])
-    (by simp [baseValues, preserved]) (by taint_decide)
-    (Proof.Ed448.AArch64.scalarBase_ok hb) Proof.Ed448.AArch64.scalarBase_ct
+    (by decide) (by taint_decide)
+    hb.ok hb.ct
     (VG.Proof.Ed25519.AArch64.Whole.depth_of_noFrames base_noFrames) (fun _ _ hs => base_ready hL hs)
-    (fun _ _ _ _ _ _ hsp hg => ⟨hsp, hg (.x0, .caller 0 0) (by simp [baseValues]),
-      hg (.x1, .frame 0) (by simp [baseValues]), hg (.x2, .caller 2 0) (by simp [baseValues])⟩)
-    (by simp [baseValues, linkRegs])
+    (fun _ _ _ _ _ _ hsp hg => ⟨hsp, hg (.x0, .caller 0 0) (List.mem_of_getElem? (i := 0) rfl),
+      hg (.x1, .frame 0) (List.mem_of_getElem? (i := 1) rfl), hg (.x2, .caller 2 0) (List.mem_of_getElem? (i := 2) rfl)⟩)
+    (by decide)
   exact (z.seq (zeroStores_ct.seq (a.seq (p.seq q)))).seq (prune_ct.seq (b.seq (wipe_ct hL)))
 
 theorem lay_eq {s t : State} (hp : pkLocal.pub s t) : lay s = lay t := by
   obtain ⟨sp, h0, h1, h2⟩ := hp
   simp only [lay, VG.Proof.Ed25519.AArch64.Whole.base, sp, h0, h1, h2]
 
-theorem publicKey_ct (v : Proof.Sha3.AArch64.Permutation) (hb : Proof.Ed448.BaseLadderOk) :
+theorem publicKey_ct (v : Proof.Sha3.AArch64.Permutation) (hb : Proof.Ed448.AArch64.BaseOk) :
     ConstantTime isa pkLocal.pre pkLocal.pub (publicKeyWith v.callee) := by
   refine VG.Proof.Ed25519.AArch64.Whole.wrap_ct (fun _ _ hp => hp.1) ?_ ?_
   · intro s hs p hp
@@ -229,7 +229,7 @@ theorem pk_implies : pkLocal.Implies (Spec.Ed448.publicKeyContract AArch64.abi 3
     Spec.Ed448.scratchWords, pkLocal, below, AArch64.abi, AArch64.argRegs]
     [satState] using satState
 
-theorem publicKey_verified (v : Proof.Sha3.AArch64.Permutation) (hb : Proof.Ed448.BaseLadderOk) :
+theorem publicKey_verified (v : Proof.Sha3.AArch64.Permutation) (hb : Proof.Ed448.AArch64.BaseOk) :
     Verified AArch64.target (publicKeyWith v.callee) (Spec.Ed448.publicKeyContract AArch64.abi 352) :=
   Verified.of_implies
     (Verified.of_correct (fun _ h => publicKey_ok v hb h) (publicKey_ct v hb) (.refl pk_implies.sat_left))

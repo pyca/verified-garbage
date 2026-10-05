@@ -34,7 +34,7 @@ structure Frame (s₀ : State) (base : Addr) (s : State) : Prop where
   wr : s.wr = s₀.wr
   mem : Outside2 base 64 2816 ACC 1152 s₀.mem s.mem
 
-theorem StepInv.frame {s₀ s : State} {base : Addr} {k j : Nat} (h : StepInv s₀ base k j s) :
+theorem StepInv.frame {n : Nat} {s₀ s : State} {base : Addr} {k j : Nat} (h : StepInv n s₀ base k j s) :
     Frame s₀ base s := ⟨h.scr, h.env, h.zero, h.lr, h.out, h.rd, h.wr, h.mem⟩
 
 /-- A complete addition, from `Frame`, with the points in slots `x1 y1 z1` and `x2 y2 z2`. -/
@@ -94,10 +94,11 @@ theorem dbl_ok {s₀ s : State} {base : Addr} {v w : ℤ} {m : Nat} (hm : 1 ≤ 
     exact h.b
 
 /-- **`16 A + B`**: from the comb's last step, `[k] B` in `A`. -/
-theorem combine_ok {s₀ s : State} {base : Addr} {k : Nat} (hk : k < 256 ^ 56) (h : StepInv s₀ base k 56 s) :
+theorem combine_ok {n : Nat} {s₀ s : State} {base : Addr} {k : Nat} (hk : k < 256 ^ n)
+    (h : StepInv n s₀ base k n s) :
     WP isa combine s fun t => Frame s₀ base t ∧ Rep (pt (EV t.mem base) 0 1 2) ((k : ℤ) • baseAff) := by
-  let v : ℤ := VG.Proof.X448.baseGVal + VG.Proof.X448.oddSumZ k 56
-  let w : ℤ := VG.Proof.X448.baseGVal + VG.Proof.X448.evenSumZ k 56
+  let v : ℤ := VG.Proof.X448.combG n + VG.Proof.X448.oddSumZ k n
+  let w : ℤ := VG.Proof.X448.combG n + VG.Proof.X448.evenSumZ k n
   unfold combine
   refine WP.seq (WP.mono (VG.Proof.X448.AArch64.Weak.setCounter_ok s 4 (by decide))
     fun s1 ⟨c1, g1, m1, rd1, wr1⟩ => ?_)

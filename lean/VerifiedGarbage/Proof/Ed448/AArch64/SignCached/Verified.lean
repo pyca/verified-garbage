@@ -7,8 +7,8 @@ import VerifiedGarbage.Proof.Framework.Contract
 # Ed448 signing with a cached public key on AArch64: `Verified`
 
 Correctness including the ABI (`signCached_ok`), for any implementation `v`
-of the Keccak permutation, given `BaseLadderOk` (which the generic file
-passes in). Constant time in every buffer's contents: two runs whose
+of the Keccak permutation, given that `vg_ed448_scalar_base` meets
+its contract in constant time (`BaseOk`, which the generic file passes in). Constant time in every buffer's contents: two runs whose
 pointers and lengths agree have the same layout, so in the frame's body they
 are related by `Whole.Two`. The blocks address only the stack and
 `scratch`, from registers that agree (the taint analysis); each call is of
@@ -168,7 +168,7 @@ def mulAddVal (L : Lay) : Reg → Addr
   | .x3 => L.E + BitVec.ofNat 64 fS
   | _ => L.scr
 
-theorem body_ct (v : Proof.Sha3.AArch64.Permutation) (hb : Proof.Ed448.BaseLadderOk) (hL : L.Ok)
+theorem body_ct (v : Proof.Sha3.AArch64.Permutation) (hb : Proof.Ed448.AArch64.BaseOk) (hL : L.Ok)
     (ha₁ : Args L m₁) (ha₂ : Args L m₂) :
     RelCT isa (fun a b => (Ctx0 L g₁ v₁ m₁ a ∧ a.gpr .x6 = L.len ∧ a.gpr .x7 = L.scr) ∧
       (Ctx0 L g₂ v₂ m₂ b ∧ b.gpr .x6 = L.len ∧ b.gpr .x7 = L.scr)) (body v.callee) fun _ _ => True := by
@@ -187,8 +187,8 @@ theorem body_ct (v : Proof.Sha3.AArch64.Permutation) (hb : Proof.Ed448.BaseLadde
       fun _ hu => ⟨hu.1, trivial⟩
   have rr := reduce_ct hV ha₁ ha₂ (g₁ := g₁) (g₂ := g₂) (v₁ := v₁) (v₂ := v₂) (args := reduceRArgs)
     (by decide) (by simp [reduceRArgs, aR, VG.Proof.Ed448.AArch64.Whole.srcValid,
-      VG.Proof.Ed25519.AArch64.Whole.valid, fH, fScr]) rfl (by simp [reduceRArgs, preserved])
-    (by simp [reduceRArgs, linkRegs]) (by taint_decide) (P := fun _ => True) (reduceRVal L)
+      VG.Proof.Ed25519.AArch64.Whole.valid, fH, fScr]) rfl (by decide)
+    (by decide) (by taint_decide) (P := fun _ => True) (reduceRVal L)
     (fun hm hc _ p hp => by
       simp only [reduceRArgs, List.mem_cons, List.not_mem_nil, or_false] at hp
       rcases hp with rfl | rfl | rfl
@@ -200,8 +200,8 @@ theorem body_ct (v : Proof.Sha3.AArch64.Permutation) (hb : Proof.Ed448.BaseLadde
     (fun hm hc _ => WP.mono (reduceR_step hL hc hm) fun _ hu => ⟨hu.1, trivial⟩)
   have bs := base_ct hb hV ha₁ ha₂ (g₁ := g₁) (g₂ := g₂) (v₁ := v₁) (v₂ := v₂) (args := baseArgs)
     (by decide) (by simp [baseArgs, aOut, aR, VG.Proof.Ed448.AArch64.Whole.srcValid,
-      VG.Proof.Ed25519.AArch64.Whole.valid, fScr]) rfl (by simp [baseArgs, preserved])
-    (by simp [baseArgs, linkRegs]) (by taint_decide) (P := fun _ => True) (baseVal L)
+      VG.Proof.Ed25519.AArch64.Whole.valid, fScr]) rfl (by decide)
+    (by decide) (by taint_decide) (P := fun _ => True) (baseVal L)
     (fun hm hc _ p hp => by
       simp only [baseArgs, List.mem_cons, List.not_mem_nil, or_false] at hp
       rcases hp with rfl | rfl | rfl
@@ -213,8 +213,8 @@ theorem body_ct (v : Proof.Sha3.AArch64.Permutation) (hb : Proof.Ed448.BaseLadde
     (fun hm hc _ => WP.mono (base_step hb hL hc hm) fun _ hu => ⟨hu.1, trivial⟩)
   have rk := reduce_ct hV ha₁ ha₂ (g₁ := g₁) (g₂ := g₂) (v₁ := v₁) (v₂ := v₂) (args := reduceKArgs)
     (by decide) (by simp [reduceKArgs, VG.Proof.Ed448.AArch64.Whole.srcValid,
-      VG.Proof.Ed25519.AArch64.Whole.valid, fH, fScr]) rfl (by simp [reduceKArgs, preserved])
-    (by simp [reduceKArgs, linkRegs]) (by taint_decide) (P := fun _ => True) (reduceKVal L)
+      VG.Proof.Ed25519.AArch64.Whole.valid, fH, fScr]) rfl (by decide)
+    (by decide) (by taint_decide) (P := fun _ => True) (reduceKVal L)
     (fun _ hc _ p hp => by
       simp only [reduceKArgs, List.mem_cons, List.not_mem_nil, or_false] at hp
       rcases hp with rfl | rfl | rfl
@@ -226,8 +226,8 @@ theorem body_ct (v : Proof.Sha3.AArch64.Permutation) (hb : Proof.Ed448.BaseLadde
     (fun _ hc _ => WP.mono (reduceK_step hL hc) fun _ hu => ⟨hu.1, trivial⟩)
   have ma := mulAdd_ct hV ha₁ ha₂ (g₁ := g₁) (g₂ := g₂) (v₁ := v₁) (v₂ := v₂) (args := mulAddArgs)
     (by decide) (by simp [mulAddArgs, aR, VG.Proof.Ed448.AArch64.Whole.srcValid,
-      VG.Proof.Ed25519.AArch64.Whole.valid, fH, fS, fScr]) rfl (by simp [mulAddArgs, preserved])
-    (by simp [mulAddArgs, linkRegs]) (by taint_decide) (P := fun _ => True) (mulAddVal L)
+      VG.Proof.Ed25519.AArch64.Whole.valid, fH, fS, fScr]) rfl (by decide)
+    (by decide) (by taint_decide) (P := fun _ => True) (mulAddVal L)
     (fun hm hc _ p hp => by
       simp only [mulAddArgs, List.mem_cons, List.not_mem_nil, or_false] at hp
       rcases hp with rfl | rfl | rfl | rfl | rfl
@@ -250,7 +250,7 @@ theorem lay_eq {s t : State} (hp : scLocal.pub s t) : lay s = lay t := by
   obtain ⟨sp, h0, h1, h2, h3, h4, h5, h6, h7⟩ := hp
   simp only [lay, VG.Proof.Ed25519.AArch64.Whole.base, sp, h0, h1, h2, h3, h4, h5, h6, h7]
 
-theorem signCached_ct (v : Proof.Sha3.AArch64.Permutation) (hb : Proof.Ed448.BaseLadderOk) :
+theorem signCached_ct (v : Proof.Sha3.AArch64.Permutation) (hb : Proof.Ed448.AArch64.BaseOk) :
     ConstantTime isa scLocal.pre scLocal.pub (signCachedWith v.callee) := by
   refine VG.Proof.Ed25519.AArch64.Whole.wrap_ct (fun _ _ hp => hp.1) ?_ ?_
   · intro s hs p hp
@@ -337,7 +337,7 @@ theorem signCached_implies : scLocal.Implies (Spec.Ed448.signCachedContract AArc
       Spec.Ed448.scratchWords, scLocal, below, AArch64.abi, AArch64.argRegs]
   sat := sat
 
-theorem signCached_verified (v : Proof.Sha3.AArch64.Permutation) (hb : Proof.Ed448.BaseLadderOk) :
+theorem signCached_verified (v : Proof.Sha3.AArch64.Permutation) (hb : Proof.Ed448.AArch64.BaseOk) :
     Verified AArch64.target (signCachedWith v.callee) (Spec.Ed448.signCachedContract AArch64.abi 352) :=
   Verified.of_implies
     (Verified.of_correct (fun _ h => signCached_ok v hb h) (signCached_ct v hb)

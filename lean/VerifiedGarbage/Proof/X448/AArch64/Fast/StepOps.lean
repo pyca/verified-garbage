@@ -35,6 +35,10 @@ def stepOpsEnv (e : Env) : Env :=
 def Post (base : Addr) (s t : State) : Prop :=
   FKeep base s t ∧ BEnv t.mem base
 
+theorem Same.append {base : Addr} {l₁ l₂ : List Index} {m₁ m₂ m₃ : Mem} (h : Same base l₁ m₁ m₂)
+    (h' : Same base l₂ m₂ m₃) : Same base (l₁ ++ l₂) m₁ m₃ := fun i hi j hj => by
+  rw [h' i (fun e => hi (List.mem_append_right _ e)) j hj, h i (fun e => hi (List.mem_append_left _ e)) j hj]
+
 theorem mulOp {s : State} {base : Addr} (hs : Scr s base) (hb : BEnv s.mem base) (o a b : Index)
     (hob : a = b ∨ o ≠ b)
     {rest : List Impl.X448.AArch64.Fast.Op} {Q : State → Prop}

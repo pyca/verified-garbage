@@ -1,6 +1,6 @@
 import VerifiedGarbage.Proof.Ed448.AArch64.PublicKey.Hash
 import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.Wipe
-import VerifiedGarbage.Proof.Ed448.AArch64.BaseVerified
+import VerifiedGarbage.Proof.Ed448.AArch64.BaseContract
 import VerifiedGarbage.Proof.Ed448.AArch64.Whole.Prune
 
 /-!
@@ -8,7 +8,7 @@ import VerifiedGarbage.Proof.Ed448.AArch64.Whole.Prune
 
 The first 57 bytes of the hash, pruned, are stored as the scalar at the
 bottom of the frame (`prune_ok`), `[s]B` is encoded into `out` by
-`vg_ed448_scalar_base` (`base_step`, given `BaseLadderOk`), and the scalar and
+`vg_ed448_scalar_base` (`base_step`, given that it meets its contract, `BaseOk`), and the scalar and
 the hash in the frame are cleared (`wipe_step`).
 -/
 
@@ -41,15 +41,16 @@ theorem prune_step (hc : Ctx L g vec m₀ t) {h : List Byte}
   · rw [hc.sp, BitVec.add_zero] at hp
     exact hp
 
-theorem base_noFrames : Impl.Ed448.AArch64.scalarBase.noFrames = true := by lit_decide
+theorem base_noFrames : Impl.Ed448.AArch64.scalarBase.noFrames = true :=
+  Proof.Ed448.AArch64.scalarBase_noFrames
 
 def baseValues : List (Reg × Value) := [(.x0, .caller 0 0), (.x1, .frame 0), (.x2, .caller 2 0)]
 
 theorem base_pre (hL : L.Ok) {u : State} (hs : ∀ p ∈ baseValues, u.gpr p.1 = argValue L p.2) :
     Proof.Ed448.AArch64.scalarBaseLocal.pre (u.callEntry.withRegions [⟨L.E, 57⟩] L.outputs) := by
-  have h0 := hs (.x0, .caller 0 0) (by simp [baseValues])
-  have h1 := hs (.x1, .frame 0) (by simp [baseValues])
-  have h2 := hs (.x2, .caller 2 0) (by simp [baseValues])
+  have h0 := hs (.x0, .caller 0 0) (List.mem_of_getElem? (i := 0) rfl)
+  have h1 := hs (.x1, .frame 0) (List.mem_of_getElem? (i := 1) rfl)
+  have h2 := hs (.x2, .caller 2 0) (List.mem_of_getElem? (i := 2) rfl)
   simp only [argValue, Lay.value, BitVec.add_zero] at h0 h1 h2
   simp only [Proof.Ed448.AArch64.scalarBaseLocal, State.withRegions_rd, State.withRegions_wr,
     State.withRegions_gpr, State.callEntry_gpr _ (by decide : Reg.x0 ∉ linkRegs),
@@ -68,7 +69,7 @@ theorem base_covers (L : Lay) : Covers ([⟨L.E, 57⟩] ++ L.outputs) (L.inputs 
 theorem base_writes (L : Lay) : ∀ r ∈ L.outputs, Within r L.FR ∨ ∃ R ∈ L.outputs, Within r R :=
   fun r hr => .inr ⟨r, hr, 0, (BitVec.add_zero _).symm, by simp⟩
 
-theorem base_step (hb : Proof.Ed448.BaseLadderOk) (hc : Ctx L g vec m₀ t) (hL : L.Ok)
+theorem base_step (hb : Proof.Ed448.AArch64.BaseOk) (hc : Ctx L g vec m₀ t) (hL : L.Ok)
     (ha : Arguments L m₀) {n : Nat}
     (hs : Spec.Ed448.decodeLE (Spec.Ed448.bytesAt t.mem L.E 57) = n) :
     WP isa (callWith baseArgs "vg_ed448_scalar_base" Impl.Ed448.AArch64.scalarBase) t fun u =>
@@ -76,14 +77,14 @@ theorem base_step (hb : Proof.Ed448.BaseLadderOk) (hc : Ctx L g vec m₀ t) (hL 
         Spec.Ed448.encodePoint (Spec.Ed448.pointMul n Spec.Ed448.basePoint) := by
   refine WP.seq (WP.mono (setup_ok hc hL ha
     (args := [(.x0, .caller 0 0), (.x1, .frame 0), (.x2, .caller 2 0)])
-    (by decide) (by simp [VG.Proof.Ed25519.AArch64.Whole.valid]) (by simp) (by simp [preserved]))
+    (by decide) (by simp [VG.Proof.Ed25519.AArch64.Whole.valid]) (by simp) (by decide))
     fun u ⟨hu, hm, hav⟩ => ?_)
   have h0 := hav (.x0, .caller 0 0) (by simp)
   have h1 := hav (.x1, .frame 0) (by simp)
   have h2 := hav (.x2, .caller 2 0) (by simp)
   simp only [argValue, Lay.value, BitVec.add_zero] at h0 h1 h2
   have hpre := base_pre hL (u := u) (fun p hp => hav p hp)
-  refine call_ok hu (Proof.Ed448.AArch64.scalarBase_ok hb) base_noFrames hpre (base_covers L)
+  refine call_ok hu hb.ok base_noFrames hpre (base_covers L)
     (base_writes L) fun w hw _ hp => ⟨hw, ?_⟩
   change Spec.Ed448.bytesAt w.mem (u.callEntry.gpr .x0) 57 =
     Spec.Ed448.scalarBase (Spec.Ed448.bytesAt u.mem (u.callEntry.gpr .x1) 57) at hp

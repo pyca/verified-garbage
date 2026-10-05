@@ -90,17 +90,17 @@ theorem reduceR_step (hL : L.Ok) (hc : WCtx L.env g vec m₀ t) (ha : Args L m�
   have hV := env_ok hL
   refine WP.seq (WP.mono (wsetup_ok hV hc (args := reduceRArgs) (by decide)
     (by simp [reduceRArgs, aR, srcValid, VG.Proof.Ed25519.AArch64.Whole.valid, fH, fScr]) rfl
-    (by simp [reduceRArgs, preserved])) fun u ⟨hu, hm, hv⟩ => ?_)
+    (by decide)) fun u ⟨hu, hm, hv⟩ => ?_)
   have h0 : u.gpr .x0 = L.out + BitVec.ofNat 64 57 :=
-    (hv (.x0, aR) (by simp [reduceRArgs])).trans (outS_src hL hc ha _)
-  have h1 : u.gpr .x1 = L.E + BitVec.ofNat 64 fH := hv (.x1, .val (.frame fH)) (by simp [reduceRArgs])
+    (hv (.x0, aR) (List.mem_of_getElem? (i := 0) rfl)).trans (outS_src hL hc ha _)
+  have h1 : u.gpr .x1 = L.E + BitVec.ofNat 64 fH := hv (.x1, .val (.frame fH)) (List.mem_of_getElem? (i := 1) rfl)
   have h2 : u.gpr .x2 = L.scr := by
-    rw [hv (.x2, .loc fScr 0) (by simp [reduceRArgs]), (scrOk hL).loc hc, BitVec.add_zero]
+    rw [hv (.x2, .loc fScr 0) (List.mem_of_getElem? (i := 2) rfl), (scrOk hL).loc hc, BitVec.add_zero]
   refine WP.mono (reduce_call hV hu h0 h1 h2 (fr_scr hL (by decide)) (.inl ⟨fH, rfl, show fH + 114 ≤ 256 by decide⟩)
     (outS_writable L) (scr_writable L)) fun w ⟨hw, hf, hk⟩ => ⟨hw, by rw [← hm]; exact hf, by rw [hk, hm]⟩
 
 /-- `R = [r]B`, into the first half of `out`. -/
-theorem base_step (hb : Proof.Ed448.BaseLadderOk) (hL : L.Ok) (hc : WCtx L.env g vec m₀ t) (ha : Args L m₀) :
+theorem base_step (hb : Proof.Ed448.AArch64.BaseOk) (hL : L.Ok) (hc : WCtx L.env g vec m₀ t) (ha : Args L m₀) :
     WP isa (callS baseArgs "vg_ed448_scalar_base" Impl.Ed448.AArch64.scalarBase) t fun u =>
       WCtx L.env g vec m₀ u ∧ Frame [⟨L.out, 57⟩, L.SCR, CK L.E] t.mem u.mem ∧
       Spec.Ed448.bytesAt u.mem L.out 57 =
@@ -108,13 +108,13 @@ theorem base_step (hb : Proof.Ed448.BaseLadderOk) (hL : L.Ok) (hc : WCtx L.env g
   have hV := env_ok hL
   refine WP.seq (WP.mono (wsetup_ok hV hc (args := baseArgs) (by decide)
     (by simp [baseArgs, aOut, aR, srcValid, VG.Proof.Ed25519.AArch64.Whole.valid, fScr]) rfl
-    (by simp [baseArgs, preserved])) fun u ⟨hu, hm, hv⟩ => ?_)
+    (by decide)) fun u ⟨hu, hm, hv⟩ => ?_)
   have h0 : u.gpr .x0 = L.out :=
-    (hv (.x0, aOut) (by simp [baseArgs])).trans (arg_src hL hc.1 ha (j := 0) (by decide) _)
+    (hv (.x0, aOut) (List.mem_of_getElem? (i := 0) rfl)).trans (arg_src hL hc.1 ha (j := 0) (by decide) _)
   have h1 : u.gpr .x1 = L.out + BitVec.ofNat 64 57 :=
-    (hv (.x1, aR) (by simp [baseArgs])).trans (outS_src hL hc ha _)
+    (hv (.x1, aR) (List.mem_of_getElem? (i := 1) rfl)).trans (outS_src hL hc ha _)
   have h2 : u.gpr .x2 = L.scr := by
-    rw [hv (.x2, .loc fScr 0) (by simp [baseArgs]), (scrOk hL).loc hc, BitVec.add_zero]
+    rw [hv (.x2, .loc fScr 0) (List.mem_of_getElem? (i := 2) rfl), (scrOk hL).loc hc, BitVec.add_zero]
   refine WP.mono (base_call hb hV hu h0 h1 h2 (hL.oc.sub_left (outR_within L).sub)
     (hL.oc.sub_left (outS_within L).sub) hL.nc (.inr ⟨L.OUT, by simp [Lay.env], outS_within L⟩)
     (outR_writable L) (scr_writable L)) fun w ⟨hw, hf, hk⟩ => ⟨hw, by rw [← hm]; exact hf, by rw [hk, hm]⟩
@@ -128,11 +128,11 @@ theorem reduceK_step (hL : L.Ok) (hc : WCtx L.env g vec m₀ t) :
   have hV := env_ok hL
   refine WP.seq (WP.mono (wsetup_ok hV hc (args := reduceKArgs) (by decide)
     (by simp [reduceKArgs, srcValid, VG.Proof.Ed25519.AArch64.Whole.valid, fH, fScr]) rfl
-    (by simp [reduceKArgs, preserved])) fun u ⟨hu, hm, hv⟩ => ?_)
-  have h0 : u.gpr .x0 = L.E + BitVec.ofNat 64 fH := hv (.x0, .val (.frame fH)) (by simp [reduceKArgs])
-  have h1 : u.gpr .x1 = L.E + BitVec.ofNat 64 fH := hv (.x1, .val (.frame fH)) (by simp [reduceKArgs])
+    (by decide)) fun u ⟨hu, hm, hv⟩ => ?_)
+  have h0 : u.gpr .x0 = L.E + BitVec.ofNat 64 fH := hv (.x0, .val (.frame fH)) (List.mem_of_getElem? (i := 0) rfl)
+  have h1 : u.gpr .x1 = L.E + BitVec.ofNat 64 fH := hv (.x1, .val (.frame fH)) (List.mem_of_getElem? (i := 1) rfl)
   have h2 : u.gpr .x2 = L.scr := by
-    rw [hv (.x2, .loc fScr 0) (by simp [reduceKArgs]), (scrOk hL).loc hc, BitVec.add_zero]
+    rw [hv (.x2, .loc fScr 0) (List.mem_of_getElem? (i := 2) rfl), (scrOk hL).loc hc, BitVec.add_zero]
   refine WP.mono (reduce_call hV hu h0 h1 h2 (fr_scr hL (by decide)) (.inl ⟨fH, rfl, show fH + 114 ≤ 256 by decide⟩)
     (.inl (fr_apart (by decide) (by decide))) (scr_writable L)) fun w ⟨hw, hf, hk⟩ =>
       ⟨hw, by rw [← hm]; exact hf, by rw [hk, hm]⟩
@@ -148,15 +148,15 @@ theorem mulAdd_step (hL : L.Ok) (hc : WCtx L.env g vec m₀ t) (ha : Args L m₀
   have hV := env_ok hL
   refine WP.seq (WP.mono (wsetup_ok hV hc (args := mulAddArgs) (by decide)
     (by simp [mulAddArgs, aR, srcValid, VG.Proof.Ed25519.AArch64.Whole.valid, fH, fS, fScr]) rfl
-    (by simp [mulAddArgs, preserved])) fun u ⟨hu, hm, hv⟩ => ?_)
+    (by decide)) fun u ⟨hu, hm, hv⟩ => ?_)
   have h0 : u.gpr .x0 = L.out + BitVec.ofNat 64 57 :=
-    (hv (.x0, aR) (by simp [mulAddArgs])).trans (outS_src hL hc ha _)
+    (hv (.x0, aR) (List.mem_of_getElem? (i := 0) rfl)).trans (outS_src hL hc ha _)
   have h1 : u.gpr .x1 = L.out + BitVec.ofNat 64 57 :=
-    (hv (.x1, aR) (by simp [mulAddArgs])).trans (outS_src hL hc ha _)
-  have h2 : u.gpr .x2 = L.E + BitVec.ofNat 64 fH := hv (.x2, .val (.frame fH)) (by simp [mulAddArgs])
-  have h3 : u.gpr .x3 = L.E + BitVec.ofNat 64 fS := hv (.x3, .val (.frame fS)) (by simp [mulAddArgs])
+    (hv (.x1, aR) (List.mem_of_getElem? (i := 1) rfl)).trans (outS_src hL hc ha _)
+  have h2 : u.gpr .x2 = L.E + BitVec.ofNat 64 fH := hv (.x2, .val (.frame fH)) (List.mem_of_getElem? (i := 2) rfl)
+  have h3 : u.gpr .x3 = L.E + BitVec.ofNat 64 fS := hv (.x3, .val (.frame fS)) (List.mem_of_getElem? (i := 3) rfl)
   have h4 : u.gpr .x4 = L.scr := by
-    rw [hv (.x4, .loc fScr 0) (by simp [mulAddArgs]), (scrOk hL).loc hc, BitVec.add_zero]
+    rw [hv (.x4, .loc fScr 0) (List.mem_of_getElem? (i := 4) rfl), (scrOk hL).loc hc, BitVec.add_zero]
   refine WP.mono (mulAdd_call hV hu h0 h1 h2 h3 h4 (hL.oc.sub_left (outS_within L).sub)
     (fr_scr hL (by decide)) (fr_scr hL (by decide)) (.inr ⟨L.OUT, by simp [Lay.env], outS_within L⟩)
     (.inl ⟨fH, rfl, show fH + 57 ≤ 256 by decide⟩) (.inl ⟨fS, rfl, show fS + 57 ≤ 256 by decide⟩)

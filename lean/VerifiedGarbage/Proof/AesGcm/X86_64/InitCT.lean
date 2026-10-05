@@ -6,7 +6,7 @@ import VerifiedGarbage.Proof.AesGcm.X86_64.FnCT
 
 Untrusted: everything here is checked by Lean. The code between the calls
 is checked by the taint analysis from the public arguments; the calls of
-`vg_aes_expand_key` and `vg_aes_ctr32` have the same arguments in both runs,
+`vg_aes_expand_key_scratch` and `vg_aes_ctr32` have the same arguments in both runs,
 which correctness gives (`initA_ok`, `initC_ok`).
 -/
 
@@ -14,7 +14,7 @@ namespace VG.Proof.AesGcm.X86_64
 
 open VG VG.X86_64 VG.X86_64.RegUpd VG.Impl.AesGcm.X86_64
 
-/-- After the entry: the call of `vg_aes_expand_key`, and what stays for the rest. -/
+/-- After the entry: the call of `vg_aes_expand_key_scratch`, and what stays for the rest. -/
 structure InitA (K Ctx W SP : Addr) (L R : Nat) (rd wr : List Region) (s : State) : Prop where
   call : KeyCall s K Ctx (W + BitVec.ofNat 64 512) L
   r15 : s.gpr .r15 = W
@@ -66,7 +66,7 @@ theorem initA_ok {s : State} (hp : Proof.AesGcm.initX86_64.pre s) :
       (covers_left (covers_cons (covers_prefix pC (by decide)) pS))
   · rw [wr₂]; exact covers_cons (covers_prefix pC (by decide)) pS
 
-/-- After the call of `vg_aes_expand_key`: the call of `vg_aes_ctr32`. -/
+/-- After the call of `vg_aes_expand_key_scratch`: the call of `vg_aes_ctr32`. -/
 theorem initC_ok {s : State} (hp : Proof.AesGcm.initX86_64.pre s) {R : Nat} (hR' : R = 10 ∨ R = 12 ∨ R = 14)
     {s₃ : State} (h15 : s₃.gpr .r15 = s.gpr .rcx) (h13 : s₃.gpr .r13 = s.gpr .rdx)
     (hbx : s₃.gpr .rbx = BitVec.ofNat 64 R) (hsp : s₃.gpr .rsp = s.gpr .rsp) (hwr : s₃.wr = s.wr) :
@@ -157,7 +157,7 @@ theorem init_rel (v : GcmImpl) {s₀ s₀' : State} (hp : Proof.AesGcm.initX86_6
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption) ⟨_, by taint_decide⟩)
     (fun _ _ h => h) (G₁ := A₁) (G₂ := A₂) (fun s h => by subst h; exact hA₁) (fun s h => by subst h; exact hA₂)
-  -- After the call of `vg_aes_expand_key`.
+  -- After the call of `vg_aes_expand_key_scratch`.
   let K₁ : State → Prop := fun s₃ => s₃.gpr .r15 = s₀.gpr .rcx ∧ s₃.gpr .r13 = s₀.gpr .rdx ∧
     s₃.gpr .rbx = BitVec.ofNat 64 R ∧ s₃.gpr .rsp = s₀.gpr .rsp ∧ s₃.rd = s₀.rd ∧ s₃.wr = s₀.wr
   let K₂ : State → Prop := fun s₃ => s₃.gpr .r15 = s₀.gpr .rcx ∧ s₃.gpr .r13 = s₀.gpr .rdx ∧

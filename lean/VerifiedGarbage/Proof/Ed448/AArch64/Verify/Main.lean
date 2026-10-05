@@ -4,8 +4,8 @@ import VerifiedGarbage.Proof.Ed448.AArch64.Verify.Correct
 # Ed448 verification on AArch64: the whole function
 
 `vg_ed448_verify` meets `vLocal` and the ABI (`verify_ok`), for any
-implementation `v` of the Keccak permutation, given the reference
-computations' agreement with the specification (`RecoverOk`, `VerifyEqOk`):
+implementation `v` of the Keccak permutation, given that
+`vg_ed448_verify_equation` meets its contract (`EqOk`, `VerifyLocal.lean`):
 a context of 256 bytes or more returns 0; otherwise the frame
 (`Proof.Ed25519.AArch64.Whole.wrap_ok`) runs the body, whose result is
 RFC 8032's verification of the inputs as on entry.
@@ -137,7 +137,7 @@ theorem body_ctx {s p u : State} (h : vLocal.pre s) (hu : Ctx0 (lay s) s.gpr s.v
   simpa only [bodyRd, bodyWr, h.1, h.2.1, Ctx0, Lay.env, Lay.inputs, Lay.PK, Lay.CTX, Lay.MSG,
     Lay.SIG, Lay.SCR, lay, List.cons_append, List.nil_append] using hu
 
-theorem verify_ok (v : Proof.Sha3.AArch64.Permutation) (hR : Proof.Ed448.RecoverOk) (hE : Proof.Ed448.VerifyEqOk)
+theorem verify_ok (v : Proof.Sha3.AArch64.Permutation) (hQ : Proof.Ed448.AArch64.EqOk)
     {s : State} (h : vLocal.pre s) :
     WP isa (verifyWith v.callee) s fun u => abiPreserved s u ∧ vLocal.post s u := by
   refine WP.seq (WP.mono (lsr_ok s) fun t ht => ?_)
@@ -166,7 +166,7 @@ theorem verify_ok (v : Proof.Sha3.AArch64.Permutation) (hR : Proof.Ed448.Recover
         (Spec.Ed448.bytesAt m (t.gpr .x5) 114) (Spec.Ed448.scalarReduce
           (Spec.Sha3.shake256 (hashIn (lay t) m) 114)) then 1 else 0) fun p hp => ?_)
       fun u ⟨hu, m, hf, hx⟩ => ⟨habi u hu, hpost u ?_⟩
-    · refine WP.mono (body_ok v hR hE hL (entry_ctx hpre hp) (entry_args hp) (entry_x6 hp))
+    · refine WP.mono (body_ok v hQ hL (entry_ctx hpre hp) (entry_args hp) (entry_x6 hp))
         fun u ⟨hu, hx⟩ => ⟨body_ctx hpre hu, hx⟩
     · have hb : ∀ R ∈ (lay t).inputs, ∀ n ≤ R.len, R.len ≤ 2 ^ 64 →
           Spec.Sha3.bytesAt m R.base n = Spec.Sha3.bytesAt t.mem R.base n := by

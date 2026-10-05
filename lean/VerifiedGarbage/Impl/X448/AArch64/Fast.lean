@@ -25,7 +25,7 @@ open VG VG.AArch64
 open VG.Impl.X448.AArch64
 
 /-- Where `x21`–`x28` are saved. -/
-def SAVE : Nat := 3520
+def SAVE : Nat := 2880
 
 /-- Where `v8`–`v15` are saved, past the vector working space. -/
 def VSAVE : Nat := 4736

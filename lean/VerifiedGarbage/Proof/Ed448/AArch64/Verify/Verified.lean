@@ -7,8 +7,8 @@ import VerifiedGarbage.Proof.Framework.Contract
 # Ed448 verification on AArch64: `Verified`
 
 Correctness including the ABI (`verify_ok`), for any implementation `v` of
-the Keccak permutation, given `RecoverOk` and `VerifyEqOk` (which the generic
-file passes in). Constant time in everything but the pointers and lengths:
+the Keccak permutation, given `EqOk` (which the generic file passes in, from
+`VerifyVerified.lean`). Constant time in everything but the pointers and lengths:
 the branch on `ctxlen` is on a public length; in the frame's body, two runs
 whose pointers and lengths agree have the same layout, so they are related
 by `Whole.Two`. The blocks address only the stack and `scratch`, from
@@ -102,7 +102,7 @@ theorem hash_ct (v : Proof.Sha3.AArch64.Permutation) (hL : L.Ok) (ha₁ : Args L
     (fr_st hL (by decide)) (fr_ks hL (by decide)) (ck_frame (by decide))
   exact z.seq (k1.seq (k2.seq (k3.seq (k4.seq (k5.seq (p.seq q))))))
 
-theorem body_ct (v : Proof.Sha3.AArch64.Permutation) (hR : Proof.Ed448.RecoverOk) (hE : Proof.Ed448.VerifyEqOk)
+theorem body_ct (v : Proof.Sha3.AArch64.Permutation) (hQ : Proof.Ed448.AArch64.EqOk)
     (hL : L.Ok) (ha₁ : Args L m₁) (ha₂ : Args L m₂) :
     RelCT isa (fun a b => (Ctx0 L g₁ v₁ m₁ a ∧ a.gpr .x6 = L.scr) ∧ (Ctx0 L g₂ v₂ m₂ b ∧ b.gpr .x6 = L.scr))
       (body v.callee) fun _ _ => True := by
@@ -116,8 +116,8 @@ theorem body_ct (v : Proof.Sha3.AArch64.Permutation) (hR : Proof.Ed448.RecoverOk
       (fun _ h => WP.mono (entry_ok hL h.1 ha₂ h.2) fun _ hu => ⟨hu, trivial⟩)
   have r := reduce_ct hV ha₁ ha₂ (g₁ := g₁) (g₂ := g₂) (v₁ := v₁) (v₂ := v₂) (args := reduceArgs)
     (by decide) (by simp [reduceArgs, VG.Proof.Ed448.AArch64.Whole.srcValid,
-      VG.Proof.Ed25519.AArch64.Whole.valid, fK, fH, fScr]) rfl (by simp [reduceArgs, preserved])
-    (by simp [reduceArgs, linkRegs]) (by taint_decide) (P := fun _ => True) (reduceVal L)
+      VG.Proof.Ed25519.AArch64.Whole.valid, fK, fH, fScr]) rfl (by decide)
+    (by decide) (by taint_decide) (P := fun _ => True) (reduceVal L)
     (fun _ hc _ p hp => by
       simp only [reduceArgs, List.mem_cons, List.not_mem_nil, or_false] at hp
       rcases hp with rfl | rfl | rfl
@@ -127,10 +127,10 @@ theorem body_ct (v : Proof.Sha3.AArch64.Permutation) (hR : Proof.Ed448.RecoverOk
     (by decide) (fr_scr hL (by decide)) (.inl ⟨fH, rfl, show fH + 114 ≤ 256 by decide⟩)
     (.inl (k_apart L)) (scr_writable L) (Q := fun _ => True)
     (fun _ hc _ => WP.mono (reduce_step hL hc) fun _ hu => ⟨hu.1, trivial⟩)
-  have q := equation_ct hR hE hV ha₁ ha₂ (g₁ := g₁) (g₂ := g₂) (v₁ := v₁) (v₂ := v₂) (args := equationArgs)
+  have q := equation_ct hQ hV ha₁ ha₂ (g₁ := g₁) (g₂ := g₂) (v₁ := v₁) (v₂ := v₂) (args := equationArgs)
     (by decide) (by simp [equationArgs, VG.Proof.Ed448.AArch64.Whole.srcValid,
-      VG.Proof.Ed25519.AArch64.Whole.valid, aPk, aSig, fK, fScr]) rfl (by simp [equationArgs, preserved])
-    (by simp [equationArgs, linkRegs]) (by taint_decide) (P := fun _ => True) (equationVal L)
+      VG.Proof.Ed25519.AArch64.Whole.valid, aPk, aSig, fK, fScr]) rfl (by decide)
+    (by decide) (by taint_decide) (P := fun _ => True) (equationVal L)
     (fun hm hc _ p hp => by
       simp only [equationArgs, List.mem_cons, List.not_mem_nil, or_false] at hp
       rcases hp with rfl | rfl | rfl | rfl
@@ -141,7 +141,7 @@ theorem body_ct (v : Proof.Sha3.AArch64.Permutation) (hR : Proof.Ed448.RecoverOk
     (by decide) hL.pc hL.sc (fr_scr hL (by decide)) hL.nc
     (in_readable L.PK (by simp [Lay.inputs])) (in_readable L.SIG (by simp [Lay.inputs]))
     (.inl ⟨fK, rfl, show fK + 57 ≤ 256 by decide⟩) (scr_writable L) (Q := fun _ => True)
-    (fun hm hc _ => WP.mono (equation_step hR hE hL hc hm) fun _ hu => ⟨hu.1, trivial⟩)
+    (fun hm hc _ => WP.mono (equation_step hQ hL hc hm) fun _ hu => ⟨hu.1, trivial⟩)
   exact (e.seq ((hash_ct v hL ha₁ ha₂).seq (r.seq q))).mono (fun _ _ h => h) fun _ _ _ => trivial
 
 theorem lay_eq {s t : State} (hp : vLocal.pub s t) : lay s = lay t := by
@@ -149,12 +149,12 @@ theorem lay_eq {s t : State} (hp : vLocal.pub s t) : lay s = lay t := by
   simp only [lay, VG.Proof.Ed25519.AArch64.Whole.base, sp, h0, h1, h2, h3, h4, h5, h6]
 
 /-- The frame and its body, for a context shorter than 256 bytes. -/
-theorem wrap_ct (v : Proof.Sha3.AArch64.Permutation) (hR : Proof.Ed448.RecoverOk) (hE : Proof.Ed448.VerifyEqOk) :
+theorem wrap_ct (v : Proof.Sha3.AArch64.Permutation) (hQ : Proof.Ed448.AArch64.EqOk) :
     ConstantTime isa (fun s => vLocal.pre s ∧ (s.gpr .x2).toNat < 256) vLocal.pub
       (Impl.Ed25519.AArch64.Whole.wrap (body v.callee)) := by
   refine VG.Proof.Ed25519.AArch64.Whole.wrap_ct (fun _ _ hp => hp.1) ?_ ?_
   · intro s hs p hp
-    exact WP.mono (body_ok v hR hE (lay_ok hs.1 hs.2) (entry_ctx hs.1 hp) (entry_args hp) (entry_x6 hp))
+    exact WP.mono (body_ok v hQ (lay_ok hs.1 hs.2) (entry_ctx hs.1 hp) (entry_args hp) (entry_x6 hp))
       fun _ _ => trivial
   · intro s t hs ht hp
     rintro a b ta tb a' b' ⟨p, q, hpa, hqb, rfl, rfl⟩ ea eb
@@ -164,10 +164,10 @@ theorem wrap_ct (v : Proof.Sha3.AArch64.Permutation) (hR : Proof.Ed448.RecoverOk
     have hqa : Args (lay s) q.mem := he ▸ entry_args hqb
     have hq6 : (q.withRegions (VG.Proof.Ed25519.AArch64.Whole.bodyRd t)
         (VG.Proof.Ed25519.AArch64.Whole.bodyWr t)).gpr .x6 = (lay s).scr := he ▸ entry_x6 hqb
-    exact ⟨(body_ct v hR hE (lay_ok hs.1 hs.2) (entry_args hpa) hqa _ _ _ _ _ _
+    exact ⟨(body_ct v hQ (lay_ok hs.1 hs.2) (entry_args hpa) hqa _ _ _ _ _ _
       ⟨⟨entry_ctx hs.1 hpa, entry_x6 hpa⟩, ⟨hq, hq6⟩⟩ ea eb).1, trivial⟩
 
-theorem verify_ct (v : Proof.Sha3.AArch64.Permutation) (hR : Proof.Ed448.RecoverOk) (hE : Proof.Ed448.VerifyEqOk) :
+theorem verify_ct (v : Proof.Sha3.AArch64.Permutation) (hQ : Proof.Ed448.AArch64.EqOk) :
     ConstantTime isa vLocal.pre vLocal.pub (verifyWith v.callee) := by
   apply RelCT.constantTime (Q := fun _ _ => True)
   have hl := (RelCT.taint (A := taint) (P := fun s₁ s₂ => vLocal.pre s₁ ∧ vLocal.pre s₂ ∧ vLocal.pub s₁ s₂)
@@ -186,7 +186,7 @@ theorem verify_ct (v : Proof.Sha3.AArch64.Permutation) (hR : Proof.Ed448.Recover
       simpa [eval, State.read] using hc
     have hc₂ : isa.eval (.zero .x .x9) b = some true := by
       rw [← hc]; simp only [eval, State.read, h₁.1, h₂.1, hp.2.2.2.1]
-    exact ⟨wrap_ct v hR hE _ _ _ _ _ _ ⟨lsr_pre p₁ h₁, hz h₁ hc⟩ ⟨lsr_pre p₂ h₂, hz h₂ hc₂⟩
+    exact ⟨wrap_ct v hQ _ _ _ _ _ _ ⟨lsr_pre p₁ h₁, hz h₁ hc⟩ ⟨lsr_pre p₂ h₂, hz h₂ hc₂⟩
       (lsr_pub hp h₁ h₂) ea eb, trivial⟩
   · exact VG.Proof.Ed25519.AArch64.Whole.block_rel
       (fun _ _ ⟨⟨_, _, _, ⟨_, _, hp⟩, h₁, h₂⟩, _⟩ => h₁.2.2.2.2.2.1.trans (hp.1.trans h₂.2.2.2.2.2.1.symm))
@@ -221,11 +221,10 @@ theorem verify_implies : vLocal.Implies (Spec.Ed448.verifyContract AArch64.abi 3
       Spec.Ed448.scratchWords, vLocal, below, AArch64.abi, AArch64.argRegs]
       [satState] using satState
 
-theorem verify_verified (v : Proof.Sha3.AArch64.Permutation) (hR : Proof.Ed448.RecoverOk)
-    (hE : Proof.Ed448.VerifyEqOk) :
+theorem verify_verified (v : Proof.Sha3.AArch64.Permutation) (hQ : Proof.Ed448.AArch64.EqOk) :
     Verified AArch64.target (verifyWith v.callee) (Spec.Ed448.verifyContract AArch64.abi 352) :=
   Verified.of_implies
-    (Verified.of_correct (fun _ h => verify_ok v hR hE h) (verify_ct v hR hE) (.refl verify_implies.sat_left))
+    (Verified.of_correct (fun _ h => verify_ok v hQ h) (verify_ct v hQ) (.refl verify_implies.sat_left))
     verify_implies
 
 end VG.Proof.Ed448.AArch64.Verify

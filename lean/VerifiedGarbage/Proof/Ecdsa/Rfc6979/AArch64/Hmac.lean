@@ -19,11 +19,11 @@ open VG.Proof.Pbkdf2.Md.AArch64.Calls (After)
 
 /-- Where the data may be: in the frame below its pointers, or in `scratch`
 above HMAC's working space. -/
-def DataOk {dn : Nat} (L : Lay dn) (da : Addr) (len : Nat) : Prop :=
+def DataOk {dn : Nat} {E : Impl.Ecdsa.AArch64.Cfg} (L : Lay dn E) (da : Addr) (len : Nat) : Prop :=
   (∃ o, da = L.B + BitVec.ofNat 64 o ∧ 16 ≤ o ∧ o + len ≤ 184) ∨
     (∃ o, da = L.scr + BitVec.ofNat 64 o ∧ 2256 ≤ o ∧ o + len ≤ 8192)
 
-variable {P : RfcHash} {dn : Nat} {L : Lay dn} {g : Reg → BitVec 64} {m₀ : Mem}
+variable {P : RfcHash} {dn : Nat} {E : Impl.Ecdsa.AArch64.Cfg} {L : Lay dn E} {g : Reg → BitVec 64} {m₀ : Mem}
 
 namespace DataOk
 
@@ -84,11 +84,11 @@ theorem Ctx.after (hL : L.Ok) {u u' : State} (hc : Ctx L g m₀ u) {ws : List Re
       exact .inr (.inr (Region.sub_prefix (by omega)))
 
 /-- The key `K`: the first `D` bytes of the frame. -/
-abbrev keyOf (P : RfcHash) {dn : Nat} (L : Lay dn) (m : Mem) : List Byte :=
+abbrev keyOf (P : RfcHash) {dn : Nat} {E : Impl.Ecdsa.AArch64.Cfg} (L : Lay dn E) (m : Mem) : List Byte :=
   Spec.Sha256.bytesAt m (L.B + BitVec.ofNat 64 16) P.H.D
 
 /-- After HMAC's `init`: HMAC's states for the key `K` in the frame on entry `t`. -/
-structure Inited (P : RfcHash) {dn : Nat} (L : Lay dn) (g : Reg → BitVec 64) (m₀ : Mem) (t u : State) : Prop where
+structure Inited (P : RfcHash) {dn : Nat} {E : Impl.Ecdsa.AArch64.Cfg} (L : Lay dn E) (g : Reg → BitVec 64) (m₀ : Mem) (t u : State) : Prop where
   ctx : Ctx L g m₀ u
   frame : Frame [⟨L.scr, 2256⟩, ⟨L.B, 16⟩] t.mem u.mem
   inner : P.ok.SH.Repr u.mem (L.scr + BitVec.ofNat 64 0)
@@ -183,7 +183,7 @@ theorem updArgs_ok (hL : L.Ok) {u : State} (hc : Ctx L g m₀ u) {dataA : List I
   · rw [h₅.keep _ (by decide), h₄.val]
 
 /-- After the streaming `update`: the inner state holds the data too. -/
-structure Updated (P : RfcHash) {dn : Nat} (L : Lay dn) (g : Reg → BitVec 64) (m₀ : Mem) (t : State) (da : Addr)
+structure Updated (P : RfcHash) {dn : Nat} {E : Impl.Ecdsa.AArch64.Cfg} (L : Lay dn E) (g : Reg → BitVec 64) (m₀ : Mem) (t : State) (da : Addr)
     (len : Nat) (u : State) : Prop where
   ctx : Ctx L g m₀ u
   frame : Frame [⟨L.scr, 2256⟩, ⟨L.B, 16⟩] t.mem u.mem
@@ -270,7 +270,7 @@ theorem finArgs_ok (hL : L.Ok) {u : State} (hc : Ctx L g m₀ u) {B len dst : Na
   · rw [h₅.keep _ (by decide), h₄.val]
 
 /-- After HMAC's `finalize`: the MAC in the frame at `dst`. -/
-structure Done (P : RfcHash) {dn : Nat} (L : Lay dn) (g : Reg → BitVec 64) (m₀ : Mem) (t : State) (da : Addr)
+structure Done (P : RfcHash) {dn : Nat} {E : Impl.Ecdsa.AArch64.Cfg} (L : Lay dn E) (g : Reg → BitVec 64) (m₀ : Mem) (t : State) (da : Addr)
     (len dst : Nat) (u : State) : Prop where
   ctx : Ctx L g m₀ u
   frame : Frame [⟨L.scr, 2256⟩, ⟨L.B, 16⟩, ⟨L.B + BitVec.ofNat 64 (16 + dst), P.H.D⟩] t.mem u.mem

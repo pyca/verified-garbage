@@ -139,6 +139,7 @@ structure PowLay (P : PowCfg) (size : Nat) : Prop where
   nbits : 1 ≤ P.nbits ∧ P.nbits < 2 ^ 16
   acc_tmp : P.acc + 8 * P.M.n ≤ P.tmp ∨ P.tmp + 8 * P.M.n ≤ P.acc
   acc_mtmp : P.acc + 8 * P.M.n ≤ P.M.tmp ∨ P.M.tmp + 8 * P.M.n ≤ P.acc
+  tmp_mtmp : P.tmp + 8 * P.M.n ≤ P.M.tmp ∨ P.M.tmp + 8 * P.M.n ≤ P.tmp
   acc_one : P.acc + 8 * P.M.n ≤ P.one ∨ P.one + 8 * P.M.n ≤ P.acc
   base_w : ∀ w ∈ powW P, P.base + 8 * P.M.n ≤ w.1 ∨ w.1 + w.2 ≤ P.base
   bits_w : ∀ w ∈ powW P, P.bits + P.nbits ≤ w.1 ∨ w.1 + w.2 ≤ P.bits

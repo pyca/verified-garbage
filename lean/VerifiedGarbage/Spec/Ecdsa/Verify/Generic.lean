@@ -10,8 +10,7 @@ of a hash verifies with a public key (`Ecdsa.verify`), with the validation of
 the public key.
 
 `verify` takes the public key as `2 len + 1` octets (`04 ‖ x ‖ y`), the hash
-as `len` octets as `sign` does (its leftmost `len` octets, or padded on the
-left with zeros), and the signature as `2 len` octets (`r` then `s`, as
+as `len` octets as `sign` does (`Ecdsa.Instance.digestDoc`), and the signature as `2 len` octets (`r` then `s`, as
 `sign` writes it). The signature determines memory validity, separation and
 that the pointers are public, through `Sig.contract`. Every input is
 public: the contents of the three buffers may affect timing (`leak`), so an
@@ -62,8 +61,7 @@ def verifyApi : Api where
   contracts := some fun A stack => I.verifyContract A stack
   summary := s!"ECDSA signature verification over {I.title} (FIPS 186-5 §6.4.2): whether \
     the signature at `sig` (`r` then `s`, {I.curve.len} bytes each, most significant first) \
-    of the hash at `digest` (its leftmost {I.curve.len} bytes, or, for a shorter hash, the \
-    hash padded on the left with zeros to {I.curve.len} bytes) verifies with the public key \
+    of the hash at `digest` ({I.digestDoc}) verifies with the public key \
     at `public`, which must be a valid public key in the uncompressed form of SEC 1 \
     §2.3.3 (`04`, then `x` and `y` in {I.curve.len} bytes each, most significant first, \
     both below `p`, on the curve; SP 800-56A §5.6.2.3.3). Returns 1 if it does, and 0 if \

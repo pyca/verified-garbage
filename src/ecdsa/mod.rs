@@ -1,10 +1,10 @@
 //! ECDSA (FIPS 186-5 §6.4) with deterministic signatures (RFC 6979 §3.2).
 //!
 //! A [`SigningKey<C>`] holds a private key on the curve `C` (so far
-//! [`P256`] and, on x86-64, `P384`), and signs with a hash function `H`
-//! that the curve has signatures with ([`SignatureHash<C>`]: for P-256,
-//! SHA-256 and SHA-384; for P-384, SHA-384),
-//! as in `key.sign::<Sha256>(message)`. Each signature is one call of
+//! [`P256`] and [`P384`]), and signs with a hash
+//! function `H` that the curve has signatures with ([`SignatureHash<C>`]: for
+//! P-256, SHA-256 and SHA-384; for P-384, SHA-384), as in
+//! `key.sign::<Sha256>(message)`. Each signature is one call of
 //! verified code, for the curve and the hash function
 //! (`vg_ecdsa_<curve>_<hash>_sign`, contract
 //! `VG.Spec.Ecdsa.Rfc6979.Instance.signContract`). That code
@@ -41,9 +41,7 @@
 mod p256;
 mod p384;
 
-#[cfg(target_arch = "x86_64")]
-pub use crate::ec::P384;
-pub use crate::ec::{Curve, P256};
+pub use crate::ec::{Curve, P256, P384};
 
 use crate::zeroize::zeroize;
 

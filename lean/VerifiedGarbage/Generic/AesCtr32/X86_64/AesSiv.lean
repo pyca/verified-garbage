@@ -10,12 +10,12 @@ it, and directly for CTR), are emitted once for each implementation
 (`Variants/AesCtr32/X86_64/`), named with its suffix (e.g.
 `vg_aes_siv_encrypt_aesni`), and need its CPU features.
 
-The stack is 16 bytes for each: the return addresses of the call of a CMAC
-function (or of `vg_aes_ctr32`) and of its call of `vg_aes_ctr32`; `encrypt`
-and `decrypt` also read their seventh argument, the working space's address,
-from the stack above their return address. `init` keeps its working space
-in a frame of its own (`Proof/AesSiv/X86_64/Frame.lean`), below which its
-calls use those 16 bytes.
+Each function keeps its working space in a frame of its own
+(`Proof/AesSiv/X86_64/Frame.lean`), below which its calls use 16 bytes: the
+return addresses of the call of a CMAC function (or of `vg_aes_ctr32`) and of
+its call of `vg_aes_ctr32`. `init`'s frame is 2568 bytes (2584 bytes of stack
+in all); `encrypt`'s and `decrypt`'s, which also hold a copy of `siv`, their
+seventh argument, passed on the stack, 2600 (2616 in all).
 -/
 
 namespace VG.Generic.AesCtr32.X86_64.AesSiv
@@ -45,22 +45,22 @@ def artifacts (v : Proof.Aes.X86_64.Ctr32Impl) : List Artifact := [
     name := Spec.Siv.encryptApi.name ++ v.suffix
     target := X86_64.target
     doc := Spec.Siv.encryptApi.doc (notes := [cryptNote v])
-    code := Impl.AesSiv.X86_64.encrypt v.callee v.suffix
-    contract := Spec.Siv.encryptContract X86_64.abi 16
-    stack := 16
-    verified := encrypt_verified v
-    spSafe := encrypt_spSafe v
+    code := Impl.StackScratch.X86_64.withStackArgScratch 2600 1 (Impl.AesSiv.X86_64.encrypt v.callee v.suffix)
+    contract := Spec.Siv.encryptContract X86_64.abi 2616
+    stack := 2616
+    verified := encrypt_framed v
+    spSafe := X86_64.withStackArgScratch_spSafe (encrypt_spSafe v)
     features := v.features },
   { Spec.Siv.decryptApi with
     name := Spec.Siv.decryptApi.name ++ v.suffix
     target := X86_64.target
     doc := Spec.Siv.decryptApi.doc (notes := [cryptNote v,
       "It compares the IVs and overwrites the data with zeros without a branch on the result."])
-    code := Impl.AesSiv.X86_64.decrypt v.callee v.suffix
-    contract := Spec.Siv.decryptContract X86_64.abi 16
-    stack := 16
-    verified := decrypt_verified v
-    spSafe := decrypt_spSafe v
+    code := Impl.StackScratch.X86_64.withStackArgScratch 2600 1 (Impl.AesSiv.X86_64.decrypt v.callee v.suffix)
+    contract := Spec.Siv.decryptContract X86_64.abi 2616
+    stack := 2616
+    verified := decrypt_framed v
+    spSafe := X86_64.withStackArgScratch_spSafe (decrypt_spSafe v)
     features := v.features }]
 
 end VG.Generic.AesCtr32.X86_64.AesSiv

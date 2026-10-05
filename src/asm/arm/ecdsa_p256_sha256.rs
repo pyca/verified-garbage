@@ -6,7 +6,7 @@
 ///
 /// Contract: `VG.Spec.Ecdsa.Rfc6979.Instance.signContract`. Constant time but for the number of candidates for `k` tried (almost always 1): timing may depend on the pointers and that number, not otherwise on the key or the hash.
 ///
-/// Computes `h = bits2octets(digest)` by a conditional subtraction of `n` from the digest's leftmost 32 bytes, and each HMAC with `vg_hmac_sha256_init_scratch`, `vg_sha256_update_scratch` and `vg_hmac_sha256_finalize_scratch`, using the start of `scratch` for HMAC's states and working space and the message. Each candidate `k`, the leftmost 32 bytes of `V`, is tried with `vg_ecdsa_p256_sign`, which uses all of `scratch`; whether to try another is computed without branches from its result and the count of candidates left, so the code branches only on that. `K`, `V`, `h` and our caller's registers are kept in a 200-byte frame, whose secrets are cleared before it is freed; the calls use the 24 bytes below it.
+/// Computes `h = bits2octets(digest)` by a conditional subtraction of `n` from the digest's leftmost 32 bytes, and each HMAC with `vg_hmac_sha256_init_scratch`, `vg_sha256_update_scratch` and `vg_hmac_sha256_finalize_scratch`, using the start of `scratch` for HMAC's states and working space and the message. Each candidate `k`, the leftmost 32 bytes of `V`, is tried with `vg_ecdsa_p256_sign`, which uses all of `scratch`; whether to try another is computed without branches from its result and the count of candidates left, so the code branches only on that. `K`, `V`, `h` and our caller's registers are kept in a 216-byte frame, whose secrets are cleared before it is freed; the calls use the 24 bytes below it.
 ///
 /// # Safety
 ///
@@ -16,21 +16,21 @@
 /// * `scratch` must be valid for reads and writes of 8192 bytes.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `out` and `scratch` must not overlap each other, `d` or `digest` (distinct Rust objects never do).
-/// * None of `out`, `d`, `digest` and `scratch` may overlap the 224 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `out`, `d`, `digest` and `scratch` may overlap the 240 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_ecdsa_p256_sha256_sign(out: *mut [u8; 64], d: *const [u8; 32], digest: *const [u8; 32], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
-        "sub sp, sp, #200",
+        "sub sp, sp, #216",
         "add r12, sp, #0",
-        "str r4, [r12, #164]",
-        "str r5, [r12, #168]",
-        "str r6, [r12, #172]",
-        "str r7, [r12, #176]",
-        "str r9, [r12, #180]",
-        "str r10, [r12, #184]",
-        "str r11, [r12, #188]",
-        "str lr, [r12, #192]",
-        "str r8, [r12, #196]",
+        "str r4, [r12, #180]",
+        "str r5, [r12, #184]",
+        "str r6, [r12, #188]",
+        "str r7, [r12, #192]",
+        "str r9, [r12, #196]",
+        "str r10, [r12, #200]",
+        "str r11, [r12, #204]",
+        "str lr, [r12, #208]",
+        "str r8, [r12, #212]",
         "mov r4, r0",
         "mov r5, r1",
         "mov r6, r2",
@@ -726,16 +726,20 @@ pub(crate) unsafe extern "C" fn vg_ecdsa_p256_sha256_sign(out: *mut [u8; 64], d:
         "str r1, [r12, #148]",
         "str r1, [r12, #152]",
         "str r1, [r12, #156]",
-        "ldr r4, [r12, #164]",
-        "ldr r5, [r12, #168]",
-        "ldr r6, [r12, #172]",
-        "ldr r7, [r12, #176]",
-        "ldr r9, [r12, #180]",
-        "ldr r10, [r12, #184]",
-        "ldr r11, [r12, #188]",
-        "ldr lr, [r12, #192]",
-        "ldr r8, [r12, #196]",
-        "add sp, sp, #200",
+        "str r1, [r12, #160]",
+        "str r1, [r12, #164]",
+        "str r1, [r12, #168]",
+        "str r1, [r12, #172]",
+        "ldr r4, [r12, #180]",
+        "ldr r5, [r12, #184]",
+        "ldr r6, [r12, #188]",
+        "ldr r7, [r12, #192]",
+        "ldr r9, [r12, #196]",
+        "ldr r10, [r12, #200]",
+        "ldr r11, [r12, #204]",
+        "ldr lr, [r12, #208]",
+        "ldr r8, [r12, #212]",
+        "add sp, sp, #216",
         "bx lr",
         vg_hmac_sha256_init_scratch = sym super::hmac_sha256::vg_hmac_sha256_init_scratch,
         vg_sha256_update_scratch = sym super::sha256::vg_sha256_update_scratch,

@@ -11,7 +11,7 @@ import VerifiedGarbage.Proof.Gcm.Stream
 # AES-GCM on AArch64: the functions called
 
 Untrusted: everything here is checked by Lean. What the AES-GCM functions
-need of the implementations of `vg_ghash`, `vg_aes_expand_key` and
+need of the implementations of `vg_ghash`, `vg_aes_expand_key_scratch` and
 `vg_aes_ctr32` they call (`GhashImpl`, `KeyImpl`, and the existing
 `Ctr32Impl`), and each call from its callee's contract (with `WP.call`), with
 the regions it is given: what it needs (`GhCall`, `CtrCall`, `KeyCall`) and
@@ -37,7 +37,7 @@ structure GhashImpl where
   suffix : String
   features : List String
 
-/-- An implementation of `vg_aes_expand_key` on AArch64. -/
+/-- An implementation of `vg_aes_expand_key_scratch` on AArch64. -/
 structure KeyImpl where
   fn : Fn
   noFrames : fn.code.noFrames = true
@@ -62,17 +62,17 @@ end GhashImpl
 
 namespace KeyImpl
 
-/-- `vg_aes_expand_key`, in the baseline ISA. -/
+/-- `vg_aes_expand_key_scratch`, in the baseline ISA. -/
 def scalar : KeyImpl where
-  fn := ⟨"vg_aes_expand_key", Impl.Aes.AArch64.expandKey⟩
+  fn := ⟨"vg_aes_expand_key_scratch", Impl.Aes.AArch64.expandKey⟩
   noFrames := by decide +kernel
   ok := Proof.Aes.AArch64.expandKey_correct
   ct := Proof.Aes.AArch64.expandKey_ct
   keepsV := by decide +kernel
 
-/-- `vg_aes_expand_key_aes`. -/
+/-- `vg_aes_expand_key_scratch_aes`. -/
 def aese : KeyImpl where
-  fn := ⟨"vg_aes_expand_key_aes", Impl.Aes.AArch64.Aese.expandKey⟩
+  fn := ⟨"vg_aes_expand_key_scratch_aes", Impl.Aes.AArch64.Aese.expandKey⟩
   noFrames := by decide +kernel
   ok := Proof.Aes.AArch64.Aese.Key.expandKey_correct
   ct := Proof.Aes.AArch64.Aese.Key.expandKey_ct
@@ -241,9 +241,9 @@ theorem ctr_rel (v : Ctr32Impl) {P : State → State → Prop}
     h₁.x0, h₁.x1, h₁.x2, h₁.x3, h₁.x4, h₁.x5, h₂.x0, h₂.x1, h₂.x2, h₂.x3, h₂.x4, h₂.x5, hsp]
   exact ⟨trivial, trivial, trivial, trivial, trivial, trivial, trivial⟩
 
-/-! ## `vg_aes_expand_key` -/
+/-! ## `vg_aes_expand_key_scratch` -/
 
-/-- What a call of `vg_aes_expand_key` needs: the `L`-byte key at `K`, the key
+/-- What a call of `vg_aes_expand_key_scratch` needs: the `L`-byte key at `K`, the key
 schedule at `C` and working space at `S`. -/
 structure KeyCall (s : State) (K C S : Addr) (L : Nat) : Prop where
   x0 : s.gpr .x0 = K
@@ -257,7 +257,7 @@ structure KeyCall (s : State) (K C S : Addr) (L : Nat) : Prop where
   reads : Covers ([⟨K, L⟩] ++ [⟨C, 240⟩, ⟨S, 512⟩]) (s.rd ++ s.wr)
   writes : Covers [⟨C, 240⟩, ⟨S, 512⟩] s.wr
 
-/-- What a call of `vg_aes_expand_key` leaves. -/
+/-- What a call of `vg_aes_expand_key_scratch` leaves. -/
 structure KeyPost (s : State) (K C S : Addr) (L : Nat) (s' : State) : Prop where
   rd : s'.rd = s.rd
   wr : s'.wr = s.wr
@@ -302,7 +302,7 @@ theorem key_rel (k : KeyImpl) {P : State → State → Prop}
 /-! ## The implementations, together -/
 
 /-- What an AES-GCM function calls: an implementation of `vg_aes_ctr32`, the
-`vg_aes_expand_key` for the same CPUs, and one of `vg_ghash`. -/
+`vg_aes_expand_key_scratch` for the same CPUs, and one of `vg_ghash`. -/
 structure GcmImpl where
   ctr : Ctr32Impl
   key : KeyImpl

@@ -245,7 +245,7 @@ pub(crate) const VG_CMAC_AES_INIT_AESNI_FEATURES: crate::cpu::Features = crate::
 ///
 /// This implementation calls the CMAC functions made with `vg_aes_ctr32_aesni` (e.g. `vg_cmac_aes_update_aesni`).
 ///
-/// It expands the key with `vg_aes_expand_key_aesni`.
+/// It expands the key with `vg_aes_expand_key_scratch_aesni`.
 ///
 /// # Safety
 ///
@@ -272,7 +272,7 @@ pub(crate) unsafe extern "sysv64" fn vg_cmac_aes_init_aesni(state: *mut [u64; 38
         "mov rdi, rsi",
         "mov rsi, rdx",
         "mov rdx, rbx",
-        "call {vg_aes_expand_key_aesni}",
+        "call {vg_aes_expand_key_scratch_aesni}",
         "mov rdi, rbx",
         "mov rsi, r12",
         "mov rdx, rbx",
@@ -288,7 +288,7 @@ pub(crate) unsafe extern "sysv64" fn vg_cmac_aes_init_aesni(state: *mut [u64; 38
         "lea rsp, [rsp+2312]",
         "ret",
         ".p2align 6",
-        vg_aes_expand_key_aesni = sym super::aes::vg_aes_expand_key_aesni,
+        vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni,
         vg_cmac_aes_subkeys_aesni = sym super::cmac_aes::vg_cmac_aes_subkeys_aesni,
     )
 }
@@ -703,7 +703,7 @@ pub(crate) unsafe extern "sysv64" fn vg_cmac_aes_finalize(key: *const [u8; 272],
 ///
 /// This implementation calls the CMAC functions made with `vg_aes_ctr32` (e.g. `vg_cmac_aes_update`).
 ///
-/// It expands the key with `vg_aes_expand_key`.
+/// It expands the key with `vg_aes_expand_key_scratch`.
 ///
 /// # Safety
 ///
@@ -729,7 +729,7 @@ pub(crate) unsafe extern "sysv64" fn vg_cmac_aes_init(state: *mut [u64; 38], key
         "mov rdi, rsi",
         "mov rsi, rdx",
         "mov rdx, rbx",
-        "call {vg_aes_expand_key}",
+        "call {vg_aes_expand_key_scratch}",
         "mov rdi, rbx",
         "mov rsi, r12",
         "mov rdx, rbx",
@@ -745,7 +745,7 @@ pub(crate) unsafe extern "sysv64" fn vg_cmac_aes_init(state: *mut [u64; 38], key
         "lea rsp, [rsp+2312]",
         "ret",
         ".p2align 6",
-        vg_aes_expand_key = sym super::aes::vg_aes_expand_key,
+        vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch,
         vg_cmac_aes_subkeys = sym super::cmac_aes::vg_cmac_aes_subkeys,
     )
 }
@@ -1167,7 +1167,7 @@ pub(crate) const VG_CMAC_AES_INIT_VAES_FEATURES: crate::cpu::Features = crate::c
 ///
 /// This implementation calls the CMAC functions made with `vg_aes_ctr32_vaes` (e.g. `vg_cmac_aes_update_vaes`).
 ///
-/// It expands the key with `vg_aes_expand_key_aesni`.
+/// It expands the key with `vg_aes_expand_key_scratch_aesni`.
 ///
 /// # Safety
 ///
@@ -1194,7 +1194,7 @@ pub(crate) unsafe extern "sysv64" fn vg_cmac_aes_init_vaes(state: *mut [u64; 38]
         "mov rdi, rsi",
         "mov rsi, rdx",
         "mov rdx, rbx",
-        "call {vg_aes_expand_key_aesni}",
+        "call {vg_aes_expand_key_scratch_aesni}",
         "mov rdi, rbx",
         "mov rsi, r12",
         "mov rdx, rbx",
@@ -1210,7 +1210,7 @@ pub(crate) unsafe extern "sysv64" fn vg_cmac_aes_init_vaes(state: *mut [u64; 38]
         "lea rsp, [rsp+2312]",
         "ret",
         ".p2align 6",
-        vg_aes_expand_key_aesni = sym super::aes::vg_aes_expand_key_aesni,
+        vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni,
         vg_cmac_aes_subkeys_vaes = sym super::cmac_aes::vg_cmac_aes_subkeys_vaes,
     )
 }

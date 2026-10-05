@@ -200,9 +200,8 @@ theorem accFrom_step (m : Mem) (B : Addr) {j : Nat} (hj : j < 56) :
   unfold accFrom
   rw [show 56 - j = 1 + (56 - (j + 1)) by omega, val16_append]
   simp only [val16, Nat.mul_zero, Nat.pow_zero, Nat.one_mul, Nat.zero_add, Nat.add_zero]
-  congr 1
-  refine congrArg (65536 * ·) (val16_congr fun i _ => ?_)
-  rw [show j + (1 + i) = j + 1 + i by omega]
+  refine congrArg (_ + ·) (congrArg (65536 * ·) (val16_congr fun i _ => ?_))
+  rw [Nat.add_assoc]
 
 /-- After the steps from the top limb down to limb `j`. -/
 structure LimbInv (b : BitVec 32) (s0 : State) (j : Nat) (s : State) : Prop where

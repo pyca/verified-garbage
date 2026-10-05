@@ -12,10 +12,12 @@ their documentation. Each curve is an `Instance` in a file of its own
 
 `sign` takes the private key `d`, the hash and the per-message secret
 number `k`, each as `len` octets, most significant first. The hash is
-`len` octets too: its leftmost `len` octets if it is longer, and padded on
-the left with zeros if it is shorter, which leaves its integer value
-unchanged. For a curve whose `n` has `8 len` bits (as for every curve with
-an `Instance` so far), `hashToInt` of those octets is then FIPS 186-5's `e`.
+`len` octets whose leftmost `N` bits (`N` the bit length of `n`, `nBits`)
+are FIPS 186-5's `e`, as `hashToInt` reads them: its leftmost `len` octets
+if it is longer. A shorter hash is padded on the left with zeros, which
+leaves its integer value unchanged, when `n` has `8 len` bits (P-256,
+P-384); otherwise its integer is shifted left by the `8 len - N` bits that
+`hashToInt` drops (P-521: 7). `digestDoc` says which.
 
 The signature determines memory validity, separation and that the pointers
 are public, through `Sig.contract`; the contents of every buffer are secret.
@@ -51,6 +53,18 @@ namespace Instance
 
 variable (I : Instance)
 
+/-- How the documentation describes the hash argument: the hash's leftmost
+`len` octets or, for a shorter hash, its integer in `len` octets, shifted
+left by the bits `hashToInt` drops if `n` has fewer than `8 len` bits. -/
+def digestDoc : String :=
+  if 8 * I.curve.len = nBits I.curve then
+    s!"its leftmost {I.curve.len} bytes, or, for a shorter hash, the hash padded on the left \
+      with zeros to {I.curve.len} bytes"
+  else
+    s!"its leftmost {I.curve.len} bytes, or, for a shorter hash, the hash's integer shifted \
+      left by {8 * I.curve.len - nBits I.curve} bits, in {I.curve.len} bytes, most significant \
+      first; `e` (FIPS 186-5 §6.4.1) is the leftmost {nBits I.curve} bits of those bytes"
+
 /-- `(out: *mut [u8; 2 len], d: *const [u8; len], digest: *const [u8; len],
 k: *const [u8; len], scratch: *mut [u64; 1024]) -> u32`. -/
 def signSig : Sig where
@@ -82,8 +96,7 @@ def signApi : Api where
   contracts := some fun A stack => I.signContract A stack
   summary := s!"ECDSA signature generation over {I.title} (FIPS 186-5 §6.4.1): with the \
     private key `d` and the per-message secret number `k` (each {I.curve.len} bytes, most \
-    significant first), signs the hash at `digest`: its leftmost {I.curve.len} bytes, or, \
-    for a shorter hash, the hash padded on the left with zeros to {I.curve.len} bytes. \
+    significant first), signs the hash at `digest`: {I.digestDoc}. \
     Returns 1 and writes `r` then `s` ({I.curve.len} bytes each, most significant first) \
     to `*out`; or returns 0 and writes zeros to `*out` if `d` or `k` is not in `[1, n-1]`, \
     or if `r` or `s` is 0, in which case the caller signs again with another `k`.\n\n\
