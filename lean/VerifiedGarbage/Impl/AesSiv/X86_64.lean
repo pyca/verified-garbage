@@ -13,7 +13,8 @@ composed of calls of the verified `vg_aes_expand_key_scratch`,
 `vg_cmac_aes_subkeys`, `vg_cmac_aes_update`, `vg_cmac_aes_finalize` and
 `vg_aes_ctr32`. Like those, they are generic over the implementation of AES
 they call (`Ctr32`, the `ExpandKey` that goes with it, and `sfx`, the suffix
-of the names of the CMAC functions made with it).
+of the names of the CMAC functions made with it); `encrypt` and `decrypt`
+also over the implementation of `vg_cmac_aes_update` they call (`Update`).
 
 The key context (`VG.Spec.Siv.KeyRepr`) is `K1`'s schedule (bytes 0–239), its
 CMAC subkeys (240–271) and `K2`'s schedule (272–511), so bytes 0–271 are
@@ -96,9 +97,8 @@ def ctxOff : Nat := 224
 
 def imm (n : Nat) : Src := .imm (BitVec.ofNat 32 n)
 
-/-- The calls of the CMAC functions made with `c`. -/
-def callUpdate (c : Ctr32) (sfx : String) : Prog isa :=
-  .call ("vg_cmac_aes_update" ++ sfx) (Impl.CmacAes.X86_64.update c)
+/-- The calls of `vg_cmac_aes_update`, and of the CMAC functions made with `c`. -/
+def callUpdate (u : Impl.CmacAes.X86_64.Update) : Prog isa := .call u.name u.code
 
 def callFinalize (c : Ctr32) (sfx : String) : Prog isa :=
   .call ("vg_cmac_aes_finalize" ++ sfx) (Impl.CmacAes.X86_64.finalize c)
@@ -200,8 +200,8 @@ def cmacMid (st : Nat) : List Instr :=
    .mov .rdx (.reg .r15), .alu .add .rdx (imm st), .mov .r9 (.reg .r15), .alu .add .r9 (imm csOff)]
 
 /-- `AES-CMAC(K1, S)` into the 16 bytes at `r15 + st`. -/
-def cmacOf (c : Ctr32) (sfx : String) (st : Nat) : Prog isa :=
-  .seq (cmacPre st) (.seq (callUpdate c sfx) (.seq (.block (cmacMid st)) (callFinalize c sfx)))
+def cmacOf (u : Impl.CmacAes.X86_64.Update) (c : Ctr32) (sfx : String) (st : Nat) : Prog isa :=
+  .seq (cmacPre st) (.seq (callUpdate u) (.seq (.block (cmacMid st)) (callFinalize c sfx)))
 
 /-! ## Finishing S2V -/
 
@@ -246,18 +246,18 @@ def longTail : Prog isa :=
 /-- The long case's calls: `vg_cmac_aes_update` over the `k` blocks of `P`,
 then over the first `j` blocks of the tail (`j` is 1 if `L > 16`, else 0),
 then `vg_cmac_aes_finalize` of the rest of the tail, into `r15 + out`. -/
-def longMac (c : Ctr32) (sfx : String) (out : Nat) : Prog isa :=
+def longMac (u : Impl.CmacAes.X86_64.Update) (c : Ctr32) (sfx : String) (out : Nat) : Prog isa :=
   .seq (.block (zero16 .r15 out ++
       [.mov .r8 (.mem (at_ .r15 dbOff)), .shift .shr .r8 4, .mov .rdi (.reg .rbx), .mov .rsi (.reg .rbp),
        .mov .rdx (.reg .r15), .alu .add .rdx (imm out), .mov .rcx (.reg .r13), .mov .r9 (.reg .r15),
        .alu .add .r9 (imm csOff)]))
-    (.seq (callUpdate c sfx)
+    (.seq (callUpdate u)
       (.seq (.block [.mov32 .r8 (.imm 0), .alu .cmp .r14 (imm 17)])
         (.seq (.ite .b (.block []) (.block [.mov32 .r8 (imm 1)]))
           (.seq (.block [.mov .rdi (.reg .rbx), .mov .rsi (.reg .rbp), .mov .rdx (.reg .r15),
               .alu .add .rdx (imm out), .mov .rcx (.reg .r15), .alu .add .rcx (imm tailOff),
               .mov .r9 (.reg .r15), .alu .add .r9 (imm csOff), .store (at_ .r15 (dbOff + 8)) .r8])
-            (.seq (callUpdate c sfx)
+            (.seq (callUpdate u)
               (.seq (.block [.mov .rax (.mem (at_ .r15 (dbOff + 8))), .alu .add .rax (.reg .rax),
                   .alu .add .rax (.reg .rax), .alu .add .rax (.reg .rax), .alu .add .rax (.reg .rax),
                   .mov .r8 (.reg .r14), .alu .sub .r8 (.mem (at_ .r15 dbOff)), .alu .sub .r8 (.reg .rax),
@@ -277,9 +277,9 @@ def shortMac (c : Ctr32) (sfx : String) (out : Nat) : Prog isa :=
 
 /-- S2V finished with the string at `r13` (`r14` bytes) from `D` at `r12`,
 into the 16 bytes at `r15 + out`. -/
-def finish (c : Ctr32) (sfx : String) (out : Nat) : Prog isa :=
+def finish (u : Impl.CmacAes.X86_64.Update) (c : Ctr32) (sfx : String) (out : Nat) : Prog isa :=
   .seq (.block [.alu .cmp .r14 (imm 16)])
-    (.ite .b (.seq shortTail (shortMac c sfx out)) (.seq longTail (longMac c sfx out)))
+    (.ite .b (.seq shortTail (shortMac c sfx out)) (.seq longTail (longMac u c sfx out)))
 
 /-! ## CTR -/
 
@@ -440,24 +440,24 @@ def adStep : List Instr :=
    .mov .rax (.mem (at_ .r15 leftOff)), .alu .sub .rax (imm 1), .store (at_ .r15 leftOff) .rax]
 
 /-- S2V of the components of associated data, from `D`'s first state. -/
-def s2vAds (c : Ctr32) (sfx : String) : Prog isa :=
+def s2vAds (u : Impl.CmacAes.X86_64.Update) (c : Ctr32) (sfx : String) : Prog isa :=
   .seq (.block [.mov .rax (.mem (at_ .r15 leftOff)), .alu .test .rax (.reg .rax)])
     (.ite .e (.block [])
-      (.loop (.seq (.block adNext) (.seq (cmacOf c sfx stOff) (.block adStep))) .ne))
+      (.loop (.seq (.block adNext) (.seq (cmacOf u c sfx stOff) (.block adStep))) .ne))
 
 /-- The registers' saving, S2V's first state (from the arguments `encPre`
 leaves) and S2V of the associated data,
 then the data and its length back in `r13` and `r14`. -/
-def encS2v (c : Ctr32) (sfx : String) : Prog isa :=
+def encS2v (u : Impl.CmacAes.X86_64.Update) (c : Ctr32) (sfx : String) : Prog isa :=
   .seq (.block (encPre ++ startPre))
     (.seq (callFinalize c sfx)
-      (.seq (s2vAds c sfx) (.block [.mov .r13 (.mem (at_ .r15 dataOff)), .mov .r14 (.mem (at_ .r15 lenOff))])))
+      (.seq (s2vAds u c sfx) (.block [.mov .r13 (.mem (at_ .r15 dataOff)), .mov .r14 (.mem (at_ .r15 lenOff))])))
 
 /-- `encrypt` up to the copy of the IV: S2V, CTR and the restore of the
 registers, with the IV in the first 16 bytes of the working space. -/
-def encryptCore (c : Ctr32) (sfx : String) : Prog isa :=
-  .seq (encS2v c sfx)
-    (.seq (finish c sfx 0) (.seq (.block (counter 0)) (.seq (ctr c) (.block restore))))
+def encryptCore (u : Impl.CmacAes.X86_64.Update) (c : Ctr32) (sfx : String) : Prog isa :=
+  .seq (encS2v u c sfx)
+    (.seq (finish u c sfx 0) (.seq (.block (counter 0)) (.seq (ctr c) (.block restore))))
 
 /-- The IV, the first 16 bytes of the working space (`[rsp + 16]`), copied to
 `siv` (`[rsp + 8]`), through `rax`, `r10` and `r11`. -/
@@ -465,7 +465,8 @@ def sivOut : List Instr :=
   [.mov .rax (.mem (at_ .rsp 8)), .mov .r10 (.mem (at_ .rsp 16)), .mov .r11 (.mem (at_ .r10 0)),
    .store (at_ .rax 0) .r11, .mov .r11 (.mem (at_ .r10 8)), .store (at_ .rax 8) .r11]
 
-def encrypt (c : Ctr32) (sfx : String) : Prog isa := .seq (encryptCore c sfx) (.block sivOut)
+def encrypt (u : Impl.CmacAes.X86_64.Update) (c : Ctr32) (sfx : String) : Prog isa :=
+  .seq (encryptCore u c sfx) (.block sivOut)
 
 /-- The received IV at `siv` (`[rsp + 8]`) copied to the first 16 bytes of the
 working space, through `rax` and `rcx`. -/
@@ -475,14 +476,14 @@ def sivIn : List Instr :=
 
 /-- `decrypt` from the received IV in the first 16 bytes of the working space
 on: CTR, S2V's end, the comparison, the mask and the restore. -/
-def openTail (c : Ctr32) (sfx : String) : Prog isa :=
+def openTail (u : Impl.CmacAes.X86_64.Update) (c : Ctr32) (sfx : String) : Prog isa :=
   .seq (.block (counter 0))
     (.seq (ctr c)
-      (.seq (finish c sfx tOff)
+      (.seq (finish u c sfx tOff)
         (.seq (.block compare)
           (.seq maskData (.block ([.mov .rax (.mem (at_ .r15 dbOff))] ++ restore))))))
 
-def decrypt (c : Ctr32) (sfx : String) : Prog isa :=
-  .seq (encS2v c sfx) (.seq (.block sivIn) (openTail c sfx))
+def decrypt (u : Impl.CmacAes.X86_64.Update) (c : Ctr32) (sfx : String) : Prog isa :=
+  .seq (encS2v u c sfx) (.seq (.block sivIn) (openTail u c sfx))
 
 end VG.Impl.AesSiv.X86_64

@@ -19,6 +19,7 @@ open VG.Impl.CmacAes.X86_64 (at_)
 open VG.Proof.CmacAes.X86_64 (offset_nat bytesAt_frame k0 zero2 zero2_bytes frame_store2 mn)
 open VG.Proof.CmacAes.Stream.X86_64 (UArgs UPost FArgs upd_call upd_rel fin_rel toNat_ofNat beq_zero_iff)
 open VG.Proof.Aes.X86_64 (Ctr32Impl)
+open VG.Proof.CmacAes.X86_64 (UpdateImpl)
 
 variable {s₀ : State} {C D P W : Addr} {R L : Nat}
 
@@ -186,13 +187,13 @@ structure CPost (s₀ : State) (C D P W : Addr) (R L : Nat) (s s' : State) : Pro
   out : Spec.Aes.bytesAt s'.mem (W + BitVec.ofNat 64 128) 16 =
     Spec.Siv.ctxMac s.mem C R (Spec.Aes.bytesAt s.mem P L)
 
-theorem cmacOf_wp (v : Ctr32Impl) (h : Env s₀ C D P W R L) {s : State} (hr : Regs s₀ C D P W R L s) :
-    WP isa (cmacOf v.callee v.suffix stOff) s (CPost s₀ C D P W R L s) := by
+theorem cmacOf_wp (v : UpdateImpl) (h : Env s₀ C D P W R L) {s : State} (hr : Regs s₀ C D P W R L s) :
+    WP isa (cmacOf v.callee v.ctr.callee v.ctr.suffix stOff) s (CPost s₀ C D P W R L s) := by
   have hcl := chainedLen_le L
   have hrest := chainedLen_rest L
   have hRb : 16 * (R + 1) ≤ 240 := by rcases h.rounds with h | h | h <;> omega
   refine WP.seq (WP.mono (cmacPre_wp h hr) fun s₁ ⟨hr₁, hu₁, m₁⟩ => ?_)
-  refine WP.seq (WP.mono (upd_call v _ hu₁) fun s₂ h₂ => ?_)
+  refine WP.seq (WP.mono (upd_call v hu₁) fun s₂ h₂ => ?_)
   have hr₂ := hr₁.keep h₂.saved h₂.rd h₂.wr
   have f₂ : Frame [⟨W + BitVec.ofNat 64 128, 16⟩, ⟨W + BitVec.ofNat 64 256, 2176⟩, below (s₀.gpr .rsp) 16]
       s₁.mem s₂.mem := by rw [← hr₁.rsp]; exact h₂.frame
@@ -206,7 +207,7 @@ theorem cmacOf_wp (v : Ctr32Impl) (h : Env s₀ C D P W R L) {s : State} (hr : R
       Mem.readW_writeW_self64]
   obtain ⟨s₃, run₃, hr₃, rdi₃, rsi₃, rdx₃, rcx₃, r8₃, r9₃, m₃⟩ := cmacMid_ok h hr₂ hcl hm₂
   refine WP.seq (WP.of_runBlock ⟨s₃, run₃, ?_⟩)
-  refine WP.mono (finr_call v _ (h.fargs hr₃.rd hr₃.wr hr₃.rsp (by decide)
+  refine WP.mono (finr_call v.ctr _ (h.fargs hr₃.rd hr₃.wr hr₃.rsp (by decide)
     (h.srcData (o := 128) (by decide) (show Spec.Cmac.chainedLen 16 L + (L - Spec.Cmac.chainedLen 16 L) ≤ L by
       omega)) hrest rdi₃ rsi₃ rdx₃ rcx₃ r8₃ r9₃)) fun s₄ h₄ => ?_
   have f₄ : Frame [⟨W + BitVec.ofNat 64 128, 16⟩, ⟨W + BitVec.ofNat 64 256, 2176⟩, below (s₀.gpr .rsp) 16]
@@ -286,13 +287,13 @@ theorem cmacOf_wp (v : Ctr32Impl) (h : Env s₀ C D P W R L) {s : State} (hr : R
 /-! ## Constant time -/
 
 /-- What the update leaves for `cmacMid`. -/
-theorem upd_after (v : Ctr32Impl) (h : Env s₀ C D P W R L) {s : State} (hr : Regs s₀ C D P W R L s)
+theorem upd_after (v : UpdateImpl) (h : Env s₀ C D P W R L) {s : State} (hr : Regs s₀ C D P W R L s)
     (hu : UArgs s C (W + BitVec.ofNat 64 128) P (W + BitVec.ofNat 64 256) R (Spec.Cmac.chainedLen 16 L / 16))
     (hm : s.mem.readW (W + BitVec.ofNat 64 144) 64 = BitVec.ofNat 64 (Spec.Cmac.chainedLen 16 L)) :
-    WP isa (.call ("vg_cmac_aes_update" ++ v.suffix) (Impl.CmacAes.X86_64.update v.callee)) s fun s' =>
+    WP isa (.call v.callee.name v.callee.code) s fun s' =>
       Regs s₀ C D P W R L s' ∧
       s'.mem.readW (W + BitVec.ofNat 64 144) 64 = BitVec.ofNat 64 (Spec.Cmac.chainedLen 16 L) := by
-  refine WP.mono (upd_call v _ hu) fun s' h' => ⟨hr.keep h'.saved h'.rd h'.wr, ?_⟩
+  refine WP.mono (upd_call v hu) fun s' h' => ⟨hr.keep h'.saved h'.rd h'.wr, ?_⟩
   rw [h'.frame.readW (Region.contains_self _ _) (fun r hr' => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr'
       rcases hr' with rfl | rfl | rfl
@@ -310,9 +311,9 @@ theorem mid_wp (h : Env s₀ C D P W R L) {s : State} (hr : Regs s₀ C D P W R 
   exact WP.of_runBlock ⟨s', run, hr', h.fargs hr'.rd hr'.wr hr'.rsp (by decide)
     (h.srcData (o := 128) (by decide) (by omega)) (chainedLen_rest L) rdi rsi rdx rcx r8 r9⟩
 
-theorem cmacOf_rel (v : Ctr32Impl) {s₀' : State} (h : Env s₀ C D P W R L) (h' : Env s₀' C D P W R L)
+theorem cmacOf_rel (v : UpdateImpl) {s₀' : State} (h : Env s₀ C D P W R L) (h' : Env s₀' C D P W R L)
     (hq : s₀.gpr .rsp = s₀'.gpr .rsp) :
-    RelCT isa (fun a b => Regs s₀ C D P W R L a ∧ Regs s₀' C D P W R L b) (cmacOf v.callee v.suffix stOff)
+    RelCT isa (fun a b => Regs s₀ C D P W R L a ∧ Regs s₀' C D P W R L b) (cmacOf v.callee v.ctr.callee v.ctr.suffix stOff)
       fun a b => Regs s₀ C D P W R L a ∧ Regs s₀' C D P W R L b := by
   obtain ⟨_, hA⟩ : ∃ hc, (taint.check (Taint.ofRegs [.rbx, .rbp, .r12, .r13, .r14, .r15, .rsp]) (cmacPre stOff)
       hc).isSome = true := ⟨_, by taint_decide⟩
@@ -332,7 +333,7 @@ theorem cmacOf_rel (v : Ctr32Impl) {s₀' : State} (h : Env s₀ C D P W R L) (h
       UArgs s C (W + BitVec.ofNat 64 128) P (W + BitVec.ofNat 64 256) R (Spec.Cmac.chainedLen 16 L / 16) ∧
       s.mem.readW (W + BitVec.ofNat 64 144) 64 = BitVec.ofNat 64 (Spec.Cmac.chainedLen 16 L))
     fun a b hab => ⟨pre_wp h hab.1, pre_wp h' hab.2⟩
-  have u := (upd_rel v ("vg_cmac_aes_update" ++ v.suffix)
+  have u := (upd_rel v
     (P := fun a b => (Regs s₀ C D P W R L a ∧
       UArgs a C (W + BitVec.ofNat 64 128) P (W + BitVec.ofNat 64 256) R (Spec.Cmac.chainedLen 16 L / 16) ∧
       a.mem.readW (W + BitVec.ofNat 64 144) 64 = BitVec.ofNat 64 (Spec.Cmac.chainedLen 16 L)) ∧
@@ -357,7 +358,7 @@ theorem cmacOf_rel (v : Ctr32Impl) {s₀' : State} (h : Env s₀ C D P W R L) (h
       FArgs s C (W + BitVec.ofNat 64 128) (P + BitVec.ofNat 64 (Spec.Cmac.chainedLen 16 L))
         (W + BitVec.ofNat 64 256) (L - Spec.Cmac.chainedLen 16 L) R)
     fun a b hab => ⟨mid_wp h hab.1.1 hab.1.2, mid_wp h' hab.2.1 hab.2.2⟩
-  have f := (fin_rel v ("vg_cmac_aes_finalize" ++ v.suffix)
+  have f := (fin_rel v.ctr ("vg_cmac_aes_finalize" ++ v.ctr.suffix)
     (P := fun a b => (Regs s₀ C D P W R L a ∧
       FArgs a C (W + BitVec.ofNat 64 128) (P + BitVec.ofNat 64 (Spec.Cmac.chainedLen 16 L))
         (W + BitVec.ofNat 64 256) (L - Spec.Cmac.chainedLen 16 L) R) ∧
@@ -366,8 +367,8 @@ theorem cmacOf_rel (v : Ctr32Impl) {s₀' : State} (h : Env s₀ C D P W R L) (h
         (W + BitVec.ofNat 64 256) (L - Spec.Cmac.chainedLen 16 L) R)
     fun a b hab => ⟨_, _, _, _, _, _, hab.1.2, hab.2.2, by rw [hab.1.1.rsp, hab.2.1.rsp, hq]⟩).wp
     (F₁ := Regs s₀ C D P W R L) (F₂ := Regs s₀' C D P W R L)
-    fun a b hab => ⟨WP.mono (finr_call v _ hab.1.2) fun _ h₂ => hab.1.1.keep h₂.saved h₂.rd h₂.wr,
-      WP.mono (finr_call v _ hab.2.2) fun _ h₂ => hab.2.1.keep h₂.saved h₂.rd h₂.wr⟩
+    fun a b hab => ⟨WP.mono (finr_call v.ctr _ hab.1.2) fun _ h₂ => hab.1.1.keep h₂.saved h₂.rd h₂.wr,
+      WP.mono (finr_call v.ctr _ hab.2.2) fun _ h₂ => hab.2.1.keep h₂.saved h₂.rd h₂.wr⟩
   exact (a.mono (fun _ _ h => h) fun _ _ h => h.2).seq ((u.mono (fun _ _ h => h) fun _ _ h => h.2).seq
     ((m.mono (fun _ _ h => h) fun _ _ h => h.2).seq (f.mono (fun _ _ h => h) fun _ _ h => h.2)))
 

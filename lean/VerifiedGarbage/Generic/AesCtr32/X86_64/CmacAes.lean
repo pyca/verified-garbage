@@ -13,9 +13,11 @@ implementation `v` of `vg_aes_ctr32`, are emitted once for each implementation
 
 The stack is 8 bytes for every implementation of the first three: the
 return address of the call of `vg_aes_ctr32`, which makes no calls. The
-streaming functions (`init`, `absorb`, `finish`) call those, so their stack
-is 16 bytes; `init` also calls the implementation of `vg_aes_expand_key_scratch`
-that goes with `v`.
+streaming functions `init` and `finish` call those, so their stack is 16
+bytes; `init` also calls the implementation of `vg_aes_expand_key_scratch`
+that goes with `v`. `vg_cmac_aes_absorb`, which calls only
+`vg_cmac_aes_update`, follows its implementations instead
+(`Generic/CmacAesUpdate/X86_64/Absorb.lean`).
 
 The streaming functions keep their working space in a frame of their own
 on the stack (`Proof/CmacAes/Stream/X86_64/Frame.lean`): their `stack` is that
@@ -77,17 +79,6 @@ def artifacts (v : Proof.Aes.X86_64.Ctr32Impl) : List Artifact := [
     stack := 2328
     verified := Proof.CmacAes.Stream.X86_64.init_framed v
     spSafe := X86_64.withStackScratch_spSafe (by decide) (Proof.CmacAes.Stream.X86_64.init_spSafe v)
-    features := v.features },
-  { Spec.Cmac.aesAbsorbApi with
-    name := Spec.Cmac.aesAbsorbApi.name ++ v.suffix
-    target := X86_64.target
-    doc := Spec.Cmac.aesAbsorbApi.doc (notes := [streamNote v])
-    code := Impl.StackScratch.X86_64.withStackScratch 2312 .r9
-      (Impl.CmacAes.Stream.X86_64.absorb v.callee v.suffix)
-    contract := Spec.Cmac.aesAbsorbContract X86_64.abi 2328
-    stack := 2328
-    verified := Proof.CmacAes.Stream.X86_64.absorb_framed v
-    spSafe := X86_64.withStackScratch_spSafe (by decide) (Proof.CmacAes.Stream.X86_64.absorb_spSafe v)
     features := v.features },
   { Spec.Cmac.aesFinishApi with
     name := Spec.Cmac.aesFinishApi.name ++ v.suffix

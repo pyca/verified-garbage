@@ -20,6 +20,7 @@ open VG VG.X86_64 VG.X86_64.RegUpd VG.Impl.AesCcm.X86_64
 open VG.Impl.AesGcm.X86_64 (at_ imm ptr copyLoop minLen)
 open VG.Spec.Aes (bytesAt)
 open VG.Proof.Aes.X86_64 (Ctr32Impl)
+open VG.Proof.CmacAes.X86_64 (UpdateImpl)
 open VG.Proof.CmacAes.Stream.X86_64 (UArgs upd_rel)
 open VG.Proof.AesGcm.X86_64 (LoopPre copyLoop_ok)
 open VG.Proof.AesCcm (hdrLen headLen adataBlocks)
@@ -68,11 +69,11 @@ theorem updArgs_check {y : Nat} (hy : y = 0 ∨ y = 96) :
   rcases hy with rfl | rfl <;> exact ⟨_, by taint_decide⟩
 
 /-- `updBlock y` in two runs. -/
-theorem updBlock_rel (v : Ctr32Impl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} {N A D : Addr} {nl al n tl : Nat}
+theorem updBlock_rel (v : UpdateImpl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} {N A D : Addr} {nl al n tl : Nat}
     (hR : R = 10 ∨ R = 12 ∨ R = 14) (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 2560⟩) (hn : n ≤ 2 ^ 64)
     {y : Nat} (hy : y = 0 ∨ y = 96) {P : State → State → Prop}
     (hP : ∀ s₁ s₂, P s₁ s₂ → Both K W SP R N A D nl al n tl [] s₁ s₂) :
-    RelCT isa P (updBlock v.callee v.suffix y) fun _ _ => True := by
+    RelCT isa P (updBlock v.callee y) fun _ _ => True := by
   have a := (rel_taintC [] hDW hn hP (c := .block (updArgs y ++ ptr .rcx .r15 bO ++ [.mov32 .r8 (imm 1)]))
     (updArgs_check hy)).wp
     (F₁ := fun (s₁ : State) => UArgs s₁ K (W + BitVec.ofNat 64 y) (W + BitVec.ofNat 64 32) (W + BitVec.ofNat 64 384) R 1 ∧
@@ -81,7 +82,7 @@ theorem updBlock_rel (v : Ctr32Impl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} 
       s₁.gpr .rsp = SP)
     fun s₁ s₂ (h : P s₁ s₂) => ⟨updArgsBlk_ok L (hP _ _ h).e₁ hR (hP _ _ h).sl₁.rounds hy,
       updArgsBlk_ok L (hP _ _ h).e₂ hR (hP _ _ h).sl₂.rounds hy⟩
-  exact RelCT.seq a (upd_rel v _ fun s₁ s₂ h => ⟨_, _, _, _, _, _, h.2.1.1, h.2.2.1, by rw [h.2.1.2, h.2.2.2]⟩)
+  exact RelCT.seq a (upd_rel v fun s₁ s₂ h => ⟨_, _, _, _, _, _, h.2.1.1, h.2.2.1, by rw [h.2.1.2, h.2.2.2]⟩)
 
 /-! ## `b0` -/
 
@@ -111,12 +112,12 @@ theorem Both.frame {K W SP : Addr} {R : Nat} {N A D : Addr} {nl al n tl : Nat} (
     fun _ h => nomatch h⟩
 
 /-- `b0 y` in two runs. -/
-theorem b0_rel (v : Ctr32Impl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} {N A D : Addr} {nl al n tl : Nat}
+theorem b0_rel (v : UpdateImpl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} {N A D : Addr} {nl al n tl : Nat}
     (hR : R = 10 ∨ R = 12 ∨ R = 14) (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 2560⟩) (hn : n ≤ 2 ^ 64)
     (h7 : 7 ≤ nl) (h13 : nl ≤ 13) (ht4 : 4 ≤ tl) (ht16 : tl ≤ 16) (hte : tl % 2 = 0) (hal : al < 2 ^ 64)
     (hn' : n < 256 ^ (15 - nl)) {y : Nat} (hy : y = 0 ∨ y = 96) {P : State → State → Prop}
     (hP : ∀ s₁ s₂, P s₁ s₂ → Both K W SP R N A D nl al n tl [] s₁ s₂ ∧ C0 W nl s₁ ∧ C0 W nl s₂) :
-    RelCT isa P (b0 v.callee v.suffix y) fun _ _ => True := by
+    RelCT isa P (b0 v.callee y) fun _ _ => True := by
   have hy16 : y + 16 ≤ 112 := by omega
   have pre : ∀ s, Both K W SP R N A D nl al n tl [] s s → C0 W nl s → WP isa _ s fun s' =>
       Env K W SP s' ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
@@ -269,13 +270,13 @@ theorem absWArgs_check {y : Nat} (hy : y = 0 ∨ y = 96) :
   rcases hy with rfl | rfl <;> exact ⟨_, by taint_decide⟩
 
 /-- The whole blocks, in two runs. -/
-theorem absorbWhole_rel (v : Ctr32Impl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} {N A D : Addr} {nl al n tl : Nat}
+theorem absorbWhole_rel (v : UpdateImpl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} {N A D : Addr} {nl al n tl : Nat}
     (hR : R = 10 ∨ R = 12 ∨ R = 14) (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 2560⟩) (hn : n ≤ 2 ^ 64)
     {y : Nat} (hy : y = 0 ∨ y = 96) {P : Addr} {len : Nat} {Q : State → State → Prop}
     (hQ : ∀ s₁ s₂, Q s₁ s₂ → One K W SP R N A D nl al n tl s₁ ∧ One K W SP R N A D nl al n tl s₂ ∧
       AbsPre K W SP P len s₁ ∧ AbsPre K W SP P len s₂) :
     RelCT isa Q (.seq (.block [.mov .r8 (.reg .rbp), .shift .shr .r8 4, .alu .test .r8 (.reg .r8)])
-      (.ite .e (.block []) (.seq (.block (updArgs y ++ ([.mov .rcx (.reg .r12)] : List Instr))) (callUpdate v.callee v.suffix))))
+      (.ite .e (.block []) (.seq (.block (updArgs y ++ ([.mov .rcx (.reg .r12)] : List Instr))) (callUpdate v.callee))))
       fun _ _ => True := by
   have r₁ := (rel_flagsC [.r12, .rbp] hDW hn (fun s₁ s₂ (h : Q s₁ s₂) => by
     obtain ⟨o₁, o₂, a₁, a₂⟩ := hQ _ _ h
@@ -331,7 +332,7 @@ theorem absorbWhole_rel (v : Ctr32Impl) {K W SP : Addr} (L : Lay K W SP) {R : Na
       obtain ⟨⟨o₁, a₁, h₁⟩, ⟨o₂, a₂, h₂⟩⟩ := hA s₁ s₂ h
       exact ⟨absorbWArgs_ok L o₁.env hR o₁.sl.rounds hy a₁.buf a₁.r12 h₁,
         absorbWArgs_ok L o₂.env hR o₂.sl.rounds hy a₂.buf a₂.r12 h₂⟩
-  exact RelCT.seq r₂ (upd_rel v _ fun s₁ s₂ h => ⟨_, _, _, _, _, _, h.2.1.1, h.2.2.1, by rw [h.2.1.2, h.2.2.2]⟩)
+  exact RelCT.seq r₂ (upd_rel v fun s₁ s₂ h => ⟨_, _, _, _, _, _, h.2.1.1, h.2.2.1, by rw [h.2.1.2, h.2.2.2]⟩)
 
 theorem absT1_check : ∃ hc, ((taint.check (ccmT [.r12, .rbp])
     (.block [.mov .rcx (.reg .rbp), .alu .and .rcx (imm 15), .alu .test .rcx (.reg .rcx)]) hc).map (·.flags)) =
@@ -342,7 +343,7 @@ theorem absT2_check : ∃ hc, (taint.check (ccmT [.rcx, .r12, .rbp])
       ptr .rdi .r15 bO)) copyLoop) hc).isSome = true := ⟨_, by taint_decide⟩
 
 /-- The last bytes, in two runs. -/
-theorem absorbTail_rel (v : Ctr32Impl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} {N A D : Addr} {nl al n tl : Nat}
+theorem absorbTail_rel (v : UpdateImpl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} {N A D : Addr} {nl al n tl : Nat}
     (hR : R = 10 ∨ R = 12 ∨ R = 14) (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 2560⟩) (hn : n ≤ 2 ^ 64)
     {y : Nat} (hy : y = 0 ∨ y = 96) {P : Addr} {len : Nat} {Q : State → State → Prop}
     (hQ : ∀ s₁ s₂, Q s₁ s₂ → One K W SP R N A D nl al n tl s₁ ∧ One K W SP R N A D nl al n tl s₂ ∧
@@ -351,7 +352,7 @@ theorem absorbTail_rel (v : Ctr32Impl) {K W SP : Addr} (L : Lay K W SP) {R : Nat
         (.ite .e (.block [])
           (.seq (.block (zero16 bO ++ ([.mov .rsi (.reg .rbp), .alu .sub .rsi (.reg .rcx), .alu .add .rsi (.reg .r12)] : List Instr) ++
               ptr .rdi .r15 bO))
-            (.seq copyLoop (updBlock v.callee v.suffix y)))))
+            (.seq copyLoop (updBlock v.callee y)))))
       fun _ _ => True := by
   have r₁ := (rel_flagsC [.r12, .rbp] hDW hn (fun s₁ s₂ (h : Q s₁ s₂) => by
     obtain ⟨o₁, o₂, a₁, a₂⟩ := hQ _ _ h
@@ -436,12 +437,12 @@ theorem One.macR {K W SP : Addr} {R : Nat} {N A D : Addr} {nl al n tl : Nat} (L 
   ⟨E, slots_mut L hDW (hf.sub (macR_mut W SP D n hy)) o.sl, hwr.trans o.wr⟩
 
 /-- `absorbPad y` in two runs. -/
-theorem absorbPad_rel (v : Ctr32Impl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} {N A D : Addr} {nl al n tl : Nat}
+theorem absorbPad_rel (v : UpdateImpl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} {N A D : Addr} {nl al n tl : Nat}
     (hR : R = 10 ∨ R = 12 ∨ R = 14) (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 2560⟩) (hn : n ≤ 2 ^ 64)
     {y : Nat} (hy : y = 0 ∨ y = 96) {P : Addr} {len : Nat} {Q : State → State → Prop}
     (hQ : ∀ s₁ s₂, Q s₁ s₂ → One K W SP R N A D nl al n tl s₁ ∧ One K W SP R N A D nl al n tl s₂ ∧
       AbsPre K W SP P len s₁ ∧ AbsPre K W SP P len s₂) :
-    RelCT isa Q (absorbPad v.callee v.suffix y) fun _ _ => True := by
+    RelCT isa Q (absorbPad v.callee y) fun _ _ => True := by
   have hy16 : y + 16 ≤ 112 := by omega
   have r₁ := (absorbWhole_rel v L hR hDW hn hy hQ).wpDep
     (F := fun (σ s' : State) => One K W SP R N A D nl al n tl σ ∧ AbsPre K W SP P len σ ∧
@@ -463,12 +464,12 @@ theorem aadHeadPre_check : ∃ hc, (taint.check (ccmT [.r12, .rbp]) (.seq header
       .alu .add .r12 (.reg .rcx), .alu .sub .rbp (.reg .rcx)]) copyLoop))) hc).isSome = true := ⟨_, by taint_decide⟩
 
 /-- The first block of the associated data, in two runs. -/
-theorem aadHead_rel (v : Ctr32Impl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} {N A D : Addr} {nl al n tl : Nat}
+theorem aadHead_rel (v : UpdateImpl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} {N A D : Addr} {nl al n tl : Nat}
     (hR : R = 10 ∨ R = 12 ∨ R = 14) (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 2560⟩) (hn : n ≤ 2 ^ 64)
     {y : Nat} (hy : y = 0 ∨ y = 96) {P : Addr} {a : Nat} (ha0 : 0 < a) {Q : State → State → Prop}
     (hQ : ∀ s₁ s₂, Q s₁ s₂ → One K W SP R N A D nl al n tl s₁ ∧ One K W SP R N A D nl al n tl s₂ ∧
       AbsPre K W SP P a s₁ ∧ AbsPre K W SP P a s₂) :
-    RelCT isa Q (aadHead v.callee v.suffix y) fun _ _ => True := by
+    RelCT isa Q (aadHead v.callee y) fun _ _ => True := by
   have r₁ := (rel_taintC [.r12, .rbp] hDW hn (fun s₁ s₂ (h : Q s₁ s₂) => by
     obtain ⟨o₁, o₂, a₁, a₂⟩ := hQ _ _ h
     exact Both.of o₁ o₂ (agree_of (l := [(.r12, P), (.rbp, BitVec.ofNat 64 a)])
@@ -517,12 +518,12 @@ theorem aadBlk_check : ∃ hc, ((taint.check (ccmT [])
     hc).map (·.flags)) = some true := ⟨_, by taint_decide⟩
 
 /-- The associated data, in two runs. -/
-theorem aad_rel (v : Ctr32Impl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} {N A D : Addr} {nl al n tl : Nat}
+theorem aad_rel (v : UpdateImpl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} {N A D : Addr} {nl al n tl : Nat}
     (hR : R = 10 ∨ R = 12 ∨ R = 14) (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 2560⟩) (hn : n ≤ 2 ^ 64)
     {y : Nat} (hy : y = 0 ∨ y = 96) {Q : State → State → Prop}
     (hQ : ∀ s₁ s₂, Q s₁ s₂ → One K W SP R N A D nl al n tl s₁ ∧ One K W SP R N A D nl al n tl s₂ ∧
       Buf K W SP s₁ A al ∧ Buf K W SP s₂ A al) :
-    RelCT isa Q (aad v.callee v.suffix y) fun _ _ => True := by
+    RelCT isa Q (aad v.callee y) fun _ _ => True := by
   have hy16 : y + 16 ≤ 112 := by omega
   have r₁ := (rel_flagsC [] hDW hn (fun s₁ s₂ (h : Q s₁ s₂) => by
     obtain ⟨o₁, o₂, -, -⟩ := hQ _ _ h; exact Both.of o₁ o₂ fun _ h => nomatch h) aadBlk_check).wpDep
@@ -594,13 +595,13 @@ theorem macBlk_check : ∃ hc, (taint.check (ccmT [])
   ⟨_, by taint_decide⟩
 
 /-- The MAC, in two runs. -/
-theorem mac_rel (v : Ctr32Impl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} {N A D : Addr} {nl al n tl : Nat}
+theorem mac_rel (v : UpdateImpl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} {N A D : Addr} {nl al n tl : Nat}
     (hR : R = 10 ∨ R = 12 ∨ R = 14) (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 2560⟩) (hn : n ≤ 2 ^ 64)
     (h7 : 7 ≤ nl) (h13 : nl ≤ 13) (ht4 : 4 ≤ tl) (ht16 : tl ≤ 16) (hte : tl % 2 = 0) (hal : al < 2 ^ 64)
     (hn' : n < 256 ^ (15 - nl)) {y : Nat} (hy : y = 0 ∨ y = 96) {Q : State → State → Prop}
     (hQ : ∀ s₁ s₂, Q s₁ s₂ → (One K W SP R N A D nl al n tl s₁ ∧ C0 W nl s₁ ∧ Buf K W SP s₁ A al ∧
       Buf K W SP s₁ D n) ∧ (One K W SP R N A D nl al n tl s₂ ∧ C0 W nl s₂ ∧ Buf K W SP s₂ A al ∧ Buf K W SP s₂ D n)) :
-    RelCT isa Q (mac v.callee v.suffix y) fun _ _ => True := by
+    RelCT isa Q (mac v.callee y) fun _ _ => True := by
   have hy16 : y + 16 ≤ 112 := by omega
   have r₁ := (b0_rel v L hR hDW hn h7 h13 ht4 ht16 hte hal hn' hy (P := Q) fun s₁ s₂ h => by
     obtain ⟨⟨o₁, c₁, -⟩, ⟨o₂, c₂, -⟩⟩ := hQ _ _ h
