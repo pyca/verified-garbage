@@ -73,10 +73,11 @@ def checkVector (C : Curve) (v : Case) : Except String Unit := do
   let sig := bytes v.r ++ bytes v.s
   unless verify C (pt v.qx v.qy) e sig == v.valid do
     throw s!"{v.hash}, R = {v.r}: expected {v.valid}"
-  -- The contract's hash argument: the leftmost `len` octets, or the hash
-  -- padded on the left with zeros, which `hashToInt` reads as `e`.
+  -- The contract's hash argument (`Ecdsa.Instance.digestDoc`): the leftmost
+  -- `len` octets, or `e` shifted left by the bits `hashToInt` drops (none
+  -- when `n` has `8 len` bits: the hash padded on the left with zeros).
   let arg := if digest.length ≥ C.len then digest.take C.len
-    else List.replicate (C.len - digest.length) 0 ++ digest
+    else toBytes C.len (e <<< (8 * C.len - nBits C))
   unless hashToInt C arg == e do throw s!"{v.hash}: truncated hash disagrees"
   if v.valid then
     -- Another hash, or a signature with `r` and `s` exchanged or out of
