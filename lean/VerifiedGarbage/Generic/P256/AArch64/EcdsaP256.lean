@@ -19,7 +19,7 @@ def artifacts (h : Proof.Weierstrass.HasLaw Spec.P256.curve) : List Artifact := 
   { Spec.Ecdsa.P256.signApi with
     target := AArch64.target
     doc := Spec.Ecdsa.P256.signApi.doc (notes := ["The function saves the callee-saved registers \
-      it uses (`x19` and `x20`) in `scratch`. Field elements and scalars are four 64-bit words in \
+      `x19`–`x25` in `scratch`. Field elements and scalars are four 64-bit words in \
       Montgomery form, multiplied by word-by-word Montgomery multiplication (CIOS, with `mul` and \
       `umulh` and the multiplicand's words in registers; modulo `p`, `p ≡ -1 (mod 2⁶⁴)`, so each \
       step adds `t₀ (p + 1) / 2⁶⁴`, which takes two shifts and one product) with a final \
@@ -47,7 +47,7 @@ def artifacts (h : Proof.Weierstrass.HasLaw Spec.P256.curve) : List Artifact := 
     target := AArch64.target
     doc := Spec.Ecdsa.P256.verifyApi.doc (notes := ["The function is `vg_ecdsa_p256_sign`'s setup, \
       field arithmetic, comb and inversions, with `vg_ecdh_p256`'s checks of the public key: it \
-      saves the callee-saved registers it uses (`x19` and `x20`) in `scratch`; field elements and \
+      saves the callee-saved registers `x19`–`x25` in `scratch`; field elements and \
       scalars are four 64-bit words in Montgomery form, multiplied by word-by-word Montgomery \
       multiplication (CIOS, with `mul` and `umulh` and the multiplicand's words in registers; \
       modulo `p`, `p ≡ -1 (mod 2⁶⁴)`, so each step adds `t₀ (p + 1) / 2⁶⁴`, which takes two shifts \

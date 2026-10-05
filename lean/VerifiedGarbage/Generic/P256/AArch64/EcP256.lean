@@ -18,7 +18,7 @@ def artifacts (h : Proof.Weierstrass.HasLaw Spec.P256.curve) : List Artifact := 
     target := AArch64.target
     doc := Spec.EcKey.P256.publicKeyApi.doc (notes := ["The function is `vg_ecdsa_p256_sign`'s \
       code up to the inversion of `Z`, with `d` as both the key and the secret number: it saves \
-      the callee-saved registers it uses (`x19` and `x20`) in `scratch`; field elements are four \
+      the callee-saved registers `x19`–`x25` in `scratch`; field elements are four \
       64-bit words in Montgomery form, multiplied by word-by-word Montgomery multiplication (CIOS, \
       with `mul` and `umulh` and the multiplicand's words in registers; modulo `p`, `p ≡ -1 (mod \
       2⁶⁴)`, so each step adds `t₀ (p + 1) / 2⁶⁴`, which takes two shifts and one product) with a \
