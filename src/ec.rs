@@ -53,14 +53,14 @@ impl Curve for P384 {
 }
 
 /// The curve P-521 (FIPS 186-5's secp521r1; SP 800-186 §3.2.1.5).
-#[cfg(target_arch = "x86_64")]
+#[cfg(any(target_arch = "x86_64", target_arch = "x86"))]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum P521 {}
 
-#[cfg(target_arch = "x86_64")]
+#[cfg(any(target_arch = "x86_64", target_arch = "x86"))]
 impl sealed::Sealed for P521 {}
 
-#[cfg(target_arch = "x86_64")]
+#[cfg(any(target_arch = "x86_64", target_arch = "x86"))]
 impl Curve for P521 {
     type PrivateKey = [u8; 66];
     type PublicKey = [u8; 133];
