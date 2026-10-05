@@ -31,7 +31,7 @@ def artifacts : List Artifact := [
     consts := Impl.Ecdsa.AArch64.p256.combConsts
     code := Impl.Ecdsa.AArch64.signP256
     contract := Spec.Ecdsa.P256.inst.signContract (AArch64.abi.withConsts Impl.Ecdsa.AArch64.p256.combConsts)
-    verified := Proof.Ecdsa.AArch64.sign_verified Proof.P256.law Proof.P256.combOk7
+    verified := Proof.Ecdsa.AArch64.sign_verified Proof.P256.law (Proof.P256.combOk7 Proof.P256.law)
     spSafe := Code.all_of_forall (fun _ => rfl) _ },
   { Spec.Ecdsa.P256.verifyApi with
     target := AArch64.target
@@ -55,7 +55,7 @@ def artifacts : List Artifact := [
     consts := Impl.Ecdsa.AArch64.p256.combConsts
     code := Impl.Ecdsa.Verify.AArch64.verifyP256
     contract := Spec.Ecdsa.P256.inst.verifyContract (AArch64.abi.withConsts Impl.Ecdsa.AArch64.p256.combConsts)
-    verified := Proof.Ecdsa.Verify.AArch64.verify_verified Proof.P256.law Proof.P256.combOk7
+    verified := Proof.Ecdsa.Verify.AArch64.verify_verified Proof.P256.law (Proof.P256.combOk7 Proof.P256.law)
     spSafe := Code.all_of_forall (fun _ => rfl) _ }]
 
 end VG.Artifacts.EcdsaP256.AArch64
