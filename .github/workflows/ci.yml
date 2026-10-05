@@ -592,7 +592,7 @@ jobs:
               neon | chacha20
               sha3 | sha3 shake mlkem mldsa ed448
               none | aes_siv chacha20 sha3 shake mlkem mldsa ecdsa p256_sha p384_sha ed448 aes_gcm_siv aes_ccm aes_ocb
-    name: Rust (${{ matrix.os && format('native, {0}', matrix.os) || matrix.chip == 'native' && 'native' || format('sde -{0}', matrix.chip) }}${{ matrix.arch && format(', {0}', matrix.arch) || '' }})
+    name: Rust (${{ matrix.os && format('native, {0}', matrix.os) || matrix.chip == 'native' && 'native' || format('{0}, native or SDE', matrix.chip) }}${{ matrix.arch && format(', {0}', matrix.arch) || '' }})
     runs-on: ${{ matrix.os || 'ubuntu-latest' }}
     container:
       image: ${{ matrix.container.image || '' }}
@@ -645,11 +645,19 @@ jobs:
         with:
           shared-key: rust-cpu-features
           save-if: ${{ github.ref == 'refs/heads/main' }}
-      # Set the test runner after caching: its temporary path would otherwise
-      # change the cache key, which includes CARGO_* environment variables.
-      - name: Run the tests under SDE
+      # Probe with the same detector the tests use, on both the host and the
+      # emulated CPU. This includes the OS's AVX/AVX-512 register-state support.
+      # Keep runner settings out of the cache key (which includes CARGO_*).
+      - name: Detect usable host and emulated CPU features
         if: ${{ matrix.chip != 'native' }}
-        run: echo "CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_RUNNER=$RUNNER_TEMP/sde/sde64 -$CHIP --" >> "$GITHUB_ENV"
+        run: |
+          rustc --edition=2024 -D warnings ci/cpu_features.rs -o "$RUNNER_TEMP/cpu-features"
+          host=$("$RUNNER_TEMP/cpu-features")
+          model=$("$RUNNER_TEMP/sde/sde64" -"$CHIP" -- "$RUNNER_TEMP/cpu-features")
+          echo "Usable host features: $host"
+          echo "Emulated $CHIP features: $model"
+          echo "HOST_CPU_FEATURES=$host" >> "$GITHUB_ENV"
+          echo "MODEL_CPU_FEATURES=$model" >> "$GITHUB_ENV"
         env:
           CHIP: ${{ matrix.chip }}
       # Only the tests of what depends on CPU features, once per line of
@@ -676,17 +684,39 @@ jobs:
             [ -z "${seen[$features]}" ] || { echo "::error::VG_CPU_FEATURES=$features twice: put its tests on one line"; exit 1; }
             seen[$features]=1
             [ "$features" = - ] && features=
+            mode=host
+            if [ "$CHIP" != native ]; then
+              selection=$(python3 ci/cpu_features.py "$HOST_CPU_FEATURES" "$MODEL_CPU_FEATURES" "$features")
+              IFS='|' read -r mode features <<< "$selection"
+            fi
             filter=$tests
             [ "$tests" = all ] && filter=
             while [ "$(jobs -rp | wc -l)" -ge "$(nproc)" ]; do wait -n || true; done
             log=$logs/${#names[@]}
             (
               status=0
-              VG_CPU_FEATURES=$features cargo test --locked --features cpu-features-env -- $filter \
-                > "$log" 2>&1 || status=$?
+              echo "$mode: VG_CPU_FEATURES=$features" > "$log"
+              if [ "$mode" = native ]; then
+                # Backend tests run on hardware with exactly the model's mask.
+                # CPU detection still runs under the original CPUID model.
+                VG_CPU_FEATURES=$features cargo test --locked --features cpu-features-env -- $filter --skip cpu:: \
+                  >> "$log" 2>&1 || status=$?
+                if [ "$tests" = all ] || [[ " $tests " == *" cpu "* ]]; then
+                  CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_RUNNER="$RUNNER_TEMP/sde/sde64 -$CHIP --" \
+                    VG_CPU_FEATURES=$features cargo test --locked --features cpu-features-env --lib -- cpu:: \
+                    >> "$log" 2>&1 || status=$?
+                fi
+              elif [ "$mode" = sde ]; then
+                CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_RUNNER="$RUNNER_TEMP/sde/sde64 -$CHIP --" \
+                  VG_CPU_FEATURES=$features cargo test --locked --features cpu-features-env -- $filter \
+                  >> "$log" 2>&1 || status=$?
+              else
+                VG_CPU_FEATURES=$features cargo test --locked --features cpu-features-env -- $filter \
+                  >> "$log" 2>&1 || status=$?
+              fi
               echo "$status" > "$log.status"
             ) &
-            names+=("VG_CPU_FEATURES=$features: $tests")
+            names+=("$mode, VG_CPU_FEATURES=$features: $tests")
           done 3<<< "$RUNS"
           wait
           failed=()
@@ -700,6 +730,7 @@ jobs:
           [ ${#failed[@]} -eq 0 ]
         env:
           RUNS: ${{ matrix.runs }}
+          CHIP: ${{ matrix.chip }}
       - name: Export coverage
         run: python3 ci/export_rust_coverage.py .rust-cov --features cpu-features-env
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
