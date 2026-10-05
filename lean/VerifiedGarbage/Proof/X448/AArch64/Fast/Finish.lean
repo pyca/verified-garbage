@@ -82,7 +82,7 @@ theorem finish_ok {s : State} {base p : Addr} (hs : Scr s base) (hb : BEnv s.mem
       (output_word wm (by decide) (by decide) hfar).trans svv.2⟩
   have sxv : SavedX base g v.mem := by
     intro k hk
-    have hS : SAVE = 3520 := rfl
+    have hS : SAVE = 2880 := rfl
     rw [vm.word (Or.inr (by simp only [X2, VG.Impl.X448.AArch64.slot]; omega)) (by simp only [ACC]; omega),
       ck.2.word (Or.inr (by simp only [X2, VG.Impl.X448.AArch64.slot]; omega)) (by simp only [ACC]; omega),
       uk.mem.word (Or.inr (by omega)) (Or.inl (by simp only [ACC]; omega)) (by omega)]

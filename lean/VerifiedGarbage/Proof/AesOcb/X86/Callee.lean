@@ -8,7 +8,7 @@ import VerifiedGarbage.Proof.Ocb.State
 
 Untrusted: everything here is checked by Lean. Each call of
 `vg_aes_encrypt_blocks` or `vg_aes_decrypt_blocks` (of any implementation
-`v`), and of `vg_aes_expand_key`, in a frame of its arguments, from the
+`v`), and of `vg_aes_expand_key_scratch`, in a frame of its arguments, from the
 callee's contract (`WP.callWith`): what it needs of the registers it pushes
 and of the regions it is given (`BCall`, AES-GCM's `KeyCall`), and what it leaves
 (`BPost`, `KeyPost`), in terms of the memory before the call; and that it is
@@ -189,10 +189,10 @@ theorem blk_ct {f : Nat → List Byte → Spec.Aes.State → Spec.Aes.State} {fn
   · rw [a3, b3]
   · rw [a4, b4]
 
-/-! ## `vg_aes_expand_key` -/
+/-! ## `vg_aes_expand_key_scratch` -/
 
 open VG.Proof.AesGcm.X86 (KeyCall KeyPost keyRegs keyRegs_esp keyRd keyWr) in
-/-- A call of `vg_aes_expand_key`. -/
+/-- A call of `vg_aes_expand_key_scratch`. -/
 theorem key_ok (v : BlocksImpl) {s : State} {K C S : BitVec 32} {L : Nat} (h : KeyCall s K C S L) :
     WP isa (keyFrame (callees v)) s (KeyPost s K C S L) := by
   have hL := toNat_ofNat32 h.L_lt
@@ -210,7 +210,7 @@ theorem key_ok (v : BlocksImpl) {s : State} {K C S : BitVec 32} {L : Nat} (h : K
   · rw [post, bytesAt_frame fE (one_disj h.bk) (by rcases h.len with rfl | rfl | rfl <;> decide)]
 
 open VG.Proof.AesGcm.X86 (KeyCall keyRd keyWr) in
-/-- Calls of `vg_aes_expand_key` with the same arguments and stack pointer
+/-- Calls of `vg_aes_expand_key_scratch` with the same arguments and stack pointer
 in both runs are constant time. -/
 theorem key_ct (v : BlocksImpl) {I : State → Prop} {K C S E : BitVec 32} {L : Nat}
     (h : ∀ s, I s → KeyCall s K C S L ∧ s.gpr .esp = E) : CT I (keyFrame (callees v)) := by

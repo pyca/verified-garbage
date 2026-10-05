@@ -11,7 +11,7 @@ pub(crate) const VG_AES_GCM_SIV_SEAL_AESNI_FEATURES: crate::cpu::Features = crat
 ///
 /// Contract: `VG.Spec.GcmSiv.sealContract`. Constant time: only the pointers, `rounds` and the lengths may affect timing, not the key schedule, the nonce, the additional data or the data.
 ///
-/// This implementation encrypts with `vg_aes_ctr32_aesni` (and expands keys with `vg_aes_expand_key_aesni`) and computes POLYVAL with `vg_ghash`.
+/// This implementation encrypts with `vg_aes_ctr32_aesni` (and expands keys with `vg_aes_expand_key_scratch_aesni`) and computes POLYVAL with `vg_ghash`.
 ///
 /// # Safety
 ///
@@ -95,7 +95,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_seal_aesni(schedule: *const 
         "add rdx, 248",
         "mov rcx, r15",
         "add rcx, 1768",
-        "call {vg_aes_expand_key_aesni}",
+        "call {vg_aes_expand_key_scratch_aesni}",
         "mov rax, QWORD PTR [r15+16]",
         "mov rdx, QWORD PTR [r15+24]",
         "mov rcx, rax",
@@ -430,7 +430,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_seal_aesni(schedule: *const 
         "ret",
         ".p2align 6",
         vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni,
-        vg_aes_expand_key_aesni = sym super::aes::vg_aes_expand_key_aesni,
+        vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni,
         vg_ghash = sym super::gcm::vg_ghash,
     )
 }
@@ -444,7 +444,7 @@ pub(crate) const VG_AES_GCM_SIV_OPEN_AESNI_FEATURES: crate::cpu::Features = crat
 ///
 /// Contract: `VG.Spec.GcmSiv.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths and whether the function returns 1 or 0 may affect timing, not the key schedule, the nonce, the additional data, the data or the tag.
 ///
-/// This implementation encrypts with `vg_aes_ctr32_aesni` (and expands keys with `vg_aes_expand_key_aesni`) and computes POLYVAL with `vg_ghash`.
+/// This implementation encrypts with `vg_aes_ctr32_aesni` (and expands keys with `vg_aes_expand_key_scratch_aesni`) and computes POLYVAL with `vg_ghash`.
 ///
 /// It compares the tags and overwrites the data with zeros without a branch on the result.
 ///
@@ -535,7 +535,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_open_aesni(schedule: *const 
         "add rdx, 248",
         "mov rcx, r15",
         "add rcx, 1768",
-        "call {vg_aes_expand_key_aesni}",
+        "call {vg_aes_expand_key_scratch_aesni}",
         "mov rax, QWORD PTR [r15+16]",
         "mov rdx, QWORD PTR [r15+24]",
         "mov rcx, rax",
@@ -892,7 +892,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_open_aesni(schedule: *const 
         "ret",
         ".p2align 6",
         vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni,
-        vg_aes_expand_key_aesni = sym super::aes::vg_aes_expand_key_aesni,
+        vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni,
         vg_ghash = sym super::gcm::vg_ghash,
     )
 }
@@ -906,7 +906,7 @@ pub(crate) const VG_AES_GCM_SIV_SEAL_AESNI_PCLMUL_FEATURES: crate::cpu::Features
 ///
 /// Contract: `VG.Spec.GcmSiv.sealContract`. Constant time: only the pointers, `rounds` and the lengths may affect timing, not the key schedule, the nonce, the additional data or the data.
 ///
-/// This implementation encrypts with `vg_aes_ctr32_aesni` (and expands keys with `vg_aes_expand_key_aesni`) and computes POLYVAL with `vg_ghash_pclmul`.
+/// This implementation encrypts with `vg_aes_ctr32_aesni` (and expands keys with `vg_aes_expand_key_scratch_aesni`) and computes POLYVAL with `vg_ghash_pclmul`.
 ///
 /// # Safety
 ///
@@ -990,7 +990,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_seal_aesni_pclmul(schedule: 
         "add rdx, 248",
         "mov rcx, r15",
         "add rcx, 1768",
-        "call {vg_aes_expand_key_aesni}",
+        "call {vg_aes_expand_key_scratch_aesni}",
         "mov rax, QWORD PTR [r15+16]",
         "mov rdx, QWORD PTR [r15+24]",
         "mov rcx, rax",
@@ -1325,7 +1325,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_seal_aesni_pclmul(schedule: 
         "ret",
         ".p2align 6",
         vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni,
-        vg_aes_expand_key_aesni = sym super::aes::vg_aes_expand_key_aesni,
+        vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni,
         vg_ghash_pclmul = sym super::gcm::vg_ghash_pclmul,
     )
 }
@@ -1339,7 +1339,7 @@ pub(crate) const VG_AES_GCM_SIV_OPEN_AESNI_PCLMUL_FEATURES: crate::cpu::Features
 ///
 /// Contract: `VG.Spec.GcmSiv.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths and whether the function returns 1 or 0 may affect timing, not the key schedule, the nonce, the additional data, the data or the tag.
 ///
-/// This implementation encrypts with `vg_aes_ctr32_aesni` (and expands keys with `vg_aes_expand_key_aesni`) and computes POLYVAL with `vg_ghash_pclmul`.
+/// This implementation encrypts with `vg_aes_ctr32_aesni` (and expands keys with `vg_aes_expand_key_scratch_aesni`) and computes POLYVAL with `vg_ghash_pclmul`.
 ///
 /// It compares the tags and overwrites the data with zeros without a branch on the result.
 ///
@@ -1430,7 +1430,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_open_aesni_pclmul(schedule: 
         "add rdx, 248",
         "mov rcx, r15",
         "add rcx, 1768",
-        "call {vg_aes_expand_key_aesni}",
+        "call {vg_aes_expand_key_scratch_aesni}",
         "mov rax, QWORD PTR [r15+16]",
         "mov rdx, QWORD PTR [r15+24]",
         "mov rcx, rax",
@@ -1787,7 +1787,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_open_aesni_pclmul(schedule: 
         "ret",
         ".p2align 6",
         vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni,
-        vg_aes_expand_key_aesni = sym super::aes::vg_aes_expand_key_aesni,
+        vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni,
         vg_ghash_pclmul = sym super::gcm::vg_ghash_pclmul,
     )
 }
@@ -1801,7 +1801,7 @@ pub(crate) const VG_AES_GCM_SIV_SEAL_AESNI_PCLMUL_AVX_FEATURES: crate::cpu::Feat
 ///
 /// Contract: `VG.Spec.GcmSiv.sealContract`. Constant time: only the pointers, `rounds` and the lengths may affect timing, not the key schedule, the nonce, the additional data or the data.
 ///
-/// This implementation encrypts with `vg_aes_ctr32_aesni` (and expands keys with `vg_aes_expand_key_aesni`) and computes POLYVAL with `vg_ghash_pclmul`.
+/// This implementation encrypts with `vg_aes_ctr32_aesni` (and expands keys with `vg_aes_expand_key_scratch_aesni`) and computes POLYVAL with `vg_ghash_pclmul`.
 ///
 /// # Safety
 ///
@@ -1885,7 +1885,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_seal_aesni_pclmul_avx(schedu
         "add rdx, 248",
         "mov rcx, r15",
         "add rcx, 1768",
-        "call {vg_aes_expand_key_aesni}",
+        "call {vg_aes_expand_key_scratch_aesni}",
         "mov rax, QWORD PTR [r15+16]",
         "mov rdx, QWORD PTR [r15+24]",
         "mov rcx, rax",
@@ -2220,7 +2220,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_seal_aesni_pclmul_avx(schedu
         "ret",
         ".p2align 6",
         vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni,
-        vg_aes_expand_key_aesni = sym super::aes::vg_aes_expand_key_aesni,
+        vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni,
         vg_ghash_pclmul = sym super::gcm::vg_ghash_pclmul,
     )
 }
@@ -2234,7 +2234,7 @@ pub(crate) const VG_AES_GCM_SIV_OPEN_AESNI_PCLMUL_AVX_FEATURES: crate::cpu::Feat
 ///
 /// Contract: `VG.Spec.GcmSiv.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths and whether the function returns 1 or 0 may affect timing, not the key schedule, the nonce, the additional data, the data or the tag.
 ///
-/// This implementation encrypts with `vg_aes_ctr32_aesni` (and expands keys with `vg_aes_expand_key_aesni`) and computes POLYVAL with `vg_ghash_pclmul`.
+/// This implementation encrypts with `vg_aes_ctr32_aesni` (and expands keys with `vg_aes_expand_key_scratch_aesni`) and computes POLYVAL with `vg_ghash_pclmul`.
 ///
 /// It compares the tags and overwrites the data with zeros without a branch on the result.
 ///
@@ -2325,7 +2325,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_open_aesni_pclmul_avx(schedu
         "add rdx, 248",
         "mov rcx, r15",
         "add rcx, 1768",
-        "call {vg_aes_expand_key_aesni}",
+        "call {vg_aes_expand_key_scratch_aesni}",
         "mov rax, QWORD PTR [r15+16]",
         "mov rdx, QWORD PTR [r15+24]",
         "mov rcx, rax",
@@ -2682,7 +2682,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_open_aesni_pclmul_avx(schedu
         "ret",
         ".p2align 6",
         vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni,
-        vg_aes_expand_key_aesni = sym super::aes::vg_aes_expand_key_aesni,
+        vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni,
         vg_ghash_pclmul = sym super::gcm::vg_ghash_pclmul,
     )
 }
@@ -2696,7 +2696,7 @@ pub(crate) const VG_AES_GCM_SIV_SEAL_AESNI_VPCLMUL_FEATURES: crate::cpu::Feature
 ///
 /// Contract: `VG.Spec.GcmSiv.sealContract`. Constant time: only the pointers, `rounds` and the lengths may affect timing, not the key schedule, the nonce, the additional data or the data.
 ///
-/// This implementation encrypts with `vg_aes_ctr32_aesni` (and expands keys with `vg_aes_expand_key_aesni`) and computes POLYVAL with `vg_ghash_vpclmul`.
+/// This implementation encrypts with `vg_aes_ctr32_aesni` (and expands keys with `vg_aes_expand_key_scratch_aesni`) and computes POLYVAL with `vg_ghash_vpclmul`.
 ///
 /// # Safety
 ///
@@ -2780,7 +2780,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_seal_aesni_vpclmul(schedule:
         "add rdx, 248",
         "mov rcx, r15",
         "add rcx, 1768",
-        "call {vg_aes_expand_key_aesni}",
+        "call {vg_aes_expand_key_scratch_aesni}",
         "mov rax, QWORD PTR [r15+16]",
         "mov rdx, QWORD PTR [r15+24]",
         "mov rcx, rax",
@@ -3115,7 +3115,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_seal_aesni_vpclmul(schedule:
         "ret",
         ".p2align 6",
         vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni,
-        vg_aes_expand_key_aesni = sym super::aes::vg_aes_expand_key_aesni,
+        vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni,
         vg_ghash_vpclmul = sym super::gcm::vg_ghash_vpclmul,
     )
 }
@@ -3129,7 +3129,7 @@ pub(crate) const VG_AES_GCM_SIV_OPEN_AESNI_VPCLMUL_FEATURES: crate::cpu::Feature
 ///
 /// Contract: `VG.Spec.GcmSiv.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths and whether the function returns 1 or 0 may affect timing, not the key schedule, the nonce, the additional data, the data or the tag.
 ///
-/// This implementation encrypts with `vg_aes_ctr32_aesni` (and expands keys with `vg_aes_expand_key_aesni`) and computes POLYVAL with `vg_ghash_vpclmul`.
+/// This implementation encrypts with `vg_aes_ctr32_aesni` (and expands keys with `vg_aes_expand_key_scratch_aesni`) and computes POLYVAL with `vg_ghash_vpclmul`.
 ///
 /// It compares the tags and overwrites the data with zeros without a branch on the result.
 ///
@@ -3220,7 +3220,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_open_aesni_vpclmul(schedule:
         "add rdx, 248",
         "mov rcx, r15",
         "add rcx, 1768",
-        "call {vg_aes_expand_key_aesni}",
+        "call {vg_aes_expand_key_scratch_aesni}",
         "mov rax, QWORD PTR [r15+16]",
         "mov rdx, QWORD PTR [r15+24]",
         "mov rcx, rax",
@@ -3577,7 +3577,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_open_aesni_vpclmul(schedule:
         "ret",
         ".p2align 6",
         vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni,
-        vg_aes_expand_key_aesni = sym super::aes::vg_aes_expand_key_aesni,
+        vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni,
         vg_ghash_vpclmul = sym super::gcm::vg_ghash_vpclmul,
     )
 }
@@ -3591,7 +3591,7 @@ pub(crate) const VG_AES_GCM_SIV_SEAL_PCLMUL_FEATURES: crate::cpu::Features = cra
 ///
 /// Contract: `VG.Spec.GcmSiv.sealContract`. Constant time: only the pointers, `rounds` and the lengths may affect timing, not the key schedule, the nonce, the additional data or the data.
 ///
-/// This implementation encrypts with `vg_aes_ctr32` (and expands keys with `vg_aes_expand_key`) and computes POLYVAL with `vg_ghash_pclmul`.
+/// This implementation encrypts with `vg_aes_ctr32` (and expands keys with `vg_aes_expand_key_scratch`) and computes POLYVAL with `vg_ghash_pclmul`.
 ///
 /// # Safety
 ///
@@ -3675,7 +3675,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_seal_pclmul(schedule: *const
         "add rdx, 248",
         "mov rcx, r15",
         "add rcx, 1768",
-        "call {vg_aes_expand_key}",
+        "call {vg_aes_expand_key_scratch}",
         "mov rax, QWORD PTR [r15+16]",
         "mov rdx, QWORD PTR [r15+24]",
         "mov rcx, rax",
@@ -4010,7 +4010,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_seal_pclmul(schedule: *const
         "ret",
         ".p2align 6",
         vg_aes_ctr32 = sym super::aes::vg_aes_ctr32,
-        vg_aes_expand_key = sym super::aes::vg_aes_expand_key,
+        vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch,
         vg_ghash_pclmul = sym super::gcm::vg_ghash_pclmul,
     )
 }
@@ -4024,7 +4024,7 @@ pub(crate) const VG_AES_GCM_SIV_OPEN_PCLMUL_FEATURES: crate::cpu::Features = cra
 ///
 /// Contract: `VG.Spec.GcmSiv.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths and whether the function returns 1 or 0 may affect timing, not the key schedule, the nonce, the additional data, the data or the tag.
 ///
-/// This implementation encrypts with `vg_aes_ctr32` (and expands keys with `vg_aes_expand_key`) and computes POLYVAL with `vg_ghash_pclmul`.
+/// This implementation encrypts with `vg_aes_ctr32` (and expands keys with `vg_aes_expand_key_scratch`) and computes POLYVAL with `vg_ghash_pclmul`.
 ///
 /// It compares the tags and overwrites the data with zeros without a branch on the result.
 ///
@@ -4115,7 +4115,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_open_pclmul(schedule: *const
         "add rdx, 248",
         "mov rcx, r15",
         "add rcx, 1768",
-        "call {vg_aes_expand_key}",
+        "call {vg_aes_expand_key_scratch}",
         "mov rax, QWORD PTR [r15+16]",
         "mov rdx, QWORD PTR [r15+24]",
         "mov rcx, rax",
@@ -4472,7 +4472,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_open_pclmul(schedule: *const
         "ret",
         ".p2align 6",
         vg_aes_ctr32 = sym super::aes::vg_aes_ctr32,
-        vg_aes_expand_key = sym super::aes::vg_aes_expand_key,
+        vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch,
         vg_ghash_pclmul = sym super::gcm::vg_ghash_pclmul,
     )
 }
@@ -4483,7 +4483,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_open_pclmul(schedule: *const
 ///
 /// Contract: `VG.Spec.GcmSiv.sealContract`. Constant time: only the pointers, `rounds` and the lengths may affect timing, not the key schedule, the nonce, the additional data or the data.
 ///
-/// This implementation encrypts with `vg_aes_ctr32` (and expands keys with `vg_aes_expand_key`) and computes POLYVAL with `vg_ghash`.
+/// This implementation encrypts with `vg_aes_ctr32` (and expands keys with `vg_aes_expand_key_scratch`) and computes POLYVAL with `vg_ghash`.
 ///
 /// # Safety
 ///
@@ -4566,7 +4566,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_seal(schedule: *const [u8; 2
         "add rdx, 248",
         "mov rcx, r15",
         "add rcx, 1768",
-        "call {vg_aes_expand_key}",
+        "call {vg_aes_expand_key_scratch}",
         "mov rax, QWORD PTR [r15+16]",
         "mov rdx, QWORD PTR [r15+24]",
         "mov rcx, rax",
@@ -4901,7 +4901,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_seal(schedule: *const [u8; 2
         "ret",
         ".p2align 6",
         vg_aes_ctr32 = sym super::aes::vg_aes_ctr32,
-        vg_aes_expand_key = sym super::aes::vg_aes_expand_key,
+        vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch,
         vg_ghash = sym super::gcm::vg_ghash,
     )
 }
@@ -4912,7 +4912,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_seal(schedule: *const [u8; 2
 ///
 /// Contract: `VG.Spec.GcmSiv.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths and whether the function returns 1 or 0 may affect timing, not the key schedule, the nonce, the additional data, the data or the tag.
 ///
-/// This implementation encrypts with `vg_aes_ctr32` (and expands keys with `vg_aes_expand_key`) and computes POLYVAL with `vg_ghash`.
+/// This implementation encrypts with `vg_aes_ctr32` (and expands keys with `vg_aes_expand_key_scratch`) and computes POLYVAL with `vg_ghash`.
 ///
 /// It compares the tags and overwrites the data with zeros without a branch on the result.
 ///
@@ -5002,7 +5002,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_open(schedule: *const [u8; 2
         "add rdx, 248",
         "mov rcx, r15",
         "add rcx, 1768",
-        "call {vg_aes_expand_key}",
+        "call {vg_aes_expand_key_scratch}",
         "mov rax, QWORD PTR [r15+16]",
         "mov rdx, QWORD PTR [r15+24]",
         "mov rcx, rax",
@@ -5359,7 +5359,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_open(schedule: *const [u8; 2
         "ret",
         ".p2align 6",
         vg_aes_ctr32 = sym super::aes::vg_aes_ctr32,
-        vg_aes_expand_key = sym super::aes::vg_aes_expand_key,
+        vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch,
         vg_ghash = sym super::gcm::vg_ghash,
     )
 }
@@ -5373,7 +5373,7 @@ pub(crate) const VG_AES_GCM_SIV_SEAL_VAES_FEATURES: crate::cpu::Features = crate
 ///
 /// Contract: `VG.Spec.GcmSiv.sealContract`. Constant time: only the pointers, `rounds` and the lengths may affect timing, not the key schedule, the nonce, the additional data or the data.
 ///
-/// This implementation encrypts with `vg_aes_ctr32_vaes` (and expands keys with `vg_aes_expand_key_aesni`) and computes POLYVAL with `vg_ghash`.
+/// This implementation encrypts with `vg_aes_ctr32_vaes` (and expands keys with `vg_aes_expand_key_scratch_aesni`) and computes POLYVAL with `vg_ghash`.
 ///
 /// # Safety
 ///
@@ -5457,7 +5457,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_seal_vaes(schedule: *const [
         "add rdx, 248",
         "mov rcx, r15",
         "add rcx, 1768",
-        "call {vg_aes_expand_key_aesni}",
+        "call {vg_aes_expand_key_scratch_aesni}",
         "mov rax, QWORD PTR [r15+16]",
         "mov rdx, QWORD PTR [r15+24]",
         "mov rcx, rax",
@@ -5792,7 +5792,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_seal_vaes(schedule: *const [
         "ret",
         ".p2align 6",
         vg_aes_ctr32_vaes = sym super::aes::vg_aes_ctr32_vaes,
-        vg_aes_expand_key_aesni = sym super::aes::vg_aes_expand_key_aesni,
+        vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni,
         vg_ghash = sym super::gcm::vg_ghash,
     )
 }
@@ -5806,7 +5806,7 @@ pub(crate) const VG_AES_GCM_SIV_OPEN_VAES_FEATURES: crate::cpu::Features = crate
 ///
 /// Contract: `VG.Spec.GcmSiv.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths and whether the function returns 1 or 0 may affect timing, not the key schedule, the nonce, the additional data, the data or the tag.
 ///
-/// This implementation encrypts with `vg_aes_ctr32_vaes` (and expands keys with `vg_aes_expand_key_aesni`) and computes POLYVAL with `vg_ghash`.
+/// This implementation encrypts with `vg_aes_ctr32_vaes` (and expands keys with `vg_aes_expand_key_scratch_aesni`) and computes POLYVAL with `vg_ghash`.
 ///
 /// It compares the tags and overwrites the data with zeros without a branch on the result.
 ///
@@ -5897,7 +5897,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_open_vaes(schedule: *const [
         "add rdx, 248",
         "mov rcx, r15",
         "add rcx, 1768",
-        "call {vg_aes_expand_key_aesni}",
+        "call {vg_aes_expand_key_scratch_aesni}",
         "mov rax, QWORD PTR [r15+16]",
         "mov rdx, QWORD PTR [r15+24]",
         "mov rcx, rax",
@@ -6254,7 +6254,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_open_vaes(schedule: *const [
         "ret",
         ".p2align 6",
         vg_aes_ctr32_vaes = sym super::aes::vg_aes_ctr32_vaes,
-        vg_aes_expand_key_aesni = sym super::aes::vg_aes_expand_key_aesni,
+        vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni,
         vg_ghash = sym super::gcm::vg_ghash,
     )
 }
@@ -6268,7 +6268,7 @@ pub(crate) const VG_AES_GCM_SIV_SEAL_VAES_PCLMUL_FEATURES: crate::cpu::Features 
 ///
 /// Contract: `VG.Spec.GcmSiv.sealContract`. Constant time: only the pointers, `rounds` and the lengths may affect timing, not the key schedule, the nonce, the additional data or the data.
 ///
-/// This implementation encrypts with `vg_aes_ctr32_vaes` (and expands keys with `vg_aes_expand_key_aesni`) and computes POLYVAL with `vg_ghash_pclmul`.
+/// This implementation encrypts with `vg_aes_ctr32_vaes` (and expands keys with `vg_aes_expand_key_scratch_aesni`) and computes POLYVAL with `vg_ghash_pclmul`.
 ///
 /// # Safety
 ///
@@ -6352,7 +6352,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_seal_vaes_pclmul(schedule: *
         "add rdx, 248",
         "mov rcx, r15",
         "add rcx, 1768",
-        "call {vg_aes_expand_key_aesni}",
+        "call {vg_aes_expand_key_scratch_aesni}",
         "mov rax, QWORD PTR [r15+16]",
         "mov rdx, QWORD PTR [r15+24]",
         "mov rcx, rax",
@@ -6687,7 +6687,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_seal_vaes_pclmul(schedule: *
         "ret",
         ".p2align 6",
         vg_aes_ctr32_vaes = sym super::aes::vg_aes_ctr32_vaes,
-        vg_aes_expand_key_aesni = sym super::aes::vg_aes_expand_key_aesni,
+        vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni,
         vg_ghash_pclmul = sym super::gcm::vg_ghash_pclmul,
     )
 }
@@ -6701,7 +6701,7 @@ pub(crate) const VG_AES_GCM_SIV_OPEN_VAES_PCLMUL_FEATURES: crate::cpu::Features 
 ///
 /// Contract: `VG.Spec.GcmSiv.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths and whether the function returns 1 or 0 may affect timing, not the key schedule, the nonce, the additional data, the data or the tag.
 ///
-/// This implementation encrypts with `vg_aes_ctr32_vaes` (and expands keys with `vg_aes_expand_key_aesni`) and computes POLYVAL with `vg_ghash_pclmul`.
+/// This implementation encrypts with `vg_aes_ctr32_vaes` (and expands keys with `vg_aes_expand_key_scratch_aesni`) and computes POLYVAL with `vg_ghash_pclmul`.
 ///
 /// It compares the tags and overwrites the data with zeros without a branch on the result.
 ///
@@ -6792,7 +6792,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_open_vaes_pclmul(schedule: *
         "add rdx, 248",
         "mov rcx, r15",
         "add rcx, 1768",
-        "call {vg_aes_expand_key_aesni}",
+        "call {vg_aes_expand_key_scratch_aesni}",
         "mov rax, QWORD PTR [r15+16]",
         "mov rdx, QWORD PTR [r15+24]",
         "mov rcx, rax",
@@ -7149,7 +7149,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_open_vaes_pclmul(schedule: *
         "ret",
         ".p2align 6",
         vg_aes_ctr32_vaes = sym super::aes::vg_aes_ctr32_vaes,
-        vg_aes_expand_key_aesni = sym super::aes::vg_aes_expand_key_aesni,
+        vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni,
         vg_ghash_pclmul = sym super::gcm::vg_ghash_pclmul,
     )
 }
@@ -7163,7 +7163,7 @@ pub(crate) const VG_AES_GCM_SIV_SEAL_VAES_VPCLMUL_FEATURES: crate::cpu::Features
 ///
 /// Contract: `VG.Spec.GcmSiv.sealContract`. Constant time: only the pointers, `rounds` and the lengths may affect timing, not the key schedule, the nonce, the additional data or the data.
 ///
-/// This implementation encrypts with `vg_aes_ctr32_vaes` (and expands keys with `vg_aes_expand_key_aesni`) and computes POLYVAL with `vg_ghash_vpclmul`.
+/// This implementation encrypts with `vg_aes_ctr32_vaes` (and expands keys with `vg_aes_expand_key_scratch_aesni`) and computes POLYVAL with `vg_ghash_vpclmul`.
 ///
 /// # Safety
 ///
@@ -7247,7 +7247,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_seal_vaes_vpclmul(schedule: 
         "add rdx, 248",
         "mov rcx, r15",
         "add rcx, 1768",
-        "call {vg_aes_expand_key_aesni}",
+        "call {vg_aes_expand_key_scratch_aesni}",
         "mov rax, QWORD PTR [r15+16]",
         "mov rdx, QWORD PTR [r15+24]",
         "mov rcx, rax",
@@ -7582,7 +7582,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_seal_vaes_vpclmul(schedule: 
         "ret",
         ".p2align 6",
         vg_aes_ctr32_vaes = sym super::aes::vg_aes_ctr32_vaes,
-        vg_aes_expand_key_aesni = sym super::aes::vg_aes_expand_key_aesni,
+        vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni,
         vg_ghash_vpclmul = sym super::gcm::vg_ghash_vpclmul,
     )
 }
@@ -7596,7 +7596,7 @@ pub(crate) const VG_AES_GCM_SIV_OPEN_VAES_VPCLMUL_FEATURES: crate::cpu::Features
 ///
 /// Contract: `VG.Spec.GcmSiv.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths and whether the function returns 1 or 0 may affect timing, not the key schedule, the nonce, the additional data, the data or the tag.
 ///
-/// This implementation encrypts with `vg_aes_ctr32_vaes` (and expands keys with `vg_aes_expand_key_aesni`) and computes POLYVAL with `vg_ghash_vpclmul`.
+/// This implementation encrypts with `vg_aes_ctr32_vaes` (and expands keys with `vg_aes_expand_key_scratch_aesni`) and computes POLYVAL with `vg_ghash_vpclmul`.
 ///
 /// It compares the tags and overwrites the data with zeros without a branch on the result.
 ///
@@ -7687,7 +7687,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_open_vaes_vpclmul(schedule: 
         "add rdx, 248",
         "mov rcx, r15",
         "add rcx, 1768",
-        "call {vg_aes_expand_key_aesni}",
+        "call {vg_aes_expand_key_scratch_aesni}",
         "mov rax, QWORD PTR [r15+16]",
         "mov rdx, QWORD PTR [r15+24]",
         "mov rcx, rax",
@@ -8044,7 +8044,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_open_vaes_vpclmul(schedule: 
         "ret",
         ".p2align 6",
         vg_aes_ctr32_vaes = sym super::aes::vg_aes_ctr32_vaes,
-        vg_aes_expand_key_aesni = sym super::aes::vg_aes_expand_key_aesni,
+        vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni,
         vg_ghash_vpclmul = sym super::gcm::vg_ghash_vpclmul,
     )
 }
@@ -8058,7 +8058,7 @@ pub(crate) const VG_AES_GCM_SIV_SEAL_VAES_VPCLMUL_AVX512_FEATURES: crate::cpu::F
 ///
 /// Contract: `VG.Spec.GcmSiv.sealContract`. Constant time: only the pointers, `rounds` and the lengths may affect timing, not the key schedule, the nonce, the additional data or the data.
 ///
-/// This implementation encrypts with `vg_aes_ctr32_vaes` (and expands keys with `vg_aes_expand_key_aesni`) and computes POLYVAL with `vg_ghash_vpclmul`.
+/// This implementation encrypts with `vg_aes_ctr32_vaes` (and expands keys with `vg_aes_expand_key_scratch_aesni`) and computes POLYVAL with `vg_ghash_vpclmul`.
 ///
 /// # Safety
 ///
@@ -8142,7 +8142,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_seal_vaes_vpclmul_avx512(sch
         "add rdx, 248",
         "mov rcx, r15",
         "add rcx, 1768",
-        "call {vg_aes_expand_key_aesni}",
+        "call {vg_aes_expand_key_scratch_aesni}",
         "mov rax, QWORD PTR [r15+16]",
         "mov rdx, QWORD PTR [r15+24]",
         "mov rcx, rax",
@@ -8477,7 +8477,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_seal_vaes_vpclmul_avx512(sch
         "ret",
         ".p2align 6",
         vg_aes_ctr32_vaes = sym super::aes::vg_aes_ctr32_vaes,
-        vg_aes_expand_key_aesni = sym super::aes::vg_aes_expand_key_aesni,
+        vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni,
         vg_ghash_vpclmul = sym super::gcm::vg_ghash_vpclmul,
     )
 }
@@ -8491,7 +8491,7 @@ pub(crate) const VG_AES_GCM_SIV_OPEN_VAES_VPCLMUL_AVX512_FEATURES: crate::cpu::F
 ///
 /// Contract: `VG.Spec.GcmSiv.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths and whether the function returns 1 or 0 may affect timing, not the key schedule, the nonce, the additional data, the data or the tag.
 ///
-/// This implementation encrypts with `vg_aes_ctr32_vaes` (and expands keys with `vg_aes_expand_key_aesni`) and computes POLYVAL with `vg_ghash_vpclmul`.
+/// This implementation encrypts with `vg_aes_ctr32_vaes` (and expands keys with `vg_aes_expand_key_scratch_aesni`) and computes POLYVAL with `vg_ghash_vpclmul`.
 ///
 /// It compares the tags and overwrites the data with zeros without a branch on the result.
 ///
@@ -8582,7 +8582,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_open_vaes_vpclmul_avx512(sch
         "add rdx, 248",
         "mov rcx, r15",
         "add rcx, 1768",
-        "call {vg_aes_expand_key_aesni}",
+        "call {vg_aes_expand_key_scratch_aesni}",
         "mov rax, QWORD PTR [r15+16]",
         "mov rdx, QWORD PTR [r15+24]",
         "mov rcx, rax",
@@ -8939,7 +8939,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_open_vaes_vpclmul_avx512(sch
         "ret",
         ".p2align 6",
         vg_aes_ctr32_vaes = sym super::aes::vg_aes_ctr32_vaes,
-        vg_aes_expand_key_aesni = sym super::aes::vg_aes_expand_key_aesni,
+        vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni,
         vg_ghash_vpclmul = sym super::gcm::vg_ghash_vpclmul,
     )
 }
@@ -8953,7 +8953,7 @@ pub(crate) const VG_AES_GCM_SIV_SEAL_VPCLMUL_FEATURES: crate::cpu::Features = cr
 ///
 /// Contract: `VG.Spec.GcmSiv.sealContract`. Constant time: only the pointers, `rounds` and the lengths may affect timing, not the key schedule, the nonce, the additional data or the data.
 ///
-/// This implementation encrypts with `vg_aes_ctr32` (and expands keys with `vg_aes_expand_key`) and computes POLYVAL with `vg_ghash_vpclmul`.
+/// This implementation encrypts with `vg_aes_ctr32` (and expands keys with `vg_aes_expand_key_scratch`) and computes POLYVAL with `vg_ghash_vpclmul`.
 ///
 /// # Safety
 ///
@@ -9037,7 +9037,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_seal_vpclmul(schedule: *cons
         "add rdx, 248",
         "mov rcx, r15",
         "add rcx, 1768",
-        "call {vg_aes_expand_key}",
+        "call {vg_aes_expand_key_scratch}",
         "mov rax, QWORD PTR [r15+16]",
         "mov rdx, QWORD PTR [r15+24]",
         "mov rcx, rax",
@@ -9372,7 +9372,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_seal_vpclmul(schedule: *cons
         "ret",
         ".p2align 6",
         vg_aes_ctr32 = sym super::aes::vg_aes_ctr32,
-        vg_aes_expand_key = sym super::aes::vg_aes_expand_key,
+        vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch,
         vg_ghash_vpclmul = sym super::gcm::vg_ghash_vpclmul,
     )
 }
@@ -9386,7 +9386,7 @@ pub(crate) const VG_AES_GCM_SIV_OPEN_VPCLMUL_FEATURES: crate::cpu::Features = cr
 ///
 /// Contract: `VG.Spec.GcmSiv.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths and whether the function returns 1 or 0 may affect timing, not the key schedule, the nonce, the additional data, the data or the tag.
 ///
-/// This implementation encrypts with `vg_aes_ctr32` (and expands keys with `vg_aes_expand_key`) and computes POLYVAL with `vg_ghash_vpclmul`.
+/// This implementation encrypts with `vg_aes_ctr32` (and expands keys with `vg_aes_expand_key_scratch`) and computes POLYVAL with `vg_ghash_vpclmul`.
 ///
 /// It compares the tags and overwrites the data with zeros without a branch on the result.
 ///
@@ -9477,7 +9477,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_open_vpclmul(schedule: *cons
         "add rdx, 248",
         "mov rcx, r15",
         "add rcx, 1768",
-        "call {vg_aes_expand_key}",
+        "call {vg_aes_expand_key_scratch}",
         "mov rax, QWORD PTR [r15+16]",
         "mov rdx, QWORD PTR [r15+24]",
         "mov rcx, rax",
@@ -9834,7 +9834,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_open_vpclmul(schedule: *cons
         "ret",
         ".p2align 6",
         vg_aes_ctr32 = sym super::aes::vg_aes_ctr32,
-        vg_aes_expand_key = sym super::aes::vg_aes_expand_key,
+        vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch,
         vg_ghash_vpclmul = sym super::gcm::vg_ghash_vpclmul,
     )
 }

@@ -15,7 +15,7 @@ against the contract.
 
 Each function calls `vg_aes_ctr32` or `vg_ghash` in a frame that pushes
 their two stack arguments, so uses 8 bytes of stack (`init` also calls
-`vg_aes_expand_key`, which takes no stack arguments). Every function also
+`vg_aes_expand_key_scratch`, which takes no stack arguments). Every function also
 keeps its working space in a frame of its own (2560 bytes for `init`, 2576
 for `stream_init` and `stream_aad`, 2592 for the others,
 `Proof/AesGcm/Arm/Frame.lean`).
@@ -26,7 +26,7 @@ namespace VG.Artifacts.AesGcm.Arm
 open VG.Proof.AesGcm.Arm
 
 /-- How `init` is built. -/
-def initNote : String := "This implementation calls `vg_aes_expand_key` for the key schedule and \
+def initNote : String := "This implementation calls `vg_aes_expand_key_scratch` for the key schedule and \
   `vg_aes_ctr32` to encrypt the zero block into the hash subkey."
 
 /-- How `stream_init` and `stream_aad` are built. -/

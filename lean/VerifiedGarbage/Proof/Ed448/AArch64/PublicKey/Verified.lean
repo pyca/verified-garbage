@@ -6,8 +6,8 @@ import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.WrapCT
 # Ed448 public-key derivation on AArch64: `Verified`
 
 Correctness including the ABI (`publicKey_ok`), for any implementation `v`
-of the Keccak permutation, given `BaseLadderOk` (which the generic file
-passes in). Constant time: two runs whose pointers agree have the same
+of the Keccak permutation, given that `vg_ed448_scalar_base` meets
+its contract in constant time (`BaseOk`, which the generic file passes in). Constant time: two runs whose pointers agree have the same
 layout, so in the frame's body they are related by `Two`: both satisfy `Ctx`
 with that layout (and what the next block or call needs of the registers,
 `Slots`), whatever their secrets. The blocks address only the stack and
@@ -147,7 +147,7 @@ def base_ready (hL : L.Ok) {t : State} (hs : Slots L baseValues t) :
     VG.Proof.Ed25519.AArch64.Whole.CallReady Proof.Ed448.AArch64.scalarBaseLocal L.E L.inputs L.outputs t :=
   ⟨[⟨L.E, 57⟩], L.outputs, base_pre hL hs, base_covers L, base_writes L⟩
 
-theorem body_ct (v : Proof.Sha3.AArch64.Permutation) (hb : Proof.Ed448.BaseLadderOk) (hL : L.Ok)
+theorem body_ct (v : Proof.Sha3.AArch64.Permutation) (hb : Proof.Ed448.AArch64.BaseOk) (hL : L.Ok)
     (ha : Arguments L m₁) (hb' : Arguments L m₂) :
     RelCT isa (Two L g₁ g₂ v₁ v₂ m₁ m₂ fun _ => True) (body v.callee)
       (Two L g₁ g₂ v₁ v₂ m₁ m₂ fun _ => True) := by
@@ -191,7 +191,7 @@ theorem body_ct (v : Proof.Sha3.AArch64.Permutation) (hb : Proof.Ed448.BaseLadde
     hL ha hb' (args := baseValues) (by decide)
     (by simp [baseValues, VG.Proof.Ed25519.AArch64.Whole.valid]) (by simp [baseValues])
     (by decide) (by taint_decide)
-    (Proof.Ed448.AArch64.scalarBase_ok hb) Proof.Ed448.AArch64.scalarBase_ct
+    hb.ok hb.ct
     (VG.Proof.Ed25519.AArch64.Whole.depth_of_noFrames base_noFrames) (fun _ _ hs => base_ready hL hs)
     (fun _ _ _ _ _ _ hsp hg => ⟨hsp, hg (.x0, .caller 0 0) (List.mem_of_getElem? (i := 0) rfl),
       hg (.x1, .frame 0) (List.mem_of_getElem? (i := 1) rfl), hg (.x2, .caller 2 0) (List.mem_of_getElem? (i := 2) rfl)⟩)
@@ -202,7 +202,7 @@ theorem lay_eq {s t : State} (hp : pkLocal.pub s t) : lay s = lay t := by
   obtain ⟨sp, h0, h1, h2⟩ := hp
   simp only [lay, VG.Proof.Ed25519.AArch64.Whole.base, sp, h0, h1, h2]
 
-theorem publicKey_ct (v : Proof.Sha3.AArch64.Permutation) (hb : Proof.Ed448.BaseLadderOk) :
+theorem publicKey_ct (v : Proof.Sha3.AArch64.Permutation) (hb : Proof.Ed448.AArch64.BaseOk) :
     ConstantTime isa pkLocal.pre pkLocal.pub (publicKeyWith v.callee) := by
   refine VG.Proof.Ed25519.AArch64.Whole.wrap_ct (fun _ _ hp => hp.1) ?_ ?_
   · intro s hs p hp
@@ -229,7 +229,7 @@ theorem pk_implies : pkLocal.Implies (Spec.Ed448.publicKeyContract AArch64.abi 3
     Spec.Ed448.scratchWords, pkLocal, below, AArch64.abi, AArch64.argRegs]
     [satState] using satState
 
-theorem publicKey_verified (v : Proof.Sha3.AArch64.Permutation) (hb : Proof.Ed448.BaseLadderOk) :
+theorem publicKey_verified (v : Proof.Sha3.AArch64.Permutation) (hb : Proof.Ed448.AArch64.BaseOk) :
     Verified AArch64.target (publicKeyWith v.callee) (Spec.Ed448.publicKeyContract AArch64.abi 352) :=
   Verified.of_implies
     (Verified.of_correct (fun _ h => publicKey_ok v hb h) (publicKey_ct v hb) (.refl pk_implies.sat_left))

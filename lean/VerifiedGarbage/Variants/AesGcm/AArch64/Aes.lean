@@ -4,7 +4,7 @@ import VerifiedGarbage.Proof.AesGcm.AArch64.Callee
 # The functions AES-GCM calls on AArch64: Aes
 
 A variant of `AesGcm` on AArch64 (see `TCB/Emit.lean`): the AES instructions
-for the cipher (`vg_aes_ctr32_aes`, `vg_aes_expand_key_aes`) and PMULL for
+for the cipher (`vg_aes_ctr32_aes`, `vg_aes_expand_key_scratch_aes`) and PMULL for
 the hash (`vg_ghash_aes`), which need `FEAT_AES` and `FEAT_PMULL`, both
 Rust's `aes` feature.
 -/

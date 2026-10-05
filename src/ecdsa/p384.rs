@@ -2,7 +2,12 @@
 //! (`vg_ecdsa_p384_sha384_sign`, which calls `vg_ecdsa_p384_sign`), public
 //! keys (`vg_ec_p384_public_key`), and verification (`vg_ecdsa_p384_verify`).
 
-#![cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
+#![cfg(any(
+    target_arch = "x86_64",
+    target_arch = "x86",
+    target_arch = "aarch64",
+    target_arch = "arm"
+))]
 
 use super::{Error, P384, SignatureHash, SigningKey, sealed};
 use crate::arch::ec_p384::vg_ec_p384_public_key;

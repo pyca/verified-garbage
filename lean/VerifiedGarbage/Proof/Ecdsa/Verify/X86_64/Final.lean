@@ -60,7 +60,8 @@ theorem slSub_ok {M : Mod} {m : Nat} (hMn : M.n = c.n) (h7 : c.n < 7) {base : Ad
     (ha : a < 45) (hb : b < 45) (hA : sv c base s a < m) (hB : sv c base s b < m) :
     WP isa (.block (Impl.Mont.X86_64.sub M (c.sl o) (c.sl a) (c.sl b))) s fun s' =>
       OpKeep M base (c.sl o) s s' ∧ sv c base s' o = (sv c base s a + m - sv c base s b) % m := by
-  have := sub_ok hs hM (o := c.sl o) (a := c.sl a) (b := c.sl b) (by rw [hMn]; exact sl_le c h7 ho)
+  rw [sub_of_lt hM.n7]
+  have := subR_ok hs hM (o := c.sl o) (a := c.sl a) (b := c.sl b) (by rw [hMn]; exact sl_le c h7 ho)
     (by rw [hMn]; exact sl_le c h7 ha) (by rw [hMn]; exact sl_le c h7 hb) (by rw [hMn]; exact hA)
     (by rw [hMn]; exact hB)
   rw [hMn] at this

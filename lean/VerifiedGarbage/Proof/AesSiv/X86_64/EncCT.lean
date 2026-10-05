@@ -43,7 +43,7 @@ theorem EPub.comp_eq (hq : EPub s₀ s₀' A N) {i : Nat} (hi : i < N) : comp s�
 
 /-- The working space's address, from the stack. -/
 theorem argLoad_wp (h : EPre s₀ C A P W D R N L) :
-    WP isa (.block [.mov .rax (.mem (at_ .rsp 8))]) s₀ fun s =>
+    WP isa (.block [.mov .rax (.mem (at_ .rsp 16))]) s₀ fun s =>
       s.gpr .rax = W ∧ ∀ r, r ≠ .rax → s.gpr r = s₀.gpr r :=
   WP.of_runBlock ⟨s₀.setReg .rax W, by
     simp only [runBlock_cons, runStep_some, runBlock_nil, at_, exec, readSrc, State.load64, State.ea, offset_nat,
@@ -89,7 +89,7 @@ theorem start_rel (v : Ctr32Impl) (h : EPre s₀ C A P W D R N L) (h' : EPre s�
       (.seq (.block (encPre ++ startPre)) (callFinalize v.callee v.suffix))
       (AA s₀ s₀' C A P W D R N L 0) := by
   obtain ⟨_, hA⟩ : ∃ hc, (taint.check (Taint.ofRegs [.rdi, .rsi, .rdx, .rcx, .r8, .r9, .rsp])
-      (.block [.mov .rax (.mem (at_ .rsp 8))]) hc).isSome = true := ⟨_, by taint_decide⟩
+      (.block [.mov .rax (.mem (at_ .rsp 16))]) hc).isSome = true := ⟨_, by taint_decide⟩
   obtain ⟨_, hB⟩ : ∃ hc, (taint.check (Taint.ofRegs [.rax, .rdi, .rsi, .rdx, .rcx, .r8, .r9, .rsp])
       (.block (encPre.drop 1 ++ startPre)) hc).isSome = true := ⟨_, by taint_decide⟩
   have a := (RelCT.taint (A := taint) (P := fun a b => a = s₀ ∧ b = s₀') _ (fun a b hab => by
@@ -109,7 +109,7 @@ theorem start_rel (v : Ctr32Impl) (h : EPre s₀ C A P W D R N L) (h' : EPre s�
       obtain ⟨rfl, rfl⟩ := hab; exact ⟨argLoad_wp h, argLoad_wp h'⟩
   have b := RelCT.taint (A := taint) (P := fun (a b : State) => (a.gpr .rax = W ∧ ∀ r, r ≠ .rax → a.gpr r = s₀.gpr r) ∧
       b.gpr .rax = W ∧ ∀ r, r ≠ .rax → b.gpr r = s₀'.gpr r) _ (fun a b hab => args_agree h h' q1 hab.1 hab.2) hB
-  have blk := (RelCT.block_append (M := isa) (l₁ := ([.mov .rax (.mem (at_ .rsp 8))] : List Instr)) (l₂ := encPre.drop 1 ++ startPre)
+  have blk := (RelCT.block_append (M := isa) (l₁ := ([.mov .rax (.mem (at_ .rsp 16))] : List Instr)) (l₂ := encPre.drop 1 ++ startPre)
       ((a.mono (fun _ _ p => p) fun _ _ p => p.2).seq b)).wp
     (F₁ := fun (s : State) => FArgs s C D (W + BitVec.ofNat 64 16) (W + BitVec.ofNat 64 256) 16 R ∧
       s.gpr .rsp = s₀.gpr .rsp ∧ WP isa (callFinalize v.callee v.suffix) s (AInv s₀ C A P W D R N L 0))
@@ -231,16 +231,81 @@ theorem encS2v_rel (v : Ctr32Impl) (h : EPre s₀ C A P W D R N L) (h' : EPre s�
   exact RelCT.assoc ((start_rel v h h' hq.rsp).seq ((ads_rel v h h' hq).seq
     (e.mono (fun _ _ p => p) fun _ _ p => p.2)))
 
-theorem encrypt_rel (v : Ctr32Impl) (h : EPre s₀ C A P W D R N L) (h' : EPre s₀' C A P W D R N L)
+theorem encryptCore_rel (v : Ctr32Impl) (h : EPre s₀ C A P W D R N L) (h' : EPre s₀' C A P W D R N L)
     (hq : EPub s₀ s₀' A N) :
-    RelCT isa (fun a b => a = s₀ ∧ b = s₀') (encrypt v.callee v.suffix) fun _ _ => True :=
+    RelCT isa (fun a b => a = s₀ ∧ b = s₀') (encryptCore v.callee v.suffix) fun _ _ => True :=
   (encS2v_rel v h h' hq).seq ((sealTail_rel v h.env h'.env hq.rsp h.cp h.pw h'.pw).mono
     (fun _ _ p => ⟨p.1.spre, p.2.spre⟩) fun _ _ p => p)
 
+/-- The copy of the IV to `siv`, in both runs: its addresses, `T` and `W`, are
+the same. -/
+theorem sivOut_rel {T : Addr} (q1 : s₀.gpr .rsp = s₀'.gpr .rsp) :
+    RelCT isa (fun a b => OutPre s₀ W T a ∧ OutPre s₀' W T b) (.block sivOut) fun _ _ => True := by
+  obtain ⟨_, hA⟩ : ∃ hc, (taint.check (Taint.ofRegs [.rsp]) (.block (sivOut.take 2)) hc).isSome = true :=
+    ⟨_, by taint_decide⟩
+  obtain ⟨_, hB⟩ : ∃ hc, (taint.check (Taint.ofRegs [.rax, .r10]) (.block (sivOut.drop 2)) hc).isSome = true :=
+    ⟨_, by taint_decide⟩
+  have a := (RelCT.taint (A := taint) (P := fun a b => OutPre s₀ W T a ∧ OutPre s₀' W T b) _
+    (fun a b hab => Taint.agree_ofRegs fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr; rw [hab.1.sp, hab.2.sp, q1]) hA).wp
+    (F₁ := fun (u : State) => u.gpr .rax = T ∧ u.gpr .r10 = W)
+    (F₂ := fun (u : State) => u.gpr .rax = T ∧ u.gpr .r10 = W)
+    fun a b hab => ⟨sivOutHead_wp hab.1, sivOutHead_wp hab.2⟩
+  have b := RelCT.taint (A := taint)
+    (P := fun (a b : State) => (a.gpr .rax = T ∧ a.gpr .r10 = W) ∧ b.gpr .rax = T ∧ b.gpr .r10 = W) _
+    (fun a b hab => Taint.agree_ofRegs fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · rw [hab.1.1, hab.2.1]
+      · rw [hab.1.2, hab.2.2]) hB
+  rw [show (Code.block sivOut : Prog isa) = .block (sivOut.take 2 ++ sivOut.drop 2) by
+    rw [List.take_append_drop]]
+  exact RelCT.block_append ((a.mono (fun _ _ p => p) fun _ _ p => p.2).seq b)
+
+theorem encrypt_rel (v : Ctr32Impl) (h : EPre s₀ C A P W D R N L) (h' : EPre s₀' C A P W D R N L)
+    {T : Addr} (hT : SivArg s₀ P W D T L) (hT' : SivArg s₀' P W D T L) (hq : EPub s₀ s₀' A N) :
+    RelCT isa (fun a b => a = s₀ ∧ b = s₀') (encrypt v.callee v.suffix) fun _ _ => True :=
+  ((encryptCore_rel v h h' hq).wp (F₁ := OutPre s₀ W T) (F₂ := OutPre s₀' W T)
+    fun a b hab => by obtain ⟨rfl, rfl⟩ := hab; exact ⟨encryptCore_out v h hT, encryptCore_out v h' hT'⟩).seq
+    ((sivOut_rel hq.rsp).mono (fun _ _ p => p.2) fun _ _ p => p)
+
+/-- The copy of the received IV to `W`, in both runs: its addresses, `T` and
+`W`, are the same. -/
+theorem sivIn_rel (h : EPre s₀ C A P W D R N L) (h' : EPre s₀' C A P W D R N L)
+    {T : Addr} (hT : SivArg s₀ P W D T L) (hT' : SivArg s₀' P W D T L) (q1 : s₀.gpr .rsp = s₀'.gpr .rsp) :
+    RelCT isa (fun a b => SDone s₀ C A P W D R N L a ∧ SDone s₀' C A P W D R N L b) (.block sivIn)
+      fun a b => (SPre s₀ C D P W R L a ∧ Spill.Saved a.mem W s₀.gpr saved) ∧
+        SPre s₀' C D P W R L b ∧ Spill.Saved b.mem W s₀'.gpr saved := by
+  obtain ⟨_, hA⟩ : ∃ hc, (taint.check (Taint.ofRegs [.rsp]) (.block (sivIn.take 1)) hc).isSome = true :=
+    ⟨_, by taint_decide⟩
+  obtain ⟨_, hB⟩ : ∃ hc, (taint.check (Taint.ofRegs [.rax, .r15]) (.block (sivIn.drop 1)) hc).isSome = true :=
+    ⟨_, by taint_decide⟩
+  have a := (RelCT.taint (A := taint) (P := fun a b => SDone s₀ C A P W D R N L a ∧ SDone s₀' C A P W D R N L b) _
+    (fun a b hab => Taint.agree_ofRegs fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr; rw [hab.1.spre.regs.rsp, hab.2.spre.regs.rsp, q1]) hA).wp
+    (F₁ := fun (u : State) => u.gpr .rax = T ∧ u.gpr .r15 = W)
+    (F₂ := fun (u : State) => u.gpr .rax = T ∧ u.gpr .r15 = W)
+    fun a b hab => ⟨sivInHead_wp h hT hab.1, sivInHead_wp h' hT' hab.2⟩
+  have b := RelCT.taint (A := taint)
+    (P := fun (a b : State) => (a.gpr .rax = T ∧ a.gpr .r15 = W) ∧ b.gpr .rax = T ∧ b.gpr .r15 = W) _
+    (fun a b hab => Taint.agree_ofRegs fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · rw [hab.1.1, hab.2.1]
+      · rw [hab.1.2, hab.2.2]) hB
+  rw [show (Code.block sivIn : Prog isa) = .block (sivIn.take 1 ++ sivIn.drop 1) by
+    rw [List.take_append_drop]]
+  exact ((RelCT.block_append ((a.mono (fun _ _ p => p) fun _ _ p => p.2).seq b)).wp
+    (F₁ := fun (s' : State) => SPre s₀ C D P W R L s' ∧ Spill.Saved s'.mem W s₀.gpr saved)
+    (F₂ := fun (s' : State) => SPre s₀' C D P W R L s' ∧ Spill.Saved s'.mem W s₀'.gpr saved)
+    fun a b hab => ⟨by rw [List.take_append_drop]; exact WP.mono (sivIn_wp h hT hab.1) (fun _ p => ⟨p.1, p.2.1⟩),
+      by rw [List.take_append_drop]; exact WP.mono (sivIn_wp h' hT' hab.2) (fun _ p => ⟨p.1, p.2.1⟩)⟩).mono
+    (fun _ _ p => p) fun _ _ p => p.2
+
 theorem decrypt_rel (v : Ctr32Impl) (h : EPre s₀ C A P W D R N L) (h' : EPre s₀' C A P W D R N L)
-    (hq : EPub s₀ s₀' A N) :
+    {T : Addr} (hT : SivArg s₀ P W D T L) (hT' : SivArg s₀' P W D T L) (hq : EPub s₀ s₀' A N) :
     RelCT isa (fun a b => a = s₀ ∧ b = s₀') (decrypt v.callee v.suffix) fun _ _ => True :=
-  (encS2v_rel v h h' hq).seq ((openTail_rel v h.env h'.env hq.rsp h.cp h.pw h'.pw).mono
-    (fun _ _ p => ⟨p.1.spre, p.2.spre⟩) fun _ _ p => p)
+  (encS2v_rel v h h' hq).seq ((sivIn_rel h h' hT hT' hq.rsp).seq
+    ((openTail_rel v h.env h'.env hq.rsp h.cp h.pw h'.pw).mono (fun _ _ p => ⟨p.1.1, p.2.1⟩) fun _ _ p => p))
 
 end VG.Proof.AesSiv.X86_64

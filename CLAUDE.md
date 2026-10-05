@@ -3,6 +3,9 @@
 This library is written entirely by LLMs, so these rules are what keep it
 trustworthy. Read `lean/README.md` first.
 
+For a fast Lean bootstrap on Linux x86-64, restore the prebuilt GHCR cache
+before compiling proofs; see [Restoring the CI build cache](lean/README.md#restoring-the-ci-build-cache).
+
 ## Hard rules
 
 * **All assembly comes from Lean.** Never write `asm!`, `naked_asm!`,
@@ -155,6 +158,13 @@ instructions in an ISA model) go in their own PR before either.
    interface append the suffix alone. Never list the
    implementations in the caller: a new implementation is a new variant
    file, and its callers follow.
+   A function whose proof takes a Weierstrass curve's group law (`Law`,
+   `Proof/Weierstrass/Law.lean`) is registered generic over it the same
+   way: the law is the one variant of the interface `<Curve>` on each target
+   (`Variants/<Curve>/<Target>/Law.lean`, the only files that import the
+   Mathlib algebra of its proof), and the registration file is
+   `Generic/<Curve>/<Target>/<Alg>.lean` (`Generic/<Iface>/<Curve>/<Target>/`
+   when it is generic over an implementation too). The law has no suffix.
 5. Regenerate `src/asm/`, build the public Rust API on top of the primitive,
    and test it against the Wycheproof vectors in `tests/wycheproof/` (set
    `WYCHEPROOF_ROOT` to a checkout of C2SP/wycheproof). Benchmark the new

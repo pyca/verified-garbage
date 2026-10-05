@@ -463,8 +463,8 @@ theorem ctrTail_ok {s : State} (he : Env c w sp R s) (hR : R = 10 ∨ R = 12 ∨
 /-- CTR's first block: the counter `Q` at `W + 96`, and the data's address
 and length in `r6` and `r5`. -/
 theorem ctrPre_ok {s : State} (he : Env c w sp R s) {D : BitVec 32} {n : Nat}
-    (hD : Dat c w sp s D n) (hfit : sp.toNat + 12 ≤ 2 ^ 32)
-    (hA : Covers [⟨State.addr sp, 12⟩] (s.rd ++ s.wr)) (hAw : (⟨State.addr sp, 12⟩ : Region).Disjoint ⟨State.addr w, 2576⟩)
+    (hD : Dat c w sp s D n) (hfit : sp.toNat + 16 ≤ 2 ^ 32)
+    (hA : Covers [⟨State.addr sp, 16⟩] (s.rd ++ s.wr)) (hAw : (⟨State.addr sp, 16⟩ : Region).Disjoint ⟨State.addr w, 2576⟩)
     (hm0 : s.mem.readW (State.addr sp) 32 = D)
     (hm1 : s.mem.readW (State.addr sp + BitVec.ofNat 64 4) 32 = BitVec.ofNat 32 n) :
     WP isa (.block (counter 0 ++ ([.ldrSp .r6 0, .ldrSp .r5 4] : List Instr))) s fun s₃ => Env c w sp R s₃ ∧ Dat c w sp s₃ D n ∧
@@ -477,7 +477,7 @@ theorem ctrPre_ok {s : State} (he : Env c w sp R s) {D : BitVec 32} {n : Nat}
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl <;> exact g₁ _ (by decide)) sp₁ rd₁ wr₁
   have hsp₁ : s₁.sp = sp := he₁.sp
-  have dA : ∀ {d : Nat}, d + 4 ≤ 12 → ∀ r ∈ [(⟨State.addr w + BitVec.ofNat 64 cbOff, 16⟩ : Region)],
+  have dA : ∀ {d : Nat}, d + 4 ≤ 16 → ∀ r ∈ [(⟨State.addr w + BitVec.ofNat 64 cbOff, 16⟩ : Region)],
       (⟨State.addr sp + BitVec.ofNat 64 d, 4⟩ : Region).Disjoint r := fun hd r hr => by
     simp only [List.mem_singleton] at hr; subst hr
     exact (hAw.sub_left (Offset.sub_base _ hd)).sub_right (Lay.wSub (by decide))
@@ -511,8 +511,8 @@ theorem ctrPre_ok {s : State} (he : Env c w sp R s) {D : BitVec 32} {n : Nat}
 /-- `ctr 0`: the data (`n` bytes at `D`, its address and length at `sp` and
 `sp + 4`) XORed with CTR's keystream from the IV at `W` with two bits cleared. -/
 theorem ctr_ok {s : State} (he : Env c w sp R s) (hR : R = 10 ∨ R = 12 ∨ R = 14) {D : BitVec 32} {n : Nat}
-    (hD : Dat c w sp s D n) (hn : n < 2 ^ 32) (hfit : sp.toNat + 12 ≤ 2 ^ 32)
-    (hA : Covers [⟨State.addr sp, 12⟩] (s.rd ++ s.wr)) (hAw : (⟨State.addr sp, 12⟩ : Region).Disjoint ⟨State.addr w, 2576⟩)
+    (hD : Dat c w sp s D n) (hn : n < 2 ^ 32) (hfit : sp.toNat + 16 ≤ 2 ^ 32)
+    (hA : Covers [⟨State.addr sp, 16⟩] (s.rd ++ s.wr)) (hAw : (⟨State.addr sp, 16⟩ : Region).Disjoint ⟨State.addr w, 2576⟩)
     (hm0 : s.mem.readW (State.addr sp) 32 = D)
     (hm1 : s.mem.readW (State.addr sp + BitVec.ofNat 64 4) 32 = BitVec.ofNat 32 n) :
     WP isa (ctr 0) s fun s' => Env c w sp R s' ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧

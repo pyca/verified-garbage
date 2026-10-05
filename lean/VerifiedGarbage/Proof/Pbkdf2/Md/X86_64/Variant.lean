@@ -122,7 +122,7 @@ structure MdHash where
   sha256 : Option Proof.Sha256.X86_64.Compress := none
   /-- For SHA-384's variants, the implementation of the compression
   function, from which the functions built on SHA-384 alone (deterministic
-  ECDSA's) are made (`Generic/MdHash/X86_64/EcdsaP256Sha384.lean`); `none`
+  ECDSA's) are made (`Generic/MdHash/P256/X86_64/EcdsaP256Sha384.lean`); `none`
   for the other hash functions. -/
   sha384 : Option Proof.Sha512.X86_64.Compress := none
 

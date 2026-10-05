@@ -954,9 +954,25 @@ yours to keep:
 
 <td>✅</td>
 
-<td>❌</td>
+<td>✅</td>
 
 <td>✅</td>
+
+</tr>
+
+<tr>
+
+<td>ECDH P-521</td>
+
+<td>✅</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+<td>❌</td>
 
 </tr>
 
@@ -1056,6 +1072,22 @@ yours to keep:
 
 <td>✅ SHA extensions</td>
 
+<td>✅</td>
+
+<td>✅</td>
+
+</tr>
+
+<tr>
+
+<td>ECDSA P-521</td>
+
+<td>✅</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
 <td>❌</td>
 
 <td>❌</td>
@@ -1086,7 +1118,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅ SHA extensions</td>
+<td>✅ SHA extensions; keys and signatures by a fixed-base comb, verification by a comb and 4-bit windows</td>
 
 <td>✅</td>
 
@@ -1234,7 +1266,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>❌</td>
+<td>✅ SHA extensions, AVX-512 IFMA, AVX-512VL, AVX2, BMI1, BMI2, ADX</td>
 
 <td>❌</td>
 
@@ -1250,7 +1282,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>❌</td>
+<td>✅ AVX-512 IFMA, AVX-512VL, AVX2, BMI2, ADX</td>
 
 <td>❌</td>
 

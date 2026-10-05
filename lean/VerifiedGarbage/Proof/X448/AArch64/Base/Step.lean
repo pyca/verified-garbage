@@ -80,66 +80,39 @@ theorem selected_env {s t : State} {base : Addr} (hs : Scr s base) (hb : BEnv s.
 /-! ## The invariant -/
 
 open VG.Proof.Ed448 (Rep baseAff dZ)
-open VG.Proof.X448 (oddSumZ evenSumZ baseGVal)
+open VG.Proof.X448 (oddSumZ evenSumZ combG)
 
-/-- The comb's state before step `j` (of the scalar `k`), from the function's state after its
-setup `s₀`. -/
-structure StepInv (s₀ : State) (base : Addr) (k j : Nat) (s : State) : Prop where
-  bound : j ≤ 56
+/-- The state of a comb of `n` tables before step `j` (of the scalar `k`), from the function's
+state after its setup `s₀`. -/
+structure StepInv (n : Nat) (s₀ : State) (base : Addr) (k j : Nat) (s : State) : Prop where
+  bound : j ≤ n
   scr : Scr s base
   env : BEnv s.mem base
   zero : ∀ w < 8, limbs s.mem base (slot (19 : Index).val) w = 0
   counter : s.gpr .x19 = BitVec.ofNat 64 j
-  bits : Bits base k s.mem
-  odd : Rep (pt (EV s.mem base) 0 1 2) (((baseGVal : ℤ) + oddSumZ k j) • baseAff)
-  even : Rep (pt (EV s.mem base) 3 4 5) (((baseGVal : ℤ) + evenSumZ k j) • baseAff)
+  bits : Bits n base k s.mem
+  odd : Rep (pt (EV s.mem base) 0 1 2) (((combG n : ℤ) + oddSumZ k j) • baseAff)
+  even : Rep (pt (EV s.mem base) 3 4 5) (((combG n : ℤ) + evenSumZ k j) • baseAff)
   lr : s.gpr .x30 = s₀.gpr .x30
   out : s.gpr .x20 = s₀.gpr .x20
   rd : s.rd = s₀.rd
   wr : s.wr = s₀.wr
   mem : Outside2 base 64 2816 ACC 1152 s₀.mem s.mem
 
-theorem zero_env {m : Mem} {base : Addr} (h : ∀ w < 8, limbs m base (slot (19 : Index).val) w = 0) :
-    EV m base 19 = 0 ∧ Bnd Mb m base (slot (19 : Index).val) := by
-  refine ⟨?_, fun w hw => by rw [h w hw]; decide⟩
-  show VG.Proof.X448.AArch64.Weak.F m base (slot (19 : Index).val) = 0
-  simp only [VG.Proof.X448.AArch64.Weak.F]
-  rw [VG.Proof.X448.Wide.valN_congr h]
-  have : VG.Proof.X448.Wide.valN (fun _ => 0) 8 = 0 := by decide
-  rw [this]; rfl
-
-private theorem next_fact : ∀ j < 56,
-    BitVec.ofNat 64 j + BitVec.ofNat 64 1 = BitVec.ofNat 64 (j + 1) ∧
-    ((BitVec.ofNat 64 (j + 1) - BitVec.ofNat 64 56 != 0) = decide (j + 1 ≠ 56)) := by
-  decide +kernel
-
-theorem next_ok (s : State) {j : Nat} (hj : j < 56) (hc : s.gpr .x19 = BitVec.ofNat 64 j) :
-    WP isa (.block ([.addImm .x .x19 .x19 1, .subImm .x .x9 .x19 56] : List Instr)) s fun t =>
-      t.gpr .x19 = BitVec.ofNat 64 (j + 1) ∧ (t.gpr .x9 != 0) = decide (j + 1 ≠ 56) ∧
-      Keeps [.x19, .x9] s t ∧ t.mem = s.mem := by
-  apply WP.of_runBlock
-  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, State.read, Size.bits,
-    show (1 : Nat) < 4096 from by decide, show (56 : Nat) < 4096 from by decide, ite_true,
-    RegUpd.gpr_write, BitVec.setWidth_eq, hc, (next_fact j hj).1, ite_false, reduceCtorEq,
-    Option.some.injEq, exists_eq_left']
-  refine ⟨trivial, (next_fact j hj).2, ⟨fun r hr => ?_, rfl, rfl⟩, rfl⟩
-  simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
-  simp only [RegUpd.gpr_write, hr.1, hr.2, ite_false]
-
 /-! ## One step -/
 
 open VG.Proof.X448 (addPt addPt_rep basePt negAff baseEntry_ok nib_lt mag_lt sdig)
 
-theorem step_eq : VG.Impl.X448.AArch64.Base.step =
-    .seq (.block digits) (.seq (selectFrom (List.range 56)) (.block (
+theorem step_eq (n : Nat) : VG.Impl.X448.AArch64.Base.stepN n =
+    .seq (.block digits) (.seq (selectFrom (List.range n)) (.block (
       negate (slot (6 : Index).val) (BITS + 4) (slot (10 : Index).val) ++
       (addAffine (slot (0 : Index).val) (slot (1 : Index).val) (slot (2 : Index).val)
         (slot (6 : Index).val) (slot (7 : Index).val) ++
       (negate (slot (8 : Index).val) BITS (slot (10 : Index).val) ++
       (addAffine (slot (3 : Index).val) (slot (4 : Index).val) (slot (5 : Index).val)
         (slot (8 : Index).val) (slot (9 : Index).val) ++
-      ([.addImm .x .x19 .x19 1, .subImm .x .x9 .x19 56] : List Instr))))))) := by
-  simp only [VG.Impl.X448.AArch64.Base.step, List.append_assoc]; rfl
+      ([.addImm .x .x19 .x19 1, .subImm .x .x9 .x19 n] : List Instr))))))) := by
+  simp only [VG.Impl.X448.AArch64.Base.stepN, List.append_assoc]; rfl
 
 /-- The selected scalar slots outside `entrySlots` are kept by a selection. -/
 theorem Selected.outside2 {base : Addr} {j ao ae : Nat} {s t : State} (h : Selected base j ao ae s t) :
@@ -159,27 +132,28 @@ theorem acc_step (G : ℤ) (S : ℤ) (n j : Nat) :
     (G + S) • baseAff + (((n : ℤ) - 8) * 256 ^ j) • baseAff = (G + (S + ((n : ℤ) - 8) * 256 ^ j)) • baseAff := by
   rw [← add_smul, add_assoc]
 
-theorem step_ok {s₀ s : State} {base : Addr} {k j : Nat} (h : StepInv s₀ base k j s) (hj : j < 56) :
-    WP isa VG.Impl.X448.AArch64.Base.step s fun t =>
-      (t.gpr .x9 != 0) = decide (j + 1 ≠ 56) ∧ StepInv s₀ base k (j + 1) t := by
+theorem step_ok {n : Nat} (hn : n ≤ 57) {s₀ s : State} {base : Addr} {k j : Nat}
+    (h : StepInv n s₀ base k j s) (hj : j < n) :
+    WP isa (VG.Impl.X448.AArch64.Base.stepN n) s fun t =>
+      (t.gpr .x9 != 0) = decide (j + 1 ≠ n) ∧ StepInv n s₀ base k (j + 1) t := by
   obtain ⟨_, hs, hb, hz, hc, hbits, hodd, heven, hlr, hout, hrd, hwr, hmem⟩ := h
   have no := nib_lt k (2 * j + 1)
   have ne := nib_lt k (2 * j)
-  rw [step_eq]
+  rw [step_eq n]
   -- The digits.
-  refine WP.seq (WP.mono (digits_ok hs hj hc hbits) fun t1 ⟨d1, m1⟩ => ?_)
+  refine WP.seq (WP.mono (digits_ok hs hn hj hc hbits) fun t1 ⟨d1, m1⟩ => ?_)
   have hs1 : Scr t1 base := hs.of_keeps d1.keeps (by decide)
   have hb1 : BEnv t1.mem base := by rw [m1]; exact hb
   have hm1 : Masks (mag (nib k (2 * j + 1))) (mag (nib k (2 * j))) t1 :=
     ⟨d1.oddMask, d1.evenMask, d1.oddZero, d1.evenZero⟩
   have hc1 : t1.gpr .x19 = BitVec.ofNat 64 j := by rw [d1.keeps.1 _ (by decide)]; exact hc
   -- The selection.
-  refine WP.seq (WP.mono (selectFrom_ok (List.range 56) (fun k hk => List.mem_range.mp hk) hs1
-    (mag_lt no) (mag_lt ne) hm1 (List.mem_range.mpr hj) hj hc1) fun t2 h2 => ?_)
+  refine WP.seq (WP.mono (selectFrom_ok (List.range n) (fun k hk => by have := List.mem_range.mp hk; omega) hs1
+    (mag_lt no) (mag_lt ne) hm1 (List.mem_range.mpr hj) (by omega) hc1) fun t2 h2 => ?_)
   obtain ⟨b2, s2, v6, v7, v8, v9, bnd2⟩ := selected_env hs1 hb1 h2
   have hs2 : Scr t2 base := hs1.of_keeps h2.2.2 (by decide)
   have hc2 : t2.gpr .x19 = BitVec.ofNat 64 j := by rw [h2.2.2.1 _ (by decide)]; exact hc1
-  have bits2 : Bits base k t2.mem := fun q hq => by
+  have bits2 : Bits n base k t2.mem := fun q hq => by
     have hn := hs.nowrap
     rw [h2.2.1 _ (by rw [ofs_off0 base (by simp only [BITS]; omega)]; simp only [OX, BITS, slot]; omega), m1]
     exact hbits q hq
@@ -188,7 +162,7 @@ theorem step_ok {s₀ s : State} {base : Addr} {k j : Nat} (h : StepInv s₀ bas
   have e1 : EV t1.mem base = EV s.mem base := by rw [m1]
   -- The odd digit's entry, negated, and added to `A`.
   rw [WP.block_append_iff]
-  refine WP.mono (negate_ok hs2 b2 (k := k) (i := 2 * j + 1) (o := BITS + 4) 6 (by decide) hj (by omega)
+  refine WP.mono (negate_ok hs2 b2 (k := k) (i := 2 * j + 1) (o := BITS + 4) 6 (by decide) hn (by omega) (by omega)
     (by simp only [BITS]; omega) (by simp only [BITS]; omega) hc2 bits2 (bnd2 6 (by decide))
     (zero_env z2).2) fun t3 ⟨k3, b3, s3, e3⟩ => ?_
   have hs3 := k3.scr hs2
@@ -205,9 +179,9 @@ theorem step_ok {s₀ s : State} {base : Addr} {k j : Nat} (h : StepInv s₀ bas
     rw [k4.regs.1 .x19 (by decide), k3.regs.1 .x19 (by decide)]; exact hc2
   -- The even digit's entry, negated, and added to `B`.
   rw [WP.block_append_iff]
-  refine WP.mono (negate_ok hs4 b4 (k := k) (i := 2 * j) (o := BITS) 8 (by decide) hj (by omega)
+  refine WP.mono (negate_ok hs4 b4 (k := k) (i := 2 * j) (o := BITS) 8 (by decide) hn (by omega) (by omega)
     (by omega) (by simp only [BITS]; omega) hc4
-    (Bits.of_fkeep hs3 (Bits.of_fkeep hs2 bits2 k3) k4)
+    (Bits.of_fkeep hn hs3 (Bits.of_fkeep hn hs2 bits2 k3) k4)
     (s4.bnd (by decide) (s3.bnd (by decide) (bnd2 8 (by decide)))) (zero_env z4).2)
     fun t5 ⟨k5, b5, s5, e5⟩ => ?_
   have hs5 := k5.scr hs4
@@ -221,7 +195,7 @@ theorem step_ok {s₀ s : State} {base : Addr} {k j : Nat} (h : StepInv s₀ bas
   -- The counter.
   have hc6 : t6.gpr .x19 = BitVec.ofNat 64 j := by
     rw [k6.regs.1 .x19 (by decide), k5.regs.1 .x19 (by decide)]; exact hc4
-  refine WP.mono (next_ok t6 hj hc6) fun t7 ⟨c7, n7, k7, m7⟩ => ⟨n7, ?_⟩
+  refine WP.mono (next_ok t6 hn hj hc6) fun t7 ⟨c7, n7, k7, m7⟩ => ⟨n7, ?_⟩
   have hs7 : Scr t7 base := hs6.of_keeps k7 (by decide)
   have z6 : ∀ w < 8, limbs t6.mem base (slot (19 : Index).val) w = 0 := fun w hw => by
     rw [s6 19 (by decide) w hw]; exact z5 w hw
@@ -268,14 +242,14 @@ theorem step_ok {s₀ s : State} {base : Addr} {k j : Nat} (h : StepInv s₀ bas
       Same.env s6 (i := 2) (by decide), Same.env s5 (i := 2) (by decide)]
   have p7B : pt (EV t7.mem base) 3 4 5 = pt (EV t6.mem base) 3 4 5 := by simp only [pt, m7]
   refine ⟨by omega, hs7, by rw [m7]; exact b6, by rw [m7]; exact z6, c7,
-    by rw [m7]; exact Bits.of_fkeep hs5 (Bits.of_fkeep hs4 (Bits.of_fkeep hs3 (Bits.of_fkeep hs2 bits2 k3) k4) k5) k6,
+    by rw [m7]; exact Bits.of_fkeep hn hs5 (Bits.of_fkeep hn hs4 (Bits.of_fkeep hn hs3 (Bits.of_fkeep hn hs2 bits2 k3) k4) k5) k6,
     ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · rw [p7A, pA]
-    have := addPt_rep hodd (baseEntry_ok j (nib k (2 * j + 1)) hj no)
+    have := addPt_rep hodd (baseEntry_ok j (nib k (2 * j + 1)) (by omega) no)
     rw [acc_step] at this
     exact this
   · rw [p7B, pB]
-    have := addPt_rep heven (baseEntry_ok j (nib k (2 * j)) hj ne)
+    have := addPt_rep heven (baseEntry_ok j (nib k (2 * j)) (by omega) ne)
     rw [acc_step] at this
     exact this
   · rw [k7.1 .x30 (by decide), k6.regs.1 .x30 (by decide), k5.regs.1 .x30 (by decide),

@@ -6,7 +6,7 @@
 ///
 /// Contract: `VG.Spec.Gcm.initContract`. The key context is `VG.Spec.Gcm.KeyRepr`. Constant time: only the pointers and `key_len` may affect timing, not the key.
 ///
-/// This implementation calls `vg_aes_expand_key` for the key schedule and `vg_aes_ctr32` to encrypt the zero block into the hash subkey.
+/// This implementation calls `vg_aes_expand_key_scratch` for the key schedule and `vg_aes_ctr32` to encrypt the zero block into the hash subkey.
 ///
 /// # Safety
 ///
@@ -34,7 +34,7 @@ pub(crate) unsafe extern "C" fn vg_aes_gcm_init(key: *const u8, key_len: usize, 
         "lsr r8, r1, #2",
         "add r8, r8, #6",
         "add r3, r11, #512",
-        "bl {vg_aes_expand_key}",
+        "bl {vg_aes_expand_key_scratch}",
         "mov r0, #0",
         "str r0, [r9, #240]",
         "str r0, [r9, #244]",
@@ -64,7 +64,7 @@ pub(crate) unsafe extern "C" fn vg_aes_gcm_init(key: *const u8, key_len: usize, 
         "ldr r11, [r11, #156]",
         "add sp, sp, #2560",
         "bx lr",
-        vg_aes_expand_key = sym super::aes::vg_aes_expand_key,
+        vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch,
         vg_aes_ctr32 = sym super::aes::vg_aes_ctr32,
     )
 }

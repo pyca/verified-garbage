@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyBlocks
 import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyVerified
 import VerifiedGarbage.Proof.Aes.X86.BlocksCT
 import VerifiedGarbage.Proof.Aes.X86.AesNi.BlocksMain
+import VerifiedGarbage.Proof.Aes.X86.Frame
 
 /-! # AES on x86 -/
 
@@ -16,9 +17,20 @@ def artifacts : List Artifact := [
     target := X86.target
     doc := Spec.Aes.expandKeyApi.doc
       (notes := ["`SUBWORD` uses a constant-time bitsliced S-box, in the style of BearSSL's \
+        `aes_ct` (Thomas Pornin, MIT licence). The working space is in a frame of 532 bytes \
+        on the stack, zeroed before returning."])
+    code := Impl.StackScratch.X86.withStackScratchWiped 532 3 128 Impl.Aes.X86.expandKey
+    contract := Spec.Aes.expandKeyContract X86.abi 532
+    stack := 532
+    verified := Proof.Aes.X86.scalar_expandKey_framed
+    spSafe := Code.all_of_allInstrs (by lit_decide) },
+  { Spec.Aes.expandKeyScratchApi with
+    target := X86.target
+    doc := Spec.Aes.expandKeyScratchApi.doc
+      (notes := ["`SUBWORD` uses a constant-time bitsliced S-box, in the style of BearSSL's \
         `aes_ct` (Thomas Pornin, MIT licence)."])
     code := Impl.Aes.X86.expandKey
-    contract := Spec.Aes.expandKeyContract X86.abi
+    contract := Spec.Aes.expandKeyScratchContract X86.abi
     verified := Proof.Aes.X86.expandKey_verified
     spSafe := Code.all_of_allInstrs (by lit_decide) },
   { Spec.Gcm.ctr32Api with
@@ -46,9 +58,22 @@ def artifacts : List Artifact := [
     target := X86.target
     doc := Spec.Aes.expandKeyApi.doc
       (notes := ["AES-NI key expansion with `AESKEYGENASSIST` for AES-128, AES-192 and AES-256. \
+        Its working space, unused, is in a frame of 532 bytes on the stack, zeroed before \
+        returning."])
+    code := Impl.StackScratch.X86.withStackScratchWiped 532 3 128 Impl.Aes.X86.AesNi.expandKey
+    contract := Spec.Aes.expandKeyContract X86.abi 532
+    stack := 532
+    verified := Proof.Aes.X86.aesni_expandKey_framed
+    features := ["aes"]
+    spSafe := Code.all_of_allInstrs (by lit_decide) },
+  { Spec.Aes.expandKeyScratchApi with
+    name := "vg_aes_expand_key_scratch_aesni"
+    target := X86.target
+    doc := Spec.Aes.expandKeyScratchApi.doc
+      (notes := ["AES-NI key expansion with `AESKEYGENASSIST` for AES-128, AES-192 and AES-256. \
         The scratch buffer is unused."])
     code := Impl.Aes.X86.AesNi.expandKey
-    contract := Spec.Aes.expandKeyContract X86.abi
+    contract := Spec.Aes.expandKeyScratchContract X86.abi
     verified := Proof.Aes.X86.AesNi.expandKey_verified
       ⟨Proof.Aes.X86.AesNi.expand128_ok, Proof.Aes.X86.AesNi.expand192_ok,
         Proof.Aes.X86.AesNi.expand256_ok⟩

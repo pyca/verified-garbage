@@ -116,10 +116,9 @@ impl Run {
     fn check(&self) {
         let (key, key_len) = self.key;
         let mut schedule = [0; 240];
-        let mut scratch = [0; 64];
         // SAFETY: `key` holds `key_len` (16, 24 or 32) bytes, and the
         // buffers are separate and of the sizes of the signature.
-        unsafe { vg_aes_expand_key(key.as_ptr(), key_len, &mut schedule, &mut scratch) };
+        unsafe { vg_aes_expand_key(key.as_ptr(), key_len, &mut schedule) };
         let rounds = key_len / 4 + 6;
         let runnable = IMPLEMENTATIONS
             .into_iter()

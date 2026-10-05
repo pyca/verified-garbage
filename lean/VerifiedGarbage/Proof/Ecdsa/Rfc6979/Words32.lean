@@ -36,6 +36,16 @@ theorem wsum_lt (f : Nat → BitVec 32) : ∀ k, wsum f k < 2 ^ (32 * k)
       rw [Nat.sub_mul, Nat.one_mul, Nat.sub_add_cancel (Nat.le_mul_of_pos_left _ (by decide))]
     omega
 
+/-- The 32-bit words of `N`, least significant first. -/
+abbrev nWn (N j : Nat) : BitVec 32 := BitVec.ofNat 32 (N >>> (32 * j))
+
+/-- The low `i` words of `N`. -/
+theorem wsum_nWn (N : Nat) : ∀ i, wsum (nWn N) i = N % 2 ^ (32 * i)
+  | 0 => by simp [wsum, Nat.mod_one]
+  | i + 1 => by
+    rw [wsum, wsum_nWn N i, show 32 * (i + 1) = 32 * i + 32 by omega, Nat.pow_add, Nat.mod_mul,
+      BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow, Nat.mul_comm, Nat.add_comm]
+
 theorem nW_sum : wsum nW 8 = Spec.P256.n := by
   simp only [wsum, nW]
   decide +kernel

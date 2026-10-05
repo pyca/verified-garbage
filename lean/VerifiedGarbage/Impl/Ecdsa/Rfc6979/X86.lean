@@ -5,15 +5,16 @@ import VerifiedGarbage.Impl.Pbkdf2.Whole.X86
 
 `sign R H core (out, d, digest, scratch) -> eax`, every argument on the
 stack (cdecl), as on x86-64 and AArch64 (`Impl/Ecdsa/Rfc6979/X86_64.lean`):
-RFC 6979 §3.2 for a curve of 32-byte scalars and a Merkle–Damgård hash
-function `H` whose output is `D` bytes, `32 ≤ D ≤ 64`, a multiple of 8, with
-HMAC computed by calling `H`'s HMAC `init`, streaming `update` and HMAC
-`finalize`, and each candidate tried by calling `core`, the signature with a
-given `k` (`vg_ecdsa_<curve>_sign`), which reads the leftmost 32 bytes of `V`
-and of the digest.
+RFC 6979 §3.2 for a curve of `Q = 4 w` byte scalars (`w ≤ 12` words: 8 for
+P-256, 12 for P-384) and a Merkle–Damgård hash function `H` whose output is
+`D` bytes, `Q ≤ D ≤ 64`, a multiple of 8, with HMAC computed by calling
+`H`'s HMAC `init`, streaming `update` and HMAC `finalize`, and each
+candidate tried by calling `core`, the signature with a given `k`
+(`vg_ecdsa_<curve>_sign`), which reads the leftmost `Q` bytes of `V` and of
+the digest.
 
-A frame of 180 bytes is allocated: from `esp`, `K` and `V` (64 bytes each,
-of which the first `D` are used), `h` (32 bytes), the number of candidates
+A frame of 196 bytes is allocated: from `esp`, `K` and `V` (64 bytes each,
+of which the first `D` are used), `h` (48 bytes), the number of candidates
 left, and our caller's `ebx`, `esi`, `edi` and `ebp`, which the calls'
 arguments use. Our arguments stay where our caller put them, above the
 frame and the return address (`argM`). Each call passes its arguments in a
@@ -26,9 +27,9 @@ address); `K`, `V` and `h` are cleared before the frame is freed. In
 working space of HMAC's and `H`'s functions, and the message of steps d, f
 and h.3.
 
-1. `h = bits2octets(digest)`: the leftmost 32 bytes, minus `n` if they are
-   at least `n` (a conditional subtraction, as `2^256 < 2n`): the bytes, as
-   eight 32-bit words, go to `h`'s place and `h - n` to `K`'s, and a mask
+1. `h = bits2octets(digest)`: the leftmost `Q` bytes, minus `n` if they are
+   at least `n` (a conditional subtraction, as `2^(8 Q) < 2n`): the bytes, as
+   `w` 32-bit words, go to `h`'s place and `h - n` to `K`'s, and a mask
    of the borrow selects between them, word by word, big-endian into `h`.
 2. Steps b to g: `V = 0x01…`, `K = 0x00…`, `K = HMAC_K(V ‖ 0x00 ‖ d ‖ h)`,
    `V = HMAC_K(V)`, `K = HMAC_K(V ‖ 0x01 ‖ d ‖ h)`, `V = HMAC_K(V)`.
@@ -58,10 +59,10 @@ def stk (d : Nat) : MemOp := { base := .esp, disp := d }
 def fK : Nat := 0
 def fV : Nat := 64
 def fH : Nat := 128
-def fCnt : Nat := 160
-def fSave : Nat := 164
+def fCnt : Nat := 176
+def fSave : Nat := 180
 /-- The frame's size, a multiple of 4. -/
-def frameBytes : Nat := 180
+def frameBytes : Nat := 196
 
 /-- Our argument `i` (`out`, `d`, `digest`, `scratch`), above the frame and
 the return address. -/
@@ -82,6 +83,8 @@ structure Cfg where
   `finalize` with their working space as an argument (the functions
   PBKDF2's code calls). -/
   F : Impl.Pbkdf2.Whole.X86.Fns
+  /-- The 32-bit words of the curve's scalars. -/
+  w : Nat
   /-- The order of the curve's base point. -/
   n : Nat
   /-- The most candidates to try. -/
@@ -150,22 +153,24 @@ first, so that every address the message's block computes is from them or
 `esp`). -/
 def msgPtrs : List Instr := [.mov .edi (argM 3), .mov .esi (argM 1)]
 
-/-- The message `V ‖ b` (and `‖ d ‖ h` if `full`) at `scratch + sMsg`, for
-`V` of `D` bytes, with `scratch` in `edi` and `d` in `esi`: `V` and `h` from
-the frame, `b` a byte. -/
-def msg (D b : Nat) (full : Bool) : List Instr :=
+/-- The message `V ‖ b` (and `‖ d ‖ h` if `full`, `w` words each) at
+`scratch + sMsg`, for `V` of `D` bytes, with `scratch` in `edi` and `d` in
+`esi`: `V` and `h` from the frame, `b` a byte. -/
+def msg (w D b : Nat) (full : Bool) : List Instr :=
   copyN (D / 4) .esp fV .edi sMsg ++
     [.mov .eax (.imm (BitVec.ofNat 32 b)), .store8 (at_ .edi (sMsg + D)) .al] ++
-    (if full then copyN 8 .esi 0 .edi (sMsg + D + 1) ++ copyN 8 .esp fH .edi (sMsg + D + 33) else [])
+    (if full then copyN w .esi 0 .edi (sMsg + D + 1) ++ copyN w .esp fH .edi (sMsg + D + 1 + 4 * w)
+    else [])
 
 /-- `K = HMAC_K(V ‖ b ‖ d ‖ h)`, then `V = HMAC_K(V)` (steps d–e, f–g). -/
 def rekeyFull (b : Nat) : Prog isa :=
-  .seq (.block msgPtrs) (.seq (.block (msg c.F.H.D b true))
-    (.seq (c.hmac (scr .edx sMsg) (c.F.H.D + 65) fK) c.hmacV))
+  .seq (.block msgPtrs) (.seq (.block (msg c.w c.F.H.D b true))
+    (.seq (c.hmac (scr .edx sMsg) (c.F.H.D + 8 * c.w + 1) fK) c.hmacV))
 
 /-- `K = HMAC_K(V ‖ 0x00)`, then `V = HMAC_K(V)` (step h.3). -/
 def rekey : Prog isa :=
-  .seq (.block msgPtrs) (.seq (.block (msg c.F.H.D 0 false)) (.seq (c.hmac (scr .edx sMsg) (c.F.H.D + 1) fK) c.hmacV))
+  .seq (.block msgPtrs) (.seq (.block (msg c.w c.F.H.D 0 false))
+    (.seq (c.hmac (scr .edx sMsg) (c.F.H.D + 1) fK) c.hmacV))
 
 /-- The 32-bit words of `n`, least significant first. -/
 def nWord (j : Nat) : BitVec 32 := BitVec.ofNat 32 (c.n >>> (32 * j))
@@ -173,25 +178,25 @@ def nWord (j : Nat) : BitVec 32 := BitVec.ofNat 32 (c.n >>> (32 * j))
 /-- `digest` in `esi`. -/
 def digestPtr : List Instr := [.mov .esi (argM 2)]
 
-/-- Word `j` (least significant first) of the 32 bytes at `digest` (in
+/-- Word `j` (least significant first) of the `Q` bytes at `digest` (in
 `esi`), as a big-endian number, to `h`'s place, and that word of the
 difference with `n` (`sub` for the first, `sbb` for the others) to `K`'s:
 both at the offset of the word's bytes. -/
 def subWord (j : Nat) : List Instr :=
-  [.mov .eax (.mem (at_ .esi (28 - 4 * j))), .bswap .eax, .store (stk (fH + 28 - 4 * j)) .eax,
-    .alu (if j = 0 then .sub else .sbb) .eax (.imm (c.nWord j)), .store (stk (fK + 28 - 4 * j)) .eax]
+  [.mov .eax (.mem (at_ .esi (4 * (c.w - 1 - j)))), .bswap .eax, .store (stk (fH + 4 * (c.w - 1 - j))) .eax,
+    .alu (if j = 0 then .sub else .sbb) .eax (.imm (c.nWord j)), .store (stk (fK + 4 * (c.w - 1 - j))) .eax]
 
 /-- Word `j` of `h`: of the digest's number if subtracting `n` borrowed
 (the mask in `edx`), of the difference if not, big-endian into `h`. -/
 def selWord (j : Nat) : List Instr :=
-  [.mov .eax (.mem (stk (fH + 28 - 4 * j))), .mov .ecx (.mem (stk (fK + 28 - 4 * j))),
+  [.mov .eax (.mem (stk (fH + 4 * (c.w - 1 - j)))), .mov .ecx (.mem (stk (fK + 4 * (c.w - 1 - j)))),
     -- `x = d ^ ((x ^ d) & mask)`: `x` if it borrowed, `d` if not.
     .alu .xor .eax (.reg .ecx), .alu .and .eax (.reg .edx), .alu .xor .eax (.reg .ecx),
-    .bswap .eax, .store (stk (fH + 28 - 4 * j)) .eax]
+    .bswap .eax, .store (stk (fH + 4 * (c.w - 1 - j))) .eax]
 
-/-- `h`: the 32 bytes at `digest` (in `esi`), minus `n` if that does not borrow. -/
+/-- `h`: the `Q` bytes at `digest` (in `esi`), minus `n` if that does not borrow. -/
 def reduce : List Instr :=
-  (List.range 8).flatMap c.subWord ++ [.alu .sbb .edx (.reg .edx)] ++ (List.range 8).flatMap selWord
+  (List.range c.w).flatMap c.subWord ++ [.alu .sbb .edx (.reg .edx)] ++ (List.range c.w).flatMap c.selWord
 
 /-- `V = 0x01…`, `K = 0x00…`, all 64 bytes of each. -/
 def initKV : List Instr :=
@@ -232,7 +237,7 @@ def tryOne : Prog isa :=
 /-- `K`, `V` and `h` cleared (`eax`, the result, kept), and our caller's
 registers back. -/
 def wipe : List Instr :=
-  [.mov .ecx (.imm 0)] ++ (List.range 40).map (fun j => .store (stk (4 * j)) .ecx) ++ restore
+  [.mov .ecx (.imm 0)] ++ (List.range 44).map (fun j => .store (stk (4 * j)) .ecx) ++ restore
 
 /-- The frame's body. -/
 def body : Prog isa :=
