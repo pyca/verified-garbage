@@ -59,7 +59,7 @@ before each call.
   length: the low 32 bits of `Ctrⱼ` are `j` modulo 2³² when `q ≥ 4`, and
   never wrap around when `q < 4`, as `j < 2^(8q)`.
 * `mask`: every byte of the data ANDed with `0 − ok`, for `ok` the result
-  of `cmp`.
+  of `cmp`, 8 bytes at a time and then the last `len mod 8` one at a time.
 * `tagOut`: the first `tag_len` bytes of the tag at `W` copied to `tag`,
   whose address is on the stack.
 
@@ -252,13 +252,25 @@ def ctr : Prog isa :=
 /-- `[r12 + r10]`. -/
 def maskByte : MemOp := { base := .r12, index := some .r10 }
 
-/-- Every byte of the data ANDed with `0 − ok`. -/
+/-- The data's `⌊len / 8⌋` whole words (counted down in `rcx`) ANDed with
+`0 − ok`, 8 bytes at a time. -/
+def maskWords : Prog isa :=
+  .loop (.block [.mov .rax (.mem maskByte), .alu .and .rax (.reg .r11), .store maskByte .rax,
+    .alu .add .r10 (imm 8), .alu .sub .rcx (imm 1)]) .ne
+
+/-- The data's last `len mod 8` bytes ANDed with `0 − ok`, one at a time. -/
+def maskBytes : Prog isa :=
+  .loop (.block [.movzx8 .rax maskByte, .alu .and .rax (.reg .r11), .store8 maskByte .rax,
+    .alu .add .r10 (imm 1), .alu .cmp .r10 (.reg .rbp)]) .ne
+
+/-- Every byte of the data ANDed with `0 − ok`: its whole words, then the
+rest. -/
 def mask : Prog isa :=
   .seq (.block [.mov .r12 (.mem (at_ .r15 dataO)), .mov .rbp (.mem (at_ .r15 lenO)), .mov32 .r11 (imm 0),
-      .alu .sub .r11 (.mem (at_ .r15 okO)), .mov32 .r10 (imm 0), .alu .test .rbp (.reg .rbp)])
-    (.ite .e (.block [])
-      (.loop (.block [.movzx8 .rax maskByte, .alu .and .rax (.reg .r11), .store8 maskByte .rax,
-        .alu .add .r10 (imm 1), .alu .cmp .r10 (.reg .rbp)]) .ne))
+      .alu .sub .r11 (.mem (at_ .r15 okO)), .mov32 .r10 (imm 0), .mov .rcx (.reg .rbp),
+      .shift .shr .rcx 3, .alu .test .rcx (.reg .rcx)])
+    (.seq (.ite .e (.block []) maskWords)
+      (.seq (.block [.alu .cmp .r10 (.reg .rbp)]) (.ite .e (.block []) maskBytes)))
 
 /-! ## The functions -/
 

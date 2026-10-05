@@ -47,10 +47,16 @@ pub(crate) mod ec_p256;
 pub(crate) mod ec_p384;
 
 #[rustfmt::skip]
+pub(crate) mod ec_p521;
+
+#[rustfmt::skip]
 pub(crate) mod ecdh_p256;
 
 #[rustfmt::skip]
 pub(crate) mod ecdh_p384;
+
+#[rustfmt::skip]
+pub(crate) mod ecdh_p521;
 
 #[rustfmt::skip]
 pub(crate) mod ecdsa_p256;
@@ -162,6 +168,9 @@ pub(crate) mod rc4;
 
 #[rustfmt::skip]
 pub(crate) mod rsa;
+
+#[rustfmt::skip]
+pub(crate) mod rsa_keygen;
 
 #[rustfmt::skip]
 pub(crate) mod rsa_pkcs1_enc;

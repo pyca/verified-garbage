@@ -75,7 +75,7 @@ theorem safe_call {u : State} (hc : Ctx L g m₀ u) {ws : List Region} (hs : ∀
   rcases List.mem_append.mp hr with hr | hr
   · exact hs r hr
   · simp only [List.mem_singleton] at hr; subst hr
-    exact .inr (.inr ((hc.below_sub hn).trans (Region.sub_prefix (by omega))))
+    exact .inr (.inr (.inl ((hc.below_sub hn).trans (Region.sub_prefix (by omega)))))
 
 /-- The key `K`: the first `D` bytes of the frame. -/
 abbrev keyOf (P : RfcHash) {dn : Nat} (L : Lay dn) (m : Mem) : List Byte :=
@@ -185,7 +185,7 @@ structure Updated (P : RfcHash) {dn : Nat} (L : Lay dn) (g : Reg → BitVec 64) 
 
 /-- The arguments of the streaming `update`. -/
 theorem updA (hL : L.Ok) {w : State} (hcw : Ctx L g m₀ w) {da : Addr} {len : Nat} (hd : DataOk L da len)
-    (hlen : len ≤ 192) (hdi : w.gpr .rdi = L.scr + BitVec.ofNat 64 0) (hdx : w.gpr .rdx = da)
+    (hlen : len ≤ 256) (hdi : w.gpr .rdi = L.scr + BitVec.ofNat 64 0) (hdx : w.gpr .rdx = da)
     (hcx : w.gpr .rcx = BitVec.ofNat 64 len) (h8 : w.gpr .r8 = L.scr + BitVec.ofNat 64 384) :
     Proof.Pbkdf2.Md.X86_64.Calls.UpdArgs P.ok.stream w (L.scr + BitVec.ofNat 64 0) da
       (L.scr + BitVec.ofNat 64 384) len := by
@@ -206,7 +206,7 @@ theorem updA (hL : L.Ok) {w : State} (hcw : Ctx L g m₀ w) {da : Addr} {len : N
 
 theorem upd_step (hL : L.Ok) {t u : State} (hu : Inited P L g m₀ t u) {dataA : List Instr} {da : Addr} {len : Nat}
     (hdA : ∀ u, Ctx L g m₀ u → WP isa (.block dataA) u (Upd L g m₀ u .rdx da)) (hd : DataOk L da len)
-    (hlen : len ≤ 192) :
+    (hlen : len ≤ 256) :
     WP isa (.seq (.block (Cfg.hmacArgs₂ P.H.P.B dataA len)) (.call P.H.updN P.H.updC)) u
       (Updated P L g m₀ t da len) := by
   refine WP.seq (WP.mono (updArgs_ok hL hu.ctx hdA (B := P.H.P.B) (by nums) (by omega))
@@ -305,7 +305,7 @@ theorem finA (hL : L.Ok) {w : State} (hcw : Ctx L g m₀ w) {len dst : Nat} (hds
       scnw := by rw [toNat_add_of (by have := hL.nc; omega)]; have := hL.nc; nums }
 
 theorem fin_step (hL : L.Ok) {t u : State} {da : Addr} {len dst : Nat} (hu : Updated P L g m₀ t da len u)
-    (hlen : len ≤ 192) (hdst : dst + P.H.D ≤ 168) :
+    (hlen : len ≤ 256) (hdst : dst + P.H.D ≤ 168) :
     WP isa (.seq (.block (Cfg.hmacArgs₃ P.H.P.B len dst)) (.call P.H.hmacFinN P.H.hmacFin)) u
       (Done P L g m₀ t da len dst) := by
   refine WP.seq (WP.mono (finArgs_ok hL hu.ctx (B := P.H.P.B) (len := len) (by nums) (by omega))
@@ -333,9 +333,8 @@ theorem fin_step (hL : L.Ok) {t u : State} {da : Addr} {len dst : Nat} (hu : Upd
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr'
     rcases hr' with rfl | rfl | rfl
     · exact .inr (.inl (hs.trans (Region.sub_prefix (by omega))))
-    · exact .inr (.inr (hs.trans (Region.sub_prefix (by omega))))
-    · exact safe_low L (by omega) |>.elim (fun h => .inl (hs.trans h)) fun h => h.elim
-        (fun h => .inr (.inl (hs.trans h))) fun h => .inr (.inr (hs.trans h))
+    · exact .inr (.inr (.inl (hs.trans (Region.sub_prefix (by omega)))))
+    · exact (safe_low L (by omega)).of_sub hs
   · have hk := blockKey_length (P := P) (keyOf_length (L := L) t.mem)
     exact hpost _ _ hk (by rw [hk, hl]; nums)
       (hmw ▸ hu.inner) (by rw [hl]) (hmw ▸ hu.outer)
@@ -352,7 +351,7 @@ theorem seq_seq {a b c : Prog isa} {s : State} {P Q : State → Prop} (h : WP is
 /-- `HMAC_K(data)`, for the key `K` in the frame, to the frame at `dst`. -/
 theorem hmac_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) {dataA : List Instr} {da : Addr} {len dst : Nat}
     (hdA : ∀ u, Ctx L g m₀ u → WP isa (.block dataA) u (Upd L g m₀ u .rdx da)) (hd : DataOk L da len)
-    (hlen : len ≤ 192) (hdst : dst + P.H.D ≤ 168) :
+    (hlen : len ≤ 256) (hdst : dst + P.H.D ≤ 168) :
     WP isa ((cfgOf P).hmac dataA len dst) t (Done P L g m₀ t da len dst) :=
   seq_seq (init_step hL hc) fun _ hu => seq_seq (upd_step hL hu hdA hd hlen) fun _ hw =>
     fin_step hL hw hlen hdst
