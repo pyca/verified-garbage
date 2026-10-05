@@ -16,8 +16,23 @@ open VG VG.AArch64 VG.Impl.Mont VG.Impl.Mont.AArch64 VG.Proof.Mont
 open VG.Proof.Ed25519.AArch64 (Keeps Keeps.trans Keeps.mono read_x)
 open VG.Proof.Ed25519 (Word64.addCarry Word64.carryOut Word64.addCarry_value Word64.borrow_mask)
 
-/-- The registers the operations change. -/
-def clob (n : Nat) : List Reg := [.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x16, .x17] ++ acc n
+/-- The registers the operations change: for `n > 7`, `dRegs n`'s
+callee-saved registers too. -/
+def clob (n : Nat) : List Reg := [.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x16, .x17] ++ acc n ++ (dRegs n).drop 7
+
+/-- Every register the operations may change, for any number of words. -/
+abbrev clobAll : List Reg := [.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x16, .x17, .x8, .x9, .x10, .x11,
+  .x12, .x13, .x14, .x15, .x21, .x22, .x23, .x24, .x25]
+
+theorem mem_clobAll {n : Nat} {r : Reg} (h : r ∈ clob n) : r ∈ clobAll := by
+  unfold clob acc dRegs at h
+  simp only [List.mem_append] at h
+  rcases h with (h | h) | h
+  · revert r; decide
+  · exact (by decide : ∀ r ∈ [Reg.x8, .x9, .x10, .x11, .x12, .x13, .x14, .x15, .x21, .x22, .x23],
+      r ∈ clobAll) r (List.mem_of_mem_take h)
+  · exact (by decide : ∀ r ∈ [Reg.x1, .x3, .x4, .x5, .x6, .x16, .x17, .x24, .x25], r ∈ clobAll) r
+      (List.mem_of_mem_take (List.mem_of_mem_drop h))
 
 /-- The modulus and the temporary area at offsets that loads and stores can
 encode. -/
@@ -36,13 +51,12 @@ structure OpKeep (M : Mod) (base : Addr) (o : Nat) (s s' : State) : Prop where
   mem : ∀ x, (ofs base x < o ∨ o + 8 * M.n ≤ ofs base x) →
     (ofs base x < M.tmp ∨ M.tmp + 8 * M.n ≤ ofs base x) → s'.mem x = s.mem x
 
-theorem x0_not_clob (n : Nat) (hn : n < 7) : Reg.x0 ∉ clob n := by
-  revert n; unfold clob; decide
+theorem x0_not_clob (n : Nat) : Reg.x0 ∉ clob n := fun h => absurd (mem_clobAll h) (by decide)
 
-theorem acc_not_x7 (n : Nat) (hn : n < 7) : ∀ r ∈ acc n, r ∉ [Reg.x0, .x1, .x2, .x3, .x4, .x5, .x6,
-    .x7, .x16, .x17] := acc_regs_lt n hn
+theorem acc_not_x7 (n : Nat) (hn : n < 10) : ∀ r ∈ acc n, r ∉ [Reg.x0, .x1, .x2, .x3, .x4, .x5, .x6,
+    .x7, .x16, .x17, .x24, .x25] := acc_regs_lt n hn
 
-theorem fresh_low (n : Nat) (hn : n < 7) :
+theorem fresh_low (n : Nat) (hn : n < 10) :
     Fresh (win n n n :: (List.range n).map (win n n)) := by
   have h := fresh_wins hn n
   rw [wins_split] at h
@@ -54,7 +68,7 @@ theorem fresh_low (n : Nat) (hn : n < 7) :
   · simp only [List.mem_cons, List.mem_append] at ht ⊢
     grind
 
-theorem fresh_low' (n : Nat) (hn : n < 7) : Fresh ((List.range n).map (win n n)) :=
+theorem fresh_low' (n : Nat) (hn : n < 10) : Fresh ((List.range n).map (win n n)) :=
   (fresh_low n hn).tail
 
 /-- `x7 = 0`. -/
@@ -66,7 +80,7 @@ change. -/
 theorem not_mem_of_clob {n : Nat} {r : Reg} (hr : r ∉ clob n) :
     r ∉ [Reg.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x16, .x17] ∧ r ∉ acc n := by
   simp only [clob, List.mem_append, not_or] at hr
-  exact hr
+  exact hr.1
 
 /-- The words at `a`, loaded into the registers `ts`, each its own. -/
 theorem loadsEach_ok {size : Nat} : ∀ (ts : List Reg) {s : State} {base : Addr} {a : Nat},
@@ -106,7 +120,7 @@ theorem mulSetup_eq (M : Mod) (b : Nat) : mulSetup M b = ([zero7] : List Instr) 
 /-- `x7 = 0`, `[b]`'s words in `bRegs`, the reduction's constant in `x6`, and
 the accumulator cleared. -/
 theorem setup_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M : Mod}
-    (hn : M.n < 7) {b : Nat} (hb : b + 8 * M.n ≤ size) (hb8 : b % 8 = 0) :
+    (hn : M.n < 10) {b : Nat} (hb : b + 8 * M.n ≤ size) (hb8 : b % 8 = 0) :
     WP isa (.block (mulSetup M b)) s fun s' =>
       s'.gpr .x7 = 0 ∧ BRegs s' base b M.n ∧ ConstOk M s' ∧ regsVal s' (wins M.n 0) = 0 ∧
         Keeps (.x4 :: .x5 :: .x6 :: .x7 :: .x16 :: .x17 :: acc M.n) s s' := by
@@ -163,21 +177,19 @@ theorem setup_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {
     · rcases htake q hq with rfl | rfl | rfl | rfl <;> simp
     · simp only [List.mem_cons]; exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr hq)))))
 
-theorem dPool_clob {n : Nat} : ∀ r ∈ dPool, r ∈ clob n := by
-  intro r hr
-  have : ∀ r ∈ dPool, r ∈ [Reg.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x16, .x17] := by decide
-  exact List.mem_append_left _ (this r hr)
+theorem dRegs_clob : ∀ n < 10, ∀ r ∈ dRegs n, r ∈ clob n := by
+  unfold clob; decide
 
 /-- What `csubR` changes is in `clob`. -/
-theorem csubR_keep {n : Nat} (h7 : n < 7) {ts : List Reg} (hts : ∀ r ∈ ts, r ∈ acc n) :
+theorem csubR_keep {n : Nat} (h7 : n < 10) {ts : List Reg} (hts : ∀ r ∈ ts, r ∈ acc n) :
     ∀ r ∈ (.x2 :: .x17 :: ts ++ dRegs n), r ∈ clob n := by
   intro r hr
   simp only [List.cons_append, List.mem_cons, List.mem_append] at hr
   rcases hr with rfl | rfl | h | h
   · simp [clob]
   · simp [clob]
-  · exact List.mem_append_right _ (hts r h)
-  · exact dPool_clob r ((dRegs_ok n h7).1.2 r h)
+  · exact List.mem_append_left _ (List.mem_append_right _ (hts r h))
+  · exact dRegs_clob n h7 r h
 
 theorem mul_eq (M : Mod) (o a b : Nat) :
     mul M o a b = mulSetup M b ++ ((List.range M.n).flatMap (round M a b) ++
@@ -186,15 +198,15 @@ theorem mul_eq (M : Mod) (o a b : Nat) :
   simp only [mul, List.append_assoc]
 
 /-- `[o] = [a] [b] R⁻¹ mod m`. -/
-theorem mul_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M : Mod} {m : Nat}
-    (hM : ModOk M size m s.mem base) (hA : ModA M) {o a b : Nat} (ho : o + 8 * M.n ≤ size)
+theorem mul_okW {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M : Mod} {m : Nat}
+    (hM : ModOkW M size m s.mem base) (h10 : M.n < 10) (hA : ModA M) {o a b : Nat} (ho : o + 8 * M.n ≤ size)
     (ha : a + 8 * M.n ≤ size) (hb : b + 8 * M.n ≤ size) (ho8 : o % 8 = 0) (ha8 : a % 8 = 0)
     (hb8 : b % 8 = 0) (hB : wordsVal s.mem base b M.n < m) :
     WP isa (.block (mul M o a b)) s fun s' => OpKeep M base o s s' ∧
       wordsVal s'.mem base o M.n < m ∧
       wordsVal s'.mem base o M.n * 2 ^ (64 * M.n) % m =
         wordsVal s.mem base a M.n * wordsVal s.mem base b M.n % m := by
-  have h7 := hM.n7
+  have h7 := h10
   rw [mul_eq, WP.block_append_iff]
   refine WP.mono (setup_ok hs h7 hb hb8) fun s₁ ⟨z₁, hBR₁, h6₁, h0, k₁⟩ => ?_
   have hacc := acc_regs_lt _ h7
@@ -248,7 +260,7 @@ theorem mul_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M 
     wins_sub_acc h7 M.n r (by rw [hsplit]; exact List.mem_append_left _ hr)
   refine WP.mono (csubR_ok hs₂ (M := M) (m := m) hlowlen hM.n0 h7 (fresh_low M.n h7) hM.mo
     hA.mo hz₂ (by rw [hmem₂]; exact hM.val) (by rw [hV]; exact hT)) fun s₃ ⟨e₃, k₃⟩ => ?_
-  have hs₃ := hs₂.of_keeps k₃ (fun h => x0_not_clob M.n h7 (csubR_keep h7 hlow_acc _ h))
+  have hs₃ := hs₂.of_keeps k₃ (fun h => x0_not_clob M.n (csubR_keep h7 hlow_acc _ h))
   refine WP.mono (stores_ok _ hs₃ (o := o) (by rw [hlowlen]; omega) ho8 (fresh_low' M.n h7).1)
     fun s₄ ⟨e₄, k₄, O₄⟩ => ?_
   rw [hlowlen] at e₄ O₄
@@ -269,13 +281,13 @@ theorem mul_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M 
 
 /-! ## Addition and subtraction -/
 
-theorem low_len_lt : ∀ n < 7, (low n).length = n := by decide
+theorem low_len_lt : ∀ n < 10, (low n).length = n := by decide
 
-theorem fresh_top_low_lt : ∀ n < 7, Fresh (top n :: low n) := by unfold Fresh; decide
+theorem fresh_top_low_lt : ∀ n < 10, Fresh (top n :: low n) := by unfold Fresh; decide
 
-theorem low_sub_acc_lt : ∀ n < 7, ∀ t ∈ top n :: low n, t ∈ acc n := by decide
+theorem low_sub_acc_lt : ∀ n < 10, ∀ t ∈ top n :: low n, t ∈ acc n := by decide
 
-theorem low_ne_nil {n : Nat} (hn : n < 7) (h0 : 0 < n) : ∃ t ts, low n = t :: ts := by
+theorem low_ne_nil {n : Nat} (hn : n < 10) (h0 : 0 < n) : ∃ t ts, low n = t :: ts := by
   have := low_len_lt n hn
   cases h : low n with
   | nil => rw [h] at this; simp at this; omega
@@ -303,19 +315,19 @@ theorem sbcMask_ok (s : State) (hz : s.gpr .x7 = 0) :
   exact RegUpd.gpr_write_of_ne _ _ _ hr
 
 /-- `[o] = [a] + [b] mod m`. -/
-theorem add_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M : Mod} {m : Nat}
-    (hM : ModOk M size m s.mem base) (hA : ModA M) {o a b : Nat} (ho : o + 8 * M.n ≤ size)
+theorem add_okW {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M : Mod} {m : Nat}
+    (hM : ModOkW M size m s.mem base) (h10 : M.n < 10) (hA : ModA M) {o a b : Nat} (ho : o + 8 * M.n ≤ size)
     (ha : a + 8 * M.n ≤ size) (hb : b + 8 * M.n ≤ size) (ho8 : o % 8 = 0) (ha8 : a % 8 = 0)
     (hb8 : b % 8 = 0)
     (hAB : wordsVal s.mem base a M.n + wordsVal s.mem base b M.n < 2 * m) :
     WP isa (.block (add M o a b)) s fun s' => OpKeep M base o s s' ∧
       wordsVal s'.mem base o M.n = (wordsVal s.mem base a M.n + wordsVal s.mem base b M.n) % m := by
   have hn := hs.nowrap
-  have h7 := hM.n7
+  have h7 := h10
   have hf := fresh_top_low_lt M.n h7
   have hl := low_len_lt M.n h7
   obtain ⟨t, ts, hts⟩ := low_ne_nil h7 hM.n0
-  have nf : ∀ r ∈ top M.n :: low M.n, r ∉ [Reg.x0, .x1, .x2, .x3, .x4, .x5, .x6, .x7, .x16, .x17] :=
+  have nf : ∀ r ∈ top M.n :: low M.n, r ∉ [Reg.x0, .x1, .x2, .x3, .x4, .x5, .x6, .x7, .x16, .x17, .x24, .x25] :=
     hf.2
   have hsub : ∀ r ∈ top M.n :: low M.n, r ∈ acc M.n := low_sub_acc_lt _ h7
   rw [Impl.Mont.AArch64.add, show zero7 :: loads (low M.n) a = [zero7] ++ loads (low M.n) a from rfl]
@@ -357,7 +369,7 @@ theorem add_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M 
   have hlow : ∀ r ∈ low M.n, r ∈ acc M.n := fun r h => hsub r (List.mem_cons_of_mem _ h)
   refine WP.mono (csubR_ok hs₄ (M := M) (m := m) hl hM.n0 h7 hf hM.mo hA.mo hz₄
     (by rw [hmem₄]; exact hM.val) (by rw [hV]; exact hAB)) fun s₅ ⟨e₅, k₅⟩ => ?_
-  have hs₅ := hs₄.of_keeps k₅ (fun h => x0_not_clob M.n h7 (csubR_keep h7 hlow _ h))
+  have hs₅ := hs₄.of_keeps k₅ (fun h => x0_not_clob M.n (csubR_keep h7 hlow _ h))
   refine WP.mono (stores_ok _ hs₅ (o := o) (by rw [hl]; omega) ho8 hf.tail.1) fun s₆ ⟨e₆, k₆, O₆⟩ => ?_
   rw [hl] at e₆ O₆
   refine ⟨⟨fun r hr => ?_, ?_, ?_, ?_, fun x hx hx' => ?_⟩, ?_⟩
@@ -476,21 +488,21 @@ theorem addMasked_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base siz
     omega
 
 /-- `[o] = [a] - [b] mod m`. -/
-theorem sub_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M : Mod} {m : Nat}
-    (hM : ModOk M size m s.mem base) (hMA : ModA M) {o a b : Nat} (ho : o + 8 * M.n ≤ size)
+theorem sub_okW {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M : Mod} {m : Nat}
+    (hM : ModOkW M size m s.mem base) (h10 : M.n < 10) (hMA : ModA M) {o a b : Nat} (ho : o + 8 * M.n ≤ size)
     (ha : a + 8 * M.n ≤ size) (hb : b + 8 * M.n ≤ size) (ho8 : o % 8 = 0) (ha8 : a % 8 = 0)
     (hb8 : b % 8 = 0)
     (hA : wordsVal s.mem base a M.n < m) (hB : wordsVal s.mem base b M.n < m) :
     WP isa (.block (sub M o a b)) s fun s' => OpKeep M base o s s' ∧
       wordsVal s'.mem base o M.n = (wordsVal s.mem base a M.n + m - wordsVal s.mem base b M.n) % m := by
   have hn := hs.nowrap
-  have h7 := hM.n7
+  have h7 := h10
   have hf := fresh_top_low_lt M.n h7
   have hl := low_len_lt M.n h7
   have hmX : m < 2 ^ (64 * M.n) := hM.val ▸ wordsVal_lt _ _ _ _
   have hmo := hM.mo
   obtain ⟨t, ts, hts⟩ := low_ne_nil h7 hM.n0
-  have nf : ∀ r ∈ top M.n :: low M.n, r ∉ [Reg.x0, .x1, .x2, .x3, .x4, .x5, .x6, .x7, .x16, .x17] :=
+  have nf : ∀ r ∈ top M.n :: low M.n, r ∉ [Reg.x0, .x1, .x2, .x3, .x4, .x5, .x6, .x7, .x16, .x17, .x24, .x25] :=
     hf.2
   have hsub : ∀ r ∈ top M.n :: low M.n, r ∈ acc M.n := low_sub_acc_lt _ h7
   have nk : ∀ r ∈ [Reg.x0, .x7, .x17], r ∉ Reg.x2 :: low M.n := by
@@ -557,5 +569,35 @@ theorem sub_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M 
         Nat.mod_eq_of_lt (by omega)]
       omega
     · omega
+
+/-! ## For at most six words (`ModOk`) -/
+
+theorem mul_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M : Mod} {m : Nat}
+    (hM : ModOk M size m s.mem base) (hA : ModA M) {o a b : Nat} (ho : o + 8 * M.n ≤ size)
+    (ha : a + 8 * M.n ≤ size) (hb : b + 8 * M.n ≤ size) (ho8 : o % 8 = 0) (ha8 : a % 8 = 0)
+    (hb8 : b % 8 = 0) (hB : wordsVal s.mem base b M.n < m) :
+    WP isa (.block (mul M o a b)) s fun s' => OpKeep M base o s s' ∧
+      wordsVal s'.mem base o M.n < m ∧
+      wordsVal s'.mem base o M.n * 2 ^ (64 * M.n) % m =
+        wordsVal s.mem base a M.n * wordsVal s.mem base b M.n % m :=
+  mul_okW hs hM.toW (by have := hM.n7; omega) hA ho ha hb ho8 ha8 hb8 hB
+
+theorem add_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M : Mod} {m : Nat}
+    (hM : ModOk M size m s.mem base) (hA : ModA M) {o a b : Nat} (ho : o + 8 * M.n ≤ size)
+    (ha : a + 8 * M.n ≤ size) (hb : b + 8 * M.n ≤ size) (ho8 : o % 8 = 0) (ha8 : a % 8 = 0)
+    (hb8 : b % 8 = 0)
+    (hAB : wordsVal s.mem base a M.n + wordsVal s.mem base b M.n < 2 * m) :
+    WP isa (.block (add M o a b)) s fun s' => OpKeep M base o s s' ∧
+      wordsVal s'.mem base o M.n = (wordsVal s.mem base a M.n + wordsVal s.mem base b M.n) % m :=
+  add_okW hs hM.toW (by have := hM.n7; omega) hA ho ha hb ho8 ha8 hb8 hAB
+
+theorem sub_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M : Mod} {m : Nat}
+    (hM : ModOk M size m s.mem base) (hMA : ModA M) {o a b : Nat} (ho : o + 8 * M.n ≤ size)
+    (ha : a + 8 * M.n ≤ size) (hb : b + 8 * M.n ≤ size) (ho8 : o % 8 = 0) (ha8 : a % 8 = 0)
+    (hb8 : b % 8 = 0)
+    (hA : wordsVal s.mem base a M.n < m) (hB : wordsVal s.mem base b M.n < m) :
+    WP isa (.block (sub M o a b)) s fun s' => OpKeep M base o s s' ∧
+      wordsVal s'.mem base o M.n = (wordsVal s.mem base a M.n + m - wordsVal s.mem base b M.n) % m :=
+  sub_okW hs hM.toW (by have := hM.n7; omega) hMA ho ha hb ho8 ha8 hb8 hA hB
 
 end VG.Proof.Mont.AArch64

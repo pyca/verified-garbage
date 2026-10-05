@@ -634,7 +634,7 @@ theorem winEntry_ok {K : WinCfg} {C : Curve} {base : Addr} {size k i : Nat} (hL 
     (by rw [hz₄]; exact hp0) hEy₄
   refine WP.mono W5 fun s₅ h₅ => ?_
   obtain ⟨k₅, e₅⟩ := h₅
-  have hs₅ : Scr s₅ base size := ⟨(k₅.gpr _ (x0_not_clob _ hM.n7)).trans hs₄.x0, k₅.wr ▸ hs₄.wr,
+  have hs₅ : Scr s₅ base size := ⟨(k₅.gpr _ (x0_not_clob _)).trans hs₄.x0, k₅.wr ▸ hs₄.wr,
     hs₄.nowrap, hs₄.enc⟩
   have U₅ := k₅.unch
   have U₄₅ : Unch base (winW K) s.mem s₅.mem := (U₄'.trans U₅).mono fun w hw => by

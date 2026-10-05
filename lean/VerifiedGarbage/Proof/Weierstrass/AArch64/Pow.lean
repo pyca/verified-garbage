@@ -18,12 +18,6 @@ open VG.Proof.Ed25519.AArch64 (Keeps Keeps.trans Keeps.mono)
 /-- The registers a power changes. -/
 def powClob (n : Nat) : List Reg := .x19 :: clob n
 
-theorem x19_not_clob (n : Nat) : Reg.x19 ∉ clob n := by
-  intro h
-  simp only [clob, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at h
-  rcases h with h | h
-  · rcases h with h | h | h | h | h | h | h | h | h <;> exact absurd h (by decide)
-  · have := List.mem_of_mem_take h
-    simp only [List.mem_cons, reduceCtorEq, List.not_mem_nil, or_self] at this
+theorem x19_not_clob (n : Nat) : Reg.x19 ∉ clob n := fun h => absurd (mem_clobAll h) (by decide)
 
 end VG.Proof.Weierstrass.AArch64
