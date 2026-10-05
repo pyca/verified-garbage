@@ -116,7 +116,7 @@ def final : Prog isa :=
 /-- `[u]G + [v]Q`, into `R`: `[u]G` by the comb from the table of the bits of
 `u`, `[v]Q` by ECDH's window method. -/
 def points : Prog isa :=
-  .seq (bits (c.sl U) (bitsAt c.n 0) (8 * c.n)) <| .seq (CombCfg.comb c.combCfg) <|
+  .seq (bits (c.sl U) (bitsAt c.n 0) (8 * c.n)) <| .seq (TCombCfg.comb c.combCfg) <|
   .seq (.block (save c)) <|
   .seq (c.winPrep (c.sl V)) <| .seq (WinCfg.window (c.winCfg PX PY)) (sum c)
 

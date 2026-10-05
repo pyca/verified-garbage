@@ -1,4 +1,5 @@
 import VerifiedGarbage.Impl.Weierstrass.AArch64.Window
+import VerifiedGarbage.Impl.Weierstrass.AArch64.TComb
 import VerifiedGarbage.Impl.Weierstrass.AArch64.Chain
 import VerifiedGarbage.Spec.Weierstrass
 
@@ -56,7 +57,9 @@ def GX := 8
 def GY := 9
 def R2N := 10
 def ONEN := 11
+/-- Unused. -/
 def EXPP := 12
+/-- Unused. -/
 def EXPN := 13
 def RX := 14
 def RY := 15
@@ -105,14 +108,16 @@ def WT : Nat := 87
 /-- The powers' tables (nine slots). -/
 def CT : Nat := 69
 
-/-- A curve as the code has it: `n` words, its parameters, and the fixed-base
-comb's tables for `G` (`tbl[j][k - 1]` is `[k 16^j]G`, affine, for `j < 16 n`
-and `k = 1 … 8`) and starting point `[8 Σ_j 16^j]G`. -/
+/-- A curve as the code has it: `n` words, its parameters, the fixed-base
+comb's tables for `G` (`tbl[j][k - 1]` is `[k 2^(7j)]G`, affine, for
+`j < combJ n` and `k = 1 … 64`) and starting point `[64 Σ_j 2^(7j)]G`, and
+the name of the `static` holding the tables (`Artifact.consts`). -/
 structure Cfg where
   n : Nat
   C : Spec.Weierstrass.Curve
   tbl : List (List (Nat × Nat))
   start : Nat × Nat
+  tsym : String
 
 namespace Cfg
 
@@ -145,8 +150,13 @@ def pt (x y z : Nat) : Pt := ⟨c.sl x, c.sl y, c.sl z⟩
 
 def rcbSlots : RcbSlots := ⟨c.sl AP, c.sl BM, c.sl T0, c.sl T1, c.sl T2, c.sl T3, c.sl T4, c.sl T5⟩
 
-/-- The comb for `[k]G`, into `R`, from the table of the bits of `k`. -/
-def combCfg : CombCfg where
+/-- The comb's digits: `combJ n` of 7 bits cover the scalar's `64 n`. -/
+def combW : Nat := 7
+def combJ (n : Nat) : Nat := (64 * n + 6) / 7
+
+/-- The comb for `[k]G`, into `R`, from the table of the bits of `k` and the
+curve's tables of constants, the `static` `tsym` (`Artifact.consts`). -/
+def combCfg : TCombCfg where
   M := c.MP'
   S := c.rcbSlots
   A := c.pt RX RY RZ
@@ -155,9 +165,18 @@ def combCfg : CombCfg where
   neg := c.sl PT
   zero := c.sl ZERO
   bits := bitsAt c.n 0
-  tbl := c.tbl.map fun t => t.map fun (x, y) => (c.mont x, c.mont y)
+  kbytes := 64 * c.n
+  tsym := c.tsym
+  w := combW
+  J := combJ c.n
   start := (c.mont c.start.1, c.mont c.start.2)
   one := c.mont 1
+
+/-- The comb's tables, in memory (`Artifact.consts`). -/
+def combWords : List (BitVec 64) := tcombWords c.n c.R c.C.p c.tbl
+
+/-- The tables of constants of the functions that run the comb (`Artifact.consts`). -/
+def combConsts : List (String × List (BitVec 64)) := [(c.tsym, c.combWords)]
 
 /-- The window method's areas. -/
 def winK : Nat := c.sl WK
@@ -197,7 +216,7 @@ def saved : List (Reg × Nat) := [(.x19, 0), (.x20, 8)]
 def consts : List (Nat × Nat) :=
   [(MP, c.C.p), (MN, c.C.n), (ZERO, 0), (ONE, 1), (ONEP, c.mont 1), (AP, c.mont c.C.a),
     (BM, c.mont c.C.b), (GX, c.mont c.C.gx), (GY, c.mont c.C.gy), (R2N, c.R * c.R % c.C.n),
-    (ONEN, c.R % c.C.n), (EXPP, c.C.p - 2), (EXPN, c.C.n - 2), (RX, 0), (RY, c.mont 1), (RZ, 0)]
+    (ONEN, c.R % c.C.n), (RX, 0), (RY, c.mont 1), (RZ, 0)]
 
 /-- Saves them, with the working space in `x4`, which then goes to `x0`,
 keeps `out` in `x20`; reads `k`, `d` and the hash; stores the constants; and sets
@@ -267,9 +286,7 @@ def scalar : Prog isa :=
 def sign : Prog isa :=
   .seq (.block c.setup) <|
   .seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n)) <|
-  .seq (bits (c.sl EXPP) (bitsAt c.n 1) (8 * c.n)) <|
-  .seq (bits (c.sl EXPN) (bitsAt c.n 2) (8 * c.n)) <|
-  .seq (CombCfg.comb c.combCfg) <|
+  .seq (TCombCfg.comb c.combCfg) <|
   .seq (ChainCfg.pow c.powP) <|
   .seq c.middle <|
   .seq (ChainCfg.pow c.powN) c.scalar

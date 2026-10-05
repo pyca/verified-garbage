@@ -5,6 +5,7 @@ import VerifiedGarbage.Proof.Framework.AArch64.RelCT
 import VerifiedGarbage.Proof.Framework.AArch64.Taint
 import VerifiedGarbage.Impl.Pbkdf2.Md.AArch64
 import VerifiedGarbage.Proof.Framework.OmegaLit
+import VerifiedGarbage.Proof.Framework.AArch64.Syms
 
 /-!
 # HMAC and PBKDF2-HMAC over any Merkle–Damgård hash function on AArch64: the calls
@@ -188,7 +189,8 @@ theorem VecKept.trans {s t u : State} (h : VecKept s t) (k : VecKept t u) : VecK
   fun r hr => (k r hr).trans (h r hr)
 
 /-- What a call leaves: the regions, stack pointer, callee-saved GPRs except
-`x30`, preserved SIMD low halves, and memory outside its writable regions. -/
+`x30`, preserved SIMD low halves, memory outside its writable regions, and
+the addresses of statics. -/
 structure After (s : State) (ws : List Region) (s' : State) : Prop where
   rd : s'.rd = s.rd
   wr : s'.wr = s.wr
@@ -196,6 +198,7 @@ structure After (s : State) (ws : List Region) (s' : State) : Prop where
   cs : ∀ r ∈ preserved, r ≠ .x30 → s'.gpr r = s.gpr r
   frame : Frame (ws ++ [below s.sp 16]) s.mem s'.mem
   vec : VecKept s s'
+  syms : s'.syms = s.syms
 
 /-- The stack of a callee with at most one frame. -/
 theorem frame_depth {c : Prog isa} (hd : c.aarch64Depth ≤ 1) {s : State} {ws : List Region} {m' : Mem}
@@ -223,11 +226,11 @@ theorem covers_wr {ws : List Region} {s : State} (h : Covers ws s.wr) : Covers (
 theorem init_call {s : State} {st : Addr} (h0 : s.gpr .x0 = st) (hc : Covers [⟨st, H.S⟩] s.wr)
     {Q : State → Prop} (hQ : ∀ s', After s [⟨st, H.S⟩] s' → hH.SH.Repr s'.mem st [] → Q s') :
     WP isa (.call H.initN H.initC) s Q := by
-  refine WP.callFV (k := initK H.S hH.SH.Repr) hH.init.1 (rd := []) (wr := [⟨st, H.S⟩]) ?_
-    (covers_wr hc) hc ?_ (fdepth_lt hH.initDepth)
+  refine WP.of_syms (WP.callFV (k := initK H.S hH.SH.Repr) hH.init.1 (rd := []) (wr := [⟨st, H.S⟩]) ?_
+    (covers_wr hc) hc ?_ (fdepth_lt hH.initDepth))
   · exact ⟨rfl, by simp [ce0, h0]⟩
-  · intro s' h₁ h₂ h₃ h₄ h₅ hv hpost
-    refine hQ s' ⟨h₁, h₂, h₃, h₅, frame_depth hH.initDepth h₄, hv⟩ ?_
+  · intro s' h₁ h₂ h₃ h₄ h₅ hv hpost hsy
+    refine hQ s' ⟨h₁, h₂, h₃, h₅, frame_depth hH.initDepth h₄, hv, hsy⟩ ?_
     simpa [initK, ce0, ce1, ce2, ce3, ce4, h0] using hpost
 
 /-! ## `update` -/
@@ -268,10 +271,10 @@ theorem upd_call {s : State} {st d sc : Addr} {len : Nat} (h : UpdArgs hH s st d
       (∀ m, hH.SH.Repr s.mem st m → s.gpr .x1 = BitVec.ofNat 64 m.length →
         hH.SH.Repr s'.mem st (m ++ bytesAt s.mem d len)) → Q s') :
     WP isa (.call H.updN H.updC) s Q := by
-  refine WP.callFV (k := updK H.S hH.Wb hH.SH.Repr) hH.upd.1 (h.pre hH) (h.covers hH) h.cw ?_
-    (fdepth_lt hH.updDepth)
-  intro s' h₁ h₂ h₃ h₄ h₅ hv hpost
-  refine hQ s' ⟨h₁, h₂, h₃, h₅, frame_depth hH.updDepth h₄, hv⟩ fun m hr hc => ?_
+  refine WP.of_syms (WP.callFV (k := updK H.S hH.Wb hH.SH.Repr) hH.upd.1 (h.pre hH) (h.covers hH) h.cw ?_
+    (fdepth_lt hH.updDepth))
+  intro s' h₁ h₂ h₃ h₄ h₅ hv hpost hsy
+  refine hQ s' ⟨h₁, h₂, h₃, h₅, frame_depth hH.updDepth h₄, hv, hsy⟩ fun m hr hc => ?_
   simp only [updK, State.withRegions_gpr, State.withRegions_mem, State.callEntry_mem, ce0, ce1, ce2, ce3, h.x0,
     h.x2, h.x3] at hpost
   exact hpost m hr hc
@@ -304,10 +307,10 @@ theorem fin_call {s : State} {st o sc : Addr} (h : FinArgs hH s st o sc) {Q : St
       (∀ m, hH.SH.Repr s.mem st m → m.length < 2 ^ 64 → s.gpr .x1 = BitVec.ofNat 64 m.length →
         (bytesAt s'.mem o H.F).take H.D = hH.SH.H.hash m) → Q s') :
     WP isa (.call H.finN H.finC) s Q := by
-  refine WP.callFV (k := finK H.S hH.Wb H.F H.D hH.SH.Repr hH.SH.H.hash) hH.fin.1 (h.pre hH)
-    (covers_wr h.cw) h.cw ?_ (fdepth_lt hH.finDepth)
-  intro s' h₁ h₂ h₃ h₄ h₅ hv hpost
-  refine hQ s' ⟨h₁, h₂, h₃, h₅, frame_depth hH.finDepth h₄, hv⟩ fun m hr hl hc => ?_
+  refine WP.of_syms (WP.callFV (k := finK H.S hH.Wb H.F H.D hH.SH.Repr hH.SH.H.hash) hH.fin.1 (h.pre hH)
+    (covers_wr h.cw) h.cw ?_ (fdepth_lt hH.finDepth))
+  intro s' h₁ h₂ h₃ h₄ h₅ hv hpost hsy
+  refine hQ s' ⟨h₁, h₂, h₃, h₅, frame_depth hH.finDepth h₄, hv, hsy⟩ fun m hr hl hc => ?_
   simp only [finK, State.withRegions_gpr, State.withRegions_mem, State.callEntry_mem, ce0, ce1, ce2, h.x0,
     h.x2] at hpost
   exact hpost m hr hl hc

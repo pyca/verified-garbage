@@ -24,6 +24,7 @@ writes only regions below the pointers (`Safe`) keeps it (`Ctx.keep`).
 namespace VG.Proof.Ecdsa.Rfc6979.AArch64
 
 open VG VG.AArch64
+open VG.Impl.Ecdsa.AArch64 (p256)
 
 /-- The buffers and the lowest byte of the stack used (`sp - 240` on entry),
 for a digest of `dn` bytes. -/
@@ -33,6 +34,8 @@ structure Lay (dn : Nat) where
   dg : Addr
   scr : Addr
   B : Addr
+  /-- The comb's tables (the static `p256.tsym`), which `core` reads. -/
+  T : Addr
 
 namespace Lay
 
@@ -49,6 +52,8 @@ abbrev FR : Region := ⟨L.B + BitVec.ofNat 64 16, 208⟩
 abbrev LR : Region := ⟨L.B + BitVec.ofNat 64 224, 16⟩
 /-- The stack below the frame's pointers: the calls' and `K`, `V`, `h` and the count. -/
 abbrev LOW : Region := ⟨L.B, 184⟩
+/-- The comb's tables. -/
+abbrev TBL : Region := ⟨L.T, 8 * p256.combWords.length⟩
 
 /-- What the contract says of where the buffers and the stack are (`d` and
 `digest`, which are only read, may overlap). -/
@@ -67,6 +72,10 @@ structure Ok : Prop where
   ng : L.dg.toNat + dn ≤ 2 ^ 64
   nc : L.scr.toNat + 8192 ≤ 2 ^ 64
   nB : L.B.toNat + 240 ≤ 2 ^ 64
+  tOut : L.TBL.Disjoint L.OUT
+  tScr : L.TBL.Disjoint L.SCR
+  tStk : L.TBL.Disjoint L.STK
+  nT : L.T.toNat + 8 * p256.combWords.length ≤ 2 ^ 64
 
 end Lay
 
@@ -166,7 +175,7 @@ end Lay.Ok
 /-- The state between the frames' pushes and pops: `g` are the registers on
 entry, `m₀` the memory. -/
 structure Ctx {dn : Nat} (L : Lay dn) (g : Reg → BitVec 64) (m₀ : Mem) (t : State) : Prop where
-  rd : t.rd = [L.D, L.DG]
+  rd : t.rd = [L.D, L.DG, L.TBL]
   wr : t.wr = [L.FR, L.LR, L.OUT, L.SCR]
   sp : t.sp = L.B + BitVec.ofNat 64 16
   cs : ∀ r ∈ preserved, r ≠ .x30 → t.gpr r = g r
@@ -176,6 +185,9 @@ structure Ctx {dn : Nat} (L : Lay dn) (g : Reg → BitVec 64) (m₀ : Mem) (t : 
   pOut : t.mem.readW (L.B + BitVec.ofNat 64 208) 64 = L.out
   lr : t.mem.readW (L.B + BitVec.ofNat 64 224) 64 = g .x30
   frame : Frame [L.OUT, L.SCR, L.STK] m₀ t.mem
+  sy : t.syms p256.tsym = L.T
+  held : ∀ i < p256.combWords.length,
+    m₀.readW (L.T + BitVec.ofNat 64 (8 * i)) 64 = p256.combWords.getD i 0
 
 theorem Safe.sub_frame {dn : Nat} {L : Lay dn} {r : Region} (h : Safe L r) :
     ∃ R ∈ [L.OUT, L.SCR, L.STK], Region.Sub r R := by
@@ -192,7 +204,8 @@ variable {dn : Nat} {L : Lay dn} {g : Reg → BitVec 64} {m₀ : Mem} {t t' : St
 but `x30`, and writes only safe regions. -/
 theorem keep (hL : L.Ok) (hc : Ctx L g m₀ t) (hrd : t'.rd = t.rd) (hwr : t'.wr = t.wr)
     (hsp : t'.sp = t.sp) (hcs : ∀ r ∈ preserved, r ≠ .x30 → t'.gpr r = t.gpr r)
-    {ws : List Region} (hf : Frame ws t.mem t'.mem) (hs : ∀ r ∈ ws, Safe L r) : Ctx L g m₀ t' := by
+    {ws : List Region} (hf : Frame ws t.mem t'.mem) (hs : ∀ r ∈ ws, Safe L r)
+    (hsy : t'.syms = t.syms) : Ctx L g m₀ t' := by
   have keep : ∀ d, 184 ≤ d → d + 8 ≤ 240 →
       t'.mem.readW (L.B + BitVec.ofNat 64 d) 64 = t.mem.readW (L.B + BitVec.ofNat 64 d) 64 :=
     fun d h₁ h₂ => hf.readW (r := ⟨L.B + BitVec.ofNat 64 184, 56⟩)
@@ -201,12 +214,13 @@ theorem keep (hL : L.Ok) (hc : Ctx L g m₀ t) (hrd : t'.rd = t.rd) (hwr : t'.wr
     (keep 184 (by omega) (by omega)).trans hc.pScr, (keep 192 (by omega) (by omega)).trans hc.pDg,
     (keep 200 (by omega) (by omega)).trans hc.pD, (keep 208 (by omega) (by omega)).trans hc.pOut,
     (keep 224 (by omega) (by omega)).trans hc.lr,
-    hc.frame.trans (hf.sub fun r hr => (hs r hr).sub_frame)⟩
+    hc.frame.trans (hf.sub fun r hr => (hs r hr).sub_frame), by rw [hsy]; exact hc.sy, hc.held⟩
 
 /-- Code that writes only registers but the callee-saved ones. -/
 theorem regs (hL : L.Ok) (hc : Ctx L g m₀ t) (hrd : t'.rd = t.rd) (hwr : t'.wr = t.wr) (hm : t'.mem = t.mem)
-    (hsp : t'.sp = t.sp) (hg : ∀ r ∈ preserved, r ≠ .x30 → t'.gpr r = t.gpr r) : Ctx L g m₀ t' :=
-  hc.keep hL hrd hwr hsp hg (ws := []) (by rw [hm]; exact Frame.refl _ _) (by simp)
+    (hsp : t'.sp = t.sp) (hg : ∀ r ∈ preserved, r ≠ .x30 → t'.gpr r = t.gpr r) (hsy : t'.syms = t.syms) :
+    Ctx L g m₀ t' :=
+  hc.keep hL hrd hwr hsp hg (ws := []) (by rw [hm]; exact Frame.refl _ _) (by simp) hsy
 
 /-- A byte of `d`, as on entry. -/
 theorem d_byte (hL : L.Ok) (hc : Ctx L g m₀ t) {i : Nat} (hi : i < 32) :
@@ -279,19 +293,21 @@ end Ctx
 
 /-- The layout of a call from `s`, with a digest of `dn` bytes. -/
 def lay (dn : Nat) (s : State) : Lay dn :=
-  ⟨s.gpr .x0, s.gpr .x1, s.gpr .x2, s.gpr .x3, s.sp - BitVec.ofNat 64 240⟩
+  ⟨s.gpr .x0, s.gpr .x1, s.gpr .x2, s.gpr .x3, s.sp - BitVec.ofNat 64 240, s.syms p256.tsym⟩
 
 theorem lay_top (dn : Nat) (s : State) : (lay dn s).B + BitVec.ofNat 64 240 = s.sp :=
   BitVec.sub_add_cancel _ _
 
 theorem lay_ok {I : Spec.Ecdsa.Rfc6979.Instance} {s : State} (h : (rfcAArch64 I).pre s) :
     (lay I.hashLen s).Ok := by
-  obtain ⟨-, -, od, og, oc, dc, gc, ko, kd, kg, kc, no, nd, ng, nc, hsp⟩ := h
+  obtain ⟨-, -, od, og, oc, dc, gc, ko, kd, kg, kc, no, nd, ng, nc, hsp, -, nT, hdw⟩ := h
   have nB : (lay I.hashLen s).B.toNat + 240 ≤ 2 ^ 64 := by
     simp only [lay]
     rw [Offset.toNat_sub_ofNat s.sp 240]
     omega
-  exact ⟨od, og, oc, dc, gc, ko, kd, kg, kc, no, nd, ng, nc, nB⟩
+  exact ⟨od, og, oc, dc, gc, ko, kd, kg, kc, no, nd, ng, nc, nB, hdw _ (List.mem_cons_self ..),
+    hdw _ (List.mem_cons_of_mem _ (List.mem_cons_self ..)),
+    hdw _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_singleton_self _))), nT⟩
 
 /-- The state in which the inner frame's body starts. -/
 def entered (s : State) : State := allocated Impl.Ecdsa.Rfc6979.AArch64.frameBytes (pushed .x30 s)
@@ -377,7 +393,7 @@ theorem entry_ok {I : Spec.Ecdsa.Rfc6979.Instance} {s : State} (h : (rfcAArch64 
     (s.gpr .x2) (s.gpr .x3)
   rw [entered_mem I.hashLen] at f k208 k200 k192 k184
   rw [entered_mem I.hashLen]
-  refine ⟨?_, ?_, rfl, ?_, k184, k192, k200, k208, ?_, ?_⟩
+  refine ⟨?_, ?_, rfl, ?_, k184, k192, k200, k208, ?_, ?_, rfl, h.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.1⟩
   · simp only [entered_rd]; rw [h.1]; rfl
   · rw [entered_wr I.hashLen, h.2.1]; rfl
   · intro r hr hr'
