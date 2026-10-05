@@ -94,7 +94,8 @@ theorem open_framed (hti : TagInputEq) :
   X86.Verified.stackScratch (sig := Spec.GcmSiv.openSig) (nm := "work") (e := .u64) (n := 352)
     (pre := Spec.GcmSiv.openPre X86.abi.ptrBits) (post := Spec.GcmSiv.openPost X86.abi.ptrBits)
     (wa := true) (stack := 28) (leak := some (Spec.GcmSiv.openLeak X86.abi.ptrBits)) (bytes := 2856)
-    (open_verified v hti) (by decide) (open_noEsp v) (open_stackUse v) (Proof.AesGcmSiv.openPre_local _)
+    (Proof.AesGcmSiv.Verified.of_openScratch (open_verified v hti)) (by decide) (open_noEsp v)
+    (open_stackUse v) (Proof.AesGcmSiv.openPre_local _)
     (Proof.AesGcmSiv.openPost_local _) openFrameSat_pre (hleak := Proof.AesGcmSiv.openLeak_local _)
 
 end VG.Proof.AesGcmSiv.X86

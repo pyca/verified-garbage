@@ -52,7 +52,7 @@ macro "tcomb_mem" : tactic => `(tactic| (simp only [List.mem_cons, List.mem_appe
   List.nil_append, TCombCfg.toComb]))
 
 /-- The selection's registers are neither `x0` nor `x19`. -/
-theorem sel_regs {n : Nat} (hn : n ≤ 8) {r : Reg} (hr : r = .x0 ∨ r = .x19) :
+theorem sel_regs {n : Nat} (hn : n ≤ 9) {r : Reg} (hr : r = .x0 ∨ r = .x19) :
     r ∉ Reg.x1 :: Reg.x2 :: Reg.x3 :: Reg.x4 :: Reg.x5 :: Reg.x6 :: Reg.x7 :: Reg.x16 :: Reg.x17 ::
       entryRegs n := by
   intro h
@@ -61,7 +61,7 @@ theorem sel_regs {n : Nat} (hn : n ≤ 8) {r : Reg} (hr : r = .x0 ∨ r = .x19) 
   rcases h with h | h | h | h | h | h | h | h | h | h <;>
     first | exact absurd h (by decide) | exact entryRegs_regs n hn _ h (by simp)
 
-theorem tcombClob_sub : ∀ n ≤ 8, ∀ r ∈ [Reg.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x9, .x16, .x17] ++
+theorem tcombClob_sub : ∀ n ≤ 9, ∀ r ∈ [Reg.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x9, .x16, .x17] ++
     entryRegs n, r ∈ tcombClob n := by decide
 
 /-- After the selection and negation: `E` represents the signed entry of

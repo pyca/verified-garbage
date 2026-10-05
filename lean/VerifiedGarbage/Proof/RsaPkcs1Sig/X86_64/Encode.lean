@@ -84,7 +84,7 @@ theorem psLoop_ok {s₀ s : State} {k : Nat} (hb : Buf s₀ k) (hk : k < 2 ^ 64)
       t'.gpr .rdi = t.gpr .rdi + 1 ∧ t'.gpr .rax = b.setWidth 64 ∧ t'.gpr .r10 = t.gpr .r10 - 1 ∧
       t'.zf = some (t.gpr .r10 - 1 == 0)) (by
     xrun [psLoop, ea0, hA, hax, byte_setWidth64]) rfl) fun t' ⟨⟨hm', hdi', hax', hc', hz⟩, hK'⟩ =>
-      ⟨⟨⟨(hK.trans hK').mono (by simp [clob]), ?_, ?_⟩, hax', (hKs.trans hK').mono (by simp)⟩, hc', hz⟩
+      ⟨⟨⟨(hK.trans hK').mono (by decide), ?_, ?_⟩, hax', (hKs.trans hK').mono (by simp)⟩, hc', hz⟩
   · rw [hm', hm, hdi, List.replicate_succ', ← List.append_assoc,
       writeBytes_snoc _ _ _ _ (by simp; omega)]
   · rw [hdi', hdi, ofNat_succ]; simp [List.replicate_succ', Nat.add_assoc]
@@ -134,7 +134,7 @@ theorem copyLoop_ok {s₀ s : State} {k : Nat} (hb : Buf s₀ k) (hk : k < 2 ^ 6
         t'.zf = some (t.gpr .r9 - 1 == 0)) (by
       xrun [copyLoop, ea0, hA, hR, hv, byte_setWidth64]) rfl)
       fun t' ⟨⟨hm', hdi', hsi'', hc', hz⟩, hK'⟩ =>
-        ⟨⟨⟨(hK.trans hK').mono (by simp [clob]), ?_, ?_⟩, ?_⟩, hc', hz⟩
+        ⟨⟨⟨(hK.trans hK').mono (by decide), ?_, ?_⟩, ?_⟩, hc', hz⟩
     · rw [hm', hm, hdi, bytesAt_take_succ _ _ hi, ← List.append_assoc,
         writeBytes_snoc _ _ _ _ (by omega)]
     · rw [hdi', hdi, ofNat_succ, bytesAt_take_succ _ _ hi]
@@ -260,7 +260,7 @@ theorem write_ok {s₀ s : State} {x : BitVec 32} {h : Hash} {k : Nat} (hb : Buf
   -- `rdi := r8`
   have w0 : WP isa (.block [.mov .rdi (.reg .r8)]) s fun t => W s₀ [] t ∧ Keep [.rdi] s t := by
     refine WP.mono (WP.keep [.rdi] (Q := fun t => t.mem = s.mem ∧ t.gpr .rdi = s.gpr .r8) (by xrun) rfl)
-      fun t ⟨⟨hm, hdi⟩, hK⟩ => ⟨⟨(hp.keep.trans hK).mono (by simp [clob]), by
+      fun t ⟨⟨hm, hdi⟩, hK⟩ => ⟨⟨(hp.keep.trans hK).mono (by decide), by
         rw [hm, hp.mem, writeBytes_nil], by rw [hdi, h8]; simp⟩, hK⟩
   unfold write head
   rw [WP.seq_iff, List.append_assoc, List.append_assoc, WP.block_append_iff]
@@ -277,7 +277,7 @@ theorem write_ok {s₀ s : State} {x : BitVec 32} {h : Hash} {k : Nat} (hb : Buf
       t.gpr .r10 = BitVec.ofNat 64 (k - (h.prefix.length + h.len) - 3) ∧ t.gpr .rax = 0xff) (by
     xrun [h10, hc2, ofNat_sub3 hlen hkk]) rfl) fun t₃ ⟨⟨hm₃, h10₃, hax₃⟩, hK₃⟩ => ?_
   have hw₃ : W s₀ ([] ++ [0x00] ++ [0x01]) t₃ :=
-    ⟨(hw₂.1.trans hK₃).mono (by simp [clob]), hm₃.trans hw₂.2.1, by rw [hK₃.gpr (by decide)]; exact hw₂.2.2⟩
+    ⟨(hw₂.1.trans hK₃).mono (by decide), hm₃.trans hw₂.2.1, by rw [hK₃.gpr (by decide)]; exact hw₂.2.2⟩
   -- `PS`
   refine WP.seq (WP.mono (psLoop_ok hb hkk (n := k - (h.prefix.length + h.len) - 3) (by omega)
     (by simp; omega) hw₃ 0xff (by rw [hax₃]; rfl) h10₃) fun t₄ ⟨hw₄, hK₄⟩ => ?_)
@@ -315,7 +315,7 @@ theorem write_ok {s₀ s : State} {x : BitVec 32} {h : Hash} {k : Nat} (hb : Buf
   refine WP.seq (WP.mono (copyLoop_ok hb hkk hlen0 (by simp; omega) hw₆
     (by rw [hK₆.gpr (by decide), hp.rsi]) (by rw [hK₆.gpr (by decide), hp.r9]) hr hd) fun t₇ hw₇ => ?_)
   refine WP.mono (WP.keep [.rax] (Q := fun t => t.mem = t₇.mem ∧ t.gpr .rax = 1) (by xrun) rfl)
-    fun t ⟨⟨hm, hax⟩, hK⟩ => ⟨(hw₇.1.trans hK).mono (by simp [clob]), hax, ?_⟩
+    fun t ⟨⟨hm, hax⟩, hK⟩ => ⟨(hw₇.1.trans hK).mono (by decide), hax, ?_⟩
   rw [hm, hw₇.2.1]
   simp only [List.nil_append, List.append_assoc, List.cons_append]
 
@@ -416,7 +416,7 @@ theorem encode_ok {s₀ : State} {x : BitVec 32} {k : Nat} (hp : EPre s₀ x k) 
     refine WP.seq (WP.mono (cmpLen_ok t₁) fun t₂ ⟨hs₂, hz₂⟩ => ?_)
     have hK₂ : Keep clob s₀ t₂ := Keep.sameF hK₁ hs₂
     have hfail : ∀ u, Keep clob s₀ u → u.mem = s₀.mem → WP isa fail u (EPost s₀ x k) := fun u hKu hmu =>
-      WP.mono (fail_ok u) fun t ⟨hK, hm, hax⟩ => ⟨(hKu.trans hK).mono (by simp [clob]), by
+      WP.mono (fail_ok u) fun t ⟨hK, hm, hax⟩ => ⟨(hKu.trans hK).mono (by decide), by
         rw [show encodeId x _ k = none from hE]; exact ⟨hax, hm.trans hmu⟩⟩
     refine ite_both (!(t₁.gpr .r9 == t₁.gpr .r11)) (by simp only [eval, hz₂]; rfl)
       (hfail t₂ hK₂ (hs₂.2.1.trans hm₁)) ?_
@@ -426,7 +426,7 @@ theorem encode_ok {s₀ : State} {x : BitVec 32} {k : Nat} (hp : EPre s₀ x k) 
     rw [hcx, h10', hk] at hcf
     refine WP.ite true (by
       simp only [eval, hcf, show ((2048 : BitVec 64) + 11).toNat = 2059 from rfl]; simp; omega) (fun _ => hfail t₃
-      ((hK₂.trans hK₃).mono (by simp [clob])) (hm₃.trans (hs₂.2.1.trans hm₁))) (by simp)
+      ((hK₂.trans hK₃).mono (by decide)) (hm₃.trans (hs₂.2.1.trans hm₁))) (by simp)
   | some h =>
     have hcase : ∀ j (hj : j < hashes.length), x.toNat = 0 + j → ∀ u, SameF s₀ u →
         WP isa (lens hashes[j]) u fun t => Keep clob s₀ t ∧ t.mem = s₀.mem ∧
@@ -456,7 +456,7 @@ theorem encode_ok {s₀ : State} {x : BitVec 32} {k : Nat} (hp : EPre s₀ x k) 
     have hHl : H.length = dl := bytesAt_length _ _ _
     have hfail : ∀ u, Keep clob s₀ u → u.mem = s₀.mem → Spec.RsaPkcs1Sig.encode h H k = none →
         WP isa fail u (EPost s₀ x k) := fun u hKu hmu hE =>
-      WP.mono (fail_ok u) fun t ⟨hK, hm, hax⟩ => ⟨(hKu.trans hK).mono (by simp [clob]), by
+      WP.mono (fail_ok u) fun t ⟨hK, hm, hax⟩ => ⟨(hKu.trans hK).mono (by decide), by
         rw [show encodeId x _ k = none by simp only [encodeId, hid]; exact hE]; exact ⟨hax, hm.trans hmu⟩⟩
     have h9 : t₁.gpr .r9 = BitVec.ofNat 64 dl := by rw [h9₁]; simp [dl]
     by_cases hdl : dl = h.len
@@ -474,7 +474,7 @@ theorem encode_ok {s₀ : State} {x : BitVec 32} {k : Nat} (hp : EPre s₀ x k) 
         simp [hkl]
       · refine WP.ite false (by simp [eval, hcf, hkl]) (by simp) (fun _ => ?_)
         have hw : WPre s₀ x h k t₃ := {
-          keep := (hK₂.trans hK₃).mono (by simp [clob])
+          keep := (hK₂.trans hK₃).mono (by decide)
           mem := hm₃.trans (hs₂.2.1.trans hm₁)
           rsi := by rw [hK₃.gpr (by decide), hs₂.1, hsi₁]
           r9 := by rw [hK₃.gpr (by decide), hs₂.1, h9, hdl]

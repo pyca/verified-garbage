@@ -53,9 +53,9 @@ structure TCombLay (K : TCombCfg) (size : Nat) : Prop where
   bits_w : ∀ w ∈ combW K.toComb, K.bits + K.kbytes + 8 * K.zw ≤ w.1 ∨ w.1 + w.2 ≤ K.bits
   bits_sl : ∀ x ∈ K.M.mo :: combSlots K.toComb,
     K.bits + K.kbytes + 8 * K.zw ≤ x ∨ x + 8 * K.M.n ≤ K.bits + K.kbytes
-  n8 : K.M.n ≤ 8
-  n2 : K.M.n % 2 = 0
-  e16 : K.E.x % 16 = 0 ∧ K.E.y % 16 = 0
+  n8 : K.M.n ≤ 9
+  n2 : K.M.n % 2 = 1 → K.M.n = 9 ∧ K.E.y = K.E.x + 8 * K.M.n
+  e16 : K.E.x % 16 = 0 ∧ (K.M.n % 2 = 0 → K.E.y % 16 = 0)
   tbl : 16 * K.M.n * K.H ≤ 32768 ∧ K.tblBytes < 65536
 
 end VG.Proof.Weierstrass

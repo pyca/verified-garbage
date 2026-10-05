@@ -1,5 +1,4 @@
 import VerifiedGarbage.Proof.Bignum.X86_64.Setup
-import Mathlib.Tactic.Positivity
 
 /-!
 # Multiword arithmetic on x86-64: `R² mod m`
@@ -24,7 +23,7 @@ theorem setWord_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hs : S
       wv t.mem B (slot w o) w = (s.gpr .rdx).toNat * 2 ^ (64 * i) ∧
       Outside B (slot w o) (8 * (w + 2)) s.mem t.mem ∧ Keep [.rax, .r8, .r14] s t := by
   have hn := hs.nowrap
-  have sl : slot w o + 8 * (w + 2) ≤ Z := (slot_le ho).trans hZ
+  have sl : slot w o + 8 * (w + 2) ≤ Z := Nat.le_trans (slot_le ho) hZ
   unfold setWord
   refine WP.seq (WP.mono (WP.keep [.r8] (Q := fun t => t.gpr .r8 = off B (slot w o) ∧ t.mem = s.mem)
     (by xrun [State.ea, hdr, hdi, hdrOff, hs.ld (show 8 * sArr o + 8 ≤ Z by
@@ -107,7 +106,7 @@ theorem topBit_ok {s : State} {T : Nat} (hT : s.gpr .rax = BitVec.ofNat 64 T) (h
       have h1 : 2 ^ (j + 1) ≤ T := by
         have := Nat.div_mul_le_self T (2 ^ (j + 1)); rw [h, Nat.one_mul] at this; exact this
       have h2 : T < 2 ^ (j + 2) := by
-        have := Nat.lt_mul_div_succ T (show 0 < 2 ^ (j + 1) by positivity)
+        have := Nat.lt_mul_div_succ T (show 0 < 2 ^ (j + 1) by exact Nat.pow_pos (by decide))
         rw [h] at this; rw [Nat.pow_succ]; omega
       have := (Nat.le_log2 (by omega)).mpr h1
       have := (Nat.log2_lt (by omega)).mpr h2
@@ -151,7 +150,7 @@ theorem dblIter_ok {s t : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hZ :
     WP isa (.seq (double mo acc tmp o) (.block (dblCount sl))) t fun t' =>
       t'.zf = some (decide (j + 1 = c)) ∧ DblsInv s B Z w minv mo acc tmp o sl c O N (j + 1) t' := by
   have hn := hI.scr.nowrap
-  have sl8 : ∀ j < 8, slot w j + 8 * (w + 2) ≤ Z := fun j hj => (slot_le hj).trans hZ
+  have sl8 : ∀ j < 8, slot w j + 8 * (w + 2) ≤ Z := fun j hj => Nat.le_trans (slot_le hj) hZ
   have sp : ∀ {j k}, j ≠ k → slot w j + 8 * (w + 2) ≤ slot w k ∨ slot w k + 8 * (w + 2) ≤ slot w j :=
     fun h => slot_sep h
   have hhs : ∀ j, 8 * sl + 8 ≤ slot w j := fun j => hdr_lt_slot w j hsl'
@@ -192,7 +191,7 @@ theorem dblStart_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hs : 
     WP isa (.block [.store (hdr sl) .rcx]) s (DblsInv s B Z w minv mo acc tmp o sl c
       (wv s.mem B (slot w o) w) (wv s.mem B (slot w mo) w) 0) := by
   have hn := hs.nowrap
-  have sl8 : ∀ j < 8, slot w j + 8 * (w + 2) ≤ Z := fun j hj => (slot_le hj).trans hZ
+  have sl8 : ∀ j < 8, slot w j + 8 * (w + 2) ≤ Z := fun j hj => Nat.le_trans (slot_le hj) hZ
   have hhs : ∀ j, 8 * sl + 8 ≤ slot w j := fun j => hdr_lt_slot w j hsl'
   refine WP.mono (WP.keep [] (Q := fun t => t.mem = s.mem.writeW (off B (8 * sl)) (s.gpr .rcx))
     (by xrun [State.ea, hdr, hdi, hdrOff, hs.st (show 8 * sl + 8 ≤ Z by have := hhs 8; omega)]) rfl)

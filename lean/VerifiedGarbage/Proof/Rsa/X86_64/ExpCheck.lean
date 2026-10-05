@@ -76,7 +76,6 @@ theorem shr33_eq_zero {v : Nat} (hv : v < 2 ^ 64) : (BitVec.ofNat 64 v >>> 33 = 
 theorem low_eq_zero {v : Nat} (hv : v < 2 ^ 64) : ((BitVec.ofNat 64 v &&& 1) ^^^ 1 = 0#64) ↔ v % 2 = 1 := by
   rw [BitVec.xor_eq_zero_iff, ← BitVec.toNat_inj, BitVec.toNat_and, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hv,
     show (1 : BitVec 64).toNat = 2 ^ 1 - 1 from rfl, Nat.and_two_pow_sub_one_eq_mod]
-  simp
 
 theorem neg_flag_eq_zero (c : Bool) : (0#64 - BitVec.setWidth 64 (BitVec.ofBool c) = 0#64) ↔ c = false := by
   cases c <;> decide

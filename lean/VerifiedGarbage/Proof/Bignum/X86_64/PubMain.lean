@@ -100,7 +100,7 @@ theorem valid_facts {N k : Nat} (hv : Spec.Rsa.modulusValid N k = true) (hk : 64
     rw [pow256_eq]; exact Nat.pow_le_pow_right (by decide) (by omega)
   have h256 : 256 ≤ 256 ^ (k - 1) := by
     have := Nat.pow_le_pow_right (n := 256) (by decide) (show 1 ≤ k - 1 by omega); simpa using this
-  exact ⟨beq_iff_eq.mp h1, by omega, hp.trans h4⟩
+  exact ⟨beq_iff_eq.mp h1, by omega, Nat.le_trans hp h4⟩
 
 /-- `main`, for a valid modulus `m`: `i2osp (x^e mod m)` if `x < m` and
 zeros otherwise, and `x < m` returned. -/
@@ -118,7 +118,7 @@ theorem main_ok {s : State} {B : Addr} {Z k : Nat} {op np ep ip : Addr} {L : Nat
   have hn := h.scr.nowrap
   have hn' : B.toNat + slot ((k + 7) / 8) 8 ≤ 2 ^ 64 := by omega
   have hZs : ∀ {rs : List (Nat × Nat)}, (∀ r ∈ rs, r.1 + r.2 ≤ slot ((k + 7) / 8) 8) → ∀ r ∈ rs, r.1 + r.2 ≤ Z :=
-    fun h' r hr => (h' r hr).trans hZ
+    fun h' r hr => Nat.le_trans (h' r hr) hZ
   rw [main_eq]
   refine wp_seqs_append (by simp [loadSteps]) (by simp [r2Steps])
     (WP.mono (setup_ok h.scr h.rdi hZ (by omega) (by omega) h.hK h.hN h.hIn h.n h.x h.nl h.xl hodd)

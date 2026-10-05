@@ -880,7 +880,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅ AVX2; SSE2 polynomial arithmetic</td>
+<td>✅ AVX-512F, AVX-512VL, AVX2; SSE2 polynomial arithmetic</td>
 
 <td>✅ SHA extensions; NEON polynomial arithmetic</td>
 
@@ -896,7 +896,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅ AVX2; SSE2 polynomial arithmetic</td>
+<td>✅ AVX-512F, AVX-512VL, AVX2; SSE2 polynomial arithmetic</td>
 
 <td>✅ SHA extensions; NEON polynomial arithmetic</td>
 
@@ -931,6 +931,22 @@ yours to keep:
 <tr>
 
 <td>ECDH P-192</td>
+
+<td>✅</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+</tr>
+
+<tr>
+
+<td>ECDH P-224</td>
 
 <td>✅</td>
 
@@ -1065,6 +1081,22 @@ yours to keep:
 <tr>
 
 <td>ECDSA P-192</td>
+
+<td>✅</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+</tr>
+
+<tr>
+
+<td>ECDSA P-224</td>
 
 <td>✅</td>
 

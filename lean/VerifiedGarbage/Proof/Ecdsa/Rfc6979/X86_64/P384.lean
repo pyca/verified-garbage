@@ -28,9 +28,11 @@ theorem coreK_p384 : coreK Impl.Ecdsa.X86_64.p384 = Proof.Ecdsa.X86_64.P384.sign
     false_implies, implies_true, and_true, Proof.Ecdsa.X86_64.P384.signX86_64, Proof.Ecdsa.X86_64.P384.TblHeld]
   rfl
 
-/-- P-384, with the group law `hL` and the comb's tables `hT`. -/
+/-- P-384, with the group law `hL`, the comb's tables `hT` and the inversions'
+soundness `hI`. -/
 def p384 (hL : Weierstrass.Law Spec.P384.curve)
-    (hT : Weierstrass.CombOkW Spec.P384.curve 7 55 Impl.P384.p384Comb7 Impl.P384.p384Comb7Start) : RfcCurve where
+    (hT : Weierstrass.CombOkW Spec.P384.curve 7 55 Impl.P384.p384Comb7 Impl.P384.p384Comb7Start)
+    (hI : Weierstrass.X86_64.InvSounds) : RfcCurve where
   E := Impl.Ecdsa.X86_64.p384
   inst := Spec.Ecdsa.P384.inst
   curve := rfl
@@ -41,7 +43,7 @@ def p384 (hL : Weierstrass.Law Spec.P384.curve)
   sh_eq := Proof.Ecdsa.X86_64.P384.p384_sh
   coreN := Spec.Ecdsa.P384.signApi.name
   coreC := Impl.Ecdsa.X86_64.signP384
-  coreX := by rw [coreK_p384]; exact Proof.Ecdsa.X86_64.P384.sign_x86 hL hT
+  coreX := by rw [coreK_p384]; exact Proof.Ecdsa.X86_64.P384.sign_x86 hL hT hI
   coreCT := by rw [coreK_p384]; exact Proof.Ecdsa.X86_64.P384.sign_ct
   coreNs := by lit_decide
   coreSp := by lit_decide

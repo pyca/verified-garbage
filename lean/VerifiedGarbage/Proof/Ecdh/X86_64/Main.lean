@@ -263,7 +263,7 @@ theorem exchange_eq' (c : Cfg) : Impl.Ecdh.X86_64.Cfg.exchange c =
       (.seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n)) (.seq (bits (c.sl EXPP) (bitsAt c.n 1) (8 * c.n))
       (.seq (bits (c.sl EXPN) (bitsAt c.n 2) (8 * c.n)) (.block [])))))
     (.seq (.block (Impl.Ecdh.X86_64.Cfg.peer c)) (.seq (Impl.Ecdh.X86_64.Cfg.validate c)
-    (.seq (ladder (Impl.Ecdh.X86_64.Cfg.ladderQ c)) (.seq (pow c.powP) (Impl.Ecdh.X86_64.Cfg.middle c)))))) := rfl
+    (.seq (ladder (Impl.Ecdh.X86_64.Cfg.ladderQ c)) (.seq c.pPow (Impl.Ecdh.X86_64.Cfg.middle c)))))) := rfl
 
 /-- `vg_ecdh_<curve>` computes the specification's shared secret and restores
 the callee-saved registers. -/
@@ -355,16 +355,19 @@ theorem exchange_ok (hc : CfgOk c) (hC : Law c.C) {s₀ : State} (hp : EPre c s�
     (fun t ht => by rw [t₄ (j := 0) (by decide) t ht, S₂.t₀ t ht, S₂.k])
     (fun t ht => by rw [t₄ (j := 1) (by decide) t ht, S₂.t₁ t ht]) fun s₅ L => ?_
   have hs₅ := L.scr
-  have F₅ := F₄.unch h7 hn ((fixedOk_slW (by decide)).append (fixedOk_slW (l := [ACC, PT, TMP]) (by decide)))
-    L.unch
+  have F₅ := F₄.unch h7 hn ((fixedOk_slW (by decide)).append fixedOk_pwW) L.unch
   have e₅ : ∀ {i}, i < 45 → i ∉ [RX, RY, RZ, T0, T1, T2, T3, T4, T5, DX, DY, DZ, T0, T1, T2, T3, T4, T5,
       TX, TY, TZ, TMP] → i ∉ [ACC, PT, TMP] → sv c (s₀.gpr .rcx) s₅ i = sv c (s₀.gpr .rcx) s₄ i :=
-    fun hi h₁ h₂ => sv_unch L.unch h7 hn hi (apart_append (apart_slW h₁) (apart_slW h₂))
+    fun hi h₁ h₂ => sv_unch L.unch h7 hn hi (apart_append (apart_slW h₁) (apart_pwW hi h₂))
   have hflag₅ := f₄
-  rw [← flag_unch L.unch (l := [RX, RY, RZ, T0, T1, T2, T3, T4, T5, DX, DY, DZ, T0, T1, T2, T3, T4, T5,
-      TX, TY, TZ, TMP] ++ [ACC, PT, TMP]) h7 h0 hn (by decide)] at hflag₅
+  have hF := sl_le c h7 (i := FLAG) (by decide)
+  rw [← L.unch.word (fun w hw => by
+    rcases apart_append (apart_slW (c := c) (i := FLAG) (by decide))
+      (apart_pwW (c := c) (i := FLAG) (by decide) (by decide)) w hw with h | h
+    · exact Or.inl (by omega)
+    · exact Or.inr h) (by omega)] at hflag₅
   have hrsi₅ : s₅.gpr .rsi = s₀.gpr .rdi := by
-    rw [L.gpr _ (rsi_not_powClob _), g₄ _ (rsi_not_clob _), k₃.gpr _ (by decide), S₂.rsi, rdi₁]
+    rw [L.gpr _ (rsi_not_invClob _), g₄ _ (rsi_not_clob _), k₃.gpr _ (by decide), S₂.rsi, rdi₁]
   have hw₅ : (⟨s₀.gpr .rdi, c.C.len⟩ : Region) ∈ s₅.wr := by
     rw [L.wr, wr₄, k₃.wr, S₂.wr, k₁.2.2.2, hp.wr]; simp
   refine WP.mono (middle_ok hc hs₅ F₅ L.acc_lt hflag₅ hrsi₅ hw₅ hp.out_sc hp.out_fit)

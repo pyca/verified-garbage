@@ -29,7 +29,7 @@ theorem p384_nBits : 64 * p384.n ≤ Spec.Ecdsa.nBits p384.C := by
 
 theorem p384_ok : CfgOk p384 where
   n0 := by decide
-  n7 := by decide
+  n10 := by decide
   onG := Proof.P384.onCurve_G
   p_odd := by decide +kernel
   n_odd := by decide +kernel

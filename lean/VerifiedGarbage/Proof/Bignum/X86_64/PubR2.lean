@@ -45,7 +45,7 @@ theorem sqs_ok {t : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} {N E : Nat}
   induction n generalizing t E with
   | zero =>
     exact WP.mono (sq_ok M hg hZ hw hw' hR hn hinv hlt hc) fun t' ⟨h1, _, _, h4, h5, h6, h7⟩ =>
-      ⟨h1, h4, by rw [h5]; rfl, h6, h7⟩
+      ⟨h1, h4, by rw [h5], h6, h7⟩
   | succ n ih =>
     show WP isa (.seq (M.mm aR2 aR2 aR2) (seqs (List.replicate (n + 1) (M.mm aR2 aR2 aR2)))) t _
     refine WP.seq (WP.mono (sq_ok M hg hZ hw hw' hR hn hinv hlt hc) fun t₁ ⟨h1, h2, h3, h4, h5, h6, h7⟩ => ?_)
@@ -215,7 +215,7 @@ theorem r2_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} {N : Nat} (h
     (by rw [hf₆'.r2_wv hn' (by decide) (by decide) (by decide) (by decide), hm₅]; exact hN₄)
     (by rw [hf₆'.r2_word hn' (by decide) (by decide) (by decide) (by decide), hm₅, hw0₄]; exact hinv)
     (by rw [hv₆]; exact Nat.mod_lt _ hN0) (by rw [hv₆, Nat.mod_mod]))
-    fun t ⟨h1, h2, h3, h4, h5⟩ => ⟨h1, h2, by rw [h3]; congr 2, ?_,
+    fun t ⟨h1, h2, h3, h4, h5⟩ => ⟨h1, h2, by rw [h3], ?_,
       ((((((k₁.trans k₂).trans k₃).trans k₄).trans k₅).trans k₆).trans h5).mono (by decide)⟩
   have f₃ : Frm B (r2Ranges w) s.mem t₃.mem := by
     rw [hm₃]; exact Frm.of_outside (writeW_outside _ B _ (by have := hdr_lt_slot w 0 (show sCnt < 32 by decide); have := slot_le (w := w) (show 0 < 8 by decide); omega)) (by simp [r2Ranges])

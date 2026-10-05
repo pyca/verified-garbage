@@ -212,7 +212,7 @@ theorem halfStep_ok {s₁ t : State} {B : Addr} {Z w m el j : Nat} (hI : HalfInv
       have := hfull t.mem
       rw [hI.val, hlow] at this
       have := Nat.mul_eq_zero.mp (show 2 ^ (64 * Bw) * wv t.mem B (slot w aM + 8 * Bw) (2 * (w + 2) - Bw) = 0 by omega)
-      exact this.resolve_left (by positivity)
+      exact this.resolve_left (Nat.ne_of_gt (Nat.pow_pos (by decide)))
     have hL : wv t'.mem B (slot w aM) Bw = wv t₃.mem B (slot w aM) Bw :=
       o₄.wv (Or.inr (by omega)) (by omega)
     rw [hfull, hU, hU0, Nat.mul_zero, Nat.add_zero, hL, hv₃, hM₂, hlow, Function.iterate_succ_apply']

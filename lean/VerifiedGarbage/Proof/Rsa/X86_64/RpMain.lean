@@ -196,8 +196,8 @@ theorem rpMain_ok (M : Mont) {I : RpIn} {s : State} (h : RpPre I s)
       ⟨fun i hi => by rw [S₅.wr, ← h.wr]; exact h.oQ.wr i hi, h.oQ.sep⟩ h.a)
       fun t ⟨z1, z2, hax, hsv, hfr, hsp⟩ => ⟨none, by rw [hnone], ?_, ?_, by rw [hax]; rfl, hsv,
         fun x hx n1 n2 => by rw [hfr x n1 n2]; exact S₅.inScr x hx, hsp.trans (S₅.rsp.trans h.rsp.symm)⟩
-    · rw [List.map_congr_left fun i hi => z1 i (List.mem_range.mp hi)]; rw [fstOr, i2osp_zero']; simp
-    · rw [List.map_congr_left fun i hi => z2 i (List.mem_range.mp hi)]; rw [sndOr, i2osp_zero']; simp
+    · rw [List.map_congr_left fun i hi => z1 i (List.mem_range.mp hi)]; rw [fstOr, i2osp_zero']; simp [List.map_const']
+    · rw [List.map_congr_left fun i hi => z2 i (List.mem_range.mp hi)]; rw [sndOr, i2osp_zero']; simp [List.map_const']
   · -- `rest`.
     have hb' : I.D * I.E % 2 = 1 ∧ 2 ≤ I.D * I.E := by simpa using hb
     have hgo := VG.Proof.Rsa.recoverPrimes_go (n := I.N) (fun h' => (hspec.mp h') hb')

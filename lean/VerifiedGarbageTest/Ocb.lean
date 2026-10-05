@@ -105,6 +105,28 @@ run_cmd do
   unless Spec.Ocb.offset0 (Spec.Ocb.aes key) 16 nonce == (← get "Offset_0") do
     throwError "RFC 7253 Appendix A: Offset_0 is wrong"
 
+/-- The same encryption wrapper, with the cipher and `L_*` supplied once
+for the iterated test's fixed key. -/
+def encryptCached (ciph : Spec.Ocb.Cipher) (lstar : Spec.Ocb.Block) (t : Nat)
+    (nonce a p : List Byte) : Option (List Byte) :=
+  if Spec.Ocb.lengthsOk t nonce.length then
+    let (c, tag) := Spec.Ocb.encryptWith ciph lstar t nonce a p
+    some (c ++ tag)
+  else none
+
+theorem encryptCached_eq (key : List Byte) (t : Nat) (nonce a p : List Byte) :
+    encryptCached (Spec.Ocb.aesWith (Spec.Aes.rounds (key.length / 4))
+      (Spec.Aes.expandKey key)) (Spec.Ocb.aes key 0) t nonce a p =
+      Spec.Ocb.encrypt key t nonce a p := rfl
+
+private def aesWithCached (nr : Nat) (w : List Byte) :
+    {c : Spec.Ocb.Cipher // c = Spec.Ocb.aesWith nr w} :=
+  ⟨fun x => Spec.Ocb.ofBytes (Test.Aes.Cached.cipherCached nr w
+      (Vector.ofFn fun i => (Spec.Ocb.toBytes x).getD i 0)).toList, by
+    funext x
+    simp only [Test.Aes.Cached.cipherCached_eq]
+    rfl⟩
+
 /-- The iterated test of Appendix A, for a key of `keyLen` bytes and a tag
 of `t` bytes:
 ```
@@ -124,14 +146,18 @@ Output : OCB-ENCRYPT(K,N,C,<empty string>)
 ``` -/
 def iterated (keyLen t : Nat) : Option (List Byte) := do
   let key := List.replicate (keyLen - 1) 0 ++ [BitVec.ofNat 8 (8 * t)]
+  let schedule := Spec.Aes.expandKey key
+  let ciph := (aesWithCached (Spec.Aes.rounds (key.length / 4)) schedule).val
+  let lstar := ciph 0
+  let encrypt := encryptCached ciph lstar t
   let num (x : Nat) : List Byte := (List.range 12).map fun i => BitVec.ofNat 8 (x / 256 ^ (11 - i))
   let mut c : List Byte := []
   for i in List.range 128 do
     let s := List.replicate i 0
-    c := c ++ (← Spec.Ocb.encrypt key t (num (3 * i + 1)) s s)
-    c := c ++ (← Spec.Ocb.encrypt key t (num (3 * i + 2)) [] s)
-    c := c ++ (← Spec.Ocb.encrypt key t (num (3 * i + 3)) s [])
-  Spec.Ocb.encrypt key t (num 385) c []
+    c := c ++ (← encrypt (num (3 * i + 1)) s s)
+    c := c ++ (← encrypt (num (3 * i + 2)) [] s)
+    c := c ++ (← encrypt (num (3 * i + 3)) s [])
+  encrypt (num 385) c []
 
 -- The iterated test.
 run_cmd do
