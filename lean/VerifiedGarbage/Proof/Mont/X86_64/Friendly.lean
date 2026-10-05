@@ -262,14 +262,14 @@ theorem redF_ok {s : State} {n i m : Nat} (hn : n < 7) {ws : List MWord}
 
 /-! ## A round -/
 
-/-- Round `i` of the multiplication: `2⁶⁴ T' = T + a_i B + u m`, and
+/-- Round `i` of the multiplication by `mul`: `2⁶⁴ T' = T + a_i B + u m`, and
 `T' < 2m` if `T < 2m`. -/
-theorem round_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M : Mod}
+theorem roundM_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M : Mod}
     (hn : M.n < 7) {a b i m : Nat} (ha : a + 8 * i + 8 ≤ size) (hb : b + 8 * M.n ≤ size)
     (hmo : M.mo + 8 * M.n ≤ size) (hm : wordsVal s.mem base M.mo M.n = m)
     (hinv : (m * M.minv.toNat + 1) % 2 ^ 64 = 0) (hred : M.red.ok M.n m = true)
     (hB : wordsVal s.mem base b M.n < m) (hT : regsVal s (wins M.n i) < 2 * m) :
-    WP isa (.block (round M a b i)) s fun s' =>
+    WP isa (.block (roundM M a b i)) s fun s' =>
       (∃ u, 2 ^ 64 * regsVal s' (wins M.n (i + 1)) = regsVal s (wins M.n i) +
         (word s.mem base (a + 8 * i)).toNat * wordsVal s.mem base b M.n + u * m) ∧
       regsVal s' (wins M.n (i + 1)) < 2 * m ∧
@@ -278,9 +278,9 @@ theorem round_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {
   have hA := (word s.mem base (a + 8 * i)).isLt
   have hAB : (word s.mem base (a + 8 * i)).toNat * wordsVal s.mem base b M.n ≤ (2 ^ 64 - 1) * m :=
     Nat.mul_le_mul (by omega) (by omega)
-  rw [show round M a b i = (([.mov .rcx (.mem (sc (a + 8 * i)))] : List Instr) ++
+  rw [show roundM M a b i = (([.mov .rcx (.mem (sc (a + 8 * i)))] : List Instr) ++
       (mulRow ((List.range M.n).map (win M.n i)) b ++ carryUp (win M.n i M.n) (win M.n i (M.n + 1)))) ++
-        redRound M i by simp only [round, List.append_assoc], WP.block_append_iff]
+        redRound M i by simp only [roundM, List.append_assoc], WP.block_append_iff]
   refine WP.mono (prod_ok hs hn ha hb hm' hB hT) fun s₂ ⟨e₂, hs₂, k₂⟩ => ?_
   have hmem : s₂.mem = s.mem := k₂.2.1
   -- From `2⁶⁴ T' = T + a_i B + u m` for a word `u`.
