@@ -6,7 +6,6 @@ import VerifiedGarbage.Proof.Framework.X86_64.Taint
 import VerifiedGarbage.Proof.Framework.X86_64.Abi
 import VerifiedGarbage.Proof.Framework.X86_64.Inline
 import VerifiedGarbage.Proof.P521.X86_64.TaintSums
-import VerifiedGarbage.Proof.Weierstrass.X86_64.InvMain
 
 /-!
 # ECDSA over P-521 on x86-64: `Verified`

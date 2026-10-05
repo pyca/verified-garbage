@@ -1,11 +1,15 @@
 import VerifiedGarbage.Proof.Weierstrass.X86_64.InvBatch
-import VerifiedGarbage.Proof.Weierstrass.InvArith
+import VerifiedGarbage.Proof.Weierstrass.InvToM
+import VerifiedGarbage.Proof.Divstep.Iter
+import Mathlib.Data.Nat.Prime.Basic
 
 /-!
 # Inversion by divsteps on x86-64: the whole inversion
 
 `InvCfg.inv P` leaves `[acc]` reading (in Montgomery form) as `[base]^(m - 2)`
-for a prime `m` (`invPow_ok`, as `pow_ok` for the exponent `m - 2`): the
+for a prime `m` (`invPow_ok`, as `pow_ok` for the exponent `m - 2`), given
+`InvToM m`, which the variants that supply `InvSound` prove with Mathlib's
+algebra (`InvArith.lean`), so that this module does not import it: the
 start holds `(d, f, g, a, b) = (1, m, x, 0, 1)` (`init_ok`), each of the `B`
 batches takes it to the next `Divstep.invRun` (`batch_ok`), and the end
 multiplies `a` by `C` or `m - C` by the sign of `f = ±1` (`finish_ok`).
@@ -336,8 +340,8 @@ theorem finish_ok {P : InvCfg} {base : Addr} {size m : Nat} (hL : InvLay P size)
     rw [Kt.mem x h1 h3, O₃ x (by rw [hsC]; omega_using [eNF, h2, n4]), m₂]
 
 /-- `[acc] = [base]^(m - 2)` in Montgomery form, for a prime `m > 2`. -/
-theorem invPow_ok {P : InvCfg} {base : Addr} {size m : Nat} [NeZero m] [Fact m.Prime] (hL : InvLay P size)
-    (hm2 : 2 < m) (hR : UnitMod m (2 ^ (64 * P.M.n))) {s : State} (hs : Scr s base size)
+theorem invPow_ok {P : InvCfg} {base : Addr} {size m : Nat} [NeZero m] (hpr : m.Prime) (hT : InvToM m)
+    (hL : InvLay P size) (hm2 : 2 < m) (hR : UnitMod m (2 ^ (64 * P.M.n))) {s : State} (hs : Scr s base size)
     (hM : ModOk P.M size m s.mem base) (hX : wordsVal s.mem base P.base P.M.n < m) (hC : InvOk P m) :
     WP isa (InvCfg.inv P) s fun s' => KeepRegs (invClob P.M.n) s s' ∧ Unch base (invW P) s.mem s'.mem ∧
       wordsVal s'.mem base P.acc P.M.n < m ∧
@@ -346,7 +350,6 @@ theorem invPow_ok {P : InvCfg} {base : Addr} {size m : Nat} [NeZero m] [Fact m.P
   have hn := hs.nowrap
   have n4 := hL.n4; have n7 := hL.n7; have htbl := hL.tbl; have hmt := hL.mo_tbl; have hmo := hM.mo
   unfold invTbl at htbl hmt
-  have hpr := (Fact.out : m.Prime)
   have hm2' : m % 2 = 1 := (hpr.eq_one_or_self_of_dvd 2 |>.mt (by omega) |> fun h => by
     rcases Nat.even_or_odd m with ⟨k, hk⟩ | ⟨k, hk⟩
     · exact absurd (hpr.eq_one_or_self_of_dvd 2 ⟨k, by omega⟩) (by omega)
@@ -396,7 +399,7 @@ theorem invPow_ok {P : InvCfg} {base : Addr} {size m : Nat} [NeZero m] [Fact m.P
       (by exact_mod_cast hpr.one_lt) hmi (done X (by omega) (by exact_mod_cast hX)) (by
         rw [Int.gcd_natCast_natCast]
         exact Nat.coprime_of_lt_prime (by omega) hX hpr)
-  refine inv_toM (K := 2 ^ (5 * P.B)) (f := I.f) (a := wordsVal s₂.mem base P.sA P.M.n) (Cs := Cs) hm2 hR hX
+  refine hT (K := 2 ^ (5 * P.B)) (f := I.f) (a := wordsVal s₂.mem base P.sA P.M.n) (Cs := Cs) hm2 hR hX
     ?_ ?_ ?_ ev
   · intro hX0
     have h := (Divstep.invRun_zero (N := 59) (p := m) (m := P.M.minv.toNat) (by omega) P.B).2
@@ -422,9 +425,7 @@ theorem invPow_ok {P : InvCfg} {base : Addr} {size m : Nat} [NeZero m] [Fact m.P
       exact this
 
 /-- A prime modulus's inversion is sound. -/
-theorem invSound_of_prime {m : Nat} [NeZero m] (hp : m.Prime) : InvSound m := by
-  intro P base size hL hm2 hR s hs hM hX hC
-  haveI : Fact m.Prime := ⟨hp⟩
-  exact invPow_ok hL hm2 hR hs hM hX hC
+theorem invSound_of_toM {m : Nat} [NeZero m] (hp : m.Prime) (hT : InvToM m) : InvSound m :=
+  fun hL hm2 hR _ hs hM hX hC => invPow_ok hp hT hL hm2 hR hs hM hX hC
 
 end VG.Proof.Weierstrass.X86_64

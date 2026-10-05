@@ -181,7 +181,6 @@ theorem mid_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {g : Reg → BitVec 6
     all_goals first
       | exact Or.inl (Or.inl hw)
       | (rcases hw with hw | hw <;> subst hw <;> simp)
-      | (rcases hw with hw | hw | hw <;> subst hw <;> simp)
       | (rcases hw with (hw | hw | hw) | hw <;> subst hw <;> simp)
   have a : ∀ {i}, i < 45 → i ∉ midW → i ≠ FLAG → sv c base s₁₀ i = sv c base s i := fun hi hl hf =>
     sv_unch UW h7 hn hi (apart_append (apart_append (apart_flag h0 hf) (apart_slW hl)) (apart_pwA hi))
@@ -210,7 +209,6 @@ theorem mid_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {g : Reg → BitVec 6
     rcases hw with hw | hw | hw | hw | hw | hw | hw | hw
     all_goals first
       | (rcases hw with hw | hw <;> subst hw <;> simp)
-      | (rcases hw with hw | hw | hw <;> subst hw <;> simp)
       | (rcases hw with (hw | hw | hw) | hw <;> subst hw <;> simp)
   refine ⟨hs₁₀, by rw [wr₁₀, wr₉, wr₈, wr₇, wr₆, wr₅, K₄.wr, wr₃, k₂.wr, k₁.wr, hF.wr],
     by rw [rd₁₀, rd₉, rd₈, rd₇, rd₆, rd₅, K₄.rd, rd₃, k₂.rd, k₁.rd, hF.rd], F₁₀,

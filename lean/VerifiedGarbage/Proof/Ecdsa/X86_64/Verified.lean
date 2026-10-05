@@ -6,15 +6,15 @@ import VerifiedGarbage.Proof.Framework.X86_64.Taint
 import VerifiedGarbage.Proof.Framework.X86_64.Abi
 import VerifiedGarbage.Proof.Framework.X86_64.Inline
 import VerifiedGarbage.Proof.Framework.X86_64.TaintSym
-import VerifiedGarbage.Proof.Weierstrass.X86_64.InvMain
 import VerifiedGarbage.Proof.P256.Prime
 
 /-!
 # ECDSA over P-256 on x86-64: `Verified`
 
-P-256 is a curve the proof supports (`p256_ok`, and `Law` for its group law
-and its comb's tables, which the registration file supplies:
-`Proof.P256.law`, `Proof.P256.combOk7`), so `sign_ok` gives the contract's
+P-256 is a curve the proof supports (`p256_ok`, and `Law` for its group law,
+its comb's tables and `InvSounds` for its inversions, which the
+registration file supplies: `Proof.P256.law`, `Proof.P256.combOk7` and the
+variant's `inv`), so `sign_ok` gives the contract's
 postcondition; the callee-saved registers are restored, `rsp` is never
 written, and every store is to `out` or `scratch`, which the return address
 is apart from (`abiPreserved`). Constant time by taint tracking with the
@@ -39,7 +39,7 @@ theorem p256_sh : p256.sh = 0 := by
   have h : 64 * 4 ≤ Spec.Ecdsa.nBits p256.C := p256_nBits
   show 8 * 32 - Spec.Ecdsa.nBits p256.C = 0; omega
 
-theorem p256_ok : CfgOk p256 where
+theorem p256_ok (hI : InvSounds) : CfgOk p256 where
   n0 := by decide
   n10 := by decide
   onG := Proof.P256.onCurve_G
@@ -57,8 +57,8 @@ theorem p256_ok : CfgOk p256 where
   len_hi := by decide
   sh := by rw [p256_sh]; decide
   comb d h := by cases h; exact ⟨by decide, by decide⟩
-  inv _ := ⟨by decide, @invSound_of_prime _ _ Proof.P256.p_prime, InvOk.ofMod (by decide +kernel) (by decide)⟩
-  inv_n _ _ := ⟨@invSound_of_prime _ _ Proof.P256.n_prime, InvOk.ofMod (by decide +kernel) (by decide)⟩
+  inv _ := ⟨by decide, @hI _ p256.C.p_ne_zero Proof.P256.p_prime, InvOk.ofMod (by decide +kernel) (by decide)⟩
+  inv_n _ _ := ⟨@hI _ p256.C.n_ne_zero Proof.P256.n_prime, InvOk.ofMod (by decide +kernel) (by decide)⟩
 
 theorem p256_tbls (hT : CombOkW Spec.P256.curve 7 37 Impl.P256.p256Comb7 Impl.P256.p256Comb7Start) :
     CombTbls p256 := fun d h => by cases h; exact hT
@@ -77,10 +77,11 @@ theorem pre_of {s : State} (h : signX86_64.pre s) : Pre p256 s := by
     rcases hr with h | h <;> simp [h]
 
 theorem sign_x86 (hL : Law Spec.P256.curve)
-    (hT : CombOkW Spec.P256.curve 7 37 Impl.P256.p256Comb7 Impl.P256.p256Comb7Start) (s : State)
+    (hT : CombOkW Spec.P256.curve 7 37 Impl.P256.p256Comb7 Impl.P256.p256Comb7Start)
+    (hI : InvSounds) (s : State)
     (hs : signX86_64.pre s) :
     ∃ t s', Exec isa signP256 s t s' ∧ abiPreserved s s' ∧ signX86_64.post s s' := by
-  obtain ⟨t, s', he, hsv, hpost⟩ := sign_ok p256_ok hL (p256_tbls hT) (pre_of hs)
+  obtain ⟨t, s', he, hsv, hpost⟩ := sign_ok (p256_ok hI) hL (p256_tbls hT) (pre_of hs)
   have hsp : ∀ i ∈ instrs signP256, Taint.clobbers i .rsp = false := by
     have h : signP256.allInstrs (fun i => !Taint.clobbers i .rsp) = true := by lit_decide
     rw [Code.allInstrs_eq, List.all_eq_true] at h
@@ -118,9 +119,10 @@ theorem sign_ct : ConstantTime isa signX86_64.pre signX86_64.pub signP256 :=
     (by taint_decide)
 
 theorem sign_verified (hL : Law Spec.P256.curve)
-    (hT : CombOkW Spec.P256.curve 7 37 Impl.P256.p256Comb7 Impl.P256.p256Comb7Start) :
+    (hT : CombOkW Spec.P256.curve 7 37 Impl.P256.p256Comb7 Impl.P256.p256Comb7Start)
+    (hI : InvSounds) :
     Verified X86_64.target signP256
       (Spec.Ecdsa.P256.inst.signContract (X86_64.abi.withConsts p256.combConsts)) :=
-  Verified.of_correct (sign_x86 hL hT) sign_ct implies
+  Verified.of_correct (sign_x86 hL hT hI) sign_ct implies
 
 end VG.Proof.Ecdsa.X86_64

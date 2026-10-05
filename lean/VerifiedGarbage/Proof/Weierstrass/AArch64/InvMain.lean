@@ -1,6 +1,7 @@
 import VerifiedGarbage.Proof.Weierstrass.AArch64.InvBatch
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Pow
 import VerifiedGarbage.Proof.Weierstrass.InvArith
+import VerifiedGarbage.Proof.Divstep.Iter
 
 /-!
 # Inversion by divsteps on AArch64: the whole inversion

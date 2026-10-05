@@ -1,5 +1,7 @@
 import VerifiedGarbage.Impl.Weierstrass.X86_64.Inv
 import VerifiedGarbage.Proof.Weierstrass.X86_64.Pow
+import VerifiedGarbage.Proof.Weierstrass.Law
+import Mathlib.Data.Nat.Prime.Defs
 
 /-!
 # Inversion by divsteps on x86-64: what it computes
@@ -9,7 +11,10 @@ its proof (`InvMain.lean`): the slots (`InvLay`), what the inversion writes
 (`invW`), the configuration's facts about the modulus (`InvOk`: batches
 enough for its bits, and the constants), and `InvSound m`, that the
 inversion leaves `[acc] = [base]^(m - 2)` (in Montgomery form), which a prime
-`m` gives (`invSound_of_prime`).
+`m` gives (`InvSounds`). The proof of that needs Mathlib's algebra, so the
+proofs of the functions take it as a hypothesis, and a curve's variant on
+x86-64 (`HasLawInv`, `Variants/<Curve>/X86_64/Law.lean`) supplies it with its
+group law.
 -/
 
 namespace VG.Proof.Weierstrass.X86_64
@@ -66,6 +71,17 @@ def InvSound (m : Nat) [NeZero m] : Prop :=
         wordsVal s'.mem base P.acc P.M.n < m ∧
         toM m (2 ^ (64 * P.M.n)) (wordsVal s'.mem base P.acc P.M.n) =
           toM m (2 ^ (64 * P.M.n)) (wordsVal s.mem base P.base P.M.n) ^ (m - 2)
+
+/-- Every prime modulus's inversion is sound (`InvMain.lean`'s `invSound_of_toM`
+and `InvArith.lean`'s `invToM_of_prime`). -/
+def InvSounds : Prop := ∀ {m : Nat} [NeZero m], m.Prime → InvSound m
+
+/-- The group law of `C` and the soundness of the inversions, as a value: the
+variant of a curve's interface on x86-64 (`Variants/<Curve>/X86_64/Law.lean`,
+see `TCB/Emit.lean`), as `HasLaw` is on the other targets. -/
+structure HasLawInv (C : Spec.Weierstrass.Curve) : Type where
+  law : Law C
+  inv : InvSounds
 
 theorem ofMod_C (M : Mod) (acc base tbl m : Nat) :
     (InvCfg.ofMod M acc base tbl m).C =

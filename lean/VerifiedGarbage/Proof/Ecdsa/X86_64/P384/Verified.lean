@@ -6,15 +6,15 @@ import VerifiedGarbage.Proof.Framework.X86_64.Taint
 import VerifiedGarbage.Proof.Framework.X86_64.Abi
 import VerifiedGarbage.Proof.Framework.X86_64.Inline
 import VerifiedGarbage.Proof.Framework.X86_64.TaintSym
-import VerifiedGarbage.Proof.Weierstrass.X86_64.InvMain
 import VerifiedGarbage.Proof.P384.Prime
 
 /-!
 # ECDSA over P-384 on x86-64: `Verified`
 
-P-384 is a curve the proof supports (`p384_ok`, and `Law` for its group law
-and its comb's tables, which the registration file supplies:
-`Proof.P384.law`, `Proof.P384.combOk7`), so `sign_ok` gives the contract's
+P-384 is a curve the proof supports (`p384_ok`, and `Law` for its group law,
+its comb's tables and `InvSounds` for its inversions, which the
+registration file supplies: `Proof.P384.law`, `Proof.P384.combOk7` and the
+variant's `inv`), so `sign_ok` gives the contract's
 postcondition; the callee-saved registers are restored, `rsp` is never
 written, and every store is to `out` or `scratch`, which the return address
 is apart from (`abiPreserved`). Constant time by taint tracking with the
@@ -39,7 +39,7 @@ theorem p384_sh : p384.sh = 0 := by
   have h : 64 * 6 ≤ Spec.Ecdsa.nBits p384.C := p384_nBits
   show 8 * 48 - Spec.Ecdsa.nBits p384.C = 0; omega
 
-theorem p384_ok : CfgOk p384 where
+theorem p384_ok (hI : InvSounds) : CfgOk p384 where
   n0 := by decide
   n10 := by decide
   onG := Proof.P384.onCurve_G
@@ -57,7 +57,13 @@ theorem p384_ok : CfgOk p384 where
   len_hi := by decide
   sh := by rw [p384_sh]; decide
   comb d h := by cases h; exact ⟨by decide, by decide⟩
-  inv _ := ⟨by decide, @invSound_of_prime _ _ Proof.P384.p_prime, InvOk.ofMod (by decide +kernel) (by decide)⟩
+  inv _ := ⟨by decide, @hI _ _ (by
+    show Nat.Prime Spec.P384.curve.p
+    rw [show Spec.P384.curve.p =
+      39402006196394479212279040100143613805079739270465446667948293404245721771496870329047266088258938001861606973112319
+      by decide +kernel]
+    exact Proof.P384.prime_39402006196394479212279040100143613805079739270465446667948293404245721771496870329047266088258938001861606973112319),
+    InvOk.ofMod (by decide +kernel) (by decide)⟩
   inv_n h := absurd h (by decide)
 
 theorem p384_tbls (hT : CombOkW Spec.P384.curve 7 55 Impl.P384.p384Comb7 Impl.P384.p384Comb7Start) :
@@ -77,10 +83,11 @@ theorem pre_of {s : State} (h : signX86_64.pre s) : Pre p384 s := by
     rcases hr with h | h <;> simp [h]
 
 theorem sign_x86 (hL : Law Spec.P384.curve)
-    (hT : CombOkW Spec.P384.curve 7 55 Impl.P384.p384Comb7 Impl.P384.p384Comb7Start) (s : State)
+    (hT : CombOkW Spec.P384.curve 7 55 Impl.P384.p384Comb7 Impl.P384.p384Comb7Start)
+    (hI : InvSounds) (s : State)
     (hs : signX86_64.pre s) :
     ∃ t s', Exec isa signP384 s t s' ∧ abiPreserved s s' ∧ signX86_64.post s s' := by
-  obtain ⟨t, s', he, hsv, hpost⟩ := sign_ok p384_ok hL (p384_tbls hT) (pre_of hs)
+  obtain ⟨t, s', he, hsv, hpost⟩ := sign_ok (p384_ok hI) hL (p384_tbls hT) (pre_of hs)
   have hsp : ∀ i ∈ instrs signP384, Taint.clobbers i .rsp = false := by
     have h : signP384.allInstrs (fun i => !Taint.clobbers i .rsp) = true := by lit_decide
     rw [Code.allInstrs_eq, List.all_eq_true] at h
@@ -118,9 +125,10 @@ theorem sign_ct : ConstantTime isa signX86_64.pre signX86_64.pub signP384 :=
     (by taint_decide)
 
 theorem sign_verified (hL : Law Spec.P384.curve)
-    (hT : CombOkW Spec.P384.curve 7 55 Impl.P384.p384Comb7 Impl.P384.p384Comb7Start) :
+    (hT : CombOkW Spec.P384.curve 7 55 Impl.P384.p384Comb7 Impl.P384.p384Comb7Start)
+    (hI : InvSounds) :
     Verified X86_64.target signP384
       (Spec.Ecdsa.P384.inst.signContract (X86_64.abi.withConsts p384.combConsts)) :=
-  Verified.of_correct (sign_x86 hL hT) sign_ct implies
+  Verified.of_correct (sign_x86 hL hT hI) sign_ct implies
 
 end VG.Proof.Ecdsa.X86_64.P384
