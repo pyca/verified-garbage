@@ -78,7 +78,7 @@ theorem kdkMac_step {s : State} (hp : DPre s) {R : BitVec 64} {EM : List Byte} {
     (by rw [hC]; exact hp.dKi.sub_left (below_sub s (by decide))) (by omega) fun t₁ h₁ => ?_
   refine WP.seq (WP.mono (kdkFinArgs_run hp h₁.ctx) fun t₂ ⟨hc₂, hm₂, hdi₂, hsi₂, hdx₂, hcx₂, h8₂⟩ => ?_)
   have h₂ : MacMid v s R EM (Spec.Rsa.bytesAt t.mem (scA s sDH) 32) (Spec.Rsa.bytesAt t.mem (stackArg s 3) (kOf s))
-      t t₂ := ⟨hc₂, (by rw [hm₂]; exact h₁.inner), (by rw [hm₂]; exact h₁.outer), (by rw [KeepHi, hm₂]; exact h₁.keep)⟩
+      t t₂ := ⟨hc₂, (by rw [hm₂]; exact h₁.inner), (by rw [hm₂]; exact h₁.outer), (by rw [KeepHi, hm₂]; exact h₁.keep), (by rw [FrmKeep, hm₂]; exact h₁.frm)⟩
   refine WP.mono (mac_fin hp h₂ (dOff := sKDK) (by decide) (by decide) (blen _ _ _) hdi₂ hsi₂
     (by rw [hdx₂, blen]) hcx₂ h8₂ (by rw [blen]; omega)) fun t₃ ⟨hc₃, hb₃, _⟩ => ⟨hc₃, ?_⟩
   rw [hb₃, h.dh, h.ctx.c hp]

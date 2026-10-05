@@ -50,12 +50,36 @@ theorem keepHi_of_frame {s : State} (hp : DPre s) {lo : List (Nat × Nat)} {ws :
     · exact hl _ hb'
   · rw [List.mem_singleton.mp hr]; exact (stkD hp hn ha).symm
 
+/-- The words of the frame are those of `m`. -/
+def FrmKeep (s : State) (m m' : Mem) : Prop :=
+  ∀ d, d + 8 ≤ frameBytes → word m' (fb s) d = word m (fb s) d
+
+theorem FrmKeep.trans {s : State} {m₁ m₂ m₃ : Mem} (h₁ : FrmKeep s m₁ m₂) (h₂ : FrmKeep s m₂ m₃) :
+    FrmKeep s m₁ m₃ := fun d hd => (h₂ d hd).trans (h₁ d hd)
+
+theorem FrmKeep.eq {s : State} {m m' : Mem} (h : m' = m) : FrmKeep s m m' := fun _ _ => by rw [h]
+
+/-- Writes in `scratch` and below the frame keep the frame. -/
+theorem frmKeep_of_frame {s : State} (hp : DPre s) {lo : List (Nat × Nat)} {ws : List Region} {n : Nat}
+    (hn : n ≤ 8 + privStack) {m m' : Mem} (hf : Frame (ws ++ [below (fb s) n]) m m')
+    (hw : ∀ r ∈ ws, ∃ a k, r = ⟨scA s a, k⟩ ∧ a + k ≤ scrBytes ∧ (a + k ≤ sMsg ∨ (a, k) ∈ lo)) :
+    FrmKeep s m m' := fun d hd => by
+  have hF := fb_toNat hp
+  obtain ⟨h1, _⟩ := scr_len hp
+  refine hf.readW (Region.contains_self _ _) (fun r hr => ?_) (by decide)
+  rcases List.mem_append.mp hr with hr | hr
+  · obtain ⟨b, j, rfl, hb, -⟩ := hw r hr
+    exact (hp.dKs.sub_left (frame_sub s hd)).sub_right (sub_trans (scSub hb) (Region.sub_prefix h1))
+  · rw [List.mem_singleton.mp hr]
+    exact Offset.disjoint_below (fb s) (by unfold frameBytes privStack at *; omega)
+
 /-- After HMAC's `init` with `K` and the streaming `update` with `X`, from `t₀`. -/
 structure MacMid (v : Compress) (s : State) (R : BitVec 64) (EM K X : List Byte) (t₀ t : State) : Prop where
   ctx : Ctx s R EM t
   inner : (OK v).SH.Repr t.mem (scA s 0) (Spec.Hmac.xorPad (Spec.Hmac.blockKey (OK v).SH.H K) Spec.Hmac.ipad ++ X)
   outer : (OK v).SH.Repr t.mem (scA s sOuter) (Spec.Hmac.xorPad (Spec.Hmac.blockKey (OK v).SH.H K) Spec.Hmac.opad)
   keep : KeepHi s [] t₀.mem t.mem
+  frm : FrmKeep s t₀.mem t.mem
 
 theorem macInitArgs_run {s : State} (hp : DPre s) {R : BitVec 64} {EM : List Byte} {t : State} (hc : Ctx s R EM t)
     {kOff : Nat} (hk : kOff < 2 ^ 31) :
@@ -170,7 +194,8 @@ theorem mac_front {s : State} (hp : DPre s) {R : BitVec 64} {EM : List Byte} {t�
   have hr₄ := hu₄ _ hi₃ (by rw [hsi₃, hlen])
   refine hrest t₄ ⟨hc₄, ?_, ?_, ((kp₂.trans (KeepHi.eq (lo := []) hm₃) |>.trans
     (keepHi_of_frame (lo := []) (n := 16) hp (by decide) hf₄ hws₄)).mono
-    fun _ h => absurd h (by simp))⟩
+    fun _ h => absurd h (by simp)), ((FrmKeep.eq hm₁).trans (frmKeep_of_frame (lo := []) hp (by decide) hf₂ hws₂)).trans
+      ((FrmKeep.eq hm₃).trans (frmKeep_of_frame (lo := []) (n := 16) hp (by decide) hf₄ hws₄))⟩
   · have e : Spec.Sha256.bytesAt t₃.mem da L = Spec.Rsa.bytesAt t₀.mem da L := by
       rw [show Spec.Sha256.bytesAt t₃.mem da L = Spec.Rsa.bytesAt t₃.mem da L from rfl, hm₃, hX₂]
     rw [e] at hr₄; exact hr₄
@@ -192,7 +217,7 @@ theorem mac_fin {s : State} (hp : DPre s) {R : BitVec 64} {EM K X : List Byte} {
     (h8 : t.gpr .r8 = scA s sWork) (hX : X.length < 2 ^ 63) :
     WP isa (.call (HH v).hmacFinN (HH v).hmacFin) t fun t' => Ctx s R EM t' ∧
       Spec.Rsa.bytesAt t'.mem (scA s dOff) 32 = Spec.Hmac.hmac Spec.Hmac.sha256 K X ∧
-      KeepHi s [(dOff, 32)] t₀.mem t'.mem := by
+      KeepHi s [(dOff, 32)] t₀.mem t'.mem ∧ FrmKeep s t₀.mem t'.mem := by
   obtain ⟨hS, hW, hD, hB, -, -, -, -⟩ := sizes v
   have hc := h.ctx
   have cw : Covers [⟨scA s 0, 96⟩, ⟨scA s dOff, 32⟩, ⟨scA s sWork, 832⟩] t.wr :=
@@ -232,7 +257,8 @@ theorem mac_fin {s : State} (hp : DPre s) {R : BitVec 64} {EM K X : List Byte} {
   have := hmac (Spec.Hmac.blockKey (OK v).SH.H K) X (by rw [hk0, hB]) (by rw [hk0]; omega) h.inner
     (by rw [hB]) h.outer
   rw [hD] at this
-  refine ⟨hc', this, ((h.keep.trans (keepHi_of_frame hp (by decide) hf hws)).mono fun p hp => ?_)⟩
+  refine ⟨hc', this, ((h.keep.trans (keepHi_of_frame hp (by decide) hf hws)).mono fun p hp => ?_),
+    h.frm.trans (frmKeep_of_frame hp (by decide) hf hws)⟩
   simpa using hp
 
 end VG.Proof.RsaPkcs1Enc.X86_64.Dec
