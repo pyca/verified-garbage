@@ -80,19 +80,21 @@ structure Front (c : Cfg) (s₀ : State) (base : Addr) (s : State) : Prop where
   /-- Memory outside `scratch` is unchanged. -/
   unch : Unch base [(0, 8192)] s₀.mem s.mem
 
-theorem VPre.setup {s : State} (hp : VPre c s) (h7 : c.n < 10) : SetupPre c Args.verify s where
+theorem VPre.setup {s : State} (hp : VPre c s) (hl : c.C.len = 8 * c.n) : SetupPre c Args.verify s where
+  shift := .inl rfl
   args := by unfold argsOk; decide
   sc_in := fun h => nomatch h
   wr := by show (⟨ptr s .r3, 8192⟩ : Region) ∈ s.wr; rw [hp.wr]; simp
-  k_in := fun e he => ⟨⟨ptr s .r2, 16 * c.n⟩, by rw [hp.rd]; simp, Offset.contains_base _ (by omega) (by omega)⟩
-  d_in := inRegions_words (by rw [hp.rd]; simp) (by omega)
-  e_in := inRegions_words (by rw [hp.rd]; simp) (by omega)
-  k_sc := (hp.sig_sc.sub_left (Region.sub_prefix (by omega))).sub_right (Region.sub_prefix (by decide))
-  d_sc := hp.dg_sc.sub_right (Region.sub_prefix (by decide))
-  e_sc := hp.dg_sc.sub_right (Region.sub_prefix (by decide))
-  k_fit := show (s.gpr .r2).toNat + 8 * c.n ≤ 2 ^ 32 by have := hp.sig_fit; omega
-  d_fit := hp.dg_fit
-  e_fit := hp.dg_fit
+  k_in := fun e he => ⟨⟨ptr s .r2, 16 * c.n⟩, by rw [hp.rd]; simp,
+    Offset.contains_base _ (by omega) (by have := hp.sig_fit; omega)⟩
+  d_in := hl ▸ inRegions_words (by rw [hp.rd]; simp) (by have := hp.dg_fit; omega)
+  e_in := hl ▸ inRegions_words (by rw [hp.rd]; simp) (by have := hp.dg_fit; omega)
+  k_sc := hl ▸ (hp.sig_sc.sub_left (Region.sub_prefix (by omega))).sub_right (Region.sub_prefix (by decide))
+  d_sc := hl ▸ hp.dg_sc.sub_right (Region.sub_prefix (by decide))
+  e_sc := hl ▸ hp.dg_sc.sub_right (Region.sub_prefix (by decide))
+  k_fit := show (s.gpr .r2).toNat + c.C.len ≤ 2 ^ 32 by have := hp.sig_fit; omega
+  d_fit := hl ▸ hp.dg_fit
+  e_fit := hl ▸ hp.dg_fit
   sc_fit := hp.sc_fit
 
 /-- Ranges of the working space, as one. -/
@@ -109,7 +111,7 @@ theorem loadS_eq (c : Cfg) : Impl.Ecdsa.Verify.Arm.Cfg.loadS c =
     .dp .add .r6 .r2 (.imm (BitVec.ofNat 32 (8 * c.n))) :: loadBE c.n (c.sl PT) .r6 := rfl
 
 /-- The setup and tables, `s`, and the checks of the key. -/
-theorem front_ok (hc : CfgOk c) {s₀ : State} (hp : VPre c s₀) {rest : Prog isa} {Q : State → Prop}
+theorem front_ok (hc : CfgOk c) (hl : c.C.len = 8 * c.n) {s₀ : State} (hp : VPre c s₀) {rest : Prog isa} {Q : State → Prop}
     (h : ∀ s, Front c s₀ (ptr s₀ .r3) s → WP isa rest s Q) :
     WP isa (.seq (Impl.Ecdsa.Verify.Arm.Cfg.prefix' c) (.seq (.block (Impl.Ecdsa.Verify.Arm.Cfg.loadS c))
       (.seq (.block (Impl.Ecdh.Arm.Cfg.peerAt c .r0)) (.seq (Impl.Ecdh.Arm.Cfg.validate c) rest)))) s₀ Q := by
@@ -120,7 +122,7 @@ theorem front_ok (hc : CfgOk c) {s₀ : State} (hp : VPre c s₀) {rest : Prog i
     hp.pk_sc.sub_right (Region.sub_prefix (by decide))
   have hsg : Region.Disjoint ⟨ptr s₀ .r2, 16 * c.n⟩ ⟨ptr s₀ .r3, size⟩ :=
     hp.sig_sc.sub_right (Region.sub_prefix (by decide))
-  refine WP.seq (stage₁ hc (hp.setup h7) fun s₂ S₂ => WP.block_nil ?_)
+  refine WP.seq (stage₁ hc (hp.setup hl) fun s₂ S₂ => WP.block_nil ?_)
   replace S₂ : St₁ c Args.verify s₀ (ptr s₀ .r3) s₂ := S₂
   have hn := S₂.scr.nowrap
   have W₂ : Outside (ptr s₀ .r3) 0 8192 s₀.mem s₂.mem :=
@@ -211,8 +213,8 @@ theorem front_ok (hc : CfgOk c) {s₀ : State} (hp : VPre c s₀) {rest : Prog i
     le_append (slWk_le h7 (by decide)) (flag_le h0 h7)
   refine ⟨hs₅, ((S₂.far.of_rest K₃).of_rest k₄).of_rest g₅, S₂.rest.trans
       (((K₃.mono (by decide)).trans ((k₄.mono (by decide)).trans (g₅.mono powClob_work))).mono (by simp)), F₅,
-    by rw [a₅ (i := K) (by decide) (by decide) (by decide) (by decide) (by decide)]; exact S₂.k,
-    by rw [a₅ (i := D) (by decide) (by decide) (by decide) (by decide) (by decide)]; exact S₂.d,
+    by rw [a₅ (i := K) (by decide) (by decide) (by decide) (by decide) (by decide), S₂.k, kv_eq rfl, hl],
+    by rw [a₅ (i := D) (by decide) (by decide) (by decide) (by decide) (by decide), S₂.d, dv_eq rfl, hl],
     by rw [e₅ (i := PT) (by decide) (by decide) (by decide), e₄ (by decide) (by decide) (by decide), pt₃],
     by rw [a₅ (i := RX) (by decide) (by decide) (by decide) (by decide) (by decide), S₂.rx],
     by rw [a₅ (i := RY) (by decide) (by decide) (by decide) (by decide) (by decide), S₂.ry],

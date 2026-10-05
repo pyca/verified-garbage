@@ -19,10 +19,22 @@ open VG.Proof.X25519.Arm (Rest)
 
 variable {c : Cfg} {A : Args}
 
-/-- The arguments' numbers. -/
-abbrev kv (c : Cfg) (A : Args) (s₀ : State) : Nat := ofBytes (Spec.Ecdsa.bytesAt s₀.mem (ptr s₀ A.k) (8 * c.n))
-abbrev dv (c : Cfg) (A : Args) (s₀ : State) : Nat := ofBytes (Spec.Ecdsa.bytesAt s₀.mem (ptr s₀ A.d) (8 * c.n))
-abbrev ev (c : Cfg) (A : Args) (s₀ : State) : Nat := ofBytes (Spec.Ecdsa.bytesAt s₀.mem (ptr s₀ A.e) (8 * c.n))
+/-- The arguments' numbers, as the setup reads them (the slot `A.hs`
+shifted). -/
+abbrev kv (c : Cfg) (A : Args) (s₀ : State) : Nat :=
+  ofBytes (Spec.Ecdsa.bytesAt s₀.mem (ptr s₀ A.k) c.C.len) >>> shAt c A.hs K
+abbrev dv (c : Cfg) (A : Args) (s₀ : State) : Nat :=
+  ofBytes (Spec.Ecdsa.bytesAt s₀.mem (ptr s₀ A.d) c.C.len) >>> shAt c A.hs D
+abbrev ev (c : Cfg) (A : Args) (s₀ : State) : Nat :=
+  ofBytes (Spec.Ecdsa.bytesAt s₀.mem (ptr s₀ A.e) c.C.len) >>> shAt c A.hs E
+
+theorem kv_eq {s₀ : State} (h : shAt c A.hs K = 0) :
+    kv c A s₀ = ofBytes (Spec.Ecdsa.bytesAt s₀.mem (ptr s₀ A.k) c.C.len) := by
+  show _ >>> _ = _; rw [h, Nat.shiftRight_zero]
+
+theorem dv_eq {s₀ : State} (h : shAt c A.hs D = 0) :
+    dv c A s₀ = ofBytes (Spec.Ecdsa.bytesAt s₀.mem (ptr s₀ A.d) c.C.len) := by
+  show _ >>> _ = _; rw [h, Nat.shiftRight_zero]
 
 /-- The registers the stages may change. -/
 abbrev work : List Reg := [.r0, .r1, .r2, .r3, .r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12]
@@ -179,12 +191,14 @@ theorem whole_of {base : Addr} {W : List (Nat × Nat)} {m₀ m m' : Mem} (h₀ :
     (hu : Unch base W m m') (hW : ∀ w ∈ W, w.1 + w.2 ≤ size) : Unch base [(0, 8192)] m₀ m' :=
   whole_of' h₀ hu fun w hw => by have := hW w hw; dsimp only [size] at this; omega
 
-/-- A hash of `8 n` bytes is its number. -/
-theorem hashToInt_eq (hc : CfgOk c) (m : Mem) (q : Addr) :
-    Spec.Ecdsa.hashToInt c.C (Spec.Ecdsa.bytesAt m q (8 * c.n)) =
-      ofBytes (Spec.Ecdsa.bytesAt m q (8 * c.n)) := by
-  have := hc.hash
-  simp only [Spec.Ecdsa.hashToInt, length_bytesAt,
-    show 8 * (8 * c.n) ≤ Spec.Ecdsa.nBits c.C by omega, ite_true]
+/-- A hash of `len` bytes is its number without the bits that are not
+`e`'s. -/
+theorem hashToInt_eq (c : Cfg) (m : Mem) (q : Addr) :
+    Spec.Ecdsa.hashToInt c.C (Spec.Ecdsa.bytesAt m q c.C.len) =
+      ofBytes (Spec.Ecdsa.bytesAt m q c.C.len) >>> c.sh := by
+  simp only [Spec.Ecdsa.hashToInt, length_bytesAt, Cfg.sh]
+  split
+  · rw [show 8 * c.C.len - Spec.Ecdsa.nBits c.C = 0 by omega, Nat.shiftRight_zero]
+  · rfl
 
 end VG.Proof.Ecdsa.Arm
