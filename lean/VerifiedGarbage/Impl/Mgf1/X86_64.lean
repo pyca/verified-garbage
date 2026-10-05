@@ -90,7 +90,9 @@ def updSrcArgs : List Instr :=
 /-- The counter, big-endian, to `scratch + oCtr`; then `update` of the
 state with those four bytes, after `src`. -/
 def updCtrArgs : List Instr :=
-  scr L .rdx L.oCtr ++ [.mov32 .rax (.mem (sp L.sCtr)), .bswap32 .rax, .store32 (at_ .rdx) .rax] ++
+  scr L .rdx L.oCtr ++ [.mov .rax (.mem (sp L.sCtr)), .store8 (at_ .rdx 3) .rax, .shift .shr .rax 8,
+    .store8 (at_ .rdx 2) .rax, .shift .shr .rax 8, .store8 (at_ .rdx 1) .rax, .shift .shr .rax 8,
+    .store8 (at_ .rdx) .rax] ++
     scr L .rdi L.oSt ++ [.mov .rsi (.mem (sp L.sSrcLen)), .mov32 .rcx (.imm 4)] ++ scr L .r8 L.oW
 
 /-- `finalize` of the state, after `srcLen + 4` bytes, to `scratch + oDig`. -/
