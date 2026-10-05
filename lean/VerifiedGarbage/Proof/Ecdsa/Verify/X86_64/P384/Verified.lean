@@ -28,7 +28,7 @@ theorem pre_of {s : State} (h : verifyX86_64.pre s) : VPre p384 s := by
 
 theorem verify_x86 (hL : Weierstrass.Law Spec.P384.curve) (s : State) (hs : verifyX86_64.pre s) :
     ∃ t s', Exec isa verifyP384 s t s' ∧ abiPreserved s s' ∧ verifyX86_64.post s s' := by
-  obtain ⟨t, s', he, hsv, hpost⟩ := verify_ok p384_ok rfl p384_sh hL (pre_of hs)
+  obtain ⟨t, s', he, hsv, hpost⟩ := verify_ok p384_ok hL (pre_of hs)
   have hsp : ∀ i ∈ instrs verifyP384, Taint.clobbers i .rsp = false := by
     have h : verifyP384.allInstrs (fun i => !Taint.clobbers i .rsp) = true := by lit_decide
     rw [Code.allInstrs_eq, List.all_eq_true] at h

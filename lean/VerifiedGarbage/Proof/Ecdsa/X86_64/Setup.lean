@@ -86,17 +86,45 @@ theorem setupLoad_ok {c : Cfg} (hc : CfgOk c) {s t : State} {base p : Addr} {src
       keep_of_disjoint' ho hd (by decide) (List.mem_range.mp hj) (by omega)
   rw [e, hp, hb]
 
-/-- The hash's integer `e`: its `len` bytes shifted right by the bits that
-are not `e`'s, if any. -/
-theorem setupShift_ok {c : Cfg} (hc : CfgOk c) {t : State} {base : Addr} (hs : Scr t base size) :
-    WP isa (.block (if c.sh = 0 then [] else shrWords c.n (c.sl E) c.sh)) t fun t' =>
-      wordsVal t'.mem base (c.sl E) c.n = wordsVal t.mem base (c.sl E) c.n >>> c.sh ∧
-      KeepRegs [.rax, .rdx] t t' ∧ Outside base (c.sl E) (8 * c.n) t.mem t'.mem := by
-  by_cases h0 : c.sh = 0
-  · rw [ite_eq_left_of_eq_true _ _ (eq_true h0), h0, Nat.shiftRight_zero]
-    exact WP.block_nil ⟨rfl, ⟨fun _ _ => rfl, rfl, rfl⟩, Outside.refl _ _ _ _⟩
-  · rw [ite_eq_right_of_eq_false _ _ (eq_false h0)]
-    exact shrWords_ok hs (sl_le c hc.n10 (by decide)) (by omega) hc.sh
+/-- Which slot `setupWith hs` may shift: none, `d`'s or the hash's. -/
+def ShiftOk (hs : Option Nat) : Prop := hs = none ∨ hs = some D ∨ hs = some E
+
+/-- The shift of slot `hs`, if any, by the bits of a hash that are not
+`e`'s: only the slots of `d` and the hash change. -/
+theorem setupShift_ok {c : Cfg} (hc : CfgOk c) {hs : Option Nat} (hhs : ShiftOk hs) {t : State}
+    {base : Addr} (hs' : Scr t base size) :
+    WP isa (.block (c.shiftCode hs)) t fun t' =>
+      wordsVal t'.mem base (c.sl D) c.n = wordsVal t.mem base (c.sl D) c.n >>> shAt c hs D ∧
+      wordsVal t'.mem base (c.sl E) c.n = wordsVal t.mem base (c.sl E) c.n >>> shAt c hs E ∧
+      KeepRegs [.rax, .rdx] t t' ∧ Outside base (c.sl D) (16 * c.n) t.mem t'.mem := by
+  have hn := hs'.nowrap
+  have h7 := hc.n10
+  have hDl := sl_le c h7 (i := D) (by decide)
+  have hEl := sl_le c h7 (i := E) (by decide)
+  have hDE : c.sl E = c.sl D + 8 * c.n := by rw [sl_eq, sl_eq]; show _ = _ + 8 * c.n; simp only [D, E]; omega
+  have nil : WP isa (.block ([] : List Instr)) t fun t' =>
+      wordsVal t'.mem base (c.sl D) c.n = wordsVal t.mem base (c.sl D) c.n >>> 0 ∧
+      wordsVal t'.mem base (c.sl E) c.n = wordsVal t.mem base (c.sl E) c.n >>> 0 ∧
+      KeepRegs [.rax, .rdx] t t' ∧ Outside base (c.sl D) (16 * c.n) t.mem t'.mem :=
+    WP.block_nil ⟨Nat.shiftRight_zero.symm, Nat.shiftRight_zero.symm, ⟨fun _ _ => rfl, rfl, rfl⟩,
+      Outside.refl _ _ _ _⟩
+  rcases hhs with rfl | rfl | rfl
+  · exact nil
+  · by_cases h0 : c.sh = 0
+    · simp only [Cfg.shiftCode, h0, ite_true]
+      rw [shAt_self, h0, shAt_D_E]; exact nil
+    · simp only [Cfg.shiftCode, h0, ite_false]
+      refine WP.mono (shrWords_ok hs' hDl (by omega) hc.sh) fun t' ⟨e, k, O⟩ => ⟨?_, ?_, k, O.mono (Nat.le_refl _) (by omega)⟩
+      · rw [shAt_self]; exact e
+      · rw [shAt_D_E, Nat.shiftRight_zero]; exact O.wordsVal (by omega) (by omega)
+  · by_cases h0 : c.sh = 0
+    · simp only [Cfg.shiftCode, h0, ite_true]
+      rw [shAt_self, h0, shAt_E_D]; exact nil
+    · simp only [Cfg.shiftCode, h0, ite_false]
+      refine WP.mono (shrWords_ok hs' hEl (by omega) hc.sh) fun t' ⟨e, k, O⟩ =>
+        ⟨?_, ?_, k, O.mono (by omega) (by omega)⟩
+      · rw [shAt_E_D, Nat.shiftRight_zero]; exact O.wordsVal (by omega) (by omega)
+      · rw [shAt_self]; exact e
 
 /-! ## The constants -/
 
@@ -185,21 +213,21 @@ theorem setupFlag_ok {c : Cfg} (hc : CfgOk c) {t : State} {base : Addr} (hs : Sc
 
 /-! ## The whole setup -/
 
-theorem setup_eq (c : Cfg) : c.setup = Spill.saveCode .r8 Cfg.saved ++
+theorem setup_eq (c : Cfg) (hs : Option Nat) : c.setupWith hs = Spill.saveCode .r8 Cfg.saved ++
     (([.mov .r14 (.reg .rdi), .mov .rdi (.reg .r8)] : List Instr) ++
     (loadBytes c.C.len c.n (c.sl K) .rcx ++ (loadBytes c.C.len c.n (c.sl D) .rsi ++
-    (loadBytes c.C.len c.n (c.sl E) .rdx ++ ((if c.sh = 0 then [] else shrWords c.n (c.sl E) c.sh) ++
+    (loadBytes c.C.len c.n (c.sl E) .rdx ++ (c.shiftCode hs ++
     (c.consts.flatMap (fun (i, x) => setConst c.n (c.sl i) x) ++
     (setConst 1 (c.sl FLAG) (2 ^ 64 - 1) ++ ([.mov .rsi (.reg .r14)] : List Instr)))))))) := by
-  simp only [Cfg.setup, List.append_assoc]; rfl
+  simp only [Cfg.setupWith, List.append_assoc]; rfl
 
-theorem setup_ok {c : Cfg} (hc : CfgOk c) {s : State} (hp : SetupPre c s) :
-    WP isa (.block c.setup) s (SetupPost c s (s.gpr .r8)) := by
+theorem setup_ok {c : Cfg} (hc : CfgOk c) {hs : Option Nat} (hhs : ShiftOk hs) {s : State}
+    (hp : SetupPre c s) : WP isa (.block (c.setupWith hs)) s (SetupPost c hs s (s.gpr .r8)) := by
   have h7 := hc.n10
   have h0 := hc.n0
   have hsz : size = 8192 := rfl
   have hw : (⟨s.gpr .r8, size⟩ : Region) ∈ s.wr := hp.wr
-  rw [setup_eq, WP.block_append_iff]
+  rw [setup_eq c hs, WP.block_append_iff]
   refine WP.mono (setupSaves_ok rfl hw) fun s₁ ⟨g₁, rd₁, wr₁, O₁, sv₁⟩ => ?_
   rw [WP.block_append_iff]
   refine WP.mono (setupMovs_ok s₁) fun s₂ ⟨r14₂, rdi₂, k₂, m₂⟩ => ?_
@@ -238,7 +266,7 @@ theorem setup_ok {c : Cfg} (hc : CfgOk c) {s : State} (hp : SetupPre c s) :
   have hs₅ := hs₄.of_keepRegs k₅ (by decide)
   -- `e`, the hash shifted
   rw [WP.block_append_iff]
-  refine WP.mono (setupShift_ok hc hs₅) fun s₅' ⟨eS, kS, OS⟩ => ?_
+  refine WP.mono (setupShift_ok hc hhs hs₅) fun s₅' ⟨eSD, eS, kS, OS⟩ => ?_
   have hs₅' := hs₅.of_keepRegs kS (by decide)
   -- the constants
   rw [WP.block_append_iff]
@@ -283,7 +311,7 @@ theorem setup_ok {c : Cfg} (hc : CfgOk c) {s : State} (hp : SetupPre c s) :
       O₄.wordsVal (by omega) (by omega), e₃]
   · show wordsVal s'.mem _ _ _ = _
     rw [m', O'.wordsVal (by omega) (by omega), O₆.wordsVal (by omega) (by omega),
-      OS.wordsVal (by omega) (by omega), O₅.wordsVal (by omega) (by omega), e₄]
+      eSD, O₅.wordsVal (by omega) (by omega), e₄]
   · show wordsVal s'.mem _ _ _ = _
     rw [m', O'.wordsVal (by omega) (by omega), O₆.wordsVal (by omega) (by omega), eS, e₅]
   · have := sl_lt c (consts_bounds hc ix hix).1

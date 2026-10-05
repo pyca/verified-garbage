@@ -9,10 +9,10 @@ ECDSA's signature (`Impl/Ecdsa/X86_64.lean`) and of ECDH
 (`Impl/Ecdh/X86_64.lean`), whose layout of the working space it uses:
 
 1. `scratch` to `r8`, `public` to `r9`, `sig` to `rcx` (the signature's
-   `k`), `public + 1` to `rdx` (its hash) and `sig + 8 n` to `r10`; then
-   the signature's setup and tables of bits, unchanged: `r` is read into
-   the slot of `k`, the hash into that of `d`, the key's `x` into that of
-   the hash; then `s` into `PT` (which only the powers use);
+   `k`), `public + 1` to `rdx` (its hash) and `sig + len` to `r10`; then
+   the signature's setup and tables of bits: `r` is read into the slot of
+   `k`, the hash into that of `d` (and shifted to `e`), the key's `x` into
+   that of the hash; then `s` into `PT` (which only the powers use);
 2. ECDH's checks of the key (`peer`, `validate`): its first byte, `x < p`,
    `y < p` and the curve's equation, into the flag, and the key's point, or
    `G` if the flag is clear, to the slots of ECDH's ladder;
@@ -66,10 +66,10 @@ variable (c : Impl.Ecdsa.X86_64.Cfg)
 signature's `r`, `d` the hash and the hash the key's `x`. -/
 def args : List Instr :=
   [.mov .r8 (.reg .rcx), .mov .r9 (.reg .rdi), .mov .rcx (.reg .rdx), .mov .r10 (.reg .rdx),
-    .alu .add .r10 (.imm (BitVec.ofNat 32 (8 * c.n))), .mov .rdx (.reg .rdi), .alu .add .rdx (.imm 1)]
+    .alu .add .r10 (.imm (BitVec.ofNat 32 c.C.len)), .mov .rdx (.reg .rdi), .alu .add .rdx (.imm 1)]
 
 /-- `s`, into `PT`. -/
-def loadS : List Instr := loadBE c.n (c.sl PT) .r10
+def loadS : List Instr := loadBytes c.C.len c.n (c.sl PT) .r10
 
 /-- The checks of `r` and `s`, and `s R mod n`. -/
 def scalars : Prog isa :=
@@ -121,7 +121,7 @@ def back : Prog isa :=
 
 /-- `vg_ecdsa_<curve>_verify`. -/
 def verify : Prog isa :=
-  .seq (.block (args c)) <| .seq (Impl.Ecdh.X86_64.Cfg.prefix' c) <| .seq (.block (loadS c)) <|
+  .seq (.block (args c)) <| .seq (Impl.Ecdh.X86_64.Cfg.prefix' c (some D)) <| .seq (.block (loadS c)) <|
   .seq (.block (Impl.Ecdh.X86_64.Cfg.peer c)) <| .seq (Impl.Ecdh.X86_64.Cfg.validate c) (back c)
 
 end Cfg

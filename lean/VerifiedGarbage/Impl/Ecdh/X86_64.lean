@@ -63,9 +63,10 @@ and the hash the peer's `x`. -/
 def args : List Instr :=
   [.mov .r8 (.reg .rcx), .mov .r9 (.reg .rdx), .mov .rcx (.reg .rsi), .alu .add .rdx (.imm 1)]
 
-/-- The signature's setup and tables of bits. -/
-def prefix' : Prog isa :=
-  .seq (.block c.setup) <|
+/-- The signature's setup, shifting slot `hs` if any (`none` here; the
+hash's slot in signature verification), and tables of bits. -/
+def prefix' (hs : Option Nat) : Prog isa :=
+  .seq (.block (c.setupWith hs)) <|
   .seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n)) <|
   .seq (bits (c.sl EXPP) (bitsAt c.n 1) (8 * c.n)) <|
   .seq (bits (c.sl EXPN) (bitsAt c.n 2) (8 * c.n)) (.block [])
@@ -99,8 +100,8 @@ def checkLead : List Instr :=
 and `y`. -/
 def peer : List Instr :=
   (consts c).flatMap (fun (i, x) => setConst c.n (c.sl i) x) ++
-  [.mov .rdx (.reg .r9), .alu .add .rdx (.imm (BitVec.ofNat 32 (1 + 8 * c.n)))] ++
-  loadBE c.n (c.sl QY) .rdx ++ checkLead c ++ checkLtP c (c.sl E) ++ checkLtP c (c.sl QY)
+  [.mov .rdx (.reg .r9), .alu .add .rdx (.imm (BitVec.ofNat 32 (1 + c.C.len)))] ++
+  loadBytes c.C.len c.n (c.sl QY) .rdx ++ checkLead c ++ checkLtP c (c.sl E) ++ checkLtP c (c.sl QY)
 
 /-- `y² - (x³ + a x + b)`, from `x R` and `y R`, to `W1`. -/
 def curveOps : List FOp :=
@@ -128,7 +129,7 @@ def ladderQ : LadderCfg := { c.ladderCfg with G := c.pt PX PY ONEP }
 /-- `x` (or zeros) to `out`, the flag's low bit to `rax`, and the
 callee-saved registers restored. -/
 def finish : List Instr :=
-  [.mov .rcx (.mem (sc (c.sl FLAG)))] ++ storeBE c.n .rsi 0 (c.sl X) ++
+  [.mov .rcx (.mem (sc (c.sl FLAG)))] ++ storeBytes c.C.len c.n .rsi 0 (c.sl X) ++
   [.mov .rax (.reg .rcx), .alu .and .rax (.imm 1)] ++
   Impl.Ecdsa.X86_64.Cfg.saved.map (fun (r, d) => .mov r (.mem (sc d)))
 
@@ -141,7 +142,7 @@ def middle : Prog isa :=
 
 /-- `vg_ecdh_<curve>`. -/
 def exchange : Prog isa :=
-  .seq (.block (args)) <| .seq (prefix' c) <| .seq (.block (peer c)) <| .seq (validate c) <|
+  .seq (.block (args)) <| .seq (prefix' c none) <| .seq (.block (peer c)) <| .seq (validate c) <|
   .seq (ladder (ladderQ c)) <| .seq (pow c.powP) (middle c)
 
 end Cfg
