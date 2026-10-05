@@ -91,7 +91,7 @@ theorem tcombLay (hc : CfgOk c) : TCombLay c.combCfg size := by
         i < 45 := by decide
       exact Or.inr (sl_below_bits c (this i hi) 0 _)
   · show (64 + 8 * c.n * 20) % 16 = 0; omega
-  · show (64 + 8 * c.n * 21) % 16 = 0; omega
+  · intro _; show (64 + 8 * c.n * 21) % 16 = 0; omega
   · show 16 * c.n * 2 ^ (7 - 1) ≤ 32768; omega
   · show 16 * c.n * 2 ^ (7 - 1) < 65536; omega
 
