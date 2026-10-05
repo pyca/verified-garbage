@@ -15,8 +15,8 @@ def putHTail : List Instr :=
     .mov32 .rax (.imm 0xbc), .store8 (at_ .rdi) .rax]
 
 theorem putH_eq (H : Impl.Pbkdf2.Md.X86_64.Hash) : putH H =
-    .seq (.block ([.mov .rdi (.mem (sp sEb)), .mov .rax (.mem (sp sDb)), .alu .add .rdi (.reg .rax)] ++
-      scr .rsi oDig ++ [.mov32 .r8 (.imm 0)]))
+    .seq (.block (([.mov .rdi (.mem (sp sEb)), .mov .rax (.mem (sp sDb)), .alu .add .rdi (.reg .rax)] : List Instr) ++
+      scr .rsi oDig ++ ([.mov32 .r8 (.imm 0)] : List Instr)))
     (.seq (byteLoop [.movzx8 .rax (ix .rsi .r8), .store8 (ix .rdi .r8) .rax] (.imm (BitVec.ofNat 32 H.D)))
       (.block putHTail)) := rfl
 

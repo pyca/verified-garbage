@@ -187,23 +187,23 @@ theorem signEnc_ok (lk : MgfLink H hH) {u : State} {F S : Addr} (L : Lay u F S) 
   rw [signEnc]
   simp only [seqs]
   -- `DB`'s slots.
-  refine WP.seq (WP.mono (WP.keepIn (by safe_by [dbSlots]) (by simp [Code.x86_64Depth])
+  refine WP.seq (WP.mono (WP.keepIn (by safe_by [dbSlots]) (Nat.zero_le 8)
     (dbSlots_ok L R hlo hax)) fun u1 ⟨⟨L1, k1, R1⟩, f1⟩ => ?_)
   have hS1 := chain (u := u) rfl L.rsp (fun _ _ => rfl) f1
   rw [hdb] at R1
   -- `Y` cleared.
-  refine WP.seq (WP.mono (WP.keepIn (by safe_by [clearY]) (by simp [clearY, Code.x86_64Depth])
+  refine WP.seq (WP.mono (WP.keepIn (by safe_by [clearY]) (Nat.zero_le 8)
     (clearY_ok L1 R1)) fun u2 ⟨⟨L2, k2, hcx2, R2⟩, f2⟩ => ?_)
   have hS2 := chain (u := u) k1.2.2 L1.rsp hS1 f2
   -- `mHash`.
-  refine WP.seq (WP.mono (WP.keepIn (by safe_by [copyDigest]) (by simp [copyDigest, byteLoop, Code.x86_64Depth])
+  refine WP.seq (WP.mono (WP.keepIn (by safe_by [copyDigest]) (Nat.zero_le 8)
     (copyDigest_ok hH L2 R2 (p := dig) (by simp [upd, hdg]) hcx2
       (fun i hi => by rw [k2.2.1, k2.2.2, k1.2.1, k1.2.2]; exact hdR i hi)
       (fun i hi j hj => Outside.ne L2 (by rw [k2.2.2, k1.2.2]; exact hdO i hi) (by omega))))
     fun u3 ⟨⟨L3, k3, R3⟩, f3⟩ => ?_)
   have hS3 := chain (u := u) (k2.2.2.trans k1.2.2) L2.rsp hS2 f3
   -- The salt.
-  refine WP.seq (WP.mono (WP.keepIn (by safe_by [copySaltY]) (by simp [copySaltY, byteLoop, Code.x86_64Depth])
+  refine WP.seq (WP.mono (WP.keepIn (by safe_by [copySaltY]) (Nat.zero_le 8)
     (copySaltY_ok hH L3 R3 (q := q) (sl := sl) (by simp [upd, hq]) (by simp [upd, hsl]) (by omega)
       ((k3.gpr (by decide)).trans hcx2)
       (fun i hi => by rw [k3.2.1, k3.2.2, k2.2.1, k2.2.2, k1.2.1, k1.2.2]; exact hqR i hi)
@@ -211,7 +211,7 @@ theorem signEnc_ok (lk : MgfLink H hH) {u : State} {F S : Addr} (L : Lay u F S) 
     fun u4 ⟨⟨L4, k4, R4⟩, f4⟩ => ?_)
   have hS4 := chain (u := u) (k3.2.2.trans (k2.2.2.trans k1.2.2)) L3.rsp hS3 f4
   -- The length of `M'`.
-  refine WP.seq (WP.mono (WP.keepIn (by safe_by [signLen]) (by simp [Code.x86_64Depth])
+  refine WP.seq (WP.mono (WP.keepIn (by safe_by [signLen]) (Nat.zero_le 8)
     (signLen_ok hH L4 R4 (sl := sl) (by simp [upd, hsl]) (by omega))) fun u5 ⟨⟨L5, k5, R5⟩, f5⟩ => ?_)
   have hS5 := chain (u := u) (k4.2.2.trans (k3.2.2.trans (k2.2.2.trans k1.2.2))) L4.rsp hS4 f5
   -- `H`.
@@ -258,7 +258,7 @@ theorem signEnc_ok (lk : MgfLink H hH) {u : State} {F S : Addr} (L : Lay u F S) 
   have h23 : W3 23 = off S (oEm + lo) := by rw [hW6 23 (by decide) (by decide) (by decide)]; simp [upd]
   have h24 : W3 24 = BitVec.ofNat 64 db := by rw [hW6 24 (by decide) (by decide) (by decide)]; simp [upd]
   -- `EM` cleared.
-  refine WP.seq (WP.mono (WP.keepIn (by decide) (by simp [clearEm, byteLoop, Code.x86_64Depth])
+  refine WP.seq (WP.mono (WP.keepIn (by decide) (Nat.zero_le 8)
     (clearEm_ok L6 R6 (k := k) (by rw [hW3' 17 (by decide) (by decide)]; exact hk) (by omega) hk2)) fun u7 ⟨⟨L7, k7, R7⟩, f7⟩ => ?_)
   have hS7 := chain (u := u) wr6' L6.rsp hS6 f7
   -- `0x01` and the salt.

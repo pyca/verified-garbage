@@ -44,7 +44,7 @@ theorem mws_of {D : Nat} {a : MA} {j : Nat} {W : Nat → BitVec 64} (h21 : W 21 
     ∀ q ∈ mws D a j, W q.1 = q.2 := by
   intro q hq
   simp only [mws, List.mem_cons, List.not_mem_nil, or_false] at hq
-  rcases hq with rfl | rfl | rfl | rfl | rfl <;> assumption
+  rcases hq with rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption
 
 /-- The rounds of `dbLen` bytes, `hLen` at a time. -/
 def mN (D : Nat) (a : MA) : Nat := (a.db + D - 1) / D

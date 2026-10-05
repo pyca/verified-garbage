@@ -107,7 +107,7 @@ theorem semLen_ct (hc : SignChecks H.P H.D) (hH : HashOK H) :
   refine WP.seq (WP.mono (smear_ok t (x := sn0v s) (BitVec.isLt _) h0 hax) fun t3 ⟨k3, hm3, hdx3, hz3⟩ => ?_)
   have L3 : Lay t3 (fb s) (stackArg s 13) := v.L.congr (k3.gpr (by decide)) k3.2.2 (by rw [hm3])
   have R3 : Rep t3.mem (fb s) (stackArg s 13) V W := hm3 ▸ R
-  refine WP.mono (WP.keepIn (by safe_by [emLen]) (by simp [emLen, Code.x86_64Depth])
+  refine WP.mono (WP.keepIn (by safe_by [emLen]) (Nat.zero_le 8)
     (emLen_ok (H := H) (by omega) L3 R3 (x := sn0v s) (k := (s.gpr .rcx).toNat)
       (by rw [hw 17 (by decide)]; show s.gpr .rcx = _; rw [BitVec.ofNat_toNat, BitVec.setWidth_eq])
       (by omega) (by omega) hdx3 hz3)) fun t4 ⟨⟨L4, k4, R4, hax4, hc4⟩, f4⟩ =>
@@ -121,7 +121,7 @@ theorem semLen_ct (hc : SignChecks H.P H.D) (hH : HashOK H) :
 
 theorem ssalt_ct (hc : SignChecks H.P H.D) (hH : HashOK H) :
     RelCT isa (Two fun a t => SAt G (SJ4 H) a t ∧ isa.eval .b t = some false)
-      (.block ([.mov .rdx (.mem (sp sSaltLen))] ++ saltFits H)) (Two (SAt G (SJ6 H))) := by
+      (.block (([.mov .rdx (.mem (sp sSaltLen))] : List Instr) ++ saltFits H)) (Two (SAt G (SJ6 H))) := by
   obtain ⟨_, hc⟩ := hc.salt
   refine two_post (stwo (G := G) (H := H) [40] [.rax] (fun a => [(.rax, BitVec.ofNat 64 (seml a))])
     (fun a t ⟨⟨s, S, h⟩, _⟩ => ⟨s, _, S, h.1.sub (by decide) _ (fun p hp => by
@@ -162,7 +162,7 @@ theorem privArgs_ct : RelCT isa (Two (SAt G (SE H KSM fun _ _ _ => True))) (.blo
   obtain ⟨v, hrd, hM, _⟩ := h
   obtain ⟨V, W, R, hw, -⟩ := v.W
   have hp := S.ps
-  exact WP.mono (WP.keepIn (by decide) (by simp [Code.x86_64Depth])
+  exact WP.mono (WP.keepIn (by decide) (Nat.zero_le 8)
     (privArgs_ok hp v.L hrd (argsKept_of hp hM) R (hw 16 (by decide)) (hw 17 (by decide)) (hw 18 (by decide))
       (hw 19 (by decide)) (hw 20 (by decide)) (hw 22 (by decide))))
     fun u ⟨⟨k', L', ⟨W', R', ha, _⟩, di, si, dx, cx, r8, r9⟩, f⟩ =>
