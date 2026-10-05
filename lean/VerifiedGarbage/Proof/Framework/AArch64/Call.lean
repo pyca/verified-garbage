@@ -18,13 +18,16 @@ frame proven without the frame's region.
 namespace VG.AArch64
 
 /-- The state a called function starts in: `x30`, `x16` and `x17` hold the
-next three unknown values, and a bit of the fourth supplies PSTATE.C. -/
+next three unknown values, and bits of the fourth supply PSTATE.N, Z, C and V. -/
 def State.callEntry (s : State) : State :=
   { s with
     gpr := fun r =>
       if r = .x30 then s.unknowns 0 else if r = .x16 then s.unknowns 1
       else if r = .x17 then s.unknowns 2 else s.gpr r
     c := (s.unknowns 3).getLsbD 0
+    nf := (s.unknowns 3).getLsbD 1
+    zf := (s.unknowns 3).getLsbD 2
+    vf := (s.unknowns 3).getLsbD 3
     unknowns := fun n => s.unknowns (n + 4) }
 
 theorem call_callEntry (s : State) : isa.call s = some s.callEntry := rfl
