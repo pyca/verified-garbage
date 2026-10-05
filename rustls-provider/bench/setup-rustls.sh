@@ -6,7 +6,7 @@
 set -eu
 here=$(cd "$(dirname "$0")/.." && pwd)
 dir=${1:-$here/target/rustls}
-rev=$(sed -n 's/.*rustls\.git", rev = "\([0-9a-f]*\)".*/\1/p' "$here/Cargo.toml" | head -n1)
+rev=$(sed -n 's/.*github.com\/rustls\/rustls", rev = "\([0-9a-f]*\)".*/\1/p' "$here/Cargo.toml" | head -n1)
 if [ ! -d "$dir" ]; then
     git clone https://github.com/rustls/rustls "$dir"
 fi
