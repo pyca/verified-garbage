@@ -402,4 +402,112 @@ theorem abUpd_ok {P : InvCfg} {base : Addr} {size p : Nat} (hL : InvLay P size) 
     fun t ⟨e₃, k₃, O₃⟩ => ⟨by rw [e₃]; exact e₁, by rw [O₃.wordsVal (by slot_omega) (by slot_omega)]; exact e₂,
       k₂.trans (k₃.mono (by decide)), Unch.cover (U₂.trans O₃.unch) (by cover_omega)⟩
 
+/-- `rax -= 1`, its zero flag whether it is now zero. -/
+theorem decRax_ok (s : State) {j : Nat} (hj : 1 ≤ j) (hj' : j < 2 ^ 64) (hb : s.gpr .rax = BitVec.ofNat 64 j) :
+    WP isa (.block [.alu .sub .rax (.imm 1)]) s fun s' =>
+      s'.gpr .rax = BitVec.ofNat 64 (j - 1) ∧ s'.zf = some (decide (j - 1 = 0)) ∧ Keeps [.rax] s s' := by
+  apply WP.of_runBlock
+  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, readSrc, Option.bind_some,
+    RegUpd.gpr_setReg, RegUpd.zf_setReg, RegUpd.zf_arithFlags, ite_true, Option.some.injEq, exists_eq_left', hb,
+    sext1]
+  have e : BitVec.ofNat 64 j - 1 = BitVec.ofNat 64 (j - 1) := by
+    apply BitVec.eq_of_toNat_eq
+    rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat, show (1 : BitVec 64).toNat = 1 from rfl]
+    rw [Nat.mod_eq_of_lt hj', Nat.mod_eq_of_lt (by omega : j - 1 < 2 ^ 64)]
+    omega
+  refine ⟨e, ?_, fun r hr => ?_, rfl, rfl, rfl⟩
+  · rw [e]
+    congr 1
+    by_cases h : j - 1 = 0
+    · rw [h]; simp
+    · rw [decide_eq_false h]
+      simp only [beq_eq_false_iff_ne, ne_eq]
+      intro he
+      have := congrArg BitVec.toNat he
+      rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)] at this
+      exact h this
+  · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    simp only [RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, hr, ite_false]
+
+/-- `[d] = r`, the flags kept. -/
+theorem storeZ_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) (r : Reg) {d : Nat}
+    (hd : d + 8 ≤ size) :
+    WP isa (.block [.store (sc d) r]) s fun s' =>
+      s'.mem = s.mem.writeW (off base d) (s.gpr r) ∧ s'.zf = s.zf ∧ KeepRegs [] s s' := by
+  apply WP.of_runBlock
+  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, store_sc hs hd, Option.some.injEq,
+    exists_eq_left']
+  exact ⟨trivial, trivial, ⟨fun _ _ => rfl, rfl, rfl⟩⟩
+
+/-- The count of batches less one, its zero flag whether it is now zero. -/
+theorem batchEnd_ok {P : InvCfg} {s : State} {base : Addr} {size : Nat} (hs : Scr s base size)
+    (hC : P.sCnt + 8 ≤ size) {j : Nat} (hj : 1 ≤ j) (hj' : j < 2 ^ 64)
+    (hc : word s.mem base P.sCnt = BitVec.ofNat 64 j) :
+    WP isa (.block P.batchEnd) s fun t =>
+      word t.mem base P.sCnt = BitVec.ofNat 64 (j - 1) ∧ t.zf = some (decide (j - 1 = 0)) ∧
+      KeepRegs [.rax] s t ∧ Outside base P.sCnt 8 s.mem t.mem := by
+  have hn := hs.nowrap
+  rw [InvCfg.batchEnd, ← List.singleton_append, WP.block_append_iff]
+  refine WP.mono (movMem_ok hs .rax hC) fun s₁ ⟨l₁, _, k₁⟩ => ?_
+  rw [← List.singleton_append, WP.block_append_iff]
+  refine WP.mono (decRax_ok s₁ hj hj' (by rw [l₁, hc])) fun s₂ ⟨a₂, z₂, k₂⟩ => ?_
+  refine WP.mono (storeZ_ok ((hs.of_keeps k₁ (by decide)).of_keeps k₂ (by decide)) .rax hC) fun t ⟨mt, zt, kt⟩ =>
+    ⟨by rw [mt, word_writeW_self, a₂], by rw [zt, z₂], ((Keeps.regs k₁).trans (Keeps.regs k₂)).trans
+      (kt.mono (by decide)), by rw [mt, k₂.2.1, k₁.2.1]; exact writeW_outside _ _ _ (by omega)⟩
+
+theorem update_eq (P : InvCfg) :
+    P.fgUpdate ++ P.abUpdate ++ P.batchEnd = fgCode P ++ (abCode P ++ P.batchEnd) := by
+  simp only [fgCode, fgHalves, abCode, abHalves, InvCfg.fgUpdate, InvCfg.abUpdate, List.append_assoc]
+
+/-- A batch: `59` divsteps on the low words, then `f`, `g`, `a`, `b` by their matrix,
+and the count less one. -/
+theorem batch_ok {P : InvCfg} {base : Addr} {size p : Nat} (hL : InvLay P size) {s : State} (hs : Scr s base size)
+    (hM : ModOk P.M size p s.mem base) {I : Divstep.IState} (hI : IInv P base I s)
+    (hd : |I.d| ≤ 2 ^ 30) (hf1 : I.f % 2 = 1) (hf : |I.f| ≤ p) (hg : |I.g| ≤ p)
+    (ha : |I.a| ≤ p) (hb : |I.b| ≤ p) {j : Nat} (hj : 1 ≤ j) (hj' : j < 2 ^ 64)
+    (hc : word s.mem base P.sCnt = BitVec.ofNat 64 j) :
+    WP isa P.batch s fun t =>
+      (IInv P base (Divstep.batch 59 p P.M.minv.toNat I) t ∧ word t.mem base P.sCnt = BitVec.ofNat 64 (j - 1) ∧
+        KeepRegs batchRegs s t ∧ Unch base (batchW P) s.mem t.mem) ∧ t.zf = some (decide (j - 1 = 0)) := by
+  have hn := hs.nowrap
+  obtain ⟨eL, eF, eG, eA, eB, eNF, eNG, eT, eU, eC⟩ := slots P
+  have n4 := hL.n4; have htbl := hL.tbl; unfold invTbl at htbl; have hmt := hL.mo_tbl; unfold invTbl at hmt
+  have hmo := hM.mo
+  have hp : p < 2 ^ (64 * P.M.n) := hM.val ▸ wordsVal_lt _ _ _ _
+  obtain ⟨buv, bqr⟩ := Divstep.msteps_bnd I.d I.f I.g 59
+  obtain ⟨mf, mg⟩ := Divstep.msteps_mat (d := I.d) (g := I.g) hf1 59
+  rw [InvCfg.batch]
+  refine WP.seq (WP.mono (words_ok hL hs hI hd hf1) fun s₁ h₁ => WP.seq (WP.mono h₁ fun s₂ h₂ => ?_))
+  obtain ⟨hD, hU, hV, hQ, hR, m₂, k₂⟩ := h₂
+  have hs₂ := hs.of_keepRegs k₂ (by decide)
+  rw [update_eq, WP.block_append_iff]
+  refine WP.mono (fgUpd_ok hL hs₂ hp hU hV hQ hR buv bqr (by rw [m₂]; exact hI.f) (by rw [m₂]; exact hI.g) hf hg
+    ⟨_, mf.symm⟩ ⟨_, mg.symm⟩) fun s₃ ⟨eF₃, eG₃, k₃, U₃⟩ => ?_
+  have hs₃ := hs₂.of_keepRegs k₃ (by decide)
+  have g₃ : ∀ r ∉ [Reg.rax, .rcx, .rdx, .rbp, .r8, .r13], s₃.gpr r = s₂.gpr r := k₃.gpr
+  have M₃ : ModOk P.M size p s₃.mem base := modOk_out hM (by rw [← m₂]; exact U₃) (by
+    simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]; slotm_omega) hn
+  rw [WP.block_append_iff]
+  refine WP.mono (abUpd_ok hL hs₃ M₃ (by rw [g₃ _ (by decide)]; exact hU) (by rw [g₃ _ (by decide)]; exact hV)
+    (by rw [g₃ _ (by decide)]; exact hQ) (by rw [g₃ _ (by decide)]; exact hR) buv bqr
+    (by rw [U₃.wordsVal (by cover_omega) (by slot_omega), m₂]; exact hI.a)
+    (by rw [U₃.wordsVal (by cover_omega) (by slot_omega), m₂]; exact hI.b) ha hb) fun s₄ ⟨eA₄, eB₄, k₄, U₄⟩ => ?_
+  have hs₄ := hs₃.of_keepRegs k₄ (by decide)
+  have c₄ : word s₄.mem base P.sCnt = BitVec.ofNat 64 j := by
+    rw [U₄.word (by cover_omega) (by slot_omega), U₃.word (by cover_omega) (by slot_omega), m₂, hc]
+  refine WP.mono (batchEnd_ok hs₄ (by slot_omega) hj hj' c₄) fun t ⟨ct, zt, kt, Ot⟩ =>
+    ⟨⟨⟨?_, ?_, ?_, ?_, ?_⟩, ct, ?_, ?_⟩, zt⟩
+  · simp only [Divstep.batch]
+    rw [kt.gpr _ (by decide), k₄.gpr _ (by decide), g₃ _ (by decide)]; exact hD
+  · simp only [Divstep.batch]
+    rw [Ot.wordsVal (by slot_omega) (by slot_omega), U₄.wordsVal (by cover_omega) (by slot_omega)]; exact eF₃
+  · simp only [Divstep.batch]
+    rw [Ot.wordsVal (by slot_omega) (by slot_omega), U₄.wordsVal (by cover_omega) (by slot_omega)]; exact eG₃
+  · simp only [Divstep.batch]
+    rw [Ot.wordsVal (by slot_omega) (by slot_omega)]; exact eA₄
+  · simp only [Divstep.batch]
+    rw [Ot.wordsVal (by slot_omega) (by slot_omega)]; exact eB₄
+  · exact ((k₂.trans (k₃.mono (by decide))).trans (k₄.mono (by decide))).trans (kt.mono (by decide))
+  · rw [← m₂]; exact Unch.cover ((U₃.trans U₄).trans Ot.unch) (by unfold batchW invTbl; cover_omega)
+
 end VG.Proof.Weierstrass.X86_64
