@@ -145,6 +145,7 @@ structure Prims where
   rej4 : Prog isa
   /-- What the names of the polynomial arithmetic's functions end with (`Arith.Backend`). -/
   sfx : String := ""
+  montgomery : Bool := false
 
 section
 variable (P : Prims)
@@ -152,13 +153,13 @@ variable (P : Prims)
 def nttAt (f : Ptr) : Prog isa := callAt ("vg_mldsa_ntt" ++ P.sfx) P.ntt [(.rdi, .ptr f), (.rsi, .ptr (sc oSS))]
 
 def invNttAt (f : Ptr) : Prog isa :=
-  callAt ("vg_mldsa_inv_ntt" ++ P.sfx) P.invNtt [(.rdi, .ptr f), (.rsi, .ptr (sc oSS))]
+  callAt ((if P.montgomery then "vg_mldsa_montgomery_inv_ntt" else "vg_mldsa_inv_ntt") ++ P.sfx) P.invNtt [(.rdi, .ptr f), (.rsi, .ptr (sc oSS))]
 
 def mulAt (h f g : Ptr) : Prog isa :=
-  callAt ("vg_mldsa_multiply_ntt" ++ P.sfx) P.mul [(.rdi, .ptr h), (.rsi, .ptr f), (.rdx, .ptr g)]
+  callAt ((if P.montgomery then "vg_mldsa_montgomery_multiply_ntt" else "vg_mldsa_multiply_ntt") ++ P.sfx) P.mul [(.rdi, .ptr h), (.rsi, .ptr f), (.rdx, .ptr g)]
 
 def mulAddAt (h f g : Ptr) : Prog isa :=
-  callAt ("vg_mldsa_multiply_add_ntt" ++ P.sfx) P.mulAdd [(.rdi, .ptr h), (.rsi, .ptr f), (.rdx, .ptr g)]
+  callAt ((if P.montgomery then "vg_mldsa_montgomery_multiply_add_ntt" else "vg_mldsa_multiply_add_ntt") ++ P.sfx) P.mulAdd [(.rdi, .ptr h), (.rsi, .ptr f), (.rdx, .ptr g)]
 
 def subAt (f g : Ptr) : Prog isa := callAt ("vg_mldsa_sub" ++ P.sfx) P.sub [(.rdi, .ptr f), (.rsi, .ptr g)]
 

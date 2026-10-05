@@ -1,3 +1,4 @@
+import VerifiedGarbage.Proof.MlDsa.Arith.Representation
 import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Entry
 
 /-!
@@ -11,6 +12,9 @@ does (`…_ok`), and that two runs whose layout registers agree leak the same
 -/
 
 namespace VG.Proof.MlDsa.X86_64.Verify
+
+open VG.Proof.MlDsa.Arith.Representation
+variable {mont : Bool}
 
 open VG VG.X86_64 VG.Impl.MlDsa.X86_64.Verify
 open VG.Proof.MlKem.X86_64
@@ -113,60 +117,60 @@ theorem mul_cov : Covers ([⟨pa s f, 1024⟩, ⟨pa s g, 1024⟩] ++ [⟨pa s h
 
 theorem mul_pre (hf : Reduced s.mem (pa s f)) (hg : Reduced s.mem (pa s g)) {s1 : State}
     (h1 : Args (mulArgs h f g) s s1) :
-    (mulContract X86_64.abi 16).pre (s1.callEntry.withRegions [⟨pa s f, 1024⟩, ⟨pa s g, 1024⟩] [⟨pa s h, 1024⟩]) := by
+    (productContract mont X86_64.abi 16).pre (s1.callEntry.withRegions [⟨pa s f, 1024⟩, ⟨pa s g, 1024⟩] [⟨pa s h, 1024⟩]) := by
   simp only [mulChk, Bool.and_eq_true] at hc
   obtain ⟨⟨⟨⟨⟨c1, c2⟩, c3⟩, c4⟩, c5⟩, _⟩ := hc
   have g1 : s1.gpr .rdi = pa s h := h1.r0
   have g2 : s1.gpr .rsi = pa s f := h1.r1
   have g3 : s1.gpr .rdx = pa s g := h1.r2
-  sig_pre [mulContract, mulSig, X86_64.abi, VG.X86_64.argRegs]
+  sig_pre [productContract, mulSig, X86_64.abi, VG.X86_64.argRegs]
   rw [g1, g2, g3, h1.rsp, h1.1.2]
   exact ⟨L.sp16, rfl, rfl, L.disj c1, L.disj c2, L.ret8 c3, L.ret8 c4, L.ret8 c5, L.stk16 c3, L.stk16 c4,
     L.stk16 c5, L.nwp c3, L.nwp c4, L.nwp c5, L.wreduced c4 _ hf, L.wreduced c5 _ hg⟩
 
 theorem mulAdd_pre (hh : Reduced s.mem (pa s h)) (hf : Reduced s.mem (pa s f)) (hg : Reduced s.mem (pa s g))
     {s1 : State} (h1 : Args (mulArgs h f g) s s1) :
-    (mulAddContract X86_64.abi 16).pre
+    (accumulateContract mont X86_64.abi 16).pre
       (s1.callEntry.withRegions [⟨pa s f, 1024⟩, ⟨pa s g, 1024⟩] [⟨pa s h, 1024⟩]) := by
   simp only [mulChk, Bool.and_eq_true] at hc
   obtain ⟨⟨⟨⟨⟨c1, c2⟩, c3⟩, c4⟩, c5⟩, _⟩ := hc
   have g1 : s1.gpr .rdi = pa s h := h1.r0
   have g2 : s1.gpr .rsi = pa s f := h1.r1
   have g3 : s1.gpr .rdx = pa s g := h1.r2
-  sig_pre [mulAddContract, mulSig, X86_64.abi, VG.X86_64.argRegs]
+  sig_pre [accumulateContract, mulSig, X86_64.abi, VG.X86_64.argRegs]
   rw [g1, g2, g3, h1.rsp, h1.1.2]
   exact ⟨L.sp16, rfl, rfl, L.disj c1, L.disj c2, L.ret8 c3, L.ret8 c4, L.ret8 c5, L.stk16 c3, L.stk16 c4,
     L.stk16 c5, L.nwp c3, L.nwp c4, L.nwp c5, L.wreduced c3 _ hh, L.wreduced c4 _ hf, L.wreduced c5 _ hg⟩
 
 end
 
-theorem mulAt_ok {P : Prims} (C : CalleeOk P.mul (mulContract X86_64.abi 16)) {rbs wbs : List (Reg × Nat)}
+theorem mulAt_ok {P : Prims} (C : CalleeOk P.mul (productContract P.montgomery X86_64.abi 16)) {rbs wbs : List (Reg × Nat)}
     {s : State} (L : Lay rbs wbs s) {h f g : Ptr} (hc : mulChk (rbs ++ wbs) wbs h f g = true)
     (hf : Reduced s.mem (pa s f)) (hg : Reduced s.mem (pa s g)) :
     WP isa (mulAt P h f g) s fun s' => PPostB s s' [(h, 1024)] ∧ s'.gpr .r15 = s.gpr .r15 ∧
-      PolyIs s'.mem (pa s h) (multiplyNTT (polyAt s.mem (pa s f)) (polyAt s.mem (pa s g))) := by
+      PolyIs s'.mem (pa s h) (product P.montgomery (polyAt s.mem (pa s f)) (polyAt s.mem (pa s g))) := by
   refine WP.mono (callAt_ok C.correct C.nosp C.depth (mul_args L.ok hc) (by simp only [List.map_cons, List.map_nil]; decide)
     (fun s1 h1 => mul_pre L hc hf hg h1) (mul_cov L hc).1 (mul_cov L hc).2)
     fun s' ⟨hP, s1, h1, s₂, hm, _, hq⟩ => ⟨hP.b, hP.cs .r15 (by decide), ?_⟩
   simp only [mulChk, Bool.and_eq_true] at hc
   obtain ⟨⟨⟨_, c4⟩, c5⟩, _⟩ := hc
-  sig_post [mulContract, mulSig, X86_64.abi, VG.X86_64.argRegs] at hq
+  sig_post [productContract, mulSig, X86_64.abi, VG.X86_64.argRegs] at hq
   rw [h1.r0, h1.r1, h1.r2, hm, h1.rsp, h1.1.2] at hq
   simp only [Arg.val] at hq
   rw [L.wpolyAt c4, L.wpolyAt c5] at hq
   exact hq
 
-theorem mulAddAt_ok {P : Prims} (C : CalleeOk P.mulAdd (mulAddContract X86_64.abi 16)) {rbs wbs : List (Reg × Nat)}
+theorem mulAddAt_ok {P : Prims} (C : CalleeOk P.mulAdd (accumulateContract P.montgomery X86_64.abi 16)) {rbs wbs : List (Reg × Nat)}
     {s : State} (L : Lay rbs wbs s) {h f g : Ptr} (hc : mulChk (rbs ++ wbs) wbs h f g = true)
     (hh : Reduced s.mem (pa s h)) (hf : Reduced s.mem (pa s f)) (hg : Reduced s.mem (pa s g)) :
     WP isa (mulAddAt P h f g) s fun s' => PPostB s s' [(h, 1024)] ∧ s'.gpr .r15 = s.gpr .r15 ∧
-      PolyIs s'.mem (pa s h) (add (polyAt s.mem (pa s h)) (multiplyNTT (polyAt s.mem (pa s f)) (polyAt s.mem (pa s g)))) := by
+      PolyIs s'.mem (pa s h) (add (polyAt s.mem (pa s h)) (product P.montgomery (polyAt s.mem (pa s f)) (polyAt s.mem (pa s g)))) := by
   refine WP.mono (callAt_ok C.correct C.nosp C.depth (mul_args L.ok hc) (by simp only [List.map_cons, List.map_nil]; decide)
     (fun s1 h1 => mulAdd_pre L hc hh hf hg h1) (mul_cov L hc).1 (mul_cov L hc).2)
     fun s' ⟨hP, s1, h1, s₂, hm, _, hq⟩ => ⟨hP.b, hP.cs .r15 (by decide), ?_⟩
   simp only [mulChk, Bool.and_eq_true] at hc
   obtain ⟨⟨⟨⟨_, c3⟩, c4⟩, c5⟩, _⟩ := hc
-  sig_post [mulAddContract, mulSig, X86_64.abi, VG.X86_64.argRegs] at hq
+  sig_post [accumulateContract, accumulate, mulSig, X86_64.abi, VG.X86_64.argRegs] at hq
   rw [h1.r0, h1.r1, h1.r2, hm, h1.rsp, h1.1.2] at hq
   simp only [Arg.val] at hq
   rw [L.wpolyAt c3, L.wpolyAt c4, L.wpolyAt c5] at hq
@@ -181,7 +185,7 @@ theorem mul_pub {x y x1 y1 : State} {h f g : Ptr} (hb : h.1 ∈ bases ∧ f.1 �
   refine ⟨?_, e.pa hb.1, e.pa hb.2.1, e.pa hb.2.2⟩
   rw [h1.rsp, h2.rsp, e.2]
 
-theorem mulAt_tr {P : Prims} (C : CalleeOk P.mul (mulContract X86_64.abi 16)) {rbs wbs : List (Reg × Nat)}
+theorem mulAt_tr {P : Prims} (C : CalleeOk P.mul (productContract P.montgomery X86_64.abi 16)) {rbs wbs : List (Reg × Nat)}
     (hS : LayOk (rbs ++ wbs)) {h f g : Ptr} (hc : mulChk (rbs ++ wbs) wbs h f g = true) {Q : State → State → Prop}
     (hQ : ∀ x y, Q x y → Lay rbs wbs x ∧ Lay rbs wbs y ∧ (Reduced x.mem (pa x f) ∧ Reduced x.mem (pa x g)) ∧
       (Reduced y.mem (pa y f) ∧ Reduced y.mem (pa y g)) ∧ SameB x y) :
@@ -194,10 +198,10 @@ theorem mulAt_tr {P : Prims} (C : CalleeOk P.mul (mulContract X86_64.abi 16)) {r
   have hc' := hc
   simp only [mulChk, Bool.and_eq_true] at hc'
   obtain ⟨⟨⟨⟨_, c3⟩, c4⟩, c5⟩, _⟩ := hc'
-  sig_pub [mulContract, mulSig, X86_64.abi, VG.X86_64.argRegs]
+  sig_pub [productContract, mulSig, X86_64.abi, VG.X86_64.argRegs]
   exact mul_pub ⟨ptr_bs hS c3, ptr_bs hS c4, ptr_bs hS c5⟩ e h1 h2
 
-theorem mulAddAt_tr {P : Prims} (C : CalleeOk P.mulAdd (mulAddContract X86_64.abi 16)) {rbs wbs : List (Reg × Nat)}
+theorem mulAddAt_tr {P : Prims} (C : CalleeOk P.mulAdd (accumulateContract P.montgomery X86_64.abi 16)) {rbs wbs : List (Reg × Nat)}
     (hS : LayOk (rbs ++ wbs)) {h f g : Ptr} (hc : mulChk (rbs ++ wbs) wbs h f g = true) {Q : State → State → Prop}
     (hQ : ∀ x y, Q x y → Lay rbs wbs x ∧ Lay rbs wbs y ∧
       (Reduced x.mem (pa x h) ∧ Reduced x.mem (pa x f) ∧ Reduced x.mem (pa x g)) ∧
@@ -211,7 +215,7 @@ theorem mulAddAt_tr {P : Prims} (C : CalleeOk P.mulAdd (mulAddContract X86_64.ab
   have hc' := hc
   simp only [mulChk, Bool.and_eq_true] at hc'
   obtain ⟨⟨⟨⟨_, c3⟩, c4⟩, c5⟩, _⟩ := hc'
-  sig_pub [mulAddContract, mulSig, X86_64.abi, VG.X86_64.argRegs]
+  sig_pub [accumulateContract, mulSig, X86_64.abi, VG.X86_64.argRegs]
   exact mul_pub ⟨ptr_bs hS c3, ptr_bs hS c4, ptr_bs hS c5⟩ e h1 h2
 
 /-! ## Subtraction -/

@@ -13,6 +13,8 @@ contract (`keyGen_verified`).
 
 namespace VG.Proof.MlDsa.X86_64.KeyGen
 
+open VG.Proof.MlDsa.Arith.Representation
+
 open VG VG.X86_64 VG.Proof.MlKem.X86_64
 open VG.Impl.MlKem.X86_64 (Ptr sc seqR topEpi oSV)
 open VG.Impl.MlDsa.X86_64.KeyGen
@@ -28,7 +30,7 @@ theorem row_piece {P : Prims} (hP : PrimsOk P) {p : Params} (hF : PFacts p) {i :
   unfold row
   refine (mul_piece hP hF hi).seq (Piece.seq ?_ ((inv_piece hP hF hi).seq ((addS2_piece hP hF hi).seq
     ((p2r_piece hP hF hi).seq ((sbp_piece hP hF hi).seq (bp_piece hP hF hi))))))
-  refine Piece.mono (Piece.seqR (I := fun j => RowI p i (tIs p fun A S => dotK p A S i j)) (p.ℓ - 1) 1
+  refine Piece.mono (Piece.seqR (I := fun j => RowI p i (tIs p fun A S => encode P.montgomery (dotK p A S i j))) (p.ℓ - 1) 1
     fun j h1 h2 => mulAdd_piece hP hF hi (by omega)) (fun _ _ _ h => h) fun _ _ _ h => ?_
   rwa [show 1 + (p.ℓ - 1) = p.ℓ by omega] at h
 
@@ -190,6 +192,8 @@ theorem keyGen_implies (p : Params) (hp : p = Spec.MlDsa.mlDsa44 ∨ p = Spec.Ml
 end VG.Proof.MlDsa.X86_64.KeyGen
 
 namespace VG.Proof.MlDsa.X86_64.KeyGen
+
+open VG.Proof.MlDsa.Arith.Representation
 
 open VG VG.X86_64
 open VG.Impl.MlDsa.X86_64.KeyGen (Prims keyGen)

@@ -12,6 +12,8 @@ iteration leaks (`checks_tr`).
 
 namespace VG.Proof.MlDsa.X86_64.Sign
 
+open VG.Proof.MlDsa.Arith.Representation
+
 open VG VG.X86_64 VG.Impl.MlDsa.X86_64.Sign
 open VG.Proof.MlKem.X86_64 (Keep Keep.gpr WP.keep)
 open VG.Proof.MlDsa.Sign
@@ -52,9 +54,9 @@ theorem zR_trL {t r : Nat} (hc : zChk p r = true) :
   · rintro x L ⟨σ, I⟩
     exact WP.mono (mulAt_ok hP.mul L cm I.1.b.c.1 (I.1.b.l.k.d.s1 r hr).1) fun x' ⟨hP', _, hq⟩ =>
       ⟨⟨_, hP'⟩, ⟨σ, I.1.step hP' z1 y1⟩, by rw [hP'.pa (pS_bases 1)]; exact hq.1⟩
-  · exact RelCT.mono (ipAt_tr (t := nttInv) hP.invNtt ci) (fun x y h => ⟨h.1, h.2.1.2, h.2.2.2⟩) fun _ _ h => h
+  · exact RelCT.mono (ipAt_tr (t := inverse P.montgomery) hP.invNtt ci) (fun x y h => ⟨h.1, h.2.1.2, h.2.2.2⟩) fun _ _ h => h
   · rintro x L ⟨⟨σ, I⟩, r1⟩
-    exact WP.mono (ipAt_ok (t := nttInv) hP.invNtt L ci r1) fun x' ⟨hP', _, hq⟩ =>
+    exact WP.mono (ipAt_ok (t := inverse P.montgomery) hP.invNtt L ci r1) fun x' ⟨hP', _, hq⟩ =>
       ⟨⟨_, hP'⟩, ⟨σ, I.step hP' z2 y2⟩, by rw [hP'.pa (pS_bases 1)]; exact hq.1⟩
   · exact RelCT.mono (addAt_tr hP ca) (fun x y ⟨R, ⟨⟨_, I₁⟩, r₁⟩, ⟨⟨_, I₂⟩, r₂⟩⟩ =>
       ⟨R, ⟨(I₁.y 0 (by omega)).1, r₁⟩, ⟨(I₂.y 0 (by omega)).1, r₂⟩⟩) fun _ _ h => h
@@ -80,9 +82,9 @@ theorem r0R_trL {t i : Nat} (hc : rChk p i = true) :
   · rintro x L ⟨σ, I⟩
     exact WP.mono (mulAt_ok hP.mul L cm I.1.b.c.1 (I.1.b.l.k.d.s2 i hi).1) fun x' ⟨hP', _, hq⟩ =>
       ⟨⟨_, hP'⟩, ⟨σ, I.1.step hP' z1 y1⟩, by rw [hP'.pa (pS_bases 1)]; exact hq.1⟩
-  · exact RelCT.mono (ipAt_tr (t := nttInv) hP.invNtt ci) (fun x y h => ⟨h.1, h.2.1.2, h.2.2.2⟩) fun _ _ h => h
+  · exact RelCT.mono (ipAt_tr (t := inverse P.montgomery) hP.invNtt ci) (fun x y h => ⟨h.1, h.2.1.2, h.2.2.2⟩) fun _ _ h => h
   · rintro x L ⟨⟨σ, I⟩, r1⟩
-    exact WP.mono (ipAt_ok (t := nttInv) hP.invNtt L ci r1) fun x' ⟨hP', _, hq⟩ =>
+    exact WP.mono (ipAt_ok (t := inverse P.montgomery) hP.invNtt L ci r1) fun x' ⟨hP', _, hq⟩ =>
       ⟨⟨_, hP'⟩, ⟨σ, I.step hP' z2 y2⟩, by rw [hP'.pa (pS_bases 1)]; exact hq.1⟩
   · exact RelCT.mono (subAt_tr hP ca) (fun x y ⟨R, ⟨⟨_, I₁⟩, r₁⟩, ⟨⟨_, I₂⟩, r₂⟩⟩ =>
       ⟨R, ⟨(I₁.w 0 (by omega)).1, r₁⟩, ⟨(I₂.w 0 (by omega)).1, r₂⟩⟩) fun _ _ h => h
@@ -118,9 +120,9 @@ theorem hR_trL {t i : Nat} (hc : hChk2 p i = true) :
   · rintro x L ⟨σ, I⟩
     exact WP.mono (mulAt_ok hP.mul L cm I.1.b.c.1 (I.1.b.l.k.d.t0 i hi).1) fun x' ⟨hP', _, hq⟩ =>
       ⟨⟨_, hP'⟩, ⟨σ, I.1.step hP' g1 o1⟩, by rw [hP'.pa (pS_bases 3)]; exact hq.1⟩
-  · exact RelCT.mono (ipAt_tr (t := nttInv) hP.invNtt ci) (fun x y h => ⟨h.1, h.2.1.2, h.2.2.2⟩) fun _ _ h => h
+  · exact RelCT.mono (ipAt_tr (t := inverse P.montgomery) hP.invNtt ci) (fun x y h => ⟨h.1, h.2.1.2, h.2.2.2⟩) fun _ _ h => h
   · rintro x L ⟨⟨σ, I⟩, r1⟩
-    exact WP.mono (ipAt_ok (t := nttInv) hP.invNtt L ci r1) fun x' ⟨hP', _, hq⟩ =>
+    exact WP.mono (ipAt_ok (t := inverse P.montgomery) hP.invNtt L ci r1) fun x' ⟨hP', _, hq⟩ =>
       ⟨⟨_, hP'⟩, ⟨σ, I.step hP' g2 o2⟩, by rw [hP'.pa (pS_bases 3)]; exact hq.1⟩
   · exact RelCT.mono (normAt_trL hP hγ' cn) (fun x y h => ⟨h.1, h.2.1.2, h.2.2.2⟩) fun _ _ h => h
   · rintro x L ⟨⟨σ, I⟩, r1⟩

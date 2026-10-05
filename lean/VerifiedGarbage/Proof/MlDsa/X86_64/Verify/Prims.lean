@@ -57,7 +57,8 @@ def primsWith (B : Arith.Backend) : Prims :=
     normLt := B.normLt
     useHint := B.useHint
     rej4 := B.rej4
-    sfx := B.sfx }
+    sfx := B.sfx
+    montgomery := B.montgomery }
 
 /-- A function of the polynomial arithmetic satisfies what the proofs of verification need of it. -/
 theorem calleeOf {sig : Sig} {pre : Curry (sig.words X86_64.abi.ptrBits) (Mem → Prop)}
@@ -73,7 +74,7 @@ theorem prims_okWith (v : ArithImpl) : PrimsOk (primsWith v.code) where
     exact calleeOf h
   invNtt := by
     have h := v.ok.invNtt
-    unfold Spec.MlDsa.nttInvContract Spec.MlDsa.inPlaceContract at h ⊢
+    unfold Proof.MlDsa.Arith.Representation.inverseContract Spec.MlDsa.inPlaceContract at h ⊢
     exact calleeOf h
   mul := calleeOf v.ok.mul
   mulAdd := calleeOf v.ok.mulAdd
