@@ -50,14 +50,14 @@ theorem init_framed (v : Ctr32Impl) :
 
 theorem encrypt_xdepth (v : Ctr32Impl) : (encrypt v.callee v.suffix).x86_64Depth ≤ 16 := by
   simp only [encrypt, encryptCore, encS2v, s2vAds, cmacOf, cmacPre, finish, shortTail, longTail, shortMac, longMac,
-    copy, ctr, ctrBody, ctrMin, xorBytes, callUpdate, callFinalize, Impl.CmacAes.X86_64.update,
+    copy, ctr, ctrWhole, ctrBody, ctrMin, xorBytes, callUpdate, callFinalize, Impl.CmacAes.X86_64.update,
     Impl.CmacAes.X86_64.finalize, Impl.CmacAes.X86_64.body, Impl.CmacAes.X86_64.finPre,
     Impl.CmacAes.Stream.X86_64.copy, Code.x86_64Depth, v.noStack]
   decide +kernel
 
 theorem decrypt_xdepth (v : Ctr32Impl) : (decrypt v.callee v.suffix).x86_64Depth ≤ 16 := by
   simp only [decrypt, openTail, encS2v, s2vAds, cmacOf, cmacPre, finish, shortTail, longTail, shortMac, longMac,
-    copy, ctr, ctrBody, ctrMin, xorBytes, maskData, callUpdate, callFinalize, Impl.CmacAes.X86_64.update,
+    copy, ctr, ctrWhole, ctrBody, ctrMin, xorBytes, maskData, callUpdate, callFinalize, Impl.CmacAes.X86_64.update,
     Impl.CmacAes.X86_64.finalize, Impl.CmacAes.X86_64.body, Impl.CmacAes.X86_64.finPre,
     Impl.CmacAes.Stream.X86_64.copy, Code.x86_64Depth, v.noStack]
   decide +kernel
