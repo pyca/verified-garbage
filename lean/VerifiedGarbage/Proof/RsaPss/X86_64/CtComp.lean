@@ -318,4 +318,46 @@ theorem compLoop_ok {t : State} {F S : Addr} (L : Lay t F S) {V : Nat → Byte} 
       simp only [hbf, decide_false, Bool.false_eq_true, ite_false, inR_cons, inR_nil, or_false]
       rw [ifn (by unfold oSt oSel; omega)]
 
+/-! ## The digest -/
+
+include hH in
+theorem digestOut_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {W : Nat → BitVec 64}
+    (R : Rep u.mem F S V W) :
+    WP isa (.block (digestOut H)) u fun u' => Lay u' F S ∧ Keep [.rbx, .rbp, .rax] u u' ∧
+      Rep u'.mem F S (fun o => if oDig ≤ o ∧ o < oDig + H.P.N then
+        (hH.md.digest (hH.md.stateAt u.mem (off S oSel))).getD (o - oDig) 0 else V o) W := by
+  have hN := hH.N_le
+  rw [digestOut, WP.block_append_iff]
+  refine WP.mono (WP.keep [.rbx, .rbp] (Q := fun v => v.gpr .rbx = off S oSel ∧ v.gpr .rbp = off S oDig ∧
+      v.mem = u.mem) ?_ rfl) fun v ⟨⟨h₁, h₂, hm⟩, hk⟩ => ?_
+  · have hs := L.slot
+    simp only [Bignum.X86_64.word] at hs
+    xrun [scr, List.cons_append, List.nil_append, ea_sp, L.rsp, L.ld (d := sScr) (by decide), hs,
+      VG.Proof.MlKem.X86_64.sx_ofNat (show oSel < 2 ^ 31 by decide),
+      VG.Proof.MlKem.X86_64.sx_ofNat (show oDig < 2 ^ 31 by decide)]
+  have Lv : Lay v F S := L.congr (hk.gpr (by decide)) hk.2.2 (by rw [hm])
+  have i₁ : InRegions (v.rd ++ v.wr) (v.gpr .rbx) H.P.N := by
+    rw [h₁]
+    exact Covers.right (Lv.cov (o := oSel) (n := H.P.N) (by unfold oSel oRsa; omega)) _ _
+      ⟨_, List.mem_singleton_self _, Region.contains_self _ _⟩
+  have i₂ : InRegions v.wr (v.gpr .rbp) H.P.N := by
+    rw [h₂]
+    exact Lv.cov (o := oDig) (n := H.P.N) (by unfold oDig oRsa; omega) _ _
+      ⟨_, List.mem_singleton_self _, Region.contains_self _ _⟩
+  have i₃ : Region.Disjoint ⟨v.gpr .rbx, H.P.N⟩ ⟨v.gpr .rbp, H.P.N⟩ := by
+    have := Lv.Sw
+    rw [h₁, h₂]
+    exact Offset.disjoint S (by unfold oSel oDig; omega) (by unfold oSel oRsa at *; omega)
+      (by unfold oDig oRsa at *; omega)
+  refine WP.mono (hH.shape.out v i₁ i₂ i₃) fun w ⟨hg, hrd, hwr, hmw⟩ => ?_
+  have Rw : Rep w.mem F S (fun o => if oDig ≤ o ∧ o < oDig + H.P.N then
+      (hH.md.digest (hH.md.stateAt u.mem (off S oSel))).getD (o - oDig) 0 else V o) W := by
+    rw [hmw, h₂, h₁, hm]
+    have := (hm ▸ R : Rep u.mem F S V W).wbs Lv.geo (o := oDig)
+      (xs := hH.md.digest (hH.md.stateAt u.mem (off S oSel))) (by rw [hH.md.digest_length]; unfold oDig oRsa; omega)
+    rwa [hH.md.digest_length] at this
+  refine ⟨Lv.of_rep (hm ▸ R) Rw (hg .rsp (by decide)) hwr, ⟨fun r hr => ?_, hrd.trans hk.2.1, hwr.trans hk.2.2⟩, Rw⟩
+  simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+  rw [hg r hr.2.2, hk.gpr (by simp [hr.1, hr.2.1])]
+
 end VG.Proof.RsaPss.X86_64

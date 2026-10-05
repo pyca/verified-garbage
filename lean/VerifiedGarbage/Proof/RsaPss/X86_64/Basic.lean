@@ -377,4 +377,12 @@ theorem inR_cons (a n : Nat) (rgs : List (Nat × Nat)) (o : Nat) :
     inR ((a, n) :: rgs) o ↔ (a ≤ o ∧ o < a + n) ∨ inR rgs o := by
   simp [inR]
 
+theorem range_map_getD {xs : List Byte} {n : Nat} (h : n ≤ xs.length) :
+    (List.range n).map (fun i => xs.getD i 0) = xs.take n := by
+  apply List.ext_getElem (by simp; omega)
+  intro i h₁ h₂
+  simp only [List.getElem_map, List.getElem_range, List.getElem_take, List.getD_eq_getElem?_getD]
+  rw [List.getElem?_eq_getElem (by simp at h₁; omega)]
+  rfl
+
 end VG.Proof.RsaPss.X86_64
