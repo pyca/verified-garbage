@@ -6,7 +6,7 @@ import VerifiedGarbage.Proof.Framework.Contract
 # Deterministic ECDSA on x86 (32-bit): the contract the proof is written against
 
 The facts of `I.signContract` for an instance `I` of a curve of `len`-byte
-scalars with a hash of `I.hashLen` bytes, for x86 and 272 bytes of stack, by
+scalars with a hash of `I.hashLen` bytes, for x86 and `N` bytes of stack, by
 name: `vg_ecdsa_<curve>_<hash>_sign(out, d, digest, scratch)`, whose arguments are
 on the stack (cdecl), the result in `eax`. Its arguments' slots are
 readable here; the shared contract makes them writable
@@ -22,7 +22,7 @@ open VG VG.X86 Spec.Weierstrass Spec.Ecdsa
 abbrev result (I : Spec.Ecdsa.Rfc6979.Instance) (m : Mem) (d digest : Addr) : Option (Nat × Nat) × Nat :=
   I.result m d digest
 
-def rfcX86 (I : Spec.Ecdsa.Rfc6979.Instance) : Contract X86.isa where
+def rfcX86 (I : Spec.Ecdsa.Rfc6979.Instance) (N : Nat) : Contract X86.isa where
   pre s :=
     let out : Region := ⟨(arg s 0).setWidth 64, 2 * I.ecdsa.curve.len⟩
     let d : Region := ⟨(arg s 1).setWidth 64, I.ecdsa.curve.len⟩
@@ -30,8 +30,8 @@ def rfcX86 (I : Spec.Ecdsa.Rfc6979.Instance) : Contract X86.isa where
     let scratch : Region := ⟨(arg s 3).setWidth 64, 8192⟩
     let args : Region := ⟨argAddr s 0, 16⟩
     let ret : Region := ⟨(s.gpr .esp).setWidth 64, 4⟩
-    let stack : Region := ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 272, 272⟩
-    272 ≤ (s.gpr .esp).toNat ∧ (s.gpr .esp).toNat + 20 ≤ 2 ^ 32 ∧
+    let stack : Region := ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 N, N⟩
+    N ≤ (s.gpr .esp).toNat ∧ (s.gpr .esp).toNat + 20 ≤ 2 ^ 32 ∧
     s.rd = [d, digest, args] ∧ s.wr = [out, scratch] ∧
       out.Disjoint d ∧ out.Disjoint digest ∧ out.Disjoint scratch ∧
       d.Disjoint scratch ∧ digest.Disjoint scratch ∧

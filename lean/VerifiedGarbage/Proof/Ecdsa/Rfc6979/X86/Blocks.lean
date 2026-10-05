@@ -19,12 +19,6 @@ open VG.Proof.Mont.X86 (wp_movS)
 
 variable {P : RfcHash} {dn : Nat} {L : Lay dn} {g : Reg → BitVec 32} {m₀ : Mem}
 
-/-- The first `n` of `k` bytes. -/
-theorem bytesAt_take (m : Mem) (p : Addr) {n k : Nat} (h : n ≤ k) :
-    Spec.Sha256.bytesAt m p n = (Spec.Sha256.bytesAt m p k).take n := by
-  rw [show k = n + (k - n) by omega, Proof.Hmac.Common.bytesAt_add, List.take_left']
-  simp [Spec.Sha256.bytesAt]
-
 /-- The `4 k` bytes at `q`, each of whose words is `w`. -/
 theorem bytesAt_of_readW (m : Mem) (q : Addr) (w : BitVec 32) {k : Nat}
     (h : ∀ j < k, m.readW (q + BitVec.ofNat 64 (4 * j)) 32 = w) :
@@ -118,7 +112,7 @@ theorem initKV_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) :
 /-- The number of candidates left, in the frame. -/
 abbrev cnt {dn : Nat} (L : Lay dn) (m : Mem) : BitVec 32 := m.readW (L.B + BitVec.ofNat 64 252) 32
 
-theorem cnt_addr (hL : L.Ok) : addr L.F fCnt = L.B + BitVec.ofNat 64 252 := hL.addrF (by decide)
+theorem cnt_addr (hL : L.Ok) : addr L.F fCnt = L.B + BitVec.ofNat 64 252 := hL.addrF (by simp only [fCnt]; omega)
 
 theorem initCnt_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) :
     WP isa (.block (cfgOf P).initCnt) t fun t' => Ctx L g m₀ t' ∧
@@ -135,21 +129,40 @@ theorem initCnt_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) :
 
 /-! ## `core`'s arguments -/
 
+/-- The digest and `k` `core` reads: the digest and `V`, or, if two `V`s
+make a candidate, the digest for `core` and the candidate at the frame's top. -/
+abbrev dgArg {dn : Nat} (L : Lay dn) : BitVec 32 := if L.wide then L.F + BitVec.ofNat 32 fX else L.a2
+abbrev kArg {dn : Nat} (L : Lay dn) : BitVec 32 :=
+  if L.wide then L.F + BitVec.ofNat 32 fKb else L.F + BitVec.ofNat 32 fV
+
 theorem coreArgs_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) :
-    WP isa (.block Cfg.coreArgs) t fun t' => Ctx L g m₀ t' ∧ t'.mem = t.mem ∧ t'.gpr .edi = L.a0 ∧
-      t'.gpr .esi = L.a1 ∧ t'.gpr .edx = L.a2 ∧ t'.gpr .ecx = L.F + BitVec.ofNat 32 64 ∧ t'.gpr .ebp = L.a3 := by
-  rw [show Cfg.coreArgs = [.mov .edi (argM 0)] ++ ([.mov .esi (argM 1)] ++ ([.mov .edx (argM 2)] ++
-    (Cfg.fr .ecx fV ++ [.mov .ebp (argM 3)]))) from rfl]
-  refine WP.block_append (WP.mono (arg_ok hL hc (d := .edi) (by decide) (i := 0) (by omega)) fun u₁ h₁ => ?_)
-  refine WP.block_append (WP.mono (arg_ok hL h₁.ctx (d := .esi) (by decide) (i := 1) (by omega)) fun u₂ h₂ => ?_)
-  refine WP.block_append (WP.mono (arg_ok hL h₂.ctx (d := .edx) (by decide) (i := 2) (by omega)) fun u₃ h₃ => ?_)
-  refine WP.block_append (WP.mono (fr_ok hL h₃.ctx (d := .ecx) (by decide) fV) fun u₄ h₄ => ?_)
-  refine WP.mono (arg_ok hL h₄.ctx (d := .ebp) (by decide) (i := 3) (by omega)) fun u₅ h₅ => ?_
-  refine ⟨h₅.ctx, by rw [h₅.mem, h₄.mem, h₃.mem, h₂.mem, h₁.mem], ?_, ?_, ?_, ?_, h₅.val⟩
-  · rw [h₅.keep _ (by decide), h₄.keep _ (by decide), h₃.keep _ (by decide), h₂.keep _ (by decide), h₁.val]; rfl
-  · rw [h₅.keep _ (by decide), h₄.keep _ (by decide), h₃.keep _ (by decide), h₂.val]; rfl
-  · rw [h₅.keep _ (by decide), h₄.keep _ (by decide), h₃.val]; rfl
-  · rw [h₅.keep _ (by decide), h₄.val]; rfl
+    WP isa (.block (Cfg.coreArgs L.wide)) t fun t' => Ctx L g m₀ t' ∧ t'.mem = t.mem ∧ t'.gpr .edi = L.a0 ∧
+      t'.gpr .esi = L.a1 ∧ t'.gpr .edx = dgArg L ∧ t'.gpr .ecx = kArg L ∧ t'.gpr .ebp = L.a3 := by
+  rcases Bool.eq_false_or_eq_true L.wide with hw | hw
+  · rw [show Cfg.coreArgs L.wide = [.mov .edi (argM L.wide 0)] ++ ([.mov .esi (argM L.wide 1)] ++
+      (Cfg.fr .edx fX ++ (Cfg.fr .ecx fKb ++ [.mov .ebp (argM L.wide 3)]))) by rw [Cfg.coreArgs, hw]; rfl]
+    refine WP.block_append (WP.mono (arg_ok hL hc (d := .edi) (by decide) (i := 0) (by omega)) fun u₁ h₁ => ?_)
+    refine WP.block_append (WP.mono (arg_ok hL h₁.ctx (d := .esi) (by decide) (i := 1) (by omega)) fun u₂ h₂ => ?_)
+    refine WP.block_append (WP.mono (fr_ok hL h₂.ctx (d := .edx) (by decide) fX) fun u₃ h₃ => ?_)
+    refine WP.block_append (WP.mono (fr_ok hL h₃.ctx (d := .ecx) (by decide) fKb) fun u₄ h₄ => ?_)
+    refine WP.mono (arg_ok hL h₄.ctx (d := .ebp) (by decide) (i := 3) (by omega)) fun u₅ h₅ => ?_
+    refine ⟨h₅.ctx, by rw [h₅.mem, h₄.mem, h₃.mem, h₂.mem, h₁.mem], ?_, ?_, ?_, ?_, h₅.val⟩
+    · rw [h₅.keep _ (by decide), h₄.keep _ (by decide), h₃.keep _ (by decide), h₂.keep _ (by decide), h₁.val]; rfl
+    · rw [h₅.keep _ (by decide), h₄.keep _ (by decide), h₃.keep _ (by decide), h₂.val]; rfl
+    · rw [h₅.keep _ (by decide), h₄.keep _ (by decide), h₃.val, dgArg, hw]; rfl
+    · rw [h₅.keep _ (by decide), h₄.val, kArg, hw]; rfl
+  · rw [show Cfg.coreArgs L.wide = [.mov .edi (argM L.wide 0)] ++ ([.mov .esi (argM L.wide 1)] ++
+      ([.mov .edx (argM L.wide 2)] ++ (Cfg.fr .ecx fV ++ [.mov .ebp (argM L.wide 3)]))) by rw [Cfg.coreArgs, hw]; rfl]
+    refine WP.block_append (WP.mono (arg_ok hL hc (d := .edi) (by decide) (i := 0) (by omega)) fun u₁ h₁ => ?_)
+    refine WP.block_append (WP.mono (arg_ok hL h₁.ctx (d := .esi) (by decide) (i := 1) (by omega)) fun u₂ h₂ => ?_)
+    refine WP.block_append (WP.mono (arg_ok hL h₂.ctx (d := .edx) (by decide) (i := 2) (by omega)) fun u₃ h₃ => ?_)
+    refine WP.block_append (WP.mono (fr_ok hL h₃.ctx (d := .ecx) (by decide) fV) fun u₄ h₄ => ?_)
+    refine WP.mono (arg_ok hL h₄.ctx (d := .ebp) (by decide) (i := 3) (by omega)) fun u₅ h₅ => ?_
+    refine ⟨h₅.ctx, by rw [h₅.mem, h₄.mem, h₃.mem, h₂.mem, h₁.mem], ?_, ?_, ?_, ?_, h₅.val⟩
+    · rw [h₅.keep _ (by decide), h₄.keep _ (by decide), h₃.keep _ (by decide), h₂.keep _ (by decide), h₁.val]; rfl
+    · rw [h₅.keep _ (by decide), h₄.keep _ (by decide), h₃.keep _ (by decide), h₂.val]; rfl
+    · rw [h₅.keep _ (by decide), h₄.keep _ (by decide), h₃.val, dgArg, hw]; rfl
+    · rw [h₅.keep _ (by decide), h₄.val, kArg, hw]; rfl
 
 /-! ## Whether to go on -/
 
@@ -265,18 +278,41 @@ theorem restore_ok (hL : L.Ok) {u : State} (hc : Ctx L g m₀ u) :
     · rw [h₄.keep _ (by decide), h₃.val]
     · exact h₄.val
 
-/-- `K`, `V` and `h` cleared (`eax` kept), and our caller's registers back. -/
+/-- `k` zero words stored at the frame's top. -/
+theorem zeroH_ok (hL : L.Ok) {u : State} (hc : Ctx L g m₀ u) : ∀ k ≤ L.e,
+    WP isa (.block ((List.range k).map fun j => .store (stk (fX + 4 * j)) .ecx)) u fun u' =>
+      u'.rd = u.rd ∧ u'.wr = u.wr ∧ u'.gpr = u.gpr ∧ Frame [⟨L.B + BitVec.ofNat 64 272, 4 * L.e⟩] u.mem u'.mem
+  | 0, _ => WP.of_runBlock ⟨u, rfl, rfl, rfl, rfl, Frame.refl _ _⟩
+  | k + 1, hk => by
+    have nB := hL.nB
+    rw [List.range_succ, List.map_append, List.map_singleton, WP.block_append_iff]
+    refine WP.mono (zeroH_ok hL hc k (by omega)) fun u₁ ⟨hrd, hwr, hg, hf⟩ => ?_
+    have e : addr L.F (fX + 4 * k) = L.B + BitVec.ofNat 64 (272 + 4 * k) := by
+      rw [hL.addrF (by simp only [fX]; omega)]; simp only [fX]; congr 2; omega
+    refine wp_stm (B := L.F) (by rw [hg, hc.esp]) (by rw [e, hwr]; exact hc.inFrW (by omega) (by omega) hL)
+      fun u₂ v₂ => WP.block_nil ⟨by rw [v₂.rd, hrd], by rw [v₂.wr, hwr], by rw [v₂.gpr, hg], hf.trans ?_⟩
+    rw [v₂.mem, e]
+    exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Offset.contains _ (by omega) (by omega) (by omega))
+
+/-- `K`, `V` and `h` cleared, and the words at the frame's top (`eax`
+kept), and our caller's registers back. -/
 theorem wipe_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) :
-    WP isa (.block Cfg.wipe) t fun t' => Ctx L g m₀ t' ∧ t'.gpr .eax = t.gpr .eax ∧
-      Frame [⟨L.B + BitVec.ofNat 64 76, 176⟩] t.mem t'.mem ∧ ∀ p ∈ saved, t'.gpr p.1 = g p.1 := by
-  rw [Cfg.wipe]
-  refine WP.block_append (WP.block_append (wp_movi fun u₁ v₁ => WP.block_nil ?_))
+    WP isa (.block (Cfg.wipe L.wide)) t fun t' => Ctx L g m₀ t' ∧ t'.gpr .eax = t.gpr .eax ∧
+      Frame [⟨L.B + BitVec.ofNat 64 76, 176⟩, ⟨L.B + BitVec.ofNat 64 272, 4 * L.e⟩] t.mem t'.mem ∧
+      ∀ p ∈ saved, t'.gpr p.1 = g p.1 := by
+  rw [Cfg.wipe, ← L.ew]
+  refine WP.block_append (WP.block_append (WP.block_append (wp_movi fun u₁ v₁ => WP.block_nil ?_)))
   have hc₁ := (Upd.of_wp hL hc (by decide) v₁).ctx
   refine WP.mono (zeroN_ok hL hc₁ 44 (Nat.le_refl _)) fun u₂ ⟨hrd, hwr, hg, hf⟩ => ?_
   have hc₂ : Ctx L g m₀ u₂ := hc₁.keep hL hrd hwr (by rw [hg]) hf (fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr; exact safe_low L (by omega))
-  refine WP.mono (restore_ok hL hc₂) fun t' ⟨hc', hm', ha', hs'⟩ => ⟨hc', ?_, ?_, hs'⟩
-  · rw [ha', hg, v₁.other _ (by decide)]
-  · rw [hm', ← v₁.mem]; exact hf
+  refine WP.mono (zeroH_ok hL hc₂ L.e (Nat.le_refl _)) fun u₃ ⟨hrd₃, hwr₃, hg₃, hf₃⟩ => ?_
+  have hc₃ : Ctx L g m₀ u₃ := hc₂.keep hL hrd₃ hwr₃ (by rw [hg₃]) hf₃ (fun r hr => by
+    simp only [List.mem_singleton] at hr; subst hr; exact safe_high L (Nat.le_refl _) (by omega))
+  refine WP.mono (restore_ok hL hc₃) fun t' ⟨hc', hm', ha', hs'⟩ => ⟨hc', ?_, ?_, hs'⟩
+  · rw [ha', hg₃, hg, v₁.other _ (by decide)]
+  · rw [hm', ← v₁.mem]
+    exact (hf.sub fun r hr => ⟨r, by simp_all, sub_refl _⟩).trans
+      (hf₃.sub fun r hr => ⟨r, by simp_all, sub_refl _⟩)
 
 end VG.Proof.Ecdsa.Rfc6979.X86
