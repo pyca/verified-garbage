@@ -30,14 +30,16 @@ abbrev work : List Reg := [.r0, .r1, .r2, .r3, .r4, .r5, .r6, .r7, .r8, .r9, .r1
 theorem clob_work : ∀ r ∈ clob, r ∈ work := by decide
 theorem powClob_work : ∀ r ∈ powClob, r ∈ work := by decide
 
-/-- What the stages keep: the working space, `sp`, the regions, `out` in
-`lr`, the constants and the saved registers. -/
+/-- What the stages keep: the working space and `scratch`, `sp`, the
+regions, `out` in `lr`, the constants and the saved registers; they write
+only in `scratch`. -/
 structure Keep (c : Cfg) (s₀ : State) (base : Addr) (s : State) : Prop where
   scr : Scr s base size
+  far : Far s base 8192
   rest : Rest (.lr :: work) s₀ s
   lr : s.gpr .lr = s₀.gpr .r0
   fixed : Fixed c base s₀.gpr s.mem
-  whole : Unch base [(0, size)] s₀.mem s.mem
+  whole : Unch base [(0, 8192)] s₀.mem s.mem
 
 /-- After the setup and the tables. -/
 structure St₁ (c : Cfg) (A : Args) (s₀ : State) (base : Addr) (s : State) : Prop extends Keep c s₀ base s where
@@ -61,7 +63,7 @@ theorem stage₁ (hc : CfgOk c) {s₀ : State} (hp : SetupPre c A s₀) {rest : 
       (.seq (bits (c.sl EXPP) (bitsAt c.n 1) (8 * c.n))
       (.seq (bits (c.sl EXPN) (bitsAt c.n 2) (8 * c.n)) rest)))) s₀ Q := by
   have h0 := hc.n0
-  have h7 := hc.n7
+  have h7 := hc.n10
   refine WP.seq (WP.mono (setup_ok hc hp) fun s₁ P => ?_)
   have hn := P.scr.nowrap
   have hc' : ∀ ix ∈ c.consts, sv c (scBase A s₀) s₁ ix.1 = ix.2 := P.consts
@@ -73,29 +75,25 @@ theorem stage₁ (hc : CfgOk c) {s₀ : State} (hp : SetupPre c A s₀) {rest : 
       hc' (GX, c.mont c.C.gx) (by simp [Cfg.consts]), hc' (GY, c.mont c.C.gy) (by simp [Cfg.consts]),
       hc' (R2N, c.R * c.R % c.C.n) (by simp [Cfg.consts]), hc' (ONEN, c.R % c.C.n) (by simp [Cfg.consts]),
       P.saved⟩
-  have hsep : ∀ {i : Nat}, i < 45 → ∀ j, c.sl i + 8 * c.n ≤ bitsAt c.n j ∨ bitsAt c.n j + 64 * c.n ≤ c.sl i :=
-    fun hi j => Or.inl (by have := sl_below_bits c hi j 0; omega)
-  have hsz : ∀ {j}, j < 3 → bitsAt c.n j + 64 * c.n ≤ size := fun hj => bitsAt_le c h7 hj
   -- The table of `k`.
-  have henc : encodable (BitVec.ofNat 32 (8 * c.n)) = true := by
-    have : ∀ n < 7, encodable (BitVec.ofNat 32 (8 * n)) = true := by decide
-    exact this _ h7
-  refine WP.seq (WP.mono (bits_ok P.scr h0 (sl_le c h7 (i := K) (by decide)) (hsz (j := 0) (by decide))
-    (hsep (i := K) (by decide) 0) henc) fun s₂ ⟨b₂, k₂, O₂⟩ => ?_)
+  refine WP.seq (WP.mono (tbl_bits_ok hc P.scr P.far (i := K) (j := 0) (by decide) (by decide))
+    fun s₂ ⟨b₂, k₂, O₂⟩ => ?_)
   have hs₂ := P.scr.of_rest k₂ (by decide)
+  have hf₂ := P.far.of_rest k₂
   have u₂ := O₂.unch
   have v₂ : ∀ {i}, i < 45 → sv c (scBase A s₀) s₂ i = sv c (scBase A s₀) s₁ i := fun hi =>
     sv_unch u₂ h7 hn hi (apart_tbl hi 0)
   -- The table of `p - 2`.
-  refine WP.seq (WP.mono (bits_ok hs₂ h0 (sl_le c h7 (i := EXPP) (by decide)) (hsz (j := 1) (by decide))
-    (hsep (i := EXPP) (by decide) 1) henc) fun s₃ ⟨b₃, k₃, O₃⟩ => ?_)
+  refine WP.seq (WP.mono (tbl_bits_ok hc hs₂ hf₂ (i := EXPP) (j := 1) (by decide) (by decide))
+    fun s₃ ⟨b₃, k₃, O₃⟩ => ?_)
   have hs₃ := hs₂.of_rest k₃ (by decide)
+  have hf₃ := hf₂.of_rest k₃
   have u₃ := O₃.unch
   have v₃ : ∀ {i}, i < 45 → sv c (scBase A s₀) s₃ i = sv c (scBase A s₀) s₁ i := fun hi =>
     (sv_unch u₃ h7 hn hi (apart_tbl hi 1)).trans (v₂ hi)
   -- The table of `n - 2`.
-  refine WP.seq (WP.mono (bits_ok hs₃ h0 (sl_le c h7 (i := EXPN) (by decide)) (hsz (j := 2) (by decide))
-    (hsep (i := EXPN) (by decide) 2) henc) fun s₄ ⟨b₄, k₄, O₄⟩ => h s₄ ?_)
+  refine WP.seq (WP.mono (tbl_bits_ok hc hs₃ hf₃ (i := EXPN) (j := 2) (by decide) (by decide))
+    fun s₄ ⟨b₄, k₄, O₄⟩ => h s₄ ?_)
   have u₄ := O₄.unch
   have v₄ : ∀ {i}, i < 45 → sv c (scBase A s₀) s₄ i = sv c (scBase A s₀) s₁ i := fun hi =>
     (sv_unch u₄ h7 hn hi (apart_tbl hi 2)).trans (v₃ hi)
@@ -105,7 +103,7 @@ theorem stage₁ (hc : CfgOk c) {s₀ : State} (hp : SetupPre c A s₀) {rest : 
   have K₂₄ : Rest work s₁ s₄ :=
     (k₂.mono (by decide)).trans ((k₃.mono (by decide)).trans (k₄.mono (by decide)))
   have A₂₄ : Rest [.r4, .r5, .r7, .r11] s₁ s₄ := k₂.trans (k₃.trans k₄)
-  refine ⟨⟨hs₃.of_rest k₄ (by decide), (P.keep.mono (by decide)).trans (K₂₄.mono (by simp)),
+  refine ⟨⟨hs₃.of_rest k₄ (by decide), hf₃.of_rest k₄, (P.keep.mono (by decide)).trans (K₂₄.mono (by simp)),
     by rw [K₂₄.gpr _ (by decide), P.lr], ?_, ?_⟩,
     by rw [v₄ (by decide), P.k], by rw [v₄ (by decide), P.d], by rw [v₄ (by decide), P.e],
     by rw [v₄ (by decide)]; exact hc' (RX, 0) (by simp [Cfg.consts]),
@@ -113,11 +111,11 @@ theorem stage₁ (hc : CfgOk c) {s₀ : State} (hp : SetupPre c A s₀) {rest : 
     by rw [v₄ (by decide)]; exact hc' (RZ, 0) (by simp [Cfg.consts]), ?_, ?_, ?_, ?_, ?_⟩
   · exact (fx.unch h7 hn (fixedOk_tbl 0) u₂ |>.unch h7 hn (fixedOk_tbl 1) u₃).unch h7 hn (fixedOk_tbl 2) u₄
   · intro x hx
-    have hx' : size ≤ ofs (scBase A s₀) x := by have := hx _ (List.mem_singleton_self _); omega
+    have hx' : 8192 ≤ ofs (scBase A s₀) x := by have := hx _ (List.mem_singleton_self _); omega
     rw [O₄ x (Or.inr (by have := bitsAt_le c h7 (j := 2) (by decide); omega)),
       O₃ x (Or.inr (by have := bitsAt_le c h7 (j := 1) (by decide); omega)),
       O₂ x (Or.inr (by have := bitsAt_le c h7 (j := 0) (by decide); omega)),
-      P.unch x fun w hw => by rw [List.mem_singleton.mp hw]; exact Or.inr (by omega)]
+      P.unch x fun w hw => by rw [List.mem_singleton.mp hw]; exact Or.inr (by dsimp only [size]; omega)]
   · have hF := sl_le c h7 (i := FLAG) (by decide)
     have ap : ∀ j, ∀ w ∈ [(bitsAt c.n j, 64 * c.n)], c.sl FLAG + 4 ≤ w.1 ∨ w.1 + w.2 ≤ c.sl FLAG :=
       fun j w hw => by
@@ -157,7 +155,7 @@ theorem accLen_MN' (c : Cfg) : accLen c.MN' = 32 * c.n + 8 := accLen_eq _
 /-- The flag word apart from numbered slots and the accumulator. -/
 theorem flag_unch {base : Addr} {l : List Nat} {m m' : Mem}
     (hu : Unch base (slW c l ++ [(c.wk, 32 * c.n + 8)]) m m')
-    (h7 : c.n < 7) (h0 : 0 < c.n) (hn : base.toNat + size ≤ 2 ^ 32) (hl : FLAG ∉ l) :
+    (h7 : c.n < 10) (h0 : 0 < c.n) (hn : base.toNat + size ≤ 2 ^ 32) (hl : FLAG ∉ l) :
     m'.readW (off base (c.sl FLAG)) 32 = m.readW (off base (c.sl FLAG)) 32 := by
   have hF := sl_le c h7 (i := FLAG) (by decide)
   refine Unch.readW32 hu (fun w hw => ?_) (by omega)
@@ -169,12 +167,17 @@ theorem flag_unch {base : Addr} {l : List Nat} {m m' : Mem}
     · exact Or.inl (by omega)
     · exact Or.inr h
 
-/-- A stage writes in the working space only. -/
-theorem whole_of {base : Addr} {W : List (Nat × Nat)} {m₀ m m' : Mem} (h₀ : Unch base [(0, size)] m₀ m)
-    (hu : Unch base W m m') (hW : ∀ w ∈ W, w.1 + w.2 ≤ size) : Unch base [(0, size)] m₀ m' := fun x hx => by
-  have h := hx (0, size) (List.mem_singleton_self _)
-  have hx' : size ≤ ofs base x := by dsimp only at h; omega
+/-- A stage writes in `scratch` only. -/
+theorem whole_of' {base : Addr} {W : List (Nat × Nat)} {m₀ m m' : Mem} (h₀ : Unch base [(0, 8192)] m₀ m)
+    (hu : Unch base W m m') (hW : ∀ w ∈ W, w.1 + w.2 ≤ 8192) : Unch base [(0, 8192)] m₀ m' := fun x hx => by
+  have h := hx (0, 8192) (List.mem_singleton_self _)
+  have hx' : 8192 ≤ ofs base x := by dsimp only at h; omega
   rw [hu x (fun w hw => Or.inr (by have := hW w hw; omega)), h₀ x hx]
+
+/-- A stage writes in the working space only. -/
+theorem whole_of {base : Addr} {W : List (Nat × Nat)} {m₀ m m' : Mem} (h₀ : Unch base [(0, 8192)] m₀ m)
+    (hu : Unch base W m m') (hW : ∀ w ∈ W, w.1 + w.2 ≤ size) : Unch base [(0, 8192)] m₀ m' :=
+  whole_of' h₀ hu fun w hw => by have := hW w hw; dsimp only [size] at this; omega
 
 /-- A hash of `8 n` bytes is its number. -/
 theorem hashToInt_eq (hc : CfgOk c) (m : Mem) (q : Addr) :

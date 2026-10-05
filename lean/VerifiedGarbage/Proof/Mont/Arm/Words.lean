@@ -67,6 +67,31 @@ theorem Scr.of_rest {rs : List Reg} {s s' : State} {base : Addr} {size : Nat} (h
     (h : Rest rs s s') (hr : .r12 ∉ rs) : Scr s' base size :=
   ⟨by rw [h.gpr _ hr]; exact hs.wb, h.wr ▸ hs.wr, hs.nowrap, hs.small⟩
 
+/-- The whole of the writable region at the working space's base, `len`
+bytes below `2³²`, which a register reaches past the 4096 bytes of `Scr`'s
+offsets (the tables of bits of the curves' code). -/
+structure Far (s : State) (base : Addr) (len : Nat) : Prop where
+  wr : (⟨base, len⟩ : Region) ∈ s.wr
+  nowrap : base.toNat + len ≤ 2 ^ 32
+
+theorem Far.read {s : State} {base : Addr} {len : Nat} (hf : Far s base len) {d n : Nat}
+    (hd : d + n ≤ len) : InRegions (s.rd ++ s.wr) (off base d) n :=
+  ⟨_, List.mem_append_right _ hf.wr, Offset.contains_base base hd (by have := hf.nowrap; omega)⟩
+
+theorem Far.write {s : State} {base : Addr} {len : Nat} (hf : Far s base len) {d n : Nat}
+    (hd : d + n ≤ len) : InRegions s.wr (off base d) n :=
+  ⟨_, hf.wr, Offset.contains_base base hd (by have := hf.nowrap; omega)⟩
+
+theorem Far.of_rest {rs : List Reg} {s s' : State} {base : Addr} {len : Nat} (hf : Far s base len)
+    (h : Rest rs s s') : Far s' base len :=
+  ⟨h.wr ▸ hf.wr, hf.nowrap⟩
+
+/-- `[r + d]` where `r = r12 + k`, anywhere in the region. -/
+theorem Far.ea_reg {s : State} {base : Addr} {size len : Nat} (hf : Far s base len) (hs : Scr s base size)
+    {r : Reg} {k d : Nat} (hr : s.gpr r = s.gpr .r12 + BitVec.ofNat 32 k) (hd : k + d < len) :
+    State.addr (s.gpr r + BitVec.ofNat 32 d) = off base (k + d) := by
+  rw [hr, Offset.add_add, VG.Arm.addr_add (by have := hf.nowrap; have := hs.wb_toNat; omega), hs.wb]
+
 /-! ## Digits -/
 
 /-- Digit `h` (0: low, 1: high) of a word. -/
