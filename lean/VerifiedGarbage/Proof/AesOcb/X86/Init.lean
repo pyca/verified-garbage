@@ -433,7 +433,7 @@ theorem iMid_pc (p : BitVec 32 × (Nat → BitVec 32)) :
 
 theorem init_eq (v : BlocksImpl) : init (callees v) = .seq (entry 3 (keep 0 nO ++ keep 1 nlO ++ keep 2 ctxO))
     (.seq (.block iArgs) (.seq (keyFrame (callees v)) (.seq (.block (mid1 ++ mid2))
-      (.seq (blocksFrame (callees v).enc) (.block ([.alu .sub .ebp (imm scrO)] ++ restore)))))) := rfl
+      (.seq (blocksFrame (callees v).enc) (.block (([.alu .sub .ebp (imm scrO)] : List Instr) ++ restore)))))) := rfl
 
 theorem init_pc (v : BlocksImpl) (p : BitVec 32 × (Nat → BitVec 32)) :
     Pc (fun (s₀ : State) s => initPre s₀ ∧ pubOf 4 s₀ = p ∧ s = s₀) (init (callees v))

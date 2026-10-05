@@ -32,7 +32,7 @@ theorem lstar_mut {p : Prm} (L : Lay p) {m m' : Mem} (h : Frame (mutR p) m m') :
 
 /-- The head of `hashRest`: `Offset_m ⊕ L_*` to `W + ohO`. -/
 theorem hashRestHead_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t) :
-    ∃ t₂, runBlock isa ([.mov .ebx (slot ctxO)] ++ xor16 .ebx 240 ohO) t = some t₂ ∧ Env p t₂ ∧
+    ∃ t₂, runBlock isa (([.mov .ebx (slot ctxO)] : List Instr) ++ xor16 .ebx 240 ohO) t = some t₂ ∧ Env p t₂ ∧
       t₂.mem = xorMem16 t.mem (w64 p.K) 240 (w64 p.W) ohO ∧
       (∀ r, r ≠ .eax → r ≠ .ebx → t₂.gpr r = t.gpr r) ∧ t₂.rd = t.rd ∧ t₂.wr = t.wr := by
   have hc := E.slots.ctx
@@ -207,9 +207,9 @@ theorem shr4_32 {v : Nat} (hv : v < 2 ^ 32) : BitVec.ofNat 32 v >>> 4 = BitVec.o
 theorem hashHead_ok {p : Prm} {ciph : Cipher} {l : Block} {a : List Byte} {s₀ : State} (C : HCtx p ciph l a s₀)
     (E : Env p s₀) (hl0 : blockAtMem s₀.mem (w64 p.W + BitVec.ofNat 64 l0O) = lAt l 0) :
     WP isa (.block (zero4 sumO ++ zero4 ohO ++
-      [.mov .esi (slot aadO), .mov .eax (slot alenO), .mov .ecx (.reg .eax), .alu .and .ecx (imm 15),
+      ([.mov .esi (slot aadO), .mov .eax (slot alenO), .mov .ecx (.reg .eax), .alu .and .ecx (imm 15),
        .store (at_ .ebp restO) .ecx, .shift .shr .eax 4, .store (at_ .ebp hlO) .eax, .mov .edi (imm 1),
-       .alu .test .eax (.reg .eax)])) s₀ fun s =>
+       .alu .test .eax (.reg .eax)] : List Instr))) s₀ fun s =>
       HInv p ciph l a s₀ s 0 ∧ s.zf = some (decide (p.al / 16 = 0)) := by
   have L := C.lay
   have hal := L.al32

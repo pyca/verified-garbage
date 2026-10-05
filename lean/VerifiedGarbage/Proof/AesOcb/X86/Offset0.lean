@@ -89,7 +89,7 @@ theorem stageW_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t) {a j : Nat} {b
 /-- The last word of a stage: `x5 << a`. -/
 theorem stageL_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t) {a : Nat} {b : Bool} (ha : 0 < a)
     (ha' : a < 32) (hbx : t.gpr .ebx = (0 : BitVec 32) - (if b then 1 else 0)) :
-    ∃ t', runBlock isa ([.mov .eax (slot (stO + 20)), .mov .ecx (.reg .eax)] ++ shlEcx a ++ selW 5) t = some t' ∧
+    ∃ t', runBlock isa (([.mov .eax (slot (stO + 20)), .mov .ecx (.reg .eax)] : List Instr) ++ shlEcx a ++ selW 5) t = some t' ∧
       t'.mem = t.mem.writeW (w64 p.W + BitVec.ofNat 64 260)
         (selW' b (slotv t.mem p.W 260) (slotv t.mem p.W 260 <<< a)) ∧
       (∀ r, r ≠ .eax → r ≠ .ecx → r ≠ .edx → t'.gpr r = t.gpr r) ∧ t'.rd = t.rd ∧ t'.wr = t.wr := by
@@ -112,7 +112,7 @@ theorem stage32W_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t) {j : Nat} {b
 /-- The last word of the last stage: zero. -/
 theorem stage32L_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t) {b : Bool}
     (hbx : t.gpr .ebx = (0 : BitVec 32) - (if b then 1 else 0)) :
-    ∃ t', runBlock isa ([.mov .eax (slot (stO + 20)), .mov .ecx (imm 0)] ++ selW 5) t = some t' ∧
+    ∃ t', runBlock isa (([.mov .eax (slot (stO + 20)), .mov .ecx (imm 0)] : List Instr) ++ selW 5) t = some t' ∧
       t'.mem = t.mem.writeW (w64 p.W + BitVec.ofNat 64 260) (selW' b (slotv t.mem p.W 260) 0) ∧
       (∀ r, r ≠ .eax → r ≠ .ecx → r ≠ .edx → t'.gpr r = t.gpr r) ∧ t'.rd = t.rd ∧ t'.wr = t.wr := by
   refine ⟨_, by grun [selW, E.ebp, L.aW, E.perm.wR, E.perm.wW], ?_,
@@ -215,16 +215,16 @@ theorem stage_ok {p : Prm} (L : Lay p) {s : State} (E : Env p s) {k a v : Nat} (
   obtain ⟨s₁, run₁, bx₁, g₁, m₁, rd₁, wr₁⟩ := stageMask_ok L E hk hv hb
   have E₁ : Env p s₁ := E.keep (by rw [g₁ _ (by decide) (by decide)]) (by rw [g₁ _ (by decide) (by decide)]) rd₁ wr₁ m₁
   obtain ⟨s', run', v', f', g', rd', wr'⟩ := stage_words L E₁ bx₁ (stageW a)
-    ([.mov .eax (slot (stO + 20)), .mov .ecx (.reg .eax)] ++ shlEcx a ++ selW 5) (shlW a) (· <<< a)
+    (([.mov .eax (slot (stO + 20)), .mov .ecx (.reg .eax)] : List Instr) ++ shlEcx a ++ selW 5) (shlW a) (· <<< a)
     (fun Et hj hbx => stageW_ok L Et ha ha' hj hbx) (fun Et hbx => stageL_ok L Et ha ha' hbx)
   refine ⟨s', ?_, ⟨?_, by rw [← m₁]; exact f', fun r h₁ h₂ h₃ h₄ => by rw [g' r h₁ h₃ h₄, g₁ r h₁ h₂],
     by rw [rd', rd₁], by rw [wr', wr₁]⟩⟩
   · rw [show stage k a = stageMask k ++ (stageW a 0 ++ stageW a 1 ++ stageW a 2 ++ stageW a 3 ++ stageW a 4 ++
-      ([.mov .eax (slot (stO + 20)), .mov .ecx (.reg .eax)] ++ shlEcx a ++ selW 5)) by simp [stage]]
+      (([.mov .eax (slot (stO + 20)), .mov .ecx (.reg .eax)] : List Instr) ++ shlEcx a ++ selW 5)) by simp [stage]]
     exact runBlock_app_of run₁ run'
   · rw [v', m₁]
     split
-    · exact shl6 a ha ha' _ _ _ _ _ _
+    · exact shl6 _ _ _ _ _ _ ha ha'
     · rfl
 
 /-- The last stage: the six words shifted left by 32 if bit 5 of `bottom` is set. -/
@@ -234,12 +234,12 @@ theorem stage32_ok {p : Prm} (L : Lay p) {s : State} (E : Env p s) {v : Nat} (hv
   obtain ⟨s₁, run₁, bx₁, g₁, m₁, rd₁, wr₁⟩ := stageMask_ok L E (k := 5) (by decide) hv hb
   have E₁ : Env p s₁ := E.keep (by rw [g₁ _ (by decide) (by decide)]) (by rw [g₁ _ (by decide) (by decide)]) rd₁ wr₁ m₁
   obtain ⟨s', run', v', f', g', rd', wr'⟩ := stage_words L E₁ bx₁ stage32W
-    ([.mov .eax (slot (stO + 20)), .mov .ecx (imm 0)] ++ selW 5) (fun _ y => y) (fun _ => 0)
+    (([.mov .eax (slot (stO + 20)), .mov .ecx (imm 0)] : List Instr) ++ selW 5) (fun _ y => y) (fun _ => 0)
     (fun Et hj hbx => stage32W_ok L Et hj hbx) (fun Et hbx => stage32L_ok L Et hbx)
   refine ⟨s', ?_, ⟨?_, by rw [← m₁]; exact f', fun r h₁ h₂ h₃ h₄ => by rw [g' r h₁ h₃ h₄, g₁ r h₁ h₂],
     by rw [rd', rd₁], by rw [wr', wr₁]⟩⟩
   · rw [show stage32 = stageMask 5 ++ (stage32W 0 ++ stage32W 1 ++ stage32W 2 ++ stage32W 3 ++ stage32W 4 ++
-      ([.mov .eax (slot (stO + 20)), .mov .ecx (imm 0)] ++ selW 5)) by simp [stage32]]
+      (([.mov .eax (slot (stO + 20)), .mov .ecx (imm 0)] : List Instr) ++ selW 5)) by simp [stage32]]
     exact runBlock_app_of run₁ run'
   · rw [v', m₁]
     split

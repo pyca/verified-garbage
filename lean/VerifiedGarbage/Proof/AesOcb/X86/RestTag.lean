@@ -89,7 +89,7 @@ theorem padCk_ok {p : Prm} (L : Lay p) {s : State} (E : Env p s) {S : BitVec 32}
 /-- The block of `rest`'s head: `Offset_* = Offset ⊕ L_*`, copied to
 `W + tmpO`. -/
 theorem restBlk_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t) :
-    ∃ t₃, runBlock isa ([.mov .ebx (slot ctxO)] ++ xor16 .ebx 240 ofsO ++ copy16 ofsO tmpO) t = some t₃ ∧
+    ∃ t₃, runBlock isa (([.mov .ebx (slot ctxO)] : List Instr) ++ xor16 .ebx 240 ofsO ++ copy16 ofsO tmpO) t = some t₃ ∧
       Env p t₃ ∧
       Frame [⟨w64 p.W + BitVec.ofNat 64 ofsO, 16⟩, ⟨w64 p.W + BitVec.ofNat 64 tmpO, 16⟩] t.mem t₃.mem ∧
       blockAtMem t₃.mem (w64 p.W + BitVec.ofNat 64 ofsO) =
@@ -140,7 +140,7 @@ structure RestHead (p : Prm) (t t' : State) : Prop where
   wr : t'.wr = t.wr
 
 theorem restHead_ok (v : BlocksImpl) {p : Prm} (L : Lay p) {t : State} (E : Env p t) :
-    WP isa (.seq (.block ([.mov .ebx (slot ctxO)] ++ xor16 .ebx 240 ofsO ++ copy16 ofsO tmpO))
+    WP isa (.seq (.block (([.mov .ebx (slot ctxO)] : List Instr) ++ xor16 .ebx 240 ofsO ++ copy16 ofsO tmpO))
       (callBlocks (callees v).enc (oneBlock tmpO))) t (RestHead p t) := by
   obtain ⟨t₃, run₃, E₃, fr₃, ofs₃, tmp₃, g₃, rd₃, wr₃⟩ := restBlk_ok L E
   refine WP.seq (WP.of_runBlock ⟨t₃, run₃, ?_⟩)

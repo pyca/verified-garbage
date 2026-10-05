@@ -83,8 +83,8 @@ theorem readK_dbl (p : Prm) (m : Mem) :
 if what is left is even. -/
 theorem lNtzStep_ok {p : Prm} (L : Lay p) {t : State} (Et : Env p t) {k : Nat} (hk : k < 2 ^ 32)
     (kt : slotv t.mem p.W kO = BitVec.ofNat 32 k) :
-    ∃ t₂, runBlock isa (dbl .ebp lO lO ++ [.mov .eax (slot kO), .shift .shr .eax 1, .store (at_ .ebp kO) .eax,
-        .alu .test .eax (imm 1)]) t = some t₂ ∧
+    ∃ t₂, runBlock isa (dbl .ebp lO lO ++ ([.mov .eax (slot kO), .shift .shr .eax 1, .store (at_ .ebp kO) .eax,
+        .alu .test .eax (imm 1)] : List Instr)) t = some t₂ ∧
       Frame (lNtzR p) t.mem t₂.mem ∧
       blockAtMem t₂.mem (w64 p.W + BitVec.ofNat 64 lO) = double (blockAtMem t.mem (w64 p.W + BitVec.ofNat 64 lO)) ∧
       slotv t₂.mem p.W kO = BitVec.ofNat 32 (k / 2) ∧ t₂.zf = some (decide (k / 2 % 2 = 0)) ∧
@@ -115,7 +115,7 @@ theorem lNtzStep_ok {p : Prm} (L : Lay p) {t : State} (Et : Env p t) {k : Nat} (
 set if `i` is even. -/
 theorem lNtzHead_ok {p : Prm} (L : Lay p) {s : State} (E : Env p s) {i : Nat} (hi' : i < 2 ^ 32)
     (hdi : s.gpr .edi = BitVec.ofNat 32 i) :
-    ∃ s₂, runBlock isa (copy16 l0O lO ++ [.mov .eax (.reg .edi), .store (at_ .ebp kO) .eax, .alu .test .eax (imm 1)])
+    ∃ s₂, runBlock isa (copy16 l0O lO ++ ([.mov .eax (.reg .edi), .store (at_ .ebp kO) .eax, .alu .test .eax (imm 1)] : List Instr))
         s = some s₂ ∧
       Frame (lNtzR p) s.mem s₂.mem ∧
       blockAtMem s₂.mem (w64 p.W + BitVec.ofNat 64 lO) = blockAtMem s.mem (w64 p.W + BitVec.ofNat 64 l0O) ∧

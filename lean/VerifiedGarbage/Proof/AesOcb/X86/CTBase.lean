@@ -103,7 +103,7 @@ theorem callBlocks_ct {f : Nat → List Byte → Spec.Aes.State → Spec.Aes.Sta
       s₁.gpr .ebx = BitVec.ofNat 32 n ∧ (∀ r, r ≠ .eax → r ≠ .ebx → r ≠ .ecx → r ≠ .edx → s₁.gpr r = s.gpr r) ∧
       s₁.mem = s.mem ∧ s₁.rd = s.rd ∧ s₁.wr = s.wr)
     (hct : ∀ {J : State → Prop}, (∀ s, J s → s.gpr .ebp = p.W) →
-      CT J (.block (args ++ [.mov .eax (slot ctxO), .mov .ecx (slot rndO), .alu .add .ebp (imm scrO)]))) :
+      CT J (.block (args ++ ([.mov .eax (slot ctxO), .mov .ecx (slot rndO), .alu .add .ebp (imm scrO)] : List Instr)))) :
     CT I (callBlocks fn args) := by
   unfold callBlocks
   refine CT.seq (J := fun s₁ => BCall s₁ p.K D (p.W + BitVec.ofNat 32 scrO) p.R n ∧ s₁.gpr .esp = p.SP)
