@@ -19,7 +19,8 @@ variable {dn : Nat} {L : Lay dn} {g : Reg → BitVec 32} {m₀ : Mem}
 /-- `V`, of `D` bytes, and `h`, in the frame. -/
 abbrev vOf {dn : Nat} (L : Lay dn) (D : Nat) (m : Mem) : List Byte :=
   Spec.Sha256.bytesAt m (L.B + BitVec.ofNat 64 88) D
-abbrev hOf {dn : Nat} (L : Lay dn) (m : Mem) : List Byte := Spec.Sha256.bytesAt m (L.B + BitVec.ofNat 64 152) 32
+abbrev hOf (P : RfcHash) {dn : Nat} (L : Lay dn) (m : Mem) : List Byte :=
+  Spec.Sha256.bytesAt m (L.B + BitVec.ofNat 64 152) (8 * P.w)
 
 /-- Where the messages are. -/
 abbrev msgA {dn : Nat} (L : Lay dn) : Addr := State.addr L.scr + BitVec.ofNat 64 2256
@@ -67,7 +68,7 @@ theorem strb_ok (hL : L.Ok) {u : State} (hc : Ctx L g m₀ u) {b o : Nat} (hb : 
       WP.block_nil ⟨by rw [m₂.rd, u₁.rd], by rw [m₂.wr, u₁.wr], by rw [m₂.sp, u₁.sp],
         fun r hr => by rw [m₂.gpr, u₁.other _ hr], by rw [m₂.mem, u₁.mem, u₁.gpr, setw8]⟩
 
-theorem fp_toNat' (hL : L.Ok) : L.fp.toNat = L.sp.toNat - 200 := by
+theorem fp_toNat' (hL : L.Ok) : L.fp.toNat = L.sp.toNat - 216 := by
   have := hL.nB
   exact VG.Arm.FrameStack.sub_toNat' (by omega)
 
@@ -111,21 +112,23 @@ theorem head_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) {b : Nat} (hb : b 
     show [u₃.mem (State.addr L.scr + BitVec.ofNat 64 (2256 + D) + BitVec.ofNat 64 0)] = _
     rw [BitVec.add_zero, hm₃, byte_self]
 
-/-- `‖ d ‖ h`, after `D + 1` bytes. -/
-theorem tail_ok (hL : L.Ok) {u : State} (hc : Ctx L g m₀ u) {D : Nat} (hD : D ≤ 64) :
-    WP isa (.block (Cfg.copyN 8 .r5 0 .r11 (sMsg + D + 1) ++ Cfg.copyN 8 .r8 fH .r11 (sMsg + D + 33))) u
+/-- `‖ d ‖ h`, `k` words each, after `D + 1` bytes. -/
+theorem tail_ok (hL : L.Ok) {u : State} (hc : Ctx L g m₀ u) {D k : Nat} (hD : D ≤ 64) (hq : L.q = 4 * k)
+    (hk : k ≤ 12) :
+    WP isa (.block (Cfg.copyN k .r5 0 .r11 (sMsg + D + 1) ++ Cfg.copyN k .r8 fH .r11 (sMsg + D + 1 + 4 * k))) u
       fun u' => Ctx L g m₀ u' ∧ (∀ r, r ≠ .r0 → u'.gpr r = u.gpr r) ∧
-        Frame [⟨State.addr L.scr + BitVec.ofNat 64 (2256 + D + 1), 64⟩] u.mem u'.mem ∧
-        Spec.Sha256.bytesAt u'.mem (State.addr L.scr + BitVec.ofNat 64 (2256 + D + 1)) 64 =
-          Spec.Sha256.bytesAt u.mem (State.addr L.d) 32 ++ hOf L u.mem := by
+        Frame [⟨State.addr L.scr + BitVec.ofNat 64 (2256 + D + 1), 8 * k⟩] u.mem u'.mem ∧
+        Spec.Sha256.bytesAt u'.mem (State.addr L.scr + BitVec.ofNat 64 (2256 + D + 1)) (8 * k) =
+          Spec.Sha256.bytesAt u.mem (State.addr L.d) (4 * k) ++
+            Spec.Sha256.bytesAt u.mem (L.B + BitVec.ofNat 64 152) (4 * k) := by
   have := L.sp.isLt; have := fp_toNat' hL; have := hL.nd
   simp only [fH, sMsg]
   rw [WP.block_append_iff]
-  refine WP.mono (copy_ok hL hc (src := .r5) hc.r5 (by decide) (so := 0) (d := 2256 + D + 1) (K := 8) (by omega)
-    (by omega) (by omega) (fun j hj => hc.inD (by omega))
+  refine WP.mono (copy_ok hL hc (src := .r5) hc.r5 (by decide) (so := 0) (d := 2256 + D + 1) (K := k) (by omega)
+    (by omega) (by omega) (fun j hj => hc.inD (by omega) (by omega))
     (hL.dc.sub_left (Offset.sub_base _ (by omega)) |>.sub_right (Offset.sub_base _ (by omega))))
     fun u₂ ⟨hc₂, hg₂, hf₂, hb₂⟩ => ?_
-  refine WP.mono (copy_ok hL hc₂ (src := .r8) hc₂.r8 (by decide) (so := 128) (d := 2256 + D + 33) (K := 8)
+  refine WP.mono (copy_ok hL hc₂ (src := .r8) hc₂.r8 (by decide) (so := 128) (d := 2256 + D + 1 + 4 * k) (K := k)
     (by omega) (by omega) (by omega)
     (fun j hj => by rw [hL.fpA0, Offset.add_add]; exact hc₂.inFr (by omega) (by omega))
     (by rw [hL.fpA0, Offset.add_add]; exact hL.stk_scr (by omega) (by omega)))
@@ -137,25 +140,27 @@ theorem tail_ok (hL : L.Ok) {u : State} (hc : Ctx L g m₀ u) {D : Nat} (hD : D 
       exact Offset.sub _ (by omega) (by omega)
     · simp only [List.mem_singleton] at hr; subst hr
       exact Offset.sub _ (by omega) (by omega)
-  · rw [Proof.Hmac.Common.bytesAt_add _ _ 32 32, Offset.add_add, show 2256 + D + 1 + 32 = 2256 + D + 33 by omega,
-      show (32 : Nat) = 4 * 8 from rfl, hb₃,
+  · rw [show 8 * k = 4 * k + 4 * k by omega, Proof.Hmac.Common.bytesAt_add _ _ (4 * k) (4 * k), Offset.add_add,
+      hb₃,
       bytesAt_frame hf₃ (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
         exact Offset.disjoint _ (by omega) (by omega) (by omega)) (by omega), hb₂, BitVec.add_zero]
-    refine congrArg (fun y => Spec.Sha256.bytesAt u.mem (State.addr L.d) (4 * 8) ++ y) ?_
+    refine congrArg (fun y => Spec.Sha256.bytesAt u.mem (State.addr L.d) (4 * k) ++ y) ?_
     rw [hL.fpA0, Offset.add_add]
     exact bytesAt_frame hf₂ (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
       exact hL.stk_scr (by omega) (by omega)) (by omega)
 
-/-- The message `V ‖ b` (`‖ d ‖ h` if `full`) at `scratch + 2256`, for `V` of `D` bytes. -/
-theorem msg_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) {b : Nat} (hb : b < 2) (full : Bool) {D : Nat}
-    (hD : D ≤ 64) (hD4 : D % 4 = 0) :
-    WP isa (.block (Cfg.msg D b full)) t fun t' => Ctx L g m₀ t' ∧ t'.gpr .r9 = t.gpr .r9 ∧
-      Frame [⟨msgA L, D + 65⟩] t.mem t'.mem ∧
-      Spec.Sha256.bytesAt t'.mem (msgA L) (if full then D + 65 else D + 1) =
+/-- The message `V ‖ b` (`‖ d ‖ h` if `full`, `k` words each) at
+`scratch + 2256`, for `V` of `D` bytes. -/
+theorem msg_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) {b : Nat} (hb : b < 2) (full : Bool) {D k : Nat}
+    (hD : D ≤ 64) (hD4 : D % 4 = 0) (hq : L.q = 4 * k) (hk : k ≤ 12) :
+    WP isa (.block (Cfg.msg k D b full)) t fun t' => Ctx L g m₀ t' ∧ t'.gpr .r9 = t.gpr .r9 ∧
+      Frame [⟨msgA L, D + 8 * k + 1⟩] t.mem t'.mem ∧
+      Spec.Sha256.bytesAt t'.mem (msgA L) (if full then D + 8 * k + 1 else D + 1) =
         vOf L D t.mem ++ [BitVec.ofNat 8 b] ++
-          (if full then Spec.Sha256.bytesAt t.mem (State.addr L.d) 32 ++ hOf L t.mem else []) := by
+          (if full then Spec.Sha256.bytesAt t.mem (State.addr L.d) (4 * k) ++
+            Spec.Sha256.bytesAt t.mem (L.B + BitVec.ofNat 64 152) (4 * k) else []) := by
   cases full
   · simp only [Cfg.msg, Bool.false_eq_true, ite_false, List.append_nil]
     refine WP.mono (head_ok hL hc hb hD hD4) fun u ⟨hcu, hg, hf, hb⟩ =>
@@ -165,7 +170,7 @@ theorem msg_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) {b : Nat} (hb : b <
   · simp only [Cfg.msg, ite_true]
     rw [WP.block_append_iff]
     refine WP.mono (head_ok hL hc hb hD hD4) fun u ⟨hcu, hg, hf, hb⟩ =>
-      WP.mono (tail_ok hL hcu hD) fun u' ⟨hcu', hg', hf', hb'⟩ =>
+      WP.mono (tail_ok hL hcu hD hq hk) fun u' ⟨hcu', hg', hf', hb'⟩ =>
         ⟨hcu', (hg' _ (by decide)).trans (hg _ (by decide)), ?_, ?_⟩
     · refine (hf.sub fun r hr => ⟨_, List.mem_singleton_self _, ?_⟩).trans
         (hf'.sub fun r hr => ⟨_, List.mem_singleton_self _, ?_⟩)
@@ -173,17 +178,17 @@ theorem msg_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) {b : Nat} (hb : b <
         exact Region.sub_prefix (by omega)
       · simp only [List.mem_singleton] at hr; subst hr
         exact Offset.sub _ (by omega) (by omega)
-    · rw [show D + 65 = (D + 1) + 64 by omega, Proof.Hmac.Common.bytesAt_add _ _ (D + 1) 64, Offset.add_add,
+    · rw [show D + 8 * k + 1 = (D + 1) + 8 * k by omega, Proof.Hmac.Common.bytesAt_add _ _ (D + 1) (8 * k),
+        Offset.add_add,
         show 2256 + (D + 1) = 2256 + D + 1 by omega, hb',
         bytesAt_frame hf' (fun r hr => by
           simp only [List.mem_singleton] at hr; subst hr
           exact Offset.disjoint _ (by omega) (by omega) (by omega)) (by omega), hb]
       refine congrArg (fun y => vOf L D t.mem ++ [BitVec.ofNat 8 b] ++ y) ?_
-      simp only [hOf]
       rw [bytesAt_frame hf (fun r hr => by
           simp only [List.mem_singleton] at hr; subst hr
-          exact hL.dc.sub_right (Offset.sub_base _ (by omega))) (by omega),
-        bytesAt_frame hf (p := L.B + BitVec.ofNat 64 152) (n := 32) (fun r hr => by
+          exact (hL.dc.sub_left (Region.sub_prefix (by omega))).sub_right (Offset.sub_base _ (by omega))) (by omega),
+        bytesAt_frame hf (p := L.B + BitVec.ofNat 64 152) (n := 4 * k) (fun r hr => by
           simp only [List.mem_singleton] at hr; subst hr
           exact hL.stk_scr (by omega) (by omega)) (by omega)]
 

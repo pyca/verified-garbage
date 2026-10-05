@@ -21,13 +21,13 @@ variable {P : RfcHash} {L : Lay P.I.hashLen} {g : Reg → BitVec 32} {m₀ : Mem
 
 /-! ## The loop -/
 
-theorem loop_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) (h0 : LoopInv P L m₀ 0 t) :
+theorem loop_ok (hL : L.Ok) (hq : L.q = 8 * P.w) {t : State} (hc : Ctx L g m₀ t) (h0 : LoopInv P L m₀ 0 t) :
     WP isa (.loop (cfgOf P).tryOne .ne) t fun t' => Ctx L g m₀ t' ∧ ∃ i, Exit P L m₀ i t' := by
   refine WP.loop (M := isa) (fun n (s : State) => Ctx L g m₀ s ∧ LoopInv P L m₀ (8 - n) s ∧ n ≤ 8) ?_ 8 t
     ⟨hc, by rw [Nat.sub_self]; exact h0, Nat.le_refl _⟩
   rintro n s ⟨hcs, hi, hn⟩
   have hn1 : 1 ≤ n := by have := hi.lt; omega
-  refine WP.mono (tryOne_ok hL hcs hi) fun s' ⟨hc', h⟩ => ?_
+  refine WP.mono (tryOne_ok hL hq hcs hi) fun s' ⟨hc', h⟩ => ?_
   rcases h with ⟨he, hx⟩ | ⟨he, hx⟩
   · exact .inl ⟨he, hc', _, hx⟩
   · refine .inr ⟨he, n - 1, by omega, hc', ?_, by omega⟩
@@ -36,37 +36,39 @@ theorem loop_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) (h0 : LoopInv P L 
 /-! ## Steps a–g -/
 
 /-- RFC 6979's `K` and `V` after step g, from the code's. -/
-theorem kv0_eq (P : RfcHash) {x : Nat} {dB hB h : List Byte} (hd : dB.length = 32)
-    (hx : x = Spec.Weierstrass.ofBytes dB) (hh : Spec.Ecdsa.Rfc6979.bits2octets Spec.P256.curve hB = h) :
-    Spec.Ecdsa.Rfc6979.init Spec.P256.curve P.ok.hH.SH.H P.F.H.D x hB =
+theorem kv0_eq (P : RfcHash) {x : Nat} {dB hB h : List Byte} (hd : dB.length = 8 * P.w)
+    (hx : x = Spec.Weierstrass.ofBytes dB) (hh : Spec.Ecdsa.Rfc6979.bits2octets P.R.E.C hB = h) :
+    Spec.Ecdsa.Rfc6979.init P.R.E.C P.ok.hH.SH.H P.F.H.D x hB =
       let K₁ := P.mac (List.replicate P.F.H.D 0) (List.replicate P.F.H.D 1 ++ [BitVec.ofNat 8 0] ++ (dB ++ h))
       let V₁ := P.mac K₁ (List.replicate P.F.H.D 1)
       let K₂ := P.mac K₁ (V₁ ++ [BitVec.ofNat 8 1] ++ (dB ++ h))
       (K₂, P.mac K₂ V₁) := by
-  have hi : Spec.Ecdsa.Rfc6979.int2octets Spec.P256.curve x = dB := by
-    rw [Spec.Ecdsa.Rfc6979.int2octets, rlen_p256, hx, ← hd, toBytes_ofBytes]
+  have hB : Spec.Ecdsa.nBits P.R.E.C = 8 * (8 * P.w) := by rw [P.R.nBits]; show 64 * P.w = _; omega
+  have hi : Spec.Ecdsa.Rfc6979.int2octets P.R.E.C x = dB := by
+    rw [Spec.Ecdsa.Rfc6979.int2octets, rlenQ hB, hx, ← hd, toBytes_ofBytes]
   simp only [Spec.Ecdsa.Rfc6979.init, hi, hh, List.append_assoc, List.singleton_append]
   rfl
 
 /-- `h`, RFC 6979's `bits2octets` of the digest. -/
 abbrev hSpec (P : RfcHash) (L : Lay P.I.hashLen) (m₀ : Mem) : List Byte :=
-  Spec.Ecdsa.Rfc6979.bits2octets Spec.P256.curve (hBOf P L m₀)
-abbrev dB {dn : Nat} (L : Lay dn) (m₀ : Mem) : List Byte := Spec.Sha256.bytesAt m₀ (State.addr L.d) 32
+  Spec.Ecdsa.Rfc6979.bits2octets P.R.E.C (hBOf P L m₀)
+abbrev dB (P : RfcHash) {dn : Nat} (L : Lay dn) (m₀ : Mem) : List Byte :=
+  Spec.Sha256.bytesAt m₀ (State.addr L.d) (8 * P.w)
 
 /-- `K` and `V` after steps d and e. -/
 abbrev K₁ (P : RfcHash) (L : Lay P.I.hashLen) (m₀ : Mem) : List Byte :=
-  P.mac (List.replicate P.F.H.D 0) (List.replicate P.F.H.D 1 ++ [BitVec.ofNat 8 0] ++ (dB L m₀ ++ hSpec P L m₀))
+  P.mac (List.replicate P.F.H.D 0) (List.replicate P.F.H.D 1 ++ [BitVec.ofNat 8 0] ++ (dB P L m₀ ++ hSpec P L m₀))
 abbrev V₁ (P : RfcHash) (L : Lay P.I.hashLen) (m₀ : Mem) : List Byte := P.mac (K₁ P L m₀) (List.replicate P.F.H.D 1)
 
 /-- After step c: `h`, `V = 0x01…` and `K = 0x00…`. -/
 structure QB (P : RfcHash) (L : Lay P.I.hashLen) (m₀ : Mem) (u : State) : Prop where
-  h : hOf L u.mem = hSpec P L m₀
+  h : hOf P L u.mem = hSpec P L m₀
   k : kOf P L u.mem = List.replicate P.F.H.D 0
   v : vOfP P L u.mem = List.replicate P.F.H.D 1
 
 /-- After step e. -/
 structure QC (P : RfcHash) (L : Lay P.I.hashLen) (m₀ : Mem) (u : State) : Prop where
-  h : hOf L u.mem = hSpec P L m₀
+  h : hOf P L u.mem = hSpec P L m₀
   k : kOf P L u.mem = K₁ P L m₀
   v : vOfP P L u.mem = V₁ P L m₀
 
@@ -76,43 +78,47 @@ structure QD (P : RfcHash) (L : Lay P.I.hashLen) (m₀ : Mem) (u : State) : Prop
   v : vOfP P L u.mem = (kv0 P L m₀).2
 
 theorem kv0_eq' (P : RfcHash) (L : Lay P.I.hashLen) (m₀ : Mem) :
-    kv0 P L m₀ = (P.mac (K₁ P L m₀) (V₁ P L m₀ ++ [BitVec.ofNat 8 1] ++ (dB L m₀ ++ hSpec P L m₀)),
-      P.mac (P.mac (K₁ P L m₀) (V₁ P L m₀ ++ [BitVec.ofNat 8 1] ++ (dB L m₀ ++ hSpec P L m₀))) (V₁ P L m₀)) :=
+    kv0 P L m₀ = (P.mac (K₁ P L m₀) (V₁ P L m₀ ++ [BitVec.ofNat 8 1] ++ (dB P L m₀ ++ hSpec P L m₀)),
+      P.mac (P.mac (K₁ P L m₀) (V₁ P L m₀ ++ [BitVec.ofNat 8 1] ++ (dB P L m₀ ++ hSpec P L m₀))) (V₁ P L m₀)) :=
   kv0_eq P (length_bytesAt _ _ _) rfl rfl
 
 theorem stageB_ok (hL : L.Ok) {u : State} (hc : Ctx L g m₀ u) :
     WP isa (.block ((cfgOf P).reduce ++ Cfg.initKV)) u fun u' => Ctx L g m₀ u' ∧ QB P L m₀ u' := by
-  have hD : 32 ≤ P.F.H.D := by anums
+  have hD : 8 * P.w ≤ P.F.H.D := by anums
+  have e4 : 4 * P.k = 8 * P.w := by anums
+  have hB : Spec.Ecdsa.nBits P.R.E.C = 8 * (8 * P.w) := by rw [P.R.nBits]; show 64 * P.w = _; omega
   rw [WP.block_append_iff]
-  refine WP.mono (reduce_ok (P := P) hL hc P.len32) fun u₁ ⟨hc₁, _, hh₁⟩ => ?_
+  refine WP.mono (reduce_ok (P := P) hL hc (by rw [e4]; exact P.lenQ)) fun u₁ ⟨hc₁, _, hh₁⟩ => ?_
+  rw [e4] at hh₁
   refine WP.mono (initKV_ok hL hc₁) fun u₂ ⟨hc₂, hf₂, hv₂, hk₂⟩ =>
     ⟨hc₂, ?_, hk₂ _ (by anums), hv₂ _ (by anums)⟩
-  rw [show hOf L u₂.mem = hOf L u₁.mem from bytesAt_frame hf₂ (fun r hr => by
-    simp only [List.mem_singleton] at hr; subst hr; exact Offset.disjoint _ (by omega) (by omega) (by omega)) (by omega)]
-  rw [hSpec, bits2octets_eq (by rw [hBOf, length_bytesAt]; exact hD), hBOf, ← bytesAt_take m₀ (State.addr L.dg) hD,
+  rw [show hOf P L u₂.mem = hOf P L u₁.mem from bytesAt_frame hf₂ (fun r hr => by
+    simp only [List.mem_singleton] at hr; subst hr; exact Offset.disjoint _ (by omega) (by anums) (by omega)) (by anums)]
+  rw [hSpec, bits2octets_eqQ hB (by rw [hBOf, length_bytesAt]; exact hD), hBOf, ← bytesAt_take m₀ (State.addr L.dg) hD,
     ← hh₁]
-  have e := toBytes_ofBytes (hOf L u₁.mem)
+  have e := toBytes_ofBytes (hOf P L u₁.mem)
   rw [length_bytesAt] at e
   exact e.symm
 
-theorem kvw_h (hL : L.Ok) : ∀ r ∈ KVW L, Region.Disjoint ⟨L.B + BitVec.ofNat 64 152, 32⟩ r := by
+theorem kvw_h (hL : L.Ok) {n : Nat} (hn : n ≤ 48) :
+    ∀ r ∈ KVW L, Region.Disjoint ⟨L.B + BitVec.ofNat 64 152, n⟩ r := by
   simp only [KVW, List.mem_cons, List.not_mem_nil, or_false]
   rintro r (rfl | rfl)
   · exact hL.stk_SCR (by omega)
   · exact Offset.disjoint_base _ (by omega) (by omega)
 
-theorem stageC_ok (hL : L.Ok) {u : State} (hc : Ctx L g m₀ u) (hq : QB P L m₀ u) :
+theorem stageC_ok (hL : L.Ok) (hw : L.q = 8 * P.w) {u : State} (hc : Ctx L g m₀ u) (hq : QB P L m₀ u) :
     WP isa ((cfgOf P).rekeyFull 0) u fun u' => Ctx L g m₀ u' ∧ QC P L m₀ u' :=
-  WP.mono (rekeyFull_ok hL hc (b := 0) (by decide)) fun u' ⟨hc', _, hf', hk', hv'⟩ =>
-    ⟨hc', (bytesAt_frame hf' (kvw_h hL) (by omega)).trans hq.h,
-      by rw [hk', hq.k, hq.v, hq.h, hc.dBytes hL],
-      by rw [hv', hk', hq.k, hq.v, hq.h, hc.dBytes hL]⟩
+  WP.mono (rekeyFull_ok hL hw hc (b := 0) (by decide)) fun u' ⟨hc', _, hf', hk', hv'⟩ =>
+    ⟨hc', (bytesAt_frame hf' (kvw_h hL (by anums)) (by anums)).trans hq.h,
+      by rw [hk', hq.k, hq.v, hq.h, hc.dBytes hL (by rw [hw])],
+      by rw [hv', hk', hq.k, hq.v, hq.h, hc.dBytes hL (by rw [hw])]⟩
 
-theorem stageD_ok (hL : L.Ok) {u : State} (hc : Ctx L g m₀ u) (hq : QC P L m₀ u) :
+theorem stageD_ok (hL : L.Ok) (hw : L.q = 8 * P.w) {u : State} (hc : Ctx L g m₀ u) (hq : QC P L m₀ u) :
     WP isa ((cfgOf P).rekeyFull 1) u fun u' => Ctx L g m₀ u' ∧ QD P L m₀ u' :=
-  WP.mono (rekeyFull_ok hL hc (b := 1) (by decide)) fun u' ⟨hc', _, _, hk', hv'⟩ =>
-    ⟨hc', by rw [kv0_eq', hk', hq.k, hq.v, hq.h, hc.dBytes hL],
-      by rw [kv0_eq', hv', hk', hq.k, hq.v, hq.h, hc.dBytes hL]⟩
+  WP.mono (rekeyFull_ok hL hw hc (b := 1) (by decide)) fun u' ⟨hc', _, _, hk', hv'⟩ =>
+    ⟨hc', by rw [kv0_eq', hk', hq.k, hq.v, hq.h, hc.dBytes hL (by rw [hw])],
+      by rw [kv0_eq', hv', hk', hq.k, hq.v, hq.h, hc.dBytes hL (by rw [hw])]⟩
 
 theorem stageE_ok {u : State} (hc : Ctx L g m₀ u) (hq : QD P L m₀ u) :
     WP isa (.block (cfgOf P).initCnt) u fun u' => Ctx L g m₀ u' ∧ LoopInv P L m₀ 0 u' :=
@@ -126,54 +132,58 @@ structure Fin (P : RfcHash) (L : Lay P.I.hashLen) (g : Reg → BitVec 32) (m₀ 
   saved : ∀ p ∈ Impl.Ecdsa.Rfc6979.Arm.saved, u.gpr p.1 = g p.1
   exit : ∃ i, Exit P L m₀ i u
 
-theorem stageG_ok (hL : L.Ok) {u : State} (hc : Ctx L g m₀ u) {i : Nat} (hx : Exit P L m₀ i u) :
+theorem stageG_ok (hL : L.Ok) (hw : L.q = 8 * P.w) {u : State} (hc : Ctx L g m₀ u) {i : Nat}
+    (hx : Exit P L m₀ i u) :
     WP isa (.block Cfg.wipe) u (Fin P L g m₀) :=
   WP.mono (wipe_ok hL hc) fun _ ⟨_, hwr, hsp, hs, ha, hf⟩ => ⟨hwr.trans hc.wr, hsp.trans hc.sp, hs, i, hx.lt,
     hx.fails, hx.last, hx.res.keep ha (bytesAt_frame hf (fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact (hL.stk_OUT (by omega)).symm) (by omega))⟩
+      simp only [List.mem_singleton] at hr; subst hr
+      exact (hL.stk_OUT (by omega)).symm.sub_left (Region.sub_prefix (by rw [hw]; omega))) (by anums))⟩
 
 /-- The body, after `h`, `V` and `K`. -/
-theorem rest_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) (hq : QB P L m₀ t) :
+theorem rest_ok (hL : L.Ok) (hw : L.q = 8 * P.w) {t : State} (hc : Ctx L g m₀ t) (hq : QB P L m₀ t) :
     WP isa (.seq ((cfgOf P).rekeyFull 0) (.seq ((cfgOf P).rekeyFull 1) (.seq (.block (cfgOf P).initCnt)
       (.seq (.loop (cfgOf P).tryOne .ne) (.block Cfg.wipe))))) t (Fin P L g m₀) :=
-  WP.seq (WP.mono (stageC_ok hL hc hq) fun _ ⟨h₂, q₂⟩ =>
-    WP.seq (WP.mono (stageD_ok hL h₂ q₂) fun _ ⟨h₃, q₃⟩ =>
+  WP.seq (WP.mono (stageC_ok hL hw hc hq) fun _ ⟨h₂, q₂⟩ =>
+    WP.seq (WP.mono (stageD_ok hL hw h₂ q₂) fun _ ⟨h₃, q₃⟩ =>
       WP.seq (WP.mono (stageE_ok h₃ q₃) fun _ ⟨h₄, q₄⟩ =>
-        WP.seq (WP.mono (loop_ok hL h₄ q₄) fun _ ⟨h₅, _, q₅⟩ => stageG_ok hL h₅ q₅))))
+        WP.seq (WP.mono (loop_ok hL hw h₄ q₄) fun _ ⟨h₅, _, q₅⟩ => stageG_ok hL hw h₅ q₅))))
 
 /-! ## RFC 6979's result -/
 
 /-- One `V` makes a candidate. -/
-theorem blocks_eq (P : RfcHash) : Spec.Ecdsa.Rfc6979.blocks Spec.P256.curve P.F.H.D = 1 := by
-  have hD : 32 ≤ P.F.H.D := by anums
-  rw [Spec.Ecdsa.Rfc6979.blocks, nBits_p256]
+theorem blocks_eq (P : RfcHash) : Spec.Ecdsa.Rfc6979.blocks P.R.E.C P.F.H.D = 1 := by
+  have hD : 8 * P.w ≤ P.F.H.D := by anums
+  have h4 : 4 ≤ P.w := by anums
+  have hw : P.w = P.R.E.n := rfl
+  rw [Spec.Ecdsa.Rfc6979.blocks, P.R.nBits]
   exact Nat.div_eq_of_lt_le (by omega) (by omega)
 
 theorem bits2int_cand (i : Nat) :
-    Spec.Ecdsa.Rfc6979.bits2int Spec.P256.curve (candI P L m₀ i ++ []) =
-      Spec.Weierstrass.ofBytes ((candI P L m₀ i).take 32) := by
+    Spec.Ecdsa.Rfc6979.bits2int P.R.E.C (candI P L m₀ i ++ []) =
+      Spec.Weierstrass.ofBytes ((candI P L m₀ i).take (8 * P.w)) := by
   have hl : (candI P L m₀ i).length = P.F.H.D := P.mac_length _ _
-  rw [List.append_nil, Spec.Ecdsa.Rfc6979.bits2int, hashToInt_take (by rw [hl]; anums)]
+  have hB : Spec.Ecdsa.nBits P.R.E.C = 8 * (8 * P.w) := by rw [P.R.nBits]; show 64 * P.w = _; omega
+  rw [List.append_nil, Spec.Ecdsa.Rfc6979.bits2int, hashToInt_takeQ hB (by rw [hl]; anums)]
 
 /-- The instance's signature and number of candidates, as the proof names its parts. -/
 theorem result_unfold :
     result P.I m₀ (State.addr L.d) (State.addr L.dg) =
-      if 1 ≤ xOf L m₀ ∧ xOf L m₀ < Spec.P256.curve.n then
+      if 1 ≤ xOf P L m₀ ∧ xOf P L m₀ < P.R.E.C.n then
         let (K, V) := kv0 P L m₀
-        Spec.Ecdsa.Rfc6979.search Spec.P256.curve P.ok.hH.SH.H P.F.H.D (xOf L m₀) (eOf P L m₀) K V 8
+        Spec.Ecdsa.Rfc6979.search P.R.E.C P.ok.hH.SH.H P.F.H.D (xOf P L m₀) (eOf P L m₀) K V 8
       else (none, 0) := by
-  have hlen : Spec.P256.curve.len = 32 := rfl
-  simp only [result, Spec.Ecdsa.Rfc6979.Instance.result, P.ecdsa, P.hash, P.tries, P.len, Spec.Ecdsa.P256.inst,
-    ecdsa_bytesAt, Spec.Ecdsa.Rfc6979.sign, hlen]
+  simp only [result, Spec.Ecdsa.Rfc6979.Instance.result, P.ecdsa, P.R.curve, P.R.len, P.hash, P.tries, P.len,
+    ecdsa_bytesAt, Spec.Ecdsa.Rfc6979.sign]
 
 /-- The signature of the candidate the loop stopped at is RFC 6979's. -/
 theorem result_eq {i : Nat} {t : State} (hx : Exit P L m₀ i t) :
     (result P.I m₀ (State.addr L.d) (State.addr L.dg)).1 = sigI P L m₀ i := by
   rw [result_unfold]
-  by_cases hv : 1 ≤ xOf L m₀ ∧ xOf L m₀ < Spec.P256.curve.n
+  by_cases hv : 1 ≤ xOf P L m₀ ∧ xOf P L m₀ < P.R.E.C.n
   · simp only [hv, and_self, ite_true]
-    have hf : ∀ j < i, Spec.Ecdsa.signWith Spec.P256.curve (xOf L m₀) (eOf P L m₀)
-        (Spec.Ecdsa.Rfc6979.bits2int Spec.P256.curve (candI P L m₀ j ++ [])) = none := fun j hj => by
+    have hf : ∀ j < i, Spec.Ecdsa.signWith P.R.E.C (xOf P L m₀) (eOf P L m₀)
+        (Spec.Ecdsa.Rfc6979.bits2int P.R.E.C (candI P L m₀ j ++ [])) = none := fun j hj => by
       rw [bits2int_cand]; exact hx.fails j hj
     rw [Proof.Ecdsa.Rfc6979.search_shift (blocks_eq P) i 8 (by have := hx.lt; omega) hf,
       show 8 - i = (7 - i) + 1 by have := hx.lt; omega]
@@ -203,10 +213,10 @@ theorem go_iff {i : Nat} (hi : i < 8) (hf : ∀ j < i, sigI P L m₀ j = none) :
     (sigI P L m₀ i = none ∧ i + 1 < 8) ↔ i < exitAt P L m₀ := by
   unfold exitAt
   rw [result_unfold]
-  by_cases hv : 1 ≤ xOf L m₀ ∧ xOf L m₀ < Spec.P256.curve.n
+  by_cases hv : 1 ≤ xOf P L m₀ ∧ xOf P L m₀ < P.R.E.C.n
   · simp only [hv, and_self, ite_true]
-    have hf' : ∀ j < i, Spec.Ecdsa.signWith Spec.P256.curve (xOf L m₀) (eOf P L m₀)
-        (Spec.Ecdsa.Rfc6979.bits2int Spec.P256.curve (candI P L m₀ j ++ [])) = none := fun j hj => by
+    have hf' : ∀ j < i, Spec.Ecdsa.signWith P.R.E.C (xOf P L m₀) (eOf P L m₀)
+        (Spec.Ecdsa.Rfc6979.bits2int P.R.E.C (candI P L m₀ j ++ [])) = none := fun j hj => by
       rw [bits2int_cand]; exact hf j hj
     rw [Proof.Ecdsa.Rfc6979.search_shift (blocks_eq P) i 8 (by omega) hf', show 8 - i = (7 - i) + 1 by omega]
     have hc : Spec.Hmac.hmac P.ok.hH.SH.H (kvI P L m₀ i).1 (kvI P L m₀ i).2 = candI P L m₀ i := rfl
@@ -217,8 +227,8 @@ theorem go_iff {i : Nat} (hi : i < 8) (hf : ∀ j < i, sigI P L m₀ j = none) :
     | none =>
       rw [Proof.Ecdsa.Rfc6979.search_fail (blocks_eq P) (by rw [hc, bits2int_cand]; exact hs)]
       by_cases h7 : i + 1 < 8
-      · have := Proof.Ecdsa.Rfc6979.search_pos (C := Spec.P256.curve) (H := P.ok.hH.SH.H) (hlen := P.F.H.D)
-          (d := xOf L m₀) (e := eOf P L m₀) (n := 6 - i)
+      · have := Proof.Ecdsa.Rfc6979.search_pos (C := P.R.E.C) (H := P.ok.hH.SH.H) (hlen := P.F.H.D)
+          (d := xOf P L m₀) (e := eOf P L m₀) (n := 6 - i)
           (K := (step P.ok.hH.SH.H (kvI P L m₀ i).1 (kvI P L m₀ i).2).1)
           (V := (step P.ok.hH.SH.H (kvI P L m₀ i).1 (kvI P L m₀ i).2).2) (blocks_eq P)
         rw [show 7 - i = 6 - i + 1 by omega]
@@ -256,16 +266,16 @@ theorem saved_pairwise : Impl.Ecdsa.Rfc6979.Arm.saved.Pairwise (fun p q => p.2 +
 
 /-- The prologue: our caller's registers into the frame, and the pointers to the registers that keep them. -/
 theorem entry_ok {s : State} (h : (rfcArm P.I).pre s) :
-    WP isa (.block Cfg.prologue) (allocated frameBytes s) (Ctx (lay P.I.hashLen s) s.gpr s.mem) := by
+    WP isa (.block Cfg.prologue) (allocated frameBytes s) (Ctx (lay P.I.hashLen P.I.ecdsa.curve.len s) s.gpr s.mem) := by
   have hL := lay_ok h
   obtain ⟨hrd, hwr, -⟩ := h
-  have hA : State.addr (lay P.I.hashLen s).fp = (lay P.I.hashLen s).B + BitVec.ofNat 64 24 := hL.fpA0
+  have hA : State.addr (lay P.I.hashLen P.I.ecdsa.curve.len s).fp = (lay P.I.hashLen P.I.ecdsa.curve.len s).B + BitVec.ofNat 64 24 := hL.fpA0
   have hb := hL.B_fit
   simp only [Cfg.prologue, List.cons_append]
   refine wp_addSp (d := .r12) (imm := 0) (by decide) fun u₁ v₁ => ?_
-  have h12 : u₁.gpr .r12 = (lay P.I.hashLen s).fp := by rw [v₁.gpr, BitVec.add_zero]; rfl
-  have hs : VG.Proof.Mont.Arm.Scr u₁ (State.addr (lay P.I.hashLen s).fp) 200 :=
-    ⟨by rw [h12], ⟨200, by omega, by omega, by rw [v₁.wr]; exact List.mem_cons_self⟩,
+  have h12 : u₁.gpr .r12 = (lay P.I.hashLen P.I.ecdsa.curve.len s).fp := by rw [v₁.gpr, BitVec.add_zero]; rfl
+  have hs : VG.Proof.Mont.Arm.Scr u₁ (State.addr (lay P.I.hashLen P.I.ecdsa.curve.len s).fp) 216 :=
+    ⟨by rw [h12], ⟨216, by omega, by omega, by rw [v₁.wr]; exact List.mem_cons_self⟩,
       by rw [hA, Offset.toNat_add_ofNat, Nat.mod_eq_of_lt (by omega)]; omega, by omega⟩
   rw [WP.block_append_iff]
   refine WP.mono (Proof.Ecdsa.Arm.strs_ok hs _ (fun p hp => (saved_off p hp).2) saved_pairwise)
@@ -280,7 +290,7 @@ theorem entry_ok {s : State} (h : (rfcArm P.I).pre s) :
   refine ⟨by rw [K.rd, K₂.rd, v₁.rd]; exact hrd, ?_, by rw [K.sp, K₂.sp, v₁.sp]; rfl, ?_, ?_, ?_, ?_, ?_,
     fun p hp => ?_, ?_⟩
   · rw [K.wr, K₂.wr, v₁.wr]
-    show ⟨State.addr (lay P.I.hashLen s).fp, 200⟩ :: s.wr = _
+    show ⟨State.addr (lay P.I.hashLen P.I.ecdsa.curve.len s).fp, 216⟩ :: s.wr = _
     rw [hA, hwr]
     rfl
   · rw [v₇.other _ (by decide), v₆.other _ (by decide), v₅.other _ (by decide), v₄.other _ (by decide), v₃.gpr,
@@ -295,41 +305,45 @@ theorem entry_ok {s : State} (h : (rfcArm P.I).pre s) :
       v₃.other _ (by decide), g₂ _ (by decide)]; rfl
   · rw [hm, ← Offset.add_add, ← hA, ← VG.Proof.Mont.off, V₂ p hp, v₁.other _ (saved_ne12 p hp)]; rfl
   · rw [hm, show s.mem = u₁.mem from v₁.mem.symm]
-    refine (Outs.frame O₂ (n := 200) fun r hr => ?_).sub fun r hr => ?_
+    refine (Outs.frame O₂ (n := 216) fun r hr => ?_).sub fun r hr => ?_
     · simp only [List.mem_map] at hr
       obtain ⟨q, hq, rfl⟩ := hr
       exact (saved_off q hq).2
     · simp only [List.mem_singleton] at hr; subst hr
-      exact ⟨(lay P.I.hashLen s).STK, by simp, by rw [hA]; exact Offset.sub_base _ (by omega)⟩
+      exact ⟨(lay P.I.hashLen P.I.ecdsa.curve.len s).STK, by simp, by rw [hA]; exact Offset.sub_base _ (by omega)⟩
 
 theorem low_preserved : ∀ r ∈ preserved, r ∈ Impl.Ecdsa.Rfc6979.Arm.saved.map Prod.fst := by decide
 
-/-- `vg_ecdsa_p256_<hash>_sign` meets `rfcArm P.I` and keeps the
+/-- `vg_ecdsa_<curve>_<hash>_sign` meets `rfcArm P.I` and keeps the
 callee-saved registers and the stack pointer. -/
 theorem sign_ok {s : State} (h : (rfcArm P.I).pre s) :
     WP isa (cfgOf P).sign s fun s' => ((∀ r ∈ preserved, s'.gpr r = s.gpr r) ∧ s'.sp = s.sp) ∧
       (rfcArm P.I).post s s' := by
   have hL := lay_ok h
-  have h224 : 224 ≤ s.sp.toNat := h.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2
-  refine WP.alloc (by decide) (by show 200 ≤ s.sp.toNat; omega) ?_
+  have h240 : 240 ≤ s.sp.toNat := h.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2
+  have hw : (lay P.I.hashLen P.I.ecdsa.curve.len s).q = 8 * P.w := P.curveLen
+  refine WP.alloc (by decide) (by show 216 ≤ s.sp.toNat; omega) ?_
   rw [Cfg.body, show Cfg.prologue ++ (cfgOf P).reduce ++ Cfg.initKV =
     Cfg.prologue ++ ((cfgOf P).reduce ++ Cfg.initKV) from List.append_assoc _ _ _]
   refine WP.seq ?_
   rw [WP.block_append_iff]
   refine WP.mono (entry_ok h) fun t hc => WP.mono (stageB_ok hL hc) fun u ⟨hu, hq⟩ => ?_
-  refine WP.mono (rest_ok hL hu hq) fun v ⟨hwr, hsp, hs, i, hx⟩ => ⟨⟨fun r hr => ?_, ?_⟩, ?_⟩
+  refine WP.mono (rest_ok hL hw hu hq) fun v ⟨hwr, hsp, hs, i, hx⟩ => ⟨⟨fun r hr => ?_, ?_⟩, ?_⟩
   · show (freed frameBytes v).gpr r = _
     obtain ⟨p, hp, rfl⟩ := List.mem_map.mp (low_preserved r hr)
     exact hs p hp
   · show v.sp + BitVec.ofNat 32 frameBytes = s.sp
     rw [hsp]; exact BitVec.sub_add_cancel _ _
-  · show match (result P.I s.mem (State.addr (lay P.I.hashLen s).d) (State.addr (lay P.I.hashLen s).dg)).1 with
+  · show match (result P.I s.mem (State.addr (lay P.I.hashLen P.I.ecdsa.curve.len s).d) (State.addr (lay P.I.hashLen P.I.ecdsa.curve.len s).dg)).1 with
       | some rs => _ | none => _
     rw [result_eq hx]
+    have e₁ : 2 * P.I.ecdsa.curve.len = 16 * P.w := by rw [P.curveLen]; omega
+    have e₂ : P.I.ecdsa.curve = P.R.E.C := by rw [P.ecdsa, P.R.curve]
+    rw [e₁, e₂]
     have hr := hx.res
     unfold ResultIs at hr
-    show match sigI P (lay P.I.hashLen s) s.mem i with | some rs => _ | none => _
-    cases hsig : sigI P (lay P.I.hashLen s) s.mem i <;> rw [hsig] at hr <;>
+    show match sigI P (lay P.I.hashLen P.I.ecdsa.curve.len s) s.mem i with | some rs => _ | none => _
+    cases hsig : sigI P (lay P.I.hashLen P.I.ecdsa.curve.len s) s.mem i <;> rw [hsig] at hr <;>
       exact ⟨by rw [low_word]; exact hr.1, hr.2⟩
 
 end VG.Proof.Ecdsa.Rfc6979.Arm

@@ -4,7 +4,11 @@ import VerifiedGarbage.Proof.Framework.RelCTAssoc
 /-!
 # AES-SIV on x86-64: CTR is constant time
 
-Every block's pointers and lengths are public (`r13`, `r14`), so the code
+`ctrWhole`'s call of `vg_aes_ctr32` takes the pointers and `k`, which the
+code computes from the length alone, so its arguments are the same in both
+runs and the code around it passes the taint analysis (`whole_rel`); both
+runs then take the same branch, on the bytes left (`ctr_rel'`). After it,
+every block's pointers and lengths are public (`r13`, `r14`), so the code
 around the call of `vg_aes_ctr32` passes the taint analysis, and the call's
 arguments are the same in both runs (`ctr_rel` of `CmacAes.X86_64`). Both
 runs leave the loop after the same block, the last one (`ctr_tail`).
@@ -17,6 +21,7 @@ open VG.Impl.CmacAes.X86_64 (at_)
 open VG.Proof.CmacAes.X86_64 (bytesAt_frame zero2 zero2_bytes CallPre ctr_call ctr_rel)
 open VG.Proof.CmacAes.Stream.X86_64 (copyMem_frame toNat_ofNat)
 open VG.Proof.Aes.X86_64 (Ctr32Impl)
+open VG.Proof.AesCcm.X86_64 (CtrCall)
 
 variable {s₀ : State} {C D P W : Addr} {R L : Nat}
 
@@ -98,7 +103,7 @@ theorem body_rel (v : Ctr32Impl) {s₀' : State} (h : Env s₀ C D P W R L) (h' 
 
 /-- Block `i` of a run, with the slots of the data and its length as at the start. -/
 def CI (s₀ : State) (C D P W : Addr) (R L i : Nat) (s : State) : Prop :=
-  ∃ m₀ q x, CInv s₀ C D P W R L m₀ q x i s ∧ m₀.readW (W + BitVec.ofNat 64 dataOff) 64 = P ∧
+  16 * i < L ∧ ∃ m₀ q x, CInv s₀ C D P W R L m₀ q x i s ∧ m₀.readW (W + BitVec.ofNat 64 dataOff) 64 = P ∧
     m₀.readW (W + BitVec.ofNat 64 lenOff) 64 = BitVec.ofNat 64 L
 
 /-- After the loop: what the reload of the pointer and the length needs. -/
@@ -132,16 +137,16 @@ def BPost (s₀ : State) (C D P W : Addr) (R L i : Nat) (s : State) : Prop :=
 theorem body_wp (v : Ctr32Impl) (h : Env s₀ C D P W R L) (hcp : (⟨C, 512⟩ : Region).Disjoint ⟨P, L⟩)
     (hPw : (⟨P, L⟩ : Region) ∈ s₀.wr) {i : Nat} {s : State} (hs : CI s₀ C D P W R L i s) :
     WP isa (ctrBody v.callee) s (BPost s₀ C D P W R L i) := by
-  obtain ⟨m₀, q, x, hi, h208, h216⟩ := hs
-  refine ctr_head v h hcp hi fun t₃ hh => WP.mono (ctr_tail h hPw hi hh) fun t ht => ?_
+  obtain ⟨hiL, m₀, q, x, hi, h208, h216⟩ := hs
+  refine ctr_head v h hcp hi fun t₃ hh => WP.mono (ctr_tail h hPw hi hiL hh) fun t ht => ?_
   rcases ht with ⟨hc, hz, hd⟩ | ⟨hc, hz, hi'⟩
   · exact Or.inl ⟨hc, hz, ⟨hd.rbx, hd.rbp, hd.r12, hd.r15, hd.rsp, hd.rd, hd.wr,
       by rw [slot_keep h hd.frame (by decide) (by decide)]; exact h208,
       by rw [slot_keep h hd.frame (by decide) (by decide)]; exact h216⟩⟩
-  · exact Or.inr ⟨hc, hz, m₀, q, x, hi', h208, h216⟩
+  · exact Or.inr ⟨hc, hz, by omega, m₀, q, x, hi', h208, h216⟩
 
 theorem CI.cr {i : Nat} {s : State} (hs : CI s₀ C D P W R L i s) : CR s₀ C D P W R L i s :=
-  let ⟨_, _, _, hi, _, _⟩ := hs; hi.cr
+  let ⟨_, _, _, _, hi, _, _⟩ := hs; hi.cr
 
 theorem loop_rel (v : Ctr32Impl) {s₀' : State} (h : Env s₀ C D P W R L) (h' : Env s₀' C D P W R L)
     (hq : s₀.gpr .rsp = s₀'.gpr .rsp) (hcp : (⟨C, 512⟩ : Region).Disjoint ⟨P, L⟩)
@@ -165,59 +170,104 @@ theorem loop_rel (v : Ctr32Impl) {s₀' : State} (h : Env s₀ C D P W R L) (h' 
   · exact ⟨by simp [eval, hz, hz'], fun e => by simp [eval, hz] at e, fun _ =>
       ⟨L - 16 * (i + 1), by omega, i + 1, rfl, hci, hci'⟩⟩
 
-/-- What `ctr` needs of a run: the registers, the counter `Q`, and the
-slots of the data and its length. -/
+/-- What `ctr` needs of a run: the registers, the counter `Q` (whose last
+32 bits are below `2³¹`), and the slots of the data and its length. -/
 structure CtrPre (s₀ : State) (C D P W : Addr) (R L : Nat) (s : State) : Prop where
   regs : Regs s₀ C D P W R L s
   cnt : ∃ (hi lo : BitVec 64) (q : List Byte), s.mem.readW (W + BitVec.ofNat 64 cntOff) 64 = bswap64 hi ∧
-    s.mem.readW (W + BitVec.ofNat 64 (cntOff + 8)) 64 = bswap64 lo ∧ (hi ++ lo : BitVec 128) = Spec.Gcm.ofBytes q
+    s.mem.readW (W + BitVec.ofNat 64 (cntOff + 8)) 64 = bswap64 lo ∧ (hi ++ lo : BitVec 128) = Spec.Gcm.ofBytes q ∧
+    q.length = 16 ∧ Spec.Siv.beNat q % 2 ^ 32 < 2 ^ 31
   d208 : s.mem.readW (W + BitVec.ofNat 64 dataOff) 64 = P
   d216 : s.mem.readW (W + BitVec.ofNat 64 lenOff) 64 = BitVec.ofNat 64 L
 
-theorem CtrPre.ci {s : State} (hs : CtrPre s₀ C D P W R L s) (hL : 0 < L) : CI s₀ C D P W R L 0 s := by
-  obtain ⟨hi₀, lo₀, q, hhi, hlo, hq⟩ := hs.cnt
-  exact ⟨s.mem, q, Spec.Aes.bytesAt s.mem P L, ⟨hs.regs.rbx, hs.regs.rbp, hs.regs.r12,
-    by rw [hs.regs.r13, Nat.mul_zero, Proof.CmacAes.X86_64.k0], by rw [hs.regs.r14, Nat.mul_zero, Nat.sub_zero],
-    hs.regs.r15, hs.regs.rsp, hs.regs.rd, hs.regs.wr, by omega,
-    ⟨hi₀, lo₀, hhi, hlo, by rw [hq]; exact (BitVec.add_zero _).symm⟩, by rw [Nat.mul_zero, ctrPart_zero],
-    Frame.refl _ _⟩, hs.d208, hs.d216⟩
+/-! ## The whole blocks -/
 
-theorem CtrPre.cend {s : State} (hs : CtrPre s₀ C D P W R L s) : CEnd s₀ C D P W R L s :=
-  ⟨hs.regs.rbx, hs.regs.rbp, hs.regs.r12, hs.regs.r15, hs.regs.rsp, hs.regs.rd, hs.regs.wr, hs.d208, hs.d216⟩
+/-- `wholePre` leaves the arguments of `vg_aes_ctr32` and the registers. -/
+theorem wholePre_wp (h : Env s₀ C D P W R L) (hcp : (⟨C, 512⟩ : Region).Disjoint ⟨P, L⟩)
+    (hPw : (⟨P, L⟩ : Region) ∈ s₀.wr) {s : State} (hr : Regs s₀ C D P W R L s) :
+    WP isa (.block wholePre) s fun t => CtrCall t (C + BitVec.ofNat 64 272) (W + BitVec.ofNat 64 96) P
+      (W + BitVec.ofNat 64 256) R (wholeOf L) ∧ Regs s₀ C D P W R L t := by
+  obtain ⟨s₁, run₁, rdi₁, rsi₁, rdx₁, rcx₁, r8₁, r9₁, hr₁, _⟩ := wholePre_ok h hr
+  exact WP.of_runBlock ⟨s₁, run₁,
+    wargs h hcp hPw hr₁.rd hr₁.wr hr₁.rsp (wholeOf_le L) rdi₁ rsi₁ rdx₁ rcx₁ r8₁ r9₁, hr₁⟩
+
+/-- `ctrWhole` is constant time: the arguments of its call, `k` blocks
+among them, depend only on the registers that hold the arguments. -/
+theorem whole_rel (v : Ctr32Impl) {s₀' : State} (h : Env s₀ C D P W R L) (h' : Env s₀' C D P W R L)
+    (hq : s₀.gpr .rsp = s₀'.gpr .rsp) (hcp : (⟨C, 512⟩ : Region).Disjoint ⟨P, L⟩)
+    (hPw : (⟨P, L⟩ : Region) ∈ s₀.wr) (hPw' : (⟨P, L⟩ : Region) ∈ s₀'.wr) :
+    RelCT isa (fun a b => Regs s₀ C D P W R L a ∧ Regs s₀' C D P W R L b) (ctrWhole v.callee)
+      fun _ _ => True := by
+  obtain ⟨_, hA⟩ : ∃ hc, (taint.check (Taint.ofRegs [.rbx, .rbp, .r12, .r13, .r14, .r15, .rsp]) (.block wholePre)
+      hc).isSome = true := ⟨_, by taint_decide⟩
+  obtain ⟨_, hB⟩ : ∃ hc, (taint.check (Taint.ofRegs [.rbx, .rbp, .r12, .r13, .r14, .r15, .rsp]) (.block wholePost)
+      hc).isSome = true := ⟨_, by taint_decide⟩
+  have r₁ := (RelCT.taint (A := taint) (P := fun a b => Regs s₀ C D P W R L a ∧ Regs s₀' C D P W R L b) _
+    (fun a b hab => regs_agree hq hab.1 hab.2) hA).wp
+    (F₁ := fun (t : State) => CtrCall t (C + BitVec.ofNat 64 272) (W + BitVec.ofNat 64 96) P
+      (W + BitVec.ofNat 64 256) R (wholeOf L) ∧ Regs s₀ C D P W R L t)
+    (F₂ := fun (t : State) => CtrCall t (C + BitVec.ofNat 64 272) (W + BitVec.ofNat 64 96) P
+      (W + BitVec.ofNat 64 256) R (wholeOf L) ∧ Regs s₀' C D P W R L t)
+    fun a b hab => ⟨wholePre_wp h hcp hPw hab.1, wholePre_wp h' hcp hPw' hab.2⟩
+  have r₂ := (Proof.AesCcm.X86_64.ctr_rel v (P := fun (a b : State) =>
+      (CtrCall a (C + BitVec.ofNat 64 272) (W + BitVec.ofNat 64 96) P (W + BitVec.ofNat 64 256) R (wholeOf L) ∧
+        Regs s₀ C D P W R L a) ∧
+      CtrCall b (C + BitVec.ofNat 64 272) (W + BitVec.ofNat 64 96) P (W + BitVec.ofNat 64 256) R (wholeOf L) ∧
+        Regs s₀' C D P W R L b)
+    fun a b hab => ⟨_, _, _, _, _, _, hab.1.1, hab.2.1, by rw [hab.1.2.rsp, hab.2.2.rsp, hq]⟩).wp
+    (F₁ := Regs s₀ C D P W R L) (F₂ := Regs s₀' C D P W R L)
+    fun a b hab => ⟨WP.mono (Proof.AesCcm.X86_64.ctr_call v hab.1.1) fun _ p => hab.1.2.keep p.saved p.rd p.wr,
+      WP.mono (Proof.AesCcm.X86_64.ctr_call v hab.2.1) fun _ p => hab.2.2.keep p.saved p.rd p.wr⟩
+  have r₃ := RelCT.taint (A := taint) (P := fun a b => Regs s₀ C D P W R L a ∧ Regs s₀' C D P W R L b) _
+    (fun a b hab => regs_agree hq hab.1 hab.2) hB
+  exact (r₁.mono (fun _ _ h => h) fun _ _ h => h.2).seq ((r₂.mono (fun _ _ h => h) fun _ _ h => h.2).seq r₃)
+
+/-- After `ctrWhole`: block `wholeOf L` of the rest of a run, with ZF set when
+no data is left. -/
+def WI (s₀ : State) (C D P W : Addr) (R L : Nat) (s : State) : Prop :=
+  s.zf = some (decide (L - 16 * wholeOf L = 0)) ∧ ∃ m₀ q x, CInv s₀ C D P W R L m₀ q x (wholeOf L) s ∧
+    m₀.readW (W + BitVec.ofNat 64 dataOff) 64 = P ∧ m₀.readW (W + BitVec.ofNat 64 lenOff) 64 = BitVec.ofNat 64 L
+
+theorem whole_wp (v : Ctr32Impl) (h : Env s₀ C D P W R L) (hcp : (⟨C, 512⟩ : Region).Disjoint ⟨P, L⟩)
+    (hPw : (⟨P, L⟩ : Region) ∈ s₀.wr) {s : State} (hs : CtrPre s₀ C D P W R L s) :
+    WP isa (ctrWhole v.callee) s (WI s₀ C D P W R L) := by
+  obtain ⟨hi, lo, q, hhi, hlo, hq, hql, hlow⟩ := hs.cnt
+  exact WP.mono (ctrWhole_wp v h hcp hPw hs.regs hql hlow ⟨hi, lo, hhi, hlo, hq⟩) fun _ ⟨hz, hc⟩ =>
+    ⟨hz, _, _, _, hc, hs.d208, hs.d216⟩
+
+theorem WI.cend (h : Env s₀ C D P W R L) {s : State} (hs : WI s₀ C D P W R L s) : CEnd s₀ C D P W R L s := by
+  obtain ⟨_, _, _, _, hi, h208, h216⟩ := hs
+  exact ⟨hi.rbx, hi.rbp, hi.r12, hi.r15, hi.rsp, hi.rd, hi.wr,
+    by rw [slot_keep h hi.frame (by decide) (by decide)]; exact h208,
+    by rw [slot_keep h hi.frame (by decide) (by decide)]; exact h216⟩
+
+theorem WI.ci {s : State} (hs : WI s₀ C D P W R L s) (hL : 16 * wholeOf L < L) :
+    CI s₀ C D P W R L (wholeOf L) s :=
+  let ⟨_, m₀, q, x, hi, h208, h216⟩ := hs; ⟨hL, m₀, q, x, hi, h208, h216⟩
 
 theorem ctr_rel' (v : Ctr32Impl) {s₀' : State} (h : Env s₀ C D P W R L) (h' : Env s₀' C D P W R L)
     (hq : s₀.gpr .rsp = s₀'.gpr .rsp) (hcp : (⟨C, 512⟩ : Region).Disjoint ⟨P, L⟩)
     (hPw : (⟨P, L⟩ : Region) ∈ s₀.wr) (hPw' : (⟨P, L⟩ : Region) ∈ s₀'.wr) :
     RelCT isa (fun a b => CtrPre s₀ C D P W R L a ∧ CtrPre s₀' C D P W R L b) (ctr v.callee)
       fun a b => Regs s₀ C D P W R L a ∧ Regs s₀' C D P W R L b := by
-  have hlt := h.lt
-  obtain ⟨_, hA⟩ : ∃ hc, (taint.check (Taint.ofRegs [.rbx, .rbp, .r12, .r13, .r14, .r15, .rsp])
-      (.block [.alu .test .r14 (.reg .r14)]) hc).isSome = true := ⟨_, by taint_decide⟩
+  have hk := wholeOf_le L
   obtain ⟨_, hB⟩ : ∃ hc, (taint.check (Taint.ofRegs [.r15])
       (.block [.mov .r13 (.mem (at_ .r15 dataOff)), .mov .r14 (.mem (at_ .r15 lenOff))]) hc).isSome = true :=
     ⟨_, by taint_decide⟩
-  have wt {σ s : State} (hs : CtrPre σ C D P W R L s) :
-      WP isa (.block [.alu .test .r14 (.reg .r14)]) s fun t => CtrPre σ C D P W R L t ∧ t.zf = some (decide (L = 0)) := by
-    refine WP.of_runBlock ⟨arithFlags s (s.gpr .r14 &&& s.gpr .r14) false false, by
-      simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, execAlu, Option.bind_some],
-      ⟨hs.regs.keep (fun _ _ => rfl) rfl rfl, hs.cnt, hs.d208, hs.d216⟩, ?_⟩
-    rw [zf_arithFlags, hs.regs.r14, BitVec.and_self, Proof.CmacAes.Stream.X86_64.beq_zero_iff, toNat_ofNat hlt]
-  have a := (RelCT.taint (A := taint) (P := fun a b => CtrPre s₀ C D P W R L a ∧ CtrPre s₀' C D P W R L b) _
-    (fun a b hab => regs_agree hq hab.1.regs hab.2.regs) hA).wp
-    (F₁ := fun (t : State) => CtrPre s₀ C D P W R L t ∧ t.zf = some (decide (L = 0)))
-    (F₂ := fun (t : State) => CtrPre s₀' C D P W R L t ∧ t.zf = some (decide (L = 0)))
-    fun a b hab => ⟨wt hab.1, wt hab.2⟩
+  have w := ((whole_rel v h h' hq hcp hPw hPw').mono (P' := fun a b => CtrPre s₀ C D P W R L a ∧
+      CtrPre s₀' C D P W R L b) (fun _ _ p => ⟨p.1.regs, p.2.regs⟩) fun _ _ p => p).wp
+    (F₁ := WI s₀ C D P W R L) (F₂ := WI s₀' C D P W R L) fun a b hab =>
+      ⟨whole_wp v h hcp hPw hab.1, whole_wp v h' hcp hPw' hab.2⟩
   have i := RelCT.ite (M := isa) (c := .e)
-    (P := fun a b => (CtrPre s₀ C D P W R L a ∧ a.zf = some (decide (L = 0))) ∧
-      CtrPre s₀' C D P W R L b ∧ b.zf = some (decide (L = 0)))
+    (P := fun a b => WI s₀ C D P W R L a ∧ WI s₀' C D P W R L b)
     (Q := fun a b => CEnd s₀ C D P W R L a ∧ CEnd s₀' C D P W R L b)
-    (fun a b hab => by show a.zf = b.zf; rw [hab.1.2, hab.2.2])
-    (RelCT.block_nil fun a b hab => ⟨hab.1.1.1.cend, hab.1.2.1.cend⟩)
-    ((loop_rel v h h' hq hcp hPw hPw' (L - 16 * 0)).mono (fun a b hab => by
-      have hL : 0 < L := by
-        have e := hab.2; rw [show isa.eval .e a = a.zf from rfl, hab.1.1.2] at e
+    (fun a b hab => by show a.zf = b.zf; rw [hab.1.1, hab.2.1])
+    (RelCT.block_nil fun a b hab => ⟨hab.1.1.cend h, hab.1.2.cend h'⟩)
+    ((loop_rel v h h' hq hcp hPw hPw' (L - 16 * wholeOf L)).mono (fun a b hab => by
+      have hL : 16 * wholeOf L < L := by
+        have e := hab.2; rw [show isa.eval .e a = a.zf from rfl, hab.1.1.1] at e
         simp at e; omega
-      exact ⟨0, rfl, hab.1.1.1.ci hL, hab.1.2.1.ci hL⟩) fun _ _ h => h)
+      exact ⟨wholeOf L, rfl, hab.1.1.ci hL, hab.1.2.ci hL⟩) fun _ _ h => h)
   have we {σ s : State} (hσ : Env σ C D P W R L) (hs : CEnd σ C D P W R L s) :
       WP isa (.block [.mov .r13 (.mem (at_ .r15 dataOff)), .mov .r14 (.mem (at_ .r15 lenOff))]) s
         (Regs σ C D P W R L) := by
@@ -230,6 +280,6 @@ theorem ctr_rel' (v : Ctr32Impl) {s₀' : State} (h : Env s₀ C D P W R L) (h' 
       refine Taint.agree_ofRegs fun r hr => ?_
       simp only [List.mem_singleton] at hr; subst hr; rw [hab.1.r15, hab.2.r15]) hB).wp
     (F₁ := Regs s₀ C D P W R L) (F₂ := Regs s₀' C D P W R L) fun a b hab => ⟨we h hab.1, we h' hab.2⟩
-  exact (a.mono (fun _ _ h => h) fun _ _ h => h.2).seq (i.seq (e.mono (fun _ _ h => h) fun _ _ h => h.2))
+  exact (w.mono (fun _ _ h => h) fun _ _ h => h.2).seq (i.seq (e.mono (fun _ _ h => h) fun _ _ h => h.2))
 
 end VG.Proof.AesSiv.X86_64

@@ -966,7 +966,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>❌</td>
+<td>✅</td>
 
 <td>❌</td>
 
@@ -1072,7 +1072,7 @@ yours to keep:
 
 <td>✅ SHA extensions</td>
 
-<td>❌</td>
+<td>✅</td>
 
 <td>✅</td>
 
@@ -1118,7 +1118,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅ SHA extensions; keys and signatures by a fixed-base comb</td>
+<td>✅ SHA extensions; keys and signatures by a fixed-base comb, verification by a comb and 4-bit windows</td>
 
 <td>✅</td>
 
@@ -1202,7 +1202,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>❌</td>
+<td>✅ BMI2, ADX</td>
 
 <td>❌</td>
 
@@ -1234,7 +1234,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>❌</td>
+<td>✅ SHA extensions, SHA512, AVX-512 IFMA, AVX-512VL, AVX2, BMI1, BMI2, ADX</td>
 
 <td>❌</td>
 

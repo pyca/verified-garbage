@@ -289,9 +289,9 @@ structure Artifact where
   doc : String
   /-- Tables of 64-bit constants the code reads, by name: the emitter writes
   each as a `static` of that name, from which the code forms the table's
-  address (`Abi.sym`; on AArch64, `adrSym`), and checks that every artifact
-  of the target with a table of that name gives the same words
-  (`Rust.checkConsts`). So `contract` is one for the calling convention
+  address (`Abi.sym`; on AArch64, `adrSym`; on x86-64, `leaSym`), and
+  checks that every artifact of the target with a table of that name gives
+  the same words (`Rust.checkConsts`). So `contract` is one for the calling convention
   `target.abi.withConsts consts` (`Abi.withConsts`). -/
   consts : List (String × List (BitVec 64)) := []
   code : Prog target.isa

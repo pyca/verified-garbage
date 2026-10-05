@@ -1,6 +1,6 @@
 import VerifiedGarbage.Proof.Weierstrass.X86_64.Ladder
 import VerifiedGarbage.Proof.Weierstrass.X86_64.Flags
-import VerifiedGarbage.Proof.Weierstrass.X86_64.Bytes
+import VerifiedGarbage.Proof.Weierstrass.X86_64.BytesLen
 import VerifiedGarbage.Proof.Framework.X86_64.Spill
 
 /-!
@@ -25,15 +25,18 @@ open VG.Proof.Mont.X86_64 VG.Proof.Mont VG.Proof.Weierstrass.X86_64 VG.Proof.Wei
 abbrev size : Nat := 8192
 
 /-- What the proof of the code needs of a curve: its field and order are odd
-and fit in `n` words (`n < 7`), `G` is on the curve, `p < 2n` (so `x mod n`
-is one conditional subtraction), the Montgomery constants are right,
-encodings are `8 n` bytes, and a hash of `8 n` bytes is not truncated.
+and fit in `n` words (`n < 10`, so that the slots and tables fit in the
+working space), `G` is on the curve, `p < 2n` (so `x mod n` is one
+conditional subtraction), the Montgomery constants are right, encodings are
+`len` bytes in `n` words (`8 (n - 1) < len ≤ 8 n`, at least one word), and
+the bits of a hash of `len` bytes that are not `e`'s (`c.sh`, 0 unless `n`
+has fewer than `8 len` bits) are fewer than 32.
 The group law needs more (`Weierstrass.Law`, which a prime field
 and no point of order 2 give: `Weierstrass.Good.law`), which only the proofs
 of the results take. -/
 structure CfgOk (c : Cfg) : Prop where
   n0 : 0 < c.n
-  n7 : c.n < 7
+  n10 : c.n < 10
   onG : onCurve c.C (G c.C) = true
   p_odd : c.C.p % 2 = 1
   n_odd : c.C.n % 2 = 1
@@ -44,44 +47,46 @@ structure CfgOk (c : Cfg) : Prop where
   p_lt_2n : c.C.p < 2 * c.C.n
   minv_p : (c.C.p * (BitVec.ofNat 64 (minv c.C.p)).toNat + 1) % 2 ^ 64 = 0
   minv_n : (c.C.n * (BitVec.ofNat 64 (minv c.C.n)).toNat + 1) % 2 ^ 64 = 0
-  len : c.C.len = 8 * c.n
-  hash : 64 * c.n ≤ Spec.Ecdsa.nBits c.C
+  len8 : 8 ≤ c.C.len
+  len_lo : 8 * c.n < c.C.len + 8
+  len_hi : c.C.len ≤ 8 * c.n
+  sh : c.sh < 32
 
-/-- The arguments: `out = rdi` (`16 n` bytes), `d = rsi`, `digest = rdx`,
-`k = rcx` (`8 n` bytes each) and `scratch = r8`, readable and writable as
+/-- The arguments: `out = rdi` (`2 len` bytes), `d = rsi`, `digest = rdx`,
+`k = rcx` (`len` bytes each) and `scratch = r8`, readable and writable as
 the contract says and apart from each other as it says. -/
 structure Pre (c : Cfg) (s : State) : Prop where
-  rd : s.rd = [⟨s.gpr .rsi, 8 * c.n⟩, ⟨s.gpr .rdx, 8 * c.n⟩, ⟨s.gpr .rcx, 8 * c.n⟩]
-  wr : s.wr = [⟨s.gpr .rdi, 16 * c.n⟩, ⟨s.gpr .r8, size⟩]
-  out_sc : Region.Disjoint ⟨s.gpr .rdi, 16 * c.n⟩ ⟨s.gpr .r8, size⟩
-  out_d : Region.Disjoint ⟨s.gpr .rdi, 16 * c.n⟩ ⟨s.gpr .rsi, 8 * c.n⟩
-  out_digest : Region.Disjoint ⟨s.gpr .rdi, 16 * c.n⟩ ⟨s.gpr .rdx, 8 * c.n⟩
-  out_k : Region.Disjoint ⟨s.gpr .rdi, 16 * c.n⟩ ⟨s.gpr .rcx, 8 * c.n⟩
-  d_sc : Region.Disjoint ⟨s.gpr .rsi, 8 * c.n⟩ ⟨s.gpr .r8, size⟩
-  digest_sc : Region.Disjoint ⟨s.gpr .rdx, 8 * c.n⟩ ⟨s.gpr .r8, size⟩
-  k_sc : Region.Disjoint ⟨s.gpr .rcx, 8 * c.n⟩ ⟨s.gpr .r8, size⟩
-  out_fit : (s.gpr .rdi).toNat + 16 * c.n ≤ 2 ^ 64
+  rd : s.rd = [⟨s.gpr .rsi, c.C.len⟩, ⟨s.gpr .rdx, c.C.len⟩, ⟨s.gpr .rcx, c.C.len⟩]
+  wr : s.wr = [⟨s.gpr .rdi, 2 * c.C.len⟩, ⟨s.gpr .r8, size⟩]
+  out_sc : Region.Disjoint ⟨s.gpr .rdi, 2 * c.C.len⟩ ⟨s.gpr .r8, size⟩
+  out_d : Region.Disjoint ⟨s.gpr .rdi, 2 * c.C.len⟩ ⟨s.gpr .rsi, c.C.len⟩
+  out_digest : Region.Disjoint ⟨s.gpr .rdi, 2 * c.C.len⟩ ⟨s.gpr .rdx, c.C.len⟩
+  out_k : Region.Disjoint ⟨s.gpr .rdi, 2 * c.C.len⟩ ⟨s.gpr .rcx, c.C.len⟩
+  d_sc : Region.Disjoint ⟨s.gpr .rsi, c.C.len⟩ ⟨s.gpr .r8, size⟩
+  digest_sc : Region.Disjoint ⟨s.gpr .rdx, c.C.len⟩ ⟨s.gpr .r8, size⟩
+  k_sc : Region.Disjoint ⟨s.gpr .rcx, c.C.len⟩ ⟨s.gpr .r8, size⟩
+  out_fit : (s.gpr .rdi).toNat + 2 * c.C.len ≤ 2 ^ 64
   sc_fit : (s.gpr .r8).toNat + size ≤ 2 ^ 64
 
 /-- What `setup` needs of its arguments (`Pre` gives it, and so can the
 arguments of other functions that run it): the working space `scratch = r8`
-writable, and `k = rcx`, `d = rsi` and `digest = rdx` (`8 n` bytes each)
+writable, and `k = rcx`, `d = rsi` and `digest = rdx` (`len` bytes each)
 readable and apart from it. -/
 structure SetupPre (c : Cfg) (s : State) : Prop where
   wr : (⟨s.gpr .r8, size⟩ : Region) ∈ s.wr
-  k_in : ∀ e, e + 8 ≤ 8 * c.n → InRegions (s.rd ++ s.wr) (s.gpr .rcx + BitVec.ofNat 64 e) 8
-  d_in : ∀ e, e + 8 ≤ 8 * c.n → InRegions (s.rd ++ s.wr) (s.gpr .rsi + BitVec.ofNat 64 e) 8
-  digest_in : ∀ e, e + 8 ≤ 8 * c.n → InRegions (s.rd ++ s.wr) (s.gpr .rdx + BitVec.ofNat 64 e) 8
-  d_sc : Region.Disjoint ⟨s.gpr .rsi, 8 * c.n⟩ ⟨s.gpr .r8, size⟩
-  digest_sc : Region.Disjoint ⟨s.gpr .rdx, 8 * c.n⟩ ⟨s.gpr .r8, size⟩
-  k_sc : Region.Disjoint ⟨s.gpr .rcx, 8 * c.n⟩ ⟨s.gpr .r8, size⟩
+  k_in : ∀ e, e + 8 ≤ c.C.len → InRegions (s.rd ++ s.wr) (s.gpr .rcx + BitVec.ofNat 64 e) 8
+  d_in : ∀ e, e + 8 ≤ c.C.len → InRegions (s.rd ++ s.wr) (s.gpr .rsi + BitVec.ofNat 64 e) 8
+  digest_in : ∀ e, e + 8 ≤ c.C.len → InRegions (s.rd ++ s.wr) (s.gpr .rdx + BitVec.ofNat 64 e) 8
+  d_sc : Region.Disjoint ⟨s.gpr .rsi, c.C.len⟩ ⟨s.gpr .r8, size⟩
+  digest_sc : Region.Disjoint ⟨s.gpr .rdx, c.C.len⟩ ⟨s.gpr .r8, size⟩
+  k_sc : Region.Disjoint ⟨s.gpr .rcx, c.C.len⟩ ⟨s.gpr .r8, size⟩
   sc_fit : (s.gpr .r8).toNat + size ≤ 2 ^ 64
 
-theorem Pre.setup {c : Cfg} {s : State} (hp : Pre c s) (h7 : c.n < 7) : SetupPre c s where
+theorem Pre.setup {c : Cfg} {s : State} (hp : Pre c s) : SetupPre c s where
   wr := by rw [hp.wr]; simp
-  k_in := inRegions_words (by rw [hp.rd]; simp) (by omega)
-  d_in := inRegions_words (by rw [hp.rd]; simp) (by omega)
-  digest_in := inRegions_words (by rw [hp.rd]; simp) (by omega)
+  k_in := inRegions_words (by rw [hp.rd]; simp) (by have := hp.out_fit; omega)
+  d_in := inRegions_words (by rw [hp.rd]; simp) (by have := hp.out_fit; omega)
+  digest_in := inRegions_words (by rw [hp.rd]; simp) (by have := hp.out_fit; omega)
   d_sc := hp.d_sc
   digest_sc := hp.digest_sc
   k_sc := hp.k_sc
@@ -90,20 +95,32 @@ theorem Pre.setup {c : Cfg} {s : State} (hp : Pre c s) (h7 : c.n < 7) : SetupPre
 /-- The number in slot `i`. -/
 abbrev sv (c : Cfg) (base : Addr) (s : State) (i : Nat) : Nat := wordsVal s.mem base (c.sl i) c.n
 
-/-- What `setup` leaves, from the state `s₀` at entry, with the working space
-at `base = r8`: `rdi = base`, `out` in `rsi`, the callee-saved registers in
-`[0, 48)`, `k`, `d` and the hash in their slots, the constants in theirs,
-and the flag all ones; only `rax`, `rdi`, `r14` and `rsi` and the working
-space changed. -/
-structure SetupPost (c : Cfg) (s₀ : State) (base : Addr) (s : State) : Prop where
+/-- The bits slot `i` is shifted right by when `setupWith hs` shifts slot
+`hs`: `sh` for that slot, 0 for the others. -/
+abbrev shAt (c : Cfg) (hs : Option Nat) (i : Nat) : Nat := if hs = some i then c.sh else 0
+
+theorem shAt_none (c : Cfg) (i : Nat) : shAt c none i = 0 := rfl
+theorem shAt_self (c : Cfg) (i : Nat) : shAt c (some i) i = c.sh := ite_eq_left_of_eq_true _ _ (eq_true rfl)
+theorem shAt_E_D (c : Cfg) : shAt c (some E) D = 0 := rfl
+theorem shAt_E_K (c : Cfg) : shAt c (some E) K = 0 := rfl
+theorem shAt_D_E (c : Cfg) : shAt c (some D) E = 0 := rfl
+theorem shAt_D_K (c : Cfg) : shAt c (some D) K = 0 := rfl
+
+/-- What `setupWith hs` leaves, from the state `s₀` at entry, with the
+working space at `base = r8`: `rdi = base`, `out` in `rsi`, the callee-saved
+registers in `[0, 48)`, `k`, `d` and the hash in their slots (the one in
+slot `hs` shifted right by `sh`), the constants in theirs, and the flag all
+ones; only `rax`, `rdi`, `r14`, `rsi` and `rdx` and the working space
+changed. -/
+structure SetupPost (c : Cfg) (hs : Option Nat) (s₀ : State) (base : Addr) (s : State) : Prop where
   scr : Scr s base size
   rsi : s.gpr .rsi = s₀.gpr .rdi
-  keep : KeepRegs [.rax, .rdi, .r14, .rsi] s₀ s
+  keep : KeepRegs [.rax, .rdi, .r14, .rsi, .rdx] s₀ s
   unch : Unch base [(0, size)] s₀.mem s.mem
   saved : Spill.Saved s.mem base s₀.gpr Cfg.saved
-  k : sv c base s K = ofBytes (Spec.Ecdsa.bytesAt s₀.mem (s₀.gpr .rcx) (8 * c.n))
-  d : sv c base s D = ofBytes (Spec.Ecdsa.bytesAt s₀.mem (s₀.gpr .rsi) (8 * c.n))
-  e : sv c base s E = ofBytes (Spec.Ecdsa.bytesAt s₀.mem (s₀.gpr .rdx) (8 * c.n))
+  k : sv c base s K = ofBytes (Spec.Ecdsa.bytesAt s₀.mem (s₀.gpr .rcx) c.C.len)
+  d : sv c base s D = ofBytes (Spec.Ecdsa.bytesAt s₀.mem (s₀.gpr .rsi) c.C.len) >>> shAt c hs D
+  e : sv c base s E = ofBytes (Spec.Ecdsa.bytesAt s₀.mem (s₀.gpr .rdx) c.C.len) >>> shAt c hs E
   consts : ∀ ix ∈ c.consts, sv c base s ix.1 = ix.2
   flag : word s.mem base (c.sl FLAG) = BitVec.allOnes 64
 
@@ -132,15 +149,15 @@ theorem sl_inj (c : Cfg) (hn : 0 < c.n) {i j : Nat} (h : c.sl i = c.sl j) : i = 
   omega
 
 /-- Every slot and table is in the working space. -/
-theorem sl_le (c : Cfg) (hn : c.n < 7) {i : Nat} (hi : i < 45) : c.sl i + 8 * c.n ≤ size := by
+theorem sl_le (c : Cfg) (hn : c.n < 10) {i : Nat} (hi : i < 45) : c.sl i + 8 * c.n ≤ size := by
   rw [sl_eq]
   have := Nat.mul_le_mul_left (8 * c.n) hi
   rw [Nat.mul_succ] at this
-  have : 8 * c.n * 45 ≤ 8 * 6 * 45 := Nat.mul_le_mul_right _ (by omega)
+  have : 8 * c.n * 45 ≤ 8 * 9 * 45 := Nat.mul_le_mul_right _ (by omega)
   show _ ≤ 8192
   omega
 
-theorem bitsAt_le (c : Cfg) (hn : c.n < 7) {j : Nat} (hj : j < 3) : bitsAt c.n j + 64 * c.n ≤ size := by
+theorem bitsAt_le (c : Cfg) (hn : c.n < 10) {j : Nat} (hj : j < 3) : bitsAt c.n j + 64 * c.n ≤ size := by
   rw [bitsAt_eq]
   have := Nat.mul_le_mul_left (64 * c.n) hj
   rw [Nat.mul_succ] at this

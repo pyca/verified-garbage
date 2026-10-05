@@ -251,7 +251,7 @@ theorem winMul_ok (hc : CfgOk c) (hC : Law c.C) {base : Addr} {s : State} (hs : 
   refine WP.mono (addConst_ok hs (n := c.n) (src := c.sl ks) (dst := c.sl WK)
     (c := 8 * geom (16 * c.n + 1)) h0 h7 (sl_le c h7 hks) (by omega) (sl_mod8 c _) (sl_mod8 c _)
     (Or.inl (by omega)) (by omega) (by omega)) fun s₁ ⟨e₁, k₁, O₁⟩ => ?_
-  have hs₁ := hs.of_keepRegs k₁ (x0_not_clob _ h7)
+  have hs₁ := hs.of_keepRegs k₁ (x0_not_clob _)
   rw [hB]
   refine WP.mono (bits_ok hs₁ (n := c.n + 1) (src := c.sl WK) (dst := c.sl WB) (by omega) (by omega)
     (by omega) (by omega) (by omega) hB4 (Or.inl (by omega))) fun s₂ ⟨b₂, k₂, O₂⟩ => ?_

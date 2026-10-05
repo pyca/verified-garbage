@@ -23,8 +23,8 @@ open VG VG.X86_64 VG.Impl.Ecdsa.X86_64 VG.Impl.Ecdh.X86_64
 open VG.Proof.Ecdsa.X86_64 VG.Proof.Ecdsa.X86_64.P384
 
 theorem pre_of {s : State} (h : ecdhX86_64.pre s) : EPre p384 s := by
-  obtain ⟨h1, h2, h3, -, -, h6, h7, -, -, -, h11⟩ := h
-  exact ⟨h1, h2, h3, h6, h7, h11⟩
+  obtain ⟨h1, h2, h3, -, -, h6, h7, -, -, h10, h11⟩ := h
+  exact ⟨h1, h2, h3, h6, h7, h10, h11⟩
 
 theorem post_of {s s' : State} (h : EPost p384 s s') : ecdhX86_64.post s s' := by
   unfold EPost at h
@@ -35,7 +35,7 @@ theorem post_of {s s' : State} (h : EPost p384 s s') : ecdhX86_64.post s s' := b
   revert h
   generalize hq : ex s.mem (s.gpr .rsi) (s.gpr .rdx) = q
   rw [show Spec.Ecdh.exchange p384.C (dk p384 s)
-      (Spec.Ecdsa.bytesAt s.mem (s.gpr .rdx) (1 + 16 * p384.n)) = ex s.mem (s.gpr .rsi) (s.gpr .rdx) from rfl, hq]
+      (Spec.Ecdsa.bytesAt s.mem (s.gpr .rdx) (1 + 2 * p384.C.len)) = ex s.mem (s.gpr .rsi) (s.gpr .rdx) from rfl, hq]
   rcases q with _ | z <;> exact id
 
 theorem ecdh_x86 (hL : Weierstrass.Law Spec.P384.curve) (s : State) (hs : ecdhX86_64.pre s) :

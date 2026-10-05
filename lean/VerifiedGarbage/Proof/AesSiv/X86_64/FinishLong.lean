@@ -43,17 +43,6 @@ theorem jOf_rest {L : Nat} (h : 16 ≤ L) :
     16 * jOf L ≤ L - 16 * kOf L ∧ 0 < L - 16 * kOf L - 16 * jOf L ∧ L - 16 * kOf L - 16 * jOf L ≤ 16 := by
   unfold kOf jOf; split <;> omega
 
-/-- Four doublings, as `add rax, rax` computes them. -/
-theorem dbl4 (x : Nat) (_h : 16 * x < 2 ^ 64) :
-    BitVec.ofNat 64 x + BitVec.ofNat 64 x + (BitVec.ofNat 64 x + BitVec.ofNat 64 x) +
-        (BitVec.ofNat 64 x + BitVec.ofNat 64 x + (BitVec.ofNat 64 x + BitVec.ofNat 64 x)) +
-      (BitVec.ofNat 64 x + BitVec.ofNat 64 x + (BitVec.ofNat 64 x + BitVec.ofNat 64 x) +
-        (BitVec.ofNat 64 x + BitVec.ofNat 64 x + (BitVec.ofNat 64 x + BitVec.ofNat 64 x))) =
-      BitVec.ofNat 64 (16 * x) := by
-  apply BitVec.eq_of_toNat_eq
-  simp only [BitVec.toNat_add, BitVec.toNat_ofNat]
-  omega
-
 /-- `16 k`, as the code computes it for `L ≥ 17`: `((L − 1) >> 4) − 1`, doubled four times. -/
 theorem kOf_bv {L : Nat} (h : 17 ≤ L) (hL : L < 2 ^ 64) :
     (BitVec.ofNat 64 L - BitVec.signExtend 64 (BitVec.ofNat 32 1)) >>> 4 - BitVec.signExtend 64 (BitVec.ofNat 32 1) =

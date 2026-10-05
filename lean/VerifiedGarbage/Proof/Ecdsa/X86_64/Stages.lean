@@ -19,9 +19,9 @@ open VG.Proof.X25519.X86_64 (Keeps)
 variable {c : Cfg}
 
 /-- The arguments' numbers. -/
-abbrev kv (c : Cfg) (s₀ : State) : Nat := ofBytes (Spec.Ecdsa.bytesAt s₀.mem (s₀.gpr .rcx) (8 * c.n))
-abbrev dv (c : Cfg) (s₀ : State) : Nat := ofBytes (Spec.Ecdsa.bytesAt s₀.mem (s₀.gpr .rsi) (8 * c.n))
-abbrev ev (c : Cfg) (s₀ : State) : Nat := ofBytes (Spec.Ecdsa.bytesAt s₀.mem (s₀.gpr .rdx) (8 * c.n))
+abbrev kv (c : Cfg) (s₀ : State) : Nat := ofBytes (Spec.Ecdsa.bytesAt s₀.mem (s₀.gpr .rcx) c.C.len)
+abbrev dv (c : Cfg) (s₀ : State) : Nat := ofBytes (Spec.Ecdsa.bytesAt s₀.mem (s₀.gpr .rsi) c.C.len)
+abbrev ev (c : Cfg) (s₀ : State) : Nat := ofBytes (Spec.Ecdsa.bytesAt s₀.mem (s₀.gpr .rdx) c.C.len) >>> c.sh
 
 /-- What the stages keep: the working space, `out` in `rsi`, the regions,
 the constants and the saved registers. -/
@@ -32,10 +32,11 @@ structure Keep (c : Cfg) (s₀ : State) (base : Addr) (s : State) : Prop where
   fixed : Fixed c base s₀.gpr s.mem
 
 /-- After the setup and the tables. -/
-structure St₁ (c : Cfg) (s₀ : State) (base : Addr) (s : State) : Prop extends Keep c s₀ base s where
+structure St₁ (c : Cfg) (hs : Option Nat) (s₀ : State) (base : Addr) (s : State) : Prop
+    extends Keep c s₀ base s where
   k : sv c base s K = kv c s₀
-  d : sv c base s D = dv c s₀
-  e : sv c base s E = ev c s₀
+  d : sv c base s D = dv c s₀ >>> shAt c hs D
+  e : sv c base s E = ofBytes (Spec.Ecdsa.bytesAt s₀.mem (s₀.gpr .rdx) c.C.len) >>> shAt c hs E
   rx : sv c base s RX = 0
   ry : sv c base s RY = c.mont 1
   rz : sv c base s RZ = 0
@@ -48,14 +49,15 @@ structure St₁ (c : Cfg) (s₀ : State) (base : Addr) (s : State) : Prop extend
   rd : s.rd = s₀.rd
 
 /-- The setup, then the three tables. -/
-theorem stage₁ (hc : CfgOk c) {s₀ : State} (hp : SetupPre c s₀) {rest : Prog isa} {Q : State → Prop}
-    (h : ∀ s, St₁ c s₀ (s₀.gpr .r8) s → WP isa rest s Q) :
-    WP isa (.seq (.block c.setup) (.seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n))
+theorem stage₁ (hc : CfgOk c) {hs : Option Nat} (hhs : ShiftOk hs) {s₀ : State} (hp : SetupPre c s₀)
+    {rest : Prog isa} {Q : State → Prop}
+    (h : ∀ s, St₁ c hs s₀ (s₀.gpr .r8) s → WP isa rest s Q) :
+    WP isa (.seq (.block (c.setupWith hs)) (.seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n))
       (.seq (bits (c.sl EXPP) (bitsAt c.n 1) (8 * c.n))
       (.seq (bits (c.sl EXPN) (bitsAt c.n 2) (8 * c.n)) rest)))) s₀ Q := by
   have h0 := hc.n0
-  have h7 := hc.n7
-  refine WP.seq (WP.mono (setup_ok hc hp) fun s₁ P => ?_)
+  have h7 := hc.n10
+  refine WP.seq (WP.mono (setup_ok hc hhs hp) fun s₁ P => ?_)
   have hn := P.scr.nowrap
   have hc' : ∀ ix ∈ c.consts, sv c (s₀.gpr .r8) s₁ ix.1 = ix.2 := P.consts
   have fx : Fixed c (s₀.gpr .r8) s₀.gpr s₁.mem :=
@@ -119,7 +121,7 @@ theorem stage₁ (hc : CfgOk c) {s₀ : State} (hp : SetupPre c s₀) {rest : Pr
     simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     rw [k₄.gpr r (by simp [hr.1, hr.2.2.2.2.1, hr.2.2.2.2.2]),
       k₃.gpr r (by simp [hr.1, hr.2.2.2.2.1, hr.2.2.2.2.2]), k₂.gpr r (by simp [hr.1, hr.2.2.2.2.1, hr.2.2.2.2.2]),
-      P.keep.gpr r (by simp [hr.1, hr.2.1, hr.2.2.1, hr.2.2.2.1])]
+      P.keep.gpr r (by simp [hr.1, hr.2.1, hr.2.2.1, hr.2.2.2.1, hr.2.2.2.2.1])]
   · intro x hx
     have hx' : size ≤ ofs (s₀.gpr .r8) x := by have := hx _ (List.mem_singleton_self _); omega
     rw [O₄ x (Or.inr (by have := bitsAt_le c h7 (j := 2) (by decide); omega)),
@@ -144,7 +146,7 @@ theorem powWN_eq (c : Cfg) : powW c.powN = slW c [ACC, PT, TMP] := rfl
 
 /-- The flag word apart from numbered slots. -/
 theorem flag_unch {base : Addr} {l : List Nat} {m m' : Mem} (hu : Unch base (slW c l) m m')
-    (h7 : c.n < 7) (h0 : 0 < c.n) (hn : base.toNat + size ≤ 2 ^ 64) (hl : FLAG ∉ l) :
+    (h7 : c.n < 10) (h0 : 0 < c.n) (hn : base.toNat + size ≤ 2 ^ 64) (hl : FLAG ∉ l) :
     word m' base (c.sl FLAG) = word m base (c.sl FLAG) := by
   have hF := sl_le c h7 (i := FLAG) (by decide)
   refine hu.word (fun w hw => ?_) (by omega)
@@ -152,12 +154,14 @@ theorem flag_unch {base : Addr} {l : List Nat} {m m' : Mem} (hu : Unch base (slW
   · exact Or.inl (by omega)
   · exact Or.inr h
 
-/-- A hash of `8 n` bytes is its number. -/
-theorem hashToInt_eq (hc : CfgOk c) (m : Mem) (q : Addr) :
-    Spec.Ecdsa.hashToInt c.C (Spec.Ecdsa.bytesAt m q (8 * c.n)) =
-      ofBytes (Spec.Ecdsa.bytesAt m q (8 * c.n)) := by
-  have := hc.hash
-  simp only [Spec.Ecdsa.hashToInt, length_bytesAt,
-    show 8 * (8 * c.n) ≤ Spec.Ecdsa.nBits c.C by omega, ite_true]
+/-- A hash of `len` bytes is its number shifted right by the bits that are
+not `e`'s. -/
+theorem hashToInt_eq (c : Cfg) (m : Mem) (q : Addr) :
+    Spec.Ecdsa.hashToInt c.C (Spec.Ecdsa.bytesAt m q c.C.len) =
+      ofBytes (Spec.Ecdsa.bytesAt m q c.C.len) >>> c.sh := by
+  simp only [Spec.Ecdsa.hashToInt, length_bytesAt, Cfg.sh]
+  split
+  · rw [show 8 * c.C.len - Spec.Ecdsa.nBits c.C = 0 by omega, Nat.shiftRight_zero]
+  · rfl
 
 end VG.Proof.Ecdsa.X86_64

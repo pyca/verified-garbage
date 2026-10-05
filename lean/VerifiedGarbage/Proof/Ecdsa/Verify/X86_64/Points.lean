@@ -28,14 +28,14 @@ theorem copySl_ok (hc : CfgOk c) {s : State} {base : Addr} (hs : Scr s base size
       sv c base s' o = sv c base s a ∧ KeepRegs [.rax] s s' ∧
       Outside base (c.sl o) (8 * c.n) s.mem s'.mem := by
   have := sl_apart c hoa
-  exact copy_ok c.n hs (sl_le c hc.n7 ho) (sl_le c hc.n7 ha) (by omega)
+  exact copy_ok c.n hs (sl_le c hc.n10 ho) (sl_le c hc.n10 ha) (by omega)
 
 /-- `[o] = x`, on numbered slots. -/
 theorem setSl_ok (hc : CfgOk c) {s : State} {base : Addr} (hs : Scr s base size) {o x : Nat}
     (ho : o < 45) (hx : x < 2 ^ (64 * c.n)) :
     WP isa (.block (setConst c.n (c.sl o) x)) s fun s' =>
       sv c base s' o = x ∧ KeepRegs [.rax] s s' ∧ Outside base (c.sl o) (8 * c.n) s.mem s'.mem :=
-  setConst_ok hs (sl_le c hc.n7 ho) hx
+  setConst_ok hs (sl_le c hc.n10 ho) hx
 
 /-- The slots `save` writes. -/
 abbrev saveW : List Nat := [UX, UY, UZ, RX, RY, RZ]
@@ -52,7 +52,7 @@ theorem save_ok (hc : CfgOk c) {s : State} {base : Addr} (hs : Scr s base size) 
       sv c base s' UX = sv c base s RX ∧ sv c base s' UY = sv c base s RY ∧
       sv c base s' UZ = sv c base s RZ ∧ sv c base s' RX = 0 ∧ sv c base s' RY = c.mont 1 ∧
       sv c base s' RZ = 0 := by
-  have h7 := hc.n7
+  have h7 := hc.n10
   have hn := hs.nowrap
   have hp := hc.p_lt
   have hp3 := hc.p_ge
@@ -114,16 +114,16 @@ theorem sum_eq (c : Cfg) : Impl.Ecdsa.Verify.X86_64.Cfg.sum c =
 
 /-- `R = U + R`, by the complete addition. -/
 theorem sum_ok (hc : CfgOk c) {s : State} {base : Addr} (hs : Scr s base size)
-    (hM : ModOk c.MP' size c.C.p s.mem base) (hlt : ∀ i ∈ sumR, sv c base s i < c.C.p) :
+    (hM : ModOkW c.MP' size c.C.p s.mem base) (hlt : ∀ i ∈ sumR, sv c base s i < c.C.p) :
     WP isa (Impl.Ecdsa.Verify.X86_64.Cfg.sum c) s fun s' =>
       Scr s' base size ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ Unch base (slW c sumW) s.mem s'.mem ∧
-      ModOk c.MP' size c.C.p s'.mem base ∧ sv c base s' RZ < c.C.p ∧
+      ModOkW c.MP' size c.C.p s'.mem base ∧ sv c base s' RZ < c.C.p ∧
       (tmv c.C c.n base s' (c.sl RX), tmv c.C c.n base s' (c.sl RY), tmv c.C c.n base s' (c.sl RZ)) =
         rcbAdd (tmv c.C c.n base s (c.sl AP)) (tmv c.C c.n base s (c.sl B3P))
           (tmv c.C c.n base s (c.sl UX)) (tmv c.C c.n base s (c.sl UY)) (tmv c.C c.n base s (c.sl UZ))
           (tmv c.C c.n base s (c.sl RX)) (tmv c.C c.n base s (c.sl RY)) (tmv c.C c.n base s (c.sl RZ)) := by
   have h0 := hc.n0
-  have h7 := hc.n7
+  have h7 := hc.n10
   have hn := hs.nowrap
   have hpR := unitMod_pow_two hc.p_odd (64 * c.n)
   have hL : Lay c.MP' size (· ∈ sumSl.map c.sl) := lay_map hc rfl rfl rfl (by decide)
@@ -181,7 +181,7 @@ theorem sum_ok (hc : CfgOk c) {s : State} {base : Addr} (hs : Scr s base size)
   refine ⟨hs₃.of_keepRegs k₄ (by decide), by rw [k₄.rd, k₃.rd, k₂.rd, k₁.rd],
     by rw [k₄.wr, k₃.wr, k₂.wr, k₁.wr], U₄, ?_, ?_, ?_⟩
   · have hM₁ := I₁.mod
-    refine ⟨hM₁.n0, hM₁.n7, hM₁.mo, hM₁.tmp, hM₁.sep, ?_, hM₁.inv, hM₁.red⟩
+    refine ⟨hM₁.n0, hM₁.mo, hM₁.tmp, hM₁.sep, ?_, hM₁.inv, hM₁.red⟩
     rw [U₄.wordsVal (fun w hw => ?_) (by have := hM₁.mo; omega)]
     · exact hM.val
     · obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hw
@@ -245,7 +245,7 @@ theorem points_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {g : Reg → BitVe
     (h : ∀ s', Pts c s₀ base g Q₁ Q₂ s' → WP isa rest s' Q) :
     WP isa (.seq (Impl.Ecdsa.Verify.X86_64.Cfg.points c) rest) s Q := by
   have h0 := hc.n0
-  have h7 := hc.n7
+  have h7 := hc.n10
   have hn := hM.scr.nowrap
   have hpR := unitMod_pow_two hc.p_odd (64 * c.n)
   have hp3 := hc.p_ge

@@ -204,11 +204,11 @@ open VG.Impl.Ecdh.X86_64 (QY R2P BP)
 
 variable {c : Cfg}
 
-theorem signExtend_ofNat : ∀ k < 64, (BitVec.ofNat 32 k).signExtend 64 = BitVec.ofNat 64 k := by
+theorem signExtend_ofNat : ∀ k < 128, (BitVec.ofNat 32 k).signExtend 64 = BitVec.ofNat 64 k := by
   decide
 
 /-- `rdx = r9 + k`. -/
-theorem ptr_ok (s : State) {k : Nat} (hk : k < 64) :
+theorem ptr_ok (s : State) {k : Nat} (hk : k < 128) :
     WP isa (.block ([.mov .rdx (.reg .r9), .alu .add .rdx (.imm (BitVec.ofNat 32 k))] : List Instr)) s
       fun s' => s'.gpr .rdx = s.gpr .r9 + BitVec.ofNat 64 k ∧ Keeps [.rdx] s s' := by
   apply WP.of_runBlock
@@ -221,32 +221,33 @@ theorem ptr_ok (s : State) {k : Nat} (hk : k < 64) :
 
 theorem peer_eq (c : Cfg) : Impl.Ecdh.X86_64.Cfg.peer c =
     setConst c.n (c.sl R2P) (c.R * c.R % c.C.p) ++ (setConst c.n (c.sl BP) (c.mont c.C.b) ++
-    (([.mov .rdx (.reg .r9), .alu .add .rdx (.imm (BitVec.ofNat 32 (1 + 8 * c.n)))] : List Instr) ++
-    (loadBE c.n (c.sl QY) .rdx ++ (Impl.Ecdh.X86_64.Cfg.checkLead c ++
+    (([.mov .rdx (.reg .r9), .alu .add .rdx (.imm (BitVec.ofNat 32 (1 + c.C.len)))] : List Instr) ++
+    (loadBytes c.C.len c.n (c.sl QY) .rdx ++ (Impl.Ecdh.X86_64.Cfg.checkLead c ++
     (Impl.Ecdh.X86_64.Cfg.checkLtP c (c.sl E) ++ Impl.Ecdh.X86_64.Cfg.checkLtP c (c.sl QY)))))) := by
   simp only [Impl.Ecdh.X86_64.Cfg.peer, Impl.Ecdh.X86_64.Cfg.consts, List.flatMap_cons, List.flatMap_nil,
     List.append_nil, List.append_assoc]
 
 /-- A slot apart from the one an operation wrote keeps its number. -/
 theorem sv_out {base : Addr} {m m' : Mem} {j : Nat} (h : Outside base (c.sl j) (8 * c.n) m m')
-    (h7 : c.n < 7) (hn : base.toNat + size ≤ 2 ^ 64) {i : Nat} (hi : i < 45) (hij : i ≠ j) :
+    (h7 : c.n < 10) (hn : base.toNat + size ≤ 2 ^ 64) {i : Nat} (hi : i < 45) (hij : i ≠ j) :
     wordsVal m' base (c.sl i) c.n = wordsVal m base (c.sl i) c.n := by
   have := sl_le c h7 hi
   exact h.wordsVal (sl_apart c hij) (by omega)
 
 /-- The constants, the peer's `y` and the checks of its first byte, `x` and `y`. -/
 theorem peer_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size) {q : Addr}
-    (hq : s.gpr .r9 = q) (hin : (⟨q, 1 + 16 * c.n⟩ : Region) ∈ s.rd ++ s.wr)
-    (hd : Region.Disjoint ⟨q, 1 + 16 * c.n⟩ ⟨base, size⟩) (hmp : sv c base s MP = c.C.p) :
+    (hq : s.gpr .r9 = q) (hin : (⟨q, 1 + 2 * c.C.len⟩ : Region) ∈ s.rd ++ s.wr)
+    (hd : Region.Disjoint ⟨q, 1 + 2 * c.C.len⟩ ⟨base, size⟩) (hmp : sv c base s MP = c.C.p) :
     WP isa (.block (Impl.Ecdh.X86_64.Cfg.peer c)) s fun s' =>
       Scr s' base size ∧ KeepRegs [.rax, .rdx] s s' ∧
       Unch base (slW c [R2P, BP, QY] ++ [(c.sl FLAG, 8)]) s.mem s'.mem ∧
       sv c base s' R2P = c.R * c.R % c.C.p ∧ sv c base s' BP = c.mont c.C.b ∧
-      sv c base s' QY = ofBytes (Spec.Ecdsa.bytesAt s.mem (q + BitVec.ofNat 64 (1 + 8 * c.n)) (8 * c.n)) ∧
+      sv c base s' QY = ofBytes (Spec.Ecdsa.bytesAt s.mem (q + BitVec.ofNat 64 (1 + c.C.len)) c.C.len) ∧
       word s'.mem base (c.sl FLAG) = word s.mem base (c.sl FLAG) &&& mask (s.mem q = 4) &&&
         mask (sv c base s E < c.C.p) &&& mask (sv c base s' QY < c.C.p) := by
   have h0 := hc.n0
-  have h7 := hc.n7
+  have h7 := hc.n10
+  have := hc.len8; have := hc.len_lo; have := hc.len_hi
   have hn := hs.nowrap
   have hpl := hc.p_lt
   have hp3 := hc.p_ge
@@ -266,7 +267,7 @@ theorem peer_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size) 
     Nat.lt_trans (Nat.mod_lt _ (by omega)) hpl)) fun s₂ ⟨e₂, k₂, O₂⟩ => ?_
   have hs₂ := hs₁.of_keepRegs k₂ (by decide)
   rw [WP.block_append_iff]
-  refine WP.mono (ptr_ok s₂ (k := 1 + 8 * c.n) (by omega)) fun s₃ ⟨e₃, k₃⟩ => ?_
+  refine WP.mono (ptr_ok s₂ (k := 1 + c.C.len) (by omega)) fun s₃ ⟨e₃, k₃⟩ => ?_
   have hs₃ := hs₂.of_keeps k₃ (by decide)
   have hq₂ : s₂.gpr .r9 = q := by rw [k₂.gpr _ (by decide), k₁.gpr _ (by decide), hq]
   have hq₃ : s₃.gpr .r9 = q := by rw [k₃.1 _ (by decide), hq₂]
@@ -275,7 +276,8 @@ theorem peer_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size) 
   rw [hq₂] at e₃
   -- `y`
   rw [WP.block_append_iff]
-  refine WP.mono (loadBE_ok hs₃ (src := .rdx) (by decide) hY (fun e he => ⟨_, by rw [hrw₃]; exact hin, by
+  refine WP.mono (loadBytes_ok hs₃ (src := .rdx) (by decide) hY hc.len8 hc.len_lo hc.len_hi
+    (fun e he => ⟨_, by rw [hrw₃]; exact hin, by
       rw [e₃, BitVec.add_assoc, BitVec.ofNat_add_ofNat]
       exact Offset.contains_base q (by omega) (by omega)⟩)
     (by rw [e₃]; exact (hd.sub_left (Offset.sub_base q (by omega))).sub_right (Offset.sub_base base hY)))
@@ -294,7 +296,7 @@ theorem peer_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size) 
   -- the first byte
   rw [WP.block_append_iff]
   refine WP.mono (checkLead_ok c hs₄ hq₄ ⟨_, by rw [hrw₄]; exact hin, by
-      have := Offset.contains_base q (d := 0) (n := 1) (k := 1 + 16 * c.n) (by omega) (by omega)
+      have := Offset.contains_base q (d := 0) (n := 1) (k := 1 + 2 * c.C.len) (by omega) (by omega)
       rwa [BitVec.add_zero] at this⟩ hF) fun s₅ ⟨f₅, k₅, O₅⟩ => ?_
   have hs₅ := hs₄.of_keepRegs k₅ (by decide)
   -- `x < p`

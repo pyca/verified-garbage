@@ -30,6 +30,7 @@ mod cmac_aes;
 mod cmac_triple_des;
 mod ecdh_p256;
 mod ecdh_p384;
+mod ecdh_p521;
 mod ecdsa_p256;
 mod ecdsa_p384;
 mod ed25519;
@@ -61,9 +62,11 @@ mod poly1305;
 mod rc2_cbc;
 mod rc4;
 mod rsa;
+mod rsa_keygen;
 mod rsa_oaep;
 mod rsa_pkcs1_enc;
 mod rsa_pkcs1_sig;
+mod rsa_pss;
 mod scrypt;
 mod sha1;
 mod sha224;
@@ -286,9 +289,11 @@ const BENCHES: &[Bench] = &[
     (rc2_cbc::USES, rc2_cbc::bench),
     (rc4::USES, rc4::bench),
     (rsa::USES, rsa::bench),
+    (rsa_keygen::USES, rsa_keygen::bench),
     (rsa_oaep::USES, rsa_oaep::bench),
     (rsa_pkcs1_enc::USES, rsa_pkcs1_enc::bench),
     (rsa_pkcs1_sig::USES, rsa_pkcs1_sig::bench),
+    (rsa_pss::USES, rsa_pss::bench),
     (triple_des_ecb::USES, triple_des_ecb::bench),
     (argon2::USES, argon2::bench),
     (scrypt::USES, scrypt::bench),
@@ -308,6 +313,7 @@ const BENCHES: &[Bench] = &[
     (ecdsa_p384::USES, ecdsa_p384::bench),
     (ecdh_p256::USES, ecdh_p256::bench),
     (ecdh_p384::USES, ecdh_p384::bench),
+    (ecdh_p521::USES, ecdh_p521::bench),
 ];
 
 /// Runs the benchmarks that use any of the modules in `$VG_BENCH_MODULES`
