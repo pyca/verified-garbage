@@ -228,7 +228,10 @@ pub fn decrypt(key: &PrivateKey, ciphertext: &[u8]) -> Result<Vec<u8>, Error> {
     if d.is_empty() || d.len() > k {
         return Err(Error::InvalidPrivateKey);
     }
-    let f = decrypt_fn(Sha256Backend::select(detected()), Backend::select(detected()));
+    let f = decrypt_fn(
+        Sha256Backend::select(detected()),
+        Backend::select(detected()),
+    );
     let mut out = vec![0u8; k];
     let mut len = [0u64; 1];
     let mut scratch = vec![0u64; scratch_words(k)];
@@ -333,7 +336,11 @@ mod tests {
     #[test]
     fn rsa_pkcs1_backends() {
         let mut fns = Vec::new();
-        for sha in [Sha256Backend::Scalar, Sha256Backend::ShaNi, Sha256Backend::Avx2] {
+        for sha in [
+            Sha256Backend::Scalar,
+            Sha256Backend::ShaNi,
+            Sha256Backend::Avx2,
+        ] {
             for crt in [Backend::Baseline, Backend::Adx, Backend::Ifma] {
                 fns.push(decrypt_fn(sha, crt) as usize);
             }

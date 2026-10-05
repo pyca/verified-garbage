@@ -9,8 +9,9 @@
 use verified_garbage::rsa::{PrivateKey, PublicKey};
 use verified_garbage::rsa_pkcs1_enc::{Error, decrypt, encrypt};
 
-const TEXT: &str =
-    include_str!("../../vectors/draft-irtf-cfrg-rsa-guidance-10/draft-irtf-cfrg-rsa-guidance-10.txt");
+const TEXT: &str = include_str!(
+    "../../vectors/draft-irtf-cfrg-rsa-guidance-10/draft-irtf-cfrg-rsa-guidance-10.txt"
+);
 
 fn unhex(s: &str) -> Vec<u8> {
     assert_eq!(s.len() % 2, 0, "{s}");
@@ -64,8 +65,14 @@ fn integers(mut seq: &[u8]) -> Vec<&[u8]> {
 
 /// The base64 text between the PEM lines of `lines` (trimmed), as DER.
 fn pem(lines: &[&str]) -> Vec<u8> {
-    let b = lines.iter().position(|l| *l == "-----BEGIN PRIVATE KEY-----").unwrap();
-    let e = lines.iter().position(|l| *l == "-----END PRIVATE KEY-----").unwrap();
+    let b = lines
+        .iter()
+        .position(|l| *l == "-----BEGIN PRIVATE KEY-----")
+        .unwrap();
+    let e = lines
+        .iter()
+        .position(|l| *l == "-----END PRIVATE KEY-----")
+        .unwrap();
     let b64: String = lines[b + 1..e]
         .iter()
         .filter(|l| !l.is_empty() && !l.contains(' '))
@@ -119,10 +126,15 @@ fn vector(title: &str, lines: &[&str]) -> Vector {
     let (end, msg) = if let Some(i) = at("ASCII encoded") {
         let text = lines[i + 1..].iter().find(|l| !l.is_empty()).unwrap();
         (i, text.as_bytes().to_vec())
-    } else if let Some(i) = at("Hex encoded decrypted message:") {
+    } else if let Some(i) =
+        at("Hex encoded decrypted message:").or_else(|| at("Hex encoded message:"))
+    {
         (i, hex_lines(&lines[i + 1..]))
     } else {
-        (at("The result of decryption is a message of length 0.").unwrap(), Vec::new())
+        (
+            at("The result of decryption is a message of length 0.").unwrap(),
+            Vec::new(),
+        )
     };
     Vector {
         title: title.to_string(),
@@ -148,7 +160,10 @@ fn keys() -> Vec<(PrivateKey, PublicKey, Vec<Vector>)> {
         if title.ends_with("Private key") {
             let (private, public) = key(&pem(lines));
             keys.push((private, public, Vec::new()));
-        } else if lines.iter().any(|l| l.starts_with("Hex encoded ciphertext:")) {
+        } else if lines
+            .iter()
+            .any(|l| l.starts_with("Hex encoded ciphertext:"))
+        {
             keys.last_mut().unwrap().2.push(vector(title, lines));
         }
     }
@@ -184,10 +199,16 @@ fn rsa_pkcs1_lengths() {
         assert_ne!(encrypt(public, &m).unwrap(), c);
         assert_eq!(decrypt(private, &c), Ok(m));
     }
-    assert_eq!(encrypt(public, &vec![1; k - 10]), Err(Error::MessageTooLong));
+    assert_eq!(
+        encrypt(public, &vec![1; k - 10]),
+        Err(Error::MessageTooLong)
+    );
     let ct = &vectors[0].ct;
     assert_eq!(decrypt(private, &ct[1..]), Err(Error::InvalidLength));
-    assert_eq!(decrypt(private, &vec![0xff; k]), Err(Error::InputOutOfRange));
+    assert_eq!(
+        decrypt(private, &vec![0xff; k]),
+        Err(Error::InputOutOfRange)
+    );
 }
 
 /// Keys whose private exponent or CRT values do not match.
@@ -198,10 +219,14 @@ fn rsa_pkcs1_bad_keys() {
     let der = pem(&lines);
     let v = components(&der);
     let ct = &keys()[0].2[0].ct;
-    let with_d = |d: &[u8]| PrivateKey::from_crt(v[1], v[2], d, v[4], v[5], v[6], v[7], v[8]).unwrap();
+    let with_d =
+        |d: &[u8]| PrivateKey::from_crt(v[1], v[2], d, v[4], v[5], v[6], v[7], v[8]).unwrap();
     assert_eq!(decrypt(&with_d(&[]), ct), Err(Error::InvalidPrivateKey));
     assert_eq!(decrypt(&with_d(&[0, 0]), ct), Err(Error::InvalidPrivateKey));
-    assert_eq!(decrypt(&with_d(&vec![1; 257]), ct), Err(Error::InvalidPrivateKey));
+    assert_eq!(
+        decrypt(&with_d(&vec![1; 257]), ct),
+        Err(Error::InvalidPrivateKey)
+    );
     // `d` with leading zeros is the same number.
     let mut d = vec![0, 0];
     d.extend_from_slice(v[3]);
