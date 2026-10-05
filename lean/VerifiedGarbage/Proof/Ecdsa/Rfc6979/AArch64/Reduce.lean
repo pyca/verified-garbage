@@ -21,7 +21,7 @@ modulo `n` (`mod_mathK`, `reduce_ok`).
 namespace VG.Proof.Ecdsa.Rfc6979.AArch64
 
 open VG VG.AArch64 VG.Impl.Ecdsa.Rfc6979.AArch64
-open VG.Proof.Ed25519.AArch64 (read_x)
+open VG.Proof.Ed25519.AArch64 (Keeps read_x)
 open VG.Proof.Ed25519 (Word64.addCarry Word64.carryOut)
 open VG.Proof.Mont.AArch64 (sub_borrow)
 open VG.Proof.Mont (word wordsVal wordsVal_lt wordsVal_succ_top Outside off ofs writeW_outside)
@@ -80,6 +80,19 @@ theorem RK.x15 {t u : State} (h : RK t u) : u.gpr .x15 = t.gpr .x15 :=
 
 /-- `r = v`, keeping the carry flag. -/
 theorem const64c_ok (s : State) (r : Reg) (v : BitVec 64) :
+    WP isa (.block (Impl.Mont.AArch64.const64 r v)) s fun t => t.gpr r = v ∧ Keeps [r] s t ∧ t.c = s.c := by
+  apply WP.of_runBlock
+  simp only [Impl.Mont.AArch64.const64, runBlock_cons, runStep_some, runBlock_nil, exec, read_x,
+    show 16 * 0 < Size.x.bits from by decide, show 16 * 1 < Size.x.bits from by decide,
+    show 16 * 2 < Size.x.bits from by decide, show 16 * 3 < Size.x.bits from by decide,
+    ite_true, RegUpd.gpr_write_self, BitVec.setWidth_eq, Option.some.injEq, exists_eq_left']
+  refine ⟨movz_movk64' v, ⟨?_, rfl, rfl, rfl, rfl⟩, rfl⟩
+  intro r' hr
+  have h : r' ≠ r := by simpa only [List.mem_singleton] using hr
+  simp only [RegUpd.gpr_write_of_ne _ _ _ h]
+
+/-- `r = v`, keeping the carry flag, with what else it keeps spelled out. -/
+theorem const64k_ok (s : State) (r : Reg) (v : BitVec 64) :
     WP isa (.block (Impl.Mont.AArch64.const64 r v)) s fun t =>
       t.gpr r = v ∧ t.mem = s.mem ∧ t.rd = s.rd ∧ t.wr = s.wr ∧ t.sp = s.sp ∧ t.c = s.c ∧
         ∀ r', r' ≠ r → t.gpr r' = s.gpr r' := by
@@ -134,7 +147,7 @@ theorem subWord_ok {t : State} (hc : Ctx L g m₀ t) (h1 : t.gpr .x1 = L.dg) (hd
     refine ⟨by atriv, by atriv, by atriv, by atriv, by atriv, by atriv, fun r hr8 => ?_⟩
     simp only [hr8, ite_false]) fun u₁ ⟨e₁, m₁, rd₁, wr₁, sp₁, c₁, g₁⟩ => ?_
   -- The word of `n`.
-  refine WP.mono (const64c_ok u₁ .x12 ((cfgOf P).nWord j)) fun u₂ ⟨e₂, m₂, rd₂, wr₂, sp₂, c₂, g₂⟩ => ?_
+  refine WP.mono (const64k_ok u₁ .x12 ((cfgOf P).nWord j)) fun u₂ ⟨e₂, m₂, rd₂, wr₂, sp₂, c₂, g₂⟩ => ?_
   have h8 : u₂.gpr .x8 = xw P L u.mem j := (g₂ _ (by decide)).trans e₁
   have h15₂ : u₂.gpr .x15 = L.B + BitVec.ofNat 64 16 := by rw [g₂ _ (by decide), g₁ _ (by decide), h15]
   have hK₂ : InRegions u₂.wr (L.B + BitVec.ofNat 64 (16 + 8 * j)) 8 := by rw [wr₂, wr₁]; exact hK
@@ -316,8 +329,12 @@ theorem digestPtr_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) :
   exact ⟨hc.set hL (d := .x1) (by decide) rfl rfl rfl rfl fun r hr => RegUpd.gpr_write_of_ne _ _ _ hr, rfl,
     by rw [RegUpd.gpr_write_self]; exact BitVec.setWidth_eq _, fun r hr => RegUpd.gpr_write_of_ne _ _ _ hr⟩
 
+/-- A callee-saved register is none of the registers `rs` the code writes. -/
+theorem not_pres {r : Reg} (hr : r ∈ preserved) (rs : List Reg) (h : ∀ q ∈ rs, q ∉ preserved) : r ∉ rs :=
+  fun h' => h r h' hr
+
 /-- `x7 = 0` and the frame in `x15`. -/
-theorem setup_ok (hc : Ctx L g m₀ t) :
+theorem setup_ok {t : State} (hc : Ctx L g m₀ t) :
     WP isa (.block ([.movz .x .x7 0 0, .addSp .x15 0] : List Instr)) t fun u =>
       u.gpr .x7 = 0 ∧ u.gpr .x15 = L.B + BitVec.ofNat 64 16 ∧ u.mem = t.mem ∧ u.rd = t.rd ∧ u.wr = t.wr ∧
         u.sp = t.sp ∧ ∀ r, r ≠ .x7 → r ≠ .x15 → u.gpr r = t.gpr r := by

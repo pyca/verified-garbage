@@ -19,7 +19,8 @@ variable {P : RfcHash} {dn : Nat} {L : Lay dn} {g : Reg → BitVec 64} {m₀ : M
 abbrev kOf (P : RfcHash) {dn : Nat} (L : Lay dn) (m : Mem) : List Byte := keyOf P L m
 abbrev vOf (P : RfcHash) {dn : Nat} (L : Lay dn) (m : Mem) : List Byte :=
   Spec.Sha256.bytesAt m (L.B + BitVec.ofNat 64 80) P.H.D
-abbrev hOf {dn : Nat} (L : Lay dn) (m : Mem) : List Byte := Spec.Sha256.bytesAt m (L.B + BitVec.ofNat 64 144) 32
+abbrev hOf (P : RfcHash) {dn : Nat} (L : Lay dn) (m : Mem) : List Byte :=
+  Spec.Sha256.bytesAt m (L.B + BitVec.ofNat 64 144) (8 * P.w)
 
 /-- What the steps change: `scratch`, the stack below the frame, `K` and `V`. -/
 abbrev KVW {dn : Nat} (L : Lay dn) : List Region := [L.SCR, ⟨L.B, 144⟩]
@@ -70,17 +71,18 @@ theorem hmacK_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) {len : Nat} (hlen
       · exact Offset.disjoint _ (by anums) (by anums) (by anums)) (by anums), h.mac⟩
 
 /-- `K = HMAC_K(m)`, then `V = HMAC_K(V)`, for the message `m = V ‖ b (‖ d ‖ h)`. -/
-theorem rekey_gen (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) {b : Nat} {full : Bool} {len : Nat}
-    (hlen : len = if full then P.H.D + 65 else P.H.D + 1) :
-    WP isa (.seq (.block Cfg.msgPtrs) (.seq (.block (Cfg.msg P.H.D b full))
+theorem rekey_gen (hL : L.Ok) (hq : 8 * P.w ≤ L.q) {t : State} (hc : Ctx L g m₀ t) {b : Nat} {full : Bool}
+    {len : Nat} (hlen : len = if full then P.H.D + 16 * P.w + 1 else P.H.D + 1) :
+    WP isa (.seq (.block Cfg.msgPtrs) (.seq (.block (Cfg.msg P.w P.H.D b full))
       (.seq ((cfgOf P).hmac (Cfg.scr .x2 sMsg) len fK) (cfgOf P).hmacV))) t
       fun t' => Ctx L g m₀ t' ∧ Frame (KVW L) t.mem t'.mem ∧
         kOf P L t'.mem = P.mac (kOf P L t.mem) (vOf P L t.mem ++ [BitVec.ofNat 8 b] ++
-          (if full then Spec.Sha256.bytesAt t.mem L.d 32 ++ hOf L t.mem else [])) ∧
+          (if full then Spec.Sha256.bytesAt t.mem L.d (8 * P.w) ++ hOf P L t.mem else [])) ∧
         vOf P L t'.mem = P.mac (kOf P L t'.mem) (vOf P L t.mem) := by
   refine WP.seq (WP.mono (ptrs_ok hL hc) fun p ⟨hcp, hmp, h9, h10, h15⟩ => ?_)
   rw [← hmp]
-  refine WP.seq (WP.mono (msg_ok hL hcp h9 h10 h15 b full (D := P.H.D) (by anums) (by anums)) fun u ⟨hcu, hfu, hbu⟩ => ?_)
+  refine WP.seq (WP.mono (msg_ok hL hcp h9 h10 h15 b full (D := P.H.D) (w := P.w) (by anums) (by anums) (by anums) hq)
+    fun u ⟨hcu, hfu, hbu⟩ => ?_)
   refine WP.seq (WP.mono (hmacK_ok (P := P) hL hcu (len := len) (by cases full <;> simp only [hlen, Bool.false_eq_true, ite_true, ite_false] <;> anums))
     fun w ⟨hcw, hfw, hvw, hkw⟩ => ?_)
   refine WP.mono (hmacV_ok hL hcw) fun t' ⟨hc', hf', hk', hv'⟩ => ⟨hc', ?_, ?_, ?_⟩
@@ -97,19 +99,19 @@ theorem rekey_gen (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) {b : Nat} {full 
     rw [hv', hk', hvw, hvu]
 
 /-- `K = HMAC_K(V ‖ b ‖ d ‖ h)`, then `V = HMAC_K(V)` (steps d–e, f–g). -/
-theorem rekeyFull_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) (b : Nat) :
+theorem rekeyFull_ok (hL : L.Ok) (hq : 8 * P.w ≤ L.q) {t : State} (hc : Ctx L g m₀ t) (b : Nat) :
     WP isa ((cfgOf P).rekeyFull b) t fun t' => Ctx L g m₀ t' ∧ Frame (KVW L) t.mem t'.mem ∧
       kOf P L t'.mem = P.mac (kOf P L t.mem) (vOf P L t.mem ++ [BitVec.ofNat 8 b] ++
-        (Spec.Sha256.bytesAt t.mem L.d 32 ++ hOf L t.mem)) ∧
+        (Spec.Sha256.bytesAt t.mem L.d (8 * P.w) ++ hOf P L t.mem)) ∧
       vOf P L t'.mem = P.mac (kOf P L t'.mem) (vOf P L t.mem) :=
-  rekey_gen (full := true) hL hc rfl
+  rekey_gen (full := true) hL hq hc rfl
 
 /-- `K = HMAC_K(V ‖ 0x00)`, then `V = HMAC_K(V)` (step h.3). -/
-theorem rekey_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) :
+theorem rekey_ok (hL : L.Ok) (hq : 8 * P.w ≤ L.q) {t : State} (hc : Ctx L g m₀ t) :
     WP isa (cfgOf P).rekey t fun t' => Ctx L g m₀ t' ∧ Frame (KVW L) t.mem t'.mem ∧
       kOf P L t'.mem = P.mac (kOf P L t.mem) (vOf P L t.mem ++ [0]) ∧
       vOf P L t'.mem = P.mac (kOf P L t'.mem) (vOf P L t.mem) :=
-  WP.mono (rekey_gen (b := 0) (full := false) hL hc rfl) fun _ h => ⟨h.1, h.2.1, by
+  WP.mono (rekey_gen (b := 0) (full := false) hL hq hc rfl) fun _ h => ⟨h.1, h.2.1, by
     rw [h.2.2.1]; simp, h.2.2.2⟩
 
 end VG.Proof.Ecdsa.Rfc6979.AArch64
