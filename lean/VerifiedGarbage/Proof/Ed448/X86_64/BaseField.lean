@@ -56,6 +56,6 @@ theorem fieldCode_ok (ops : List FOp) (hv : ∀ op ∈ ops, fopValid op) {s : St
     rw [fieldCode, List.flatMap_cons, WP.block_append_iff]
     refine WP.mono (fop_ok hf hs op (hv op List.mem_cons_self)) fun t ⟨ht, et⟩ => ?_
     refine WP.mono (ih (fun o h => hv o (List.mem_cons_of_mem _ h)) (ht.scr hs))
-      fun u ⟨hu, eu⟩ => ⟨ht.trans hu, by rw [eu, et]; rfl⟩
+      fun u ⟨hu, eu⟩ => ⟨ht.trans hu, by rw [eu, et, evalOps, evalOps, List.foldl_cons]⟩
 
 end VG.Proof.Ed448.X86_64

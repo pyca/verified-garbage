@@ -34,7 +34,7 @@ def artifacts : List Artifact := [
     consts := Impl.Ecdsa.AArch64.p384.combConsts
     code := Impl.Ecdsa.AArch64.signP384
     contract := Spec.Ecdsa.P384.inst.signContract (AArch64.abi.withConsts Impl.Ecdsa.AArch64.p384.combConsts)
-    verified := Proof.Ecdsa.AArch64.P384.sign_verified Proof.P384.law Proof.P384.combOk7
+    verified := Proof.Ecdsa.AArch64.P384.sign_verified Proof.P384.law (Proof.P384.combOk7 Proof.P384.law)
     spSafe := Code.all_of_forall (fun _ => rfl) _ },
   { Spec.Ecdsa.P384.verifyApi with
     target := AArch64.target
@@ -59,7 +59,7 @@ def artifacts : List Artifact := [
     consts := Impl.Ecdsa.AArch64.p384.combConsts
     code := Impl.Ecdsa.Verify.AArch64.verifyP384
     contract := Spec.Ecdsa.P384.inst.verifyContract (AArch64.abi.withConsts Impl.Ecdsa.AArch64.p384.combConsts)
-    verified := Proof.Ecdsa.Verify.AArch64.P384.verify_verified Proof.P384.law Proof.P384.combOk7
+    verified := Proof.Ecdsa.Verify.AArch64.P384.verify_verified Proof.P384.law (Proof.P384.combOk7 Proof.P384.law)
     spSafe := Code.all_of_forall (fun _ => rfl) _ }]
 
 end VG.Artifacts.EcdsaP384.AArch64

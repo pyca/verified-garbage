@@ -27,7 +27,7 @@ def artifacts : List Artifact := [
     consts := Impl.Ecdsa.AArch64.p384.combConsts
     code := Impl.EcKey.AArch64.publicKeyP384
     contract := Spec.EcKey.P384.inst.publicKeyContract (AArch64.abi.withConsts Impl.Ecdsa.AArch64.p384.combConsts)
-    verified := Proof.EcKey.AArch64.P384.pk_verified Proof.P384.law Proof.P384.combOk7
+    verified := Proof.EcKey.AArch64.P384.pk_verified Proof.P384.law (Proof.P384.combOk7 Proof.P384.law)
     spSafe := Code.all_of_forall (fun _ => rfl) _ }]
 
 end VG.Artifacts.EcP384.AArch64

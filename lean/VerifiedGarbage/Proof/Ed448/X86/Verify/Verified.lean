@@ -209,11 +209,11 @@ theorem equation_ct :
   refine RelCT.seq (R := Two₁ σ₁ σ₂ g₁ g₂ (EqQ σ₁))
     (block_ct (by taint_decide)
       (fun _ hc hq => WP.mono (eq_setup h hc ha) fun _ hu => ⟨hu.1, hu.2.2, keep hu.2.1 hq,
-        hk.input_bytes hu.1 (pk_in σ₁) (whole (PK σ₁)) (by show 57 ≤ 2 ^ 64; decide),
-        hk.input_bytes hu.1 (sig_in σ₁) (whole (SIG σ₁)) (by show 114 ≤ 2 ^ 64; decide)⟩)
+        hk.input_bytes (D := PK σ₁) hu.1 (pk_in σ₁) (whole (PK σ₁)) (by show 57 ≤ 2 ^ 64; decide),
+        hk.input_bytes (D := SIG σ₁) hu.1 (sig_in σ₁) (whole (SIG σ₁)) (by show 114 ≤ 2 ^ 64; decide)⟩)
       (fun _ hc hq => WP.mono (eq_setup h hc hb) fun _ hu => ⟨hu.1, hu.2.2, keep hu.2.1 hq,
-        (hk.input_bytes hu.1 (pk_in σ₁) (whole (PK σ₁)) (by show 57 ≤ 2 ^ 64; decide)).trans pk₂,
-        (hk.input_bytes hu.1 (sig_in σ₁) (whole (SIG σ₁)) (by show 114 ≤ 2 ^ 64; decide)).trans sig₂⟩)) ?_
+        (hk.input_bytes (D := PK σ₁) hu.1 (pk_in σ₁) (whole (PK σ₁)) (by show 57 ≤ 2 ^ 64; decide)).trans pk₂,
+        (hk.input_bytes (D := SIG σ₁) hu.1 (sig_in σ₁) (whole (SIG σ₁)) (by show 114 ≤ 2 ^ 64; decide)).trans sig₂⟩)) ?_
   refine call_ct hE.ok hE.ct (fun _ _ _ hc hs => eq_ready h hc hs.1) ?_
     (fun _ hc hs => WP.mono (eq_call hE h hc hs.1) fun _ hv => ⟨hv.1, trivial⟩)
     (fun _ hc hs => WP.mono (eq_call hE h hc hs.1) fun _ hv => ⟨hv.1, trivial⟩)
@@ -383,8 +383,9 @@ theorem verify_verified {eq : Prog isa} (hE : CalleeOk Proof.Ed448.X86.verifyEqu
   · intro s h a n ⟨r, hr, hc⟩
     rw [h.1, h.2.1]
     refine ⟨r, ?_, hc⟩
-    simpa only [vfRd, vfWr, List.mem_append, List.mem_cons, List.not_mem_nil,
-      or_false, or_assoc, or_left_comm, or_comm] using hr
+    simp only [vfRd, vfWr, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hr
+    simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false]
+    rcases hr with (rfl | rfl | rfl | rfl | rfl) | rfl <;> simp only [true_or, or_true]
   · intro s h a n ⟨r, hr, hc⟩
     rw [h.2.1]
     refine ⟨r, ?_, hc⟩
