@@ -2996,7 +2996,7 @@ pub(crate) const VG_CHACHA20_XOR_AVX512_FEATURES: crate::cpu::Features = crate::
 ///
 /// Contract: `VG.Spec.ChaCha20.xorContract`. Constant time: only the pointers and `len` may affect timing, not the state or the data.
 ///
-/// Uses AVX-512: sixteen blocks at a time while at least 1024 bytes remain, then at most two computations of eight or four blocks, four to a set of `zmm` registers, for the rest.
+/// Uses AVX-512: sixteen blocks at a time while at least 1024 bytes remain, then at most two computations of eight or four blocks, four to a set of `zmm` registers, for the rest, or `vg_chacha20_xor` for at most 64 bytes.
 ///
 /// # Safety
 ///
@@ -5584,6 +5584,8 @@ pub(crate) unsafe extern "sysv64" fn vg_chacha20_xor_avx512(state: *mut [u32; 16
         "25:",
         "test rdx, rdx",
         "je 213f",
+        "cmp rdx, 65",
+        "jb 215f",
         "vbroadcasti32x4 zmm0, XMMWORD PTR [rdi]",
         "vbroadcasti32x4 zmm1, XMMWORD PTR [rdi+16]",
         "vbroadcasti32x4 zmm2, XMMWORD PTR [rdi+32]",
@@ -5915,30 +5917,36 @@ pub(crate) unsafe extern "sysv64" fn vg_chacha20_xor_avx512(state: *mut [u32; 16
         "mov ecx, 0",
         "mov rax, rdx",
         "shr rax, 3",
-        "je 215f",
-        "217:",
+        "je 217f",
+        "219:",
         "mov r8, QWORD PTR [rsi+rcx*1]",
         "xor r8, QWORD PTR [r9+rcx*1]",
         "mov QWORD PTR [rsi+rcx*1], r8",
         "add rcx, 8",
         "sub rax, 1",
-        "jne 217b",
-        "jmp 216f",
-        "215:",
-        "216:",
+        "jne 219b",
+        "jmp 218f",
+        "217:",
+        "218:",
         "cmp rcx, rdx",
-        "je 218f",
-        "220:",
+        "je 220f",
+        "222:",
         "movzx eax, BYTE PTR [rsi+rcx*1]",
         "movzx r8d, BYTE PTR [r9+rcx*1]",
         "xor rax, r8",
         "mov BYTE PTR [rsi+rcx*1], al",
         "add rcx, 1",
         "cmp rcx, rdx",
-        "jne 220b",
-        "jmp 219f",
-        "218:",
-        "219:",
+        "jne 222b",
+        "jmp 221f",
+        "220:",
+        "221:",
+        "jmp 216f",
+        "215:",
+        "vzeroupper",
+        "call {vg_chacha20_xor}",
+        "mov r9, rsi",
+        "216:",
         "jmp 214f",
         "213:",
         "214:",
@@ -5947,6 +5955,7 @@ pub(crate) unsafe extern "sysv64" fn vg_chacha20_xor_avx512(state: *mut [u32; 16
         "mov rsi, r9",
         "ret",
         ".p2align 6",
+        vg_chacha20_xor = sym super::chacha20::vg_chacha20_xor,
     )
 }
 

@@ -15,8 +15,10 @@ two computations of eight or four blocks:
   four XORed into the next 256 bytes, the other four stored to `buf[0, 256)`
   and as many of their bytes as remain XORed into the data
   (`XorBuf.xorBuf`);
-* otherwise, if any bytes remain, four blocks are computed into `buf[0,
-  256)`, and as many of their bytes as remain XORed into the data.
+* otherwise, if more than 64 bytes remain, four blocks are computed into
+  `buf[0, 256)`, and as many of their bytes as remain XORed into the data;
+  if fewer, but some, `vg_chacha20_xor` XORs them, one block costing less
+  in general-purpose registers than four in `zmm` registers.
 
 The states are kept one per 128-bit lane, four to a set of four `zmm`
 registers (`zmm0 … zmm3`, and `zmm4 … zmm7` for the second four): row `r`
@@ -31,9 +33,10 @@ At the end, the input state is added again, and eight `vshufi32x4` gather
 the lanes of a set's four registers into its four blocks.
 
 `buf` is in `r9` throughout, which `xorBuf` keeps; `xorBuf` writes `rax`,
-`r8` and `rcx`. No callee-saved register is written. The branches are on
-the length only, and every address is a pointer plus a constant or a count,
-so only the pointers and the length can affect timing.
+`r8` and `rcx`, and `vg_chacha20_xor` returns with `buf` in `rsi`. No
+callee-saved register is written. The branches are on the length only,
+and every address is a pointer plus a constant or a count, so only the
+pointers and the length can affect timing.
 -/
 
 namespace VG.Impl.ChaCha20.X86_64.Avx512Tail
@@ -192,12 +195,22 @@ def part : Prog isa :=
 def last : Prog isa :=
   .seq (.block setup) (.seq (rounds 10) (.seq (.block finish) fromBuf))
 
+/-- At most 64 bytes, by `vg_chacha20_xor`, whose one block takes less time
+than four in `zmm` registers; it returns with `rsi` pointing at `buf`, which
+goes back to `r9`. -/
+def scalar : Prog isa :=
+  .seq (.block [.vop .vzeroupper]) (.seq (.call "vg_chacha20_xor" Xor.xor) (.block [.mov .r9 (.reg .rsi)]))
+
+/-- The last `rdx` bytes, from 1 to 256. -/
+def small : Prog isa :=
+  .seq (.block [.alu .cmp .rdx (.imm 65)]) (.ite .b scalar last)
+
 /-- The last `rdx` bytes (fewer than 1024); then `rsi` points at `buf`. -/
 def tail : Prog isa :=
   .seq (.block [.mov .r9 (.reg .rcx), .alu .cmp .rdx (.imm 512)])
   (.seq (.ite .b (.block []) full)
   (.seq (.block [.alu .cmp .rdx (.imm 257)])
-  (.seq (.ite .b (.seq (.block [.alu .test .rdx (.reg .rdx)]) (.ite .e (.block []) last)) part)
+  (.seq (.ite .b (.seq (.block [.alu .test .rdx (.reg .rdx)]) (.ite .e (.block []) small)) part)
     (.block [.vop .vzeroupper, .mov .rsi (.reg .r9)]))))
 
 end VG.Impl.ChaCha20.X86_64.Avx512Tail
