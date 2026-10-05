@@ -252,19 +252,19 @@ def setup (N₀ wl : Nat) : List Instr :=
 four), at once. After the copies, `vzeroupper` clears the upper halves of
 the vector registers, so that the SSE code that runs next does not pay for
 mixing them. -/
-def batch (N₀ m o wl : Nat) : Prog isa :=
-  .seq (.block (setup N₀ wl)) (.seq permute4 (.block (extract m o wl ++ [.vop .vzeroupper])))
+def batch (N₀ m o wl : Nat) (fast : Bool := false) : Prog isa :=
+  .seq (.block (setup N₀ wl)) (.seq (permute4 fast) (.block (extract m o wl ++ [.vop .vzeroupper])))
 
 end Prf4
 
 /-- `PRF₂(σ, N₀ + i)` to `scratch + o + 128 i` for each `i < n`, four at a
 time (the last `n mod 4` with lanes whose outputs are not copied). -/
-def prfsX4 : Nat → Nat → Nat → Nat → Prog isa
+def prfsX4 (fast : Bool := false) : Nat → Nat → Nat → Nat → Prog isa
   | _, 0, _, _ => .block []
-  | N₀, 1, o, wl => Prf4.batch N₀ 1 o wl
-  | N₀, 2, o, wl => Prf4.batch N₀ 2 o wl
-  | N₀, 3, o, wl => Prf4.batch N₀ 3 o wl
-  | N₀, n + 4, o, wl => .seq (Prf4.batch N₀ 4 o wl) (prfsX4 (N₀ + 4) n (o + 512) wl)
+  | N₀, 1, o, wl => Prf4.batch (fast := fast) N₀ 1 o wl
+  | N₀, 2, o, wl => Prf4.batch (fast := fast) N₀ 2 o wl
+  | N₀, 3, o, wl => Prf4.batch (fast := fast) N₀ 3 o wl
+  | N₀, n + 4, o, wl => .seq (Prf4.batch (fast := fast) N₀ 4 o wl) (prfsX4 (fast := fast) (N₀ + 4) n (o + 512) wl)
 
 /-- How many of `n` outputs `prfsAvx2` computes one at a time, first:
 `n mod 4` when it is 1 or 2. (Four instances at once cost about as much as
@@ -274,8 +274,8 @@ def prfsLead (n : Nat) : Nat := if n % 4 = 1 ∨ n % 4 = 2 then n % 4 else 0
 
 /-- `PRF₂(σ, N₀ + i)` to `scratch + o + 128 i` for each `i < n`, with AVX2:
 the first `prfsLead n` one at a time, and the others four at a time. -/
-def prfsAvx2 (N₀ n o wl : Nat) : Prog isa :=
-  .seq (prfsScalar N₀ (prfsLead n) o wl) (prfsX4 (N₀ + prfsLead n) (n - prfsLead n) (o + 128 * prfsLead n) wl)
+def prfsAvx2 (N₀ n o wl : Nat) (fast : Bool := false) : Prog isa :=
+  .seq (prfsScalar N₀ (prfsLead n) o wl) (prfsX4 (fast := fast) (N₀ + prfsLead n) (n - prfsLead n) (o + 128 * prfsLead n) wl)
 
 /-- An implementation of `vg_mlkem_sample_ntt4` to call (its symbol and its
 code), and of the computation of several outputs of `PRF₂` that goes with
@@ -291,11 +291,11 @@ structure Callee4 where
   arith : Arith
 
 def Callee4.scalar : Callee4 := ⟨"vg_mlkem_sample_ntt4", Sample4.sampleNTT4, prfsScalar, .sse⟩
-def Callee4.avx2 : Callee4 := ⟨"vg_mlkem_sample_ntt4_avx2", Sample4.sampleNTT4Avx2, prfsAvx2, .avx2⟩
+def Callee4.avx2 : Callee4 := ⟨"vg_mlkem_sample_ntt4_avx2", Sample4.sampleNTT4Avx2, (fun n k o w => prfsAvx2 n k o w), .avx2⟩
 
 /-- Four-way sampling with AVX-512VL quadword rotates. -/
 def Callee4.avx512 : Callee4 :=
-  ⟨"vg_mlkem_sample_ntt4_avx512", Sample4.sampleNTT4Avx2 true, prfsAvx2, .avx2⟩
+  ⟨"vg_mlkem_sample_ntt4_avx512", Sample4.sampleNTT4Avx2 true, (fun n k o w => prfsAvx2 n k o w true), .avx2⟩
 
 /-- `SampleNTT` of the four seeds at `scratch` to the four polynomials from
 `a`, with the working space `scr` (8192 bytes), and `r15 ← r15 ∧ result`. -/

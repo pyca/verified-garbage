@@ -111,7 +111,7 @@ def avx512 : Sample4Impl where
   prfs_sp := prfsAvx2_sp
   arith := ArithOk.avx2
   suffix := "_avx512"
-  prfsDoc := "four at a time, with AVX2 (and the first one or two of `4k + 1` or `4k + 2` on their own)"
+  prfsDoc := "four at a time, with AVX-512VL quadword rotates (and the first one or two of `4k + 1` or `4k + 2` on their own)"
   features := ["avx", "avx2", "avx512f", "avx512vl"]
 
 end Sample4Impl
