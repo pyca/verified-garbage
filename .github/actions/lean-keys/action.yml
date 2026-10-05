@@ -1,0 +1,32 @@
+name: Name the Lean caches
+description: >
+  The keys of the caches of the Lean build and of its manifest, for every job
+  that restores them: the toolchain and dependencies (a prefix, which other
+  sources' entries share, as fallbacks), then the sources. CI's plan job and
+  the cache publisher (lean-cache.yml) both name them here, so they agree.
+
+outputs:
+  build-cache:
+    value: ${{ steps.keys.outputs.build-cache }}
+  build-cache-prefix:
+    value: ${{ steps.keys.outputs.build-cache-prefix }}
+  manifest-cache:
+    value: ${{ steps.keys.outputs.manifest-cache }}
+  manifest-cache-prefix:
+    value: ${{ steps.keys.outputs.manifest-cache-prefix }}
+
+runs:
+  using: composite
+  steps:
+    - id: keys
+      shell: bash
+      env:
+        PREFIX: ${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('lean/lean-toolchain', 'lean/lake-manifest.json') }}-
+        SOURCES: ${{ hashFiles('lean/lakefile.toml', 'lean/*.lean', 'lean/VerifiedGarbage/**', 'lean/VerifiedGarbageTest/**') }}
+      run: |
+        {
+          echo "build-cache-prefix=lean-build-$PREFIX"
+          echo "build-cache=lean-build-$PREFIX$SOURCES"
+          echo "manifest-cache-prefix=lean-manifest-$PREFIX"
+          echo "manifest-cache=lean-manifest-$PREFIX$SOURCES"
+        } >> "$GITHUB_OUTPUT"
