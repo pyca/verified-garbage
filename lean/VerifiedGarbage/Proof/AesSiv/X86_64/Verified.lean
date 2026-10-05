@@ -28,12 +28,12 @@ theorem init_mx (v : Ctr32Impl) :
 
 theorem encrypt_mx (v : Ctr32Impl) : (encrypt v.callee v.suffix).allInstrs (fun i => !loadsMxcsr i) = true := by
   simp only [encrypt, encryptCore, sivOut, encS2v, s2vAds, cmacOf, cmacPre, finish, shortTail, longTail, shortMac, longMac, copy, ctr,
-    ctrBody, ctrMin, xorBytes, callUpdate, callFinalize, Code.allInstrs, update_mx v, finalize_mx v, v.mxcsr]
+    ctrWhole, ctrBody, ctrMin, xorBytes, callUpdate, callFinalize, Code.allInstrs, update_mx v, finalize_mx v, v.mxcsr]
   decide +kernel
 
 theorem decrypt_mx (v : Ctr32Impl) : (decrypt v.callee v.suffix).allInstrs (fun i => !loadsMxcsr i) = true := by
   simp only [decrypt, openTail, sivIn, encS2v, s2vAds, cmacOf, cmacPre, finish, shortTail, longTail, shortMac, longMac, copy, ctr,
-    ctrBody, ctrMin, xorBytes, maskData, callUpdate, callFinalize, Code.allInstrs, update_mx v, finalize_mx v,
+    ctrWhole, ctrBody, ctrMin, xorBytes, maskData, callUpdate, callFinalize, Code.allInstrs, update_mx v, finalize_mx v,
     v.mxcsr]
   decide +kernel
 
@@ -43,13 +43,14 @@ theorem init_spSafe (v : Ctr32Impl) :
 
 theorem encrypt_spSafe (v : Ctr32Impl) : (encrypt v.callee v.suffix).all (fun i => !X86_64.isa.writesSp i) = true := by
   simp only [encrypt, encryptCore, sivOut, encS2v, s2vAds, cmacOf, cmacPre, finish, shortTail, longTail, shortMac, longMac, copy, ctr,
-    ctrBody, ctrMin, xorBytes, callUpdate, callFinalize, Code.all, update_spSafe v, finalize_spSafe v, v.spSafe]
+    ctrWhole, ctrBody, ctrMin, xorBytes, callUpdate, callFinalize, Code.all, update_spSafe v, finalize_spSafe v,
+    v.spSafe]
   decide +kernel
 
 theorem decrypt_spSafe (v : Ctr32Impl) : (decrypt v.callee v.suffix).all (fun i => !X86_64.isa.writesSp i) = true := by
   simp only [decrypt, openTail, sivIn, encS2v, s2vAds, cmacOf, cmacPre, finish, shortTail, longTail, shortMac, longMac, copy, ctr,
-    ctrBody, ctrMin, xorBytes, maskData, callUpdate, callFinalize, Code.all, update_spSafe v, finalize_spSafe v,
-    v.spSafe]
+    ctrWhole, ctrBody, ctrMin, xorBytes, maskData, callUpdate, callFinalize, Code.all, update_spSafe v,
+    finalize_spSafe v, v.spSafe]
   decide +kernel
 
 theorem init_correct (v : Ctr32Impl) (s : State) (hs : initX86_64.pre s) :
