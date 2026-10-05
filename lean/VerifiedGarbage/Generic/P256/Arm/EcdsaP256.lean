@@ -1,5 +1,5 @@
 import VerifiedGarbage.TCB.Arm.Target
-import VerifiedGarbage.Proof.Weierstrass.Law
+import VerifiedGarbage.Proof.Weierstrass.HasLaw
 import VerifiedGarbage.Impl.Ecdsa.P256.Arm
 import VerifiedGarbage.Proof.Ecdsa.Arm.Verified
 import VerifiedGarbage.Impl.Ecdsa.Verify.P256.Arm

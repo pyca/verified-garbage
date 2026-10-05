@@ -1,6 +1,7 @@
 import VerifiedGarbage.Proof.Weierstrass.Env
 import VerifiedGarbage.Proof.Framework.PowLit
 import VerifiedGarbage.Proof.Weierstrass.Field
+import VerifiedGarbage.Proof.Weierstrass.InvToM
 import Mathlib.Tactic.LinearCombination
 
 /-!
@@ -8,7 +9,8 @@ import Mathlib.Tactic.LinearCombination
 
 The inversion ends with `f = ±1`, `x (f a) K ≡ 1` (`K = 2^(5 B)`, or `a = 0`
 for `x = 0`) and multiplies `a` by `C_f ≡ f K R³` in Montgomery form, which
-leaves `toM acc = toM x ^ (p - 2)` for a prime `p > 2` (`inv_toM`).
+leaves `toM acc = toM x ^ (p - 2)` for a prime `p > 2` (`inv_toM`, and
+`invToM` for `InvToM`, the statement the proofs of the code take).
 -/
 
 namespace VG.Proof.Weierstrass
@@ -43,5 +45,9 @@ theorem inv_toM {p R X a Cs acc K : Nat} [Fact p.Prime] (hp2 : 2 < p) (hR : Unit
     refine (eq_inv_of_mul_eq_one_left ?_)
     linear_combination (-ρ ^ 2 * X * acc + X * f * a * K * (R ^ 2 * ρ ^ 2 + R * ρ + 1)) * hρ +
       ρ ^ 3 * X * e1 + ρ ^ 3 * X * a * e2 + e3
+
+theorem invToM : InvToM := fun hp hp2 hR hXp h0 hspec hCs hmul =>
+  haveI := Fact.mk hp
+  inv_toM hp2 hR hXp h0 hspec hCs hmul
 
 end VG.Proof.Weierstrass

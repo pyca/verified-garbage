@@ -187,10 +187,4 @@ theorem pow_eq_npow {m : Nat} [NeZero m] (x : Fin m) (e : Nat) : pow x e = x ^ e
         rw [show x ^ e = x ^ (e / 2 + e / 2 + 1) from congrArg (x ^ ·) (by omega),
           Lean.Grind.Semiring.pow_succ, Lean.Grind.CommSemiring.mul_comm]
 
-/-- The group law of `C`, as a value: the variant of a curve's interface on
-each target (`Variants/<Curve>/<Target>/Law.lean`, see `TCB/Emit.lean`),
-whose type must be a `Type`, as the emitter lists the variants. -/
-structure HasLaw (C : Curve) : Type where
-  law : Law C
-
 end VG.Proof.Weierstrass
