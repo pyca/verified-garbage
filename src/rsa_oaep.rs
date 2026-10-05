@@ -214,10 +214,7 @@ fn encrypt_with<const L: usize>(
     zeroize(&mut seed);
     // `PublicKey::new` checked `n`, and the message's length is checked
     // above.
-    assert_eq!(
-        r, 1,
-        "vg_rsa_oaep_*_encrypt refused a valid key and message"
-    );
+    assert_eq!(r, 1, "OAEP encryption refused a valid key and message");
     Ok(out)
 }
 

@@ -94,11 +94,8 @@ fn check(name: &str) -> (usize, usize, usize) {
             let (ct, label, msg) = (&test.case.ct.0, &test.case.label.0, &test.case.msg.0);
             let r = decrypt(&key, ct, h, g, label);
             if r == Err(Error::UnsupportedHash) {
-                assert_eq!(
-                    encrypt(&public, msg, h, g, label),
-                    Err(Error::UnsupportedHash),
-                    "{name} tcId {id}"
-                );
+                let e = encrypt(&public, msg, h, g, label);
+                assert_eq!(e, Err(Error::UnsupportedHash), "{name} tcId {id}");
                 unsupported += 1;
             } else if test.result == Expectation::Invalid {
                 let e = if ct.len() == n.len() {
