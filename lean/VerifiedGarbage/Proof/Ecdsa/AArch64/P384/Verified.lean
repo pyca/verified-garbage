@@ -4,14 +4,14 @@ import VerifiedGarbage.Proof.Ecdsa.AArch64.P384.Lit
 import VerifiedGarbage.Proof.P384.Point
 import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
-import VerifiedGarbage.Proof.Weierstrass.AArch64.InvMain
+import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
 import VerifiedGarbage.Proof.P384.Prime
 
 /-!
 # ECDSA over P-384 on AArch64: `Verified`
 
-P-384 is a curve the proof supports (`p384_ok`, and `Law` for its group law,
-which the registration file supplies: `Proof.P384.law`), so `sign_ok` gives
+P-384 is a curve the proof supports (`p384_ok`, given the inversions' soundness `InvSounds`, and `Law` for its group
+law, which the registration file supplies: `Proof.P384.law` and `invSound_of_toM`), so `sign_ok` gives
 the contract's postcondition; `x19` and `x20` are restored, and no instruction
 writes the other callee-saved registers, `sp` or a SIMD register
 (`abiPreserved_of`). Constant time by taint tracking: the only branches are on
@@ -30,7 +30,7 @@ theorem p384_nBits : 64 * p384.n ≤ Spec.Ecdsa.nBits p384.C := by
     (Nat.le_log2 (by decide +kernel)).mpr (by decide +kernel)
   omega
 
-theorem p384_ok : CfgOk p384 where
+theorem p384_ok (hI : Weierstrass.AArch64.InvSounds) : CfgOk p384 where
   n0 := by decide
   n10 := by decide
   onG := Proof.P384.onCurve_G
@@ -51,7 +51,7 @@ theorem p384_ok : CfgOk p384 where
   len_hi := by decide
   sh := by have := p384_nBits; have : p384.n = 6 := rfl; have : p384.C.len = 48 := rfl; unfold Cfg.sh; omega
   n4 := by decide
-  sound_p := @invSound_of_prime _ _ (by
+  sound_p := hI (by
     show Nat.Prime Spec.P384.curve.p
     rw [show Spec.P384.curve.p =
       39402006196394479212279040100143613805079739270465446667948293404245721771496870329047266088258938001861606973112319
@@ -67,7 +67,7 @@ theorem pre_of {s : State} (h : signAArch64.pre s) : Pre p384 s := by
   exact ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11,
     ⟨by rw [h1]; simp, held, fit, hdw _ (by simp)⟩⟩
 
-theorem sign_a64 (hL : Weierstrass.Law Spec.P384.curve)
+theorem sign_a64 (hL : Weierstrass.Law Spec.P384.curve) (hI : Weierstrass.AArch64.InvSounds)
     (hT : CombOkW Spec.P384.curve 7 55 Impl.P384.p384Comb7 Impl.P384.p384Comb7Start) (s : State)
     (hs : signAArch64.pre s) :
     ∃ t s', Exec isa signP384 s t s' ∧ abiPreserved s s' ∧ signAArch64.post s s' := by
@@ -76,7 +76,7 @@ theorem sign_a64 (hL : Weierstrass.Law Spec.P384.curve)
   have hn : signP384.noCalls = true := by lit_decide
   have hu : KeepsUntouched signP384 := by lit_decide
   have hv : signP384.allInstrs keepsV = true := by lit_decide
-  obtain ⟨t, s', he, hsv, hpost⟩ := sign_ok p384_ok hL hT (pre_of hs)
+  obtain ⟨t, s', he, hsv, hpost⟩ := sign_ok (p384_ok hI) hL hT (pre_of hs)
   exact ⟨t, s', he, abiPreserved_of he hn hu hv hsv, hpost⟩
 
 theorem sign_ct : ConstantTime isa signAArch64.pre signAArch64.pub signP384 :=
@@ -91,10 +91,10 @@ theorem sign_ct : ConstantTime isa signAArch64.pre signAArch64.pub signP384 :=
       · exact h4⟩, fun n hn => by
       simp only [List.mem_singleton] at hn; subst hn; exact hsy⟩) (by taint_decide)
 
-theorem sign_verified (hL : Weierstrass.Law Spec.P384.curve)
+theorem sign_verified (hL : Weierstrass.Law Spec.P384.curve) (hI : Weierstrass.AArch64.InvSounds)
     (hT : CombOkW Spec.P384.curve 7 55 Impl.P384.p384Comb7 Impl.P384.p384Comb7Start) :
     Verified AArch64.target signP384
       (Spec.Ecdsa.P384.inst.signContract (AArch64.abi.withConsts p384.combConsts)) :=
-  Verified.of_correct (sign_a64 hL hT) sign_ct implies
+  Verified.of_correct (sign_a64 hL hI hT) sign_ct implies
 
 end VG.Proof.Ecdsa.AArch64.P384

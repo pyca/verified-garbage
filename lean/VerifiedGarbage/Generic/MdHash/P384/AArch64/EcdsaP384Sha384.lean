@@ -1,5 +1,5 @@
 import VerifiedGarbage.TCB.AArch64.Target
-import VerifiedGarbage.Proof.Weierstrass.Law
+import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
 import VerifiedGarbage.Proof.P384.Comb7
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.P384Sha384
 
@@ -25,7 +25,7 @@ namespace VG.Generic.MdHash.P384.AArch64.EcdsaP384Sha384
 open VG.Proof.Ecdsa.Rfc6979.AArch64 (cfgOf signNotes)
 open VG.Proof.Ecdsa.Rfc6979.AArch64.P384Sha384 (pack sign_verified)
 
-def artifacts (v : Proof.Pbkdf2.Md.AArch64.MdHash) (h : Proof.Weierstrass.HasLaw Spec.P384.curve) :
+def artifacts (v : Proof.Pbkdf2.Md.AArch64.MdHash) (h : Proof.Weierstrass.AArch64.HasLawInv Spec.P384.curve) :
     List Artifact :=
   match v.sha384 with
   | none => []
@@ -34,13 +34,13 @@ def artifacts (v : Proof.Pbkdf2.Md.AArch64.MdHash) (h : Proof.Weierstrass.HasLaw
       name := Spec.Ecdsa.Rfc6979.P384Sha384.signApi.name ++ c.suffix
       target := AArch64.target
       doc := Spec.Ecdsa.Rfc6979.P384Sha384.signApi.doc
-        (notes := [signNotes (cfgOf (pack h.law (Proof.P384.combOk7 h.law) c)).H 48 Spec.Ecdsa.P384.signApi.name])
-      code := (cfgOf (pack h.law (Proof.P384.combOk7 h.law) c)).sign
+        (notes := [signNotes (cfgOf (pack h.law h.inv (Proof.P384.combOk7 h.law) c)).H 48 Spec.Ecdsa.P384.signApi.name])
+      code := (cfgOf (pack h.law h.inv (Proof.P384.combOk7 h.law) c)).sign
       consts := Impl.Ecdsa.AArch64.p384.combConsts
       contract := Spec.Ecdsa.Rfc6979.P384Sha384.inst.signContract
         (AArch64.abi.withConsts Impl.Ecdsa.AArch64.p384.combConsts) 256
       stack := 256
-      verified := sign_verified h.law (Proof.P384.combOk7 h.law) c
+      verified := sign_verified h.law h.inv (Proof.P384.combOk7 h.law) c
       spSafe := Code.all_of_forall (fun _ => rfl) _
       features := c.features }]
 
