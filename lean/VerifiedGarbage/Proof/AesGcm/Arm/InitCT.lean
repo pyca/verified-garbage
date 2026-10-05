@@ -6,7 +6,7 @@ import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
 
 Untrusted: everything here is checked by Lean. The blocks are checked by the
 taint analysis, from the registers the correctness proof pins (the
-arguments, then `r8`, `r9` and `r11`); the calls of `vg_aes_expand_key` and
+arguments, then `r8`, `r9` and `r11`); the calls of `vg_aes_expand_key_scratch` and
 `vg_aes_ctr32` are constant time by their own proofs (`key_rel`, `ctr_rel`),
 with the same arguments in both runs.
 -/

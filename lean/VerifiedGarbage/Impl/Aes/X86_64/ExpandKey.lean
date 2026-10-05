@@ -3,7 +3,8 @@ import VerifiedGarbage.Impl.Aes.X86_64.Ctr32
 /-!
 # The AES key expansion on x86-64
 
-`vg_aes_expand_key(key = rdi, key_len = rsi, schedule = rdx, scratch = rcx)`.
+`vg_aes_expand_key_scratch(key = rdi, key_len = rsi, schedule = rdx, scratch = rcx)`;
+`vg_aes_expand_key` runs it with `scratch` in a frame of its own (`Proof/Aes/X86_64/Frame.lean`).
 
 FIPS 197 §5.2 (`KEYEXPANSION`), one word at a time, with `SUBWORD` done by
 the bitsliced S-box of `Sbox.lean` on the word in the low 32 bits of `q 0`

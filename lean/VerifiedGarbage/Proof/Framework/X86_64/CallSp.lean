@@ -1,25 +1,26 @@
 import VerifiedGarbage.Proof.Framework.X86_64.Depth
 
 /-!
-# Calls of code with frames (x86-64)
+# Calling verified code with frames (x86-64)
 
-`WP.call_mx` runs a call of code that never writes `rsp` (`NoSp`); a callee
-with frames of its own writes it in its pushes and pops (`SpSafe`).
-`WP.callSp` runs a call of such code: it changes memory only within the
-regions it may write and the `c.x86_64Depth + 8` bytes below `rsp` its
-frames, its calls and the return address use (`Exec.stackFrame`).
+`WP.call_sp_mx` is `WP.call_mx` for a callee that writes `rsp` only in the
+pushes and pops of its frames (`SpSafe`) rather than never (`NoSp`): it
+changes memory below `rsp` within its depth in bytes (`Code.x86_64Depth`,
+`Exec.stackFrame`), which its frames' buffers and its calls' return
+addresses take.
 -/
 
 namespace VG.X86_64
 
-/-- `WP.call_mx`, for a callee whose frames write `rsp`. -/
-theorem WP.callSp {n : String} {c : Prog isa} {k : Contract isa}
+/-- Calling verified code that may have frames, as `WP.call_mx`. -/
+theorem WP.call_sp_mx {n : String} {c : Prog isa} {k : Contract isa}
     (hv : ∀ s, k.pre s → ∃ t s', Exec isa c s t s' ∧ abiPreserved s s' ∧ k.post s s')
-    (hsp : SpSafe c) (hd : c.x86_64Depth + 8 < 2 ^ 64)
+    (hsp : SpSafe c) (hd : c.x86_64Depth + 16 < 2 ^ 64)
     {s : State} {rd wr : List Region} (hpre : k.pre (s.callEntry.withRegions rd wr))
     (hc : Covers (rd ++ wr) (s.rd ++ s.wr)) (hw : Covers wr s.wr) {Q : State → Prop}
     (hQ : ∀ s', s'.rd = s.rd → s'.wr = s.wr → (∀ r ∈ calleeSaved, s'.gpr r = s.gpr r) →
       Frame (wr ++ [below (s.gpr .rsp) (c.x86_64Depth + 8)]) s.mem s'.mem →
+      (∀ r, (∀ i ∈ instrs c, Taint.clobbers i r = false) → s'.gpr r = s.gpr r) →
       (∃ s₂ : State, s₂.mem = s'.mem ∧ (∀ r, r ≠ .rsp → s₂.gpr r = s'.gpr r) ∧
         k.post (s.callEntry.withRegions rd wr) s₂) →
       s'.mxcsr.extractLsb' 6 10 = s.mxcsr.extractLsb' 6 10 → Q s') :
@@ -47,7 +48,7 @@ theorem WP.callSp {n : String} {c : Prog isa} {k : Contract isa}
     simp only [State.setReg, ite_true, hsp₂]; exact BitVec.sub_add_cancel _ _
   have hkeep : ∀ r, r ≠ .rsp → (s₂.setReg .rsp (s₂.gpr .rsp + 8)).gpr r = s₂.gpr r :=
     fun r h => by simp [State.setReg, h]
-  refine ⟨_, _, .call (call_callEntry s) he' hret, hQ _ rfl rfl (fun r hr' => ?_) ?_
+  refine ⟨_, _, .call (call_callEntry s) he' hret, hQ _ rfl rfl (fun r hr' => ?_) ?_ (fun r h => ?_)
     ⟨s₁, rfl, fun r h => (hkeep r h).symm, hpost⟩ habi.2.2⟩
   · by_cases h : r = .rsp
     · subst h; exact hrsp
@@ -62,7 +63,12 @@ theorem WP.callSp {n : String} {c : Prog isa} {k : Contract isa}
         rcases List.mem_append.mp hr with hr | hr
         · exact ⟨r, List.mem_append_left _ hr, fun _ h => h⟩
         · simp only [List.mem_singleton] at hr; subst hr
-          exact ⟨_, List.mem_append_right _ (List.mem_singleton_self _), below_callee _ _⟩
+          refine ⟨_, List.mem_append_right _ (List.mem_singleton_self _), ?_⟩
+          exact below_callee _ _
     exact Frame.trans f₀ f₁
+  · by_cases hrs : r = .rsp
+    · subst hrs; exact hrsp
+    · rw [hkeep r hrs, Exec.gpr h he', State.callEntry_gpr _ hrs]
+
 
 end VG.X86_64

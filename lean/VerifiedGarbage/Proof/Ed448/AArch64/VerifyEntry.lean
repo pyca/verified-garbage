@@ -1,4 +1,6 @@
-import VerifiedGarbage.Proof.Ed448.AArch64.BaseSetup
+import VerifiedGarbage.Proof.Ed448.AArch64.BaseField
+import VerifiedGarbage.Proof.X448.AArch64.Base.Const
+import VerifiedGarbage.Proof.X448.AArch64.Weak.Main
 import VerifiedGarbage.Impl.Ed448.AArch64.VerifyEquation
 
 /-!
@@ -20,6 +22,9 @@ open VG.Proof.X448.AArch64.Weak (E BoundedEnv E_outside slot_sep)
 open VG.Proof.X448.AArch64.Base (constSlot_ok F_of_words limb_lt)
 open VG.Impl.X448.AArch64 (ld st slot)
 open VG.Impl.X448.AArch64.Base (constSlot limb)
+
+theorem limb_zero (w : Nat) : limb 0 w = 0 := by
+  rw [limb, Fin.val_zero, Nat.zero_shiftRight, Nat.zero_mod]; rfl
 
 /-- `x12 := 2²⁸ - 1`. -/
 theorem mask12_ok (s : State) :

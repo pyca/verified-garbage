@@ -6,7 +6,7 @@ import VerifiedGarbage.Proof.AesGcm.X86.GhashImpls
 # AES-GCM (NIST SP 800-38D) on x86
 
 A generic file (see `TCB/Emit.lean`): the artifacts it lists, calling the
-implementations `v` of `vg_aes_ctr32` with its `vg_aes_expand_key` and of
+implementations `v` of `vg_aes_ctr32` with its `vg_aes_expand_key_scratch` and of
 `vg_ghash`, are emitted once for each combination (`Variants/AesGcm/X86/`),
 named with its suffix (e.g. `vg_aes_gcm_seal_aesni_pclmul`), and need its CPU
 features: `init` only AES's, `stream_init` and `stream_aad` only GHASH's.

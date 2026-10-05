@@ -100,7 +100,7 @@ theorem reduceR_step (hL : L.Ok) (hc : WCtx L.env g vec m₀ t) (ha : Args L m�
     (outS_writable L) (scr_writable L)) fun w ⟨hw, hf, hk⟩ => ⟨hw, by rw [← hm]; exact hf, by rw [hk, hm]⟩
 
 /-- `R = [r]B`, into the first half of `out`. -/
-theorem base_step (hb : Proof.Ed448.BaseLadderOk) (hL : L.Ok) (hc : WCtx L.env g vec m₀ t) (ha : Args L m₀) :
+theorem base_step (hb : Proof.Ed448.AArch64.BaseOk) (hL : L.Ok) (hc : WCtx L.env g vec m₀ t) (ha : Args L m₀) :
     WP isa (callS baseArgs "vg_ed448_scalar_base" Impl.Ed448.AArch64.scalarBase) t fun u =>
       WCtx L.env g vec m₀ u ∧ Frame [⟨L.out, 57⟩, L.SCR, CK L.E] t.mem u.mem ∧
       Spec.Ed448.bytesAt u.mem L.out 57 =

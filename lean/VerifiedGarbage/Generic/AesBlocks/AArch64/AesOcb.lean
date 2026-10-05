@@ -6,7 +6,7 @@ import VerifiedGarbage.Proof.AesOcb.AArch64.Frame
 
 A generic file (see `TCB/Emit.lean`): the artifacts it lists, calling an
 implementation `v` of `vg_aes_encrypt_blocks`, `vg_aes_decrypt_blocks` and
-`vg_aes_expand_key`, are emitted once for each implementation
+`vg_aes_expand_key_scratch`, are emitted once for each implementation
 (`Variants/AesBlocks/AArch64/`), named with its suffix (e.g.
 `vg_aes_ocb_seal_aes`), and need its CPU features.
 

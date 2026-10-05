@@ -14,7 +14,7 @@ implementation `v` of `vg_aes_ctr32`, are emitted once for each implementation
 The stack is 8 bytes for every implementation of the first three: the
 return address of the call of `vg_aes_ctr32`, which makes no calls. The
 streaming functions (`init`, `absorb`, `finish`) call those, so their stack
-is 16 bytes; `init` also calls the implementation of `vg_aes_expand_key`
+is 16 bytes; `init` also calls the implementation of `vg_aes_expand_key_scratch`
 that goes with `v`.
 
 The streaming functions keep their working space in a frame of their own

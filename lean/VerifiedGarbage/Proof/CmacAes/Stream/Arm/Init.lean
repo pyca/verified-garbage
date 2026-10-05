@@ -148,7 +148,7 @@ theorem initPre_wp {s₀ : State} {St Kp S : BitVec 32} {KL : Nat} (hp : IPre s�
 
 /-! ## Between the calls -/
 
-/-- What the call of `vg_aes_expand_key` leaves, for `initMid`. -/
+/-- What the call of `vg_aes_expand_key_scratch` leaves, for `initMid`. -/
 structure IAfter (s₀ : State) (St S : BitVec 32) (KL : Nat) (s : State) : Prop where
   r4 : s.gpr .r4 = St
   r5 : s.gpr .r5 = S
@@ -159,7 +159,7 @@ structure IAfter (s₀ : State) (St S : BitVec 32) (KL : Nat) (s : State) : Prop
   wr : s.wr = s₀.wr
 
 theorem ek_after {s₀ s : State} {St Kp S : BitVec 32} {KL : Nat} (h : IMid₁ s₀ St Kp S KL s) :
-    WP isa (.call "vg_aes_expand_key" Impl.Aes.Arm.expandKey) s (IAfter s₀ St S KL) :=
+    WP isa (.call "vg_aes_expand_key_scratch" Impl.Aes.Arm.expandKey) s (IAfter s₀ St S KL) :=
   WP.mono (ek_call h.args) fun _ h₂ =>
     ⟨by rw [h₂.saved _ (by simp [preserved]) (by decide), h.r4],
       by rw [h₂.saved _ (by simp [preserved]) (by decide), h.r5],

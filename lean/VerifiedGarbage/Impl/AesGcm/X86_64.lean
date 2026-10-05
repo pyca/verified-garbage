@@ -7,9 +7,9 @@ import VerifiedGarbage.Impl.Gcm.X86_64.Pclmul
 # AES-GCM: x86-64 implementation
 
 The AES-GCM functions of `Spec/Gcm/Contract.lean`, composed of calls of the
-verified `vg_aes_expand_key`, `vg_aes_ctr32` and `vg_ghash`. They are generic
+verified `vg_aes_expand_key_scratch`, `vg_aes_ctr32` and `vg_ghash`. They are generic
 over the implementations of those they call (`Callees`): each is emitted once
-for each implementation of `vg_aes_ctr32` (with the `vg_aes_expand_key` for
+for each implementation of `vg_aes_ctr32` (with the `vg_aes_expand_key_scratch` for
 the same CPUs) and of `vg_ghash`.
 
 ## The working space
@@ -93,7 +93,7 @@ structure Fn where
   name : String
   code : Prog isa
 
-/-- The implementations called: of `vg_aes_ctr32`, `vg_aes_expand_key` and
+/-- The implementations called: of `vg_aes_ctr32`, `vg_aes_expand_key_scratch` and
 `vg_ghash`, and the instances of `vg_aes_gcm_encrypt_blocks` and
 `vg_aes_gcm_decrypt_blocks` that call them. -/
 structure Callees where

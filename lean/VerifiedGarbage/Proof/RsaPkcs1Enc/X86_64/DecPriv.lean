@@ -212,8 +212,8 @@ theorem priv_call (v : PrivImpl) {s t : State} (hp : DPre s) (h : Setup s t) :
   obtain ⟨hc, hw⟩ := priv_covers hp h
   have hdp := v.depth
   have e2 : privStack = 3248 := rfl
-  refine WP.callSp (k := privK) v.ok (SpSafe.of_all v.spSafe) (by omega) (priv_pre hp h) hc hw ?_
-  intro s' hrd hwr hcs hf ⟨s₂, hm₂, hg₂, hpost⟩ hmx
+  refine WP.call_sp_mx (k := privK) v.ok (SpSafe.of_all v.spSafe) (by omega) (priv_pre hp h) hc hw ?_
+  intro s' hrd hwr hcs hf _ ⟨s₂, hm₂, hg₂, hpost⟩ hmx
   rw [h.rsp] at hf
   have hf' : Frame (privWr s ++ [below (fb s) (8 + privStack)]) t.mem s'.mem :=
     Frame.below_mono hf (by omega) (by have := (fb_toNat hp).2.2; omega)

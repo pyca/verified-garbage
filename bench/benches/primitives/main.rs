@@ -62,6 +62,7 @@ mod rc2_cbc;
 mod rc4;
 mod rsa;
 mod rsa_pkcs1_enc;
+mod rsa_pkcs1_sig;
 mod scrypt;
 mod sha1;
 mod sha224;
@@ -285,6 +286,7 @@ const BENCHES: &[Bench] = &[
     (rc4::USES, rc4::bench),
     (rsa::USES, rsa::bench),
     (rsa_pkcs1_enc::USES, rsa_pkcs1_enc::bench),
+    (rsa_pkcs1_sig::USES, rsa_pkcs1_sig::bench),
     (triple_des_ecb::USES, triple_des_ecb::bench),
     (argon2::USES, argon2::bench),
     (scrypt::USES, scrypt::bench),

@@ -5,7 +5,7 @@ import VerifiedGarbage.Proof.AesOcb.X86.Calls
 
 Untrusted: everything here is checked by Lean. The entry (our caller's
 registers saved in `scratch`, the arguments into its slots), the key
-schedule (`vg_aes_expand_key`), then `L_* = ENCIPHER(K, zeros(128))`
+schedule (`vg_aes_expand_key_scratch`), then `L_* = ENCIPHER(K, zeros(128))`
 (`vg_aes_encrypt_blocks` on a zero block at byte 240 of the key context),
 as one `Pc` (`init_pc`): correct (`init_correct`) and constant time
 (`init_ct`).
@@ -170,11 +170,11 @@ theorem InitPure.cw' {p : BitVec 32 × (Nat → BitVec 32)} (h : InitPure p) {a 
     (⟨w64 (p.2 2) + BitVec.ofNat 64 a, n⟩ : Region).Disjoint ⟨w64 (p.2 3) + BitVec.ofNat 64 d, k⟩ :=
   (h.cw.sub_left (Offset.sub_base _ ha)).sub_right (Lay.wSub hd)
 
-/-- The arguments of `vg_aes_expand_key`. -/
+/-- The arguments of `vg_aes_expand_key_scratch`. -/
 abbrev iArgs : List Instr :=
   [.mov .eax (slot nO), .mov .ecx (slot nlO), .mov .edx (slot ctxO), .alu .add .ebp (imm scrO)]
 
-/-- After `iArgs`: the call of `vg_aes_expand_key`. -/
+/-- After `iArgs`: the call of `vg_aes_expand_key_scratch`. -/
 structure IArg (p : BitVec 32 × (Nat → BitVec 32)) (s₀ s : State) : Prop where
   pre : initPre s₀
   pub : pubOf 4 s₀ = p

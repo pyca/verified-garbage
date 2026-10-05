@@ -1,6 +1,6 @@
 import VerifiedGarbage.Proof.Ed448.AArch64.Whole.Ctx
 import VerifiedGarbage.Proof.Ed448.AArch64.ScalarVerified
-import VerifiedGarbage.Proof.Ed448.AArch64.BaseVerified
+import VerifiedGarbage.Proof.Ed448.AArch64.BaseContract
 import VerifiedGarbage.Proof.Ed448.AArch64.VerifyVerified
 
 /-!
@@ -90,7 +90,7 @@ theorem base_pre {op sp scr : Addr} (h0 : u.gpr .x0 = op) (h1 : u.gpr .x1 = sp) 
     State.callEntry_gpr _ (by decide : Reg.x2 ∉ linkRegs), h0, h1, h2]
   exact ⟨trivial, trivial, hos, hss, hn⟩
 
-theorem base_call (hb : Proof.Ed448.BaseLadderOk) (hV : V.Ok) (hu : WCtx V g vec m₀ u) {op sp scr : Addr}
+theorem base_call (hb : Proof.Ed448.AArch64.BaseOk) (hV : V.Ok) (hu : WCtx V g vec m₀ u) {op sp scr : Addr}
     (h0 : u.gpr .x0 = op) (h1 : u.gpr .x1 = sp) (h2 : u.gpr .x2 = scr)
     (hos : Region.Disjoint ⟨op, 57⟩ ⟨scr, 8192⟩) (hss : Region.Disjoint ⟨sp, 57⟩ ⟨scr, 8192⟩)
     (hn : scr.toNat + 8192 ≤ 2 ^ 64) (hr : Readable V ⟨sp, 57⟩)
@@ -102,7 +102,7 @@ theorem base_call (hb : Proof.Ed448.BaseLadderOk) (hV : V.Ok) (hu : WCtx V g vec
     simp only [List.mem_cons, List.not_mem_nil, or_false]
     rintro r (rfl | rfl)
     exacts [hwo, hws]
-  refine wcall hV hu (Proof.Ed448.AArch64.scalarBase_ok hb) (noFrames_depth base_noFrames)
+  refine wcall hV hu hb.ok (noFrames_depth base_noFrames)
     (base_pre h0 h1 h2 hos hss hn) (covers_rw (by simpa using hr) hw) hw fun w hw' hf hp => ⟨hw', hf, ?_⟩
   change Spec.Ed448.bytesAt w.mem (u.callEntry.gpr .x0) 57 =
     Spec.Ed448.scalarBase (Spec.Ed448.bytesAt u.mem (u.callEntry.gpr .x1) 57) at hp

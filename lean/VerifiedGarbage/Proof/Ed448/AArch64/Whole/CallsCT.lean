@@ -238,7 +238,7 @@ theorem reduce_ct (hV : V.Ok) (h₁ : M m₁) (h₂ : M m₂) {args : List (Reg 
     (fun _ _ hsp hg => ⟨hsp, entry_eq hg (hm .x0 (by simp)), entry_eq hg (hm .x1 (by simp)),
       entry_eq hg (hm .x2 (by simp))⟩) hok
 
-theorem base_ct (hb : Proof.Ed448.BaseLadderOk) (hV : V.Ok) (h₁ : M m₁) (h₂ : M m₂)
+theorem base_ct (hb : Proof.Ed448.AArch64.BaseOk) (hV : V.Ok) (h₁ : M m₁) (h₂ : M m₂)
     {args : List (Reg × Src)}
     (hn : (args.map Prod.fst).Nodup) (hv : ∀ p ∈ args, srcValid p.2) (hret : retOk args = true)
     (hr : ∀ p ∈ args, p.1 ∉ preserved) (hl : ∀ p ∈ args, p.1 ∉ linkRegs)
@@ -260,8 +260,8 @@ theorem base_ct (hb : Proof.Ed448.BaseLadderOk) (hV : V.Ok) (h₁ : M m₁) (h�
     simp only [List.mem_cons, List.not_mem_nil, or_false]
     rintro r (rfl | rfl)
     exacts [hwo, hws]
-  exact callS_ct hV h₁ h₂ hn hv hret hr hl ht val hval (Proof.Ed448.AArch64.scalarBase_ok hb)
-    Proof.Ed448.AArch64.scalarBase_ct
+  exact callS_ct hV h₁ h₂ hn hv hret hr hl ht val hval hb.ok
+    hb.ct
     (fun _ hs => base_pre (regs_get hs (hm .x0 (by simp))) (regs_get hs (hm .x1 (by simp)))
       (regs_get hs (hm .x2 (by simp))) hos hss hnc)
     (covers_rw (fun r hr => by rw [List.mem_singleton.mp hr]; exact hrd) hw) hw

@@ -126,12 +126,12 @@ structure ExpInv (s : State) (ep : Addr) (L : Nat) (eb : List Byte) (j : Nat) (t
   keep : Keep [.rax, .r10, .r11] s t
 
 /-- `expCheck`: ZF set exactly when the `L` bytes `eb` of `e` at `r8` are
-within BoringSSL's limits. -/
-theorem expCheck_ok {s : State} {ep : Addr} {L : Nat} {eb : List Byte} (h8 : s.gpr .r8 = ep)
+within BoringSSL's limits, and `e` saturated (`sat`) in `r11`. -/
+theorem expCheckR_ok {s : State} {ep : Addr} {L : Nat} {eb : List Byte} (h8 : s.gpr .r8 = ep)
     (h9 : s.gpr .r9 = BitVec.ofNat 64 L) (hL1 : 1 ≤ L) (hL : L < 2 ^ 63)
     (hrd : ∀ i < L, InRegions (s.rd ++ s.wr) (ep + BitVec.ofNat 64 i) 1) (heb : eb = Spec.Rsa.bytesAt s.mem ep L) :
     WP isa expCheck s fun t => t.zf = some (Spec.Rsa.exponentValid (Spec.Rsa.os2ip eb)) ∧ t.mem = s.mem ∧
-      Keep [.rax, .r10, .r11] s t := by
+      t.gpr .r11 = BitVec.ofNat 64 (sat (Spec.Rsa.os2ip eb)) ∧ Keep [.rax, .r10, .r11] s t := by
   have hlen : eb.length = L := by rw [heb]; simp [Spec.Rsa.bytesAt]
   unfold expCheck
   refine WP.seq (WP.mono (WP.keep [.r10, .r11] (Q := fun t => t.gpr .r10 = BitVec.ofNat 64 0 ∧
@@ -148,11 +148,22 @@ theorem expCheck_ok {s : State} {ep : Addr} {L : Nat} {eb : List Byte} (h8 : s.g
         hm'.trans hI.mem, (hI.keep.trans k').mono (by decide)⟩
     rw [h11', pre_succ eb (by omega)]
   · refine WP.mono (WP.keep [.rax, .r10, .r11] (Q := fun t => t.zf = some (Spec.Rsa.exponentValid (Spec.Rsa.os2ip eb)) ∧
-        t.mem = t₁.mem) ?_ rfl) fun t ⟨⟨hz, hm'⟩, k⟩ => ⟨hz, hm'.trans hI.mem, (hI.keep.trans k).mono (by decide)⟩
+        t.mem = t₁.mem ∧ t.gpr .r11 = BitVec.ofNat 64 (sat (Spec.Rsa.os2ip eb))) ?_ rfl)
+      fun t ⟨⟨hz, hm', h11⟩, k⟩ => ⟨hz, hm'.trans hI.mem, h11, (hI.keep.trans k).mono (by decide)⟩
     have hv : sat (pre eb L) < 2 ^ 64 := by have := sat_lt (pre eb L); omega
     unfold expTest
     xrun [hI.r11]
     rw [BitVec.and_self, expTest_val hv, exponentValid_sat, ← hlen, pre_len]
+    exact ⟨rfl, rfl⟩
+
+/-- `expCheck`: ZF set exactly when the `L` bytes `eb` of `e` at `r8` are
+within BoringSSL's limits. -/
+theorem expCheck_ok {s : State} {ep : Addr} {L : Nat} {eb : List Byte} (h8 : s.gpr .r8 = ep)
+    (h9 : s.gpr .r9 = BitVec.ofNat 64 L) (hL1 : 1 ≤ L) (hL : L < 2 ^ 63)
+    (hrd : ∀ i < L, InRegions (s.rd ++ s.wr) (ep + BitVec.ofNat 64 i) 1) (heb : eb = Spec.Rsa.bytesAt s.mem ep L) :
+    WP isa expCheck s fun t => t.zf = some (Spec.Rsa.exponentValid (Spec.Rsa.os2ip eb)) ∧ t.mem = s.mem ∧
+      Keep [.rax, .r10, .r11] s t :=
+  WP.mono (expCheckR_ok h8 h9 hL1 hL hrd heb) fun _ ⟨hz, hm, _, k⟩ => ⟨hz, hm, k⟩
 
 /-! ## `failOut` -/
 

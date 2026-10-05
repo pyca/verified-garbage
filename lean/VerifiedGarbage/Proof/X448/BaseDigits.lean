@@ -4,11 +4,12 @@ import Mathlib.Algebra.Module.NatInt
 /-!
 # The fixed-base comb's digits and partial sums
 
-As `Proof/Ed25519/CombDigits.lean` for Ed25519's comb, for 448 bits. The
-scalar `S < 256^56` has 112 nibbles `n_i`; the digits are `d_i = n_i - 8`, from
-`-8` to `7`. Step `j < 56` adds `d_{2j+1} 256^j` to one accumulator and
-`d_{2j} 256^j` to another, both starting at `G = baseGVal`; 16 times the first
-plus the second is `S` (`comb_total`), since `G = 8 Σ_{j < 56} 256^j`.
+As `Proof/Ed25519/CombDigits.lean` for Ed25519's comb, for `8n` bits (448 for
+X448, 456 for Ed448). The scalar `S < 256^n` has `2n` nibbles `n_i`; the digits
+are `d_i = n_i - 8`, from `-8` to `7`. Step `j < n` adds `d_{2j+1} 256^j` to one
+accumulator and `d_{2j} 256^j` to another, both starting at `G = combG n`; 16
+times the first plus the second is `S` (`comb_total`), since
+`G = 8 Σ_{j < n} 256^j`.
 
 A negative digit adds the negation `(-x, y)` of the table entry `|d|`
 (`baseEntry_ok`).
@@ -55,7 +56,12 @@ def geom : Nat → Nat
   | 0 => 0
   | c + 1 => geom c + 256 ^ c
 
-theorem baseGVal_eq : baseGVal = 8 * geom 56 := by decide
+/-- The constant the digits of a comb of `n` tables are offset by: `8 Σ_{j < n} 256^j`. -/
+def combG (n : Nat) : Nat := 8 * geom n
+
+theorem combG_56 : combG 56 = baseGVal := by decide
+
+theorem combG_57 : combG 57 = baseGVal57 := by decide
 
 /-- The comb's digit `i`: `n_i - 8`, from `-8` to `7`. -/
 def sdig (S i : Nat) : ℤ := (nib S i : ℤ) - 8
@@ -84,12 +90,12 @@ theorem evenSumZ_eq (S : Nat) : ∀ c, evenSumZ S c = evenSum S c - 8 * geom c
 
 /-- The two accumulators' multiples of `B` give the scalar: `16 (G + Σ_j d_{2j+1} 256^j) +
 (G + Σ_j d_{2j} 256^j) = S`. -/
-theorem comb_total {S : Nat} (hS : S < 256 ^ 56) :
-    16 * ((baseGVal : ℤ) + oddSumZ S 56) + (baseGVal + evenSumZ S 56) = S := by
-  simp only [oddSumZ_eq, evenSumZ_eq, baseGVal_eq]
-  have h := comb_partial S 56
+theorem comb_total {n S : Nat} (hS : S < 256 ^ n) :
+    16 * ((combG n : ℤ) + oddSumZ S n) + (combG n + evenSumZ S n) = S := by
+  simp only [oddSumZ_eq, evenSumZ_eq, combG]
+  have h := comb_partial S n
   rw [Nat.mod_eq_of_lt hS] at h
-  have h' : (16 * oddSum S 56 + evenSum S 56 : ℤ) = S := by exact_mod_cast h
+  have h' : (16 * oddSum S n + evenSum S n : ℤ) = S := by exact_mod_cast h
   push_cast
   linear_combination h'
 
@@ -118,7 +124,7 @@ theorem basePt_neg (q : Fe × Fe) : basePt (negAff q) = negPoint (basePt q) := r
 
 /-- The entry for the digit `n - 8` of table `j`, negated for a negative digit, represents
 `[(n - 8) 256^j] B`. -/
-theorem baseEntry_ok (j n : Nat) (hj : j < 56) (hn : n < 16) :
+theorem baseEntry_ok (j n : Nat) (hj : j < 57) (hn : n < 16) :
     Rep (basePt (if n < 8 then negAff (baseTable j (mag n)) else baseTable j (mag n)))
       ((((n : ℤ) - 8) * 256 ^ j) • baseAff) := by
   have hr := baseTable_ok j (mag n) hj (mag_lt hn)

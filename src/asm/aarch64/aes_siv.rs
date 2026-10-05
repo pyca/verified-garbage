@@ -9,7 +9,7 @@ pub(crate) const VG_AES_SIV_INIT_AES_FEATURES: crate::cpu::Features = crate::cpu
 ///
 /// Contract: `VG.Spec.Siv.initContract`. The key context is `VG.Spec.Siv.KeyRepr`. Constant time: only the pointers and `key_len` may affect timing, not the key.
 ///
-/// This implementation expands the keys with `vg_aes_expand_key_aes` and computes the CMAC subkeys with `vg_cmac_aes_subkeys_aes`.
+/// This implementation expands the keys with `vg_aes_expand_key_scratch_aes` and computes the CMAC subkeys with `vg_cmac_aes_subkeys_aes`.
 ///
 /// # Safety
 ///
@@ -35,7 +35,7 @@ pub(crate) unsafe extern "C" fn vg_aes_siv_init_aes(key: *const u8, key_len: usi
         "add x21, x2, #0",
         "add x22, x3, #0",
         "add x1, x20, #0",
-        "bl {vg_aes_expand_key_aes}",
+        "bl {vg_aes_expand_key_scratch_aes}",
         "add x0, x21, #0",
         "lsr x1, x20, #2",
         "add x1, x1, #6",
@@ -46,7 +46,7 @@ pub(crate) unsafe extern "C" fn vg_aes_siv_init_aes(key: *const u8, key_len: usi
         "add x1, x20, #0",
         "add x2, x21, #272",
         "add x3, x22, #0",
-        "bl {vg_aes_expand_key_aes}",
+        "bl {vg_aes_expand_key_scratch_aes}",
         "ldr x19, [x22, #2176]",
         "ldr x20, [x22, #2184]",
         "ldr x21, [x22, #2192]",
@@ -55,7 +55,7 @@ pub(crate) unsafe extern "C" fn vg_aes_siv_init_aes(key: *const u8, key_len: usi
         "add sp, sp, #2560",
         "ret",
         ".arch_extension noaes",
-        vg_aes_expand_key_aes = sym super::aes::vg_aes_expand_key_aes,
+        vg_aes_expand_key_scratch_aes = sym super::aes::vg_aes_expand_key_scratch_aes,
         vg_cmac_aes_subkeys_aes = sym super::cmac_aes::vg_cmac_aes_subkeys_aes,
     )
 }
@@ -64,7 +64,7 @@ pub(crate) unsafe extern "C" fn vg_aes_siv_init_aes(key: *const u8, key_len: usi
 ///
 /// Contract: `VG.Spec.Siv.initContract`. The key context is `VG.Spec.Siv.KeyRepr`. Constant time: only the pointers and `key_len` may affect timing, not the key.
 ///
-/// This implementation expands the keys with `vg_aes_expand_key` and computes the CMAC subkeys with `vg_cmac_aes_subkeys`.
+/// This implementation expands the keys with `vg_aes_expand_key_scratch` and computes the CMAC subkeys with `vg_cmac_aes_subkeys`.
 ///
 /// # Safety
 ///
@@ -88,7 +88,7 @@ pub(crate) unsafe extern "C" fn vg_aes_siv_init(key: *const u8, key_len: usize, 
         "add x21, x2, #0",
         "add x22, x3, #0",
         "add x1, x20, #0",
-        "bl {vg_aes_expand_key}",
+        "bl {vg_aes_expand_key_scratch}",
         "add x0, x21, #0",
         "lsr x1, x20, #2",
         "add x1, x1, #6",
@@ -99,7 +99,7 @@ pub(crate) unsafe extern "C" fn vg_aes_siv_init(key: *const u8, key_len: usize, 
         "add x1, x20, #0",
         "add x2, x21, #272",
         "add x3, x22, #0",
-        "bl {vg_aes_expand_key}",
+        "bl {vg_aes_expand_key_scratch}",
         "ldr x19, [x22, #2176]",
         "ldr x20, [x22, #2184]",
         "ldr x21, [x22, #2192]",
@@ -107,7 +107,7 @@ pub(crate) unsafe extern "C" fn vg_aes_siv_init(key: *const u8, key_len: usize, 
         "ldr x22, [x22, #2200]",
         "add sp, sp, #2560",
         "ret",
-        vg_aes_expand_key = sym super::aes::vg_aes_expand_key,
+        vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch,
         vg_cmac_aes_subkeys = sym super::cmac_aes::vg_cmac_aes_subkeys,
     )
 }
