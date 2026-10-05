@@ -2,6 +2,7 @@ import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombSelect
 import VerifiedGarbage.Proof.Weierstrass.X86_64.Ladder
 import VerifiedGarbage.Proof.Weierstrass.X86_64.Unch
 import VerifiedGarbage.Proof.Weierstrass.CombW
+import VerifiedGarbage.Proof.Weierstrass.Law3
 import VerifiedGarbage.Proof.Framework.X86_64.Syms
 
 /-!
@@ -11,7 +12,7 @@ As on AArch64 (`Proof/Weierstrass/AArch64/TComb.lean`): iteration `j`
 selects the entry of the digit's magnitude (`digit_ok`, `select_ok`, whose
 words are the entry's coordinates in Montgomery form, `tbl_entry`), negates
 `y` for a negative digit (`tentry_ok`), and adds it to `A` with the complete
-addition (`rcb_ok`), so that `A`, which represented `[combEW (j+1)]G`,
+addition for `a = -3` (`rcb3_ok`, `Law.add3`), so that `A`, which represented `[combEW (j+1)]G`,
 represents `[combEW j]G` (`combW_add`, `tstep_ok`); after the `J` digits,
 `[k]G` (`tcomb_ok`).
 -/
@@ -296,13 +297,13 @@ theorem tentry_ok {K : TCombCfg} {C : Curve} {base : Addr} {size k i : Nat} {T :
 /-! ## The loop -/
 
 /-- What the comb reads and never writes, at the start: the curve's `a` and
-`3b`, zero, the table of the scalar's bits (`kbytes` bytes, the rest of its
+`b`, zero, the table of the scalar's bits (`kbytes` bytes, the rest of its
 `w J` zero after `init`), the tables' address, and the tables, apart from the
 working space. -/
 structure TCombFixed (K : TCombCfg) (C : Curve) (base : Addr) (size : Nat) (s₀ : State) (k : Nat)
     (T : Addr) (ws : List (BitVec 64)) : Prop where
   a : tmv C K.M.n base s₀ K.S.a = Fin.ofNat C.p C.a
-  b : tmv C K.M.n base s₀ K.S.b3 = Fin.ofNat C.p (3 * C.b)
+  b : tmv C K.M.n base s₀ K.S.b3 = Fin.ofNat C.p C.b
   ro_lt : ∀ x ∈ combRo K.toComb, wordsVal s₀.mem base x K.M.n < C.p
   zero : wordsVal s₀.mem base K.zero K.M.n = 0
   bits : ∀ t < K.kbytes, s₀.mem (off base (K.bits + t)) = if k.testBit t then 1 else 0
@@ -405,6 +406,7 @@ theorem clob_powClob {n : Nat} : ∀ r ∈ clob n, r ∈ powClob n := fun _ h =>
 /-- An iteration. -/
 theorem tstep_ok {K : TCombCfg} {C : Curve} {base : Addr} {size k : Nat} {T : Addr}
     {tbl : List (List (Nat × Nat))} (hL : TCombLay K size) (hC : Law C)
+    (hM3 : AM3 C)
     (hG : onCurve C (G C) = true) (hV : TCombVals K C tbl)
     (hpn : C.p < 2 ^ (64 * K.M.n)) {s₀ : State}
     (hF : TCombFixed K C base size s₀ k T (tcombWords K.M.n (2 ^ (64 * K.M.n)) C.p tbl))
@@ -497,13 +499,11 @@ theorem tstep_ok {K : TCombCfg} {C : Curve} {base : Addr} {size k : Nat} {T : Ad
     rcases List.mem_append.mp hx with hx | hx
     · simp only [combSlots, List.mem_append, TCombCfg.toComb]; exact Or.inr hx
     · exact hSl x hx
-  refine WP.seq ((fprogB_wp _ _).mpr (WP.mono (rcb_ok hL.comb.lay hV.unit hL.comb.add hSl' I₃
-    (fun _ h => h)) fun s₄ ⟨P₄, I₄, t₄, _⟩ => ?_))
+  refine WP.seq ((fprogB_wp _ _).mpr (WP.mono (rcb3_ok hL.comb.lay hV.unit hL.comb.add hSl' I₃
+    (fun _ h => h)) fun s₄ ⟨P₄, I₄, t₄⟩ => ?_))
   dsimp only [TCombCfg.toComb] at P₄ I₄ t₄
   -- The sum.
-  have ta : tmv C K.M.n base s₃ K.S.a = Fin.ofNat C.p C.a := by
-    show toM _ _ _ = _; rw [hro _ (by simp [combRo, TCombCfg.toComb])]; exact hF.a
-  have tb : tmv C K.M.n base s₃ K.S.b3 = Fin.ofNat C.p (3 * C.b) := by
+  have tb : tmv C K.M.n base s₃ K.S.b3 = Fin.ofNat C.p C.b := by
     show toM _ _ _ = _; rw [hro _ (by simp [combRo, TCombCfg.toComb])]; exact hF.b
   have hRA : Rep C (tmv C K.M.n base s₃ K.A.x) (tmv C K.M.n base s₃ K.A.y)
       (tmv C K.M.n base s₃ K.A.z) (mul (combEW K.w k K.J j) (G C)) := by
@@ -514,14 +514,14 @@ theorem tstep_ok {K : TCombCfg} {C : Curve} {base : Addr} {size k : Nat} {T : Ad
     have ez : tmv C K.M.n base s₃ K.A.z = tmv C K.M.n base s K.A.z := by
       show toM _ _ _ = toM _ _ _; rw [hAx _ (by simp)]
     rw [ex, ey, ez]; exact hI.rep
-  rw [ta, tb] at t₄
+  rw [tb] at t₄
   have hP := hC.onCurve_mul hG (combEW K.w k K.J j)
   have hQ : onCurve C (signedPtW C K.w k (j - 1)) = true := by
     unfold signedPtW combPtW
     split
     · exact hC.onCurve_mul hG _
     · exact onCurve_negPt (hC.onCurve_mul hG _)
-  have hR := Rep.add hC hP hQ hRA E₃.rep t₄.symm
+  have hR := hC.add3 hM3 hP hQ hRA E₃.rep t₄.symm
   have hadd := combW_add hC hG (w := K.w) (k := k) (J := K.J) (j := j - 1) (by omega)
   rw [Nat.sub_add_cancel hj] at hadd
   have hsp : signedPtW C K.w k (j - 1) = (if 2 ^ (K.w - 1) ≤ combWin K.w k (j - 1) then
@@ -529,10 +529,8 @@ theorem tstep_ok {K : TCombCfg} {C : Curve} {base : Addr} {size k : Nat} {T : Ad
       else negPt (combPtW C K.w (j - 1) (2 ^ (K.w - 1) - combWin K.w k (j - 1)))) := rfl
   rw [hsp, hadd] at hR
   -- The copy and the test.
-  have hDv : ∀ x ∈ [K.D.x, K.D.y, K.D.z], x ∈ rcbW K.S K.D ++ rcbR K.S K.A K.E := by
-    intro x hx
-    simp only [rcbW, rcbR, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hx ⊢
-    rcases hx with rfl | rfl | rfl <;> simp
+  have hDv : ∀ x ∈ [K.D.x, K.D.y, K.D.z], x ∈ [K.D.x, K.D.y, K.D.z] ++ rcbR K.S K.A K.E :=
+    fun _ hx => List.mem_append_left _ hx
   have hs₄ := I₄.scr
   have hb₄ : s₄.gpr .rbx = BitVec.ofNat 64 (j - 1) := by
     rw [P₄.gpr _ (rbx_not_clob _), E₃.keep.gpr _ (rbx_not_clob _), b₁]
@@ -577,7 +575,7 @@ theorem tstep_ok {K : TCombCfg} {C : Curve} {base : Addr} {size k : Nat} {T : Ad
   have U : Unch base (combW K.toComb) s.mem s₆.mem := (U₁₃.trans (U₄.trans U₆)).mono fun w hw => by
     simp only [List.mem_append] at hw; rcases hw with h | h | h <;> exact h
   have hDval : ∀ x ∈ [K.D.x, K.D.y, K.D.z], toM C.p (2 ^ (64 * K.M.n)) (wordsVal s₄.mem base x K.M.n) =
-      runOps (rcb K.S K.A K.E K.D) (tmv C K.M.n base s₃) x := fun x hx => I₄.val x (hDv x hx)
+      runOps (rcb3 K.S K.A K.E K.D) (tmv C K.M.n base s₃) x := fun x hx => I₄.val x (hDv x hx)
   have hDlt : ∀ x ∈ [K.D.x, K.D.y, K.D.z], wordsVal s₄.mem base x K.M.n < C.p := fun x hx => I₄.lt x (hDv x hx)
   refine ⟨⟨hs₅.of_keeps k₆ (by decide), by rw [k₆.1 _ (by decide), hb₅], ?_, ?_, ?_, ?_, ?_, ?_, ?_,
     by rw [sy₆]; exact hI.tsym⟩, z₆⟩
@@ -659,6 +657,7 @@ theorem zeroRax_ok (s : State) :
 only `powClob` and `tcombW` change. -/
 theorem tcomb_ok {K : TCombCfg} {C : Curve} {base : Addr} {size k : Nat} {T : Addr}
     {tbl : List (List (Nat × Nat))} (hL : TCombLay K size) (hC : Law C)
+    (hM3 : AM3 C)
     (hG : onCurve C (G C) = true) (hV : TCombVals K C tbl)
     (hpn : C.p < 2 ^ (64 * K.M.n)) {s : State} (hs : Scr s base size)
     (hM : ModOkW K.M size C.p s.mem base)
@@ -774,7 +773,7 @@ theorem tcomb_ok {K : TCombCfg} {C : Curve} {base : Addr} {size k : Nat} {T : Ad
         k₃.wr, k₂.rd, k₂.wr, k₁.rd, k₁.wr]) U₆ (tcombW_size hL hM) hF.out
   exact countLoop_ok (Inv := fun j s' =>
       TCombInv K C base size k T (tcombWords K.M.n (2 ^ (64 * K.M.n)) C.p tbl) s s' j) (n := K.J)
-    (fun j s' h1 h2 hi => tstep_ok hL hC hG hV hpn hF h1 h2 hi)
+    (fun j s' h1 h2 hi => tstep_ok hL hC hM3 hG hV hpn hF h1 h2 hi)
     (fun s' hi => ⟨hi.keep, hi.unch, hi.mod, hi.lt, by rw [← combEW_zero hk]; exact hi.rep⟩)
     hJ.1 I₆
 

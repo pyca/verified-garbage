@@ -17,10 +17,10 @@ open VG.Proof.Mont.X86_64 VG.Proof.Mont VG.Proof.Weierstrass.X86_64 VG.Proof.Wei
 
 variable {c : Cfg}
 
-/-- What `[k]G` may write, by the comb or the ladder: their slots and the
-word past the table of `k`'s bits. -/
+/-- What `[k]G` may write, by the comb (with `b R mod p` in `EM`) or the
+ladder: their slots and the word past the table of `k`'s bits. -/
 abbrev gW (c : Cfg) : List (Nat × Nat) :=
-  slW c [RX, RY, RZ, TX, TY, TZ, PT, T0, T1, T2, T3, T4, T5, DX, DY, DZ, TMP] ++
+  slW c [RX, RY, RZ, TX, TY, TZ, PT, T0, T1, T2, T3, T4, T5, DX, DY, DZ, TMP, EM] ++
     [(bitsAt c.n 0 + 64 * c.n, 8)]
 
 /-- A slot is apart from the word past the table of `k`'s bits. -/
@@ -32,7 +32,7 @@ theorem apart_pad {i : Nat} (hi : i < 45) :
 
 /-- A slot apart from what `[k]G` writes. -/
 theorem apart_gW {i : Nat} (hi : i < 45)
-    (hl : i ∉ [RX, RY, RZ, TX, TY, TZ, PT, T0, T1, T2, T3, T4, T5, DX, DY, DZ, TMP]) :
+    (hl : i ∉ [RX, RY, RZ, TX, TY, TZ, PT, T0, T1, T2, T3, T4, T5, DX, DY, DZ, TMP, EM]) :
     ∀ w ∈ gW c, c.sl i + 8 * c.n ≤ w.1 ∨ w.1 + w.2 ≤ c.sl i :=
   apart_append (apart_slW hl) (apart_pad hi)
 
@@ -118,35 +118,57 @@ theorem gMul_ok' (hc : CfgOk c) (hC : Law c.C) (hT : CombTbls c) {base : Addr} {
       fun s' ⟨K', U', M', L', R'⟩ => ⟨K', ?_, M', L', by rw [Nat.shiftRight_zero] at R'; exact R'⟩
     rw [ladW_eq] at U'
     have hsub : slW c [RX, RY, RZ, T0, T1, T2, T3, T4, T5, DX, DY, DZ, T0, T1, T2, T3, T4, T5, TX, TY, TZ,
-        TMP] ⊆ slW c [RX, RY, RZ, TX, TY, TZ, PT, T0, T1, T2, T3, T4, T5, DX, DY, DZ, TMP] :=
+        TMP] ⊆ slW c [RX, RY, RZ, TX, TY, TZ, PT, T0, T1, T2, T3, T4, T5, DX, DY, DZ, TMP, EM] :=
       List.map_subset _ (by decide)
     exact Unch.cover U' fun w hw => ⟨w, List.mem_append_left _ (hsub hw), Nat.le_refl _, Nat.le_refl _⟩
   | some d =>
     have hd := hc.comb d hcd
     obtain ⟨hTM, hout⟩ := hTb d hcd
-    have hF : TCombFixed (c.combCfg d) c.C base size s k (s.syms d.tsym)
+    have hn := hs.nowrap
+    -- `b R mod p` in `EM`.
+    refine WP.seq (WP.mono_syms (setConst_ok hs (n := c.n) (o := c.sl EM) (x := c.mont c.C.b)
+      (sl_le c h7 (by decide)) (by have := hc.p_lt; have := hmont c.C.b; omega))
+      fun s₁ ⟨e₁, k₁, O₁⟩ sy₁ => ?_)
+    have hs₁ := hs.of_keepRegs k₁ (by decide)
+    have F₁ := F.unch h7 hn (fixedOk_slW (l := [EM]) (by decide)) O₁.unch
+    have ht₁ : ∀ t < 64 * c.n, s₁.mem (off base (bitsAt c.n 0 + t)) = if k.testBit t then 1 else 0 :=
+      fun t ht => by
+        rw [tbl_unch (W := slW c [EM]) O₁.unch h7 hn (j := 0) (by decide) ht (tbl_apart_slW (by decide) 0 t)]
+        exact ht₀ t ht
+    have hTM₁ : TblMem s₁ (s.syms d.tsym) (c.combWords d) :=
+      hTM.of_unch (by rw [k₁.rd, k₁.wr]) O₁.unch (fun w hw => by
+        rw [List.mem_singleton.mp hw]; exact sl_le c h7 (by decide)) hout
+    have hF : TCombFixed (c.combCfg d) c.C base size s₁ k (s₁.syms d.tsym)
         (tcombWords (c.combCfg d).M.n (2 ^ (64 * (c.combCfg d).M.n)) c.C.p d.tbl) := by
-      refine ⟨?_, ?_, fun x hx => ?_, F.zero, ht₀, hkl, rfl, hTM, hout⟩
-      · show toM c.C.p (2 ^ (64 * c.n)) (wordsVal s.mem _ (c.sl AP) c.n) = _
-        rw [F.ap]; exact toM_cmont hc _
-      · show toM c.C.p (2 ^ (64 * c.n)) (wordsVal s.mem _ (c.sl B3P) c.n) = _
-        rw [F.b3p]; exact toM_cmont hc _
+      refine ⟨?_, ?_, fun x hx => ?_, F₁.zero, ht₁, hkl, rfl, by rw [sy₁]; exact hTM₁,
+        by rw [sy₁]; exact hout⟩
+      · show toM c.C.p (2 ^ (64 * c.n)) (wordsVal s₁.mem _ (c.sl AP) c.n) = _
+        rw [F₁.ap]; exact toM_cmont hc _
+      · show toM c.C.p (2 ^ (64 * c.n)) (wordsVal s₁.mem _ (c.sl EM) c.n) = _
+        rw [e₁]; exact toM_cmont hc _
       · simp only [combRo, TCombCfg.toComb, Cfg.combCfg, Cfg.rcbSlots, List.mem_cons, List.not_mem_nil,
           or_false] at hx
         rcases hx with rfl | rfl | rfl
-        · exact lt_of_eq_of_lt F.ap (hmont _)
-        · exact lt_of_eq_of_lt F.b3p (hmont _)
-        · exact lt_of_eq_of_lt F.zero (by omega)
-    refine WP.mono (tcomb_ok (tcombLay hc hd) hC hc.onG (tcombVals hc hC (hT d hcd)) hc.p_lt hs
-      (modP_of hc F.mp) hF) fun s' ⟨K', U', M', L', R'⟩ => ⟨K', ?_, M', L', R'⟩
+        · exact lt_of_eq_of_lt F₁.ap (hmont _)
+        · exact lt_of_eq_of_lt e₁ (hmont _)
+        · exact lt_of_eq_of_lt F₁.zero (by omega)
+    refine WP.mono (tcomb_ok (tcombLay hc hd) hC hc.am3 hc.onG (tcombVals hc hC (hT d hcd)) hc.p_lt hs₁
+      (modP_of hc F₁.mp) hF) fun s' ⟨K', U', M', L', R'⟩ =>
+        ⟨(k₁.mono fun r hr => by rw [List.mem_singleton.mp hr]; simp [powClob, clob]).trans K', ?_, M', L', R'⟩
     rw [tcombW_eq] at U'
     have hz := zw_le hd
-    exact Unch.cover U' fun w hw => by
-      rcases List.mem_append.mp hw with hw | hw
-      · exact ⟨w, List.mem_append_left _ hw, Nat.le_refl _, Nat.le_refl _⟩
-      · rw [List.mem_singleton.mp hw]
-        exact ⟨_, List.mem_append_right _ (List.mem_singleton_self _), Nat.le_refl _, by dsimp only; omega⟩
-
+    refine Unch.cover (O₁.unch.trans U') fun w hw => ?_
+    rcases List.mem_append.mp hw with hw | hw
+    · rw [List.mem_singleton.mp hw]
+      exact ⟨_, List.mem_append_left _ (List.mem_map_of_mem (f := fun i => (c.sl i, 8 * c.n))
+        (show EM ∈ [RX, RY, RZ, TX, TY, TZ, PT, T0, T1, T2, T3, T4, T5, DX, DY, DZ, TMP, EM] by decide)),
+        Nat.le_refl _, Nat.le_refl _⟩
+    rcases List.mem_append.mp hw with hw | hw
+    · have sub : ∀ i ∈ [RX, RY, RZ, TX, TY, TZ, PT, T0, T1, T2, T3, T4, T5, DX, DY, DZ, TMP],
+          i ∈ [RX, RY, RZ, TX, TY, TZ, PT, T0, T1, T2, T3, T4, T5, DX, DY, DZ, TMP, EM] := by decide
+      exact ⟨w, List.mem_append_left _ (List.map_subset _ sub hw), Nat.le_refl _, Nat.le_refl _⟩
+    · rw [List.mem_singleton.mp hw]
+      exact ⟨_, List.mem_append_right _ (List.mem_singleton_self _), Nat.le_refl _, by dsimp only; omega⟩
 
 /-- `R = [k]G`, by the comb or the ladder, after the setup and the tables. -/
 theorem gMul_ok (hc : CfgOk c) (hC : Law c.C) (hT : CombTbls c) {hs : Option Nat} {s₀ : State} (hp : Pre c s₀)

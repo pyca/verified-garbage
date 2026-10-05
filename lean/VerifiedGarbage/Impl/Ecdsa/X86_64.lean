@@ -20,7 +20,8 @@ scratch = r8) -> eax`, for a curve whose field elements and scalars are `n`
    stored as immediates;
 2. the bits of `k`, `p - 2` and `n - 2` are expanded into tables;
 3. `R = [k]G` by the fixed-base comb from the curve's tables in a `static`
-   (`Impl/Weierstrass/X86_64/TComb.lean`), for a curve that has them, else
+   (`Impl/Weierstrass/X86_64/TComb.lean`, its additions those for `a = -3`,
+   with `b R mod p` in `EM`), for a curve that has them, else
    by the ladder from `R = O = (0 : 1 : 0)`, then
    `x = X Z^(p-2)` (Montgomery's form left by a multiplication by 1) and
    `r = x mod n` (a conditional subtraction, as `x < p < 2n`);
@@ -169,10 +170,11 @@ def ladderCfg : LadderCfg where
 def combJ (w : Nat) : Nat := (64 * c.n + w - 1) / w
 
 /-- The comb for `[k]G`, into `R`, from the table of the bits of `k` and the
-curve's tables of constants, the `static` `d.tsym` (`Artifact.consts`). -/
+curve's tables of constants, the `static` `d.tsym` (`Artifact.consts`), with
+`b R mod p` in `EM` (free until `scalar`). -/
 def combCfg (d : CombData) : TCombCfg where
   M := c.MP'
-  S := c.rcbSlots
+  S := { c.rcbSlots with b3 := c.sl EM }
   A := c.pt RX RY RZ
   E := c.pt TX TY TZ
   D := c.pt DX DY DZ
@@ -196,10 +198,11 @@ def combConsts : List (String × List (BitVec 64)) :=
   | some d => [(d.tsym, c.combWords d)]
   | none => []
 
-/-- `R = [k]G`, from the table of the bits of `k`: by the comb, or the ladder. -/
+/-- `R = [k]G`, from the table of the bits of `k`: by the comb (with `b R mod p`
+in `EM` for its complete addition for `a = -3`), or the ladder. -/
 def gMul : Prog isa :=
   match c.comb with
-  | some d => TCombCfg.comb (c.combCfg d)
+  | some d => .seq (.block (setConst c.n (c.sl EM) (c.mont c.C.b))) (TCombCfg.comb (c.combCfg d))
   | none => ladder c.ladderCfg
 
 def powP : PowCfg := ⟨c.MP', c.sl ACC, c.sl PT, c.sl RZ, c.sl ONEP, bitsAt c.n 1, 64 * c.n⟩
