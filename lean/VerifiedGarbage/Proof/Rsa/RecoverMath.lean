@@ -251,4 +251,14 @@ theorem recoverPrimes_go {n e d : Nat} (h : ¬(d * e < 2 ∨ (d * e - 1) % 2 = 1
       recoverPrimes.go n (splitTwos (d * e - 1)).1 (splitTwos (d * e - 1)).2 recoverTries := by
   simp only [recoverPrimes, h, ite_false]
 
+/-- `recoverPrimes.go` tries at least one candidate. -/
+theorem go_pos (n t r : Nat) : ∀ k, k ≤ recoverTries → 1 ≤ (recoverPrimes.go n t r k).2
+  | 0, _ => by rw [recoverPrimes.go]; decide
+  | k + 1, hk => by
+    rw [recoverPrimes.go]
+    split
+    · show 1 ≤ recoverTries - k
+      unfold recoverTries at *; omega
+    · exact go_pos n t r k (by omega)
+
 end VG.Proof.Rsa
