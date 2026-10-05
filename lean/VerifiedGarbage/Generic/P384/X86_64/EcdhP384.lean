@@ -17,16 +17,21 @@ def artifacts (h : Proof.Weierstrass.X86_64.HasLawInv Spec.P384.curve) : List Ar
   { Spec.Ecdh.P384.exchangeApi with
     target := X86_64.target
     doc := Spec.Ecdh.P384.exchangeApi.doc (notes := ["The function is `vg_ecdsa_p384_sign`'s setup, \
-      field arithmetic, ladder and inversion, with the peer's point in place of `G`: it saves its \
+      field arithmetic and inversion, with the peer's point in place of `G`: it saves its \
       caller's callee-saved registers in `scratch`; field elements are six 64-bit words in \
       Montgomery form, multiplied by word-by-word Montgomery multiplication (CIOS) with a final \
       conditional subtraction. The peer's key is checked without branches (its first byte, both \
-      coordinates below `p`, and the curve's equation), and the ladder multiplies the peer's \
-      point if it is valid, else `G`, so it always runs on a point of the curve. `[d]P` is a \
-      double-and-add ladder over all 384 bits of `d`, with the complete addition formulas of \
-      Renes, Costello and Batina and a masked selection for each bit; `Z⁻¹` is by the \
-      signature's divsteps. The result (or zeros) is selected by a mask of the checks, `d` \
-      in `[1, n-1]` and `Z ≠ 0`, so the time depends only on the pointers."])
+      coordinates below `p`, and the curve's equation), and `[d]P` is computed for the peer's \
+      point if it is valid, else `G`, so it always runs on a point of the curve. `[d]P` is by \
+      signed 4-bit windows: `d` is recoded as `d + 8 Σ_{j<97} 16^j`, whose 97 nibbles less 8 \
+      are digits in `[-8, 7]`; a table of `[1 … 8]P` is built in `scratch` by complete \
+      additions; then, from the point at infinity, for each digit from the top, four doublings \
+      in Jacobian coordinates (dbl-2001-b, for `a = -3`) and the addition of the digit's entry, \
+      selected in constant time by loading all eight entries, 16 bytes at a time, and keeping \
+      (`pand`, `por`) the one of the digit's magnitude, and negated by a mask of its sign, by \
+      the complete addition formulas of Renes, Costello and Batina for `a = -3` (Algorithm 4); \
+      `Z⁻¹` is by the signature's divsteps. The result (or zeros) is selected by a mask of the \
+      checks, `d` in `[1, n-1]` and `Z ≠ 0`, so the time depends only on the pointers."])
     code := Impl.Ecdh.X86_64.exchangeP384
     contract := Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P384.inst X86_64.abi
     verified := Proof.Ecdh.X86_64.P384.ecdh_verified h.law h.inv

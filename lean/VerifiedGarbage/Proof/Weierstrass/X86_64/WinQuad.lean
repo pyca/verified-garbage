@@ -81,10 +81,10 @@ theorem WinSt.ro_tmv {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL :
       (∀ x ∈ winRo K, wordsVal s.mem base x K.M.n < C.p) ∧ wordsVal s.mem base K.zero K.M.n = 0 := by
   have hn := h.scr.nowrap
   refine ⟨?_, ?_, fun x hx => ?_, ?_⟩
-  · rw [hL.ro_tmv h.unch hn (by simp [winRo])]; exact hF.a
-  · rw [hL.ro_tmv h.unch hn (by simp [winRo])]; exact hF.b
-  · rw [hL.ro_val h.unch hn hx]; exact hF.ro_lt x hx
-  · rw [hL.ro_val h.unch hn (by simp [winRo])]; exact hF.zero
+  · rw [winRo_tmv hL h.unch hn (by simp [winRo])]; exact hF.a
+  · rw [winRo_tmv hL h.unch hn (by simp [winRo])]; exact hF.b
+  · rw [winRo_val hL h.unch hn hx]; exact hF.ro_lt x hx
+  · rw [winRo_val hL h.unch hn (by simp [winRo])]; exact hF.zero
 
 /-- `R = R + E`, for `R` representing `PR` and `E` `PQ`. -/
 theorem sumStep_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : WinLay K size)

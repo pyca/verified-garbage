@@ -4,6 +4,7 @@ import VerifiedGarbage.Proof.Weierstrass.X86_64.BytesLen
 import VerifiedGarbage.Proof.Framework.X86_64.Spill
 import VerifiedGarbage.Proof.Weierstrass.CombW
 import VerifiedGarbage.Proof.Weierstrass.X86_64.InvSpec
+import VerifiedGarbage.Proof.Weierstrass.Law3
 
 /-!
 # ECDSA on x86-64: the curve, the arguments and the working space
@@ -80,6 +81,10 @@ structure CfgOk (c : Cfg) : Prop where
   (`InvOk`), and modulo `n` too if `fastN`. -/
   inv : c.n ≤ 6 → 4 ≤ c.n ∧ InvSound c.C.p ∧ InvOk c.invP c.C.p
   inv_n : c.fastN = true → c.n ≤ 6 → InvSound c.C.n ∧ InvOk c.invN c.C.n
+  /-- `a = -3`, for the window method's formulas, and for up to six words an
+  even number of them, for its selection of 16 bytes at a time. -/
+  am3 : AM3 c.C
+  even : c.n ≤ 6 → c.n % 2 = 0
 
 /-- The comb's tables, if any, at the address of their static: held, not
 wrapping around, and apart from the regions `wr`, as `Abi.withConsts`

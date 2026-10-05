@@ -123,15 +123,15 @@ structure WinFixed (K : WinCfg) (C : Curve) (base : Addr) (s₀ : State) (P : Po
   bits : ∀ t < 4 * K.J, s₀.mem (off base (K.bits + t)) = if k.testBit t then 1 else 0
 
 /-- A slot read only keeps its number. -/
-theorem _root_.VG.Proof.Weierstrass.WinLay.ro_val {K : WinCfg} {size : Nat} (hL : WinLay K size) {base : Addr}
+theorem winRo_val {K : WinCfg} {size : Nat} (hL : WinLay K size) {base : Addr}
     {m m' : Mem} (hU : Unch base (winW K) m m') (hn : base.toNat + size ≤ 2 ^ 64) {x : Nat}
     (hx : x ∈ winRo K) : wordsVal m' base x K.M.n = wordsVal m base x K.M.n :=
   hU.wordsVal (hL.ro_w hx) (by have := hL.lay.le x (winRo_slots K x hx); omega)
 
-theorem _root_.VG.Proof.Weierstrass.WinLay.ro_tmv {K : WinCfg} {C : Curve} {size : Nat} (hL : WinLay K size)
+theorem winRo_tmv {K : WinCfg} {C : Curve} {size : Nat} (hL : WinLay K size)
     {base : Addr} {s s' : State} (hU : Unch base (winW K) s.mem s'.mem) (hn : base.toNat + size ≤ 2 ^ 64)
     {x : Nat} (hx : x ∈ winRo K) : tmv C K.M.n base s' x = tmv C K.M.n base s x := by
-  show toM _ _ _ = toM _ _ _; rw [hL.ro_val hU hn hx]
+  show toM _ _ _ = toM _ _ _; rw [winRo_val hL hU hn hx]
 
 /-- What the window method writes misses the modulus. -/
 theorem winW_mo {K : WinCfg} {size : Nat} (hL : WinLay K size) {m : Nat} {mem : Mem} {base : Addr}
@@ -198,9 +198,9 @@ theorem addT_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : WinL
       (BuildInv K C base size P s₀ (m + 1)) := by
   have hn := hI.scr.nowrap
   have tb : tmv C K.M.n base s K.S.b3 = Fin.ofNat C.p C.b := by
-    rw [hL.ro_tmv hI.unch hn (by simp [winRo])]; exact hF.b
+    rw [winRo_tmv hL hI.unch hn (by simp [winRo])]; exact hF.b
   have ro_lt : ∀ x ∈ winRo K, wordsVal s.mem base x K.M.n < C.p := fun x hx => by
-    rw [hL.ro_val hI.unch hn hx]; exact hF.ro_lt x hx
+    rw [winRo_val hL hI.unch hn hx]; exact hF.ro_lt x hx
   have Tm := hI.tbl m h1 (Nat.le_refl _)
   have T1 := hI.tbl 1 (Nat.le_refl _) h1
   have sm := tblPt_slots K (m := m) h1 (by omega)
