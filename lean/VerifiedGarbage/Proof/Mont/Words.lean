@@ -160,6 +160,25 @@ structure ModOk (M : Mod) (size m : Nat) (mem : Mem) (base : Addr) : Prop where
   inv : (m * M.minv.toNat + 1) % 2 ^ 64 = 0
   red : M.ok m = true
 
+/-- The modulus, for any number of words: `ModOk` but for its bound on the
+number of words. -/
+structure ModOkW (M : Mod) (size m : Nat) (mem : Mem) (base : Addr) : Prop where
+  n0 : 0 < M.n
+  mo : M.mo + 8 * M.n ≤ size
+  tmp : M.tmp + 8 * M.n ≤ size
+  sep : M.mo + 8 * M.n ≤ M.tmp ∨ M.tmp + 8 * M.n ≤ M.mo
+  val : wordsVal mem base M.mo M.n = m
+  inv : (m * M.minv.toNat + 1) % 2 ^ 64 = 0
+  red : M.ok m = true
+
+theorem ModOk.toW {M : Mod} {size m : Nat} {mem : Mem} {base : Addr}
+    (h : ModOk M size m mem base) : ModOkW M size m mem base :=
+  ⟨h.n0, h.mo, h.tmp, h.sep, h.val, h.inv, h.red⟩
+
+theorem ModOkW.toModOk {M : Mod} {size m : Nat} {mem : Mem} {base : Addr} (h : ModOkW M size m mem base)
+    (hn : M.n < 7) : ModOk M size m mem base :=
+  ⟨h.n0, hn, h.mo, h.tmp, h.sep, h.val, h.inv, h.red⟩
+
 /-! ## Slots -/
 
 /-- The slots `Sl` (offsets of `n`-word numbers in a working space of `size`

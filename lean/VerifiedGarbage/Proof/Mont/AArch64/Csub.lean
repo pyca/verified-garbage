@@ -45,22 +45,22 @@ theorem sub_borrow (a b : BitVec 64) (c : Bool) :
     Bool.toNat_false] at this ⊢ <;> omega
 
 /-- The registers for the difference. -/
-abbrev dPool : List Reg := [.x1, .x3, .x4, .x5, .x6, .x16]
+abbrev dPool : List Reg := [.x1, .x3, .x4, .x5, .x6, .x16, .x17, .x24, .x25]
 
 /-- Registers for the difference: distinct, from `dPool`. -/
 def DRegs (ds : List Reg) : Prop := ds.Nodup ∧ ∀ d ∈ ds, d ∈ dPool
 
-theorem dPool_ne : ∀ d ∈ dPool, d ≠ .x2 ∧ d ≠ .x17 ∧ d ≠ .x7 ∧ d ≠ .x0 := by decide
+theorem dPool_ne : ∀ d ∈ dPool, d ≠ .x2 ∧ d ≠ .x7 ∧ d ≠ .x0 := by decide
 
-theorem dPool_sub : ∀ d ∈ dPool, d ∈ [Reg.x0, .x1, .x2, .x3, .x4, .x5, .x6, .x7, .x16, .x17] := by
+theorem dPool_sub : ∀ d ∈ dPool, d ∈ [Reg.x0, .x1, .x2, .x3, .x4, .x5, .x6, .x7, .x16, .x17, .x24, .x25] := by
   decide
 
 /-- A register of the pool is not a fresh one. -/
 theorem dPool_fresh {d t : Reg} (hd : d ∈ dPool)
-    (ht : t ∉ [Reg.x0, .x1, .x2, .x3, .x4, .x5, .x6, .x7, .x16, .x17]) : d ≠ t := fun h =>
+    (ht : t ∉ [Reg.x0, .x1, .x2, .x3, .x4, .x5, .x6, .x7, .x16, .x17, .x24, .x25]) : d ≠ t := fun h =>
   ht (h ▸ dPool_sub d hd)
 
-theorem dRegs_ok : ∀ n < 7, DRegs (dRegs n) ∧ (n ≤ 6 → (dRegs n).length = n) := by
+theorem dRegs_ok : ∀ n < 10, DRegs (dRegs n) ∧ (n ≤ 9 → (dRegs n).length = n) := by
   unfold DRegs dRegs; decide
 
 theorem DRegs.tail {d : Reg} {ds : List Reg} (h : DRegs (d :: ds)) : DRegs ds :=
@@ -103,7 +103,7 @@ theorem diffsRSbc_ok {size : Nat} : ∀ (ts ds : List Reg) {s : State} {base : A
       (by omega) hmo8) fun s₁ ⟨e₁, k₁⟩ => ?_
     have hs₁ := hs.of_keeps k₁ (by
       simp only [List.mem_cons, List.not_mem_nil, or_false, not_or]
-      exact ⟨by decide, Ne.symm (dPool_ne d hdP).2.2.2⟩)
+      exact ⟨by decide, Ne.symm (dPool_ne d hdP).2.2⟩)
     refine WP.mono (diffsRSbc_ok ts ds hs₁ (mo := mo + 8) (by omega) (by omega) (by omega) hf.tail
       hd.tail) fun s₂ ⟨e₂, k₂⟩ => ?_
     have hR : regsVal s₁ ts = regsVal s ts := regsVal_congr fun q hq => k₁.gpr q (by
@@ -140,7 +140,7 @@ theorem diffsR_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) 
     (by omega) hmo8) fun s₁ ⟨e₁, k₁⟩ => ?_
   have hs₁ := hs.of_keeps k₁ (by
     simp only [List.mem_cons, List.not_mem_nil, or_false, not_or]
-    exact ⟨by decide, Ne.symm (dPool_ne d hdP).2.2.2⟩)
+    exact ⟨by decide, Ne.symm (dPool_ne d hdP).2.2⟩)
   refine WP.mono (diffsRSbc_ok ts ds' hs₁ (mo := mo + 8) (by omega) (by omega) (by omega) hf.tail
     hd.tail) fun s₂ ⟨e₂, k₂⟩ => ?_
   have hR : regsVal s₁ ts = regsVal s ts := regsVal_congr fun q hq => k₁.gpr q (by
@@ -224,7 +224,7 @@ theorem selectsR_ok : ∀ (ts ds : List Reg) {s : State} (k : Bool), ts.length =
 
 /-- `csubR`: `ts + 2^(64 n) top < 2m` reduced modulo `m`, with `x7 = 0`. -/
 theorem csubR_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M : Mod}
-    {ts : List Reg} {top : Reg} (hlen : ts.length = M.n) (hn : 0 < M.n) (h7 : M.n < 7)
+    {ts : List Reg} {top : Reg} (hlen : ts.length = M.n) (hn : 0 < M.n) (h7 : M.n < 10)
     (hf : Fresh (top :: ts)) (hmo : M.mo + 8 * M.n ≤ size) (hmo8 : M.mo % 8 = 0)
     (hz : s.gpr .x7 = 0) {m : Nat} (hm : wordsVal s.mem base M.mo M.n = m)
     (hV : regsVal s ts + 2 ^ (64 * M.n) * (s.gpr top).toNat < 2 * m) :
@@ -248,13 +248,13 @@ theorem csubR_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {
     intro h
     rcases List.mem_cons.mp h with h | h
     · exact absurd h (by decide)
-    · exact (dPool_ne _ (hD.2 _ h)).2.2.2 rfl)
+    · exact (dPool_ne _ (hD.2 _ h)).2.2 rfl)
   have hz₁ : s₁.gpr .x7 = 0 := by
     rw [k₁.gpr _ (by
       intro h
       rcases List.mem_cons.mp h with h | h
       · exact absurd h (by decide)
-      · exact (dPool_ne _ (hD.2 _ h)).2.2.1 rfl), hz]
+      · exact (dPool_ne _ (hD.2 _ h)).2.1 rfl), hz]
   rw [WP.block_append_iff]
   refine WP.mono (flagR_ok s₁ top hz₁) fun s₂ ⟨x₂, k₂⟩ => ?_
   have htopP : ∀ d ∈ dRegs M.n, d ≠ top := fun d hd => dPool_fresh (hD.2 d hd) (by

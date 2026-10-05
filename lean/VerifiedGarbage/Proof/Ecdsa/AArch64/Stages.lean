@@ -113,8 +113,8 @@ theorem toM_cmont (hc : CfgOk c) (x : Nat) : toM c.C.p (2 ^ (64 * c.n)) (c.mont 
 theorem mul_zero_pt (P : Point c.C) : Spec.Weierstrass.mul 0 P = .infinity := by
   rw [Spec.Weierstrass.mul]; simp
 
-theorem x0_not_powClob {n : Nat} (hn : n < 7) : Reg.x0 ∉ powClob n := fun h =>
-  (List.mem_cons.mp h).elim (fun h => absurd h (by decide)) (x0_not_clob n hn)
+theorem x0_not_powClob {n : Nat} (_hn : n < 7) : Reg.x0 ∉ powClob n := fun h =>
+  (List.mem_cons.mp h).elim (fun h => absurd h (by decide)) (x0_not_clob n)
 
 
 /-- The flag word apart from numbered slots. -/

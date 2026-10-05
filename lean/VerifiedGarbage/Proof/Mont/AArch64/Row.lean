@@ -22,13 +22,13 @@ open VG.Proof.Ed25519 (Word64.addCarry Word64.carryOut Word64.addCarry_value)
 /-- Registers the arithmetic can use for words: distinct, and none of the
 registers it uses otherwise (`x0`–`x7`, `x16`, `x17`). -/
 def Fresh (ts : List Reg) : Prop :=
-  ts.Nodup ∧ ∀ t ∈ ts, t ∉ [.x0, .x1, .x2, .x3, .x4, .x5, .x6, .x7, .x16, .x17]
+  ts.Nodup ∧ ∀ t ∈ ts, t ∉ [.x0, .x1, .x2, .x3, .x4, .x5, .x6, .x7, .x16, .x17, .x24, .x25]
 
 theorem Fresh.tail {t : Reg} {ts : List Reg} (h : Fresh (t :: ts)) : Fresh ts :=
   ⟨(List.nodup_cons.mp h.1).2, fun q hq => h.2 q (List.mem_cons_of_mem _ hq)⟩
 
 theorem Fresh.head {t : Reg} {ts : List Reg} (h : Fresh (t :: ts)) :
-    t ∉ ts ∧ t ∉ [.x0, .x1, .x2, .x3, .x4, .x5, .x6, .x7, .x16, .x17] :=
+    t ∉ ts ∧ t ∉ [.x0, .x1, .x2, .x3, .x4, .x5, .x6, .x7, .x16, .x17, .x24, .x25] :=
   ⟨(List.nodup_cons.mp h.1).1, h.2 t (List.mem_cons_self ..)⟩
 
 /-- Closes `∀ r ∈ rs, r ∈ rs'` for literal lists of registers and variables. -/

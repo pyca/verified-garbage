@@ -18,25 +18,6 @@ namespace VG.Proof.Mont.X86_64
 open VG VG.X86_64 VG.Impl.Mont.X86_64 VG.Impl.Mont
 open VG.Proof.X25519.X86_64 (Keeps Keeps.trans Keeps.mono)
 
-/-- The modulus, for any number of words: `ModOk` but for its bound on the
-number of words. -/
-structure ModOkW (M : Mod) (size m : Nat) (mem : Mem) (base : Addr) : Prop where
-  n0 : 0 < M.n
-  mo : M.mo + 8 * M.n ≤ size
-  tmp : M.tmp + 8 * M.n ≤ size
-  sep : M.mo + 8 * M.n ≤ M.tmp ∨ M.tmp + 8 * M.n ≤ M.mo
-  val : wordsVal mem base M.mo M.n = m
-  inv : (m * M.minv.toNat + 1) % 2 ^ 64 = 0
-  red : M.ok m = true
-
-theorem _root_.VG.Proof.Mont.ModOk.toW {M : Mod} {size m : Nat} {mem : Mem} {base : Addr}
-    (h : ModOk M size m mem base) : ModOkW M size m mem base :=
-  ⟨h.n0, h.mo, h.tmp, h.sep, h.val, h.inv, h.red⟩
-
-theorem ModOkW.toModOk {M : Mod} {size m : Nat} {mem : Mem} {base : Addr} (h : ModOkW M size m mem base)
-    (hn : M.n < 7) : ModOk M size m mem base :=
-  ⟨h.n0, hn, h.mo, h.tmp, h.sep, h.val, h.inv, h.red⟩
-
 /-- The registers the operations with the accumulator in memory use are
 among `clob n`. -/
 theorem wide_clob {n : Nat} (hn : 0 < n) : ∀ r ∈ [Reg.rax, .rcx, .rdx, .rbp, .r8, .r9, .r10], r ∈ clob n := by
