@@ -15,9 +15,6 @@ open VG.Proof.X448.AArch64.Weak (Index Env opCopy)
 open VG.Spec.Ed448 (Point)
 open VG.Proof.X448 (addPt)
 
-/-- The point in slots `x`, `y`, `z`. -/
-def pt (e : Env) (x y z : Index) : Point := ⟨e x, e y, e z⟩
-
 /-- What `addAffine` computes from `(X : Y : Z)` and `(x, y)`, with `z0` (zero) in slot 19. -/
 def affPt (X Y Z x y z0 : Spec.X448.Fe) : Point :=
   let b := Z * Z

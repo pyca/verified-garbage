@@ -1,5 +1,6 @@
 import VerifiedGarbage.Proof.X448.AArch64.Fast.Weave
 import VerifiedGarbage.Proof.X448.AArch64.Fast.NeonEnv
+import VerifiedGarbage.Proof.X448.AArch64.Fast.StepOps
 
 /-!
 # X448 on AArch64: the ladder step's field operations
@@ -21,10 +22,6 @@ open VG.Impl.X448.AArch64.Fast (ops codeOf weave stepA stepB)
 open VG.Impl.Curve448.AArch64.Neon (mul2)
 
 local notation "EV" => VG.Proof.X448.AArch64.Weak.E
-
-theorem Same.append {base : Addr} {l₁ l₂ : List Index} {m₁ m₂ m₃ : Mem} (h : Same base l₁ m₁ m₂)
-    (h' : Same base l₂ m₂ m₃) : Same base (l₁ ++ l₂) m₁ m₃ := fun i hi j hj => by
-  rw [h' i (fun e => hi (List.mem_append_right _ e)) j hj, h i (fun e => hi (List.mem_append_left _ e)) j hj]
 
 /-- The scalar half of `stepA`. -/
 theorem opsA_ok {s : State} {base : Addr} (hs : Scr s base) (hb : BEnv s.mem base) :
