@@ -330,21 +330,16 @@ jobs:
             -t "$IMAGE" "$RUNNER_TEMP/lean-cache-image"
           docker push "$IMAGE"
           echo "published=true" >> "$GITHUB_OUTPUT"
-      - name: Delete every cache version except latest
+      # Only `latest` is published, so replacing it leaves old images untagged.
+      - name: Delete old cache versions
         if: ${{ steps.upload.outputs.published == 'true' }}
-        run: |
-          endpoint=orgs/pyca/packages/container/vg-lean-cache/versions
-          # Fetch all pages before deleting: deleting while paging can skip
-          # versions as the remaining entries shift between pages.
-          gh api --paginate --slurp "$endpoint?per_page=100" > "$RUNNER_TEMP/lean-cache-versions.json"
-          # Fail safely if the tag is not visible, rather than deleting all.
-          jq -e '[.[][] | select(.metadata.container.tags | index("latest"))] | length == 1' \
-            "$RUNNER_TEMP/lean-cache-versions.json"
-          jq -r '.[][] | select(.metadata.container.tags | index("latest") | not) | .id' \
-            "$RUNNER_TEMP/lean-cache-versions.json" > "$RUNNER_TEMP/lean-cache-old-versions"
-          while IFS= read -r id; do
-            gh api --method DELETE "$endpoint/$id"
-          done < "$RUNNER_TEMP/lean-cache-old-versions"
+        uses: actions/delete-package-versions@25ad4af5be03aef10e0b3376b248688b7a44c40b # v5
+        with:
+          owner: pyca
+          package-name: vg-lean-cache
+          package-type: container
+          min-versions-to-keep: 0
+          delete-only-untagged-versions: 'true'
 
   lean-imports:
     name: Static checks
