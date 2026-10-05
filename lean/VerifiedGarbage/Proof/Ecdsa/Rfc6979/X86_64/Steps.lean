@@ -114,9 +114,7 @@ theorem rekey_gen (hL : L.Ok) (hq : HOk P L) {t : State} (hc : Ctx L g m₀ t) {
       simp only [List.mem_singleton] at hr; subst hr
       exact hL.stk_scr (by nums) (by nums)) (by nums)
     rw [hk', hkw, hku, hlen]
-    have e : (if full then P.H.D + 2 * P.Q + 1 else P.H.D + 1) =
-        (if full then P.H.D + 2 * P.Q + 1 else P.H.D + 1) := rfl
-    rw [e, hbu]
+    rw [hbu]
   · have hvu : vOf P L u.mem = vOf P L p.mem := bytesAt_frame hfu (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
       exact hL.stk_scr (by nums) (by nums)) (by nums)

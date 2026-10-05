@@ -8,6 +8,8 @@ For a curve and hash function whose candidates are each one `V`
 from there: a suitable candidate ends it (`search_ok`), an unsuitable one
 moves to the next (`search_fail`), so after `i` unsuitable candidates the
 search is the one from candidate `i`, `i` candidates later (`search_shift`).
+The same for candidates of `b` `V`s each, `b = blocks` (`kvAtB`, `candAtB`,
+`searchB_ok`, `searchB_fail`, `searchB_shift`).
 -/
 
 namespace VG.Proof.Ecdsa.Rfc6979
