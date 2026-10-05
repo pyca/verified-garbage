@@ -170,6 +170,30 @@ theorem entry_words {s t : State} (hsp : t.gpr .rsp = fb s) {d n : Nat} (h : d +
   exact (callEntry_frame hsp).readW (Region.contains_self _ _) (fun r hr => by
     rw [List.mem_singleton.mp hr]; exact (ret_disjoint s (by unfold frameBytes at *; omega)).symm) (by decide)
 
+/-- The regions `vg_rsa_public_precomputed_checked` is given. -/
+theorem pd_covers {s t : State} (hp : PreF s) (he : Env s t) :
+    Covers (pdRd s) (t.rd ++ t.wr) ∧ Covers (pdWr s) t.wr := by
+  have hpw := preWords_le hp
+  have hk2 := hp.k2
+  have hsi' := hp.hsi
+  have hfr : (⟨fb s, frameBytes⟩ : Region) ∈ t.wr := by rw [he.wr]; exact List.mem_cons_self ..
+  have z : ∀ p : Addr, p = p + BitVec.ofNat 64 0 := fun p => (BitVec.add_zero p).symm
+  have cw : Covers (pdWr s) t.wr := Covers.of_mem fun r hr => by
+    simp only [pdWr, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rw [he.wr, hp.hwr]
+    rcases hr with rfl | rfl
+    · rw [← hsi']; simp
+    · simp [scrR]
+  have cr : Covers (pdRd s) (t.rd ++ t.wr) := Covers.of_sub fun r hr => by
+    simp only [pdRd, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl
+    · exact ⟨_, List.mem_append_right _ hfr, oPre, rfl, by simp only [preR]; unfold oPre frameBytes; omega⟩
+    · exact ⟨⟨s.gpr .r8, (s.gpr .r9).toNat⟩, List.mem_append_left _ (by rw [he.rd, hp.hrd]; simp), 0, z _,
+        by dsimp only; omega⟩
+    · exact ⟨_, List.mem_append_right _ hfr, oM, rfl, by simp only [mR]; unfold oM frameBytes; omega⟩
+    · exact ⟨_, List.mem_append_right _ hfr, 0, z _, by dsimp only; unfold frameBytes; omega⟩
+  exact ⟨cr, cw⟩
+
 /-- The call of `vg_rsa_public_precomputed_checked`: `M^e mod n` to `out`,
 for whatever modulus `n`'s values in the frame are of. `M` and the slots of
 `r₁` and `r₃` are kept. -/
@@ -195,22 +219,7 @@ theorem pd_call (M : Mont) (name : String) (hmx : (Precomputed.code M.mm).allIns
   have hpw := preWords_le hp
   have hk2 := hp.k2
   have hsi' := hp.hsi
-  have hfr : (⟨fb s, frameBytes⟩ : Region) ∈ t.wr := by rw [he.wr]; exact List.mem_cons_self ..
-  have z : ∀ p : Addr, p = p + BitVec.ofNat 64 0 := fun p => (BitVec.add_zero p).symm
-  have cw : Covers (pdWr s) t.wr := Covers.of_mem fun r hr => by
-    simp only [pdWr, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rw [he.wr, hp.hwr]
-    rcases hr with rfl | rfl
-    · rw [← hsi']; simp
-    · simp [scrR]
-  have cr : Covers (pdRd s) (t.rd ++ t.wr) := Covers.of_sub fun r hr => by
-    simp only [pdRd, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl
-    · exact ⟨_, List.mem_append_right _ hfr, oPre, rfl, by simp only [preR]; unfold oPre frameBytes; omega⟩
-    · exact ⟨⟨s.gpr .r8, (s.gpr .r9).toNat⟩, List.mem_append_left _ (by rw [he.rd, hp.hrd]; simp), 0, z _,
-        by dsimp only; omega⟩
-    · exact ⟨_, List.mem_append_right _ hfr, oM, rfl, by simp only [mR]; unfold oM frameBytes; omega⟩
-    · exact ⟨_, List.mem_append_right _ hfr, 0, z _, by dsimp only; unfold frameBytes; omega⟩
+  obtain ⟨cr, cw⟩ := pd_covers hp he
   have hv := Proof.Rsa.X86_64.precomputedChecked_correct M hmx
   have hpre := pd_pre hp he hw0 hw1 hw2 hw3 hdi hsi hdx hcx h8 h9
   have hdd : 8 * (Checked.precomputedChecked M.mm).depth + 16 < 2 ^ 64 := by rw [hd]; decide

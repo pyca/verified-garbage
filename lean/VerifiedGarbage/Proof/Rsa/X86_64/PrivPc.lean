@@ -118,6 +118,24 @@ theorem pc_pre {s t : State} (hp : PreF s) (he : Env s t) (hdi : t.gpr .rdi = of
   exact ⟨trivial, rfl, hp.dKn.sub_left sP, hp.dKs.sub_left sP, hp.dns, dRP, hp.dKn.sub_left sR,
     hp.dKs.sub_left sR, wP, hp.wN, hp.wS, ⟨hp.k1, hp.k2⟩, trivial, hp.hsl⟩
 
+/-- The regions `vg_rsa_public_precompute` is given: `n`, and the precomputed
+values and the working space. -/
+theorem pc_covers {s t : State} (hp : PreF s) (he : Env s t) :
+    Covers ([⟨s.gpr .rdx, (s.gpr .rcx).toNat⟩] ++ [preR s, scrR s]) (t.rd ++ t.wr) ∧
+      Covers [preR s, scrR s] t.wr := by
+  have hpw := preWords_le hp
+  have hk2 := hp.k2
+  have hfr : (⟨fb s, frameBytes⟩ : Region) ∈ t.wr := by rw [he.wr]; exact List.mem_cons_self ..
+  have hscr : scrR s ∈ t.wr := by rw [he.wr, hp.hwr]; simp [scrR]
+  have hn : (⟨s.gpr .rdx, (s.gpr .rcx).toNat⟩ : Region) ∈ t.rd := by rw [he.rd, hp.hrd]; simp
+  have z : ∀ p : Addr, p = p + BitVec.ofNat 64 0 := fun p => (BitVec.add_zero p).symm
+  have cw : Covers [preR s, scrR s] t.wr := Covers.of_sub fun r hr => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl
+    · exact ⟨_, hfr, oPre, rfl, by simp only [preR]; unfold oPre frameBytes; omega⟩
+    · exact ⟨_, hscr, 0, z _, Nat.le_refl _ |>.trans (by simp)⟩
+  exact ⟨Covers.append (Covers.of_mem fun r hr => by rw [List.mem_singleton.mp hr]; exact hn) cw, cw⟩
+
 /-- The call of `vg_rsa_public_precompute`: `n`'s values in the frame (zeros
 if `n` is not valid), and whether it is returned. `M` and `r₁`'s slot are
 kept. -/
@@ -140,18 +158,9 @@ theorem pc_call (M : Mont) (name : String) (hmx : (Precompute.code M.mm).allInst
       (∀ r ∈ calleeSaved, t'.gpr r = t.gpr r) ∧ t'.mxcsr.extractLsb' 6 10 = t.mxcsr.extractLsb' 6 10 := by
   have hpw := preWords_le hp
   have hk2 := hp.k2
-  have hfr : (⟨fb s, frameBytes⟩ : Region) ∈ t.wr := by rw [he.wr]; exact List.mem_cons_self ..
-  have hscr : scrR s ∈ t.wr := by rw [he.wr, hp.hwr]; simp [scrR]
-  have hn : (⟨s.gpr .rdx, (s.gpr .rcx).toNat⟩ : Region) ∈ t.rd := by rw [he.rd, hp.hrd]; simp
-  have z : ∀ p : Addr, p = p + BitVec.ofNat 64 0 := fun p => (BitVec.add_zero p).symm
-  have cw : Covers [preR s, scrR s] t.wr := Covers.of_sub fun r hr => by
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl
-    · exact ⟨_, hfr, oPre, rfl, by simp only [preR]; unfold oPre frameBytes; omega⟩
-    · exact ⟨_, hscr, 0, z _, Nat.le_refl _ |>.trans (by simp)⟩
+  obtain ⟨hcov, cw⟩ := pc_covers hp he
   refine WP.call_mx (k := pcContract) (pcCode_correct M hmx) hsp (by rw [hd]; decide)
-    (pc_pre hp he hdi hsi hdx hcx h8 h9)
-    (Covers.append (Covers.of_mem fun r hr => by rw [List.mem_singleton.mp hr]; exact hn) cw) cw ?_
+    (pc_pre hp he hdi hsi hdx hcx h8 h9) hcov cw ?_
   intro s' hrd hwr hcs hf _ ⟨s₂, hm₂, hg₂, hpost⟩ hmx
   rw [hd, he.rsp] at hf
   have hfE : Frame [stkR s, outR s, scrR s] s.mem t.callEntry.mem :=
