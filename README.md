@@ -880,7 +880,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅ AVX2; SSE2 polynomial arithmetic</td>
+<td>✅ AVX-512F, AVX-512VL, AVX2; SSE2 polynomial arithmetic</td>
 
 <td>✅ SHA extensions; NEON polynomial arithmetic</td>
 
@@ -896,7 +896,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅ AVX2; SSE2 polynomial arithmetic</td>
+<td>✅ AVX-512F, AVX-512VL, AVX2; SSE2 polynomial arithmetic</td>
 
 <td>✅ SHA extensions; NEON polynomial arithmetic</td>
 

@@ -293,6 +293,10 @@ structure Callee4 where
 def Callee4.scalar : Callee4 := ⟨"vg_mlkem_sample_ntt4", Sample4.sampleNTT4, prfsScalar, .sse⟩
 def Callee4.avx2 : Callee4 := ⟨"vg_mlkem_sample_ntt4_avx2", Sample4.sampleNTT4Avx2, prfsAvx2, .avx2⟩
 
+/-- Four-way sampling with AVX-512VL quadword rotates. -/
+def Callee4.avx512 : Callee4 :=
+  ⟨"vg_mlkem_sample_ntt4_avx512", Sample4.sampleNTT4Avx2 true, prfsAvx2, .avx2⟩
+
 /-- `SampleNTT` of the four seeds at `scratch` to the four polynomials from
 `a`, with the working space `scr` (8192 bytes), and `r15 ← r15 ∧ result`. -/
 def sample4At (c : Callee4) (a scr : Ptr) : Prog isa :=
