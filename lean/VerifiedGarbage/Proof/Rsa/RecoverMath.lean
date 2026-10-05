@@ -241,4 +241,14 @@ theorem go_eq (n t r : Nat) {c : Nat} (hc : c < recoverTries) :
 theorem go_last (n t r : Nat) : recoverPrimes.go n t r (recoverTries - recoverTries) = (none, recoverTries) := by
   rw [Nat.sub_self, recoverPrimes.go]
 
+/-- `recoverPrimes` when step 1 fails. -/
+theorem recoverPrimes_none {n e d : Nat} (h : d * e < 2 ∨ (d * e - 1) % 2 = 1) : recoverPrimes n e d = (none, 0) := by
+  simp only [recoverPrimes, h, ite_true]
+
+/-- `recoverPrimes` when step 1 passes: the candidates from `splitTwos (d e - 1)`. -/
+theorem recoverPrimes_go {n e d : Nat} (h : ¬(d * e < 2 ∨ (d * e - 1) % 2 = 1)) :
+    recoverPrimes n e d =
+      recoverPrimes.go n (splitTwos (d * e - 1)).1 (splitTwos (d * e - 1)).2 recoverTries := by
+  simp only [recoverPrimes, h, ite_false]
+
 end VG.Proof.Rsa
