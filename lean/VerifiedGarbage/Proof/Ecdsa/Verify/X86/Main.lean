@@ -31,9 +31,9 @@ variable {c : Cfg}
 verification holds. -/
 def VPost (c : Cfg) (s₀ s' : State) : Prop :=
   s'.gpr .eax =
-    if Spec.Ecdsa.verify c.C (Spec.Ecdsa.bytesAt s₀.mem (ptr s₀ 0) (1 + 16 * c.n))
-      (Spec.Ecdsa.hashToInt c.C (Spec.Ecdsa.bytesAt s₀.mem (ptr s₀ 1) (8 * c.n)))
-      (Spec.Ecdsa.bytesAt s₀.mem (ptr s₀ 2) (16 * c.n)) then 1 else 0
+    if Spec.Ecdsa.verify c.C (Spec.Ecdsa.bytesAt s₀.mem (ptr s₀ 0) (1 + 2 * c.C.len))
+      (Spec.Ecdsa.hashToInt c.C (Spec.Ecdsa.bytesAt s₀.mem (ptr s₀ 1) c.C.len))
+      (Spec.Ecdsa.bytesAt s₀.mem (ptr s₀ 2) (2 * c.C.len)) then 1 else 0
 
 /-- What the function keeps: the callee-saved registers, `esp`, and memory
 but the working space. -/
@@ -58,10 +58,10 @@ theorem consts_tmv (hc : CfgOk c) {base : Addr} {g : Reg → BitVec 32} {s : Sta
 
 /-- `vg_ecdsa_<curve>_verify` returns whether the specification's
 verification holds, and restores the callee-saved registers. -/
-theorem verify_ok (hc : CfgOk c) (hl : c.C.len = 8 * c.n) (hsh : c.sh = 0) (hC : Law c.C) {s₀ : State} (hp : VPre c s₀) :
+theorem verify_ok (hc : CfgOk c) (hC : Law c.C) {s₀ : State} (hp : VPre c s₀) :
     WP isa (Impl.Ecdsa.Verify.X86.Cfg.verify c) s₀ fun s' => VKeep s₀ s' ∧ VPost c s₀ s' := by
   have hpR := unitMod_pow_two hc.p_odd (64 * c.n)
-  refine front_ok hc hl hp fun s₁ hF => mid_ok hc hF fun s₂ hM => ?_
+  refine front_ok hc hp fun s₁ hF => mid_ok hc hF fun s₂ hM => ?_
   have F₂ := hM.fixed
   obtain ⟨ha, hb, h1⟩ := consts_tmv hc F₂
   -- The point the second ladder multiplies.
@@ -97,25 +97,25 @@ theorem verify_ok (hc : CfgOk c) (hl : c.C.len = 8 * c.n) (hsh : c.sh = 0) (hC :
     have := q2; simp only [Nat.shiftRight_zero] at this; exact this
   have hR := Rep.add hC (hC.onCurve_mul hc.onG _) (hC.onCurve_mul hPc _) q1' q2' hsum.symm
   -- The arguments as the specification reads them.
-  have hlen : (Spec.Ecdsa.bytesAt s₀.mem (ptr s₀ 0) (1 + 16 * c.n)).length = 2 * c.C.len + 1 := by
-    rw [length_bytesAt, hl]; omega
-  have hb0 : (Spec.Ecdsa.bytesAt s₀.mem (ptr s₀ 0) (1 + 16 * c.n)).head? = some (s₀.mem (ptr s₀ 0)) := by
+  have hlen : (Spec.Ecdsa.bytesAt s₀.mem (ptr s₀ 0) (1 + 2 * c.C.len)).length = 2 * c.C.len + 1 := by
+    rw [length_bytesAt]; omega
+  have hb0 : (Spec.Ecdsa.bytesAt s₀.mem (ptr s₀ 0) (1 + 2 * c.C.len)).head? = some (s₀.mem (ptr s₀ 0)) := by
     rw [peer_bytes]; rfl
-  have hxv : ofBytes (((Spec.Ecdsa.bytesAt s₀.mem (ptr s₀ 0) (1 + 16 * c.n)).drop 1).take c.C.len) =
+  have hxv : ofBytes (((Spec.Ecdsa.bytesAt s₀.mem (ptr s₀ 0) (1 + 2 * c.C.len)).drop 1).take c.C.len) =
       keyX c s₀ := by
-    rw [peer_bytes, List.drop_one, List.tail_cons, hl, List.take_left' (length_bytesAt _ _ _)]
-  have hyv : ofBytes ((Spec.Ecdsa.bytesAt s₀.mem (ptr s₀ 0) (1 + 16 * c.n)).drop (c.C.len + 1)) =
+    rw [peer_bytes, List.drop_one, List.tail_cons, List.take_left' (length_bytesAt _ _ _)]
+  have hyv : ofBytes ((Spec.Ecdsa.bytesAt s₀.mem (ptr s₀ 0) (1 + 2 * c.C.len)).drop (c.C.len + 1)) =
       keyY c s₀ := by
-    rw [peer_bytes, hl, List.drop_succ_cons, List.drop_left' (length_bytesAt _ _ _)]
+    rw [peer_bytes, List.drop_succ_cons, List.drop_left' (length_bytesAt _ _ _)]
   have hP' : ∀ h : Ecdh.Valid c.C (s₀.mem (ptr s₀ 0)) (keyX c s₀) (keyY c s₀),
       P = .affine ⟨_, h.2.1⟩ ⟨_, h.2.2.1⟩ := fun h => by
     show peerPt c _ _ _ = _
     unfold peerPt; rw [dite_eq_left ⟨⟨⟨h.1, h.2.1⟩, h.2.2.1⟩, h.2.2.2⟩]
-  have h16 : 16 * c.n = 8 * c.n + 8 * c.n := by omega
-  have hr : ofBytes ((Spec.Ecdsa.bytesAt s₀.mem (ptr s₀ 2) (16 * c.n)).take c.C.len) = sigR c s₀ := by
-    rw [h16, bytesAt_add, hl, List.take_left' (length_bytesAt _ _ _)]
-  have hs : ofBytes ((Spec.Ecdsa.bytesAt s₀.mem (ptr s₀ 2) (16 * c.n)).drop c.C.len) = sigS c s₀ := by
-    rw [h16, bytesAt_add, hl, List.drop_left' (length_bytesAt _ _ _)]
+  have h16 : 2 * c.C.len = c.C.len + c.C.len := by omega
+  have hr : ofBytes ((Spec.Ecdsa.bytesAt s₀.mem (ptr s₀ 2) (2 * c.C.len)).take c.C.len) = sigR c s₀ := by
+    rw [h16, bytesAt_add, List.take_left' (length_bytesAt _ _ _)]
+  have hs : ofBytes ((Spec.Ecdsa.bytesAt s₀.mem (ptr s₀ 2) (2 * c.C.len)).drop c.C.len) = sigS c s₀ := by
+    rw [h16, bytesAt_add, List.drop_left' (length_bytesAt _ _ _)]
   have hspec := Proof.Ecdsa.verify_eq hC hlen hb0 hxv hyv hP' hr hs hM.u_lt hM.v_lt hM.u hM.v hR hxo hx
   -- The conditions.
   have hz := not_congr (toM_eq_zero_iff hpR hP.rz_lt)
@@ -129,11 +129,8 @@ theorem verify_ok (hc : CfgOk c) (hl : c.C.len = 8 * c.n) (hsh : c.sh = 0) (hC :
       exact ⟨⟨⟨⟨⟨h4, hx⟩, hy⟩, hcv⟩, hr, hs⟩, hz.mp hZ, he⟩
     · rintro ⟨⟨⟨⟨⟨h4, hx⟩, hy⟩, hcv⟩, hr, hs⟩, hZ, he⟩
       exact ⟨⟨h4, hx, hy, hcv⟩, hr, hs, hz.mpr hZ, he⟩
-  have hh : Spec.Ecdsa.hashToInt c.C (Spec.Ecdsa.bytesAt s₀.mem (ptr s₀ 1) (8 * c.n)) =
-      ofBytes (Spec.Ecdsa.bytesAt s₀.mem (ptr s₀ 1) (8 * c.n)) := by
-    rw [← hl, hashToInt_eq c, hsh, Nat.shiftRight_zero]
   unfold VPost
-  rw [hh, hspec, ret]
+  rw [hashToInt_eq c, hspec, ret]
   by_cases h : (KeyOk c s₀ ∧ (0 < sigR c s₀ ∧ sigR c s₀ < c.C.n) ∧ (0 < sigS c s₀ ∧ sigS c s₀ < c.C.n)) ∧
       sv c (ptr s₀ 3) s₃ RZ ≠ 0 ∧ Fin.ofNat c.C.n xo = Fin.ofNat c.C.n (sigR c s₀)
   · rw [ite_eq_left (decide_eq_true (hiff.mpr h)), ite_eq_left h]
