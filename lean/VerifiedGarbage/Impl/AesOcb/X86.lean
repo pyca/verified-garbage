@@ -388,11 +388,13 @@ def tag (d : Nat) : Prog isa :=
 /-! ## The functions -/
 
 /-- The entry of `seal` and `open`: our caller's registers saved in `work`
-(the eleventh argument), `ebp :=` `work`, the other arguments kept, `L_$`
-and `L_0`, the checksum zeroed. -/
+(the eleventh argument), `ebp :=` `work`, the other arguments kept. -/
 def ocbEntry : Prog isa :=
   entry 10 (keep 0 ctxO ++ keep 1 rndO ++ keep 2 nO ++ keep 3 nlO ++ keep 4 aadO ++ keep 5 alenO ++
-    keep 6 dataO ++ keep 7 lenO ++ keep 8 tgO ++ keep 9 tlO ++ lsetup ++ zero4 ckO)
+    keep 6 dataO ++ keep 7 lenO ++ keep 8 tgO ++ keep 9 tlO)
+
+/-- `L_$` and `L_0`, and the checksum zeroed. -/
+def setup : List Instr := lsetup ++ zero4 ckO
 
 /-- The data: whole blocks, then the rest. -/
 def body (enc : Bool) : Prog isa :=
@@ -404,10 +406,10 @@ def body (enc : Bool) : Prog isa :=
           .alu .test .ecx (.reg .ecx)])
         (.ite .e (.block []) (rest c enc))))
 
-/-- `seal` (`enc`) or `open` up to the tag, at `W + d`: the entry,
-`Offset_0`, `HASH`, the data and the tag. -/
+/-- `seal` (`enc`) or `open` up to the tag, at `W + d`: the entry, the
+setup, `Offset_0`, `HASH`, the data and the tag. -/
 def front (enc : Bool) (d : Nat) : Prog isa :=
-  .seq ocbEntry (.seq (nonce c) (.seq (hash c) (.seq (body c enc) (tag c d))))
+  .seq ocbEntry (.seq (.block setup) (.seq (nonce c) (.seq (hash c) (.seq (body c enc) (tag c d)))))
 
 /-- The first `tag_len` bytes of the tag at `W` copied to `tag`. -/
 def tagOut : Prog isa :=
