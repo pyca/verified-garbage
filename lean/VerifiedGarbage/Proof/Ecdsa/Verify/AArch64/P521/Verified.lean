@@ -6,8 +6,8 @@ import VerifiedGarbage.Proof.Ecdsa.AArch64.P521.Verified
 /-!
 # ECDSA verification over P-521 on AArch64: `Verified`
 
-P-521 is a curve the proof supports (`p521_ok`, given the inversions' last step `InvToM`, and `Law` for its group
-law, which the registration file supplies: `Proof.P521.law` and `Proof.Weierstrass.invToM`), so `verify_ok` gives
+P-521 is a curve the proof supports (`p521_ok`, given the inversions' soundness `InvSounds`, and `Law` for its group
+law, which the registration file supplies: `Proof.P521.law` and `Proof.Weierstrass.AArch64.invSounds`), so `verify_ok` gives
 the contract's postcondition; `x19`–`x25` are restored, and no instruction
 writes the other callee-saved registers, `sp` or a SIMD register
 (`abiPreserved_of`). Constant time by taint tracking: the only branches are on
@@ -31,7 +31,7 @@ theorem verify_untouched : KeepsUntouched verifyP521 := by lit_decide
 
 theorem verify_keepsV : verifyP521.allInstrs keepsV = true := by lit_decide
 
-theorem verify_a64 (hL : Weierstrass.Law Spec.P521.curve) (hI : Weierstrass.InvToM)
+theorem verify_a64 (hL : Weierstrass.Law Spec.P521.curve) (hI : Weierstrass.AArch64.InvSounds)
     (hT : Weierstrass.CombOkW Spec.P521.curve 7 83 Impl.P521.p521Comb7 Impl.P521.p521Comb7Start)
     (s : State)
     (hs : verifyAArch64.pre s) :
@@ -50,7 +50,7 @@ theorem verify_ct : ConstantTime isa verifyAArch64.pre verifyAArch64.pub verifyP
       · exact h3⟩, fun n hn => by
       simp only [List.mem_singleton] at hn; subst hn; exact hsy⟩) (by taint_decide)
 
-theorem verify_verified (hL : Weierstrass.Law Spec.P521.curve) (hI : Weierstrass.InvToM)
+theorem verify_verified (hL : Weierstrass.Law Spec.P521.curve) (hI : Weierstrass.AArch64.InvSounds)
     (hT : Weierstrass.CombOkW Spec.P521.curve 7 83 Impl.P521.p521Comb7 Impl.P521.p521Comb7Start) :
     Verified AArch64.target verifyP521
       (Spec.Ecdsa.P521.inst.verifyContract (AArch64.abi.withConsts p521.combConsts)) :=

@@ -6,8 +6,8 @@ import VerifiedGarbage.Proof.Ecdsa.AArch64.P521.Verified
 /-!
 # P-521 public keys on AArch64: `Verified`
 
-P-521 is a curve the proof supports (`p521_ok`, given the inversions' last step `InvToM`, and `Law` for its group
-law, which the registration file supplies: `Proof.P521.law` and `Proof.Weierstrass.invToM`), so `publicKey_ok`
+P-521 is a curve the proof supports (`p521_ok`, given the inversions' soundness `InvSounds`, and `Law` for its group
+law, which the registration file supplies: `Proof.P521.law` and `Proof.Weierstrass.AArch64.invSounds`), so `publicKey_ok`
 gives the contract's postcondition; `x19`–`x25` are restored, and no
 instruction writes the other callee-saved registers, `sp` or a SIMD register
 (`abiPreserved_of`). Constant time by taint tracking: the only branches are on
@@ -35,7 +35,7 @@ theorem post_of {s s' : State} (h : PkPost p521 s s') : pkAArch64.post s s' := b
   rw [show Spec.EcKey.publicKey p521.C (dk p521 s) = pk s.mem (s.gpr .x1) from rfl, hq]
   rcases q with _ | _ | ⟨x, y⟩ <;> exact id
 
-theorem pk_a64 (hL : Weierstrass.Law Spec.P521.curve) (hI : Weierstrass.InvToM)
+theorem pk_a64 (hL : Weierstrass.Law Spec.P521.curve) (hI : Weierstrass.AArch64.InvSounds)
     (hT : Weierstrass.CombOkW Spec.P521.curve 7 83 Impl.P521.p521Comb7 Impl.P521.p521Comb7Start)
     (s : State)
     (hs : pkAArch64.pre s) :
@@ -58,7 +58,7 @@ theorem pk_ct : ConstantTime isa pkAArch64.pre pkAArch64.pub publicKeyP521 :=
       · exact h2⟩, fun n hn => by
       simp only [List.mem_singleton] at hn; subst hn; exact hsy⟩) (by taint_decide)
 
-theorem pk_verified (hL : Weierstrass.Law Spec.P521.curve) (hI : Weierstrass.InvToM)
+theorem pk_verified (hL : Weierstrass.Law Spec.P521.curve) (hI : Weierstrass.AArch64.InvSounds)
     (hT : Weierstrass.CombOkW Spec.P521.curve 7 83 Impl.P521.p521Comb7 Impl.P521.p521Comb7Start) :
     Verified AArch64.target publicKeyP521
       (Spec.EcKey.P521.inst.publicKeyContract (AArch64.abi.withConsts p521.combConsts)) :=

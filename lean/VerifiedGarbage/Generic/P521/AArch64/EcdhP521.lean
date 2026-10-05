@@ -1,5 +1,5 @@
 import VerifiedGarbage.TCB.AArch64.Target
-import VerifiedGarbage.Proof.Weierstrass.HasLaw
+import VerifiedGarbage.Proof.Weierstrass.AArch64.HasLaw
 import VerifiedGarbage.Impl.Ecdh.P521.AArch64
 import VerifiedGarbage.Proof.Ecdh.AArch64.P521.Verified
 
@@ -12,7 +12,7 @@ A generic file (see `TCB/Emit.lean`) over P-521's group law `h`, the variant
 
 namespace VG.Generic.P521.AArch64.EcdhP521
 
-def artifacts (h : Proof.Weierstrass.HasLaw Spec.P521.curve) : List Artifact := [
+def artifacts (h : Proof.Weierstrass.AArch64.HasLaw Spec.P521.curve) : List Artifact := [
   { Spec.Ecdh.P521.exchangeApi with
     target := AArch64.target
     doc := Spec.Ecdh.P521.exchangeApi.doc (notes := ["The function is `vg_ecdsa_p521_sign`'s \
