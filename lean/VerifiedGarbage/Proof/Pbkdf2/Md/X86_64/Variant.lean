@@ -5,7 +5,6 @@ import VerifiedGarbage.TCB.Artifact
 import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
 import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratch
 import VerifiedGarbage.Proof.Pbkdf2.Scratch
-import VerifiedGarbage.Spec.Mgf1
 
 /-!
 # Merkle–Damgård hash functions on x86-64, as variants
@@ -64,18 +63,6 @@ its working space, for its `_scratch` form: a quadword standing for the
 return address, a copy of `out_len` and the buffer's address (its stack
 arguments), then the buffer. -/
 def pbkdf2Frame (I : Spec.Hmac.Instance) : Nat := 24 + 8 * I.pbkdf2Scratch
-
-/-- The hash functions of `MdHash`'s variants, as RSA's padding takes them. -/
-def mdHashes : List Spec.Mgf1.Hash :=
-  [Spec.Mgf1.md5, Spec.Mgf1.sha1, Spec.Mgf1.sha224, Spec.Mgf1.sha256, Spec.Mgf1.sha384, Spec.Mgf1.sha512,
-    Spec.Mgf1.sha512_224, Spec.Mgf1.sha512_256]
-
-/-- The hash function `H` as RSA's padding takes it (`Spec.Mgf1.Hash`). -/
-structure MgfLink (H : Hash) (hH : HashOK H) where
-  G : Spec.Mgf1.Hash
-  mem : G ∈ mdHashes
-  hash : ∀ x, G.hash x = hH.SH.H.hash x
-  len : G.len = H.D
 
 /-- A Merkle–Damgård hash function on x86-64, with one implementation of its
 compression function: its functions, verified against the contracts of its

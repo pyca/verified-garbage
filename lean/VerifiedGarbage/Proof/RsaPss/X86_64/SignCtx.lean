@@ -1,7 +1,7 @@
 import VerifiedGarbage.Proof.Rsa.X86_64.PrivCtx
 import VerifiedGarbage.Proof.Bignum.X86_64.PubVerified
 import VerifiedGarbage.Spec.RsaPss.Contract
-import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Variant
+import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Hash
 
 /-!
 # RSASSA-PSS signing on x86-64: the contract on the registers

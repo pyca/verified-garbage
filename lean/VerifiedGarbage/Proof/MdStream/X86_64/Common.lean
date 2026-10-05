@@ -327,6 +327,9 @@ structure Taints (P : Params) : Prop where
   `Proof/RsaPss/X86_64/`). -/
   lenSec : ∃ hc, (taint.check (X86_64.Taint.ofRegs [.rbx]) (.block P.len) hc).isSome = true
   outPub : ∃ hc, (taint.check (X86_64.Taint.ofRegs [.rbx, .rbp]) (.block P.out) hc).isSome = true
+  /-- Neither writes `rsp` nor loads MXCSR. -/
+  lenSafe : P.len.all (fun i => !isa.writesSp i && !loadsMxcsr i) = true
+  outSafe : P.out.all (fun i => !isa.writesSp i && !loadsMxcsr i) = true
 
 /-! ## The compression function -/
 

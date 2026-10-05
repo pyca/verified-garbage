@@ -406,10 +406,13 @@ def privArgs : List Instr :=
 
 variable (privN : String) (privC : Prog isa)
 
-/-- After the checks: the encoding, and the private-key operation. -/
-def signMain : Prog isa :=
+/-- After the checks: `EM` at `scratch + oEm`. -/
+def signEnc : Prog isa :=
   seqs [.block dbSlots, clearY, copyDigest H, copySaltY H, .block (signLen H), ctHash H, clearEm,
-    putSalt, putH H, mgfXor H, .block clearTop, .block privArgs, .call privN privC]
+    putSalt, putH H, mgfXor H, .block clearTop]
+
+/-- After the checks: the encoding, and the private-key operation. -/
+def signMain : Prog isa := seqs [signEnc H, .block privArgs, .call privN privC]
 
 /-- The checks, then `signMain`. -/
 def signBody : Prog isa :=

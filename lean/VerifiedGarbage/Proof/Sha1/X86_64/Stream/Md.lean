@@ -40,7 +40,7 @@ theorem shape : Shape (P := params) md where
 theorem taints : Taints params :=
   ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩,
     ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩,
-    ⟨_, by taint_decide⟩⟩
+    ⟨_, by taint_decide⟩, by decide, by decide⟩
 
 theorem scalar_ok : CalleeOk (P := params) md Callee.scalar.code :=
   .of_verified compress_verified.1 compress_verified.2.1 (by rw [← Code.allInstrs_eq]; decide +kernel)
