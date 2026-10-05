@@ -5,7 +5,7 @@ import VerifiedGarbage.Proof.AesGcm.Arm.Contract
 
 Untrusted: everything here is checked by Lean. `init` saves our caller's
 registers in `scratch` (`W`), expands the key into the context with
-`vg_aes_expand_key`, and computes the hash subkey `CIPH_K(0¹²⁸)` into its
+`vg_aes_expand_key_scratch`, and computes the hash subkey `CIPH_K(0¹²⁸)` into its
 bytes 240–255 with `vg_aes_ctr32` on a zero block, from a zero counter block
 at `W + 96` (`init_wp`). The layout lemmas of `Lay` apply with the state
 taken to be `W + 16` (which `init` never touches).

@@ -5,7 +5,7 @@ import VerifiedGarbage.Proof.Aes.X86.BlocksVariant
 
 A variant of `AesBlocks` on x86 (see `TCB/Emit.lean`):
 `vg_aes_encrypt_blocks_aesni`, `vg_aes_decrypt_blocks_aesni` and
-`vg_aes_expand_key_aesni`.
+`vg_aes_expand_key_scratch_aesni`.
 -/
 
 namespace VG.Variants.AesBlocks.X86.AesNi

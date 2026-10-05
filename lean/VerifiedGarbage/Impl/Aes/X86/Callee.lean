@@ -18,8 +18,8 @@ structure Blocks where
   code : Prog isa
 def Ctr32.scalar : Ctr32 := ⟨"vg_aes_ctr32", ctr32⟩
 def Ctr32.aesni : Ctr32 := ⟨"vg_aes_ctr32_aesni", AesNi.ctr32⟩
-def ExpandKey.scalar : ExpandKey := ⟨"vg_aes_expand_key", expandKey⟩
-def ExpandKey.aesni : ExpandKey := ⟨"vg_aes_expand_key_aesni", AesNi.expandKey⟩
+def ExpandKey.scalar : ExpandKey := ⟨"vg_aes_expand_key_scratch", expandKey⟩
+def ExpandKey.aesni : ExpandKey := ⟨"vg_aes_expand_key_scratch_aesni", AesNi.expandKey⟩
 def Blocks.encScalar : Blocks := ⟨"vg_aes_encrypt_blocks", encryptBlocks⟩
 def Blocks.decScalar : Blocks := ⟨"vg_aes_decrypt_blocks", decryptBlocks⟩
 def Blocks.encAesni : Blocks := ⟨"vg_aes_encrypt_blocks_aesni", AesNi.encryptBlocks⟩

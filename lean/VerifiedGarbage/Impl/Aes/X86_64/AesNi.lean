@@ -6,8 +6,8 @@ import VerifiedGarbage.TCB.X86_64.Isa
 
 Two functions, for CPUs with AES-NI (and SSSE3, for `pshufb`):
 
-* `vg_aes_expand_key_aesni(key = rdi, key_len = rsi, schedule = rdx, scratch = rcx)`,
-  with the contract of `vg_aes_expand_key` (`Spec.Aes.expandKeyContract`).
+* `vg_aes_expand_key_scratch_aesni(key = rdi, key_len = rsi, schedule = rdx, scratch = rcx)`,
+  with the contract of `vg_aes_expand_key_scratch` (`Spec.Aes.expandKeyScratchContract`).
 * `vg_aes_ctr32_aesni(schedule = rdi, rounds = rsi, counter = rdx, data = rcx, n = r8,
   scratch = r9)`, with the contract of `vg_aes_ctr32` (`Spec.Gcm.ctr32Contract`).
 

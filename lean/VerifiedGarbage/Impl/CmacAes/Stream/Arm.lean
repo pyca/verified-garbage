@@ -8,7 +8,7 @@ import VerifiedGarbage.Impl.Aes.Arm.ExpandKey
 `vg_cmac_aes_absorb(state = r0, rounds = r1, count = r2:r3, data = [sp], len = [sp, #4], scratch = [sp, #8])`
 and `vg_cmac_aes_finish(state = r0, rounds = r1, count = r2:r3, out = [sp], scratch = [sp, #4])`
 (see `VG.Spec.Cmac.aesInitContract` and the others), composed of calls of
-the verified `vg_aes_expand_key`, `vg_cmac_aes_subkeys`, `vg_cmac_aes_update`
+the verified `vg_aes_expand_key_scratch`, `vg_cmac_aes_subkeys`, `vg_cmac_aes_update`
 and `vg_cmac_aes_finalize`, as on x86-64 (`Impl/CmacAes/Stream/X86_64.lean`).
 
 The state (`VG.Spec.Cmac.Repr`) is the key schedule (bytes 0–239), the
@@ -62,7 +62,7 @@ def sOff : Nat := 2176
 
 /-- Saves `r4`–`r6` and `lr`, keeps the state in `r4`, the scratch buffer in
 `r5` and the rounds (`key_len / 4 + 6`) in `r6`, and sets up the arguments
-of `vg_aes_expand_key(key = r0, key_len = r1, schedule = r2, scratch = r3)`. -/
+of `vg_aes_expand_key_scratch(key = r0, key_len = r1, schedule = r2, scratch = r3)`. -/
 def initPre : List Instr :=
   [.str .r4 .r3 2176, .str .r5 .r3 2180, .str .r6 .r3 2184, .str .lr .r3 2188, mov .r4 .r0, mov .r5 .r3,
    .mov .r6 (.shifted .r2 .lsr 2), .dp .add .r6 .r6 (.imm 6), mov .r0 .r1, mov .r1 .r2, mov .r2 .r4]
@@ -78,7 +78,7 @@ def initPost : List Instr :=
 
 def init : Prog isa :=
   .seq (.block initPre)
-    (.seq (.call "vg_aes_expand_key" Impl.Aes.Arm.expandKey)
+    (.seq (.call "vg_aes_expand_key_scratch" Impl.Aes.Arm.expandKey)
       (.seq (.block initMid) (.seq (.call "vg_cmac_aes_subkeys" Impl.CmacAes.Arm.subkeys)
         (.block initPost))))
 

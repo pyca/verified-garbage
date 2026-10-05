@@ -66,10 +66,6 @@ use core::mem::MaybeUninit;
 /// A 16-byte block.
 type Block = [u8; 16];
 
-/// The working space of `vg_aes_siv_encrypt` and `vg_aes_siv_decrypt`, in
-/// 64-bit words: the synthetic IV in its first 16 bytes.
-const WORK: usize = 322;
-
 /// The instance of a function for `backend`; for `encrypt` and `decrypt` on
 /// AArch64 with the AES extension, `$aes_cbc` rather than `$aes` if `$long`
 /// (`chains_long`).
@@ -255,7 +251,7 @@ impl AesSiv {
     pub fn encrypt_in_place(&self, ads: &[&[u8]], data: &mut [u8]) -> Result<Block, Error> {
         let mut storage = [const { MaybeUninit::uninit() }; Self::MAX_COMPONENTS];
         let descs = Self::descriptors(ads, &mut storage)?;
-        let mut work = MaybeUninit::<[u64; WORK]>::uninit();
+        let mut siv = [0u8; 16];
         let encrypt = instance!(
             self.backend,
             chains_long(ads, data.len()),
@@ -269,17 +265,14 @@ impl AesSiv {
         // `storage`, whose first `ads.len()` entries (`16 * ads.len()`
         // bytes, all the function reads) `descriptors` initialized to list
         // the components of `ads`, each valid for reads of its length in
-        // bytes. `data` is valid for
-        // reads and writes of `data.len()` bytes and `work` for reads and
-        // writes of 2576. `data` and `work` are unique borrows, so they
-        // overlap neither each other nor `self.ctx`, `storage` or a component;
-        // no buffer overlaps the arguments on the stack or the return address
-        // (on x86 and x86-64) or the stack below it that the function uses, and none
-        // wraps around the end of the address space. The CPU has the
-        // features of the implementation selected.
-        // `work` is uninitialized: it is only working space but for the
-        // synthetic IV written to its first 16 bytes, and the contract's
-        // result does not depend on what it holds.
+        // bytes. `data` is valid for reads and writes of `data.len()` bytes
+        // and `siv` for reads and writes of 16. `data` and `siv` are unique
+        // borrows, so they overlap neither each other nor `self.ctx`,
+        // `storage` or a component; no buffer overlaps the arguments on the
+        // stack or the return address (on x86 and x86-64) or the stack below
+        // them that the function uses, and none wraps around the end of the
+        // address space. The CPU has the features of the implementation
+        // selected.
         unsafe {
             encrypt(
                 &self.ctx,
@@ -288,12 +281,10 @@ impl AesSiv {
                 ads.len(),
                 data.as_mut_ptr(),
                 data.len(),
-                work.as_mut_ptr(),
+                &mut siv,
             )
         };
-        // SAFETY: `encrypt` wrote the synthetic IV to the first 16 bytes of
-        // `work`.
-        Ok(unsafe { first_block(&work) })
+        Ok(siv)
     }
 
     /// `SIV-DECRYPT` (RFC 5297 §2.7): decrypts `data` in place with the
@@ -308,7 +299,6 @@ impl AesSiv {
     ) -> Result<(), Error> {
         let mut storage = [const { MaybeUninit::uninit() }; Self::MAX_COMPONENTS];
         let descs = Self::descriptors(ads, &mut storage)?;
-        let mut work = MaybeUninit::<[u64; WORK]>::uninit();
         let decrypt = instance!(
             self.backend,
             chains_long(ads, data.len()),
@@ -316,15 +306,10 @@ impl AesSiv {
             x86_64: [vg_aes_siv_decrypt_aesni, vg_aes_siv_decrypt_vaes],
             aarch64: [vg_aes_siv_decrypt_aes, vg_aes_siv_decrypt_aes_cbc]
         );
-        let w = work.as_mut_ptr().cast::<u64>();
-        // SAFETY: `work` is valid for writes of 322 words.
-        unsafe {
-            w.write(u64::from_le_bytes(tag[..8].try_into().unwrap()));
-            w.add(1)
-                .write(u64::from_le_bytes(tag[8..].try_into().unwrap()));
-        }
         // SAFETY: as in `encrypt_in_place`, with the received synthetic IV
-        // in the first 16 bytes of `work`.
+        // `tag`, valid for reads of 16 bytes, in place of `siv`: it is a
+        // shared borrow, so it does not overlap `data`, a unique one, and
+        // only read-only buffers may overlap it.
         let ok = unsafe {
             decrypt(
                 &self.ctx,
@@ -333,7 +318,7 @@ impl AesSiv {
                 ads.len(),
                 data.as_mut_ptr(),
                 data.len(),
-                work.as_mut_ptr(),
+                tag,
             )
         };
         // `decrypt`'s contract leaves the plaintext in `data` if it returns
@@ -344,22 +329,6 @@ impl AesSiv {
             Err(Error::TagMismatch)
         }
     }
-}
-
-/// The first 16 bytes of `work`, where `encrypt` writes the synthetic IV.
-///
-/// # Safety
-///
-/// They must have been written.
-unsafe fn first_block(work: &MaybeUninit<[u64; WORK]>) -> Block {
-    let w = work.as_ptr().cast::<u64>();
-    let mut b = [0u8; 16];
-    // SAFETY: the first two words are initialized (the caller's guarantee).
-    unsafe {
-        b[..8].copy_from_slice(&w.read().to_le_bytes());
-        b[8..].copy_from_slice(&w.add(1).read().to_le_bytes());
-    }
-    b
 }
 
 #[cfg(test)]

@@ -68,10 +68,11 @@ def checkVector (C : Curve) (x : Nat) (v : Vector) : Except String Unit := do
   unless enc.length == 2 * C.len && ofBytes (enc.take C.len) == v.r &&
       ofBytes (enc.drop C.len) == v.s do
     throw s!"{v.hash}, {v.message}: encoding mismatch"
-  -- The contract's hash argument: the leftmost `len` octets, or the hash
-  -- padded on the left with zeros, which `hashToInt` reads as `e`.
+  -- The contract's hash argument (`Ecdsa.Instance.digestDoc`): the leftmost
+  -- `len` octets, or `e` shifted left by the bits `hashToInt` drops (none
+  -- when `n` has `8 len` bits: the hash padded on the left with zeros).
   let arg := if digest.length ≥ C.len then digest.take C.len
-    else List.replicate (C.len - digest.length) 0 ++ digest
+    else toBytes C.len (e <<< (8 * C.len - nBits C))
   unless hashToInt C arg == e do throw s!"{v.hash}: truncated hash disagrees"
   -- Another hash or key gives another signature.
   if signWith C x (e + 1) v.k == some (v.r, v.s) then throw "accepted another hash"
@@ -95,10 +96,11 @@ def checkCurve (C : Curve) (x ux uy : Nat) : Except String Unit := do
   -- Keys and nonces outside `[1, n-1]` give no signature.
   for (d, k) in [(0, 1), (n, 1), (n + 1, 1), (1, 0), (1, n), (1, n + 1)] do
     if (signWith C d 0 k).isSome then throw s!"signed with d = {d}, k = {k}"
-  -- `hashToInt`: whole hashes up to `8 len` bits, the leftmost `8 len` bits
-  -- of longer ones.
+  -- `hashToInt`: whole hashes up to `N` bits, the leftmost `N` bits of
+  -- longer ones.
   let long := (List.range (C.len + 16)).map fun i => BitVec.ofNat 8 (i + 1)
-  unless hashToInt C long == ofBytes (long.take C.len) do throw "hashToInt of a long hash"
+  unless hashToInt C long == ofBytes (long.take C.len) >>> (8 * C.len - nBits C) do
+    throw "hashToInt of a long hash"
   unless hashToInt C (long.take 20) == ofBytes (long.take 20) do throw "hashToInt of 20 octets"
   unless ofBytes (toBytes C.len ux) == ux && (toBytes C.len ux).length == C.len do
     throw "octet round trip"

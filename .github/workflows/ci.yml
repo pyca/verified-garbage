@@ -384,6 +384,10 @@ jobs:
           # key but run no clippy, so when one of them saved the entry first,
           # this job's clippy checked the dependencies again on every run.
           shared-key: rust
+          # The benchmark crate is outside the library's workspace.
+          workspaces: |
+            . -> target
+            bench -> target
           save-if: ${{ github.ref == 'refs/heads/main' }}
       - name: Lint
         if: ${{ matrix.rust == 'stable' }}

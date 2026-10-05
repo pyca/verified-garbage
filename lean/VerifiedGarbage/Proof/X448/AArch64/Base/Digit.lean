@@ -21,19 +21,20 @@ open VG.Proof.X448.AArch64 (Scr Keeps off contains_sc read1_eq)
 open VG.Proof.X448 (nib nib_bits nib_lt mag mag_lt)
 open VG.Proof.Curve448.AArch64 (mask)
 
-/-- The bits of the scalar `k`, one per byte at `BITS`, as `bits_ok` leaves them. -/
-def Bits (base : Addr) (k : Nat) (m : Mem) : Prop :=
-  ∀ t < 448, m (off base (BITS + t)) = BitVec.ofNat 8 (VG.Proof.X448.bit k t)
+/-- The `8n` bits of the scalar `k` (for a comb of `n` tables), one per byte at `BITS`, as
+`bits_ok` leaves them. -/
+def Bits (n : Nat) (base : Addr) (k : Nat) (m : Mem) : Prop :=
+  ∀ t < 8 * n, m (off base (BITS + t)) = BitVec.ofNat 8 (VG.Proof.X448.bit k t)
 
 theorem bit_eq (k t : Nat) : VG.Proof.X448.bit k t = (k / 2 ^ t) % 2 := by
   simp only [VG.Proof.X448.bit, Nat.shiftRight_eq_div_pow, Nat.and_one_is_mod]
 
 /-! ## The bit index -/
 
-private theorem index_fact : ∀ j < 56, BitVec.ofNat 64 j <<< 3 = BitVec.ofNat 64 (8 * j) := by
+private theorem index_fact : ∀ j < 57, BitVec.ofNat 64 j <<< 3 = BitVec.ofNat 64 (8 * j) := by
   decide +kernel
 
-theorem index_ok (s : State) {base : Addr} (hs : Scr s base) {j : Nat} (hj : j < 56)
+theorem index_ok (s : State) {base : Addr} (hs : Scr s base) {j : Nat} (hj : j < 57)
     (hb : s.gpr .x19 = BitVec.ofNat 64 j) :
     WP isa (.block ([.lsl .x .x8 .x19 3, .add .x .x8 .x3 .x8] : List Instr)) s fun t =>
       t.gpr .x8 = off base (8 * j) ∧ Keeps [.x8] s t ∧ t.mem = s.mem := by
@@ -50,9 +51,9 @@ theorem index_ok (s : State) {base : Addr} (hs : Scr s base) {j : Nat} (hj : j <
 private theorem bit_ext : ∀ b < 2, ((BitVec.ofNat 8 b).setWidth 32).setWidth 64 = BitVec.ofNat 64 b := by
   decide
 
-theorem nibble_ok {s : State} {base : Addr} (hs : Scr s base) {k i p o : Nat} (hi : i < 112)
-    (hp : s.gpr .x8 = off base p) (hpo : p + o = BITS + 4 * i) (ho : o + 3 < 4096)
-    (hb : Bits base k s.mem) :
+theorem nibble_ok {s : State} {base : Addr} (hs : Scr s base) {n k i p o : Nat} (hn : n ≤ 57)
+    (hi : i < 2 * n) (hp : s.gpr .x8 = off base p) (hpo : p + o = BITS + 4 * i) (ho : o + 3 < 4096)
+    (hb : Bits n base k s.mem) :
     WP isa (.block (nibble o)) s fun t =>
       t.gpr .x2 = BitVec.ofNat 64 (nib k i) ∧ Keeps [.x2, .x9] s t ∧ t.mem = s.mem := by
   have hr : ∀ j < 4, InRegions (s.rd ++ s.wr) (off base (BITS + (4 * i + j))) 1 := fun j hj =>
@@ -204,17 +205,17 @@ structure DigitsOut (s : State) (k j : Nat) (t : State) : Prop where
   evenZero : t.gpr .x0 = zeroBit (mag (nib k (2 * j)))
   keeps : Keeps digitRegs s t
 
-theorem digits_ok {s : State} {base : Addr} (hs : Scr s base) {k j : Nat} (hj : j < 56)
-    (hc : s.gpr .x19 = BitVec.ofNat 64 j) (hb : Bits base k s.mem) :
+theorem digits_ok {s : State} {base : Addr} (hs : Scr s base) {n k j : Nat} (hn : n ≤ 57) (hj : j < n)
+    (hc : s.gpr .x19 = BitVec.ofNat 64 j) (hb : Bits n base k s.mem) :
     WP isa (.block digits) s fun t => DigitsOut s k j t ∧ t.mem = s.mem := by
   have no : nib k (2 * j + 1) < 16 := nib_lt _ _
   have ne : nib k (2 * j) < 16 := nib_lt _ _
   simp only [digits, List.append_assoc]
   rw [WP.block_append_iff]
-  refine WP.mono (index_ok s hs hj hc) fun a ⟨a8, ka, ma⟩ => ?_
+  refine WP.mono (index_ok s hs (by omega) hc) fun a ⟨a8, ka, ma⟩ => ?_
   have hsa := hs.of_keeps ka (by decide)
   rw [WP.block_append_iff]
-  refine WP.mono (nibble_ok hsa (k := k) (i := 2 * j + 1) (by omega) a8 (by simp only [BITS]; omega)
+  refine WP.mono (nibble_ok hsa hn (k := k) (i := 2 * j + 1) (by omega) a8 (by simp only [BITS]; omega)
     (by decide) (by rw [ma]; exact hb)) fun b ⟨b2, kb, mb⟩ => ?_
   rw [WP.block_append_iff]
   refine WP.mono (magnitude_ok b no b2) fun c ⟨c2, _, kc, mc⟩ => ?_
@@ -224,10 +225,10 @@ theorem digits_ok {s : State} {base : Addr} (hs : Scr s base) {k j : Nat} (hj : 
   have e8 : e.gpr .x8 = off base (8 * j) := by
     rw [ke.1 _ (by decide), kc.1 _ (by decide), kb.1 _ (by decide), a8]
   have hse : Scr e base := hsc.of_keeps ke (by decide)
-  have hbe : Bits base k e.mem := fun q hq => by
+  have hbe : Bits n base k e.mem := fun q hq => by
     rw [me, mc, mb, ma]; exact hb q hq
   rw [WP.block_append_iff]
-  refine WP.mono (nibble_ok hse (k := k) (i := 2 * j) (by omega) e8 (by simp only [BITS]; omega)
+  refine WP.mono (nibble_ok hse hn (k := k) (i := 2 * j) (by omega) e8 (by simp only [BITS]; omega)
     (by decide) hbe) fun f ⟨f2, kf, mf⟩ => ?_
   rw [WP.block_append_iff]
   refine WP.mono (magnitude_ok f ne f2) fun g ⟨g2, _, kg, mg⟩ => ?_

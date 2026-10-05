@@ -113,14 +113,11 @@ theorem prefix_ok {s : State} {base : Addr} (hb : s.gpr .x2 = base) (hw : (⟨ba
 /-- The setup's first block: `prefix`, then `v8`–`v15` saved and every slot zeroed. -/
 theorem block1_ok {s : State} {base : Addr} (hb : s.gpr .x2 = base) (hw : (⟨base, 8192⟩ : Region) ∈ s.wr)
     (hn : base.toNat + 8192 ≤ 2 ^ 64) :
-    WP isa (.block (([.addImm .x .x3 .x2 0, .movz .x .x12 0xffff 0, .movk .x .x12 0x0fff 1,
-        st .x19 0, st .x20 8, .addImm .x .x20 .x0 0] : List Instr) ++ VG.Impl.X448.AArch64.Fast.save ++
-        VG.Impl.X448.AArch64.Fast.vsave ++ ([.movz .x .x4 0 0] : List Instr) ++
-        (List.range 352).map (fun i => st .x4 (slot 0 + 8 * i)))) s fun t =>
+    WP isa (.block VG.Impl.X448.AArch64.Base.entry) s fun t =>
       Scr t base ∧ Saved base s.gpr t.mem ∧ t.gpr .x20 = s.gpr .x0 ∧ SavedX base s.gpr t.mem ∧
       SavedV base s.v t.mem ∧ Keeps [.x3, .x12, .x4, .x20] s t ∧
       (∀ i < 352, limbs t.mem base (slot 0) i = 0) ∧ Outside base 0 8192 s.mem t.mem := by
-  simp only [List.append_assoc]
+  simp only [VG.Impl.X448.AArch64.Base.entry, List.append_assoc]
   rw [← List.append_assoc (([.addImm .x .x3 .x2 0, .movz .x .x12 0xffff 0, .movk .x .x12 0x0fff 1,
         st .x19 0, st .x20 8, .addImm .x .x20 .x0 0] : List Instr)), WP.block_append_iff]
   refine WP.mono (WP.preservedV (prefix_ok hb hw hn) (by lit_decide)) fun a ⟨⟨ha, sa, oa, xa, ka, outa⟩, va⟩ => ?_
@@ -164,17 +161,15 @@ theorem block1_ok {s : State} {base : Addr} (hb : s.gpr .x2 = base) (hw : (⟨ba
       (by simp only [Impl.X448.AArch64.Fast.VSAVE]; omega))).trans ?_
     rw [← mc]; exact tOut.mono (by simp only [slot]; omega) (by simp only [slot]; omega)
 
-/-- The constant slots: both accumulators at `[G] B`, and the counter at 0. -/
-theorem consts_ok {s : State} {base : Addr} (hs : Scr s base) :
-    WP isa (.block (constSlot AX Impl.X448.baseG.1 ++ constSlot AY Impl.X448.baseG.2 ++ constSlot AZ 1 ++
-        constSlot BX Impl.X448.baseG.1 ++ constSlot BY Impl.X448.baseG.2 ++ constSlot BZ 1 ++
-        ([.movz .x .x19 0 0] : List Instr))) s fun t =>
-      (∀ w < 8, word t.mem base (AX + 8 * w) = limb Impl.X448.baseG.1 w ∧
-        word t.mem base (AY + 8 * w) = limb Impl.X448.baseG.2 w ∧ word t.mem base (AZ + 8 * w) = limb 1 w ∧
-        word t.mem base (BX + 8 * w) = limb Impl.X448.baseG.1 w ∧
-        word t.mem base (BY + 8 * w) = limb Impl.X448.baseG.2 w ∧ word t.mem base (BZ + 8 * w) = limb 1 w) ∧
+/-- The constant slots: both accumulators at the affine point `g`, and the counter at 0. -/
+theorem consts_ok {s : State} {base : Addr} (hs : Scr s base) (g : Spec.X448.Fe × Spec.X448.Fe) :
+    WP isa (.block (accs g)) s fun t =>
+      (∀ w < 8, word t.mem base (AX + 8 * w) = limb g.1 w ∧
+        word t.mem base (AY + 8 * w) = limb g.2 w ∧ word t.mem base (AZ + 8 * w) = limb 1 w ∧
+        word t.mem base (BX + 8 * w) = limb g.1 w ∧
+        word t.mem base (BY + 8 * w) = limb g.2 w ∧ word t.mem base (BZ + 8 * w) = limb 1 w) ∧
       Outside base 64 768 s.mem t.mem ∧ Keeps [.x4, .x19] s t ∧ t.gpr .x19 = 0 := by
-  simp only [List.append_assoc]
+  simp only [accs, List.append_assoc]
   rw [WP.block_append_iff]
   refine WP.mono (constSlot_ok hs (o := AX) (by decide) (by decide) _) fun t1 ⟨v1, o1, k1⟩ => ?_
   have h1 := hs.of_keeps k1 (by decide)
@@ -237,7 +232,7 @@ theorem bytesAt_outside {base p : Addr} {m m' : Mem} (h : Outside base 0 8192 m 
 
 /-- What the setup leaves, from the function's entry state `sE`. -/
 structure Ready (sE : State) (base : Addr) (k : Nat) (t : State) : Prop where
-  inv : StepInv t base k 0 t
+  inv : StepInv 56 t base k 0 t
   saved : Saved base sE.gpr t.mem
   out : t.gpr .x20 = sE.gpr .x0
   savedX : SavedX base sE.gpr t.mem
@@ -260,7 +255,7 @@ theorem setup_ok {s : State} {base kp : Addr} (hb : s.gpr .x2 = base) (hw : (⟨
   have kb : Keeps bitRegs a b := ⟨gb, rdb, wrb⟩
   have hsb : Scr b base := ha.of_keeps kb (by decide)
   rw [bytesAt_outside outa hkd] at bitsb
-  refine WP.mono (consts_ok hsb) fun t ⟨tv, tOut, kt, tc⟩ => ?_
+  refine WP.mono (consts_ok hsb _) fun t ⟨tv, tOut, kt, tc⟩ => ?_
   have hst : Scr t base := hsb.of_keeps kt (by decide)
   -- Every word outside the constant slots and the bits is as `block1` left it.
   have wt : ∀ {d : Nat}, d + 8 ≤ 64 ∨ 832 ≤ d → d + 8 ≤ BITS ∨ BITS + 448 ≤ d → d + 8 ≤ 8192 →
@@ -288,8 +283,8 @@ theorem setup_ok {s : State} {base kp : Addr} (hb : s.gpr .x2 = base) (hw : (⟨
     simp only [pt, VG.Proof.X448.basePt]
     rw [ev 3 _ fun w hw => (tv w hw).2.2.2.1, ev 4 _ fun w hw => (tv w hw).2.2.2.2.1,
       ev 5 _ fun w hw => (tv w hw).2.2.2.2.2]
-  have hG : Rep (VG.Proof.X448.basePt Impl.X448.baseG) (((VG.Proof.X448.baseGVal : ℤ) + 0) • baseAff) := by
-    rw [add_zero, natCast_zsmul]; exact VG.Proof.X448.baseG_ok
+  have hG : Rep (VG.Proof.X448.basePt Impl.X448.baseG) (((VG.Proof.X448.combG 56 : ℤ) + 0) • baseAff) := by
+    rw [VG.Proof.X448.combG_56, add_zero, natCast_zsmul]; exact VG.Proof.X448.baseG_ok
   have bsaved : ∀ {d : Nat}, d + 8 ≤ 64 ∨ 832 ≤ d → d + 8 ≤ BITS ∨ BITS + 448 ≤ d → d + 8 ≤ 8192 →
       word t.mem base d = word a.mem base d := wt
   refine ⟨⟨by decide, hst, fun i w hw => ?_, fun w hw => ?_, by rw [tc]; rfl, fun q hq => ?_,

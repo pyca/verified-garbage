@@ -85,7 +85,7 @@ theorem correct {sE : State} (hp : Pre sE) :
   set k := Spec.X448.decodeScalar448 kb
   unfold x448Base
   refine WP.seq (WP.mono (setup_ok rfl hw hn rfl kr kd) fun s1 R => ?_)
-  refine WP.seq (WP.mono (loop_ok (s₀ := s1) 56 s1 (by decide) le_rfl (by rw [Nat.sub_self]; exact R.inv))
+  refine WP.seq (WP.mono (loop_ok (by decide) (s₀ := s1) 56 s1 (by decide) le_rfl (by rw [Nat.sub_self]; exact R.inv))
     fun s2 h2 => ?_)
   refine WP.seq (WP.mono (combine_ok (decodeScalar448_lt kb) h2) fun s3 ⟨f3, r3⟩ => ?_)
   unfold VG.Impl.X448.AArch64.Base.finish

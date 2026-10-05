@@ -5,7 +5,7 @@ import VerifiedGarbage.Proof.AesOcb.AArch64.Seal
 
 Untrusted: everything here is checked by Lean. `init` saves our caller's
 registers in the scratch buffer, expands the key into the key context
-(`vg_aes_expand_key`), enciphers a zero block at byte 240 of it in place,
+(`vg_aes_expand_key_scratch`), enciphers a zero block at byte 240 of it in place,
 for `L_*` (`vg_aes_encrypt_blocks`), and restores the registers
 (`init_wp`).
 -/
@@ -54,7 +54,7 @@ theorem pK : Covers [⟨K, L⟩] (s.rd ++ s.wr) := by rw [Ar.rd]; exact covers_o
 
 end IArgs
 
-/-- The registers saved and the arguments of `vg_aes_expand_key`. -/
+/-- The registers saved and the arguments of `vg_aes_expand_key_scratch`. -/
 theorem init1_ok {s : State} {K Ctx W : Addr} {L : Nat} (Ar : IArgs s K Ctx W L) (h0 : s.gpr .x0 = K)
     (h1 : s.gpr .x1 = BitVec.ofNat 64 L) (h2 : s.gpr .x2 = Ctx) (h3 : s.gpr .x3 = W) :
     WP isa (.block (save .x3 ++ [Impl.AesGcm.AArch64.mov .x19 .x3, Impl.AesGcm.AArch64.mov .x20 .x2,

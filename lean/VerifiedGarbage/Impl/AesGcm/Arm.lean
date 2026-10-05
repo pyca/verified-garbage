@@ -6,7 +6,7 @@ import VerifiedGarbage.Impl.Gcm.Arm
 # AES-GCM: 32-bit ARM implementation
 
 The AES-GCM functions of `Spec/Gcm/Contract.lean`, composed of calls of the
-verified `vg_aes_expand_key`, `vg_aes_ctr32` and `vg_ghash`.
+verified `vg_aes_expand_key_scratch`, `vg_aes_ctr32` and `vg_ghash`.
 
 `vg_aes_ctr32(schedule, rounds, counter, data, n, scratch)` takes `n` and
 `scratch` on the stack, and `vg_ghash(h, y, data, n, scratch)` takes
@@ -337,7 +337,7 @@ def initArgs : List Instr :=
 
 def init : Prog isa :=
   .seq (.block initPre)
-  (.seq (.call "vg_aes_expand_key" Impl.Aes.Arm.expandKey)
+  (.seq (.call "vg_aes_expand_key_scratch" Impl.Aes.Arm.expandKey)
   (.seq (.block initArgs) (.seq ctrFrame (.block restore))))
 
 /-- `vg_aes_gcm_stream_init(ctx = r0, nonce = r1, nonce_len = r2, state = r3, scratch = [sp])`. -/

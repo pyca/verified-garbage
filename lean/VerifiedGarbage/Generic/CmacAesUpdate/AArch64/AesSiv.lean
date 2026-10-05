@@ -1,5 +1,5 @@
 import VerifiedGarbage.TCB.AArch64.Target
-import VerifiedGarbage.Proof.AesSiv.AArch64.Verified
+import VerifiedGarbage.Proof.AesSiv.AArch64.Frame
 
 /-!
 # AES-SIV (RFC 5297) encryption and decryption on AArch64
@@ -11,8 +11,10 @@ AES that goes with it (`v.ctr`), are emitted once for each implementation
 of the update (`Variants/CmacAesUpdate/AArch64/`), named with its suffix
 (e.g. `vg_aes_siv_encrypt_aes_cbc`), and need its CPU features.
 
-The functions use no stack: their calls (`bl`) keep the return address in
-`x30`, which they save in the working space.
+Each function keeps its working space, 2576 bytes, in a frame of its own
+(`Proof/AesSiv/AArch64/Frame.lean`): its `stack` is that frame. Their calls
+(`bl`) keep the return address in `x30`, which they save in the working
+space.
 -/
 
 namespace VG.Generic.CmacAesUpdate.AArch64.AesSiv
@@ -30,9 +32,11 @@ def artifacts (v : Proof.CmacAes.AArch64.UpdateImpl) : List Artifact := [
     name := Spec.Siv.encryptApi.name ++ v.suffix
     target := AArch64.target
     doc := Spec.Siv.encryptApi.doc (notes := [cryptNote v])
-    code := Impl.AesSiv.AArch64.encrypt v.callee v.ctr.callee v.ctr.suffix
-    contract := Spec.Siv.encryptContract AArch64.abi
-    verified := encrypt_verified v
+    code := Impl.StackScratch.AArch64.withStackScratch 2576 .x7
+      (Impl.AesSiv.AArch64.encrypt v.callee v.ctr.callee v.ctr.suffix)
+    contract := Spec.Siv.encryptContract AArch64.abi 2576
+    stack := 2576
+    verified := encrypt_framed v
     spSafe := Code.all_of_forall (fun _ => rfl) _
     features := v.features },
   { Spec.Siv.decryptApi with
@@ -40,9 +44,11 @@ def artifacts (v : Proof.CmacAes.AArch64.UpdateImpl) : List Artifact := [
     target := AArch64.target
     doc := Spec.Siv.decryptApi.doc (notes := [cryptNote v,
       "It compares the IVs and overwrites the data with zeros without a branch on the result."])
-    code := Impl.AesSiv.AArch64.decrypt v.callee v.ctr.callee v.ctr.suffix
-    contract := Spec.Siv.decryptContract AArch64.abi
-    verified := decrypt_verified v
+    code := Impl.StackScratch.AArch64.withStackScratch 2576 .x7
+      (Impl.AesSiv.AArch64.decrypt v.callee v.ctr.callee v.ctr.suffix)
+    contract := Spec.Siv.decryptContract AArch64.abi 2576
+    stack := 2576
+    verified := decrypt_framed v
     spSafe := Code.all_of_forall (fun _ => rfl) _
     features := v.features }]
 

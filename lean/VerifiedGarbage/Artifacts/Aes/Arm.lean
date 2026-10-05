@@ -2,6 +2,7 @@ import VerifiedGarbage.TCB.Arm.Target
 import VerifiedGarbage.Proof.Aes.Arm.Ctr32
 import VerifiedGarbage.Proof.Aes.Arm.ExpandKey
 import VerifiedGarbage.Proof.Aes.Arm.Blocks
+import VerifiedGarbage.Proof.Aes.Arm.Frame
 
 /-! # AES on ARMv7 -/
 
@@ -12,9 +13,20 @@ def artifacts : List Artifact := [
     target := Arm.target
     doc := Spec.Aes.expandKeyApi.doc
       (notes := ["`SUBWORD` uses a constant-time bitsliced S-box, in the style of BearSSL's \
+        `aes_ct` (Thomas Pornin, MIT licence). The working space is in a frame of 512 bytes \
+        on the stack, zeroed before returning."])
+    code := Impl.StackScratch.Arm.withRegScratchWiped 512 .r3 128 Impl.Aes.Arm.expandKey
+    contract := Spec.Aes.expandKeyContract Arm.abi 512
+    stack := 512
+    verified := Proof.Aes.Arm.expandKey_framed
+    spSafe := Code.all_of_forall (fun _ => rfl) _ },
+  { Spec.Aes.expandKeyScratchApi with
+    target := Arm.target
+    doc := Spec.Aes.expandKeyScratchApi.doc
+      (notes := ["`SUBWORD` uses a constant-time bitsliced S-box, in the style of BearSSL's \
         `aes_ct` (Thomas Pornin, MIT licence)."])
     code := Impl.Aes.Arm.expandKey
-    contract := Spec.Aes.expandKeyContract Arm.abi
+    contract := Spec.Aes.expandKeyScratchContract Arm.abi
     verified := Proof.Aes.Arm.expandKey_verified
     spSafe := Code.all_of_forall (fun _ => rfl) _ },
   { Spec.Gcm.ctr32Api with

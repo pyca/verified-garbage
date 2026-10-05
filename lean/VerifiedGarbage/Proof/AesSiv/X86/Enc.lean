@@ -11,7 +11,8 @@ state (`start_ok`), absorbs the components of associated data
 (`s2vAds_ok`) and makes the data S2V's last string (`dataStr_ok`):
 `encS2v_ok`. `encrypt` then finishes S2V with the plaintext into the IV at
 `W` (`finish_ok`), sets the counter from it (`counter_ok`), encrypts the
-plaintext with CTR (`ctr_ok`) and restores the registers (`encrypt_wp`):
+plaintext with CTR (`ctr_ok`), copies the IV to `siv` (`sivOut_ok`) and
+restores the registers (`encrypt_wp`):
 `encryptWith` of the context's PRF and cipher (`Spec.Siv.encryptWith_eq`).
 -/
 
@@ -24,12 +25,13 @@ open VG.Spec.Aes (bytesAt)
 open VG.Proof.Aes.X86 (Ctr32Impl)
 open VG.Impl.AesGcm.X86 (at_ imm slot restore)
 open VG.Proof.AesGcm.X86 (w64 slotv argsR SavedAt savedR exit_ok readW_writeW_off covers_left covers_off ret_below
-  length_bytesAt CT)
+  length_bytesAt CT argA argA_sub argA_contains w64_add)
 
 /-- What `encrypt` and `decrypt` start from: the key context `C`, `R`
-rounds, the `N` descriptors at `A`, the `n` bytes of data at `D` and the
-working space `W`, the arguments on the stack at `SP`. -/
-structure EPre (C W SP A D : BitVec 32) (R N n : Nat) (s : State) : Prop where
+rounds, the `N` descriptors at `A`, the `n` bytes of data at `D`, `siv`
+(16 bytes at `T`, which they may at least read) and the working space `W`,
+the arguments on the stack at `SP`. -/
+structure EPre (C W SP A D T : BitVec 32) (R N n : Nat) (s : State) : Prop where
   ads : AdCtx s C W SP A R N
   data : Dat C W SP s D n
   perm : Perm C W s
@@ -40,13 +42,21 @@ structure EPre (C W SP A D : BitVec 32) (R N n : Nat) (s : State) : Prop where
   a3 : arg s 3 = BitVec.ofNat 32 N
   a4 : arg s 4 = D
   a5 : arg s 5 = BitVec.ofNat 32 n
-  a6 : arg s 6 = W
-  rA : Covers [argsR SP 7] (s.rd ++ s.wr)
-  aw : (argsR SP 7).Disjoint ⟨w64 W, 2576⟩
-  fa : SP.toNat + 4 + 4 * 7 ≤ 2 ^ 32
+  a6 : arg s 6 = T
+  a7 : arg s 7 = W
+  rA : Covers [argsR SP 8] (s.rd ++ s.wr)
+  aw : (argsR SP 8).Disjoint ⟨w64 W, 2576⟩
+  ad : (argsR SP 8).Disjoint ⟨w64 D, n⟩
+  as : (below SP 56).Disjoint (argsR SP 8)
+  fa : SP.toNat + 4 + 4 * 8 ≤ 2 ^ 32
   ret : (⟨w64 SP, 4⟩ : Region).Disjoint ⟨w64 W, 2576⟩
   retD : (⟨w64 SP, 4⟩ : Region).Disjoint ⟨w64 D, n⟩
+  retT : (⟨w64 SP, 4⟩ : Region).Disjoint ⟨w64 T, 16⟩
   n32 : n < 2 ^ 32
+  tfit : T.toNat + 16 ≤ 2 ^ 32
+  t_rd : Covers [⟨w64 T, 16⟩] (s.rd ++ s.wr)
+  t_w : (⟨w64 T, 16⟩ : Region).Disjoint ⟨w64 W, 2576⟩
+  t_stk : (below SP 56).Disjoint ⟨w64 T, 16⟩
 
 /-- The data as S2V's last string. -/
 theorem dataStr_ok {C W SP : BitVec 32} (L : Lay C W SP) {s : State} (E : Env C W SP s) {D : BitVec 32} {n : Nat}
@@ -99,7 +109,7 @@ structure S2vOut (C W SP A D : BitVec 32) (R N n : Nat) (s s' : State) : Prop wh
     Spec.Siv.s2vAcc (Spec.Siv.ctxMac s.mem (w64 C) R) (Spec.Siv.components 32 s.mem (w64 A) N)
 
 /-- The entry's memory, as `Kept` (the slots are the arguments). -/
-theorem kept_of_entered {C W SP A D : BitVec 32} {R N n : Nat} {s s₁ : State} (h : EPre C W SP A D R N n s)
+theorem kept_of_entered {C W SP A D T : BitVec 32} {R N n : Nat} {s s₁ : State} (h : EPre C W SP A D T R N n s)
     (en : Entered s W s₁) : Kept s C W SP R D n [] s₁ ∧ slotv s₁.mem W adsO = A ∧
       slotv s₁.mem W leftO = BitVec.ofNat 32 N := by
   have sl := en.slots
@@ -115,20 +125,20 @@ theorem kept_of_entered {C W SP A D : BitVec 32} {R N n : Nat} {s s₁ : State} 
               exact ⟨⟨w64 W + BitVec.ofNat 64 16, 2560⟩, by simp, Offset.sub _ (by decide) (by decide)⟩ },
     a₁.trans h.a2, l₁.trans h.a3⟩
 
-theorem entry_wp {C W SP A D : BitVec 32} {R N n : Nat} {s : State} (h : EPre C W SP A D R N n s) :
+theorem entry_wp {C W SP A D T : BitVec 32} {R N n : Nat} {s : State} (h : EPre C W SP A D T R N n s) :
     WP isa sivEntry s (Entered s W) := by
   have L := h.ads.lay
   have wW : Covers [⟨w64 W, 2560⟩] s.wr := fun a m ⟨r, hr, hc⟩ => by
     simp only [List.mem_singleton] at hr; subst hr
     exact h.perm.w a m ⟨_, List.mem_singleton_self _, by simp only [Region.Contains] at hc ⊢; omega⟩
-  have aw : (argsR (s.gpr .esp) 7).Disjoint ⟨w64 W, 2560⟩ := by
+  have aw : (argsR (s.gpr .esp) 8).Disjoint ⟨w64 W, 2560⟩ := by
     rw [h.sp]; exact h.aw.sub_right (Region.sub_prefix (by decide))
-  exact entry_ok (s := s) (W := W) h.a6 wW (by rw [h.sp]; exact h.rA) aw (by rw [h.sp]; exact h.fa)
+  exact entry_ok (s := s) (W := W) h.a7 wW (by rw [h.sp]; exact h.rA) aw (by rw [h.sp]; exact h.fa)
     (by have := L.fw; omega)
 
 /-- S2V's first state, after the entry. -/
-theorem start_wp (v : Ctr32Impl) {C W SP A D : BitVec 32} {R N n : Nat} {s s₁ : State}
-    (h : EPre C W SP A D R N n s) (en : Entered s W s₁) :
+theorem start_wp (v : Ctr32Impl) {C W SP A D T : BitVec 32} {R N n : Nat} {s s₁ : State}
+    (h : EPre C W SP A D T R N n s) (en : Entered s W s₁) :
     WP isa (start v.callee v.suffix) s₁ (AInv s C W SP A R N D n 0) := by
   have L := h.ads.lay
   obtain ⟨K₁, a₁, l₁⟩ := kept_of_entered h en
@@ -144,7 +154,7 @@ theorem start_wp (v : Ctr32Impl) {C W SP A D : BitVec 32} {R N n : Nat} {s s₁ 
     by rw [k₂ _ (by decide) (by decide), l₁, Nat.sub_zero], by rw [List.take_zero]; exact st₂⟩
 
 /-- The data as S2V's last string, after S2V of the associated data. -/
-theorem s2vEnd_ok {C W SP A D : BitVec 32} {R N n : Nat} {s s₃ : State} (h : EPre C W SP A D R N n s)
+theorem s2vEnd_ok {C W SP A D T : BitVec 32} {R N n : Nat} {s s₃ : State} (h : EPre C W SP A D T R N n s)
     (I : AInv s C W SP A R N D n N s₃) :
     ∃ s₄, runBlock isa [.mov .eax (slot dataO), .store (at_ .ebp strO) .eax, .mov .eax (slot lenO),
       .store (at_ .ebp slenO) .eax] s₃ = some s₄ ∧ S2vOut C W SP A D R N n s s₄ := by
@@ -155,8 +165,8 @@ theorem s2vEnd_ok {C W SP A D : BitVec 32} {R N n : Nat} {s s₃ : State} (h : E
     simp only [List.mem_singleton] at hr; subst hr; exact Lay.w_w (.inr (by decide)) (by decide) (by decide))
     (by decide), I.acc, components_take_all]
 
-theorem encS2v_ok (v : Ctr32Impl) {C W SP A D : BitVec 32} {R N n : Nat} {s : State}
-    (h : EPre C W SP A D R N n s) :
+theorem encS2v_ok (v : Ctr32Impl) {C W SP A D T : BitVec 32} {R N n : Nat} {s : State}
+    (h : EPre C W SP A D T R N n s) :
     WP isa (encS2v v.callee v.suffix) s (S2vOut C W SP A D R N n s) := by
   refine WP.seq (WP.mono (entry_wp h) fun s₁ en => ?_)
   refine WP.seq (WP.mono (start_wp v h en) fun s₂ I₀ => ?_)
@@ -216,13 +226,53 @@ theorem counter_wR {W SP : BitVec 32} {e : List Region} :
   simp only [List.mem_singleton] at hr; subst hr
   exact .inl ⟨wA W, by simp, Offset.sub _ (by decide) (by decide)⟩
 
-/-- `vg_aes_siv_encrypt`: the synthetic IV at `W` and the ciphertext in place. -/
-theorem encrypt_wp (v : Ctr32Impl) {C W SP A D : BitVec 32} {R N n : Nat} {s : State}
-    (h : EPre C W SP A D R N n s) :
+/-- `siv`'s address, the stack argument 6, as on entry, after code that wrote
+apart from the arguments. -/
+theorem Kept.arg6 {C W SP A D T : BitVec 32} {R N n : Nat} {s₀ s : State} (h : EPre C W SP A D T R N n s₀)
+    {ext : List Region} (K : Kept s₀ C W SP R D n ext s)
+    (he : ∀ r ∈ ext, (argsR SP 8).Disjoint r) :
+    s.mem.readW (argA SP 6) 32 = T ∧ InRegions (s.rd ++ s.wr) (argA SP 6) 4 := by
+  have hs6 := argA_sub (SP := SP) (n := 8) (i := 6) (by decide) h.fa
+  refine ⟨?_, by rw [K.rd, K.wr]; exact h.rA _ _ ⟨_, List.mem_singleton_self _, argA_contains (by decide) h.fa⟩⟩
+  rw [K.big.readW (r := ⟨argA SP 6, 4⟩) (Region.contains_self _ _) (fun r hr => by
+    simp only [List.cons_append, List.nil_append, List.mem_cons] at hr
+    rcases hr with rfl | rfl | hr
+    · exact (h.aw.sub_left hs6).sub_right (Lay.wSub (by decide))
+    · exact h.as.symm.sub_left hs6
+    · exact (he r hr).sub_left hs6) (by decide), ← h.a6, arg, argAddr, h.sp]
+
+/-- `sivOut`: the IV at `W` copied to `T`, the stack argument 6. -/
+theorem sivOut_ok {C W SP : BitVec 32} (L : Lay C W SP) {s : State} (E : Env C W SP s) {T : BitVec 32}
+    (hin : InRegions (s.rd ++ s.wr) (argA SP 6) 4) (hv : s.mem.readW (argA SP 6) 32 = T)
+    (tW : Covers [⟨w64 T, 16⟩] s.wr) (fT : T.toNat + 16 ≤ 2 ^ 32) :
+    WP isa sivOut s fun s' => bytesAt s'.mem (w64 T) 16 = bytesAt s.mem (w64 W + BitVec.ofNat 64 0) 16 ∧
+      Frame [⟨w64 T, 16⟩] s.mem s'.mem ∧ s'.gpr .ebp = W ∧ s'.gpr .esp = SP ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
+  have aT : ∀ {k}, k < 16 → w64 (T + BitVec.ofNat 32 k) = w64 T + BitVec.ofNat 64 k := fun hk => w64_add (by omega)
+  have tIn : ∀ {k}, k + 4 ≤ 16 → InRegions s.wr (w64 T + BitVec.ofNat 64 k) 4 := fun hk =>
+    Proof.AesGcm.X86.in_off tW hk (by decide)
+  have hs := Proof.AesGcm.X86.store4_eq s.mem T 0
+  simp only [Nat.reduceAdd] at hs
+  refine WP.seq (WP.of_runBlock ⟨_, by crun [E.ebp, E.esp, L.aW, E.perm.wR, hin, hv], ?_⟩)
+  refine WP.of_runBlock ⟨_, by crun [aT, tIn], ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · cmems [hs]
+    rw [show w64 T + 0#64 = w64 T from BitVec.add_zero _, Cmac.bytesAt_store4, Cmac.bytesAt_split4, Cmac.le4_readW,
+      Cmac.le4_readW, Cmac.le4_readW, Cmac.le4_readW, add_ofNat_assoc, add_ofNat_assoc, add_ofNat_assoc]
+  · cmems [hs]
+    rw [show w64 T + 0#64 = w64 T from BitVec.add_zero _]
+    exact Cmac.frame_store4 _ _ _ _ _
+  · cregs [E.ebp]
+  · cregs [E.esp]
+  · cmems []
+  · cmems []
+
+/-- `vg_aes_siv_encrypt`: the synthetic IV at `T` and the ciphertext in place. -/
+theorem encrypt_wp (v : Ctr32Impl) {C W SP A D T : BitVec 32} {R N n : Nat} {s : State}
+    (h : EPre C W SP A D T R N n s) (hTw : Covers [⟨w64 T, 16⟩] s.wr)
+    (hTd : (⟨w64 T, 16⟩ : Region).Disjoint ⟨w64 D, n⟩) :
     WP isa (encrypt v.callee v.suffix) s fun s' => abiPreserved s s' ∧
       Spec.Siv.encryptWith (Spec.Siv.ctxMac s.mem (w64 C) R) (Spec.Siv.ctxCiph s.mem (w64 C) R)
           (Spec.Siv.components 32 s.mem (w64 A) N) (bytesAt s.mem (w64 D) n) =
-        (bytesAt s'.mem (w64 W) 16, bytesAt s'.mem (w64 D) n) := by
+        (bytesAt s'.mem (w64 T) 16, bytesAt s'.mem (w64 D) n) := by
   have L := h.ads.lay
   have hR := h.ads.rounds
   have hRb := rounds_le hR
@@ -253,19 +303,47 @@ theorem encrypt_wp (v : Ctr32Impl) {C W SP A D : BitVec 32} {R N n : Nat} {s : S
       rcases hr with rfl | rfl
       · exact hW16
       · exact hDw) E₄ rd₄ wr₄ f₄ (ctrR_wR (by simp))
-  have hret : s₄.mem.readW (w64 (s.gpr .esp)) 32 = s.mem.readW (w64 (s.gpr .esp)) 32 := by
-    rw [h.sp]
-    exact K₄.big.readW (r := ⟨w64 SP, 4⟩) (Region.contains_self _ _) (fun r hr => by
+  -- The IV copied to `siv`.
+  have hs6 := argA_sub (SP := SP) (n := 8) (i := 6) (by decide) h.fa
+  have v6 : s₄.mem.readW (argA SP 6) 32 = T := by
+    rw [K₄.big.readW (r := ⟨argA SP 6, 4⟩) (Region.contains_self _ _) (fun r hr => by
       simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl
+      · exact (h.aw.sub_left hs6).sub_right (Lay.wSub (by decide))
+      · exact h.as.symm.sub_left hs6
+      · exact (h.aw.sub_left hs6).sub_right (Region.sub_prefix (by decide))
+      · exact h.ad.sub_left hs6) (by decide), ← h.a6, arg, argAddr, h.sp]
+  have i6 : InRegions (s₄.rd ++ s₄.wr) (argA SP 6) 4 := by
+    rw [K₄.rd, K₄.wr]; exact h.rA _ _ ⟨_, List.mem_singleton_self _, argA_contains (by decide) h.fa⟩
+  refine WP.seq (WP.mono (sivOut_ok L K₄.env i6 v6 (by rw [K₄.wr]; exact hTw) h.tfit)
+    fun s₅ ⟨iv₅, f₅, bp₅, sp₅, rd₅, wr₅⟩ => ?_)
+  have hTW : (⟨w64 T, 16⟩ : Region).Disjoint ⟨w64 W + BitVec.ofNat 64 128, 2448⟩ :=
+    h.t_w.sub_right (Lay.wSub (by decide))
+  have K₅ : Kept s C W SP R D n ([⟨w64 W, 16⟩, ⟨w64 D, n⟩] ++ [⟨w64 T, 16⟩]) s₅ := (K₄.widen _).step L
+    (fun r hr => by
+      simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl
+      · exact hW16
+      · exact hDw
+      · exact hTW) ⟨bp₅, sp₅, K₄.env.perm.of_eq rd₅ wr₅⟩ rd₅ wr₅ f₅ (fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr; exact .inr ⟨_, by simp, fun _ h => h⟩)
+  have hret : s₅.mem.readW (w64 (s.gpr .esp)) 32 = s.mem.readW (w64 (s.gpr .esp)) 32 := by
+    rw [h.sp]
+    exact K₅.big.readW (r := ⟨w64 SP, 4⟩) (Region.contains_self _ _) (fun r hr => by
+      simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl | rfl | rfl
       · exact h.ret.sub_right (Lay.wSub (by decide))
       · exact ret_below L.sp
       · exact h.ret.sub_right (Region.sub_prefix (by decide))
-      · exact h.retD) (by decide)
-  refine WP.mono (exit_ok K₄.env.ebp (by rw [K₄.env.esp, h.sp]) (covers_left (fun a m ⟨r, hr, hc⟩ => by
+      · exact h.retD
+      · exact h.retT) (by decide)
+  refine WP.mono (exit_ok K₅.env.ebp (by rw [K₅.env.esp, h.sp]) (covers_left (fun a m ⟨r, hr, hc⟩ => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact K₄.env.perm.w a m ⟨_, List.mem_singleton_self _, by simp only [Region.Contains] at hc ⊢; omega⟩))
-    (by have := L.fw; omega) K₄.saved hret) fun s₅ ⟨ab, m₅, _, _, _⟩ => ⟨ab, ?_⟩
+      exact K₅.env.perm.w a m ⟨_, List.mem_singleton_self _, by simp only [Region.Contains] at hc ⊢; omega⟩))
+    (by have := L.fw; omega) K₅.saved hret) fun s₆ ⟨ab, m₆, _, _, _⟩ => ⟨ab, ?_⟩
+  have pD : bytesAt s₅.mem (w64 D) n = bytesAt s₄.mem (w64 D) n :=
+    Proof.AesGcm.X86.bytesAt_frame f₅ (fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr; exact hTd.symm) (by have := h.data.buf.lt; omega)
   -- The values.
   have dW : ∀ r ∈ ctrR W SP D n, (⟨w64 W, 16⟩ : Region).Disjoint r := by
     intro r hr
@@ -296,6 +374,7 @@ theorem encrypt_wp (v : Ctr32Impl) {C W SP A D : BitVec 32} {R N n : Nat} {s : S
       simp only [List.mem_singleton] at hr; subst hr; exact dDW) (by have := h.data.buf.lt; omega)
   have o₂ := F.out
   rw [BitVec.add_zero] at o₂
-  rw [m₅, Spec.Siv.encryptWith_eq, Spec.Siv.sealWith, d₄, iv, o₂, mac₁, O.acc, p₁, ciph₃, p₃]
+  rw [m₆, iv₅, BitVec.add_zero, pD, Spec.Siv.encryptWith_eq, Spec.Siv.sealWith, d₄, iv, o₂, mac₁, O.acc, p₁,
+    ciph₃, p₃]
 
 end VG.Proof.AesSiv.X86

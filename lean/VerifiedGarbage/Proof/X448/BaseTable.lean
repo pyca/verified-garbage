@@ -79,10 +79,10 @@ private theorem checkTables_ok (b : Point) (c : EPoint dZ) (hb : Rep b c)
 private theorem tables_check : checkTables basePoint baseRows = true := by decide +kernel
 
 private theorem tables_length :
-    baseRows.length = 56 ∧ baseRows.all (fun row => row.length == 8) = true := by decide +kernel
+    baseRows.length = 57 ∧ baseRows.all (fun row => row.length == 8) = true := by decide +kernel
 
-/-- Entry `k ≤ 8` of table `j < 56` is `[k 256^j] B`, affine. -/
-theorem baseTable_ok (j k : Nat) (hj : j < 56) (hk : k < 9) :
+/-- Entry `k ≤ 8` of table `j < 57` is `[k 256^j] B`, affine. -/
+theorem baseTable_ok (j k : Nat) (hj : j < 57) (hk : k < 9) :
     Rep (basePt (baseTable j k)) ((k * 256 ^ j) • baseAff) := by
   cases k with
   | zero =>
@@ -112,6 +112,21 @@ theorem baseG_ok : Rep (basePt baseG) (baseGVal • baseAff) := by
   have hp := pointMul_rep baseGVal basePoint_rep
   have hc := baseG_check
   simp only [baseGCheck, Bool.and_eq_true, beq_iff_eq, bne_iff_ne, ne_eq] at hc
+  obtain ⟨⟨hx, hy⟩, _⟩ := hc
+  exact basePt_rep hp hx hy
+
+/-- The constant the digits of a comb of all 57 tables are offset by: `8 Σ_{j < 57} 256^j`. -/
+def baseGVal57 : Nat := 8 * ((256 ^ 57 - 1) / 255)
+
+private def baseG57Check (p : Point) : Bool :=
+  baseG57.1 * p.Z == p.X && baseG57.2 * p.Z == p.Y && p.Z != 0
+
+private theorem baseG57_check : baseG57Check (pointMul baseGVal57 basePoint) = true := by decide +kernel
+
+theorem baseG57_ok : Rep (basePt baseG57) (baseGVal57 • baseAff) := by
+  have hp := pointMul_rep baseGVal57 basePoint_rep
+  have hc := baseG57_check
+  simp only [baseG57Check, Bool.and_eq_true, beq_iff_eq, bne_iff_ne, ne_eq] at hc
   obtain ⟨⟨hx, hy⟩, _⟩ := hc
   exact basePt_rep hp hx hy
 

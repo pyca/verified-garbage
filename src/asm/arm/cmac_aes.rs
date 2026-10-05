@@ -313,7 +313,7 @@ pub(crate) unsafe extern "C" fn vg_cmac_aes_finalize(key: *const [u8; 272], roun
 ///
 /// Contract: `VG.Spec.Cmac.aesInitContract`. Constant time: only the pointers and `key_len` may affect timing, not the key.
 ///
-/// This implementation expands the key with `vg_aes_expand_key` and derives the subkeys with `vg_cmac_aes_subkeys`.
+/// This implementation expands the key with `vg_aes_expand_key_scratch` and derives the subkeys with `vg_cmac_aes_subkeys`.
 ///
 /// # Safety
 ///
@@ -338,7 +338,7 @@ pub(crate) unsafe extern "C" fn vg_cmac_aes_init(state: *mut [u64; 38], key: *co
         "mov r0, r1",
         "mov r1, r2",
         "mov r2, r4",
-        "bl {vg_aes_expand_key}",
+        "bl {vg_aes_expand_key_scratch}",
         "mov r0, r4",
         "mov r1, r6",
         "add r2, r4, #240",
@@ -355,7 +355,7 @@ pub(crate) unsafe extern "C" fn vg_cmac_aes_init(state: *mut [u64; 38], key: *co
         "ldr r5, [r5, #2180]",
         "add sp, sp, #2304",
         "bx lr",
-        vg_aes_expand_key = sym super::aes::vg_aes_expand_key,
+        vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch,
         vg_cmac_aes_subkeys = sym super::cmac_aes::vg_cmac_aes_subkeys,
     )
 }

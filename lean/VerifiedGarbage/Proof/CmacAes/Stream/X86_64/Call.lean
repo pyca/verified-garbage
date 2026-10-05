@@ -96,7 +96,7 @@ end
 /-!
 # Streaming AES-CMAC on x86-64: the calls
 
-A call of each function the streaming functions call (`vg_aes_expand_key`,
+A call of each function the streaming functions call (`vg_aes_expand_key_scratch`,
 `vg_cmac_aes_subkeys`, `vg_cmac_aes_update` and `vg_cmac_aes_finalize`, for
 any implementation of AES), from its contract (with `WP.call`): what it needs
 (`…Args`), what it leaves (`…Post`, in terms of the memory before the call),
@@ -424,9 +424,9 @@ theorem fin_rel (v : Ctr32Impl) (nm : String) {P : State → State → Prop}
     h₁.rdi, h₁.rsi, h₁.rdx, h₁.rcx, h₁.r8, h₁.r9, h₂.rdi, h₂.rsi, h₂.rdx, h₂.rcx, h₂.r8, h₂.r9, hsp]
   exact ⟨trivial, trivial, trivial, trivial, trivial, trivial, trivial⟩
 
-/-! ## `vg_aes_expand_key` -/
+/-! ## `vg_aes_expand_key_scratch` -/
 
-/-- What a call of `vg_aes_expand_key` needs: the key `Kp` of `KL` bytes,
+/-- What a call of `vg_aes_expand_key_scratch` needs: the key `Kp` of `KL` bytes,
 the schedule `W` and the working space `S`. -/
 structure EArgs (s : State) (Kp W S : Addr) (KL : Nat) : Prop where
   rdi : s.gpr .rdi = Kp
@@ -443,7 +443,7 @@ structure EArgs (s : State) (Kp W S : Addr) (KL : Nat) : Prop where
   reads : Covers ([⟨Kp, KL⟩] ++ [⟨W, 240⟩, ⟨S, 512⟩]) (s.rd ++ s.wr)
   writes : Covers [⟨W, 240⟩, ⟨S, 512⟩] s.wr
 
-/-- What a call of `vg_aes_expand_key` leaves. -/
+/-- What a call of `vg_aes_expand_key_scratch` leaves. -/
 structure EPost (s : State) (Kp W S : Addr) (KL : Nat) (s' : State) : Prop where
   rd : s'.rd = s.rd
   wr : s'.wr = s.wr

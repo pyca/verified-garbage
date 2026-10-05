@@ -6,7 +6,7 @@ import VerifiedGarbage.Proof.AesSiv.AArch64.Frame
 
 A generic file (see `TCB/Emit.lean`): `vg_aes_siv_init`, calling an
 implementation `v` of `vg_aes_ctr32` (through the CMAC subkeys made with it)
-and the implementation of `vg_aes_expand_key` that goes with it, is emitted
+and the implementation of `vg_aes_expand_key_scratch` that goes with it, is emitted
 once for each implementation (`Variants/AesCtr32/AArch64/`), named with its
 suffix (e.g. `vg_aes_siv_init_aes`), and needs its CPU features.
 `vg_aes_siv_encrypt` and `vg_aes_siv_decrypt`, which also call

@@ -923,9 +923,9 @@ theorem expandKey_ct : ConstantTime isa Proof.Aes.expandKeyX86_64.pre Proof.Aes.
   rcases hr with rfl | rfl | rfl | rfl <;> with_reducible assumption
 
 theorem expandKey_verified :
-    Verified X86_64.target Impl.Aes.X86_64.expandKey (Spec.Aes.expandKeyContract X86_64.abi) :=
+    Verified X86_64.target Impl.Aes.X86_64.expandKey (Spec.Aes.expandKeyScratchContract X86_64.abi) :=
   Verified.of_correct expandKey_correct expandKey_ct (by
-    sig_implies [Spec.Aes.expandKeyContract, Spec.Aes.expandKeySig, Proof.Aes.expandKeyX86_64,
+    sig_implies [Spec.Aes.expandKeyScratchContract, Spec.Aes.expandKeyScratchSig, Proof.Aes.expandKeyX86_64,
       X86_64.abi, X86_64.argRegs] [Proof.Aes.X86_64.ekSatState] using Proof.Aes.X86_64.ekSatState)
 
 end VG.Proof.Aes.X86_64

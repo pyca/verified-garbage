@@ -9,7 +9,7 @@ pub(crate) const VG_AES_OCB_INIT_AES_FEATURES: crate::cpu::Features = crate::cpu
 ///
 /// Contract: `VG.Spec.Ocb.initContract`. The key context is `VG.Spec.Ocb.KeyRepr`. Constant time: only the pointers and `key_len` may affect timing, not the key.
 ///
-/// This implementation expands the key with `vg_aes_expand_key_aes`, and enciphers `L_*` with `vg_aes_encrypt_blocks_aes`.
+/// This implementation expands the key with `vg_aes_expand_key_scratch_aes`, and enciphers `L_*` with `vg_aes_encrypt_blocks_aes`.
 ///
 /// # Safety
 ///
@@ -41,7 +41,7 @@ pub(crate) unsafe extern "C" fn vg_aes_ocb_init_aes(key: *const u8, key_len: usi
         "lsr x22, x1, #2",
         "add x22, x22, #6",
         "add x3, x19, #512",
-        "bl {vg_aes_expand_key_aes}",
+        "bl {vg_aes_expand_key_scratch_aes}",
         "movz x9, #0, lsl #0",
         "str x9, [x20, #240]",
         "str x9, [x20, #248]",
@@ -65,7 +65,7 @@ pub(crate) unsafe extern "C" fn vg_aes_ocb_init_aes(key: *const u8, key_len: usi
         "add sp, sp, #2560",
         "ret",
         ".arch_extension noaes",
-        vg_aes_expand_key_aes = sym super::aes::vg_aes_expand_key_aes,
+        vg_aes_expand_key_scratch_aes = sym super::aes::vg_aes_expand_key_scratch_aes,
         vg_aes_encrypt_blocks_aes = sym super::aes::vg_aes_encrypt_blocks_aes,
     )
 }
@@ -1498,7 +1498,7 @@ pub(crate) unsafe extern "C" fn vg_aes_ocb_open_aes(ctx: *const [u64; 32], round
 ///
 /// Contract: `VG.Spec.Ocb.initContract`. The key context is `VG.Spec.Ocb.KeyRepr`. Constant time: only the pointers and `key_len` may affect timing, not the key.
 ///
-/// This implementation expands the key with `vg_aes_expand_key`, and enciphers `L_*` with `vg_aes_encrypt_blocks`.
+/// This implementation expands the key with `vg_aes_expand_key_scratch`, and enciphers `L_*` with `vg_aes_encrypt_blocks`.
 ///
 /// # Safety
 ///
@@ -1528,7 +1528,7 @@ pub(crate) unsafe extern "C" fn vg_aes_ocb_init(key: *const u8, key_len: usize, 
         "lsr x22, x1, #2",
         "add x22, x22, #6",
         "add x3, x19, #512",
-        "bl {vg_aes_expand_key}",
+        "bl {vg_aes_expand_key_scratch}",
         "movz x9, #0, lsl #0",
         "str x9, [x20, #240]",
         "str x9, [x20, #248]",
@@ -1551,7 +1551,7 @@ pub(crate) unsafe extern "C" fn vg_aes_ocb_init(key: *const u8, key_len: usize, 
         "ldr x19, [x19, #160]",
         "add sp, sp, #2560",
         "ret",
-        vg_aes_expand_key = sym super::aes::vg_aes_expand_key,
+        vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch,
         vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks,
     )
 }

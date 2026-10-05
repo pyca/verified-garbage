@@ -282,7 +282,7 @@ def Selected (base : Addr) (j ao ae : Nat) (s t : State) : Prop :=
     word t.mem base (EY + 8 * w) = limb (Impl.X448.baseTable j ae).2 w) ∧
   VG.Proof.X448.AArch64.Outside base OX 512 s.mem t.mem ∧ Keeps [.x9, .x6, .x7, .x1, .x2] s t
 
-theorem dispatch_ok (s : State) {j k : Nat} (hj : j < 56) (hk : k < 56)
+theorem dispatch_ok (s : State) {j k : Nat} (hj : j < 57) (hk : k < 57)
     (hc : s.gpr .x19 = BitVec.ofNat 64 j) :
     WP isa (.block [.subImm .x .x9 .x19 k]) s fun t =>
       (t.gpr .x9 == 0) = decide (j = k) ∧ Keeps [.x9] s t ∧ t.mem = s.mem := by
@@ -296,16 +296,16 @@ theorem dispatch_ok (s : State) {j k : Nat} (hj : j < 56) (hk : k < 56)
     Option.some.injEq, exists_eq_left']
   exact ⟨True.intro, ⟨fun r hr => RegUpd.gpr_write_of_ne _ _ _ (by simpa using hr), rfl, rfl⟩, rfl⟩
 
-theorem selectFrom_ok (ks : List Nat) (hks : ∀ k ∈ ks, k < 56) {s : State} {base : Addr}
+theorem selectFrom_ok (ks : List Nat) (hks : ∀ k ∈ ks, k < 57) {s : State} {base : Addr}
     (hs : Scr s base) {ao ae : Nat} (hao : ao < 9) (hae : ae < 9) (hm : Masks ao ae s)
-    {j : Nat} (hj : j ∈ ks) (hj56 : j < 56) (hc : s.gpr .x19 = BitVec.ofNat 64 j) :
+    {j : Nat} (hj : j ∈ ks) (hj57 : j < 57) (hc : s.gpr .x19 = BitVec.ofNat 64 j) :
     WP isa (selectFrom ks) s (Selected base j ao ae s) := by
   induction ks generalizing s with
   | nil => exact absurd hj List.not_mem_nil
   | cons k ks ih =>
-    have hk : k < 56 := hks k (by simp)
+    have hk : k < 57 := hks k (by simp)
     rw [selectFrom]
-    refine WP.seq (WP.mono (dispatch_ok s hj56 hk hc) fun t ⟨tz, kt, mt⟩ => ?_)
+    refine WP.seq (WP.mono (dispatch_ok s hj57 hk hc) fun t ⟨tz, kt, mt⟩ => ?_)
     have ht : Scr t base := hs.of_keeps kt (by decide)
     have hm' : Masks ao ae t := hm.of_keeps kt
     refine WP.ite (decide (j = k)) (by simp only [eval, State.read, Size.bits, BitVec.setWidth_eq, tz])

@@ -9,7 +9,7 @@ and `vg_aes_ocb_open` with the same arguments (`Spec/Ocb/Contract.lean`),
 cdecl (every argument on the stack), with the working space (`scratch`,
 `work`) as a last argument, which a frame on the stack allocates
 (`Impl.StackScratch.X86.withStackScratch`), composed of calls of the
-verified `vg_aes_expand_key`, `vg_aes_encrypt_blocks` and
+verified `vg_aes_expand_key_scratch`, `vg_aes_encrypt_blocks` and
 `vg_aes_decrypt_blocks`, and generic over their implementations
 (`Callees`): each function is emitted once for each. The algorithm is
 x86-64's (`Impl/AesOcb/X86_64.lean`), on 32-bit words; the conventions are
@@ -58,7 +58,7 @@ data; `[512, 2560)`: the working space of the functions called.
 `esi` and `edi`. While on a string, its pointer is in `esi` and `i` in
 `edi`; counts are in `ebx` or in `W`. Everything else is reloaded from `W`.
 Each call pushes its arguments in a frame of its own: `vg_aes_*_blocks`
-five, `vg_aes_expand_key` four, with the return address 24 bytes of stack
+five, `vg_aes_expand_key_scratch` four, with the return address 24 bytes of stack
 at most. The callee's working space is passed in `ebp`, moved there before
 the frame and back after it.
 
