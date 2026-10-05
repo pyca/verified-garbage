@@ -29,6 +29,9 @@ theorem rd_write (sz : Size) (r : Reg) (v : BitVec sz.bits) : (s.write sz r v).r
 theorem wr_write (sz : Size) (r : Reg) (v : BitVec sz.bits) : (s.write sz r v).wr = s.wr := rfl
 theorem sp_write (sz : Size) (r : Reg) (v : BitVec sz.bits) : (s.write sz r v).sp = s.sp := rfl
 theorem c_write (sz : Size) (r : Reg) (v : BitVec sz.bits) : (s.write sz r v).c = s.c := rfl
+theorem nf_write (sz : Size) (r : Reg) (v : BitVec sz.bits) : (s.write sz r v).nf = s.nf := rfl
+theorem zf_write (sz : Size) (r : Reg) (v : BitVec sz.bits) : (s.write sz r v).zf = s.zf := rfl
+theorem vf_write (sz : Size) (r : Reg) (v : BitVec sz.bits) : (s.write sz r v).vf = s.vf := rfl
 
 theorem gpr_addWithCarry (sz : Size) (d : Reg) (a b : BitVec sz.bits) (c : Bool) (r : Reg) :
     (s.addWithCarry sz d a b c).gpr r =
