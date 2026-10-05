@@ -17,7 +17,7 @@ namespace VG.Proof.Ecdsa.Rfc6979.X86.Sha384
 open VG VG.X86
 
 theorem implies :
-    (rfcWide Spec.Ecdsa.Rfc6979.P256Sha384.inst).Implies
+    (rfcWide Spec.Ecdsa.Rfc6979.P256Sha384.inst 272).Implies
       (Spec.Ecdsa.Rfc6979.P256Sha384.inst.signContract X86.abi 272) := by
   have a0 : arg (satState 32 48) 0 = 0x1000 := by decide
   have a1 : arg (satState 32 48) 1 = 0x2000 := by decide
