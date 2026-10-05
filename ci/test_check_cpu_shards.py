@@ -40,7 +40,7 @@ def workflow_runs(chip):
 
 class SplitTests(unittest.TestCase):
     def shards(self, n, times=None, runs=RUNS):
-        return [cpu_shards.pick("icx", f"{i}/{n}", {"icx": times or {}}, runs)
+        return [cpu_shards.pick("icx", f"{i}/{n}", {"icx": {"no-avx512f": times or {}}}, runs)
                 for i in range(1, n + 1)]
 
     def test_every_line_runs_once(self):
@@ -73,7 +73,7 @@ class SplitTests(unittest.TestCase):
                          ["pclmulqdq", "aes,vaes", "aes,vpclmulqdq", "avx,avx2", "avx,bmi1", "-"])
 
     def test_other_cpus_times_are_not_used(self):
-        self.assertEqual(cpu_shards.pick("icx", "1/2", {"skx": {"pclmulqdq": 99}}, RUNS),
+        self.assertEqual(cpu_shards.pick("icx", "1/2", {"skx": {"no-avx512f": {"pclmulqdq": 99}}}, RUNS),
                          cpu_shards.pick("icx", "1/2", {}, RUNS))
 
     def test_cpu_key_ignores_empty_fields(self):
@@ -95,13 +95,44 @@ class SplitTests(unittest.TestCase):
         with tempfile.NamedTemporaryFile("w", delete=False) as f:
             f.write("-\t1.25 0.5\navx,avx2\t3 1\n\n")
         try:
-            a = cpu_shards.times("icx  ", Path(f.name).read_text())
+            a = cpu_shards.times("icx  ", "avx512f", Path(f.name).read_text())
         finally:
             os.unlink(f.name)
-        self.assertEqual(a, {"icx": {"-": 1.75, "avx,avx2": 4.0}})
-        b = {"icx": {"aes,vaes": 2.0}, "skx": {"-": 1.0}}
-        self.assertEqual(cpu_shards.merge([a, b]),
-                         {"icx": {"-": 1.75, "avx,avx2": 4.0, "aes,vaes": 2.0}, "skx": {"-": 1.0}})
+        self.assertEqual(a, {"icx": {"avx512f": {"-": 1.75, "avx,avx2": 4.0}}})
+        # Later parts win, line by line, within each class of host.
+        b = {"icx": {"avx512f": {"-": 2.0}, "no-avx512f": {"-": 9.0}}, "skx": {"no-avx512f": {"-": 1.0}}}
+        self.assertEqual(cpu_shards.merge([a, b]), {
+            "icx": {"avx512f": {"-": 2.0, "avx,avx2": 4.0}, "no-avx512f": {"-": 9.0}},
+            "skx": {"no-avx512f": {"-": 1.0}},
+        })
+        with self.assertRaisesRegex(SystemExit, "not one of"):
+            cpu_shards.times("icx", "fast", "")
+
+    def split_with(self, by_host):
+        return [cpu_shards.pick("icx", f"{i}/3", {"icx": by_host}, RUNS) for i in (1, 2, 3)]
+
+    def test_one_class_of_host_only(self):
+        # Shard 1 of main's run had AVX-512, so its RSA line ("-") measured
+        # five times faster; the slow hosts' times, which time every line,
+        # are the ones used, not a mix.
+        slow = {"-": 300, "avx,avx2": 301, "avx,bmi1": 303,
+                "aes,vaes": 5, "aes,vpclmulqdq": 18, "pclmulqdq": 12}
+        fast = {"-": 60, "aes,vaes": 4}
+        self.assertEqual(self.split_with({"no-avx512f": slow, "avx512f": fast}),
+                         self.split_with({"no-avx512f": slow}))
+        # A mix would have put every light line with "-".
+        mixed = dict(slow, **fast)
+        self.assertEqual(len(self.split_with({"no-avx512f": mixed})[2]), 4)
+
+    def test_the_class_timing_the_most_lines_without_a_complete_slow_one(self):
+        fast = {"-": 60, "avx,avx2": 61, "avx,bmi1": 62, "aes,vaes": 1, "aes,vpclmulqdq": 1}
+        slow = {"-": 300, "pclmulqdq": 30}
+        self.assertEqual(self.split_with({"no-avx512f": slow, "avx512f": fast}),
+                         self.split_with({"avx512f": fast}))
+        # The slow hosts' on a tie.
+        slow = {"-": 300, "avx,avx2": 1, "avx,bmi1": 1, "aes,vaes": 1, "aes,vpclmulqdq": 1}
+        self.assertEqual(self.split_with({"no-avx512f": slow, "avx512f": fast}),
+                         self.split_with({"no-avx512f": slow}))
 
     def test_icx_shards_each_get_an_rsa_line_before_any_time(self):
         runs = workflow_runs("icx")
@@ -144,8 +175,8 @@ class StepTests(unittest.TestCase):
             return result, calls, recorded
 
     def test_runs_its_lines_and_records_their_times(self):
-        times = json.dumps({"icx": {"-": 50, "avx,avx2": 40, "avx,bmi1": 30,
-                                    "aes,vaes": 1, "aes,vpclmulqdq": 1, "pclmulqdq": 1}})
+        times = json.dumps({"icx": {"no-avx512f": {"-": 50, "avx,avx2": 40, "avx,bmi1": 30,
+                                                   "aes,vaes": 1, "aes,vpclmulqdq": 1, "pclmulqdq": 1}}})
         result, calls, recorded = self.run_step("1/3", times)
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertEqual(calls[0], "VG_CPU_FEATURES=unset test --locked --features cpu-features-env --no-run")
@@ -153,7 +184,9 @@ class StepTests(unittest.TestCase):
         self.assertEqual(calls[1:], [
             "VG_CPU_FEATURES= test --locked --features cpu-features-env -- x25519 rsa cpu",
         ])
-        self.assertEqual(sorted(recorded["icx"]), ["-"])
+        (host,) = recorded["icx"]
+        self.assertIn(host, cpu_shards.HOSTS)
+        self.assertEqual(sorted(recorded["icx"][host]), ["-"])
         self.assertIn("s of CPU (user, system)", result.stdout)
 
     def test_a_failing_line_fails_the_step_after_the_others(self):
@@ -161,7 +194,8 @@ class StepTests(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("::error::Failed with VG_CPU_FEATURES=pclmulqdq: aes_gcm cpu", result.stdout)
         self.assertEqual(len(calls), 1 + 6)
-        self.assertEqual(len(recorded["icx"]), 6)
+        (lines,) = recorded["icx"].values()
+        self.assertEqual(len(lines), 6)
 
 
 if __name__ == "__main__":

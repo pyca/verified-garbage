@@ -449,8 +449,9 @@ jobs:
             awk '$4 == "FUNC" && $8 ~ /vg_/ { n++; if ($2 ~ /[02468aceACE]$/) { print "not Thumb: " $8; bad++ } }
                  END { print n " verified function symbols"; exit (n == 0 || bad > 0) }'
 
-  # The CPU time each line of `rust-cpu-features`' runs took in `main`'s
-  # last run, which its shards deal out their lines by (ci/cpu_shards.py):
+  # The latest CPU time of each line of `rust-cpu-features`' runs on `main`,
+  # per class of host, which its shards deal out their lines by
+  # (ci/cpu_shards.py):
   # restored once, so that every shard has the same; `{}` before `main` has
   # saved any.
   cpu-features-times:
@@ -486,7 +487,7 @@ jobs:
   # that no run repeats another's. A CPU whose lines take long is split into
   # shards: matrix entries with the same `runs` (a YAML alias of the first's)
   # and a `shard` of `i/n`, each a job that runs its share of the lines,
-  # dealt out by the CPU time each took in `main`'s last run
+  # dealt out by the CPU time each took on `main` on one class of host
   # (ci/cpu_shards.py, with the times `cpu-features-times` restores).
   rust-cpu-features:
     needs: cpu-features-times
@@ -714,7 +715,11 @@ jobs:
             printf '%s\t%s\n' "${keys[$i]}" "$(cat "$logs/$i.time")" >> "$logs/times"
             [ "$(cat "$logs/$i.status")" = 0 ] || failed+=("${names[$i]}")
           done
-          python3 ci/cpu_shards.py times "$CPU" "$logs/times" > "cpu-features-times-$JOB.json"
+          # SDE emulates AVX-512 several times slower without it: the times
+          # are kept per class of host (ci/cpu_shards.py).
+          host=no-avx512f
+          if grep -qw avx512f /proc/cpuinfo; then host=avx512f; fi
+          python3 ci/cpu_shards.py times "$CPU" "$host" "$logs/times" > "cpu-features-times-$JOB.json"
           for f in "${failed[@]}"; do echo "::error::Failed with $f"; done
           [ ${#failed[@]} -eq 0 ]
         env:
@@ -739,7 +744,9 @@ jobs:
           if-no-files-found: error
 
   # The CPU time of each line of `rust-cpu-features`' runs in this run of
-  # `main`, saved for the next runs' `cpu-features-times`.
+  # `main`, over those of earlier runs (so that each line keeps its latest
+  # time on each class of host, whichever its shard ran on this time),
+  # saved for the next runs' `cpu-features-times`.
   cpu-features-times-save:
     name: "Rust: save the times of the CPU feature runs"
     if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
@@ -749,14 +756,21 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+      - uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .cpu-features-times
+          key: cpu-features-times-${{ github.run_id }}
+          restore-keys: cpu-features-times-
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           pattern: cpu-features-times-*
           merge-multiple: true
           path: ${{ runner.temp }}/times
       - run: |
-          mkdir .cpu-features-times
-          python3 ci/cpu_shards.py merge "$RUNNER_TEMP"/times/*.json > .cpu-features-times/times.json
+          mkdir -p .cpu-features-times
+          [ -f .cpu-features-times/times.json ] || echo '{}' > .cpu-features-times/times.json
+          python3 ci/cpu_shards.py merge .cpu-features-times/times.json "$RUNNER_TEMP"/times/*.json > "$RUNNER_TEMP/merged.json"
+          mv "$RUNNER_TEMP/merged.json" .cpu-features-times/times.json
           cat .cpu-features-times/times.json
       - uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:

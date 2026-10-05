@@ -13,21 +13,35 @@ of the CPU's known lines, or 1 if none is known. Every shard computes the
 same split from the same times (which the plan job hands to all of them), so
 each line runs in exactly one.
 
+A runner's CPU decides how fast SDE emulates another: one without AVX-512
+emulates `-icx`'s AVX-512 instructions several times slower, and the shards
+of one run may land on different ones. So the times are kept per class of
+host (`HOSTS`), each line's latest in each, and a split uses one class's
+times only: the slow hosts', which are the runs worth balancing, if they
+time every line, or else the class that times the most lines (the slow
+hosts' on a tie).
+
   cpu_shards.py pick CPU SHARD TIMES  of the `runs` on stdin, the lines of
                                       SHARD (`i/n`, or empty for every
                                       line) of CPU, slowest first, as
                                       `<features>|<tests>`, by the times
                                       in the JSON TIMES (`{}` for none)
-  cpu_shards.py times CPU FILE        the times (seconds of CPU, `user sys`)
+  cpu_shards.py times CPU HOST FILE   the times (seconds of CPU, `user sys`)
                                       of FILE's lines (`<features>\t<user>
-                                      <sys>`) as JSON for CPU
-  cpu_shards.py merge FILE...         the times of FILEs (from `times`),
-                                      merged, as JSON
+                                      <sys>`), on a host of class HOST, as
+                                      JSON for CPU
+  cpu_shards.py merge FILE...         the times of FILEs (from `times`, or
+                                      earlier merges), merged, later files'
+                                      winning, as JSON
 """
 
 import json
 import statistics
 import sys
+
+# The classes of host, slowest first: whether its CPU has AVX-512
+# (`/proc/cpuinfo`'s `avx512f`).
+HOSTS = ["no-avx512f", "avx512f"]
 
 
 def cpu_key(cpu):
@@ -81,30 +95,44 @@ def split(lines, times, shards):
     return out
 
 
+def host_times(lines, by_host):
+    """Of `by_host` (a host class to features to seconds), the times of the
+    one class a split uses for `lines`."""
+    features = [f for f, _ in lines]
+    known = {h: sum(f in by_host.get(h, {}) for f in features) for h in HOSTS}
+    if known[HOSTS[0]] == len(features):
+        return by_host[HOSTS[0]]
+    # `max` keeps the first, the slowest, of the classes that time as many.
+    return by_host.get(max(HOSTS, key=lambda h: known[h]), {})
+
+
 def pick(cpu, shard, times, runs):
     lines = parse_runs(runs)
     i, n = parse_shard(shard)
     if n > len(lines):
         raise SystemExit(f"{n} shards for {len(lines)} lines: some would run nothing")
-    return split(lines, times.get(cpu_key(cpu), {}), n)[i - 1]
+    return split(lines, host_times(lines, times.get(cpu_key(cpu), {})), n)[i - 1]
 
 
-def times(cpu, text):
-    """`<features>\t<user> <sys>` lines as {cpu: {features: seconds}}."""
+def times(cpu, host, text):
+    """`<features>\t<user> <sys>` lines as {cpu: {host: {features: seconds}}}."""
+    if host not in HOSTS:
+        raise SystemExit(f"host {host}: not one of {', '.join(HOSTS)}")
     out = {}
     for raw in text.splitlines():
         if not raw.strip():
             continue
         features, _, cpu_time = raw.partition("\t")
         out[" ".join(features.split())] = round(sum(float(t) for t in cpu_time.split()), 2)
-    return {cpu_key(cpu): out}
+    return {cpu_key(cpu): {host: out}}
 
 
 def merge(parts):
     out = {}
     for part in parts:
-        for cpu, lines in part.items():
-            out.setdefault(cpu, {}).update(lines)
+        for cpu, hosts in part.items():
+            for host, lines in hosts.items():
+                out.setdefault(cpu, {}).setdefault(host, {}).update(lines)
     return out
 
 
@@ -112,9 +140,9 @@ def main(argv):
     if argv[:1] == ["pick"] and len(argv) == 4:
         for features, tests in pick(argv[1], argv[2], json.loads(argv[3] or "{}"), sys.stdin.read()):
             print(f"{features}|{tests}")
-    elif argv[:1] == ["times"] and len(argv) == 3:
-        with open(argv[2]) as f:
-            print(json.dumps(times(argv[1], f.read()), sort_keys=True))
+    elif argv[:1] == ["times"] and len(argv) == 4:
+        with open(argv[3]) as f:
+            print(json.dumps(times(argv[1], argv[2], f.read()), sort_keys=True))
     elif argv[:1] == ["merge"]:
         parts = []
         for path in argv[1:]:
