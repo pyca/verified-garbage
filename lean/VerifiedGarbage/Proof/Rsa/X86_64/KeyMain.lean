@@ -11,7 +11,7 @@ the workspace (`setupK_ok`), then each check, and'ed into `sMask`; it
 returns `keyValid` as 1 or 0 (`main_ok`).
 -/
 
-namespace VG.Proof.Rsa.X86_64
+namespace VG.Proof.Rsa.X86_64.Key
 
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Rsa.X86_64.CheckKey
 open VG.Proof.MlKem.X86_64 VG.Proof.Bignum.X86_64
@@ -237,4 +237,4 @@ theorem main_ok {s : State} {B : Addr} {Z k : Nat} {np pd pp pq pdp pdq pqi : Ad
     exact hw i (by omega) (by revert hi; revert i; decide)
   · rw [hm]; exact in₀.trans h₅.ins
 
-end VG.Proof.Rsa.X86_64
+end VG.Proof.Rsa.X86_64.Key

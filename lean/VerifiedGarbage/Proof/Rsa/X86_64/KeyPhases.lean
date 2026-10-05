@@ -8,7 +8,7 @@ In the checks' context (`KCtx`), each phase of `main` and'ed into `sMask`:
 `qInv q mod p = 1` (`qInv_ok`).
 -/
 
-namespace VG.Proof.Rsa.X86_64
+namespace VG.Proof.Rsa.X86_64.Key
 
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Rsa.X86_64.CheckKey
 open VG.Proof.MlKem.X86_64 VG.Proof.Bignum.X86_64
@@ -104,4 +104,4 @@ theorem qInv_ok (h : KCtx s t B Z w minv N) {b : Bool} (hm : word t.mem B (8 * s
 
 end
 
-end VG.Proof.Rsa.X86_64
+end VG.Proof.Rsa.X86_64.Key

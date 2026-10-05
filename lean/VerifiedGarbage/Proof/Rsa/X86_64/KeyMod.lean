@@ -9,7 +9,7 @@ and'ed with the masks of `dX < M`, `R₁ = 1` and `R₂ = 1`, for `M = X - 1`
 (when `M > 0`) (`modChecks_ok`).
 -/
 
-namespace VG.Proof.Rsa.X86_64
+namespace VG.Proof.Rsa.X86_64.Key
 
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Rsa.X86_64.CheckKey
 open VG.Proof.MlKem.X86_64 VG.Proof.Bignum.X86_64
@@ -83,4 +83,4 @@ theorem modChecks_ok {s t : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} {N 
     wv t₁₁.mem B (slot w aR) w, fun hx => by have := v₂ hx; omega, v₇, v₁₁, ?_⟩
   rw [m₁₂, Arrays.mask_eq a₁₁ hn hZ, Arrays.mask_eq a₁₀ hn hZ, Arrays.mask_eq a₉ hn hZ, m₈, mask_and']
 
-end VG.Proof.Rsa.X86_64
+end VG.Proof.Rsa.X86_64.Key

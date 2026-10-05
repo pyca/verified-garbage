@@ -11,7 +11,7 @@ the modulus' check from `n`'s pointer and length, the branch on its
 validity, and `main` (`keyCode_ct`).
 -/
 
-namespace VG.Proof.Rsa.X86_64
+namespace VG.Proof.Rsa.X86_64.Key
 
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Rsa.X86_64.CheckKey
 open VG.Proof.MlKem.X86_64 VG.Proof.Bignum.X86_64
@@ -155,4 +155,4 @@ theorem keyCode_constantTime : ConstantTime isa keyContract.pre keyContract.pub 
       congrArg BitVec.toNat (r .r9 (by decide)), a0.symm, congrArg BitVec.toNat a1.symm, a2.symm,
       congrArg BitVec.toNat a3.symm, a4.symm, a6.symm, a8.symm, hn.symm, he.symm, rfl⟩
 
-end VG.Proof.Rsa.X86_64
+end VG.Proof.Rsa.X86_64.Key

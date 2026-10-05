@@ -9,7 +9,7 @@ pin (`hdr_ct`), and `KK` after it from its correctness lemma (`loadK`,
 `ltK`, …).
 -/
 
-namespace VG.Proof.Rsa.X86_64
+namespace VG.Proof.Rsa.X86_64.Key
 
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Rsa.X86_64.CheckKey
 open VG.Proof.MlKem.X86_64 VG.Proof.Bignum.X86_64
@@ -218,4 +218,4 @@ theorem reduceXRK_ct : RelCT isa (Two KK) (seqs (reduce cntXR)) (Two KK) :=
     (fun _ _ h => let ⟨s₀, minv, N, c, hs⟩ := h; WP.mono (reduceXRK c) fun _ ⟨c', _, _⟩ => ⟨s₀, minv, N, c', hs⟩)
     (by taint_decide) (by taint_decide)
 
-end VG.Proof.Rsa.X86_64
+end VG.Proof.Rsa.X86_64.Key

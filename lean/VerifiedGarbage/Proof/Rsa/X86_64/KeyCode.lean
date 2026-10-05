@@ -12,7 +12,7 @@ as 1 or 0 (`keyCode_correct`), against `keyContract`, which states the
 shared contract's precondition on the registers and the stack.
 -/
 
-namespace VG.Proof.Rsa.X86_64
+namespace VG.Proof.Rsa.X86_64.Key
 
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Rsa.X86_64.CheckKey
 open VG.Proof.MlKem.X86_64 VG.Proof.Bignum.X86_64
@@ -412,4 +412,4 @@ theorem keyCode_correct (hmx : code.allInstrs (fun i => !loadsMxcsr i) = true) (
           ((h₄.inScr c).trans hin) ?_
       simp only [keyOf, Spec.Rsa.checkKey, bytesAt_length]
 
-end VG.Proof.Rsa.X86_64
+end VG.Proof.Rsa.X86_64.Key

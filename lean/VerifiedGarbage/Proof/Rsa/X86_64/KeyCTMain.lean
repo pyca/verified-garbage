@@ -7,7 +7,7 @@ The setup (`setupK_ct`), then each check from `KK` (`KeyCTPieces.lean`),
 then the result from `rdi` (`main_ct`).
 -/
 
-namespace VG.Proof.Rsa.X86_64
+namespace VG.Proof.Rsa.X86_64.Key
 
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Rsa.X86_64.CheckKey
 open VG.Proof.MlKem.X86_64 VG.Proof.Bignum.X86_64
@@ -93,4 +93,4 @@ theorem main_ct : RelCT isa (Two M0) main fun _ _ => True := by
     ?_)
   exact outK_ct
 
-end VG.Proof.Rsa.X86_64
+end VG.Proof.Rsa.X86_64.Key

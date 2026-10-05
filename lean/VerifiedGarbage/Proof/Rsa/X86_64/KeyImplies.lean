@@ -11,7 +11,7 @@ import VerifiedGarbage.Proof.Framework.Contract
 (`key_implies`).
 -/
 
-namespace VG.Proof.Rsa.X86_64
+namespace VG.Proof.Rsa.X86_64.Key
 
 open VG VG.X86_64 VG.Proof.Bignum.X86_64
 
@@ -56,4 +56,4 @@ theorem key_implies : keyContract.Implies (Spec.Rsa.checkKeyContract abi) where
     exact ⟨hdi, hsi, hdx, hcx, h8, h9, hsp⟩
   sat := by sig_implies_sat [Spec.Rsa.checkKeyContract, Spec.Rsa.checkKeySig, abi, argRegs, keyContract, stackArgs_twelve, List.append_eq] [keySatState, stackArg, stackArgAddr, Mem.readW, Mem.read] using keySatState
 
-end VG.Proof.Rsa.X86_64
+end VG.Proof.Rsa.X86_64.Key

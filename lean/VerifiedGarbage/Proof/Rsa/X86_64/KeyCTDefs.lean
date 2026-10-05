@@ -14,7 +14,7 @@ the taint analysis from `rdi`), then runs from the registers that
 correctness pins (`hdr_ct`).
 -/
 
-namespace VG.Proof.Rsa.X86_64
+namespace VG.Proof.Rsa.X86_64.Key
 
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Rsa.X86_64.CheckKey
 open VG.Proof.MlKem.X86_64 VG.Proof.Bignum.X86_64
@@ -154,4 +154,4 @@ theorem zeroArrK_ct {j : Nat} (hj : j < 8) (hjN : j ≠ aN) (hj1 : j ≠ aOne) {
   two_post (two_map (fun p : KPub => (⟨p.B, p.Z, p.w⟩ : Ws)) (fun _ _ h => h.goodW) (zeroArr_ct hj hT))
     fun _ _ h => zeroArrK_ok h hj hjN hj1
 
-end VG.Proof.Rsa.X86_64
+end VG.Proof.Rsa.X86_64.Key

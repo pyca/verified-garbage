@@ -10,7 +10,7 @@ the registers that correctness pins after the one before: `setup_nested`
 states them, piece by piece, and `setupK_ct` follows it.
 -/
 
-namespace VG.Proof.Rsa.X86_64
+namespace VG.Proof.Rsa.X86_64.Key
 
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Rsa.X86_64.CheckKey
 open VG.Proof.MlKem.X86_64 VG.Proof.Bignum.X86_64
@@ -181,4 +181,4 @@ theorem setupK_ct : RelCT isa (Two M0) (seqs [.block VG.Impl.Rsa.X86_64.head, lo
   · exact two_post (two_taint [.rdi] (pins_of (fun a _ => a.kp.B) fun _ _ h r hr => by
         simp only [List.mem_singleton] at hr; subst hr; exact h.1) (by taint_decide)) fun _ _ h => h.2
 
-end VG.Proof.Rsa.X86_64
+end VG.Proof.Rsa.X86_64.Key

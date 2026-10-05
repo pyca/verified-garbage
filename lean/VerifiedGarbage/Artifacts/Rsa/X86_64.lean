@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.Bignum.X86_64.CrtVerified
 import VerifiedGarbage.Proof.Bignum.X86_64.IfmaVerified
 import VerifiedGarbage.Proof.Rsa.X86_64.CvVerified
 import VerifiedGarbage.Proof.Rsa.X86_64.RpVerified
+import VerifiedGarbage.Proof.Rsa.X86_64.KeyVerified
 
 /-! # RSA (RFC 8017) on x86-64 -/
 
@@ -149,6 +150,20 @@ def artifacts : List Artifact := [
     contract := Spec.Rsa.recoverPrimesContract X86_64.abi
     verified := Proof.Rsa.X86_64.rp_verified _ (by decide +kernel)
     features := ["bmi2", "adx"]
+    spSafe := Code.all_of_allInstrs (by decide +kernel) },
+  { Spec.Rsa.checkKeyApi with
+    target := X86_64.target
+    doc := Spec.Rsa.checkKeyApi.doc
+      (notes := ["Baseline x86-64: `e` is checked as `vg_rsa_public_checked` checks it and `n` as \
+        `vg_rsa_public_precompute` checks it, which are the only branches on the key. Then every check \
+        of the private key is computed whatever its outcome and and'ed into a mask: the comparisons by \
+        a subtraction's borrow over `w` words, `p q = n` by a product of the two, and each remainder \
+        (`d e mod (p - 1)` and the others, `q qInv mod p`) by restoring division, a doubling modulo \
+        the divisor per bit of the product, `64 (w + 2)` or `64 (2 w + 2)` bits for `w`-word \
+        numbers, its subtraction selected under a mask."])
+    code := Impl.Rsa.X86_64.CheckKey.code
+    contract := Spec.Rsa.checkKeyContract X86_64.abi
+    verified := Proof.Rsa.X86_64.Key.key_verified (by decide +kernel)
     spSafe := Code.all_of_allInstrs (by decide +kernel) }]
 
 end VG.Artifacts.Rsa.X86_64

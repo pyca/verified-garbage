@@ -12,7 +12,7 @@ In the workspace at `B` (`Good`): `loadNum` loads a number (`loadNum_ok`),
 products the reductions start from (`mulE_ok`, `mulXR_ok`).
 -/
 
-namespace VG.Proof.Rsa.X86_64
+namespace VG.Proof.Rsa.X86_64.Key
 
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Rsa.X86_64.CheckKey
 open VG.Proof.MlKem.X86_64 VG.Proof.Bignum.X86_64
@@ -360,4 +360,4 @@ theorem loadNum_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hg : G
     rwa [show slot w j + 8 * ((bs.length + 7) / 8) + 8 * q = slot w j + 8 * ((bs.length + 7) / 8 + q) by omega]
   rw [hz, Nat.mul_zero, Nat.add_zero]
 
-end VG.Proof.Rsa.X86_64
+end VG.Proof.Rsa.X86_64.Key

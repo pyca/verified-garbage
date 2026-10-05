@@ -10,7 +10,7 @@ carry: the double into the accumulator (`w + 1` words), then `subMod` and
 `selectAcc`.
 -/
 
-namespace VG.Proof.Rsa.X86_64
+namespace VG.Proof.Rsa.X86_64.Key
 
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Rsa.X86_64.CheckKey
 open VG.Proof.MlKem.X86_64 VG.Proof.Bignum.X86_64
@@ -145,4 +145,4 @@ theorem dblIn_ok {s : State} {B : Addr} {Z w eo em eA eT : Nat} {c₀ : Bool} (h
       Frm.of_outside hot (by simp)
     exact (f3.trans f4).trans f5
 
-end VG.Proof.Rsa.X86_64
+end VG.Proof.Rsa.X86_64.Key
