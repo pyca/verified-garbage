@@ -15,6 +15,8 @@ set_option linter.unusedSimpArgs false
 
 namespace VG.Proof.AesGcmSiv.X86_64
 
+open VG.Proof.Aes.X86_64 (BlocksImpl)
+
 open VG VG.X86_64 VG.X86_64.RegUpd VG.Impl.AesGcmSiv.X86_64
 open VG.Impl.AesGcm.X86_64 (at_ imm ptr)
 open VG.Spec.Aes (bytesAt)
@@ -449,8 +451,9 @@ theorem ret_disj {K W SP D : Addr} {n : Nat} (L : Lay K W SP) (hW : (⟨SP, 8⟩
 theorem cryR_mut (W SP D : Addr) (n : Nat) : ∀ r ∈ cryR W SP D n, ∃ r' ∈ mutR W SP D n, Region.Sub r r' := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl
+  rcases hr with rfl | rfl | rfl | rfl | rfl
   · exact ⟨wA W, by simp, Offset.sub_base W (by decide)⟩
+  · exact ⟨wC W, by simp, Offset.sub W (by decide) (by decide)⟩
   · exact ⟨wC W, by simp, Offset.sub W (by decide) (by decide)⟩
   · exact ⟨_, by simp, fun _ h => h⟩
   · exact ⟨_, by simp, fun _ h => h⟩
@@ -498,7 +501,7 @@ theorem key_tagR {K W SP : Addr} (L : Lay K W SP) {o : Nat} (ho : o + 16 ≤ 248
   · exact (L.stk_w' (by decide)).symm
 
 /-- `vg_aes_gcm_siv_seal`, for its arguments. -/
-theorem seal_wp' (v : GcmImpl) (hpv : GcmSiv.Polyval.PolyvalEq) {s : State} {K W SP N A D T : Addr} {R al n : Nat}
+theorem seal_wp' (v : GcmImpl) (eb : Proof.Aes.X86_64.BlocksImpl) (hpv : GcmSiv.Polyval.PolyvalEq) {s : State} {K W SP N A D T : Addr} {R al n : Nat}
     (Ar : Args s K W SP N A D R al n) (Tb : TagBuf W SP D n T) (hTw : Covers [⟨T, 16⟩] s.wr)
     (hrT : (⟨SP, 8⟩ : Region).Disjoint ⟨T, 16⟩) (hsp : s.gpr .rsp = SP)
     (hn : s.mem.readW (SP + BitVec.ofNat 64 8) 64 = BitVec.ofNat 64 n)
@@ -506,7 +509,7 @@ theorem seal_wp' (v : GcmImpl) (hpv : GcmSiv.Polyval.PolyvalEq) {s : State} {K W
     (hW : s.mem.readW (SP + BitVec.ofNat 64 24) 64 = W)
     (hdi : s.gpr .rdi = K) (hsi : s.gpr .rsi = BitVec.ofNat 64 R) (hdx : s.gpr .rdx = N)
     (hcx : s.gpr .rcx = A) (hr8 : s.gpr .r8 = BitVec.ofNat 64 al) (hr9 : s.gpr .r9 = D) :
-    WP isa («seal» v.callees) s fun s' => gprPreserved s s' ∧
+    WP isa («seal» v.callees ⟨eb.enc.name, eb.enc.code⟩) s fun s' => gprPreserved s s' ∧
       Spec.GcmSiv.encryptWith (Spec.GcmSiv.ctxCiph s.mem K R) (Spec.GcmSiv.keyLen R) (bytesAt s.mem N 12)
         (bytesAt s.mem D n) (bytesAt s.mem A al) = (bytesAt s'.mem D n, bytesAt s'.mem T 16) := by
   have L := Ar.lay
@@ -539,7 +542,7 @@ theorem seal_wp' (v : GcmImpl) (hpv : GcmSiv.Polyval.PolyvalEq) {s : State} {K W
   have f₁₄ : Frame (mutW W SP) s₁.mem s₄.mem := (fK.trans f₃).trans f₄
   -- Counter mode.
   have bD₄ : Buf K W SP s₄ D n := bD₁.of_eq (by rw [Tg.rd, Po.rd, Ky.rd]) (by rw [Tg.wr, Po.wr, Ky.wr])
-  refine WP.seq (WP.mono (crypt_ok v L Ar.rounds Tg.env S₄ bD₄
+  refine WP.seq (WP.mono (crypt_ok v eb L Ar.rounds Tg.env S₄ bD₄
     (by rw [Tg.wr, Po.wr, Ky.wr, wr₁]; exact Ar.dw)) fun s₅ Cr => ?_)
   have f₁₅ : Frame (mutR W SP D n) s₁.mem s₅.mem := (f₁₄.sub (mutW_mut W SP D n)).trans (Cr.frame.sub (cryR_mut W SP D n))
   have fall : Frame (entryR W :: mutR W SP D n) s.mem s₅.mem :=
@@ -591,8 +594,9 @@ theorem seal_wp' (v : GcmImpl) (hpv : GcmSiv.Polyval.PolyvalEq) {s : State} {K W
     have d₄ : bytesAt s₄.mem D n = bytesAt s.mem D n := by rw [buf_mutW bD₁ f₁₄, hent Ar.data]
     have t₅ : bytesAt s₅.mem W 16 = bytesAt s₄.mem W 16 := Proof.AesGcm.X86_64.bytesAt_frame Cr.frame (fun q hq => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
-      rcases hq with rfl | rfl | rfl | rfl
+      rcases hq with rfl | rfl | rfl | rfl | rfl
       · simpa using L.w_w (a := 0) (n := 16) (d := 96) (k := 48) (.inl (by decide)) (by decide) (by decide)
+      · simpa using L.w_w (a := 0) (n := 16) (d := 488) (k := 1024) (.inl (by decide)) (by decide) (by decide)
       · simpa using L.w_w (a := 0) (n := 16) (d := 1768) (k := 2048) (.inl (by decide)) (by decide) (by decide)
       · exact (L.stk_w.sub_right (Region.sub_prefix (by decide))).symm
       · exact (Ar.data.w.sub_right (Region.sub_prefix (by decide))).symm) (by decide)
@@ -613,10 +617,10 @@ theorem seal_wp' (v : GcmImpl) (hpv : GcmSiv.Polyval.PolyvalEq) {s : State} {K W
     rfl
 
 /-- `vg_aes_gcm_siv_seal`. -/
-theorem seal_wp (v : GcmImpl) (hpv : GcmSiv.Polyval.PolyvalEq) {s : State} (h : sealPre s) :
-    WP isa («seal» v.callees) s fun s' => gprPreserved s s' ∧ sealX86_64.post s s' := by
+theorem seal_wp (v : GcmImpl) (eb : Proof.Aes.X86_64.BlocksImpl) (hpv : GcmSiv.Polyval.PolyvalEq) {s : State} (h : sealPre s) :
+    WP isa («seal» v.callees ⟨eb.enc.name, eb.enc.code⟩) s fun s' => gprPreserved s s' ∧ sealX86_64.post s s' := by
   obtain ⟨⟨Ar, Tb⟩, hTw, hrT⟩ := args_of_seal h
-  exact seal_wp' v hpv Ar Tb hTw hrT rfl (ofNat_toNat64 _).symm rfl rfl rfl (ofNat_toNat64 _).symm rfl rfl
+  exact seal_wp' v eb hpv Ar Tb hTw hrT rfl (ofNat_toNat64 _).symm rfl rfl rfl (ofNat_toNat64 _).symm rfl rfl
     (ofNat_toNat64 _).symm rfl
 
 end VG.Proof.AesGcmSiv.X86_64
@@ -652,8 +656,9 @@ theorem w0_cryR {K W SP D : Addr} {n : Nat} (L : Lay K W SP) (hD : (⟨D, n⟩ :
     ∀ r ∈ cryR W SP D n, (⟨W, 16⟩ : Region).Disjoint r := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl
+  rcases hr with rfl | rfl | rfl | rfl | rfl
   · simpa using L.w_w (a := 0) (n := 16) (d := 96) (k := 48) (.inl (by decide)) (by decide) (by decide)
+  · simpa using L.w_w (a := 0) (n := 16) (d := 488) (k := 1024) (.inl (by decide)) (by decide) (by decide)
   · simpa using L.w_w (a := 0) (n := 16) (d := 1768) (k := 2048) (.inl (by decide)) (by decide) (by decide)
   · exact (L.stk_w.sub_right (Region.sub_prefix (by decide))).symm
   · exact (hD.sub_right (Region.sub_prefix (by decide))).symm
@@ -679,7 +684,7 @@ theorem w0_tagR {K W SP : Addr} (L : Lay K W SP) : ∀ r ∈ tagR W SP 128, (⟨
   · exact (L.stk_w.sub_right (Region.sub_prefix (by decide))).symm
 
 /-- `vg_aes_gcm_siv_open`, for its arguments. -/
-theorem open_wp' (v : GcmImpl) (hpv : GcmSiv.Polyval.PolyvalEq) {s : State} {K W SP N A D T : Addr} {R al n : Nat}
+theorem open_wp' (v : GcmImpl) (eb : Proof.Aes.X86_64.BlocksImpl) (hpv : GcmSiv.Polyval.PolyvalEq) {s : State} {K W SP N A D T : Addr} {R al n : Nat}
     (Ar : Args s K W SP N A D R al n) (Tb : TagBuf W SP D n T) (hTr : Covers [⟨T, 16⟩] (s.rd ++ s.wr))
     (hsp : s.gpr .rsp = SP)
     (hn : s.mem.readW (SP + BitVec.ofNat 64 8) 64 = BitVec.ofNat 64 n)
@@ -687,7 +692,7 @@ theorem open_wp' (v : GcmImpl) (hpv : GcmSiv.Polyval.PolyvalEq) {s : State} {K W
     (hW : s.mem.readW (SP + BitVec.ofNat 64 24) 64 = W)
     (hdi : s.gpr .rdi = K) (hsi : s.gpr .rsi = BitVec.ofNat 64 R) (hdx : s.gpr .rdx = N)
     (hcx : s.gpr .rcx = A) (hr8 : s.gpr .r8 = BitVec.ofNat 64 al) (hr9 : s.gpr .r9 = D) :
-    WP isa («open» v.callees) s fun s' => gprPreserved s s' ∧
+    WP isa («open» v.callees ⟨eb.enc.name, eb.enc.code⟩) s fun s' => gprPreserved s s' ∧
       openPost (Spec.GcmSiv.decryptWith (Spec.GcmSiv.ctxCiph s.mem K R) (Spec.GcmSiv.keyLen R) (bytesAt s.mem N 12)
         (bytesAt s.mem D n) (bytesAt s.mem A al) (bytesAt s.mem T 16)) s' D n := by
   have L := Ar.lay
@@ -741,13 +746,14 @@ theorem open_wp' (v : GcmImpl) (hpv : GcmSiv.Polyval.PolyvalEq) {s : State} {K W
   have fK : Frame (mutW W SP) s₁.mem s₂.mem := Ky.frame.sub (keyR_mutW W SP)
   have S₂ := slots_mut L Ar.data.w (fK.sub (mutW_mut W SP D n)) S₁
   -- Counter mode from the received tag.
-  refine WP.seq (WP.mono (crypt_ok v L Ar.rounds Ky.env S₂ (bD₁.of_eq Ky.rd Ky.wr)
+  refine WP.seq (WP.mono (crypt_ok v eb L Ar.rounds Ky.env S₂ (bD₁.of_eq Ky.rd Ky.wr)
     (by rw [Ky.wr, wr₁]; exact Ar.dw)) fun s₃ Cr => ?_)
   have S₃ := S₂.of_frame Cr.frame (slots_cryR L Ar.data)
   have dK : ∀ {d k : Nat}, 16 ≤ d → d + k ≤ 96 → ∀ q ∈ cryR W SP D n, (⟨W + BitVec.ofNat 64 d, k⟩ : Region).Disjoint q :=
     fun h₁ h₂ q hq => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
-      rcases hq with rfl | rfl | rfl | rfl
+      rcases hq with rfl | rfl | rfl | rfl | rfl
+      · exact L.w_w (.inl (by omega)) (by omega) (by decide)
       · exact L.w_w (.inl (by omega)) (by omega) (by decide)
       · exact L.w_w (.inl (by omega)) (by omega) (by decide)
       · exact (L.stk_w' (by omega)).symm
@@ -763,7 +769,8 @@ theorem open_wp' (v : GcmImpl) (hpv : GcmSiv.Polyval.PolyvalEq) {s : State} {K W
       bytesAt s₃.mem P len = bytesAt s.mem P len := fun hP hPD => by
     rw [Proof.AesGcm.X86_64.bytesAt_frame Cr.frame (fun q hq => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
-        rcases hq with rfl | rfl | rfl | rfl
+        rcases hq with rfl | rfl | rfl | rfl | rfl
+        · exact hP.w.sub_right (Lay.wSub (by decide))
         · exact hP.w.sub_right (Lay.wSub (by decide))
         · exact hP.w.sub_right (Lay.wSub (by decide))
         · exact hP.stk.symm
@@ -907,10 +914,10 @@ theorem open_wp' (v : GcmImpl) (hpv : GcmSiv.Polyval.PolyvalEq) {s : State} {K W
       · rw [hm₉, hm₈, md]; simp only [hc, ↓reduceIte]
 
 /-- `vg_aes_gcm_siv_open`. -/
-theorem open_wp (v : GcmImpl) (hpv : GcmSiv.Polyval.PolyvalEq) {s : State} (h : openPre s) :
-    WP isa («open» v.callees) s fun s' => gprPreserved s s' ∧ openX86_64.post s s' := by
+theorem open_wp (v : GcmImpl) (eb : Proof.Aes.X86_64.BlocksImpl) (hpv : GcmSiv.Polyval.PolyvalEq) {s : State} (h : openPre s) :
+    WP isa («open» v.callees ⟨eb.enc.name, eb.enc.code⟩) s fun s' => gprPreserved s s' ∧ openX86_64.post s s' := by
   obtain ⟨⟨Ar, Tb⟩, hTr⟩ := args_of_open h
-  exact open_wp' v hpv Ar Tb hTr rfl (ofNat_toNat64 _).symm rfl rfl rfl (ofNat_toNat64 _).symm rfl rfl
+  exact open_wp' v eb hpv Ar Tb hTr rfl (ofNat_toNat64 _).symm rfl rfl rfl (ofNat_toNat64 _).symm rfl rfl
     (ofNat_toNat64 _).symm rfl
 
 end VG.Proof.AesGcmSiv.X86_64
