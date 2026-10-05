@@ -279,7 +279,7 @@ def modWord : Prog isa :=
 def modLoop : List (Prog isa) := [
   .block [.mov .r12 (.mem (hdr sW)), .mov .rsi (.mem (hdr (sArr aN))), .mov .rbx (.mem (hdr (sArr aX)))],
   copyWords,
-  .block [.mov .r8 (.mem (hdr (sArr aX))), .mov .rax (.mem (at0 .rbx)), .alu .and .rax (.imm (BitVec.ofInt 32 (-2))),
+  .block [.mov .r8 (.reg .rbx), .mov .rax (.mem (at0 .rbx)), .alu .and .rax (.imm (BitVec.ofInt 32 (-2))),
     .store (at0 .rbx) .rax, .mov .rbx (.mem (hdr kG)), .mov32 .rsi (.imm 0), .mov32 .r14 (.imm 0)],
   .loop (.seq modWord (.block [.alu .add .r14 (.imm 1), .alu .cmp .r14 (.reg .r12)])) .ne]
 

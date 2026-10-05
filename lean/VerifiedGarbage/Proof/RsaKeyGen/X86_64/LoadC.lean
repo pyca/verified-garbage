@@ -114,7 +114,47 @@ theorem loadCBits_ok {s : State} {B : Addr} {Z w k : Nat} (hs : Scr s B Z) (hdi 
       writeW_outside _ B _ (by omega) x (by have := hx (slot w aN, 8 * (w + 2)) (by simp); omega),
       writeW_outside _ B _ (by omega) x (by have := hx (slot w aN, 8 * (w + 2)) (by simp); omega)]
 
-/-- `loadC`: the candidate from the `out_len = k` octets `bs` at `rand`. -/
+/-- `loadC` but its last block: `w`, the bases, and the octets of `c`. -/
+theorem loadCFront_ok {s : State} {B : Addr} {Z k : Nat} {rp : Addr} {bs : List Byte} (hs : Scr s B Z)
+    (hdi : s.gpr .rdi = B) (hZ : slot (k / 8) 8 ≤ Z) (hk1 : 16 ≤ k) (hk : k < 2 ^ 31) (hk8 : k % 8 = 0)
+    (hK : word s.mem B (8 * kLen) = BitVec.ofNat 64 k) (hR : word s.mem B (8 * kRand) = rp)
+    (hsrc : Src s B Z rp bs) (hbl : bs.length = k) :
+    WP isa (.seq (.block ([.mov .rcx (.mem (hdr kLen)), .mov .r12 (.reg .rcx), .shift .shr .r12 3, .store (hdr sW) .r12] ++
+      setBases ++ [.mov .rsi (.mem (hdr kRand)), .mov .rbx (.mem (hdr (sArr aN)))])) loadBE) s fun t =>
+      wv t.mem B (slot (k / 8) aN) (k / 8) = Spec.Rsa.os2ip bs ∧ Scr t B Z ∧ t.gpr .rdi = B ∧
+      word t.mem B (8 * sW) = BitVec.ofNat 64 (k / 8) ∧ (∀ j < 8, word t.mem B (8 * sArr j) = off B (slot (k / 8) j)) ∧
+      (∀ i, 16 ≤ i → i < 32 → word t.mem B (8 * i) = word s.mem B (8 * i)) ∧
+      Frm B (loadCRanges (k / 8)) s.mem t.mem ∧ Keep [.rax, .rcx, .rdx, .rbx, .rsi, .rbp, .r12, .r14] s t := by
+  have hn := hs.nowrap
+  have hw8 : (k + 7) / 8 = k / 8 := by omega
+  have sN := Nat.le_trans (slot_le (w := k / 8) (show aN < 8 by decide)) hZ
+  have hsl : ∀ r ∈ loadCRanges (k / 8), r.1 + r.2 ≤ Z := by
+    have := hdr_lt_slot (k / 8) aN (show kUsed < 32 by decide)
+    have := hdr_lt_slot (k / 8) aN (show sW < 32 by decide)
+    simp only [loadCRanges, List.mem_cons, List.not_mem_nil, or_false]
+    rintro _ (rfl | rfl | rfl | rfl) <;> simp only [sArr, sW, kUsed, sFn] at * <;> omega
+  refine WP.seq (WP.mono (loadCHead_ok hs hdi hZ hk hK hR) fun t₁ ⟨hsi, hcx, hbx, hW₁, hb₁, hf₁, k₁⟩ => ?_)
+  have hs₁ := hs.congr k₁.2.2
+  have hf₁' : Frm B (loadCRanges (k / 8)) s.mem t₁.mem := hf₁.mono (by simp [loadCRanges])
+  refine WP.mono (loadArr_ok (j := aN) hs₁ (by decide) (by rw [hw8]; exact hZ) (hsrc.congrK (InScr.of_frm hf₁' hsl) k₁)
+    hbl (by omega) hk hsi hcx (by rw [hw8]; exact hbx)) fun t₂ ⟨hv₂, ha₂, k₂⟩ => ?_
+  rw [hw8] at hv₂ ha₂
+  have hf₂ : Frm B (loadCRanges (k / 8)) s.mem t₂.mem :=
+    hf₁'.trans (Frm.of_arrays ha₂ (fun _ hj => (List.mem_singleton.mp hj) ▸ by simp [loadCRanges]))
+  refine ⟨hv₂, hs₁.congr k₂.2.2, (k₂.gpr (by decide)).trans ((k₁.gpr (by decide)).trans hdi),
+    by rw [ha₂.hslot (by decide)]; exact hW₁, fun j hj => by rw [ha₂.hslot (by unfold sArr; omega)]; exact hb₁ j hj,
+    fun i h1 h2 => ?_, hf₂, (k₁.trans k₂).mono (by decide)⟩
+  by_cases h3 : i = kUsed
+  · subst h3; rw [ha₂.hslot (by decide)]
+    exact hf₁.word_eq (fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl <;> simp only [sW, sArr, kUsed, sFn] <;> omega) (by omega)
+  refine hf₂.word_eq (fun r hr => ?_) (by omega)
+  have := hdr_lt_slot (k / 8) aN (i := i) (by omega)
+  simp only [loadCRanges, List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl | rfl <;> simp only [sW, sArr, kUsed, sFn] at * <;> omega
+
+/-- `loadC`: `c` from the first `k` octets of `rand`. -/
 theorem loadC_ok {s : State} {B : Addr} {Z k : Nat} {rp : Addr} {bs : List Byte} (hs : Scr s B Z) (hdi : s.gpr .rdi = B)
     (hZ : slot (k / 8) 8 ≤ Z) (hk1 : 16 ≤ k) (hk : k < 2 ^ 31) (hk8 : k % 8 = 0)
     (hK : word s.mem B (8 * kLen) = BitVec.ofNat 64 k) (hR : word s.mem B (8 * kRand) = rp)
@@ -126,39 +166,16 @@ theorem loadC_ok {s : State} {B : Addr} {Z k : Nat} {rp : Addr} {bs : List Byte}
       Frm B (loadCRanges (k / 8)) s.mem t.mem ∧ t.gpr .rdi = B ∧ t.gpr .r12 = BitVec.ofNat 64 (k / 8) ∧
       Keep [.rax, .rcx, .rdx, .rbx, .rsi, .rbp, .r12, .r14] s t := by
   have hn := hs.nowrap
-  have hw8 : (k + 7) / 8 = k / 8 := by omega
   have sN := Nat.le_trans (slot_le (w := k / 8) (show aN < 8 by decide)) hZ
-  have hsl : ∀ r ∈ loadCRanges (k / 8), r.1 + r.2 ≤ Z := by
-    have := hdr_lt_slot (k / 8) aN (show kUsed < 32 by decide)
-    have := hdr_lt_slot (k / 8) aN (show sW < 32 by decide)
-    simp only [loadCRanges, List.mem_cons, List.not_mem_nil, or_false]
-    rintro _ (rfl | rfl | rfl | rfl) <;> simp only [sArr, sW, kUsed, sFn] at * <;> omega
   unfold loadC
   simp only [seqs]
-  refine WP.seq (WP.mono (loadCHead_ok hs hdi hZ hk hK hR) fun t₁ ⟨hsi, hcx, hbx, hW₁, hb₁, hf₁, k₁⟩ => ?_)
-  have hs₁ := hs.congr k₁.2.2
-  have hf₁' : Frm B (loadCRanges (k / 8)) s.mem t₁.mem := hf₁.mono (by simp [loadCRanges])
-  refine WP.seq (WP.mono (loadArr_ok (j := aN) hs₁ (by decide) (by rw [hw8]; exact hZ) (hsrc.congrK (InScr.of_frm hf₁' hsl) k₁)
-    hbl (by omega) hk hsi hcx (by rw [hw8]; exact hbx)) fun t₂ ⟨hv₂, ha₂, k₂⟩ => ?_)
-  rw [hw8] at hv₂ ha₂
-  have hs₂ := hs₁.congr k₂.2.2
-  have hf₂ : Frm B (loadCRanges (k / 8)) s.mem t₂.mem :=
-    hf₁'.trans (Frm.of_arrays ha₂ (fun _ hj => (List.mem_singleton.mp hj) ▸ by simp [loadCRanges]))
-  have hhd : ∀ i, 16 ≤ i → i < 32 → i ≠ kUsed → word t₂.mem B (8 * i) = word s.mem B (8 * i) := fun i h1 h2 h3 => by
-    refine hf₂.word_eq (fun r hr => ?_) (by omega)
-    have := hdr_lt_slot (k / 8) aN (i := i) (by omega)
-    simp only [loadCRanges, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl <;> simp only [sW, sArr, kUsed, sFn] at * <;> omega
-  have hdi₂ : t₂.gpr .rdi = B := (k₂.gpr (by decide)).trans ((k₁.gpr (by decide)).trans hdi)
-  have hW₂ : word t₂.mem B (8 * sW) = BitVec.ofNat 64 (k / 8) := by
-    rw [ha₂.hslot (by decide)]; exact hW₁
-  have hb₂ : ∀ j < 8, word t₂.mem B (8 * sArr j) = off B (slot (k / 8) j) := fun j hj => by
-    rw [ha₂.hslot (by unfold sArr; omega)]; exact hb₁ j hj
+  refine WP.assoc (WP.seq (WP.mono (loadCFront_ok hs hdi hZ hk1 hk hk8 hK hR hsrc hbl)
+    fun t₂ ⟨hv₂, hs₂, hdi₂, hW₂, hb₂, hhd, hf₂, k₂⟩ => ?_))
   refine WP.mono (loadCBits_ok (k := k) hs₂ hdi₂ hZ (by omega) (by omega) hW₂ (hb₂ aN (by decide))
-    (by rw [hhd kLen (by decide) (by decide) (by decide)]; exact hK)) fun t ⟨hc, hU, hf, h12, k₃⟩ => ?_
+    (by rw [hhd kLen (by decide) (by decide)]; exact hK)) fun t ⟨hc, hU, hf, h12, k₃⟩ => ?_
   have hw64 : 64 * (k / 8) = 8 * k := by omega
   refine ⟨by rw [hc, hv₂, hw64], hU, ?_, fun j hj => ?_, hf₂.trans (hf.mono (by simp [loadCRanges])),
-    (k₃.gpr (by decide)).trans hdi₂, h12, ((k₁.trans k₂).trans k₃).mono (by decide)⟩
+    (k₃.gpr (by decide)).trans hdi₂, h12, (k₂.trans k₃).mono (by decide)⟩
   · have h1 := hdr_lt_slot (k / 8) aN (show sW < 32 by decide)
     rw [hf.word_eq (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
