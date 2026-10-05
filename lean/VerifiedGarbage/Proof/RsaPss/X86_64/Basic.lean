@@ -404,4 +404,27 @@ theorem zx32 {n : Nat} (h : n < 2 ^ 32) : (BitVec.ofNat 32 n).setWidth 64 = BitV
   simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
   omega
 
+/-- A slot, read. -/
+theorem Rep.rd {m : Mem} {F S : Addr} {V : Nat → Byte} {W : Nat → BitVec 64} (R : Rep m F S V W) {d : Nat}
+    (k : Nat) (hd : d = 8 * k) (hk : k < nW) : m.readW (off F d) 64 = W k := by
+  subst hd; exact R.fr k hk
+
+/-- `Lay` after stores that keep the slot of `scratch`. -/
+theorem Lay.of_rep' {u u' : State} {F S : Addr} (L : Lay u F S) {V V' : Nat → Byte} {W W' : Nat → BitVec 64}
+    (R : Rep u.mem F S V W) (R' : Rep u'.mem F S V' W') (h21 : W' 21 = W 21) (hsp : u'.gpr .rsp = u.gpr .rsp)
+    (hwr : u'.wr = u.wr) : Lay u' F S :=
+  L.congr hsp hwr (by rw [slot_eq sScr 21 rfl, slot_eq sScr 21 rfl, R'.fr 21 (by decide), R.fr 21 (by decide), h21])
+
+theorem ofNat_beq_zero {x : Nat} (hx : x < 2 ^ 64) : (BitVec.ofNat 64 x == 0) = decide (x = 0) := by
+  rw [Bool.eq_iff_iff, beq_iff_eq, decide_eq_true_iff]
+  constructor
+  · intro h; have := congrArg BitVec.toNat h; simpa [Nat.mod_eq_of_lt hx] using this
+  · intro h; subst h; rfl
+
+theorem off_sub (p : Addr) {a b : Nat} (h : b ≤ a) : off p a - BitVec.ofNat 64 b = off p (a - b) := by
+  simp only [off]
+  rw [BitVec.sub_eq_iff_eq_add, BitVec.add_assoc, ← BitVec.ofNat_add, Nat.sub_add_cancel h]
+
+theorem off_sub1 (p : Addr) {a : Nat} (h : 1 ≤ a) : off p a - 1 = off p (a - 1) := off_sub p h
+
 end VG.Proof.RsaPss.X86_64

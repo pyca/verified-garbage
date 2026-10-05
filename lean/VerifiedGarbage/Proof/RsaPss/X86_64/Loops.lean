@@ -212,4 +212,45 @@ theorem xor_ok {u₀ : State} {F S : Addr} (L : Lay u₀ F S) {V : Nat → Byte}
     exact ⟨I.L.of_rep I.R R'' (by rw [k'.gpr (by decide), k.gpr (by decide)]) (k'.2.2.trans k.2.2),
       (I.keep.trans (k.trans k')).mono (by decide), h8'', R''⟩
 
+/-! ## Filling bytes with zeros -/
+
+structure FillI (u₀ : State) (F S : Addr) (V : Nat → Byte) (W : Nat → BitVec 64) (o j : Nat) (v : State) : Prop where
+  L : Lay v F S
+  keep : Keep [.r8] u₀ v
+  r8 : v.gpr .r8 = BitVec.ofNat 64 j
+  R : Rep v.mem F S (clrV V o j) W
+
+/-- `n` bytes from `scratch + o` (`rcx`) cleared, a byte at a time. -/
+theorem fill_ok {u₀ : State} {F S : Addr} (L : Lay u₀ F S) {V : Nat → Byte} {W : Nat → BitVec 64}
+    (R : Rep u₀.mem F S V W) {o n : Nat} {cnt : Src} (hs : StepOk cnt n u₀ [.r8]) (hn : 0 < n) (ho : o + n ≤ oRsa)
+    (hcx : u₀.gpr .rcx = off S o) (hax : u₀.gpr .rax = 0) (h8 : u₀.gpr .r8 = BitVec.ofNat 64 0) :
+    WP isa (byteLoop [.store8 (ix .rcx .r8) .rax] cnt) u₀ fun u' =>
+      Lay u' F S ∧ Keep [.r8] u₀ u' ∧ Rep u'.mem F S (clrV V o n) W := by
+  refine WP.mono (byteLoop_ok hn hs (FillI u₀ F S V W o) ?_ (u := u₀)
+    ⟨L, Keep.refl _ _, h8, (congrArg (fun V' => Rep u₀.mem F S V' W) (funext fun x => by
+      simp only [clrV]; rw [ifn (by omega)])).mpr R⟩) fun u' I => ⟨I.L, I.keep, I.R⟩
+  intro j hj v I
+  have hcv : v.gpr .rcx = off S o := (I.keep.gpr (by decide)).trans hcx
+  have hav : v.gpr .rax = 0 := (I.keep.gpr (by decide)).trans hax
+  have hea : off S o + BitVec.ofNat 64 j + BitVec.ofNat 64 0 = off S (o + j) := by
+    rw [show BitVec.ofNat 64 0 = 0#64 from rfl, BitVec.add_zero, off_plus]
+  refine WP.mono (WP.keep [] (Q := fun v' => v'.gpr .r8 = BitVec.ofNat 64 j ∧
+      v'.mem = v.mem.writeW (off S (o + j)) (0 : Byte)) ?_ rfl)
+    fun v' ⟨⟨h8', hm⟩, k⟩ => ⟨(I.keep.trans k).mono (by decide), h8', fun v'' k' hm' h8'' => ?_⟩
+  · xrun [ea_ix, hcv, hav, I.r8, hea, I.L.sst8 (d := o + j) (by omega)]
+    rfl
+  · have R' := I.R.wb I.L.geo (o := o + j) (by omega) (0 : Byte)
+    rw [← hm, ← hm'] at R'
+    have R'' : Rep v''.mem F S (clrV V o (j + 1)) W := by
+      refine (congrArg (fun V' => Rep v''.mem F S V' W) (funext fun x => ?_)).mp R'
+      simp only [upd, clrV]
+      by_cases hx : x = o + j
+      · subst hx; rw [ifp rfl, ifp (by omega)]
+      · rw [ifn hx]
+        by_cases h' : o ≤ x ∧ x < o + j
+        · rw [ifp h', ifp (by omega)]
+        · rw [ifn h', ifn (by omega)]
+    exact ⟨I.L.of_rep I.R R'' (by rw [k'.gpr (by decide), k.gpr (by decide)]) (k'.2.2.trans k.2.2),
+      (I.keep.trans (k.trans k')).mono (by decide), h8'', R''⟩
+
 end VG.Proof.RsaPss.X86_64
