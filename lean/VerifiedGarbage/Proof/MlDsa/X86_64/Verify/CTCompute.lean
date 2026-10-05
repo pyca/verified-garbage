@@ -86,24 +86,24 @@ variable {P : Prims} (C : PrimsOk P) {p : Params} (hp : p ∈ params) {r : Nat} 
 include C hp hr
 
 theorem dot_tr : RelCT isa (RV p (IR p r)) (dot P p r)
-    (RV p (IRX p r fun _ A' _ σ s₀ s => DI p σ A' r p.ℓ s₀ s)) := by
+    (RV p (IRX p r fun _ A' _ σ s₀ s => DI P.montgomery p σ A' r p.ℓ s₀ s)) := by
   have R := rowC hp hr
   obtain ⟨_, _, hZ, hA⟩ := keepC_spec R.keep
   have hT : ∀ σ s, IR p r σ s → T p σ s := fun _ _ ⟨_, _, _, _, hs⟩ => hs.t
   unfold dot
-  refine RelCT.seq (relInv (I' := IRX p r fun _ A' _ σ s₀ s => DI p σ A' r 1 s₀ s)
+  refine RelCT.seq (relInv (I' := IRX p r fun _ A' _ σ s₀ s => DI P.montgomery p σ A' r 1 s₀ s)
     (fun σ s hv ⟨h, A', q, cH, hs⟩ => WP.mono (dotFirst_ok C hp hv hr hs) fun _ h' => ⟨h, A', q, cH, s, hs, h'⟩)
     (mulAt_tr C.mul (layOk p hp) (R.mul 0 R.l1) fun x y hxy => ?_)) ?_
   · have L := RV.lrel hp hT hxy
     obtain ⟨_, _, _, _, _, ⟨_, _, _, _, hx⟩, ⟨_, _, _, _, hy⟩⟩ := hxy
     exact ⟨L.1, L.2.1, ⟨(hx.a r hr 0 R.l1).1, (hx.zHat R.l1).1⟩, ⟨(hy.a r hr 0 R.l1).1, (hy.zHat R.l1).1⟩, L.2.2⟩
-  have hs := seqR_tr (R := fun j => RV p (IRX p r fun _ A' _ σ s₀ s => DI p σ A' r j s₀ s)) (p.ℓ - 1) 1
+  have hs := seqR_tr (R := fun j => RV p (IRX p r fun _ A' _ σ s₀ s => DI P.montgomery p σ A' r j s₀ s)) (p.ℓ - 1) 1
     fun k hk hk' => IRX.step (fun h A' q cH σ s₀ s hv hs hd => dotStep_ok C hp hv hr hs (by omega) hd)
       (mulAddAt_tr C.mulAdd (layOk p hp) (R.mul k (by omega)) fun x y hxy => ?_)
   · rwa [show 1 + (p.ℓ - 1) = p.ℓ by have := R.l1; omega] at hs
   · have L := IRX.lrel hp (fun _ _ _ _ _ _ hd => ⟨_, hd.1⟩) hxy
     have hz : k ≠ 100 := by have := kl_le p hp; omega
-    have red : ∀ {σ s}, VPre p σ → IRX p r (fun _ A' _ σ s₀ s => DI p σ A' r k s₀ s) σ s →
+    have red : ∀ {σ s}, VPre p σ → IRX p r (fun _ A' _ σ s₀ s => DI P.montgomery p σ A' r k s₀ s) σ s →
         Reduced s.mem (pa s pW) ∧ Reduced s.mem (pa s (pA p.ℓ r k)) ∧ Reduced s.mem (pa s (pZ k)) :=
       fun hv ⟨_, _, _, _, s₀, hs, hP, _, hW⟩ => by
         have L₀ := hs.t.lay hp hv
@@ -123,32 +123,32 @@ theorem RF7.bound {σ : State} {h : List (Vector Bool n)} {A' : Nat → Nat → 
   rw [this, R.max]
   exact useHint_le R.g2 _ _
 
-theorem rowRest_tr : RelCT isa (RV p (IRX p r fun _ A' _ σ s₀ s => RF1 p σ A' r s₀ s))
+theorem rowRest_tr : RelCT isa (RV p (IRX p r fun _ A' _ σ s₀ s => RF1 P.montgomery p σ A' r s₀ s))
     (.seq (unpackT1At P (.rbp, 32 + 320 * r) pT) (.seq (nttAt P pT) (.seq (mulAt P pT2 pC pT)
       (.seq (subAt P pW pT2) (.seq (invNttAt P pW) (.seq (useHintAt P (pH r) pW p.γ₂ pW1)
         (sbpAt P pW1 (w1Max p) (sc (oB + w1Len p * r)) (w1Len p))))))))
     fun _ _ => True := by
   have R := rowC hp hr
   have hS := layOk p hp
-  refine RelCT.seq (IRX.step (F' := fun _ A' _ σ s₀ s => RF2 p σ A' r s₀ s)
+  refine RelCT.seq (IRX.step (F' := fun _ A' _ σ s₀ s => RF2 P.montgomery p σ A' r s₀ s)
     (fun h A' q cH σ s₀ s hv hs hf => row1_ok C hp hv hr hs hf)
     (unpackT1At_tr C.unpackT1 hS R.t1 fun x y hxy => IRX.lrel hp (fun _ _ _ _ _ _ hf => ⟨_, hf.1.1⟩) hxy)) ?_
-  refine RelCT.seq (IRX.step (F' := fun _ A' _ σ s₀ s => RF3 p σ A' r s₀ s)
+  refine RelCT.seq (IRX.step (F' := fun _ A' _ σ s₀ s => RF3 P.montgomery p σ A' r s₀ s)
     (fun h A' q cH σ s₀ s hv hs hf => row2_ok C hp hv hr hs hf)
     (ipAt_tr C.ntt hS R.ipT fun x y hxy => ?_)) ?_
   · have L := IRX.lrel hp (fun _ _ _ _ _ _ hf => ⟨_, hf.1.1.1⟩) hxy
     obtain ⟨_, _, _, _, _, ⟨_, _, _, _, _, _, hx⟩, ⟨_, _, _, _, _, _, hy⟩⟩ := hxy
     exact ⟨L.1, L.2.1, hx.2.1, hy.2.1, L.2.2⟩
-  refine RelCT.seq (IRX.step (F' := fun _ A' cH σ s₀ s => RF4 p σ A' cH r s₀ s)
+  refine RelCT.seq (IRX.step (F' := fun _ A' cH σ s₀ s => RF4 P.montgomery p σ A' cH r s₀ s)
     (fun h A' q cH σ s₀ s hv hs hf => row3_ok C hp hv hr hs hf)
     (mulAt_tr C.mul hS R.mulT fun x y hxy => ?_)) ?_
   · have L := IRX.lrel hp (fun _ _ _ _ _ _ hf => ⟨_, hf.1.1.1⟩) hxy
-    have red : ∀ {σ s}, VPre p σ → IRX p r (fun _ A' _ σ s₀ s => RF3 p σ A' r s₀ s) σ s →
+    have red : ∀ {σ s}, VPre p σ → IRX p r (fun _ A' _ σ s₀ s => RF3 P.montgomery p σ A' r s₀ s) σ s →
         Reduced s.mem (pa s pC) ∧ Reduced s.mem (pa s pT) := fun hv ⟨_, _, _, _, _, hs, hf⟩ =>
       ⟨(hs.t.lay hp hv).keepRed hf.1.1.1 R.keepC' hs.c.1, hf.2.1⟩
     obtain ⟨_, _, v₁, v₂, _, i₁, i₂⟩ := hxy
     exact ⟨L.1, L.2.1, red v₁ i₁, red v₂ i₂, L.2.2⟩
-  refine RelCT.seq (IRX.step (F' := fun _ A' cH σ s₀ s => RF5 p σ A' cH r s₀ s)
+  refine RelCT.seq (IRX.step (F' := fun _ A' cH σ s₀ s => RF5 P.montgomery p σ A' cH r s₀ s)
     (fun h A' q cH σ s₀ s hv hs hf => row4_ok C hp hv hr hs hf)
     (subAt_tr C.sub hS R.sub fun x y hxy => ?_)) ?_
   · have L := IRX.lrel hp (fun _ _ _ _ _ _ hf => ⟨_, hf.1.1.1⟩) hxy

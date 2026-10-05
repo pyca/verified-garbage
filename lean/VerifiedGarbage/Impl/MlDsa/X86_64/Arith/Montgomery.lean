@@ -1,4 +1,4 @@
-import VerifiedGarbage.Impl.MlDsa.X86_64.Arith.Avx2
+import VerifiedGarbage.Impl.MlDsa.X86_64.Arith.Lazy
 
 /-! # Montgomery-scaled AVX2 products for ML-DSA -/
 
@@ -28,5 +28,14 @@ def montNttInvAvx2 : Prog isa := VG.Impl.MlKem.X86_64.withMxcsr .rsi 768 <|
       (.seq (ylay vibfly 32 7 (-4)) (.seq (ylay vibfly 64 3 (-4)) (.seq (ylay vibfly 128 1 (-4))
         (.seq montScale (.block yepi))))))))))
 
+
+/-- AVX2 arithmetic with lazy forward NTT, scaled products and a compensating inverse NTT. -/
+def Backend.avx2Combined : Backend :=
+  { Backend.avx2 with
+    ntt := lazyNtt
+    invNtt := montNttInvAvx2
+    mul := montMulAvx2
+    mulAdd := montMulAddAvx2
+    montgomery := true }
 
 end VG.Impl.MlDsa.X86_64.Arith

@@ -11,6 +11,8 @@ Row `i` of `t`: the sum of the products `Â[i, j] ŝ₁[j]` in `t` (`mul_ok`,
 
 namespace VG.Proof.MlDsa.X86_64.KeyGen
 
+open VG.Proof.MlDsa.Arith.Representation
+
 open VG VG.X86_64 VG.Proof.MlKem.X86_64
 open VG.Impl.MlKem.X86_64 (Ptr sc seqR)
 open VG.Impl.MlDsa.X86_64.KeyGen
@@ -108,8 +110,8 @@ include hP hF hp hi
 
 /-- `t = Â[i, 0] ŝ₁[0]`. -/
 theorem mul_ok {A : Nat → Poly} {S : Nat → IPoly} {R : BitVec 64} {s : State} (h : KR p σ A S R (p.ℓ + p.k) p.ℓ i s) :
-    WP isa (mulAt P.sfx P.mul (tP p) (aP (p.ℓ * i)) (sP p 0)) s fun s' =>
-      KR p σ A S R (p.ℓ + p.k) p.ℓ i s' ∧ tIs p (fun A S => dotK p A S i 1) A S s' := by
+    WP isa (mulAt (mont := P.montgomery) P.sfx P.mul (tP p) (aP (p.ℓ * i)) (sP p 0)) s fun s' =>
+      KR p σ A S R (p.ℓ + p.k) p.ℓ i s' ∧ tIs p (fun A S => encode P.montgomery (dotK p A S i 1)) A S s' := by
   have hkl := hF.kl; have hl := hF.l; have hk := hF.k
   have hx0 := idx_lt (j := 0) hi (by omega)
   rw [Nat.add_zero] at hx0
@@ -126,9 +128,9 @@ theorem mul_ok {A : Nat → Poly} {S : Nat → IPoly} {R : BitVec 64} {s : State
 
 /-- `t = t + Â[i, j] ŝ₁[j]`. -/
 theorem mulAdd_ok {j : Nat} (hj : j < p.ℓ) {A : Nat → Poly} {S : Nat → IPoly} {R : BitVec 64} {s : State}
-    (h : KR p σ A S R (p.ℓ + p.k) p.ℓ i s) (ht : tIs p (fun A S => dotK p A S i j) A S s) :
-    WP isa (mulAddAt P.sfx P.mulAdd (tP p) (aP (p.ℓ * i + j)) (sP p j)) s fun s' =>
-      KR p σ A S R (p.ℓ + p.k) p.ℓ i s' ∧ tIs p (fun A S => dotK p A S i (j + 1)) A S s' := by
+    (h : KR p σ A S R (p.ℓ + p.k) p.ℓ i s) (ht : tIs p (fun A S => encode P.montgomery (dotK p A S i j)) A S s) :
+    WP isa (mulAddAt (mont := P.montgomery) P.sfx P.mulAdd (tP p) (aP (p.ℓ * i + j)) (sP p j)) s fun s' =>
+      KR p σ A S R (p.ℓ + p.k) p.ℓ i s' ∧ tIs p (fun A S => encode P.montgomery (dotK p A S i (j + 1))) A S s' := by
   have hkl := hF.kl; have hl := hF.l; have hk := hF.k
   dsimp only [tIs] at ht
   have hx0 := idx_lt hi hj
@@ -139,23 +141,24 @@ theorem mulAdd_ok {j : Nat} (hj : j < p.ℓ) {A : Nat → Poly} {S : Nat → IPo
     (by lay) (by lay) (by lay) hP.mulAdd S₀ ht.1 hA.1 hS.1) fun s' ⟨hP', hx, hb⟩ => ?_
   have hP'' : PPostB s s' [(tP p, 1024)] := hP'.b
   refine ⟨h.keep hF hp hP'' hx (hP'.cs .r15 (by decide)) (chk_t hF hi), ?_⟩
-  rw [tIs, hP''.pa (p := tP p) rbx_bases, Proof.MlDsa.KeyGen.dotK_succ, ← hA.2, ← hS.2, ← ht.2]
+  rw [tIs, hP''.pa (p := tP p) rbx_bases, Proof.MlDsa.KeyGen.dotK_succ, encode_add, ← hA.2, ← hS.2, ← ht.2]
   exact hb
 
 /-- `t = NTT⁻¹(t)`. -/
 theorem inv_ok {A : Nat → Poly} {S : Nat → IPoly} {R : BitVec 64} {s : State}
-    (h : KR p σ A S R (p.ℓ + p.k) p.ℓ i s) (ht : tIs p (fun A S => dotK p A S i p.ℓ) A S s) :
-    WP isa (invNttAt P.sfx P.invNtt (tP p)) s fun s' =>
+    (h : KR p σ A S R (p.ℓ + p.k) p.ℓ i s) (ht : tIs p (fun A S => encode P.montgomery (dotK p A S i p.ℓ)) A S s) :
+    WP isa (invNttAt (mont := P.montgomery) P.sfx P.invNtt (tP p)) s fun s' =>
       KR p σ A S R (p.ℓ + p.k) p.ℓ i s' ∧ tIs p (fun A S => nttInv (dotK p A S i p.ℓ)) A S s' := by
   have hkl := hF.kl; have hl := hF.l; have hk := hF.k
   dsimp only [tIs] at ht
   have S₀ := h.kc.site hF hp
   unfold invNttAt
-  refine WP.mono (ipAt_ok (t := nttInv) (f := tP p) (tP_ok hF) (by lay) (by lay) (by lay) hP.invNtt S₀ ht.1)
+  refine WP.mono (ipAt_ok (t := inverse P.montgomery) (f := tP p) (tP_ok hF) (by lay) (by lay) (by lay) hP.invNtt S₀ ht.1)
     fun s' ⟨hP', hx, hb⟩ => ?_
   have hP'' : PPostB s s' [(tP p, 1024), (sc VG.Impl.MlKem.X86_64.oSS, 1024)] := hP'.b
   refine ⟨h.keep hF hp hP'' hx (hP'.cs .r15 (by decide)) (chk_inv hF hi), ?_⟩
-  rw [tIs, hP''.pa (p := tP p) rbx_bases, ← ht.2]
+  rw [tIs, hP''.pa (p := tP p) rbx_bases]
+  rw [ht.2, inverse_encode] at hb
   exact hb
 
 /-- `t = t + s₂[i]`. -/
@@ -259,8 +262,8 @@ section
 variable {P : Prims} (hP : PrimsOk P) {p : Params} (hF : PFacts p) {i : Nat} (hi : i < p.k)
 include hP hF hi
 
-theorem mul_piece : Piece p (KRx p (p.ℓ + p.k) p.ℓ i) (RowI p i (tIs p fun A S => dotK p A S i 1))
-    (mulAt P.sfx P.mul (tP p) (aP (p.ℓ * i)) (sP p 0)) := by
+theorem mul_piece : Piece p (KRx p (p.ℓ + p.k) p.ℓ i) (RowI p i (tIs p fun A S => encode P.montgomery (dotK p A S i 1)))
+    (mulAt (mont := P.montgomery) P.sfx P.mul (tP p) (aP (p.ℓ * i)) (sP p 0)) := by
   have hkl := hF.kl; have hl := hF.l; have hk := hF.k
   have hx0 := idx_lt (j := 0) hi (by omega)
   rw [Nat.add_zero] at hx0
@@ -277,8 +280,8 @@ theorem mul_piece : Piece p (KRx p (p.ℓ + p.k) p.ℓ i) (RowI p i (tIs p fun A
     (show Reg.rbx ∈ kgRegs by decide)
 
 theorem mulAdd_piece {j : Nat} (hj : j < p.ℓ) :
-    Piece p (RowI p i (tIs p fun A S => dotK p A S i j)) (RowI p i (tIs p fun A S => dotK p A S i (j + 1)))
-      (mulAddAt P.sfx P.mulAdd (tP p) (aP (p.ℓ * i + j)) (sP p j)) := by
+    Piece p (RowI p i (tIs p fun A S => encode P.montgomery (dotK p A S i j))) (RowI p i (tIs p fun A S => encode P.montgomery (dotK p A S i (j + 1))))
+      (mulAddAt (mont := P.montgomery) P.sfx P.mulAdd (tP p) (aP (p.ℓ * i + j)) (sP p j)) := by
   have hkl := hF.kl; have hl := hF.l; have hk := hF.k
   have hx0 := idx_lt hi hj
   refine ⟨fun _ _ hp ⟨A, S, R, h, ht⟩ => WP.mono (mulAdd_ok hP hF hp hi hj h ht) fun _ h => ⟨A, S, R, h⟩, ?_⟩
@@ -292,8 +295,8 @@ theorem mulAdd_piece {j : Nat} (hj : j < p.ℓ) :
     (by lay) (by lay) hP.mulAdd (show Reg.rbx ∈ kgRegs by decide) (show Reg.rbx ∈ kgRegs by decide)
     (show Reg.rbx ∈ kgRegs by decide)
 
-theorem inv_piece : Piece p (RowI p i (tIs p fun A S => dotK p A S i p.ℓ))
-    (RowI p i (tIs p fun A S => nttInv (dotK p A S i p.ℓ))) (invNttAt P.sfx P.invNtt (tP p)) := by
+theorem inv_piece : Piece p (RowI p i (tIs p fun A S => encode P.montgomery (dotK p A S i p.ℓ)))
+    (RowI p i (tIs p fun A S => nttInv (dotK p A S i p.ℓ))) (invNttAt (mont := P.montgomery) P.sfx P.invNtt (tP p)) := by
   have hkl := hF.kl; have hl := hF.l; have hk := hF.k
   refine ⟨fun _ _ hp ⟨A, S, R, h, ht⟩ => WP.mono (inv_ok hP hF hp hi h ht) fun _ h => ⟨A, S, R, h⟩, ?_⟩
   refine rel_of (Q := fun x y => Two p x y ∧ Reduced x.mem (pa x (tP p)) ∧ Reduced y.mem (pa y (tP p))) ?_

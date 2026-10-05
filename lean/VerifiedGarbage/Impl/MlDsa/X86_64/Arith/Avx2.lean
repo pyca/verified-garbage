@@ -203,6 +203,6 @@ def subAvx2 : Prog isa :=
 def Backend.avx2 : Backend :=
   ⟨nttAvx2, nttInvAvx2, mulAvx2, mulAddAvx2, addAvx2, subAvx2, Round.highBitsAvx2,
     Round.lowBitsAvx2, Round.normLtAvx2, Round.makeHintAvx2, Round.useHintAvx2, Sample.Rej5.rejNTT4Avx2,
-    Sample.Mask4.expandMask4Avx2, "_avx2"⟩
+    Sample.Mask4.expandMask4Avx2, "_avx2", false⟩
 
 end VG.Impl.MlDsa.X86_64.Arith

@@ -1,6 +1,7 @@
+import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.YMontgomeryInv
 import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Rej5Verified
 import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Backend
-import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.YNtt
+import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.LazyNtt
 import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.YMul
 import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.YAddSub
 import VerifiedGarbage.Proof.MlDsa.X86_64.Round.YHint
@@ -19,15 +20,15 @@ open VG VG.X86_64 VG.Impl.MlDsa.X86_64.Arith
 
 /-- The AVX2 code. -/
 def ArithImpl.avx2 : ArithImpl where
-  code := .avx2
+  code := .avx2Combined
   ok :=
-    { ntt := FnOk.of Arith.nttY_verified (by decide +kernel) (by decide +kernel) (by decide +kernel)
+    { ntt := FnOk.of Arith.Lazy.verified (by decide +kernel) (by decide +kernel) (by decide +kernel)
         (by decide +kernel)
-      invNtt := FnOk.of Arith.nttInvY_verified (by decide +kernel) (by decide +kernel) (by decide +kernel)
+      invNtt := FnOk.of Arith.MontgomeryInv.verified (by decide +kernel) (by decide +kernel) (by decide +kernel)
         (by decide +kernel)
-      mul := FnOk.of Arith.mulY_verified (by decide +kernel) (by decide +kernel) (by decide +kernel)
+      mul := FnOk.of Arith.montMulY_verified (by decide +kernel) (by decide +kernel) (by decide +kernel)
         (by decide +kernel)
-      mulAdd := FnOk.of Arith.mulAddY_verified (by decide +kernel) (by decide +kernel) (by decide +kernel)
+      mulAdd := FnOk.of Arith.montMulAddY_verified (by decide +kernel) (by decide +kernel) (by decide +kernel)
         (by decide +kernel)
       add := FnOk.of Arith.addY_verified (by decide +kernel) (by decide +kernel) (by decide +kernel)
         (by decide +kernel)

@@ -1,3 +1,4 @@
+import VerifiedGarbage.Proof.MlDsa.Arith.Representation
 import VerifiedGarbage.Proof.MlKem.X86_64.TopBase
 import VerifiedGarbage.Impl.MlDsa.X86_64.KeyGen.KeyGen
 import VerifiedGarbage.Spec.MlDsa.Contract
@@ -42,9 +43,9 @@ structure Callee4 (c : Prog isa) : Prop where
 /-- Verified implementations of the primitives key generation calls. -/
 structure PrimsOk (P : Prims) : Prop where
   ntt : Callee P.ntt (fun stk => Spec.MlDsa.nttContract X86_64.abi stk)
-  invNtt : Callee P.invNtt (fun stk => Spec.MlDsa.nttInvContract X86_64.abi stk)
-  mul : Callee P.mul (fun stk => Spec.MlDsa.mulContract X86_64.abi stk)
-  mulAdd : Callee P.mulAdd (fun stk => Spec.MlDsa.mulAddContract X86_64.abi stk)
+  invNtt : Callee P.invNtt (fun stk => Arith.Representation.inverseContract P.montgomery X86_64.abi stk)
+  mul : Callee P.mul (fun stk => Arith.Representation.productContract P.montgomery X86_64.abi stk)
+  mulAdd : Callee P.mulAdd (fun stk => Arith.Representation.accumulateContract P.montgomery X86_64.abi stk)
   add : Callee P.add (fun stk => Spec.MlDsa.addContract X86_64.abi stk)
   rejNtt : Callee P.rejNtt (fun stk => Spec.MlDsa.rejNTTContract X86_64.abi stk)
   rejBounded : Callee P.rejBounded (fun stk => Spec.MlDsa.rejBoundedContract X86_64.abi stk)

@@ -40,6 +40,7 @@ def primsWith (B : Arith.Backend) : Prims :=
     mulAdd := B.mulAdd
     add := B.add
     rej4 := B.rej4
-    sfx := B.sfx }
+    sfx := B.sfx
+    montgomery := B.montgomery }
 
 end VG.Impl.MlDsa.X86_64.KeyGen

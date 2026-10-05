@@ -2050,6 +2050,9 @@ pub(crate) unsafe extern "sysv64" fn vg_mldsa_ntt_avx2(f: *mut [u32; 256], scrat
         "mov eax, -58728449",
         "vmovq xmm14, rax",
         "vpbroadcastd ymm14, xmm14",
+        "mov eax, 16760834",
+        "vmovq xmm11, rax",
+        "vpbroadcastd ymm11, xmm11",
         "mov rdx, rdi",
         "mov r8, rsi",
         "add r8, 4",
@@ -2074,20 +2077,10 @@ pub(crate) unsafe extern "sysv64" fn vg_mldsa_ntt_avx2(f: *mut [u32; 256], scrat
         "vpmuludq ymm2, ymm2, ymm15",
         "vpaddq ymm4, ymm4, ymm2",
         "vpor ymm1, ymm1, ymm4",
-        "vpsubd ymm1, ymm1, ymm15",
-        "vpsrad ymm2, ymm1, 31",
-        "vpand ymm2, ymm2, ymm15",
-        "vpaddd ymm1, ymm1, ymm2",
         "vmovdqa ymm3, ymm0",
         "vpaddd ymm0, ymm0, ymm1",
-        "vpsubd ymm0, ymm0, ymm15",
-        "vpsrad ymm2, ymm0, 31",
-        "vpand ymm2, ymm2, ymm15",
-        "vpaddd ymm0, ymm0, ymm2",
+        "vpaddd ymm3, ymm3, ymm11",
         "vpsubd ymm3, ymm3, ymm1",
-        "vpsrad ymm2, ymm3, 31",
-        "vpand ymm2, ymm2, ymm15",
-        "vpaddd ymm3, ymm3, ymm2",
         "vmovdqu YMMWORD PTR [rdx], ymm0",
         "vmovdqu YMMWORD PTR [rdx+512], ymm3",
         "add rdx, 32",
@@ -2120,20 +2113,10 @@ pub(crate) unsafe extern "sysv64" fn vg_mldsa_ntt_avx2(f: *mut [u32; 256], scrat
         "vpmuludq ymm2, ymm2, ymm15",
         "vpaddq ymm4, ymm4, ymm2",
         "vpor ymm1, ymm1, ymm4",
-        "vpsubd ymm1, ymm1, ymm15",
-        "vpsrad ymm2, ymm1, 31",
-        "vpand ymm2, ymm2, ymm15",
-        "vpaddd ymm1, ymm1, ymm2",
         "vmovdqa ymm3, ymm0",
         "vpaddd ymm0, ymm0, ymm1",
-        "vpsubd ymm0, ymm0, ymm15",
-        "vpsrad ymm2, ymm0, 31",
-        "vpand ymm2, ymm2, ymm15",
-        "vpaddd ymm0, ymm0, ymm2",
+        "vpaddd ymm3, ymm3, ymm11",
         "vpsubd ymm3, ymm3, ymm1",
-        "vpsrad ymm2, ymm3, 31",
-        "vpand ymm2, ymm2, ymm15",
-        "vpaddd ymm3, ymm3, ymm2",
         "vmovdqu YMMWORD PTR [rdx], ymm0",
         "vmovdqu YMMWORD PTR [rdx+256], ymm3",
         "add rdx, 32",
@@ -2166,20 +2149,10 @@ pub(crate) unsafe extern "sysv64" fn vg_mldsa_ntt_avx2(f: *mut [u32; 256], scrat
         "vpmuludq ymm2, ymm2, ymm15",
         "vpaddq ymm4, ymm4, ymm2",
         "vpor ymm1, ymm1, ymm4",
-        "vpsubd ymm1, ymm1, ymm15",
-        "vpsrad ymm2, ymm1, 31",
-        "vpand ymm2, ymm2, ymm15",
-        "vpaddd ymm1, ymm1, ymm2",
         "vmovdqa ymm3, ymm0",
         "vpaddd ymm0, ymm0, ymm1",
-        "vpsubd ymm0, ymm0, ymm15",
-        "vpsrad ymm2, ymm0, 31",
-        "vpand ymm2, ymm2, ymm15",
-        "vpaddd ymm0, ymm0, ymm2",
+        "vpaddd ymm3, ymm3, ymm11",
         "vpsubd ymm3, ymm3, ymm1",
-        "vpsrad ymm2, ymm3, 31",
-        "vpand ymm2, ymm2, ymm15",
-        "vpaddd ymm3, ymm3, ymm2",
         "vmovdqu YMMWORD PTR [rdx], ymm0",
         "vmovdqu YMMWORD PTR [rdx+128], ymm3",
         "add rdx, 32",
@@ -2212,20 +2185,10 @@ pub(crate) unsafe extern "sysv64" fn vg_mldsa_ntt_avx2(f: *mut [u32; 256], scrat
         "vpmuludq ymm2, ymm2, ymm15",
         "vpaddq ymm4, ymm4, ymm2",
         "vpor ymm1, ymm1, ymm4",
-        "vpsubd ymm1, ymm1, ymm15",
-        "vpsrad ymm2, ymm1, 31",
-        "vpand ymm2, ymm2, ymm15",
-        "vpaddd ymm1, ymm1, ymm2",
         "vmovdqa ymm3, ymm0",
         "vpaddd ymm0, ymm0, ymm1",
-        "vpsubd ymm0, ymm0, ymm15",
-        "vpsrad ymm2, ymm0, 31",
-        "vpand ymm2, ymm2, ymm15",
-        "vpaddd ymm0, ymm0, ymm2",
+        "vpaddd ymm3, ymm3, ymm11",
         "vpsubd ymm3, ymm3, ymm1",
-        "vpsrad ymm2, ymm3, 31",
-        "vpand ymm2, ymm2, ymm15",
-        "vpaddd ymm3, ymm3, ymm2",
         "vmovdqu YMMWORD PTR [rdx], ymm0",
         "vmovdqu YMMWORD PTR [rdx+64], ymm3",
         "add rdx, 32",
@@ -2258,20 +2221,10 @@ pub(crate) unsafe extern "sysv64" fn vg_mldsa_ntt_avx2(f: *mut [u32; 256], scrat
         "vpmuludq ymm2, ymm2, ymm15",
         "vpaddq ymm4, ymm4, ymm2",
         "vpor ymm1, ymm1, ymm4",
-        "vpsubd ymm1, ymm1, ymm15",
-        "vpsrad ymm2, ymm1, 31",
-        "vpand ymm2, ymm2, ymm15",
-        "vpaddd ymm1, ymm1, ymm2",
         "vmovdqa ymm3, ymm0",
         "vpaddd ymm0, ymm0, ymm1",
-        "vpsubd ymm0, ymm0, ymm15",
-        "vpsrad ymm2, ymm0, 31",
-        "vpand ymm2, ymm2, ymm15",
-        "vpaddd ymm0, ymm0, ymm2",
+        "vpaddd ymm3, ymm3, ymm11",
         "vpsubd ymm3, ymm3, ymm1",
-        "vpsrad ymm2, ymm3, 31",
-        "vpand ymm2, ymm2, ymm15",
-        "vpaddd ymm3, ymm3, ymm2",
         "vmovdqu YMMWORD PTR [rdx], ymm0",
         "vmovdqu YMMWORD PTR [rdx+32], ymm3",
         "add rdx, 32",
@@ -2306,20 +2259,10 @@ pub(crate) unsafe extern "sysv64" fn vg_mldsa_ntt_avx2(f: *mut [u32; 256], scrat
         "vpmuludq ymm2, ymm2, ymm15",
         "vpaddq ymm4, ymm4, ymm2",
         "vpor ymm1, ymm1, ymm4",
-        "vpsubd ymm1, ymm1, ymm15",
-        "vpsrad ymm2, ymm1, 31",
-        "vpand ymm2, ymm2, ymm15",
-        "vpaddd ymm1, ymm1, ymm2",
         "vmovdqa ymm3, ymm0",
         "vpaddd ymm0, ymm0, ymm1",
-        "vpsubd ymm0, ymm0, ymm15",
-        "vpsrad ymm2, ymm0, 31",
-        "vpand ymm2, ymm2, ymm15",
-        "vpaddd ymm0, ymm0, ymm2",
+        "vpaddd ymm3, ymm3, ymm11",
         "vpsubd ymm3, ymm3, ymm1",
-        "vpsrad ymm2, ymm3, 31",
-        "vpand ymm2, ymm2, ymm15",
-        "vpaddd ymm3, ymm3, ymm2",
         "vperm2i128 ymm4, ymm0, ymm3, 32",
         "vperm2i128 ymm5, ymm0, ymm3, 49",
         "vmovdqu YMMWORD PTR [rdx], ymm4",
@@ -2355,20 +2298,10 @@ pub(crate) unsafe extern "sysv64" fn vg_mldsa_ntt_avx2(f: *mut [u32; 256], scrat
         "vpmuludq ymm2, ymm2, ymm15",
         "vpaddq ymm4, ymm4, ymm2",
         "vpor ymm1, ymm1, ymm4",
-        "vpsubd ymm1, ymm1, ymm15",
-        "vpsrad ymm2, ymm1, 31",
-        "vpand ymm2, ymm2, ymm15",
-        "vpaddd ymm1, ymm1, ymm2",
         "vmovdqa ymm3, ymm0",
         "vpaddd ymm0, ymm0, ymm1",
-        "vpsubd ymm0, ymm0, ymm15",
-        "vpsrad ymm2, ymm0, 31",
-        "vpand ymm2, ymm2, ymm15",
-        "vpaddd ymm0, ymm0, ymm2",
+        "vpaddd ymm3, ymm3, ymm11",
         "vpsubd ymm3, ymm3, ymm1",
-        "vpsrad ymm2, ymm3, 31",
-        "vpand ymm2, ymm2, ymm15",
-        "vpaddd ymm3, ymm3, ymm2",
         "vmovdqa ymm1, ymm0",
         "vpunpcklqdq ymm0, ymm0, ymm3",
         "vpunpckhqdq ymm1, ymm1, ymm3",
@@ -2404,20 +2337,10 @@ pub(crate) unsafe extern "sysv64" fn vg_mldsa_ntt_avx2(f: *mut [u32; 256], scrat
         "vpmuludq ymm2, ymm2, ymm15",
         "vpaddq ymm4, ymm4, ymm2",
         "vpor ymm1, ymm1, ymm4",
-        "vpsubd ymm1, ymm1, ymm15",
-        "vpsrad ymm2, ymm1, 31",
-        "vpand ymm2, ymm2, ymm15",
-        "vpaddd ymm1, ymm1, ymm2",
         "vmovdqa ymm3, ymm0",
         "vpaddd ymm0, ymm0, ymm1",
-        "vpsubd ymm0, ymm0, ymm15",
-        "vpsrad ymm2, ymm0, 31",
-        "vpand ymm2, ymm2, ymm15",
-        "vpaddd ymm0, ymm0, ymm2",
+        "vpaddd ymm3, ymm3, ymm11",
         "vpsubd ymm3, ymm3, ymm1",
-        "vpsrad ymm2, ymm3, 31",
-        "vpand ymm2, ymm2, ymm15",
-        "vpaddd ymm3, ymm3, ymm2",
         "vmovdqa ymm1, ymm0",
         "vpunpckldq ymm0, ymm0, ymm3",
         "vpunpckhdq ymm1, ymm1, ymm3",
@@ -2426,6 +2349,24 @@ pub(crate) unsafe extern "sysv64" fn vg_mldsa_ntt_avx2(f: *mut [u32; 256], scrat
         "add rdx, 64",
         "sub rcx, 1",
         "jne 212b",
+        "mov rdx, rdi",
+        "mov ecx, 32",
+        "213:",
+        "vmovdqu ymm0, YMMWORD PTR [rdx]",
+        "vpsrld ymm1, ymm0, 23",
+        "vpslld ymm2, ymm1, 23",
+        "vpsubd ymm0, ymm0, ymm2",
+        "vpslld ymm2, ymm1, 13",
+        "vpaddd ymm0, ymm0, ymm2",
+        "vpsubd ymm0, ymm0, ymm1",
+        "vpsubd ymm0, ymm0, ymm15",
+        "vpsrad ymm2, ymm0, 31",
+        "vpand ymm2, ymm2, ymm15",
+        "vpaddd ymm0, ymm0, ymm2",
+        "vmovdqu YMMWORD PTR [rdx], ymm0",
+        "add rdx, 32",
+        "sub rcx, 1",
+        "jne 213b",
         "vzeroupper",
         "lfence",
         "mov DWORD PTR [rsi+768], r11d",
@@ -2435,12 +2376,12 @@ pub(crate) unsafe extern "sysv64" fn vg_mldsa_ntt_avx2(f: *mut [u32; 256], scrat
     )
 }
 
-/// The CPU features `vg_mldsa_inv_ntt_avx2` requires (`Artifact.features`).
-pub(crate) const VG_MLDSA_INV_NTT_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2"]);
+/// The CPU features `vg_mldsa_montgomery_inv_ntt_avx2` requires (`Artifact.features`).
+pub(crate) const VG_MLDSA_MONTGOMERY_INV_NTT_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2"]);
 
-/// The inverse of the ML-DSA number-theoretic transform, `NTT⁻¹` (FIPS 204 Algorithm 42), of `*f` (256 coefficients less than `q` = 8380417), in place.
+/// Replaces `*f` with `R * NTT^-1(*f)`, coefficientwise modulo `q` = 8380417, reduced, where `R = 2^32 mod q`. An input scaled by `R^-1` produces the ordinary inverse transform of the unscaled polynomial.
 ///
-/// Contract: `VG.Spec.MlDsa.nttInvContract`. Constant time: only the pointers may affect timing, not the data.
+/// Contract: `VG.Spec.MlDsa.montgomeryNttInvContract`. Constant time: only the pointers may affect timing, not the data.
 ///
 /// The function computes on eight coefficients at a time in AVX2 registers, with a table of the 256 zetas that it stores in `scratch`. It sets MXCSR to `0x1FBF` around its multiplications (Intel's mitigation of MXCSR-configuration-dependent timing) and loads the caller's MXCSR back before returning.
 ///
@@ -2449,12 +2390,12 @@ pub(crate) const VG_MLDSA_INV_NTT_AVX2_FEATURES: crate::cpu::Features = crate::c
 /// * `f` must be valid for reads and writes of 1024 bytes.
 /// * `scratch` must be valid for reads and writes of 1024 bytes.
 /// * Each of the 256 `u32`s of `f` must be less than `q` = 8380417.
-/// * `scratch` is working space: on return it may hold intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
+/// * `scratch` is working space: on return it may hold intermediate values, which the caller must destroy (FIPS 204 section 3.6.3).
 /// * `f` and `scratch` must not overlap each other (distinct Rust objects never do).
 /// * Neither `f` nor `scratch` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx` and `avx2` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_mldsa_inv_ntt_avx2(f: *mut [u32; 256], scratch: *mut [u64; 128]) {
+pub(crate) unsafe extern "sysv64" fn vg_mldsa_montgomery_inv_ntt_avx2(f: *mut [u32; 256], scratch: *mut [u64; 128]) {
     core::arch::naked_asm!(
         "stmxcsr DWORD PTR [rsi+768]",
         "mov r11d, DWORD PTR [rsi+768]",
@@ -3079,7 +3020,7 @@ pub(crate) unsafe extern "sysv64" fn vg_mldsa_inv_ntt_avx2(f: *mut [u32; 256], s
         "sub rax, 1",
         "jne 211b",
         "mov rdx, rdi",
-        "mov eax, 16382",
+        "mov eax, 41978",
         "vmovq xmm13, rax",
         "vpbroadcastd ymm13, xmm13",
         "vmovdqa ymm12, ymm13",
@@ -3114,12 +3055,12 @@ pub(crate) unsafe extern "sysv64" fn vg_mldsa_inv_ntt_avx2(f: *mut [u32; 256], s
     )
 }
 
-/// The CPU features `vg_mldsa_multiply_ntt_avx2` requires (`Artifact.features`).
-pub(crate) const VG_MLDSA_MULTIPLY_NTT_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2"]);
+/// The CPU features `vg_mldsa_montgomery_multiply_ntt_avx2` requires (`Artifact.features`).
+pub(crate) const VG_MLDSA_MONTGOMERY_MULTIPLY_NTT_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2"]);
 
-/// The product of two elements of `T_q`, `MultiplyNTT` (FIPS 204 Algorithm 45): writes the coefficientwise product of `*f` and `*g` modulo `q` = 8380417 to `*h`.
+/// Writes `R^-1 * MultiplyNTT(*f, *g)` to `*h`, coefficientwise modulo `q` = 8380417, reduced, where `R = 2^32 mod q`. The factor of `R^-1` is canceled by `vg_mldsa_montgomery_inv_ntt`.
 ///
-/// Contract: `VG.Spec.MlDsa.mulContract`. Constant time: only the pointers may affect timing, not the data.
+/// Contract: `VG.Spec.MlDsa.montgomeryMulContract`. Constant time: only the pointers may affect timing, not the data.
 ///
 /// The function computes on eight coefficients at a time in AVX2 registers. It sets MXCSR to `0x1FBF` around its multiplications (Intel's mitigation of MXCSR-configuration-dependent timing), through the last 8 bytes of `h`, which it stores last, and loads the caller's MXCSR back before returning.
 ///
@@ -3134,7 +3075,7 @@ pub(crate) const VG_MLDSA_MULTIPLY_NTT_AVX2_FEATURES: crate::cpu::Features = cra
 /// * None of `h`, `f` and `g` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx` and `avx2` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_mldsa_multiply_ntt_avx2(h: *mut [u32; 256], f: *const [u32; 256], g: *const [u32; 256]) {
+pub(crate) unsafe extern "sysv64" fn vg_mldsa_montgomery_multiply_ntt_avx2(h: *mut [u32; 256], f: *const [u32; 256], g: *const [u32; 256]) {
     core::arch::naked_asm!(
         "mov r8, rdi",
         "vmovdqu ymm6, YMMWORD PTR [rdi+992]",
@@ -3163,17 +3104,6 @@ pub(crate) unsafe extern "sysv64" fn vg_mldsa_multiply_ntt_avx2(h: *mut [u32; 25
         "vpshufd ymm4, ymm3, 245",
         "vpmuludq ymm3, ymm3, ymm13",
         "vpmuludq ymm4, ymm4, ymm12",
-        "vpmuludq ymm2, ymm3, ymm14",
-        "vpmuludq ymm2, ymm2, ymm15",
-        "vpaddq ymm3, ymm3, ymm2",
-        "vpsrlq ymm3, ymm3, 32",
-        "vpmuludq ymm2, ymm4, ymm14",
-        "vpmuludq ymm2, ymm2, ymm15",
-        "vpaddq ymm4, ymm4, ymm2",
-        "vpor ymm3, ymm3, ymm4",
-        "vpshufd ymm4, ymm3, 245",
-        "vpmuludq ymm3, ymm3, ymm11",
-        "vpmuludq ymm4, ymm4, ymm11",
         "vpmuludq ymm2, ymm3, ymm14",
         "vpmuludq ymm2, ymm2, ymm15",
         "vpaddq ymm3, ymm3, ymm2",
@@ -3207,17 +3137,6 @@ pub(crate) unsafe extern "sysv64" fn vg_mldsa_multiply_ntt_avx2(h: *mut [u32; 25
         "vpmuludq ymm2, ymm2, ymm15",
         "vpaddq ymm4, ymm4, ymm2",
         "vpor ymm3, ymm3, ymm4",
-        "vpshufd ymm4, ymm3, 245",
-        "vpmuludq ymm3, ymm3, ymm11",
-        "vpmuludq ymm4, ymm4, ymm11",
-        "vpmuludq ymm2, ymm3, ymm14",
-        "vpmuludq ymm2, ymm2, ymm15",
-        "vpaddq ymm3, ymm3, ymm2",
-        "vpsrlq ymm3, ymm3, 32",
-        "vpmuludq ymm2, ymm4, ymm14",
-        "vpmuludq ymm2, ymm2, ymm15",
-        "vpaddq ymm4, ymm4, ymm2",
-        "vpor ymm3, ymm3, ymm4",
         "vpsubd ymm3, ymm3, ymm15",
         "vpsrad ymm2, ymm3, 31",
         "vpand ymm2, ymm2, ymm15",
@@ -3232,12 +3151,12 @@ pub(crate) unsafe extern "sysv64" fn vg_mldsa_multiply_ntt_avx2(h: *mut [u32; 25
     )
 }
 
-/// The CPU features `vg_mldsa_multiply_add_ntt_avx2` requires (`Artifact.features`).
-pub(crate) const VG_MLDSA_MULTIPLY_ADD_NTT_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2"]);
+/// The CPU features `vg_mldsa_montgomery_multiply_add_ntt_avx2` requires (`Artifact.features`).
+pub(crate) const VG_MLDSA_MONTGOMERY_MULTIPLY_ADD_NTT_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2"]);
 
-/// Adds the product of two elements of `T_q` to a third, `AddNTT(h, MultiplyNTT(f, g))` (FIPS 204 Algorithms 44 and 45): adds the coefficientwise product of `*f` and `*g` to `*h`, modulo `q` = 8380417.
+/// Adds `R^-1 * MultiplyNTT(*f, *g)` to `*h`, coefficientwise modulo `q` = 8380417, reduced, where `R = 2^32 mod q`. The existing accumulator is not rescaled; callers must keep every accumulated term at the same scale.
 ///
-/// Contract: `VG.Spec.MlDsa.mulAddContract`. Constant time: only the pointers may affect timing, not the data.
+/// Contract: `VG.Spec.MlDsa.montgomeryMulAddContract`. Constant time: only the pointers may affect timing, not the data.
 ///
 /// The function computes on eight coefficients at a time in AVX2 registers. It sets MXCSR to `0x1FBF` around its multiplications (Intel's mitigation of MXCSR-configuration-dependent timing), through the last 8 bytes of `h`, which it stores last, and loads the caller's MXCSR back before returning.
 ///
@@ -3253,7 +3172,7 @@ pub(crate) const VG_MLDSA_MULTIPLY_ADD_NTT_AVX2_FEATURES: crate::cpu::Features =
 /// * None of `h`, `f` and `g` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx` and `avx2` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_mldsa_multiply_add_ntt_avx2(h: *mut [u32; 256], f: *const [u32; 256], g: *const [u32; 256]) {
+pub(crate) unsafe extern "sysv64" fn vg_mldsa_montgomery_multiply_add_ntt_avx2(h: *mut [u32; 256], f: *const [u32; 256], g: *const [u32; 256]) {
     core::arch::naked_asm!(
         "mov r8, rdi",
         "vmovdqu ymm6, YMMWORD PTR [rdi+992]",
@@ -3282,17 +3201,6 @@ pub(crate) unsafe extern "sysv64" fn vg_mldsa_multiply_add_ntt_avx2(h: *mut [u32
         "vpshufd ymm4, ymm3, 245",
         "vpmuludq ymm3, ymm3, ymm13",
         "vpmuludq ymm4, ymm4, ymm12",
-        "vpmuludq ymm2, ymm3, ymm14",
-        "vpmuludq ymm2, ymm2, ymm15",
-        "vpaddq ymm3, ymm3, ymm2",
-        "vpsrlq ymm3, ymm3, 32",
-        "vpmuludq ymm2, ymm4, ymm14",
-        "vpmuludq ymm2, ymm2, ymm15",
-        "vpaddq ymm4, ymm4, ymm2",
-        "vpor ymm3, ymm3, ymm4",
-        "vpshufd ymm4, ymm3, 245",
-        "vpmuludq ymm3, ymm3, ymm11",
-        "vpmuludq ymm4, ymm4, ymm11",
         "vpmuludq ymm2, ymm3, ymm14",
         "vpmuludq ymm2, ymm2, ymm15",
         "vpaddq ymm3, ymm3, ymm2",
@@ -3323,17 +3231,6 @@ pub(crate) unsafe extern "sysv64" fn vg_mldsa_multiply_add_ntt_avx2(h: *mut [u32
         "vpshufd ymm4, ymm3, 245",
         "vpmuludq ymm3, ymm3, ymm13",
         "vpmuludq ymm4, ymm4, ymm12",
-        "vpmuludq ymm2, ymm3, ymm14",
-        "vpmuludq ymm2, ymm2, ymm15",
-        "vpaddq ymm3, ymm3, ymm2",
-        "vpsrlq ymm3, ymm3, 32",
-        "vpmuludq ymm2, ymm4, ymm14",
-        "vpmuludq ymm2, ymm2, ymm15",
-        "vpaddq ymm4, ymm4, ymm2",
-        "vpor ymm3, ymm3, ymm4",
-        "vpshufd ymm4, ymm3, 245",
-        "vpmuludq ymm3, ymm3, ymm11",
-        "vpmuludq ymm4, ymm4, ymm11",
         "vpmuludq ymm2, ymm3, ymm14",
         "vpmuludq ymm2, ymm2, ymm15",
         "vpaddq ymm3, ymm3, ymm2",

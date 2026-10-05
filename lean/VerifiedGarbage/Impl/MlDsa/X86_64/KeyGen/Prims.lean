@@ -40,5 +40,7 @@ structure Prims where
   rej4 : Prog isa
   /-- What the names of the polynomial arithmetic's functions end with (`Arith.Backend`). -/
   sfx : String := ""
+  /-- Products retain R⁻¹ and the inverse NTT cancels it. -/
+  montgomery : Bool := false
 
 end VG.Impl.MlDsa.X86_64.KeyGen
