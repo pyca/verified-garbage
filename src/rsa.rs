@@ -69,13 +69,15 @@ use crate::arch::rsa::{
     vg_rsa_public_precompute, vg_rsa_public_precompute_adx, vg_rsa_public_precomputed_checked,
     vg_rsa_public_precomputed_checked_adx, vg_rsa_recover_primes, vg_rsa_recover_primes_adx,
 };
+use crate::arch::rsa_keygen::VG_RSA_KEYGEN_CANDIDATE_ADX_FEATURES;
 use crate::arch::rsa_pkcs1_sig::{VG_RSA_PKCS1_SIGN_ADX_FEATURES, VG_RSA_PKCS1_SIGN_IFMA_FEATURES};
 use crate::cpu::{Features, detected};
 
 /// The implementations of `vg_rsa_public_precompute`,
 /// `vg_rsa_public_precomputed_checked`, `vg_rsa_private_checked` and
 /// `vg_rsa_recover_primes`, and of the functions built on them
-/// (`vg_rsa_pkcs1_sign`, `crate::rsa_pkcs1_sig`).
+/// (`vg_rsa_pkcs1_sign`, `crate::rsa_pkcs1_sig`; `vg_rsa_keygen_candidate`,
+/// `crate::rsa_keygen`).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum Backend {
     /// The baseline ISA.
@@ -95,7 +97,8 @@ impl Backend {
             && f.contains(VG_RSA_PUBLIC_PRECOMPUTED_CHECKED_ADX_FEATURES)
             && f.contains(VG_RSA_PRIVATE_CHECKED_ADX_FEATURES)
             && f.contains(VG_RSA_RECOVER_PRIMES_ADX_FEATURES)
-            && f.contains(VG_RSA_PKCS1_SIGN_ADX_FEATURES);
+            && f.contains(VG_RSA_PKCS1_SIGN_ADX_FEATURES)
+            && f.contains(VG_RSA_KEYGEN_CANDIDATE_ADX_FEATURES);
         if adx
             && f.contains(VG_RSA_PRIVATE_CHECKED_IFMA_FEATURES)
             && f.contains(VG_RSA_PKCS1_SIGN_IFMA_FEATURES)
