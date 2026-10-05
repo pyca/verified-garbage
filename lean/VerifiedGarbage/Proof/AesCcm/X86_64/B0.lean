@@ -18,6 +18,7 @@ open VG.Impl.AesGcm.X86_64 (at_ imm ptr)
 open VG.Spec.Aes (bytesAt)
 open VG.Proof.Cmac (le8)
 open VG.Proof.Aes.X86_64 (Ctr32Impl)
+open VG.Proof.CmacAes.X86_64 (UpdateImpl)
 
 /-- What the pieces of the MAC write: the MAC state at `W + y`, `B`, the
 working space of the functions called and the stack below `SP`. -/
@@ -187,12 +188,12 @@ theorem b0Pre_ok {K W SP : Addr} {s : State} (L : Lay K W SP) (E : Env K W SP s)
     rw [hB₁, hB]
 
 /-- `B₀` chained into a zeroed MAC state at `W + y`. -/
-theorem b0_ok (v : Ctr32Impl) {K W SP : Addr} {s : State} (L : Lay K W SP) (E : Env K W SP s) {R : Nat}
+theorem b0_ok (v : UpdateImpl) {K W SP : Addr} {s : State} (L : Lay K W SP) (E : Env K W SP s) {R : Nat}
     {N A D : Addr} {nl al n tl : Nat} (S : Slots W R N A D nl al n tl s.mem) (hR : R = 10 ∨ R = 12 ∨ R = 14)
     {nonce : List Byte} (hnl : nonce.length = nl) (h7 : 7 ≤ nl) (h13 : nl ≤ 13)
     (ht4 : 4 ≤ tl) (ht16 : tl ≤ 16) (hte : tl % 2 = 0) (hal : al < 2 ^ 64) (hn : n < 256 ^ (15 - nl))
     (hc0 : bytesAt s.mem (W + BitVec.ofNat 64 48) 16 = Spec.Ccm.ctrBlock nonce 0) {y : Nat} (hy : y = 0 ∨ y = 96) :
-    WP isa (b0 v.callee v.suffix y) s fun s' => Env K W SP s' ∧ Frame (macR W SP y) s.mem s'.mem ∧
+    WP isa (b0 v.callee y) s fun s' => Env K W SP s' ∧ Frame (macR W SP y) s.mem s'.mem ∧
       bytesAt s'.mem (W + BitVec.ofNat 64 y) 16 =
         Spec.Cmac.chain (Spec.Ccm.ctxCiph s.mem K R) (Spec.Cmac.zeros 16) [Spec.Ccm.b0 tl nonce al n] ∧
       s'.rd = s.rd ∧ s'.wr = s.wr := by

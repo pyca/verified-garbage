@@ -256,7 +256,7 @@ the registers the correctness proof pins to values of the public arguments
 namespace VG.Proof.CmacAes.Stream.X86_64
 
 open VG VG.X86_64 VG.Impl.CmacAes.Stream.X86_64
-open VG.Proof.Aes.X86_64 (Ctr32Impl)
+open VG.Proof.CmacAes.X86_64 (UpdateImpl)
 
 /-- What the first call leaves, for `chain2`. -/
 structure AAfter₁ (s₀ : State) (St D S : Addr) (L : Nat) (s : State) : Prop where
@@ -269,11 +269,11 @@ structure AAfter₁ (s₀ : State) (St D S : Addr) (L : Nat) (s : State) : Prop 
   rd : s.rd = s₀.rd
   wr : s.wr = s₀.wr
 
-theorem call1_after (v : Ctr32Impl) {s₀ s : State} {St D S : Addr} {L R : Nat}
+theorem call1_after (v : UpdateImpl) {s₀ s : State} {St D S : Addr} {L R : Nat}
     (h : AMid₁ s₀ St D S L R s) :
-    WP isa (.call ("vg_cmac_aes_update" ++ v.suffix) (Impl.CmacAes.X86_64.update v.callee)) s
+    WP isa (.call v.callee.name v.callee.code) s
       (AAfter₁ s₀ St D S L) :=
-  WP.mono (upd_call v _ h.args) fun _ h₆ =>
+  WP.mono (upd_call v h.args) fun _ h₆ =>
     ⟨by rw [h₆.saved _ (by simp [calleeSaved]), h.rbx], by rw [h₆.saved _ (by simp [calleeSaved]), h.rbp],
       by rw [h₆.saved _ (by simp [calleeSaved]), h.r13], by rw [h₆.saved _ (by simp [calleeSaved]), h.r14],
       by rw [h₆.saved _ (by simp [calleeSaved]), h.r15], by rw [h₆.saved _ (by simp [calleeSaved]), h.rsp],
@@ -330,18 +330,18 @@ structure AAfter₂ (s₀ : State) (St D S : Addr) (L : Nat) (s : State) : Prop 
   r14 : s.gpr .r14 = BitVec.ofNat 64 (leftOf (s₀.gpr .rdx).toNat L)
   r15 : s.gpr .r15 = S
 
-theorem call2_after (v : Ctr32Impl) {s₀ s : State} {St D S : Addr} {L R : Nat}
+theorem call2_after (v : UpdateImpl) {s₀ s : State} {St D S : Addr} {L R : Nat}
     (h : AMid₂ s₀ St D S L R s) :
-    WP isa (.call ("vg_cmac_aes_update" ++ v.suffix) (Impl.CmacAes.X86_64.update v.callee)) s
+    WP isa (.call v.callee.name v.callee.code) s
       (AAfter₂ s₀ St D S L) :=
-  WP.mono (upd_call v _ h.args) fun _ h₈ =>
+  WP.mono (upd_call v h.args) fun _ h₈ =>
     ⟨by rw [h₈.saved _ (by simp [calleeSaved]), h.rbx], by rw [h₈.saved _ (by simp [calleeSaved]), h.r12],
       by rw [h₈.saved _ (by simp [calleeSaved]), h.r13], by rw [h₈.saved _ (by simp [calleeSaved]), h.r14],
       by rw [h₈.saved _ (by simp [calleeSaved]), h.r15]⟩
 
-theorem absorb_rel (v : Ctr32Impl) {s₀ s₀' : State} (h0 : absorbX86_64.pre s₀) (h0' : absorbX86_64.pre s₀')
+theorem absorb_rel (v : UpdateImpl) {s₀ s₀' : State} (h0 : absorbX86_64.pre s₀) (h0' : absorbX86_64.pre s₀')
     (hq : absorbX86_64.pub s₀ s₀') :
-    RelCT isa (fun a b => a = s₀ ∧ b = s₀') (absorb v.callee v.suffix) fun _ _ => True := by
+    RelCT isa (fun a b => a = s₀ ∧ b = s₀') (absorb v.callee) fun _ _ => True := by
   obtain ⟨q1, q2, q3, q4, q5, q6, q7⟩ := hq
   have hp := APre.of h0
   have hp' : APre s₀' (s₀.gpr .rdi) (s₀.gpr .rcx) (s₀.gpr .r9) (s₀.gpr .r8).toNat (s₀.gpr .rsi).toNat := by
@@ -365,7 +365,7 @@ theorem absorb_rel (v : Ctr32Impl) {s₀ s₀' : State} (h0 : absorbX86_64.pre s
       rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption) hA).wp
     (F₁ := AMid₁ s₀ St D S L R) (F₂ := AMid₁ s₀' St D S L R) fun a b h => by
       obtain ⟨rfl, rfl⟩ := h; exact ⟨absorbPre_wp hp, absorbPre_wp hp'⟩
-  have c₁ := (upd_rel v _ (P := fun a b => AMid₁ s₀ St D S L R a ∧ AMid₁ s₀' St D S L R b)
+  have c₁ := (upd_rel v (P := fun a b => AMid₁ s₀ St D S L R a ∧ AMid₁ s₀' St D S L R b)
     fun a b h => ⟨_, _, _, _, _, _, h.1.args, by rw [q4]; exact h.2.args, by rw [h.1.rsp, h.2.rsp, q1]⟩).wp
     (F₁ := AAfter₁ s₀ St D S L) (F₂ := AAfter₁ s₀' St D S L) fun a b h => ⟨call1_after v h.1, call1_after v h.2⟩
   have m := (RelCT.taint (A := taint) (P := fun a b => AAfter₁ s₀ St D S L a ∧ AAfter₁ s₀' St D S L b) _
@@ -380,7 +380,7 @@ theorem absorb_rel (v : Ctr32Impl) {s₀ s₀' : State} (h0 : absorbX86_64.pre s
       · rw [h.1.r15, h.2.r15]
       · rw [h.1.rsp, h.2.rsp, q1]) hB).wp
     (F₁ := AMid₂ s₀ St D S L R) (F₂ := AMid₂ s₀' St D S L R) fun a b h => ⟨chain2_mid hp h.1, chain2_mid hp' h.2⟩
-  have c₂ := (upd_rel v _ (P := fun a b => AMid₂ s₀ St D S L R a ∧ AMid₂ s₀' St D S L R b)
+  have c₂ := (upd_rel v (P := fun a b => AMid₂ s₀ St D S L R a ∧ AMid₂ s₀' St D S L R b)
     fun a b h => ⟨_, _, _, _, _, _, h.1.args, by rw [q4]; exact h.2.args, by rw [h.1.rsp, h.2.rsp, q1]⟩).wp
     (F₁ := AAfter₂ s₀ St D S L) (F₂ := AAfter₂ s₀' St D S L) fun a b h =>
       ⟨call2_after v h.1, call2_after v h.2⟩
@@ -397,8 +397,8 @@ theorem absorb_rel (v : Ctr32Impl) {s₀ s₀' : State} (h0 : absorbX86_64.pre s
   exact (a.mono (fun _ _ h => h) fun _ _ h => h.2).seq ((c₁.mono (fun _ _ h => h) fun _ _ h => h.2).seq
     ((m.mono (fun _ _ h => h) fun _ _ h => h.2).seq ((c₂.mono (fun _ _ h => h) fun _ _ h => h.2).seq p)))
 
-theorem absorb_ct (v : Ctr32Impl) :
-    ConstantTime isa absorbX86_64.pre absorbX86_64.pub (absorb v.callee v.suffix) :=
+theorem absorb_ct (v : UpdateImpl) :
+    ConstantTime isa absorbX86_64.pre absorbX86_64.pub (absorb v.callee) :=
   fun _ _ _ _ _ _ h₁ h₂ hq e₁ e₂ => (absorb_rel v h₁ h₂ hq _ _ _ _ _ _ ⟨rfl, rfl⟩ e₁ e₂).1
 
 end VG.Proof.CmacAes.Stream.X86_64
@@ -418,14 +418,14 @@ namespace VG.Proof.CmacAes.Stream.X86_64
 
 open VG VG.X86_64 VG.Impl.CmacAes.Stream.X86_64
 open VG.Proof.Aes.X86_64 (Ctr32Impl)
-open VG.Proof.CmacAes.X86_64 (update_mx subkeys_mx finalize_mx update_spSafe subkeys_spSafe finalize_spSafe)
+open VG.Proof.CmacAes.X86_64 (UpdateImpl subkeys_mx finalize_mx subkeys_spSafe finalize_spSafe)
 
 theorem init_mx (v : Ctr32Impl) :
     (init v.expand v.callee v.suffix).allInstrs (fun i => !loadsMxcsr i) = true := by
   simp only [init, Code.allInstrs, v.expandMxcsr, subkeys_mx v]; decide +kernel
 
-theorem absorb_mx (v : Ctr32Impl) : (absorb v.callee v.suffix).allInstrs (fun i => !loadsMxcsr i) = true := by
-  simp only [absorb, absorbPre, absorbPost, held, fill, copy, chain1, chain2, Code.allInstrs, update_mx v]
+theorem absorb_mx (v : UpdateImpl) : (absorb v.callee).allInstrs (fun i => !loadsMxcsr i) = true := by
+  simp only [absorb, absorbPre, absorbPost, held, fill, copy, chain1, chain2, Code.allInstrs, v.mxcsr]
   decide +kernel
 
 theorem finish_mx (v : Ctr32Impl) : (finish v.callee v.suffix).allInstrs (fun i => !loadsMxcsr i) = true := by
@@ -435,9 +435,9 @@ theorem init_spSafe (v : Ctr32Impl) :
     (init v.expand v.callee v.suffix).all (fun i => !X86_64.isa.writesSp i) = true := by
   simp only [init, Code.all, v.expandSpSafe, subkeys_spSafe v]; decide +kernel
 
-theorem absorb_spSafe (v : Ctr32Impl) :
-    (absorb v.callee v.suffix).all (fun i => !X86_64.isa.writesSp i) = true := by
-  simp only [absorb, absorbPre, absorbPost, held, fill, copy, chain1, chain2, Code.all, update_spSafe v]
+theorem absorb_spSafe (v : UpdateImpl) :
+    (absorb v.callee).all (fun i => !X86_64.isa.writesSp i) = true := by
+  simp only [absorb, absorbPre, absorbPost, held, fill, copy, chain1, chain2, Code.all, v.spSafe]
   decide +kernel
 
 theorem finish_spSafe (v : Ctr32Impl) :
@@ -449,8 +449,8 @@ theorem init_correct (v : Ctr32Impl) (s : State) (hs : initX86_64.pre s) :
   obtain ⟨t, s', he, hg, hp⟩ := init_wp v hs
   exact ⟨t, s', he, abiPreserved_of_exec (init_mx v) he hg, hp⟩
 
-theorem absorb_correct (v : Ctr32Impl) (s : State) (hs : absorbX86_64.pre s) :
-    ∃ t s', Exec isa (absorb v.callee v.suffix) s t s' ∧ abiPreserved s s' ∧ absorbX86_64.post s s' := by
+theorem absorb_correct (v : UpdateImpl) (s : State) (hs : absorbX86_64.pre s) :
+    ∃ t s', Exec isa (absorb v.callee) s t s' ∧ abiPreserved s s' ∧ absorbX86_64.post s s' := by
   obtain ⟨t, s', he, hg, hp⟩ := absorb_wp v hs
   exact ⟨t, s', he, abiPreserved_of_exec (absorb_mx v) he hg, hp⟩
 
@@ -489,8 +489,8 @@ def absorbSat : State where
   rd := [⟨0x3000, 0⟩]
   wr := [⟨0x1000, 304⟩, ⟨0x4000, 2304⟩]
 
-theorem absorb_verified (v : Ctr32Impl) :
-    Verified X86_64.target (absorb v.callee v.suffix) (absorbScratchContract X86_64.abi 16) :=
+theorem absorb_verified (v : UpdateImpl) :
+    Verified X86_64.target (absorb v.callee) (absorbScratchContract X86_64.abi 16) :=
   Verified.of_correct (absorb_correct v) (absorb_ct v) (by
     sig_implies [absorbScratchContract, absorbScratchSig, Spec.Cmac.aesAbsorbPre, Spec.Cmac.aesAbsorbPost, absorbX86_64, X86_64.abi,
       X86_64.argRegs] [absorbSat] using absorbSat)

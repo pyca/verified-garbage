@@ -13,25 +13,32 @@ of working space, a copy of those four arguments, the word that stands for
 the return address and the address of the working space. The code's own
 calls use 16 bytes below it: the return addresses of the call of
 `vg_cmac_aes_update` (or of `vg_aes_ctr32`) and of its call of
-`vg_aes_ctr32`, which uses no stack (`Ctr32Impl.noStack`). `open`'s leak,
+`vg_aes_ctr32`, if it makes one (`UpdateImpl.xdepth`), which uses no stack
+(`Ctr32Impl.noStack`). `open`'s leak,
 whether it succeeds, reads only its buffers (`openLeak_local`).
 -/
 
 namespace VG.Proof.AesCcm.X86_64
 
 open VG VG.X86_64 VG.Impl.AesCcm.X86_64
-open VG.Proof.Aes.X86_64 (Ctr32Impl)
+open VG.Proof.CmacAes.X86_64 (UpdateImpl)
 
-variable (v : Ctr32Impl)
+variable (v : UpdateImpl)
 
-theorem seal_xdepth : («seal» v.callee v.suffix).x86_64Depth ≤ 16 := by
+theorem seal_xdepth : («seal» v.callee v.ctr.callee).x86_64Depth ≤ 16 := by
+  have := v.xdepth
   simp only [«seal», sealFront, tagOut, mac, b0, aad, aadHead, absorbPad, updBlock, tag, ctr, ctrChunk, callUpdate,
-    callCtr, Impl.CmacAes.X86_64.update, Impl.CmacAes.X86_64.body, Code.x86_64Depth, v.noStack]
+    callCtr, Code.x86_64Depth, v.ctr.noStack]
+  generalize v.callee.code.x86_64Depth = d at this ⊢
+  revert d
   decide +kernel
 
-theorem open_xdepth : («open» v.callee v.suffix).x86_64Depth ≤ 16 := by
+theorem open_xdepth : («open» v.callee v.ctr.callee).x86_64Depth ≤ 16 := by
+  have := v.xdepth
   simp only [«open», openFront, mac, b0, aad, aadHead, absorbPad, updBlock, tag, ctr, ctrChunk, callUpdate, callCtr,
-    Impl.CmacAes.X86_64.update, Impl.CmacAes.X86_64.body, Code.x86_64Depth, v.noStack]
+    Code.x86_64Depth, v.ctr.noStack]
+  generalize v.callee.code.x86_64Depth = d at this ⊢
+  revert d
   decide +kernel
 
 /-- A state satisfying `vg_aes_ccm_seal`'s precondition, without the working
@@ -45,7 +52,7 @@ theorem sealFrameSat_pre : ∃ s, (Spec.Ccm.sealContract X86_64.abi 2624).pre s 
 
 theorem seal_framed :
     Verified X86_64.target
-      (Impl.StackScratch.X86_64.withStackArgScratch 2608 4 («seal» v.callee v.suffix))
+      (Impl.StackScratch.X86_64.withStackArgScratch 2608 4 («seal» v.callee v.ctr.callee))
       (Spec.Ccm.sealContract X86_64.abi 2624) :=
   X86_64.Verified.stackArgScratch (sig := Spec.Ccm.sealSig) (nm := "work") (e := .u64)
     (n := 320) (pre := Spec.Ccm.sealPre X86_64.abi.ptrBits)
@@ -64,7 +71,7 @@ theorem openFrameSat_pre : ∃ s, (Spec.Ccm.openContract X86_64.abi 2624).pre s 
 
 theorem open_framed :
     Verified X86_64.target
-      (Impl.StackScratch.X86_64.withStackArgScratch 2608 4 («open» v.callee v.suffix))
+      (Impl.StackScratch.X86_64.withStackArgScratch 2608 4 («open» v.callee v.ctr.callee))
       (Spec.Ccm.openContract X86_64.abi 2624) :=
   X86_64.Verified.stackArgScratch (sig := Spec.Ccm.openSig) (nm := "work") (e := .u64)
     (n := 320) (pre := Spec.Ccm.openPre X86_64.abi.ptrBits)

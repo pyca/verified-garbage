@@ -1,5 +1,5 @@
 import VerifiedGarbage.Impl.AesGcm.X86_64
-import VerifiedGarbage.Impl.CmacAes.X86_64
+import VerifiedGarbage.Impl.CmacAes.X86_64.Callee
 
 /-!
 # AES-CCM: x86-64 implementation
@@ -10,9 +10,8 @@ and `openContract`), with the working space `work` as a last argument, which
 a frame on the stack allocates (`Impl.StackScratch.X86_64.withStackArgScratch`),
 composed of calls of the verified `vg_cmac_aes_update`,
 whose chaining (`Cᵢ = CIPH_K(Cᵢ₋₁ ⊕ Mᵢ)`) from a zero block is CCM's CBC-MAC
-(§6.1 steps 1–4), and `vg_aes_ctr32`. Like those, they are generic over the
-implementation of AES they call (`Ctr32`, and `sfx`, the suffix of the name
-of `vg_cmac_aes_update` made with it).
+(§6.1 steps 1–4), and `vg_aes_ctr32`. They are generic over the
+implementations of both they call (`Update` and `Ctr32`).
 
 ## The working space
 
@@ -112,9 +111,9 @@ def restore : List Instr := saved.map fun (r, d) => .mov r (.mem (at_ .r15 d))
 def zero16 (d : Nat) : List Instr :=
   [.mov32 .rax (imm 0), .store (at_ .r15 d) .rax, .store (at_ .r15 (d + 8)) .rax]
 
-variable (c : Ctr32) (sfx : String)
+variable (u : Impl.CmacAes.X86_64.Update) (c : Ctr32)
 
-def callUpdate : Prog isa := .call ("vg_cmac_aes_update" ++ sfx) (Impl.CmacAes.X86_64.update c)
+def callUpdate : Prog isa := .call u.name u.code
 
 def callCtr : Prog isa := .call c.name c.code
 
@@ -128,18 +127,18 @@ def updArgs (y : Nat) : List Instr :=
 
 /-- `B` chained into the MAC state at `W + y`. -/
 def updBlock (y : Nat) : Prog isa :=
-  .seq (.block (updArgs y ++ ptr .rcx .r15 bO ++ [.mov32 .r8 (imm 1)])) (callUpdate c sfx)
+  .seq (.block (updArgs y ++ ptr .rcx .r15 bO ++ [.mov32 .r8 (imm 1)])) (callUpdate u)
 
 /-- The `rbp` bytes at `r12`, padded with zeros to whole blocks, chained into
 the MAC state at `W + y`. -/
 def absorbPad (y : Nat) : Prog isa :=
   .seq (.block [.mov .r8 (.reg .rbp), .shift .shr .r8 4, .alu .test .r8 (.reg .r8)])
-  (.seq (.ite .e (.block []) (.seq (.block (updArgs y ++ [.mov .rcx (.reg .r12)])) (callUpdate c sfx)))
+  (.seq (.ite .e (.block []) (.seq (.block (updArgs y ++ [.mov .rcx (.reg .r12)])) (callUpdate u)))
   (.seq (.block [.mov .rcx (.reg .rbp), .alu .and .rcx (imm 15), .alu .test .rcx (.reg .rcx)])
     (.ite .e (.block [])
       (.seq (.block (zero16 bO ++ [.mov .rsi (.reg .rbp), .alu .sub .rsi (.reg .rcx), .alu .add .rsi (.reg .r12)] ++
           ptr .rdi .r15 bO))
-        (.seq copyLoop (updBlock c sfx y))))))
+        (.seq copyLoop (updBlock u y))))))
 
 /-- `B` zeroed, and the encoding (A.2.2) of the length `rbp` (not 0) of the
 associated data at its start, its length (2, 6 or 10) in `rbx`. -/
@@ -164,12 +163,12 @@ def aadHead (y : Nat) : Prog isa :=
   (.seq minLen
   (.seq (.block [.mov .rsi (.reg .r12), .mov .rdi (.reg .r15), .alu .add .rdi (.reg .rbx),
       .alu .add .rdi (imm bO), .alu .add .r12 (.reg .rcx), .alu .sub .rbp (.reg .rcx)])
-  (.seq copyLoop (updBlock c sfx y))))
+  (.seq copyLoop (updBlock u y))))
 
 /-- The associated data, formatted (A.2.2) and chained into `W + y`. -/
 def aad (y : Nat) : Prog isa :=
   .seq (.block [.mov .r12 (.mem (at_ .r15 aadO)), .mov .rbp (.mem (at_ .r15 alenO)), .alu .test .rbp (.reg .rbp)])
-    (.ite .e (.block []) (.seq (aadHead c sfx y) (absorbPad c sfx y)))
+    (.ite .e (.block []) (.seq (aadHead u y) (absorbPad u y)))
 
 /-- `Ctr₀ = [q − 1]₈ ‖ N ‖ 0⁸q` (A.3) at `W + 48`. -/
 def ctrs : Prog isa :=
@@ -196,15 +195,15 @@ def b0 (y : Nat) : Prog isa :=
   (.seq (.block ([.mov .rcx (.mem (at_ .r15 c0O)), .mov .rdx (.mem (at_ .r15 (c0O + 8))),
       .mov .rsi (.mem (at_ .r15 lenO)), .store (at_ .r15 bO) .rcx, .store8 (at_ .r15 bO) .rax, .bswap .rsi,
       .alu .or .rsi (.reg .rdx), .store (at_ .r15 (bO + 8)) .rsi] ++ zero16 y))
-    (updBlock c sfx y)))
+    (updBlock u y)))
 
 /-- `Yᵣ`, the CBC-MAC of the formatted nonce, associated data and payload
 (§6.1 steps 1–4), at `W + y`. -/
 def mac (y : Nat) : Prog isa :=
-  .seq (b0 c sfx y)
-  (.seq (aad c sfx y)
+  .seq (b0 u y)
+  (.seq (aad u y)
   (.seq (.block [.mov .r12 (.mem (at_ .r15 dataO)), .mov .rbp (.mem (at_ .r15 lenO))])
-    (absorbPad c sfx y)))
+    (absorbPad u y)))
 
 /-- `Yᵣ ⊕ CIPH_K(Ctr₀)` at `W + y`, by `vg_aes_ctr32` on it with a copy of
 `Ctr₀` (which it increments). -/
@@ -276,20 +275,20 @@ def tagOut : Prog isa :=
 
 /-- `seal` after its entry, up to the tag: `Ctr₀`, the MAC and the tag at
 `W`, and the payload encrypted. -/
-def sealFront : Prog isa := .seq ctrs (.seq (mac c sfx 0) (.seq (tag c 0) (ctr c)))
+def sealFront : Prog isa := .seq ctrs (.seq (mac u 0) (.seq (tag c 0) (ctr c)))
 
 /-- `vg_aes_ccm_seal`. -/
 def «seal» : Prog isa :=
-  .seq (.block entry) (.seq (sealFront c sfx) (.seq tagOut (.block restore)))
+  .seq (.block entry) (.seq (sealFront u c) (.seq tagOut (.block restore)))
 
 /-- `open` after its entry, up to the comparison: `Ctr₀`, the payload
 decrypted, and the MAC of the plaintext and its tag at `W + 96`. -/
-def openFront : Prog isa := .seq ctrs (.seq (ctr c) (.seq (mac c sfx uO) (tag c uO)))
+def openFront : Prog isa := .seq ctrs (.seq (ctr c) (.seq (mac u uO) (tag c uO)))
 
 /-- `vg_aes_ccm_open`, with the received tag at `tag` (`[rsp + 24]`). -/
 def «open» : Prog isa :=
   .seq (.block entry)
-  (.seq (openFront c sfx)
+  (.seq (openFront u c)
   (.seq (.block [.mov .rbx (.mem (at_ .r15 tlO)), .mov .rsi (.mem (at_ .rsp 24))])
   (.seq recv
   (.seq (cmp uO)

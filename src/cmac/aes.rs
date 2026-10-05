@@ -16,7 +16,11 @@
 //! `vg_aes_expand_key_scratch_aesni` and `vg_aes_ctr32_aesni` rather than
 //! `vg_aes_expand_key_scratch` and `vg_aes_ctr32`, and CPUs with VAES and AVX2 too
 //! the `_vaes` functions, calling `vg_aes_ctr32_vaes` (which, for CMAC's
-//! single blocks, runs `vg_aes_ctr32_aesni`'s code). On AArch64, CPUs with the AES
+//! single blocks, runs `vg_aes_ctr32_aesni`'s code). Updates longer than 32
+//! bytes use `vg_cmac_aes_absorb_aesni_cbc` on both, whose whole-block
+//! chaining (`vg_cmac_aes_update_aesni_cbc`) keeps the round keys and the
+//! chaining value in SSE registers rather than calling `vg_aes_ctr32_aesni`
+//! on each block (`chains_long`). On AArch64, CPUs with the AES
 //! extension run the `_aes` functions, calling `vg_aes_expand_key_scratch_aes` and
 //! `vg_aes_ctr32_aes`. Updates longer than 32 bytes use `_aes_cbc`, whose
 //! whole-block chaining keeps the round keys and chaining value in vector
@@ -38,17 +42,17 @@ use crate::arch::cmac_aes::{
     VG_CMAC_AES_FINISH_AES_FEATURES, VG_CMAC_AES_INIT_AES_FEATURES, vg_cmac_aes_absorb_aes,
     vg_cmac_aes_absorb_aes_cbc, vg_cmac_aes_finish_aes, vg_cmac_aes_init_aes,
 };
+#[cfg(target_arch = "x86_64")]
+use crate::arch::cmac_aes::{
+    VG_CMAC_AES_ABSORB_AESNI_CBC_FEATURES, VG_CMAC_AES_ABSORB_VAES_FEATURES,
+    VG_CMAC_AES_FINISH_VAES_FEATURES, VG_CMAC_AES_INIT_VAES_FEATURES, vg_cmac_aes_absorb_aesni_cbc,
+    vg_cmac_aes_absorb_vaes, vg_cmac_aes_finish_vaes, vg_cmac_aes_init_vaes,
+};
 #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
 use crate::arch::cmac_aes::{
     VG_CMAC_AES_ABSORB_AESNI_FEATURES, VG_CMAC_AES_FINISH_AESNI_FEATURES,
     VG_CMAC_AES_INIT_AESNI_FEATURES, vg_cmac_aes_absorb_aesni, vg_cmac_aes_finish_aesni,
     vg_cmac_aes_init_aesni,
-};
-#[cfg(target_arch = "x86_64")]
-use crate::arch::cmac_aes::{
-    VG_CMAC_AES_ABSORB_VAES_FEATURES, VG_CMAC_AES_FINISH_VAES_FEATURES,
-    VG_CMAC_AES_INIT_VAES_FEATURES, vg_cmac_aes_absorb_vaes, vg_cmac_aes_finish_vaes,
-    vg_cmac_aes_init_vaes,
 };
 use crate::arch::cmac_aes::{vg_cmac_aes_absorb, vg_cmac_aes_finish, vg_cmac_aes_init};
 use crate::cpu::{Features, detected};
@@ -76,11 +80,13 @@ fn select(f: Features) -> Backend {
     const VAES: Features = Features::all(&[
         VG_CMAC_AES_INIT_VAES_FEATURES,
         VG_CMAC_AES_ABSORB_VAES_FEATURES,
+        VG_CMAC_AES_ABSORB_AESNI_CBC_FEATURES,
         VG_CMAC_AES_FINISH_VAES_FEATURES,
     ]);
     const AESNI: Features = Features::all(&[
         VG_CMAC_AES_INIT_AESNI_FEATURES,
         VG_CMAC_AES_ABSORB_AESNI_FEATURES,
+        VG_CMAC_AES_ABSORB_AESNI_CBC_FEATURES,
         VG_CMAC_AES_FINISH_AESNI_FEATURES,
     ]);
     Backend::select_for(f, VAES, AESNI)
@@ -97,6 +103,16 @@ fn select(f: Features) -> Backend {
         VG_CMAC_AES_FINISH_AES_FEATURES,
     ]);
     Backend::select_for(f, AES)
+}
+
+/// Whether an update of `len` bytes should chain its blocks with the round
+/// keys and the chaining value kept in registers (`_aes_cbc` on AArch64,
+/// `_aesni_cbc` on x86-64) rather than by a call of `vg_aes_ctr32` on each
+/// block: when it is longer than 32 bytes, where that pays for loading the
+/// round keys.
+#[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
+fn chains_long(len: usize) -> bool {
+    len > 32
 }
 
 /// The best implementation a CPU with the features `f` can run: there is
@@ -180,13 +196,27 @@ impl AesCmac {
             .expect("message too long");
         let f = match self.backend {
             Backend::Scalar => vg_cmac_aes_absorb,
-            #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+            #[cfg(target_arch = "x86")]
             Backend::AesNi => vg_cmac_aes_absorb_aesni,
             #[cfg(target_arch = "x86_64")]
-            Backend::Vaes => vg_cmac_aes_absorb_vaes,
+            Backend::AesNi => {
+                if chains_long(data.len()) {
+                    vg_cmac_aes_absorb_aesni_cbc
+                } else {
+                    vg_cmac_aes_absorb_aesni
+                }
+            }
+            #[cfg(target_arch = "x86_64")]
+            Backend::Vaes => {
+                if chains_long(data.len()) {
+                    vg_cmac_aes_absorb_aesni_cbc
+                } else {
+                    vg_cmac_aes_absorb_vaes
+                }
+            }
             #[cfg(target_arch = "aarch64")]
             Backend::Aes => {
-                if data.len() > 32 {
+                if chains_long(data.len()) {
                     vg_cmac_aes_absorb_aes_cbc
                 } else {
                     vg_cmac_aes_absorb_aes
@@ -339,6 +369,17 @@ mod tests {
                 }
             }
         }
+    }
+
+    /// Updates longer than 32 bytes chain in registers.
+    #[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
+    #[test]
+    fn chains_long() {
+        use super::chains_long;
+        assert!(!chains_long(0));
+        assert!(!chains_long(32));
+        assert!(chains_long(33));
+        assert!(chains_long(usize::MAX));
     }
 
     /// A message of 2⁶⁴ bytes or more is refused.

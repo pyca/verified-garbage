@@ -19,6 +19,7 @@ open VG.Impl.AesGcm.X86_64 (at_ imm ptr copyLoop minLen)
 open VG.Proof.AesGcm.X86_64 (LoopPre copyLoop_ok)
 open VG.Spec.Aes (bytesAt)
 open VG.Proof.Aes.X86_64 (Ctr32Impl)
+open VG.Proof.CmacAes.X86_64 (UpdateImpl)
 open VG.Proof.AesCcm (hdrLen headLen adataBlocks)
 
 /-- The encoding of the length of the associated data and its first bytes in `B`. -/
@@ -112,11 +113,11 @@ theorem aadHeadPre_ok {K W SP : Addr} {s : State} (E : Env K W SP s)
     by rw [hg₄ _ (by decide) (by decide), h12₃], by rw [hg₄ _ (by decide) (by decide), hbp₃], hB₄⟩
 
 /-- The first block of the associated data. -/
-theorem aadHead_ok (v : Ctr32Impl) {K W SP : Addr} {s : State} (L : Lay K W SP) (E : Env K W SP s) {R : Nat}
+theorem aadHead_ok (v : UpdateImpl) {K W SP : Addr} {s : State} (L : Lay K W SP) (E : Env K W SP s) {R : Nat}
     (hR : R = 10 ∨ R = 12 ∨ R = 14) (hRo : s.mem.readW (W + BitVec.ofNat 64 232) 64 = BitVec.ofNat 64 R)
     {y : Nat} (hy : y = 0 ∨ y = 96) {A : Addr} {a : Nat} (hA : Buf K W SP s A a) (ha0 : 0 < a)
     (h12 : s.gpr .r12 = A) (hbp : s.gpr .rbp = BitVec.ofNat 64 a) :
-    WP isa (aadHead v.callee v.suffix y) s (@Absorbed K W SP s y (A + BitVec.ofNat 64 (headLen a)) (a - headLen a)
+    WP isa (aadHead v.callee y) s (@Absorbed K W SP s y (A + BitVec.ofNat 64 (headLen a)) (a - headLen a)
       (Spec.Cmac.chain (Spec.Ccm.ctxCiph s.mem K R) (bytesAt s.mem (W + BitVec.ofNat 64 y) 16)
         [Spec.Ccm.pad16 (Spec.Ccm.encodeLen a ++ (bytesAt s.mem A a).take (headLen a))])) := by
   refine seq_assoc4 (WP.seq (WP.mono (aadHeadPre_ok E hA ha0 h12 hbp)
@@ -156,10 +157,10 @@ structure MacStep {K W SP : Addr} (s : State) (y : Nat) (Y : List Byte) (s' : St
   wr : s'.wr = s.wr
 
 /-- The associated data, formatted and chained. -/
-theorem aad_ok (v : Ctr32Impl) {K W SP : Addr} {s : State} (L : Lay K W SP) (E : Env K W SP s) {R : Nat}
+theorem aad_ok (v : UpdateImpl) {K W SP : Addr} {s : State} (L : Lay K W SP) (E : Env K W SP s) {R : Nat}
     {N A D : Addr} {nl al n tl : Nat} (S : Slots W R N A D nl al n tl s.mem) (hR : R = 10 ∨ R = 12 ∨ R = 14)
     {y : Nat} (hy : y = 0 ∨ y = 96) (hA : Buf K W SP s A al) :
-    WP isa (aad v.callee v.suffix y) s (@MacStep K W SP s y
+    WP isa (aad v.callee y) s (@MacStep K W SP s y
       (Spec.Cmac.chain (Spec.Ccm.ctxCiph s.mem K R) (bytesAt s.mem (W + BitVec.ofNat 64 y) 16)
         (adataBlocks (bytesAt s.mem A al)))) := by
   have h15 := E.r15

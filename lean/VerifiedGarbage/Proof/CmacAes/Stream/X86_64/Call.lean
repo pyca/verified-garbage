@@ -1,5 +1,5 @@
 import VerifiedGarbage.Proof.Framework.OffsetBelow
-import VerifiedGarbage.Proof.CmacAes.X86_64.Verified
+import VerifiedGarbage.Proof.CmacAes.X86_64.Variant
 import VerifiedGarbage.Proof.Cmac.Stream
 import VerifiedGarbage.Impl.CmacAes.Stream.X86_64
 
@@ -97,20 +97,21 @@ end
 # Streaming AES-CMAC on x86-64: the calls
 
 A call of each function the streaming functions call (`vg_aes_expand_key_scratch`,
-`vg_cmac_aes_subkeys`, `vg_cmac_aes_update` and `vg_cmac_aes_finalize`, for
-any implementation of AES), from its contract (with `WP.call`): what it needs
-(`…Args`), what it leaves (`…Post`, in terms of the memory before the call),
-and that two calls with the same arguments leak the same (`…_rel`). Each
-callee's stack is in the 16 bytes below the stack pointer (`below sp 16`): its
-return address, and that of the call of `vg_aes_ctr32` it makes.
+`vg_cmac_aes_subkeys` and `vg_cmac_aes_finalize`, for any implementation of
+AES, and `vg_cmac_aes_update`, for any of its implementations, `UpdateImpl`),
+from its contract (with `WP.call`): what it needs (`…Args`), what it leaves
+(`…Post`, in terms of the memory before the call), and that two calls with
+the same arguments leak the same (`…_rel`). Each callee's stack is in the 16
+bytes below the stack pointer (`below sp 16`): its return address, and that
+of the call of `vg_aes_ctr32` it makes, if it makes one.
 -/
 
 namespace VG.Proof.CmacAes.Stream.X86_64
 
 open VG VG.X86_64
 open VG.Proof.Aes.X86_64 (Ctr32Impl)
-open VG.Proof.CmacAes.X86_64 (updateX86_64 subkeysX86_64 finalizeX86_64 update_correct subkeys_correct
-  finalize_correct update_ct subkeys_ct finalize_ct callEntry_frame bytesAt_frame toNat_rounds)
+open VG.Proof.CmacAes.X86_64 (UpdateImpl updateX86_64 subkeysX86_64 finalizeX86_64 subkeys_correct
+  finalize_correct subkeys_ct finalize_ct callEntry_frame bytesAt_frame toNat_rounds)
 
 /-! ## The stack -/
 
@@ -145,14 +146,6 @@ theorem nosp_of_all {c : Prog isa} (h : c.allInstrs (fun i => !Taint.clobbers i 
 theorem all_of_nosp {c : Prog isa} (h : NoSp c) : c.allInstrs (fun i => !Taint.clobbers i .rsp) = true := by
   rw [Code.allInstrs_eq, List.all_eq_true]
   exact fun i hi => by simp [h i hi]
-
-theorem update_nosp (v : Ctr32Impl) : NoSp (Impl.CmacAes.X86_64.update v.callee) :=
-  nosp_of_all (by
-    simp only [Impl.CmacAes.X86_64.update, Impl.CmacAes.X86_64.body, Code.allInstrs, all_of_nosp v.nosp]
-    decide +kernel)
-
-theorem update_depth (v : Ctr32Impl) : (Impl.CmacAes.X86_64.update v.callee).depth = 1 := by
-  simp [Impl.CmacAes.X86_64.update, Impl.CmacAes.X86_64.body, Code.depth, v.depth]
 
 /-! ## `vg_cmac_aes_update` -/
 
@@ -206,16 +199,15 @@ theorem UArgs.pre {s : State} {W C D S : Addr} {R n : Nat} (h : UArgs s W C D S 
     h.stkS.sub_left (ret_sub _), h.stkW.sub_left (stk_sub _), h.stkD.sub_left (stk_sub _),
     h.stkC.sub_left (stk_sub _), h.stkS.sub_left (stk_sub _), h.wrapC, h.wrapD, h.wrapS, h.rounds⟩
 
-theorem upd_call (v : Ctr32Impl) (nm : String) {s : State} {W C D S : Addr} {R n : Nat}
+theorem upd_call (v : UpdateImpl) {s : State} {W C D S : Addr} {R n : Nat}
     (h : UArgs s W C D S R n) :
-    WP isa (.call nm (Impl.CmacAes.X86_64.update v.callee)) s (UPost s W C D S R n) := by
+    WP isa (.call v.callee.name v.callee.code) s (UPost s W C D S R n) := by
   have hR := toNat_rounds h.rounds
   have hN := toNat_ofNat (n := n) (by have := h.hn; omega)
-  refine WP.call (k := updateX86_64) (update_correct v) (update_nosp v) (by rw [update_depth]; decide)
-    h.pre h.reads h.writes ?_
+  have hd := v.depth
+  refine WP.call (k := updateX86_64) v.ok v.nosp (by omega) h.pre h.reads h.writes ?_
   intro s' hrd hwr hcs hf _ ⟨s₂, hm₂, _, hpost⟩
-  rw [update_depth] at hf
-  refine ⟨hrd, hwr, hcs, by simpa using hf, ?_⟩
+  refine ⟨hrd, hwr, hcs, by simpa using Frame.below_mono hf (b := 16) (by omega) (by decide), ?_⟩
   simp only [updateX86_64, State.withRegions_gpr, State.withRegions_mem,
     State.callEntry_gpr s (by decide : Reg.rdi ≠ .rsp), State.callEntry_gpr s (by decide : Reg.rsi ≠ .rsp),
     State.callEntry_gpr s (by decide : Reg.rdx ≠ .rsp), State.callEntry_gpr s (by decide : Reg.rcx ≠ .rsp),
@@ -225,11 +217,11 @@ theorem upd_call (v : Ctr32Impl) (nm : String) {s : State} {W C D S : Addr} {R n
     callEntry_bytes s (h.stkW.sub_right (Region.sub_prefix hRb)) (by omega),
     callEntry_bytes s h.stkC (by decide), callEntry_bytes s h.stkD (by have := h.hn; omega)]
 
-theorem upd_rel (v : Ctr32Impl) (nm : String) {P : State → State → Prop}
+theorem upd_rel (v : UpdateImpl) {P : State → State → Prop}
     (h : ∀ s₁ s₂, P s₁ s₂ → ∃ W C D S : Addr, ∃ R n : Nat,
       UArgs s₁ W C D S R n ∧ UArgs s₂ W C D S R n ∧ s₁.gpr .rsp = s₂.gpr .rsp) :
-    RelCT isa P (.call nm (Impl.CmacAes.X86_64.update v.callee)) fun _ _ => True := by
-  refine RelCT.callEx (update_correct v) (update_ct v) fun s₁ s₂ hp => ?_
+    RelCT isa P (.call v.callee.name v.callee.code) fun _ _ => True := by
+  refine RelCT.callEx v.ok v.ct fun s₁ s₂ hp => ?_
   obtain ⟨W, C, D, S, R, n, h₁, h₂, hsp⟩ := h s₁ s₂ hp
   refine ⟨_, _, _, _, h₁.pre, h₂.pre, ?_, h₁.reads, h₁.writes, h₂.reads, h₂.writes, hsp⟩
   simp only [updateX86_64, State.withRegions_gpr, State.callEntry_rsp,

@@ -26,6 +26,7 @@ open VG.Impl.CmacAes.X86_64 (at_)
 open VG.Proof.CmacAes.X86_64 (offset_nat bytesAt_frame k0 zero2 zero2_bytes frame_store2 mn)
 open VG.Proof.CmacAes.Stream.X86_64 (FArgs toNat_ofNat toNat_add_lt)
 open VG.Proof.Aes.X86_64 (Ctr32Impl)
+open VG.Proof.CmacAes.X86_64 (UpdateImpl)
 
 /-- What `encrypt` and `decrypt` need of their arguments, on the state with
 narrowed permissions: the key context `C`, the rounds `R`, the `N`
@@ -395,9 +396,9 @@ theorem adDesc_wp (h : EPre s₀ C A P W D R N L) {i : Nat} (hiN : i < N) {s : S
 
 /-- One component: its descriptor read (`adNext_ok`), its CMAC into the
 working space (`cmacOf_wp`) and the step of S2V (`adStep_wp`). -/
-theorem adBody_wp (v : Ctr32Impl) (h : EPre s₀ C A P W D R N L) {i : Nat} (hiN : i < N) {s : State}
+theorem adBody_wp (v : UpdateImpl) (h : EPre s₀ C A P W D R N L) {i : Nat} (hiN : i < N) {s : State}
     (hi : AInv s₀ C A P W D R N L i s) :
-    WP isa (.seq (.block adNext) (.seq (cmacOf v.callee v.suffix stOff) (.block adStep))) s
+    WP isa (.seq (.block adNext) (.seq (cmacOf v.callee v.ctr.callee v.ctr.suffix stOff) (.block adStep))) s
       fun s' => AInv s₀ C A P W D R N L (i + 1) s' ∧ s'.zf = some (decide (i + 1 = N)) := by
   have e := h.env
   have hN := h.N_lt
@@ -524,8 +525,8 @@ theorem adsHead_wp (h : EPre s₀ C A P W D R N L) {s : State} (hs : AInv s₀ C
   exact WP.of_runBlock ⟨s₁, run₁, hs.keep g₁ m₁ rd₁ wr₁, zf₁⟩
 
 /-- S2V over all the components, if there are any. -/
-theorem ads_wp (v : Ctr32Impl) (h : EPre s₀ C A P W D R N L) {s : State} (hs : AInv s₀ C A P W D R N L 0 s) :
-    WP isa (s2vAds v.callee v.suffix) s (AInv s₀ C A P W D R N L N) := by
+theorem ads_wp (v : UpdateImpl) (h : EPre s₀ C A P W D R N L) {s : State} (hs : AInv s₀ C A P W D R N L 0 s) :
+    WP isa (s2vAds v.callee v.ctr.callee v.ctr.suffix) s (AInv s₀ C A P W D R N L N) := by
   refine WP.seq (WP.mono (adsHead_wp h hs) fun s₁ ⟨hs₁, zf₁⟩ => ?_)
   refine WP.ite (decide (N = 0)) zf₁ (fun hb => WP.block_nil ?_) (fun hb => ?_)
   · have hN0 : N = 0 := of_decide_eq_true hb
@@ -564,9 +565,9 @@ theorem adsEnd_wp (h : EPre s₀ C A P W D R N L) {s : State} (hs : AInv s₀ C 
   · have hl : (Spec.Siv.components 64 s₀.mem A N).length = N := by simp [Spec.Siv.components, Sig.listed]
     rw [m₃, hs.acc, List.take_of_length_le (Nat.le_of_eq hl)]
 
-theorem encS2v_wp (v : Ctr32Impl) (h : EPre s₀ C A P W D R N L) :
-    WP isa (encS2v v.callee v.suffix) s₀ (SDone s₀ C A P W D R N L) :=
-  WP.seq (WP.mono (start_wp v h) fun _ h₀ => WP.seq (WP.mono h₀.2.2 fun _ h₁ =>
+theorem encS2v_wp (v : UpdateImpl) (h : EPre s₀ C A P W D R N L) :
+    WP isa (encS2v v.callee v.ctr.callee v.ctr.suffix) s₀ (SDone s₀ C A P W D R N L) :=
+  WP.seq (WP.mono (start_wp v.ctr h) fun _ h₀ => WP.seq (WP.mono h₀.2.2 fun _ h₁ =>
     WP.seq (WP.mono (ads_wp v h h₁) fun _ h₂ => adsEnd_wp h h₂)))
 
 /-! ## The whole functions -/
@@ -661,8 +662,8 @@ theorem EPre.all_sub (h : EPre s₀ C A P W D R N L) :
 
 /-- `encrypt` but for the copy of the IV: the IV at `W`, the ciphertext at
 `P`, and nothing written but the data, the working space, `D` and the stack. -/
-theorem encryptCore_wp (v : Ctr32Impl) (h : EPre s₀ C A P W D R N L) :
-    WP isa (encryptCore v.callee v.suffix) s₀ fun s' => gprPreserved s₀ s' ∧
+theorem encryptCore_wp (v : UpdateImpl) (h : EPre s₀ C A P W D R N L) :
+    WP isa (encryptCore v.callee v.ctr.callee v.ctr.suffix) s₀ fun s' => gprPreserved s₀ s' ∧
       Frame (allRegions W D P L (s₀.gpr .rsp)) s₀.mem s'.mem ∧
       Spec.Siv.encryptWith (Spec.Siv.ctxMac s₀.mem C R) (Spec.Siv.ctxCiph s₀.mem C R)
           (Spec.Siv.components 64 s₀.mem A N) (Spec.Aes.bytesAt s₀.mem P L) =
@@ -764,8 +765,8 @@ theorem outPre_of (h : EPre s₀ C A P W D R N L) (hT : SivArg s₀ P W D T L) {
     exact f.readW (Region.contains_self _ _) (hT.args_dis (d := 16) (by decide) (by decide)) (by decide)
 
 /-- `encryptCore` ends where the copy of the IV can read its stack arguments. -/
-theorem encryptCore_out (v : Ctr32Impl) (h : EPre s₀ C A P W D R N L) (hT : SivArg s₀ P W D T L) :
-    WP isa (encryptCore v.callee v.suffix) s₀ (OutPre s₀ W T) :=
+theorem encryptCore_out (v : UpdateImpl) (h : EPre s₀ C A P W D R N L) (hT : SivArg s₀ P W D T L) :
+    WP isa (encryptCore v.callee v.ctr.callee v.ctr.suffix) s₀ (OutPre s₀ W T) :=
   WP.mono (WP.rdwr (encryptCore_wp v h)) fun _ ⟨⟨g, f, _⟩, rd, wr⟩ => outPre_of h hT g f rd wr
 
 /-- The first two loads of `sivOut`: the addresses of `siv` and the working space. -/
@@ -777,9 +778,9 @@ theorem sivOutHead_wp {u : State} (hu : OutPre s₀ W T u) :
       ite_true, ite_false, hu.i8, hu.a8, hu.i16, hu.a16]
     rfl, by simp [gpr_setReg], by simp [gpr_setReg]⟩
 
-theorem encrypt_wp (v : Ctr32Impl) (h : EPre s₀ C A P W D R N L) (hT : SivArg s₀ P W D T L)
+theorem encrypt_wp (v : UpdateImpl) (h : EPre s₀ C A P W D R N L) (hT : SivArg s₀ P W D T L)
     (hTw : (⟨T, 16⟩ : Region) ∈ s₀.wr) :
-    WP isa (encrypt v.callee v.suffix) s₀ fun s' => gprPreserved s₀ s' ∧
+    WP isa (encrypt v.callee v.ctr.callee v.ctr.suffix) s₀ fun s' => gprPreserved s₀ s' ∧
       Spec.Siv.encryptWith (Spec.Siv.ctxMac s₀.mem C R) (Spec.Siv.ctxCiph s₀.mem C R)
           (Spec.Siv.components 64 s₀.mem A N) (Spec.Aes.bytesAt s₀.mem P L) =
         (Spec.Aes.bytesAt s'.mem T 16, Spec.Aes.bytesAt s'.mem P L) := by
@@ -876,8 +877,8 @@ theorem sivIn_wp (h : EPre s₀ C A P W D R N L) (hT : SivArg s₀ P W D T L) {s
     Proof.Cmac.le8_readW, ← Proof.Cmac.bytesAt_split]
   exact bytesAt_frame hs.frame (hT.s2v_dis h) (by decide)
 
-theorem decrypt_wp (v : Ctr32Impl) (h : EPre s₀ C A P W D R N L) (hT : SivArg s₀ P W D T L) :
-    WP isa (decrypt v.callee v.suffix) s₀ fun s' => gprPreserved s₀ s' ∧
+theorem decrypt_wp (v : UpdateImpl) (h : EPre s₀ C A P W D R N L) (hT : SivArg s₀ P W D T L) :
+    WP isa (decrypt v.callee v.ctr.callee v.ctr.suffix) s₀ fun s' => gprPreserved s₀ s' ∧
       match Spec.Siv.decryptWith (Spec.Siv.ctxMac s₀.mem C R) (Spec.Siv.ctxCiph s₀.mem C R)
           (Spec.Siv.components 64 s₀.mem A N) (Spec.Aes.bytesAt s₀.mem T 16) (Spec.Aes.bytesAt s₀.mem P L) with
       | some pt => (s'.gpr .rax).setWidth 32 = 1 ∧ Spec.Aes.bytesAt s'.mem P L = pt

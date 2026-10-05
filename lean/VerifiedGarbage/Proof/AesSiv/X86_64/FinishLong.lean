@@ -21,6 +21,7 @@ open VG.Proof.CmacAes.X86_64 (offset_nat bytesAt_frame k0 zero2 zero2_bytes fram
 open VG.Proof.CmacAes.Stream.X86_64 (UArgs FArgs Copied copy_ok toNat_ofNat toNat_add_lt upd_call
   bytesAt_writeBytes_self)
 open VG.Proof.Aes.X86_64 (Ctr32Impl)
+open VG.Proof.CmacAes.X86_64 (UpdateImpl)
 
 variable {s₀ : State} {C D P W : Addr} {R L : Nat}
 
@@ -463,10 +464,10 @@ structure LMac (s₀ : State) (C D P W : Addr) (R L out : Nat) (s s' : State) : 
             (Spec.Cmac.blocks 16 (Spec.Aes.bytesAt s.mem P (16 * kOf L))))
           (Spec.Cmac.blocks 16 (Spec.Aes.bytesAt s.mem (W + BitVec.ofNat 64 32) (16 * jOf L)))))
 
-theorem longMac_wp (v : Ctr32Impl) (h : Env s₀ C D P W R L) {s₁ : State} (hr₁ : Regs s₀ C D P W R L s₁)
+theorem longMac_wp (v : UpdateImpl) (h : Env s₀ C D P W R L) {s₁ : State} (hr₁ : Regs s₀ C D P W R L s₁)
     (hL16 : 16 ≤ L) {out : Nat} (hout : out = 0 ∨ out = 112)
     (ha : s₁.mem.readW (W + BitVec.ofNat 64 144) 64 = BitVec.ofNat 64 (16 * kOf L)) :
-    WP isa (longMac v.callee v.suffix out) s₁ (LMac s₀ C D P W R L out s₁) := by
+    WP isa (longMac v.callee v.ctr.callee v.ctr.suffix out) s₁ (LMac s₀ C D P W R L out s₁) := by
   have hwW := h.wW
   have hlt := h.lt
   have hT := kOf_tail hL16
@@ -475,7 +476,7 @@ theorem longMac_wp (v : Ctr32Impl) (h : Env s₀ C D P W R L) {s₁ : State} (hr
   have hRb : 16 * (R + 1) ≤ 240 := by rcases h.rounds with h | h | h <;> omega
   obtain ⟨s₂, run₂, hr₂, u₂, m₂⟩ := m1_ok h hr₁ hout hL16 ha
   refine WP.seq (WP.of_runBlock ⟨s₂, run₂, ?_⟩)
-  refine WP.seq (WP.mono (upd_call v _ u₂) fun s₃ h₃ => ?_)
+  refine WP.seq (WP.mono (upd_call v u₂) fun s₃ h₃ => ?_)
   have hr₃ := hr₂.keep h₃.saved h₃.rd h₃.wr
   obtain ⟨s₄', run₄', r8₄', cf₄', g₄', m₄', rd₄', wr₄'⟩ := m2_ok hr₃.r14 hlt
   refine WP.seq (WP.of_runBlock ⟨s₄', run₄', ?_⟩)
@@ -487,7 +488,7 @@ theorem longMac_wp (v : Ctr32Impl) (h : Env s₀ C D P W R L) {s₁ : State} (hr
   have hr₄ := hr₃.keep (fun r hr' => g₄ r (by rintro rfl; simp [calleeSaved] at hr')) rd₄ wr₄
   obtain ⟨s₅, run₅, hr₅, u₅, m₅⟩ := m3_ok h hr₄ hout r8₄
   refine WP.seq (WP.of_runBlock ⟨s₅, run₅, ?_⟩)
-  refine WP.seq (WP.mono (upd_call v _ u₅) fun s₆ h₆ => ?_)
+  refine WP.seq (WP.mono (upd_call v u₅) fun s₆ h₆ => ?_)
   have hr₆ := hr₅.keep h₆.saved h₆.rd h₆.wr
   -- The frames of the calls.
   have dO (d n : Nat) (hd : d + n ≤ 256) (hs : d + n ≤ out ∨ out + 16 ≤ d) (r : Region)
@@ -517,7 +518,7 @@ theorem longMac_wp (v : Ctr32Impl) (h : Env s₀ C D P W R L) {s₁ : State} (hr
       Mem.readW_writeW_self64]
   obtain ⟨s₇, run₇, hr₇, fa₇, m₇⟩ := m4_ok h hr₆ hout hL16 ha₆ hj₆
   refine WP.seq (WP.of_runBlock ⟨s₇, run₇, ?_⟩)
-  refine WP.mono (finr_call v _ fa₇) fun s₈ h₈ => ?_
+  refine WP.mono (finr_call v.ctr _ fa₇) fun s₈ h₈ => ?_
   have f₈ : Frame [⟨W + BitVec.ofNat 64 out, 16⟩, ⟨W + BitVec.ofNat 64 256, 2176⟩, below (s₀.gpr .rsp) 16]
       s₇.mem s₈.mem := by rw [← hr₇.rsp]; exact h₈.frame
   -- Everything after the tail, as one frame.
@@ -608,9 +609,9 @@ theorem long_spec (ciph : Spec.Cmac.Cipher) (k1 k2 d p : List Byte) (hd : d.leng
       (by rw [List.length_take, hlT]; omega) (by rw [List.length_drop, hlT]; omega)
       (Or.inr (by rw [List.length_drop, hlT]; omega)), Proof.Cmac.xor_comm]
 
-theorem finishLong_wp (v : Ctr32Impl) (h : Env s₀ C D P W R L) {s : State} (hr : Regs s₀ C D P W R L s)
+theorem finishLong_wp (v : UpdateImpl) (h : Env s₀ C D P W R L) {s : State} (hr : Regs s₀ C D P W R L s)
     (hL16 : 16 ≤ L) {out : Nat} (hout : out = 0 ∨ out = 112) :
-    WP isa (.seq longTail (longMac v.callee v.suffix out)) s (FinPost s₀ C D P W R L out s) := by
+    WP isa (.seq longTail (longMac v.callee v.ctr.callee v.ctr.suffix out)) s (FinPost s₀ C D P W R L out s) := by
   have hwW := h.wW
   have hlt := h.lt
   have hT := kOf_tail hL16
