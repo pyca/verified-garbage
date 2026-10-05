@@ -235,4 +235,47 @@ theorem verify_ok (lk : Pbkdf2.Md.X86_64.MgfLink H hH) {pubN : String} {pubC : P
       (emLen := (s.gpr .rsi).toNat - loV n₀.toNat) (bytesAt_length _ _ _) (by rw [bytesAt_length, hrl]) rfl hEL
       (by omega) hlo (by omega), vx, hnB, hrl]
 
+include hH K in
+theorem verify_safe {pubN : String} {pubC : Prog isa} (hC : pubC.allInstrs safeI = true) :
+    (verify H pubN pubC).allInstrs safeI = true := by
+  simp only [verify, verifyBody, seqs, verifyMain, Code.allInstrs, mgfXor_safe hH K, ctHash_safe hH K, hC, rec_all,
+    List.all_append, verifyFail, emLen, anyArgs, posScan, posCheck, clearY, copyDigest, copyDb, shift, shiftPass,
+    cmpH, byteLoop, step, Bool.and_true, Bool.true_and]
+  rfl
+
+include K in
+theorem verify_xd {pubN : String} {pubC : Prog isa} (hd : pubC.x86_64Depth = 0) :
+    (verify H pubN pubC).x86_64Depth ≤ verifyStack := by
+  simp only [verify, verifyBody, seqs, verifyMain, Code.x86_64Depth, mgfXor_xd K, ctHash_xd K, hd, verifyFail, emLen,
+    anyArgs, posScan, posCheck, clearY, copyDigest, copyDb, shift, shiftPass, cmpH, byteLoop,
+    X86_64.Instr.frameBytes]
+  unfold verifyStack frameBytes
+  decide
+
+include hH K in
+theorem verify_correct (lk : Pbkdf2.Md.X86_64.MgfLink H hH) {pubN : String} {pubC : Prog isa}
+    (hv : ∀ s, pubContract.pre s → ∃ t s', Exec isa pubC s t s' ∧ abiPreserved s s' ∧ pubChkContract.post s s')
+    (hC : pubC.allInstrs safeI = true) (hdC : pubC.x86_64Depth = 0)
+    (s : State) (h : (verifyK lk.G).pre s) :
+    ∃ t s', Exec isa (verify H pubN pubC) s t s' ∧ abiPreserved s s' ∧ (verifyK lk.G).post s s' := by
+  have hp := VPre.of lk.G h
+  have hsf := verify_safe hH K (pubN := pubN) hC
+  have hW := X86_64.WP.stackFrame (safe_sp hsf) (by have := verify_xd K (pubN := pubN) hdC; unfold verifyStack at this; omega)
+    (verify_ok hH K lk hv (safe_sp hC) hdC h)
+  obtain ⟨t, s', he, hq⟩ := WP.mono_mx (safe_mx hsf) hW fun s' q hmx => (⟨q, hmx⟩ : _ ∧ _)
+  obtain ⟨⟨⟨hcs, hpost⟩, hf⟩, hmx⟩ := hq
+  refine ⟨t, s', he, ⟨hcs, ?_, by rw [hmx]⟩, hpost⟩
+  -- The return address.
+  have hd := verify_xd K (pubN := pubN) hdC
+  refine Mem.readW_congr fun i hi => hf _ fun r hr hc => ?_
+  rcases List.mem_append.mp hr with hr | hr
+  · rw [hp.hwr] at hr
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    subst hr
+    exact hp.dRs _ (Offset.contains_base _ (by omega) (by omega)) hc
+  · simp only [List.mem_singleton] at hr; subst hr
+    have := hp.sp1; have := hp.sp2
+    exact Offset.base_disjoint_below (s.gpr .rsp) (n := (verify H pubN pubC).x86_64Depth) (k := 8)
+      (by unfold verifyStack at *; omega) _ (Offset.contains_base _ (by omega) (by omega)) hc
+
 end VG.Proof.RsaPss.X86_64
