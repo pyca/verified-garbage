@@ -315,4 +315,95 @@ theorem montSetup_ct (M : Mont) :
       hsrc.congrK (InScr.of_frm hf hle) k, by rw [e _ (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr rfl)))))]; exact hUs,
       Nat.le_refl _, hrk, hS⟩
 
+/-! ## The result -/
+
+/-- The status `millerRabin` leaves, from the shape of its result. -/
+def statOf (S : Option (Bool × Nat)) : Nat :=
+  match S with
+  | none => 0
+  | some (b, _) => if b then 1 else 3
+
+/-- The header words the end reads. -/
+def endVs (a : LPub) : List (Nat × BitVec 64) :=
+  [(kOut, a.p.op), (kLen, BitVec.ofNat 64 (8 * a.p.w)), (kUsedP, a.p.up)] ++ gvs a.p.B a.p.w
+
+def endS : List Nat := [kOut, kLen, kUsedP] ++ gS
+
+theorem endVs_fst (a : LPub) : (endVs a).map (·.1) = endS := rfl
+
+theorem loopEnd_good {a : LPub} {s : State} (h : LoopEnd a s) : ∃ mi, Good s a.p.B a.p.Z a.p.w mi :=
+  let ⟨_, _, mi, _, _, _, _, ⟨⟨_, hc⟩, _⟩, _⟩ := h; ⟨mi, hc.good⟩
+
+theorem loopEnd_hp {a : LPub} {s : State} (h : LoopEnd a s) : KW a.p.B a.p.wr ∧ HP a.p.B a.p.wr (endVs a) s := by
+  obtain ⟨hk, hd, mi, c, r, s₀, res, ⟨⟨bm, hc⟩, -, -, hf, k⟩, -, -, ho, hu, hl, hw⟩ := h
+  have hg := good_hp hc.good (k.2.2.trans hw)
+  refine ⟨hk, hc.good.rdi, k.2.2.trans hw, fun e he => ?_⟩
+  rcases List.mem_append.mp he with he | he
+  · simp only [List.mem_cons, List.not_mem_nil, or_false] at he
+    rcases he with rfl | rfl | rfl
+    · rw [hf.word_eq (roundRanges_hdr _ (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl rfl)))))) (by decide)]; exact ho
+    · rw [hf.word_eq (roundRanges_hdr _ (Or.inr (Or.inl rfl))) (by decide)]; exact hl
+    · rw [hf.word_eq (roundRanges_hdr _ (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr rfl)))))) (by decide)]; exact hu
+  · exact hg.hdr e he
+
+theorem loopEnd_stat {a : LPub} {s : State} (h : LoopEnd a s) :
+    word s.mem a.p.B (8 * kStat) = BitVec.ofNat 64 (statOf a.S) := by
+  obtain ⟨-, -, mi, c, r, s₀, res, ⟨-, h0, h1, -, -⟩, hS, -⟩ := h
+  rcases hres : res with _ | ⟨b, rest⟩
+  · rw [← hS, hres]; exact h0 hres
+  · rw [← hS, hres]; exact (h1 b rest hres).1
+
+/-- `LoopEnd` survives changes to registers Montgomery multiplication may
+change, and none to memory. -/
+theorem LoopEnd.congr {a : LPub} {s t : State} {rs : List Reg} (h : LoopEnd a s) (hm : t.mem = s.mem)
+    (k : Keep rs s t) (hrs : ∀ r ∈ rs, r ∈ mmRegs) : LoopEnd a t := by
+  obtain ⟨hk, hd, mi, c, r, s₀, res, ⟨⟨bm, hc⟩, h0, h1, hf, k₀⟩, hS, hrl, ho, hu, hl, hw⟩ := h
+  refine ⟨hk, hd, mi, c, r, s₀, res, ⟨⟨bm, hc.of_frm hd (rs := []) (by rw [hm]; exact Frm.refl _ _ _)
+    (hc.good.scr.congr k.2.2) ((k.gpr (by intro h; have := hrs _ h; simp [mmRegs] at this)).trans hc.good.rdi)
+    (by simp) (by simp) (by simp) (by simp) (by simp)⟩, fun h => by rw [hm]; exact h0 h,
+    fun b rest h => by rw [hm]; exact h1 b rest h, by rw [hm]; exact hf, (k₀.trans k).mono fun r hr => ?_⟩,
+    hS, hrl, ho, hu, hl, hw⟩
+  rcases List.mem_append.mp hr with hr | hr
+  · exact hr
+  · exact hrs r hr
+
+/-- The result leaks the same in runs that agree on the public data and on
+the shape of Miller–Rabin's result. -/
+theorem mrResult_ct : RelCT isa (Two LoopEnd) mrResult fun _ _ => True := by
+  unfold mrResult
+  refine RelCT.seq (R := Two fun a s => LoopEnd a s ∧ s.zf = some (decide (statOf a.S = 0)) ∧
+      s.gpr .rax = BitVec.ofNat 64 (statOf a.S))
+    (kt_piece (fun a : LPub => a.p.B) (fun a => a.p.wr) endS endVs [] (by decide) endVs_fst
+      (fun _ _ h => loopEnd_hp h) (pins_nil _) (by taint_decide) ?_)
+    (two_ite (fun _ _ _ h₁ h₂ => by simp only [eval, h₁.2.1, h₂.2.1])
+      (kt_ct (fun a : LPub => a.p.B) (fun a => a.p.wr) endS endVs [] (by decide) endVs_fst
+        (fun _ _ h => loopEnd_hp h.1.1) (pins_nil _) (by taint_decide))
+      (RelCT.seq (R := Two fun a s => LoopEnd a s ∧ s.zf = some (decide (statOf a.S = 1)))
+        (kt_piece (fun a : LPub => a.p.B) (fun a => a.p.wr) endS endVs [] (by decide) endVs_fst
+          (fun _ _ h => loopEnd_hp h.1.1) (pins_nil _) (by taint_decide) ?_)
+        (two_ite (fun _ _ _ h₁ h₂ => by simp only [eval, h₁.2, h₂.2])
+          (kt_ct (fun a : LPub => a.p.B) (fun a => a.p.wr) endS endVs [] (by decide) endVs_fst
+            (fun _ _ h => loopEnd_hp h.1.1) (pins_nil _) (by taint_decide))
+          (kt_ct (fun a : LPub => a.p.B) (fun a => a.p.wr) endS endVs [] (by decide) endVs_fst
+            (fun _ _ h => loopEnd_hp h.1.1) (pins_nil _) (by taint_decide)))))
+  · rintro a s h
+    obtain ⟨mi, hg⟩ := loopEnd_good h
+    have hn := hg.scr.nowrap
+    have hd : MrDims a.p.B a.p.Z a.p.w := h.2.1
+    have hl : InRegions (s.rd ++ s.wr) (off a.p.B (8 * kStat)) 8 :=
+      hg.scr.ld (by have := hdr_lt_slot a.p.w 8 (show kStat < 32 by decide); have := hd.z; omega)
+    have hS := loopEnd_stat h
+    have hv : statOf a.S < 4 := by unfold statOf; split <;> (try split) <;> decide
+    refine WP.mono (WP.keep [.rax] (Q := fun t => t.zf = some (decide (statOf a.S = 0)) ∧
+        t.gpr .rax = BitVec.ofNat 64 (statOf a.S) ∧ t.mem = s.mem) (by
+      xrun [State.ea, hdr, hg.rdi, hdrOff, hl, hS, BitVec.and_self]
+      rcases (show statOf a.S = 0 ∨ statOf a.S = 1 ∨ statOf a.S = 2 ∨ statOf a.S = 3 by omega) with
+        e | e | e | e <;> rw [e] <;> decide) rfl) fun t ⟨⟨hz, hax, hm⟩, k⟩ => ⟨h.congr hm k (by decide), hz, hax⟩
+  · rintro a s ⟨⟨h, -, hax⟩, -⟩
+    have hv : statOf a.S < 4 := by unfold statOf; split <;> (try split) <;> decide
+    refine WP.mono (WP.keep [.rax] (Q := fun t => t.zf = some (decide (statOf a.S = 1)) ∧ t.mem = s.mem) (by
+      xrun [hax]
+      rcases (show statOf a.S = 0 ∨ statOf a.S = 1 ∨ statOf a.S = 2 ∨ statOf a.S = 3 by omega) with
+        e | e | e | e <;> rw [e] <;> decide) rfl) fun t ⟨⟨hz, hm⟩, k⟩ => ⟨h.congr hm k (by decide), hz⟩
+
 end VG.Proof.RsaKeyGen.X86_64

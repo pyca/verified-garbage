@@ -155,6 +155,10 @@ theorem finUsed_ok {s : State} {B : Addr} {Z : Nat} {up : Addr} {st u : Nat} (hs
   exact ⟨h.rax, h.used, fun i hi => (h.saved i hi).trans (by rw [hm₁]), fun x hx hx' => (h.frame x hx hx').trans
     (by rw [hm₁]), (k₁.trans h.keep).mono (by decide)⟩
 
+theorem exit_eq : [Instr.mov32 .rax (.imm 1)] ++ exit = [.mov32 .rax (.imm 1),
+    .mov .rbx (.mem (hdr 0)), .mov .rbp (.mem (hdr 1)), .mov .r12 (.mem (hdr 2)), .mov .r13 (.mem (hdr 3)),
+    .mov .r14 (.mem (hdr 4)), .mov .r15 (.mem (hdr 5))] := rfl
+
 theorem sxm1'' : BitVec.signExtend 64 (BitVec.ofInt 32 (-1)) = mask true := by decide
 
 /-- `finPrime`: `c` (`aN`) to the `8 w` octets of `out`, `kUsed` to `used`,
@@ -180,31 +184,54 @@ theorem finPrime_ok {s : State} {B : Addr} {Z w : Nat} {mi : BitVec 64} {op up :
     hg.scr.ld (by have := hdr_lt_slot w 8 hi; omega)
   have sN := Nat.le_trans (slot_le (w := w) (show aN < 8 by decide)) hZ
   have hw8 : w = (8 * w + 7) / 8 := by omega
+  have hZ8 : 8 * 32 ≤ Z := by have := hdr_lt_slot w 8 (show 31 < 32 by decide); omega
+  -- `used`, and the arguments of `storeBE`.
   unfold finPrime
-  refine WP.seq (WP.mono (WP.keep [.rbx, .rsi, .rcx, .r15] (Q := fun t => t.gpr .rbx = off B (slot w aN) ∧
-      t.gpr .rsi = op ∧ t.gpr .rcx = BitVec.ofNat 64 (8 * w) ∧ t.gpr .r15 = mask true ∧ t.mem = s.mem) (by
-    xrun [State.ea, hdr, hg.rdi, hdrOff, hl (sArr aN) (by decide), hl kOut (by decide), hl kLen (by decide),
-      hg.hdr.harr aN (by decide), hO, hK, sxm1'']) rfl) fun s₁ ⟨⟨hbx, hsi, hcx, h15, hm₁⟩, k₁⟩ => ?_)
+  refine WP.seq (WP.mono (WP.keep [.rax, .rdx, .rbx, .rsi, .rcx, .r15] (Q := fun t => t.gpr .rbx = off B (slot w aN) ∧
+      t.gpr .rsi = op ∧ t.gpr .rcx = BitVec.ofNat 64 (8 * w) ∧ t.gpr .r15 = mask true ∧
+      t.mem = s.mem.writeW up (BitVec.ofNat 64 u)) (by
+    xrun [State.ea, hdr, at0, hg.rdi, hdrOff, hl kUsed (by decide), hl kUsedP (by decide), hu, hU,
+      show BitVec.ofInt 64 0 = 0#64 from rfl, BitVec.add_zero, hupw, hl (sArr aN) (by decide), hl kOut (by decide),
+      hl kLen (by decide), hg.hdr.harr aN (by decide), hO, hK, sxm1'']) rfl) fun s₁ ⟨⟨hbx, hsi, hcx, h15, hm₁⟩, k₁⟩ => ?_)
   have hs₁ := hg.scr.congr k₁.2.2
+  have hZx₁ : ∀ x, ofs B x < Z → s₁.mem x = s.mem x := fun x hx => by
+    rw [hm₁]; refine Mem.write_apply fun h => ?_
+    have := hupZ _ h
+    rw [← addr_of_sub x up] at this; omega
+  have hwv₁ : wv s₁.mem B (slot w aN) w = wv s.mem B (slot w aN) w :=
+    wv_congr fun i hi => Mem.readW_congr fun b hb => hZx₁ _ (by rw [ofs_off B (by omega)]; omega)
   refine WP.seq (WP.mono (storeBE_ok hs₁ hbx hsi hcx h15 (by omega) (by omega) hw8 (by omega)
     (fun j hj => by rw [k₁.2.2]; exact hout j hj) hsep) fun s₂ ⟨hb₂, hf₂, hwr₂, hrd₂, k₂⟩ => ?_)
   simp only [↓reduceIte] at hb₂
-  rw [hm₁] at hb₂ hf₂
   have hZx : ∀ x, ofs B x < Z → s₂.mem x = s.mem x := fun x hx =>
-    hf₂ x fun j hj he => by have := hsep j hj; rw [← he] at this; omega
+    (hf₂ x fun j hj he => by have := hsep j hj; rw [← he] at this; omega).trans (hZx₁ x hx)
   have hw₂ : ∀ d, d + 8 ≤ Z → word s₂.mem B d = word s.mem B d := fun d hd =>
     Mem.readW_congr fun b hb => hZx _ (by rw [ofs_off B (by omega)]; omega)
   have hs₂ : Scr s₂ B Z := ⟨by rw [hwr₂, k₁.2.2]; exact hg.scr.1, hn⟩
-  refine WP.mono (finUsed_ok hs₂ ((k₂.gpr (by decide)).trans ((k₁.gpr (by decide)).trans hg.rdi))
-    (by have := hdr_lt_slot w 8 (show 31 < 32 by decide); omega) (by decide)
-    (by rw [hw₂ _ (by have := hdr_lt_slot w 8 (show kUsed < 32 by decide); omega)]; exact hu)
-    (by rw [hw₂ _ (by have := hdr_lt_slot w 8 (show kUsedP < 32 by decide); omega)]; exact hU)
-    (by rw [hwr₂, k₁.2.2]; exact hupw) hupZ) fun t h => ⟨?_, h.rax, h.used, fun i hi => ?_, fun x hx hx' hx'' => ?_,
-      ((k₁.trans k₂).trans h.keep).mono (by decide)⟩
-  · rw [← hb₂]
-    exact List.map_congr_left fun i hi => h.frame _ (hsep i (List.mem_range.mp hi))
-      (fun b hb => hou i (List.mem_range.mp hi) b hb)
-  · rw [h.saved i hi, hw₂ _ (by have := hdr_lt_slot w 8 (show 5 < 32 by decide); omega)]
-  · rw [h.frame x hx hx', hf₂ x hx'']
+  have hdi₂ : s₂.gpr .rdi = B := (k₂.gpr (by decide)).trans ((k₁.gpr (by decide)).trans hg.rdi)
+  have hl₂ : ∀ i < 32, InRegions (s₂.rd ++ s₂.wr) (off B (8 * i)) 8 := fun i hi =>
+    hs₂.ld (by have := hdr_lt_slot w 8 hi; omega)
+  -- Status 1, and the saved registers.
+  refine WP.mono (WP.keep [.rax, .rbx, .rbp, .r12, .r13, .r14, .r15] (Q := fun t =>
+      t.gpr .rax = BitVec.ofNat 64 1 ∧ t.mem = s₂.mem ∧
+      t.gpr .rbx = word s₂.mem B (8 * 0) ∧ t.gpr .rbp = word s₂.mem B (8 * 1) ∧ t.gpr .r12 = word s₂.mem B (8 * 2) ∧
+      t.gpr .r13 = word s₂.mem B (8 * 3) ∧ t.gpr .r14 = word s₂.mem B (8 * 4) ∧ t.gpr .r15 = word s₂.mem B (8 * 5)) (by
+    rw [exit_eq]
+    xrun [State.ea, hdr, hdi₂, hdrOff, hl₂ 0 (by decide), hl₂ 1 (by decide), hl₂ 2 (by decide), hl₂ 3 (by decide),
+      hl₂ 4 (by decide), hl₂ 5 (by decide)]) rfl) fun t ⟨⟨hax, hm, h0, h1, h2, h3, h4, h5⟩, k⟩ => ⟨?_, hax, ?_, fun i hi => ?_, fun x hx hx' hx'' => ?_,
+      ((k₁.trans k₂).trans k).mono (by decide)⟩
+  · rw [hm, ← hwv₁, ← hb₂]
+  · rw [hm]
+    refine (Mem.readW_congr fun b hb => hf₂ _ fun j hj he => hou j hj b hb he.symm).trans ?_
+    rw [hm₁]; exact Mem.readW_writeW_self64 _ _ _
+  · rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 by omega) with rfl | rfl | rfl | rfl | rfl | rfl
+    · exact h0.trans (hw₂ _ (by omega))
+    · exact h1.trans (hw₂ _ (by omega))
+    · exact h2.trans (hw₂ _ (by omega))
+    · exact h3.trans (hw₂ _ (by omega))
+    · exact h4.trans (hw₂ _ (by omega))
+    · exact h5.trans (hw₂ _ (by omega))
+  · rw [hm, hf₂ x hx'', hm₁]
+    exact Mem.write_apply fun h => hx' _ h (addr_of_sub x up)
 
 end VG.Proof.RsaKeyGen.X86_64

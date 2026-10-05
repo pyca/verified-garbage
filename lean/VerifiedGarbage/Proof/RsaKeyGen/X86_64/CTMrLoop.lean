@@ -71,13 +71,14 @@ def LoopI (a : LPub) (j : Nat) (s : State) : Prop :=
     ∃ (mi : BitVec 64) (c : Nat) (r : List Byte) (s₀ : State) (res : Option (Bool × List Byte)) (uni : Nat),
       MrSt a.p.B a.p.Z a.p.w mi c a.p.ch a.p.rP r s₀ res (j + 1) uni (a.u j) s ∧ shapeOf res = a.S ∧
       r.length = a.p.rl ∧ 1 < c ∧ VG.Proof.RsaKeyGen.PrimeShape (64 * a.p.w) c ∧
-      word s₀.mem a.p.B (8 * kOut) = a.p.op ∧ word s₀.mem a.p.B (8 * kUsedP) = a.p.up ∧ s₀.wr = a.p.wr ∧
+      word s₀.mem a.p.B (8 * kOut) = a.p.op ∧ word s₀.mem a.p.B (8 * kUsedP) = a.p.up ∧
+      word s₀.mem a.p.B (8 * kLen) = BitVec.ofNat 64 (8 * a.p.w) ∧ s₀.wr = a.p.wr ∧
       itersOf (8 * a.p.w) a.p.rl a.S (a.u j) = a.N - j
 
 /-- The header at the head of an iteration. -/
 theorem LoopI.hp {a : LPub} {j : Nat} {s : State} (h : LoopI a j s) :
     HP a.p.B a.p.wr (a.p.vs (j + 1) (a.u j)) s := by
-  obtain ⟨-, hd, -, -, mi, c, r, s₀, res, uni, hI, -, hrl, -, -, hout, hup, hw, -⟩ := h
+  obtain ⟨-, hd, -, -, mi, c, r, s₀, res, uni, hI, -, hrl, -, -, hout, hup, -, hw, -⟩ := h
   obtain ⟨bm, hc⟩ := hI.ctx
   have hf := hI.frm
   have e : ∀ k, k = kOut ∨ k = kUsedP → word s.mem a.p.B (8 * k) = word s₀.mem a.p.B (8 * k) := fun k hk => by
@@ -117,7 +118,8 @@ def LoopEnd (a : LPub) (s : State) : Prop :=
   KW a.p.B a.p.wr ∧ MrDims a.p.B a.p.Z a.p.w ∧
     ∃ (mi : BitVec 64) (c : Nat) (r : List Byte) (s₀ : State) (res : Option (Bool × List Byte)),
       MrEnd a.p.B a.p.Z a.p.w mi c r s₀ res s ∧ shapeOf res = a.S ∧ r.length = a.p.rl ∧
-      word s₀.mem a.p.B (8 * kOut) = a.p.op ∧ word s₀.mem a.p.B (8 * kUsedP) = a.p.up ∧ s₀.wr = a.p.wr
+      word s₀.mem a.p.B (8 * kOut) = a.p.op ∧ word s₀.mem a.p.B (8 * kUsedP) = a.p.up ∧
+      word s₀.mem a.p.B (8 * kLen) = BitVec.ofNat 64 (8 * a.p.w) ∧ s₀.wr = a.p.wr
 
 theorem hp_nil {B : Addr} {wr : List Region} {vs : List (Nat × BitVec 64)} {s : State} (h : HP B wr vs s) :
     HP B wr [] s := ⟨h.rdi, h.wr, fun _ he => absurd he (List.not_mem_nil)⟩
@@ -139,11 +141,11 @@ theorem mrLoop_ct (M : Mont) :
       (two_ite_seq (fun _ _ _ h₁ h₂ => by simp only [eval, h₁.2, h₂.2]) ?_ ?_)
     · rintro ⟨a, j⟩ s ⟨hj, h⟩
       have h' := h
-      obtain ⟨hk, hd, hch, hrl, mi, c, r, s₀, res, uni, hI, hS, hrlen, hc1, hsh, ho, hu, hw, hit⟩ := h'
+      obtain ⟨hk, hd, hch, hrl, mi, c, r, s₀, res, uni, hI, hS, hrlen, hc1, hsh, ho, hu, hl0, hw, hit⟩ := h'
       obtain ⟨bm, hc⟩ := hI.ctx
       refine WP.mono (availCmp_ok hc.good hd.z (hI.rlen.trans (by rw [hrlen])) hI.kused hI.len (by rw [← hrlen]; exact hI.ul)
         hrl (by have := hd.w64; omega)) fun t ⟨hcf, hm, k⟩ =>
-          ⟨⟨hk, hd, hch, hrl, mi, c, r, s₀, res, uni, hI.congr hd hm k (by decide), hS, hrlen, hc1, hsh, ho, hu, hw,
+          ⟨⟨hk, hd, hch, hrl, mi, c, r, s₀, res, uni, hI.congr hd hm k (by decide), hS, hrlen, hc1, hsh, ho, hu, hl0, hw,
             hit⟩, hcf⟩
     · exact kt_ct (fun p : LPub × Nat => p.1.p.B) (fun p => p.1.p.wr) [] (fun _ => []) [] (by decide)
         (fun _ => rfl) (fun _ _ h => ⟨h.1.1.1, hp_nil h.1.1.hp⟩) (pins_nil _) (by taint_decide)
@@ -159,7 +161,7 @@ theorem mrLoop_ct (M : Mont) :
       have hm := (hp0 hp).mrh
       exact WP.mono (mrRound_ok M hd hc hR2 hc1 hsh hm.rand hm.used hm.len hsrc hlen hm.ki hun hm.chk hi huni hch)
         fun t ⟨hc', _, _, _, _, _, k⟩ => ⟨hk, hc'.good.rdi, k.2.2.trans hp.wr, fun _ he => absurd he (List.not_mem_nil)⟩
-  · rintro a j s hj ⟨hk, hd, hch, hrl, mi, c, r, s₀, res, uni, hI, hS, hrlen, hc1, hsh, ho, hu, hw, hit⟩
+  · rintro a j s hj ⟨hk, hd, hch, hrl, mi, c, r, s₀, res, uni, hI, hS, hrlen, hc1, hsh, ho, hu, hl0, hw, hit⟩
     have hw4 := hd.w4
     obtain ⟨_, _, hwb⟩ := VG.Proof.RsaKeyGen.cand_bits (by omega) hsh
     refine WP.mono (mrIter_ok M hd hc1 hsh (by omega) hch s hI) fun t ht => ?_
@@ -170,7 +172,7 @@ theorem mrLoop_ct (M : Mont) :
         · rw [← hS, hres]
           exact VG.Proof.RsaKeyGen.iters_end_some (by omega) (by rw [← hrlen]; exact hsome b rest hres)
       refine ⟨by rw [he]; simp only [Option.some.injEq, Bool.false_eq, decide_eq_false_iff_not, Nat.not_lt]; omega,
-        fun h => absurd h (by omega), fun _ => ⟨hk, hd, mi, c, r, s₀, res, hend, hS, hrlen, ho, hu, hw⟩⟩
+        fun h => absurd h (by omega), fun _ => ⟨hk, hd, mi, c, r, s₀, res, hend, hS, hrlen, ho, hu, hl0, hw⟩⟩
     · have hu' : a.u (j + 1) = a.u j + 8 * a.p.w := by simp only [LPub.u]; rw [Nat.mul_add, Nat.mul_one, Nat.add_assoc]
       have hc := VG.Proof.RsaKeyGen.iters_cont (L := 8 * a.p.w) (r := r) (a := (Spec.Rsa.splitTwos (c - 1)).1)
         (m := (Spec.Rsa.splitTwos (c - 1)).2) hI'.go hwb (by omega) (by omega) hI'.ul
@@ -179,7 +181,7 @@ theorem mrLoop_ct (M : Mont) :
       rw [show a.u j + 8 * a.p.w - 8 * a.p.w = a.u j by omega, hr', hS, hrlen] at hc
       refine ⟨by rw [he]; exact congrArg some (decide_eq_true (by omega)).symm, fun _ => ?_, fun h => absurd h (by omega)⟩
       rw [← hu'] at hI'
-      exact ⟨hk, hd, hch, hrl, mi, c, r, s₀, res, uni', hI', hS, hrlen, hc1, hsh, ho, hu, hw, by rw [hu']; omega⟩
+      exact ⟨hk, hd, hch, hrl, mi, c, r, s₀, res, uni', hI', hS, hrlen, hc1, hsh, ho, hu, hl0, hw, by rw [hu']; omega⟩
 
 /-- What `millerRabin` needs (`millerRabin_ok`'s hypotheses), for the shape
 of its result. -/
@@ -214,6 +216,6 @@ theorem millerRabin_ct (M : Mont) : RelCT isa (Two MrPre) (seqs (millerRabin M.m
         (Spec.Rsa.splitTwos (c - 1)).2) (1, 0) (List.drop a.u0 r) = mrRest c a.p.ch r 1 0 a.u0 := rfl
     rwa [hr', hS, hrlen] at this
   refine WP.mono (mrInit_ok hd hc hr2 hR hK hRL hC hsrc hU hu1 hu2) fun t hI => ⟨hN, hk, hd, hch, hrl, mi, c, r, s,
-    _, 0, by simpa [LPub.u] using hI, hS, hrlen, hc1, hsh, ho, hup, hp.wr, by simp [LPub.u]⟩
+    _, 0, by simpa [LPub.u] using hI, hS, hrlen, hc1, hsh, ho, hup, hK, hp.wr, by simp [LPub.u]⟩
 
 end VG.Proof.RsaKeyGen.X86_64

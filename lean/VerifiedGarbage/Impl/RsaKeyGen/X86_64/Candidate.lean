@@ -163,11 +163,14 @@ def finNone : Prog isa := .block ([.mov32 .rax (.imm 0)] ++ finish 0)
 /-- Status `st` (2 or 3): `used` is the octets read. -/
 def finUsed (st : Nat) : Prog isa := .block ([.mov .rax (.mem (hdr kUsed))] ++ finish st)
 
-/-- Status 1: `c` to `out`, and `used` the octets read. -/
+/-- Status 1: `used` the octets read, and `c` to `out` (the bases and the
+length loaded first, so that none is read from the header once memory
+outside it has been written). -/
 def finPrime : Prog isa :=
   .seq (.block [.mov .rbx (.mem (hdr (sArr aN))), .mov .rsi (.mem (hdr kOut)), .mov .rcx (.mem (hdr kLen)),
-      .mov .r15 (.imm (BitVec.ofInt 32 (-1)))])
-    (.seq storeBE (finUsed 1))
+      .mov .r15 (.imm (BitVec.ofInt 32 (-1))), .mov .rax (.mem (hdr kUsed)), .mov .rdx (.mem (hdr kUsedP)),
+      .store (at0 .rdx) .rax])
+    (.seq storeBE (.block ([.mov32 .rax (.imm 1)] ++ exit)))
 
 /-! ## The candidate -/
 
