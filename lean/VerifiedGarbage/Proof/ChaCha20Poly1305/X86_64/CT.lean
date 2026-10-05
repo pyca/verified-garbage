@@ -1309,7 +1309,7 @@ theorem copy_step {s₀ : State} (hp : APre e s₀) {s₂ : State} {Q : Addr} {t
   · simp only [ite_true]; rw [BitVec.ofNat_add]; rfl
   · exact h.frame.writeW (List.mem_singleton_self _) _ (contains_sub s₀ (by lit_omega) (by lit_omega) (by lit_omega))
   · dsimp only
-    rw [VG.Proof.ChaCha20.X86_64.Xor.writeW8_apply]
+    rw [VG.Proof.ChaCha20.X86_64.XorBuf.writeW8_apply]
     by_cases hki : k = i
     · subst hki
       simp only [ite_true, show k < k + 1 by omega, BitVec.setWidth_setWidth_of_le _ (by omega :
