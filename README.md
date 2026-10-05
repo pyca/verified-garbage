@@ -1086,7 +1086,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅ SHA extensions</td>
+<td>✅ SHA extensions; keys and signatures by a fixed-base comb</td>
 
 <td>✅</td>
 

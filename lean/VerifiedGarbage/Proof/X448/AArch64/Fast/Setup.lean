@@ -80,7 +80,7 @@ theorem setup0_ok {s : State} {base p : Addr} (hc : s.gpr .x3 = base)
   have sl : ∀ i : Index, ∀ j < 8, limbs t.mem base (slot i.val) j = limbs u.mem base (slot i.val) j := by
     intro i j hj
     have hi := i.isLt
-    have hS : SAVE = 3520 := rfl
+    have hS : SAVE = 2880 := rfl
     exact tO.limbs (Or.inl (by simp only [slot]; omega)) (by simp only [slot]; omega) (by omega)
   have sm : Same base [] u.mem t.mem := fun i _ j hj => sl i j hj
   have red : ∀ i : Index, Bnd Mb t.mem base (slot i.val) := fun i => sm.bnd (by simp) (weak_bnd (ub i))

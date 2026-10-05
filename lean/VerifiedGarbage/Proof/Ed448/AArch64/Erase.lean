@@ -217,53 +217,6 @@ def root0 (z : Nat) : Prog isa :=
 theorem root_eraseOff (z : Nat) : Code.eraseOff (root z) = Code.eraseOff (root0 z) := by
   simp only [root, root0, Code.eraseOff, ops_eraseOff, sqn_eraseOff]
 
-/-! ## `scalarBase`
-
-Its other blocks, as constants with literals. -/
-
-/-- The entry and the constants. -/
-def entryC : Prog isa := .block (entry ++ baseConsts)
-
-/-- The selection by the bit. -/
-def selectC : Prog isa := .block select
-
-/-- The sign of `x`, after its product. -/
-def signC : Prog isa :=
-  .block (VG.Impl.Curve448.AArch64.toLegacy X2 ++ VG.Impl.X448.AArch64.freeze ++
-    [VG.Impl.X448.AArch64.ld .x4 X2, .lsl .x .x4 .x4 63, .lsr .x .x4 .x4 56, .strb .x4 .x1 56])
-
-/-- `y`, after its product, and the registers restored. -/
-def finishC : Prog isa :=
-  .block (VG.Impl.Curve448.AArch64.toLegacy X2 ++ VG.Impl.X448.AArch64.freeze ++
-    (List.range 8).flatMap VG.Impl.X448.AArch64.packPair ++
-    [VG.Impl.X448.AArch64.ld .x19 0, VG.Impl.X448.AArch64.ld .x20 8])
-
-materialize_code entryC
-materialize_code selectC
-materialize_code signC
-materialize_code finishC
-materialize_code VG.Impl.Ed448.AArch64.bits
-
-/-- `step`, each field operation on slots chosen once. -/
-def step0 : Prog isa :=
-  .seq (.block [.subImm .x .x19 .x19 1]) <| .seq (field0 doubleOps) <| .seq (field0 addOps) selectC
-
-/-- `encode`, each field operation on slots chosen once. -/
-def encode0 : Prog isa :=
-  .seq invert0 <|
-  .seq (.seq (ops0 [.copy (slot 3) (slot 1), .mul (slot 1) (slot 0) (slot 21)]) signC) <|
-  .seq (ops0 [.copy X2 (slot 3)]) <| .seq (mul0 X2 T7) finishC
-
-/-- `scalarBase`, each field operation on slots chosen once. -/
-def scalarBase0 : Prog isa :=
-  .seq entryC <| .seq bits <|
-  .seq (.seq (.block [.movz .x .x19 456 0]) (.loop step0 (.nonzero .x .x19))) encode0
-
-theorem scalarBase_eraseOff : Code.eraseOff scalarBase = Code.eraseOff scalarBase0 := by
-  simp only [scalarBase, scalarBase0, mulLoop, step, step0, encode, encode0, sign,
-    VG.Impl.X448.AArch64.Weak.finish, entryC, selectC, signC, finishC, Code.eraseOff,
-    field_eraseOff, ops_eraseOff, invert_eraseOff, mul_eraseOff]
-
 /-! ## `verifyEquation`
 
 Its other blocks, as constants with literals, those of both decodings without their

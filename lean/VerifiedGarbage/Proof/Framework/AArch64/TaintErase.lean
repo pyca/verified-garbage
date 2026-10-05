@@ -111,4 +111,8 @@ theorem Code.allInstrs_keepsV_of_eraseImm {c c' : Prog isa} (he : Code.eraseImm 
     (h : c'.allInstrs keepsV = true) : c.allInstrs keepsV = true := by
   rw [← Code.allInstrs_eraseImm keepsV_eraseImm, he]; exact h
 
+/-- Whether code has no frames does not depend on its immediates. -/
+theorem Code.noFrames_eraseImm (c : Prog isa) : (Code.eraseImm c).noFrames = c.noFrames := by
+  induction c <;> simp_all [Code.eraseImm, Code.noFrames]
+
 end VG.AArch64
