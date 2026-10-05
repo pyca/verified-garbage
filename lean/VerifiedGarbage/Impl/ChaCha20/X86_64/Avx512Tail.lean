@@ -195,15 +195,9 @@ def part : Prog isa :=
 def last : Prog isa :=
   .seq (.block setup) (.seq (rounds 10) (.seq (.block finish) fromBuf))
 
-/-- At most 64 bytes, by `vg_chacha20_xor`, whose one block takes less time
-than four in `zmm` registers; it returns with `rsi` pointing at `buf`, which
-goes back to `r9`. -/
-def scalar : Prog isa :=
-  .seq (.block [.vop .vzeroupper]) (.seq (.call "vg_chacha20_xor" Xor.xor) (.block [.mov .r9 (.reg .rsi)]))
-
 /-- The last `rdx` bytes, from 1 to 256. -/
 def small : Prog isa :=
-  .seq (.block [.alu .cmp .rdx (.imm 65)]) (.ite .b scalar last)
+  .seq (.block [.alu .cmp .rdx (.imm 65)]) (.ite .b Avx2Tail.scalar last)
 
 /-- The last `rdx` bytes (fewer than 1024); then `rsi` points at `buf`. -/
 def tail : Prog isa :=
