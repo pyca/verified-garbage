@@ -56,7 +56,8 @@ theorem scalarBase_ok (hl : BaseLadderOk) (s : State) (hs : scalarBaseLocal.pre 
   rw [h.2, hl _ (decodeLE_below (by simp [Spec.Ed448.bytesAt]))]
 
 theorem scalarBase_ct : ConstantTime isa scalarBaseLocal.pre scalarBaseLocal.pub scalarBase := by
-  refine VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r0, .r1, .r2]) ?_ (by taint_decide)
+  refine Taint.constantTime_eraseOff_of_eq (Taint.ofRegs [.r0, .r1, .r2]) (Taint.noBase_ofRegs _) ?_
+    (c' := scalarBaseErased) rfl (by taint_decide)
   intro s₁ s₂ _ _ ⟨h1, h2, h3, _⟩
   apply Taint.agree_ofRegs
   intro r hr

@@ -32,7 +32,7 @@ theorem verifyEquation_some {pk sig ch : List Byte} (hl : pk.length = 57) (hs : 
   have hvr := decodePoint_valid hr
   unfold Spec.Ed448.verifyEquation
   simp only [hl, hs, hc, bne_self_eq_false, Bool.or_false, Bool.false_eq_true, ite_false, ha, hr]
-  congr 1
+  refine congrArg (decide (Spec.Ed448.decodeLE (sig.drop 57) < Spec.Ed448.L) && ·) ?_
   generalize Spec.Ed448.decodeLE (sig.drop 57) = S at *
   generalize Spec.Ed448.decodeLE ch = K at *
   have h1 := pointMul_rep 4 (pointMul_rep S basePoint_rep)

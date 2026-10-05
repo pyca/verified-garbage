@@ -79,7 +79,7 @@ theorem hash_ok (h : Facts s) (hc : GCtx s g m t) (ha : Shake.Args (base s) 7 (a
     hr2 hp2') fun t3 ⟨hc3, _, hr3, hp3⟩ => ?_)
   have ex : Spec.Sha3.bytesAt t2.mem ((arg s 1).setWidth 64) (arg s 2).toNat =
       Spec.Sha3.bytesAt m ((arg s 1).setWidth 64) (arg s 2).toNat :=
-    hk.input_bytes hc2 (ctx_in s) (whole (CTX s)) (by show (arg s 2).toNat ≤ 2 ^ 64; have := (arg s 2).isLt; omega)
+    hk.input_bytes (D := CTX s) hc2 (ctx_in s) (whole (CTX s)) (by show (arg s 2).toNat ≤ 2 ^ 64; have := (arg s 2).isLt; omega)
   rw [ex] at hr3 hp3
   -- `R`.
   refine WP.seq (WP.mono (hk.next_abs hc3 ha (scr_at s) (src := .caller 5 0) (len := .const 57)
@@ -87,7 +87,7 @@ theorem hash_ok (h : Facts s) (hc : GCtx s g m t) (ha : Shake.Args (base s) 7 (a
     (.inr ⟨_, List.mem_append_left _ (sig_in s), sig57 s⟩) (hk.away_input (sig_in s) (sig57 s))
     (by have := h.sig; omega) hr3 hp3) fun t4 ⟨hc4, _, hr4, hp4⟩ => ?_)
   have es : Spec.Sha3.bytesAt t3.mem ((arg s 5).setWidth 64) 57 = Spec.Sha3.bytesAt m ((arg s 5).setWidth 64) 57 :=
-    hk.input_bytes hc3 (sig_in s) (sig57 s) (by show 57 ≤ 2 ^ 64; decide)
+    hk.input_bytes (D := ⟨(arg s 5).setWidth 64, 57⟩) hc3 (sig_in s) (sig57 s) (by show 57 ≤ 2 ^ 64; decide)
   rw [es] at hr4 hp4
   -- `A`.
   refine WP.seq (WP.mono (hk.next_abs hc4 ha (scr_at s) (src := .caller 0 0) (len := .const 57)
@@ -95,7 +95,7 @@ theorem hash_ok (h : Facts s) (hc : GCtx s g m t) (ha : Shake.Args (base s) 7 (a
     (.inr ⟨_, List.mem_append_left _ (pk_in s), whole _⟩) (hk.away_input (pk_in s) (whole _))
     h.pk hr4 hp4) fun t5 ⟨hc5, _, hr5, hp5⟩ => ?_)
   have ep : Spec.Sha3.bytesAt t4.mem ((arg s 0).setWidth 64) 57 = Spec.Sha3.bytesAt m ((arg s 0).setWidth 64) 57 :=
-    hk.input_bytes hc4 (pk_in s) (whole (PK s)) (by show 57 ≤ 2 ^ 64; decide)
+    hk.input_bytes (D := PK s) hc4 (pk_in s) (whole (PK s)) (by show 57 ≤ 2 ^ 64; decide)
   rw [ep] at hr5 hp5
   -- The message.
   refine WP.seq (WP.mono (hk.next_abs hc5 ha (scr_at s) (src := .caller 3 0) (len := .caller 4 0)
@@ -105,7 +105,7 @@ theorem hash_ok (h : Facts s) (hc : GCtx s g m t) (ha : Shake.Args (base s) 7 (a
     hr5 hp5) fun t6 ⟨hc6, _, hr6, hp6⟩ => ?_)
   have em : Spec.Sha3.bytesAt t5.mem ((arg s 3).setWidth 64) (arg s 4).toNat =
       Spec.Sha3.bytesAt m ((arg s 3).setWidth 64) (arg s 4).toNat :=
-    hk.input_bytes hc5 (msg_in s) (whole (MSG s)) (by show (arg s 4).toNat ≤ 2 ^ 64; have := (arg s 4).isLt; omega)
+    hk.input_bytes (D := MSG s) hc5 (msg_in s) (whole (MSG s)) (by show (arg s 4).toNat ≤ 2 ^ 64; have := (arg s 4).isLt; omega)
   rw [em] at hr6 hp6
   -- Pad and squeeze.
   refine WP.seq (WP.mono (hk.pad_step hc6 ha (scr_at s) hr6 hp6) fun t7 ⟨hc7, _, hs7⟩ => ?_)
@@ -338,8 +338,8 @@ theorem body_ok {eq : Prog isa} (hE : CalleeOk Proof.Ed448.X86.verifyEquationLoc
       Spec.Ed448.hash (Spec.Ed448.bytesAt m ((arg s 1).setWidth 64) (arg s 2).toNat)
         (Spec.Ed448.bytesAt m ((arg s 5).setWidth 64) 57 ++ Spec.Ed448.bytesAt m ((arg s 0).setWidth 64) 57 ++
           Spec.Ed448.bytesAt m ((arg s 3).setWidth 64) (arg s 4).toNat) := hb₂
-  rw [ho, hk₃, hb₂', hk.input_bytes hc₃ (pk_in s) (whole (PK s)) (by show 57 ≤ 2 ^ 64; decide),
-    hk.input_bytes hc₃ (sig_in s) (whole (SIG s)) (by show 114 ≤ 2 ^ 64; decide)]
+  rw [ho, hk₃, hb₂', hk.input_bytes (D := PK s) hc₃ (pk_in s) (whole (PK s)) (by show 57 ≤ 2 ^ 64; decide),
+    hk.input_bytes (D := SIG s) hc₃ (sig_in s) (whole (SIG s)) (by show 114 ≤ 2 ^ 64; decide)]
 
 theorem body_nosp {eq : Prog isa} (hE : CalleeOk Proof.Ed448.X86.verifyEquationLocal eq) : NoSp (body eq) :=
   nosp_seq (NoSp.of_all (by decide +kernel))

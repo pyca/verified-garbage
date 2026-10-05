@@ -37,7 +37,9 @@ abbrev FrOk (s : State) : Prop := ∀ f, f + 8 ≤ 256 → InRegions (s.rd ++ s.
 theorem Arg.mov_ok (d : Reg) (a : Arg) (ha : a.ok = true) (hd : d ∈ argRegs6) (s : State) (hfr : FrOk s) :
     WP isa (.block (a.mov d)) s fun s1 =>
       (s1.gpr d = a.val s ∧ s1.mem = s.mem ∧ s1.mxcsr = s.mxcsr) ∧ Keep [d] s s1 := by
-  refine WP.keep [d] ?_ (by cases a <;> cases d <;> rfl)
+  refine WP.keep [d] ?_ (by
+    simp only [argRegs6, List.mem_cons, List.not_mem_nil, or_false] at hd
+    rcases hd with rfl | rfl | rfl | rfl | rfl | rfl <;> cases a <;> rfl)
   have hsp : d ≠ .rsp := fun h => by subst h; revert hd; decide
   have hax : d ≠ .rax := fun h => by subst h; revert hd; decide
   cases a with
