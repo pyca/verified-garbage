@@ -47,7 +47,7 @@ theorem ret_keep {s₀ s' : State} (hp : VPre p256 s₀) (K : VKeep s₀ s') :
 theorem verify_x86 (hL : Weierstrass.Law Spec.P256.curve) (s : State) (hs : verifyX86.pre s) :
     ∃ t s', Exec isa verifyP256 s t s' ∧ abiPreserved s s' ∧ verifyX86.post s s' := by
   have hp := pre_of hs
-  obtain ⟨t, s', he, K, hpost⟩ := verify_ok p256_ok rfl p256_sh hL hp
+  obtain ⟨t, s', he, K, hpost⟩ := verify_ok p256_ok hL hp
   refine ⟨t, s', he, ⟨fun r hr => ?_, ret_keep hp K⟩, post_of hpost⟩
   simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl

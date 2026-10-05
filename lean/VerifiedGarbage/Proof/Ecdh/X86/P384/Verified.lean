@@ -40,7 +40,7 @@ theorem post_of {s s' : State} (h : EPost p384 s s') : ecdhX86.post s s' := by
   revert h
   generalize hq : ex s.mem ((arg s 1).setWidth 64) ((arg s 2).setWidth 64) = q
   rw [show Spec.Ecdh.exchange p384.C (dk p384 s)
-      (Spec.Ecdsa.bytesAt s.mem (ptr s 2) (1 + 16 * p384.n)) = ex s.mem ((arg s 1).setWidth 64)
+      (Spec.Ecdsa.bytesAt s.mem (ptr s 2) (1 + 2 * p384.C.len)) = ex s.mem ((arg s 1).setWidth 64)
         ((arg s 2).setWidth 64) from rfl, hq]
   rcases q with _ | z <;> exact id
 
@@ -58,7 +58,7 @@ theorem ret_keep {s₀ s' : State} (hp : EPre p384 s₀) (K : EKeep p384 s₀ s'
 theorem ecdh_x86 (hL : Weierstrass.Law Spec.P384.curve) (s : State) (hs : ecdhX86.pre s) :
     ∃ t s', Exec isa exchangeP384 s t s' ∧ abiPreserved s s' ∧ ecdhX86.post s s' := by
   have hp := pre_of hs
-  obtain ⟨t, s', he, K, hpost⟩ := exchange_ok p384_ok rfl hL hp
+  obtain ⟨t, s', he, K, hpost⟩ := exchange_ok p384_ok hL hp
   refine ⟨t, s', he, ⟨fun r hr => ?_, ret_keep hp K⟩, post_of hpost⟩
   simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl
@@ -76,7 +76,7 @@ def τ₀ : VG.X86.Taint.T :=
 
 theorem wf₀ {s : State} (hp : EPre p384 s) : VG.X86.Taint.Wf τ₀ s := by
   have hsc := hp.sc_fit; have ho := hp.out_fit; have hs := hp.sp_fit
-  have hn6 : p384.n = 6 := rfl
+  have hn6 : p384.C.len = 48 := rfl
   rw [hn6] at ho
   refine VG.X86.Taint.Wf.entry rfl rfl ⟨fun _ => ⟨by simp [hp.wr, τ₀, hn6], by simpa [hp.wr, hn6] using hp.out_sc, ?_⟩,
     fun _ h => (List.not_mem_nil h).elim, fun _ h => (List.not_mem_nil h).elim,
