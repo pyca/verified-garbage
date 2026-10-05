@@ -242,12 +242,12 @@ theorem dg_ofBytes (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) {n : Nat} (hn :
   exact List.map_congr_left fun i hi => (hc.dg_byte hL (by have := List.mem_range.mp hi; omega)).symm
 
 /-- `h`: the digest's leftmost `4 k` bytes (at `esi`) modulo `n`, big-endian in the frame. -/
-theorem reduce_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) (hsi : t.gpr .esi = L.a2) (hn : 4 * P.k ≤ dn) :
+theorem reduce_ok (hA : P.R.wide = false) (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) (hsi : t.gpr .esi = L.a2) (hn : 4 * P.k ≤ dn) :
     WP isa (.block (cfgOf P).reduce) t fun t' => Ctx L g m₀ t' ∧
       Frame [⟨L.B + BitVec.ofNat 64 76, 176⟩] t.mem t'.mem ∧
       Spec.Weierstrass.ofBytes (Spec.Sha256.bytesAt t'.mem (L.B + BitVec.ofNat 64 204) (4 * P.k)) =
         Spec.Weierstrass.ofBytes (Spec.Sha256.bytesAt m₀ L.dg (4 * P.k)) % P.R.E.C.n := by
-  have hk : P.k ≤ 12 := by have := P.R.n6; simp only [RfcHash.k]; omega
+  have hk : P.k ≤ 12 := by have := (P.sizesA hA).2.1; simp only [RfcHash.k, RfcHash.w] at *; omega
   have hk8 : 8 ≤ P.k := by have := P.R.n4; simp only [RfcHash.k]; omega
   rw [Cfg.reduce, WP.block_append_iff, WP.block_append_iff, w_cfgOf]
   refine WP.mono (subs_ok (P := P) hL hn hk P.k (Nat.le_refl _) t
@@ -273,6 +273,6 @@ theorem reduce_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) (hsi : t.gpr .es
   change Spec.Weierstrass.ofBytes (Spec.Ecdsa.bytesAt _ _ (4 * P.k)) =
     Spec.Weierstrass.ofBytes (Spec.Ecdsa.bytesAt _ _ (4 * P.k)) % _
   rw [hH, hX, wsum_sel]
-  exact mod_mathK _ _ _ _ _ hch (wsum_lt _ _) (wsum_lt _ _) (by rw [e32]; exact P.R.lt_2n)
+  exact mod_mathK _ _ _ _ _ hch (wsum_lt _ _) (wsum_lt _ _) (by rw [e32]; exact (P.R.sizesA hA).2.2.2)
 
 end VG.Proof.Ecdsa.Rfc6979.X86
