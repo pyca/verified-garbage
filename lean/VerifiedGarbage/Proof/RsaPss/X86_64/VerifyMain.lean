@@ -254,4 +254,140 @@ theorem vmid_ok (lk : Pbkdf2.Md.X86_64.MgfLink H hH) {u : State} {F S : Addr} (L
     simp only [mixV]
     rw [ifn hn]
 
+/-! ## The salt, its hash, and the result -/
+
+include hH K in
+theorem vback_ok (lk : Pbkdf2.Md.X86_64.MgfLink H hH) {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte}
+    {W : Nat → BitVec 64} (R : Rep u.mem F S V W) {lo db pos : Nat} {dig : Addr}
+    (he : W 23 = off S (oEm + lo)) (hdb : W 24 = BitVec.ofNat 64 db) (hpos : W 34 = BitVec.ofNat 64 pos)
+    (hl : W 27 = BitVec.ofNat 64 (db - pos - 1 + (8 + H.D))) (hdg : W 37 = dig)
+    (hlo1 : lo ≤ 1) (hdb1 : 1 ≤ db) (hpd : pos < db) (hfit : lo + db + H.D + 1 ≤ 1024)
+    (hdR : ∀ i < H.D, InRegions (u.rd ++ u.wr) (dig + BitVec.ofNat 64 i) 1)
+    (hdO : ∀ i < H.D, Outside u.wr F (dig + BitVec.ofNat 64 i)) :
+    let msg := Spec.RsaPss.zeros 8 ++ (List.range H.D).map (bytesF u.mem dig) ++
+      ((List.range db).map fun i => V (oEm + lo + i)).drop (pos + 1)
+    WP isa (seqs [clearY, copyDigest H, copyDb H, shift H, .block (verifyNb H), ctHash H, cmpH H]) u fun u' =>
+      Lay u' F S ∧ u'.rd = u.rd ∧ u'.wr = u.wr ∧ (∀ r ∈ [Reg.r13, .r14, .r15, .rsp], u'.gpr r = u.gpr r) ∧
+      (∃ V' W', Rep u'.mem F S V' W' ∧
+        ∀ j < nW, j ≠ 28 → j ≠ 29 → j ≠ 30 → j ≠ 44 → j ≠ 45 → j ≠ 46 → W' j = W j) ∧
+      u'.gpr .rax = if W 33 = 0 ∧ ∀ i < H.D, (lk.G.hash msg).getD i 0 = V (oEm + lo + db + i) then 1 else 0 := by
+  intro msg
+  have hD := hH.hD0
+  have hDN := hH.hDN
+  have hN := hH.N_le
+  have c1 : oEm = 2560 := rfl
+  have c2 : oY = 3584 := rfl
+  have c3 : oDig = 2304 := rfl
+  have c5 : oRsa = 8192 := rfl
+  simp only [seqs]
+  -- `Y` cleared.
+  refine WP.seq (WP.mono (WP.keepIn (by safe_by [clearY]) (by simp [clearY, Code.x86_64Depth])
+    (clearY_ok L R)) fun u1 ⟨⟨L1, k1, hcx1, R1⟩, f1⟩ => ?_)
+  have hS1 := chain (u := u) rfl L.rsp (fun _ _ => rfl) f1
+  -- `mHash`.
+  refine WP.seq (WP.mono (WP.keepIn (by safe_by [copyDigest]) (by simp [copyDigest, byteLoop, Code.x86_64Depth])
+    (copyDigest_ok hH L1 R1 (p := dig) hdg hcx1
+      (fun i hi => by rw [k1.2.1, k1.2.2]; exact hdR i hi)
+      (fun i hi j hj => Outside.ne L1 (by rw [k1.2.2]; exact hdO i hi) (by omega))))
+    fun u2 ⟨⟨L2, k2, R2⟩, f2⟩ => ?_)
+  have hS2 := chain (u := u) k1.2.2 L1.rsp hS1 f2
+  -- `DB`.
+  refine WP.seq (WP.mono (copyDb_ok L2 R2 (e := oEm + lo) (db := db) he hdb ((k2.gpr (by decide)).trans hcx1)
+    hdb1 (by omega) (by omega)) fun u3 ⟨L3, k3, R3⟩ => ?_)
+  set V4 := clrV V oY 2048 with hV4
+  set V5 := cpV V4 (fun i => u1.mem (dig + BitVec.ofNat 64 i)) (oY + 8) H.D with hV5
+  set V6 := cpV V5 (fun i => V5 (oEm + lo + i)) (oY + (8 + H.D)) db with hV6
+  have e5 : ∀ i < db, V5 (oEm + lo + i) = V (oEm + lo + i) := fun i hi => by
+    simp only [hV5, hV4, cpV, clrV]; rw [ifn (by omega), ifn (by omega)]
+  -- The shift.
+  have hz : ∀ j, db ≤ j → j < db + 512 → V6 (oY + 8 + H.D + j) = 0 := fun j h1 h2 => by
+    simp only [hV6, hV5, hV4, cpV, clrV]; rw [ifn (by omega), ifn (by omega), ifp (by omega)]
+  refine WP.seq (WP.mono (shift_ok hH L3 R3 (pos := pos) (db := db) hpos hdb (by omega) hdb1 (by omega) hz)
+    fun u4 I4 => ?_)
+  obtain ⟨V7, W4, R4, -, -, -, hW4, hV7, hO7⟩ := I4.rep
+  have hp10 : (pos + 1) % 2 ^ 10 = pos + 1 := Nat.mod_eq_of_lt (by rw [show (2 : Nat) ^ 10 = 1024 from rfl]; omega)
+  rw [hp10] at hV7
+  have g4 : ∀ j, j ≠ 44 → j ≠ 45 → j ≠ 46 → j < nW → W4 j = W j := fun j a b c d => hW4 j d a b c
+  -- `nbm`.
+  refine WP.seq (WP.mono (verifyNb_ok hH I4.L R4 (db := db) (by rw [g4 24 (by decide) (by decide) (by decide)
+    (by decide), hdb]) (by omega)) fun u5 ⟨L5, k5, R5⟩ => ?_)
+  -- The hash of `M'`.
+  have hml : msg.length = db - pos - 1 + (8 + H.D) := by
+    simp only [msg, List.length_append, RsaPss.zeros_length, List.length_map, List.length_range, List.length_drop]
+    omega
+  have hB0 := hH.B_pos
+  have hBl := hH.B_le
+  have hL := hH.dims.L
+  have hnb1 := Nat.lt_div_mul_add (a := db + (7 + H.D + H.P.L)) (b := H.P.B) hB0
+  have hnb2 := Nat.div_mul_le_self (db + (7 + H.D + H.P.L)) H.P.B
+  have hmsg : ∀ i, msg.getD i 0 = if i < 8 then 0 else if i < 8 + H.D then u.mem (dig + BitVec.ofNat 64 (i - 8))
+      else if i < 8 + H.D + (db - (pos + 1)) then V (oEm + lo + (pos + 1 + (i - (8 + H.D)))) else 0 := fun i => by
+    simp only [msg, getD_app, List.length_append, RsaPss.zeros_length, List.length_map, List.length_range,
+      getD_map_range, bytesF, RsaPss.zeros_getD]
+    by_cases h1 : i < 8
+    · rw [ifp (by omega), ifp h1, ifp h1]
+    by_cases h2 : i < 8 + H.D
+    · rw [ifp h2, ifn h1, ifp (by omega), ifn h1, ifp h2]
+    rw [ifn h2, ifn h1, ifn h2]
+    simp only [List.getD_eq_getElem?_getD, List.getElem?_drop, List.getElem?_map]
+    by_cases h3 : i < 8 + H.D + (db - (pos + 1))
+    · rw [ifp h3, List.getElem?_range (by omega)]; rfl
+    · rw [ifn h3, List.getElem?_eq_none (by simp; omega)]; rfl
+  refine WP.seq (WP.mono (ctHash_ok hH K L5 R5 (msg := msg) (nbm := (db + (7 + H.D + H.P.L)) / H.P.B + 1)
+      (by rw [hml]; simp only [upd]; rw [ifn (by decide), g4 27 (by decide) (by decide) (by decide) (by decide), hl])
+      (by simp [upd]) (by rw [hml, Nat.succ_mul]; omega) (by rw [Nat.succ_mul]; omega) (fun i hi => ?_))
+    fun u6 ⟨L6, rd6, wr6, cs6, V8, W6, R6, hout6, hW6, hdig6⟩ => ?_)
+  · rw [hmsg]
+    have hi' : i < 2048 := by rw [Nat.succ_mul] at hi; omega
+    by_cases hY : 8 + H.D ≤ i ∧ i < 8 + H.D + db
+    · have := hV7 (i - (8 + H.D)) (by omega)
+      rw [show oY + 8 + H.D + (i - (8 + H.D)) = oY + i by omega] at this
+      rw [this, ifn (show ¬ i < 8 by omega), ifn (show ¬ i < 8 + H.D by omega)]
+      by_cases h3 : i - (8 + H.D) + (pos + 1) < db
+      · rw [ifp h3, ifp (show i < 8 + H.D + (db - (pos + 1)) by omega)]
+        simp only [hV6, cpV]
+        rw [ifp (by omega), show oY + 8 + H.D + (i - (8 + H.D) + (pos + 1)) - (oY + (8 + H.D)) =
+          pos + 1 + (i - (8 + H.D)) by omega, e5 _ (by omega)]
+      · rw [ifn h3, ifn (show ¬ i < 8 + H.D + (db - (pos + 1)) by omega)]
+    · rw [hO7 _ (by omega)]
+      simp only [hV6, hV5, hV4, cpV, clrV]
+      rw [ifn (by omega)]
+      by_cases h1 : i < 8
+      · rw [ifn (by omega), ifp (by omega), ifp h1]
+      by_cases h2 : i < 8 + H.D
+      · rw [ifp (by omega), ifn h1, ifp h2, show oY + i - (oY + 8) = i - 8 by omega]
+        exact hS1 _ (hdO _ (by omega))
+      · rw [ifn (by omega), ifp (by omega), ifn h1, ifn h2, ifn (by omega)]
+  -- The comparison.
+  have h23 : W6 23 = off S (oEm + lo) := by
+    rw [hW6 23 (by decide) (by decide) (by decide)]; simp only [upd]
+    rw [ifn (by decide), g4 23 (by decide) (by decide) (by decide) (by decide), he]
+  have h24 : W6 24 = BitVec.ofNat 64 db := by
+    rw [hW6 24 (by decide) (by decide) (by decide)]; simp only [upd]
+    rw [ifn (by decide), g4 24 (by decide) (by decide) (by decide) (by decide), hdb]
+  refine WP.mono (cmpH_ok hH L6 R6 h23 h24 (by omega)) fun u7 ⟨k7, hm7, hax7⟩ => ?_
+  have L7 : Lay u7 F S := L6.congr (k7.gpr (by decide)) k7.2.2 (by rw [hm7])
+  have hrd : u6.rd = u.rd := by
+    rw [rd6, k5.2.1, I4.keep.2.1, k3.2.1, k2.2.1, k1.2.1]
+  have hwr : u6.wr = u.wr := by
+    rw [wr6, k5.2.2, I4.keep.2.2, k3.2.2, k2.2.2, k1.2.2]
+  refine ⟨L7, k7.2.1.trans hrd, k7.2.2.trans hwr, fun r hr => ?_, ⟨V8, W6, hm7 ▸ R6, fun j hj a b c d e f => ?_⟩, ?_⟩
+  · rw [keep_cs k7 (by decide) r hr, cs6 r hr, keep_cs k5 (by decide) r hr, keep_cs I4.keep (by decide) r hr,
+      keep_cs k3 (by decide) r hr, keep_cs k2 (by decide) r hr, keep_cs k1 (by decide) r hr]
+  · rw [hW6 j hj b c]; simp only [upd]; rw [ifn a, g4 j d e f hj]
+  · rw [hax7]
+    have h33 : W6 33 = W 33 := by
+      rw [hW6 33 (by decide) (by decide) (by decide)]; simp only [upd]
+      rw [ifn (by decide), g4 33 (by decide) (by decide) (by decide) (by decide)]
+    have hH' : ∀ i < H.D, V8 (oDig + i) = (lk.G.hash msg).getD i 0 := fun i hi => by
+      rw [map_range_getD hdig6 hi, ← lk.hash]
+    have hE : ∀ i < H.D, V8 (oEm + lo + db + i) = V (oEm + lo + db + i) := fun i hi => by
+      rw [hout6 _ (by omega) ⟨by unfold oLen; omega, by omega⟩, hO7 _ (by omega)]
+      simp only [hV6, hV5, hV4, cpV, clrV]
+      rw [ifn (by omega), ifn (by omega), ifn (by omega)]
+    rw [h33]
+    congr 1
+    apply propext
+    exact and_congr_right fun _ => forall_congr' fun i => imp_congr_right fun hi => by rw [hH' i hi, hE i hi]
+
 end VG.Proof.RsaPss.X86_64
