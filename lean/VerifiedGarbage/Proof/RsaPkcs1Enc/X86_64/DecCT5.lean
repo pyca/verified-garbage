@@ -146,4 +146,21 @@ theorem dec_verified (v : Compress) (pv : PrivImpl) :
     Verified target (code (HH v) pv.name pv.code) (Spec.RsaPkcs1Enc.decryptContract abi decStack) :=
   Verified.of_correct (k := decK) (dec_correct v pv) (dec_constantTime v pv) decrypt_implies
 
+/-- It writes `rsp` only in its frame's push and pop, and its callees' own. -/
+theorem dec_spSafe (v : Compress) (pv : PrivImpl) :
+    (code (HH v) pv.name pv.code).all (fun i => !isa.writesSp i) = true := by
+  have K := Proof.Pbkdf2.Md.X86_64.Sha256.callees v
+  have hI : (HH v).hmacInit.all (fun i => !isa.writesSp i) = true := (Proof.Pbkdf2.Md.X86_64.Sha256.variant v).hmacInitSp
+  have hF : (HH v).hmacFin.all (fun i => !isa.writesSp i) = true := (Proof.Pbkdf2.Md.X86_64.Sha256.variant v).hmacFinSp
+  have hU : (HH v).updC.all (fun i => !isa.writesSp i) = true := Code.all_of_allInstrs
+    (Proof.Pbkdf2.Md.X86_64.core_updC K.cSp
+      (show Proof.Pbkdf2.Md.X86_64.Sha256.coreH.updC.allInstrs _ = true by decide +kernel))
+  have hFi : (HH v).finC.all (fun i => !isa.writesSp i) = true := Code.all_of_allInstrs
+    (Proof.Pbkdf2.Md.X86_64.core_finC K.cSp
+      (show Proof.Pbkdf2.Md.X86_64.Sha256.coreH.finC.allInstrs _ = true by decide +kernel))
+  have hIn : (HH v).initC.all (fun i => !isa.writesSp i) = true := Code.all_of_allInstrs K.iSp
+  simp only [code, body, dBuild, hashD, kdkMac, clLoop, amLoop, prfBody, maskPart, alPart, scanPart, selPart,
+    Code.all, hI, hF, hU, hFi, hIn, pv.spSafe, Bool.and_true, Bool.true_and]
+  decide +kernel
+
 end VG.Proof.RsaPkcs1Enc.X86_64.Dec

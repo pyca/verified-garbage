@@ -504,7 +504,8 @@ jobs:
             # AES-NI functions, and AES-OCB's through `Backend::AesNi`), which
             # a runner with VAES and VPCLMULQDQ never chooses; and VAES's and
             # VPCLMULQDQ's 256-bit ones, which a runner with AVX512BW too
-            # never chooses.
+            # never chooses; and RSAES-PKCS1-v1_5 decryption with SHA-256's
+            # SHA extensions and RSA's baseline code.
             runs: |
               - | sha1 sha224 sha256 sha384 sha512 blake2 aes_gcm aes_ocb cmac chacha20 triple_des_ecb poly1305 mlkem mldsa scrypt argon2 rfc9106 x25519 x448 ed25519 rsa message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
               aes,ssse3 | aes_gcm aes_ocb cmac cpu
@@ -512,6 +513,7 @@ jobs:
               aes,pclmulqdq,ssse3 | aes_gcm cpu
               aes,avx,pclmulqdq,ssse3 | aes_gcm cpu
               aes,avx,avx2,pclmulqdq,ssse3,vaes,vpclmulqdq | aes_gcm cpu
+              sha,ssse3 | rsa_pkcs1 cpu
           # x86 feature dispatch, natively in a 32-bit userspace, with the
           # runner's features (ChaCha20's and ChaCha20-Poly1305's SSSE3
           # instances) and every test with the baseline implementations; and
@@ -538,15 +540,16 @@ jobs:
             arch: x86_64
             runs: |
               - | sha1 sha224 sha256 sha384 sha512 blake2 aes_gcm cmac chacha20 triple_des_ecb poly1305 mlkem mldsa scrypt argon2 rfc9106 x25519 x448 ed25519 rsa message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
-              bmi2,adx | ed25519 message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
+              bmi2,adx | ed25519 rsa_pkcs1 message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
               avx,avx512f | argon2 rfc9106 cpu
               avx,avx2,avx512f | argon2 rfc9106 cpu
           # AVX2, but not AVX-512F or ADX; AES-NI and PCLMULQDQ with AVX, but
-          # not VAES or VPCLMULQDQ.
+          # not VAES or VPCLMULQDQ (RSAES-PKCS1-v1_5 decryption with SHA-256's
+          # AVX2 code and RSA's baseline code).
           - chip: hsw
             arch: x86_64
             runs: |
-              - | sha1 sha224 sha256 sha384 sha512 blake2 aes_gcm cmac chacha20 triple_des_ecb poly1305 mlkem mldsa scrypt argon2 rfc9106 x25519 x448 ed25519 message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
+              - | sha1 sha224 sha256 sha384 sha512 blake2 aes_gcm cmac chacha20 triple_des_ecb poly1305 mlkem mldsa scrypt argon2 rfc9106 x25519 x448 ed25519 rsa_pkcs1 message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
           # Nothing beyond x86-64's baseline, not even CPUID leaf 7.
           - chip: p4p
             arch: x86_64
@@ -564,11 +567,14 @@ jobs:
           # with its 512-bit loops); and AES-GCM's instances with VAES or
           # VPCLMULQDQ alone or paired with the other's 128-bit instruction,
           # which no chip has without the other, and with both in 256-bit
-          # registers alone, which a chip with AVX512BW never chooses.
+          # registers alone, which a chip with AVX512BW never chooses; and
+          # RSAES-PKCS1-v1_5 decryption with vg_rsa_private_checked_ifma and
+          # each of SHA-256's implementations.
           - chip: icx
             runs: |
               - | x25519 ed25519 rsa message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs aes_gcm cmac cpu
-              avx,avx2,bmi2,adx,avx512ifma,avx512vl | ed25519 message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
+              avx,avx2,bmi2,adx,avx512ifma,avx512vl | ed25519 rsa_pkcs1 message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
+              avx,avx2,bmi1,bmi2,adx,avx512ifma,avx512vl | rsa_pkcs1 cpu
               aes,avx,avx2,ssse3,vaes | aes_gcm cpu
               avx,avx2,pclmulqdq,ssse3,vpclmulqdq | aes_gcm cpu
               aes,avx,avx2,pclmulqdq,ssse3,vaes | aes_gcm cpu

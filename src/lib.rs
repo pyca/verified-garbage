@@ -108,6 +108,7 @@ pub mod poly1305;
 pub mod rc2_cbc;
 pub mod rc4;
 pub mod rsa;
+pub mod rsa_pkcs1_enc;
 pub mod scrypt;
 pub mod triple_des_ecb;
 pub mod x25519;

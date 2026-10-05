@@ -67,7 +67,7 @@ use crate::cpu::{Features, detected};
 /// `vg_rsa_public_precomputed_checked`, `vg_rsa_private_checked` and
 /// `vg_rsa_recover_primes`.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-enum Backend {
+pub(crate) enum Backend {
     /// The baseline ISA.
     Baseline,
     /// Montgomery multiplication with BMI2's `mulx` and ADX's `adcx` and
@@ -80,7 +80,7 @@ enum Backend {
 
 impl Backend {
     /// The best implementation a CPU with the features `f` can run.
-    fn select(f: Features) -> Backend {
+    pub(crate) fn select(f: Features) -> Backend {
         let adx = f.contains(VG_RSA_PUBLIC_PRECOMPUTE_ADX_FEATURES)
             && f.contains(VG_RSA_PUBLIC_PRECOMPUTED_CHECKED_ADX_FEATURES)
             && f.contains(VG_RSA_PRIVATE_CHECKED_ADX_FEATURES)
@@ -143,7 +143,7 @@ impl core::error::Error for Error {}
 
 /// The words of working space the operations need for an `n_len`-byte
 /// modulus (`VG.Spec.Rsa.scratchWords`).
-fn scratch_words(n_len: usize) -> usize {
+pub(crate) fn scratch_words(n_len: usize) -> usize {
     16 * n_len
 }
 
@@ -154,7 +154,7 @@ fn precomputed_words(n_len: usize) -> usize {
 }
 
 /// `x` without its leading zero bytes.
-fn trim(x: &[u8]) -> &[u8] {
+pub(crate) fn trim(x: &[u8]) -> &[u8] {
     let z = x.iter().take_while(|&&b| b == 0).count();
     &x[z..]
 }
@@ -177,7 +177,8 @@ fn exponent(e: &[u8]) -> Result<&[u8], Error> {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct PublicKey {
     n_len: usize,
-    e: Vec<u8>,
+    pub(crate) n: Vec<u8>,
+    pub(crate) e: Vec<u8>,
     pre: Vec<u64>,
 }
 
@@ -223,6 +224,7 @@ impl PublicKey {
         }
         Ok(PublicKey {
             n_len: k,
+            n: n.to_vec(),
             e: e.to_vec(),
             pre,
         })
@@ -297,14 +299,14 @@ fn widen(x: &[u8], len: usize) -> Option<Vec<u8>> {
 /// of RFC 8017 §3.2, with its public key `(n, e)` and its private exponent
 /// `d`. Its private values are wiped when it is dropped.
 pub struct PrivateKey {
-    n: Vec<u8>,
-    e: Vec<u8>,
-    d: Vec<u8>,
-    p: Vec<u8>,
-    q: Vec<u8>,
-    dp: Vec<u8>,
-    dq: Vec<u8>,
-    qinv: Vec<u8>,
+    pub(crate) n: Vec<u8>,
+    pub(crate) e: Vec<u8>,
+    pub(crate) d: Vec<u8>,
+    pub(crate) p: Vec<u8>,
+    pub(crate) q: Vec<u8>,
+    pub(crate) dp: Vec<u8>,
+    pub(crate) dq: Vec<u8>,
+    pub(crate) qinv: Vec<u8>,
 }
 
 impl fmt::Debug for PrivateKey {
