@@ -4,7 +4,7 @@ import VerifiedGarbage.Impl.Mont.Mod
 /-!
 # Montgomery arithmetic modulo an odd multiword modulus, on AArch64
 
-Arithmetic modulo an odd `m < 2^(64 n)`, `n` 64-bit words (`n ≤ 6`), on
+Arithmetic modulo an odd `m < 2^(64 n)`, `n` 64-bit words (`n ≤ 9`), on
 numbers below `m` held in the working space as `n` little-endian words at a
 constant offset from its base, which is in `x0`. The modulus is in the
 working space too, at `M.mo`; `M.minv` is `-m⁻¹ mod 2⁶⁴`. With
@@ -37,7 +37,9 @@ and `adc` (with `x7 = 0`), every selection is a mask or a `csel` on the carry,
 and every address is `x0` plus
 a constant: nothing but `x0` may affect timing. The operations use the
 registers `x1`–`x7`, `x16`, `x17` and `acc n` (`x8`–`x13` for `n = 4`), and
-write only `[o]` (their frames allow `[M.tmp]` too).
+for `n > 6` the callee-saved `x21`–`x23` (`acc n`) and, for `n > 7`, `x24`
+and `x25` (`dRegs n`), and write only `[o]` (their frames allow `[M.tmp]`
+too).
 -/
 
 namespace VG.Impl.Mont.AArch64
@@ -58,8 +60,10 @@ def const64 (r : Reg) (v : BitVec 64) : List Instr :=
 /-- `x7 = 0`, for the carries. -/
 def zero7 : Instr := .movz .x .x7 0 0
 
-/-- The accumulator's registers: `n + 2` of `x8`–`x15`. -/
-def acc (n : Nat) : List Reg := [.x8, .x9, .x10, .x11, .x12, .x13, .x14, .x15].take (n + 2)
+/-- The accumulator's registers: `n + 2` of `x8`–`x15`, then the
+callee-saved `x21`–`x23` (for `n > 6`, whose callers save them). -/
+def acc (n : Nat) : List Reg :=
+  [.x8, .x9, .x10, .x11, .x12, .x13, .x14, .x15, .x21, .x22, .x23].take (n + 2)
 
 /-- Word `j` of the accumulator in round `i`: the registers rotate by one
 word each round. -/
@@ -81,8 +85,9 @@ def selectsR : List Reg → List Reg → List Instr
   | t :: ts, d :: ds => .csel .x t d t :: selectsR ts ds
   | _, _ => []
 
-/-- The registers free for the difference when a sum or product is reduced. -/
-def dRegs (n : Nat) : List Reg := [.x1, .x3, .x4, .x5, .x6, .x16].take n
+/-- The registers free for the difference when a sum or product is reduced:
+for `n > 7`, the callee-saved `x24` and `x25` too. -/
+def dRegs (n : Nat) : List Reg := [.x1, .x3, .x4, .x5, .x6, .x16, .x17, .x24, .x25].take n
 
 /-- `ts` (and the top word `top`), below `2m`, reduced modulo `m`, in
 registers: the difference with `m` into `dRegs n`, and selected where it did

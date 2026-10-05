@@ -48,10 +48,10 @@ theorem wins_split (n i : Nat) :
   simp only [wins, List.range_succ, List.map_append, List.map_cons, List.map_nil,
     List.append_assoc, List.singleton_append]
 
-theorem fresh_wins_lt : ∀ n < 7, ∀ i < n + 2, Fresh (wins n i) := by
+theorem fresh_wins_lt : ∀ n < 10, ∀ i < n + 2, Fresh (wins n i) := by
   unfold Fresh; decide
 
-theorem fresh_wins {n : Nat} (hn : n < 7) (i : Nat) : Fresh (wins n i) := by
+theorem fresh_wins {n : Nat} (hn : n < 10) (i : Nat) : Fresh (wins n i) := by
   rw [wins_mod]; exact fresh_wins_lt n hn _ (Nat.mod_lt _ (by omega))
 
 /-! ## The multiplicands -/
@@ -173,17 +173,18 @@ theorem wins_tail (n i : Nat) :
   rw [wins_cons]; rfl
 
 /-- The window's registers: distinct, and none of `x0`–`x7`, `x16`, `x17`. -/
-theorem wins_regs {n : Nat} (hn : n < 7) (i : Nat) :
+theorem wins_regs {n : Nat} (hn : n < 10) (i : Nat) :
     ∀ r ∈ wins n i, r ≠ .x0 ∧ r ≠ .x1 ∧ r ≠ .x2 ∧ r ≠ .x3 ∧ r ≠ .x4 ∧ r ≠ .x5 ∧ r ≠ .x6 ∧
       r ≠ .x7 ∧ r ≠ .x16 ∧ r ≠ .x17 := by
   intro r hr
   have := (fresh_wins hn i).2 r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at this
-  exact this
+  obtain ⟨h0, h1, h2, h3, h4, h5, h6, h7, h16, h17, -, -⟩ := this
+  exact ⟨h0, h1, h2, h3, h4, h5, h6, h7, h16, h17⟩
 
 theorem bRegs_regs : ∀ r ∈ bRegs, r = .x4 ∨ r = .x5 ∨ r = .x16 ∨ r = .x17 := by decide
 
-theorem rowOkA {size : Nat} {n b : Nat} (hn : n < 7) (hb : b + 8 * n ≤ size) (hb8 : b % 8 = 0)
+theorem rowOkA {size : Nat} {n b : Nat} (hn : n < 10) (hb : b + 8 * n ≤ size) (hb8 : b % 8 = 0)
     (i : Nat) : RowOk size .x1 (wins n i) (bWords b 0 n) where
   nodup := (fresh_wins hn i).1
   regs t ht := by have := wins_regs hn i t ht; exact ⟨this.1, this.2.2.1, this.2.2.2.1,
@@ -212,7 +213,7 @@ theorem rowOkA {size : Nat} {n b : Nat} (hn : n < 7) (hb : b + 8 * n ≤ size) (
   x2 := by decide
   x3 := by decide
 
-theorem rowOkM {size : Nat} {n mo : Nat} (hn : n < 7) (hmo : mo + 8 * n ≤ size) (hmo8 : mo % 8 = 0)
+theorem rowOkM {size : Nat} {n mo : Nat} (hn : n < 10) (hmo : mo + 8 * n ≤ size) (hmo8 : mo % 8 = 0)
     (i : Nat) : RowOk size .x1 (wins n i) (mWords mo 0 n) where
   nodup := (fresh_wins hn i).1
   regs t ht := by have := wins_regs hn i t ht; exact ⟨this.1, this.2.2.1, this.2.2.2.1,
@@ -226,7 +227,7 @@ theorem rowOkM {size : Nat} {n mo : Nat} (hn : n < 7) (hmo : mo + 8 * n ≤ size
   x2 := by decide
   x3 := by decide
 
-theorem rowOkF {size : Nat} {n : Nat} (hn : n < 7) (i : Nat) {ws : List MWord}
+theorem rowOkF {size : Nat} {n : Nat} (hn : n < 10) (i : Nat) {ws : List MWord}
     (hws : ws.all MWord.ok = true) (g : Option Nat) :
     RowOk size (win n i 0) (wins n i).tail (ws.map (fWord g)) where
   nodup := (fresh_wins hn i).1.tail
@@ -298,7 +299,7 @@ theorem rwVal_regs (s : State) (base : Addr) : ∀ rs : List Reg,
 accumulator, or a row into the window (its low `n + 1` words for a tight
 modulus). -/
 theorem prodRow_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M : Mod}
-    (hn : M.n < 7) {a b i m : Nat} (ha : a + 8 * i + 8 ≤ size) (hb : b + 8 * M.n ≤ size)
+    (hn : M.n < 10) {a b i m : Nat} (ha : a + 8 * i + 8 ≤ size) (hb : b + 8 * M.n ≤ size)
     (ha8 : a % 8 = 0) (hb8 : b % 8 = 0) (hz : s.gpr .x7 = 0) (hBR : BRegs s base b M.n)
     (hm : m < 2 ^ (64 * M.n)) (hok : M.ok m = true) (hB : wordsVal s.mem base b M.n < m)
     (hT : regsVal s (wins M.n i) < 2 * m) (h0 : i = 0 → regsVal s (wins M.n 0) = 0) :
@@ -403,7 +404,7 @@ theorem prodRow_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size)
 `bRegs` and the reduction's constant in `x6`: `2⁶⁴ T' = T + a_i B + u m`,
 and `T' < 2m` if `T < 2m`. -/
 theorem round_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M : Mod}
-    (hn : M.n < 7) {a b i m : Nat} (ha : a + 8 * i + 8 ≤ size) (hb : b + 8 * M.n ≤ size)
+    (hn : M.n < 10) {a b i m : Nat} (ha : a + 8 * i + 8 ≤ size) (hb : b + 8 * M.n ≤ size)
     (hmo : M.mo + 8 * M.n ≤ size) (ha8 : a % 8 = 0) (hb8 : b % 8 = 0) (hmo8 : M.mo % 8 = 0)
     (hz : s.gpr .x7 = 0) (hm : wordsVal s.mem base M.mo M.n = m)
     (hinv : (m * M.minv.toNat + 1) % 2 ^ 64 = 0) (hok : M.ok m = true)

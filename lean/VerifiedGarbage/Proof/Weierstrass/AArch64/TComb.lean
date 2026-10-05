@@ -197,7 +197,7 @@ theorem tentry_ok {K : TCombCfg} {C : Curve} {base : Addr} {size k i : Nat} {T :
     (by rw [hz₂]; exact hp0) hEy₂
   refine WP.mono W3 fun s₃ h₃ => ?_
   obtain ⟨k₃, e₃⟩ := h₃
-  have hs₃ : Scr s₃ base size := ⟨(k₃.gpr _ (x0_not_clob _ hM.n7)).trans hs₂.x0, k₃.wr ▸ hs₂.wr,
+  have hs₃ : Scr s₃ base size := ⟨(k₃.gpr _ (x0_not_clob _)).trans hs₂.x0, k₃.wr ▸ hs₂.wr,
     hs₂.nowrap, hs₂.enc⟩
   have U₃ := k₃.unch
   have U₂₃ : Unch base (combW K.toComb) s.mem s₃.mem := (U₂'.trans U₃).mono fun w hw => by

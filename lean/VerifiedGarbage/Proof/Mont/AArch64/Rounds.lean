@@ -32,18 +32,18 @@ theorem zeros_ok (s : State) : ∀ ts : List Reg,
     · have : q = t := by simpa [hqt] using hq
       subst this; rw [k₂.gpr _ hqt, z₁]
 
-theorem wins_sub_acc_lt : ∀ n < 7, ∀ i < n + 2, ∀ r ∈ wins n i, r ∈ acc n := by decide
+theorem wins_sub_acc_lt : ∀ n < 10, ∀ i < n + 2, ∀ r ∈ wins n i, r ∈ acc n := by decide
 
-theorem wins_sub_acc {n : Nat} (hn : n < 7) (i : Nat) : ∀ r ∈ wins n i, r ∈ acc n := by
+theorem wins_sub_acc {n : Nat} (hn : n < 10) (i : Nat) : ∀ r ∈ wins n i, r ∈ acc n := by
   rw [wins_mod]; exact wins_sub_acc_lt n hn _ (Nat.mod_lt _ (by omega))
 
-theorem acc_regs_lt : ∀ n < 7, ∀ r ∈ acc n,
-    r ∉ [Reg.x0, .x1, .x2, .x3, .x4, .x5, .x6, .x7, .x16, .x17] := by
+theorem acc_regs_lt : ∀ n < 10, ∀ r ∈ acc n,
+    r ∉ [Reg.x0, .x1, .x2, .x3, .x4, .x5, .x6, .x7, .x16, .x17, .x24, .x25] := by
   decide
 
 /-- `k` rounds, from a cleared accumulator, with `x7 = 0`, `[b]`'s words in
 `bRegs` and the reduction's constant in `x6`. -/
-theorem rounds_ok {M : Mod} (hn : M.n < 7) {a b m size : Nat}
+theorem rounds_ok {M : Mod} (hn : M.n < 10) {a b m size : Nat}
     (ha : a + 8 * M.n ≤ size) (hb : b + 8 * M.n ≤ size) (hmo : M.mo + 8 * M.n ≤ size)
     (ha8 : a % 8 = 0) (hb8 : b % 8 = 0) (hmo8 : M.mo % 8 = 0)
     (hinv : (m * M.minv.toNat + 1) % 2 ^ 64 = 0) (hok : M.ok m = true) :
