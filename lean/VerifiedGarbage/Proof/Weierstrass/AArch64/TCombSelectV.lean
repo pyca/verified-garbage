@@ -1,5 +1,6 @@
 import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombSelect
 import VerifiedGarbage.Proof.Framework.AArch64.SimdMem64
+import VerifiedGarbage.Proof.Weierstrass.TCombWords
 
 /-!
 # The comb from tables in memory on AArch64: the selection by vectors
@@ -145,18 +146,6 @@ theorem vdword_zero {e : Nat} : vdword 0 e = 0 := by
 
 theorem ofVDwords_vdword (x : BitVec 128) : ofVDwords (vdword x 0) (vdword x 1) = x :=
   vec64_ext (vdword_ofVDwords_0 _ _) (vdword_ofVDwords_1 _ _)
-
-/-- `[T, T + L)` within a region holds the ranges at offsets of `T` within it. -/
-theorem Region.contains_off {r : Region} {T : Addr} {L d n : Nat} (h : r.Contains T L)
-    (hd : d + n ≤ L) : r.Contains (T + BitVec.ofNat 64 d) n := by
-  unfold Region.Contains at *
-  have e : T + BitVec.ofNat 64 d - r.base = (T - r.base) + BitVec.ofNat 64 d := by
-    rw [BitVec.sub_eq_add_neg, BitVec.sub_eq_add_neg, BitVec.add_assoc, BitVec.add_comm (BitVec.ofNat 64 d),
-      ← BitVec.add_assoc]
-  rw [e, BitVec.toNat_add, BitVec.toNat_ofNat]
-  have := Nat.mod_le ((T - r.base).toNat + d % 2 ^ 64) (2 ^ 64)
-  have := Nat.mod_le d (2 ^ 64)
-  omega
 
 /-! ## The groups -/
 

@@ -19,13 +19,14 @@ open VG VG.X86_64
 open VG.Proof.Sha512.X86_64 (Compress)
 
 theorem implies :
-    (rfcX86_64 Spec.Ecdsa.Rfc6979.P521Sha512.inst 384).Implies
+    (rfcX86_64 Impl.Ecdsa.X86_64.p521.combConsts Spec.Ecdsa.Rfc6979.P521Sha512.inst 384).Implies
       (Spec.Ecdsa.Rfc6979.P521Sha512.inst.signContract X86_64.abi 384) := by
   exact
     { pre := by
         sig_implies_pre [Spec.Ecdsa.Rfc6979.P521Sha512.inst, Spec.Ecdsa.Rfc6979.Instance.signContract,
           Spec.Ecdsa.Rfc6979.Instance.signSig, Spec.Ecdsa.P521.inst, Spec.P521.curve, Spec.Ecdsa.scratchWords,
-          X86_64.abi, X86_64.argRegs, rfcX86_64]
+          X86_64.abi, X86_64.argRegs, rfcX86_64, TblsOk, p521_combConsts, Abi.constRegions, Abi.constsHeld,
+          List.map_nil, List.append_nil, List.not_mem_nil, false_implies, implies_true, and_true]
       post := by
         sig_implies_post [Spec.Ecdsa.Rfc6979.P521Sha512.inst, Spec.Ecdsa.Rfc6979.Instance.signContract,
           Spec.Ecdsa.Rfc6979.Instance.signSig, Spec.Ecdsa.P521.inst, Spec.P521.curve, Spec.Ecdsa.scratchWords,
@@ -36,7 +37,7 @@ theorem implies :
           Spec.Ecdsa.Rfc6979.Instance.signSig, Spec.Ecdsa.P521.inst, Spec.P521.curve, Spec.Ecdsa.scratchWords,
           X86_64.abi, X86_64.argRegs, rfcX86_64] at h
         obtain ⟨h0, hl, h1, h2, h3, h4⟩ := h
-        exact ⟨h0, h1, h2, h3, h4, (List.cons.inj hl).1⟩
+        exact ⟨h0, h1, h2, h3, h4, (List.cons.inj hl).1, fun c hc => by simp [p521_combConsts] at hc⟩
       sat := by
         sig_implies_sat [Spec.Ecdsa.Rfc6979.P521Sha512.inst, Spec.Ecdsa.Rfc6979.Instance.signContract,
           Spec.Ecdsa.Rfc6979.Instance.signSig, Spec.Ecdsa.P521.inst, Spec.P521.curve, Spec.Ecdsa.scratchWords,

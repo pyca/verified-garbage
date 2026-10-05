@@ -55,14 +55,19 @@ theorem p521_ok : CfgOk p521 where
   len_lo := by decide
   len_hi := by decide
   sh := by rw [p521_sh]; decide
+  comb d h := by cases h
+
+/-- P-521 has no comb: `[k]G` is by the ladder, and there are no tables. -/
+theorem p521_tbls : CombTbls p521 := fun d h => by cases h
 
 theorem pre_of {s : State} (h : signX86_64.pre s) : Pre p521 s := by
   obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, -, -, h12, h13⟩ := h
-  exact ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h12, h13⟩
+  exact ⟨by rw [h1]; rfl, h2, h3, h4, h5, h6, h7, h8, h9, h12, h13,
+    by simp [TblsHeld, Cfg.combConsts, Abi.constsHeld, Abi.constRegions, p521]⟩
 
 theorem sign_x86 (hL : Law Spec.P521.curve) (s : State) (hs : signX86_64.pre s) :
     ∃ t s', Exec isa signP521 s t s' ∧ abiPreserved s s' ∧ signX86_64.post s s' := by
-  obtain ⟨t, s', he, hsv, hpost⟩ := sign_ok p521_ok hL (pre_of hs)
+  obtain ⟨t, s', he, hsv, hpost⟩ := sign_ok p521_ok hL p521_tbls (pre_of hs)
   have hsp : ∀ i ∈ instrs signP521, Taint.clobbers i .rsp = false := by
     have h : signP521.allInstrs (fun i => !Taint.clobbers i .rsp) = true := by lit_decide
     rw [Code.allInstrs_eq, List.all_eq_true] at h

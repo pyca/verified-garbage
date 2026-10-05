@@ -1,6 +1,6 @@
 import VerifiedGarbage.Impl.Ecdsa.P384.AArch64
 import VerifiedGarbage.Proof.Framework.ConstMem
-import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombWords
+import VerifiedGarbage.Proof.Weierstrass.TCombWords
 
 /-!
 # ECDSA over P-384 on AArch64: the comb's tables in a static
@@ -35,7 +35,7 @@ theorem p384_tbl_lenH : ∀ j < 55, (Impl.P384.p384Comb7.getD j []).length = 64 
 
 /-- `p384.combWords` has `55 · 64 · 12` words. -/
 theorem p384_combWords_length : p384.combWords.length = 42240 :=
-  (Proof.Weierstrass.AArch64.tcombWords_length (n := p384.n) (R := p384.R) (p := p384.C.p)
+  (Proof.Weierstrass.tcombWords_length (n := p384.n) (R := p384.R) (p := p384.C.p)
     (H := 64) (tbl := p384.tbl) p384_tbl_len p384_tbl_lenH).trans rfl
 
 /-- The memory of the contracts' witnesses: the tables at `0x100000`

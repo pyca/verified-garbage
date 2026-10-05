@@ -231,9 +231,9 @@ theorem scr_sub {dn : Nat} {L : Lay dn} {r : Region} (h : Region.Sub r ⟨L.scr,
 theorem init_ctx (hL : L.Ok) {u : State} (hc : Ctx L g m₀ u) (ha : IA P L m₀ u) :
     WP isa (.call P.H.hmacInitN P.H.hmacInit) u fun u' => Ctx L g m₀ u' ∧ True := by
   obtain ⟨d, s, x, k, r⟩ := ha
-  refine Pbkdf2.Md.X86_64.Pbk.hinit_call P.ok P.hI P.hIsp P.hId (initA (P := P) hL hc d s x k r)
-    fun u' hrd hwr hcs hf _ _ => ⟨hc.keep hL hrd hwr (hcs .rsp (by decide)) (fun r hr _ => hcs r hr) hf
-      (safe_call hc (fun r hr => scr_sub ?_) (Nat.le_refl _)), trivial⟩
+  refine WP.of_syms (Pbkdf2.Md.X86_64.Pbk.hinit_call P.ok P.hI P.hIsp P.hId (initA (P := P) hL hc d s x k r)
+    fun u' hrd hwr hcs hf _ _ hsy => ⟨hc.keep hL hrd hwr (hcs .rsp (by decide)) (fun r hr _ => hcs r hr) hf
+      (safe_call hc (fun r hr => scr_sub ?_) (Nat.le_refl _)) hsy, trivial⟩)
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl <;> exact scr_work (by nums)
 
@@ -241,9 +241,9 @@ theorem upd_ctx {dA : Lay P.I.hashLen → Addr} {len : Nat} (hd : ∀ L : Lay P.
     (hlen : len ≤ 256) (hL : L.Ok) {u : State} (hc : Ctx L g m₀ u) (ha : UA P dA len L m₀ u) :
     WP isa (.call P.H.updN P.H.updC) u fun u' => Ctx L g m₀ u' ∧ True := by
   obtain ⟨d, _, x, k, r⟩ := ha
-  refine Pbkdf2.Md.X86_64.Calls.upd_call P.ok.stream (updA (P := P) hL hc (hd L hL) hlen d x k r) (by omega)
-    fun u' af _ => ⟨hc.keep hL af.rd af.wr (af.cs .rsp (by decide)) (fun r hr _ => af.cs r hr) af.frame
-      (safe_call hc (fun r hr => scr_sub ?_) (by omega)), trivial⟩
+  refine WP.of_syms (Pbkdf2.Md.X86_64.Calls.upd_call P.ok.stream (updA (P := P) hL hc (hd L hL) hlen d x k r)
+    (by omega) fun u' af _ hsy => ⟨hc.keep hL af.rd af.wr (af.cs .rsp (by decide)) (fun r hr _ => af.cs r hr)
+      af.frame (safe_call hc (fun r hr => scr_sub ?_) (by omega)) hsy, trivial⟩)
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl <;> exact scr_work (by nums)
 
@@ -251,9 +251,9 @@ theorem fin_ctx {len dst : Nat} (hdst : dst + P.H.D ≤ 168) (hL : L.Ok) {u : St
     (ha : FA P len dst L m₀ u) :
     WP isa (.call P.H.hmacFinN P.H.hmacFin) u fun u' => Ctx L g m₀ u' ∧ True := by
   obtain ⟨d, s, x, k, r⟩ := ha
-  refine Pbkdf2.Md.X86_64.Pbk.hfin_call P.ok P.hF P.hFsp P.hFd (finA (P := P) hL hc hdst d s x k r)
-    fun u' hrd hwr hcs hf _ => ⟨hc.keep hL hrd hwr (hcs .rsp (by decide)) (fun r hr _ => hcs r hr) hf
-      (safe_call hc (fun r hr => ?_) (Nat.le_refl _)), trivial⟩
+  refine WP.of_syms (Pbkdf2.Md.X86_64.Pbk.hfin_call P.ok P.hF P.hFsp P.hFd (finA (P := P) hL hc hdst d s x k r)
+    fun u' hrd hwr hcs hf _ hsy => ⟨hc.keep hL hrd hwr (hcs .rsp (by decide)) (fun r hr _ => hcs r hr) hf
+      (safe_call hc (fun r hr => ?_) (Nat.le_refl _)) hsy, trivial⟩)
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl
   · exact scr_sub (scr_work (by nums))
@@ -373,7 +373,7 @@ theorem cand_ct {Φ : Lay P.I.hashLen → Mem → State → Prop} :
       WP.mono (hmacV_ok hL hc) fun _ h => ⟨h.1, trivial⟩).seq ?_
     refine (two_wp (Ψ := fun _ _ _ => True) (two_blk [.rsp] rspOnly W.keep) fun L _ _ _ hL hk hc _ => ?_).seq ?_
     · obtain ⟨hw9, hQ66, hD64, -⟩ := P.sizesW hw
-      have he := e18 hk.2.2 hw
+      have he := e18 hk.2.2.1 hw
       have e₃ : (cfgOf P).H.D = 64 := hD64
       simp only [Cfg.keepV, e₃]
       exact WP.mono (copyF_ok hL hc (src := .rsp) (S := L.B + BitVec.ofNat 64 24) hc.rsp (by decide)
@@ -400,7 +400,9 @@ theorem core_ct {i : Nat} :
       core_pre hL hk c₂ a₂.rdi a₂.rsi a₂.rdx a₂.rcx a₂.r8,
       ⟨ce_rsp_two c₁ c₂ _ _ _ _, ce_two (by decide) a₁.rdi a₂.rdi _ _ _ _, ce_two (by decide) a₁.rsi a₂.rsi _ _ _ _,
         ce_two (by decide) a₁.rdx a₂.rdx _ _ _ _, ce_two (by decide) a₁.rcx a₂.rcx _ _ _ _,
-        ce_two (by decide) a₁.r8 a₂.r8 _ _ _ _⟩,
+        ce_two (by decide) a₁.r8 a₂.r8 _ _ _ _, fun c hc => by
+          have hc' : c ∈ L.cs := by rw [hk.2.2.2]; exact hc
+          exact (c₁.sy c hc').trans (c₂.sy c hc').symm⟩,
       core_covers hk hL c₁, core_coversW hk.1 c₁, core_covers hk hL c₂, core_coversW hk.1 c₂, rsp_two c₁ c₂⟩
 
 /-- Whether to go on agrees: in both runs, iff the candidate is before the one it stops at. -/
@@ -468,7 +470,7 @@ theorem loop_ct :
 
 /-! ## The frame's body -/
 
-theorem initCnt_blk : TaintOk [.rsp] (cfgC ⟨4, Spec.P256.curve⟩).initCnt := ⟨_, by taint_decide⟩
+theorem initCnt_blk : TaintOk [.rsp] (cfgC { n := 4, C := Spec.P256.curve }).initCnt := ⟨_, by taint_decide⟩
 
 /-- `digest` in `rsi`, and, if two `V`s make a candidate, `scratch` in `rdi`. -/
 def DgIn (P : RfcHash) {dn : Nat} (L : Lay dn) (_ : Mem) (u : State) : Prop :=
@@ -509,19 +511,25 @@ theorem body_ct :
 /-! ## The whole function -/
 
 /-- Runs whose public data agree have the same layout, and stop at the same candidate. -/
-theorem sign_ct : ConstantTime isa (rfcX86_64 P.I (240 + 8 * P.e)).pre (rfcX86_64 P.I (240 + 8 * P.e)).pub
-    (cfgOf P).sign := by
+theorem sign_ct : ConstantTime isa (rfcX86_64 P.R.E.combConsts P.I (240 + 8 * P.e)).pre
+    (rfcX86_64 P.R.E.combConsts P.I (240 + 8 * P.e)).pub (cfgOf P).sign := by
   have he : P.e ≤ 18 := by nums
   rw [sign_eq]
   refine VG.RelCT.constantTime (Q := fun _ _ => True) (RelCT.frame (R := fun _ _ => True) (fun _ _ h => h.2.2.1) ?_)
-  refine body_ct.mono (fun a b ⟨s₁, s₂, ⟨p₁, p₂, hsp, hdi, hsi, hdx, hcx, hres⟩, ea, eb⟩ => ?_) fun _ _ _ => trivial
+  refine body_ct.mono (fun a b ⟨s₁, s₂, ⟨p₁, p₂, hsp, hdi, hsi, hdx, hcx, hres, hsy⟩, ea, eb⟩ => ?_) fun _ _ _ => trivial
   subst ea eb
-  have hl : lay P.I.hashLen P.I.ecdsa.curve.len P.e he s₁ = lay P.I.hashLen P.I.ecdsa.curve.len P.e he s₂ := by
-    simp only [lay, hsp, hdi, hsi, hdx, hcx]
+  have hsy' : (fun n => if n ∈ P.R.E.combConsts.map Prod.fst then s₁.syms n else 0) =
+      fun n => if n ∈ P.R.E.combConsts.map Prod.fst then s₂.syms n else 0 := funext fun n => by
+    split
+    · next h => obtain ⟨c, hc, rfl⟩ := List.mem_map.mp h; exact hsy c hc
+    · rfl
+  have hl : lay P.I.hashLen P.I.ecdsa.curve.len P.e he P.R.E.combConsts s₁ =
+      lay P.I.hashLen P.I.ecdsa.curve.len P.e he P.R.E.combConsts s₂ := by
+    unfold lay; rw [hsp, hdi, hsi, hdx, hcx, hsy']
   have hr : (result P.I s₁.mem (s₁.gpr .rsi) (s₁.gpr .rdx)).2 = (result P.I s₂.mem (s₁.gpr .rsi) (s₁.gpr .rdx)).2 := by
     rw [hres, hsi, hdx]
-  refine ⟨⟨lay P.I.hashLen P.I.ecdsa.curve.len P.e he s₁, s₁.gpr, s₂.gpr, s₁.mem, s₂.mem⟩, lay_ok he p₁,
-    coreOk_lay P he s₁, congrArg (fun x => if x = 0 then 7 else x - 1) hr, push_ctx he p₁, by rw [hl]; exact push_ctx he p₂,
-    trivial, trivial⟩
+  refine ⟨⟨lay P.I.hashLen P.I.ecdsa.curve.len P.e he P.R.E.combConsts s₁, s₁.gpr, s₂.gpr, s₁.mem, s₂.mem⟩,
+    lay_ok he p₁, coreOk_lay P he s₁, congrArg (fun x => if x = 0 then 7 else x - 1) hr, push_ctx he p₁,
+    by rw [hl]; exact push_ctx he p₂, trivial, trivial⟩
 
 end VG.Proof.Ecdsa.Rfc6979.X86_64

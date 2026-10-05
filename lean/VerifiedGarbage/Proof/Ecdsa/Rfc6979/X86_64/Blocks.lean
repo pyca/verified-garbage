@@ -89,7 +89,7 @@ theorem initKV_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) :
     simp only [runBlock_cons, runStep_some, runBlock_nil, exec, execAlu32, readSrc32, State.setReg32,
       Option.bind_some, RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, reduceCtorEq, ite_false, ite_true,
       Option.some.injEq, exists_eq_left', xor_self_zx]
-    exact ⟨hc.regs hL rfl rfl rfl (by cs_tac), by triv, by triv, by triv, by triv, by triv⟩
+    exact ⟨hc.regs hL rfl rfl rfl rfl (by cs_tac), by triv, by triv, by triv, by triv, by triv⟩
   refine WP.mono h₁ fun u ⟨hcu, hrd, hwr, hm, ha, hb⟩ => WP.mono (kvN_ok hL hcu ha hb 8 (by omega))
     fun u' ⟨hrd', hwr', _, hf, hv⟩ => ⟨hrd'.trans hrd, hwr'.trans hwr, hm ▸ hf, fun n hn => ?_, fun n hn => ?_⟩
   · rw [bytesAt_take _ _ (k := 64) hn, show (88 : Nat) = 88 + 0 from rfl,
@@ -146,7 +146,7 @@ theorem coreArgs_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) :
       RegUpd.rd_arithFlags, RegUpd.wr_arithFlags, Option.map_some, Option.bind_some, reduceCtorEq,
       ite_true, hc.rsp, Offset.add_add, Nat.reduceAdd, p0, p1, p2, p3, hc.pOut, hc.pD, hc.pDg, hc.pScr, sx32,
       Nat.reducePow, Nat.reduceLT, Option.some.injEq, exists_eq_left']
-    exact ⟨hc.regs hL rfl rfl rfl (by cs_tac), by triv, by triv, by triv, by triv, by triv, by triv⟩
+    exact ⟨hc.regs hL rfl rfl rfl rfl (by cs_tac), by triv, by triv, by triv, by triv, by triv, by triv⟩
   · simp only [Cfg.coreArgs, cfgOf, hw, ite_true, Cfg.fr, fOut, fD, fX, fKb, fScratch,
       List.cons_append, List.nil_append,
       runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, readSrc, State.load64, ea_stk, RegUpd.gpr_setReg,
@@ -154,7 +154,7 @@ theorem coreArgs_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) :
       RegUpd.rd_arithFlags, RegUpd.wr_arithFlags, Option.map_some, Option.bind_some, reduceCtorEq, ite_false,
       hc.rsp, Offset.add_add, Nat.reduceAdd, p0, p1, p3, hc.pOut, hc.pD, hc.pScr, sx32,
       Nat.reducePow, Nat.reduceLT, Option.some.injEq, exists_eq_left']
-    exact ⟨hc.regs hL rfl rfl rfl (by cs_tac), by triv, by triv, by triv, by triv, by triv, by triv⟩
+    exact ⟨hc.regs hL rfl rfl rfl rfl (by cs_tac), by triv, by triv, by triv, by triv, by triv, by triv⟩
 
 /-! ## Whether to go on -/
 
@@ -211,7 +211,7 @@ theorem again_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) :
   simp only [Cfg.again, runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, readSrc, readSrc32, State.setReg32,
     RegUpd.gpr_setReg, RegUpd.zf_arithFlags, ite_true,
     Option.map_some, Option.bind_some, Option.some.injEq, exists_eq_left']
-  exact ⟨hc.regs hL rfl rfl rfl (by cs_tac), rfl, by decide⟩
+  exact ⟨hc.regs hL rfl rfl rfl rfl (by cs_tac), rfl, by decide⟩
 
 /-- `ZF` set. -/
 theorem stop_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) :
@@ -220,7 +220,7 @@ theorem stop_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) :
   apply WP.of_runBlock
   simp only [Cfg.stop, runBlock_cons, runStep_some, runBlock_nil, exec, execAlu32, readSrc32, State.setReg32,
     Option.bind_some, Option.some.injEq, exists_eq_left']
-  exact ⟨hc.regs hL rfl rfl rfl (by cs_tac), rfl, by simp, RegUpd.gpr_setReg_of_ne _ _ (by decide)⟩
+  exact ⟨hc.regs hL rfl rfl rfl rfl (by cs_tac), rfl, by simp, RegUpd.gpr_setReg_of_ne _ _ (by decide)⟩
 
 /-! ## Wiping the frame -/
 
@@ -276,7 +276,7 @@ theorem wipe_ok (hL : L.Ok) (hLe : L.e = P.e) {t : State} (hc : Ctx L g m₀ t) 
       simp only [runBlock_cons, runStep_some, runBlock_nil, exec, execAlu32, readSrc32, State.setReg32,
         Option.bind_some, RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, reduceCtorEq, ite_false,
         Option.some.injEq, exists_eq_left']
-      exact ⟨hc.regs hL rfl rfl rfl (by cs_tac), by triv, by triv, by triv, by triv⟩
+      exact ⟨hc.regs hL rfl rfl rfl rfl (by cs_tac), by triv, by triv, by triv, by triv⟩
     refine WP.mono h₁ fun u ⟨hcu, hrd, hwr, hm, ha⟩ => WP.mono (zeroN_ok hcu 22 (by omega))
       fun u' ⟨hrd', hwr', hg, hf⟩ => WP.mono (zeroH_ok hcu (Nat.le_refl _) L.e (Nat.le_refl _) u' hwr'
         (by rw [hg]))

@@ -1,4 +1,5 @@
 import VerifiedGarbage.Impl.Weierstrass.AArch64
+import VerifiedGarbage.Impl.Weierstrass.TCombWords
 
 /-!
 # Short Weierstrass curves on AArch64: a fixed-base comb
@@ -33,9 +34,6 @@ namespace VG.Impl.Weierstrass.AArch64
 open VG.AArch64 VG.Impl.Mont VG.Impl.Mont.AArch64 VG.Impl.Weierstrass
 
 /-! ## Digits, shared with the window method -/
-
-/-- Word `w` of `v`. -/
-def wordOf (v w : Nat) : BitVec 64 := BitVec.ofNat 64 (v >>> (64 * w))
 
 /-- The registers holding the masks of the magnitudes `0 … 8`. -/
 def maskRegs : List Reg := [.x1, .x3, .x5, .x6, .x7, .x8, .x10, .x11, .x12]

@@ -2,6 +2,7 @@ import VerifiedGarbage.Proof.Weierstrass.X86_64.Ladder
 import VerifiedGarbage.Proof.Weierstrass.X86_64.Flags
 import VerifiedGarbage.Proof.Weierstrass.X86_64.BytesLen
 import VerifiedGarbage.Proof.Framework.X86_64.Spill
+import VerifiedGarbage.Proof.Weierstrass.CombW
 
 /-!
 # ECDSA on x86-64: the curve, the arguments and the working space
@@ -12,8 +13,14 @@ and of its arguments (`Pre`), for any curve of `n` words, and the state
 
 The working space is the `8192` bytes at `scratch`: the saved registers in
 `[0, 48)`, the slots `c.sl i = 64 + 8 n i` of `n` words for `i < nslots`, and
-the tables of bits `bitsAt n j` (`64 n` bytes each, `j < 3`), which are
-slots `nslots + 8 j` to `nslots + 8 j + 7`.
+the tables of bits `bitsAt n j` (`64 n` bytes each, `j < 3`, each followed
+by a word that the comb's last digit may read).
+
+A curve with a fixed-base comb (`Cfg.comb`) has its tables in a `static`
+(`Cfg.combConsts`), which the calling convention gives
+(`Abi.withConsts`): after the arguments in the regions the code may read, at
+the static's address, holding the tables' words, and apart from what it may
+write (`TblsHeld`).
 -/
 
 namespace VG.Proof.Ecdsa.X86_64
@@ -23,6 +30,19 @@ open VG.Proof.Mont.X86_64 VG.Proof.Mont VG.Proof.Weierstrass.X86_64 VG.Proof.Wei
 
 /-- The size of the working space, in bytes. -/
 abbrev size : Nat := 8192
+
+/-- What the proof needs of a curve's comb: digits of `w ≤ 8` bits, whose
+`combJ` windows cover the scalar's `64 n` bits and at most a word more (the
+word past its table of bits). That its tables are right (`CombTbls`) the
+proofs of the results take with the group law. -/
+structure CombOk (c : Cfg) (d : CombData) : Prop where
+  w : 1 ≤ d.w ∧ d.w < 9
+  cover : 64 * c.n ≤ d.w * c.combJ d.w ∧ d.w * c.combJ d.w ≤ 64 * c.n + 8
+
+/-- The comb's tables, if the curve has one, are right (`CombOkW`, which a
+curve's own facts prove, with its group law). -/
+def CombTbls (c : Cfg) : Prop :=
+  ∀ d, c.comb = some d → CombOkW c.C d.w (c.combJ d.w) d.tbl d.start
 
 /-- What the proof of the code needs of a curve: its field and order are odd
 and fit in `n` words (`n < 10`, so that the slots and tables fit in the
@@ -51,12 +71,24 @@ structure CfgOk (c : Cfg) : Prop where
   len_lo : 8 * c.n < c.C.len + 8
   len_hi : c.C.len ≤ 8 * c.n
   sh : c.sh < 32
+  /-- The comb, if the curve has one. -/
+  comb : ∀ d, c.comb = some d → CombOk c d
+
+/-- The comb's tables, if any, at the address of their static: held, not
+wrapping around, and apart from the regions `wr`, as `Abi.withConsts`
+says. -/
+def TblsHeld (c : Cfg) (s : State) (wr : List Region) : Prop :=
+  Abi.constsHeld s.mem (fun n => s.syms n) c.combConsts ∧
+    ∀ t ∈ Abi.constRegions (fun n => s.syms n) c.combConsts, t.base.toNat + t.len ≤ 2 ^ 64 ∧
+      ∀ r ∈ wr, t.Disjoint r
 
 /-- The arguments: `out = rdi` (`2 len` bytes), `d = rsi`, `digest = rdx`,
 `k = rcx` (`len` bytes each) and `scratch = r8`, readable and writable as
-the contract says and apart from each other as it says. -/
+the contract says and apart from each other as it says, and the comb's
+tables, if any. -/
 structure Pre (c : Cfg) (s : State) : Prop where
-  rd : s.rd = [⟨s.gpr .rsi, c.C.len⟩, ⟨s.gpr .rdx, c.C.len⟩, ⟨s.gpr .rcx, c.C.len⟩]
+  rd : s.rd = [⟨s.gpr .rsi, c.C.len⟩, ⟨s.gpr .rdx, c.C.len⟩, ⟨s.gpr .rcx, c.C.len⟩] ++
+    Abi.constRegions (fun n => s.syms n) c.combConsts
   wr : s.wr = [⟨s.gpr .rdi, 2 * c.C.len⟩, ⟨s.gpr .r8, size⟩]
   out_sc : Region.Disjoint ⟨s.gpr .rdi, 2 * c.C.len⟩ ⟨s.gpr .r8, size⟩
   out_d : Region.Disjoint ⟨s.gpr .rdi, 2 * c.C.len⟩ ⟨s.gpr .rsi, c.C.len⟩
@@ -67,6 +99,7 @@ structure Pre (c : Cfg) (s : State) : Prop where
   k_sc : Region.Disjoint ⟨s.gpr .rcx, c.C.len⟩ ⟨s.gpr .r8, size⟩
   out_fit : (s.gpr .rdi).toNat + 2 * c.C.len ≤ 2 ^ 64
   sc_fit : (s.gpr .r8).toNat + size ≤ 2 ^ 64
+  tbls : TblsHeld c s s.wr
 
 /-- What `setup` needs of its arguments (`Pre` gives it, and so can the
 arguments of other functions that run it): the working space `scratch = r8`
@@ -128,7 +161,7 @@ structure SetupPost (c : Cfg) (hs : Option Nat) (s₀ : State) (base : Addr) (s 
 
 theorem sl_eq (c : Cfg) (i : Nat) : c.sl i = 64 + 8 * c.n * i := rfl
 
-theorem bitsAt_eq (c : Cfg) (j : Nat) : bitsAt c.n j = 64 + 8 * c.n * 45 + 64 * c.n * j := rfl
+theorem bitsAt_eq (c : Cfg) (j : Nat) : bitsAt c.n j = 64 + 8 * c.n * 45 + (64 * c.n + 8) * j := rfl
 
 /-- Slots `i < j` are apart. -/
 theorem sl_lt (c : Cfg) {i j : Nat} (h : i < j) : c.sl i + 8 * c.n ≤ c.sl j := by
@@ -159,7 +192,16 @@ theorem sl_le (c : Cfg) (hn : c.n < 10) {i : Nat} (hi : i < 45) : c.sl i + 8 * c
 
 theorem bitsAt_le (c : Cfg) (hn : c.n < 10) {j : Nat} (hj : j < 3) : bitsAt c.n j + 64 * c.n ≤ size := by
   rw [bitsAt_eq]
-  have := Nat.mul_le_mul_left (64 * c.n) hj
+  have := Nat.mul_le_mul_left (64 * c.n + 8) hj
+  rw [Nat.mul_succ] at this
+  show _ ≤ 8192
+  omega
+
+/-- The word past a table of bits is in the working space too. -/
+theorem bitsAt_le_pad (c : Cfg) (hn : c.n < 10) {j : Nat} (hj : j < 3) :
+    bitsAt c.n j + 64 * c.n + 8 ≤ size := by
+  rw [bitsAt_eq]
+  have := Nat.mul_le_mul_left (64 * c.n + 8) hj
   rw [Nat.mul_succ] at this
   show _ ≤ 8192
   omega
