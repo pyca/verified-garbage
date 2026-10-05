@@ -1,5 +1,5 @@
 import VerifiedGarbage.Proof.Rsa.X86_64.PublicImpl
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxCT
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareBackend
 
 /-! # Precomputed RSA public operation: Adx -/
 
@@ -9,7 +9,7 @@ open VG.X86_64 VG.Proof.Bignum.X86_64 VG.Proof.Rsa.X86_64
 
 def variant : PublicImpl where
   name := Spec.Rsa.publicPrecomputedCheckedApi.name ++ "_adx"
-  code := Impl.Rsa.X86_64.Checked.precomputedChecked Mont.adx.mm
+  code := Impl.Rsa.X86_64.Checked.precomputedChecked Mont.adxSquare.mm
   ok := precomputedChecked_correct _ (by decide +kernel)
   ct := precomputedChecked_constantTime _
   nosp := noSp_of (by decide +kernel)

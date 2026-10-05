@@ -1,7 +1,7 @@
 import VerifiedGarbage.TCB.X86_64.Target
 import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Verified
 import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Key.Verified
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxCT
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareBackend
 
 /-! # RSA key generation (FIPS 186-5 A.1.3) on x86-64 -/
 
@@ -30,7 +30,7 @@ def artifacts : List Artifact := [
     doc := Spec.RsaKeyGen.candidateApi.doc
       (notes := ["`vg_rsa_keygen_candidate`'s code, with `vg_rsa_public_precomputed_adx`'s \
         Montgomery multiplication."])
-    code := Impl.RsaKeyGen.X86_64.Candidate.code Proof.Bignum.X86_64.Mont.adx.mm
+    code := Impl.RsaKeyGen.X86_64.Candidate.code Proof.Bignum.X86_64.Mont.adxSquare.mm
     contract := Spec.RsaKeyGen.candidateContract X86_64.abi
     verified := Proof.RsaKeyGen.X86_64.candidate_verified _ (by decide +kernel)
     features := ["bmi2", "adx"]
