@@ -908,6 +908,44 @@ yours to keep:
 
 </table>
 
+### Public-key encryption
+
+<table>
+
+<tr>
+
+<th>Algorithm</th>
+
+<th>Spec landed</th>
+
+<th>x86-64</th>
+
+<th>ARM64</th>
+
+<th>ARMv7</th>
+
+<th>x86</th>
+
+</tr>
+
+<tr>
+
+<td>RSAES-PKCS1-v1_5 (implicit rejection)</td>
+
+<td>✅</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+</tr>
+
+</table>
+
 ### Key agreement
 
 <table>
