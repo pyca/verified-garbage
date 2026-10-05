@@ -92,11 +92,11 @@ theorem Ctx.set (hL : L.Ok) {u u' : State} (hc : Ctx L g m₀ u) {d : Reg} (hd :
 theorem scr_ok (hL : L.Ok) {u : State} (hc : Ctx L g m₀ u) {d : Reg} (hd : d ∉ preserved) {a : Nat}
     (ha : a < 4096) :
     WP isa (.block (Cfg.scr d a)) u (Upd L g m₀ u d (L.scr + BitVec.ofNat 64 a)) := by
-  have h184 := hc.inFr (d := 184) (by omega) (by omega)
+  have h200 := hc.inFr (d := 200) (by omega) (by omega)
   apply WP.of_runBlock
   simp only [Cfg.scr, fScratch, runBlock_cons, runStep_some, runBlock_nil, exec, State.load, State.read,
     Size.bits, BitVec.setWidth_eq, hc.sp, Offset.add_add, Nat.reduceAdd, Nat.reduceMod, Nat.reduceLT, and_self,
-    h184, ite_true, Option.map_some, read8, hc.pScr, RegUpd.gpr_write_self, ha, Option.some.injEq,
+    h200, ite_true, Option.map_some, read8, hc.pScr, RegUpd.gpr_write_self, ha, Option.some.injEq,
     exists_eq_left']
   refine ⟨hc.set hL hd rfl rfl rfl rfl fun r hr => ?_, rfl, by rw [RegUpd.gpr_write_self]; exact BitVec.setWidth_eq _,
     fun r hr => ?_⟩
