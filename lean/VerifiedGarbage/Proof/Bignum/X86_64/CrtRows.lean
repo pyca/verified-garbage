@@ -1,9 +1,6 @@
 import VerifiedGarbage.Proof.Bignum.X86_64.Row
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 import VerifiedGarbage.Impl.Rsa.X86_64.Crt
-import Mathlib.Tactic.LinearCombination
-import Mathlib.Tactic.Zify
-import Mathlib.Tactic.Ring
 
 /-!
 # Multiword arithmetic on x86-64: a product by rows
@@ -94,7 +91,7 @@ theorem mrStep_ok {s₀ : State} {B : Addr} {Z ea eb eA wa wb : Nat} (hs : Scr s
         rw [e2]; exact Nat.mul_le_mul_left _ (Nat.pow_le_pow_right (by decide) (by omega))
       have hWlt : 2 ^ (64 * i) * wv t.mem B (eA + 8 * i) (wb + 2) < 2 ^ (64 * i) * (2 * 2 ^ (64 * wb)) := by
         have : 2 ^ (64 * i) * (2 * 2 ^ (64 * wb)) = 2 ^ (64 * wb) * 2 ^ (64 * i) + 2 ^ (64 * wb) * 2 ^ (64 * i) := by
-          ring
+          grind
         omega
       have hW2 := Nat.lt_of_mul_lt_mul_left hWlt
       rw [e1]
@@ -131,8 +128,7 @@ theorem mrStep_ok {s₀ : State} {B : Addr} {Z ea eb eA wa wb : Nat} (hs : Scr s
     have e : wv s₀.mem B ea (i + 1) = wv s₀.mem B ea i + 2 ^ (64 * i) * (word s₀.mem B (ea + 8 * i)).toNat := rfl
     rw [e]
     rw [sp] at hval
-    zify at hval ⊢
-    linear_combination hval
+    grind
 
 /-- `acc += a b`, for an accumulator of `w_a + w_b + 2` words below
 `2^(64 (w_b + 1))`. -/

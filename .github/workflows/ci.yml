@@ -558,7 +558,7 @@ jobs:
               - | sha384 sha512 ed25519 message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
               avx,avx2,sha512 | ed25519 message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
           # Ice Lake server: AVX512_IFMA and AVX512VL, for vg_x25519_ifma,
-          # Ed25519's IFMA variants and vg_rsa_private_crt_ifma; VAES,
+          # Ed25519's IFMA variants and vg_rsa_private_checked_ifma; VAES,
           # VPCLMULQDQ and AVX512BW, for vg_aes_ctr32_vaes, vg_ghash_vpclmul
           # and the AES-GCM and AES-CMAC instances calling them (AES-GCM's
           # with its 512-bit loops); and AES-GCM's instances with VAES or
