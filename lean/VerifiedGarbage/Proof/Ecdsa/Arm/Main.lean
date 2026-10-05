@@ -248,19 +248,20 @@ theorem stage₃ (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State} (hS : S
 /-- The result the contract asks for: the specification's signature of the
 hash with `d` and `k`, big-endian, and `1`, or zeros and `0`. -/
 def SignPost (c : Cfg) (s₀ s' : State) : Prop :=
-  match Spec.Ecdsa.signWith c.C (dv c .sign s₀)
-      (Spec.Ecdsa.hashToInt c.C (Spec.Ecdsa.bytesAt s₀.mem (ptr s₀ .r2) (8 * c.n))) (kv c .sign s₀) with
+  match Spec.Ecdsa.signWith c.C (ofBytes (Spec.Ecdsa.bytesAt s₀.mem (ptr s₀ .r1) c.C.len))
+      (Spec.Ecdsa.hashToInt c.C (Spec.Ecdsa.bytesAt s₀.mem (ptr s₀ .r2) c.C.len))
+      (ofBytes (Spec.Ecdsa.bytesAt s₀.mem (ptr s₀ .r3) c.C.len)) with
   | some rs => s'.gpr .r0 = 1 ∧
-      Spec.Ecdsa.bytesAt s'.mem (ptr s₀ .r0) (16 * c.n) = Spec.Ecdsa.encode c.C rs
+      Spec.Ecdsa.bytesAt s'.mem (ptr s₀ .r0) (2 * c.C.len) = Spec.Ecdsa.encode c.C rs
   | none => s'.gpr .r0 = 0 ∧
-      Spec.Ecdsa.bytesAt s'.mem (ptr s₀ .r0) (16 * c.n) = List.replicate (16 * c.n) 0
+      Spec.Ecdsa.bytesAt s'.mem (ptr s₀ .r0) (2 * c.C.len) = List.replicate (2 * c.C.len) 0
 
 /-- What the ABI asks for: the callee-saved registers and `lr` restored,
 `sp` kept; and memory changed only in the working space, then in `out`. -/
 structure SignKeep (c : Cfg) (s₀ s' : State) : Prop where
   saved : ∀ rd ∈ Cfg.saved, s'.gpr rd.1 = s₀.gpr rd.1
   sp : s'.sp = s₀.sp
-  frame : ∃ m : Mem, Unch (scPtr s₀) [(0, 8192)] s₀.mem m ∧ Outside (ptr s₀ .r0) 0 (16 * c.n) m s'.mem
+  frame : ∃ m : Mem, Unch (scPtr s₀) [(0, 8192)] s₀.mem m ∧ Outside (ptr s₀ .r0) 0 (2 * c.C.len) m s'.mem
 
 /-- `s`, its check, and the result. -/
 theorem stage₄ (hc : CfgOk c) (hC : Law c.C) {s₀ : State} (hp : Pre c s₀) {base : Addr} (hb : base = scPtr s₀)
@@ -303,7 +304,7 @@ theorem stage₄ (hc : CfgOk c) (hC : Law c.C) {s₀ : State} (hp : Pre c s₀) 
   have K₁₂' : Rest work s s₁₂ := (K₁₀.mono clob_work).trans ((K₁₁.mono clob_work).trans (k₁₂.mono (by decide)))
   have K₁₂ : Rest (.lr :: work) s₀ s₁₂ := hS.rest.trans (K₁₂'.mono (by simp))
   have lr₁₂ : s₁₂.gpr .lr = s₀.gpr .r0 := by rw [K₁₂'.gpr _ (by decide), hS.lr]
-  have hw : (⟨State.addr (s₀.gpr .r0), 16 * c.n⟩ : Region) ∈ s₁₂.wr := by
+  have hw : (⟨State.addr (s₀.gpr .r0), 2 * c.C.len⟩ : Region) ∈ s₁₂.wr := by
     rw [K₁₂.wr, hp.wr]; simp
   refine WP.mono (finish_ok hc hs₁₂ lr₁₂ hp.out_fit hw (hb ▸ hp.out_sc.sub_right (sc_sub s₀)) F₁₂.saved _
     hflag) fun s' ⟨bytes, ret, saved, others, Oout⟩ => ⟨⟨saved, by rw [others.sp, K₁₂.sp],
@@ -313,7 +314,9 @@ theorem stage₄ (hc : CfgOk c) (hC : Law c.C) {s₀ : State} (hp : Pre c s₀) 
     (s := wordsVal s₁₁.mem base (c.sl SS) c.n) ss_lt (by
       rw [ss, trm, tdm, tem, acc₁₀, hS.acc, hS.rr, hS.d, hS.e, Lean.Grind.AddCommMonoid.add_comm])
   unfold SignPost
-  rw [hashToInt_eq hc, hsig]
+  have he : ofBytes (Spec.Ecdsa.bytesAt s₀.mem (ptr s₀ .r2) c.C.len) >>> c.sh = ev c .sign s₀ :=
+    congrArg (_ >>> ·) (shAt_self c E).symm
+  rw [← dv_eq (A := .sign) (shAt_E_D c), ← kv_eq (A := .sign) (shAt_E_K c), hashToInt_eq c, he, hsig]
   rw [ss₁₂, rr₁₂, hS.rr] at bytes
   by_cases hP : 1 ≤ dv c .sign s₀ ∧ dv c .sign s₀ < c.C.n ∧ 1 ≤ kv c .sign s₀ ∧ kv c .sign s₀ < c.C.n ∧
       sv c base s X % c.C.n ≠ 0 ∧ wordsVal s₁₁.mem base (c.sl SS) c.n ≠ 0
@@ -322,7 +325,7 @@ theorem stage₄ (hc : CfgOk c) (hC : Law c.C) {s₀ : State} (hp : Pre c s₀) 
       simp only [decide_eq_true_eq]; omega
     rw [ite_eq_left_of_eq_true _ _ (eq_true hP)]
     refine ⟨by rw [ret, hd]; rfl, ?_⟩
-    rw [bytes, hd, ite_eq_left_of_eq_true _ _ (eq_true rfl), Spec.Ecdsa.encode, hc.len]
+    rw [bytes, hd, ite_eq_left_of_eq_true _ _ (eq_true rfl), Spec.Ecdsa.encode]
   · have hd : decide ((((0 < dv c .sign s₀ ∧ dv c .sign s₀ < c.C.n) ∧ (0 < kv c .sign s₀ ∧ kv c .sign s₀ < c.C.n)) ∧
         sv c base s X % c.C.n ≠ 0) ∧ wordsVal s₁₁.mem base (c.sl SS) c.n ≠ 0) = false := by
       simp only [decide_eq_false_iff_not]; omega
@@ -340,7 +343,7 @@ the callee-saved registers and changes only the working space and `out`. -/
 theorem sign_ok (hc : CfgOk c) (hC : Law c.C) {s₀ : State} (hp : Pre c s₀) :
     WP isa c.sign s₀ fun s' => SignKeep c s₀ s' ∧ SignPost c s₀ s' := by
   rw [sign_eq]
-  exact stage₁ hc (hp.setup hc.n10) fun _ S₁ => stage₂ hc hC S₁ fun _ S₂ => stage₃ hc S₂ fun _ S₃ =>
+  exact stage₁ hc hp.setup fun _ S₁ => stage₂ hc hC S₁ fun _ S₂ => stage₃ hc S₂ fun _ S₃ =>
     stage₄ hc hC hp rfl S₃
 
 end VG.Proof.Ecdsa.Arm

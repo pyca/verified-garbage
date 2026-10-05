@@ -1,5 +1,6 @@
 import VerifiedGarbage.Impl.Weierstrass.Arm
 import VerifiedGarbage.Spec.Weierstrass
+import VerifiedGarbage.Spec.Ecdsa
 
 /-!
 # ECDSA signing on 32-bit ARM
@@ -108,15 +109,17 @@ def bitsAt (n j : Nat) : Nat := wkAt n + (32 * n + 8) + 64 * n * j
 /-- The registers holding the arguments the setup reads: `k`, `d` and the
 hash (the functions built on the signature's code read some of them from the
 same argument), and the working space's (`sc`), or `none` for the argument on
-the stack. -/
+the stack; and the slot, if any, holding a hash to shift. -/
 structure Args where
   k : Reg
   d : Reg
   e : Reg
   sc : Option Reg := none
+  hs : Option Nat := none
 
-/-- The signature's: `(out, d, digest, k, scratch)`, `scratch` on the stack. -/
-abbrev Args.sign : Args := ⟨.r3, .r1, .r2, none⟩
+/-- The signature's: `(out, d, digest, k, scratch)`, `scratch` on the stack,
+shifting the hash in `E`. -/
+abbrev Args.sign : Args := ⟨.r3, .r1, .r2, none, some E⟩
 
 /-- A curve as the code has it: `n` words, and its parameters. -/
 structure Cfg where
@@ -129,6 +132,10 @@ variable (c : Cfg)
 
 /-- `R = 2^(64 n)`. -/
 def R : Nat := 2 ^ (64 * c.n)
+
+/-- The bits of the hash's `len` bytes that are not `e`'s: `8 len - N`, for
+`N` the bits of `n` (0 but for P-521's 7). -/
+def sh : Nat := 8 * c.C.len - Spec.Ecdsa.nBits c.C
 
 /-- `x R mod p`. -/
 def mont (x : Nat) : Nat := x * c.R % c.C.p
@@ -177,13 +184,21 @@ def scStart (A : Args) : Instr :=
   | none => .ldrSp wb 0
   | some r => .mov wb (.reg r)
 
+/-- The slot `hs` (if any) shifted right by the bits of a hash's `len`
+bytes that are not `e`'s (`sh`: none but for P-521's 7). -/
+def shiftCode : Option Nat → List Instr
+  | none => []
+  | some i => if c.sh = 0 then [] else shrWords c.n (c.sl i) c.sh
+
 /-- The working space from its argument to `r12`; saves the callee-saved
-registers there and moves `out` to `lr`; reads `k`, `d` and the hash from the registers
-`A` names; stores the constants; and sets `R = (0 : 1 : 0)` and the flag (a
+registers there and moves `out` to `lr`; reads `k`, `d` and the hash (`len`
+bytes each) from the registers `A` names, and shifts the slot `A.hs` holding
+a hash; stores the constants; and sets `R = (0 : 1 : 0)` and the flag (a
 word) to all ones. -/
 def setupWith (A : Args) : List Instr :=
   [scStart A] ++ saveCode ++ [.mov .lr (.reg .r0)] ++
-  loadBE c.n (c.sl K) A.k ++ loadBE c.n (c.sl D) A.d ++ loadBE c.n (c.sl E) A.e ++
+  loadBytes c.C.len c.n (c.sl K) A.k ++ loadBytes c.C.len c.n (c.sl D) A.d ++
+  loadBytes c.C.len c.n (c.sl E) A.e ++ c.shiftCode A.hs ++
   c.consts.flatMap (fun (i, x) => setConst c.n (c.sl i) x) ++
   [.mov .r4 (.imm 0), .dp .sub .r4 .r4 (.imm 1), .str .r4 wb (c.sl FLAG)]
 
@@ -241,7 +256,7 @@ def restore : List Instr := saved.map fun (r, d) => .ldr r wb d
 the callee-saved registers restored. -/
 def finish : List Instr :=
   [.ldr .r10 wb (c.sl FLAG)] ++
-  storeBE c.n .lr 0 (c.sl RR) ++ storeBE c.n .lr (8 * c.n) (c.sl SS) ++
+  storeBytes c.C.len c.n .lr 0 (c.sl RR) ++ storeBytes c.C.len c.n .lr c.C.len (c.sl SS) ++
   [.dp .and .r0 .r10 (.imm 1)] ++ restore
 
 /-- `s = k⁻¹ (e + r d) mod n`, with `k⁻¹ R` in `ACC`, and its check. -/
