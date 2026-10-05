@@ -8,7 +8,7 @@ The entry of the magnitude `a` of table `j`, selected in constant time
 (`select_ok`): the table's address into `x16` (from the static `tsym`'s, plus
 `j` tables), the registers `entryRegs n` set to `(0, R)`, then for every
 entry `m = 1 … H`, `x1 = m`, the carry clear exactly when `a = m`
-(`selEntry_ok`), and each of its words loaded and kept by `csel` on the
+(`selEntryW_ok`), and each of its words loaded and kept by `csel` on the
 carry (`cselWords_ok`): after them the registers hold entry `a`'s words if
 `1 ≤ a ≤ H`, else `(0, R)` (`entries_ok`). They go to `E`, and `Z` is `R`
 unless `a = 0`.
@@ -20,8 +20,27 @@ open VG VG.AArch64 VG.Impl.Mont.AArch64 VG.Impl.Mont VG.Impl.Weierstrass.AArch64
 open VG.Proof.Mont.AArch64 VG.Proof.Mont VG.Proof.Weierstrass
 open VG.Proof.Ed25519.AArch64 (Keeps Keeps.trans Keeps.mono read_x)
 
+/-- Register `i` of `c` words of the entry. -/
+def sr (c i : Nat) : Reg := (selRegs c).getD i .x8
+
 /-- Register `i` of the entry. -/
 def er (n i : Nat) : Reg := (entryRegs n).getD i .x8
+
+theorem sr_ne : ∀ c ≤ 8, ∀ i < c, ∀ i' < c, i ≠ i' → sr c i ≠ sr c i' := by decide
+
+theorem sr_regs : ∀ c ≤ 8, ∀ i < c,
+    sr c i ∉ [Reg.x0, .x1, .x2, .x3, .x4, .x5, .x6, .x7, .x16, .x17, .x19] := by decide
+
+theorem sr_mem : ∀ c ≤ 8, ∀ i < c, sr c i ∈ selRegs c := by decide
+
+theorem selRegs_regs : ∀ c ≤ 8, ∀ r ∈ selRegs c,
+    r ∉ [Reg.x0, .x1, .x2, .x3, .x4, .x5, .x6, .x7, .x16, .x17, .x19] := by decide
+
+theorem selRegs_length : ∀ c ≤ 8, (selRegs c).length = c := by decide
+
+theorem selRegs_nodup : ∀ c ≤ 8, (selRegs c).Nodup := by decide
+
+theorem selRegs_entryRegs : ∀ n ≤ 8, ∀ r ∈ selRegs n, r ∈ entryRegs n := by decide
 
 theorem er_ne : ∀ n ≤ 4, ∀ i < 2 * n, ∀ i' < 2 * n, i ≠ i' → er n i ≠ er n i' := by decide
 
@@ -30,50 +49,50 @@ theorem er_regs : ∀ n ≤ 4, ∀ i < 2 * n,
 
 theorem er_mem : ∀ n ≤ 4, ∀ i < 2 * n, er n i ∈ entryRegs n := by decide
 
-theorem entryRegs_regs : ∀ n ≤ 4, ∀ r ∈ entryRegs n,
+theorem entryRegs_regs : ∀ n ≤ 8, ∀ r ∈ entryRegs n,
     r ∉ [Reg.x0, .x1, .x2, .x3, .x4, .x5, .x6, .x7, .x16, .x17, .x19] := by decide
 
 /-- The words of an entry at `x16 + o`: each loaded into `x6` and kept in its
 register by `csel` unless the carry is set. -/
-theorem cselWords_ok {n : Nat} (hn : n ≤ 4) {o : Nat} (ho : o % 8 = 0) :
-    ∀ k ≤ 2 * n, ∀ {s : State}, o + 8 * k ≤ 32768 →
+theorem cselWords_ok {c : Nat} (hc : c ≤ 8) {o : Nat} (ho : o % 8 = 0) :
+    ∀ k ≤ c, ∀ {s : State}, o + 8 * k ≤ 32768 →
       (∀ i < k, InRegions (s.rd ++ s.wr) (s.gpr .x16 + BitVec.ofNat 64 (o + 8 * i)) 8) →
       WP isa (.block ((List.range k).flatMap fun i =>
-          [.ldr .x .x6 .x16 (o + 8 * i), .csel .x (er n i) (er n i) .x6])) s fun t =>
-        (∀ i < 2 * n, t.gpr (er n i) = if i < k ∧ s.c = false then
-          s.mem.readW (s.gpr .x16 + BitVec.ofNat 64 (o + 8 * i)) 64 else s.gpr (er n i)) ∧
-        t.c = s.c ∧ Keeps (.x6 :: entryRegs n) s t
+          [.ldr .x .x6 .x16 (o + 8 * i), .csel .x (sr c i) (sr c i) .x6])) s fun t =>
+        (∀ i < c, t.gpr (sr c i) = if i < k ∧ s.c = false then
+          s.mem.readW (s.gpr .x16 + BitVec.ofNat 64 (o + 8 * i)) 64 else s.gpr (sr c i)) ∧
+        t.c = s.c ∧ Keeps (.x6 :: selRegs c) s t
   | 0, _, s, _, _ => WP.block_nil ⟨fun i _ => by simp, rfl, fun _ _ => rfl, rfl, rfl, rfl, rfl⟩
   | k + 1, hk, s, ho', hr => by
     rw [List.range_succ, List.flatMap_append, List.flatMap_singleton, WP.block_append_iff]
-    refine WP.mono (cselWords_ok hn ho k (by omega) (by omega) fun i hi => hr i (by omega))
+    refine WP.mono (cselWords_ok hc ho k (by omega) (by omega) fun i hi => hr i (by omega))
       fun s₁ ⟨e₁, c₁, k₁⟩ => ?_
     have h16 : s₁.gpr .x16 = s.gpr .x16 := k₁.gpr _ (by
       simp only [List.mem_cons, not_or]
-      exact ⟨by decide, fun h => entryRegs_regs n hn _ h (by simp)⟩)
+      exact ⟨by decide, fun h => selRegs_regs c hc _ h (by simp)⟩)
     have hrk := hr k (by omega)
     rw [← h16, ← k₁.rd, ← k₁.wr] at hrk
     apply WP.of_runBlock
     simp only [runBlock_cons, runStep_some, runBlock_nil, exec_ldr_x (by omega) hrk, exec_csel,
       Option.some.injEq, exists_eq_left']
-    have hne := er_regs n hn k (by omega)
+    have hne := sr_regs c hc k (by omega)
     simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hne
     refine ⟨fun i hi => ?_, by simp only [RegUpd.c_write]; exact c₁, ?_⟩
     · by_cases hik : i = k
       · subst hik
-        have hx6 : ¬ er n i = .x6 := hne.2.2.2.2.2.2.1
+        have hx6 : ¬ sr c i = .x6 := hne.2.2.2.2.2.2.1
         simp only [RegUpd.gpr_write_self, BitVec.setWidth_eq, State.read, RegUpd.c_write,
           RegUpd.gpr_write, hx6, ite_false, c₁, k₁.mem, h16, Nat.lt_add_one, true_and]
         rw [e₁ i hi]
         cases s.c <;> simp
-      · rw [RegUpd.gpr_write_of_ne _ _ _ (er_ne n hn i hi k (by omega) hik),
-          RegUpd.gpr_write_of_ne _ _ _ (fun h => (er_regs n hn i hi) (by rw [h]; simp)), e₁ i hi]
+      · rw [RegUpd.gpr_write_of_ne _ _ _ (sr_ne c hc i hi k (by omega) hik),
+          RegUpd.gpr_write_of_ne _ _ _ (fun h => (sr_regs c hc i hi) (by rw [h]; simp)), e₁ i hi]
         by_cases hlt : i < k
         · simp [hlt, show i < k + 1 by omega]
         · simp [hlt, show ¬ i < k + 1 by omega]
     · refine k₁.trans ⟨fun r hr => ?_, rfl, rfl, rfl, rfl⟩
       simp only [List.mem_cons, not_or] at hr
-      rw [RegUpd.gpr_write_of_ne _ _ _ (fun h => hr.2 (by rw [h]; exact er_mem n hn k (by omega))),
+      rw [RegUpd.gpr_write_of_ne _ _ _ (fun h => hr.2 (by rw [h]; exact sr_mem c hc k (by omega))),
         RegUpd.gpr_write_of_ne _ _ _ hr.1]
 
 theorem xor_eq_zero_iff (x y : BitVec 64) : x ^^^ y = 0 ↔ x = y := by
@@ -95,23 +114,24 @@ theorem carry_sub_one (x : BitVec 64) :
     simp only [Bool.toNat_true, h, ne_eq, not_false_eq_true, decide_true, decide_eq_true_eq]
     omega
 
-/-- Entry `m` (from 1): `x1 = m`, and each word kept in its register unless
-`m` is the magnitude `a` in `x2`, when it is the entry's word. -/
-theorem selEntry_ok (K : TCombCfg) (hn : K.M.n ≤ 4) {s : State} {a m : Nat} (hm : 1 ≤ m)
-    (ha : a < 2 ^ 64) (hm' : m < 2 ^ 64) (hx1 : s.gpr .x1 = BitVec.ofNat 64 (m - 1))
+/-- Entry `m` (from 1): `x1 = m`, and each of its `c` words from byte `o` kept
+in its register unless `m` is the magnitude `a` in `x2`, when it is the
+entry's word. -/
+theorem selEntryW_ok (K : TCombCfg) {o c : Nat} (hc : c ≤ 8) (ho8 : o % 8 = 0) {s : State} {a m : Nat}
+    (hm : 1 ≤ m) (ha : a < 2 ^ 64) (hm' : m < 2 ^ 64) (hx1 : s.gpr .x1 = BitVec.ofNat 64 (m - 1))
     (hx2 : s.gpr .x2 = BitVec.ofNat 64 a) (hx5 : s.gpr .x5 = 1)
-    (ho : 16 * K.M.n * (m - 1) + 8 * (2 * K.M.n) ≤ 32768)
-    (hr : ∀ i < 2 * K.M.n,
-      InRegions (s.rd ++ s.wr) (s.gpr .x16 + BitVec.ofNat 64 (16 * K.M.n * (m - 1) + 8 * i)) 8) :
-    WP isa (.block (K.selEntry m)) s fun t =>
+    (ho : 16 * K.M.n * (m - 1) + o + 8 * c ≤ 32768)
+    (hr : ∀ i < c,
+      InRegions (s.rd ++ s.wr) (s.gpr .x16 + BitVec.ofNat 64 (16 * K.M.n * (m - 1) + o + 8 * i)) 8) :
+    WP isa (.block (K.selEntryW o c m)) s fun t =>
       t.gpr .x1 = BitVec.ofNat 64 m ∧
-      (∀ i < 2 * K.M.n, t.gpr (er K.M.n i) = if a = m then
-        s.mem.readW (s.gpr .x16 + BitVec.ofNat 64 (16 * K.M.n * (m - 1) + 8 * i)) 64
-        else s.gpr (er K.M.n i)) ∧
-      Keeps (.x1 :: .x3 :: .x4 :: .x6 :: entryRegs K.M.n) s t := by
-  rw [show K.selEntry m = ([.add .x .x1 .x1 .x5, .logic .eor .x .x3 .x2 .x1, .subs .x .x4 .x3 .x5] :
-      List Instr) ++ (List.range (2 * K.M.n)).flatMap (fun i =>
-        [.ldr .x .x6 .x16 (16 * K.M.n * (m - 1) + 8 * i), .csel .x (er K.M.n i) (er K.M.n i) .x6])
+      (∀ i < c, t.gpr (sr c i) = if a = m then
+        s.mem.readW (s.gpr .x16 + BitVec.ofNat 64 (16 * K.M.n * (m - 1) + o + 8 * i)) 64
+        else s.gpr (sr c i)) ∧
+      Keeps (.x1 :: .x3 :: .x4 :: .x6 :: selRegs c) s t := by
+  rw [show K.selEntryW o c m = ([.add .x .x1 .x1 .x5, .logic .eor .x .x3 .x2 .x1, .subs .x .x4 .x3 .x5] :
+      List Instr) ++ (List.range c).flatMap (fun i =>
+        [.ldr .x .x6 .x16 (16 * K.M.n * (m - 1) + o + 8 * i), .csel .x (sr c i) (sr c i) .x6])
       from rfl, WP.block_append_iff]
   have hpre : WP isa (.block ([.add .x .x1 .x1 .x5, .logic .eor .x .x3 .x2 .x1,
       .subs .x .x4 .x3 .x5] : List Instr)) s fun t =>
@@ -134,44 +154,45 @@ theorem selEntry_ok (K : TCombCfg) (hn : K.M.n ≤ 4) {s : State} {a m : Nat} (h
       simp only [RegUpd.gpr_addWithCarry, RegUpd.gpr_write, hr.1, hr.2.1, hr.2.2, ite_false]
   refine WP.mono hpre fun s₁ ⟨e₁, c₁, k₁⟩ => ?_
   have h16 : s₁.gpr .x16 = s.gpr .x16 := k₁.gpr _ (by decide)
-  refine WP.mono (cselWords_ok hn (o := 16 * K.M.n * (m - 1)) (by rw [Nat.mul_assoc]; omega)
-    (2 * K.M.n) (Nat.le_refl _) (by omega) fun i hi => by rw [h16, k₁.rd, k₁.wr]; exact hr i hi)
+  refine WP.mono (cselWords_ok hc (o := 16 * K.M.n * (m - 1) + o) (by rw [Nat.mul_assoc]; omega)
+    c (Nat.le_refl _) (by omega) fun i hi => by rw [h16, k₁.rd, k₁.wr]; exact hr i hi)
     fun t ⟨et, ct, kt⟩ => ?_
   refine ⟨?_, fun i hi => ?_, (k₁.mono (by sub_regs)).trans (kt.mono (by sub_regs))⟩
   · rw [kt.gpr _ (by
       simp only [List.mem_cons, not_or]
-      exact ⟨by decide, fun h => entryRegs_regs K.M.n hn _ h (by simp)⟩), e₁]
+      exact ⟨by decide, fun h => selRegs_regs c hc _ h (by simp)⟩), e₁]
   · rw [et i hi, c₁, h16, k₁.mem, k₁.gpr _ (by
-      have := er_regs K.M.n hn i hi
+      have := sr_regs c hc i hi
       simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at this ⊢
       exact ⟨this.2.1, this.2.2.2.1, this.2.2.2.2.1⟩)]
     by_cases h : a = m <;> simp [h, hi]
 
-/-- The entries `1 … m`: `x1 = m`, and the registers hold entry `a`'s words if
-`1 ≤ a ≤ m`, else what they held. -/
-theorem entries_ok (K : TCombCfg) (hn : K.M.n ≤ 4) {a : Nat} (ha : a < 2 ^ 64) :
+/-- The entries `1 … m`: `x1 = m`, and the registers hold the `c` words from
+byte `o` of entry `a` if `1 ≤ a ≤ m`, else what they held. -/
+theorem entriesW_ok (K : TCombCfg) {o c : Nat} (hc : c ≤ 8) (ho8 : o % 8 = 0)
+    (hoc : o + 8 * c ≤ 16 * K.M.n) {a : Nat} (ha : a < 2 ^ 64) :
     ∀ m, m < 2 ^ 64 → 16 * K.M.n * m ≤ 32768 → ∀ {s : State}, s.gpr .x1 = 0 →
       s.gpr .x2 = BitVec.ofNat 64 a → s.gpr .x5 = 1 →
-      (∀ e < m, ∀ i < 2 * K.M.n,
-        InRegions (s.rd ++ s.wr) (s.gpr .x16 + BitVec.ofNat 64 (16 * K.M.n * e + 8 * i)) 8) →
-      WP isa (.block ((List.range m).flatMap fun e => K.selEntry (e + 1))) s fun t =>
+      (∀ e < m, ∀ i < c,
+        InRegions (s.rd ++ s.wr) (s.gpr .x16 + BitVec.ofNat 64 (16 * K.M.n * e + o + 8 * i)) 8) →
+      WP isa (.block ((List.range m).flatMap fun e => K.selEntryW o c (e + 1))) s fun t =>
         t.gpr .x1 = BitVec.ofNat 64 m ∧
-        (∀ i < 2 * K.M.n, t.gpr (er K.M.n i) = if 1 ≤ a ∧ a ≤ m then
-          s.mem.readW (s.gpr .x16 + BitVec.ofNat 64 (16 * K.M.n * (a - 1) + 8 * i)) 64
-          else s.gpr (er K.M.n i)) ∧
-        Keeps (.x1 :: .x3 :: .x4 :: .x6 :: entryRegs K.M.n) s t
+        (∀ i < c, t.gpr (sr c i) = if 1 ≤ a ∧ a ≤ m then
+          s.mem.readW (s.gpr .x16 + BitVec.ofNat 64 (16 * K.M.n * (a - 1) + o + 8 * i)) 64
+          else s.gpr (sr c i)) ∧
+        Keeps (.x1 :: .x3 :: .x4 :: .x6 :: selRegs c) s t
   | 0, _, _, s, h1, _, _, _ => WP.block_nil ⟨h1, fun i _ => by simp; omega, fun _ _ => rfl, rfl, rfl, rfl, rfl⟩
   | m + 1, hm, hb, s, h1, h2, h5, hr => by
     rw [List.range_succ, List.flatMap_append, List.flatMap_singleton, WP.block_append_iff]
     have hb' : 16 * K.M.n * m + 16 * K.M.n ≤ 32768 := by rw [Nat.mul_succ] at hb; exact hb
-    refine WP.mono (entries_ok K hn ha m (by omega) (by omega) h1 h2 h5 fun e he => hr e (by omega))
+    refine WP.mono (entriesW_ok K hc ho8 hoc ha m (by omega) (by omega) h1 h2 h5 fun e he => hr e (by omega))
       fun s₁ ⟨e₁, v₁, k₁⟩ => ?_
     have hk : ∀ r ∈ [Reg.x2, .x5, .x16], s₁.gpr r = s.gpr r := fun r hr' => k₁.gpr r (by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr'
       rcases hr' with rfl | rfl | rfl <;>
         simp only [List.mem_cons, not_or] <;>
-        exact ⟨by decide, by decide, by decide, by decide, fun h => entryRegs_regs K.M.n hn _ h (by simp)⟩)
-    refine WP.mono (selEntry_ok K hn (m := m + 1) (by omega) ha hm (by rw [e₁]; rfl)
+        exact ⟨by decide, by decide, by decide, by decide, fun h => selRegs_regs c hc _ h (by simp)⟩)
+    refine WP.mono (selEntryW_ok K hc ho8 (m := m + 1) (by omega) ha hm (by rw [e₁]; rfl)
       (by rw [hk _ (by simp)]; exact h2) (by rw [hk _ (by simp)]; exact h5)
       (by rw [Nat.add_sub_cancel]; omega)
       fun i hi => by rw [hk _ (by simp), k₁.rd, k₁.wr]; exact hr m (by omega) i hi)
@@ -182,6 +203,22 @@ theorem entries_ok (K : TCombCfg) (hn : K.M.n ≤ 4) {a : Nat} (ha : a < 2 ^ 64)
     · by_cases h' : 1 ≤ a ∧ a ≤ m
       · simp [h, h', show 1 ≤ a ∧ a ≤ m + 1 by omega]
       · simp [h, h', show ¬ (1 ≤ a ∧ a ≤ m + 1) by omega]
+
+/-- The entries `1 … m`, all `2n ≤ 8` words of each in one pass. -/
+theorem entries_ok (K : TCombCfg) (hn : K.M.n ≤ 4) {a : Nat} (ha : a < 2 ^ 64)
+    (m : Nat) (hm : m < 2 ^ 64) (hb : 16 * K.M.n * m ≤ 32768) {s : State} (h1 : s.gpr .x1 = 0)
+    (h2 : s.gpr .x2 = BitVec.ofNat 64 a) (h5 : s.gpr .x5 = 1)
+    (hr : ∀ e < m, ∀ i < 2 * K.M.n,
+        InRegions (s.rd ++ s.wr) (s.gpr .x16 + BitVec.ofNat 64 (16 * K.M.n * e + 8 * i)) 8) :
+    WP isa (.block ((List.range m).flatMap fun e => K.selEntryW 0 (2 * K.M.n) (e + 1))) s fun t =>
+      t.gpr .x1 = BitVec.ofNat 64 m ∧
+      (∀ i < 2 * K.M.n, t.gpr (er K.M.n i) = if 1 ≤ a ∧ a ≤ m then
+        s.mem.readW (s.gpr .x16 + BitVec.ofNat 64 (16 * K.M.n * (a - 1) + 8 * i)) 64
+        else s.gpr (er K.M.n i)) ∧
+      Keeps (.x1 :: .x3 :: .x4 :: .x6 :: entryRegs K.M.n) s t :=
+  WP.mono (entriesW_ok K (o := 0) (c := 2 * K.M.n) (by omega) rfl (by omega) ha m hm hb h1 h2 h5
+    fun e he i hi => by rw [Nat.add_zero]; exact hr e he i hi)
+    fun _ ⟨e1, v, k⟩ => ⟨e1, fun i hi => by have := v i hi; rw [Nat.add_zero] at this; exact this, k⟩
 
 /-- Registers holding words of memory hold their number. -/
 theorem regsVal_of_words {s : State} {m : Mem} {B : Addr} :
@@ -366,10 +403,73 @@ theorem selZ_carry (s : State) {a : Nat} (ha : a < 2 ^ 64) (hx2 : s.gpr .x2 = Bi
   · simp only [List.mem_singleton] at hr
     simp only [RegUpd.gpr_addWithCarry, hr, ite_false]
 
-/-- The entry of the magnitude `a ≤ H` of table `j = x19` into `E`, from the
+theorem sel_keep : ∀ n ≤ 8, ∀ r ∈ [Reg.x0, .x1, .x2, .x5, .x7, .x16, .x19], r ∉ selRegs n := by decide
+
+theorem pass_keep : ∀ n ≤ 8, ∀ r ∈ [Reg.x0, .x2, .x5, .x7, .x16, .x19],
+    r ∉ Reg.x1 :: Reg.x3 :: Reg.x4 :: Reg.x6 :: selRegs n := by decide
+
+/-- Words that no byte of changed. -/
+theorem wordsVal_of_bytes {m m' : Mem} {A : Addr} :
+    ∀ (k o : Nat), (∀ i < k, ∀ b < 8, m' (A + BitVec.ofNat 64 (o + 8 * i) + BitVec.ofNat 64 b) =
+      m (A + BitVec.ofNat 64 (o + 8 * i) + BitVec.ofNat 64 b)) → wordsVal m' A o k = wordsVal m A o k
+  | 0, _, _ => rfl
+  | k + 1, o, h => by
+    have hw : word m' A o = word m A o := Mem.readW_congr fun b hb => by
+      have := h 0 (by omega) b (by omega)
+      rwa [Nat.mul_zero, Nat.add_zero] at this
+    have ih : wordsVal m' A (o + 8) k = wordsVal m A (o + 8) k :=
+      wordsVal_of_bytes k (o + 8) fun i hi b hb => by
+        have := h (i + 1) (by omega) b hb
+        rwa [show o + 8 * (i + 1) = o + 8 + 8 * i by omega] at this
+    simp only [wordsVal, hw, ih]
+
+/-- One pass over the `H` entries for their `c ≤ 8` words from byte `o`, into
+`selRegs c`, which held the words of `v`, then stored at `d`: the words of
+entry `a` if `1 ≤ a`, else `v`. -/
+theorem pass_ok (K : TCombCfg) {o c d : Nat} (hc : c ≤ 8) (ho8 : o % 8 = 0)
+    (hoc : o + 8 * c ≤ 16 * K.M.n) {s : State} {base : Addr} {size : Nat} (hs : Scr s base size)
+    {a v : Nat} {A : Addr} (ha : a ≤ K.H) (hH : 16 * K.M.n * K.H ≤ 32768) (hHlt : K.H < 2 ^ 64)
+    (h1 : s.gpr .x1 = 0) (h2 : s.gpr .x2 = BitVec.ofNat 64 a) (h5 : s.gpr .x5 = 1) (h16 : s.gpr .x16 = A)
+    (hv : v < 2 ^ (64 * c)) (hregs : ∀ i < c, s.gpr (sr c i) = wordOf v i)
+    (hd : d + 8 * c ≤ size) (hd8 : d % 8 = 0)
+    (hreg : ∀ e < K.H, ∀ i < c,
+      InRegions (s.rd ++ s.wr) (A + BitVec.ofNat 64 (16 * K.M.n * e + o + 8 * i)) 8) :
+    WP isa (.block (K.entriesW o c ++ stores (selRegs c) d)) s fun t =>
+      wordsVal t.mem base d c = (if 1 ≤ a then wordsVal s.mem A (16 * K.M.n * (a - 1) + o) c else v) ∧
+      KeepRegs (.x1 :: .x3 :: .x4 :: .x6 :: selRegs c) s t ∧ Outside base d (8 * c) s.mem t.mem ∧
+      Scr t base size := by
+  have hlen := selRegs_length c hc
+  have ha64 : a < 2 ^ 64 := by omega
+  rw [WP.block_append_iff]
+  refine WP.mono (entriesW_ok K hc ho8 hoc ha64 K.H hHlt hH h1 h2 h5
+    fun e he i hi => by rw [h16]; exact hreg e he i hi) fun s₁ ⟨_, v₁, k₁⟩ => ?_
+  have hs₁ := hs.of_keeps k₁ (pass_keep c hc _ (by simp))
+  refine WP.mono (stores_ok _ hs₁ (o := d) (by rw [hlen]; exact hd) hd8 (selRegs_nodup c hc))
+    fun t ⟨wt, kt, Ot⟩ => ⟨?_, (Keeps.regs k₁).trans (kt.mono fun _ h => absurd h List.not_mem_nil),
+      by rw [hlen, k₁.mem] at Ot; exact Ot, hs₁.of_keepRegs kt (by simp)⟩
+  rw [hlen] at wt
+  rw [wt]
+  by_cases h : 1 ≤ a
+  · simp only [h, ↓reduceIte]
+    refine (regsVal_of_words _ _ fun i hi => ?_).trans (by rw [hlen])
+    rw [hlen] at hi
+    show s₁.gpr (sr c i) = _
+    rw [v₁ i hi, h16]
+    simp only [h, ha, and_self, ↓reduceIte]
+  · simp only [h, ↓reduceIte]
+    exact regsVal_of_wordOf _ v (by rw [hlen]; exact hv) fun i hi => by
+      rw [hlen] at hi
+      show s₁.gpr (sr c i) = _
+      rw [v₁ i hi]
+      simp only [h, false_and, ↓reduceIte]
+      exact hregs i hi
+
+/-- `tselect_ok` for `2n > 8`: `x`'s words in one pass, then `y`'s. The
+second reads the tables after the first's stores, which are in the working
+space, apart from them (`hout`). The entry of the magnitude `a ≤ H` of table `j = x19` into `E`, from the
 tables at `T` (the static `tsym`'s address): its `x` and `y` if `a ≥ 1`, else
 `(0 : R : 0)`; `Z` is `R` unless `a = 0`. -/
-theorem tselect_ok (K : TCombCfg) (hn : K.M.n ≤ 4) {s : State} {base : Addr} {size : Nat}
+theorem tselect2_ok (K : TCombCfg) (hn : K.M.n ≤ 8) (h2 : ¬ 2 * K.M.n ≤ 8) {s : State} {base : Addr} {size : Nat}
     (hs : Scr s base size) {j a : Nat} {T : Addr} (hx19 : s.gpr .x19 = BitVec.ofNat 64 j)
     (hx2 : s.gpr .x2 = BitVec.ofNat 64 a) (ha : a ≤ K.H) (hH : 16 * K.M.n * K.H ≤ 32768)
     (htb : K.tblBytes < 65536) (hHlt : K.H < 2 ^ 64) (hT : s.syms K.tsym = T)
@@ -379,7 +479,9 @@ theorem tselect_ok (K : TCombCfg) (hn : K.M.n ≤ 4) {s : State} {base : Addr} {
       (K.E.y + 8 * K.M.n ≤ K.E.z ∨ K.E.z + 8 * K.M.n ≤ K.E.y))
     (hone : K.one < 2 ^ (64 * K.M.n))
     (hreg : ∀ e < K.H, ∀ i < 2 * K.M.n, InRegions (s.rd ++ s.wr)
-      (T + BitVec.ofNat 64 (j * K.tblBytes) + BitVec.ofNat 64 (16 * K.M.n * e + 8 * i)) 8) :
+      (T + BitVec.ofNat 64 (j * K.tblBytes) + BitVec.ofNat 64 (16 * K.M.n * e + 8 * i)) 8)
+    (hout : ∀ e < K.H, ∀ i < 2 * K.M.n, ∀ b < 8, size ≤ ofs base
+      (T + BitVec.ofNat 64 (j * K.tblBytes) + BitVec.ofNat 64 (16 * K.M.n * e + 8 * i) + BitVec.ofNat 64 b)) :
     WP isa (.block K.select) s fun t =>
       wordsVal t.mem base K.E.x K.M.n = (if 1 ≤ a then
         wordsVal s.mem (T + BitVec.ofNat 64 (j * K.tblBytes)) (16 * K.M.n * (a - 1)) K.M.n else 0) ∧
@@ -389,6 +491,149 @@ theorem tselect_ok (K : TCombCfg) (hn : K.M.n ≤ 4) {s : State} {base : Addr} {
       wordsVal t.mem base K.E.z K.M.n = (if 1 ≤ a then K.one else 0) ∧
       KeepRegs (.x1 :: .x2 :: .x3 :: .x4 :: .x5 :: .x6 :: .x7 :: .x16 :: .x17 :: entryRegs K.M.n) s t ∧
       Unch base [(K.E.x, 8 * K.M.n), (K.E.y, 8 * K.M.n), (K.E.z, 8 * K.M.n)] s.mem t.mem := by
+  have hnw := hs.nowrap
+  have hEx := hE K.E.x (by simp)
+  have hEy := hE K.E.y (by simp)
+  have hEz := hE K.E.z (by simp)
+  obtain ⟨axy, axz, ayz⟩ := hap
+  have ha64 : a < 2 ^ 64 := by omega
+  have hlen := selRegs_length _ hn
+  have hnd := selRegs_nodup _ hn
+  simp only [TCombCfg.select, h2, ↓reduceIte, List.append_assoc, List.cons_append]
+  rw [WP.block_append_iff]
+  refine WP.mono (selSetup_ok K hx19 hT htb) fun s₁ ⟨e16, e7, e5, e1, k₁⟩ => ?_
+  have hs₁ := hs.of_keeps k₁ (by decide)
+  have h2₁ : s₁.gpr .x2 = BitVec.ofNat 64 a := by rw [k₁.gpr _ (by decide), hx2]
+  rw [WP.block_append_iff]
+  refine WP.mono (zeros_ok s₁ (selRegs K.M.n)) fun s₂ ⟨z₂, k₂⟩ => ?_
+  have g₂ : ∀ r ∈ [Reg.x0, .x1, .x2, .x5, .x7, .x16, .x19], s₂.gpr r = s₁.gpr r := fun r hr =>
+    k₂.gpr r (sel_keep _ hn r hr)
+  have hs₂ := hs₁.of_keeps k₂ (sel_keep _ hn _ (by simp))
+  have hrd₂ : s₂.rd ++ s₂.wr = s.rd ++ s.wr := by rw [k₂.rd, k₂.wr, k₁.rd, k₁.wr]
+  have hm₂ : s₂.mem = s.mem := by rw [k₂.mem, k₁.mem]
+  -- `x`'s words.
+  rw [← List.append_assoc, WP.block_append_iff]
+  refine WP.mono (pass_ok K (o := 0) (c := K.M.n) (d := K.E.x) hn rfl (by omega) hs₂ (v := 0) (A := T + BitVec.ofNat 64 (j * K.tblBytes)) ha hH hHlt
+    (by rw [g₂ _ (by simp), e1]) (by rw [g₂ _ (by simp), h2₁]) (by rw [g₂ _ (by simp), e5])
+    (by rw [g₂ _ (by simp), e16]) (Nat.two_pow_pos _)
+    (fun i hi => by rw [wordOf_zero]; exact z₂ _ (sr_mem _ hn i hi)) hEx.1 hEx.2
+    (fun e he i hi => by rw [hrd₂, Nat.add_zero]; exact hreg e he i (by omega)))
+    fun s₃ ⟨w₃, k₃, O₃, hs₃⟩ => ?_
+  have g₃ : ∀ r ∈ [Reg.x0, .x2, .x5, .x7, .x16, .x19], s₃.gpr r = s₁.gpr r := fun r hr => by
+    rw [k₃.gpr r (pass_keep _ hn r hr), g₂ r (by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
+      rcases hr with h | h | h | h | h | h <;> simp [h])]
+  -- `x1 = 0`, and `R` in the registers.
+  rw [← List.singleton_append, WP.block_append_iff]
+  refine WP.mono (movz0_ok s₃ .x1) fun s₄ ⟨z₄, k₄⟩ => ?_
+  rw [WP.block_append_iff]
+  refine WP.mono (setRegs_ok s₄ (v := K.one) (selRegs K.M.n) _ (Nat.le_refl _) hnd) fun s₅ ⟨z₅, k₅⟩ => ?_
+  have g₅ : ∀ r ∈ [Reg.x0, .x2, .x5, .x7, .x16, .x19], s₅.gpr r = s₁.gpr r := fun r hr => by
+    rw [k₅.gpr r (sel_keep _ hn r (by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
+      rcases hr with h | h | h | h | h | h <;> simp [h])), k₄.gpr r (by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
+      rcases hr with h | h | h | h | h | h <;> simp [h]), g₃ r hr]
+  have h1₅ : s₅.gpr .x1 = 0 := by rw [k₅.gpr _ (sel_keep _ hn _ (by simp)), z₄]
+  have hs₅ := (hs₃.of_keeps k₄ (by decide)).of_keeps k₅ (sel_keep _ hn _ (by simp))
+  have hrd₅ : s₅.rd ++ s₅.wr = s.rd ++ s.wr := by
+    rw [k₅.rd, k₅.wr, k₄.rd, k₄.wr, k₃.rd, k₃.wr, hrd₂]
+  have hm₅ : s₅.mem = s₃.mem := by rw [k₅.mem, k₄.mem]
+  -- `y`'s words.
+  rw [← List.append_assoc, WP.block_append_iff]
+  refine WP.mono (pass_ok K (o := 8 * K.M.n) (c := K.M.n) (d := K.E.y) hn (by omega) (by omega) hs₅
+    (v := K.one) (A := T + BitVec.ofNat 64 (j * K.tblBytes)) ha hH hHlt h1₅ (by rw [g₅ _ (by simp), h2₁]) (by rw [g₅ _ (by simp), e5])
+    (by rw [g₅ _ (by simp), e16]) hone (fun i hi => z₅ i (by rw [hlen]; exact hi)) hEy.1 hEy.2
+    (fun e he i hi => by
+      rw [hrd₅, show 16 * K.M.n * e + 8 * K.M.n + 8 * i = 16 * K.M.n * e + 8 * (K.M.n + i) by omega]
+      exact hreg e he _ (by omega)))
+    fun s₆ ⟨w₆, k₆, O₆, hs₆⟩ => ?_
+  have g₆ : ∀ r ∈ [Reg.x2, .x5, .x7], s₆.gpr r = s₁.gpr r := fun r hr => by
+    have hr' : r ∈ [Reg.x0, .x2, .x5, .x7, .x16, .x19] := by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
+      rcases hr with h | h | h <;> simp [h]
+    rw [k₆.gpr r (pass_keep _ hn r hr'), g₅ r hr']
+  -- `Z`.
+  rw [TCombCfg.selZ, ← List.singleton_append, WP.block_append_iff]
+  refine WP.mono (selZ_carry s₆ ha64 (by rw [g₆ _ (by simp), h2₁]) (by rw [g₆ _ (by simp), e5]))
+    fun s₇ ⟨c₇, k₇⟩ => ?_
+  have hs₇ := hs₆.of_keeps k₇ (by decide)
+  refine WP.mono (zWords_ok K hs₇ (by rw [k₇.gpr _ (by decide), g₆ _ (by simp), e7]) hEz.1 hEz.2
+    K.M.n (Nat.le_refl _)) fun t ⟨wt, _, kt, Ot⟩ => ?_
+  have hm₇ : s₇.mem = s₆.mem := k₇.mem
+  have b64 : ∀ d ∈ [K.E.x, K.E.y, K.E.z], d + 8 * K.M.n ≤ 2 ^ 64 := fun d hd => by
+    have := (hE d hd).1; omega
+  -- The tables, which the stores of `x` left alone.
+  have htbl : 1 ≤ a → wordsVal s₅.mem (T + BitVec.ofNat 64 (j * K.tblBytes))
+      (16 * K.M.n * (a - 1) + 8 * K.M.n) K.M.n =
+      wordsVal s.mem (T + BitVec.ofNat 64 (j * K.tblBytes)) (16 * K.M.n * (a - 1) + 8 * K.M.n) K.M.n :=
+    fun h1a => by
+      rw [hm₅, ← hm₂]
+      refine wordsVal_of_bytes _ _ fun i hi b hb => O₃ _ (Or.inr ?_)
+      have := hout (a - 1) (by omega) (K.M.n + i) (by omega) b hb
+      rw [show 16 * K.M.n * (a - 1) + 8 * (K.M.n + i) = 16 * K.M.n * (a - 1) + 8 * K.M.n + 8 * i by omega]
+        at this
+      omega
+  refine ⟨?_, ?_, ?_, ?_, ?_⟩
+  · rw [Ot.wordsVal axz (b64 _ (by simp)), hm₇, O₆.wordsVal axy (b64 _ (by simp)), hm₅, w₃, hm₂,
+      Nat.add_zero]
+  · rw [Ot.wordsVal ayz (b64 _ (by simp)), hm₇, w₆]
+    by_cases h : 1 ≤ a
+    · simp only [h, ↓reduceIte]; exact htbl h
+    · simp only [h, ↓reduceIte]
+  · refine wordsVal_of_shifts _ _ _ _ _ (by split <;> [exact hone; exact Nat.two_pow_pos _])
+      fun i hi => ?_
+    rw [wt i hi, c₇]
+    by_cases h : 1 ≤ a <;> simp only [h, decide_true, decide_false, ↓reduceIte] <;> [rfl; simp]
+  · have hsub : ∀ q ∈ selRegs K.M.n, q ∈ Reg.x1 :: Reg.x2 :: Reg.x3 :: Reg.x4 :: Reg.x5 :: Reg.x6 ::
+        Reg.x7 :: Reg.x16 :: Reg.x17 :: entryRegs K.M.n := fun q hq => by
+      simp only [List.mem_cons]
+      exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr
+        (selRegs_entryRegs _ hn q hq)))))))))
+    refine ((((((((Keeps.regs k₁).mono (by sub_regs)).trans ((Keeps.regs k₂).mono hsub)).trans
+      (k₃.mono fun q hq => ?_)).trans ((Keeps.regs k₄).mono (by sub_regs))).trans
+      ((Keeps.regs k₅).mono hsub)).trans (k₆.mono fun q hq => ?_)).trans
+      ((Keeps.regs k₇).mono (by sub_regs))).trans (kt.mono (by sub_regs))
+    all_goals
+      simp only [List.mem_cons] at hq
+      rcases hq with h | h | h | h | h
+      · subst h; simp
+      · subst h; simp
+      · subst h; simp
+      · subst h; simp
+      · exact hsub q h
+  · intro x hx
+    simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] at hx
+    rw [Ot x (by omega), hm₇, O₆ x (by omega), hm₅, O₃ x (by omega), hm₂]
+
+/-- The entry of the magnitude `a ≤ H` of table `j = x19` into `E`, from the
+tables at `T` (the static `tsym`'s address): its `x` and `y` if `a ≥ 1`, else
+`(0 : R : 0)`; `Z` is `R` unless `a = 0`. -/
+theorem tselect_ok (K : TCombCfg) (hn : K.M.n ≤ 8) {s : State} {base : Addr} {size : Nat}
+    (hs : Scr s base size) {j a : Nat} {T : Addr} (hx19 : s.gpr .x19 = BitVec.ofNat 64 j)
+    (hx2 : s.gpr .x2 = BitVec.ofNat 64 a) (ha : a ≤ K.H) (hH : 16 * K.M.n * K.H ≤ 32768)
+    (htb : K.tblBytes < 65536) (hHlt : K.H < 2 ^ 64) (hT : s.syms K.tsym = T)
+    (hE : ∀ d ∈ [K.E.x, K.E.y, K.E.z], d + 8 * K.M.n ≤ size ∧ d % 8 = 0)
+    (hap : (K.E.x + 8 * K.M.n ≤ K.E.y ∨ K.E.y + 8 * K.M.n ≤ K.E.x) ∧
+      (K.E.x + 8 * K.M.n ≤ K.E.z ∨ K.E.z + 8 * K.M.n ≤ K.E.x) ∧
+      (K.E.y + 8 * K.M.n ≤ K.E.z ∨ K.E.z + 8 * K.M.n ≤ K.E.y))
+    (hone : K.one < 2 ^ (64 * K.M.n))
+    (hreg : ∀ e < K.H, ∀ i < 2 * K.M.n, InRegions (s.rd ++ s.wr)
+      (T + BitVec.ofNat 64 (j * K.tblBytes) + BitVec.ofNat 64 (16 * K.M.n * e + 8 * i)) 8)
+    (hout : ∀ e < K.H, ∀ i < 2 * K.M.n, ∀ b < 8, size ≤ ofs base
+      (T + BitVec.ofNat 64 (j * K.tblBytes) + BitVec.ofNat 64 (16 * K.M.n * e + 8 * i) + BitVec.ofNat 64 b)) :
+    WP isa (.block K.select) s fun t =>
+      wordsVal t.mem base K.E.x K.M.n = (if 1 ≤ a then
+        wordsVal s.mem (T + BitVec.ofNat 64 (j * K.tblBytes)) (16 * K.M.n * (a - 1)) K.M.n else 0) ∧
+      wordsVal t.mem base K.E.y K.M.n = (if 1 ≤ a then
+        wordsVal s.mem (T + BitVec.ofNat 64 (j * K.tblBytes)) (16 * K.M.n * (a - 1) + 8 * K.M.n) K.M.n
+        else K.one) ∧
+      wordsVal t.mem base K.E.z K.M.n = (if 1 ≤ a then K.one else 0) ∧
+      KeepRegs (.x1 :: .x2 :: .x3 :: .x4 :: .x5 :: .x6 :: .x7 :: .x16 :: .x17 :: entryRegs K.M.n) s t ∧
+      Unch base [(K.E.x, 8 * K.M.n), (K.E.y, 8 * K.M.n), (K.E.z, 8 * K.M.n)] s.mem t.mem := by
+  by_cases h2 : 2 * K.M.n ≤ 8
+  case neg => exact tselect2_ok K hn h2 hs hx19 hx2 ha hH htb hHlt hT hE hap hone hreg hout
+  have hn : K.M.n ≤ 4 := by omega
   have hnw := hs.nowrap
   have hlen := entryRegs_length _ hn
   have hnd := entryRegs_nodup _ hn
@@ -400,13 +645,13 @@ theorem tselect_ok (K : TCombCfg) (hn : K.M.n ≤ 4) {s : State} {base : Addr} {
   -- What every step keeps.
   have nE : ∀ r ∈ entryRegs K.M.n, r ≠ .x0 ∧ r ≠ .x1 ∧ r ≠ .x2 ∧ r ≠ .x5 ∧ r ≠ .x7 ∧ r ≠ .x16 :=
     fun r hr => by
-      have := entryRegs_regs _ hn r hr
+      have := entryRegs_regs _ (by omega) r hr
       simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at this
       exact ⟨this.1, this.2.1, this.2.2.1, this.2.2.2.2.2.1, this.2.2.2.2.2.2.2.1,
         this.2.2.2.2.2.2.2.2.1⟩
   have htake : ∀ r ∈ (entryRegs K.M.n).take K.M.n, r ∈ entryRegs K.M.n := fun r h => List.mem_of_mem_take h
   have hdrop : ∀ r ∈ (entryRegs K.M.n).drop K.M.n, r ∈ entryRegs K.M.n := fun r h => List.mem_of_mem_drop h
-  simp only [TCombCfg.select, List.append_assoc]
+  simp only [TCombCfg.select, h2, ↓reduceIte, TCombCfg.entriesW, List.append_assoc]
   rw [WP.block_append_iff]
   refine WP.mono (selSetup_ok K hx19 hT htb) fun s₁ ⟨e16, e7, e5, e1, k₁⟩ => ?_
   have hs₁ := hs.of_keeps k₁ (by decide)

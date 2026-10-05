@@ -43,7 +43,6 @@ theorem p256_ok : CfgOk p256 where
   minv_n := by decide +kernel
   red_p := by decide +kernel
   red_n := by decide +kernel
-  n4 := by decide
   len := rfl
   hash := p256_nBits
   chain_p := by decide +kernel

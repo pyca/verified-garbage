@@ -51,7 +51,6 @@ structure CfgOk (c : Cfg) : Prop where
   minv_n : (c.C.n * (BitVec.ofNat 64 (minv c.C.n)).toNat + 1) % 2 ^ 64 = 0
   red_p : c.MP'.ok c.C.p = true
   red_n : c.MN'.ok c.C.n = true
-  n4 : c.n ≤ 4
   len : c.C.len = 8 * c.n
   hash : 64 * c.n ≤ Spec.Ecdsa.nBits c.C
   chain_p : chainCheck (slide (c.C.p - 2)).1 (slide (c.C.p - 2)).2 (c.C.p - 2) = true
