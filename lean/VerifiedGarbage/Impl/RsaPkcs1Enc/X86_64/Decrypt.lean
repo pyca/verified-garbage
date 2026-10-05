@@ -296,11 +296,13 @@ def outInit : List Instr :=
   [.store (at_ .r8 0) .rdx, .mov .rdx (.reg .rsi), .mov .rsi (.reg .rcx), .mov32 .rcx (.imm 0)]
 
 /-- Byte `rcx` of `out`: `(EM[i] & v | AM[i] & ~v) & -(i ≥ k - len) & ok`. -/
-def selLoop : Prog isa :=
-  .loop (.block [.movzx8 .rax (bx .rdi .rcx), .movzx8 .r8 (bx .rsi .rcx), .alu .xor .rax (.reg .r8),
+def selBody : List Instr :=
+  [.movzx8 .rax (bx .rdi .rcx), .movzx8 .r8 (bx .rsi .rcx), .alu .xor .rax (.reg .r8),
     .alu .and .rax (.reg .r10), .alu .xor .rax (.reg .r8), .mov .r8 (.reg .rcx), .alu .cmp .r8 (.reg .rdx),
     .alu .sbb .r8 (.reg .r8), .alu .xor .r8 (.imm (BitVec.ofInt 32 (-1))), .alu .and .r8 (.reg .r11),
-    .alu .and .rax (.reg .r8), .store8 (bx .rdi .rcx) .rax, .alu .add .rcx (.imm 1), .alu .cmp .rcx (.reg .r9)]) .ne
+    .alu .and .rax (.reg .r8), .store8 (bx .rdi .rcx) .rax, .alu .add .rcx (.imm 1), .alu .cmp .rcx (.reg .r9)]
+
+def selLoop : Prog isa := .loop (.block selBody) .ne
 
 def selPart : Prog isa :=
   .seq (.block validBlock) (.seq (.block outPtrs) (.seq (.block outInit) (.seq selLoop
