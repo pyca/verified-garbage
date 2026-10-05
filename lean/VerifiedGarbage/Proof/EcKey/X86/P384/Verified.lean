@@ -74,7 +74,7 @@ def τ₀ : VG.X86.Taint.T :=
 
 theorem wf₀ {s : State} (hp : PkPre p384 s) : VG.X86.Taint.Wf τ₀ s := by
   have hsc := hp.sc_fit; have ho := hp.out_fit; have hs := hp.sp_fit
-  have hn6 : p384.n = 6 := rfl
+  have hn6 : p384.C.len = 48 := rfl
   rw [hn6] at ho
   refine VG.X86.Taint.Wf.entry rfl rfl ⟨fun _ => ⟨by simp [hp.wr, τ₀, hn6], by simpa [hp.wr, hn6] using hp.out_sc, ?_⟩,
     fun _ h => (List.not_mem_nil h).elim, fun _ h => (List.not_mem_nil h).elim,

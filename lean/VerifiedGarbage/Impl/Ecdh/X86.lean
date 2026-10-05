@@ -56,7 +56,7 @@ def PY : Nat := SS
 
 /-- ECDH's arguments: `(out, d, peer, scratch)`, with `k` and the hash both
 `d` (the peer's `x` is read into the hash's slot after the setup). -/
-abbrev Args.ecdh : Args := ⟨3, 1, 1, 1⟩
+abbrev Args.ecdh : Args := ⟨3, 1, 1, 1, none⟩
 
 namespace Cfg
 
@@ -96,8 +96,8 @@ def checkLeadAt (i : Nat) : List Instr :=
 `y` (also signature verification's, with its key). -/
 def peerAt (i : Nat) : List Instr :=
   (consts c).flatMap (fun (i, x) => setConst c.n (c.sl i) x) ++
-  [.mov .ebx (.mem (Cfg.argOp i)), .alu .add .ebx (.imm 1)] ++ loadBE c.n (c.sl E) .ebx ++
-  [.alu .add .ebx (.imm (BitVec.ofNat 32 (8 * c.n)))] ++ loadBE c.n (c.sl QY) .ebx ++
+  [.mov .ebx (.mem (Cfg.argOp i)), .alu .add .ebx (.imm 1)] ++ loadBytes c.C.len c.n (c.sl E) .ebx ++
+  [.alu .add .ebx (.imm (BitVec.ofNat 32 c.C.len))] ++ loadBytes c.C.len c.n (c.sl QY) .ebx ++
   checkLeadAt c i ++ checkLtP c (c.sl E) ++ checkLtP c (c.sl QY)
 
 /-- The peer's key: `peerAt` its argument. -/
@@ -129,7 +129,7 @@ def ladderQ : LadderCfg := { c.ladderCfg with G := c.pt PX PY ONEP }
 /-- `x` (or zeros) to `out` (through `ebx`), the flag's low bit to `eax`,
 and the callee-saved registers restored. -/
 def finish : List Instr :=
-  [.mov .ecx (.mem (sc (c.sl FLAG))), .mov .ebx (.mem (Cfg.argOp 0))] ++ storeBE c.n .ebx 0 (c.sl X) ++
+  [.mov .ecx (.mem (sc (c.sl FLAG))), .mov .ebx (.mem (Cfg.argOp 0))] ++ storeBytes c.C.len c.n .ebx 0 (c.sl X) ++
   [.mov .eax (.reg .ecx), .alu .and .eax (.imm 1)] ++ Impl.Ecdsa.X86.Cfg.restore
 
 /-- `x = X Z⁻¹`, with `Z⁻¹ R` in `ACC`, out of Montgomery form, the checks

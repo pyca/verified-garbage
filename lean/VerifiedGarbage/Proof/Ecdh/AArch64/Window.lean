@@ -315,7 +315,7 @@ theorem winPow_ok (hc : CfgOk c) (hC : Law c.C) {base : Addr} {s : State} (hs : 
       (tmv c.C c.n base s (c.sl ONEP)) P)
     {rest : Prog isa} {R : State → Prop}
     (h : ∀ s', WinPost c base P (sv c base s K) s s' → WP isa rest s' R) :
-    WP isa (.seq (c.winPrep (c.sl K)) (.seq (WinCfg.window (winQ c)) (.seq (ChainCfg.pow c.powP) rest))) s R := by
+    WP isa (.seq (c.winPrep (c.sl K)) (.seq (WinCfg.window (winQ c)) (.seq c.pPow rest))) s R := by
   have h0 := hc.n0
   have h7 := hc.n7
   have hn := hs.nowrap
@@ -323,9 +323,8 @@ theorem winPow_ok (hc : CfgOk c) (hC : Law c.C) {base : Addr} {s : State} (hs : 
   refine winMul_ok hc hC hs F hP hpx hpy hrep (ks := K) (by decide) fun s₃ W => ?_
   have F₃ := F.unch h7 hn (fixedOk_winX.append (fixedOk_slW (by decide))) W.unch
   have rz₃ : wordsVal s₃.mem base (c.sl RZ) c.n < c.C.p := W.lt _ (by simp)
-  refine WP.seq (WP.mono (chainPow_ok (chainLayP hc) hpR W.scr W.mod rz₃ (chainOkP hc))
+  refine WP.seq (WP.mono (pPow_ok hc W.scr W.mod rz₃)
     fun s₄ ⟨K₄, U₄, lt₄, v₄⟩ => h s₄ ?_)
-  rw [chainWP_eq] at U₄
   have r₄ : ∀ {i}, i < 45 → i ∉ [ACC, TMP] → sv c base s₄ i = sv c base s₃ i := fun hi h₁ =>
     sv_unch U₄ h7 hn hi (apart_chainWc hi h₁)
   refine ⟨W.scr.of_keepRegs K₄ (x0_not_powClob h7), fun r hr hr' => ?_, by rw [K₄.rd, W.rd],

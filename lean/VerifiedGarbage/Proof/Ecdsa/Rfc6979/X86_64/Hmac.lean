@@ -125,14 +125,15 @@ theorem init_step (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) :
   refine WP.seq (WP.mono (initArgs_ok hL hc P.H.D (by nums)) fun u ⟨hcu, hmu, hdi, hsi, hdx, hcx, h8⟩ => ?_)
   have hsp : below (u.gpr .rsp) 24 = ⟨L.B, 24⟩ := by rw [hcu.rsp, below24]
   have a := initA (P := P) hL hcu hdi hsi hdx hcx h8
-  refine Proof.Pbkdf2.Md.X86_64.Pbk.hinit_call P.ok P.hI P.hIsp P.hId a
-    fun u' hrd hwr hcs hf hi ho => ?_
+  refine WP.of_syms (Proof.Pbkdf2.Md.X86_64.Pbk.hinit_call P.ok P.hI P.hIsp P.hId a
+    fun u' hrd hwr hcs hf hi ho hsy => ?_)
   have hsafe : ∀ r ∈ [(⟨L.scr + BitVec.ofNat 64 0, P.H.S⟩ : Region), ⟨L.scr + BitVec.ofNat 64 192, P.H.S⟩,
       ⟨L.scr + BitVec.ofNat 64 384, 8 * P.H.W⟩], Region.Sub r ⟨L.scr, 2256⟩ := by
     simp only [List.mem_cons, List.not_mem_nil, or_false]
     rintro r (rfl | rfl | rfl) <;> exact scr_work (by nums)
   refine ⟨hcu.keep hL hrd hwr (hcs .rsp (by decide)) (fun r hr _ => hcs r hr) hf
-    (safe_call hcu (fun r hr => .inr (.inl ((hsafe r hr).trans (Region.sub_prefix (by omega))))) (Nat.le_refl _)),
+    (safe_call hcu (fun r hr => .inr (.inl ((hsafe r hr).trans (Region.sub_prefix (by omega))))) (Nat.le_refl _))
+    hsy,
     hmu ▸ hf.sub fun r hr => ?_, by rw [← hmu]; exact hi, by rw [← hmu]; exact ho⟩
   rcases List.mem_append.mp hr with hr | hr
   · exact ⟨⟨L.scr, 2256⟩, by simp, hsafe r hr⟩
@@ -213,7 +214,7 @@ theorem upd_step (hL : L.Ok) {t u : State} (hu : Inited P L g m₀ t u) {dataA :
     fun w ⟨hcw, hmw, hdi, hsi, hdx, hcx, h8⟩ => ?_)
   have hsp : Region.Sub (below (w.gpr .rsp) 16) ⟨L.B, 24⟩ := hcw.below_sub (by omega)
   have a := updA (P := P) hL hcw hd hlen hdi hdx hcx h8
-  refine Proof.Pbkdf2.Md.X86_64.Calls.upd_call P.ok.stream a (by omega) fun w' af hr => ?_
+  refine WP.of_syms (Proof.Pbkdf2.Md.X86_64.Calls.upd_call P.ok.stream a (by omega) fun w' af hr hsy => ?_)
   have hws : ∀ r ∈ [(⟨L.scr + BitVec.ofNat 64 0, P.H.stream.S⟩ : Region),
       ⟨L.scr + BitVec.ofNat 64 384, P.ok.stream.Wb⟩], Region.Sub r ⟨L.scr, 2256⟩ := by
     simp only [List.mem_cons, List.not_mem_nil, or_false]
@@ -231,7 +232,7 @@ theorem upd_step (hL : L.Ok) {t u : State} (hu : Inited P L g m₀ t u) {dataA :
     · simpa using hd.work hL (e := 0) (k := 2256) (by omega)
     · exact (hd.low hL).symm
   refine ⟨hcw.keep hL af.rd af.wr (af.cs .rsp (by decide)) (fun r hr _ => af.cs r hr) af.frame
-      (safe_call hcw (fun r hr => .inr (.inl ((hws r hr).trans (Region.sub_prefix (by omega))))) (by omega)),
+      (safe_call hcw (fun r hr => .inr (.inl ((hws r hr).trans (Region.sub_prefix (by omega))))) (by omega)) hsy,
     hu.frame.trans (hmw ▸ hf'), ?_, ?_⟩
   · rw [← hdata]
     exact hr _ (hmw ▸ hu.inner) (by rw [hsi, xorPad_length, blockKey_length (keyOf_length _)])
@@ -312,8 +313,8 @@ theorem fin_step (hL : L.Ok) {t u : State} {da : Addr} {len dst : Nat} (hu : Upd
     fun w ⟨hcw, hmw, hdi, hsi, hdx, hcx, h8⟩ => ?_)
   have hsp : below (w.gpr .rsp) 24 = ⟨L.B, 24⟩ := by rw [hcw.rsp, below24]
   have a := finA (P := P) hL hcw (len := len) hdst hdi hsi hdx hcx h8
-  refine Proof.Pbkdf2.Md.X86_64.Pbk.hfin_call P.ok P.hF P.hFsp P.hFd a
-    fun w' hrd hwr hcs hf hpost => ?_
+  refine WP.of_syms (Proof.Pbkdf2.Md.X86_64.Pbk.hfin_call P.ok P.hF P.hFsp P.hFd a
+    fun w' hrd hwr hcs hf hpost hsy => ?_)
   have hws : ∀ r ∈ [(⟨L.scr + BitVec.ofNat 64 0, P.H.S⟩ : Region),
       ⟨L.B + BitVec.ofNat 64 (24 + dst), P.H.D⟩, ⟨L.scr + BitVec.ofNat 64 384, 8 * P.H.W⟩] ++
       [below (w.gpr .rsp) 24], ∃ r' ∈ [(⟨L.scr, 2256⟩ : Region), ⟨L.B, 24⟩,
@@ -325,7 +326,7 @@ theorem fin_step (hL : L.Ok) {t u : State} {da : Addr} {len dst : Nat} (hu : Upd
     · exact ⟨⟨L.scr, 2256⟩, by simp, scr_work (by nums)⟩
     · exact ⟨⟨L.B, 24⟩, by simp, sub_refl _⟩
   have hl : (Spec.Sha256.bytesAt t.mem da len).length = len := by simp [Spec.Sha256.bytesAt]
-  refine ⟨hcw.keep hL hrd hwr (hcs .rsp (by decide)) (fun r hr _ => hcs r hr) hf fun r hr => ?_,
+  refine ⟨hcw.keep hL hrd hwr (hcs .rsp (by decide)) (fun r hr _ => hcs r hr) hf (hsy := hsy) fun r hr => ?_,
     hu.frame.sub (fun r hr => ⟨r, by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr ⊢; rcases hr with h | h <;> simp [h],
       sub_refl _⟩) |>.trans (hmw ▸ hf.sub hws), ?_⟩

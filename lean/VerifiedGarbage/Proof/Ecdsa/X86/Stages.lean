@@ -18,10 +18,22 @@ open VG.Proof.Mont.X86 VG.Proof.Mont VG.Proof.Weierstrass.X86 VG.Proof.Weierstra
 
 variable {c : Cfg} {A : Args}
 
-/-- The arguments' numbers. -/
-abbrev kv (c : Cfg) (A : Args) (s₀ : State) : Nat := ofBytes (Spec.Ecdsa.bytesAt s₀.mem (ptr s₀ A.k) (8 * c.n))
-abbrev dv (c : Cfg) (A : Args) (s₀ : State) : Nat := ofBytes (Spec.Ecdsa.bytesAt s₀.mem (ptr s₀ A.d) (8 * c.n))
-abbrev ev (c : Cfg) (A : Args) (s₀ : State) : Nat := ofBytes (Spec.Ecdsa.bytesAt s₀.mem (ptr s₀ A.e) (8 * c.n))
+/-- The arguments' numbers, as the setup reads them (the slot `A.hs`
+shifted). -/
+abbrev kv (c : Cfg) (A : Args) (s₀ : State) : Nat :=
+  ofBytes (Spec.Ecdsa.bytesAt s₀.mem (ptr s₀ A.k) c.C.len) >>> shAt c A.hs K
+abbrev dv (c : Cfg) (A : Args) (s₀ : State) : Nat :=
+  ofBytes (Spec.Ecdsa.bytesAt s₀.mem (ptr s₀ A.d) c.C.len) >>> shAt c A.hs D
+abbrev ev (c : Cfg) (A : Args) (s₀ : State) : Nat :=
+  ofBytes (Spec.Ecdsa.bytesAt s₀.mem (ptr s₀ A.e) c.C.len) >>> shAt c A.hs E
+
+theorem kv_eq {s₀ : State} (h : shAt c A.hs K = 0) :
+    kv c A s₀ = ofBytes (Spec.Ecdsa.bytesAt s₀.mem (ptr s₀ A.k) c.C.len) := by
+  show _ >>> _ = _; rw [h, Nat.shiftRight_zero]
+
+theorem dv_eq {s₀ : State} (h : shAt c A.hs D = 0) :
+    dv c A s₀ = ofBytes (Spec.Ecdsa.bytesAt s₀.mem (ptr s₀ A.d) c.C.len) := by
+  show _ >>> _ = _; rw [h, Nat.shiftRight_zero]
 
 /-- What the stages keep: the working space, `esp`, the regions, the
 constants and the saved registers. -/
@@ -54,7 +66,7 @@ theorem stage₁ (hc : CfgOk c) {s₀ : State} (hp : SetupPre c A s₀) {rest : 
       (.seq (bits (c.sl EXPP) (bitsAt c.n 1) (8 * c.n))
       (.seq (bits (c.sl EXPN) (bitsAt c.n 2) (8 * c.n)) rest)))) s₀ Q := by
   have h0 := hc.n0
-  have h7 := hc.n7
+  have h7 := hc.n10
   refine WP.seq (WP.mono (setup_ok hc hp) fun s₁ P => ?_)
   have hn := P.scr.nowrap
   have hc' : ∀ ix ∈ c.consts, sv c (ptr s₀ A.sc) s₁ ix.1 = ix.2 := P.consts
@@ -141,7 +153,7 @@ theorem accLen_MN' (c : Cfg) : accLen c.MN' = 16 * c.n + 4 := accLen_eq _
 /-- The flag word apart from numbered slots and the accumulator. -/
 theorem flag_unch {base : Addr} {l : List Nat} {m m' : Mem}
     (hu : Unch base (slW c l ++ [(c.wk, 16 * c.n + 4)]) m m')
-    (h7 : c.n < 7) (h0 : 0 < c.n) (hn : base.toNat + size ≤ 2 ^ 32) (hl : FLAG ∉ l) :
+    (h7 : c.n < 10) (h0 : 0 < c.n) (hn : base.toNat + size ≤ 2 ^ 32) (hl : FLAG ∉ l) :
     m'.readW (off base (c.sl FLAG)) 32 = m.readW (off base (c.sl FLAG)) 32 := by
   have hF := sl_le c h7 (i := FLAG) (by decide)
   refine Unch.readW32 hu (fun w hw => ?_) (by omega)
@@ -160,12 +172,14 @@ theorem whole_of {base : Addr} {W : List (Nat × Nat)} {m₀ m m' : Mem} (h₀ :
   have hx' : size ≤ ofs base x := by dsimp only at h; omega
   rw [hu x (fun w hw => Or.inr (by have := hW w hw; omega)), h₀ x hx]
 
-/-- A hash of `8 n` bytes is its number. -/
-theorem hashToInt_eq (hc : CfgOk c) (m : Mem) (q : Addr) :
-    Spec.Ecdsa.hashToInt c.C (Spec.Ecdsa.bytesAt m q (8 * c.n)) =
-      ofBytes (Spec.Ecdsa.bytesAt m q (8 * c.n)) := by
-  have := hc.hash
-  simp only [Spec.Ecdsa.hashToInt, length_bytesAt,
-    show 8 * (8 * c.n) ≤ Spec.Ecdsa.nBits c.C by omega, ite_true]
+/-- A hash of `len` bytes is its number without the bits that are not
+`e`'s. -/
+theorem hashToInt_eq (c : Cfg) (m : Mem) (q : Addr) :
+    Spec.Ecdsa.hashToInt c.C (Spec.Ecdsa.bytesAt m q c.C.len) =
+      ofBytes (Spec.Ecdsa.bytesAt m q c.C.len) >>> c.sh := by
+  simp only [Spec.Ecdsa.hashToInt, length_bytesAt, Cfg.sh]
+  split
+  · rw [show 8 * c.C.len - Spec.Ecdsa.nBits c.C = 0 by omega, Nat.shiftRight_zero]
+  · rfl
 
 end VG.Proof.Ecdsa.X86

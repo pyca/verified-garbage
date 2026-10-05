@@ -70,7 +70,8 @@ def primsWith (B : Impl.MlDsa.X86_64.Arith.Backend) : Prims :=
     lowBits := B.lowBits
     normLt := B.normLt
     makeHint := B.makeHint
-    sfx := B.sfx }
+    sfx := B.sfx
+    montgomery := B.montgomery }
 
 theorem nosp_of {c : Prog isa} (h : c.allInstrs (fun i => !Taint.clobbers i .rsp) = true) : NoSp c := by
   rw [Code.allInstrs_eq] at h

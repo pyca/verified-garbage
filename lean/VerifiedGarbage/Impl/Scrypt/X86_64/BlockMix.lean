@@ -9,13 +9,13 @@ bytes at `y`.
 
 Step 2's `Y[i]` go straight to their places in step 3's output: `Y[2k]` to
 `y + 64k` and `Y[2k + 1]` to `y + 64 (r + k)`. Each is computed in place:
-`T = X xor B[i]` is written there, and `vg_salsa20_8` replaces it by
+`T = X xor B[i]` is written there, and the inlined Salsa20/8 core replaces it by
 `Salsa (T)`. `X` is then the block just written (initially `B[2r - 1]`).
 The loop runs once for each pair `(2k, 2k + 1)`.
 
 `scratch` (128 bytes) holds Salsa20/8's working space (`[0, 64)`) and our
-caller's `rbx, rbp, r12–r15` (`[64, 112)`). Across the calls, which
-preserve them, `rbx` is `B[2k]`, `rbp` is `y + 64k`, `r12` is
+caller's `rbx, rbp, r12–r15` (`[64, 112)`). Across each inlined core, which
+preserves them, `rbx` is `B[2k]`, `rbp` is `y + 64k`, `r12` is
 `y + 64 (r + k)`, `r13` is `scratch`, `r14` counts the pairs left and `r15`
 is `X`. Every address is one of these plus a constant, and the only branch
 is on the count, so only the pointers and `r` affect timing.
@@ -38,9 +38,9 @@ def xorW (dst x src : Reg) (k : Nat) : List Instr :=
 /-- The 64 bytes `[dst] ← [x] xor [src]`. -/
 def xor64 (dst x src : Reg) : List Instr := (List.range 8).flatMap (xorW dst x src)
 
-/-- `vg_salsa20_8(dst, scratch)`. -/
+/-- Inline the Salsa20/8 core on `dst`, using the shared scratch space. -/
 def salsaAt (salsa : Prog isa) (dst : Reg) : Prog isa :=
-  .seq (.block [.mov .rdi (.reg dst), .mov .rsi (.reg .r13)]) (.call "vg_salsa20_8" salsa)
+  .seq (.block [.mov .rdi (.reg dst), .mov .rsi (.reg .r13)]) salsa
 
 /-- `rsi ← 64 * rsi`, by doubling. -/
 def times64 : List Instr := (List.range 6).map fun _ => .alu .add .rsi (.reg .rsi)

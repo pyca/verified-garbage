@@ -118,6 +118,17 @@ theorem rep_infinity' (hC : Law C) : Rep C 0 1 0 .infinity := ⟨rfl, hC.one_ne_
 theorem rep_affine' (hC : Law C) (x y : Fe C) : Rep C x y 1 (.affine x y) :=
   ⟨hC.one_ne_zero, (Lean.Grind.Semiring.mul_one _).symm, (Lean.Grind.Semiring.mul_one _).symm⟩
 
+/-- The reflection of a representative. -/
+theorem Rep.negY {X Y Z : Fe C} {P : Point C} (h : Rep C X Y Z P) :
+    Rep C X (-Y) Z (negPt P) := by
+  cases P with
+  | infinity =>
+    obtain ⟨hX, hY, hZ⟩ := h
+    exact ⟨hX, fun h' => hY (by grind), hZ⟩
+  | affine x y =>
+    obtain ⟨hZ, hX, hY⟩ := h
+    exact ⟨hZ, hX, by rw [hY]; grind⟩
+
 /-- **Completeness**, over `Fin p`. -/
 theorem Rep.add (hC : Law C) {P Q : Point C} (hP : onCurve C P = true)
     (hQ : onCurve C Q = true) {X1 Y1 Z1 X2 Y2 Z2 X3 Y3 Z3 : Fe C}

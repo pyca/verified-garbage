@@ -3,8 +3,8 @@ import VerifiedGarbage.Proof.Ecdsa.X86.Scalar
 /-!
 # ECDSA on x86 (32-bit): the result
 
-`finish` reads `out` from its argument, writes `r ‖ s` big-endian to it, or
-zeros, by the flag's mask, returns the flag's low bit and restores `ebx`,
+`finish` reads `out` from its argument, writes `r ‖ s` big-endian to it
+(`len` bytes each), or zeros, by the flag's mask, returns the flag's low bit and restores `ebx`,
 `esi`, `ebp` and `edi` (`finish_ok`). The stores are outside the working
 space, so it keeps its numbers and the saved registers
 (`Outside.unch_far`).
@@ -44,7 +44,7 @@ theorem mask_bit (b : Bool) : (mask32 (b = true) &&& 1 : BitVec 32) = if b then 
 theorem saved_lt : ∀ p ∈ Cfg.saved, p.2 + 4 ≤ 16 := by decide
 
 theorem finish_eq (c : Cfg) : c.finish = .mov .ecx (.mem (sc (c.sl FLAG))) :: .mov .ebx (.mem (Cfg.argOp 0)) ::
-    (storeBE c.n .ebx 0 (c.sl RR) ++ (storeBE c.n .ebx (8 * c.n) (c.sl SS) ++
+    (storeBytes c.C.len c.n .ebx 0 (c.sl RR) ++ (storeBytes c.C.len c.n .ebx c.C.len (c.sl SS) ++
     (([.mov .eax (.reg .ecx), .alu .and .eax (.imm 1)] : List Instr) ++ Cfg.restore))) := by
   simp only [Cfg.finish, List.append_assoc, List.cons_append, List.nil_append]
 
@@ -116,20 +116,22 @@ theorem tail_ok {base : Addr} {s : State} (hs : Scr s base size) {g : Reg → Bi
 
 /-- The result, the return value and the callee-saved registers. -/
 theorem finish_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size) {o32 : BitVec 32}
-    (hout : readSrc s (.mem (Cfg.argOp 0)) = some o32) (hofit : o32.toNat + 16 * c.n ≤ 2 ^ 32)
-    (hw : (⟨o32.setWidth 64, 16 * c.n⟩ : Region) ∈ s.wr)
-    (hd : Region.Disjoint ⟨o32.setWidth 64, 16 * c.n⟩ ⟨base, size⟩)
+    (hout : readSrc s (.mem (Cfg.argOp 0)) = some o32) (hofit : o32.toNat + 2 * c.C.len ≤ 2 ^ 32)
+    (hw : (⟨o32.setWidth 64, 2 * c.C.len⟩ : Region) ∈ s.wr)
+    (hd : Region.Disjoint ⟨o32.setWidth 64, 2 * c.C.len⟩ ⟨base, size⟩)
     {g : Reg → BitVec 32} (hsv : ∀ rd ∈ Cfg.saved, s.mem.readW (off base rd.2) 32 = g rd.1) (b : Bool)
     (hf : flagW c base s = mask32 (b = true)) :
     WP isa (.block c.finish) s fun s' =>
-      Spec.Ecdsa.bytesAt s'.mem (o32.setWidth 64) (16 * c.n) =
-        (if b then toBytes (8 * c.n) (sv c base s RR) ++ toBytes (8 * c.n) (sv c base s SS)
-          else List.replicate (16 * c.n) 0) ∧
+      Spec.Ecdsa.bytesAt s'.mem (o32.setWidth 64) (2 * c.C.len) =
+        (if b then toBytes c.C.len (sv c base s RR) ++ toBytes c.C.len (sv c base s SS)
+          else List.replicate (2 * c.C.len) 0) ∧
       s'.gpr .eax = (if b then 1 else 0) ∧
       (∀ rd ∈ Cfg.saved, s'.gpr rd.1 = g rd.1) ∧
       (∀ r, r ∉ [.eax, .ebx, .ecx, .edx, .esi, .edi, .ebp] → s'.gpr r = s.gpr r) ∧
-      Outside (o32.setWidth 64) 0 (16 * c.n) s.mem s'.mem := by
-  have h7 := hc.n7
+      Outside (o32.setWidth 64) 0 (2 * c.C.len) s.mem s'.mem := by
+  have h7 := hc.n10
+  have hl8 := hc.len8
+  have hlhi := hc.len_hi
   have hn0 := hc.n0
   have hn := hs.nowrap
   have hsz : size = 8192 := rfl
@@ -139,14 +141,14 @@ theorem finish_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size
   generalize hout64 : o32.setWidth 64 = out at hw hd ⊢
   have h0 : ∀ e, out + BitVec.ofNat 64 0 + BitVec.ofNat 64 e = out + BitVec.ofNat 64 e := fun e =>
     congrArg (· + BitVec.ofNat 64 e) (BitVec.add_zero out)
-  have h8 : ∀ e, out + BitVec.ofNat 64 (8 * c.n) + BitVec.ofNat 64 e =
-      out + BitVec.ofNat 64 (8 * c.n + e) := fun e => by
+  have h8 : ∀ e, out + BitVec.ofNat 64 c.C.len + BitVec.ofNat 64 e =
+      out + BitVec.ofNat 64 (c.C.len + e) := fun e => by
     rw [BitVec.add_assoc, BitVec.ofNat_add_ofNat]
-  have hdsc : ∀ {a d : Nat}, a + 8 * c.n ≤ size → d + 8 * c.n ≤ 16 * c.n →
-      Region.Disjoint ⟨off base a, 8 * c.n⟩ ⟨out + BitVec.ofNat 64 d, 8 * c.n⟩ := fun ha hd' =>
+  have hdsc : ∀ {a d : Nat}, a + 8 * c.n ≤ size → d + c.C.len ≤ 2 * c.C.len →
+      Region.Disjoint ⟨off base a, 8 * c.n⟩ ⟨out + BitVec.ofNat 64 d, c.C.len⟩ := fun ha hd' =>
     (hd.symm.sub_left (Offset.sub_base base ha)).sub_right (Offset.sub_base out hd')
-  have hscd : ∀ {d : Nat}, d + 8 * c.n ≤ 16 * c.n →
-      Region.Disjoint ⟨base, size⟩ ⟨out + BitVec.ofNat 64 d, 8 * c.n⟩ := fun hd' =>
+  have hscd : ∀ {d : Nat}, d + c.C.len ≤ 2 * c.C.len →
+      Region.Disjoint ⟨base, size⟩ ⟨out + BitVec.ofNat 64 d, c.C.len⟩ := fun hd' =>
     hd.symm.sub_right (Offset.sub_base out hd')
   rw [finish_eq]
   refine wp_movS (readSrc_sc hs (d := c.sl FLAG) (by omega)) fun s₁ u₁ _ => ?_
@@ -161,8 +163,8 @@ theorem finish_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size
   have hm₂ : s₂.mem = s.mem := by rw [u₂.mem, u₁.mem]
   have hc₂ : s₂.gpr .ecx = mask32 (b = true) := by
     rw [u₂.other _ (by decide), u₁.gpr, ← flagW, hf]
-  refine WP.block_append (WP.mono (storeBE_ok hs₂ (dst := .ebx) (d := 0) (a := c.sl RR) (by decide) b
-    hc₂ hRR (by rw [u₂.gpr]; omega) (fun e he => ⟨_, by rw [k₂.2.2]; exact hw, by
+  refine WP.block_append (WP.mono (storeBytes_ok hs₂ (dst := .ebx) (d := 0) (a := c.sl RR) (by decide) (by decide) b
+    hc₂ hRR (by omega) hlhi (by rw [u₂.gpr]; omega) (fun e m he => ⟨_, by rw [k₂.2.2]; exact hw, by
       rw [u₂.gpr, hout64, h0]; exact Offset.contains_base out (by omega) (by omega)⟩)
     (by rw [u₂.gpr, hout64]; exact hdsc hRR (by omega))) fun s₃ ⟨e₃, k₃, O₃⟩ => ?_)
   rw [u₂.gpr, hout64] at e₃ O₃
@@ -172,15 +174,15 @@ theorem finish_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size
   have hc₃ : s₃.gpr .ecx = mask32 (b = true) := by rw [k₃.1 _ (by decide), hc₂]
   have ss₃ : wordsVal s₃.mem base (c.sl SS) c.n = sv c base s SS := by
     rw [U₃.wordsVal (fun w hw => by simp only [List.mem_singleton] at hw; subst hw; omega) (by omega), hm₂]
-  refine WP.block_append (WP.mono (storeBE_ok hs₃ (dst := .ebx) (d := 8 * c.n) (a := c.sl SS) (by decide) b
-    hc₃ hSS (by rw [hebx₃]; omega) (fun e he => ⟨_, by rw [k₃.2.2, k₂.2.2]; exact hw, by
+  refine WP.block_append (WP.mono (storeBytes_ok hs₃ (dst := .ebx) (d := c.C.len) (a := c.sl SS) (by decide)
+    (by decide) b hc₃ hSS (by omega) hlhi (by rw [hebx₃]; omega) (fun e m he => ⟨_, by rw [k₃.2.2, k₂.2.2]; exact hw, by
       rw [hebx₃, hout64, h8]; exact Offset.contains_base out (by omega) (by omega)⟩)
     (by rw [hebx₃, hout64]; exact hdsc hSS (by omega))) fun s₄ ⟨e₄, k₄, O₄⟩ => ?_)
   rw [hebx₃, hout64] at e₄ O₄
   have hs₄ := hs₃.of_keeps k₄ (by decide)
-  have U₄ := O₄.unch_far (hscd (d := 8 * c.n) (by omega))
-  have first : Spec.Ecdsa.bytesAt s₄.mem out (8 * c.n) =
-      if b then toBytes (8 * c.n) (sv c base s RR) else List.replicate (8 * c.n) 0 := by
+  have U₄ := O₄.unch_far (hscd (d := c.C.len) (by omega))
+  have first : Spec.Ecdsa.bytesAt s₄.mem out c.C.len =
+      if b then toBytes c.C.len (sv c base s RR) else List.replicate c.C.len 0 := by
     rw [bytesAt_keep O₄ (Offset.base_disjoint out (Nat.le_refl _) (by omega)) (by omega) (by omega)]
     have e₃' := e₃
     rw [(BitVec.add_zero out : out + BitVec.ofNat 64 0 = out)] at e₃'
@@ -193,14 +195,14 @@ theorem finish_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size
     rw [Unch.readW32 U₄ h16 (by omega), Unch.readW32 U₃ h16 (by omega), hm₂, hsv rd hrd]
   refine WP.mono (tail_ok hs₄ hsv₄ b (by rw [k₄.1 _ (by decide), hc₃]))
     fun s' ⟨hm', eax', saved', others'⟩ => ⟨?_, eax', saved', fun r hr => ?_, ?_⟩
-  · rw [hm', show 16 * c.n = 8 * c.n + 8 * c.n by omega, bytesAt_add, first, e₄, ss₃]
+  · rw [hm', show 2 * c.C.len = c.C.len + c.C.len by omega, bytesAt_add, first, e₄, ss₃]
     cases b
     · simp only [Bool.false_eq_true, ite_false, List.replicate_append_replicate]
     · simp only [ite_true]
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     obtain ⟨h1, h2, h3, h4, h5, h6, h7'⟩ := hr
-    rw [others' _ (by simp [h1, h2, h4, h5, h6, h7']), k₄.1 _ (by simp [h1]),
-      k₃.1 _ (by simp [h1]), k₂.1 _ (by simp [h2, h3])]
+    rw [others' _ (by simp [h1, h2, h4, h5, h6, h7']), k₄.1 _ (by simp [h1, h4]),
+      k₃.1 _ (by simp [h1, h4]), k₂.1 _ (by simp [h2, h3])]
   · rw [hm', ← hm₂]
     exact ((O₃.shift (by omega)).mono (Nat.zero_le _) (by omega)).trans
       ((O₄.shift (by omega)).mono (Nat.zero_le _) (by omega))

@@ -14,6 +14,8 @@ sum against `ω` (`onesOk_ok`); so `r15` is 1 exactly when the iteration passes
 
 namespace VG.Proof.MlDsa.X86_64.Sign
 
+open VG.Proof.MlDsa.Arith.Representation
+
 open VG VG.X86_64 VG.Impl.MlDsa.X86_64.Sign
 open VG.Proof.MlKem.X86_64 (Keep Keep.gpr WP.keep)
 open VG.Proof.MlDsa.Sign
@@ -215,9 +217,9 @@ theorem zR_ok {P : Prims} {D : Nat} (hP : PrimsOk P D) {p : Params} {σ : State}
   refine WP.seq (WP.mono (mulAt_ok hP.mul L cm h.b.c.1 hs1.1) fun s1 ⟨hP1, hcs1, hq1⟩ => ?_)
   rw [h.b.c.2, hs1.2] at hq1
   have I1 := h.step hP1 z1 y1
-  refine WP.seq (WP.mono (ipAt_ok (t := nttInv) hP.invNtt I1.b.l.st.lay ci
+  refine WP.seq (WP.mono (ipAt_ok (t := inverse P.montgomery) hP.invNtt I1.b.l.st.lay ci
     (by rw [hP1.pa (by decide)]; exact hq1.1)) fun s2 ⟨hP2, hcs2, hq2⟩ => ?_)
-  rw [hP1.pa (by decide), hq1.2] at hq2
+  rw [hP1.pa (by decide), hq1.2, inverse_product] at hq2
   have I2 := I1.step hP2 z2 y2
   have hy2 : Pl s2 (yBase p + r) (Yv p σ (p.ℓ * t) r) := I2.y 0 (by omega)
   refine WP.seq (WP.mono (addAt_ok hP I2.b.l.st.lay ca hy2.1 (by rw [hP2.pa (by decide), hP1.pa (by decide)]; exact hq2.1))
@@ -296,9 +298,9 @@ theorem r0R_ok {P : Prims} {D : Nat} (hP : PrimsOk P D) {p : Params} {σ : State
   refine WP.seq (WP.mono (mulAt_ok hP.mul L cm h.b.c.1 hs2.1) fun s1 ⟨hP1, hcs1, hq1⟩ => ?_)
   rw [h.b.c.2, hs2.2] at hq1
   have I1 := h.step hP1 z1 y1
-  refine WP.seq (WP.mono (ipAt_ok (t := nttInv) hP.invNtt I1.b.l.st.lay ci
+  refine WP.seq (WP.mono (ipAt_ok (t := inverse P.montgomery) hP.invNtt I1.b.l.st.lay ci
     (by rw [hP1.pa (by decide)]; exact hq1.1)) fun s2 ⟨hP2, hcs2, hq2⟩ => ?_)
-  rw [hP1.pa (by decide), hq1.2] at hq2
+  rw [hP1.pa (by decide), hq1.2, inverse_product] at hq2
   have I2 := I1.step hP2 z2 y2
   have hw2 : Pl s2 (wBase p + i) (Wv p σ (p.ℓ * t) i) := I2.w 0 (by omega)
   refine WP.seq (WP.mono (subAt_ok hP I2.b.l.st.lay ca hw2.1
@@ -476,9 +478,9 @@ theorem hR_ok {P : Prims} {D : Nat} (hP : PrimsOk P D) {p : Params} {σ : State}
   have I1 := h.step hP1 g1 o1
   have b1 : s1.gpr .rbx = s.gpr .rbx := hP1.bs _ (by decide)
   -- `ct₀[i]`
-  refine WP.seq (WP.mono (ipAt_ok (t := nttInv) hP.invNtt I1.b.l.st.lay ci (by rw [pa_sc b1]; exact hq1.1))
+  refine WP.seq (WP.mono (ipAt_ok (t := inverse P.montgomery) hP.invNtt I1.b.l.st.lay ci (by rw [pa_sc b1]; exact hq1.1))
     fun s2 ⟨hP2, hcs2, hq2⟩ => ?_)
-  rw [pa_sc b1, hq1.2] at hq2
+  rw [pa_sc b1, hq1.2, inverse_product] at hq2
   have I2 := I1.step hP2 g2 o2
   have b2 : s2.gpr .rbx = s.gpr .rbx := (hP2.bs _ (by decide)).trans b1
   have q2 : Pl s2 3 (CT0v p σ (p.ℓ * t) i) := by show PolyIs _ _ _; rw [pa_sc b2]; exact hq2

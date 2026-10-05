@@ -27,7 +27,7 @@ theorem cfgOf_w : (cfgOf P).w = P.w := rfl
 theorem cfgOf_sh : (cfgOf P).sh = P.R.sh := rfl
 theorem cfgOf_wide : (cfgOf P).wide = P.R.wide := rfl
 theorem reduce_eq : (cfgOf P).reduce = (cfgC P.R.E).reduce := rfl
-theorem initCnt_eq : (cfgOf P).initCnt = (cfgC ⟨4, Spec.P256.curve⟩).initCnt := rfl
+theorem initCnt_eq : (cfgOf P).initCnt = (cfgC { n := 4, C := Spec.P256.curve }).initCnt := rfl
 theorem coreC_eq : (cfgOf P).coreC = P.R.coreC := rfl
 
 /-- No instruction loads MXCSR: not those of the functions it calls, by what
@@ -79,8 +79,9 @@ theorem sign_spSafe : (cfgOf P).sign.all (fun i => !isa.writesSp i) = true := by
     simp only [hD64, hB]
     decide +kernel
 
-theorem sign_x86 (s : State) (h : (rfcX86_64 P.I (240 + 8 * P.e)).pre s) :
-    ∃ t s', Exec isa (cfgOf P).sign s t s' ∧ abiPreserved s s' ∧ (rfcX86_64 P.I (240 + 8 * P.e)).post s s' := by
+theorem sign_x86 (s : State) (h : (rfcX86_64 P.R.E.combConsts P.I (240 + 8 * P.e)).pre s) :
+    ∃ t s', Exec isa (cfgOf P).sign s t s' ∧ abiPreserved s s' ∧
+      (rfcX86_64 P.R.E.combConsts P.I (240 + 8 * P.e)).post s s' := by
   obtain ⟨t, s', he, hg, hp⟩ := sign_ok (P := P) h
   exact ⟨t, s', he, abiPreserved_of_exec (sign_mx P) he hg, hp⟩
 
@@ -95,8 +96,23 @@ def signNotes (H : Impl.Pbkdf2.Md.X86_64.Hash) (q : Nat) (core : String) : Strin
   the code branches only on that. `K`, `V`, `h`, the count and the pointers are kept in a 216-byte stack \
   frame, whose secrets are cleared before it is popped; the calls use the 24 bytes below it."
 
-theorem sign_verified (himp : (rfcX86_64 P.I (240 + 8 * P.e)).Implies (P.I.signContract X86_64.abi (240 + 8 * P.e))) :
-    Verified X86_64.target (cfgOf P).sign (P.I.signContract X86_64.abi (240 + 8 * P.e)) :=
+/-- The notes of an instance whose scalars are longer than the hash
+(`wide`): `q` bytes of `nb` bits, from a `D`-byte hash. -/
+def signNotesWide (H : Impl.Pbkdf2.Md.X86_64.Hash) (q nb D : Nat) (core : String) : String :=
+  "Computes `h = bits2octets(digest)` as " ++ toString (q - D) ++ " zero bytes and the digest (whose integer \
+  is below `n`), and each HMAC with `" ++ H.hmacInitN ++ "`, `" ++ H.updN ++ "` and `" ++ H.hmacFinN ++ "`, \
+  using the start of `scratch` for HMAC's states and working space and the message. Each candidate `k`, the \
+  leftmost " ++ toString nb ++ " bits of two successive `V`s, is shifted into " ++ toString q ++ " bytes, as is \
+  the digest for the signature (its integer shifted left by " ++ toString (8 * q - nb) ++ " bits), with word \
+  loads, shifts and stores, and tried with `" ++ core ++ "`, which uses all of `scratch`; whether to try \
+  another is computed without branches from its result and the count of candidates left, so the code branches \
+  only on that. `K`, `V`, `h`, the count, the pointers, the candidate and the shifted digest are kept in a \
+  360-byte stack frame, whose secrets are cleared before it is popped; the calls use the 24 bytes below it."
+
+theorem sign_verified (himp : (rfcX86_64 P.R.E.combConsts P.I (240 + 8 * P.e)).Implies
+      (P.I.signContract (X86_64.abi.withConsts P.R.E.combConsts) (240 + 8 * P.e))) :
+    Verified X86_64.target (cfgOf P).sign
+      (P.I.signContract (X86_64.abi.withConsts P.R.E.combConsts) (240 + 8 * P.e)) :=
   Verified.of_correct (sign_x86 P) sign_ct himp
 
 end VG.Proof.Ecdsa.Rfc6979.X86_64

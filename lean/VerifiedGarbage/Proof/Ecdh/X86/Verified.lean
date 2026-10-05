@@ -40,7 +40,7 @@ theorem post_of {s s' : State} (h : EPost p256 s s') : ecdhX86.post s s' := by
   revert h
   generalize hq : ex s.mem ((arg s 1).setWidth 64) ((arg s 2).setWidth 64) = q
   rw [show Spec.Ecdh.exchange p256.C (dk p256 s)
-      (Spec.Ecdsa.bytesAt s.mem (ptr s 2) (1 + 16 * p256.n)) = ex s.mem ((arg s 1).setWidth 64)
+      (Spec.Ecdsa.bytesAt s.mem (ptr s 2) (1 + 2 * p256.C.len)) = ex s.mem ((arg s 1).setWidth 64)
         ((arg s 2).setWidth 64) from rfl, hq]
   rcases q with _ | z <;> exact id
 
@@ -76,7 +76,7 @@ def τ₀ : VG.X86.Taint.T :=
 
 theorem wf₀ {s : State} (hp : EPre p256 s) : VG.X86.Taint.Wf τ₀ s := by
   have hsc := hp.sc_fit; have ho := hp.out_fit; have hs := hp.sp_fit
-  have hn4 : p256.n = 4 := rfl
+  have hn4 : p256.C.len = 32 := rfl
   rw [hn4] at ho
   refine VG.X86.Taint.Wf.entry rfl rfl ⟨fun _ => ⟨by simp [hp.wr, τ₀, hn4], by simpa [hp.wr, hn4] using hp.out_sc, ?_⟩,
     fun _ h => (List.not_mem_nil h).elim, fun _ h => (List.not_mem_nil h).elim,

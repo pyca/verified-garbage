@@ -70,4 +70,17 @@ macro "comb_mem" : tactic => `(tactic| (simp only [List.mem_cons, List.mem_appen
   List.mem_singleton, true_or, or_true, combSlots, combWs, combRo, rcbW, rcbR, List.cons_append,
   List.nil_append]))
 
+/-- A slot read only is apart from what the comb writes. -/
+theorem combW_ro {K : CombCfg} {size : Nat} (hL : CombLay K size) {x : Nat} (hx : x ∈ combRo K) :
+    ∀ w ∈ combW K, x + 8 * K.M.n ≤ w.1 ∨ w.1 + w.2 ≤ x := by
+  have hs : x ∈ combSlots K := by
+    simp only [combRo, List.mem_cons, List.not_mem_nil, or_false] at hx
+    rcases hx with rfl | rfl | rfl <;> comb_mem
+  exact hL.apart_w hs (hL.ro x hx)
+
+theorem combRo_slots {K : CombCfg} : ∀ x ∈ combRo K, x ∈ combSlots K := by
+  intro x hx
+  simp only [combRo, List.mem_cons, List.not_mem_nil, or_false] at hx
+  rcases hx with rfl | rfl | rfl <;> comb_mem
+
 end VG.Proof.Weierstrass

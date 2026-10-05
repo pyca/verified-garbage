@@ -6,6 +6,10 @@ trustworthy. Read `lean/README.md` first.
 For a fast Lean bootstrap on Linux x86-64, restore the prebuilt GHCR cache
 before compiling proofs; see [Restoring the CI build cache](lean/README.md#restoring-the-ci-build-cache).
 
+After rebasing a long-running session onto `main`, consider pulling and
+restoring the latest cache again to avoid rebuilding upstream Lean changes.
+Lake rebuilds your changes and anything not yet cached.
+
 ## Hard rules
 
 * **All assembly comes from Lean.** Never write `asm!`, `naked_asm!`,
@@ -476,6 +480,10 @@ to test is a line of a CPU's `runs` in `rust-cpu-features`
 (`<VG_CPU_FEATURES> | <tests>`), never a step or job of its own, and
 each CPU has one line per value of `VG_CPU_FEATURES` (CI checks both), so
 a run never repeats another: add tests to a CPU's line for those features.
+A CPU whose lines take long runs as shards (matrix entries with a `shard`
+of `i/n` and the first entry's `runs` as a YAML alias), which deal out its
+lines by the CPU time each took on `main` (`ci/cpu_shards.py`): to speed
+one up, add a shard, never split its lines by hand.
 To test the baseline ISA's implementations:
 
 ```sh

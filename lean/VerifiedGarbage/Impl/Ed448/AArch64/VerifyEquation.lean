@@ -1,4 +1,5 @@
 import VerifiedGarbage.Impl.Ed448.AArch64.ScalarBase
+import VerifiedGarbage.Impl.X448.AArch64.Fast
 
 /-!
 # Ed448 verification's equation on AArch64: the checks, the decodings and the entry
@@ -74,25 +75,38 @@ def sCheck : List Instr :=
 
 /-! ## Decoding a point -/
 
-/-- `[T7] = [z]^((p-3)/4)`: X448's addition chain (`Weak.invert`) as far as
+/-- `[T7] = [z]^((p-3)/4)`: X448's addition chain (`Fast.invert`) as far as
 `z^(2^223 - 1)` in `T7` and `z^(2^222 - 1)` in `T6`, then
-`(z^(2^223 - 1))^(2^223) · z^(2^222 - 1)`. -/
+`(z^(2^223 - 1))^(2^223) · z^(2^222 - 1)`, with the register-resident products. -/
 def root (z : Nat) : Prog isa :=
-  .seq (X448.AArch64.Weak.ops [.copy T0 (slot z)]) <| .seq (X448.AArch64.Weak.sqn T0 1) <|
-  .seq (X448.AArch64.Weak.ops [.mul T0 T0 (slot z), .copy T1 T0]) <|
-  .seq (X448.AArch64.Weak.sqn T1 2) <| .seq (X448.AArch64.Weak.ops [.mul T1 T1 T0, .copy T2 T1]) <|
-  .seq (X448.AArch64.Weak.sqn T2 4) <| .seq (X448.AArch64.Weak.ops [.mul T2 T2 T1, .copy T3 T2]) <|
-  .seq (X448.AArch64.Weak.sqn T3 8) <| .seq (X448.AArch64.Weak.ops [.mul T3 T3 T2, .copy T4 T3]) <|
-  .seq (X448.AArch64.Weak.sqn T4 16) <| .seq (X448.AArch64.Weak.ops [.mul T4 T4 T3, .copy T5 T4]) <|
-  .seq (X448.AArch64.Weak.sqn T5 32) <| .seq (X448.AArch64.Weak.ops [.mul T5 T5 T4, .copy T6 T5]) <|
-  .seq (X448.AArch64.Weak.sqn T6 64) <| .seq (X448.AArch64.Weak.ops [.mul T6 T6 T5]) <|
-  .seq (X448.AArch64.Weak.sqn T6 64) <| .seq (X448.AArch64.Weak.ops [.mul T6 T6 T5]) <|
-  .seq (X448.AArch64.Weak.sqn T6 16) <| .seq (X448.AArch64.Weak.ops [.mul T6 T6 T3]) <|
-  .seq (X448.AArch64.Weak.sqn T6 8) <| .seq (X448.AArch64.Weak.ops [.mul T6 T6 T2]) <|
-  .seq (X448.AArch64.Weak.sqn T6 4) <| .seq (X448.AArch64.Weak.ops [.mul T6 T6 T1]) <|
-  .seq (X448.AArch64.Weak.sqn T6 2) <| .seq (X448.AArch64.Weak.ops [.mul T6 T6 T0, .copy T7 T6]) <|
-  .seq (X448.AArch64.Weak.sqn T7 1) <| .seq (X448.AArch64.Weak.ops [.mul T7 T7 (slot z)]) <|
-  .seq (X448.AArch64.Weak.sqn T7 223) (X448.AArch64.Weak.ops [.mul T7 T7 T6])
+  .seq (X448.AArch64.Fast.ops [.copy T0 (slot z)]) <| .seq (X448.AArch64.Fast.sqn T0 1) <|
+  .seq (X448.AArch64.Fast.ops [.mul T0 T0 (slot z), .copy T1 T0]) <|
+  .seq (X448.AArch64.Fast.sqn T1 2) <| .seq (X448.AArch64.Fast.ops [.mul T1 T1 T0, .copy T2 T1]) <|
+  .seq (X448.AArch64.Fast.sqn T2 4) <| .seq (X448.AArch64.Fast.ops [.mul T2 T2 T1, .copy T3 T2]) <|
+  .seq (X448.AArch64.Fast.sqn T3 8) <| .seq (X448.AArch64.Fast.ops [.mul T3 T3 T2, .copy T4 T3]) <|
+  .seq (X448.AArch64.Fast.sqn T4 16) <| .seq (X448.AArch64.Fast.ops [.mul T4 T4 T3, .copy T5 T4]) <|
+  .seq (X448.AArch64.Fast.sqn T5 32) <| .seq (X448.AArch64.Fast.ops [.mul T5 T5 T4, .copy T6 T5]) <|
+  .seq (X448.AArch64.Fast.sqn T6 64) <| .seq (X448.AArch64.Fast.ops [.mul T6 T6 T5]) <|
+  .seq (X448.AArch64.Fast.sqn T6 64) <| .seq (X448.AArch64.Fast.ops [.mul T6 T6 T5]) <|
+  .seq (X448.AArch64.Fast.sqn T6 16) <| .seq (X448.AArch64.Fast.ops [.mul T6 T6 T3]) <|
+  .seq (X448.AArch64.Fast.sqn T6 8) <| .seq (X448.AArch64.Fast.ops [.mul T6 T6 T2]) <|
+  .seq (X448.AArch64.Fast.sqn T6 4) <| .seq (X448.AArch64.Fast.ops [.mul T6 T6 T1]) <|
+  .seq (X448.AArch64.Fast.sqn T6 2) <| .seq (X448.AArch64.Fast.ops [.mul T6 T6 T0, .copy T7 T6]) <|
+  .seq (X448.AArch64.Fast.sqn T7 1) <| .seq (X448.AArch64.Fast.ops [.mul T7 T7 (slot z)]) <|
+  .seq (X448.AArch64.Fast.sqn T7 223) (X448.AArch64.Fast.ops [.mul T7 T7 T6])
+
+/-- `decodeUV yo xo` (`Formulas.lean`) with the register-resident operations, whose
+difference may not write an operand: `d y²` goes through slot 4. `u = y² - 1` in 13, `v = d y² - 1`
+in 3, `(uv)²` in 4, `u³` in 5, `u³v` in `xo` and `u⁵v³` in 12. -/
+def decodeUVOps (yo xo : Nat) : List X448.AArch64.Fast.Op :=
+  [.mul (slot 12) (slot yo) (slot yo), .sub (slot 13) (slot 12) (slot 10), .mul (slot 4) (slot 11) (slot 12),
+   .sub (slot 3) (slot 4) (slot 10), .mul (slot 4) (slot 13) (slot 3), .mul (slot 4) (slot 4) (slot 4),
+   .mul (slot 5) (slot 13) (slot 13), .mul (slot 5) (slot 5) (slot 13), .mul (slot xo) (slot 5) (slot 3),
+   .mul (slot 12) (slot xo) (slot 4)]
+
+/-- `x = u³v · root` into `xo`, and `x² v` into 12. -/
+def decodeXOps (xo : Nat) : List X448.AArch64.Fast.Op :=
+  [.mul (slot xo) (slot xo) (slot 21), .mul (slot 12) (slot xo) (slot xo), .mul (slot 12) (slot 12) (slot 3)]
 
 /-- The 57 bytes at `rp`: `y`'s eight seven-byte chunks into slot `yo`, the
 sign bit into `x17`, and `x20 |= 0` exactly when `y < p` and bits 448–454
@@ -119,12 +133,20 @@ def negMask : List Instr :=
 def negSwap (xo : Nat) : List Instr :=
   [.addImm .x .x6 .x17 0] ++ Curve448.AArch64.cswap (slot xo) (slot 12)
 
-/-- Decode the 57 bytes at `rp` into slots `xo` and `yo`. -/
+/-- Where decoding keeps the sign bit across the field operations, which use `x17`. -/
+def SIGN : Nat := 16
+
+/-- Decode the 57 bytes at `rp` into slots `xo` and `yo`, with the register-resident
+arithmetic: 1 is written into slot 10 (the differences need their operands below the products'
+bound), the sign bit is kept at `SIGN`, and `-x` is `0 - x`, from zero written into slot 13 (`u`,
+once compared). -/
 def decode (rp : Reg) (xo yo : Nat) : Prog isa :=
-  .seq (.block (decodeY rp yo)) <| .seq (field (decodeUV yo xo)) <| .seq (root 12) <|
-  .seq (field [.mul xo xo 21, .sqr 12 xo, .mul 12 3 12]) <|
-  .seq (.block (eqSlots 12 13 ++ zeroSign xo ++ negMask)) <|
-  .seq (field [.sub 12 xo xo, .sub 12 12 xo]) (.block (negSwap xo))
+  .seq (.block (decodeY rp yo ++ [st .x17 SIGN] ++ Impl.X448.AArch64.Base.constSlot (slot 10) 1)) <|
+  .seq (X448.AArch64.Fast.ops (decodeUVOps yo xo)) <| .seq (root 12) <|
+  .seq (X448.AArch64.Fast.ops (decodeXOps xo)) <|
+  .seq (.block (eqSlots 12 13 ++ Impl.X448.AArch64.Base.constSlot (slot 13) 0)) <|
+  .seq (X448.AArch64.Fast.ops [.sub (slot 12) (slot 13) (slot xo)]) <|
+  .block ([ld .x17 SIGN] ++ zeroSign xo ++ negMask ++ negSwap xo)
 
 /-! ## A scalar's bits -/
 
@@ -152,12 +174,11 @@ def ventry : List Instr :=
   Impl.X448.AArch64.Base.constSlot (slot 9) Spec.Ed448.basePoint.Y ++
   Impl.X448.AArch64.Base.constSlot (slot 10) 1 ++ Impl.X448.AArch64.Base.constSlot (slot 11) Spec.Ed448.d
 
-/-- `Q` the neutral point `(0 : 1 : 1)` (slot 0 is still zero). -/
-def qInit : List Instr :=
-  Impl.X448.AArch64.Base.constSlot (slot 1) 1 ++ Impl.X448.AArch64.Base.constSlot (slot 2) 1
-
-/-- `A` decoded into slots 6–7 and negated (slot 0 is zero), and `Q` the neutral point. -/
+/-- `A` decoded into slots 6–7 and negated: `x` (below the products' bound, a product by 1 in
+slot 10) subtracted from zero in slot 13. -/
 def vdecodeA : Prog isa :=
-  .seq (decode .x0 6 7) <| .seq (field [.sub 6 0 6]) (.block qInit)
+  .seq (decode .x0 6 7) <| .seq (X448.AArch64.Fast.ops [.mul (slot 6) (slot 6) (slot 10)]) <|
+  .seq (.block (Impl.X448.AArch64.Base.constSlot (slot 13) 0)) <|
+  X448.AArch64.Fast.ops [.sub (slot 12) (slot 13) (slot 6), .copy (slot 6) (slot 12)]
 
 end VG.Impl.Ed448.AArch64

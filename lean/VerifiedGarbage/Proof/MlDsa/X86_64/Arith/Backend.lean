@@ -1,3 +1,4 @@
+import VerifiedGarbage.Proof.MlDsa.Arith.Representation
 import VerifiedGarbage.Impl.MlDsa.X86_64.Arith.Backend
 import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Ntt
 import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.NttInv
@@ -60,9 +61,9 @@ structure Mask4Ok (c : Prog isa) : Prop where
 /-- Each function of the backend `B` meets its contract, and is safe to call. -/
 structure BackendOk (B : Backend) : Prop where
   ntt : FnOk (fun S => Spec.MlDsa.nttContract X86_64.abi S) B.ntt
-  invNtt : FnOk (fun S => Spec.MlDsa.nttInvContract X86_64.abi S) B.invNtt
-  mul : FnOk (fun S => Spec.MlDsa.mulContract X86_64.abi S) B.mul
-  mulAdd : FnOk (fun S => Spec.MlDsa.mulAddContract X86_64.abi S) B.mulAdd
+  invNtt : FnOk (fun S => Proof.MlDsa.Arith.Representation.inverseContract B.montgomery X86_64.abi S) B.invNtt
+  mul : FnOk (fun S => Proof.MlDsa.Arith.Representation.productContract B.montgomery X86_64.abi S) B.mul
+  mulAdd : FnOk (fun S => Proof.MlDsa.Arith.Representation.accumulateContract B.montgomery X86_64.abi S) B.mulAdd
   add : FnOk (fun S => Spec.MlDsa.addContract X86_64.abi S) B.add
   sub : FnOk (fun S => Spec.MlDsa.subContract X86_64.abi S) B.sub
   highBits : FnOk (fun S => Spec.MlDsa.highBitsContract X86_64.abi S) B.highBits

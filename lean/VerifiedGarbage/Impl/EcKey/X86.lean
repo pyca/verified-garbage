@@ -37,7 +37,7 @@ def Y : Nat := SS
 
 /-- The public key's arguments: `(out, d, scratch)`, with `k` and the hash
 both `d`. -/
-abbrev Args.publicKey : Args := ⟨2, 1, 1, 1⟩
+abbrev Args.publicKey : Args := ⟨2, 1, 1, 1, none⟩
 
 namespace Cfg
 
@@ -57,7 +57,7 @@ def upToPow : Prog isa :=
 def finish : List Instr :=
   [.mov .ecx (.mem (sc (c.sl FLAG))), .mov .ebx (.mem (Cfg.argOp 0)), .mov .eax (.imm 4),
     .alu .and .eax (.reg .ecx), .store8 (at_ .ebx 0) .al] ++
-  storeBE c.n .ebx 1 (c.sl X) ++ storeBE c.n .ebx (1 + 8 * c.n) (c.sl Y) ++
+  storeBytes c.C.len c.n .ebx 1 (c.sl X) ++ storeBytes c.C.len c.n .ebx (1 + c.C.len) (c.sl Y) ++
   [.mov .eax (.reg .ecx), .alu .and .eax (.imm 1)] ++ Impl.Ecdsa.X86.Cfg.restore
 
 /-- `x = X Z⁻¹` and `y = Y Z⁻¹`, with `Z⁻¹ R` in `ACC`, out of Montgomery

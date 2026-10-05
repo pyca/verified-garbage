@@ -248,14 +248,14 @@ theorem digestPtr_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) :
       runStep_some, runBlock_nil, exec, readSrc, State.load64, ea_stk, hc.rsp, Offset.add_add, Nat.reduceAdd, p,
       ite_true, Option.map_some, hc.pDg, Option.some.injEq, exists_eq_left', RegUpd.gpr_setReg_self,
       RegUpd.mem_setReg, Bool.false_eq_true]
-    exact ⟨hc.set hL (d := .rsi) (by decide) rfl rfl rfl fun r hr => RegUpd.gpr_setReg_of_ne _ _ hr, trivial,
+    exact ⟨hc.set hL (d := .rsi) (by decide) rfl rfl rfl rfl fun r hr => RegUpd.gpr_setReg_of_ne _ _ hr, trivial,
       trivial, fun h => absurd h (by decide)⟩
   · simp only [Cfg.digestPtr, cfgOf, hw, ite_true, fDigest, fScratch, List.cons_append, List.nil_append,
       runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, State.load64, ea_stk, hc.rsp, Offset.add_add,
       Nat.reduceAdd, p, p', ite_true, Option.map_some, hc.pDg, hc.pScr, Option.some.injEq, exists_eq_left',
       RegUpd.gpr_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg, RegUpd.mem_setReg, reduceCtorEq, ite_false,
       forall_const]
-    exact ⟨hc.regs hL rfl rfl rfl (by cs_tac), by triv, by triv, by triv⟩
+    exact ⟨hc.regs hL rfl rfl rfl rfl (by cs_tac), by triv, by triv, by triv⟩
 
 /-- `h`: the digest's leftmost `8 w` bytes (at `rsi`) modulo `n`, big-endian
 in the frame. -/
@@ -267,6 +267,7 @@ theorem reduce_ok (hA : P.R.wide = false) (hL : L.Ok) {t : State} (hc : Ctx L g 
           (Spec.Weierstrass.ofBytes (Spec.Sha256.bytesAt m₀ L.dg (8 * P.w)) % P.R.E.C.n) := by
   have h6 : P.w ≤ 6 := (P.sizesA hA).2.1
   have h4 : 4 ≤ P.w := P.R.n4
+  refine WP.of_syms ?_
   rw [Cfg.reduce, WP.block_append_iff, WP.block_append_iff]
   refine WP.mono (subs_ok hA hc hL hsi hdn P.w (Nat.le_refl _)) fun u₁ ⟨k₁, O₁, e₁, c, _, hcf, hs⟩ => ?_
   have hcf₁ : u₁.cf = some c := hcf (by omega)
@@ -279,7 +280,7 @@ theorem reduce_ok (hA : P.R.wide = false) (hL : L.Ok) {t : State} (hc : Ctx L g 
       ite_true, Option.some.injEq, exists_eq_left']
     refine ⟨⟨by trivial, by trivial, fun r _ _ h₃ => ?_⟩, by trivial, by trivial⟩
     simp only [RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, h₃, ite_false]) fun u₂ ⟨k₂, m₂, d₂⟩ => ?_
-  refine WP.mono (sels_ok (P := P) hA hc (k₁.trans k₂) d₂ P.w (Nat.le_refl _)) fun t' ⟨k₃, _, O₃, e₃⟩ => ?_
+  refine WP.mono (sels_ok (P := P) hA hc (k₁.trans k₂) d₂ P.w (Nat.le_refl _)) fun t' ⟨k₃, _, O₃, e₃⟩ hsy => ?_
   have k' : RK t t' := (k₁.trans k₂).trans k₃
   have O' : Outside L.B 24 176 t.mem t'.mem :=
     (O₁.mono (by omega) (by omega)).trans ((by rw [m₂]; exact Outside.refl _ _ _ _ : Outside L.B 24 176 u₁.mem u₂.mem).trans
@@ -288,7 +289,7 @@ theorem reduce_ok (hA : P.R.wide = false) (hL : L.Ok) {t : State} (hc : Ctx L g 
   refine ⟨hc.keep hL k'.rd k'.wr (k'.gpr _ (by decide) (by decide) (by decide))
     (fun r hr _ => k'.gpr r (fun h => by subst h; exact absurd hr (by decide)) (fun h => by subst h; exact absurd hr (by decide))
       (fun h => by subst h; exact absurd hr (by decide))) hf
-    (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact safe_low L (by omega)), hf, ?_⟩
+    (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact safe_low L (by omega)) hsy, hf, ?_⟩
   -- The number, the difference, and the one selected.
   have hX : wordsVal u₁.mem L.B 88 P.w = Spec.Weierstrass.ofBytes (Spec.Sha256.bytesAt t.mem L.dg (8 * P.w)) :=
     Proof.Weierstrass.wordsVal_eq_ofBytes _ _ _ _ _ _ fun j hj => e₁ j hj

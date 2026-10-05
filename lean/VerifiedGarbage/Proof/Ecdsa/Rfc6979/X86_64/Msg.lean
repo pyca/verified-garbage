@@ -26,10 +26,10 @@ theorem copy_ok (hL : L.Ok) {u : State} (hc : Ctx L g m₀ u) {src : Reg} {S : A
       (∀ r, r ≠ .rax → u'.gpr r = u.gpr r) ∧ Frame [⟨L.scr + BitVec.ofNat 64 d, 8 * K⟩] u.mem u'.mem ∧
       Spec.Sha256.bytesAt u'.mem (L.scr + BitVec.ofNat 64 d) (8 * K) =
         Spec.Sha256.bytesAt u.mem (S + BitVec.ofNat 64 so) (8 * K) :=
-  WP.mono (copyN_ok (K := K) (by decide) hsr hsep (by have := hL.nc; omega) K (Nat.le_refl _) u hs hdi hr
-    fun j hj => hc.inScrW (by omega)) fun u' ⟨hrd, hwr, hg, hf, hb⟩ =>
+  WP.mono_syms (copyN_ok (K := K) (by decide) hsr hsep (by have := hL.nc; omega) K (Nat.le_refl _) u hs hdi hr
+    fun j hj => hc.inScrW (by omega)) fun u' ⟨hrd, hwr, hg, hf, hb⟩ hsy =>
     ⟨hc.keep hL hrd hwr (hg _ (by decide)) (fun r hr _ => hg r (ne_cs hr (by decide))) hf
-      (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact safe_scr L hd),
+      (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact safe_scr L hd) hsy,
       hrd, hwr, hg, hf, hb⟩
 
 theorem fr_add (B : Addr) (o : Nat) : B + BitVec.ofNat 64 24 + BitVec.ofNat 64 o = B + BitVec.ofNat 64 (24 + o) :=
@@ -48,12 +48,12 @@ theorem ptrs_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) (wide : Bool) :
       runStep_some, runBlock_nil, exec, readSrc, State.load64, ea_stk, hc.rsp, Offset.add_add, Nat.reduceAdd, h208,
       h224, ite_true, Option.map_some, hc.pScr, hc.pD, RegUpd.gpr_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg,
       RegUpd.mem_setReg, reduceCtorEq, ite_false, Option.some.injEq, exists_eq_left']
-    exact ⟨hc.regs hL rfl rfl rfl (by cs_tac), by triv, by triv, by triv, fun h => absurd h (by decide)⟩
+    exact ⟨hc.regs hL rfl rfl rfl rfl (by cs_tac), by triv, by triv, by triv, fun h => absurd h (by decide)⟩
   · simp only [Cfg.msgPtrs, ite_true, List.cons_append, List.nil_append, fScratch, fD, fDigest, runBlock_cons,
       runStep_some, runBlock_nil, exec, readSrc, State.load64, ea_stk, hc.rsp, Offset.add_add, Nat.reduceAdd, h208,
       h216, h224, ite_true, Option.map_some, hc.pScr, hc.pD, hc.pDg, RegUpd.gpr_setReg, RegUpd.rd_setReg,
       RegUpd.wr_setReg, RegUpd.mem_setReg, reduceCtorEq, ite_false, Option.some.injEq, exists_eq_left']
-    exact ⟨hc.regs hL rfl rfl rfl (by cs_tac), by triv, by triv, by triv, fun _ => by triv⟩
+    exact ⟨hc.regs hL rfl rfl rfl rfl (by cs_tac), by triv, by triv, by triv, fun _ => by triv⟩
 
 /-- `V ‖ b`, for `V` of `D` bytes, with `scratch` in `rdi`. -/
 theorem head_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) (hdi : t.gpr .rdi = L.scr) (b : Nat) {D : Nat}
@@ -85,7 +85,7 @@ theorem head_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) (hdi : t.gpr .rdi 
     (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
   refine ⟨hc₂.keep hL rfl rfl (by trivial)
       (fun r hr hr' => by first | trivial | rfl | exact RegUpd.gpr_setReg_of_ne _ _ (ne_cs hr (by decide))) hf₃
-      (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact safe_scr L (by omega)),
+      (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact safe_scr L (by omega)) rfl,
     fun r hr => ?_, ?_, ?_⟩
   · simp only [hr, ite_false]; exact hg₂ r hr
   · refine (hf₂.sub fun r hr => ⟨_, List.mem_singleton_self _, ?_⟩).trans
@@ -155,10 +155,10 @@ theorem copyB_ok (hL : L.Ok) {u : State} (hc : Ctx L g m₀ u) {src : Reg} {S : 
       (∀ r, r ≠ .rax → u'.gpr r = u.gpr r) ∧ Frame [⟨L.scr + BitVec.ofNat 64 d, Q⟩] u.mem u'.mem ∧
       Spec.Sha256.bytesAt u'.mem (L.scr + BitVec.ofNat 64 d) Q =
         Spec.Sha256.bytesAt u.mem (S + BitVec.ofNat 64 so) Q :=
-  WP.mono (copyBytes_ok (by decide) hsr hsep h8 hso (by omega) hs hdi hr fun j hj => hc.inScrW (by omega))
-    fun u' ⟨hrd, hwr, hg, hf, hb⟩ =>
+  WP.mono_syms (copyBytes_ok (by decide) hsr hsep h8 hso (by omega) hs hdi hr fun j hj => hc.inScrW (by omega))
+    fun u' ⟨hrd, hwr, hg, hf, hb⟩ hsy =>
     ⟨hc.keep hL hrd hwr (hg _ (by decide)) (fun r hr _ => hg r (ne_cs hr (by decide))) hf
-      (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact safe_scr L hd), hg, hf, hb⟩
+      (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact safe_scr L hd) hsy, hg, hf, hb⟩
 
 /-- A zero word at `scratch + o`, with `scratch` in `rdi`. -/
 theorem zeroW_ok (hL : L.Ok) {u : State} (hc : Ctx L g m₀ u) (hdi : u.gpr .rdi = L.scr) {o : Nat}
@@ -175,7 +175,7 @@ theorem zeroW_ok (hL : L.Ok) {u : State} (hc : Ctx L g m₀ u) (hdi : u.gpr .rdi
   have hf : Frame [⟨L.scr + BitVec.ofNat 64 o, 8⟩] u.mem (u.mem.writeW (L.scr + BitVec.ofNat 64 o) (0 : BitVec 64)) :=
     (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
   refine ⟨hc.keep hL rfl rfl (by triv) (fun r hr _ => ?_) hf
-      (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact safe_scr L ho),
+      (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact safe_scr L ho) rfl,
     fun r hr => ?_, hf, fun k hk => ?_⟩
   · simp only [RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, ne_cs hr (by decide : Reg.rax ∉ calleeSaved), ite_false]
   · simp only [hr, ite_false]

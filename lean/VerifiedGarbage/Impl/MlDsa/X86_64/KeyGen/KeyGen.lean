@@ -81,14 +81,14 @@ def imm (r : Reg) (v : Nat) : List Instr := [.mov32 r (.imm (BitVec.ofNat 32 v))
 def nttAt (sfx : String) (c : Prog isa) (f : Ptr) : Prog isa :=
   .seq (.block (lea .rdi f ++ lea .rsi (sc oSS))) (.call ("vg_mldsa_ntt" ++ sfx) c)
 
-def invNttAt (sfx : String) (c : Prog isa) (f : Ptr) : Prog isa :=
-  .seq (.block (lea .rdi f ++ lea .rsi (sc oSS))) (.call ("vg_mldsa_inv_ntt" ++ sfx) c)
+def invNttAt (sfx : String) (c : Prog isa) (f : Ptr) (mont : Bool := false) : Prog isa :=
+  .seq (.block (lea .rdi f ++ lea .rsi (sc oSS))) (.call ((if mont then "vg_mldsa_montgomery_inv_ntt" else "vg_mldsa_inv_ntt") ++ sfx) c)
 
-def mulAt (sfx : String) (c : Prog isa) (h f g : Ptr) : Prog isa :=
-  .seq (.block (lea .rdi h ++ lea .rsi f ++ lea .rdx g)) (.call ("vg_mldsa_multiply_ntt" ++ sfx) c)
+def mulAt (sfx : String) (c : Prog isa) (h f g : Ptr) (mont : Bool := false) : Prog isa :=
+  .seq (.block (lea .rdi h ++ lea .rsi f ++ lea .rdx g)) (.call ((if mont then "vg_mldsa_montgomery_multiply_ntt" else "vg_mldsa_multiply_ntt") ++ sfx) c)
 
-def mulAddAt (sfx : String) (c : Prog isa) (h f g : Ptr) : Prog isa :=
-  .seq (.block (lea .rdi h ++ lea .rsi f ++ lea .rdx g)) (.call ("vg_mldsa_multiply_add_ntt" ++ sfx) c)
+def mulAddAt (sfx : String) (c : Prog isa) (h f g : Ptr) (mont : Bool := false) : Prog isa :=
+  .seq (.block (lea .rdi h ++ lea .rsi f ++ lea .rdx g)) (.call ((if mont then "vg_mldsa_montgomery_multiply_add_ntt" else "vg_mldsa_multiply_add_ntt") ++ sfx) c)
 
 def addAt (sfx : String) (c : Prog isa) (f g : Ptr) : Prog isa :=
   .seq (.block (lea .rdi f ++ lea .rsi g)) (.call ("vg_mldsa_add" ++ sfx) c)
@@ -171,9 +171,9 @@ def nttS (P : Prims) (p : Params) (j : Nat) : Prog isa := nttAt P.sfx P.ntt (sP 
 
 /-- Row `i`: `t = NTT⁻¹(Σⱼ Â[i, j] ŝ₁[j]) + s₂[i]`, and its `t₁` to `pk` and `t₀` to `sk`. -/
 def row (P : Prims) (p : Params) (i : Nat) : Prog isa :=
-  .seq (mulAt P.sfx P.mul (tP p) (aP (p.ℓ * i)) (sP p 0))
-    (.seq (seqR (fun j => mulAddAt P.sfx P.mulAdd (tP p) (aP (p.ℓ * i + j)) (sP p j)) 1 (p.ℓ - 1))
-    (.seq (invNttAt P.sfx P.invNtt (tP p)) (.seq (addAt P.sfx P.add (tP p) (sP p (p.ℓ + i)))
+  .seq (mulAt (mont := P.montgomery) P.sfx P.mul (tP p) (aP (p.ℓ * i)) (sP p 0))
+    (.seq (seqR (fun j => mulAddAt (mont := P.montgomery) P.sfx P.mulAdd (tP p) (aP (p.ℓ * i + j)) (sP p j)) 1 (p.ℓ - 1))
+    (.seq (invNttAt (mont := P.montgomery) P.sfx P.invNtt (tP p)) (.seq (addAt P.sfx P.add (tP p) (sP p (p.ℓ + i)))
     (.seq (power2RoundAt P.power2Round (tP p) (t1P p) (t0P p))
     (.seq (simpleBitPackAt P.simpleBitPack (t1P p) 1023 (.r12, 32 + 320 * i) 320)
       (bitPackAt P.bitPack (t0P p) 4095 4096 (.r13, oT0 p + 416 * i) 416))))))

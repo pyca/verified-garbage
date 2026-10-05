@@ -9,11 +9,11 @@
 //! whose ladder does four field multiplications at once.
 //! This module gives it working space, and destroys what it leaves there.
 //!
-//! On AArch64 and x86, [`public_key`](PrivateKey::public_key) is the verified
+//! On AArch64, x86 and x86-64, [`public_key`](PrivateKey::public_key) is the verified
 //! assembly `vg_x25519_base` (contract `VG.Spec.X25519.x25519BaseContract`):
 //! `X25519(k, 9)` computed as the u-coordinate of a fixed-base multiplication
 //! on edwards25519, with Ed25519's precomputed tables, rather than with the
-//! ladder.
+//! ladder. On x86-64, `vg_x25519_base_adx` uses BMI2 and ADX when available.
 //!
 //! [`diffie_hellman`](PrivateKey::diffie_hellman) rejects the all-zero
 //! shared secret that a public key of small order gives (RFC 7748 §6.1), in
@@ -27,11 +27,12 @@
 ))]
 
 use crate::arch::x25519::vg_x25519;
-#[cfg(any(target_arch = "aarch64", target_arch = "x86"))]
+#[cfg(any(target_arch = "aarch64", target_arch = "x86", target_arch = "x86_64"))]
 use crate::arch::x25519::vg_x25519_base;
 #[cfg(target_arch = "x86_64")]
 use crate::arch::x25519::{
-    VG_X25519_ADX_FEATURES, VG_X25519_IFMA_FEATURES, vg_x25519_adx, vg_x25519_ifma,
+    VG_X25519_ADX_FEATURES, VG_X25519_IFMA_FEATURES, vg_x25519_adx, vg_x25519_base_adx,
+    vg_x25519_ifma,
 };
 use crate::cpu::{Features, detected};
 use crate::zeroize::zeroize;
@@ -112,21 +113,29 @@ pub fn x25519(scalar: &[u8; 32], u: &[u8; 32]) -> [u8; 32] {
 }
 
 /// `X25519(scalar, 9)`, by `vg_x25519_base`.
-#[cfg(any(target_arch = "aarch64", target_arch = "x86"))]
+#[cfg(any(target_arch = "aarch64", target_arch = "x86", target_arch = "x86_64"))]
 fn base(scalar: &[u8; 32]) -> [u8; 32] {
     let mut out = [0u8; 32];
     let mut scratch = [0u64; 1024];
+    #[cfg(target_arch = "x86_64")]
+    let f = match Backend::select(detected()) {
+        Backend::Baseline => vg_x25519_base,
+        Backend::Adx | Backend::Ifma => vg_x25519_base_adx,
+    };
+    #[cfg(not(target_arch = "x86_64"))]
+    let f = vg_x25519_base;
     // SAFETY: `out` and `scratch` are valid for reads and writes of 32 and
     // 8192 bytes, and `scalar` for reads of 32 bytes; the writable buffers are
     // disjoint from each other and from the input. No buffer overlaps the
-    // callee's stack or wraps around the address space.
-    unsafe { vg_x25519_base(&mut out, scalar, &mut scratch) };
+    // callee's stack or wraps around the address space. The selected backend
+    // has the required CPU features.
+    unsafe { f(&mut out, scalar, &mut scratch) };
     zeroize(&mut scratch);
     out
 }
 
 /// `X25519(scalar, 9)`, with the ladder.
-#[cfg(not(any(target_arch = "aarch64", target_arch = "x86")))]
+#[cfg(target_arch = "arm")]
 fn base(scalar: &[u8; 32]) -> [u8; 32] {
     x25519(scalar, &BASE_POINT)
 }
@@ -214,7 +223,8 @@ mod tests {
     }
 
     /// The public key is `X25519(k, 9)` for many scalars: random ones, and
-    /// ones with every nibble the same (each digit of the fixed-base comb).
+    /// ones with every nibble the same (each digit of the fixed-base comb),
+    /// and each individual bit (including the bits that clamping overrides).
     #[test]
     fn public_key_is_x25519_of_base_point() {
         let check = |k: &[u8; 32]| {
@@ -225,6 +235,11 @@ mod tests {
         };
         for n in 0..=15u8 {
             check(&[n * 0x11; 32]);
+        }
+        for bit in 0..256 {
+            let mut k = [0; 32];
+            k[bit / 8] = 1 << (bit % 8);
+            check(&k);
         }
         for _ in 0..64 {
             check(PrivateKey::generate().unwrap().as_bytes());

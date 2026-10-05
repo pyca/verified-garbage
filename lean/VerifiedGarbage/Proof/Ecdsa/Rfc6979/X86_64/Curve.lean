@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.Framework.X86_64.Abi
 import VerifiedGarbage.Proof.Framework.X86_64.Taint
 import VerifiedGarbage.Impl.Ecdsa.Rfc6979.X86_64
 import VerifiedGarbage.Impl.Sha256.X86_64.Stream
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Contract
 
 /-!
 # Deterministic ECDSA on x86-64: the curve
@@ -35,8 +36,9 @@ abbrev coreSigOf (E : Impl.Ecdsa.X86_64.Cfg) (m : Mem) (d digest k : Addr) : Opt
   signWith E.C (ofBytes (bytesAt m d E.C.len)) (hashToInt E.C (bytesAt m digest E.C.len))
     (ofBytes (bytesAt m k E.C.len))
 
-/-- The contract of `vg_ecdsa_<curve>_sign` on the curve `E`, as each
-curve's proof states it (`Proof.Ecdsa.X86_64.signX86_64` for P-256). -/
+/-- The contract of `vg_ecdsa_<curve>_sign` on the curve `E`, with the
+comb's tables (`E.combConsts`, if any) at their statics, as each curve's
+proof states it (`Proof.Ecdsa.X86_64.signX86_64` for P-256). -/
 def coreK (E : Impl.Ecdsa.X86_64.Cfg) : Contract X86_64.isa where
   pre s :=
     let out : Region := ⟨s.gpr .rdi, 2 * E.C.len⟩
@@ -45,18 +47,20 @@ def coreK (E : Impl.Ecdsa.X86_64.Cfg) : Contract X86_64.isa where
     let k : Region := ⟨s.gpr .rcx, E.C.len⟩
     let scratch : Region := ⟨s.gpr .r8, 8192⟩
     let ret : Region := ⟨s.gpr .rsp, 8⟩
-    s.rd = [d, digest, k] ∧ s.wr = [out, scratch] ∧ out.Disjoint scratch ∧
-      out.Disjoint d ∧ out.Disjoint digest ∧ out.Disjoint k ∧
+    s.rd = [d, digest, k] ++ Abi.constRegions (fun n => s.syms n) E.combConsts ∧ s.wr = [out, scratch] ∧
+      out.Disjoint scratch ∧ out.Disjoint d ∧ out.Disjoint digest ∧ out.Disjoint k ∧
       d.Disjoint scratch ∧ digest.Disjoint scratch ∧ k.Disjoint scratch ∧
       ret.Disjoint out ∧ ret.Disjoint scratch ∧
-      (s.gpr .rdi).toNat + 2 * E.C.len ≤ 2 ^ 64 ∧ (s.gpr .r8).toNat + 8192 ≤ 2 ^ 64
+      (s.gpr .rdi).toNat + 2 * E.C.len ≤ 2 ^ 64 ∧ (s.gpr .r8).toNat + 8192 ≤ 2 ^ 64 ∧
+      TblsOk E.combConsts s [out, scratch, ret]
   post s s' :=
     match coreSigOf E s.mem (s.gpr .rsi) (s.gpr .rdx) (s.gpr .rcx) with
     | some rs => (s'.gpr .rax).setWidth 32 = 1 ∧ bytesAt s'.mem (s.gpr .rdi) (2 * E.C.len) = encode E.C rs
     | none => (s'.gpr .rax).setWidth 32 = 0 ∧ bytesAt s'.mem (s.gpr .rdi) (2 * E.C.len) =
         List.replicate (2 * E.C.len) 0
   pub s₁ s₂ := s₁.gpr .rsp = s₂.gpr .rsp ∧ s₁.gpr .rdi = s₂.gpr .rdi ∧ s₁.gpr .rsi = s₂.gpr .rsi ∧
-    s₁.gpr .rdx = s₂.gpr .rdx ∧ s₁.gpr .rcx = s₂.gpr .rcx ∧ s₁.gpr .r8 = s₂.gpr .r8
+    s₁.gpr .rdx = s₂.gpr .rdx ∧ s₁.gpr .rcx = s₂.gpr .rcx ∧ s₁.gpr .r8 = s₂.gpr .r8 ∧
+    ∀ c ∈ E.combConsts, s₁.syms c.1 = s₂.syms c.1
 
 /-- The code's blocks that depend on neither the hash function nor the
 compression function, for scalars of `E`. -/

@@ -11,8 +11,9 @@ x86-64 and AArch64 (`Impl/Ecdsa/Verify/AArch64.lean`):
 
 1. the signature's setup and tables of bits, with the setup reading the
    working space from `scratch`, `k` from `sig` (so `r` is read into the
-   slot of `k`) and `d` and the hash from `digest` (`Args.verify`); then
-   `s`, from `sig + 8 n` through `ebx`, into `PT` (which only the powers
+   slot of `k`) and `d` and the hash from `digest` (`Args.verify`), `d`
+   shifted right by the bits of the digest that are not `e`'s; then
+   `s`, from `sig + len` through `ebx`, into `PT` (which only the powers
    use);
 2. ECDH's checks of the key (`peerAt 0`, `validate`): its `x` into the
    hash's slot, its first byte, `x < p`, `y < p` and the curve's equation,
@@ -62,8 +63,9 @@ def W : Nat := EM
 
 /-- Verification's arguments: `(public, digest, sig, scratch)`, with `k`
 the signature's `r` (at `sig`), and `d` and the hash both `digest` (the
-key's `x` is read into the hash's slot after the setup). -/
-abbrev Args.verify : Args := ⟨3, 2, 1, 1⟩
+key's `x` is read into the hash's slot after the setup), shifting the hash
+in `D`. -/
+abbrev Args.verify : Args := ⟨3, 2, 1, 1, some D⟩
 
 namespace Cfg
 
@@ -76,10 +78,10 @@ def prefix' : Prog isa :=
   .seq (bits (c.sl EXPP) (bitsAt c.n 1) (8 * c.n)) <|
   .seq (bits (c.sl EXPN) (bitsAt c.n 2) (8 * c.n)) (.block [])
 
-/-- `s`, from `sig + 8 n` through `ebx`, into `PT`. -/
+/-- `s`, from `sig + len` through `ebx`, into `PT`. -/
 def loadS : List Instr :=
-  [.mov .ebx (.mem (Cfg.argOp 2)), .alu .add .ebx (.imm (BitVec.ofNat 32 (8 * c.n)))] ++
-  loadBE c.n (c.sl PT) .ebx
+  [.mov .ebx (.mem (Cfg.argOp 2)), .alu .add .ebx (.imm (BitVec.ofNat 32 c.C.len))] ++
+  loadBytes c.C.len c.n (c.sl PT) .ebx
 
 /-- The checks of `r` and `s`, and `s R mod n`. -/
 def scalars : Prog isa :=

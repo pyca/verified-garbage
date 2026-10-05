@@ -108,4 +108,9 @@ theorem combW_add (hC : Law C) (hG : onCurve C (G C) = true) {w k J j : Nat} (hj
       Nat.mul_le_mul_right _ (by omega)
     omega
 
+/-- The signed entry of digit `j`: `[d_j 2^(wj)]G` as `combW_add` has it. -/
+def signedPtW (C : Curve) (w k j : Nat) : Point C :=
+  if 2 ^ (w - 1) ≤ combWin w k j then combPtW C w j (combWin w k j - 2 ^ (w - 1))
+  else negPt (combPtW C w j (2 ^ (w - 1) - combWin w k j))
+
 end VG.Proof.Weierstrass

@@ -41,18 +41,20 @@ structure Backend where
   expandMask4 : Prog isa
   /-- What the names of its functions, and of those calling them, end with. -/
   sfx : String
+  /-- Whether products and the inverse transform use Montgomery scaling. -/
+  montgomery : Bool := false
 
 /-- The SSE2 code. -/
 def Backend.sse2 : Backend :=
   ⟨Arith.ntt, Arith.nttInv, Arith.mul, Arith.mulAdd, Arith.add, Arith.sub, Round.highBits,
     Round.lowBits, Round.normLt, Round.makeHint, Round.useHint, Sample.Rej4.rejNTT4,
-    Sample.Mask4.expandMask4, ""⟩
+    Sample.Mask4.expandMask4, "", false⟩
 
 /-- Every function empty, which the proofs that the functions calling a
 backend never write `rsp` (and load MXCSR only to restore it) evaluate in
 its place. -/
 def Backend.empty : Backend :=
   ⟨.block [], .block [], .block [], .block [], .block [], .block [], .block [], .block [], .block [],
-    .block [], .block [], .block [], .block [], ""⟩
+    .block [], .block [], .block [], .block [], "", false⟩
 
 end VG.Impl.MlDsa.X86_64.Arith

@@ -1,0 +1,293 @@
+import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Key.DBase
+
+/-!
+# An RSA key from its primes on x86-64: `d` for an odd `e`
+
+`L = e Q + R`, `x = R⁻¹ mod e`, `t = e − x` and `d = Q t + c` with
+`c = (1 + R t) e⁻¹ mod 2⁶⁴` (`dOdd_k`, `inverse_odd`).
+-/
+
+namespace VG.Proof.RsaKeyGen.X86_64.Key
+
+open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Rsa.X86_64.Keys VG.Impl.RsaKeyGen.X86_64.Key
+open VG.Proof.MlKem.X86_64 VG.Proof.Bignum.X86_64 VG.Proof.Rsa.X86_64
+
+/-- What `dPart` leaves: `kOk` the mask of `e⁻¹ mod L` existing, and that
+inverse in `aDd`. -/
+def DRes (I : KIn) (e L : Nat) (m : Mem) : Prop :=
+  ∃ ok : Bool, word m I.B (8 * kOk) = mask ok ∧ ((∃ d, Spec.Rsa.inverse e L = some d) ↔ ok = true) ∧
+    ∀ d, Spec.Rsa.inverse e L = some d → av I m aDd = d
+
+/-- The parts `dPart` changes. -/
+abbrev csD : List Rc :=
+  [.arr aE, .arr aQt, .arr aR, .arr aT, .arr aU, .arr aV, .arr aX₁, .arr aX₂, .arr aC, .arr aM, .arr aDd, .hdr sMo,
+    .hdr kOk]
+
+theorem dOdd_eq : dOdd = loadEv ++ ([zeroA aQt, copyA aQt aL, divmod aQt aR aE aT, zeroA aU, copyA aU aR] ++
+    (invFrom aE ++ ([inverse aU aV aX₁ aX₂ aE aT] ++ (lGe2 ++ (gcdIsOne ++
+    ([.block (([.mov .rbx (.mem (hdr kEv))] : List Instr) ++ minv),
+      .block (ws ++ base aX₂ .rbx ++ base aR .r10 ++
+        ([.mov .rsi (.mem (hdr kEv)), .alu .sub .rsi (.mem (at0 .rbx)), .mov .rax (.mem (at0 .r10)), .mul .rsi,
+          .alu .add .rax (.imm 1), .mul .rcx, .mov .r15 (.reg .rax), .store (hdr sMo) .rsi] : List Instr)),
+      zeroA aDd,
+      .block (ws ++ base aDd .r8 ++ ([.store (at0 .r8) .r15] : List Instr) ++ base aQt .rax ++
+        ([.mov .r9 (.reg .rax), .mov .rcx (.mem (hdr sMo))] : List Instr)),
+      mulAddRow] : List (Prog isa))))))) := by
+  simp only [dOdd, List.append_assoc]
+
+/-- A number below `2⁶⁴` is its low word. -/
+theorem word0_of_lt {I : KIn} {m : Mem} {j v : Nat} (hw : 1 ≤ I.W) (h : av I m j = v) (hv : v < 2 ^ 64) :
+    (word m I.B (slot I.W j)).toNat = v := by
+  rw [← wv_mod64 _ _ _ hw, show wv m I.B (slot I.W j) I.W = av I m j from rfl, h, Nat.mod_eq_of_lt hv]
+
+/-- `dOdd`, for an odd `e ≥ 3`. -/
+theorem dOdd_k {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) {e L : Nat} (he3 : 3 ≤ e) (he64 : e < 2 ^ 64)
+    (heo : e % 2 = 1) (hev : word s.mem I.B (8 * kEv) = BitVec.ofNat 64 e) (hL : av I s.mem aL = L)
+    (hLW : L < 2 ^ (64 * I.W)) :
+    WP isa (seqs dOdd) s fun t => KS I m₀ t ∧ KF I.B I.W csD s.mem t.mem ∧ DRes I e L t.mem := by
+  have hn := h.ws.scr.nowrap
+  have hZ := h.hZ
+  have hw1 : 1 ≤ I.W := by have := h.ws.w1; omega
+  have hw2 := h.ws.w2
+  rw [dOdd_eq]
+  -- `[aE] := e`.
+  refine wp_seqs_append (by simp [loadEv]) (by simp) (WP.mono (loadEv_k h he64 hev) fun s₁ ⟨h₁, f₁, e₁⟩ => ?_)
+  have vE₁ : av I s₁.mem aE = e := av_of_full e₁ (two_le_pow h he64)
+  have vL₁ : av I s₁.mem aL = L := by rw [f₁.av (by decide) (by decide) (by decide) hZ, hL]
+  -- `L = e Q + R`.
+  refine wp_seqs_append (by simp) (by simp [invFrom]) ?_
+  simp only [seqs]
+  refine WP.seq (WP.mono (zeroA_k h₁ (j := aQt) (by decide)) fun s₂ ⟨h₂, f₂, _, _⟩ =>
+    WP.seq (WP.mono (copyA_k h₂ (o := aQt) (a := aL) (by decide) (by decide) (by decide)) fun s₃ ⟨h₃, f₃, v₃, _, _⟩ =>
+      WP.seq (WP.mono (divmod_k h₃ (iQ := aQt) (iR := aR) (iD := aE) (iT := aT) (by decide) (by decide) (by decide)
+        (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)) fun s₄ ⟨h₄, f₄, d₄⟩ =>
+        WP.seq (WP.mono (zeroA_k h₄ (j := aU) (by decide)) fun s₅ ⟨h₅, f₅, z₅, _⟩ =>
+          WP.mono (copyA_k h₅ (o := aU) (a := aR) (by decide) (by decide) (by decide))
+            fun s₆ ⟨h₆, f₆, v₆, t₆, _⟩ => ?_))))
+  have vE₃ : av I s₃.mem aE = e := by
+    rw [f₃.av (by decide) (by decide) (by decide) hZ, f₂.av (by decide) (by decide) (by decide) hZ, vE₁]
+  have vQ₃ : av I s₃.mem aQt = L := by rw [v₃, f₂.av (by decide) (by decide) (by decide) hZ, vL₁]
+  rw [vE₃, vQ₃] at d₄
+  obtain ⟨dR, dQ⟩ := d₄ (by omega)
+  have hR : L % e < e := Nat.mod_lt _ (by omega)
+  have vR₄ : av I s₄.mem aR = L % e := by
+    rw [← dR]; exact wv_low_of_lt (by omega) (by rw [dR]; exact Nat.lt_trans hR (two_le_pow h he64))
+  have hok4 : [Rc.arr aQt, Rc.arr aR, Rc.arr aT].all Rc.ok = true := by decide
+  have vU₆ : av I s₆.mem aU = L % e := by rw [v₆, f₅.av (by decide) (by decide) (by decide) hZ, vR₄]
+  have tU₆ : atop I s₆.mem aU = 0 := by rw [t₆]; exact (wv_zero2 z₅).2
+  have pres6 : ∀ j, j < 16 → j ≠ aQt → j ≠ aR → j ≠ aT → j ≠ aU → av I s₆.mem j = av I s₃.mem j :=
+    fun j hj h1 h2 h3 h4 => by
+      rw [f₆.av (by decide) hj (by simp [h4]) hZ, f₅.av (by decide) hj (by simp [h4]) hZ,
+        f₄.av hok4 hj (by simp [h1, h2, h3]) hZ]
+  have vE₆ : av I s₆.mem aE = e := by rw [pres6 aE (by decide) (by decide) (by decide) (by decide) (by decide), vE₃]
+  have vQ₆ : av I s₆.mem aQt = L / e := by
+    rw [f₆.av (by decide) (by decide) (by decide) hZ, f₅.av (by decide) (by decide) (by decide) hZ, dQ]
+  have vR₆ : av I s₆.mem aR = L % e := by
+    rw [f₆.av (by decide) (by decide) (by decide) hZ, f₅.av (by decide) (by decide) (by decide) hZ, vR₄]
+  have vL₆ : av I s₆.mem aL = L := by
+    rw [pres6 aL (by decide) (by decide) (by decide) (by decide) (by decide), f₃.av (by decide) (by decide)
+      (by decide) hZ, f₂.av (by decide) (by decide) (by decide) hZ, vL₁]
+  -- `x = R⁻¹ mod e`.
+  refine wp_seqs_append (by simp [invFrom]) (by simp) (WP.mono (invFrom_k h₆ (j := aE) (by decide) (by decide))
+    fun s₇ ⟨h₇, f₇, vV₇, vX₁₇, vX₂₇⟩ => ?_)
+  have hok7 : [Rc.arr aV, Rc.arr aX₁, Rc.arr aX₂].all Rc.ok = true := by decide
+  have vU₇ : av I s₇.mem aU = L % e := by rw [f₇.av hok7 (by decide) (by decide) hZ, vU₆]
+  have tU₇ : atop I s₇.mem aU = 0 := by rw [f₇.at hok7 (by decide) (by decide) hZ, tU₆]
+  have vE₇ : av I s₇.mem aE = e := by rw [f₇.av hok7 (by decide) (by decide) hZ, vE₆]
+  refine wp_seqs_append (by simp) (by simp [lGe2]) ?_
+  simp only [seqs]
+  refine WP.mono (inverse_k h₇ (iU := aU) (iV := aV) (iX₁ := aX₁) (iX₂ := aX₂) (iM := aE) (iT := aT)
+    (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
+    (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
+    (by decide) (by decide) (by decide) tU₇ (by rw [vV₇, vE₆, vE₇]) vX₁₇ vX₂₇) fun s₈ ⟨h₈, f₈, hinv⟩ => ?_
+  rw [vE₇, vU₇] at hinv
+  obtain ⟨hg₈, hdv₈, hx₈⟩ := hinv heo (by omega)
+  generalize hx : av I s₈.mem aX₂ = x at hdv₈ hx₈
+  have hokI : [Rc.arr aU, Rc.arr aV, Rc.arr aX₁, Rc.arr aX₂, Rc.arr aT, Rc.hdr sMo].all Rc.ok = true := by decide
+  have vL₈ : av I s₈.mem aL = L := by
+    rw [f₈.av hokI (by decide) (by decide) hZ, f₇.av hok7 (by decide) (by decide) hZ, vL₆]
+  -- `kOk := ` the masks of `L ≥ 2` and `gcd(R, e) = 1`.
+  refine wp_seqs_append (by simp [lGe2, constA]) (by simp [gcdIsOne, constA]) (WP.mono (lGe2_k h₈)
+    fun s₉ ⟨h₉, f₉, ok₉⟩ => ?_)
+  rw [vL₈] at ok₉
+  have vV₉ : av I s₉.mem aV = Nat.gcd (L % e) e := by rw [f₉.av (by decide) (by decide) (by decide) hZ, hg₈]
+  refine wp_seqs_append (by simp [gcdIsOne, constA]) (by simp) (WP.mono (gcdIsOne_k h₉ ok₉)
+    fun s₁₀ ⟨h₁₀, f₁₀, ok₁₀⟩ => ?_)
+  rw [vV₉] at ok₁₀
+  have hokC : [Rc.arr aC, Rc.hdr kOk].all Rc.ok = true := by decide
+  have pres10 : ∀ j, j < 16 → j ≠ aC → av I s₁₀.mem j = av I s₈.mem j := fun j hj h1 => by
+    rw [f₁₀.av hokC hj (by simp [h1]) hZ, f₉.av hokC hj (by simp [h1]) hZ]
+  have hxe : x < e := hx₈
+  have vX₁₀ : av I s₁₀.mem aX₂ = x := by rw [pres10 aX₂ (by decide) (by decide), hx]
+  have vR₁₀ : av I s₁₀.mem aR = L % e := by
+    rw [pres10 aR (by decide) (by decide), f₈.av hokI (by decide) (by decide) hZ,
+      f₇.av hok7 (by decide) (by decide) hZ, vR₆]
+  have vQ₁₀ : av I s₁₀.mem aQt = L / e := by
+    rw [pres10 aQt (by decide) (by decide), f₈.av hokI (by decide) (by decide) hZ,
+      f₇.av hok7 (by decide) (by decide) hZ, vQ₆]
+  have hev₁₀ : word s₁₀.mem I.B (8 * kEv) = BitVec.ofNat 64 e := by
+    have hk : ∀ {cs : List Rc} {m m' : Mem}, KF I.B I.W cs m m' → cs.all Rc.ok = true → .hdr kEv ∉ cs →
+        word m' I.B (8 * kEv) = word m I.B (8 * kEv) := fun f ok hn => f.word ok (by decide) hn
+    rw [hk f₁₀ hokC (by decide), hk f₉ hokC (by decide), hk f₈ hokI (by decide), hk f₇ hok7 (by decide),
+      hk f₆ (by decide) (by decide), hk f₅ (by decide) (by decide), hk f₄ hok4 (by decide),
+      hk f₃ (by decide) (by decide), hk f₂ (by decide) (by decide), hk f₁ (by decide) (by decide), hev]
+  -- `e⁻¹ mod 2⁶⁴` into `rcx`.
+  have oddE : ∀ {u : State}, u.gpr .rbx = BitVec.ofNat 64 e → (u.gpr .rbx).toNat % 2 = 1 := fun hb => by
+    rw [hb, BitVec.toNat_ofNat, Nat.mod_eq_of_lt he64]; exact heo
+  simp only [seqs]
+  have hld := fun (i : Nat) (hi : i < 32) => h₁₀.ws.scr.ld (d := 8 * i) (by have := h.ws.h256; omega)
+  refine WP.seq (WP.block_append_iff.mpr (WP.mono (WP.keep [.rbx] (Q := fun t => t.gpr .rbx = BitVec.ofNat 64 e ∧
+    t.mem = s₁₀.mem) (by xrun [State.ea, hdr, h₁₀.ws.rdi, hdrOff, hld kEv (by decide), hev₁₀]) rfl)
+    fun s₁₁ ⟨⟨hbx₁₁, m₁₁⟩, k₁₁⟩ => WP.mono (minvC_ok s₁₁ (oddE hbx₁₁)) fun s₁₂ ⟨hinv₁₂, _, k₁₂, m₁₂⟩ => ?_))
+  rw [hbx₁₁, BitVec.toNat_ofNat, Nat.mod_eq_of_lt he64] at hinv₁₂
+  generalize hei : (s₁₂.gpr .rcx).toNat = einv at hinv₁₂
+  have hm₁₂ : s₁₂.mem = s₁₀.mem := by rw [m₁₂, m₁₁]
+  have h₁₂ := h₁₀.step (cs := []) (by rw [hm₁₂]; exact KF.refl _ _ _) rfl (k₁₁.trans k₁₂) (by decide)
+  -- `c` into `r15`, `t` into `sMo`.
+  have sX := h.ws.sl (j := aX₂) (by decide)
+  have sR := h.ws.sl (j := aR) (by decide)
+  have wX : (word s₁₂.mem I.B (slot I.W aX₂)).toNat = x := by
+    rw [hm₁₂]; exact word0_of_lt hw1 vX₁₀ (Nat.lt_trans hxe he64)
+  have wR : (word s₁₂.mem I.B (slot I.W aR)).toNat = L % e := by
+    rw [hm₁₂]; exact word0_of_lt hw1 vR₁₀ (Nat.lt_trans hR he64)
+  refine WP.seq (WP.mono (Q := fun (t : State) => (t.gpr .r15).toNat = ((L % e * (e - x) % 2 ^ 64 + 1) % 2 ^ 64 * einv) % 2 ^ 64 ∧
+    t.mem = s₁₂.mem.writeW (off I.B (8 * sMo)) (BitVec.ofNat 64 (e - x)) ∧
+    Keep [.r12, .r9, .rbx, .r10, .rsi, .rax, .rdx, .r15] s₁₂ t) ?_ fun s₁₃ ⟨c₁₃, m₁₃, k₁₃⟩ => ?_)
+  · rw [List.append_assoc, List.append_assoc]
+    refine WP.block_append_iff.mpr (WP.mono h₁₂.ws.ws_ok fun u₁ ⟨_, h9, mu₁, ku₁⟩ => WP.block_append_iff.mpr ?_)
+    have hdi₁ : u₁.gpr .rdi = I.B := (ku₁.gpr (by decide)).trans h₁₂.ws.rdi
+    refine WP.mono (base_ok aX₂ (r := .rbx) (by decide) hdi₁ h9) fun u₂ ⟨hbx, mu₂, ku₂⟩ => WP.block_append_iff.mpr ?_
+    refine WP.mono (base_ok aR (r := .r10) (by decide) ((ku₂.gpr (by decide)).trans hdi₁)
+      ((ku₂.gpr (by decide)).trans h9)) fun u₃ ⟨h10, mu₃, ku₃⟩ => ?_
+    have hmu : u₃.mem = s₁₂.mem := by rw [mu₃, mu₂, mu₁]
+    have hs₃ := h₁₂.ws.scr.congr ((ku₁.trans ku₂).trans ku₃).2.2
+    have hdi₃ : u₃.gpr .rdi = I.B := ((ku₂.trans ku₃).gpr (by decide)).trans hdi₁
+    have hcx : u₃.gpr .rcx = s₁₂.gpr .rcx := ((ku₁.trans ku₂).trans ku₃).gpr (by decide)
+    have hbx₃ : u₃.gpr .rbx = off I.B (slot I.W aX₂) := (ku₃.gpr (by decide)).trans hbx
+    have hev₁₂ : word s₁₂.mem I.B (8 * kEv) = BitVec.ofNat 64 e := by rw [hm₁₂, hev₁₀]
+    refine WP.mono (WP.keep [.rsi, .rax, .rdx, .r15] (Q := fun t =>
+      (t.gpr .r15).toNat = ((L % e * (e - x) % 2 ^ 64 + 1) % 2 ^ 64 * einv) % 2 ^ 64 ∧
+      t.mem = s₁₂.mem.writeW (off I.B (8 * sMo)) (BitVec.ofNat 64 (e - x))) (by
+        xrun [State.ea, at0, hdr, hbx₃, h10, hdi₃, hdrOff, show BitVec.ofInt 64 0 = 0#64 from rfl, BitVec.add_zero,
+          hs₃.ld (d := slot I.W aX₂) (by omega), hs₃.ld (d := slot I.W aR) (by omega),
+          hs₃.ld (d := 8 * kEv) (by have := h.ws.h256; unfold kEv sFn; omega),
+          hs₃.st (d := 8 * sMo) (by have := h.ws.h256; unfold sMo sFn; omega), hmu, hcx, execMul]
+        have hX' : s₁₂.mem.readW (off I.B (slot I.W aX₂)) 64 = BitVec.ofNat 64 x :=
+          BitVec.eq_of_toNat_eq (by rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]; exact wX)
+        have hE' : s₁₂.mem.readW (off I.B (8 * kEv)) 64 = BitVec.ofNat 64 e := hev₁₂
+        have hR' : (s₁₂.mem.readW (off I.B (slot I.W aR)) 64).toNat = L % e := wR
+        rw [hE', hX', ofNat_sub' (by omega) he64, hR', hei]
+        refine ⟨?_, rfl⟩
+        simp only [BitVec.toNat_ofNat, BitVec.toNat_add, show (1 : BitVec 64).toNat = 1 from rfl,
+          Nat.mod_eq_of_lt (show e - x < 2 ^ 64 by omega)]) rfl) fun t ⟨⟨hc, hm⟩, k⟩ => ⟨hc, hm, (((ku₁.trans ku₂).trans ku₃).trans k).mono (by simp)⟩
+  generalize hcv : ((L % e * (e - x) % 2 ^ 64 + 1) % 2 ^ 64 * einv) % 2 ^ 64 = c at c₁₃
+  obtain ⟨h₁₃, f₁₃, mo₁₃⟩ := h₁₂.hdrW (i := sMo) (by unfold sMo sFn; omega) m₁₃ k₁₃ (by decide)
+  -- `[aDd] := c`.
+  refine WP.seq (WP.mono (zeroA_k h₁₃ (j := aDd) (by decide)) fun s₁₄ ⟨h₁₄, f₁₄, z₁₄, k₁₄⟩ => ?_)
+  have c₁₄ : (s₁₄.gpr .r15).toNat = c := by rw [k₁₄.gpr (by decide)]; exact c₁₃
+  have mo₁₄ : word s₁₄.mem I.B (8 * sMo) = BitVec.ofNat 64 (e - x) := by
+    rw [f₁₄.word (by decide) (by decide) (by decide), mo₁₃]
+  have sD := h.ws.sl (j := aDd) (by decide)
+  have sQ := h.ws.sl (j := aQt) (by decide)
+  have spDQ := slot_far (w := I.W) (i := aDd) (j := aQt) (by decide)
+  refine WP.seq (WP.mono (Q := fun (t : State) => t.mem = s₁₄.mem.writeW (off I.B (slot I.W aDd)) (s₁₄.gpr .r15) ∧
+    t.gpr .r8 = off I.B (slot I.W aDd) ∧ t.gpr .r9 = off I.B (slot I.W aQt) ∧
+    t.gpr .rcx = BitVec.ofNat 64 (e - x) ∧ t.gpr .r12 = BitVec.ofNat 64 I.W ∧
+    Keep [.r12, .r9, .r8, .rax, .rcx] s₁₄ t) ?_ fun s₁₅ ⟨m₁₅, h8, h9, hcx, h12, k₁₅⟩ => ?_)
+  · rw [List.append_assoc, List.append_assoc, List.append_assoc]
+    refine WP.block_append_iff.mpr (WP.mono h₁₄.ws.ws_ok fun u₁ ⟨h12, h9, mu₁, ku₁⟩ => WP.block_append_iff.mpr ?_)
+    have hdi₁ : u₁.gpr .rdi = I.B := (ku₁.gpr (by decide)).trans h₁₄.ws.rdi
+    refine WP.mono (base_ok aDd (r := .r8) (by decide) hdi₁ h9) fun u₂ ⟨h8, mu₂, ku₂⟩ => WP.block_append_iff.mpr ?_
+    have hs₂ := h₁₄.ws.scr.congr (ku₁.trans ku₂).2.2
+    have h15 : u₂.gpr .r15 = s₁₄.gpr .r15 := (ku₁.trans ku₂).gpr (by decide)
+    refine WP.mono (WP.keep [] (c := .block [.store (at0 .r8) .r15]) (Q := fun t => t.mem = s₁₄.mem.writeW
+      (off I.B (slot I.W aDd)) (s₁₄.gpr .r15)) (by
+        xrun [State.ea, at0, h8, show BitVec.ofInt 64 0 = 0#64 from rfl, BitVec.add_zero,
+          hs₂.st (d := slot I.W aDd) (by omega), h15, mu₂, mu₁]) rfl) fun u₃ ⟨mu₃, ku₃⟩ => WP.block_append_iff.mpr ?_
+    have hdi₃ : u₃.gpr .rdi = I.B := ((ku₂.trans ku₃).gpr (by decide)).trans hdi₁
+    have h9₃ : u₃.gpr .r9 = BitVec.ofNat 64 (8 * (I.W + 2)) := ((ku₂.trans ku₃).gpr (by decide)).trans h9
+    refine WP.mono (base_ok aQt (r := .rax) (by decide) hdi₃ h9₃) fun u₄ ⟨hax, mu₄, ku₄⟩ => ?_
+    have hs₄ := h₁₄.ws.scr.congr (((ku₁.trans ku₂).trans ku₃).trans ku₄).2.2
+    have mo₄ : word u₄.mem I.B (8 * sMo) = BitVec.ofNat 64 (e - x) := by
+      rw [mu₄, mu₃, (writeW_outside s₁₄.mem I.B (s₁₄.gpr .r15) (d := slot I.W aDd) (by omega)).word
+        (Or.inl (hdr_lt_slot I.W aDd (show sMo < 32 by decide))) (by unfold sMo sFn; omega), mo₁₄]
+    refine WP.mono (WP.keep [.r9, .rcx] (Q := fun t => t.gpr .r9 = off I.B (slot I.W aQt) ∧
+      t.gpr .rcx = BitVec.ofNat 64 (e - x) ∧ t.mem = u₄.mem) (by
+        xrun [State.ea, hdr, (ku₄.gpr (by decide)).trans hdi₃, hdrOff, hax,
+          hs₄.ld (d := 8 * sMo) (by have := h.ws.h256; unfold sMo sFn; omega), mo₄]) rfl) fun t ⟨⟨h9t, hcxt, mt⟩, kt⟩ =>
+      ⟨by rw [mt, mu₄, mu₃], ((ku₄.trans kt).gpr (by decide)).trans ((ku₃.gpr (by decide)).trans h8), h9t, hcxt,
+        (((ku₂.trans ku₃).trans ku₄).trans kt).gpr (by decide) |>.trans h12,
+        ((((ku₁.trans ku₂).trans ku₃).trans ku₄).trans kt).mono (by simp)⟩
+  have o₁₅ := writeW_outside s₁₄.mem I.B (s₁₄.gpr .r15) (d := slot I.W aDd) (by omega)
+  rw [← m₁₅] at o₁₅
+  have f₁₅ := KF.arr1 (I := I) (j := aDd) o₁₅ (Nat.le_refl _) (by omega)
+  have h₁₅ := h₁₄.step f₁₅ (all_mut_arr (by decide)) k₁₅ (by decide)
+  have vD₁₅ : wv s₁₅.mem I.B (slot I.W aDd) (I.W + 2) = c := by
+    rw [m₁₅]
+    have := wv_put (m := s₁₄.mem) (B := I.B) (d := slot I.W aDd) (N := I.W + 2) (k := 0) (s₁₄.gpr .r15)
+      ((wv_eq_zero_iff _ _ _ _).mp z₁₄) (by omega) (by omega) (I.W + 2) (Nat.le_refl _)
+    rw [Nat.mul_zero, Nat.add_zero] at this
+    rw [this, ite_eq_left (show 0 < I.W + 2 by omega), Nat.pow_zero, Nat.one_mul, c₁₄]
+  have hokD : [Rc.arr aDd].all Rc.ok = true := by decide
+  have vQ₁₅ : av I s₁₅.mem aQt = L / e := by
+    rw [f₁₅.av hokD (by decide) (by decide) hZ, f₁₄.av hokD (by decide) (by decide) hZ,
+      f₁₃.av (by decide) (by decide) (by decide) hZ]
+    show wv s₁₂.mem I.B (slot I.W aQt) I.W = L / e
+    rw [hm₁₂]; exact vQ₁₀
+  -- `[aDd] += t Q`.
+  have hcl : c < 2 ^ 64 := by rw [← hcv]; exact Nat.mod_lt _ (by decide)
+  have hQ : L / e < 2 ^ (64 * I.W) := Nat.lt_of_le_of_lt (Nat.div_le_self _ _) hLW
+  have hbound : c + (e - x) * (L / e) < 2 ^ (64 * (I.W + 2)) := by
+    have h1 : (e - x) * (L / e) < 2 ^ 64 * 2 ^ (64 * I.W) :=
+      Nat.mul_lt_mul_of_lt_of_le (by omega) (Nat.le_of_lt hQ) (by omega)
+    have h2 : 2 ^ 64 + 2 ^ 64 * 2 ^ (64 * I.W) ≤ 2 ^ (64 * (I.W + 2)) := by
+      rw [show 64 * (I.W + 2) = 64 + 64 + 64 * I.W by omega, Nat.pow_add, Nat.pow_add]
+      have : 1 ≤ 2 ^ (64 * I.W) := Nat.one_le_two_pow
+      have : 2 ^ 64 ≤ 2 ^ 64 * 2 ^ (64 * I.W) := Nat.le_mul_of_pos_right _ (by omega)
+      have : 2 * (2 ^ 64 * 2 ^ (64 * I.W)) ≤ 2 ^ 64 * 2 ^ 64 * 2 ^ (64 * I.W) := by
+        rw [Nat.mul_assoc]; exact Nat.mul_le_mul_right _ (by decide)
+      omega
+    omega
+  have vQ' : wv s₁₅.mem I.B (slot I.W aQt) I.W = L / e := vQ₁₅
+  have hbound' : c + (e - x) * wv s₁₅.mem I.B (slot I.W aQt) I.W < 2 ^ (64 * (I.W + 2)) := by rw [vQ']; exact hbound
+  refine WP.mono (mulAddRow_ok h₁₅.ws.scr h8 h9 h12 (by omega) (by omega) (by omega) (by omega) (by omega)
+    (by rw [vD₁₅, hcx, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+        exact hbound')) fun t ⟨hv, o, kt⟩ => ?_
+  rw [vD₁₅, hcx, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show e - x < 2 ^ 64 by omega), vQ'] at hv
+  have ft := KF.arr1 (I := I) (j := aDd) o (Nat.le_refl _) (Nat.le_refl _)
+  have ht := h₁₅.step ft (all_mut_arr (by decide)) kt (by decide)
+  have hok₁₃ : [Rc.hdr sMo].all Rc.ok = true := by decide
+  have okt : word t.mem I.B (8 * kOk) = mask (decide (Nat.gcd (L % e) e = 1) && !decide (L < 2)) := by
+    rw [ft.word hokD (by decide) (by decide), f₁₅.word hokD (by decide) (by decide),
+      f₁₄.word hokD (by decide) (by decide), f₁₃.word hok₁₃ (by decide) (by decide), hm₁₂, ok₁₀]
+  refine ⟨ht, ?_, ⟨_, okt, ?_, ?_⟩⟩
+  · have f₁₂ : KF I.B I.W [] s₁₀.mem s₁₂.mem := by rw [hm₁₂]; exact KF.refl _ _ _
+    exact ((((((((((((((f₁.trans f₂).trans f₃).trans f₄).trans f₅).trans f₆).trans f₇).trans f₈).trans f₉).trans
+      f₁₀).trans f₁₂).trans f₁₃).trans f₁₄).trans f₁₅).trans ft).mono (by simp)
+  · -- The inverse exists iff both hold.
+    have hQR : L = e * (L / e) + L % e := (Nat.div_add_mod L e).symm
+    constructor
+    · rintro ⟨d, hd⟩
+      by_contra hc
+      have : ¬ (2 ≤ L ∧ Nat.gcd (L % e) e = 1) := fun ⟨h1, h2⟩ => hc (by simp [h2]; omega)
+      rw [inverse_odd_none he3 hQR this] at hd
+      cases hd
+    · intro hc
+      simp only [Bool.and_eq_true, decide_eq_true_eq, Bool.not_eq_true', decide_eq_false_iff_not] at hc
+      have hx1 : (e : Int) ∣ (x : Int) * (L % e : Nat) - 1 := by
+        have := hdv₈; rw [hg₈, hc.1] at this; exact_mod_cast this
+      exact ⟨_, inverse_odd he3 he64 (by omega) hQR hR hx1 hxe hinv₁₂⟩
+  · intro d hd
+    by_cases hc : 2 ≤ L ∧ Nat.gcd (L % e) e = 1
+    · have hQR : L = e * (L / e) + L % e := (Nat.div_add_mod L e).symm
+      have hx1 : (e : Int) ∣ (x : Int) * (L % e : Nat) - 1 := by
+        have := hdv₈; rw [hg₈, hc.2] at this; exact_mod_cast this
+      rw [inverse_odd he3 he64 hc.1 hQR hR hx1 hxe hinv₁₂, hcv] at hd
+      cases hd
+      have hdL := (inverse_some (inverse_odd he3 he64 hc.1 hQR hR hx1 hxe hinv₁₂)).2 (by omega)
+      rw [hcv] at hdL
+      exact av_of_full (by rw [hv, Nat.add_comm, Nat.mul_comm]) (by omega)
+    · rw [inverse_odd_none he3 (Nat.div_add_mod L e).symm hc] at hd
+      cases hd
+
+end VG.Proof.RsaKeyGen.X86_64.Key

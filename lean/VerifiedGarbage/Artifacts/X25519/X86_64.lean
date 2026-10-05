@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.X25519.X86_64.Adx.Lit
 import VerifiedGarbage.Impl.X25519.X86_64.Ifma
 import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Verified
 import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Lit
+import VerifiedGarbage.Proof.X25519.X86_64.Base.Verified
 
 /-! # X25519 (RFC 7748) on x86-64 -/
 
@@ -51,6 +52,25 @@ def artifacts : List Artifact := [
     contract := Spec.X25519.x25519Contract X86_64.abi
     verified := Proof.X25519.X86_64.x25519Ifma_verified
     features := ["avx", "avx2", "bmi2", "adx", "avx512ifma", "avx512vl"]
+    spSafe := Code.all_of_allInstrs (by lit_decide) },
+  { Spec.X25519.x25519BaseApi with
+    target := X86_64.target
+    doc := Spec.X25519.x25519BaseApi.doc (notes := ["Ed25519's fixed-base comb, with the \
+      scalar clamped as RFC 7748 specifies and the point mapped to `(Z + Y) / (Z - Y)`. \
+      The table selection is constant time; the callee-saved registers are saved in `scratch`."])
+    code := Impl.X25519.X86_64.Base.x25519Base Impl.X25519.X86_64.baseline
+    contract := Spec.X25519.x25519BaseContract X86_64.abi
+    verified := Proof.X25519.X86_64.Base.x25519Base_verified
+    spSafe := Code.all_of_allInstrs (by lit_decide) },
+  { Spec.X25519.x25519BaseApi with
+    target := X86_64.target
+    name := "vg_x25519_base_adx"
+    doc := Spec.X25519.x25519BaseApi.doc (notes := ["The same fixed-base comb as \
+      `vg_x25519_base`, with BMI2 and ADX field arithmetic."])
+    code := Impl.X25519.X86_64.Base.x25519Base Impl.X25519.X86_64.adx
+    contract := Spec.X25519.x25519BaseContract X86_64.abi
+    verified := Proof.X25519.X86_64.Base.x25519Base_verified
+    features := ["bmi2", "adx"]
     spSafe := Code.all_of_allInstrs (by lit_decide) }]
 
 end VG.Artifacts.X25519.X86_64

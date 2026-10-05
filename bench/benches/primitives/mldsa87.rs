@@ -24,7 +24,8 @@ pub fn bench(c: &mut Criterion) {
     let seed = [0x42; 32];
     let key = SigningKey87::from_seed(&seed).unwrap();
     let msg = [0x5a; 64];
-    let sig = key.sign(&msg, b"").unwrap();
+    // Keep verification inputs identical across benchmark processes and revisions.
+    let sig = key.sign_deterministic(&msg, b"").unwrap();
     #[cfg(feature = "openssl-mldsa")]
     let (openssl_key, openssl_public) = {
         use openssl::pkey::{KeyType, PKey};

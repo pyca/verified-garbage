@@ -46,11 +46,6 @@ structure TCombVals (K : TCombCfg) (C : Curve) (tbl : List (List (Nat × Nat))) 
   start : Rep C (toM C.p (2 ^ (64 * K.M.n)) K.start.1) (toM C.p (2 ^ (64 * K.M.n)) K.start.2) 1
     (mul (K.H * geomW K.w K.J) (G C))
 
-/-- The signed entry of digit `j`: `[d_j 2^(wj)]G` as `combW_add` has it. -/
-def signedPtW (C : Curve) (w k j : Nat) : Point C :=
-  if 2 ^ (w - 1) ≤ combWin w k j then combPtW C w j (combWin w k j - 2 ^ (w - 1))
-  else negPt (combPtW C w j (2 ^ (w - 1) - combWin w k j))
-
 /-- `x ∈ l` for the comb's lists, through `toComb`. -/
 macro "tcomb_mem" : tactic => `(tactic| (simp only [List.mem_cons, List.mem_append,
   List.mem_singleton, true_or, or_true, combSlots, combWs, combRo, rcbW, rcbR, List.cons_append,
@@ -68,8 +63,6 @@ theorem sel_regs {n : Nat} (hn : n ≤ 8) {r : Reg} (hr : r = .x0 ∨ r = .x19) 
 
 theorem tcombClob_sub : ∀ n ≤ 8, ∀ r ∈ [Reg.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x9, .x16, .x17] ++
     entryRegs n, r ∈ tcombClob n := by decide
-
-theorem magH_le {H v : Nat} (hv : v < 2 * H) : magH H v ≤ H := by unfold magH; split <;> omega
 
 /-- After the selection and negation: `E` represents the signed entry of
 digit `i`, and only `E`, `-y` and the temporary area changed. -/

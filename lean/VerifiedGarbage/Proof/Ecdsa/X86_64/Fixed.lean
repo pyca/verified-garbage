@@ -157,10 +157,10 @@ theorem tbl_apart_tbl {j j' t : Nat} (hjj : j ≠ j') (ht : t < 64 * c.n) :
   rw [List.mem_singleton.mp hw]
   simp only [bitsAt_eq]
   rcases Nat.lt_or_gt_of_ne hjj with h | h
-  · have := Nat.mul_le_mul_left (64 * c.n) h
+  · have := Nat.mul_le_mul_left (64 * c.n + 8) h
     rw [Nat.mul_succ] at this
     omega
-  · have := Nat.mul_le_mul_left (64 * c.n) h
+  · have := Nat.mul_le_mul_left (64 * c.n + 8) h
     rw [Nat.mul_succ] at this
     omega
 

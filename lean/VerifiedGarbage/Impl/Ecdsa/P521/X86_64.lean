@@ -8,7 +8,9 @@ namespace VG.Impl.Ecdsa.X86_64
 open VG.X86_64
 
 /-- P-521 as the code has it. -/
-def p521 : Cfg := ⟨9, Spec.P521.curve⟩
+def p521 : Cfg where
+  n := 9
+  C := Spec.P521.curve
 
 /-- `vg_ecdsa_p521_sign`. -/
 def signP521 : Prog isa := p521.sign

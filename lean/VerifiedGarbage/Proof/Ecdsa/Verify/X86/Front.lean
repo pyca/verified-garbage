@@ -25,32 +25,32 @@ open VG.Impl.Ecdsa.Verify.X86 (Args.verify)
 
 variable {c : Cfg}
 
-/-- The arguments: `public` (`1 + 16 n` bytes), `digest` (`8 n` bytes),
-`sig` (`16 n` bytes) and `scratch`, readable and writable as the contract
+/-- The arguments: `public` (`1 + 2 len` bytes), `digest` (`len` bytes),
+`sig` (`2 len` bytes) and `scratch`, readable and writable as the contract
 says and apart from `scratch`. -/
 structure VPre (c : Cfg) (s : State) : Prop where
-  rd : s.rd = [⟨ptr s 0, 1 + 16 * c.n⟩, ⟨ptr s 1, 8 * c.n⟩, ⟨ptr s 2, 16 * c.n⟩, ⟨argAddr s 0, 16⟩]
+  rd : s.rd = [⟨ptr s 0, 1 + 2 * c.C.len⟩, ⟨ptr s 1, c.C.len⟩, ⟨ptr s 2, 2 * c.C.len⟩, ⟨argAddr s 0, 16⟩]
   wr : s.wr = [⟨ptr s 3, size⟩]
-  pk_sc : Region.Disjoint ⟨ptr s 0, 1 + 16 * c.n⟩ ⟨ptr s 3, size⟩
-  dg_sc : Region.Disjoint ⟨ptr s 1, 8 * c.n⟩ ⟨ptr s 3, size⟩
-  sig_sc : Region.Disjoint ⟨ptr s 2, 16 * c.n⟩ ⟨ptr s 3, size⟩
+  pk_sc : Region.Disjoint ⟨ptr s 0, 1 + 2 * c.C.len⟩ ⟨ptr s 3, size⟩
+  dg_sc : Region.Disjoint ⟨ptr s 1, c.C.len⟩ ⟨ptr s 3, size⟩
+  sig_sc : Region.Disjoint ⟨ptr s 2, 2 * c.C.len⟩ ⟨ptr s 3, size⟩
   args_sc : Region.Disjoint ⟨argAddr s 0, 16⟩ ⟨ptr s 3, size⟩
   ret_sc : Region.Disjoint ⟨(s.gpr .esp).setWidth 64, 4⟩ ⟨ptr s 3, size⟩
-  pk_fit : (arg s 0).toNat + (1 + 16 * c.n) ≤ 2 ^ 32
-  dg_fit : (arg s 1).toNat + 8 * c.n ≤ 2 ^ 32
-  sig_fit : (arg s 2).toNat + 16 * c.n ≤ 2 ^ 32
+  pk_fit : (arg s 0).toNat + (1 + 2 * c.C.len) ≤ 2 ^ 32
+  dg_fit : (arg s 1).toNat + c.C.len ≤ 2 ^ 32
+  sig_fit : (arg s 2).toNat + 2 * c.C.len ≤ 2 ^ 32
   sc_fit : (arg s 3).toNat + size ≤ 2 ^ 32
   sp_fit : (s.gpr .esp).toNat + 20 ≤ 2 ^ 32
 
-/-- The key's `x` and `y`, the hash, and the signature's `r` and `s`. -/
+/-- The key's `x` and `y`, the hash's `e`, and the signature's `r` and `s`. -/
 abbrev keyX (c : Cfg) (s₀ : State) : Nat :=
-  ofBytes (Spec.Ecdsa.bytesAt s₀.mem (ptr s₀ 0 + BitVec.ofNat 64 1) (8 * c.n))
+  ofBytes (Spec.Ecdsa.bytesAt s₀.mem (ptr s₀ 0 + BitVec.ofNat 64 1) c.C.len)
 abbrev keyY (c : Cfg) (s₀ : State) : Nat :=
-  ofBytes (Spec.Ecdsa.bytesAt s₀.mem (ptr s₀ 0 + BitVec.ofNat 64 (1 + 8 * c.n)) (8 * c.n))
-abbrev dig (c : Cfg) (s₀ : State) : Nat := ofBytes (Spec.Ecdsa.bytesAt s₀.mem (ptr s₀ 1) (8 * c.n))
-abbrev sigR (c : Cfg) (s₀ : State) : Nat := ofBytes (Spec.Ecdsa.bytesAt s₀.mem (ptr s₀ 2) (8 * c.n))
+  ofBytes (Spec.Ecdsa.bytesAt s₀.mem (ptr s₀ 0 + BitVec.ofNat 64 (1 + c.C.len)) c.C.len)
+abbrev dig (c : Cfg) (s₀ : State) : Nat := ofBytes (Spec.Ecdsa.bytesAt s₀.mem (ptr s₀ 1) c.C.len) >>> c.sh
+abbrev sigR (c : Cfg) (s₀ : State) : Nat := ofBytes (Spec.Ecdsa.bytesAt s₀.mem (ptr s₀ 2) c.C.len)
 abbrev sigS (c : Cfg) (s₀ : State) : Nat :=
-  ofBytes (Spec.Ecdsa.bytesAt s₀.mem (ptr s₀ 2 + BitVec.ofNat 64 (8 * c.n)) (8 * c.n))
+  ofBytes (Spec.Ecdsa.bytesAt s₀.mem (ptr s₀ 2 + BitVec.ofNat 64 c.C.len) c.C.len)
 
 /-- The key is valid as the code checks it. -/
 abbrev KeyOk (c : Cfg) (s₀ : State) : Prop :=
@@ -87,19 +87,21 @@ theorem idx_verify {i : Nat} (hi : i ∈ Args.verify.idx) : i < 4 := by
   simp only [Args.idx, List.mem_cons, List.not_mem_nil, or_false] at hi
   omega
 
-theorem VPre.setup {s : State} (hp : VPre c s) (h7 : c.n < 7) : SetupPre c Args.verify s where
+theorem VPre.setup {s : State} (hp : VPre c s) : SetupPre c Args.verify s where
+  shift := .inr (.inl rfl)
   wr := by rw [hp.wr]; simp
   arg_in := fun i hi => ⟨_, by rw [hp.rd]; simp, arg_containsN (k := 4) (by have := hp.sp_fit; omega)
     (idx_verify hi)⟩
   arg_sc := fun i hi => hp.args_sc.sub_left (arg_subN (k := 4) (by have := hp.sp_fit; omega) (idx_verify hi))
   sp_fit := fun i hi => by have := idx_verify hi; have := hp.sp_fit; omega
-  k_in := fun e he => ⟨⟨ptr s 2, 16 * c.n⟩, by rw [hp.rd]; simp, Offset.contains_base _ (by omega) (by omega)⟩
-  d_in := inRegions_words (by rw [hp.rd]; simp) (by omega)
-  e_in := inRegions_words (by rw [hp.rd]; simp) (by omega)
+  k_in := fun e he => ⟨⟨ptr s 2, 2 * c.C.len⟩, by rw [hp.rd]; simp,
+    Offset.contains_base _ (by omega) (by have := hp.sig_fit; omega)⟩
+  d_in := inRegions_words (by rw [hp.rd]; simp) (by have := hp.dg_fit; omega)
+  e_in := inRegions_words (by rw [hp.rd]; simp) (by have := hp.dg_fit; omega)
   k_sc := hp.sig_sc.sub_left (Region.sub_prefix (by omega))
   d_sc := hp.dg_sc
   e_sc := hp.dg_sc
-  k_fit := show (arg s 2).toNat + 8 * c.n ≤ 2 ^ 32 by have := hp.sig_fit; omega
+  k_fit := show (arg s 2).toNat + c.C.len ≤ 2 ^ 32 by have := hp.sig_fit; omega
   d_fit := hp.dg_fit
   e_fit := hp.dg_fit
   sc_fit := hp.sc_fit
@@ -109,14 +111,14 @@ theorem unch_whole {base : Addr} {W : List (Nat × Nat)} {m m' : Mem} (h : Unch 
     (hW : ∀ w ∈ W, w.1 + w.2 ≤ size) : Unch base [(0, size)] m m' :=
   (h.outside fun w hw => ⟨Nat.zero_le _, by have := hW w hw; omega⟩).unch
 
-theorem slW_le (h7 : c.n < 7) {l : List Nat} (hl : ∀ i ∈ l, i < 45) : ∀ w ∈ slW c l, w.1 + w.2 ≤ size := by
+theorem slW_le (h7 : c.n < 10) {l : List Nat} (hl : ∀ i ∈ l, i < 45) : ∀ w ∈ slW c l, w.1 + w.2 ≤ size := by
   intro w hw
   obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hw
   exact sl_le c h7 (hl i hi)
 
 theorem loadS_eq (c : Cfg) : Impl.Ecdsa.Verify.X86.Cfg.loadS c =
-    .mov .ebx (.mem (Cfg.argOp 2)) :: .alu .add .ebx (.imm (BitVec.ofNat 32 (8 * c.n))) ::
-      loadBE c.n (c.sl PT) .ebx := by
+    .mov .ebx (.mem (Cfg.argOp 2)) :: .alu .add .ebx (.imm (BitVec.ofNat 32 c.C.len)) ::
+      loadBytes c.C.len c.n (c.sl PT) .ebx := by
   simp only [Impl.Ecdsa.Verify.X86.Cfg.loadS, List.cons_append, List.nil_append]
 
 /-- The setup and tables, `s`, and the checks of the key. -/
@@ -125,10 +127,12 @@ theorem front_ok (hc : CfgOk c) {s₀ : State} (hp : VPre c s₀) {rest : Prog i
     WP isa (.seq (Impl.Ecdsa.Verify.X86.Cfg.prefix' c) (.seq (.block (Impl.Ecdsa.Verify.X86.Cfg.loadS c))
       (.seq (.block (Impl.Ecdh.X86.Cfg.peerAt c 0)) (.seq (Impl.Ecdh.X86.Cfg.validate c) rest)))) s₀ Q := by
   have h0 := hc.n0
-  have h7 := hc.n7
+  have h7 := hc.n10
   have hsz : size = 8192 := rfl
+  have hl8 := hc.len8
+  have hlhi := hc.len_hi
   have h4 : (s₀.gpr .esp).toNat + 4 + 4 * 4 ≤ 2 ^ 32 := by have := hp.sp_fit; omega
-  refine WP.seq (stage₁ hc (hp.setup h7) fun s₂ S₂ => WP.block_nil ?_)
+  refine WP.seq (stage₁ hc hp.setup fun s₂ S₂ => WP.block_nil ?_)
   have hn := S₂.scr.nowrap
   have W₂ : Outside (ptr s₀ 3) 0 size s₀.mem s₂.mem :=
     S₂.whole.outside fun w hw => by rw [List.mem_singleton.mp hw]; exact ⟨Nat.le_refl _, Nat.le_refl _⟩
@@ -146,15 +150,15 @@ theorem front_ok (hc : CfgOk c) {s₀ : State} (hp : VPre c s₀) {rest : Prog i
   have k₂ : Keeps [.ebx] s₂ s₂'' := u₂.keeps.trans u₂'.keeps
   have hs₂ := S₂.scr.of_keeps k₂ (by decide)
   have hm₂ : s₂''.mem = s₂.mem := by rw [u₂'.mem, u₂.mem]
-  have hb : s₂''.gpr .ebx = arg s₀ 2 + BitVec.ofNat 32 (8 * c.n) := by rw [u₂'.gpr, u₂.gpr]
-  have hb' : (s₂''.gpr .ebx).setWidth 64 = ptr s₀ 2 + BitVec.ofNat 64 (8 * c.n) := by
+  have hb : s₂''.gpr .ebx = arg s₀ 2 + BitVec.ofNat 32 c.C.len := by rw [u₂'.gpr, u₂.gpr]
+  have hb' : (s₂''.gpr .ebx).setWidth 64 = ptr s₀ 2 + BitVec.ofNat 64 c.C.len := by
     rw [hb]; exact addr_eq (by have := hp.sig_fit; omega)
-  have hbt : (s₂''.gpr .ebx).toNat = (arg s₀ 2).toNat + 8 * c.n := by
-    rw [hb, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 8 * c.n) (by omega)]
+  have hbt : (s₂''.gpr .ebx).toNat = (arg s₀ 2).toNat + c.C.len := by
+    rw [hb, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := c.C.len) (by omega)]
     exact Nat.mod_eq_of_lt (by have := hp.sig_fit; omega)
   have hrw₂' : s₂''.rd ++ s₂''.wr = s₀.rd ++ s₀.wr := by rw [k₂.2.1, k₂.2.2, hrw₂]
-  refine WP.mono (loadBE_ok hs₂ (src := .ebx) (by decide) hPT (by rw [hbt]; have := hp.sig_fit; omega)
-    (fun e he => ⟨⟨ptr s₀ 2, 16 * c.n⟩, by rw [hrw₂', hp.rd]; simp, by
+  refine WP.mono (loadBytes_ok hs₂ (src := .ebx) (by decide) hPT (by rw [hbt]; have := hp.sig_fit; omega)
+    (by omega) hlhi (fun e he => ⟨⟨ptr s₀ 2, 2 * c.C.len⟩, by rw [hrw₂', hp.rd]; simp, by
       rw [hb', Offset.add_add]; exact Offset.contains_base _ (by omega) (by omega)⟩)
     (by
       rw [hb']
@@ -223,8 +227,9 @@ theorem front_ok (hc : CfgOk c) {s₀ : State} (hp : VPre c s₀) {rest : Prog i
     le_append (slWk_le h7 (by decide)) (flag_le h0 h7)
   refine ⟨hs₅, by rw [wr₅, k₄.2.2, K₃.2.2, S₂.wr], by rw [rd₅, k₄.2.1, K₃.2.1, S₂.rd],
     by rw [g₅ _ (by decide), k₄.1 _ (by decide), K₃.1 _ (by decide), S₂.esp], F₅,
-    by rw [a₅ (i := K) (by decide) (by decide) (by decide) (by decide) (by decide)]; exact S₂.k,
-    by rw [a₅ (i := D) (by decide) (by decide) (by decide) (by decide) (by decide)]; exact S₂.d,
+    by rw [a₅ (i := K) (by decide) (by decide) (by decide) (by decide) (by decide), S₂.k, kv_eq (A := Args.verify) rfl],
+    by rw [a₅ (i := D) (by decide) (by decide) (by decide) (by decide) (by decide), S₂.d]
+       show _ >>> shAt c (some D) D = _; rw [shAt_self],
     by rw [e₅ (i := PT) (by decide) (by decide) (by decide), e₄ (by decide) (by decide) (by decide), pt₃],
     by rw [a₅ (i := RX) (by decide) (by decide) (by decide) (by decide) (by decide), S₂.rx],
     by rw [a₅ (i := RY) (by decide) (by decide) (by decide) (by decide) (by decide), S₂.ry],

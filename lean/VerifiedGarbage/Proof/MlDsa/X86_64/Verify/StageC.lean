@@ -11,6 +11,8 @@ NTT(z[i])` (`nttZ_ok`), `ĉ` (`nttC_ok`), and each row `r` of `w′₁`, packed 
 
 namespace VG.Proof.MlDsa.X86_64.Verify
 
+open VG.Proof.MlDsa.Arith.Representation
+
 open VG VG.X86_64 VG.Impl.MlDsa.X86_64.Verify
 open VG.Proof.MlKem.X86_64
 open VG.Spec.MlDsa
@@ -175,8 +177,8 @@ theorem pa_rbx {s s' : State} {W : List Region} (hP : PostB s s' W) (o : Nat) : 
   hP.pa (show Reg.rbx ∈ bases by decide)
 
 /-- After `Σ_{s < j} Â[r, s] ẑ[s]`, from `s₀`. -/
-def DI (p : Params) (σ : State) (A' : Nat → Nat → Poly) (r j : Nat) (s₀ st : State) : Prop :=
-  PPostB s₀ st [(pW, 1024)] ∧ st.gpr .r15 = s₀.gpr .r15 ∧ PolyIs st.mem (pa s₀ pW) (dotAcc p (vSig p σ) A' r j)
+def DI (mont : Bool) (p : Params) (σ : State) (A' : Nat → Nat → Poly) (r j : Nat) (s₀ st : State) : Prop :=
+  PPostB s₀ st [(pW, 1024)] ∧ st.gpr .r15 = s₀.gpr .r15 ∧ PolyIs st.mem (pa s₀ pW) (encode mont (dotAcc p (vSig p σ) A' r j))
 
 theorem SC.zHat {p : Params} {h : List (Vector Bool n)} {A' : Nat → Nat → Poly} {Q : Prop} [Decidable Q]
     {cH : Poly} {r : Nat} {σ s : State} (hs : SC p h A' Q p.ℓ cH r σ s) {c : Nat} (hc : c < p.ℓ) :
@@ -189,7 +191,7 @@ variable {P : Prims} (C : PrimsOk P) {p : Params} (hp : p ∈ params) {σ : Stat
   {r : Nat} (hr : r < p.k) {s₀ : State} (hs : SC p h A' Q p.ℓ cH r σ s₀)
 include C hp hv hr hs
 
-theorem dotFirst_ok : WP isa (mulAt P pW (pA p.ℓ r 0) (pZ 0)) s₀ (DI p σ A' r 1 s₀) := by
+theorem dotFirst_ok : WP isa (mulAt P pW (pA p.ℓ r 0) (pZ 0)) s₀ (DI P.montgomery p σ A' r 1 s₀) := by
   have R := rowC hp hr
   refine WP.mono (mulAt_ok C.mul (hs.t.lay hp hv) (R.mul 0 R.l1) (hs.a r hr 0 R.l1).1 (hs.zHat R.l1).1)
     fun s₁ ⟨hP₁, e₁, hq₁⟩ => ⟨hP₁, e₁, ?_⟩
@@ -197,8 +199,8 @@ theorem dotFirst_ok : WP isa (mulAt P pW (pA p.ℓ r 0) (pZ 0)) s₀ (DI p σ A'
   simp only [dotAcc, add_zero_left]
   exact hq₁
 
-theorem dotStep_ok {k : Nat} (hk' : k < p.ℓ) {st : State} (hd : DI p σ A' r k s₀ st) :
-    WP isa (mulAddAt P pW (pA p.ℓ r k) (pZ k)) st (DI p σ A' r (k + 1) s₀) := by
+theorem dotStep_ok {k : Nat} (hk' : k < p.ℓ) {st : State} (hd : DI P.montgomery p σ A' r k s₀ st) :
+    WP isa (mulAddAt P pW (pA p.ℓ r k) (pZ k)) st (DI P.montgomery p σ A' r (k + 1) s₀) := by
   have R := rowC hp hr
   have L := hs.t.lay hp hv
   obtain ⟨_, _, hZ, hA⟩ := keepC_spec R.keep
@@ -210,15 +212,15 @@ theorem dotStep_ok {k : Nat} (hk' : k < p.ℓ) {st : State} (hd : DI p σ A' r k
     (L.keepRed H (hA r hr k hk') (hs.a r hr k hk').1) (L.keepRed H (hZ k hk' hz) (hs.zHat hk').1))
     fun s' ⟨hP', e', hq'⟩ => ?_
   rw [ew, hW.2, L.keepPolyAt H (hA r hr k hk'), (hs.a r hr k hk').2, L.keepPolyAt H (hZ k hk' hz),
-    (hs.zHat hk').2] at hq'
+    (hs.zHat hk').2, product, ← encode_add] at hq'
   exact ⟨hP.trans hP' (fun w hw => by rw [List.mem_singleton.mp hw]; decide) (fun _ h => h) (fun _ h => h),
     e'.trans e, hq'⟩
 
-theorem dot_ok : WP isa (dot P p r) s₀ (DI p σ A' r p.ℓ s₀) := by
+theorem dot_ok : WP isa (dot P p r) s₀ (DI P.montgomery p σ A' r p.ℓ s₀) := by
   have R := rowC hp hr
   unfold dot
   refine WP.seq (WP.mono (dotFirst_ok C hp hv hr hs) fun s₁ h₁ => ?_)
-  have := seqR_ok (I := fun j => DI p σ A' r j s₀) (p.ℓ - 1) 1
+  have := seqR_ok (I := fun j => DI P.montgomery p σ A' r j s₀) (p.ℓ - 1) 1
     (fun k _ hk' st hd => dotStep_ok C hp hv hr hs (by omega) hd) s₁ h₁
   rwa [show 1 + (p.ℓ - 1) = p.ℓ by have := R.l1; omega] at this
 
@@ -243,17 +245,17 @@ abbrev rCT (p : Params) (σ : State) (cH : Poly) (r : Nat) : Poly := multiplyNTT
 abbrev RB (p : Params) (r : Nat) (s₀ s : State) : Prop := PPostB s₀ s (wsR p r) ∧ s.gpr .r15 = s₀.gpr .r15
 
 /-- After `Σₛ Â[r, s] ẑ[s]`, and `t₁[r] · 2ᵈ`, its NTT, and `ĉ t̂₁[r]`. -/
-def RF1 (p : Params) (σ : State) (A' : Nat → Nat → Poly) (r : Nat) (s₀ s : State) : Prop :=
-  RB p r s₀ s ∧ PolyIs s.mem (pa s pW) (rDot p σ A' r)
-def RF2 (p : Params) (σ : State) (A' : Nat → Nat → Poly) (r : Nat) (s₀ s : State) : Prop :=
-  RF1 p σ A' r s₀ s ∧ PolyIs s.mem (pa s pT) (rU p σ r)
-def RF3 (p : Params) (σ : State) (A' : Nat → Nat → Poly) (r : Nat) (s₀ s : State) : Prop :=
-  RF1 p σ A' r s₀ s ∧ PolyIs s.mem (pa s pT) (ntt (rU p σ r))
-def RF4 (p : Params) (σ : State) (A' : Nat → Nat → Poly) (cH : Poly) (r : Nat) (s₀ s : State) : Prop :=
-  RF1 p σ A' r s₀ s ∧ PolyIs s.mem (pa s pT2) (rCT p σ cH r)
+def RF1 (mont : Bool) (p : Params) (σ : State) (A' : Nat → Nat → Poly) (r : Nat) (s₀ s : State) : Prop :=
+  RB p r s₀ s ∧ PolyIs s.mem (pa s pW) (encode mont (rDot p σ A' r))
+def RF2 (mont : Bool) (p : Params) (σ : State) (A' : Nat → Nat → Poly) (r : Nat) (s₀ s : State) : Prop :=
+  RF1 mont p σ A' r s₀ s ∧ PolyIs s.mem (pa s pT) (rU p σ r)
+def RF3 (mont : Bool) (p : Params) (σ : State) (A' : Nat → Nat → Poly) (r : Nat) (s₀ s : State) : Prop :=
+  RF1 mont p σ A' r s₀ s ∧ PolyIs s.mem (pa s pT) (ntt (rU p σ r))
+def RF4 (mont : Bool) (p : Params) (σ : State) (A' : Nat → Nat → Poly) (cH : Poly) (r : Nat) (s₀ s : State) : Prop :=
+  RF1 mont p σ A' r s₀ s ∧ PolyIs s.mem (pa s pT2) (encode mont (rCT p σ cH r))
 /-- After `w′ = NTT⁻¹(…)` less `ĉ t̂₁[r]`, `w′`, and `w′₁`. -/
-def RF5 (p : Params) (σ : State) (A' : Nat → Nat → Poly) (cH : Poly) (r : Nat) (s₀ s : State) : Prop :=
-  RB p r s₀ s ∧ PolyIs s.mem (pa s pW) (sub (rDot p σ A' r) (rCT p σ cH r))
+def RF5 (mont : Bool) (p : Params) (σ : State) (A' : Nat → Nat → Poly) (cH : Poly) (r : Nat) (s₀ s : State) : Prop :=
+  RB p r s₀ s ∧ PolyIs s.mem (pa s pW) (encode mont (sub (rDot p σ A' r) (rCT p σ cH r)))
 def RF6 (p : Params) (σ : State) (A' : Nat → Nat → Poly) (cH : Poly) (r : Nat) (s₀ s : State) : Prop :=
   RB p r s₀ s ∧ PolyIs s.mem (pa s pW) (wRow p (vPk p σ) (vSig p σ) A' cH r)
 def RF7 (p : Params) (σ : State) (h : List (Vector Bool n)) (A' : Nat → Nat → Poly) (cH : Poly) (r : Nat)
@@ -269,15 +271,15 @@ variable {P : Prims} (C : PrimsOk P) (hp : p ∈ params) (hv : VPre p σ) {Q : P
 include C hp hv hr hs
 
 omit C hp hv hr hs in
-theorem DI.rf1 {s : State} (hd : DI p σ A' r p.ℓ s₀ s) : RF1 p σ A' r s₀ s :=
+theorem DI.rf1 {s : State} (hd : DI P.montgomery p σ A' r p.ℓ s₀ s) : RF1 P.montgomery p σ A' r s₀ s :=
   let ⟨hP, e, hq⟩ := hd
   ⟨⟨hP.mono (sub1 (wsR_mem p r).1), e⟩, by rw [pa_rbx hP]; exact hq⟩
 
-theorem row0_ok : WP isa (dot P p r) s₀ (RF1 p σ A' r s₀) :=
+theorem row0_ok : WP isa (dot P p r) s₀ (RF1 P.montgomery p σ A' r s₀) :=
   WP.mono (dot_ok C hp hv hr hs) fun _ hd => DI.rf1 hd
 
-theorem row1_ok {s : State} (hf : RF1 p σ A' r s₀ s) :
-    WP isa (unpackT1At P (.rbp, 32 + 320 * r) pT) s (RF2 p σ A' r s₀) := by
+theorem row1_ok {s : State} (hf : RF1 P.montgomery p σ A' r s₀ s) :
+    WP isa (unpackT1At P (.rbp, 32 + 320 * r) pT) s (RF2 P.montgomery p σ A' r s₀) := by
   have R := rowC hp hr
   have L := (hs.t.lay hp hv).post hf.1.1
   refine WP.mono (unpackT1At_ok C.unpackT1 L R.t1) fun s' ⟨hP, e, hq⟩ => ⟨⟨hf.1.acc hP e (sub1 (wsR_mem p r).2.1),
@@ -286,7 +288,7 @@ theorem row1_ok {s : State} (hf : RF1 p σ A' r s₀ s) :
   rw [pa_rbx hP]
   exact hq
 
-theorem row2_ok {s : State} (hf : RF2 p σ A' r s₀ s) : WP isa (nttAt P pT) s (RF3 p σ A' r s₀) := by
+theorem row2_ok {s : State} (hf : RF2 P.montgomery p σ A' r s₀ s) : WP isa (nttAt P pT) s (RF3 P.montgomery p σ A' r s₀) := by
   have R := rowC hp hr
   have L := (hs.t.lay hp hv).post hf.1.1.1
   refine WP.mono (ipAt_ok C.ntt L R.ipT hf.2.1) fun s' ⟨hP, e, hq⟩ => ⟨⟨hf.1.1.acc hP e
@@ -295,7 +297,7 @@ theorem row2_ok {s : State} (hf : RF2 p σ A' r s₀ s) : WP isa (nttAt P pT) s 
   rw [pa_rbx hP, ← hf.2.2]
   exact hq
 
-theorem row3_ok {s : State} (hf : RF3 p σ A' r s₀ s) : WP isa (mulAt P pT2 pC pT) s (RF4 p σ A' cH r s₀) := by
+theorem row3_ok {s : State} (hf : RF3 P.montgomery p σ A' r s₀ s) : WP isa (mulAt P pT2 pC pT) s (RF4 P.montgomery p σ A' cH r s₀) := by
   have R := rowC hp hr
   have L₀ := hs.t.lay hp hv
   have L := L₀.post hf.1.1.1
@@ -306,20 +308,22 @@ theorem row3_ok {s : State} (hf : RF3 p σ A' r s₀ s) : WP isa (mulAt P pT2 pC
   rw [pa_rbx hP, hC.2, hf.2.2] at *
   exact hq
 
-theorem row4_ok {s : State} (hf : RF4 p σ A' cH r s₀ s) : WP isa (subAt P pW pT2) s (RF5 p σ A' cH r s₀) := by
+theorem row4_ok {s : State} (hf : RF4 P.montgomery p σ A' cH r s₀ s) : WP isa (subAt P pW pT2) s (RF5 P.montgomery p σ A' cH r s₀) := by
   have R := rowC hp hr
   have L := (hs.t.lay hp hv).post hf.1.1.1
   refine WP.mono (subAt_ok C.sub L R.sub hf.1.2.1 hf.2.1) fun s' ⟨hP, e, hq⟩ => ⟨hf.1.1.acc hP e
     (sub1 (wsR_mem p r).1), ?_⟩
   rw [pa_rbx hP, hf.1.2.2, hf.2.2] at *
+  rw [← encode_sub] at hq
   exact hq
 
-theorem row5_ok {s : State} (hf : RF5 p σ A' cH r s₀ s) : WP isa (invNttAt P pW) s (RF6 p σ A' cH r s₀) := by
+theorem row5_ok {s : State} (hf : RF5 P.montgomery p σ A' cH r s₀ s) : WP isa (invNttAt P pW) s (RF6 p σ A' cH r s₀) := by
   have R := rowC hp hr
   have L := (hs.t.lay hp hv).post hf.1.1
   refine WP.mono (ipAt_ok C.invNtt L R.ipW hf.2.1) fun s' ⟨hP, e, hq⟩ => ⟨hf.1.acc hP e
     (sub2 (wsR_mem p r).1 (wsR_mem p r).2.2.1), ?_⟩
   rw [pa_rbx hP, hf.2.2] at *
+  rw [inverse_encode] at hq
   exact hq
 
 theorem row6_ok {s : State} (hf : RF6 p σ A' cH r s₀ s) : WP isa (useHintAt P (pH r) pW p.γ₂ pW1) s (RF7 p σ h A' cH r s₀) := by

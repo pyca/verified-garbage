@@ -1,5 +1,6 @@
 import VerifiedGarbage.TCB.X86_64.Target
 import VerifiedGarbage.Proof.Weierstrass.Law
+import VerifiedGarbage.Proof.P384.Comb7
 import VerifiedGarbage.Impl.Ecdsa.P384.X86_64
 import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.Verified
 import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.Lit
@@ -20,35 +21,45 @@ def artifacts (h : Proof.Weierstrass.HasLaw Spec.P384.curve) : List Artifact := 
   { Spec.Ecdsa.P384.signApi with
     target := X86_64.target
     doc := Spec.Ecdsa.P384.signApi.doc (notes := ["The function saves its caller's callee-saved \
-      registers in `scratch`. Field elements and scalars are six 64-bit words in Montgomery \
-      form, multiplied by word-by-word Montgomery multiplication (CIOS) with a final \
-      conditional subtraction. `[k]G` is a double-and-add ladder over all 384 bits of `k`, \
-      with the complete addition formulas of Renes, Costello and Batina for every addition \
-      and doubling and a masked selection for each bit; the inversions modulo `p` and `n` are \
-      Fermat's, by square-and-always-multiply over the bits of `p - 2` and `n - 2`. The \
-      signature (or zeros) is selected by a mask, so the time depends only on the pointers."])
+      registers in `scratch`. Field elements and scalars are six 64-bit words in Montgomery form, \
+      multiplied by word-by-word Montgomery multiplication (CIOS) with a final conditional \
+      subtraction. `[k]G` is a fixed-base comb of 7-bit signed digits: the 55 windows `k_j` of \
+      `k`'s bits as digits `k_j - 64` from `-64` to `63`, `[k]G = [64 Σ 2^(7j)]G + Σ [(k_j - 64) \
+      2^(7j)]G`, from 55 tables of `[m 2^(7j)]G` (`m = 1 … 64`, affine, in Montgomery form) in the \
+      static `VG_P384_COMB` (330 KB), with no doublings: each entry is selected in constant time \
+      by loading every entry of its table, 16 bytes at a time, and keeping (`pand`, `por`) the one \
+      of the digit's magnitude (or the point at infinity for a zero digit), negated by a mask of \
+      its sign, and added by the complete addition formulas of Renes, Costello and Batina; the \
+      inversions modulo `p` and `n` are Fermat's, by square-and-always-multiply over the bits of \
+      `p - 2` and `n - 2`. The signature (or zeros) is selected by a mask, so the time depends \
+      only on the pointers."])
+    consts := Impl.Ecdsa.X86_64.p384.combConsts
     code := Impl.Ecdsa.X86_64.signP384
-    contract := Spec.Ecdsa.P384.inst.signContract X86_64.abi
-    verified := Proof.Ecdsa.X86_64.P384.sign_verified h.law
+    contract := Spec.Ecdsa.P384.inst.signContract
+      (X86_64.abi.withConsts Impl.Ecdsa.X86_64.p384.combConsts)
+    verified := Proof.Ecdsa.X86_64.P384.sign_verified h.law (Proof.P384.combOk7 h.law)
     spSafe := Code.all_of_allInstrs (by lit_decide) },
   { Spec.Ecdsa.P384.verifyApi with
     target := X86_64.target
     doc := Spec.Ecdsa.P384.verifyApi.doc (notes := ["The function is `vg_ecdsa_p384_sign`'s setup, \
-      field arithmetic, ladder and inversions, with `vg_ecdh_p384`'s checks of the public key: it \
-      saves its caller's callee-saved registers in `scratch`; field elements and scalars are six \
-      64-bit words in Montgomery form, multiplied by word-by-word Montgomery multiplication \
-      (CIOS) with a final conditional subtraction. The key is checked without branches (its \
-      first byte, both coordinates below `p`, and the curve's equation), and the second ladder \
-      multiplies the key's point if it is valid, else `G`, so it always runs on a point of the \
-      curve. `s⁻¹` modulo `n` and `Z⁻¹` are Fermat's, by square-and-always-multiply; `[u]G` and \
-      `[v]Q` are double-and-add ladders over all 384 bits of `u` and `v`, with the complete \
-      addition formulas of Renes, Costello and Batina, which also add the two. The result is \
-      the conjunction of the checks (the key, `r` and `s` in `[1, n-1]`, the sum not the point \
-      at infinity, and `x ≡ r` modulo `n`) as a mask, so the time depends only on the pointers, \
-      although the contract would let every input affect it."])
+      field arithmetic, comb, ladder and inversions, with `vg_ecdh_p384`'s checks of the public \
+      key: it saves its caller's callee-saved registers in `scratch`; field elements and scalars \
+      are six 64-bit words in Montgomery form, multiplied by word-by-word Montgomery \
+      multiplication (CIOS) with a final conditional subtraction. The key is checked without \
+      branches (its first byte, both coordinates below `p`, and the curve's equation), and the \
+      ladder multiplies the key's point if it is valid, else `G`, so it always runs on a point of \
+      the curve. `s⁻¹` modulo `n` and `Z⁻¹` are Fermat's, by square-and-always-multiply; `[u]G` is \
+      the signature's comb over the 7-bit windows of `u` (from the static `VG_P384_COMB`), and \
+      `[v]Q` a double-and-add ladder over all 384 bits of `v`, with the complete addition formulas \
+      of Renes, Costello and Batina, which also add the two. The result is the conjunction of the \
+      checks (the key, `r` and `s` in `[1, n-1]`, the sum not the point at infinity, and `x ≡ r` \
+      modulo `n`) as a mask, so the time depends only on the pointers, although the contract would \
+      let every input affect it."])
+    consts := Impl.Ecdsa.X86_64.p384.combConsts
     code := Impl.Ecdsa.Verify.X86_64.verifyP384
-    contract := Spec.Ecdsa.P384.inst.verifyContract X86_64.abi
-    verified := Proof.Ecdsa.Verify.X86_64.P384.verify_verified h.law
+    contract := Spec.Ecdsa.P384.inst.verifyContract
+      (X86_64.abi.withConsts Impl.Ecdsa.X86_64.p384.combConsts)
+    verified := Proof.Ecdsa.Verify.X86_64.P384.verify_verified h.law (Proof.P384.combOk7 h.law)
     spSafe := Code.all_of_allInstrs (by lit_decide) }]
 
 end VG.Generic.P384.X86_64.EcdsaP384

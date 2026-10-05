@@ -1,4 +1,4 @@
-import VerifiedGarbage.Impl.Weierstrass.X86_64
+import VerifiedGarbage.Impl.Weierstrass.X86_64.TComb
 import VerifiedGarbage.Spec.Weierstrass
 import VerifiedGarbage.Spec.Ecdsa
 
@@ -18,7 +18,9 @@ scratch = r8) -> eax`, for a curve whose field elements and scalars are `n`
    Montgomery form, `R² mod n`, and the exponents `p - 2` and `n - 2`) are
    stored as immediates;
 2. the bits of `k`, `p - 2` and `n - 2` are expanded into tables;
-3. `R = [k]G` by the ladder from `R = O = (0 : 1 : 0)`, then
+3. `R = [k]G` by the fixed-base comb from the curve's tables in a `static`
+   (`Impl/Weierstrass/X86_64/TComb.lean`), for a curve that has them, else
+   by the ladder from `R = O = (0 : 1 : 0)`, then
    `x = X Z^(p-2)` (Montgomery's form left by a multiplication by 1) and
    `r = x mod n` (a conditional subtraction, as `x < p < 2n`);
 4. `s = k^(n-2) (e + r d) mod n`, in Montgomery form modulo `n`, then left;
@@ -92,13 +94,27 @@ def FLAG := 44
 /-- The number of slots. -/
 def nslots := 45
 
-/-- The table of the bits of `k` (`j = 0`), `p - 2` (1) and `n - 2` (2). -/
-def bitsAt (n j : Nat) : Nat := slot n nslots + 64 * n * j
+/-- The table of the bits of `k` (`j = 0`), `p - 2` (1) and `n - 2` (2): `64 n`
+bytes each, and a word of zeros past them that the comb's last digit may
+read. -/
+def bitsAt (n j : Nat) : Nat := slot n nslots + (64 * n + 8) * j
 
-/-- A curve as the code has it: `n` words, and its parameters. -/
+/-- A fixed-base comb for `G`: its digits' width `w`, its tables
+(`tbl[j][m - 1]` is `[m 2^(w j)]G`, affine, for `j < combJ` and
+`m = 1 … 2^(w-1)`), its starting point `[2^(w-1) Σ_j 2^(wj)]G`, and the
+name of the `static` holding the tables (`Artifact.consts`). -/
+structure CombData where
+  w : Nat
+  tbl : List (List (Nat × Nat))
+  start : Nat × Nat
+  tsym : String
+
+/-- A curve as the code has it: `n` words, its parameters, and the comb for
+`G`, if it has one (else `[k]G` is by the ladder). -/
 structure Cfg where
   n : Nat
   C : Spec.Weierstrass.Curve
+  comb : Option CombData := none
 
 namespace Cfg
 
@@ -132,6 +148,43 @@ def ladderCfg : LadderCfg where
   T := c.pt TX TY TZ
   bits := bitsAt c.n 0
   nbits := 64 * c.n
+
+/-- The comb's digits: `combJ` of `w` bits cover the scalar's `64 n`. -/
+def combJ (w : Nat) : Nat := (64 * c.n + w - 1) / w
+
+/-- The comb for `[k]G`, into `R`, from the table of the bits of `k` and the
+curve's tables of constants, the `static` `d.tsym` (`Artifact.consts`). -/
+def combCfg (d : CombData) : TCombCfg where
+  M := c.MP'
+  S := c.rcbSlots
+  A := c.pt RX RY RZ
+  E := c.pt TX TY TZ
+  D := c.pt DX DY DZ
+  neg := c.sl PT
+  zero := c.sl ZERO
+  bits := bitsAt c.n 0
+  kbytes := 64 * c.n
+  tsym := d.tsym
+  w := d.w
+  J := c.combJ d.w
+  start := (c.mont d.start.1, c.mont d.start.2)
+  one := c.mont 1
+
+/-- The comb's tables, in memory (`Artifact.consts`). -/
+def combWords (d : CombData) : List (BitVec 64) := tcombWords c.n c.R c.C.p d.tbl
+
+/-- The tables of constants of the functions that run the comb
+(`Artifact.consts`): none without one. -/
+def combConsts : List (String × List (BitVec 64)) :=
+  match c.comb with
+  | some d => [(d.tsym, c.combWords d)]
+  | none => []
+
+/-- `R = [k]G`, from the table of the bits of `k`: by the comb, or the ladder. -/
+def gMul : Prog isa :=
+  match c.comb with
+  | some d => TCombCfg.comb (c.combCfg d)
+  | none => ladder c.ladderCfg
 
 def powP : PowCfg := ⟨c.MP', c.sl ACC, c.sl PT, c.sl RZ, c.sl ONEP, bitsAt c.n 1, 64 * c.n⟩
 def powN : PowCfg := ⟨c.MN', c.sl ACC, c.sl PT, c.sl KM, c.sl ONEN, bitsAt c.n 2, 64 * c.n⟩
@@ -224,7 +277,7 @@ def sign : Prog isa :=
   .seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n)) <|
   .seq (bits (c.sl EXPP) (bitsAt c.n 1) (8 * c.n)) <|
   .seq (bits (c.sl EXPN) (bitsAt c.n 2) (8 * c.n)) <|
-  .seq (ladder c.ladderCfg) <|
+  .seq c.gMul <|
   .seq (pow c.powP) <|
   .seq c.middle <|
   .seq (pow c.powN) c.scalar

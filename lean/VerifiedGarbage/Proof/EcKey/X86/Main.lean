@@ -53,13 +53,13 @@ structure OpsPost (c : Cfg) (base : Addr) (s s' : State) : Prop where
 
 /-- The four field operations of `middle`. -/
 theorem pkOps_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size)
-    (hMP : ModOk c.MP' size c.C.p s.mem base) (hacc : sv c base s ACC < c.C.p) (hone : sv c base s ONE = 1)
+    (hMP : ModOkW c.MP' size c.C.p s.mem base) (hacc : sv c base s ACC < c.C.p) (hone : sv c base s ONE = 1)
     {rest : Prog isa} {Q : State → Prop} (h : ∀ s', OpsPost c base s s' → WP isa rest s' Q) :
     WP isa (.seq (mul c.MP' c.wk (c.sl XM) (c.sl RX) (c.sl ACC))
       (.seq (mul c.MP' c.wk (c.sl X) (c.sl XM) (c.sl ONE))
       (.seq (mul c.MP' c.wk (c.sl YM) (c.sl RY) (c.sl ACC))
       (.seq (mul c.MP' c.wk (c.sl Y) (c.sl YM) (c.sl ONE)) rest)))) s Q := by
-  have h7 := hc.n7
+  have h7 := hc.n10
   have hn := hs.nowrap
   have hpR := unitMod_pow_two hc.p_odd (64 * c.n)
   have hp3 := hc.p_ge
@@ -123,22 +123,22 @@ theorem middle_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State} (hs : 
     (F : Fixed c base s₀.gpr s.mem) (hacc : sv c base s ACC < c.C.p) (hflag : flagW c base s = BitVec.allOnes 32)
     (hwhole : Unch base [(0, size)] s₀.mem s.mem) (hesp : s.gpr .esp = s₀.gpr .esp) (hrd : s.rd = s₀.rd)
     (hwr : s.wr = s₀.wr) (hin : InRegions (s₀.rd ++ s₀.wr) (argAddr s₀ 0) 4)
-    (hdarg : Region.Disjoint ⟨argAddr s₀ 0, 4⟩ ⟨base, size⟩) (hofit : (arg s₀ 0).toNat + (1 + 16 * c.n) ≤ 2 ^ 32)
-    (hw : (⟨ptr s₀ 0, 1 + 16 * c.n⟩ : Region) ∈ s₀.wr)
-    (hd : Region.Disjoint ⟨ptr s₀ 0, 1 + 16 * c.n⟩ ⟨base, size⟩) :
+    (hdarg : Region.Disjoint ⟨argAddr s₀ 0, 4⟩ ⟨base, size⟩) (hofit : (arg s₀ 0).toNat + (1 + 2 * c.C.len) ≤ 2 ^ 32)
+    (hw : (⟨ptr s₀ 0, 1 + 2 * c.C.len⟩ : Region) ∈ s₀.wr)
+    (hd : Region.Disjoint ⟨ptr s₀ 0, 1 + 2 * c.C.len⟩ ⟨base, size⟩) :
     WP isa (Impl.EcKey.X86.Cfg.middle c) s fun s' => ∃ xv yv, xv < c.C.p ∧
       Fin.ofNat c.C.p xv =
         toM c.C.p (2 ^ (64 * c.n)) (sv c base s RX) * toM c.C.p (2 ^ (64 * c.n)) (sv c base s ACC) ∧
       yv < c.C.p ∧ Fin.ofNat c.C.p yv =
         toM c.C.p (2 ^ (64 * c.n)) (sv c base s RY) * toM c.C.p (2 ^ (64 * c.n)) (sv c base s ACC) ∧
-      Spec.Ecdsa.bytesAt s'.mem (ptr s₀ 0) (1 + 16 * c.n) =
-        (if ok c base s then 4 :: (toBytes (8 * c.n) xv ++ toBytes (8 * c.n) yv)
-          else List.replicate (1 + 16 * c.n) 0) ∧
+      Spec.Ecdsa.bytesAt s'.mem (ptr s₀ 0) (1 + 2 * c.C.len) =
+        (if ok c base s then 4 :: (toBytes c.C.len xv ++ toBytes c.C.len yv)
+          else List.replicate (1 + 2 * c.C.len) 0) ∧
       s'.gpr .eax = (if ok c base s then 1 else 0) ∧
       (∀ rd ∈ Cfg.saved, s'.gpr rd.1 = s₀.gpr rd.1) ∧ s'.gpr .esp = s₀.gpr .esp ∧
-      ∃ m, Unch base [(0, size)] s₀.mem m ∧ Outside (ptr s₀ 0) 0 (1 + 16 * c.n) m s'.mem := by
+      ∃ m, Unch base [(0, size)] s₀.mem m ∧ Outside (ptr s₀ 0) 0 (1 + 2 * c.C.len) m s'.mem := by
   have h0 := hc.n0
-  have h7 := hc.n7
+  have h7 := hc.n10
   have hn := hs.nowrap
   have hf : c.sl FLAG + 4 ≤ size := by have := sl_le c h7 (i := FLAG) (by decide); omega
   rw [middle_eq]
@@ -178,21 +178,21 @@ theorem middle_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State} (hs : 
         s₆.mem, W₆, Oout⟩
   rw [bytes, e₆ (i := X) (by decide) (by decide), e₆ (i := Y) (by decide) (by decide)]
 
-/-- The arguments: `out` (`1 + 16 n` bytes), `d` (`8 n` bytes) and `scratch`,
+/-- The arguments: `out` (`1 + 2 len` bytes), `d` (`len` bytes) and `scratch`,
 readable and writable as the contract says and apart from each other as it
 says. -/
 structure PkPre (c : Cfg) (s : State) : Prop where
-  rd : s.rd = [⟨ptr s 1, 8 * c.n⟩, ⟨argAddr s 0, 12⟩]
-  wr : s.wr = [⟨ptr s 0, 1 + 16 * c.n⟩, ⟨ptr s 2, size⟩]
-  out_sc : Region.Disjoint ⟨ptr s 0, 1 + 16 * c.n⟩ ⟨ptr s 2, size⟩
-  out_d : Region.Disjoint ⟨ptr s 0, 1 + 16 * c.n⟩ ⟨ptr s 1, 8 * c.n⟩
-  d_sc : Region.Disjoint ⟨ptr s 1, 8 * c.n⟩ ⟨ptr s 2, size⟩
-  args_out : Region.Disjoint ⟨argAddr s 0, 12⟩ ⟨ptr s 0, 1 + 16 * c.n⟩
+  rd : s.rd = [⟨ptr s 1, c.C.len⟩, ⟨argAddr s 0, 12⟩]
+  wr : s.wr = [⟨ptr s 0, 1 + 2 * c.C.len⟩, ⟨ptr s 2, size⟩]
+  out_sc : Region.Disjoint ⟨ptr s 0, 1 + 2 * c.C.len⟩ ⟨ptr s 2, size⟩
+  out_d : Region.Disjoint ⟨ptr s 0, 1 + 2 * c.C.len⟩ ⟨ptr s 1, c.C.len⟩
+  d_sc : Region.Disjoint ⟨ptr s 1, c.C.len⟩ ⟨ptr s 2, size⟩
+  args_out : Region.Disjoint ⟨argAddr s 0, 12⟩ ⟨ptr s 0, 1 + 2 * c.C.len⟩
   args_sc : Region.Disjoint ⟨argAddr s 0, 12⟩ ⟨ptr s 2, size⟩
-  ret_out : Region.Disjoint ⟨(s.gpr .esp).setWidth 64, 4⟩ ⟨ptr s 0, 1 + 16 * c.n⟩
+  ret_out : Region.Disjoint ⟨(s.gpr .esp).setWidth 64, 4⟩ ⟨ptr s 0, 1 + 2 * c.C.len⟩
   ret_sc : Region.Disjoint ⟨(s.gpr .esp).setWidth 64, 4⟩ ⟨ptr s 2, size⟩
-  out_fit : (arg s 0).toNat + (1 + 16 * c.n) ≤ 2 ^ 32
-  d_fit : (arg s 1).toNat + 8 * c.n ≤ 2 ^ 32
+  out_fit : (arg s 0).toNat + (1 + 2 * c.C.len) ≤ 2 ^ 32
+  d_fit : (arg s 1).toNat + c.C.len ≤ 2 ^ 32
   sc_fit : (arg s 2).toNat + size ≤ 2 ^ 32
   sp_fit : (s.gpr .esp).toNat + 16 ≤ 2 ^ 32
 
@@ -200,15 +200,16 @@ theorem idx_publicKey {i : Nat} (hi : i ∈ Args.publicKey.idx) : i < 3 := by
   simp only [Args.idx, List.mem_cons, List.not_mem_nil, or_false] at hi
   omega
 
-theorem PkPre.setup {s : State} (hp : PkPre c s) (h7 : c.n < 7) : SetupPre c Args.publicKey s where
+theorem PkPre.setup {s : State} (hp : PkPre c s) : SetupPre c Args.publicKey s where
+  shift := .inl rfl
   wr := by rw [hp.wr]; simp
   arg_in := fun i hi => ⟨_, by rw [hp.rd]; simp, arg_containsN (k := 3) (by have := hp.sp_fit; omega)
     (idx_publicKey hi)⟩
   arg_sc := fun i hi => hp.args_sc.sub_left (arg_subN (k := 3) (by have := hp.sp_fit; omega) (idx_publicKey hi))
   sp_fit := fun i hi => by have := idx_publicKey hi; have := hp.sp_fit; omega
-  k_in := inRegions_words (by rw [hp.rd]; simp) (by omega)
-  d_in := inRegions_words (by rw [hp.rd]; simp) (by omega)
-  e_in := inRegions_words (by rw [hp.rd]; simp) (by omega)
+  k_in := inRegions_words (by rw [hp.rd]; simp) (by have := hp.d_fit; omega)
+  d_in := inRegions_words (by rw [hp.rd]; simp) (by have := hp.d_fit; omega)
+  e_in := inRegions_words (by rw [hp.rd]; simp) (by have := hp.d_fit; omega)
   k_sc := hp.d_sc
   d_sc := hp.d_sc
   e_sc := hp.d_sc
@@ -218,23 +219,23 @@ theorem PkPre.setup {s : State} (hp : PkPre c s) (h7 : c.n < 7) : SetupPre c Arg
   sc_fit := hp.sc_fit
 
 /-- The private key. -/
-abbrev dk (c : Cfg) (s₀ : State) : Nat := ofBytes (Spec.Ecdsa.bytesAt s₀.mem (ptr s₀ 1) (8 * c.n))
+abbrev dk (c : Cfg) (s₀ : State) : Nat := ofBytes (Spec.Ecdsa.bytesAt s₀.mem (ptr s₀ 1) (c.C.len))
 
 /-- The result the contract asks for: the specification's public key of `d`,
 `04 ‖ x ‖ y`, and `1`, or zeros and `0`. -/
 def PkPost (c : Cfg) (s₀ s' : State) : Prop :=
   match Spec.EcKey.publicKey c.C (dk c s₀) with
   | some (.affine x y) => s'.gpr .eax = 1 ∧
-      Spec.Ecdsa.bytesAt s'.mem (ptr s₀ 0) (1 + 16 * c.n) = Spec.EcKey.encodePoint (.affine x y)
+      Spec.Ecdsa.bytesAt s'.mem (ptr s₀ 0) (1 + 2 * c.C.len) = Spec.EcKey.encodePoint (.affine x y)
   | _ => s'.gpr .eax = 0 ∧
-      Spec.Ecdsa.bytesAt s'.mem (ptr s₀ 0) (1 + 16 * c.n) = List.replicate (1 + 16 * c.n) 0
+      Spec.Ecdsa.bytesAt s'.mem (ptr s₀ 0) (1 + 2 * c.C.len) = List.replicate (1 + 2 * c.C.len) 0
 
 /-- What the function keeps: the callee-saved registers, `esp`, and memory
 but the working space and `out`. -/
 structure PkKeep (c : Cfg) (s₀ s' : State) : Prop where
   saved : ∀ rd ∈ Cfg.saved, s'.gpr rd.1 = s₀.gpr rd.1
   esp : s'.gpr .esp = s₀.gpr .esp
-  frame : ∃ m : Mem, Unch (ptr s₀ 2) [(0, size)] s₀.mem m ∧ Outside (ptr s₀ 0) 0 (1 + 16 * c.n) m s'.mem
+  frame : ∃ m : Mem, Unch (ptr s₀ 2) [(0, size)] s₀.mem m ∧ Outside (ptr s₀ 0) 0 (1 + 2 * c.C.len) m s'.mem
 
 theorem publicKey_eq' (c : Cfg) : Impl.EcKey.X86.Cfg.publicKey c =
     .seq (.seq (.block (c.setupWith Args.publicKey)) (.seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n))
@@ -248,14 +249,14 @@ theorem publicKey_ok (hc : CfgOk c) (hC : Law c.C) {s₀ : State} (hp : PkPre c 
     WP isa (Impl.EcKey.X86.Cfg.publicKey c) s₀ fun s' => PkKeep c s₀ s' ∧ PkPost c s₀ s' := by
   have hpR := unitMod_pow_two hc.p_odd (64 * c.n)
   rw [publicKey_eq']
-  refine WP.seq (stage₁ hc (hp.setup hc.n7) fun _ S₁ => stage₂ hc hC S₁ fun s₂ S₂ => WP.block_nil ?_)
+  refine WP.seq (stage₁ hc hp.setup fun _ S₁ => stage₂ hc hC S₁ fun s₂ S₂ => WP.block_nil ?_)
   have h3 : (s₀.gpr .esp).toNat + 4 + 4 * 3 ≤ 2 ^ 32 := by have := hp.sp_fit; omega
   refine WP.mono (middle_ok hc S₂.scr S₂.fixed S₂.acc_lt S₂.flag S₂.whole S₂.esp S₂.rd S₂.wr
     ⟨_, by rw [hp.rd]; simp, arg_containsN h3 (by decide)⟩ (hp.args_sc.sub_left (arg_subN h3 (by decide)))
     hp.out_fit (by rw [hp.wr]; simp) hp.out_sc)
     fun s' ⟨xv, yv, hxl, hx, hyl, hy, bytes, rax, saved, esp, frame⟩ => ⟨⟨saved, esp, frame⟩, ?_⟩
   -- The specification.
-  have hD : sv c (ptr s₀ 2) s₂ D = dk c s₀ := S₂.d
+  have hD : sv c (ptr s₀ 2) s₂ D = dk c s₀ := by rw [S₂.d, dv_eq (A := Args.publicKey) rfl]
   have hR := S₂.rep
   have hxX : Fin.ofNat c.C.p xv = tmv c.C c.n (ptr s₀ 2) s₂ (c.sl RX) *
       tmv c.C c.n (ptr s₀ 2) s₂ (c.sl RZ) ^ (c.C.p - 2) := by rw [hx, S₂.acc]
@@ -263,7 +264,8 @@ theorem publicKey_ok (hc : CfgOk c) (hC : Law c.C) {s₀ : State} (hp : PkPre c 
       tmv c.C c.n (ptr s₀ 2) s₂ (c.sl RZ) ^ (c.C.p - 2) := by rw [hy, S₂.acc]
   have hz := toM_eq_zero_iff hpR (x := sv c (ptr s₀ 2) s₂ RZ) S₂.rz_lt
   unfold PkPost
-  rw [publicKey_eq hC hR hxl hxX hyl hyY]
+  have hdk : dk c s₀ = kv c Args.publicKey s₀ := (kv_eq (A := Args.publicKey) rfl).symm
+  rw [hdk, publicKey_eq hC hR hxl hxX hyl hyY, ← hdk]
   by_cases hd : 1 ≤ dk c s₀ ∧ dk c s₀ < c.C.n
   · rw [ite_eq_left_of_eq_true _ _ (eq_true hd)]
     by_cases h0 : sv c (ptr s₀ 2) s₂ RZ = 0
@@ -275,7 +277,7 @@ theorem publicKey_ok (hc : CfgOk c) (hC : Law c.C) {s₀ : State} (hp : PkPre c 
       refine ⟨by rw [rax, hok]; rfl, ?_⟩
       rw [bytes, hok]
       show _ = 4 :: (toBytes c.C.len xv ++ toBytes c.C.len yv)
-      rw [hc.len]; rfl
+      rfl
   · have hok : ok c (ptr s₀ 2) s₂ = false := decide_eq_false (by rw [hD]; omega)
     rw [ite_eq_right_of_eq_false _ _ (eq_false hd)]
     exact ⟨by rw [rax, hok]; rfl, by rw [bytes, hok]; rfl⟩

@@ -23,16 +23,16 @@ theorem core_nosp (P : RfcHash) : NoSp P.R.coreC := Proof.Pbkdf2.Md.X86_64.nosp_
 abbrev coreSig (P : RfcHash) {dn : Nat} (L : Lay dn) (m : Mem) : Option (Nat × Nat) :=
   coreSigOf P.R.E m L.d (dgArg P L) (kArg P L)
 
-/-- `core` reads the private key, the digest and `k`, `Q` bytes each. -/
+/-- `core` reads the private key, the digest and `k`, `Q` bytes each, and the comb's tables. -/
 abbrev coreRd (P : RfcHash) {dn : Nat} (L : Lay dn) : List Region :=
-  [⟨L.d, P.Q⟩, ⟨dgArg P L, P.Q⟩, ⟨kArg P L, P.Q⟩]
+  [⟨L.d, P.Q⟩, ⟨dgArg P L, P.Q⟩, ⟨kArg P L, P.Q⟩] ++ L.TBLs
 abbrev coreWr (P : RfcHash) {dn : Nat} (L : Lay dn) : List Region := [⟨L.out, 2 * P.Q⟩, L.SCR]
 
 /-- What `core`'s digest and `k` need of the layout: unless two `V`s make a
 candidate, the digest has `Q` bytes; if they do, the frame has the words
-above its pointers. -/
+above its pointers; and the tables are the comb's. -/
 def CoreOk (P : RfcHash) {dn : Nat} (L : Lay dn) : Prop :=
-  L.q = P.Q ∧ (P.R.wide = false → P.Q ≤ dn) ∧ L.e = P.e
+  L.q = P.Q ∧ (P.R.wide = false → P.Q ≤ dn) ∧ L.e = P.e ∧ L.cs = P.R.E.combConsts
 
 /-- `core`'s digest and `k`: in the digest or the frame, apart from `out`,
 `scratch` and the return address of a call from the frame. -/
@@ -51,7 +51,7 @@ theorem coreArg_ok (hL : L.Ok) (hk : CoreOk P L) {x : Addr} (hx : x = dgArg P L 
     · exact ⟨⟨L.FR, by simp, within_fr _ (by omega) (by omega)⟩, (hL.stk_OUT (by omega)),
         hL.stk_SCR (by omega), Offset.disjoint _ (by omega) (by omega) (by omega)⟩
   · obtain ⟨hw9, hQ66, -, -⟩ := P.sizesW hw
-    have he : L.e = 18 := by rw [hk.2.2]; simp only [RfcHash.e, hw, ite_true]
+    have he : L.e = 18 := by rw [hk.2.2.1]; simp only [RfcHash.e, hw, ite_true]
     simp only [dgArg, kArg, hw, ite_true] at hx
     rcases hx with rfl | rfl
     · exact ⟨⟨L.FR, by simp, within_fr _ (by omega) (by omega)⟩, (hL.stk_OUT (by omega)),
@@ -82,6 +82,33 @@ theorem ce_bytesAt {t : State} (hc : Ctx L g m₀ t) {p : Addr} {n : Nat}
     have e : L.B + BitVec.ofNat 64 24 - BitVec.ofNat 64 8 = L.B + BitVec.ofNat 64 16 := by bv_omega
     simpa [below, e] using ha
 
+/-- The comb's tables, at the addresses the state gives their statics. -/
+theorem Ctx.tbls (hk : CoreOk P L) {t : State} (hc : Ctx L g m₀ t) :
+    Abi.constRegions (fun n => t.syms n) P.R.E.combConsts = L.TBLs := by
+  rw [Lay.TBLs, ← hk.2.2.2]; exact constRegions_congr hc.sy
+
+/-- The comb's tables, as on entry, on entry to a call from the frame. -/
+theorem tbl_held (hL : L.Ok) (hk : CoreOk P L) {t : State} (hc : Ctx L g m₀ t) :
+    Abi.constsHeld t.callEntry.mem (fun n => t.syms n) P.R.E.combConsts := fun c hc' i hi => by
+  have hcs : c ∈ L.cs := by rw [hk.2.2.2]; exact hc'
+  show t.callEntry.mem.readW (t.syms c.1 + BitVec.ofNat 64 (8 * i)) 64 = c.2.getD i 0
+  rw [hc.sy c hcs]
+  obtain ⟨hn, tO, tS, tK⟩ := hL.tbl ⟨L.sy c.1, 8 * c.2.length⟩
+    (List.mem_map_of_mem (f := fun c => (⟨L.sy c.1, 8 * c.2.length⟩ : Region)) hcs)
+  simp only at hn
+  have hce : Frame [below (t.gpr .rsp) 8] t.mem t.callEntry.mem :=
+    Frame.writeW (Frame.refl _ _) (List.mem_singleton_self _) _ (below_call _ (by omega) (by omega))
+  have hf : Frame [L.OUT, L.SCR, L.STK] m₀ t.callEntry.mem := hc.frame.trans (hce.sub fun r hr => by
+    simp only [List.mem_singleton] at hr; subst hr
+    exact ⟨L.STK, by simp, (hc.below_sub (n := 8) (by omega)).trans (Region.sub_prefix (by omega))⟩)
+  rw [hf.readW (r := ⟨L.sy c.1, 8 * c.2.length⟩) (Offset.contains_base _ (by omega) (by omega)) (fun r hr => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl
+    · exact tO
+    · exact tS
+    · exact tK) (by decide)]
+  exact hc.held c hcs i hi
+
 theorem core_pre (hL : L.Ok) (hk : CoreOk P L) {t : State} (hc : Ctx L g m₀ t)
     (hdi : t.gpr .rdi = L.out) (hsi : t.gpr .rsi = L.d) (hdx : t.gpr .rdx = dgArg P L) (hcx : t.gpr .rcx = kArg P L)
     (h8 : t.gpr .r8 = L.scr) :
@@ -93,25 +120,41 @@ theorem core_pre (hL : L.Ok) (hk : CoreOk P L) {t : State} (hc : Ctx L g m₀ t)
   have no : L.out.toNat + 2 * P.R.E.C.len ≤ 2 ^ 64 := by have := hL.no; rw [hq] at this; omega
   obtain ⟨-, gO, gS, gR⟩ := coreArg_ok hL hk (.inl rfl)
   obtain ⟨-, kO, kS, -⟩ := coreArg_ok hL hk (.inr rfl)
-  simp only [coreK, coreRd, coreWr, eD, eO, ce_gpr _ _ _ (by decide : Reg.rdi ≠ .rsp),
+  have ht := hc.tbls hk
+  have hT : ∀ T ∈ Abi.constRegions (fun n => t.syms n) P.R.E.combConsts, T.base.toNat + T.len ≤ 2 ^ 64 ∧
+      ∀ r ∈ [L.OUT, L.SCR, ⟨L.B + BitVec.ofNat 64 16, 8⟩], T.Disjoint r := fun T hT => by
+    rw [ht] at hT
+    obtain ⟨hn, tO, tS, tK⟩ := hL.tbl T hT
+    refine ⟨hn, fun r hr => ?_⟩
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl
+    · exact tO
+    · exact tS
+    · exact tK.sub_right (Offset.sub_base _ (by omega))
+  simp only [coreK, TblsOk, coreRd, coreWr, eD, eO, ce_gpr _ _ _ (by decide : Reg.rdi ≠ .rsp),
     ce_gpr _ _ _ (by decide : Reg.rsi ≠ .rsp), ce_gpr _ _ _ (by decide : Reg.rdx ≠ .rsp),
     ce_gpr _ _ _ (by decide : Reg.rcx ≠ .rsp), ce_gpr _ _ _ (by decide : Reg.r8 ≠ .rsp), hdi, hsi, hdx, hcx, h8,
     State.withRegions_rd, State.withRegions_wr, State.withRegions_gpr]
   rw [hret]
-  exact ⟨by triv, by triv, hL.oc, hL.od, gO.symm, kO.symm, hL.dc, gS, kS, (hL.stk_OUT (by omega)).symm.symm,
-    hL.stk_SCR (by omega), no, hL.nc⟩
+  exact ⟨(congrArg (fun x => [L.D, (⟨dgArg P L, P.Q⟩ : Region), ⟨kArg P L, P.Q⟩] ++ x) ht).symm, by triv, hL.oc,
+    hL.od, gO.symm, kO.symm, hL.dc, gS, kS, (hL.stk_OUT (by omega)).symm.symm, hL.stk_SCR (by omega), no, hL.nc,
+    tbl_held hL hk hc, hT⟩
 
 theorem core_covers (hk : CoreOk P L) (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) :
     Covers (coreRd P L ++ coreWr P L) (t.rd ++ t.wr) :=
-  hc.covers fun r hr => by
+  covers_of fun r hr => by
     have hq : L.q = P.Q := hk.1
-    simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl | rfl
-    · exact ⟨L.D, by simp, within_base _ (by omega)⟩
-    · exact (coreArg_ok hL hk (.inl rfl)).1
-    · exact (coreArg_ok hL hk (.inr rfl)).1
-    · exact ⟨L.OUT, by simp, within_base _ (by omega)⟩
-    · exact ⟨L.SCR, by simp, within_base _ (by omega)⟩
+    have m : ∀ {R}, R ∈ [L.D, L.DG, L.FR, L.OUT, L.SCR] → R ∈ t.rd ++ t.wr := fun h => by
+      rw [hc.rd, hc.wr]; exact Ctx.mem_regions h
+    simp only [coreRd, coreWr, List.cons_append, List.nil_append, List.mem_cons,
+      List.mem_append, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | hr | rfl | rfl
+    · exact ⟨L.D, m (by simp), within_base _ (by omega)⟩
+    · obtain ⟨R, hR, hw⟩ := (coreArg_ok hL hk (.inl rfl)).1; exact ⟨R, m hR, hw⟩
+    · obtain ⟨R, hR, hw⟩ := (coreArg_ok hL hk (.inr rfl)).1; exact ⟨R, m hR, hw⟩
+    · exact ⟨r, by rw [hc.rd]; simp [hr], 0, (BitVec.add_zero _).symm, by omega⟩
+    · exact ⟨L.OUT, m (by simp), within_base _ (by omega)⟩
+    · exact ⟨L.SCR, m (by simp), within_base _ (by omega)⟩
 
 theorem core_coversW (hq : L.q = P.Q) {t : State} (hc : Ctx L g m₀ t) : Covers (coreWr P L) t.wr :=
   hc.coversW fun r hr => by
@@ -138,11 +181,12 @@ theorem core_ok (hL : L.Ok) (hk : CoreOk P L) {t : State} (hc : Ctx L g m₀ t)
     congr 1; bv_omega
   have eW : coreWr P L = [L.OUT, L.SCR] := by
     simp only [coreWr, Lay.OUT, hq]
-  refine WP.call (k := coreK P.R.E) P.R.coreX (core_nosp P)
+  refine WP.of_syms (WP.call (k := coreK P.R.E) P.R.coreX (core_nosp P)
     (by rw [P.R.coreD]; decide) (core_pre hL hk hc hdi hsi hdx hcx h8)
-    (core_covers hk hL hc) (core_coversW hq hc) fun t' hrd hwr hcs hf _ ⟨s₂, hm, hg₂, hpost⟩ => ?_
+    (core_covers hk hL hc) (core_coversW hq hc) fun t' hrd hwr hcs hf _ ⟨s₂, hm, hg₂, hpost⟩ hsy => ?_)
   rw [hsp, eW] at hf
-  refine ⟨hc.keep hL hrd hwr (hcs .rsp (by decide)) (fun r hr _ => hcs r hr) hf fun r hr => ?_, hf, ?_⟩
+  refine ⟨hc.keep hL hrd hwr (hcs .rsp (by decide)) (fun r hr _ => hcs r hr) hf (hsy := hsy) fun r hr => ?_, hf,
+    ?_⟩
   · simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
     · exact .inl (sub_refl _)

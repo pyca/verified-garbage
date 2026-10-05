@@ -1,5 +1,6 @@
 import VerifiedGarbage.TCB.X86_64.Target
 import VerifiedGarbage.Proof.Weierstrass.Law
+import VerifiedGarbage.Proof.P256.Comb7
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Sha256
 
 /-!
@@ -15,6 +16,7 @@ features. Other hash functions emit no artifact here.
 The stack is 240 bytes: a 216-byte frame, and the 24 bytes below it that the
 calls use (`vg_ecdsa_p256_sign` only its return address).
 
+It reads the comb's tables of `vg_ecdsa_p256_sign`, the static `VG_P256_COMB`.
 It is generic over P-256's group law `h` too, the variant
 `Variants/P256/X86_64/Law.lean`.
 -/
@@ -33,12 +35,15 @@ def artifacts (v : Proof.Pbkdf2.Md.X86_64.MdHash) (h : Proof.Weierstrass.HasLaw 
       name := Spec.Ecdsa.Rfc6979.P256Sha256.signApi.name ++ c.suffix
       target := X86_64.target
       doc := Spec.Ecdsa.Rfc6979.P256Sha256.signApi.doc
-        (notes := [signNotes (cfgOf (pack h.law c)).H 32 Spec.Ecdsa.P256.signApi.name])
-      code := (cfgOf (pack h.law c)).sign
-      contract := Spec.Ecdsa.Rfc6979.P256Sha256.inst.signContract X86_64.abi 240
+        (notes := [signNotes (cfgOf (pack h.law (Proof.P256.combOk7 h.law) c)).H 32
+          Spec.Ecdsa.P256.signApi.name])
+      code := (cfgOf (pack h.law (Proof.P256.combOk7 h.law) c)).sign
+      consts := Impl.Ecdsa.X86_64.p256.combConsts
+      contract := Spec.Ecdsa.Rfc6979.P256Sha256.inst.signContract
+        (X86_64.abi.withConsts Impl.Ecdsa.X86_64.p256.combConsts) 240
       stack := 240
-      verified := sign_verified h.law c
-      spSafe := sign_spSafe (pack h.law c)
+      verified := sign_verified h.law (Proof.P256.combOk7 h.law) c
+      spSafe := sign_spSafe (pack h.law (Proof.P256.combOk7 h.law) c)
       features := c.features }]
 
 end VG.Generic.MdHash.P256.X86_64.EcdsaP256Sha256
