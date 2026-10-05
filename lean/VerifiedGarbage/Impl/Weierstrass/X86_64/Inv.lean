@@ -177,13 +177,12 @@ def sU : Nat := P.sT + 8 * (P.M.n + 2)
 def sCnt : Nat := P.sU + 8 * P.L
 def sC : Nat := P.sNF
 
-/-- `d = rbx = 1`, the count `B`; `f = p`, `g = x`, `a = 0`, `b = 1`. -/
+/-- `d = rbx = 1`, the count `B`; `f = p`, `g = x` (a zero word on top),
+`a = 0`, `b = 1`. -/
 def init : List Instr :=
   [.mov32 .rbx (.imm 1), .mov32 .rax (.imm (BitVec.ofNat 32 P.B)), .store (sc P.sCnt) .rax] ++
-  copy P.M.n P.sF P.M.mo ++ copy P.M.n P.sG P.base ++
-  zeroWords P.M.n P.sA ++ zeroWords P.M.n P.sB ++
-  [.store (sc (P.sF + 8 * P.M.n)) .r8, .store (sc (P.sG + 8 * P.M.n)) .r8,
-    .mov32 .r8 (.imm 1), .store (sc P.sB) .r8]
+  copy P.M.n P.sF P.M.mo ++ zeroTop P.sF P.M.n ++ copy P.M.n P.sG P.base ++ zeroTop P.sG P.M.n ++
+  zeroWords P.M.n P.sA ++ zeroWords P.M.n P.sB ++ [.mov32 .r8 (.imm 1), .store (sc P.sB) .r8]
 
 /-- A batch's start: the low words of `f`, `g` and the identity. -/
 def batchStart : List Instr :=
