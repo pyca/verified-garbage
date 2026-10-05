@@ -1054,7 +1054,7 @@ yours to keep:
 
 <td>✅ SHA512, AVX2, BMI1, BMI2</td>
 
-<td>❌</td>
+<td>✅ SHA extensions</td>
 
 <td>❌</td>
 
@@ -1203,6 +1203,22 @@ yours to keep:
 <td>✅</td>
 
 <td>✅ AVX-512 IFMA, AVX-512VL, AVX2, BMI2, ADX</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+</tr>
+
+<tr>
+
+<td>RSAES-PKCS1-v1_5 (implicit rejection)</td>
+
+<td>✅</td>
+
+<td>❌</td>
 
 <td>❌</td>
 
