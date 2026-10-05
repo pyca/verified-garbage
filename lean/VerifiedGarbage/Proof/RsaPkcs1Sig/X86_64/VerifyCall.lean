@@ -64,24 +64,27 @@ def callArgs : List Instr :=
 theorem pubArgs_eq : pubArgs = slotStores ++ callArgs := rfl
 
 /-- The frame's push and the slots. -/
-theorem slotStores_ok {s : State} (hp : PreV s) :
-    WP isa (.block slotStores) (allocState frameBytes s) fun t =>
-      Keep [] (allocState frameBytes s) t ∧ Outside (fb s) 0 frameBytes s.mem t.mem ∧
+theorem slotStores_ok {s A : State} (hp : PreV s) (hA : Keep [.rax] (allocState frameBytes s) A)
+    (hAm : A.mem = s.mem) :
+    WP isa (.block slotStores) A fun t =>
+      Keep [.rax] (allocState frameBytes s) t ∧ Outside (fb s) 0 frameBytes s.mem t.mem ∧
       word t.mem (fb s) oN = s.gpr .rdi ∧ word t.mem (fb s) oK = s.gpr .rsi ∧
       word t.mem (fb s) oE = s.gpr .rdx ∧ word t.mem (fb s) oEl = s.gpr .rcx ∧
       word t.mem (fb s) oH = s.gpr .r8 ∧ word t.mem (fb s) oD = s.gpr .r9 := by
   have hF := fb_toNat hp
-  set A := allocState frameBytes s with hA
-  have hsp : A.gpr .rsp = fb s := rfl
-  have hs : Scr A (fb s) frameBytes := Scr.of_mem (List.mem_cons_self ..) (by omega)
+  have hsp : A.gpr .rsp = fb s := hA.gpr (by decide)
+  have hs : Scr A (fb s) frameBytes := Scr.of_mem (by rw [hA.2.2]; exact List.mem_cons_self ..) (by omega)
+  have g : ∀ r, r ≠ .rsp → r ≠ .rax → A.gpr r = s.gpr r := fun r h h' => by
+    rw [hA.gpr (by simpa using h')]; simp [allocState_gpr, h]
   refine WP.mono (WP.keep [] (Q := fun t => t.mem =
       (((((s.mem.writeW (off (fb s) oN) (s.gpr .rdi)).writeW (off (fb s) oK) (s.gpr .rsi)).writeW
         (off (fb s) oE) (s.gpr .rdx)).writeW (off (fb s) oEl) (s.gpr .rcx)).writeW (off (fb s) oH)
         (s.gpr .r8)).writeW (off (fb s) oD) (s.gpr .r9)) (by
     xrun [slotStores, ea_sp, hsp, hs.st (d := oN) (by decide), hs.st (d := oK) (by decide),
       hs.st (d := oE) (by decide), hs.st (d := oEl) (by decide), hs.st (d := oH) (by decide),
-      hs.st (d := oD) (by decide)]
-    rfl) rfl) fun t ⟨hm, k⟩ => ⟨k, ?_, ?_⟩
+      hs.st (d := oD) (by decide), hAm, g .rdi (by decide) (by decide), g .rsi (by decide) (by decide),
+      g .rdx (by decide) (by decide), g .rcx (by decide) (by decide), g .r8 (by decide) (by decide),
+      g .r9 (by decide) (by decide)]) rfl) fun t ⟨hm, k⟩ => ⟨(hA.trans k).mono (by simp), ?_, ?_⟩
   · rw [hm]
     intro x hx
     have hx' : frameBytes ≤ ofs (fb s) x := by unfold frameBytes at hx ⊢; omega
@@ -94,7 +97,7 @@ theorem slotStores_ok {s : State} (hp : PreV s) :
     simp (disch := decide) only [word_wo, word_writeW_self, oN, oK, oE, oEl, oH, oD, and_self]
 
 /-- The arguments of `vg_rsa_public_checked`. -/
-theorem callArgs_ok {s t : State} (hp : PreV s) (hk : Keep [] (allocState frameBytes s) t)
+theorem callArgs_ok {s t : State} (hp : PreV s) (hk : Keep [.rax] (allocState frameBytes s) t)
     (ho : Outside (fb s) 0 frameBytes s.mem t.mem) :
     WP isa (.block callArgs) t fun t' => Keep [.rax, .rdi, .rdx, .rcx, .r8, .r9, .r10, .r11] t t' ∧
       t'.mem = (((t.mem.writeW (fb s) (stackArg s 1)).writeW (off (fb s) 8) (s.gpr .rsi)).writeW
@@ -106,8 +109,8 @@ theorem callArgs_ok {s t : State} (hp : PreV s) (hk : Keep [] (allocState frameB
   have hs : Scr t (fb s) frameBytes :=
     Scr.of_mem (by rw [hk.2.2]; exact List.mem_cons_self ..) (by omega)
   have hrd : t.rd = s.rd := hk.2.1
-  have g : ∀ r, r ≠ .rsp → t.gpr r = s.gpr r := fun r h => by
-    rw [hk.gpr (by simp)]; simp [allocState_gpr, h]
+  have g : ∀ r, r ≠ .rsp → r ≠ .rax → t.gpr r = s.gpr r := fun r h h' => by
+    rw [hk.gpr (by simpa using h')]; simp [allocState_gpr, h]
   have h0 : InRegions t.wr (fb s) 8 := by
     simpa only [off, BitVec.add_zero] using hs.st (d := 0) (by decide)
   refine WP.keep [.rax, .rdi, .rdx, .rcx, .r8, .r9, .r10, .r11] (by
@@ -120,7 +123,8 @@ theorem callArgs_ok {s t : State} (hp : PreV s) (hk : Keep [] (allocState frameB
       arg_outside hp ho (show 3 < 5 by decide), arg_outside hp ho (show 4 < 5 by decide),
       hs.st (d := 8) (by decide), hs.st (d := 16) (by decide), hs.st (d := 24) (by decide),
       sx_ofNat (show oEM1 < 2 ^ 31 by decide),
-      g .rsi (by decide), g .rdx (by decide), g .rcx (by decide), g .rdi (by decide)]) rfl |> fun h => WP.mono h fun t' ⟨q, k⟩ => ⟨k, q⟩
+      g .rsi (by decide) (by decide), g .rdx (by decide) (by decide), g .rcx (by decide) (by decide),
+      g .rdi (by decide) (by decide)]) rfl |> fun h => WP.mono h fun t' ⟨q, k⟩ => ⟨k, q⟩
 
 /-! ## The call -/
 

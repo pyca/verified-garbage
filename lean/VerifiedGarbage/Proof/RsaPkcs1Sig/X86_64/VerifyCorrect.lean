@@ -252,4 +252,159 @@ theorem afterPub_ok {s t : State} (hp : PreV s) (he : Env s t)
         simp only [setWidth_byte_eq_zero, VG.Proof.Ct.diff_zero, ← bytesAt_eq_iff, hm₅, hs₄.2.1, h1, h2]
         by_cases hq : em = em' <;> simp [hq]
 
+/-! ## The arguments and the frame -/
+
+theorem word_wo0 (m : Mem) (base : Addr) (v : BitVec 64) {d' : Nat} (h : 8 ≤ d') (hd' : d' + 8 ≤ 4096) :
+    word (m.writeW base v) base d' = word m base d' := by
+  have := word_wo m base v (d := 0) (d' := d') (.inl (by omega)) (by decide) hd'
+  simpa only [Bignum.X86_64.word, off, BitVec.add_zero] using this
+
+theorem word_self0 (m : Mem) (base : Addr) (v : BitVec 64) : word (m.writeW base v) base 0 = v := by
+  have := word_writeW_self m base 0 v
+  simpa only [off, BitVec.add_zero] using this
+
+/-- The frame's push and the arguments of the call. -/
+theorem pubArgs_ok {s A : State} (hp : PreV s) (hA : Keep [.rax] (allocState frameBytes s) A)
+    (hAm : A.mem = s.mem) :
+    WP isa (.block pubArgs) A fun t => Env s t ∧
+      word t.mem (fb s) 0 = stackArg s 1 ∧ word t.mem (fb s) 8 = s.gpr .rsi ∧
+      word t.mem (fb s) 16 = stackArg s 3 ∧ word t.mem (fb s) 24 = stackArg s 4 ∧
+      t.gpr .rdi = off (fb s) oEM1 ∧ t.gpr .rsi = s.gpr .rsi ∧ t.gpr .rdx = s.gpr .rdi ∧
+      t.gpr .rcx = s.gpr .rsi ∧ t.gpr .r8 = s.gpr .rdx ∧ t.gpr .r9 = s.gpr .rcx ∧
+      (∀ r ∈ calleeSaved, r ≠ .rsp → t.gpr r = s.gpr r) := by
+  have hF := fb_toNat hp
+  rw [pubArgs_eq, WP.block_append_iff]
+  refine WP.mono (slotStores_ok hp hA hAm) fun t₁ ⟨k₁, ho₁, hN, hK, hE, hEl, hH, hD⟩ => ?_
+  refine WP.mono (callArgs_ok hp k₁ ho₁) fun t ⟨k, hm, hdi, hsi, hdx, hcx, h8, h9⟩ => ?_
+  have k' := k₁.trans k
+  have hw : ∀ d, 32 ≤ d → d + 8 ≤ frameBytes → word t.mem (fb s) d = word t₁.mem (fb s) d := fun d hd hd' => by
+    unfold frameBytes at hd'
+    rw [hm, word_wo _ _ _ (d := 24) (.inl (by omega)) (by decide) (by omega),
+      word_wo _ _ _ (d := 16) (.inl (by omega)) (by decide) (by omega),
+      word_wo _ _ _ (d := 8) (.inl (by omega)) (by decide) (by omega), word_wo0 _ _ _ (by omega) (by omega)]
+  refine ⟨⟨(k'.gpr (by decide)).trans rfl, k'.2.1, k'.2.2, frame_of_outside ?_,
+      (hw _ (by decide) (by decide)).trans hN, (hw _ (by decide) (by decide)).trans hK,
+      (hw _ (by decide) (by decide)).trans hE, (hw _ (by decide) (by decide)).trans hEl,
+      (hw _ (by decide) (by decide)).trans hH, (hw _ (by decide) (by decide)).trans hD⟩, ?_, ?_, ?_, ?_,
+    hdi, hsi, hdx, hcx, h8, h9, fun r hr hr' => ?_⟩
+  · rw [hm]
+    intro x hx
+    have hx' : frameBytes ≤ ofs (fb s) x := by unfold frameBytes at hx ⊢; omega
+    unfold frameBytes at hx hx'
+    rw [writeW_outside _ _ _ (d := 24) (by omega) x (by omega), writeW_outside _ _ _ (d := 16) (by omega) x (by omega),
+      writeW_outside _ _ _ (d := 8) (by omega) x (by omega)]
+    have := writeW_outside t₁.mem (fb s) (stackArg s 1) (d := 0) (by omega) x (by omega)
+    simp only [off, BitVec.add_zero] at this
+    rw [this]; exact ho₁ x hx
+  · rw [hm]; simp (disch := decide) only [word_wo]; exact word_self0 _ _ _
+  · rw [hm]; simp (disch := decide) only [word_wo, word_writeW_self]
+  · rw [hm]; simp (disch := decide) only [word_wo, word_writeW_self]
+  · rw [hm]; exact word_writeW_self _ _ _ _
+  · rw [k'.gpr (by simp [calleeSaved] at hr ⊢; rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp_all)]
+    simp [allocState_gpr, hr']
+
+/-! ## The whole function -/
+
+/-- The state after the frame's pop, from the state `s₂` its body ends in. -/
+def freed (bytes : Nat) (s₂ : State) : State :=
+  { s₂.setReg .rsp (s₂.gpr .rsp + BitVec.ofNat 64 bytes) with wr := s₂.wr.tail }
+
+/-- The frame: its body runs from `allocState frameBytes s` and ends with
+`rsp` and the writable regions as the push left them. -/
+theorem wp_alloc {body : Prog isa} {s : State} {Q : State → Prop} (hsp : frameBytes ≤ (s.gpr .rsp).toNat)
+    (hb : WP isa body (allocState frameBytes s) fun s₂ => s₂.gpr .rsp = fb s ∧
+      s₂.wr = (allocState frameBytes s).wr ∧ Q (freed frameBytes s₂)) :
+    WP isa (.frame (.alloc frameBytes) body (.free frameBytes)) s Q := by
+  obtain ⟨t, s₂, he, hsp₂, hw, hq⟩ := hb
+  have ha : isa.push (.alloc frameBytes) s = some (allocState frameBytes s) := by
+    simp only [isa, push, allocState]
+    exact ite_eq_left ⟨by decide, by decide, by decide, hsp⟩
+  have hf : isa.pop (.free frameBytes) (allocState frameBytes s) s₂ = some (freed frameBytes s₂) := by
+    simp only [isa, pop]
+    exact ite_eq_left ⟨by decide, by decide, by decide, hsp₂, hw, rfl⟩
+  exact ⟨_, _, Exec.frame ha he hf, hq⟩
+
+/-- The return address is outside everything the function writes. -/
+theorem ret_frame {s : State} (hp : PreV s) {m : Mem} (h : Frame [stkR s, scrR s] s.mem m) :
+    m.readW (s.gpr .rsp) 64 = s.mem.readW (s.gpr .rsp) 64 := by
+  have hsp2 := hp.sp2
+  refine h.readW (r := ⟨s.gpr .rsp, 8⟩) (Region.contains_self _ _) (fun r hr => ?_) (by decide)
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl
+  · have := Offset.disjoint_below (s.gpr .rsp) (n := verStack) (d := 0) (k := 8)
+      (by unfold verStack; omega)
+    simpa only [stkR, kb, BitVec.ofNat_eq_ofNat, BitVec.add_zero] using this
+  · exact hp.dRs
+
+theorem arg0_ea (t : State) (j : Nat) : t.ea (arg0 j) = stackArgAddr t j := by
+  rw [arg0, ea_sp, stackArgAddr]; congr 2; omega
+
+theorem lenCheck_ok {s : State} (hp : PreV s) :
+    WP isa (.block lenCheck) s fun t => Keep [.rax] s t ∧ t.mem = s.mem ∧
+      t.zf = some (stackArg s 2 == s.gpr .rsi) := by
+  refine WP.mono (WP.keep [.rax] (Q := fun t => t.mem = s.mem ∧ t.zf = some (stackArg s 2 == s.gpr .rsi)) (by
+    xrun [lenCheck, arg0_ea, arg_in hp rfl (show 2 < 5 by decide), sub_beq64]
+    rfl) rfl) fun t ⟨h, hK⟩ => ⟨hK, h⟩
+
+theorem verifyId_len {nB eB H sig : List Byte} (x : Nat) (h : sig.length ≠ nB.length) :
+    verifyId nB eB x H sig = false := by
+  unfold verifyId
+  split
+  · unfold verify; rw [ite_eq_right_iff.mpr (fun h' => absurd h'.1 h)]
+  · rfl
+
+theorem code_correct (v : PubImpl) (s : State) (h : verContract.pre s) :
+    ∃ t s', Exec isa (code v.name v.code) s t s' ∧ abiPreserved s s' ∧ verContract.post s s' := by
+  have hp := preV_of h
+  have hk2 := hp.k2
+  suffices hw : WP isa (code v.name v.code) s fun s' => abiPreserved s s' ∧ verContract.post s s' by
+    obtain ⟨t, s', he, hq⟩ := hw
+    exact ⟨t, s', he, hq⟩
+  unfold code
+  refine WP.seq (WP.mono_mx (by decide) (lenCheck_ok hp) fun t₀ ⟨k₀, hm₀, hz₀⟩ hmx₀ => ?_)
+  by_cases hsig : stackArg s 2 = s.gpr .rsi
+  · refine WP.ite false (by simp [eval, hz₀, hsig]) (by simp) (fun _ => ?_)
+    have g₀ : ∀ r, r ≠ .rax → t₀.gpr r = s.gpr r := fun r h => k₀.gpr (by simpa using h)
+    have hsp₀ : t₀.gpr .rsp = s.gpr .rsp := g₀ _ (by decide)
+    have hA : Keep [.rax] (allocState frameBytes s) (allocState frameBytes t₀) :=
+      ⟨fun r hr => by
+        simp only [allocState_gpr, fb, hsp₀]
+        split
+        · rfl
+        · exact g₀ r (by simpa using hr), k₀.2.1, by simp only [allocState, hsp₀, k₀.2.2]⟩
+    have hfb : fb t₀ = fb s := by simp only [fb, hsp₀]
+    refine wp_alloc (s := t₀) (by rw [hsp₀]; have := hp.sp1; unfold verStack at this; unfold frameBytes; omega) ?_
+    unfold body
+    refine WP.seq (WP.mono_mx (by decide) (pubArgs_ok hp hA hm₀)
+      fun t₁ ⟨he₁, hw0, hw1, hw2, hw3, hdi, hsi, hdx, hcx, h8, h9, hcs₁⟩ hmx₁ => ?_)
+    refine WP.seq (WP.mono (pub_call v hp hsig he₁ hw0 hw1 hw2 hw3 hdi hsi hdx hcx h8 h9)
+      fun t₂ ⟨he₂, hw, hcs₂, hmx₂⟩ => ?_)
+    refine WP.mono_mx (by decide +kernel) (WP.keep [.rax, .rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r11]
+      (afterPub_ok hp he₂ hw) (by decide +kernel)) fun t₃ ⟨⟨he₃, hax⟩, k₃⟩ hmx₃ => ?_
+    refine ⟨he₃.rsp.trans hfb.symm, by rw [he₃.wr]; simp only [allocState, hsp₀, k₀.2.2],
+      ⟨fun r hr => ?_, ret_frame hp he₃.mem, ?_⟩, ?_⟩
+    · by_cases hr' : r = .rsp
+      · subst hr'
+        show t₃.gpr .rsp + BitVec.ofNat 64 frameBytes = s.gpr .rsp
+        rw [he₃.rsp, BitVec.sub_add_cancel]
+      · show (if r = .rsp then _ else t₃.gpr r) = s.gpr r
+        simp only [hr', ↓reduceIte]
+        have hr'' : r ∉ [Reg.rax, .rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r11] := by
+          simp [calleeSaved] at hr ⊢; rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp_all
+        rw [k₃.gpr hr'', hcs₂ r hr, hcs₁ r hr hr']
+    · show t₃.mxcsr.extractLsb' 6 10 = s.mxcsr.extractLsb' 6 10
+      rw [hmx₃, hmx₂, hmx₁]; exact congrArg _ hmx₀
+    · have hfr : (freed frameBytes t₃).gpr .rax = t₃.gpr .rax := rfl
+      simp only [verContract, hfr, hax, hsig]
+  · refine WP.ite true (by simp [eval, hz₀, hsig]) (fun _ => ?_) (by simp)
+    refine WP.mono_mx (by decide) (ret0_ok t₀) fun u ⟨hK, hm, hax⟩ hmx =>
+      ⟨⟨fun r hr => ?_, by rw [hm, hm₀], by rw [hmx, hmx₀]⟩, ?_⟩
+    · rw [hK.gpr (by simp [calleeSaved] at hr ⊢; rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp),
+        k₀.gpr (by simp [calleeSaved] at hr ⊢; rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp)]
+    · simp only [verContract, hax]
+      rw [verifyId_len _ (by
+        simp only [bytesAt_length]
+        intro h'; exact hsig (BitVec.eq_of_toNat_eq h'))]
+      rfl
+
 end VG.Proof.RsaPkcs1Sig.X86_64.Ver
