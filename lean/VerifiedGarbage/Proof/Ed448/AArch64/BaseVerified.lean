@@ -1,5 +1,5 @@
 import VerifiedGarbage.Proof.Ed448.AArch64.BaseMain
-import VerifiedGarbage.Proof.Ed448.AArch64.BaseLit
+import VerifiedGarbage.Proof.Ed448.AArch64.Erase
 import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 import VerifiedGarbage.Proof.Framework.AArch64.Taint
 import VerifiedGarbage.Proof.Framework.Contract
@@ -29,10 +29,18 @@ def scalarBaseSat : State where
 theorem scalarBase_ok (hL : Proof.Ed448.BaseLadderOk) (s : State) (hs : scalarBaseLocal.pre s) :
     ∃ t s', Exec isa scalarBase s t s' ∧ abiPreserved s s' ∧ scalarBaseLocal.post s s' := by
   obtain ⟨t, s', he, h⟩ := scalarBase_correct hL hs
-  exact ⟨t, s', he, ⟨h.1, Exec.sp he, Exec.preservedV he (by lit_decide)⟩, h.2⟩
+  exact ⟨t, s', he, ⟨h.1, Exec.sp he, Exec.preservedV he
+    (Code.allInstrs_keepsV_of_eraseOff_eq scalarBase_eraseOff (by lit_decide))⟩, h.2⟩
+
+theorem scalarBase_noFrames : scalarBase.noFrames = true := by
+  rw [← Code.noFrames_eraseOff, scalarBase_eraseOff, Code.noFrames_eraseOff]; decide +kernel
 
 theorem scalarBase_ct : ConstantTime isa scalarBaseLocal.pre scalarBaseLocal.pub scalarBase := by
-  refine VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0, .x1, .x2]) ?_ (by taint_decide)
+  refine VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0, .x1, .x2]) ?_
+    -- The hint keeps public only the pointers and the counter, which the addresses and
+    -- branches use: every field operation is then analysed from the same taint.
+    (Taint.isSome_check_of_eraseOff scalarBase_eraseOff
+      (by taint_decide_weak fun τ => τ.inter (Taint.ofRegs [.x0, .x1, .x2, .x3, .x19, .x20])))
   intro s₁ s₂ _ _ ⟨hsp, h0, h1, h2⟩
   refine ⟨hsp, fun r hr => ?_⟩
   simp only [Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr

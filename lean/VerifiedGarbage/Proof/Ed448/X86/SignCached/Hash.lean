@@ -75,7 +75,7 @@ theorem seed_ok (hc : GCtx s g m t) (ha : Args (base s) 8 (arg s) m) :
     (.inr ⟨SEED s, List.mem_append_left _ (seed_in s), whole _⟩) (hk.away_input (seed_in s) (whole _))
     h.seed (repr_nil hz)) fun t2 ⟨hc2, hf2, hr2, hp2⟩ => ?_)
   have e1 : Spec.Sha3.bytesAt t1.mem ((arg s 1).setWidth 64) 57 = Spec.Sha3.bytesAt m ((arg s 1).setWidth 64) 57 :=
-    hk.input_bytes hc1 (seed_in s) (whole (SEED s)) (by show 57 ≤ 2 ^ 64; decide)
+    hk.input_bytes (D := SEED s) hc1 (seed_in s) (whole (SEED s)) (by show 57 ≤ 2 ^ 64; decide)
   rw [e1] at hr2
   refine WP.seq (WP.mono (hk.pad_step hc2 ha (scr_at s) hr2 (by rw [hp2, length_sbytes]))
     fun t3 ⟨hc3, hf3, hs3⟩ => ?_)
@@ -116,7 +116,7 @@ theorem nonce_ok (hc : GCtx s g m t) (ha : Args (base s) 8 (arg s) m)
     hr2 hp2') fun t3 ⟨hc3, hf3, hr3, hp3⟩ => ?_)
   have ex : Spec.Sha3.bytesAt t2.mem ((arg s 3).setWidth 64) (arg s 4).toNat =
       Spec.Sha3.bytesAt m ((arg s 3).setWidth 64) (arg s 4).toNat :=
-    hk.input_bytes hc2 (ctx_in s) (whole (CTX s)) (by show (arg s 4).toNat ≤ 2 ^ 64; have := (arg s 4).isLt; omega)
+    hk.input_bytes (D := CTX s) hc2 (ctx_in s) (whole (CTX s)) (by show (arg s 4).toNat ≤ 2 ^ 64; have := (arg s 4).isLt; omega)
   rw [ex] at hr3 hp3
   have hpk3 := (sframe_bytes hf3 (D := fr (base s) K 57) (away_lo aK) (by show 57 ≤ 2 ^ 64; decide)).trans hpk2
   -- The prefix.
@@ -133,7 +133,7 @@ theorem nonce_ok (hc : GCtx s g m t) (ha : Args (base s) 8 (arg s) m)
     hr4 hp4) fun t5 ⟨hc5, hf5, hr5, hp5⟩ => ?_)
   have em : Spec.Sha3.bytesAt t4.mem ((arg s 5).setWidth 64) (arg s 6).toNat =
       Spec.Sha3.bytesAt m ((arg s 5).setWidth 64) (arg s 6).toNat :=
-    hk.input_bytes hc4 (msg_in s) (whole (MSG s)) (by show (arg s 6).toNat ≤ 2 ^ 64; have := (arg s 6).isLt; omega)
+    hk.input_bytes (D := MSG s) hc4 (msg_in s) (whole (MSG s)) (by show (arg s 6).toNat ≤ 2 ^ 64; have := (arg s 6).isLt; omega)
   rw [em] at hr5 hp5
   -- Pad and squeeze.
   refine WP.seq (WP.mono (hk.pad_step hc5 ha (scr_at s) hr5 hp5) fun t6 ⟨hc6, hf6, hs6⟩ => ?_)
@@ -177,7 +177,7 @@ theorem chal_ok (hc : GCtx s g m t) (ha : Args (base s) 8 (arg s) m)
     hr2 hp2') fun t3 ⟨hc3, hf3, hr3, hp3⟩ => ?_)
   have ex : Spec.Sha3.bytesAt t2.mem ((arg s 3).setWidth 64) (arg s 4).toNat =
       Spec.Sha3.bytesAt m ((arg s 3).setWidth 64) (arg s 4).toNat :=
-    hk.input_bytes hc2 (ctx_in s) (whole (CTX s)) (by show (arg s 4).toNat ≤ 2 ^ 64; have := (arg s 4).isLt; omega)
+    hk.input_bytes (D := CTX s) hc2 (ctx_in s) (whole (CTX s)) (by show (arg s 4).toNat ≤ 2 ^ 64; have := (arg s 4).isLt; omega)
   rw [ex] at hr3 hp3
   have hR3 := (sframe_bytes hf3 (D := OUT1 s) (away_lo aR) (by show 57 ≤ 2 ^ 64; decide)).trans hR2
   -- `R`.
@@ -192,7 +192,7 @@ theorem chal_ok (hc : GCtx s g m t) (ha : Args (base s) 8 (arg s) m)
     (.inr ⟨_, List.mem_append_left _ (pk_in s), whole _⟩) (hk.away_input (pk_in s) (whole _)) h.pk
     hr4 hp4) fun t5 ⟨hc5, hf5, hr5, hp5⟩ => ?_)
   have ep : Spec.Sha3.bytesAt t4.mem ((arg s 2).setWidth 64) 57 = Spec.Sha3.bytesAt m ((arg s 2).setWidth 64) 57 :=
-    hk.input_bytes hc4 (pk_in s) (whole (PK s)) (by show 57 ≤ 2 ^ 64; decide)
+    hk.input_bytes (D := PK s) hc4 (pk_in s) (whole (PK s)) (by show 57 ≤ 2 ^ 64; decide)
   rw [ep] at hr5 hp5
   -- The message.
   refine WP.seq (WP.mono (hk.next_abs hc5 ha (scr_at s) (src := .caller 5 0) (len := .caller 6 0)
@@ -202,7 +202,7 @@ theorem chal_ok (hc : GCtx s g m t) (ha : Args (base s) 8 (arg s) m)
     hr5 hp5) fun t6 ⟨hc6, hf6, hr6, hp6⟩ => ?_)
   have em : Spec.Sha3.bytesAt t5.mem ((arg s 5).setWidth 64) (arg s 6).toNat =
       Spec.Sha3.bytesAt m ((arg s 5).setWidth 64) (arg s 6).toNat :=
-    hk.input_bytes hc5 (msg_in s) (whole (MSG s)) (by show (arg s 6).toNat ≤ 2 ^ 64; have := (arg s 6).isLt; omega)
+    hk.input_bytes (D := MSG s) hc5 (msg_in s) (whole (MSG s)) (by show (arg s 6).toNat ≤ 2 ^ 64; have := (arg s 6).isLt; omega)
   rw [em] at hr6 hp6
   -- Pad and squeeze.
   refine WP.seq (WP.mono (hk.pad_step hc6 ha (scr_at s) hr6 hp6) fun t7 ⟨hc7, hf7, hs7⟩ => ?_)
