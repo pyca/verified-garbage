@@ -343,7 +343,8 @@ def decMain : Prog isa :=
 variable (privN : String) (privC : Prog isa)
 
 def decBody : Prog isa :=
-  seqs [.block (decPrologue ++ privArgs), .call privN privC, .block ([.store (sp sR) .rax] ++ chkK H),
+  seqs [.block (decPrologue ++ privArgs), .call privN privC,
+    .block ([.mov32 .rax (.reg .rax), .store (sp sR) .rax] ++ chkK H),
     .ite .b decFail (decMain H G)]
 
 /-- `vg_rsa_oaep_<H>_mgf1_<G>_decrypt`. -/
