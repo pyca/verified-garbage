@@ -37,8 +37,8 @@ theorem LabAt.congr {t t' : State} {F S : Addr} {W W' : Nat → BitVec 64} {lab 
 
 theorem labA_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {W : Nat → BitVec 64}
     (R : Rep u.mem F S V W) {lab : Addr} {labLen : Nat} (A : LabAt u F S W lab labLen) :
-    WP isa (.block (scr .rdi oSt ++ [.mov32 .rsi (.imm 0), .mov .rdx (.mem (sp sLab)),
-      .mov .rcx (.mem (sp sLabLen))] ++ scr .r8 oW)) u fun u' => u'.gpr .rdi = off S oSt ∧
+    WP isa (.block (scr .rdi oSt ++ ([.mov32 .rsi (.imm 0), .mov .rdx (.mem (sp sLab)),
+      .mov .rcx (.mem (sp sLabLen))] : List Instr) ++ scr .r8 oW)) u fun u' => u'.gpr .rdi = off S oSt ∧
       u'.gpr .rsi = BitVec.ofNat 64 0 ∧ u'.gpr .rdx = lab ∧ u'.gpr .rcx = BitVec.ofNat 64 labLen ∧
       u'.gpr .r8 = off S oW ∧ u'.mem = u.mem ∧ Keep [.rdi, .rsi, .rdx, .rcx, .r8] u u' := by
   have hs := L.slot
@@ -54,7 +54,7 @@ theorem labA_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {W :
 
 theorem labF_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {W : Nat → BitVec 64}
     (R : Rep u.mem F S V W) {labLen : Nat} (hll : W 28 = BitVec.ofNat 64 labLen) {o : Nat} (ho : o < 2 ^ 31) :
-    WP isa (.block (scr .rdi oSt ++ [.mov .rsi (.mem (sp sLabLen))] ++ scr .rdx o ++ scr .rcx oW)) u fun u' =>
+    WP isa (.block (scr .rdi oSt ++ ([.mov .rsi (.mem (sp sLabLen))] : List Instr) ++ scr .rdx o ++ scr .rcx oW)) u fun u' =>
       u'.gpr .rdi = off S oSt ∧ u'.gpr .rsi = BitVec.ofNat 64 labLen ∧ u'.gpr .rdx = off S o ∧
       u'.gpr .rcx = off S oW ∧ u'.mem = u.mem ∧ Keep [.rdi, .rsi, .rdx, .rcx] u u' := by
   have hs := L.slot

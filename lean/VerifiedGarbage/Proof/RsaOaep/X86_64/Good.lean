@@ -38,7 +38,7 @@ theorem hashLabel_good (o : Nat) : Good (hashLabel H.stream o) := by
   refine ⟨?_, ?_⟩
   · simp only [hashLabel, seqs, Code.allInstrs, Hash.stream, g.init, g.upd, g.fin, Bool.and_true, Bool.true_and]
     rfl
-  · simp only [hashLabel, seqs, Code.depth, Hash.stream]; omega
+  · simp only [hashLabel, seqs, Code.depth, Hash.stream, Nat.max_le]; omega
 
 theorem mgfXor_good : Good (mgfXor lay H.stream) := by
   have := g.initD; have := g.updD; have := g.finD
@@ -46,7 +46,7 @@ theorem mgfXor_good : Good (mgfXor lay H.stream) := by
   · simp only [mgfXor, round, xorOut, seqs, Code.allInstrs, Hash.stream, g.init, g.upd, g.fin, Bool.and_true,
       Bool.true_and]
     rfl
-  · simp only [mgfXor, round, xorOut, seqs, Code.depth, Hash.stream, Impl.Mgf1.X86_64.byteLoop]; omega
+  · simp only [mgfXor, round, xorOut, seqs, Code.depth, Hash.stream, Impl.Mgf1.X86_64.byteLoop, Nat.max_le]; omega
 
 omit g in
 theorem block_good (is : List Instr) (h : (Code.block is : Prog isa).allInstrs okI = true) : Good (.block is) :=

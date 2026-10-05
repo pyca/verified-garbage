@@ -222,10 +222,10 @@ theorem privArgs_eq : privArgs =
     argSlot 13 0 ++ ([.mov .rax (.mem (sp sK)), .store (sp 8) .rax] : List Instr) ++ argSlot 1 16 ++
     argSlot 2 24 ++ argSlot 3 32 ++ argSlot 4 40 ++ argSlot 5 48 ++ argSlot 6 56 ++ argSlot 7 64 ++
     argSlot 8 72 ++ argSlot 9 80 ++ argSlot 10 88 ++
-    (scr .rax oRsa ++ [.store (sp 96) .rax]) ++
+    (scr .rax oRsa ++ ([.store (sp 96) .rax] : List Instr)) ++
     ([.mov .rax (.mem (sp sScrLen)), .alu .sub .rax (.imm 1024), .store (sp 104) .rax] : List Instr) ++
-    (scr .rdi oEm ++ [.mov .rsi (.mem (sp sK)), .mov .rdx (.mem (sp sN)),
-      .mov .rcx (.mem (sp sK)), .mov .r8 (.mem (sp sE)), .mov .r9 (.mem (sp sEl))]) := rfl
+    (scr .rdi oEm ++ ([.mov .rsi (.mem (sp sK)), .mov .rdx (.mem (sp sN)),
+      .mov .rcx (.mem (sp sK)), .mov .r8 (.mem (sp sE)), .mov .r9 (.mem (sp sEl))] : List Instr)) := rfl
 
 /-- A copy of a stack argument to the frame's word `k`, with `Rep`. -/
 theorem copyRep_ok {s : State} (hp : DPre s) {u : State} (L : Lay u (fb s) (stackArg s 15)) {V : Nat → Byte}

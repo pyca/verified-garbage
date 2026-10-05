@@ -19,11 +19,11 @@ theorem xdepth_le : ∀ {c : Prog isa}, NoSp c → c.x86_64Depth ≤ 8 * c.depth
   | .seq a b, h => by
     have ha := xdepth_le (c := a) (fun i hi => h i (List.mem_append_left _ hi))
     have hb := xdepth_le (c := b) (fun i hi => h i (List.mem_append_right _ hi))
-    simp only [Code.x86_64Depth, Code.depth]; omega
+    simp only [Code.x86_64Depth, Code.depth, Nat.max_le]; omega
   | .ite _ a b, h => by
     have ha := xdepth_le (c := a) (fun i hi => h i (List.mem_append_left _ hi))
     have hb := xdepth_le (c := b) (fun i hi => h i (List.mem_append_right _ hi))
-    simp only [Code.x86_64Depth, Code.depth]; omega
+    simp only [Code.x86_64Depth, Code.depth, Nat.max_le]; omega
   | .loop b _, h => by
     have := xdepth_le (c := b) h
     simp only [Code.x86_64Depth, Code.depth]; omega
