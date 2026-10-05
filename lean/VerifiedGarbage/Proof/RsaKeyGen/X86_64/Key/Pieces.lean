@@ -339,10 +339,10 @@ theorem inverse_k {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) {iU iV iX
     KF.of_frm hf fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl | rfl | rfl
-      · exact ⟨.arr iU, by simp, by simp [Rc.range], by simp [Rc.range]⟩
-      · exact ⟨.arr iV, by simp, by simp [Rc.range], by simp [Rc.range]⟩
-      · exact ⟨.arr iX₁, by simp, by simp [Rc.range], by simp [Rc.range]⟩
-      · exact ⟨.arr iX₂, by simp, by simp [Rc.range], by simp [Rc.range]⟩
+      · exact ⟨.arr iU, by simp, by simp [Rc.range], by simp only [Rc.range]; omega⟩
+      · exact ⟨.arr iV, by simp, by simp [Rc.range], by simp only [Rc.range]; omega⟩
+      · exact ⟨.arr iX₁, by simp, by simp [Rc.range], by simp only [Rc.range]; omega⟩
+      · exact ⟨.arr iX₂, by simp, by simp [Rc.range], by simp only [Rc.range]; omega⟩
       · exact ⟨.arr iT, by simp, by simp [Rc.range], by simp [Rc.range]⟩
       · exact ⟨.hdr sMo, by simp, by simp [Rc.range], by simp [Rc.range]⟩
   have k' : Keep (List.filter (· != .rdi) (.r9 :: .r11 :: stepRegs)) s t :=

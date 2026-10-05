@@ -59,6 +59,7 @@ abbrev KeyOk (c : Cfg) (s₀ : State) : Prop :=
 space at `base`. -/
 structure Front (c : Cfg) (s₀ : State) (base : Addr) (s : State) : Prop where
   scr : Scr s base size
+  far : Far s base 8192
   rest : Rest (.lr :: work) s₀ s
   fixed : Fixed c base s₀.gpr s.mem
   k : sv c base s K = sigR c s₀
@@ -76,10 +77,10 @@ structure Front (c : Cfg) (s₀ : State) (base : Addr) (s : State) : Prop where
     if KeyOk c s₀ then Fin.ofNat c.C.p (keyX c s₀) else Fin.ofNat c.C.p c.C.gx
   py : toM c.C.p (2 ^ (64 * c.n)) (sv c base s PY) =
     if KeyOk c s₀ then Fin.ofNat c.C.p (keyY c s₀) else Fin.ofNat c.C.p c.C.gy
-  /-- Memory outside the working space is unchanged. -/
-  unch : Unch base [(0, size)] s₀.mem s.mem
+  /-- Memory outside `scratch` is unchanged. -/
+  unch : Unch base [(0, 8192)] s₀.mem s.mem
 
-theorem VPre.setup {s : State} (hp : VPre c s) (h7 : c.n < 7) : SetupPre c Args.verify s where
+theorem VPre.setup {s : State} (hp : VPre c s) (h7 : c.n < 10) : SetupPre c Args.verify s where
   args := by unfold argsOk; decide
   sc_in := fun h => nomatch h
   wr := by show (⟨ptr s .r3, 8192⟩ : Region) ∈ s.wr; rw [hp.wr]; simp
@@ -99,7 +100,7 @@ theorem unch_whole {base : Addr} {W : List (Nat × Nat)} {m m' : Mem} (h : Unch 
     (hW : ∀ w ∈ W, w.1 + w.2 ≤ size) : Unch base [(0, size)] m m' :=
   (h.outside fun w hw => ⟨Nat.zero_le _, by have := hW w hw; omega⟩).unch
 
-theorem slW_le (h7 : c.n < 7) {l : List Nat} (hl : ∀ i ∈ l, i < 45) : ∀ w ∈ slW c l, w.1 + w.2 ≤ size := by
+theorem slW_le (h7 : c.n < 10) {l : List Nat} (hl : ∀ i ∈ l, i < 45) : ∀ w ∈ slW c l, w.1 + w.2 ≤ size := by
   intro w hw
   obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hw
   exact sl_le c h7 (hl i hi)
@@ -113,7 +114,7 @@ theorem front_ok (hc : CfgOk c) {s₀ : State} (hp : VPre c s₀) {rest : Prog i
     WP isa (.seq (Impl.Ecdsa.Verify.Arm.Cfg.prefix' c) (.seq (.block (Impl.Ecdsa.Verify.Arm.Cfg.loadS c))
       (.seq (.block (Impl.Ecdh.Arm.Cfg.peerAt c .r0)) (.seq (Impl.Ecdh.Arm.Cfg.validate c) rest)))) s₀ Q := by
   have h0 := hc.n0
-  have h7 := hc.n7
+  have h7 := hc.n10
   have hsz : size = 4096 := rfl
   have hpk : Region.Disjoint ⟨ptr s₀ .r0, 1 + 16 * c.n⟩ ⟨ptr s₀ .r3, size⟩ :=
     hp.pk_sc.sub_right (Region.sub_prefix (by decide))
@@ -122,7 +123,7 @@ theorem front_ok (hc : CfgOk c) {s₀ : State} (hp : VPre c s₀) {rest : Prog i
   refine WP.seq (stage₁ hc (hp.setup h7) fun s₂ S₂ => WP.block_nil ?_)
   replace S₂ : St₁ c Args.verify s₀ (ptr s₀ .r3) s₂ := S₂
   have hn := S₂.scr.nowrap
-  have W₂ : Outside (ptr s₀ .r3) 0 size s₀.mem s₂.mem :=
+  have W₂ : Outside (ptr s₀ .r3) 0 8192 s₀.mem s₂.mem :=
     S₂.whole.outside fun w hw => by rw [List.mem_singleton.mp hw]; exact ⟨Nat.le_refl _, Nat.le_refl _⟩
   have hrw₂ : s₂.rd ++ s₂.wr = s₀.rd ++ s₀.wr := by rw [S₂.rest.rd, S₂.rest.wr]
   have hr0 : s₂.gpr .r0 = s₀.gpr .r0 := S₂.args .r0 (by simp)
@@ -156,8 +157,8 @@ theorem front_ok (hc : CfgOk c) {s₀ : State} (hp : VPre c s₀) {rest : Prog i
   have v₃ : ∀ {i}, i < 45 → i ≠ PT → sv c (ptr s₀ .r3) s₃ i = sv c (ptr s₀ .r3) s₂ i := fun hi hl =>
     sv_unch U₃ h7 hn hi (apart_slW (by simpa using hl))
   have pt₃ : sv c (ptr s₀ .r3) s₃ PT = sigS c s₀ := by
-    rw [sv, e₃, bytesAt_keep W₂ (hsg.sub_left (Offset.sub_base _ (by omega))) (by omega) (by omega)]
-  have W₃ : Outside (ptr s₀ .r3) 0 size s₂.mem s₃.mem := O₃.mono (Nat.zero_le _) (by omega)
+    rw [sv, e₃, bytesAt_keep W₂ (hp.sig_sc.sub_left (Offset.sub_base _ (by omega))) (by omega) (by omega)]
+  have W₃ : Outside (ptr s₀ .r3) 0 8192 s₂.mem s₃.mem := O₃.mono (Nat.zero_le _) (by omega)
   have hrw₃ : s₃.rd ++ s₃.wr = s₂.rd ++ s₂.wr := by rw [K₃.rd, K₃.wr]
   have hr0₃ : s₃.gpr .r0 = s₀.gpr .r0 := by rw [K₃.gpr _ (by decide), hr0]
   -- The key.
@@ -169,13 +170,13 @@ theorem front_ok (hc : CfgOk c) {s₀ : State} (hp : VPre c s₀) {rest : Prog i
   have e₄ : ∀ {i}, i < 45 → i ∉ [R2P, BP, E, QY] → i ≠ FLAG →
       sv c (ptr s₀ .r3) s₄ i = sv c (ptr s₀ .r3) s₃ i := fun hi hl hf =>
     sv_unch U₄ h7 hn hi (apart_append (apart_slW hl) (apart_flag h0 hf))
-  have W₃' : Outside (ptr s₀ .r3) 0 size s₀.mem s₃.mem := W₂.trans W₃
+  have W₃' : Outside (ptr s₀ .r3) 0 8192 s₀.mem s₃.mem := W₂.trans W₃
   have x₄' : sv c (ptr s₀ .r3) s₄ E = keyX c s₀ := by
-    rw [x₄, bytesAt_keep W₃' (hpk.sub_left (Offset.sub_base _ (by omega))) (by omega) (by omega)]
+    rw [x₄, bytesAt_keep W₃' (hp.pk_sc.sub_left (Offset.sub_base _ (by omega))) (by omega) (by omega)]
   have y₄' : sv c (ptr s₀ .r3) s₄ QY = keyY c s₀ := by
-    rw [y₄, bytesAt_keep W₃' (hpk.sub_left (Offset.sub_base _ (by omega))) (by omega) (by omega)]
+    rw [y₄, bytesAt_keep W₃' (hp.pk_sc.sub_left (Offset.sub_base _ (by omega))) (by omega) (by omega)]
   have hq0 : s₃.mem (ptr s₀ .r0) = s₀.mem (ptr s₀ .r0) := by
-    have := keep_of_disjoint' W₃' hpk (by omega) (i := 0) (by omega) (by omega)
+    have := keep_of_disjoint' W₃' hp.pk_sc (by omega) (i := 0) (by omega) (by omega)
     rwa [BitVec.add_zero] at this
   have hf₄ : flagW c (ptr s₀ .r3) s₄ = mask32 (((s₀.mem (ptr s₀ .r0) = 4 ∧
       sv c (ptr s₀ .r3) s₄ E < c.C.p) ∧ sv c (ptr s₀ .r3) s₄ QY < c.C.p)) := by
@@ -195,7 +196,7 @@ theorem front_ok (hc : CfgOk c) {s₀ : State} (hp : VPre c s₀) {rest : Prog i
   have t₅ : ∀ {j}, j < 3 → ∀ t < 64 * c.n,
       s₅.mem (off (ptr s₀ .r3) (bitsAt c.n j + t)) = s₂.mem (off (ptr s₀ .r3) (bitsAt c.n j + t)) :=
     fun hj t ht => by
-      rw [tbl_unch U₅ h7 hj ht (apart_append (tbl_apart_slWk (by decide) hj ht) (tbl_apart_flag h0 _ t)),
+      rw [tbl_unch U₅ h7 hj ht (apart_append (tbl_apart_slWk (by decide)) (tbl_apart_flag h0 _ t)),
         tbl_unch U₄ h7 hj ht (apart_append (tbl_apart_slW (by decide) _ t) (tbl_apart_flag h0 _ t)),
         tbl_unch U₃ h7 hj ht (tbl_apart_slW (by decide) _ t)]
   have hok : PeerOk c (ptr s₀ .r3) s₄ ((s₀.mem (ptr s₀ .r0) = 4 ∧ sv c (ptr s₀ .r3) s₄ E < c.C.p) ∧
@@ -208,7 +209,7 @@ theorem front_ok (hc : CfgOk c) {s₀ : State} (hp : VPre c s₀) {rest : Prog i
     le_append (slW_le h7 (by decide)) (flag_le h0 h7)
   have hW5 : ∀ w ∈ slWk c [QXM, QYM, TMP, W0, W1, W2, W3, PY] ++ [(c.sl FLAG, 4)], w.1 + w.2 ≤ size :=
     le_append (slWk_le h7 (by decide)) (flag_le h0 h7)
-  refine ⟨hs₅, S₂.rest.trans
+  refine ⟨hs₅, ((S₂.far.of_rest K₃).of_rest k₄).of_rest g₅, S₂.rest.trans
       (((K₃.mono (by decide)).trans ((k₄.mono (by decide)).trans (g₅.mono powClob_work))).mono (by simp)), F₅,
     by rw [a₅ (i := K) (by decide) (by decide) (by decide) (by decide) (by decide)]; exact S₂.k,
     by rw [a₅ (i := D) (by decide) (by decide) (by decide) (by decide) (by decide)]; exact S₂.d,

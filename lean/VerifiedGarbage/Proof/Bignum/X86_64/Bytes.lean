@@ -1,6 +1,5 @@
 import VerifiedGarbage.Proof.Bignum.X86_64.Double
 import VerifiedGarbage.Spec.Rsa
-import Mathlib.Tactic.Positivity
 
 /-!
 # Multiword arithmetic on x86-64: bytes and words
@@ -127,7 +126,7 @@ theorem loadStep_ok {s₀ : State} {B : Addr} {Z ed k w : Nat} {src : Addr} {bs 
   have hax : (t.gpr .rax).toNat < 2 ^ 56 := by
     rw [hI.rax]
     have : 256 ^ ((8 - (k - i) % 8) % 8) ≤ 256 ^ 7 := Nat.pow_le_pow_right (by decide) hr7
-    have := Nat.mod_lt (pre bs i) (show 0 < 256 ^ ((8 - (k - i) % 8) % 8) by positivity)
+    have := Nat.mod_lt (pre bs i) (show 0 < 256 ^ ((8 - (k - i) % 8) % 8) by exact Nat.pow_pos (by decide))
     have : (256 : Nat) ^ 7 = 2 ^ 56 := by decide
     omega
   have hb : t.mem (src + BitVec.ofNat 64 i) = bs[i]'(by omega) := by

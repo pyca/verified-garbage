@@ -176,6 +176,22 @@ def artifacts : List Artifact := [
     stack := 24
     verified := Proof.MlKem.X86_64.sample4_verified
     spSafe := Code.all_of_allInstrs (by decide +kernel)
-    features := ["avx", "avx2"] }]
+    features := ["avx", "avx2"] },
+  { Spec.MlKem.sampleNTT4Api with
+    name := Spec.MlKem.sampleNTT4Api.name ++ "_avx512"
+    target := X86_64.target
+    doc := Spec.MlKem.sampleNTT4Api.doc
+      (notes := ["The function absorbs the four seeds and squeezes the four instances of SHAKE128 at once, \
+        each 64-bit lane of the Keccak states in a 256-bit AVX2 register holding that lane of all four; \
+        it then samples from the output of each in turn, eight candidates at a time in AVX2 registers \
+        (keeping those less than `q` with `vpermd`, by a table in `*scratch` indexed by their mask), \
+        and finishes any that needs more than the 504 bytes it squeezed with `vg_mlkem_sample_ntt`, \
+        using AVX-512VL quadword rotates in Keccak, with 24 bytes of stack below its return address."])
+    code := Impl.MlKem.X86_64.Sample4.sampleNTT4Avx2 true
+    contract := Spec.MlKem.sampleNTT4Contract X86_64.abi 24
+    stack := 24
+    verified := Proof.MlKem.X86_64.sample4_verified
+    spSafe := Code.all_of_allInstrs (by decide +kernel)
+    features := ["avx", "avx2", "avx512f", "avx512vl"] }]
 
 end VG.Artifacts.MlKem.X86_64

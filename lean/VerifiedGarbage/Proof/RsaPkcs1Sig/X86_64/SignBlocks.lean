@@ -247,7 +247,7 @@ theorem callArgs_ok {s t : State} (hp : PreS s) (he : Env s t) :
     rcases hr with rfl | rfl
     · exact ⟨0, 8, by simp [off], .inl (by decide), by decide⟩
     · exact ⟨8, 8, rfl, .inl (by decide), by decide⟩
-  refine WP.mono (copies_ok hp 12 (le_refl _) u heu) fun t' ⟨he', hw, hk, hf', k'⟩ =>
+  refine WP.mono (copies_ok hp 12 (Nat.le_refl _) u heu) fun t' ⟨he', hw, hk, hf', k'⟩ =>
     ⟨he', fun i hi => ?_, by rw [k'.gpr (by decide), hdi], by rw [k'.gpr (by decide), hsi],
       by rw [k'.gpr (by decide), hdx], by rw [k'.gpr (by decide), hcx], by rw [k'.gpr (by decide), h8],
       by rw [k'.gpr (by decide), h9], f'.trans hf', (k.trans k').mono (by decide)⟩

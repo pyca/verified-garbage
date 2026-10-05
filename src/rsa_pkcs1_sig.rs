@@ -12,10 +12,11 @@
 //! multiplication; on one with AVX512_IFMA and AVX512VL too,
 //! `vg_rsa_pkcs1_sign_ifma` (see [`crate::rsa`]).
 //!
-//! [`verify`] is the verified `vg_rsa_pkcs1_verify` (contract
-//! `VG.Spec.RsaPkcs1Sig.verifyContract`), which accepts a signature exactly
+//! [`verify`] is the verified `vg_rsa_pkcs1_verify_precomputed` (contract
+//! `VG.Spec.RsaPkcs1Sig.verifyPrecomputedContract`), which accepts a signature exactly
 //! when `s^e mod n` is the encoding of the hash value, as BoringSSL's
-//! `RSA_verify` does; [`recover`] is `vg_rsa_pkcs1_recover` (contract
+//! `RSA_verify` does. It reuses the public key's precomputed modulus values
+//! and selects ADX multiplication when available. [`recover`] is `vg_rsa_pkcs1_recover` (contract
 //! `VG.Spec.RsaPkcs1Sig.recoverContract`), which returns the hash value a
 //! signature signs, as BoringSSL's `EVP_PKEY_verify_recover` does. Everything
 //! they read is public and their timing may depend on it.
@@ -31,7 +32,7 @@ use core::fmt;
 
 use crate::arch::rsa_pkcs1_sig::{
     vg_rsa_pkcs1_recover, vg_rsa_pkcs1_sign, vg_rsa_pkcs1_sign_adx, vg_rsa_pkcs1_sign_ifma,
-    vg_rsa_pkcs1_verify,
+    vg_rsa_pkcs1_verify_precomputed, vg_rsa_pkcs1_verify_precomputed_adx,
 };
 use crate::cpu::detected;
 use crate::rsa::{Backend, PrivateKey, PublicKey, scratch_words};
@@ -174,12 +175,18 @@ pub fn sign(key: &PrivateKey, digest: &[u8], hash: Hash) -> Result<Vec<u8>, Erro
 pub fn verify(key: &PublicKey, signature: &[u8], digest: &[u8], hash: Hash) -> bool {
     let k = key.n.len();
     let mut scratch = vec![0u64; scratch_words(k)];
+    let f = match Backend::select(detected()) {
+        Backend::Baseline => vg_rsa_pkcs1_verify_precomputed,
+        Backend::Adx | Backend::Ifma => vg_rsa_pkcs1_verify_precomputed_adx,
+    };
     // SAFETY: each pointer is valid for its length (`scratch` for writes),
     // and none overlaps another or wraps around, as they are distinct Rust
     // allocations; `PublicKey::new` gives `64 ≤ n_len ≤ 1024` and
-    // `1 ≤ e_len ≤ 5 ≤ n_len`; and `scratch_len = 16 n_len`.
+    // `1 ≤ e_len ≤ 5 ≤ n_len`; `scratch_len = 16 n_len`; and `key.pre`
+    // holds the verified precomputation for `key.n`, with `2 * ceil(n_len / 8)`
+    // words. The CPU supports the selected function's features.
     let r = unsafe {
-        vg_rsa_pkcs1_verify(
+        f(
             key.n.as_ptr(),
             k,
             key.e.as_ptr(),
@@ -191,6 +198,8 @@ pub fn verify(key: &PublicKey, signature: &[u8], digest: &[u8], hash: Hash) -> b
             signature.len(),
             scratch.as_mut_ptr(),
             scratch.len(),
+            key.pre.as_ptr(),
+            key.pre.len(),
         )
     };
     // The working space holds only public values.

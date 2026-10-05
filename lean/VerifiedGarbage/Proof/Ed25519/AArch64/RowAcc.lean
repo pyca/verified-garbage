@@ -128,7 +128,10 @@ theorem rowFirst_ok (s : State) (hz : s.gpr .x10 = 0) :
         (s.gpr .x3).toNat * val4 (s.gpr .x12) (s.gpr .x13) (s.gpr .x14) (s.gpr .x15) ∧
       Keeps [.x2, .x8, .x9, .x16, .x4, .x5, .x6, .x7, .x21] s t := by
   reg_exec hz
-  refine ⟨?_, ⟨?_, rfl, rfl, rfl, rfl⟩⟩
+  refine ⟨?_, ⟨?_, by simp only [RegUpd.mem_write, RegUpd.mem_addWithCarry],
+      by simp only [RegUpd.rd_write, RegUpd.rd_addWithCarry],
+      by simp only [RegUpd.wr_write, RegUpd.wr_addWithCarry],
+      by simp only [RegUpd.sp_write, RegUpd.sp_addWithCarry]⟩⟩
   · have h := rowFirst_value (s.gpr .x3) (s.gpr .x12) (s.gpr .x13) (s.gpr .x14) (s.gpr .x15)
     dsimp only [addCarry, carryOut, mulHi, Size.bits] at h ⊢
     exact h
@@ -142,7 +145,10 @@ theorem rowAcc1_ok (s : State) (hz : s.gpr .x10 = 0) :
           (s.gpr .x3).toNat * val4 (s.gpr .x12) (s.gpr .x13) (s.gpr .x14) (s.gpr .x15) ∧
       Keeps [.x2, .x8, .x9, .x16, .x5, .x6, .x7, .x21, .x22] s t := by
   reg_exec hz
-  refine ⟨?_, ⟨?_, rfl, rfl, rfl, rfl⟩⟩
+  refine ⟨?_, ⟨?_, by simp only [RegUpd.mem_write, RegUpd.mem_addWithCarry],
+      by simp only [RegUpd.rd_write, RegUpd.rd_addWithCarry],
+      by simp only [RegUpd.wr_write, RegUpd.wr_addWithCarry],
+      by simp only [RegUpd.sp_write, RegUpd.sp_addWithCarry]⟩⟩
   · have h := rowAcc_value (s.gpr .x3) (s.gpr .x12) (s.gpr .x13) (s.gpr .x14) (s.gpr .x15) (s.gpr .x5) (s.gpr .x6) (s.gpr .x7) (s.gpr .x21)
     dsimp only [addCarry, carryOut, mulHi, Size.bits] at h ⊢
     exact h
@@ -156,7 +162,10 @@ theorem rowAcc2_ok (s : State) (hz : s.gpr .x10 = 0) :
           (s.gpr .x3).toNat * val4 (s.gpr .x12) (s.gpr .x13) (s.gpr .x14) (s.gpr .x15) ∧
       Keeps [.x2, .x8, .x9, .x16, .x6, .x7, .x21, .x22, .x23] s t := by
   reg_exec hz
-  refine ⟨?_, ⟨?_, rfl, rfl, rfl, rfl⟩⟩
+  refine ⟨?_, ⟨?_, by simp only [RegUpd.mem_write, RegUpd.mem_addWithCarry],
+      by simp only [RegUpd.rd_write, RegUpd.rd_addWithCarry],
+      by simp only [RegUpd.wr_write, RegUpd.wr_addWithCarry],
+      by simp only [RegUpd.sp_write, RegUpd.sp_addWithCarry]⟩⟩
   · have h := rowAcc_value (s.gpr .x3) (s.gpr .x12) (s.gpr .x13) (s.gpr .x14) (s.gpr .x15) (s.gpr .x6) (s.gpr .x7) (s.gpr .x21) (s.gpr .x22)
     dsimp only [addCarry, carryOut, mulHi, Size.bits] at h ⊢
     exact h
@@ -170,7 +179,10 @@ theorem rowAcc3_ok (s : State) (hz : s.gpr .x10 = 0) :
           (s.gpr .x3).toNat * val4 (s.gpr .x12) (s.gpr .x13) (s.gpr .x14) (s.gpr .x15) ∧
       Keeps [.x2, .x8, .x9, .x16, .x7, .x21, .x22, .x23, .x24] s t := by
   reg_exec hz
-  refine ⟨?_, ⟨?_, rfl, rfl, rfl, rfl⟩⟩
+  refine ⟨?_, ⟨?_, by simp only [RegUpd.mem_write, RegUpd.mem_addWithCarry],
+      by simp only [RegUpd.rd_write, RegUpd.rd_addWithCarry],
+      by simp only [RegUpd.wr_write, RegUpd.wr_addWithCarry],
+      by simp only [RegUpd.sp_write, RegUpd.sp_addWithCarry]⟩⟩
   · have h := rowAcc_value (s.gpr .x3) (s.gpr .x12) (s.gpr .x13) (s.gpr .x14) (s.gpr .x15) (s.gpr .x7) (s.gpr .x21) (s.gpr .x22) (s.gpr .x23)
     dsimp only [addCarry, carryOut, mulHi, Size.bits] at h ⊢
     exact h
@@ -184,7 +196,10 @@ theorem rowAccReduce_ok (s : State) (hz : s.gpr .x10 = 0) :
           (s.gpr .x11).toNat * val4 (s.gpr .x21) (s.gpr .x22) (s.gpr .x23) (s.gpr .x24) ∧
       Keeps [.x2, .x8, .x9, .x16, .x4, .x5, .x6, .x7, .x20] s t := by
   reg_exec hz
-  refine ⟨?_, ⟨?_, rfl, rfl, rfl, rfl⟩⟩
+  refine ⟨?_, ⟨?_, by simp only [RegUpd.mem_write, RegUpd.mem_addWithCarry],
+      by simp only [RegUpd.rd_write, RegUpd.rd_addWithCarry],
+      by simp only [RegUpd.wr_write, RegUpd.wr_addWithCarry],
+      by simp only [RegUpd.sp_write, RegUpd.sp_addWithCarry]⟩⟩
   · have h := rowAcc_value (s.gpr .x11) (s.gpr .x21) (s.gpr .x22) (s.gpr .x23) (s.gpr .x24) (s.gpr .x4) (s.gpr .x5) (s.gpr .x6) (s.gpr .x7)
     dsimp only [addCarry, carryOut, mulHi, Size.bits] at h ⊢
     exact h

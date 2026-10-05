@@ -75,12 +75,12 @@ theorem end_ok {X : Mem → Prop} {s : State} (h : PC X σ 4 s) :
       (by decide)
 
 /-- The three squeezes, the table and the four polynomials. -/
-theorem squeezes_ok {s : State} (h : SqInv σ 0 s) :
-    WP isa (.seq (squeeze4 0) (.seq (squeeze4 1) (.seq (squeeze4 2) (.seq (.block tabBuild)
+theorem squeezes_ok {fast : Bool} {s : State} (h : SqInv σ 0 s) :
+    WP isa (.seq (squeeze4 0 fast) (.seq (squeeze4 1 fast) (.seq (squeeze4 2 fast) (.seq (.block tabBuild)
       (.seq (parse 0) (.seq (parse 1) (.seq (parse 2) (.seq (parse 3) (.block epi))))))))) s fun s' =>
       sample4K.post σ s' ∧ gprPreserved σ s' := by
-  refine WP.seq (WP.mono (sq_ok hp (by decide) h) fun s₁ h₁ => WP.seq (WP.mono (sq_ok hp (by decide) h₁)
-    fun s₂ h₂ => WP.seq (WP.mono (sq_ok hp (by decide) h₂) fun s₃' h₃' =>
+  refine WP.seq (WP.mono (sq_ok (fast := fast) hp (by decide) h) fun s₁ h₁ => WP.seq (WP.mono (sq_ok (fast := fast) hp (by decide) h₁)
+    fun s₂ h₂ => WP.seq (WP.mono (sq_ok (fast := fast) hp (by decide) h₂) fun s₃' h₃' =>
       WP.seq (WP.mono (pinv0_ok hp h₃') fun s₃ p₀ => ?_))))
   refine WP.seq (WP.mono (parse_ok hp (by decide) p₀) fun s₄ p₁ => WP.seq (WP.mono (parse_ok hp (by decide) p₁)
     fun s₅ p₂ => WP.seq (WP.mono (parse_ok hp (by decide) p₂) fun s₆ p₃ =>
@@ -88,10 +88,10 @@ theorem squeezes_ok {s : State} (h : SqInv σ 0 s) :
 
 end
 
-theorem correct (σ : State) (hs : sample4K.pre σ) :
-    ∃ t s', Exec isa Impl.MlKem.X86_64.Sample4.sampleNTT4Avx2 σ t s' ∧ abiPreserved σ s' ∧ sample4K.post σ s' := by
+theorem correct {fast : Bool} (σ : State) (hs : sample4K.pre σ) :
+    ∃ t s', Exec isa (Impl.MlKem.X86_64.Sample4.sampleNTT4Avx2 fast) σ t s' ∧ abiPreserved σ s' ∧ sample4K.post σ s' := by
   have hp := pre_of hs
-  obtain ⟨t, s', he, hF⟩ := WP.seq (WP.mono (start_ok hp) fun _ h => squeezes_ok hp h)
-  exact ⟨t, s', he, abiPreserved_of_exec (by decide +kernel) he hF.2, hF.1⟩
+  obtain ⟨t, s', he, hF⟩ := WP.seq (WP.mono (start_ok hp) fun _ h => squeezes_ok (fast := fast) hp h)
+  exact ⟨t, s', he, abiPreserved_of_exec (by cases fast <;> decide +kernel) he hF.2, hF.1⟩
 
 end VG.Proof.MlKem.X86_64.S4

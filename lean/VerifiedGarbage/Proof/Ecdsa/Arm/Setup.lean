@@ -92,8 +92,8 @@ theorem setupLoad_ok {c : Cfg} (hc : CfgOk c) {s t : State} {base : Addr} {i : N
     WP isa (.block (loadBE c.n (c.sl i) src)) t fun t' =>
       wordsVal t'.mem base (c.sl i) c.n = ofBytes (Spec.Ecdsa.bytesAt s.mem (State.addr p) (8 * c.n)) ∧
       Rest [.r4] t t' ∧ Outside base (c.sl i) (8 * c.n) t.mem t'.mem := by
-  have hl := sl_le c hc.n7 hi
-  have h7 := hc.n7
+  have hl := sl_le c hc.n10 hi
+  have h7 := hc.n10
   refine WP.mono (loadBE_ok hs hsrc hl (by rw [hp]; exact hfit) (by rw [hp]; exact hin)
     (by rw [hp]; exact hd.sub_right (Offset.sub_base base hl))) fun t' ⟨e, k, O⟩ => ⟨?_, k, O⟩
   have hb : Spec.Ecdsa.bytesAt t.mem (State.addr p) (8 * c.n) = Spec.Ecdsa.bytesAt s.mem (State.addr p) (8 * c.n) :=
@@ -115,7 +115,7 @@ theorem setupConsts_ok {c : Cfg} (hc : CfgOk c) {base : Addr} : ∀ (l : List (N
   | (i, x) :: l, t, hs, hb, hnd => by
     rw [List.flatMap_cons]
     have hi := hb (i, x) List.mem_cons_self
-    have hl := sl_le c hc.n7 (i := i) (by omega)
+    have hl := sl_le c hc.n10 (i := i) (by omega)
     refine VG.Proof.X25519.Arm.WP.append (setConst_ok hs hl hi.2) fun t₁ ⟨e₁, k₁, O₁⟩ => ?_
     have hs₁ := hs.of_rest k₁ (by decide)
     rw [List.map_cons, List.nodup_cons] at hnd
@@ -201,7 +201,7 @@ theorem setup_eq (c : Cfg) (A : Args) : c.setupWith A = Cfg.scStart A :: (Cfg.sa
 
 theorem setup_ok {c : Cfg} (hc : CfgOk c) {A : Args} {s : State} (hp : SetupPre c A s) :
     WP isa (.block (c.setupWith A)) s (SetupPost c A s (scBase A s)) := by
-  have h7 := hc.n7
+  have h7 := hc.n10
   have h0 := hc.n0
   have hsz : size = 4096 := rfl
   have hfit := hp.sc_fit
@@ -290,7 +290,8 @@ theorem setup_ok {c : Cfg} (hc : CfgOk c) {A : Args} {s : State} (hp : SetupPre 
     ((k₉.mono (by simp)).trans (m'.rest _)))
   have K₃' : Rest [.r4, .r12] s₃ s' := ((k₄.mono (by simp)).trans (k₅.mono (by simp))).trans
     ((k₆.mono (by simp)).trans ((k₇.mono (by simp)).trans ((k₉.mono (by simp)).trans (m'.rest _))))
-  refine ⟨hs₉.of_rest (m'.rest []) (by decide), K', ?_, fun rd hrd => ?_, ?_, ?_, ?_, ?_, fun ix hix => ?_, ?_⟩
+  refine ⟨hs₉.of_rest (m'.rest []) (by decide), ⟨by rw [K'.wr]; exact hp.wr,
+    by simp only [scBase, State.addr, BitVec.toNat_setWidth_of_le (by decide : 32 ≤ 64)]; omega⟩, K', ?_, fun rd hrd => ?_, ?_, ?_, ?_, ?_, fun ix hix => ?_, ?_⟩
   · exact (O₃.trans (Ol.mono (Nat.zero_le _) (by omega))).unch
   · have hlt := saved_lt rd hrd
     have hw32 := Ol.w32 (d := rd.2) (by omega) (by omega)

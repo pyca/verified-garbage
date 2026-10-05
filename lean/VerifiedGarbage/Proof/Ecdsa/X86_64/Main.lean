@@ -1,4 +1,5 @@
 import VerifiedGarbage.Proof.Ecdsa.X86_64.GMul
+import VerifiedGarbage.Proof.Ecdsa.X86_64.Inv
 import VerifiedGarbage.Proof.Ecdsa.Sign
 
 /-!
@@ -9,8 +10,8 @@ with `d` and `k`, for any curve the proof of the code supports (`CfgOk`)
 whose group law the proofs support (`Law`), with its comb's tables, if
 any, right (`CombTbls`), and restores the callee-saved registers. Four
 stages, each a lemma: the setup and the tables of bits (`stage₁`, in
-`Stages.lean`), `[k]G` (`gMul_ok`) and `Z^(p-2)` (`stage₂`), `x`, `r`, the
-checks and `k^(n-2)` (`stage₃`), and `s`, its check and the result
+`Stages.lean`), `[k]G` (`gMul_ok`) and `Z^(p-2)` (`stage₂`, `pPow_ok`), `x`,
+`r`, the checks and `k^(n-2)` (`stage₃`, `nPow_ok`), and `s`, its check and the result
 (`stage₄`); `signWith_eq` connects what they compute to the specification.
 -/
 
@@ -40,7 +41,7 @@ structure St₂ (c : Cfg) (hs : Option Nat) (s₀ : State) (base : Addr) (s : St
 theorem stage₂ (hc : CfgOk c) (hC : Law c.C) (hT : CombTbls c) {hs : Option Nat} {s₀ : State} (hp : Pre c s₀) {base : Addr}
     (hb : base = s₀.gpr .r8) {s : State} (hS : St₁ c hs s₀ base s)
     {rest : Prog isa} {Q : State → Prop} (h : ∀ s', St₂ c hs s₀ base s' → WP isa rest s' Q) :
-    WP isa (.seq c.gMul (.seq (pow c.powP) rest)) s Q := by
+    WP isa (.seq c.gMul (.seq c.pPow rest)) s Q := by
   subst hb
   have h0 := hc.n0
   have h7 := hc.n10
@@ -50,30 +51,28 @@ theorem stage₂ (hc : CfgOk c) (hC : Law c.C) (hT : CombTbls c) {hs : Option Na
   refine WP.seq (WP.mono (gMul_ok hc hC hT hp hS) fun s₅ ⟨K₅, U₅, M₅, L₅, R₅⟩ => ?_)
   have hs₅ := hS.scr.of_keepRegs K₅ (rdi_not_powClob _)
   have F₅ := F.unch h7 hn fixedOk_gW U₅
-  refine WP.seq (WP.mono (pow_ok (P := c.powP) (e := c.C.p - 2) (powLayP hc) hpR hs₅ M₅
+  refine WP.seq (WP.mono (pPow_ok hc hs₅ M₅
     (L₅ (c.sl RZ) (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_singleton_self _)))) F₅.onep
     (fun t ht => by
       show s₅.mem (off (s₀.gpr .r8) (bitsAt c.n 1 + t)) = _
       rw [tbl_unch U₅ h7 hn (j := 1) (by decide) ht (tbl_apart_gW (Or.inl rfl))]
-      exact hS.t₁ t ht)
-    (show c.C.p - 2 < 2 ^ (64 * c.n) by have := hc.p_lt; omega)) fun s₆ ⟨K₆, U₆, lt₆, v₆⟩ => h s₆ ?_)
-  rw [powWP_eq] at U₆
+      exact hS.t₁ t ht)) fun s₆ ⟨K₆, U₆, lt₆, v₆⟩ => h s₆ ?_)
   have e₆ : ∀ {i}, i < 45 → i ∉ [ACC, PT, TMP] →
       i ∉ [RX, RY, RZ, TX, TY, TZ, PT, T0, T1, T2, T3, T4, T5, DX, DY, DZ, TMP] →
       sv c (s₀.gpr .r8) s₆ i = sv c (s₀.gpr .r8) s i := fun hi h₁ h₂ =>
-    (sv_unch U₆ h7 hn hi (apart_slW h₁)).trans (sv_unch U₅ h7 hn hi (apart_gW hi h₂))
+    (sv_unch U₆ h7 hn hi (apart_pwW hi h₁)).trans (sv_unch U₅ h7 hn hi (apart_gW hi h₂))
   have r₆ : ∀ {i}, i < 45 → i ∉ [ACC, PT, TMP] → sv c (s₀.gpr .r8) s₆ i = sv c (s₀.gpr .r8) s₅ i := fun hi h₁ =>
-    sv_unch U₆ h7 hn hi (apart_slW h₁)
-  refine ⟨⟨hs₅.of_keepRegs K₆ (rdi_not_powClob _), ?_, by rw [K₆.wr, K₅.wr, hS.wr],
-    F₅.unch h7 hn (fixedOk_slW (by decide)) U₆⟩,
+    sv_unch U₆ h7 hn hi (apart_pwW hi h₁)
+  refine ⟨⟨hs₅.of_keepRegs K₆ (rdi_not_invClob _), ?_, by rw [K₆.wr, K₅.wr, hS.wr],
+    F₅.unch h7 hn fixedOk_pwW U₆⟩,
     by rw [e₆ (by decide) (by decide) (by decide), hS.k],
     by rw [e₆ (by decide) (by decide) (by decide), hS.d],
     by rw [e₆ (by decide) (by decide) (by decide), hS.e],
-    by rw [flag_unch U₆ h7 h0 hn (by decide), flag_unch_gW U₅ h7 h0 hn, hS.flag], ?_, ?_, lt₆, ?_,
+    by rw [flag_unch_pwW U₆ h7 h0 hn, flag_unch_gW U₅ h7 h0 hn, hS.flag], ?_, ?_, lt₆, ?_,
     ?_⟩
-  · rw [K₆.gpr _ (rsi_not_powClob _), K₅.gpr _ (rsi_not_powClob _), hS.rsi]
+  · rw [K₆.gpr _ (rsi_not_invClob _), K₅.gpr _ (rsi_not_powClob _), hS.rsi]
   · intro t ht
-    rw [tbl_unch U₆ h7 hn (j := 2) (by decide) ht (tbl_apart_slW (by decide) 2 t),
+    rw [tbl_unch U₆ h7 hn (j := 2) (by decide) ht (tbl_apart_pwW (by decide) ht),
       tbl_unch U₅ h7 hn (j := 2) (by decide) ht (tbl_apart_gW (Or.inr rfl))]
     exact hS.t₂ t ht
   · show Rep c.C (toM _ _ (sv c (s₀.gpr .r8) s₆ RX)) (toM _ _ (sv c (s₀.gpr .r8) s₆ RY)) (toM _ _ (sv c (s₀.gpr .r8) s₆ RZ)) _
@@ -104,7 +103,7 @@ structure St₃ (c : Cfg) (s₀ : State) (base : Addr) (s : State) : Prop extend
 /-- `x`, `r`, `k R mod n` and the checks, then `k^(n-2)`. -/
 theorem stage₃ (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State} (hS : St₂ c (some E) s₀ base s)
     {rest : Prog isa} {Q : State → Prop} (h : ∀ s', St₃ c s₀ base s' → WP isa rest s' Q) :
-    WP isa (.seq c.middle (.seq (pow c.powN) rest)) s Q := by
+    WP isa (.seq c.middle (.seq c.nPow rest)) s Q := by
   have hSd : sv c base s D = dv c s₀ := by rw [hS.d, shAt_E_D, Nat.shiftRight_zero]
   have hSe : sv c base s E = ev c s₀ := by rw [hS.e, shAt_self]
   have h0 := hc.n0
@@ -124,17 +123,15 @@ theorem stage₃ (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State} (hS : S
     sv_flag O₈ h0 h7 hn hi hf
   have e₇ : ∀ {i}, i < 45 → i ∉ [XM, X, RR, KM, TMP] → sv c base s₇ i = sv c base s i := fun hi hl =>
     sv_unch Mp.unch h7 hn hi (apart_slW hl)
-  refine WP.seq (WP.mono (pow_ok (P := c.powN) (e := c.C.n - 2) (powLayN hc) hnR hs₈ (modN_of hc F₈.mn)
+  refine WP.seq (WP.mono (nPow_ok hc hs₈ (modN_of hc F₈.mn)
     (lt_of_eq_of_lt (e₈ (i := KM) (by decide) (by decide)) Mp.km_lt) F₈.onen
     (fun t ht => by
       show s₈.mem (off base (bitsAt c.n 2 + t)) = _
       rw [tbl_unch O₈.unch h7 hn (j := 2) (by decide) ht (tbl_apart_flag h0 2 t),
         tbl_unch Mp.unch h7 hn (j := 2) (by decide) ht (tbl_apart_slW (by decide) 2 t)]
-      exact hS.t₂ t ht)
-    (show c.C.n - 2 < 2 ^ (64 * c.n) by have := hc.n_lt; omega)) fun s₉ ⟨K₉, U₉, lt₉, v₉⟩ => h s₉ ?_)
-  rw [powWN_eq] at U₉
+      exact hS.t₂ t ht)) fun s₉ ⟨K₉, U₉, lt₉, v₉⟩ => h s₉ ?_)
   have e₉ : ∀ {i}, i < 45 → i ∉ [ACC, PT, TMP] → sv c base s₉ i = sv c base s₈ i := fun hi hl =>
-    sv_unch U₉ h7 hn hi (apart_slW hl)
+    sv_unch U₉ h7 hn hi (apart_pwW hi hl)
   -- The slots `middle` and the power do not write.
   have a₉ : ∀ {i}, i < 45 → i ∉ [ACC, PT, TMP] → i ≠ FLAG → i ∉ [XM, X, RR, KM, TMP] →
       sv c base s₉ i = sv c base s i := fun hi h₁ h₂ h₃ =>
@@ -148,16 +145,16 @@ theorem stage₃ (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State} (hS : S
     show toM _ _ (sv c base s₉ i) = toM _ _ (sv c base s i)
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hi
     rcases hi with rfl | rfl | rfl <;> rw [a₉ (by decide) (by decide) (by decide) (by decide)]
-  refine ⟨⟨hs₈.of_keepRegs K₉ (rdi_not_powClob _), ?_, by rw [K₉.wr, k₈.wr, Mp.wr, hS.wr],
-    F₈.unch h7 hn (fixedOk_slW (by decide)) U₉⟩,
+  refine ⟨⟨hs₈.of_keepRegs K₉ (rdi_not_invClob _), ?_, by rw [K₉.wr, k₈.wr, Mp.wr, hS.wr],
+    F₈.unch h7 hn fixedOk_pwW U₉⟩,
     by rw [a₉ (i := D) (by decide) (by decide) (by decide) (by decide), hSd],
     by rw [a₉ (i := E) (by decide) (by decide) (by decide) (by decide), hSe],
     by rw [tR RX (by simp), tR RY (by simp), tR RZ (by simp)]; exact hS.rep,
     by rw [x₉]; exact Mp.x_lt,
     by rw [x₉, Mp.x, tR RX (by simp), tR RZ (by simp), hS.acc],
     by rw [rr₉, x₉]; exact Mp.rr, ?_, ?_⟩
-  · rw [K₉.gpr _ (rsi_not_powClob _), k₈.gpr _ (by decide), Mp.gpr _ (rsi_not_clob _), hS.rsi]
-  · rw [flag_unch U₉ h7 h0 hn (by decide), f₈, flag_unch Mp.unch h7 h0 hn (by decide), hS.flag,
+  · rw [K₉.gpr _ (rsi_not_invClob _), k₈.gpr _ (by decide), Mp.gpr _ (rsi_not_clob _), hS.rsi]
+  · rw [flag_unch_pwW U₉ h7 h0 hn, f₈, flag_unch Mp.unch h7 h0 hn (by decide), hS.flag,
       e₇ (i := D) (by decide) (by decide), e₇ (i := K) (by decide) (by decide), hSd, hS.k, Mp.rr, x₉]
   · refine v₉.trans ?_
     show toM c.C.n (2 ^ (64 * c.n)) (sv c base s₈ KM) ^ _ = _
@@ -238,7 +235,7 @@ theorem stage₄ (hc : CfgOk c) (hC : Law c.C) {s₀ : State} (hp : Pre c s₀) 
 
 theorem sign_eq (c : Cfg) : c.sign = .seq (.block c.setup) (.seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n))
     (.seq (bits (c.sl EXPP) (bitsAt c.n 1) (8 * c.n)) (.seq (bits (c.sl EXPN) (bitsAt c.n 2) (8 * c.n))
-    (.seq c.gMul (.seq (pow c.powP) (.seq c.middle (.seq (pow c.powN) c.scalar))))))) := rfl
+    (.seq c.gMul (.seq c.pPow (.seq c.middle (.seq c.nPow c.scalar))))))) := rfl
 
 /-- `vg_ecdsa_<curve>_sign` computes the specification's signature and
 restores the callee-saved registers. -/

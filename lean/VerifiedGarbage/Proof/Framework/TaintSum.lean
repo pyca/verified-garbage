@@ -223,7 +223,7 @@ def checkSum [Frame A] (S : List (Summary M A.T)) (τ : A.T) (c : Prog M) (h : S
     | some (_, pre, post, F) =>
       if Mono.R (A := A) pre τ then some (Frame.join post (Frame.frameOf τ F)) else none
     | none => none
-  | .block ms, τ, .block is => checkChunks A τ is ms
+  | .block ms, τ, .block is => checkChunks A chunk τ is ms
   | .seq mid h₁ h₂, τ, .seq c₁ c₂ =>
     (checkSum S τ c₁ h₁).bind fun τ' => if A.le mid τ' then checkSum S mid c₂ h₂ else none
   | .ite h₁ h₂, τ, .ite c t e =>
@@ -307,24 +307,24 @@ theorem checkBlock_frame [hm : Frame A] {is : List M.Instr} {F Φ τ σ τ' : A.
     obtain ⟨σ', h', hle'', hΦ'⟩ := ih hr hk.2 hle' (hm.step_keeps i hk.1 hΦF hΦ hs')
     exact ⟨σ', by simp only [checkBlock, Option.bind_eq_some_iff]; exact ⟨σ₁, hs', h'⟩, hle'', hΦ'⟩
 
-theorem checkChunks_frame [hm : Frame A] {ms : List A.T} {is : List M.Instr} {F Φ τ σ τ' : A.T}
-    (h : A.checkChunks τ is ms = some τ') (hk : is.all (Frame.keeps (A := A) F) = true)
+theorem checkChunks_frame [hm : Frame A] {chunkSize : Nat} {ms : List A.T} {is : List M.Instr} {F Φ τ σ τ' : A.T}
+    (h : A.checkChunks chunkSize τ is ms = some τ') (hk : is.all (Frame.keeps (A := A) F) = true)
     (hΦF : Fr Φ F = true) (hle : R τ σ = true) (hΦ : Fr Φ σ = true) :
-    ∃ σ', A.checkChunks σ is (ms.map (J · Φ)) = some σ' ∧ R τ' σ' = true ∧ Fr Φ σ' = true := by
+    ∃ σ', A.checkChunks chunkSize σ is (ms.map (J · Φ)) = some σ' ∧ R τ' σ' = true ∧ Fr Φ σ' = true := by
   induction ms generalizing τ σ is with
   | nil => exact checkBlock_frame h hk hΦF hle hΦ
   | cons m ms ih =>
-    simp only [checkChunks, Option.bind_eq_some_iff] at h
+    simp only [checkChunks, KList.take_eq, KList.drop_eq, Option.bind_eq_some_iff] at h
     obtain ⟨τ₁, h₁, h₂⟩ := h
     split at h₂ <;> [rename_i hm₁; cases h₂]
-    have hk' : (is.take chunk ++ is.drop chunk).all (Frame.keeps (A := A) F) = true := by
+    have hk' : (is.take chunkSize ++ is.drop chunkSize).all (Frame.keeps (A := A) F) = true := by
       rw [List.take_append_drop]; exact hk
     rw [List.all_append, Bool.and_eq_true] at hk'
     obtain ⟨σ₁, h₁', hle₁, hΦ₁⟩ := checkBlock_frame h₁ hk'.1 hΦF hle hΦ
     have jl := hm.join_hint (hm.le_R hm₁ hle₁) hΦ₁
     obtain ⟨σ', h', hle', hΦ'⟩ := ih h₂ hk'.2 jl.2.1 jl.2.2
     refine ⟨σ', ?_, hle', hΦ'⟩
-    simp only [List.map_cons, checkChunks, Option.bind_eq_some_iff]
+    simp only [List.map_cons, checkChunks, KList.take_eq, KList.drop_eq, Option.bind_eq_some_iff]
     exact ⟨σ₁, h₁', by rw [if_pos' jl.1]; exact h'⟩
 
 theorem AllOk.get [Frame A] {S : List (Summary M A.T)} (hS : AllOk A S) {k : Nat}
@@ -372,7 +372,7 @@ theorem checkSum_frame [hm : Frame A] {S : List (Summary M A.T)} (hS : AllOk A S
     cases c with
     | block is =>
       obtain ⟨σ', h', hle', hΦ'⟩ := checkChunks_frame (ms := ms) (A := A) h hk hΦF hle hΦ
-      exact ⟨.block (ms.map (J · Φ)), σ', h', hle', hΦ'⟩
+      exact ⟨.block (ms.map (J · Φ)) chunk, σ', h', hle', hΦ'⟩
     | _ => cases (h : (none : Option A.T) = some τ')
   | seq mid g₁ g₂ ih₁ ih₂ =>
     intro c τ σ τ' h hf hk hle hΦ
@@ -623,7 +623,7 @@ and at any other code that is a summary's (by `same`). -/
 def hintSum [Frame A] (S : List (Summary M A.T)) (same : Prog M → Prog M → Bool) :
     A.T → Prog M → Option (A.T × SHint A.T)
   | τ, .block is => sumOr (findSumCode A same (.block is) τ S 0) fun _ =>
-    (A.checkBlock τ is).map fun τ' => (τ', .block (chunkHints A τ is is.length))
+    (A.checkBlock τ is).map fun τ' => (τ', .block (chunkHints A chunk τ is is.length))
   | τ, .seq c₁ c₂ => sumOr (findSumCode A same (.seq c₁ c₂) τ S 0) fun _ =>
     (hintSum S same τ c₁).bind fun (τ₁, h₁) =>
       (hintSum S same τ₁ c₂).map fun (τ₂, h₂) => (τ₂, .seq τ₁ h₁ h₂)

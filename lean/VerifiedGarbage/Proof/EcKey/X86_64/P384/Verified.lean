@@ -7,9 +7,10 @@ import VerifiedGarbage.Proof.Framework.X86_64.TaintSym
 /-!
 # P-384 public keys on x86-64: `Verified`
 
-P-384 is a curve the proof supports (`p384_ok`, and `Law` for its group law
-and its comb's tables, which the registration file supplies:
-`Proof.P384.law`, `Proof.P384.combOk7`), so `publicKey_ok` gives the
+P-384 is a curve the proof supports (`p384_ok`, and `Law` for its group law,
+its comb's tables and `InvSounds` for its inversions, which the
+registration file supplies: `Proof.P384.law`, `Proof.P384.combOk7` and the
+variant's `inv`), so `publicKey_ok` gives the
 contract's postcondition; the callee-saved registers are restored, `rsp` is
 never written, and every store is to `out` or `scratch`, which the return
 address is apart from (`abiPreserved`). Constant time by taint tracking with
@@ -50,9 +51,10 @@ theorem post_of {s s' : State} (h : PkPost p384 s s') : pkX86_64.post s s' := by
 
 theorem pk_x86 (hL : Weierstrass.Law Spec.P384.curve)
     (hT : Weierstrass.CombOkW Spec.P384.curve 7 55 Impl.P384.p384Comb7 Impl.P384.p384Comb7Start)
+    (hI : Weierstrass.X86_64.InvSounds)
     (s : State) (hs : pkX86_64.pre s) :
     ∃ t s', Exec isa publicKeyP384 s t s' ∧ abiPreserved s s' ∧ pkX86_64.post s s' := by
-  obtain ⟨t, s', he, hsv, hpost⟩ := publicKey_ok p384_ok hL (p384_tbls hT) (pre_of hs)
+  obtain ⟨t, s', he, hsv, hpost⟩ := publicKey_ok (p384_ok hI) hL (p384_tbls hT) (pre_of hs)
   have hsp : ∀ i ∈ instrs publicKeyP384, Taint.clobbers i .rsp = false := by
     have h : publicKeyP384.allInstrs (fun i => !Taint.clobbers i .rsp) = true := by lit_decide
     rw [Code.allInstrs_eq, List.all_eq_true] at h
@@ -88,9 +90,10 @@ theorem pk_ct : ConstantTime isa pkX86_64.pre pkX86_64.pub publicKeyP384 :=
     (by taint_decide)
 
 theorem pk_verified (hL : Weierstrass.Law Spec.P384.curve)
-    (hT : Weierstrass.CombOkW Spec.P384.curve 7 55 Impl.P384.p384Comb7 Impl.P384.p384Comb7Start) :
+    (hT : Weierstrass.CombOkW Spec.P384.curve 7 55 Impl.P384.p384Comb7 Impl.P384.p384Comb7Start)
+    (hI : Weierstrass.X86_64.InvSounds) :
     Verified X86_64.target publicKeyP384
       (Spec.EcKey.P384.inst.publicKeyContract (X86_64.abi.withConsts p384.combConsts)) :=
-  Verified.of_correct (pk_x86 hL hT) pk_ct implies
+  Verified.of_correct (pk_x86 hL hT hI) pk_ct implies
 
 end VG.Proof.EcKey.X86_64.P384

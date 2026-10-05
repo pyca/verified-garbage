@@ -724,7 +724,7 @@ theorem crtByteHead2_ok {t₀ t : State} {P : Addr} {wx : Nat} {minv : BitVec 64
   refine ⟨hc₁, hI.tab.of_win f₁ hn, hYe ▸ hI.ylt, fun hq => ?_, ?_, ?_, Frm.refl _ _ _, Keep.refl _ _⟩
   · rw [hYe, hI.y hq, Nat.pow_zero, Nat.mul_one, Nat.sub_zero, Nat.div_eq_of_lt (show _ < 16 ^ 2 from hv),
       Nat.add_zero]
-  · rw [o2.word (by decide) (by decide), word_writeW_self, setWidth_byte, Nat.pow_zero, Nat.pow_zero]
+  · rw [o2.word (by decide) (by decide), word_writeW_self, setWidth_byte, Nat.pow_zero]
   · rw [hm₁, word_writeW_self]; rfl
 
 theorem crtByteHead_eq : ([.mov .rax (.mem (hdr Crt.sExp)), .mov .rcx (.mem (hdr Crt.sI)),

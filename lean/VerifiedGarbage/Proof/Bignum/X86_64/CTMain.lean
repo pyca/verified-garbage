@@ -221,8 +221,8 @@ theorem mb_ePre {p : MPub} {t σ t₁ : State} {xb : List Byte} {mi : BitVec 64}
   have hZ : slot p.w 8 ≤ p.Z := hm.z
   have hn' : p.B.toNat + slot p.w 8 ≤ 2 ^ 64 := by omega
   have x₁₂ := (Fixed.of_frm f (setupRanges_fixed _)).trans (Fixed.of_frm f' (r2Ranges_fixed _))
-  have i₁₂ := (InScr.of_frm f fun r hr => (setupRanges_le _ r hr).trans hZ).trans
-    (InScr.of_frm f' fun r hr => (r2Ranges_le _ r hr).trans hZ)
+  have i₁₂ := (InScr.of_frm f fun r hr => Nat.le_trans (setupRanges_le _ r hr) hZ).trans
+    (InScr.of_frm f' fun r hr => Nat.le_trans (r2Ranges_le _ r hr) hZ)
   exact ⟨Spec.Rsa.os2ip xb, hg, hZ, show 2 ≤ p.w by unfold MPub.w; omega,
     show p.w < 2 ^ 31 by unfold MPub.w; omega, hodd, hN1,
     by rw [f'.r2_wv hn' (by decide) (by decide) (by decide) (by decide)]; exact so.n,
