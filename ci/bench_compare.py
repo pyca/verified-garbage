@@ -13,7 +13,8 @@ interference, both of which are common on shared CI runners.
 
 Writes a Markdown table of the results to stdout (and appends it to
 `--summary`, e.g. `$GITHUB_STEP_SUMMARY`), and exits with status 1 if any
-verified-garbage benchmark got slower by more than `--threshold`.
+verified-garbage benchmark got slower by more than `--threshold`. If BASE
+does not exist, HEAD runs alone, next to OpenSSL.
 
 OpenSSL's code is the same on both sides, so its benchmarks run just once,
 with HEAD's binary, as a reference point for HEAD's times; and only without
@@ -237,7 +238,9 @@ def main():
         p.error("head's benchmark registry does not use the selected modules")
     binaries = {"head": build(head / "bench"), "base": None}
     note = "Base has no selected benchmarks; head/OpenSSL results are new."
-    if modules["base"] is not None:
+    if not base.is_dir():
+        note = "No base to compare with, so head ran alone."
+    elif modules["base"] is not None:
         binaries["base"], note, source = build_base(base, head)
         if binaries["base"] is not None:
             modules["base"] = selected_modules(source, args.modules)

@@ -8,7 +8,8 @@ name: Benchmarks
 #
 # It can also be run by hand (Actions > Benchmarks > Run workflow), comparing
 # the chosen branch with any earlier commit on every architecture, e.g. to
-# measure the total speedup of a series of pull requests.
+# measure the total speedup of a series of pull requests; or, with no
+# commit, measuring the chosen branch alone, next to OpenSSL.
 on:
   pull_request:
     paths:
@@ -22,8 +23,8 @@ on:
   workflow_dispatch:
     inputs:
       base_commit:
-        description: The commit to compare against
-        required: true
+        description: The commit to compare against (empty to run the branch alone, next to OpenSSL)
+        required: false
 
 permissions:
   contents: read
@@ -105,6 +106,7 @@ jobs:
           path: head
           persist-credentials: false
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        if: ${{ needs.arches.outputs.base }}
         with:
           ref: ${{ needs.arches.outputs.base }}
           path: base
