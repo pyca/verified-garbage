@@ -212,7 +212,7 @@ theorem wordFold_ok (s : State) (hc : Consts s) (hr : rem s < L) :
   rw [a11] at eb
   have hb : rv b N + ((b.gpr .x12).toNat + 2 ^ 64 * rv b [.x13, .x14, .x15, .x20]) < 2 ^ 448 := by
     have : 2 * L < 2 ^ 448 := by decide +kernel
-    rw [nb, eb]; omega
+    rw [nb, eb]; exact Nat.lt_trans hlt this
   refine WP.mono (foldAdd_ok b hcb.z hb) fun t ⟨et, kt⟩ => ?_
   rw [et, nb, eb]
   refine ⟨hlt, ?_, ((ka.mono (by decide)).trans (kb.mono (by decide))).trans (kt.mono (by decide))⟩
@@ -268,9 +268,8 @@ theorem csubSel_ok (s : State) (hz : s.gpr Z = 0) :
   simp only [Z] at hz
   simp only [hz, sbcs_mask]
   refine ⟨?_, ⟨fun r hr => ?_, rfl, rfl, rfl, rfl⟩⟩
-  · simp only [rem, R, S, N, rv, RegUpd.gpr_write, RegUpd.gpr_addWithCarry, BitVec.setWidth_eq,
-      ite_true, ite_false, reduceCtorEq, sel_mask]
-    cases s.c <;> simp only [Bool.false_eq_true, ite_true, ite_false]
+  · cases s.c <;> simp only [rem, R, S, N, rv, RegUpd.gpr_write, RegUpd.gpr_addWithCarry,
+      BitVec.setWidth_eq, ite_true, ite_false, reduceCtorEq, sel_mask, Bool.false_eq_true]
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     simp only [RegUpd.gpr_write, RegUpd.gpr_addWithCarry, hr.1, hr.2.1, hr.2.2.1, hr.2.2.2.1,
       hr.2.2.2.2.1, hr.2.2.2.2.2.1, hr.2.2.2.2.2.2.1, hr.2.2.2.2.2.2.2.1, hr.2.2.2.2.2.2.2.2,

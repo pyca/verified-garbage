@@ -55,7 +55,7 @@ theorem scalarBase_agree {s₁ s₂ : State} (h₁ : scalarBaseLocal.pre s₁)
 theorem scalarBase_ok (hL : Proof.Ed448.BaseLadderOk) (s : State) (hs : scalarBaseLocal.pre s) :
     ∃ t s', Exec isa scalarBase s t s' ∧ abiPreserved s s' ∧ scalarBaseLocal.post s s' := by
   obtain ⟨t, s', he, h⟩ := scalarBase_correct Proof.X448.X86_64.baseline_ok hL hs
-  exact ⟨t, s', he, abiPreserved_of_exec (by lit_decide) he h.1, h.2⟩
+  exact ⟨t, s', he, abiPreserved_of_exec (c := scalarBase) (by lit_decide) he h.1, h.2⟩
 
 theorem scalarBase_ct : ConstantTime isa scalarBaseLocal.pre scalarBaseLocal.pub scalarBase := by
   refine VG.Taint.constantTime (A := taint) scalarBaseτ
