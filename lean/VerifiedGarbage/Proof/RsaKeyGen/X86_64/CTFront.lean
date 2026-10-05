@@ -297,4 +297,106 @@ theorem tailPre {q : FPub} {s : State} (h : KSt q s) (hcl : q.sch.close = false)
   rw [hS, show 8 * (8 * q.w) = 64 * q.w by omega] at this
   exact this.symm
 
+/-! ## `closeCheck` -/
+
+theorem RelCT.seqs_app_seq {P Q : State → State → Prop} {a b : List (Prog isa)} {k : Prog isa} (ha : a ≠ [])
+    (hb : b ≠ []) (h : RelCT isa P (.seq (seqs a) (.seq (seqs b) k)) Q) : RelCT isa P (.seq (seqs (a ++ b)) k) Q := by
+  intro s₁ s₂ t₁ t₂ s₁' s₂' hp e₁ e₂
+  cases e₁ with
+  | seq x₁ k₁ =>
+    cases e₂ with
+    | seq x₂ k₂ =>
+      cases exec_seqs_app ha hb x₁ with
+      | seq a₁ b₁ =>
+        cases exec_seqs_app ha hb x₂ with
+        | seq a₂ b₂ =>
+          obtain ⟨ht, hq⟩ := h _ _ _ _ _ _ hp (.seq a₁ (.seq b₁ k₁)) (.seq a₂ (.seq b₂ k₂))
+          exact ⟨by simpa only [List.append_assoc] using ht, hq⟩
+
+theorem KSt.congr {q : FPub} {s t : State} {regs : List Reg} (h : KSt q s) (hm : t.mem = s.mem) (k : Keep regs s t)
+    (hdi : t.gpr .rdi = s.gpr .rdi) : KSt q t := by
+  obtain ⟨-, -, -, mi, -, -, hg, -⟩ := id h
+  exact h.step (rs := []) ⟨mi, hg.scr.congr k.2.2, hdi.trans hg.rdi, by rw [hm]; exact hg.hdr⟩
+    (fun x _ => by rw [hm]) (by simp) (by simp) (by simp) k
+
+theorem GW.of_good {q : TPub} {s t : State} {mi : BitVec 64} (h : GW q s) (hg : Good t q.B q.Z q.w mi)
+    (hw : t.wr = s.wr) : GW q t :=
+  let ⟨hk, hw', hd, _⟩ := h; ⟨hk, hw.trans hw', hd, mi, hg⟩
+
+/-- `p` into `aX`. -/
+theorem closeLoad_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hg : Good s B Z w minv) (hZ : slot w 8 ≤ Z)
+    (hw : 4 ≤ w) (hw' : w ≤ 64) {pP : Addr} {pB : List Byte} (hP : word s.mem B (8 * kP) = pP)
+    (hK : word s.mem B (8 * kLen) = BitVec.ofNat 64 (8 * w)) (hpl : pB.length = 8 * w) (hsrc : Src s B Z pP pB) :
+    WP isa (seqs [.block [.mov .r12 (.mem (hdr sW)), .mov .rsi (.mem (hdr kP)), .mov .rcx (.mem (hdr kLen)),
+        .mov .rbx (.mem (hdr (sArr aX)))], loadBE]) s fun t => Good t B Z w minv ∧ t.wr = s.wr := by
+  have hn := hg.scr.nowrap
+  have hl : ∀ i < 32, InRegions (s.rd ++ s.wr) (off B (8 * i)) 8 := fun i hi =>
+    hg.scr.ld (by have := hdr_lt_slot w 8 hi; omega)
+  have hw8 : (8 * w + 7) / 8 = w := by omega
+  simp only [seqs]
+  refine WP.seq (WP.mono (WP.keep [.r12, .rsi, .rcx, .rbx] (Q := fun t => t.gpr .r12 = BitVec.ofNat 64 w ∧
+      t.gpr .rsi = pP ∧ t.gpr .rcx = BitVec.ofNat 64 (8 * w) ∧ t.gpr .rbx = off B (slot w aX) ∧ t.mem = s.mem) (by
+    xrun [State.ea, hdr, hg.rdi, hdrOff, hl sW (by decide), hl kP (by decide), hl kLen (by decide),
+      hl (sArr aX) (by decide), hg.hdr.hw, hP, hK, hg.hdr.harr aX (by decide)]) rfl)
+    fun s₁ ⟨⟨_, hsi₁, hcx₁, hbx₁, hm₁⟩, k₁⟩ => ?_)
+  have hs₁ := hg.scr.congr k₁.2.2
+  refine WP.mono (loadArr_ok (j := aX) hs₁ (by decide) (by rw [hw8]; exact hZ)
+    (hsrc.congrK (by rw [hm₁]; exact InScr.refl _ _ _) k₁) hpl (by omega) (by omega) hsi₁ hcx₁
+    (by rw [hw8]; exact hbx₁)) fun s₂ ⟨_, ha₂, k₂⟩ => ?_
+  rw [hw8] at ha₂
+  exact ⟨⟨hs₁.congr k₂.2.2, (k₂.gpr (by decide)).trans ((k₁.gpr (by decide)).trans hg.rdi),
+    ha₂.hdr (by rw [hm₁]; exact hg.hdr)⟩, k₂.2.2.trans k₁.2.2⟩
+
+/-- `closeCheck` leaks the same in runs that agree on the public data. -/
+theorem closeCheck_ct : RelCT isa (Two KSt) (seqs closeCheck) fun _ _ => True := by
+  unfold closeCheck
+  simp only [seqs]
+  refine RelCT.seq (R := Two fun q s => KSt q s ∧ s.zf = some (BitVec.ofNat 64 q.pl == 0))
+    (kt_piece (fun q : FPub => q.B) (fun q => q.wr) fS fvs [] (by decide) fvs_fst (fun _ _ h => h.hp) (pins_nil _)
+      (by taint_decide) ?_)
+    (two_ite_seq (fun _ _ _ h₁ h₂ => by simp only [eval, h₁.2, h₂.2]) ?_
+      (kt_ct (fun q : FPub => q.B) (fun q => q.wr) fS fvs [] (by decide) fvs_fst (fun _ _ h => h.1.1.hp) (pins_nil _)
+        (by taint_decide)))
+  · rintro q s h
+    obtain ⟨mi, -, -, hg, ha, -⟩ := h.cand
+    have hd := h.2.2.1
+    have hn := hg.scr.nowrap
+    have hl : InRegions (s.rd ++ s.wr) (off q.B (8 * kPlen)) 8 :=
+      hg.scr.ld (by have := hdr_lt_slot q.w 8 (show kPlen < 32 by decide); have := hd.z; unfold slot aTab at *; omega)
+    refine WP.mono (WP.keep [.rax, .rbp] (Q := fun t => t.zf = some (BitVec.ofNat 64 q.pl == 0) ∧ t.mem = s.mem) (by
+      xrun [State.ea, hdr, hg.rdi, hdrOff, hl, (avsW_of ha).plen, BitVec.and_self]) rfl)
+      fun t ⟨⟨hz, hm⟩, k⟩ => ⟨h.congr hm k (k.gpr (by decide)), hz⟩
+  · -- With `p`: `p` into `aX`, `c − p`, `|c − p|`, then the comparison.
+    refine RelCT.seqs_app_seq (by simp) (by simp) ?_
+    refine RelCT.seq (R := Two fun (q : FPub) s => GW q.tp s) ?_ (kt_ct (fun q : FPub => q.B) (fun q => q.wr) gS
+      (fun q => gvs q.B q.w) [] (by decide) (fun _ => gvs_fst _ _) (fun _ _ h => h.hp) (pins_nil _) (by taint_decide))
+    refine RelCT.seqs_app (by simp) (by simp [negLoop]) (RelCT.seq (R := Two fun (q : FPub) s => GW q.tp s ∧
+      s.gpr .r12 = BitVec.ofNat 64 q.w ∧ ∃ b, s.gpr .rbp = mask b) ?_ ?_)
+    · refine RelCT.seqs_app (by simp) (by simp [diffLoop]) (RelCT.seq (R := Two fun (q : FPub) s => GW q.tp s) ?_ ?_)
+      · refine kt_piece (fun q : FPub => q.B) (fun q => q.wr) fS fvs [] (by decide) fvs_fst (fun _ _ h => h.1.1.hp)
+          (pins_nil _) (by taint_decide) ?_
+        rintro q s ⟨⟨h, hz⟩, he⟩
+        obtain ⟨mi, pB, -, hg, ha, -, hp, -, -, hpl, -⟩ := h.cand
+        have hd := h.2.2.1
+        have hpl8 : q.pl = 8 * q.w := hd.pl.resolve_left fun h0 => by
+          rw [h0] at hz; simp [eval, hz] at he
+        exact WP.mono (closeLoad_ok hg (by have := hd.z; unfold slot aTab at *; omega) hd.w4 hd.w64 (avsW_of ha).p
+          (avsW_of ha).len (hpl.trans hpl8) hp) fun t ⟨hgt, hw⟩ => h.gw.of_good hgt hw
+      · refine kt_piece (fun q : FPub => q.B) (fun q => q.wr) gS (fun q => gvs q.B q.w) [] (by decide)
+          (fun _ => gvs_fst _ _) (fun _ _ h => h.hp) (pins_nil _) (by taint_decide) ?_
+        rintro q s h
+        obtain ⟨-, -, hd, mi, hg⟩ := id h
+        exact WP.mono (diff_ok hg hd.z (by have := hd.w4; omega) (by have := hd.w64; omega))
+          fun t ⟨b, hb, _, ho, h12, k⟩ => ⟨h.of_good ⟨hg.scr.congr k.2.2, (k.gpr (by decide)).trans hg.rdi,
+            Hdr.outside hg.hdr ho (by unfold slot; omega)⟩ k.2.2, h12, b, hb⟩
+    · refine kt_piece (fun q : FPub => q.B) (fun q => q.wr) gS (fun q => gvs q.B q.w) [.r12] (by decide)
+        (fun _ => gvs_fst _ _) (fun _ _ h => h.1.hp)
+        (fun _ _ _ h₁ h₂ r hr => by simp only [List.mem_singleton] at hr; subst hr; rw [h₁.2.1, h₂.2.1])
+        (by taint_decide) ?_
+      rintro q s ⟨h, h12, b, hb⟩
+      obtain ⟨-, -, hd, mi, hg⟩ := id h
+      exact WP.mono (neg_ok hg hd.z (by have := hd.w4; omega) (by have := hd.w64; omega) hb h12)
+        fun t ⟨_, ho, k⟩ => h.of_good ⟨hg.scr.congr k.2.2, (k.gpr (by decide)).trans hg.rdi,
+          Hdr.outside hg.hdr ho (by unfold slot; omega)⟩ k.2.2
+
 end VG.Proof.RsaKeyGen.X86_64
