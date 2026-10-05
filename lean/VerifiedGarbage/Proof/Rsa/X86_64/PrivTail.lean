@@ -191,4 +191,127 @@ theorem releaseLoop_ok {t : State} {S op : Addr} {k : Nat} {g : BitVec 64} {eq :
       ite_eq_right_of_eq_false _ _ (eq_false (hx j (by omega)))]
     exact hI.frame x (fun i hi => hx i (by omega)) fun i hi => hx' i (by omega)
 
+theorem bytesAt_eq_iff (m : Mem) (a b : Addr) (k : Nat) :
+    Spec.Rsa.bytesAt m a k = Spec.Rsa.bytesAt m b k ↔
+      ∀ i < k, m (a + BitVec.ofNat 64 i) = m (b + BitVec.ofNat 64 i) := by
+  simp only [Spec.Rsa.bytesAt]
+  constructor
+  · intro h i hi
+    have := congrArg (fun l => l[i]?) h
+    simpa [hi] using this
+  · intro h
+    exact List.map_congr_left fun i hi => h i (List.mem_range.mp hi)
+
+theorem contains_of_byte {r : Region} {p : Addr} {n : Nat} (h : r = ⟨p, n⟩) (hn : n ≤ 2 ^ 64) {i : Nat}
+    (hi : i < n) : r.Contains (p + BitVec.ofNat 64 i) 1 := by
+  subst h; exact Offset.contains_base _ (by omega) (by omega)
+
+/-- The check and the release, after the calls, from `t`: whatever `M`,
+`out` and the values returned hold. -/
+theorem tail_ok {s t : State} (hp : PreF s) (he : Env s t) :
+    WP isa (seqs PrivChecked.tail) t fun t' =>
+      t'.gpr .rax = result (gOf (t.gpr .rax) (word t.mem (fb s) oR1) (word t.mem (fb s) oR3))
+        (decide (Spec.Rsa.bytesAt t.mem (s.gpr .rdi) (s.gpr .rcx).toNat =
+          Spec.Rsa.bytesAt s.mem (stackArg s 0) (s.gpr .rcx).toNat)) ∧
+      Spec.Rsa.bytesAt t'.mem (s.gpr .rdi) (s.gpr .rcx).toNat =
+        (if gOf (t.gpr .rax) (word t.mem (fb s) oR1) (word t.mem (fb s) oR3) = 1 ∧
+            Spec.Rsa.bytesAt t.mem (s.gpr .rdi) (s.gpr .rcx).toNat =
+              Spec.Rsa.bytesAt s.mem (stackArg s 0) (s.gpr .rcx).toNat
+          then Spec.Rsa.bytesAt t.mem (off (fb s) oM) (s.gpr .rcx).toNat
+          else List.replicate (s.gpr .rcx).toNat 0) ∧
+      Spec.Rsa.bytesAt t'.mem (off (fb s) oM) (s.gpr .rcx).toNat = List.replicate (s.gpr .rcx).toNat 0 ∧
+      Env s t' := by
+  have hk1 := hp.k1
+  have hk2 := hp.k2
+  have hsi := hp.hsi
+  have hil := hp.hil
+  -- The input, unchanged.
+  have hin : Spec.Rsa.bytesAt t.mem (stackArg s 0) (s.gpr .rcx).toNat =
+      Spec.Rsa.bytesAt s.mem (stackArg s 0) (s.gpr .rcx).toNat :=
+    bytes_of_frame he.mem (by rw [← hil]; exact hp.dKi) (by rw [← hil]; exact hp.dOi) (by rw [← hil]; exact hp.dis.symm)
+      (by omega)
+  have hout : (⟨s.gpr .rdi, (s.gpr .rcx).toNat⟩ : Region) ∈ t.wr := by
+    rw [he.wr, hp.hwr, ← hsi]; simp
+  have hinp : (⟨stackArg s 0, (s.gpr .rcx).toNat⟩ : Region) ∈ t.rd := by
+    rw [he.rd, hp.hrd, ← hil]; simp
+  have hfr : (⟨fb s, frameBytes⟩ : Region) ∈ t.wr := by rw [he.wr]; exact List.mem_cons_self ..
+  have wO : (s.gpr .rcx).toNat ≤ 2 ^ 64 := by omega
+  unfold PrivChecked.tail
+  simp only [seqs]
+  refine WP.seq (WP.mono (cmpArgs_ok hp he) fun t₁ ⟨hm₁, h11, hdi, hsi₁, hcx, h10, hdx, k₁⟩ => ?_)
+  refine WP.seq (WP.mono (cmpLoop_ok (k := (s.gpr .rcx).toNat) (op := s.gpr .rdi) (ip := stackArg s 0) (by omega)
+    (by omega) hdi hsi₁ (by rw [hcx]; exact (ofNat_toNat _).symm) h10 hdx
+    (fun i hi => ⟨_, List.mem_append_right _ (by rw [k₁.2.2]; exact hout), contains_of_byte rfl wO hi⟩)
+    (fun i hi => ⟨_, List.mem_append_left _ (by rw [k₁.2.1]; exact hinp), contains_of_byte rfl wO hi⟩))
+    fun t₂ hI => ?_)
+  have k12 := k₁.trans hI.keep
+  have hrdx : t₂.gpr .rdx = 0 ↔ decide (Spec.Rsa.bytesAt t.mem (s.gpr .rdi) (s.gpr .rcx).toNat =
+      Spec.Rsa.bytesAt s.mem (stackArg s 0) (s.gpr .rcx).toNat) = true := by
+    rw [hI.rdx, decide_eq_true_iff, ← hin, bytesAt_eq_iff, hm₁]
+  refine WP.seq (WP.mono (masks_ok (h11 ▸ (hI.keep.gpr (by decide))) (gOf_cases _ _ _) hrdx)
+    fun t₃ ⟨hm₃, h9, h11', h10', k₃⟩ => ?_)
+  have k13 := k12.trans k₃
+  have hsep : ∀ i < (s.gpr .rcx).toNat, ∀ i' < (s.gpr .rcx).toNat,
+      s.gpr .rdi + BitVec.ofNat 64 i ≠ off (fb s) oM + BitVec.ofNat 64 i' := fun i hi i' hi' h => by
+    have hc := contains_of_byte (r := mR s) rfl wO hi'
+    rw [← h] at hc
+    exact (hp.dKo.sub_left (mR_sub hp)) _ hc
+      (contains_of_byte (r := ⟨s.gpr .rdi, (s.gpr .rsi).toNat⟩) rfl (by omega) (show i < (s.gpr .rsi).toNat by omega))
+  refine WP.seq (WP.mono (releaseLoop_ok (k := (s.gpr .rcx).toNat) (S := fb s) (by omega) (by omega)
+    ((k13.gpr (by decide)).trans he.rsp) (((hI.keep.trans k₃).gpr (by decide)).trans hdi) h9 ?_ h10'
+    (fun i hi => ⟨_, by rw [k13.2.2]; exact hout, contains_of_byte rfl wO hi⟩)
+    (fun i hi => ⟨_, by rw [k13.2.2]; exact hfr, by
+      rw [off, BitVec.add_assoc, ← BitVec.ofNat_add]
+      exact Offset.contains_base _ (by unfold oM frameBytes; omega) (by unfold oM; omega)⟩)
+    hsep) fun t₄ hR => ?_)
+  · rw [((hI.keep.trans k₃).gpr (by decide)).trans hcx]; exact (ofNat_toNat _).symm
+  have hm₃ : t₃.mem = t.mem := hm₃.trans (hI.mem.trans hm₁)
+  have k14 := k13.trans hR.keep
+  refine WP.mono (WP.keep [.rax] (Q := fun t' => t'.gpr .rax = t₄.gpr .r11 ∧ t'.mem = t₄.mem) (by xrun) rfl)
+    fun t' ⟨⟨hax, hm⟩, k'⟩ => ?_
+  have k15 := k14.trans k'
+  have hfr4 : Frame [outR s, mR s] t.mem t'.mem := fun x hx => by
+    rw [hm, hR.frame x (fun i hi h => hx _ (List.mem_cons_self ..) (by
+        rw [h]; exact contains_of_byte (r := outR s) rfl (by omega) (show i < (s.gpr .rsi).toNat by omega)))
+      (fun i hi h => hx _ (List.mem_cons_of_mem _ (List.mem_cons_self ..)) (by
+        rw [h]; exact contains_of_byte rfl wO hi)), hm₃]
+  have hslot : ∀ {d : Nat}, 96 ≤ d → d + 8 ≤ oM → word t'.mem (fb s) d = word t.mem (fb s) d := fun hd hd' =>
+    slot_keep hfr4 fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · exact hp.dKo.sub_left (frame_sub s (by unfold oM frameBytes at *; omega))
+      · exact Offset.disjoint _ (.inl hd') (by unfold oM at hd'; omega) (by unfold oM; omega)
+  refine ⟨hax.trans ((hR.keep.gpr (by decide)).trans h11'), ?_, ?_, ⟨(k15.gpr (by decide)).trans he.rsp,
+    k15.2.1.trans he.rd, k15.2.2.trans he.wr, frame_call he.mem hfr4 fun r hr => ?_,
+    (hslot (by decide) (by decide)).trans he.sOut, (hslot (by decide) (by decide)).trans he.sN,
+    (hslot (by decide) (by decide)).trans he.sK, (hslot (by decide) (by decide)).trans he.sE,
+    (hslot (by decide) (by decide)).trans he.sEl⟩⟩
+  · by_cases hc : gOf (t.gpr .rax) (word t.mem (fb s) oR1) (word t.mem (fb s) oR3) = 1 ∧
+        Spec.Rsa.bytesAt t.mem (s.gpr .rdi) (s.gpr .rcx).toNat =
+          Spec.Rsa.bytesAt s.mem (stackArg s 0) (s.gpr .rcx).toNat
+    · have hc' : gOf (t.gpr .rax) (word t.mem (fb s) oR1) (word t.mem (fb s) oR3) = 1 ∧
+          decide (Spec.Rsa.bytesAt t.mem (s.gpr .rdi) (s.gpr .rcx).toNat =
+            Spec.Rsa.bytesAt s.mem (stackArg s 0) (s.gpr .rcx).toNat) = true := ⟨hc.1, decide_eq_true hc.2⟩
+      simp only [hc, and_self, ↓reduceIte]
+      simp only [Spec.Rsa.bytesAt, hm]
+      exact List.map_congr_left fun i hi => by
+        rw [hR.out i (List.mem_range.mp hi), hm₃]; simp only [hc', and_self, ↓reduceIte]
+    · have hc' : ¬ (gOf (t.gpr .rax) (word t.mem (fb s) oR1) (word t.mem (fb s) oR3) = 1 ∧
+          decide (Spec.Rsa.bytesAt t.mem (s.gpr .rdi) (s.gpr .rcx).toNat =
+            Spec.Rsa.bytesAt s.mem (stackArg s 0) (s.gpr .rcx).toNat) = true) :=
+        fun h => hc ⟨h.1, of_decide_eq_true h.2⟩
+      simp only [hc, ↓reduceIte]
+      simp only [Spec.Rsa.bytesAt, hm]
+      refine List.ext_getElem (by simp) fun i h₁ _ => ?_
+      simp only [List.getElem_map, List.getElem_range, List.getElem_replicate]
+      rw [hR.out i (by simpa using h₁)]; simp only [hc', ↓reduceIte]
+  · simp only [Spec.Rsa.bytesAt, hm]
+    refine List.ext_getElem (by simp) fun i h₁ _ => ?_
+    simp only [List.getElem_map, List.getElem_range, List.getElem_replicate]
+    exact hR.m i (by simpa using h₁)
+  · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl
+    · exact .inr (.inl (sub_refl _))
+    · exact .inl (mR_sub hp)
+
 end VG.Proof.Rsa.X86_64
