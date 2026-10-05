@@ -32,7 +32,8 @@ theorem os2ip_lt (bs : List Byte) : Spec.Rsa.os2ip bs < 256 ^ bs.length := by
 theorem pow256_eq (a : Nat) : (256 : Nat) ^ a = 2 ^ (8 * a) := by
   rw [show (256 : Nat) = 2 ^ 8 from rfl, ← Nat.pow_mul]
 
-theorem pow256_64 : (256 : Nat) ^ 64 = 2 ^ 512 := (pow256_eq 64).trans (congrArg (2 ^ ·) rfl)
+theorem pow256_64 : (256 : Nat) ^ 64 = 2 ^ 512 := by
+  simpa only [Nat.reduceMul] using pow256_eq 64
 
 theorem modulusValid_nat {n0 r l P k : Nat} (hn0 : n0 < 256) (hr : r < P) (hP : P = 256 ^ (k - 1))
     (hk : 64 ≤ k) (hk' : k ≤ 1024) (hodd : (n0 * P + r) % 2 = l % 2) :
@@ -55,7 +56,8 @@ theorem modulusValid_nat {n0 r l P k : Nat} (hn0 : n0 < 256) (hr : r < P) (hP : 
   have h511 : decide (2 ^ 511 ≤ n0 * P + r) = !decide ((k - 64) * 256 + n0 < 128) := by
     by_cases hk64 : k = 64
     · subst hk64
-      have hP' : P = 2 ^ 504 := hP.trans ((pow256_eq _).trans (congrArg (2 ^ ·) rfl))
+      have hP' : P = 2 ^ 504 := by
+        simpa only [Nat.reduceSub, Nat.reduceMul] using hP.trans (pow256_eq _)
       rw [hP'] at hr ⊢
       rw [show (64 - 64) * 256 + n0 = n0 by omega]
       by_cases h128 : 128 ≤ n0

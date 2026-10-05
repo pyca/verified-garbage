@@ -139,7 +139,7 @@ theorem msR2_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {mi : BitVec 64} {
   refine WP.mono (sqs_ok M 5 hg₆ hZ hw hw' hR (E := w) hNf (by rw [hW0]; exact hinv)
     (by rw [hv₆]; exact Nat.mod_lt _ hN0) (by rw [hv₆, Nat.mod_mod]))
     fun t ⟨h1, h2, h3, h4, h5⟩ => ⟨h1, ?_, ?_, ((((k₃.trans k₄).trans k₅).trans k₆).trans h5).mono (by decide)⟩
-  · rw [← Nat.mod_eq_of_lt h2, h3, ← Nat.pow_add, ← Nat.pow_add, show 2 ^ (5 + 1) * w = 64 * w by rfl]
+  · rw [← Nat.mod_eq_of_lt h2, h3, ← Nat.pow_add]
   · have f₄ : Frm B (msR2Ranges w) s.mem t₄.mem := by
       rw [← hm₃]; exact Frm.of_arrays ha₄ (by simp [msR2Ranges])
     exact ((f₄.trans (by rw [hm₅]; exact Frm.refl _ _ _)).trans hf₆').trans

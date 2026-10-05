@@ -1,4 +1,5 @@
 import VerifiedGarbage.Impl.Weierstrass.X86_64.TComb
+import VerifiedGarbage.Impl.Weierstrass.X86_64.Inv
 import VerifiedGarbage.Spec.Weierstrass
 import VerifiedGarbage.Spec.Ecdsa
 
@@ -24,6 +25,10 @@ scratch = r8) -> eax`, for a curve whose field elements and scalars are `n`
    `x = X Z^(p-2)` (Montgomery's form left by a multiplication by 1) and
    `r = x mod n` (a conditional subtraction, as `x < p < 2n`);
 4. `s = k^(n-2) (e + r d) mod n`, in Montgomery form modulo `n`, then left;
+   the powers `Z^(p-2)` and `k^(n-2)` are inverses by divsteps
+   (`Impl/Weierstrass/X86_64/Inv.lean`) for a curve of up to six words
+   (`k^(n-2)` if `fastN`), their working area past the tables of bits, else
+   powers from the tables of the exponents' bits (`pPow`, `nPow`);
 5. the flag: `d` and `k` in `[1, n-1]`, `r ≠ 0` and `s ≠ 0`, as a mask, which
    selects `r ‖ s` or zeros for `out` (big-endian), and is returned as 0 or 1.
 
@@ -115,6 +120,8 @@ structure Cfg where
   n : Nat
   C : Spec.Weierstrass.Curve
   comb : Option CombData := none
+  /-- Whether `k^(n-2)` is by divsteps (the proofs need `n` prime), else by the power. -/
+  fastN : Bool := false
 
 namespace Cfg
 
@@ -188,6 +195,15 @@ def gMul : Prog isa :=
 
 def powP : PowCfg := ⟨c.MP', c.sl ACC, c.sl PT, c.sl RZ, c.sl ONEP, bitsAt c.n 1, 64 * c.n⟩
 def powN : PowCfg := ⟨c.MN', c.sl ACC, c.sl PT, c.sl KM, c.sl ONEN, bitsAt c.n 2, 64 * c.n⟩
+
+/-- The inversions by divsteps, their working area past the tables of bits. -/
+def invP : InvCfg := .ofMod c.MP' (c.sl ACC) (c.sl RZ) (bitsAt c.n 3) c.C.p
+def invN : InvCfg := .ofMod c.MN' (c.sl ACC) (c.sl KM) (bitsAt c.n 3) c.C.n
+
+/-- `Z^(p-2)` and `k^(n-2)` into `ACC`: by divsteps for up to six words
+(`k^(n-2)` only if `fastN`), else by the powers. -/
+def pPow : Prog isa := if c.n ≤ 6 then InvCfg.inv c.invP else pow c.powP
+def nPow : Prog isa := if c.fastN ∧ c.n ≤ 6 then InvCfg.inv c.invN else pow c.powN
 
 /-- The callee-saved registers, and where they are saved. -/
 def saved : List (Reg × Nat) := [(.rbx, 0), (.rbp, 8), (.r12, 16), (.r13, 24), (.r14, 32), (.r15, 40)]
@@ -278,9 +294,9 @@ def sign : Prog isa :=
   .seq (bits (c.sl EXPP) (bitsAt c.n 1) (8 * c.n)) <|
   .seq (bits (c.sl EXPN) (bitsAt c.n 2) (8 * c.n)) <|
   .seq c.gMul <|
-  .seq (pow c.powP) <|
+  .seq c.pPow <|
   .seq c.middle <|
-  .seq (pow c.powN) c.scalar
+  .seq c.nPow c.scalar
 
 end Cfg
 

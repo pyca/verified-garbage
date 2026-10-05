@@ -17,14 +17,15 @@ ECDSA's signature (`Impl/Ecdsa/X86_64.lean`) and of ECDH
    `y < p` and the curve's equation, into the flag, and the key's point, or
    `G` if the flag is clear, to the slots of ECDH's ladder;
 3. the masks of `r` and `s` in `[1, n-1]` into the flag, and
-   `w = s^(n-2)`, in Montgomery form modulo `n`;
+   `w = s^(n-2)` (by the signature's inversion or power), in Montgomery form
+   modulo `n`;
 4. `u = e w` and `v = r w` modulo `n`, out of Montgomery's form;
 5. `[u]G` by the signature's comb, or its ladder for a curve without one
    (`Cfg.gMul`, from the table of `u`'s bits), saved
    to `U`, and `R` reset to `O`; then `[v]Q` by ECDH's ladder (from the
    table of `v`'s bits) and `[u]G + [v]Q` by the complete addition, into
    `R`;
-6. `Z^(p-2)` by the signature's power, `x = X Z^(p-2)` out of Montgomery's
+6. `Z^(p-2)` by the signature's inversion (or power), `x = X Z^(p-2)` out of Montgomery's
    form, and the masks of `Z ≠ 0` and `x R ≡ r R` modulo `n` into the
    flag, which is returned as 0 or 1.
 
@@ -118,7 +119,7 @@ def points : Prog isa :=
 
 /-- Everything after the checks of the key. -/
 def back : Prog isa :=
-  .seq (scalars c) <| .seq (pow c.powN) <| .seq (uv c) <| .seq (points c) <| .seq (pow c.powP) (final c)
+  .seq (scalars c) <| .seq c.nPow <| .seq (uv c) <| .seq (points c) <| .seq c.pPow (final c)
 
 /-- `vg_ecdsa_<curve>_verify`. -/
 def verify : Prog isa :=

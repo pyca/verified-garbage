@@ -11,13 +11,13 @@ import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Lit
 /-!
 # ECDSA over P-256 (FIPS 186-5) on x86-64
 
-A generic file (see `TCB/Emit.lean`) over P-256's group law `h`, the variant
-`Variants/P256/X86_64/Law.lean`.
+A generic file (see `TCB/Emit.lean`) over P-256's group law and
+inversions `h`, the variant `Variants/P256/X86_64/Law.lean`.
 -/
 
 namespace VG.Generic.P256.X86_64.EcdsaP256
 
-def artifacts (h : Proof.Weierstrass.HasLaw Spec.P256.curve) : List Artifact := [
+def artifacts (h : Proof.Weierstrass.X86_64.HasLawInv Spec.P256.curve) : List Artifact := [
   { Spec.Ecdsa.P256.signApi with
     target := X86_64.target
     doc := Spec.Ecdsa.P256.signApi.doc (notes := ["The function saves its caller's callee-saved \
@@ -30,14 +30,20 @@ def artifacts (h : Proof.Weierstrass.HasLaw Spec.P256.curve) : List Artifact := 
       by loading every entry of its table, 16 bytes at a time, and keeping (`pand`, `por`) the one \
       of the digit's magnitude (or the point at infinity for a zero digit), negated by a mask of \
       its sign, and added by the complete addition formulas of Renes, Costello and Batina; the \
-      inversions modulo `p` and `n` are Fermat's, by square-and-always-multiply over the bits of \
-      `p - 2` and `n - 2`. The signature (or zeros) is selected by a mask, so the time depends \
-      only on the pointers."])
+      inversions modulo `p` and `n` are by divsteps (Bernstein and Yang's safegcd, half-delta \
+      form): 10 batches of 59 divsteps on the low 64-bit words of `f` and `g` (from `f = p`, \
+      `g = Z`, or `n` and `k`), each giving a matrix of 64-bit entries that updates `f`, `g` \
+      (divided by 2⁵⁹) and the coefficients `a`, `b` (divided by 2⁶⁴ modulo `p` or `n`, as in \
+      Montgomery reduction), 590 divsteps in all, enough for 256-bit moduli by Bernstein and \
+      Yang's bound (which the proof checks); then `f = ±1`, and `Z⁻¹` is `a` times a constant or \
+      its negation by `f`'s sign. The number of steps is fixed, so the time does not depend on \
+      `Z` or `k`. The signature (or zeros) is selected by a mask, so the time depends only on the \
+      pointers."])
     consts := Impl.Ecdsa.X86_64.p256.combConsts
     code := Impl.Ecdsa.X86_64.signP256
     contract := Spec.Ecdsa.P256.inst.signContract
       (X86_64.abi.withConsts Impl.Ecdsa.X86_64.p256.combConsts)
-    verified := Proof.Ecdsa.X86_64.sign_verified h.law (Proof.P256.combOk7 h.law)
+    verified := Proof.Ecdsa.X86_64.sign_verified h.law (Proof.P256.combOk7 h.law) h.inv
     spSafe := Code.all_of_allInstrs (by lit_decide) },
   { Spec.Ecdsa.P256.verifyApi with
     target := X86_64.target
@@ -48,7 +54,7 @@ def artifacts (h : Proof.Weierstrass.HasLaw Spec.P256.curve) : List Artifact := 
       multiplication (CIOS) with a final conditional subtraction. The key is checked without \
       branches (its first byte, both coordinates below `p`, and the curve's equation), and the \
       ladder multiplies the key's point if it is valid, else `G`, so it always runs on a point of \
-      the curve. `s⁻¹` modulo `n` and `Z⁻¹` are Fermat's, by square-and-always-multiply; `[u]G` is \
+      the curve. `s⁻¹` modulo `n` and `Z⁻¹` are by the signature's divsteps; `[u]G` is \
       the signature's comb over the 7-bit windows of `u` (from the static `VG_P256_COMB`), and \
       `[v]Q` a double-and-add ladder over all 256 bits of `v`, with the complete addition formulas \
       of Renes, Costello and Batina, which also add the two. The result is the conjunction of the \
@@ -59,7 +65,7 @@ def artifacts (h : Proof.Weierstrass.HasLaw Spec.P256.curve) : List Artifact := 
     code := Impl.Ecdsa.Verify.X86_64.verifyP256
     contract := Spec.Ecdsa.P256.inst.verifyContract
       (X86_64.abi.withConsts Impl.Ecdsa.X86_64.p256.combConsts)
-    verified := Proof.Ecdsa.Verify.X86_64.verify_verified h.law (Proof.P256.combOk7 h.law)
+    verified := Proof.Ecdsa.Verify.X86_64.verify_verified h.law (Proof.P256.combOk7 h.law) h.inv
     spSafe := Code.all_of_allInstrs (by lit_decide) }]
 
 end VG.Generic.P256.X86_64.EcdsaP256

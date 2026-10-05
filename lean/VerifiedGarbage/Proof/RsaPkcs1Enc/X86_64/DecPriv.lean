@@ -262,7 +262,7 @@ theorem priv_call (v : PrivImpl) {s t : State} (hp : DPre s) (h : Setup s t) :
     rcases hr with rfl | rfl | rfl
     · exact ⟨outR s, by simp, by rw [outR, hsi']; exact fun _ h => h⟩
     · exact ⟨scrR s, by simp, fun _ h => h⟩
-    · exact ⟨stkR s, by simp, below_sub s (le_refl _)⟩
+    · exact ⟨stkR s, by simp, below_sub s (Nat.le_refl _)⟩
   · simp only [privOut, nB, eB, cB, pB, qB, dpB, dqB, qiB, kOf]
     rw [hl, hp.hqil, hp.hdql] at hpost
     exact hpost

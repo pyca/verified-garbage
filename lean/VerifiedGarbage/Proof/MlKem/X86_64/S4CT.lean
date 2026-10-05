@@ -64,15 +64,24 @@ theorem env_rbx {σ₁ σ₂ s₁ s₂ : State} (hq : sample4K.pub σ₁ σ₂) 
     s₁.gpr .rbx = s₂.gpr .rbx := by rw [e₁.rbx, e₂.rbx, pub_scr hq]
 
 /-- `squeeze4 n`, given its taint analysis. -/
-theorem sq_ct (n : Nat) (hn : n < 3) {hc : VG.Taint.Hint X86_64.Taint.T}
-    (c : (taint.check (X86_64.Taint.ofRegs [.rbx]) (squeeze4 n) hc).isSome = true) :
-    RelCT isa (R4 fun σ s => SqInv σ n s) (squeeze4 n) (R4 fun σ s => SqInv σ (n + 1) s) :=
-  relInv (fun σ s hp h => sq_ok (pre_of hp) hn h)
+theorem sq_ct {fast : Bool} (n : Nat) (hn : n < 3) {hc : VG.Taint.Hint X86_64.Taint.T}
+    (c : (taint.check (X86_64.Taint.ofRegs [.rbx]) (squeeze4 n fast) hc).isSome = true) :
+    RelCT isa (R4 fun σ s => SqInv σ n s) (squeeze4 n fast) (R4 fun σ s => SqInv σ (n + 1) s) :=
+  relInv (fun σ s hp h => sq_ok (fast := fast) (pre_of hp) hn h)
     (taintRel [.rbx] (fun x y ⟨σ₁, σ₂, _, _, hq, h₁, h₂⟩ r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact env_rbx hq h₁.env h₂.env) c)
 
-theorem sq0_ct : RelCT isa (R4 fun σ s => SqInv σ 0 s) (squeeze4 0) (R4 fun σ s => SqInv σ 1 s) :=
-  sq_ct 0 (by decide) (by taint_decide)
+theorem sq0_ct {fast : Bool} : RelCT isa (R4 fun σ s => SqInv σ 0 s)
+    (squeeze4 0 fast) (R4 fun σ s => SqInv σ 1 s) := by
+  cases fast <;> exact sq_ct 0 (by decide) (by taint_decide)
+
+theorem sq1_ct {fast : Bool} : RelCT isa (R4 fun σ s => SqInv σ 1 s)
+    (squeeze4 1 fast) (R4 fun σ s => SqInv σ 2 s) := by
+  cases fast <;> exact sq_ct 1 (by decide) (by taint_decide)
+
+theorem sq2_ct {fast : Bool} : RelCT isa (R4 fun σ s => SqInv σ 2 s)
+    (squeeze4 2 fast) (R4 fun σ s => SqInv σ 3 s) := by
+  cases fast <;> exact sq_ct 2 (by decide) (by taint_decide)
 
 /-! ## The groups of four iterations -/
 
@@ -338,9 +347,9 @@ theorem tab_ct : RelCT isa (R4 fun σ s => SqInv σ 3 s) (.block tabBuild) (R4 f
     (taintRel [.rbx] (fun x y ⟨σ₁, σ₂, _, _, hq, h₁, h₂⟩ r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact env_rbx hq h₁.env h₂.env) (by taint_decide))
 
-theorem ct : ConstantTime isa sample4K.pre sample4K.pub Impl.MlKem.X86_64.Sample4.sampleNTT4Avx2 := by
-  refine relStart (Q := fun _ _ => True) (RelCT.seq start_ct (RelCT.seq sq0_ct
-    (RelCT.seq (sq_ct 1 (by decide) (by taint_decide)) (RelCT.seq (sq_ct 2 (by decide) (by taint_decide))
+theorem ct {fast : Bool} : ConstantTime isa sample4K.pre sample4K.pub (Impl.MlKem.X86_64.Sample4.sampleNTT4Avx2 fast) := by
+  refine relStart (Q := fun _ _ => True) (RelCT.seq start_ct (RelCT.seq (sq0_ct (fast := fast))
+    (RelCT.seq (sq1_ct (fast := fast)) (RelCT.seq (sq2_ct (fast := fast))
       (RelCT.seq tab_ct ?_)))))
   refine RelCT.seq (parse_ct (K := 0) (by decide) (by taint_decide) (by taint_decide)) ?_
   refine RelCT.seq (parse_ct (K := 1) (by decide) (by taint_decide) (by taint_decide)) ?_

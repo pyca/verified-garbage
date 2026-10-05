@@ -98,6 +98,14 @@ def firsts (k : Nat) (rs : List (List (String × String))) : List (List (String 
       if i < k then r :: go rs (some (key r)) (i + 1) else go rs (some (key r)) (i + 1)
   go rs none 0
 
+private def aesCached (key : List Byte) : {c : Spec.Ccm.Cipher // c = Spec.Ccm.aes key} :=
+  let nr := Spec.Aes.rounds (key.length / 4)
+  let w := Spec.Aes.expandKey key
+  ⟨fun x => (Test.Aes.Cached.cipherCached nr w (Vector.ofFn fun i => x.getD i 0)).toList, by
+    funext x
+    simp only [Test.Aes.Cached.cipherCached_eq]
+    rfl⟩
+
 run_cmd do
   let mut n : Nat := 0
   for kind in ["VADT", "VNT", "VPT", "VTT"] do
@@ -112,7 +120,7 @@ run_cmd do
         match v with
         | .error e => throwError "{name}, Count = {(get r "Count").toOption}: {e}"
         | .ok (key, nonce, aad, pt, ct, t) =>
-          unless Spec.Ccm.aesCcmEncrypt key t nonce pt aad == some ct do
+          unless Spec.Ccm.encrypt (aesCached key).val t nonce pt aad == some ct do
             throwError "{name}, Count = {(get r "Count").toOption}: encryption is wrong"
           n := n + 1
   -- One vector per length: 33 associated-data lengths, 7 nonce lengths, 25 payload lengths
@@ -137,7 +145,7 @@ run_cmd do
       match v with
       | .error e => throwError "{name}, Count = {(get r "Count").toOption}: {e}"
       | .ok (key, nonce, aad, ct, t, expected) =>
-        unless Spec.Ccm.aesCcmDecrypt key t nonce ct aad == expected do
+        unless Spec.Ccm.decrypt (aesCached key).val t nonce ct aad == expected do
           throwError "{name}, Count = {(get r "Count").toOption}: decryption-verification is wrong"
         if expected.isSome then pass := pass + 1 else fail := fail + 1
   -- 16 sections in each of 3 files.

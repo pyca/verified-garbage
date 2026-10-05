@@ -242,7 +242,7 @@ theorem gBit_ok (M : Mont) {s₀ t : State} {B : Addr} {Z w : Nat} {minv : BitVe
       · omega
       · rw [show L - j = (L - j - 1) + 1 by omega, Nat.pow_succ, Nat.mul_div_cancel _ (by decide)] at h
         exact absurd h (Nat.pos_iff_ne_zero.mp (Nat.two_pow_pos _))
-    · rw [show L - j = 0 by omega]; rfl
+    · rw [show L - j = 0 by omega]
   · exact (((hI.frm.trans (Frm.of_arrays ha₁ (by simp [gRanges]))).trans
       (by rw [hm₂]; exact Frm.refl _ _ _)).trans (Frm.of_arrays ha₃ (by simp [gRanges]))).trans
       (Frm.of_outside o' (by simp [gRanges]))

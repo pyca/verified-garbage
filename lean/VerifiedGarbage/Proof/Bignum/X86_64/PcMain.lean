@@ -69,7 +69,7 @@ theorem pcLoad_ok {s : State} {B : Addr} {Z k : Nat} {np : Addr} {nb : List Byte
   have eA : sArr 0 = 8 := rfl
   have eAN : sArr aN = 8 := rfl
   have hsl : ∀ r ∈ pcLoadRanges ((k + 7) / 8), r.1 + r.2 ≤ Z := fun r hr =>
-    (pcLoadRanges_le _ r hr).trans hZ
+    Nat.le_trans (pcLoadRanges_le _ r hr) hZ
   unfold pcLoad
   refine WP.seq (WP.mono (setupHead_ok hs hdi hZ (by omega) hK hN)
     fun t₁ ⟨h12, hcx, hsi, hbx, hW₁, hb₁, hf₁, k₁⟩ => ?_)
@@ -291,8 +291,8 @@ theorem pcMain_ok (M : Mont) {s : State} {B : Addr} {Z k : Nat} {op np : Addr} {
     (WP.mono (r2_ok M hg₁ hZ (by omega) (by omega) hn₁ hinv₁ h12₁ h10₁ hodd hlo)
       fun t₂ ⟨hg₂, hlt₂, hr₂, f₂, k₂⟩ => ?_)
   have x₁₂ := (Fixed.of_frm f₁ (pcLoadRanges_fixed _)).trans (Fixed.of_frm f₂ (r2Ranges_fixed _))
-  have i₁₂ : InScr B Z s.mem t₂.mem := (InScr.of_frm f₁ fun r hr => (pcLoadRanges_le _ r hr).trans hZ).trans
-    (InScr.of_frm f₂ fun r hr => (r2Ranges_le _ r hr).trans hZ)
+  have i₁₂ : InScr B Z s.mem t₂.mem := (InScr.of_frm f₁ fun r hr => Nat.le_trans (pcLoadRanges_le _ r hr) hZ).trans
+    (InScr.of_frm f₂ fun r hr => Nat.le_trans (r2Ranges_le _ r hr) hZ)
   have k₁₂ := k₁.trans k₂
   have hR : wv t₂.mem B (slot ((k + 7) / 8) aR2) ((k + 7) / 8) =
       2 ^ (128 * ((k + 7) / 8)) % Spec.Rsa.os2ip nb := by

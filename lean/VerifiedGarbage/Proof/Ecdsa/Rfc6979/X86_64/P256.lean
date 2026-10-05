@@ -28,9 +28,11 @@ theorem coreK_p256 : coreK Impl.Ecdsa.X86_64.p256 = Proof.Ecdsa.X86_64.signX86_6
     false_implies, implies_true, and_true, Proof.Ecdsa.X86_64.signX86_64, Proof.Ecdsa.X86_64.TblHeld]
   rfl
 
-/-- P-256, with the group law `hL` and the comb's tables `hT`. -/
+/-- P-256, with the group law `hL`, the comb's tables `hT` and the inversions'
+soundness `hI`. -/
 def p256 (hL : Weierstrass.Law Spec.P256.curve)
-    (hT : Weierstrass.CombOkW Spec.P256.curve 7 37 Impl.P256.p256Comb7 Impl.P256.p256Comb7Start) : RfcCurve where
+    (hT : Weierstrass.CombOkW Spec.P256.curve 7 37 Impl.P256.p256Comb7 Impl.P256.p256Comb7Start)
+    (hI : Weierstrass.X86_64.InvSounds) : RfcCurve where
   E := Impl.Ecdsa.X86_64.p256
   inst := Spec.Ecdsa.P256.inst
   curve := rfl
@@ -41,7 +43,7 @@ def p256 (hL : Weierstrass.Law Spec.P256.curve)
   sh_eq := Proof.Ecdsa.X86_64.p256_sh
   coreN := Spec.Ecdsa.P256.signApi.name
   coreC := Impl.Ecdsa.X86_64.signP256
-  coreX := by rw [coreK_p256]; exact Proof.Ecdsa.X86_64.sign_x86 hL hT
+  coreX := by rw [coreK_p256]; exact Proof.Ecdsa.X86_64.sign_x86 hL hT hI
   coreCT := by rw [coreK_p256]; exact Proof.Ecdsa.X86_64.sign_ct
   coreNs := by lit_decide
   coreSp := by lit_decide

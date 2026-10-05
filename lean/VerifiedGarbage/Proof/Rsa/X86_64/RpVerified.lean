@@ -57,7 +57,7 @@ theorem rp_implies : rpContract.Implies (Spec.Rsa.recoverPrimesContract abi) whe
     simp only [List.getD_cons_succ, List.getD_cons_zero] at h
     obtain ⟨hsp, hl, hdi, hsi, hdx, hcx, h8, h9, a0, a1, a2, a3, a4, a5⟩ := h
     obtain ⟨hl₁, hc⟩ := List.append_inj' hl (List.length_singleton.trans List.length_singleton.symm)
-    have hm := List.map_injective_iff.2 (fun _ _ h => BitVec.toNat_inj.1 h) hl₁
+    have hm := (List.map_inj_right (fun _ _ h => BitVec.toNat_inj.1 h)).1 hl₁
     obtain ⟨hn, he⟩ := List.append_inj hm (by rw [bytesAt_length, bytesAt_length, h9])
     refine ⟨?_, a0, a1, a2, a3, a4, a5, hn, he, List.singleton_inj.mp hc⟩
     simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]
