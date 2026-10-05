@@ -57,6 +57,11 @@ theorem exec_vec {i : Instr} {r : VReg} {s s' : State}
     split at h <;> [skip; cases h]
     obtain ⟨v, -, rfl⟩ := Option.map_eq_some_iff.mp h
     rfl
+  | ccmp sz n imm nzcv cond =>
+    simp only [exec] at h
+    split at h <;> [skip; cases h]
+    simp only [Option.some.injEq] at h; subst h
+    split <;> rfl
   | push _ | pop _ | alloc _ | free _ => simp only [exec, reduceCtorEq] at h
   | _ =>
     simp only [exec] at h

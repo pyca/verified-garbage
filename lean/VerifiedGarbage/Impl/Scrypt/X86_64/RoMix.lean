@@ -1,4 +1,4 @@
-import VerifiedGarbage.Impl.Scrypt.X86_64.BlockMix
+import VerifiedGarbage.Impl.Scrypt.X86_64.BlockMixFused
 
 /-!
 # scryptROMix: x86-64 implementation
@@ -11,7 +11,7 @@ Step 2 runs `N` times: `V[i] = X` (a copy), then `X = scryptBlockMix (V[i])`.
 Step 3 runs `N` times: `j = Integerify (X) mod N` (the low 8 bytes of
 `X`'s last 64-byte block, masked with `N - 1`), then `T = X xor V[j]`, then
 `X = scryptBlockMix (T)`. The address of `V[j]` is `v + j * 128 r`, computed
-by shifting and adding over the bits of `j`.
+by a scalar unsigned multiply and addition.
 
 `scratch` (`128 (r + 2)` bytes) holds scryptBlockMix's working space
 (`[0, 128)`), our caller's `rbx, rbp, r12, r14, r15, r13` (`[128, 176)`),
@@ -33,22 +33,22 @@ open VG.X86_64
 def rmSaved : List (Reg × Nat) :=
   [(.rbx, 128), (.rbp, 136), (.r12, 144), (.r14, 152), (.r15, 160), (.r13, 168)]
 
-/-- The 8-byte words `[dst] ← [src]`, `rcx` of them. -/
+/-- The 16-byte chunks `[dst] ← [src]`, `rcx` of them. -/
 def copyLoop : Prog isa :=
-  .loop (.block [.mov .rax (.mem (at_ .rdi 0)), .store (at_ .rsi 0) .rax,
-    .alu .add .rdi (.imm 8), .alu .add .rsi (.imm 8), .alu .sub .rcx (.imm 1)]) .ne
+  .loop (.block [.movdquLoad .xmm0 (at_ .rdi 0), .movdquStore (at_ .rsi 0) .xmm0,
+    .alu .add .rdi (.imm 16), .alu .add .rsi (.imm 16), .alu .sub .rcx (.imm 1)]) .ne
 
-/-- The 8-byte words `[r8] ← [rdi] xor [rsi]`, `rcx` of them. -/
+/-- The 16-byte chunks `[r8] ← [rdi] xor [rsi]`, `rcx` of them. -/
 def xorLoop : Prog isa :=
-  .loop (.block [.mov .rax (.mem (at_ .rdi 0)), .alu .xor .rax (.mem (at_ .rsi 0)),
-    .store (at_ .r8 0) .rax, .alu .add .rdi (.imm 8), .alu .add .rsi (.imm 8),
-    .alu .add .r8 (.imm 8), .alu .sub .rcx (.imm 1)]) .ne
+  .loop (.block [.movdquLoad .xmm0 (at_ .rdi 0), .movdquLoad .xmm1 (at_ .rsi 0),
+    .xop (.bin .pxor .xmm0 .xmm1), .movdquStore (at_ .r8 0) .xmm0,
+    .alu .add .rdi (.imm 16), .alu .add .rsi (.imm 16), .alu .add .r8 (.imm 16), .alu .sub .rcx (.imm 1)]) .ne
 
-/-- `rdx ← rdx + rax * rcx`, over the bits of `rax`. -/
+/-- `rdx ← rdx + rax * rcx`, using the low half of an unsigned multiply.
+`rdi` holds the base address across `mul`, which overwrites `rdx`. -/
 def mulLoop : Prog isa :=
-  .loop (.seq (.block [.alu .test .rax (.imm 1)]) <|
-    .seq (.ite .ne (.block [.alu .add .rdx (.reg .rcx)]) (.block []))
-      (.block [.alu .add .rcx (.reg .rcx), .shift .shr .rax 1])) .ne
+  .block [.mov .rdi (.reg .rdx), .mul .rcx, .mov .rdx (.reg .rdi),
+    .alu .add .rdx (.reg .rax)]
 
 /-- Saving our caller's registers; `rbx = b`, `r12 = v`, `r13 = scratch`,
 `r14 = 128 r`; `rax = 2 r`, `rdx = 2`, `rcx = 2 vlen` for `nLoop`. -/
@@ -75,7 +75,7 @@ def blockMixTo (blockMix : Prog isa) (src : List Instr) : Prog isa :=
 /-- Step 2, once: `V[i] = X`, `X = scryptBlockMix (V[i])`. -/
 def step2 (blockMix : Prog isa) : Prog isa :=
   .seq (.block [.mov .rdi (.reg .rbx), .mov .rsi (.reg .rbp), .mov .rcx (.reg .r14),
-    .shift .shr .rcx 3]) <|
+    .shift .shr .rcx 4]) <|
   .seq copyLoop <|
   .seq (blockMixTo blockMix [.mov .rdi (.reg .rbp)])
     (.block [.alu .add .rbp (.reg .r14), .alu .sub .r15 (.imm 1)])
@@ -94,7 +94,7 @@ def step3 (blockMix : Prog isa) : Prog isa :=
   .seq (.block [.mov .rdx (.reg .r12), .mov .rcx (.reg .r14)]) <|
   .seq mulLoop <|
   .seq (.block [.mov .rdi (.reg .rbx), .mov .rsi (.reg .rdx), .mov .r8 (.reg .r13),
-    .alu .add .r8 (.imm 192), .mov .rcx (.reg .r14), .shift .shr .rcx 3]) <|
+    .alu .add .r8 (.imm 192), .mov .rcx (.reg .r14), .shift .shr .rcx 4]) <|
   .seq xorLoop <|
   .seq (blockMixTo blockMix [.mov .rdi (.reg .r13), .alu .add .rdi (.imm 192)])
     (.block [.alu .sub .r15 (.imm 1)])
@@ -111,6 +111,6 @@ def roMixWith (blockMix : Prog isa) : Prog isa :=
   .seq (.loop (step3 blockMix) .ne)
     (.block rmEpilogue)
 
-def roMix : Prog isa := roMixWith blockMix
+def roMix : Prog isa := roMixWith blockMixFused
 
 end VG.Impl.Scrypt.X86_64

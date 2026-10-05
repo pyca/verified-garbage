@@ -21,6 +21,7 @@ deriving instance Lean.ToExpr for VPermOp
 deriving instance Lean.ToExpr for VRevOp
 deriving instance Lean.ToExpr for Sha1Op
 deriving instance Lean.ToExpr for VOp
+deriving instance Lean.ToExpr for CondCode
 deriving instance Lean.ToExpr for Instr
 deriving instance Lean.ToExpr for Cond
 

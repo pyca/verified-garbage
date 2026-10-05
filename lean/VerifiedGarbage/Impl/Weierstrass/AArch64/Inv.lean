@@ -31,21 +31,16 @@ open VG.AArch64 VG.Impl.Mont VG.Impl.Mont.AArch64 VG.Impl.Weierstrass
 `d` in `x1`, the words of `f` and `g` in `x2`, `x3`, the matrix `u, v, q, r`
 in `x4`–`x7`; `x11 = 1`, `x12 = 0`; through `x8`–`x10`. -/
 
-/-- `x10 = ((src ^ S) - S) & B`, then `dst += x10`. -/
-def condAdd (dst src : Reg) : List Instr :=
-  [.logic .eor .x .x10 src .x9, .sub .x .x10 .x10 .x9, .logic .and .x .x10 .x10 .x8, .add .x dst dst .x10]
-
-/-- `dst += src & S`. -/
-def swapAdd (dst src : Reg) : List Instr := [.logic .and .x .x10 src .x9, .add .x dst dst .x10]
-
-/-- One divstep on words. -/
+/-- One divstep on words, branch-free by the flags: `x8`–`x10` are the
+addends of `g`, `q`, `r` (`f`, `u`, `v`, negated if `d ≥ 0`, and zero if `g`
+is even), `ge` after the `ccmp` says that the step swaps (`g` odd and
+`d ≥ 0`), and then `f, u, v` take `g, q, r`'s. -/
 def wstepCode : List Instr :=
-  [.logic .and .x .x8 .x3 .x11, .sub .x .x8 .x12 .x8,
-    .lsr .x .x9 .x1 63, .subImm .x .x9 .x9 1, .logic .and .x .x9 .x9 .x8] ++
-  condAdd .x3 .x2 ++ condAdd .x6 .x4 ++ condAdd .x7 .x5 ++
-  swapAdd .x2 .x3 ++ swapAdd .x4 .x6 ++ swapAdd .x5 .x7 ++
-  ([.logic .eor .x .x1 .x1 .x9, .sub .x .x1 .x1 .x9, .addImm .x .x1 .x1 2,
-    .lsr .x .x3 .x3 1, .lsl .x .x4 .x4 1, .lsl .x .x5 .x5 1] : List Instr)
+  [.tst .x .x1 .x1, .csneg .x .x8 .x2 .x2 .lt, .csneg .x .x9 .x4 .x4 .lt, .csneg .x .x10 .x5 .x5 .lt,
+    .tst .x .x3 .x11, .cselc .x .x8 .x8 .x12 .ne, .cselc .x .x9 .x9 .x12 .ne, .cselc .x .x10 .x10 .x12 .ne,
+    .ccmp .x .x1 0 8 .ne, .cselc .x .x2 .x3 .x2 .ge, .cselc .x .x4 .x6 .x4 .ge, .cselc .x .x5 .x7 .x5 .ge,
+    .csneg .x .x1 .x1 .x1 .lt, .add .x .x3 .x3 .x8, .add .x .x6 .x6 .x9, .add .x .x7 .x7 .x10,
+    .addImm .x .x1 .x1 2, .lsr .x .x3 .x3 1, .lsl .x .x4 .x4 1, .lsl .x .x5 .x5 1]
 
 /-- `N` word divsteps, counted down in `x13`. -/
 def wsteps (N : Nat) : Prog isa :=

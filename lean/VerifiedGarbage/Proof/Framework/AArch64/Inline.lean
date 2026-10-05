@@ -34,7 +34,8 @@ def dstOf : Instr → Option Reg
   | .add _ d .. | .sub _ d .. | .addImm _ d .. | .subImm _ d .. | .logic _ _ d .. | .logicRor _ _ d .. | .bicRor _ d .. | .ror _ d .. | .extr _ d ..
   | .lsr _ d .. | .lsl _ d .. | .madd _ d .. | .mul _ d .. | .rev32 d _ | .rev d _ | .movz _ d ..
   | .addSp d _ | .movk _ d .. | .ldr _ d .. | .ldrb d .. | .ldrSp d _ | .pop d | .umov _ d .. => some d
-  | .str .. | .strb .. | .alloc _ | .free _ | .push _ | .vop _ | .ldrq .. | .strq .. => none
+  | .cselc _ d .. | .csneg _ d .. => some d
+  | .str .. | .strb .. | .alloc _ | .free _ | .push _ | .vop _ | .ldrq .. | .strq .. | .tst .. | .ccmp .. => none
 
 section
 variable {s s' : State} {rd wr : List Region}
@@ -53,6 +54,9 @@ theorem store_widen (hc : Covers s.wr wr) {a : Addr} {n : Nat} {v : BitVec (8 * 
   split at h <;> [rename_i hi; cases h]
   cases h
   simp only [State.store, State.withRegions_wr, hc _ _ hi, ite_true]; rfl
+
+theorem holds_withRegions (c : CondCode) : c.holds (s.withRegions rd wr) = c.holds s := by
+  cases c <;> rfl
 
 theorem write_withRegions (sz : Size) (d : Reg) (v : BitVec sz.bits) :
     (s.withRegions rd wr).write sz d v = (s.write sz d v).withRegions rd wr := rfl
@@ -88,6 +92,11 @@ theorem exec_widen (hc : Covers (s.rd ++ s.wr) (rd ++ wr)) (hw : Covers s.wr wr)
     simp only [exec, Option.map_eq_some_iff] at h ⊢
     obtain ⟨⟨d, x⟩, he, rfl⟩ := h
     exact ⟨(d, x), he, rfl⟩
+  | ccmp sz n imm nzcv cond =>
+    simp only [exec] at h ⊢
+    split at h <;> [rename_i hh; cases h]
+    simp only [hh, and_self, ite_true, Option.some.injEq, holds_withRegions] at h ⊢; subst h
+    split <;> rfl
   | ldrSp t off =>
     simp only [exec] at h ⊢
     split at h <;> [rename_i ho; cases h]
@@ -148,6 +157,11 @@ theorem exec_regions {i : Instr} (h : exec i s = some s') :
     split at h <;> [skip; cases h]
     obtain ⟨v, -, rfl⟩ := Option.map_eq_some_iff.mp h
     exact ⟨rfl, rfl, rfl, Frame.refl _ _⟩
+  | ccmp sz n imm nzcv cond =>
+    simp only [exec] at h
+    split at h <;> [skip; cases h]
+    simp only [Option.some.injEq] at h; subst h
+    split <;> exact ⟨rfl, rfl, rfl, Frame.refl _ _⟩
   | push _ | pop _ | alloc _ | free _ => simp only [exec, reduceCtorEq] at h
   | _ =>
     simp only [exec] at h
@@ -194,6 +208,13 @@ theorem exec_gpr {i : Instr} {r : Reg} (hi : dstOf i ≠ some r) (h : exec i s =
     split at h <;> [skip; cases h]
     obtain ⟨v, -, rfl⟩ := Option.map_eq_some_iff.mp h
     exact hw _ _ _ _ fun e => hi (by simp [dstOf, e])
+  | tst sz n m =>
+    simp only [exec, Option.some.injEq] at h; subst h; rfl
+  | ccmp sz n imm nzcv cond =>
+    simp only [exec] at h
+    split at h <;> [skip; cases h]
+    simp only [Option.some.injEq] at h; subst h
+    split <;> rfl
   | push _ | pop _ | alloc _ | free _ => simp only [exec, reduceCtorEq] at h
   | _ =>
     simp only [exec] at h
