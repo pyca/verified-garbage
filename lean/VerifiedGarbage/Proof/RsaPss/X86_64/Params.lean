@@ -148,4 +148,22 @@ theorem dbSlots_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {
   rw [slot_eq sScr 21 rfl, slot_eq sScr 21 rfl, h1, R.fr 21 (by decide)]
   simp [upd]
 
+/-- The mask fits in a byte. -/
+theorem maskV_byte {x : Nat} (hx : x < 256) : maskV x = BitVec.setWidth 64 ((maskV x).setWidth 8) := by
+  have hv : (maskV x).toNat < 2 ^ 8 := by
+    unfold maskV
+    split
+    · decide
+    · have hl : Nat.log2 x < 8 := by
+        by_cases h0 : x = 0
+        · subst h0; decide
+        · exact (Nat.log2_lt h0).mpr hx
+      have : 2 ^ Nat.log2 x ≤ 2 ^ 7 := Nat.pow_le_pow_right (by decide) (by omega)
+      rw [BitVec.toNat_ofNat]
+      have : 2 ^ Nat.log2 x - 1 < 2 ^ 64 := by omega
+      rw [Nat.mod_eq_of_lt this]
+      omega
+  apply BitVec.eq_of_toNat_eq
+  rw [BitVec.toNat_setWidth, BitVec.toNat_setWidth, Nat.mod_eq_of_lt hv, Nat.mod_eq_of_lt (by omega)]
+
 end VG.Proof.RsaPss.X86_64

@@ -230,23 +230,6 @@ theorem vtwoX {α : Type} {Φ : α → State → Prop} {c : Prog isa} (π : α �
     (fun a t h => let ⟨_, S, _⟩ := hΦ a t h; S.rest)
     (fun a => by simp [pw, Function.comp_def, he a]) hr hks h
 
-theorem maskV_byte {x : Nat} (hx : x < 256) : maskV x = BitVec.setWidth 64 ((maskV x).setWidth 8) := by
-  have hv : (maskV x).toNat < 2 ^ 8 := by
-    unfold maskV
-    split
-    · decide
-    · have hl : Nat.log2 x < 8 := by
-        by_cases h0 : x = 0
-        · subst h0; decide
-        · exact (Nat.log2_lt h0).mpr hx
-      have : 2 ^ Nat.log2 x ≤ 2 ^ 7 := Nat.pow_le_pow_right (by decide) (by omega)
-      rw [BitVec.toNat_ofNat]
-      have : 2 ^ Nat.log2 x - 1 < 2 ^ 64 := by omega
-      rw [Nat.mod_eq_of_lt this]
-      omega
-  apply BitVec.eq_of_toNat_eq
-  rw [BitVec.toNat_setWidth, BitVec.toNat_setWidth, Nat.mod_eq_of_lt hv, Nat.mod_eq_of_lt (by omega)]
-
 theorem fnz_lt {f : Nat → Byte} : ∀ {j i : Nat}, fnz f j = some i → i < j
   | 0, _, h => by simp [fnz] at h
   | j + 1, i, h => by
