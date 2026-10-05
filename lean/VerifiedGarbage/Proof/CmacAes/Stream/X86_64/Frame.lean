@@ -8,7 +8,7 @@ The streaming functions run their code, proved with the working space as an
 argument (`Verified.lean`), in a frame of 2312 bytes that allocates it
 (`Verified.stackScratch`): the 2304 bytes of working space, and 8 more to
 keep `rsp` aligned. Their own calls use 16 bytes below it: two return
-addresses, as `vg_aes_ctr32` and `vg_aes_expand_key` use no stack.
+addresses, as `vg_aes_ctr32` and `vg_aes_expand_key_scratch` use no stack.
 -/
 
 namespace VG.Proof.CmacAes.Stream.X86_64

@@ -11,7 +11,7 @@ import VerifiedGarbage.Impl.Aes.X86_64.AesNiBlocks
 A function that calls `vg_aes_ctr32` (AES-CMAC's) takes the implementation it
 calls, a `Ctr32`, and is emitted once for each (`Generic/AesCtr32/X86_64/`).
 One that also expands the key (streaming AES-CMAC's `init`) calls the
-implementation of `vg_aes_expand_key` that goes with it, an `ExpandKey`.
+implementation of `vg_aes_expand_key_scratch` that goes with it, an `ExpandKey`.
 A function that encrypts or decrypts whole blocks (AES-OCB's) calls an
 implementation of `vg_aes_encrypt_blocks` and `vg_aes_decrypt_blocks`, a
 pair of `Blocks`.
@@ -30,13 +30,13 @@ def Ctr32.scalar : Ctr32 := ⟨"vg_aes_ctr32", ctr32⟩
 def Ctr32.aesni : Ctr32 := ⟨"vg_aes_ctr32_aesni", AesNi.ctr32⟩
 def Ctr32.vaes : Ctr32 := ⟨"vg_aes_ctr32_vaes", Vaes.ctr32⟩
 
-/-- An implementation of `vg_aes_expand_key` to call: its symbol and its code. -/
+/-- An implementation of `vg_aes_expand_key_scratch` to call: its symbol and its code. -/
 structure ExpandKey where
   name : String
   code : Prog isa
 
-def ExpandKey.scalar : ExpandKey := ⟨"vg_aes_expand_key", expandKey⟩
-def ExpandKey.aesni : ExpandKey := ⟨"vg_aes_expand_key_aesni", AesNi.expandKey⟩
+def ExpandKey.scalar : ExpandKey := ⟨"vg_aes_expand_key_scratch", expandKey⟩
+def ExpandKey.aesni : ExpandKey := ⟨"vg_aes_expand_key_scratch_aesni", AesNi.expandKey⟩
 
 /-- An implementation of `vg_aes_encrypt_blocks` or `vg_aes_decrypt_blocks`
 to call: its symbol and its code. -/

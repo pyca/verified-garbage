@@ -7,7 +7,7 @@ import VerifiedGarbage.Impl.CmacAes.AArch64.Callee
 `vg_cmac_aes_absorb(state = x0, rounds = x1, count = x2, data = x3, len = x4, scratch = x5)`
 and `vg_cmac_aes_finish(state = x0, rounds = x1, count = x2, out = x3, scratch = x4)`
 (see `VG.Spec.Cmac.aesInitContract` and the others), composed of calls of
-the verified `vg_aes_expand_key`, `vg_cmac_aes_subkeys`, `vg_cmac_aes_update`
+the verified `vg_aes_expand_key_scratch`, `vg_cmac_aes_subkeys`, `vg_cmac_aes_update`
 and `vg_cmac_aes_finalize`. Initialization and finalization are generic
 over AES (`Ctr32`, its `ExpandKey`, and their symbol suffix). Absorption is
 generic over whole-block CMAC chaining (`Update`), so a specialized chaining
@@ -60,7 +60,7 @@ def initSaved : List (Reg × Nat) := [(.x19, 2176), (.x20, 2184), (.x21, 2192), 
 
 /-- Saves the registers, keeps the state in `x19`, the scratch buffer in
 `x20` and the rounds (`key_len / 4 + 6`) in `x21`, and sets up the arguments
-of `vg_aes_expand_key(key = x0, key_len = x1, schedule = x2, scratch = x3)`. -/
+of `vg_aes_expand_key_scratch(key = x0, key_len = x1, schedule = x2, scratch = x3)`. -/
 def initPre : List Instr :=
   initSaved.map (fun (r, d) => .str .x r .x3 d) ++
   [mov .x19 .x0, mov .x20 .x3, .lsr .x .x21 .x2 2, .addImm .x .x21 .x21 6, mov .x0 .x1, mov .x1 .x2,

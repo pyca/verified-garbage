@@ -9,7 +9,7 @@ import VerifiedGarbage.Impl.StackScratch.X86
 `vg_aes_siv_encrypt(ctx, rounds, ads, ads_count, data, len, work)` and
 `vg_aes_siv_decrypt` with the same arguments (see `VG.Spec.Siv.initContract`
 and the others), cdecl (every argument on the stack), composed of calls of
-the verified `vg_aes_expand_key`, `vg_cmac_aes_subkeys`,
+the verified `vg_aes_expand_key_scratch`, `vg_cmac_aes_subkeys`,
 `vg_cmac_aes_update`, `vg_cmac_aes_finalize` and `vg_aes_ctr32`. Like those,
 they are generic over the implementation of AES they call (`c`, the `e` that
 goes with it, and `sfx`, the suffix of the names of the CMAC functions made
@@ -103,7 +103,7 @@ variable (e : Impl.Aes.X86.ExpandKey) (c : Impl.Aes.X86.Ctr32) (sfx : String)
 
 open Impl.CmacAes.Stream.X86 (save call4) in
 /-- Saves the registers (at `scratch + 2176`), and the arguments of
-`vg_aes_expand_key(key, key_len / 2, ctx, scratch)` for `K1`. -/
+`vg_aes_expand_key_scratch(key, key_len / 2, ctx, scratch)` for `K1`. -/
 def initPre : List Instr :=
   [.mov .eax (argOp 3)] ++ save ++
     [.mov .eax (argOp 0), .mov .ecx (argOp 1), .shift .shr .ecx 1, .mov .edx (argOp 2), .mov .ebx (argOp 3)]
@@ -113,7 +113,7 @@ def initMid₁ : List Instr :=
   [.mov .eax (argOp 2), .mov .ecx (argOp 1), .shift .shr .ecx 3, .alu .add .ecx (imm 6), .mov .edx (.reg .eax),
    .alu .add .edx (imm 240), .mov .ebx (argOp 3)]
 
-/-- The arguments of `vg_aes_expand_key(key + key_len / 2, key_len / 2, ctx + 272, scratch)` for `K2`. -/
+/-- The arguments of `vg_aes_expand_key_scratch(key + key_len / 2, key_len / 2, ctx + 272, scratch)` for `K2`. -/
 def initMid₂ : List Instr :=
   [.mov .ecx (argOp 1), .shift .shr .ecx 1, .mov .eax (argOp 0), .alu .add .eax (.reg .ecx), .mov .edx (argOp 2),
    .alu .add .edx (imm 272), .mov .ebx (argOp 3)]

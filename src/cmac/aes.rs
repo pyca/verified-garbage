@@ -13,11 +13,11 @@
 //! It follows the implementation of AES (`crate::aes::Backend`): on x86-64,
 //! CPUs with AES-NI and SSSE3 run the `_aesni` functions instead, which have
 //! the same contracts: the same verified CMAC code, calling
-//! `vg_aes_expand_key_aesni` and `vg_aes_ctr32_aesni` rather than
-//! `vg_aes_expand_key` and `vg_aes_ctr32`, and CPUs with VAES and AVX2 too
+//! `vg_aes_expand_key_scratch_aesni` and `vg_aes_ctr32_aesni` rather than
+//! `vg_aes_expand_key_scratch` and `vg_aes_ctr32`, and CPUs with VAES and AVX2 too
 //! the `_vaes` functions, calling `vg_aes_ctr32_vaes` (which, for CMAC's
 //! single blocks, runs `vg_aes_ctr32_aesni`'s code). On AArch64, CPUs with the AES
-//! extension run the `_aes` functions, calling `vg_aes_expand_key_aes` and
+//! extension run the `_aes` functions, calling `vg_aes_expand_key_scratch_aes` and
 //! `vg_aes_ctr32_aes`. Updates longer than 32 bytes use `_aes_cbc`, whose
 //! whole-block chaining keeps the round keys and chaining value in vector
 //! registers. On x86, CPUs with AES-NI run the `_aesni` functions; SSSE3

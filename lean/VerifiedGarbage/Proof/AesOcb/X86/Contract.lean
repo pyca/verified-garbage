@@ -11,7 +11,7 @@ shared contracts with it appended (`Proof/AesOcb/Scratch.lean`), which imply
 these (`Verified.lean`); a frame allocates it (`Frame.lean`). The arguments
 are on the stack, from `[esp + 4]` (cdecl), and may be overwritten
 (`writeArgs`); the calls of `vg_aes_encrypt_blocks`, `vg_aes_decrypt_blocks`
-and `vg_aes_expand_key`, which make no calls, push their arguments and
+and `vg_aes_expand_key_scratch`, which make no calls, push their arguments and
 return addresses in the 24 bytes below `esp`, which no buffer overlaps, nor
 the return address.
 -/

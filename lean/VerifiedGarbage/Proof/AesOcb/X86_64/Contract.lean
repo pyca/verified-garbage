@@ -9,7 +9,7 @@ Untrusted: everything here is checked by Lean. The artifacts' contracts are
 the shared ones of `Spec/Ocb/Contract.lean`, with the working space as a
 last argument (`Proof/AesOcb/Scratch.lean`), which imply these
 (`Verified.lean`). The functions call `vg_aes_encrypt_blocks`,
-`vg_aes_decrypt_blocks` and `vg_aes_expand_key`, which use no stack: the
+`vg_aes_decrypt_blocks` and `vg_aes_expand_key_scratch`, which use no stack: the
 return address of a call is in the 8 bytes below the stack pointer (`stk8`),
 which no buffer overlaps, nor the return address (`ret`).
 -/

@@ -26,7 +26,7 @@ namespace VG.Artifacts.AesOcb.Arm
 open VG.Proof.AesOcb.Arm
 
 /-- How `init` is built. -/
-def initNote : String := "This implementation calls `vg_aes_expand_key` for the key schedule and \
+def initNote : String := "This implementation calls `vg_aes_expand_key_scratch` for the key schedule and \
   `vg_aes_ctr32` to encrypt the zero block into `L_*`."
 
 def artifacts : List Artifact := [

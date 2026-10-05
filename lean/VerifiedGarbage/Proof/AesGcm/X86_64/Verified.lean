@@ -12,7 +12,7 @@ import VerifiedGarbage.Proof.AesGcm.Scratch
 # AES-GCM on x86-64: `Verified`
 
 Untrusted: everything here is checked by Lean. Correctness and constant time
-(for any implementations `v` of `vg_aes_ctr32`, `vg_aes_expand_key` and
+(for any implementations `v` of `vg_aes_ctr32`, `vg_aes_expand_key_scratch` and
 `vg_ghash`), a state satisfying each precondition, and the shared contracts
 of `Spec/Gcm/Contract.lean` with the working space as a last argument
 (`Proof/AesGcm/Scratch.lean`; with 8 bytes of stack, for the return address

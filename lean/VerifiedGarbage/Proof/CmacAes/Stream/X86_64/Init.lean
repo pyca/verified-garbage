@@ -388,7 +388,7 @@ theorem init_wp (v : Ctr32Impl) {s₀ : State} (h0 : initX86_64.pre s₀) :
 
 /-! ## Constant time -/
 
-/-- What the call of `vg_aes_expand_key` leaves, for `initMid`. -/
+/-- What the call of `vg_aes_expand_key_scratch` leaves, for `initMid`. -/
 structure IAfter (s₀ : State) (St S : Addr) (KL : Nat) (s : State) : Prop where
   rbx : s.gpr .rbx = St
   rbp : s.gpr .rbp = S

@@ -10,7 +10,7 @@ import VerifiedGarbage.Proof.AesOcb.Scratch
 Untrusted: everything here is checked by Lean. Correctness (`seal_wp`,
 `open_wp`, `init_correct`) and constant time (`seal_ct`, `open_ct`,
 `init_ct`) for any implementations `v` of `vg_aes_encrypt_blocks`,
-`vg_aes_decrypt_blocks` and `vg_aes_expand_key`, a state satisfying each
+`vg_aes_decrypt_blocks` and `vg_aes_expand_key_scratch`, a state satisfying each
 precondition, and the shared contracts with the working space as a last
 argument (`Proof/AesOcb/Scratch.lean`), with 24 bytes of stack: the
 arguments and return address of the calls, whose callees use no stack.

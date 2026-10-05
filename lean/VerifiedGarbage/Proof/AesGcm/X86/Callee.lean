@@ -14,7 +14,7 @@ import VerifiedGarbage.Proof.Gcm.Compose
 # AES-GCM on x86: the calls
 
 Untrusted: everything here is checked by Lean. Each call of `vg_ghash`,
-`vg_aes_ctr32` and `vg_aes_expand_key`, in a frame of its arguments, from
+`vg_aes_ctr32` and `vg_aes_expand_key_scratch`, in a frame of its arguments, from
 the callee's contract (`WP.callWith`): what it needs of the registers it
 pushes and of the regions it is given (`GhCall`, `CtrCall`, `KeyCall`), and
 what it leaves (`GhPost`, `CtrPost`, `KeyPost`), in terms of the memory
@@ -95,7 +95,7 @@ def scalar : GhashImpl where
 end GhashImpl
 
 /-- The implementations a set of AES-GCM functions calls: of
-`vg_aes_ctr32` with its `vg_aes_expand_key` (`Ctr32Impl`), and of
+`vg_aes_ctr32` with its `vg_aes_expand_key_scratch` (`Ctr32Impl`), and of
 `vg_ghash`. -/
 structure GcmImpl where
   ctr : Proof.Aes.X86.Ctr32Impl
@@ -406,13 +406,13 @@ theorem ctr_ct (v : GcmImpl) {I : State → Prop} {K C D S E : BitVec 32} {R n :
   · rw [a4, b4]
   · rw [a5, b5]
 
-/-! ## `vg_aes_expand_key` -/
+/-! ## `vg_aes_expand_key_scratch` -/
 
 abbrev keyRegs : List Reg := [.ebp, .edx, .ecx, .eax]
 
 theorem keyRegs_esp : Reg.esp ∉ keyRegs := by decide
 
-/-- What a call of `vg_aes_expand_key` needs: the `L`-byte key at `K`, the key
+/-- What a call of `vg_aes_expand_key_scratch` needs: the `L`-byte key at `K`, the key
 schedule at `C` and working space at `S`. -/
 structure KeyCall (s : State) (K C S : BitVec 32) (L : Nat) : Prop where
   eax : s.gpr .eax = K
@@ -433,7 +433,7 @@ structure KeyCall (s : State) (K C S : BitVec 32) (L : Nat) : Prop where
   reads : Covers [⟨w64 K, L⟩] (s.rd ++ s.wr)
   writes : Covers [⟨w64 C, 240⟩, ⟨w64 S, 512⟩] s.wr
 
-/-- What a call of `vg_aes_expand_key` leaves. -/
+/-- What a call of `vg_aes_expand_key_scratch` leaves. -/
 structure KeyPost (s : State) (K C S : BitVec 32) (L : Nat) (s' : State) : Prop where
   rd : s'.rd = s.rd
   wr : s'.wr = s.wr
@@ -510,7 +510,7 @@ theorem key_call (v : GcmImpl) {s : State} {K C S : BitVec 32} {L : Nat} (h : Ke
   · exact f'.mono fun r hr => by simp only [List.cons_append, List.nil_append] at hr; simpa using hr
   · rw [post, bytesAt_frame fE (one_disj h.bk) (by rcases h.len with rfl | rfl | rfl <;> decide)]
 
-/-- Calls of `vg_aes_expand_key` with the same arguments and stack pointer
+/-- Calls of `vg_aes_expand_key_scratch` with the same arguments and stack pointer
 in both runs are constant time. -/
 theorem key_ct (v : GcmImpl) {I : State → Prop} {K C S E : BitVec 32} {L : Nat}
     (h : ∀ s, I s → KeyCall s K C S L ∧ s.gpr .esp = E) : CT I (keyCall v.callees) := by

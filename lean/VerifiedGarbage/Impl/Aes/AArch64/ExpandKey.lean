@@ -3,7 +3,8 @@ import VerifiedGarbage.Impl.Aes.AArch64.Ctr32
 /-!
 # The AES key expansion on AArch64
 
-`vg_aes_expand_key(key = x0, key_len = x1, schedule = x2, scratch = x3)`.
+`vg_aes_expand_key_scratch(key = x0, key_len = x1, schedule = x2, scratch = x3)`; `vg_aes_expand_key`
+runs it with `scratch` in a frame of its own (`Proof/Aes/AArch64/Frame.lean`).
 
 FIPS 197 §5.2 (`KEYEXPANSION`), one word at a time, with `SUBWORD` done by
 the bitsliced S-box of `Sbox.lean` on the word in the low 32 bits of `q 0`

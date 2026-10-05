@@ -9,7 +9,7 @@ pub(crate) const VG_AES_SIV_INIT_AESNI_FEATURES: crate::cpu::Features = crate::c
 ///
 /// Contract: `VG.Spec.Siv.initContract`. The key context is `VG.Spec.Siv.KeyRepr`. Constant time: only the pointers and `key_len` may affect timing, not the key.
 ///
-/// This implementation expands the keys with `vg_aes_expand_key_aesni` and computes the CMAC subkeys with `vg_cmac_aes_subkeys_aesni`.
+/// This implementation expands the keys with `vg_aes_expand_key_scratch_aesni` and computes the CMAC subkeys with `vg_cmac_aes_subkeys_aesni`.
 ///
 /// # Safety
 ///
@@ -40,7 +40,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_siv_init_aesni(key: *const u8, key_l
         "add r14, 6",
         "mov rsi, rbp",
         "add rcx, 256",
-        "call {vg_aes_expand_key_aesni}",
+        "call {vg_aes_expand_key_scratch_aesni}",
         "mov rdi, r12",
         "mov rsi, r14",
         "mov rdx, r12",
@@ -55,7 +55,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_siv_init_aesni(key: *const u8, key_l
         "add rdx, 272",
         "mov rcx, r13",
         "add rcx, 256",
-        "call {vg_aes_expand_key_aesni}",
+        "call {vg_aes_expand_key_scratch_aesni}",
         "mov rbx, QWORD PTR [r13+160]",
         "mov rbp, QWORD PTR [r13+168]",
         "mov r12, QWORD PTR [r13+176]",
@@ -64,7 +64,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_siv_init_aesni(key: *const u8, key_l
         "lea rsp, [rsp+2568]",
         "ret",
         ".p2align 6",
-        vg_aes_expand_key_aesni = sym super::aes::vg_aes_expand_key_aesni,
+        vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni,
         vg_cmac_aes_subkeys_aesni = sym super::cmac_aes::vg_cmac_aes_subkeys_aesni,
     )
 }
@@ -850,7 +850,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_siv_decrypt_aesni(ctx: *const [u64; 
 ///
 /// Contract: `VG.Spec.Siv.initContract`. The key context is `VG.Spec.Siv.KeyRepr`. Constant time: only the pointers and `key_len` may affect timing, not the key.
 ///
-/// This implementation expands the keys with `vg_aes_expand_key` and computes the CMAC subkeys with `vg_cmac_aes_subkeys`.
+/// This implementation expands the keys with `vg_aes_expand_key_scratch` and computes the CMAC subkeys with `vg_cmac_aes_subkeys`.
 ///
 /// # Safety
 ///
@@ -880,7 +880,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_siv_init(key: *const u8, key_len: us
         "add r14, 6",
         "mov rsi, rbp",
         "add rcx, 256",
-        "call {vg_aes_expand_key}",
+        "call {vg_aes_expand_key_scratch}",
         "mov rdi, r12",
         "mov rsi, r14",
         "mov rdx, r12",
@@ -895,7 +895,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_siv_init(key: *const u8, key_len: us
         "add rdx, 272",
         "mov rcx, r13",
         "add rcx, 256",
-        "call {vg_aes_expand_key}",
+        "call {vg_aes_expand_key_scratch}",
         "mov rbx, QWORD PTR [r13+160]",
         "mov rbp, QWORD PTR [r13+168]",
         "mov r12, QWORD PTR [r13+176]",
@@ -904,7 +904,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_siv_init(key: *const u8, key_len: us
         "lea rsp, [rsp+2568]",
         "ret",
         ".p2align 6",
-        vg_aes_expand_key = sym super::aes::vg_aes_expand_key,
+        vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch,
         vg_cmac_aes_subkeys = sym super::cmac_aes::vg_cmac_aes_subkeys,
     )
 }
@@ -1685,7 +1685,7 @@ pub(crate) const VG_AES_SIV_INIT_VAES_FEATURES: crate::cpu::Features = crate::cp
 ///
 /// Contract: `VG.Spec.Siv.initContract`. The key context is `VG.Spec.Siv.KeyRepr`. Constant time: only the pointers and `key_len` may affect timing, not the key.
 ///
-/// This implementation expands the keys with `vg_aes_expand_key_aesni` and computes the CMAC subkeys with `vg_cmac_aes_subkeys_vaes`.
+/// This implementation expands the keys with `vg_aes_expand_key_scratch_aesni` and computes the CMAC subkeys with `vg_cmac_aes_subkeys_vaes`.
 ///
 /// # Safety
 ///
@@ -1716,7 +1716,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_siv_init_vaes(key: *const u8, key_le
         "add r14, 6",
         "mov rsi, rbp",
         "add rcx, 256",
-        "call {vg_aes_expand_key_aesni}",
+        "call {vg_aes_expand_key_scratch_aesni}",
         "mov rdi, r12",
         "mov rsi, r14",
         "mov rdx, r12",
@@ -1731,7 +1731,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_siv_init_vaes(key: *const u8, key_le
         "add rdx, 272",
         "mov rcx, r13",
         "add rcx, 256",
-        "call {vg_aes_expand_key_aesni}",
+        "call {vg_aes_expand_key_scratch_aesni}",
         "mov rbx, QWORD PTR [r13+160]",
         "mov rbp, QWORD PTR [r13+168]",
         "mov r12, QWORD PTR [r13+176]",
@@ -1740,7 +1740,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_siv_init_vaes(key: *const u8, key_le
         "lea rsp, [rsp+2568]",
         "ret",
         ".p2align 6",
-        vg_aes_expand_key_aesni = sym super::aes::vg_aes_expand_key_aesni,
+        vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni,
         vg_cmac_aes_subkeys_vaes = sym super::cmac_aes::vg_cmac_aes_subkeys_vaes,
     )
 }

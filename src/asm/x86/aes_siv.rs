@@ -9,7 +9,7 @@ pub(crate) const VG_AES_SIV_INIT_AESNI_FEATURES: crate::cpu::Features = crate::c
 ///
 /// Contract: `VG.Spec.Siv.initContract`. The key context is `VG.Spec.Siv.KeyRepr`. Constant time: only the pointers and `key_len` may affect timing, not the key.
 ///
-/// This implementation expands the keys with `vg_aes_expand_key_aesni` and computes the CMAC subkeys with `vg_cmac_aes_subkeys_aesni`.
+/// This implementation expands the keys with `vg_aes_expand_key_scratch_aesni` and computes the CMAC subkeys with `vg_cmac_aes_subkeys_aesni`.
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -48,7 +48,7 @@ pub(crate) unsafe extern "C" fn vg_aes_siv_init_aesni(key: *const u8, key_len: u
         "push edx",
         "push ecx",
         "push eax",
-        "call {vg_aes_expand_key_aesni}",
+        "call {vg_aes_expand_key_scratch_aesni}",
         "pop eax",
         "pop eax",
         "pop eax",
@@ -80,7 +80,7 @@ pub(crate) unsafe extern "C" fn vg_aes_siv_init_aesni(key: *const u8, key_len: u
         "push edx",
         "push ecx",
         "push eax",
-        "call {vg_aes_expand_key_aesni}",
+        "call {vg_aes_expand_key_scratch_aesni}",
         "pop eax",
         "pop eax",
         "pop eax",
@@ -93,7 +93,7 @@ pub(crate) unsafe extern "C" fn vg_aes_siv_init_aesni(key: *const u8, key_len: u
         "lea esp, [esp+2580]",
         "ret",
         ".p2align 6",
-        vg_aes_expand_key_aesni = sym super::aes::vg_aes_expand_key_aesni,
+        vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni,
         vg_cmac_aes_subkeys_aesni = sym super::cmac_aes::vg_cmac_aes_subkeys_aesni,
     )
 }
@@ -1260,7 +1260,7 @@ pub(crate) unsafe extern "C" fn vg_aes_siv_decrypt_aesni(ctx: *const [u64; 64], 
 ///
 /// Contract: `VG.Spec.Siv.initContract`. The key context is `VG.Spec.Siv.KeyRepr`. Constant time: only the pointers and `key_len` may affect timing, not the key.
 ///
-/// This implementation expands the keys with `vg_aes_expand_key` and computes the CMAC subkeys with `vg_cmac_aes_subkeys`.
+/// This implementation expands the keys with `vg_aes_expand_key_scratch` and computes the CMAC subkeys with `vg_cmac_aes_subkeys`.
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
@@ -1298,7 +1298,7 @@ pub(crate) unsafe extern "C" fn vg_aes_siv_init(key: *const u8, key_len: usize, 
         "push edx",
         "push ecx",
         "push eax",
-        "call {vg_aes_expand_key}",
+        "call {vg_aes_expand_key_scratch}",
         "pop eax",
         "pop eax",
         "pop eax",
@@ -1330,7 +1330,7 @@ pub(crate) unsafe extern "C" fn vg_aes_siv_init(key: *const u8, key_len: usize, 
         "push edx",
         "push ecx",
         "push eax",
-        "call {vg_aes_expand_key}",
+        "call {vg_aes_expand_key_scratch}",
         "pop eax",
         "pop eax",
         "pop eax",
@@ -1343,7 +1343,7 @@ pub(crate) unsafe extern "C" fn vg_aes_siv_init(key: *const u8, key_len: usize, 
         "lea esp, [esp+2580]",
         "ret",
         ".p2align 6",
-        vg_aes_expand_key = sym super::aes::vg_aes_expand_key,
+        vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch,
         vg_cmac_aes_subkeys = sym super::cmac_aes::vg_cmac_aes_subkeys,
     )
 }
