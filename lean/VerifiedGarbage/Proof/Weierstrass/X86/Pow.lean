@@ -54,7 +54,7 @@ structure PowInv (P : PowCfg) (wk : Nat) (base : Addr) (size m e : Nat) [NeZero 
 /-- An iteration. -/
 theorem powBody_ok {P : PowCfg} {wk : Nat} {base : Addr} {size m e : Nat} [NeZero m] (hL : PowLay P size)
     (hW : PowWk P size wk) (hm : UnitMod m (2 ^ (64 * P.M.n))) {s₀ : State}
-    (hM₀ : ModOk P.M size m s₀.mem base) (hB : wordsVal s₀.mem base P.base P.M.n < m)
+    (hM₀ : ModOkW P.M size m s₀.mem base) (hB : wordsVal s₀.mem base P.base P.M.n < m)
     (hbits : ∀ t < P.nbits, s₀.mem (off base (P.bits + t)) = if e.testBit t then 1 else 0)
     {j : Nat} {s : State} (hj : 1 ≤ j) (hjn : j ≤ P.nbits) (hI : PowInv P wk base size m e s₀ s j) :
     WP isa (powBody P wk) s fun s' =>
@@ -82,8 +82,8 @@ theorem powBody_ok {P : PowCfg} {wk : Nat} {base : Addr} {size m e : Nat} [NeZer
     rcases hw with hw | rfl
     · exact hL.base_w w hw
     · exact .inl hW.base
-  have hM : ModOk P.M size m s.mem base :=
-    ⟨hM₀.n0, hM₀.n7, hM₀.mo, hM₀.tmp, hM₀.sep,
+  have hM : ModOkW P.M size m s.mem base :=
+    ⟨hM₀.n0, hM₀.mo, hM₀.tmp, hM₀.sep,
       by rw [hI.unch.wordsVal hmo (by omega)]; exact hM₀.val, hM₀.inv, hM₀.red⟩
   have hBs : wordsVal s.mem base P.base P.M.n = wordsVal s₀.mem base P.base P.M.n :=
     hI.unch.wordsVal hbw (by omega)
@@ -99,8 +99,8 @@ theorem powBody_ok {P : PowCfg} {wk : Nat} {base : Addr} {size m e : Nat} [NeZer
     (by rw [hm₁]; exact hI.lt)) fun s₂ ⟨k₂, lt₂, e₂⟩ => ?_)
   have hs₂ := k₂.scr hs₁
   have hU₂ := k₂.unch
-  have hM₂ : ModOk P.M size m s₂.mem base :=
-    ⟨hM.n0, hM.n7, hM.mo, hM.tmp, hM.sep, by
+  have hM₂ : ModOkW P.M size m s₂.mem base :=
+    ⟨hM.n0, hM.mo, hM.tmp, hM.sep, by
       rw [hU₂.wordsVal (fun w hw => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
         rcases hw with rfl | rfl | rfl
@@ -177,7 +177,7 @@ theorem powBody_ok {P : PowCfg} {wk : Nat} {base : Addr} {size m e : Nat} [NeZer
 whose bits are the table at `P.bits`; only `powClob` and `powWx` change. -/
 theorem pow_ok {P : PowCfg} {wk : Nat} {base : Addr} {size m e : Nat} [NeZero m] (hL : PowLay P size)
     (hW : PowWk P size wk) (hm : UnitMod m (2 ^ (64 * P.M.n))) {s : State} (hs : Scr s base size)
-    (hM : ModOk P.M size m s.mem base) (hB : wordsVal s.mem base P.base P.M.n < m)
+    (hM : ModOkW P.M size m s.mem base) (hB : wordsVal s.mem base P.base P.M.n < m)
     (hO : wordsVal s.mem base P.one P.M.n = 2 ^ (64 * P.M.n) % m)
     (hbits : ∀ t < P.nbits, s.mem (off base (P.bits + t)) = if e.testBit t then 1 else 0)
     (he : e < 2 ^ P.nbits) :

@@ -56,7 +56,7 @@ def PY : Nat := SS
 
 /-- ECDH's arguments: `(out, d, peer, scratch)`, with `k` and the hash both
 `d` (the peer's `x` is read into the hash's slot after the setup). -/
-abbrev Args.ecdh : Args := ⟨3, 1, 1, 1⟩
+abbrev Args.ecdh : Args := ⟨3, 1, 1, 1, none⟩
 
 namespace Cfg
 

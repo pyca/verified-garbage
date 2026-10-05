@@ -39,7 +39,7 @@ structure WkOk (M : Mod) (size wk : Nat) (Sl : Nat → Prop) : Prop where
 structure Inv (M : Mod) (base : Addr) (size m : Nat) [NeZero m] (Sl : Nat → Prop) (V : List Nat)
     (E : Nat → Fin m) (s : State) : Prop where
   scr : Scr s base size
-  mod : ModOk M size m s.mem base
+  mod : ModOkW M size m s.mem base
   sl : ∀ x ∈ V, Sl x
   lt : ∀ x ∈ V, wordsVal s.mem base x M.n < m
   val : ∀ x ∈ V, toM m (2 ^ (64 * M.n)) (wordsVal s.mem base x M.n) = E x
@@ -149,7 +149,7 @@ theorem Inv.update {M : Mod} {base : Addr} {size m wk : Nat} [NeZero m] {Sl : Na
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
         subst hw; exact hL.apart x w hx ho hxo)
       (hL.tmp x hx) (hW.sl x hx)
-  refine ⟨hk.scr hI.scr, ⟨hM.n0, hM.n7, hM.mo, hM.tmp, hM.sep, ?_, hM.inv, hM.red⟩, ?_, ?_, ?_⟩
+  refine ⟨hk.scr hI.scr, ⟨hM.n0, hM.mo, hM.tmp, hM.sep, ?_, hM.inv, hM.red⟩, ?_, ?_, ?_⟩
   · have := hW.mo
     rw [hk.wordsVal hn hM.mo (fun w hw => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hw

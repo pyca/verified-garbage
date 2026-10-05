@@ -56,7 +56,7 @@ theorem post_of {s s' : State} (h : PkPost p256 s s') : pkX86.post s s' := by
 theorem pk_x86 (hL : Weierstrass.Law Spec.P256.curve) (s : State) (hs : pkX86.pre s) :
     ∃ t s', Exec isa publicKeyP256 s t s' ∧ abiPreserved s s' ∧ pkX86.post s s' := by
   have hp := pre_of hs
-  obtain ⟨t, s', he, K, hpost⟩ := publicKey_ok p256_ok hL hp
+  obtain ⟨t, s', he, K, hpost⟩ := publicKey_ok p256_ok rfl hL hp
   refine ⟨t, s', he, ⟨fun r hr => ?_, ret_keep hp K⟩, post_of hpost⟩
   simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl
