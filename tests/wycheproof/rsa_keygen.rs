@@ -11,7 +11,12 @@
 //! * each number of `primality_test.json` of such a length and form (only
 //!   composites, Carmichael numbers and worst cases for Miller–Rabin):
 //!   followed by random octets, it is never the prime returned, with `e = 1`
-//!   (so that only trial division and Miller–Rabin can reject it).
+//!   (so that only trial division and Miller–Rabin can reject it);
+//! * each two-prime private key of the RSA test vector files whose primes
+//!   `key_from_primes` takes, from its primes and public exponent: the key
+//!   it returns has the key's `n`, `p`, `q`, `dP`, `dQ` and `qInv`, passes
+//!   `check_key` (`d e ≡ 1` modulo `p - 1` and `q - 1`), and has the key's
+//!   `d` but where the key's `d` is not the least (all keys but one).
 
 #![cfg(all(target_arch = "x86_64", feature = "alloc"))]
 
@@ -19,7 +24,7 @@ use std::collections::BTreeMap;
 use std::sync::atomic::{AtomicUsize, Ordering};
 
 use serde::Deserialize;
-use verified_garbage::rsa_keygen::generate_prime_from;
+use verified_garbage::rsa_keygen::{generate_prime_from, key_from_primes};
 
 use crate::harness::{self, Expectation, Hex, TestFile};
 use crate::require_vectors;
@@ -30,6 +35,12 @@ struct Key {
     public_exponent: Hex,
     prime1: Option<Hex>,
     prime2: Option<Hex>,
+    modulus: Option<Hex>,
+    private_exponent: Option<Hex>,
+    exponent1: Option<Hex>,
+    exponent2: Option<Hex>,
+    coefficient: Option<Hex>,
+    other_prime_infos: Option<serde_json::Value>,
 }
 
 #[derive(Deserialize)]
@@ -118,6 +129,7 @@ fn rsa_keygen_primes() {
                 public_exponent,
                 prime1: Some(p),
                 prime2: Some(q),
+                ..
             }) = group.params.private_key
             else {
                 continue;
@@ -178,4 +190,70 @@ fn rsa_keygen_composites() {
         checked += 1;
     }
     assert!(checked > 0);
+}
+
+/// `x` in `len` bytes (big-endian).
+fn widen(x: &[u8], len: usize) -> Vec<u8> {
+    let x = trim(x);
+    let mut v = vec![0; len - x.len()];
+    v.extend_from_slice(x);
+    v
+}
+
+#[test]
+fn rsa_keygen_keys() {
+    require_vectors!();
+    let mut seen = std::collections::BTreeSet::new();
+    let (mut checked, mut same_d) = (0, 0);
+    for name in harness::all_files().unwrap() {
+        if !(name.starts_with("rsa_") && name.ends_with("_test.json")) {
+            continue;
+        }
+        let file: TestFile<Group, Case> = harness::load(&name);
+        for group in file.test_groups {
+            let Some(Key {
+                public_exponent: e,
+                prime1: Some(p),
+                prime2: Some(q),
+                modulus: Some(n),
+                private_exponent: Some(d),
+                exponent1: Some(dp),
+                exponent2: Some(dq),
+                coefficient: Some(qinv),
+                other_prime_infos: None,
+            }) = group.params.private_key
+            else {
+                continue;
+            };
+            let (p, q) = (trim(&p.0), trim(&q.0));
+            let len = p.len();
+            let e = trim(&e.0);
+            if q.len() != len || !len.is_multiple_of(8) || !(32..=512).contains(&len) || e.len() > 8
+            {
+                continue;
+            }
+            if !seen.insert(p.to_vec()) {
+                continue;
+            }
+            // The key's `p` is the larger, as `key_from_primes` makes it.
+            assert!(p > q, "{name}");
+            for (a, b) in [(p, q), (q, p)] {
+                let key = key_from_primes(e, a, b).unwrap();
+                let [kn, ke, kd, kp, kq, kdp, kdq, kqinv] = key.components();
+                assert_eq!((kn, ke), (trim(&n.0), e), "{name}");
+                assert_eq!((kp, kq), (p, q), "{name}");
+                assert_eq!(kdp, widen(&dp.0, len), "{name}");
+                assert_eq!(kdq, widen(&dq.0, len), "{name}");
+                assert_eq!(kqinv, widen(&qinv.0, len), "{name}");
+                assert!(key.check_key(), "{name}");
+                if kd == widen(&d.0, 2 * len) {
+                    same_d += 1;
+                }
+            }
+            checked += 1;
+        }
+    }
+    assert!(checked > 0);
+    // One key's `d` is the least plus 12 `lcm(p - 1, q - 1)`.
+    assert_eq!(same_d, 2 * (checked - 1));
 }
