@@ -1,3 +1,4 @@
+import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.EncLoops
 
 /-!

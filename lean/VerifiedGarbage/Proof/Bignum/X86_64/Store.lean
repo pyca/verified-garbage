@@ -1,5 +1,6 @@
 import VerifiedGarbage.Proof.Bignum.X86_64.Bytes
 import VerifiedGarbage.Proof.Framework.WriteBytes
+import Mathlib.Tactic.Set
 
 /-!
 # Multiword arithmetic on x86-64: words to bytes
@@ -34,7 +35,7 @@ theorem word_of_wv (m : Mem) (B : Addr) (ed w : Nat) {q : Nat} (hq : q < w) :
   rw [h]
   have hl := wv_lt m B ed q
   have hw := (word m B (ed + 8 * q)).isLt
-  rw [Nat.add_mul_div_left _ _ (by positivity), Nat.div_eq_of_lt hl, Nat.zero_add,
+  rw [Nat.add_mul_div_left _ _ (by exact Nat.pow_pos (by decide)), Nat.div_eq_of_lt hl, Nat.zero_add,
     show 64 * 1 = 64 from rfl, Nat.add_mul_mod_self_left, Nat.mod_eq_of_lt hw]
 
 theorem out_ne {out : Addr} {i j : Nat} (hi : i < 2 ^ 64) (hj : j < 2 ^ 64) (h : i ≠ j) :
@@ -132,8 +133,7 @@ theorem storeStep_ok {s : State} {B : Addr} {Z ed k w : Nat} {out : Addr} {c : B
   have hbyte : (t₂.gpr .rax).setWidth 8 = BitVec.ofNat 8 (Ym / 256 ^ p) := by
     rw [← BitVec.ofNat_toNat, hax₂]
     apply BitVec.eq_of_toNat_eq
-    rw [BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_mod_of_dvd _ (Dvd.intro_left
-      (256 ^ (8 - p % 8 - 1)) (by rw [← Nat.pow_succ]; congr 1; omega))]
+    rw [BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_mod_of_dvd _ ⟨256 ^ (8 - p % 8 - 1), by rw [Nat.mul_comm, ← Nat.pow_succ]; congr 1; omega⟩]
   refine ⟨k'.2.2.trans (k12.2.2.trans hI.wr), k'.2.1.trans (k12.2.1.trans hI.rd),
     ((hI.keep.trans k12).trans k').mono (by decide), hdx', by rw [h14']; congr 2; omega, ?_, ?_, ?_⟩
   · intro hz

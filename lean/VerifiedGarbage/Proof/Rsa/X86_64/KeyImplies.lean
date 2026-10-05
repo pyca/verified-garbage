@@ -43,7 +43,6 @@ theorem key_implies : keyContract.Implies (Spec.Rsa.checkKeyContract abi) where
     sig_reduce [Spec.Rsa.checkKeyContract, Spec.Rsa.checkKeySig, abi, argRegs, keyContract, stackArgs_twelve, List.append_eq]
     sig_and_intros
     sig_close
-    all_goals with_reducible assumption
   post := by sig_implies_post [Spec.Rsa.checkKeyContract, Spec.Rsa.checkKeySig, abi, argRegs, keyContract, keyOf, stackArgs_twelve, List.append_eq]
   pub := by
     rintro s₁ s₂ - - h

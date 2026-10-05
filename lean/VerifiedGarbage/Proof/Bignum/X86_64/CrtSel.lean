@@ -5,6 +5,10 @@ import VerifiedGarbage.Proof.Bignum.X86_64.Copy
 import VerifiedGarbage.Proof.Framework.X86_64.Avx
 import VerifiedGarbage.Impl.Rsa.X86_64.Crt
 
+-- Reduce vector updates before comparing unchanged fields of whole states.
+attribute [local instance_reducible] VG.X86_64.State.setXmm
+
+
 /-!
 # RSA with the CRT on x86-64: a masked copy with SSE2
 

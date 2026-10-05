@@ -36,7 +36,7 @@ def satState : State where
 the same. -/
 theorem leak_eq {a b c d : List Byte} (hl : a.length = c.length)
     (h : (a ++ b).map (·.toNat) = (c ++ d).map (·.toNat)) : a = c ∧ b = d := by
-  have hi : (a ++ b) = (c ++ d) := List.map_injective_iff.2 (fun _ _ h => BitVec.toNat_inj.1 h) h
+  have hi : (a ++ b) = (c ++ d) := (List.map_inj_right (fun _ _ h => BitVec.toNat_inj.1 h)).1 h
   exact List.append_inj hi hl
 
 end VG.Proof.Bignum.X86_64

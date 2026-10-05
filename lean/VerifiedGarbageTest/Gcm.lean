@@ -41,6 +41,16 @@ def firstOfSections (k : Nat) (p : Record → Bool) (rs : List Record) : List Re
       if p r && n < k then r :: go rs (some r.params) (n + 1) else go rs (some r.params) n
   go rs none 0
 
+private def aesCached (key : List Byte) :
+    {c : Spec.Gcm.Block → Spec.Gcm.Block // c = Spec.Gcm.aes key} :=
+  let nr := Spec.Aes.rounds (key.length / 4)
+  let w := Spec.Aes.expandKey key
+  ⟨fun x => Spec.Gcm.ofBytes (Test.Aes.Cached.cipherCached nr w
+      (Vector.ofFn fun i => (Spec.Gcm.toBytes x).getD i 0)).toList, by
+    funext x
+    simp only [Test.Aes.Cached.cipherCached_eq]
+    rfl⟩
+
 run_cmd do
   let mut enc : Nat := 0
   let mut dec : Nat := 0
@@ -55,7 +65,7 @@ run_cmd do
       | .error e => throwError "{name}: {e}"
       | .ok (key, iv, pt, aad, ct, tag) =>
         unless key.length == bits / 8 do throwError "{name}: a {key.length}-byte key"
-        unless Spec.Gcm.aesGcmEncrypt key tag.length iv pt aad == (ct, tag) do
+        unless Spec.Gcm.encrypt (aesCached key).val tag.length iv pt aad == (ct, tag) do
           throwError "{name}, {r.params}, Count = {(r.get "Count").toOption}: GCM-AE is wrong"
         enc := enc + 1
     let name := s!"gcmDecrypt{bits}.rsp"
@@ -69,7 +79,7 @@ run_cmd do
           match r.bytes "PT" with
           | .ok pt => pure (some pt)
           | .error e => throwError "{name}: {e}"
-        unless Spec.Gcm.aesGcmDecrypt key tag.length iv ct aad tag == expected do
+        unless Spec.Gcm.decrypt (aesCached key).val tag.length iv ct aad tag == expected do
           throwError "{name}, {r.params}, Count = {(r.get "Count").toOption}: GCM-AD is wrong"
         dec := dec + 1
         if r.fail then fails := fails + 1
