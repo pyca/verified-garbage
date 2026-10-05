@@ -22,7 +22,7 @@ theorem p384_nBits : Spec.Ecdsa.nBits Spec.P384.curve = 384 := by
 
 /-- P-384, with the group law `hL` and the comb's tables `hT`. -/
 def p384 (hL : Weierstrass.Law Spec.P384.curve)
-    (hT : Weierstrass.CombOk Spec.P384.curve 96 Impl.P384.p384Comb Impl.P384.p384CombStart) : RfcCurve where
+    (hT : Weierstrass.CombOkW Spec.P384.curve 7 55 Impl.P384.p384Comb7 Impl.P384.p384Comb7Start) : RfcCurve where
   E := Impl.Ecdsa.AArch64.p384
   inst := Spec.Ecdsa.P384.inst
   curve := rfl

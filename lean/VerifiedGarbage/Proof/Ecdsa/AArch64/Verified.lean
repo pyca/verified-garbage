@@ -2,7 +2,7 @@ import VerifiedGarbage.Proof.Ecdsa.AArch64.Main
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Contract
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Lit
 import VerifiedGarbage.Proof.P256.Point
-import VerifiedGarbage.Proof.Framework.AArch64.Taint
+import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
 
 /-!
@@ -43,7 +43,6 @@ theorem p256_ok : CfgOk p256 where
   minv_n := by decide +kernel
   red_p := by decide +kernel
   red_n := by decide +kernel
-  tbl_len := by decide
   len := rfl
   hash := p256_nBits
   chain_p := by decide +kernel
@@ -51,30 +50,33 @@ theorem p256_ok : CfgOk p256 where
   am3 := by unfold AM3; decide +kernel
 
 theorem pre_of {s : State} (h : signAArch64.pre s) : Pre p256 s := by
-  obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11⟩ := h
-  exact ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11⟩
+  obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, held, fit, hdw⟩ := h
+  exact ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11,
+    ⟨by rw [h1]; simp, held, fit, hdw _ (by simp)⟩⟩
 
 theorem sign_a64 (hL : Weierstrass.Law Spec.P256.curve)
-    (hT : CombOk Spec.P256.curve 64 Impl.P256.p256Comb Impl.P256.p256CombStart) (s : State)
+    (hT : CombOkW Spec.P256.curve 7 37 Impl.P256.p256Comb7 Impl.P256.p256Comb7Start) (s : State)
     (hs : signAArch64.pre s) :
     ∃ t s', Exec isa signP256 s t s' ∧ abiPreserved s s' ∧ signAArch64.post s s' := by
   obtain ⟨t, s', he, hsv, hpost⟩ := sign_ok p256_ok hL hT (pre_of hs)
   exact ⟨t, s', he, abiPreserved_of he (by lit_decide) (by lit_decide) (by lit_decide) hsv, hpost⟩
 
 theorem sign_ct : ConstantTime isa signAArch64.pre signAArch64.pub signP256 :=
-  VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0, .x1, .x2, .x3, .x4])
-    (fun _ _ _ _ ⟨h0, h1, h2, h3, h4, hsp⟩ => ⟨hsp, fun r hr => by
+  VG.Taint.constantTime (A := taintS [p256.tsym]) (Taint.ofRegs [.x0, .x1, .x2, .x3, .x4])
+    (fun _ _ _ _ ⟨h0, h1, h2, h3, h4, hsp, hsy⟩ => ⟨⟨hsp, fun r hr => by
       simp only [Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl | rfl
       · exact h0
       · exact h1
       · exact h2
       · exact h3
-      · exact h4⟩) (by taint_decide)
+      · exact h4⟩, fun n hn => by
+      simp only [List.mem_singleton] at hn; subst hn; exact hsy⟩) (by taint_decide)
 
 theorem sign_verified (hL : Weierstrass.Law Spec.P256.curve)
-    (hT : CombOk Spec.P256.curve 64 Impl.P256.p256Comb Impl.P256.p256CombStart) :
-    Verified AArch64.target signP256 (Spec.Ecdsa.P256.inst.signContract AArch64.abi) :=
+    (hT : CombOkW Spec.P256.curve 7 37 Impl.P256.p256Comb7 Impl.P256.p256Comb7Start) :
+    Verified AArch64.target signP256
+      (Spec.Ecdsa.P256.inst.signContract (AArch64.abi.withConsts p256.combConsts)) :=
   Verified.of_correct (sign_a64 hL hT) sign_ct implies
 
 end VG.Proof.Ecdsa.AArch64

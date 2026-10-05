@@ -20,31 +20,31 @@ namespace VG.Proof.Ecdsa.Rfc6979.AArch64
 open VG VG.AArch64 VG.Impl.Ecdsa.Rfc6979.AArch64
 open VG.Proof.Ecdsa.Rfc6979 (kvAt candAt step)
 
-variable {P : RfcHash} {L : Lay P.I.hashLen} {g : Reg → BitVec 64} {m₀ : Mem}
+variable {P : RfcHash} {L : Lay P.I.hashLen P.R.E} {g : Reg → BitVec 64} {m₀ : Mem}
 
 /-! ## The run's values -/
 
 /-- The private key, the digest and its integer. -/
-abbrev xOf (P : RfcHash) {dn : Nat} (L : Lay dn) (m₀ : Mem) : Nat :=
+abbrev xOf (P : RfcHash) {dn : Nat} {E : Impl.Ecdsa.AArch64.Cfg} (L : Lay dn E) (m₀ : Mem) : Nat :=
   Spec.Weierstrass.ofBytes (Spec.Sha256.bytesAt m₀ L.d (8 * P.w))
-abbrev hBOf (P : RfcHash) (L : Lay P.I.hashLen) (m₀ : Mem) : List Byte := Spec.Sha256.bytesAt m₀ L.dg P.H.D
-abbrev eOf (P : RfcHash) (L : Lay P.I.hashLen) (m₀ : Mem) : Nat := Spec.Ecdsa.hashToInt P.R.E.C (hBOf P L m₀)
+abbrev hBOf (P : RfcHash) (L : Lay P.I.hashLen P.R.E) (m₀ : Mem) : List Byte := Spec.Sha256.bytesAt m₀ L.dg P.H.D
+abbrev eOf (P : RfcHash) (L : Lay P.I.hashLen P.R.E) (m₀ : Mem) : Nat := Spec.Ecdsa.hashToInt P.R.E.C (hBOf P L m₀)
 
 /-- `K` and `V` after steps b–g. -/
-abbrev kv0 (P : RfcHash) (L : Lay P.I.hashLen) (m₀ : Mem) : List Byte × List Byte :=
+abbrev kv0 (P : RfcHash) (L : Lay P.I.hashLen P.R.E) (m₀ : Mem) : List Byte × List Byte :=
   Spec.Ecdsa.Rfc6979.init P.R.E.C P.ok.SH.H P.H.D (xOf P L m₀) (hBOf P L m₀)
 
 /-- `K` and `V` before candidate `i`, candidate `i`'s `V`, and its signature, with
 `k` the leftmost `8 w` bytes of `V`. -/
-abbrev kvI (P : RfcHash) (L : Lay P.I.hashLen) (m₀ : Mem) (i : Nat) : List Byte × List Byte :=
+abbrev kvI (P : RfcHash) (L : Lay P.I.hashLen P.R.E) (m₀ : Mem) (i : Nat) : List Byte × List Byte :=
   kvAt P.ok.SH.H (kv0 P L m₀).1 (kv0 P L m₀).2 i
-abbrev candI (P : RfcHash) (L : Lay P.I.hashLen) (m₀ : Mem) (i : Nat) : List Byte :=
+abbrev candI (P : RfcHash) (L : Lay P.I.hashLen P.R.E) (m₀ : Mem) (i : Nat) : List Byte :=
   candAt P.ok.SH.H (kv0 P L m₀).1 (kv0 P L m₀).2 i
-abbrev sigI (P : RfcHash) (L : Lay P.I.hashLen) (m₀ : Mem) (i : Nat) : Option (Nat × Nat) :=
+abbrev sigI (P : RfcHash) (L : Lay P.I.hashLen P.R.E) (m₀ : Mem) (i : Nat) : Option (Nat × Nat) :=
   Spec.Ecdsa.signWith P.R.E.C (xOf P L m₀) (eOf P L m₀) (Spec.Weierstrass.ofBytes ((candI P L m₀ i).take (8 * P.w)))
 
 /-- What the function's result is, for the signature `r` of the last candidate. -/
-def ResultIs (P : RfcHash) {dn : Nat} (L : Lay dn) (r : Option (Nat × Nat)) (t : State) : Prop :=
+def ResultIs (P : RfcHash) {dn : Nat} {E : Impl.Ecdsa.AArch64.Cfg} (L : Lay dn E) (r : Option (Nat × Nat)) (t : State) : Prop :=
   match r with
   | some rs => (t.gpr .x0).setWidth 32 = 1 ∧
       Spec.Sha256.bytesAt t.mem L.out (16 * P.w) = Spec.Ecdsa.encode P.R.E.C rs
@@ -52,7 +52,7 @@ def ResultIs (P : RfcHash) {dn : Nat} (L : Lay dn) (r : Option (Nat × Nat)) (t 
       Spec.Sha256.bytesAt t.mem L.out (16 * P.w) = List.replicate (16 * P.w) 0
 
 /-- Before candidate `i`. -/
-structure LoopInv (P : RfcHash) (L : Lay P.I.hashLen) (m₀ : Mem) (i : Nat) (t : State) : Prop where
+structure LoopInv (P : RfcHash) (L : Lay P.I.hashLen P.R.E) (m₀ : Mem) (i : Nat) (t : State) : Prop where
   lt : i < 8
   k : kOf P L t.mem = (kvI P L m₀ i).1
   v : vOf P L t.mem = (kvI P L m₀ i).2
@@ -60,7 +60,7 @@ structure LoopInv (P : RfcHash) (L : Lay P.I.hashLen) (m₀ : Mem) (i : Nat) (t 
   fails : ∀ j < i, sigI P L m₀ j = none
 
 /-- After the loop, at candidate `i`: suitable or the last. -/
-structure Exit (P : RfcHash) (L : Lay P.I.hashLen) (m₀ : Mem) (i : Nat) (t : State) : Prop where
+structure Exit (P : RfcHash) (L : Lay P.I.hashLen P.R.E) (m₀ : Mem) (i : Nat) (t : State) : Prop where
   lt : i < 8
   fails : ∀ j < i, sigI P L m₀ j = none
   last : sigI P L m₀ i ≠ none ∨ i = 7
@@ -90,7 +90,7 @@ theorem kvw_cnt (hL : L.Ok) : ∀ r ∈ KVW L, Region.Disjoint ⟨L.B + BitVec.o
   · exact Offset.disjoint_base _ (by anums) (by anums)
 
 /-- What `core` changes: `out` and `scratch`. -/
-abbrev CoreW {dn : Nat} (L : Lay dn) : List Region := [L.OUT, L.SCR]
+abbrev CoreW {dn : Nat} {E : Impl.Ecdsa.AArch64.Cfg} (L : Lay dn E) : List Region := [L.OUT, L.SCR]
 
 theorem corew_disj (hL : L.Ok) {d n : Nat} (h₂ : d + n ≤ 256) :
     ∀ r ∈ CoreW L, Region.Disjoint ⟨L.B + BitVec.ofNat 64 d, n⟩ r := by
@@ -150,7 +150,7 @@ theorem ResultIs.keep {r : Option (Nat × Nat)} {t t' : State} (h : ResultIs P L
 /-! ## One candidate -/
 
 /-- After `V = HMAC_K(V)`: candidate `i`'s `V`. -/
-structure P₁ (P : RfcHash) (L : Lay P.I.hashLen) (m₀ : Mem) (i : Nat) (u : State) : Prop where
+structure P₁ (P : RfcHash) (L : Lay P.I.hashLen P.R.E) (m₀ : Mem) (i : Nat) (u : State) : Prop where
   lt : i < 8
   k : kOf P L u.mem = (kvI P L m₀ i).1
   v : vOf P L u.mem = candI P L m₀ i
@@ -158,7 +158,7 @@ structure P₁ (P : RfcHash) (L : Lay P.I.hashLen) (m₀ : Mem) (i : Nat) (u : S
   fails : ∀ j < i, sigI P L m₀ j = none
 
 /-- `core`'s arguments. -/
-structure Args {dn : Nat} (L : Lay dn) (u : State) : Prop where
+structure Args {dn : Nat} {E : Impl.Ecdsa.AArch64.Cfg} (L : Lay dn E) (u : State) : Prop where
   x0 : u.gpr .x0 = L.out
   x1 : u.gpr .x1 = L.d
   x2 : u.gpr .x2 = L.dg
@@ -166,7 +166,7 @@ structure Args {dn : Nat} (L : Lay dn) (u : State) : Prop where
   x4 : u.gpr .x4 = L.scr
 
 /-- After `core`: its result. -/
-structure P₃ (P : RfcHash) (L : Lay P.I.hashLen) (m₀ : Mem) (i : Nat) (u : State) : Prop where
+structure P₃ (P : RfcHash) (L : Lay P.I.hashLen P.R.E) (m₀ : Mem) (i : Nat) (u : State) : Prop where
   lt : i < 8
   k : kOf P L u.mem = (kvI P L m₀ i).1
   v : vOf P L u.mem = candI P L m₀ i
@@ -175,7 +175,7 @@ structure P₃ (P : RfcHash) (L : Lay P.I.hashLen) (m₀ : Mem) (i : Nat) (u : S
   res : ResultIs P L (sigI P L m₀ i) u
 
 /-- After the decision: whether to go on. -/
-structure Mid (P : RfcHash) (L : Lay P.I.hashLen) (m₀ : Mem) (i : Nat) (u : State) : Prop where
+structure Mid (P : RfcHash) (L : Lay P.I.hashLen P.R.E) (m₀ : Mem) (i : Nat) (u : State) : Prop where
   lt : i < 8
   k : kOf P L u.mem = (kvI P L m₀ i).1
   v : vOf P L u.mem = candI P L m₀ i

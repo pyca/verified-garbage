@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.Framework.AArch64.Taint
 import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 import VerifiedGarbage.Impl.Ecdsa.Rfc6979.AArch64
 import VerifiedGarbage.Impl.Sha256.AArch64.Stream
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Contract
 import VerifiedGarbage.Impl.Pbkdf2.AArch64
 
 /-!
@@ -35,8 +36,9 @@ abbrev coreSigOf (E : Impl.Ecdsa.AArch64.Cfg) (m : Mem) (d digest k : Addr) : Op
   signWith E.C (ofBytes (bytesAt m d (8 * E.n))) (hashToInt E.C (bytesAt m digest (8 * E.n)))
     (ofBytes (bytesAt m k (8 * E.n)))
 
-/-- The contract of `vg_ecdsa_<curve>_sign` on the curve `E`, as each
-curve's proof states it (`Proof.Ecdsa.AArch64.signAArch64` for P-256). -/
+/-- The contract of `vg_ecdsa_<curve>_sign` on the curve `E`, with the
+comb's tables at the static `E.tsym`, as each curve's proof states it
+(`Proof.Ecdsa.AArch64.signAArch64` for P-256). -/
 def coreK (E : Impl.Ecdsa.AArch64.Cfg) : Contract AArch64.isa where
   pre s :=
     let out : Region := ⟨s.gpr .x0, 16 * E.n⟩
@@ -44,17 +46,17 @@ def coreK (E : Impl.Ecdsa.AArch64.Cfg) : Contract AArch64.isa where
     let digest : Region := ⟨s.gpr .x2, 8 * E.n⟩
     let k : Region := ⟨s.gpr .x3, 8 * E.n⟩
     let scratch : Region := ⟨s.gpr .x4, 8192⟩
-    s.rd = [d, digest, k] ∧ s.wr = [out, scratch] ∧ out.Disjoint scratch ∧
-      out.Disjoint d ∧ out.Disjoint digest ∧ out.Disjoint k ∧
+    s.rd = [d, digest, k, ⟨s.syms E.tsym, 8 * E.combWords.length⟩] ∧ s.wr = [out, scratch] ∧
+      out.Disjoint scratch ∧ out.Disjoint d ∧ out.Disjoint digest ∧ out.Disjoint k ∧
       d.Disjoint scratch ∧ digest.Disjoint scratch ∧ k.Disjoint scratch ∧
-      (s.gpr .x0).toNat + 16 * E.n ≤ 2 ^ 64 ∧ (s.gpr .x4).toNat + 8192 ≤ 2 ^ 64
+      (s.gpr .x0).toNat + 16 * E.n ≤ 2 ^ 64 ∧ (s.gpr .x4).toNat + 8192 ≤ 2 ^ 64 ∧ TblOk E s [out, scratch]
   post s s' :=
     match coreSigOf E s.mem (s.gpr .x1) (s.gpr .x2) (s.gpr .x3) with
     | some rs => (s'.gpr .x0).setWidth 32 = 1 ∧ bytesAt s'.mem (s.gpr .x0) (16 * E.n) = encode E.C rs
     | none => (s'.gpr .x0).setWidth 32 = 0 ∧ bytesAt s'.mem (s.gpr .x0) (16 * E.n) =
         List.replicate (16 * E.n) 0
   pub s₁ s₂ := s₁.gpr .x0 = s₂.gpr .x0 ∧ s₁.gpr .x1 = s₂.gpr .x1 ∧ s₁.gpr .x2 = s₂.gpr .x2 ∧
-    s₁.gpr .x3 = s₂.gpr .x3 ∧ s₁.gpr .x4 = s₂.gpr .x4 ∧ s₁.sp = s₂.sp
+    s₁.gpr .x3 = s₂.gpr .x3 ∧ s₁.gpr .x4 = s₂.gpr .x4 ∧ s₁.sp = s₂.sp ∧ s₁.syms E.tsym = s₂.syms E.tsym
 
 /-- The code's blocks that depend on neither the hash function nor the
 compression function, for scalars of `E`. -/

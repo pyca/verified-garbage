@@ -22,7 +22,7 @@ theorem p256_nBits : Spec.Ecdsa.nBits Spec.P256.curve = 256 := by
 
 /-- P-256, with the group law `hL` and the comb's tables `hT`. -/
 def p256 (hL : Weierstrass.Law Spec.P256.curve)
-    (hT : Weierstrass.CombOk Spec.P256.curve 64 Impl.P256.p256Comb Impl.P256.p256CombStart) : RfcCurve where
+    (hT : Weierstrass.CombOkW Spec.P256.curve 7 37 Impl.P256.p256Comb7 Impl.P256.p256Comb7Start) : RfcCurve where
   E := Impl.Ecdsa.AArch64.p256
   inst := Spec.Ecdsa.P256.inst
   curve := rfl

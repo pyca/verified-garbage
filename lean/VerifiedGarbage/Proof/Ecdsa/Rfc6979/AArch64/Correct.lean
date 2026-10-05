@@ -14,7 +14,7 @@ namespace VG.Proof.Ecdsa.Rfc6979.AArch64
 open VG VG.AArch64 VG.Impl.Ecdsa.Rfc6979.AArch64
 open VG.Proof.Ecdsa.Rfc6979 (kvAt candAt step)
 
-variable {P : RfcHash} {L : Lay P.I.hashLen} {g : Reg → BitVec 64} {m₀ : Mem}
+variable {P : RfcHash} {L : Lay P.I.hashLen P.R.E} {g : Reg → BitVec 64} {m₀ : Mem}
 
 /-- HMAC's output is the hash function's. -/
 theorem mac_length (P : RfcHash) (K t : List Byte) : (P.mac K t).length = P.H.D := by
@@ -54,33 +54,33 @@ theorem kv0_eq (P : RfcHash) {x : Nat} {dB hB h : List Byte} (hd : dB.length = 8
   rfl
 
 /-- `h`, RFC 6979's `bits2octets` of the digest. -/
-abbrev hSpec (P : RfcHash) (L : Lay P.I.hashLen) (m₀ : Mem) : List Byte :=
+abbrev hSpec (P : RfcHash) (L : Lay P.I.hashLen P.R.E) (m₀ : Mem) : List Byte :=
   Spec.Ecdsa.Rfc6979.bits2octets P.R.E.C (hBOf P L m₀)
-abbrev dB (P : RfcHash) {dn : Nat} (L : Lay dn) (m₀ : Mem) : List Byte := Spec.Sha256.bytesAt m₀ L.d (8 * P.w)
+abbrev dB (P : RfcHash) {dn : Nat} {E : Impl.Ecdsa.AArch64.Cfg} (L : Lay dn E) (m₀ : Mem) : List Byte := Spec.Sha256.bytesAt m₀ L.d (8 * P.w)
 
 /-- `K` and `V` after steps d and e. -/
-abbrev K₁ (P : RfcHash) (L : Lay P.I.hashLen) (m₀ : Mem) : List Byte :=
+abbrev K₁ (P : RfcHash) (L : Lay P.I.hashLen P.R.E) (m₀ : Mem) : List Byte :=
   P.mac (List.replicate P.H.D 0) (List.replicate P.H.D 1 ++ [BitVec.ofNat 8 0] ++ (dB P L m₀ ++ hSpec P L m₀))
-abbrev V₁ (P : RfcHash) (L : Lay P.I.hashLen) (m₀ : Mem) : List Byte := P.mac (K₁ P L m₀) (List.replicate P.H.D 1)
+abbrev V₁ (P : RfcHash) (L : Lay P.I.hashLen P.R.E) (m₀ : Mem) : List Byte := P.mac (K₁ P L m₀) (List.replicate P.H.D 1)
 
 /-- After step c: `h`, `V = 0x01…` and `K = 0x00…`. -/
-structure QB (P : RfcHash) (L : Lay P.I.hashLen) (m₀ : Mem) (u : State) : Prop where
+structure QB (P : RfcHash) (L : Lay P.I.hashLen P.R.E) (m₀ : Mem) (u : State) : Prop where
   h : hOf P L u.mem = hSpec P L m₀
   k : kOf P L u.mem = List.replicate P.H.D 0
   v : vOf P L u.mem = List.replicate P.H.D 1
 
 /-- After step e. -/
-structure QC (P : RfcHash) (L : Lay P.I.hashLen) (m₀ : Mem) (u : State) : Prop where
+structure QC (P : RfcHash) (L : Lay P.I.hashLen P.R.E) (m₀ : Mem) (u : State) : Prop where
   h : hOf P L u.mem = hSpec P L m₀
   k : kOf P L u.mem = K₁ P L m₀
   v : vOf P L u.mem = V₁ P L m₀
 
 /-- After step g. -/
-structure QD (P : RfcHash) (L : Lay P.I.hashLen) (m₀ : Mem) (u : State) : Prop where
+structure QD (P : RfcHash) (L : Lay P.I.hashLen P.R.E) (m₀ : Mem) (u : State) : Prop where
   k : kOf P L u.mem = (kv0 P L m₀).1
   v : vOf P L u.mem = (kv0 P L m₀).2
 
-theorem kv0_eq' (P : RfcHash) (L : Lay P.I.hashLen) (m₀ : Mem) :
+theorem kv0_eq' (P : RfcHash) (L : Lay P.I.hashLen P.R.E) (m₀ : Mem) :
     kv0 P L m₀ = (P.mac (K₁ P L m₀) (V₁ P L m₀ ++ [BitVec.ofNat 8 1] ++ (dB P L m₀ ++ hSpec P L m₀)),
       P.mac (P.mac (K₁ P L m₀) (V₁ P L m₀ ++ [BitVec.ofNat 8 1] ++ (dB P L m₀ ++ hSpec P L m₀))) (V₁ P L m₀)) :=
   kv0_eq P (length_bytesAt _ _ _) rfl rfl
@@ -211,7 +211,7 @@ theorem result_eq {i : Nat} {t : State} (hx : Exit P L m₀ i t) :
 /-! ## How many candidates -/
 
 /-- The candidate the loop stops at, from the number RFC 6979 tries. -/
-def exitAt (P : RfcHash) (L : Lay P.I.hashLen) (m₀ : Mem) : Nat :=
+def exitAt (P : RfcHash) (L : Lay P.I.hashLen P.R.E) (m₀ : Mem) : Nat :=
   if (result P.I m₀ L.d L.dg).2 = 0 then 7 else (result P.I m₀ L.d L.dg).2 - 1
 
 /-- The loop goes on after candidate `i` iff it stops at a later one. -/
@@ -256,14 +256,14 @@ theorem go_iff {i : Nat} (hi : i < 8) (hf : ∀ j < i, sigI P L m₀ j = none) :
 
 /-! ## The whole function -/
 
-/-- `vg_ecdsa_<curve>_<hash>_sign` meets `rfcAArch64 P.I` and keeps the
+/-- `vg_ecdsa_<curve>_<hash>_sign` meets `rfcAArch64 P.R.E P.I` and keeps the
 callee-saved registers and the stack pointer. -/
-theorem sign_ok {s : State} (h : (rfcAArch64 P.I).pre s) :
+theorem sign_ok {s : State} (h : (rfcAArch64 P.R.E P.I).pre s) :
     WP isa (cfgOf P).sign s fun s' => ((∀ r ∈ preserved, s'.gpr r = s.gpr r) ∧ s'.sp = s.sp) ∧
-      (rfcAArch64 P.I).post s s' := by
+      (rfcAArch64 P.R.E P.I).post s s' := by
   have hL := lay_ok h
   have h256 := h.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2
-  have hw : (lay P.I.hashLen P.I.ecdsa.curve.len s).q = 8 * P.w := P.curveLen
+  have hw : (lay P.I.hashLen P.I.ecdsa.curve.len P.R.E s).q = 8 * P.w := P.curveLen
   refine WP.frame (by omega) (WP.alloc (by decide) ?_ ?_)
   · show 224 ≤ (s.sp - 16).toNat
     rw [BitVec.toNat_sub_of_le (by show 16 ≤ s.sp.toNat; omega)]
@@ -283,9 +283,9 @@ theorem sign_ok {s : State} (h : (rfcAArch64 P.I).pre s) :
         exact hu.cs r hr h30
     · show u.sp + BitVec.ofNat 64 frameBytes + BitVec.ofNat 64 16 = s.sp
       rw [hu.sp, Offset.add_add, Offset.add_add]
-      exact lay_top _ _ s
-    · show match (result P.I s.mem (lay P.I.hashLen P.I.ecdsa.curve.len s).d
-          (lay P.I.hashLen P.I.ecdsa.curve.len s).dg).1 with
+      exact lay_top _ _ _ s
+    · show match (result P.I s.mem (lay P.I.hashLen P.I.ecdsa.curve.len P.R.E s).d
+          (lay P.I.hashLen P.I.ecdsa.curve.len P.R.E s).dg).1 with
         | some rs => _ | none => _
       have e₁ : 2 * P.I.ecdsa.curve.len = 16 * P.w := by rw [P.curveLen]; omega
       have e₂ : Spec.Ecdsa.encode P.I.ecdsa.curve = Spec.Ecdsa.encode P.R.E.C := by rw [P.ecdsa, P.R.curve]

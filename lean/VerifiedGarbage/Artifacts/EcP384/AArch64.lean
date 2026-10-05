@@ -1,6 +1,6 @@
 import VerifiedGarbage.TCB.AArch64.Target
 import VerifiedGarbage.Proof.P384.Curve
-import VerifiedGarbage.Proof.P384.Comb
+import VerifiedGarbage.Proof.P384.Comb7
 import VerifiedGarbage.Impl.EcKey.P384.AArch64
 import VerifiedGarbage.Proof.EcKey.AArch64.P384.Verified
 
@@ -18,17 +18,16 @@ def artifacts : List Artifact := [
       with `mul` and `umulh`, four of the multiplicand's words in registers and the other two \
       loaded for each word of the multiplier; each reduction step multiplies the accumulator's low \
       word by `-p⁻¹ mod 2⁶⁴` and adds that multiple of `p`) with a final conditional subtraction; \
-      `[d]G` is a fixed-base comb: the 96 nibbles `d_j` of `d` as \
-      digits `d_j - 8` from `-8` to `7`, `[d]G = [8 Σ 16^j]G + Σ [(d_j - 8) 16^j]G` from 96 \
-      constant tables of `[m 16^j]G` (`m = 1 … 8`), each entry selected in constant time from \
-      immediates by masks of the digit's magnitude and negated by a mask of its sign, and added by \
-      the complete addition formulas of Renes, Costello and Batina for `a = -3` (Algorithm 4); and \
+      `[d]G` is `vg_ecdsa_p384_sign`'s fixed-base comb of 7-bit signed digits from the 55 tables \
+      of `[m 2^(7j)]G` (`m = 1 … 64`) in the static `VG_P384_COMB`, each entry selected in \
+      constant time by loading the whole table, with no doublings; and \
       `Z⁻¹` is Fermat's, by \
       a chain of sliding 4-bit windows over `p - 2`, fixed by the code. The result (or zeros) is selected by a \
       mask of `d ∈ [1, n-1]` and `Z ≠ 0`, so the time depends only on the pointers."])
+    consts := Impl.Ecdsa.AArch64.p384.combConsts
     code := Impl.EcKey.AArch64.publicKeyP384
-    contract := Spec.EcKey.P384.inst.publicKeyContract AArch64.abi
-    verified := Proof.EcKey.AArch64.P384.pk_verified Proof.P384.law Proof.P384.combOk
+    contract := Spec.EcKey.P384.inst.publicKeyContract (AArch64.abi.withConsts Impl.Ecdsa.AArch64.p384.combConsts)
+    verified := Proof.EcKey.AArch64.P384.pk_verified Proof.P384.law Proof.P384.combOk7
     spSafe := Code.all_of_forall (fun _ => rfl) _ }]
 
 end VG.Artifacts.EcP384.AArch64

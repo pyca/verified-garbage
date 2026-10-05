@@ -16,7 +16,7 @@ namespace VG.Proof.Ecdsa.Rfc6979.AArch64
 open VG VG.AArch64 VG.Impl.Ecdsa.Rfc6979.AArch64
 open VG.Proof.Ed25519.AArch64 (read_x)
 
-variable {P : RfcHash} {dn : Nat} {L : Lay dn} {g : Reg → BitVec 64} {m₀ : Mem}
+variable {P : RfcHash} {dn : Nat} {E : Impl.Ecdsa.AArch64.Cfg} {L : Lay dn E} {g : Reg → BitVec 64} {m₀ : Mem}
 
 /-- The first `n` of `k` bytes. -/
 theorem bytesAt_take (m : Mem) (p : Addr) {n k : Nat} (h : n ≤ k) :
@@ -135,7 +135,7 @@ theorem initKV_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) :
 /-! ## The number of candidates -/
 
 /-- The number of candidates left, in the frame. -/
-abbrev cnt {dn : Nat} (L : Lay dn) (m : Mem) : BitVec 64 := m.readW (L.B + BitVec.ofNat 64 192) 64
+abbrev cnt {dn : Nat} {E : Impl.Ecdsa.AArch64.Cfg} (L : Lay dn E) (m : Mem) : BitVec 64 := m.readW (L.B + BitVec.ofNat 64 192) 64
 
 theorem initCnt_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) :
     WP isa (.block (cfgOf P).initCnt) t fun t' => Ctx L g m₀ t' ∧
@@ -171,7 +171,7 @@ theorem coreArgs_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) :
     reduceCtorEq, ite_false, hc.sp, Offset.add_add, Nat.reduceAdd, p0, p1, p2, p3, Option.map_some,
     read8, hc.pOut, hc.pD, hc.pDg, hc.pScr, BitVec.setWidth_eq, Option.some.injEq,
     exists_eq_left']
-  refine ⟨hc.regs hL rfl rfl rfl rfl fun r hr h30 => ?_, trivial⟩
+  refine ⟨hc.regs hL rfl rfl rfl rfl (fun r hr h30 => ?_) rfl, trivial⟩
   have h₁ : r ∉ [Reg.x0, .x1, .x2, .x3, .x4] := not_pres hr _ (by decide)
   simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at h₁
   simp only [RegUpd.gpr_write, h₁.1, h₁.2.1, h₁.2.2.1, h₁.2.2.2.1, h₁.2.2.2.2, ite_false]

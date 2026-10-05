@@ -54,10 +54,10 @@ theorem addr8 (s : State) (n : Reg) {o : Nat} (h₁ : o % 8 = 0) (h₂ : o < 327
     addr s 8 n o = some (s.gpr n + BitVec.ofNat 64 o) := by
   simp only [addr, h₁, show o < 4096 * 8 by omega, and_self, ite_true]
 
-variable {P : RfcHash} {dn : Nat} {L : Lay dn} {g : Reg → BitVec 64} {m₀ : Mem}
+variable {P : RfcHash} {dn : Nat} {E : Impl.Ecdsa.AArch64.Cfg} {L : Lay dn E} {g : Reg → BitVec 64} {m₀ : Mem}
 
 /-- Word `j` of the number at `digest`, least significant first. -/
-abbrev xw (P : RfcHash) (L : Lay dn) (m : Mem) (j : Nat) : BitVec 64 :=
+abbrev xw (P : RfcHash) (L : Lay dn E) (m : Mem) (j : Nat) : BitVec 64 :=
   rev64 (m.readW (L.dg + BitVec.ofNat 64 (8 * (P.w - 1 - j))) 64)
 
 /-- Only `x2`, `x6`, `x8` and `x12` (and the flags and memory) changed since `t`. -/
@@ -326,7 +326,7 @@ theorem digestPtr_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) :
   simp only [Cfg.digestPtr, fDigest, runBlock_cons, runStep_some, runBlock_nil, exec, Nat.reduceMod,
     Nat.reduceLT, and_self, ite_true, State.load, hc.sp, Offset.add_add, Nat.reduceAdd, p, Option.map_some,
     read8, hc.pDg, BitVec.setWidth_eq, Option.some.injEq, exists_eq_left']
-  exact ⟨hc.set hL (d := .x1) (by decide) rfl rfl rfl rfl fun r hr => RegUpd.gpr_write_of_ne _ _ _ hr, rfl,
+  exact ⟨hc.set hL (d := .x1) (by decide) rfl rfl rfl rfl (fun r hr => RegUpd.gpr_write_of_ne _ _ _ hr) rfl, rfl,
     by rw [RegUpd.gpr_write_self]; exact BitVec.setWidth_eq _, fun r hr => RegUpd.gpr_write_of_ne _ _ _ hr⟩
 
 /-- A callee-saved register is none of the registers `rs` the code writes. -/
@@ -356,15 +356,16 @@ theorem reduce_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) (h1 : t.gpr .x1 
           (Spec.Weierstrass.ofBytes (Spec.Sha256.bytesAt m₀ L.dg (8 * P.w)) % P.R.E.C.n) := by
   have h6 : P.w ≤ 6 := P.R.n6
   rw [Cfg.reduce, WP.block_append_iff, WP.block_append_iff, WP.block_append_iff]
-  refine WP.mono (setup_ok hc) fun u₀ ⟨z₀, f₀, m₀', rd₀, wr₀, sp₀, g₀⟩ => ?_
-  have hc₀ : Ctx L g m₀ u₀ := hc.regs hL rd₀ wr₀ m₀' sp₀ fun r hr _ =>
-    g₀ r (fun h => by subst h; exact absurd hr (by decide)) (fun h => by subst h; exact absurd hr (by decide))
-  refine WP.mono (subs_ok hc₀ hL ((g₀ _ (by decide) (by decide)).trans h1) hdn f₀ P.w (Nat.le_refl _))
-    fun u₁ ⟨k₁, O₁, e₁, b, _, hcf, hs⟩ => ?_
+  refine WP.mono_syms (setup_ok hc) fun u₀ ⟨z₀, f₀, m₀', rd₀, wr₀, sp₀, g₀⟩ sy₀ => ?_
+  have hc₀ : Ctx L g m₀ u₀ := hc.regs hL rd₀ wr₀ m₀' sp₀ (fun r hr _ =>
+    g₀ r (fun h => by subst h; exact absurd hr (by decide)) (fun h => by subst h; exact absurd hr (by decide)))
+    sy₀
+  refine WP.mono_syms (subs_ok hc₀ hL ((g₀ _ (by decide) (by decide)).trans h1) hdn f₀ P.w (Nat.le_refl _))
+    fun u₁ ⟨k₁, O₁, e₁, b, _, hcf, hs⟩ sy₁ => ?_
   have h4 : 4 ≤ P.w := P.R.n4
   have hcf₁ : u₁.c = !b := hcf (by omega)
   -- The mask of the borrow.
-  refine WP.mono (show WP isa (.block ([.sbc .x .x6 .x7 .x7] : List Instr)) u₁ fun u₂ =>
+  refine WP.mono_syms (show WP isa (.block ([.sbc .x .x6 .x7 .x7] : List Instr)) u₁ fun u₂ =>
       RK u₁ u₂ ∧ u₂.mem = u₁.mem ∧ u₂.gpr .x6 = if b then BitVec.allOnes 64 else 0 by
     apply WP.of_runBlock
     simp only [runBlock_cons, runStep_some, runBlock_nil, exec, read_x, RegUpd.gpr_write, RegUpd.mem_write,
@@ -372,9 +373,9 @@ theorem reduce_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) (h1 : t.gpr .x1 
       Option.some.injEq, exists_eq_left']
     refine ⟨⟨by atriv, by atriv, by atriv, fun r _ h₂ _ _ => ?_⟩, by atriv, ?_⟩
     · simp only [RegUpd.gpr_write, h₂, ite_false]
-    · cases b <;> decide) fun u₂ ⟨k₂, m₂, d₂⟩ => ?_
-  refine WP.mono (sels_ok (P := P) hc₀ (k₁.trans k₂) ((k₂.x15.trans k₁.x15).trans f₀) d₂ P.w (Nat.le_refl _))
-    fun t' ⟨k₃, _, O₃, e₃⟩ => ?_
+    · cases b <;> decide) fun u₂ ⟨k₂, m₂, d₂⟩ sy₂ => ?_
+  refine WP.mono_syms (sels_ok (P := P) hc₀ (k₁.trans k₂) ((k₂.x15.trans k₁.x15).trans f₀) d₂ P.w (Nat.le_refl _))
+    fun t' ⟨k₃, _, O₃, e₃⟩ sy₃ => ?_
   have k' : RK u₀ t' := (k₁.trans k₂).trans k₃
   have O' : Outside L.B 16 176 t.mem t'.mem := by
     rw [← m₀']
@@ -387,7 +388,8 @@ theorem reduce_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) (h1 : t.gpr .x1 
       (fun h => by subst h; exact absurd hr (by decide)) (fun h => by subst h; exact absurd hr (by decide))
       (fun h => by subst h; exact absurd hr (by decide))).trans
       (g₀ r (fun h => by subst h; exact absurd hr (by decide)) (fun h => by subst h; exact absurd hr (by decide))))
-    hf (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact safe_low L (by omega)), hf, ?_⟩
+    hf (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact safe_low L (by omega))
+    (sy₃.trans (sy₂.trans (sy₁.trans sy₀))), hf, ?_⟩
   -- The number, the difference, and the one selected.
   have hX : wordsVal u₁.mem L.B 80 P.w = Spec.Weierstrass.ofBytes (Spec.Sha256.bytesAt u₀.mem L.dg (8 * P.w)) :=
     Proof.Weierstrass.wordsVal_eq_ofBytes _ _ _ _ _ _ fun j hj => e₁ j hj

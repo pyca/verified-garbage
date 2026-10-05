@@ -23,7 +23,7 @@ variable (P : RfcHash)
 
 theorem cfgOf_H : (cfgOf P).H = P.H := rfl
 theorem reduce_eq : (cfgOf P).reduce = (cfgC P.R.E).reduce := rfl
-theorem initCnt_eq : (cfgOf P).initCnt = (cfgC ⟨4, Spec.P256.curve, [], (0, 0)⟩).initCnt := rfl
+theorem initCnt_eq : (cfgOf P).initCnt = (cfgC ⟨4, Spec.P256.curve, [], (0, 0), ""⟩).initCnt := rfl
 theorem coreC_eq : (cfgOf P).coreC = P.R.coreC := rfl
 
 /-- No instruction writes a callee-saved SIMD register: not those of the
@@ -41,8 +41,8 @@ theorem sign_keepsV : (cfgOf P).sign.allInstrs keepsV = true := by
   rcases P.hDB with ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ <;> rcases P.R.n46 with h'' | h'' <;>
     simp only [h, h', h''] <;> decide +kernel
 
-theorem sign_a64 (s : State) (h : (rfcAArch64 P.I).pre s) :
-    ∃ t s', Exec isa (cfgOf P).sign s t s' ∧ abiPreserved s s' ∧ (rfcAArch64 P.I).post s s' := by
+theorem sign_a64 (s : State) (h : (rfcAArch64 P.R.E P.I).pre s) :
+    ∃ t s', Exec isa (cfgOf P).sign s t s' ∧ abiPreserved s s' ∧ (rfcAArch64 P.R.E P.I).post s s' := by
   obtain ⟨t, s', he, ⟨hg, hsp⟩, hp⟩ := sign_ok (P := P) h
   exact ⟨t, s', he, ⟨hg, hsp, Exec.preservedV he (sign_keepsV P)⟩, hp⟩
 
@@ -58,8 +58,9 @@ def signNotes (H : Impl.Pbkdf2.Md.AArch64.Hash) (q : Nat) (core : String) : Stri
   frame, below the 16 bytes saving `x30`, and the secrets are cleared before it is freed; the calls use \
   the 16 bytes below it."
 
-theorem sign_verified (himp : (rfcAArch64 P.I).Implies (P.I.signContract AArch64.abi 256)) :
-    Verified AArch64.target (cfgOf P).sign (P.I.signContract AArch64.abi 256) :=
+theorem sign_verified
+    (himp : (rfcAArch64 P.R.E P.I).Implies (P.I.signContract (AArch64.abi.withConsts P.R.E.combConsts) 256)) :
+    Verified AArch64.target (cfgOf P).sign (P.I.signContract (AArch64.abi.withConsts P.R.E.combConsts) 256) :=
   Verified.of_correct (sign_a64 P) sign_ct himp
 
 end VG.Proof.Ecdsa.Rfc6979.AArch64

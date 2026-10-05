@@ -22,8 +22,8 @@ open VG VG.AArch64 VG.Impl.Ecdsa.AArch64 VG.Impl.Ecdsa.Verify.AArch64
 open VG.Proof.Ecdsa.AArch64 VG.Proof.Ecdsa.AArch64.P384
 
 theorem pre_of {s : State} (h : verifyAArch64.pre s) : VPre p384 s := by
-  obtain ⟨h1, h2, h3, h4, h5, h6⟩ := h
-  exact ⟨h1, h2, h3, h4, h5, h6⟩
+  obtain ⟨h1, h2, h3, h4, h5, h6, held, fit, hdw⟩ := h
+  exact ⟨h1, h2, h3, h4, h5, h6, ⟨by rw [h1]; simp, held, fit, hdw _ (by simp)⟩⟩
 
 theorem verify_noCalls : verifyP384.noCalls = true := by lit_decide
 
@@ -32,25 +32,28 @@ theorem verify_untouched : KeepsUntouched verifyP384 := by lit_decide
 theorem verify_keepsV : verifyP384.allInstrs keepsV = true := by lit_decide
 
 theorem verify_a64 (hL : Weierstrass.Law Spec.P384.curve)
-    (hT : Weierstrass.CombOk Spec.P384.curve 96 Impl.P384.p384Comb Impl.P384.p384CombStart) (s : State)
+    (hT : Weierstrass.CombOkW Spec.P384.curve 7 55 Impl.P384.p384Comb7 Impl.P384.p384Comb7Start)
+    (s : State)
     (hs : verifyAArch64.pre s) :
     ∃ t s', Exec isa verifyP384 s t s' ∧ abiPreserved s s' ∧ verifyAArch64.post s s' := by
   obtain ⟨t, s', he, hsv, hpost⟩ := verify_ok p384_ok hL hT (pre_of hs)
   exact ⟨t, s', he, abiPreserved_of he verify_noCalls verify_untouched verify_keepsV hsv, hpost⟩
 
 theorem verify_ct : ConstantTime isa verifyAArch64.pre verifyAArch64.pub verifyP384 :=
-  VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0, .x1, .x2, .x3])
-    (fun _ _ _ _ ⟨h0, h1, h2, h3, hsp⟩ => ⟨hsp, fun r hr => by
+  VG.Taint.constantTime (A := taintS [p384.tsym]) (Taint.ofRegs [.x0, .x1, .x2, .x3])
+    (fun _ _ _ _ ⟨h0, h1, h2, h3, hsp, hsy⟩ => ⟨⟨hsp, fun r hr => by
       simp only [Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl
       · exact h0
       · exact h1
       · exact h2
-      · exact h3⟩) (by taint_decide)
+      · exact h3⟩, fun n hn => by
+      simp only [List.mem_singleton] at hn; subst hn; exact hsy⟩) (by taint_decide)
 
 theorem verify_verified (hL : Weierstrass.Law Spec.P384.curve)
-    (hT : Weierstrass.CombOk Spec.P384.curve 96 Impl.P384.p384Comb Impl.P384.p384CombStart) :
-    Verified AArch64.target verifyP384 (Spec.Ecdsa.P384.inst.verifyContract AArch64.abi) :=
+    (hT : Weierstrass.CombOkW Spec.P384.curve 7 55 Impl.P384.p384Comb7 Impl.P384.p384Comb7Start) :
+    Verified AArch64.target verifyP384
+      (Spec.Ecdsa.P384.inst.verifyContract (AArch64.abi.withConsts p384.combConsts)) :=
   Verified.of_correct (verify_a64 hL hT) verify_ct implies
 
 end VG.Proof.Ecdsa.Verify.AArch64.P384

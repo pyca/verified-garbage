@@ -19,6 +19,13 @@ failure for `c ≥ n`; no vector values are embedded in this test. For each:
 * `publicOp` with `e` takes `k` back to `c`.
 * Inconsistent keys fail: `qInv + p`, and `q + 2` (so `p q ≠ n`), in
   `privateCrt` and `crtKey`.
+* BoringSSL's checks: these vectors' exponents exceed its limits, so
+  `publicOpChecked`, `privateChecked` and `checkKey` refuse them. The same
+  factors with `e = 65537` and `d = e⁻¹ mod λ(n)` (computed, when it exists)
+  make a key `checkKey` accepts, with `p` and `q` either way round and with
+  leading zeros, and refuses when any one of its checks fails; with it
+  `privateChecked` gives `c^d mod n`, which `publicOpChecked` takes back to
+  `c`, and faults for a wrong `dP`, `dQ` or `e`.
 * `publicPrecompute` gives `w = ⌈k / 8⌉` words of `n`, which make up `n`,
   then `w` words of `R² mod n`, which equal `(R mod n)² mod n`, with
   `R = 2^(64 w)` reduced by doubling; and nothing for the invalid moduli
@@ -148,6 +155,74 @@ def check (v : Vector) : Except String Nat := do
   unless ofWords (ws.drop w) == rr * rr % n do throw "publicPrecompute: R² mod n"
   unless publicPrecompute (0 :: nB) == none && publicPrecompute (i2osp (n + 1) len) == none do
     throw "publicPrecompute accepted an invalid modulus"
+  -- BoringSSL's checks. These vectors' exponents are above `2^33`, beyond
+  -- BoringSSL's limits, so every checked function refuses them.
+  let pB := bytes p
+  let qB := bytes q
+  let crt (dP dQ qInv : Nat) := (i2osp dP pLen, i2osp dQ qLen, i2osp qInv pLen)
+  let (dPB, dQB, qInvB) := crt dP dQ qInv
+  unless !exponentValid e do throw "exponent within BoringSSL's limits"
+  unless publicOpChecked nB eB kB == none do throw "publicOpChecked accepted a large exponent"
+  unless privateChecked nB eB cB pB qB dPB dQB qInvB == .invalid do
+    throw "privateChecked accepted a large exponent"
+  unless !checkKey nB eB dB pB qB dPB dQB qInvB do throw "checkKey accepted a large exponent"
+  -- The same factors with `e = 65537` and `d = e⁻¹ mod λ(n)`, computed here.
+  let e' := 65537
+  let eB' := bytes e'
+  let lam := (p - 1) * (q - 1) / Nat.gcd (p - 1) (q - 1)
+  if let some d' := inverse e' lam then
+    let dB' := bytes d'
+    let some (dP', dQ', qInv') := crtValues p q d' | throw "no CRT values for e = 65537"
+    let (dPB', dQB', qInvB') := crt dP' dQ' qInv'
+    unless checkKey nB eB' dB' pB qB dPB' dQB' qInvB' do throw "checkKey rejected a valid key"
+    -- With the factors' lengths unbalanced (a leading zero), as given.
+    unless checkKey nB eB' (0 :: dB') (0 :: pB) qB (0 :: dPB') dQB' (0 :: qInvB') do
+      throw "checkKey rejected a valid key with leading zeros"
+    -- Each check of `RSA_check_key` fails alone.
+    let rejects : List (String × Bool) := [
+      ("an even modulus", checkKey (i2osp (n + 1) len) eB' dB' pB qB dPB' dQB' qInvB'),
+      ("e = 65536", checkKey nB (bytes 65536) dB' pB qB dPB' dQB' qInvB'),
+      ("e = 2^33 + 1", checkKey nB (bytes (2 ^ 33 + 1)) dB' pB qB dPB' dQB' qInvB'),
+      ("d ≥ n", checkKey nB eB' (bytes (d' + n)) pB qB dPB' dQB' qInvB'),
+      ("p q ≠ n", checkKey nB eB' dB' pB (bytes (q + 2)) dPB' dQB' qInvB'),
+      ("d e ≢ 1", checkKey nB eB' (bytes (d' + 1)) pB qB dPB' dQB' qInvB'),
+      ("dP ≥ p - 1", checkKey nB eB' dB' pB qB (i2osp (dP' + (p - 1)) (pLen + 1)) dQB' qInvB'),
+      ("e dP ≢ 1", checkKey nB eB' dB' pB qB (i2osp (dP' + 1) pLen) dQB' qInvB'),
+      ("dQ ≥ q - 1", checkKey nB eB' dB' pB qB dPB' (i2osp (dQ' + (q - 1)) (qLen + 1)) qInvB'),
+      ("e dQ ≢ 1", checkKey nB eB' dB' pB qB dPB' (i2osp (dQ' + 1) qLen) qInvB'),
+      ("qInv ≥ p", checkKey nB eB' dB' pB qB dPB' dQB' (i2osp (qInv' + p) (pLen + 1))),
+      ("q qInv ≢ 1", checkKey nB eB' dB' pB qB dPB' dQB' (i2osp (qInv' + 1) pLen))]
+    for (what, accepted) in rejects do
+      if accepted then throw s!"checkKey accepted {what}"
+    -- `p` and `q` swapped make another valid key, with its own CRT values.
+    let some (dQ'', dP'', pInv) := crtValues q p d' | throw "no CRT values, swapped"
+    unless checkKey nB eB' dB' qB pB (i2osp dQ'' qLen) (i2osp dP'' pLen) (i2osp pInv qLen) do
+      throw "checkKey rejected the key with p and q swapped"
+    if v.pass then
+      let m := powMod v.c d' n
+      unless privateChecked nB eB' cB pB qB dPB' dQB' qInvB' == .ok (i2osp m len) do
+        throw "privateChecked mismatch"
+      unless publicOpChecked nB eB' (i2osp m len) == some cB do
+        throw "publicOpChecked mismatch"
+      -- A wrong `dP` or `dQ` (which `checkKey` refuses) faults rather than
+      -- releasing a result that reveals a factor.
+      unless privateChecked nB eB' cB pB qB (i2osp (dP' + 1) pLen) dQB' qInvB' == .fault do
+        throw "privateChecked released a result with a wrong dP"
+      unless privateChecked nB eB' cB pB qB dPB' (i2osp (dQ' + 1) qLen) qInvB' == .fault do
+        throw "privateChecked released a result with a wrong dQ"
+      -- So does a wrong exponent.
+      unless privateChecked nB (bytes (e' + 2)) cB pB qB dPB' dQB' qInvB' == .fault do
+        throw "privateChecked released a result for the wrong e"
+      unless privateChecked nB (bytes 65536) cB pB qB dPB' dQB' qInvB' == .invalid do
+        throw "privateChecked accepted an even exponent"
+      unless privateChecked nB eB' cB pB qB dPB' dQB' (i2osp (qInv' + p) (pLen + 1)) ==
+          .invalid do
+        throw "privateChecked accepted qInv ≥ p"
+    else
+      unless privateChecked nB eB' cB pB qB dPB' dQB' qInvB' == .invalid do
+        throw "privateChecked accepted an input not below n"
+      unless publicOpChecked nB eB' cB == none do
+        throw "publicOpChecked accepted an input not below n"
   -- A modulus with a leading zero octet, or an even one, is not valid.
   unless publicOp (0 :: nB) eB (0 :: kB) == none do throw "accepted a leading zero"
   unless publicOp (i2osp (n + 1) len) eB kB == none do throw "accepted an even modulus"
@@ -167,6 +242,9 @@ def checkEdges : Except String Unit := do
   for (k, w) in [(64, 8), (65, 9), (71, 9), (72, 9), (73, 10), (1024, 128)] do
     unless modulusWords k == w do throw s!"modulusWords {k}"
   unless toWords (2 ^ 64 + 5) 3 == [5, 1, 0] do throw "toWords"
+  for (e, ok) in [(0, false), (1, false), (2, false), (3, true), (4, false), (65537, true),
+      (2 ^ 33 - 1, true), (2 ^ 33, false), (2 ^ 33 + 1, false)] do
+    unless exponentValid e == ok do throw s!"exponentValid {e}"
   for x in List.range 70000 do
     unless os2ip (i2osp x 3) == x % 2 ^ 24 do throw "I2OSP/OS2IP"
   for m in List.range 120 do
@@ -184,7 +262,11 @@ def checkEdges : Except String Unit := do
 #assert_standard_axioms Spec.Rsa.crtKey
 #assert_standard_axioms Spec.Rsa.primesKey
 #assert_standard_axioms Spec.Rsa.publicPrecompute
+#assert_standard_axioms Spec.Rsa.publicOpChecked
+#assert_standard_axioms Spec.Rsa.privateChecked
+#assert_standard_axioms Spec.Rsa.checkKey
 #assert_no_compiler_overrides Spec.Rsa.publicPrecompute Spec.Rsa.publicOp Spec.Rsa.privateCrt Spec.Rsa.crtKey Spec.Rsa.primesKey
+#assert_no_compiler_overrides Spec.Rsa.publicOpChecked Spec.Rsa.privateChecked Spec.Rsa.checkKey
 #assert_spec_origin
 
 run_cmd do

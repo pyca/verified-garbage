@@ -214,7 +214,6 @@ structure Pts (c : Cfg) (s₀ : State) (base : Addr) (g : Reg → BitVec 64)
   wr : s.wr = s₀.wr
   rd : s.rd = s₀.rd
   fixed : Fixed c base g s.mem
-  t₁ : ∀ t < 64 * c.n, s.mem (off base (bitsAt c.n 1 + t)) = if (c.C.p - 2).testBit t then 1 else 0
   flag : word s.mem base (c.sl FLAG) =
     mask (KeyOk c s₀ ∧ (0 < sigR c s₀ ∧ sigR c s₀ < c.C.n) ∧ (0 < sigS c s₀ ∧ sigS c s₀ < c.C.n))
   rm_lt : sv c base s RM' < c.C.n
@@ -226,7 +225,7 @@ structure Pts (c : Cfg) (s₀ : State) (base : Addr) (g : Reg → BitVec 64)
   unch : Unch base [(0, size)] s₀.mem s.mem
 
 theorem points_eq (c : Cfg) : Impl.Ecdsa.Verify.AArch64.Cfg.points c =
-    .seq (bits (c.sl U) (bitsAt c.n 0) (8 * c.n)) (.seq (CombCfg.comb c.combCfg)
+    .seq (bits (c.sl U) (bitsAt c.n 0) (8 * c.n)) (.seq (TCombCfg.comb c.combCfg)
       (.seq (.block (Impl.Ecdsa.Verify.AArch64.Cfg.save c)) (.seq (c.winPrep (c.sl V))
       (.seq (WinCfg.window (winQ c)) (Impl.Ecdsa.Verify.AArch64.Cfg.sum c))))) := rfl
 
@@ -237,7 +236,8 @@ abbrev ptsW : List Nat :=
 /-- `[u]G + [v]Q`, into `R`. -/
 theorem points_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {g : Reg → BitVec 64} {s : State}
     (hM : Mid c s₀ base g s) {Q₁ Q₂ : Nat → Fe c.C → Fe c.C → Fe c.C → Prop}
-    (hC : Law c.C) (hT : CombOk c.C (16 * c.n) c.tbl c.start)
+    (hC : Law c.C) (hT : CombOkW c.C Cfg.combW (Cfg.combJ c.n) c.tbl c.start)
+    (hTP : TblPre c s₀ (s₀.syms c.tsym) base)
     (hQ₁ : ∀ X Y Z, Rep c.C X Y Z (mul (sv c base s U) (G c.C)) → Q₁ 0 X Y Z)
     {P : Point c.C} (hP : onCurve c.C P = true)
     (hrep : Rep c.C (tmv c.C c.n base s (c.sl PX)) (tmv c.C c.n base s (c.sl PY))
@@ -258,16 +258,20 @@ theorem points_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {g : Reg → BitVe
   rw [points_eq]
   refine WP.seq ?_
   -- The table of `u`.
-  refine WP.seq (WP.mono (bits_ok hM.scr h0 (by omega) (sl_le c h7 (i := U) (by decide))
+  refine WP.seq (WP.mono_syms (bits_ok hM.scr h0 (by omega) (sl_le c h7 (i := U) (by decide))
     (tbl_le h7) (sl_lt4096 h0 h7 (i := U) (by decide)) (bitsAt_le c h7 (j := 0) (by decide)) (Or.inl (by have := sl_below_bits c (i := U) (by decide) 0 0; omega)))
-    fun s₁ ⟨b₁, k₁, O₁⟩ => ?_)
+    fun s₁ ⟨b₁, k₁, O₁⟩ sy₁ => ?_)
   have hs₁ := hM.scr.of_keepRegs k₁ (by decide)
   have U₁ : Unch base [(bitsAt c.n 0, 64 * c.n)] s.mem s₁.mem := O₁.unch
   have F₁ := F.unch h7 hn (fixedOk_tbl 0) U₁
   have v₁ : ∀ {i}, i < 45 → sv c base s₁ i = sv c base s i := fun hi => sv_unch U₁ h7 hn hi (tb hi)
   -- `[u]G`.
-  have hF : CombFixed c.combCfg c.C base s₁ (sv c base s U) := by
-    refine ⟨?_, ?_, ?_, F₁.zero, ?_⟩
+  obtain ⟨hTM, hout⟩ := tbl_of hTP hM.rd hM.unch
+  have hTM₁ : TblMem s₁ (s₀.syms c.tsym) c.combWords :=
+    TblMem.of_unch hTM (by rw [k₁.rd, k₁.wr]) U₁ (fun w hw => by
+      rw [List.mem_singleton.mp hw]; exact tbl_le h7) hout
+  have hF : TCombFixed c.combCfg c.C base size s₁ (sv c base s U) (s₀.syms c.tsym) c.combWords := by
+    refine ⟨?_, ?_, ?_, F₁.zero, ?_, wordsVal_lt _ _ _ _, by rw [sy₁, hM.syms]; rfl, hTM₁, hout⟩
     · show toM c.C.p (2 ^ (64 * c.n)) (wordsVal s₁.mem base (c.sl AP) c.n) = _
       rw [F₁.ap]; exact toM_cmont hc _
     · show toM c.C.p (2 ^ (64 * c.n)) (wordsVal s₁.mem base (c.sl BM) c.n) = _
@@ -279,21 +283,16 @@ theorem points_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {g : Reg → BitVe
       · show wordsVal s₁.mem base (c.sl BM) c.n < _; rw [F₁.bm]; exact hmont _
       · show wordsVal s₁.mem base (c.sl ZERO) c.n < _; rw [F₁.zero]; omega
     · intro t ht
-      rw [combJ hc] at ht
       show s₁.mem (off base (bitsAt c.n 0 + t)) = _
-      rw [b₁ t (by omega)]
-  have hku : sv c base s U < 16 ^ c.combCfg.J := by
-    rw [combJ hc, show (16 : Nat) ^ (16 * c.n) = 2 ^ (64 * c.n) by
-      rw [show (16 : Nat) = 2 ^ 4 by rfl, ← Nat.pow_mul]; congr 1; omega]
-    exact wordsVal_lt _ _ _ _
-  have WC := comb_ok (combLay hc) (combA c) hpR hC hc.am3 hc.onG (combVals hc hC hT) hc.p_lt hs₁
-    (modP_of hc F₁.mp) hF hku
+      rw [b₁ t ht]
+  have WC := tcomb_ok (tcombLay hc) (combA c) hC hc.am3 hc.onG (tcombVals hc hC hT) hc.p_lt hs₁
+    (modP_of hc F₁.mp) hF
   refine WP.seq (WP.mono WC fun s₂ h₂ => ?_)
   obtain ⟨K₂, U₂, M₂, L₂, R₂⟩ := h₂
   have q₂ := hQ₁ _ _ _ R₂
-  rw [combW_eq] at U₂
-  have hs₂ := hs₁.of_keepRegs K₂ (x0_not_combClob h7)
-  have F₂ := F₁.unch h7 hn (fixedOk_slW (by decide)) U₂
+  have F₂ := F₁.unch h7 hn fixedOk_tcombW U₂
+  rw [tcombW_eq] at U₂
+  have hs₂ := hs₁.of_keepRegs K₂ (x0_not_tcombClob hc.n7)
   -- `U = [u]G`, `R = O`.
   refine WP.seq (WP.mono (save_ok hc hs₂) fun s₃ ⟨hs₃, k₃, U₃, ux₃, uy₃, uz₃, rx₃, ry₃, rz₃⟩ => ?_)
   have F₃ := F₂.unch h7 hn (fixedOk_slW (by decide)) U₃
@@ -302,7 +301,7 @@ theorem points_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {g : Reg → BitVe
   have sub₃ : ∀ i ∈ saveW, i ∈ ptsW := by decide
   have W₃ : ∀ {i}, i < 45 → i ∉ ptsW → sv c base s₃ i = sv c base s i := fun hi hl =>
     ((sv_unch U₃ h7 hn hi (apart_slW (fun h => hl (sub₃ _ h)))).trans
-      (sv_unch U₂ h7 hn hi (apart_slW (fun h => hl (sub₂ _ h))))).trans (v₁ hi)
+      (sv_unch U₂ h7 hn hi (apart_append (apart_slW (fun h => hl (sub₂ _ h))) (apart_zw hi)))).trans (v₁ hi)
   -- `[v]Q`.
   have tv₃ : ∀ {i}, i < 45 → i ∉ ptsW → tmv c.C c.n base s₃ (c.sl i) = tmv c.C c.n base s (c.sl i) :=
     fun hi hl => by
@@ -339,13 +338,15 @@ theorem points_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {g : Reg → BitVe
   have v₆ : ∀ {i}, i < 45 → i ∉ ptsW → sv c base s₆ i = sv c base s i := fun hi hl =>
     (sv_unch U₆ h7 hn hi (apart_slW (fun h => hl (sub₆ _ h)))).trans ((v₅ hi hl).trans (W₃ hi hl))
   have sub₅ : ∀ i ∈ otherI ++ tblI ++ [TMP], i ∈ ptsW ++ tblI := by decide
-  have UW : Unch base ([(bitsAt c.n 0, 64 * c.n)] ++ winX c ++ slW c (ptsW ++ tblI)) s.mem s₆.mem := by
+  have UW : Unch base ([(bitsAt c.n 0, 64 * c.n), (bitsAt c.n 0 + 64 * c.n, 8 * c.combCfg.zw)] ++
+      winX c ++ slW c (ptsW ++ tblI)) s.mem s₆.mem := by
     refine (U₁.trans (U₂.trans (U₃.trans (W.unch.trans U₆)))).mono fun w hw => ?_
     simp only [List.mem_append] at hw ⊢
-    rcases hw with hw | hw | hw | (hw | hw) | hw
-    · exact Or.inl (Or.inl hw)
+    rcases hw with hw | (hw | hw) | hw | (hw | hw) | hw
+    · exact Or.inl (Or.inl (List.mem_cons.mpr (Or.inl (List.mem_singleton.mp hw))))
     · obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hw
       exact Or.inr (List.mem_map_of_mem (List.mem_append_left _ (sub₂ i hi)))
+    · exact Or.inl (Or.inl (List.mem_cons_of_mem _ hw))
     · obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hw
       exact Or.inr (List.mem_map_of_mem (List.mem_append_left _ (sub₃ i hi)))
     · exact Or.inl (Or.inr hw)
@@ -365,7 +366,7 @@ theorem points_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {g : Reg → BitVe
     show toM _ _ (wordsVal s.mem base (c.sl BM) c.n) = _
     rw [F.bm]; exact toM_cmont hc _
   refine ⟨hs₆, by rw [wr₆, W.wr, k₃.wr, K₂.wr, k₁.wr, hM.wr],
-    by rw [rd₆, W.rd, k₃.rd, K₂.rd, k₁.rd, hM.rd], F₆, fun t ht => ?_, ?_,
+    by rw [rd₆, W.rd, k₃.rd, K₂.rd, k₁.rd, hM.rd], F₆, ?_,
     by rw [v₆ (by decide) (by decide)]; exact hM.rm_lt,
     by rw [v₆ (by decide) (by decide)]; exact hM.rm, rz₆,
     ⟨_, _, _, _, _, _, q₂, q₅, by
@@ -373,16 +374,13 @@ theorem points_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {g : Reg → BitVe
         tu (by decide) (by decide) uy₃, tu (by decide) (by decide) uz₃, rcbAdd3_eq, ← hc.am3,
         ← ofNat_three_mul]
       rfl⟩, ?_⟩
-  · rw [tbl_unch UW h7 (j := 1) (by decide) ht (apart_append (apart_append (tbl_apart_tbl (by decide) ht)
-      (tbl_apart_winX (by decide) ht)) (tbl_apart_slW' (by decide) (by decide) ht))]
-    exact hM.t₁ t ht
   · rw [UW.word (fun w hw => ?_) (by have := sl_le c h7 (i := FLAG) (by decide); omega)]
     · exact hM.flag
     · simp only [List.mem_append] at hw
       rcases hw with (hw | hw) | hw
-      · rw [List.mem_singleton.mp hw]
+      · simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
         have := sl_below_bits c (i := FLAG) (by decide) 0 0
-        exact Or.inl (by dsimp only; omega)
+        rcases hw with rfl | rfl <;> exact Or.inl (by dsimp only; omega)
       · exact (apart_winX (c := c) (i := FLAG) (by decide)) w hw |>.elim
           (fun h => Or.inl (by omega)) (fun h => Or.inr h)
       · exact (apart_slW (c := c) (i := FLAG) (by decide)) w hw |>.elim
@@ -391,7 +389,10 @@ theorem points_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {g : Reg → BitVe
     simp only [List.mem_append] at hw
     rcases hw with hw | (hw | hw) | hw
     · rw [List.mem_singleton.mp hw]; exact Nat.le_of_eq (Nat.zero_add _)
-    · rw [List.mem_singleton.mp hw]; exact tbl_le h7
+    · simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
+      rcases hw with rfl | rfl
+      · exact tbl_le h7
+      · have := (tcombLay hc).bits; exact this
     · simp only [winX, List.mem_cons, List.not_mem_nil, or_false] at hw
       have := sl_le' c h7 (i := WT) (by decide)
       have e1 : c.sl WK + 16 * c.n ≤ c.sl WT := by rw [sl_eq, sl_eq]; unfold WK WT; omega

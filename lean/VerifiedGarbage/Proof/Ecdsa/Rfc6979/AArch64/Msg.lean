@@ -12,7 +12,7 @@ namespace VG.Proof.Ecdsa.Rfc6979.AArch64
 
 open VG VG.AArch64 VG.Impl.Ecdsa.Rfc6979.AArch64
 
-variable {dn : Nat} {L : Lay dn} {g : Reg → BitVec 64} {m₀ : Mem}
+variable {dn : Nat} {E : Impl.Ecdsa.AArch64.Cfg} {L : Lay dn E} {g : Reg → BitVec 64} {m₀ : Mem}
 
 /-- `8 K` bytes copied to `scratch + e + d` by `copyN`, with `Ctx` kept. -/
 theorem copy_ok (hL : L.Ok) {u : State} (hc : Ctx L g m₀ u) {src : Reg} {S : Addr} (hs : u.gpr src = S)
@@ -27,11 +27,11 @@ theorem copy_ok (hL : L.Ok) {u : State} (hc : Ctx L g m₀ u) {src : Reg} {S : A
         Spec.Sha256.bytesAt u.mem (S + BitVec.ofNat 64 so) (8 * K) := by
   have hsep' := hsep
   rw [← Offset.add_add] at hsep'
-  refine WP.mono (copyN_ok (K := K) hdr hsr hsep' (by omega) hso hdo K (Nat.le_refl _) u hs hdi hr
+  refine WP.mono_syms (copyN_ok (K := K) hdr hsr hsep' (by omega) hso hdo K (Nat.le_refl _) u hs hdi hr
     fun j hj => by rw [Offset.add_add]; exact hc.inScrW (by omega))
-    fun u' ⟨hrd, hwr, hsp, hg, hf, hb⟩ => ?_
+    fun u' ⟨hrd, hwr, hsp, hg, hf, hb⟩ hsy => ?_
   rw [Offset.add_add] at hf hb
-  exact ⟨hc.keep hL hrd hwr hsp (fun r hr _ => hg r (ne_cs hr (by decide))) hf
+  exact ⟨hc.keep hL hrd hwr hsp (fun r hr _ => hg r (ne_cs hr (by decide))) hf (hsy := hsy)
       (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact safe_scr L hd),
     hrd, hwr, hg, hf, hb⟩
 
@@ -47,7 +47,7 @@ theorem ptrs_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) :
     RegUpd.wr_write, RegUpd.mem_write, reduceCtorEq, ite_false, hc.sp, Offset.add_add, Nat.reduceAdd, h200,
     h216, Option.map_some, read8, hc.pScr, hc.pD, BitVec.setWidth_eq, show (0 : Nat) < 4096 by decide,
     BitVec.add_zero, Option.some.injEq, exists_eq_left']
-  refine ⟨hc.regs hL rfl rfl rfl rfl fun r hr h30 => ?_, trivial⟩
+  refine ⟨hc.regs hL rfl rfl rfl rfl (fun r hr h30 => ?_) rfl, trivial⟩
   have h₁ : r ∉ [Reg.x9, .x10, .x15] := not_pres hr _ (by decide)
   simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at h₁
   simp only [RegUpd.gpr_write, h₁.1, h₁.2.1, h₁.2.2, ite_false]
@@ -97,10 +97,11 @@ theorem head_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) (h9 : t.gpr .x9 = 
     (by rw [Offset.add_add]; exact hL.stk_scr (by omega) (by omega))) fun u₂ ⟨hc₂, hrd₂, hwr₂, hg₂, hf₂, hb₂⟩ => ?_
   rw [e8, Nat.zero_add] at hf₂ hb₂
   have h9₂ : u₂.gpr .x9 = L.scr := (hg₂ _ (by decide)).trans h9
-  refine WP.mono (strb_ok hc₂ h9₂ (b := b) (o := 2256 + D) (by omega)) fun u₃ ⟨hrd₃, hwr₃, hsp₃, hg₃, hm₃⟩ => ?_
+  refine WP.mono_syms (strb_ok hc₂ h9₂ (b := b) (o := 2256 + D) (by omega))
+    fun u₃ ⟨hrd₃, hwr₃, hsp₃, hg₃, hm₃⟩ sy₃ => ?_
   have hf₃ : Frame [⟨L.scr + BitVec.ofNat 64 (2256 + D), 1⟩] u₂.mem u₃.mem := by
     rw [hm₃]; exact (Frame.refl _ _).write (List.mem_singleton_self _) _ (Region.contains_self _ _)
-  refine ⟨hc₂.keep hL hrd₃ hwr₃ hsp₃ (fun r hr _ => hg₃ r (ne_cs hr (by decide))) hf₃
+  refine ⟨hc₂.keep hL hrd₃ hwr₃ hsp₃ (fun r hr _ => hg₃ r (ne_cs hr (by decide))) hf₃ (hsy := sy₃)
       (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact safe_scr L (by omega)),
     fun r hr => (hg₃ r hr).trans (hg₂ r hr), ?_, ?_⟩
   · refine (hf₂.sub fun r hr => ⟨_, List.mem_singleton_self _, ?_⟩).trans
@@ -138,7 +139,7 @@ theorem tail_ok (hL : L.Ok) {u : State} (hc : Ctx L g m₀ u) (h9 : u.gpr .x9 = 
     apply WP.of_runBlock
     simp only [runBlock_cons, runStep_some, runBlock_nil, exec, show 2256 + D + 1 < 4096 by omega, ite_true,
       State.read, Size.bits, BitVec.setWidth_eq, h9, Option.some.injEq, exists_eq_left']
-    exact ⟨hc.set hL (d := .x12) (by decide) rfl rfl rfl rfl fun r hr => RegUpd.gpr_write_of_ne _ _ _ hr, rfl,
+    exact ⟨hc.set hL (d := .x12) (by decide) rfl rfl rfl rfl (fun r hr => RegUpd.gpr_write_of_ne _ _ _ hr) rfl, rfl,
       by rw [RegUpd.gpr_write_self]; exact BitVec.setWidth_eq _, fun r hr => RegUpd.gpr_write_of_ne _ _ _ hr⟩
   refine WP.mono h₁ fun u₁ h₁ => ?_
   rw [WP.block_append_iff]
