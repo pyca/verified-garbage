@@ -15,7 +15,8 @@ ladder keeps a representative of `[k >>> j]P` (`step`); multiples of a
 point of the curve are on the curve; and a representative's affine
 coordinates are `X / Z` and `Y / Z`, with the inverse by Fermat; and the
 points of the curve form an abelian group (`GroupRep`, in Lean's core
-`IntModule`), so sums of points may be rearranged. Its proof, `Good.law`
+`IntModule`), so sums of points may be rearranged; and the checks of a
+comb's tables without inverses (`chordOk`, `tangentOk`) give sums. Its proof, `Good.law`
 (`Group.lean`), is in `ZMod C.p` with Mathlib's algebra and elliptic curves, which only a curve's own facts (e.g. `Proof/P256/Curve.lean`)
 import: the proofs of the code take `Law C` as a hypothesis, and only the
 registration files supply it, so none of them loads that algebra.
@@ -49,6 +50,25 @@ structure GroupRep (C : Curve) (A : Type) [Lean.Grind.IntModule A] (f : Point C 
   neg : ∀ {P : Point C}, onCurve C P = true → f (negPt P) = -f P
   inj : ∀ {P Q : Point C}, onCurve C P = true → onCurve C Q = true → f P = f Q → P = Q
 
+/-- An affine point with `Nat` coordinates. -/
+def ptN (C : Curve) (q : Nat × Nat) : Point C := .affine (Fin.ofNat C.p q.1) (Fin.ofNat C.p q.2)
+
+/-- `(x₃, y₃) = (x₁, y₁) + (x₂, y₂)` by the chord, for `x₁ ≠ x₂`, checked
+without inverses: `(x₃ + x₁ + x₂)(x₂ - x₁)² = (y₂ - y₁)²` and
+`(y₃ + y₁)(x₂ - x₁) = (y₂ - y₁)(x₁ - x₃)`, modulo `p`. -/
+def chordOk (p : Nat) (x1 y1 x2 y2 x3 y3 : Nat) : Bool :=
+  x1 != x2 &&
+  (x3 + x1 + x2) * ((x2 + p - x1) * (x2 + p - x1)) % p == (y2 + p - y1) * (y2 + p - y1) % p &&
+  (y3 + y1) * (x2 + p - x1) % p == (y2 + p - y1) * (x1 + p - x3) % p
+
+/-- `(x₃, y₃) = 2 (x₁, y₁)` by the tangent, for `2 y₁ ≠ 0`, checked without
+inverses: `(x₃ + 2x₁)(2y₁)² = (3x₁² + a)²` and
+`(y₃ + y₁)(2y₁) = (3x₁² + a)(x₁ - x₃)`, modulo `p`. -/
+def tangentOk (p a : Nat) (x1 y1 x3 y3 : Nat) : Bool :=
+  2 * y1 % p != 0 &&
+  (x3 + 2 * x1) * (2 * y1 * (2 * y1)) % p == (3 * x1 * x1 + a) * (3 * x1 * x1 + a) % p &&
+  (y3 + y1) * (2 * y1) % p == (3 * x1 * x1 + a) * (x1 + p - x3) % p
+
 /-- What the proofs of the code need of the group law of `C`. -/
 structure Law (C : Curve) : Prop where
   one_ne_zero : (1 : Fe C) ≠ 0
@@ -77,6 +97,14 @@ structure Law (C : Curve) : Prop where
   /-- The points of the curve form an abelian group, the specification's
   addition its addition (`GroupRep`). -/
   group : ∃ (A : Type) (_ : Lean.Grind.IntModule A) (f : Point C → A), GroupRep C A f
+  /-- A chord checked without inverses (`chordOk`) gives the sum of two
+  points of distinct `x`. -/
+  chord : ∀ {x1 y1 x2 y2 x3 y3 : Nat}, x1 < C.p → x2 < C.p → y1 < C.p → x3 < C.p →
+    chordOk C.p x1 y1 x2 y2 x3 y3 = true →
+    Spec.Weierstrass.add (ptN C (x1, y1)) (ptN C (x2, y2)) = ptN C (x3, y3)
+  /-- A tangent checked without inverses (`tangentOk`) gives the double. -/
+  tangent : ∀ {x1 y1 x3 y3 : Nat}, x3 < C.p → tangentOk C.p C.a x1 y1 x3 y3 = true →
+    Spec.Weierstrass.add (ptN C (x1, y1)) (ptN C (x1, y1)) = ptN C (x3, y3)
 
 variable {C : Curve}
 

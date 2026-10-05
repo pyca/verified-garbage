@@ -299,6 +299,11 @@ def val8 (f : Nat → Nat) : Nat :=
 
 theorem range8 : List.range 8 = [0, 1, 2, 3, 4, 5, 6, 7] := rfl
 
+/-- `val8` unfolded (stated, as `simp` would otherwise generate it at length). -/
+theorem val8_eq (f : Nat → Nat) : val8 f =
+    f 0 + 2 ^ 64 * (f 1 + 2 ^ 64 * (f 2 + 2 ^ 64 * (f 3 + 2 ^ 64 * (f 4 + 2 ^ 64 * (f 5 +
+      2 ^ 64 * (f 6 + 2 ^ 64 * f 7)))))) := rfl
+
 /-- The columns of `r + k s`: with `k` the left operands `0–7`, `r` the
 left operands `8–15`, `s` the right operands `0–7` and one the right
 operand 8. -/
@@ -307,14 +312,14 @@ theorem mulCols_sum (xv yv : Nat → Nat) (h1 : yv 8 = 1) :
   simp only [colsVal, colSum, mulCol, range8, List.filter_cons, List.filter_nil, Nat.reduceSub,
     Nat.reduceLT, Nat.reduceLeDiff, Nat.reduceAdd, and_self, and_true, and_false,
     decide_true, decide_false, ite_true, ite_false, List.map_cons, List.map_nil, List.cons_append,
-    List.nil_append, List.append_nil, List.sum_cons, List.sum_nil, val8, h1, Nat.mul_one,
+    List.nil_append, List.append_nil, List.sum_cons, List.sum_nil, val8_eq, h1, Nat.mul_one,
     Nat.add_zero, Nat.zero_le, Nat.le_refl, Bool.false_eq_true]
   generalize 2 ^ 64 = B
   grind
 
 theorem mv8_val (m : Mem) (base : Addr) (o : Nat) :
     mv m base o 8 = val8 fun i => (word m base (o + 8 * i)).toNat := by
-  simp only [mv8, val8, Nat.mul_zero, Nat.add_zero, Nat.reduceMul]
+  simp only [mv8, val8_eq, Nat.mul_zero, Nat.add_zero, Nat.reduceMul]
 
 theorem pow_mono {a b : Nat} (h : a ≤ b) : 2 ^ a ≤ 2 ^ b := Nat.pow_le_pow_right (by omega) h
 

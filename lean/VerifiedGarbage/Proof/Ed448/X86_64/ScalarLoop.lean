@@ -96,7 +96,7 @@ theorem scalarWord_ok {s : State} {base : Addr} (hs : Scr s base)
   refine WP.mono (wordRead_ok s k hb hr) fun a ⟨ab, ax, ka⟩ => ?_
   have av : rem a = rem s := ka.rv_eq (by decide)
   rw [WP.block_append_iff]
-  refine WP.mono (wordFold_ok a (av ▸ hv)) fun b ⟨b2, bm, kb⟩ => ?_
+  refine WP.mono (wordFold_ok a (by rw [av]; exact hv)) fun b ⟨b2, bm, kb⟩ => ?_
   have hsb : Scr b base := (hs.of_keeps ka (by decide)).of_keeps kb (by decide)
   have mb : b.mem = s.mem := kb.2.1.trans ka.2.1
   rw [WP.block_append_iff]

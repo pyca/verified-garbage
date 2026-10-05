@@ -2,13 +2,17 @@
 //! (`vg_ecdsa_p384_sha384_sign`, which calls `vg_ecdsa_p384_sign`), public
 //! keys (`vg_ec_p384_public_key`), and verification (`vg_ecdsa_p384_verify`).
 
-#![cfg(target_arch = "x86_64")]
+#![cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
 
 use super::{Error, P384, SignatureHash, SigningKey, sealed};
 use crate::arch::ec_p384::vg_ec_p384_public_key;
 use crate::arch::ecdsa_p384::vg_ecdsa_p384_verify;
+use crate::arch::ecdsa_p384_sha384::vg_ecdsa_p384_sha384_sign;
+#[cfg(target_arch = "aarch64")]
+use crate::arch::ecdsa_p384_sha384::vg_ecdsa_p384_sha384_sign_sha3;
+#[cfg(target_arch = "x86_64")]
 use crate::arch::ecdsa_p384_sha384::{
-    vg_ecdsa_p384_sha384_sign, vg_ecdsa_p384_sha384_sign_avx2, vg_ecdsa_p384_sha384_sign_shani,
+    vg_ecdsa_p384_sha384_sign_avx2, vg_ecdsa_p384_sha384_sign_shani,
 };
 use crate::hashes::sha384::{Sha384, Sha384Backend};
 use crate::zeroize::zeroize;
@@ -42,7 +46,11 @@ impl sealed::Functions<P384> for Sha384 {
     fn sign(d: &[u8; 48], digest: &[u8; 48]) -> Result<[u8; 96], Error> {
         let sign = match Sha384Backend::select(crate::cpu::detected()) {
             Sha384Backend::Scalar => vg_ecdsa_p384_sha384_sign,
+            #[cfg(target_arch = "aarch64")]
+            Sha384Backend::Sha3 => vg_ecdsa_p384_sha384_sign_sha3,
+            #[cfg(target_arch = "x86_64")]
             Sha384Backend::ShaNi => vg_ecdsa_p384_sha384_sign_shani,
+            #[cfg(target_arch = "x86_64")]
             Sha384Backend::Avx2 => vg_ecdsa_p384_sha384_sign_avx2,
         };
         let mut out = [0; 96];

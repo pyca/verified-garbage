@@ -13,7 +13,7 @@ is emitted for every SHA-256 variant carried by `MdHash.sha256`, named with
 its suffix (e.g. `vg_ecdsa_p256_sha256_sign_sha2`), and needs its CPU
 features. Other hash functions emit no artifact here.
 
-The stack is 240 bytes: 16 saving `x30`, a 208-byte frame, and the 16 bytes
+The stack is 256 bytes: 16 saving `x30`, a 224-byte frame, and the 16 bytes
 below it that HMAC's functions use (`vg_ecdsa_p256_sign` uses none).
 -/
 
@@ -29,13 +29,14 @@ def artifacts (v : Proof.Pbkdf2.Md.AArch64.MdHash) : List Artifact :=
     { Spec.Ecdsa.Rfc6979.P256Sha256.signApi with
       name := Spec.Ecdsa.Rfc6979.P256Sha256.signApi.name ++ c.suffix
       target := AArch64.target
-      doc := Spec.Ecdsa.Rfc6979.P256Sha256.signApi.doc (notes := [signNotes (cfgOf (pack Proof.P256.law Proof.P256.combOk7 c)).H])
-      code := (cfgOf (pack Proof.P256.law Proof.P256.combOk7 c)).sign
+      doc := Spec.Ecdsa.Rfc6979.P256Sha256.signApi.doc
+        (notes := [signNotes (cfgOf (pack Proof.P256.law (Proof.P256.combOk7 Proof.P256.law) c)).H 32 Spec.Ecdsa.P256.signApi.name])
+      code := (cfgOf (pack Proof.P256.law (Proof.P256.combOk7 Proof.P256.law) c)).sign
       consts := Impl.Ecdsa.AArch64.p256.combConsts
       contract := Spec.Ecdsa.Rfc6979.P256Sha256.inst.signContract
-        (AArch64.abi.withConsts Impl.Ecdsa.AArch64.p256.combConsts) 240
-      stack := 240
-      verified := sign_verified Proof.P256.law Proof.P256.combOk7 c
+        (AArch64.abi.withConsts Impl.Ecdsa.AArch64.p256.combConsts) 256
+      stack := 256
+      verified := sign_verified Proof.P256.law (Proof.P256.combOk7 Proof.P256.law) c
       spSafe := Code.all_of_forall (fun _ => rfl) _
       features := c.features }]
 

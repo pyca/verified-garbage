@@ -17,12 +17,15 @@ negated if `d_j < 0`, by the complete addition for `a = -3`, for
 `j = J - 1` down to `0`: `J` additions, and no doublings.
 
 The digits are secret, so their entries are selected in constant time: every
-word of every entry of the table is loaded, at an address that depends only
-on `j` (public), and `csel` keeps it exactly when its entry's index equals the
-magnitude, as the carry says (`selEntryW`: `eor` with the index, then `subs`
-of 1 sets the carry unless they are equal). The words are kept in at most
-eight registers: an entry's `2n` words in one pass over the table if
-`2n ≤ 8`, else `x`'s and then `y`'s `n` words in two. The entry's `Z` is `1`
+pair of words of every entry of the table is loaded into a vector register,
+at an address that depends only on `j` (public), and `bit` inserts it under
+a mask that is all ones exactly when its entry's index equals the magnitude
+(`selEntry`: `cmeq` of the index, counted in both lanes, with the magnitude
+in both lanes). Two groups of registers take the odd and the even entries,
+so that the loads of one overlap the masks of the other, and are combined by
+`orr` (`selPass`). Each group accumulates at most four pairs: an entry's
+`n` pairs in one pass over the table if `n ≤ 4`, else `x`'s and then `y`'s
+`n / 2` in two. The entry's `Z` is `1`
 (Montgomery's, `R mod p`) unless the magnitude is zero, when the entry is
 `(0 : 1 : 0)`. The negation computes `0 - y` and selects it by the mask of the
 digit's sign.
@@ -93,6 +96,29 @@ def selRegs (c : Nat) : List Reg := [.x8, .x9, .x10, .x11, .x12, .x13, .x14, .x1
 those of each coordinate in turn are among them). -/
 def entryRegs (n : Nat) : List Reg := selRegs (2 * n)
 
+/-- The vector registers of the selection of `c ≤ 4` pairs of words, in two
+groups taking the odd and the even entries: each group's accumulators, the
+registers it loads an entry into, its entries' index and its mask. -/
+structure SelGroup where
+  acc : List VReg
+  ld : List VReg
+  idx : VReg
+  mask : VReg
+
+def selA (c : Nat) : SelGroup :=
+  ⟨[.v0, .v1, .v2, .v3].take c, [.v20, .v21, .v22, .v23].take c, .v17, .v16⟩
+def selB (c : Nat) : SelGroup :=
+  ⟨[.v4, .v5, .v6, .v7].take c, [.v24, .v25, .v26, .v27].take c, .v30, .v31⟩
+
+/-- The magnitude in `x2` in both lanes of `v19`, `x5 = 1` in both of `v28`
+and `2` in both of `v18`. -/
+def selBcast : List Instr :=
+  [.vop (.dup .d2 .v19 .x2), .vop (.dup .d2 .v28 .x5), .vop (.add .d2 .v18 .v28 .v28)]
+
+/-- `A`'s accumulators `h … h + k - 1` stored at `o`. -/
+def selStore (c h k o : Nat) : List Instr :=
+  (List.range k).map fun i => .strq ((selA c).acc.getD (h + i) .v0) .x0 (o + 16 * i)
+
 namespace TCombCfg
 
 variable (K : TCombCfg)
@@ -103,18 +129,25 @@ def H : Nat := 2 ^ (K.w - 1)
 /-- The bytes of a table. -/
 def tblBytes : Nat := 16 * K.M.n * K.H
 
-/-- Entry `m` (from 1) of the table at `x16`: `x1 = m`, the carry clear exactly
-if `m` is the magnitude in `x2`, and its `c` words from byte `o` each kept in
-its register of `selRegs c` unless it is (with `x5 = 1`), through `x3`, `x4`
-and `x6`. -/
-def selEntryW (o c m : Nat) : List Instr :=
-  [.add .x .x1 .x1 .x5, .logic .eor .x .x3 .x2 .x1, .subs .x .x4 .x3 .x5] ++
-    (List.range c).flatMap fun i =>
-      [.ldr .x .x6 .x16 (16 * K.M.n * (m - 1) + o + 8 * i),
-        .csel .x ((selRegs c).getD i .x8) ((selRegs c).getD i .x8) .x6]
+/-- Entry `m` (from 1) of the table at `x16` into group `G`: its index `+= 2`
+(`v18`), its mask all ones exactly if the index is the magnitude (`v19`),
+and its `c` pairs of words from byte `o` inserted under it. -/
+def selEntry (o c : Nat) (G : SelGroup) (m : Nat) : List Instr :=
+  [.vop (.add .d2 G.idx G.idx .v18), .vop (.cmeq .d2 G.mask G.idx .v19)] ++
+    (List.range c).map (fun i => .ldrq (G.ld.getD i .v20) .x16 (16 * K.M.n * (m - 1) + o + 16 * i)) ++
+    (List.range c).map fun i => .vop (.bsel .bit (G.acc.getD i .v0) (G.ld.getD i .v20) G.mask)
 
-/-- Every entry's `c` words from byte `o`, into `selRegs c`. -/
-def entriesW (o c : Nat) : List Instr := (List.range K.H).flatMap fun m => K.selEntryW o c (m + 1)
+/-- Every entry's `c` pairs from byte `o` into `selA c`'s accumulators: the
+odd entries into `A`, the even ones into `B` (their indices from `-1` and
+`0`), then both combined. -/
+def selPass (o c : Nat) : List Instr :=
+  [.vop (.movi0 (selA c).idx), .vop (.sub .d2 (selA c).idx (selA c).idx .v28),
+    .vop (.movi0 (selB c).idx)] ++
+  ((selA c).acc ++ (selB c).acc).map (fun v => .vop (.movi0 v)) ++
+  (List.range (K.H / 2)).flatMap (fun m =>
+    K.selEntry o c (selA c) (2 * m + 1) ++ K.selEntry o c (selB c) (2 * m + 2)) ++
+  (List.range c).map fun i =>
+    .vop (.logic .orr ((selA c).acc.getD i .v0) ((selA c).acc.getD i .v0) ((selB c).acc.getD i .v0))
 
 /-- `x16` = table `x19`'s address, from the static `tsym`'s, with `x7 = 0`,
 `x5 = 1` and `x1 = 0`, through `x17`. -/
@@ -122,9 +155,14 @@ def selSetup : List Instr :=
   [zero7, .adrSym .x16 K.tsym, .movz .x .x17 (BitVec.ofNat 16 K.tblBytes) 0, .mul .x .x17 .x19 .x17,
     .add .x .x16 .x16 .x17, .movz .x .x5 1 0, .movz .x .x1 0 0]
 
-/-- The registers `rs` set to the words of `v`. -/
-def setRegs (rs : List Reg) (v : Nat) : List Instr :=
-  (List.range rs.length).flatMap fun i => const64 (rs.getD i .x8) (wordOf v i)
+/-- The mask of a zero magnitude into `v16`, and `A`'s accumulators
+`h … h + k - 1` set to `R`'s pairs of words under it, through `x6` and `v20`. -/
+def selOne (c h k : Nat) : List Instr :=
+  [.vop (.movi0 .v16), .vop (.cmeq .d2 .v16 .v16 .v19)] ++
+  (List.range k).flatMap fun i =>
+    const64 .x6 (wordOf K.one (2 * i)) ++ ([.vop (.ins .d2 .v20 0 .x6)] : List Instr) ++
+    const64 .x6 (wordOf K.one (2 * i + 1)) ++ ([.vop (.ins .d2 .v20 1 .x6),
+    .vop (.bsel .bit ((selA c).acc.getD (h + i) .v0) .v20 .v16)] : List Instr)
 
 /-- `Z` = `R` (the `n` words of `one`) unless the magnitude in `x2` is zero
 (with `x5 = 1` and `x7 = 0`), through `x4` and `x6`. -/
@@ -133,19 +171,18 @@ def selZ : List Instr :=
     const64 .x6 (wordOf K.one i) ++ [.csel .x .x6 .x6 .x7, st .x6 (K.E.z + 8 * i)]
 
 /-- The entry of table `x19` for the magnitude in `x2` into `E`: the table's
-address into `x16`; `(0, R)` in the registers, then every entry, kept if its
-index is the magnitude (if `2n ≤ 8`; else `0` and `x`'s words, then, with
-`x1` cleared again, `R` and `y`'s); `Z = R` unless the magnitude is zero. -/
+address into `x16`, the broadcasts, then the entry's pairs selected (if
+`n ≤ 4`, all in one pass; else `x`'s, stored, then `y`'s), `y = R` if the
+magnitude is zero, and `Z = R` unless it is. -/
 def select : List Instr :=
-  K.selSetup ++
+  K.selSetup ++ selBcast ++
   (if 2 * K.M.n ≤ 8 then
-    zeros ((entryRegs K.M.n).take K.M.n) ++ setRegs ((entryRegs K.M.n).drop K.M.n) K.one ++
-    K.entriesW 0 (2 * K.M.n) ++
-    stores ((entryRegs K.M.n).take K.M.n) K.E.x ++ stores ((entryRegs K.M.n).drop K.M.n) K.E.y
+    K.selPass 0 K.M.n ++ K.selOne K.M.n (K.M.n / 2) (K.M.n / 2) ++
+    selStore K.M.n 0 (K.M.n / 2) K.E.x ++ selStore K.M.n (K.M.n / 2) (K.M.n / 2) K.E.y
   else
-    zeros (selRegs K.M.n) ++ K.entriesW 0 K.M.n ++ stores (selRegs K.M.n) K.E.x ++
-    .movz .x .x1 0 0 :: setRegs (selRegs K.M.n) K.one ++ K.entriesW (8 * K.M.n) K.M.n ++
-    stores (selRegs K.M.n) K.E.y) ++
+    K.selPass 0 (K.M.n / 2) ++ selStore (K.M.n / 2) 0 (K.M.n / 2) K.E.x ++
+    K.selPass (8 * K.M.n) (K.M.n / 2) ++ K.selOne (K.M.n / 2) 0 (K.M.n / 2) ++
+    selStore (K.M.n / 2) 0 (K.M.n / 2) K.E.y) ++
   K.selZ
 
 /-- The digit's magnitude into `x2`: its window and `|k - H|`. -/

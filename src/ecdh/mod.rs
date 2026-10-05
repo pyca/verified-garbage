@@ -2,7 +2,7 @@
 //! Rev. 3, §5.7.1.2.
 //!
 //! A [`PrivateKey<C>`] holds a private key on the curve `C` (so far
-//! [`P256`], and `P384` on x86-64 and AArch64). Each exchange is one
+//! [`P256`], and `P384` on x86-64, AArch64 and x86). Each exchange is one
 //! call of verified code (`vg_ecdh_<curve>`, contract
 //! `VG.Spec.Ecdh.Instance.exchangeContract`): it validates the peer's public
 //! key as SP 800-56A §5.6.2.3.3 requires (the uncompressed form of SEC 1
@@ -20,7 +20,7 @@
 mod p256;
 mod p384;
 
-#[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
+#[cfg(any(target_arch = "x86_64", target_arch = "aarch64", target_arch = "x86"))]
 pub use crate::ec::P384;
 pub use crate::ec::{Curve, P256};
 
