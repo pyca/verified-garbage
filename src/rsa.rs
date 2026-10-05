@@ -195,7 +195,7 @@ fn exponent(e: &[u8]) -> Result<&[u8], Error> {
 pub struct PublicKey {
     pub(crate) n: Vec<u8>,
     pub(crate) e: Vec<u8>,
-    pre: Vec<u64>,
+    pub(crate) pre: Vec<u64>,
 }
 
 impl PublicKey {

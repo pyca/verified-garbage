@@ -556,9 +556,9 @@ theorem setup_ok {b : Addr} {wl o m : Nat} {s₀ : State} (hp : BPre b wl o m s�
 
 /-! ## The permutation -/
 
-theorem perm_ok {b : Addr} {wl o m N₀ : Nat} {s₀ : State} (hp : BPre b wl o m s₀) {s : State}
+theorem perm_ok {fast : Bool} {b : Addr} {wl o m N₀ : Nat} {s₀ : State} (hp : BPre b wl o m s₀) {s : State}
     (h : SetupPost b wl o m N₀ s₀ s) :
-    WP isa Impl.Sha3.X86_64.X4.permute4 s fun s' => BEnv b wl o m s₀ s' ∧
+    WP isa (Impl.Sha3.X86_64.X4.permute4 fast) s fun s' => BEnv b wl o m s₀ s' ∧
       Lanes4 s'.mem (sP b wl) fun k => keccakF (P0 (sig b s₀) (BitVec.ofNat 8 (N₀ + k))) := by
   have := hp.small
   have pre : Pre4 s (sP b wl) (sP b wl + BitVec.ofNat 64 800) (sP b wl + BitVec.ofNat 64 1600) :=
@@ -571,7 +571,7 @@ theorem perm_ok {b : Addr} {wl o m N₀ : Nat} {s₀ : State} (hp : BPre b wl o 
       fun r hr k hk => by
         rw [la, Offset.add_add, show 1600 + (32 * r + 8 * k) = 32 * (50 + r) + 8 * k by bdd_omega]
         exact h.tbl r hr k hk⟩
-  refine WP.mono (permute4_ok pre h.rdi h.rsi h.rdx (by rw [h.rcx, Offset.add_add (sP b wl) 1600 768]) h.lanes)
+  refine WP.mono (permute4_ok (fast := fast) pre h.rdi h.rsi h.rdx (by rw [h.rcx, Offset.add_add (sP b wl) 1600 768]) h.lanes)
     fun s' ⟨hl, hf, hrd, hwr, _, hg⟩ => ⟨⟨hrd.trans h.env.rd, hwr.trans h.env.wr, fun r hr => ?_,
       h.env.frame.trans (hf.sub fun r hr => ⟨wR b wl, by simp, ?_⟩)⟩, hl⟩
   · rw [hg r (rax_ncs r hr) (by revert hr; decide +revert)]; exact h.env.cs r hr
@@ -635,12 +635,12 @@ theorem extract_ok {b : Addr} {wl o m : Nat} {s₀ : State} (hp : BPre b wl o m 
 /-! ## The whole -/
 
 /-- `batch N₀ m o wl`: `PRF₂(σ, N₀ + k)` to `scratch + o + 128 k` for each `k < m`. -/
-theorem batch_ok {b : Addr} {wl o m : Nat} {s₀ : State} (hp : BPre b wl o m s₀) {N₀ : Nat} (hN : N₀ + 4 ≤ 256) :
-    WP isa (batch N₀ m o wl) s₀ fun s => BEnv b wl o m s₀ s ∧
+theorem batch_ok {fast : Bool} {b : Addr} {wl o m : Nat} {s₀ : State} (hp : BPre b wl o m s₀) {N₀ : Nat} (hN : N₀ + 4 ≤ 256) :
+    WP isa (batch N₀ m o wl fast) s₀ fun s => BEnv b wl o m s₀ s ∧
       ∀ k < m, bytesAt s.mem (b + BitVec.ofNat 64 (o + 128 * k)) 128 = prf 2 (sig b s₀) (BitVec.ofNat 8 (N₀ + k)) := by
   unfold batch
   refine WP.seq (WP.mono (setup_ok hp hN) fun s₁ h₁ => ?_)
-  refine WP.seq (WP.mono (perm_ok hp h₁) fun s₂ ⟨e₂, l₂⟩ => ?_)
+  refine WP.seq (WP.mono (perm_ok (fast := fast) hp h₁) fun s₂ ⟨e₂, l₂⟩ => ?_)
   rw [WP.block_append_iff]
   refine WP.mono (extract_ok hp e₂ l₂) fun s₃ ⟨e₃, o₃⟩ => WP.mono (vz_ok s₃) fun s₄ ⟨hm, k⟩ =>
     ⟨⟨k.2.1.trans e₃.rd, k.2.2.trans e₃.wr, fun r hr => (k.gpr List.not_mem_nil).trans (e₃.cs r hr),
@@ -657,19 +657,21 @@ theorem batch_ok {b : Addr} {wl o m : Nat} {s₀ : State} (hp : BPre b wl o m s�
 /-- `batch` leaks only the address in `rbx`: the immediates (the indices
 and offsets) are the same in every run, and no address or branch depends on
 the data. -/
-theorem batch_tr {P : State → State → Prop} (hP : ∀ x y, P x y → x.gpr .rbx = y.gpr .rbx) (N₀ o wl : Nat)
-    {m : Nat} (hm : m ≤ 4) : RelCT isa P (batch N₀ m o wl) fun x y => x.gpr .rbx = y.gpr .rbx := by
-  have hx : ((taint.check (X86_64.Taint.ofRegs [.rbx]) (.block (extract m o wl ++ ([.vop .vzeroupper] : List Instr)))
-      (.block [])).map fun τ' => (RegSet.ofList [Reg.rbx]).subset τ'.regs) = some true := by
-    rcases (by bdd_omega : m = 0 ∨ m = 1 ∨ m = 2 ∨ m = 3 ∨ m = 4) with rfl | rfl | rfl | rfl | rfl <;> kernel_rfl
-  unfold batch
-  refine RelCT.seq (RelCT.taintRegs (τ := X86_64.Taint.ofRegs [.rbx])
-    (fun x y h => X86_64.Taint.agree_ofRegs fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact hP x y h) [.rbx, .rdi, .rsi, .rdx, .rcx]
-    (hc := .block []) (by kernel_rfl)) ?_
-  refine RelCT.seq (RelCT.taintRegs (τ := X86_64.Taint.ofRegs [.rbx, .rdi, .rsi, .rdx, .rcx])
-    (fun x y h => X86_64.Taint.agree_ofRegs h) [.rbx] (by taint_decide)) ?_
-  exact RelCT.mono (RelCT.taintRegs (τ := X86_64.Taint.ofRegs [.rbx]) (fun x y h => X86_64.Taint.agree_ofRegs h)
-    [.rbx] hx) (fun _ _ h => h) fun _ _ h => h _ (List.mem_singleton_self _)
+theorem batch_tr {fast : Bool} {P : State → State → Prop} (hP : ∀ x y, P x y → x.gpr .rbx = y.gpr .rbx) (N₀ o wl : Nat)
+    {m : Nat} (hm : m ≤ 4) : RelCT isa P (batch N₀ m o wl fast) fun x y => x.gpr .rbx = y.gpr .rbx := by
+  cases fast <;> (
+    have hx : ((taint.check (X86_64.Taint.ofRegs [.rbx]) (.block (extract m o wl ++ ([.vop .vzeroupper] : List Instr)))
+        (.block [])).map fun τ' => (RegSet.ofList [Reg.rbx]).subset τ'.regs) = some true := by
+      rcases (by bdd_omega : m = 0 ∨ m = 1 ∨ m = 2 ∨ m = 3 ∨ m = 4) with rfl | rfl | rfl | rfl | rfl <;> kernel_rfl
+    unfold batch
+    refine RelCT.seq (RelCT.taintRegs (τ := X86_64.Taint.ofRegs [.rbx])
+      (fun x y h => X86_64.Taint.agree_ofRegs fun r hr => by
+        simp only [List.mem_singleton] at hr; subst hr; exact hP x y h) [.rbx, .rdi, .rsi, .rdx, .rcx]
+      (hc := .block []) (by kernel_rfl)) ?_
+    refine RelCT.seq (RelCT.taintRegs (τ := X86_64.Taint.ofRegs [.rbx, .rdi, .rsi, .rdx, .rcx])
+      (fun x y h => X86_64.Taint.agree_ofRegs h) [.rbx] (by taint_decide)) ?_
+    exact RelCT.mono (RelCT.taintRegs (τ := X86_64.Taint.ofRegs [.rbx]) (fun x y h => X86_64.Taint.agree_ofRegs h)
+      [.rbx] hx) (fun _ _ h => h) fun _ _ h => h _ (List.mem_singleton_self _)
+  )
 
 end VG.Proof.MlKem.X86_64.Prf4
