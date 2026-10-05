@@ -147,10 +147,8 @@ fn rsa_pss_test() {
             assert_eq!(accepted + rejected, 0, "{name}");
         } else {
             // The miscellaneous vectors are all valid.
-            assert!(
-                accepted > 0 && (rejected > 0 || name.contains("misc")),
-                "{name}"
-            );
+            let both = rejected > 0 || name.contains("misc");
+            assert!(accepted > 0 && both, "{name}");
         }
     }
 }
