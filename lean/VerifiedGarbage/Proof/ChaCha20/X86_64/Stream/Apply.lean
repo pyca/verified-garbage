@@ -325,21 +325,6 @@ structure Q1 (s₀ s : State) : Prop where
   done : Done s₀ (H s₀) s.mem
   frame : Frame [stR s₀, dR s₀] s₀.mem s.mem
 
-theorem dR_byte {s₀ : State} (hp : APre s₀) {k : Nat} (hk : k < L s₀) : InRegions s₀.wr (dp s₀ + BitVec.ofNat 64 k) 1 :=
-  ⟨dR s₀, by rw [hp.wr]; simp, Offset.contains_base _ (by omega) (by have := L_lt s₀; omega)⟩
-
-theorem stR_byte {s₀ : State} (hp : APre s₀) {k : Nat} (hk : k < 768) : InRegions s₀.wr (st s₀ + BitVec.ofNat 64 k) 1 :=
-  ⟨stR s₀, by rw [hp.wr]; simp, Offset.contains_base _ (by omega) (by omega)⟩
-
-theorem d_ne_st {s₀ : State} (hp : APre s₀) {j k : Nat} (hj : j < L s₀) (hk : k < 768) :
-    dp s₀ + BitVec.ofNat 64 j ≠ st s₀ + BitVec.ofNat 64 k := by
-  intro he
-  have c₁ : (dR s₀).Contains (dp s₀ + BitVec.ofNat 64 j) 1 :=
-    Offset.contains_base _ (by omega) (by have := L_lt s₀; omega)
-  have c₂ : (stR s₀).Contains (st s₀ + BitVec.ofNat 64 k) 1 := Offset.contains_base _ (by omega) (by omega)
-  rw [he] at c₁
-  exact hp.st_d _ c₂ c₁
-
 theorem not_in_prefix (p : Addr) {k c : Nat} (hk : c ≤ k) (hk' : k < 2 ^ 64) :
     ¬ (⟨p, c⟩ : Region).Contains (p + BitVec.ofNat 64 k) 1 := by
   simp only [Region.Contains]
@@ -377,12 +362,15 @@ theorem part1_ok {s₀ : State} (hp : APre s₀) (hle : L s₀ ≤ N s₀) {s : 
       exact h₂.keep _ (by simp)
   refine WP.seq (WP.mono h₃ fun s₃ ⟨h₃, hrsi⟩ => ?_)
   have hb : BPre s₃ (dp s₀) (st s₀ + BitVec.ofNat 64 (128 - O s₀)) (H s₀) :=
-    ⟨h₃.rbp, hrsi, h₃.rdx, by omega, fun k hk => by rw [h₃.wr]; exact dR_byte hp (by omega),
-      fun k hk => by
-        rw [h₃.wr, Offset.add_add]
-        obtain ⟨r, hr, hc⟩ := stR_byte hp (k := 128 - O s₀ + k) (by omega)
-        exact ⟨r, List.mem_append_right _ hr, hc⟩,
-      fun j hj k hk => by rw [Offset.add_add]; exact d_ne_st hp (by omega) (by omega)⟩
+    ⟨h₃.rbp, hrsi, h₃.rdx, by omega,
+      by
+        rw [h₃.wr]
+        exact ⟨dR s₀, by rw [hp.wr]; simp, by
+          simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero, Nat.zero_add]; omega⟩,
+      by
+        rw [h₃.rd, h₃.wr, hp.rd, hp.wr, List.nil_append]
+        exact ⟨stR s₀, by simp, Offset.contains_base _ (by omega) (by omega)⟩,
+      (hp.st_d.symm.sub_left (Region.sub_prefix (by omega))).sub_right (Offset.sub_base _ (by omega))⟩
   refine WP.seq (WP.mono (xorBytes_ok hb) fun s₄ h₄ => ?_)
   have hr12 : s₄.gpr .r12 = BitVec.ofNat 64 (L s₀ - H s₀) := by
     rw [h₄.r12, h₃.r12, Offset.ofNat_sub_ofNat hH]
@@ -822,13 +810,13 @@ theorem tail_ok {s₀ : State} (hp : APre s₀) {s : State} (h : Q2 s₀ s) (ht 
     (hp.st_d.symm.sub_left h₁).sub_right h₂
   have hb : BPre s₃ (dp s₀ + BitVec.ofNat 64 (H s₀ + 64 * NB s₀)) (st s₀ + BitVec.ofNat 64 64) (T s₀) :=
     ⟨hrbp₃, rsi₃, by rw [rdx₃, g .r12 (by simp), h.r12], by omega,
-      fun k hk => by
-        rw [wr₃, wr₂, hwr₁, Offset.add_add]
+      by
+        rw [wr₃, wr₂, hwr₁]
         exact ⟨dR s₀, by simp, Offset.contains_base _ (by omega) (by omega)⟩,
-      fun k hk => by
-        rw [rd₃, wr₃, rd₂, wr₂, hrd₁, hwr₁, List.nil_append, Offset.add_add]
+      by
+        rw [rd₃, wr₃, rd₂, wr₂, hrd₁, hwr₁, List.nil_append]
         exact ⟨stR s₀, by simp, Offset.contains_base _ (by omega) (by omega)⟩,
-      fun j hj k hk => by rw [Offset.add_add, Offset.add_add]; exact d_ne_st hp (by omega) (by omega)⟩
+      dS _ _ (Offset.sub_base _ (by omega)) (Offset.sub_base _ (by omega))⟩
   refine WP.mono (xorBytes_ok hb) fun s₄ h₄ => ?_
   have stS : Region.Sub ⟨st s₀, 64⟩ (stR s₀) := prefix_sub _ (by omega)
   have b8S := below8_stk s₀

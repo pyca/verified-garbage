@@ -101,7 +101,7 @@ theorem prfBody_ct (j : Nat) (hL16 : label.length + 4 ≤ 16) (hd1 : sKDK + 32 �
       t.gpr .rdx = scA s sMsg ∧ (t.gpr .rcx).toNat = label.length + 4 ∧ t.gpr .r8 = scA s sWork) tu
     fun s t R EM hp hc _ _ => WP.mono (prfUpdArgs_run hp hc (by omega)) fun _ ⟨hc', hm', h⟩ => ⟨hc', hm', h⟩) ?_
   have hdm : ∀ s, DPre s → DataOk s (scA s sMsg) (label.length + 4) := fun s hp =>
-    DataOk.scr hp (le_refl _) (by unfold scrBytes sMsg; omega)
+    DataOk.scr hp (Nat.le_refl _) (by unfold scrBytes sMsg; omega)
   refine RelCT.seq (cxm_call GW.keep (upd_two (v := v) (da := fun s => scA s sMsg) (L := fun _ => label.length + 4)
       (si := fun _ => BitVec.ofNat 64 64) (fun _ _ h => ⟨h.1, h.2.2⟩) hdm (scA_pin sMsg) (fun _ _ _ => rfl)
       (fun _ _ _ => rfl))

@@ -142,23 +142,39 @@ theorem apart_cons' {Y : Lay} {b c : Buf} {bs : List Buf} (h₁ : Y.apart b bs =
 theorem mul_row {a i n : Nat} (hi : i < n) : a * i + a ≤ a * n := by
   rw [← Nat.mul_succ]; exact Nat.mul_le_mul_left _ hi
 
-/-- Proves checks of buffers against the layout (`ok`, `okW`, `sep`, `apart`),
-from arithmetic on their offsets closed by `omega`, with the facts of the
-parameter set `hF : VFacts p` and those in the context. -/
-syntax "lv " term:max : tactic
+-- Select layout rules by the outer form; the full tactic retains its original fallback.
+open Lean Elab Tactic in
+elab "lv_step" : tactic => withMainContext do
+  let some (_, lhs, _) := (← getMainTarget).eq? | throwError "not a layout equality"
+  match lhs.getAppFn.constName? with
+  | some ``VG.Proof.MlKem.X86.Top.Lay.apart =>
+    evalTactic (← `(tactic| first
+      | with_reducible apply VG.Proof.MlDsa.X86.Verify.apart_cons'
+      | with_reducible apply VG.Proof.MlDsa.X86.Verify.apart_nil'))
+  | some ``VG.Proof.MlKem.X86.Top.Lay.okW =>
+    evalTactic (← `(tactic| with_reducible apply VG.Proof.MlDsa.X86.Verify.okWS))
+  | some ``VG.Proof.MlKem.X86.Top.Lay.ok =>
+    evalTactic (← `(tactic| first
+      | with_reducible apply VG.Proof.MlDsa.X86.Verify.okS
+      | with_reducible apply VG.Proof.MlDsa.X86.Verify.okPk
+      | with_reducible apply VG.Proof.MlDsa.X86.Verify.okMu
+      | with_reducible apply VG.Proof.MlDsa.X86.Verify.okSig))
+  | some ``VG.Proof.MlKem.X86.Top.Lay.sep =>
+    evalTactic (← `(tactic| first
+      | with_reducible apply VG.Proof.MlDsa.X86.Verify.sepS
+      | with_reducible apply VG.Proof.MlDsa.X86.Verify.sepRS
+      | with_reducible apply VG.Proof.MlDsa.X86.Verify.sepSR))
+  | _ => throwError "not a layout check"
+
+syntax "lv_core " term:max " using " tactic : tactic
 macro_rules
-  | `(tactic| lv $hF) => `(tactic| (
+  | `(tactic| lv_core $hF using $step:tactic) => do
+    let steps ← `(tacticSeq| $step:tactic)
+    `(tactic| (
       try simp only [Bool.and_eq_true, VG.Proof.MlDsa.X86.Verify.accB, VG.Proof.MlDsa.X86.Verify.YV_sc,
         VG.Proof.MlDsa.X86.KeyGen.chk3]
       try and_intros
-      repeat' (first
-        | with_reducible apply VG.Proof.MlDsa.X86.Verify.apart_cons'
-        | with_reducible apply VG.Proof.MlDsa.X86.Verify.apart_nil'
-        | with_reducible apply VG.Proof.MlDsa.X86.Verify.okWS | with_reducible apply VG.Proof.MlDsa.X86.Verify.okS
-        | with_reducible apply VG.Proof.MlDsa.X86.Verify.okPk | with_reducible apply VG.Proof.MlDsa.X86.Verify.okMu
-        | with_reducible apply VG.Proof.MlDsa.X86.Verify.okSig | with_reducible apply VG.Proof.MlDsa.X86.Verify.sepS
-        | with_reducible apply VG.Proof.MlDsa.X86.Verify.sepRS
-        | with_reducible apply VG.Proof.MlDsa.X86.Verify.sepSR)
+      repeat' ($steps)
       all_goals (
         have := ($hF).k; have := ($hF).l; have := ($hF).ct; have := ($hF).om; have := ($hF).lz
         have := ($hF).w1; have := ($hF).scr; have := ($hF).pk; have := ($hF).sig
@@ -166,6 +182,22 @@ macro_rules
           VG.Impl.MlDsa.X86.Verify.oCT, VG.Impl.MlDsa.X86.Verify.oACC, VG.Impl.MlDsa.X86.Verify.oSS,
           VG.Impl.MlDsa.X86.Verify.oHint]
         omega_arith)))
+
+/-- Proves checks of buffers against the layout (`ok`, `okW`, `sep`, `apart`),
+from arithmetic on their offsets closed by `omega`, with the facts of the
+parameter set `hF : VFacts p` and those in the context. -/
+syntax "lv " term:max : tactic
+macro_rules
+  | `(tactic| lv $hF) => `(tactic| first
+      | lv_core $hF using lv_step
+      | lv_core $hF using (first
+        | with_reducible apply VG.Proof.MlDsa.X86.Verify.apart_cons'
+        | with_reducible apply VG.Proof.MlDsa.X86.Verify.apart_nil'
+        | with_reducible apply VG.Proof.MlDsa.X86.Verify.okWS | with_reducible apply VG.Proof.MlDsa.X86.Verify.okS
+        | with_reducible apply VG.Proof.MlDsa.X86.Verify.okPk | with_reducible apply VG.Proof.MlDsa.X86.Verify.okMu
+        | with_reducible apply VG.Proof.MlDsa.X86.Verify.okSig | with_reducible apply VG.Proof.MlDsa.X86.Verify.sepS
+        | with_reducible apply VG.Proof.MlDsa.X86.Verify.sepRS
+        | with_reducible apply VG.Proof.MlDsa.X86.Verify.sepSR))
 
 /-! ## The inputs -/
 

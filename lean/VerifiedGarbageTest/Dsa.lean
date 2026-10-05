@@ -77,13 +77,59 @@ def digest (v : Vector) : Except String (List Byte) :=
   | "SHA-512" => pure (Spec.Sha512.sha512 v.msg)
   | h => throw s!"unknown hash {h}"
 
+private def nonceUsing (key : Key) (valid : Bool) (digest : List Byte) (k : Nat) : Option Signature := do
+  let x ← key.x
+  if !valid || !(0 < k && k < key.params.q) then none else do
+    let a := key.params
+    let r := powMod a.g k a.p % a.q
+    let s := powMod k (a.q - 2) a.q * (digestScalar a.q digest + x * r) % a.q
+    if r == 0 || s == 0 then none else some ⟨r, s⟩
+
+private def verifyUsing (key : Key) (valid : Bool) (sig : Signature) (digest : List Byte) : Bool :=
+  let a := key.params
+  if !valid || !(0 < sig.r && sig.r < a.q && 0 < sig.s && sig.s < a.q) then false
+  else
+    let w := powMod sig.s (a.q - 2) a.q
+    let u1 := digestScalar a.q digest * w % a.q
+    let u2 := sig.r * w % a.q
+    (powMod a.g u1 a.p * powMod key.y u2 a.p % a.p) % a.q == sig.r
+
+private def nonceCached (key : Key) (valid : {b // b = keyValid key})
+    (digest : List Byte) (k : Nat) : {s // s = signWithNonce key digest k} :=
+  ⟨nonceUsing key valid.val digest k, by simp only [nonceUsing, valid.property, signWithNonce]⟩
+
+private def verifyCached (key : Key) (valid : {b // b = keyValid { key with x := none }})
+    (sig : Signature) (digest : List Byte) : {b // b = verify key sig digest} :=
+  ⟨verifyUsing key valid.val sig digest, by simp only [verifyUsing, valid.property, verify]⟩
+
+private def signUsing (key : Key) (valid : Bool) (digest : List Byte) : List Nat → Option Signature
+  | [] => none
+  | k :: ks => match nonceUsing key valid digest k with
+    | some sig => some sig
+    | none => signUsing key valid digest ks
+
+private theorem signUsing_eq (key : Key) (digest : List Byte) (ks : List Nat) :
+    signUsing key (keyValid key) digest ks = sign key digest ks := by
+  induction ks with
+  | nil => rfl
+  | cons k ks ih =>
+    simp only [signUsing, sign, show nonceUsing key (keyValid key) digest k =
+      signWithNonce key digest k from rfl, ih]
+    rfl
+
+private def signCached (key : Key) (valid : {b // b = keyValid key})
+    (digest : List Byte) (ks : List Nat) : {s // s = sign key digest ks} :=
+  ⟨signUsing key valid.val digest ks, by rw [valid.property, signUsing_eq]⟩
+
 def check (v : Vector) (signing : Bool) : Except String Unit := do
   let d ← digest v
   let key : Key := ⟨v.params, v.y, some v.x⟩
-  unless verify key v.sig d == v.pass do throw "verification mismatch"
+  let publicValid : {b // b = keyValid { key with x := none }} := ⟨keyValid { key with x := none }, rfl⟩
+  unless (verifyCached key publicValid v.sig d).val == v.pass do throw "verification mismatch"
   if signing then
-    unless signWithNonce key d v.k == some v.sig do throw "signature mismatch"
-    unless sign key d [0, v.params.q, v.k] == some v.sig do throw "nonce rejection failed"
+    let valid : {b // b = keyValid key} := ⟨keyValid key, rfl⟩
+    unless (nonceCached key valid d v.k).val == some v.sig do throw "signature mismatch"
+    unless (signCached key valid d [0, v.params.q, v.k]).val == some v.sig do throw "nonce rejection failed"
     unless generate v.params [0, v.params.q, v.x] == some key do throw "key generation mismatch"
     unless toComponents key == (v.params.p, v.params.q, v.params.g, v.y, some v.x) do
       throw "component export mismatch"
@@ -91,7 +137,7 @@ def check (v : Vector) (signing : Bool) : Except String Unit := do
     unless signWithNonce { key with x := some (v.x + 1) } d v.k == none do
       throw "accepted inconsistent private key"
     for bad in [⟨0, v.sig.s⟩, ⟨v.params.q, v.sig.s⟩, ⟨v.sig.r, 0⟩, ⟨v.sig.r, v.params.q⟩] do
-      if verify key bad d then throw "accepted out-of-range signature"
+      if (verifyCached key publicValid bad d).val then throw "accepted out-of-range signature"
     if verify { key with y := 1 } v.sig d then throw "accepted identity public key"
     -- Truncation discards low digest bits; extending a long digest by a
     -- byte must not change z. An empty digest represents zero.

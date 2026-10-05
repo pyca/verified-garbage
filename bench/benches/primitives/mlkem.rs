@@ -30,7 +30,9 @@ macro_rules! mlkem_bench {
         let seed = [0x42; 64];
         let dk = $DecapsulationKey::from_seed(&seed).unwrap();
         let ek = dk.encapsulation_key();
-        let (_ss, ct) = ek.encapsulate().unwrap();
+        // Keep the decapsulation input identical across benchmark binaries.
+        // Timed encapsulation below still draws fresh randomness.
+        let (_ss, ct) = ek.encapsulate_internal(&[0x42; 32]).unwrap();
         #[cfg(feature = "openssl-mlkem")]
         let (openssl_key, openssl_public) = {
             use openssl::pkey::{KeyType, PKey};

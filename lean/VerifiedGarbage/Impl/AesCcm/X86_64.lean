@@ -58,7 +58,8 @@ before each call.
   length: the low 32 bits of `Ctrⱼ` are `j` modulo 2³² when `q ≥ 4`, and
   never wrap around when `q < 4`, as `j < 2^(8q)`.
 * `mask`: every byte of the data ANDed with `0 − ok`, for `ok` the result
-  of `cmp`, 8 bytes at a time and then the last `len mod 8` one at a time.
+  of `cmp`, 16 bytes at a time (in an SSE register) and then the last
+  `len mod 16` one at a time.
 * `tagOut`: the first `tag_len` bytes of the tag at `W` copied to `tag`,
   whose address is on the stack.
 
@@ -249,11 +250,11 @@ def ctr : Prog isa :=
 /-! ## Masking the data -/
 
 /-- Every byte of the data ANDed with `0 − ok` (`maskTail`): its whole
-words, then the rest. -/
+blocks, then the rest. -/
 def mask : Prog isa :=
   .seq (.block [.mov .r12 (.mem (at_ .r15 dataO)), .mov .rbp (.mem (at_ .r15 lenO)), .mov32 .r11 (imm 0),
       .alu .sub .r11 (.mem (at_ .r15 okO)), .mov32 .r10 (imm 0), .mov .rcx (.reg .rbp),
-      .shift .shr .rcx 3, .alu .test .rcx (.reg .rcx)])
+      .shift .shr .rcx 4, .alu .test .rcx (.reg .rcx)])
     maskTail
 
 /-! ## The functions -/

@@ -1,5 +1,5 @@
 import VerifiedGarbage.TCB.X86_64.Target
-import VerifiedGarbage.Proof.Weierstrass.HasLaw
+import VerifiedGarbage.Proof.Weierstrass.Law
 import VerifiedGarbage.Impl.Ecdsa.P521.X86_64
 import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.Verified
 import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.Lit

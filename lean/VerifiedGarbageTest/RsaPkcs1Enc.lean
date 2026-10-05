@@ -184,6 +184,14 @@ def parse (text : String) : Except String (Array Group) := do
       i := i + 1
   return groups
 
+/-- Reuse the checked private operation while varying only the implicit-rejection key. -/
+def decryptCached (nB eB pB qB dPB dQB qInvB C : List Byte)
+    (em : { v : Spec.Rsa.Outcome // v = Spec.Rsa.privateChecked nB eB C pB qB dPB dQB qInvB })
+    (dB : List Byte) : { v : Spec.Rsa.Outcome // v = decrypt nB eB dB pB qB dPB dQB qInvB C } :=
+  ⟨decryptWith (fun _ => em.val) nB.length dB C, by
+    simp only [decrypt, decryptWith]
+    rw [em.property]⟩
+
 /-- Checks one key and its cases. -/
 def check (g : Group) : Except String Unit := do
   let key ← parseKey g.der
@@ -202,11 +210,14 @@ def check (g : Group) : Except String Unit := do
   unless g.cases.size == 12 do throw s!"{g.cases.size} cases"
   for cs in g.cases do
     unless cs.c.length == k do throw s!"{cs.title}: ciphertext of {cs.c.length} octets"
-    unless dec dB cs.c == .ok cs.m do throw s!"{cs.title}: wrong message"
+    let em := Spec.Rsa.privateChecked nB eB cs.c pB qB dPB dQB qInvB
+    let decC := fun dB => (decryptCached nB eB pB qB dPB dQB qInvB cs.c ⟨em, rfl⟩ dB).val
+    let result := decC dB
+    unless result == .ok cs.m do throw s!"{cs.title}: wrong message"
     -- The leading zeros of `d` do not matter.
-    unless dec (0 :: dB.dropWhile (· == 0)) cs.c == .ok cs.m do
+    unless decC (0 :: dB.dropWhile (· == 0)) == .ok cs.m do
       throw s!"{cs.title}: wrong message with d of another length"
-    let .ok EM := Spec.Rsa.privateChecked nB eB cs.c pB qB dPB dQB qInvB
+    let .ok EM := em
       | throw s!"{cs.title}: RSADP failed"
     let isValid := cs.title.startsWith "Valid"
     unless valid EM == isValid do throw s!"{cs.title}: validity"
@@ -216,7 +227,7 @@ def check (g : Group) : Except String Unit := do
       unless EM == encode cs.m PS do throw s!"{cs.title}: encoding"
       unless encrypt nB eB cs.m PS == some cs.c do throw s!"{cs.title}: encryption"
     else
-      unless dec dB cs.c == .ok (alternative k dB cs.c) do throw s!"{cs.title}: alternative"
+      unless result == .ok (alternative k dB cs.c) do throw s!"{cs.title}: alternative"
     unless dec dB (cs.c.drop 1) == .invalid && dec dB (0 :: cs.c) == .invalid do
       throw s!"{cs.title}: accepted a ciphertext of another length"
   unless dec dB nB == .invalid do throw "accepted the ciphertext n"

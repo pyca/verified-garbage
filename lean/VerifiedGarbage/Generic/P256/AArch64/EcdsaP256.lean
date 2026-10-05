@@ -1,5 +1,5 @@
 import VerifiedGarbage.TCB.AArch64.Target
-import VerifiedGarbage.Proof.Weierstrass.HasLaw
+import VerifiedGarbage.Proof.Weierstrass.Law
 import VerifiedGarbage.Proof.P256.Comb7
 import VerifiedGarbage.Impl.Ecdsa.P256.AArch64
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Verified
@@ -41,7 +41,7 @@ def artifacts (h : Proof.Weierstrass.HasLaw Spec.P256.curve) : List Artifact := 
     consts := Impl.Ecdsa.AArch64.p256.combConsts
     code := Impl.Ecdsa.AArch64.signP256
     contract := Spec.Ecdsa.P256.inst.signContract (AArch64.abi.withConsts Impl.Ecdsa.AArch64.p256.combConsts)
-    verified := Proof.Ecdsa.AArch64.sign_verified h.law h.inv (Proof.P256.combOk7 h.law)
+    verified := Proof.Ecdsa.AArch64.sign_verified h.law (Proof.P256.combOk7 h.law)
     spSafe := Code.all_of_forall (fun _ => rfl) _ },
   { Spec.Ecdsa.P256.verifyApi with
     target := AArch64.target
@@ -65,7 +65,7 @@ def artifacts (h : Proof.Weierstrass.HasLaw Spec.P256.curve) : List Artifact := 
     consts := Impl.Ecdsa.AArch64.p256.combConsts
     code := Impl.Ecdsa.Verify.AArch64.verifyP256
     contract := Spec.Ecdsa.P256.inst.verifyContract (AArch64.abi.withConsts Impl.Ecdsa.AArch64.p256.combConsts)
-    verified := Proof.Ecdsa.Verify.AArch64.verify_verified h.law h.inv (Proof.P256.combOk7 h.law)
+    verified := Proof.Ecdsa.Verify.AArch64.verify_verified h.law (Proof.P256.combOk7 h.law)
     spSafe := Code.all_of_forall (fun _ => rfl) _ }]
 
 end VG.Generic.P256.AArch64.EcdsaP256

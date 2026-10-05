@@ -245,15 +245,21 @@ theorem pub_covers {s t : State} (hp : PreV s) (hsig : stackArg s 2 = s.gpr .rsi
     rcases hr with rfl | rfl
     · exact ⟨_, hfr, oEM1, rfl, by dsimp only; unfold oEM1 frameBytes; omega⟩
     · exact ⟨_, hscr, 0, z _, by simp only [scrR]; omega⟩
-  refine ⟨Covers.append_left (Covers.of_sub fun r hr => ?_) cw.right, cw⟩
-  have hrd : ∀ x, x ∈ s.rd → x ∈ t.rd ++ t.wr := fun x hx => List.mem_append_left _ (by rw [he.rd]; exact hx)
+  refine ⟨Covers.append_left ?_ cw.right, cw⟩
+  have cr : Covers [⟨s.gpr .rdi, (s.gpr .rsi).toNat⟩, ⟨s.gpr .rdx, (s.gpr .rcx).toNat⟩,
+      ⟨s.gpr .r9, (stackArg s 0).toNat⟩, ⟨stackArg s 1, (stackArg s 2).toNat⟩,
+      ⟨stackArgAddr s 0, 40⟩] (t.rd ++ t.wr) := by rw [he.rd]; exact hp.hrd.left
+  apply Covers.of_forall
+  intro r hr
   simp only [pubRd, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl
-  · exact ⟨_, hrd ⟨s.gpr .rdi, (s.gpr .rsi).toNat⟩ (by rw [hp.hrd]; simp), 0, z _, by dsimp only; omega⟩
-  · exact ⟨_, hrd ⟨s.gpr .rdx, (s.gpr .rcx).toNat⟩ (by rw [hp.hrd]; simp), 0, z _, by dsimp only; omega⟩
-  · exact ⟨_, hrd ⟨stackArg s 1, (stackArg s 2).toNat⟩ (by rw [hp.hrd]; simp), 0, z _,
-      by dsimp only; rw [hsig]; omega⟩
-  · exact ⟨_, List.mem_append_right _ hfr, 0, z _, by dsimp only; unfold frameBytes; omega⟩
+  · exact (Covers.of_mem (by intro r hr; rw [List.mem_singleton.mp hr]; simp)).trans cr
+  · exact (Covers.of_mem (by intro r hr; rw [List.mem_singleton.mp hr]; simp)).trans cr
+  · rw [← hsig]
+    exact (Covers.of_mem (by intro r hr; rw [List.mem_singleton.mp hr]; simp)).trans cr
+  · exact Covers.of_sub fun r hr => by
+      rw [List.mem_singleton.mp hr]
+      exact ⟨_, List.mem_append_right _ hfr, 0, z _, by dsimp only; unfold frameBytes; omega⟩
 
 /-- The call of `vg_rsa_public_checked`: `EM₁` holds `s^e mod n`, which it
 returns, or zeros. -/

@@ -52,7 +52,7 @@ theorem cv_implies : cvContract.Implies (Spec.Rsa.crtValuesContract abi) where
     sig_pub [Spec.Rsa.crtValuesContract, Spec.Rsa.crtValuesSig, abi, argRegs, cvContract, stackArgs_ten, List.append_eq] at h
     simp only [List.getD_cons_succ, List.getD_cons_zero] at h
     obtain ⟨hsp, hl, hdi, hsi, hdx, hcx, h8, h9, a0, a1, a2, a3, a4, a5, a6, a7, a8, a9⟩ := h
-    refine ⟨?_, a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, List.map_injective_iff.2 (fun _ _ h => BitVec.toNat_inj.1 h) hl⟩
+    refine ⟨?_, a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, (List.map_inj_right (fun _ _ h => BitVec.toNat_inj.1 h)).1 hl⟩
     simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]
     exact ⟨hdi, hsi, hdx, hcx, h8, h9, hsp⟩
   sat := by sig_implies_sat [Spec.Rsa.crtValuesContract, Spec.Rsa.crtValuesSig, abi, argRegs, cvContract, stackArgs_ten, List.append_eq] [cvSatState, stackArg, stackArgAddr, Mem.readW, Mem.read] using cvSatState

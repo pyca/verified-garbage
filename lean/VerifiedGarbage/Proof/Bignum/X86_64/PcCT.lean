@@ -111,7 +111,7 @@ theorem pcLoad_ct : RelCT isa (Two PcM) (seqs pcLoad) (Two Pc3) := by
       ⟨h.congr (Frm.of_arrays1 ha (List.mem_singleton_self _)) (fun r hr => ?_) (fun r hr => ?_) k (by decide),
         by rw [ha.hslot (by decide)]; exact hW, fun j hj => by rw [ha.hslot (by unfold sArr; omega)]; exact hb j hj,
         hv, (k.gpr (by decide)).trans hbx⟩
-    · rw [List.mem_singleton.mp hr]; exact this.trans hZ
+    · rw [List.mem_singleton.mp hr]; exact Nat.le_trans this hZ
     · rw [List.mem_singleton.mp hr]; exact arr_fixed _
   -- `-m⁻¹`.
   refine two_piece (Ψ := Pc3) _ pins_Pc2 (by taint_decide) ?_
@@ -244,7 +244,7 @@ theorem pcCopy_ok {q : PcPub × BitVec 64} {s : State} (h : PcO q s) {e d : Nat}
   refine WP.mono (copyWords_ok hsi hbx h12 (by omega) (by omega) (by omega)
     (fun j hj => hs.ld (by omega))
     (fun j hj => by rw [show 8 * d + 8 * j = 8 * (d + j) by omega]; exact hpw (d + j) (by omega))
-    (fun j hj b hb => Or.inr (le_trans (by omega)
+    (fun j hj b hb => Or.inr (Nat.le_trans (by omega)
       (hsep _ (by rw [ofs_off q.1.B (d := e + 8 * j) (i := b) (by omega)]; omega)))))
     fun t ⟨_, _, ho, k⟩ => ?_
   have hi : ∀ x, ofs q.1.B x < q.1.Z → t.mem x = s.mem x := fun x hx =>

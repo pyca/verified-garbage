@@ -1,4 +1,4 @@
-import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2.Xor
+import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2.Verified
 import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.Xor
 import VerifiedGarbage.Impl.ChaCha20.X86_64.Callee
 import VerifiedGarbage.Impl.Poly1305.X86_64.Callee

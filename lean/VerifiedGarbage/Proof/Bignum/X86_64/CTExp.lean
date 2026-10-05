@@ -301,7 +301,7 @@ theorem expPhase_ct : RelCT isa (Two EPhasePre) (seqs expSteps) fun _ _ => True 
       ha₂.wv_of_not_mem (by decide) (by decide) hn'
     have f₁₂ := f₁.trans (Frm.ep_of_arrays ha₂ (by simp))
     have hin : InScr a.L.B a.L.Z σ.mem t₂.mem :=
-      InScr.of_frm f₁₂ fun r hr => (expPhaseRanges_le _ r hr).trans hZ
+      InScr.of_frm f₁₂ fun r hr => Nat.le_trans (expPhaseRanges_le _ r hr) hZ
     have heb₂ := heb.congrK hin (k₁.trans k₂)
     exact ⟨_, X, _, ⟨hg₂, hn₂, hinv₂, rfl⟩, ⟨hZ, hw, hw', hR, hlt₂, hX₂⟩, hY₂, hlt₁, hY₁,
       by rw [f₁₂.ep_hdr (by decide) (by decide) (by decide) (by decide)]; exact he,
