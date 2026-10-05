@@ -162,4 +162,24 @@ theorem privateCrt_some {nB xB pB qB dPB dQB qInvB y : List Byte}
       Nat.mod_eq_of_lt (Nat.lt_trans hlt (lt_of_os2ip nB)), hlt, ite_true, Option.map_some, Option.isSome_some]
   · cases h
 
+/-- The public operation's check: a result `xB` of the public operation of
+`mB` (of `k` octets) is `mB^e mod n`, with `mB` below `n`. -/
+theorem publicOpChecked_sound {nB eB mB xB : List Byte} (hx : xB.length = nB.length)
+    (h : publicOpChecked nB eB mB = some xB) :
+    os2ip mB < os2ip nB ∧ os2ip mB ^ os2ip eB % os2ip nB = os2ip xB := by
+  simp only [publicOpChecked, publicOp, encrypt] at h
+  split at h
+  · split at h
+    · split at h
+      · rename_i hlt
+        simp only [Option.map_some, Option.some.injEq] at h
+        have hn : 0 < os2ip nB := by omega
+        have hP : powMod (os2ip mB) (os2ip eB) (os2ip nB) < 256 ^ xB.length := by
+          rw [powMod_eq, hx]; exact Nat.lt_trans (Nat.mod_lt _ hn) (lt_of_os2ip nB)
+        rw [← hx] at h
+        exact ⟨hlt, by rw [← powMod_eq]; exact (i2osp_eq_iff hP).mp h⟩
+      · cases h
+    · cases h
+  · cases h
+
 end VG.Proof.Rsa

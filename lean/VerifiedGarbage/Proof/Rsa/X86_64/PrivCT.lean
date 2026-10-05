@@ -380,4 +380,24 @@ theorem code_constantTime (v : CrtImpl) (pcName pdName : String) :
     (fun _ _ ⟨s₁, s₂, ⟨h₁, h₂, hpub⟩, e₁, e₂⟩ => ⟨s₁, ⟨s₁, ⟨h₁, pub_refl s₁⟩, e₁⟩, ⟨s₂, ⟨h₂, hpub⟩, e₂⟩⟩)
     fun _ _ h => h))
 
+/-! ## `Verified` -/
+
+/-- `vg_rsa_private_checked`, calling the implementation `v` of the CRT and
+the public operation of the same Montgomery multiplication, meets the shared
+contract. -/
+theorem code_verified (v : CrtImpl) (pcName pdName : String) :
+    Verified target (code v.name v.code pcName (Precompute.code v.mont.mm) pdName
+      (Checked.precomputedChecked v.mont.mm)) (Spec.Rsa.privateCheckedContract abi stackBytes) :=
+  have hct : ConstantTime isa chkContract.pre chkContract.pub (code v.name v.code pcName
+      (Precompute.code v.mont.mm) pdName (Checked.precomputedChecked v.mont.mm)) := code_constantTime v pcName pdName
+  Verified.of_correct (k := chkContract) (code_correct v pcName pdName) hct private_checked_implies
+
+/-- It writes `rsp` only in its frame's push and pop. -/
+theorem code_spSafe (v : CrtImpl) (pcName pdName : String) :
+    (code v.name v.code pcName (Precompute.code v.mont.mm) pdName (Checked.precomputedChecked v.mont.mm)).all
+      (fun i => !isa.writesSp i) = true := by
+  simp only [code, body_eq, check_eq, tail_eq, Code.all, v.spSafe, v.pcSpSafe, v.pdSpSafe,
+    Bool.true_and]
+  decide +kernel
+
 end VG.Proof.Rsa.X86_64

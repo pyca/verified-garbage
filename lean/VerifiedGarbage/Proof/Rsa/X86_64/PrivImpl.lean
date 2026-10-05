@@ -30,6 +30,7 @@ structure CrtImpl where
   ct : ConstantTime isa crtContract.pre crtContract.pub code
   /-- It never writes the stack pointer. -/
   nosp : NoSp code
+  spSafe : code.all (fun i => !isa.writesSp i) = true
   /-- The Montgomery multiplication of `vg_rsa_public_precompute` and
   `vg_rsa_public_precomputed_checked`, and the suffix of their names. -/
   mont : Mont
@@ -40,6 +41,8 @@ structure CrtImpl where
   pdNosp : NoSp (Checked.precomputedChecked mont.mm)
   pcDepth : (Precompute.code mont.mm).depth = 0
   pdDepth : (Checked.precomputedChecked mont.mm).depth = 0
+  pcSpSafe : (Precompute.code mont.mm).all (fun i => !isa.writesSp i) = true
+  pdSpSafe : (Checked.precomputedChecked mont.mm).all (fun i => !isa.writesSp i) = true
   /-- What the names of `vg_rsa_private_checked`'s instances end with (e.g.
   `_adx`; nothing for the baseline implementation). -/
   suffix : String
