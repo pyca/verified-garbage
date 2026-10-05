@@ -41,9 +41,6 @@ structure ScrAt (n : Nat) (val : Nat → BitVec 32) (sc : Nat) (scr : BitVec 32)
 
 theorem ScrAt.valid {sc : Nat} (h : ScrAt n val sc scr) (d : Nat) : Whole.valid n (.caller sc d) := h.lt
 
-theorem absorb_nosp : NoSp Impl.Sha3.X86.Stream.absorb := NoSp.of_all (by decide +kernel)
-theorem pad_nosp : NoSp Impl.Sha3.X86.Stream.pad := NoSp.of_all (by decide +kernel)
-theorem squeeze_nosp : NoSp Impl.Sha3.X86.Stream.squeeze := NoSp.of_all (by decide +kernel)
 theorem absorb_stack : stackUse Impl.Sha3.X86.Stream.absorb = 12 := by decide +kernel
 theorem pad_stack : stackUse Impl.Sha3.X86.Stream.pad = 12 := by decide +kernel
 theorem squeeze_stack : stackUse Impl.Sha3.X86.Stream.squeeze = 12 := by decide +kernel
@@ -53,6 +50,35 @@ theorem nosp_seq {a b : Prog isa} (ha : NoSp a) (hb : NoSp b) : NoSp (.seq a b) 
   rcases List.mem_append.mp hi with hi | hi
   · exact ha i hi
   · exact hb i hi
+
+theorem nosp_ite {c : Cond} {a b : Prog isa} (ha : NoSp a) (hb : NoSp b) : NoSp (.ite c a b) :=
+  nosp_seq (a := a) (b := b) ha hb
+
+/-- The calls of the permutation do not write `esp`, from the permutation's
+own `permute_nosp`, rather than by evaluating its code again. -/
+theorem permuteCall_nosp (st scr : Reg) : NoSp (Impl.Sha3.X86.Stream.permuteCall st scr) := by
+  intro i hi
+  rcases List.mem_cons.mp hi with rfl | hi
+  · rfl
+  rcases List.mem_append.mp hi with hi | hi
+  · exact Proof.Sha3.X86.permute_nosp i hi
+  · rw [List.mem_singleton.mp hi]; rfl
+
+theorem next_nosp : NoSp Impl.Sha3.X86.Stream.next :=
+  nosp_ite (nosp_seq (NoSp.of_all (by decide +kernel)) (permuteCall_nosp _ _)) (NoSp.of_all (by decide +kernel))
+
+theorem absorb_nosp : NoSp Impl.Sha3.X86.Stream.absorb :=
+  nosp_seq (NoSp.of_all (by decide +kernel)) (nosp_seq (nosp_ite (NoSp.of_all (by decide +kernel))
+    (nosp_seq (NoSp.of_all (by decide +kernel)) (nosp_seq next_nosp (NoSp.of_all (by decide +kernel)))))
+    (NoSp.of_all (by decide +kernel)))
+
+theorem pad_nosp : NoSp Impl.Sha3.X86.Stream.pad :=
+  nosp_seq (NoSp.of_all (by decide +kernel)) (nosp_seq (permuteCall_nosp _ _) (NoSp.of_all (by decide +kernel)))
+
+theorem squeeze_nosp : NoSp Impl.Sha3.X86.Stream.squeeze :=
+  nosp_seq (NoSp.of_all (by decide +kernel)) (nosp_seq (nosp_ite (NoSp.of_all (by decide +kernel))
+    (nosp_seq (NoSp.of_all (by decide +kernel)) (nosp_seq next_nosp (NoSp.of_all (by decide +kernel)))))
+    (NoSp.of_all (by decide +kernel)))
 
 theorem absorb_nosp' {args : List Instr} (h : NoSp (.block args)) : NoSp (absorb args) :=
   nosp_seq h absorb_nosp

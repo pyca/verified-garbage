@@ -382,7 +382,7 @@ theorem vdecodeA_ok (hR : RecoverOk) {s : State} {base pk : Addr} (hs : Scr s ba
   have hs2 : Scr s2 base := ⟨(g2 _ (by decide)).trans hs1.rdi, wr2 ▸ hs1.wr, hs1.nowrap⟩
   have hp2 : s2.gpr .rsi = pk := by rw [si2, o1.word (Or.inr (by decide)) (by decide), hpk]
   have e2 : E s2.mem base = E s1.mem base := by rw [m2]
-  have h10 : E s2.mem base 10 = 1 := by rw [e2]; exact congrArg Spec.Ed448.Point.Z q1
+  have h10 : E s2.mem base 10 = 1 := by rw [e2]; exact (congrArg Spec.Ed448.Point.Z q1 :)
   have h11 : E s2.mem base 11 = Spec.Ed448.d := by rw [e2]; exact d1
   have rr2 : s2.rd = s.rd := by rw [rd2, rd1]
   have ww2 : s2.wr = s.wr := by rw [wr2, wr1]
@@ -408,10 +408,10 @@ theorem vdecodeA_ok (hR : RecoverOk) {s : State} {base pk : Addr} (hs : Scr s ba
   · rw [kt.mem.word (Or.inr (by decide)) (by decide), o4.word (Or.inr (by decide)) (by decide), b3, m2,
       o1.word (Or.inr (by decide)) (by decide)]
   · obtain ⟨vx, vy, vz⟩ := v3 a ha
-    have z0 : E s4.mem base 0 = 0 := congrArg Spec.Ed448.Point.X p4
+    have z0 : E s4.mem base 0 = 0 := (congrArg Spec.Ed448.Point.X p4 :)
     show (⟨E t.mem base 6, E t.mem base 7, E t.mem base 10⟩ : Spec.Ed448.Point) = ⟨0 - a.X, a.Y, a.Z⟩
     rw [t6, keep 7 (by decide), keep 10 (by decide), z0, k4 6 (by decide) (by decide),
-      k4 7 (by decide) (by decide), vx, vy, vz, show E s4.mem base 10 = 1 from congrArg Spec.Ed448.Point.Z q4]
+      k4 7 (by decide) (by decide), vx, vy, vz, show E s4.mem base 10 = 1 from (congrArg Spec.Ed448.Point.Z q4 :)]
   · rw [pt_congr (keep 0 (by decide)) (keep 1 (by decide)) (keep 2 (by decide)), p4]
   · rw [pt_congr (keep 8 (by decide)) (keep 9 (by decide)) (keep 10 (by decide)), q4]
   · rw [keep 11 (by decide), d4]
@@ -528,7 +528,7 @@ theorem verifyEquation_correct (hR : RecoverOk) (hE : VerifyEqOk) {s : State}
   have rr7 : s7.rd ++ s7.wr = s.rd ++ s.wr := by
     rw [rd7, wr7, I6.rd, I6.wr, rd5, wr5, rd4, wr4, rr3]
   have h10 : E s7.mem base 10 = 1 := by
-    rw [m7]; exact congrArg Spec.Ed448.Point.Z I6.q
+    rw [m7]; exact (congrArg Spec.Ed448.Point.Z I6.q :)
   have h11 : E s7.mem base 11 = Spec.Ed448.d := by rw [m7]; exact I6.d
   apply WP.seq
   refine WP.mono (decode_ok hf hR hs7 hsig7 8 9 (Or.inr ⟨rfl, rfl⟩) h10 h11

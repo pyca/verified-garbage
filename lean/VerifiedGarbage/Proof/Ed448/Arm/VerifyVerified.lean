@@ -45,7 +45,8 @@ theorem verifyEquation_ok (hR : RecoverOk) (hE : VerifyEqOk) (s : State) (hs : v
 
 theorem verifyEquation_ct :
     ConstantTime isa verifyEquationLocal.pre verifyEquationLocal.pub verifyEquation := by
-  refine VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r0, .r1, .r2, .r3]) ?_ (by taint_decide)
+  refine Taint.constantTime_eraseOff_of_eq (Taint.ofRegs [.r0, .r1, .r2, .r3]) (Taint.noBase_ofRegs _) ?_
+    (c' := verifyEquationErased) rfl (by taint_decide)
   intro s₁ s₂ _ _ ⟨h0, h1, h2, h3, _⟩
   apply Taint.agree_ofRegs
   intro r hr

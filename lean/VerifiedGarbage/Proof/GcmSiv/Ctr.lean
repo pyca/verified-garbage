@@ -148,7 +148,11 @@ theorem leNat_le4 (w : BitVec 32) : Spec.GcmSiv.leNat (le4 w) = w.toNat := by
   have h := w.isLt
   simp only [Spec.GcmSiv.leNat, le4, List.range_succ, List.range_zero, List.nil_append, List.map_cons, List.map_nil, List.cons_append, List.foldr_cons, List.foldr_nil,
     BitVec.extractLsb'_toNat, Nat.shiftRight_eq_div_pow]
-  omega
+  generalize w.toNat = x at h ⊢
+  have h3 : x / 2 ^ (8 * 3) % 2 ^ 8 + 256 * 0 = x / 2 ^ (8 * 3) := by
+    rw [Nat.mul_zero, Nat.add_zero, Nat.mod_eq_of_lt (Nat.div_lt_of_lt_mul (by omega))]
+  rw [h3, byte_step x (8 * 2), byte_step x (8 * 1), byte_step x (8 * 0), Nat.mul_zero, Nat.pow_zero,
+    Nat.div_one]
 
 theorem le4_ofNat (y : Nat) : le4 (BitVec.ofNat 32 y) = Spec.GcmSiv.le32 y := by
   rw [← le4_le32]
