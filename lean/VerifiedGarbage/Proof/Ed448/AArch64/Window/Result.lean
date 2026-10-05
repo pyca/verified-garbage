@@ -74,14 +74,14 @@ theorem wfinish_ok {s : State} {base : Addr} (hs : Scr s base)
       t.gpr .x30 = s.gpr .x30 ∧ t.rd = s.rd ∧ t.wr = s.wr ∧ CFrame base s.mem t.mem := by
   rw [wfinish_eq, WP.block_append_iff]
   refine WP.mono (eqSlotsF_ok hs 12 13 (hb 12 (by decide) (by decide)) (hb 13 (by decide) (by decide))
-    (by decide) (by decide)) fun s1 ⟨⟨c1, hc1, x1⟩, k1⟩ => ?_
+    (by decide) (by decide)) fun s1 ⟨⟨c1, hc1, x1⟩, k1, _⟩ => ?_
   have hs1 := k1.scr hs
   have hb1 : ∀ j < 8, limbs s1.mem base (slot (14 : Index).val) j < 2 ^ 118 := fun j hj => by
     rw [k1.mem.limbs (i := 14) (by decide) (by omega)]; exact hb 14 (by decide) (by decide) j hj
   have hb1' : ∀ j < 8, limbs s1.mem base (slot (15 : Index).val) j < 2 ^ 118 := fun j hj => by
     rw [k1.mem.limbs (i := 15) (by decide) (by omega)]; exact hb 15 (by decide) (by decide) j hj
   rw [WP.block_append_iff]
-  refine WP.mono (eqSlotsF_ok hs1 14 15 hb1 hb1' (by decide) (by decide)) fun s2 ⟨⟨c2, hc2, x2⟩, k2⟩ => ?_
+  refine WP.mono (eqSlotsF_ok hs1 14 15 hb1 hb1' (by decide) (by decide)) fun s2 ⟨⟨c2, hc2, x2⟩, k2, _⟩ => ?_
   have hs2 := k2.scr hs1
   rw [WP.block_append_iff]
   refine WP.mono (mov_ok .x5 .x20 s2) fun s3 ⟨v3, m3, k3⟩ => ?_

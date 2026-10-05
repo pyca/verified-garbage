@@ -93,7 +93,7 @@ theorem verifyEquation_correct (hR : RecoverOk) {s : State} (hp : verifyEquation
   -- The comparison and the result.
   rw [WP.block_append_iff]
   refine WP.mono (wcross_ok K6.ctx.scr K6.ctx.env K6.ctx.zero K6.ctx.one
-    (ib_of_limbs hrx (weak_ib (F.bnd 8))) (ib_of_limbs hry (weak_ib (F.bnd 9))))
+    (ib_of_limbs hrx (F.bnd 8)) (ib_of_limbs hry (F.bnd 9)))
     fun s7 ⟨hs7, k7, o7, c7, b7⟩ => ?_
   have P7 := P6.outside2 o7
   refine WP.mono (wfinish_ok hs7 (fun i h1 h2 j hj => Nat.lt_trans (b7 i h1 h2 j hj) (by decide))
