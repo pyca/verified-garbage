@@ -69,21 +69,21 @@ theorem putBytes_ok {s₀ : State} {k : Nat} (hb : Buf s₀ k) (hk : k < 2 ^ 64)
     refine WP.mono (ih (acc := acc ++ [b]) (s := t) (by simp at hl ⊢; omega) ht) fun u ⟨hu, hk₂⟩ =>
       ⟨by simpa using hu, (hk₁.trans hk₂).mono (by simp)⟩
 
-/-- `PS`: `n` bytes `0xff`, counted down in `r10`. -/
+/-- `PS`: `n` bytes `b` (in `rax`; `0xff` for `PS`), counted down in `r10`. -/
 theorem psLoop_ok {s₀ s : State} {k : Nat} (hb : Buf s₀ k) (hk : k < 2 ^ 64) {acc : List Byte}
-    {n : Nat} (hn : 0 < n) (hl : acc.length + n ≤ k) (h : W s₀ acc s)
-    (hax : s.gpr .rax = 0xff) (hc : s.gpr .r10 = BitVec.ofNat 64 n) :
-    WP isa psLoop s fun t => W s₀ (acc ++ List.replicate n 0xff) t ∧ Keep [.rdi, .r10] s t := by
+    {n : Nat} (hn : 0 < n) (hl : acc.length + n ≤ k) (h : W s₀ acc s) (b : Byte)
+    (hax : s.gpr .rax = b.setWidth 64) (hc : s.gpr .r10 = BitVec.ofNat 64 n) :
+    WP isa psLoop s fun t => W s₀ (acc ++ List.replicate n b) t ∧ Keep [.rdi, .r10] s t := by
   refine wp_countdown (cnt := .r10) (by omega) hn
-    (fun i t => W s₀ (acc ++ List.replicate i 0xff) t ∧ t.gpr .rax = 0xff ∧ Keep [.rdi, .r10] s t) ?_
+    (fun i t => W s₀ (acc ++ List.replicate i b) t ∧ t.gpr .rax = b.setWidth 64 ∧ Keep [.rdi, .r10] s t) ?_
     (fun _ h => ⟨h.1, h.2.2⟩) ⟨by simpa using h, hax, Keep.refl _ _⟩ hc
   intro i hi t ⟨⟨hK, hm, hdi⟩, hax, hKs⟩ _
   have hA : InRegions t.wr (t.gpr .rdi) 1 := by
     rw [hdi, hK.2.2]; exact hb _ (by simp; omega)
-  refine WP.mono (WP.keep [.rdi, .r10] (Q := fun t' => t'.mem = (t.mem.writeW (t.gpr .rdi) (0xff : Byte)) ∧
-      t'.gpr .rdi = t.gpr .rdi + 1 ∧ t'.gpr .rax = 0xff ∧ t'.gpr .r10 = t.gpr .r10 - 1 ∧
+  refine WP.mono (WP.keep [.rdi, .r10] (Q := fun t' => t'.mem = (t.mem.writeW (t.gpr .rdi) b) ∧
+      t'.gpr .rdi = t.gpr .rdi + 1 ∧ t'.gpr .rax = b.setWidth 64 ∧ t'.gpr .r10 = t.gpr .r10 - 1 ∧
       t'.zf = some (t.gpr .r10 - 1 == 0)) (by
-    xrun [psLoop, ea0, hA, hax]; rfl) rfl) fun t' ⟨⟨hm', hdi', hax', hc', hz⟩, hK'⟩ =>
+    xrun [psLoop, ea0, hA, hax, byte_setWidth64]) rfl) fun t' ⟨⟨hm', hdi', hax', hc', hz⟩, hK'⟩ =>
       ⟨⟨⟨(hK.trans hK').mono (by simp [clob]), ?_, ?_⟩, hax', (hKs.trans hK').mono (by simp)⟩, hc', hz⟩
   · rw [hm', hm, hdi, List.replicate_succ', ← List.append_assoc,
       writeBytes_snoc _ _ _ _ (by simp; omega)]
@@ -280,7 +280,7 @@ theorem write_ok {s₀ s : State} {x : BitVec 32} {h : Hash} {k : Nat} (hb : Buf
     ⟨(hw₂.1.trans hK₃).mono (by simp [clob]), hm₃.trans hw₂.2.1, by rw [hK₃.gpr (by decide)]; exact hw₂.2.2⟩
   -- `PS`
   refine WP.seq (WP.mono (psLoop_ok hb hkk (n := k - (h.prefix.length + h.len) - 3) (by omega)
-    (by simp; omega) hw₃ hax₃ h10₃) fun t₄ ⟨hw₄, hK₄⟩ => ?_)
+    (by simp; omega) hw₃ 0xff (by rw [hax₃]; rfl) h10₃) fun t₄ ⟨hw₄, hK₄⟩ => ?_)
   -- `0x00`
   refine WP.seq (WP.mono (putByte_ok hb (by simp; omega) hkk 0x00 hw₄) fun t₅ ⟨hw₅, hK₅⟩ => ?_)
   have hK₅' : Keep [.rax, .rdi, .r10] s t₅ := ((((hK₂'.trans hK₃).trans hK₄).trans hK₅)).mono (by simp)
