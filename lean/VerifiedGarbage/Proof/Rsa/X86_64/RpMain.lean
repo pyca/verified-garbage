@@ -75,20 +75,35 @@ theorem frm_skip {B : Addr} {w : Nat} {m m' : Mem} (h : Frm B [(slot w aM, 8), (
   · exact rg_cover_arr _ (by decide) (Nat.le_refl _) (by omega)
   · exact rg_cover_hdr _ (by decide))
 
-/-- `main`, from a valid modulus: `recoverPrimes`'s factors written, or
-zeros. -/
-theorem rpMain_ok (M : Mont) {I : RpIn} {s : State} (h : RpPre I s)
-    (hv : Spec.Rsa.modulusValid I.N I.k = true) :
-    WP isa (main M.mm) s fun t => ∃ res : Option (Nat × Nat),
-      (recoverPrimes I.N I.E I.D).1 = res ∧
-      (List.range I.k).map (fun i => t.mem (I.pP + BitVec.ofNat 64 i)) =
-        Spec.Rsa.i2osp (match res with | some v => v.1 | none => 0) I.k ∧
-      (List.range I.k).map (fun i => t.mem (I.pQ + BitVec.ofNat 64 i)) =
-        Spec.Rsa.i2osp (match res with | some v => v.2 | none => 0) I.k ∧
-      t.gpr .rax = BitVec.ofNat 64 res.isSome.toNat ∧ (∀ i < 6, t.gpr (saved.getD i .rax) = I.sv i) ∧
-      (∀ x, I.Z ≤ ofs I.B x → (∀ i < I.k, x ≠ I.pP + BitVec.ofNat 64 i) →
-        (∀ i < I.k, x ≠ I.pQ + BitVec.ofNat 64 i) → t.mem x = s.mem x) ∧
-      t.gpr .rsp = s.gpr .rsp := by
+/-- The factors written, or 0. -/
+def fstOr : Option (Nat × Nat) → Nat
+  | some v => v.1
+  | none => 0
+
+def sndOr : Option (Nat × Nat) → Nat
+  | some v => v.2
+  | none => 0
+
+/-- The prefix of `main`, up to the check of `d e - 1`. -/
+abbrev prefixList : List (Prog isa) := ([.block CrtValues.head] : List (Prog isa)) ++
+    ((loadA aN Impl.Bignum.X86_64.Public.sN Impl.Bignum.X86_64.Public.sK ++
+      (loadA aE Impl.Bignum.X86_64.Public.sE Impl.Bignum.X86_64.Public.sElen ++ loadA aD sD sDl)) ++
+    (([.block minvBlk] : List (Prog isa)) ++ (prod ++
+    ([.block skipBlk, wordLoop 0 orBody, .block skipTest] : List (Prog isa)))))
+
+theorem rpMain_eq' (mul : Nat → Nat → Nat → Prog isa) :
+    main mul = seqs (prefixList ++ ([.ite .ne fail (rest mul)] : List (Prog isa))) := by
+  simp only [main, prefixList, List.append_assoc, List.cons_append, List.nil_append]
+
+/-- The prefix: `M = d e - (d e mod 2)`, `ZF` set if `d e` is odd and at
+least 2, `n` and `-n⁻¹`. -/
+theorem rpPrefix_ok {I : RpIn} {s : State} (h : RpPre I s) (hv : Spec.Rsa.modulusValid I.N I.k = true) :
+    WP isa (seqs prefixList) s fun s₅ => RpS I s.mem s₅ ∧
+      s₅.zf = some (decide (I.D * I.E % 2 = 1 ∧ 2 ≤ I.D * I.E)) ∧
+      wv s₅.mem I.B (slot (wk I.k) aM) (2 * (wk I.k + 2)) = I.D * I.E - I.D * I.E % 2 ∧
+      wv s₅.mem I.B (slot (wk I.k) aN) (wk I.k) = I.N ∧
+      ((word s₅.mem I.B (slot (wk I.k) aN)).toNat * (word s₅.mem I.B (8 * sMinv)).toNat + 1) % 2 ^ 64 = 0 ∧
+      I.D * I.E < 2 ^ (64 * (wk I.k + (I.el + 7) / 8)) := by
   have L := h.L
   have k1 := L.k1
   have k2 := L.k2
@@ -97,16 +112,13 @@ theorem rpMain_ok (M : Mont) {I : RpIn} {s : State} (h : RpPre I s)
   have hdl2 := L.dl2
   have hn := h.scr.nowrap
   have hZ := L.z
-  obtain ⟨hNo, hlo⟩ := valid_lo hv
-  have hlo' : 2 ^ (64 * (wk I.k - 1)) ≤ I.N := by
-    refine Nat.le_trans ?_ hlo
-    rw [pow256_eq]; exact Nat.pow_le_pow_right (by decide) (by unfold wk; omega)
+  obtain ⟨hNo, -⟩ := valid_lo hv
   have hEl : I.E < 2 ^ (64 * ((I.el + 7) / 8)) := by
     have := os2ip_lt I.eb; rw [L.ebl] at this; exact Nat.lt_of_lt_of_le this (pow256_le_wk I.el)
   have hDl : I.D < 2 ^ (64 * wk I.k) := by
     have := os2ip_lt I.db; rw [L.dbl] at this
     exact Nat.lt_of_lt_of_le this (by rw [pow256_eq]; exact Nat.pow_le_pow_right (by decide) (by unfold wk; omega))
-  rw [rpMain_eq]
+  simp only [prefixList]
   -- The head.
   refine wp_seqs_append (by simp) (by simp [loadA]) (WP.mono (rpHeadS_ok h) fun s₁ S₁ => ?_)
   have hZ16 : slot (wk I.k) 16 ≤ 2 ^ 64 := by have := S₁.ws.scr.nowrap; have := S₁.ws.hZ; omega
@@ -133,11 +145,46 @@ theorem rpMain_ok (M : Mont) {I : RpIn} {s : State} (h : RpPre I s)
   have hDE : I.D * I.E < 2 ^ (64 * (wk I.k + (I.el + 7) / 8)) := by
     rw [Nat.mul_add, Nat.pow_add]; exact Nat.mul_lt_mul'' hDl hEl
   -- Whether `d e - 1` is even and positive.
-  refine wp_seqs_append (by simp) (by simp) (WP.mono (skip_ok S₄.ws S₄.args.el hel1 (by unfold wk; omega)
-    (by rw [vM₄]; exact hDE)) fun s₅ ⟨hz₅, vM₅, f₅', _, k₅⟩ => ?_)
+  refine WP.mono (skip_ok S₄.ws S₄.args.el hel1 (by unfold wk; omega)
+    (by rw [vM₄]; exact hDE)) fun s₅ ⟨hz₅, vM₅, f₅', _, k₅⟩ => ?_
   rw [vM₄] at hz₅ vM₅
   have f₅ := frm_skip f₅'
   have S₅ := S₄.step f₅ (by decide) (by decide) k₅ (by decide)
+  refine ⟨S₅, hz₅, vM₅, ?_, ?_, hDE⟩
+  · rw [f₅.rg_wv hZ16 (by decide) (by decide) (by decide) (by omega),
+      f₄.rg_wv hZ16 (by decide) (by decide) (by decide) (by omega),
+      f₃.rg_wv hZ16 (by decide) (by decide) (by simp) (by omega), vN]
+  · rw [f₅.rg_word0 hZ16 (by decide) (by decide) (by decide), f₅.rg_word (by decide) (by decide),
+      f₄.rg_word0 hZ16 (by decide) (by decide) (by decide), f₄.rg_word (by decide) (by decide)]; exact hi₃
+
+/-- `main`, from a valid modulus: `recoverPrimes`'s factors written, or
+zeros. -/
+theorem rpMain_ok (M : Mont) {I : RpIn} {s : State} (h : RpPre I s)
+    (hv : Spec.Rsa.modulusValid I.N I.k = true) :
+    WP isa (main M.mm) s fun t => ∃ res : Option (Nat × Nat),
+      (recoverPrimes I.N I.E I.D).1 = res ∧
+      (List.range I.k).map (fun i => t.mem (I.pP + BitVec.ofNat 64 i)) =
+        Spec.Rsa.i2osp (fstOr res) I.k ∧
+      (List.range I.k).map (fun i => t.mem (I.pQ + BitVec.ofNat 64 i)) =
+        Spec.Rsa.i2osp (sndOr res) I.k ∧
+      t.gpr .rax = BitVec.ofNat 64 res.isSome.toNat ∧ (∀ i < 6, t.gpr (saved.getD i .rax) = I.sv i) ∧
+      (∀ x, I.Z ≤ ofs I.B x → (∀ i < I.k, x ≠ I.pP + BitVec.ofNat 64 i) →
+        (∀ i < I.k, x ≠ I.pQ + BitVec.ofNat 64 i) → t.mem x = s.mem x) ∧
+      t.gpr .rsp = s.gpr .rsp := by
+  have L := h.L
+  have k1 := L.k1
+  have k2 := L.k2
+  have hel1 := L.el1
+  have hel2 := L.el2
+  have hdl2 := L.dl2
+  have hn := h.scr.nowrap
+  have hZ := L.z
+  obtain ⟨hNo, hlo⟩ := valid_lo hv
+  have hlo' : 2 ^ (64 * (wk I.k - 1)) ≤ I.N := by
+    refine Nat.le_trans ?_ hlo
+    rw [pow256_eq]; exact Nat.pow_le_pow_right (by decide) (by unfold wk; omega)
+  rw [rpMain_eq']
+  refine wp_seqs_append (by simp) (by simp) (WP.mono (rpPrefix_ok h hv) fun s₅ ⟨S₅, hz₅, vM₅, vN₅, hi₅, hDE⟩ => ?_)
   have hspec : (I.D * I.E < 2 ∨ (I.D * I.E - 1) % 2 = 1) ↔ ¬(I.D * I.E % 2 = 1 ∧ 2 ≤ I.D * I.E) := by omega
   simp only [seqs]
   refine WP.ite (!decide (I.D * I.E % 2 = 1 ∧ 2 ≤ I.D * I.E)) (by simp [eval, hz₅]) (fun hb => ?_) (fun hb => ?_)
@@ -149,19 +196,11 @@ theorem rpMain_ok (M : Mont) {I : RpIn} {s : State} (h : RpPre I s)
       ⟨fun i hi => by rw [S₅.wr, ← h.wr]; exact h.oQ.wr i hi, h.oQ.sep⟩ h.a)
       fun t ⟨z1, z2, hax, hsv, hfr, hsp⟩ => ⟨none, by rw [hnone], ?_, ?_, by rw [hax]; rfl, hsv,
         fun x hx n1 n2 => by rw [hfr x n1 n2]; exact S₅.inScr x hx, hsp.trans (S₅.rsp.trans h.rsp.symm)⟩
-    · rw [List.map_congr_left fun i hi => z1 i (List.mem_range.mp hi)]; rw [i2osp_zero']; simp
-    · rw [List.map_congr_left fun i hi => z2 i (List.mem_range.mp hi)]; rw [i2osp_zero']; simp
+    · rw [List.map_congr_left fun i hi => z1 i (List.mem_range.mp hi)]; rw [fstOr, i2osp_zero']; simp
+    · rw [List.map_congr_left fun i hi => z2 i (List.mem_range.mp hi)]; rw [sndOr, i2osp_zero']; simp
   · -- `rest`.
     have hb' : I.D * I.E % 2 = 1 ∧ 2 ≤ I.D * I.E := by simpa using hb
     have hgo := VG.Proof.Rsa.recoverPrimes_go (n := I.N) (fun h' => (hspec.mp h') hb')
-    have vN₅ : wv s₅.mem I.B (slot (wk I.k) aN) (wk I.k) = I.N := by
-      rw [f₅.rg_wv hZ16 (by decide) (by decide) (by decide) (by omega),
-        f₄.rg_wv hZ16 (by decide) (by decide) (by decide) (by omega),
-        f₃.rg_wv hZ16 (by decide) (by decide) (by simp) (by omega), vN]
-    have hi₅ : ((word s₅.mem I.B (slot (wk I.k) aN)).toNat * (word s₅.mem I.B (8 * sMinv)).toNat + 1) %
-        2 ^ 64 = 0 := by
-      rw [f₅.rg_word0 hZ16 (by decide) (by decide) (by decide), f₅.rg_word (by decide) (by decide),
-        f₄.rg_word0 hZ16 (by decide) (by decide) (by decide), f₄.rg_word (by decide) (by decide)]; exact hi₃
     refine WP.mono (rpRest_ok M (m := I.D * I.E - 1) (N := I.N) ⟨S₅, L, hNo, hlo', vN₅, hi₅,
       by rw [vM₅]; omega, by omega, by omega, by omega,
       ⟨fun i hi => by rw [S₅.wr, ← h.wr]; exact h.oP.wr i hi, h.oP.sep⟩,
