@@ -181,4 +181,39 @@ theorem mrLoop_ct (M : Mont) :
       rw [← hu'] at hI'
       exact ⟨hk, hd, hch, hrl, mi, c, r, s₀, res, uni', hI', hS, hrlen, hc1, hsh, ho, hu, hw, by rw [hu']; omega⟩
 
+/-- What `millerRabin` needs (`millerRabin_ok`'s hypotheses), for the shape
+of its result. -/
+def MrPre (a : LPub) (s : State) : Prop :=
+  KW a.p.B a.p.wr ∧ HP a.p.B a.p.wr [] s ∧ MrDims a.p.B a.p.Z a.p.w ∧ a.p.ch < 2 ^ 62 ∧ a.p.rl < 2 ^ 64 ∧
+    ∃ (mi : BitVec 64) (c bm : Nat) (r : List Byte), MrCtx s a.p.B a.p.Z a.p.w mi c bm ∧
+      wv s.mem a.p.B (slot a.p.w aR2) a.p.w = 2 ^ (64 * a.p.w) * 2 ^ (64 * a.p.w) % c ∧ 1 < c ∧
+      VG.Proof.RsaKeyGen.PrimeShape (64 * a.p.w) c ∧ word s.mem a.p.B (8 * kOut) = a.p.op ∧
+      word s.mem a.p.B (8 * kUsedP) = a.p.up ∧ word s.mem a.p.B (8 * kRand) = a.p.rP ∧
+      word s.mem a.p.B (8 * kLen) = BitVec.ofNat 64 (8 * a.p.w) ∧
+      word s.mem a.p.B (8 * kRandLen) = BitVec.ofNat 64 r.length ∧ r.length = a.p.rl ∧
+      word s.mem a.p.B (8 * kChecks) = BitVec.ofNat 64 a.p.ch ∧ Src s a.p.B a.p.Z a.p.rP r ∧
+      word s.mem a.p.B (8 * kUsed) = BitVec.ofNat 64 a.u0 ∧ 8 * a.p.w ≤ a.u0 ∧ a.u0 ≤ r.length ∧
+      shapeOf (mrRest c a.p.ch r 1 0 a.u0) = a.S
+
+/-- `millerRabin` leaks the same in runs that agree on the public data and on
+the shape of the result. -/
+theorem millerRabin_ct (M : Mont) : RelCT isa (Two MrPre) (seqs (millerRabin M.mm)) (Two LoopEnd) := by
+  unfold millerRabin
+  simp only [seqs]
+  refine RelCT.seq (kt_piece (fun a : LPub => a.p.B) (fun a => a.p.wr) [] (fun _ => []) [] (by decide)
+    (fun _ => rfl) (fun _ _ h => ⟨h.1, h.2.1⟩) (pins_nil _) (by taint_decide) ?_) (mrLoop_ct M)
+  rintro a s ⟨hk, hp, hd, hch, hrl, mi, c, bm, r, hc, hr2, hc1, hsh, ho, hup, hR, hK, hRL, hrlen, hC, hsrc, hU, hu1, hu2,
+    hS⟩
+  have hw4 := hd.w4
+  obtain ⟨_, _, hwb⟩ := VG.Proof.RsaKeyGen.cand_bits (by omega) hsh
+  have hN : 1 ≤ a.N := by
+    have := (VG.Proof.RsaKeyGen.iters_cont (L := 8 * a.p.w) (r := r) (a := (Spec.Rsa.splitTwos (c - 1)).1)
+      (m := (Spec.Rsa.splitTwos (c - 1)).2) (ch := a.p.ch) (i := 1) (uni := 0) (Or.inl (by decide)) hwb (by omega) hu1
+      hu2).2
+    have hr' : Spec.RsaKeyGen.loop (Spec.RsaKeyGen.mrStep c a.p.ch (Spec.Rsa.splitTwos (c - 1)).1
+        (Spec.Rsa.splitTwos (c - 1)).2) (1, 0) (List.drop a.u0 r) = mrRest c a.p.ch r 1 0 a.u0 := rfl
+    rwa [hr', hS, hrlen] at this
+  refine WP.mono (mrInit_ok hd hc hr2 hR hK hRL hC hsrc hU hu1 hu2) fun t hI => ⟨hN, hk, hd, hch, hrl, mi, c, r, s,
+    _, 0, by simpa [LPub.u] using hI, hS, hrlen, hc1, hsh, ho, hup, hp.wr, by simp [LPub.u]⟩
+
 end VG.Proof.RsaKeyGen.X86_64
