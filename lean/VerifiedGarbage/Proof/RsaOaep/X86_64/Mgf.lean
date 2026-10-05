@@ -320,7 +320,7 @@ theorem round_ok {Gs : Spec.Mgf1.Hash} (hGh : ∀ x, Gs.hash x = hG.SH.H.hash x)
   refine WP.seq (WP.mono (scr_ok I.L (d := .rdi) (by decide) (o := oSt) (by decide)) fun u1 ⟨hdi1, hm1, k1⟩ => ?_)
   have L1 : Lay u1 F S := I.L.congr (k1.gpr (by decide)) k1.2.2 (by rw [hm1])
   have R1' : Rep u1.mem F S V1 W1 := hm1 ▸ R1
-  refine WP.seq (WP.mono (init_ok hG L1 R1' hdi1) fun u2 ⟨L2, rd2, wr2, cs2, R2, hr2⟩ => ?_)
+  refine WP.seq (WP.mono (init_ok hG L1 R1' hdi1) fun u2 ⟨L2, rd2, wr2, cs2, R2, _, hr2⟩ => ?_)
   obtain ⟨V2, R2, hV2, -⟩ := Rep.ex R2
   -- `update` with `src`.
   refine WP.seq (WP.mono (updSrc_ok L2 R2 A1) fun u3 ⟨hdi3, hsi3, hdx3, hcx3, h83, hm3, k3⟩ => ?_)

@@ -70,14 +70,16 @@ theorem init_ok {t : State} {F S : Addr} (L : Lay t F S) {V : Nat → Byte} {W :
     WP isa (.call G.initN G.initC) t fun t' => Lay t' F S ∧ t'.rd = t.rd ∧ t'.wr = t.wr ∧
       (∀ r ∈ calleeSaved, t'.gpr r = t.gpr r) ∧
       Rep t'.mem F S (fun o => if inR [(oSt, G.S)] o then t'.mem (off S o) else V o) W ∧
+      Frame (regs S [(oSt, G.S)] ++ [retR F]) t.mem t'.mem ∧
       hG.SH.Repr t'.mem (off S oSt) [] := by
   have hz := sizes hG
   have h1 : oSt + G.S ≤ oRsa := by unfold oSt oRsa; omega
   refine init_call hG hdi (L.cov h1) (L.stk h1) fun t' A hr => ?_
+  have hF : Frame (regs S [(oSt, G.S)] ++ [retR F]) t.mem t'.mem := by
+    have := A.frame; rw [L.rsp] at this; exact this
   obtain ⟨L', R'⟩ := L.after_call R (rgs := [(oSt, G.S)])
-    (by simp only [List.mem_singleton]; rintro p rfl; exact h1)
-    (by have := A.frame; rw [L.rsp] at this; exact this) (keep_cs A.cs) A.wr
-  exact ⟨L', A.rd, A.wr, A.cs, R', hr⟩
+    (by simp only [List.mem_singleton]; rintro p rfl; exact h1) hF (keep_cs A.cs) A.wr
+  exact ⟨L', A.rd, A.wr, A.cs, R', hF, hr⟩
 
 /-! ## `update` -/
 
@@ -155,5 +157,42 @@ theorem fin_ok {t : State} {F S : Addr} (L : Lay t F S) {V : Nat → Byte} {W : 
   rw [← e, List.getD_eq_getElem?_getD, List.getElem?_take_of_lt hi]
   simp only [Spec.Sha256.bytesAt, List.getElem?_map, List.getElem?_range (show i < G.F by omega),
     Option.map_some, Option.getD_some, off_off]
+
+include hG in
+/-- `update` of the state with the `len` bytes at `d`, outside our working
+space and the stack the call uses, after `cnt` bytes. -/
+theorem updExt_ok {t : State} {F S : Addr} (L : Lay t F S) {V : Nat → Byte} {W : Nat → BitVec 64}
+    (R : Rep t.mem F S V W) {d : Addr} {len : Nat} (hlen : len < 2 ^ 63)
+    (hcd : Covers [⟨d, len⟩] (t.rd ++ t.wr)) (hds : Region.Disjoint ⟨d, len⟩ ⟨S, oRsa⟩)
+    (hdk : (below F 16).Disjoint ⟨d, len⟩)
+    (hdi : t.gpr .rdi = off S oSt) (hdx : t.gpr .rdx = d) (hcx : t.gpr .rcx = BitVec.ofNat 64 len)
+    (h8 : t.gpr .r8 = off S oW) :
+    WP isa (.call G.updN G.updC) t fun t' => Lay t' F S ∧ t'.rd = t.rd ∧ t'.wr = t.wr ∧
+      (∀ r ∈ calleeSaved, t'.gpr r = t.gpr r) ∧
+      Rep t'.mem F S (fun o => if inR [(oSt, G.S), (oW, hG.Wb)] o then t'.mem (off S o) else V o) W ∧
+      Frame (regs S [(oSt, G.S), (oW, hG.Wb)] ++ [retR F]) t.mem t'.mem ∧
+      (∀ m, hG.SH.Repr t.mem (off S oSt) m → t.gpr .rsi = BitVec.ofNat 64 m.length →
+        hG.SH.Repr t'.mem (off S oSt) (m ++ Spec.Rsa.bytesAt t.mem d len)) := by
+  have hz := sizes hG
+  have h1 : oSt + G.S ≤ oRsa := by unfold oSt oRsa; omega
+  have h2 : oW + hG.Wb ≤ oRsa := by unfold oW oRsa; omega
+  have hsw : oSt + G.S ≤ oW := by unfold oSt oW; omega
+  have args : UpdArgs hG t (off S oSt) d (off S oW) len :=
+    { rdi := hdi, rdx := hdx
+      rcx := by rw [hcx, BitVec.toNat_ofNat]; omega
+      r8 := h8
+      cd := hcd
+      cw := Covers.pair (L.cov h1) (L.cov h2)
+      st_sc := sdis S (Or.inl hsw) h1 h2
+      d_st := hds.sub_right (Offset.sub_base S h1)
+      d_sc := hds.sub_right (Offset.sub_base S h2)
+      stk_st := L.stk h1, stk_d := by rw [L.rsp]; exact hdk, stk_sc := L.stk h2 }
+  refine upd_call hG args (by omega) fun t' A hr => ?_
+  have hF : Frame (regs S [(oSt, G.S), (oW, hG.Wb)] ++ [retR F]) t.mem t'.mem := by
+    have := A.frame; rw [L.rsp] at this; exact this
+  obtain ⟨L', R'⟩ := L.after_call R (rgs := [(oSt, G.S), (oW, hG.Wb)])
+    (by simp only [List.mem_cons, List.not_mem_nil, or_false]; rintro p (rfl | rfl) <;> with_reducible assumption)
+    hF (keep_cs A.cs) A.wr
+  exact ⟨L', A.rd, A.wr, A.cs, R', hF, fun m hm hc => hr m hm hc⟩
 
 end VG.Proof.RsaOaep.X86_64
