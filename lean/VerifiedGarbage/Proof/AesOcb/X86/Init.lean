@@ -384,4 +384,143 @@ theorem iMid_ok {p : BitVec 32 × (Nat → BitVec 32)} {s₀ s₁ s : State} (h 
     · simp only [List.mem_singleton] at hr; subst hr
       exact ⟨_, List.mem_cons_self .., Offset.sub_base _ (by decide)⟩
 
+/-- The first two instructions of `mid1`: `ebp` back to `W`, the key context
+into `edx`. -/
+theorem mid0_ok {p : BitVec 32 × (Nat → BitVec 32)} {s₀ s₁ s : State} (h : IArg p s₀ s₁)
+    (g : KeyPost s₁ (p.2 0) (p.2 2) (p.2 3 + BitVec.ofNat 32 512) (p.2 1).toNat s) :
+    WP isa (.block [.alu .sub .ebp (imm scrO), .mov .edx (slot ctxO)]) s
+      fun t => t.gpr .ebp = p.2 3 ∧ t.gpr .edx = p.2 2 := by
+  have hc := initPure_of h.pre h.pub
+  obtain ⟨-, hwr⟩ := init_perm h.pre h.pub
+  have hfw := hc.fw
+  have eS := w64_add (x := p.2 3) (k := 512) (by omega)
+  have bp : s.gpr .ebp = p.2 3 + BitVec.ofNat 32 512 := by rw [g.saved .ebp (by decide), h.call.ebp]
+  have hb0 : p.2 3 + BitVec.ofNat 32 512 - BitVec.ofNat 32 512 = p.2 3 := BitVec.add_sub_cancel _ _
+  have bsub : Region.Sub (below p.1 20) (below p.1 24) := VG.X86.below_sub (by decide) hc.sp
+  have gf := g.frame
+  rw [h.esp, eS] at gf
+  have sC := h.sC
+  rw [slotv_eq, ← gf.readW (Region.contains_self _ _) (fun r hr => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl
+    · exact (hc.cw.sub_left (Region.sub_prefix (by decide))).symm.sub_left (Lay.wSub (by decide))
+    · exact Lay.w_w (.inl (by decide)) (by decide) (by decide)
+    · exact ((hc.k_w.sub_left bsub).sub_right (Lay.wSub (by decide))).symm) (by decide)] at sC
+  have wW : Covers [⟨w64 (p.2 3), 2560⟩] s.wr := by rw [g.wr, h.wr, hwr]; exact covers_of_mem (by simp)
+  have aW : ∀ {o}, o < 2560 → w64 (p.2 3 + BitVec.ofNat 32 o) = w64 (p.2 3) + BitVec.ofNat 64 o :=
+    fun ho => w64_add (by omega)
+  have rIn : ∀ {o}, o + 4 ≤ 2560 → InRegions (s.rd ++ s.wr) (w64 (p.2 3) + BitVec.ofNat 64 o) 4 :=
+    fun ho => Proof.AesGcm.X86.in_left (in_off wW ho (by decide))
+  exact WP.of_runBlock ⟨_, by grun [bp, hb0, aW, rIn, sC], by gregs [bp, hb0], by gregs [sC]⟩
+
+theorem iMid_pc (p : BitVec 32 × (Nat → BitVec 32)) :
+    Pc (fun s₀ s' => ∃ s, IArg p s₀ s ∧ KeyPost s (p.2 0) (p.2 2) (p.2 3 + BitVec.ofNat 32 512) (p.2 1).toNat s')
+      (.block (mid1 ++ mid2)) (IMid p) := by
+  refine ⟨fun s₀ s ⟨s₁, h, g⟩ => iMid_ok h g, ?_⟩
+  rw [show mid1 ++ mid2 = [.alu .sub .ebp (imm scrO), .mov .edx (slot ctxO)] ++
+    ([.mov .eax (imm 0), .store (at_ .edx 240) .eax, .store (at_ .edx 244) .eax, .store (at_ .edx 248) .eax,
+      .store (at_ .edx 252) .eax] ++ mid2) from rfl]
+  refine RelCT.block_append (CT.seq (J := fun s => s.gpr .ebp = p.2 3 ∧ s.gpr .edx = p.2 2)
+    (CT.taint [.ebp] (fun s₁ s₂ ⟨_, _, h₁, g₁⟩ ⟨_, _, h₂, g₂⟩ r hr => by
+      simp only [List.mem_singleton] at hr; subst hr
+      rw [g₁.saved .ebp (by decide), g₂.saved .ebp (by decide), h₁.call.ebp, h₂.call.ebp]) (by taint_decide))
+    (fun s ⟨_, _, h, g⟩ => mid0_ok h g)
+    (CT.taint [.ebp, .edx] (fun s₁ s₂ h₁ h₂ r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · rw [h₁.1, h₂.1]
+      · rw [h₁.2, h₂.2]) (by taint_decide)))
+
+theorem init_eq (v : BlocksImpl) : init (callees v) = .seq (entry 3 (keep 0 nO ++ keep 1 nlO ++ keep 2 ctxO))
+    (.seq (.block iArgs) (.seq (keyFrame (callees v)) (.seq (.block (mid1 ++ mid2))
+      (.seq (blocksFrame (callees v).enc) (.block ([.alu .sub .ebp (imm scrO)] ++ restore)))))) := rfl
+
+theorem init_pc (v : BlocksImpl) (p : BitVec 32 × (Nat → BitVec 32)) :
+    Pc (fun (s₀ : State) s => initPre s₀ ∧ pubOf 4 s₀ = p ∧ s = s₀) (init (callees v))
+      (fun s₀ s' => abiPreserved s₀ s' ∧ initX86.post s₀ s') := by
+  rw [init_eq]
+  refine Pc.seq (iEntry_pc p) (Pc.seq (iArgs_pc p) ?_)
+  refine Pc.seq (Pc.of (I := fun s => KeyCall s (p.2 0) (p.2 2) (p.2 3 + BitVec.ofNat 32 512) (p.2 1).toNat ∧
+    s.gpr .esp = p.1) (fun s h => key_ok v h.1) (key_ct v fun s h => h) _ fun _ _ h => ⟨h.call, h.esp⟩) ?_
+  refine Pc.seq (iMid_pc p) ?_
+  refine Pc.seq (Pc.of (I := fun s => BCall s (p.2 2) (p.2 2 + BitVec.ofNat 32 240) (p.2 3 + BitVec.ofNat 32 512)
+    ((p.2 1).toNat / 4 + 6) 1 ∧ s.gpr .esp = p.1) (fun s h => blk_call v.encOk v.encNosp v.encStack h.1)
+    (blk_ct v.encOk v.encCt fun s h => h) _ fun _ _ h => ⟨h.call, h.esp⟩) ?_
+  refine Pc.taint [.ebp] (fun s₀ s' ⟨s, hm, g⟩ => ?_) (fun _ _ s₁ s₂ ⟨_, h₁, g₁⟩ ⟨_, h₂, g₂⟩ r hr => by
+      simp only [List.mem_singleton] at hr; subst hr
+      rw [g₁.saved .ebp (by decide), g₂.saved .ebp (by decide), h₁.call.ebp, h₂.call.ebp]) (by taint_decide)
+  have hc := initPure_of hm.pre hm.pub
+  obtain ⟨-, hwr⟩ := init_perm hm.pre hm.pub
+  have hfw := hc.fw
+  have hfc := hc.fc
+  have hsp := hc.sp
+  have eS := w64_add (x := p.2 3) (k := 512) (by omega)
+  have eH := w64_add (x := p.2 2) (k := 240) (by omega)
+  have bp : s'.gpr .ebp = p.2 3 + BitVec.ofNat 32 512 := by rw [g.saved .ebp (by decide), hm.call.ebp]
+  have hb0 : p.2 3 + BitVec.ofNat 32 512 - BitVec.ofNat 32 512 = p.2 3 := BitVec.add_sub_cancel _ _
+  have gf := g.frame
+  rw [hm.esp, eH, eS] at gf
+  have hR := rounds_of_len hc.len
+  have hRb : 16 * ((p.2 1).toNat / 4 + 6 + 1) ≤ 240 := by rcases hR with h' | h' | h' <;> omega
+  have hsv : SavedAt s'.mem (p.2 3) s₀ := hm.saved.frame gf fun r hr => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl
+    · exact (hc.cw' (by decide) (by decide)).symm
+    · exact Lay.w_w (.inl (by decide)) (by decide) (by decide)
+    · exact ((hc.k_w.sub_right (Lay.wSub (by decide)))).symm
+  have rG : ∀ r ∈ [(⟨w64 (p.2 2) + BitVec.ofNat 64 240, 16 * 1⟩ : Region),
+      ⟨w64 (p.2 3) + BitVec.ofNat 64 512, 2048⟩, below p.1 24], (⟨w64 p.1, 4⟩ : Region).Disjoint r := fun r hr => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl
+    · exact hc.r_c.sub_right (Offset.sub_base _ (by decide))
+    · exact hc.r_w.sub_right (Lay.wSub (by decide))
+    · exact ret_below hsp
+  have rF : ∀ r ∈ [(⟨w64 (p.2 2), 256⟩ : Region), ⟨w64 (p.2 3), 2560⟩, below p.1 24],
+      (⟨w64 p.1, 4⟩ : Region).Disjoint r := fun r hr => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl
+    · exact hc.r_c
+    · exact hc.r_w
+    · exact ret_below hsp
+  have hret : s'.mem.readW (w64 (s₀.gpr .esp)) 32 = s₀.mem.readW (w64 (s₀.gpr .esp)) 32 := by
+    rw [pubOf_esp hm.pub, ret_kept gf rG, ret_kept hm.frame rF]
+  have wW : Covers [⟨w64 (p.2 3), 2560⟩] s'.wr := by rw [g.wr, hm.wr, hwr]; exact covers_of_mem (by simp)
+  refine WP.block_append (WP.of_runBlock ⟨_, by grun [bp, hb0], ?_⟩)
+  refine WP.mono (exit_ok (W := p.2 3) (by gregs [bp, hb0])
+    (by gregs [g.saved .esp (by decide), hm.esp, pubOf_esp hm.pub]) (by gmems []; exact covers_left wW) hc.fw
+    (by gmems []; exact hsv) (by gmems []; exact hret)) fun s'' ⟨abi, m'', _, _, _⟩ => ⟨abi, ?_⟩
+  have hA : ∀ i, i < 4 → arg s₀ i = p.2 i := fun i hi => pubOf_arg hm.pub hi
+  show KeyRepr s''.mem _ _
+  rw [hA 0 (by decide), hA 1 (by decide), hA 2 (by decide), m'']
+  simp only [mem_setReg, mem_arithFlags]
+  have hlen := length_bytesAt s₀.mem (w64 (p.2 0)) (p.2 1).toNat
+  have hs : bytesAt s'.mem (w64 (p.2 2)) (16 * ((p.2 1).toNat / 4 + 6 + 1)) =
+      Spec.Aes.expandKey (bytesAt s₀.mem (w64 (p.2 0)) (p.2 1).toNat) := by
+    rw [Proof.AesGcm.X86.bytesAt_frame gf (fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl
+      · have := Offset.disjoint (w64 (p.2 2)) (d := 0) (n := 16 * ((p.2 1).toNat / 4 + 6 + 1)) (e := 240)
+          (k := 16 * 1) (.inl (by omega)) (by omega) (by omega)
+        simpa using this
+      · exact (hc.cw.sub_left (Region.sub_prefix (by omega))).sub_right (Lay.wSub (by decide))
+      · exact (hc.k_c.sub_right (Region.sub_prefix (by omega))).symm) (by omega)]
+    exact hm.sched
+  refine ⟨by rw [hlen]; exact hs, ?_⟩
+  have e : blockAtMem s'.mem (w64 (p.2 2 + BitVec.ofNat 32 240) + BitVec.ofNat 64 (16 * 0)) =
+      Spec.Ocb.ctxCiph s.mem (w64 (p.2 2)) ((p.2 1).toNat / 4 + 6)
+        (blockAtMem s.mem (w64 (p.2 2 + BitVec.ofNat 32 240) + BitVec.ofNat 64 (16 * 0))) :=
+    Proof.Ocb.blockAtMem_of_state _ (Proof.Ocb.stateAt_of_statesAt g.out (by decide))
+  rw [eH, show 16 * 0 = 0 from rfl, show BitVec.ofNat 64 0 = 0#64 from rfl, BitVec.add_zero,
+    hm.zero] at e
+  show blockAtMem s'.mem (w64 (p.2 2) + BitVec.ofNat 64 240) = _
+  rw [e, Spec.Ocb.ctxCiph, hm.sched]
+  simp only [Spec.Ocb.aes, hlen, Spec.Aes.rounds]
+
+theorem init_correct (v : BlocksImpl) (s : State) (hs : initX86.pre s) :
+    ∃ t s', Exec isa (init (callees v)) s t s' ∧ abiPreserved s s' ∧ initX86.post s s' :=
+  ((init_pc v (pubOf 4 s)).wp s s ⟨hs, rfl, rfl⟩)
+
+theorem init_ct (v : BlocksImpl) : ConstantTime isa initX86.pre initX86.pub (init (callees v)) :=
+  Pc.constantTime (pubOf 4) (fun _ _ _ _ h => pubOf_eq h) (init_pc v) fun _ hs => ⟨hs, rfl, rfl⟩
+
 end VG.Proof.AesOcb.X86
