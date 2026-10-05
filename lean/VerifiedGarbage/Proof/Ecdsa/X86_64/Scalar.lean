@@ -17,7 +17,7 @@ variable {c : Cfg}
 
 /-- A slot apart from the flag word keeps its number. -/
 theorem sv_flag {base : Addr} {m m' : Mem} (h : Outside base (c.sl FLAG) 8 m m') (h0 : 0 < c.n)
-    (h7 : c.n < 7) (hn : base.toNat + size ≤ 2 ^ 64) {i : Nat} (hi : i < 45) (hif : i ≠ FLAG) :
+    (h7 : c.n < 10) (hn : base.toNat + size ≤ 2 ^ 64) {i : Nat} (hi : i < 45) (hif : i ≠ FLAG) :
     wordsVal m' base (c.sl i) c.n = wordsVal m base (c.sl i) c.n := by
   have := sl_apart c hif
   have := sl_le c h7 hi
@@ -32,7 +32,7 @@ theorem checks_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size
           mask (0 < sv c base s K ∧ sv c base s K < c.C.n) &&& mask (sv c base s RR ≠ 0) ∧
         KeepRegs [.rax, .rbp, .rcx, .rdx] s s' ∧ Outside base (c.sl FLAG) 8 s.mem s'.mem := by
   have h0 := hc.n0
-  have h7 := hc.n7
+  have h7 := hc.n10
   have hn := hs.nowrap
   have hf : c.sl FLAG + 8 ≤ size := by have := sl_le c h7 (i := FLAG) (by decide); omega
   rw [WP.block_append_iff, WP.block_append_iff]
@@ -75,10 +75,10 @@ structure ScPost (c : Cfg) (base : Addr) (s s' : State) : Prop where
 
 /-- The first three multiplications by `R² mod n`. -/
 theorem scalarIn_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size)
-    (hMN : ModOk c.MN' size c.C.n s.mem base)
+    (hMN : ModOkW c.MN' size c.C.n s.mem base)
     (hr2 : sv c base s R2N = 2 ^ (64 * c.n) * 2 ^ (64 * c.n) % c.C.n) {rest : Prog isa}
     {Q : State → Prop}
-    (h : ∀ s', Scr s' base size → ModOk c.MN' size c.C.n s'.mem base →
+    (h : ∀ s', Scr s' base size → ModOkW c.MN' size c.C.n s'.mem base →
       (∀ r, r ∉ clob c.n → s'.gpr r = s.gpr r) → s'.rd = s.rd → s'.wr = s.wr →
       Unch base ([RM, DM, EM, TT, SM, SS, TMP].map fun i => (c.sl i, 8 * c.n)) s.mem s'.mem →
       sv c base s' RM < c.C.n → sv c base s' DM < c.C.n → sv c base s' EM < c.C.n →
@@ -89,20 +89,20 @@ theorem scalarIn_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base si
     WP isa (.seq (.block (mul c.MN' (c.sl RM) (c.sl RR) (c.sl R2N)))
       (.seq (.block (mul c.MN' (c.sl DM) (c.sl D) (c.sl R2N)))
       (.seq (.block (mul c.MN' (c.sl EM) (c.sl E) (c.sl R2N))) rest))) s Q := by
-  have h7 := hc.n7
+  have h7 := hc.n10
   have hn := hs.nowrap
   have hnR := unitMod_pow_two hc.n_odd (64 * c.n)
   have hn3 := hc.n_ge
   have hr2lt : sv c base s R2N < c.C.n := by rw [hr2]; exact Nat.mod_lt _ (by omega)
-  refine WP.seq (WP.mono (slMul_ok (MN'_n c) h7 hs hMN (o := RM) (a := RR) (b := R2N) (by decide)
-    (by decide) (by decide) hr2lt) fun s₁ ⟨k₁, lt₁, e₁⟩ => ?_)
+  refine WP.seq (WP.mono (slMul_ok (MN'_n c) (MN'_tmp c) (MN'_mo c) h7 hs hMN (o := RM) (a := RR) (b := R2N) (by decide)
+    (by decide) (by decide) (by decide) hr2lt) fun s₁ ⟨k₁, lt₁, e₁⟩ => ?_)
   have hs₁ := k₁.scr hs
   have kN₁ := hMN.keep (j := MN) (by decide) rfl rfl rfl rfl h7 hn k₁ (by decide) (by decide)
   have r₁ : sv c base s₁ R2N = sv c base s R2N := sv_keep (MN'_n c) rfl h7 hn k₁ (by decide) (by decide) (by decide)
   have d₁ : sv c base s₁ D = sv c base s D := sv_keep (MN'_n c) rfl h7 hn k₁ (by decide) (by decide) (by decide)
   have E₁ : sv c base s₁ E = sv c base s E := sv_keep (MN'_n c) rfl h7 hn k₁ (by decide) (by decide) (by decide)
-  refine WP.seq (WP.mono (slMul_ok (MN'_n c) h7 hs₁ kN₁ (o := DM) (a := D) (b := R2N) (by decide)
-    (by decide) (by decide) (by rw [r₁]; exact hr2lt)) fun s₂ ⟨k₂, lt₂, e₂⟩ => ?_)
+  refine WP.seq (WP.mono (slMul_ok (MN'_n c) (MN'_tmp c) (MN'_mo c) h7 hs₁ kN₁ (o := DM) (a := D) (b := R2N) (by decide)
+    (by decide) (by decide) (by decide) (by rw [r₁]; exact hr2lt)) fun s₂ ⟨k₂, lt₂, e₂⟩ => ?_)
   have hs₂ := k₂.scr hs₁
   have kN₂ := kN₁.keep (j := MN) (by decide) rfl rfl rfl rfl h7 hn k₂ (by decide) (by decide)
   have r₂ : sv c base s₂ R2N = sv c base s R2N :=
@@ -110,8 +110,8 @@ theorem scalarIn_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base si
   have E₂ : sv c base s₂ E = sv c base s E :=
     (sv_keep (MN'_n c) rfl h7 hn k₂ (by decide) (by decide) (by decide)).trans E₁
   have rm₂ : sv c base s₂ RM = sv c base s₁ RM := sv_keep (MN'_n c) rfl h7 hn k₂ (by decide) (by decide) (by decide)
-  refine WP.seq (WP.mono (slMul_ok (MN'_n c) h7 hs₂ kN₂ (o := EM) (a := E) (b := R2N) (by decide)
-    (by decide) (by decide) (by rw [r₂]; exact hr2lt)) fun s₃ ⟨k₃, lt₃, e₃⟩ => ?_)
+  refine WP.seq (WP.mono (slMul_ok (MN'_n c) (MN'_tmp c) (MN'_mo c) h7 hs₂ kN₂ (o := EM) (a := E) (b := R2N) (by decide)
+    (by decide) (by decide) (by decide) (by rw [r₂]; exact hr2lt)) fun s₃ ⟨k₃, lt₃, e₃⟩ => ?_)
   have rm₃ : sv c base s₃ RM = sv c base s₁ RM :=
     (sv_keep (MN'_n c) rfl h7 hn k₃ (by decide) (by decide) (by decide)).trans rm₂
   have dm₃ : sv c base s₃ DM = sv c base s₂ DM := sv_keep (MN'_n c) rfl h7 hn k₃ (by decide) (by decide) (by decide)
@@ -129,7 +129,7 @@ theorem scalarIn_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base si
 
 /-- The rest of the field operations: `s`, left Montgomery's form. -/
 theorem scalarOut_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size)
-    (hMN : ModOk c.MN' size c.C.n s.mem base) (hone : sv c base s ONE = 1)
+    (hMN : ModOkW c.MN' size c.C.n s.mem base) (hone : sv c base s ONE = 1)
     (hdm : sv c base s DM < c.C.n) (hem : sv c base s EM < c.C.n)
     {rest : Prog isa} {Q : State → Prop}
     (h : ∀ s', Scr s' base size → (∀ r, r ∉ clob c.n → s'.gpr r = s.gpr r) → s'.rd = s.rd →
@@ -144,17 +144,17 @@ theorem scalarOut_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base s
       (.seq (.block (add c.MN' (c.sl TT) (c.sl TT) (c.sl EM)))
       (.seq (.block (mul c.MN' (c.sl SM) (c.sl ACC) (c.sl TT)))
       (.seq (.block (mul c.MN' (c.sl SS) (c.sl SM) (c.sl ONE))) rest)))) s Q := by
-  have h7 := hc.n7
+  have h7 := hc.n10
   have hn := hs.nowrap
   have hnR := unitMod_pow_two hc.n_odd (64 * c.n)
   have hn3 := hc.n_ge
-  refine WP.seq (WP.mono (slMul_ok (MN'_n c) h7 hs hMN (o := TT) (a := RM) (b := DM) (by decide)
-    (by decide) (by decide) hdm) fun s₁ ⟨k₁, lt₁, e₁⟩ => ?_)
+  refine WP.seq (WP.mono (slMul_ok (MN'_n c) (MN'_tmp c) (MN'_mo c) h7 hs hMN (o := TT) (a := RM) (b := DM) (by decide)
+    (by decide) (by decide) (by decide) hdm) fun s₁ ⟨k₁, lt₁, e₁⟩ => ?_)
   have hs₁ := k₁.scr hs
   have kN₁ := hMN.keep (j := MN) (by decide) rfl rfl rfl rfl h7 hn k₁ (by decide) (by decide)
   have em₁ : sv c base s₁ EM = sv c base s EM := sv_keep (MN'_n c) rfl h7 hn k₁ (by decide) (by decide) (by decide)
-  refine WP.seq (WP.mono (slAdd_ok (MN'_n c) h7 hs₁ kN₁ (o := TT) (a := TT) (b := EM) (by decide)
-    (by decide) (by decide) (by rw [em₁]; omega)) fun s₂ ⟨k₂, e₂⟩ => ?_)
+  refine WP.seq (WP.mono (slAdd_ok (MN'_n c) (MN'_tmp c) (MN'_mo c) h7 hs₁ kN₁ (o := TT) (a := TT) (b := EM) (by decide)
+    (by decide) (by decide) (by decide) (by rw [em₁]; omega)) fun s₂ ⟨k₂, e₂⟩ => ?_)
   have hs₂ := k₂.scr hs₁
   have kN₂ := kN₁.keep (j := MN) (by decide) rfl rfl rfl rfl h7 hn k₂ (by decide) (by decide)
   have acc₂ : sv c base s₂ ACC = sv c base s ACC := by
@@ -168,14 +168,14 @@ theorem scalarOut_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base s
         toM c.C.n (2 ^ (64 * c.n)) (sv c base s EM) := by
     rw [e₂, toM_add, toM_mul hnR e₁, em₁]
   have ttlt : sv c base s₂ TT < c.C.n := by rw [e₂]; exact Nat.mod_lt _ (by omega)
-  refine WP.seq (WP.mono (slMul_ok (MN'_n c) h7 hs₂ kN₂ (o := SM) (a := ACC) (b := TT) (by decide)
-    (by decide) (by decide) ttlt) fun s₃ ⟨k₃, _, e₃⟩ => ?_)
+  refine WP.seq (WP.mono (slMul_ok (MN'_n c) (MN'_tmp c) (MN'_mo c) h7 hs₂ kN₂ (o := SM) (a := ACC) (b := TT) (by decide)
+    (by decide) (by decide) (by decide) ttlt) fun s₃ ⟨k₃, _, e₃⟩ => ?_)
   have hs₃ := k₃.scr hs₂
   have kN₃ := kN₂.keep (j := MN) (by decide) rfl rfl rfl rfl h7 hn k₃ (by decide) (by decide)
   have one₃ : sv c base s₃ ONE = 1 :=
     (sv_keep (MN'_n c) rfl h7 hn k₃ (by decide) (by decide) (by decide)).trans one₂
-  refine WP.seq (WP.mono (slMul_ok (MN'_n c) h7 hs₃ kN₃ (o := SS) (a := SM) (b := ONE) (by decide)
-    (by decide) (by decide) (by omega)) fun s₄ ⟨k₄, lt₄, e₄⟩ => ?_)
+  refine WP.seq (WP.mono (slMul_ok (MN'_n c) (MN'_tmp c) (MN'_mo c) h7 hs₃ kN₃ (o := SS) (a := SM) (b := ONE) (by decide)
+    (by decide) (by decide) (by decide) (by omega)) fun s₄ ⟨k₄, lt₄, e₄⟩ => ?_)
   refine h s₄ (k₄.scr hs₃) (fun r hr => by rw [k₄.gpr r hr, k₃.gpr r hr, k₂.gpr r hr, k₁.gpr r hr])
     (by rw [k₄.rd, k₃.rd, k₂.rd, k₁.rd]) (by rw [k₄.wr, k₃.wr, k₂.wr, k₁.wr]) ?_ lt₄ ?_
   · exact (((unch_slots (MN'_n c) rfl k₁.unch (l := [RM, DM, EM, TT, SM, SS, TMP]) (by simp) (by simp)).trans

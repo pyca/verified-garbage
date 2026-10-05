@@ -30,9 +30,14 @@ theorem p384_nBits : 64 * p384.n ≤ Spec.Ecdsa.nBits p384.C := by
     (Nat.le_log2 (by decide +kernel)).mpr (by decide +kernel)
   omega
 
+/-- No bit of a hash of `48` bytes is dropped. -/
+theorem p384_sh : p384.sh = 0 := by
+  have h : 64 * 6 ≤ Spec.Ecdsa.nBits p384.C := p384_nBits
+  show 8 * 48 - Spec.Ecdsa.nBits p384.C = 0; omega
+
 theorem p384_ok : CfgOk p384 where
   n0 := by decide
-  n7 := by decide
+  n10 := by decide
   onG := Proof.P384.onCurve_G
   p_odd := by decide +kernel
   n_odd := by decide +kernel
@@ -43,8 +48,10 @@ theorem p384_ok : CfgOk p384 where
   p_lt_2n := by decide +kernel
   minv_p := by decide +kernel
   minv_n := by decide +kernel
-  len := rfl
-  hash := p384_nBits
+  len8 := by decide
+  len_lo := by decide
+  len_hi := by decide
+  sh := by rw [p384_sh]; decide
 
 theorem pre_of {s : State} (h : signX86_64.pre s) : Pre p384 s := by
   obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, -, -, h12, h13⟩ := h

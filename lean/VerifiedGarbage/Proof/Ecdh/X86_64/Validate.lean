@@ -55,30 +55,30 @@ structure MontPost (c : Cfg) (base : Addr) (s s' : State) : Prop where
   rd : s'.rd = s.rd
   wr : s'.wr = s.wr
   unch : Unch base (slW c [QXM, QYM, TMP]) s.mem s'.mem
-  mod : ModOk c.MP' size c.C.p s'.mem base
+  mod : ModOkW c.MP' size c.C.p s'.mem base
   x_lt : sv c base s' QXM < c.C.p
   x : toM c.C.p (2 ^ (64 * c.n)) (sv c base s' QXM) = Fin.ofNat c.C.p (sv c base s E)
   y_lt : sv c base s' QYM < c.C.p
   y : toM c.C.p (2 ^ (64 * c.n)) (sv c base s' QYM) = Fin.ofNat c.C.p (sv c base s QY)
 
 theorem mont_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size)
-    (hM : ModOk c.MP' size c.C.p s.mem base) (hr2 : sv c base s R2P = c.R * c.R % c.C.p) :
+    (hM : ModOkW c.MP' size c.C.p s.mem base) (hr2 : sv c base s R2P = c.R * c.R % c.C.p) :
     WP isa (.block (Impl.Mont.X86_64.mul c.MP' (c.sl QXM) (c.sl E) (c.sl R2P) ++
       Impl.Mont.X86_64.mul c.MP' (c.sl QYM) (c.sl QY) (c.sl R2P))) s (MontPost c base s) := by
-  have h7 := hc.n7
+  have h7 := hc.n10
   have hn := hs.nowrap
   have hpR := unitMod_pow_two hc.p_odd (64 * c.n)
   have hp3 := hc.p_ge
   have hr2' : sv c base s R2P = 2 ^ (64 * c.n) * 2 ^ (64 * c.n) % c.C.p := hr2
   rw [WP.block_append_iff]
-  refine WP.mono (slMul_ok (MP'_n c) h7 hs hM (o := QXM) (a := E) (b := R2P) (by decide)
-    (by decide) (by decide) (by rw [hr2']; exact Nat.mod_lt _ (by omega))) fun s₁ ⟨k₁, lt₁, e₁⟩ => ?_
+  refine WP.mono (slMul_ok (MP'_n c) (MP'_tmp c) (MP'_mo c) h7 hs hM (o := QXM) (a := E) (b := R2P) (by decide)
+    (by decide) (by decide) (by decide) (by rw [hr2']; exact Nat.mod_lt _ (by omega))) fun s₁ ⟨k₁, lt₁, e₁⟩ => ?_
   have hs₁ := k₁.scr hs
   have kP₁ := hM.keep (j := MP) (by decide) rfl rfl rfl rfl h7 hn k₁ (by decide) (by decide)
   have r2₁ : sv c base s₁ R2P = sv c base s R2P := sv_keep (MP'_n c) rfl h7 hn k₁ (by decide) (by decide) (by decide)
   have y₁ : sv c base s₁ QY = sv c base s QY := sv_keep (MP'_n c) rfl h7 hn k₁ (by decide) (by decide) (by decide)
-  refine WP.mono (slMul_ok (MP'_n c) h7 hs₁ kP₁ (o := QYM) (a := QY) (b := R2P) (by decide)
-    (by decide) (by decide) (by rw [r2₁, hr2']; exact Nat.mod_lt _ (by omega))) fun s₂ ⟨k₂, lt₂, e₂⟩ => ?_
+  refine WP.mono (slMul_ok (MP'_n c) (MP'_tmp c) (MP'_mo c) h7 hs₁ kP₁ (o := QYM) (a := QY) (b := R2P) (by decide)
+    (by decide) (by decide) (by decide) (by rw [r2₁, hr2']; exact Nat.mod_lt _ (by omega))) fun s₂ ⟨k₂, lt₂, e₂⟩ => ?_
   have x₂ : sv c base s₂ QXM = sv c base s₁ QXM := sv_keep (MP'_n c) rfl h7 hn k₂ (by decide) (by decide) (by decide)
   refine ⟨k₂.scr hs₁, fun r hr => by rw [k₂.gpr r hr, k₁.gpr r hr], by rw [k₂.rd, k₁.rd],
     by rw [k₂.wr, k₁.wr], ?_, kP₁.keep (j := MP) (by decide) rfl rfl rfl rfl h7 hn k₂ (by decide) (by decide),
@@ -96,7 +96,7 @@ abbrev OnCurve (c : Cfg) (x y : Fe c.C) : Prop :=
   y * y - ((x * x * x + Fin.ofNat c.C.p c.C.a * x) + Fin.ofNat c.C.p c.C.b) = 0
 
 theorem curve_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size)
-    (hM : ModOk c.MP' size c.C.p s.mem base) (hx : sv c base s QXM < c.C.p) (hy : sv c base s QYM < c.C.p)
+    (hM : ModOkW c.MP' size c.C.p s.mem base) (hx : sv c base s QXM < c.C.p) (hy : sv c base s QYM < c.C.p)
     (hap : sv c base s AP = c.mont c.C.a) (hbp : sv c base s BP = c.mont c.C.b) {P₀ : Prop} [Decidable P₀]
     (hf : word s.mem base (c.sl FLAG) = mask P₀) :
     WP isa (.block (fprog c.MP' (Impl.Ecdh.X86_64.Cfg.curveOps c) ++
@@ -106,7 +106,7 @@ theorem curve_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size)
       word s'.mem base (c.sl FLAG) = mask (P₀ ∧ OnCurve c (toM c.C.p (2 ^ (64 * c.n)) (sv c base s QXM))
         (toM c.C.p (2 ^ (64 * c.n)) (sv c base s QYM))) := by
   have h0 := hc.n0
-  have h7 := hc.n7
+  have h7 := hc.n10
   have hn := hs.nowrap
   have hpR := unitMod_pow_two hc.p_odd (64 * c.n)
   have hp3 := hc.p_ge
@@ -176,7 +176,7 @@ theorem select_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size
       sv c base s' PX = (if P then sv c base s QXM else sv c base s GX) ∧
       sv c base s' PY = (if P then sv c base s QYM else sv c base s GY) := by
   have h0 := hc.n0
-  have h7 := hc.n7
+  have h7 := hc.n10
   have hn := hs.nowrap
   have hap : ∀ {i j}, i ≠ j → c.sl i ≤ c.sl j ∨ c.sl j + 8 * c.n ≤ c.sl i := fun h => by
     have := sl_apart c h; omega
@@ -238,7 +238,7 @@ theorem validate_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base si
       toM c.C.p (2 ^ (64 * c.n)) (sv c base s' PY) =
         (if PeerOk c base s P₀ then Fin.ofNat c.C.p (sv c base s QY) else Fin.ofNat c.C.p c.C.gy) := by
   have h0 := hc.n0
-  have h7 := hc.n7
+  have h7 := hc.n10
   have hn := hs.nowrap
   have hp3 := hc.p_ge
   have hmont : ∀ x, c.mont x < c.C.p := fun x => Nat.mod_lt _ (by omega)
@@ -316,7 +316,7 @@ variable {c : Cfg}
 
 theorem ladLayQ (hc : CfgOk c) : LadLay (Impl.Ecdh.X86_64.Cfg.ladderQ c) size := by
   have hn := hc.n0
-  have h7 := hc.n7
+  have h7 := hc.n10
   refine ⟨?_, rcbApart_of hn (lw := [T0, T1, T2, T3, T4, T5, DX, DY, DZ])
       (lr := [AP, B3P, RX, RY, RZ, RX, RY, RZ]) rfl rfl (by decide) (by decide),
     rcbApart_of hn (lw := [T0, T1, T2, T3, T4, T5, TX, TY, TZ])
@@ -371,7 +371,7 @@ theorem ladPow_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size
     {rest : Prog isa} {R : State → Prop} (h : ∀ s', LadPost c base Q s s' → WP isa rest s' R) :
     WP isa (.seq (ladder (Impl.Ecdh.X86_64.Cfg.ladderQ c)) (.seq (pow c.powP) rest)) s R := by
   have h0 := hc.n0
-  have h7 := hc.n7
+  have h7 := hc.n10
   have hn := hs.nowrap
   have hpR := unitMod_pow_two hc.p_odd (64 * c.n)
   have hp3 := hc.p_ge

@@ -42,7 +42,7 @@ theorem vfinish_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base siz
     WP isa (.block (Impl.Ecdsa.Verify.X86_64.Cfg.finish c)) s fun s' =>
       (s'.gpr .rax).setWidth 32 = (if b then 1 else 0) ∧
       (∀ r ∈ Cfg.saved.map Prod.fst, s'.gpr r = g r) := by
-  have hF := sl_le c hc.n7 (i := FLAG) (by decide)
+  have hF := sl_le c hc.n10 (i := FLAG) (by decide)
   rw [vfinish_eq, WP.block_append_iff]
   refine WP.mono (raxFlag_ok hs (d := c.sl FLAG) (by have := hc.n0; omega)) fun s₁ ⟨e₁, k₁⟩ => ?_
   have hs₁ := hs.of_keeps k₁ (by decide)
@@ -55,15 +55,16 @@ theorem vfinish_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base siz
     rw [r₂ _ hra, e₁, hf, mask_bit]
 
 /-- `[o] = ([a] - [b]) mod m`, on slots. -/
-theorem slSub_ok {M : Mod} {m : Nat} (hMn : M.n = c.n) (h7 : c.n < 7) {base : Addr} {s : State}
-    (hs : Scr s base size) (hM : ModOk M size m s.mem base) {o a b : Nat} (ho : o < 45)
-    (ha : a < 45) (hb : b < 45) (hA : sv c base s a < m) (hB : sv c base s b < m) :
+theorem slSub_ok {M : Mod} {m : Nat} (hMn : M.n = c.n) (hMt : M.tmp = c.sl TMP) {jm : Nat}
+    (hMo : M.mo = c.sl jm) (h7 : c.n < 10) {base : Addr} {s : State}
+    (hs : Scr s base size) (hM : ModOkW M size m s.mem base) {o a b : Nat} (ho : o < 45)
+    (ha : a < 45) (hb : b < 45) (hS : SlotsOk o a b jm) (hA : sv c base s a < m) (hB : sv c base s b < m) :
     WP isa (.block (Impl.Mont.X86_64.sub M (c.sl o) (c.sl a) (c.sl b))) s fun s' =>
       OpKeep M base (c.sl o) s s' ∧ sv c base s' o = (sv c base s a + m - sv c base s b) % m := by
-  rw [sub_of_lt hM.n7]
-  have := subR_ok hs hM (o := c.sl o) (a := c.sl a) (b := c.sl b) (by rw [hMn]; exact sl_le c h7 ho)
-    (by rw [hMn]; exact sl_le c h7 ha) (by rw [hMn]; exact sl_le c h7 hb) (by rw [hMn]; exact hA)
-    (by rw [hMn]; exact hB)
+  have hA' := slots_apart hMn hMt hMo hS
+  have := sub_ok hs hM (o := c.sl o) (a := c.sl a) (b := c.sl b) (by rw [hMn]; exact sl_le c h7 ho)
+    (by rw [hMn]; exact sl_le c h7 ha) (by rw [hMn]; exact sl_le c h7 hb) hA'.1 hA'.2.1 hA'.2.2.1 hA'.2.2.2
+    (by rw [hMn]; exact hA) (by rw [hMn]; exact hB)
   rw [hMn] at this
   exact this
 
@@ -86,7 +87,7 @@ theorem tail_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {g : Reg → BitVec 
           (0 < sigS c s₀ ∧ sigS c s₀ < c.C.n)) ∧ sv c base s RZ ≠ 0 ∧
           Fin.ofNat c.C.n xo = Fin.ofNat c.C.n (sigR c s₀) then 1 else 0 := by
   have h0 := hc.n0
-  have h7 := hc.n7
+  have h7 := hc.n10
   have hn := hP.scr.nowrap
   have hpR := unitMod_pow_two hc.p_odd (64 * c.n)
   have hnR := unitMod_pow_two hc.n_odd (64 * c.n)
@@ -106,16 +107,16 @@ theorem tail_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {g : Reg → BitVec 
   rw [final_eq]
   -- `XM = X · ACC`.
   have hM₁ := modP_of hc F₁.mp
-  refine WP.seq (WP.mono (slMul_ok (MP'_n c) h7 hs₁ hM₁ (o := XM) (a := RX) (b := ACC) (by decide)
-    (by decide) (by decide) lt₁) fun s₂ ⟨k₂, _, e₂⟩ => ?_)
+  refine WP.seq (WP.mono (slMul_ok (MP'_n c) (MP'_tmp c) (MP'_mo c) h7 hs₁ hM₁ (o := XM) (a := RX) (b := ACC) (by decide)
+    (by decide) (by decide) (by decide) lt₁) fun s₂ ⟨k₂, _, e₂⟩ => ?_)
   have hs₂ := k₂.scr hs₁
   have M₂ := hM₁.keep (j := MP) (by decide) rfl rfl rfl rfl h7 hn k₂ (by decide) (by decide)
   have v₂ : ∀ {i}, i < 45 → i ≠ XM → i ≠ TMP → sv c base s₂ i = sv c base s₁ i := fun hi h₁ h₂ =>
     sv_keep (MP'_n c) rfl h7 hn k₂ hi h₁ h₂
   -- `X = XM · 1`.
   have one₂ : sv c base s₂ ONE = 1 := (v₂ (by decide) (by decide) (by decide)).trans F₁.one
-  refine WP.seq (WP.mono (slMul_ok (MP'_n c) h7 hs₂ M₂ (o := X) (a := XM) (b := ONE) (by decide)
-    (by decide) (by decide) (by rw [one₂]; omega)) fun s₃ ⟨k₃, lt₃, e₃⟩ => ?_)
+  refine WP.seq (WP.mono (slMul_ok (MP'_n c) (MP'_tmp c) (MP'_mo c) h7 hs₂ M₂ (o := X) (a := XM) (b := ONE) (by decide)
+    (by decide) (by decide) (by decide) (by rw [one₂]; omega)) fun s₃ ⟨k₃, lt₃, e₃⟩ => ?_)
   have hs₃ := k₃.scr hs₂
   have v₃ : ∀ {i}, i < 45 → i ≠ X → i ≠ TMP → sv c base s₃ i = sv c base s₂ i := fun hi h₁ h₂ =>
     sv_keep (MP'_n c) rfl h7 hn k₃ hi h₁ h₂
@@ -133,8 +134,8 @@ theorem tail_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {g : Reg → BitVec 
   have r2₃ : sv c base s₃ R2N = 2 ^ (64 * c.n) * 2 ^ (64 * c.n) % c.C.n :=
     (v₃ (by decide) (by decide) (by decide)).trans ((v₂ (by decide) (by decide) (by decide)).trans
       ((e₁ (by decide) (by decide)).trans F.r2n))
-  refine WP.seq (WP.mono (slMul_ok (MN'_n c) h7 hs₃ hMN₃ (o := XN) (a := X) (b := R2N) (by decide)
-    (by decide) (by decide) (by rw [r2₃]; exact Nat.mod_lt _ (by omega))) fun s₄ ⟨k₄, lt₄, e₄⟩ => ?_)
+  refine WP.seq (WP.mono (slMul_ok (MN'_n c) (MN'_tmp c) (MN'_mo c) h7 hs₃ hMN₃ (o := XN) (a := X) (b := R2N) (by decide)
+    (by decide) (by decide) (by decide) (by rw [r2₃]; exact Nat.mod_lt _ (by omega))) fun s₄ ⟨k₄, lt₄, e₄⟩ => ?_)
   have hs₄ := k₄.scr hs₃
   have M₄ := hMN₃.keep (j := MN) (by decide) rfl rfl rfl rfl h7 hn k₄ (by decide) (by decide)
   have v₄ : ∀ {i}, i < 45 → i ≠ XN → i ≠ TMP → sv c base s₄ i = sv c base s₃ i := fun hi h₁ h₂ =>
@@ -142,8 +143,8 @@ theorem tail_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {g : Reg → BitVec 
   have rm₄ : sv c base s₄ RM' = sv c base s RM' := by
     rw [v₄ (by decide) (by decide) (by decide), v₃ (by decide) (by decide) (by decide),
       v₂ (by decide) (by decide) (by decide), e₁ (by decide) (by decide)]
-  refine WP.seq (WP.mono (slSub_ok (MN'_n c) h7 hs₄ M₄ (o := W) (a := XN) (b := RM') (by decide)
-    (by decide) (by decide) lt₄ (by rw [rm₄]; exact hP.rm_lt)) fun s₅ ⟨k₅, e₅⟩ => ?_)
+  refine WP.seq (WP.mono (slSub_ok (MN'_n c) (MN'_tmp c) (MN'_mo c) h7 hs₄ M₄ (o := W) (a := XN) (b := RM') (by decide)
+    (by decide) (by decide) (by decide) lt₄ (by rw [rm₄]; exact hP.rm_lt)) fun s₅ ⟨k₅, e₅⟩ => ?_)
   have hs₅ := k₅.scr hs₄
   have v₅ : ∀ {i}, i < 45 → i ≠ W → i ≠ TMP → sv c base s₅ i = sv c base s₄ i := fun hi h₁ h₂ =>
     sv_keep (MN'_n c) rfl h7 hn k₅ hi h₁ h₂

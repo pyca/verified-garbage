@@ -108,6 +108,7 @@ pub mod poly1305;
 pub mod rc2_cbc;
 pub mod rc4;
 pub mod rsa;
+pub mod rsa_keygen;
 pub mod rsa_pkcs1_enc;
 pub mod rsa_pkcs1_sig;
 pub mod rsa_pss;

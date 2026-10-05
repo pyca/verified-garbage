@@ -1,5 +1,6 @@
 import VerifiedGarbage.Impl.Weierstrass.X86_64
 import VerifiedGarbage.Spec.Weierstrass
+import VerifiedGarbage.Spec.Ecdsa
 
 /-!
 # ECDSA signing on x86-64
@@ -106,6 +107,10 @@ variable (c : Cfg)
 /-- `R = 2^(64 n)`. -/
 def R : Nat := 2 ^ (64 * c.n)
 
+/-- The bits of the hash's `len` bytes that are not `e`'s: `8 len - N`, for
+`N` the bits of `n` (0 but for P-521's 7). -/
+def sh : Nat := 8 * c.C.len - Spec.Ecdsa.nBits c.C
+
 /-- `x R mod p`. -/
 def mont (x : Nat) : Nat := x * c.R % c.C.p
 
@@ -140,17 +145,29 @@ def consts : List (Nat × Nat) :=
     (B3P, c.mont (3 * c.C.b)), (GX, c.mont c.C.gx), (GY, c.mont c.C.gy), (R2N, c.R * c.R % c.C.n),
     (ONEN, c.R % c.C.n), (EXPP, c.C.p - 2), (EXPN, c.C.n - 2), (RX, 0), (RY, c.mont 1), (RZ, 0)]
 
+/-- Slot `hs`, if any, shifted right by `sh`. -/
+def shiftCode (hs : Option Nat) : List Instr :=
+  match hs with
+  | some i => if c.sh = 0 then [] else shrWords c.n (c.sl i) c.sh
+  | none => []
+
 /-- Saves them, with the working space in `r8`, which then goes to `rdi`
-(`out` going to `r14` meanwhile); reads `k`, `d` and the hash; stores the
-constants; sets `R = (0 : 1 : 0)` and the flag to all ones; and keeps `out`
-in `rsi`, which nothing after it writes (the multiplications of six words
-use `r14`). -/
-def setup : List Instr :=
+(`out` going to `r14` meanwhile); reads `k`, `d` and the hash, and shifts
+the number in slot `hs`, if any, right by `sh`, the bits of a hash that are
+not `e`'s; stores the constants; sets `R = (0 : 1 : 0)` and the flag to all
+ones; and keeps `out` in `rsi`, which nothing after it writes (the
+multiplications of six words use `r14`). -/
+def setupWith (hs : Option Nat) : List Instr :=
   saved.map (fun (r, d) => .store { base := .r8, disp := (d : Int) } r) ++
   [.mov .r14 (.reg .rdi), .mov .rdi (.reg .r8)] ++
-  loadBE c.n (c.sl K) .rcx ++ loadBE c.n (c.sl D) .rsi ++ loadBE c.n (c.sl E) .rdx ++
+  loadBytes c.C.len c.n (c.sl K) .rcx ++ loadBytes c.C.len c.n (c.sl D) .rsi ++
+  loadBytes c.C.len c.n (c.sl E) .rdx ++
+  c.shiftCode hs ++
   c.consts.flatMap (fun (i, x) => setConst c.n (c.sl i) x) ++
   setConst 1 (c.sl FLAG) (2 ^ 64 - 1) ++ [.mov .rsi (.reg .r14)]
+
+/-- The signature's setup: the hash, `e`, in slot `E`. -/
+def setup : List Instr := c.setupWith (some E)
 
 /-- The mask `rdx` of `[a] ≠ 0` (all ones if it is not zero). -/
 def nonzero (a : Nat) : List Instr :=
@@ -186,7 +203,7 @@ def middle : Prog isa :=
 callee-saved registers restored. -/
 def finish : List Instr :=
   [.mov .rcx (.mem (sc (c.sl FLAG)))] ++
-  storeBE c.n .rsi 0 (c.sl RR) ++ storeBE c.n .rsi (8 * c.n) (c.sl SS) ++
+  storeBytes c.C.len c.n .rsi 0 (c.sl RR) ++ storeBytes c.C.len c.n .rsi c.C.len (c.sl SS) ++
   [.mov .rax (.reg .rcx), .alu .and .rax (.imm 1)] ++
   saved.map (fun (r, d) => .mov r (.mem (sc d)))
 
