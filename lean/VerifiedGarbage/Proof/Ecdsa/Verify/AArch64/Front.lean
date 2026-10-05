@@ -24,29 +24,29 @@ open VG.Impl.Ecdh.AArch64 (QY R2P BP QXM QYM W0 W1 W2 W3 PX PY)
 
 variable {c : Cfg}
 
-/-- The arguments: `public = x0` (`1 + 16 n` bytes), `digest = x1`
-(`8 n` bytes), `sig = x2` (`16 n` bytes) and `scratch = x3`, and the comb's
+/-- The arguments: `public = x0` (`1 + 2 len` bytes), `digest = x1`
+(`len` bytes), `sig = x2` (`2 len` bytes) and `scratch = x3`, and the comb's
 tables at the static `c.tsym` (`Artifact.consts`), readable and writable as
 the contract says and apart from `scratch`. -/
 structure VPre (c : Cfg) (s : State) : Prop where
-  rd : s.rd = [⟨s.gpr .x0, 1 + 16 * c.n⟩, ⟨s.gpr .x1, 8 * c.n⟩, ⟨s.gpr .x2, 16 * c.n⟩,
+  rd : s.rd = [⟨s.gpr .x0, 1 + 2 * c.C.len⟩, ⟨s.gpr .x1, c.C.len⟩, ⟨s.gpr .x2, 2 * c.C.len⟩,
     ⟨s.syms c.tsym, 8 * c.combWords.length⟩]
   wr : s.wr = [⟨s.gpr .x3, size⟩]
-  pk_sc : Region.Disjoint ⟨s.gpr .x0, 1 + 16 * c.n⟩ ⟨s.gpr .x3, size⟩
-  dg_sc : Region.Disjoint ⟨s.gpr .x1, 8 * c.n⟩ ⟨s.gpr .x3, size⟩
-  sig_sc : Region.Disjoint ⟨s.gpr .x2, 16 * c.n⟩ ⟨s.gpr .x3, size⟩
+  pk_sc : Region.Disjoint ⟨s.gpr .x0, 1 + 2 * c.C.len⟩ ⟨s.gpr .x3, size⟩
+  dg_sc : Region.Disjoint ⟨s.gpr .x1, c.C.len⟩ ⟨s.gpr .x3, size⟩
+  sig_sc : Region.Disjoint ⟨s.gpr .x2, 2 * c.C.len⟩ ⟨s.gpr .x3, size⟩
   sc_fit : (s.gpr .x3).toNat + size ≤ 2 ^ 64
   tbl : TblPre c s (s.syms c.tsym) (s.gpr .x3)
 
 /-- The key's `x` and `y`, the hash, and the signature's `r` and `s`. -/
 abbrev keyX (c : Cfg) (s₀ : State) : Nat :=
-  ofBytes (Spec.Ecdsa.bytesAt s₀.mem (s₀.gpr .x0 + BitVec.ofNat 64 1) (8 * c.n))
+  ofBytes (Spec.Ecdsa.bytesAt s₀.mem (s₀.gpr .x0 + BitVec.ofNat 64 1) c.C.len)
 abbrev keyY (c : Cfg) (s₀ : State) : Nat :=
-  ofBytes (Spec.Ecdsa.bytesAt s₀.mem (s₀.gpr .x0 + BitVec.ofNat 64 (1 + 8 * c.n)) (8 * c.n))
-abbrev dig (c : Cfg) (s₀ : State) : Nat := ofBytes (Spec.Ecdsa.bytesAt s₀.mem (s₀.gpr .x1) (8 * c.n))
-abbrev sigR (c : Cfg) (s₀ : State) : Nat := ofBytes (Spec.Ecdsa.bytesAt s₀.mem (s₀.gpr .x2) (8 * c.n))
+  ofBytes (Spec.Ecdsa.bytesAt s₀.mem (s₀.gpr .x0 + BitVec.ofNat 64 (1 + c.C.len)) c.C.len)
+abbrev dig (c : Cfg) (s₀ : State) : Nat := ofBytes (Spec.Ecdsa.bytesAt s₀.mem (s₀.gpr .x1) c.C.len)
+abbrev sigR (c : Cfg) (s₀ : State) : Nat := ofBytes (Spec.Ecdsa.bytesAt s₀.mem (s₀.gpr .x2) c.C.len)
 abbrev sigS (c : Cfg) (s₀ : State) : Nat :=
-  ofBytes (Spec.Ecdsa.bytesAt s₀.mem (s₀.gpr .x2 + BitVec.ofNat 64 (8 * c.n)) (8 * c.n))
+  ofBytes (Spec.Ecdsa.bytesAt s₀.mem (s₀.gpr .x2 + BitVec.ofNat 64 c.C.len) c.C.len)
 
 /-- The key is valid as the code checks it. -/
 abbrev KeyOk (c : Cfg) (s₀ : State) : Prop :=
@@ -61,7 +61,7 @@ structure Front (c : Cfg) (s₀ : State) (base : Addr) (g : Reg → BitVec 64) (
   rd : s.rd = s₀.rd
   fixed : Fixed c base g s.mem
   k : sv c base s K = sigR c s₀
-  d : sv c base s D = dig c s₀
+  d : sv c base s D = dig c s₀ >>> c.sh
   pt : sv c base s PT = sigS c s₀
   rx : sv c base s RX = 0
   ry : sv c base s RY = c.mont 1
@@ -77,22 +77,22 @@ structure Front (c : Cfg) (s₀ : State) (base : Addr) (g : Reg → BitVec 64) (
   unch : Unch base [(0, size)] s₀.mem s.mem
   syms : s.syms = s₀.syms
 
-theorem args_ok (c : Cfg) (s : State) (h7 : c.n < 10) :
+theorem args_ok (c : Cfg) (s : State) (hl : c.C.len < 4096) :
     WP isa (.block (Impl.Ecdsa.Verify.AArch64.Cfg.args c)) s fun s' =>
       s'.gpr .x4 = s.gpr .x3 ∧ s'.gpr .x6 = s.gpr .x0 ∧ s'.gpr .x3 = s.gpr .x2 ∧
-        s'.gpr .x8 = s.gpr .x2 + BitVec.ofNat 64 (8 * c.n) ∧
+        s'.gpr .x8 = s.gpr .x2 + BitVec.ofNat 64 c.C.len ∧
         s'.gpr .x2 = s.gpr .x0 + BitVec.ofNat 64 1 ∧ Keeps [.x2, .x3, .x4, .x6, .x8] s s' := by
   apply WP.of_runBlock
   simp only [Impl.Ecdsa.Verify.AArch64.Cfg.args, runBlock_cons, runStep_some, runBlock_nil, exec, read_x,
     show (0 : Nat) < 4096 by decide, show (1 : Nat) < 4096 by decide,
-    show 8 * c.n < 4096 by omega, ite_true, RegUpd.gpr_write, BitVec.setWidth_eq, BitVec.add_zero,
+    hl, ite_true, RegUpd.gpr_write, BitVec.setWidth_eq, BitVec.add_zero,
     reduceCtorEq, ite_false, Option.some.injEq, exists_eq_left']
   refine ⟨trivial, trivial, trivial, trivial, trivial, fun r hr => ?_, rfl, rfl, rfl, rfl⟩
   simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
   simp only [RegUpd.gpr_write, hr.1, hr.2.1, hr.2.2.1, hr.2.2.2.1, hr.2.2.2.2, ite_false]
 
 theorem verify_eq' (c : Cfg) : Impl.Ecdsa.Verify.AArch64.Cfg.verify c =
-    .seq (.block (Impl.Ecdsa.Verify.AArch64.Cfg.args c)) (.seq (.seq (.block c.setup)
+    .seq (.block (Impl.Ecdsa.Verify.AArch64.Cfg.args c)) (.seq (.seq (.block (c.setupWith (some D)))
       (.seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n)) (.block [])))
     (.seq (.block (Impl.Ecdsa.Verify.AArch64.Cfg.loadS c)) (.seq (.block (Impl.Ecdh.AArch64.Cfg.peer c))
     (.seq (Impl.Ecdh.AArch64.Cfg.validate c) (Impl.Ecdsa.Verify.AArch64.Cfg.back c))))) := rfl
@@ -114,34 +114,36 @@ theorem flag_le (h0 : 0 < c.n) (h7 : c.n < 10) : ∀ w ∈ [(c.sl FLAG, 8)], w.1
   dsimp only; omega
 
 /-- `args`, the signature's setup and tables, `s`, and the checks of the key. -/
-theorem front_ok (hc : CfgOk c) (hl : c.C.len = 8 * c.n) {s₀ : State} (hp : VPre c s₀) {rest : Prog isa}
+theorem front_ok (hc : CfgOk c) {s₀ : State} (hp : VPre c s₀) {rest : Prog isa}
     {Q : State → Prop}
     (h : ∀ g s, (∀ r ∈ Cfg.saved.map Prod.fst, g r = s₀.gpr r) → Front c s₀ (s₀.gpr .x3) g s →
       WP isa rest s Q) :
-    WP isa (.seq (.block (Impl.Ecdsa.Verify.AArch64.Cfg.args c)) (.seq (.seq (.block c.setup)
+    WP isa (.seq (.block (Impl.Ecdsa.Verify.AArch64.Cfg.args c)) (.seq (.seq (.block (c.setupWith (some D)))
       (.seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n)) (.block [])))
       (.seq (.block (Impl.Ecdsa.Verify.AArch64.Cfg.loadS c)) (.seq (.block (Impl.Ecdh.AArch64.Cfg.peer c))
       (.seq (Impl.Ecdh.AArch64.Cfg.validate c) rest))))) s₀ Q := by
   have h0 := hc.n0
   have h7 := hc.n10
   have hsz : size = 8192 := rfl
-  refine WP.seq (WP.mono_syms (args_ok c s₀ h7) fun s₁ ⟨x4₁, x6₁, x3₁, x8₁, x2₁, k₁⟩ sy₁ => ?_)
+  have hl8 := hc.len8
+  have hlo := hc.len_lo
+  have hhi := hc.len_hi
+  refine WP.seq (WP.mono_syms (args_ok c s₀ (by omega)) fun s₁ ⟨x4₁, x6₁, x3₁, x8₁, x2₁, k₁⟩ sy₁ => ?_)
   have x1₁ : s₁.gpr .x1 = s₀.gpr .x1 := k₁.gpr _ (by decide)
   have hrd₁ : s₁.rd ++ s₁.wr = s₀.rd ++ s₀.wr := by rw [k₁.rd, k₁.wr]
-  have := hl
   have hsp : SetupPre c s₁ := by
     refine ⟨by rw [k₁.wr, hp.wr, x4₁]; simp, fun e he => ?_, fun e he => ?_, fun e he => ?_, ?_, ?_, ?_,
       by rw [x4₁]; exact hp.sc_fit⟩
     · rw [x3₁, hrd₁, hp.rd]
-      exact ⟨⟨s₀.gpr .x2, 16 * c.n⟩, by simp, Offset.contains_base _ (by omega) (by omega)⟩
-    · rw [x1₁, hrd₁, hp.rd]; rw [hl] at he
+      exact ⟨⟨s₀.gpr .x2, 2 * c.C.len⟩, by simp, Offset.contains_base _ (by omega) (by omega)⟩
+    · rw [x1₁, hrd₁, hp.rd]
       exact ⟨_, by simp, Offset.contains_base _ he (by omega)⟩
     · rw [x2₁, hrd₁, hp.rd, BitVec.add_assoc, BitVec.ofNat_add_ofNat]
-      exact ⟨⟨s₀.gpr .x0, 1 + 16 * c.n⟩, by simp, Offset.contains_base _ (by omega) (by omega)⟩
-    · rw [x1₁, x4₁, hl]; exact hp.dg_sc
+      exact ⟨⟨s₀.gpr .x0, 1 + 2 * c.C.len⟩, by simp, Offset.contains_base _ (by omega) (by omega)⟩
+    · rw [x1₁, x4₁]; exact hp.dg_sc
     · rw [x2₁, x4₁]; exact hp.pk_sc.sub_left (Offset.sub_base _ (by omega))
     · rw [x3₁, x4₁]; exact hp.sig_sc.sub_left (Region.sub_prefix (by omega))
-  refine WP.seq (WP.mono (stage₁ hc (.inl rfl) hsp (rest := .block []) (Q := St₁ c none s₁ (s₁.gpr .x4))
+  refine WP.seq (WP.mono (stage₁ hc (.inr (.inl rfl)) hsp (rest := .block []) (Q := St₁ c (some D) s₁ (s₁.gpr .x4))
     fun _ S => WP.block_nil S) fun s₂ S₂ => ?_)
   rw [x4₁] at S₂
   have hn := S₂.scr.nowrap
@@ -149,12 +151,13 @@ theorem front_ok (hc : CfgOk c) (hl : c.C.len = 8 * c.n) {s₀ : State} (hp : VP
   have W₂ : Outside (s₀.gpr .x3) 0 size s₀.mem s₂.mem := fun x hx =>
     (S₂.unch x fun w hw => by rw [List.mem_singleton.mp hw]; exact hx).trans (congrFun k₁.mem x)
   -- `s`.
-  have hx8 : s₂.gpr .x8 = s₀.gpr .x2 + BitVec.ofNat 64 (8 * c.n) := by rw [S₂.gpr _ (by decide), x8₁]
+  have hx8 : s₂.gpr .x8 = s₀.gpr .x2 + BitVec.ofNat 64 c.C.len := by rw [S₂.gpr _ (by decide), x8₁]
   have hPT := sl_le c h7 (i := PT) (by decide)
   rw [Impl.Ecdsa.Verify.AArch64.Cfg.loadS]
-  refine WP.seq (WP.mono_syms (loadBE_ok S₂.scr (src := .x8) (by decide) hPT (sl_mod8 c PT) (by omega) (fun d hd => by
+  refine WP.seq (WP.mono_syms (loadBytes_ok S₂.scr (src := .x8) (by decide) (by decide) hPT (sl_mod8 c PT)
+    hl8 hlo hhi (by omega) (fun d hd => by
       rw [hrw₂, hp.rd, hx8, BitVec.add_assoc, BitVec.ofNat_add_ofNat]
-      exact ⟨⟨s₀.gpr .x2, 16 * c.n⟩, by simp, Offset.contains_base _ (by omega) (by omega)⟩)
+      exact ⟨⟨s₀.gpr .x2, 2 * c.C.len⟩, by simp, Offset.contains_base _ (by omega) (by omega)⟩)
     (by
       rw [hx8]
       exact (hp.sig_sc.sub_left (Offset.sub_base _ (by omega))).sub_right
@@ -181,8 +184,8 @@ theorem front_ok (hc : CfgOk c) (hl : c.C.len = 8 * c.n) {s₀ : State} (hp : VP
       simp only [List.map_cons, List.map_nil, List.mem_singleton] at hw; subst hw
       exact ⟨Nat.zero_le _, hPT⟩))
   have x₄ : sv c (s₀.gpr .x3) s₃ E = keyX c s₀ := by
-    rw [v₃ (by decide) (by decide), S₂.e, shAt_none, Nat.shiftRight_zero]
-    simp only [ev, k₁.mem, x2₁, hl]
+    rw [v₃ (by decide) (by decide), S₂.e, shAt_D_E, Nat.shiftRight_zero]
+    simp only [ev, k₁.mem, x2₁]
   have hq0 : s₃.mem (s₀.gpr .x0) = s₀.mem (s₀.gpr .x0) := by
     have := keep_of_disjoint' W₃ hp.pk_sc (by omega) (i := 0) (by omega) (by omega)
     rwa [BitVec.add_zero] at this
@@ -211,10 +214,9 @@ theorem front_ok (hc : CfgOk c) (hl : c.C.len = 8 * c.n) {s₀ : State} (hp : VP
   rw [y₄'] at py
   refine ⟨hs₅, by rw [wr₅, k₄.wr, k₃.wr, S₂.wr, k₁.wr], by rw [rd₅, k₄.rd, k₃.rd, S₂.rd, k₁.rd], F₅,
     by rw [a₅ (i := K) (by decide) (by decide) (by decide) (by decide) (by decide), S₂.k]
-       simp only [kv, k₁.mem, x3₁, hl],
-    by rw [a₅ (i := D) (by decide) (by decide) (by decide) (by decide) (by decide), S₂.d, shAt_none,
-         Nat.shiftRight_zero]
-       simp only [dv, k₁.mem, x1₁, hl],
+       simp only [kv, k₁.mem, x3₁],
+    by rw [a₅ (i := D) (by decide) (by decide) (by decide) (by decide) (by decide), S₂.d, shAt_self]
+       simp only [dv, k₁.mem, x1₁],
     by rw [e₅ (i := PT) (by decide) (by decide) (by decide), e₄ (by decide) (by decide) (by decide), pt₃],
     by rw [a₅ (i := RX) (by decide) (by decide) (by decide) (by decide) (by decide), S₂.rx],
     by rw [a₅ (i := RY) (by decide) (by decide) (by decide) (by decide) (by decide), S₂.ry],

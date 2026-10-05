@@ -45,7 +45,7 @@ structure Mid (c : Cfg) (s₀ : State) (base : Addr) (g : Reg → BitVec 64) (s 
   rm : toM c.C.n (2 ^ (64 * c.n)) (sv c base s RM') = Fin.ofNat c.C.n (sigR c s₀)
   u_lt : sv c base s U < c.C.n
   u : Fin.ofNat c.C.n (sv c base s U) =
-    Fin.ofNat c.C.n (dig c s₀) * Fin.ofNat c.C.n (sigS c s₀) ^ (c.C.n - 2)
+    Fin.ofNat c.C.n (dig c s₀ >>> c.sh) * Fin.ofNat c.C.n (sigS c s₀) ^ (c.C.n - 2)
   v_lt : sv c base s V < c.C.n
   v : Fin.ofNat c.C.n (sv c base s V) =
     Fin.ofNat c.C.n (sigR c s₀) * Fin.ofNat c.C.n (sigS c s₀) ^ (c.C.n - 2)
@@ -181,18 +181,18 @@ theorem mid_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {g : Reg → BitVec 6
     sv_unch UW h7 hn hi (apart_append (apart_append (apart_flag h0 hf) (apart_chainWc hi (hmw _ hl)))
       (apart_slW hl))
   -- The values.
-  have d₄ : sv c base s₄ D = dig c s₀ := by
+  have d₄ : sv c base s₄ D = dig c s₀ >>> c.sh := by
     rw [e₄ (by decide) (by decide), v₃ (by decide) (by decide) (by decide), v₂ (by decide) (by decide), hF.d]
   have k₄ : sv c base s₄ K = sigR c s₀ := by
     rw [e₄ (by decide) (by decide), v₃ (by decide) (by decide) (by decide), v₂ (by decide) (by decide), hF.k]
-  have em₆ : toM c.C.n (2 ^ (64 * c.n)) (sv c base s₆ EM') = Fin.ofNat c.C.n (dig c s₀) := by
+  have em₆ : toM c.C.n (2 ^ (64 * c.n)) (sv c base s₆ EM') = Fin.ofNat c.C.n (dig c s₀ >>> c.sh) := by
     rw [v₆ (i := EM') (by decide) (by decide) (by decide),
       toM_r2 hnR (by rw [e₅, show sv c base s₄ R2N = _ from F₄.r2n]), d₄]
   have rm₆ : toM c.C.n (2 ^ (64 * c.n)) (sv c base s₆ RM') = Fin.ofNat c.C.n (sigR c s₀) := by
     rw [toM_r2 hnR (by rw [e₆, show sv c base s₅ R2N = _ from F₅.r2n]),
       v₅ (i := K) (by decide) (by decide) (by decide), k₄]
   have um₈ : toM c.C.n (2 ^ (64 * c.n)) (sv c base s₈ UM) =
-      Fin.ofNat c.C.n (dig c s₀) * Fin.ofNat c.C.n (sigS c s₀) ^ (c.C.n - 2) := by
+      Fin.ofNat c.C.n (dig c s₀ >>> c.sh) * Fin.ofNat c.C.n (sigS c s₀) ^ (c.C.n - 2) := by
     rw [v₈ (i := UM) (by decide) (by decide) (by decide), toM_mul hnR e₇, em₆, acc₆, w₄]
   have vm₈ : toM c.C.n (2 ^ (64 * c.n)) (sv c base s₈ VM) =
       Fin.ofNat c.C.n (sigR c s₀) * Fin.ofNat c.C.n (sigS c s₀) ^ (c.C.n - 2) := by

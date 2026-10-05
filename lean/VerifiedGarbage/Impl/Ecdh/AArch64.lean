@@ -68,10 +68,13 @@ and the hash the peer's `x`. -/
 def args : List Instr :=
   [.addImm .x .x4 .x3 0, .addImm .x .x6 .x2 0, .addImm .x .x3 .x1 0, .addImm .x .x2 .x2 1]
 
-/-- The signature's setup and table of bits. -/
-def prefix' : Prog isa :=
-  .seq (.block c.setup) <|
+/-- The signature's setup (shifting the slot `hs`) and table of bits. -/
+def prefixWith (hs : Option Nat) : Prog isa :=
+  .seq (.block (c.setupWith hs)) <|
   .seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n)) (.block [])
+
+/-- The signature's setup, shifting nothing, and table of bits. -/
+def prefix' : Prog isa := prefixWith c none
 
 /-- The constants ECDH adds to the signature's. -/
 def consts : List (Nat × Nat) := [(R2P, c.R * c.R % c.C.p), (BP, c.mont c.C.b)]
@@ -106,8 +109,8 @@ def checkLead : List Instr :=
 and `y`. -/
 def peer : List Instr :=
   (consts c).flatMap (fun (i, x) => setConst c.n (c.sl i) x) ++
-  [.addImm .x .x2 .x6 (1 + 8 * c.n)] ++
-  loadBE c.n (c.sl QY) .x2 ++ checkLead c ++ checkLtP c (c.sl E) ++ checkLtP c (c.sl QY)
+  [.addImm .x .x2 .x6 (1 + c.C.len)] ++
+  loadBytes c.C.len c.n (c.sl QY) .x2 ++ checkLead c ++ checkLtP c (c.sl E) ++ checkLtP c (c.sl QY)
 
 /-- `y² - (x³ + a x + b)`, from `x R` and `y R`, to `W1`. -/
 def curveOps : List FOp :=
@@ -129,10 +132,10 @@ def validate : Prog isa :=
     Mont.AArch64.mul c.MP' (c.sl QYM) (c.sl QY) (c.sl R2P)] ++
     (curveOps c).map (opCode c.MP') ++ [checkZero c (c.sl W1) ++ select c])
 
-/-- `x` (or zeros) to `out`, `x19` and `x20` restored, and the flag's low
-bit to `x0`. -/
+/-- `x` (or zeros, `len` bytes) to `out`, `x19`–`x25` restored, and the
+flag's low bit to `x0`. -/
 def finish : List Instr :=
-  [ld .x3 (c.sl FLAG)] ++ storeBE c.n .x20 0 (c.sl X) ++
+  [ld .x3 (c.sl FLAG)] ++ storeBytes c.C.len c.n .x20 0 (c.sl X) ++
   Impl.Ecdsa.AArch64.Cfg.saved.map (fun (r, d) => ld r d) ++
   [.movz .x .x1 1 0, .logic .and .x .x0 .x3 .x1]
 
