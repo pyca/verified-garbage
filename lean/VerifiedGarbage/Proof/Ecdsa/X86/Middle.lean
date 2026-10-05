@@ -61,7 +61,7 @@ theorem midOps_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size
       (.seq ((mul c.MP' c.wk (c.sl X) (c.sl XM) (c.sl ONE)))
       (.seq (.block (add c.MN' c.wk (c.sl RR) (c.sl X) (c.sl ZERO)))
       (.seq ((mul c.MN' c.wk (c.sl KM) (c.sl K) (c.sl R2N))) rest)))) s Q := by
-  have h7 := hc.n7
+  have h7 := hc.n10
   have hn := hs.nowrap
   have hpR := unitMod_pow_two hc.p_odd (64 * c.n)
   have hnR := unitMod_pow_two hc.n_odd (64 * c.n)

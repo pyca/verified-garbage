@@ -41,7 +41,7 @@ theorem lay_map (hc : CfgOk c) {M : Mod} (hmo : M.mo = c.sl MP) (htmp : M.tmp = 
   have hn := hc.n0
   refine ⟨fun x hx => ?_, fun x y hx hy hxy => ?_, fun x hx => ?_, fun x hx => ?_⟩
   · obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hx
-    rw [hMn]; exact sl_le c hc.n7 (hl i hi).1
+    rw [hMn]; exact sl_le c hc.n10 (hl i hi).1
   · obtain ⟨i, -, rfl⟩ := List.mem_map.mp hx
     obtain ⟨j, -, rfl⟩ := List.mem_map.mp hy
     rw [hMn]; exact sl_apart c fun h => hxy (h ▸ rfl)
@@ -60,7 +60,7 @@ theorem ladSlots_eq (c : Cfg) : ladSlots c.ladderCfg = [AP, B3P, GX, GY, ONEP, R
 
 theorem ladLay (hc : CfgOk c) : LadLay c.ladderCfg size := by
   have hn := hc.n0
-  have h7 := hc.n7
+  have h7 := hc.n10
   refine ⟨?_, rcbApart_of hn (lw := [T0, T1, T2, T3, T4, T5, DX, DY, DZ])
       (lr := [AP, B3P, RX, RY, RZ, RX, RY, RZ]) rfl rfl (by decide) (by decide),
     rcbApart_of hn (lw := [T0, T1, T2, T3, T4, T5, TX, TY, TZ])
@@ -88,7 +88,7 @@ theorem ladLay (hc : CfgOk c) : LadLay c.ladderCfg size := by
     · exact Or.inr (sl_below_bits c (i := TMP) (by decide) 0 0)
 
 theorem ladWk (hc : CfgOk c) : LadWk c.ladderCfg size c.wk where
-  le := wk_le c hc.n7 rfl
+  le := wk_le c hc.n10 rfl
   sl := by
     rw [ladSlots_eq]
     intro x hx
@@ -107,7 +107,7 @@ theorem powLay_of (hc : CfgOk c) {jm : Nat} (hjm : jm ∉ [ACC, PT, TMP])
     PowLay ⟨⟨c.n, c.sl jm, c.sl TMP, minv, red, false⟩, c.sl ACC, c.sl PT, c.sl base, c.sl one, bitsAt c.n j,
       64 * c.n⟩ size := by
   have hn := hc.n0
-  have h7 := hc.n7
+  have h7 := hc.n10
   have hw : ∀ i, i ∉ [ACC, PT, TMP] →
       ∀ w ∈ powW ⟨⟨c.n, c.sl jm, c.sl TMP, minv, red, false⟩, c.sl ACC, c.sl PT, c.sl base, c.sl one,
         bitsAt c.n j, 64 * c.n⟩, c.sl i + 8 * c.n ≤ w.1 ∨ w.1 + w.2 ≤ c.sl i := by
@@ -140,7 +140,7 @@ theorem powWk_of (hc : CfgOk c) {jm : Nat} (hjm : jm < 45) (minv : BitVec 64) {r
     (hj : j < 3) (hb45 : base < 45) :
     PowWk ⟨⟨c.n, c.sl jm, c.sl TMP, minv, red, false⟩, c.sl ACC, c.sl PT, c.sl base, c.sl one, bitsAt c.n j,
       64 * c.n⟩ size c.wk :=
-  ⟨wk_le c hc.n7 rfl, sl_below_wk c (by decide), sl_below_wk c (by decide), sl_below_wk c hb45,
+  ⟨wk_le c hc.n10 rfl, sl_below_wk c (by decide), sl_below_wk c (by decide), sl_below_wk c hb45,
     sl_below_wk c hjm, sl_below_wk c (by decide), bitsAt_below_wk c hj, sl_apart c (by decide)⟩
 
 theorem powWkP (hc : CfgOk c) : PowWk c.powP size c.wk :=

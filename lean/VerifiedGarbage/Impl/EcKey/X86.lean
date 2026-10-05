@@ -45,7 +45,7 @@ variable (c : Impl.Ecdsa.X86.Cfg)
 
 /-- The signature's code up to `Z^(p-2)`, with the public key's arguments. -/
 def upToPow : Prog isa :=
-  .seq (.block (c.setupWith Args.publicKey)) <|
+  .seq (.block (c.setupWith Args.publicKey none)) <|
   .seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n)) <|
   .seq (bits (c.sl EXPP) (bitsAt c.n 1) (8 * c.n)) <|
   .seq (bits (c.sl EXPN) (bitsAt c.n 2) (8 * c.n)) <|

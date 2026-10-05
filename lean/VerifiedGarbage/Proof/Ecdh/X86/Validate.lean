@@ -75,7 +75,7 @@ theorem mont_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size)
     {rest : Prog isa} {Q : State → Prop} (h : ∀ s', MontPost c base s s' → WP isa rest s' Q) :
     WP isa (.seq (mul c.MP' c.wk (c.sl QXM) (c.sl E) (c.sl R2P))
       (.seq (mul c.MP' c.wk (c.sl QYM) (c.sl QY) (c.sl R2P)) rest)) s Q := by
-  have h7 := hc.n7
+  have h7 := hc.n10
   have hn := hs.nowrap
   have hpR := unitMod_pow_two hc.p_odd (64 * c.n)
   have hp3 := hc.p_ge
@@ -117,7 +117,7 @@ theorem curve_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size)
       (sv c base s' W1 = 0 ↔ OnCurve c (toM c.C.p (2 ^ (64 * c.n)) (sv c base s QXM))
         (toM c.C.p (2 ^ (64 * c.n)) (sv c base s QYM))) := by
   have h0 := hc.n0
-  have h7 := hc.n7
+  have h7 := hc.n10
   have hpR := unitMod_pow_two hc.p_odd (64 * c.n)
   have hp3 := hc.p_ge
   have hL : Lay c.MP' size (· ∈ curveSl.map c.sl) := lay_map hc rfl rfl rfl (by decide)
@@ -184,7 +184,7 @@ theorem select_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size
       sv c base s' PX = (if P then sv c base s QXM else sv c base s GX) ∧
       sv c base s' PY = (if P then sv c base s QYM else sv c base s GY) := by
   have h0 := hc.n0
-  have h7 := hc.n7
+  have h7 := hc.n10
   have hn := hs.nowrap
   have hap : ∀ {i j}, i ≠ j → c.sl i ≤ c.sl j ∨ c.sl j + 4 * (2 * c.n) ≤ c.sl i := fun h => by
     have := sl_apart c h; omega
@@ -248,7 +248,7 @@ theorem validate_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base si
       toM c.C.p (2 ^ (64 * c.n)) (sv c base s' PY) =
         (if PeerOk c base s P₀ then Fin.ofNat c.C.p (sv c base s QY) else Fin.ofNat c.C.p c.C.gy) := by
   have h0 := hc.n0
-  have h7 := hc.n7
+  have h7 := hc.n10
   have hn := hs.nowrap
   have hp3 := hc.p_ge
   have hmont : ∀ x, c.mont x < c.C.p := fun x => Nat.mod_lt _ (by omega)
@@ -324,7 +324,7 @@ group law, that `R` represents `[k >>> j]P`.
 
 theorem ladLayQ (hc : CfgOk c) : LadLay (Impl.Ecdh.X86.Cfg.ladderQ c) size := by
   have hn := hc.n0
-  have h7 := hc.n7
+  have h7 := hc.n10
   refine ⟨?_, rcbApart_of hn (lw := [T0, T1, T2, T3, T4, T5, DX, DY, DZ])
       (lr := [AP, B3P, RX, RY, RZ, RX, RY, RZ]) rfl rfl (by decide) (by decide),
     rcbApart_of hn (lw := [T0, T1, T2, T3, T4, T5, TX, TY, TZ])
@@ -352,7 +352,7 @@ theorem ladLayQ (hc : CfgOk c) : LadLay (Impl.Ecdh.X86.Cfg.ladderQ c) size := by
     · exact Or.inr (sl_below_bits c (i := TMP) (by decide) 0 0)
 
 theorem ladWkQ (hc : CfgOk c) : LadWk (Impl.Ecdh.X86.Cfg.ladderQ c) size c.wk where
-  le := wk_le c hc.n7 rfl
+  le := wk_le c hc.n10 rfl
   sl := by
     have e : ladSlots (Impl.Ecdh.X86.Cfg.ladderQ c) = [AP, B3P, PX, PY, ONEP, RX, RY, RZ, T0, T1, T2, T3,
       T4, T5, DX, DY, DZ, TX, TY, TZ].map c.sl := rfl
@@ -395,7 +395,7 @@ theorem ladPow_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size
     {rest : Prog isa} {R : State → Prop} (h : ∀ s', LadPost c base Q s s' → WP isa rest s' R) :
     WP isa (.seq (ladder (Impl.Ecdh.X86.Cfg.ladderQ c) c.wk) (.seq (pow c.powP c.wk) rest)) s R := by
   have h0 := hc.n0
-  have h7 := hc.n7
+  have h7 := hc.n10
   have hn := hs.nowrap
   have hpR := unitMod_pow_two hc.p_odd (64 * c.n)
   have hp3 := hc.p_ge

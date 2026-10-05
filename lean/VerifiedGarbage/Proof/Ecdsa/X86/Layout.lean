@@ -30,12 +30,15 @@ abbrev size : Nat := 8192
 abbrev ptr (s : State) (i : Nat) : Addr := (arg s i).setWidth 64
 
 /-- What the proof of the code needs of a curve: its field and order are odd
-and fit in `n` words (`n < 7`), `G` is on the curve, `p < 2n` (so `x mod n`
-is one conditional subtraction), the Montgomery constants are right,
-encodings are `8 n` bytes, and a hash of `8 n` bytes is not truncated. -/
+and fit in `n` words (`n < 10`, so that the slots, the tables and the
+accumulator fit in the working space), `G` is on the curve, `p < 2n` (so
+`x mod n` is one conditional subtraction), the Montgomery constants are
+right, encodings are `len` bytes in `n` words (`8 (n - 1) < len ≤ 8 n`, at
+least one word), and the bits of a hash of `len` bytes that are not `e`'s
+(`c.sh`, 0 unless `n` has fewer than `8 len` bits) are fewer than 32. -/
 structure CfgOk (c : Cfg) : Prop where
   n0 : 0 < c.n
-  n7 : c.n < 7
+  n10 : c.n < 10
   onG : onCurve c.C (G c.C) = true
   p_odd : c.C.p % 2 = 1
   n_odd : c.C.n % 2 = 1
@@ -46,16 +49,18 @@ structure CfgOk (c : Cfg) : Prop where
   p_lt_2n : c.C.p < 2 * c.C.n
   minv_p : (c.C.p * (BitVec.ofNat 64 (minv c.C.p)).toNat + 1) % 2 ^ 64 = 0
   minv_n : (c.C.n * (BitVec.ofNat 64 (minv c.C.n)).toNat + 1) % 2 ^ 64 = 0
-  len : c.C.len = 8 * c.n
-  hash : 64 * c.n ≤ Spec.Ecdsa.nBits c.C
+  len8 : 8 ≤ c.C.len
+  len_lo : 8 * c.n < c.C.len + 8
+  len_hi : c.C.len ≤ 8 * c.n
+  sh : c.sh < 32
 
 section
 variable (c : Cfg) (s : State)
 /-- The regions of the arguments, on entry. -/
-abbrev outR : Region := ⟨ptr s 0, 16 * c.n⟩
-abbrev dR : Region := ⟨ptr s 1, 8 * c.n⟩
-abbrev digestR : Region := ⟨ptr s 2, 8 * c.n⟩
-abbrev kR : Region := ⟨ptr s 3, 8 * c.n⟩
+abbrev outR : Region := ⟨ptr s 0, 2 * c.C.len⟩
+abbrev dR : Region := ⟨ptr s 1, c.C.len⟩
+abbrev digestR : Region := ⟨ptr s 2, c.C.len⟩
+abbrev kR : Region := ⟨ptr s 3, c.C.len⟩
 abbrev scR : Region := ⟨ptr s 4, size⟩
 abbrev argsR : Region := ⟨argAddr s 0, 20⟩
 abbrev retR : Region := ⟨(s.gpr .esp).setWidth 64, 4⟩
@@ -77,10 +82,10 @@ structure Pre (c : Cfg) (s : State) : Prop where
   args_sc : (argsR s).Disjoint (scR s)
   ret_out : (retR s).Disjoint (outR c s)
   ret_sc : (retR s).Disjoint (scR s)
-  out_fit : (arg s 0).toNat + 16 * c.n ≤ 2 ^ 32
-  d_fit : (arg s 1).toNat + 8 * c.n ≤ 2 ^ 32
-  digest_fit : (arg s 2).toNat + 8 * c.n ≤ 2 ^ 32
-  k_fit : (arg s 3).toNat + 8 * c.n ≤ 2 ^ 32
+  out_fit : (arg s 0).toNat + 2 * c.C.len ≤ 2 ^ 32
+  d_fit : (arg s 1).toNat + c.C.len ≤ 2 ^ 32
+  digest_fit : (arg s 2).toNat + c.C.len ≤ 2 ^ 32
+  k_fit : (arg s 3).toNat + c.C.len ≤ 2 ^ 32
   sc_fit : (arg s 4).toNat + size ≤ 2 ^ 32
   sp_fit : (s.gpr .esp).toNat + 24 ≤ 2 ^ 32
 
@@ -131,22 +136,22 @@ theorem arg_containsN {s : State} {k i : Nat} (hfit : (s.gpr .esp).toNat + 4 + 4
   exact Offset.contains_base _ (show 4 * i + 4 ≤ 4 * k by omega) (by omega)
 
 /-- What `setupWith A` needs of its arguments: the working space writable,
-the slots of the arguments `A` names and `k`, `d` and the hash readable,
-apart from it, and nothing wrapping around `2³²`. -/
+the slots of the arguments `A` names and `k`, `d` and the hash (`len` bytes
+each) readable, apart from it, and nothing wrapping around `2³²`. -/
 structure SetupPre (c : Cfg) (A : Args) (s : State) : Prop where
   wr : (⟨ptr s A.sc, size⟩ : Region) ∈ s.wr
   arg_in : ∀ i ∈ A.idx, InRegions (s.rd ++ s.wr) (argAddr s i) 4
   arg_sc : ∀ i ∈ A.idx, Region.Disjoint ⟨argAddr s i, 4⟩ ⟨ptr s A.sc, size⟩
   sp_fit : ∀ i ∈ A.idx, (s.gpr .esp).toNat + 8 + 4 * i ≤ 2 ^ 32
-  k_in : ∀ e, e + 4 ≤ 8 * c.n → InRegions (s.rd ++ s.wr) (ptr s A.k + BitVec.ofNat 64 e) 4
-  d_in : ∀ e, e + 4 ≤ 8 * c.n → InRegions (s.rd ++ s.wr) (ptr s A.d + BitVec.ofNat 64 e) 4
-  e_in : ∀ e, e + 4 ≤ 8 * c.n → InRegions (s.rd ++ s.wr) (ptr s A.e + BitVec.ofNat 64 e) 4
-  k_sc : Region.Disjoint ⟨ptr s A.k, 8 * c.n⟩ ⟨ptr s A.sc, size⟩
-  d_sc : Region.Disjoint ⟨ptr s A.d, 8 * c.n⟩ ⟨ptr s A.sc, size⟩
-  e_sc : Region.Disjoint ⟨ptr s A.e, 8 * c.n⟩ ⟨ptr s A.sc, size⟩
-  k_fit : (arg s A.k).toNat + 8 * c.n ≤ 2 ^ 32
-  d_fit : (arg s A.d).toNat + 8 * c.n ≤ 2 ^ 32
-  e_fit : (arg s A.e).toNat + 8 * c.n ≤ 2 ^ 32
+  k_in : ∀ e, e + 4 ≤ c.C.len → InRegions (s.rd ++ s.wr) (ptr s A.k + BitVec.ofNat 64 e) 4
+  d_in : ∀ e, e + 4 ≤ c.C.len → InRegions (s.rd ++ s.wr) (ptr s A.d + BitVec.ofNat 64 e) 4
+  e_in : ∀ e, e + 4 ≤ c.C.len → InRegions (s.rd ++ s.wr) (ptr s A.e + BitVec.ofNat 64 e) 4
+  k_sc : Region.Disjoint ⟨ptr s A.k, c.C.len⟩ ⟨ptr s A.sc, size⟩
+  d_sc : Region.Disjoint ⟨ptr s A.d, c.C.len⟩ ⟨ptr s A.sc, size⟩
+  e_sc : Region.Disjoint ⟨ptr s A.e, c.C.len⟩ ⟨ptr s A.sc, size⟩
+  k_fit : (arg s A.k).toNat + c.C.len ≤ 2 ^ 32
+  d_fit : (arg s A.d).toNat + c.C.len ≤ 2 ^ 32
+  e_fit : (arg s A.e).toNat + c.C.len ≤ 2 ^ 32
   sc_fit : (arg s A.sc).toNat + size ≤ 2 ^ 32
 
 /-- The words of a region are accessible. -/
@@ -158,14 +163,14 @@ theorem idx_sign {i : Nat} (hi : i ∈ Args.sign.idx) : i < 5 := by
   simp only [Args.idx, List.mem_cons, List.not_mem_nil, or_false] at hi
   omega
 
-theorem Pre.setup {c : Cfg} {s : State} (hp : Pre c s) (h7 : c.n < 7) : SetupPre c .sign s where
+theorem Pre.setup {c : Cfg} {s : State} (hp : Pre c s) : SetupPre c .sign s where
   wr := by rw [hp.wr]; simp
   arg_in := fun i hi => ⟨argsR s, by rw [hp.rd]; simp, arg_contains hp.sp_fit (idx_sign hi)⟩
   arg_sc := fun i hi => hp.args_sc.sub_left (arg_sub hp.sp_fit (idx_sign hi))
   sp_fit := fun i hi => by have := idx_sign hi; have := hp.sp_fit; omega
-  k_in := inRegions_words (by rw [hp.rd]; simp) (by omega)
-  d_in := inRegions_words (by rw [hp.rd]; simp) (by omega)
-  e_in := inRegions_words (by rw [hp.rd]; simp) (by omega)
+  k_in := inRegions_words (by rw [hp.rd]; simp) (by have := hp.k_fit; omega)
+  d_in := inRegions_words (by rw [hp.rd]; simp) (by have := hp.d_fit; omega)
+  e_in := inRegions_words (by rw [hp.rd]; simp) (by have := hp.digest_fit; omega)
   k_sc := hp.k_sc
   d_sc := hp.d_sc
   e_sc := hp.digest_sc
@@ -177,18 +182,30 @@ theorem Pre.setup {c : Cfg} {s : State} (hp : Pre c s) (h7 : c.n < 7) : SetupPre
 /-- The number in slot `i`. -/
 abbrev sv (c : Cfg) (base : Addr) (s : State) (i : Nat) : Nat := wordsVal s.mem base (c.sl i) c.n
 
-/-- What `setupWith A` leaves, from the state `s₀` at entry, with the working
-space at `base`, the argument `A.sc`: `edi = base`, `ebx`, `esi`, `edi` and `ebp` in `[0, 16)`,
-`k`, `d` and the hash in their slots, the constants in theirs, and the flag
-all ones; only `eax`, `ebx` and `edi` and the working space changed. -/
-structure SetupPost (c : Cfg) (A : Args) (s₀ : State) (base : Addr) (s : State) : Prop where
+/-- The bits slot `i` is shifted right by when `setupWith _ hs` reads it:
+`c.sh` for the slot `hs` holding a hash, 0 for the others. -/
+abbrev shAt (c : Cfg) (hs : Option Nat) (i : Nat) : Nat := if hs = some i then c.sh else 0
+
+theorem shAt_none (c : Cfg) (i : Nat) : shAt c none i = 0 := rfl
+theorem shAt_self (c : Cfg) (i : Nat) : shAt c (some i) i = c.sh := ite_eq_left_of_eq_true _ _ (eq_true rfl)
+theorem shAt_E_D (c : Cfg) : shAt c (some E) D = 0 := rfl
+theorem shAt_E_K (c : Cfg) : shAt c (some E) K = 0 := rfl
+theorem shAt_K_D (c : Cfg) : shAt c (some K) D = 0 := rfl
+theorem shAt_K_E (c : Cfg) : shAt c (some K) E = 0 := rfl
+
+/-- What `setupWith A hs` leaves, from the state `s₀` at entry, with the
+working space at `base`, the argument `A.sc`: `edi = base`, `ebx`, `esi`,
+`edi` and `ebp` in `[0, 16)`, `k`, `d` and the hash in their slots (the slot
+`hs` shifted, `shAt`), the constants in theirs, and the flag all ones; only
+`eax`, `ebx`, `edx` and `edi` and the working space changed. -/
+structure SetupPost (c : Cfg) (A : Args) (hs : Option Nat) (s₀ : State) (base : Addr) (s : State) : Prop where
   scr : Scr s base size
-  keep : Keeps [.eax, .ebx, .edi] s₀ s
+  keep : Keeps [.eax, .ebx, .edx, .edi] s₀ s
   unch : Unch base [(0, size)] s₀.mem s.mem
   saved : ∀ rd ∈ Cfg.saved, s.mem.readW (off base rd.2) 32 = s₀.gpr rd.1
-  k : sv c base s K = ofBytes (Spec.Ecdsa.bytesAt s₀.mem (ptr s₀ A.k) (8 * c.n))
-  d : sv c base s D = ofBytes (Spec.Ecdsa.bytesAt s₀.mem (ptr s₀ A.d) (8 * c.n))
-  e : sv c base s E = ofBytes (Spec.Ecdsa.bytesAt s₀.mem (ptr s₀ A.e) (8 * c.n))
+  k : sv c base s K = ofBytes (Spec.Ecdsa.bytesAt s₀.mem (ptr s₀ A.k) c.C.len) >>> shAt c hs K
+  d : sv c base s D = ofBytes (Spec.Ecdsa.bytesAt s₀.mem (ptr s₀ A.d) c.C.len) >>> shAt c hs D
+  e : sv c base s E = ofBytes (Spec.Ecdsa.bytesAt s₀.mem (ptr s₀ A.e) c.C.len) >>> shAt c hs E
   consts : ∀ ix ∈ c.consts, sv c base s ix.1 = ix.2
   flag : flagW c base s = BitVec.allOnes 32
 
@@ -242,21 +259,21 @@ theorem bitsAt_below_wk (c : Cfg) {j : Nat} (hj : j < 3) : bitsAt c.n j + 64 * c
   omega
 
 /-- The accumulator is in the working space. -/
-theorem wk_le (c : Cfg) (hn : c.n < 7) {M : Mod} (hM : M.n = c.n) : c.wk + accLen M ≤ size := by
+theorem wk_le (c : Cfg) (hn : c.n < 10) {M : Mod} (hM : M.n = c.n) : c.wk + accLen M ≤ size := by
   rw [wk_eq, accLen_eq, hM]
-  have : 8 * c.n * 45 ≤ 8 * 6 * 45 := Nat.mul_le_mul_right _ (by omega)
-  have : 64 * c.n * 3 ≤ 64 * 6 * 3 := Nat.mul_le_mul_right _ (by omega)
+  have : 8 * c.n * 45 ≤ 8 * 9 * 45 := Nat.mul_le_mul_right _ (by omega)
+  have : 64 * c.n * 3 ≤ 64 * 9 * 3 := Nat.mul_le_mul_right _ (by omega)
   show _ ≤ 8192
   omega
 
 /-- Every slot is in the working space. -/
-theorem sl_le (c : Cfg) (hn : c.n < 7) {i : Nat} (hi : i < 45) : c.sl i + 8 * c.n ≤ size := by
+theorem sl_le (c : Cfg) (hn : c.n < 10) {i : Nat} (hi : i < 45) : c.sl i + 8 * c.n ≤ size := by
   have := sl_below_wk c hi
   have := wk_le c hn (M := c.MP') rfl
   omega
 
 /-- Every table is in the working space. -/
-theorem bitsAt_le (c : Cfg) (hn : c.n < 7) {j : Nat} (hj : j < 3) : bitsAt c.n j + 64 * c.n ≤ size := by
+theorem bitsAt_le (c : Cfg) (hn : c.n < 10) {j : Nat} (hj : j < 3) : bitsAt c.n j + 64 * c.n ≤ size := by
   have := bitsAt_below_wk c hj
   have := wk_le c hn (M := c.MP') rfl
   omega

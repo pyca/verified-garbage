@@ -1,5 +1,6 @@
 import VerifiedGarbage.Impl.Weierstrass.X86
 import VerifiedGarbage.Spec.Weierstrass
+import VerifiedGarbage.Spec.Ecdsa
 
 /-!
 # ECDSA signing on x86 (32-bit)
@@ -122,6 +123,10 @@ variable (c : Cfg)
 /-- `R = 2^(64 n)`. -/
 def R : Nat := 2 ^ (64 * c.n)
 
+/-- The bits of the hash's `len` bytes that are not `e`'s: `8 len - N`, for
+`N` the bits of `n` (0 but for P-521's 7). -/
+def sh : Nat := 8 * c.C.len - Spec.Ecdsa.nBits c.C
+
 /-- `x R mod p`. -/
 def mont (x : Nat) : Nat := x * c.R % c.C.p
 
@@ -164,20 +169,28 @@ def argOp (i : Nat) : MemOp := at_ .esp (4 + 4 * i)
 /-- Saves them at `[eax]`. -/
 def saveCode : List Instr := saved.map fun (r, d) => .store (at_ .eax d) r
 
+/-- The slot `hs` (if any) shifted right by the bits of a hash's `len`
+bytes that are not `e`'s (`sh`: none but for P-521's 7). -/
+def shiftCode : Option Nat → List Instr
+  | none => []
+  | some i => if c.sh = 0 then [] else shrWords c.n (c.sl i) c.sh
+
 /-- Saves them through `eax`, with the working space from its argument, which
-then goes to `edi`; reads `k`, `d` and the hash through `ebx` from the
-arguments `A` names; stores the constants; and sets `R = (0 : 1 : 0)` and the
-flag (a word) to all ones. -/
-def setupWith (A : Args) : List Instr :=
+then goes to `edi`; reads `k`, `d` and the hash (`len` bytes each) through
+`ebx` from the arguments `A` names, and shifts the slot `hs` holding a hash;
+stores the constants; and sets `R = (0 : 1 : 0)` and the flag (a word) to
+all ones. -/
+def setupWith (A : Args) (hs : Option Nat) : List Instr :=
   [.mov .eax (.mem (argOp A.sc))] ++ saveCode ++
-  [.mov .edi (.reg .eax), .mov .ebx (.mem (argOp A.k))] ++ loadBE c.n (c.sl K) .ebx ++
-  [.mov .ebx (.mem (argOp A.d))] ++ loadBE c.n (c.sl D) .ebx ++
-  [.mov .ebx (.mem (argOp A.e))] ++ loadBE c.n (c.sl E) .ebx ++
+  [.mov .edi (.reg .eax), .mov .ebx (.mem (argOp A.k))] ++ loadBytes c.C.len c.n (c.sl K) .ebx ++
+  [.mov .ebx (.mem (argOp A.d))] ++ loadBytes c.C.len c.n (c.sl D) .ebx ++
+  [.mov .ebx (.mem (argOp A.e))] ++ loadBytes c.C.len c.n (c.sl E) .ebx ++
+  c.shiftCode hs ++
   c.consts.flatMap (fun (i, x) => setConst c.n (c.sl i) x) ++
   [.mov .eax (.imm (BitVec.allOnes 32)), .store (sc (c.sl FLAG)) .eax]
 
-/-- The setup of `sign`. -/
-def setup : List Instr := c.setupWith .sign
+/-- The setup of `sign`, which shifts the hash in `E`. -/
+def setup : List Instr := c.setupWith .sign (some E)
 
 /-- The mask `edx` of `[a] ≠ 0` (all ones if it is not zero), through `ecx`. -/
 def nonzero (a : Nat) : List Instr :=
@@ -219,7 +232,7 @@ def restore : List Instr :=
 and the callee-saved registers restored. -/
 def finish : List Instr :=
   [.mov .ecx (.mem (sc (c.sl FLAG))), .mov .ebx (.mem (argOp 0))] ++
-  storeBE c.n .ebx 0 (c.sl RR) ++ storeBE c.n .ebx (8 * c.n) (c.sl SS) ++
+  storeBytes c.C.len c.n .ebx 0 (c.sl RR) ++ storeBytes c.C.len c.n .ebx c.C.len (c.sl SS) ++
   [.mov .eax (.reg .ecx), .alu .and .eax (.imm 1)] ++ restore
 
 /-- `s = k⁻¹ (e + r d) mod n`, with `k⁻¹ R` in `ACC`, and its check. -/

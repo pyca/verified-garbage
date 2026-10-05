@@ -24,7 +24,7 @@ open VG.Impl.Ecdsa.Verify.X86 (SM' EM' RM' UM VM U V UX UY UZ)
 
 variable {c : Cfg}
 
-theorem tbl_le (h7 : c.n < 7) : bitsAt c.n 0 + 64 * c.n ≤ size := bitsAt_le c h7 (j := 0) (by decide)
+theorem tbl_le (h7 : c.n < 10) : bitsAt c.n 0 + 64 * c.n ≤ size := bitsAt_le c h7 (j := 0) (by decide)
 
 /-- `[o] = [a]`, on numbered slots. -/
 theorem copySl_ok (hc : CfgOk c) {s : State} {base : Addr} (hs : Scr s base size) {o a : Nat}
@@ -33,8 +33,8 @@ theorem copySl_ok (hc : CfgOk c) {s : State} {base : Addr} (hs : Scr s base size
       sv c base s' o = sv c base s a ∧ Keeps [.eax] s s' ∧
       Outside base (c.sl o) (8 * c.n) s.mem s'.mem := by
   have := sl_apart c hoa
-  have := sl_le c hc.n7 ho
-  have := sl_le c hc.n7 ha
+  have := sl_le c hc.n10 ho
+  have := sl_le c hc.n10 ha
   refine WP.mono (copy_ok (2 * c.n) hs (by omega) (by omega) (by omega)) fun s' ⟨e, k, O⟩ => ⟨?_, k, ?_⟩
   · show wordsVal _ _ _ _ = wordsVal _ _ _ _
     rw [wordsVal_eq_val32, wordsVal_eq_val32, e]
@@ -45,7 +45,7 @@ theorem setSl_ok (hc : CfgOk c) {s : State} {base : Addr} (hs : Scr s base size)
     (ho : o < 45) (hx : x < 2 ^ (64 * c.n)) :
     WP isa (.block (setConst c.n (c.sl o) x)) s fun s' =>
       sv c base s' o = x ∧ Keeps [.eax] s s' ∧ Outside base (c.sl o) (8 * c.n) s.mem s'.mem :=
-  setConst_ok hs (sl_le c hc.n7 ho) hx
+  setConst_ok hs (sl_le c hc.n10 ho) hx
 
 /-- The slots `save` writes. -/
 abbrev saveW : List Nat := [UX, UY, UZ, RX, RY, RZ]
@@ -63,7 +63,7 @@ theorem save_ok (hc : CfgOk c) {s : State} {base : Addr} (hs : Scr s base size) 
       sv c base s' UX = sv c base s RX ∧ sv c base s' UY = sv c base s RY ∧
       sv c base s' UZ = sv c base s RZ ∧ sv c base s' RX = 0 ∧ sv c base s' RY = c.mont 1 ∧
       sv c base s' RZ = 0 := by
-  have h7 := hc.n7
+  have h7 := hc.n10
   have hn := hs.nowrap
   have hp := hc.p_lt
   have hp3 := hc.p_ge
@@ -129,7 +129,7 @@ theorem sum_ok (hc : CfgOk c) {s : State} {base : Addr} (hs : Scr s base size)
           (tmv c.C c.n base s (c.sl UX)) (tmv c.C c.n base s (c.sl UY)) (tmv c.C c.n base s (c.sl UZ))
           (tmv c.C c.n base s (c.sl RX)) (tmv c.C c.n base s (c.sl RY)) (tmv c.C c.n base s (c.sl RZ)) := by
   have h0 := hc.n0
-  have h7 := hc.n7
+  have h7 := hc.n10
   have hn := hs.nowrap
   have hpR := unitMod_pow_two hc.p_odd (64 * c.n)
   have hL : Lay c.MP' size (· ∈ sumSl.map c.sl) := lay_map hc rfl rfl rfl (by decide)
@@ -195,7 +195,7 @@ theorem sum_ok (hc : CfgOk c) {s : State} {base : Addr} (hs : Scr s base size)
     U₄, ?_, ?_, ?_⟩
   · rw [K₄.1 r (fun h => hr (by simp only [List.mem_singleton] at h; subst h; decide)), PK.gpr r hr]
   · have hM₁ := I₁.mod
-    refine ⟨hM₁.n0, hM₁.n7, hM₁.mo, hM₁.tmp, hM₁.sep, ?_, hM₁.inv, hM₁.red⟩
+    refine ⟨hM₁.n0, hM₁.n10, hM₁.mo, hM₁.tmp, hM₁.sep, ?_, hM₁.inv, hM₁.red⟩
     rw [U₄.wordsVal (fun w hw => ?_) (by have := hM₁.mo; omega)]
     · exact hM.val
     · exact apart_slWk (c := c) (i := MP) (by decide) (by decide) w hw
@@ -258,7 +258,7 @@ theorem points_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State}
     (h : ∀ s', Pts c s₀ base Q₁ Q₂ s' → WP isa rest s' Q) :
     WP isa (.seq (Impl.Ecdsa.Verify.X86.Cfg.points c) rest) s Q := by
   have h0 := hc.n0
-  have h7 := hc.n7
+  have h7 := hc.n10
   have hn := hM.scr.nowrap
   have hpR := unitMod_pow_two hc.p_odd (64 * c.n)
   have hp3 := hc.p_ge

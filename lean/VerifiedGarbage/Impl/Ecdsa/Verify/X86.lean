@@ -71,7 +71,7 @@ variable (c : Impl.Ecdsa.X86.Cfg)
 
 /-- The signature's setup, with verification's arguments, and tables of bits. -/
 def prefix' : Prog isa :=
-  .seq (.block (c.setupWith Args.verify)) <|
+  .seq (.block (c.setupWith Args.verify none)) <|
   .seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n)) <|
   .seq (bits (c.sl EXPP) (bitsAt c.n 1) (8 * c.n)) <|
   .seq (bits (c.sl EXPN) (bitsAt c.n 2) (8 * c.n)) (.block [])

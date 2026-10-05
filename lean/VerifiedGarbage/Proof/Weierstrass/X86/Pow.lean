@@ -83,7 +83,7 @@ theorem powBody_ok {P : PowCfg} {wk : Nat} {base : Addr} {size m e : Nat} [NeZer
     · exact hL.base_w w hw
     · exact .inl hW.base
   have hM : ModOk P.M size m s.mem base :=
-    ⟨hM₀.n0, hM₀.n7, hM₀.mo, hM₀.tmp, hM₀.sep,
+    ⟨hM₀.n0, hM₀.n10, hM₀.mo, hM₀.tmp, hM₀.sep,
       by rw [hI.unch.wordsVal hmo (by omega)]; exact hM₀.val, hM₀.inv, hM₀.red⟩
   have hBs : wordsVal s.mem base P.base P.M.n = wordsVal s₀.mem base P.base P.M.n :=
     hI.unch.wordsVal hbw (by omega)
@@ -100,7 +100,7 @@ theorem powBody_ok {P : PowCfg} {wk : Nat} {base : Addr} {size m e : Nat} [NeZer
   have hs₂ := k₂.scr hs₁
   have hU₂ := k₂.unch
   have hM₂ : ModOk P.M size m s₂.mem base :=
-    ⟨hM.n0, hM.n7, hM.mo, hM.tmp, hM.sep, by
+    ⟨hM.n0, hM.n10, hM.mo, hM.tmp, hM.sep, by
       rw [hU₂.wordsVal (fun w hw => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
         rcases hw with rfl | rfl | rfl

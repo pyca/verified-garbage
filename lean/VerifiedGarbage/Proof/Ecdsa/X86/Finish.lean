@@ -129,7 +129,7 @@ theorem finish_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size
       (∀ rd ∈ Cfg.saved, s'.gpr rd.1 = g rd.1) ∧
       (∀ r, r ∉ [.eax, .ebx, .ecx, .edx, .esi, .edi, .ebp] → s'.gpr r = s.gpr r) ∧
       Outside (o32.setWidth 64) 0 (16 * c.n) s.mem s'.mem := by
-  have h7 := hc.n7
+  have h7 := hc.n10
   have hn0 := hc.n0
   have hn := hs.nowrap
   have hsz : size = 8192 := rfl

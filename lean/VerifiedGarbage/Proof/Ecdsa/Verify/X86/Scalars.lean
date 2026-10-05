@@ -79,7 +79,7 @@ theorem mulN_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size)
       (∀ {i}, i < 45 → i ≠ o → i ≠ TMP → sv c base s' i = sv c base s i) ∧
       sv c base s' o < c.C.n ∧
       sv c base s' o * 2 ^ (64 * c.n) % c.C.n = sv c base s a * sv c base s b % c.C.n := by
-  have h7 := hc.n7
+  have h7 := hc.n10
   have hn := hs.nowrap
   exact WP.mono (slMul_ok (MN'_n c) (.inr rfl) rfl h7 hs hMN ho ha hb hot hB) fun s' ⟨k, lt, e⟩ =>
     ⟨k.scr hs, hMN.keepX86 (j := MN) (by decide) rfl rfl rfl rfl h7 hn k (Ne.symm hoN) (by decide),
@@ -93,7 +93,7 @@ theorem mid_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State}
     WP isa (.seq (Impl.Ecdsa.Verify.X86.Cfg.scalars c) (.seq (pow c.powN c.wk)
       (.seq (Impl.Ecdsa.Verify.X86.Cfg.uv c) rest))) s Q := by
   have h0 := hc.n0
-  have h7 := hc.n7
+  have h7 := hc.n10
   have hn := hF.scr.nowrap
   have hnR := unitMod_pow_two hc.n_odd (64 * c.n)
   have hn3 := hc.n_ge
