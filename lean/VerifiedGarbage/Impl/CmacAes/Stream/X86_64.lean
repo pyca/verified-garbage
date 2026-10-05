@@ -1,4 +1,4 @@
-import VerifiedGarbage.Impl.CmacAes.X86_64
+import VerifiedGarbage.Impl.CmacAes.X86_64.Callee
 
 /-!
 # Streaming AES-CMAC: x86-64 implementation
@@ -8,10 +8,13 @@ import VerifiedGarbage.Impl.CmacAes.X86_64
 and `vg_cmac_aes_finish(state = rdi, rounds = rsi, count = rdx, out = rcx, scratch = r8)`
 (see `VG.Spec.Cmac.aesInitContract` and the others), composed of calls of
 the verified `vg_aes_expand_key_scratch`, `vg_cmac_aes_subkeys`, `vg_cmac_aes_update`
-and `vg_cmac_aes_finalize`. Like those, they are generic over the
-implementation of AES they call (`Ctr32`, the `ExpandKey` that goes with it,
-and `sfx`, the suffix of the names of the CMAC functions made with it): e.g.
-`vg_cmac_aes_absorb_aesni` calls `vg_cmac_aes_update_aesni`.
+and `vg_cmac_aes_finalize`. Like those, `init` and `finish` are generic over
+the implementation of AES they call (`Ctr32`, the `ExpandKey` that goes with
+it, and `sfx`, the suffix of the names of the CMAC functions made with it),
+and `absorb`, which calls only `vg_cmac_aes_update`, over the implementation
+of that (`Update`): e.g. `vg_cmac_aes_absorb_aesni` calls
+`vg_cmac_aes_update_aesni`, and `vg_cmac_aes_absorb_aesni_cbc`
+`vg_cmac_aes_update_aesni_cbc`.
 
 The state (`VG.Spec.Cmac.Repr`) is the key schedule (bytes 0–239), the
 subkeys (240–271), the chaining value (272–287) and the bytes held back
@@ -154,10 +157,8 @@ def absorbPre : Prog isa := .seq (.block save) (.seq held (.seq fill (.seq copy 
 /-- Everything after the second call. -/
 def absorbPost : Prog isa := .seq (.block rest) (.seq copy (.block restore))
 
-def absorb (c : Ctr32) (sfx : String) : Prog isa :=
-  .seq absorbPre
-    (.seq (.call ("vg_cmac_aes_update" ++ sfx) (Impl.CmacAes.X86_64.update c))
-      (.seq chain2 (.seq (.call ("vg_cmac_aes_update" ++ sfx) (Impl.CmacAes.X86_64.update c)) absorbPost)))
+def absorb (u : Impl.CmacAes.X86_64.Update) : Prog isa :=
+  .seq absorbPre (.seq (.call u.name u.code) (.seq chain2 (.seq (.call u.name u.code) absorbPost)))
 
 /-! ## `vg_cmac_aes_finish` -/
 

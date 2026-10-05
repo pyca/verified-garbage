@@ -18,6 +18,7 @@ open VG.Impl.CmacAes.X86_64 (at_)
 open VG.Proof.CmacAes.X86_64 (offset_nat bytesAt_frame k0 succ_ofNat bytesAt_succ)
 open VG.Proof.CmacAes.Stream.X86_64 (toNat_ofNat)
 open VG.Proof.Aes.X86_64 (Ctr32Impl)
+open VG.Proof.CmacAes.X86_64 (UpdateImpl)
 
 variable {s₀ : State} {C D P W : Addr} {R L : Nat}
 
@@ -299,10 +300,10 @@ theorem maskData_wp (s : State) {P : Addr} {L : Nat} {c : Bool} (hL : L < 2 ^ 64
 from the IV at `W` (`counter_ok`), CTR over the data in place (`ctr_wp`),
 S2V's end with the plaintext into `W + 112` (`finish_wp`), the comparison of
 the IVs (`compare_ok`), the mask of the data (`maskData_wp`) and the restore. -/
-theorem openTail_wp (v : Ctr32Impl) (h : Env s₀ C D P W R L) (hcp : (⟨C, 512⟩ : Region).Disjoint ⟨P, L⟩)
+theorem openTail_wp (v : UpdateImpl) (h : Env s₀ C D P W R L) (hcp : (⟨C, 512⟩ : Region).Disjoint ⟨P, L⟩)
     (hPw : (⟨P, L⟩ : Region) ∈ s₀.wr) {s : State} (hs : SPre s₀ C D P W R L s) {g : Reg → BitVec 64}
     (hsv : Spill.Saved s.mem W g saved) :
-    WP isa (.seq (.block (counter 0)) (.seq (ctr v.callee) (.seq (finish v.callee v.suffix tOff)
+    WP isa (.seq (.block (counter 0)) (.seq (ctr v.ctr.callee) (.seq (finish v.callee v.ctr.callee v.ctr.suffix tOff)
         (.seq (.block Impl.AesSiv.X86_64.compare)
           (.seq maskData (.block (([.mov .rax (.mem (at_ .r15 dbOff))] : List Instr) ++ restore))))))) s
       fun s' => (∀ r ∈ saved.map Prod.fst, s'.gpr r = g r) ∧ s'.gpr .rsp = s₀.gpr .rsp ∧
@@ -331,7 +332,7 @@ theorem openTail_wp (v : Ctr32Impl) (h : Env s₀ C D P W R L) (hcp : (⟨C, 512
       (hi ++ lo : BitVec 128) = Spec.Gcm.ofBytes (Spec.Siv.counter (Spec.Aes.bytesAt s.mem W 16)) := by
     rw [m₁]; exact counter_cnt s.mem W
   -- CTR.
-  refine WP.seq (WP.mono (ctr_wp v h hcp hPw hr₁ (length_counter _) (counter_low _) hcnt h208 h216)
+  refine WP.seq (WP.mono (ctr_wp v.ctr h hcp hPw hr₁ (length_counter _) (counter_low _) hcnt h208 h216)
     fun s₂ h₂ => ?_)
   have f₂ := h₂.frame
   -- S2V into `W + 112`.
