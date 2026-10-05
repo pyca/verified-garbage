@@ -70,8 +70,8 @@ theorem tcombLay (hc : CfgOk c) : TCombLay c.combCfg size := by
   have hw : c.combCfg.w = 7 := rfl
   have hJ : c.combCfg.J = (64 * c.n + 6) / 7 := rfl
   have h2 := hc.n2
-  refine ⟨combLay hc, ⟨by rw [hw]; decide, by rw [hw]; decide⟩, ?_, ?_, ?_, ?_, ?_, ?_, by show c.n ≤ 8; omega,
-    h2, ⟨?_, ?_⟩, ⟨?_, ?_⟩⟩
+  refine ⟨combLay hc, ⟨by rw [hw]; decide, by rw [hw]; decide⟩, ?_, ?_, ?_, ?_, ?_, ?_, by show c.n ≤ 9; omega,
+    fun h => absurd (show c.n % 2 = 1 from h) (by omega), ⟨?_, ?_⟩, ⟨?_, ?_⟩⟩
   · rw [hk, hw, hJ]; omega
   · rw [hbits, hk]; show _ ≤ 8192; omega
   · rw [hbits, hk, ← hb0]; exact bitsAt_mod8 c 1
@@ -91,7 +91,7 @@ theorem tcombLay (hc : CfgOk c) : TCombLay c.combCfg size := by
         i < 45 := by decide
       exact Or.inr (sl_below_bits c (this i hi) 0 _)
   · show (64 + 8 * c.n * 20) % 16 = 0; omega
-  · show (64 + 8 * c.n * 21) % 16 = 0; omega
+  · intro _; show (64 + 8 * c.n * 21) % 16 = 0; omega
   · show 16 * c.n * 2 ^ (7 - 1) ≤ 32768; omega
   · show 16 * c.n * 2 ^ (7 - 1) < 65536; omega
 

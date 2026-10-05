@@ -25,7 +25,8 @@ in both lanes). Two groups of registers take the odd and the even entries,
 so that the loads of one overlap the masks of the other, and are combined by
 `orr` (`selPass`). Each group accumulates at most four pairs: an entry's
 `n` pairs in one pass over the table if `n ≤ 4`, else `x`'s and then `y`'s
-`n / 2` in two. The entry's `Z` is `1`
+`n / 2` in two for even `n`, else three at a time (`n` a multiple of 3),
+stored at `E.x`, which `E.y` continues. The entry's `Z` is `1`
 (Montgomery's, `R mod p`) unless the magnitude is zero, when the entry is
 `(0 : 1 : 0)`. The negation computes `0 - y` and selects it by the mask of the
 digit's sign.
@@ -149,12 +150,13 @@ def selSetup : List Instr :=
     .add .x .x16 .x16 .x17, .movz .x .x5 1 0, .movz .x .x1 0 0]
 
 /-- The mask of a zero magnitude into `v16`, and `A`'s accumulators
-`h … h + k - 1` set to `R`'s pairs of words under it, through `x6` and `v20`. -/
-def selOne (c h k : Nat) : List Instr :=
+`h … h + k - 1` set to the pairs of words of `v` (`R`, for `y`) under it,
+through `x6` and `v20`. -/
+def selOne (v c h k : Nat) : List Instr :=
   [.vop (.movi0 .v16), .vop (.cmeq .d2 .v16 .v16 .v19)] ++
   (List.range k).flatMap fun i =>
-    const64 .x6 (wordOf K.one (2 * i)) ++ ([.vop (.ins .d2 .v20 0 .x6)] : List Instr) ++
-    const64 .x6 (wordOf K.one (2 * i + 1)) ++ ([.vop (.ins .d2 .v20 1 .x6),
+    const64 .x6 (wordOf v (2 * i)) ++ ([.vop (.ins .d2 .v20 0 .x6)] : List Instr) ++
+    const64 .x6 (wordOf v (2 * i + 1)) ++ ([.vop (.ins .d2 .v20 1 .x6),
     .vop (.bsel .bit ((selA c).acc.getD (h + i) .v0) .v20 .v16)] : List Instr)
 
 /-- `Z` = `R` (the `n` words of `one`) unless the magnitude in `x2` is zero
@@ -163,19 +165,30 @@ def selZ : List Instr :=
   .subs .x .x4 .x2 .x5 :: (List.range K.M.n).flatMap fun i =>
     const64 .x6 (wordOf K.one i) ++ [.csel .x .x6 .x6 .x7, st .x6 (K.E.z + 8 * i)]
 
+/-- The pairs of an entry of an odd number `n` of words (`n` a multiple of
+3): `n / 3` passes of three pairs each, from byte `48 i`, under the mask of
+a zero magnitude set to those of `(0, R)` (`R` from word `n`), and stored at
+`E.x + 48 i`, which `E.y = E.x + 8 n` continues. -/
+def selThirds : List Instr :=
+  (List.range (K.M.n / 3)).flatMap fun i =>
+    K.selPass (48 * i) 3 ++ selOne ((K.one <<< (64 * K.M.n)) >>> (384 * i)) 3 0 3 ++
+    selStore 3 0 3 (K.E.x + 48 * i)
+
 /-- The entry of table `x19` for the magnitude in `x2` into `E`: the table's
 address into `x16`, the broadcasts, then the entry's pairs selected (if
-`n ≤ 4`, all in one pass; else `x`'s, stored, then `y`'s), `y = R` if the
-magnitude is zero, and `Z = R` unless it is. -/
+`n ≤ 4`, all in one pass; else, for even `n`, `x`'s, stored, then `y`'s;
+else by thirds), `y = R` if the magnitude is zero, and `Z = R` unless it
+is. -/
 def select : List Instr :=
   K.selSetup ++ selBcast ++
   (if 2 * K.M.n ≤ 8 then
-    K.selPass 0 K.M.n ++ K.selOne K.M.n (K.M.n / 2) (K.M.n / 2) ++
+    K.selPass 0 K.M.n ++ selOne K.one K.M.n (K.M.n / 2) (K.M.n / 2) ++
     selStore K.M.n 0 (K.M.n / 2) K.E.x ++ selStore K.M.n (K.M.n / 2) (K.M.n / 2) K.E.y
-  else
+  else if K.M.n % 2 = 0 then
     K.selPass 0 (K.M.n / 2) ++ selStore (K.M.n / 2) 0 (K.M.n / 2) K.E.x ++
-    K.selPass (8 * K.M.n) (K.M.n / 2) ++ K.selOne (K.M.n / 2) 0 (K.M.n / 2) ++
-    selStore (K.M.n / 2) 0 (K.M.n / 2) K.E.y) ++
+    K.selPass (8 * K.M.n) (K.M.n / 2) ++ selOne K.one (K.M.n / 2) 0 (K.M.n / 2) ++
+    selStore (K.M.n / 2) 0 (K.M.n / 2) K.E.y
+  else K.selThirds) ++
   K.selZ
 
 /-- The digit's magnitude into `x2`: its window and `|k - H|`. -/
