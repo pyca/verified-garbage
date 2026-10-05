@@ -73,7 +73,7 @@ structure Front (c : Cfg) (s₀ : State) (base : Addr) (g : Reg → BitVec 64) (
   /-- Memory outside the working space is unchanged. -/
   unch : Unch base [(0, size)] s₀.mem s.mem
 
-theorem args_ok (c : Cfg) (s : State) (h7 : c.n < 7) :
+theorem args_ok (c : Cfg) (s : State) (h7 : c.n < 10) :
     WP isa (.block (Impl.Ecdsa.Verify.X86_64.Cfg.args c)) s fun s' =>
       s'.gpr .r8 = s.gpr .rcx ∧ s'.gpr .r9 = s.gpr .rdi ∧ s'.gpr .rcx = s.gpr .rdx ∧
         s'.gpr .r10 = s.gpr .rdx + BitVec.ofNat 64 (8 * c.n) ∧
@@ -100,12 +100,12 @@ theorem unch_whole {base : Addr} {W : List (Nat × Nat)} {m m' : Mem} (h : Unch 
     (hW : ∀ w ∈ W, w.1 + w.2 ≤ size) : Unch base [(0, size)] m m' :=
   (h.outside fun w hw => ⟨Nat.zero_le _, by have := hW w hw; omega⟩).unch
 
-theorem slW_le (h7 : c.n < 7) {l : List Nat} (hl : ∀ i ∈ l, i < 45) : ∀ w ∈ slW c l, w.1 + w.2 ≤ size := by
+theorem slW_le (h7 : c.n < 10) {l : List Nat} (hl : ∀ i ∈ l, i < 45) : ∀ w ∈ slW c l, w.1 + w.2 ≤ size := by
   intro w hw
   obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hw
   exact sl_le c h7 (hl i hi)
 
-theorem flag_le (h0 : 0 < c.n) (h7 : c.n < 7) : ∀ w ∈ [(c.sl FLAG, 8)], w.1 + w.2 ≤ size := by
+theorem flag_le (h0 : 0 < c.n) (h7 : c.n < 10) : ∀ w ∈ [(c.sl FLAG, 8)], w.1 + w.2 ≤ size := by
   intro w hw
   rw [List.mem_singleton.mp hw]
   have := sl_le c h7 (i := FLAG) (by decide)
@@ -121,7 +121,7 @@ theorem front_ok (hc : CfgOk c) {s₀ : State} (hp : VPre c s₀) {rest : Prog i
       (.seq (.block (Impl.Ecdsa.Verify.X86_64.Cfg.loadS c)) (.seq (.block (Impl.Ecdh.X86_64.Cfg.peer c))
       (.seq (Impl.Ecdh.X86_64.Cfg.validate c) rest))))) s₀ Q := by
   have h0 := hc.n0
-  have h7 := hc.n7
+  have h7 := hc.n10
   have hsz : size = 8192 := rfl
   refine WP.seq (WP.mono (args_ok c s₀ h7) fun s₁ ⟨r8₁, r9₁, rcx₁, r10₁, rdx₁, k₁⟩ => ?_)
   have rsi₁ : s₁.gpr .rsi = s₀.gpr .rsi := k₁.1 _ (by decide)

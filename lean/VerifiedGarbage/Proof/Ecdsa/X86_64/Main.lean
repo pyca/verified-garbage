@@ -40,7 +40,7 @@ theorem stage₂ (hc : CfgOk c) (hC : Law c.C) {s₀ : State} {base : Addr} {s :
     {rest : Prog isa} {Q : State → Prop} (h : ∀ s', St₂ c s₀ base s' → WP isa rest s' Q) :
     WP isa (.seq (ladder c.ladderCfg) (.seq (pow c.powP) rest)) s Q := by
   have h0 := hc.n0
-  have h7 := hc.n7
+  have h7 := hc.n10
   have hn := hS.scr.nowrap
   have hpR := unitMod_pow_two hc.p_odd (64 * c.n)
   have hp3 := hc.p_ge
@@ -141,7 +141,7 @@ theorem stage₃ (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State} (hS : S
     {rest : Prog isa} {Q : State → Prop} (h : ∀ s', St₃ c s₀ base s' → WP isa rest s' Q) :
     WP isa (.seq c.middle (.seq (pow c.powN) rest)) s Q := by
   have h0 := hc.n0
-  have h7 := hc.n7
+  have h7 := hc.n10
   have hn := hS.scr.nowrap
   have hnR := unitMod_pow_two hc.n_odd (64 * c.n)
   have F := hS.fixed
@@ -200,18 +200,18 @@ theorem stage₃ (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State} (hS : S
 hash with `d` and `k`, big-endian, and `1`, or zeros and `0`. -/
 def SignPost (c : Cfg) (s₀ s' : State) : Prop :=
   match Spec.Ecdsa.signWith c.C (dv c s₀)
-      (Spec.Ecdsa.hashToInt c.C (Spec.Ecdsa.bytesAt s₀.mem (s₀.gpr .rdx) (8 * c.n))) (kv c s₀) with
+      (Spec.Ecdsa.hashToInt c.C (Spec.Ecdsa.bytesAt s₀.mem (s₀.gpr .rdx) c.C.len)) (kv c s₀) with
   | some rs => (s'.gpr .rax).setWidth 32 = 1 ∧
-      Spec.Ecdsa.bytesAt s'.mem (s₀.gpr .rdi) (16 * c.n) = Spec.Ecdsa.encode c.C rs
+      Spec.Ecdsa.bytesAt s'.mem (s₀.gpr .rdi) (2 * c.C.len) = Spec.Ecdsa.encode c.C rs
   | none => (s'.gpr .rax).setWidth 32 = 0 ∧
-      Spec.Ecdsa.bytesAt s'.mem (s₀.gpr .rdi) (16 * c.n) = List.replicate (16 * c.n) 0
+      Spec.Ecdsa.bytesAt s'.mem (s₀.gpr .rdi) (2 * c.C.len) = List.replicate (2 * c.C.len) 0
 
 /-- `s`, its check, and the result. -/
 theorem stage₄ (hc : CfgOk c) (hC : Law c.C) {s₀ : State} (hp : Pre c s₀) {base : Addr} (hb : base = s₀.gpr .r8)
     {s : State} (hS : St₃ c s₀ base s) :
     WP isa c.scalar s fun s' => (∀ r ∈ Cfg.saved.map Prod.fst, s'.gpr r = s₀.gpr r) ∧ SignPost c s₀ s' := by
   have h0 := hc.n0
-  have h7 := hc.n7
+  have h7 := hc.n10
   have hn := hS.scr.nowrap
   have hnR := unitMod_pow_two hc.n_odd (64 * c.n)
   have F := hS.fixed
@@ -243,16 +243,16 @@ theorem stage₄ (hc : CfgOk c) (hC : Law c.C) {s₀ : State} (hp : Pre c s₀) 
     simp only [mask, decide_eq_true_eq]
   have hrsi : s₁₂.gpr .rsi = s₀.gpr .rdi := by
     rw [k₁₂.gpr _ (by decide), g₁₁ _ (rsi_not_clob _), g₁₀ _ (rsi_not_clob _), hS.rsi]
-  have hw : (⟨s₀.gpr .rdi, 16 * c.n⟩ : Region) ∈ s₁₂.wr := by
+  have hw : (⟨s₀.gpr .rdi, 2 * c.C.len⟩ : Region) ∈ s₁₂.wr := by
     rw [k₁₂.wr, wr₁₁, wr₁₀, hS.wr, hp.wr]; simp
-  refine WP.mono (finish_ok hc hs₁₂ hrsi hw (hb ▸ hp.out_sc) F₁₂.saved _ hflag)
+  refine WP.mono (finish_ok hc hs₁₂ hrsi hw (hb ▸ hp.out_sc) hp.out_fit F₁₂.saved _ hflag)
     fun s' ⟨bytes, rax, saved, _⟩ => ⟨saved, ?_⟩
   -- The specification.
   have hsig := signWith_eq hC (C := c.C) (d := dv c s₀) (e := ev c s₀) (k := kv c s₀) hS.rep hS.x_lt hS.x
     (s := wordsVal s₁₁.mem base (c.sl SS) c.n) ss_lt (by
       rw [ss, trm, tdm, tem, acc₁₀, hS.acc, hS.rr, hS.d, hS.e, Lean.Grind.AddCommMonoid.add_comm])
   unfold SignPost
-  rw [hashToInt_eq hc, hsig]
+  rw [hashToInt_eq c, hsig]
   rw [ss₁₂, rr₁₂, hS.rr] at bytes
   by_cases hP : 1 ≤ dv c s₀ ∧ dv c s₀ < c.C.n ∧ 1 ≤ kv c s₀ ∧ kv c s₀ < c.C.n ∧
       sv c base s X % c.C.n ≠ 0 ∧ wordsVal s₁₁.mem base (c.sl SS) c.n ≠ 0
@@ -261,7 +261,7 @@ theorem stage₄ (hc : CfgOk c) (hC : Law c.C) {s₀ : State} (hp : Pre c s₀) 
       simp only [decide_eq_true_eq]; omega
     rw [ite_eq_left_of_eq_true _ _ (eq_true hP)]
     refine ⟨by rw [rax, hd]; rfl, ?_⟩
-    rw [bytes, hd, ite_eq_left_of_eq_true _ _ (eq_true rfl), Spec.Ecdsa.encode, hc.len]
+    rw [bytes, hd, ite_eq_left_of_eq_true _ _ (eq_true rfl), Spec.Ecdsa.encode]
   · have hd : decide ((((0 < dv c s₀ ∧ dv c s₀ < c.C.n) ∧ (0 < kv c s₀ ∧ kv c s₀ < c.C.n)) ∧
         sv c base s X % c.C.n ≠ 0) ∧ wordsVal s₁₁.mem base (c.sl SS) c.n ≠ 0) = false := by
       simp only [decide_eq_false_iff_not]; omega
@@ -278,7 +278,7 @@ restores the callee-saved registers. -/
 theorem sign_ok (hc : CfgOk c) (hC : Law c.C) {s₀ : State} (hp : Pre c s₀) :
     WP isa c.sign s₀ fun s' => (∀ r ∈ Cfg.saved.map Prod.fst, s'.gpr r = s₀.gpr r) ∧ SignPost c s₀ s' := by
   rw [sign_eq]
-  exact stage₁ hc (hp.setup hc.n7) fun _ S₁ => stage₂ hc hC S₁ fun _ S₂ => stage₃ hc S₂ fun _ S₃ =>
+  exact stage₁ hc hp.setup fun _ S₁ => stage₂ hc hC S₁ fun _ S₂ => stage₃ hc S₂ fun _ S₃ =>
     stage₄ hc hC hp rfl S₃
 
 end VG.Proof.Ecdsa.X86_64
