@@ -18,9 +18,9 @@ namespace VG.Proof.Weierstrass.AArch64
 open VG VG.AArch64 VG.Impl.Mont.AArch64 VG.Impl.Mont VG.Impl.Weierstrass.AArch64 VG.Impl.Weierstrass
 open VG.Proof.Mont.AArch64 VG.Proof.Mont VG.Proof.Weierstrass
 
-/-- The words `ws` at `T`, readable. -/
+/-- The words `ws` at `T`, readable (in one region). -/
 structure TblMem (s : State) (T : Addr) (ws : List (BitVec 64)) : Prop where
-  rd : ∀ i < ws.length, InRegions (s.rd ++ s.wr) (T + BitVec.ofNat 64 (8 * i)) 8
+  rd : InRegions (s.rd ++ s.wr) T (8 * ws.length)
   val : ∀ i < ws.length, s.mem.readW (T + BitVec.ofNat 64 (8 * i)) 64 = ws.getD i 0
 
 /-- Element `q k + r` of a list of lists of `k` elements each. -/
@@ -75,7 +75,7 @@ theorem TblMem.unch {s s' : State} {T : Addr} {ws : List (BitVec 64)} (h : TblMe
       s'.mem (T + BitVec.ofNat 64 (8 * i) + BitVec.ofNat 64 b) =
         s.mem (T + BitVec.ofNat 64 (8 * i) + BitVec.ofNat 64 b)) :
     TblMem s' T ws :=
-  ⟨fun i hi => hrd ▸ h.rd i hi, fun i hi => by
+  ⟨hrd ▸ h.rd, fun i hi => by
     rw [← h.val i hi]; exact Mem.readW_congr fun b hb => hm i hi b (by omega)⟩
 
 /-- The `x` and `y` of entry `m` of table `j`, in Montgomery form, at
