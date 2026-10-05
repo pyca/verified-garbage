@@ -23,30 +23,31 @@ variable {P : RfcHash} {L : Lay P.I.hashLen} {g : Reg → BitVec 32} {m₀ : Mem
 /-! ## The run's values -/
 
 /-- The private key, the digest and its integer. -/
-abbrev xOf {dn : Nat} (L : Lay dn) (m₀ : Mem) : Nat :=
-  Spec.Weierstrass.ofBytes (Spec.Sha256.bytesAt m₀ (State.addr L.d) 32)
+abbrev xOf (P : RfcHash) {dn : Nat} (L : Lay dn) (m₀ : Mem) : Nat :=
+  Spec.Weierstrass.ofBytes (Spec.Sha256.bytesAt m₀ (State.addr L.d) (8 * P.w))
 abbrev hBOf (P : RfcHash) (L : Lay P.I.hashLen) (m₀ : Mem) : List Byte :=
   Spec.Sha256.bytesAt m₀ (State.addr L.dg) P.F.H.D
-abbrev eOf (P : RfcHash) (L : Lay P.I.hashLen) (m₀ : Mem) : Nat := Spec.Ecdsa.hashToInt Spec.P256.curve (hBOf P L m₀)
+abbrev eOf (P : RfcHash) (L : Lay P.I.hashLen) (m₀ : Mem) : Nat := Spec.Ecdsa.hashToInt P.R.E.C (hBOf P L m₀)
 
 /-- `K` and `V` after steps b–g. -/
 abbrev kv0 (P : RfcHash) (L : Lay P.I.hashLen) (m₀ : Mem) : List Byte × List Byte :=
-  Spec.Ecdsa.Rfc6979.init Spec.P256.curve P.ok.hH.SH.H P.F.H.D (xOf L m₀) (hBOf P L m₀)
+  Spec.Ecdsa.Rfc6979.init P.R.E.C P.ok.hH.SH.H P.F.H.D (xOf P L m₀) (hBOf P L m₀)
 
 /-- `K` and `V` before candidate `i`, candidate `i`'s `V`, and its signature, with
-`k` the leftmost 256 bits of `V`. -/
+`k` the leftmost `8 w` bytes of `V`. -/
 abbrev kvI (P : RfcHash) (L : Lay P.I.hashLen) (m₀ : Mem) (i : Nat) : List Byte × List Byte :=
   kvAt P.ok.hH.SH.H (kv0 P L m₀).1 (kv0 P L m₀).2 i
 abbrev candI (P : RfcHash) (L : Lay P.I.hashLen) (m₀ : Mem) (i : Nat) : List Byte :=
   candAt P.ok.hH.SH.H (kv0 P L m₀).1 (kv0 P L m₀).2 i
 abbrev sigI (P : RfcHash) (L : Lay P.I.hashLen) (m₀ : Mem) (i : Nat) : Option (Nat × Nat) :=
-  Spec.Ecdsa.signWith Spec.P256.curve (xOf L m₀) (eOf P L m₀) (Spec.Weierstrass.ofBytes ((candI P L m₀ i).take 32))
+  Spec.Ecdsa.signWith P.R.E.C (xOf P L m₀) (eOf P L m₀)
+    (Spec.Weierstrass.ofBytes ((candI P L m₀ i).take (8 * P.w)))
 
 /-- What the function's result is, for the signature `r` of the last candidate. -/
-def ResultIs {dn : Nat} (L : Lay dn) (r : Option (Nat × Nat)) (t : State) : Prop :=
+def ResultIs (P : RfcHash) {dn : Nat} (L : Lay dn) (r : Option (Nat × Nat)) (t : State) : Prop :=
   match r with
-  | some rs => t.gpr .r0 = 1 ∧ Spec.Sha256.bytesAt t.mem (State.addr L.out) 64 = Spec.Ecdsa.encode Spec.P256.curve rs
-  | none => t.gpr .r0 = 0 ∧ Spec.Sha256.bytesAt t.mem (State.addr L.out) 64 = List.replicate 64 0
+  | some rs => t.gpr .r0 = 1 ∧ Spec.Sha256.bytesAt t.mem (State.addr L.out) (16 * P.w) = Spec.Ecdsa.encode P.R.E.C rs
+  | none => t.gpr .r0 = 0 ∧ Spec.Sha256.bytesAt t.mem (State.addr L.out) (16 * P.w) = List.replicate (16 * P.w) 0
 
 /-- Before candidate `i`. -/
 structure LoopInv (P : RfcHash) (L : Lay P.I.hashLen) (m₀ : Mem) (i : Nat) (t : State) : Prop where
@@ -61,14 +62,14 @@ structure Exit (P : RfcHash) (L : Lay P.I.hashLen) (m₀ : Mem) (i : Nat) (t : S
   lt : i < 8
   fails : ∀ j < i, sigI P L m₀ j = none
   last : sigI P L m₀ i ≠ none ∨ i = 7
-  res : ResultIs L (sigI P L m₀ i) t
+  res : ResultIs P L (sigI P L m₀ i) t
 
 /-! ## Facts kept -/
 
-theorem Ctx.dBytes (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) :
-    Spec.Sha256.bytesAt t.mem (State.addr L.d) 32 = Spec.Sha256.bytesAt m₀ (State.addr L.d) 32 := by
+theorem Ctx.dBytes (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) {n : Nat} (hn : n ≤ L.q) :
+    Spec.Sha256.bytesAt t.mem (State.addr L.d) n = Spec.Sha256.bytesAt m₀ (State.addr L.d) n := by
   simp only [Spec.Sha256.bytesAt]
-  exact List.map_congr_left fun i hi => hc.d_byte hL (List.mem_range.mp hi)
+  exact List.map_congr_left fun i hi => hc.d_byte hL (by have := List.mem_range.mp hi; omega)
 
 theorem Ctx.dgBytes (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) {n : Nat} (hn : n ≤ P.I.hashLen) :
     Spec.Sha256.bytesAt t.mem (State.addr L.dg) n = Spec.Sha256.bytesAt m₀ (State.addr L.dg) n := by
@@ -78,7 +79,7 @@ theorem Ctx.dgBytes (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) {n : Nat} (hn 
 /-- What `core` changes: `out`, `scratch` and the stack below the frame. -/
 abbrev CoreW {dn : Nat} (L : Lay dn) : List Region := [L.OUT, L.SCR, ⟨L.B, 24⟩]
 
-theorem corew_disj (hL : L.Ok) {d n : Nat} (h₁ : 24 ≤ d) (h₂ : d + n ≤ 224) :
+theorem corew_disj (hL : L.Ok) {d n : Nat} (h₁ : 24 ≤ d) (h₂ : d + n ≤ 240) :
     ∀ r ∈ CoreW L, Region.Disjoint ⟨L.B + BitVec.ofNat 64 d, n⟩ r := by
   simp only [CoreW, List.mem_cons, List.not_mem_nil, or_false]
   rintro r (rfl | rfl | rfl)
@@ -103,28 +104,40 @@ theorem low_word (h l : BitVec 32) : BitVec.setWidth 32 (h ++ l) = l := by
   have := l.isLt
   rw [Nat.add_mod, Nat.mul_mod_left, Nat.zero_add, Nat.mod_mod, Nat.mod_eq_of_lt this]
 
-/-- `core`'s signature is the candidate's: it reads the leftmost 32 bytes of
-`V` and of the digest. -/
-theorem coreSig_eq (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) {i : Nat} (hv : vOfP P L t.mem = candI P L m₀ i) :
-    coreSig L t.mem = sigI P L m₀ i := by
-  have h32 := P.len32
-  have hD : 32 ≤ P.F.H.D := by rw [← P.len]; exact h32
+/-- `core`'s signature is the candidate's: it reads the leftmost `8 w` bytes
+of `V` and of the digest. -/
+theorem coreSig_eq (hL : L.Ok) (hq : L.q = 8 * P.w) {t : State} (hc : Ctx L g m₀ t) {i : Nat}
+    (hv : vOfP P L t.mem = candI P L m₀ i) : coreSig P L t.mem = sigI P L m₀ i := by
+  have hQ := P.lenQ
+  have hw : P.w = P.R.E.n := rfl
+  have hD : 8 * P.w ≤ P.F.H.D := by rw [← P.len]; exact hQ
+  have hB : Spec.Ecdsa.nBits P.R.E.C = 8 * (8 * P.w) := by rw [P.R.nBits]; omega
   have hv' : Spec.Sha256.bytesAt t.mem (L.B + BitVec.ofNat 64 88) P.F.H.D = candI P L m₀ i := hv
-  simp only [coreSig, Proof.Ecdsa.Arm.sig, ecdsa_bytesAt, sigI, eOf, hBOf, xOf]
-  rw [hc.dBytes hL, hc.dgBytes hL (n := 32) h32, bytesAt_take _ (L.B + BitVec.ofNat 64 88) hD, hv',
-    hashToInt_32 (length_bytesAt _ _ _), bytesAt_take m₀ (State.addr L.dg) hD,
-    hashToInt_take (h := Spec.Sha256.bytesAt m₀ (State.addr L.dg) P.F.H.D) (by rw [length_bytesAt]; exact hD)]
+  have e₁ : Spec.Ecdsa.hashToInt P.R.E.C (Spec.Sha256.bytesAt t.mem (State.addr L.dg) (8 * P.w)) =
+      Spec.Weierstrass.ofBytes (Spec.Sha256.bytesAt m₀ (State.addr L.dg) (8 * P.w)) := by
+    rw [hashToInt_takeQ hB (by rw [length_bytesAt]), List.take_of_length_le (by rw [length_bytesAt]),
+      hc.dgBytes hL hQ]
+  have e₂ : Spec.Ecdsa.hashToInt P.R.E.C (Spec.Sha256.bytesAt m₀ (State.addr L.dg) P.F.H.D) =
+      Spec.Weierstrass.ofBytes (Spec.Sha256.bytesAt m₀ (State.addr L.dg) (8 * P.w)) := by
+    rw [hashToInt_takeQ hB (by rw [length_bytesAt]; exact hD), ← bytesAt_take m₀ (State.addr L.dg) hD]
+  have e₃ : Spec.Sha256.bytesAt t.mem (L.B + BitVec.ofNat 64 88) (8 * P.w) = (candI P L m₀ i).take (8 * P.w) := by
+    rw [bytesAt_take _ (L.B + BitVec.ofNat 64 88) hD, hv']
+  have e₄ : Spec.Sha256.bytesAt t.mem (State.addr L.d) (8 * P.w) = Spec.Sha256.bytesAt m₀ (State.addr L.d) (8 * P.w) :=
+    hc.dBytes hL (by omega)
+  simp only [coreSig, coreSigOf, ecdsa_bytesAt, sigI, eOf, hBOf, xOf]
+  rw [← hw, e₁, e₂, e₃, e₄]
 
-theorem ResultIs.r0_zero {r : Option (Nat × Nat)} {t : State} (h : ResultIs L r t) :
+theorem ResultIs.r0_zero {r : Option (Nat × Nat)} {t : State} (h : ResultIs P L r t) :
     t.gpr .r0 = 0 ↔ r = none := by
   cases r with
   | none => exact ⟨fun _ => rfl, fun _ => h.1⟩
   | some rs => exact ⟨fun h' => by rw [h.1] at h'; exact absurd h' (by decide), fun h' => by cases h'⟩
 
 /-- The result, kept by code that keeps `r0` and changes memory elsewhere. -/
-theorem ResultIs.keep {r : Option (Nat × Nat)} {t t' : State} (h : ResultIs L r t) (ha : t'.gpr .r0 = t.gpr .r0)
-    (hm : Spec.Sha256.bytesAt t'.mem (State.addr L.out) 64 = Spec.Sha256.bytesAt t.mem (State.addr L.out) 64) :
-    ResultIs L r t' := by
+theorem ResultIs.keep {r : Option (Nat × Nat)} {t t' : State} (h : ResultIs P L r t) (ha : t'.gpr .r0 = t.gpr .r0)
+    (hm : Spec.Sha256.bytesAt t'.mem (State.addr L.out) (16 * P.w) =
+      Spec.Sha256.bytesAt t.mem (State.addr L.out) (16 * P.w)) :
+    ResultIs P L r t' := by
   cases r with
   | none => exact ⟨by rw [ha]; exact h.1, by rw [hm]; exact h.2⟩
   | some rs => exact ⟨by rw [ha]; exact h.1, by rw [hm]; exact h.2⟩
@@ -146,7 +159,7 @@ structure P₃ (P : RfcHash) (L : Lay P.I.hashLen) (m₀ : Mem) (i : Nat) (u : S
   v : vOfP P L u.mem = candI P L m₀ i
   cnt : u.gpr .r9 = BitVec.ofNat 32 (8 - i)
   fails : ∀ j < i, sigI P L m₀ j = none
-  res : ResultIs L (sigI P L m₀ i) u
+  res : ResultIs P L (sigI P L m₀ i) u
 
 /-- After the decision: whether to go on. -/
 structure Mid (P : RfcHash) (L : Lay P.I.hashLen) (m₀ : Mem) (i : Nat) (u : State) : Prop where
@@ -155,7 +168,7 @@ structure Mid (P : RfcHash) (L : Lay P.I.hashLen) (m₀ : Mem) (i : Nat) (u : St
   v : vOfP P L u.mem = candI P L m₀ i
   cnt : u.gpr .r9 = BitVec.ofNat 32 (8 - (i + 1))
   fails : ∀ j < i, sigI P L m₀ j = none
-  res : ResultIs L (sigI P L m₀ i) u
+  res : ResultIs P L (sigI P L m₀ i) u
   dec : isa.eval .ne u = some (decide (sigI P L m₀ i = none ∧ i + 1 < 8))
 
 theorem try₁_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) {i : Nat} (hi : LoopInv P L m₀ i t) :
@@ -168,11 +181,12 @@ theorem try₂_ok {t : State} (hc : Ctx L g m₀ t) {i : Nat} (hi : P₁ P L m�
   WP.mono (coreArgs_ok hc) fun _ ⟨hc₂, hm₂, h0, h1, h2, h3, h12, h9⟩ =>
     ⟨hc₂, ⟨hi.lt, hm₂ ▸ hi.k, hm₂ ▸ hi.v, h9.trans hi.cnt, hi.fails⟩, h0, h1, h2, h3, h12⟩
 
-theorem try₃_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) {i : Nat} (hi : P₁ P L m₀ i t) (ha : CoreRegs L t) :
+theorem try₃_ok (hL : L.Ok) (hq : L.q = 8 * P.w) {t : State} (hc : Ctx L g m₀ t) {i : Nat} (hi : P₁ P L m₀ i t)
+    (ha : CoreRegs L t) :
     WP isa (.frame (.push [.r12, .lr]) (.call (cfgOf P).coreN (cfgOf P).coreC) (.pop .r12 8)) t
       fun u => Ctx L g m₀ u ∧ P₃ P L m₀ i u := by
-  refine WP.mono (core_ok (P := P) hL P.len32 hc ha) fun u₃ ⟨hc₃, h9₃, hf₃, hr₃⟩ => ?_
-  rw [coreSig_eq hL hc hi.v, low_word] at hr₃
+  refine WP.mono (core_ok (P := P) hL hq P.lenQ hc ha) fun u₃ ⟨hc₃, h9₃, hf₃, hr₃⟩ => ?_
+  rw [coreSig_eq hL hq hc hi.v, low_word] at hr₃
   refine ⟨hc₃, hi.lt, (bytesAt_frame hf₃ (corew_disj hL (by omega) (by anums)) (by anums)).trans hi.k,
     (bytesAt_frame hf₃ (corew_disj hL (by omega) (by anums)) (by anums)).trans hi.v, h9₃.trans hi.cnt,
     hi.fails, ?_⟩
@@ -188,13 +202,13 @@ theorem try₄_ok {t : State} (hc : Ctx L g m₀ t) {i : Nat} (hi : P₃ P L m�
   simp only [hi.res.r0_zero, cnt_ne hi.lt]
 
 /-- The branch: step h.3 and the next candidate, or the end. -/
-theorem branch_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) {i : Nat} (hi : Mid P L m₀ i t) :
+theorem branch_ok (hL : L.Ok) (hq : L.q = 8 * P.w) {t : State} (hc : Ctx L g m₀ t) {i : Nat} (hi : Mid P L m₀ i t) :
     WP isa (.ite .ne (.seq (cfgOf P).rekey (.block Cfg.again)) (.block Cfg.stop)) t fun t' => Ctx L g m₀ t' ∧
       ((isa.eval .ne t' = some false ∧ Exit P L m₀ i t') ∨
         (isa.eval .ne t' = some true ∧ LoopInv P L m₀ (i + 1) t')) := by
   by_cases hgo : sigI P L m₀ i = none ∧ i + 1 < 8
   · refine WP.ite true (by rw [hi.dec, decide_eq_true hgo]) (fun _ => ?_) (fun h => absurd h (by decide))
-    refine WP.seq (WP.mono (rekey_ok hL hc) fun u₅ ⟨hc₅, h9₅, _, hk₅, hv₅⟩ => ?_)
+    refine WP.seq (WP.mono (rekey_ok hL hq hc) fun u₅ ⟨hc₅, h9₅, _, hk₅, hv₅⟩ => ?_)
     refine WP.mono (again_ok hc₅) fun u₆ ⟨hc₆, hm₆, h9₆, hz₆⟩ => ⟨hc₆, .inr ⟨hz₆, ?_⟩⟩
     have hkv : kvI P L m₀ (i + 1) = step P.ok.hH.SH.H (kvI P L m₀ i).1 (kvI P L m₀ i).2 := rfl
     refine ⟨hgo.2, ?_, ?_, ?_, fun j hj => ?_⟩
@@ -211,13 +225,14 @@ theorem branch_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) {i : Nat} (hi : 
     · exact .inr (by have := hi.lt; have : ¬ i + 1 < 8 := fun h => hgo ⟨hs, h⟩; omega)
     · exact .inl hs
 
-theorem tryOne_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) {i : Nat} (hi : LoopInv P L m₀ i t) :
+theorem tryOne_ok (hL : L.Ok) (hq : L.q = 8 * P.w) {t : State} (hc : Ctx L g m₀ t) {i : Nat}
+    (hi : LoopInv P L m₀ i t) :
     WP isa (cfgOf P).tryOne t fun t' => Ctx L g m₀ t' ∧
       ((isa.eval .ne t' = some false ∧ Exit P L m₀ i t') ∨
         (isa.eval .ne t' = some true ∧ LoopInv P L m₀ (i + 1) t')) :=
   WP.seq (WP.mono (try₁_ok hL hc hi) fun _ ⟨h₁, p₁⟩ =>
     WP.seq (WP.mono (try₂_ok h₁ p₁) fun _ ⟨h₂, p₂, a₂⟩ =>
-      WP.seq (WP.mono (try₃_ok hL h₂ p₂ a₂) fun _ ⟨h₃, p₃⟩ =>
-        WP.seq (WP.mono (try₄_ok h₃ p₃) fun _ ⟨h₄, p₄⟩ => branch_ok hL h₄ p₄))))
+      WP.seq (WP.mono (try₃_ok hL hq h₂ p₂ a₂) fun _ ⟨h₃, p₃⟩ =>
+        WP.seq (WP.mono (try₄_ok h₃ p₃) fun _ ⟨h₄, p₄⟩ => branch_ok hL hq h₄ p₄))))
 
 end VG.Proof.Ecdsa.Rfc6979.Arm

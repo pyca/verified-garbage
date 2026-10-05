@@ -1,5 +1,5 @@
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Verified
-import VerifiedGarbage.Proof.Ecdsa.Arm.Verified
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.P256
 import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.Sha256
 import VerifiedGarbage.Spec.Ecdsa.Rfc6979.P256Sha256
 
@@ -18,7 +18,7 @@ open VG VG.Arm
 
 theorem implies :
     (rfcArm Spec.Ecdsa.Rfc6979.P256Sha256.inst).Implies
-      (Spec.Ecdsa.Rfc6979.P256Sha256.inst.signContract Arm.abi 224) := by
+      (Spec.Ecdsa.Rfc6979.P256Sha256.inst.signContract Arm.abi 240) := by
   exact
     { pre := by
         sig_implies_pre [Spec.Ecdsa.Rfc6979.P256Sha256.inst, Spec.Ecdsa.Rfc6979.Instance.signContract,
@@ -38,10 +38,11 @@ theorem implies :
       sat := by
         sig_implies_sat [Spec.Ecdsa.Rfc6979.P256Sha256.inst, Spec.Ecdsa.Rfc6979.Instance.signContract,
           Spec.Ecdsa.Rfc6979.Instance.signSig, Spec.Ecdsa.P256.inst, Spec.P256.curve, Spec.Ecdsa.scratchWords,
-          Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr, rfcArm, stkR] [satState 32] using satState 32 }
+          Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr, rfcArm, stkR] [satState 32 32] using satState 32 32 }
 
 /-- SHA-256, for P-256's group law `hL`. -/
 def pack (hL : Weierstrass.Law Spec.P256.curve) : RfcHash where
+  R := p256 hL
   I := Spec.Ecdsa.Rfc6979.P256Sha256.inst
   F := Proof.Pbkdf2.Whole.Arm.sha256F
   ok := Proof.Pbkdf2.Whole.Arm.sha256OKF
@@ -57,11 +58,10 @@ def pack (hL : Weierstrass.Law Spec.P256.curve) : RfcHash where
   hWi := Nat.le_of_ble_eq_true rfl
   hWf := Nat.le_of_ble_eq_true rfl
   hWb := Nat.le_of_ble_eq_true rfl
-  coreX := Proof.Ecdsa.Arm.sign_arm hL
-  coreCT := Proof.Ecdsa.Arm.sign_ct
+  hQ := Nat.le_of_ble_eq_true rfl
 
 theorem sign_verified (hL : Weierstrass.Law Spec.P256.curve) :
-    Verified Arm.target (cfgOf (pack hL)).sign (Spec.Ecdsa.Rfc6979.P256Sha256.inst.signContract Arm.abi 224) :=
+    Verified Arm.target (cfgOf (pack hL)).sign (Spec.Ecdsa.Rfc6979.P256Sha256.inst.signContract Arm.abi 240) :=
   Arm.sign_verified (pack hL) implies
 
 end VG.Proof.Ecdsa.Rfc6979.Arm.Sha256

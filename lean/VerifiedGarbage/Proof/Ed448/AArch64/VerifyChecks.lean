@@ -264,7 +264,11 @@ theorem eqSlots_ok {s : State} {base : Addr} (hs : Scr s base) (hb : BoundedEnv 
   refine WP.mono (diffCan_ok hsw) fun x ⟨x5, xm, xk⟩ => ?_
   refine WP.mono (orBad_ok x) fun t ⟨t20, tm, tk⟩ => ?_
   have can : ∀ j < 16, word w.mem base (CAN + 8 * j) = word v.mem base (CAN + 8 * j) := fun j hj =>
-    mw.word (Or.inr (by simp only [X2, slot, CAN]; omega)) (by simp only [CAN, ACC]; omega)
+    Mem.readW_congr fun i hi => mw _ (by
+        simp only [ofs]; rw [Offset.add_add, Mem.sub_ofNat_toNat base (by simp only [CAN]; omega)]
+        simp only [X2, slot, CAN]; omega)
+      (by simp only [ofs]; rw [Offset.add_add, Mem.sub_ofNat_toNat base (by simp only [CAN]; omega)]
+          simp only [CAN, ACC]; omega)
   have eb : E v.mem base b = E s.mem base b := (cu.trans cv).mem.E hb1
   refine ⟨⟨x.gpr .x5, ?_, ?_⟩, ?_, ?_⟩
   · rw [x5]

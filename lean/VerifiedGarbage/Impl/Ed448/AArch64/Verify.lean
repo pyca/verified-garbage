@@ -1,6 +1,6 @@
 import VerifiedGarbage.Impl.Ed448.AArch64.Whole
 import VerifiedGarbage.Impl.Ed448.AArch64.Scalar
-import VerifiedGarbage.Impl.Ed448.AArch64.VerifyEquation
+import VerifiedGarbage.Impl.Ed448.AArch64.VerifyWindow
 
 /-!
 # Ed448 verification on AArch64

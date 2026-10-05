@@ -9,7 +9,7 @@ import textwrap
 import unittest
 
 
-WORKFLOW = Path(__file__).resolve().parents[1] / ".github/workflows/ci.yml"
+WORKFLOW = Path(__file__).resolve().parents[1] / ".github/workflows/lean-cache.yml"
 
 
 class LeanCachePublishingTests(unittest.TestCase):
@@ -55,7 +55,7 @@ class LeanCachePublishingTests(unittest.TestCase):
                 RUNNER_TEMP=tmp,
                 GITHUB_OUTPUT=str(output),
                 GH_REPO="pyca/verified-garbage",
-                GITHUB_SHA="current",
+                HEAD_SHA="current",
                 GH_TOKEN="test-token",
                 GITHUB_ACTOR="test-actor",
                 IMAGE="ghcr.io/pyca/vg-lean-cache:latest",

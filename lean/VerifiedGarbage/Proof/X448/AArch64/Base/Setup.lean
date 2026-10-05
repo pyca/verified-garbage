@@ -214,11 +214,6 @@ theorem consts_ok {s : State} {base : Addr} (hs : Scr s base) (g : Spec.X448.Fe 
     · rw [rd, k6.2.1, k5.2.1, k4.2.1, k3.2.1, k2.2.1, k1.2.1]
     · rw [wr, k6.2.2, k5.2.2, k4.2.2, k3.2.2, k2.2.2, k1.2.2]
 
-theorem bnd_of_words {m : Mem} {base : Addr} {o : Nat} {v : Spec.X448.Fe}
-    (h : ∀ w < 8, word m base (o + 8 * w) = limb v w) : Bnd Ib m base o := fun w hw => by
-  show (word m base (o + 8 * w)).toNat < _
-  rw [h w hw]; exact Nat.lt_of_lt_of_le (limb_lt v w) (by decide)
-
 open VG.Proof.Ed448 (Rep baseAff)
 open VG.Proof.X448.AArch64 (bitRegs ofs)
 
