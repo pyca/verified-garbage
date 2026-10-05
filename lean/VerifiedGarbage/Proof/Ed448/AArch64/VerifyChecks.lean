@@ -76,15 +76,6 @@ theorem CKeep.of_keeps {base : Addr} {s t : State} {rs : List Reg} (hk : Keeps r
     (hr : ∀ r ∈ rs, r ∈ Reg.x20 :: workRegs) (hm : CFrame base s.mem t.mem) : CKeep base s t :=
   ⟨hk.mono hr, hm⟩
 
-/-- `BoundedEnv` after a check: the slots but `X2` are unchanged, and `X2` holds 28-bit limbs. -/
-theorem bounded_check {base : Addr} {m m' : Mem} (hb : BoundedEnv m base) (h : CFrame base m m')
-    (h2 : VG.Proof.X448.AArch64.Bounded m' base X2) : BoundedEnv m' base := by
-  intro i j hj
-  by_cases hi : i = 1
-  · subst hi; exact bounded_of_legacy h2 j hj
-  · rw [show VG.Proof.X448.AArch64.limbs m' base (slot i.val) j = _ from h.limbs hi (by omega)]
-    exact hb i j hj
-
 /-! ## Small blocks -/
 
 theorem orBad_ok (s : State) :
@@ -147,35 +138,6 @@ theorem valN_inj {f g : Nat → Nat} : ∀ n, (∀ i < n, f i < VG.Proof.X448.ra
     · exact valN_inj n (fun j hj => hf j (by omega)) (fun j hj => hg j (by omega)) e2 i hi
     · exact e1
 
-/-- `canon a`: slot `a` fully reduced into `X2`, as sixteen 28-bit limbs. -/
-theorem canon_ok {s : State} {base : Addr} (hs : Scr s base) (hb : BoundedEnv s.mem base) (a : Fin 22)
-    (ha : a ≠ 1) :
-    WP isa (.block (canon a.val)) s fun t =>
-      VG.Proof.X448.AArch64.Bounded t.mem base X2 ∧ VG.Proof.X448.AArch64.fe t.mem base X2 = (E s.mem base a).val ∧
-      FieldMem base X2 s.mem t.mem ∧ Keeps workRegs s t := by
-  have hal := a.isLt
-  have hne : a.val ≠ 1 := fun e => ha (Fin.ext e)
-  rw [canon, List.append_assoc, WP.block_append_iff]
-  refine WP.mono (VG.Proof.Curve448.AArch64.copy_ok hs (o := X2) (a := slot a.val) (by decide)
-    (by simp only [slot]; omega) (by decide) (by simp only [slot]; omega)
-    (Or.inr (by simp only [X2, slot]; omega))) fun u ⟨ul, uo, uk⟩ => ?_
-  have hsu := hs.of_keeps uk (by decide)
-  have ub : VG.Proof.Curve448.AArch64.Bounded u.mem base X2 := fun j hj => by
-    rw [show VG.Proof.X448.AArch64.limbs u.mem base X2 j = _ from ul j hj]; exact hb a j hj
-  rw [WP.block_append_iff]
-  refine WP.mono (VG.Proof.Curve448.AArch64.toLegacy_ok hsu (o := X2) (by decide) (by decide) ub)
-    fun v ⟨vk, vb, vf⟩ => ?_
-  have hsv := hsu.of_keeps vk.keeps (by decide)
-  refine WP.mono (VG.Proof.X448.AArch64.freeze_ok hsv vb) fun t ⟨tb, tv, tm, tk⟩ => ?_
-  refine ⟨tb, ?_, (FieldMem.output uo).trans (vk.mem.trans tm), ((uk.trans vk.keeps).mono
-    (fun r hr => List.mem_cons_of_mem _ hr)).trans tk⟩
-  have hF : VG.Proof.X448.toFe (VG.Proof.X448.AArch64.fe v.mem base X2) = E s.mem base a := by
-    have : VG.Proof.X448.AArch64.F v.mem base X2 = VG.Proof.Curve448.AArch64.F u.mem base X2 := vf
-    rw [show VG.Proof.X448.toFe (VG.Proof.X448.AArch64.fe v.mem base X2) = VG.Proof.X448.AArch64.F v.mem base X2
-      from rfl, this]
-    exact congrArg VG.Proof.X448.toFe (VG.Proof.X448.Wide.valN_congr ul)
-  rw [tv, ← hF, VG.Proof.X448.toFe_val]
-
 theorem or_eq_zero64 (x y : BitVec 64) : x ||| y = 0 ↔ x = 0 ∧ y = 0 := BitVec.or_eq_zero_iff
 
 theorem xor_eq_zero64 (x y : BitVec 64) : x ^^^ y = 0 ↔ x = y := BitVec.xor_eq_zero_iff
@@ -233,71 +195,5 @@ theorem diffCan_ok {s : State} {base : Addr} (hs : Scr s base) :
   refine WP.mono (wp_range_flatMap (M := isa) (N := 16) inv step 16 (by decide) t0
     ⟨⟨fun _ _ h => absurd h (Nat.not_lt_zero _), fun _ => z0⟩, m0, VG.Proof.X448.AArch64.Keeps.refl _ _⟩)
     fun u ⟨uv, um, uk⟩ => ⟨uv, um, (k0.mono (by intro r hr; simp only [List.mem_singleton] at hr; subst r; decide)).trans uk⟩
-
-/-- `eqSlots a b`: `x20 |= c`, with `c = 0` exactly when slots `a` and `b` hold the same element. -/
-theorem eqSlots_ok {s : State} {base : Addr} (hs : Scr s base) (hb : BoundedEnv s.mem base) (a b : Fin 22)
-    (ha : a ≠ 1) (hb1 : b ≠ 1) :
-    WP isa (.block (eqSlots a.val b.val)) s fun t =>
-      (∃ c : BitVec 64, (c = 0 ↔ E s.mem base a = E s.mem base b) ∧ t.gpr .x20 = s.gpr .x20 ||| c) ∧
-      CKeep base s t ∧ BoundedEnv t.mem base := by
-  rw [eqSlots]
-  simp only [List.append_assoc]
-  rw [WP.block_append_iff]
-  refine WP.mono (canon_ok hs hb a ha) fun u ⟨bu, fu, mu, ku⟩ => ?_
-  have hsu := hs.of_keeps ku (by decide)
-  have cu : CKeep base s u := CKeep.of_keeps ku (fun r hr => List.mem_cons_of_mem _ hr) (CFrame.of_field mu)
-  rw [WP.block_append_iff]
-  refine WP.mono (VG.Proof.X448.AArch64.copy_ok hsu (o := CAN) (a := X2) (by decide) (by decide) (by decide)
-    (by decide) (Or.inr (Or.inr (by decide)))) fun v ⟨lv, ov, kv⟩ => ?_
-  have hsv := hsu.of_keeps kv (by decide)
-  have cv : CKeep base u v := CKeep.of_keeps kv (by decide) (CFrame.of_can ov)
-  have bu2 : BoundedEnv u.mem base := bounded_check hb cu.mem bu
-  have x2v : ∀ j < 16, VG.Proof.X448.AArch64.limbs v.mem base X2 j = VG.Proof.X448.AArch64.limbs u.mem base X2 j :=
-    fun j hj => congrArg BitVec.toNat (ov.word (Or.inl (by simp only [X2, slot, CAN]; omega)) (by simp only [X2, slot]; omega))
-  have bv2 : VG.Proof.X448.AArch64.Bounded v.mem base X2 := fun j hj => by rw [x2v j hj]; exact bu j hj
-  have bv : BoundedEnv v.mem base := bounded_check bu2 cv.mem bv2
-  rw [WP.block_append_iff]
-  refine WP.mono (canon_ok hsv bv b hb1) fun w ⟨bw, fw, mw, kw⟩ => ?_
-  have hsw := hsv.of_keeps kw (by decide)
-  have cw : CKeep base v w := CKeep.of_keeps kw (fun r hr => List.mem_cons_of_mem _ hr) (CFrame.of_field mw)
-  rw [WP.block_append_iff]
-  refine WP.mono (diffCan_ok hsw) fun x ⟨x5, xm, xk⟩ => ?_
-  refine WP.mono (orBad_ok x) fun t ⟨t20, tm, tk⟩ => ?_
-  have can : ∀ j < 16, word w.mem base (CAN + 8 * j) = word v.mem base (CAN + 8 * j) := fun j hj =>
-    Mem.readW_congr fun i hi => mw _ (by
-        simp only [ofs]; rw [Offset.add_add, Mem.sub_ofNat_toNat base (by simp only [CAN]; omega)]
-        simp only [X2, slot, CAN]; omega)
-      (by simp only [ofs]; rw [Offset.add_add, Mem.sub_ofNat_toNat base (by simp only [CAN]; omega)]
-          simp only [CAN, ACC]; omega)
-  have eb : E v.mem base b = E s.mem base b := (cu.trans cv).mem.E hb1
-  refine ⟨⟨x.gpr .x5, ?_, ?_⟩, ?_, ?_⟩
-  · rw [x5]
-    constructor
-    · intro h
-      apply Fin.ext
-      rw [← fu, ← eb, ← fw]
-      apply VG.Proof.X448.valN_congr
-      intro j hj
-      have e := congrArg BitVec.toNat (h j hj)
-      rw [can j hj] at e
-      have := lv j hj
-      change (word v.mem base (CAN + 8 * j)).toNat = VG.Proof.X448.AArch64.limbs u.mem base X2 j at this
-      change VG.Proof.X448.AArch64.limbs u.mem base X2 j = (word w.mem base (X2 + 8 * j)).toNat
-      rw [← this, e]
-    · intro h j hj
-      have hv : VG.Proof.X448.AArch64.fe w.mem base X2 = VG.Proof.X448.AArch64.fe u.mem base X2 := by
-        rw [fw, eb, fu, ← h]
-      have := valN_inj 16 bw bu hv j hj
-      apply BitVec.eq_of_toNat_eq
-      rw [can j hj]
-      change VG.Proof.X448.AArch64.limbs w.mem base X2 j = (word v.mem base (CAN + 8 * j)).toNat
-      rw [this]; exact (lv j hj).symm
-  · rw [t20, xk.1 _ (by decide), kw.1 _ (by decide), kv.1 _ (by decide), ku.1 _ (by decide)]
-  · refine ((cu.trans cv).trans cw).trans ?_
-    refine CKeep.of_keeps (rs := [.x4, .x5, .x6, .x20]) ((xk.mono (by decide)).trans (tk.mono (by decide)))
-      (by decide) ?_
-    rw [tm, xm]; exact CFrame.refl _ _
-  · rw [tm, xm]
-    exact bounded_check bv cw.mem bw
 
 end VG.Proof.Ed448.AArch64

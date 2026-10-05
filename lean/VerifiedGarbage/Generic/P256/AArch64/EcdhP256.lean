@@ -29,9 +29,13 @@ def artifacts (h : Proof.Weierstrass.HasLaw Spec.P256.curve) : List Artifact := 
       coordinates, dbl-2001-b, with `Y = 1` where the result is the point at infinity) and the \
       addition of its entry, every entry loaded and masked and `y` negated by a mask of the \
       digit's sign, by the complete formula of Renes, Costello and Batina for `a = -3` \
-      (Algorithm 4); `Z⁻¹` is Fermat's, by \
-      a chain of sliding 4-bit windows over `p - 2` (fixed by the code: 252 squarings and 32 \
-      products by a table of odd powers). The result (or zeros) is selected by a mask of the checks, `d` \
+      (Algorithm 4); `Z⁻¹` is by divsteps (Bernstein and Yang's safegcd, half-delta form): 10 batches of 59 \
+      divsteps on the low 64-bit words of `f` and `g` (from `f = p`, `g = Z`), each giving a matrix of \
+      64-bit entries that updates `f`, `g` (divided by 2⁵⁹) and the coefficients `a`, `b` \
+      (divided by 2⁶⁴ modulo `p`, as in Montgomery reduction), 590 divsteps in all, enough for \
+      256-bit moduli by Bernstein and Yang's bound (which the proof checks); then `f = ±1`, and `Z⁻¹` is `a` times a \
+      constant or its negation by `f`'s sign. The number of steps is fixed, so the time does not \
+      depend on `Z`. The result (or zeros) is selected by a mask of the checks, `d` \
       in `[1, n-1]` and `Z ≠ 0`, so the time depends only on the pointers."])
     code := Impl.Ecdh.AArch64.exchangeP256
     contract := Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P256.inst AArch64.abi

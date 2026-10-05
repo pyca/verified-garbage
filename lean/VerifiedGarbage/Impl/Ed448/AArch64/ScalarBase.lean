@@ -30,17 +30,6 @@ namespace VG.Impl.Ed448.AArch64
 open VG.AArch64
 open VG.Impl.X448.AArch64 (ld st slot BITS X2)
 
-/-! ## Field programs on the slots -/
-
-/-- A field operation (`Impl/Ed448/Formulas.lean`) as X448's. -/
-def toOp : FOp → Impl.X448.AArch64.Op
-  | .mul o a b => .mul (slot o) (slot a) (slot b)
-  | .sqr o a => .mul (slot o) (slot a) (slot a)
-  | .add o a b => .add (slot o) (slot a) (slot b)
-  | .sub o a b => .sub (slot o) (slot a) (slot b)
-
-def field (ops : List FOp) : Prog isa := Impl.X448.AArch64.Weak.ops (ops.map toOp)
-
 /-! ## The scalar's bits -/
 
 /-- Scalar byte `x19`, expanded into its eight bits at `BITS + 8 x19`. -/

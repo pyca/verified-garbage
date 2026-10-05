@@ -1,4 +1,6 @@
-import VerifiedGarbage.Proof.Ed448.AArch64.BaseField
+import VerifiedGarbage.Impl.Ed448.AArch64.ScalarBase
+import VerifiedGarbage.Proof.X448.AArch64.Weak.Ops
+import VerifiedGarbage.Proof.Ed448.Formulas
 import VerifiedGarbage.Proof.X448.AArch64.Weak.Main
 
 /-!

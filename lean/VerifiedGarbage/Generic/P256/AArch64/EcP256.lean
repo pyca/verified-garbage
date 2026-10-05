@@ -25,8 +25,13 @@ def artifacts (h : Proof.Weierstrass.HasLaw Spec.P256.curve) : List Artifact := 
       final conditional subtraction; `[d]G` is `vg_ecdsa_p256_sign`'s fixed-base comb of 7-bit \
       signed digits from the 37 tables of `[m 2^(7j)]G` (`m = 1 … 64`) in the static \
       `VG_P256_COMB`, each entry selected in constant time by loading the whole table, with no \
-      doublings; and `Z⁻¹` is Fermat's, by \
-      a chain of sliding 4-bit windows over `p - 2`, fixed by the code. The result (or zeros) is selected by a \
+      doublings; and `Z⁻¹` is by divsteps (Bernstein and Yang's safegcd, half-delta form): 10 batches of 59 \
+      divsteps on the low 64-bit words of `f` and `g` (from `f = p`, `g = Z`), each giving a matrix of \
+      64-bit entries that updates `f`, `g` (divided by 2⁵⁹) and the coefficients `a`, `b` \
+      (divided by 2⁶⁴ modulo `p`, as in Montgomery reduction), 590 divsteps in all, enough for \
+      256-bit moduli by Bernstein and Yang's bound (which the proof checks); then `f = ±1`, and `Z⁻¹` is `a` times a \
+      constant or its negation by `f`'s sign. The number of steps is fixed, so the time does not \
+      depend on `Z`. The result (or zeros) is selected by a \
       mask of `d ∈ [1, n-1]` and `Z ≠ 0`, so the time depends only on the pointers."])
     consts := Impl.Ecdsa.AArch64.p256.combConsts
     code := Impl.EcKey.AArch64.publicKeyP256

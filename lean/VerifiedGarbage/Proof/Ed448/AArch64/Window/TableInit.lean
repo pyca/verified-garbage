@@ -6,7 +6,7 @@ import VerifiedGarbage.Proof.X448.AArch64.Weak.Counters
 # Ed448 verification on AArch64: the table's first entries
 
 Untrusted: everything here is checked by Lean. `tabInit`, after the decodings
-(every slot's limbs below X448's `weakBound`): `R` (slots 8–9) copied to `RX`
+(every slot's limbs below the products' operand bound `Ib`): `R` (slots 8–9) copied to `RX`
 and `RY`, zero in slot 19 and 1 in slot 20, entry 0 the neutral point, `P =
 (x, y, 1)` from slots 6–7 in slots 0–2 and 3–5 and as entry 1, and the counter
 at 2 (`tabInit_ok`): `TInv` for entry 2. Only the slots, `RX`, `RY` and the
@@ -214,15 +214,12 @@ theorem tabPre_ok {s : State} {base : Addr} (hs : Scr s base) :
 
 /-! ## `tabInit` -/
 
-theorem weak_ib {m : Mem} {base : Addr} {o : Nat} (h : VG.Proof.Curve448.AArch64.Bounded m base o) :
-    Bnd Ib m base o := fun i hi => Nat.lt_trans (h i hi) (by decide)
-
 /-- A slot equal limb by limb to a bounded slot is bounded. -/
 theorem ib_of_limbs {m m' : Mem} {base : Addr} {o o' : Nat} (h : ∀ i < 8, limbs m' base o' i = limbs m base o i)
     (hb : Bnd Ib m base o) : Bnd Ib m' base o' := fun i hi => by rw [h i hi]; exact hb i hi
 
 theorem tabInit_ok {s : State} {base : Addr} (hs : Scr s base)
-    (hb : VG.Proof.X448.AArch64.Weak.BoundedEnv s.mem base) :
+    (hb : BEnv s.mem base) :
     WP isa (.block tabInit) s (IOut s base) := by
   rw [tabInit_eq, WP.block_append_iff]
   refine WP.mono (tabPre_ok hs) fun u P => ?_
@@ -268,12 +265,12 @@ theorem tabInit_ok {s : State} {base : Addr} (hs : Scr s base)
     rw [lut _ (by decide) (by decide) i hi]; exact P.s3 i hi
   have l4 : ∀ i < 8, limbs t.mem base (slot 4) i = limbs s.mem base (slot 7) i := fun i hi => by
     rw [lut _ (by decide) (by decide) i hi]; exact P.s4 i hi
-  have b6 := weak_ib (hb 6)
-  have b7 := weak_ib (hb 7)
+  have b6 := hb 6
+  have b7 := hb 7
   have benv : BEnv t.mem base := by
     intro i
     by_cases h6 : 6 ≤ i.val ∧ i.val ≠ 19 ∧ i.val ≠ 20
-    · exact ib_of_limbs (fun j hj => slotKeep i h6.1 h6.2.1 h6.2.2 j hj) (weak_ib (hb i))
+    · exact ib_of_limbs (fun j hj => slotKeep i h6.1 h6.2.1 h6.2.2 j hj) (hb i)
     · have hi : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 19 ∨ i = 20 := by
         rcases i with ⟨i, hlt⟩; simp only [Fin.ext_iff] at h6 ⊢; omega
       rcases hi with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl

@@ -6,6 +6,10 @@ trustworthy. Read `lean/README.md` first.
 For a fast Lean bootstrap on Linux x86-64, restore the prebuilt GHCR cache
 before compiling proofs; see [Restoring the CI build cache](lean/README.md#restoring-the-ci-build-cache).
 
+After rebasing a long-running session onto `main`, consider pulling and
+restoring the latest cache again to avoid rebuilding upstream Lean changes.
+Lake rebuilds your changes and anything not yet cached.
+
 ## Hard rules
 
 * **All assembly comes from Lean.** Never write `asm!`, `naked_asm!`,

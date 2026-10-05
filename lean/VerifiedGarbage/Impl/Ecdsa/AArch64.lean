@@ -1,6 +1,7 @@
 import VerifiedGarbage.Impl.Weierstrass.AArch64.Window
 import VerifiedGarbage.Impl.Weierstrass.AArch64.TComb
 import VerifiedGarbage.Impl.Weierstrass.AArch64.Chain
+import VerifiedGarbage.Impl.Weierstrass.AArch64.Inv
 import VerifiedGarbage.Spec.Weierstrass
 
 /-!
@@ -118,6 +119,8 @@ structure Cfg where
   tbl : List (List (Nat × Nat))
   start : Nat × Nat
   tsym : String
+  /-- Whether `k⁻¹ mod n` is by divsteps (the proofs need `n` prime), else by a chain. -/
+  fastN : Bool
 
 namespace Cfg
 
@@ -204,10 +207,15 @@ def winPrep (k : Nat) : Prog isa :=
   .seq (.block (WinCfg.addConst c.n k c.winK (WinCfg.offset (16 * c.n + 1))))
     (bits c.winK c.winBits (8 * (c.n + 1)))
 
-/-- `Z^(p-2)` and `k^(n-2)` into `ACC`, by sliding windows, their tables at
-slots `CT …` (the window method's, which no power overlaps in time). -/
-def powP : Weierstrass.ChainCfg := .ofExp c.MP' (c.sl ACC) (c.sl RZ) (c.sl CT) (c.C.p - 2)
+/-- `Z^(p-2)` and `k^(n-2)` into `ACC`, by divsteps (`k^(n-2)` by sliding
+windows unless `fastN`), their working slots at `CT …` (the window method's,
+which no power overlaps in time). -/
+def invP : InvCfg := .ofMod c.MP' (c.sl ACC) (c.sl RZ) (c.sl CT) c.C.p
+def invN : InvCfg := .ofMod c.MN' (c.sl ACC) (c.sl KM) (c.sl CT) c.C.n
 def powN : Weierstrass.ChainCfg := .ofExp c.MN' (c.sl ACC) (c.sl KM) (c.sl CT) (c.C.n - 2)
+
+def pPow : Prog isa := InvCfg.inv c.invP
+def nPow : Prog isa := if c.fastN then InvCfg.inv c.invN else ChainCfg.pow c.powN
 
 /-- The callee-saved registers the code uses, and where they are saved. -/
 def saved : List (Reg × Nat) := [(.x19, 0), (.x20, 8)]
@@ -287,9 +295,9 @@ def sign : Prog isa :=
   .seq (.block c.setup) <|
   .seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n)) <|
   .seq (TCombCfg.comb c.combCfg) <|
-  .seq (ChainCfg.pow c.powP) <|
+  .seq c.pPow <|
   .seq c.middle <|
-  .seq (ChainCfg.pow c.powN) c.scalar
+  .seq c.nPow c.scalar
 
 end Cfg
 

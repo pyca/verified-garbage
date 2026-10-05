@@ -49,6 +49,7 @@ mod pbkdf2_sha512;
 mod rsa;
 mod rsa_keygen;
 mod rsa_keys;
+mod rsa_oaep;
 mod rsa_pkcs1_enc;
 mod rsa_pkcs1_sig;
 mod rsa_pss;

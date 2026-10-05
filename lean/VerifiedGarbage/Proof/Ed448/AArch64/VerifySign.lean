@@ -3,8 +3,9 @@ import VerifiedGarbage.Proof.Ed448.AArch64.VerifyBytes
 /-!
 # Ed448 verification's equation on AArch64: the sign of `x`
 
-`zeroSign`: `x` fully reduced into `X2`; `x20 |= c`, `c = 0` exactly when
-`x ≠ 0` or the sign bit (`x17`) is 0. `negSwap`: `x` swapped with `-x` (slot 12)
+`zeroSign`'s pieces (its proof is `zeroSignF_ok`, `DecodeSteps.lean`): `x`
+fully reduced into `X2`; `x20 |= c`, `c = 0` exactly when `x ≠ 0` or the sign
+bit (`x17`) is 0. `negSwap`: `x` swapped with `-x` (slot 12)
 by the mask of `x`'s low bit (from `X2`) differing from the sign bit.
 -/
 
@@ -95,57 +96,6 @@ theorem valN_zero_iff {f : Nat → Nat} : VG.Proof.X448.valN f 16 = 0 ↔ ∀ j 
 theorem zeroSign_val (z : Bool) {sb : Nat} (hsb : sb < 2) :
     ((if z then (1 : BitVec 64) else 0) &&& BitVec.ofNat 64 sb = 0) ↔ ¬ (z = true ∧ sb = 1) := by
   rcases (by omega : sb = 0 ∨ sb = 1) with rfl | rfl <;> cases z <;> decide
-
-/-- `zeroSign xo`: `x20 |= c`, `c = 0` exactly when slot `xo` is not zero or the sign bit `x17`
-is 0; and the low bit of `X2`'s first limb is `x`'s. -/
-theorem zeroSign_ok {s : State} {base : Addr} (hs : Scr s base) (hb : BoundedEnv s.mem base) (xo : Fin 22)
-    (hxo : xo ≠ 1) {sb : Nat} (hsb : sb < 2) (h17 : s.gpr .x17 = BitVec.ofNat 64 sb) :
-    WP isa (.block (zeroSign xo.val)) s fun t =>
-      (∃ c : BitVec 64, (c = 0 ↔ ¬ (E s.mem base xo = 0 ∧ sb = 1)) ∧ t.gpr .x20 = s.gpr .x20 ||| c) ∧
-      VG.Proof.X448.AArch64.limbs t.mem base X2 0 % 2 = (E s.mem base xo).val % 2 ∧
-      CKeep base s t ∧ BoundedEnv t.mem base := by
-  rw [zeroSign]
-  simp only [List.append_assoc]
-  rw [WP.block_append_iff]
-  refine WP.mono (canon_ok hs hb xo hxo) fun u ⟨bu, fu, mu, ku⟩ => ?_
-  have hsu := hs.of_keeps ku (by decide)
-  rw [← List.append_assoc, WP.block_append_iff]
-  refine WP.mono (orWords_ok hsu) fun v ⟨v5, vm, vk⟩ => ?_
-  rw [WP.block_append_iff]
-  refine WP.mono (isZero_ok v) fun w ⟨w5, wm, wk⟩ => ?_
-  rw [WP.block_append_iff]
-  refine WP.mono (and17_ok w) fun x ⟨x5, xm, xk⟩ => ?_
-  refine WP.mono (orBad_ok x) fun t ⟨t20, tm, tk⟩ => ?_
-  have tmem : t.mem = u.mem := by rw [tm, xm, wm, vm]
-  have x17 : w.gpr .x17 = BitVec.ofNat 64 sb := by
-    rw [wk.1 _ (by decide), vk.1 _ (by decide), ku.1 _ (by decide)]; exact h17
-  have hz : v.gpr .x5 = 0 ↔ E s.mem base xo = 0 := by
-    rw [v5]
-    constructor
-    · intro h
-      apply Fin.ext
-      rw [← fu, Fin.val_zero]
-      exact valN_zero_iff.mpr fun j hj => by
-        have := congrArg BitVec.toNat (h j hj)
-        exact this
-    · intro h j hj
-      have h0 : VG.Proof.X448.AArch64.fe u.mem base X2 = 0 := by rw [fu, h, Fin.val_zero]
-      apply BitVec.eq_of_toNat_eq
-      exact valN_zero_iff.mp h0 j hj
-  refine ⟨⟨x.gpr .x5, ?_, ?_⟩, ?_, ?_, ?_⟩
-  · rw [x5, w5, x17]
-    have := zeroSign_val (decide (v.gpr .x5 = 0)) hsb
-    simp only [decide_eq_true_eq] at this
-    rw [this, hz]
-  · rw [t20, xk.1 _ (by decide), wk.1 _ (by decide), vk.1 _ (by decide), ku.1 _ (by decide)]
-  · rw [tmem, ← fu]
-    exact (valN_mod_two _).symm
-  · refine CKeep.of_keeps (rs := [.x4, .x5, .x6, .x7, .x20] ++ workRegs)
-      ((ku.mono (by decide)).trans ((((vk.mono (by decide)).trans (wk.mono (by decide))).trans
-        (xk.mono (by decide))).trans (tk.mono (by decide)))) (by decide) ?_
-    rw [tmem]; exact CFrame.of_field mu
-  · rw [tmem]
-    exact bounded_check hb (CFrame.of_field mu) bu
 
 /-! ## `-x` swapped in -/
 
