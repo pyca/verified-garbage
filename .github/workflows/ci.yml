@@ -277,6 +277,112 @@ jobs:
           retention-days: 1
           if-no-files-found: error
 
+  # Export main's checked build for agents that cannot restore Actions caches.
+  # Serialize upload and cleanup, and skip superseded commits: CI runs on main
+  # can finish out of order. Only the publisher needs registry write access,
+  # and only the steps that talk to the registry see the token: the others
+  # run third-party code (elan's installer, Mathlib's `cache` tool).
+  lean-cache:
+    name: Publish Lean cache
+    needs: [lean, all-green]
+    if: ${{ always() && github.event_name == 'push' && github.ref == 'refs/heads/main' && github.repository == 'pyca/verified-garbage' && needs.all-green.result == 'success' }}
+    runs-on: ubuntu-latest
+    concurrency:
+      group: publish-lean-cache
+      cancel-in-progress: false
+    permissions:
+      contents: read
+      packages: write
+    env:
+      GH_REPO: ${{ github.repository }}
+      IMAGE: ghcr.io/pyca/vg-lean-cache:latest
+      # Bump the suffix if the archive format or compression settings change.
+      CACHE_KEY: ${{ needs.lean.outputs.build-cache }}-zstd5-v1
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Decide whether the cache needs publishing
+        id: publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          head=$(gh api "repos/$GH_REPO/commits/main" --jq .sha)
+          if [ "$head" != "$GITHUB_SHA" ]; then
+            echo "Main has advanced: its newer run will publish the cache."
+            exit 0
+          fi
+          # Log out on every exit, so later steps find no stored credential.
+          printf '%s' "$GH_TOKEN" | docker login ghcr.io --username "$GITHUB_ACTOR" --password-stdin
+          trap 'docker logout ghcr.io' EXIT
+          # Read the registry's small image config, without pulling any layers.
+          if docker buildx imagetools inspect "$IMAGE" --format '{{json .Image.Config.Labels}}' \
+              > "$RUNNER_TEMP/lean-cache-labels.json" 2> "$RUNNER_TEMP/lean-cache-inspect.log"; then
+            key=$(jq -r '.["io.pyca.lean.cache-key"] // empty' "$RUNNER_TEMP/lean-cache-labels.json")
+            if [ "$key" = "$CACHE_KEY" ]; then
+              echo "The checked Lean cache is already published."
+              exit 0
+            fi
+          else
+            # A missing image is expected on the first publish. Other registry
+            # errors must fail rather than hiding a broken comparison.
+            if ! grep -qiE 'manifest unknown|not found' "$RUNNER_TEMP/lean-cache-inspect.log"; then
+              cat "$RUNNER_TEMP/lean-cache-inspect.log" >&2
+              exit 1
+            fi
+          fi
+          echo "needed=true" >> "$GITHUB_OUTPUT"
+      - uses: ./.github/actions/lean-prepare
+        id: prepare
+        if: ${{ steps.publish.outputs.needed == 'true' }}
+        with:
+          key: ${{ needs.lean.outputs.build-cache }}
+          restore-keys: ${{ needs.lean.outputs.build-cache }}
+      - name: Package the checked build and dependencies
+        if: ${{ steps.publish.outputs.needed == 'true' }}
+        env:
+          CACHE_HIT: ${{ steps.prepare.outputs.cache-hit }}
+        run: |
+          # Never publish a fallback or an empty project build.
+          [ "$CACHE_HIT" = true ] || { echo "::error::The checked build cache is missing"; exit 1; }
+          mkdir -p "$RUNNER_TEMP/lean-cache-image"
+          tar -C lean -cf - .lake/build .lake/packages \
+            | zstd -T0 -5 -o "$RUNNER_TEMP/lean-cache-image/lean-cache.tar.zst"
+      - name: Upload the cache image
+        id: upload
+        if: ${{ steps.publish.outputs.needed == 'true' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # Check immediately before publishing, while holding the job's lock.
+          head=$(gh api "repos/$GH_REPO/commits/main" --jq .sha)
+          if [ "$head" != "$GITHUB_SHA" ]; then
+            echo "Main has advanced: its newer run will publish the cache."
+            exit 0
+          fi
+          printf '%s' "$GH_TOKEN" | docker login ghcr.io --username "$GITHUB_ACTOR" --password-stdin
+          trap 'docker logout ghcr.io' EXIT
+          # One plain manifest: with attestations, the push would be an index
+          # whose untagged children the cleanup below would delete.
+          docker build -f ci/lean-cache.Dockerfile --provenance=false --sbom=false \
+            --label "org.opencontainers.image.source=https://github.com/$GH_REPO" \
+            --label "org.opencontainers.image.revision=$GITHUB_SHA" \
+            --label "io.pyca.lean.toolchain=$(cat lean/lean-toolchain)" \
+            --label "io.pyca.lean.cache-key=$CACHE_KEY" \
+            -t "$IMAGE" "$RUNNER_TEMP/lean-cache-image"
+          docker push "$IMAGE"
+          echo "published=true" >> "$GITHUB_OUTPUT"
+      # Only `latest` is published, so replacing it leaves old images untagged.
+      - name: Delete old cache versions
+        if: ${{ steps.upload.outputs.published == 'true' }}
+        uses: actions/delete-package-versions@e5bc658cc4c965c472efe991f8beea3981499c55 # v5.0.0
+        with:
+          owner: pyca
+          package-name: vg-lean-cache
+          package-type: container
+          min-versions-to-keep: 0
+          delete-only-untagged-versions: 'true'
+
   lean-imports:
     name: Static checks
     runs-on: ubuntu-latest
