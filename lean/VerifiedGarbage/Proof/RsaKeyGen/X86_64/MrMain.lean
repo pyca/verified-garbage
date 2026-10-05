@@ -77,14 +77,20 @@ theorem roundRanges_hdr (w : Nat) {k : Nat} (hk : k = kRand ∨ k = kLen ∨ k =
   all_goals (try simp only [kRand, kLen, kRandLen, kOut, kUsedP])
   all_goals rng_disj
 
+theorem ofNat_sub_ofNat' {a b : Nat} (h : b ≤ a) (ha : a < 2 ^ 64) :
+    BitVec.ofNat 64 a - BitVec.ofNat 64 b = BitVec.ofNat 64 (a - b) := by
+  apply BitVec.eq_of_toNat_eq
+  rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt ha,
+    Nat.mod_eq_of_lt (show b < 2 ^ 64 by omega)]
+  omega
+
 /-- One iteration of `millerRabin`'s loop. -/
 theorem mrIter_ok (M : Mont) {B : Addr} {Z w : Nat} {mi : BitVec 64} {c ch : Nat} {rp : Addr} {r : List Byte}
     {s₀ : State} {res : Option (Bool × List Byte)} (hd : MrDims B Z w) (hc1 : 1 < c)
-    (hsh : VG.Proof.RsaKeyGen.PrimeShape (64 * w) c) (hrl : r.length + 8 * w < 2 ^ 64) (hch : ch < 2 ^ 62)
+    (hsh : VG.Proof.RsaKeyGen.PrimeShape (64 * w) c) (hrl : r.length < 2 ^ 64) (hch : ch < 2 ^ 62)
     (n : Nat) (s : State) (hI : MrSt B Z w mi c ch rp r s₀ res n s) :
     WP isa (seqs [
-      .block [.mov .rax (.mem (hdr kUsed)), .alu .add .rax (.mem (hdr kLen)), .mov .rcx (.mem (hdr kRandLen)),
-        .alu .cmp .rcx (.reg .rax)],
+      .block [.mov .rcx (.mem (hdr kRandLen)), .alu .sub .rcx (.mem (hdr kUsed)), .alu .cmp .rcx (.mem (hdr kLen))],
       .ite .b (.block [.mov32 .rax (.imm 0), .store (hdr kStat) .rax]) (seqs (mrRound M.mm)),
       .block [.mov .rax (.mem (hdr kStat)), .alu .cmp .rax (.imm 4)]]) s fun s' =>
       (isa.eval .e s' = some false ∧ MrEnd B Z w mi c r s₀ res s') ∨
@@ -101,11 +107,15 @@ theorem mrIter_ok (M : Mont) {B : Addr} {Z w : Nat} {mi : BitVec 64} {c ch : Nat
   have hres' := VG.Proof.RsaKeyGen.mrLoop_step c ch (Spec.Rsa.splitTwos (c - 1)).1 (Spec.Rsa.splitTwos (c - 1)).2
     (8 * w) r i uni used hgo hwb (by omega)
   simp only [seqs]
-  refine WP.seq (WP.mono (WP.keep [.rax, .rcx] (Q := fun t => t.cf = some (decide (r.length < used + 8 * w)) ∧
+  have e1 : BitVec.ofNat 64 r.length - BitVec.ofNat 64 used = BitVec.ofNat 64 (r.length - used) :=
+    ofNat_sub_ofNat' hul hrl
+  have e2 : r.length - used < 2 ^ 64 := by omega
+  have e3 : 8 * w < 2 ^ 64 := by have := hd.w64; omega
+  refine WP.seq (WP.mono (WP.keep [.rcx] (Q := fun t => t.cf = some (decide (r.length < used + 8 * w)) ∧
       t.mem = s.mem) (by
     xrun [State.ea, hdr, hg.rdi, hdrOff, hl kUsed (by decide), hl kLen (by decide), hl kRandLen (by decide), hus, hlen,
-      hrlen, ← BitVec.ofNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show r.length < 2 ^ 64 by omega),
-      Nat.mod_eq_of_lt (show used + 8 * w < 2 ^ 64 by omega)]) rfl) fun s₁ ⟨⟨hcf, hm₁⟩, k₁⟩ => ?_)
+      hrlen, e1, BitVec.toNat_ofNat, Nat.mod_eq_of_lt e2, Nat.mod_eq_of_lt e3]
+    exact decide_eq_decide.mpr (by omega)) rfl) fun s₁ ⟨⟨hcf, hm₁⟩, k₁⟩ => ?_)
   have hg₁ : Good s₁ B Z w mi := ⟨hg.scr.congr k₁.2.2, (k₁.gpr (by decide)).trans hg.rdi, by rw [hm₁]; exact hg.hdr⟩
   refine WP.seq (WP.ite (decide (r.length < used + 8 * w)) (by simp [eval, hcf]) (fun h => ?_) (fun h => ?_))
   · -- Out of octets: `kStat := 0`.
@@ -205,7 +215,7 @@ theorem mrIter_ok (M : Mont) {B : Addr} {Z w : Nat} {mi : BitVec 64} {c ch : Nat
 loop from `(1, 0)`. -/
 theorem millerRabin_ok (M : Mont) {B : Addr} {Z w : Nat} {mi : BitVec 64} {c ch bm : Nat} {rp : Addr}
     {r : List Byte} {s : State} {used : Nat} (hd : MrDims B Z w) (hc1 : 1 < c)
-    (hsh : VG.Proof.RsaKeyGen.PrimeShape (64 * w) c) (hrl : r.length + 8 * w < 2 ^ 64) (hch : ch < 2 ^ 62)
+    (hsh : VG.Proof.RsaKeyGen.PrimeShape (64 * w) c) (hrl : r.length < 2 ^ 64) (hch : ch < 2 ^ 62)
     (hc : MrCtx s B Z w mi c bm) (hr2 : wv s.mem B (slot w aR2) w = 2 ^ (64 * w) * 2 ^ (64 * w) % c)
     (hrp : word s.mem B (8 * kRand) = rp) (hlen : word s.mem B (8 * kLen) = BitVec.ofNat 64 (8 * w))
     (hrlen : word s.mem B (8 * kRandLen) = BitVec.ofNat 64 r.length)

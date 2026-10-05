@@ -421,12 +421,12 @@ def mrRound (mul : Nat → Nat → Nat → Prog isa) : List (Prog isa) :=
       .alu .sbb .rax (.reg .rax), .alu .or .rcx (.reg .rax), .alu .and .rcx (.imm 3), .alu .add .rcx (.imm 1)]),
   .block [.store (hdr kStat) .rcx]]
 
-/-- Miller–Rabin: witnesses while `kStat = 4`; 0 when `rand` runs out. -/
+/-- Miller–Rabin: witnesses while `kStat = 4`; 0 when fewer than `out_len`
+octets of `rand` are left (`rand_len − used`, which does not wrap). -/
 def millerRabin (mul : Nat → Nat → Nat → Prog isa) : List (Prog isa) := [
   .block [.mov32 .rax (.imm 1), .store (hdr kI) .rax, .mov32 .rax (.imm 0), .store (hdr kUni) .rax],
   .loop (seqs [
-    .block [.mov .rax (.mem (hdr kUsed)), .alu .add .rax (.mem (hdr kLen)), .mov .rcx (.mem (hdr kRandLen)),
-      .alu .cmp .rcx (.reg .rax)],
+    .block [.mov .rcx (.mem (hdr kRandLen)), .alu .sub .rcx (.mem (hdr kUsed)), .alu .cmp .rcx (.mem (hdr kLen))],
     .ite .b (.block [.mov32 .rax (.imm 0), .store (hdr kStat) .rax]) (seqs (mrRound mul)),
     .block [.mov .rax (.mem (hdr kStat)), .alu .cmp .rax (.imm 4)]]) .e]
 
