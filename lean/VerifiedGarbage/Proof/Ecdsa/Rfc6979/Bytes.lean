@@ -7,8 +7,12 @@ import VerifiedGarbage.Spec.Ecdsa.P256
 
 The 32 bytes at an address, big-endian, from the byte reversals of their
 four words (`ofBytes_32`); a number's encoding is determined by its value
-(`toBytes_ofBytes`); and RFC 6979's conversions at P-256, of a hash of at
-least 32 bytes, which take its leftmost 32 (`hashToInt_take`, `bits2octets_eq`).
+(`toBytes_ofBytes`), and a number's value by its encoding (`ofBytes_toBytes`);
+RFC 6979's conversions at P-256, of a hash of at least 32 bytes, which take
+its leftmost 32 (`hashToInt_take`, `bits2octets_eq`); and, for any curve,
+`bits2int` of at least `rlen` bytes, from its leftmost `rlen`
+(`hashToInt_takeR`), and `bits2octets` of a hash shorter than `n`, which
+is the hash after zero bytes (`bits2octets_short`).
 Each target's proof uses them, its byte reversal being `byteRev64`.
 -/
 
@@ -76,6 +80,105 @@ theorem toBytes_ofBytes : ∀ (l : List Byte), Spec.Weierstrass.toBytes l.length
     apply BitVec.eq_of_toNat_eq
     rw [BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow, Nat.add_comm, Nat.add_mul_div_right _ _ (Nat.two_pow_pos _),
       Nat.div_eq_of_lt hl, Nat.zero_add, Nat.mod_eq_of_lt hb]
+
+theorem toBytes_mod (len x : Nat) : Spec.Weierstrass.toBytes len x = Spec.Weierstrass.toBytes len (x % 2 ^ (8 * len)) := by
+  conv => lhs; rw [← Nat.div_add_mod x (2 ^ (8 * len)), Nat.mul_comm]
+  exact toBytes_add _ _ _
+
+/-- A number below `2^(8 len)` is the number of its `len` bytes. -/
+theorem ofBytes_toBytes : ∀ (len x : Nat), x < 2 ^ (8 * len) →
+    Spec.Weierstrass.ofBytes (Spec.Weierstrass.toBytes len x) = x
+  | 0, x, h => by simp only [Nat.mul_zero, Nat.pow_zero] at h; simp [Spec.Weierstrass.toBytes, Spec.Weierstrass.ofBytes]; omega
+  | len + 1, x, h => by
+    rw [toBytes_succ, show BitVec.ofNat 8 (x >>> (8 * len)) :: Spec.Weierstrass.toBytes len x =
+        [BitVec.ofNat 8 (x >>> (8 * len))] ++ Spec.Weierstrass.toBytes len x from rfl, ofBytes_append,
+      ofBytes_single, toBytes_mod, ofBytes_toBytes len _ (Nat.mod_lt _ (Nat.two_pow_pos _))]
+    simp only [Spec.Weierstrass.toBytes, List.length_map, List.length_reverse, List.length_range, pow256,
+      BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow]
+    have h₁ : x / 2 ^ (8 * len) < 2 ^ 8 := by
+      rw [Nat.div_lt_iff_lt_mul (Nat.two_pow_pos _), ← Nat.pow_add, show 8 + 8 * len = 8 * (len + 1) by omega]
+      exact h
+    rw [Nat.mod_eq_of_lt h₁, Nat.mul_comm]
+    exact Nat.div_add_mod x _
+
+/-- The bytes of a number of `len` bytes, after `k` zero bytes. -/
+theorem toBytes_pad (k len x : Nat) (hx : x < 2 ^ (8 * len)) :
+    Spec.Weierstrass.toBytes (k + len) x = List.replicate k 0 ++ Spec.Weierstrass.toBytes len x := by
+  induction k with
+  | zero => simp
+  | succ k ih =>
+    rw [show k + 1 + len = (k + len) + 1 by omega, toBytes_succ, ih, List.replicate_succ, List.cons_append]
+    refine congrArg (· :: _) ?_
+    apply BitVec.eq_of_toNat_eq
+    rw [BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow,
+      Nat.div_eq_of_lt (Nat.lt_of_lt_of_le hx (Nat.pow_le_pow_right (by omega) (by omega)))]
+    rfl
+
+/-- A number with zero bytes before it. -/
+theorem ofBytes_zeros (k : Nat) (l : List Byte) :
+    Spec.Weierstrass.ofBytes (List.replicate k 0 ++ l) = Spec.Weierstrass.ofBytes l := by
+  induction k with
+  | zero => rfl
+  | succ k ih =>
+    rw [List.replicate_succ, List.cons_append, show (0 : Byte) :: (List.replicate k 0 ++ l) =
+      [0] ++ (List.replicate k 0 ++ l) from rfl, ofBytes_append, ofBytes_single, ih]
+    simp
+
+/-- A number with zero bytes after it. -/
+theorem ofBytes_append_zeros (l : List Byte) (k : Nat) :
+    Spec.Weierstrass.ofBytes (l ++ List.replicate k 0) = Spec.Weierstrass.ofBytes l * 2 ^ (8 * k) := by
+  have hz : Spec.Weierstrass.ofBytes (List.replicate k 0) = 0 := by
+    have := ofBytes_zeros k []
+    rwa [List.append_nil] at this
+  rw [ofBytes_append, List.length_replicate, pow256, hz, Nat.add_zero]
+
+/-! ## For any curve -/
+
+/-- `rlen` is `R` when `n` has more than `8 (R - 1)` bits, and at most `8 R`. -/
+theorem rlenR {C : Spec.Weierstrass.Curve} {R : Nat} (h₁ : Spec.Ecdsa.nBits C ≤ 8 * R)
+    (h₂ : 8 * R < Spec.Ecdsa.nBits C + 8) : Spec.Ecdsa.Rfc6979.rlen C = R := by
+  rw [Spec.Ecdsa.Rfc6979.rlen]; omega
+
+/-- A hash of at least `R` bytes is the number of its leftmost `R`, shifted
+right by the bits of them beyond `nBits`. -/
+theorem hashToInt_takeR {C : Spec.Weierstrass.Curve} {R : Nat} (h₁ : Spec.Ecdsa.nBits C ≤ 8 * R)
+    {h : List Byte} (hl : R ≤ h.length) :
+    Spec.Ecdsa.hashToInt C h = Spec.Weierstrass.ofBytes (h.take R) >>> (8 * R - Spec.Ecdsa.nBits C) := by
+  have hd : (h.drop R).length = h.length - R := List.length_drop
+  have key : Spec.Weierstrass.ofBytes h =
+      Spec.Weierstrass.ofBytes (h.take R) * 2 ^ (8 * (h.length - R)) + Spec.Weierstrass.ofBytes (h.drop R) := by
+    conv => lhs; rw [← List.take_append_drop R h]
+    rw [ofBytes_append, hd, pow256]
+  rw [Spec.Ecdsa.hashToInt]
+  by_cases hQ : 8 * h.length ≤ Spec.Ecdsa.nBits C
+  · have hR : h.length = R := by omega
+    simp only [hQ, ite_true]
+    rw [show h.take R = h from List.take_of_length_le (by omega),
+      show 8 * R - Spec.Ecdsa.nBits C = 0 by omega, Nat.shiftRight_zero]
+  · simp only [hQ, ite_false]
+    rw [key, show 8 * h.length - Spec.Ecdsa.nBits C = 8 * (h.length - R) + (8 * R - Spec.Ecdsa.nBits C) by
+      omega, Nat.shiftRight_add, Nat.shiftRight_eq_div_pow (_ + _),
+      Nat.add_comm, Nat.add_mul_div_right _ _ (Nat.two_pow_pos _),
+      Nat.div_eq_of_lt (by have := ofBytes_lt (h.drop R); rwa [hd] at this), Nat.zero_add]
+
+/-- A hash of `D` bytes, fewer than `n` has bits, is its number, below `n`. -/
+theorem hashToInt_short {C : Spec.Weierstrass.Curve} {h : List Byte} (hl : 8 * h.length < Spec.Ecdsa.nBits C)
+    (hn : C.n ≠ 0) : Spec.Ecdsa.hashToInt C h = Spec.Weierstrass.ofBytes h ∧ Spec.Weierstrass.ofBytes h < C.n := by
+  refine ⟨by rw [Spec.Ecdsa.hashToInt]; simp only [show 8 * h.length ≤ Spec.Ecdsa.nBits C by omega, ite_true],
+    Nat.lt_of_lt_of_le (ofBytes_lt h) ?_⟩
+  have h₁ : 2 ^ C.n.log2 ≤ C.n := (Nat.le_log2 hn).mp (Nat.le_refl _)
+  have h₂ : Spec.Ecdsa.nBits C = C.n.log2 + 1 := rfl
+  exact Nat.le_trans (Nat.pow_le_pow_right (by omega) (by omega)) h₁
+
+/-- `bits2octets` of such a hash: zero bytes, then the hash. -/
+theorem bits2octets_short {C : Spec.Weierstrass.Curve} {R : Nat} (h₁ : Spec.Ecdsa.nBits C ≤ 8 * R)
+    (h₂ : 8 * R < Spec.Ecdsa.nBits C + 8) {h : List Byte} (hl : 8 * h.length < Spec.Ecdsa.nBits C)
+    (hn : C.n ≠ 0) :
+    Spec.Ecdsa.Rfc6979.bits2octets C h = List.replicate (R - h.length) 0 ++ h := by
+  obtain ⟨e₁, e₂⟩ := hashToInt_short hl hn
+  rw [Spec.Ecdsa.Rfc6979.bits2octets, Spec.Ecdsa.Rfc6979.int2octets, Spec.Ecdsa.Rfc6979.bits2int, rlenR h₁ h₂,
+    e₁, Nat.mod_eq_of_lt e₂, show R = (R - h.length) + h.length by omega, toBytes_pad _ _ _ (ofBytes_lt h),
+    toBytes_ofBytes, Nat.add_sub_cancel]
 
 /-! ## For a curve whose `n` has `8 Q` bits -/
 

@@ -19,7 +19,7 @@ open VG VG.X86_64
 open VG.Proof.Sha512.X86_64 (Compress)
 
 theorem implies :
-    (rfcX86_64 Spec.Ecdsa.Rfc6979.P256Sha384.inst).Implies
+    (rfcX86_64 Spec.Ecdsa.Rfc6979.P256Sha384.inst 240).Implies
       (Spec.Ecdsa.Rfc6979.P256Sha384.inst.signContract X86_64.abi 240) := by
   exact
     { pre := by
