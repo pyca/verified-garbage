@@ -32,7 +32,7 @@ theorem both_rr {K W SP : Addr} {R : Nat} {N A D : Addr} {nl n tl : Nat} {P : Ad
 
 /-- `Offset_*` and a copy of it at `W + tmpO`. -/
 theorem restHead1_one {K W SP : Addr} (L : Lay K W SP) {N A D : Addr} {R nl n tl : Nat}
-    (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 2560⟩) {P : Addr} {r : Nat} {s : State}
+    (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 3584⟩) {P : Addr} {r : Nat} {s : State}
     (h : RRun K W SP R N A D nl n tl P r s) :
     WP isa (.block (xor16 .r14 240 ofsO ++ copy16 ofsO tmpO)) s (RRun K W SP R N A D nl n tl P r) := by
   have E := h.1.env
@@ -50,7 +50,7 @@ theorem restHead1_one {K W SP : Addr} (L : Lay K W SP) {N A D : Addr} {R nl n tl
 
 /-- The call on the block at `W + tmpO` keeps the callee-saved registers. -/
 theorem callTmp_rr (v : BlocksImpl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} (hR : R = 10 ∨ R = 12 ∨ R = 14)
-    {N A D : Addr} {nl n tl : Nat} (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 2560⟩) {P : Addr} {r : Nat} {s : State}
+    {N A D : Addr} {nl n tl : Nat} (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 3584⟩) {P : Addr} {r : Nat} {s : State}
     (h : RRun K W SP R N A D nl n tl P r s) :
     WP isa (callBlocks (callees v).enc (oneBlock tmpO)) s (RRun K W SP R N A D nl n tl P r) :=
   WP.mono (callBlocks_ok (f := Spec.Aes.cipher) v.encOk v.encNosp v.encDepth L h.1.env hR h.1.sl.rounds
@@ -66,7 +66,7 @@ theorem callTmp_rr (v : BlocksImpl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} (
 
 /-- `rest enc` in two runs. -/
 theorem rest_rel (v : BlocksImpl) (enc : Bool) {K W SP : Addr} (L : Lay K W SP) {R : Nat}
-    (hR : R = 10 ∨ R = 12 ∨ R = 14) {N A D : Addr} {nl n tl : Nat} (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 2560⟩)
+    (hR : R = 10 ∨ R = 12 ∨ R = 14) {N A D : Addr} {nl n tl : Nat} (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 3584⟩)
     (hn : n ≤ 2 ^ 64) {P : Addr} {r : Nat} {Q : State → State → Prop}
     (hQ : ∀ s₁ s₂, Q s₁ s₂ → RRun K W SP R N A D nl n tl P r s₁ ∧ RRun K W SP R N A D nl n tl P r s₂) :
     RelCT isa Q (rest (callees v) enc) fun _ _ => True := by

@@ -63,7 +63,7 @@ theorem mask_one {s : State} (o : One K W SP R N A D nl n tl s) {c : Bool}
     simp only [List.mem_singleton] at hr; subst hr; exact ⟨_, by simp, fun _ h => h⟩
   exact o.step T.ar.lay T.ar.data.w E wr fr
 
-variable (hw : s₀.wr = [⟨D, n⟩, ⟨W, 2560⟩]) (hw' : s₀'.wr = [⟨D, n⟩, ⟨W, 2560⟩])
+variable (hw : s₀.wr = [⟨D, n⟩, ⟨W, 3584⟩]) (hw' : s₀'.wr = [⟨D, n⟩, ⟨W, 3584⟩])
 include hw hw'
 
 /-- `vg_aes_ocb_open` in two runs. -/
@@ -106,7 +106,7 @@ theorem open_ct (v : BlocksImpl) : ConstantTime isa openX86_64.pre openX86_64.pu
   fun s₁ s₂ _ _ _ _ h₁ h₂ hq e₁ e₂ => by
     have T := Two.of hq.1 (openArgs_of h₁) (openArgs_of h₂)
     obtain ⟨⟨q1, q2, q3, q4, q5, q6, q7, q8⟩, -⟩ := hq
-    have hw₂ : s₂.wr = [⟨arg s₁ 0, (arg s₁ 1).toNat⟩, ⟨arg s₁ 4, 2560⟩] := by
+    have hw₂ : s₂.wr = [⟨arg s₁ 0, (arg s₁ 1).toNat⟩, ⟨arg s₁ 4, 3584⟩] := by
       rw [h₂.2.1, q8 0 (by decide), q8 1 (by decide), q8 4 (by decide)]
     exact (open_rel T h₁.2.1 hw₂ v _ _ _ _ _ _ ⟨rfl, rfl⟩ e₁ e₂).1
 

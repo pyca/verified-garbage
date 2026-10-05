@@ -20,9 +20,19 @@ emitted once for each.
   it to the checksum), encipher or decipher all of them in one call, then
   XOR each with its offset again (and, for `open`, add it to the
   checksum). The offsets are recomputed in the third pass, from `Offset_0`.
-* `L_{ntz(i)}` is `L_0` doubled `ntz(i)` times, computed for each block by
-  a loop on the public `i`; `L_$` and `L_0` are `L_*` doubled once and
-  twice.
+  During a pass the offset and the checksum are in `xmm0` and `xmm1`
+  (loaded from `W` before it, stored back after it), and each block goes
+  through `xmm3`. A pass takes four blocks at a time while it can: the
+  first three of them have `ntz(i)` 0, 1 and 0, so their `L_{ntz(i)}`
+  are `L_0` and `L_1`, kept in `xmm4` and `xmm5`.
+* `L_$` and `L_0` are `L_*` doubled once and twice. The table (`table`,
+  after the entry) holds `L_j = double^j(L_0)` for every `j` with `2^j` at
+  most `(len | aad_len) / 16`, so for every `ntz(i)` of a block index `i`
+  of the data or of the associated data (`j < 60`, as
+  `len, aad_len < 2^64`), in the 16-byte slot `slot j` of `W + tblO`, the
+  top 6 bits of `debruijn · 2^j`, which differ for each `j < 64`.
+  `L_{ntz(i)}` is read from its slot without a branch (`lAddr`):
+  `2^{ntz(i)} = i ∧ (0 − i)`, from the public `i`.
 * `HASH(K, A)` copies up to 8 blocks of the associated data at a time,
   each XORed with its offset, to `W + bufO`, and enciphers them there.
 * `Offset_0` takes the bits `bottom … bottom + 127` of `Stretch` (§4.2),
@@ -32,17 +42,18 @@ emitted once for each.
 * `seal` computes the tag at `W` (`front`) and copies its first `tag_len`
   bytes to `tag` (`tagOut`).
 * `open` copies the received tag from `tag` to `W` (`recv`), compares the
-  tags without a branch and masks the data with `0 − ok`.
+  tags without a branch and masks the data with `0 − ok`, 16 bytes at a time
+  (in `xmm6`) and then the last `len mod 16` one at a time.
 
-## The working space `W` (`work`, 2560 bytes)
+## The working space `W` (`work`, 3584 bytes)
 
 `[0, 16)`: the tag (out of `seal`; the received one, for `open`); then the
-offset, the checksum, the sum of `HASH`, `L_$`, `L_0`, the current
-`L_{ntz(i)}`, a block for one call, the computed tag of `open`, the offset
-of `HASH`, the callee-saved registers, the public arguments, `bottom`,
-`Offset_0`, the nonce and its length, and the address of the tag;
-`[384, 512)`: 8 blocks of the associated data; `[512, 2560)`: the working
-space of the functions called.
+offset, the checksum, the sum of `HASH`, `L_$`, `L_0`, an unused block, a
+block for one call, the computed tag of `open`, the offset of `HASH`, the
+callee-saved registers, the public arguments, `bottom`, `Offset_0`, the
+nonce and its length, and the address of the tag; `[384, 512)`: 8 blocks of
+the associated data; `[512, 2560)`: the working space of the functions
+called; `[2560, 3584)`: the table of `L_j`, in 64 slots of 16 bytes.
 
 `r15` holds `W` and `r14` the key context throughout; the functions called
 preserve them, and `rbx`, `rbp`, `r12` and `r13`, which hold pointers and
@@ -75,7 +86,6 @@ def ckO : Nat := 32
 def sumO : Nat := 48
 def ldO : Nat := 64
 def l0O : Nat := 80
-def lO : Nat := 96
 def tmpO : Nat := 112
 def t2O : Nat := 128
 def ohO : Nat := 144
@@ -93,6 +103,7 @@ def nlO : Nat := 296
 def tgO : Nat := 304
 def bufO : Nat := 384
 def scrO : Nat := 512
+def tblO : Nat := 2560
 
 /-- The callee-saved registers, and where they are kept. -/
 def saved : List (Reg × Nat) :=
@@ -117,24 +128,33 @@ def xor16 (b : Reg) (s d : Nat) : List Instr :=
   [ld .rax .r15 d, ld .rdx .r15 (d + 8), .alu .xor .rax (.mem (at_ b s)),
    .alu .xor .rdx (.mem (at_ b (s + 8))), st .r15 d .rax, st .r15 (d + 8) .rdx]
 
-/-- `W + d ← double(W + s)` (§2): the block is big-endian, so each half is
+/-- `o + d ← double(b + s)` (§2): the block is big-endian, so each half is
 byte-reversed into `rax` (high) and `rdx` (low), shifted left by one bit,
 the carry out of the high half reducing the low one by `{87}` through a
 mask, and byte-reversed back. -/
-def dbl (b : Reg) (s d : Nat) : List Instr :=
+def dbl (b : Reg) (s : Nat) (o : Reg) (d : Nat) : List Instr :=
   [ld .rax b s, .bswap .rax, ld .rdx b (s + 8), .bswap .rdx,
    mvr .rcx .rax, .shift .shr .rcx 63, .alu .xor .r8 (.reg .r8), .alu .sub .r8 (.reg .rcx),
    .alu .and .r8 (.imm 0x87),
    mvr .rcx .rdx, .shift .shr .rcx 63, .alu .add .rax (.reg .rax), .alu .or .rax (.reg .rcx),
    .alu .add .rdx (.reg .rdx), .alu .xor .rdx (.reg .r8),
-   .bswap .rax, st .r15 d .rax, .bswap .rdx, st .r15 (d + 8) .rdx]
+   .bswap .rax, st o d .rax, .bswap .rdx, st o (d + 8) .rdx]
 
-/-- `W + lO ← L_{ntz(i)}` for `i ≥ 1` in `rbp`: `L_0` doubled while the
-low bit of `r11` (from `i`, shifted right each time) is zero. -/
-def lNtz : Prog isa :=
-  .seq (.block (copy16 l0O lO ++ [mvr .r11 .rbp, .alu .test .r11 (.imm 1)]))
-    (.ite .e (.loop (.block (dbl .r15 lO lO ++ [.shift .shr .r11 1, .alu .test .r11 (.imm 1)])) .e)
-      (.block []))
+/-- A de Bruijn sequence B(2, 6): the top 6 bits of `debruijn · 2^t` (mod
+`2^64`), the slot of `L_t` in the table, are different for every `t < 64`,
+and 0 for `t = 0`. -/
+def debruijn : BitVec 64 := 0x022fdd63cc95386d
+
+/-- `rax ← 16 ·` the top 6 bits of `rax` (shifted right by 58, rotated left
+by 4). -/
+def slotOf : List Instr := [.shift .shr .rax 58, .shift .ror .rax 60]
+
+/-- `rcx ← W + 16 · slot`, for `i ≥ 1` in `rbp`, the slot of `L_{ntz(i)}`,
+which is at `rcx + tblO`, without a branch: `2^{ntz(i)} = i ∧ (0 − i)`,
+times `debruijn`. -/
+def lAddr : List Instr :=
+  [mvr .rax .rbp, .mov .rcx (.imm 0), .alu .sub .rcx (.reg .rbp), .alu .and .rax (.reg .rcx),
+   .movImm64 .rcx debruijn, .mul .rcx] ++ slotOf ++ [mvr .rcx .r15, .alu .add .rcx (.reg .rax)]
 
 /-! ## Calls -/
 
@@ -151,7 +171,20 @@ def oneBlock (d : Nat) : List Instr := [mvr .rdx .r15, addi .rdx d, .mov .rcx (.
 /-! ## `L_$`, `L_0` and `Offset_0` -/
 
 /-- `L_$` and `L_0` from `L_*` (bytes 240–255 of the key context). -/
-def lsetup : List Instr := dbl .r14 240 ldO ++ dbl .r15 ldO l0O
+def lsetup : List Instr := dbl .r14 240 .r15 ldO ++ dbl .r15 ldO .r15 l0O
+
+/-- The table of `L_j` at `W + tblO`, each in its slot (`debruijn`): `L_0`
+(in slot 0), then `L_{j+1} = double(L_j)` (`r10` at `L_j`, `r11` is `2^j`)
+while `(len | aad_len) >> (5 + j)` (in `r9`) is not zero, so for every `j`
+with `2^j ≤ (len | aad_len) / 16`. -/
+def table : Prog isa :=
+  .seq (.block (copy16 l0O tblO ++ [ld .r9 .r15 lenO, ld .rax .r15 alenO, .alu .or .r9 (.reg .rax),
+      .shift .shr .r9 5, mvr .r10 .r15, addi .r10 tblO, .mov .r11 (.imm 1), .movImm64 .rsi debruijn,
+      .alu .test .r9 (.reg .r9)]))
+    (.ite .e (.block [])
+      (.loop (.block ([.alu .add .r11 (.reg .r11), mvr .rax .r11, .mul .rsi] ++ slotOf ++
+          [.alu .add .rax (.reg .r15), mvr .rdi .rax] ++ dbl .r10 0 .rdi tblO ++
+          [mvr .r10 .rdi, addi .r10 tblO, .shift .shr .r9 1, .alu .test .r9 (.reg .r9)])) .ne))
 
 /-- The `r12` bytes at `rbx` copied to `rsi`, from `rcx = 0` (`r12 > 0`). -/
 def copyLoop : Prog isa :=
@@ -223,11 +256,10 @@ def nonce : Prog isa :=
 /-- One block of the associated data (at `rbx`) XORed with its offset to
 `rsi` (from `W + bufO`, counting up, as does `r13` from 0), `i` in `rbp`. -/
 def hashFill : Prog isa :=
-  .seq lNtz
-    (.block (xor16 .r15 lO ohO ++
+  .block (lAddr ++ xor16 .rcx tblO ohO ++
       [ld .rax .rbx 0, ld .rdx .rbx 8, .alu .xor .rax (.mem (at_ .r15 ohO)),
        .alu .xor .rdx (.mem (at_ .r15 (ohO + 8))), st .rsi 0 .rax, st .rsi 8 .rdx,
-       addi .rsi 16, addi .rbx 16, addi .rbp 1, addi .r13 1, .alu .cmp .r13 (.reg .r12)]))
+       addi .rsi 16, addi .rbx 16, addi .rbp 1, addi .r13 1, .alu .cmp .r13 (.reg .r12)])
 
 /-- `r13 ← 0`, `rsi ← W + bufO`. -/
 def bufStart : List Instr := [.mov .r13 (.imm 0), mvr .rsi .r15, addi .rsi bufO]
@@ -270,24 +302,45 @@ def hash : Prog isa :=
 
 /-! ## The whole blocks -/
 
-/-- The offset of block `i` (in `rbp`): `Offset ← Offset ⊕ L_{ntz(i)}`. -/
-def nextOffset : Prog isa := .seq lNtz (.block (xor16 .r15 lO ofsO))
+/-- The offset of block `i` (in `rbp`): `Offset ← Offset ⊕ L_{ntz(i)}`, in
+`xmm0`. -/
+def nextOffset : List Instr := lAddr ++ [.movdquLoad .xmm2 (at_ .rcx tblO), .xop (.bin .pxor .xmm0 .xmm2)]
 
-/-- `W + ckO ⊕= (rbx)`. -/
-def addCk : List Instr := xor16 .rbx 0 ckO
+/-- The checksum, in `xmm1`, `⊕=` the block in `xmm3`. -/
+def addCk : Instr := .xop (.bin .pxor .xmm1 .xmm3)
 
-/-- `(rbx) ⊕= W + ofsO`. -/
-def xorOfs : List Instr :=
-  [ld .rax .rbx 0, ld .rdx .rbx 8, .alu .xor .rax (.mem (at_ .r15 ofsO)),
-   .alu .xor .rdx (.mem (at_ .r15 (ofsO + 8))), st .rbx 0 .rax, st .rbx 8 .rdx]
+/-- The block in `xmm3` `⊕=` the offset in `xmm0`. -/
+def xorOfs : Instr := .xop (.bin .pxor .xmm3 .xmm0)
 
-/-- On to the next block (ZF set when none are left). -/
-def nextBlock : List Instr := [addi .rbx 16, addi .rbp 1, .alu .sub .r12 (.imm 1)]
+/-- On to the next block. -/
+def nextBlock : List Instr := [addi .rbx 16, addi .rbp 1]
+
+/-- `Offset ← Offset ⊕ x`, `x` holding `L_{ntz(i)}`. -/
+def ofsX (x : XReg) : List Instr := [.xop (.bin .pxor .xmm0 x)]
+
+/-- One block: its offset (`ofs`), then loaded to `xmm3` from `rbx`, through
+`body`, stored back, and on to the next. -/
+def blockStep (ofs body : List Instr) : List Instr :=
+  ofs ++ [.movdquLoad .xmm3 (at_ .rbx 0)] ++ body ++ [.movdquStore (at_ .rbx 0) .xmm3] ++ nextBlock
+
+/-- Four blocks, `i = 4k + 1` to `4k + 4`, whose `ntz(i)` are 0, 1, 0 and at
+least 2: `L_0` and `L_1` are in `xmm4` and `xmm5`. Then CF is set if fewer
+than 4 blocks are left. -/
+def quad (body : List Instr) : List Instr :=
+  blockStep (ofsX .xmm4) body ++ blockStep (ofsX .xmm5) body ++ blockStep (ofsX .xmm4) body ++
+    blockStep nextOffset body ++ [.alu .sub .r12 (.imm 4), .alu .cmp .r12 (.imm 4)]
 
 /-- A pass over the `r12` whole blocks of the data at `rbx` (`r12 > 0`),
-with `i` from 1 in `rbp`: each block through `body` after its offset. -/
+with `i` from 1 in `rbp`, the offset and the checksum in `xmm0` and `xmm1`
+(from `W` and back): each block through `blockStep body` after its
+offset, four at a time while at least four are left, then one at a time. -/
 def pass (body : List Instr) : Prog isa :=
-  .loop (.seq nextOffset (.block (body ++ nextBlock))) .ne
+  .seq (.block [.movdquLoad .xmm0 (at_ .r15 ofsO), .movdquLoad .xmm1 (at_ .r15 ckO),
+      .movdquLoad .xmm4 (at_ .r15 tblO), .movdquLoad .xmm5 (at_ .r15 (tblO + 16)), .alu .cmp .r12 (.imm 4)])
+    (.seq (.ite .b (.block []) (.loop (.block (quad body)) .ae))
+      (.seq (.block [.alu .test .r12 (.reg .r12)])
+        (.seq (.ite .e (.block []) (.loop (.block (blockStep nextOffset body ++ [.alu .sub .r12 (.imm 1)])) .ne))
+          (.block [.movdquStore (at_ .r15 ofsO) .xmm0, .movdquStore (at_ .r15 ckO) .xmm1]))))
 
 /-- The whole blocks: `pre` (the first pass), `f` on all of them, `post` (the
 third pass, the offsets recomputed from `Offset_0`); `rbx` the data, `r13`
@@ -343,15 +396,15 @@ def entry : List Instr :=
 def body (enc : Bool) : Prog isa :=
   .seq (.block [ld .r13 .r15 lenO, .shift .shr .r13 4, .alu .test .r13 (.reg .r13)])
     (.seq (.ite .e (.block [])
-        (if enc then whole c.enc (addCk ++ xorOfs) xorOfs else whole c.dec xorOfs (xorOfs ++ addCk)))
+        (if enc then whole c.enc [addCk, xorOfs] [xorOfs] else whole c.dec [xorOfs] [xorOfs, addCk]))
       (.seq (.block [ld .rbx .r15 dataO, ld .rax .r15 lenO, mvr .r12 .rax, .alu .and .r12 (.imm 15),
           .alu .sub .rax (.reg .r12), .alu .add .rbx (.reg .rax), .alu .test .r12 (.reg .r12)])
         (.ite .e (.block []) (rest c enc))))
 
-/-- `seal` (`enc`) or `open` up to the tag, at `W + d`: the entry,
-`Offset_0`, `HASH`, the data and the tag. -/
+/-- `seal` (`enc`) or `open` up to the tag, at `W + d`: the entry, the
+table of `L_j`, `Offset_0`, `HASH`, the data and the tag. -/
 def front (enc : Bool) (d : Nat) : Prog isa :=
-  .seq (.block entry) (.seq (nonce c) (.seq (hash c) (.seq (body c enc) (tag c d))))
+  .seq (.block entry) (.seq table (.seq (nonce c) (.seq (hash c) (.seq (body c enc) (tag c d)))))
 
 /-- The first `tag_len` bytes of the tag at `W` copied to `tag`. -/
 def tagOut : Prog isa :=
@@ -372,14 +425,28 @@ def cmp : Prog isa :=
         .alu .or .rdx (.reg .rax), addi .rcx 1, .alu .cmp .rcx (.reg .r12)]) .ne)
       (.block [.alu .sub .rdx (.imm 1), .shift .shr .rdx 63, st .r15 tagO .rdx]))
 
-/-- The data (`len` bytes) masked with `0 − ok`, `ok` at `W + tagO`. -/
+/-- `[rbx + rcx]`. -/
+def maskAt : MemOp := { base := .rbx, index := some .rcx }
+
+/-- The data's `⌊len / 16⌋` whole blocks (counted down in `r8`) ANDed with
+`0 − ok` (in both halves of `xmm6`), 16 bytes at a time. -/
+def maskBlocks : Prog isa :=
+  .loop (.block [.movdquLoad .xmm7 maskAt, .xop (.bin .pand .xmm7 .xmm6), .movdquStore maskAt .xmm7, addi .rcx 16,
+    .alu .sub .r8 (.imm 1)]) .ne
+
+/-- The data's last `len mod 16` bytes ANDed with `0 − ok`, one at a time. -/
+def maskBytes : Prog isa :=
+  .loop (.block [.movzx8 .rax maskAt, .alu .and .rax (.reg .rdx), .store8 maskAt .rax, addi .rcx 1,
+    .alu .cmp .rcx (.reg .r12)]) .ne
+
+/-- The data (`len` bytes) masked with `0 − ok`, `ok` at `W + tagO`: its
+whole blocks, then the rest. -/
 def mask : Prog isa :=
   .seq (.block [ld .rbx .r15 dataO, ld .r12 .r15 lenO, .alu .xor .rdx (.reg .rdx),
-      .alu .sub .rdx (.mem (at_ .r15 tagO)), .mov .rcx (.imm 0), .alu .test .r12 (.reg .r12)])
-    (.ite .e (.block [])
-      (.loop (.block [.movzx8 .rax { base := .rbx, index := some .rcx }, .alu .and .rax (.reg .rdx),
-        .store8 { base := .rbx, index := some .rcx } .rax, addi .rcx 1,
-        .alu .cmp .rcx (.reg .r12)]) .ne))
+      .alu .sub .rdx (.mem (at_ .r15 tagO)), .xop (.movq .xmm6 .rdx), .xop (.bin .punpcklqdq .xmm6 .xmm6),
+      .mov .rcx (.imm 0), mvr .r8 .r12, .shift .shr .r8 4, .alu .test .r8 (.reg .r8)])
+    (.seq (.ite .e (.block []) maskBlocks)
+      (.seq (.block [.alu .cmp .rcx (.reg .r12)]) (.ite .e (.block []) maskBytes)))
 
 def «open» : Prog isa :=
   .seq (front c false t2O) (.seq recv (.seq cmp (.seq mask (.block ([ld .rax .r15 tagO] ++ restore)))))

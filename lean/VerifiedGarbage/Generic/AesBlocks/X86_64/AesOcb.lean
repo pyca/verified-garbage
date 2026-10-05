@@ -15,8 +15,9 @@ whose callees use no stack; `seal` and `open` also read their arguments
 after the sixth, from the data to the working space, from the stack above
 their return address. Each keeps its working space, its last argument, in a
 frame on the stack: of 2568 bytes for `init` (`Verified.stackScratch`), and
-of 2608 bytes for `seal` and `open`, which also holds a copy of their four
-other stack arguments (`Verified.stackArgScratch`).
+of 3632 bytes for `seal` and `open` (3584 bytes of working space, which
+includes the table of `L_j`), which also holds a copy of their four other
+stack arguments (`Verified.stackArgScratch`).
 -/
 
 namespace VG.Generic.AesBlocks.X86_64.AesOcb
@@ -44,9 +45,9 @@ def artifacts (v : Proof.Aes.X86_64.BlocksImpl) : List Artifact := [
     name := Spec.Ocb.sealApi.name ++ v.suffix
     target := X86_64.target
     doc := Spec.Ocb.sealApi.doc (notes := [callNote v false])
-    code := Impl.StackScratch.X86_64.withStackArgScratch 2608 4 (Impl.AesOcb.X86_64.seal (callees v))
-    contract := Spec.Ocb.sealContract X86_64.abi 2616
-    stack := 2616
+    code := Impl.StackScratch.X86_64.withStackArgScratch 3632 4 (Impl.AesOcb.X86_64.seal (callees v))
+    contract := Spec.Ocb.sealContract X86_64.abi 3640
+    stack := 3640
     verified := seal_framed v
     spSafe := X86_64.withStackArgScratch_spSafe (seal_spSafe v)
     features := v.features },
@@ -55,9 +56,9 @@ def artifacts (v : Proof.Aes.X86_64.BlocksImpl) : List Artifact := [
     target := X86_64.target
     doc := Spec.Ocb.openApi.doc (notes := [callNote v true,
       "It compares the tags and overwrites the data with zeros without a branch on the result."])
-    code := Impl.StackScratch.X86_64.withStackArgScratch 2608 4 (Impl.AesOcb.X86_64.open (callees v))
-    contract := Spec.Ocb.openContract X86_64.abi 2616
-    stack := 2616
+    code := Impl.StackScratch.X86_64.withStackArgScratch 3632 4 (Impl.AesOcb.X86_64.open (callees v))
+    contract := Spec.Ocb.openContract X86_64.abi 3640
+    stack := 3640
     verified := open_framed v
     spSafe := X86_64.withStackArgScratch_spSafe (open_spSafe v)
     features := v.features }]

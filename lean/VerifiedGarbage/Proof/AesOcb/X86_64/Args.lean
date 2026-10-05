@@ -33,7 +33,7 @@ theorem covers_prefix {p : Addr} {k n : Nat} {rs : List Region} (h : Covers [⟨
   simp only [List.mem_singleton] at hr; subst hr
   exact h a m ⟨_, List.mem_singleton_self _, by simp only [Region.Contains] at hc ⊢; omega⟩
 
-theorem toNat_W {W : Addr} (hw : W.toNat + 2560 ≤ 2 ^ 64) {d : Nat} (hd : d < 2560) :
+theorem toNat_W {W : Addr} (hw : W.toNat + 3584 ≤ 2 ^ 64) {d : Nat} (hd : d < 3584) :
     (W + BitVec.ofNat 64 d).toNat = W.toNat + d := by
   rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := d) (by omega), Nat.mod_eq_of_lt (by omega)]
 

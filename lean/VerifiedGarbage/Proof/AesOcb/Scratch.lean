@@ -9,7 +9,9 @@ working space in a frame of their own (`Verified.stackScratch`,
 `Verified.stackArgScratch`), around code proved with the working space as a
 last argument: `initScratchContract`, `sealScratchContract` and
 `openScratchContract` are the shared contracts with a 2560-byte buffer
-appended, whatever it holds.
+appended, whatever it holds; `sealWorkContract` and `openWorkContract`,
+with a buffer of `words` 8-byte words, for an implementation that needs
+another size.
 
 A frame that copies arguments passed on the stack needs the pre- and
 postconditions, and `open`'s leak, to read the memory on entry only within
@@ -63,6 +65,41 @@ def openScratchSig : Sig where
 /-- `openContract`, whatever `work` is. -/
 def openScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
   openScratchSig.contract A
+    (pre := fun ctx rounds nonce nonceLen aad aadLen data len tag tagLen _work =>
+      openPre A.ptrBits ctx rounds nonce nonceLen aad aadLen data len tag tagLen)
+    (post := fun ctx rounds nonce nonceLen aad aadLen data len tag tagLen _work =>
+      openPost A.ptrBits ctx rounds nonce nonceLen aad aadLen data len tag tagLen)
+    (writeArgs := true) (stack := stack)
+    (leak := some fun ctx rounds nonce nonceLen aad aadLen data len tag tagLen _work =>
+      openLeak A.ptrBits ctx rounds nonce nonceLen aad aadLen data len tag tagLen)
+
+/-- `vg_aes_ocb_seal` with `work: *mut [u64; words]`. -/
+def sealWorkSig (words : Nat) : Sig where
+  params := [("ctx", .array false .u64 32), ("rounds", .int .usize true),
+    ("nonce", .slice false .u8 "nonce_len"), ("aad", .slice false .u8 "aad_len"),
+    ("data", .slice true .u8 "len"), ("tag", .slice true .u8 "tag_len"),
+    ("work", .array true .u64 words)]
+
+/-- `sealContract`, whatever `work` (`words` words) is. -/
+def sealWorkContract {M : ISA} (A : Abi M) (words : Nat) (stack : Nat := 0) : Contract M :=
+  (sealWorkSig words).contract A
+    (pre := fun ctx rounds nonce nonceLen aad aadLen data len tag tagLen _work =>
+      sealPre A.ptrBits ctx rounds nonce nonceLen aad aadLen data len tag tagLen)
+    (post := fun ctx rounds nonce nonceLen aad aadLen data len tag tagLen _work =>
+      sealPost A.ptrBits ctx rounds nonce nonceLen aad aadLen data len tag tagLen)
+    (writeArgs := true) (stack := stack)
+
+/-- `vg_aes_ocb_open` with `work: *mut [u64; words]`. -/
+def openWorkSig (words : Nat) : Sig where
+  params := [("ctx", .array false .u64 32), ("rounds", .int .usize true),
+    ("nonce", .slice false .u8 "nonce_len"), ("aad", .slice false .u8 "aad_len"),
+    ("data", .slice true .u8 "len"), ("tag", .slice false .u8 "tag_len"),
+    ("work", .array true .u64 words)]
+  ret := some .u32
+
+/-- `openContract`, whatever `work` (`words` words) is. -/
+def openWorkContract {M : ISA} (A : Abi M) (words : Nat) (stack : Nat := 0) : Contract M :=
+  (openWorkSig words).contract A
     (pre := fun ctx rounds nonce nonceLen aad aadLen data len tag tagLen _work =>
       openPre A.ptrBits ctx rounds nonce nonceLen aad aadLen data len tag tagLen)
     (post := fun ctx rounds nonce nonceLen aad aadLen data len tag tagLen _work =>

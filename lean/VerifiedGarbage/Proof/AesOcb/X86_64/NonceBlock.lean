@@ -94,7 +94,7 @@ theorem nonceBlock_ok {K W SP : Addr} (L : Lay K W SP) {s : State} (E : Env K W 
   -- `zero16 tmpO`
   obtain ⟨s₁, run₁, B₁⟩ := zero16_ok (s := s) (d := tmpO) h15r (E.perm.wW (by decide)) (E.perm.wW (by decide))
   have h15₁ : s₁.gpr .r15 = W := by rw [B₁.gpr _ (by decide), h15r]
-  have kept₁ : ∀ {d}, (d + 8 ≤ tmpO ∨ tmpO + 16 ≤ d) → d + 8 ≤ 2560 →
+  have kept₁ : ∀ {d}, (d + 8 ≤ tmpO ∨ tmpO + 16 ≤ d) → d + 8 ≤ 3584 →
       s₁.mem.readW (W + BitVec.ofNat 64 d) 64 = s.mem.readW (W + BitVec.ofNat 64 d) 64 := fun h₁ h₂ =>
     B₁.frame.readW (r := ⟨W + BitVec.ofNat 64 _, 8⟩) (Region.contains_self _ _) (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
