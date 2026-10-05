@@ -89,7 +89,8 @@ theorem shape : Shape (P := params) md where
 
 theorem taints : Taints params :=
   ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩,
-    ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩
+    ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩,
+    ⟨_, by taint_decide⟩⟩
 
 theorem scalar_ok : CalleeOk (P := params) md Callee.scalar.code :=
   .of_verified compressWide_verified.1 compressWide_verified.2.1

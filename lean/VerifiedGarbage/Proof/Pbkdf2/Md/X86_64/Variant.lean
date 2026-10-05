@@ -72,6 +72,11 @@ structure MdHash where
   H : Hash
   /-- The instance of the shared contracts. -/
   I : Spec.Hmac.Instance
+  /-- What the proofs know of the hash function's code, and of the functions
+  it calls (for the callers that work at the level of its compression
+  function: RSASSA-PSS's, `Generic/MdHash/RsaPrivateCrt/X86_64/RsaPss.lean`). -/
+  ok : HashOK H
+  K : Callees H
   hmacInit : Verified X86_64.target H.hmacInit (I.initScratchContract X86_64.abi 16)
   hmacFin : Verified X86_64.target H.hmacFin (I.finalizeScratchContract X86_64.abi 16)
   iterate : Verified X86_64.target H.iterate (I.iterateContract X86_64.abi 8)
@@ -206,6 +211,8 @@ def MdHash.of {H : Hash} {I : Spec.Hmac.Instance} (hH : HashOK H) (C : CoreOK (c
     (suffix : String) (features : List String) (stream : List StreamFn) : MdHash where
   H := H
   I := I
+  ok := hH
+  K := K
   hmacInit := MdHash.hmacInit_of hH C K hSH hW hsI
   hmacFin := MdHash.hmacFin_of hH C K hSH hW hsF
   iterate := MdHash.iterate_of hH C K hSH hW hsT

@@ -37,7 +37,8 @@ theorem shape : Shape (P := params) md where
 
 theorem taints : Taints params :=
   ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩,
-    ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩
+    ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩,
+    ⟨_, by taint_decide⟩⟩
 
 theorem callee {f : Callee} (hf : f.Ok) : CalleeOk (P := params) md f.code :=
   ⟨hf.verified, hf.ct, hf.nosp, hf.depth, hf.keeps_rdi, hf.keeps_rcx⟩
