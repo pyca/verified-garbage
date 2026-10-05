@@ -1,4 +1,5 @@
 import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.EncCorrect
+import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.Alloc
 import VerifiedGarbage.Proof.Bignum.X86_64.Mont
 import VerifiedGarbage.Proof.Framework.X86_64.Taint
 
@@ -256,29 +257,6 @@ theorem body_ct (v : PubImpl) : RelCT isa (Two (At J0)) (body v.name v.code) fun
   rw [body_eq]
   exact RelCT.seq setup_two (RelCT.seq ps_two (RelCT.seq sep_two (RelCT.seq copy_two
     (RelCT.seq callArgs_two (RelCT.seq (call_two v) (RelCT.seq maskArgs_two mask_ct))))))
-
-theorem alloc_push {bytes : Nat} {s s₁ : State} (h : isa.push (.alloc bytes) s = some s₁) :
-    s₁ = allocState bytes s := by
-  simp only [isa, push] at h
-  split at h
-  · cases h; rfl
-  · cases h
-
-/-- A frame of `bytes` bytes leaks what its body does. -/
-theorem relCT_alloc {bytes : Nat} {body : Prog isa} {P R : State → State → Prop}
-    (hb : RelCT isa (fun a b => ∃ s₁ s₂, P s₁ s₂ ∧ a = allocState bytes s₁ ∧ b = allocState bytes s₂)
-      body R) :
-    RelCT isa P (.frame (.alloc bytes) body (.free bytes)) fun _ _ => True := by
-  intro s₁ s₂ t₁ t₂ s₁' s₂' hp e₁ e₂
-  cases e₁ with
-  | frame p₁ b₁ q₁ =>
-    cases e₂ with
-    | frame p₂ b₂ q₂ =>
-      obtain rfl := alloc_push p₁
-      obtain rfl := alloc_push p₂
-      obtain ⟨rfl, -⟩ := hb _ _ _ _ _ _ ⟨s₁, s₂, hp, rfl, rfl⟩ b₁ b₂
-      simp only [isa, push, pop] at p₁ q₁ p₂ q₂ ⊢
-      exact ⟨rfl, trivial⟩
 
 theorem enc_constantTime (v : PubImpl) : ConstantTime isa encK.pre encK.pub (code v.name v.code) :=
   RelCT.constantTime (relCT_alloc ((body_ct v).mono
