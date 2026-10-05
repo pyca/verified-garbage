@@ -35,6 +35,16 @@ theorem resK_ok {Hm : Stream} {u : State} {F S : Addr} (L : Lay u F S) {V : Nat 
   refine WP.mono (chkK_ok L' R' (by simp only [upd]; exact hk) hk1 hD) fun u' ⟨k2, hm2, _, hcf⟩ =>
     ⟨(kx.trans k2).mono (by decide), L'.congr (k2.gpr (by decide)) k2.2.2 (by rw [hm2]), hm2 ▸ R', hcf⟩
 
+theorem decKs_iff {k : Nat} (h : k ∈ decKs) : k = 14 ∨ (21 ≤ k ∧ k ≤ 29) := by
+  simp only [decKs, List.mem_cons, List.not_mem_nil, or_false] at h; omega
+
+theorem ArgsD_privW (s : State) : ArgsD s (privW s) := fun j hj => by
+  have := decKs_iff hj
+  simp only [privW, upd, show j ≠ 0 by omega, show j ≠ 1 by omega, show j ≠ 2 by omega, show j ≠ 3 by omega,
+    show j ≠ 4 by omega, show j ≠ 5 by omega, show j ≠ 6 by omega, show j ≠ 7 by omega, show j ≠ 8 by omega,
+    show j ≠ 9 by omega, show j ≠ 10 by omega, show j ≠ 11 by omega, show j ≠ 12 by omega,
+    show j ≠ 13 by omega, ↓reduceIte]
+
 /-! ## The specification -/
 
 theorem decrypt_eq {H G : Spec.Mgf1.Hash} {nB eB pB qB dPB dQB qInvB label cB : List Byte}
@@ -114,9 +124,7 @@ theorem dec_correct (v : PrivImpl) (s : State) (h : (decK mH.G mG.G).pre s) :
   unfold decBody seqs seqs seqs
   refine WP.seq (WP.mono (decHead_ok hp) fun t0 h0 => ?_)
   refine WP.seq (WP.mono (privD_call v hp h0) fun t1 ⟨he1, L1, R1, hw1⟩ => ?_)
-  have hW1 : ArgsD s (privW s) := fun j hj => by
-    simp only [decKs, List.mem_cons, List.not_mem_nil, or_false] at hj
-    rcases hj with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> rfl
+  have hW1 : ArgsD s (privW s) := ArgsD_privW s
   obtain ⟨-, w21, -, w23, -, -, -, -, -, w29⟩ := hW1.w
   have w23' : privW s 23 = BitVec.ofNat 64 (s.gpr .r8).toNat := by
     rw [w23, BitVec.ofNat_toNat, BitVec.setWidth_eq]
