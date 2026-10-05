@@ -162,7 +162,7 @@ include hG in
 /-- `update` of the state with the `len` bytes at `d`, outside our working
 space and the stack the call uses, after `cnt` bytes. -/
 theorem updExt_ok {t : State} {F S : Addr} (L : Lay t F S) {V : Nat → Byte} {W : Nat → BitVec 64}
-    (R : Rep t.mem F S V W) {d : Addr} {len : Nat} (hlen : len < 2 ^ 63)
+    (R : Rep t.mem F S V W) {d : Addr} {len : Nat} (hlen : len < 2 ^ 64)
     (hcd : Covers [⟨d, len⟩] (t.rd ++ t.wr)) (hds : Region.Disjoint ⟨d, len⟩ ⟨S, oRsa⟩)
     (hdk : (below F 16).Disjoint ⟨d, len⟩)
     (hdi : t.gpr .rdi = off S oSt) (hdx : t.gpr .rdx = d) (hcx : t.gpr .rcx = BitVec.ofNat 64 len)

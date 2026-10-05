@@ -48,4 +48,34 @@ theorem mgfXor_good : Good (mgfXor lay H.stream) := by
     rfl
   · simp only [mgfXor, round, xorOut, seqs, Code.depth, Hash.stream, Impl.Mgf1.X86_64.byteLoop]; omega
 
+omit g in
+theorem block_good (is : List Instr) (h : (Code.block is : Prog isa).allInstrs okI = true) : Good (.block is) :=
+  ⟨h, by simp [Code.depth]⟩
+
+omit g in
+theorem clearEm_good : Good clearEm := ⟨rfl, by simp [clearEm, Code.depth]⟩
+
+omit g in
+theorem putMsg_good : Good putMsg := ⟨rfl, by simp [putMsg, Code.depth, Impl.Mgf1.X86_64.byteLoop]⟩
+
+omit g in
+theorem zeroOut_good : Good zeroOut := ⟨rfl, by simp [zeroOut, Code.depth, Impl.Mgf1.X86_64.byteLoop]⟩
+
+omit g in
+theorem copySeed_good (H : Impl.Pbkdf2.Md.X86_64.Stream) : Good (copySeed H) :=
+  ⟨rfl, by simp [copySeed, Code.depth, Impl.Mgf1.X86_64.byteLoop]⟩
+
+omit g in
+theorem copyLh_good (H : Impl.Pbkdf2.Md.X86_64.Stream) : Good (copyLh H) :=
+  ⟨rfl, by simp [copyLh, Code.depth, Impl.Mgf1.X86_64.byteLoop]⟩
+
+omit g in
+theorem dbArgs_good (H : Impl.Pbkdf2.Md.X86_64.Stream) : Good (.block (dbArgs H)) := ⟨rfl, by simp [Code.depth]⟩
+
+omit g in
+theorem seedArgs_good (H : Impl.Pbkdf2.Md.X86_64.Stream) : Good (.block (seedArgs H)) := ⟨rfl, by simp [Code.depth]⟩
+
+omit g in
+theorem pubArgs_good : Good (.block pubArgs) := ⟨rfl, by simp [Code.depth]⟩
+
 end VG.Proof.RsaOaep.X86_64

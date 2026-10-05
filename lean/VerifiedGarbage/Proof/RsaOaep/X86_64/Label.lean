@@ -25,7 +25,7 @@ space and the stack below the frame. -/
 structure LabAt (t : State) (F S : Addr) (W : Nat → BitVec 64) (lab : Addr) (labLen : Nat) : Prop where
   hl : W 27 = lab
   hll : W 28 = BitVec.ofNat 64 labLen
-  len : labLen < 2 ^ 63
+  len : labLen < 2 ^ 64
   cov : Covers [⟨lab, labLen⟩] (t.rd ++ t.wr)
   dS : Region.Disjoint ⟨lab, labLen⟩ ⟨S, oRsa⟩
   dK : (below F 16).Disjoint ⟨lab, labLen⟩
