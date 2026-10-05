@@ -27,9 +27,8 @@ theorem accLh_good (H : Impl.Pbkdf2.Md.X86_64.Stream) : Good (accLh H) :=
   ⟨rfl, by simp [accLh, Code.depth, Impl.Mgf1.X86_64.byteLoop]⟩
 theorem scan_good (H : Impl.Pbkdf2.Md.X86_64.Stream) : Good (scan H) :=
   ⟨rfl, by simp [scan, Code.depth, Impl.Mgf1.X86_64.byteLoop]⟩
-theorem clearBuf_good : Good clearBuf := ⟨rfl, by simp [clearBuf, Code.depth]⟩
-theorem copyT_good (H : Impl.Pbkdf2.Md.X86_64.Stream) : Good (copyT H) :=
-  ⟨rfl, by simp [copyT, Code.depth, Impl.Mgf1.X86_64.byteLoop]⟩
+theorem clearBuf_good (H : Impl.Pbkdf2.Md.X86_64.Stream) : Good (clearBuf H) := ⟨rfl, by simp [clearBuf, Code.depth]⟩
+theorem copyT_good : Good copyT := ⟨rfl, by simp [copyT, Code.depth, Impl.Mgf1.X86_64.byteLoop]⟩
 theorem shift_good : Good shift := ⟨rfl, by simp [shift, shiftPass, Code.depth, Impl.Mgf1.X86_64.byteLoop]⟩
 theorem outLoop_good : Good outLoop := ⟨rfl, by simp [outLoop, Code.depth, Impl.Mgf1.X86_64.byteLoop]⟩
 theorem decFail_good : Good decFail :=
@@ -234,16 +233,18 @@ theorem decMain_ok {s t : State} (hp : DPre s) (he : EnvD s t) (L : Lay t (fb s)
         ((s.gpr .r8).toNat - (2 * Hl.stream.D + 1))).2.1) j = W5 j := fun j h1 h2 => by
     simp only [upd, ifn h1, ifn h2]
   -- The buffer.
-  refine WP.seq (WP.mono (wp_good clearBuf_good (clearBuf_ok L7 R7)) fun t8 ⟨⟨L8, k8, R8⟩, sp8, mx8, f8⟩ => ?_)
+  refine WP.seq (WP.mono (wp_good (clearBuf_good _) (clearBuf_ok (Hm := Hl.stream) L7 R7 (k := (s.gpr .r8).toNat)
+    (by rw [w7k 23 (by decide) (by decide)]; exact w5k) (by omega) (by omega)))
+    fun t8 ⟨⟨L8, k8, hsi8, h108, hcx8, R8⟩, sp8, mx8, f8⟩ => ?_)
   have he8 : EnvD s t8 := he7.step k8.2.1 k8.2.2 sp8 (keep_cs3 k8 (by decide)) mx8 f8
-  refine WP.seq (WP.mono (wp_good (copyT_good _) (copyT_ok (Hm := Hl.stream) L8 R8
-    (by rw [w7k 23 (by decide) (by decide)]; exact w5k) (by omega) hk2 (by omega)))
-    fun t9 ⟨⟨L9, k9, R9⟩, sp9, mx9, f9⟩ => ?_)
+  refine WP.seq (WP.mono (wp_good copyT_good (copyT_ok (Hm := Hl.stream) L8 R8 hsi8 h108 hcx8
+    (by omega) hk2 (by omega)))
+    fun t9 ⟨⟨L9, k9, hcx9, R9⟩, sp9, mx9, f9⟩ => ?_)
   have he9 : EnvD s t9 := he8.step k9.2.1 k9.2.2 sp9 (keep_cs3 k9 (by decide)) mx9 f9
   -- The shift.
   obtain ⟨idx, hidx, hidx'⟩ := scan_idx (tF V5 Hl.stream.D) (upd W5 31 (accL V5 Hl.stream.D Hl.stream.D) 31)
     ((s.gpr .r8).toNat - (2 * Hl.stream.D + 1))
-  refine WP.seq (WP.mono (wp_good shift_good (shift_ok L9 R9 (idx := idx) (by simp only [upd]; exact hidx)
+  refine WP.seq (WP.mono (wp_good shift_good (shift_ok L9 R9 hcx9 (idx := idx) (by simp only [upd]; exact hidx)
     (by omega) (fun x h1 h2 => by
       simp only [cpV, clrV]
       rw [ifn (by omega), ifp (by omega)])))

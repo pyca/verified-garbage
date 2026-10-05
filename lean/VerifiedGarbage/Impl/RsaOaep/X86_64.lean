@@ -90,12 +90,10 @@ def sSeed : Nat := 248
 def sMl : Nat := 232
 def sR : Nat := 240
 def sAcc : Nat := 248
-/-- Decryption: `idx`, `ok`, and the shift's bits, distance and passes. -/
+/-- Decryption: `idx`, `ok`, and the shift's bits. -/
 def sIdx : Nat := 256
 def sOk : Nat := 264
 def sA : Nat := 272
-def sD : Nat := 280
-def sJ : Nat := 288
 
 /-! ## Our part of `scratch` -/
 
@@ -286,35 +284,41 @@ def scan : Prog isa :=
     (.seq (byteLoop scanBody (.reg .r10))
       (.block [.alu .or .rcx (.reg .rdx), .store (sp sAcc) .rcx, .store (sp sIdx) .rsi]))
 
-/-- The buffer's 2048 bytes cleared. -/
+/-- The buffer's 2048 bytes cleared, with `T`'s address and length in `rsi`
+and `r10` and the buffer's in `rcx` for `copyT` and `shift` after it, which
+store through them and so cannot read the frame's public slots. -/
 def clearBuf : Prog isa :=
-  .seq (.block (scr .rcx oBuf ++ [.mov32 .rax (.imm 0), .mov32 .r8 (.imm 0)]))
+  .seq (.block (scr .rsi (oEm + 1 + 2 * H.D) ++ tLen H ++ scr .rcx oBuf ++ [.mov32 .rax (.imm 0),
+      .mov32 .r8 (.imm 0)]))
     (.loop (.block [.store (ix .rcx .r8) .rax, .alu .add .r8 (.imm 8), .alu .cmp .r8 (.imm 2048)]) .ne)
 
-/-- `T` to the buffer. -/
+/-- `T` (at `rsi`, `r10` bytes) to the buffer (at `rcx`). -/
 def copyT : Prog isa :=
-  .seq (.block (scr .rsi (oEm + 1 + 2 * H.D) ++ scr .rcx oBuf ++ tLen H ++ [.mov32 .r8 (.imm 0)]))
+  .seq (.block [.mov32 .r8 (.imm 0)])
     (byteLoop [.movzx8 .rax (ix .rsi .r8), .store8 (ix .rcx .r8) .rax] (.reg .r10))
 
-/-- One pass of the shift: each of the buffer's first 1024 bytes replaced by
-the one `d` (`sD`) bytes after it if bit 0 of `a` (`sA`) is set. -/
+/-- One pass of the shift, with the buffer at `rcx`: each of its first 1024
+bytes replaced by the one `d` (`rdx`) bytes after it if bit 0 of `a` (`sA`)
+is set. -/
 def shiftPass : Prog isa :=
-  .seq (.block (scr .rcx oBuf ++ [.mov .rsi (.mem (sp sD)), .alu .add .rsi (.reg .rcx),
+  .seq (.block [.mov .rsi (.reg .rdx), .alu .add .rsi (.reg .rcx),
       .mov .r11 (.mem (sp sA)), .alu .and .r11 (.imm 1), .mov32 .r9 (.imm 0), .alu .sub .r9 (.reg .r11),
-      .mov32 .r8 (.imm 0)]))
+      .mov32 .r8 (.imm 0)])
     (byteLoop [.movzx8 .rax (ix .rcx .r8), .movzx8 .rdi (ix .rsi .r8), .alu .xor .rdi (.reg .rax),
       .alu .and .rdi (.reg .r9), .alu .xor .rax (.reg .rdi), .store8 (ix .rcx .r8) .rax] (.imm 1024))
 
-/-- The next pass: `a >>= 1`, `d += d`, and ZF set after the tenth. -/
+/-- The next pass: `a >>= 1`, `d += d`, and ZF set after the tenth (the
+passes left in `r10`). The distance and the passes stay in registers, the
+buffer's address in `rcx`, so that the passes, which store through `rcx`,
+read only `a` from the frame. -/
 def nextPass : List Instr :=
-  [.mov .rax (.mem (sp sA)), .shift .shr .rax 1, .store (sp sA) .rax, .mov .rax (.mem (sp sD)),
-    .alu .add .rax (.reg .rax), .store (sp sD) .rax, .mov .rax (.mem (sp sJ)), .alu .sub .rax (.imm 1),
-    .store (sp sJ) .rax]
+  [.mov .rax (.mem (sp sA)), .shift .shr .rax 1, .store (sp sA) .rax, .alu .add .rdx (.reg .rdx),
+    .alu .sub .r10 (.imm 1)]
 
-/-- The buffer shifted left by `idx + 1` bytes. -/
+/-- The buffer (at `rcx`) shifted left by `idx + 1` bytes. -/
 def shift : Prog isa :=
-  .seq (.block [.mov .rax (.mem (sp sIdx)), .alu .add .rax (.imm 1), .store (sp sA) .rax, .mov32 .rax (.imm 1),
-      .store (sp sD) .rax, .mov32 .rax (.imm 10), .store (sp sJ) .rax])
+  .seq (.block [.mov .rax (.mem (sp sIdx)), .alu .add .rax (.imm 1), .store (sp sA) .rax,
+      .mov32 .rdx (.imm 1), .mov32 .r10 (.imm 10)])
     (.loop (.seq shiftPass (.block nextPass)) .ne)
 
 /-- `ok`: all ones iff `r = 1` and `acc = 0`, to its slot and `r11`. -/
@@ -338,7 +342,7 @@ def decRet : List Instr :=
 /-- After the private operation and the check of `k`: the decoding. -/
 def decMain : Prog isa :=
   seqs [hashLabel H oLh, .block (seedArgs H), mgfXor lay G, .block (dbArgs H), mgfXor lay G, accLh H, scan H,
-    clearBuf, copyT H, shift, .block okMask, outLoop, .block (decRet H)]
+    clearBuf H, copyT, shift, .block okMask, outLoop, .block (decRet H)]
 
 variable (privN : String) (privC : Prog isa)
 
