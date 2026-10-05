@@ -173,6 +173,9 @@ pub(crate) mod rc4;
 pub(crate) mod rsa;
 
 #[rustfmt::skip]
+pub(crate) mod rsa_keygen;
+
+#[rustfmt::skip]
 pub(crate) mod rsa_pkcs1_enc;
 
 #[rustfmt::skip]

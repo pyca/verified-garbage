@@ -63,6 +63,7 @@ mod poly1305;
 mod rc2_cbc;
 mod rc4;
 mod rsa;
+mod rsa_keygen;
 mod rsa_pkcs1_enc;
 mod rsa_pkcs1_sig;
 mod scrypt;
@@ -287,6 +288,7 @@ const BENCHES: &[Bench] = &[
     (rc2_cbc::USES, rc2_cbc::bench),
     (rc4::USES, rc4::bench),
     (rsa::USES, rsa::bench),
+    (rsa_keygen::USES, rsa_keygen::bench),
     (rsa_pkcs1_enc::USES, rsa_pkcs1_enc::bench),
     (rsa_pkcs1_sig::USES, rsa_pkcs1_sig::bench),
     (triple_des_ecb::USES, triple_des_ecb::bench),
