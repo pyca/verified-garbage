@@ -1,5 +1,6 @@
 import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.EncContract
 import VerifiedGarbage.Impl.RsaPkcs1Enc.X86_64.Decrypt
+import VerifiedGarbage.Proof.Framework.X86_64.CallSp
 
 /-!
 # RSAES-PKCS1-v1_5 decryption on x86-64: the contracts on the registers
@@ -93,16 +94,14 @@ def privK : Contract isa where
 
 /-- An implementation of `vg_rsa_private_checked`: its symbol and code,
 correct and constant time under `privK`, writing `rsp` only by its own
-frames, and calls, nested at most `depth` deep. -/
+frames, which with its calls use at most `privStack` bytes of stack. -/
 structure PrivImpl where
   name : String
   code : Prog isa
   ok : ∀ s, privK.pre s → ∃ t s', Exec isa code s t s' ∧ abiPreserved s s' ∧ privK.post s s'
   ct : ConstantTime isa privK.pre privK.pub code
-  nosp : NoSp code
-  /-- Its stack, as the shared contract states it, holds its frames and calls. -/
-  depth : 8 * code.depth + 16 < 2 ^ 64
   spSafe : code.all (fun i => !isa.writesSp i) = true
+  depth : code.x86_64Depth ≤ privStack
 
 /-! ## Decryption -/
 
