@@ -24,11 +24,11 @@ open VG.Proof.AesCcm.Arm (blw)
 open VG.Proof.AesGcm.Arm (CT savedR in_off bytesAt_frame Keeps)
 open VG.Proof.MdStream.Arm (wp_ldrSp)
 
-/-- The entry, with the regions the code may write and the descriptors'
-words `dsc`. -/
-structure E0 (c w sp a D : BitVec 32) (R N n : Nat) (dsc : Nat → Nat → BitVec 32) (s : State) : Prop where
-  pre : EPre c w sp a D R N n s
-  wr : s.wr = [⟨State.addr D, n⟩, ⟨State.addr w, 2576⟩]
+/-- The entry, with the regions the code may write apart from the stack
+arguments, and the descriptors' words `dsc`. -/
+structure E0 (c w sp a D T : BitVec 32) (R N n : Nat) (dsc : Nat → Nat → BitVec 32) (s : State) : Prop where
+  pre : EPre c w sp a D T R N n s
+  wa : ∀ r ∈ s.wr, (⟨State.addr sp, 16⟩ : Region).Disjoint r
   desc : DescEq s.mem a N dsc
 
 /-- The descriptors' words, after writes apart from them. -/
@@ -43,11 +43,11 @@ theorem DescEq.frame {m m' : Mem} {a : BitVec 32} {N : Nat} {dsc : Nat → Nat �
 same regions and an environment. -/
 theorem CtrI.next {c w sp D : BitVec 32} {R n : Nat} {s s' : State} (h : CtrI c w sp R D n s)
     (he : Env c w sp R s') (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr) {rs : List Region}
-    (hf : Frame rs s.mem s'.mem) (hd : ∀ r ∈ rs, (⟨State.addr sp, 12⟩ : Region).Disjoint r) :
+    (hf : Frame rs s.mem s'.mem) (hd : ∀ r ∈ rs, (⟨State.addr sp, 16⟩ : Region).Disjoint r) :
     CtrI c w sp R D n s' where
   env := he
   dat := h.dat.of_eq hrd hwr
-  wr := by rw [hwr, h.wr]
+  wa := by rw [hwr]; exact h.wa
   afit := h.afit
   args := by rw [hrd, hwr]; exact h.args
   args_w := h.args_w
@@ -60,6 +60,34 @@ theorem CtrI.next {c w sp D : BitVec 32} {R n : Nat} {s s' : State} (h : CtrI c 
       (fun r hr => (hd r hr).sub_left (Offset.sub_base _ (by decide))) (by decide), h.m1]
   n32 := h.n32
 
+/-- `siv`, the third stack argument, at `T`: 16 bytes apart from `W` that the
+code may read. -/
+structure SivA (w sp T : BitVec 32) (s : State) : Prop where
+  m2 : s.mem.readW (State.addr sp + BitVec.ofNat 64 8) 32 = T
+  fit : T.toNat + 16 ≤ 2 ^ 32
+  rd : Covers [⟨State.addr T, 16⟩] (s.rd ++ s.wr)
+  t_w : (⟨State.addr T, 16⟩ : Region).Disjoint ⟨State.addr w, 2576⟩
+
+theorem SivA.of_pre {c w sp a D T : BitVec 32} {R N n : Nat} {s : State} (h : EPre c w sp a D T R N n s) :
+    SivA w sp T s :=
+  ⟨h.a2, h.tfit, h.t_rd, h.t_w⟩
+
+/-- `siv` where it was, after writes apart from the stack arguments. -/
+theorem SivA.next {w sp T : BitVec 32} {s s' : State} (h : SivA w sp T s) (hrd : s'.rd = s.rd)
+    (hwr : s'.wr = s.wr) {rs : List Region} (hf : Frame rs s.mem s'.mem)
+    (hd : ∀ r ∈ rs, (⟨State.addr sp, 16⟩ : Region).Disjoint r) : SivA w sp T s' where
+  m2 := by
+    rw [hf.readW (r := ⟨State.addr sp + BitVec.ofNat 64 8, 4⟩) (Region.contains_self _ _)
+      (fun r hr => (hd r hr).sub_left (Offset.sub_base _ (by decide))) (by decide), h.m2]
+  fit := h.fit
+  rd := by rw [hrd, hwr]; exact h.rd
+  t_w := h.t_w
+
+/-- The third stack argument: `siv`'s address. -/
+theorem SivA.arg {c w sp D T : BitVec 32} {R n : Nat} {s : State} (hc : CtrI c w sp R D n s)
+    (h : SivA w sp T s) : stackArg s 2 = T := by
+  rw [stackArg, stackArgAddr, hc.env.sp, addr_add (by have := hc.afit; omega), h.m2]
+
 section
 variable {c w sp : BitVec 32} {R : Nat} (L : Lay c w sp) (hR : R = 10 ∨ R = 12 ∨ R = 14)
 include L hR
@@ -67,20 +95,20 @@ include L hR
 omit L hR in
 /-- A region of `W` but its first 16 bytes, or the stack below `sp`, is apart
 from the stack arguments. -/
-theorem args_dis (hw : (⟨State.addr sp, 12⟩ : Region).Disjoint ⟨State.addr w, 2576⟩) :
-    ∀ r ∈ savedR w :: wR w sp, (⟨State.addr sp, 12⟩ : Region).Disjoint r := by
+theorem args_dis (hw : (⟨State.addr sp, 16⟩ : Region).Disjoint ⟨State.addr w, 2576⟩) :
+    ∀ r ∈ savedR w :: wR w sp, (⟨State.addr sp, 16⟩ : Region).Disjoint r := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl
   · exact hw.sub_right (Lay.wSub (by decide))
   · exact hw.sub_right (Lay.wSub (by decide))
   · exact hw.sub_right (Lay.wSub (by decide))
-  · exact Offset.base_disjoint_below (State.addr sp) (n := 16) (k := 12) (by decide)
+  · exact Offset.base_disjoint_below (State.addr sp) (n := 16) (k := 16) (by decide)
 
 omit L hR in
 /-- What S2V's end writes, apart from the stack arguments. -/
-theorem args_dis_oR (hw : (⟨State.addr sp, 12⟩ : Region).Disjoint ⟨State.addr w, 2576⟩) {out : Nat}
-    (hout : out = 0 ∨ out = tOff) : ∀ r ∈ oR w sp out, (⟨State.addr sp, 12⟩ : Region).Disjoint r := by
+theorem args_dis_oR (hw : (⟨State.addr sp, 16⟩ : Region).Disjoint ⟨State.addr w, 2576⟩) {out : Nat}
+    (hout : out = 0 ∨ out = tOff) : ∀ r ∈ oR w sp out, (⟨State.addr sp, 16⟩ : Region).Disjoint r := by
   intro r hr
   rcases List.mem_cons.mp hr with rfl | hr
   · exact hw.sub_right (Lay.wSub (by rcases hout with rfl | rfl <;> decide))
@@ -89,27 +117,27 @@ theorem args_dis_oR (hw : (⟨State.addr sp, 12⟩ : Region).Disjoint ⟨State.a
 omit L hR in
 /-- What CTR writes, apart from the stack arguments. -/
 theorem args_dis_ctr {D : BitVec 32} {n : Nat}
-    (hw : (⟨State.addr sp, 12⟩ : Region).Disjoint ⟨State.addr w, 2576⟩)
-    (hd : (⟨State.addr sp, 12⟩ : Region).Disjoint ⟨State.addr D, n⟩) :
-    ∀ r ∈ ctrR w sp D n, (⟨State.addr sp, 12⟩ : Region).Disjoint r := by
+    (hw : (⟨State.addr sp, 16⟩ : Region).Disjoint ⟨State.addr w, 2576⟩)
+    (hd : (⟨State.addr sp, 16⟩ : Region).Disjoint ⟨State.addr D, n⟩) :
+    ∀ r ∈ ctrR w sp D n, (⟨State.addr sp, 16⟩ : Region).Disjoint r := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl
   · exact hw.sub_right (Lay.wSub (by decide))
   · exact hw.sub_right (Lay.wSub (by decide))
-  · exact Offset.base_disjoint_below (State.addr sp) (n := 16) (k := 12) (by decide)
+  · exact Offset.base_disjoint_below (State.addr sp) (n := 16) (k := 16) (by decide)
   · exact hd
 
 omit L hR in
 /-- The pieces' invariant, from the entry, after writes that keep the stack
 arguments. -/
-theorem CtrI.of_entry {a D : BitVec 32} {N n : Nat} {dsc : Nat → Nat → BitVec 32} {σ s : State}
-    (h : E0 c w sp a D R N n dsc σ) (he : Env c w sp R s) (hrd : s.rd = σ.rd) (hwr : s.wr = σ.wr)
-    {rs : List Region} (hf : Frame rs σ.mem s.mem) (hd : ∀ r ∈ rs, (⟨State.addr sp, 12⟩ : Region).Disjoint r) :
+theorem CtrI.of_entry {a D T : BitVec 32} {N n : Nat} {dsc : Nat → Nat → BitVec 32} {σ s : State}
+    (h : E0 c w sp a D T R N n dsc σ) (he : Env c w sp R s) (hrd : s.rd = σ.rd) (hwr : s.wr = σ.wr)
+    {rs : List Region} (hf : Frame rs σ.mem s.mem) (hd : ∀ r ∈ rs, (⟨State.addr sp, 16⟩ : Region).Disjoint r) :
     CtrI c w sp R D n s where
   env := he
   dat := h.pre.data.of_eq hrd hwr
-  wr := by rw [hwr, h.wr]
+  wa := by rw [hwr]; exact h.wa
   afit := h.pre.afit
   args := by rw [hrd, hwr]; exact h.pre.args
   args_w := h.pre.args_w
@@ -130,12 +158,7 @@ theorem loadArgs_ct {D : BitVec 32} {n : Nat} :
       (.block [.ldrSp .r6 0, .ldrSp .r5 4]) h).isSome = true := ⟨_, by taint_decide⟩
   exact CT.argTaint _ _ (fun _ _ _ _ r hr => by simp at hr) (fun s₁ s₂ h₁ h₂ => by rw [h₁.env.sp, h₂.env.sp])
     (fun s h => ⟨by rw [h.env.sp]; have := h.afit; omega, fun r hr => by
-      rw [h.wr] at hr
-      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rw [h.env.sp]
-      rcases hr with rfl | rfl
-      · exact h.args_d.sub_left (Region.sub_prefix (by decide))
-      · exact h.args_w.sub_left (Region.sub_prefix (by decide))⟩)
+      rw [h.env.sp]; exact (h.wa r hr).sub_left (Region.sub_prefix (by decide))⟩)
     (fun s₁ s₂ h₁ h₂ => argMem_of (by rw [h₁.env.sp, h₂.env.sp]) (by rw [h₁.env.sp]; have := h₁.afit; omega)
       fun i hi => by
         rcases (show i = 0 ∨ i = 1 by omega) with rfl | rfl
@@ -167,15 +190,15 @@ theorem loadArgs_wp {D : BitVec 32} {n : Nat} {s : State} (h : CtrI c w sp R D n
 
 /-- Between S2V's pieces, in one run: from the entry `σ`, the memory `m₀`
 after the save, before component `i`. -/
-def SI (c w sp a D : BitVec 32) (R N n : Nat) (dsc : Nat → Nat → BitVec 32) (i : Nat) (s : State) : Prop :=
-  ∃ σ m₀, E0 c w sp a D R N n dsc σ ∧ Frame [savedR w] σ.mem m₀ ∧ AInv c w sp a R N m₀ σ i s ∧
+def SI (c w sp a D T : BitVec 32) (R N n : Nat) (dsc : Nat → Nat → BitVec 32) (i : Nat) (s : State) : Prop :=
+  ∃ σ m₀, E0 c w sp a D T R N n dsc σ ∧ Frame [savedR w] σ.mem m₀ ∧ AInv c w sp a R N m₀ σ i s ∧
     DescEq m₀ a N dsc
 
-theorem encS2v_ct {a D : BitVec 32} {N n : Nat} {dsc : Nat → Nat → BitVec 32} (hN : N < 2 ^ 32) :
-    CT (E0 c w sp a D R N n dsc) encS2v := by
-  obtain ⟨_, hA⟩ : ∃ h, (Taint.check VG.Arm.taint (argTaint [.r0, .r1, .r2, .r3] (4 * 3))
+theorem encS2v_ct {a D T : BitVec 32} {N n : Nat} {dsc : Nat → Nat → BitVec 32} (hN : N < 2 ^ 32) :
+    CT (E0 c w sp a D T R N n dsc) encS2v := by
+  obtain ⟨_, hA⟩ : ∃ h, (Taint.check VG.Arm.taint (argTaint [.r0, .r1, .r2, .r3] (4 * 4))
       (.block (encPre ++ startPre)) h).isSome = true := ⟨_, by taint_decide⟩
-  have ab : CT (E0 c w sp a D R N n dsc) (.seq (.block (encPre ++ startPre)) finFrame) := by
+  have ab : CT (E0 c w sp a D T R N n dsc) (.seq (.block (encPre ++ startPre)) finFrame) := by
     refine CT.seq (J := fun s => ∃ σ mₛ, Started c w sp a R N σ mₛ s)
       (CT.argTaint _ _ (fun s₁ s₂ h₁ h₂ r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -185,30 +208,26 @@ theorem encS2v_ct {a D : BitVec 32} {N n : Nat} {dsc : Nat → Nat → BitVec 32
         · rw [h₁.pre.r2, h₂.pre.r2]
         · rw [h₁.pre.r3, h₂.pre.r3]) (fun s₁ s₂ h₁ h₂ => by rw [h₁.pre.hsp, h₂.pre.hsp])
         (fun s h => ⟨by rw [h.pre.hsp]; exact h.pre.afit, fun r hr => by
-          rw [h.wr] at hr
-          simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-          rw [h.pre.hsp]
-          rcases hr with rfl | rfl
-          · exact h.pre.args_d
-          · exact h.pre.args_w⟩)
+          rw [h.pre.hsp]; exact h.wa r hr⟩)
         (fun s₁ s₂ h₁ h₂ => argMem_of (by rw [h₁.pre.hsp, h₂.pre.hsp]) (by rw [h₁.pre.hsp]; exact h₁.pre.afit)
           fun i hi => by
-            have e : ∀ {s : State}, E0 c w sp a D R N n dsc s → ∀ {k : Nat}, k < 3 →
+            have e : ∀ {s : State}, E0 c w sp a D T R N n dsc s → ∀ {k : Nat}, k < 4 →
                 stackArg s k = s.mem.readW (State.addr sp + BitVec.ofNat 64 (4 * k)) 32 := fun h k hk => by
               rw [stackArg, stackArgAddr, h.pre.hsp, addr_add (by have := h.pre.afit; omega)]
             rw [e h₁ hi, e h₂ hi]
-            rcases (show i = 0 ∨ i = 1 ∨ i = 2 by omega) with rfl | rfl | rfl
+            rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 by omega) with rfl | rfl | rfl | rfl
             · rw [show 4 * 0 = 0 from rfl, BitVec.add_zero, h₁.pre.a0, h₂.pre.a0]
             · rw [h₁.pre.a1, h₂.pre.a1]
-            · rw [h₁.pre.a2, h₂.pre.a2]) hA)
+            · rw [h₁.pre.a2, h₂.pre.a2]
+            · rw [h₁.pre.a3, h₂.pre.a3]) hA)
       (fun s h => WP.mono (startBlock_ok L h.pre) fun s' ⟨mₛ, St⟩ => ⟨s, mₛ, St⟩) ?_
     exact fin_rel fun s₁ s₂ hh => by
       obtain ⟨⟨_, _, h₁⟩, ⟨_, _, h₂⟩⟩ := hh
       exact ⟨h₁.args, h₂.args, h₁.env.sp, h₂.env.sp⟩
-  refine RelCT.assoc (CT.seq ab (J := SI c w sp a D R N n dsc 0) (fun s h => WP.mono (start_ok L h.pre)
+  refine RelCT.assoc (CT.seq ab (J := SI c w sp a D T R N n dsc 0) (fun s h => WP.mono (start_ok L h.pre)
     fun s' ⟨mₛ, fs, _, I⟩ => ⟨s, mₛ, h, fs, I, h.desc.frame fs fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact h.pre.ads.dw.sub_right (Lay.wSub (by decide))⟩) ?_)
-  refine CT.seq (J := SI c w sp a D R N n dsc N)
+  refine CT.seq (J := SI c w sp a D T R N n dsc N)
     ((s2vAds_ct L hR hN).mono fun s ⟨σ, m₀, _, _, I, hd⟩ => ⟨m₀, σ, I, hd⟩)
     (fun s ⟨σ, m₀, h, fs, I, hd⟩ => WP.mono (s2vAds_ok L hR I hN) fun s' I' => ⟨σ, m₀, h, fs, I', hd⟩) ?_
   exact (loadArgs_ct (c := c) (w := w) (sp := sp) (R := R) (D := D) (n := n)).mono fun s ⟨σ, m₀, h, fs, I, _⟩ =>
@@ -217,12 +236,83 @@ theorem encS2v_ct {a D : BitVec 32} {N n : Nat} {dsc : Nat → Nat → BitVec 32
 
 omit hR in
 /-- After S2V of the associated data. -/
-theorem encS2v_wp {a D : BitVec 32} {N n : Nat} {dsc : Nat → Nat → BitVec 32} {s : State}
-    (h : E0 c w sp a D R N n dsc s) :
-    WP isa encS2v s fun s' => CtrI c w sp R D n s' ∧ s'.gpr .r6 = D ∧ s'.gpr .r5 = BitVec.ofNat 32 n :=
+theorem encS2v_wp {a D T : BitVec 32} {N n : Nat} {dsc : Nat → Nat → BitVec 32} {s : State}
+    (h : E0 c w sp a D T R N n dsc s) :
+    WP isa encS2v s fun s' => (CtrI c w sp R D n s' ∧ s'.gpr .r6 = D ∧ s'.gpr .r5 = BitVec.ofNat 32 n) ∧
+      SivA w sp T s' ∧ s'.wr = s.wr :=
   WP.mono (s2v_ok L h.pre) fun s' ⟨mₛ, O⟩ => by
-    exact ⟨CtrI.of_entry h O.env O.rd O.wr ((O.fs.mono (by simp)).trans (O.frame.mono fun r hr =>
-      List.mem_cons_of_mem _ hr)) (args_dis h.pre.args_w), O.r6, O.r5⟩
+    have F : Frame (savedR w :: wR w sp) s.mem s'.mem :=
+      (O.fs.mono (by simp)).trans (O.frame.mono fun r hr => List.mem_cons_of_mem _ hr)
+    exact ⟨⟨CtrI.of_entry h O.env O.rd O.wr F (args_dis h.pre.args_w), O.r6, O.r5⟩,
+      (SivA.of_pre h.pre).next O.rd O.wr F (args_dis h.pre.args_w), O.wr⟩
+
+/-! ## `siv` -/
+
+omit hR in
+/-- The IV copied to `siv`, which the code may write: what follows needs only
+the environment. -/
+theorem sivOut_wp {D T : BitVec 32} {n : Nat} {s : State}
+    (h : CtrI c w sp R D n s ∧ SivA w sp T s ∧ Covers [⟨State.addr T, 16⟩] s.wr) :
+    WP isa (.block sivOut) s (Env c w sp R) := by
+  obtain ⟨hc, ht, hw⟩ := h
+  have a8 : State.addr (s.sp + BitVec.ofNat 32 8) = State.addr sp + BitVec.ofNat 64 8 := by
+    rw [hc.env.sp]; exact addr_add (by have := hc.afit; omega)
+  obtain ⟨s', run, -, -, g, rd, wr, sp'⟩ := sivOut_ok L hc.env (T := T)
+    (by rw [a8]; exact in_off hc.args (by decide) (by decide)) (by rw [a8]; exact ht.m2) hw ht.fit
+    (ht.t_w.sub_right (Region.sub_prefix (by decide)))
+  exact WP.of_runBlock ⟨s', run, hc.env.keep (fun r hr => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl <;> exact g _ (by decide) (by decide)) sp' rd wr⟩
+
+omit L hR in
+theorem sivOut_ct {D T : BitVec 32} {n : Nat} :
+    CT (fun s => CtrI c w sp R D n s ∧ SivA w sp T s ∧ Covers [⟨State.addr T, 16⟩] s.wr) (.block sivOut) := by
+  obtain ⟨_, hA⟩ : ∃ h, (Taint.check VG.Arm.taint (argTaint [.r11] (4 * 3)) (.block sivOut) h).isSome = true :=
+    ⟨_, by taint_decide⟩
+  exact CT.argTaint _ _ (fun s₁ s₂ h₁ h₂ r hr => by
+      simp only [List.mem_singleton] at hr; subst hr; rw [h₁.1.env.r11, h₂.1.env.r11])
+    (fun s₁ s₂ h₁ h₂ => by rw [h₁.1.env.sp, h₂.1.env.sp])
+    (fun s h => ⟨by rw [h.1.env.sp]; have := h.1.afit; omega, fun r hr => by
+      rw [h.1.env.sp]; exact (h.1.wa r hr).sub_left (Region.sub_prefix (by decide))⟩)
+    (fun s₁ s₂ h₁ h₂ => argMem_of (by rw [h₁.1.env.sp, h₂.1.env.sp]) (by rw [h₁.1.env.sp]; have := h₁.1.afit; omega)
+      fun i hi => by
+        rcases (show i = 0 ∨ i = 1 ∨ i = 2 by omega) with rfl | rfl | rfl
+        · rw [h₁.1.arg.1, h₂.1.arg.1]
+        · rw [h₁.1.arg.2, h₂.1.arg.2]
+        · rw [SivA.arg h₁.1 h₁.2.1, SivA.arg h₂.1 h₂.2.1]) hA
+
+omit hR in
+/-- The received IV copied from `siv` to `W`. -/
+theorem sivIn_wp {D T : BitVec 32} {n : Nat} {s : State} (h : CtrI c w sp R D n s ∧ SivA w sp T s) :
+    WP isa (.block sivIn) s (CtrI c w sp R D n) := by
+  obtain ⟨hc, ht⟩ := h
+  have a8 : State.addr (s.sp + BitVec.ofNat 32 8) = State.addr sp + BitVec.ofNat 64 8 := by
+    rw [hc.env.sp]; exact addr_add (by have := hc.afit; omega)
+  obtain ⟨s', run, -, f, g, rd, wr, sp'⟩ := sivIn_ok L hc.env (T := T)
+    (by rw [a8]; exact in_off hc.args (by decide) (by decide)) (by rw [a8]; exact ht.m2) ht.rd ht.fit
+    (ht.t_w.sub_right (Region.sub_prefix (by decide)))
+  refine WP.of_runBlock ⟨s', run, hc.next (hc.env.keep (fun r hr => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl <;> exact g _ (by decide) (by decide)) sp' rd wr) rd wr f fun r hr => ?_⟩
+  simp only [List.mem_singleton] at hr; subst hr
+  exact hc.args_w.sub_right (Region.sub_prefix (by decide))
+
+omit L hR in
+theorem sivIn_ct {D T : BitVec 32} {n : Nat} :
+    CT (fun s => CtrI c w sp R D n s ∧ SivA w sp T s) (.block sivIn) := by
+  obtain ⟨_, hA⟩ : ∃ h, (Taint.check VG.Arm.taint (argTaint [.r11] (4 * 3)) (.block sivIn) h).isSome = true :=
+    ⟨_, by taint_decide⟩
+  exact CT.argTaint _ _ (fun s₁ s₂ h₁ h₂ r hr => by
+      simp only [List.mem_singleton] at hr; subst hr; rw [h₁.1.env.r11, h₂.1.env.r11])
+    (fun s₁ s₂ h₁ h₂ => by rw [h₁.1.env.sp, h₂.1.env.sp])
+    (fun s h => ⟨by rw [h.1.env.sp]; have := h.1.afit; omega, fun r hr => by
+      rw [h.1.env.sp]; exact (h.1.wa r hr).sub_left (Region.sub_prefix (by decide))⟩)
+    (fun s₁ s₂ h₁ h₂ => argMem_of (by rw [h₁.1.env.sp, h₂.1.env.sp]) (by rw [h₁.1.env.sp]; have := h₁.1.afit; omega)
+      fun i hi => by
+        rcases (show i = 0 ∨ i = 1 ∨ i = 2 by omega) with rfl | rfl | rfl
+        · rw [h₁.1.arg.1, h₂.1.arg.1]
+        · rw [h₁.1.arg.2, h₂.1.arg.2]
+        · rw [SivA.arg h₁.1 h₁.2, SivA.arg h₂.1 h₂.2]) hA
 
 /-! ## The ends -/
 
@@ -237,7 +327,7 @@ theorem restore_ct : CT (Env c w sp R) (.block Impl.AesGcm.Arm.restore) := by
 the data in `r6` and `r5`. -/
 theorem finish_next {D : BitVec 32} {n : Nat} {out : Nat} (hout : out = 0 ∨ out = tOff) {s : State}
     (h : CtrI c w sp R D n s ∧ s.gpr .r6 = D ∧ s.gpr .r5 = BitVec.ofNat 32 n)
-    (hA : ∀ r ∈ oR w sp out, (⟨State.addr sp, 12⟩ : Region).Disjoint r) :
+    (hA : ∀ r ∈ oR w sp out, (⟨State.addr sp, 16⟩ : Region).Disjoint r) :
     WP isa (finish out) s (CtrI c w sp R D n) := by
   exact WP.mono (finish_ok L h.1.env hR h.1.dat.buf h.1.n32 h.2.1 h.2.2 hout) fun s' ⟨he, rd, wr, _, f, _⟩ =>
     h.1.next he rd wr f hA
@@ -250,12 +340,7 @@ theorem cmpLoad_ct {D : BitVec 32} {n : Nat} :
       (.block (compare ++ [.ldrSp .r6 0, .ldrSp .r5 4])) h).isSome = true := ⟨_, by taint_decide⟩
   exact CT.argTaint _ _ (fun s₁ s₂ h₁ h₂ => env_regs h₁.env h₂.env) (fun s₁ s₂ h₁ h₂ => by rw [h₁.env.sp, h₂.env.sp])
     (fun s h => ⟨by rw [h.env.sp]; have := h.afit; omega, fun r hr => by
-      rw [h.wr] at hr
-      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rw [h.env.sp]
-      rcases hr with rfl | rfl
-      · exact h.args_d.sub_left (Region.sub_prefix (by decide))
-      · exact h.args_w.sub_left (Region.sub_prefix (by decide))⟩)
+      rw [h.env.sp]; exact (h.wa r hr).sub_left (Region.sub_prefix (by decide))⟩)
     (fun s₁ s₂ h₁ h₂ => argMem_of (by rw [h₁.env.sp, h₂.env.sp]) (by rw [h₁.env.sp]; have := h₁.afit; omega)
       fun i hi => by
         rcases (show i = 0 ∨ i = 1 by omega) with rfl | rfl
@@ -290,24 +375,36 @@ theorem maskData_ct {D : BitVec 32} {n : Nat} :
     · rw [h₁.2.2, h₂.2.2]
     · rw [h₁.2.1, h₂.2.1]) hA
 
-/-- `vg_aes_siv_encrypt`, in two runs with the same public arguments and descriptors. -/
-theorem encrypt_ct {a D : BitVec 32} {N n : Nat} {dsc : Nat → Nat → BitVec 32} (hN : N < 2 ^ 32)
-    (hn : n < 2 ^ 32) : CT (E0 c w sp a D R N n dsc) encrypt := by
-  refine CT.seq (encS2v_ct L hR hN) (fun s h => encS2v_wp L h) ?_
-  refine CT.seq (J := CtrI c w sp R D n) ((finish_ct L hR hn (.inl rfl)).mono
-      fun s h => ⟨h.1.env, h.1.dat.buf, h.2.1, h.2.2⟩)
-    (fun s h => finish_next L hR (.inl rfl) h (args_dis_oR h.1.args_w (.inl rfl))) ?_
-  exact CT.seq (J := Env c w sp R) (ctr_ct L hR hn)
-    (fun s h => WP.mono (ctr_ok L h.env hR h.dat hn h.afit h.args h.args_w h.m0 h.m1) fun s' p => p.1)
-    restore_ct
+/-- `vg_aes_siv_encrypt`, in two runs with the same public arguments and
+descriptors, with `siv` writable. -/
+theorem encrypt_ct {a D T : BitVec 32} {N n : Nat} {dsc : Nat → Nat → BitVec 32} (hN : N < 2 ^ 32)
+    (hn : n < 2 ^ 32) :
+    CT (fun s => E0 c w sp a D T R N n dsc s ∧ Covers [⟨State.addr T, 16⟩] s.wr) encrypt := by
+  refine CT.seq ((encS2v_ct L hR hN).mono fun s h => h.1) (J := fun s =>
+      (CtrI c w sp R D n s ∧ s.gpr .r6 = D ∧ s.gpr .r5 = BitVec.ofNat 32 n) ∧ SivA w sp T s ∧
+        Covers [⟨State.addr T, 16⟩] s.wr)
+    (fun s h => WP.mono (encS2v_wp L h.1) fun s' ⟨p, q, e⟩ => ⟨p, q, by rw [e]; exact h.2⟩) ?_
+  refine CT.seq (J := fun s => CtrI c w sp R D n s ∧ SivA w sp T s ∧ Covers [⟨State.addr T, 16⟩] s.wr)
+    ((finish_ct L hR hn (.inl rfl)).mono fun s h => ⟨h.1.1.env, h.1.1.dat.buf, h.1.2.1, h.1.2.2⟩)
+    (fun s h => WP.mono (finish_ok L h.1.1.env hR h.1.1.dat.buf h.1.1.n32 h.1.2.1 h.1.2.2 (.inl rfl))
+      fun s' ⟨he, rd, wr, _, f, _⟩ => ⟨h.1.1.next he rd wr f (args_dis_oR h.1.1.args_w (.inl rfl)),
+        h.2.1.next rd wr f (args_dis_oR h.1.1.args_w (.inl rfl)), by rw [wr]; exact h.2.2⟩) ?_
+  refine CT.seq (J := fun s => CtrI c w sp R D n s ∧ SivA w sp T s ∧ Covers [⟨State.addr T, 16⟩] s.wr)
+    ((ctr_ct L hR hn).mono fun s h => h.1)
+    (fun s h => WP.mono (ctr_ok L h.1.env hR h.1.dat hn h.1.afit h.1.args h.1.args_w h.1.m0 h.1.m1)
+      fun s' ⟨he, rd, wr, _, _, _, f, _⟩ => ⟨h.1.next he rd wr f (args_dis_ctr h.1.args_w h.1.args_d),
+        h.2.1.next rd wr f (args_dis_ctr h.1.args_w h.1.args_d), by rw [wr]; exact h.2.2⟩) ?_
+  exact CT.seq (J := Env c w sp R) sivOut_ct (fun s h => sivOut_wp L h) restore_ct
 
 /-- `vg_aes_siv_decrypt`, in two runs with the same public arguments and descriptors. -/
-theorem decrypt_ct {a D : BitVec 32} {N n : Nat} {dsc : Nat → Nat → BitVec 32} (hN : N < 2 ^ 32)
-    (hn : n < 2 ^ 32) : CT (E0 c w sp a D R N n dsc) decrypt := by
-  refine CT.seq (encS2v_ct L hR hN) (fun s h => encS2v_wp L h) ?_
-  refine CT.seq (J := CtrI c w sp R D n) ((ctr_ct L hR hn).mono fun s h => h.1)
-    (fun s h => WP.mono (ctr_ok L h.1.env hR h.1.dat hn h.1.afit h.1.args h.1.args_w h.1.m0 h.1.m1)
-      fun s' ⟨he, rd, wr, _, _, _, f, _⟩ => h.1.next he rd wr f (args_dis_ctr h.1.args_w h.1.args_d)) ?_
+theorem decrypt_ct {a D T : BitVec 32} {N n : Nat} {dsc : Nat → Nat → BitVec 32} (hN : N < 2 ^ 32)
+    (hn : n < 2 ^ 32) : CT (E0 c w sp a D T R N n dsc) decrypt := by
+  refine CT.seq (encS2v_ct L hR hN) (J := fun s => CtrI c w sp R D n s ∧ SivA w sp T s)
+    (fun s h => WP.mono (encS2v_wp L h) fun s' ⟨p, q, _⟩ => ⟨p.1, q⟩) ?_
+  refine CT.seq sivIn_ct (fun s h => sivIn_wp L h) ?_
+  refine CT.seq (J := CtrI c w sp R D n) (ctr_ct L hR hn)
+    (fun s h => WP.mono (ctr_ok L h.env hR h.dat hn h.afit h.args h.args_w h.m0 h.m1)
+      fun s' ⟨he, rd, wr, _, _, _, f, _⟩ => h.next he rd wr f (args_dis_ctr h.args_w h.args_d)) ?_
   refine CT.seq loadArgs_ct (fun s h => WP.mono (loadArgs_wp h) fun s' p => p.1) ?_
   refine CT.seq (J := CtrI c w sp R D n) ((finish_ct L hR hn (.inr rfl)).mono
       fun s h => ⟨h.1.env, h.1.dat.buf, h.2.1, h.2.2⟩)

@@ -4,9 +4,12 @@ import VerifiedGarbage.Impl.CmacAes.Stream.X86_64
 # AES-SIV: x86-64 implementation
 
 `vg_aes_siv_init(key = rdi, key_len = rsi, ctx = rdx, scratch = rcx)`,
-`vg_aes_siv_encrypt(ctx = rdi, rounds = rsi, ads = rdx, ads_count = rcx, data = r8, len = r9, work = [rsp + 8])`
+`vg_aes_siv_encrypt(ctx = rdi, rounds = rsi, ads = rdx, ads_count = rcx, data = r8, len = r9, siv = [rsp + 8], work = [rsp + 16])`
 and `vg_aes_siv_decrypt` with the same arguments (see `VG.Spec.Siv.initContract`
-and the others), composed of calls of the verified `vg_aes_expand_key_scratch`,
+and the others), with the working space (`scratch` or `work`) as a last
+argument, which a frame on the stack allocates
+(`Impl.StackScratch.X86_64.withStackScratch`, `withStackArgScratch`),
+composed of calls of the verified `vg_aes_expand_key_scratch`,
 `vg_cmac_aes_subkeys`, `vg_cmac_aes_update`, `vg_cmac_aes_finalize` and
 `vg_aes_ctr32`. Like those, they are generic over the implementation of AES
 they call (`Ctr32`, the `ExpandKey` that goes with it, and `sfx`, the suffix
@@ -38,9 +41,11 @@ key context, `[256, 2432)` the working space of the functions called, and
   each block, `vg_aes_ctr32` on a zero block with the counter block `Q + i`
   gives the keystream, whose first `min(16, left)` bytes are XORed into the
   data, and the counter is incremented as a 128-bit big-endian integer.
-* `decrypt` then decrypts with CTR from the IV it is given, finishes S2V with
-  the plaintext into `[112, 128)`, compares the two IVs without a branch and
-  ANDs every byte of the data with the mask of the result.
+  After restoring the registers it copies the IV to `siv` (`sivOut`).
+* `decrypt` then copies the IV it is given from `siv` to the working space
+  (`sivIn`), decrypts with CTR from it, finishes S2V with the plaintext into
+  `[112, 128)`, compares the two IVs without a branch and ANDs every byte of
+  the data with the mask of the result.
 
 `finish`, for a string `P` of `L` bytes: if `L < 16`, the tail is
 `pad(P) XOR dbl(D)` and its CMAC is that of one complete block; otherwise,
@@ -354,8 +359,8 @@ def adsOff : Nat := tOff
 def leftOff : Nat := tOff + 8
 def dOff : Nat := 2560
 
-/-- Saves the registers in the working space (whose address, the seventh
-argument, is on the stack above the return address) and keeps the
+/-- Saves the registers in the working space (whose address, the eighth
+argument, is on the stack above the return address and `siv`) and keeps the
 arguments in them: the context in `rbx`, the rounds in `rbp`, `D` in `r12`,
 the data in `r13` (`r14` bytes) and the working space in `r15`; the data and
 its length also at `r15 + 208` and `r15 + 216`, and the descriptors of the
@@ -363,7 +368,7 @@ components and their number at `r15 + 112` and `r15 + 120`. Then the
 arguments of `startPre`: the context, the rounds, `D` and the working
 space. -/
 def encPre : List Instr :=
-  [.mov .rax (.mem (at_ .rsp 8))] ++ save .rax ++
+  [.mov .rax (.mem (at_ .rsp 16))] ++ save .rax ++
   [.mov .rbx (.reg .rdi), .mov .rbp (.reg .rsi), .mov .r15 (.reg .rax), .mov .r12 (.reg .rax),
    .alu .add .r12 (imm dOff), .mov .r13 (.reg .r8), .mov .r14 (.reg .r9),
    .store (at_ .r15 dataOff) .r13, .store (at_ .r15 lenOff) .r14,
@@ -400,16 +405,36 @@ def encS2v (c : Ctr32) (sfx : String) : Prog isa :=
     (.seq (callFinalize c sfx)
       (.seq (s2vAds c sfx) (.block [.mov .r13 (.mem (at_ .r15 dataOff)), .mov .r14 (.mem (at_ .r15 lenOff))])))
 
-def encrypt (c : Ctr32) (sfx : String) : Prog isa :=
+/-- `encrypt` up to the copy of the IV: S2V, CTR and the restore of the
+registers, with the IV in the first 16 bytes of the working space. -/
+def encryptCore (c : Ctr32) (sfx : String) : Prog isa :=
   .seq (encS2v c sfx)
     (.seq (finish c sfx 0) (.seq (.block (counter 0)) (.seq (ctr c) (.block restore))))
 
+/-- The IV, the first 16 bytes of the working space (`[rsp + 16]`), copied to
+`siv` (`[rsp + 8]`), through `rax`, `r10` and `r11`. -/
+def sivOut : List Instr :=
+  [.mov .rax (.mem (at_ .rsp 8)), .mov .r10 (.mem (at_ .rsp 16)), .mov .r11 (.mem (at_ .r10 0)),
+   .store (at_ .rax 0) .r11, .mov .r11 (.mem (at_ .r10 8)), .store (at_ .rax 8) .r11]
+
+def encrypt (c : Ctr32) (sfx : String) : Prog isa := .seq (encryptCore c sfx) (.block sivOut)
+
+/-- The received IV at `siv` (`[rsp + 8]`) copied to the first 16 bytes of the
+working space, through `rax` and `rcx`. -/
+def sivIn : List Instr :=
+  [.mov .rax (.mem (at_ .rsp 8)), .mov .rcx (.mem (at_ .rax 0)), .store (at_ .r15 0) .rcx,
+   .mov .rcx (.mem (at_ .rax 8)), .store (at_ .r15 8) .rcx]
+
+/-- `decrypt` from the received IV in the first 16 bytes of the working space
+on: CTR, S2V's end, the comparison, the mask and the restore. -/
+def openTail (c : Ctr32) (sfx : String) : Prog isa :=
+  .seq (.block (counter 0))
+    (.seq (ctr c)
+      (.seq (finish c sfx tOff)
+        (.seq (.block compare)
+          (.seq maskData (.block ([.mov .rax (.mem (at_ .r15 dbOff))] ++ restore))))))
+
 def decrypt (c : Ctr32) (sfx : String) : Prog isa :=
-  .seq (encS2v c sfx)
-    (.seq (.block (counter 0))
-      (.seq (ctr c)
-        (.seq (finish c sfx tOff)
-          (.seq (.block compare)
-            (.seq maskData (.block ([.mov .rax (.mem (at_ .r15 dbOff))] ++ restore)))))))
+  .seq (encS2v c sfx) (.seq (.block sivIn) (openTail c sfx))
 
 end VG.Impl.AesSiv.X86_64

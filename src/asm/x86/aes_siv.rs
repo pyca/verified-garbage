@@ -101,7 +101,7 @@ pub(crate) unsafe extern "C" fn vg_aes_siv_init_aesni(key: *const u8, key_len: u
 /// The CPU features `vg_aes_siv_encrypt_aesni` requires (`Artifact.features`).
 pub(crate) const VG_AES_SIV_ENCRYPT_AESNI_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes"]);
 
-/// AES-SIV encryption, `SIV-ENCRYPT` (RFC 5297 §2.6): with the key context `*ctx` that `vg_aes_siv_init` wrote for `rounds` rounds, computes the synthetic IV `V = S2V(K1, AD1, …, ADn, P)` of the `ads_count` components of associated data that `ads` lists (each an address and a length, in bytes; for nonce-based encryption, §3, the nonce is the last) and the `len` bytes of plaintext `P` at `data`, writes it to the first 16 bytes of `*work`, and encrypts the plaintext in place with AES-CTR under `K2` from `V` with bits 31 and 63 cleared. The RFC's output is `V` followed by the encrypted data. The rest of `*work` is working space, unspecified on return.
+/// AES-SIV encryption, `SIV-ENCRYPT` (RFC 5297 §2.6): with the key context `*ctx` that `vg_aes_siv_init` wrote for `rounds` rounds, computes the synthetic IV `V = S2V(K1, AD1, …, ADn, P)` of the `ads_count` components of associated data that `ads` lists (each an address and a length, in bytes; for nonce-based encryption, §3, the nonce is the last) and the `len` bytes of plaintext `P` at `data`, writes it to `*siv`, and encrypts the plaintext in place with AES-CTR under `K2` from `V` with bits 31 and 63 cleared. The RFC's output is `V` followed by the encrypted data.
 ///
 /// Contract: `VG.Spec.Siv.encryptContract`. Constant time: only the pointers, `rounds`, `ads_count`, `len` and where the components are (their addresses and lengths) may affect timing, not the key context, the associated data or the plaintext.
 ///
@@ -114,15 +114,33 @@ pub(crate) const VG_AES_SIV_ENCRYPT_AESNI_FEATURES: crate::cpu::Features = crate
 /// * `ctx` must be valid for reads of 512 bytes.
 /// * `ads` must be valid for reads of `2 * size_of::<usize>() * ads_count` bytes, and each slice it lists for reads of its length in bytes.
 /// * `data` must be valid for reads and writes of `len` bytes.
-/// * `work` must be valid for reads and writes of 2576 bytes.
+/// * `siv` must be valid for reads and writes of 16 bytes.
 /// * `rounds` must be 10, 12 or 14.
-/// * `data` and `work` must not overlap each other, `ctx`, `ads` or the slices `ads` lists (distinct Rust objects never do).
-/// * None of `ctx`, `ads`, the slices `ads` lists, `data` and `work` may overlap the arguments on the stack, overlap the return address on the stack or the 56 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `data` and `siv` must not overlap each other, `ctx`, `ads` or the slices `ads` lists (distinct Rust objects never do).
+/// * None of `ctx`, `ads`, the slices `ads` lists, `data` and `siv` may overlap the arguments on the stack, overlap the return address on the stack or the 2668 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` target feature.
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_aes_siv_encrypt_aesni(ctx: *const [u64; 64], rounds: usize, ads: *const [usize; 2], ads_count: usize, data: *mut u8, len: usize, work: *mut [u64; 322]) {
+pub(crate) unsafe extern "C" fn vg_aes_siv_encrypt_aesni(ctx: *const [u64; 64], rounds: usize, ads: *const [usize; 2], ads_count: usize, data: *mut u8, len: usize, siv: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        "mov eax, DWORD PTR [esp+28]",
+        "lea esp, [esp-2612]",
+        "mov eax, DWORD PTR [esp+2616]",
+        "mov DWORD PTR [esp+4], eax",
+        "mov eax, DWORD PTR [esp+2620]",
+        "mov DWORD PTR [esp+8], eax",
+        "mov eax, DWORD PTR [esp+2624]",
+        "mov DWORD PTR [esp+12], eax",
+        "mov eax, DWORD PTR [esp+2628]",
+        "mov DWORD PTR [esp+16], eax",
+        "mov eax, DWORD PTR [esp+2632]",
+        "mov DWORD PTR [esp+20], eax",
+        "mov eax, DWORD PTR [esp+2636]",
+        "mov DWORD PTR [esp+24], eax",
+        "mov eax, DWORD PTR [esp+2640]",
+        "mov DWORD PTR [esp+28], eax",
+        "mov eax, esp",
+        "add eax, 36",
+        "mov DWORD PTR [esp+32], eax",
+        "mov eax, DWORD PTR [esp+32]",
         "mov DWORD PTR [eax+128], ebx",
         "mov DWORD PTR [eax+132], esi",
         "mov DWORD PTR [eax+136], edi",
@@ -646,10 +664,20 @@ pub(crate) unsafe extern "C" fn vg_aes_siv_encrypt_aesni(ctx: *const [u64; 64], 
         "jmp 218f",
         "217:",
         "218:",
+        "mov eax, DWORD PTR [ebp]",
+        "mov ecx, DWORD PTR [ebp+4]",
+        "mov edx, DWORD PTR [ebp+8]",
+        "mov ebx, DWORD PTR [ebp+12]",
+        "mov edi, DWORD PTR [esp+28]",
+        "mov DWORD PTR [edi], eax",
+        "mov DWORD PTR [edi+4], ecx",
+        "mov DWORD PTR [edi+8], edx",
+        "mov DWORD PTR [edi+12], ebx",
         "mov ebx, DWORD PTR [ebp+128]",
         "mov esi, DWORD PTR [ebp+132]",
         "mov edi, DWORD PTR [ebp+136]",
         "mov ebp, DWORD PTR [ebp+140]",
+        "lea esp, [esp+2612]",
         "ret",
         ".p2align 6",
         vg_cmac_aes_finalize_aesni = sym super::cmac_aes::vg_cmac_aes_finalize_aesni,
@@ -661,7 +689,7 @@ pub(crate) unsafe extern "C" fn vg_aes_siv_encrypt_aesni(ctx: *const [u64; 64], 
 /// The CPU features `vg_aes_siv_decrypt_aesni` requires (`Artifact.features`).
 pub(crate) const VG_AES_SIV_DECRYPT_AESNI_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes"]);
 
-/// AES-SIV decryption, `SIV-DECRYPT` (RFC 5297 §2.7): with the key context `*ctx` that `vg_aes_siv_init` wrote for `rounds` rounds and the received synthetic IV `V` in the first 16 bytes of `*work`, decrypts the `len` bytes of ciphertext at `data` in place with AES-CTR under `K2` from `V` with bits 31 and 63 cleared, computes `S2V(K1, AD1, …, ADn, P)` of the `ads_count` components of associated data that `ads` lists (each an address and a length, in bytes) and the plaintext `P`, and returns 1 if it is `V`; otherwise returns 0 and overwrites the `len` bytes at `data` with zeros. The rest of `*work` is working space, unspecified on return. The IVs are compared without a branch.
+/// AES-SIV decryption, `SIV-DECRYPT` (RFC 5297 §2.7): with the key context `*ctx` that `vg_aes_siv_init` wrote for `rounds` rounds and the received synthetic IV `V` at `siv`, decrypts the `len` bytes of ciphertext at `data` in place with AES-CTR under `K2` from `V` with bits 31 and 63 cleared, computes `S2V(K1, AD1, …, ADn, P)` of the `ads_count` components of associated data that `ads` lists (each an address and a length, in bytes) and the plaintext `P`, and returns 1 if it is `V`; otherwise returns 0 and overwrites the `len` bytes at `data` with zeros. The IVs are compared without a branch.
 ///
 /// Contract: `VG.Spec.Siv.decryptContract`. Constant time but for the result: only the pointers, `rounds`, `ads_count`, `len`, where the components are (their addresses and lengths) and whether the function returns 1 or 0 may affect timing, not the key context, the associated data, the data or `V`.
 ///
@@ -676,15 +704,33 @@ pub(crate) const VG_AES_SIV_DECRYPT_AESNI_FEATURES: crate::cpu::Features = crate
 /// * `ctx` must be valid for reads of 512 bytes.
 /// * `ads` must be valid for reads of `2 * size_of::<usize>() * ads_count` bytes, and each slice it lists for reads of its length in bytes.
 /// * `data` must be valid for reads and writes of `len` bytes.
-/// * `work` must be valid for reads and writes of 2576 bytes.
+/// * `siv` must be valid for reads of 16 bytes.
 /// * `rounds` must be 10, 12 or 14.
-/// * `data` and `work` must not overlap each other, `ctx`, `ads` or the slices `ads` lists (distinct Rust objects never do).
-/// * None of `ctx`, `ads`, the slices `ads` lists, `data` and `work` may overlap the arguments on the stack, overlap the return address on the stack or the 56 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `data` must not overlap `ctx`, `ads`, the slices `ads` lists or `siv` (distinct Rust objects never do).
+/// * None of `ctx`, `ads`, the slices `ads` lists, `data` and `siv` may overlap the arguments on the stack, overlap the return address on the stack or the 2668 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` target feature.
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_aes_siv_decrypt_aesni(ctx: *const [u64; 64], rounds: usize, ads: *const [usize; 2], ads_count: usize, data: *mut u8, len: usize, work: *mut [u64; 322]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_aes_siv_decrypt_aesni(ctx: *const [u64; 64], rounds: usize, ads: *const [usize; 2], ads_count: usize, data: *mut u8, len: usize, siv: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
-        "mov eax, DWORD PTR [esp+28]",
+        "lea esp, [esp-2612]",
+        "mov eax, DWORD PTR [esp+2616]",
+        "mov DWORD PTR [esp+4], eax",
+        "mov eax, DWORD PTR [esp+2620]",
+        "mov DWORD PTR [esp+8], eax",
+        "mov eax, DWORD PTR [esp+2624]",
+        "mov DWORD PTR [esp+12], eax",
+        "mov eax, DWORD PTR [esp+2628]",
+        "mov DWORD PTR [esp+16], eax",
+        "mov eax, DWORD PTR [esp+2632]",
+        "mov DWORD PTR [esp+20], eax",
+        "mov eax, DWORD PTR [esp+2636]",
+        "mov DWORD PTR [esp+24], eax",
+        "mov eax, DWORD PTR [esp+2640]",
+        "mov DWORD PTR [esp+28], eax",
+        "mov eax, esp",
+        "add eax, 36",
+        "mov DWORD PTR [esp+32], eax",
+        "mov eax, DWORD PTR [esp+32]",
         "mov DWORD PTR [eax+128], ebx",
         "mov DWORD PTR [eax+132], esi",
         "mov DWORD PTR [eax+136], edi",
@@ -871,6 +917,15 @@ pub(crate) unsafe extern "C" fn vg_aes_siv_decrypt_aesni(ctx: *const [u64; 64], 
         "mov DWORD PTR [ebp+200], eax",
         "mov eax, DWORD PTR [ebp+196]",
         "mov DWORD PTR [ebp+204], eax",
+        "mov edi, DWORD PTR [esp+28]",
+        "mov eax, DWORD PTR [edi]",
+        "mov ecx, DWORD PTR [edi+4]",
+        "mov edx, DWORD PTR [edi+8]",
+        "mov ebx, DWORD PTR [edi+12]",
+        "mov DWORD PTR [ebp], eax",
+        "mov DWORD PTR [ebp+4], ecx",
+        "mov DWORD PTR [ebp+8], edx",
+        "mov DWORD PTR [ebp+12], ebx",
         "mov eax, DWORD PTR [ebp]",
         "mov DWORD PTR [ebp+96], eax",
         "mov eax, DWORD PTR [ebp+4]",
@@ -1248,6 +1303,7 @@ pub(crate) unsafe extern "C" fn vg_aes_siv_decrypt_aesni(ctx: *const [u64; 64], 
         "mov esi, DWORD PTR [ebp+132]",
         "mov edi, DWORD PTR [ebp+136]",
         "mov ebp, DWORD PTR [ebp+140]",
+        "lea esp, [esp+2612]",
         "ret",
         ".p2align 6",
         vg_cmac_aes_finalize_aesni = sym super::cmac_aes::vg_cmac_aes_finalize_aesni,
@@ -1348,7 +1404,7 @@ pub(crate) unsafe extern "C" fn vg_aes_siv_init(key: *const u8, key_len: usize, 
     )
 }
 
-/// AES-SIV encryption, `SIV-ENCRYPT` (RFC 5297 §2.6): with the key context `*ctx` that `vg_aes_siv_init` wrote for `rounds` rounds, computes the synthetic IV `V = S2V(K1, AD1, …, ADn, P)` of the `ads_count` components of associated data that `ads` lists (each an address and a length, in bytes; for nonce-based encryption, §3, the nonce is the last) and the `len` bytes of plaintext `P` at `data`, writes it to the first 16 bytes of `*work`, and encrypts the plaintext in place with AES-CTR under `K2` from `V` with bits 31 and 63 cleared. The RFC's output is `V` followed by the encrypted data. The rest of `*work` is working space, unspecified on return.
+/// AES-SIV encryption, `SIV-ENCRYPT` (RFC 5297 §2.6): with the key context `*ctx` that `vg_aes_siv_init` wrote for `rounds` rounds, computes the synthetic IV `V = S2V(K1, AD1, …, ADn, P)` of the `ads_count` components of associated data that `ads` lists (each an address and a length, in bytes; for nonce-based encryption, §3, the nonce is the last) and the `len` bytes of plaintext `P` at `data`, writes it to `*siv`, and encrypts the plaintext in place with AES-CTR under `K2` from `V` with bits 31 and 63 cleared. The RFC's output is `V` followed by the encrypted data.
 ///
 /// Contract: `VG.Spec.Siv.encryptContract`. Constant time: only the pointers, `rounds`, `ads_count`, `len` and where the components are (their addresses and lengths) may affect timing, not the key context, the associated data or the plaintext.
 ///
@@ -1361,14 +1417,32 @@ pub(crate) unsafe extern "C" fn vg_aes_siv_init(key: *const u8, key_len: usize, 
 /// * `ctx` must be valid for reads of 512 bytes.
 /// * `ads` must be valid for reads of `2 * size_of::<usize>() * ads_count` bytes, and each slice it lists for reads of its length in bytes.
 /// * `data` must be valid for reads and writes of `len` bytes.
-/// * `work` must be valid for reads and writes of 2576 bytes.
+/// * `siv` must be valid for reads and writes of 16 bytes.
 /// * `rounds` must be 10, 12 or 14.
-/// * `data` and `work` must not overlap each other, `ctx`, `ads` or the slices `ads` lists (distinct Rust objects never do).
-/// * None of `ctx`, `ads`, the slices `ads` lists, `data` and `work` may overlap the arguments on the stack, overlap the return address on the stack or the 56 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `data` and `siv` must not overlap each other, `ctx`, `ads` or the slices `ads` lists (distinct Rust objects never do).
+/// * None of `ctx`, `ads`, the slices `ads` lists, `data` and `siv` may overlap the arguments on the stack, overlap the return address on the stack or the 2668 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_aes_siv_encrypt(ctx: *const [u64; 64], rounds: usize, ads: *const [usize; 2], ads_count: usize, data: *mut u8, len: usize, work: *mut [u64; 322]) {
+pub(crate) unsafe extern "C" fn vg_aes_siv_encrypt(ctx: *const [u64; 64], rounds: usize, ads: *const [usize; 2], ads_count: usize, data: *mut u8, len: usize, siv: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        "mov eax, DWORD PTR [esp+28]",
+        "lea esp, [esp-2612]",
+        "mov eax, DWORD PTR [esp+2616]",
+        "mov DWORD PTR [esp+4], eax",
+        "mov eax, DWORD PTR [esp+2620]",
+        "mov DWORD PTR [esp+8], eax",
+        "mov eax, DWORD PTR [esp+2624]",
+        "mov DWORD PTR [esp+12], eax",
+        "mov eax, DWORD PTR [esp+2628]",
+        "mov DWORD PTR [esp+16], eax",
+        "mov eax, DWORD PTR [esp+2632]",
+        "mov DWORD PTR [esp+20], eax",
+        "mov eax, DWORD PTR [esp+2636]",
+        "mov DWORD PTR [esp+24], eax",
+        "mov eax, DWORD PTR [esp+2640]",
+        "mov DWORD PTR [esp+28], eax",
+        "mov eax, esp",
+        "add eax, 36",
+        "mov DWORD PTR [esp+32], eax",
+        "mov eax, DWORD PTR [esp+32]",
         "mov DWORD PTR [eax+128], ebx",
         "mov DWORD PTR [eax+132], esi",
         "mov DWORD PTR [eax+136], edi",
@@ -1892,10 +1966,20 @@ pub(crate) unsafe extern "C" fn vg_aes_siv_encrypt(ctx: *const [u64; 64], rounds
         "jmp 218f",
         "217:",
         "218:",
+        "mov eax, DWORD PTR [ebp]",
+        "mov ecx, DWORD PTR [ebp+4]",
+        "mov edx, DWORD PTR [ebp+8]",
+        "mov ebx, DWORD PTR [ebp+12]",
+        "mov edi, DWORD PTR [esp+28]",
+        "mov DWORD PTR [edi], eax",
+        "mov DWORD PTR [edi+4], ecx",
+        "mov DWORD PTR [edi+8], edx",
+        "mov DWORD PTR [edi+12], ebx",
         "mov ebx, DWORD PTR [ebp+128]",
         "mov esi, DWORD PTR [ebp+132]",
         "mov edi, DWORD PTR [ebp+136]",
         "mov ebp, DWORD PTR [ebp+140]",
+        "lea esp, [esp+2612]",
         "ret",
         ".p2align 6",
         vg_cmac_aes_finalize = sym super::cmac_aes::vg_cmac_aes_finalize,
@@ -1904,7 +1988,7 @@ pub(crate) unsafe extern "C" fn vg_aes_siv_encrypt(ctx: *const [u64; 64], rounds
     )
 }
 
-/// AES-SIV decryption, `SIV-DECRYPT` (RFC 5297 §2.7): with the key context `*ctx` that `vg_aes_siv_init` wrote for `rounds` rounds and the received synthetic IV `V` in the first 16 bytes of `*work`, decrypts the `len` bytes of ciphertext at `data` in place with AES-CTR under `K2` from `V` with bits 31 and 63 cleared, computes `S2V(K1, AD1, …, ADn, P)` of the `ads_count` components of associated data that `ads` lists (each an address and a length, in bytes) and the plaintext `P`, and returns 1 if it is `V`; otherwise returns 0 and overwrites the `len` bytes at `data` with zeros. The rest of `*work` is working space, unspecified on return. The IVs are compared without a branch.
+/// AES-SIV decryption, `SIV-DECRYPT` (RFC 5297 §2.7): with the key context `*ctx` that `vg_aes_siv_init` wrote for `rounds` rounds and the received synthetic IV `V` at `siv`, decrypts the `len` bytes of ciphertext at `data` in place with AES-CTR under `K2` from `V` with bits 31 and 63 cleared, computes `S2V(K1, AD1, …, ADn, P)` of the `ads_count` components of associated data that `ads` lists (each an address and a length, in bytes) and the plaintext `P`, and returns 1 if it is `V`; otherwise returns 0 and overwrites the `len` bytes at `data` with zeros. The IVs are compared without a branch.
 ///
 /// Contract: `VG.Spec.Siv.decryptContract`. Constant time but for the result: only the pointers, `rounds`, `ads_count`, `len`, where the components are (their addresses and lengths) and whether the function returns 1 or 0 may affect timing, not the key context, the associated data, the data or `V`.
 ///
@@ -1919,14 +2003,32 @@ pub(crate) unsafe extern "C" fn vg_aes_siv_encrypt(ctx: *const [u64; 64], rounds
 /// * `ctx` must be valid for reads of 512 bytes.
 /// * `ads` must be valid for reads of `2 * size_of::<usize>() * ads_count` bytes, and each slice it lists for reads of its length in bytes.
 /// * `data` must be valid for reads and writes of `len` bytes.
-/// * `work` must be valid for reads and writes of 2576 bytes.
+/// * `siv` must be valid for reads of 16 bytes.
 /// * `rounds` must be 10, 12 or 14.
-/// * `data` and `work` must not overlap each other, `ctx`, `ads` or the slices `ads` lists (distinct Rust objects never do).
-/// * None of `ctx`, `ads`, the slices `ads` lists, `data` and `work` may overlap the arguments on the stack, overlap the return address on the stack or the 56 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * `data` must not overlap `ctx`, `ads`, the slices `ads` lists or `siv` (distinct Rust objects never do).
+/// * None of `ctx`, `ads`, the slices `ads` lists, `data` and `siv` may overlap the arguments on the stack, overlap the return address on the stack or the 2668 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_aes_siv_decrypt(ctx: *const [u64; 64], rounds: usize, ads: *const [usize; 2], ads_count: usize, data: *mut u8, len: usize, work: *mut [u64; 322]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_aes_siv_decrypt(ctx: *const [u64; 64], rounds: usize, ads: *const [usize; 2], ads_count: usize, data: *mut u8, len: usize, siv: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
-        "mov eax, DWORD PTR [esp+28]",
+        "lea esp, [esp-2612]",
+        "mov eax, DWORD PTR [esp+2616]",
+        "mov DWORD PTR [esp+4], eax",
+        "mov eax, DWORD PTR [esp+2620]",
+        "mov DWORD PTR [esp+8], eax",
+        "mov eax, DWORD PTR [esp+2624]",
+        "mov DWORD PTR [esp+12], eax",
+        "mov eax, DWORD PTR [esp+2628]",
+        "mov DWORD PTR [esp+16], eax",
+        "mov eax, DWORD PTR [esp+2632]",
+        "mov DWORD PTR [esp+20], eax",
+        "mov eax, DWORD PTR [esp+2636]",
+        "mov DWORD PTR [esp+24], eax",
+        "mov eax, DWORD PTR [esp+2640]",
+        "mov DWORD PTR [esp+28], eax",
+        "mov eax, esp",
+        "add eax, 36",
+        "mov DWORD PTR [esp+32], eax",
+        "mov eax, DWORD PTR [esp+32]",
         "mov DWORD PTR [eax+128], ebx",
         "mov DWORD PTR [eax+132], esi",
         "mov DWORD PTR [eax+136], edi",
@@ -2113,6 +2215,15 @@ pub(crate) unsafe extern "C" fn vg_aes_siv_decrypt(ctx: *const [u64; 64], rounds
         "mov DWORD PTR [ebp+200], eax",
         "mov eax, DWORD PTR [ebp+196]",
         "mov DWORD PTR [ebp+204], eax",
+        "mov edi, DWORD PTR [esp+28]",
+        "mov eax, DWORD PTR [edi]",
+        "mov ecx, DWORD PTR [edi+4]",
+        "mov edx, DWORD PTR [edi+8]",
+        "mov ebx, DWORD PTR [edi+12]",
+        "mov DWORD PTR [ebp], eax",
+        "mov DWORD PTR [ebp+4], ecx",
+        "mov DWORD PTR [ebp+8], edx",
+        "mov DWORD PTR [ebp+12], ebx",
         "mov eax, DWORD PTR [ebp]",
         "mov DWORD PTR [ebp+96], eax",
         "mov eax, DWORD PTR [ebp+4]",
@@ -2490,6 +2601,7 @@ pub(crate) unsafe extern "C" fn vg_aes_siv_decrypt(ctx: *const [u64; 64], rounds
         "mov esi, DWORD PTR [ebp+132]",
         "mov edi, DWORD PTR [ebp+136]",
         "mov ebp, DWORD PTR [ebp+140]",
+        "lea esp, [esp+2612]",
         "ret",
         ".p2align 6",
         vg_cmac_aes_finalize = sym super::cmac_aes::vg_cmac_aes_finalize,

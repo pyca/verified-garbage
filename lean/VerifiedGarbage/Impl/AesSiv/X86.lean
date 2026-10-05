@@ -6,7 +6,7 @@ import VerifiedGarbage.Impl.StackScratch.X86
 # AES-SIV: x86 (32-bit) implementation
 
 `vg_aes_siv_init(key, key_len, ctx)`,
-`vg_aes_siv_encrypt(ctx, rounds, ads, ads_count, data, len, work)` and
+`vg_aes_siv_encrypt(ctx, rounds, ads, ads_count, data, len, siv, work)` and
 `vg_aes_siv_decrypt` with the same arguments (see `VG.Spec.Siv.initContract`
 and the others), cdecl (every argument on the stack), composed of calls of
 the verified `vg_aes_expand_key_scratch`, `vg_cmac_aes_subkeys`,
@@ -31,7 +31,9 @@ caller's `ebx`, `esi`, `edi` and `ebp` saved at `scratch + 2176`.
 
 `work` (`W`, 2576 bytes):
 
-* `[0, 16)`: the synthetic IV;
+* `[0, 16)`: the synthetic IV (`encrypt` copies it to `siv` at the end,
+  `decrypt` copies the received one from `siv` at the start, `sivOut`,
+  `sivIn`);
 * `[16, 32)`: a zero block;
 * `[32, 64)`: the last bytes of S2V's last string (`tail`);
 * `[64, 80)`: unused;
@@ -85,6 +87,8 @@ As on x86-64:
   with it.
 * `compare`, `mask`: `ok = 1` if the IVs at `W` and `W + 112` are equal,
   else 0, without a branch, and every byte of the data ANDed with `0 − ok`.
+* `sivOut`, `sivIn`: the IV at `W` copied to `siv`, or the received one from
+  `siv` to `W`, through its address read from the stack.
 
 Only the pointers, `rounds`, the key length, `ads_count`, `len` and where
 the components of associated data are can affect timing: the branches are on
@@ -374,10 +378,26 @@ def mask : Prog isa :=
 
 /-! ## `vg_aes_siv_encrypt` and `vg_aes_siv_decrypt` -/
 
-/-- Our caller's registers saved in `work` (the seventh argument),
-`ebp :=` `work`, and the arguments kept. -/
+/-- Our caller's registers saved in `work` (the eighth argument),
+`ebp :=` `work`, and the arguments kept (but `siv`, read from the stack
+where it is needed). -/
 def sivEntry : Prog isa :=
-  entry 6 (keep 0 ctxO ++ keep 1 roundsO ++ keep 2 adsO ++ keep 3 leftO ++ keep 4 dataO ++ keep 5 lenO)
+  entry 7 (keep 0 ctxO ++ keep 1 roundsO ++ keep 2 adsO ++ keep 3 leftO ++ keep 4 dataO ++ keep 5 lenO)
+
+/-- The IV at `W` copied to `siv` (the stack argument 6): its words into
+`eax`, `ecx`, `edx`, `ebx` and `siv` into `edi`, then stored. -/
+def sivOut : Prog isa :=
+  .seq (.block [.mov .eax (slot 0), .mov .ecx (slot 4), .mov .edx (slot 8), .mov .ebx (slot 12),
+      .mov .edi (argOp 6)])
+    (.block [.store (at_ .edi 0) .eax, .store (at_ .edi 4) .ecx, .store (at_ .edi 8) .edx,
+      .store (at_ .edi 12) .ebx])
+
+/-- The received IV at `siv` (the stack argument 6) copied to `W`. -/
+def sivIn : Prog isa :=
+  .seq (.block [.mov .edi (argOp 6)])
+    (.block [.mov .eax (.mem (at_ .edi 0)), .mov .ecx (.mem (at_ .edi 4)), .mov .edx (.mem (at_ .edi 8)),
+      .mov .ebx (.mem (at_ .edi 12)), .store (at_ .ebp 0) .eax, .store (at_ .ebp 4) .ecx,
+      .store (at_ .ebp 8) .edx, .store (at_ .ebp 12) .ebx])
 
 /-- The entry, S2V's first state and S2V of the associated data, and the
 data as the string S2V is on. -/
@@ -389,16 +409,17 @@ def encS2v : Prog isa :=
           .store (at_ .ebp slenO) .eax])))
 
 def encrypt : Prog isa :=
-  .seq (encS2v c sfx) (.seq (finish c sfx 0) (.seq (.block (counter 0)) (.seq (ctr c) (.block restore))))
+  .seq (encS2v c sfx)
+    (.seq (finish c sfx 0) (.seq (.block (counter 0)) (.seq (ctr c) (.seq sivOut (.block restore)))))
 
 def decrypt : Prog isa :=
   .seq (encS2v c sfx)
-    (.seq (.block (counter 0))
+    (.seq sivIn (.seq (.block (counter 0))
       (.seq (ctr c)
         (.seq (.block [.mov .eax (slot dataO), .store (at_ .ebp strO) .eax, .mov .eax (slot lenO),
             .store (at_ .ebp slenO) .eax])
           (.seq (finish c sfx tOff)
-            (.seq (.block compare) (.seq mask (.block ([.mov .eax (slot okO)] ++ restore))))))))
+            (.seq (.block compare) (.seq mask (.block ([.mov .eax (slot okO)] ++ restore)))))))))
 
 end
 

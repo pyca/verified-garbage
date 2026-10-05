@@ -6,7 +6,7 @@ import VerifiedGarbage.Proof.AesGcm.Arm.Fn
 
 Untrusted: everything here is checked by Lean. `encrypt` and `decrypt` take
 the key context in `r0`, the rounds in `r1`, the descriptors in `r2` and
-their number in `r3`, and the data, its length and `W` on the stack
+their number in `r3`, and the data, its length, `siv` and `W` on the stack
 (`EPre`). They save our caller's registers in `W` where AES-GCM does
 (`Proof.AesGcm.Arm.save_ok`), keep their arguments in registers, zero the
 block at `W + 16` and `D`, and finalize the zero block into `D`:
@@ -26,9 +26,10 @@ open VG.Proof.AesGcm.Arm (bytesAt_frame SavedAt savedR save_ok covers_left cover
 open VG.Proof.MdStream.Arm (wp_ldrSp)
 
 /-- What `encrypt` and `decrypt` need of their arguments: the key context
-`c`, the rounds `R`, the `N` descriptors at `a`, the data (`n` bytes at `D`)
-and `W`, the last three on the stack at `sp`. -/
-structure EPre (c w sp a D : BitVec 32) (R N n : Nat) (s : State) : Prop where
+`c`, the rounds `R`, the `N` descriptors at `a`, the data (`n` bytes at `D`),
+`siv` (16 bytes at `T`, which they may at least read) and `W`, the last four
+on the stack at `sp`. -/
+structure EPre (c w sp a D T : BitVec 32) (R N n : Nat) (s : State) : Prop where
   lay : Lay c w sp
   perm : Perm c w s
   r0 : s.gpr .r0 = c
@@ -37,16 +38,21 @@ structure EPre (c w sp a D : BitVec 32) (R N n : Nat) (s : State) : Prop where
   r3 : s.gpr .r3 = BitVec.ofNat 32 N
   hsp : s.sp = sp
   rounds : R = 10 ∨ R = 12 ∨ R = 14
-  afit : sp.toNat + 12 ≤ 2 ^ 32
-  args : Covers [⟨State.addr sp, 12⟩] (s.rd ++ s.wr)
-  args_w : (⟨State.addr sp, 12⟩ : Region).Disjoint ⟨State.addr w, 2576⟩
-  args_d : (⟨State.addr sp, 12⟩ : Region).Disjoint ⟨State.addr D, n⟩
+  afit : sp.toNat + 16 ≤ 2 ^ 32
+  args : Covers [⟨State.addr sp, 16⟩] (s.rd ++ s.wr)
+  args_w : (⟨State.addr sp, 16⟩ : Region).Disjoint ⟨State.addr w, 2576⟩
+  args_d : (⟨State.addr sp, 16⟩ : Region).Disjoint ⟨State.addr D, n⟩
   a0 : s.mem.readW (State.addr sp) 32 = D
   a1 : s.mem.readW (State.addr sp + BitVec.ofNat 64 4) 32 = BitVec.ofNat 32 n
-  a2 : s.mem.readW (State.addr sp + BitVec.ofNat 64 8) 32 = w
+  a2 : s.mem.readW (State.addr sp + BitVec.ofNat 64 8) 32 = T
+  a3 : s.mem.readW (State.addr sp + BitVec.ofNat 64 12) 32 = w
   ads : Ads w sp a N s.mem s
   data : Dat c w sp s D n
   n32 : n < 2 ^ 32
+  tfit : T.toNat + 16 ≤ 2 ^ 32
+  t_rd : Covers [⟨State.addr T, 16⟩] (s.rd ++ s.wr)
+  t_w : (⟨State.addr T, 16⟩ : Region).Disjoint ⟨State.addr w, 2576⟩
+  t_stk : (blw sp).Disjoint ⟨State.addr T, 16⟩
 
 /-- The descriptors as they were, after writes apart from them. -/
 theorem Ads.of_frame {w sp a : BitVec 32} {N : Nat} {m m' : Mem} {s : State} (h : Ads w sp a N m s)
@@ -101,15 +107,15 @@ structure Started (c w sp a : BitVec 32) (R N : Nat) (s : State) (mₛ : Mem) (s
   args : FArgs s' c (w + BitVec.ofNat 32 dOff) (w + BitVec.ofNat 32 zOff) (w + BitVec.ofNat 32 256) 16 R
 
 /-- The entry, up to the call. -/
-theorem startBlock_ok {a D : BitVec 32} {N n : Nat} {s : State} (h : EPre c w sp a D R N n s) :
+theorem startBlock_ok {a D T : BitVec 32} {N n : Nat} {s : State} (h : EPre c w sp a D T R N n s) :
     WP isa (.block (encPre ++ startPre)) s fun s' => ∃ mₛ, Started c w sp a R N s mₛ s' := by
   have ww := L.ww
   have hR := h.rounds
   rw [encPre, List.cons_append]
-  refine wp_ldrSp (a := State.addr sp + BitVec.ofNat 64 8) (by decide)
+  refine wp_ldrSp (a := State.addr sp + BitVec.ofNat 64 12) (by decide)
     (by rw [h.hsp]; exact addr_add (by have := h.afit; omega)) (in_off h.args (by decide) (by decide))
     fun s₁ u₁ => ?_
-  have h12 : s₁.gpr .r12 = w := by rw [u₁.gpr, h.a2]
+  have h12 : s₁.gpr .r12 = w := by rw [u₁.gpr, h.a3]
   simp only [List.append_eq, List.append_assoc]
   refine save_ok h12 (by omega) (by rw [u₁.wr]; exact covers_prefix h.perm.w (by decide))
     fun s₂ g₂ rd₂ wr₂ sp₂ sv₂ f₂ => ?_
@@ -204,7 +210,7 @@ theorem startBlock_ok {a D : BitVec 32} {N n : Nat} {s : State} (h : EPre c w sp
 
 /-- The entry and S2V's first state: from the memory `mₛ` after the save,
 `D = AES-CMAC(K1, <zero>)`, before the first component. -/
-theorem start_ok {a D : BitVec 32} {N n : Nat} {s : State} (h : EPre c w sp a D R N n s) :
+theorem start_ok {a D T : BitVec 32} {N n : Nat} {s : State} (h : EPre c w sp a D T R N n s) :
     WP isa (.seq (.block (encPre ++ startPre)) finFrame) s fun s' =>
       ∃ mₛ : Mem, Frame [savedR w] s.mem mₛ ∧ SavedAt mₛ w s ∧ AInv c w sp a R N mₛ s 0 s' := by
   have hR := h.rounds
