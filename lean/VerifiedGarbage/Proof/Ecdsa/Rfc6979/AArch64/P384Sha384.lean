@@ -92,7 +92,7 @@ theorem implies :
   sat := ⟨satState 48 48 satMem 337920, sat_spec⟩
 
 /-- SHA-384, with the implementation `v` of SHA-512's compression function. -/
-def pack (hL : Weierstrass.Law Spec.P384.curve) (hI : Weierstrass.InvToM)
+def pack (hL : Weierstrass.Law Spec.P384.curve) (hI : Weierstrass.AArch64.InvSounds)
     (hT : Weierstrass.CombOkW Spec.P384.curve 7 55 Impl.P384.p384Comb7 Impl.P384.p384Comb7Start) (v : Compress) :
     RfcHash where
   R := p384 hL hI hT
@@ -113,7 +113,7 @@ def pack (hL : Weierstrass.Law Spec.P384.curve) (hI : Weierstrass.InvToM)
   hWb := Nat.le_of_ble_eq_true rfl
   hQ := Nat.le_of_ble_eq_true rfl
 
-theorem sign_verified (hL : Weierstrass.Law Spec.P384.curve) (hI : Weierstrass.InvToM)
+theorem sign_verified (hL : Weierstrass.Law Spec.P384.curve) (hI : Weierstrass.AArch64.InvSounds)
     (hT : Weierstrass.CombOkW Spec.P384.curve 7 55 Impl.P384.p384Comb7 Impl.P384.p384Comb7Start) (v : Compress) :
     Verified AArch64.target (cfgOf (pack hL hI hT v)).sign
       (Spec.Ecdsa.Rfc6979.P384Sha384.inst.signContract (AArch64.abi.withConsts Impl.Ecdsa.AArch64.p384.combConsts) 256) :=

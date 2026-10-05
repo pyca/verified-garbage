@@ -20,8 +20,8 @@ theorem p384_nBits : Spec.Ecdsa.nBits Spec.P384.curve = 384 := by
   have h₂ : Spec.P384.curve.n.log2 < 384 := (Nat.log2_lt (by decide +kernel)).mpr (by decide +kernel)
   omega
 
-/-- P-384, with the group law `hL`, the inversions' last step `hI` and the comb's tables `hT`. -/
-def p384 (hL : Weierstrass.Law Spec.P384.curve) (hI : Weierstrass.InvToM)
+/-- P-384, with the group law `hL`, the inversions' soundness `hI` and the comb's tables `hT`. -/
+def p384 (hL : Weierstrass.Law Spec.P384.curve) (hI : Weierstrass.AArch64.InvSounds)
     (hT : Weierstrass.CombOkW Spec.P384.curve 7 55 Impl.P384.p384Comb7 Impl.P384.p384Comb7Start) : RfcCurve where
   E := Impl.Ecdsa.AArch64.p384
   inst := Spec.Ecdsa.P384.inst

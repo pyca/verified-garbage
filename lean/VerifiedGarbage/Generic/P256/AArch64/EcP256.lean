@@ -1,5 +1,5 @@
 import VerifiedGarbage.TCB.AArch64.Target
-import VerifiedGarbage.Proof.Weierstrass.HasLaw
+import VerifiedGarbage.Proof.Weierstrass.AArch64.HasLaw
 import VerifiedGarbage.Proof.P256.Comb7
 import VerifiedGarbage.Impl.EcKey.P256.AArch64
 import VerifiedGarbage.Proof.EcKey.AArch64.Verified
@@ -13,7 +13,7 @@ A generic file (see `TCB/Emit.lean`) over P-256's group law `h`, the variant
 
 namespace VG.Generic.P256.AArch64.EcP256
 
-def artifacts (h : Proof.Weierstrass.HasLaw Spec.P256.curve) : List Artifact := [
+def artifacts (h : Proof.Weierstrass.AArch64.HasLaw Spec.P256.curve) : List Artifact := [
   { Spec.EcKey.P256.publicKeyApi with
     target := AArch64.target
     doc := Spec.EcKey.P256.publicKeyApi.doc (notes := ["The function is `vg_ecdsa_p256_sign`'s \
