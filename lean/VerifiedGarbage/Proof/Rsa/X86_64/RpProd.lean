@@ -48,7 +48,7 @@ theorem prodInit_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) {el : Na
 
 /-- `rowHead`: `e`'s word `j`, the accumulator's base at word `j` of `M`,
 and `d`'s base. -/
-theorem rowHead_ok {t : State} {B : Addr} {Z w j : Nat} (hs : Scr t B Z) (hw : 2 ≤ w) (hZ : slot w 16 ≤ Z)
+theorem rowHead_ok {t : State} {B : Addr} {Z w j : Nat} (hs : Scr t B Z) (hZ : slot w 16 ≤ Z)
     (hbx : t.gpr .rbx = off B (slot w aE)) (h10 : t.gpr .r10 = off B (slot w aM))
     (h15 : t.gpr .r15 = off B (slot w aD)) (h13 : t.gpr .r13 = BitVec.ofNat 64 j) (hj : j < w) :
     WP isa (.block rowHead) t fun t' =>
@@ -105,7 +105,7 @@ theorem prodStep_ok {s₁ t : State} {B : Addr} {Z w we j : Nat} (hI : ProdInv s
   have eM1 : slot w (aM + 1) = slot w aM + 8 * (w + 2) := by simp only [slot, hdrBytes, aM]; omega
   have eDM : slot w aD + 8 * (w + 2) = slot w aM := by simp only [slot, hdrBytes, aD, aM]; omega
   have eEM : slot w aE + 8 * (w + 2) = slot w aD := by simp only [slot, hdrBytes, aE, aD]; omega
-  refine WP.seq (WP.mono (rowHead_ok hI.scr hw hZ ((hI.keep.gpr (by decide)).trans hbx)
+  refine WP.seq (WP.mono (rowHead_ok hI.scr hZ ((hI.keep.gpr (by decide)).trans hbx)
     ((hI.keep.gpr (by decide)).trans h10) ((hI.keep.gpr (by decide)).trans h15) hI.r13 (by omega))
     fun t₁ ⟨hcx, h8, h9, m₁, k₁⟩ => ?_)
   have k01 := hI.keep.trans k₁

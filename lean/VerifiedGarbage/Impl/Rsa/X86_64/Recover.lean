@@ -119,13 +119,14 @@ def prod : List (Prog isa) :=
 def orBody : List Instr := [.mov .rax (.mem (ix .rbx .r14)), .alu .or .rbp (.reg .rax)]
 
 /-- The mask of `M` even into `sC2`, and `m := M` with its low bit cleared
-(`M - 1` for an odd `M`); then `w`, `rbp := 0` and `r12 := Bw` for the test
-of `m = 0`. -/
+(`M - 1` for an odd `M`); `r12 := Bw` and `rbp := 0` for the test of
+`m = 0`. -/
 def skipBlk : List Instr :=
   ws ++ base aM .rbx ++
     [.mov .rax (.mem (at0 .rbx)), .mov .rdx (.reg .rax), .alu .and .rdx (.imm 1), .alu .sub .rax (.reg .rdx),
-      .store (at0 .rbx) .rax, .alu .sub .rdx (.imm 1), .store (hdr sC2) .rdx, .mov32 .rbp (.imm 0)] ++ bw ++
-    [.mov .r12 (.reg .rax)]
+      .mov .rcx (.mem (hdr sElen)), .alu .add .rcx (.imm 7), .shift .shr .rcx 3, .alu .add .rcx (.mem (hdr sW)),
+      .mov .r12 (.reg .rcx), .store (at0 .rbx) .rax, .alu .sub .rdx (.imm 1), .store (hdr sC2) .rdx,
+      .mov32 .rbp (.imm 0)]
 
 /-- `ZF := ¬(M even ∨ m = 0)`: the mask of `m = 0` or'ed with `sC2`. -/
 def skipTest : List Instr :=
