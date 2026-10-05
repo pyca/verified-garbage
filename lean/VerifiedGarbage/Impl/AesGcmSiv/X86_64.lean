@@ -32,7 +32,8 @@ implementations as AES-GCM is (`Impl.AesGcm.X86_64.Callees`: only `ctr`,
   bytes are XORed with a keystream block from `vg_aes_ctr32` (`crypt`).
 * `seal` copies the tag from `W` to `tag` at the end (`tagOut`); `open`
   copies the received tag from `tag` to `W` first (`recv`), computes the tag of the plaintext at `W + 128` and compares the two
-  without a branch (`cmp`), then masks the data with `0 − ok` (`mask`).
+  without a branch (`cmp`), then masks the data with `0 − ok`, a word at a
+  time and then its last `len mod 8` bytes (`mask`).
 
 ## The working space `W` (3816 bytes)
 
@@ -59,7 +60,7 @@ pointers and counts across calls. Only the pointers, the lengths and
 namespace VG.Impl.AesGcmSiv.X86_64
 
 open VG.X86_64
-open VG.Impl.AesGcm.X86_64 (at_ imm ptr copyLoop xorLoop Callees Fn)
+open VG.Impl.AesGcm.X86_64 (at_ imm ptr copyLoop xorLoop Callees Fn maskTail)
 
 def tagO : Nat := 0
 def akO : Nat := 16
@@ -278,15 +279,13 @@ def cmp : List Instr :=
     .alu .xor .rdx (.mem (at_ .r15 (bO + 8))), .alu .or .rax (.reg .rdx), .alu .cmp .rax (imm 1),
     .mov32 .rax (imm 0), .alu32 .adc .rax (imm 0), .store (at_ .r15 okO) .rax]
 
-def maskByte : MemOp := { base := .r12, index := some .r10 }
-
-/-- Every byte of the data ANDed with `0 − ok`. -/
+/-- Every byte of the data ANDed with `0 − ok` (`maskTail`): its whole
+words, then the rest. -/
 def mask : Prog isa :=
   .seq (.block [.mov .r12 (.mem (at_ .r15 dataO)), .mov .rbp (.mem (at_ .r15 lenO)), .mov32 .r11 (imm 0),
-      .alu .sub .r11 (.mem (at_ .r15 okO)), .mov32 .r10 (imm 0), .alu .test .rbp (.reg .rbp)])
-    (.ite .e (.block [])
-      (.loop (.block [.movzx8 .rax maskByte, .alu .and .rax (.reg .r11), .store8 maskByte .rax,
-        .alu .add .r10 (imm 1), .alu .cmp .r10 (.reg .rbp)]) .ne))
+      .alu .sub .r11 (.mem (at_ .r15 okO)), .mov32 .r10 (imm 0), .mov .rcx (.reg .rbp),
+      .shift .shr .rcx 3, .alu .test .rcx (.reg .rcx)])
+    maskTail
 
 /-! ## The functions -/
 

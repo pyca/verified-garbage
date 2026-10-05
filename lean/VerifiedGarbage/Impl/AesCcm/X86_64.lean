@@ -78,7 +78,7 @@ namespace VG.Impl.AesCcm.X86_64
 
 open VG.X86_64
 open VG.Impl.Aes.X86_64 (Ctr32)
-open VG.Impl.AesGcm.X86_64 (at_ imm ptr copyLoop xorLoop minLen recv cmp)
+open VG.Impl.AesGcm.X86_64 (at_ imm ptr copyLoop xorLoop minLen recv cmp maskTail)
 
 /-! ## The working space -/
 
@@ -249,28 +249,13 @@ def ctr : Prog isa :=
 
 /-! ## Masking the data -/
 
-/-- `[r12 + r10]`. -/
-def maskByte : MemOp := { base := .r12, index := some .r10 }
-
-/-- The data's `⌊len / 8⌋` whole words (counted down in `rcx`) ANDed with
-`0 − ok`, 8 bytes at a time. -/
-def maskWords : Prog isa :=
-  .loop (.block [.mov .rax (.mem maskByte), .alu .and .rax (.reg .r11), .store maskByte .rax,
-    .alu .add .r10 (imm 8), .alu .sub .rcx (imm 1)]) .ne
-
-/-- The data's last `len mod 8` bytes ANDed with `0 − ok`, one at a time. -/
-def maskBytes : Prog isa :=
-  .loop (.block [.movzx8 .rax maskByte, .alu .and .rax (.reg .r11), .store8 maskByte .rax,
-    .alu .add .r10 (imm 1), .alu .cmp .r10 (.reg .rbp)]) .ne
-
-/-- Every byte of the data ANDed with `0 − ok`: its whole words, then the
-rest. -/
+/-- Every byte of the data ANDed with `0 − ok` (`maskTail`): its whole
+words, then the rest. -/
 def mask : Prog isa :=
   .seq (.block [.mov .r12 (.mem (at_ .r15 dataO)), .mov .rbp (.mem (at_ .r15 lenO)), .mov32 .r11 (imm 0),
       .alu .sub .r11 (.mem (at_ .r15 okO)), .mov32 .r10 (imm 0), .mov .rcx (.reg .rbp),
       .shift .shr .rcx 3, .alu .test .rcx (.reg .rcx)])
-    (.seq (.ite .e (.block []) maskWords)
-      (.seq (.block [.alu .cmp .r10 (.reg .rbp)]) (.ite .e (.block []) maskBytes)))
+    maskTail
 
 /-! ## The functions -/
 
