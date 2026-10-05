@@ -353,7 +353,7 @@ jobs:
             echo "Main has advanced: its newer run will publish the cache."
             exit 0
           fi
-          docker build -f ci/lean-cache.Dockerfile \
+          docker build -f .github/lean-cache.Dockerfile \
             --label "org.opencontainers.image.source=https://github.com/$GH_REPO" \
             --label "org.opencontainers.image.revision=$GITHUB_SHA" \
             --label "io.pyca.lean.toolchain=$(cat lean/lean-toolchain)" \
@@ -388,6 +388,7 @@ jobs:
       - name: Only rust-cpu-features sets VG_CPU_FEATURES
         run: "! grep -nE '^ *VG_CPU_FEATURES:' .github/workflows/ci.yml"
       - run: python3 -m unittest discover -s ci -p 'test_check_*.py'
+      - run: python3 .github/test_check_lean_cache.py
       - run: python3 ci/check_mcdt.py
 
   vectors:
