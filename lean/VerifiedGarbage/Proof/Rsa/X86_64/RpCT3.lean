@@ -215,7 +215,7 @@ def GR2 (p : RpP) (s : State) : Prop :=
   ∃ (I : RpIn) (m₀ : Mem), I.pub = p ∧ RpS I m₀ s ∧ RpLens I ∧ RpOuts I ∧
     Spec.Rsa.modulusValid I.N I.k = true ∧
     Cst s I.B I.Z (wk I.k) (word s.mem I.B (8 * sMinv)) I.N I.el (splitTwos (I.D * I.E - 1)).2
-      (splitTwos (I.D * I.E - 1)).1
+      (splitTwos (I.D * I.E - 1)).1 ∧ 0 < I.D * I.E - 1 ∧ (I.D * I.E - 1) % 2 = 0
 
 theorem mont_ct (M : Mont) : RelCT isa (Two GR1) (seqs (mont M.mm)) (Two GR2) :=
   two_post (montT_ct M) fun p s h => by
@@ -240,8 +240,8 @@ theorem mont_ct (M : Mont) : RelCT isa (Two GR1) (seqs (mont M.mm)) (Two GR2) :=
       · have := hspl.1; rw [h0, Nat.pow_zero, Nat.one_mul] at this; have := hspl.2; omega
       · exact h0
     have ht2 := VG.Proof.Rsa.splitTwos_lt hm0 hmlt
-    refine ⟨S₂, L, O, hv, S₂.ws, rfl, ?_, ?_, hr2lt, hr2, hone, ho, hng, S₂.args.el, ?_, ?_, hodd, hlo, hel1,
-      by unfold wk; omega, ht1, ht2⟩
+    refine ⟨S₂, L, O, hv, ⟨S₂.ws, rfl, ?_, ?_, hr2lt, hr2, hone, ho, hng, S₂.args.el, ?_, ?_, hodd, hlo, hel1,
+      by unfold wk; omega, ht1, ht2⟩, hm0, heven⟩
     · rw [hf₂.rg_word0 hZ16 (by decide) (by decide) (by decide), hf₂.rg_word (by decide) (by decide)]; exact hi₁
     · rw [hf₂.rg_wv hZ16 (by decide) (by decide) (by decide) (by omega)]; exact hn₁
     · rw [hf₂.rg_wv2 hZ16 (by decide) (by decide) (by decide) (by decide) (by unfold wk; omega)]
