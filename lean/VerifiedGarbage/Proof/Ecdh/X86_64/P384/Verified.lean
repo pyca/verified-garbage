@@ -40,7 +40,7 @@ theorem post_of {s s' : State} (h : EPost p384 s s') : ecdhX86_64.post s s' := b
 
 theorem ecdh_x86 (hL : Weierstrass.Law Spec.P384.curve) (s : State) (hs : ecdhX86_64.pre s) :
     ∃ t s', Exec isa exchangeP384 s t s' ∧ abiPreserved s s' ∧ ecdhX86_64.post s s' := by
-  obtain ⟨t, s', he, hsv, hpost⟩ := exchange_ok p384_ok rfl p384_sh hL (pre_of hs)
+  obtain ⟨t, s', he, hsv, hpost⟩ := exchange_ok p384_ok hL (pre_of hs)
   have hsp : ∀ i ∈ instrs exchangeP384, Taint.clobbers i .rsp = false := by
     have h : exchangeP384.allInstrs (fun i => !Taint.clobbers i .rsp) = true := by lit_decide
     rw [Code.allInstrs_eq, List.all_eq_true] at h
