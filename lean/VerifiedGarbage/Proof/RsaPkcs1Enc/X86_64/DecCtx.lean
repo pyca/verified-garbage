@@ -44,6 +44,7 @@ structure Ctx (s : State) (R : BitVec 64) (EM : List Byte) (t : State) : Prop wh
   slots : Slots s t.mem
   sR : word t.mem (fb s) oR = R
   out : Spec.Rsa.bytesAt t.mem (s.gpr .rdi) (kOf s) = EM
+  cs : ∀ r ∈ calleeSaved, r ≠ .rsp → t.gpr r = s.gpr r
 
 theorem Safe.sub {s : State} (hp : DPre s) {r : Region} (h : Safe s r) : ∃ R ∈ wrs s, Region.Sub r R := by
   rcases h with h | h | h
@@ -101,20 +102,25 @@ theorem bytes_keep {ws : List Region} {m m' : Mem} (hf : Frame ws m m') {p : Add
 
 /-- A step that writes only where it may keeps `Ctx`. -/
 theorem Ctx.step {s : State} (hp : DPre s) {R : BitVec 64} {EM : List Byte} {t t' : State} (hc : Ctx s R EM t)
-    (hrd : t'.rd = t.rd) (hwr : t'.wr = t.wr) (hsp : t'.gpr .rsp = t.gpr .rsp) {ws : List Region}
+    (hrd : t'.rd = t.rd) (hwr : t'.wr = t.wr) (hcs : ∀ r ∈ calleeSaved, t'.gpr r = t.gpr r) {ws : List Region}
     (hf : Frame ws t.mem t'.mem) (hs : ∀ r ∈ ws, Safe s r) : Ctx s R EM t' := by
   have w : ∀ {d : Nat}, d + 8 ≤ oI → word t'.mem (fb s) d = word t.mem (fb s) d := fun hd =>
     hf.readW (Region.contains_self _ _) (fun r hr => Safe.slot hp (hs r hr) hd) (by decide)
   have hk2 := hp.k2
   have hsi := hp.hsi
-  refine ⟨hsp.trans hc.rsp, hrd.trans hc.rd, hwr.trans hc.wr, frame_call hc.mem hf fun r hr => (hs r hr).sub hp,
+  refine ⟨(hcs .rsp (by decide)).trans hc.rsp, hrd.trans hc.rd, hwr.trans hc.wr, frame_call hc.mem hf fun r hr => (hs r hr).sub hp,
     ⟨(w (by decide)).trans hc.slots.sOut, (w (by decide)).trans hc.slots.sML, (w (by decide)).trans hc.slots.sN,
       (w (by decide)).trans hc.slots.sK, (w (by decide)).trans hc.slots.sE, (w (by decide)).trans hc.slots.sEl,
       (w (by decide)).trans hc.slots.sD, (w (by decide)).trans hc.slots.sDl, (w (by decide)).trans hc.slots.sIn,
-      (w (by decide)).trans hc.slots.sScr⟩, (w (by decide)).trans hc.sR, ?_⟩
+      (w (by decide)).trans hc.slots.sScr⟩, (w (by decide)).trans hc.sR, ?_,
+    fun r hr hr' => (hcs r hr).trans (hc.cs r hr hr')⟩
   rw [bytes_keep hf (fun r hr => Safe.disj hp (hs r hr) (by have := hp.dKo; rwa [hsi] at this)
     (by have := hp.dOs; rw [hsi] at this; exact this.symm)) (by unfold kOf; omega)]
   exact hc.out
+
+/-- What a block keeps of the callee-saved registers. -/
+theorem _root_.VG.Proof.MlKem.X86_64.Keep.cs {rs : List Reg} {t t' : State} (k : Keep rs t t')
+    (h : ∀ r ∈ calleeSaved, r ∉ rs) : ∀ r ∈ calleeSaved, t'.gpr r = t.gpr r := fun r hr => k.gpr (h r hr)
 
 /-- `m'` differs from `m` only at the offsets `[o, o + n)` of `base`, a
 region. -/

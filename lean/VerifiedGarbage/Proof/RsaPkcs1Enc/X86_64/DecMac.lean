@@ -145,7 +145,7 @@ theorem mac_front {s : State} (hp : DPre s) {R : BitVec 64} {EM : List Byte} {t�
     · exact ⟨0, 96, rfl, by decide, .inl (by decide)⟩
     · exact ⟨sOuter, 96, rfl, by decide, .inl (by decide)⟩
     · exact ⟨sWork, 8 * 104, rfl, by decide, .inl (by decide)⟩
-  have hc₂ : Ctx s R EM t₂ := hc₁.step hp hrd₂ hwr₂ (hcs₂ .rsp (by decide)) hf₂ fun r hr => by
+  have hc₂ : Ctx s R EM t₂ := hc₁.step hp hrd₂ hwr₂ hcs₂ hf₂ fun r hr => by
     rcases List.mem_append.mp hr with hr | hr
     · obtain ⟨a, k, rfl, hk, -⟩ := hws₂ r hr; exact scS hk
     · rw [List.mem_singleton.mp hr]; exact belowS hp (n := 24) (by decide)
@@ -249,7 +249,7 @@ theorem mac_fin {s : State} (hp : DPre s) {R : BitVec 64} {EM K X : List Byte} {
     · exact ⟨0, 96, rfl, by decide, .inl (by decide)⟩
     · exact ⟨dOff, 32, rfl, hd2, .inr (List.mem_singleton_self _)⟩
     · exact ⟨sWork, 8 * 104, rfl, by decide, .inl (by decide)⟩
-  have hc' : Ctx s R EM t' := hc.step hp hrd hwr (hcs .rsp (by decide)) hf fun r hr => by
+  have hc' : Ctx s R EM t' := hc.step hp hrd hwr hcs hf fun r hr => by
     rcases List.mem_append.mp hr with hr | hr
     · obtain ⟨a, k, rfl, hk, -⟩ := hws r hr; exact scS hk
     · rw [List.mem_singleton.mp hr]; exact belowS hp (n := 24) (by decide)

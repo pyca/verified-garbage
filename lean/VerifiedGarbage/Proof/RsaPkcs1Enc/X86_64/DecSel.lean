@@ -87,6 +87,7 @@ structure Fin (s : State) (R : BitVec 64) (EM AM : List Byte) (v ok : Bool) (L :
   rax : t.gpr .rax = R
   out : ∀ i < kOf s, t.mem (off (s.gpr .rdi) i) = outByte v ok (kOf s - L) i (EM.getD i 1) (AM.getD i 0)
   ml : t.mem.readW (s.gpr .rdx) 64 = BitVec.ofNat 64 L &&& bmask ok
+  cs : ∀ r ∈ calleeSaved, r ≠ .rsp → t.gpr r = s.gpr r
 
 
 /-- The alternative message. -/
@@ -205,7 +206,8 @@ theorem selPart_step {s : State} (hp : DPre s) {R : BitVec 64} {EM : List Byte} 
   refine WP.mono (WP.keep [.rax] (c := .block [.mov .rax (.mem (sp oR))]) (Q := fun t' => t'.mem = t₄.mem ∧
     t'.gpr .rax = R) (by xrun [ea_sp, hsp₄, hs₄.ld (d := oR) (by decide), hR₄]) rfl) fun t₅ ⟨⟨hm₅, hax₅⟩, k₅⟩ => ?_
   have k' := (kk.trans k₄).trans k₅
-  refine ⟨(k₅.gpr (by decide)).trans hsp₄, k'.2.1.trans hc.rd, k'.2.2.trans hc.wr, ?_, hax₅, fun i hi => ?_, ?_⟩
+  refine ⟨(k₅.gpr (by decide)).trans hsp₄, k'.2.1.trans hc.rd, k'.2.2.trans hc.wr, ?_, hax₅, fun i hi => ?_, ?_,
+    fun r hr hr' => (k'.cs (by decide) r hr).trans (hc.cs r hr hr')⟩
   · rw [hm₅]
     refine frame_call (frame_call hc.mem hfw₃ fun r hr => ?_) hfo₄ fun r hr => ?_
     · rw [List.mem_singleton.mp hr]; exact ⟨mlR s, by simp, fun _ h => h⟩

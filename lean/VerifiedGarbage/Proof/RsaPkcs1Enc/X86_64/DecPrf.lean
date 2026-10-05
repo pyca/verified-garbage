@@ -185,7 +185,7 @@ theorem incr_post {s : State} (hp : DPre s) {R : BitVec 64} {EM : List Byte} {t 
     (hz : t'.zf = some (decide (i + 1 = N))) (k : Keep [.rax] t t') : Incr s R EM t i N t' := by
   have hfw : Frame [⟨off (fb s) oI, 8⟩] t.mem t'.mem := by
     rw [hm]; exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
-  exact ⟨hc.step hp k.2.1 k.2.2 (k.gpr (by decide)) hfw fun r hr => by
+  exact ⟨hc.step hp k.2.1 k.2.2 (k.cs (by decide)) hfw fun r hr => by
       rw [List.mem_singleton.mp hr]; exact .inr (.inr (Region.sub_prefix (by decide))), hz,
     by rw [hm]; exact word_writeW_self _ _ _ _,
     by rw [hm]; exact word_ww _ _ _ (by decide) (by decide) (by decide), by rw [hm]; exact keepHi_of_slot hp (by decide) _⟩
@@ -256,7 +256,7 @@ theorem prf_body {s : State} (hp : DPre s) {R : BitVec 64} {EM K : List Byte} {m
   refine WP.seq (WP.mono (prfStart_run hp h.ctx h.sI) fun t₁ ⟨hc₁, hm₁, hdi₁, hax₁, h9₁⟩ => ?_)
   refine WP.seq (WP.mono (hmsg t₁ i hc₁ hi hdi₁ hax₁ h9₁) fun t₂ ⟨ho₂, hb₂, k₂⟩ => ?_)
   have hf₂ : Frame [⟨scA s sMsg, 16⟩] t₁.mem t₂.mem := frame_of_out ho₂ (by decide)
-  have hc₂ : Ctx s R EM t₂ := hc₁.step hp k₂.2.1 k₂.2.2 (k₂.gpr (by decide)) hf₂ fun r hr => by
+  have hc₂ : Ctx s R EM t₂ := hc₁.step hp k₂.2.1 k₂.2.2 (k₂.cs (by decide)) hf₂ fun r hr => by
     rw [List.mem_singleton.mp hr]; exact scS (by decide)
   have fk₂ : FrmKeep s t.mem t₂.mem := (FrmKeep.eq hm₁).trans (frmKeep_of_frame (lo := [(sMsg, 16)]) (ws := [⟨scA s sMsg, 16⟩])
     (n := 0) hp (by decide) (hf₂.sub fun r hr => ⟨r, List.mem_append_left _ hr, fun _ h => h⟩)

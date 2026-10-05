@@ -40,7 +40,7 @@ theorem clInit_run {s : State} (hp : DPre s) {R : BitVec 64} {EM : List Byte} {t
         (Offset.contains (fb s) (d := oI) (n := 8) (e := oI) (k := 16) (by decide) (by decide) (by decide))).writeW
         (List.mem_singleton_self _) _ (Offset.contains (fb s) (d := oNB) (n := 8) (e := oI) (k := 16) (by decide)
           (by decide) (by decide))
-    refine ⟨hc.step hp k.2.1 k.2.2 (k.gpr (by decide)) hfw fun r hr => by
+    refine ⟨hc.step hp k.2.1 k.2.2 (k.cs (by decide)) hfw fun r hr => by
         rw [List.mem_singleton.mp hr]; exact .inr (.inr fun _ h => h), ?_, ?_, ?_⟩
     · rw [hm, word_ww _ _ _ (by decide) (by decide) (by decide)]; exact word_writeW_self _ _ _ _
     · rw [hm]; exact word_writeW_self _ _ _ _
@@ -83,7 +83,7 @@ theorem amInit_run {s : State} (hp : DPre s) {R : BitVec 64} {EM : List Byte} {t
     rfl
   · have hfw : Frame [⟨off (fb s) oI, 8⟩] t.mem t'.mem := by
       rw [hm]; exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
-    refine ⟨hc.step hp k.2.1 k.2.2 (k.gpr (by decide)) hfw fun r hr => by
+    refine ⟨hc.step hp k.2.1 k.2.2 (k.cs (by decide)) hfw fun r hr => by
         rw [List.mem_singleton.mp hr]; exact .inr (.inr (Region.sub_prefix (by decide))), ?_, ?_, ?_⟩
     · rw [hm]; exact word_writeW_self _ _ _ _
     · rw [hm]; exact word_ww _ _ _ (by decide) (by decide) (by decide)

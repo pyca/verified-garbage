@@ -98,14 +98,14 @@ theorem sx {d : Nat} (h : d < 2 ^ 31) : (BitVec.ofNat 32 d).signExtend 64 = BitV
 
 /-- Code that changes only registers but `rsp` keeps `Ctx`. -/
 theorem Ctx.regs {s : State} (hp : DPre s) {R : BitVec 64} {EM : List Byte} {t t' : State} (hc : Ctx s R EM t)
-    (hm : t'.mem = t.mem) {rs : List Reg} (k : Keep rs t t') (hr : Reg.rsp ∉ rs) : Ctx s R EM t' :=
-  hc.step hp k.2.1 k.2.2 (k.gpr hr) (ws := []) (fun x _ => by rw [hm]) (fun _ h => absurd h List.not_mem_nil)
+    (hm : t'.mem = t.mem) {rs : List Reg} (k : Keep rs t t') (hr : ∀ r ∈ calleeSaved, r ∉ rs) : Ctx s R EM t' :=
+  hc.step hp k.2.1 k.2.2 (k.cs hr) (ws := []) (fun x _ => by rw [hm]) (fun _ h => absurd h List.not_mem_nil)
 
 /-- What a call leaves, from `Calls.After`, for writes in `scratch` and below the frame. -/
 theorem Ctx.after {s : State} (hp : DPre s) {R : BitVec 64} {EM : List Byte} {t t' : State} (hc : Ctx s R EM t)
     {ws : List Region} (h : Proof.Pbkdf2.Md.X86_64.Calls.After t ws t') (hs : ∀ r ∈ ws, Safe s r) :
     Ctx s R EM t' :=
-  hc.step hp h.rd h.wr (h.cs .rsp (by decide)) h.frame fun r hr => by
+  hc.step hp h.rd h.wr h.cs h.frame fun r hr => by
     rcases List.mem_append.mp hr with hr | hr
     · exact hs r hr
     · rw [List.mem_singleton.mp hr, hc.rsp]; exact belowS hp (by decide)

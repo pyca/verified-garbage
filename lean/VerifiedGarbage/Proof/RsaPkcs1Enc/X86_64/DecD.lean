@@ -27,7 +27,8 @@ structure P1 (s : State) (R : BitVec 64) (EM : List Byte) (t : State) : Prop whe
   r10 : t.gpr .r10 = BitVec.ofNat 64 0
   rax : t.gpr .rax = BitVec.setWidth 64 (0 : BitVec 32)
 
-theorem p1_step {s t : State} (hp : DPre s) (h : PostPriv s t) :
+theorem p1_step {s t : State} (hp : DPre s) (h : PostPriv s t)
+    (hcs : ∀ r ∈ calleeSaved, r ≠ .rsp → t.gpr r = s.gpr r) :
     WP isa (.block dPtrs₁) t (P1 s (t.gpr .rax) (Spec.Rsa.bytesAt t.mem (s.gpr .rdi) (kOf s))) := by
   have hF := fb_toNat hp
   have hs : Scr t (fb s) frameBytes := Scr.of_mem (by rw [h.wr]; exact List.mem_cons_self ..)
@@ -52,7 +53,8 @@ theorem p1_step {s t : State} (hp : DPre s) (h : PostPriv s t) :
     ⟨(w (by decide)).trans h.slots.sOut, (w (by decide)).trans h.slots.sML, (w (by decide)).trans h.slots.sN,
       (w (by decide)).trans h.slots.sK, (w (by decide)).trans h.slots.sE, (w (by decide)).trans h.slots.sEl,
       (w (by decide)).trans h.slots.sD, (w (by decide)).trans h.slots.sDl, (w (by decide)).trans h.slots.sIn,
-      (w (by decide)).trans h.slots.sScr⟩, by rw [hm]; exact word_writeW_self _ _ _ _, ?_⟩, hdi, hcx, h10, hax⟩
+      (w (by decide)).trans h.slots.sScr⟩, by rw [hm]; exact word_writeW_self _ _ _ _, ?_,
+    fun r hr hr' => (k.cs (by decide) r hr).trans (hcs r hr hr')⟩, hdi, hcx, h10, hax⟩
   · rw [List.mem_singleton.mp hr]; exact ⟨stkR s, by simp, frame_sub s (by decide)⟩
   · refine bytes_keep hfw (fun r hr => ?_) (by unfold kOf; omega)
     rw [List.mem_singleton.mp hr]
@@ -151,7 +153,7 @@ structure P2 (s : State) (R : BitVec 64) (EM : List Byte) (t₀ t : State) : Pro
 theorem p2_step {s t₀ t : State} (hp : DPre s) {R : BitVec 64} {EM : List Byte} (h₀ : P1 s R EM t₀)
     (h : ZInv s t₀ (kOf s) t) : WP isa (.block dPtrs₂) t (P2 s R EM t₀) := by
   have hF := fb_toNat hp
-  have hc₁ : Ctx s R EM t := h₀.ctx.step hp h.keep.2.1 h.keep.2.2 (h.keep.gpr (by decide))
+  have hc₁ : Ctx s R EM t := h₀.ctx.step hp h.keep.2.1 h.keep.2.2 (h.keep.cs (by decide))
     (frame_of_out h.out (by unfold sD; have := hp.k2; unfold kOf; omega)) fun r hr => by
       rw [List.mem_singleton.mp hr]
       exact .inl (Offset.sub_base _ (by unfold sD scrBytes; have := hp.k2; unfold kOf; omega))
@@ -164,7 +166,7 @@ theorem p2_step {s t₀ t : State} (hp : DPre s) {R : BitVec 64} {EM : List Byte
     xrun [dPtrs₂, ea_sp, hsp, hs.ld (d := oD) (by decide), hs.ld (d := oDl) (by decide),
       hs.ld (d := oScr) (by decide), hs.ld (d := oK) (by decide), hc₁.slots.sD, hc₁.slots.sDl,
       hc₁.slots.sScr, hc₁.slots.sK]) rfl) fun t' ⟨⟨hm, hsi, hcx, hdi, h10⟩, k⟩ => ?_
-  have hc : Ctx s R EM t' := hc₁.step hp k.2.1 k.2.2 (k.gpr (by decide)) (ws := [])
+  have hc : Ctx s R EM t' := hc₁.step hp k.2.1 k.2.2 (k.cs (by decide)) (ws := [])
     (fun x _ => by rw [hm]) (fun _ h => absurd h List.not_mem_nil)
   refine ⟨hc, by rw [hm]; exact h.out, fun i hi => by rw [hm]; exact h.zs i hi, hsi, hcx, ?_, h10⟩
   rw [hdi, add_sub_ofNat _ hdl]
@@ -229,7 +231,8 @@ structure DB (s : State) (R : BitVec 64) (EM : List Byte) (t : State) : Prop whe
   ctx : Ctx s R EM t
   D : Spec.Rsa.bytesAt t.mem (scA s sD) (kOf s) = Spec.Rsa.i2osp (Spec.Rsa.os2ip (dB s)) (kOf s)
 
-theorem dBuild_step {s t : State} (hp : DPre s) (h : PostPriv s t) :
+theorem dBuild_step {s t : State} (hp : DPre s) (h : PostPriv s t)
+    (hcs : ∀ r ∈ calleeSaved, r ≠ .rsp → t.gpr r = s.gpr r) :
     WP isa dBuild t (DB s (t.gpr .rax) (Spec.Rsa.bytesAt t.mem (s.gpr .rdi) (kOf s))) := by
   have hk2 := hp.k2
   have hdl1 := hp.dl1
@@ -238,11 +241,11 @@ theorem dBuild_step {s t : State} (hp : DPre s) (h : PostPriv s t) :
   have hd1 : 1 ≤ dlOf s := hdl1
   have hd2 : dlOf s ≤ kOf s := hdl
   have hdd : dlOf s = (stackArg s 2).toNat := rfl
-  refine WP.seq (WP.mono (p1_step hp h) fun t₁ h₁ => ?_)
+  refine WP.seq (WP.mono (p1_step hp h hcs) fun t₁ h₁ => ?_)
   refine WP.seq (WP.mono (zeroLoop_ok hp h₁) fun t₂ h₂ => ?_)
   refine WP.seq (WP.mono (p2_step hp h₁ h₂) fun t₃ h₃ => ?_)
   refine WP.mono (copyLoop_ok hp h₃) fun t₄ h₄ => ?_
-  have hc : Ctx s _ _ t₄ := h₃.ctx.step hp h₄.keep.2.1 h₄.keep.2.2 (h₄.keep.gpr (by decide))
+  have hc : Ctx s _ _ t₄ := h₃.ctx.step hp h₄.keep.2.1 h₄.keep.2.2 (h₄.keep.cs (by decide))
     (frame_of_out h₄.out (by unfold sD; omega)) fun r hr => by
       rw [List.mem_singleton.mp hr]
       exact .inl (Offset.sub_base _ (by unfold sD scrBytes; omega))
