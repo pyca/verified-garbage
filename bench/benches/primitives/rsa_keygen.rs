@@ -12,19 +12,44 @@ pub fn bench(c: &mut Criterion) {
     use criterion::BenchmarkId;
     use openssl::bn::{BigNum, BigNumContext};
     use openssl::rsa::Rsa;
-    use verified_garbage::rsa_keygen::{generate_prime, generate_prime_from, key_from_primes};
+    use verified_garbage::rsa_keygen::{generate_prime_from, key_from_primes};
 
     use crate::{OPENSSL, VG};
     // The primes of keys of 2048, 3072 and 4096 bits; the ids' size is the
-    // prime's bytes. Each library draws candidates from the operating
-    // system's random number generator until one is a probable prime (with
-    // the public exponent 65537 for verified-garbage, which also tests
-    // `gcd(p - 1, e)`), so that the time varies from one prime to the next.
+    // prime's bytes. Each library draws candidates until one is a probable
+    // prime (with the public exponent 65537 for verified-garbage, which also
+    // tests `gcd(p - 1, e)`). The number of candidates varies from one prime
+    // to the next, so verified-garbage reads the same octets in every run, a
+    // stream from a fixed seed (splitmix64, long enough for its prime), and
+    // a slowdown is the code's, not the draw's: it is
+    // `generate_prime(bits, e, None)` but for `getrandom`. OpenSSL draws
+    // from its own generator.
     let mut g = c.benchmark_group("rsa_keygen_prime");
     g.sample_size(10);
     for bits in [1024, 1536, 2048] {
+        let mut seed = bits as u64;
+        let mut next = || {
+            seed = seed.wrapping_add(0x9e37_79b9_7f4a_7c15);
+            let z = (seed ^ (seed >> 30)).wrapping_mul(0xbf58_476d_1ce4_e5b9);
+            let z = (z ^ (z >> 27)).wrapping_mul(0x94d0_49bb_1331_11eb);
+            z ^ (z >> 31)
+        };
+        let mut rand: Vec<u8> = Vec::new();
+        while generate_prime_from(bits, &[1, 0, 1], None, &rand).is_err() {
+            for _ in 0..(rand.len() / 8).max(2 * bits / 64) {
+                rand.extend(next().to_le_bytes());
+            }
+        }
         g.bench_function(BenchmarkId::new(VG, bits / 8), |b| {
-            b.iter(|| generate_prime(black_box(bits), black_box(&[1, 0, 1]), None).unwrap())
+            b.iter(|| {
+                generate_prime_from(
+                    black_box(bits),
+                    black_box(&[1, 0, 1]),
+                    None,
+                    black_box(&rand),
+                )
+                .unwrap()
+            })
         });
         g.bench_function(BenchmarkId::new(OPENSSL, bits / 8), |b| {
             b.iter(|| {
