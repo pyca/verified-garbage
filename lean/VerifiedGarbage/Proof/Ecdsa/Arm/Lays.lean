@@ -6,8 +6,9 @@ import VerifiedGarbage.Proof.Ecdsa.Arm.SlotOps
 The slots of `c.ladderCfg`, `c.powP` and `c.powN` are numbered slots `c.sl i`
 for distinct `i`, so they are apart as `ladder_ok` and `pow_ok` need
 (`ladLay`, `powLayP`, `powLayN`): each fact is one about the numbers `i`,
-which `decide` checks. The accumulator `c.wk` is above them all (`ladWk`,
-`powWkP`, `powWkN`).
+which `decide` checks. The accumulator `c.wk` is above them all and below
+the tables (`ladWk`, `powWkP`, `powWkN`), which are in `scratch`'s `8192`
+bytes.
 -/
 
 namespace VG.Proof.Ecdsa.Arm
@@ -41,7 +42,7 @@ theorem lay_map (hc : CfgOk c) {M : Mod} (hmo : M.mo = c.sl MP) (htmp : M.tmp = 
   have hn := hc.n0
   refine ⟨fun x hx => ?_, fun x y hx hy hxy => ?_, fun x hx => ?_, fun x hx => ?_⟩
   · obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hx
-    rw [hMn]; exact sl_le c hc.n7 (hl i hi).1
+    rw [hMn]; exact sl_le c hc.n10 (hl i hi).1
   · obtain ⟨i, -, rfl⟩ := List.mem_map.mp hx
     obtain ⟨j, -, rfl⟩ := List.mem_map.mp hy
     rw [hMn]; exact sl_apart c fun h => hxy (h ▸ rfl)
@@ -58,9 +59,9 @@ theorem rcbApart_of (hn : 0 < c.n) {S : RcbSlots} {p q o : Pt} {lw lr : List Nat
 theorem ladSlots_eq (c : Cfg) : ladSlots c.ladderCfg = [AP, B3P, GX, GY, ONEP, RX, RY, RZ, T0, T1, T2, T3, T4,
     T5, DX, DY, DZ, TX, TY, TZ].map c.sl := rfl
 
-theorem ladLay (hc : CfgOk c) : LadLay c.ladderCfg size := by
+theorem ladLay (hc : CfgOk c) : LadLay c.ladderCfg size 8192 := by
   have hn := hc.n0
-  have h7 := hc.n7
+  have h7 := hc.n10
   refine ⟨?_, rcbApart_of hn (lw := [T0, T1, T2, T3, T4, T5, DX, DY, DZ])
       (lr := [AP, B3P, RX, RY, RZ, RX, RY, RZ]) rfl rfl (by decide) (by decide),
     rcbApart_of hn (lw := [T0, T1, T2, T3, T4, T5, TX, TY, TZ])
@@ -88,7 +89,7 @@ theorem ladLay (hc : CfgOk c) : LadLay c.ladderCfg size := by
     · exact Or.inr (sl_below_bits c (i := TMP) (by decide) 0 0)
 
 theorem ladWk (hc : CfgOk c) : LadWk c.ladderCfg size c.wk where
-  le := wk_le c hc.n7 rfl
+  le := wk_le c hc.n10 rfl
   sl := by
     rw [ladSlots_eq]
     intro x hx
@@ -98,16 +99,16 @@ theorem ladWk (hc : CfgOk c) : LadWk c.ladderCfg size c.wk where
     exact sl_below_wk c (this i hi)
   mo := sl_below_wk c (i := MP) (by decide)
   tmp := sl_below_wk c (i := TMP) (by decide)
-  bits := bitsAt_below_wk c (j := 0) (by decide)
+  bits := wk_below_bits c rfl 0
 
 theorem powLay_of (hc : CfgOk c) {jm : Nat} (hjm : jm ∉ [ACC, PT, TMP])
     (minv : BitVec 64) {red : Red}
     {base one j : Nat} (hj : j < 3) (hb : base ∉ [ACC, PT, TMP]) (hb45 : base < 45) (ho : one ≠ ACC)
     (ho45 : one < 45) :
     PowLay ⟨⟨c.n, c.sl jm, c.sl TMP, minv, red, false⟩, c.sl ACC, c.sl PT, c.sl base, c.sl one, bitsAt c.n j,
-      64 * c.n⟩ size := by
+      64 * c.n⟩ size 8192 := by
   have hn := hc.n0
-  have h7 := hc.n7
+  have h7 := hc.n10
   have hw : ∀ i, i ∉ [ACC, PT, TMP] →
       ∀ w ∈ powW ⟨⟨c.n, c.sl jm, c.sl TMP, minv, red, false⟩, c.sl ACC, c.sl PT, c.sl base, c.sl one,
         bitsAt c.n j, 64 * c.n⟩, c.sl i + 8 * c.n ≤ w.1 ∨ w.1 + w.2 ≤ c.sl i := by
@@ -127,26 +128,25 @@ theorem powLay_of (hc : CfgOk c) {jm : Nat} (hjm : jm ∉ [ACC, PT, TMP])
   simp only [powW, List.mem_cons, List.not_mem_nil, or_false] at hw'
   rcases hw' with rfl | rfl | rfl <;> exact Or.inr (sl_below_bits c (by decide) j 0)
 
-theorem powLayP (hc : CfgOk c) : PowLay c.powP size :=
+theorem powLayP (hc : CfgOk c) : PowLay c.powP size 8192 :=
   powLay_of hc (jm := MP) (by decide) _ (j := 1) (by decide) (base := RZ) (by decide) (by decide)
     (one := ONEP) (by decide) (by decide)
 
-theorem powLayN (hc : CfgOk c) : PowLay c.powN size :=
+theorem powLayN (hc : CfgOk c) : PowLay c.powN size 8192 :=
   powLay_of hc (jm := MN) (by decide) _ (j := 2) (by decide) (base := KM) (by decide) (by decide)
     (one := ONEN) (by decide) (by decide)
 
 theorem powWk_of (hc : CfgOk c) {jm : Nat} (hjm : jm < 45) (minv : BitVec 64) {red : Red}
-    {base one j : Nat}
-    (hj : j < 3) (hb45 : base < 45) :
+    {base one j : Nat} (hb45 : base < 45) :
     PowWk ⟨⟨c.n, c.sl jm, c.sl TMP, minv, red, false⟩, c.sl ACC, c.sl PT, c.sl base, c.sl one, bitsAt c.n j,
       64 * c.n⟩ size c.wk :=
-  ⟨wk_le c hc.n7 rfl, sl_below_wk c (by decide), sl_below_wk c (by decide), sl_below_wk c hb45,
-    sl_below_wk c hjm, sl_below_wk c (by decide), bitsAt_below_wk c hj, sl_apart c (by decide)⟩
+  ⟨wk_le c hc.n10 rfl, sl_below_wk c (by decide), sl_below_wk c (by decide), sl_below_wk c hb45,
+    sl_below_wk c hjm, sl_below_wk c (by decide), wk_below_bits c rfl j, sl_apart c (by decide)⟩
 
 theorem powWkP (hc : CfgOk c) : PowWk c.powP size c.wk :=
-  powWk_of hc (jm := MP) (by decide) _ (j := 1) (by decide) (base := RZ) (by decide)
+  powWk_of hc (jm := MP) (by decide) _ (j := 1) (base := RZ) (by decide)
 
 theorem powWkN (hc : CfgOk c) : PowWk c.powN size c.wk :=
-  powWk_of hc (jm := MN) (by decide) _ (j := 2) (by decide) (base := KM) (by decide)
+  powWk_of hc (jm := MN) (by decide) _ (j := 2) (base := KM) (by decide)
 
 end VG.Proof.Ecdsa.Arm
