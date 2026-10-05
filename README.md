@@ -1144,6 +1144,22 @@ yours to keep:
 
 <tr>
 
+<td>RSA key generation</td>
+
+<td>✅</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+</tr>
+
+<tr>
+
 <td>RSA</td>
 
 <td>✅</td>
