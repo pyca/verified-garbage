@@ -30,7 +30,8 @@ def artifacts (h : Proof.Weierstrass.X86_64.HasLawInv Spec.P256.curve) : List Ar
       static `VG_P256_COMB` (148 KB), with no doublings: each entry is selected in constant time \
       by loading every entry of its table, 16 bytes at a time, and keeping (`pand`, `por`) the one \
       of the digit's magnitude (or the point at infinity for a zero digit), negated by a mask of \
-      its sign, and added by the complete addition formulas of Renes, Costello and Batina; the \
+      its sign, and added by the complete addition formulas of Renes, Costello and Batina for \
+      `a = -3` (Algorithm 4); the \
       inversions modulo `p` and `n` are by divsteps (Bernstein and Yang's safegcd, half-delta \
       form): 10 batches of 59 divsteps on the low 64-bit words of `f` and `g` (from `f = p`, \
       `g = Z`, or `n` and `k`), each giving a matrix of 64-bit entries that updates `f`, `g` \
