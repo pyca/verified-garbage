@@ -1,5 +1,5 @@
 import VerifiedGarbage.TCB.AArch64.Target
-import VerifiedGarbage.Proof.Weierstrass.AArch64.HasLaw
+import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
 import VerifiedGarbage.Proof.P521.Comb7
 import VerifiedGarbage.Impl.Ecdsa.P521.AArch64
 import VerifiedGarbage.Proof.Ecdsa.AArch64.P521.Verified
@@ -15,7 +15,7 @@ A generic file (see `TCB/Emit.lean`) over P-521's group law `h`, the variant
 
 namespace VG.Generic.P521.AArch64.EcdsaP521
 
-def artifacts (h : Proof.Weierstrass.AArch64.HasLaw Spec.P521.curve) : List Artifact := [
+def artifacts (h : Proof.Weierstrass.AArch64.HasLawInv Spec.P521.curve) : List Artifact := [
   { Spec.Ecdsa.P521.signApi with
     target := AArch64.target
     doc := Spec.Ecdsa.P521.signApi.doc (notes := ["The function saves the callee-saved registers \

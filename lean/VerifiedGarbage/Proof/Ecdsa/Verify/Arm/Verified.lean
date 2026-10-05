@@ -32,7 +32,7 @@ theorem post_of {s s' : State} (h : VPost p256 s s') : verifyArm.post s s' := by
 theorem verify_arm (hL : Weierstrass.Law Spec.P256.curve) (s : State) (hs : verifyArm.pre s) :
     ∃ t s', Exec isa verifyP256 s t s' ∧ abiPreserved s s' ∧ verifyArm.post s s' := by
   have hp := pre_of hs
-  obtain ⟨t, s', he, K, hpost⟩ := verify_ok p256_ok hL hp
+  obtain ⟨t, s', he, K, hpost⟩ := verify_ok p256_ok rfl p256_sh hL hp
   refine ⟨t, s', he, ⟨fun r hr => ?_, K.sp⟩, post_of hpost⟩
   simp only [preserved, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl

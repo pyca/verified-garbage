@@ -26,6 +26,9 @@ plane into `ymm0`–`ymm4` (a rotation left by `n` is `vpsllq`, `vpsrlq` by
 (χ, `vpandn`, and ι for lane 0, with `ymm11`), computed in `ymm10`, to
 `dst`. It writes only `rax`, `rdx`, `rdi`, `rsi`, the flags and `ymm0`–`ymm11`.
 
+With `fast = true`, θ and ρ use AVX-512F/VL quadword rotates instead of
+two shifts and an OR. The vectors remain 256 bits wide, with four states.
+
 Every address is a pointer plus a constant, and the only branch is the
 round loop's, so only the pointers can affect timing.
 -/
@@ -64,14 +67,16 @@ def column (x : Nat) : List Instr :=
     vb .vpxor (creg x) (creg x) T]
 
 /-- `D[x] = ROTL¹(C[x + 1]) ⊕ C[x - 1]`. -/
-def dcol (x : Nat) : List Instr :=
-  [vsh .psllq T (creg ((x + 1) % 5)) 1, vsh .psrlq U (creg ((x + 1) % 5)) 63, vb .vpor T T U,
-    vb .vpxor (dreg x) T (creg ((x + 4) % 5))]
+def dcol (x : Nat) (fast : Bool := false) : List Instr :=
+  (if fast then [.vop (.vprorq .l256 T (creg ((x + 1) % 5)) 63)]
+    else [vsh .psllq T (creg ((x + 1) % 5)) 1, vsh .psrlq U (creg ((x + 1) % 5)) 63, vb .vpor T T U]) ++
+    [vb .vpxor (dreg x) T (creg ((x + 4) % 5))]
 
 /-- `B[x] = ROTL^ρ(A[piSrc x y] ⊕ D[(x + 3y) mod 5])` for plane `y`. -/
-def laneB (x y : Nat) : List Instr :=
+def laneB (x y : Nat) (fast : Bool := false) : List Instr :=
   [ld (creg x) .rdi (piSrc x y), vb .vpxor (creg x) (creg x) (dreg ((x + 3 * y) % 5))] ++
     if rhoOff (piSrc x y) = 0 then []
+    else if fast then [.vop (.vprorq .l256 (creg x) (creg x) (BitVec.ofNat 8 (64 - rhoOff (piSrc x y))))]
     else [vsh .psllq T (creg x) (rhoOff (piSrc x y)), vsh .psrlq (creg x) (creg x) (64 - rhoOff (piSrc x y)),
       vb .vpor (creg x) (creg x) T]
 
@@ -83,19 +88,19 @@ def chi (x y : Nat) : List Instr :=
     [st .rsi (x + 5 * y) T]
 
 /-- Plane `y` of the output. -/
-def plane (y : Nat) : List Instr :=
-  (List.range 5).flatMap (fun x => laneB x y) ++ (List.range 5).flatMap (fun x => chi x y)
+def plane (y : Nat) (fast : Bool := false) : List Instr :=
+  (List.range 5).flatMap (fun x => laneB x y fast) ++ (List.range 5).flatMap (fun x => chi x y)
 
 /-- One round from `rdi` to `rsi`; then swap them, and advance to the next
 round constant (setting ZF after the last). -/
-def round : List Instr :=
-  (List.range 5).flatMap column ++ (List.range 5).flatMap dcol ++ (List.range 5).flatMap plane ++
+def round (fast : Bool := false) : List Instr :=
+  (List.range 5).flatMap column ++ (List.range 5).flatMap (fun x => dcol x fast) ++ (List.range 5).flatMap (fun y => plane y fast) ++
     [.mov .rax (.reg .rdi), .mov .rdi (.reg .rsi), .mov .rsi (.reg .rax),
       .alu .add .rdx (.imm 32), .alu .cmp .rdx (.reg .rcx)]
 
 /-- The 24 rounds, from `rdi` (and back to it), with the table at `rdx`
 and its end in `rcx`. -/
-def permute4 : Prog isa := .loop (.block (round ++ round)) .ne
+def permute4 (fast : Bool := false) : Prog isa := .loop (.block (round fast ++ round fast)) .ne
 
 /-- The table of the round constants from lane `i` at `b` (byte `32 i`),
 each in the four elements, through `rax` and `ymm0`. -/

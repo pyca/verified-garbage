@@ -7,8 +7,8 @@ import VerifiedGarbage.Proof.Weierstrass.InvArith
 
 The variant of `P521` on AArch64 (see `TCB/Emit.lean`): not an implementation
 but the facts the proofs of P-521's functions take, `Proof.P521.law` and the
-inversions' soundness `Proof.Weierstrass.AArch64.invSounds`, whose proofs need
-Mathlib's algebra and the divsteps' bound and arithmetic.
+soundness of the inversions by divsteps modulo a prime (`InvSounds`), whose
+proofs need Mathlib's algebra.
 Their registration files are generic over them
 (`Generic/P521/AArch64/`, and `Generic/<Iface>/P521/AArch64/` for those generic over an
 implementation too), so that this file alone, of those that emit them,
@@ -17,7 +17,9 @@ imports that algebra.
 
 namespace VG.Variants.P521.AArch64.Law
 
-def variant : Proof.Weierstrass.AArch64.HasLaw Spec.P521.curve :=
-  ⟨Proof.P521.law, Proof.Weierstrass.AArch64.invSounds Proof.Weierstrass.invToM⟩
+open Proof.Weierstrass Proof.Weierstrass.AArch64
+
+def variant : HasLawInv Spec.P521.curve :=
+  ⟨Proof.P521.law, fun hp => invSound_of_toM hp (invToM_of_prime hp)⟩
 
 end VG.Variants.P521.AArch64.Law

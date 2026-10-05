@@ -46,7 +46,6 @@ theorem crt_implies : crtContract.Implies (Spec.Rsa.privateCrtContract abi) wher
     sig_reduce [Spec.Rsa.privateCrtContract, Spec.Rsa.privateCrtSig, abi, argRegs, crtContract, stackArgs_twelve, List.append_eq]
     sig_and_intros
     sig_close
-    all_goals with_reducible assumption
   post := by sig_implies_post [Spec.Rsa.privateCrtContract, Spec.Rsa.privateCrtSig, abi, argRegs, crtContract, stackArgs_twelve, List.append_eq]
   pub := by
     rintro s₁ s₂ - - h
@@ -54,7 +53,7 @@ theorem crt_implies : crtContract.Implies (Spec.Rsa.privateCrtContract abi) wher
     simp only [List.getD_cons_succ, List.getD_cons_zero] at h
     obtain ⟨hsp, hl, hdi, hsi, hdx, hcx, h8, h9, a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11⟩ := h
     refine ⟨?_, a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11,
-      List.map_injective_iff.2 (fun _ _ h => BitVec.toNat_inj.1 h) hl⟩
+      (List.map_inj_right (fun _ _ h => BitVec.toNat_inj.1 h)).1 hl⟩
     simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]
     exact ⟨hdi, hsi, hdx, hcx, h8, h9, hsp⟩
   sat := by sig_implies_sat [Spec.Rsa.privateCrtContract, Spec.Rsa.privateCrtSig, abi, argRegs, crtContract, stackArgs_twelve, List.append_eq] [crtSatState, stackArg, stackArgAddr, Mem.readW, Mem.read] using crtSatState

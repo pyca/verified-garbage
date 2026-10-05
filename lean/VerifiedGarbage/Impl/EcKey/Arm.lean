@@ -37,7 +37,7 @@ def Y : Nat := SS
 
 /-- The public key's arguments: `(out, d, scratch)`, with `k` and the hash
 both `d`, and `scratch` in `r2`. -/
-abbrev Args.publicKey : Args := ⟨.r1, .r1, .r1, some .r2⟩
+abbrev Args.publicKey : Args := ⟨.r1, .r1, .r1, some .r2, none⟩
 
 namespace Cfg
 
