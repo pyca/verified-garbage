@@ -40,7 +40,7 @@ class SelectionTests(unittest.TestCase):
 
 
 class WorkflowTests(unittest.TestCase):
-    def run_workflow(self, fail_mode=""):
+    def run_workflow(self, fail_mode="", force_fallback=False):
         root = pathlib.Path(__file__).resolve().parent.parent
         workflow = (root / ".github/workflows/ci.yml").read_text()
         body = workflow.split("      - name: Test the implementations\n", 1)[1]
@@ -71,6 +71,11 @@ class WorkflowTests(unittest.TestCase):
                 MODEL_CPU_FEATURES="avx,avx2,sha512",
                 RUNS="- | sha512 cpu\navx,avx2 | sha512 cpu",
             )
+            if force_fallback:
+                env.update(
+                    HOST_CPU_FEATURES="avx,avx2,sha512",
+                    RUNS="avx,avx2,sha512 | sha512 cpu | fallback",
+                )
             result = subprocess.run(
                 ["bash", "-eo", "pipefail", "-c", script],
                 cwd=root, env=env, text=True, capture_output=True, timeout=20,
@@ -102,6 +107,13 @@ class WorkflowTests(unittest.TestCase):
             with self.subTest(mode=mode):
                 result, _ = self.run_workflow(mode)
                 self.assertNotEqual(result.returncode, 0)
+
+    def test_fallback_check_uses_sde_even_on_capable_host(self):
+        result, calls = self.run_workflow(force_fallback=True)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertEqual([call[0] for call in calls], ["build", "sde"])
+        self.assertEqual(calls[1][1], "avx,avx2,sha512")
+        self.assertIn("simulated missing host features", result.stdout)
 
 
 if __name__ == "__main__":

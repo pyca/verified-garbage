@@ -476,6 +476,8 @@ jobs:
   # for. A job is one CPU (and userspace); its `runs` are lines of
   # `<VG_CPU_FEATURES> | <tests>` (`all` for every test), each a `cargo
   # test` of the one build, since `VG_CPU_FEATURES` is read at run time.
+  # An optional third column, `fallback`, simulates missing host features
+  # for one small configuration, requiring actual SDE fallback in every run.
   # `VG_CPU_FEATURES` restricts the CPU's features (`-` for no restriction,
   # `none` for the baseline ISA), so that each implementation, and each of
   # Ed25519's combinations of SHA-512 and field multiplication, is chosen
@@ -567,7 +569,7 @@ jobs:
               - | x25519 ed25519 rsa message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs aes_gcm cmac cpu
               avx,avx2,bmi2,adx,avx512ifma,avx512vl | ed25519 rsa_pkcs1 message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
               avx,avx2,bmi1,bmi2,adx,avx512ifma,avx512vl | rsa_pkcs1 cpu
-              aes,avx,avx2,ssse3,vaes | aes_gcm cpu
+              aes,avx,avx2,ssse3,vaes | aes_gcm cpu | fallback
               avx,avx2,pclmulqdq,ssse3,vpclmulqdq | aes_gcm cpu
               aes,avx,avx2,pclmulqdq,ssse3,vaes | aes_gcm cpu
               aes,avx,avx2,pclmulqdq,ssse3,vpclmulqdq | aes_gcm cpu
@@ -678,16 +680,27 @@ jobs:
           mkdir -p "$logs"
           names=()
           declare -A seen
-          while IFS='|' read -r -u 3 features tests; do
-            features=$(echo $features) tests=$(echo $tests)
+          while IFS='|' read -r -u 3 features tests validation; do
+            features=$(echo $features) tests=$(echo $tests) validation=$(echo $validation)
             [ -n "$tests" ] || continue
             [ -z "${seen[$features]}" ] || { echo "::error::VG_CPU_FEATURES=$features twice: put its tests on one line"; exit 1; }
             seen[$features]=1
             [ "$features" = - ] && features=
             mode=host
             if [ "$CHIP" != native ]; then
-              selection=$(python3 ci/cpu_features.py "$HOST_CPU_FEATURES" "$MODEL_CPU_FEATURES" "$features")
+              host=$HOST_CPU_FEATURES
+              # One existing configuration exercises the real fallback even
+              # when every assigned runner supports its required features.
+              if [ "$validation" = fallback ]; then
+                host=
+                echo "Checking SDE fallback with simulated missing host features: $features"
+              fi
+              selection=$(python3 ci/cpu_features.py "$host" "$MODEL_CPU_FEATURES" "$features")
               IFS='|' read -r mode features <<< "$selection"
+              if [ "$validation" = fallback ] && [ "$mode" != sde ]; then
+                echo "::error::The fallback check must select SDE"
+                exit 1
+              fi
             fi
             filter=$tests
             [ "$tests" = all ] && filter=
