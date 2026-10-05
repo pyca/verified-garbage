@@ -82,7 +82,7 @@ theorem ea_bxd {t : State} {b i : Reg} {p : Addr} {j : Nat} (d : Nat) (hb : t.gp
   rw [BitVec.add_assoc, ← BitVec.ofNat_add, Nat.add_comm]
 
 /-- `[b + d]`. -/
-theorem ea_at {t : State} {b : Reg} {p : Addr} (d : Nat) (hb : t.gpr b = p) : t.ea (at_ b d) = off p d := by
+theorem ea_atd {t : State} {b : Reg} {p : Addr} (d : Nat) (hb : t.gpr b = p) : t.ea (at_ b d) = off p d := by
   simp only [State.ea, at_, hb, BitVec.ofInt_natCast, off]
 
 theorem blen (m : Mem) (p : Addr) (n : Nat) : (Spec.Rsa.bytesAt m p n).length = n := by

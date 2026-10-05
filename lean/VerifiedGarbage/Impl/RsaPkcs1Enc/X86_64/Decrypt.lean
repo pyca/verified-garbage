@@ -180,9 +180,10 @@ def msgBytes (label : List Nat) (len : List Instr) : List Instr :=
 /-- The bit length 2048 of `CL`, after the 6 bytes of "length". -/
 def clLen : List Instr := putByte 8 0x08 ++ putByte 9 0x00
 
-/-- The bit length `8 k` of `AM`, after the 7 bytes of "message". -/
+/-- The bit length `8 k` of `AM`, after the 7 bytes of "message", from `k`
+in `r9`. -/
 def amLen : List Instr :=
-  [.mov .rdx (.mem (sp oK)), .alu .add .rdx (.reg .rdx), .alu .add .rdx (.reg .rdx), .alu .add .rdx (.reg .rdx),
+  [.mov .rdx (.reg .r9), .alu .add .rdx (.reg .rdx), .alu .add .rdx (.reg .rdx), .alu .add .rdx (.reg .rdx),
     .store8 (at_ .rdi (sMsg + 10)) .rdx, .shift .shr .rdx 8, .store8 (at_ .rdi (sMsg + 9)) .rdx]
 
 /-- `update(inner, 64, msg, len, work)`. -/
@@ -204,7 +205,8 @@ def incr (count : Src) : List Instr :=
 /-- Block `i` (in its slot) of IRPRF with the label `label`, the bit length's
 code `len`, to `scratch + dst + 32 i`, and the count `count`. -/
 def prfBody (label : List Nat) (len : List Instr) (dst : Nat) (count : Src) : Prog isa :=
-  .seq (.block [.mov .rdi (.mem (sp oScr)), .mov .rax (.mem (sp oI))]) (.seq (.block (msgBytes label len))
+  .seq (.block [.mov .rdi (.mem (sp oScr)), .mov .rax (.mem (sp oI)), .mov .r9 (.mem (sp oK))])
+  (.seq (.block (msgBytes label len))
   (.seq (.block (macInitArgs sKDK)) (.seq (.call H.hmacInitN H.hmacInit)
   (.seq (.block (prfUpdArgs (label.length + 4))) (.seq (.call H.updN H.updC)
   (.seq (.block (prfFinArgs (label.length + 4) dst)) (.seq (.call H.hmacFinN H.hmacFin)
