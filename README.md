@@ -962,6 +962,22 @@ yours to keep:
 
 <tr>
 
+<td>ECDH P-521</td>
+
+<td>✅</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+</tr>
+
+<tr>
+
 <td>X25519</td>
 
 <td>✅</td>
@@ -1055,6 +1071,22 @@ yours to keep:
 <td>✅ SHA512, AVX2, BMI1, BMI2</td>
 
 <td>✅ SHA extensions</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+</tr>
+
+<tr>
+
+<td>ECDSA P-521</td>
+
+<td>✅</td>
+
+<td>❌</td>
+
+<td>❌</td>
 
 <td>❌</td>
 

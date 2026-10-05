@@ -1,0 +1,5 @@
+name = "ECDSA P-521"
+family = "Signatures"
+specs = ["Weierstrass", "P521", "EcKey", "Ecdsa", "Ecdsa/Rfc6979", "Ecdsa/Verify"]
+modules = ["src/ecdsa/p521.rs"]
+asm = ["ec_p521", "ecdsa_p521", "ecdsa_p521_sha512"]
