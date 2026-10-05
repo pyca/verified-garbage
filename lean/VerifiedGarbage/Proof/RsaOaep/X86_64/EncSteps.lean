@@ -63,7 +63,7 @@ variable {H : Spec.Mgf1.Hash} {s t : State} (hp : EPre H s)
 include hp
 
 /-- The frame and the other writable regions. -/
-theorem EnvE.frv (he : EnvE s t) : FrV (fb s) [outR s, scrR s] t where
+theorem EnvE.frv (he : EnvE s t) : FrV 2 (fb s) [outR s, scrR s] t where
   rsp := he.rsp
   wr := he.wr
   two := rfl

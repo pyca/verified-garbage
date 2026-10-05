@@ -27,21 +27,23 @@ open VG.Proof.Pbkdf2.Md.X86_64.Calls (StreamOK UpdArgs FinArgs init_rel upd_rel 
 /-! ## The taint from the frame -/
 
 /-- The registers `rs` and `rsp` public, `rsp` the base of the frame (the
-first of three writable regions), and the frame's words `ks` public. -/
-def frT (rs : List Reg) (ks : List Nat) : X86_64.Taint.T :=
-  { regs := .ofList (rs ++ [.rsp]), flags := false, lens := [frameBytes, 0, 0], bases := [(.rsp, 0, 0)],
+first of `n + 1` writable regions), and the frame's words `ks` public. -/
+def frT (rs : List Reg) (ks : List Nat) (n : Nat) : X86_64.Taint.T :=
+  { regs := .ofList (rs ++ [.rsp]), flags := false, lens := frameBytes :: List.replicate n 0,
+    bases := [(.rsp, 0, 0)],
     slots := ks.map fun k => (0, 8 * k, 8) }
 
-/-- In the frame at `F`, with the writable regions `F`'s and `ws`, apart. -/
-structure FrV (F : Addr) (ws : List Region) (t : State) : Prop where
+/-- In the frame at `F`, with the writable regions `F`'s and the `n` of `ws`,
+apart. -/
+structure FrV (n : Nat) (F : Addr) (ws : List Region) (t : State) : Prop where
   rsp : t.gpr .rsp = F
   wr : t.wr = ⟨F, frameBytes⟩ :: ws
-  two : ws.length = 2
+  two : ws.length = n
   pw : (⟨F, frameBytes⟩ :: ws : List Region).Pairwise Region.Disjoint
   len : ∀ r ∈ ws, r.len ≤ 2 ^ 64
 
-theorem FrV.congr {F : Addr} {ws : List Region} {t t' : State} (h : FrV F ws t) (hsp : t'.gpr .rsp = t.gpr .rsp)
-    (hwr : t'.wr = t.wr) : FrV F ws t' :=
+theorem FrV.congr {n : Nat} {F : Addr} {ws : List Region} {t t' : State} (h : FrV n F ws t) (hsp : t'.gpr .rsp = t.gpr .rsp)
+    (hwr : t'.wr = t.wr) : FrV n F ws t' :=
   ⟨hsp.trans h.rsp, hwr.trans h.wr, h.two, h.pw, h.len⟩
 
 /-- Bytes of a word that both memories hold. -/
@@ -51,14 +53,19 @@ theorem word_byte {m₁ m₂ : Mem} {a : Addr} (h : m₁.readW a 64 = m₂.readW
   simp only [Mem.readW, BitVec.setWidth_eq] at h
   rw [h]
 
-theorem frT_agree {F : Addr} {ws : List Region} {rs : List Reg} {ks : List Nat} {t₁ t₂ : State}
-    (h₁ : FrV F ws t₁) (h₂ : FrV F ws t₂) (hr : ∀ r ∈ rs, t₁.gpr r = t₂.gpr r) (hk : ∀ k ∈ ks, k < nW)
-    (hw : ∀ k ∈ ks, word t₁.mem F (8 * k) = word t₂.mem F (8 * k)) : X86_64.Taint.Agree (frT rs ks) t₁ t₂ := by
-  have wf : ∀ {t : State}, FrV F ws t → X86_64.Taint.Wf (frT rs ks) t := fun h => by
+theorem replicate_le (ws : List Region) :
+    List.Forall₂ (fun r l => l ≤ r.len) ws (List.replicate ws.length 0) := by
+  induction ws with
+  | nil => exact .nil
+  | cons _ _ ih => exact .cons (Nat.zero_le _) ih
+
+theorem frT_agree {n : Nat} {F : Addr} {ws : List Region} {rs : List Reg} {ks : List Nat} {t₁ t₂ : State}
+    (h₁ : FrV n F ws t₁) (h₂ : FrV n F ws t₂) (hr : ∀ r ∈ rs, t₁.gpr r = t₂.gpr r) (hk : ∀ k ∈ ks, k < nW)
+    (hw : ∀ k ∈ ks, word t₁.mem F (8 * k) = word t₂.mem F (8 * k)) : X86_64.Taint.Agree (frT rs ks n) t₁ t₂ := by
+  have wf : ∀ {t : State}, FrV n F ws t → X86_64.Taint.Wf (frT rs ks n) t := fun h => by
     refine ⟨fun _ => ⟨?_, ?_, ?_⟩, fun p hp => ?_⟩
-    · rw [h.wr]
-      match ws, h.two with
-      | [a, b], _ => exact .cons (Nat.le_refl _) (.cons (Nat.zero_le _) (.cons (Nat.zero_le _) .nil))
+    · rw [h.wr, ← h.two]
+      exact .cons (Nat.le_refl _) (replicate_le ws)
     · rw [h.wr]; exact h.pw
     · rw [h.wr]; intro r hr
       rcases List.mem_cons.mp hr with rfl | hr
@@ -80,7 +87,7 @@ theorem frT_agree {F : Addr} {ws : List Region} {rs : List Reg} {ks : List Nat} 
   · simp only [frT, List.mem_map] at hsl
     obtain ⟨k, hk', rfl⟩ := hsl
     simp only at hj₁ hj₂
-    have hb : ∀ {t : State}, FrV F ws t → X86_64.Taint.byteAddr t 0 j = off F (8 * k) + BitVec.ofNat 64 (j - 8 * k) :=
+    have hb : ∀ {t : State}, FrV n F ws t → X86_64.Taint.byteAddr t 0 j = off F (8 * k) + BitVec.ofNat 64 (j - 8 * k) :=
       fun h => by
         simp only [X86_64.Taint.byteAddr, X86_64.Taint.region, h.wr, List.getD_cons_zero, off, BitVec.add_assoc,
           ← BitVec.ofNat_add]
@@ -92,25 +99,25 @@ variable {α : Type}
 
 /-- Code the taint analysis checks from `frT rs ks`, in two runs that `Φ a`
 puts in the same frame, with the same words `ks` and registers `rs`. -/
-theorem two_taintF {Φ : α → State → Prop} {c : Prog isa} (rs : List Reg) (ks : List Nat)
+theorem two_taintF {n : Nat} {Φ : α → State → Prop} {c : Prog isa} (rs : List Reg) (ks : List Nat)
     (F : α → Addr) (ws : α → List Region) (w : α → Nat → BitVec 64)
-    (hv : ∀ a t, Φ a t → FrV (F a) (ws a) t ∧ ∀ k ∈ ks, word t.mem (F a) (8 * k) = w a k)
+    (hv : ∀ a t, Φ a t → FrV n (F a) (ws a) t ∧ ∀ k ∈ ks, word t.mem (F a) (8 * k) = w a k)
     (hpin : Pins Φ rs) (hk : ∀ k ∈ ks, k < nW)
-    (h : ∃ hc, (taint.check (frT rs ks) c hc).isSome = true) :
+    (h : ∃ hc, (taint.check (frT rs ks n) c hc).isSome = true) :
     RelCT isa (Two Φ) c fun _ _ => True := by
   obtain ⟨_, h⟩ := h
-  refine RelCT.taint (A := taint) (frT rs ks) (fun t₁ t₂ ⟨a, h₁, h₂⟩ => ?_) h
+  refine RelCT.taint (A := taint) (frT rs ks n) (fun t₁ t₂ ⟨a, h₁, h₂⟩ => ?_) h
   obtain ⟨v₁, w₁⟩ := hv a t₁ h₁
   obtain ⟨v₂, w₂⟩ := hv a t₂ h₂
   exact frT_agree v₁ v₂ (hpin a _ _ h₁ h₂) hk fun k hk' => (w₁ k hk').trans (w₂ k hk').symm
 
 /-- A piece checked by the taint analysis from `frT rs ks`, with what
 correctness gives after it. -/
-theorem two_pieceF {Φ Ψ : α → State → Prop} {c : Prog isa} (rs : List Reg) (ks : List Nat)
+theorem two_pieceF {n : Nat} {Φ Ψ : α → State → Prop} {c : Prog isa} (rs : List Reg) (ks : List Nat)
     (F : α → Addr) (ws : α → List Region) (w : α → Nat → BitVec 64)
-    (hv : ∀ a t, Φ a t → FrV (F a) (ws a) t ∧ ∀ k ∈ ks, word t.mem (F a) (8 * k) = w a k)
+    (hv : ∀ a t, Φ a t → FrV n (F a) (ws a) t ∧ ∀ k ∈ ks, word t.mem (F a) (8 * k) = w a k)
     (hpin : Pins Φ rs) (hk : ∀ k ∈ ks, k < nW)
-    (h : ∃ hc, (taint.check (frT rs ks) c hc).isSome = true) (hw : ∀ a t, Φ a t → WP isa c t (Ψ a)) :
+    (h : ∃ hc, (taint.check (frT rs ks n) c hc).isSome = true) (hw : ∀ a t, Φ a t → WP isa c t (Ψ a)) :
     RelCT isa (Two Φ) c (Two Ψ) :=
   two_post (two_taintF rs ks F ws w hv hpin hk h) hw
 

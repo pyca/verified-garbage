@@ -34,20 +34,20 @@ theorem chkMsg_taint : ∀ d < 65, (taint.check (Taint.ofRegs [.rsp]) (.block (c
     (taint.hintOf (Taint.ofRegs [.rsp]) (.block (chkMsg (gD 0))))).isSome = true := by
   decide +kernel
 
-theorem copySeed_taint : ∀ d < 65, (taint.check (frT [] [14, 31]) (copySeed (gD d))
-    (taint.hintOf (frT [] [14, 31]) (copySeed (gD 0)))).isSome = true := by
+theorem copySeed_taint : ∀ d < 65, (taint.check (frT [] [14, 31] 2) (copySeed (gD d))
+    (taint.hintOf (frT [] [14, 31] 2) (copySeed (gD 0)))).isSome = true := by
   decide +kernel
 
-theorem copyLh_taint : ∀ d < 65, (taint.check (frT [] [14]) (copyLh (gD d))
-    (taint.hintOf (frT [] [14]) (copyLh (gD 0)))).isSome = true := by
+theorem copyLh_taint : ∀ d < 65, (taint.check (frT [] [14] 2) (copyLh (gD d))
+    (taint.hintOf (frT [] [14] 2) (copyLh (gD 0)))).isSome = true := by
   decide +kernel
 
-theorem dbArgs_taint : ∀ d < 65, (taint.check (frT [] []) (.block (dbArgs (gD d)))
-    (taint.hintOf (frT [] []) (.block (dbArgs (gD 0))))).isSome = true := by
+theorem dbArgs_taint : ∀ d < 65, (taint.check (frT [] [] 2) (.block (dbArgs (gD d)))
+    (taint.hintOf (frT [] [] 2) (.block (dbArgs (gD 0))))).isSome = true := by
   decide +kernel
 
-theorem seedArgs_taint : ∀ d < 65, (taint.check (frT [] []) (.block (seedArgs (gD d)))
-    (taint.hintOf (frT [] []) (.block (seedArgs (gD 0))))).isSome = true := by
+theorem seedArgs_taint : ∀ d < 65, (taint.check (frT [] [] 2) (.block (seedArgs (gD d)))
+    (taint.hintOf (frT [] [] 2) (.block (seedArgs (gD 0))))).isSome = true := by
   decide +kernel
 
 /-! ## Entry states and the anchor -/
@@ -109,7 +109,7 @@ theorem ESib.w_eq {a s : State} (h : ESib H G a s) {k : Nat} (hk : k ∈ encKs) 
 /-- Code the taint analysis checks from the frame's argument slots `ks`. -/
 theorem e_taintF {J : State → State → Prop} (hJ : ∀ s t, (encK H G).pre s → J s t → EW s t)
     (rs : List Reg) (ks : List Nat) (hks : ∀ k ∈ ks, k ∈ encKs) (hpin : Pins (EAt H G J) rs) {c : Prog isa}
-    (h : ∃ hc, (taint.check (frT rs ks) c hc).isSome = true) :
+    (h : ∃ hc, (taint.check (frT rs ks 2) c hc).isSome = true) :
     RelCT isa (Two (EAt H G J)) c fun _ _ => True :=
   two_taintF rs ks fb (fun a => [outR a, scrR a]) encW (fun a t ⟨s, S, j⟩ => by
       have e := hJ s t S.1 j
@@ -256,10 +256,10 @@ theorem encEm_ct : RelCT isa (Two (EAt mH.G mG.G (EK Hl.D))) (encEm Hl.stream) (
   refine RelCT.seq (e_post (J' := EK Hl.D) (two_map lq (fun a t ⟨s, S, e, _⟩ => by
       have hp := EPre.of _ S.1
       obtain ⟨V, W, R, hW⟩ := e.rep
-      have := (⟨e.he.frv hp, e.L, V, W, R, e.lab hp hW⟩ : LW (lq s) t)
+      have := (⟨e.he.frv hp, e.L, V, W, R, e.lab hp hW⟩ : LW 2 (lq s) t)
       simp only [lq] at this ⊢
       rwa [S.fb, S.out_eq, S.scr_eq, S.arg (i := 5) (by decide), S.arg (i := 0) (by decide),
-        S.arg (i := 1) (by decide)] at this) (hashLabel_ct hH.stream (Or.inl rfl)))
+        S.arg (i := 1) (by decide)] at this) (hashLabel_ct hH.stream 2 (.inl rfl) (Or.inl rfl)))
     fun s t hs h => WP.mono (ew_hashLabel (EPre.of _ hs) hH KH mH h.1) fun _ e => ⟨e, h.2⟩) ?_
   refine RelCT.seq (e_post (J' := EK Hl.D) (e_taintF (fun _ _ _ h => h.1) [] [14] (by decide) nopin
       ⟨_, copyLh_taint Hl.D hD65⟩)
@@ -286,11 +286,11 @@ theorem me_of {src srcLen dst dstLen : Nat → Nat} {a s t : State} (S : ESib H 
       (dstLen (s.gpr .rcx).toNat))
     (hf : MFit (src (s.gpr .rcx).toNat) (srcLen (s.gpr .rcx).toNat) (dst (s.gpr .rcx).toNat)
       (dstLen (s.gpr .rcx).toNat)) :
-    ME ⟨fb a, stackArg a 5, [outR a, scrR a], src (a.gpr .rcx).toNat, srcLen (a.gpr .rcx).toNat,
+    ME 2 ⟨fb a, stackArg a 5, [outR a, scrR a], src (a.gpr .rcx).toNat, srcLen (a.gpr .rcx).toNat,
       dst (a.gpr .rcx).toNat, dstLen (a.gpr .rcx).toNat⟩ t := by
   have hp := EPre.of H S.1
   obtain ⟨V, W, R, _, A⟩ := h.rep
-  have := (⟨h.he.frv hp, h.L, hf, V, W, R, A⟩ : ME ⟨fb s, stackArg s 5, [outR s, scrR s],
+  have := (⟨h.he.frv hp, h.L, hf, V, W, R, A⟩ : ME 2 ⟨fb s, stackArg s 5, [outR s, scrR s],
     src (s.gpr .rcx).toNat, srcLen (s.gpr .rcx).toNat, dst (s.gpr .rcx).toNat, dstLen (s.gpr .rcx).toNat⟩ t)
   rwa [S.fb, S.out_eq, S.scr_eq, S.arg (i := 5) (by decide), S.k] at this
 
@@ -312,7 +312,7 @@ theorem encMain_ct : RelCT isa (Two (EAt mH.G mG.G (EK Hl.D)))
       oEm + 1 + Hl.D, (a.gpr .rcx).toNat - (Hl.D + 1)⟩ : MQ))
       (fun a t ⟨s, S, e, hk⟩ => me_of (src := fun _ => oEm + 1) (srcLen := fun _ => Hl.D)
         (dst := fun _ => oEm + 1 + Hl.D) (dstLen := fun k => k - (Hl.D + 1)) S e (fit_db (EPre.of _ S.1) hk))
-      (mgf_ct hG.stream mG.hash mG.len (valid_of_link hG mG)))
+      (mgf_ct hG.stream 2 mG.hash mG.len (valid_of_link hG mG) (.inl rfl)))
     fun s t hs h => WP.mono (ew_mgf hG KG mG (fit_db (EPre.of _ hs) h.2) h.1) fun _ e => ⟨e, h.2⟩) ?_
   -- The seed masked.
   refine RelCT.seq (e_post (J' := fun s t => EWM s t (oEm + 1 + Hl.D) ((s.gpr .rcx).toNat - (Hl.D + 1)) (oEm + 1)
@@ -323,7 +323,7 @@ theorem encMain_ct : RelCT isa (Two (EAt mH.G mG.G (EK Hl.D)))
       oEm + 1 + Hl.D, (a.gpr .rcx).toNat - (Hl.D + 1), oEm + 1, Hl.D⟩ : MQ))
       (fun a t ⟨s, S, e, hk⟩ => me_of (src := fun _ => oEm + 1 + Hl.D) (srcLen := fun k => k - (Hl.D + 1))
         (dst := fun _ => oEm + 1) (dstLen := fun _ => Hl.D) S e (fit_seed (EPre.of _ S.1) hk hD0))
-      (mgf_ct hG.stream mG.hash mG.len (valid_of_link hG mG)))
+      (mgf_ct hG.stream 2 mG.hash mG.len (valid_of_link hG mG) (.inl rfl)))
     fun s t hs h => WP.mono (ew_mgf hG KG mG (fit_seed (EPre.of _ hs) h.2 hD0) h.1) fun _ e => ⟨e, h.2⟩) ?_
   -- The call.
   refine RelCT.seq (e_post (J' := EWP) (e_taintF (fun _ _ _ h => h.1) [] [] (by decide) nopin ⟨_, by taint_decide⟩)
