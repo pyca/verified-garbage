@@ -10,8 +10,8 @@ Untrusted: everything here is checked by Lean. Each call of
 `vg_aes_encrypt_blocks` or `vg_aes_decrypt_blocks` (of any implementation
 `v`), and of `vg_aes_expand_key`, in a frame of its arguments, from the
 callee's contract (`WP.callWith`): what it needs of the registers it pushes
-and of the regions it is given (`BCall`, `KCall`), and what it leaves
-(`BPost`, `KPost`), in terms of the memory before the call; and that it is
+and of the regions it is given (`BCall`, AES-GCM's `KeyCall`), and what it leaves
+(`BPost`, `KeyPost`), in terms of the memory before the call; and that it is
 constant time (`blk_ct`, `key_ct`) by the callee's own proof, when the
 arguments are the same in both runs.
 -/
@@ -188,5 +188,48 @@ theorem blk_ct {f : Nat → List Byte → Spec.Aes.State → Spec.Aes.State} {fn
   · rw [a2, b2]
   · rw [a3, b3]
   · rw [a4, b4]
+
+/-! ## `vg_aes_expand_key` -/
+
+open VG.Proof.AesGcm.X86 (KeyCall KeyPost keyRegs keyRegs_esp keyRd keyWr) in
+/-- A call of `vg_aes_expand_key`. -/
+theorem key_ok (v : BlocksImpl) {s : State} {K C S : BitVec 32} {L : Nat} (h : KeyCall s K C S L) :
+    WP isa (keyFrame (callees v)) s (KeyPost s K C S L) := by
+  have hL := toNat_ofNat32 h.L_lt
+  unfold keyFrame
+  refine WP.callWith (rs := keyRegs) (k := Proof.Aes.expandKeyX86) v.expandOk v.expandNosp
+    (by simp) keyRegs_esp (by rw [v.expandStack]; have := h.esp; simp only [List.length_cons, List.length_nil]; omega)
+    h.callPre fun s' rd' wr' cs' f' ⟨s₂, m₂, post⟩ => ?_
+  obtain ⟨a0, a1, a2, -⟩ := h.args
+  rw [v.expandStack] at f'
+  have fE := callEntry_frame h.fit keyRegs_esp
+  rw [show 4 * keyRegs.length + 4 = 20 from rfl] at fE
+  simp only [Proof.Aes.expandKeyX86, arg_withRegions, State.withRegions_mem, a0, a1, a2, hL, m₂] at post
+  refine ⟨rd', wr', cs', ?_, ?_⟩
+  · exact f'.mono fun r hr => by simp only [List.cons_append, List.nil_append] at hr; simpa using hr
+  · rw [post, bytesAt_frame fE (one_disj h.bk) (by rcases h.len with rfl | rfl | rfl <;> decide)]
+
+open VG.Proof.AesGcm.X86 (KeyCall keyRd keyWr) in
+/-- Calls of `vg_aes_expand_key` with the same arguments and stack pointer
+in both runs are constant time. -/
+theorem key_ct (v : BlocksImpl) {I : State → Prop} {K C S E : BitVec 32} {L : Nat}
+    (h : ∀ s, I s → KeyCall s K C S L ∧ s.gpr .esp = E) : CT I (keyFrame (callees v)) := by
+  refine CT.callWith v.expandOk v.expandCt (keyRd E K L) (keyWr C S) fun s₁ s₂ i₁ i₂ => ?_
+  obtain ⟨h₁, e₁⟩ := h s₁ i₁
+  obtain ⟨h₂, e₂⟩ := h s₂ i₂
+  have p₁ := h₁.callPre
+  have p₂ := h₂.callPre
+  rw [e₁] at p₁
+  rw [e₂] at p₂
+  refine ⟨p₁, p₂, e₁.trans e₂.symm, ?_⟩
+  obtain ⟨a0, a1, a2, a3⟩ := h₁.args
+  obtain ⟨b0, b1, b2, b3⟩ := h₂.args
+  refine ⟨by simp only [State.withRegions_gpr, callEntry_esp', e₁, e₂], fun i hi => ?_⟩
+  simp only [arg_withRegions]
+  rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3) with rfl | rfl | rfl | rfl
+  · rw [a0, b0]
+  · rw [a1, b1]
+  · rw [a2, b2]
+  · rw [a3, b3]
 
 end VG.Proof.AesOcb.X86
