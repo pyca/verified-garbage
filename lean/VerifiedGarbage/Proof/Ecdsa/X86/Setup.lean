@@ -141,15 +141,16 @@ theorem setupShift_ok {c : Cfg} (hc : CfgOk c) {hs : Option Nat} (hhs : ShiftOk 
       Keeps.refl _ _, VG.Proof.Mont.Outside.refl _ _ _ _⟩
   rcases hhs with rfl | rfl | rfl
   · exact nil
-  · by_cases h0 : c.sh = 0
+  · have hDl := sl_le c h7 (i := D) (by decide)
+    by_cases h0 : c.sh = 0
     · simp only [Cfg.shiftCode, h0, ite_true]
-      rw [shAt_self, h0, shAt_K_D, shAt_K_E]; exact nil
+      rw [shAt_self, h0, shAt_D_K, shAt_D_E]; exact nil
     · simp only [Cfg.shiftCode, h0, ite_false]
-      refine WP.mono (shrWords_ok hs' hKl (by omega) hc.sh) fun t' ⟨e, k, O⟩ =>
-        ⟨?_, ?_, ?_, k, O.mono (Nat.le_refl _) (by omega)⟩
+      refine WP.mono (shrWords_ok hs' hDl (by omega) hc.sh) fun t' ⟨e, k, O⟩ =>
+        ⟨?_, ?_, ?_, k, O.mono (by omega) (by omega)⟩
+      · rw [shAt_D_K, Nat.shiftRight_zero]; exact O.wordsVal (by omega) (by omega)
       · rw [shAt_self]; exact e
-      · rw [shAt_K_D, Nat.shiftRight_zero]; exact O.wordsVal (by omega) (by omega)
-      · rw [shAt_K_E, Nat.shiftRight_zero]; exact O.wordsVal (by omega) (by omega)
+      · rw [shAt_D_E, Nat.shiftRight_zero]; exact O.wordsVal (by omega) (by omega)
   · by_cases h0 : c.sh = 0
     · simp only [Cfg.shiftCode, h0, ite_true]
       rw [shAt_self, h0, shAt_E_D, shAt_E_K]; exact nil

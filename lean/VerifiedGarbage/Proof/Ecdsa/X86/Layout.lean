@@ -135,9 +135,9 @@ theorem arg_containsN {s : State} {k i : Nat} (hfit : (s.gpr .esp).toNat + 4 + 4
   rw [e0, ei]
   exact Offset.contains_base _ (show 4 * i + 4 ≤ 4 * k by omega) (by omega)
 
-/-- Which slot `setupWith` may shift: none, `k`'s (verification reads the
+/-- Which slot `setupWith` may shift: none, `d`'s (verification reads the
 hash there) or the hash's. -/
-def ShiftOk (hs : Option Nat) : Prop := hs = none ∨ hs = some K ∨ hs = some E
+def ShiftOk (hs : Option Nat) : Prop := hs = none ∨ hs = some D ∨ hs = some E
 
 /-- What `setupWith A` needs of its arguments: the slot `A.hs` one it may
 shift, the working space writable, the slots of the arguments `A` names and `k`, `d` and the hash (`len` bytes
@@ -196,8 +196,8 @@ theorem shAt_none (c : Cfg) (i : Nat) : shAt c none i = 0 := rfl
 theorem shAt_self (c : Cfg) (i : Nat) : shAt c (some i) i = c.sh := ite_eq_left_of_eq_true _ _ (eq_true rfl)
 theorem shAt_E_D (c : Cfg) : shAt c (some E) D = 0 := rfl
 theorem shAt_E_K (c : Cfg) : shAt c (some E) K = 0 := rfl
-theorem shAt_K_D (c : Cfg) : shAt c (some K) D = 0 := rfl
-theorem shAt_K_E (c : Cfg) : shAt c (some K) E = 0 := rfl
+theorem shAt_D_K (c : Cfg) : shAt c (some D) K = 0 := rfl
+theorem shAt_D_E (c : Cfg) : shAt c (some D) E = 0 := rfl
 
 /-- What `setupWith A` leaves, from the state `s₀` at entry, with the
 working space at `base`, the argument `A.sc`: `edi = base`, `ebx`, `esi`,
