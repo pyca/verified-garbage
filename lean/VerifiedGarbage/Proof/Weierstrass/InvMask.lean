@@ -104,4 +104,23 @@ theorem shifted_cong (m : Mem) (base : Addr) (x : Nat) {k K : Nat} (hk : K - 1 �
   rw [wordsVal_split, Nat.mul_add, ← Nat.mul_assoc, ← Nat.pow_add, show 64 + 64 * (K - 1) = 64 * K by omega,
     Nat.add_mul_mod_self_left]
 
+/-- A number's low word, modulo `2^64`. -/
+theorem low_word (m : Mem) (base : Addr) (d L : Nat) (hL : 1 ≤ L) :
+    ((word m base d).toNat : Int) % 2 ^ 64 = (wordsVal m base d L : Int) % 2 ^ 64 := by
+  obtain ⟨k, rfl⟩ : ∃ k, L = k + 1 := ⟨L - 1, by omega⟩
+  rw [wordsVal, Int.natCast_add, Int.natCast_mul, Int.natCast_pow]
+  exact (Int.add_mul_emod_self_left _ _ _).symm
+
+/-- `c ^ ((c' ^ c) & m)` selects `c'` under a mask. -/
+theorem sel_eq {c c' m : BitVec 64} (hm : IsMask m) :
+    c ^^^ ((c' ^^^ c) &&& m) = if m = BitVec.allOnes 64 then c' else c := by
+  rcases hm with rfl | rfl
+  · simp only [show (0 : BitVec 64) ≠ BitVec.allOnes 64 by decide, ↓reduceIte]; simp
+  · simp only [BitVec.and_allOnes, ↓reduceIte]
+    rw [← BitVec.xor_assoc, BitVec.xor_comm c c', BitVec.xor_assoc, BitVec.xor_self, BitVec.xor_zero]
+
+/-- Word `i` of a constant: bits `64 i …`. -/
+theorem const_word (V i : Nat) : (BitVec.ofNat 64 (V >>> (64 * i))).toNat = V / 2 ^ (64 * i) % 2 ^ 64 := by
+  rw [BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow]
+
 end VG.Proof.Weierstrass
