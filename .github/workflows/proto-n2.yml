@@ -1,0 +1,17 @@
+# Temporary: timing a prototype of Ed448 verification on AArch64. Not for merging.
+name: proto-n2
+on:
+  push:
+    branches: [proto-ed448-verify-n2]
+permissions:
+  contents: read
+jobs:
+  time:
+    runs-on: ubuntu-24.04-arm
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - run: grep -m1 "CPU part" /proc/cpuinfo || true
+      - run: for i in 1 2; do cargo run -q --release 2>/dev/null; done
+        working-directory: proto/vproto
