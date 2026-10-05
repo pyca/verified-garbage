@@ -16,7 +16,7 @@ open VG.Proof.MlKem.X86_64 (Keep WP.keep writesOnly ifp ifn)
 open VG.Proof.Rsa.X86_64 (pubChkContract)
 open VG.Impl.Pbkdf2.Md.X86_64 (Hash)
 
-variable {G : Spec.Mgf1.Hash} {H : Hash}
+variable {G : Spec.Mgf1.Hash} {H : Hash} {extra : State → State → Prop}
 
 /-- The public words after the checks. -/
 def K5 : List Nat := [17, 18, 19, 20, 21, 22, 25, 26, 35, 36, 37, 38]
@@ -50,8 +50,8 @@ variable (H) in
 def JM (X : State → (Nat → Byte) → (Nat → BitVec 64) → Prop) (s t : State) : Prop :=
   VS H s t KM [] (X s) ∧ t.rd = s.rd ∧ H.D + 2 ≤ veml s
 
-theorem dbPub_ct : RelCT isa (Two fun a t => VAt G (J7 H) a t ∧ isa.eval .b t = some false)
-    (.seq (.block dbSlots) (.block pubArgs)) (Two (VAt G (JC1 H))) := by
+theorem dbPub_ct : RelCT isa (Two fun a t => VAt (extra := extra) G (J7 H) a t ∧ isa.eval .b t = some false)
+    (.seq (.block dbSlots) (.block pubArgs)) (Two (VAt (extra := extra) G (JC1 H))) := by
   obtain ⟨_, hc⟩ := vFixed.dbPub
   refine two_post (vtwo (G := G) (H := H) [17, 18, 19, 20, 21, 22, 26, 38] [.rax]
     (fun a => [(.rax, BitVec.ofNat 64 (veml a - (H.D + 2)))])
@@ -103,11 +103,11 @@ theorem entry_bytes {s t : State} (hst : t.gpr .rsp = fb s) (hM : Frame (vwrR s)
     rw [List.mem_singleton.mp hr]; exact ⟨_, List.mem_cons_self .., vret_sub s⟩)
   exact bytesAt_frame fSE (vin_apart hK hS) hl
 
-theorem vArg_sib {a s : State} (S : VSib G a s) {i : Nat} : vArg s i = vArg a i := by
+theorem vArg_sib {a s : State} (S : VSib (extra := extra) G a s) {i : Nat} : vArg s i = vArg a i := by
   unfold vArg
   split <;> simp only [S.gpr (r := .r9) (by decide), S.gpr (r := .rsi) (by decide), S.arg3, S.arg4]
 
-theorem entry_n {a s t : State} (S : VSib G a s) (hst : t.gpr .rsp = fb s) (hM : Frame (vwrR s) s.mem t.mem) :
+theorem entry_n {a s t : State} (S : VSib (extra := extra) G a s) (hst : t.gpr .rsp = fb s) (hM : Frame (vwrR s) s.mem t.mem) :
     Spec.Rsa.bytesAt t.callEntry.mem (s.gpr .rdi) (s.gpr .rsi).toNat =
       Spec.Rsa.bytesAt a.mem (a.gpr .rdi) (a.gpr .rsi).toNat := by
   have hp := S.ps
@@ -115,7 +115,7 @@ theorem entry_n {a s t : State} (S : VSib G a s) (hst : t.gpr .rsp = fb s) (hM :
   exact entry_bytes (R := ⟨s.gpr .rdi, (s.gpr .rsi).toNat⟩) hst hM hp.dKn hp.dns
     (by have := hp.wN; dsimp only; omega)
 
-theorem entry_e {a s t : State} (S : VSib G a s) (hst : t.gpr .rsp = fb s) (hM : Frame (vwrR s) s.mem t.mem) :
+theorem entry_e {a s t : State} (S : VSib (extra := extra) G a s) (hst : t.gpr .rsp = fb s) (hM : Frame (vwrR s) s.mem t.mem) :
     Spec.Rsa.bytesAt t.callEntry.mem (s.gpr .rdx) (s.gpr .rcx).toNat =
       Spec.Rsa.bytesAt a.mem (a.gpr .rdx) (a.gpr .rcx).toNat := by
   have hp := S.ps
@@ -124,7 +124,7 @@ theorem entry_e {a s t : State} (S : VSib G a s) (hst : t.gpr .rsp = fb s) (hM :
     (by have := hp.wE; dsimp only; omega)
 
 /-- The call's public data agree. -/
-theorem call_pub {a s₁ s₂ t₁ t₂ : State} (S₁ : VSib G a s₁) (h₁ : JC1 H s₁ t₁) (S₂ : VSib G a s₂)
+theorem call_pub {a s₁ s₂ t₁ t₂ : State} (S₁ : VSib (extra := extra) G a s₁) (h₁ : JC1 H s₁ t₁) (S₂ : VSib (extra := extra) G a s₂)
     (h₂ : JC1 H s₂ t₂) :
     pubChkContract.pub (t₁.callEntry.withRegions (vRd s₁) (vWr s₁)) (t₂.callEntry.withRegions (vRd s₂) (vWr s₂)) := by
   obtain ⟨v₁, -, hM₁, ha₁, di₁, si₁, dx₁, cx₁, r8₁, r9₁, -⟩ := h₁
@@ -169,7 +169,7 @@ variable {pubN : String} {pubC : Prog isa}
   (hct : ConstantTime isa pubContract.pre pubContract.pub pubC) (hspC : SpSafe pubC) (hdC : pubC.x86_64Depth = 0)
 
 include hv hct hspC hdC in
-theorem call_ct : RelCT isa (Two (VAt G (JC1 H))) (.call pubN pubC) (Two (VAt G (JM H fun _ _ _ => True))) := by
+theorem call_ct : RelCT isa (Two (VAt (extra := extra) G (JC1 H))) (.call pubN pubC) (Two (VAt (extra := extra) G (JM H fun _ _ _ => True))) := by
   refine two_post (RelCT.callEx (k := pubChkContract) hv hct fun t₁ t₂ ⟨a, ⟨s₁, S₁, h₁⟩, ⟨s₂, S₂, h₂⟩⟩ => ?_)
     fun a t ⟨s, S, h⟩ => ?_
   · obtain ⟨c₁, w₁⟩ := pub_covers S₁.ps h₁.2.1 h₁.1.wr

@@ -15,6 +15,7 @@ def variant : PublicImpl where
   nosp := noSp_of (by decide +kernel)
   depth := by decide +kernel
   spSafe := Code.all_of_allInstrs (by decide +kernel)
+  mxSafe := by decide +kernel
   suffix := "_adx"
   features := ["bmi2", "adx"]
 
