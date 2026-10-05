@@ -16,7 +16,9 @@ the other, and their `orr` holds entry `a`'s, or zeros if `a = 0`
 (`passV_ok`). An entry of `n ≤ 4` pairs takes one pass, and `y` is then set
 to `R` if `a = 0` (`selOneV_ok`), and both stored (`selXY1_ok`); else `x`'s
 pairs are selected and stored, then `y`'s, reading the tables, which lie
-outside the working space, after the first stores (`selXY2_ok`). `Z` is `R`
+outside the working space, after the first stores (`selXY2_ok`); and an odd
+number of words, a multiple of 3, by thirds of three pairs, stored at `E.x`,
+which `E.y` continues (`selXY3_ok`). `Z` is `R`
 unless `a = 0`, as the scalar code sets it (`TCombSelect`).
 -/
 
@@ -918,7 +920,7 @@ theorem wordOf_shiftLeft_ge (v n j : Nat) : wordOf (v <<< (64 * n)) (n + j) = wo
 
 /-- The word `w` of the entry the selection of `a` leaves, `x ‖ y`: entry `a`'s
 of the table at `X` if `a ≥ 1`, else `(0, R)`'s. -/
-abbrev selW (K : TCombCfg) (m : Mem) (X : Addr) (a w : Nat) : BitVec 64 :=
+abbrev selEW (K : TCombCfg) (m : Mem) (X : Addr) (a w : Nat) : BitVec 64 :=
   if 1 ≤ a then word m X (16 * K.M.n * (a - 1) + 8 * w) else wordOf (K.one <<< (64 * K.M.n)) w
 
 /-- Third `i`: entry `a`'s pairs `3 i … 3 i + 2` (or `(0, R)`'s) selected and
@@ -931,7 +933,7 @@ theorem thirdV_ok (K : TCombCfg) (i : Nat) {s : State} {base : Addr} {size : Nat
     (hreg : InRegions (s.rd ++ s.wr) X (16 * K.M.n * K.H)) :
     WP isa (.block (K.selPass (48 * i) 3 ++ TCombCfg.selOne ((K.one <<< (64 * K.M.n)) >>> (384 * i)) 3 0 3 ++
       selStore 3 0 3 (K.E.x + 48 * i))) s fun t =>
-      (∀ j < 6, word t.mem base (K.E.x + 48 * i + 8 * j) = selW K s.mem X a (6 * i + j)) ∧
+      (∀ j < 6, word t.mem base (K.E.x + 48 * i + 8 * j) = selEW K s.mem X a (6 * i + j)) ∧
       KeepRegs [.x6] s t ∧ t.v .v18 = s.v .v18 ∧ t.v .v19 = s.v .v19 ∧ t.v .v28 = s.v .v28 ∧
       Outside base (K.E.x + 48 * i) 48 s.mem t.mem ∧ Scr t base size := by
   have hnw := hs.nowrap
@@ -952,7 +954,7 @@ theorem thirdV_ok (K : TCombCfg) (i : Nat) {s : State} {base : Addr} {size : Nat
   refine ⟨fun j hj => ?_, (Keeps.regs K02).trans (kr₃.mono fun _ h => absurd h List.not_mem_nil),
     by rw [v₃, nv _ (by simp), a18], by rw [v₃, nv _ (by simp), a19], by rw [v₃, nv _ (by simp), a28],
     by rw [← K02.mem]; exact O₃, hs₂.of_keepRegs kr₃ (by decide)⟩
-  rw [w₃ j (by omega), f₂ _ (by omega), selW]
+  rw [w₃ j (by omega), f₂ _ (by omega), selEW]
   by_cases h : 1 ≤ a
   · rw [ite_f (show ¬ a = 0 by omega), ite_t h, v₁ _ (by omega), ite_t h,
       vdword_ldE _ _ _ _ _ (Nat.mod_lt _ (by decide)), h16,
@@ -978,7 +980,7 @@ theorem thirdsV_ok (K : TCombCfg) {s : State} {base : Addr} {size : Nat} (hs : S
     WP isa (.block ((List.range q).flatMap fun i =>
       K.selPass (48 * i) 3 ++ TCombCfg.selOne ((K.one <<< (64 * K.M.n)) >>> (384 * i)) 3 0 3 ++
       selStore 3 0 3 (K.E.x + 48 * i))) s fun t =>
-      (∀ w < 6 * q, word t.mem base (K.E.x + 8 * w) = selW K s.mem X a w) ∧
+      (∀ w < 6 * q, word t.mem base (K.E.x + 8 * w) = selEW K s.mem X a w) ∧
       KeepRegs [.x6] s t ∧ t.v .v18 = s.v .v18 ∧ t.v .v19 = s.v .v19 ∧ t.v .v28 = s.v .v28 ∧
       Outside base K.E.x (48 * q) s.mem t.mem ∧ Scr t base size
   | 0, _ => WP.block_nil ⟨fun _ h => absurd h (Nat.not_lt_zero _), ⟨fun _ _ => rfl, rfl, rfl, rfl⟩,
@@ -998,8 +1000,8 @@ theorem thirdsV_ok (K : TCombCfg) {s : State} {base : Addr} {size : Nat} (hs : S
         (show K.E.x + 48 * q ≤ size by omega) (hout (a - 1) (by omega) w hw b (by omega))))
     refine ⟨fun w hw => ?_, k₁.trans k₂, by rw [b18, a18], by rw [b19, a19], by rw [b28, a28],
       (O₁.mono (Nat.le_refl _) (by omega)).trans (O₂.mono (by omega) (by omega)), hs₂⟩
-    have sw : ∀ w < 2 * K.M.n, selW K s₁.mem X a w = selW K s.mem X a w := fun w hw => by
-      simp only [selW]
+    have sw : ∀ w < 2 * K.M.n, selEW K s₁.mem X a w = selEW K s.mem X a w := fun w hw => by
+      simp only [selEW]
       by_cases h : 1 ≤ a
       · rw [ite_t h, ite_t h, hm w hw h]
       · rw [ite_f h, ite_f h]
@@ -1026,14 +1028,14 @@ theorem selXY3_ok (K : TCombCfg) (h3 : K.M.n % 3 = 0) (hxy : K.E.y = K.E.x + 8 *
     (by omega)) fun t ⟨w, kt, _, _, _, O, ht⟩ => ?_
   have wx : ∀ j < K.M.n, word t.mem base (K.E.x + 8 * j) =
       if 1 ≤ a then word s.mem X (16 * K.M.n * (a - 1) + 8 * j) else 0 := fun j hj => by
-    rw [w j (by omega), selW]
+    rw [w j (by omega), selEW]
     by_cases h : 1 ≤ a
     · rw [ite_t h, ite_t h]
     · rw [ite_f h, ite_f h, wordOf_shiftLeft_lt _ _ _ hj]
   have wy : ∀ j < K.M.n, word t.mem base (K.E.y + 8 * j) =
       if 1 ≤ a then word s.mem X (16 * K.M.n * (a - 1) + 8 * K.M.n + 8 * j) else wordOf K.one j :=
     fun j hj => by
-      rw [hxy, show K.E.x + 8 * K.M.n + 8 * j = K.E.x + 8 * (K.M.n + j) by omega, w _ (by omega), selW]
+      rw [hxy, show K.E.x + 8 * K.M.n + 8 * j = K.E.x + 8 * (K.M.n + j) by omega, w _ (by omega), selEW]
       by_cases h : 1 ≤ a
       · rw [ite_t h, ite_t h, show 16 * K.M.n * (a - 1) + 8 * (K.M.n + j) =
           16 * K.M.n * (a - 1) + 8 * K.M.n + 8 * j by omega]
