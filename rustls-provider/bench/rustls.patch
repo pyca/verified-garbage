@@ -1,0 +1,150 @@
+diff --git a/Cargo.toml b/Cargo.toml
+index efbf1ef..6710c58 100644
+--- a/Cargo.toml
++++ b/Cargo.toml
+@@ -144,3 +144,7 @@ unused_qualifications = "warn"
+ # against the latest _published_ copy.
+ [patch.crates-io]
+ rustls = { path = "rustls" }
++
++# The verified-garbage provider depends on rustls from git: use this checkout.
++[patch."https://github.com/rustls/rustls"]
++rustls = { path = "rustls" }
+diff --git a/rustls-bench/Cargo.toml b/rustls-bench/Cargo.toml
+index f21627e..6f50d6c 100644
+--- a/rustls-bench/Cargo.toml
++++ b/rustls-bench/Cargo.toml
+@@ -9,6 +9,7 @@ clap = { workspace = true }
+ rustls = { path = "../rustls" }
+ rustls-aws-lc-rs = { path = "../rustls-aws-lc-rs", optional = true }
+ rustls-ring = { path = "../rustls-ring", optional = true }
++rustls-verified-garbage = { path = "@VG_PROVIDER@", optional = true }
+ rustls-graviola = { workspace = true, optional = true }
+ rustls-test = { workspace = true, default-features = false }
+ 
+@@ -18,6 +19,7 @@ aws-lc-rs = ["rustls-aws-lc-rs"]
+ fips = ["rustls-aws-lc-rs/fips", "aws-lc-rs"]
+ graviola = ["dep:rustls-graviola"]
+ ring = ["dep:rustls-ring"]
++verified-garbage = ["dep:rustls-verified-garbage"]
+ 
+ [target.'cfg(not(target_env = "msvc"))'.dependencies]
+ tikv-jemallocator = { workspace = true }
+diff --git a/rustls-bench/src/main.rs b/rustls-bench/src/main.rs
+index 0a3df37..41298d9 100644
+--- a/rustls-bench/src/main.rs
++++ b/rustls-bench/src/main.rs
+@@ -881,6 +881,8 @@ enum Provider {
+     Graviola,
+     #[cfg(feature = "ring")]
+     Ring,
++    #[cfg(feature = "verified-garbage")]
++    VerifiedGarbage,
+     #[value(skip)]
+     _None, // prevents this enum being uninhabited when built with no features
+ }
+@@ -896,6 +898,8 @@ impl Provider {
+             Self::Graviola => rustls_graviola::default_provider(),
+             #[cfg(feature = "ring")]
+             Self::Ring => rustls_ring::DEFAULT_PROVIDER,
++            #[cfg(feature = "verified-garbage")]
++            Self::VerifiedGarbage => rustls_verified_garbage::DEFAULT_PROVIDER,
+             Self::_None => unreachable!(),
+         }
+     }
+@@ -944,6 +948,9 @@ impl Provider {
+         #[cfg(feature = "ring")]
+         available.push(Self::Ring);
+ 
++        #[cfg(feature = "verified-garbage")]
++        available.push(Self::VerifiedGarbage);
++
+         match available[..] {
+             [] => panic!("no providers available in this build"),
+             [one] => one,
+diff --git a/rustls-test/Cargo.toml b/rustls-test/Cargo.toml
+index b8ac36c..3ef867d 100644
+--- a/rustls-test/Cargo.toml
++++ b/rustls-test/Cargo.toml
+@@ -21,6 +21,7 @@ num-bigint = { workspace = true }
+ pki-types = { workspace = true }
+ rustls-aws-lc-rs = { path = "../rustls-aws-lc-rs", features = ["std"] }
+ rustls-ring = { path = "../rustls-ring" }
++rustls-verified-garbage = { path = "@VG_PROVIDER@" }
+ rustls-util = { path = "../rustls-util", default-features = false }
+ x509-parser = { workspace = true }
+ webpki = { workspace = true }
+diff --git a/rustls-test/src/lib.rs b/rustls-test/src/lib.rs
+index e10df50..7db12ad 100644
+--- a/rustls-test/src/lib.rs
++++ b/rustls-test/src/lib.rs
+@@ -2250,6 +2250,27 @@ pub mod macros {
+         };
+     }
+ 
++    #[macro_export]
++    macro_rules! provider_verified_garbage {
++        () => {
++            #[allow(unused_imports)]
++            use rustls_verified_garbage as provider;
++            // Like aws-lc-rs, it prefers X25519MLKEM768.
++            #[allow(dead_code)]
++            const fn provider_is_aws_lc_rs() -> bool {
++                true
++            }
++            #[allow(dead_code)]
++            const fn provider_is_ring() -> bool {
++                false
++            }
++            #[allow(dead_code)]
++            const fn provider_is_fips() -> bool {
++                false
++            }
++        };
++    }
++
+     #[macro_export]
+     macro_rules! provider_aws_lc_rs {
+         () => {
+diff --git a/rustls-test/tests/api.rs b/rustls-test/tests/api.rs
+index 60c8327..f8106a5 100644
+--- a/rustls-test/tests/api.rs
++++ b/rustls-test/tests/api.rs
+@@ -67,3 +67,37 @@ mod tests_with_aws_lc_rs {
+     #[path = "api/api.rs"]
+     mod tests;
+ }
++
++#[path = "."]
++mod tests_with_verified_garbage {
++    rustls_test::provider_verified_garbage!();
++
++    #[path = "api/client_cert_verifier.rs"]
++    mod client_cert_verifier;
++    #[path = "api/compress.rs"]
++    mod compress;
++    #[path = "api/crypto.rs"]
++    mod crypto;
++    #[path = "api/ffdhe.rs"]
++    mod ffdhe;
++    #[path = "api/io.rs"]
++    mod io;
++    #[path = "api/kernel.rs"]
++    mod kernel;
++    #[path = "api/kx.rs"]
++    mod kx;
++    #[path = "api/quic.rs"]
++    mod quic;
++    #[path = "api/raw_keys.rs"]
++    mod raw_keys;
++    #[path = "api/resolve.rs"]
++    mod resolve;
++    #[path = "api/resume.rs"]
++    mod resume;
++    #[path = "api/server_cert_verifier.rs"]
++    mod server_cert_verifier;
++    #[path = "api/split.rs"]
++    mod split;
++    #[path = "api/api.rs"]
++    mod tests;
++}
