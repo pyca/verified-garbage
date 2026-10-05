@@ -34,16 +34,16 @@ theorem CI.keep {c w sp D : BitVec 32} {R n : Nat} {s s' : State} (h : CI c w sp
   ⟨h.env.of_saved hg hsp hrd hwr, h.dat.of_eq hrd hwr, by rw [hg _ (by decide) (by decide), h.r6],
     by rw [hg _ (by decide) (by decide), h.r5]⟩
 
-/-- Before CTR: the data's address and length as the stack arguments, and
-the regions the code may write. -/
+/-- Before CTR: the data's address and length as the stack arguments, which
+the regions the code may write are apart from. -/
 structure CtrI (c w sp : BitVec 32) (R : Nat) (D : BitVec 32) (n : Nat) (s : State) : Prop where
   env : Env c w sp R s
   dat : Dat c w sp s D n
-  wr : s.wr = [⟨State.addr D, n⟩, ⟨State.addr w, 2576⟩]
-  afit : sp.toNat + 12 ≤ 2 ^ 32
-  args : Covers [⟨State.addr sp, 12⟩] (s.rd ++ s.wr)
-  args_w : (⟨State.addr sp, 12⟩ : Region).Disjoint ⟨State.addr w, 2576⟩
-  args_d : (⟨State.addr sp, 12⟩ : Region).Disjoint ⟨State.addr D, n⟩
+  wa : ∀ r ∈ s.wr, (⟨State.addr sp, 16⟩ : Region).Disjoint r
+  afit : sp.toNat + 16 ≤ 2 ^ 32
+  args : Covers [⟨State.addr sp, 16⟩] (s.rd ++ s.wr)
+  args_w : (⟨State.addr sp, 16⟩ : Region).Disjoint ⟨State.addr w, 2576⟩
+  args_d : (⟨State.addr sp, 16⟩ : Region).Disjoint ⟨State.addr D, n⟩
   m0 : s.mem.readW (State.addr sp) 32 = D
   m1 : s.mem.readW (State.addr sp + BitVec.ofNat 64 4) 32 = BitVec.ofNat 32 n
   n32 : n < 2 ^ 32
@@ -161,12 +161,7 @@ theorem ctr_ct {D : BitVec 32} {n : Nat} (hn : n < 2 ^ 32) : CT (CtrI c w sp R D
     (CT.argTaint _ _ (fun s₁ s₂ h₁ h₂ => env_regs h₁.env h₂.env)
       (fun s₁ s₂ h₁ h₂ => by rw [h₁.env.sp, h₂.env.sp])
       (fun s h => ⟨by rw [h.env.sp]; have := h.afit; omega, fun r hr => by
-        rw [h.wr] at hr
-        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-        rw [h.env.sp]
-        rcases hr with rfl | rfl
-        · exact h.args_d.sub_left (Region.sub_prefix (by decide))
-        · exact h.args_w.sub_left (Region.sub_prefix (by decide))⟩)
+        rw [h.env.sp]; exact (h.wa r hr).sub_left (Region.sub_prefix (by decide))⟩)
       (fun s₁ s₂ h₁ h₂ => argMem_of (by rw [h₁.env.sp, h₂.env.sp]) (by rw [h₁.env.sp]; have := h₁.afit; omega)
         fun i hi => by
           rcases (show i = 0 ∨ i = 1 by omega) with rfl | rfl

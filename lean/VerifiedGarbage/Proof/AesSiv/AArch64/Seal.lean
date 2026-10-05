@@ -9,8 +9,9 @@ import VerifiedGarbage.Proof.Cmac.Dbl32
 (`counter_words`). From S2V's state of the associated data on, `encrypt`
 finishes S2V with the plaintext into the first 16 bytes of the working space
 (`finish_wp`), sets the counter from that IV, encrypts the data in place with
-CTR (`ctr_wp`) and restores the registers: the working space then starts
-with the IV and the data is the ciphertext (`sealTail_wp`).
+CTR (`ctr_wp`), copies the IV to `siv`, whose address the save left at
+`W + 248` (`sivOut_ok`), and restores the registers: `siv` then holds the IV
+and the data is the ciphertext (`sealTail_wp`).
 -/
 
 namespace VG.Proof.AesSiv.AArch64
@@ -177,7 +178,7 @@ structure SPre (s₀ : State) (C D P W : Addr) (R L : Nat) (s : State) : Prop wh
 
 theorem saved_fits : Spill.Fits saved := by decide
 
-theorem saved_bound : ∀ p ∈ saved, 160 ≤ p.2 ∧ p.2 + 8 ≤ 248 := by decide
+theorem saved_bound : ∀ p ∈ saved, 160 ≤ p.2 ∧ p.2 + 8 ≤ 256 := by decide
 
 theorem restored_sub : ∀ p ∈ restored, p ∈ saved := by decide
 
@@ -197,15 +198,43 @@ theorem restore_wp (h : Env s₀ C D P W R L) {s : State} (h19 : s.gpr .x19 = W)
     fun _ h₇ => ⟨fun r hr => by
       obtain ⟨p, hp, rfl⟩ := List.mem_map.mp (restored_all r hr); exact h₇.gpr p hp, h₇.other, h₇.sp, h₇.mem⟩
 
+/-- The copy of the IV at `W` to `T`, whose address is at `W + 248`. -/
+theorem sivOut_ok {s : State} {W T : Addr} (h19 : s.gpr .x19 = W)
+    (aT : s.mem.readW (W + BitVec.ofNat 64 248) 64 = T)
+    (r₂ : InRegions (s.rd ++ s.wr) (W + BitVec.ofNat 64 248) 8)
+    (r₀ : InRegions (s.rd ++ s.wr) (W + BitVec.ofNat 64 0) 8) (r₈ : InRegions (s.rd ++ s.wr) (W + BitVec.ofNat 64 8) 8)
+    (w₀ : InRegions s.wr (T + BitVec.ofNat 64 0) 8) (w₈ : InRegions s.wr (T + BitVec.ofNat 64 8) 8) :
+    ∃ s', runBlock isa sivOut s = some s' ∧
+      s'.mem = (s.mem.writeW (T + BitVec.ofNat 64 0) (s.mem.readW (W + BitVec.ofNat 64 0) 64)).writeW
+        (T + BitVec.ofNat 64 8)
+        ((s.mem.writeW (T + BitVec.ofNat 64 0) (s.mem.readW (W + BitVec.ofNat 64 0) 64)).readW
+          (W + BitVec.ofNat 64 8) 64) ∧
+      (∀ r, r ≠ .x9 → r ≠ .x10 → s'.gpr r = s.gpr r) ∧ s'.sp = s.sp ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
+  simp only [Mem.readW, BitVec.setWidth_eq] at aT
+  refine ⟨_, by
+    simp only [reduceCtorEq, ↓reduceIte, Nat.reduceLT, Nat.reduceMod, Nat.reduceMul, and_self,
+      sivOut, runBlock_cons, runStep_some, runBlock_nil, exec, addr, State.load, State.store, Size.bytes, Size.bits,
+      State.read, gpr_write, mem_write, rd_write, wr_write, Option.bind_some, Option.map_some, BitVec.setWidth_eq,
+      h19, r₂, aT, r₀, r₈, w₀, w₈]
+    rfl, ?_, fun r h₁ h₂ => by simp [gpr_write, h₁, h₂], by rfl, by rfl, by rfl⟩
+  simp only [Mem.writeW, Mem.readW, BitVec.setWidth_eq, Nat.reduceDiv, Nat.reduceMul]
+
+/-- Disjoint ranges are separate. -/
+theorem sep_of_disjoint {a b : Addr} {n k n' k' : Nat} (h : (⟨a, n'⟩ : Region).Disjoint ⟨b, k'⟩)
+    (hn : n ≤ n') (hk : k ≤ k') : Mem.Sep a n b k :=
+  fun x h₁ h₂ => h x (by simp only [Region.Contains]; omega) (by simp only [Region.Contains]; omega)
+
 theorem sealTail_wp (v : Proof.CmacAes.AArch64.UpdateImpl) (h : Env s₀ C D P W R L)
     (hcp : (⟨C, 512⟩ : Region).Disjoint ⟨P, L⟩) (hPw : (⟨P, L⟩ : Region) ∈ s₀.wr) {s : State}
-    (hs : SPre s₀ C D P W R L s) {g : Reg → BitVec 64} (hsv : Spill.Saved W g saved s.mem) :
+    (hs : SPre s₀ C D P W R L s) {g : Reg → BitVec 64} (hsv : Spill.Saved W g saved s.mem) {T : Addr}
+    (hgT : g .x6 = T) (hTw : (⟨T, 16⟩ : Region) ∈ s₀.wr) (tW : (⟨T, 16⟩ : Region).Disjoint ⟨W, 2560⟩)
+    (tP : (⟨T, 16⟩ : Region).Disjoint ⟨P, L⟩) (wT : T.toNat + 16 ≤ 2 ^ 64) :
     WP isa (.seq (finish v.callee v.ctr.callee v.ctr.suffix 0)
-        (.seq (.block (counter 0)) (.seq (ctr v.ctr.callee) (.block restore)))) s
+        (.seq (.block (counter 0)) (.seq (ctr v.ctr.callee) (.seq (.block sivOut) (.block restore))))) s
       fun s' => (∀ r ∈ preserved, s'.gpr r = g r) ∧ s'.sp = s₀.sp ∧
-        Frame (endRegions W P L) s.mem s'.mem ∧
+        Frame (⟨T, 16⟩ :: endRegions W P L) s.mem s'.mem ∧
         Spec.Siv.sealWith (Spec.Siv.ctxMac s.mem C R) (Spec.Siv.ctxCiph s.mem C R) (Spec.Aes.bytesAt s.mem D 16)
-          (Spec.Aes.bytesAt s.mem P L) = (Spec.Aes.bytesAt s'.mem W 16, Spec.Aes.bytesAt s'.mem P L) := by
+          (Spec.Aes.bytesAt s.mem P L) = (Spec.Aes.bytesAt s'.mem T 16, Spec.Aes.bytesAt s'.mem P L) := by
   have hRb : 16 * (R + 1) ≤ 240 := by rcases h.rounds with h | h | h <;> omega
   have hL : L ≤ 2 ^ 64 := by have := h.lt; omega
   refine WP.seq (WP.mono (finish_wp v h hs.regs (Or.inl rfl)) fun s₂ h₂ => ?_)
@@ -223,32 +252,60 @@ theorem sealTail_wp (v : Proof.CmacAes.AArch64.UpdateImpl) (h : Env s₀ C D P W
     (by rw [g₃ _ (by decide) (by decide), h₂.hold.2, hs.x27])) fun s₄ h₄ => ?_)
   have f₄ := h₄.frame
   -- The saved registers.
+  have hb := saved_bound
   have hsv₄ : Spill.Saved W g saved s₄.mem := by
-    have hb := saved_bound
     refine (((hsv.frame f₂ fun p hp => ?_).frame f₃ fun p hp => ?_).frame f₄ fun p hp => ?_)
     · have := hb p hp
       exact fin_dis h (by decide) (by omega) (by omega) (by omega) (by omega) (by omega)
     · have := hb p hp; exact cnt_dis (by omega) (by omega)
     · have := hb p hp; exact ctr_dis h (by omega) (by omega)
-  refine WP.mono (restore_wp h h₄.regs.x19 h₄.regs.rd h₄.regs.wr hsv₄) fun s₅ ⟨h₅a, _, sp₅, m₅⟩ => ?_
+  -- The copy of the IV to `T`.
+  have a₂ : s₄.mem.readW (W + BitVec.ofNat 64 248) 64 = T := by
+    rw [hsv₄ (.x6, 248) (by decide), hgT]
+  have inT (d : Nat) (hd : d + 8 ≤ 16) : InRegions s₄.wr (T + BitVec.ofNat 64 d) 8 := by
+    rw [h₄.regs.wr]; exact ⟨_, hTw, Offset.contains_base T hd (by have := wT; omega)⟩
+  obtain ⟨s₅, run₅, m₅, g₅, sp₅, rd₅, wr₅⟩ := sivOut_ok h₄.regs.x19 a₂
+    (h.inRW h₄.regs.rd h₄.regs.wr (d := 248) (n := 8) (by decide))
+    (h.inRW h₄.regs.rd h₄.regs.wr (d := 0) (n := 8) (by decide))
+    (h.inRW h₄.regs.rd h₄.regs.wr (d := 8) (n := 8) (by decide)) (inT 0 (by decide)) (inT 8 (by decide))
+  have fT : Frame [⟨T, 16⟩] s₄.mem s₅.mem := by rw [m₅, k0]; exact Proof.Cmac.frame_store2 _ _ _
+  have hsv₅ : Spill.Saved W g saved s₅.mem := hsv₄.frame fT fun p hp r hr => by
+    simp only [List.mem_singleton] at hr; subst hr
+    have := hb p hp
+    exact (tW.sub_right (h.sW (d := p.2) (n := 8) (by omega))).symm
+  refine WP.seq (WP.of_runBlock ⟨s₅, run₅, ?_⟩)
+  refine WP.mono (restore_wp h (by rw [g₅ _ (by decide) (by decide), h₄.regs.x19]) (by rw [rd₅, h₄.regs.rd])
+    (by rw [wr₅, h₄.regs.wr]) hsv₅) fun s₆ ⟨h₆a, _, sp₆, m₆⟩ => ?_
   have c₀ := ctr_dis h (d := 0) (n := 16) (by decide) (by decide)
   have d₀ := cnt_dis (W := W) (d := 0) (n := 16) (by decide) (by decide)
   rw [k0] at c₀ d₀
   -- The IV: S2V's end.
-  have hv : Spec.Aes.bytesAt s₅.mem W 16 =
+  have hv : Spec.Aes.bytesAt s₄.mem W 16 =
       Spec.Siv.s2vFinish (Spec.Siv.ctxMac s.mem C R) (Spec.Aes.bytesAt s.mem D 16) (Spec.Aes.bytesAt s.mem P L) := by
     have o₂ := h₂.out
     rw [k0] at o₂
-    rw [m₅, Proof.Cmac.bytesAt_frame f₄ c₀ (by decide), Proof.Cmac.bytesAt_frame f₃ d₀ (by decide), o₂]
+    rw [Proof.Cmac.bytesAt_frame f₄ c₀ (by decide), Proof.Cmac.bytesAt_frame f₃ d₀ (by decide), o₂]
   -- The ciphertext: CTR of the data from the IV's counter.
-  have hc : Spec.Aes.bytesAt s₅.mem P L =
-      Spec.Siv.ctr (Spec.Siv.ctxCiph s.mem C R) (Spec.Siv.counter (Spec.Aes.bytesAt s₅.mem W 16))
+  have hc : Spec.Aes.bytesAt s₄.mem P L =
+      Spec.Siv.ctr (Spec.Siv.ctxCiph s.mem C R) (Spec.Siv.counter (Spec.Aes.bytesAt s₄.mem W 16))
         (Spec.Aes.bytesAt s.mem P L) := by
-    rw [m₅, h₄.data, Proof.Cmac.bytesAt_frame f₄ c₀ (by decide), Proof.Cmac.bytesAt_frame f₃ d₀ (by decide),
+    rw [h₄.data, Proof.Cmac.bytesAt_frame f₄ c₀ (by decide), Proof.Cmac.bytesAt_frame f₃ d₀ (by decide),
       ctxCiph_frame f₃ (cnt_out h.c_w) hRb, ctxCiph_frame f₂ (fin_out (by decide) h.c_w) hRb,
       Proof.Cmac.bytesAt_frame f₃ (cnt_out h.p_w) hL, Proof.Cmac.bytesAt_frame f₂ (fin_out (by decide) h.p_w) hL]
-  refine ⟨h₅a, by rw [sp₅, h₄.regs.sp], ?_, by rw [hc, hv]; rfl⟩
-  rw [m₅]
-  exact ((f₂.sub (fin_sub h (by decide))).trans (f₃.sub (cnt_sub h))).trans (f₄.sub (ctr_sub h))
+  -- The copy.
+  have hT : Spec.Aes.bytesAt s₆.mem T 16 = Spec.Aes.bytesAt s₄.mem W 16 := by
+    have sp8 : Mem.Sep (W + BitVec.ofNat 64 8) (64 / 8) T (64 / 8) :=
+      sep_of_disjoint (tW.sub_right (h.sW (d := 8) (n := 8) (by decide))).symm (by decide) (by decide)
+    rw [m₆, m₅, k0, k0, Mem.readW_writeW_sep sp8 (by decide), Proof.Cmac.bytesAt_store2, Proof.Cmac.le8_readW,
+      Proof.Cmac.le8_readW, ← Proof.Cmac.bytesAt_split]
+  have hP : Spec.Aes.bytesAt s₆.mem P L = Spec.Aes.bytesAt s₄.mem P L := by
+    rw [m₆]
+    exact Proof.Cmac.bytesAt_frame fT (fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr; exact tP.symm) hL
+  refine ⟨h₆a, by rw [sp₆, sp₅, h₄.regs.sp], ?_, by rw [hT, hP, hc, hv]; rfl⟩
+  rw [m₆]
+  refine (((f₂.sub (fin_sub h (by decide))).trans (f₃.sub (cnt_sub h))).trans (f₄.sub (ctr_sub h))).mono
+    (fun r hr => List.mem_cons_of_mem _ hr) |>.trans (fT.mono fun r hr => ?_)
+  simp only [List.mem_singleton] at hr; subst hr; exact List.mem_cons_self
 
 end VG.Proof.AesSiv.AArch64

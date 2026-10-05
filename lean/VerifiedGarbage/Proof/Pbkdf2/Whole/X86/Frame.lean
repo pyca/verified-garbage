@@ -41,7 +41,7 @@ theorem pbkFramed {I : Spec.Hmac.Instance} {c : Prog isa}
       refine ⟨?_, by simp only [pbkFrame]; omega, by simp only [pbkFrame]; omega⟩
       change 8 + 4 * 7 + I.pbkdf2Scratch * 8 ≤ pbkFrame I
       simp only [pbkFrame]; omega)
-    hsp hd (Pbkdf2.pbkdf2Pre_local I.S _) (Pbkdf2.pbkdf2Post_local I.S _) hsat rfl
+    hsp hd (Pbkdf2.pbkdf2Pre_local I.S _) (Pbkdf2.pbkdf2Post_local I.S _) hsat
 
 /-- Memory holding the arguments `0x1000, 0, 0x1400, 0, 1, 0x1800, 0` of
 `pbkdf2` at `0x6004`. -/

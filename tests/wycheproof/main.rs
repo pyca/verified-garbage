@@ -46,6 +46,7 @@ mod pbkdf2_sha384;
 mod pbkdf2_sha512;
 mod rsa;
 mod rsa_keys;
+mod rsa_pkcs1_enc;
 mod rsa_pkcs1_sig;
 mod x25519;
 mod x448;
