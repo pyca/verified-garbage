@@ -21,6 +21,7 @@ def text (ls : List Line) : List String :=
     | .call n => s!"<call {n}>"
     | .sym s .page n => s!"{s}<page {n}>"
     | .sym s .pageOff n => s!"{s}<pageoff {n}>"
+    | .sym s .ripRel n => s!"{s}<riprel {n}>"
 
 open X86_64
 
