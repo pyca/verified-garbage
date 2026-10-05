@@ -26,6 +26,17 @@
 //! exponentiations of a 2048-bit key with primes of 1024 bits at once, in
 //! 256-bit vector registers.
 //!
+//! A private key can also be loaded from its modulus, its exponents and its
+//! primes `(n, e, d, p, q)`, whose CRT values `dP`, `dQ` and `qInv` the
+//! verified `vg_rsa_crt_values` (contract `VG.Spec.Rsa.crtValuesContract`)
+//! computes, or from `(n, e, d)` alone, whose primes the verified
+//! `vg_rsa_recover_primes` (contract `VG.Spec.Rsa.recoverPrimesContract`)
+//! recovers by SP 800-56B Rev. 2 Appendix C.1 (`vg_rsa_recover_primes_adx`
+//! on a CPU with BMI2 and ADX). The timing of the first may depend on `n`
+//! but not on the private key; that of the second on `n`, `e` and the number
+//! of candidates the recovery tried (1 or 2 for most keys), but not
+//! otherwise on `d`.
+//!
 //! This module only checks the lengths and allocates the memory they work in.
 //!
 //! This is a primitive for building padding schemes (OAEP, PSS, PKCS #1
@@ -41,13 +52,16 @@ use core::fmt;
 use crate::arch::rsa::{
     VG_RSA_PRIVATE_CRT_ADX_FEATURES, VG_RSA_PRIVATE_CRT_IFMA_FEATURES,
     VG_RSA_PUBLIC_PRECOMPUTE_ADX_FEATURES, VG_RSA_PUBLIC_PRECOMPUTED_ADX_FEATURES,
-    vg_rsa_private_crt, vg_rsa_private_crt_adx, vg_rsa_private_crt_ifma, vg_rsa_public_precompute,
+    VG_RSA_RECOVER_PRIMES_ADX_FEATURES, vg_rsa_crt_values, vg_rsa_private_crt,
+    vg_rsa_private_crt_adx, vg_rsa_private_crt_ifma, vg_rsa_public_precompute,
     vg_rsa_public_precompute_adx, vg_rsa_public_precomputed, vg_rsa_public_precomputed_adx,
+    vg_rsa_recover_primes, vg_rsa_recover_primes_adx,
 };
 use crate::cpu::{Features, detected};
 
 /// The implementations of `vg_rsa_public_precompute`,
-/// `vg_rsa_public_precomputed` and `vg_rsa_private_crt`.
+/// `vg_rsa_public_precomputed`, `vg_rsa_private_crt` and
+/// `vg_rsa_recover_primes`.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum Backend {
     /// The baseline ISA.
@@ -65,7 +79,8 @@ impl Backend {
     fn select(f: Features) -> Backend {
         let adx = f.contains(VG_RSA_PUBLIC_PRECOMPUTE_ADX_FEATURES)
             && f.contains(VG_RSA_PUBLIC_PRECOMPUTED_ADX_FEATURES)
-            && f.contains(VG_RSA_PRIVATE_CRT_ADX_FEATURES);
+            && f.contains(VG_RSA_PRIVATE_CRT_ADX_FEATURES)
+            && f.contains(VG_RSA_RECOVER_PRIMES_ADX_FEATURES);
         if adx && f.contains(VG_RSA_PRIVATE_CRT_IFMA_FEATURES) {
             Backend::Ifma
         } else if adx {
@@ -335,6 +350,140 @@ impl PrivateKey {
         }
     }
 
+    /// The key with the modulus `n`, the public exponent `e`, the private
+    /// exponent `d` and the primes `p` and `q`, all big-endian (with any
+    /// number of leading zero bytes but `n`), as RFC 8017 §3.2's first form
+    /// with the primes: computes the CRT values `dP = d mod (p - 1)`,
+    /// `dQ = d mod (q - 1)` and `qInv = q⁻¹ mod p` and loads the key as
+    /// [`from_crt`](Self::from_crt) does. `n` must be odd, from 512 to 8192
+    /// bits long, with no leading zero byte; `e` and `d` must be 1 to
+    /// `n.len()` bytes long without their leading zeros, and `p` and `q`
+    /// shorter than `n`; `p q = n`, and `q` must have an inverse modulo
+    /// `p`. Nothing checks that `p` and `q` are prime or that `d` is the
+    /// private exponent of `e`: `e` is checked only for its length.
+    pub fn from_primes(n: &[u8], e: &[u8], d: &[u8], p: &[u8], q: &[u8]) -> Result<Self, Error> {
+        let k = n.len();
+        if !(MIN_MODULUS_LEN..=MAX_MODULUS_LEN).contains(&k) {
+            return Err(Error::InvalidModulus);
+        }
+        let e = trim(e);
+        if e.is_empty() || e.len() > k {
+            return Err(Error::InvalidExponent);
+        }
+        let (d, p, q) = (trim(d), trim(p), trim(q));
+        if d.is_empty()
+            || d.len() > k
+            || p.is_empty()
+            || p.len() >= k
+            || q.is_empty()
+            || q.len() >= k
+        {
+            return Err(Error::InvalidPrivateKey);
+        }
+        let (mut dp, mut dq, mut qinv) = (vec![0; p.len()], vec![0; q.len()], vec![0; p.len()]);
+        let mut scratch = vec![0u64; scratch_words(k)];
+        // SAFETY: each pointer is valid for its length (`dp`, `dq`, `qinv`
+        // and `scratch` for writes), and none overlaps another or wraps
+        // around, as they are distinct Rust allocations; the checks above
+        // give `64 ≤ n_len ≤ 1024`, `1 ≤ p_len < n_len`, `1 ≤ q_len < n_len`
+        // and `1 ≤ d_len ≤ n_len`, and `dp_len = qinv_len = p_len`,
+        // `dq_len = q_len` and `scratch_len = 16 n_len`.
+        let r = unsafe {
+            vg_rsa_crt_values(
+                dp.as_mut_ptr(),
+                dp.len(),
+                dq.as_mut_ptr(),
+                dq.len(),
+                qinv.as_mut_ptr(),
+                qinv.len(),
+                n.as_ptr(),
+                k,
+                p.as_ptr(),
+                p.len(),
+                q.as_ptr(),
+                q.len(),
+                d.as_ptr(),
+                d.len(),
+                scratch.as_mut_ptr(),
+                scratch.len(),
+            )
+        };
+        // The working space holds the private key.
+        crate::zeroize::zeroize(&mut scratch);
+        let key = if r == 1 {
+            PrivateKey::from_crt(n, p, q, &dp, &dq, &qinv)
+        } else {
+            Err(Error::InvalidPrivateKey)
+        };
+        for x in [&mut dp, &mut dq, &mut qinv] {
+            crate::zeroize::zeroize(x);
+        }
+        key
+    }
+
+    /// The key with the modulus `n`, the public exponent `e` and the private
+    /// exponent `d`, all big-endian (with any number of leading zero bytes
+    /// but `n`), RFC 8017 §3.2's first form: recovers the primes `p > q` of
+    /// `n` by SP 800-56B Rev. 2 Appendix C.1, trying the candidates
+    /// `g = 2, 3, …` up to 100 of them, and loads the key as
+    /// [`from_primes`](Self::from_primes) does. `n` must be odd, from 512 to
+    /// 8192 bits long, with no leading zero byte, and `e` and `d` 1 to
+    /// `n.len()` bytes long without their leading zeros. For a valid RSA key
+    /// the primes are found, but for a negligible fraction of keys.
+    pub fn from_components(n: &[u8], e: &[u8], d: &[u8]) -> Result<Self, Error> {
+        let k = n.len();
+        if !(MIN_MODULUS_LEN..=MAX_MODULUS_LEN).contains(&k) {
+            return Err(Error::InvalidModulus);
+        }
+        let (e, d) = (trim(e), trim(d));
+        if e.is_empty() || e.len() > k {
+            return Err(Error::InvalidExponent);
+        }
+        if d.is_empty() || d.len() > k {
+            return Err(Error::InvalidPrivateKey);
+        }
+        let (mut p, mut q) = (vec![0; k], vec![0; k]);
+        let mut scratch = vec![0u64; scratch_words(k)];
+        let f = match Backend::select(detected()) {
+            Backend::Baseline => vg_rsa_recover_primes,
+            // `select` chose it because the CPU has the features it needs.
+            Backend::Adx | Backend::Ifma => vg_rsa_recover_primes_adx,
+        };
+        // SAFETY: each pointer is valid for its length (`p`, `q` and
+        // `scratch` for writes), and none overlaps another or wraps around,
+        // as they are distinct Rust allocations; the checks above give
+        // `64 ≤ n_len ≤ 1024` and `1 ≤ e_len, d_len ≤ n_len`, and
+        // `p_len = q_len = n_len` and `scratch_len = 16 n_len`; and the CPU
+        // has the features of the function `select` chose.
+        let r = unsafe {
+            f(
+                p.as_mut_ptr(),
+                k,
+                q.as_mut_ptr(),
+                k,
+                n.as_ptr(),
+                k,
+                e.as_ptr(),
+                e.len(),
+                d.as_ptr(),
+                d.len(),
+                scratch.as_mut_ptr(),
+                scratch.len(),
+            )
+        };
+        // The working space holds the private key.
+        crate::zeroize::zeroize(&mut scratch);
+        let key = if r == 1 {
+            PrivateKey::from_primes(n, e, d, &p, &q)
+        } else {
+            Err(Error::InvalidPrivateKey)
+        };
+        for x in [&mut p, &mut q] {
+            crate::zeroize::zeroize(x);
+        }
+        key
+    }
+
     /// The length of the modulus in bytes, which is that of every input and
     /// output.
     pub fn modulus_len(&self) -> usize {
@@ -459,6 +608,10 @@ mod tests {
             Backend::Adx
         );
         assert_eq!(
+            Backend::select(VG_RSA_RECOVER_PRIMES_ADX_FEATURES),
+            Backend::Adx
+        );
+        assert_eq!(
             Backend::select(VG_RSA_PRIVATE_CRT_IFMA_FEATURES),
             Backend::Ifma
         );
@@ -565,6 +718,70 @@ mod tests {
             Err(Error::InvalidLength)
         );
         assert!(!alloc::format!("{key:?}").contains('['));
+    }
+
+    /// With `d = 1`, `dP = dQ = 1` and the operation is the identity below
+    /// `n`, whatever `qInv` `vg_rsa_crt_values` computed.
+    #[test]
+    fn private_from_primes() {
+        for (pl, ql) in [(32, 32), (33, 31), (40, 24), (100, 28)] {
+            let (n, p, q) = crt_key(pl, ql);
+            let k = n.len();
+            let key = PrivateKey::from_primes(&n, &[0, 3], &[0, 1], &[&[0][..], &p].concat(), &q)
+                .unwrap();
+            for x in [
+                be(0, k),
+                be(2, k),
+                be(0x1234_5678_9abc_def0, k),
+                minus_one(&n),
+            ] {
+                assert_eq!(private(&key, &x), Ok(x.clone()));
+            }
+        }
+        let (n, p, q) = crt_key(32, 32);
+        let new = |n: &[u8], e: &[u8], d: &[u8], p: &[u8], q: &[u8]| {
+            PrivateKey::from_primes(n, e, d, p, q).map(|_| ())
+        };
+        assert_eq!(new(&n[1..], &[3], &[1], &p, &q), Err(Error::InvalidModulus));
+        assert_eq!(
+            new(&[1; 1025], &[3], &[1], &p, &q),
+            Err(Error::InvalidModulus)
+        );
+        assert_eq!(new(&n, &[0], &[1], &p, &q), Err(Error::InvalidExponent));
+        assert_eq!(new(&n, &[1; 65], &[1], &p, &q), Err(Error::InvalidExponent));
+        let bad = Err(Error::InvalidPrivateKey);
+        assert_eq!(new(&n, &[3], &[0, 0], &p, &q), bad);
+        assert_eq!(new(&n, &[3], &[1; 65], &p, &q), bad);
+        assert_eq!(new(&n, &[3], &[1], &[0; 3], &q), bad);
+        assert_eq!(new(&n, &[3], &[1], &n, &q), bad);
+        assert_eq!(new(&n, &[3], &[1], &p, &[]), bad);
+        assert_eq!(new(&n, &[3], &[1], &p, &n), bad);
+        // `p q ≠ n`, and `q` with no inverse modulo `p` (`gcd = 13`).
+        let mut n2 = n.clone();
+        n2[10] ^= 1;
+        assert_eq!(new(&n2, &[3], &[1], &p, &q), bad);
+        let (n3, p3, q3) = crt_key(36, 32);
+        assert_eq!(new(&n3, &[3], &[1], &p3, &q3), bad);
+    }
+
+    #[test]
+    fn private_from_components_invalid() {
+        let (n, _, _) = crt_key(32, 32);
+        let new = |n: &[u8], e: &[u8], d: &[u8]| PrivateKey::from_components(n, e, d).map(|_| ());
+        assert_eq!(new(&n[1..], &[3], &[1]), Err(Error::InvalidModulus));
+        assert_eq!(new(&[1; 1025], &[3], &[1]), Err(Error::InvalidModulus));
+        assert_eq!(new(&n, &[0, 0], &[1]), Err(Error::InvalidExponent));
+        assert_eq!(new(&n, &[1; 65], &[1]), Err(Error::InvalidExponent));
+        let bad = Err(Error::InvalidPrivateKey);
+        assert_eq!(new(&n, &[3], &[]), bad);
+        assert_eq!(new(&n, &[3], &[1; 65]), bad);
+        // `d e - 1 = 2`: no candidate finds a factor.
+        assert_eq!(new(&n, &[3], &[1]), bad);
+        // `d e` even: step 1 fails. An even modulus.
+        assert_eq!(new(&n, &[3], &[2]), bad);
+        let mut even = n.clone();
+        *even.last_mut().unwrap() ^= 1;
+        assert_eq!(new(&even, &[3], &[1]), bad);
     }
 
     /// Identities that hold for every modulus, at every length from 512 to
