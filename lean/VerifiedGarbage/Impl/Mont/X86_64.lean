@@ -15,8 +15,12 @@ working space too, at `M.mo`; `M.minv` is `-m⁻¹ mod 2⁶⁴`. With
   `t += a_i [b]`, then `t += u m` for `u = t₀ m' mod 2⁶⁴`, which makes the
   low word zero, and `t /= 2⁶⁴`. The `n + 2` accumulator words are
   registers (`acc n`); the division renames them (round `i`'s words are
-  `win n i 0`, `win n i 1`, …), so it costs nothing. The accumulator stays
-  below `2m`, and the result is reduced by `csub`.
+  `win n i 0`, `win n i 1`, …), so it costs nothing. For a modulus
+  `m ≡ -1 (mod 2⁶⁴)` (`Red.friendly`, P-256's `p`), `u = t₀` and
+  `t + t₀ m = (t - t₀) + 2⁶⁴ t₀ m'` with `m' = (m + 1) / 2⁶⁴`, so the words
+  above `t₀` get `t₀ m'`, one product per word of `m'` but those of zero
+  (`redWords`): for `p`, two products. The accumulator stays below `2m`, and
+  the result is reduced by `csub`.
 * `add o a b`, `sub o a b`: `[a] ± [b] mod m`, with a conditional
   subtraction (`csub`) or addition of `m`.
 * `csub`: a number below `2m` in `n` registers and a top word (0 or 1)
@@ -82,14 +86,34 @@ def carryUp (tn tn1 : Reg) : List Instr := [.alu .add tn (.reg .rbp), .alu .adc 
 /-- The words of round `i`'s accumulator, low to high. -/
 def wins (n i : Nat) : List Reg := (List.range (n + 2)).map (win n i)
 
-/-- Round `i` of `mul o a b`: `t += a_i [b]`, then `t += u m` with
-`u = t₀ m' mod 2⁶⁴`, after which `t₀ = 0`. -/
+/-- `ts += t₀ w` (`ts` of at least two words): the product `rdx:rax` added
+to the first two words, and its carry up the others. -/
+def addProd (t0 : Reg) (w : BitVec 64) : List Reg → List Instr
+  | t :: t' :: rest => [.movImm64 .rax w, .mul t0, .alu .add t (.reg .rax), .alu .adc t' (.reg .rdx)] ++
+      rest.map fun r => .alu .adc r (.imm 0)
+  | _ => []
+
+/-- `ts += t₀ m'` for the words `ws` of `m'`: each word but zero multiplied by
+`t₀` and added at its place. -/
+def redWords (t0 : Reg) : List MWord → List Reg → List Instr
+  | [], _ => []
+  | w :: ws, ts => (if w = .zero then [] else addProd t0 (BitVec.ofNat 64 w.val) ts) ++ redWords t0 ws ts.tail
+
+/-- The reduction of round `i`: `t += u m` with `u = t₀ m' mod 2⁶⁴`, after
+which `t₀ = 0`; or, for a friendly modulus, the words above `t₀` get `t₀ m'`
+and `t₀ = 0`. -/
+def redRound (M : Mod) (i : Nat) : List Instr :=
+  let t := win M.n i
+  match M.red with
+  | .general => [.mov .rax (.reg (t 0)), .movImm64 .rcx M.minv, .mul .rcx, .mov .rcx (.reg .rax)] ++
+      mulRow ((List.range M.n).map t) M.mo ++ carryUp (t M.n) (t (M.n + 1))
+  | .friendly ws => redWords (t 0) ws (wins M.n i).tail ++ [.mov32 (t 0) (.imm 0)]
+
+/-- Round `i` of `mul o a b`: `t += a_i [b]`, then the reduction. -/
 def round (M : Mod) (a b i : Nat) : List Instr :=
   let t := win M.n i
   let low := (List.range M.n).map t
-  [.mov .rcx (.mem (sc (a + 8 * i)))] ++ mulRow low b ++ carryUp (t M.n) (t (M.n + 1)) ++
-  [.mov .rax (.reg (t 0)), .movImm64 .rcx M.minv, .mul .rcx, .mov .rcx (.reg .rax)] ++
-    mulRow low M.mo ++ carryUp (t M.n) (t (M.n + 1))
+  [.mov .rcx (.mem (sc (a + 8 * i)))] ++ mulRow low b ++ carryUp (t M.n) (t (M.n + 1)) ++ redRound M i
 
 /-- `[tmp + d] = ts - [mo + d]`, word by word, with `op` (`sub`, then
 `sbb`) on the first word, through `rax`. -/

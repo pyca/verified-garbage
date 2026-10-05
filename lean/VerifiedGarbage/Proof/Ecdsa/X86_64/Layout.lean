@@ -69,6 +69,7 @@ structure CfgOk (c : Cfg) : Prop where
   n_ge : 3 ≤ c.C.n
   p_lt_2n : c.C.p < 2 * c.C.n
   minv_p : (c.C.p * (BitVec.ofNat 64 (minv c.C.p)).toNat + 1) % 2 ^ 64 = 0
+  red_p : c.MP'.ok c.C.p = true
   minv_n : (c.C.n * (BitVec.ofNat 64 (minv c.C.n)).toNat + 1) % 2 ^ 64 = 0
   len8 : 8 ≤ c.C.len
   len_lo : 8 * c.n < c.C.len + 8
