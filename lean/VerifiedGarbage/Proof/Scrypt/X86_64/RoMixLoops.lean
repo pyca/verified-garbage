@@ -1,3 +1,5 @@
+import VerifiedGarbage.Proof.Scrypt.X86_64.SimdMem
+import VerifiedGarbage.Proof.Scrypt.X86_64.Memory128
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Scrypt.X86_64.Common
 import VerifiedGarbage.Impl.Scrypt.X86_64.RoMix
@@ -20,7 +22,7 @@ open VG.Proof.Sha256.Stream (writeBytes writeBytes_append writeBytes_nil)
 open VG.Proof.MdStream.X86_64 (Upd wp_movm wp_store wp_add wp_addi wp_subi wp_cmp ofNat_pred
   ofNat_beq_zero sub_beq)
 open VG.Proof.Scrypt.X86_64.BlockMix (ea_at wp_xorm)
-open VG.Proof.Scrypt.Memory (toNat_ofNat_lt add_ofNat copy_mem xor_mem dbl_pow)
+open VG.Proof.Scrypt.Memory (toNat_ofNat_lt add_ofNat copy_mem xor_mem128 dbl_pow)
 
 /-! ## Instructions and arithmetic -/
 
@@ -28,14 +30,14 @@ open VG.Proof.Scrypt.Memory (toNat_ofNat_lt add_ofNat copy_mem xor_mem dbl_pow)
 theorem ea_at0 (s : State) (b : Reg) : s.ea (at_ b 0) = s.gpr b := by
   rw [ea_at]; exact BitVec.add_zero _
 
-theorem sx8 : (8 : BitVec 32).signExtend 64 = BitVec.ofNat 64 8 := by decide
+theorem sx16 : (16 : BitVec 32).signExtend 64 = BitVec.ofNat 64 16 := by decide
 
 theorem sx1 : (1 : BitVec 32).signExtend 64 = 1 := by decide
 
 /-- A pointer advanced by one word. -/
 theorem next_ptr (p : Addr) (k : Nat) :
-    p + BitVec.ofNat 64 (8 * k) + (8 : BitVec 32).signExtend 64 = p + BitVec.ofNat 64 (8 * (k + 1)) := by
-  rw [sx8, add_ofNat, Nat.mul_succ]
+    p + BitVec.ofNat 64 (16 * k) + (16 : BitVec 32).signExtend 64 = p + BitVec.ofNat 64 (16 * (k + 1)) := by
+  rw [sx16, add_ofNat, Nat.mul_succ]
 
 /-- The count after one more iteration of `n`. -/
 theorem dec_count {n k : Nat} (hk : k < n) :
@@ -47,7 +49,7 @@ theorem dec_zf {n k : Nat} (hk : k < n) (hn : n < 2 ^ 64) :
   rw [dec_count hk, ofNat_beq_zero (by omega)]
   exact decide_eq_decide.mpr (by omega)
 
-theorem ofNat_zero_add (p : Addr) : p + BitVec.ofNat 64 (8 * 0) = p := by
+theorem ofNat_zero_add (p : Addr) : p + BitVec.ofNat 64 (16 * 0) = p := by
   rw [Nat.mul_zero]; exact BitVec.add_zero _
 
 /-! ## Counted loops -/
@@ -72,47 +74,50 @@ structure CopyInv (s : State) (src dst : Addr) (n k : Nat) (t : State) : Prop wh
   rd : t.rd = s.rd
   wr : t.wr = s.wr
   other : ∀ r, r ≠ .rax → r ≠ .rdi → r ≠ .rsi → r ≠ .rcx → t.gpr r = s.gpr r
-  rdi : t.gpr .rdi = src + BitVec.ofNat 64 (8 * k)
-  rsi : t.gpr .rsi = dst + BitVec.ofNat 64 (8 * k)
+  rdi : t.gpr .rdi = src + BitVec.ofNat 64 (16 * k)
+  rsi : t.gpr .rsi = dst + BitVec.ofNat 64 (16 * k)
   rcx : t.gpr .rcx = BitVec.ofNat 64 (n - k)
-  mem : t.mem = writeBytes s.mem dst (bytesAt s.mem src (8 * k))
+  mem : t.mem = writeBytes s.mem dst (bytesAt s.mem src (16 * k))
 
-theorem copy_step {s : State} {src dst : Addr} {n : Nat} (hlt : 8 * n < 2 ^ 64)
-    (hin : ∀ k < n, InRegions (s.rd ++ s.wr) (src + BitVec.ofNat 64 (8 * k)) 8)
-    (hout : ∀ k < n, InRegions s.wr (dst + BitVec.ofNat 64 (8 * k)) 8)
-    (hsep : Region.Disjoint ⟨src, 8 * n⟩ ⟨dst, 8 * n⟩) {k : Nat} (hk : k < n) {t : State}
+theorem copy_step {s : State} {src dst : Addr} {n : Nat} (hlt : 16 * n < 2 ^ 64)
+    (hin : ∀ k < n, InRegions (s.rd ++ s.wr) (src + BitVec.ofNat 64 (16 * k)) 16)
+    (hout : ∀ k < n, InRegions s.wr (dst + BitVec.ofNat 64 (16 * k)) 16)
+    (hsep : Region.Disjoint ⟨src, 16 * n⟩ ⟨dst, 16 * n⟩) {k : Nat} (hk : k < n) {t : State}
     (h : CopyInv s src dst n k t) :
-    WP isa (.block [.mov .rax (.mem (at_ .rdi 0)), .store (at_ .rsi 0) .rax,
-      .alu .add .rdi (.imm 8), .alu .add .rsi (.imm 8), .alu .sub .rcx (.imm 1)]) t
+    WP isa (.block [.movdquLoad .xmm0 (at_ .rdi 0), .movdquStore (at_ .rsi 0) .xmm0,
+      .alu .add .rdi (.imm 16), .alu .add .rsi (.imm 16), .alu .sub .rcx (.imm 1)]) t
       fun t' => CopyInv s src dst n (k + 1) t' ∧ t'.zf = some (decide (k + 1 = n)) := by
-  refine wp_movm (a := src + BitVec.ofNat 64 (8 * k)) (by rw [ea_at0, h.rdi])
-    (by rw [h.rd, h.wr]; exact hin k hk) fun t₁ u₁ => ?_
-  refine wp_store (a := dst + BitVec.ofNat 64 (8 * k)) (by rw [ea_at0, u₁.other _ (by decide), h.rsi])
-    (by rw [u₁.wr, h.wr]; exact hout k hk) fun t₂ g₂ m₂ rd₂ wr₂ => ?_
+  change WP isa (.block ([.movdquLoad .xmm0 (at_ .rdi 0),
+    .movdquStore (at_ .rsi 0) .xmm0] ++
+    [.alu .add .rdi (.imm 16), .alu .add .rsi (.imm 16), .alu .sub .rcx (.imm 1)])) t _
+  rw [WP.block_append_iff]
+  refine WP.mono (SimdMem.copy (by rw [ea_at0, h.rdi]) (by rw [ea_at0, h.rsi])
+    (by rw [h.rd, h.wr]; exact hin k hk) (by rw [h.wr]; exact hout k hk)) ?_
+  intro t₂ ⟨g₂, rd₂, wr₂, m₂⟩
   refine wp_addi fun t₃ u₃ => wp_addi fun t₄ u₄ => wp_subi fun t₅ u₅ z₅ => WP.block_nil ?_
-  have g : ∀ r, r ≠ .rax → t₂.gpr r = t.gpr r := fun r hr => by rw [g₂, u₁.other r hr]
-  refine ⟨⟨by rw [u₅.rd, u₄.rd, u₃.rd, rd₂, u₁.rd, h.rd], by rw [u₅.wr, u₄.wr, u₃.wr, wr₂, u₁.wr, h.wr],
+  have g : ∀ r, r ≠ .rax → t₂.gpr r = t.gpr r := fun r hr => congrFun g₂ r
+  refine ⟨⟨by rw [u₅.rd, u₄.rd, u₃.rd, rd₂, h.rd], by rw [u₅.wr, u₄.wr, u₃.wr, wr₂, h.wr],
     fun r ha hdi hsi hcx => ?_, ?_, ?_, ?_, ?_⟩, ?_⟩
   · rw [u₅.other r hcx, u₄.other r hsi, u₃.other r hdi, g r ha, h.other r ha hdi hsi hcx]
   · rw [u₅.other _ (by decide), u₄.other _ (by decide), u₃.gpr, g _ (by decide), h.rdi, next_ptr]
   · rw [u₅.other _ (by decide), u₄.gpr, u₃.other _ (by decide), g _ (by decide), h.rsi, next_ptr]
   · rw [u₅.gpr, u₄.other _ (by decide), u₃.other _ (by decide), g _ (by decide), h.rcx, dec_count hk]
-  · rw [u₅.mem, u₄.mem, u₃.mem, m₂, u₁.gpr, u₁.mem, h.mem, Nat.mul_succ]
-    exact copy_mem s.mem src dst k 8
+  · rw [u₅.mem, u₄.mem, u₃.mem, m₂, h.mem, Nat.mul_succ]
+    exact copy_mem s.mem src dst k 16
       (hsep.sep (by simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega)
         (by simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega)) (by omega)
   · rw [z₅, u₄.other _ (by decide), u₃.other _ (by decide), g _ (by decide), h.rcx,
       dec_zf hk (by omega)]
 
-/-- `copyLoop` copies `8 n` bytes from `rdi` to `rsi` (`rcx = n > 0` words). -/
-theorem copyLoop_ok {s : State} {src dst : Addr} {n : Nat} (hn : 0 < n) (hlt : 8 * n < 2 ^ 64)
+/-- `copyLoop` copies `16 n` bytes from `rdi` to `rsi` (`rcx = n > 0` words). -/
+theorem copyLoop_ok {s : State} {src dst : Addr} {n : Nat} (hn : 0 < n) (hlt : 16 * n < 2 ^ 64)
     (hdi : s.gpr .rdi = src) (hsi : s.gpr .rsi = dst) (hcx : s.gpr .rcx = BitVec.ofNat 64 n)
-    (hin : ∀ k < n, InRegions (s.rd ++ s.wr) (src + BitVec.ofNat 64 (8 * k)) 8)
-    (hout : ∀ k < n, InRegions s.wr (dst + BitVec.ofNat 64 (8 * k)) 8)
-    (hsep : Region.Disjoint ⟨src, 8 * n⟩ ⟨dst, 8 * n⟩) :
+    (hin : ∀ k < n, InRegions (s.rd ++ s.wr) (src + BitVec.ofNat 64 (16 * k)) 16)
+    (hout : ∀ k < n, InRegions s.wr (dst + BitVec.ofNat 64 (16 * k)) 16)
+    (hsep : Region.Disjoint ⟨src, 16 * n⟩ ⟨dst, 16 * n⟩) :
     WP isa copyLoop s fun s' => s'.rd = s.rd ∧ s'.wr = s.wr ∧
       (∀ r, r ≠ .rax → r ≠ .rdi → r ≠ .rsi → r ≠ .rcx → s'.gpr r = s.gpr r) ∧
-      s'.mem = writeBytes s.mem dst (bytesAt s.mem src (8 * n)) := by
+      s'.mem = writeBytes s.mem dst (bytesAt s.mem src (16 * n)) := by
   refine WP.mono (count_loop hn (CopyInv s src dst n)
     (fun k hk t h => copy_step hlt hin hout hsep hk h) ?_) fun t h => ⟨h.rd, h.wr, h.other, h.mem⟩
   exact ⟨rfl, rfl, fun _ _ _ _ _ => rfl, by rw [ofNat_zero_add, hdi], by rw [ofNat_zero_add, hsi],
@@ -125,35 +130,36 @@ structure XorInv (s : State) (x y d : Addr) (n k : Nat) (t : State) : Prop where
   rd : t.rd = s.rd
   wr : t.wr = s.wr
   other : ∀ r, r ≠ .rax → r ≠ .rdi → r ≠ .rsi → r ≠ .r8 → r ≠ .rcx → t.gpr r = s.gpr r
-  rdi : t.gpr .rdi = x + BitVec.ofNat 64 (8 * k)
-  rsi : t.gpr .rsi = y + BitVec.ofNat 64 (8 * k)
-  r8 : t.gpr .r8 = d + BitVec.ofNat 64 (8 * k)
+  rdi : t.gpr .rdi = x + BitVec.ofNat 64 (16 * k)
+  rsi : t.gpr .rsi = y + BitVec.ofNat 64 (16 * k)
+  r8 : t.gpr .r8 = d + BitVec.ofNat 64 (16 * k)
   rcx : t.gpr .rcx = BitVec.ofNat 64 (n - k)
-  mem : t.mem = writeBytes s.mem d (xorBytes (bytesAt s.mem x (8 * k)) (bytesAt s.mem y (8 * k)))
+  mem : t.mem = writeBytes s.mem d (xorBytes (bytesAt s.mem x (16 * k)) (bytesAt s.mem y (16 * k)))
 
-theorem xor_step {s : State} {x y d : Addr} {n : Nat} (hlt : 8 * n < 2 ^ 64)
-    (hinx : ∀ k < n, InRegions (s.rd ++ s.wr) (x + BitVec.ofNat 64 (8 * k)) 8)
-    (hiny : ∀ k < n, InRegions (s.rd ++ s.wr) (y + BitVec.ofNat 64 (8 * k)) 8)
-    (hout : ∀ k < n, InRegions s.wr (d + BitVec.ofNat 64 (8 * k)) 8)
-    (hdx : Region.Disjoint ⟨d, 8 * n⟩ ⟨x, 8 * n⟩) (hdy : Region.Disjoint ⟨d, 8 * n⟩ ⟨y, 8 * n⟩)
+theorem xor_step {s : State} {x y d : Addr} {n : Nat} (hlt : 16 * n < 2 ^ 64)
+    (hinx : ∀ k < n, InRegions (s.rd ++ s.wr) (x + BitVec.ofNat 64 (16 * k)) 16)
+    (hiny : ∀ k < n, InRegions (s.rd ++ s.wr) (y + BitVec.ofNat 64 (16 * k)) 16)
+    (hout : ∀ k < n, InRegions s.wr (d + BitVec.ofNat 64 (16 * k)) 16)
+    (hdx : Region.Disjoint ⟨d, 16 * n⟩ ⟨x, 16 * n⟩) (hdy : Region.Disjoint ⟨d, 16 * n⟩ ⟨y, 16 * n⟩)
     {k : Nat} (hk : k < n) {t : State} (h : XorInv s x y d n k t) :
-    WP isa (.block [.mov .rax (.mem (at_ .rdi 0)), .alu .xor .rax (.mem (at_ .rsi 0)),
-      .store (at_ .r8 0) .rax, .alu .add .rdi (.imm 8), .alu .add .rsi (.imm 8),
-      .alu .add .r8 (.imm 8), .alu .sub .rcx (.imm 1)]) t
+    WP isa (.block [.movdquLoad .xmm0 (at_ .rdi 0), .movdquLoad .xmm1 (at_ .rsi 0),
+      .xop (.bin .pxor .xmm0 .xmm1), .movdquStore (at_ .r8 0) .xmm0, .alu .add .rdi (.imm 16), .alu .add .rsi (.imm 16),
+      .alu .add .r8 (.imm 16), .alu .sub .rcx (.imm 1)]) t
       fun t' => XorInv s x y d n (k + 1) t' ∧ t'.zf = some (decide (k + 1 = n)) := by
-  refine wp_movm (a := x + BitVec.ofNat 64 (8 * k)) (by rw [ea_at0, h.rdi])
-    (by rw [h.rd, h.wr]; exact hinx k hk) fun t₁ u₁ => ?_
-  refine wp_xorm (a := y + BitVec.ofNat 64 (8 * k)) (by rw [ea_at0, u₁.other _ (by decide), h.rsi])
-    (by rw [u₁.rd, u₁.wr, h.rd, h.wr]; exact hiny k hk) fun t₂ u₂ => ?_
-  refine wp_store (a := d + BitVec.ofNat 64 (8 * k))
-    (by rw [ea_at0, u₂.other _ (by decide), u₁.other _ (by decide), h.r8])
-    (by rw [u₂.wr, u₁.wr, h.wr]; exact hout k hk) fun t₃ g₃ m₃ rd₃ wr₃ => ?_
+  change WP isa (.block ([.movdquLoad .xmm0 (at_ .rdi 0), .movdquLoad .xmm1 (at_ .rsi 0),
+    .xop (.bin .pxor .xmm0 .xmm1), .movdquStore (at_ .r8 0) .xmm0] ++
+    [.alu .add .rdi (.imm 16), .alu .add .rsi (.imm 16), .alu .add .r8 (.imm 16),
+      .alu .sub .rcx (.imm 1)])) t _
+  rw [WP.block_append_iff]
+  refine WP.mono (SimdMem.xor (by rw [ea_at0, h.rdi]) (by rw [ea_at0, h.rsi])
+    (by rw [ea_at0, h.r8]) (by rw [h.rd, h.wr]; exact hinx k hk)
+    (by rw [h.rd, h.wr]; exact hiny k hk) (by rw [h.wr]; exact hout k hk)) ?_
+  intro t₃ ⟨g₃, rd₃, wr₃, m₃⟩
   refine wp_addi fun t₄ u₄ => wp_addi fun t₅ u₅ => wp_addi fun t₆ u₆ =>
     wp_subi fun t₇ u₇ z₇ => WP.block_nil ?_
-  have g : ∀ r, r ≠ .rax → t₃.gpr r = t.gpr r := fun r hr => by
-    rw [g₃, u₂.other r hr, u₁.other r hr]
-  refine ⟨⟨by rw [u₇.rd, u₆.rd, u₅.rd, u₄.rd, rd₃, u₂.rd, u₁.rd, h.rd],
-    by rw [u₇.wr, u₆.wr, u₅.wr, u₄.wr, wr₃, u₂.wr, u₁.wr, h.wr],
+  have g : ∀ r, r ≠ .rax → t₃.gpr r = t.gpr r := fun r hr => congrFun g₃ r
+  refine ⟨⟨by rw [u₇.rd, u₆.rd, u₅.rd, u₄.rd, rd₃, h.rd],
+    by rw [u₇.wr, u₆.wr, u₅.wr, u₄.wr, wr₃, h.wr],
     fun r ha hdi hsi h8 hcx => ?_, ?_, ?_, ?_, ?_, ?_⟩, ?_⟩
   · rw [u₇.other r hcx, u₆.other r h8, u₅.other r hsi, u₄.other r hdi, g r ha,
       h.other r ha hdi hsi h8 hcx]
@@ -165,22 +171,22 @@ theorem xor_step {s : State} {x y d : Addr} {n : Nat} (hlt : 8 * n < 2 ^ 64)
       g _ (by decide), h.r8, next_ptr]
   · rw [u₇.gpr, u₆.other _ (by decide), u₅.other _ (by decide), u₄.other _ (by decide),
       g _ (by decide), h.rcx, dec_count hk]
-  · rw [u₇.mem, u₆.mem, u₅.mem, u₄.mem, m₃, u₂.gpr, u₂.mem, u₁.gpr, u₁.mem, h.mem]
-    exact xor_mem s.mem hk hlt hdx hdy
+  · rw [u₇.mem, u₆.mem, u₅.mem, u₄.mem, m₃, h.mem]
+    exact xor_mem128 s.mem hk hlt hdx hdy
   · rw [z₇, u₆.other _ (by decide), u₅.other _ (by decide), u₄.other _ (by decide),
       g _ (by decide), h.rcx, dec_zf hk (by omega)]
 
-/-- `xorLoop` writes `[rdi] xor [rsi]` to `r8`, `8 n` bytes. -/
-theorem xorLoop_ok {s : State} {x y d : Addr} {n : Nat} (hn : 0 < n) (hlt : 8 * n < 2 ^ 64)
+/-- `xorLoop` writes `[rdi] xor [rsi]` to `r8`, `16 n` bytes. -/
+theorem xorLoop_ok {s : State} {x y d : Addr} {n : Nat} (hn : 0 < n) (hlt : 16 * n < 2 ^ 64)
     (hdi : s.gpr .rdi = x) (hsi : s.gpr .rsi = y) (hr8 : s.gpr .r8 = d)
     (hcx : s.gpr .rcx = BitVec.ofNat 64 n)
-    (hinx : ∀ k < n, InRegions (s.rd ++ s.wr) (x + BitVec.ofNat 64 (8 * k)) 8)
-    (hiny : ∀ k < n, InRegions (s.rd ++ s.wr) (y + BitVec.ofNat 64 (8 * k)) 8)
-    (hout : ∀ k < n, InRegions s.wr (d + BitVec.ofNat 64 (8 * k)) 8)
-    (hdx : Region.Disjoint ⟨d, 8 * n⟩ ⟨x, 8 * n⟩) (hdy : Region.Disjoint ⟨d, 8 * n⟩ ⟨y, 8 * n⟩) :
+    (hinx : ∀ k < n, InRegions (s.rd ++ s.wr) (x + BitVec.ofNat 64 (16 * k)) 16)
+    (hiny : ∀ k < n, InRegions (s.rd ++ s.wr) (y + BitVec.ofNat 64 (16 * k)) 16)
+    (hout : ∀ k < n, InRegions s.wr (d + BitVec.ofNat 64 (16 * k)) 16)
+    (hdx : Region.Disjoint ⟨d, 16 * n⟩ ⟨x, 16 * n⟩) (hdy : Region.Disjoint ⟨d, 16 * n⟩ ⟨y, 16 * n⟩) :
     WP isa xorLoop s fun s' => s'.rd = s.rd ∧ s'.wr = s.wr ∧
       (∀ r, r ≠ .rax → r ≠ .rdi → r ≠ .rsi → r ≠ .r8 → r ≠ .rcx → s'.gpr r = s.gpr r) ∧
-      s'.mem = writeBytes s.mem d (xorBytes (bytesAt s.mem x (8 * n)) (bytesAt s.mem y (8 * n))) := by
+      s'.mem = writeBytes s.mem d (xorBytes (bytesAt s.mem x (16 * n)) (bytesAt s.mem y (16 * n))) := by
   refine WP.mono (count_loop hn (XorInv s x y d n)
     (fun k hk t h => xor_step hlt hinx hiny hout hdx hdy hk h) ?_)
     fun t h => ⟨h.rd, h.wr, h.other, h.mem⟩
