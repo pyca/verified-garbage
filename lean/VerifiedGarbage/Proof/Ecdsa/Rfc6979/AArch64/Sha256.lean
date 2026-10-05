@@ -1,5 +1,5 @@
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Verified
-import VerifiedGarbage.Proof.Ecdsa.AArch64.Verified
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.P256
 import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Hashes.Sha256
 import VerifiedGarbage.Spec.Ecdsa.Rfc6979.P256Sha256
 
@@ -8,7 +8,7 @@ import VerifiedGarbage.Spec.Ecdsa.Rfc6979.P256Sha256
 
 SHA-256, with any implementation `v` of its compression function, as the
 proof's hash function (`pack`), and the contract
-`Spec.Ecdsa.Rfc6979.P256Sha256.inst.signContract` for 240 bytes of stack,
+`Spec.Ecdsa.Rfc6979.P256Sha256.inst.signContract` for 256 bytes of stack,
 which implies the one the proof is written against (`implies`):
 `vg_ecdsa_p256_sha256_sign` is verified (`sign_verified`).
 -/
@@ -20,7 +20,7 @@ open VG.Proof.Sha256.AArch64 (Compress)
 
 theorem implies :
     (rfcAArch64 Spec.Ecdsa.Rfc6979.P256Sha256.inst).Implies
-      (Spec.Ecdsa.Rfc6979.P256Sha256.inst.signContract AArch64.abi 240) := by
+      (Spec.Ecdsa.Rfc6979.P256Sha256.inst.signContract AArch64.abi 256) := by
   exact
     { pre := by
         sig_implies_pre [Spec.Ecdsa.Rfc6979.P256Sha256.inst, Spec.Ecdsa.Rfc6979.Instance.signContract,
@@ -40,12 +40,13 @@ theorem implies :
       sat := by
         sig_implies_sat [Spec.Ecdsa.Rfc6979.P256Sha256.inst, Spec.Ecdsa.Rfc6979.Instance.signContract,
           Spec.Ecdsa.Rfc6979.Instance.signSig, Spec.Ecdsa.P256.inst, Spec.P256.curve, Spec.Ecdsa.scratchWords,
-          AArch64.abi, AArch64.argRegs, satState, below] [satState 32] using satState 32 }
+          AArch64.abi, AArch64.argRegs, satState, below] [satState 32 32] using satState 32 32 }
 
 /-- SHA-256, with the implementation `v` of its compression function. -/
 def pack (hL : Weierstrass.Law Spec.P256.curve)
     (hT : Weierstrass.CombOk Spec.P256.curve 64 Impl.P256.p256Comb Impl.P256.p256CombStart) (v : Compress) :
     RfcHash where
+  R := p256 hL hT
   I := Spec.Ecdsa.Rfc6979.P256Sha256.inst
   H := Proof.Pbkdf2.Md.AArch64.Sha256.hash v
   ok := Proof.Pbkdf2.Md.AArch64.Sha256.ok v
@@ -60,13 +61,12 @@ def pack (hL : Weierstrass.Law Spec.P256.curve)
   hS := Nat.le_of_ble_eq_true rfl
   hW := Nat.le_of_ble_eq_true rfl
   hWb := Nat.le_of_ble_eq_true rfl
-  coreX := Proof.Ecdsa.AArch64.sign_a64 hL hT
-  coreCT := Proof.Ecdsa.AArch64.sign_ct
+  hQ := Nat.le_of_ble_eq_true rfl
 
 theorem sign_verified (hL : Weierstrass.Law Spec.P256.curve)
     (hT : Weierstrass.CombOk Spec.P256.curve 64 Impl.P256.p256Comb Impl.P256.p256CombStart) (v : Compress) :
     Verified AArch64.target (cfgOf (pack hL hT v)).sign
-      (Spec.Ecdsa.Rfc6979.P256Sha256.inst.signContract AArch64.abi 240) :=
+      (Spec.Ecdsa.Rfc6979.P256Sha256.inst.signContract AArch64.abi 256) :=
   AArch64.sign_verified (pack hL hT v) implies
 
 end VG.Proof.Ecdsa.Rfc6979.AArch64.Sha256
