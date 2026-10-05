@@ -50,6 +50,7 @@ mod rsa_keygen;
 mod rsa_keys;
 mod rsa_pkcs1_enc;
 mod rsa_pkcs1_sig;
+mod rsa_pss;
 mod x25519;
 mod x448;
 

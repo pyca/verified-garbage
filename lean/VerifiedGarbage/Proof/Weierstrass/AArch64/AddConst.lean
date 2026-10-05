@@ -32,11 +32,12 @@ theorem addConst_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size
       Outside base dst (8 * (n + 1)) s.mem t.mem := by
   have hn := hs.nowrap
   have hf := fresh_low_top n h7
-  have hft := fresh_top_low_lt n h7
-  have hl := low_len_lt n h7
+  have h10 : n < 10 := by omega
+  have hft := fresh_top_low_lt n h10
+  have hl := low_len_lt n h10
   have hcl := low_top_clob n h7
   have hL : (low n ++ [top n]).length = n + 1 := by rw [List.length_append, hl]; rfl
-  obtain ⟨t, ts, hts⟩ := low_ne_nil h7 h0
+  obtain ⟨t, ts, hts⟩ := low_ne_nil h10 h0
   rw [WinCfg.addConst]
   simp only [List.append_assoc]
   rw [WP.block_append_iff]

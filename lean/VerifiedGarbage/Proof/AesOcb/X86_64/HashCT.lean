@@ -40,14 +40,13 @@ theorem FillInv.one {N : Addr} {nl tl : Nat} (C : HCtx K W SP D n R ciph l A a s
 /-- The first block and the chunks, if any. -/
 theorem hashHI_ok (v : BlocksImpl) (C : HCtx K W SP D n R ciph l A a s₀) (E : Env K W SP s₀)
     (haad : s₀.mem.readW (W + BitVec.ofNat 64 aadO) 64 = A)
-    (halen : s₀.mem.readW (W + BitVec.ofNat 64 alenO) 64 = BitVec.ofNat 64 a.length)
-    (hl0 : blockAtMem s₀.mem (W + BitVec.ofNat 64 l0O) = lAt l 0) :
+    (halen : s₀.mem.readW (W + BitVec.ofNat 64 alenO) 64 = BitVec.ofNat 64 a.length) :
     WP isa (.seq (.block (zero16 sumO ++ zero16 ohO ++
       [ld .rbx .r15 aadO, ld .rax .r15 alenO, mvr .rcx .rax, .alu .and .rcx (.imm 15),
        st .r15 tmpO .rcx, .shift .shr .rax 4, st .r15 alenO .rax, .mov .rbp (.imm 1),
        .alu .test .rax (.reg .rax)])) (.ite .e (.block []) (.loop (hashChunk (callees v)) .ne))) s₀
       fun t => HInv K W SP D n ciph l A a s₀ t (a.length / 16) := by
-  refine WP.seq (WP.mono (hashHead_ok C E haad halen hl0) fun s₃ ⟨H₀, zf₃⟩ => ?_)
+  refine WP.seq (WP.mono (hashHead_ok C E haad halen) fun s₃ ⟨H₀, zf₃⟩ => ?_)
   refine WP.ite (decide (a.length / 16 = 0)) (eval_e zf₃) (fun hb => WP.block_nil ?_) (fun hb => ?_)
   · exact (of_decide_eq_true hb) ▸ H₀
   · exact hashLoop_ok v C H₀ (Nat.pos_of_ne_zero (of_decide_eq_false hb))
@@ -80,8 +79,7 @@ theorem tailHead_ok {t : State} (H : HInv K W SP D n ciph l A a s₀ t (a.length
       rbx := by rw [g₁ _ (by decide), H.rbx]
       rbp := by rw [g₁ _ (by decide), H.rbp]
       alen := by rw [m₁, H.alen]
-      rest := by rw [m₁, H.rest]
-      l0 := by rw [m₁, H.l0] }, r12₁, zf₁⟩
+      rest := by rw [m₁, H.rest] }, r12₁, zf₁⟩
 
 /-- The rest of the associated data, before its call, keeps the public arguments. -/
 theorem hashRestPre_one {N : Addr} {nl tl : Nat} (C : HCtx K W SP D n R ciph l A a s₀)
@@ -226,7 +224,7 @@ theorem chunk_rel (v : BlocksImpl) {K W SP D : Addr} {n R : Nat} {ciph₁ ciph�
 
 /-- The call on the block at `W + bufO` keeps the public arguments. -/
 theorem callBuf_one (v : BlocksImpl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} (hR : R = 10 ∨ R = 12 ∨ R = 14)
-    {N A D : Addr} {nl n tl : Nat} (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 2560⟩) {s : State}
+    {N A D : Addr} {nl n tl : Nat} (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 3584⟩) {s : State}
     (o : One K W SP R N A D nl n tl s) :
     WP isa (callBlocks (callees v).enc (oneBlock bufO)) s (One K W SP R N A D nl n tl) :=
   WP.mono (callBlocks_ok (f := Spec.Aes.cipher) v.encOk v.encNosp v.encDepth L o.env hR o.sl.rounds
@@ -245,9 +243,7 @@ theorem hash_rel (v : BlocksImpl) {K W SP D : Addr} {n R : Nat} {ciph₁ ciph₂
     (o₁ : One K W SP R N A D nl n tl s₀₁) (o₂ : One K W SP R N A D nl n tl s₀₂) (hal : a₂.length = a₁.length)
     (hn : n ≤ 2 ^ 64)
     (halen₁ : s₀₁.mem.readW (W + BitVec.ofNat 64 alenO) 64 = BitVec.ofNat 64 a₁.length)
-    (halen₂ : s₀₂.mem.readW (W + BitVec.ofNat 64 alenO) 64 = BitVec.ofNat 64 a₂.length)
-    (hl0₁ : blockAtMem s₀₁.mem (W + BitVec.ofNat 64 l0O) = lAt l₁ 0)
-    (hl0₂ : blockAtMem s₀₂.mem (W + BitVec.ofNat 64 l0O) = lAt l₂ 0) :
+    (halen₂ : s₀₂.mem.readW (W + BitVec.ofNat 64 alenO) 64 = BitVec.ofNat 64 a₂.length) :
     RelCT isa (fun s₁ s₂ => s₁ = s₀₁ ∧ s₂ = s₀₂) (Impl.AesOcb.X86_64.hash (callees v)) fun _ _ => True := by
   have L := C₁.lay
   have hDW := C₁.dw
@@ -269,7 +265,7 @@ theorem hash_rel (v : BlocksImpl) {K W SP D : Addr} {n R : Nat} {ciph₁ ciph₂
     (F₂ := fun (s : State) => HInv K W SP D n ciph₂ l₂ A a₂ s₀₂ s 0 ∧ s.zf = some (decide (a₂.length / 16 = 0)))
     fun s₁ s₂ h => by
       obtain ⟨rfl, rfl⟩ := h
-      exact ⟨hashHead_ok C₁ o₁.env haad₁ halen₁ hl0₁, hashHead_ok C₂ o₂.env haad₂ halen₂ hl0₂⟩
+      exact ⟨hashHead_ok C₁ o₁.env haad₁ halen₁, hashHead_ok C₂ o₂.env haad₂ halen₂⟩
   -- The chunks.
   have lp : RelCT isa (fun s₁ s₂ => ∃ j, a₁.length / 16 - 0 = a₁.length / 16 - j ∧ j < a₁.length / 16 ∧
       HInv K W SP D n ciph₁ l₁ A a₁ s₀₁ s₁ j ∧ HInv K W SP D n ciph₂ l₂ A a₂ s₀₂ s₂ j)
@@ -295,7 +291,7 @@ theorem hash_rel (v : BlocksImpl) {K W SP D : Addr} {n R : Nat} {ciph₁ ciph₂
     (F₁ := fun s => HInv K W SP D n ciph₁ l₁ A a₁ s₀₁ s (a₁.length / 16))
     (F₂ := fun s => HInv K W SP D n ciph₂ l₂ A a₂ s₀₂ s (a₂.length / 16)) fun s₁ s₂ h => by
       obtain ⟨rfl, rfl⟩ := h
-      exact ⟨hashHI_ok v C₁ o₁.env haad₁ halen₁ hl0₁, hashHI_ok v C₂ o₂.env haad₂ halen₂ hl0₂⟩
+      exact ⟨hashHI_ok v C₁ o₁.env haad₁ halen₁, hashHI_ok v C₂ o₂.env haad₂ halen₂⟩
   -- The rest.
   have t₁ := (rel_flagsC [] [112] hDW hn (fun s₁ s₂ (h : True ∧ HInv K W SP D n ciph₁ l₁ A a₁ s₀₁ s₁ (a₁.length / 16) ∧
       HInv K W SP D n ciph₂ l₂ A a₂ s₀₂ s₂ (a₂.length / 16)) => by

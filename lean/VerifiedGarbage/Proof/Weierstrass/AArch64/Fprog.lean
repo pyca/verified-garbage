@@ -61,13 +61,7 @@ theorem ProgKeep.mono {M : Mod} {base : Addr} {W W' : List Nat} {s s' : State}
     (h : ProgKeep M base W s s') (hW : ∀ w ∈ W, w ∈ W') : ProgKeep M base W' s s' :=
   ⟨h.gpr, h.rd, h.wr, h.sp, fun x hx ht => h.mem x (fun w hw => hx w (hW w hw)) ht⟩
 
-theorem x0_not_clob' (n : Nat) : Reg.x0 ∉ clob n := by
-  intro h
-  simp only [clob, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at h
-  rcases h with h | h
-  · rcases h with h | h | h | h | h | h | h | h | h <;> exact absurd h (by decide)
-  · have := List.mem_of_mem_take h
-    simp only [List.mem_cons, reduceCtorEq, List.not_mem_nil, or_self] at this
+theorem x0_not_clob' (n : Nat) : Reg.x0 ∉ clob n := fun h => absurd (mem_clobAll h) (by decide)
 
 theorem ProgKeep.scr {M : Mod} {base : Addr} {W : List Nat} {s s' : State} {size : Nat}
     (h : ProgKeep M base W s s') (hs : Scr s base size) : Scr s' base size :=

@@ -7,7 +7,7 @@ import VerifiedGarbage.Impl.AesOcb.X86_64
 # AES-OCB on x86-64: where everything is
 
 Untrusted: everything here is checked by Lean. The key context (256 bytes
-at `K`), the working space (2560 bytes at `W`) and the 8 bytes of stack
+at `K`), the working space (3584 bytes at `W`) and the 8 bytes of stack
 below `SP` that the calls use (`Lay`); what a state may access (`Perm`); the
 registers holding `K` and `W` and the stack pointer (`Env`); and the public
 values the entry keeps in `W` (`Slots`). The pieces write the parts of `W`
@@ -28,16 +28,16 @@ open VG.Proof.AesCcm.X86_64 (covers_off in_off in_left covers_left)
 /-- The key context, `W` and the stack below `SP` used by the calls. -/
 structure Lay (K W SP : Addr) : Prop where
   kw : K.toNat + 256 ≤ 2 ^ 64
-  ww : W.toNat + 2560 ≤ 2 ^ 64
-  k_w : (⟨K, 256⟩ : Region).Disjoint ⟨W, 2560⟩
+  ww : W.toNat + 3584 ≤ 2 ^ 64
+  k_w : (⟨K, 256⟩ : Region).Disjoint ⟨W, 3584⟩
   stk_k : (below SP 8).Disjoint ⟨K, 256⟩
-  stk_w : (below SP 8).Disjoint ⟨W, 2560⟩
+  stk_w : (below SP 8).Disjoint ⟨W, 3584⟩
   sp : 8 ≤ SP.toNat
 
 /-- What a state may access. -/
 structure Perm (K W : Addr) (s : State) : Prop where
   k : Covers [⟨K, 256⟩] (s.rd ++ s.wr)
-  w : Covers [⟨W, 2560⟩] s.wr
+  w : Covers [⟨W, 3584⟩] s.wr
 
 /-- The registers holding the key context, `W` and the stack pointer, and
 what the state may access. -/
@@ -68,22 +68,22 @@ namespace Lay
 theorem kSub {K : Addr} {d n : Nat} (h : d + n ≤ 256) : Region.Sub ⟨K + BitVec.ofNat 64 d, n⟩ ⟨K, 256⟩ :=
   Offset.sub_base _ h
 
-theorem wSub {W : Addr} {d n : Nat} (h : d + n ≤ 2560) : Region.Sub ⟨W + BitVec.ofNat 64 d, n⟩ ⟨W, 2560⟩ :=
+theorem wSub {W : Addr} {d n : Nat} (h : d + n ≤ 3584) : Region.Sub ⟨W + BitVec.ofNat 64 d, n⟩ ⟨W, 3584⟩ :=
   Offset.sub_base _ h
 
 variable {K W SP : Addr} (L : Lay K W SP)
 include L
 
 /-- Parts of `W` are disjoint. -/
-theorem w_w {a n d k : Nat} (h : a + n ≤ d ∨ d + k ≤ a) (ha : a + n ≤ 2560) (hd : d + k ≤ 2560) :
+theorem w_w {a n d k : Nat} (h : a + n ≤ d ∨ d + k ≤ a) (ha : a + n ≤ 3584) (hd : d + k ≤ 3584) :
     (⟨W + BitVec.ofNat 64 a, n⟩ : Region).Disjoint ⟨W + BitVec.ofNat 64 d, k⟩ :=
   Offset.disjoint _ h (by have := L.ww; omega) (by have := L.ww; omega)
 
-theorem k_w' {a n d k : Nat} (ha : a + n ≤ 256) (hd : d + k ≤ 2560) :
+theorem k_w' {a n d k : Nat} (ha : a + n ≤ 256) (hd : d + k ≤ 3584) :
     (⟨K + BitVec.ofNat 64 a, n⟩ : Region).Disjoint ⟨W + BitVec.ofNat 64 d, k⟩ :=
   (L.k_w.sub_left (kSub ha)).sub_right (wSub hd)
 
-theorem stk_w' {a n : Nat} (ha : a + n ≤ 2560) : (below SP 8).Disjoint ⟨W + BitVec.ofNat 64 a, n⟩ :=
+theorem stk_w' {a n : Nat} (ha : a + n ≤ 3584) : (below SP 8).Disjoint ⟨W + BitVec.ofNat 64 a, n⟩ :=
   L.stk_w.sub_right (wSub ha)
 
 theorem stk_k' {a n : Nat} (ha : a + n ≤ 256) : (below SP 8).Disjoint ⟨K + BitVec.ofNat 64 a, n⟩ :=
@@ -99,16 +99,16 @@ include P
 theorem kR {d n : Nat} (h : d + n ≤ 256) : InRegions (s.rd ++ s.wr) (K + BitVec.ofNat 64 d) n :=
   in_off P.k h (by decide)
 
-theorem wW {d n : Nat} (h : d + n ≤ 2560) : InRegions s.wr (W + BitVec.ofNat 64 d) n :=
+theorem wW {d n : Nat} (h : d + n ≤ 3584) : InRegions s.wr (W + BitVec.ofNat 64 d) n :=
   in_off P.w h (by decide)
 
-theorem wR {d n : Nat} (h : d + n ≤ 2560) : InRegions (s.rd ++ s.wr) (W + BitVec.ofNat 64 d) n :=
+theorem wR {d n : Nat} (h : d + n ≤ 3584) : InRegions (s.rd ++ s.wr) (W + BitVec.ofNat 64 d) n :=
   in_left (P.wW h)
 
 theorem kC {d n : Nat} (h : d + n ≤ 256) : Covers [⟨K + BitVec.ofNat 64 d, n⟩] (s.rd ++ s.wr) :=
   covers_off P.k h (by decide)
 
-theorem wC {d n : Nat} (h : d + n ≤ 2560) : Covers [⟨W + BitVec.ofNat 64 d, n⟩] s.wr :=
+theorem wC {d n : Nat} (h : d + n ≤ 3584) : Covers [⟨W + BitVec.ofNat 64 d, n⟩] s.wr :=
   covers_off P.w h (by decide)
 
 end Perm
@@ -121,7 +121,7 @@ structure Buf (W SP : Addr) (s : State) (D : Addr) (n : Nat) : Prop where
   rd : Covers [⟨D, n⟩] (s.rd ++ s.wr)
   lt : n < 2 ^ 64
   wrap : D.toNat + n ≤ 2 ^ 64
-  w : (⟨D, n⟩ : Region).Disjoint ⟨W, 2560⟩
+  w : (⟨D, n⟩ : Region).Disjoint ⟨W, 3584⟩
   stk : (below SP 8).Disjoint ⟨D, n⟩
 
 namespace Buf
@@ -198,23 +198,24 @@ structure Slots (W : Addr) (R : Nat) (N A D : Addr) (nl n tl : Nat) (m : Mem) : 
   nlen : m.readW (W + BitVec.ofNat 64 296) 64 = BitVec.ofNat 64 nl
 
 /-- The parts of `W` the pieces write: the blocks at `[0, 160)`, `[248, 288)`
-(the length of the associated data, `bottom` and `Offset_0`) and
-`[384, 2560)`. -/
+(the length of the associated data, `bottom` and `Offset_0`),
+`[384, 2560)` and the table of `L_j`, `[2560, 3584)`. -/
 abbrev wA (W : Addr) : Region := ⟨W, 160⟩
 abbrev wB (W : Addr) : Region := ⟨W + BitVec.ofNat 64 248, 40⟩
 abbrev wC (W : Addr) : Region := ⟨W + BitVec.ofNat 64 384, 2176⟩
+abbrev wT (W : Addr) : Region := ⟨W + BitVec.ofNat 64 2560, 1024⟩
 
 /-- What the pieces may change: those parts of `W`, the stack below `SP`
 and the data. -/
-abbrev mutR (W SP D : Addr) (n : Nat) : List Region := [wA W, wB W, wC W, below SP 8, ⟨D, n⟩]
+abbrev mutR (W SP D : Addr) (n : Nat) : List Region := [wA W, wB W, wC W, below SP 8, ⟨D, n⟩, wT W]
 
 /-- The part of `W` at `[d, d + k)`, when it misses the parts the pieces write. -/
-theorem kept_mut {K W SP D : Addr} {n : Nat} (L : Lay K W SP) (hD : (⟨D, n⟩ : Region).Disjoint ⟨W, 2560⟩)
+theorem kept_mut {K W SP D : Addr} {n : Nat} (L : Lay K W SP) (hD : (⟨D, n⟩ : Region).Disjoint ⟨W, 3584⟩)
     {d k : Nat} (hd : 160 ≤ d ∧ d + k ≤ 248 ∨ 288 ≤ d ∧ d + k ≤ 384) :
     ∀ r ∈ mutR W SP D n, (⟨W + BitVec.ofNat 64 d, k⟩ : Region).Disjoint r := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl | rfl
+  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl
   · simpa using L.w_w (a := d) (n := k) (d := 0) (k := 160) (.inr (by omega)) (by omega) (by decide)
   · rcases hd with hd | hd
     · exact L.w_w (.inl (by omega)) (by omega) (by decide)
@@ -222,17 +223,19 @@ theorem kept_mut {K W SP D : Addr} {n : Nat} (L : Lay K W SP) (hD : (⟨D, n⟩ 
   · exact L.w_w (.inl (by omega)) (by omega) (by decide)
   · exact (L.stk_w' (by omega)).symm
   · exact (hD.sub_right (Lay.wSub (by omega))).symm
+  · exact L.w_w (.inl (by omega)) (by omega) (by decide)
 
 /-- The key context misses the parts the pieces write. -/
 theorem k_mut {K W SP D : Addr} {n : Nat} (L : Lay K W SP) (hD : (⟨K, 256⟩ : Region).Disjoint ⟨D, n⟩) :
     ∀ r ∈ mutR W SP D n, (⟨K, 256⟩ : Region).Disjoint r := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl | rfl
+  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl
   · exact L.k_w.sub_right (Region.sub_prefix (by decide))
   · exact L.k_w.sub_right (Lay.wSub (by decide))
   · exact L.k_w.sub_right (Lay.wSub (by decide))
   · exact L.stk_k.symm
   · exact hD
+  · exact L.k_w.sub_right (Lay.wSub (by decide))
 
 end VG.Proof.AesOcb.X86_64
