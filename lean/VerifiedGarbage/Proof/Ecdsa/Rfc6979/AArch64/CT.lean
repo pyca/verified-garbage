@@ -142,7 +142,7 @@ theorem hinit_ct : RelCT isa (Two P (IA P)) (.call P.H.hmacInitN P.H.hmacInit) f
       Pbkdf2.Md.AArch64.Pbk.covers_app A₁.cr A₁.cw, A₁.cw, Pbkdf2.Md.AArch64.Pbk.covers_app A₂.cr A₂.cw, A₂.cw⟩
 
 theorem hupd_ct {dA : Lay P.I.hashLen P.R.E → Addr} {len : Nat} (hd : ∀ L : Lay P.I.hashLen P.R.E, L.Ok → DataOk L (dA L) len)
-    (hlen : len ≤ 192) :
+    (hlen : len ≤ 256) :
     RelCT isa (Two P (UA P dA len)) (.call P.H.updN P.H.updC) fun _ _ => True :=
   AArch64.RelCT.callEx P.ok.stream.upd.1 P.ok.stream.upd.2.1 fun _ _ ⟨⟨L, _, _, _, _⟩, hL, _, _, c₁, c₂, a₁, a₂⟩ => by
     obtain ⟨d₁, s₁, x₁, k₁, r₁⟩ := a₁
@@ -184,7 +184,7 @@ theorem init_ctx (hL : L.Ok) {u : State} (hc : Ctx L g m₀ u) (ha : IA P L m₀
   rcases hr with rfl | rfl | rfl <;> exact scr_work (by anums)
 
 theorem upd_ctx {dA : Lay P.I.hashLen P.R.E → Addr} {len : Nat} (hd : ∀ L : Lay P.I.hashLen P.R.E, L.Ok → DataOk L (dA L) len)
-    (hlen : len ≤ 192) (hL : L.Ok) {u : State} (hc : Ctx L g m₀ u) (ha : UA P dA len L m₀ u) :
+    (hlen : len ≤ 256) (hL : L.Ok) {u : State} (hc : Ctx L g m₀ u) (ha : UA P dA len L m₀ u) :
     WP isa (.call P.H.updN P.H.updC) u fun u' => Ctx L g m₀ u' ∧ True := by
   obtain ⟨d, _, x, k, r⟩ := ha
   refine Pbkdf2.Md.AArch64.Calls.upd_call P.ok.stream (updA (P := P) hL hc (hd L hL) hlen d x k r)
@@ -212,7 +212,7 @@ its calls are constant time with arguments that agree. -/
 theorem hmac_ct {dataA : List Instr} {dA : Lay P.I.hashLen P.R.E → Addr} {len dst : Nat}
     {Φ : Lay P.I.hashLen P.R.E → Mem → State → Prop}
     (hdA : ∀ (L : Lay P.I.hashLen P.R.E) g m₀ u, L.Ok → Ctx L g m₀ u → WP isa (.block dataA) u (Upd L g m₀ u .x2 (dA L)))
-    (hd : ∀ L : Lay P.I.hashLen P.R.E, L.Ok → DataOk L (dA L) len) (hlen : len ≤ 192) (hdst : dst + P.H.D ≤ 168)
+    (hd : ∀ L : Lay P.I.hashLen P.R.E, L.Ok → DataOk L (dA L) len) (hlen : len ≤ 256) (hdst : dst + P.H.D ≤ 168)
     (t₂ : TaintOk [] (Cfg.hmacArgs₂ P.H.P.B dataA len)) (t₃ : TaintOk [] (Cfg.hmacArgs₃ P.H.P.B len dst)) :
     RelCT isa (Two P Φ) ((cfgOf P).hmac dataA len dst) fun _ _ => True := by
   refine (two_wp (Ψ := IA P) (two_blk [] spOnly (blks P).init) fun L _ _ _ hL hq hc _ =>
@@ -233,7 +233,7 @@ theorem hmacV_ct {Φ : Lay P.I.hashLen P.R.E → Mem → State → Prop} : RelCT
     (fun _ _ => .inl ⟨80, rfl, by omega, by anums⟩) (by anums) (by anums) (blks P).vUpd (blks P).vFin
 
 /-- `K = HMAC_K(m)`, for the message of `len` bytes at `scratch + 2256`. -/
-theorem hmacK_ct {Φ : Lay P.I.hashLen P.R.E → Mem → State → Prop} {len : Nat} (hlen : len ≤ 192)
+theorem hmacK_ct {Φ : Lay P.I.hashLen P.R.E → Mem → State → Prop} {len : Nat} (hlen : len ≤ 256)
     (t₂ : TaintOk [] (Cfg.hmacArgs₂ P.H.P.B (Cfg.scr .x2 sMsg) len))
     (t₃ : TaintOk [] (Cfg.hmacArgs₃ P.H.P.B len fK)) :
     RelCT isa (Two P Φ) ((cfgOf P).hmac (Cfg.scr .x2 sMsg) len fK) fun _ _ => True :=
