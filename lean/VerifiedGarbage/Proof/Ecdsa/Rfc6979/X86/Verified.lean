@@ -26,17 +26,18 @@ theorem sign_spSafe (P : RfcHash) : (cfgOf P).sign.all (fun i => !isa.writesSp i
   have h := allInstrs_of_noSp (body_nosp P)
   simp only [Proof.Pbkdf2.Whole.X86.clobbers_esp] at h
   simp only [Cfg.sign, Code.allInstrs, h]
-  decide
+  generalize Impl.Ecdsa.Rfc6979.X86.frameBytes (cfgOf P).wide = n
+  rfl
 
-theorem sign_x86 (P : RfcHash) (s : State) (h : (rfcX86 P.I).pre s) :
-    ∃ t s', Exec isa (cfgOf P).sign s t s' ∧ abiPreserved s s' ∧ (rfcX86 P.I).post s s' := by
+theorem sign_x86 (P : RfcHash) (s : State) (h : (rfcX86 P.I (272 + 4 * P.e)).pre s) :
+    ∃ t s', Exec isa (cfgOf P).sign s t s' ∧ abiPreserved s s' ∧ (rfcX86 P.I (272 + 4 * P.e)).post s s' := by
   obtain ⟨t, s', he, hg, hp⟩ := sign_ok (P := P) h
   exact ⟨t, s', he, hg, hp⟩
 
 /-- The contract with the regions the shared one gives: the arguments'
 slots writable rather than readable. -/
-def rfcWide (I : Spec.Ecdsa.Rfc6979.Instance) : Contract isa :=
-  { rfcX86 I with
+def rfcWide (I : Spec.Ecdsa.Rfc6979.Instance) (N : Nat) : Contract isa :=
+  { rfcX86 I N with
   pre := fun s =>
     let out : Region := ⟨(arg s 0).setWidth 64, 2 * I.ecdsa.curve.len⟩
     let d : Region := ⟨(arg s 1).setWidth 64, I.ecdsa.curve.len⟩
@@ -44,8 +45,8 @@ def rfcWide (I : Spec.Ecdsa.Rfc6979.Instance) : Contract isa :=
     let scratch : Region := ⟨(arg s 3).setWidth 64, 8192⟩
     let args : Region := ⟨argAddr s 0, 16⟩
     let ret : Region := ⟨(s.gpr .esp).setWidth 64, 4⟩
-    let stack : Region := ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 272, 272⟩
-    272 ≤ (s.gpr .esp).toNat ∧ (s.gpr .esp).toNat + 20 ≤ 2 ^ 32 ∧
+    let stack : Region := ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 N, N⟩
+    N ≤ (s.gpr .esp).toNat ∧ (s.gpr .esp).toNat + 20 ≤ 2 ^ 32 ∧
     s.rd = [d, digest] ∧ s.wr = [out, scratch, args] ∧
       out.Disjoint d ∧ out.Disjoint digest ∧ out.Disjoint scratch ∧
       d.Disjoint scratch ∧ digest.Disjoint scratch ∧
@@ -59,8 +60,8 @@ def wideRd (I : Spec.Ecdsa.Rfc6979.Instance) (s : State) : List Region :=
 def wideWr (I : Spec.Ecdsa.Rfc6979.Instance) (s : State) : List Region :=
   [⟨(arg s 0).setWidth 64, 2 * I.ecdsa.curve.len⟩, ⟨(arg s 3).setWidth 64, 8192⟩]
 
-theorem wide_pre (I : Spec.Ecdsa.Rfc6979.Instance) (s : State) (h : (rfcWide I).pre s) :
-    (rfcX86 I).pre (s.withRegions (wideRd I s) (wideWr I s)) := by
+theorem wide_pre (I : Spec.Ecdsa.Rfc6979.Instance) (N : Nat) (s : State) (h : (rfcWide I N).pre s) :
+    (rfcX86 I N).pre (s.withRegions (wideRd I s) (wideWr I s)) := by
   obtain ⟨h₁, h₂, -, -, h⟩ := h
   simp only [rfcX86, wideRd, wideWr, arg_withRegions, argAddr_withRegions, State.withRegions_gpr,
     State.withRegions_rd, State.withRegions_wr]
@@ -78,6 +79,20 @@ def signNotes (hiN updN hfN : String) (q : Nat) (core : String) : String :=
   so the code branches only on that. `K`, `V`, `h`, the count and our caller's registers are kept in a \
   196-byte stack frame, whose secrets are cleared before it is released; the calls use the 76 bytes \
   below it."
+
+/-- The notes of an instance whose scalars are longer than the hash
+(`wide`): `q` bytes of `nb` bits, from a `D`-byte hash. -/
+def signNotesWide (hiN updN hfN : String) (q nb D : Nat) (core : String) : String :=
+  "Computes `h = bits2octets(digest)` as " ++ toString (q - D) ++ " zero bytes and the digest (whose integer \
+  is below `n`), and each HMAC with `" ++ hiN ++ "`, `" ++ updN ++ "` and `" ++ hfN ++ "`, using the start of \
+  `scratch` for HMAC's states and working space and the message. Each candidate `k`, the leftmost " ++
+  toString nb ++ " bits of two successive `V`s, is shifted into " ++ toString q ++ " bytes, as is the digest \
+  for the signature (its integer shifted left by " ++ toString (8 * q - nb) ++ " bits), with word loads, shifts \
+  and stores through `scratch`, and tried with `" ++ core ++ "`, which uses all of `scratch`; whether to try \
+  another is computed without branches from its result and the count of candidates left, so the code branches \
+  only on that. `K`, `V`, `h`, the count, our caller's registers, the candidate and the shifted digest are kept \
+  in a 340-byte stack frame, whose secrets are cleared before it is released; the calls use the 76 bytes below \
+  it."
 
 /-- Memory holding the arguments `0x1000, 0x2000, 0x3000, 0x8000` at
 `0x20004`. -/
@@ -98,13 +113,14 @@ def satState (Q D : Nat) : State where
   rd := [⟨0x2000, Q⟩, ⟨0x3000, D⟩]
   wr := [⟨0x1000, 2 * Q⟩, ⟨0x8000, 8192⟩, ⟨0x20004, 16⟩]
 
-theorem sign_verified (P : RfcHash) (himp : (rfcWide P.I).Implies (P.I.signContract X86.abi 272)) :
-    Verified X86.target (cfgOf P).sign (P.I.signContract X86.abi 272) := by
+theorem sign_verified (P : RfcHash)
+    (himp : (rfcWide P.I (272 + 4 * P.e)).Implies (P.I.signContract X86.abi (272 + 4 * P.e))) :
+    Verified X86.target (cfgOf P).sign (P.I.signContract X86.abi (272 + 4 * P.e)) := by
   have hsat := himp.sat_left
-  have satLocal : ∃ s, (rfcX86 P.I).pre s := hsat.elim fun s h => ⟨_, wide_pre P.I s h⟩
-  have verifiedLocal : Verified X86.target (cfgOf P).sign (rfcX86 P.I) :=
+  have satLocal : ∃ s, (rfcX86 P.I (272 + 4 * P.e)).pre s := hsat.elim fun s h => ⟨_, wide_pre P.I _ s h⟩
+  have verifiedLocal : Verified X86.target (cfgOf P).sign (rfcX86 P.I (272 + 4 * P.e)) :=
     Verified.of_correct (sign_x86 P) sign_ct (.refl satLocal)
-  apply Verified.of_implies (Verified.narrowTo verifiedLocal (wideRd P.I) (wideWr P.I) (wide_pre P.I)
+  apply Verified.of_implies (Verified.narrowTo verifiedLocal (wideRd P.I) (wideWr P.I) (wide_pre P.I _)
     ?_ ?_ ?_ ?_ hsat) himp
   · intro s h a n ⟨r, hr, hc⟩
     rw [h.2.2.1, h.2.2.2.1]
