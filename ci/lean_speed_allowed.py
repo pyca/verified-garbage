@@ -64,6 +64,7 @@ DECIDE_SIMP_ALLOWED = {
     "VerifiedGarbage/Proof/ChaCha20/X86_64/Avx2/Finish.lean": 1,
     "VerifiedGarbage/Proof/ChaCha20/X86_64/Avx2/Xor.lean": 1,
     "VerifiedGarbage/Proof/ChaCha20/X86_64/Avx512/Xor.lean": 1,
+    "VerifiedGarbage/Proof/ChaCha20/X86_64/Avx512Tail/Tail.lean": 1,
     "VerifiedGarbage/Proof/ChaCha20/X86_64/Block.lean": 4,
     "VerifiedGarbage/Proof/ChaCha20/X86_64/Stream/Apply.lean": 35,
     "VerifiedGarbage/Proof/ChaCha20/X86_64/Stream/ApplyCT.lean": 5,
