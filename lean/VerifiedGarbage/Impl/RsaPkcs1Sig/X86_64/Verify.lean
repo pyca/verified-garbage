@@ -75,13 +75,14 @@ def pubArgs : List Instr :=
 /-- ZF set if the low 32 bits of `rax` are 0. -/
 def test0 : List Instr := [.alu32 .cmp .rax (.imm 0)]
 
-/-- The arguments of `encode`: `EM₂`, `k`, `hash`, `digest` and `digest_len`. -/
+/-- The arguments of `encode`: `EM₂`, `k`, `hash` (zero-extended from its 32
+bits), `digest` and `digest_len`. -/
 def encArgs : List Instr :=
-  lea .r8 oEM2 ++ [.mov .rcx (.mem (sp oK)), .mov .rdx (.mem (sp oH)), .mov .rsi (.mem (sp oD)),
-    .mov .r9 (.mem (arg 0))]
+  lea .r8 oEM2 ++ [.mov .rcx (.mem (sp oK)), .mov .rdx (.mem (sp oH)), .mov32 .rdx (.reg .rdx),
+    .mov .rsi (.mem (sp oD)), .mov .r9 (.mem (arg 0))]
 
-/-- The arguments of `compare`: `EM₁`, `EM₂` and `k`. -/
-def cmpArgs : List Instr := lea .rdi oEM1 ++ lea .rsi oEM2 ++ [.mov .rcx (.mem (sp oK))]
+/-- The arguments of `compare`: `EM₁` and `EM₂` (`k` is still in `rcx`). -/
+def cmpArgs : List Instr := lea .rdi oEM1 ++ lea .rsi oEM2
 
 /-- 1 if `rdx` is 0, 0 if not. -/
 def result : List Instr :=

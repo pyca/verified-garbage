@@ -79,26 +79,25 @@ theorem result_ok (t : State) :
 
 theorem encArgs_ok {s t : State} (hp : PreV s) (he : Env s t) :
     WP isa (.block encArgs) t fun u => Keep [.r8, .rcx, .rdx, .rsi, .r9] t u ∧ u.mem = t.mem ∧
-      u.gpr .r8 = off (fb s) oEM2 ∧ u.gpr .rcx = s.gpr .rsi ∧ u.gpr .rdx = s.gpr .r8 ∧
+      u.gpr .r8 = off (fb s) oEM2 ∧ u.gpr .rcx = s.gpr .rsi ∧ u.gpr .rdx = ((s.gpr .r8).setWidth 32).setWidth 64 ∧
       u.gpr .rsi = s.gpr .r9 ∧ u.gpr .r9 = stackArg s 0 := by
   have hs := he.scr hp
   refine WP.mono (WP.keep [.r8, .rcx, .rdx, .rsi, .r9] (Q := fun u => u.mem = t.mem ∧
-      u.gpr .r8 = off (fb s) oEM2 ∧ u.gpr .rcx = s.gpr .rsi ∧ u.gpr .rdx = s.gpr .r8 ∧
+      u.gpr .r8 = off (fb s) oEM2 ∧ u.gpr .rcx = s.gpr .rsi ∧ u.gpr .rdx = ((s.gpr .r8).setWidth 32).setWidth 64 ∧
       u.gpr .rsi = s.gpr .r9 ∧ u.gpr .r9 = stackArg s 0) (by
     xrun [encArgs, lea, List.cons_append, List.nil_append, @arg_ea s, ea_sp, he.rsp,
       sx_ofNat (show oEM2 < 2 ^ 31 by decide), hs.ld (d := oK) (by decide), hs.ld (d := oH) (by decide),
       hs.ld (d := oD) (by decide), arg_in hp he.rd (show 0 < 5 by decide), he.arg hp (show 0 < 5 by decide),
       he.sK, he.sH, he.sD]) rfl) fun u ⟨h, hK⟩ => ⟨hK, h⟩
 
-theorem cmpArgs_ok {s t : State} (hp : PreV s) (he : Env s t) :
-    WP isa (.block cmpArgs) t fun u => Keep [.rdi, .rsi, .rcx] t u ∧ u.mem = t.mem ∧
-      u.gpr .rdi = off (fb s) oEM1 ∧ u.gpr .rsi = off (fb s) oEM2 ∧ u.gpr .rcx = s.gpr .rsi := by
-  have hs := he.scr hp
-  refine WP.mono (WP.keep [.rdi, .rsi, .rcx] (Q := fun u => u.mem = t.mem ∧
-      u.gpr .rdi = off (fb s) oEM1 ∧ u.gpr .rsi = off (fb s) oEM2 ∧ u.gpr .rcx = s.gpr .rsi) (by
-    xrun [cmpArgs, lea, List.cons_append, List.nil_append, ea_sp, he.rsp,
-      sx_ofNat (show oEM1 < 2 ^ 31 by decide), sx_ofNat (show oEM2 < 2 ^ 31 by decide),
-      hs.ld (d := oK) (by decide), he.sK]) rfl) fun u ⟨h, hK⟩ => ⟨hK, h⟩
+theorem cmpArgs_ok {s t : State} (he : Env s t) :
+    WP isa (.block cmpArgs) t fun u => Keep [.rdi, .rsi] t u ∧ u.mem = t.mem ∧
+      u.gpr .rdi = off (fb s) oEM1 ∧ u.gpr .rsi = off (fb s) oEM2 := by
+  refine WP.mono (WP.keep [.rdi, .rsi] (Q := fun u => u.mem = t.mem ∧
+      u.gpr .rdi = off (fb s) oEM1 ∧ u.gpr .rsi = off (fb s) oEM2) (by
+    xrun [cmpArgs, lea, List.cons_append, List.nil_append, he.rsp,
+      sx_ofNat (show oEM1 < 2 ^ 31 by decide), sx_ofNat (show oEM2 < 2 ^ 31 by decide)]) rfl)
+    fun u ⟨h, hK⟩ => ⟨hK, h⟩
 
 theorem bytesAt_eq_iff (m : Mem) (a b : Addr) (n : Nat) :
     Spec.Rsa.bytesAt m a n = Spec.Rsa.bytesAt m b n ↔
@@ -179,7 +178,7 @@ theorem afterPub_ok {s t : State} (hp : PreV s) (he : Env s t)
     have sE2 : Region.Sub ⟨off (fb s) oEM2, k⟩ (stkR s) := frame_sub s (by unfold oEM2 frameBytes; omega)
     have hdl := hp.wD
     have hpre : EPre t₂ x k := {
-      rdx := by rw [hdx₂]
+      rdx := by rw [hdx₂]; apply BitVec.eq_of_toNat_eq; simp [x]
       hk := by rw [hcx₂]
       kle := hk2
       buf := fun i hi => by
@@ -221,7 +220,9 @@ theorem afterPub_ok {s t : State} (hp : PreV s) (he : Env s t)
         fun r hr => ⟨oEM2, k, by rw [List.mem_singleton.mp hr, h8₂, hl'], by decide, by unfold oEM2 frameBytes; omega⟩
       have he₄ : Env s t₄ := he₃.regs (by rw [hs₄.1]) hs₄.2.1 hs₄.2.2.1 hs₄.2.2.2
       refine WP.ite false (by simp [eval, hz₄, hax]) (by simp) (fun _ => ?_)
-      refine WP.seq (WP.mono (cmpArgs_ok hp he₄) fun t₅ ⟨hK₅, hm₅, hdi₅, hsi₅, hcx₅⟩ => ?_)
+      refine WP.seq (WP.mono (cmpArgs_ok he₄) fun t₅ ⟨hK₅, hm₅, hdi₅, hsi₅⟩ => ?_)
+      have hcx₅ : t₅.gpr .rcx = s.gpr .rsi := by
+        rw [hK₅.gpr (by decide), hs₄.1, hK₃.gpr (by decide), hcx₂]
       have he₅ : Env s t₅ := he₄.regs (hK₅.gpr (by decide)) hm₅ hK₅.2.1 hK₅.2.2
       have hr5 : ∀ i < k, InRegions (t₅.rd ++ t₅.wr) (t₅.gpr .rdi + BitVec.ofNat 64 i) 1 ∧
           InRegions (t₅.rd ++ t₅.wr) (t₅.gpr .rsi + BitVec.ofNat 64 i) 1 := fun i hi => by
