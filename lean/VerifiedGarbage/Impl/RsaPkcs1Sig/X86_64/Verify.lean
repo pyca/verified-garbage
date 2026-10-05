@@ -67,10 +67,10 @@ the modulus. -/
 def pubArgs : List Instr :=
   [.store (sp oN) .rdi, .store (sp oK) .rsi, .store (sp oE) .rdx, .store (sp oEl) .rcx,
     .store (sp oH) .r8, .store (sp oD) .r9,
-    .mov .rax (.mem (arg 1)), .store (sp 0) .rax, .store (sp 8) .rsi,
-    .mov .rax (.mem (arg 3)), .store (sp 16) .rax, .mov .rax (.mem (arg 4)), .store (sp 24) .rax] ++
-  lea .rdi oEM1 ++
-  [.mov .r8 (.reg .rdx), .mov .r9 (.reg .rcx), .mov .rdx (.mem (sp oN)), .mov .rcx (.reg .rsi)]
+    .mov .rax (.mem (arg 1)), .mov .r10 (.mem (arg 3)), .mov .r11 (.mem (arg 4)),
+    .store (sp 0) .rax, .store (sp 8) .rsi, .store (sp 16) .r10, .store (sp 24) .r11,
+    .mov .r8 (.reg .rdx), .mov .r9 (.reg .rcx), .mov .rdx (.reg .rdi), .mov .rcx (.reg .rsi)] ++
+  lea .rdi oEM1
 
 /-- ZF set if the low 32 bits of `rax` are 0. -/
 def test0 : List Instr := [.alu32 .cmp .rax (.imm 0)]

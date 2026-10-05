@@ -503,4 +503,34 @@ theorem encode_ok {s₀ : State} {x : BitVec 32} {k : Nat} (hp : EPre s₀ x k) 
       refine WP.ite true hev (fun _ => hfail t₂ hK₂ (hs₂.2.1.trans hm₁) ?_) (by simp)
       simp [Spec.RsaPkcs1Sig.encode, hHl, hdl]
 
+/-! ## The buffer after `encode` -/
+
+/-- Writing `xs` at `q` changes memory only there. -/
+theorem frame_writeBytes (m : Mem) (q : Addr) (xs : List Byte) :
+    Frame [⟨q, xs.length⟩] m (writeBytes m q xs) := by
+  intro x hx
+  have h := hx _ (List.mem_singleton_self _)
+  simp only [Region.Contains] at h
+  simp only [writeBytes]
+  rw [ite_eq_right_iff.mpr (fun h' => absurd h' (by omega))]
+
+/-- The bytes written. -/
+theorem bytesAt_writeBytes (m : Mem) (q : Addr) (xs : List Byte) (hl : xs.length < 2 ^ 64) :
+    Spec.Rsa.bytesAt (writeBytes m q xs) q xs.length = xs := by
+  apply List.ext_getElem (by simp [Spec.Rsa.bytesAt])
+  intro i h₁ h₂
+  simp only [Spec.Rsa.bytesAt, List.getElem_map, List.getElem_range, writeBytes,
+    Offset.add_sub_cancel_left, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show i < 2 ^ 64 by omega)]
+  rw [ite_eq_left_iff.mpr (fun h' => absurd h₂ h')]
+  simp [List.getD_eq_getElem?_getD, h₂]
+
+/-- Two addresses of disjoint regions differ. -/
+theorem ne_of_disjoint {p q : Addr} {n k : Nat} (hd : (⟨p, n⟩ : Region).Disjoint ⟨q, k⟩) (hn : n ≤ 2 ^ 64)
+    (hk : k ≤ 2 ^ 64) {j i : Nat} (hj : j < n) (hi : i < k) :
+    p + BitVec.ofNat 64 j ≠ q + BitVec.ofNat 64 i := by
+  intro h
+  refine hd (p + BitVec.ofNat 64 j) ?_ ?_
+  · simp only [Region.Contains, Offset.add_sub_cancel_left, BitVec.toNat_ofNat]; omega
+  · rw [h]; simp only [Region.Contains, Offset.add_sub_cancel_left, BitVec.toNat_ofNat]; omega
+
 end VG.Proof.RsaPkcs1Sig.X86_64
