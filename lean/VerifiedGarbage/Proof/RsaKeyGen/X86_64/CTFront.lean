@@ -518,4 +518,113 @@ theorem afterLoad_ct (M : Mont) : RelCT isa (Two KSt) (seqs (closeCheck ++ [.ite
     ⟨q.tp, tailPre h₁.1.1.1 h₁.1.2.1 h₁.1.2.2 (ne_false h₁.1.1.2 h₁.2),
       tailPre h₂.1.1.1 h₂.1.2.1 h₂.1.2.2 (ne_false h₂.1.1.2 h₂.2)⟩) h) fun _ _ h => h
 
+/-! ## `loadC`, and `kMain` -/
+
+/-- The arguments' header words. -/
+def avs0 (q : FPub) : List (Nat × BitVec 64) :=
+  [(kOut, q.op), (kLen, BitVec.ofNat 64 (8 * q.w)), (kUsedP, q.up), (kE, q.eP),
+    (kElen, BitVec.ofNat 64 q.eB.length), (kP, q.pP), (kPlen, BitVec.ofNat 64 q.pl), (kRand, q.rP),
+    (kRandLen, BitVec.ofNat 64 q.rl)]
+
+def aS0 : List Nat := [kOut, kLen, kUsedP, kE, kElen, kP, kPlen, kRand, kRandLen]
+
+/-- Before `loadC`: what `kMain_ok` needs, for the public data. -/
+def K0 (q : FPub) (s : State) : Prop :=
+  KW q.B q.wr ∧ s.wr = q.wr ∧ FDims q ∧ ∃ pB r : List Byte,
+    MainCtx s q.B q.Z (8 * q.w) q.op q.up q.eP q.pP q.rP q.eB pB r ∧ pB.length = q.pl ∧ r.length = q.rl ∧
+      schedOf (8 * q.w) (Spec.Rsa.os2ip q.eB) (Spec.RsaKeyGen.otherPrime pB) r = q.sch
+
+theorem K0.hp {q : FPub} {s : State} (h : K0 q s) : KW q.B q.wr ∧ HP q.B q.wr (avs0 q) s := by
+  obtain ⟨hk, hw, -, pB, r, hm, hpl, hrl, -⟩ := h
+  refine ⟨hk, hm.rdi, hw, fun e he => ?_⟩
+  simp only [avs0, List.mem_cons, List.not_mem_nil, or_false] at he
+  rcases he with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+  · exact hm.out
+  · exact hm.len
+  · exact hm.usedP
+  · exact hm.e
+  · exact hm.elen
+  · exact hm.p
+  · rw [← hpl]; exact hm.plen
+  · exact hm.rand
+  · rw [← hrl]; exact hm.rlen
+
+theorem K0.src {q : FPub} {s : State} {pB r : List Byte}
+    (h : MainCtx s q.B q.Z (8 * q.w) q.op q.up q.eP q.pP q.rP q.eB pB r) :
+    Src s q.B q.Z q.rP (r.take (8 * q.w)) := by
+  have := VG.Proof.RsaKeyGen.X86_64.Src.seg h.rsrc (a := 0) (n := 8 * q.w) (by have := h.rk; omega)
+  rwa [seg_zero, show BitVec.ofNat 64 0 = 0#64 from rfl, BitVec.add_zero] at this
+
+/-- `loadC`, from `K0`. -/
+theorem loadCStage_ok {q : FPub} {s : State} (h : K0 q s) : WP isa (seqs loadC) s (KSt q) := by
+  obtain ⟨hk, hw, hd, pB, r, hm, hpl, hrl, hS⟩ := id h
+  have hn := hm.scr.nowrap
+  have hz := hd.z
+  have hw4 := hd.w4
+  have hw64 := hd.w64
+  have hw8 : 8 * q.w / 8 = q.w := by omega
+  refine WP.mono (loadC_ok hm.scr hm.rdi (by rw [hw8]; unfold slot aTab at *; omega) (by omega) (by omega) (by omega)
+    hm.len hm.rand (K0.src hm) (by simp; have := hm.rk; omega)) fun t ⟨hc, hU, hW, hA, hf, hdi, _, k⟩ => ?_
+  rw [hw8] at hc hW hA hf
+  rw [show 8 * (8 * q.w) = 64 * q.w by omega] at hc
+  have hsl : ∀ r ∈ loadCRanges q.w, r.1 + r.2 ≤ q.Z := fun r hr => by
+    have : r.1 + r.2 ≤ slot q.w aTab + 2048 := by revert r hr; simp only [loadCRanges]; rng_le
+    omega
+  have hin := InScr.of_frm hf hsl
+  have hh : ∀ {i}, i = kOut ∨ i = kLen ∨ i = kUsedP ∨ i = kE ∨ i = kElen ∨ i = kP ∨ i = kPlen ∨ i = kRand ∨
+      i = kRandLen → word t.mem q.B (8 * i) = word s.mem q.B (8 * i) := fun {i} hi => by
+    have hi32 : i < 32 := by rcases hi with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
+    refine hf.word_eq ?_ (by omega)
+    simp only [loadCRanges]
+    rcases hi with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> rng_disj
+  refine ⟨hk, k.2.2.trans hw, hd, word t.mem q.B (8 * sMinv), pB, r, ⟨hm.scr.congr k.2.2, hdi, ⟨hW, rfl, hA⟩⟩,
+    fun e he => ?_, hc, hm.psrc.congrK hin k, hm.esrc.congrK hin k, hm.rsrc.congrK hin k, hpl, hrl, hS⟩
+  simp only [avs, List.mem_cons, List.not_mem_nil, or_false] at he
+  rcases he with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+  · rw [hh (by simp)]; exact hm.out
+  · rw [hh (by simp)]; exact hm.len
+  · rw [hh (by simp)]; exact hm.usedP
+  · rw [hh (by simp)]; exact hm.e
+  · rw [hh (by simp)]; exact hm.elen
+  · rw [hh (by simp)]; exact hm.p
+  · rw [hh (by simp), ← hpl]; exact hm.plen
+  · rw [hh (by simp)]; exact hm.rand
+  · rw [hh (by simp), ← hrl]; exact hm.rlen
+  · exact hU
+
+/-- After `loadC`'s octets: the header words its last block reads. -/
+def lvs (q : FPub) : List (Nat × BitVec 64) :=
+  [(sW, BitVec.ofNat 64 q.w), (sArr aN, off q.B (slot q.w aN)), (kLen, BitVec.ofNat 64 (8 * q.w))]
+
+/-- `loadC` leaks the same in runs that agree on the public data. -/
+theorem loadC_ct : RelCT isa (Two K0) (seqs loadC) fun _ _ => True := by
+  unfold loadC
+  simp only [seqs]
+  refine RelCT.assoc (RelCT.seq (R := Two fun q s => KW q.B q.wr ∧ HP q.B q.wr (lvs q) s)
+    (kt_piece (fun q : FPub => q.B) (fun q => q.wr) aS0 avs0 [] (by decide) (fun _ => rfl) (fun _ _ h => h.hp)
+      (pins_nil _) (by taint_decide) ?_)
+    (kt_ct (fun q : FPub => q.B) (fun q => q.wr) [sW, sArr aN, kLen] lvs [] (by decide) (fun _ => rfl)
+      (fun _ _ h => h) (pins_nil _) (by taint_decide)))
+  rintro q s h
+  obtain ⟨hk, hw, hd, pB, r, hm, -, -, -⟩ := h
+  have hz := hd.z
+  have hw4 := hd.w4
+  have hw64 := hd.w64
+  have hw8 : 8 * q.w / 8 = q.w := by omega
+  refine WP.mono (loadCFront_ok hm.scr hm.rdi (by rw [hw8]; unfold slot aTab at *; omega) (by omega) (by omega)
+    (by omega) hm.len hm.rand (K0.src hm) (by simp; have := hm.rk; omega)) fun t ⟨_, _, hdi, hW, hA, hhd, _, k⟩ => ?_
+  rw [hw8] at hW hA
+  refine ⟨hk, hdi, k.2.2.trans hw, fun e he => ?_⟩
+  simp only [lvs, List.mem_cons, List.not_mem_nil, or_false] at he
+  rcases he with rfl | rfl | rfl
+  · exact hW
+  · exact hA aN (by decide)
+  · rw [hhd kLen (by decide) (by decide)]; exact hm.len
+
+/-- `kMain` leaks the same in runs that agree on the public data. -/
+theorem kMain_ct (M : Mont) : RelCT isa (Two K0) (kMain M.mm) fun _ _ => True := by
+  rw [kMain_eq]
+  exact RelCT.seqs_app (by simp [loadC]) (by simp [closeCheck])
+    (RelCT.seq (two_post loadC_ct fun _ _ h => loadCStage_ok h) (afterLoad_ct M))
+
 end VG.Proof.RsaKeyGen.X86_64
