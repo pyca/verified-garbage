@@ -298,22 +298,20 @@ jobs:
       matrix:
         platform:
           - os: ubuntu-latest
-          # x86: a 32-bit userspace, run natively on the x86-64 host. There's
-          # no pyca runner image for i386, so the job starts by installing the
-          # amd64 libc that the runner's (64-bit) Node needs for JS actions
-          # (and Python, for the coverage export).
+          # x86: a 32-bit userspace, run natively on the x86-64 host, in the
+          # image ci/runner.Dockerfile builds (Runner images workflow). It
+          # holds only that platform, so it is named.
           - os: ubuntu-latest
             container:
-              image: rust:slim
+              image: ghcr.io/pyca/verified-garbage-runner:i686
               options: --platform linux/386
-            install-amd64-libc: true
           - os: ubuntu-24.04-arm
-          # ARMv7: a 32-bit userspace, run natively on the ARM64 host.
+          # ARMv7: a 32-bit userspace, run natively on the ARM64 host, in the
+          # same Dockerfile's image for it.
           - os: ubuntu-24.04-arm
             container:
-              image: ghcr.io/pyca/cryptography-runner-ubuntu-rolling:armv7l
-              # A fresh home avoids upgrading the image's incomplete Rust installation.
-              options: --env RUSTUP_HOME=/tmp/verified-garbage-rustup
+              image: ghcr.io/pyca/verified-garbage-runner:armv7l
+              options: --platform linux/arm/v7
           - os: macos-latest
           - os: windows-latest
         rust: [stable]
@@ -345,13 +343,6 @@ jobs:
       LLVM_PROFILE_FILE: .rust-cov/cov-%p-%m.profraw
       WYCHEPROOF_ROOT: wycheproof
     steps:
-      - name: Install the amd64 libc for the runner's Node
-        if: ${{ matrix.platform.install-amd64-libc }}
-        run: |
-          dpkg --add-architecture amd64
-          apt-get update -qq
-          apt-get install -qq -y --no-install-recommends libc6:amd64 libstdc++6:amd64 git ca-certificates python3
-
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
@@ -392,13 +383,6 @@ jobs:
         env:
           RUSTFLAGS: -D warnings
         run: |
-          # GitHub's runner images have OpenSSL's headers and pkg-config;
-          # only the containers need them installed (as root, without sudo).
-          if ! pkg-config --exists openssl 2>/dev/null; then
-            if [ "$(id -u)" != 0 ]; then sudo=sudo; fi
-            $sudo apt-get update -qq
-            $sudo apt-get install -qq -y --no-install-recommends libssl-dev pkg-config
-          fi
           cargo fmt --check
           cargo clippy --all-targets --locked
       - run: rustc -vV
@@ -428,9 +412,8 @@ jobs:
     name: Rust (Thumb, ${{ matrix.rust }})
     runs-on: ubuntu-24.04-arm
     container:
-      image: ghcr.io/pyca/cryptography-runner-ubuntu-rolling:armv7l
-      # A fresh home avoids upgrading the image's incomplete Rust installation.
-      options: --env RUSTUP_HOME=/tmp/verified-garbage-rustup
+      image: ghcr.io/pyca/verified-garbage-runner:armv7l
+      options: --platform linux/arm/v7
     env:
       RUSTUP_TOOLCHAIN: ${{ matrix.rust }}
       # For every cargo command, with the container's native linker.
@@ -517,9 +500,8 @@ jobs:
           - chip: native
             arch: x86
             container:
-              image: rust:slim
+              image: ghcr.io/pyca/verified-garbage-runner:i686
               options: --platform linux/386
-            install-amd64-libc: true
             runs: |
               - | sha1 sha224 sha256 sha384 sha512 aes_ccm aes_gcm aes_gcm_siv aes_ocb aes_siv cmac chacha20 mlkem scrypt x25519 ed25519 ecdsa p256_sha cpu
               none | all
@@ -613,13 +595,6 @@ jobs:
       SDE_URL: https://downloadmirror.intel.com/924984/sde-external-10.13.1-2026-07-28-lin.tar.xz
       SDE_SHA256: 94e97d623fec54385686e1e7ba65ebc9941748c05ee451423948334892bf2b50
     steps:
-      - name: Install the amd64 libc for the runner's Node
-        if: ${{ matrix.install-amd64-libc }}
-        run: |
-          dpkg --add-architecture amd64
-          apt-get update -qq
-          apt-get install -qq -y --no-install-recommends libc6:amd64 libstdc++6:amd64 git ca-certificates python3
-
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false

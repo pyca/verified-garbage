@@ -95,12 +95,6 @@ jobs:
       # implementations (see ci/bench_arches.py); empty restricts nothing.
       VG_CPU_FEATURES: ${{ matrix.cpu-features }}
     steps:
-      - name: Install the amd64 libc for the runner's Node
-        if: ${{ matrix.install-amd64-libc }}
-        run: |
-          dpkg --add-architecture amd64
-          apt-get update -qq
-          apt-get install -qq -y --no-install-recommends libc6:amd64 libstdc++6:amd64 git ca-certificates python3
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           path: head
@@ -111,15 +105,6 @@ jobs:
           ref: ${{ needs.arches.outputs.base }}
           path: base
           persist-credentials: false
-      - name: Install OpenSSL headers
-        run: |
-          # GitHub's runner images have all of these; only the containers
-          # need them installed (as root, without sudo).
-          if ! { pkg-config --exists openssl && command -v openssl && command -v python3; } > /dev/null 2>&1; then
-            if [ "$(id -u)" != 0 ]; then sudo=sudo; fi
-            $sudo apt-get update -qq
-            $sudo apt-get install -qq -y --no-install-recommends libssl-dev openssl pkg-config python3
-          fi
       - name: Record CPU and OpenSSL capabilities
         run: |
           openssl version -a
