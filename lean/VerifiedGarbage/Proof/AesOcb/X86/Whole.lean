@@ -24,11 +24,12 @@ open VG.Proof.AesGcm.X86 (w64 w64_add slotv slotv_eq runBlock_app_of toNat_ofNat
 
 /-- What `whole` writes: the offset and the checksum, `L_{ntz(i)}`, `i`, the
 working space of the functions called, the stack and the data. -/
-abbrev wholeR (p : Prm) : List Region :=
+abbrev wholeR (p : Prm) (k : Nat) : List Region :=
   [⟨w64 p.W + BitVec.ofNat 64 ofsO, 32⟩, ⟨w64 p.W + BitVec.ofNat 64 lO, 16⟩, ⟨w64 p.W + BitVec.ofNat 64 kO, 4⟩,
-    wC p.W, stk p, ⟨w64 p.D, p.n⟩]
+    wC p.W, stk p, ⟨w64 p.D, 16 * k⟩]
 
-theorem wholeR_mut {p : Prm} {m m' : Mem} (h : Frame (wholeR p) m m') : Frame (mutR p) m m' := h.sub fun r hr => by
+theorem wholeR_mut {p : Prm} {k : Nat} (hk : 16 * k ≤ p.n) {m m' : Mem} (h : Frame (wholeR p k) m m') :
+    Frame (mutR p) m m' := h.sub fun r hr => by
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl | rfl
   · exact inMut_w p (.inl (by decide))
@@ -36,7 +37,7 @@ theorem wholeR_mut {p : Prm} {m m' : Mem} (h : Frame (wholeR p) m m') : Frame (m
   · exact inMut_w p (.inr (.inr (.inl ⟨by decide, by decide⟩)))
   · exact ⟨_, by simp, fun _ h => h⟩
   · exact inMut_stk p
-  · exact inMut_d p
+  · exact ⟨_, by simp, Region.sub_prefix hk⟩
 
 /-- The `m` blocks of the data, for a call. -/
 theorem DReg.d {p : Prm} (L : Lay p) {s : State} (E : Env p s) {m : Nat} (hm : 16 * m ≤ p.n) : DReg p s p.D m := by
@@ -72,7 +73,7 @@ theorem passStart_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t) {m : Nat}
 /-- What `whole` leaves. -/
 structure WholePost (p : Prm) (m : Nat) (O0 l : Block) (Z : Nat → Block) (ck : Block) (t t' : State) : Prop where
   env : Env p t'
-  frame : Frame (wholeR p) t.mem t'.mem
+  frame : Frame (wholeR p m) t.mem t'.mem
   rd : t'.rd = t.rd
   wr : t'.wr = t.wr
   blk : ∀ k < m, blockAtMem t'.mem (w64 p.D + BitVec.ofNat 64 (16 * k)) = Z k ^^^ offAt O0 l (k + 1)
@@ -224,7 +225,7 @@ theorem whole_ok {f : Nat → List Byte → Spec.Aes.State → Spec.Aes.State} {
   refine WP.mono (pass_ok L hB2 (fun i hi => by rw [hckF2 i hi, X₄ i hi]) hmn hm0 P₀') fun s₅ P₅ => ?_
   have subP : ∀ r ∈ [(⟨w64 p.W + BitVec.ofNat 64 lO, 16⟩ : Region), ⟨w64 p.W + BitVec.ofNat 64 kO, 4⟩,
       ⟨w64 p.W + BitVec.ofNat 64 ofsO, 16⟩, ⟨w64 p.W + BitVec.ofNat 64 ckO, 16⟩, ⟨w64 p.D, 16 * m⟩],
-      ∃ r' ∈ wholeR p, Region.Sub r r' := by
+      ∃ r' ∈ wholeR p m, Region.Sub r r' := by
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl
@@ -232,14 +233,14 @@ theorem whole_ok {f : Nat → List Byte → Spec.Aes.State → Spec.Aes.State} {
     · exact ⟨_, by simp, fun _ h => h⟩
     · exact ⟨_, by simp, Offset.sub _ (d := 16) (n := 16) (e := 16) (k := 32) (by decide) (by decide)⟩
     · exact ⟨_, by simp, Offset.sub _ (d := 32) (n := 16) (e := 16) (k := 32) (by decide) (by decide)⟩
-    · exact ⟨⟨w64 p.D, p.n⟩, by simp, Region.sub_prefix hmn⟩
+    · exact ⟨⟨w64 p.D, 16 * m⟩, by simp, fun _ h => h⟩
   refine ⟨P₅.env, ?_, by rw [P₅.rd, rd₄, rd₄a, P₃.rd, P₂.rd, rd₁], by rw [P₅.wr, wr₄, wr₄a, P₃.wr, P₂.wr, wr₁],
     fun k hk => ?_, P₅.ofs, P₅.ck⟩
   · rw [← m₁]
     refine (P₂.frame.sub subP).trans ((P₃.frame.sub fun r hr => ?_).trans ?_)
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl
-      · exact ⟨⟨w64 p.D, p.n⟩, by simp, Region.sub_prefix hmn⟩
+      · exact ⟨⟨w64 p.D, 16 * m⟩, by simp, fun _ h => h⟩
       · exact ⟨wC p.W, by simp, Offset.sub _ (by decide) (by decide)⟩
       · exact ⟨stk p, by simp, fun _ h => h⟩
     · have F₅ := P₅.frame
