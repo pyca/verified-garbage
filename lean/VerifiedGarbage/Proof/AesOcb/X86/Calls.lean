@@ -60,7 +60,7 @@ structure CallPost (p : Prm) (f : Nat → List Byte → Spec.Aes.State → Spec.
   frame : Frame [⟨w64 D, 16 * n⟩, ⟨w64 p.W + BitVec.ofNat 64 scrO, 2048⟩, stk p] s.mem s'.mem
   out : Spec.Aes.statesAt s'.mem (w64 D) n =
     (Spec.Aes.statesAt s.mem (w64 D) n).map (f p.R (bytesAt s.mem (w64 p.K) (16 * (p.R + 1))))
-  gpr : ∀ r, r ≠ .eax → r ≠ .ecx → r ≠ .edx → s'.gpr r = s.gpr r
+  gpr : ∀ r, r ≠ .eax → r ≠ .ebx → r ≠ .ecx → r ≠ .edx → s'.gpr r = s.gpr r
   rd : s'.rd = s.rd
   wr : s'.wr = s.wr
 
@@ -121,7 +121,7 @@ theorem blocksCall_ok {f : Nat → List Byte → Spec.Aes.State → Spec.Aes.Sta
       · exact .inr (.inl rfl)
       · exact .inr (.inr (by rfl))
   refine ⟨E.mut L bp₃ (by rw [g₃ _ (by decide), sp₂]) (by rw [rd₃, P₂.rd, rd₁]) (by rw [wr₃, P₂.wr, wr₁])
-      (fr.sub fun r hr => ?_), fr, ?_, fun r h₁ h₂ h₃ => ?_, by rw [rd₃, P₂.rd, rd₁], by rw [wr₃, P₂.wr, wr₁]⟩
+      (fr.sub fun r hr => ?_), fr, ?_, fun r h₁ _ h₂ h₃ => ?_, by rw [rd₃, P₂.rd, rd₁], by rw [wr₃, P₂.wr, wr₁]⟩
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
     · exact hD.inm _ (List.mem_singleton_self _)
@@ -131,5 +131,54 @@ theorem blocksCall_ok {f : Nat → List Byte → Spec.Aes.State → Spec.Aes.Sta
   · by_cases h₄ : r = .ebp
     · subst h₄; rw [bp₃, E.ebp]
     · rw [g₃ r h₄, P₂.saved r (by cases r <;> simp_all [calleeSaved]), g₁ r h₁ h₂ h₄]
+
+/-- `callBlocks`: `args`, which leaves the blocks' address in `edx` and their
+number in `ebx`, then the call. -/
+theorem callBlocks_ok {f : Nat → List Byte → Spec.Aes.State → Spec.Aes.State} {fn : Impl.AesGcm.X86.Fn}
+    (ok : ∀ s, (Proof.Aes.blocksX86 f).pre s →
+      ∃ t s', Exec isa fn.code s t s' ∧ abiPreserved s s' ∧ (Proof.Aes.blocksX86 f).post s s')
+    (nosp : NoSp fn.code) (stack : stackUse fn.code = 0) {p : Prm} (L : Lay p) {s : State} (E : Env p s)
+    {args : List Instr} {D : BitVec 32} {n : Nat}
+    (hargs : ∃ s₁, runBlock isa args s = some s₁ ∧ s₁.gpr .edx = D ∧ s₁.gpr .ebx = BitVec.ofNat 32 n ∧
+      (∀ r, r ≠ .eax → r ≠ .ebx → r ≠ .ecx → r ≠ .edx → s₁.gpr r = s.gpr r) ∧ s₁.mem = s.mem ∧
+      s₁.rd = s.rd ∧ s₁.wr = s.wr)
+    (hD : DReg p s D n) :
+    WP isa (callBlocks fn args) s (CallPost p f D n s) := by
+  obtain ⟨s₁, run₁, dx₁, bx₁, g₁, m₁, rd₁, wr₁⟩ := hargs
+  have E₁ : Env p s₁ := E.keep (by rw [g₁ _ (by decide) (by decide) (by decide) (by decide)])
+    (by rw [g₁ _ (by decide) (by decide) (by decide) (by decide)]) rd₁ wr₁ m₁
+  unfold callBlocks
+  rw [WP.seq_iff, WP.block_append_iff]
+  refine WP.of_runBlock ⟨s₁, run₁, ?_⟩
+  rw [← WP.seq_iff]
+  refine WP.mono (blocksCall_ok ok nosp stack L E₁ dx₁ bx₁ (hD.of_eq wr₁)) fun s' P => ?_
+  have fr := P.frame
+  have out := P.out
+  rw [m₁] at fr out
+  exact ⟨P.env, fr, out,
+    fun r h₁ h₂ h₃ h₄ => by rw [P.gpr r h₁ h₂ h₃ h₄, g₁ r h₁ h₂ h₃ h₄], by rw [P.rd, rd₁], by rw [P.wr, wr₁]⟩
+
+/-- `oneBlock d`: the block at `W + d`. -/
+theorem oneBlock_ok {p : Prm} {s : State} (E : Env p s) (d : Nat) :
+    ∃ s₁, runBlock isa (oneBlock d) s = some s₁ ∧ s₁.gpr .edx = p.W + BitVec.ofNat 32 d ∧
+      s₁.gpr .ebx = BitVec.ofNat 32 1 ∧
+      (∀ r, r ≠ .eax → r ≠ .ebx → r ≠ .ecx → r ≠ .edx → s₁.gpr r = s.gpr r) ∧ s₁.mem = s.mem ∧
+      s₁.rd = s.rd ∧ s₁.wr = s.wr :=
+  ⟨_, by grun [oneBlock], by gregs [E.ebp], by gregs [], fun r _ h₂ _ h₄ => by gregs [h₂, h₄], by gmems [],
+    by gmems [], by gmems []⟩
+
+/-- Block `i` after `vg_aes_encrypt_blocks`. -/
+theorem CallPost.enc {p : Prm} {D : BitVec 32} {n : Nat} {s s' : State} (h : CallPost p Spec.Aes.cipher D n s s')
+    {i : Nat} (hi : i < n) :
+    blockAtMem s'.mem (w64 D + BitVec.ofNat 64 (16 * i)) =
+      Spec.Ocb.ctxCiph s.mem (w64 p.K) p.R (blockAtMem s.mem (w64 D + BitVec.ofNat 64 (16 * i))) :=
+  Proof.Ocb.blockAtMem_of_state _ (Proof.Ocb.stateAt_of_statesAt h.out hi)
+
+/-- Block `i` after `vg_aes_decrypt_blocks`. -/
+theorem CallPost.dec {p : Prm} {D : BitVec 32} {n : Nat} {s s' : State}
+    (h : CallPost p Spec.Aes.invCipher D n s s') {i : Nat} (hi : i < n) :
+    blockAtMem s'.mem (w64 D + BitVec.ofNat 64 (16 * i)) =
+      Spec.Ocb.ctxInv s.mem (w64 p.K) p.R (blockAtMem s.mem (w64 D + BitVec.ofNat 64 (16 * i))) :=
+  Proof.Ocb.blockAtMem_of_state _ (Proof.Ocb.stateAt_of_statesAt h.out hi)
 
 end VG.Proof.AesOcb.X86
