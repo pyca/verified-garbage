@@ -154,7 +154,10 @@ lake env lean --run EmitOne.lean [--check] Rc2.AArch64   # one registration file
 After CI passes on `main`, it publishes the Linux x86-64 project build and
 Mathlib dependencies to `ghcr.io/pyca/vg-lean-cache:latest`. The image contains
 one file, `/lean-cache.tar.zst`, with `.lake/build` and `.lake/packages`
-relative to `lean/`. Only the latest image version is retained.
+relative to `lean/`. Only the latest image version is retained. CI compares
+the checked build's cache key with the image's `io.pyca.lean.cache-key` label
+and skips packaging and publishing when it matches, so Rust- or docs-only
+changes do not create a new cache version.
 
 With Docker and zstd installed, restore it from the repository root:
 

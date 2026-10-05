@@ -3,6 +3,9 @@
 This library is written entirely by LLMs, so these rules are what keep it
 trustworthy. Read `lean/README.md` first.
 
+For a fast Lean bootstrap on Linux x86-64, restore the prebuilt GHCR cache
+before compiling proofs; see [Restoring the CI build cache](lean/README.md#restoring-the-ci-build-cache).
+
 ## Hard rules
 
 * **All assembly comes from Lean.** Never write `asm!`, `naked_asm!`,
