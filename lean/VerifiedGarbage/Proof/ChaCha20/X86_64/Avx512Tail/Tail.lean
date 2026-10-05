@@ -540,10 +540,30 @@ theorem not_pR {k : Nat} (hk : k < p) (hp : p ≤ eL s₀) :
 
 end
 
+/-- What `vg_chacha20_xor` needs of `TInv` (and of `Avx2Tail.TInv`): all
+but the constants in `buf`. -/
+structure SInv (s₀ : State) (p : Nat) (s : State) : Prop where
+  rdi : s.gpr .rdi = est s₀
+  rcx : s.gpr .rcx = ebp s₀
+  rsi : s.gpr .rsi = edp s₀ + BitVec.ofNat 64 p
+  rdx : s.gpr .rdx = BitVec.ofNat 64 (eL s₀ - p)
+  le : p ≤ eL s₀
+  dvd : 64 ∣ p
+  keep : ∀ r ∈ calleeSaved, s.gpr r = s₀.gpr r
+  rd : s.rd = s₀.rd
+  wr : s.wr = s₀.wr
+  cnt : stateAt s.mem (est s₀) = ctr (Avx2.S0 s₀) (p / 64)
+  data : ∀ k < eL s₀, s.mem (edp s₀ + BitVec.ofNat 64 k) =
+    if k < p then D0 s₀ k ^^^ (KS s₀).getD k 0 else D0 s₀ k
+  frame : Frame (frR s₀) s₀.mem s.mem
+
+theorem TInv.sinv {s₀ : State} {p : Nat} {s : State} (h : TInv s₀ p s) : SInv s₀ p s :=
+  ⟨h.rdi, h.rcx, h.rsi, h.rdx, h.le, h.dvd, h.keep, h.rd, h.wr, h.cnt, h.data, h.frame⟩
+
 /-- `vg_chacha20_xor` XORs the last bytes into the data, and returns with
 `rsi` pointing at `buf`. -/
-theorem scalarT_ok {s₀ : State} (hp : APre s₀) {p : Nat} {s : State} (h : TInv s₀ p s) :
-    WP isa scalar s (Fin s₀) := by
+theorem scalarT_ok {s₀ : State} (hp : APre s₀) {p : Nat} {s : State} (h : SInv s₀ p s) :
+    WP isa Impl.ChaCha20.X86_64.Avx2Tail.scalar s (Fin s₀) := by
   have hL := eL_lt s₀
   have hle := h.le
   refine WP.seq (WP.mono (vz_ok s) fun s₁ ⟨g₁, m₁, rd₁, wr₁⟩ => ?_)
@@ -656,7 +676,7 @@ theorem smallT_ok {s₀ : State} (hp : APre s₀) {p : Nat} (hpos : 0 < eL s₀ 
     WP isa small s (Fin s₀) := by
   refine WP.seq (WP.mono (cmp65_ok h hr9) fun s₁ ⟨h₁, r₁, c₁⟩ => ?_)
   refine WP.ite (decide (eL s₀ - p < 65)) (by simp [eval, c₁]) (fun hs => ?_) (fun hs => ?_)
-  · exact scalarT_ok hp h₁
+  · exact scalarT_ok hp h₁.sinv
   · simp only [decide_eq_false_iff_not] at hs
     exact WP.mono (lastT_ok hp hpos hle h₁ r₁) fun _ d => d.fin hp
 
