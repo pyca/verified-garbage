@@ -43,15 +43,17 @@ tests in `VerifiedGarbageTest/Print.lean`.
 namespace VG
 
 /-- The part of a `static`'s address a line names: its 4 KB page, or its
-offset in that page. -/
+offset in that page (AArch64's `adrp` and `add`), or the whole address as a
+RIP-relative memory operand, `[rip + <sym>]` (x86-64's `lea`). -/
 inductive SymPart
   | page
   | pageOff
+  | ripRel
   deriving DecidableEq, Repr
 
 /-- A line of assembly: text, a call instruction of the function it names,
 or text followed by the page or the offset in its page of the address of the
-`static` it names. -/
+`static` it names, or by a RIP-relative operand of that address. -/
 inductive Line
   | text (s : String)
   | call (name : String)
