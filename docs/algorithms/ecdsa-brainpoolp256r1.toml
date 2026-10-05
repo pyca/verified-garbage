@@ -1,0 +1,5 @@
+name = "ECDSA brainpoolP256r1"
+family = "Signatures"
+specs = ["Weierstrass", "BrainpoolP256r1", "EcKey", "Ecdsa", "Ecdsa/Rfc6979", "Ecdsa/Verify"]
+modules = ["src/ecdsa/brainpoolp256r1.rs"]
+asm = ["ec_brainpoolp256r1", "ecdsa_brainpoolp256r1", "ecdsa_brainpoolp256r1_sha256"]
