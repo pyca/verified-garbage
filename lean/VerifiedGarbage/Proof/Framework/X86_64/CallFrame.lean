@@ -86,4 +86,12 @@ theorem x86_64Depth_zero : ∀ {c : Prog isa}, NoSp c → c.depth = 0 → c.x86_
     simp only [Code.x86_64Depth, hb, Nat.zero_add]
     cases i <;> simp_all [X86_64.Instr.frameBytes, Taint.clobbers]
 
+/-- What `Exec.stackFrame` adds to a weakest precondition: memory changes
+only within the writable regions and the stack below `rsp` the code uses. -/
+theorem WP.stackFrame {c : Prog isa} (hc : SpSafe c) (hd : c.x86_64Depth < 2 ^ 64) {s : State}
+    {Q : State → Prop} (h : WP isa c s Q) :
+    WP isa c s fun s' => Q s' ∧ Frame (s.wr ++ [below (s.gpr .rsp) c.x86_64Depth]) s.mem s'.mem := by
+  obtain ⟨t, s', he, hq⟩ := h
+  exact ⟨t, s', he, hq, Exec.stackFrame hc he hd⟩
+
 end VG.X86_64

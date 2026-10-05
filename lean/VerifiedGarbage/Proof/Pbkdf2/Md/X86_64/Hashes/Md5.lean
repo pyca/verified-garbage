@@ -162,7 +162,7 @@ theorem satPF :
 
 /-- MD5, as a variant of `MdHash`. -/
 def variant : MdHash :=
-  MdHash.of ok coreOK callees rfl rfl satI satF satT satP (by decide)
+  MdHash.of ok coreOK callees ⟨Spec.Mgf1.md5, by simp [mdHashes], fun _ => rfl, rfl⟩ rfl rfl satI satF satT satP (by decide)
     (by
       unfold Spec.Hmac.Instance.initContract Spec.Hmac.initContract
       exact X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (Nat.le_of_ble_eq_true rfl))

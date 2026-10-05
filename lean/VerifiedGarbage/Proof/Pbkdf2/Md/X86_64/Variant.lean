@@ -5,6 +5,7 @@ import VerifiedGarbage.TCB.Artifact
 import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
 import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratch
 import VerifiedGarbage.Proof.Pbkdf2.Scratch
+import VerifiedGarbage.Spec.Mgf1
 
 /-!
 # Merkle–Damgård hash functions on x86-64, as variants
@@ -64,6 +65,18 @@ return address, a copy of `out_len` and the buffer's address (its stack
 arguments), then the buffer. -/
 def pbkdf2Frame (I : Spec.Hmac.Instance) : Nat := 24 + 8 * I.pbkdf2Scratch
 
+/-- The hash functions of `MdHash`'s variants, as RSA's padding takes them. -/
+def mdHashes : List Spec.Mgf1.Hash :=
+  [Spec.Mgf1.md5, Spec.Mgf1.sha1, Spec.Mgf1.sha224, Spec.Mgf1.sha256, Spec.Mgf1.sha384, Spec.Mgf1.sha512,
+    Spec.Mgf1.sha512_224, Spec.Mgf1.sha512_256]
+
+/-- The hash function `H` as RSA's padding takes it (`Spec.Mgf1.Hash`). -/
+structure MgfLink (H : Hash) (hH : HashOK H) where
+  G : Spec.Mgf1.Hash
+  mem : G ∈ mdHashes
+  hash : ∀ x, G.hash x = hH.SH.H.hash x
+  len : G.len = H.D
+
 /-- A Merkle–Damgård hash function on x86-64, with one implementation of its
 compression function: its functions, verified against the contracts of its
 instance `I` (`Spec/Hmac/Generic.lean`, `Spec/Pbkdf2/Generic.lean`). -/
@@ -77,6 +90,8 @@ structure MdHash where
   function: RSASSA-PSS's, `Generic/MdHash/RsaPrivateCrt/X86_64/RsaPss.lean`). -/
   ok : HashOK H
   K : Callees H
+  /-- The hash function as RSA's padding takes it. -/
+  mgf : MgfLink H ok
   hmacInit : Verified X86_64.target H.hmacInit (I.initScratchContract X86_64.abi 16)
   hmacFin : Verified X86_64.target H.hmacFin (I.finalizeScratchContract X86_64.abi 16)
   iterate : Verified X86_64.target H.iterate (I.iterateContract X86_64.abi 8)
@@ -198,7 +213,7 @@ end MdHash
 /-- The variant of hash function `H`, of instance `I`, from what the proofs
 need of it and the satisfiability of the shared contracts. -/
 def MdHash.of {H : Hash} {I : Spec.Hmac.Instance} (hH : HashOK H) (C : CoreOK (core H)) (K : Callees H)
-    (hSH : hH.SH = I.S) (hW : H.W = I.scratch)
+    (mgf : MgfLink H hH) (hSH : hH.SH = I.S) (hW : H.W = I.scratch)
     (hsI : ∃ s, (I.initScratchContract X86_64.abi 16).pre s)
     (hsF : ∃ s, (I.finalizeScratchContract X86_64.abi 16).pre s)
     (hsT : ∃ s, (I.iterateContract X86_64.abi 8).pre s)
@@ -213,6 +228,7 @@ def MdHash.of {H : Hash} {I : Spec.Hmac.Instance} (hH : HashOK H) (C : CoreOK (c
   I := I
   ok := hH
   K := K
+  mgf := mgf
   hmacInit := MdHash.hmacInit_of hH C K hSH hW hsI
   hmacFin := MdHash.hmacFin_of hH C K hSH hW hsF
   iterate := MdHash.iterate_of hH C K hSH hW hsT
