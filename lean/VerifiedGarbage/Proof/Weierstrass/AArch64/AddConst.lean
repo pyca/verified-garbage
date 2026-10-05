@@ -14,16 +14,16 @@ open VG VG.AArch64 VG.Impl.Mont.AArch64 VG.Impl.Mont VG.Impl.Weierstrass.AArch64
 open VG.Proof.Mont.AArch64 VG.Proof.Mont VG.Proof.Weierstrass
 open VG.Proof.Ed25519.AArch64 (Keeps Keeps.trans Keeps.mono read_x)
 
-theorem fresh_low_top : ∀ n < 7, Fresh (low n ++ [top n]) := by unfold Fresh; decide
+theorem fresh_low_top : ∀ n < 10, Fresh (low n ++ [top n]) := by unfold Fresh; decide
 
-theorem low_top_clob : ∀ n < 7, ∀ t ∈ .x2 :: (low n ++ [top n]), t ∈ clob n := by
+theorem low_top_clob : ∀ n < 10, ∀ t ∈ .x2 :: (low n ++ [top n]), t ∈ clob n := by
   unfold clob; decide
 
-theorem x0_not_low_top : ∀ n < 7, Reg.x0 ∉ low n ++ [top n] := by decide
+theorem x0_not_low_top : ∀ n < 10, Reg.x0 ∉ low n ++ [top n] := by decide
 
 /-- `[dst] = [src] + c`, `n + 1` words from `n`. -/
 theorem addConst_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {n src dst c : Nat}
-    (h0 : 0 < n) (h7 : n < 7) (hsrc : src + 8 * n ≤ size) (hdst : dst + 8 * (n + 1) ≤ size)
+    (h0 : 0 < n) (h7 : n < 10) (hsrc : src + 8 * n ≤ size) (hdst : dst + 8 * (n + 1) ≤ size)
     (hs8 : src % 8 = 0) (hd8 : dst % 8 = 0) (hsep : src + 8 * n ≤ dst ∨ dst + 8 * (n + 1) ≤ src)
     (hc : c < 2 ^ (64 * (n + 1)))
     (hsum : wordsVal s.mem base src n + c < 2 ^ (64 * (n + 1))) :

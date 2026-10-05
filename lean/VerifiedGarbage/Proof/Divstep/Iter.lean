@@ -85,17 +85,25 @@ theorem divsteps_885 {f g : Int} (hf : f % 2 = 1) (hg : 0 ≤ g) (hgf : g ≤ f)
     (hn : 885 ≤ n) : (divsteps n (1, f, g)).2.2 = 0 ∧ (divsteps n (1, f, g)).2.1.natAbs = Int.gcd f g :=
   divsteps_bound hf hg hgf hf2 (pow_fuzz (by decide +kernel)) hn
 
+/-- 576-bit moduli (nine words): 1328 divsteps. -/
+theorem divsteps_1328 {f g : Int} (hf : f % 2 = 1) (hg : 0 ≤ g) (hgf : g ≤ f) (hf2 : f ≤ 2 ^ 576) {n : Nat}
+    (hn : 1328 ≤ n) : (divsteps n (1, f, g)).2.2 = 0 ∧ (divsteps n (1, f, g)).2.1.natAbs = Int.gcd f g :=
+  divsteps_bound hf hg hgf hf2 (pow_fuzz (by decide +kernel)) hn
+
 /-- Enough divsteps for numbers of `n` words: `590` for `n ≤ 4` (256 bits),
-`885` for `n ≤ 6` (384). -/
+`885` for `n ≤ 6` (384), `1328` for `n ≤ 9` (576). -/
 theorem divsteps_words {f g : Int} {n N : Nat} (hf : f % 2 = 1) (hg : 0 ≤ g) (hgf : g ≤ f)
-    (hfn : f < 2 ^ (64 * n)) (hb : (n ≤ 4 ∧ 590 ≤ N) ∨ (n ≤ 6 ∧ 885 ≤ N)) :
+    (hfn : f < 2 ^ (64 * n)) (hb : (n ≤ 4 ∧ 590 ≤ N) ∨ (n ≤ 6 ∧ 885 ≤ N) ∨ (n ≤ 9 ∧ 1328 ≤ N)) :
     (divsteps N (1, f, g)).2.2 = 0 ∧ (divsteps N (1, f, g)).2.1.natAbs = Int.gcd f g := by
-  rcases hb with ⟨h1, h2⟩ | ⟨h1, h2⟩
+  rcases hb with ⟨h1, h2⟩ | ⟨h1, h2⟩ | ⟨h1, h2⟩
   · refine divsteps_590 hf hg hgf ?_ h2
     calc f ≤ 2 ^ (64 * n) := hfn.le
       _ ≤ 2 ^ 256 := pow_le_pow_right₀ (by norm_num) (by omega)
   · refine divsteps_885 hf hg hgf ?_ h2
     calc f ≤ 2 ^ (64 * n) := hfn.le
       _ ≤ 2 ^ 384 := pow_le_pow_right₀ (by norm_num) (by omega)
+  · refine divsteps_1328 hf hg hgf ?_ h2
+    calc f ≤ 2 ^ (64 * n) := hfn.le
+      _ ≤ 2 ^ 576 := pow_le_pow_right₀ (by norm_num) (by omega)
 
 end VG.Proof.Divstep

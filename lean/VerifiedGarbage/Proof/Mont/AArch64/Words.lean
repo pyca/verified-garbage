@@ -134,4 +134,20 @@ theorem Scr.of_keepRegs {rs : List Reg} {s s' : State} {base : Addr} {size : Nat
     (hs : Scr s base size) (h : KeepRegs rs s s') (hr : .x0 ∉ rs) : Scr s' base size :=
   ⟨(h.gpr _ hr).trans hs.x0, h.wr ▸ hs.wr, hs.nowrap, hs.enc⟩
 
+/-- The modulus as the AArch64 arithmetic takes it: `ModOkW` and at most nine
+words (the accumulator's registers, `acc n`). -/
+structure ModOkA (M : Mod) (size m : Nat) (mem : Mem) (base : Addr) : Prop where
+  n0 : 0 < M.n
+  n10 : M.n < 10
+  mo : M.mo + 8 * M.n ≤ size
+  tmp : M.tmp + 8 * M.n ≤ size
+  sep : M.mo + 8 * M.n ≤ M.tmp ∨ M.tmp + 8 * M.n ≤ M.mo
+  val : wordsVal mem base M.mo M.n = m
+  inv : (m * M.minv.toNat + 1) % 2 ^ 64 = 0
+  red : M.ok m = true
+
+theorem ModOkA.toW {M : Mod} {size m : Nat} {mem : Mem} {base : Addr}
+    (h : ModOkA M size m mem base) : ModOkW M size m mem base :=
+  ⟨h.n0, h.mo, h.tmp, h.sep, h.val, h.inv, h.red⟩
+
 end VG.Proof.Mont.AArch64

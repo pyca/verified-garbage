@@ -89,7 +89,7 @@ negative digit. -/
 theorem tentry_ok {K : TCombCfg} {C : Curve} {base : Addr} {size k i : Nat} {T : Addr}
     {tbl : List (List (Nat × Nat))} (hL : TCombLay K size) (hA : CombA K.toComb) (hC : Law C)
     (hV : TCombVals K C tbl) (hpn : C.p < 2 ^ (64 * K.M.n)) {s : State} (hs : Scr s base size)
-    (hM : ModOk K.M size C.p s.mem base) (hi : i < K.J) (hx : s.gpr .x19 = BitVec.ofNat 64 i)
+    (hM : ModOkA K.M size C.p s.mem base) (hi : i < K.J) (hx : s.gpr .x19 = BitVec.ofNat 64 i)
     (hbits : ∀ t < K.w * K.J, s.mem (off base (K.bits + t)) = if k.testBit t then 1 else 0)
     (hz : wordsVal s.mem base K.zero K.M.n = 0) (hT : s.syms K.tsym = T)
     (hTM : TblMem s T (tcombWords K.M.n (2 ^ (64 * K.M.n)) C.p tbl))
@@ -172,7 +172,7 @@ theorem tentry_ok {K : TCombCfg} {C : Curve} {base : Addr} {size k i : Nat} {T :
   have U₂' : Unch base (combW K.toComb) s.mem s₂.mem := U₂.mono fun w hw => hEW w (by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hw ⊢; rcases hw with h | h | h <;> simp [h])
   have hmoW := combW_mo hL.comb hM
-  have hM₂ : ModOk K.M size C.p s₂.mem base := hM.unch U₂' hmoW hn
+  have hM₂ : ModOkA K.M size C.p s₂.mem base := hM.unch U₂' hmoW hn
   have hzW := combW_ro hL.comb (x := K.zero) (by simp [combRo, TCombCfg.toComb])
   dsimp only [TCombCfg.toComb] at hzW
   have hz₂ : wordsVal s₂.mem base K.zero K.M.n = 0 := by
@@ -353,7 +353,7 @@ structure TCombInv (K : TCombCfg) (C : Curve) (base : Addr) (size k : Nat) (T : 
   x19 : s.gpr .x19 = BitVec.ofNat 64 j
   keep : KeepRegs (tcombClob K.M.n) s₀ s
   unch : Unch base (tcombW K) s₀.mem s.mem
-  mod : ModOk K.M size C.p s.mem base
+  mod : ModOkA K.M size C.p s.mem base
   lt : ∀ x ∈ [K.A.x, K.A.y, K.A.z], wordsVal s.mem base x K.M.n < C.p
   rep : Rep C (tmv C K.M.n base s K.A.x) (tmv C K.M.n base s K.A.y) (tmv C K.M.n base s K.A.z)
     (mul (combEW K.w k K.J j) (G C))
@@ -363,7 +363,7 @@ structure TCombInv (K : TCombCfg) (C : Curve) (base : Addr) (size k : Nat) (T : 
 
 /-- What the comb writes is in the working space. -/
 theorem tcombW_size {K : TCombCfg} {C : Curve} {size : Nat} {mem : Mem} {base : Addr}
-    (hL : TCombLay K size) (hM : ModOk K.M size C.p mem base) : ∀ w ∈ tcombW K, w.1 + w.2 ≤ size := by
+    (hL : TCombLay K size) (hM : ModOkA K.M size C.p mem base) : ∀ w ∈ tcombW K, w.1 + w.2 ≤ size := by
   intro w hw
   simp only [tcombW, combW, List.mem_append, List.mem_map, List.mem_singleton] at hw
   rcases hw with (⟨y, hy, rfl⟩ | rfl) | rfl
@@ -413,7 +413,7 @@ theorem tstep_ok {K : TCombCfg} {C : Curve} {base : Addr} {size k : Nat} {T : Ad
   obtain ⟨b₁, k₁⟩ := h₁
   have hs₁ := hI.scr.of_keeps k₁ (by decide)
   have hm₁ : s₁.mem = s.mem := k₁.mem
-  have hM₁ : ModOk K.M size C.p s₁.mem base := by rw [hm₁]; exact hI.mod
+  have hM₁ : ModOkA K.M size C.p s₁.mem base := by rw [hm₁]; exact hI.mod
   have hbits₁ : ∀ t < K.w * K.J, s₁.mem (off base (K.bits + t)) = if k.testBit t then 1 else 0 :=
     fun t ht => by rw [hm₁]; exact hI.bits t ht
   have hzW := tcombW_ro hL (x := K.zero) (by simp [combRo, TCombCfg.toComb])
@@ -432,7 +432,7 @@ theorem tstep_ok {K : TCombCfg} {C : Curve} {base : Addr} {size k : Nat} {T : Ad
       rcases List.mem_append.mp hw with hw | hw
       · exact hw
       · exact List.mem_append_left _ hw
-  have hM₃ : ModOk K.M size C.p s₃.mem base := hI.mod.unch U₁₃ hmoW hn
+  have hM₃ : ModOkA K.M size C.p s₃.mem base := hI.mod.unch U₁₃ hmoW hn
   -- What `A` and the read-only slots hold at `s₃`.
   have hnd := hL.comb.nodup
   dsimp only [TCombCfg.toComb] at hnd
@@ -557,10 +557,10 @@ theorem tcomb_ok {K : TCombCfg} {C : Curve} {base : Addr} {size k : Nat} {T : Ad
     {tbl : List (List (Nat × Nat))} (hL : TCombLay K size) (hA : CombA K.toComb) (hC : Law C)
     (hM3 : AM3 C) (hG : onCurve C (G C) = true) (hV : TCombVals K C tbl)
     (hpn : C.p < 2 ^ (64 * K.M.n)) {s : State} (hs : Scr s base size)
-    (hM : ModOk K.M size C.p s.mem base)
+    (hM : ModOkA K.M size C.p s.mem base)
     (hF : TCombFixed K C base size s k T (tcombWords K.M.n (2 ^ (64 * K.M.n)) C.p tbl)) :
     WP isa K.comb s fun s' => KeepRegs (tcombClob K.M.n) s s' ∧ Unch base (tcombW K) s.mem s'.mem ∧
-      ModOk K.M size C.p s'.mem base ∧
+      ModOkA K.M size C.p s'.mem base ∧
       (∀ x ∈ [K.A.x, K.A.y, K.A.z], wordsVal s'.mem base x K.M.n < C.p) ∧
       Rep C (tmv C K.M.n base s' K.A.x) (tmv C K.M.n base s' K.A.y) (tmv C K.M.n base s' K.A.z)
         (mul k (G C)) := by

@@ -52,7 +52,7 @@ theorem stage₁ (hc : CfgOk c) {s₀ : State} (hp : SetupPre c s₀) {rest : Pr
     (h : ∀ s, St₁ c s₀ (s₀.gpr .x4) s → WP isa rest s Q) :
     WP isa (.seq (.block c.setup) (.seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n)) rest)) s₀ Q := by
   have h0 := hc.n0
-  have h7 := hc.n7
+  have h7 := hc.n10
   refine WP.seq (WP.mono_syms (setup_ok hc hp) fun s₁ P sy₁ => ?_)
   have hn := P.scr.nowrap
   have hc' : ∀ ix ∈ c.consts, sv c (s₀.gpr .x4) s₁ ix.1 = ix.2 := P.consts
@@ -67,13 +67,13 @@ theorem stage₁ (hc : CfgOk c) {s₀ : State} (hp : SetupPre c s₀) {rest : Pr
   have hsep : ∀ {i : Nat}, i < 45 → ∀ j, c.sl i + 8 * c.n ≤ bitsAt c.n j ∨ bitsAt c.n j + 64 * c.n ≤ c.sl i :=
     fun hi j => Or.inl (by have := sl_below_bits c hi j 0; omega)
   have hS : size = 8192 := rfl
-  have hsz' : ∀ {j}, j < 3 → bitsAt c.n j + 64 * c.n ≤ 4096 := fun hj => bitsAt_le c h7 hj
-  have hsz : ∀ {j}, j < 3 → bitsAt c.n j + 64 * c.n ≤ size := fun hj => by have := hsz' hj; omega
+  have hsz' : bitsAt c.n 0 + 64 * c.n ≤ 4096 := by have := bitsAt0_le c h7; omega
+  have hsz : ∀ {j}, j < 3 → bitsAt c.n j + 64 * c.n ≤ size := fun hj => bitsAt_le c h7 hj
   have h4k : ∀ {i}, i < 45 → c.sl i < 4096 := fun hi => by
-    have := sl_below_bits c hi 0 0; have := hsz' (j := 0) (by decide); omega
+    have := sl_below_bits c hi 0 0; omega
   -- The table of `k`.
   refine WP.seq (WP.mono_syms (bits_ok P.scr h0 (by omega) (sl_le c h7 (i := K) (by decide)) (hsz (j := 0)
-    (by decide)) (h4k (by decide)) (hsz' (by decide)) (hsep (i := K) (by decide) 0)) fun s₂ ⟨b₂, k₂, O₂⟩ sy₂ => h s₂ ?_)
+    (by decide)) (h4k (by decide)) (by omega) (hsep (i := K) (by decide) 0)) fun s₂ ⟨b₂, k₂, O₂⟩ sy₂ => h s₂ ?_)
   have u₂ := O₂.unch
   have v₂ : ∀ {i}, i < 45 → sv c (s₀.gpr .x4) s₂ i = sv c (s₀.gpr .x4) s₁ i := fun hi =>
     sv_unch u₂ h7 hn hi (apart_tbl hi 0)
@@ -104,7 +104,7 @@ theorem stage₁ (hc : CfgOk c) {s₀ : State} (hp : SetupPre c s₀) {rest : Pr
     rw [k₂.gpr r (sub (by decide)), P.keep.gpr r (sub (by decide))]
   · intro x hx
     have hx' : size ≤ ofs (s₀.gpr .x4) x := by have := hx _ (List.mem_singleton_self _); omega
-    rw [O₂ x (Or.inr (by have := bitsAt_le c h7 (j := 0) (by decide); omega)),
+    rw [O₂ x (Or.inr (by have := bitsAt0_le c h7; omega)),
       P.unch x fun w hw => by rw [List.mem_singleton.mp hw]; exact Or.inr (by omega)]
 
 theorem toM_cmont (hc : CfgOk c) (x : Nat) : toM c.C.p (2 ^ (64 * c.n)) (c.mont x) = Fin.ofNat c.C.p x :=
@@ -113,13 +113,13 @@ theorem toM_cmont (hc : CfgOk c) (x : Nat) : toM c.C.p (2 ^ (64 * c.n)) (c.mont 
 theorem mul_zero_pt (P : Point c.C) : Spec.Weierstrass.mul 0 P = .infinity := by
   rw [Spec.Weierstrass.mul]; simp
 
-theorem x0_not_powClob {n : Nat} (_hn : n < 7) : Reg.x0 ∉ powClob n := fun h =>
+theorem x0_not_powClob {n : Nat} (_hn : n < 10) : Reg.x0 ∉ powClob n := fun h =>
   (List.mem_cons.mp h).elim (fun h => absurd h (by decide)) (x0_not_clob n)
 
 
 /-- The flag word apart from numbered slots. -/
 theorem flag_unch {base : Addr} {l : List Nat} {m m' : Mem} (hu : Unch base (slW c l) m m')
-    (h7 : c.n < 7) (h0 : 0 < c.n) (hn : base.toNat + size ≤ 2 ^ 64) (hl : FLAG ∉ l) :
+    (h7 : c.n < 10) (h0 : 0 < c.n) (hn : base.toNat + size ≤ 2 ^ 64) (hl : FLAG ∉ l) :
     word m' base (c.sl FLAG) = word m base (c.sl FLAG) := by
   have hF := sl_le c h7 (i := FLAG) (by decide)
   refine hu.word (fun w hw => ?_) (by omega)

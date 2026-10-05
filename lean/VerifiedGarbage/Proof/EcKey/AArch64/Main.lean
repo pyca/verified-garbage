@@ -87,7 +87,7 @@ theorem pkFinish_ok {c : Cfg} (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr
           else List.replicate (1 + 16 * c.n) 0) ∧
       (s'.gpr .x0).setWidth 32 = (if b then 1 else 0) ∧
       (∀ r ∈ Cfg.saved.map Prod.fst, s'.gpr r = g r) := by
-  have h7 := hc.n7
+  have h7 := hc.n10
   have hn0 := hc.n0
   have hn := hs.nowrap
   have hX := sl_le c h7 (i := X) (by decide)
@@ -163,7 +163,7 @@ theorem pkFinish_ok {c : Cfg} (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr
       if b then toBytes (8 * c.n) (sv c base s X) else List.replicate (8 * c.n) 0 := by
     rw [bytesAt_keep O₄ (Offset.disjoint out (by omega) (by omega) (by omega)) (by omega) (by omega), e₃, x₂]
   have hsv₄ : Spill.Saved base g Cfg.saved s₄.mem := by
-    have h16 : ∀ w ∈ [(size, 2 ^ 64)], 16 ≤ w.1 := fun w hw => by
+    have h16 : ∀ w ∈ [(size, 2 ^ 64)], 56 ≤ w.1 := fun w hw => by
       simp only [List.mem_singleton] at hw; subst hw; decide
     have sv₂ : Spill.Saved base g Cfg.saved s₂'.mem := by
       rw [k₂'.mem]; exact Saved.unch (hm₁ ▸ hsv) h16 U₂
@@ -229,13 +229,13 @@ structure OpsPost (c : Cfg) (base : Addr) (s s' : State) : Prop where
 
 /-- The four field operations of `middle`. -/
 theorem pkOps_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size)
-    (hMP : ModOk c.MP' size c.C.p s.mem base) (hacc : sv c base s ACC < c.C.p) (hone : sv c base s ONE = 1)
+    (hMP : ModOkA c.MP' size c.C.p s.mem base) (hacc : sv c base s ACC < c.C.p) (hone : sv c base s ONE = 1)
     {rest : Prog isa} {Q : State → Prop} (h : ∀ s', OpsPost c base s s' → WP isa rest s' Q) :
     WP isa (.seq (.block (mul c.MP' (c.sl XM) (c.sl RX) (c.sl ACC)))
       (.seq (.block (mul c.MP' (c.sl X) (c.sl XM) (c.sl ONE)))
       (.seq (.block (mul c.MP' (c.sl YM) (c.sl RY) (c.sl ACC)))
       (.seq (.block (mul c.MP' (c.sl Y) (c.sl YM) (c.sl ONE))) rest)))) s Q := by
-  have h7 := hc.n7
+  have h7 := hc.n10
   have hn := hs.nowrap
   have hpR := unitMod_pow_two hc.p_odd (64 * c.n)
   have hp3 := hc.p_ge
@@ -311,7 +311,7 @@ theorem middle_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size
       (s'.gpr .x0).setWidth 32 = (if ok c base s then 1 else 0) ∧
       (∀ r ∈ Cfg.saved.map Prod.fst, s'.gpr r = g r) := by
   have h0 := hc.n0
-  have h7 := hc.n7
+  have h7 := hc.n10
   have hn := hs.nowrap
   have hf : c.sl FLAG + 8 ≤ size := by have := sl_le c h7 (i := FLAG) (by decide); omega
   rw [middle_eq]
@@ -447,7 +447,7 @@ theorem publicKey_ok (hc : CfgOk c) (hC : Law c.C)
     · exact hp.tbl.fit
     · exact hp.tbl.sc
   have hb : sN.gpr .x4 = s₀.gpr .x2 := by rw [g, x4₁]
-  obtain ⟨t, s₂N, ex, S₂⟩ := stage₁ hc (hpN.setup hc.n7) (rest := .seq (TCombCfg.comb c.combCfg) (.seq c.pPow (.block [])))
+  obtain ⟨t, s₂N, ex, S₂⟩ := stage₁ hc (hpN.setup hc.n10) (rest := .seq (TCombCfg.comb c.combCfg) (.seq c.pPow (.block [])))
     (Q := St₂ c sN (sN.gpr .x4)) fun _ S₁ => stage₂ hc hC hT hpN.tbl S₁ fun _ S₂ => WP.block_nil S₂
   rw [hb] at S₂
   -- The same run, with the public key's regions.

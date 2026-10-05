@@ -84,10 +84,10 @@ theorem shrM_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) (h
   exact Divstep.shr_nat (c := 2 ^ 59) (B := 2 ^ 64) rfl rfl (Nat.mul_pos (Nat.two_pow_pos _) (Nat.two_pow_pos _))
     (by have := wordsVal_lt s.mem base src (j + 1); rw [hQ] at this; exact this) hy hy1 hy2 hz e
 
-theorem modOk_out {M : Mod} {size p : Nat} {mem mem' : Mem} {base : Addr} (hM : ModOk M size p mem base) {o len : Nat}
+theorem modOk_out {M : Mod} {size p : Nat} {mem mem' : Mem} {base : Addr} (hM : ModOkA M size p mem base) {o len : Nat}
     (hO : Outside base o len mem mem') (hsep : o + len ≤ M.mo ∨ M.mo + 8 * M.n ≤ o) (hn : base.toNat + size ≤ 2 ^ 64) :
-    ModOk M size p mem' base :=
-  ⟨hM.n0, hM.n7, hM.mo, hM.tmp, hM.sep, by rw [hO.wordsVal (by omega) (by have := hM.mo; omega)]; exact hM.val,
+    ModOkA M size p mem' base :=
+  ⟨hM.n0, hM.n10, hM.mo, hM.tmp, hM.sep, by rw [hO.wordsVal (by omega) (by have := hM.mo; omega)]; exact hM.val,
     hM.inv, hM.red⟩
 
 /-- Half a batch's update of `f`, `g`: `[dst] = (u f + v g) / 2^59` (`L` words, signed). -/
@@ -121,7 +121,7 @@ theorem fHalf_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) (
 
 /-- Half a batch's update of `a`, `b`: `[dst] = mred (u a + v b)` (`n` words). -/
 theorem abHalf_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M : Mod} {p : Nat}
-    (hM : ModOk M size p s.mem base) (hmo8 : M.mo % 8 = 0) (h12 : s.gpr .x12 = 0)
+    (hM : ModOkA M size p s.mem base) (hmo8 : M.mo % 8 = 0) (h12 : s.gpr .x12 = 0)
     {w w' : Reg} (hw : w ∉ [Reg.x0, .x2, .x3, .x8, .x9, .x10, .x12, .x16, .x17])
     (hw' : w' ∉ [Reg.x0, .x2, .x3, .x8, .x9, .x10, .x12, .x16, .x17])
     {u v : Int} (hu : s.gpr w = BitVec.ofInt 64 u) (hv : s.gpr w' = BitVec.ofInt 64 v) (huv : |u| + |v| ≤ 2 ^ 59)
@@ -361,7 +361,7 @@ theorem fgUpd_ok {P : InvCfg} {base : Addr} {size p : Nat} (hL : InvLay P size) 
 
 /-- A batch's update of `a`, `b`, by the matrix in `x4`–`x7`. -/
 theorem abUpd_ok {P : InvCfg} {base : Addr} {size p : Nat} (hL : InvLay P size) {s : State} (hs : Scr s base size)
-    (hM : ModOk P.M size p s.mem base) (h12 : s.gpr .x12 = 0) {u v q r a b : Int}
+    (hM : ModOkA P.M size p s.mem base) (h12 : s.gpr .x12 = 0) {u v q r a b : Int}
     (h4 : s.gpr .x4 = BitVec.ofInt 64 u) (h5 : s.gpr .x5 = BitVec.ofInt 64 v)
     (h6 : s.gpr .x6 = BitVec.ofInt 64 q) (h7 : s.gpr .x7 = BitVec.ofInt 64 r)
     (huv : |u| + |v| ≤ 2 ^ 59) (hqr : |q| + |r| ≤ 2 ^ 59)
@@ -387,7 +387,7 @@ theorem abUpd_ok {P : InvCfg} {base : Addr} {size p : Nat} (hL : InvLay P size) 
   have rB : wordsVal s₁.mem base P.sB P.M.n = wordsVal s.mem base P.sB P.M.n :=
     Unch.wv2 U₁ (Or.inl (show P.sB + 8 * P.M.n ≤ P.sT by omega_using [eL, eF, eG, eA, eB, eNF, eNG, eT, n4, htbl, htbl8, hn, hmt, hmo]))
       (Or.inl (show P.sB + 8 * P.M.n ≤ P.sNF by omega_using [eL, eF, eG, eA, eB, eNF, eNG, eT, n4, htbl, htbl8, hn, hmt, hmo])) (by omega_using [eL, eF, eG, eA, eB, eNF, eNG, eT, n4, htbl, htbl8, hn, hmt, hmo])
-  have M₁ : ModOk P.M size p s₁.mem base := ⟨hM.n0, hM.n7, hM.mo, hM.tmp, hM.sep,
+  have M₁ : ModOkA P.M size p s₁.mem base := ⟨hM.n0, hM.n10, hM.mo, hM.tmp, hM.sep,
     by rw [Unch.wv2 U₁ (by dsimp only; omega_using [eL, eF, eG, eA, eB, eNF, eNG, eT, n4, htbl, htbl8, hn, hmt, hmo]) (by dsimp only; omega_using [eL, eF, eG, eA, eB, eNF, eNG, eT, n4, htbl, htbl8, hn, hmt, hmo]) (by omega_using [eL, eF, eG, eA, eB, eNF, eNG, eT, n4, htbl, htbl8, hn, hmt, hmo])]; exact hM.val, hM.inv, hM.red⟩
   rw [WP.block_append_iff]
   refine WP.mono (abHalf_ok hs₁ M₁ hL.mo8 (by rw [k₁.gpr _ (by decide), h12]) (w := .x6) (w' := .x7) (by decide)
@@ -410,7 +410,7 @@ theorem abUpd_ok {P : InvCfg} {base : Addr} {size p : Nat} (hL : InvLay P size) 
 
 /-- A batch: `59` divsteps on the low words, then `f`, `g`, `a`, `b` by their matrix. -/
 theorem batch_ok {P : InvCfg} {base : Addr} {size p : Nat} (hL : InvLay P size) {s : State} (hs : Scr s base size)
-    (hM : ModOk P.M size p s.mem base) {I : Divstep.IState} (hI : IInv P base I s)
+    (hM : ModOkA P.M size p s.mem base) {I : Divstep.IState} (hI : IInv P base I s)
     (hd : |I.d| ≤ 2 ^ 30) (hf1 : I.f % 2 = 1) (hf : |I.f| ≤ p) (hg : |I.g| ≤ p)
     (ha : |I.a| ≤ p) (hb : |I.b| ≤ p) {j : Nat} (hj : 1 ≤ j) (hj' : j < 2 ^ 64)
     (h19 : s.gpr .x19 = BitVec.ofNat 64 j) :
@@ -447,7 +447,7 @@ theorem batch_ok {P : InvCfg} {base : Addr} {size p : Nat} (hL : InvLay P size) 
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
       rcases hw with rfl | rfl | rfl | rfl | rfl <;> dsimp only <;>
         omega_using [eL, eF, eG, eA, eB, eNF, eNG, eT, h1, h2]) (by omega_using [h3, hn])
-  have M₄ : ModOk P.M size p s₄.mem base := ⟨hM.n0, hM.n7, hM.mo, hM.tmp, hM.sep,
+  have M₄ : ModOkA P.M size p s₄.mem base := ⟨hM.n0, hM.n10, hM.mo, hM.tmp, hM.sep,
     by
       rw [U₄.wordsVal (fun w hw => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hw

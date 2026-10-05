@@ -33,7 +33,7 @@ structure Aligned (M : Mod) (Sl : Nat → Prop) : Prop where
 structure Inv (M : Mod) (base : Addr) (size m : Nat) [NeZero m] (Sl : Nat → Prop) (V : List Nat)
     (E : Nat → Fin m) (s : State) : Prop where
   scr : Scr s base size
-  mod : ModOk M size m s.mem base
+  mod : ModOkA M size m s.mem base
   sl : ∀ x ∈ V, Sl x
   lt : ∀ x ∈ V, wordsVal s.mem base x M.n < m
   val : ∀ x ∈ V, toM m (2 ^ (64 * M.n)) (wordsVal s.mem base x M.n) = E x
@@ -98,7 +98,7 @@ theorem Inv.update {M : Mod} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat �
       have := hL.le x hx
       exact opKeep_wordsVal hk (by omega) (by omega) (by omega)
   refine ⟨⟨(hk.gpr _ (x0_not_clob' _)).trans hI.scr.x0, hk.wr ▸ hI.scr.wr, hn, hI.scr.enc⟩,
-    ⟨hM.n0, hM.n7, hM.mo, hM.tmp, hM.sep, ?_, hM.inv, hM.red⟩, ?_, ?_, ?_⟩
+    ⟨hM.n0, hM.n10, hM.mo, hM.tmp, hM.sep, ?_, hM.inv, hM.red⟩, ?_, ?_, ?_⟩
   · have := hM.mo
     have := hM.sep
     rw [opKeep_wordsVal hk (by omega) (by omega) (by omega)]

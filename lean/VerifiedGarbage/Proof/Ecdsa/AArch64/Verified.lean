@@ -32,7 +32,7 @@ theorem p256_nBits : 64 * p256.n ≤ Spec.Ecdsa.nBits p256.C := by
 
 theorem p256_ok (hI : Weierstrass.AArch64.InvSounds) : CfgOk p256 where
   n0 := by decide
-  n7 := by decide
+  n10 := by decide
   onG := Proof.P256.onCurve_G
   p_odd := by decide +kernel
   n_odd := by decide +kernel

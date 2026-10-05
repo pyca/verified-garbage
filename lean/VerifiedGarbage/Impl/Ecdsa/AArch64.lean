@@ -12,7 +12,7 @@ scratch = x4) -> w0`, for a curve whose field elements and scalars are `n`
 64-bit words (`n = 4` for the 256-bit curves), from the code of
 `Impl/Weierstrass/AArch64.lean`, as on x86-64 (`Impl/Ecdsa/X86_64.lean`):
 
-1. `x19` and `x20` are saved in the working space, whose base is then
+1. `x19`–`x25` are saved in the working space, whose base is then
    `x0`, and `out` is kept in `x20`; `k`, `d` and the hash are read
    big-endian into slots, and the constants (the moduli, `a`, `b`, `G` and
    Montgomery's ones in Montgomery form, `R² mod n`, and the exponents
@@ -40,7 +40,7 @@ def minv (m : Nat) : Nat :=
   let inv := (List.range 6).foldl (fun x _ => x * ((2 + 2 ^ 64 - m * x % 2 ^ 64) % 2 ^ 64) % 2 ^ 64) 1
   (2 ^ 64 - inv) % 2 ^ 64
 
-/-- The working space: the saved registers in bytes `[0, 16)`, then
+/-- The working space: the saved registers in bytes `[0, 56)`, then
 slots of `n` words (`slot n i`) from byte 64, then the tables of bits
 (`bitsAt`). -/
 def slot (n i : Nat) : Nat := 64 + 8 * n * i
@@ -99,12 +99,13 @@ def nslots := 45
 /-- The table of the bits of `k` (`j = 0`), `p - 2` (1) and `n - 2` (2). -/
 def bitsAt (n j : Nat) : Nat := slot n nslots + 64 * n * j
 
-/-- The window method's slots, past the tables of bits (which are slots
-`45 + 8 j`): `k + offset J` (`n + 1` words, two slots), the table of its bits
-(`64 (n + 1)` bytes, sixteen slots) and the table of points `[1 … 8]P` (24
-slots). -/
-def WK : Nat := 69
-def WB : Nat := 71
+/-- The window method's slots: `k + offset J` (`n + 1` words, two slots) and
+the table of its bits (`64 (n + 1)` bytes), which `bits` and the digits read
+with `ldrb` and `strb`, in place of the tables of bits `j = 1` and `2`, which
+nothing uses (so that their offsets are below `4096` for up to nine words),
+and the table of points `[1 … 8]P` (24 slots). -/
+def WK : Nat := 53
+def WB : Nat := 55
 def WT : Nat := 87
 /-- The powers' tables (nine slots). -/
 def CT : Nat := 69
@@ -217,8 +218,10 @@ def powN : Weierstrass.ChainCfg := .ofExp c.MN' (c.sl ACC) (c.sl KM) (c.sl CT) (
 def pPow : Prog isa := InvCfg.inv c.invP
 def nPow : Prog isa := if c.fastN then InvCfg.inv c.invN else ChainCfg.pow c.powN
 
-/-- The callee-saved registers the code uses, and where they are saved. -/
-def saved : List (Reg × Nat) := [(.x19, 0), (.x20, 8)]
+/-- The callee-saved registers the code uses (`x21`–`x25` by the
+multiplications of more than six words), and where they are saved. -/
+def saved : List (Reg × Nat) :=
+  [(.x19, 0), (.x20, 8), (.x21, 16), (.x22, 24), (.x23, 32), (.x24, 40), (.x25, 48)]
 
 /-- The constants, and `R = (0 : 1 : 0)`: slots and values. -/
 def consts : List (Nat × Nat) :=

@@ -392,7 +392,7 @@ theorem invPow_ok {P : InvCfg} {base : Addr} {size m : Nat} [NeZero m] (hpr : m.
     have hodd : (m : Int) % 2 = 1 := by exact_mod_cast hm2'
     have hmP := hM.val ▸ wordsVal_lt s.mem base P.M.mo P.M.n
     have hfn : (m : Int) < 2 ^ (64 * P.M.n) := by exact_mod_cast hmP
-    exact Divstep.divsteps_words hodd h0 h1.le hfn hC.bound
+    exact Divstep.divsteps_words hodd h0 h1.le hfn (hC.bound.imp id .inl)
   -- `x ≠ 0`: `f = ±1` and `x f a 2^(5 B) ≡ 1`.
   have spec : X ≠ 0 → (I.f = 1 ∨ I.f = -1) ∧ (X : Int) * (I.f * I.a) * 2 ^ ((64 - 59) * P.B) ≡ 1 [ZMOD m] :=
     fun hX0 => Divstep.invRun_spec (N := 59) (B := P.B) (by decide) (by exact_mod_cast hm2')

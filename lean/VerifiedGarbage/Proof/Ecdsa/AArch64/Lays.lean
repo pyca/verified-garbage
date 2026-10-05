@@ -44,7 +44,7 @@ theorem lay_map (hc : CfgOk c) {M : Mod} (hmo : M.mo = c.sl MP) (htmp : M.tmp = 
   have hn := hc.n0
   refine ⟨fun x hx => ?_, fun x y hx hy hxy => ?_, fun x hx => ?_, fun x hx => ?_⟩
   · obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hx
-    rw [hMn]; exact sl_le c hc.n7 (hl i hi).1
+    rw [hMn]; exact sl_le c hc.n10 (hl i hi).1
   · obtain ⟨i, -, rfl⟩ := List.mem_map.mp hx
     obtain ⟨j, -, rfl⟩ := List.mem_map.mp hy
     rw [hMn]; exact sl_apart c fun h => hxy (h ▸ rfl)
@@ -67,9 +67,9 @@ theorem rcbApart_of (hn : 0 < c.n) {S : RcbSlots} {p q o : Pt} {lw lr : List Nat
   ⟨hw ▸ map_sl_nodup hn hnd, by rw [hw, hr]; exact map_sl_disj hn hd⟩
 
 /-- The powers' table is in the working space, past the other slots. -/
-theorem ct_le (c : Cfg) (h7 : c.n < 7) : c.sl CT + 9 * (8 * c.n) ≤ size := by
+theorem ct_le (c : Cfg) (h7 : c.n < 10) : c.sl CT + 9 * (8 * c.n) ≤ size := by
   rw [sl_eq]; unfold CT
-  have : 8 * c.n * 69 ≤ 8 * 6 * 69 := Nat.mul_le_mul_right _ (by omega)
+  have : 8 * c.n * 69 ≤ 8 * 9 * 69 := Nat.mul_le_mul_right _ (by omega)
   show _ ≤ 8192
   omega
 
@@ -80,7 +80,7 @@ theorem chainLay_of (hc : CfgOk c) {P : ChainCfg} (hn : P.M.n = c.n) (hacc : P.a
     (htmp : P.M.tmp = c.sl TMP) (hA : ModA P.M) (hb45 : b < 45) (hbs : b ∉ [ACC, TMP, jm])
     (hjm : jm < 45 ∧ jm ∉ [ACC, TMP]) : ChainLay P size := by
   have h0 := hc.n0
-  have h7 := hc.n7
+  have h7 := hc.n10
   have lt : ∀ {i}, i < 45 → c.sl i + 8 * c.n ≤ c.sl CT := fun hi => sl_lt c (by unfold CT; omega)
   simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hbs hjm
   refine ⟨by omega, ?_, ?_, ?_, ?_, ?_, ?_, hA, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;>
@@ -107,11 +107,11 @@ theorem chainLay_of (hc : CfgOk c) {P : ChainCfg} (hn : P.M.n = c.n) (hacc : P.a
 
 theorem invLayP (hc : CfgOk c) : InvLay c.invP size :=
   InvLay.of_chain (chainLay_of hc (P := c.invP.toChain) rfl rfl rfl (b := RZ) (jm := MP) rfl rfl rfl (MP'_A c)
-    (by decide) (by decide) (by decide)) hc.n4 hc.n7
+    (by decide) (by decide) (by decide)) hc.n4 hc.n10
 
 theorem invLayN (hc : CfgOk c) : InvLay c.invN size :=
   InvLay.of_chain (chainLay_of hc (P := c.invN.toChain) rfl rfl rfl (b := KM) (jm := MN) rfl rfl rfl (MN'_A c)
-    (by decide) (by decide) (by decide)) hc.n4 hc.n7
+    (by decide) (by decide) (by decide)) hc.n4 hc.n10
 
 theorem chainLayN (hc : CfgOk c) : ChainLay c.powN size :=
   chainLay_of hc rfl rfl rfl (b := KM) (jm := MN) rfl rfl rfl (MN'_A c) (by decide) (by decide)

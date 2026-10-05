@@ -99,7 +99,7 @@ structure ChainSt (P : ChainCfg) (base : Addr) (size m : Nat) (s₀ s : State) :
   scr : Scr s base size
   keep : KeepRegs (powClob P.M.n) s₀ s
   unch : Unch base (chainW P) s₀.mem s.mem
-  mod : ModOk P.M size m s.mem base
+  mod : ModOkA P.M size m s.mem base
 
 /-- An operation writing the result or a table slot. -/
 theorem ChainSt.op {P : ChainCfg} {base : Addr} {size m : Nat} (hL : ChainLay P size)
@@ -333,7 +333,7 @@ theorem steps_ok {P : ChainCfg} {base : Addr} {size m : Nat} [NeZero m] (hL : Ch
 only `powClob` and `chainW` change. -/
 theorem chainPow_ok {P : ChainCfg} {base : Addr} {size m e : Nat} [NeZero m] (hL : ChainLay P size)
     (hm : UnitMod m (2 ^ (64 * P.M.n))) {s : State} (hs : Scr s base size)
-    (hM : ModOk P.M size m s.mem base) (hB : wordsVal s.mem base P.base P.M.n < m) (hC : ChainOk P e) :
+    (hM : ModOkA P.M size m s.mem base) (hB : wordsVal s.mem base P.base P.M.n < m) (hC : ChainOk P e) :
     WP isa (ChainCfg.pow P) s fun s' => KeepRegs (powClob P.M.n) s s' ∧ Unch base (chainW P) s.mem s'.mem ∧
       wordsVal s'.mem base P.acc P.M.n < m ∧
       toM m (2 ^ (64 * P.M.n)) (wordsVal s'.mem base P.acc P.M.n) =

@@ -226,10 +226,11 @@ def finish : List Instr :=
     [.logic .eor .x .x3 .x3 .x2, .logic .and .x .x3 .x3 .x9, .logic .eor .x .x2 .x2 .x3, st .x2 (P.sC + 8 * i)]) ++
   Mont.AArch64.mul P.M P.acc P.sA P.sC
 
-/-- The inversion modulo `m` (`n ≤ 6` words): `10` batches for up to 256
-bits, `15` for 384 (`590` and `885` divsteps), and `C = 2^(5 B) R³ mod m`. -/
+/-- The inversion modulo `m` (`n ≤ 9` words): `10` batches for up to 256
+bits, `15` for 384, `23` for 576 (`590`, `885` and `1328` divsteps), and
+`C = 2^(5 B) R³ mod m`. -/
 def ofMod (M : Mod) (acc base tbl m : Nat) : InvCfg :=
-  let B := if M.n ≤ 4 then 10 else 15
+  let B := if M.n ≤ 4 then 10 else if M.n ≤ 6 then 15 else 23
   let C := 2 ^ (5 * B) * (2 ^ (64 * M.n)) ^ 3 % m
   { M, acc, base, tbl, B, C, Cn := m - C }
 
