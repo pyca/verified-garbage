@@ -8,8 +8,8 @@ import VerifiedGarbage.Proof.Framework.Contract
 The contract the proof is written against (`pkLocal`: the facts of
 `Spec.Ed448.publicKeyContract` for 352 bytes of stack, stated for AArch64),
 and the correctness of `vg_ed448_public_key` against it, for any
-implementation `v` of the Keccak permutation, given that the reference
-ladder encodes `[k]B` (`BaseLadderOk`, which the generic file passes in):
+implementation `v` of the Keccak permutation, given that
+`vg_ed448_scalar_base` meets its contract (`BaseOk`, which the generic file passes in):
 `SHAKE256(seed, 114)`, pruned, multiplies the base point into `out`; the
 frame (`Proof.Ed25519.AArch64.Whole.wrap_ok`) restores `x30` and the stack
 pointer, and the callee-saved registers are never written.
@@ -76,7 +76,7 @@ theorem entry_args {s p : State}
 
 variable {L : Lay} {g : Reg → Addr} {vec : VReg → BitVec 128} {m₀ : Mem} {t : State}
 
-theorem body_ok (v : Proof.Sha3.AArch64.Permutation) (hb : Proof.Ed448.BaseLadderOk)
+theorem body_ok (v : Proof.Sha3.AArch64.Permutation) (hb : Proof.Ed448.AArch64.BaseOk)
     (hc : Ctx L g vec m₀ t) (hL : L.Ok) (ha : Arguments L m₀) :
     WP isa (body v.callee) t fun u => Ctx L g vec m₀ u ∧
       Spec.Ed448.bytesAt u.mem L.out 57 = Spec.Ed448.publicKey (Spec.Ed448.bytesAt m₀ L.seed 57) := by
@@ -93,7 +93,7 @@ theorem body_depth (v : Proof.Sha3.AArch64.Permutation) : (body v.callee).aarch6
   simp only [body, Impl.Ed448.AArch64.PublicKey.hash, Impl.Ed25519.AArch64.Whole.callWith, Code.aarch64Depth, Nat.max_le, hb, ha, hp, hs]
   omega
 
-theorem publicKey_ok (v : Proof.Sha3.AArch64.Permutation) (hb : Proof.Ed448.BaseLadderOk) {s : State}
+theorem publicKey_ok (v : Proof.Sha3.AArch64.Permutation) (hb : Proof.Ed448.AArch64.BaseOk) {s : State}
     (h : pkLocal.pre s) :
     WP isa (publicKeyWith v.callee) s fun u => abiPreserved s u ∧ pkLocal.post s u := by
   have hw := VG.Proof.Ed25519.AArch64.Whole.wrap_ok (body_depth v) (entry_below h) (entry_writes h)

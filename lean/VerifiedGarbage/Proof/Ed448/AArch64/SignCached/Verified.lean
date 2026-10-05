@@ -7,8 +7,8 @@ import VerifiedGarbage.Proof.Framework.Contract
 # Ed448 signing with a cached public key on AArch64: `Verified`
 
 Correctness including the ABI (`signCached_ok`), for any implementation `v`
-of the Keccak permutation, given `BaseLadderOk` (which the generic file
-passes in). Constant time in every buffer's contents: two runs whose
+of the Keccak permutation, given that `vg_ed448_scalar_base` meets
+its contract in constant time (`BaseOk`, which the generic file passes in). Constant time in every buffer's contents: two runs whose
 pointers and lengths agree have the same layout, so in the frame's body they
 are related by `Whole.Two`. The blocks address only the stack and
 `scratch`, from registers that agree (the taint analysis); each call is of
@@ -168,7 +168,7 @@ def mulAddVal (L : Lay) : Reg → Addr
   | .x3 => L.E + BitVec.ofNat 64 fS
   | _ => L.scr
 
-theorem body_ct (v : Proof.Sha3.AArch64.Permutation) (hb : Proof.Ed448.BaseLadderOk) (hL : L.Ok)
+theorem body_ct (v : Proof.Sha3.AArch64.Permutation) (hb : Proof.Ed448.AArch64.BaseOk) (hL : L.Ok)
     (ha₁ : Args L m₁) (ha₂ : Args L m₂) :
     RelCT isa (fun a b => (Ctx0 L g₁ v₁ m₁ a ∧ a.gpr .x6 = L.len ∧ a.gpr .x7 = L.scr) ∧
       (Ctx0 L g₂ v₂ m₂ b ∧ b.gpr .x6 = L.len ∧ b.gpr .x7 = L.scr)) (body v.callee) fun _ _ => True := by
@@ -250,7 +250,7 @@ theorem lay_eq {s t : State} (hp : scLocal.pub s t) : lay s = lay t := by
   obtain ⟨sp, h0, h1, h2, h3, h4, h5, h6, h7⟩ := hp
   simp only [lay, VG.Proof.Ed25519.AArch64.Whole.base, sp, h0, h1, h2, h3, h4, h5, h6, h7]
 
-theorem signCached_ct (v : Proof.Sha3.AArch64.Permutation) (hb : Proof.Ed448.BaseLadderOk) :
+theorem signCached_ct (v : Proof.Sha3.AArch64.Permutation) (hb : Proof.Ed448.AArch64.BaseOk) :
     ConstantTime isa scLocal.pre scLocal.pub (signCachedWith v.callee) := by
   refine VG.Proof.Ed25519.AArch64.Whole.wrap_ct (fun _ _ hp => hp.1) ?_ ?_
   · intro s hs p hp
@@ -337,7 +337,7 @@ theorem signCached_implies : scLocal.Implies (Spec.Ed448.signCachedContract AArc
       Spec.Ed448.scratchWords, scLocal, below, AArch64.abi, AArch64.argRegs]
   sat := sat
 
-theorem signCached_verified (v : Proof.Sha3.AArch64.Permutation) (hb : Proof.Ed448.BaseLadderOk) :
+theorem signCached_verified (v : Proof.Sha3.AArch64.Permutation) (hb : Proof.Ed448.AArch64.BaseOk) :
     Verified AArch64.target (signCachedWith v.callee) (Spec.Ed448.signCachedContract AArch64.abi 352) :=
   Verified.of_implies
     (Verified.of_correct (fun _ h => signCached_ok v hb h) (signCached_ct v hb)

@@ -4,8 +4,8 @@ import VerifiedGarbage.Proof.Ed448.AArch64.SignCached.Run
 # Ed448 signing with a cached public key on AArch64: the whole function
 
 `vg_ed448_sign_cached` meets `scLocal` and the ABI (`signCached_ok`), for any
-implementation `v` of the Keccak permutation, given that the reference
-ladder encodes `[k]B` (`BaseLadderOk`): the frame
+implementation `v` of the Keccak permutation, given that
+`vg_ed448_scalar_base` meets its contract (`BaseOk`): the frame
 (`Proof.Ed25519.AArch64.Whole.wrap_ok`) runs the body, whose signature is
 RFC 8032's for the inputs as on entry.
 -/
@@ -84,7 +84,7 @@ theorem entry_pk {s p : State} (h : scLocal.pre s)
   exact h.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.1
 
 /-- The frame's body, from the state the frame enters it in. -/
-theorem signCached_ok_body (v : Proof.Sha3.AArch64.Permutation) (hb : Proof.Ed448.BaseLadderOk) {s p : State}
+theorem signCached_ok_body (v : Proof.Sha3.AArch64.Permutation) (hb : Proof.Ed448.AArch64.BaseOk) {s p : State}
     (h : scLocal.pre s) (hp : VG.Proof.Ed25519.AArch64.Whole.Saved (entered s) 6 p) :
     WP isa (body v.callee) (p.withRegions (bodyRd s) (bodyWr s)) fun u => Ctx0 (lay s) s.gpr s.v p.mem u ∧
       Spec.Ed448.bytesAt u.mem (lay s).out 114 = Spec.Ed448.sign (Spec.Ed448.bytesAt p.mem (lay s).seed 57)
@@ -92,7 +92,7 @@ theorem signCached_ok_body (v : Proof.Sha3.AArch64.Permutation) (hb : Proof.Ed44
         (Spec.Ed448.bytesAt p.mem (lay s).msg (lay s).len.toNat) :=
   body_ok v hb (lay_ok h) (entry_ctx h hp) (entry_args hp) (entry_x6 hp) (entry_x7 hp) (entry_pk h hp)
 
-theorem signCached_ok (v : Proof.Sha3.AArch64.Permutation) (hb : Proof.Ed448.BaseLadderOk) {s : State}
+theorem signCached_ok (v : Proof.Sha3.AArch64.Permutation) (hb : Proof.Ed448.AArch64.BaseOk) {s : State}
     (h : scLocal.pre s) :
     WP isa (signCachedWith v.callee) s fun u => abiPreserved s u ∧ scLocal.post s u := by
   have hw := VG.Proof.Ed25519.AArch64.Whole.wrap_ok (body_depth v) (entry_below h) (entry_writes h)
