@@ -82,8 +82,8 @@ fn then_random(x: &[u8]) -> Vec<u8> {
     v
 }
 
-/// Checks the prime `p` of the key with the other prime `q` and the public
-/// exponent `e`, from the file `name`.
+/// Checks the prime `p` of the key with the other prime `q` (as long) and
+/// the public exponent `e`, from the file `name`.
 fn check_prime(name: &str, p: &[u8], q: &[u8], e: &[u8]) {
     let len = p.len();
     let bits = 8 * len;
@@ -94,9 +94,6 @@ fn check_prime(name: &str, p: &[u8], q: &[u8], e: &[u8]) {
         used >= 17 * len && used.is_multiple_of(len),
         "{name}: {used}"
     );
-    if q.len() != len {
-        return;
-    }
     let (got, used2) = generate_prime_from(bits, e, Some(q), &rand).unwrap();
     assert_eq!((&got[..], used2), (p, used), "{name}: with q");
     if candidate(q) {
@@ -129,7 +126,8 @@ fn rsa_keygen_primes() {
             };
             let (p, q) = (trim(&p.0), trim(&q.0));
             for (a, b) in [(p, q), (q, p)] {
-                if candidate(a) {
+                // Every key's primes are as long as each other.
+                if candidate(a) && b.len() == a.len() {
                     primes.entry(a.to_vec()).or_insert((
                         name.clone(),
                         b.to_vec(),
@@ -173,13 +171,15 @@ fn rsa_keygen_composites() {
             continue;
         }
         let r = generate_prime_from(8 * x.len(), &[1], None, &then_random(x));
-        match t.result {
-            Expectation::Valid => assert_eq!(r.unwrap().0, x, "tcId {}", t.tc_id),
-            Expectation::Invalid => {
-                assert!(!r.is_ok_and(|(p, _)| p == x), "tcId {}", t.tc_id)
-            }
-            Expectation::Acceptable => {}
-        }
+        // A valid number (a prime) is the first candidate, accepted; an
+        // invalid one is rejected.
+        let accepted = r.is_ok_and(|(p, _)| p == x);
+        let expected = t.result == Expectation::Valid;
+        assert!(
+            t.result == Expectation::Acceptable || accepted == expected,
+            "tcId {}",
+            t.tc_id
+        );
         checked += 1;
     }
     assert!(checked > 0);
