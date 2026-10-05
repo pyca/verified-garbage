@@ -21,6 +21,7 @@ mod ecdh_p384;
 mod ecdh_p521;
 mod ecdsa_p256;
 mod ecdsa_p384;
+mod ecdsa_p521;
 mod ed25519;
 mod ed448;
 mod harness;
