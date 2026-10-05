@@ -1057,9 +1057,9 @@ def ekSat : State where
   wr := [⟨0x2000, 240⟩, ⟨0x3000, 512⟩]
 
 theorem expandKey_verified :
-    Verified Arm.target Impl.Aes.Arm.expandKey (Spec.Aes.expandKeyContract Arm.abi) :=
+    Verified Arm.target Impl.Aes.Arm.expandKey (Spec.Aes.expandKeyScratchContract Arm.abi) :=
   Verified.of_correct expandKey_correct expandKey_ct (by
-    sig_implies [Spec.Aes.expandKeyContract, Spec.Aes.expandKeySig, Proof.Aes.expandKeyArm, Arm.abi,
+    sig_implies [Spec.Aes.expandKeyScratchContract, Spec.Aes.expandKeyScratchSig, Proof.Aes.expandKeyArm, Arm.abi,
       Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr] [Proof.Aes.Arm.ekSat]
       using Proof.Aes.Arm.ekSat)
 

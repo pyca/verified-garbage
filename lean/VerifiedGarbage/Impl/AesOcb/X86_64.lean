@@ -9,7 +9,7 @@ and `vg_aes_ocb_open` with the same arguments (`Spec/Ocb/Contract.lean`),
 with the working space (`scratch`, `work`) as a last argument, which a frame
 on the stack allocates (`Impl.StackScratch.X86_64.withStackScratch` and
 `withStackArgScratch`), composed of calls of the verified
-`vg_aes_expand_key`, `vg_aes_encrypt_blocks` and `vg_aes_decrypt_blocks`,
+`vg_aes_expand_key_scratch`, `vg_aes_encrypt_blocks` and `vg_aes_decrypt_blocks`,
 and generic over their implementations (`Callees`): each function is
 emitted once for each.
 

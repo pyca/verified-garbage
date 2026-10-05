@@ -89,7 +89,7 @@ theorem rel_ctr {σ₁ σ₂ : State} {K C D S : BitVec 32} {R n : Nat} (h₁ : 
   ctr_rel fun a b hab => by obtain ⟨rfl, rfl⟩ := hab; exact ⟨K, C, D, S, R, n, h₁, h₂, hsp⟩
 
 theorem rel_key {σ₁ σ₂ : State} {K C S : BitVec 32} {L : Nat} (h₁ : KeyCall σ₁ K C S L)
-    (h₂ : KeyCall σ₂ K C S L) : RelCT isa (Eq2 σ₁ σ₂) (.call "vg_aes_expand_key" Impl.Aes.Arm.expandKey) TT :=
+    (h₂ : KeyCall σ₂ K C S L) : RelCT isa (Eq2 σ₁ σ₂) (.call "vg_aes_expand_key_scratch" Impl.Aes.Arm.expandKey) TT :=
   key_rel fun a b hab => by obtain ⟨rfl, rfl⟩ := hab; exact ⟨K, C, S, L, h₁, h₂⟩
 
 /-- A branch both runs take the same way. -/

@@ -3,7 +3,8 @@ import VerifiedGarbage.Impl.Aes.Arm.Ctr32
 /-!
 # The AES key expansion on ARMv7
 
-`vg_aes_expand_key(key = r0, key_len = r1, schedule = r2, scratch = r3)`.
+`vg_aes_expand_key_scratch(key = r0, key_len = r1, schedule = r2, scratch = r3)`; `vg_aes_expand_key`
+runs it with `scratch` in a frame of its own (`Proof/Aes/Arm/Frame.lean`).
 
 FIPS 197 §5.2 (`KEYEXPANSION`), one word at a time, with `SUBWORD` done by
 the bitsliced S-box of `Sbox.lean` on the word in `q 0` (as BearSSL's

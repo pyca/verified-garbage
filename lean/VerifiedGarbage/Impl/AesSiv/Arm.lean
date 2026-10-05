@@ -6,7 +6,7 @@ import VerifiedGarbage.Impl.AesCcm.Arm
 `vg_aes_siv_init(key = r0, key_len = r1, ctx = r2, scratch = r3)`,
 `vg_aes_siv_encrypt(ctx = r0, rounds = r1, ads = r2, ads_count = r3, data = [sp], len = [sp + 4], work = [sp + 8])`
 and `vg_aes_siv_decrypt` with the same arguments (see `VG.Spec.Siv.initContract`
-and the others), composed of calls of the verified `vg_aes_expand_key`,
+and the others), composed of calls of the verified `vg_aes_expand_key_scratch`,
 `vg_cmac_aes_subkeys`, `vg_cmac_aes_update`, `vg_cmac_aes_finalize` and
 `vg_aes_ctr32`, as on AArch64 (`Impl/AesSiv/AArch64.lean`), but for CTR.
 
@@ -122,7 +122,7 @@ def initSaved : List (Reg × Nat) :=
 /-- Saves the registers and keeps the key in `r4`, the half length
 (`key_len / 2`) in `r5`, the context in `r6` and the scratch buffer in
 `r11`; the arguments of
-`vg_aes_expand_key(key = r0, key_len = r1, schedule = r2, scratch = r3)` for
+`vg_aes_expand_key_scratch(key = r0, key_len = r1, schedule = r2, scratch = r3)` for
 `K1` are then those but the length. -/
 def initPre : List Instr :=
   initSaved.map (fun (r, d) => .str r .r3 d) ++
@@ -133,7 +133,7 @@ the rounds `key_len / 8 + 6`. -/
 def initMid₁ : List Instr :=
   [mov .r0 .r6, .mov .r1 (.shifted .r5 .lsr 2), addI .r1 .r1 6, addI .r2 .r6 240, mov .r3 .r11]
 
-/-- The arguments of `vg_aes_expand_key` for `K2`. -/
+/-- The arguments of `vg_aes_expand_key_scratch` for `K2`. -/
 def initMid₂ : List Instr :=
   [.dp .add .r0 .r4 (.reg .r5), mov .r1 .r5, addI .r2 .r6 272, mov .r3 .r11]
 
@@ -142,11 +142,11 @@ def initPost : List Instr := initSaved.map fun (r, d) => .ldr r .r11 d
 
 def init : Prog isa :=
   .seq (.block initPre)
-    (.seq (.call "vg_aes_expand_key" Impl.Aes.Arm.expandKey)
+    (.seq (.call "vg_aes_expand_key_scratch" Impl.Aes.Arm.expandKey)
       (.seq (.block initMid₁)
         (.seq (.call "vg_cmac_aes_subkeys" Impl.CmacAes.Arm.subkeys)
           (.seq (.block initMid₂)
-            (.seq (.call "vg_aes_expand_key" Impl.Aes.Arm.expandKey) (.block initPost))))))
+            (.seq (.call "vg_aes_expand_key_scratch" Impl.Aes.Arm.expandKey) (.block initPost))))))
 
 /-! ## S2V's first state -/
 

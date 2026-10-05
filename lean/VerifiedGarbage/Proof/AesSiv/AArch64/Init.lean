@@ -91,7 +91,7 @@ theorem IPre.sK (_hp : IPre s₀ Kp Ct S KL) {d n : Nat} (h : d + n ≤ KL) :
     Region.Sub ⟨Kp + BitVec.ofNat 64 d, n⟩ ⟨Kp, KL⟩ :=
   Offset.sub_base Kp (by omega)
 
-/-- The arguments of a call of `vg_aes_expand_key` on half the key, from
+/-- The arguments of a call of `vg_aes_expand_key_scratch` on half the key, from
 offset `a` (0 or `KL / 2`), into the context at offset `c`. -/
 theorem IPre.eargs (hp : IPre s₀ Kp Ct S KL) {s : State} {a c : Nat}
     (ha : a + KL / 2 ≤ KL) (hc : c + 240 ≤ 512)
@@ -274,7 +274,7 @@ theorem initMid₁_wp {s₀ s : State} {Kp Ct S : Addr} {KL : Nat} (hp : IPre s�
   have h' := h.keep (fun r hr _ => g r hr) sp rd wr
   exact WP.of_runBlock ⟨s', run, hp.sargs x0 (by rw [x1, rounds_bv hp.klen]) x2 x3 h'.rd h'.wr, h', m⟩
 
-/-- The arguments of the second call of `vg_aes_expand_key`, and the
+/-- The arguments of the second call of `vg_aes_expand_key_scratch`, and the
 registers the code after it uses. -/
 abbrev IEk (s₀ : State) (Kp Ct S : Addr) (KL : Nat) (s : State) : Prop :=
   EArgs s (Kp + BitVec.ofNat 64 (KL / 2)) (Ct + BitVec.ofNat 64 272) S (KL / 2) ∧ IAfter s₀ Kp Ct S KL s

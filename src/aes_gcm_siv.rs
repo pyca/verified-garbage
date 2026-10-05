@@ -49,7 +49,6 @@ use crate::arch::aes_gcm_siv::{
 };
 use crate::cpu::detected;
 use crate::zeroize::zeroize;
-use core::mem::MaybeUninit;
 
 /// The longest plaintext and additional data, in bytes (§6: `P_MAX` and
 /// `A_MAX`, `2^36`).
@@ -118,22 +117,13 @@ impl AesGcmSiv {
                 vg_aes_expand_key_aesni, vg_aes_expand_key_aesni, vg_aes_expand_key_aesni],
             avx: [vg_aes_expand_key_aesni],
             aarch64: [vg_aes_expand_key_aes]);
-        let mut scratch = MaybeUninit::<[u64; 64]>::uninit();
         // SAFETY: `key` is valid for reads of `key.len()` bytes, which is 16
-        // or 32; `k.schedule` and `scratch` are valid for reads and writes of
-        // 240 and 512 bytes. They are distinct objects, so no two overlap,
-        // nor do they overlap the return address on the stack or the stack
-        // below it, and none wraps around the end of the address space. The
-        // CPU has the features of the implementation selected. `scratch` is
-        // uninitialized: it is only working space.
-        unsafe {
-            expand(
-                key.as_ptr(),
-                key.len(),
-                &mut k.schedule,
-                scratch.as_mut_ptr(),
-            )
-        };
+        // or 32, and `k.schedule` for reads and writes of 240 bytes. They are
+        // distinct objects, so they do not overlap, nor do they overlap the
+        // return address on the stack or the stack below it, and neither
+        // wraps around the end of the address space. The CPU has the
+        // features of the implementation selected.
+        unsafe { expand(key.as_ptr(), key.len(), &mut k.schedule) };
         Ok(k)
     }
 

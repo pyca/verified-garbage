@@ -6,7 +6,7 @@ import VerifiedGarbage.Impl.CmacAes.Stream.AArch64
 `vg_aes_siv_init(key = x0, key_len = x1, ctx = x2, scratch = x3)`,
 `vg_aes_siv_encrypt(ctx = x0, rounds = x1, ads = x2, ads_count = x3, data = x4, len = x5, work = x6)`
 and `vg_aes_siv_decrypt` with the same arguments (see `VG.Spec.Siv.initContract`
-and the others), composed of calls of the verified `vg_aes_expand_key`,
+and the others), composed of calls of the verified `vg_aes_expand_key_scratch`,
 `vg_cmac_aes_subkeys`, `vg_cmac_aes_update`, `vg_cmac_aes_finalize` and
 `vg_aes_ctr32`. `init` is generic over the implementation of AES it calls
 (`Ctr32`, the `ExpandKey` that goes with it, and `sfx`, the suffix of the
@@ -122,7 +122,7 @@ def initRestored : List (Reg × Nat) :=
 /-- Saves the registers and keeps the key in `x19`, the half length
 (`key_len / 2`) in `x20`, the context in `x21` and the scratch buffer in
 `x22`; the arguments of
-`vg_aes_expand_key(key = x0, key_len = x1, schedule = x2, scratch = x3)` for
+`vg_aes_expand_key_scratch(key = x0, key_len = x1, schedule = x2, scratch = x3)` for
 `K1` are then those but the length. -/
 def initPre : List Instr :=
   initSaved.map (fun (r, d) => .str .x r .x3 d) ++
@@ -133,7 +133,7 @@ the rounds `key_len / 8 + 6`. -/
 def initMid₁ : List Instr :=
   [mov .x0 .x21, .lsr .x .x1 .x20 2, .addImm .x .x1 .x1 6, .addImm .x .x2 .x21 240, mov .x3 .x22]
 
-/-- The arguments of `vg_aes_expand_key` for `K2`. -/
+/-- The arguments of `vg_aes_expand_key_scratch` for `K2`. -/
 def initMid₂ : List Instr :=
   [.add .x .x0 .x19 .x20, mov .x1 .x20, .addImm .x .x2 .x21 272, mov .x3 .x22]
 

@@ -24,7 +24,7 @@ namespace VG.Artifacts.AesSiv.Arm
 open VG.Proof.AesSiv.Arm
 
 /-- Which functions `init` calls. -/
-def initNote : String := "This implementation expands the keys with `vg_aes_expand_key` and computes the CMAC \
+def initNote : String := "This implementation expands the keys with `vg_aes_expand_key_scratch` and computes the CMAC \
   subkeys with `vg_cmac_aes_subkeys`."
 
 /-- Which functions `encrypt` and `decrypt` call. -/

@@ -13,7 +13,7 @@ implementation `v` of `vg_aes_ctr32`, are emitted once for each implementation
 The functions use no stack: their calls (`bl`) keep the return address in
 `x30`, which they save in the scratch buffer. The streaming functions
 (`init`, `absorb`, `finish`) call the first three; `init` also calls the
-implementation of `vg_aes_expand_key` that goes with `v`.
+implementation of `vg_aes_expand_key_scratch` that goes with `v`.
 
 The streaming functions keep their working space in a frame of their own
 on the stack (`Proof/CmacAes/Stream/AArch64/Frame.lean`): their `stack` is that

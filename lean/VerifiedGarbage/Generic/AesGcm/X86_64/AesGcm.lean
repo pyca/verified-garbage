@@ -10,7 +10,7 @@ import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx.Ok
 # AES-GCM (NIST SP 800-38D) on x86-64
 
 A generic file (see `TCB/Emit.lean`): the artifacts it lists, calling the
-implementations `v` of `vg_aes_expand_key`, `vg_aes_ctr32` and `vg_ghash`,
+implementations `v` of `vg_aes_expand_key_scratch`, `vg_aes_ctr32` and `vg_ghash`,
 are emitted once for each combination (`Variants/AesGcm/X86_64/`), named with
 its suffix (e.g. `vg_aes_gcm_seal_aesni_pclmul`), and need its CPU features.
 **Review note**: `sig` and `doc` are trusted, as they tie the Rust caller to
@@ -35,7 +35,7 @@ it (`GcmImpl.stitch`).
 
 The code of `init`, `stream_init`, `stream_aad`, `stream_finish` and
 `stream_verify` uses 8 bytes of stack: the return address of a call of
-`vg_aes_expand_key`, `vg_aes_ctr32` or `vg_ghash`, which make no calls. That
+`vg_aes_expand_key_scratch`, `vg_aes_ctr32` or `vg_ghash`, which make no calls. That
 of `seal`, `open`, `stream_encrypt` and `stream_decrypt` uses 24: the
 argument they pass on the stack, the return address of their call of
 `vg_aes_gcm_encrypt_blocks` or `vg_aes_gcm_decrypt_blocks`, and that of its

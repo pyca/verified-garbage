@@ -6,7 +6,7 @@ import VerifiedGarbage.Impl.CmacAes.Stream.X86_64
 `vg_aes_siv_init(key = rdi, key_len = rsi, ctx = rdx, scratch = rcx)`,
 `vg_aes_siv_encrypt(ctx = rdi, rounds = rsi, ads = rdx, ads_count = rcx, data = r8, len = r9, work = [rsp + 8])`
 and `vg_aes_siv_decrypt` with the same arguments (see `VG.Spec.Siv.initContract`
-and the others), composed of calls of the verified `vg_aes_expand_key`,
+and the others), composed of calls of the verified `vg_aes_expand_key_scratch`,
 `vg_cmac_aes_subkeys`, `vg_cmac_aes_update`, `vg_cmac_aes_finalize` and
 `vg_aes_ctr32`. Like those, they are generic over the implementation of AES
 they call (`Ctr32`, the `ExpandKey` that goes with it, and `sfx`, the suffix
@@ -123,7 +123,7 @@ def initRestored : List (Reg × Nat) :=
 /-- Saves the registers and keeps the key in `rbx`, the half length
 (`key_len / 2`) in `rbp`, the context in `r12`, the working space in `r13`
 and the rounds (`key_len / 8 + 6`) in `r14`; then the arguments of
-`vg_aes_expand_key(key = rdi, key_len = rsi, schedule = rdx, scratch = rcx)`
+`vg_aes_expand_key_scratch(key = rdi, key_len = rsi, schedule = rdx, scratch = rcx)`
 for `K1`. -/
 def initPre : List Instr :=
   saveCode .rcx initSaved ++
@@ -136,7 +136,7 @@ def initMid₁ : List Instr :=
   [.mov .rdi (.reg .r12), .mov .rsi (.reg .r14), .mov .rdx (.reg .r12), .alu .add .rdx (imm 240),
    .mov .rcx (.reg .r13), .alu .add .rcx (imm csOff)]
 
-/-- The arguments of `vg_aes_expand_key` for `K2`. -/
+/-- The arguments of `vg_aes_expand_key_scratch` for `K2`. -/
 def initMid₂ : List Instr :=
   [.mov .rdi (.reg .rbx), .alu .add .rdi (.reg .rbp), .mov .rsi (.reg .rbp), .mov .rdx (.reg .r12),
    .alu .add .rdx (imm 272), .mov .rcx (.reg .r13), .alu .add .rcx (imm csOff)]

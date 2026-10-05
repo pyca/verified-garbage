@@ -6,7 +6,7 @@
 ///
 /// Contract: `VG.Spec.Siv.initContract`. The key context is `VG.Spec.Siv.KeyRepr`. Constant time: only the pointers and `key_len` may affect timing, not the key.
 ///
-/// This implementation expands the keys with `vg_aes_expand_key` and computes the CMAC subkeys with `vg_cmac_aes_subkeys`.
+/// This implementation expands the keys with `vg_aes_expand_key_scratch` and computes the CMAC subkeys with `vg_cmac_aes_subkeys`.
 ///
 /// # Safety
 ///
@@ -30,7 +30,7 @@ pub(crate) unsafe extern "C" fn vg_aes_siv_init(key: *const u8, key_len: usize, 
         "mov r6, r2",
         "mov r11, r3",
         "mov r1, r5",
-        "bl {vg_aes_expand_key}",
+        "bl {vg_aes_expand_key_scratch}",
         "mov r0, r6",
         "lsr r1, r5, #2",
         "add r1, r1, #6",
@@ -41,7 +41,7 @@ pub(crate) unsafe extern "C" fn vg_aes_siv_init(key: *const u8, key_len: usize, 
         "mov r1, r5",
         "add r2, r6, #272",
         "mov r3, r11",
-        "bl {vg_aes_expand_key}",
+        "bl {vg_aes_expand_key_scratch}",
         "ldr r4, [r11, #2176]",
         "ldr r5, [r11, #2180]",
         "ldr r6, [r11, #2184]",
@@ -49,7 +49,7 @@ pub(crate) unsafe extern "C" fn vg_aes_siv_init(key: *const u8, key_len: usize, 
         "ldr r11, [r11, #2188]",
         "add sp, sp, #2560",
         "bx lr",
-        vg_aes_expand_key = sym super::aes::vg_aes_expand_key,
+        vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch,
         vg_cmac_aes_subkeys = sym super::cmac_aes::vg_cmac_aes_subkeys,
     )
 }
