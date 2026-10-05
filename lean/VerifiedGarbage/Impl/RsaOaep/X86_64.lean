@@ -197,7 +197,8 @@ def copyLh : Prog isa :=
 /-- `0x01` at `EM + k - mLen - 1`, and the message after it, if it is not
 empty. -/
 def putMsg : Prog isa :=
-  .seq (.block (scr .rdi oEm ++ [.alu .add .rdi (.mem (sp sK)), .alu .sub .rdi (.mem (sp sMsgLen)),
+  .seq (.block (scr .rdi oEm ++ [.mov .rax (.mem (sp sK)), .alu .add .rdi (.reg .rax), .mov .rax (.mem (sp sMsgLen)),
+      .alu .sub .rdi (.reg .rax),
       .alu .sub .rdi (.imm 1), .mov32 .rax (.imm 1), .store8 (at_ .rdi) .rax, .mov .rsi (.mem (sp sMsg)),
       .mov .r10 (.mem (sp sMsgLen)), .mov32 .r8 (.imm 0), .alu .test .r10 (.reg .r10)]))
     (.ite .e (.block []) (byteLoop [.movzx8 .rax (ix .rsi .r8), .store8 (ix .rdi .r8 1) .rax] (.reg .r10)))

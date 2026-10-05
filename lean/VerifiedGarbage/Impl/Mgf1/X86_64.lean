@@ -103,8 +103,8 @@ def finArgs : List Instr :=
 /-- `rcx` = the digest, `rdi` = `dst + done`, `r10` = `hLen`, `rax` =
 `dstLen - done`, and CF set if `dstLen - done < hLen`. -/
 def xorHead : List Instr :=
-  scr L .rcx L.oDig ++ [.mov .rdi (.mem (sp L.sDst)), .alu .add .rdi (.mem (sp L.sDone)),
-    .mov .rax (.mem (sp L.sDstLen)), .alu .sub .rax (.mem (sp L.sDone)),
+  scr L .rcx L.oDig ++ [.mov .rdx (.mem (sp L.sDone)), .mov .rdi (.mem (sp L.sDst)), .alu .add .rdi (.reg .rdx),
+    .mov .rax (.mem (sp L.sDstLen)), .alu .sub .rax (.reg .rdx),
     .mov32 .r10 (.imm (BitVec.ofNat 32 G.D)), .alu .cmp .rax (.reg .r10)]
 
 /-- The first `min(hLen, dstLen - done)` bytes of the digest XORed into
