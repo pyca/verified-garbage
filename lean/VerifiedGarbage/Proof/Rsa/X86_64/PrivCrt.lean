@@ -206,11 +206,12 @@ theorem crt_call (v : CrtImpl) {s t : State} (hp : PreF s) (he : Env s t)
           (Spec.Rsa.bytesAt s.mem (stackArg s 4) (stackArg s 5).toNat)
           (Spec.Rsa.bytesAt s.mem (stackArg s 6) (stackArg s 3).toNat)
           (Spec.Rsa.bytesAt s.mem (stackArg s 8) (stackArg s 5).toNat)
-          (Spec.Rsa.bytesAt s.mem (stackArg s 10) (stackArg s 3).toNat)) := by
+          (Spec.Rsa.bytesAt s.mem (stackArg s 10) (stackArg s 3).toNat)) ∧
+      (∀ r ∈ calleeSaved, t'.gpr r = t.gpr r) ∧ t'.mxcsr.extractLsb' 6 10 = t.mxcsr.extractLsb' 6 10 := by
   obtain ⟨hc, hw⟩ := crt_covers hp he
-  refine WP.call (k := crtContract) v.ok v.nosp (by rw [v.depth]; decide)
+  refine WP.call_mx (k := crtContract) v.ok v.nosp (by rw [v.depth]; decide)
     (crt_pre hp he hargs hdi hsi hdx hcx h8 h9) hc hw ?_
-  intro s' hrd hwr hcs hf _ ⟨s₂, hm₂, hg₂, hpost⟩
+  intro s' hrd hwr hcs hf _ ⟨s₂, hm₂, hg₂, hpost⟩ hmx
   rw [v.depth, he.rsp] at hf
   have hE : ∀ i < 12, stackArg (t.callEntry.withRegions (crtRd s) (crtWr s)) i = stackArg s (i + 2) :=
     fun i hi => (stackArg_entry he.rsp _ _ (by omega)).trans (hargs i hi)
@@ -240,7 +241,7 @@ theorem crt_call (v : CrtImpl) {s t : State} (hp : PreF s) (he : Env s t)
     b (by rw [← hp.hqil]; exact hp.dKqi) (by rw [← hp.hqil]; exact hp.dOqi)
       (by rw [← hp.hqil]; exact hp.dqis.symm) (by have := hp.wQi; have := hp.hqil; omega)] at hpost
   refine ⟨⟨(hcs .rsp (by decide)).trans he.rsp, hrd.trans he.rd, hwr.trans he.wr,
-    frame_call he.mem hf fun r hr => ?_, ?_, ?_, ?_, ?_, ?_⟩, hpost⟩
+    frame_call he.mem hf fun r hr => ?_, ?_, ?_, ?_, ?_, ?_⟩, hpost, hcs, hmx⟩
   · simp only [crtWr, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
     · exact .inl (frame_sub s (by unfold oM frameBytes; omega))

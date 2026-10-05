@@ -190,7 +190,8 @@ theorem pd_call (M : Mont) (name : String) (hmx : (Precomputed.code M.mm).allIns
             (Spec.Rsa.bytesAt t.mem (off (fb s) oM) (s.gpr .rcx).toNat))) ∧
       Spec.Rsa.bytesAt t'.mem (off (fb s) oM) (s.gpr .rcx).toNat =
         Spec.Rsa.bytesAt t.mem (off (fb s) oM) (s.gpr .rcx).toNat ∧
-      word t'.mem (fb s) oR1 = word t.mem (fb s) oR1 ∧ word t'.mem (fb s) oR3 = word t.mem (fb s) oR3 := by
+      word t'.mem (fb s) oR1 = word t.mem (fb s) oR1 ∧ word t'.mem (fb s) oR3 = word t.mem (fb s) oR3 ∧
+      (∀ r ∈ calleeSaved, t'.gpr r = t.gpr r) ∧ t'.mxcsr.extractLsb' 6 10 = t.mxcsr.extractLsb' 6 10 := by
   have hpw := preWords_le hp
   have hk2 := hp.k2
   have hsi' := hp.hsi
@@ -216,10 +217,10 @@ theorem pd_call (M : Mont) (name : String) (hmx : (Precomputed.code M.mm).allIns
   have hpre' : (⟨pdContract.pre, pdChkContract.post, pdContract.pub⟩ : Contract isa).pre
       (t.callEntry.withRegions (pdRd s) (pdWr s)) := hpre
   have hcov := Covers.append_left cr cw.right
-  refine WP.call (k := ⟨pdContract.pre, pdChkContract.post, pdContract.pub⟩) (rd := pdRd s) (wr := pdWr s)
+  refine WP.call_mx (k := ⟨pdContract.pre, pdChkContract.post, pdContract.pub⟩) (rd := pdRd s) (wr := pdWr s)
     hv hsp hdd
     hpre' hcov cw ?_
-  intro s' hrd hwr hcs hf _ ⟨s₂, hm₂, hg₂, hpost⟩
+  intro s' hrd hwr hcs hf _ ⟨s₂, hm₂, hg₂, hpost⟩ hmx
   rw [hd, he.rsp] at hf
   have hfE : Frame [stkR s, outR s, scrR s] s.mem t.callEntry.mem :=
     frame_call he.mem (callEntry_frame he.rsp) fun r hr => by
@@ -243,7 +244,7 @@ theorem pd_call (M : Mont) (name : String) (hmx : (Precomputed.code M.mm).allIns
     · exact hp.dKs.sub_left (frame_sub s hdn)
     · exact (ret_disjoint s hdn).symm
   refine ⟨⟨(hcs .rsp (by decide)).trans he.rsp, hrd.trans he.rd, hwr.trans he.wr,
-    frame_call he.mem hf fun r hr => ?_, ?_, ?_, ?_, ?_, ?_⟩, hpost, ?_, ?_, ?_⟩
+    frame_call he.mem hf fun r hr => ?_, ?_, ?_, ?_, ?_, ?_⟩, hpost, ?_, ?_, ?_, hcs, hmx⟩
   · simp only [pdWr, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
     · exact .inr (.inl (by rw [← hsi']; exact sub_refl _))

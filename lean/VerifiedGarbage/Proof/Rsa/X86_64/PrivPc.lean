@@ -136,7 +136,8 @@ theorem pc_call (M : Mont) (name : String) (hmx : (Precompute.code M.mm).allInst
             List.replicate (Spec.Rsa.precomputedWords (s.gpr .rcx).toNat) 0) ∧
       Spec.Rsa.bytesAt t'.mem (off (fb s) oM) (s.gpr .rcx).toNat =
         Spec.Rsa.bytesAt t.mem (off (fb s) oM) (s.gpr .rcx).toNat ∧
-      word t'.mem (fb s) oR1 = word t.mem (fb s) oR1 := by
+      word t'.mem (fb s) oR1 = word t.mem (fb s) oR1 ∧
+      (∀ r ∈ calleeSaved, t'.gpr r = t.gpr r) ∧ t'.mxcsr.extractLsb' 6 10 = t.mxcsr.extractLsb' 6 10 := by
   have hpw := preWords_le hp
   have hk2 := hp.k2
   have hfr : (⟨fb s, frameBytes⟩ : Region) ∈ t.wr := by rw [he.wr]; exact List.mem_cons_self ..
@@ -148,10 +149,10 @@ theorem pc_call (M : Mont) (name : String) (hmx : (Precompute.code M.mm).allInst
     rcases hr with rfl | rfl
     · exact ⟨_, hfr, oPre, rfl, by simp only [preR]; unfold oPre frameBytes; omega⟩
     · exact ⟨_, hscr, 0, z _, Nat.le_refl _ |>.trans (by simp)⟩
-  refine WP.call (k := pcContract) (pcCode_correct M hmx) hsp (by rw [hd]; decide)
+  refine WP.call_mx (k := pcContract) (pcCode_correct M hmx) hsp (by rw [hd]; decide)
     (pc_pre hp he hdi hsi hdx hcx h8 h9)
     (Covers.append (Covers.of_mem fun r hr => by rw [List.mem_singleton.mp hr]; exact hn) cw) cw ?_
-  intro s' hrd hwr hcs hf _ ⟨s₂, hm₂, hg₂, hpost⟩
+  intro s' hrd hwr hcs hf _ ⟨s₂, hm₂, hg₂, hpost⟩ hmx
   rw [hd, he.rsp] at hf
   have hfE : Frame [stkR s, outR s, scrR s] s.mem t.callEntry.mem :=
     frame_call he.mem (callEntry_frame he.rsp) fun r hr => by
@@ -172,7 +173,7 @@ theorem pc_call (M : Mont) (name : String) (hmx : (Precompute.code M.mm).allInst
     · exact hp.dKs.sub_left (frame_sub s (by unfold frameBytes; omega))
     · exact (ret_disjoint s (by unfold frameBytes; omega)).symm
   refine ⟨⟨(hcs .rsp (by decide)).trans he.rsp, hrd.trans he.rd, hwr.trans he.wr,
-    frame_call he.mem hf fun r hr => ?_, ?_, ?_, ?_, ?_, ?_⟩, hpost, ?_, ?_⟩
+    frame_call he.mem hf fun r hr => ?_, ?_, ?_, ?_, ?_, ?_⟩, hpost, ?_, ?_, hcs, hmx⟩
   · simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
     · exact .inl (preR_sub hp)

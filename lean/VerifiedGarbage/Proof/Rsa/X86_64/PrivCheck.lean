@@ -166,14 +166,20 @@ theorem check_ok (M : Mont) (pcName pdName : String)
             (Spec.Rsa.bytesAt t.mem (off (fb s) oM) (s.gpr .rcx).toNat)
           then Spec.Rsa.bytesAt t.mem (off (fb s) oM) (s.gpr .rcx).toNat
           else List.replicate (s.gpr .rcx).toNat 0) ∧
-      Spec.Rsa.bytesAt t'.mem (off (fb s) oM) (s.gpr .rcx).toNat = List.replicate (s.gpr .rcx).toNat 0 := by
+      Spec.Rsa.bytesAt t'.mem (off (fb s) oM) (s.gpr .rcx).toNat = List.replicate (s.gpr .rcx).toNat 0 ∧
+      (∀ r ∈ calleeSaved, t'.gpr r = t.gpr r) ∧ t'.mxcsr.extractLsb' 6 10 = t.mxcsr.extractLsb' 6 10 := by
   have hk2 := hp.k2
   have hpw := preWords_le hp
+  have csk : ∀ {rs : List Reg} {a b : State}, Keep rs a b → (∀ r ∈ calleeSaved, r ∉ rs) →
+      ∀ r ∈ calleeSaved, b.gpr r = a.gpr r := fun k h r hr => k.gpr (h r hr)
   rw [check_eq]
-  refine WP.seq (WP.mono (pcArgs_ok hp he) fun t₁ ⟨he₁, hm₁, hdi, hsi, hdx, hcx, h8, h9⟩ => ?_)
+  refine WP.seq (WP.mono_mx (by decide +kernel) (WP.keep [.rdi, .rsi, .rdx, .rcx, .r8, .r9] (pcArgs_ok hp he) rfl)
+    fun t₁ ⟨⟨he₁, hm₁, hdi, hsi, hdx, hcx, h8, h9⟩, k₁⟩ hmx₁ => ?_)
   refine WP.seq (WP.mono (pc_call M pcName pcMx pcNosp pcDepth hp he₁ hdi hsi hdx hcx h8 h9)
-    fun t₂ ⟨he₂, hpc, hM₂, hR1₂⟩ => ?_)
-  refine WP.seq (WP.mono (pdArgs_ok hp he₂) fun t₃ ⟨he₃, hm₃, hdi₃, hsi₃, hdx₃, hcx₃, h8₃, h9₃⟩ => ?_)
+    fun t₂ ⟨he₂, hpc, hM₂, hR1₂, hcs₂, hmx₂⟩ => ?_)
+  refine WP.seq (WP.mono_mx (by decide +kernel)
+    (WP.keep [.rax, .rdi, .rsi, .rdx, .rcx, .r8, .r9] (pdArgs_ok hp he₂) rfl)
+    fun t₃ ⟨⟨he₃, hm₃, hdi₃, hsi₃, hdx₃, hcx₃, h8₃, h9₃⟩, k₃⟩ hmx₃ => ?_)
   have hw : ∀ {d : Nat}, d < 4 → word t₃.mem (fb s) (8 * d) =
       [off (fb s) oM, s.gpr .rcx, stackArg s 12, stackArg s 13].getD d 0 := fun {d} hd => by
     rw [hm₃]
@@ -185,8 +191,13 @@ theorem check_ok (M : Mont) (pcName pdName : String)
     · simp (disch := decide) only [word_writeW_self]; rfl
   refine WP.seq (WP.mono (pd_call M pdName pdMx pdNosp pdDepth hp he₃ (hw (d := 0) (by decide))
     (hw (d := 1) (by decide)) (hw (d := 2) (by decide)) (hw (d := 3) (by decide)) hdi₃ hsi₃ hdx₃ hcx₃ h8₃ h9₃)
-    fun t₄ ⟨he₄, hpd, hM₄, hR1₄, hR3₄⟩ => ?_)
-  refine WP.mono (tail_ok hp he₄) fun t' ⟨hax, hout, hM', he'⟩ => ⟨he', ?_, ?_, hM'⟩ <;> clear hM'
+    fun t₄ ⟨he₄, hpd, hM₄, hR1₄, hR3₄, hcs₄, hmx₄⟩ => ?_)
+  refine WP.mono_mx (by decide +kernel)
+    (WP.keep [.rax, .r11, .rdi, .rsi, .rcx, .r10, .rdx, .r9, .r8] (tail_ok hp he₄) (by decide +kernel))
+    fun t' ⟨⟨hax, hout, hM', he'⟩, k₅⟩ hmx₅ => ⟨he', ?_, ?_, hM',
+      fun r hr => by rw [csk k₅ (by decide) r hr, hcs₄ r hr, csk k₃ (by decide) r hr, hcs₂ r hr,
+        csk k₁ (by decide) r hr],
+      by rw [hmx₅, hmx₄, hmx₃, hmx₂, hmx₁]⟩ <;> clear hM'
   all_goals
     -- The values the tail reads.
     have hr1 : word t₄.mem (fb s) oR1 = t.gpr .rax := by
