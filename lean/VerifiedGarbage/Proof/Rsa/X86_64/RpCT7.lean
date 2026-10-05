@@ -286,6 +286,97 @@ theorem finB_ct : RelCT isa (Two (FX XT)) (seqs [zeroA fV, copyA fV aN, zeroA fX
         h.step (Frm.rg_of_out o (by omega) [fQ] [] (by decide)) (by decide) (by simp) (by simp) k (by decide)
           fun _ _ _ => trivial) (divmod_gct (by taint_decide))))
 
+/-! ## The larger first, and the stores -/
+
+theorem finC_ct : RelCT isa (Two (FX fun _ _ => True)) (seqs [.block (ws ++ base fV .rbx ++ base fQ .r10 ++
+    [.mov32 .rbp (.imm 0)]), wordLoop 0 ltBody, .block [.mov .r15 (.reg .rbp)], wordLoop 0 cswapBody])
+    (Two (FX fun _ _ => True)) := by
+  have e : seqs [.block (ws ++ base fV .rbx ++ base fQ .r10 ++ [.mov32 .rbp (.imm 0)]), wordLoop 0 ltBody,
+      .block [.mov .r15 (.reg .rbp)], wordLoop 0 cswapBody] = .seq (.block (ws ++ (base fV .rbx ++ (base fQ .r10 ++
+        ([.mov32 .rbp (.imm 0)] : List Instr))))) (.seq (wordLoop 0 ltBody) (.seq (.block [.mov .r15 (.reg .rbp)])
+          (wordLoop 0 cswapBody))) := by
+    simp only [seqs, List.append_assoc]
+  rw [e]
+  refine ws_ct RpP.B RpP.Z (fun p => wk p.k) (fun _ _ h => h.ws) (by taint_decide) fun p s h => ?_
+  rw [← e]
+  exact WP.mono (finC_ok h.ws) fun u ⟨f, k, _⟩ => h.step f (by decide) (by simp) (by simp) k (by decide)
+    fun _ _ _ => trivial
+
+/-- Before the stores: the working space, the arguments and the mask. -/
+def GSr (p : RpP) (s : State) : Prop :=
+  ∃ (I : RpIn) (c : Bool), I.pub = p ∧ Ws s I.B I.Z (wk I.k) ∧
+    RpArgs s.mem I.B I.k I.el I.dl I.pP I.pQ I.pN I.pE I.pD I.sv ∧ s.wr = I.W ∧ RpLens I ∧ RpOuts I ∧
+    word s.mem I.B (8 * sMask) = mask c
+
+theorem GSr.ws {p : RpP} {s : State} (h : GSr p s) : Ws s p.B p.Z (wk p.k) := by
+  obtain ⟨I, c, rfl, h, -⟩ := h
+  exact h
+
+theorem pins_GSr : Pins GSr [.rdi] := fun _ _ _ h₁ h₂ r hr => by
+  simp only [List.mem_singleton] at hr; subst hr; rw [h₁.ws.rdi, h₂.ws.rdi]
+
+theorem storeR_ct {j sPtr : Nat} (hj : j < 16) (hP : sPtr < 32) (ptr : RpP → Addr)
+    (hA : ∀ p s, GSr p s → word s.mem p.B (8 * sPtr) = ptr p ∧
+      (∀ i < p.k, InRegions p.W (ptr p + BitVec.ofNat 64 i) 1) ∧
+      (∀ i < p.k, p.Z ≤ ofs p.B (ptr p + BitVec.ofNat 64 i)))
+    {hc : VG.Taint.Hint VG.X86_64.Taint.T}
+    (ht : (taint.check (Taint.ofRegs [.rdi]) (.block (ws ++ base j .rbx ++ ([.mov .rsi (.mem (hdr sPtr)),
+      .mov .rcx (.mem (hdr Impl.Bignum.X86_64.Public.sK)), .mov .r15 (.mem (hdr sMask))] : List Instr))) hc).isSome
+      = true) :
+    RelCT isa (Two GSr) (seqs (storeA j sPtr Impl.Bignum.X86_64.Public.sK sMask)) (Two GSr) :=
+  pin_ct [.rdi] [.rdi, .rbx, .rsi, .rcx] (fun p => ioVal p.B (off p.B (slot (wk p.k) j)) (ptr p) p.k) pins_GSr ht
+    (fun p s h => by
+      obtain ⟨hp, -⟩ := hA p s h
+      have h' := h
+      obtain ⟨I, c, rfl, hw, ha, -⟩ := h'
+      exact WP.mono (storeBlk_ok hw hP (by decide) hp ha.k) fun t ⟨hbx, hsi, hcx, hdi⟩ r hr => by
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl | rfl | rfl
+        · exact hdi
+        · exact hbx
+        · exact hsi
+        · exact hcx)
+    (by taint_decide) fun p s h => by
+      obtain ⟨hp, hwr, hsep⟩ := hA p s h
+      obtain ⟨I, c, rfl, hw, ha, hW, L, O, hm⟩ := h
+      dsimp only [RpIn.pub] at hp hwr hsep ⊢
+      have hn := hw.scr.nowrap
+      have h256 := hw.h256
+      have hk1 := L.k1
+      have hk2 := L.k2
+      refine WP.mono (storeA_ws hw hj hP (by decide) hp ha.k hm (by omega) (by unfold wk; omega)
+        (fun i hi => by rw [hW]; exact hwr i hi) hsep) fun t ⟨_, _, ht, hf, k⟩ => ?_
+      have fw : ∀ i < 32, word t.mem I.B (8 * i) = word s.mem I.B (8 * i) :=
+        fun i hi => hf.word_eq (fun r hr => by rw [List.mem_singleton.mp hr]; exact Or.inl (by omega)) (by omega)
+      exact ⟨I, c, rfl, ht, ha.congr fun i hi => fw i (by unfold rArg at hi; omega), k.2.2.trans hW, L, O,
+        (fw _ (by decide)).trans hm⟩
+
+/-- `fin` leaks the same in runs that agree on the public data. -/
+theorem fin_ct (M : Mont) : RelCT isa (Two GR3) (seqs (fin M.mm)) fun _ _ => True := by
+  rw [show fin M.mm = [.block [.mov .rax (.mem (hdr sC3)), .store (hdr sMask) .rax], M.mm aY aY aOne, zeroA fU,
+      .block (ws ++ base aY .r8 ++ base aOne .r10 ++ base fU .rsi ++ [.mov32 .rbp (.imm 0)]),
+      wordLoop 0 subBody] ++ ([zeroA fV, copyA fV aN, zeroA fX₁, .block (setOneA fX₁), zeroA fX₂,
+        inverse fU fV fX₁ fX₂ aN fT, zeroA fQ, copyA fQ aN, divmod fQ fR fV fT] ++
+      ([.block (ws ++ base fV .rbx ++ base fQ .r10 ++ [.mov32 .rbp (.imm 0)]), wordLoop 0 ltBody,
+        .block [.mov .r15 (.reg .rbp)], wordLoop 0 cswapBody] ++
+      (storeA fV sP Impl.Bignum.X86_64.Public.sK sMask ++ (storeA fQ sQ Impl.Bignum.X86_64.Public.sK sMask ++
+        ([.block retMask] : List (Prog isa)))))) by simp only [fin, List.append_assoc, List.cons_append,
+          List.nil_append]]
+  refine (ct_app (by simp) (by simp) (finA_ct M) (ct_app (by simp) (by simp) finB_ct (ct_app (by simp)
+    (by simp [storeA]) finC_ct (?_ : RelCT isa (Two (FX fun _ _ => True)) _ (Two fun (_ : RpP) (_ : State) => True))))).mono
+      (fun _ _ h => h) fun _ _ _ => trivial
+  refine RelCT.seqs_append (by simp [storeA]) (by simp [storeA]) (RelCT.seq (R := Two GSr) ?_ ?_)
+  · refine (storeR_ct (by decide) (by decide) RpP.pP (fun p s h => ?_) (by taint_decide)).mono
+      (fun _ _ h => two_mono (fun p s ⟨I, m₀, c, e, S, L, O, hm, _⟩ => ⟨I, c, e, S.ws, S.args, S.wr, L, O, hm⟩) h)
+      fun _ _ h => h
+    obtain ⟨I, c, rfl, -, ha, -, L, O, -⟩ := h
+    exact ⟨ha.p, O.p, O.sp⟩
+  refine RelCT.seqs_append (by simp [storeA]) (by simp) (RelCT.seq (R := Two GSr)
+    (storeR_ct (by decide) (by decide) RpP.pQ (fun p s h => ?_) (by taint_decide)) ?_)
+  · obtain ⟨I, c, rfl, -, ha, -, L, O, -⟩ := h
+    exact ⟨ha.q, O.q, O.sq⟩
+  exact (two_taint [.rdi] pins_GSr (by taint_decide)).mono (fun _ _ h => h) fun _ _ _ => ⟨default, trivial, trivial⟩
+
 end Rp
 
 end VG.Proof.Rsa.X86_64
