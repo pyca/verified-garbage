@@ -168,7 +168,8 @@ theorem tbl_apart_tbl {j j' t : Nat} (hjj : j ≠ j') (ht : t < 64 * c.n) :
 abbrev chainWc (c : Cfg) : List (Nat × Nat) :=
   [(c.sl ACC, 8 * c.n), (c.sl CT, 9 * (8 * c.n)), (c.sl TMP, 8 * c.n)]
 
-theorem chainWP_eq (c : Cfg) : chainW c.powP = chainWc c := rfl
+theorem invWP_eq (c : Cfg) : invW c.invP = chainWc c := rfl
+theorem invWN_eq (c : Cfg) : invW c.invN = chainWc c := rfl
 theorem chainWN_eq (c : Cfg) : chainW c.powN = chainWc c := rfl
 
 theorem fixedOk_chainWc : FixedOk c (chainWc c) := by
@@ -233,6 +234,32 @@ theorem modN_of (hc : CfgOk c) {base : Addr} {m : Mem} (h : wordsVal m base (c.s
     ModOk c.MN' size c.C.n m base :=
   ⟨hc.n0, hc.n7, sl_le c hc.n7 (by decide), sl_le c hc.n7 (by decide), sl_apart c (by decide), h,
     hc.minv_n, hc.red_n⟩
+
+/-- `ACC = RZ^(p - 2)` (in Montgomery form), by divsteps. -/
+theorem pPow_ok (hc : CfgOk c) {s : State} {base : Addr} (hs : Scr s base size)
+    (hM : ModOk c.MP' size c.C.p s.mem base) (hB : wordsVal s.mem base (c.sl RZ) c.n < c.C.p) :
+    WP isa c.pPow s fun s' => KeepRegs (powClob c.n) s s' ∧ Unch base (chainWc c) s.mem s'.mem ∧
+      wordsVal s'.mem base (c.sl ACC) c.n < c.C.p ∧
+      toM c.C.p (2 ^ (64 * c.n)) (wordsVal s'.mem base (c.sl ACC) c.n) =
+        toM c.C.p (2 ^ (64 * c.n)) (wordsVal s.mem base (c.sl RZ) c.n) ^ (c.C.p - 2) := by
+  have := hc.p_ge
+  exact hc.sound_p (invLayP hc) (by omega) (unitMod_pow_two hc.p_odd _) hs hM hB hc.inv_p
+
+/-- `ACC = KM^(n - 2)` (in Montgomery form), by divsteps or a chain. -/
+theorem nPow_ok (hc : CfgOk c) {s : State} {base : Addr} (hs : Scr s base size)
+    (hM : ModOk c.MN' size c.C.n s.mem base) (hB : wordsVal s.mem base (c.sl KM) c.n < c.C.n) :
+    WP isa c.nPow s fun s' => KeepRegs (powClob c.n) s s' ∧ Unch base (chainWc c) s.mem s'.mem ∧
+      wordsVal s'.mem base (c.sl ACC) c.n < c.C.n ∧
+      toM c.C.n (2 ^ (64 * c.n)) (wordsVal s'.mem base (c.sl ACC) c.n) =
+        toM c.C.n (2 ^ (64 * c.n)) (wordsVal s.mem base (c.sl KM) c.n) ^ (c.C.n - 2) := by
+  have := hc.n_ge
+  rw [Cfg.nPow]
+  split
+  · rename_i h
+    exact (hc.inv_n h).1 (invLayN hc) (by omega) (unitMod_pow_two hc.n_odd _) hs hM hB (hc.inv_n h).2
+  · rename_i h
+    exact WP.mono (chainPow_ok (chainLayN hc) (unitMod_pow_two hc.n_odd _) hs hM hB
+      (chainOkN hc (by simpa using h))) fun s' ⟨K, U, lt, v⟩ => ⟨K, by rw [chainWN_eq] at U; exact U, lt, v⟩
 
 theorem x20_not_clob {n : Nat} (h : n < 7) : Reg.x20 ∉ clob n := by
   have : ∀ n < 7, Reg.x20 ∉ clob n := by decide

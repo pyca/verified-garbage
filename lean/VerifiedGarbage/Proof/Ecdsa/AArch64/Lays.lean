@@ -3,9 +3,10 @@ import VerifiedGarbage.Proof.Ecdsa.AArch64.SlotOps
 /-!
 # ECDSA on AArch64: where the powers' slots are
 
-The slots of `c.powP` and `c.powN` are numbered slots `c.sl i` for distinct
-`i`, and their table is past them (`CT`), so they are apart as `chainPow_ok`
-needs (`chainLayP`, `chainLayN`): each fact is one about the numbers `i`,
+The slots of the inversions `c.invP`, `c.invN` and of the power `c.powN` are
+numbered slots `c.sl i` for distinct `i`, and their working slots are past
+them (`CT`), so they are apart as `chainPow_ok` and `InvSound` need
+(`invLayP`, `invLayN`, `chainLayN`): each fact is one about the numbers `i`,
 which `decide` checks.
 -/
 
@@ -104,16 +105,19 @@ theorem chainLay_of (hc : CfgOk c) {P : ChainCfg} (hn : P.M.n = c.n) (hacc : P.a
     · exact sl_apart c hjm.2.2
   · exact sl_apart c hbs.2.2
 
-theorem chainLayP (hc : CfgOk c) : ChainLay c.powP size :=
-  chainLay_of hc rfl rfl rfl (b := RZ) (jm := MP) rfl rfl rfl (MP'_A c) (by decide) (by decide)
-    (by decide)
+theorem invLayP (hc : CfgOk c) : InvLay c.invP size :=
+  InvLay.of_chain (chainLay_of hc (P := c.invP.toChain) rfl rfl rfl (b := RZ) (jm := MP) rfl rfl rfl (MP'_A c)
+    (by decide) (by decide) (by decide)) hc.n4 hc.n7
+
+theorem invLayN (hc : CfgOk c) : InvLay c.invN size :=
+  InvLay.of_chain (chainLay_of hc (P := c.invN.toChain) rfl rfl rfl (b := KM) (jm := MN) rfl rfl rfl (MN'_A c)
+    (by decide) (by decide) (by decide)) hc.n4 hc.n7
 
 theorem chainLayN (hc : CfgOk c) : ChainLay c.powN size :=
   chainLay_of hc rfl rfl rfl (b := KM) (jm := MN) rfl rfl rfl (MN'_A c) (by decide) (by decide)
     (by decide)
 
-theorem chainOkP (hc : CfgOk c) : ChainOk c.powP (c.C.p - 2) := ChainOk.of_check hc.chain_p
-
-theorem chainOkN (hc : CfgOk c) : ChainOk c.powN (c.C.n - 2) := ChainOk.of_check hc.chain_n
+theorem chainOkN (hc : CfgOk c) (h : c.fastN = false) : ChainOk c.powN (c.C.n - 2) :=
+  ChainOk.of_check (hc.chain_n h)
 
 end VG.Proof.Ecdsa.AArch64

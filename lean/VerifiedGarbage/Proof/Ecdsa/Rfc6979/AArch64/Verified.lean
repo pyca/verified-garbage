@@ -23,7 +23,7 @@ variable (P : RfcHash)
 
 theorem cfgOf_H : (cfgOf P).H = P.H := rfl
 theorem reduce_eq : (cfgOf P).reduce = (cfgC P.R.E).reduce := rfl
-theorem initCnt_eq : (cfgOf P).initCnt = (cfgC ⟨4, Spec.P256.curve, [], (0, 0), ""⟩).initCnt := rfl
+theorem initCnt_eq : (cfgOf P).initCnt = (cfgC ⟨4, Spec.P256.curve, [], (0, 0), "", true⟩).initCnt := rfl
 theorem coreC_eq : (cfgOf P).coreC = P.R.coreC := rfl
 
 /-- No instruction writes a callee-saved SIMD register: not those of the
