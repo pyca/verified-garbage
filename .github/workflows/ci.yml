@@ -449,6 +449,25 @@ jobs:
             awk '$4 == "FUNC" && $8 ~ /vg_/ { n++; if ($2 ~ /[02468aceACE]$/) { print "not Thumb: " $8; bad++ } }
                  END { print n " verified function symbols"; exit (n == 0 || bad > 0) }'
 
+  # The latest CPU time of each line of `rust-cpu-features`' runs on `main`,
+  # per class of host, which its shards deal out their lines by
+  # (ci/cpu_shards.py):
+  # restored once, so that every shard has the same; `{}` before `main` has
+  # saved any.
+  cpu-features-times:
+    name: "Rust: times of the CPU feature runs"
+    runs-on: ubuntu-latest
+    outputs:
+      times: ${{ steps.times.outputs.times }}
+    steps:
+      - uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .cpu-features-times
+          key: cpu-features-times-${{ github.run_id }}
+          restore-keys: cpu-features-times-
+      - id: times
+        run: echo "times=$(cat .cpu-features-times/times.json 2>/dev/null || echo '{}')" >> "$GITHUB_OUTPUT"
+
   # CPU feature detection (src/cpu.rs) and the primitives that choose an
   # implementation by CPU feature, tested end to end on this runner's CPU,
   # on CPUs that Intel SDE emulates, and natively on ARM64 (where
@@ -464,9 +483,14 @@ jobs:
   # Ed25519's combinations of SHA-512 and field multiplication, is chosen
   # somewhere; the coverage, merged with the rest, checks that every one
   # was. These are the only runs that set `VG_CPU_FEATURES`, and a CPU runs
-  # each value of it once (the lint job and the loop below check both), so
-  # that no run repeats another's.
+  # each value of it once (the lint job and ci/cpu_shards.py check both), so
+  # that no run repeats another's. A CPU whose lines take long is split into
+  # shards: matrix entries with the same `runs` (a YAML alias of the first's)
+  # and a `shard` of `i/n`, each a job that runs its share of the lines,
+  # dealt out by the CPU time each took on `main` on one class of host
+  # (ci/cpu_shards.py, with the times `cpu-features-times` restores).
   rust-cpu-features:
+    needs: cpu-features-times
     strategy:
       fail-fast: false
       matrix:
@@ -550,8 +574,12 @@ jobs:
           # RSAES-PKCS1-v1_5 decryption and RSASSA-PSS signing with
           # vg_rsa_private_checked_ifma and each hash function's
           # implementations.
+          # Three shards: its RSA lines each run Wycheproof's RSA tests
+          # under SDE, which take minutes on a runner without AVX-512, and
+          # three times as long sharing a runner's cores.
           - chip: icx
-            runs: |
+            shard: 1/3
+            runs: &icx-runs |
               - | x25519 ed25519 rsa message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs aes_gcm cmac cpu
               avx,avx2,bmi2,adx,avx512ifma,avx512vl | ed25519 rsa_pkcs1 rsa_pss rsa_oaep message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
               avx,avx2,bmi1,bmi2,adx,avx512ifma,avx512vl | rsa_pkcs1 rsa_pss rsa_oaep cpu
@@ -560,6 +588,12 @@ jobs:
               aes,avx,avx2,pclmulqdq,ssse3,vaes | aes_gcm cpu
               aes,avx,avx2,pclmulqdq,ssse3,vpclmulqdq | aes_gcm cpu
               aes,avx,avx2,pclmulqdq,ssse3,vaes,vpclmulqdq | aes_gcm cpu
+          - chip: icx
+            shard: 2/3
+            runs: *icx-runs
+          - chip: icx
+            shard: 3/3
+            runs: *icx-runs
           # Diamond Rapids: the SHA512 extension and AVX512_IFMA, for
           # Ed25519's verification with both (vg_ed25519_verify_shani_ifma)
           # and RSASSA-PSS signing with both.
@@ -581,7 +615,7 @@ jobs:
               neon | chacha20
               sha3 | sha3 shake mlkem mldsa ed448
               none | aes_siv chacha20 sha3 shake mlkem mldsa ecdsa p256_sha p384_sha ed448 aes_gcm_siv aes_ccm aes_ocb
-    name: Rust (${{ matrix.os && format('native, {0}', matrix.os) || matrix.chip == 'native' && 'native' || format('sde -{0}', matrix.chip) }}${{ matrix.arch && format(', {0}', matrix.arch) || '' }})
+    name: Rust (${{ matrix.os && format('native, {0}', matrix.os) || matrix.chip == 'native' && 'native' || format('sde -{0}', matrix.chip) }}${{ matrix.arch && format(', {0}', matrix.arch) || '' }}${{ matrix.shard && format(', {0}', matrix.shard) || '' }})
     runs-on: ${{ matrix.os || 'ubuntu-latest' }}
     container:
       image: ${{ matrix.container.image || '' }}
@@ -635,28 +669,28 @@ jobs:
         env:
           CHIP: ${{ matrix.chip }}
       # Only the tests of what depends on CPU features, once per line of
-      # `runs`. The lines run at the same time, as many as the runner has
-      # cores: each `cargo test` starts every test binary, under SDE a second
-      # or more each on one core, whether or not its filter selects any test,
-      # so that one line at a time left the other cores idle. (Cargo holds the
-      # build directory's lock only while building, which the first command
-      # does for all of them; the coverage files are named by process.) Each
-      # line's output is printed afterwards in a log group of its own; every
-      # line runs, and the step fails at the end, naming the lines that
-      # failed.
+      # `runs` (of this shard's, ci/cpu_shards.py). The lines run at the same
+      # time, slowest first, as many as the runner has cores: each `cargo
+      # test` starts every test binary, under SDE a second or more each on one
+      # core, whether or not its filter selects any test, so that one line at
+      # a time left the other cores idle. (Cargo holds the build directory's
+      # lock only while building, which the first command does for all of
+      # them; the coverage files are named by process.) Each line's output is
+      # printed afterwards in a log group of its own; every line runs, and the
+      # step fails at the end, naming the lines that failed. Each line's CPU
+      # time (user and system, of its `cargo test` and everything it ran) is
+      # kept, for `main` to save for the next runs' shards.
       - name: Test the implementations
         shell: bash
         run: |
+          lines=$(python3 ci/cpu_shards.py pick "$CPU" "$SHARD" "$TIMES" <<< "$RUNS")
           cargo test --locked --features cpu-features-env --no-run
           logs=$RUNNER_TEMP/runs
           mkdir -p "$logs"
           names=()
-          declare -A seen
+          keys=()
           while IFS='|' read -r -u 3 features tests; do
-            features=$(echo $features) tests=$(echo $tests)
-            [ -n "$tests" ] || continue
-            [ -z "${seen[$features]}" ] || { echo "::error::VG_CPU_FEATURES=$features twice: put its tests on one line"; exit 1; }
-            seen[$features]=1
+            keys+=("$features")
             [ "$features" = - ] && features=
             filter=$tests
             [ "$tests" = all ] && filter=
@@ -664,24 +698,43 @@ jobs:
             log=$logs/${#names[@]}
             (
               status=0
-              VG_CPU_FEATURES=$features cargo test --locked --features cpu-features-env -- $filter \
-                > "$log" 2>&1 || status=$?
+              TIMEFORMAT='%U %S'
+              { time VG_CPU_FEATURES=$features cargo test --locked --features cpu-features-env -- $filter \
+                > "$log" 2>&1 || status=$?; } 2> "$log.time"
               echo "$status" > "$log.status"
             ) &
             names+=("VG_CPU_FEATURES=$features: $tests")
-          done 3<<< "$RUNS"
+          done 3<<< "$lines"
           wait
           failed=()
           for i in "${!names[@]}"; do
             echo "::group::${names[$i]}"
             cat "$logs/$i"
             echo "::endgroup::"
+            echo "${names[$i]}: $(cat "$logs/$i.time") s of CPU (user, system)"
+            printf '%s\t%s\n' "${keys[$i]}" "$(cat "$logs/$i.time")" >> "$logs/times"
             [ "$(cat "$logs/$i.status")" = 0 ] || failed+=("${names[$i]}")
           done
+          # SDE emulates AVX-512 several times slower without it: the times
+          # are kept per class of host (ci/cpu_shards.py).
+          host=no-avx512f
+          if grep -qw avx512f /proc/cpuinfo; then host=avx512f; fi
+          python3 ci/cpu_shards.py times "$CPU" "$host" "$logs/times" > "cpu-features-times-$JOB.json"
           for f in "${failed[@]}"; do echo "::error::Failed with $f"; done
           [ ${#failed[@]} -eq 0 ]
         env:
           RUNS: ${{ matrix.runs }}
+          CPU: ${{ matrix.chip }} ${{ matrix.arch }} ${{ matrix.os }}
+          SHARD: ${{ matrix.shard }}
+          TIMES: ${{ needs.cpu-features-times.outputs.times }}
+          JOB: ${{ strategy.job-index }}
+      # For `cpu-features-times-save`, on `main`.
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: cpu-features-times-${{ strategy.job-index }}
+          path: cpu-features-times-${{ strategy.job-index }}.json
+          retention-days: 1
+          if-no-files-found: error
       - name: Export coverage
         run: python3 ci/export_rust_coverage.py .rust-cov --features cpu-features-env
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -689,6 +742,40 @@ jobs:
           name: coverage-data-cpu-features-${{ strategy.job-index }}
           path: "*.lcov"
           if-no-files-found: error
+
+  # The CPU time of each line of `rust-cpu-features`' runs in this run of
+  # `main`, over those of earlier runs (so that each line keeps its latest
+  # time on each class of host, whichever its shard ran on this time),
+  # saved for the next runs' `cpu-features-times`.
+  cpu-features-times-save:
+    name: "Rust: save the times of the CPU feature runs"
+    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+    needs: rust-cpu-features
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .cpu-features-times
+          key: cpu-features-times-${{ github.run_id }}
+          restore-keys: cpu-features-times-
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          pattern: cpu-features-times-*
+          merge-multiple: true
+          path: ${{ runner.temp }}/times
+      - run: |
+          mkdir -p .cpu-features-times
+          [ -f .cpu-features-times/times.json ] || echo '{}' > .cpu-features-times/times.json
+          python3 ci/cpu_shards.py merge .cpu-features-times/times.json "$RUNNER_TEMP"/times/*.json > "$RUNNER_TEMP/merged.json"
+          mv "$RUNNER_TEMP/merged.json" .cpu-features-times/times.json
+          cat .cpu-features-times/times.json
+      - uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .cpu-features-times
+          key: cpu-features-times-${{ github.run_id }}-${{ github.run_attempt }}
 
   coverage:
     name: Rust coverage
