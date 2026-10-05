@@ -26,7 +26,7 @@ theorem implies : contract.Implies (Spec.RsaPkcs1Sig.verifyPrecomputedContract a
     simp only [List.getD_cons_succ, List.getD_cons_zero] at h
     obtain ⟨hsp, hl, hdi, hsi, hdx, hcx, h8, h9, a0, a1, a2, a3, a4, a5, a6⟩ := h
     obtain ⟨hb, hp⟩ := List.append_inj hl (by simp [Spec.Rsa.bytesAt, hsi, hcx, a0, a2])
-    have hp' := List.map_injective_iff.2 (fun _ _ h => BitVec.toNat_inj.1 h) hp
+    have hp' := (List.map_inj_right (fun _ _ h => BitVec.toNat_inj.1 h)).1 hp
     obtain ⟨hn, he, hd, hs⟩ := leak_eq4 (by simp [Spec.Rsa.bytesAt, hsi]) (by simp [Spec.Rsa.bytesAt, hcx])
       (by simp [Spec.Rsa.bytesAt, a0]) hb
     refine ⟨⟨?_, h8, by simp only [stackArgs_five, a0, a1, a2, a3, a4], hn, he, hd, hs⟩, a5, a6, hp'⟩

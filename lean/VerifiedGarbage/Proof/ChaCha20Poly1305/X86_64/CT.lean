@@ -2636,7 +2636,7 @@ theorem seal_rel (h₀ : preX86_64 true s₀) (h₀' : preX86_64 true s₀') (hq
   obtain ⟨_, hpre⟩ := sealPre_taint v.poly
   obtain ⟨_, hpost⟩ := sealPost_taint v.poly
   have pre := ((RelCT.taint (A := taintS) (P := fun s₁ s₂ => s₁ = entryS s₀ ∧ s₂ = entryS s₀') (τ₀ true)
-    (fun _ _ h => h.1 ▸ h.2 ▸ agree₀ hp hp' hq) hpre).wp (F₁ := XArgs s₀) (F₂ := XArgs s₀') fun _ _ h =>
+    (fun _ _ h => by rw [h.1, h.2]; exact agree₀ hp hp' hq) hpre).wp (F₁ := XArgs s₀) (F₂ := XArgs s₀') fun _ _ h =>
     ⟨by rw [h.1]; exact sealPre_ok v.poly hp, by rw [h.2]; exact sealPre_ok v.poly hp'⟩).mono
     (fun _ _ h => h) fun _ _ h => h.2
   have post := RelCT.taint (A := taintS) (P := fun s₁ s₂ => After s₀ s₁ ∧ After s₀' s₂) (τ₁ true)
@@ -2651,7 +2651,7 @@ theorem open_rel (h₀ : preX86_64 false s₀) (h₀' : preX86_64 false s₀') (
   obtain ⟨_, hpre⟩ := openPre_taint v.poly
   obtain ⟨_, hpost⟩ := openPost_taint
   have pre := ((RelCT.taint (A := taintS) (P := fun s₁ s₂ => s₁ = entryS s₀ ∧ s₂ = entryS s₀') (τ₀ false)
-    (fun _ _ h => h.1 ▸ h.2 ▸ agree₀ hp hp' hq) hpre).wp (F₁ := XArgs s₀) (F₂ := XArgs s₀') fun _ _ h =>
+    (fun _ _ h => by rw [h.1, h.2]; exact agree₀ hp hp' hq) hpre).wp (F₁ := XArgs s₀) (F₂ := XArgs s₀') fun _ _ h =>
     ⟨by rw [h.1]; exact openPre_ok v.poly hp, by rw [h.2]; exact openPre_ok v.poly hp'⟩).mono
     (fun _ _ h => h) fun _ _ h => h.2
   have post := RelCT.taint (A := taintS) (P := fun s₁ s₂ => After s₀ s₁ ∧ After s₀' s₂) (τ₁ false)

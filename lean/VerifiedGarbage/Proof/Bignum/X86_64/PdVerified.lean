@@ -33,7 +33,7 @@ length is the same. -/
 theorem leak_eq2 {a c : List (BitVec 64)} {b d : List Byte} (hl : a.length = c.length)
     (h : a.map (·.toNat) ++ b.map (·.toNat) = c.map (·.toNat) ++ d.map (·.toNat)) : a = c ∧ b = d := by
   obtain ⟨h1, h2⟩ := List.append_inj h (by simp [hl])
-  exact ⟨List.map_injective_iff.2 (fun _ _ h => BitVec.toNat_inj.1 h) h1,
-    List.map_injective_iff.2 (fun _ _ h => BitVec.toNat_inj.1 h) h2⟩
+  exact ⟨(List.map_inj_right (fun _ _ h => BitVec.toNat_inj.1 h)).1 h1,
+    (List.map_inj_right (fun _ _ h => BitVec.toNat_inj.1 h)).1 h2⟩
 
 end VG.Proof.Bignum.X86_64
