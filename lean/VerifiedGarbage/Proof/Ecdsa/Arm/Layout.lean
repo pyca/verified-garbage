@@ -13,9 +13,10 @@ The arguments are `out`, `d`, `digest` and `k` in `r0`–`r3` and `scratch`
 on the stack (AAPCS). The working space is the first `4096` bytes of the
 `8192` at `scratch` (every offset in it is an immediate offset of `ldr` and
 `str`): the saved registers in `[0, 36)`, the slots
-`c.sl i = 64 + 8 n i` of `n` words for `i < nslots`, the tables of bits
-`bitsAt n j` (`64 n` bytes each, `j < 3`), and the multiplications'
-accumulator at `c.wk = bitsAt n 3`.
+`c.sl i = 64 + 8 n i` of `n` words for `i < nslots`, and the
+multiplications' accumulator at `c.wk = c.sl nslots`. The tables of bits
+`bitsAt n j` (`64 n` bytes each, `j < 3`) follow it, in `scratch` but past
+the working space for the largest curves (`Far`).
 -/
 
 namespace VG.Proof.Ecdsa.Arm
