@@ -54,6 +54,37 @@ theorem RpPre.outs {I : RpIn} {s : State} (h : RpPre I s) : RpOuts I :=
   ⟨fun i hi => by rw [← h.wr]; exact h.oP.wr i hi, fun i hi => by rw [← h.wr]; exact h.oQ.wr i hi,
     h.oP.sep, h.oQ.sep, h.a⟩
 
+
+/-- `ws`, a block checked from `rdi`, `r12` and `r9` that leaves the
+registers `rs₂` with values of the public data, and code checked from
+`rs₂`. -/
+theorem ws_pin_ct {α : Type} {Φ Ψ : α → State → Prop} (B : α → Addr) (Z w : α → Nat) {rest : List Instr}
+    {c₂ : Prog isa} (hws : ∀ a s, Φ a s → Ws s (B a) (Z a) (w a)) {hc₁ : VG.Taint.Hint VG.X86_64.Taint.T}
+    (ht₁ : (taint.check (Taint.ofRegs [.rdi, .r12, .r9]) (.block rest) hc₁).isSome = true)
+    (rs₂ : List Reg) (f : α → Reg → BitVec 64)
+    (hp : ∀ a s, Φ a s → WP isa (.block (ws ++ rest)) s fun t => ∀ r ∈ rs₂, t.gpr r = f a r)
+    {hc₂ : VG.Taint.Hint VG.X86_64.Taint.T} (ht₂ : (taint.check (Taint.ofRegs rs₂) c₂ hc₂).isSome = true)
+    (hw : ∀ a s, Φ a s → WP isa (.seq (.block (ws ++ rest)) c₂) s (Ψ a)) :
+    RelCT isa (Two Φ) (.seq (.block (ws ++ rest)) c₂) (Two Ψ) := by
+  refine RelCT.block_seq (RelCT.seq (two_piece (Ψ := fun a t => (∀ r ∈ [.rdi, .r12, .r9], t.gpr r = wsVal (B a) (w a) r) ∧
+      WP isa (.block rest) t (fun u => ∀ r ∈ rs₂, u.gpr r = f a r) ∧ WP isa (.seq (.block rest) c₂) t (Ψ a))
+      [.rdi] (fun a s₁ s₂ h₁ h₂ r hr => by
+        simp only [List.mem_singleton] at hr; subst hr; rw [(hws a s₁ h₁).rdi, (hws a s₂ h₂).rdi])
+      (by taint_decide) fun a s h => ?_)
+    (pin_ct [.rdi, .r12, .r9] rs₂ f (fun a s₁ s₂ h₁ h₂ r hr => (h₁.1 r hr).trans (h₂.1 r hr).symm) ht₁
+      (fun a t h => h.2.1) ht₂ fun a t h => h.2.2))
+  have e₁ := WP.block_append_iff.mp (hp a s h)
+  have e₂ := WP.block_seq_iff.mp (hw a s h)
+  refine WP.mono (WP.and (WP.and (hws a s h).ws_ok e₁) (WP.seq_iff.mp e₂)) fun t ⟨⟨⟨h12, h9, _, k⟩, w₁⟩, w₂⟩ =>
+    ⟨fun r hr => ?_, w₁, w₂⟩
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl
+  · exact (k.gpr (by decide)).trans (hws a s h).rdi
+  · exact h12
+  · exact h9
+
+namespace Rp
+
 /-- On entry to `main`. -/
 def GM (p : RpP) (s : State) : Prop :=
   ∃ I : RpIn, I.pub = p ∧ RpPre I s ∧ Spec.Rsa.modulusValid I.N I.k = true
@@ -170,5 +201,211 @@ theorem loads_ct : RelCT isa (Two GA) (seqs (loadA aN Impl.Bignum.X86_64.Public.
   · exact ⟨h.args.n, h.args.k, ⟨_, h.n, L.nbl⟩, by omega, k8⟩
   · exact ⟨h.args.e, h.args.el, ⟨_, h.e, L.ebl⟩, L.el1, by have := L.el2; have := @k8 I.k; omega⟩
   · exact ⟨h.args.d, h.args.dl, ⟨_, h.d, L.dbl⟩, L.dl1, by have := L.dl2; have := @k8 I.k; omega⟩
+
+/-! ## Values between the pieces -/
+
+/-- `GA` with facts `F` about the memory. -/
+def GV (F : RpIn → Mem → Prop) (p : RpP) (s : State) : Prop :=
+  ∃ (I : RpIn) (m₀ : Mem), I.pub = p ∧ RpS I m₀ s ∧ RpLens I ∧ RpOuts I ∧
+    Spec.Rsa.modulusValid I.N I.k = true ∧ F I s.mem
+
+theorem GV.ga {F : RpIn → Mem → Prop} {p : RpP} {s : State} (h : GV F p s) : GA p s := by
+  obtain ⟨I, m₀, e, h, L, O, hv, -⟩ := h
+  exact ⟨I, m₀, e, h, L, O, hv⟩
+
+theorem GV.ws {F : RpIn → Mem → Prop} {p : RpP} {s : State} (h : GV F p s) : Ws s p.B p.Z (wk p.k) := h.ga.ws
+
+theorem pins_GV {F : RpIn → Mem → Prop} : Pins (GV F) [.rdi] := fun _ _ _ h₁ h₂ r hr => by
+  simp only [List.mem_singleton] at hr; subst hr; rw [h₁.ws.rdi, h₂.ws.rdi]
+
+/-- `GV` after a piece, with the facts carried over. -/
+theorem GV.step {F G : RpIn → Mem → Prop} {p : RpP} {s t : State} (h : GV F p s) {js hs : List Nat}
+    (hf : Frm p.B (rg (wk p.k) js hs) s.mem t.mem) (hjs : ∀ j ∈ js, j < 16) (hhs : ∀ i ∈ hs, rSlot i = true)
+    {regs : List Reg} (k : Keep regs s t) (hr : .rdi ∉ regs ∧ .rsp ∉ regs)
+    (hFG : ∀ I : RpIn, I.pub = p → RpS I s.mem s → RpS I s.mem t → F I s.mem → G I t.mem) : GV G p t := by
+  obtain ⟨I, m₀, rfl, h, L, O, hv, hF⟩ := h
+  have h' := h.step hf hjs hhs k hr
+  have hS : RpS I s.mem s := { h with inScr := InScr.refl _ _ _ }
+  exact ⟨I, m₀, rfl, h', L, O, hv, hFG I rfl hS (hS.step hf hjs hhs k hr) hF⟩
+
+/-- The values of `n`, `e` and `d` in their arrays. -/
+def FL (I : RpIn) (m : Mem) : Prop :=
+  wv m I.B (slot (wk I.k) aN) (wk I.k) = I.N ∧ wv m I.B (slot (wk I.k) aE) (wk I.k) = I.E ∧
+    wv m I.B (slot (wk I.k) aD) (wk I.k) = I.D
+
+/-- And `-n⁻¹`. -/
+def FM (I : RpIn) (m : Mem) : Prop :=
+  FL I m ∧ ((word m I.B (slot (wk I.k) aN)).toNat * (word m I.B (8 * sMinv)).toNat + 1) % 2 ^ 64 = 0
+
+theorem loadsV_ct : RelCT isa (Two GA) (seqs (loadA aN Impl.Bignum.X86_64.Public.sN Impl.Bignum.X86_64.Public.sK ++
+    (loadA aE Impl.Bignum.X86_64.Public.sE Impl.Bignum.X86_64.Public.sElen ++ loadA aD sD sDl))) (Two (GV FL)) :=
+  two_post (loads_ct.mono (fun _ _ h => h) fun _ _ _ => trivial) fun p s h => by
+    obtain ⟨I, m₀, rfl, h, L, O, hv⟩ := h
+    exact WP.mono (rpLoads_ok h L) fun t ⟨ht, _, vN, vE, vD, _⟩ => ⟨I, m₀, rfl, ht, L, O, hv, vN, vE, vD⟩
+
+theorem minv_ct : RelCT isa (Two (GV FL)) (.block minvBlk) (Two (GV FM)) := by
+  have e : minvBlk = ws ++ (base aN .r10 ++ ([.mov .rbx (.mem (at0 .r10))] : List Instr) ++ minv ++
+      ([.store (hdr sMinv) .r15] : List Instr)) := by simp only [minvBlk, List.append_assoc]
+  rw [e]
+  refine ws_block_ct (rest := base aN .r10 ++ ([.mov .rbx (.mem (at0 .r10))] : List Instr) ++ minv ++
+      ([.store (hdr sMinv) .r15] : List Instr)) RpP.B RpP.Z (fun p => wk p.k) (fun _ _ h => h.ws)
+    (by taint_decide) fun p s h => ?_
+  rw [← e]
+  obtain ⟨I, m₀, eI, h', L, O, hv, vN, vE, vD⟩ := id h
+  subst eI
+  have hw := h'.ws
+  have hZ16 : slot (wk I.k) 16 ≤ 2 ^ 64 := by have := hw.scr.nowrap; have := hw.hZ; omega
+  have hodd := (valid_lo hv).1
+  have hw0 : (word s.mem I.B (slot (wk I.k) aN)).toNat % 2 = 1 := by
+    rw [show (word s.mem I.B (slot (wk I.k) aN)).toNat % 2 = wv s.mem I.B (slot (wk I.k) aN) (wk I.k) % 2 by
+      rw [wv_low (by have := hw.w1; omega)]; omega, vN]; exact hodd
+  refine WP.mono (minvBlk_ok hw hw0) fun t ⟨hi, f, k⟩ => ⟨I, m₀, rfl, h'.step f (by simp) (by decide) k (by decide),
+    L, O, hv, ⟨?_, ?_, ?_⟩, hi⟩
+  · rw [f.rg_wv hZ16 (by decide) (by decide) (by simp) (by omega)]; exact vN
+  · rw [f.rg_wv hZ16 (by decide) (by decide) (by simp) (by omega)]; exact vE
+  · rw [f.rg_wv hZ16 (by decide) (by decide) (by simp) (by omega)]; exact vD
+
+/-! ## `M = d e` and its check -/
+
+def FZ1 (I : RpIn) (m : Mem) : Prop := FM I m ∧ wv m I.B (slot (wk I.k) aM) (wk I.k + 2) = 0
+def FZ2 (I : RpIn) (m : Mem) : Prop := FM I m ∧ wv m I.B (slot (wk I.k) aM) (2 * (wk I.k + 2)) = 0
+def FP (I : RpIn) (m : Mem) : Prop := FM I m ∧ wv m I.B (slot (wk I.k) aM) (2 * (wk I.k + 2)) = I.D * I.E
+
+theorem zeroAV_ct {F : RpIn → Mem → Prop} {j : Nat} (hj : j < 16) {hc : VG.Taint.Hint VG.X86_64.Taint.T}
+    (ht : (taint.check (Taint.ofRegs [.rdi, .r12, .r9]) (.seq (.block (base j .r8)) zeroAccLoop) hc).isSome = true) :
+    RelCT isa (Two (GV F)) (zeroA j) fun _ _ => True :=
+  (zeroA_ct hj ht).mono (fun _ _ h => two_mono (Φ := GV F) (fun _ _ h => GV.ga h) h) fun _ _ _ => trivial
+
+theorem zeroM_ct : RelCT isa (Two (GV FM)) (zeroA aM) (Two (GV FZ1)) :=
+  two_post (zeroAV_ct (by decide) (by taint_decide)) fun p s h => by
+    obtain ⟨I, m₀, rfl, h', L, O, hv, ⟨vN, vE, vD⟩, hi⟩ := id h
+    have hw := h'.ws
+    have hZ16 : slot (wk I.k) 16 ≤ 2 ^ 64 := by have := hw.scr.nowrap; have := hw.hZ; omega
+    refine WP.mono (zeroA_ok hw (j := aM) (by decide)) fun t ⟨z, o, k⟩ => ?_
+    have f : Frm I.B (rg (wk I.k) [aM] []) s.mem t.mem := Frm.rg_of_out o (Nat.le_refl _) _ _ (by decide)
+    refine ⟨I, m₀, rfl, h'.step f (by decide) (by simp) k (by decide), L, O, hv, ⟨⟨?_, ?_, ?_⟩, ?_⟩, z⟩
+    · rw [f.rg_wv hZ16 (by simp) (by decide) (by decide) (by omega)]; exact vN
+    · rw [f.rg_wv hZ16 (by simp) (by decide) (by decide) (by omega)]; exact vE
+    · rw [f.rg_wv hZ16 (by simp) (by decide) (by decide) (by omega)]; exact vD
+    · rw [f.rg_word0 hZ16 (by simp) (by decide) (by decide), f.rg_word (by decide) (by simp)]; exact hi
+
+theorem zeroM1_ct : RelCT isa (Two (GV FZ1)) (zeroA (aM + 1)) (Two (GV FZ2)) :=
+  two_post (zeroAV_ct (by decide) (by taint_decide)) fun p s h => by
+    obtain ⟨I, m₀, rfl, h', L, O, hv, ⟨⟨vN, vE, vD⟩, hi⟩, z₁⟩ := id h
+    have hw := h'.ws
+    have hZ16 : slot (wk I.k) 16 ≤ 2 ^ 64 := by have := hw.scr.nowrap; have := hw.hZ; omega
+    refine WP.mono (zeroA_ok hw (j := aM + 1) (by decide)) fun t ⟨z, o, k⟩ => ?_
+    have f : Frm I.B (rg (wk I.k) [aM + 1] []) s.mem t.mem := Frm.rg_of_out o (Nat.le_refl _) _ _ (by decide)
+    have eM1 : slot (wk I.k) (aM + 1) = slot (wk I.k) aM + 8 * (wk I.k + 2) := by simp only [slot, hdrBytes, aM]; omega
+    refine ⟨I, m₀, rfl, h'.step f (by decide) (by simp) k (by decide), L, O, hv, ⟨⟨?_, ?_, ?_⟩, ?_⟩, ?_⟩
+    · rw [f.rg_wv hZ16 (by simp) (by decide) (by decide) (by omega)]; exact vN
+    · rw [f.rg_wv hZ16 (by simp) (by decide) (by decide) (by omega)]; exact vE
+    · rw [f.rg_wv hZ16 (by simp) (by decide) (by decide) (by omega)]; exact vD
+    · rw [f.rg_word0 hZ16 (by simp) (by decide) (by decide), f.rg_word (by decide) (by simp)]; exact hi
+    · rw [show 2 * (wk I.k + 2) = (wk I.k + 2) + (wk I.k + 2) by omega, wv_add, ← eM1, z,
+        f.rg_wv hZ16 (by simp) (by decide) (by decide) (by omega), z₁, Nat.mul_zero]
+
+/-- The registers `prod`'s loop needs pinned. -/
+def prodVal (p : RpP) : Reg → BitVec 64
+  | .rdi => p.B
+  | .r12 => BitVec.ofNat 64 (wk p.k)
+  | .rbx => off p.B (slot (wk p.k) aE)
+  | .r10 => off p.B (slot (wk p.k) aM)
+  | .r15 => off p.B (slot (wk p.k) aD)
+  | .r11 => BitVec.ofNat 64 ((p.el + 7) / 8)
+  | .r13 => BitVec.ofNat 64 0
+  | _ => 0
+
+theorem prodLoop_ct : RelCT isa (Two (GV FZ2))
+    (.seq (.block prodInit) (.loop (.seq (.block rowHead) (.seq mulAddRow (.block rowNext))) .ne)) (Two (GV FP)) :=
+  pin_ct [.rdi] [.rdi, .r12, .rbx, .r10, .r15, .r11, .r13] prodVal pins_GV (by taint_decide)
+    (fun p s h => by
+      obtain ⟨I, m₀, rfl, h', L, O, hv, -⟩ := id h
+      exact WP.mono (prodInit_ok h'.ws h'.args.el (by have := L.el2; have := L.k2; omega))
+        fun t ⟨h12, hbx, h10, h15, h11, h13, hdi, _⟩ r hr => by
+          simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+          rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl
+          · exact hdi
+          · exact h12
+          · exact hbx
+          · exact h10
+          · exact h15
+          · exact h11
+          · exact h13)
+    (by taint_decide) fun p s h => by
+      obtain ⟨I, m₀, rfl, h', L, O, hv, ⟨⟨vN, vE, vD⟩, hi⟩, hz⟩ := id h
+      have hw := h'.ws
+      have hZ16 : slot (wk I.k) 16 ≤ 2 ^ 64 := by have := hw.scr.nowrap; have := hw.hZ; omega
+      have hEl : I.E < 2 ^ (64 * ((I.el + 7) / 8)) := by
+        have := os2ip_lt I.eb; rw [L.ebl] at this; exact Nat.lt_of_lt_of_le this (pow256_le_wk I.el)
+      have sM := hw.sl (j := aM + 1) (by decide)
+      refine WP.mono (prodLoop_ok hw h'.args.el L.el1 (by have := L.el2; unfold wk; omega)
+        (by rw [vE]; exact hEl) hz) fun t ⟨vM, o, k⟩ => ?_
+      have f : Frm I.B (rg (wk I.k) [aM, aM + 1] []) s.mem t.mem :=
+        Frm.rg_of_out2 o (Nat.le_refl _) _ _ (by decide) (by decide)
+      refine ⟨I, m₀, rfl, h'.step f (by decide) (by simp) k (by decide), L, O, hv, ⟨⟨⟨?_, ?_, ?_⟩, ?_⟩, ?_⟩⟩
+      · rw [f.rg_wv hZ16 (by simp) (by decide) (by decide) (by omega)]; exact vN
+      · rw [f.rg_wv hZ16 (by simp) (by decide) (by decide) (by omega)]; exact vE
+      · rw [f.rg_wv hZ16 (by simp) (by decide) (by decide) (by omega)]; exact vD
+      · rw [f.rg_word0 hZ16 (by simp) (by decide) (by decide), f.rg_word (by decide) (by simp)]; exact hi
+      · rw [vM, vD, vE]
+
+theorem prod_ct : RelCT isa (Two (GV FM)) (seqs prod) (Two (GV FP)) := by
+  simp only [prod, seqs]
+  exact RelCT.seq zeroM_ct (RelCT.seq zeroM1_ct prodLoop_ct)
+
+/-- The registers the check of `M` needs pinned. -/
+def skipVal (p : RpP) : Reg → BitVec 64
+  | .rdi => p.B
+  | .rbx => off p.B (slot (wk p.k) aM)
+  | .r12 => BitVec.ofNat 64 (wk p.k + (p.el + 7) / 8)
+  | _ => 0
+
+theorem skipBlk_eq : skipBlk = ws ++ (base aM .rbx ++
+    ([.mov .rax (.mem (at0 .rbx)), .mov .rdx (.reg .rax), .alu .and .rdx (.imm 1), .alu .sub .rax (.reg .rdx),
+      .mov .rcx (.mem (hdr Impl.Bignum.X86_64.Public.sElen)), .alu .add .rcx (.imm 7), .shift .shr .rcx 3,
+      .alu .add .rcx (.mem (hdr sW)), .mov .r12 (.reg .rcx), .store (at0 .rbx) .rax, .alu .sub .rdx (.imm 1),
+      .store (hdr sC2) .rdx, .mov32 .rbp (.imm 0)] : List Instr)) := by
+  simp only [skipBlk, List.append_assoc]
+
+theorem skip_ct : RelCT isa (Two (GV FP)) (seqs [.block skipBlk, wordLoop 0 orBody, .block skipTest])
+    fun _ _ => True := by
+  simp only [seqs]
+  rw [skipBlk_eq]
+  refine (ws_pin_ct (Ψ := fun _ _ => True) RpP.B RpP.Z (fun p => wk p.k) (fun _ _ h => h.ws) (by taint_decide)
+    [.rdi, .rbx, .r12, .rbp] skipVal (fun p s h => ?_) (by taint_decide) fun p s h => ?_).mono
+    (fun _ _ h => h) fun _ _ _ => trivial
+  · rw [← skipBlk_eq]
+    obtain ⟨I, m₀, rfl, h', L, O, -⟩ := id h
+    exact WP.mono (skipBlk_ok h'.ws h'.args.el (by have := L.el2; have := L.k2; omega))
+      fun t ⟨hbx, hbp, h12, hdi, _⟩ r hr => by
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl | rfl | rfl
+        · exact hdi
+        · exact hbx
+        · exact h12
+        · exact hbp
+  · rw [← skipBlk_eq]
+    obtain ⟨I, m₀, rfl, h', L, O, hv, ⟨⟨vN, vE, vD⟩, hi⟩, vM⟩ := id h
+    have hEl : I.E < 2 ^ (64 * ((I.el + 7) / 8)) := by
+      have := os2ip_lt I.eb; rw [L.ebl] at this; exact Nat.lt_of_lt_of_le this (pow256_le_wk I.el)
+    have hDl : I.D < 2 ^ (64 * wk I.k) := by
+      have := os2ip_lt I.db; rw [L.dbl] at this
+      exact Nat.lt_of_lt_of_le this (by
+        rw [pow256_eq]; exact Nat.pow_le_pow_right (by decide) (by have := L.dl2; unfold wk; omega))
+    have := skip_ok h'.ws h'.args.el L.el1 (by have := L.el2; unfold wk; omega)
+      (by rw [vM, Nat.mul_add, Nat.pow_add]; exact Nat.mul_lt_mul'' hDl hEl)
+    simp only [seqs] at this
+    exact WP.mono this fun _ _ => trivial
+
+/-- The prefix of `main` leaks the same in two runs with the same public
+data. -/
+theorem prefix_ct : RelCT isa (Two GM) (seqs prefixList) (Two fun (_ : RpP) (_ : State) => True) := by
+  simp only [prefixList]
+  refine ct_app ?_ ?_ (ct_one head_ct) (ct_app ?_ ?_ loadsV_ct (ct_app ?_ ?_ (ct_one minv_ct)
+    (ct_app ?_ ?_ prod_ct (skip_ct.mono (fun _ _ h => h) fun _ _ _ => ⟨default, trivial, trivial⟩))))
+  all_goals simp [loadA, prod]
+
+end Rp
 
 end VG.Proof.Rsa.X86_64
