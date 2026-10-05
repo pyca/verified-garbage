@@ -1,6 +1,8 @@
 import VerifiedGarbage.Impl.Weierstrass.AArch64.Inv
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Chain
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Pow
+import VerifiedGarbage.Proof.Weierstrass.Law
+import Mathlib.Data.Nat.Prime.Defs
 
 /-!
 # Inversion by divsteps on AArch64: what it computes
@@ -10,7 +12,10 @@ its proof (`InvMain.lean`): the slots (`InvLay`), what the inversion writes
 (`invW`), the configuration's facts about the modulus (`InvOk`: batches
 enough for its bits, and the constants), and `InvSound m`, that the
 inversion leaves `[acc] = [base]^(m - 2)` (in Montgomery form), which a prime
-`m` gives (`invSound_of_prime`). An inversion with a power's slots takes the
+`m` gives (`InvSounds`). The proof of that needs Mathlib's algebra, so the
+proofs of the functions take it as a hypothesis, and a curve's variant on
+AArch64 (`HasLawInv`, `Variants/<Curve>/AArch64/Law.lean`) supplies it with
+its group law, as on x86-64. An inversion with a power's slots takes the
 power's place (`InvLay.of_chain`, `invW_eq`).
 -/
 
@@ -94,5 +99,17 @@ theorem InvLay.of_chain {P : InvCfg} {size : Nat} (h : ChainLay P.toChain size) 
     forall_eq] at mo
   exact ⟨h4, h7, h.acc, h.base, h.tbl, h.acc8, h.base8, h.tbl8, h.mod, h.acc_base, h.acc_tbl, h.base_tbl,
     h.acc_tmp, h.tbl_tmp, mo.1, mo.2.1, mo.2.2, h.base_mo⟩
+
+/-- Every prime modulus's inversion is sound (`InvMain.lean`'s `invSound_of_toM`
+and `InvArith.lean`'s `invToM_of_prime`). -/
+def InvSounds : Prop := ∀ {m : Nat} [NeZero m], m.Prime → InvSound m
+
+/-- The group law of `C` and the soundness of the inversions, as a value: the
+variant of a curve's interface on AArch64 (`Variants/<Curve>/AArch64/Law.lean`,
+see `TCB/Emit.lean`), as `HasLaw` is on the targets without inversions by
+divsteps. -/
+structure HasLawInv (C : Spec.Weierstrass.Curve) : Type where
+  law : Law C
+  inv : InvSounds
 
 end VG.Proof.Weierstrass.AArch64

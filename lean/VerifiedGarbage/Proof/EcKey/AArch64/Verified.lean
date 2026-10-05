@@ -6,8 +6,8 @@ import VerifiedGarbage.Proof.Ecdsa.AArch64.Verified
 /-!
 # P-256 public keys on AArch64: `Verified`
 
-P-256 is a curve the proof supports (`p256_ok`, and `Law` for its group law,
-which the registration file supplies: `Proof.P256.law`), so `publicKey_ok`
+P-256 is a curve the proof supports (`p256_ok`, given the inversions' soundness `InvSounds`, and `Law` for its group
+law, which the registration file supplies: `Proof.P256.law` and `invSound_of_toM`), so `publicKey_ok`
 gives the contract's postcondition; `x19` and `x20` are restored, and no
 instruction writes the other callee-saved registers, `sp` or a SIMD register
 (`abiPreserved_of`). Constant time by taint tracking: the only branches are on
@@ -35,12 +35,12 @@ theorem post_of {s s' : State} (h : PkPost p256 s s') : pkAArch64.post s s' := b
   rw [show Spec.EcKey.publicKey p256.C (dk p256 s) = pk s.mem (s.gpr .x1) from rfl, hq]
   rcases q with _ | _ | ⟨x, y⟩ <;> exact id
 
-theorem pk_a64 (hL : Weierstrass.Law Spec.P256.curve)
+theorem pk_a64 (hL : Weierstrass.Law Spec.P256.curve) (hI : Weierstrass.AArch64.InvSounds)
     (hT : Weierstrass.CombOkW Spec.P256.curve 7 37 Impl.P256.p256Comb7 Impl.P256.p256Comb7Start)
     (s : State)
     (hs : pkAArch64.pre s) :
     ∃ t s', Exec isa publicKeyP256 s t s' ∧ abiPreserved s s' ∧ pkAArch64.post s s' := by
-  obtain ⟨t, s', he, hsv, hpost⟩ := publicKey_ok p256_ok hL hT (pre_of hs)
+  obtain ⟨t, s', he, hsv, hpost⟩ := publicKey_ok (p256_ok hI) hL hT (pre_of hs)
   exact ⟨t, s', he, abiPreserved_of he (by lit_decide) (by lit_decide) (by lit_decide) hsv, post_of hpost⟩
 
 theorem pk_ct : ConstantTime isa pkAArch64.pre pkAArch64.pub publicKeyP256 :=
@@ -53,10 +53,10 @@ theorem pk_ct : ConstantTime isa pkAArch64.pre pkAArch64.pub publicKeyP256 :=
       · exact h2⟩, fun n hn => by
       simp only [List.mem_singleton] at hn; subst hn; exact hsy⟩) (by taint_decide)
 
-theorem pk_verified (hL : Weierstrass.Law Spec.P256.curve)
+theorem pk_verified (hL : Weierstrass.Law Spec.P256.curve) (hI : Weierstrass.AArch64.InvSounds)
     (hT : Weierstrass.CombOkW Spec.P256.curve 7 37 Impl.P256.p256Comb7 Impl.P256.p256Comb7Start) :
     Verified AArch64.target publicKeyP256
       (Spec.EcKey.P256.inst.publicKeyContract (AArch64.abi.withConsts p256.combConsts)) :=
-  Verified.of_correct (pk_a64 hL hT) pk_ct implies
+  Verified.of_correct (pk_a64 hL hI hT) pk_ct implies
 
 end VG.Proof.EcKey.AArch64

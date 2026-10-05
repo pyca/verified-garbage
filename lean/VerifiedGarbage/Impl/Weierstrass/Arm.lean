@@ -131,6 +131,48 @@ def storeBE (n : Nat) (dst : Reg) (d a : Nat) : List Instr :=
   (List.range (2 * n)).flatMap fun j =>
     [.ldr .r4 wb (a + 4 * j), .dp .and .r4 .r4 (.reg .r10), .rev .r4 .r4, .str .r4 dst (d + 4 * (2 * n - 1 - j))]
 
+/-- `[r12 + o] = ` the `len`-byte big-endian number at `[src]`, in the `2 n`
+32-bit words of `n` 64-bit ones (`4 ≤ len ≤ 8 n`), through `r4`: word `j`
+is the byte reversal of the word at `src + len - 4 (j + 1)`, a word of fewer
+bytes `t` the first four bytes' reversal shifted right by `8 (4 - t)` bits,
+and the words past `len` zero. For `len = 8 n`, it is `loadBE n o src`. -/
+def loadBytes (len n o : Nat) (src : Reg) : List Instr :=
+  (List.range (2 * n)).flatMap fun j =>
+    if 4 * (j + 1) ≤ len then
+      [.ldr .r4 src (len - 4 * (j + 1)), .rev .r4 .r4, .str .r4 wb (o + 4 * j)]
+    else if 4 * j < len then
+      [.ldr .r4 src 0, .rev .r4 .r4, .mov .r4 (.shifted .r4 .lsr (8 * (4 * (j + 1) - len))),
+        .str .r4 wb (o + 4 * j)]
+    else [.mov .r4 (.imm 0), .str .r4 wb (o + 4 * j)]
+
+/-- `[r12 + o] = [r12 + o] >> sh`, the `2 n` 32-bit words of `n` 64-bit
+ones (`0 < sh < 32`), through `r4` and `r5`: word `j` is word `j` shifted
+right, or'd with word `j + 1` shifted left by `32 - sh`. -/
+def shrWords (n o sh : Nat) : List Instr :=
+  (List.range (2 * n)).flatMap fun j =>
+    [.ldr .r4 wb (o + 4 * j), .mov .r4 (.shifted .r4 .lsr sh)] ++
+    (if j + 1 < 2 * n then
+      [.ldr .r5 wb (o + 4 * (j + 1)), .dp .orr .r4 .r4 (.shifted .r5 .lsl (32 - sh))]
+    else []) ++
+    [.str .r4 wb (o + 4 * j)]
+
+/-- `[dst + d] = ` the `n`-word number at `[r12 + a]` masked with `r10`, in
+`len` bytes big-endian (`len ≤ 8 n`, the number below `2^(8 len)`), through
+`r4` and `r5`: its whole 32-bit words byte-reversed to
+`dst + d + len - 4 (j + 1)`, a word of fewer bytes a byte at a time, and
+nothing of the words past `len`. For `len = 8 n`, it is `storeBE`. -/
+def storeBytes (len n : Nat) (dst : Reg) (d a : Nat) : List Instr :=
+  (List.range (2 * n)).flatMap fun j =>
+    if 4 * (j + 1) ≤ len then
+      [.ldr .r4 wb (a + 4 * j), .dp .and .r4 .r4 (.reg .r10), .rev .r4 .r4,
+        .str .r4 dst (d + (len - 4 * (j + 1)))]
+    else if 4 * j < len then
+      [.ldr .r4 wb (a + 4 * j), .dp .and .r4 .r4 (.reg .r10)] ++
+      (List.range (len - 4 * j)).flatMap fun i =>
+        if len - 4 * j - 1 - i = 0 then [.strb .r4 dst (d + i)]
+        else [.mov .r5 (.shifted .r4 .lsr (8 * (len - 4 * j - 1 - i))), .strb .r5 dst (d + i)]
+    else []
+
 /-- `r4 = x mod 2³²`. -/
 def movImm (x : Nat) : List Instr :=
   [.movw .r4 (BitVec.ofNat 16 x), .movt .r4 (BitVec.ofNat 16 (x >>> 16))]

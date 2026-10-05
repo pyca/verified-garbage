@@ -978,6 +978,22 @@ yours to keep:
 
 <tr>
 
+<td>ECDH P-192</td>
+
+<td>✅</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+</tr>
+
+<tr>
+
 <td>ECDH P-224</td>
 
 <td>✅</td>
@@ -1145,6 +1161,22 @@ yours to keep:
 <tr>
 
 <td>ECDSA brainpoolP512r1</td>
+
+<td>✅</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+</tr>
+
+<tr>
+
+<td>ECDSA P-192</td>
 
 <td>✅</td>
 
