@@ -76,7 +76,7 @@ theorem final_eq (c : Cfg) : Impl.Ecdsa.Verify.AArch64.Cfg.final c =
 /-- `Z^(p-2)`, `x`, the last checks and the result. -/
 theorem tail_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {g : Reg → BitVec 64}
     {Q₁ Q₂ : Nat → Fe c.C → Fe c.C → Fe c.C → Prop} {s : State} (hP : Pts c s₀ base g Q₁ Q₂ s) :
-    WP isa (.seq (ChainCfg.pow c.powP) (Impl.Ecdsa.Verify.AArch64.Cfg.final c)) s fun s' =>
+    WP isa (.seq c.pPow (Impl.Ecdsa.Verify.AArch64.Cfg.final c)) s fun s' =>
       (∀ r ∈ Cfg.saved.map Prod.fst, s'.gpr r = g r) ∧ ∃ xo, xo < c.C.p ∧
         Fin.ofNat c.C.p xo = tmv c.C c.n base s (c.sl RX) * tmv c.C c.n base s (c.sl RZ) ^ (c.C.p - 2) ∧
         (s'.gpr .x0).setWidth 32 = if (KeyOk c s₀ ∧ (0 < sigR c s₀ ∧ sigR c s₀ < c.C.n) ∧
@@ -92,9 +92,8 @@ theorem tail_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {g : Reg → BitVec 
   have F := hP.fixed
   have hf : c.sl FLAG + 8 ≤ size := by have := sl_le c h7 (i := FLAG) (by decide); omega
   -- `Z^(p-2)`.
-  refine WP.seq (WP.mono (chainPow_ok (chainLayP hc) hpR hP.scr (modP_of hc F.mp) hP.rz_lt (chainOkP hc))
+  refine WP.seq (WP.mono (pPow_ok hc hP.scr (modP_of hc F.mp) hP.rz_lt)
     fun s₁ ⟨K₁, U₁, lt₁, v₁⟩ => ?_)
-  rw [chainWP_eq] at U₁
   have hs₁ := hP.scr.of_keepRegs K₁ (x0_not_powClob h7)
   have F₁ := F.unch h7 hn fixedOk_chainWc U₁
   have e₁ : ∀ {i}, i < 45 → i ∉ [ACC, TMP] → sv c base s₁ i = sv c base s i := fun hi hl =>

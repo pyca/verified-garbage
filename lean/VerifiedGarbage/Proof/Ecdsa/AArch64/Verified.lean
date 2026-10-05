@@ -4,6 +4,8 @@ import VerifiedGarbage.Proof.Ecdsa.AArch64.Lit
 import VerifiedGarbage.Proof.P256.Point
 import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
+import VerifiedGarbage.Proof.Weierstrass.AArch64.InvMain
+import VerifiedGarbage.Proof.P256.Prime
 
 /-!
 # ECDSA over P-256 on AArch64: `Verified`
@@ -46,8 +48,12 @@ theorem p256_ok : CfgOk p256 where
   n2 := by decide
   len := rfl
   hash := p256_nBits
-  chain_p := by decide +kernel
-  chain_n := by decide +kernel
+  n4 := by decide
+  sound_p := @invSound_of_prime _ _ Proof.P256.p_prime
+  inv_p := InvOk.ofMod (by decide +kernel) (by decide)
+  inv_n := fun _ => ⟨@invSound_of_prime _ _ Proof.P256.n_prime,
+    InvOk.ofMod (by decide +kernel) (by decide)⟩
+  chain_n := fun h => absurd h (by decide)
   am3 := by unfold AM3; decide +kernel
 
 theorem pre_of {s : State} (h : signAArch64.pre s) : Pre p256 s := by

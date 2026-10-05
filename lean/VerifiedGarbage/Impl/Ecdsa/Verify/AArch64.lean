@@ -122,7 +122,7 @@ def points : Prog isa :=
 
 /-- Everything after the checks of the key. -/
 def back : Prog isa :=
-  .seq (scalars c) <| .seq (ChainCfg.pow c.powN) <| .seq (uv c) <| .seq (points c) <| .seq (ChainCfg.pow c.powP) (final c)
+  .seq (scalars c) <| .seq c.nPow <| .seq (uv c) <| .seq (points c) <| .seq c.pPow (final c)
 
 /-- `vg_ecdsa_<curve>_verify`. -/
 def verify : Prog isa :=
