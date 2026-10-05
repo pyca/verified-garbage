@@ -43,6 +43,7 @@ theorem p384_ok : CfgOk p384 where
   minv_n := by decide +kernel
   red_p := by decide +kernel
   red_n := by decide +kernel
+  n2 := by decide
   len := rfl
   hash := p384_nBits
   chain_p := by decide +kernel

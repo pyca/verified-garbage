@@ -45,7 +45,7 @@ theorem hash_ok (h : Facts s) (hc : GCtx s g m t) (ha : Args (base s) 3 (arg s) 
     (.inr ⟨SEED s, List.mem_append_left _ (seed_in s), whole _⟩) (hk.away_input (seed_in s) (whole _))
     h.seed (repr_nil hz)) fun t2 ⟨hc2, _, hr2, hp2⟩ => ?_)
   have e1 : Spec.Sha3.bytesAt t1.mem ((arg s 1).setWidth 64) 57 = Spec.Sha3.bytesAt m ((arg s 1).setWidth 64) 57 :=
-    hk.input_bytes hc1 (seed_in s) (whole (SEED s)) (by show 57 ≤ 2 ^ 64; decide)
+    hk.input_bytes (D := SEED s) hc1 (seed_in s) (whole (SEED s)) (by show 57 ≤ 2 ^ 64; decide)
   rw [e1] at hr2
   refine WP.seq (WP.mono (hk.pad_step hc2 ha (scr_at s) hr2 (by rw [hp2, length_sbytes]))
     fun t3 ⟨hc3, _, hs3⟩ => ?_)

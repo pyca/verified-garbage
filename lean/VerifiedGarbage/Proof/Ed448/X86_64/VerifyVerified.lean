@@ -59,7 +59,7 @@ theorem verifyEquation_ok (hR : Proof.Ed448.RecoverOk) (hE : Proof.Ed448.VerifyE
     (hs : verifyEquationLocal.pre s) :
     ∃ t s', Exec isa verifyEquation s t s' ∧ abiPreserved s s' ∧ verifyEquationLocal.post s s' := by
   obtain ⟨t, s', he, h⟩ := verifyEquation_correct Proof.X448.X86_64.baseline_ok hR hE hs
-  exact ⟨t, s', he, abiPreserved_of_exec (by lit_decide) he h.1, h.2⟩
+  exact ⟨t, s', he, abiPreserved_of_exec (c := verifyEquation) (by lit_decide) he h.1, h.2⟩
 
 /-! ## Constant time, with summaries
 

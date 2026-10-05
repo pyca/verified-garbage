@@ -138,4 +138,85 @@ theorem top4 (x₀ x₁ x₂ x₃ x₄ x₅ : BitVec 32) :
     show ¬ 64 + i < 32 by omega, show ¬ 64 + i - 32 < 32 by omega, show 64 + i - 32 - 32 = i by omega,
     ↓reduceIte]
 
+/-! ## Words as six-word values, for x86 -/
+
+/-- Six words, the most significant first. -/
+abbrev cat6 (x0 x1 x2 x3 x4 x5 : BitVec 32) : BitVec 192 := x0 ++ x1 ++ x2 ++ x3 ++ x4 ++ x5
+
+/-- Bit `32 k + j` of six words: bit `j` of word `5 − k`. -/
+theorem getLsbD_cat6 (x0 x1 x2 x3 x4 x5 : BitVec 32) (i : Nat) :
+    (cat6 x0 x1 x2 x3 x4 x5).getLsbD i =
+      if i < 32 then x5.getLsbD i else if i < 64 then x4.getLsbD (i - 32) else
+      if i < 96 then x3.getLsbD (i - 64) else if i < 128 then x2.getLsbD (i - 96) else
+      if i < 160 then x1.getLsbD (i - 128) else x0.getLsbD (i - 160) := by
+  simp only [cat6, BitVec.getLsbD_append]
+  simp only [Nat.sub_sub, Nat.reduceAdd]
+  by_cases h1 : i < 32
+  · simp only [h1, ↓reduceIte]
+  by_cases h2 : i < 64
+  · simp only [h1, h2, show i - 32 < 32 by omega, ↓reduceIte]
+  by_cases h3 : i < 96
+  · simp only [h1, h2, h3, show ¬ i - 32 < 32 by omega, show i - 64 < 32 by omega, ↓reduceIte]
+  by_cases h4 : i < 128
+  · simp only [h1, h2, h3, h4, show ¬ i - 32 < 32 by omega, show ¬ i - 64 < 32 by omega,
+      show i - 96 < 32 by omega, ↓reduceIte]
+  by_cases h5 : i < 160
+  · simp only [h1, h2, h3, h4, h5, show ¬ i - 32 < 32 by omega, show ¬ i - 64 < 32 by omega,
+      show ¬ i - 96 < 32 by omega, show i - 128 < 32 by omega, ↓reduceIte]
+  · simp only [h1, h2, h3, h4, h5, show ¬ i - 32 < 32 by omega, show ¬ i - 64 < 32 by omega,
+      show ¬ i - 96 < 32 by omega, show ¬ i - 128 < 32 by omega, ↓reduceIte]
+
+/-- The word `x` shifted left by `a` with the top bits of the next, `y`. -/
+abbrev shlW (a : Nat) (x y : BitVec 32) : BitVec 32 := x <<< a ||| y >>> (32 - a)
+
+theorem getLsbD_shlW (a : Nat) (ha : 0 < a) (ha' : a < 32) (x y : BitVec 32) {j : Nat} (hj : j < 32) :
+    (shlW a x y).getLsbD j = if j < a then y.getLsbD (32 - a + j) else x.getLsbD (j - a) := by
+  simp only [shlW, BitVec.getLsbD_or, BitVec.getLsbD_shiftLeft, BitVec.getLsbD_ushiftRight, hj, decide_true,
+    Bool.true_and]
+  by_cases h : j < a
+  · simp [h]
+  · simp [h, BitVec.getLsbD_of_ge y (32 - a + j) (by omega)]
+
+/-- Rotating right by `32 − a` and masking off the `a` low bits shifts left
+by `a`. -/
+theorem ror_mask32 (x : BitVec 32) {a : Nat} (ha : 0 < a) (ha' : a < 32) :
+    x.rotateRight (32 - a) &&& (BitVec.allOnes 32 <<< a) = x <<< a := by
+  apply BitVec.eq_of_getLsbD_eq
+  intro i hi
+  simp only [BitVec.getLsbD_and, BitVec.getLsbD_shiftLeft, BitVec.getLsbD_allOnes,
+    BitVec.getLsbD_rotateRight, hi, decide_true, Bool.true_and]
+  by_cases hia : i < a
+  · simp [hia]
+  · simp only [hia, decide_false, Bool.not_false, Bool.true_and]
+    simp only [BitVec.getLsbD, show i < 32 - (32 - a) ↔ i < a by omega, hia, ↓reduceIte,
+      Nat.mod_eq_of_lt (show 32 - a < 32 by omega)]
+    rw [show i - (32 - (32 - a)) = i - a by omega]
+    simp [show i - a < 32 by omega]
+
+/-- Bit `k` of `bottom` (less than 64), as 0 or 1. -/
+theorem bit_bottom32 {v : Nat} (hv : v < 64) (k : Nat) :
+    (BitVec.ofNat 32 v >>> k) &&& 1 = if v.testBit k then 1 else 0 := by
+  apply BitVec.eq_of_toNat_eq
+  rw [BitVec.toNat_and, BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega),
+    show (1 : BitVec 32).toNat = 1 from rfl, Nat.and_one_is_mod, Nat.testBit_eq_decide_div_mod_eq,
+    Nat.shiftRight_eq_div_pow]
+  have h2 : v / 2 ^ k % 2 < 2 := Nat.mod_lt _ (by decide)
+  by_cases h : v / 2 ^ k % 2 = 1
+  · simp [h]
+  · simp [h]; omega
+
+theorem getLsbD_cat4 (k0 k1 k2 k3 : BitVec 32) (i : Nat) :
+    (k0 ++ k1 ++ k2 ++ k3).getLsbD i =
+      if i < 32 then k3.getLsbD i else if i < 64 then k2.getLsbD (i - 32) else
+      if i < 96 then k1.getLsbD (i - 64) else k0.getLsbD (i - 96) := by
+  simp only [BitVec.getLsbD_append]
+  simp only [Nat.sub_sub, Nat.reduceAdd]
+  by_cases h1 : i < 32
+  · simp only [h1, ↓reduceIte]
+  by_cases h2 : i < 64
+  · simp only [h1, h2, show i - 32 < 32 by omega, ↓reduceIte]
+  by_cases h3 : i < 96
+  · simp only [h1, h2, h3, show ¬ i - 32 < 32 by omega, show i - 64 < 32 by omega, ↓reduceIte]
+  · simp only [h1, h2, h3, show ¬ i - 32 < 32 by omega, show ¬ i - 64 < 32 by omega, ↓reduceIte]
+
 end VG.Proof.Ocb

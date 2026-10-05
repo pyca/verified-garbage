@@ -37,11 +37,11 @@ theorem reduce_step (hL : L.Ok) (hc : WCtx L.env g vec m₀ t) :
   have hV := env_ok hL
   refine WP.seq (WP.mono (wsetup_ok hV hc (args := reduceArgs) (by decide)
     (by simp [reduceArgs, srcValid, VG.Proof.Ed25519.AArch64.Whole.valid, fK, fH, fScr]) rfl
-    (by simp [reduceArgs, preserved])) fun u ⟨hu, hm, hv⟩ => ?_)
-  have h0 : u.gpr .x0 = L.E + BitVec.ofNat 64 fK := hv (.x0, .val (.frame fK)) (by simp [reduceArgs])
-  have h1 : u.gpr .x1 = L.E + BitVec.ofNat 64 fH := hv (.x1, .val (.frame fH)) (by simp [reduceArgs])
+    (by decide)) fun u ⟨hu, hm, hv⟩ => ?_)
+  have h0 : u.gpr .x0 = L.E + BitVec.ofNat 64 fK := hv (.x0, .val (.frame fK)) (List.mem_of_getElem? (i := 0) rfl)
+  have h1 : u.gpr .x1 = L.E + BitVec.ofNat 64 fH := hv (.x1, .val (.frame fH)) (List.mem_of_getElem? (i := 1) rfl)
   have h2 : u.gpr .x2 = L.scr := by
-    rw [hv (.x2, .loc fScr 0) (by simp [reduceArgs]), (scrOk hL).loc hc, BitVec.add_zero]
+    rw [hv (.x2, .loc fScr 0) (List.mem_of_getElem? (i := 2) rfl), (scrOk hL).loc hc, BitVec.add_zero]
   refine WP.mono (reduce_call hV hu h0 h1 h2 (fr_scr hL (by decide)) (.inl ⟨fH, rfl, show fH + 114 ≤ 256 by decide⟩)
     (.inl (k_apart L)) (scr_writable L)) fun w ⟨hw, _, hk⟩ => ⟨hw, by rw [hk, hm]⟩
 
@@ -53,14 +53,14 @@ theorem equation_step (hR : Proof.Ed448.RecoverOk) (hE : Proof.Ed448.VerifyEqOk)
   have hV := env_ok hL
   refine WP.seq (WP.mono (wsetup_ok hV hc (args := equationArgs) (by decide)
     (by simp [equationArgs, srcValid, VG.Proof.Ed25519.AArch64.Whole.valid, aPk, aSig, fK, fScr]) rfl
-    (by simp [equationArgs, preserved])) fun u ⟨hu, hm, hv⟩ => ?_)
-  have h0 : u.gpr .x0 = L.pk := (hv (.x0, aPk) (by simp [equationArgs])).trans
+    (by decide)) fun u ⟨hu, hm, hv⟩ => ?_)
+  have h0 : u.gpr .x0 = L.pk := (hv (.x0, aPk) (List.mem_of_getElem? (i := 0) rfl)).trans
     (arg_src hL hc.1 ha (j := 0) (by decide) _)
-  have h1 : u.gpr .x1 = L.sig := (hv (.x1, aSig) (by simp [equationArgs])).trans
+  have h1 : u.gpr .x1 = L.sig := (hv (.x1, aSig) (List.mem_of_getElem? (i := 1) rfl)).trans
     (arg_src hL hc.1 ha (j := 5) (by decide) _)
-  have h2 : u.gpr .x2 = L.E + BitVec.ofNat 64 fK := hv (.x2, .val (.frame fK)) (by simp [equationArgs])
+  have h2 : u.gpr .x2 = L.E + BitVec.ofNat 64 fK := hv (.x2, .val (.frame fK)) (List.mem_of_getElem? (i := 2) rfl)
   have h3 : u.gpr .x3 = L.scr := by
-    rw [hv (.x3, .loc fScr 0) (by simp [equationArgs]), (scrOk hL).loc hc, BitVec.add_zero]
+    rw [hv (.x3, .loc fScr 0) (List.mem_of_getElem? (i := 3) rfl), (scrOk hL).loc hc, BitVec.add_zero]
   refine WP.mono (equation_call hR hE hV hu h0 h1 h2 h3 hL.pc hL.sc (fr_scr hL (by decide)) hL.nc
     (in_readable L.PK (by simp [Lay.inputs])) (in_readable L.SIG (by simp [Lay.inputs]))
     (.inl ⟨fK, rfl, show fK + 57 ≤ 256 by decide⟩) (scr_writable L)) fun w ⟨hw, _, hx⟩ => ⟨hw, ?_⟩
