@@ -50,15 +50,17 @@ variable {H : Hash} (hH : HashOK H) (K : Callees H)
 def ctOut (o : Nat) : Prop := oLen + 16 ≤ o ∧ ¬ (oY ≤ o ∧ o < oY + 2048)
 
 include K in
-theorem ctHash_ok {t : State} {F S : Addr} (L : Lay t F S) {V : Nat → Byte} {W : Nat → BitVec 64}
-    (R : Rep t.mem F S V W) {msg : List Byte} {nbm : Nat} (hl : W 27 = BitVec.ofNat 64 msg.length)
-    (hn : W 28 = BitVec.ofNat 64 nbm) (hfit : msg.length + 1 + H.P.L ≤ nbm * H.P.B) (hnb : nbm * H.P.B ≤ 2048)
-    (hY : ∀ i < nbm * H.P.B, V (oY + i) = msg.getD i 0) :
+/-- `ctHash` on the first `ℓ` bytes of `Y` (`sL`), in `nbm` blocks (`sNb`):
+what it changes, and its digest if those bytes are followed by zeros. -/
+theorem ctHash_gen {t : State} {F S : Addr} (L : Lay t F S) {V : Nat → Byte} {W : Nat → BitVec 64}
+    (R : Rep t.mem F S V W) {ℓ nbm : Nat} (hl : W 27 = BitVec.ofNat 64 ℓ)
+    (hn : W 28 = BitVec.ofNat 64 nbm) (hfit : ℓ + 1 + H.P.L ≤ nbm * H.P.B) (hnb : nbm * H.P.B ≤ 2048) :
     WP isa (ctHash H) t fun t' => Lay t' F S ∧ t'.rd = t.rd ∧ t'.wr = t.wr ∧
       (∀ r ∈ [Reg.r13, .r14, .r15, .rsp], t'.gpr r = t.gpr r) ∧
       ∃ V' W', Rep t'.mem F S V' W' ∧ (∀ o < oRsa, ctOut o → V' o = V o) ∧
         (∀ k < nW, k ≠ 29 → k ≠ 30 → W' k = W k) ∧
-        (List.range H.D).map (fun i => V' (oDig + i)) = hH.SH.H.hash msg := by
+        ∀ msg : List Byte, msg.length = ℓ → (∀ i < nbm * H.P.B, V (oY + i) = msg.getD i 0) →
+          (List.range H.D).map (fun i => V' (oDig + i)) = hH.SH.H.hash msg := by
   have hB := hH.B_le
   have hB0 := hH.B_pos
   have hN := hH.N_le
@@ -66,8 +68,8 @@ theorem ctHash_ok {t : State} {F S : Addr} (L : Lay t F S) {V : Nat → Byte} {W
   have hNL := hH.hNL
   have hDN := hH.hDN
   have hnbm : nbm ≤ 2048 := Nat.le_trans (Nat.le_mul_of_pos_right nbm hB0) hnb
-  have hfb : lastBlk H.P.B H.P.L msg.length < nbm := (Nat.div_lt_iff_lt_mul hB0).mpr (by omega)
-  have hfbB : H.P.B * (lastBlk H.P.B H.P.L msg.length + 1) ≤ nbm * H.P.B := by
+  have hfb : lastBlk H.P.B H.P.L ℓ < nbm := (Nat.div_lt_iff_lt_mul hB0).mpr (by omega)
+  have hfbB : H.P.B * (lastBlk H.P.B H.P.L ℓ + 1) ≤ nbm * H.P.B := by
     rw [Nat.mul_comm]; exact Nat.mul_le_mul_right _ hfb
   unfold ctHash seqs seqs seqs seqs seqs
   -- `init`.
@@ -77,7 +79,7 @@ theorem ctHash_ok {t : State} {F S : Addr} (L : Lay t F S) {V : Nat → Byte} {W
   -- The length field.
   refine WP.seq (WP.mono (lenField_ok hH P.L P.R hl (by omega)) fun u3 ⟨L3, k3, R3⟩ => ?_)
   -- Into the last block.
-  refine WP.seq (WP.mono (lenLoop_ok hH L3 R3 (len := hH.md.lenBytes msg.length) (fun i hi => by
+  refine WP.seq (WP.mono (lenLoop_ok hH L3 R3 (len := hH.md.lenBytes ℓ) (fun i hi => by
       simp only [lenV, hH.md.lenBytes_length]; rw [ifp (by omega), Nat.add_sub_cancel_left])
     (by simp [upd]) (by simp [upd, hn]) hfb hnb) fun u4 O => ?_)
   -- Every block.
@@ -89,14 +91,14 @@ theorem ctHash_ok {t : State} {F S : Addr} (L : Lay t F S) {V : Nat → Byte} {W
     rw [ifn (by unfold oY oSt; omega), ifn (by unfold oLen oSt; omega), ifn (by unfold oY oSt; omega)]
   -- The digest.
   refine WP.mono (digestOut_ok hH L5 R5) fun u6 ⟨L6, k6, R6⟩ => ?_
-  have hO : (if lastBlk H.P.B H.P.L msg.length < nbm then H.P.L else 0) = H.P.L := by rw [ifp hfb]
+  have hO : (if lastBlk H.P.B H.P.L ℓ < nbm then H.P.L else 0) = H.P.L := by rw [ifp hfb]
   have c1 : oY = 3584 := rfl
   have c2 : oLen = 2368 := rfl
   have c3 : oDig = 2304 := rfl
   have c4 : oSt = 2048 := rfl
   have c5 : oSel = 2240 := rfl
   have hso := hH.hso
-  have hfbB' : H.P.B * lastBlk H.P.B H.P.L msg.length + H.P.B ≤ 2048 := by
+  have hfbB' : H.P.B * lastBlk H.P.B H.P.L ℓ + H.P.B ≤ 2048 := by
     rw [← Nat.mul_add_one]; omega
   have hsel := sel5 hfb
   refine ⟨L6, k6.2.1.trans (rd5.trans (O.keep.2.1.trans (k3.2.1.trans (P.keep.2.1.trans rd1)))),
@@ -118,7 +120,9 @@ theorem ctHash_ok {t : State} {F S : Addr} (L : Lay t F S) {V : Nat → Byte} {W
     rw [ifn (by omega), ifn (by rw [hH.md.lenBytes_length]; omega), ifn (by omega), ifn (by omega)]
   · intro k hk h29 h30
     simp [upd, h29, h30]
-  · rw [hH.hash, MdStream.Md.hash, ← range_map_getD (by rw [hH.md.digest_length]; exact hDN)]
+  · intro msg hml hY
+    subst hml
+    rw [hH.hash, MdStream.Md.hash, ← range_map_getD (by rw [hH.md.digest_length]; exact hDN)]
     refine List.map_congr_left fun i hi => ?_
     have hi := List.mem_range.mp hi
     simp only [show oDig ≤ oDig + i ∧ oDig + i < oDig + H.P.N from ⟨by omega, by omega⟩,
@@ -131,5 +135,19 @@ theorem ctHash_ok {t : State} {F S : Addr} (L : Lay t F S) {V : Nat → Byte} {W
     refine y_padded msg _ rfl (by omega) (hH.md.lenBytes_length _) _ (fun j' hj' => ?_) j hj
     simp only [lenV, v80, inR_cons, inR_nil, or_false, hH.md.lenBytes_length]
     rw [ifn (by omega), ifp (by omega), ifn (by omega), Nat.add_sub_cancel_left, hY j' (by omega)]
+
+
+include K in
+theorem ctHash_ok {t : State} {F S : Addr} (L : Lay t F S) {V : Nat → Byte} {W : Nat → BitVec 64}
+    (R : Rep t.mem F S V W) {msg : List Byte} {nbm : Nat} (hl : W 27 = BitVec.ofNat 64 msg.length)
+    (hn : W 28 = BitVec.ofNat 64 nbm) (hfit : msg.length + 1 + H.P.L ≤ nbm * H.P.B) (hnb : nbm * H.P.B ≤ 2048)
+    (hY : ∀ i < nbm * H.P.B, V (oY + i) = msg.getD i 0) :
+    WP isa (ctHash H) t fun t' => Lay t' F S ∧ t'.rd = t.rd ∧ t'.wr = t.wr ∧
+      (∀ r ∈ [Reg.r13, .r14, .r15, .rsp], t'.gpr r = t.gpr r) ∧
+      ∃ V' W', Rep t'.mem F S V' W' ∧ (∀ o < oRsa, ctOut o → V' o = V o) ∧
+        (∀ k < nW, k ≠ 29 → k ≠ 30 → W' k = W k) ∧
+        (List.range H.D).map (fun i => V' (oDig + i)) = hH.SH.H.hash msg :=
+  WP.mono (ctHash_gen hH K L R hl hn hfit hnb) fun _ ⟨L', rd, wr, cs, V', W', R', hV, hW, hd⟩ =>
+    ⟨L', rd, wr, cs, V', W', R', hV, hW, hd msg rfl hY⟩
 
 end VG.Proof.RsaPss.X86_64
