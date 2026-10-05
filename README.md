@@ -570,7 +570,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>❌</td>
+<td>✅ AES-NI, PCLMULQDQ</td>
 
 </tr>
 
@@ -600,7 +600,7 @@ yours to keep:
 
 <td>✅ AES, PMULL</td>
 
-<td>❌</td>
+<td>✅</td>
 
 <td>❌</td>
 
@@ -952,7 +952,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>❌</td>
+<td>✅</td>
 
 <td>❌</td>
 
@@ -1161,6 +1161,22 @@ yours to keep:
 <th>ARMv7</th>
 
 <th>x86</th>
+
+</tr>
+
+<tr>
+
+<td>RSA key generation</td>
+
+<td>✅</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+<td>❌</td>
 
 </tr>
 

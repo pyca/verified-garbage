@@ -296,7 +296,7 @@ theorem digestPtr_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) :
   simp only [Cfg.digestPtr, fDigest, runBlock_cons, runStep_some, runBlock_nil, exec, Nat.reduceMod,
     Nat.reduceLT, and_self, ite_true, State.load, hc.sp, Offset.add_add, Nat.reduceAdd, p, Option.map_some,
     read8, hc.pDg, BitVec.setWidth_eq, Option.some.injEq, exists_eq_left']
-  exact ⟨hc.set hL (d := .x1) (by decide) rfl rfl rfl rfl fun r hr => RegUpd.gpr_write_of_ne _ _ _ hr, rfl,
+  exact ⟨hc.set hL (d := .x1) (by decide) rfl rfl rfl rfl (fun r hr => RegUpd.gpr_write_of_ne _ _ _ hr) rfl, rfl,
     by rw [RegUpd.gpr_write_self]; exact BitVec.setWidth_eq _, fun r hr => RegUpd.gpr_write_of_ne _ _ _ hr⟩
 
 /-- A callee-saved register is none of the registers `rs` the code writes. -/
@@ -313,13 +313,14 @@ theorem reduce_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) (h1 : t.gpr .x1 
   refine Ctx.of_keep hL hc ?_ (by rfl) fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr; exact safe_low L (by omega)
   rw [reduce_split, WP.block_append_iff]
-  refine WP.mono (load_ok hc h1 hn) fun u₁ ⟨z₁, f₁, a₁, b₁, c₁, d₁, k₁⟩ => ?_
+  refine WP.mono_syms (load_ok hc h1 hn) fun u₁ ⟨z₁, f₁, a₁, b₁, c₁, d₁, k₁⟩ sy₁ => ?_
   rw [WP.block_append_iff]
-  refine WP.mono (sub_ok (cfgOf P) u₁ z₁) fun u₂ ⟨a₂, b₂, c₂, d₂, m₂, k₂⟩ => ?_
+  refine WP.mono_syms (sub_ok (cfgOf P) u₁ z₁) fun u₂ ⟨a₂, b₂, c₂, d₂, m₂, k₂⟩ sy₂ => ?_
   rw [WP.block_append_iff]
-  refine WP.mono (sel_ok u₂ m₂) fun u₃ ⟨a₃, b₃, c₃, d₃, k₃⟩ => ?_
+  refine WP.mono_syms (sel_ok u₂ m₂) fun u₃ ⟨a₃, b₃, c₃, d₃, k₃⟩ sy₃ => ?_
   have hc₃ : Ctx L g m₀ u₃ := hc.regs hL (k₃.rd.trans (k₂.rd.trans k₁.rd)) (k₃.wr.trans (k₂.wr.trans k₁.wr))
-    (k₃.mem.trans (k₂.mem.trans k₁.mem)) (k₃.sp.trans (k₂.sp.trans k₁.sp)) fun r hr _ => by
+    (k₃.mem.trans (k₂.mem.trans k₁.mem)) (k₃.sp.trans (k₂.sp.trans k₁.sp)) (hsy := sy₃.trans (sy₂.trans sy₁))
+    fun r hr _ => by
       have h₁ : r ∉ [Reg.x8, .x9, .x10, .x11] := not_pres hr _ (by decide)
       have h₂ : r ∉ [Reg.x12, .x2, .x3, .x4, .x5, .x6] := not_pres hr _ (by decide)
       have h₃ : r ∉ [Reg.x7, .x15, .x8, .x9, .x10, .x11] := not_pres hr _ (by decide)

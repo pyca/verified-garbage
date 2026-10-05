@@ -109,29 +109,6 @@ def select (t : List (Nat × Nat)) : List Instr :=
   (List.range K.M.n).flatMap (selectWord K.one (t.map (·.2)) K.E.y) ++
   (List.range K.M.n).flatMap ((selectZ K) K.E.z)
 
-/-- The selection from table `x19`, for the tables `js`. -/
-def selectFrom : List Nat → Prog isa
-  | [] => .block []
-  | j :: js => .seq (.block [.subImm .x .x9 .x19 j])
-      (.ite (.zero .x .x9) (.block ((select K) (K.tbl.getD j []))) (selectFrom js))
-
-/-- Iteration `j = x19 - 1` (with `x19` counting down from `J`): the entry,
-negated for a negative digit, added to `A`. -/
-def step : Prog isa :=
-  .seq (.block (decCounter :: (digit K.bits))) <|
-  .seq ((selectFrom K) (List.range K.J)) <|
-  .seq (.block (negY K.M K.neg K.zero K.E.y K.bits)) <|
-  .seq (fprogB K.M (rcb3 K.S K.A K.E K.D)) <|
-  .block (copyPt K.M.n K.A K.D)
-
-/-- `A = [c]P` and the counter. -/
-def init : List Instr :=
-  setConst K.M.n K.A.x K.start.1 ++ setConst K.M.n K.A.y K.start.2 ++
-    setConst K.M.n K.A.z K.one ++ [.movz .x .x19 (BitVec.ofNat 16 K.J) 0]
-
-/-- `[k]P` into `A`. -/
-def comb : Prog isa := .seq (.block (init K)) (.loop (step K) (.nonzero .x .x19))
-
 end CombCfg
 
 end VG.Impl.Weierstrass.AArch64

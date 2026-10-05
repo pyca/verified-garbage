@@ -76,7 +76,7 @@ theorem initArgs_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) (D : Nat) (hD 
 16 bytes below the frame. -/
 theorem Ctx.after (hL : L.Ok) {u u' : State} (hc : Ctx L g m₀ u) {ws : List Region} (ha : After u ws u')
     (hs : ∀ r ∈ ws, Safe L r) : Ctx L g m₀ u' :=
-  hc.keep hL ha.rd ha.wr ha.sp ha.cs ha.frame fun r hr => by
+  hc.keep hL ha.rd ha.wr ha.sp ha.cs ha.frame (hsy := ha.syms) fun r hr => by
     rcases List.mem_append.mp hr with hr | hr
     · exact hs r hr
     · simp only [List.mem_singleton] at hr; subst hr
@@ -329,7 +329,7 @@ theorem fin_step (hL : L.Ok) {t u : State} {da : Addr} {len dst : Nat} (hu : Upd
     · exact ⟨⟨L.scr, 2256⟩, by simp, scr_work (by anums)⟩
     · exact ⟨⟨L.B, 16⟩, by simp, sub_refl _⟩
   have hl : (Spec.Sha256.bytesAt t.mem da len).length = len := by simp [Spec.Sha256.bytesAt]
-  refine ⟨hcw.keep hL ha.rd ha.wr ha.sp ha.cs ha.frame fun r hr => ?_,
+  refine ⟨hcw.keep hL ha.rd ha.wr ha.sp ha.cs ha.frame (hsy := ha.syms) fun r hr => ?_,
     hu.frame.sub (fun r hr => ⟨r, by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr ⊢; rcases hr with h | h <;> simp [h],
       sub_refl _⟩) |>.trans (hmw ▸ ha.frame.sub hws), ?_⟩

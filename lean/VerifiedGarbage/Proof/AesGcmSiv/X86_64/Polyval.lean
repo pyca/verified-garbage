@@ -1,4 +1,5 @@
 import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Absorb
+import VerifiedGarbage.Proof.GcmSiv.Polyval
 
 /-!
 # AES-GCM-SIV on x86-64: POLYVAL and the tag input (`polyval`)
