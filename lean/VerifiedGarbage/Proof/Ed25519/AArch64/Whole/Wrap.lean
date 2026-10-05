@@ -142,6 +142,8 @@ theorem saved_words {s p : State} (hs : Saved (entered s) 6 p) {j : Nat} (hj : j
   rw [entered_sp] at h
   exact h
 
+attribute [local instance_reducible] freed
+
 /-- The complete operations share one LR save and a 320-byte allocation.
 Their body sees writable locals and readonly saved arguments, and its
 callees' frames take 16 more bytes below them. -/

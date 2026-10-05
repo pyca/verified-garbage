@@ -97,16 +97,16 @@ theorem buf_frame {σ : State} {m m' : Mem} {rs : List Region}
   simpa only [at', Offset.add_add, Nat.add_assoc] using this
 
 /-- The permutation, after `n` squeezes. -/
-theorem perm_ok {σ : State} (hp : Pre σ) {n : Nat} (hn : n < 3) {s : State} (h : SqInv σ n s)
+theorem perm_ok {fast : Bool} {σ : State} (hp : Pre σ) {n : Nat} (hn : n < 3) {s : State} (h : SqInv σ n s)
     {rest : Prog isa} {Q : State → Prop} (kont : ∀ s', Env σ s' ∧ s'.gpr .r14 = 1 ∧
       (∀ r < 24, ∀ k < 4, s'.mem.readW (la (scr σ) (50 + r) k) 64 = RC r) ∧
       Lanes4 s'.mem (scr σ) (fun k => iterF (n + 1) (A0 (B σ k))) ∧
       (∀ k < 4, ∀ p < 168 * n, s'.mem (at' σ (oBuf + 504 * k + p)) = xofByte (B σ k) p) → WP isa rest s' Q) :
-    WP isa (.seq (.block permArgs) (.seq Impl.Sha3.X86_64.X4.permute4 rest)) s Q := by
+    WP isa (.seq (.block permArgs) (.seq (Impl.Sha3.X86_64.X4.permute4 fast) rest)) s Q := by
   refine WP.seq (WP.mono (args_ok h.env) fun s₁ ⟨⟨hm, hdi, hsi, hdx, hcx⟩, k₁⟩ => ?_)
   have hrd : s₁.rd = σ.rd := k₁.2.1.trans h.env.rd
   have hwr : s₁.wr = σ.wr := k₁.2.2.trans h.env.wr
-  refine WP.seq (WP.mono (permute4_ok (A := fun k => iterF n (A0 (B σ k))) (pre4 hp hrd hwr (by rw [hm]; exact h.rc))
+  refine WP.seq (WP.mono (permute4_ok (fast := fast) (A := fun k => iterF n (A0 (B σ k))) (pre4 hp hrd hwr (by rw [hm]; exact h.rc))
     hdi hsi hdx (by rw [hcx, at', at', Offset.add_add]) (by rw [hm]; exact h.lanes))
     fun s₂ ⟨hl, hf, hrd₂, hwr₂, _, hg⟩ => kont s₂ ?_)
   have hsub : ∀ r ∈ [(⟨scr σ, 800⟩ : Region), ⟨at' σ 800, 800⟩], Region.Sub r ⟨scr σ, oSave⟩ := by
@@ -198,10 +198,10 @@ theorem extract_ok {σ : State} (hp : Pre σ) {n : Nat} (hn : n < 3) {s : State}
     21 (Nat.le_refl _) s h) fun s' h' => ⟨h'.env, h'.r14, h'.rc, h'.lanes, fun k hk p hp' hc => h'.buf k hk p hp' (by omega)⟩
 
 /-- `squeeze4 n`: after `n + 1` squeezes. -/
-theorem sq_ok {σ : State} (hp : Pre σ) {n : Nat} (hn : n < 3) {s : State} (h : SqInv σ n s) :
-    WP isa (squeeze4 n) s (SqInv σ (n + 1)) := by
+theorem sq_ok {fast : Bool} {σ : State} (hp : Pre σ) {n : Nat} (hn : n < 3) {s : State} (h : SqInv σ n s) :
+    WP isa (squeeze4 n fast) s (SqInv σ (n + 1)) := by
   unfold squeeze4
-  exact perm_ok hp hn h fun s' ⟨he, h14, hrc, hl, hb⟩ =>
+  exact perm_ok (fast := fast) hp hn h fun s' ⟨he, h14, hrc, hl, hb⟩ =>
     extract_ok hp hn ⟨he, h14, hrc, hl, fun k hk p _ hc => hb k hk p (by omega)⟩
 
 end VG.Proof.MlKem.X86_64.S4

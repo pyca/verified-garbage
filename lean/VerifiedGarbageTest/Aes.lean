@@ -115,4 +115,35 @@ run_cmd do
     let b : Byte := BitVec.ofNat 8 x
     unless Spec.Aes.invSbox (Spec.Aes.sbox b) == b do throwError "invSbox (sbox {x}) ≠ {x}"
 
+namespace Cached
+open Spec.Aes
+
+-- Compute the 256 specification values once for all blocks in this test.
+private def sboxTable : Vector Byte 256 := Vector.ofFn fun i => sbox (BitVec.ofNat 8 i.val)
+
+private def sboxCached (b : Byte) : Byte := sboxTable[b.toNat]
+
+private theorem sboxCached_eq (b : Byte) : sboxCached b = sbox b := by
+  simp only [sboxCached, sboxTable, Vector.getElem_ofFn, BitVec.ofNat_toNat, BitVec.setWidth_eq]
+
+private def subBytesCached (s : Spec.Aes.State) : Spec.Aes.State := s.map sboxCached
+
+private theorem subBytesCached_eq : subBytesCached = subBytes := by
+  funext s
+  simp only [subBytesCached, subBytes, show sboxCached = sbox from funext sboxCached_eq]
+
+/-- The AES cipher with the finite S-box values shared across test blocks. -/
+def cipherCached (nr : Nat) (w : List Byte) (input : Spec.Aes.State) : Spec.Aes.State :=
+  let s := addRoundKey input (roundKey w 0)
+  let s := (List.range (nr - 1)).foldl
+    (fun s j => addRoundKey (mixColumns (shiftRows (subBytesCached s))) (roundKey w (j + 1))) s
+  addRoundKey (shiftRows (subBytesCached s)) (roundKey w nr)
+
+/-- The cached test evaluator computes exactly the specification. -/
+theorem cipherCached_eq (nr : Nat) (w : List Byte) (input : Spec.Aes.State) :
+    cipherCached nr w input = cipher nr w input := by
+  simp only [cipherCached, subBytesCached_eq, cipher]
+
+end Cached
+
 end VG.Test.Aes

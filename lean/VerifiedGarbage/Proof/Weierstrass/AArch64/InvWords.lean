@@ -1,6 +1,7 @@
 import VerifiedGarbage.Impl.Weierstrass.AArch64.Inv
 import VerifiedGarbage.Proof.Mont.AArch64.Chain
 import VerifiedGarbage.Proof.Mont.AArch64.Csub
+import VerifiedGarbage.Proof.Weierstrass.InvMask
 
 /-!
 # Inversion by divsteps on AArch64: numbers of several words
@@ -169,16 +170,6 @@ theorem zerosW_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) 
     rw [mt, wordsVal_succ_top, word_writeW_self, Oj.wordsVal (by omega) (by omega), e₁,
       k₁.gpr _ List.not_mem_nil, h12]
     rfl
-
-/-- Words `0 … a + b` of a number: the first `a`, then `b` more. -/
-theorem wordsVal_split (m : Mem) (base : Addr) (d a : Nat) :
-    ∀ b, wordsVal m base d (a + b) = wordsVal m base d a + 2 ^ (64 * a) * wordsVal m base (d + 8 * a) b
-  | 0 => by simp [wordsVal]
-  | b + 1 => by
-    rw [← Nat.add_assoc, wordsVal_succ_top, wordsVal_split m base d a b, wordsVal_succ_top m base (d + 8 * a) b,
-      show d + 8 * a + 8 * b = d + 8 * (a + b) by omega, show 64 * (a + b) = 64 * a + 64 * b by omega, Nat.pow_add,
-      Nat.mul_add (2 ^ (64 * a)), ← Nat.mul_assoc (2 ^ (64 * a))]
-    omega
 
 /-- `w x < 2^(64 (k + 1))` for a word `w` and `x < 2^(64 k)`. -/
 theorem word_mul_lt (w : BitVec 64) {x k : Nat} (hx : x < 2 ^ (64 * k)) : w.toNat * x < 2 ^ (64 * (k + 1)) := by
@@ -486,18 +477,6 @@ theorem mulAdd_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) 
     refine WP.block_nil ⟨?_, k01, O₁⟩
     rw [← e₁, Nat.add_mul_mod_self_left, Nat.mod_eq_of_lt (wordsVal_lt _ _ _ _)]
 
-/-- A mask: all ones or zero. -/
-def IsMask (x : BitVec 64) : Prop := x = 0 ∨ x = BitVec.allOnes 64
-
-/-- `[src] & m` word by word, as a number. -/
-def masked (m : BitVec 64) (v : Nat) : Nat := if m = BitVec.allOnes 64 then v else 0
-
-theorem and_mask {x m : BitVec 64} (hm : IsMask m) : (x &&& m).toNat = masked m x.toNat := by
-  unfold masked
-  rcases hm with rfl | rfl
-  · simp only [show (0 : BitVec 64) ≠ BitVec.allOnes 64 by decide, ↓reduceIte]; simp
-  · simp only [↓reduceIte, BitVec.and_allOnes]
-
 /-- Word `i + 1` of `[dst] -= 2^64 ([src] & m)`: `d' + s + !c_in = d + 2^64 !c_out`. -/
 theorem subShStep_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {m : Reg}
     (hm : m ∉ [Reg.x0, .x2, .x3]) (hmask : IsMask (s.gpr m)) {si di : Nat}
@@ -549,9 +528,6 @@ theorem subShStep_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base siz
     rw [gt, k₄.gpr r (by simp [hr.2]), k₃.gpr r (by simp [hr.1]), k₂.gpr r (by simp [hr.1]),
       k₁.gpr r (by simp [hr.2])]
   · rw [mt, hm₄]; exact writeW_outside _ _ _ (by omega)
-
-theorem masked_add (m : BitVec 64) (a A b : Nat) : masked m (a + A * b) = masked m a + A * masked m b := by
-  unfold masked; split <;> simp
 
 /-- Words `1 … j` of `[dst] -= 2^64 ([src] & m)`: `V + S = D + 2^(64 j) !c`. -/
 theorem subShRows_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {m : Reg}
@@ -655,9 +631,6 @@ theorem extr59_ok (s : State) (d hi lo : Reg) :
   simp only [List.mem_singleton] at hr
   exact RegUpd.gpr_write_of_ne _ _ _ hr
 
-/-- A word's sign, as a word: all ones if its top bit is set. -/
-def sgnW (x : BitVec 64) : Nat := if 2 ^ 63 ≤ x.toNat then 2 ^ 64 - 1 else 0
-
 /-- `d = ` the sign of `r`, as a mask. -/
 theorem maskOf_ok (s : State) {d r : Reg} (h12 : s.gpr .x12 = 0) (hd : Reg.x12 ≠ d) :
     WP isa (.block (maskOf d r)) s fun t =>
@@ -682,20 +655,6 @@ theorem sgnMask_ok (s : State) (h12 : s.gpr .x12 = 0) :
     WP isa (.block sgnMask) s fun t =>
       (t.gpr .x9).toNat = sgnW (s.gpr .x3) ∧ IsMask (t.gpr .x9) ∧ Keeps [.x9] s t ∧ t.c = s.c :=
   maskOf_ok s h12 (by decide)
-
-/-- Words `0 … j` of `X / 2^59`: from word `j` of `X`, and the next. -/
-theorem shr_arith (j V s t : Nat) (hV : V < 2 ^ (64 * j)) :
-    ((V + 2 ^ (64 * j) * s + 2 ^ (64 * j) * 2 ^ 64 * t) / 2 ^ 59) % (2 ^ (64 * j) * 2 ^ 64) =
-      ((V + 2 ^ (64 * j) * s) / 2 ^ 59) % 2 ^ (64 * j) + 2 ^ (64 * j) * ((s / 2 ^ 59 + 2 ^ 5 * t) % 2 ^ 64) := by
-  generalize 2 ^ (64 * j) = A at *
-  have hA0 : 0 < A := by omega
-  have e1 : A * 2 ^ 64 * t = 2 ^ 59 * (A * (2 ^ 5 * t)) := by
-    rw [show (2 : Nat) ^ 64 = 2 ^ 59 * 2 ^ 5 from rfl, Nat.mul_comm A, Nat.mul_assoc, Nat.mul_assoc,
-      Nat.mul_left_comm A]
-  have e2 : (V + A * s) / A = s := by
-    rw [Nat.add_mul_div_left _ _ hA0, Nat.div_eq_of_lt hV, Nat.zero_add]
-  rw [e1, Nat.add_mul_div_left _ _ (by decide), Nat.mod_mul, Nat.add_mul_mod_self_left,
-    Nat.add_mul_div_left _ _ hA0, Nat.div_div_eq_div_mul, Nat.mul_comm (2 ^ 59), ← Nat.div_div_eq_div_mul, e2]
 
 /-- Words `0 … j - 1` of `[src] >> 59` (`j + 1 ≤ L` words of `[src]`). -/
 theorem shrRows_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {dst src L : Nat}
@@ -740,10 +699,6 @@ theorem shrRows_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size)
     · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
       rw [gt, k₄.gpr r (by simp [hr.2.2]), k₃.gpr r (by simp [hr.2.1]), k₂.gpr r (by simp [hr.1]),
         k₁.gpr r (by simp [hr.1, hr.2.1, hr.2.2])]
-
-/-- `[src]` (`L` words) sign-extended by a word. -/
-def sext (m : Mem) (base : Addr) (src L : Nat) : Nat :=
-  wordsVal m base src L + 2 ^ (64 * L) * sgnW (word m base (src + 8 * (L - 1)))
 
 /-- `[dst] = [src] >> 59`, arithmetic (`L ≥ 1` words). -/
 theorem shr59_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) (h12 : s.gpr .x12 = 0)

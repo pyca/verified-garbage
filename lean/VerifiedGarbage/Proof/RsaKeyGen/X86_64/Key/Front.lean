@@ -95,8 +95,8 @@ theorem order_k {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) :
     exact KF.of_frm hf fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
-      · exact ⟨.arr aPa, by simp, by simp [Rc.range], by simp [Rc.range]⟩
-      · exact ⟨.arr aQa, by simp, by simp [Rc.range], by simp [Rc.range]⟩
+      · exact ⟨.arr aPa, by simp, by simp [Rc.range], by simp only [Rc.range]; omega⟩
+      · exact ⟨.arr aQa, by simp, by simp [Rc.range], by simp only [Rc.range]; omega⟩
   rw [m₂, m₁] at hX hY
   refine ⟨h.step f (all_mut_arrs (js := [aPa, aQa]) (by decide)) ((k₁.trans k₂).trans k₃) (by decide), f, ?_, ?_⟩
   · dsimp only [av]; rw [hX]; split <;> simp_all

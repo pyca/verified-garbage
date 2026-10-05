@@ -107,9 +107,10 @@ theorem implies : (rfcX86_64 Impl.Ecdsa.X86_64.p256.combConsts Spec.Ecdsa.Rfc697
 
 /-- SHA-384, with the implementation `v` of SHA-512's compression function. -/
 def pack (hL : Weierstrass.Law Spec.P256.curve)
-    (hT : Weierstrass.CombOkW Spec.P256.curve 7 37 Impl.P256.p256Comb7 Impl.P256.p256Comb7Start) (v : Compress) :
+    (hT : Weierstrass.CombOkW Spec.P256.curve 7 37 Impl.P256.p256Comb7 Impl.P256.p256Comb7Start)
+    (hI : Weierstrass.X86_64.InvSounds) (v : Compress) :
     RfcHash where
-  R := p256 hL hT
+  R := p256 hL hT hI
   I := Spec.Ecdsa.Rfc6979.P256Sha384.inst
   H := Proof.Pbkdf2.Md.X86_64.Sha512.sha384H v
   ok := Proof.Pbkdf2.Md.X86_64.Sha512.sha384OK v
@@ -129,9 +130,10 @@ def pack (hL : Weierstrass.Law Spec.P256.curve)
   updSp := show (Proof.Pbkdf2.Md.X86_64.Sha512.coreH 48).updC.allInstrs _ = true by decide +kernel
 
 theorem sign_verified (hL : Weierstrass.Law Spec.P256.curve)
-    (hT : Weierstrass.CombOkW Spec.P256.curve 7 37 Impl.P256.p256Comb7 Impl.P256.p256Comb7Start) (v : Compress) :
-    Verified X86_64.target (cfgOf (pack hL hT v)).sign
+    (hT : Weierstrass.CombOkW Spec.P256.curve 7 37 Impl.P256.p256Comb7 Impl.P256.p256Comb7Start)
+    (hI : Weierstrass.X86_64.InvSounds) (v : Compress) :
+    Verified X86_64.target (cfgOf (pack hL hT hI v)).sign
       (Spec.Ecdsa.Rfc6979.P256Sha384.inst.signContract (X86_64.abi.withConsts Impl.Ecdsa.X86_64.p256.combConsts) 240) :=
-  X86_64.sign_verified (pack hL hT v) implies
+  X86_64.sign_verified (pack hL hT hI v) implies
 
 end VG.Proof.Ecdsa.Rfc6979.X86_64.Sha384
