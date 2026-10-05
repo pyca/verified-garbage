@@ -39,7 +39,6 @@ namespace VG.Impl.ChaCha20.X86_64.Stream
 
 open VG.X86_64
 open VG.Impl.ChaCha20.X86_64 (at_ block)
-open VG.Impl.ChaCha20.X86_64.Xor (xorLoop)
 
 /-- The nonce at `rsi`, the constants and the number of bytes left, into
 the state at `rdi`. -/
@@ -77,11 +76,11 @@ def start : List Instr :=
    .mov .rcx (.reg .rax), .alu .sub .rcx (.reg .rdx), .store (at_ .rbx 600) .rcx,
    .alu .and .rax (.imm 63), .alu .cmp .rax (.reg .rdx)]
 
-/-- XORs the `rdx` bytes at `rsi` into the data (`rbp`), and moves past them. -/
+/-- XORs the `rdx` bytes at `rsi` into the data (`rbp`), eight at a time and
+then one at a time (`XorBuf.xorBuf`), and moves past them. -/
 def xorBytes : Prog isa :=
-  .seq (.block [.mov32 .rcx (.imm 0), .alu .test .rdx (.reg .rdx)])
-  (.seq (.ite .e (.block []) xorLoop)
-    (.block [.alu .add .rbp (.reg .rdx), .alu .sub .r12 (.reg .rdx)]))
+  .seq (XorBuf.xorBuf .rbp .rsi)
+    (.block [.alu .add .rbp (.reg .rdx), .alu .sub .r12 (.reg .rdx)])
 
 /-- Everything up to the call of `vg_chacha20_xor`: the bytes left in the
 buffered block, `rdx = min(rax, len)` of them, from `rbx + 128 - rax`; then

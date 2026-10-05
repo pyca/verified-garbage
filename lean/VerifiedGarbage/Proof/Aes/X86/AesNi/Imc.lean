@@ -210,7 +210,7 @@ theorem dKeys_of_imc {s : State} {nr : Nat} {w : List Byte} (hK : Keys nr w s₀
   refine ⟨hK', fun j h1 h2 => ⟨?_, ?_⟩, ⟨?_, fun i hi => ?_⟩⟩
   · rw [hI.rd, hI.wr, ea_at, hI.gpr]; exact in_rd (hs.scrIn (by omega))
   · rw [ea_at, hI.gpr, hI.keys j (hS j h1 h2), st_aesimc]
-    congr 1
+    refine congrArg invMixColumns ?_
     apply st_ext; intro i hi
     rw [getD_st _ hi, ← ea_at, hK.bytes j (by omega) i hi]
     simp [rkState, Vector.getD, hi]

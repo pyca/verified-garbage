@@ -115,7 +115,7 @@ theorem expPhase_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} {N X :
   have hs₂ : ∀ i < 32, i ≠ sI → i ≠ sV → i ≠ sBit → word t₂.mem B (8 * i) = word s.mem B (8 * i) :=
     fun i hi h0 h1 h2 => f₁₂.ep_hdr hi h0 h1 h2
   have hin₂ : InScr B Z s.mem t₂.mem :=
-    InScr.of_frm f₁₂ fun r hr => (expPhaseRanges_le w r hr).trans hZ
+    InScr.of_frm f₁₂ fun r hr => Nat.le_trans (expPhaseRanges_le w r hr) hZ
   have heb₂ := heb.congrK hin₂ (k₁.trans k₂)
   refine WP.seq (WP.mono (expLoop_ok (x := X) (Y := wv t₂.mem B (slot w aY) w) ⟨hg₂, hn₂, hinv₂, rfl⟩ hZ hw hw' hR
     hlt₂ hX₂ rfl (by rw [hY₂]; exact hlt₁) (by rw [hY₂]; exact hY₁)

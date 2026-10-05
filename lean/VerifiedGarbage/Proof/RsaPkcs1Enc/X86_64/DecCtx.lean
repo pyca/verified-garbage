@@ -50,7 +50,7 @@ theorem Safe.sub {s : State} (hp : DPre s) {r : Region} (h : Safe s r) : ∃ R �
   rcases h with h | h | h
   · obtain ⟨h1, _⟩ := scr_len hp
     exact ⟨scrR s, by simp, sub_trans h (Region.sub_prefix h1)⟩
-  · exact ⟨stkR s, by simp, sub_trans h (below_sub s (le_refl _))⟩
+  · exact ⟨stkR s, by simp, sub_trans h (below_sub s (Nat.le_refl _))⟩
   · exact ⟨stkR s, by simp, sub_trans h (frame_sub s (by decide))⟩
 
 /-- A region apart from the stack the function uses and from `scratch` is
@@ -60,7 +60,7 @@ theorem Safe.disj {s : State} (hp : DPre s) {r X : Region} (h : Safe s r) (hk : 
   rcases h with h | h | h
   · obtain ⟨h1, _⟩ := scr_len hp
     exact (hs.sub_left (sub_trans h (Region.sub_prefix h1))).symm
-  · exact (hk.sub_left (sub_trans h (below_sub s (le_refl _)))).symm
+  · exact (hk.sub_left (sub_trans h (below_sub s (Nat.le_refl _)))).symm
   · exact (hk.sub_left (sub_trans h (frame_sub s (by decide)))).symm
 
 /-- Words of the frame below `oI` are apart from what a step writes. -/

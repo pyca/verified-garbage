@@ -43,8 +43,10 @@ def minv (m : Nat) : Nat :=
   (2 ^ 64 - inv) % 2 ^ 64
 
 /-- The working space: the saved registers in bytes `[0, 36)`, then
-slots of `n` words (`slot n i`) from byte 64, then the tables of bits
-(`bitsAt`), then the multiplications' accumulator (`wkAt`). -/
+slots of `n` words (`slot n i`) from byte 64, then the multiplications'
+accumulator (`wkAt`), then the tables of bits (`bitsAt`). Everything but the
+tables is within the 4096 bytes a `ldr` or `str` reaches from `r12`; a
+table is reached from a register (`bitMask`, `bits`). -/
 def slot (n i : Nat) : Nat := 64 + 8 * n * i
 
 /-! Slot numbers. -/
@@ -96,11 +98,12 @@ def FLAG := 44
 /-- The number of slots. -/
 def nslots := 45
 
-/-- The table of the bits of `k` (`j = 0`), `p - 2` (1) and `n - 2` (2). -/
-def bitsAt (n j : Nat) : Nat := slot n nslots + 64 * n * j
+/-- The multiplications' accumulator: after the slots. -/
+def wkAt (n : Nat) : Nat := slot n nslots
 
-/-- The multiplications' accumulator: after the tables. -/
-def wkAt (n : Nat) : Nat := bitsAt n 3
+/-- The table of the bits of `k` (`j = 0`), `p - 2` (1) and `n - 2` (2):
+after the accumulator's `32 n + 8` bytes (`Mont.Arm.accLen`). -/
+def bitsAt (n j : Nat) : Nat := wkAt n + (32 * n + 8) + 64 * n * j
 
 /-- The registers holding the arguments the setup reads: `k`, `d` and the
 hash (the functions built on the signature's code read some of them from the

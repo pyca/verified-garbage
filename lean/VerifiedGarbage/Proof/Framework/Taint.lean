@@ -1,4 +1,5 @@
 import VerifiedGarbage.Proof.Framework.Semantics
+import VerifiedGarbage.Proof.Framework.KernelList
 import Mathlib.Util.CompileInductive
 import Lean.Elab.Tactic.Basic
 import Lean.Meta.Eval
@@ -18,7 +19,7 @@ for a whole program by evaluation (`taint_decide`).
 
 The kernel is a slow evaluator, so `check` does not search for loop
 invariants itself: it is given a `Hint` with every loop's invariant, and the
-analysis at every `seq` and every `chunk` instructions of a block, and only
+analysis at every `seq` and at bounded intervals within a block, and only
 checks that they are sound (`le`). `Taint.hint` computes such a hint by
 running the search in compiled code, and `taint_decide` has the kernel check
 the analysis with it. A wrong hint can only make the check fail.
@@ -62,11 +63,12 @@ structure Taint (M : ISA) where
 
 namespace Taint
 
-/-- Precomputed results of the analysis, for `check`: the taint at every
-`chunk` instructions of a block and between the parts of a `seq`, and every
-loop's invariant. -/
+/-- Precomputed results of the analysis, for `check`: each block's interval and
+intermediate taints, the taint between parts of a `seq`, and loop invariants.
+The checker validates every interval; choosing its size changes no soundness
+requirement. -/
 inductive Hint (T : Type) where
-  | block (mids : List T)
+  | block (mids : List T) (chunkSize : Nat := 256)
   | seq (mid : T) (h₁ h₂ : Hint T)
   | ite (h₁ h₂ : Hint T)
   | loop (inv : T) (h : Hint T)
@@ -83,23 +85,21 @@ compiles it for `hint`. -/
 def checkBlock (τ : A.T) (is : List M.Instr) : Option A.T :=
   List.rec (motive := fun _ => A.T → Option A.T) some (fun i _ ih τ => (A.step τ i).bind ih) is τ
 
-/-- How many instructions of a block `check` analyses between hints. Every
-hint makes the kernel evaluate the whole analysis there, to compare it with the
-hint (`le`), and the kernel checks the hint itself: fewer hints are faster
-(256 rather than 64 takes a third off the check of the fully unrolled SHA-512
-on x86). Between hints the analysis is evaluated lazily, so a block without
-any hints can exhaust the kernel's recursion depth. -/
+/-- The fallback interval, also used by summary and batch checks. Every hint
+requires the kernel to evaluate the analysis and compare it with the hint.
+Larger intervals reduce those checks, but can exhaust the recursion depth in
+some blocks, so `taintDecide` retries this interval if a larger one fails. -/
 def chunk : Nat := 256
 
-/-- The analysis of a block, weakened to `mids` after every `chunk` instructions. -/
-def checkChunks : A.T → List M.Instr → List A.T → Option A.T
+/-- The analysis of a block, weakened to `mids` after every `chunkSize` instructions. -/
+def checkChunks (chunkSize : Nat) : A.T → List M.Instr → List A.T → Option A.T
   | τ, is, [] => A.checkBlock τ is
-  | τ, is, m :: ms => (A.checkBlock τ (is.take chunk)).bind fun τ' =>
-    if A.le m τ' then checkChunks m (is.drop chunk) ms else none
+  | τ, is, m :: ms => (A.checkBlock τ (KList.take chunkSize is)).bind fun τ' =>
+    if A.le m τ' then checkChunks chunkSize m (KList.drop chunkSize is) ms else none
 
 /-- The analysis of structured code, given a hint. -/
 def check : A.T → Prog M → Hint A.T → Option A.T
-  | τ, .block is, .block ms => checkChunks A τ is ms
+  | τ, .block is, .block ms chunkSize => checkChunks A chunkSize τ is ms
   | τ, .seq c₁ c₂, .seq mid h₁ h₂ =>
     (check τ c₁ h₁).bind fun τ' => if A.le mid τ' then check mid c₂ h₂ else none
   | τ, .ite c t e, .ite h₁ h₂ =>
@@ -119,13 +119,13 @@ def check : A.T → Prog M → Hint A.T → Option A.T
 
 Nothing here needs to be sound: `check` checks the hint. -/
 
-/-- The hints for a block: the analysis after every `chunk` instructions but the last. -/
-def chunkHints : A.T → List M.Instr → Nat → List A.T
+/-- The hints for a block: the analysis after every `chunkSize` instructions but the last. -/
+def chunkHints (chunkSize : Nat) : A.T → List M.Instr → Nat → List A.T
   | _, _, 0 => []
   | τ, is, n + 1 =>
-    if is.length ≤ chunk then [] else
-    match A.checkBlock τ (is.take chunk) with
-    | some τ' => τ' :: chunkHints τ' (is.drop chunk) n
+    if is.length ≤ chunkSize then [] else
+    match A.checkBlock τ (is.take chunkSize) with
+    | some τ' => τ' :: chunkHints chunkSize τ' (is.drop chunkSize) n
     | none => []
 
 /-- How many times the search for a loop invariant weakens its candidate. -/
@@ -136,17 +136,17 @@ found by starting from the taint on entry and, while the body does not keep
 public everything the candidate says is public (or leaves the loop condition
 secret), weakening the candidate to what is public both before and after the
 body. -/
-def hint : A.T → Prog M → Option (A.T × Hint A.T)
-  | τ, .block is => (A.checkBlock τ is).map fun τ' => (τ', .block (chunkHints A τ is is.length))
+def hint (chunkSize : Nat) : A.T → Prog M → Option (A.T × Hint A.T)
+  | τ, .block is => (A.checkBlock τ is).map fun τ' => (τ', .block (chunkHints A chunkSize τ is is.length) chunkSize)
   | τ, .seq c₁ c₂ =>
-    (hint τ c₁).bind fun (τ₁, h₁) => (hint τ₁ c₂).map fun (τ₂, h₂) => (τ₂, .seq τ₁ h₁ h₂)
+    (hint chunkSize τ c₁).bind fun (τ₁, h₁) => (hint chunkSize τ₁ c₂).map fun (τ₂, h₂) => (τ₂, .seq τ₁ h₁ h₂)
   | τ, .ite _ t e =>
-    (hint τ t).bind fun (τ₁, h₁) => (hint τ e).map fun (τ₂, h₂) => (A.meet τ₁ τ₂, .ite h₁ h₂)
-  | τ, .loop body c => go c (hint · body) loopFuel τ
+    (hint chunkSize τ t).bind fun (τ₁, h₁) => (hint chunkSize τ e).map fun (τ₂, h₂) => (A.meet τ₁ τ₂, .ite h₁ h₂)
+  | τ, .loop body c => go c (hint chunkSize · body) loopFuel τ
   | τ, .call _ body =>
-    (A.call τ).bind fun τ₁ => (hint τ₁ body).bind fun (τ₂, h) => (A.ret τ₂).map (·, .call h)
+    (A.call τ).bind fun τ₁ => (hint chunkSize τ₁ body).bind fun (τ₂, h) => (A.ret τ₂).map (·, .call h)
   | τ, .frame i body j =>
-    (A.push τ i).bind fun τ₁ => (hint τ₁ body).bind fun (τ₂, h) => (A.pop τ₂ j).map (·, .frame h)
+    (A.push τ i).bind fun τ₁ => (hint chunkSize τ₁ body).bind fun (τ₂, h) => (A.pop τ₂ j).map (·, .frame h)
 where
   go (c : M.Cond) (body : A.T → Option (A.T × Hint A.T)) :
       Nat → A.T → Option (A.T × Hint A.T)
@@ -155,7 +155,11 @@ where
       if A.le σ σ' && A.condPub σ' c then some (σ', .loop σ h) else go c body n (A.meet σ σ')
 
 /-- The hint for `c` from `τ` (any hint, if the analysis fails). -/
-def hintOf (τ : A.T) (c : Prog M) : Hint A.T := ((hint A τ c).map (·.2)).getD (.block [])
+def hintOfSize (chunkSize : Nat) (τ : A.T) (c : Prog M) : Hint A.T :=
+  ((hint A chunkSize τ c).map (·.2)).getD (.block [] chunkSize)
+
+/-- A hint using the fallback interval, for summary and batch callers. -/
+def hintOf (τ : A.T) (c : Prog M) : Hint A.T := hintOfSize A chunk τ c
 
 /-! ## Soundness -/
 
@@ -195,18 +199,18 @@ theorem execBlock_split {is : List M.Instr} {s s' : M.State} {t : List Leak} (n 
   obtain ⟨⟨s₁, u₁⟩, e₁, ⟨s₂, u₂⟩, e₂, rfl, rfl⟩ := e
   exact ⟨s₁, u₁, u₂, e₁, e₂, rfl⟩
 
-theorem checkChunks_sound {ms : List A.T} {is : List M.Instr} {τ τ' : A.T}
-    {s₁ s₂ s₁' s₂' : M.State} {t₁ t₂ : List Leak} (h : A.checkChunks τ is ms = some τ')
+theorem checkChunks_sound {chunkSize : Nat} {ms : List A.T} {is : List M.Instr} {τ τ' : A.T}
+    {s₁ s₂ s₁' s₂' : M.State} {t₁ t₂ : List Leak} (h : A.checkChunks chunkSize τ is ms = some τ')
     (ha : A.Agree τ s₁ s₂) (e₁ : execBlock M is s₁ = some (s₁', t₁))
     (e₂ : execBlock M is s₂ = some (s₂', t₂)) : t₁ = t₂ ∧ A.Agree τ' s₁' s₂' := by
   induction ms generalizing τ is s₁ s₂ t₁ t₂ with
   | nil => exact checkBlock_sound h ha e₁ e₂
   | cons m ms ih =>
-    simp only [checkChunks, Option.bind_eq_some_iff] at h
+    simp only [checkChunks, KList.take_eq, KList.drop_eq, Option.bind_eq_some_iff] at h
     obtain ⟨τ₁, h₁, h₂⟩ := h
     split at h₂ <;> [rename_i hle; cases h₂]
-    obtain ⟨_, _, _, a₁, b₁, rfl⟩ := execBlock_split chunk e₁
-    obtain ⟨_, _, _, a₂, b₂, rfl⟩ := execBlock_split chunk e₂
+    obtain ⟨_, _, _, a₁, b₁, rfl⟩ := execBlock_split chunkSize e₁
+    obtain ⟨_, _, _, a₂, b₂, rfl⟩ := execBlock_split chunkSize e₂
     obtain ⟨rfl, ha₁⟩ := checkBlock_sound h₁ ha a₁ a₂
     obtain ⟨rfl, ha₂⟩ := ih h₂ (A.le_sound hle ha₁) b₁ b₂
     exact ⟨rfl, ha₂⟩
@@ -219,8 +223,8 @@ theorem check_sound {c : Prog M} {τ τ' : A.T} {hc : Hint A.T} {s₁ s₂ s₁'
   induction e₁ generalizing τ τ' hc s₂ t₂ s₂' with
   | block h₁ =>
     cases hc with
-    | block ms =>
-      have h : A.checkChunks τ _ ms = some τ' := h
+    | block ms chunkSize =>
+      have h : A.checkChunks chunkSize τ _ ms = some τ' := h
       cases e₂ with
       | block h₂ => exact checkChunks_sound h ha h₁ h₂
     | _ => have h' : (none : Option A.T) = some τ' := h; cases h'
@@ -349,7 +353,7 @@ theorem constantTime {Pre : M.State → Prop} {Pub : M.State → M.State → Pro
 
 /-- Apply `f` to every taint of a hint. -/
 def Hint.map {T U : Type} (f : T → U) : Hint T → Hint U
-  | .block ms => .block (ms.map f)
+  | .block ms chunkSize => .block (ms.map f) chunkSize
   | .seq m h₁ h₂ => .seq (f m) (h₁.map f) (h₂.map f)
   | .ite h₁ h₂ => .ite (h₁.map f) (h₂.map f)
   | .loop i h => .loop (f i) (h.map f)
@@ -360,7 +364,7 @@ end Taint
 
 open Lean Meta Elab Tactic in
 /-- `taint_decide`, with the taints of the hint weakened by `w`, if given. -/
-def taintDecide (name : String) (w : Option Term) : TacticM Unit := do
+def taintDecideAt (chunkSize : Nat) (name : String) (w : Option Term) : TacticM Unit := do
   let g ← getMainGoal
   let some (_, lhs, _) := (← instantiateMVars (← g.getType)).eq?
     | throwError "{name}: the goal is not an equation about `Taint.check A τ c h`"
@@ -371,7 +375,7 @@ def taintDecide (name : String) (w : Option Term) : TacticM Unit := do
   let tT ← whnfD (mkApp2 (mkConst ``Taint.T) m a)
   let hty := mkApp (mkConst ``Taint.Hint) tT
   let inst ← synthInstance (mkApp (mkConst ``ToExpr [0]) hty)
-  let mut hint := mkApp4 (mkConst ``Taint.hintOf) m a τ c
+  let mut hint := mkApp5 (mkConst ``Taint.hintOfSize) m a (mkNatLit chunkSize) τ c
   if let some w := w then
     unless h.isMVar do throwError "{name}: the hint is already given"
     let wv ← Term.elabTermEnsuringType w (← mkArrow tT tT)
@@ -381,6 +385,17 @@ def taintDecide (name : String) (w : Option Term) : TacticM Unit := do
   if h.isMVar then h.mvarId!.assign hv
   -- The kernel evaluates the literal of any code that has one (`materialize_code`).
   evalTactic (← `(tactic| lit_decide))
+
+open Lean Elab Tactic in
+/-- Try larger hint intervals, retaining the original bounded check as a fallback. -/
+def taintDecide (name : String) (w : Option Term) : TacticM Unit := do
+  let saved ← saveState
+  try
+    taintDecideAt 1024 name w
+  catch _ =>
+    -- Discard the failed attempt's hint assignment before constructing another.
+    saved.restore
+    taintDecideAt Taint.chunk name w
 
 /-- Proves `(Taint.check A τ c ?hint).isSome = true`, or any decidable
 equation whose left side contains `Taint.check A τ c ?hint` (e.g. a property of
@@ -394,7 +409,7 @@ elab "taint_decide" : tactic => taintDecide "taint_decide" none
 (computed in compiled code, like the hint).
 
 `Taint.check` accepts any hint whose taints are at most what the analysis
-computes (`le`): at every `chunk` instructions of a block, between the parts
+computes (`le`): at every `chunkSize` instructions of a block, between the parts
 of a `seq` and at every loop, the analysis continues from the hint's taint.
 So a hint may forget public facts that the rest of the code never uses. The
 kernel is a slow evaluator, and the cost of each instruction grows with the

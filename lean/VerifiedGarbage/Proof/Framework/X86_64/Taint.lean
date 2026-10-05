@@ -1806,54 +1806,63 @@ def storeSlotsKD (τ : T) (m : MemOp) (w : Nat) (p : Bool) : List (Nat × Nat ×
 def storeStepKD (τ : T) (m : MemOp) (w : Nat) (p : Bool) : Option T :=
   bif memPub τ m then some { τ with slots := storeSlotsKD τ m w p } else none
 
-/-- `stepK`, with stores that do not repeat a slot (written out, rather than
-calling `stepK`, so that the kernel matches on the instruction once). -/
-def stepKD (τ : T) : Instr → Option T
-  | .mov d src =>
+/-- An instruction transfer function, independent of the incoming taint. -/
+structure Step where
+  run : T → Option T
+
+/-- Classify an instruction before substituting its incoming taint, so the
+kernel can share the classification between checks from different taints.
+Stores retain the duplicate-slot optimization of `storeStepKD`. -/
+def stepKDFn : Instr → Step
+  | .mov d src => ⟨fun τ =>
     bif srcOkK τ src then
       some { τ with
         regs := setK τ d (srcPub τ src || loadPubK τ 8 src), bases := movBasesK τ d src, lo := .empty }
-    else none
-  | .mov32 d src =>
+    else none⟩
+  | .mov32 d src => ⟨fun τ =>
     bif srcOkK τ src then
       some { τ with
         regs := setK τ d (srcPub τ src || loadPubK τ 4 src || loPub τ src), bases := killK τ d, lo := .empty }
-    else none
-  | .store m r => storeStepKD τ m 8 (pub τ r)
-  | .store32 m r => storeStepKD τ m 4 (pub τ r)
-  | .store8 m r => storeStepKD τ m 1 (pub τ r)
-  | .alu op d src => aluStepK τ op d src true
-  | .alu32 op d src => aluStepK τ op d src false
-  | .shift32 _ d _ | .shift _ d _ =>
-    some { τ with flags := τ.flags && pub τ d, bases := killK τ d, lo := .empty }
-  | .bswap32 d | .bswap d => some { τ with bases := killK τ d, lo := .empty }
-  | .rorx32 d r _ | .rorx d r _ =>
-    some { τ with regs := setK τ d (pub τ r), bases := killK τ d, lo := .empty }
-  | .andn32 d a b | .andn d a b =>
+    else none⟩
+  | .store m r => ⟨fun τ => storeStepKD τ m 8 (pub τ r)⟩
+  | .store32 m r => ⟨fun τ => storeStepKD τ m 4 (pub τ r)⟩
+  | .store8 m r => ⟨fun τ => storeStepKD τ m 1 (pub τ r)⟩
+  | .alu op d src => ⟨fun τ => aluStepK τ op d src true⟩
+  | .alu32 op d src => ⟨fun τ => aluStepK τ op d src false⟩
+  | .shift32 _ d _ | .shift _ d _ => ⟨fun τ =>
+    some { τ with flags := τ.flags && pub τ d, bases := killK τ d, lo := .empty }⟩
+  | .bswap32 d | .bswap d => ⟨fun τ => some { τ with bases := killK τ d, lo := .empty }⟩
+  | .rorx32 d r _ | .rorx d r _ => ⟨fun τ =>
+    some { τ with regs := setK τ d (pub τ r), bases := killK τ d, lo := .empty }⟩
+  | .andn32 d a b | .andn d a b => ⟨fun τ =>
     let p := pub τ a && pub τ b
-    some { τ with regs := setK τ d p, flags := p, bases := killK τ d, lo := .empty }
-  | .movImm64 d _ => some { τ with regs := setK τ d true, bases := killK τ d, lo := .empty }
-  | .leaSym d _ => some { τ with regs := setK τ d false, bases := killK τ d, lo := .empty }
-  | .movzx8 d m =>
-    bif memPub τ m then some { τ with regs := setK τ d false, bases := killK τ d, lo := .empty } else none
-  | .vpmovmskb _ d _ => some { τ with regs := setK τ d false, bases := killK τ d, lo := .empty }
-  | .movdquLoad _ m => bif memPub τ m then some τ else none
-  | .movdquStore m _ => storeStepK τ m 16 false
-  | .xop _ | .vop _ => some τ
-  | .vmovdquLoad _ _ m | .vbroadcasti128 _ m => bif memPub τ m then some τ else none
-  | .vmovdquStore .l128 m _ => storeStepK τ m 16 false
-  | .vmovdquStore .l256 m _ => storeStepK τ m 32 false
-  | .zop _ => some τ
-  | .vmovdqu32Load _ m | .vbroadcasti32x4 _ m | .zbcst _ _ _ m | .vpmadd52Load _ _ _ m =>
-    bif memPub τ m then some τ else none
-  | .vmovdqu32Store m _ => storeStepK τ m 64 false
-  | .stmxcsr m => storeStepK τ m 4 false
-  | .ldmxcsr m => bif memPub τ m then some τ else none
-  | .lfence => some τ
-  | .mul r => some (mulStep τ r)
-  | .mulx hi lo src => bif srcOkK τ src then some (mulxStepK τ hi lo src) else none
-  | .adcx d src | .adox d src => adxStepK τ d src
-  | .push _ | .pop .. | .alloc _ | .free _ => none
+    some { τ with regs := setK τ d p, flags := p, bases := killK τ d, lo := .empty }⟩
+  | .movImm64 d _ => ⟨fun τ => some { τ with regs := setK τ d true, bases := killK τ d, lo := .empty }⟩
+  | .leaSym d _ => ⟨fun τ => some { τ with regs := setK τ d false, bases := killK τ d, lo := .empty }⟩
+  | .movzx8 d m => ⟨fun τ =>
+    bif memPub τ m then some { τ with regs := setK τ d false, bases := killK τ d, lo := .empty } else none⟩
+  | .vpmovmskb _ d _ => ⟨fun τ => some { τ with regs := setK τ d false, bases := killK τ d, lo := .empty }⟩
+  | .movdquLoad _ m => ⟨fun τ => bif memPub τ m then some τ else none⟩
+  | .movdquStore m _ => ⟨fun τ => storeStepK τ m 16 false⟩
+  | .xop _ | .vop _ => ⟨fun τ => some τ⟩
+  | .vmovdquLoad _ _ m | .vbroadcasti128 _ m => ⟨fun τ => bif memPub τ m then some τ else none⟩
+  | .vmovdquStore .l128 m _ => ⟨fun τ => storeStepK τ m 16 false⟩
+  | .vmovdquStore .l256 m _ => ⟨fun τ => storeStepK τ m 32 false⟩
+  | .zop _ => ⟨fun τ => some τ⟩
+  | .vmovdqu32Load _ m | .vbroadcasti32x4 _ m | .zbcst _ _ _ m | .vpmadd52Load _ _ _ m => ⟨fun τ =>
+    bif memPub τ m then some τ else none⟩
+  | .vmovdqu32Store m _ => ⟨fun τ => storeStepK τ m 64 false⟩
+  | .stmxcsr m => ⟨fun τ => storeStepK τ m 4 false⟩
+  | .ldmxcsr m => ⟨fun τ => bif memPub τ m then some τ else none⟩
+  | .lfence => ⟨fun τ => some τ⟩
+  | .mul r => ⟨fun τ => some (mulStep τ r)⟩
+  | .mulx hi lo src => ⟨fun τ => bif srcOkK τ src then some (mulxStepK τ hi lo src) else none⟩
+  | .adcx d src | .adox d src => ⟨fun τ => adxStepK τ d src⟩
+  | .push _ | .pop .. | .alloc _ | .free _ => ⟨fun _ => none⟩
+
+/-- Apply the preclassified instruction to the incoming taint. -/
+def stepKD (τ : T) (i : Instr) : Option T := (stepKDFn i).run τ
+
 
 /-- The same taints, but for repeated slots. -/
 structure Sim (a b : T) : Prop where

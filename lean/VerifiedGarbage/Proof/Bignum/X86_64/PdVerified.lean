@@ -2,12 +2,11 @@ import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
 import VerifiedGarbage.Proof.Bignum.X86_64.PubVerified
 
 /-!
-# `vg_rsa_public_precomputed` on x86-64: verified against the shared contract
+# RSAEP from precomputed values on x86-64: helpers for the shared contracts
 
-`pdContract` states the shared contract on the registers and the stack
-(`precomputed_implies`); with correctness (`pdCode_correct`) and constant
-time (`pdCode_constantTime`), `Precomputed.code` is verified
-(`precomputed_verified`).
+What the proofs of `pdContract`'s callers against their shared contracts
+(`vg_rsa_public_precomputed_checked`'s, `PubChecked.lean`) share: a state
+meeting `pdContract.pre`, and the leak of `pre` and `e`.
 -/
 
 namespace VG.Proof.Bignum.X86_64
@@ -34,37 +33,7 @@ length is the same. -/
 theorem leak_eq2 {a c : List (BitVec 64)} {b d : List Byte} (hl : a.length = c.length)
     (h : a.map (·.toNat) ++ b.map (·.toNat) = c.map (·.toNat) ++ d.map (·.toNat)) : a = c ∧ b = d := by
   obtain ⟨h1, h2⟩ := List.append_inj h (by simp [hl])
-  exact ⟨List.map_injective_iff.2 (fun _ _ h => BitVec.toNat_inj.1 h) h1,
-    List.map_injective_iff.2 (fun _ _ h => BitVec.toNat_inj.1 h) h2⟩
-
-theorem precomputed_implies : pdContract.Implies (Spec.Rsa.publicPrecomputedContract abi) where
-  pre := by
-    intro s h
-    -- Twice: the stack arguments' list evaluates only on the second pass.
-    sig_pre [Spec.Rsa.publicPrecomputedContract, Spec.Rsa.publicPrecomputedSig, abi, argRegs, pdContract, stackArgs_four, List.append_eq] at h
-    sig_pre [Spec.Rsa.publicPrecomputedContract, Spec.Rsa.publicPrecomputedSig, abi, argRegs, pdContract, stackArgs_four, List.append_eq] at h
-    sig_split h
-    sig_reduce [Spec.Rsa.publicPrecomputedContract, Spec.Rsa.publicPrecomputedSig, abi, argRegs, pdContract, stackArgs_four, List.append_eq]
-    sig_and_intros
-    sig_close
-    all_goals with_reducible assumption
-  post := by sig_implies_post [Spec.Rsa.publicPrecomputedContract, Spec.Rsa.publicPrecomputedSig, abi, argRegs, pdContract, stackArgs_four, List.append_eq]
-  pub := by
-    rintro s₁ s₂ - - h
-    sig_pub [Spec.Rsa.publicPrecomputedContract, Spec.Rsa.publicPrecomputedSig, abi, argRegs, pdContract, stackArgs_four, List.append_eq] at h
-    simp only [List.getD_cons_succ, List.getD_cons_zero] at h
-    obtain ⟨hsp, hl, hdi, hsi, hdx, hcx, h8, h9, a0, a1, a2, a3⟩ := h
-    obtain ⟨hw, he⟩ := leak_eq2 (by simp [Spec.Rsa.wordsAt, hcx]) hl
-    refine ⟨?_, a0, a1, a2, a3, hw, he⟩
-    simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]
-    exact ⟨hdi, hsi, hdx, hcx, h8, h9, hsp⟩
-  sat := by sig_implies_sat [Spec.Rsa.publicPrecomputedContract, Spec.Rsa.publicPrecomputedSig, abi, argRegs, pdContract, stackArgs_four, List.append_eq] [pdSatState, stackArg, stackArgAddr, Mem.readW, Mem.read] using pdSatState
-
-/-- `vg_rsa_public_precomputed` with Montgomery multiplication `M`, given
-that its code never loads MXCSR (which the registration file evaluates). -/
-theorem precomputed_verified (M : Mont)
-    (hmx : (Precomputed.code M.mm).allInstrs (fun i => !loadsMxcsr i) = true) :
-    Verified target (Precomputed.code M.mm) (Spec.Rsa.publicPrecomputedContract abi) :=
-  Verified.of_correct (pdCode_correct M hmx) pdCode_constantTime precomputed_implies
+  exact ⟨(List.map_inj_right (fun _ _ h => BitVec.toNat_inj.1 h)).1 h1,
+    (List.map_inj_right (fun _ _ h => BitVec.toNat_inj.1 h)).1 h2⟩
 
 end VG.Proof.Bignum.X86_64

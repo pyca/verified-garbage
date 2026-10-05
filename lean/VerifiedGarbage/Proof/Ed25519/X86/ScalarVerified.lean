@@ -110,8 +110,9 @@ theorem scalarReduce_verified : Verified X86.target scalarReduce (Spec.Ed25519.s
   · intro s h a n ⟨r, hr, hc⟩
     rw [h.1, h.2.1]
     refine ⟨r, ?_, hc⟩
-    simpa only [scalarReduceRd, scalarReduceWr, List.mem_append, List.mem_cons, List.not_mem_nil,
-      or_false, or_assoc, or_left_comm, or_comm] using hr
+    simp only [scalarReduceRd, scalarReduceWr, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hr
+    simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false]
+    rcases hr with (rfl | rfl) | rfl | rfl <;> simp only [true_or, or_true]
   · intro s h a n ⟨r, hr, hc⟩
     rw [h.2.1]
     refine ⟨r, ?_, hc⟩
