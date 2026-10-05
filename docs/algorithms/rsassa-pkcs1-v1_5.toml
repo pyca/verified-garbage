@@ -1,5 +1,5 @@
 name = "RSASSA-PKCS1-v1_5"
-family = "Signatures"
+family = "RSA"
 specs = ["Rsa", "RsaPkcs1Sig"]
 modules = ["src/rsa_pkcs1_sig.rs"]
 asm = ["rsa", "rsa_pkcs1_sig"]

@@ -88,7 +88,7 @@ globs = ["VerifiedGarbage.Spec.Sha1", "VerifiedGarbage.Spec.Sha256",
   "VerifiedGarbage.Spec.Ecdsa", "VerifiedGarbage.Spec.Dsa", "VerifiedGarbage.Spec.EcKey",
   "VerifiedGarbage.Spec.Ecdh", "VerifiedGarbage.Spec.Ecdsa.Rfc6979", "VerifiedGarbage.Spec.Ecdsa.Verify",
   "VerifiedGarbage.Spec.Rsa", "VerifiedGarbage.Spec.RsaKeyGen", "VerifiedGarbage.Spec.Ed448",
-  "VerifiedGarbage.Spec.RsaPkcs1Enc"]
+  "VerifiedGarbage.Spec.RsaPkcs1Enc", "VerifiedGarbage.Spec.Mgf1", "VerifiedGarbage.Spec.RsaPss"]
 precompileModules = true
 
 # The project's tactics, which run in most modules: the evaluator of

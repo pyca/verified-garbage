@@ -1,5 +1,5 @@
 name = "RSA"
-family = "Signatures"
+family = "RSA"
 specs = ["Rsa"]
 modules = ["src/rsa.rs"]
 asm = ["rsa"]
