@@ -46,7 +46,8 @@ def artifacts : List Artifact := [
     target := X86_64.target
     doc := Spec.ChaCha20.xorApi.doc
       (notes := ["Uses AVX-512: sixteen blocks at a time while at least 1024 bytes remain, then \
-        `vg_chacha20_xor` for the rest."])
+        at most two computations of eight or four blocks, four to a set of `zmm` registers, for \
+        the rest, or `vg_chacha20_xor` for at most 64 bytes."])
     code := Impl.ChaCha20.X86_64.Avx512.xor
     contract := Spec.ChaCha20.xorContract X86_64.abi 16
     writeArgs := true
