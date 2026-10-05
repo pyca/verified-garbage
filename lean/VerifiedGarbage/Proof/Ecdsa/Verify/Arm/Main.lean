@@ -41,7 +41,7 @@ but the working space. -/
 structure VKeep (s₀ s' : State) : Prop where
   saved : ∀ rd ∈ Cfg.saved, s'.gpr rd.1 = s₀.gpr rd.1
   sp : s'.sp = s₀.sp
-  frame : Unch (ptr s₀ .r3) [(0, size)] s₀.mem s'.mem
+  frame : Unch (ptr s₀ .r3) [(0, 8192)] s₀.mem s'.mem
 
 /-- What the slots of `a`, `3b` and `G` stand for. -/
 theorem consts_tmv (hc : CfgOk c) {base : Addr} {g : Reg → BitVec 32} {s : State}

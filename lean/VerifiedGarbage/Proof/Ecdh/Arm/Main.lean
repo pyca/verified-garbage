@@ -43,7 +43,7 @@ theorem ecFinish_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base si
       (∀ rd ∈ Cfg.saved, s'.gpr rd.1 = g rd.1) ∧
       Rest [.r0, .r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .lr] s s' ∧
       Outside (State.addr o32) 0 (8 * c.n) s.mem s'.mem := by
-  have h7 := hc.n7
+  have h7 := hc.n10
   have hn := hs.nowrap
   have hsz : size = 4096 := rfl
   have hn0 := hc.n0
@@ -110,7 +110,7 @@ changed only the working space since `s₀`, with `out` in `lr`. -/
 theorem middle_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State} (hs : Scr s base size)
     (F : Fixed c base s₀.gpr s.mem) (hacc : sv c base s ACC < c.C.p)
     {V : Prop} [Decidable V] (hflag : flagW c base s = mask32 V)
-    (hwhole : Unch base [(0, size)] s₀.mem s.mem) (hrest : Rest (.lr :: work) s₀ s) (hlr : s.gpr .lr = s₀.gpr .r0)
+    (hwhole : Unch base [(0, 8192)] s₀.mem s.mem) (hrest : Rest (.lr :: work) s₀ s) (hlr : s.gpr .lr = s₀.gpr .r0)
     (hofit : (s₀.gpr .r0).toNat + 8 * c.n ≤ 2 ^ 32)
     (hw : (⟨ptr s₀ .r0, 8 * c.n⟩ : Region) ∈ s₀.wr) (hd : Region.Disjoint ⟨ptr s₀ .r0, 8 * c.n⟩ ⟨base, size⟩) :
     WP isa (Impl.Ecdh.Arm.Cfg.middle c) s fun s' => ∃ xv, xv < c.C.p ∧
@@ -120,9 +120,9 @@ theorem middle_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State} (hs : 
         (if ok c base s V then toBytes (8 * c.n) xv else List.replicate (8 * c.n) 0) ∧
       s'.gpr .r0 = (if ok c base s V then 1 else 0) ∧
       (∀ rd ∈ Cfg.saved, s'.gpr rd.1 = s₀.gpr rd.1) ∧ s'.sp = s₀.sp ∧
-      ∃ m, Unch base [(0, size)] s₀.mem m ∧ Outside (ptr s₀ .r0) 0 (8 * c.n) m s'.mem := by
+      ∃ m, Unch base [(0, 8192)] s₀.mem m ∧ Outside (ptr s₀ .r0) 0 (8 * c.n) m s'.mem := by
   have h0 := hc.n0
-  have h7 := hc.n7
+  have h7 := hc.n10
   have hn := hs.nowrap
   have hpR := unitMod_pow_two hc.p_odd (64 * c.n)
   have hp3 := hc.p_ge
@@ -168,7 +168,7 @@ theorem middle_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State} (hs : 
     rw [f₆, f₅, flagW, flag_unch U₂ h7 h0 hn (by decide), ← flagW, hflag,
       sv_flag O₅ h0 h7 hn (i := RZ) (by decide) (by decide), hMN, z₂, d₂, mask32_and, mask32_and]
     simp only [mask32, decide_eq_true_eq]
-  have W₆ : Unch base [(0, size)] s₀.mem s₆.mem :=
+  have W₆ : Unch base [(0, 8192)] s₀.mem s₆.mem :=
     whole_of (whole_of (whole_of hwhole U₂ (slWk_le h7 (by decide))) O₅.unch (flag_le h0 h7))
       O₆.unch (flag_le h0 h7)
   have K₆ : Rest work s s₆ :=
@@ -223,7 +223,7 @@ structure EPre (c : Cfg) (s : State) : Prop where
   peer_fit : (s.gpr .r2).toNat + (1 + 16 * c.n) ≤ 2 ^ 32
   sc_fit : (s.gpr .r3).toNat + 8192 ≤ 2 ^ 32
 
-theorem EPre.setup {s : State} (hp : EPre c s) (h7 : c.n < 7) : SetupPre c Args.ecdh s where
+theorem EPre.setup {s : State} (hp : EPre c s) (h7 : c.n < 10) : SetupPre c Args.ecdh s where
   args := by unfold argsOk; decide
   sc_in := fun h => nomatch h
   wr := by show (⟨ptr s .r3, 8192⟩ : Region) ∈ s.wr; rw [hp.wr]; simp
@@ -253,7 +253,7 @@ memory but the working space and `out`. -/
 structure EKeep (c : Cfg) (s₀ s' : State) : Prop where
   saved : ∀ rd ∈ Cfg.saved, s'.gpr rd.1 = s₀.gpr rd.1
   sp : s'.sp = s₀.sp
-  frame : ∃ m : Mem, Unch (ptr s₀ .r3) [(0, size)] s₀.mem m ∧ Outside (ptr s₀ .r0) 0 (8 * c.n) m s'.mem
+  frame : ∃ m : Mem, Unch (ptr s₀ .r3) [(0, 8192)] s₀.mem m ∧ Outside (ptr s₀ .r0) 0 (8 * c.n) m s'.mem
 
 /-- The point the ladder multiplies: the peer's, if its key is valid as the
 code checks it, else `G`. -/
@@ -306,22 +306,21 @@ the callee-saved registers. -/
 theorem exchange_ok (hc : CfgOk c) (hC : Law c.C) {s₀ : State} (hp : EPre c s₀) :
     WP isa (Impl.Ecdh.Arm.Cfg.exchange c) s₀ fun s' => EKeep c s₀ s' ∧ EPost c s₀ s' := by
   have h0 := hc.n0
-  have h7 := hc.n7
+  have h7 := hc.n10
   have hpR := unitMod_pow_two hc.p_odd (64 * c.n)
   have hp3 := hc.p_ge
   rw [exchange_eq']
   refine WP.seq (stage₁ hc (hp.setup h7) fun s₂ S₂ => WP.block_nil ?_)
   replace S₂ : St₁ c Args.ecdh s₀ (ptr s₀ .r3) s₂ := S₂
   have hn := S₂.scr.nowrap
-  have W₂ : Outside (ptr s₀ .r3) 0 size s₀.mem s₂.mem :=
+  have W₂ : Outside (ptr s₀ .r3) 0 8192 s₀.mem s₂.mem :=
     S₂.whole.outside fun w hw => by rw [List.mem_singleton.mp hw]; exact ⟨Nat.le_refl _, Nat.le_refl _⟩
   have hq₂ : s₂.gpr .r2 = s₀.gpr .r2 := S₂.args .r2 (by simp)
-  have hpsc : Region.Disjoint ⟨ptr s₀ .r2, 1 + 16 * c.n⟩ ⟨ptr s₀ .r3, size⟩ :=
-    hp.peer_sc.sub_right (Region.sub_prefix (by decide))
+  have hpsc : Region.Disjoint ⟨ptr s₀ .r2, 1 + 16 * c.n⟩ ⟨ptr s₀ .r3, 8192⟩ := hp.peer_sc
   -- The peer's key.
   refine WP.seq (WP.mono (peer_ok hc S₂.scr (q := .r2) (by decide) (by decide)
     (by rw [hq₂]; exact hp.peer_fit) (by rw [hq₂, S₂.rest.rd, S₂.rest.wr, hp.rd]; simp)
-    (by rw [hq₂]; exact hpsc) S₂.fixed.mp) fun s₃ ⟨hs₃, k₃, U₃, r2₃, bp₃, x₃, y₃, f₃⟩ => ?_)
+    (by rw [hq₂]; exact hpsc.sub_right (Region.sub_prefix (by decide))) S₂.fixed.mp) fun s₃ ⟨hs₃, k₃, U₃, r2₃, bp₃, x₃, y₃, f₃⟩ => ?_)
   rw [hq₂] at x₃ y₃ f₃
   have F₃ := S₂.fixed.unch h7 hn ((fixedOk_slW (l := [R2P, BP, E, QY]) (by decide)).append fixedOk_flag) U₃
   have e₃ : ∀ {i}, i < 45 → i ∉ [R2P, BP, E, QY] → i ≠ FLAG →
@@ -345,7 +344,7 @@ theorem exchange_ok (hc : CfgOk c) (hC : Law c.C) {s₀ : State} (hp : EPre c s�
   have t₄ : ∀ {j}, j < 3 → ∀ t < 64 * c.n,
       s₄.mem (off (ptr s₀ .r3) (bitsAt c.n j + t)) = s₂.mem (off (ptr s₀ .r3) (bitsAt c.n j + t)) :=
     fun hj t ht => by
-      rw [tbl_unch U₄ h7 hj ht (apart_append (tbl_apart_slWk (by decide) hj ht) (tbl_apart_flag h0 _ t)),
+      rw [tbl_unch U₄ h7 hj ht (apart_append (tbl_apart_slWk (by decide)) (tbl_apart_flag h0 _ t)),
         tbl_unch U₃ h7 hj ht (apart_append (tbl_apart_slW (by decide) _ t) (tbl_apart_flag h0 _ t))]
   have hpk : sv c (ptr s₀ .r3) s₂ K < 2 ^ (64 * c.n) := wordsVal_lt _ _ _ _
   -- `[d]P`, then `Z^(p-2)`.
@@ -362,7 +361,7 @@ theorem exchange_ok (hc : CfgOk c) (hC : Law c.C) {s₀ : State} (hp : EPre c s�
         (toM c.C.p (2 ^ (64 * c.n)) (sv c (ptr s₀ .r3) s₄ PY))
         (toM c.C.p (2 ^ (64 * c.n)) (wordsVal s₄.mem (ptr s₀ .r3) (c.sl ONEP) c.n)) _
       rw [F₄.onep, toM_one hpR]; exact h)
-  refine ladPow_ok hc hs₄ F₄ hstep
+  refine ladPow_ok hc hs₄ ((S₂.far.of_rest k₃).of_rest g₄) F₄ hstep
     (by rw [shiftRight_eq_zero hpk, mul_zero_pt]; exact rep_infinity' hC)
     px_lt py_lt
     (by rw [e₄ (by decide) (by decide) (by decide), e₃ (by decide) (by decide) (by decide)]; exact S₂.rx)
@@ -392,7 +391,7 @@ theorem exchange_ok (hc : CfgOk c) (hC : Law c.C) {s₀ : State} (hp : EPre c s�
     (((k₃.mono (by decide)).trans ((g₄.mono powClob_work).trans (L.rest.mono powClob_work))).mono (by simp))
   have hlr₅ : s₅.gpr .lr = s₀.gpr .r0 := by
     rw [L.rest.gpr _ (by decide), g₄.gpr _ (by decide), k₃.gpr _ (by decide), S₂.lr]
-  have W₅ : Unch (ptr s₀ .r3) [(0, size)] s₀.mem s₅.mem :=
+  have W₅ : Unch (ptr s₀ .r3) [(0, 8192)] s₀.mem s₅.mem :=
     whole_of (whole_of (whole_of S₂.whole U₃ (le_append (slWk_le h7 (l := [R2P, BP, E, QY]) (by decide) |>
       fun h w hw => h w (List.mem_append_left _ hw)) (flag_le h0 h7))) U₄
       (le_append (slWk_le h7 (by decide)) (flag_le h0 h7))) L.unch

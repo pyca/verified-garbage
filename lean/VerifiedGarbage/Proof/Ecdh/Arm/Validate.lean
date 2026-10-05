@@ -63,18 +63,18 @@ structure MontPost (c : Cfg) (base : Addr) (s s' : State) : Prop where
   scr : Scr s' base size
   rest : Rest clob s s'
   unch : Unch base (slWk c [QXM, QYM, TMP]) s.mem s'.mem
-  mod : ModOk c.MP' size c.C.p s'.mem base
+  mod : ModOkW c.MP' size c.C.p s'.mem base
   x_lt : sv c base s' QXM < c.C.p
   x : toM c.C.p (2 ^ (64 * c.n)) (sv c base s' QXM) = Fin.ofNat c.C.p (sv c base s E)
   y_lt : sv c base s' QYM < c.C.p
   y : toM c.C.p (2 ^ (64 * c.n)) (sv c base s' QYM) = Fin.ofNat c.C.p (sv c base s QY)
 
 theorem mont_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size)
-    (hM : ModOk c.MP' size c.C.p s.mem base) (hr2 : sv c base s R2P = c.R * c.R % c.C.p)
+    (hM : ModOkW c.MP' size c.C.p s.mem base) (hr2 : sv c base s R2P = c.R * c.R % c.C.p)
     {rest : Prog isa} {Q : State → Prop} (h : ∀ s', MontPost c base s s' → WP isa rest s' Q) :
     WP isa (.seq (mul c.MP' c.wk (c.sl QXM) (c.sl E) (c.sl R2P))
       (.seq (mul c.MP' c.wk (c.sl QYM) (c.sl QY) (c.sl R2P)) rest)) s Q := by
-  have h7 := hc.n7
+  have h7 := hc.n10
   have hn := hs.nowrap
   have hpR := unitMod_pow_two hc.p_odd (64 * c.n)
   have hp3 := hc.p_ge
@@ -107,14 +107,14 @@ abbrev OnCurve (c : Cfg) (x y : Fe c.C) : Prop :=
 
 /-- `y² - (x³ + a x + b)` to `W1`, zero iff the point is on the curve. -/
 theorem curve_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size)
-    (hM : ModOk c.MP' size c.C.p s.mem base) (hx : sv c base s QXM < c.C.p) (hy : sv c base s QYM < c.C.p)
+    (hM : ModOkW c.MP' size c.C.p s.mem base) (hx : sv c base s QXM < c.C.p) (hy : sv c base s QYM < c.C.p)
     (hap : sv c base s AP = c.mont c.C.a) (hbp : sv c base s BP = c.mont c.C.b) :
     WP isa (fprog c.MP' c.wk (Impl.Ecdh.Arm.Cfg.curveOps c)) s fun s' =>
       Scr s' base size ∧ Rest clob s s' ∧ Unch base (slWk c [W0, W1, W2, W3, TMP]) s.mem s'.mem ∧
       (sv c base s' W1 = 0 ↔ OnCurve c (toM c.C.p (2 ^ (64 * c.n)) (sv c base s QXM))
         (toM c.C.p (2 ^ (64 * c.n)) (sv c base s QYM))) := by
   have h0 := hc.n0
-  have h7 := hc.n7
+  have h7 := hc.n10
   have hpR := unitMod_pow_two hc.p_odd (64 * c.n)
   have hp3 := hc.p_ge
   have hL : Lay c.MP' size (· ∈ curveSl.map c.sl) := lay_map hc rfl rfl rfl (by decide)
@@ -181,7 +181,7 @@ theorem select_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size
       sv c base s' PX = (if P then sv c base s QXM else sv c base s GX) ∧
       sv c base s' PY = (if P then sv c base s QYM else sv c base s GY) := by
   have h0 := hc.n0
-  have h7 := hc.n7
+  have h7 := hc.n10
   have hn := hs.nowrap
   have hap : ∀ {i j}, i ≠ j → c.sl i ≤ c.sl j ∨ c.sl j + 4 * (2 * c.n) ≤ c.sl i := fun h => by
     have := sl_apart c h; omega
@@ -247,7 +247,7 @@ theorem validate_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base si
       toM c.C.p (2 ^ (64 * c.n)) (sv c base s' PY) =
         (if PeerOk c base s P₀ then Fin.ofNat c.C.p (sv c base s QY) else Fin.ofNat c.C.p c.C.gy) := by
   have h0 := hc.n0
-  have h7 := hc.n7
+  have h7 := hc.n10
   have hn := hs.nowrap
   have hp3 := hc.p_ge
   have hmont : ∀ x, c.mont x < c.C.p := fun x => Nat.mod_lt _ (by omega)
@@ -320,9 +320,9 @@ whose slots are apart as `ladder_ok` needs (`ladLayQ`, `ladWkQ`, as
 group law, that `R` represents `[k >>> j]P`.
 -/
 
-theorem ladLayQ (hc : CfgOk c) : LadLay (Impl.Ecdh.Arm.Cfg.ladderQ c) size := by
+theorem ladLayQ (hc : CfgOk c) : LadLay (Impl.Ecdh.Arm.Cfg.ladderQ c) size 8192 := by
   have hn := hc.n0
-  have h7 := hc.n7
+  have h7 := hc.n10
   refine ⟨?_, rcbApart_of hn (lw := [T0, T1, T2, T3, T4, T5, DX, DY, DZ])
       (lr := [AP, B3P, RX, RY, RZ, RX, RY, RZ]) rfl rfl (by decide) (by decide),
     rcbApart_of hn (lw := [T0, T1, T2, T3, T4, T5, TX, TY, TZ])
@@ -350,7 +350,7 @@ theorem ladLayQ (hc : CfgOk c) : LadLay (Impl.Ecdh.Arm.Cfg.ladderQ c) size := by
     · exact Or.inr (sl_below_bits c (i := TMP) (by decide) 0 0)
 
 theorem ladWkQ (hc : CfgOk c) : LadWk (Impl.Ecdh.Arm.Cfg.ladderQ c) size c.wk where
-  le := wk_le c hc.n7 rfl
+  le := wk_le c hc.n10 rfl
   sl := by
     have e : ladSlots (Impl.Ecdh.Arm.Cfg.ladderQ c) = [AP, B3P, PX, PY, ONEP, RX, RY, RZ, T0, T1, T2, T3,
       T4, T5, DX, DY, DZ, TX, TY, TZ].map c.sl := rfl
@@ -362,7 +362,7 @@ theorem ladWkQ (hc : CfgOk c) : LadWk (Impl.Ecdh.Arm.Cfg.ladderQ c) size c.wk wh
     exact sl_below_wk c (this i hi)
   mo := sl_below_wk c (i := MP) (by decide)
   tmp := sl_below_wk c (i := TMP) (by decide)
-  bits := bitsAt_below_wk c (j := 0) (by decide)
+  bits := wk_below_bits c rfl 0
 
 theorem ladWxQ_eq (c : Cfg) : ladWx (Impl.Ecdh.Arm.Cfg.ladderQ c) c.wk = slW c [RX, RY, RZ, T0, T1, T2, T3,
     T4, T5, DX, DY, DZ, T0, T1, T2, T3, T4, T5, TX, TY, TZ, TMP] ++ [(c.wk, accLen c.MP')] := rfl
@@ -381,7 +381,8 @@ structure LadPost (c : Cfg) (base : Addr) (Q : Nat → Fe c.C → Fe c.C → Fe 
 
 /-- The ladder, from `R = O`, then `Z^(p-2)`, for any invariant `Q` that an
 iteration keeps and that `Q (64 n)` accepts `O`. -/
-theorem ladPow_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size) {g : Reg → BitVec 32}
+theorem ladPow_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size) (hf : Far s base 8192)
+    {g : Reg → BitVec 32}
     (F : Fixed c base g s.mem) {k : Nat} {Q : Nat → Fe c.C → Fe c.C → Fe c.C → Prop}
     (hstep : Step (Impl.Ecdh.Arm.Cfg.ladderQ c) c.C base s k Q) (hO : Q (64 * c.n) 0 1 0)
     (hpx : sv c base s PX < c.C.p) (hpy : sv c base s PY < c.C.p)
@@ -391,13 +392,13 @@ theorem ladPow_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size
     {rest : Prog isa} {R : State → Prop} (h : ∀ s', LadPost c base Q s s' → WP isa rest s' R) :
     WP isa (.seq (ladder (Impl.Ecdh.Arm.Cfg.ladderQ c) c.wk) (.seq (pow c.powP c.wk) rest)) s R := by
   have h0 := hc.n0
-  have h7 := hc.n7
+  have h7 := hc.n10
   have hn := hs.nowrap
   have hpR := unitMod_pow_two hc.p_odd (64 * c.n)
   have hp3 := hc.p_ge
   have hmont : ∀ x, c.mont x < c.C.p := fun x => Nat.mod_lt _ (by omega)
   have henc : encodable (BitVec.ofNat 32 (64 * c.n)) = true := by
-    have : ∀ n < 7, encodable (BitVec.ofNat 32 (64 * n)) = true := by decide
+    have : ∀ n < 10, encodable (BitVec.ofNat 32 (64 * n)) = true := by decide
     exact this _ h7
   have hlt : ∀ x ∈ ladR (Impl.Ecdh.Arm.Cfg.ladderQ c), wordsVal s.mem base x c.MP'.n < c.C.p := by
     intro x hx
@@ -420,17 +421,19 @@ theorem ladPow_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size
     rw [hrx, hry, hrz, toM_cmont hc, toM_zero]
     exact hO
   refine WP.seq (WP.mono (ladder_ok (L := Impl.Ecdh.Arm.Cfg.ladderQ c) (k := k) (ladLayQ hc)
-    (ladWkQ hc) hpR hs (modP_of hc F.mp) hlt hstep hR ht₀ henc)
+    (ladWkQ hc) hpR (bitsAt_lt hc (j := 0) (by decide)) hs hf (modP_of hc F.mp) hlt hstep hR ht₀ henc)
     fun s₅ ⟨K₅, U₅, M₅, L₅, R₅⟩ => ?_)
   rw [ladWxQ_eq, accLen_MP'] at U₅
   have hs₅ := hs.of_rest K₅ (by decide)
+  have hf₅ := hf.of_rest K₅
   have F₅ := F.unch h7 hn (fixedOk_slWk (by decide)) U₅
   have rz₅ : wordsVal s₅.mem base (c.sl RZ) c.n < c.C.p :=
     L₅ (c.sl RZ) (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_singleton_self _)))
-  refine WP.seq (WP.mono (pow_ok (P := c.powP) (e := c.C.p - 2) (powLayP hc) (powWkP hc) hpR hs₅ M₅ rz₅
+  refine WP.seq (WP.mono (pow_ok (P := c.powP) (e := c.C.p - 2) (powLayP hc) (powWkP hc) hpR
+    (bitsAt_lt hc (j := 1) (by decide)) hs₅ hf₅ M₅ rz₅
     F₅.onep (fun t ht => by
       show s₅.mem (off base (bitsAt c.n 1 + t)) = _
-      rw [tbl_unch U₅ h7 (j := 1) (by decide) ht (tbl_apart_slWk (by decide) (by decide) ht)]
+      rw [tbl_unch U₅ h7 (j := 1) (by decide) ht (tbl_apart_slWk (by decide))]
       exact ht₁ t ht)
     (show c.C.p - 2 < 2 ^ (64 * c.n) by have := hc.p_lt; omega) henc) fun s₆ ⟨K₆, U₆, lt₆, v₆⟩ => h s₆ ?_)
   rw [powWxP_eq, accLen_MP'] at U₆
