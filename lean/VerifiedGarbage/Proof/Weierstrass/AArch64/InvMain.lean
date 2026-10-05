@@ -1,6 +1,7 @@
 import VerifiedGarbage.Proof.Weierstrass.AArch64.InvBatch
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Pow
 import VerifiedGarbage.Proof.Weierstrass.InvToM
+import VerifiedGarbage.Proof.Weierstrass.AArch64.HasLaw
 
 /-!
 # Inversion by divsteps on AArch64: the whole inversion
@@ -427,5 +428,9 @@ theorem invPow_ok (hI : InvToM) {P : InvCfg} {base : Addr} {size m : Nat} [NeZer
 /-- A prime modulus's inversion is sound. -/
 theorem invSound_of_prime (hI : InvToM) {m : Nat} [NeZero m] (hp : m.Prime) : InvSound m :=
   fun hL hm2 hR _ hs hM hX hC => invPow_ok hI hp hL hm2 hR hs hM hX hC
+
+/-- The inversion is sound modulo every prime: what the variants give the
+proofs of the curves' functions (`HasLaw.lean`). -/
+theorem invSounds (hI : InvToM) : InvSounds := fun hp => invSound_of_prime hI hp
 
 end VG.Proof.Weierstrass.AArch64

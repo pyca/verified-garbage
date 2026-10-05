@@ -6,8 +6,8 @@ import VerifiedGarbage.Proof.Ecdsa.AArch64.P384.Verified
 /-!
 # P-384 public keys on AArch64: `Verified`
 
-P-384 is a curve the proof supports (`p384_ok`, given the inversions' last step `InvToM`, and `Law` for its group
-law, which the registration file supplies: `Proof.P384.law` and `Proof.Weierstrass.invToM`), so `publicKey_ok`
+P-384 is a curve the proof supports (`p384_ok`, given the inversions' soundness `InvSounds`, and `Law` for its group
+law, which the registration file supplies: `Proof.P384.law` and `Proof.Weierstrass.AArch64.invSounds`), so `publicKey_ok`
 gives the contract's postcondition; `x19` and `x20` are restored, and no
 instruction writes the other callee-saved registers, `sp` or a SIMD register
 (`abiPreserved_of`). Constant time by taint tracking: the only branches are on
@@ -35,7 +35,7 @@ theorem post_of {s s' : State} (h : PkPost p384 s s') : pkAArch64.post s s' := b
   rw [show Spec.EcKey.publicKey p384.C (dk p384 s) = pk s.mem (s.gpr .x1) from rfl, hq]
   rcases q with _ | _ | ⟨x, y⟩ <;> exact id
 
-theorem pk_a64 (hL : Weierstrass.Law Spec.P384.curve) (hI : Weierstrass.InvToM)
+theorem pk_a64 (hL : Weierstrass.Law Spec.P384.curve) (hI : Weierstrass.AArch64.InvSounds)
     (hT : Weierstrass.CombOkW Spec.P384.curve 7 55 Impl.P384.p384Comb7 Impl.P384.p384Comb7Start)
     (s : State)
     (hs : pkAArch64.pre s) :
@@ -58,7 +58,7 @@ theorem pk_ct : ConstantTime isa pkAArch64.pre pkAArch64.pub publicKeyP384 :=
       · exact h2⟩, fun n hn => by
       simp only [List.mem_singleton] at hn; subst hn; exact hsy⟩) (by taint_decide)
 
-theorem pk_verified (hL : Weierstrass.Law Spec.P384.curve) (hI : Weierstrass.InvToM)
+theorem pk_verified (hL : Weierstrass.Law Spec.P384.curve) (hI : Weierstrass.AArch64.InvSounds)
     (hT : Weierstrass.CombOkW Spec.P384.curve 7 55 Impl.P384.p384Comb7 Impl.P384.p384Comb7Start) :
     Verified AArch64.target publicKeyP384
       (Spec.EcKey.P384.inst.publicKeyContract (AArch64.abi.withConsts p384.combConsts)) :=

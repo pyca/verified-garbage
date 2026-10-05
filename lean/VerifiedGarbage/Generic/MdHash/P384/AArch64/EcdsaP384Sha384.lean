@@ -1,5 +1,5 @@
 import VerifiedGarbage.TCB.AArch64.Target
-import VerifiedGarbage.Proof.Weierstrass.HasLaw
+import VerifiedGarbage.Proof.Weierstrass.AArch64.HasLaw
 import VerifiedGarbage.Proof.P384.Comb7
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.P384Sha384
 
@@ -25,7 +25,7 @@ namespace VG.Generic.MdHash.P384.AArch64.EcdsaP384Sha384
 open VG.Proof.Ecdsa.Rfc6979.AArch64 (cfgOf signNotes)
 open VG.Proof.Ecdsa.Rfc6979.AArch64.P384Sha384 (pack sign_verified)
 
-def artifacts (v : Proof.Pbkdf2.Md.AArch64.MdHash) (h : Proof.Weierstrass.HasLaw Spec.P384.curve) :
+def artifacts (v : Proof.Pbkdf2.Md.AArch64.MdHash) (h : Proof.Weierstrass.AArch64.HasLaw Spec.P384.curve) :
     List Artifact :=
   match v.sha384 with
   | none => []

@@ -92,7 +92,7 @@ theorem implies :
   sat := ⟨satState 32 32 satMem 151552, sat_spec⟩
 
 /-- SHA-256, with the implementation `v` of its compression function. -/
-def pack (hL : Weierstrass.Law Spec.P256.curve) (hI : Weierstrass.InvToM)
+def pack (hL : Weierstrass.Law Spec.P256.curve) (hI : Weierstrass.AArch64.InvSounds)
     (hT : Weierstrass.CombOkW Spec.P256.curve 7 37 Impl.P256.p256Comb7 Impl.P256.p256Comb7Start) (v : Compress) :
     RfcHash where
   R := p256 hL hI hT
@@ -112,7 +112,7 @@ def pack (hL : Weierstrass.Law Spec.P256.curve) (hI : Weierstrass.InvToM)
   hWb := Nat.le_of_ble_eq_true rfl
   hQ := Nat.le_of_ble_eq_true rfl
 
-theorem sign_verified (hL : Weierstrass.Law Spec.P256.curve) (hI : Weierstrass.InvToM)
+theorem sign_verified (hL : Weierstrass.Law Spec.P256.curve) (hI : Weierstrass.AArch64.InvSounds)
     (hT : Weierstrass.CombOkW Spec.P256.curve 7 37 Impl.P256.p256Comb7 Impl.P256.p256Comb7Start) (v : Compress) :
     Verified AArch64.target (cfgOf (pack hL hI hT v)).sign
       (Spec.Ecdsa.Rfc6979.P256Sha256.inst.signContract (AArch64.abi.withConsts Impl.Ecdsa.AArch64.p256.combConsts) 256) :=
