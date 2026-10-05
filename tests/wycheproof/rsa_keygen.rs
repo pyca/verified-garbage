@@ -90,10 +90,8 @@ fn check_prime(name: &str, p: &[u8], q: &[u8], e: &[u8]) {
     let rand = then_random(p);
     let (got, used) = generate_prime_from(bits, e, None, &rand).unwrap();
     assert_eq!(got, p, "{name}");
-    assert!(
-        used >= 17 * len && used.is_multiple_of(len),
-        "{name}: {used}"
-    );
+    let whole = used >= 17 * len && used.is_multiple_of(len);
+    assert!(whole, "{name}: {used}");
     let (got, used2) = generate_prime_from(bits, e, Some(q), &rand).unwrap();
     assert_eq!((&got[..], used2), (p, used), "{name}: with q");
     if candidate(q) {
@@ -175,11 +173,8 @@ fn rsa_keygen_composites() {
         // invalid one is rejected.
         let accepted = r.is_ok_and(|(p, _)| p == x);
         let expected = t.result == Expectation::Valid;
-        assert!(
-            t.result == Expectation::Acceptable || accepted == expected,
-            "tcId {}",
-            t.tc_id
-        );
+        let ok = t.result == Expectation::Acceptable || accepted == expected;
+        assert!(ok, "tcId {}", t.tc_id);
         checked += 1;
     }
     assert!(checked > 0);
