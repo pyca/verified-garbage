@@ -4,9 +4,9 @@ import VerifiedGarbage.Proof.Curve448.AArch64.Legacy
 /-!
 # Ed448 verification on AArch64: comparing slots of the register-resident arithmetic
 
-Untrusted: everything here is checked by Lean. As `canon_ok` and `eqSlots_ok`
-(`VerifyChecks.lean`), for slots whose limbs are below `2^118` (products of
-the register-resident arithmetic) rather than X448's `weakBound`.
+Untrusted: everything here is checked by Lean. `canon` and `eqSlots`
+(`VerifyChecks.lean`) for slots whose limbs are below `2^118` (products of
+the register-resident arithmetic).
 -/
 
 namespace VG.Proof.Ed448.AArch64
@@ -50,7 +50,7 @@ theorem eqSlotsF_ok {s : State} {base : Addr} (hs : Scr s base) (a b : Fin 22)
     (ha : a ≠ 1) (hb1 : b ≠ 1) :
     WP isa (.block (eqSlots a.val b.val)) s fun t =>
       (∃ c : BitVec 64, (c = 0 ↔ E s.mem base a = E s.mem base b) ∧ t.gpr .x20 = s.gpr .x20 ||| c) ∧
-      CKeep base s t := by
+      CKeep base s t ∧ VG.Proof.X448.AArch64.Bounded t.mem base X2 := by
   rw [eqSlots]
   simp only [List.append_assoc]
   rw [WP.block_append_iff]
@@ -80,7 +80,7 @@ theorem eqSlotsF_ok {s : State} {base : Addr} (hs : Scr s base) (a b : Fin 22)
       (by simp only [ofs]; rw [Offset.add_add, Mem.sub_ofNat_toNat base (by simp only [CAN]; omega)]
           simp only [CAN, ACC]; omega)
   have eb : E v.mem base b = E s.mem base b := (cu.trans cv).mem.E hb1
-  refine ⟨⟨x.gpr .x5, ?_, ?_⟩, ?_⟩
+  refine ⟨⟨x.gpr .x5, ?_, ?_⟩, ?_, by rw [tm, xm]; exact bw⟩
   · rw [x5]
     constructor
     · intro h

@@ -542,6 +542,14 @@ impl PrivateKey {
         self.n.len()
     }
 
+    /// The key's values, big-endian, as it holds them:
+    /// `[n, e, d, p, q, dP, dQ, qInv]`.
+    pub fn components(&self) -> [&[u8]; 8] {
+        [
+            &self.n, &self.e, &self.d, &self.p, &self.q, &self.dp, &self.dq, &self.qinv,
+        ]
+    }
+
     /// Whether BoringSSL's `RSA_check_key` accepts the key: `d < n`,
     /// `p < n`, `q < n`, `p q = n`, `d e ≡ 1` modulo `p - 1` and `q - 1`,
     /// `dP < p - 1`, `e dP ≡ 1 (mod p - 1)`, `dQ < q - 1`,

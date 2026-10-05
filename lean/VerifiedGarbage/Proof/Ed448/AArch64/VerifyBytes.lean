@@ -196,7 +196,7 @@ theorem P_add : Spec.X448.P + (2 ^ 224 + 1) = 2 ^ 448 := by decide +kernel
 
 /-- `decodeY rp yo`: `y` (the first 56 bytes at `rp`) in slot `yo`, the sign bit in `x17`, and
 `x20 |= c`, `c = 0` exactly when bits 448–454 are 0 and `y < p`. -/
-theorem decodeY_ok {s : State} {base : Addr} (hs : Scr s base) (hb : BoundedEnv s.mem base) {rp : Reg}
+theorem decodeY_ok {s : State} {base : Addr} (hs : Scr s base) {rp : Reg}
     {p : Addr} (hp : s.gpr rp = p) (hrp : rp = .x0 ∨ rp = .x1) (yo : Fin 22)
     (hr : ∀ j < 57, InRegions (s.rd ++ s.wr) (p + BitVec.ofNat 64 j) 1)
     (hfar : ∀ j < 57, 8192 ≤ ofs base (p + BitVec.ofNat 64 j)) :
@@ -206,7 +206,8 @@ theorem decodeY_ok {s : State} {base : Addr} (hs : Scr s base) (hb : BoundedEnv 
       (∃ c : BitVec 64, (c = 0 ↔ (s.mem (p + BitVec.ofNat 64 56)).toNat % 128 = 0 ∧
           Spec.Ed448.decodeLE (Spec.Ed448.bytesAt s.mem p 56) < Spec.X448.P) ∧
         t.gpr .x20 = s.gpr .x20 ||| c) ∧
-      (∀ i : Fin 22, i ≠ yo → E t.mem base i = E s.mem base i) ∧ BoundedEnv t.mem base ∧
+      (∀ i : Fin 22, i ≠ yo → E t.mem base i = E s.mem base i) ∧
+      (∀ j < 8, VG.Proof.X448.AArch64.limbs t.mem base (slot yo.val) j < 2 ^ 56) ∧
       Keeps [.x4, .x5, .x6, .x7, .x17, .x20] s t ∧ Outside base (slot yo.val) 64 s.mem t.mem := by
   have hy := yo.isLt
   have h4 : rp ≠ .x4 := by rcases hrp with rfl | rfl <;> decide
@@ -250,7 +251,7 @@ theorem decodeY_ok {s : State} {base : Addr} (hs : Scr s base) (hb : BoundedEnv 
     rw [show 7 * 8 = 56 from rfl] at w8
     rw [decodeLE_eq, show Spec.Ed448.bytesAt s.mem p 56 = Spec.X448.bytesAt s.mem p 56 from rfl, ← w8, tmem]
     exact congrArg VG.Proof.X448.toFe (VG.Proof.X448.Wide.valN_congr fun i hi => av i hi)
-  refine ⟨ey, ?_, ⟨u.gpr .x5 ||| w.gpr .x5, ?_, ?_⟩, fun i hi => ?_, fun i j hj => ?_, ?_, ?_⟩
+  refine ⟨ey, ?_, ⟨u.gpr .x5 ||| w.gpr .x5, ?_, ?_⟩, fun i hi => ?_, fun j hj => ?_, ?_, ?_⟩
   · rw [tk.1 _ (by decide), w17, hb56]
   · rw [or_eq_zero64, w5, hb56]
     have hc : (u.gpr .x5).toNat = (Spec.Ed448.decodeLE (Spec.Ed448.bytesAt s.mem p 56) + (2 ^ 224 + 1)) / 2 ^ 448 := by
@@ -285,16 +286,9 @@ theorem decodeY_ok {s : State} {base : Addr} (hs : Scr s base) (hb : BoundedEnv 
     exact VG.Proof.X448.AArch64.Weak.E_outside am i
       (by have := VG.Proof.X448.AArch64.Weak.slot_sep hi; omega)
   · rw [tmem]
-    by_cases h : i = yo
-    · subst h
-      change (word a.mem base (slot i.val + 8 * j)).toNat < _
-      rw [av j hj]
-      exact Nat.lt_of_lt_of_le (chunk7_lt _ _) (by decide)
-    · have := VG.Proof.X448.AArch64.Weak.slot_sep h
-      have hil := i.isLt
-      change (word a.mem base (slot i.val + 8 * j)).toNat < _
-      rw [am.word (by omega) (by simp only [slot]; omega)]
-      exact hb i j hj
+    change (word a.mem base (slot yo.val + 8 * j)).toNat < _
+    rw [av j hj]
+    exact chunk7_lt _ _
   · exact ((((ak.mono (by decide)).trans (uk.mono (by decide))).trans (vk.mono (by decide))).trans
       (wk.mono (by decide))).trans (tk.mono (by decide))
   · rw [tmem]; exact am

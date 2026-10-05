@@ -4,6 +4,8 @@ import VerifiedGarbage.Proof.Ecdsa.AArch64.P384.Lit
 import VerifiedGarbage.Proof.P384.Point
 import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
+import VerifiedGarbage.Proof.Weierstrass.AArch64.InvMain
+import VerifiedGarbage.Proof.P384.Prime
 
 /-!
 # ECDSA over P-384 on AArch64: `Verified`
@@ -46,8 +48,16 @@ theorem p384_ok : CfgOk p384 where
   n2 := by decide
   len := rfl
   hash := p384_nBits
-  chain_p := by decide +kernel
-  chain_n := by decide +kernel
+  n4 := by decide
+  sound_p := @invSound_of_prime _ _ (by
+    show Nat.Prime Spec.P384.curve.p
+    rw [show Spec.P384.curve.p =
+      39402006196394479212279040100143613805079739270465446667948293404245721771496870329047266088258938001861606973112319
+      by decide +kernel]
+    exact Proof.P384.prime_39402006196394479212279040100143613805079739270465446667948293404245721771496870329047266088258938001861606973112319)
+  inv_p := InvOk.ofMod (by decide +kernel) (by decide)
+  inv_n := fun h => absurd h (by decide)
+  chain_n := fun _ => by decide +kernel
   am3 := by unfold AM3; decide +kernel
 
 theorem pre_of {s : State} (h : signAArch64.pre s) : Pre p384 s := by

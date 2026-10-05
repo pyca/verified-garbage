@@ -1,4 +1,4 @@
-import VerifiedGarbage.Proof.X448.AArch64.Weak.Inv
+import VerifiedGarbage.Proof.X448.AArch64.Fast.Chain
 import VerifiedGarbage.Proof.Ed448.Root
 import VerifiedGarbage.Impl.Ed448.AArch64.VerifyEquation
 
@@ -6,14 +6,15 @@ import VerifiedGarbage.Impl.Ed448.AArch64.VerifyEquation
 # Ed448 verification's equation on AArch64: the square root's power
 
 `root 12` writes only the temporaries of X448's inversion (slots 14–21), the
-products' coefficients and the counter `x19` (an `ISpec`, as X448's
-inversion); slot 21 ends as `rootPow` of slot 12.
+products' coefficients and the counter `x19` (an `ISpec` of the register-resident
+arithmetic, as X448's inversion); slot 21 ends as `rootPow` of slot 12.
 -/
 
 namespace VG.Proof.Ed448.AArch64
 
 open VG VG.AArch64 VG.Impl.Ed448.AArch64
-open VG.Proof.X448.AArch64.Weak (Env ISpec FieldOp applyOps opMul opCopy opSqn opsI sqnI)
+open VG.Proof.X448.AArch64.Weak (Env FieldOp applyOps opMul opCopy opSqn)
+open VG.Proof.X448.AArch64.Fast (ISpec MulCopy opsI sqnI)
 
 /-- The slots after `root 12`. -/
 def rootEnv (e : Env) : Env :=
@@ -49,35 +50,35 @@ def rootEnv (e : Env) : Env :=
 
 theorem root_spec (base : Addr) : ISpec base (root 12) rootEnv := by
   have h : ISpec base _ _ :=
-    (opsI base [.copy 14 12]).seq <|
+    (opsI base [.copy 14 12] (by simp [MulCopy])).seq <|
     (sqnI base 14 (n := 1) (by decide) (by decide)).seq <|
-    (opsI base [.mul 14 14 12, .copy 15 14]).seq <|
+    (opsI base [.mul 14 14 12, .copy 15 14] (by simp [MulCopy])).seq <|
     (sqnI base 15 (n := 2) (by decide) (by decide)).seq <|
-    (opsI base [.mul 15 15 14, .copy 16 15]).seq <|
+    (opsI base [.mul 15 15 14, .copy 16 15] (by simp [MulCopy])).seq <|
     (sqnI base 16 (n := 4) (by decide) (by decide)).seq <|
-    (opsI base [.mul 16 16 15, .copy 17 16]).seq <|
+    (opsI base [.mul 16 16 15, .copy 17 16] (by simp [MulCopy])).seq <|
     (sqnI base 17 (n := 8) (by decide) (by decide)).seq <|
-    (opsI base [.mul 17 17 16, .copy 18 17]).seq <|
+    (opsI base [.mul 17 17 16, .copy 18 17] (by simp [MulCopy])).seq <|
     (sqnI base 18 (n := 16) (by decide) (by decide)).seq <|
-    (opsI base [.mul 18 18 17, .copy 19 18]).seq <|
+    (opsI base [.mul 18 18 17, .copy 19 18] (by simp [MulCopy])).seq <|
     (sqnI base 19 (n := 32) (by decide) (by decide)).seq <|
-    (opsI base [.mul 19 19 18, .copy 20 19]).seq <|
+    (opsI base [.mul 19 19 18, .copy 20 19] (by simp [MulCopy])).seq <|
     (sqnI base 20 (n := 64) (by decide) (by decide)).seq <|
-    (opsI base [.mul 20 20 19]).seq <|
+    (opsI base [.mul 20 20 19] (by simp [MulCopy])).seq <|
     (sqnI base 20 (n := 64) (by decide) (by decide)).seq <|
-    (opsI base [.mul 20 20 19]).seq <|
+    (opsI base [.mul 20 20 19] (by simp [MulCopy])).seq <|
     (sqnI base 20 (n := 16) (by decide) (by decide)).seq <|
-    (opsI base [.mul 20 20 17]).seq <|
+    (opsI base [.mul 20 20 17] (by simp [MulCopy])).seq <|
     (sqnI base 20 (n := 8) (by decide) (by decide)).seq <|
-    (opsI base [.mul 20 20 16]).seq <|
+    (opsI base [.mul 20 20 16] (by simp [MulCopy])).seq <|
     (sqnI base 20 (n := 4) (by decide) (by decide)).seq <|
-    (opsI base [.mul 20 20 15]).seq <|
+    (opsI base [.mul 20 20 15] (by simp [MulCopy])).seq <|
     (sqnI base 20 (n := 2) (by decide) (by decide)).seq <|
-    (opsI base [.mul 20 20 14, .copy 21 20]).seq <|
+    (opsI base [.mul 20 20 14, .copy 21 20] (by simp [MulCopy])).seq <|
     (sqnI base 21 (n := 1) (by decide) (by decide)).seq <|
-    (opsI base [.mul 21 21 12]).seq <|
+    (opsI base [.mul 21 21 12] (by simp [MulCopy])).seq <|
     (sqnI base 21 (n := 223) (by decide) (by decide)).seq
-    (opsI base [.mul 21 21 20])
+    (opsI base [.mul 21 21 20] (by simp [MulCopy]))
   exact h
 
 theorem rootEnv_eval (e : Env) : rootEnv e 21 = rootPow (e 12) := by

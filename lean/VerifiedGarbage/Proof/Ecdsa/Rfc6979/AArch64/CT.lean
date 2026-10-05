@@ -356,7 +356,7 @@ theorem loop_ct :
 
 /-! ## The frame's body -/
 
-theorem initCnt_blk : TaintOk [] (cfgC ⟨4, Spec.P256.curve, [], (0, 0), ""⟩).initCnt := ⟨_, by taint_decide⟩
+theorem initCnt_blk : TaintOk [] (cfgC ⟨4, Spec.P256.curve, [], (0, 0), "", true⟩).initCnt := ⟨_, by taint_decide⟩
 
 /-- `digest` in `x1`. -/
 def DgIn {dn : Nat} {E : Impl.Ecdsa.AArch64.Cfg} (L : Lay dn E) (_ : Mem) (u : State) : Prop := u.gpr .x1 = L.dg
