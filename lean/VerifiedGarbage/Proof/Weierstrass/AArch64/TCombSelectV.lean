@@ -1056,7 +1056,7 @@ theorem tselect_ok (K : TCombCfg) (hn : K.M.n ≤ 9)
     (hH : 16 * K.M.n * K.H ≤ 32768) (htb : K.tblBytes < 65536) (hHlt : K.H < 2 ^ 64)
     (hT : s.syms K.tsym = T)
     (hE : ∀ d ∈ [K.E.x, K.E.y, K.E.z], d + 8 * K.M.n ≤ size ∧ d % 8 = 0)
-    (hE16 : K.E.x % 16 = 0 ∧ K.E.y % 16 = 0)
+    (hE16 : K.E.x % 16 = 0 ∧ (K.M.n % 2 = 0 → K.E.y % 16 = 0))
     (hap : (K.E.x + 8 * K.M.n ≤ K.E.y ∨ K.E.y + 8 * K.M.n ≤ K.E.x) ∧
       (K.E.x + 8 * K.M.n ≤ K.E.z ∨ K.E.z + 8 * K.M.n ≤ K.E.x) ∧
       (K.E.y + 8 * K.M.n ≤ K.E.z ∨ K.E.z + 8 * K.M.n ≤ K.E.y))
@@ -1104,14 +1104,14 @@ theorem tselect_ok (K : TCombCfg) (hn : K.M.n ≤ 9)
     by_cases h2 : 2 * K.M.n ≤ 8
     · rw [ite_t h2]
       by_cases hn2 : K.M.n % 2 = 0
-      · exact selXY1_ok K (by omega) hn2 hs₂ ha hH2 hH hHlt h16 h18 h19 h28 hEx.1 hEy.1 hE16 axy hone
-          hreg₂
+      · exact selXY1_ok K (by omega) hn2 hs₂ ha hH2 hH hHlt h16 h18 h19 h28 hEx.1 hEy.1
+          ⟨hE16.1, hE16.2 hn2⟩ axy hone hreg₂
       · exact absurd (hodd (by omega)).1 (by omega)
     · rw [ite_f h2]
       by_cases hn2 : K.M.n % 2 = 0
       · rw [ite_t hn2]
-        exact selXY2_ok K (by omega) h2 hn2 hs₂ ha hH2 hH hHlt h16 h18 h19 h28 hEx.1 hEy.1 hE16 axy hone
-          hreg₂ hout
+        exact selXY2_ok K (by omega) h2 hn2 hs₂ ha hH2 hH hHlt h16 h18 h19 h28 hEx.1 hEy.1
+          ⟨hE16.1, hE16.2 hn2⟩ axy hone hreg₂ hout
       · rw [ite_f hn2]
         obtain ⟨h9, hxy⟩ := hodd (by omega)
         exact selXY3_ok K (by omega) hxy hs₂ ha hH2 hH hHlt h16 h18 h19 h28 hEy.1 hE16.1 hone hreg₂ hout
