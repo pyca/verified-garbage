@@ -1,9 +1,9 @@
 import Mathlib.Data.List.Dedup
 import VerifiedGarbage.Proof.AesGcmSiv.X86_64.FnCT
-import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Seal
-import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Open
+import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Fn
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Spec.GcmSiv.Contract
+import VerifiedGarbage.Proof.GcmSiv.Polyval
 import VerifiedGarbage.Proof.AesGcmSiv.Scratch
 import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratch
 
@@ -56,12 +56,12 @@ theorem open_spSafe : («open» v.callees).all (fun i => !X86_64.isa.writesSp i)
 
 theorem seal_correct (s : State) (hs : sealX86_64.pre s) :
     ∃ t s', Exec isa («seal» v.callees) s t s' ∧ abiPreserved s s' ∧ sealX86_64.post s s' := by
-  obtain ⟨t, s', he, hg, hp⟩ := seal_wp v hs
+  obtain ⟨t, s', he, hg, hp⟩ := seal_wp v GcmSiv.Polyval.polyvalFrom_eq hs
   exact ⟨t, s', he, abiPreserved_of_exec (seal_mx v) he hg, hp⟩
 
 theorem open_correct (s : State) (hs : openX86_64.pre s) :
     ∃ t s', Exec isa («open» v.callees) s t s' ∧ abiPreserved s s' ∧ openX86_64.post s s' := by
-  obtain ⟨t, s', he, hg, hp⟩ := open_wp v hs
+  obtain ⟨t, s', he, hg, hp⟩ := open_wp v GcmSiv.Polyval.polyvalFrom_eq hs
   exact ⟨t, s', he, abiPreserved_of_exec (open_mx v) he hg, hp⟩
 
 theorem seal_ct : ConstantTime isa sealX86_64.pre sealX86_64.pub («seal» v.callees) :=
@@ -233,7 +233,8 @@ theorem open_framed :
   X86_64.Verified.stackArgScratch (sig := Spec.GcmSiv.openSig) (nm := "work") (e := .u64)
     (n := 477) (pre := Spec.GcmSiv.openPre X86_64.abi.ptrBits)
     (post := Spec.GcmSiv.openPost X86_64.abi.ptrBits) (wa := true) (stack := 8)
-    (leak := some (Spec.GcmSiv.openLeak X86_64.abi.ptrBits)) (bytes := 3848) (open_verified v)
+    (leak := some (Spec.GcmSiv.openLeak X86_64.abi.ptrBits)) (bytes := 3848)
+    (Proof.AesGcmSiv.Verified.of_openScratch (open_verified v))
     (by decide) (by decide) (by decide) (open_spSafe v) (open_xdepth v) (openPre_local _)
     (openPost_local _) openFrameSat_pre (hleak := openLeak_local _)
 

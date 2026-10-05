@@ -1,5 +1,5 @@
 import VerifiedGarbage.Proof.Gcm.Poly
-import VerifiedGarbage.Spec.GcmSiv
+import VerifiedGarbage.Proof.GcmSiv.Spec
 
 /-!
 # AES-GCM-SIV: POLYVAL is GHASH
@@ -144,10 +144,6 @@ theorem φ_dot (a b : Spec.GcmSiv.Elem) : φ (Spec.GcmSiv.dot a b) = x * φ a * 
   rw [show Spec.GcmSiv.dot a b = Spec.GcmSiv.mul (Spec.GcmSiv.mul a b) Spec.GcmSiv.xInv128 from rfl, h₁,
     φ_xInv128, ← x255]
   linear_combination (x ^ 128) * h₂
-
-/-- GHASH's product with `x`: a shift to the right (`Proof.Gcm.Poly.φ_shr1`). -/
-def mulXG (h : Spec.Gcm.Block) : Spec.Gcm.Block :=
-  if h.getLsbD 0 then (h >>> 1) ^^^ Spec.Gcm.R else h >>> 1
 
 theorem dot_eq (a b : Spec.GcmSiv.Elem) : Spec.GcmSiv.dot a b = Spec.Gcm.mul a (mulXG b) := by
   refine φ_inj ?_

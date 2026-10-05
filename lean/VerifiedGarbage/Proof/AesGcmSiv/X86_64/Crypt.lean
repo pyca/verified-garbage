@@ -135,7 +135,7 @@ theorem cryptBlock_ok (v : GcmImpl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} (
       simp only [List.mem_singleton] at hq; subst hq; exact L.w_w (.inr (by decide)) (by decide) (by decide))
       (by rcases hR with h | h <;> subst h <;> decide), hc]
   have hx₁ : bytesAt t₁.mem D n = GcmSiv.ctrPart ciph icb x (16 * j) := by
-    rw [Proof.AesGcm.X86_64.bytesAt_frame f₁ dD hn.le, hx]
+    rw [Proof.AesGcm.X86_64.bytesAt_frame f₁ dD (Nat.le_of_lt hn), hx]
   refine WP.seq (WP.of_runBlock ⟨t₁, run₁, WP.seq ?_⟩)
   refine WP.mono (ctr_call v.ctr cc) fun t₂ P => ?_
   have fc := P.frame
@@ -193,7 +193,7 @@ theorem cryptBlock_ok (v : GcmImpl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} (
       · exact L.w_w (.inl (by omega)) (by omega) (by decide)
       · exact (L.stk_w' (by omega)).symm
   have w₂ : t₂.mem.readW (W + BitVec.ofNat 64 96) 32 = t.mem.readW (W + BitVec.ofNat 64 96) 32 :=
-    f₂'.readW (Region.contains_self _ _) (dC (k := 4) (le_refl _) (by decide)) (by decide)
+    f₂'.readW (Region.contains_self _ _) (dC (k := 4) (Nat.le_refl _) (by decide)) (by decide)
   have r₂ : bytesAt t₂.mem (W + BitVec.ofNat 64 100) 12 = bytesAt t.mem (W + BitVec.ofNat 64 100) 12 :=
     Proof.AesGcm.X86_64.bytesAt_frame f₂' (dC (by decide) (by decide)) (by decide)
   have fw : ∀ v : BitVec 32, Frame [⟨W + BitVec.ofNat 64 96, 4⟩] t₂.mem (t₂.mem.writeW (W + BitVec.ofNat 64 96) v) :=
@@ -220,9 +220,9 @@ theorem cryptBlock_ok (v : GcmImpl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} (
           simp only [List.mem_singleton] at hq; subst hq; exact L.w_w (.inr (by decide)) (by decide) (by decide))
           (by decide), r₂, C.rest]
   · rw [Proof.AesGcm.X86_64.bytesAt_frame (fw _) (fun q hq => by
-        simp only [List.mem_singleton] at hq; subst hq; exact hD.w.sub_right (Lay.wSub (by decide))) hn.le, hx₂,
+        simp only [List.mem_singleton] at hq; subst hq; exact hD.w.sub_right (Lay.wSub (by decide))) (Nat.le_of_lt hn), hx₂,
       show 16 * j + 16 = 16 * (j + 1) by omega]
-  · exact f₂.writeW (List.mem_cons_self ..) _ (Offset.contains W (le_refl _) (by decide) (by omega))
+  · exact f₂.writeW (List.mem_cons_self ..) _ (Offset.contains W (Nat.le_refl _) (by decide) (by omega))
 
 /-- The slots, after code that writes only parts of `W` apart from them, the
 stack below `SP` and a buffer apart from `W`. -/
@@ -326,7 +326,7 @@ theorem cryptTail_ok (v : GcmImpl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} (h
     · exact hD.w.sub_right (Lay.wSub (by decide))
     · exact hD.stk.symm
   have hx₂ : bytesAt t₂.mem D n = GcmSiv.ctrPart ciph icb x (16 * b) := by
-    rw [Proof.AesGcm.X86_64.bytesAt_frame fT dT hn'.le, hx]
+    rw [Proof.AesGcm.X86_64.bytesAt_frame fT dT (Nat.le_of_lt hn'), hx]
   have hks : bytesAt t₂.mem (W + BitVec.ofNat 64 128) 16 = GcmSiv.ksBlock ciph icb b := by
     rw [T.out, hc, C.block]
   have h15₂ := T.env.r15
@@ -460,7 +460,7 @@ theorem crypt_ok (v : GcmImpl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} (hR : 
   have f₁ : Frame [⟨W + BitVec.ofNat 64 96, 16⟩] t.mem t₁.mem := by rw [hm₁]; exact Proof.Cmac.frame_store2 _ _ _
   have dD : ∀ q ∈ [(⟨W + BitVec.ofNat 64 96, 16⟩ : Region)], (⟨D, n⟩ : Region).Disjoint q := fun q hq => by
     simp only [List.mem_singleton] at hq; subst hq; exact hD.w.sub_right (Lay.wSub (by decide))
-  have hx₁ : bytesAt t₁.mem D n = bytesAt t.mem D n := Proof.AesGcm.X86_64.bytesAt_frame f₁ dD hn.le
+  have hx₁ : bytesAt t₁.mem D n = bytesAt t.mem D n := Proof.AesGcm.X86_64.bytesAt_frame f₁ dD (Nat.le_of_lt hn)
   have hc₁ : Spec.GcmSiv.ctxCiph t₁.mem (W + BitVec.ofNat 64 248) R =
       Spec.GcmSiv.ctxCiph t.mem (W + BitVec.ofNat 64 248) R :=
     ctxCiph_frame f₁ (fun q hq => by

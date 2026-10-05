@@ -1,5 +1,4 @@
 import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Derive
-import VerifiedGarbage.Proof.GcmSiv.Polyval
 import VerifiedGarbage.Proof.Gcm.X86_64.Bits
 
 /-!

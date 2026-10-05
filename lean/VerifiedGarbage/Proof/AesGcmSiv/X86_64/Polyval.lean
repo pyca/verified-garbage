@@ -132,7 +132,9 @@ structure PolyPost (K W SP : Addr) (N A D : Addr) (al n : Nat) (t t' : State) : 
   rd : t'.rd = t.rd
   wr : t'.wr = t.wr
   frame : Frame (polyR W SP) t.mem t'.mem
-  out : bytesAt t'.mem (W + BitVec.ofNat 64 96) 16 =
+  /-- Given that POLYVAL is GHASH with `mulXG` of the key (`PolyvalEq`, proved
+  in `Verified.lean` so that these proofs need not import its algebra). -/
+  out : GcmSiv.Polyval.PolyvalEq → bytesAt t'.mem (W + BitVec.ofNat 64 96) 16 =
     Spec.GcmSiv.tagInput (bytesAt t.mem (W + BitVec.ofNat 64 16) 16) (bytesAt t.mem N 12) (bytesAt t.mem D n)
       (bytesAt t.mem A al)
 
@@ -186,7 +188,7 @@ theorem polyval_ok (v : GcmImpl) {K W SP : Addr} (L : Lay K W SP) {t : State} (E
   have hD₃ : Buf K W SP t₃ D n := hD.of_eq (hrd₃.trans P₂'.rd) (hwr₃.trans P₂'.wr)
   refine WP.mono (absorb_ok v L E₃ hD₃ h12₃ hbp₃) fun t₄ P₄ => ?_
   have P₄' := P₄.of_eq hm₃ hrd₃ hwr₃
-  rw [hm₃, Proof.AesGcm.X86_64.bytesAt_frame P₂'.frame (buf_absR hD) hD.lt.le] at P₄'
+  rw [hm₃, Proof.AesGcm.X86_64.bytesAt_frame P₂'.frame (buf_absR hD) (Nat.le_of_lt hD.lt)] at P₄'
   have P₂₄ := P₂'.trans L P₄'
   have S₄ := S.absR L P₂₄.frame
   refine WP.seq (WP.mono (lens_ok v L P₂₄.env S₄.alen S₄.len hA.lt hD.lt) fun t₅ P₅ => ?_)
@@ -195,12 +197,12 @@ theorem polyval_ok (v : GcmImpl) {K W SP : Addr} (L : Lay K W SP) {t : State} (E
   obtain ⟨t₆, run₆, fr₆, out₆, hg₆, hrd₆, hwr₆⟩ := tagIn_ok L P₂₅.env S₅.nonce (hN.of_eq P₂₅.rd P₂₅.wr)
   refine WP.of_runBlock ⟨t₆, run₆, P₂₅.env.of_saved hg₆ hrd₆ hwr₆, hrd₆.trans P₂₅.rd, hwr₆.trans P₂₅.wr,
     (P₂₅.frame.mono fun q hq => List.mem_cons_of_mem _ hq).trans
-      (fr₆.mono fun q hq => by simp only [List.mem_singleton] at hq; subst hq; exact List.mem_cons_self ..), ?_⟩
+      (fr₆.mono fun q hq => by simp only [List.mem_singleton] at hq; subst hq; exact List.mem_cons_self ..), fun hpv => ?_⟩
   have hp : ∀ xs ys : List Byte, (Spec.GcmSiv.pad16 xs ++ Spec.GcmSiv.pad16 ys).length % 16 = 0 := fun xs ys => by
     rw [List.length_append]; have := GcmSiv.pad16_mod xs; have := GcmSiv.pad16_mod ys; omega
   rw [out₆, Proof.AesGcm.X86_64.bytesAt_frame P₂₅.frame (buf_absR hN) (by decide), GcmSiv.tagInput_eq,
     Proof.AesGcm.X86_64.length_bytesAt, Proof.AesGcm.X86_64.length_bytesAt, P₂₅.out, hG, hY, Spec.GcmSiv.polyval,
-    GcmSiv.Polyval.polyvalFrom_eq, GcmSiv.elems_append (hp _ _), GcmSiv.elems_append (GcmSiv.pad16_mod _),
+    hpv, GcmSiv.elems_append (hp _ _), GcmSiv.elems_append (GcmSiv.pad16_mod _),
     GcmSiv.elems_single (bs := Spec.GcmSiv.le64 (8 * al) ++ Spec.GcmSiv.le64 (8 * n)) (by simp [Spec.GcmSiv.le64])]
 
 end VG.Proof.AesGcmSiv.X86_64

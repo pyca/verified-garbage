@@ -1,6 +1,7 @@
 import VerifiedGarbage.Proof.Cmac.Mem
 import VerifiedGarbage.Proof.Cmac.Mem32
 import VerifiedGarbage.Spec.GcmSiv
+import VerifiedGarbage.Spec.Gcm
 
 /-!
 # AES-GCM-SIV: lemmas on the specification
@@ -27,6 +28,18 @@ theorem ctxCiph_length (m : Mem) (K : Addr) (R : Nat) (x : List Byte) :
     (Spec.GcmSiv.ctxCiph m K R x).length = 16 :=
   aesWith_length _ _ _
 
+/-- A byte of a number below `2 ^ n` is the byte of the number. -/
+theorem byte_mod {x n k : Nat} (h : k + 8 ≤ n) : x % 2 ^ n / 2 ^ k % 2 ^ 8 = x / 2 ^ k % 2 ^ 8 := by
+  apply Nat.eq_of_testBit_eq; intro i
+  simp only [Nat.testBit_mod_two_pow, Nat.testBit_div_two_pow]
+  by_cases hi : i < 8
+  · simp only [hi, decide_true, Bool.true_and, show i + k < n by omega]
+  · simp only [hi, decide_false, Bool.false_and]
+
+/-- A number from `k` on: its byte at `k`, then the rest. -/
+theorem byte_step (x k : Nat) : x / 2 ^ k % 2 ^ 8 + 256 * (x / 2 ^ (k + 8)) = x / 2 ^ k := by
+  rw [Nat.pow_add, ← Nat.div_div_eq_div_mul]; exact Nat.mod_add_div _ 256
+
 /-- The four bytes of the counter `i`, as `little_endian_uint32`. -/
 theorem le4_le32 (i : Nat) : Proof.Cmac.le4 ((BitVec.ofNat 64 i).setWidth 32) = Spec.GcmSiv.le32 i := by
   apply List.ext_getElem (by simp [Proof.Cmac.le4, Spec.GcmSiv.le32])
@@ -35,7 +48,7 @@ theorem le4_le32 (i : Nat) : Proof.Cmac.le4 ((BitVec.ofNat 64 i).setWidth 32) = 
   simp only [Proof.Cmac.le4, Spec.GcmSiv.le32, List.getElem_map, List.getElem_range]
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.extractLsb'_toNat, BitVec.toNat_setWidth, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow]
-  rcases (by omega : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3) with rfl | rfl | rfl | rfl <;> simp <;> omega
+  rw [Nat.mod_mod_of_dvd _ (Nat.pow_dvd_pow 2 (by decide : 32 ≤ 64)), byte_mod (by omega), Nat.pow_mul]
 
 /-- The first 8 bytes of `CIPH(little_endian_uint32(i) ‖ nonce)`, for `i < k`,
 one after the other. -/
@@ -81,7 +94,11 @@ theorem leNat_le8 (a : BitVec 64) : Spec.GcmSiv.leNat (Proof.Cmac.le8 a) = a.toN
   simp only [Spec.GcmSiv.leNat, Proof.Cmac.le8, List.range_succ, List.range_zero, List.nil_append,
     List.map_append, List.map_cons, List.map_nil, List.cons_append, List.foldr_cons, List.foldr_nil,
     BitVec.extractLsb'_toNat, Nat.shiftRight_eq_div_pow]
-  omega
+  generalize a.toNat = x at h ⊢
+  have h7 : x / 2 ^ (8 * 7) % 2 ^ 8 + 256 * 0 = x / 2 ^ (8 * 7) := by
+    rw [Nat.mul_zero, Nat.add_zero, Nat.mod_eq_of_lt (Nat.div_lt_of_lt_mul (by omega))]
+  rw [h7, byte_step x (8 * 6), byte_step x (8 * 5), byte_step x (8 * 4), byte_step x (8 * 3),
+    byte_step x (8 * 2), byte_step x (8 * 1), byte_step x (8 * 0), Nat.mul_zero, Nat.pow_zero, Nat.div_one]
 
 /-- POLYVAL's field element of a block stored as two little-endian words. -/
 theorem ofBytes_le8 (a b : BitVec 64) : Spec.GcmSiv.ofBytes (Proof.Cmac.le8 a ++ Proof.Cmac.le8 b) = b ++ a := by
@@ -126,8 +143,7 @@ theorem le64_le8 (x : Nat) : Spec.GcmSiv.le64 x = Proof.Cmac.le8 (BitVec.ofNat 6
   simp only [Proof.Cmac.le8, Spec.GcmSiv.le64, List.getElem_map, List.getElem_range]
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.extractLsb'_toNat, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow]
-  rcases (by omega : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 ∨ j = 6 ∨ j = 7) with
-    rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp <;> omega
+  rw [byte_mod (by omega), Nat.pow_mul]
 
 /-! ## POLYVAL's field elements of a string -/
 
@@ -268,3 +284,24 @@ theorem tagOf_words (a b n₀ : BitVec 64) (n₁ : BitVec 32) :
     simp [le8, BitVec.extractLsb'_xor, BitVec.extractLsb'_and, setWidth_byte_hi _ (show 4 ≤ 7 by omega)]
 
 end VG.Proof.GcmSiv
+
+/-! ## GHASH's product with `x`
+
+`mulXG`, and the statement that POLYVAL with `H` is GHASH with `mulXG H`
+(`PolyvalEq`, proved by `Polyval.polyvalFrom_eq`), apart from the algebra of
+`Polyval.lean`, so that proofs of implementations can take it as a
+hypothesis and need not import that algebra (only `Verified.lean` does).
+-/
+
+namespace VG.Proof.GcmSiv.Polyval
+
+/-- GHASH's product with `x`: a shift to the right (`Proof.Gcm.Poly.φ_shr1`). -/
+def mulXG (h : Spec.Gcm.Block) : Spec.Gcm.Block :=
+  if h.getLsbD 0 then (h >>> 1) ^^^ Spec.Gcm.R else h >>> 1
+
+/-- RFC 8452 Appendix A: POLYVAL with `H` is GHASH with `H · x`
+(`polyvalFrom_eq`). -/
+abbrev PolyvalEq : Prop := ∀ (h s : Spec.GcmSiv.Elem) (xs : List Spec.GcmSiv.Elem),
+  Spec.GcmSiv.polyvalFrom h s xs = Spec.Gcm.ghashFrom (mulXG h) s xs
+
+end VG.Proof.GcmSiv.Polyval
