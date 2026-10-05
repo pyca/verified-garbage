@@ -229,22 +229,22 @@ theorem idx_ecdh {i : Nat} (hi : i ∈ Args.ecdh.idx) : i < 4 := by
   simp only [Args.idx, List.mem_cons, List.not_mem_nil, or_false] at hi
   omega
 
-theorem EPre.setup {s : State} (hp : EPre c s) (h7 : c.n < 10) : SetupPre c Args.ecdh s where
+theorem EPre.setup {s : State} (hp : EPre c s) (hl : c.C.len = 8 * c.n) : SetupPre c Args.ecdh s where
   shift := .inl rfl
   wr := by rw [hp.wr]; simp
   arg_in := fun i hi => ⟨_, by rw [hp.rd]; simp, arg_containsN (k := 4) (by have := hp.sp_fit; omega)
     (idx_ecdh hi)⟩
   arg_sc := fun i hi => hp.args_sc.sub_left (arg_subN (k := 4) (by have := hp.sp_fit; omega) (idx_ecdh hi))
   sp_fit := fun i hi => by have := idx_ecdh hi; have := hp.sp_fit; omega
-  k_in := inRegions_words (by rw [hp.rd]; simp) (by omega)
-  d_in := inRegions_words (by rw [hp.rd]; simp) (by omega)
-  e_in := inRegions_words (by rw [hp.rd]; simp) (by omega)
-  k_sc := hp.d_sc
-  d_sc := hp.d_sc
-  e_sc := hp.d_sc
-  k_fit := hp.d_fit
-  d_fit := hp.d_fit
-  e_fit := hp.d_fit
+  k_in := hl ▸ inRegions_words (by rw [hp.rd]; simp) (by have := hp.d_fit; omega)
+  d_in := hl ▸ inRegions_words (by rw [hp.rd]; simp) (by have := hp.d_fit; omega)
+  e_in := hl ▸ inRegions_words (by rw [hp.rd]; simp) (by have := hp.d_fit; omega)
+  k_sc := hl ▸ hp.d_sc
+  d_sc := hl ▸ hp.d_sc
+  e_sc := hl ▸ hp.d_sc
+  k_fit := hl ▸ hp.d_fit
+  d_fit := hl ▸ hp.d_fit
+  e_fit := hl ▸ hp.d_fit
   sc_fit := hp.sc_fit
 
 /-- The private key. -/
@@ -312,7 +312,7 @@ theorem exchange_eq' (c : Cfg) : Impl.Ecdh.X86.Cfg.exchange c =
 
 /-- `vg_ecdh_<curve>` computes the specification's shared secret and restores
 the callee-saved registers. -/
-theorem exchange_ok (hc : CfgOk c) (hC : Law c.C) {s₀ : State} (hp : EPre c s₀) :
+theorem exchange_ok (hc : CfgOk c) (hl : c.C.len = 8 * c.n) (hC : Law c.C) {s₀ : State} (hp : EPre c s₀) :
     WP isa (Impl.Ecdh.X86.Cfg.exchange c) s₀ fun s' => EKeep c s₀ s' ∧ EPost c s₀ s' := by
   have h0 := hc.n0
   have h7 := hc.n10
@@ -321,7 +321,7 @@ theorem exchange_ok (hc : CfgOk c) (hC : Law c.C) {s₀ : State} (hp : EPre c s�
   have hp3 := hc.p_ge
   have h4 : (s₀.gpr .esp).toNat + 4 + 4 * 4 ≤ 2 ^ 32 := by have := hp.sp_fit; omega
   rw [exchange_eq']
-  refine WP.seq (stage₁ hc (hp.setup h7) fun s₂ S₂ => WP.block_nil ?_)
+  refine WP.seq (stage₁ hc (hp.setup hl) fun s₂ S₂ => WP.block_nil ?_)
   have hn := S₂.scr.nowrap
   have W₂ : Outside (ptr s₀ 3) 0 size s₀.mem s₂.mem :=
     S₂.whole.outside fun w hw => by rw [List.mem_singleton.mp hw]; exact ⟨Nat.le_refl _, Nat.le_refl _⟩
@@ -411,22 +411,22 @@ theorem exchange_ok (hc : CfgOk c) (hC : Law c.C) {s₀ : State} (hp : EPre c s�
     fun s' ⟨xv, hxl, hxv, bytes, ret, saved, esp, m, Wm, Om⟩ => ⟨⟨saved, esp, m, Wm, Om⟩, ?_⟩
   -- The specification.
   have hlen : (Spec.Ecdsa.bytesAt s₀.mem (ptr s₀ 2) (1 + 16 * c.n)).length = 2 * c.C.len + 1 := by
-    rw [length_bytesAt, hc.len]; omega
+    rw [length_bytesAt, hl]; omega
   have hb0 : (Spec.Ecdsa.bytesAt s₀.mem (ptr s₀ 2) (1 + 16 * c.n)).head? = some (s₀.mem (ptr s₀ 2)) := by
     rw [peer_bytes]; rfl
   have hxs : ofBytes (((Spec.Ecdsa.bytesAt s₀.mem (ptr s₀ 2) (1 + 16 * c.n)).drop 1).take c.C.len) =
       sv c (ptr s₀ 3) s₃ E := by
-    rw [peer_bytes, List.drop_one, List.tail_cons, hc.len, List.take_left' (length_bytesAt _ _ _), x₃,
+    rw [peer_bytes, List.drop_one, List.tail_cons, hl, List.take_left' (length_bytesAt _ _ _), x₃,
       bytesAt_keep W₂ (hp.peer_sc.sub_left (Offset.sub_base _ (by omega))) (by omega) (by omega)]
   have hys : ofBytes ((Spec.Ecdsa.bytesAt s₀.mem (ptr s₀ 2) (1 + 16 * c.n)).drop (c.C.len + 1)) =
       sv c (ptr s₀ 3) s₃ QY := by
-    rw [peer_bytes, hc.len, List.drop_succ_cons, List.drop_left' (length_bytesAt _ _ _), y₃,
+    rw [peer_bytes, hl, List.drop_succ_cons, List.drop_left' (length_bytesAt _ _ _), y₃,
       bytesAt_keep W₂ (hp.peer_sc.sub_left (Offset.sub_base _ (by omega))) (by omega) (by omega)]
   have hP' : ∀ h : Ecdh.Valid c.C (s₀.mem (ptr s₀ 2)) (sv c (ptr s₀ 3) s₃ E) (sv c (ptr s₀ 3) s₃ QY),
       peerPt c (s₀.mem (ptr s₀ 2) = 4) (sv c (ptr s₀ 3) s₃ E) (sv c (ptr s₀ 3) s₃ QY) =
         .affine ⟨_, h.2.1⟩ ⟨_, h.2.2.1⟩ := fun h => by
     unfold peerPt; rw [dite_eq_left ⟨⟨⟨h.1, h.2.1⟩, h.2.2.1⟩, h.2.2.2⟩]
-  have hk : sv c (ptr s₀ 3) s₂ K = dk c s₀ := S₂.k
+  have hk : sv c (ptr s₀ 3) s₂ K = dk c s₀ := by rw [S₂.k, kv_eq rfl, hl]
   have hR := L.q
   rw [Nat.shiftRight_zero, hk] at hR
   have hxoX : Fin.ofNat c.C.p xv = tmv c.C c.n (ptr s₀ 3) s₅ (c.sl RX) *
@@ -434,8 +434,7 @@ theorem exchange_ok (hc : CfgOk c) (hC : Law c.C) {s₀ : State} (hp : EPre c s�
   have hspec := exchange_eq hC hlen hb0 hxs hys hP' hR hxl hxoX
   have hD₅ : sv c (ptr s₀ 3) s₅ D = dk c s₀ := by
     rw [e₅ (by decide) (by decide) (by decide), e₄ (by decide) (by decide) (by decide),
-      e₃ (by decide) (by decide) (by decide)]
-    exact S₂.d
+      e₃ (by decide) (by decide) (by decide), S₂.d, dv_eq rfl, hl]
   have hz : tmv c.C c.n (ptr s₀ 3) s₅ (c.sl RZ) ≠ 0 ↔ sv c (ptr s₀ 3) s₅ RZ ≠ 0 :=
     not_congr (toM_eq_zero_iff hpR L.rz_lt)
   unfold EPost
@@ -450,7 +449,7 @@ theorem exchange_ok (hc : CfgOk c) (hC : Law c.C) {s₀ : State} (hp : EPre c s�
       · rw [hD₅]; exact hcond.1.1
       · rw [hD₅]; exact hcond.1.2
     rw [ite_eq_left hcond]
-    exact ⟨by rw [ret, hok]; rfl, by rw [bytes, hok, hc.len]; rfl⟩
+    exact ⟨by rw [ret, hok]; rfl, by rw [bytes, hok, hl]; rfl⟩
   · have hok : ok c (ptr s₀ 3) s₅ (PeerOk c (ptr s₀ 3) s₃ ((s₀.mem (ptr s₀ 2) = 4 ∧
         sv c (ptr s₀ 3) s₃ E < c.C.p) ∧ sv c (ptr s₀ 3) s₃ QY < c.C.p)) = false := by
       refine decide_eq_false fun h => hcond ⟨⟨?_, ?_⟩, ⟨h.1.1.1.1.1, h.1.1.1.1.2, h.1.1.1.2, h.1.1.2⟩,

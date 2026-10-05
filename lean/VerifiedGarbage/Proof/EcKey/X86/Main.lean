@@ -200,22 +200,22 @@ theorem idx_publicKey {i : Nat} (hi : i ∈ Args.publicKey.idx) : i < 3 := by
   simp only [Args.idx, List.mem_cons, List.not_mem_nil, or_false] at hi
   omega
 
-theorem PkPre.setup {s : State} (hp : PkPre c s) (h7 : c.n < 10) : SetupPre c Args.publicKey s where
+theorem PkPre.setup {s : State} (hp : PkPre c s) (hl : c.C.len = 8 * c.n) : SetupPre c Args.publicKey s where
   shift := .inl rfl
   wr := by rw [hp.wr]; simp
   arg_in := fun i hi => ⟨_, by rw [hp.rd]; simp, arg_containsN (k := 3) (by have := hp.sp_fit; omega)
     (idx_publicKey hi)⟩
   arg_sc := fun i hi => hp.args_sc.sub_left (arg_subN (k := 3) (by have := hp.sp_fit; omega) (idx_publicKey hi))
   sp_fit := fun i hi => by have := idx_publicKey hi; have := hp.sp_fit; omega
-  k_in := inRegions_words (by rw [hp.rd]; simp) (by omega)
-  d_in := inRegions_words (by rw [hp.rd]; simp) (by omega)
-  e_in := inRegions_words (by rw [hp.rd]; simp) (by omega)
-  k_sc := hp.d_sc
-  d_sc := hp.d_sc
-  e_sc := hp.d_sc
-  k_fit := hp.d_fit
-  d_fit := hp.d_fit
-  e_fit := hp.d_fit
+  k_in := hl ▸ inRegions_words (by rw [hp.rd]; simp) (by have := hp.d_fit; omega)
+  d_in := hl ▸ inRegions_words (by rw [hp.rd]; simp) (by have := hp.d_fit; omega)
+  e_in := hl ▸ inRegions_words (by rw [hp.rd]; simp) (by have := hp.d_fit; omega)
+  k_sc := hl ▸ hp.d_sc
+  d_sc := hl ▸ hp.d_sc
+  e_sc := hl ▸ hp.d_sc
+  k_fit := hl ▸ hp.d_fit
+  d_fit := hl ▸ hp.d_fit
+  e_fit := hl ▸ hp.d_fit
   sc_fit := hp.sc_fit
 
 /-- The private key. -/
@@ -245,18 +245,18 @@ theorem publicKey_eq' (c : Cfg) : Impl.EcKey.X86.Cfg.publicKey c =
 
 /-- `vg_ec_<curve>_public_key` computes the specification's public key and
 restores the callee-saved registers. -/
-theorem publicKey_ok (hc : CfgOk c) (hC : Law c.C) {s₀ : State} (hp : PkPre c s₀) :
+theorem publicKey_ok (hc : CfgOk c) (hl : c.C.len = 8 * c.n) (hC : Law c.C) {s₀ : State} (hp : PkPre c s₀) :
     WP isa (Impl.EcKey.X86.Cfg.publicKey c) s₀ fun s' => PkKeep c s₀ s' ∧ PkPost c s₀ s' := by
   have hpR := unitMod_pow_two hc.p_odd (64 * c.n)
   rw [publicKey_eq']
-  refine WP.seq (stage₁ hc (hp.setup hc.n10) fun _ S₁ => stage₂ hc hC S₁ fun s₂ S₂ => WP.block_nil ?_)
+  refine WP.seq (stage₁ hc (hp.setup hl) fun _ S₁ => stage₂ hc hC S₁ fun s₂ S₂ => WP.block_nil ?_)
   have h3 : (s₀.gpr .esp).toNat + 4 + 4 * 3 ≤ 2 ^ 32 := by have := hp.sp_fit; omega
   refine WP.mono (middle_ok hc S₂.scr S₂.fixed S₂.acc_lt S₂.flag S₂.whole S₂.esp S₂.rd S₂.wr
     ⟨_, by rw [hp.rd]; simp, arg_containsN h3 (by decide)⟩ (hp.args_sc.sub_left (arg_subN h3 (by decide)))
     hp.out_fit (by rw [hp.wr]; simp) hp.out_sc)
     fun s' ⟨xv, yv, hxl, hx, hyl, hy, bytes, rax, saved, esp, frame⟩ => ⟨⟨saved, esp, frame⟩, ?_⟩
   -- The specification.
-  have hD : sv c (ptr s₀ 2) s₂ D = dk c s₀ := S₂.d
+  have hD : sv c (ptr s₀ 2) s₂ D = dk c s₀ := by rw [S₂.d, dv_eq rfl, hl]
   have hR := S₂.rep
   have hxX : Fin.ofNat c.C.p xv = tmv c.C c.n (ptr s₀ 2) s₂ (c.sl RX) *
       tmv c.C c.n (ptr s₀ 2) s₂ (c.sl RZ) ^ (c.C.p - 2) := by rw [hx, S₂.acc]
@@ -264,7 +264,8 @@ theorem publicKey_ok (hc : CfgOk c) (hC : Law c.C) {s₀ : State} (hp : PkPre c 
       tmv c.C c.n (ptr s₀ 2) s₂ (c.sl RZ) ^ (c.C.p - 2) := by rw [hy, S₂.acc]
   have hz := toM_eq_zero_iff hpR (x := sv c (ptr s₀ 2) s₂ RZ) S₂.rz_lt
   unfold PkPost
-  rw [publicKey_eq hC hR hxl hxX hyl hyY]
+  have hdk : dk c s₀ = kv c Args.publicKey s₀ := by rw [kv_eq rfl, hl]
+  rw [hdk, publicKey_eq hC hR hxl hxX hyl hyY, ← hdk]
   by_cases hd : 1 ≤ dk c s₀ ∧ dk c s₀ < c.C.n
   · rw [ite_eq_left_of_eq_true _ _ (eq_true hd)]
     by_cases h0 : sv c (ptr s₀ 2) s₂ RZ = 0
@@ -276,7 +277,7 @@ theorem publicKey_ok (hc : CfgOk c) (hC : Law c.C) {s₀ : State} (hp : PkPre c 
       refine ⟨by rw [rax, hok]; rfl, ?_⟩
       rw [bytes, hok]
       show _ = 4 :: (toBytes c.C.len xv ++ toBytes c.C.len yv)
-      rw [hc.len]; rfl
+      rw [hl]; rfl
   · have hok : ok c (ptr s₀ 2) s₂ = false := decide_eq_false (by rw [hD]; omega)
     rw [ite_eq_right_of_eq_false _ _ (eq_false hd)]
     exact ⟨by rw [rax, hok]; rfl, by rw [bytes, hok]; rfl⟩

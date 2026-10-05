@@ -87,22 +87,23 @@ theorem idx_verify {i : Nat} (hi : i ∈ Args.verify.idx) : i < 4 := by
   simp only [Args.idx, List.mem_cons, List.not_mem_nil, or_false] at hi
   omega
 
-theorem VPre.setup {s : State} (hp : VPre c s) (h7 : c.n < 10) : SetupPre c Args.verify s where
+theorem VPre.setup {s : State} (hp : VPre c s) (hl : c.C.len = 8 * c.n) : SetupPre c Args.verify s where
   shift := .inl rfl
   wr := by rw [hp.wr]; simp
   arg_in := fun i hi => ⟨_, by rw [hp.rd]; simp, arg_containsN (k := 4) (by have := hp.sp_fit; omega)
     (idx_verify hi)⟩
   arg_sc := fun i hi => hp.args_sc.sub_left (arg_subN (k := 4) (by have := hp.sp_fit; omega) (idx_verify hi))
   sp_fit := fun i hi => by have := idx_verify hi; have := hp.sp_fit; omega
-  k_in := fun e he => ⟨⟨ptr s 2, 16 * c.n⟩, by rw [hp.rd]; simp, Offset.contains_base _ (by omega) (by omega)⟩
-  d_in := inRegions_words (by rw [hp.rd]; simp) (by omega)
-  e_in := inRegions_words (by rw [hp.rd]; simp) (by omega)
+  k_in := fun e he => ⟨⟨ptr s 2, 16 * c.n⟩, by rw [hp.rd]; simp,
+    Offset.contains_base _ (by omega) (by have := hp.sig_fit; omega)⟩
+  d_in := hl ▸ inRegions_words (by rw [hp.rd]; simp) (by have := hp.dg_fit; omega)
+  e_in := hl ▸ inRegions_words (by rw [hp.rd]; simp) (by have := hp.dg_fit; omega)
   k_sc := hp.sig_sc.sub_left (Region.sub_prefix (by omega))
-  d_sc := hp.dg_sc
-  e_sc := hp.dg_sc
-  k_fit := show (arg s 2).toNat + 8 * c.n ≤ 2 ^ 32 by have := hp.sig_fit; omega
-  d_fit := hp.dg_fit
-  e_fit := hp.dg_fit
+  d_sc := hl ▸ hp.dg_sc
+  e_sc := hl ▸ hp.dg_sc
+  k_fit := show (arg s 2).toNat + c.C.len ≤ 2 ^ 32 by have := hp.sig_fit; omega
+  d_fit := hl ▸ hp.dg_fit
+  e_fit := hl ▸ hp.dg_fit
   sc_fit := hp.sc_fit
 
 /-- Ranges of the working space, as one. -/
@@ -121,7 +122,7 @@ theorem loadS_eq (c : Cfg) : Impl.Ecdsa.Verify.X86.Cfg.loadS c =
   simp only [Impl.Ecdsa.Verify.X86.Cfg.loadS, List.cons_append, List.nil_append]
 
 /-- The setup and tables, `s`, and the checks of the key. -/
-theorem front_ok (hc : CfgOk c) {s₀ : State} (hp : VPre c s₀) {rest : Prog isa} {Q : State → Prop}
+theorem front_ok (hc : CfgOk c) (hl : c.C.len = 8 * c.n) {s₀ : State} (hp : VPre c s₀) {rest : Prog isa} {Q : State → Prop}
     (h : ∀ s, Front c s₀ (ptr s₀ 3) s → WP isa rest s Q) :
     WP isa (.seq (Impl.Ecdsa.Verify.X86.Cfg.prefix' c) (.seq (.block (Impl.Ecdsa.Verify.X86.Cfg.loadS c))
       (.seq (.block (Impl.Ecdh.X86.Cfg.peerAt c 0)) (.seq (Impl.Ecdh.X86.Cfg.validate c) rest)))) s₀ Q := by
@@ -129,7 +130,7 @@ theorem front_ok (hc : CfgOk c) {s₀ : State} (hp : VPre c s₀) {rest : Prog i
   have h7 := hc.n10
   have hsz : size = 8192 := rfl
   have h4 : (s₀.gpr .esp).toNat + 4 + 4 * 4 ≤ 2 ^ 32 := by have := hp.sp_fit; omega
-  refine WP.seq (stage₁ hc (hp.setup h7) fun s₂ S₂ => WP.block_nil ?_)
+  refine WP.seq (stage₁ hc (hp.setup hl) fun s₂ S₂ => WP.block_nil ?_)
   have hn := S₂.scr.nowrap
   have W₂ : Outside (ptr s₀ 3) 0 size s₀.mem s₂.mem :=
     S₂.whole.outside fun w hw => by rw [List.mem_singleton.mp hw]; exact ⟨Nat.le_refl _, Nat.le_refl _⟩
@@ -224,8 +225,8 @@ theorem front_ok (hc : CfgOk c) {s₀ : State} (hp : VPre c s₀) {rest : Prog i
     le_append (slWk_le h7 (by decide)) (flag_le h0 h7)
   refine ⟨hs₅, by rw [wr₅, k₄.2.2, K₃.2.2, S₂.wr], by rw [rd₅, k₄.2.1, K₃.2.1, S₂.rd],
     by rw [g₅ _ (by decide), k₄.1 _ (by decide), K₃.1 _ (by decide), S₂.esp], F₅,
-    by rw [a₅ (i := K) (by decide) (by decide) (by decide) (by decide) (by decide)]; exact S₂.k,
-    by rw [a₅ (i := D) (by decide) (by decide) (by decide) (by decide) (by decide)]; exact S₂.d,
+    by rw [a₅ (i := K) (by decide) (by decide) (by decide) (by decide) (by decide), S₂.k, kv_eq rfl, hl],
+    by rw [a₅ (i := D) (by decide) (by decide) (by decide) (by decide) (by decide), S₂.d, dv_eq rfl, hl],
     by rw [e₅ (i := PT) (by decide) (by decide) (by decide), e₄ (by decide) (by decide) (by decide), pt₃],
     by rw [a₅ (i := RX) (by decide) (by decide) (by decide) (by decide) (by decide), S₂.rx],
     by rw [a₅ (i := RY) (by decide) (by decide) (by decide) (by decide) (by decide), S₂.ry],
