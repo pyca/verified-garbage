@@ -163,7 +163,8 @@ theorem open_framed (v : GcmImpl) :
     (n := 476) (pre := Spec.GcmSiv.openPre AArch64.abi.ptrBits)
     (post := Spec.GcmSiv.openPost AArch64.abi.ptrBits) (wa := true) (stack := 0) (bytes := 3824)
     (leak := some (Spec.GcmSiv.openLeak AArch64.abi.ptrBits))
-    (open_verified v) (by decide) (by decide) (openPre_local _) (openPost_local _) openFrameSat_pre
+    (Proof.AesGcmSiv.Verified.of_openScratch (open_verified v)) (by decide) (by decide) (openPre_local _)
+    (openPost_local _) openFrameSat_pre
     (hleak := openLeak_local _)
 
 end VG.Proof.AesGcmSiv.AArch64

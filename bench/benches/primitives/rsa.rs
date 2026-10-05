@@ -1,6 +1,6 @@
 //! The RSA public-key operation (RSAEP) and private-key operation (RSADP with
-//! the CRT), without padding, and the loading of a private key from
-//! `(n, e, d, p, q)` and from `(n, e, d)`.
+//! the CRT, checked against the public exponent), without padding, and the
+//! loading of a private key from `(n, e, d, p, q)` and from `(n, e, d)`.
 
 use criterion::Criterion;
 
@@ -54,13 +54,16 @@ pub fn bench(c: &mut Criterion) {
 
     let mut g = c.benchmark_group("rsa_private");
     // The same sizes, each library holding the private key in the CRT form
-    // `(p, q, dP, dQ, qInv)` (OpenSSL with its default blinding).
+    // `(p, q, dP, dQ, qInv)` (OpenSSL with its default blinding). Both check
+    // the result against `e` (OpenSSL's `rsa_ossl_mod_exp` verifies it too).
     for bits in [2048, 3072, 4096] {
         let key = Rsa::generate(bits).unwrap();
         let n = key.n().to_vec();
         let k = n.len();
         let vg_key = PrivateKey::from_crt(
             &n,
+            &key.e().to_vec(),
+            &key.d().to_vec(),
             &key.p().unwrap().to_vec(),
             &key.q().unwrap().to_vec(),
             &key.dmp1().unwrap().to_vec(),

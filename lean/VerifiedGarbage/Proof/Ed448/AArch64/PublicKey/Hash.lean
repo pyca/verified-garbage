@@ -30,7 +30,7 @@ variable {L : Lay} {g : Reg → Addr} {vec : VReg → BitVec 128} {m₀ : Mem} {
 theorem zeroArgs_ok (hc : Ctx L g vec m₀ t) (hL : L.Ok) (ha : Arguments L m₀) :
     WP isa (.block zeroArgs) t fun w => Ctx L g vec m₀ w ∧ w.gpr .x15 = L.scr := by
   refine WP.mono (setup_ok hc hL ha (args := [(.x15, .caller 2 0)]) (by decide)
-    (by simp [VG.Proof.Ed25519.AArch64.Whole.valid]) (by simp) (by simp [preserved]))
+    (by simp [VG.Proof.Ed25519.AArch64.Whole.valid]) (by simp) (by decide))
     fun u ⟨hu, _, hs⟩ => ⟨hu, ?_⟩
   have h15 := hs (.x15, .caller 2 0) (by simp)
   simp only [argValue, Lay.value, BitVec.add_zero] at h15
@@ -105,12 +105,12 @@ def squeezeValues : List (Reg × Value) :=
 theorem absorb_pre (hL : L.Ok) {u : State} (hsp : u.sp = L.E)
     (hs : ∀ p ∈ absorbValues, u.gpr p.1 = argValue L p.2) :
     Proof.Sha3.absorbAArch64.pre (u.callEntry.withRegions [L.SEED] [ST L, KS L]) := by
-  have h0 := hs (.x0, .caller 2 0) (by simp [absorbValues])
-  have h1 := hs (.x1, .const 136) (by simp [absorbValues])
-  have h2 := hs (.x2, .const 0) (by simp [absorbValues])
-  have h3 := hs (.x3, .caller 1 0) (by simp [absorbValues])
-  have h4 := hs (.x4, .const 57) (by simp [absorbValues])
-  have h5 := hs (.x5, .caller 2 keccakScratch) (by simp [absorbValues])
+  have h0 := hs (.x0, .caller 2 0) (List.mem_of_getElem? (i := 0) rfl)
+  have h1 := hs (.x1, .const 136) (List.mem_of_getElem? (i := 1) rfl)
+  have h2 := hs (.x2, .const 0) (List.mem_of_getElem? (i := 2) rfl)
+  have h3 := hs (.x3, .caller 1 0) (List.mem_of_getElem? (i := 3) rfl)
+  have h4 := hs (.x4, .const 57) (List.mem_of_getElem? (i := 4) rfl)
+  have h5 := hs (.x5, .caller 2 keccakScratch) (List.mem_of_getElem? (i := 5) rfl)
   simp only [argValue, Lay.value, BitVec.add_zero] at h0 h1 h2 h3 h4 h5
   simp only [Proof.Sha3.absorbAArch64, State.withRegions_rd, State.withRegions_wr,
     State.withRegions_sp, State.callEntry_sp,
@@ -135,10 +135,10 @@ theorem absorb_covers (L : Lay) : Covers ([L.SEED] ++ [ST L, KS L]) (L.inputs ++
 theorem pad_pre (hL : L.Ok) {u : State} (hsp : u.sp = L.E)
     (hs : ∀ p ∈ padValues, u.gpr p.1 = argValue L p.2) :
     Proof.Sha3.padAArch64.pre (u.callEntry.withRegions [] [ST L, KS L]) := by
-  have h0 := hs (.x0, .caller 2 0) (by simp [padValues])
-  have h1 := hs (.x1, .const 136) (by simp [padValues])
-  have h2 := hs (.x2, .const 57) (by simp [padValues])
-  have h4 := hs (.x4, .caller 2 keccakScratch) (by simp [padValues])
+  have h0 := hs (.x0, .caller 2 0) (List.mem_of_getElem? (i := 0) rfl)
+  have h1 := hs (.x1, .const 136) (List.mem_of_getElem? (i := 1) rfl)
+  have h2 := hs (.x2, .const 57) (List.mem_of_getElem? (i := 2) rfl)
+  have h4 := hs (.x4, .caller 2 keccakScratch) (List.mem_of_getElem? (i := 4) rfl)
   simp only [argValue, Lay.value, BitVec.add_zero] at h0 h1 h2 h4
   simp only [Proof.Sha3.padAArch64, State.withRegions_rd, State.withRegions_wr,
     State.withRegions_sp, State.callEntry_sp,
@@ -155,12 +155,12 @@ theorem hs_stk (L : Lay) : Region.Sub (HS L) L.STK := Offset.sub_base _ (by deci
 theorem squeeze_pre (hL : L.Ok) {u : State} (hsp : u.sp = L.E)
     (hs : ∀ p ∈ squeezeValues, u.gpr p.1 = argValue L p.2) :
     Proof.Sha3.squeezeAArch64.pre (u.callEntry.withRegions [] [ST L, HS L, KS L]) := by
-  have h0 := hs (.x0, .caller 2 0) (by simp [squeezeValues])
-  have h1 := hs (.x1, .const 136) (by simp [squeezeValues])
-  have h2 := hs (.x2, .const 0) (by simp [squeezeValues])
-  have h3 := hs (.x3, .frame hashAt) (by simp [squeezeValues])
-  have h4 := hs (.x4, .const 114) (by simp [squeezeValues])
-  have h5 := hs (.x5, .caller 2 keccakScratch) (by simp [squeezeValues])
+  have h0 := hs (.x0, .caller 2 0) (List.mem_of_getElem? (i := 0) rfl)
+  have h1 := hs (.x1, .const 136) (List.mem_of_getElem? (i := 1) rfl)
+  have h2 := hs (.x2, .const 0) (List.mem_of_getElem? (i := 2) rfl)
+  have h3 := hs (.x3, .frame hashAt) (List.mem_of_getElem? (i := 3) rfl)
+  have h4 := hs (.x4, .const 114) (List.mem_of_getElem? (i := 4) rfl)
+  have h5 := hs (.x5, .caller 2 keccakScratch) (List.mem_of_getElem? (i := 5) rfl)
   simp only [argValue, Lay.value, BitVec.add_zero] at h0 h1 h2 h3 h4 h5
   have hos : (HS L).Disjoint (ST L) := (hL.kc.sub_left (hs_stk L)).sub_right (st_sub L)
   have hok : (HS L).Disjoint (KS L) := (hL.kc.sub_left (hs_stk L)).sub_right (ks_sub L)
@@ -185,7 +185,7 @@ theorem absorb_step (v : Proof.Sha3.AArch64.Permutation) (hc : Ctx L g vec m₀ 
     (args := [(.x0, .caller 2 0), (.x1, .const 136), (.x2, .const 0), (.x3, .caller 1 0), (.x4, .const 57),
       (.x5, .caller 2 keccakScratch)])
     (by decide) (by simp [VG.Proof.Ed25519.AArch64.Whole.valid, keccakScratch]) (by simp)
-    (by simp [preserved])) fun u ⟨hu, hm, hs⟩ => ?_)
+    (by decide)) fun u ⟨hu, hm, hs⟩ => ?_)
   have h0 := hs (.x0, .caller 2 0) (by simp)
   have h1 := hs (.x1, .const 136) (by simp)
   have h2 := hs (.x2, .const 0) (by simp)
@@ -225,7 +225,7 @@ theorem pad_step (v : Proof.Sha3.AArch64.Permutation) (hc : Ctx L g vec m₀ t) 
     (args := [(.x0, .caller 2 0), (.x1, .const 136), (.x2, .const 57), (.x3, .const 0x1f),
       (.x4, .caller 2 keccakScratch)])
     (by decide) (by simp [VG.Proof.Ed25519.AArch64.Whole.valid, keccakScratch]) (by simp)
-    (by simp [preserved])) fun u ⟨hu, hm, hs⟩ => ?_)
+    (by decide)) fun u ⟨hu, hm, hs⟩ => ?_)
   have h0 := hs (.x0, .caller 2 0) (by simp)
   have h1 := hs (.x1, .const 136) (by simp)
   have h2 := hs (.x2, .const 57) (by simp)
@@ -263,7 +263,7 @@ theorem squeeze_step (v : Proof.Sha3.AArch64.Permutation) (hc : Ctx L g vec m₀
     (args := [(.x0, .caller 2 0), (.x1, .const 136), (.x2, .const 0), (.x3, .frame hashAt),
       (.x4, .const 114), (.x5, .caller 2 keccakScratch)])
     (by decide) (by simp [VG.Proof.Ed25519.AArch64.Whole.valid, keccakScratch, hashAt]) (by simp)
-    (by simp [preserved])) fun u ⟨hu, hm, hs⟩ => ?_)
+    (by decide)) fun u ⟨hu, hm, hs⟩ => ?_)
   have h0 := hs (.x0, .caller 2 0) (by simp)
   have h1 := hs (.x1, .const 136) (by simp)
   have h2 := hs (.x2, .const 0) (by simp)

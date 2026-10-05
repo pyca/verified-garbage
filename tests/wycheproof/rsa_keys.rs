@@ -4,9 +4,10 @@
 //! the RSA test vector files (`rsa_*_test.json`; keys with other primes are
 //! skipped).
 //!
-//! Each key's operation is `x^d mod n` (by the public-key operation with `d`
-//! as the exponent) on a few inputs, as is the operation of the key loaded
-//! from its CRT values when the file gives them.
+//! On a few inputs, RSAEP of each key's result gives back the input, and the
+//! keys loaded from `(n, e, d, p, q)` and from the CRT values the file gives
+//! agree with it. (Every key's public exponent, 3 or 65537, is within
+//! BoringSSL's limits.)
 
 #![cfg(all(target_arch = "x86_64", feature = "alloc"))]
 
@@ -60,27 +61,29 @@ fn check_key(name: &str, k: &Key) -> bool {
     let n = trim(&k.modulus.0);
     let (e, d) = (&k.public_exponent.0, &k.private_exponent.0);
     let len = n.len();
-    let by_d = PublicKey::new(n, trim(d)).unwrap();
+    let public = PublicKey::new(n, e).unwrap();
     // 2, and `n` with its top byte halved, both below `n`.
     let mut x = vec![0; len];
     x[len - 1] = 2;
     let mut y = n.to_vec();
     y[0] >>= 1;
+    let key = PrivateKey::from_components(n, e, d).unwrap_or_else(|err| panic!("{name}: {err}"));
+    assert_eq!(key.modulus_len(), len, "{name}");
+    // RSAEP of each result gives back the input.
     let expect: Vec<Vec<u8>> = [&x, &y]
         .iter()
         .map(|v| {
-            let mut out = vec![0; len];
-            by_d.public_op(v, &mut out).unwrap();
+            let out = private(&key, v);
+            let mut back = vec![0; len];
+            public.public_op(&out, &mut back).unwrap();
+            assert_eq!(&back, *v, "{name}");
             out
         })
         .collect();
     let check = |key: &PrivateKey, how: &str| {
-        assert_eq!(key.modulus_len(), len, "{name}: {how}");
         assert_eq!(private(key, &x), expect[0], "{name}: {how}");
         assert_eq!(private(key, &y), expect[1], "{name}: {how}");
     };
-    let key = PrivateKey::from_components(n, e, d).unwrap_or_else(|err| panic!("{name}: {err}"));
-    check(&key, "from_components");
     let (Some(p), Some(q), Some(dp), Some(dq), Some(qi)) = (
         &k.prime1,
         &k.prime2,
@@ -93,7 +96,7 @@ fn check_key(name: &str, k: &Key) -> bool {
     let key =
         PrivateKey::from_primes(n, e, d, &p.0, &q.0).unwrap_or_else(|err| panic!("{name}: {err}"));
     check(&key, "from_primes");
-    let key = PrivateKey::from_crt(n, &p.0, &q.0, &dp.0, &dq.0, &qi.0).unwrap();
+    let key = PrivateKey::from_crt(n, e, d, &p.0, &q.0, &dp.0, &dq.0, &qi.0).unwrap();
     check(&key, "from_crt");
     true
 }
@@ -122,17 +125,19 @@ fn rsa_keys_from_components() {
     let workers = std::thread::available_parallelism().map_or(1, |n| n.get());
     let next = AtomicUsize::new(0);
     let with_primes = AtomicUsize::new(0);
+    let without_primes = AtomicUsize::new(0);
     std::thread::scope(|s| {
         for _ in 0..workers.min(keys.len()) {
             s.spawn(|| {
                 while let Some((name, k)) = keys.get(next.fetch_add(1, Ordering::Relaxed)) {
                     if check_key(name, k) {
                         with_primes.fetch_add(1, Ordering::Relaxed);
+                    } else {
+                        without_primes.fetch_add(1, Ordering::Relaxed);
                     }
                 }
             });
         }
     });
-    let with_primes = with_primes.into_inner();
-    assert!(with_primes > 0 && with_primes < keys.len());
+    assert!(with_primes.into_inner() > 0 && without_primes.into_inner() > 0);
 }

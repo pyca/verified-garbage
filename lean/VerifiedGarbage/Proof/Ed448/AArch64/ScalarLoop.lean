@@ -52,7 +52,7 @@ theorem scalarWord_ok (s : State) (hc : Consts s) (k : Nat)
   have av : rem a = rem s := Keeps.rv_eq ka (by decide)
   have hca : Consts a := hc.of_keeps ka (by decide)
   rw [WP.block_append_iff]
-  refine WP.mono (wordFold_ok a hca (av ▸ hv)) fun b ⟨b2, bm, kb⟩ => ?_
+  refine WP.mono (wordFold_ok a hca (by rw [av]; exact hv)) fun b ⟨b2, bm, kb⟩ => ?_
   have hcb : Consts b := hca.of_keeps kb (by decide)
   refine WP.mono (csub_ok b hcb b2) fun t ⟨tv, kt⟩ => ?_
   refine ⟨?_, ?_, ((ka.mono (by decide)).trans (kb.mono (by decide))).trans (kt.mono (by decide))⟩

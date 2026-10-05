@@ -116,8 +116,8 @@ theorem body_ct (v : Proof.Sha3.AArch64.Permutation) (hR : Proof.Ed448.RecoverOk
       (fun _ h => WP.mono (entry_ok hL h.1 ha₂ h.2) fun _ hu => ⟨hu, trivial⟩)
   have r := reduce_ct hV ha₁ ha₂ (g₁ := g₁) (g₂ := g₂) (v₁ := v₁) (v₂ := v₂) (args := reduceArgs)
     (by decide) (by simp [reduceArgs, VG.Proof.Ed448.AArch64.Whole.srcValid,
-      VG.Proof.Ed25519.AArch64.Whole.valid, fK, fH, fScr]) rfl (by simp [reduceArgs, preserved])
-    (by simp [reduceArgs, linkRegs]) (by taint_decide) (P := fun _ => True) (reduceVal L)
+      VG.Proof.Ed25519.AArch64.Whole.valid, fK, fH, fScr]) rfl (by decide)
+    (by decide) (by taint_decide) (P := fun _ => True) (reduceVal L)
     (fun _ hc _ p hp => by
       simp only [reduceArgs, List.mem_cons, List.not_mem_nil, or_false] at hp
       rcases hp with rfl | rfl | rfl
@@ -129,8 +129,8 @@ theorem body_ct (v : Proof.Sha3.AArch64.Permutation) (hR : Proof.Ed448.RecoverOk
     (fun _ hc _ => WP.mono (reduce_step hL hc) fun _ hu => ⟨hu.1, trivial⟩)
   have q := equation_ct hR hE hV ha₁ ha₂ (g₁ := g₁) (g₂ := g₂) (v₁ := v₁) (v₂ := v₂) (args := equationArgs)
     (by decide) (by simp [equationArgs, VG.Proof.Ed448.AArch64.Whole.srcValid,
-      VG.Proof.Ed25519.AArch64.Whole.valid, aPk, aSig, fK, fScr]) rfl (by simp [equationArgs, preserved])
-    (by simp [equationArgs, linkRegs]) (by taint_decide) (P := fun _ => True) (equationVal L)
+      VG.Proof.Ed25519.AArch64.Whole.valid, aPk, aSig, fK, fScr]) rfl (by decide)
+    (by decide) (by taint_decide) (P := fun _ => True) (equationVal L)
     (fun hm hc _ p hp => by
       simp only [equationArgs, List.mem_cons, List.not_mem_nil, or_false] at hp
       rcases hp with rfl | rfl | rfl | rfl

@@ -1,4 +1,4 @@
-import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Callee
+import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Entry
 import VerifiedGarbage.Proof.GcmSiv.Spec
 
 /-!

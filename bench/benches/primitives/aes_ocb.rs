@@ -7,7 +7,12 @@ pub const USES: &[&str] = &["aes_ocb", "aes"];
 /// One-shot AES-128-OCB encryption and decryption (key setup included), with
 /// a 12-byte nonce, 16 bytes of associated data and a 16-byte tag, as
 /// OpenSSL's `EVP_aes_128_ocb` does it.
-#[cfg(any(target_arch = "x86_64", target_arch = "aarch64", target_arch = "arm"))]
+#[cfg(any(
+    target_arch = "x86",
+    target_arch = "x86_64",
+    target_arch = "aarch64",
+    target_arch = "arm"
+))]
 pub fn bench(c: &mut Criterion) {
     use std::hint::black_box;
 
@@ -90,5 +95,10 @@ pub fn bench(c: &mut Criterion) {
     }
 }
 
-#[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64", target_arch = "arm")))]
+#[cfg(not(any(
+    target_arch = "x86",
+    target_arch = "x86_64",
+    target_arch = "aarch64",
+    target_arch = "arm"
+)))]
 pub fn bench(_: &mut Criterion) {}

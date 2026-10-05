@@ -30,13 +30,13 @@ def artifacts (v : Proof.Pbkdf2.Md.AArch64.MdHash) : List Artifact :=
       name := Spec.Ecdsa.Rfc6979.P384Sha384.signApi.name ++ c.suffix
       target := AArch64.target
       doc := Spec.Ecdsa.Rfc6979.P384Sha384.signApi.doc
-        (notes := [signNotes (cfgOf (pack Proof.P384.law Proof.P384.combOk7 c)).H 48 Spec.Ecdsa.P384.signApi.name])
-      code := (cfgOf (pack Proof.P384.law Proof.P384.combOk7 c)).sign
+        (notes := [signNotes (cfgOf (pack Proof.P384.law (Proof.P384.combOk7 Proof.P384.law) c)).H 48 Spec.Ecdsa.P384.signApi.name])
+      code := (cfgOf (pack Proof.P384.law (Proof.P384.combOk7 Proof.P384.law) c)).sign
       consts := Impl.Ecdsa.AArch64.p384.combConsts
       contract := Spec.Ecdsa.Rfc6979.P384Sha384.inst.signContract
         (AArch64.abi.withConsts Impl.Ecdsa.AArch64.p384.combConsts) 256
       stack := 256
-      verified := sign_verified Proof.P384.law Proof.P384.combOk7 c
+      verified := sign_verified Proof.P384.law (Proof.P384.combOk7 Proof.P384.law) c
       spSafe := Code.all_of_forall (fun _ => rfl) _
       features := c.features }]
 
