@@ -34,12 +34,12 @@ abbrev ptr (s : State) (r : Reg) : Addr := State.addr (s.gpr r)
 abbrev scPtr (s : State) : Addr := State.addr (stackArg s 0)
 
 /-- What the proof of the code needs of a curve: its field and order are odd
-and fit in `n` words (`n < 7`), `G` is on the curve, `p < 2n` (so `x mod n`
+and fit in `n` words (`n < 10`), `G` is on the curve, `p < 2n` (so `x mod n`
 is one conditional subtraction), the Montgomery constants are right,
 encodings are `8 n` bytes, and a hash of `8 n` bytes is not truncated. -/
 structure CfgOk (c : Cfg) : Prop where
   n0 : 0 < c.n
-  n7 : c.n < 7
+  n10 : c.n < 10
   onG : onCurve c.C (G c.C) = true
   p_odd : c.C.p % 2 = 1
   n_odd : c.C.n % 2 = 1
@@ -125,7 +125,7 @@ theorem stackArgAddr0 (s : State) : stackArgAddr s 0 = State.addr s.sp := by
 /-- The working space, the first `size` bytes of `scratch`. -/
 theorem sc_sub (s : State) : Region.Sub ⟨scPtr s, size⟩ (scR s) := Region.sub_prefix (by decide)
 
-theorem Pre.setup {c : Cfg} {s : State} (hp : Pre c s) (h7 : c.n < 7) : SetupPre c .sign s where
+theorem Pre.setup {c : Cfg} {s : State} (hp : Pre c s) (h7 : c.n < 10) : SetupPre c .sign s where
   args := by unfold argsOk; decide
   sc_in := fun _ => by rw [stackArgAddr0]; exact ⟨argsR s, by rw [hp.rd]; simp, Region.contains_self _ _⟩
   wr := by show (⟨scPtr s, 8192⟩ : Region) ∈ s.wr; rw [hp.wr]; simp
@@ -149,6 +149,7 @@ space at `base`: `r12 = base`, `r4`–`r11` and `lr` in `[0, 36)`, `lr = out`,
 all ones; only `r4`, `r12`, `lr` and the working space changed. -/
 structure SetupPost (c : Cfg) (A : Args) (s₀ : State) (base : Addr) (s : State) : Prop where
   scr : Scr s base size
+  far : Far s base 8192
   keep : VG.Proof.X25519.Arm.Rest [.r4, .r12, .lr] s₀ s
   unch : Unch base [(0, size)] s₀.mem s.mem
   saved : ∀ rd ∈ Cfg.saved, s.mem.readW (off base rd.2) 32 = s₀.gpr rd.1
@@ -163,9 +164,9 @@ structure SetupPost (c : Cfg) (A : Args) (s₀ : State) (base : Addr) (s : State
 
 theorem sl_eq (c : Cfg) (i : Nat) : c.sl i = 64 + 8 * c.n * i := rfl
 
-theorem bitsAt_eq (c : Cfg) (j : Nat) : bitsAt c.n j = 64 + 8 * c.n * 45 + 64 * c.n * j := rfl
+theorem wk_eq (c : Cfg) : c.wk = 64 + 8 * c.n * 45 := rfl
 
-theorem wk_eq (c : Cfg) : c.wk = 64 + 8 * c.n * 45 + 64 * c.n * 3 := rfl
+theorem bitsAt_eq (c : Cfg) (j : Nat) : bitsAt c.n j = 64 + 8 * c.n * 45 + (32 * c.n + 8) + 64 * c.n * j := rfl
 
 theorem accLen_eq (M : Mod) : accLen M = 32 * M.n + 8 := by
   simp only [accLen, digits]; omega
@@ -188,44 +189,69 @@ theorem sl_inj (c : Cfg) (hn : 0 < c.n) {i j : Nat} (h : c.sl i = c.sl j) : i = 
   have := sl_apart c hij
   omega
 
+/-- A slot is below the accumulator. -/
+theorem sl_below_wk (c : Cfg) {i : Nat} (hi : i < 45) : c.sl i + 8 * c.n ≤ c.wk := by
+  have := sl_lt c hi
+  rw [sl_eq c 45] at this
+  rw [wk_eq]
+  omega
+
+/-- The accumulator is below the tables. -/
+theorem wk_below_bits (c : Cfg) {M : Mod} (hM : M.n = c.n) (j : Nat) :
+    c.wk + accLen M ≤ bitsAt c.n j := by
+  rw [wk_eq, bitsAt_eq, accLen_eq, hM]
+  omega
+
 /-- A slot is below the tables. -/
 theorem sl_below_bits (c : Cfg) {i : Nat} (hi : i < 45) (j t : Nat) :
     c.sl i + 8 * c.n ≤ bitsAt c.n j + t := by
-  have := sl_lt c hi
-  rw [sl_eq c 45] at this
-  rw [bitsAt_eq]
-  omega
-
-/-- A slot is below the accumulator. -/
-theorem sl_below_wk (c : Cfg) {i : Nat} (hi : i < 45) : c.sl i + 8 * c.n ≤ c.wk := by
-  have := sl_below_bits c hi 3 0
-  rw [wk_eq]; rw [bitsAt_eq] at this; omega
-
-/-- The tables are below the accumulator. -/
-theorem bitsAt_below_wk (c : Cfg) {j : Nat} (hj : j < 3) : bitsAt c.n j + 64 * c.n ≤ c.wk := by
-  rw [bitsAt_eq, wk_eq]
-  have := Nat.mul_le_mul_left (64 * c.n) hj
-  rw [Nat.mul_succ] at this
+  have := sl_below_wk c hi
+  have := wk_below_bits c (M := c.MP') rfl j
   omega
 
 /-- The accumulator is in the working space. -/
-theorem wk_le (c : Cfg) (hn : c.n < 7) {M : Mod} (hM : M.n = c.n) : c.wk + accLen M ≤ size := by
+theorem wk_le (c : Cfg) (hn : c.n < 10) {M : Mod} (hM : M.n = c.n) : c.wk + accLen M ≤ size := by
   rw [wk_eq, accLen_eq, hM]
-  have : 8 * c.n * 45 ≤ 8 * 6 * 45 := Nat.mul_le_mul_right _ (by omega)
-  have : 64 * c.n * 3 ≤ 64 * 6 * 3 := Nat.mul_le_mul_right _ (by omega)
   show _ ≤ 4096
   omega
 
 /-- Every slot is in the working space. -/
-theorem sl_le (c : Cfg) (hn : c.n < 7) {i : Nat} (hi : i < 45) : c.sl i + 8 * c.n ≤ size := by
+theorem sl_le (c : Cfg) (hn : c.n < 10) {i : Nat} (hi : i < 45) : c.sl i + 8 * c.n ≤ size := by
   have := sl_below_wk c hi
   have := wk_le c hn (M := c.MP') rfl
   omega
 
-/-- Every table is in the working space. -/
-theorem bitsAt_le (c : Cfg) (hn : c.n < 7) {j : Nat} (hj : j < 3) : bitsAt c.n j + 64 * c.n ≤ size := by
-  have := bitsAt_below_wk c hj
-  have := wk_le c hn (M := c.MP') rfl
+/-- Every table is in `scratch`. -/
+theorem bitsAt_le (c : Cfg) (hn : c.n < 10) {j : Nat} (hj : j < 3) : bitsAt c.n j + 64 * c.n ≤ 8192 := by
+  rw [bitsAt_eq]
+  have : 64 * c.n * j ≤ 64 * c.n * 2 := Nat.mul_le_mul_left _ (by omega)
   omega
+
+theorem bitsAt_lt {c : Cfg} (hc : CfgOk c) {j : Nat} (hj : j < 3) : bitsAt c.n j < 8192 := by
+  have := bitsAt_le c hc.n10 hj
+  have := hc.n0
+  omega
+
+/-- The tables are at offsets of 8-byte words. -/
+theorem bitsAt_al (c : Cfg) (j : Nat) : bitsAt c.n j % 8 = 0 := by
+  rw [bitsAt_eq, Nat.mul_assoc 64]; omega
+
+/-- The bytes of a number, an immediate. -/
+theorem enc8n {c : Cfg} (hn : c.n < 10) : encodable (BitVec.ofNat 32 (8 * c.n)) = true := by
+  have : ∀ n < 10, encodable (BitVec.ofNat 32 (8 * n)) = true := by decide
+  exact this _ hn
+
+/-- Table `j` of the bits of slot `i`. -/
+theorem tbl_bits_ok {c : Cfg} (hc : CfgOk c) {s : State} {base : Addr} (hs : Scr s base size)
+    (hf : Far s base 8192) {i j : Nat} (hi : i < 45) (hj : j < 3) :
+    WP isa (bits (c.sl i) (bitsAt c.n j) (8 * c.n)) s fun s' =>
+      (∀ t < 64 * c.n, s'.mem (off base (bitsAt c.n j + t)) =
+        if (wordsVal s.mem base (c.sl i) c.n).testBit t then 1 else 0) ∧
+      VG.Proof.X25519.Arm.Rest [.r4, .r5, .r7, .r11] s s' ∧
+      Outside base (bitsAt c.n j) (64 * c.n) s.mem s'.mem := by
+  have hb := bitsAt_le c hc.n10 hj
+  have := hc.n0
+  exact bits_ok hs hf hc.n0 (sl_le c hc.n10 hi) hb (by omega) (bitsAt_al c j)
+    (Or.inl (sl_below_bits c hi j 0)) (enc8n hc.n10)
 
 end VG.Proof.Ecdsa.Arm

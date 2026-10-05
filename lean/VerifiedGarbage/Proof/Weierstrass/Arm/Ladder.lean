@@ -82,7 +82,7 @@ structure LadInv (L : LadderCfg) (wk : Nat) (C : Curve) (base : Addr) (size : Na
   r11 : s.gpr .r11 = BitVec.ofNat 32 j
   keep : Rest powClob s₀ s
   unch : Unch base (ladWx L wk) s₀.mem s.mem
-  mod : ModOk L.M size C.p s.mem base
+  mod : ModOkW L.M size C.p s.mem base
   lt : ∀ x ∈ [L.R.x, L.R.y, L.R.z], wordsVal s.mem base x L.M.n < C.p
   q : Q j (tmv C L.M.n base s L.R.x) (tmv C L.M.n base s L.R.y) (tmv C L.M.n base s L.R.z)
 
@@ -90,7 +90,7 @@ structure LadInv (L : LadderCfg) (wk : Nat) (C : Curve) (base : Addr) (size : Na
 structure AddsPost (L : LadderCfg) (wk : Nat) (C : Curve) (base : Addr) (size : Nat) (E : Nat → Fe C)
     (s s' : State) : Prop where
   scr : Scr s' base size
-  mod : ModOk L.M size C.p s'.mem base
+  mod : ModOkW L.M size C.p s'.mem base
   keep : Rest clob s s'
   unch : Unch base (ladWx L wk) s.mem s'.mem
   lt : ∀ x ∈ [L.D.x, L.D.y, L.D.z, L.T.x, L.T.y, L.T.z], wordsVal s'.mem base x L.M.n < C.p
@@ -245,7 +245,7 @@ theorem ladderBody_ok {L : LadderCfg} {wk : Nat} {C : Curve} {base : Addr} {size
       · exact List.mem_append_left _ (mem_ladW_R w hw)
   · have hM := A.mod
     have hmo := hL.lay.mo
-    refine ⟨hM.n0, hM.n7, hM.mo, hM.tmp, hM.sep, ?_, hM.inv, hM.red⟩
+    refine ⟨hM.n0, hM.mo, hM.tmp, hM.sep, ?_, hM.inv, hM.red⟩
     rw [f''.mem, U'.wordsVal (fun w hw => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
       rcases hw with rfl | rfl | rfl
@@ -290,13 +290,13 @@ whose bits are the table at `L.bits`; only `powClob` and `ladWx` change. -/
 theorem ladder_ok {L : LadderCfg} {wk : Nat} {C : Curve} {base : Addr} {size len k : Nat}
     {Q : Nat → Fe C → Fe C → Fe C → Prop} (hL : LadLay L size len) (hW : LadWk L size wk)
     (hp : UnitMod C.p (2 ^ (64 * L.M.n))) (hb8 : L.bits < 8192)
-    {s : State} (hs : Scr s base size) (hf : Far s base len) (hM : ModOk L.M size C.p s.mem base)
+    {s : State} (hs : Scr s base size) (hf : Far s base len) (hM : ModOkW L.M size C.p s.mem base)
     (hlt : ∀ x ∈ ladR L, wordsVal s.mem base x L.M.n < C.p) (hstep : Step L C base s k Q)
     (hR : Q L.nbits (tmv C L.M.n base s L.R.x) (tmv C L.M.n base s L.R.y) (tmv C L.M.n base s L.R.z))
     (hbits : ∀ t < L.nbits, s.mem (off base (L.bits + t)) = if k.testBit t then 1 else 0)
     (henc : encodable (BitVec.ofNat 32 L.nbits) = true) :
     WP isa (ladder L wk) s fun s' => Rest powClob s s' ∧ Unch base (ladWx L wk) s.mem s'.mem ∧
-      ModOk L.M size C.p s'.mem base ∧
+      ModOkW L.M size C.p s'.mem base ∧
       (∀ x ∈ [L.R.x, L.R.y, L.R.z], wordsVal s'.mem base x L.M.n < C.p) ∧
       Q 0 (tmv C L.M.n base s' L.R.x) (tmv C L.M.n base s' L.R.y) (tmv C L.M.n base s' L.R.z) := by
   have hnb := hL.nbits
