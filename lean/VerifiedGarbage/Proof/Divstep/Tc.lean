@@ -361,17 +361,4 @@ theorem invRun_zero {N : Nat} {p m : Int} (hp : 0 < p) :
     simp only [mul_zero, add_zero, zero_add, mul_one]
     simp [mred, mredRaw, norm, show ¬ p ≤ 0 by omega]
 
-/-- Enough divsteps for numbers of `n` words: `590` for `n ≤ 4` (256 bits),
-`885` for `n ≤ 6` (384). -/
-theorem divsteps_words {f g : Int} {n N : Nat} (hf : f % 2 = 1) (hg : 0 ≤ g) (hgf : g ≤ f)
-    (hfn : f < 2 ^ (64 * n)) (hb : (n ≤ 4 ∧ 590 ≤ N) ∨ (n ≤ 6 ∧ 885 ≤ N)) :
-    (divsteps N (1, f, g)).2.2 = 0 ∧ (divsteps N (1, f, g)).2.1.natAbs = Int.gcd f g := by
-  rcases hb with ⟨h1, h2⟩ | ⟨h1, h2⟩
-  · refine divsteps_590 hf hg hgf ?_ h2
-    calc f ≤ 2 ^ (64 * n) := hfn.le
-      _ ≤ 2 ^ 256 := pow_le_pow_right₀ (by norm_num) (by omega)
-  · refine divsteps_885 hf hg hgf ?_ h2
-    calc f ≤ 2 ^ (64 * n) := hfn.le
-      _ ≤ 2 ^ 384 := pow_le_pow_right₀ (by norm_num) (by omega)
-
 end VG.Proof.Divstep
