@@ -1,6 +1,9 @@
 Continuation: SIMD memory loops, direct filling, retained scalar state
 ====================================================================
 
+Historical checkpoint. The retained-state loop is now fully proved and
+integrated; see FUSED.txt for completion, validation, and matched timings.
+
 Completed and used by the public scrypt API:
 - b3e8572c: 16-byte SSE2 ROMix copy/XOR loops, including functional and
   trace-equivalence proofs and Lean-generated assembly.

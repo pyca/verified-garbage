@@ -1,4 +1,4 @@
-import VerifiedGarbage.Impl.Scrypt.X86_64.BlockMix
+import VerifiedGarbage.Impl.Scrypt.X86_64.BlockMixFused
 
 /-!
 # scryptROMix: x86-64 implementation
@@ -111,6 +111,6 @@ def roMixWith (blockMix : Prog isa) : Prog isa :=
   .seq (.loop (step3 blockMix) .ne)
     (.block rmEpilogue)
 
-def roMix : Prog isa := roMixWith blockMix
+def roMix : Prog isa := roMixWith blockMixFused
 
 end VG.Impl.Scrypt.X86_64

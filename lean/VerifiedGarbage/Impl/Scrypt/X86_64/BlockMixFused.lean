@@ -1,6 +1,6 @@
 import VerifiedGarbage.Impl.Scrypt.X86_64.BlockMix
 
-/-! Experimental scalar BlockMix (not yet registered as a verified artifact) retaining its twelve register words and four scratch words
+/-! Scalar BlockMix retaining its twelve register words and four scratch words
 across Salsa invocations. Loop metadata lives in scratch[16, 48); scratch[48, 56)
 is a temporary, and scratch[64, 112) retains the caller's saved registers. -/
 namespace VG.Impl.Scrypt.X86_64
@@ -29,18 +29,23 @@ def fusedFinishWord (k : Nat) : List Instr :=
 def fusedCore : Prog isa :=
   .seq (.block fusedXor) <| .seq (rounds 4) (.block ((List.range 16).flatMap fusedFinishWord))
 
+def fusedHead (offset : Nat) (odd : Bool) : List Instr :=
+  [.mov .rax (.mem (at_ .rsi 16)), .alu .add .rax (.imm (BitVec.ofNat 32 offset)),
+    .mov .rdi (.mem (at_ .rsi (if odd then 32 else 24)))]
+
 def fusedHalf (offset : Nat) (odd : Bool) : Prog isa :=
-  .seq (.block [.mov .rax (.mem (at_ .rsi 16)), .alu .add .rax (.imm (BitVec.ofNat 32 offset)),
-    .mov .rdi (.mem (at_ .rsi (if odd then 32 else 24)))]) fusedCore
+  .seq (.block (fusedHead offset odd)) fusedCore
 
 def fusedAdvance (off inc : Nat) : List Instr :=
   [.mov .rax (.mem (at_ .rsi off)), .alu .add .rax (.imm (BitVec.ofNat 32 inc)),
    .store (at_ .rsi off) .rax]
 
+def fusedTail : List Instr :=
+  fusedAdvance 16 128 ++ fusedAdvance 24 64 ++ fusedAdvance 32 64 ++
+    [.mov .rax (.mem (at_ .rsi 40)), .alu .sub .rax (.imm 1), .store (at_ .rsi 40) .rax]
+
 def fusedBody : Prog isa :=
-  .seq (fusedHalf 0 false) <| .seq (fusedHalf 64 true) <|
-  .block (fusedAdvance 16 128 ++ fusedAdvance 24 64 ++ fusedAdvance 32 64 ++
-    [.mov .rax (.mem (at_ .rsi 40)), .alu .sub .rax (.imm 1), .store (at_ .rsi 40) .rax])
+  .seq (fusedHalf 0 false) <| .seq (fusedHalf 64 true) (.block fusedTail)
 
 def blockMixFused : Prog isa :=
   .seq (.block (bmPrologue ++ fusedSetup)) <|

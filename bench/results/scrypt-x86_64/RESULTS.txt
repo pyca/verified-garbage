@@ -1,6 +1,10 @@
 Verified scalar Salsa/BlockMix and ROMix optimization
 ====================================================
 
+Historical scalar-scheduling experiment. Subsequent SIMD memory loops,
+direct table filling, and fully verified retained-state fusion are described
+in CONTINUATION.txt and FUSED.txt.
+
 Baseline: 1434e4dc0598e2e14a841d666239bf72d2e15fe0
 Scheduling + inlining: 84a8a7ca
 Scheduling + inlining + address multiply: 0ff1ac70
