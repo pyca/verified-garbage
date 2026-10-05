@@ -11,7 +11,7 @@ function, and `vg_ecdsa_p256_sign`, is emitted for every backend, named with
 its suffix (e.g. `vg_ecdsa_p256_sha256_sign_shani`), and needs its CPU
 features.
 
-The stack is 256 bytes: a 180-byte frame, and the 76 bytes below it that the
+The stack is 272 bytes: a 196-byte frame, and the 76 bytes below it that the
 calls use (up to 24 bytes of arguments and the return address, and 48 bytes
 of stack for HMAC's functions).
 
@@ -29,10 +29,11 @@ def artifacts (v : Proof.Sha256.X86.Variants.Backend) (h : Proof.Weierstrass.Has
   { Spec.Ecdsa.Rfc6979.P256Sha256.signApi with
     name := Spec.Ecdsa.Rfc6979.P256Sha256.signApi.name ++ v.suffix
     target := X86.target
-    doc := Spec.Ecdsa.Rfc6979.P256Sha256.signApi.doc (notes := [signNotes v.F.hiN v.F.H.updN v.F.hfN])
+    doc := Spec.Ecdsa.Rfc6979.P256Sha256.signApi.doc (notes := [signNotes v.F.hiN v.F.H.updN v.F.hfN 32
+      Spec.Ecdsa.P256.signApi.name])
     code := (cfgOf (pack h.law v)).sign
-    contract := Spec.Ecdsa.Rfc6979.P256Sha256.inst.signContract X86.abi 256
-    stack := 256
+    contract := Spec.Ecdsa.Rfc6979.P256Sha256.inst.signContract X86.abi 272
+    stack := 272
     verified := sign_verified h.law v
     spSafe := sign_spSafe (pack h.law v)
     features := v.features }]
