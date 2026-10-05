@@ -1,5 +1,5 @@
-//! The generation of an RSA key's prime, the test of one candidate that is
-//! prime, and the key from its two primes.
+//! The generation of an RSA key, of one of its primes, the test of one
+//! candidate that is prime, and the key from its two primes.
 
 use criterion::Criterion;
 
@@ -12,7 +12,7 @@ pub fn bench(c: &mut Criterion) {
     use criterion::BenchmarkId;
     use openssl::bn::{BigNum, BigNumContext};
     use openssl::rsa::Rsa;
-    use verified_garbage::rsa_keygen::{generate_prime_from, key_from_primes};
+    use verified_garbage::rsa_keygen::{generate_from, generate_prime_from, key_from_primes};
 
     use crate::{OPENSSL, VG};
     // The primes of keys of 2048, 3072 and 4096 bits; the ids' size is the
@@ -27,19 +27,9 @@ pub fn bench(c: &mut Criterion) {
     let mut g = c.benchmark_group("rsa_keygen_prime");
     g.sample_size(10);
     for bits in [1024, 1536, 2048] {
-        let mut seed = bits as u64;
-        let mut next = || {
-            seed = seed.wrapping_add(0x9e37_79b9_7f4a_7c15);
-            let z = (seed ^ (seed >> 30)).wrapping_mul(0xbf58_476d_1ce4_e5b9);
-            let z = (z ^ (z >> 27)).wrapping_mul(0x94d0_49bb_1331_11eb);
-            z ^ (z >> 31)
-        };
-        let mut rand: Vec<u8> = Vec::new();
-        while generate_prime_from(bits, &[1, 0, 1], None, &rand).is_err() {
-            for _ in 0..(rand.len() / 8).max(2 * bits / 64) {
-                rand.extend(next().to_le_bytes());
-            }
-        }
+        let rand = fixed_octets(bits, |r| {
+            generate_prime_from(bits, &[1, 0, 1], None, r).is_ok()
+        });
         g.bench_function(BenchmarkId::new(VG, bits / 8), |b| {
             b.iter(|| {
                 generate_prime_from(
@@ -58,6 +48,35 @@ pub fn bench(c: &mut Criterion) {
                     .unwrap();
                 p
             })
+        });
+    }
+    g.finish();
+
+    // Keys of 2048, 3072 and 4096 bits with `e = 65537`; the ids' size is the
+    // modulus' bytes. Like the primes, verified-garbage's key is from fixed
+    // octets (`generate(bits, e)` but for `getrandom`): two primes, the key
+    // from them, its check, and the pairwise consistency test. So that the
+    // draw is a typical one, they are the stream, of the streams of nine
+    // fixed seeds, whose key reads the median number of octets. OpenSSL's
+    // `RSA_generate_key_ex` draws from its own generator.
+    let mut g = c.benchmark_group("rsa_keygen_generate");
+    g.sample_size(10);
+    for bits in [2048, 3072, 4096] {
+        let mut draws: Vec<(usize, Vec<u8>)> = (0..9)
+            .map(|i| {
+                let rand = fixed_octets(bits + i, |r| generate_from(bits, &[1, 0, 1], r).is_ok());
+                (generate_from(bits, &[1, 0, 1], &rand).unwrap().1, rand)
+            })
+            .collect();
+        draws.sort_by_key(|d| d.0);
+        let rand = draws.swap_remove(4).1;
+        g.bench_function(BenchmarkId::new(VG, bits / 8), |b| {
+            b.iter(|| {
+                generate_from(black_box(bits), black_box(&[1, 0, 1]), black_box(&rand)).unwrap()
+            })
+        });
+        g.bench_function(BenchmarkId::new(OPENSSL, bits / 8), |b| {
+            b.iter(|| Rsa::generate(black_box(bits as u32)).unwrap())
         });
     }
     g.finish();
@@ -164,6 +183,27 @@ pub fn bench(c: &mut Criterion) {
         });
     }
     g.finish();
+}
+
+/// The shortest stream of octets from a splitmix64 generator seeded with
+/// `seed`, grown by doubling from `seed / 4` octets, that is `enough`.
+#[cfg(target_arch = "x86_64")]
+fn fixed_octets(seed: usize, enough: impl Fn(&[u8]) -> bool) -> Vec<u8> {
+    let start = seed / 4;
+    let mut seed = seed as u64;
+    let mut next = || {
+        seed = seed.wrapping_add(0x9e37_79b9_7f4a_7c15);
+        let z = (seed ^ (seed >> 30)).wrapping_mul(0xbf58_476d_1ce4_e5b9);
+        let z = (z ^ (z >> 27)).wrapping_mul(0x94d0_49bb_1331_11eb);
+        z ^ (z >> 31)
+    };
+    let mut rand: Vec<u8> = Vec::new();
+    while !enough(&rand) {
+        for _ in 0..(rand.len() / 8).max(start / 8) {
+            rand.extend(next().to_le_bytes());
+        }
+    }
+    rand
 }
 
 #[cfg(not(target_arch = "x86_64"))]
