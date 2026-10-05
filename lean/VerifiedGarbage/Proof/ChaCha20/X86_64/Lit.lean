@@ -11,6 +11,7 @@ namespace VG
 
 materialize_code Impl.ChaCha20.X86_64.block
 materialize_code Impl.ChaCha20.X86_64.Xor.xor
+materialize_code Impl.ChaCha20.X86_64.Avx2.xorBody
 materialize_code Impl.ChaCha20.X86_64.Avx2.xor
 materialize_code Impl.ChaCha20.X86_64.Avx512.xor
 

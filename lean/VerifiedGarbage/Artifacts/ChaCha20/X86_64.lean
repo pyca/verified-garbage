@@ -40,7 +40,9 @@ def artifacts : List Artifact := [
     stack := 16
     verified := Proof.ChaCha20.X86_64.Avx2.xor_verified
     features := ["avx", "avx2"]
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
+    spSafe := Code.all_of_allInstrs (by lit_decide)
+    clearsResidue := true
+    noResidue := fun _ => Proof.ChaCha20.X86_64.Avx2.xor_noResidue },
   { Spec.ChaCha20.xorApi with
     name := "vg_chacha20_xor_avx512"
     target := X86_64.target

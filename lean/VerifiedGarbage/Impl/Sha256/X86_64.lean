@@ -1,5 +1,6 @@
 import VerifiedGarbage.Spec.Sha256
 import VerifiedGarbage.TCB.X86_64.Isa
+import VerifiedGarbage.Impl.Clear.X86_64
 
 /-!
 # SHA-256 compression function: x86-64 implementation
@@ -137,8 +138,16 @@ def advance : List Instr := [.alu .add .rsi (.imm 64), .alu .sub .rdx (.imm 1)]
 /-- One block. -/
 def body : Prog isa := .seq (.block load) (.seq (rounds 64) (.block (update ++ advance)))
 
-def compress : Prog isa :=
+def compressBody : Prog isa :=
   .seq (.block (save ++ [.alu .test .rdx (.reg .rdx)]))
     (.seq (.ite .e (.block []) (.loop body .ne)) (.block restore))
+
+/-- The registers `compress` clears on return: the caller-saved ones it
+writes, but `rdi` and `rcx` (`state` and `scratch`, which its callers keep). -/
+def cleared : List Reg := [.rax, .rdx, .rsi, .r8, .r9, .r10, .r11]
+
+/-- `compressBody`, then the SSE registers and `cleared` zeroed, leaving no
+secret residue (`X86_64.noResidue`). -/
+def compress : Prog isa := .seq compressBody (.block (Clear.X86_64.clear cleared false))
 
 end VG.Impl.Sha256.X86_64

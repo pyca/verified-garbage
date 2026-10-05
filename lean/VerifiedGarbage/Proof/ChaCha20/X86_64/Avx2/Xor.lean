@@ -2,6 +2,7 @@ import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2.Finish
 import VerifiedGarbage.Proof.ChaCha20.X86_64.Xor
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.X86_64.Residue
 
 /-!
 # ChaCha20 keystream XOR on x86-64 with AVX2
@@ -500,13 +501,13 @@ theorem tail_ok {s₀ : State} (hp : APre s₀) {t : Nat} (hlt : eL s₀ - 512 *
 
 /-! ## The whole function -/
 
-theorem xor_eq : Impl.ChaCha20.X86_64.Avx2.xor =
+theorem xor_eq : Impl.ChaCha20.X86_64.Avx2.xorBody =
     .seq (.block (consts ++ ([.alu .cmp .rdx (.imm 512)] : List Instr)))
     (.seq (.ite .b (.block []) (.loop body .ae))
     (.seq (.block [.vop .vzeroupper]) (.call "vg_chacha20_xor" Impl.ChaCha20.X86_64.Xor.xor))) := rfl
 
 theorem correct {s₀ : State} (hp : APre s₀) :
-    WP isa Impl.ChaCha20.X86_64.Avx2.xor s₀ fun s' =>
+    WP isa Impl.ChaCha20.X86_64.Avx2.xorBody s₀ fun s' =>
       (gprPreserved s₀ s' ∧ xorAvx2X86_64.post s₀ s') ∧ s'.gpr .rsi = s₀.gpr .rcx := by
   rw [xor_eq]
   refine WP.seq (WP.mono (prologue_ok hp) fun s₁ ⟨h₁, hc⟩ => ?_)
@@ -568,27 +569,88 @@ def sat : State where
 
 /-- `vg_chacha20_xor_avx2` returns with `rsi` pointing at `buf`, as
 `vg_chacha20_xor` does, for a caller that recomputes pointers from it. -/
-theorem xor_rsi (s : State) (hs : xorAvx2X86_64.pre s) :
-    ∃ t s', Exec isa Impl.ChaCha20.X86_64.Avx2.xor s t s' ∧ abiPreserved s s' ∧
+theorem body_rsi (s : State) (hs : xorAvx2X86_64.pre s) :
+    ∃ t s', Exec isa Impl.ChaCha20.X86_64.Avx2.xorBody s t s' ∧ abiPreserved s s' ∧
       (xorAvx2X86_64.post s s' ∧ s'.gpr .rsi = s.gpr .rcx) := by
   obtain ⟨t, s', he, ⟨h, hpost⟩, hr⟩ := correct (APre.of s hs)
   exact ⟨t, s', he, abiPreserved_of_exec (by lit_decide) he h, hpost, hr⟩
 
-theorem xor_correct (s : State) (hs : xorAvx2X86_64.pre s) :
-    ∃ t s', Exec isa Impl.ChaCha20.X86_64.Avx2.xor s t s' ∧ abiPreserved s s' ∧
+theorem body_correct (s : State) (hs : xorAvx2X86_64.pre s) :
+    ∃ t s', Exec isa Impl.ChaCha20.X86_64.Avx2.xorBody s t s' ∧ abiPreserved s s' ∧
       xorAvx2X86_64.post s s' :=
-  (xor_rsi s hs).imp fun _ ⟨s', he, ha, h, _⟩ => ⟨s', he, ha, h⟩
+  (body_rsi s hs).imp fun _ ⟨s', he, ha, h, _⟩ => ⟨s', he, ha, h⟩
+
+theorem body_ct : ConstantTime isa xorAvx2X86_64.pre xorAvx2X86_64.pub
+    Impl.ChaCha20.X86_64.Avx2.xorBody :=
+  VG.Taint.constantTime (A := taint) τ₀ (fun _ _ h₁ h₂ hp => agree₀ h₁ h₂ hp) (by taint_decide)
+
+theorem xor_implies : Contract.Implies xorAvx2X86_64 (Spec.ChaCha20.xorContract X86_64.abi 16) := by
+  sig_implies [Spec.ChaCha20.xorContract, Spec.ChaCha20.xorSig, X86_64.abi, X86_64.argRegs,
+    xorAvx2X86_64, Proof.ChaCha20.xorX86_64]
+    [sat] using sat
+
+/-! ## No secret residue
+
+`xorBody` leaves `rsi` pointing at `buf`, and below the stack pointer only
+return addresses; `xor` clears every other caller-saved register. -/
+
+theorem body_nosp : NoSp Impl.ChaCha20.X86_64.Avx2.xorBody := by
+  have : ((instrs Impl.ChaCha20.X86_64.Avx2.xorBody).all fun i => !Taint.clobbers i .rsp) = true := by
+    rw [← Code.allInstrs_eq]; lit_decide
+  exact fun i hi => by simpa using List.all_eq_true.mp this i hi
+
+theorem body_depth : Impl.ChaCha20.X86_64.Avx2.xorBody.depth = 2 := by lit_decide
+
+/-- What `xorBody` leaves that `xor` does not clear. -/
+def Kept (s s' : State) : Prop := s'.gpr .rsi = s.gpr .rcx ∧ StackRes 16 s s'
+
+theorem body_kept (s : State) (hs : xorAvx2X86_64.pre s) :
+    ∃ t s', Exec isa Impl.ChaCha20.X86_64.Avx2.xorBody s t s' ∧ abiPreserved s s' ∧
+      xorAvx2X86_64.post s s' ∧ Kept s s' := by
+  obtain ⟨t, s', he, ha, hp, hr⟩ := body_rsi s hs
+  refine ⟨t, s', he, ha, hp, hr, Exec.stackRes he body_nosp (by rw [body_depth]) (by decide) ?_⟩
+  obtain ⟨-, hw, -, -, -, -, -, -, d1, d2, d3, -⟩ := hs
+  intro r hr x hx
+  rw [hw] at hr
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl
+  exacts [d1 x hx, d2 x hx, d3 x hx]
+
+theorem xor_clear :
+    Verified X86_64.target Impl.ChaCha20.X86_64.Avx2.xor xorAvx2X86_64 ∧
+      ∀ s t s', xorAvx2X86_64.pre s → Exec isa Impl.ChaCha20.X86_64.Avx2.xor s t s' →
+        noResidue Spec.ChaCha20.xorSig 16 s s' :=
+  Verified.clear (by decide) (by decide) Kept body_kept body_ct xor_implies.sat_left
+    (fun _ _ h => h)
+    (fun _ _ _ ⟨hsi, hst⟩ => noResidue_cleared [(.rsi, 3)] (by decide)
+      (fun p hp => by
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hp
+        subst hp; exact hsi)
+      (fun h => by cases h) hst.below)
+
+/-- `vg_chacha20_xor_avx2` returns with `rsi` pointing at `buf`, as
+`vg_chacha20_xor` does, for a caller that recomputes pointers from it. -/
+theorem xor_rsi (s : State) (hs : xorAvx2X86_64.pre s) :
+    ∃ t s', Exec isa Impl.ChaCha20.X86_64.Avx2.xor s t s' ∧ abiPreserved s s' ∧
+      (xorAvx2X86_64.post s s' ∧ s'.gpr .rsi = s.gpr .rcx) := by
+  obtain ⟨t, s', he, ha, hp, hr⟩ := body_rsi s hs
+  obtain ⟨he', ha'⟩ := run_clear (rs := Impl.ChaCha20.X86_64.Avx2.cleared) (by decide) (by decide) true he ha
+  exact ⟨_, _, he', ha', hp, (cleared_gpr (by decide) true s').trans hr⟩
 
 theorem xor_ct : ConstantTime isa xorAvx2X86_64.pre xorAvx2X86_64.pub
     Impl.ChaCha20.X86_64.Avx2.xor :=
-  VG.Taint.constantTime (A := taint) τ₀ (fun _ _ h₁ h₂ hp => agree₀ h₁ h₂ hp) (by taint_decide)
+  xor_clear.1.2.1
 
 theorem xor_verified :
     Verified X86_64.target Impl.ChaCha20.X86_64.Avx2.xor
       (Spec.ChaCha20.xorContract X86_64.abi 16) :=
-  Verified.of_correct xor_correct xor_ct
-    (by sig_implies [Spec.ChaCha20.xorContract, Spec.ChaCha20.xorSig, X86_64.abi, X86_64.argRegs,
-      xorAvx2X86_64, Proof.ChaCha20.xorX86_64]
-      [sat] using sat)
+  xor_clear.1.of_implies xor_implies
+
+/-- `vg_chacha20_xor_avx2` returns without secret residue. -/
+theorem xor_noResidue (s : State) (t : List Leak) (s' : State)
+    (hs : (Spec.ChaCha20.xorContract X86_64.abi 16).pre s)
+    (he : Exec isa Impl.ChaCha20.X86_64.Avx2.xor s t s') :
+    X86_64.target.noResidue Spec.ChaCha20.xorSig 16 s s' :=
+  xor_clear.2 s t s' (xor_implies.pre s hs) he
 
 end VG.Proof.ChaCha20.X86_64.Avx2

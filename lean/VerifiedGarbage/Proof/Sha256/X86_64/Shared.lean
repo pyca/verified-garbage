@@ -123,12 +123,22 @@ calls) run in a frame that allocates it (`Verified.stackScratch`), for an
 
 namespace VG.Proof.Sha256.X86_64.Shared
 
+theorem compress_implies :
+    Contract.Implies Proof.Sha256.compressX86_64 (Spec.Sha256.compressContract X86_64.abi) := by
+  contract_implies [Spec.Sha256.compressContract, Spec.Sha256.compressSig,
+    Proof.Sha256.compressX86_64, X86_64.abi, X86_64.argRegs]
+    [Proof.Sha256.X86_64.satState] using Proof.Sha256.X86_64.satState
+
 theorem compress :
     Verified X86_64.target Impl.Sha256.X86_64.compress (Spec.Sha256.compressContract X86_64.abi) :=
-  Proof.Sha256.X86_64.compress_verified.of_implies (by
-    contract_implies [Spec.Sha256.compressContract, Spec.Sha256.compressSig,
-      Proof.Sha256.compressX86_64, X86_64.abi, X86_64.argRegs]
-      [Proof.Sha256.X86_64.satState] using Proof.Sha256.X86_64.satState)
+  Proof.Sha256.X86_64.compress_verified.of_implies compress_implies
+
+/-- `vg_sha256_compress` returns without secret residue. -/
+theorem compress_noResidue (s : X86_64.State) (t : List Leak) (s' : X86_64.State)
+    (hs : (Spec.Sha256.compressContract X86_64.abi).pre s)
+    (he : Exec X86_64.isa Impl.Sha256.X86_64.compress s t s') :
+    X86_64.target.noResidue Spec.Sha256.compressSig 0 s s' :=
+  Proof.Sha256.X86_64.compress_clear.2 s t s' (compress_implies.pre s hs) he
 
 theorem compress_shani :
     Verified X86_64.target Impl.Sha256.X86_64.ShaNi.compress (Spec.Sha256.compressContract X86_64.abi) :=

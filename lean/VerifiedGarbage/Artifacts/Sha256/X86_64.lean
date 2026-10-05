@@ -12,7 +12,9 @@ def artifacts : List Artifact := [
     code := Impl.Sha256.X86_64.compress
     contract := Spec.Sha256.compressContract X86_64.abi
     verified := Proof.Sha256.X86_64.Shared.compress
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
+    spSafe := Code.all_of_allInstrs (by lit_decide)
+    clearsResidue := true
+    noResidue := fun _ => Proof.Sha256.X86_64.Shared.compress_noResidue },
   { Spec.Sha256.initApi with
     target := X86_64.target
     doc := Spec.Sha256.initApi.doc
