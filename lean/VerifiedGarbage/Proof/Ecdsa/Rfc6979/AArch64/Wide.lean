@@ -185,7 +185,7 @@ theorem shift_mul (e : Nat) : (e * 2 ^ (8 * 2)) >>> 9 = e * 2 ^ 7 := by
 /-- The digest (at `x1`) and a zero word after it, in the frame's top bytes. -/
 theorem dig_ok (hL : L.Ok) (hw : L.wide = P.R.wide) (hW : P.R.wide = true) (hdn : P.H.D ≤ dn)
     {t : State} (hc : Ctx L g m₀ t) (h1 : t.gpr .x1 = L.dg) :
-    WP isa (.block ([.addSp .x15 0, .movz .x .x11 0 0, .str .x .x11 .x15 (fX + (cfgOf P).H.D)] ++
+    WP isa (.block (([.addSp .x15 0, .movz .x .x11 0 0, .str .x .x11 .x15 (fX + (cfgOf P).H.D)] : List Instr) ++
       Cfg.copyN ((cfgOf P).H.D / 8) .x1 0 .x15 fX)) t fun u => Ctx L g m₀ u ∧
       Frame [⟨L.B + BitVec.ofNat 64 240, 72⟩] t.mem u.mem ∧
       Spec.Sha256.bytesAt u.mem (L.B + BitVec.ofNat 64 240) 66 =

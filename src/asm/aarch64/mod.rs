@@ -80,6 +80,9 @@ pub(crate) mod ecdsa_p384_sha384;
 pub(crate) mod ecdsa_p521;
 
 #[rustfmt::skip]
+pub(crate) mod ecdsa_p521_sha512;
+
+#[rustfmt::skip]
 pub(crate) mod ed25519;
 
 #[rustfmt::skip]

@@ -314,8 +314,8 @@ theorem tailW_ok (hL : L.Ok) {u : State} (hc : Ctx L g m₀ u) (h9 : u.gpr .x9 =
     (h8 : u.gpr .x8 = L.dg) (hq : 66 ≤ L.q) (hdn : 64 ≤ dn) :
     WP isa (.block (.addImm .x .x12 .x9 (sMsg + 64 + 1) ::
       (Cfg.copyBytes 66 .x10 .x12 ++
-        [.addImm .x .x13 .x9 (sMsg + 64 + 1 + 66), .movz .x .x11 0 0, .str .x .x11 .x13 0,
-          .addImm .x .x14 .x9 (sMsg + 1 + 2 * 66)] ++ Cfg.copyN (64 / 8) .x8 0 .x14 0))) u
+        ([.addImm .x .x13 .x9 (sMsg + 64 + 1 + 66), .movz .x .x11 0 0, .str .x .x11 .x13 0,
+          .addImm .x .x14 .x9 (sMsg + 1 + 2 * 66)] : List Instr) ++ Cfg.copyN (64 / 8) .x8 0 .x14 0))) u
       fun u' => Ctx L g m₀ u' ∧ Frame [⟨L.scr + BitVec.ofNat 64 2321, 132⟩] u.mem u'.mem ∧
         Spec.Sha256.bytesAt u'.mem (L.scr + BitVec.ofNat 64 2321) 132 =
           Spec.Sha256.bytesAt u.mem L.d 66 ++ List.replicate 2 0 ++ Spec.Sha256.bytesAt u.mem L.dg 64 := by
