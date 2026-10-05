@@ -1,7 +1,7 @@
 //! ECDSA (FIPS 186-5 §6.4) with deterministic signatures (RFC 6979 §3.2).
 //!
 //! A [`SigningKey<C>`] holds a private key on the curve `C` (so far
-//! [`P256`], [`P384`] and, on x86-64 and x86, `P521`), and signs with a hash
+//! [`P256`], [`P384`] and, on x86-64, x86 and AArch64, `P521`), and signs with a hash
 //! function `H` that the curve has signatures with ([`SignatureHash<C>`]: for
 //! P-256, SHA-256 and SHA-384; for P-384, SHA-384; for P-521, SHA-512), as in
 //! `key.sign::<Sha256>(message)`. Each signature is one call of
@@ -42,7 +42,7 @@ mod p256;
 mod p384;
 mod p521;
 
-#[cfg(any(target_arch = "x86_64", target_arch = "x86"))]
+#[cfg(any(target_arch = "x86_64", target_arch = "x86", target_arch = "aarch64"))]
 pub use crate::ec::P521;
 pub use crate::ec::{Curve, P256, P384};
 

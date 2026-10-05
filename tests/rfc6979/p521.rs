@@ -1,6 +1,6 @@
 //! RFC 6979 §A.2.7: P-521, with SHA-512.
 
-#![cfg(any(target_arch = "x86_64", target_arch = "x86"))]
+#![cfg(any(target_arch = "x86_64", target_arch = "x86", target_arch = "aarch64"))]
 
 use verified_garbage::ecdsa::{Error, P521, SigningKey, VerifyingKey};
 use verified_garbage::hashes::sha512::Sha512;
