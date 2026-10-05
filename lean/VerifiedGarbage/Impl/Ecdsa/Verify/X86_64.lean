@@ -22,9 +22,10 @@ ECDSA's signature (`Impl/Ecdsa/X86_64.lean`) and of ECDH
 4. `u = e w` and `v = r w` modulo `n`, out of Montgomery's form;
 5. `[u]G` by the signature's comb, or its ladder for a curve without one
    (`Cfg.gMul`, from the table of `u`'s bits), saved
-   to `U`, and `R` reset to `O`; then `[v]Q` by ECDH's ladder (from the
-   table of `v`'s bits) and `[u]G + [v]Q` by the complete addition, into
-   `R`;
+   to `U`, and `R` reset to `O`; then `[v]Q` by ECDH's window method (for
+   up to six words, with `b R mod p` set again in ECDH's slot of it), or
+   its ladder (from the table of `v`'s bits), and `[u]G + [v]Q` by the
+   complete addition, into `R`;
 6. `Z^(p-2)` by the signature's inversion (or power), `x = X Z^(p-2)` out of Montgomery's
    form, and the masks of `Z ≠ 0` and `x R ≡ r R` modulo `n` into the
    flag, which is returned as 0 or 1.
@@ -112,10 +113,20 @@ def final : Prog isa :=
     Mont.X86_64.sub c.MN' (c.sl W) (c.sl XN) (c.sl RM'),
     c.checkNonzero (c.sl RZ) ++ Impl.Ecdh.X86_64.Cfg.checkZero c (c.sl W) ++ finish c]
 
-/-- `[u]G + [v]Q`, into `R`, from the tables of bits of `u` and `v`. -/
+/-- `[v]Q`, into `R`: for up to six words, `b R mod p` to ECDH's `BP` (the
+hash's `e R mod n` was there) and ECDH's window method from `v`; for more,
+the table of `v`'s bits and ECDH's ladder. -/
+def mulV : Prog isa :=
+  if c.n ≤ 6 then
+    .seq (.block (setConst c.n (c.sl Impl.Ecdh.X86_64.BP) (c.mont c.C.b)))
+      (.seq (c.winPrep (c.sl V)) (WinCfg.window (c.winCfg Impl.Ecdh.X86_64.PX Impl.Ecdh.X86_64.PY
+        Impl.Ecdh.X86_64.BP)))
+  else .seq (bits (c.sl V) (bitsAt c.n 0) (8 * c.n)) (ladder (Impl.Ecdh.X86_64.Cfg.ladderQ c))
+
+/-- `[u]G + [v]Q`, into `R`, from `u` and `v`. -/
 def points : Prog isa :=
   .seq (bits (c.sl U) (bitsAt c.n 0) (8 * c.n)) <| .seq c.gMul <| .seq (.block (save c)) <|
-  .seq (bits (c.sl V) (bitsAt c.n 0) (8 * c.n)) <| .seq (ladder (Impl.Ecdh.X86_64.Cfg.ladderQ c)) (sum c)
+  .seq (mulV c) (sum c)
 
 /-- Everything after the checks of the key. -/
 def back : Prog isa :=
