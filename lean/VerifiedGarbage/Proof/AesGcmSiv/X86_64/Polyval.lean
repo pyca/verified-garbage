@@ -1,4 +1,5 @@
 import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Absorb
+import VerifiedGarbage.Proof.GcmSiv.Polyval
 
 /-!
 # AES-GCM-SIV on x86-64: POLYVAL and the tag input (`polyval`)
@@ -21,8 +22,8 @@ open VG.Proof.AesGcm.X86_64 (GcmImpl GhCall GhPost gh_call ofNat_add_ofNat in_of
 
 /-- The arguments of `lens`'s call. -/
 theorem lensArgs_ok {K W SP : Addr} {t : State} (E : Env K W SP t) {al n : Nat}
-    (hal : t.mem.readW (W + BitVec.ofNat 64 296) 64 = BitVec.ofNat 64 al)
-    (hn : t.mem.readW (W + BitVec.ofNat 64 312) 64 = BitVec.ofNat 64 n) (hal' : al < 2 ^ 64) (hn' : n < 2 ^ 64) :
+    (hal : t.mem.readW (W + BitVec.ofNat 64 224) 64 = BitVec.ofNat 64 al)
+    (hn : t.mem.readW (W + BitVec.ofNat 64 240) 64 = BitVec.ofNat 64 n) (hal' : al < 2 ^ 64) (hn' : n < 2 ^ 64) :
     ∃ t₁ : State,
       runBlock isa (([.mov .rax (.mem (at_ .r15 lenO)), .alu .add .rax (.reg .rax), .alu .add .rax (.reg .rax),
         .alu .add .rax (.reg .rax), .bswap .rax, .store (at_ .r15 bO) .rax,
@@ -32,14 +33,14 @@ theorem lensArgs_ok {K W SP : Addr} {t : State} (E : Env K W SP t) {al n : Nat}
       t₁.mem = (t.mem.writeW (W + BitVec.ofNat 64 128) (bswap64 (BitVec.ofNat 64 (8 * n)))).writeW
         (W + BitVec.ofNat 64 128 + BitVec.ofNat 64 8) (bswap64 (BitVec.ofNat 64 (8 * al))) ∧
       t₁.gpr .rdi = W + BitVec.ofNat 64 64 ∧ t₁.gpr .rsi = W + BitVec.ofNat 64 80 ∧
-      t₁.gpr .r8 = W + BitVec.ofNat 64 1792 ∧ t₁.gpr .rdx = W + BitVec.ofNat 64 128 ∧
+      t₁.gpr .r8 = W + BitVec.ofNat 64 1512 ∧ t₁.gpr .rdx = W + BitVec.ofNat 64 128 ∧
       t₁.gpr .rcx = BitVec.ofNat 64 1 ∧ (∀ r ∈ calleeSaved, t₁.gpr r = t.gpr r) ∧
       t₁.rd = t.rd ∧ t₁.wr = t.wr := by
   have h15 := E.r15
-  have r₁ := E.perm.wR (show 312 + 8 ≤ 4096 by decide)
-  have r₂ := E.perm.wR (show 296 + 8 ≤ 4096 by decide)
-  have w₀ := E.perm.wW (show 128 + 8 ≤ 4096 by decide)
-  have w₈ := E.perm.wW (show 136 + 8 ≤ 4096 by decide)
+  have r₁ := E.perm.wR (show 240 + 8 ≤ 3816 by decide)
+  have r₂ := E.perm.wR (show 224 + 8 ≤ 3816 by decide)
+  have w₀ := E.perm.wW (show 128 + 8 ≤ 3816 by decide)
+  have w₈ := E.perm.wW (show 136 + 8 ≤ 3816 by decide)
   refine ⟨_, by srun [ghArgs, h15, r₁, r₂, w₀, w₈, hal, hn], ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · simp only [mem_setReg, mem_arithFlags, add_ofNat_assoc, Proof.AesGcm.X86_64.times8_val,
       toNat_ofNat_of_lt hal', toNat_ofNat_of_lt hn']
@@ -54,8 +55,8 @@ theorem lensArgs_ok {K W SP : Addr} {t : State} (E : Env K W SP t) {al n : Nat}
   all_goals rfl
 
 theorem lens_ok (v : GcmImpl) {K W SP : Addr} (L : Lay K W SP) {t : State} (E : Env K W SP t) {al n : Nat}
-    (hal : t.mem.readW (W + BitVec.ofNat 64 296) 64 = BitVec.ofNat 64 al)
-    (hn : t.mem.readW (W + BitVec.ofNat 64 312) 64 = BitVec.ofNat 64 n) (hal' : al < 2 ^ 64) (hn' : n < 2 ^ 64) :
+    (hal : t.mem.readW (W + BitVec.ofNat 64 224) 64 = BitVec.ofNat 64 al)
+    (hn : t.mem.readW (W + BitVec.ofNat 64 240) 64 = BitVec.ofNat 64 n) (hal' : al < 2 ^ 64) (hn' : n < 2 ^ 64) :
     WP isa (lens v.callees) t
       (AbsPost K W SP [Spec.GcmSiv.ofBytes (Spec.GcmSiv.le64 (8 * al) ++ Spec.GcmSiv.le64 (8 * n))] t) := by
   obtain ⟨t₁, run₁, hm₁, rdi₁, rsi₁, r8₁, rdx₁, rcx₁, hg₁, hrd₁, hwr₁⟩ := lensArgs_ok E hal hn hal' hn'
@@ -83,18 +84,18 @@ theorem lens_ok (v : GcmImpl) {K W SP : Addr} (L : Lay K W SP) {t : State} (E : 
       simp [Spec.Gcm.blocksAt], hm₁, blockAt_two, GcmSiv.le64_le8, GcmSiv.le64_le8, GcmSiv.ofBytes_le8]
 
 theorem tagIn_ok {K W SP : Addr} (L : Lay K W SP) {t : State} (E : Env K W SP t) {N : Addr}
-    (hN : t.mem.readW (W + BitVec.ofNat 64 280) 64 = N) (hNb : Buf K W SP t N 12) :
+    (hN : t.mem.readW (W + BitVec.ofNat 64 208) 64 = N) (hNb : Buf K W SP t N 12) :
     ∃ t' : State, runBlock isa tagIn t = some t' ∧ Frame [⟨W + BitVec.ofNat 64 96, 16⟩] t.mem t'.mem ∧
       bytesAt t'.mem (W + BitVec.ofNat 64 96) 16 =
         GcmSiv.tagOf (Spec.GcmSiv.toBytes (Spec.Gcm.blockAt t.mem (W + BitVec.ofNat 64 80))) (bytesAt t.mem N 12) ∧
       (∀ r ∈ calleeSaved, t'.gpr r = t.gpr r) ∧ t'.rd = t.rd ∧ t'.wr = t.wr := by
   have h15 := E.r15
   have hw := L.ww
-  have r₀ := E.perm.wR (show 80 + 8 ≤ 4096 by decide)
-  have r₈ := E.perm.wR (show 88 + 8 ≤ 4096 by decide)
-  have rn := E.perm.wR (show 280 + 8 ≤ 4096 by decide)
-  have w₀ := E.perm.wW (show 96 + 8 ≤ 4096 by decide)
-  have w₈ := E.perm.wW (show 104 + 8 ≤ 4096 by decide)
+  have r₀ := E.perm.wR (show 80 + 8 ≤ 3816 by decide)
+  have r₈ := E.perm.wR (show 88 + 8 ≤ 3816 by decide)
+  have rn := E.perm.wR (show 208 + 8 ≤ 3816 by decide)
+  have w₀ := E.perm.wW (show 96 + 8 ≤ 3816 by decide)
+  have w₈ := E.perm.wW (show 104 + 8 ≤ 3816 by decide)
   have n₀ : InRegions (t.rd ++ t.wr) N 8 := by
     simpa using in_off (d := 0) (n := 8) hNb.rd (by decide) (by decide)
   have n₈ := in_off (d := 8) (n := 4) hNb.rd (by decide) (by decide)
@@ -117,11 +118,11 @@ theorem tagIn_ok {K W SP : Addr} (L : Lay K W SP) {t : State} (E : Env K W SP t)
 /-- The slots, after code that writes only what absorbing writes. -/
 theorem Slots.absR {K W SP : Addr} (L : Lay K W SP) {R : Nat} {N A D : Addr} {al n : Nat} {m m' : Mem}
     (S : Slots W R N A D al n m) (hf : Frame (absR W SP) m m') : Slots W R N A D al n m' := by
-  have k (d : Nat) (hd : 272 ≤ d ∧ d + 8 ≤ 320) : m'.readW (W + BitVec.ofNat 64 d) 64 = m.readW (W + BitVec.ofNat 64 d) 64 :=
+  have k (d : Nat) (hd : 200 ≤ d ∧ d + 8 ≤ 248) : m'.readW (W + BitVec.ofNat 64 d) 64 = m.readW (W + BitVec.ofNat 64 d) 64 :=
     hf.readW (Region.contains_self _ _) (w_absR L (.inr (.inr ⟨by omega, by omega⟩))) (by decide)
-  exact ⟨by rw [k 272 (by decide)]; exact S.rounds, by rw [k 280 (by decide)]; exact S.nonce,
-    by rw [k 288 (by decide)]; exact S.aad, by rw [k 296 (by decide)]; exact S.alen,
-    by rw [k 304 (by decide)]; exact S.data, by rw [k 312 (by decide)]; exact S.len⟩
+  exact ⟨by rw [k 200 (by decide)]; exact S.rounds, by rw [k 208 (by decide)]; exact S.nonce,
+    by rw [k 216 (by decide)]; exact S.aad, by rw [k 224 (by decide)]; exact S.alen,
+    by rw [k 232 (by decide)]; exact S.data, by rw [k 240 (by decide)]; exact S.len⟩
 
 /-- What `polyval` writes: what absorbing writes, and the tag input at `W + 96`. -/
 abbrev polyR (W SP : Addr) : List Region := ⟨W + BitVec.ofNat 64 96, 16⟩ :: absR W SP
@@ -144,8 +145,8 @@ theorem polyval_ok (v : GcmImpl) {K W SP : Addr} (L : Lay K W SP) {t : State} (E
     (hY : Spec.Gcm.blockAt t.mem (W + BitVec.ofNat 64 80) = 0) :
     WP isa (polyval v.callees) t (PolyPost K W SP N A D al n t) := by
   have h15 := E.r15
-  have rA := E.perm.wR (show 288 + 8 ≤ 4096 by decide)
-  have rL := E.perm.wR (show 296 + 8 ≤ 4096 by decide)
+  have rA := E.perm.wR (show 216 + 8 ≤ 3816 by decide)
+  have rL := E.perm.wR (show 224 + 8 ≤ 3816 by decide)
   have sA := S.aad
   have sL := S.alen
   obtain ⟨t₁, run₁, h12₁, hbp₁, hg₁, hm₁, hrd₁, hwr₁⟩ : ∃ t₁ : State, runBlock isa
@@ -166,8 +167,8 @@ theorem polyval_ok (v : GcmImpl) {K W SP : Addr} (L : Lay K W SP) {t : State} (E
   rw [hm₁] at P₂'
   have S₂ := S.absR L P₂'.frame
   have h15₂ := P₂'.env.r15
-  have rD := P₂'.env.perm.wR (show 304 + 8 ≤ 4096 by decide)
-  have rN := P₂'.env.perm.wR (show 312 + 8 ≤ 4096 by decide)
+  have rD := P₂'.env.perm.wR (show 232 + 8 ≤ 3816 by decide)
+  have rN := P₂'.env.perm.wR (show 240 + 8 ≤ 3816 by decide)
   have sD := S₂.data
   have sN := S₂.len
   obtain ⟨t₃, run₃, h12₃, hbp₃, hg₃, hm₃, hrd₃, hwr₃⟩ : ∃ t₃ : State, runBlock isa

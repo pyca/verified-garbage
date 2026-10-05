@@ -6,7 +6,10 @@ import VerifiedGarbage.Proof.AesGcmSiv.AArch64.PolyvalCT
 Untrusted: everything here is checked by Lean. Each call of `vg_aes_ctr32`
 has the same arguments in both runs, which encrypt the same number of
 blocks; the code around the calls, the comparison and the mask pass the
-taint analysis (`open` never branches on whether the tag is right).
+taint analysis (`open` never branches on whether the tag is right). The
+loads of `W` from the stack and of `tag`'s address from `W` give the same
+address in both runs (by correctness), and the taint analysis checks the
+code after them (`entry_rel`, `rel_ldrT`).
 -/
 
 set_option linter.unusedSimpArgs false
@@ -15,21 +18,22 @@ namespace VG.Proof.AesGcmSiv.AArch64
 
 open VG VG.AArch64 VG.AArch64.RegUpd VG.Impl.AesGcmSiv.AArch64
 open VG.Spec.Aes (bytesAt)
-open VG.Proof.AesGcm.AArch64 (Eq2 TT rel_seq rel_ctr rel_ite rel_taint ct_of GcmImpl CtrCall ctr_call eval_zero
+open VG.Proof.AesGcm.AArch64 (Eq2 TT rel_seq rel_ctr rel_ite rel_taint ct_of GcmImpl CtrCall ctr_call eval_zero in_off
+  RelCT.block_split
   eval_nonzero Others add_ofNat_assoc ofNat_sub lsr_ofNat)
 
 /-! ## The tag -/
 
-theorem tagA_check {o : Nat} (ho : o = 0 ∨ o = 224 ∨ o = 240) : ∃ h, (taint.check (Taint.ofRegs (pubRegs []))
+theorem tagA_check {o : Nat} (ho : o = 0 ∨ o = 224) : ∃ h, (taint.check (Taint.ofRegs (pubRegs []))
     (.block (copy16 cbO ccO ++ zero16 o ++ ctrArgs ++ [Impl.AesGcm.AArch64.ptr .x3 .x19 o])) h).isSome = true := by
-  rcases ho with rfl | rfl | rfl <;> exact ⟨_, by taint_decide⟩
+  rcases ho with rfl | rfl <;> exact ⟨_, by taint_decide⟩
 
 /-- `tag o`, in two runs with the same public arguments. -/
 theorem tag_rel (v : GcmImpl) {p : Prm} (L : Lay p) {τ₁ τ₂ : State} (E₁ : Env p τ₁) (E₂ : Env p τ₂) {o : Nat}
-    (ho : o = 0 ∨ o = 224 ∨ o = 240) : RelCT isa (Eq2 τ₁ τ₂) (tag v.callees o) TT := by
+    (ho : o = 0 ∨ o = 224) : RelCT isa (Eq2 τ₁ τ₂) (tag v.callees o) TT := by
   have w : ∀ {τ : State}, Env p τ → WP isa (.block (copy16 cbO ccO ++ zero16 o ++ ctrArgs ++
-      [Impl.AesGcm.AArch64.ptr .x3 .x19 o])) τ fun t₁ => CtrCall t₁ (p.W + BitVec.ofNat 64 512)
-        (p.W + BitVec.ofNat 64 112) (p.W + BitVec.ofNat 64 o) (p.W + BitVec.ofNat 64 2048) p.R 1 ∧ Env p t₁ :=
+      [Impl.AesGcm.AArch64.ptr .x3 .x19 o])) τ fun t₁ => CtrCall t₁ (p.W + BitVec.ofNat 64 240)
+        (p.W + BitVec.ofNat 64 112) (p.W + BitVec.ofNat 64 o) (p.W + BitVec.ofNat 64 1760) p.R 1 ∧ Env p t₁ :=
     fun E => by
       obtain ⟨t₁, run₁, -, x0, x1, x2, x3, x4, x5, ho₁, sp₁, rd₁, wr₁⟩ := tagArgs_ok E ho
       have E' : Env p t₁ := E.keep (fun r hr => ho₁ r (by
@@ -60,8 +64,8 @@ theorem cryptBlock_rel (v : GcmImpl) {p : Prm} (L : Lay p) {τ₁ τ₂ : State}
   have w : ∀ {τ : State}, Env p τ → τ.gpr .x27 = p.D + BitVec.ofNat 64 (16 * j) →
       τ.gpr .x28 = BitVec.ofNat 64 (p.n - 16 * j) →
       WP isa (.block (copy16 cbO ccO ++ ctrArgs ++ [Impl.AesGcm.AArch64.mov .x3 .x27])) τ fun t₁ =>
-        CtrCall t₁ (p.W + BitVec.ofNat 64 512) (p.W + BitVec.ofNat 64 112) (p.D + BitVec.ofNat 64 (16 * j))
-          (p.W + BitVec.ofNat 64 2048) p.R 1 ∧ Env p t₁ ∧ t₁.gpr .x27 = p.D + BitVec.ofNat 64 (16 * j) ∧
+        CtrCall t₁ (p.W + BitVec.ofNat 64 240) (p.W + BitVec.ofNat 64 112) (p.D + BitVec.ofNat 64 (16 * j))
+          (p.W + BitVec.ofNat 64 1760) p.R 1 ∧ Env p t₁ ∧ t₁.gpr .x27 = p.D + BitVec.ofNat 64 (16 * j) ∧
           t₁.gpr .x28 = BitVec.ofNat 64 (p.n - 16 * j) := fun E h27 h28 => by
     obtain ⟨t₁, run₁, -, x0, x1, x2, x3, x4, x5, ho₁, sp₁, rd₁, wr₁⟩ := blkArgs_ok E h27
     have E' : Env p t₁ := E.keep (fun r hr => ho₁ r (by
@@ -69,8 +73,8 @@ theorem cryptBlock_rel (v : GcmImpl) {p : Prm} (L : Lay p) {τ₁ τ₂ : State}
       rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide)) sp₁ rd₁ wr₁
     exact WP.of_runBlock ⟨t₁, run₁, blkCall L E' hj x0 x1 x2 x3 x4 x5, E', by rw [ho₁ _ (by decide), h27],
       by rw [ho₁ _ (by decide), h28]⟩
-  have wc : ∀ {t : State}, (CtrCall t (p.W + BitVec.ofNat 64 512) (p.W + BitVec.ofNat 64 112)
-      (p.D + BitVec.ofNat 64 (16 * j)) (p.W + BitVec.ofNat 64 2048) p.R 1 ∧ Env p t ∧
+  have wc : ∀ {t : State}, (CtrCall t (p.W + BitVec.ofNat 64 240) (p.W + BitVec.ofNat 64 112)
+      (p.D + BitVec.ofNat 64 (16 * j)) (p.W + BitVec.ofNat 64 1760) p.R 1 ∧ Env p t ∧
       t.gpr .x27 = p.D + BitVec.ofNat 64 (16 * j) ∧ t.gpr .x28 = BitVec.ofNat 64 (p.n - 16 * j)) →
       WP isa (callCtr v.callees) t fun u => Env p u ∧ u.gpr .x27 = p.D + BitVec.ofNat 64 (16 * j) ∧
         u.gpr .x28 = BitVec.ofNat 64 (p.n - 16 * j) := fun ⟨cc, E, h27, h28⟩ =>
@@ -106,8 +110,8 @@ theorem cryptBlockL_ok (v : GcmImpl) {p : Prm} (L : Lay p) {j : Nat} (hj : 16 * 
     rw [P.saved _ (by decide) (by decide), ho₁ _ (by decide), B.x27]
   have h28₂ : t₂.gpr .x28 = BitVec.ofNat 64 (p.n - 16 * j) := by
     rw [P.saved _ (by decide) (by decide), ho₁ _ (by decide), B.x28]
-  have c₀ := E₂.perm.wR (show 96 + 4 ≤ 4096 by decide)
-  have c₁ := E₂.perm.wW (show 96 + 4 ≤ 4096 by decide)
+  have c₀ := E₂.perm.wR (show 96 + 4 ≤ 3808 by decide)
+  have c₁ := E₂.perm.wW (show 96 + 4 ≤ 3808 by decide)
   refine WP.run ⟨_, by grun [E₂.x19, c₀, c₁, h27₂, h28₂], rfl⟩ fun t₃ ht₃ => ?_
   subst ht₃
   refine ⟨⟨E₂.keep (fun r hr => by
@@ -187,8 +191,24 @@ theorem crypt_rel (v : GcmImpl) {p : Prm} (L : Lay p) {σ₁ σ₂ : State} (E�
 
 /-! ## The functions -/
 
-theorem entry_check : ∃ h, (taint.check (Taint.ofRegs [.x0, .x1, .x2, .x3, .x4, .x5, .x6, .x7]) (.block entry) h).isSome =
-    true := ⟨_, by taint_decide⟩
+/-- `ldr x9, [sp]`: `W` in `x9`. -/
+theorem ldr9_ok {s : State} (hA : Covers [args s] (s.rd ++ s.wr)) :
+    WP isa (.block [.ldrSp .x9 0]) s fun s' => s'.gpr .x9 = stackArg s 0 ∧ (∀ r, r ≠ .x9 → s'.gpr r = s.gpr r) ∧
+      s'.sp = s.sp ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
+  have a₀ : InRegions (s.rd ++ s.wr) s.sp 8 := by
+    simpa [args, stackArgAddr] using in_off (d := 0) (n := 8) hA (by decide) (by decide)
+  refine WP.run ⟨_, by grun [BitVec.add_zero, a₀], rfl⟩ fun s' hs => ?_
+  subst hs
+  exact ⟨by simp [gpr_write, stackArg, stackArgAddr, Mem.readW], fun r hr => by simp [gpr_write, hr], rfl, rfl, rfl⟩
+
+theorem ldr9_check : ∃ h, (taint.check (Taint.ofRegs []) (.block [.ldrSp .x9 0]) h).isSome = true :=
+  ⟨_, by taint_decide⟩
+
+theorem entryRest_check : ∃ h, (taint.check (Taint.ofRegs [.x9, .x0, .x1, .x2, .x3, .x4, .x5, .x6, .x7])
+    (.block (Impl.AesGcm.AArch64.save .x9 ++ [Impl.AesGcm.AArch64.mov .x19 .x9, Impl.AesGcm.AArch64.mov .x20 .x2,
+      Impl.AesGcm.AArch64.mov .x21 .x0, Impl.AesGcm.AArch64.mov .x22 .x1, Impl.AesGcm.AArch64.mov .x23 .x3,
+      Impl.AesGcm.AArch64.mov .x24 .x4, Impl.AesGcm.AArch64.mov .x25 .x5, Impl.AesGcm.AArch64.mov .x26 .x6,
+      .str .x .x7 .x19 tagPO])) h).isSome = true := ⟨_, by taint_decide⟩
 
 theorem restore_check : ∃ h, (taint.check (Taint.ofRegs (pubRegs [])) (.block Impl.AesGcm.AArch64.restore) h).isSome =
     true := ⟨_, by taint_decide⟩
@@ -199,35 +219,94 @@ theorem openEnd_check : ∃ h, (taint.check (Taint.ofRegs (pubRegs []))
 
 /-- The public arguments of two states with the same public data. -/
 theorem prmOf_eq {σ₁ σ₂ : State} (h : onePub σ₁ σ₂) : prmOf σ₁ = prmOf σ₂ := by
-  obtain ⟨h0, h1, h2, h3, h4, h5, h6, h7, hsp⟩ := h
-  simp only [prmOf, h0, h1, h2, h3, h4, h5, h6, h7, hsp]
+  obtain ⟨h0, h1, h2, h3, h4, h5, h6, h7, hsp, hw⟩ := h
+  simp only [prmOf, h0, h1, h2, h3, h4, h5, h6, h7, hsp, hw]
 
 /-- The entry, in two runs with the same public arguments. -/
-theorem entry_rel {σ₁ σ₂ : State} (h : onePub σ₁ σ₂) : RelCT isa (Eq2 σ₁ σ₂) (.block entry) TT := by
-  obtain ⟨h0, h1, h2, h3, h4, h5, h6, h7, hsp⟩ := h
-  exact rel_taint _ hsp (by simp [h0, h1, h2, h3, h4, h5, h6, h7]) entry_check
+theorem entry_rel {σ₁ σ₂ : State} (h : onePub σ₁ σ₂) (hA₁ : Covers [args σ₁] (σ₁.rd ++ σ₁.wr))
+    (hA₂ : Covers [args σ₂] (σ₂.rd ++ σ₂.wr)) : RelCT isa (Eq2 σ₁ σ₂) (.block entry) TT := by
+  obtain ⟨h0, h1, h2, h3, h4, h5, h6, h7, hsp, hw⟩ := h
+  show RelCT isa _ (.block ([.ldrSp .x9 0] ++ Impl.AesGcm.AArch64.save .x9 ++ _)) _
+  rw [List.append_assoc]
+  refine RelCT.block_split (rel_seq (rel_taint [] hsp (by simp) ldr9_check) (ldr9_ok hA₁) (ldr9_ok hA₂)
+    fun τ₁ τ₂ ⟨x9₁, g₁, sp₁, _, _⟩ ⟨x9₂, g₂, sp₂, _, _⟩ => ?_)
+  refine rel_taint _ (by rw [sp₁, sp₂, hsp]) ?_ entryRest_check
+  intro r hr
+  by_cases h9 : r = .x9
+  · subst h9; rw [x9₁, x9₂, hw]
+  · rw [g₁ r h9, g₂ r h9]
+    simp only [List.mem_cons, List.not_mem_nil, or_false, h9, false_or] at hr
+    rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+    exacts [h0, h1, h2, h3, h4, h5, h6, h7]
+
+/-- The entry of the second run, with the first's public arguments. -/
+theorem entry_pub {σ₁ σ₂ : State} (hp : onePub σ₁ σ₂) (P : Perm (prmOf σ₂) σ₂)
+    (hA : Covers [args σ₂] (σ₂.rd ++ σ₂.wr)) :
+    WP isa (.block entry) σ₂ fun s => Env (prmOf σ₁) s ∧ TagSlot (prmOf σ₁) s.mem := by
+  rw [prmOf_eq hp]
+  exact WP.mono (entry_ok P hA) fun _ h => ⟨h.1, h.2.2.2.1⟩
+
+/-- `ldr x9, [x19, #216]`: `tag`'s address in `x9`. -/
+theorem ldrT_ok {p : Prm} {s : State} (E : Env p s) (hT : TagSlot p s.mem) :
+    WP isa (.block [.ldr .x .x9 .x19 tagPO]) s fun s' => s'.gpr .x9 = p.T ∧ Env p s' := by
+  have r₀ := E.perm.wR (show 216 + 8 ≤ 3808 by decide)
+  have hT' : s.mem.read (p.W + BitVec.ofNat 64 216) 8 = p.T := by rw [read8_readW]; exact hT
+  refine WP.run ⟨_, by grun [E.x19, r₀, hT'], rfl⟩ fun s' hs => ?_
+  subst hs
+  exact ⟨by simp [gpr_write], E.write (by decide) _⟩
+
+theorem ldrT_check : ∃ h, (taint.check (Taint.ofRegs (pubRegs [])) (.block [.ldr .x .x9 .x19 tagPO]) h).isSome =
+    true := ⟨_, by taint_decide⟩
+
+/-- `ldr x9, [x19, #216]` and then `l`, which the taint analysis checks with
+`x9` public, in two runs with the same public arguments. -/
+theorem rel_ldrT {p : Prm} {σ₁ σ₂ : State} (E₁ : Env p σ₁) (E₂ : Env p σ₂) (T₁ : TagSlot p σ₁.mem)
+    (T₂ : TagSlot p σ₂.mem) {l : List Instr}
+    (hc : ∃ h, (taint.check (Taint.ofRegs (pubRegs [.x9])) (.block l) h).isSome = true) :
+    RelCT isa (Eq2 σ₁ σ₂) (.block (([.ldr .x .x9 .x19 tagPO] : List Instr) ++ l)) TT :=
+  RelCT.block_split (rel_seq (rel_env E₁ E₂ [] (by simp) ldrT_check) (ldrT_ok E₁ T₁) (ldrT_ok E₂ T₂)
+    fun _ _ ⟨x9₁, E₁'⟩ ⟨x9₂, E₂'⟩ => rel_env E₁' E₂' [.x9] (by simp [x9₁, x9₂]) hc)
+
+theorem sealEnd_check : ∃ h, (taint.check (Taint.ofRegs (pubRegs [.x9]))
+    (.block (tagOut.tail ++ Impl.AesGcm.AArch64.restore)) h).isSome = true := ⟨_, by taint_decide⟩
+
+theorem recv_check : ∃ h, (taint.check (Taint.ofRegs (pubRegs [.x9])) (.block recv.tail) h).isSome = true :=
+  ⟨_, by taint_decide⟩
 
 theorem seal_ct (v : GcmImpl) : ConstantTime isa sealAArch64.pre sealAArch64.pub («seal» v.callees) := by
   refine ct_of fun σ₁ σ₂ h₁ h₂ hp => ?_
-  have L := lay_of h₁
-  have e := prmOf_eq hp
-  refine rel_seq (entry_rel hp) (entry_ok h₁) (entry_ok h₂) fun τ₁ τ₂ ⟨E₁, _⟩ ⟨E₂, _⟩ => ?_
-  rw [← e] at E₂
+  obtain ⟨L, P₁, -, hA₁⟩ := args_of_seal h₁
+  obtain ⟨-, P₂, -, hA₂⟩ := args_of_seal h₂
+  refine rel_seq (entry_rel hp hA₁ hA₂) (entry_ok P₁ hA₁) (entry_pub hp P₂ hA₂)
+    fun τ₁ τ₂ ⟨E₁, _, _, S₁, _⟩ ⟨E₂, S₂⟩ => ?_
   refine rel_seq (keys_rel v L E₁ E₂) (keys_ok v L E₁) (keys_ok v L E₂) fun a₁ a₂ K₁ K₂ => ?_
   refine rel_seq (polyval_rel v L K₁.env K₂.env) (polyval_ok v L K₁.env K₁.hkey K₁.acc)
     (polyval_ok v L K₂.env K₂.hkey K₂.acc) fun b₁ b₂ P₁ P₂ => ?_
   refine rel_seq (tag_rel v L P₁.env P₂.env (o := 0) (by decide)) (tag_ok v L P₁.env (o := 0) (by decide))
     (tag_ok v L P₂.env (o := 0) (by decide)) fun c₁ c₂ T₁ T₂ => ?_
-  exact rel_seq (crypt_rel v L T₁.env T₂.env) (crypt_ok v L T₁.env) (crypt_ok v L T₂.env)
-    fun d₁ d₂ C₁ C₂ => rel_env C₁.env C₂.env [] (by simp) restore_check
+  refine rel_seq (crypt_rel v L T₁.env T₂.env) (crypt_ok v L T₁.env) (crypt_ok v L T₂.env)
+    fun d₁ d₂ C₁ C₂ => ?_
+  have sl : ∀ {τ a b c d : State}, TagSlot (prmOf σ₁) τ.mem → KeysPost (prmOf σ₁) τ a → PolyPost (prmOf σ₁) a b →
+      TagPost (prmOf σ₁) 0 b c → CryptPost (prmOf σ₁) c d → TagSlot (prmOf σ₁) d.mem := fun S K P T C =>
+    (((S.frame K.frame (by disj_tac L)).frame P.frame (by disj_tac L)).frame T.frame (by disj_tac L)).frame C.frame
+      (by disj_tac L)
+  exact rel_ldrT (l := tagOut.tail ++ Impl.AesGcm.AArch64.restore) C₁.env C₂.env (sl S₁ K₁ P₁ T₁ C₁)
+    (sl S₂ K₂ P₂ T₂ C₂) sealEnd_check
 
 theorem open_ct (v : GcmImpl) : ConstantTime isa openAArch64.pre openAArch64.pub («open» v.callees) := by
   refine ct_of fun σ₁ σ₂ h₁ h₂ hp => ?_
-  have L := lay_of h₁
-  have e := prmOf_eq hp
-  refine rel_seq (entry_rel hp) (entry_ok h₁) (entry_ok h₂) fun τ₁ τ₂ ⟨E₁, _⟩ ⟨E₂, _⟩ => ?_
-  rw [← e] at E₂
-  refine rel_seq (keys_rel v L E₁ E₂) (keys_ok v L E₁) (keys_ok v L E₂) fun a₁ a₂ K₁ K₂ => ?_
+  obtain ⟨L, P₁, hA₁⟩ := args_of_open h₁
+  obtain ⟨-, P₂, hA₂⟩ := args_of_open h₂
+  refine rel_seq (entry_rel hp hA₁ hA₂) (entry_ok P₁ hA₁) (entry_pub hp P₂ hA₂)
+    fun τ₁ τ₂ ⟨E₁, _, _, S₁, _⟩ ⟨E₂, S₂⟩ => ?_
+  have wr : ∀ {τ : State}, Env (prmOf σ₁) τ → TagSlot (prmOf σ₁) τ.mem → WP isa (.block recv) τ (Env (prmOf σ₁)) :=
+    fun E S => by
+      obtain ⟨t, run, -, -, -, ho, sp, rd, wr⟩ := recv_ok L E S
+      exact WP.of_runBlock ⟨t, run, E.keep (fun r hr => ho r (by
+        simp only [envRegs, List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
+        rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide)) sp rd wr⟩
+  refine rel_seq (rel_ldrT (l := recv.tail) E₁ E₂ S₁ S₂ recv_check) (wr E₁ S₁) (wr E₂ S₂) fun ρ₁ ρ₂ R₁ R₂ => ?_
+  refine rel_seq (keys_rel v L R₁ R₂) (keys_ok v L R₁) (keys_ok v L R₂) fun a₁ a₂ K₁ K₂ => ?_
   refine rel_seq (crypt_rel v L K₁.env K₂.env) (crypt_ok v L K₁.env) (crypt_ok v L K₂.env) fun b₁ b₂ C₁ C₂ => ?_
   have hG : ∀ {σ τ : State}, KeysPost (prmOf σ₁) σ τ → ∀ {u : State}, CryptPost (prmOf σ₁) τ u →
       Spec.Gcm.blockAt u.mem ((prmOf σ₁).W + BitVec.ofNat 64 64) =
@@ -240,7 +319,7 @@ theorem open_ct (v : GcmImpl) : ConstantTime isa openAArch64.pre openAArch64.pub
     exact ⟨rfl, rfl⟩
   refine rel_seq (polyval_rel v L C₁.env C₂.env) (polyval_ok v L C₁.env (hG K₁ C₁).1 (hG K₁ C₁).2)
     (polyval_ok v L C₂.env (hG K₂ C₂).1 (hG K₂ C₂).2) fun c₁ c₂ P₁ P₂ => ?_
-  exact rel_seq (tag_rel v L P₁.env P₂.env (o := 240) (by decide)) (tag_ok v L P₁.env (o := 240) (by decide))
-    (tag_ok v L P₂.env (o := 240) (by decide)) fun d₁ d₂ T₁ T₂ => rel_env T₁.env T₂.env [] (by simp) openEnd_check
+  exact rel_seq (tag_rel v L P₁.env P₂.env (o := 224) (by decide)) (tag_ok v L P₁.env (o := 224) (by decide))
+    (tag_ok v L P₂.env (o := 224) (by decide)) fun d₁ d₂ T₁ T₂ => rel_env T₁.env T₂.env [] (by simp) openEnd_check
 
 end VG.Proof.AesGcmSiv.AArch64

@@ -570,7 +570,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>❌</td>
+<td>✅ AES-NI, PCLMULQDQ</td>
 
 </tr>
 
@@ -600,7 +600,7 @@ yours to keep:
 
 <td>✅ AES, PMULL</td>
 
-<td>❌</td>
+<td>✅</td>
 
 <td>❌</td>
 
@@ -618,7 +618,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>❌</td>
+<td>✅ AES-NI</td>
 
 </tr>
 
@@ -908,6 +908,44 @@ yours to keep:
 
 </table>
 
+### Public-key encryption
+
+<table>
+
+<tr>
+
+<th>Algorithm</th>
+
+<th>Spec landed</th>
+
+<th>x86-64</th>
+
+<th>ARM64</th>
+
+<th>ARMv7</th>
+
+<th>x86</th>
+
+</tr>
+
+<tr>
+
+<td>RSAES-PKCS1-v1_5 (implicit rejection)</td>
+
+<td>✅</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+</tr>
+
+</table>
+
 ### Key agreement
 
 <table>
@@ -950,9 +988,9 @@ yours to keep:
 
 <td>✅</td>
 
-<td>❌</td>
+<td>✅</td>
 
-<td>❌</td>
+<td>✅</td>
 
 <td>❌</td>
 
@@ -1052,9 +1090,9 @@ yours to keep:
 
 <td>✅</td>
 
-<td>❌</td>
+<td>✅ SHA512, AVX2, BMI1, BMI2</td>
 
-<td>❌</td>
+<td>✅ SHA extensions</td>
 
 <td>❌</td>
 
@@ -1144,11 +1182,43 @@ yours to keep:
 
 <tr>
 
+<td>RSA key generation</td>
+
+<td>✅</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+</tr>
+
+<tr>
+
 <td>RSA</td>
 
 <td>✅</td>
 
 <td>✅ AVX-512 IFMA, AVX-512VL, AVX2, BMI2, ADX</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+</tr>
+
+<tr>
+
+<td>RSASSA-PKCS1-v1_5</td>
+
+<td>✅</td>
+
+<td>❌</td>
 
 <td>❌</td>
 

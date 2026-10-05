@@ -15,14 +15,14 @@ mod sealed {
 /// A curve that ECDSA signs over and ECDH exchanges keys on.
 pub trait Curve: sealed::Sealed {
     /// The encoding of a private key: the integer `d` in `[1, n − 1]`, most
-    /// significant byte first (`[u8; 32]` for P-256).
+    /// significant byte first (`[u8; 32]` for P-256, `[u8; 48]` for P-384).
     type PrivateKey: AsMut<[u8]> + Clone;
     /// The encoding of a public key: the uncompressed form of SEC 1 §2.3.3,
     /// `04 ‖ x ‖ y`, each coordinate most significant byte first
-    /// (`[u8; 65]` for P-256).
+    /// (`[u8; 65]` for P-256, `[u8; 97]` for P-384).
     type PublicKey: Clone + core::fmt::Debug + PartialEq + Eq;
     /// The encoding of a signature: `r ‖ s`, each most significant byte
-    /// first (`[u8; 64]` for P-256).
+    /// first (`[u8; 64]` for P-256, `[u8; 96]` for P-384).
     type Signature;
 }
 
@@ -36,4 +36,20 @@ impl Curve for P256 {
     type PrivateKey = [u8; 32];
     type PublicKey = [u8; 65];
     type Signature = [u8; 64];
+}
+
+/// The curve P-384 (FIPS 186-5's secp384r1; SP 800-186 §3.2.1.4), so far
+/// on x86-64 and AArch64.
+#[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum P384 {}
+
+#[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
+impl sealed::Sealed for P384 {}
+
+#[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
+impl Curve for P384 {
+    type PrivateKey = [u8; 48];
+    type PublicKey = [u8; 97];
+    type Signature = [u8; 96];
 }

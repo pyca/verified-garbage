@@ -1,0 +1,40 @@
+name: Prepare the Lean build
+description: >
+  Restores this project's last build into `lean/.lake/build` (Lake rebuilds
+  only what changed since: mostly extraction), then installs Lean and
+  Mathlib (`lean-setup`, `lean-mathlib`). Every job that builds the proofs
+  starts with it, after checking out the repository.
+
+inputs:
+  key:
+    description: The key of the build's cache (the plan job's `build-cache`).
+    required: true
+  restore-keys:
+    description: Fallbacks, one per line, most preferred first.
+    required: true
+
+outputs:
+  cache-hit:
+    description: Whether the build was restored from exactly `key`.
+    value: ${{ steps.lean-build.outputs.cache-hit }}
+  cache-primary-key:
+    description: The key to save the build under (`key`).
+    value: ${{ steps.lean-build.outputs.cache-primary-key }}
+
+runs:
+  using: composite
+  steps:
+    - name: Restore this project's build
+      id: lean-build
+      uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: lean/.lake/build
+        key: ${{ inputs.key }}
+        restore-keys: ${{ inputs.restore-keys }}
+    - uses: ./.github/actions/lean-setup
+      id: lean-setup
+    - uses: ./.github/actions/lean-mathlib
+      with:
+        mods: ${{ steps.lean-setup.outputs.mods }}
+        cache-hit: ${{ steps.lean-setup.outputs.cache-hit }}
+        cache-key: ${{ steps.lean-setup.outputs.cache-key }}

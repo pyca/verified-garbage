@@ -95,8 +95,7 @@ theorem Verified.stackArgScratchWiped {c : Prog isa}
       (∀ b ∈ Sig.bufs sig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
       Curry.apply (sig.words abi.ptrBits) post vs m m₁ r →
         Curry.apply (sig.words abi.ptrBits) post vs m m₂ r)
-    (hsat : ∃ s, (sig.contract abi pre post wa (stack + bytes)).pre s)
-    (hl : Sig.noLists sig.params = true := by decide) :
+    (hsat : ∃ s, (sig.contract abi pre post wa (stack + bytes)).pre s) :
     Verified target (withStackArgScratchWiped bytes (nStack sig) words c)
       (sig.contract abi pre post wa (stack + bytes)) := by
   obtain ⟨hcor, hct, -⟩ := h
@@ -115,14 +114,14 @@ theorem Verified.stackArgScratchWiped {c : Prog isa}
         b.1.Disjoint ⟨s.gpr .rsp - BitVec.ofNat 64 bytes + BitVec.ofNat 64 (16 + 8 * nStack sig),
           n * e.size⟩ := by
     intro s hs b hb'
-    rw [pre_args hk hl] at hs
+    rw [pre_args hk] at hs
     obtain ⟨⟨hwf, -⟩, -, -, -, hres, -, -⟩ := hs
     have hsb : stack + bytes ≤ (s.gpr .rsp).toNat := by rcases hwf with h | h <;> omega
     have hbelow : below (s.gpr .rsp) (stack + bytes) ∈
         (⟨s.gpr .rsp, 8⟩ :: stackBelow (s.gpr .rsp) (stack + bytes) : List Region) := by
       rw [stackBelow_pos _ (by omega)]; simp
     rw [sub_add_ofNat _ (by omega)]
-    exact (Region.Disjoint.symm (hres _ hbelow b (List.mem_append_left _ hb'))).sub_right
+    exact (Region.Disjoint.symm (hres _ hbelow b (List.mem_append_left _ (List.mem_append_left _ hb')))).sub_right
       (Offset.sub_below _ (by omega) (by omega))
   -- Every run is `setArgs`, then the code's run from `narrowS`, then the wipe.
   have hrun : ∀ s, (sig.contract abi pre post wa (stack + bytes)).pre s → ∃ t s₃ m',
@@ -138,8 +137,8 @@ theorem Verified.stackArgScratchWiped {c : Prog isa}
       (popState bytes s { s₃.setReg32 .r11 0 with mem := m' }).mem = m' ∧
       (popState bytes s { s₃.setReg32 .r11 0 with mem := m' }).gpr .rax = s₃.gpr .rax := by
     intro s hs
-    obtain ⟨t, s₃, he, ha, hq⟩ := hcor _ (narrowS_pre hk hb0 hb1 hpre hs hl)
-    obtain ⟨hrsp, -, -, -, -⟩ := narrowS_facts (nm := nm) hk hb0 hb1 hs hl
+    obtain ⟨t, s₃, he, ha, hq⟩ := hcor _ (narrowS_pre hk hb0 hb1 (fun vs m₁ m₂ hl hb _ => hpre vs m₁ m₂ hl hb) hs)
+    obtain ⟨hrsp, -, -, -, -⟩ := narrowS_facts (nm := nm) hk hb0 hb1 hs
     have hrsp₃ : s₃.gpr .rsp = s.gpr .rsp - BitVec.ofNat 64 bytes :=
       (ha.1 .rsp (by simp [calleeSaved])).trans hrsp
     have hwr₃ : s₃.wr = (narrowS sig e n bytes s).wr := (Exec.rdwr he).2
@@ -168,7 +167,7 @@ theorem Verified.stackArgScratchWiped {c : Prog isa}
         have h2 := ha.2.1
         rwa [hrsp] at h2
     obtain ⟨hex, habi, hm, hrax⟩ :=
-      withStackArgScratch_run hk ⟨hb0, hb1, hb2⟩ hst hsafe hdep hs he' ha' hl
+      withStackArgScratch_run hk ⟨hb0, hb1, hb2⟩ hst hsafe hdep hs he' ha'
     exact ⟨t, s₃, m', he, hq, hfr, hex, habi, hm, by rw [hrax]; simp [State.setReg32, State.setReg]⟩
   refine ⟨fun s hs => ?_, fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hp e₁ e₂ => ?_, hsat⟩
   · obtain ⟨t, s₃, m', -, hq, hfr, hex, ha, hm, hrax⟩ := hrun s hs
@@ -177,12 +176,12 @@ theorem Verified.stackArgScratchWiped {c : Prog isa}
     have hq' := (post_args (sig := sig.withScratch nm e n)
       (pre := Curry.withScratch abi.ptrBits nm e n sig.params pre)
       (post := Curry.withScratch abi.ptrBits nm e n sig.params post) hk').mp hq
-    obtain ⟨-, -, -, hargs, -⟩ := narrowS_facts (nm := nm) hk hb0 hb1 hs hl
+    obtain ⟨-, -, -, hargs, -⟩ := narrowS_facts (nm := nm) hk hb0 hb1 hs
     rw [hargs] at hq'
     rw [hm, hrax]
     have h₃ := Eq.mp (congrFun (congrFun (congrFun (Curry.apply_withScratch abi.ptrBits nm e n
       sig.params post _ _ (allArgs_length sig s hk)) _) s₃.mem) _) hq'
-    have h₄ := hpost _ _ _ _ _ (allArgs_length sig s hk) (narrowS_agree hk hb0 hb1 hs hl) h₃
+    have h₄ := hpost _ _ _ _ _ (allArgs_length sig s hk) (narrowS_agree hk hb0 hb1 hs) h₃
     refine hpostOut _ _ _ _ _ (allArgs_length sig s hk) (fun b hb' a ha' => ?_) h₄
     exact (hfr a fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
@@ -190,9 +189,10 @@ theorem Verified.stackArgScratchWiped {c : Prog isa}
   · obtain ⟨u₁, _, _, f₁, _, _, x₁, _⟩ := hrun s₁ h₁
     obtain ⟨u₂, _, _, f₂, _, _, x₂, _⟩ := hrun s₂ h₂
     rw [(Exec.det e₁ x₁).1, (Exec.det e₂ x₂).1]
-    have hsp₁₂ : s₁.gpr .rsp = s₂.gpr .rsp := ((pub_args hk hl).mp hp).1
-    rw [hct _ _ _ _ _ _ (narrowS_pre hk hb0 hb1 hpre h₁ hl) (narrowS_pre hk hb0 hb1 hpre h₂ hl)
-      (narrowS_pub hk hb0 hb1 h₁ h₂ hp hl) f₁ f₂, hsp₁₂]
+    have hsp₁₂ : s₁.gpr .rsp = s₂.gpr .rsp := ((pub_args hk).mp hp).1
+    rw [hct _ _ _ _ _ _ (narrowS_pre hk hb0 hb1 (fun vs m₁ m₂ hl hb _ => hpre vs m₁ m₂ hl hb) h₁)
+      (narrowS_pre hk hb0 hb1 (fun vs m₁ m₂ hl hb _ => hpre vs m₁ m₂ hl hb) h₂)
+      (narrowS_pub hk hb0 hb1 h₁ h₂ hp) f₁ f₂, hsp₁₂]
 
 /-- `withStackArgScratchWiped` writes `rsp` only in its frame if its code
 does. -/

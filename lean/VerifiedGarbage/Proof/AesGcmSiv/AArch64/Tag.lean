@@ -4,7 +4,7 @@ import VerifiedGarbage.Proof.AesGcmSiv.AArch64.Polyval
 # AES-GCM-SIV on AArch64: the tag (`tag`)
 
 Untrusted: everything here is checked by Lean. `tag o` encrypts the block at
-`W + 96` with the encryption key's schedule at `W + 512` into the block at
+`W + 96` with the encryption key's schedule at `W + 240` into the block at
 `W + o`, by `vg_aes_ctr32` of one zero block from a copy of it at `W + 112`
 (`tag_ok`): the tag, the tag `open` computes, and counter mode's last
 keystream block.
@@ -40,7 +40,7 @@ theorem copyMem_bytes (m : Mem) (W : Addr) :
 
 /-- What `tag o` writes. -/
 abbrev tagR (W : Addr) (o : Nat) : List Region :=
-  [⟨W + BitVec.ofNat 64 112, 16⟩, ⟨W + BitVec.ofNat 64 o, 16⟩, ⟨W + BitVec.ofNat 64 2048, 2048⟩]
+  [⟨W + BitVec.ofNat 64 112, 16⟩, ⟨W + BitVec.ofNat 64 o, 16⟩, ⟨W + BitVec.ofNat 64 1760, 2048⟩]
 
 /-- What `tag o` leaves, from `t`. -/
 structure TagPost (p : Prm) (o : Nat) (t t' : State) : Prop where
@@ -51,22 +51,22 @@ structure TagPost (p : Prm) (o : Nat) (t t' : State) : Prop where
   x28 : t'.gpr .x28 = t.gpr .x28
   frame : Frame (tagR p.W o) t.mem t'.mem
   out : bytesAt t'.mem (p.W + BitVec.ofNat 64 o) 16 =
-    Spec.GcmSiv.ctxCiph t.mem (p.W + BitVec.ofNat 64 512) p.R (bytesAt t.mem (p.W + BitVec.ofNat 64 96) 16)
+    Spec.GcmSiv.ctxCiph t.mem (p.W + BitVec.ofNat 64 240) p.R (bytesAt t.mem (p.W + BitVec.ofNat 64 96) 16)
 
 /-- The arguments of `tag o`'s call. -/
-theorem tagArgs_ok {p : Prm} {t : State} (E : Env p t) {o : Nat} (ho : o = 0 ∨ o = 224 ∨ o = 240) :
+theorem tagArgs_ok {p : Prm} {t : State} (E : Env p t) {o : Nat} (ho : o = 0 ∨ o = 224) :
     ∃ t₁ : State, runBlock isa (copy16 cbO ccO ++ zero16 o ++ ctrArgs ++ [Impl.AesGcm.AArch64.ptr .x3 .x19 o]) t =
       some t₁ ∧ t₁.mem = Proof.Cmac.zero2 (copyMem t.mem p.W) (p.W + BitVec.ofNat 64 o) ∧
-      t₁.gpr .x0 = p.W + BitVec.ofNat 64 512 ∧ t₁.gpr .x1 = BitVec.ofNat 64 p.R ∧
+      t₁.gpr .x0 = p.W + BitVec.ofNat 64 240 ∧ t₁.gpr .x1 = BitVec.ofNat 64 p.R ∧
       t₁.gpr .x2 = p.W + BitVec.ofNat 64 112 ∧ t₁.gpr .x3 = p.W + BitVec.ofNat 64 o ∧
-      t₁.gpr .x4 = BitVec.ofNat 64 1 ∧ t₁.gpr .x5 = p.W + BitVec.ofNat 64 2048 ∧
+      t₁.gpr .x4 = BitVec.ofNat 64 1 ∧ t₁.gpr .x5 = p.W + BitVec.ofNat 64 1760 ∧
       Others [.x9, .x0, .x1, .x2, .x3, .x4, .x5] t t₁ ∧ t₁.sp = t.sp ∧ t₁.rd = t.rd ∧ t₁.wr = t.wr := by
-  have r₀ := E.perm.wR (show 96 + 8 ≤ 4096 by decide)
-  have r₈ := E.perm.wR (show 104 + 8 ≤ 4096 by decide)
-  have w₀ := E.perm.wW (show 112 + 8 ≤ 4096 by decide)
-  have w₈ := E.perm.wW (show 120 + 8 ≤ 4096 by decide)
-  have z₀ := E.perm.wW (show o + 8 ≤ 4096 by omega)
-  have z₈ := E.perm.wW (show o + 8 + 8 ≤ 4096 by omega)
+  have r₀ := E.perm.wR (show 96 + 8 ≤ 3808 by decide)
+  have r₈ := E.perm.wR (show 104 + 8 ≤ 3808 by decide)
+  have w₀ := E.perm.wW (show 112 + 8 ≤ 3808 by decide)
+  have w₈ := E.perm.wW (show 120 + 8 ≤ 3808 by decide)
+  have z₀ := E.perm.wW (show o + 8 ≤ 3808 by omega)
+  have z₈ := E.perm.wW (show o + 8 + 8 ≤ 3808 by omega)
   have o₁ : o % 8 = 0 := by omega
   have o₂ : o < 32768 := by omega
   have o₃ : (o + 8) % 8 = 0 := by omega
@@ -83,12 +83,12 @@ theorem tagArgs_ok {p : Prm} {t : State} (E : Env p t) {o : Nat} (ho : o = 0 ∨
   all_goals simp [gpr_write, E.x19, E.x22]
 
 /-- The arguments of `tag o`'s call, as `vg_aes_ctr32` needs them. -/
-theorem tagCall {p : Prm} (L : Lay p) {t₁ : State} (E₁ : Env p t₁) {o : Nat} (ho : o = 0 ∨ o = 224 ∨ o = 240)
-    (x0 : t₁.gpr .x0 = p.W + BitVec.ofNat 64 512) (x1 : t₁.gpr .x1 = BitVec.ofNat 64 p.R)
+theorem tagCall {p : Prm} (L : Lay p) {t₁ : State} (E₁ : Env p t₁) {o : Nat} (ho : o = 0 ∨ o = 224)
+    (x0 : t₁.gpr .x0 = p.W + BitVec.ofNat 64 240) (x1 : t₁.gpr .x1 = BitVec.ofNat 64 p.R)
     (x2 : t₁.gpr .x2 = p.W + BitVec.ofNat 64 112) (x3 : t₁.gpr .x3 = p.W + BitVec.ofNat 64 o)
-    (x4 : t₁.gpr .x4 = BitVec.ofNat 64 1) (x5 : t₁.gpr .x5 = p.W + BitVec.ofNat 64 2048) :
-    CtrCall t₁ (p.W + BitVec.ofNat 64 512) (p.W + BitVec.ofNat 64 112) (p.W + BitVec.ofNat 64 o)
-      (p.W + BitVec.ofNat 64 2048) p.R 1 :=
+    (x4 : t₁.gpr .x4 = BitVec.ofNat 64 1) (x5 : t₁.gpr .x5 = p.W + BitVec.ofNat 64 1760) :
+    CtrCall t₁ (p.W + BitVec.ofNat 64 240) (p.W + BitVec.ofNat 64 112) (p.W + BitVec.ofNat 64 o)
+      (p.W + BitVec.ofNat 64 1760) p.R 1 :=
   have hw := L.ww
   { x0 := x0, x1 := x1, x2 := x2, x3 := x3, x4 := x4, x5 := x5
     rounds := L.rounds3
@@ -108,7 +108,7 @@ theorem tagCall {p : Prm} (L : Lay p) {t₁ : State} (E₁ : Env p t₁) {o : Na
         (covers_cons (E₁.perm.wC (by decide)) covers_nil)) }
 
 theorem tag_ok (v : GcmImpl) {p : Prm} (L : Lay p) {t : State} (E : Env p t) {o : Nat}
-    (ho : o = 0 ∨ o = 224 ∨ o = 240) :
+    (ho : o = 0 ∨ o = 224) :
     WP isa (tag v.callees o) t (TagPost p o t) := by
   have hw := L.ww
   obtain ⟨t₁, run₁, hm₁, x0, x1, x2, x3, x4, x5, ho₁, sp₁, rd₁, wr₁⟩ := tagArgs_ok E ho
@@ -127,8 +127,8 @@ theorem tag_ok (v : GcmImpl) {p : Prm} (L : Lay p) {t : State} (E : Env p t) {o 
     rw [hm₁, Proof.Cmac.zero2, Proof.AesGcm.AArch64.bytesAt_frame fZ (fun q hq => by
         simp only [List.mem_singleton] at hq; subst hq; exact dO.symm) (by decide), copyMem_bytes]
   have hz₁ : Spec.Gcm.blockAt t₁.mem (p.W + BitVec.ofNat 64 o) = 0 := by rw [hm₁]; exact blockAt_zero2 _ _
-  have ek₁ : Spec.GcmSiv.ctxCiph t₁.mem (p.W + BitVec.ofNat 64 512) p.R =
-      Spec.GcmSiv.ctxCiph t.mem (p.W + BitVec.ofNat 64 512) p.R := by
+  have ek₁ : Spec.GcmSiv.ctxCiph t₁.mem (p.W + BitVec.ofNat 64 240) p.R =
+      Spec.GcmSiv.ctxCiph t.mem (p.W + BitVec.ofNat 64 240) p.R := by
     unfold Spec.GcmSiv.ctxCiph
     rw [Proof.AesGcm.AArch64.bytesAt_frame f₁ (fun q hq => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
@@ -153,7 +153,7 @@ theorem tag_ok (v : GcmImpl) {p : Prm} (L : Lay p) {t : State} (E : Env p t) {o 
     hz₁, Proof.Cmac.ctr32_one, List.cons.injEq, and_true] at hout
   rw [Proof.Cmac.bytesAt_blockAt, hout, Spec.Gcm.blockAt,
     Proof.Cmac.aesWith_bytes _ _ (Proof.Cmac.bytesAt_length _ _ _), ← GcmSiv.aesWith_eq,
-    show Spec.GcmSiv.aesWith p.R (bytesAt t₁.mem (p.W + BitVec.ofNat 64 512) (16 * (p.R + 1))) =
-      Spec.GcmSiv.ctxCiph t₁.mem (p.W + BitVec.ofNat 64 512) p.R from rfl, ek₁, hb₁]
+    show Spec.GcmSiv.aesWith p.R (bytesAt t₁.mem (p.W + BitVec.ofNat 64 240) (16 * (p.R + 1))) =
+      Spec.GcmSiv.ctxCiph t₁.mem (p.W + BitVec.ofNat 64 240) p.R from rfl, ek₁, hb₁]
 
 end VG.Proof.AesGcmSiv.AArch64

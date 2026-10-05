@@ -9,12 +9,12 @@ import VerifiedGarbage.Impl.AesGcmSiv.AArch64
 
 Untrusted: everything here is checked by Lean. The public arguments
 (`Prm`): the key schedule of the key-generating key (240 bytes at `K`), the
-working space (4096 bytes at `W`), the nonce (12 bytes at `N`), the
-additional data (`al` bytes at `A`), the data (`n` bytes at `D`), the stack
-pointer and the number of rounds; how their regions lie (`Lay`); what a
-state may access (`Perm`); and the registers that hold them throughout
-(`Env`), which the functions called preserve. `grun` runs a block
-symbolically.
+working space (3808 bytes at `W`), the nonce (12 bytes at `N`), the
+additional data (`al` bytes at `A`), the data (`n` bytes at `D`), the tag
+(16 bytes at `T`), the stack pointer and the number of rounds; how their
+regions lie (`Lay`); what a state may access (`Perm`); and the registers
+that hold them throughout (`Env`), which the functions called preserve.
+`grun` runs a block symbolically.
 -/
 
 namespace VG.Proof.AesGcmSiv.AArch64
@@ -29,7 +29,7 @@ macro "grun" "[" ts:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(tactic| (
     State.load, State.store, Size.bytes, Size.bits, State.read, gpr_write, mem_write, rd_write, wr_write,
     sp_write, ite_true, ite_false, Option.bind_some, Option.map_some, BitVec.setWidth_eq, and_self,
     Impl.AesGcm.AArch64.mov, Impl.AesGcm.AArch64.ptr, Impl.AesGcm.AArch64.imm, tagO, akO, ekO, hO, yO,
-    cbO, ccO, bO, t2O, skO, revO, ghO, scrO, List.cons_append, List.nil_append,
+    cbO, ccO, tagPO, bO, skO, revO, ghO, scrO, List.cons_append, List.nil_append,
     List.append_assoc, reduceCtorEq, ↓reduceIte, Nat.reduceLT, Nat.reduceLeDiff, Nat.reduceSub, Nat.reduceEqDiff,
     Nat.reduceAdd, Nat.reduceMul, Nat.reduceMod, and_true, true_and, eq_self_iff_true, $ts,*]) <;> try rfl)
 
@@ -45,6 +45,8 @@ structure Prm where
   A : Addr
   /-- The data. -/
   D : Addr
+  /-- The tag. -/
+  T : Addr
   /-- The stack pointer. -/
   SP : Addr
   /-- The number of rounds. -/
@@ -57,17 +59,20 @@ structure Prm where
 /-- How the regions lie. -/
 structure Lay (p : Prm) : Prop where
   kw : p.K.toNat + 240 ≤ 2 ^ 64
-  ww : p.W.toNat + 4096 ≤ 2 ^ 64
+  ww : p.W.toNat + 3808 ≤ 2 ^ 64
   nw : p.N.toNat + 12 ≤ 2 ^ 64
   aw : p.A.toNat + p.al ≤ 2 ^ 64
   dw : p.D.toNat + p.n ≤ 2 ^ 64
-  k_w : (⟨p.K, 240⟩ : Region).Disjoint ⟨p.W, 4096⟩
+  k_w : (⟨p.K, 240⟩ : Region).Disjoint ⟨p.W, 3808⟩
   k_d : (⟨p.K, 240⟩ : Region).Disjoint ⟨p.D, p.n⟩
-  n_w : (⟨p.N, 12⟩ : Region).Disjoint ⟨p.W, 4096⟩
+  n_w : (⟨p.N, 12⟩ : Region).Disjoint ⟨p.W, 3808⟩
   n_d : (⟨p.N, 12⟩ : Region).Disjoint ⟨p.D, p.n⟩
-  a_w : (⟨p.A, p.al⟩ : Region).Disjoint ⟨p.W, 4096⟩
+  a_w : (⟨p.A, p.al⟩ : Region).Disjoint ⟨p.W, 3808⟩
   a_d : (⟨p.A, p.al⟩ : Region).Disjoint ⟨p.D, p.n⟩
-  d_w : (⟨p.D, p.n⟩ : Region).Disjoint ⟨p.W, 4096⟩
+  d_w : (⟨p.D, p.n⟩ : Region).Disjoint ⟨p.W, 3808⟩
+  tw : p.T.toNat + 16 ≤ 2 ^ 64
+  t_w : (⟨p.T, 16⟩ : Region).Disjoint ⟨p.W, 3808⟩
+  t_d : (⟨p.T, 16⟩ : Region).Disjoint ⟨p.D, p.n⟩
   rounds : p.R = 10 ∨ p.R = 14
   al_lt : p.al < 2 ^ 64
   n_lt : p.n < 2 ^ 64
@@ -78,13 +83,14 @@ structure Perm (p : Prm) (s : State) : Prop where
   non : Covers [⟨p.N, 12⟩] (s.rd ++ s.wr)
   aad : Covers [⟨p.A, p.al⟩] (s.rd ++ s.wr)
   d : Covers [⟨p.D, p.n⟩] s.wr
-  w : Covers [⟨p.W, 4096⟩] s.wr
+  w : Covers [⟨p.W, 3808⟩] s.wr
+  t : Covers [⟨p.T, 16⟩] (s.rd ++ s.wr)
 
 theorem Perm.of_eq {p : Prm} {s s' : State} (h : Perm p s) (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr) :
     Perm p s' := by
-  obtain ⟨a, b, c, d, e⟩ := h
+  obtain ⟨a, b, c, d, e, f⟩ := h
   exact ⟨by rw [hrd, hwr]; exact a, by rw [hrd, hwr]; exact b, by rw [hrd, hwr]; exact c, by rw [hwr]; exact d,
-    by rw [hwr]; exact e⟩
+    by rw [hwr]; exact e, by rw [hrd, hwr]; exact f⟩
 
 /-- The registers holding the public arguments, the stack pointer, and what
 the state may access. -/
@@ -132,30 +138,33 @@ theorem Env.of_regs {p : Prm} {s s' : State} {rs : List Reg} (h : Env p s) (hr :
 
 namespace Lay
 
-theorem wSub {W : Addr} {d n : Nat} (h : d + n ≤ 4096) : Region.Sub ⟨W + BitVec.ofNat 64 d, n⟩ ⟨W, 4096⟩ :=
+theorem wSub {W : Addr} {d n : Nat} (h : d + n ≤ 3808) : Region.Sub ⟨W + BitVec.ofNat 64 d, n⟩ ⟨W, 3808⟩ :=
   Offset.sub_base _ h
 
 variable {p : Prm} (L : Lay p)
 include L
 
 /-- Parts of `W` are disjoint. -/
-theorem w_w {a n d k : Nat} (h : a + n ≤ d ∨ d + k ≤ a) (ha : a + n ≤ 4096) (hd : d + k ≤ 4096) :
+theorem w_w {a n d k : Nat} (h : a + n ≤ d ∨ d + k ≤ a) (ha : a + n ≤ 3808) (hd : d + k ≤ 3808) :
     (⟨p.W + BitVec.ofNat 64 a, n⟩ : Region).Disjoint ⟨p.W + BitVec.ofNat 64 d, k⟩ :=
   Offset.disjoint _ h (by have := L.ww; omega) (by have := L.ww; omega)
 
-theorem k_w' {d k : Nat} (hd : d + k ≤ 4096) : (⟨p.K, 240⟩ : Region).Disjoint ⟨p.W + BitVec.ofNat 64 d, k⟩ :=
+theorem k_w' {d k : Nat} (hd : d + k ≤ 3808) : (⟨p.K, 240⟩ : Region).Disjoint ⟨p.W + BitVec.ofNat 64 d, k⟩ :=
   L.k_w.sub_right (wSub hd)
 
-theorem n_w' {d k : Nat} (hd : d + k ≤ 4096) : (⟨p.N, 12⟩ : Region).Disjoint ⟨p.W + BitVec.ofNat 64 d, k⟩ :=
+theorem n_w' {d k : Nat} (hd : d + k ≤ 3808) : (⟨p.N, 12⟩ : Region).Disjoint ⟨p.W + BitVec.ofNat 64 d, k⟩ :=
   L.n_w.sub_right (wSub hd)
 
-theorem a_w' {d k : Nat} (hd : d + k ≤ 4096) : (⟨p.A, p.al⟩ : Region).Disjoint ⟨p.W + BitVec.ofNat 64 d, k⟩ :=
+theorem a_w' {d k : Nat} (hd : d + k ≤ 3808) : (⟨p.A, p.al⟩ : Region).Disjoint ⟨p.W + BitVec.ofNat 64 d, k⟩ :=
   L.a_w.sub_right (wSub hd)
 
-theorem d_w' {d k : Nat} (hd : d + k ≤ 4096) : (⟨p.D, p.n⟩ : Region).Disjoint ⟨p.W + BitVec.ofNat 64 d, k⟩ :=
+theorem d_w' {d k : Nat} (hd : d + k ≤ 3808) : (⟨p.D, p.n⟩ : Region).Disjoint ⟨p.W + BitVec.ofNat 64 d, k⟩ :=
   L.d_w.sub_right (wSub hd)
 
-theorem toNat_W {d : Nat} (hd : d < 4096) : (p.W + BitVec.ofNat 64 d).toNat = p.W.toNat + d := by
+theorem t_w' {d k : Nat} (hd : d + k ≤ 3808) : (⟨p.T, 16⟩ : Region).Disjoint ⟨p.W + BitVec.ofNat 64 d, k⟩ :=
+  L.t_w.sub_right (wSub hd)
+
+theorem toNat_W {d : Nat} (hd : d < 3808) : (p.W + BitVec.ofNat 64 d).toNat = p.W.toNat + d := by
   have := L.ww
   rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := d) (by omega), Nat.mod_eq_of_lt (by omega)]
 
@@ -173,16 +182,16 @@ namespace Perm
 variable {p : Prm} {s : State} (P : Perm p s)
 include P
 
-theorem wW {d n : Nat} (h : d + n ≤ 4096) : InRegions s.wr (p.W + BitVec.ofNat 64 d) n :=
+theorem wW {d n : Nat} (h : d + n ≤ 3808) : InRegions s.wr (p.W + BitVec.ofNat 64 d) n :=
   in_off P.w h (by decide)
 
-theorem wR {d n : Nat} (h : d + n ≤ 4096) : InRegions (s.rd ++ s.wr) (p.W + BitVec.ofNat 64 d) n :=
+theorem wR {d n : Nat} (h : d + n ≤ 3808) : InRegions (s.rd ++ s.wr) (p.W + BitVec.ofNat 64 d) n :=
   in_left (P.wW h)
 
-theorem wC {d n : Nat} (h : d + n ≤ 4096) : Covers [⟨p.W + BitVec.ofNat 64 d, n⟩] s.wr :=
+theorem wC {d n : Nat} (h : d + n ≤ 3808) : Covers [⟨p.W + BitVec.ofNat 64 d, n⟩] s.wr :=
   covers_off P.w h (by decide)
 
-theorem wCR {d n : Nat} (h : d + n ≤ 4096) : Covers [⟨p.W + BitVec.ofNat 64 d, n⟩] (s.rd ++ s.wr) :=
+theorem wCR {d n : Nat} (h : d + n ≤ 3808) : Covers [⟨p.W + BitVec.ofNat 64 d, n⟩] (s.rd ++ s.wr) :=
   covers_left (P.wC h)
 
 /-- The first 2560 bytes of `W`, where AES-GCM's save area is. -/
