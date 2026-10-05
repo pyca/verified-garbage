@@ -18,21 +18,21 @@ open VG.Proof.MlKem.X86_64
 def witRanges (w : Nat) : List (Nat × Nat) := [(slot w aX, 8 * (w + 2)), (8 * kUsed, 8), (8 * kU, 8)]
 
 theorem mrWitness_eq : mrWitness =
-    [.block [.mov .rsi (.mem (hdr kRand)), .mov .rax (.mem (hdr kUsed)), .alu .add .rsi (.reg .rax),
+    ([.block [.mov .rsi (.mem (hdr kRand)), .mov .rax (.mem (hdr kUsed)), .alu .add .rsi (.reg .rax),
         .mov .rcx (.mem (hdr kLen)), .mov .rbx (.mem (hdr (sArr aX))), .alu .add .rax (.reg .rcx),
-        .store (hdr kUsed) .rax], loadBE] ++
-    ([.block [.mov .r12 (.mem (hdr sW)), .mov .rbx (.mem (hdr (sArr aX))), .mov .rbp (.mem (at0 .rbx)),
+        .store (hdr kUsed) .rax], loadBE] : List (Prog isa)) ++
+    (([.block [.mov .r12 (.mem (hdr sW)), .mov .rbx (.mem (hdr (sArr aX))), .mov .rbp (.mem (at0 .rbx)),
         .alu .and .rbp (.imm (BitVec.ofInt 32 (-2)))],
-      wordLoop 1 [.mov .rax (.mem (ix .rbx .r14)), .alu .or .rbp (.reg .rax)]] ++
-    ([.block [.alu .cmp .rbp (.imm 1), .alu .sbb .r15 (.reg .r15),
+      wordLoop 1 [.mov .rax (.mem (ix .rbx .r14)), .alu .or .rbp (.reg .rax)]] : List (Prog isa)) ++
+    (([.block [.alu .cmp .rbp (.imm 1), .alu .sbb .r15 (.reg .r15),
         .alu .xor .r15 (.imm (BitVec.ofInt 32 (-1))), .mov .r10 (.mem (hdr (sArr aN))), .mov .rax (.mem (at0 .rbx)),
         .alu .or .rax (.imm 1), .alu .sub .rax (.mem (at0 .r10)), cfToRbp],
-      wordLoop 1 cmpBody] ++
-    [.block [.alu .and .r15 (.reg .rbp), .store (hdr kU) .r15, .alu .xor .r15 (.imm (BitVec.ofInt 32 (-1))),
+      wordLoop 1 cmpBody] : List (Prog isa)) ++
+    ([.block [.alu .and .r15 (.reg .rbp), .store (hdr kU) .r15, .alu .xor .r15 (.imm (BitVec.ofInt 32 (-1))),
       .mov .rax (.reg .r15), .alu .and .rax (.imm 2), .alu .or .rax (.mem (at0 .rbx)), .store (at0 .rbx) .rax,
       .movImm64 .rax (BitVec.ofNat 64 (2 ^ 63)), .alu .and .rax (.reg .r15),
       .alu .xor .rax (.imm (BitVec.ofInt 32 (-1))), .alu .and .rax (.mem (ix .rbx .r12 (-8))),
-      .store (ix .rbx .r12 (-8)) .rax]])) := rfl
+      .store (ix .rbx .r12 (-8)) .rax]] : List (Prog isa)))) := rfl
 
 /-- `mrWitness`. -/
 theorem mrWitness_ok {s : State} {B : Addr} {Z w : Nat} {mi : BitVec 64} {c bm : Nat} (hd : MrDims B Z w)

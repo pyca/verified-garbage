@@ -24,8 +24,8 @@ and `rcx`. -/
 theorem loadCHead_ok {s : State} {B : Addr} {Z k : Nat} {rp : Addr} (hs : Scr s B Z) (hdi : s.gpr .rdi = B)
     (hZ : slot (k / 8) 8 ≤ Z) (hk : k < 2 ^ 31) (hK : word s.mem B (8 * kLen) = BitVec.ofNat 64 k)
     (hR : word s.mem B (8 * kRand) = rp) :
-    WP isa (.block ([.mov .rcx (.mem (hdr kLen)), .mov .r12 (.reg .rcx), .shift .shr .r12 3, .store (hdr sW) .r12] ++
-      setBases ++ [.mov .rsi (.mem (hdr kRand)), .mov .rbx (.mem (hdr (sArr aN)))])) s fun t =>
+    WP isa (.block (([.mov .rcx (.mem (hdr kLen)), .mov .r12 (.reg .rcx), .shift .shr .r12 3, .store (hdr sW) .r12] : List Instr) ++
+      setBases ++ ([.mov .rsi (.mem (hdr kRand)), .mov .rbx (.mem (hdr (sArr aN)))] : List Instr))) s fun t =>
       t.gpr .rsi = rp ∧ t.gpr .rcx = BitVec.ofNat 64 k ∧ t.gpr .rbx = off B (slot (k / 8) aN) ∧
       word t.mem B (8 * sW) = BitVec.ofNat 64 (k / 8) ∧ (∀ j < 8, word t.mem B (8 * sArr j) = off B (slot (k / 8) j)) ∧
       Frm B [(8 * sW, 8), (8 * sArr 0, 64)] s.mem t.mem ∧ Keep [.rax, .rcx, .rdx, .rbx, .rsi, .r12] s t := by
@@ -119,8 +119,8 @@ theorem loadCFront_ok {s : State} {B : Addr} {Z k : Nat} {rp : Addr} {bs : List 
     (hdi : s.gpr .rdi = B) (hZ : slot (k / 8) 8 ≤ Z) (hk1 : 16 ≤ k) (hk : k < 2 ^ 31) (hk8 : k % 8 = 0)
     (hK : word s.mem B (8 * kLen) = BitVec.ofNat 64 k) (hR : word s.mem B (8 * kRand) = rp)
     (hsrc : Src s B Z rp bs) (hbl : bs.length = k) :
-    WP isa (.seq (.block ([.mov .rcx (.mem (hdr kLen)), .mov .r12 (.reg .rcx), .shift .shr .r12 3, .store (hdr sW) .r12] ++
-      setBases ++ [.mov .rsi (.mem (hdr kRand)), .mov .rbx (.mem (hdr (sArr aN)))])) loadBE) s fun t =>
+    WP isa (.seq (.block (([.mov .rcx (.mem (hdr kLen)), .mov .r12 (.reg .rcx), .shift .shr .r12 3, .store (hdr sW) .r12] : List Instr) ++
+      setBases ++ ([.mov .rsi (.mem (hdr kRand)), .mov .rbx (.mem (hdr (sArr aN)))] : List Instr))) loadBE) s fun t =>
       wv t.mem B (slot (k / 8) aN) (k / 8) = Spec.Rsa.os2ip bs ∧ Scr t B Z ∧ t.gpr .rdi = B ∧
       word t.mem B (8 * sW) = BitVec.ofNat 64 (k / 8) ∧ (∀ j < 8, word t.mem B (8 * sArr j) = off B (slot (k / 8) j)) ∧
       (∀ i, 16 ≤ i → i < 32 → word t.mem B (8 * i) = word s.mem B (8 * i)) ∧

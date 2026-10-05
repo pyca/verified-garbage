@@ -1,5 +1,6 @@
 import VerifiedGarbage.Spec.RsaKeyGen.Contract
 import VerifiedGarbage.TCB.X86_64.Target
+import VerifiedGarbage.Proof.Framework.PowLit
 
 /-!
 # A candidate for an RSA prime on x86-64: the contract the proofs use

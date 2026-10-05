@@ -40,8 +40,8 @@ theorem xor_mask_toNat (x : BitVec 64) (b : Bool) :
 theorem negStep_ok {s₀ : State} {B : Addr} {Z w e : Nat} {b : Bool}
     (hsi : s₀.gpr .rsi = off B e) (h15 : s₀.gpr .r15 = mask b) (h12 : s₀.gpr .r12 = BitVec.ofNat 64 w)
     (hw : w < 2 ^ 32) (he : e + 8 * w ≤ Z) {j : Nat} (hj : j < w) {t : State} (hI : NegInv s₀ B Z e b j t) :
-    WP isa (.block ([.mov .rax (.mem (ix .rsi .r14)), .alu .xor .rax (.reg .r15), cfFromRbp, .alu .adc .rax (.imm 0),
-        .store (ix .rsi .r14) .rax, cfToRbp] ++ ([.alu .add .r14 (.imm 1), .alu .cmp .r14 (.reg .r12)] : List Instr))) t
+    WP isa (.block (([.mov .rax (.mem (ix .rsi .r14)), .alu .xor .rax (.reg .r15), cfFromRbp, .alu .adc .rax (.imm 0),
+        .store (ix .rsi .r14) .rax, cfToRbp] : List Instr) ++ ([.alu .add .r14 (.imm 1), .alu .cmp .r14 (.reg .r12)] : List Instr))) t
       fun t' => t'.zf = some (decide (j + 1 = w)) ∧ NegInv s₀ B Z e b (j + 1) t' := by
   have hn := hI.scr.nowrap
   have tsi : t.gpr .rsi = off B e := (hI.keep.gpr (by decide)).trans hsi
@@ -197,15 +197,15 @@ theorem bound_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hg : Goo
 theorem closeInner_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hg : Good s B Z w minv) (hZ : slot w 8 ≤ Z)
     (hw : 4 ≤ w) (hw' : w ≤ 64) {pP : Addr} {pB : List Byte} (hP : word s.mem B (8 * kP) = pP)
     (hK : word s.mem B (8 * kLen) = BitVec.ofNat 64 (8 * w)) (hpl : pB.length = 8 * w) (hsrc : Src s B Z pP pB) :
-    WP isa (seqs ([.block [.mov .r12 (.mem (hdr sW)), .mov .rsi (.mem (hdr kP)), .mov .rcx (.mem (hdr kLen)),
-        .mov .rbx (.mem (hdr (sArr aX)))], loadBE] ++ diffLoop ++ negLoop ++ [
+    WP isa (seqs (([.block [.mov .r12 (.mem (hdr sW)), .mov .rsi (.mem (hdr kP)), .mov .rcx (.mem (hdr kLen)),
+        .mov .rbx (.mem (hdr (sArr aX)))], loadBE] : List (Prog isa)) ++ diffLoop ++ negLoop ++ ([
       .block [.mov .r12 (.mem (hdr sW)), .mov .rcx (.reg .r12), .alu .sub .rcx (.imm 2),
         .mov32 .rdx (.imm (BitVec.ofNat 32 (2 ^ 28)))],
       setWord aTmp .rcx,
       .block [.mov .r12 (.mem (hdr sW)), .mov .rbx (.mem (hdr (sArr aTmp))), .mov .r10 (.mem (hdr (sArr aAcc))),
         .mov32 .rbp (.imm 0)],
       wordLoop 0 [cfFromRbp, .mov .rax (.mem (ix .rbx .r14)), .alu .sbb .rax (.mem (ix .r10 .r14)), cfToRbp],
-      .block [.alu .xor .rbp (.imm (BitVec.ofInt 32 (-1)))]])) s fun t =>
+      .block [.alu .xor .rbp (.imm (BitVec.ofInt 32 (-1)))]] : List (Prog isa)))) s fun t =>
       t.gpr .rbp = mask (decide (Spec.RsaKeyGen.absDiff (wv s.mem B (slot w aN) w) (Spec.Rsa.os2ip pB) ≤
         2 ^ (64 * w - 100))) ∧
       Good t B Z w minv ∧ Frm B (closeRanges w) s.mem t.mem ∧

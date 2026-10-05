@@ -20,8 +20,8 @@ open VG.Proof.MlKem.X86_64
 theorem msRm1_ok {s : State} {B : Addr} {Z w : Nat} {mi : BitVec 64} (hg : Good s B Z w mi) (hZ : slot w 8 ≤ Z)
     (hXZ : slot w aRm1 + 8 * (w + 2) ≤ Z) (hw : 1 ≤ w) (hw' : w < 2 ^ 31)
     (hlt : wv s.mem B (slot w aR1) w < wv s.mem B (slot w aN) w) :
-    WP isa (seqs [.block ([.mov .r12 (.mem (hdr sW)), .mov .r8 (.mem (hdr (sArr aN)))] ++ extBase aR1 .r10 ++
-        extBase aRm1 .rsi ++ [.mov32 .rbp (.imm 0)]),
+    WP isa (seqs [.block (([.mov .r12 (.mem (hdr sW)), .mov .r8 (.mem (hdr (sArr aN)))] : List Instr) ++ extBase aR1 .r10 ++
+        extBase aRm1 .rsi ++ ([.mov32 .rbp (.imm 0)] : List Instr)),
       wordLoop 0 [cfFromRbp, .mov .rax (.mem (ix .r8 .r14)), .alu .sbb .rax (.mem (ix .r10 .r14)),
         .store (ix .rsi .r14) .rax, cfToRbp]]) s fun t =>
       wv t.mem B (slot w aRm1) w = wv s.mem B (slot w aN) w - wv s.mem B (slot w aR1) w ∧
@@ -88,7 +88,7 @@ theorem chkStep_ok {t : State} {w v k : Nat} {pre : List Instr} {rest : Prog isa
     (ht : w < k → ∀ t', t'.gpr .rax = BitVec.ofNat 64 v → t'.mem = t.mem → Keep [.rax, .rcx] t t' → Q t')
     (he : ¬ w < k → ∀ t', t'.gpr .rcx = BitVec.ofNat 64 w → t'.mem = t.mem → Keep [.rax, .rcx] t t' →
       WP isa rest t' Q) :
-    WP isa (.seq (.block (pre ++ [.mov32 .rax (.imm (BitVec.ofNat 32 v)), .alu .cmp .rcx (.imm (BitVec.ofNat 32 k))]))
+    WP isa (.seq (.block (pre ++ ([.mov32 .rax (.imm (BitVec.ofNat 32 v)), .alu .cmp .rcx (.imm (BitVec.ofNat 32 k))] : List Instr)))
       (.ite .b (.block []) rest)) t Q := by
   refine WP.seq ?_
   rw [WP.block_append_iff]

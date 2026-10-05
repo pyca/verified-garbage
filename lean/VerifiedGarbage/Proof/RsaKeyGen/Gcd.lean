@@ -30,7 +30,7 @@ theorem gcd_half {x u : Nat} (hx : x % 2 = 0) (hu : u % 2 = 1) : Nat.gcd (x / 2)
 
 theorem gcdStep_odd {u v : Nat} (hv : v % 2 = 1) : (gcdStep u v).2 % 2 = 1 := by
   unfold gcdStep; split
-  · split <;> assumption
+  · split <;> with_reducible assumption
   · exact hv
 
 theorem gcdStep_gcd {u v : Nat} (hv : v % 2 = 1) :

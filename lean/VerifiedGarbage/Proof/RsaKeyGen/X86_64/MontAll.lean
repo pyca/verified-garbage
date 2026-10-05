@@ -29,15 +29,15 @@ def msRanges (w : Nat) : List (Nat × Nat) :=
     (slot w aRm1, 8 * (w + 2)), (8 * kChecks, 8)]
 
 theorem montSetup_eq (mul : Nat → Nat → Nat → Prog isa) : montSetup mul =
-    [.block (([.mov .r10 (.mem (hdr (sArr aN))), .mov .r12 (.mem (hdr sW)), .mov .rbx (.mem (at0 .r10))] :
+    ([.block (([.mov .r10 (.mem (hdr (sArr aN))), .mov .r12 (.mem (hdr sW)), .mov .rbx (.mem (at0 .r10))] :
       List Instr) ++ minv ++ ([.store (hdr sMinv) .r15, .mov32 .rdx (.imm 1), .mov32 .rcx (.imm 0)] : List Instr)),
-      setWord aOne .rcx] ++ (msR2 mul ++ ([mul aY aR2 aOne] ++
-    ([.block ([.mov .r12 (.mem (hdr sW)), .mov .rsi (.mem (hdr (sArr aY)))] ++ extBase aR1 .rbx), copyWords] ++
-    ([.block ([.mov .r12 (.mem (hdr sW)), .mov .r8 (.mem (hdr (sArr aN)))] ++ extBase aR1 .r10 ++
-        extBase aRm1 .rsi ++ [.mov32 .rbp (.imm 0)]),
+      setWord aOne .rcx] : List (Prog isa)) ++ (msR2 mul ++ ([mul aY aR2 aOne] ++
+    (([.block (([.mov .r12 (.mem (hdr sW)), .mov .rsi (.mem (hdr (sArr aY)))] : List Instr) ++ extBase aR1 .rbx), copyWords] : List (Prog isa)) ++
+    (([.block (([.mov .r12 (.mem (hdr sW)), .mov .r8 (.mem (hdr (sArr aN)))] : List Instr) ++ extBase aR1 .r10 ++
+        extBase aRm1 .rsi ++ ([.mov32 .rbp (.imm 0)] : List Instr)),
       wordLoop 0 [cfFromRbp, .mov .rax (.mem (ix .r8 .r14)), .alu .sbb .rax (.mem (ix .r10 .r14)),
-        .store (ix .rsi .r14) .rax, cfToRbp]] ++
-    [.block [.mov .rcx (.mem (hdr sW)), .mov32 .rax (.imm 27), .alu .cmp .rcx (.imm 5)],
+        .store (ix .rsi .r14) .rax, cfToRbp]] : List (Prog isa)) ++
+    ([.block [.mov .rcx (.mem (hdr sW)), .mov32 .rax (.imm 27), .alu .cmp .rcx (.imm 5)],
       .ite .b (.block []) (seqs [
         .block [.mov32 .rax (.imm 8), .alu .cmp .rcx (.imm 6)],
         .ite .b (.block []) (seqs [
@@ -49,7 +49,7 @@ theorem montSetup_eq (mul : Nat → Nat → Nat → Prog isa) : montSetup mul =
               .ite .b (.block []) (seqs [
                 .block [.mov32 .rax (.imm 4), .alu .cmp .rcx (.imm 59)],
                 .ite .b (.block []) (.block [.mov32 .rax (.imm 3)])])])])])]),
-      .block [.store (hdr kChecks) .rax]])))) := rfl
+      .block [.store (hdr kChecks) .rax]] : List (Prog isa)))))) := rfl
 
 /-- `montSetup` for the odd candidate `c` of `4 ≤ w ≤ 64` words, its top bit
 set. -/

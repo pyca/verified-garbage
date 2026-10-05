@@ -31,7 +31,7 @@ theorem copyB_ok {s : State} {B : Addr} {Z w eS eD : Nat} (hs : Scr s B Z) (hsi 
 theorem copyToExt_ok {s : State} {B : Addr} {Z w : Nat} {mi : BitVec 64} (hg : Good s B Z w mi)
     (hZ : slot w 8 ≤ Z) (hw : 1 ≤ w) (hw' : w < 2 ^ 31) {a d : Nat} (ha : a < 8) (hd : 7 < d)
     (hdZ : slot w d + 8 * (w + 2) ≤ Z) :
-    WP isa (seqs [.block ([.mov .r12 (.mem (hdr sW)), .mov .rsi (.mem (hdr (sArr a)))] ++ extBase d .rbx),
+    WP isa (seqs [.block (([.mov .r12 (.mem (hdr sW)), .mov .rsi (.mem (hdr (sArr a)))] : List Instr) ++ extBase d .rbx),
       copyWords]) s fun t => wv t.mem B (slot w d) w = wv s.mem B (slot w a) w ∧
       Outside B (slot w d) (8 * w) s.mem t.mem ∧ Keep [.rax, .rbx, .rsi, .r12, .r14] s t := by
   have hn := hg.scr.nowrap
@@ -60,7 +60,7 @@ theorem copyToExt_ok {s : State} {B : Addr} {Z w : Nat} {mi : BitVec 64} (hg : G
 theorem copyFromExt_ok {s : State} {B : Addr} {Z w : Nat} {mi : BitVec 64} (hg : Good s B Z w mi)
     (hZ : slot w 8 ≤ Z) (hw : 1 ≤ w) (hw' : w < 2 ^ 31) {a d : Nat} (ha : a < 8) (hd : 7 < d)
     (hdZ : slot w d + 8 * (w + 2) ≤ Z) :
-    WP isa (seqs [.block ([.mov .r12 (.mem (hdr sW)), .mov .rbx (.mem (hdr (sArr a)))] ++ extBase d .rsi),
+    WP isa (seqs [.block (([.mov .r12 (.mem (hdr sW)), .mov .rbx (.mem (hdr (sArr a)))] : List Instr) ++ extBase d .rsi),
       copyWords]) s fun t => wv t.mem B (slot w a) w = wv s.mem B (slot w d) w ∧
       Outside B (slot w a) (8 * w) s.mem t.mem ∧ Keep [.rax, .rbx, .rsi, .r12, .r14] s t := by
   have hn := hg.scr.nowrap

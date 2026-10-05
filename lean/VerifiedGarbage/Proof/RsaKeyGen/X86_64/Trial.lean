@@ -119,8 +119,8 @@ theorem trStep_ok {s₀ : State} {B : Addr} {Z d w sp : Nat} (hs : Scr s₀ B Z)
     (h12 : s₀.gpr .r12 = BitVec.ofNat 64 w) (hbx : (s₀.gpr .rbx).toNat = sp)
     (h15 : (sp * (s₀.gpr .r15).toNat + 1) % 2 ^ 64 = 0) (hs3 : 3 ≤ sp) (hs13 : sp < 2 ^ 13)
     (hw : w < 2 ^ 31) (hd : d + 8 * w ≤ Z) {j : Nat} (hj : j < w) {t : State} (hI : TrInv s₀ B d sp j t) :
-    WP isa (.block (([.mov .rsi (.mem (ix .r8 .r14)), .mov32 .rax (.reg .rsi)] ++ redc32 ++
-        [.mov .rax (.reg .rsi), .shift .shr .rax 32] ++ redc32) ++
+    WP isa (.block ((([.mov .rsi (.mem (ix .r8 .r14)), .mov32 .rax (.reg .rsi)] : List Instr) ++ redc32 ++
+        ([.mov .rax (.reg .rsi), .shift .shr .rax 32] : List Instr) ++ redc32) ++
         ([.alu .add .r14 (.imm 1), .alu .cmp .r14 (.reg .r12)] : List Instr))) t
       fun t' => t'.zf = some (decide (j + 1 = w)) ∧ TrInv s₀ B d sp (j + 1) t' := by
   have hn := hs.nowrap
@@ -228,8 +228,8 @@ theorem sxFFFF : BitVec.signExtend 64 (0xFFFF : BitVec 32) = 0xFFFF := by decide
 /-- Entry `j` of the table word in `kT1` into `rbx`. -/
 theorem entryLoad_ok {t : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hg : Good t B Z w minv) (hZ : slot w 8 ≤ Z)
     {i j : Nat} (hi : i < 256) (hj : j < 4) (hT : word t.mem B (8 * kT1) = BitVec.ofNat 64 (tabWord i)) :
-    WP isa (.block ([.mov .rbx (.mem (hdr kT1))] ++ (if j = 0 then [] else [.shift .shr .rbx (16 * j)]) ++
-      [.alu .and .rbx (.imm 0xFFFF)])) t fun t' =>
+    WP isa (.block (([.mov .rbx (.mem (hdr kT1))] : List Instr) ++ (if j = 0 then [] else [.shift .shr .rbx (16 * j)]) ++
+      ([.alu .and .rbx (.imm 0xFFFF)] : List Instr))) t fun t' =>
       (t'.gpr .rbx).toNat = tabEntry (4 * i + j) ∧ t'.mem = t.mem ∧ Keep [.rbx] t t' := by
   have hn := hg.scr.nowrap
   have hl : InRegions (t.rd ++ t.wr) (off B (8 * kT1)) 8 := hg.scr.ld (by have := hdr_lt_slot w 8 (show kT1 < 32 by decide); omega)

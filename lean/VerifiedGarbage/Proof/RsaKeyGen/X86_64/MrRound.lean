@@ -33,11 +33,11 @@ def preRanges (w : Nat) : List (Nat × Nat) :=
 
 theorem roundPre_eq (mul : Nat → Nat → Nat → Prog isa) :
     mrWitness ++ [mul aXm aX aR2,
-      .block ([.mov .r12 (.mem (hdr sW)), .mov .rsi (.mem (hdr (sArr aXm)))] ++ extBase aB .rbx), copyWords,
-      .block ([.mov .r12 (.mem (hdr sW)), .mov .rbx (.mem (hdr (sArr aY)))] ++ extBase aR1 .rsi), copyWords] =
+      .block (([.mov .r12 (.mem (hdr sW)), .mov .rsi (.mem (hdr (sArr aXm)))] : List Instr) ++ extBase aB .rbx), copyWords,
+      .block (([.mov .r12 (.mem (hdr sW)), .mov .rbx (.mem (hdr (sArr aY)))] : List Instr) ++ extBase aR1 .rsi), copyWords] =
     mrWitness ++ ([mul aXm aX aR2] ++
-      ([.block ([.mov .r12 (.mem (hdr sW)), .mov .rsi (.mem (hdr (sArr aXm)))] ++ extBase aB .rbx), copyWords] ++
-      [.block ([.mov .r12 (.mem (hdr sW)), .mov .rbx (.mem (hdr (sArr aY)))] ++ extBase aR1 .rsi), copyWords])) := rfl
+      (([.block (([.mov .r12 (.mem (hdr sW)), .mov .rsi (.mem (hdr (sArr aXm)))] : List Instr) ++ extBase aB .rbx), copyWords] : List (Prog isa)) ++
+      ([.block (([.mov .r12 (.mem (hdr sW)), .mov .rbx (.mem (hdr (sArr aY)))] : List Instr) ++ extBase aR1 .rsi), copyWords] : List (Prog isa)))) := rfl
 
 /-- `MrCtx` with a new witness. -/
 theorem MrCtx.setB {s t : State} {B : Addr} {Z w : Nat} {mi : BitVec 64} {c bm bm' : Nat} {rs : List (Nat × Nat)}
@@ -67,8 +67,8 @@ theorem roundPre_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {mi : BitVec 6
     (hU : word s.mem B (8 * kUsed) = BitVec.ofNat 64 used) (hK : word s.mem B (8 * kLen) = BitVec.ofNat 64 (8 * w))
     (hsrc : Src s B Z rp r) (hlen : used + 8 * w ≤ r.length) :
     WP isa (seqs (mrWitness ++ [M.mm aXm aX aR2,
-      .block ([.mov .r12 (.mem (hdr sW)), .mov .rsi (.mem (hdr (sArr aXm)))] ++ extBase aB .rbx), copyWords,
-      .block ([.mov .r12 (.mem (hdr sW)), .mov .rbx (.mem (hdr (sArr aY)))] ++ extBase aR1 .rsi), copyWords])) s
+      .block (([.mov .r12 (.mem (hdr sW)), .mov .rsi (.mem (hdr (sArr aXm)))] : List Instr) ++ extBase aB .rbx), copyWords,
+      .block (([.mov .r12 (.mem (hdr sW)), .mov .rbx (.mem (hdr (sArr aY)))] : List Instr) ++ extBase aR1 .rsi), copyWords])) s
       fun t =>
       MrCtx t B Z w mi c
         ((Spec.RsaKeyGen.witness (c - 1) (Spec.Rsa.os2ip (VG.Proof.RsaKeyGen.seg r used (8 * w)))).1 *

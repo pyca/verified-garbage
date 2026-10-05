@@ -49,6 +49,15 @@ struct PrimalityCase {
     value: Hex,
 }
 
+/// A prime, with the file it is from, the key's other prime and its public
+/// exponent.
+struct Prime {
+    p: Vec<u8>,
+    name: String,
+    q: Vec<u8>,
+    e: Vec<u8>,
+}
+
 /// `x` without its leading zero bytes (the vectors write numbers in DER's
 /// form, with a zero byte before a top bit that is set).
 fn trim(x: &[u8]) -> &[u8] {
@@ -58,7 +67,7 @@ fn trim(x: &[u8]) -> &[u8] {
 /// Whether `x` is a candidate as `generate_prime_from` makes it from its
 /// octets: of a length it takes, with its two top bits and its low bit set.
 fn candidate(x: &[u8]) -> bool {
-    x.len() % 8 == 0
+    x.len().is_multiple_of(8)
         && (32..=512).contains(&x.len())
         && x[0] >> 6 == 3
         && x[x.len() - 1] & 1 == 1
@@ -81,7 +90,10 @@ fn check_prime(name: &str, p: &[u8], q: &[u8], e: &[u8]) {
     let rand = then_random(p);
     let (got, used) = generate_prime_from(bits, e, None, &rand).unwrap();
     assert_eq!(got, p, "{name}");
-    assert!(used >= 17 * len && used % len == 0, "{name}: {used}");
+    assert!(
+        used >= 17 * len && used.is_multiple_of(len),
+        "{name}: {used}"
+    );
     if q.len() != len {
         return;
     }
@@ -118,14 +130,19 @@ fn rsa_keygen_primes() {
             let (p, q) = (trim(&p.0), trim(&q.0));
             for (a, b) in [(p, q), (q, p)] {
                 if candidate(a) {
-                    primes
-                        .entry(a.to_vec())
-                        .or_insert((name.clone(), b.to_vec(), public_exponent.0.clone()));
+                    primes.entry(a.to_vec()).or_insert((
+                        name.clone(),
+                        b.to_vec(),
+                        public_exponent.0.clone(),
+                    ));
                 }
             }
         }
     }
-    let primes: Vec<(Vec<u8>, (String, Vec<u8>, Vec<u8>))> = primes.into_iter().collect();
+    let primes: Vec<Prime> = primes
+        .into_iter()
+        .map(|(p, (name, q, e))| Prime { p, name, q, e })
+        .collect();
     assert!(!primes.is_empty());
     // Miller–Rabin's exponentiations are this test's time: shared among as
     // many threads as the machine runs at once.
@@ -134,8 +151,8 @@ fn rsa_keygen_primes() {
     std::thread::scope(|s| {
         for _ in 0..workers.min(primes.len()) {
             s.spawn(|| {
-                while let Some((p, (name, q, e))) = primes.get(next.fetch_add(1, Ordering::Relaxed)) {
-                    check_prime(name, p, q, e);
+                while let Some(x) = primes.get(next.fetch_add(1, Ordering::Relaxed)) {
+                    check_prime(&x.name, &x.p, &x.q, &x.e);
                 }
             });
         }

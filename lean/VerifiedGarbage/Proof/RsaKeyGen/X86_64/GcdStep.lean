@@ -111,7 +111,7 @@ theorem odd_mask (u : BitVec 64) :
 
 /-- The gcd's step and count, from `u = rsi`, `v = rbx`. -/
 theorem gcdBody_ok (s : State) :
-    WP isa (.block (Impl.RsaKeyGen.X86_64.Candidate.bgcdStep ++ [.alu .sub .r13 (.imm 1)])) s fun t =>
+    WP isa (.block (Impl.RsaKeyGen.X86_64.Candidate.bgcdStep ++ ([.alu .sub .r13 (.imm 1)] : List Instr))) s fun t =>
       (t.gpr .rsi).toNat = (gcdStep (s.gpr .rsi).toNat (s.gpr .rbx).toNat).1 ∧
       (t.gpr .rbx).toNat = (gcdStep (s.gpr .rsi).toNat (s.gpr .rbx).toNat).2 ∧
       t.gpr .r13 = s.gpr .r13 - 1 ∧ t.zf = some (s.gpr .r13 - 1 == 0) ∧ t.mem = s.mem ∧
@@ -130,7 +130,7 @@ theorem gcdBody_ok (s : State) :
 /-- The gcd's 128 steps, from `u = rsi` and the odd `v = rbx`: `gcd u v`
 in `rbx`. -/
 theorem gcdLoop_ok {s : State} (h13 : s.gpr .r13 = BitVec.ofNat 64 128) (hv : (s.gpr .rbx).toNat % 2 = 1) :
-    WP isa (.loop (.block (Impl.RsaKeyGen.X86_64.Candidate.bgcdStep ++ [.alu .sub .r13 (.imm 1)])) .ne) s fun t =>
+    WP isa (.loop (.block (Impl.RsaKeyGen.X86_64.Candidate.bgcdStep ++ ([.alu .sub .r13 (.imm 1)] : List Instr))) .ne) s fun t =>
       (t.gpr .rbx).toNat = Nat.gcd (s.gpr .rsi).toNat (s.gpr .rbx).toNat ∧ t.mem = s.mem ∧
       Keep [.rax, .rcx, .rdx, .rbp, .rsi, .rbx, .r13] s t := by
   refine wp_countdown (cnt := .r13) (N := 128) (by decide) (by decide)

@@ -132,7 +132,7 @@ theorem modClear_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hg : 
 theorem gcdTail_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hg : Good s B Z w minv)
     (hZ : slot w 8 ≤ Z) (he : (word s.mem B (8 * kG)).toNat % 2 = 1) :
     WP isa (seqs [.block [.mov .rbx (.mem (hdr kG)), .mov32 .r13 (.imm 128)],
-      .loop (.block (Impl.RsaKeyGen.X86_64.Candidate.bgcdStep ++ [.alu .sub .r13 (.imm 1)])) .ne,
+      .loop (.block (Impl.RsaKeyGen.X86_64.Candidate.bgcdStep ++ ([.alu .sub .r13 (.imm 1)] : List Instr))) .ne,
       .block [.store (hdr kG) .rbx]]) s fun t =>
       word t.mem B (8 * kG) = BitVec.ofNat 64 (Nat.gcd (s.gpr .rsi).toNat (word s.mem B (8 * kG)).toNat) ∧
       Good t B Z w minv ∧ Outside B (8 * kG) 8 s.mem t.mem ∧ Keep [.rax, .rcx, .rdx, .rbp, .rsi, .rbx, .r13] s t := by

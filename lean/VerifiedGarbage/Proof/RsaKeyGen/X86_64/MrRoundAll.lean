@@ -21,15 +21,15 @@ def roundRanges (w : Nat) : List (Nat × Nat) :=
 
 theorem mrRound_eq (mul : Nat → Nat → Nat → Prog isa) : mrRound mul =
     (mrWitness ++ [mul aXm aX aR2,
-      .block ([.mov .r12 (.mem (hdr sW)), .mov .rsi (.mem (hdr (sArr aXm)))] ++ extBase aB .rbx), copyWords,
-      .block ([.mov .r12 (.mem (hdr sW)), .mov .rbx (.mem (hdr (sArr aY)))] ++ extBase aR1 .rsi), copyWords]) ++
-    (mrExpLoop mul ++ [.block [.mov32 .rcx (.imm 3), .mov .rax (.mem (hdr kFlag)), .alu .test .rax (.reg .rax)],
+      .block (([.mov .r12 (.mem (hdr sW)), .mov .rsi (.mem (hdr (sArr aXm)))] : List Instr) ++ extBase aB .rbx), copyWords,
+      .block (([.mov .r12 (.mem (hdr sW)), .mov .rbx (.mem (hdr (sArr aY)))] : List Instr) ++ extBase aR1 .rsi), copyWords]) ++
+    (mrExpLoop mul ++ ([.block [.mov32 .rcx (.imm 3), .mov .rax (.mem (hdr kFlag)), .alu .test .rax (.reg .rax)],
       .ite .e (.block [])
         (.block [.mov .rax (.mem (hdr kI)), .alu .add .rax (.imm 1), .store (hdr kI) .rax,
           .mov .rdx (.mem (hdr kU)), .alu .and .rdx (.imm 1), .alu .add .rdx (.mem (hdr kUni)), .store (hdr kUni) .rdx,
           .alu .cmp .rax (.imm 17), .alu .sbb .rcx (.reg .rcx), .alu .cmp .rdx (.mem (hdr kChecks)),
           .alu .sbb .rax (.reg .rax), .alu .or .rcx (.reg .rax), .alu .and .rcx (.imm 3), .alu .add .rcx (.imm 1)]),
-      .block [.store (hdr kStat) .rcx]]) := rfl
+      .block [.store (hdr kStat) .rcx]] : List (Prog isa))) := rfl
 
 /-- The witness of a round, and whether it passes. -/
 abbrev wtOf (c w used : Nat) (r : List Byte) : Nat × Bool :=
@@ -49,8 +49,8 @@ theorem roundMid_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {mi : BitVec 6
     {i uni ch : Nat} (hI : word s.mem B (8 * kI) = BitVec.ofNat 64 i)
     (hN : word s.mem B (8 * kUni) = BitVec.ofNat 64 uni) (hC : word s.mem B (8 * kChecks) = BitVec.ofNat 64 ch) :
     WP isa (seqs ((mrWitness ++ [M.mm aXm aX aR2,
-      .block ([.mov .r12 (.mem (hdr sW)), .mov .rsi (.mem (hdr (sArr aXm)))] ++ extBase aB .rbx), copyWords,
-      .block ([.mov .r12 (.mem (hdr sW)), .mov .rbx (.mem (hdr (sArr aY)))] ++ extBase aR1 .rsi), copyWords]) ++
+      .block (([.mov .r12 (.mem (hdr sW)), .mov .rsi (.mem (hdr (sArr aXm)))] : List Instr) ++ extBase aB .rbx), copyWords,
+      .block (([.mov .r12 (.mem (hdr sW)), .mov .rbx (.mem (hdr (sArr aY)))] : List Instr) ++ extBase aR1 .rsi), copyWords]) ++
       mrExpLoop M.mm)) s fun s₂ =>
       MrCtx s₂ B Z w mi c ((wtOf c w used r).1 * 2 ^ (64 * w) % c) ∧
       word s₂.mem B (8 * kFlag) = mask (passOf c w used r) ∧ word s₂.mem B (8 * kI) = BitVec.ofNat 64 i ∧
@@ -155,7 +155,7 @@ theorem mrRound_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {mi : BitVec 64
     · rw [hdrStore_hdr _ _ _ (by decide) (by decide) (by decide), hdrStore_hdr _ _ _ (by decide) (by decide) (by decide),
         word_writeW_self]
     · rw [hdrStore_hdr _ _ _ (by decide) (by decide) (by decide), word_writeW_self]
-  · exact (hf02.mono fun r hr => by simp only [roundRanges, List.mem_append] at hr ⊢; tauto).trans
+  · exact (hf02.mono fun r hr => by simp only [roundRanges, List.mem_append] at hr ⊢; grind).trans
       (hft.mono (by simp [roundRanges]))
 
 end VG.Proof.RsaKeyGen.X86_64

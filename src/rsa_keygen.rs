@@ -74,8 +74,12 @@ impl core::error::Error for Error {}
 
 /// The prime's length in bytes, and the most candidates that may be
 /// rejected (`VG.Spec.RsaKeyGen.primeLimit`), after checking the arguments.
-fn check(bits: usize, public_exponent: &[u8], other: Option<&[u8]>) -> Result<(usize, usize), Error> {
-    if !(MIN_PRIME_BITS..=MAX_PRIME_BITS).contains(&bits) || bits % 64 != 0 {
+fn check(
+    bits: usize,
+    public_exponent: &[u8],
+    other: Option<&[u8]>,
+) -> Result<(usize, usize), Error> {
+    if !(MIN_PRIME_BITS..=MAX_PRIME_BITS).contains(&bits) || !bits.is_multiple_of(64) {
         return Err(Error::InvalidLength);
     }
     if !(1..=8).contains(&public_exponent.len()) {
@@ -85,7 +89,9 @@ fn check(bits: usize, public_exponent: &[u8], other: Option<&[u8]>) -> Result<(u
     if other.is_some_and(|p| p.len() != len) {
         return Err(Error::InvalidOtherPrime);
     }
-    let e3 = public_exponent[..public_exponent.len() - 1].iter().all(|&b| b == 0)
+    let e3 = public_exponent[..public_exponent.len() - 1]
+        .iter()
+        .all(|&b| b == 0)
         && public_exponent[public_exponent.len() - 1] == 3;
     Ok((len, if e3 { 8 * bits } else { 5 * bits }))
 }
@@ -217,12 +223,24 @@ mod tests {
     fn invalid() {
         for bits in [0, 128, 192, 255, 257, 4096 + 64] {
             assert_eq!(generate_prime(bits, &[3], None), Err(Error::InvalidLength));
-            assert_eq!(generate_prime_from(bits, &[3], None, &[]), Err(Error::InvalidLength));
+            assert_eq!(
+                generate_prime_from(bits, &[3], None, &[]),
+                Err(Error::InvalidLength)
+            );
         }
         assert_eq!(generate_prime(256, &[], None), Err(Error::InvalidExponent));
-        assert_eq!(generate_prime(256, &[1; 9], None), Err(Error::InvalidExponent));
-        assert_eq!(generate_prime(256, &[3], Some(&[0xff; 31])), Err(Error::InvalidOtherPrime));
-        assert_eq!(generate_prime(256, &[3], Some(&[0xff; 33])), Err(Error::InvalidOtherPrime));
+        assert_eq!(
+            generate_prime(256, &[1; 9], None),
+            Err(Error::InvalidExponent)
+        );
+        assert_eq!(
+            generate_prime(256, &[3], Some(&[0xff; 31])),
+            Err(Error::InvalidOtherPrime)
+        );
+        assert_eq!(
+            generate_prime(256, &[3], Some(&[0xff; 33])),
+            Err(Error::InvalidOtherPrime)
+        );
     }
 
     /// Candidates from zeros: `2^255 + 2^254 + 1`, which is 1 modulo 3, so
@@ -230,10 +248,19 @@ mod tests {
     #[test]
     fn too_many_iterations() {
         let zeros = vec![0u8; 32 * 8 * 256];
-        assert_eq!(generate_prime_from(256, &[3], None, &zeros), Err(Error::TooManyIterations));
-        assert_eq!(generate_prime_from(256, &[0, 0, 3], None, &zeros), Err(Error::TooManyIterations));
+        assert_eq!(
+            generate_prime_from(256, &[3], None, &zeros),
+            Err(Error::TooManyIterations)
+        );
+        assert_eq!(
+            generate_prime_from(256, &[0, 0, 3], None, &zeros),
+            Err(Error::TooManyIterations)
+        );
         // `e = 15` rejects them too, but allows only `5 bits` rejections.
-        assert_eq!(generate_prime_from(256, &[15], None, &zeros[..32 * 5 * 256]), Err(Error::TooManyIterations));
+        assert_eq!(
+            generate_prime_from(256, &[15], None, &zeros[..32 * 5 * 256]),
+            Err(Error::TooManyIterations)
+        );
         // One fewer is not enough.
         assert_eq!(
             generate_prime_from(256, &[3], None, &zeros[..32 * (8 * 256 - 1)]),

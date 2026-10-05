@@ -51,9 +51,9 @@ structure MainCtx (s : State) (B : Addr) (Z k : Nat) (op up eP pP rP : Addr) (eB
   ou : OutUp s B Z op up k
 
 theorem kMain_eq (mul : Nat → Nat → Nat → Prog isa) : kMain mul =
-    seqs (loadC ++ (closeCheck ++ [.ite .ne (finUsed 2) (seqs (trial ++
-      [.ite .ne (finUsed 3) (seqs (gcdCheck ++
-        [.ite .ne (finUsed 3) (seqs (montSetup mul ++ millerRabin mul ++ [mrResult]))]))]))])) := by
+    seqs (loadC ++ (closeCheck ++ ([.ite .ne (finUsed 2) (seqs (trial ++
+      ([.ite .ne (finUsed 3) (seqs (gcdCheck ++
+        ([.ite .ne (finUsed 3) (seqs (montSetup mul ++ millerRabin mul ++ [mrResult]))] : List (Prog isa))))] : List (Prog isa))))] : List (Prog isa)))) := by
   unfold kMain; rw [List.append_assoc]
 
 theorem seg_zero (r : List Byte) (n : Nat) : VG.Proof.RsaKeyGen.seg r 0 n = r.take n := by

@@ -119,8 +119,8 @@ theorem preRanges_mrh (w : Nat) :
 /-- The round up to the exponentiation leaks the same in runs that agree on
 the public data. -/
 theorem roundPre_ct (M : Mont) : RelCT isa (Two R0) (seqs (mrWitness ++ [M.mm aXm aX aR2,
-      .block ([.mov .r12 (.mem (hdr sW)), .mov .rsi (.mem (hdr (sArr aXm)))] ++ extBase aB .rbx), copyWords,
-      .block ([.mov .r12 (.mem (hdr sW)), .mov .rbx (.mem (hdr (sArr aY)))] ++ extBase aR1 .rsi), copyWords]))
+      .block (([.mov .r12 (.mem (hdr sW)), .mov .rsi (.mem (hdr (sArr aXm)))] : List Instr) ++ extBase aB .rbx), copyWords,
+      .block (([.mov .r12 (.mem (hdr sW)), .mov .rbx (.mem (hdr (sArr aY)))] : List Instr) ++ extBase aR1 .rsi), copyWords]))
     (Two fun (q : RPub) s => ExpPre ⟨q.p, q.i, q.u + 8 * q.p.w⟩ s) := by
   refine two_post (RelCT.seqs_app (by simp [mrWitness]) (by simp) (RelCT.seq (mrWitness_ct) ?_)) ?_
   · simp only [seqs]
@@ -170,8 +170,8 @@ theorem midRanges_mrh (w : Nat) : ∀ k ∈ [kOut, kLen, kUsedP, kRand, kRandLen
 /-- The round up to its flag leaks the same in runs that agree on the public
 data. -/
 theorem roundMid_ct (M : Mont) : RelCT isa (Two R0) (seqs ((mrWitness ++ [M.mm aXm aX aR2,
-      .block ([.mov .r12 (.mem (hdr sW)), .mov .rsi (.mem (hdr (sArr aXm)))] ++ extBase aB .rbx), copyWords,
-      .block ([.mov .r12 (.mem (hdr sW)), .mov .rbx (.mem (hdr (sArr aY)))] ++ extBase aR1 .rsi), copyWords]) ++
+      .block (([.mov .r12 (.mem (hdr sW)), .mov .rsi (.mem (hdr (sArr aXm)))] : List Instr) ++ extBase aB .rbx), copyWords,
+      .block (([.mov .r12 (.mem (hdr sW)), .mov .rbx (.mem (hdr (sArr aY)))] : List Instr) ++ extBase aR1 .rsi), copyWords]) ++
       mrExpLoop M.mm)) (Two Rmid) := by
   refine two_post (RelCT.seqs_app (by simp [mrWitness]) (by simp [mrExpLoop]) (RelCT.seq (roundPre_ct M)
     ((mrExpLoop_ct M).mono (fun _ _ h => two_bind (fun q _ _ h₁ h₂ => ⟨⟨q.p, q.i, q.u + 8 * q.p.w⟩, h₁, h₂⟩) h)

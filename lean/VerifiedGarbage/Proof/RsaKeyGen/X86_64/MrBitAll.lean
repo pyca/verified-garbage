@@ -26,13 +26,13 @@ theorem mrExpBit_eq (mul : Nat → Nat → Nat → Prog isa) : mrExpBit mul =
         extBase aR1 .rsi),
       wordLoop 0 [.mov .rax (.mem (ix .r8 .r14)), .mov .rdx (.mem (ix .rsi .r14)), .alu .xor .rax (.reg .rdx),
         .alu .and .rax (.reg .r15), .alu .xor .rax (.reg .rdx), .store (ix .rbx .r14) .rax],
-      mul aY aY aXm] ++ (eqMask aRm1 ++ ([.block [.store (hdr kG) .rbp]] ++ (eqMask aR1 ++ [
+      mul aY aY aXm] ++ (eqMask aRm1 ++ (([.block [.store (hdr kG) .rbp]] : List (Prog isa)) ++ (eqMask aR1 ++ ([
       .block [.mov .rax (.mem (hdr kV)), .shift .shr .rax 63, .mov32 .r15 (.imm 0), .alu .sub .r15 (.reg .rax),
         .mov .rdx (.mem (hdr kG)), .alu .or .rbp (.reg .rdx), .alu .and .rbp (.reg .r15),
         .mov .rax (.mem (hdr kFlag)), .alu .or .rax (.reg .rdx), .alu .xor .r15 (.imm (BitVec.ofInt 32 (-1))),
         .alu .and .rax (.reg .r15), .alu .or .rax (.reg .rbp), .store (hdr kFlag) .rax,
         .mov .rax (.mem (hdr kV)), .alu .add .rax (.reg .rax), .store (hdr kV) .rax,
-        .mov .rax (.mem (hdr kBits)), .alu .sub .rax (.imm 1), .store (hdr kBits) .rax]]))) := rfl
+        .mov .rax (.mem (hdr kBits)), .alu .sub .rax (.imm 1), .store (hdr kBits) .rax]] : List (Prog isa))))) := rfl
 
 /-- The selection's bases and mask. -/
 theorem bitSel_ok {s : State} {B : Addr} {Z w : Nat} {mi : BitVec 64} (hg : Good s B Z w mi) (hZ : slot w 8 ≤ Z)

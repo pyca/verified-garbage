@@ -43,7 +43,7 @@ theorem shift_step (x k i : Nat) (hki : k + i = 63) :
 
 /-- `modBit` and the count. -/
 theorem modBody_ok (s : State) (hre : (s.gpr .rsi).toNat < (s.gpr .rbx).toNat) :
-    WP isa (.block (modBit ++ [.alu .sub .r13 (.imm 1)])) s fun t =>
+    WP isa (.block (modBit ++ ([.alu .sub .r13 (.imm 1)] : List Instr))) s fun t =>
       (t.gpr .rsi).toNat = (2 * (s.gpr .rsi).toNat +
         (decide (2 ^ 64 ≤ (s.gpr .rdx).toNat + (s.gpr .rdx).toNat)).toNat) % (s.gpr .rbx).toNat ∧
       t.gpr .rdx = s.gpr .rdx + s.gpr .rdx ∧
@@ -62,7 +62,7 @@ theorem modBody_ok (s : State) (hre : (s.gpr .rsi).toNat < (s.gpr .rbx).toNat) :
 /-- The 64 bits of the word `x` in `rdx` into `r = rsi < e` (`rbx`):
 `(r 2^64 + x) mod e`. -/
 theorem modBits_ok {s : State} (h13 : s.gpr .r13 = BitVec.ofNat 64 64) (hre : (s.gpr .rsi).toNat < (s.gpr .rbx).toNat) :
-    WP isa (.loop (.block (modBit ++ [.alu .sub .r13 (.imm 1)])) .ne) s fun t =>
+    WP isa (.loop (.block (modBit ++ ([.alu .sub .r13 (.imm 1)] : List Instr))) .ne) s fun t =>
       (t.gpr .rsi).toNat = ((s.gpr .rsi).toNat * 2 ^ 64 + (s.gpr .rdx).toNat) % (s.gpr .rbx).toNat ∧
       t.mem = s.mem ∧ Keep [.rax, .rcx, .rdx, .rbp, .rsi, .r13] s t := by
   have he0 : 0 < (s.gpr .rbx).toNat := by omega

@@ -49,12 +49,22 @@ pub fn bench(c: &mut Criterion) {
         let prime = p.to_vec();
         let mut rand = prime.clone();
         rand.extend((0..64 * prime.len()).map(|i| (i * 37 + 11) as u8));
-        assert_eq!(generate_prime_from(bits, &[1, 0, 1], None, &rand).unwrap().0, prime);
+        assert_eq!(
+            generate_prime_from(bits, &[1, 0, 1], None, &rand)
+                .unwrap()
+                .0,
+            prime
+        );
         let mut ctx = BigNumContext::new().unwrap();
         g.bench_function(BenchmarkId::new(VG, bits / 8), |b| {
             b.iter(|| {
-                generate_prime_from(black_box(bits), black_box(&[1, 0, 1]), None, black_box(&rand))
-                    .unwrap()
+                generate_prime_from(
+                    black_box(bits),
+                    black_box(&[1, 0, 1]),
+                    None,
+                    black_box(&rand),
+                )
+                .unwrap()
             })
         });
         g.bench_function(BenchmarkId::new(OPENSSL, bits / 8), |b| {

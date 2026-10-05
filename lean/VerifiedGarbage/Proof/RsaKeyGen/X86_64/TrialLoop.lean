@@ -142,7 +142,7 @@ theorem tlEntry_ok {s₀ : State} {B : Addr} {Z w T N : Nat} {minv : BitVec 64} 
 theorem tlLoad_ok {s₀ : State} {B : Addr} {Z w N : Nat} {minv : BitVec 64} (hZ : slot w 8 ≤ Z)
     (hw' : w < 2 ^ 31) (hTZ : slot w aTab + 2048 ≤ Z) {k : Nat} (hk : k < 256) {t : State}
     (hI : TLInv s₀ B Z w (slot w aTab) N minv k t) :
-    WP isa (.block (extBase aTab .rbx ++ [.mov .rax (.mem (ix .rbx .r13)), .store (hdr kT1) .rax])) t fun t' =>
+    WP isa (.block (extBase aTab .rbx ++ ([.mov .rax (.mem (ix .rbx .r13)), .store (hdr kT1) .rax] : List Instr))) t fun t' =>
       TLInv s₀ B Z w (slot w aTab) N minv k t' ∧ word t'.mem B (8 * kT1) = BitVec.ofNat 64 (tabWord k) ∧
       word t'.mem B (8 * kT2) = word t.mem B (8 * kT2) := by
   have hn := hI.good.scr.nowrap
@@ -175,9 +175,9 @@ theorem tlIter_ok {s₀ : State} {B : Addr} {Z w N : Nat} {minv : BitVec 64} (hZ
     (hw' : w < 2 ^ 31) (hTZ : slot w aTab + 2048 ≤ Z) (hN : N ≤ 256) {k : Nat} (hk : k < N) {t : State}
     (hI : TLInv s₀ B Z w (slot w aTab) N minv k t)
     (hf : word t.mem B (8 * kT2) = mask (anyPre (wv s₀.mem B (slot w aN) w) (4 * k))) :
-    WP isa (seqs ([.block (extBase aTab .rbx ++ [.mov .rax (.mem (ix .rbx .r13)), .store (hdr kT1) .rax])] ++
+    WP isa (seqs (([.block (extBase aTab .rbx ++ ([.mov .rax (.mem (ix .rbx .r13)), .store (hdr kT1) .rax] : List Instr))] : List (Prog isa)) ++
       trialEntry 0 ++ trialEntry 1 ++ trialEntry 2 ++ trialEntry 3 ++
-      [.block [.alu .add .r13 (.imm 1), .mov .rax (.mem (hdr kT0)), .alu .cmp .r13 (.reg .rax)]])) t fun t' =>
+      ([.block [.alu .add .r13 (.imm 1), .mov .rax (.mem (hdr kT0)), .alu .cmp .r13 (.reg .rax)]] : List (Prog isa)))) t fun t' =>
       t'.zf = some (decide (k + 1 = N)) ∧ TLInv s₀ B Z w (slot w aTab) N minv (k + 1) t' ∧
       word t'.mem B (8 * kT2) = mask (anyPre (wv s₀.mem B (slot w aN) w) (4 * (k + 1))) := by
   have hT : 8 * kT2 + 8 ≤ slot w aTab := hdr_lt_slot w aTab (by decide)

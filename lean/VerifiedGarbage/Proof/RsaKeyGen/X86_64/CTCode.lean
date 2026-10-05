@@ -87,7 +87,7 @@ theorem WP.and' {c : Prog isa} {s : State} {Q₁ Q₂ : State → Prop} (h₁ : 
   obtain ⟨-, rfl⟩ := Exec.det e₁ e₂
   exact ⟨t₁, s₁, e₁, q₁, q₂⟩
 
-theorem kEntry_split : kEntry = [.mov .r11 (.mem { base := .rsp, disp := 32 })] ++ kEntry.drop 1 := rfl
+theorem kEntry_split : kEntry = ([.mov .r11 (.mem { base := .rsp, disp := 32 })] : List Instr) ++ kEntry.drop 1 := rfl
 
 /-- What `kMain` needs, from a state past the length check with enough
 octets. -/

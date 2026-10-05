@@ -494,9 +494,9 @@ theorem finUsed3_ct {Φ : FPub → State → Prop} (hΦ : ∀ q s, Φ q s → KS
 
 /-- Everything after `loadC` leaks the same in runs that agree on the public
 data and the schedule. -/
-theorem afterLoad_ct (M : Mont) : RelCT isa (Two KSt) (seqs (closeCheck ++ [.ite .ne (finUsed 2) (seqs (trial ++
-    [.ite .ne (finUsed 3) (seqs (gcdCheck ++
-      [.ite .ne (finUsed 3) (seqs (montSetup M.mm ++ millerRabin M.mm ++ [mrResult]))]))]))])) fun _ _ => True := by
+theorem afterLoad_ct (M : Mont) : RelCT isa (Two KSt) (seqs (closeCheck ++ ([.ite .ne (finUsed 2) (seqs (trial ++
+    ([.ite .ne (finUsed 3) (seqs (gcdCheck ++
+      ([.ite .ne (finUsed 3) (seqs (montSetup M.mm ++ millerRabin M.mm ++ [mrResult]))] : List (Prog isa))))] : List (Prog isa))))] : List (Prog isa)))) fun _ _ => True := by
   refine RelCT.seqs_app (by simp [closeCheck]) (by simp) (RelCT.seq (R := Two fun q s => KSt q s ∧
     s.zf = some (!q.sch.close)) (two_post closeCheck_ct fun _ _ h => closeStage_ok h) ?_)
   simp only [seqs]
