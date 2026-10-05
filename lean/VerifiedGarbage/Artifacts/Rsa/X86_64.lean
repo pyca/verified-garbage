@@ -4,6 +4,8 @@ import VerifiedGarbage.Proof.Bignum.X86_64.PcVerified
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxCT
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtVerified
 import VerifiedGarbage.Proof.Bignum.X86_64.IfmaVerified
+import VerifiedGarbage.Proof.Rsa.X86_64.CvVerified
+import VerifiedGarbage.Proof.Rsa.X86_64.RpVerified
 
 /-! # RSA (RFC 8017) on x86-64 -/
 
@@ -108,6 +110,45 @@ def artifacts : List Artifact := [
     verified := Proof.Bignum.X86_64.ifma_verified _ (by decide +kernel) (by decide +kernel) (by decide +kernel)
       (by decide +kernel)
     features := ["avx", "avx2", "avx512ifma", "avx512vl", "bmi2", "adx"]
+    spSafe := Code.all_of_allInstrs (by decide +kernel) },
+  { Spec.Rsa.crtValuesApi with
+    target := X86_64.target
+    doc := Spec.Rsa.crtValuesApi.doc
+      (notes := ["Baseline x86-64: `n` is checked as `vg_rsa_public_precompute` checks it; then the \
+        checks (`p q = n`, as `n mod p = 0`, `n / p = q` and `p` odd, and `gcd(q, p) = 1`) give a \
+        mask, the arithmetic is the same whatever the key, and the results are stored masked. The \
+        remainders and quotients are computed by bit-serial division, `64 w` steps for `w`-word \
+        numbers, and `qInv` by `128 w` steps of the binary extended Euclidean algorithm modulo `p`, \
+        each step's swaps and subtractions under masks."])
+    code := Impl.Rsa.X86_64.Keys.CrtValues.code
+    contract := Spec.Rsa.crtValuesContract X86_64.abi
+    verified := Proof.Rsa.X86_64.cv_verified (by decide +kernel)
+    spSafe := Code.all_of_allInstrs (by decide +kernel) },
+  { Spec.Rsa.recoverPrimesApi with
+    target := X86_64.target
+    doc := Spec.Rsa.recoverPrimesApi.doc
+      (notes := ["Baseline x86-64: `n` is checked as `vg_rsa_public_precompute` checks it; `d e` and \
+        the halvings of `d e - 1` (`r` odd and `t` its twos) run over `64 Bw` steps for `Bw` words \
+        of `d e`, whatever their values. Each candidate `g` computes `g^r mod n` by `vg_rsa_public`'s \
+        Montgomery multiplication over all the bits of `r`, a square and a multiplication by `g` or \
+        1 (a masked selection) per bit, then `64 Bw` squarings, each kept or not under masks; the \
+        candidates stop at the first that finds the factors, which is the only branch on the key. \
+        `gcd(y - 1, n)` is `128 w` steps of the binary extended Euclidean algorithm, and `n / p` \
+        `64 w` steps of bit-serial division."])
+    code := Impl.Rsa.X86_64.Keys.Recover.code Proof.Bignum.X86_64.Mont.base.mm
+    contract := Spec.Rsa.recoverPrimesContract X86_64.abi
+    verified := Proof.Rsa.X86_64.rp_verified _ (by decide +kernel)
+    spSafe := Code.all_of_allInstrs (by decide +kernel) },
+  { Spec.Rsa.recoverPrimesApi with
+    target := X86_64.target
+    name := Spec.Rsa.recoverPrimesApi.name ++ "_adx"
+    doc := Spec.Rsa.recoverPrimesApi.doc
+      (notes := ["`vg_rsa_recover_primes`'s code, with `vg_rsa_public_precomputed_adx`'s Montgomery \
+        multiplication."])
+    code := Impl.Rsa.X86_64.Keys.Recover.code Proof.Bignum.X86_64.Mont.adx.mm
+    contract := Spec.Rsa.recoverPrimesContract X86_64.abi
+    verified := Proof.Rsa.X86_64.rp_verified _ (by decide +kernel)
+    features := ["bmi2", "adx"]
     spSafe := Code.all_of_allInstrs (by decide +kernel) }]
 
 end VG.Artifacts.Rsa.X86_64
