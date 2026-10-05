@@ -77,15 +77,32 @@ structure NoncePost (p : Prm) (nonce : List Byte) (s s' : State) : Prop where
   rd : s'.rd = s.rd
   wr : s'.wr = s.wr
 
-theorem nonceBlock_ok {p : Prm} (L : Lay p) {s : State} (E : Env p s) :
-    WP isa nonceBlock s (NoncePost p (bytesAt s.mem (w64 p.N) p.nl) s) := by
+/-- A copy of `n` bytes into `W + d`, within the first 128 bytes of `W`:
+the environment is kept. -/
+theorem copyW_ok {p : Prm} (L : Lay p) {s : State} (E : Env p s) {S : BitVec 32} {d n : Nat} (hd : d + n ≤ 128)
+    (lp : LoopPre s S (p.W + BitVec.ofNat 32 d) n) :
+    WP isa copyLoop s fun s' => Env p s' ∧ CopyPost s S (p.W + BitVec.ofNat 32 d) n s' :=
+  WP.mono (copyLoop_ok s lp) fun s' P => ⟨E.mut L
+    (by rw [P.other _ (by decide) (by decide) (by decide) (by decide), E.ebp])
+    (by rw [P.other _ (by decide) (by decide) (by decide) (by decide), E.esp]) P.rd P.wr
+    (frame_toMut (rs := [⟨w64 p.W + BitVec.ofNat 64 d, n⟩]) (by
+      rw [P.mem, L.aW (by omega)]
+      exact writeBytes_frame _ _ _ (by rw [length_bytesAt]; exact Region.contains_self _ _))
+      fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact inMut_w p (.inl hd)), P⟩
+
+/-- The head of `nonceBlock`: `W + tmpO` zeroed, the copy's arguments. -/
+theorem nonceHead_ok {p : Prm} (L : Lay p) {s : State} (E : Env p s) :
+    ∃ s₂, runBlock isa (zero4 tmpO ++
+      ([.mov .edi (slot nO), .mov .ecx (slot nlO), .mov .edx (.reg .ebp), .alu .add .edx (imm (tmpO + 16)),
+        .alu .sub .edx (.reg .ecx)] : List Instr)) s = some s₂ ∧
+      Env p s₂ ∧ LoopPre s₂ p.N (p.W + BitVec.ofNat 32 (128 - p.nl)) p.nl ∧
+      s₂.mem = Proof.Cmac.zero4 s.mem (w64 p.W + BitVec.ofNat 64 tmpO) ∧
+      (∀ r, r ≠ .eax → r ≠ .ecx → r ≠ .edx → r ≠ .edi → s₂.gpr r = s.gpr r) ∧ s₂.rd = s.rd ∧ s₂.wr = s.wr := by
   have h1 := L.nl1
   have h15 := L.nl15
   have hN := E.slots.nonce
   have hnl := E.slots.nlen
-  have htl := E.slots.tlen
-  simp only [slotv_eq] at hN hnl htl
-  -- `zero4 tmpO` and the copy's arguments
+  simp only [slotv_eq] at hN hnl
   have hz := zero4_fold s.mem p.W tmpO
   obtain ⟨s₂, run₂, m₂, di₂, dx₂, cx₂, g₂, rd₂, wr₂⟩ : ∃ s₂, runBlock isa (zero4 tmpO ++
       ([.mov .edi (slot nO), .mov .ecx (slot nlO), .mov .edx (.reg .ebp), .alu .add .edx (imm (tmpO + 16)),
@@ -100,13 +117,24 @@ theorem nonceBlock_ok {p : Prm} (L : Lay p) {s : State} (E : Env p s) :
   have a128 : w64 (p.W + BitVec.ofNat 32 (128 - p.nl)) = w64 p.W + BitVec.ofNat 64 (128 - p.nl) := L.aW (by omega)
   have fr₂ : Frame [⟨w64 p.W + BitVec.ofNat 64 tmpO, 16⟩] s.mem s₂.mem := by
     rw [m₂]; exact Proof.Cmac.frame_store4 _ _ _ _ _
+  refine ⟨s₂, run₂, E.mut L (by rw [g₂ _ (by decide) (by decide) (by decide) (by decide), E.ebp])
+    (by rw [g₂ _ (by decide) (by decide) (by decide) (by decide), E.esp]) rd₂ wr₂
+    (frame_toMut fr₂ fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact inMut_w p (.inl (by decide))),
+    ⟨di₂, dx₂, cx₂, h1, by omega, L.nw, by rw [L.nW (by omega)]; have := L.ww; omega,
+      by rw [rd₂, wr₂]; exact E.perm.non, by rw [a128, wr₂]; exact E.perm.wC (by omega),
+      by rw [a128]; exact L.n_w' (by omega)⟩, m₂, g₂, rd₂, wr₂⟩
+
+theorem nonceBlock_ok {p : Prm} (L : Lay p) {s : State} (E : Env p s) :
+    WP isa nonceBlock s (NoncePost p (bytesAt s.mem (w64 p.N) p.nl) s) := by
+  have h1 := L.nl1
+  have h15 := L.nl15
+  obtain ⟨s₂, run₂, -, lp, m₂, g₂, rd₂, wr₂⟩ := nonceHead_ok L E
+  have a128 : w64 (p.W + BitVec.ofNat 32 (128 - p.nl)) = w64 p.W + BitVec.ofNat 64 (128 - p.nl) := L.aW (by omega)
+  have fr₂ : Frame [⟨w64 p.W + BitVec.ofNat 64 tmpO, 16⟩] s.mem s₂.mem := by
+    rw [m₂]; exact Proof.Cmac.frame_store4 _ _ _ _ _
   have eN : bytesAt s₂.mem (w64 p.N) p.nl = bytesAt s.mem (w64 p.N) p.nl :=
     Proof.AesGcm.X86.bytesAt_frame fr₂ (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact L.n_w' (by decide)) (by omega)
-  have lp : LoopPre s₂ p.N (p.W + BitVec.ofNat 32 (128 - p.nl)) p.nl :=
-    ⟨di₂, dx₂, cx₂, h1, by omega, L.nw, by rw [L.nW (by omega)]; have := L.ww; omega,
-      by rw [rd₂, wr₂]; exact E.perm.non, by rw [a128, wr₂]; exact E.perm.wC (by omega),
-      by rw [a128]; exact L.n_w' (by omega)⟩
   unfold nonceBlock
   refine WP.seq (WP.of_runBlock ⟨s₂, run₂, ?_⟩)
   refine WP.seq (WP.mono (copyLoop_ok s₂ lp) fun s₃ P₃ => ?_)
