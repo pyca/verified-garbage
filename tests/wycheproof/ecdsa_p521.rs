@@ -4,7 +4,7 @@
 //! A valid vector must verify, an invalid one must be refused (or, if its
 //! signature is not 132 bytes, cannot be passed).
 
-#![cfg(target_arch = "x86_64")]
+#![cfg(any(target_arch = "x86_64", target_arch = "x86"))]
 
 use serde::Deserialize;
 use verified_garbage::ecdsa::{Error, P521, VerifyingKey};
