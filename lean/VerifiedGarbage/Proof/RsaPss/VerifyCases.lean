@@ -77,28 +77,27 @@ theorem clearTop_eq_iff (z : Nat) {l : List Byte} (hl : l ≠ []) :
 
 variable (G : Hash)
 
+/-- `H`, after the `L` octets of `maskedDB`. -/
+def vH (em : List Byte) (L : Nat) : List Byte := (em.drop L).take G.len
+
+/-- `DB`: `maskedDB` unmasked, its top `z` bits cleared. -/
+def vDb (em : List Byte) (L z : Nat) : List Byte := clearTop z (xorBytes (em.take L) (mgf1 G (vH G em L) L))
+
+/-- What `verifyEncoding` checks, a byte at a time, for `emLen = E`. -/
+def EncOk (mHash em : List Byte) (E z : Nat) (sLen : Option Nat) : Prop :=
+  em.getD (E - 1) 0 = 0xbc ∧ em.getD 0 0 &&& ~~~((0xFF : Byte) >>> z) = 0 ∧
+    lz (vDb G em (E - G.len - 1) z) < E - G.len - 1 ∧
+    (vDb G em (E - G.len - 1) z).getD (lz (vDb G em (E - G.len - 1) z)) 0 = 1 ∧
+    (sLen = none ∨ sLen = some (E - G.len - 1 - 1 - lz (vDb G em (E - G.len - 1) z))) ∧
+    G.hash (zeros 8 ++ mHash ++ (vDb G em (E - G.len - 1) z).drop (lz (vDb G em (E - G.len - 1) z) + 1)) =
+      vH G em (E - G.len - 1)
+
 theorem verifyEncoding_bytes (hG : Valid G) {mHash em : List Byte} {emBits : Nat} {sLen : Option Nat}
     (hm : mHash.length = G.len) (hl : em.length = emLength emBits)
     (hfit : G.len + sLen.getD 0 + 2 ≤ emLength emBits) :
     verifyEncoding G G mHash em emBits sLen = true ↔
-      em.getD (emLength emBits - 1) 0 = 0xbc ∧
-      em.getD 0 0 &&& ~~~((0xFF : Byte) >>> (8 * emLength emBits - emBits)) = 0 ∧
-      lz (clearTop (8 * emLength emBits - emBits) (xorBytes (em.take (emLength emBits - G.len - 1))
-          (mgf1 G ((em.drop (emLength emBits - G.len - 1)).take G.len) (emLength emBits - G.len - 1)))) <
-        emLength emBits - G.len - 1 ∧
-      (clearTop (8 * emLength emBits - emBits) (xorBytes (em.take (emLength emBits - G.len - 1))
-          (mgf1 G ((em.drop (emLength emBits - G.len - 1)).take G.len) (emLength emBits - G.len - 1)))).getD
-        (lz (clearTop (8 * emLength emBits - emBits) (xorBytes (em.take (emLength emBits - G.len - 1))
-          (mgf1 G ((em.drop (emLength emBits - G.len - 1)).take G.len) (emLength emBits - G.len - 1))))) 0 = 1 ∧
-      (sLen = none ∨ sLen = some (emLength emBits - G.len - 1 - 1 -
-        lz (clearTop (8 * emLength emBits - emBits) (xorBytes (em.take (emLength emBits - G.len - 1))
-          (mgf1 G ((em.drop (emLength emBits - G.len - 1)).take G.len) (emLength emBits - G.len - 1)))))) ∧
-      G.hash (zeros 8 ++ mHash ++ (clearTop (8 * emLength emBits - emBits) (xorBytes
-          (em.take (emLength emBits - G.len - 1))
-          (mgf1 G ((em.drop (emLength emBits - G.len - 1)).take G.len) (emLength emBits - G.len - 1)))).drop
-        (lz (clearTop (8 * emLength emBits - emBits) (xorBytes (em.take (emLength emBits - G.len - 1))
-          (mgf1 G ((em.drop (emLength emBits - G.len - 1)).take G.len) (emLength emBits - G.len - 1)))) + 1)) =
-        (em.drop (emLength emBits - G.len - 1)).take G.len := by
+      EncOk G mHash em (emLength emBits) (8 * emLength emBits - emBits) sLen := by
+  unfold EncOk vDb vH
   generalize hE : emLength emBits = E at *
   generalize hL : E - G.len - 1 = L
   generalize hz : 8 * E - emBits = z
@@ -149,5 +148,45 @@ theorem verifyEncoding_bytes (hG : Valid G) {mHash em : List Byte} {emBits : Nat
       simp only [h2, false_and, and_false, Bool.false_eq_true]
   · rw [ifp (by rw [getLast?_eq hne, hl]; simpa using h1)]
     simp only [h1, false_and, Bool.false_eq_true]
+
+theorem publicOpChecked_length' {nB eB sB x : List Byte} (h : Rsa.publicOpChecked nB eB sB = some x) :
+    x.length = nB.length := by
+  simp only [Rsa.publicOpChecked, Rsa.publicOp] at h
+  split at h
+  · split at h
+    · obtain ⟨y, -, rfl⟩ := Option.map_eq_some_iff.mp h
+      simp [Rsa.i2osp]
+    · cases h
+  · cases h
+
+/-- `verify`, byte by byte, for a modulus whose first octet is not zero and
+`emLen = k - lo` octets: of `x`, RSAVP1's result (zeros if it fails), the
+first `lo ≤ 1` are zero and the rest is a valid encoding. -/
+theorem verify_bytes (hG : Valid G) {n₀ : Byte} {rest eB mHash sB : List Byte} {sLen : Option Nat}
+    (hm : mHash.length = G.len) (hs : sB.length = (n₀ :: rest).length) {emBits emLen lo : Nat}
+    (hb : bitLength (Rsa.os2ip (n₀ :: rest)) - 1 = emBits) (he : emLength emBits = emLen)
+    (hk : emLen + lo = (n₀ :: rest).length) (hlo : lo ≤ 1) (hfit : G.len + sLen.getD 0 + 2 ≤ emLen) :
+    verify G G (n₀ :: rest) eB mHash sB sLen = true ↔
+      (lo = 1 → ((Rsa.publicOpChecked (n₀ :: rest) eB sB).getD (zeros (n₀ :: rest).length)).getD 0 0 = 0) ∧
+      EncOk G mHash (((Rsa.publicOpChecked (n₀ :: rest) eB sB).getD (zeros (n₀ :: rest).length)).drop lo)
+        emLen (8 * emLen - emBits) sLen := by
+  unfold verify
+  simp only [hb, he, hs, beq_self_eq_true, Bool.true_and, show (n₀ :: rest).length - emLen = lo by omega]
+  cases hp : Rsa.publicOpChecked (n₀ :: rest) eB sB with
+  | none =>
+    simp only [Option.getD_none, Bool.false_eq_true, false_iff, not_and]
+    intro _ h
+    have := h.1
+    simp only [zeros, List.getD_eq_getElem?_getD, List.getElem?_drop, List.getElem?_replicate] at this
+    split at this <;> simp at this
+  | some x =>
+    have hx := publicOpChecked_length' hp
+    simp only [Option.getD_some, Bool.and_eq_true, beq_iff_eq]
+    rw [← he, verifyEncoding_bytes G hG hm (by rw [List.length_drop, hx]; omega) (by omega), he]
+    refine and_congr_left fun _ => ?_
+    rcases (show lo = 0 ∨ lo = 1 by omega) with rfl | rfl
+    · simp [zeros]
+    · obtain ⟨b, xs, rfl⟩ := List.exists_cons_of_ne_nil (show x ≠ [] from fun h => by simp [h] at hx)
+      simp [zeros]
 
 end VG.Proof.RsaPss
