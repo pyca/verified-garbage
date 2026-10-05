@@ -23,7 +23,8 @@ open VG.Proof.Ecdsa.X86_64 VG.Proof.Ecdsa.X86_64.P521
 
 theorem pre_of {s : State} (h : pkX86_64.pre s) : PkPre p521 s := by
   obtain ⟨h1, h2, h3, h4, h5, -, -, h8, h9⟩ := h
-  exact ⟨h1, h2, h3, h4, h5, h8, h9⟩
+  exact ⟨by rw [h1]; rfl, h2, h3, h4, h5, h8, h9,
+    by simp [TblsHeld, Cfg.combConsts, Abi.constsHeld, Abi.constRegions, p521]⟩
 
 theorem post_of {s s' : State} (h : PkPost p521 s s') : pkX86_64.post s s' := by
   unfold PkPost at h
@@ -39,7 +40,7 @@ theorem post_of {s s' : State} (h : PkPost p521 s s') : pkX86_64.post s s' := by
 
 theorem pk_x86 (hL : Weierstrass.Law Spec.P521.curve) (s : State) (hs : pkX86_64.pre s) :
     ∃ t s', Exec isa publicKeyP521 s t s' ∧ abiPreserved s s' ∧ pkX86_64.post s s' := by
-  obtain ⟨t, s', he, hsv, hpost⟩ := publicKey_ok p521_ok hL (pre_of hs)
+  obtain ⟨t, s', he, hsv, hpost⟩ := publicKey_ok p521_ok hL p521_tbls (pre_of hs)
   have hsp : ∀ i ∈ instrs publicKeyP521, Taint.clobbers i .rsp = false := by
     have h : publicKeyP521.allInstrs (fun i => !Taint.clobbers i .rsp) = true := by lit_decide
     rw [Code.allInstrs_eq, List.all_eq_true] at h

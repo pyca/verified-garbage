@@ -35,13 +35,6 @@ namespace VG.Impl.Weierstrass.AArch64
 
 open VG.AArch64 VG.Impl.Mont VG.Impl.Mont.AArch64 VG.Impl.Weierstrass
 
-/-- The words of the tables `tbl` (affine points, below `p`) in Montgomery form
-(`R`), `n` words a coordinate, little-endian: table after table, entry after
-entry, `x` then `y`. -/
-def tcombWords (n R p : Nat) (tbl : List (List (Nat × Nat))) : List (BitVec 64) :=
-  tbl.flatMap fun t => t.flatMap fun (x, y) =>
-    (List.range n).map (wordOf (x * R % p)) ++ (List.range n).map (wordOf (y * R % p))
-
 /-- What the comb needs: the field, the complete addition's slots, the
 accumulator `A`, the selected entry `E`, the sum `D`, a slot for `-y` and one
 holding zero, the table of the scalar's bits, the slot holding the tables'

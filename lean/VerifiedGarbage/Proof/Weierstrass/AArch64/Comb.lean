@@ -7,7 +7,7 @@ import VerifiedGarbage.Proof.Weierstrass.Law3
 # The fixed-base comb on AArch64: what its digits and additions share
 
 The registers the comb changes (`combClob`), the negation of `y` for a
-negative digit (`Rep.negY`, `signMask_ok`), where the selected entry `E` is
+negative digit (`signMask_ok`; `Rep.negY` is in `Law.lean`), where the selected entry `E` is
 (`combLay_E`, `entryW_sub`), and the addition `A = A + E` by the complete
 formulas (`combSum_ok`): what the comb from tables in memory
 (`Proof/Weierstrass/AArch64/TComb.lean`) and ECDH's window method use.
@@ -24,17 +24,6 @@ open Spec.Weierstrass CombCfg
 def combClob (n : Nat) : List Reg := .x19 :: .x9 :: maskRegs ++ clob n
 
 /-! ## Representatives -/
-
-/-- The reflection of a representative. -/
-theorem Rep.negY {C : Curve} {X Y Z : Fe C} {P : Point C} (h : Rep C X Y Z P) :
-    Rep C X (-Y) Z (negPt P) := by
-  cases P with
-  | infinity =>
-    obtain ⟨hX, hY, hZ⟩ := h
-    exact ⟨hX, fun h' => hY (by grind), hZ⟩
-  | affine x y =>
-    obtain ⟨hZ, hX, hY⟩ := h
-    exact ⟨hZ, hX, by rw [hY]; grind⟩
 
 /-! ## The digit's sign -/
 
@@ -149,13 +138,6 @@ theorem combW_mo {K : CombCfg} {size : Nat} (hL : CombLay K size) {m : Nat} {mem
   · have := hL.lay.mo y (combWs_slots K y hy); dsimp only; omega
   · have := hM.sep; dsimp only; omega
 
-/-- A slot read only is apart from what the comb writes. -/
-theorem combW_ro {K : CombCfg} {size : Nat} (hL : CombLay K size) {x : Nat} (hx : x ∈ combRo K) :
-    ∀ w ∈ combW K, x + 8 * K.M.n ≤ w.1 ∨ w.1 + w.2 ≤ x := by
-  have hs : x ∈ combSlots K := by
-    simp only [combRo, List.mem_cons, List.not_mem_nil, or_false] at hx
-    rcases hx with rfl | rfl | rfl <;> comb_mem
-  exact hL.apart_w hs (hL.ro x hx)
 
 /-! ## The addition -/
 
@@ -263,10 +245,6 @@ theorem combSum_ok {K : CombCfg} {C : Curve} {base : Addr} {size : Nat} (hL : Co
     show (toM _ _ _, toM _ _ _, toM _ _ _) = _
     rw [wx, wy, wz, I₁.val _ hDx, I₁.val _ hDy, I₁.val _ hDz]
 
-theorem combRo_slots {K : CombCfg} : ∀ x ∈ combRo K, x ∈ combSlots K := by
-  intro x hx
-  simp only [combRo, List.mem_cons, List.not_mem_nil, or_false] at hx
-  rcases hx with rfl | rfl | rfl <;> comb_mem
 
 theorem combClob_mem {n : Nat} {r : Reg} (h : r ∈ [Reg.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x16, .x17]) :
     r ∈ combClob n := by

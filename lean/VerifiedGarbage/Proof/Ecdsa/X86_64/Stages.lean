@@ -1,5 +1,6 @@
 import VerifiedGarbage.Proof.Ecdsa.X86_64.Fixed
 import VerifiedGarbage.Proof.Ecdsa.X86_64.Finish
+import VerifiedGarbage.Proof.Framework.X86_64.Syms
 
 /-!
 # ECDSA on x86-64: the setup and the tables of bits
@@ -47,6 +48,7 @@ structure St₁ (c : Cfg) (hs : Option Nat) (s₀ : State) (base : Addr) (s : St
   gpr : ∀ r, r ∉ [.rax, .rdi, .r14, .rsi, .rdx, .rbx] → s.gpr r = s₀.gpr r
   unch : Unch base [(0, size)] s₀.mem s.mem
   rd : s.rd = s₀.rd
+  syms : s.syms = s₀.syms
 
 /-- The setup, then the three tables. -/
 theorem stage₁ (hc : CfgOk c) {hs : Option Nat} (hhs : ShiftOk hs) {s₀ : State} (hp : SetupPre c s₀)
@@ -57,7 +59,7 @@ theorem stage₁ (hc : CfgOk c) {hs : Option Nat} (hhs : ShiftOk hs) {s₀ : Sta
       (.seq (bits (c.sl EXPN) (bitsAt c.n 2) (8 * c.n)) rest)))) s₀ Q := by
   have h0 := hc.n0
   have h7 := hc.n10
-  refine WP.seq (WP.mono (setup_ok hc hhs hp) fun s₁ P => ?_)
+  refine WP.seq (WP.mono_syms (setup_ok hc hhs hp) fun s₁ P sy₁ => ?_)
   have hn := P.scr.nowrap
   have hc' : ∀ ix ∈ c.consts, sv c (s₀.gpr .r8) s₁ ix.1 = ix.2 := P.consts
   have fx : Fixed c (s₀.gpr .r8) s₀.gpr s₁.mem :=
@@ -72,22 +74,22 @@ theorem stage₁ (hc : CfgOk c) {hs : Option Nat} (hhs : ShiftOk hs) {s₀ : Sta
     fun hi j => Or.inl (by have := sl_below_bits c hi j 0; omega)
   have hsz : ∀ {j}, j < 3 → bitsAt c.n j + 64 * c.n ≤ size := fun hj => bitsAt_le c h7 hj
   -- The table of `k`.
-  refine WP.seq (WP.mono (bits_ok P.scr h0 (by omega) (sl_le c h7 (i := K) (by decide)) (hsz (j := 0)
-    (by decide)) (hsep (i := K) (by decide) 0)) fun s₂ ⟨b₂, k₂, O₂⟩ => ?_)
+  refine WP.seq (WP.mono_syms (bits_ok P.scr h0 (by omega) (sl_le c h7 (i := K) (by decide)) (hsz (j := 0)
+    (by decide)) (hsep (i := K) (by decide) 0)) fun s₂ ⟨b₂, k₂, O₂⟩ sy₂ => ?_)
   have hs₂ := P.scr.of_keepRegs k₂ (by decide)
   have u₂ := O₂.unch
   have v₂ : ∀ {i}, i < 45 → sv c (s₀.gpr .r8) s₂ i = sv c (s₀.gpr .r8) s₁ i := fun hi =>
     sv_unch u₂ h7 hn hi (apart_tbl hi 0)
   -- The table of `p - 2`.
-  refine WP.seq (WP.mono (bits_ok hs₂ h0 (by omega) (sl_le c h7 (i := EXPP) (by decide)) (hsz (j := 1)
-    (by decide)) (hsep (i := EXPP) (by decide) 1)) fun s₃ ⟨b₃, k₃, O₃⟩ => ?_)
+  refine WP.seq (WP.mono_syms (bits_ok hs₂ h0 (by omega) (sl_le c h7 (i := EXPP) (by decide)) (hsz (j := 1)
+    (by decide)) (hsep (i := EXPP) (by decide) 1)) fun s₃ ⟨b₃, k₃, O₃⟩ sy₃ => ?_)
   have hs₃ := hs₂.of_keepRegs k₃ (by decide)
   have u₃ := O₃.unch
   have v₃ : ∀ {i}, i < 45 → sv c (s₀.gpr .r8) s₃ i = sv c (s₀.gpr .r8) s₁ i := fun hi =>
     (sv_unch u₃ h7 hn hi (apart_tbl hi 1)).trans (v₂ hi)
   -- The table of `n - 2`.
-  refine WP.seq (WP.mono (bits_ok hs₃ h0 (by omega) (sl_le c h7 (i := EXPN) (by decide)) (hsz (j := 2)
-    (by decide)) (hsep (i := EXPN) (by decide) 2)) fun s₄ ⟨b₄, k₄, O₄⟩ => h s₄ ?_)
+  refine WP.seq (WP.mono_syms (bits_ok hs₃ h0 (by omega) (sl_le c h7 (i := EXPN) (by decide)) (hsz (j := 2)
+    (by decide)) (hsep (i := EXPN) (by decide) 2)) fun s₄ ⟨b₄, k₄, O₄⟩ sy₄ => h s₄ ?_)
   have u₄ := O₄.unch
   have v₄ : ∀ {i}, i < 45 → sv c (s₀.gpr .r8) s₄ i = sv c (s₀.gpr .r8) s₁ i := fun hi =>
     (sv_unch u₄ h7 hn hi (apart_tbl hi 2)).trans (v₃ hi)
@@ -99,7 +101,7 @@ theorem stage₁ (hc : CfgOk c) {hs : Option Nat} (hhs : ShiftOk hs) {s₀ : Sta
     by rw [v₄ (by decide)]; exact hc' (RX, 0) (by simp [Cfg.consts]),
     by rw [v₄ (by decide)]; exact hc' (RY, c.mont 1) (by simp [Cfg.consts]),
     by rw [v₄ (by decide)]; exact hc' (RZ, 0) (by simp [Cfg.consts]), ?_, ?_, ?_, ?_, ?_, ?_,
-    by rw [k₄.rd, k₃.rd, k₂.rd, P.keep.rd]⟩
+    by rw [k₄.rd, k₃.rd, k₂.rd, P.keep.rd], by rw [sy₄, sy₃, sy₂, sy₁]⟩
   · rw [k₄.gpr _ (by decide), k₃.gpr _ (by decide), k₂.gpr _ (by decide), P.rsi]
   · exact (fx.unch h7 hn (fixedOk_tbl 0) u₂ |>.unch h7 hn (fixedOk_tbl 1) u₃).unch h7 hn (fixedOk_tbl 2) u₄
   · have hF := sl_le c h7 (i := FLAG) (by decide)

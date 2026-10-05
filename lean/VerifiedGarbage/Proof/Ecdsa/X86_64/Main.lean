@@ -1,5 +1,4 @@
-import VerifiedGarbage.Proof.Ecdsa.X86_64.Stages
-import VerifiedGarbage.Proof.Weierstrass.X86_64.Rep
+import VerifiedGarbage.Proof.Ecdsa.X86_64.GMul
 import VerifiedGarbage.Proof.Ecdsa.Sign
 
 /-!
@@ -7,9 +6,10 @@ import VerifiedGarbage.Proof.Ecdsa.Sign
 
 `sign_ok`: `Cfg.sign` computes the specification's signature of the hash
 with `d` and `k`, for any curve the proof of the code supports (`CfgOk`)
-whose group law the proofs support (`Law`), and restores the callee-saved
-registers. Four stages, each a lemma: the setup and the tables of bits
-(`stage₁`, in `Stages.lean`), `[k]G` and `Z^(p-2)` (`stage₂`), `x`, `r`, the
+whose group law the proofs support (`Law`), with its comb's tables, if
+any, right (`CombTbls`), and restores the callee-saved registers. Four
+stages, each a lemma: the setup and the tables of bits (`stage₁`, in
+`Stages.lean`), `[k]G` (`gMul_ok`) and `Z^(p-2)` (`stage₂`), `x`, `r`, the
 checks and `k^(n-2)` (`stage₃`), and `s`, its check and the result
 (`stage₄`); `signWith_eq` connects what they compute to the specification.
 -/
@@ -37,87 +37,50 @@ structure St₂ (c : Cfg) (hs : Option Nat) (s₀ : State) (base : Addr) (s : St
   rz_lt : sv c base s RZ < c.C.p
 
 /-- `[k]G`, then `Z^(p-2)`. -/
-theorem stage₂ (hc : CfgOk c) (hC : Law c.C) {hs : Option Nat} {s₀ : State} {base : Addr} {s : State}
-    (hS : St₁ c hs s₀ base s)
+theorem stage₂ (hc : CfgOk c) (hC : Law c.C) (hT : CombTbls c) {hs : Option Nat} {s₀ : State} (hp : Pre c s₀) {base : Addr}
+    (hb : base = s₀.gpr .r8) {s : State} (hS : St₁ c hs s₀ base s)
     {rest : Prog isa} {Q : State → Prop} (h : ∀ s', St₂ c hs s₀ base s' → WP isa rest s' Q) :
-    WP isa (.seq (ladder c.ladderCfg) (.seq (pow c.powP) rest)) s Q := by
+    WP isa (.seq c.gMul (.seq (pow c.powP) rest)) s Q := by
+  subst hb
   have h0 := hc.n0
   have h7 := hc.n10
   have hn := hS.scr.nowrap
   have hpR := unitMod_pow_two hc.p_odd (64 * c.n)
-  have hp3 := hc.p_ge
   have F := hS.fixed
-  have hkl : kv c s₀ < 2 ^ (64 * c.n) := hS.k ▸ wordsVal_lt _ _ _ _
-  have hmont : ∀ x, c.mont x < c.C.p := fun x => Nat.mod_lt _ (by omega)
-  have hlt : ∀ x ∈ ladR c.ladderCfg, wordsVal s.mem base x c.MP'.n < c.C.p := by
-    intro x hx
-    have hx' : x ∈ [AP, B3P, GX, GY, ONEP, RX, RY, RZ].map c.sl := hx
-    obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hx'
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hi
-    show sv c base s i < c.C.p
-    rcases hi with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
-    · exact lt_of_eq_of_lt F.ap (hmont _)
-    · exact lt_of_eq_of_lt F.b3p (hmont _)
-    · exact lt_of_eq_of_lt F.gx (hmont _)
-    · exact lt_of_eq_of_lt F.gy (hmont _)
-    · exact lt_of_eq_of_lt F.onep (Nat.mod_lt _ (by omega))
-    · exact lt_of_eq_of_lt hS.rx (by omega)
-    · exact lt_of_eq_of_lt hS.ry (hmont _)
-    · exact lt_of_eq_of_lt hS.rz (by omega)
-  have hG : Rep c.C (tmv c.C c.n base s (c.sl GX)) (tmv c.C c.n base s (c.sl GY))
-      (tmv c.C c.n base s (c.sl ONEP)) (G c.C) := by
-    show Rep c.C (toM _ _ (wordsVal s.mem base (c.sl GX) c.n)) (toM _ _ (wordsVal s.mem base (c.sl GY) c.n))
-      (toM _ _ (wordsVal s.mem base (c.sl ONEP) c.n)) (G c.C)
-    rw [F.gx, F.gy, F.onep, toM_cmont hc, toM_cmont hc, toM_one hpR]
-    exact rep_affine' hC _ _
-  have hR : Rep c.C (tmv c.C c.n base s (c.sl RX)) (tmv c.C c.n base s (c.sl RY))
-      (tmv c.C c.n base s (c.sl RZ)) (mul (kv c s₀ >>> (64 * c.n)) (G c.C)) := by
-    show Rep c.C (toM _ _ (sv c base s RX)) (toM _ _ (sv c base s RY)) (toM _ _ (sv c base s RZ)) _
-    rw [hS.rx, hS.ry, hS.rz, toM_cmont hc, toM_zero, shiftRight_eq_zero hkl, mul_zero_pt]
-    exact rep_infinity' hC
-  have hstep := step_rep (L := c.ladderCfg) (k := kv c s₀) hC hc.onG (by
-      show toM c.C.p (2 ^ (64 * c.n)) (wordsVal s.mem base (c.sl AP) c.n) = _
-      rw [F.ap]; exact toM_cmont hc _)
-    (by
-      show toM c.C.p (2 ^ (64 * c.n)) (wordsVal s.mem base (c.sl B3P) c.n) = _
-      rw [F.b3p]; exact toM_cmont hc _) hG
-  refine WP.seq (WP.mono (ladder_ok (ladLay hc) hpR hS.scr (modP_of hc F.mp) hlt hstep hR hS.t₀)
-    fun s₅ ⟨K₅, U₅, M₅, L₅, R₅⟩ => ?_)
-  rw [Nat.shiftRight_zero] at R₅
-  rw [ladW_eq] at U₅
+  refine WP.seq (WP.mono (gMul_ok hc hC hT hp hS) fun s₅ ⟨K₅, U₅, M₅, L₅, R₅⟩ => ?_)
   have hs₅ := hS.scr.of_keepRegs K₅ (rdi_not_powClob _)
-  have F₅ := F.unch h7 hn (fixedOk_slW (by decide)) U₅
+  have F₅ := F.unch h7 hn fixedOk_gW U₅
   refine WP.seq (WP.mono (pow_ok (P := c.powP) (e := c.C.p - 2) (powLayP hc) hpR hs₅ M₅
     (L₅ (c.sl RZ) (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_singleton_self _)))) F₅.onep
     (fun t ht => by
-      show s₅.mem (off base (bitsAt c.n 1 + t)) = _
-      rw [tbl_unch U₅ h7 hn (j := 1) (by decide) ht (tbl_apart_slW (by decide) 1 t)]
+      show s₅.mem (off (s₀.gpr .r8) (bitsAt c.n 1 + t)) = _
+      rw [tbl_unch U₅ h7 hn (j := 1) (by decide) ht (tbl_apart_gW (Or.inl rfl))]
       exact hS.t₁ t ht)
     (show c.C.p - 2 < 2 ^ (64 * c.n) by have := hc.p_lt; omega)) fun s₆ ⟨K₆, U₆, lt₆, v₆⟩ => h s₆ ?_)
   rw [powWP_eq] at U₆
   have e₆ : ∀ {i}, i < 45 → i ∉ [ACC, PT, TMP] →
-      i ∉ [RX, RY, RZ, T0, T1, T2, T3, T4, T5, DX, DY, DZ, T0, T1, T2, T3, T4, T5, TX, TY, TZ, TMP] →
-      sv c base s₆ i = sv c base s i := fun hi h₁ h₂ =>
-    (sv_unch U₆ h7 hn hi (apart_slW h₁)).trans (sv_unch U₅ h7 hn hi (apart_slW h₂))
-  have r₆ : ∀ {i}, i < 45 → i ∉ [ACC, PT, TMP] → sv c base s₆ i = sv c base s₅ i := fun hi h₁ =>
+      i ∉ [RX, RY, RZ, TX, TY, TZ, PT, T0, T1, T2, T3, T4, T5, DX, DY, DZ, TMP] →
+      sv c (s₀.gpr .r8) s₆ i = sv c (s₀.gpr .r8) s i := fun hi h₁ h₂ =>
+    (sv_unch U₆ h7 hn hi (apart_slW h₁)).trans (sv_unch U₅ h7 hn hi (apart_gW hi h₂))
+  have r₆ : ∀ {i}, i < 45 → i ∉ [ACC, PT, TMP] → sv c (s₀.gpr .r8) s₆ i = sv c (s₀.gpr .r8) s₅ i := fun hi h₁ =>
     sv_unch U₆ h7 hn hi (apart_slW h₁)
   refine ⟨⟨hs₅.of_keepRegs K₆ (rdi_not_powClob _), ?_, by rw [K₆.wr, K₅.wr, hS.wr],
     F₅.unch h7 hn (fixedOk_slW (by decide)) U₆⟩,
     by rw [e₆ (by decide) (by decide) (by decide), hS.k],
     by rw [e₆ (by decide) (by decide) (by decide), hS.d],
     by rw [e₆ (by decide) (by decide) (by decide), hS.e],
-    by rw [flag_unch U₆ h7 h0 hn (by decide), flag_unch U₅ h7 h0 hn (by decide), hS.flag], ?_, ?_, lt₆, ?_,
+    by rw [flag_unch U₆ h7 h0 hn (by decide), flag_unch_gW U₅ h7 h0 hn, hS.flag], ?_, ?_, lt₆, ?_,
     ?_⟩
   · rw [K₆.gpr _ (rsi_not_powClob _), K₅.gpr _ (rsi_not_powClob _), hS.rsi]
   · intro t ht
     rw [tbl_unch U₆ h7 hn (j := 2) (by decide) ht (tbl_apart_slW (by decide) 2 t),
-      tbl_unch U₅ h7 hn (j := 2) (by decide) ht (tbl_apart_slW (by decide) 2 t)]
+      tbl_unch U₅ h7 hn (j := 2) (by decide) ht (tbl_apart_gW (Or.inr rfl))]
     exact hS.t₂ t ht
-  · show Rep c.C (toM _ _ (sv c base s₆ RX)) (toM _ _ (sv c base s₆ RY)) (toM _ _ (sv c base s₆ RZ)) _
+  · show Rep c.C (toM _ _ (sv c (s₀.gpr .r8) s₆ RX)) (toM _ _ (sv c (s₀.gpr .r8) s₆ RY)) (toM _ _ (sv c (s₀.gpr .r8) s₆ RZ)) _
     rw [r₆ (i := RX) (by decide) (by decide), r₆ (i := RY) (by decide) (by decide),
       r₆ (i := RZ) (by decide) (by decide)]
     exact R₅
-  · show _ = toM _ _ (sv c base s₆ RZ) ^ _
+  · show _ = toM _ _ (sv c (s₀.gpr .r8) s₆ RZ) ^ _
     rw [r₆ (i := RZ) (by decide) (by decide)]
     exact v₆
   · rw [r₆ (i := RZ) (by decide) (by decide)]
@@ -275,14 +238,14 @@ theorem stage₄ (hc : CfgOk c) (hC : Law c.C) {s₀ : State} (hp : Pre c s₀) 
 
 theorem sign_eq (c : Cfg) : c.sign = .seq (.block c.setup) (.seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n))
     (.seq (bits (c.sl EXPP) (bitsAt c.n 1) (8 * c.n)) (.seq (bits (c.sl EXPN) (bitsAt c.n 2) (8 * c.n))
-    (.seq (ladder c.ladderCfg) (.seq (pow c.powP) (.seq c.middle (.seq (pow c.powN) c.scalar))))))) := rfl
+    (.seq c.gMul (.seq (pow c.powP) (.seq c.middle (.seq (pow c.powN) c.scalar))))))) := rfl
 
 /-- `vg_ecdsa_<curve>_sign` computes the specification's signature and
 restores the callee-saved registers. -/
-theorem sign_ok (hc : CfgOk c) (hC : Law c.C) {s₀ : State} (hp : Pre c s₀) :
+theorem sign_ok (hc : CfgOk c) (hC : Law c.C) (hT : CombTbls c) {s₀ : State} (hp : Pre c s₀) :
     WP isa c.sign s₀ fun s' => (∀ r ∈ Cfg.saved.map Prod.fst, s'.gpr r = s₀.gpr r) ∧ SignPost c s₀ s' := by
   rw [sign_eq]
-  exact stage₁ hc (Or.inr (Or.inr rfl)) hp.setup fun _ S₁ => stage₂ hc hC S₁ fun _ S₂ => stage₃ hc S₂ fun _ S₃ =>
+  exact stage₁ hc (Or.inr (Or.inr rfl)) hp.setup fun _ S₁ => stage₂ hc hC hT hp rfl S₁ fun _ S₂ => stage₃ hc S₂ fun _ S₃ =>
     stage₄ hc hC hp rfl S₃
 
 end VG.Proof.Ecdsa.X86_64

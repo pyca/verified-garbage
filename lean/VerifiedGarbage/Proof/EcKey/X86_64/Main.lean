@@ -364,13 +364,14 @@ variable {c : Cfg}
 bytes) and `scratch = rdx`, readable and writable as the contract says and
 apart from each other as it says. -/
 structure PkPre (c : Cfg) (s : State) : Prop where
-  rd : s.rd = [⟨s.gpr .rsi, c.C.len⟩]
+  rd : s.rd = [⟨s.gpr .rsi, c.C.len⟩] ++ Abi.constRegions (fun n => s.syms n) c.combConsts
   wr : s.wr = [⟨s.gpr .rdi, 1 + 2 * c.C.len⟩, ⟨s.gpr .rdx, size⟩]
   out_sc : Region.Disjoint ⟨s.gpr .rdi, 1 + 2 * c.C.len⟩ ⟨s.gpr .rdx, size⟩
   out_d : Region.Disjoint ⟨s.gpr .rdi, 1 + 2 * c.C.len⟩ ⟨s.gpr .rsi, c.C.len⟩
   d_sc : Region.Disjoint ⟨s.gpr .rsi, c.C.len⟩ ⟨s.gpr .rdx, size⟩
   out_fit : (s.gpr .rdi).toNat + (1 + 2 * c.C.len) ≤ 2 ^ 64
   sc_fit : (s.gpr .rdx).toNat + size ≤ 2 ^ 64
+  tbls : TblsHeld c s s.wr
 
 /-- The private key. -/
 abbrev dk (c : Cfg) (s₀ : State) : Nat := ofBytes (Spec.Ecdsa.bytesAt s₀.mem (s₀.gpr .rsi) c.C.len)
@@ -398,25 +399,27 @@ theorem args_ok (s : State) :
 
 /-- `vg_ec_<curve>_public_key` computes the specification's public key and
 restores the callee-saved registers. -/
-theorem publicKey_ok (hc : CfgOk c) (hC : Law c.C) {s₀ : State} (hp : PkPre c s₀) :
+theorem publicKey_ok (hc : CfgOk c) (hC : Law c.C) (hT : CombTbls c) {s₀ : State} (hp : PkPre c s₀) :
     WP isa (Impl.EcKey.X86_64.Cfg.publicKey c) s₀ fun s' =>
       (∀ r ∈ Cfg.saved.map Prod.fst, s'.gpr r = s₀.gpr r) ∧ PkPost c s₀ s' := by
   have h0 := hc.n0
   have hpR := unitMod_pow_two hc.p_odd (64 * c.n)
-  refine WP.seq (WP.mono (args_ok s₀) fun s₁ ⟨r8₁, rcx₁, rdx₁, k₁⟩ => ?_)
+  refine WP.seq (WP.mono_syms (args_ok s₀) fun s₁ ⟨r8₁, rcx₁, rdx₁, k₁⟩ sy₁ => ?_)
   have rsi₁ : s₁.gpr .rsi = s₀.gpr .rsi := k₁.1 _ (by decide)
   have rdi₁ : s₁.gpr .rdi = s₀.gpr .rdi := k₁.1 _ (by decide)
   -- The signature's regions, `k`, `d` and the hash all at `d`.
   obtain ⟨sN, hsN⟩ : ∃ sN, sN = s₁.withRegions
-      [⟨s₀.gpr .rsi, c.C.len⟩, ⟨s₀.gpr .rsi, c.C.len⟩, ⟨s₀.gpr .rsi, c.C.len⟩]
+      ([⟨s₀.gpr .rsi, c.C.len⟩, ⟨s₀.gpr .rsi, c.C.len⟩, ⟨s₀.gpr .rsi, c.C.len⟩] ++
+        Abi.constRegions (fun n => s₀.syms n) c.combConsts)
       [⟨s₀.gpr .rdi, 2 * c.C.len⟩, ⟨s₀.gpr .rdx, size⟩] := ⟨_, rfl⟩
   have g : ∀ r, sN.gpr r = s₁.gpr r := fun r => by rw [hsN]; rfl
   have mN : sN.mem = s₀.mem := by rw [hsN]; exact k₁.2.1
+  have yN : sN.syms = s₀.syms := by rw [hsN, ← sy₁]; rfl
   have hsub : Region.Sub ⟨s₀.gpr .rdi, 2 * c.C.len⟩ ⟨s₀.gpr .rdi, 1 + 2 * c.C.len⟩ :=
     Region.sub_prefix (by omega)
   have hpN : Pre c sN := by
-    refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;>
-      simp only [g, rsi₁, rdi₁, rdx₁, rcx₁, r8₁]
+    refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;>
+      try simp only [g, rsi₁, rdi₁, rdx₁, rcx₁, r8₁, yN]
     · rw [hsN]; rfl
     · rw [hsN]; rfl
     · exact hp.out_sc.sub_left hsub
@@ -428,23 +431,38 @@ theorem publicKey_ok (hc : CfgOk c) (hC : Law c.C) {s₀ : State} (hp : PkPre c 
     · exact hp.d_sc
     · have := hp.out_fit; omega
     · exact hp.sc_fit
+    · obtain ⟨held, fit⟩ := hp.tbls
+      refine ⟨?_, fun t ht => ?_⟩
+      · show Abi.constsHeld sN.mem (fun n => sN.syms n) c.combConsts
+        rw [mN, yN]; exact held
+      rw [yN] at ht
+      obtain ⟨f1, f2⟩ := fit t ht
+      refine ⟨f1, fun r hr => ?_⟩
+      rw [hsN] at hr
+      simp only [State.withRegions_wr, List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · exact (((f2 _ (by rw [hp.wr]; simp)).symm).sub_left hsub).symm
+      · exact f2 _ (by rw [hp.wr]; simp)
   have hb : sN.gpr .r8 = s₀.gpr .rdx := by rw [g, r8₁]
   obtain ⟨t, s₂N, ex, S₂⟩ := stage₁ hc (hs := none) (Or.inl rfl) hpN.setup
-    (rest := .seq (ladder c.ladderCfg) (.seq (pow c.powP) (.block [])))
-    (Q := St₂ c none sN (sN.gpr .r8)) fun _ S₁ => stage₂ hc hC S₁ fun _ S₂ => WP.block_nil S₂
+    (rest := .seq c.gMul (.seq (pow c.powP) (.block [])))
+    (Q := St₂ c none sN (sN.gpr .r8)) fun _ S₁ => stage₂ hc hC hT hpN rfl S₁ fun _ S₂ => WP.block_nil S₂
   rw [hb] at S₂
   -- The same run, with the public key's regions.
-  have hrd₁ : s₁.rd = [⟨s₀.gpr .rsi, c.C.len⟩] := by rw [k₁.2.2.1, hp.rd]
+  have hrd₁ : s₁.rd = [⟨s₀.gpr .rsi, c.C.len⟩] ++ Abi.constRegions (fun n => s₀.syms n) c.combConsts := by
+    rw [k₁.2.2.1, hp.rd]
   have hwr₁ : s₁.wr = [⟨s₀.gpr .rdi, 1 + 2 * c.C.len⟩, ⟨s₀.gpr .rdx, size⟩] := by rw [k₁.2.2.2, hp.wr]
   have ex' := Exec.widen ex (rd := s₁.rd) (wr := s₁.wr)
     (by
       rw [hsN, State.withRegions_rd, State.withRegions_wr, hrd₁, hwr₁]
       refine Covers.of_sub fun r hr => ?_
-      simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl | rfl | rfl
+      simp only [List.cons_append, List.nil_append, List.mem_cons, List.mem_append, List.not_mem_nil,
+        or_false] at hr
+      rcases hr with rfl | rfl | rfl | hr | rfl | rfl
       · exact ⟨_, List.mem_cons_self .., 0, (BitVec.add_zero _).symm, Nat.le_of_eq (Nat.zero_add _)⟩
       · exact ⟨_, List.mem_cons_self .., 0, (BitVec.add_zero _).symm, Nat.le_of_eq (Nat.zero_add _)⟩
       · exact ⟨_, List.mem_cons_self .., 0, (BitVec.add_zero _).symm, Nat.le_of_eq (Nat.zero_add _)⟩
+      · exact ⟨r, by simp [hr], 0, (BitVec.add_zero _).symm, Nat.le_of_eq (Nat.zero_add _)⟩
       · exact ⟨⟨s₀.gpr .rdi, 1 + 2 * c.C.len⟩, by simp, 0, (BitVec.add_zero _).symm,
           by show 0 + 2 * c.C.len ≤ 1 + 2 * c.C.len; omega⟩
       · exact ⟨⟨s₀.gpr .rdx, size⟩, by simp, 0, (BitVec.add_zero _).symm, Nat.le_of_eq (Nat.zero_add _)⟩)

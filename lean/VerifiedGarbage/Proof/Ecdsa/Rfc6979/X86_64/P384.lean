@@ -6,8 +6,8 @@ import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.Verified
 
 P-384 as the proof's curve (`p384`): scalars of 6 words, the order `n` of
 exactly 384 bits with `2^384 < 2 n`, and `vg_ecdsa_p384_sign`, proven correct
-(given the group law) and constant time against its contract (`coreK` at
-P-384's sizes, which is `Proof.Ecdsa.X86_64.P384.signX86_64`).
+(given the group law and the comb's tables) and constant time against its
+contract (`coreK` at P-384's sizes, which is `Proof.Ecdsa.X86_64.P384.signX86_64`).
 -/
 
 namespace VG.Proof.Ecdsa.Rfc6979.X86_64
@@ -20,8 +20,17 @@ theorem p384_nBits : Spec.Ecdsa.nBits Spec.P384.curve = 384 := by
   have h₂ : Spec.P384.curve.n.log2 < 384 := (Nat.log2_lt (by decide +kernel)).mpr (by decide +kernel)
   omega
 
-/-- P-384, with the group law `hL`. -/
-def p384 (hL : Weierstrass.Law Spec.P384.curve) : RfcCurve where
+/-- `coreK` at P-384's sizes is `Proof.Ecdsa.X86_64.P384.signX86_64` (by rewriting, as
+deciding it would evaluate the tables' length). -/
+theorem coreK_p384 : coreK Impl.Ecdsa.X86_64.p384 = Proof.Ecdsa.X86_64.P384.signX86_64 := by
+  simp only [coreK, TblsOk, Proof.Ecdsa.X86_64.P384.p384_combConsts, Abi.constRegions, Abi.constsHeld,
+    List.map_cons, List.map_nil, List.cons_append, List.nil_append, List.forall_mem_cons, List.not_mem_nil,
+    false_implies, implies_true, and_true, Proof.Ecdsa.X86_64.P384.signX86_64, Proof.Ecdsa.X86_64.P384.TblHeld]
+  rfl
+
+/-- P-384, with the group law `hL` and the comb's tables `hT`. -/
+def p384 (hL : Weierstrass.Law Spec.P384.curve)
+    (hT : Weierstrass.CombOkW Spec.P384.curve 7 55 Impl.P384.p384Comb7 Impl.P384.p384Comb7Start) : RfcCurve where
   E := Impl.Ecdsa.X86_64.p384
   inst := Spec.Ecdsa.P384.inst
   curve := rfl
@@ -32,8 +41,8 @@ def p384 (hL : Weierstrass.Law Spec.P384.curve) : RfcCurve where
   sh_eq := Proof.Ecdsa.X86_64.P384.p384_sh
   coreN := Spec.Ecdsa.P384.signApi.name
   coreC := Impl.Ecdsa.X86_64.signP384
-  coreX := Proof.Ecdsa.X86_64.P384.sign_x86 hL
-  coreCT := Proof.Ecdsa.X86_64.P384.sign_ct
+  coreX := by rw [coreK_p384]; exact Proof.Ecdsa.X86_64.P384.sign_x86 hL hT
+  coreCT := by rw [coreK_p384]; exact Proof.Ecdsa.X86_64.P384.sign_ct
   coreNs := by lit_decide
   coreSp := by lit_decide
   coreMx := by lit_decide

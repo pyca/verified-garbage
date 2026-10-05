@@ -145,7 +145,7 @@ theorem dg_apart (hL : L.Ok) (hk : CoreOk P L) {r : Region} (h : DgApart P L r) 
     · exact (hL.stk_DG (by omega)).symm.sub_left hD
     · rw [hw] at h; exact absurd h (by decide)
   · obtain ⟨hw9, hQ66, -, -⟩ := P.sizesW hw
-    have he : L.e = 18 := by rw [hk.2.2]; simp only [RfcHash.e, hw, ite_true]
+    have he : L.e = 18 := by rw [hk.2.2.1]; simp only [RfcHash.e, hw, ite_true]
     simp only [dgArg, hw, ite_true]
     rcases h with rfl | rfl | rfl | rfl | rfl | ⟨-, rfl⟩
     · exact hL.stk_SCR (by omega)
@@ -230,7 +230,7 @@ theorem cand_ok (hL : L.Ok) (hk : CoreOk P L) {t : State} (hc : Ctx L g m₀ t) 
     refine congrArg Spec.Weierstrass.ofBytes ?_
     rw [bytesAt_take _ _ hQD]
     exact congrArg (List.take P.Q) hv
-  · have hLe : L.e = P.e := hk.2.2
+  · have hLe : L.e = P.e := hk.2.2.1
     have hl := P.R.nBits_len
     simp only [RfcHash.nb, CW, hw, ite_true, kArg]
     rw [genT_two]

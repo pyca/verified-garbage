@@ -126,14 +126,14 @@ theorem stageB_ok (hL : L.Ok) (hk : CoreOk P L) {u : State} (hc : Ctx L g m₀ u
     have hsh := sh7 hw
     have hwc : (cfgOf P).wide = true := hw
     simp only [hwc, ite_true]
-    refine WP.mono (coreDigest_ok hL hk.2.2 hw (by rw [← hD]) hc hsi (hdi hw)) fun u₁ ⟨hc₁, hf₁, hx₁⟩ => ?_
+    refine WP.mono (coreDigest_ok hL hk.2.2.1 hw (by rw [← hD]) hc hsi (hdi hw)) fun u₁ ⟨hc₁, hf₁, hx₁⟩ => ?_
     refine WP.mono (initKV_ok hL hc₁) fun u₂ ⟨hc₂, hf₂, hv₂, hk₂⟩ =>
       ⟨hc₂, ?_, hk₂ _ (by nums), hv₂ _ (by nums), ?_⟩
     · simp only [hOf, hPart, hw, ite_true]
       rw [hc₂.dgBytes hL (by rw [← hD]), hSpec, bits2octets_short (R := P.Q) (by show _ ≤ 8 * P.R.E.C.len; omega)
         (by show 8 * P.R.E.C.len < _; omega) (by rw [hBOf, length_bytesAt]; omega) P.R.n_ne,
         hBOf, length_bytesAt]
-    · have he : L.e = 18 := e18 hk.2.2 hw
+    · have he : L.e = 18 := e18 hk.2.2.1 hw
       -- `core`'s digest: the digest's number `e`, shifted left by `sh` bits.
       have hX : Spec.Sha256.bytesAt u₂.mem (L.B + BitVec.ofNat 64 240) P.Q = Spec.Weierstrass.toBytes P.Q
           (Spec.Weierstrass.ofBytes (Spec.Sha256.bytesAt m₀ L.dg P.H.D) * 2 ^ P.R.sh) := by
@@ -208,7 +208,7 @@ theorem stageE_ok (hL : L.Ok) (hk : CoreOk P L) {u : State} (hc : Ctx L g m₀ u
 theorem stageG_ok (hL : L.Ok) (hk : CoreOk P L) {u : State} (hc : Ctx L g m₀ u) {i : Nat}
     (hx : Exit P L m₀ i u) :
     WP isa (.block (cfgOf P).wipe) u fun u' => Ctx L g m₀ u' ∧ Exit P L m₀ i u' :=
-  WP.mono (wipe_ok hL hk.2.2 hc) fun _ ⟨hc₇, ha₇, hf₇⟩ => ⟨hc₇, hx.lt, hx.fails, hx.last,
+  WP.mono (wipe_ok hL hk.2.2.1 hc) fun _ ⟨hc₇, ha₇, hf₇⟩ => ⟨hc₇, hx.lt, hx.fails, hx.last,
     hx.res.keep ha₇ (bytesAt_frame hf₇ (fun r hr => by
       have := L.he
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -326,13 +326,14 @@ theorem sign_eq (P : RfcHash) :
   rw [pushRs_length]; rfl
 
 theorem coreOk_lay (P : RfcHash) (he : P.e ≤ 18) (s : State) :
-    CoreOk P (lay P.I.hashLen P.I.ecdsa.curve.len P.e he s) :=
-  ⟨P.curveLen, fun hw => by show P.Q ≤ P.I.hashLen; rw [P.len]; exact (P.sizesA hw).2.2, rfl⟩
+    CoreOk P (lay P.I.hashLen P.I.ecdsa.curve.len P.e he P.R.E.combConsts s) :=
+  ⟨P.curveLen, fun hw => by show P.Q ≤ P.I.hashLen; rw [P.len]; exact (P.sizesA hw).2.2, rfl, rfl⟩
 
 /-- `vg_ecdsa_<curve>_<hash>_sign` meets `rfcX86_64 P.I` and keeps the
 callee-saved registers and its return address. -/
-theorem sign_ok {s : State} (h : (rfcX86_64 P.I (240 + 8 * P.e)).pre s) :
-    WP isa (cfgOf P).sign s fun s' => gprPreserved s s' ∧ (rfcX86_64 P.I (240 + 8 * P.e)).post s s' := by
+theorem sign_ok {s : State} (h : (rfcX86_64 P.R.E.combConsts P.I (240 + 8 * P.e)).pre s) :
+    WP isa (cfgOf P).sign s fun s' =>
+      gprPreserved s s' ∧ (rfcX86_64 P.R.E.combConsts P.I (240 + 8 * P.e)).post s s' := by
   have he : P.e ≤ 18 := by nums
   have hL := lay_ok he h
   have hc := push_ctx he h
@@ -348,7 +349,7 @@ theorem sign_ok {s : State} (h : (rfcX86_64 P.I (240 + 8 * P.e)).pre s) :
       · subst hr'; exact hrsp
       · rw [popped_gpr _ _ _ hr' (ne_cs hr (by decide)), hu.cs r hr hr']
     · rw [popped_mem]
-      refine hu.frame.readW (r := (lay P.I.hashLen P.I.ecdsa.curve.len P.e he s).RET) ?_ ?_ (by decide)
+      refine hu.frame.readW (r := (lay P.I.hashLen P.I.ecdsa.curve.len P.e he P.R.E.combConsts s).RET) ?_ ?_ (by decide)
       · show (⟨_ + BitVec.ofNat 64 (240 + 8 * P.e), 8⟩ : Region).Contains (s.gpr .rsp) 8
         rw [lay_ret]; exact Region.contains_self _ _
       · intro r hr
@@ -356,10 +357,10 @@ theorem sign_ok {s : State} (h : (rfcX86_64 P.I (240 + 8 * P.e)).pre s) :
         rcases hr with rfl | rfl | rfl
         · exact hL.ro
         · exact hL.rc
-        · have := (lay P.I.hashLen P.I.ecdsa.curve.len P.e he s).he
+        · have := (lay P.I.hashLen P.I.ecdsa.curve.len P.e he P.R.E.combConsts s).he
           exact Offset.disjoint_base _ (by omega) (by omega)
-  · show match (result P.I s.mem (lay P.I.hashLen P.I.ecdsa.curve.len P.e he s).d
-        (lay P.I.hashLen P.I.ecdsa.curve.len P.e he s).dg).1 with
+  · show match (result P.I s.mem (lay P.I.hashLen P.I.ecdsa.curve.len P.e he P.R.E.combConsts s).d
+        (lay P.I.hashLen P.I.ecdsa.curve.len P.e he P.R.E.combConsts s).dg).1 with
       | some rs => _ | none => _
     rw [result_eq hx]
     have e₁ : 2 * P.I.ecdsa.curve.len = 2 * P.Q := by rw [P.curveLen]

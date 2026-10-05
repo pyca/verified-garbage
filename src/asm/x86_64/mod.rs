@@ -38,6 +38,9 @@ pub(crate) mod cmac_aes;
 pub(crate) mod cmac_triple_des;
 
 #[rustfmt::skip]
+pub(crate) mod consts;
+
+#[rustfmt::skip]
 pub(crate) mod ct;
 
 #[rustfmt::skip]
