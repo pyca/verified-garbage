@@ -18,8 +18,7 @@ use crate::arch::rsa_pss_sha512_224_mgf1_sha512_224::{
     VG_RSA_PSS_SHA512_224_MGF1_SHA512_224_SIGN_SHA512_224_SHANI_FEATURES,
     VG_RSA_PSS_SHA512_224_MGF1_SHA512_224_VERIFY_AVX2_FEATURES,
     VG_RSA_PSS_SHA512_224_MGF1_SHA512_224_VERIFY_SHANI_FEATURES,
-    vg_rsa_pss_sha512_224_mgf1_sha512_224_sign,
-    vg_rsa_pss_sha512_224_mgf1_sha512_224_sign_crt_adx,
+    vg_rsa_pss_sha512_224_mgf1_sha512_224_sign, vg_rsa_pss_sha512_224_mgf1_sha512_224_sign_crt_adx,
     vg_rsa_pss_sha512_224_mgf1_sha512_224_sign_crt_ifma,
     vg_rsa_pss_sha512_224_mgf1_sha512_224_sign_sha512_224_avx2,
     vg_rsa_pss_sha512_224_mgf1_sha512_224_sign_sha512_224_avx2_crt_adx,
@@ -33,7 +32,7 @@ use crate::arch::rsa_pss_sha512_224_mgf1_sha512_224::{
 };
 use crate::hashes::sha512_224::Sha512_224Backend;
 
-super::pss_hash!(Sha512_224Backend {
+super::pss_hash!(28, Sha512_224Backend {
     Scalar => {
         verify: vg_rsa_pss_sha512_224_mgf1_sha512_224_verify [],
         sign: vg_rsa_pss_sha512_224_mgf1_sha512_224_sign [],

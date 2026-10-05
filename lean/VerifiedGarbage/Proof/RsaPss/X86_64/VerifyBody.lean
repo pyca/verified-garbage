@@ -149,7 +149,7 @@ theorem verify_ok (lk : Pbkdf2.Md.X86_64.MgfLink H hH) {pubN : String} {pubC : P
   have L3 : Lay t3 (fb s) (stackArg s 3) := L2.congr (k3.gpr (by decide)) k3.2.2 (by rw [hm3])
   have R3 : Rep t3.mem (fb s) (stackArg s 3) _ (vproW s) := hm3 ▸ R2
   -- `emLen`, the mask and `lo`.
-  refine WP.seq (WP.mono (WP.keepIn (by safe_by [emLen]) (Nat.zero_le 8)
+  refine WP.seq (WP.mono (WP.keepIn (by safe_by [emLen]) (by exact Nat.zero_le 8)
     (emLen_ok (H := H) (by omega) L3 R3 (x := n₀.toNat) (k := (s.gpr .rsi).toNat)
       (by simp [vproW, upd]) (by omega) (by omega) hdx3 hz3)) fun t4 ⟨⟨L4, k4, R4, hax4, hc4⟩, f4⟩ => ?_)
   have hw4 : t4.wr = frR s :: s.wr := k4.2.2.trans (k3.2.2.trans hw2)
@@ -167,7 +167,7 @@ theorem verify_ok (lk : Pbkdf2.Md.X86_64.MgfLink H hH) {pubN : String} {pubC : P
   rw [decide_eq_false_iff_not] at hb4
   -- The salt length's arguments.
   have hrd4 : t4.rd = s.rd := k4.2.1.trans (k3.2.1.trans hrd2)
-  refine WP.seq (WP.mono (WP.keepIn (by safe_by [anyArgs]) (Nat.zero_le 8)
+  refine WP.seq (WP.mono (WP.keepIn (by safe_by [anyArgs]) (by exact Nat.zero_le 8)
     (anyArgs_ok hp L4 hrd4 hM4 R4)) fun t5 ⟨⟨L5, k5, R5, hdx5⟩, f5⟩ => ?_)
   have hM5 : Frame (vwrR s) s.mem t5.mem := vframe_keep hp hw4 L4.rsp hM4 f5
   set fixed := decide ((stackArg s 2).setWidth 32 = 0) with hfixed

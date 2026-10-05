@@ -95,13 +95,13 @@ theorem vfront_ok {pubN : String} {pubC : Prog isa}
   have hk1 := hp.k1; have hk2 := hp.k2
   simp only [seqs]
   -- `DB`'s slots.
-  refine WP.seq (WP.mono (WP.keepIn (by safe_by [dbSlots]) (Nat.zero_le 8)
+  refine WP.seq (WP.mono (WP.keepIn (by safe_by [dbSlots]) (by exact Nat.zero_le 8)
     (dbSlots_ok L R h26 hax)) fun u1 ⟨⟨L1, k1, R1⟩, f1⟩ => ?_)
   have hM1 := vframe_keep hp hw L.rsp hM f1
   have g1 : ∀ j, j ≠ 23 → j ≠ 24 → upd (upd W 24 (BitVec.ofNat 64 (a + 1))) 23 (off (stackArg s 3) (oEm + lo)) j =
       W j := fun j h23 h24 => by simp [upd, h23, h24]
   -- The arguments.
-  refine WP.seq (WP.mono (WP.keepIn (by decide) (Nat.zero_le 8)
+  refine WP.seq (WP.mono (WP.keepIn (by decide) (by exact Nat.zero_le 8)
     (pubArgs_ok L1 R1 (by rw [g1 17 (by decide) (by decide), h17]) (by rw [g1 18 (by decide) (by decide), h18])
       (by rw [g1 19 (by decide) (by decide), h19]) (by rw [g1 20 (by decide) (by decide), h20])
       (by rw [g1 22 (by decide) (by decide), h22]) (by rw [g1 38 (by decide) (by decide), h38])))
@@ -281,11 +281,11 @@ theorem vback_ok (lk : Pbkdf2.Md.X86_64.MgfLink H hH) {u : State} {F S : Addr} (
   have c5 : oRsa = 8192 := rfl
   simp only [seqs]
   -- `Y` cleared.
-  refine WP.seq (WP.mono (WP.keepIn (by safe_by [clearY]) (Nat.zero_le 8)
+  refine WP.seq (WP.mono (WP.keepIn (by safe_by [clearY]) (by exact Nat.zero_le 8)
     (clearY_ok L R)) fun u1 ⟨⟨L1, k1, hcx1, R1⟩, f1⟩ => ?_)
   have hS1 := chain (u := u) rfl L.rsp (fun _ _ => rfl) f1
   -- `mHash`.
-  refine WP.seq (WP.mono (WP.keepIn (by safe_by [copyDigest]) (Nat.zero_le 8)
+  refine WP.seq (WP.mono (WP.keepIn (by safe_by [copyDigest]) (by exact Nat.zero_le 8)
     (copyDigest_ok hH L1 R1 (p := dig) hdg hcx1
       (fun i hi => by rw [k1.2.1, k1.2.2]; exact hdR i hi)
       (fun i hi j hj => Outside.ne L1 (by rw [k1.2.2]; exact hdO i hi) (by omega))))

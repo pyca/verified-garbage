@@ -69,7 +69,7 @@ theorem sdb_ct : RelCT isa (Two fun a t => SAt G (SJ6 H) a t ∧ isa.eval .b t =
   obtain ⟨V, W, R, hw, -⟩ := v.W
   have hp := S.ps
   have L := v.L
-  refine WP.mono (WP.keepIn (by safe_by [dbSlots]) (Nat.zero_le 8)
+  refine WP.mono (WP.keepIn (by safe_by [dbSlots]) (by exact Nat.zero_le 8)
     (dbSlots_ok L R (hw 26 (by decide)) hax)) fun u1 ⟨⟨L1, k1, R1⟩, f1⟩ =>
     ⟨s, S, ⟨v.next L1 k1.2.2 R1 (fun k hk => ?_) trivial, k1.2.1.trans hrd, frame_keep hp v.wr L.rsp hM f1, hfit⟩⟩
   by_cases h23 : k = 23
@@ -100,10 +100,10 @@ theorem scyd_ct (hc : SignChecks H.P H.D) :
   have hD : lk.G.len = H.D := lk.len
   have hDN := hH.hDN
   have hN := hH.N_le
-  refine WP.seq (WP.mono (WP.keepIn (by safe_by [clearY]) (Nat.zero_le 8)
+  refine WP.seq (WP.mono (WP.keepIn (by safe_by [clearY]) (by exact Nat.zero_le 8)
     (clearY_ok v.L R)) fun u1 ⟨⟨L1, k1, hcx1, R1⟩, f1⟩ => ?_)
   have hM1 := frame_keep hp v.wr v.L.rsp hM f1
-  refine WP.mono (WP.keepIn (by safe_by [copyDigest]) (Nat.zero_le 8)
+  refine WP.mono (WP.keepIn (by safe_by [copyDigest]) (by exact Nat.zero_le 8)
     (copyDigest_ok hH L1 R1 (p := stackArg s 10) (hw 37 (by decide)) hcx1
     (fun i hi => ⟨⟨stackArg s 10, lk.G.len⟩, List.mem_append_left _ (by rw [k1.2.1, hrd, hp.hrd]; simp),
       Offset.contains_base _ (by omega) (by omega)⟩)
@@ -136,7 +136,7 @@ theorem copySaltY_ct (hc : SignChecks H.P H.D) :
   have hss : ssl s = (stackArg s 12).toNat := rfl
   have hDN := hH.hDN
   have hN := hH.N_le
-  exact WP.mono (WP.keepIn (by safe_by [copySaltY]) (Nat.zero_le 8)
+  exact WP.mono (WP.keepIn (by safe_by [copySaltY]) (by exact Nat.zero_le 8)
     (copySaltY_ok hH v.L R (q := stackArg s 11) (sl := ssl s) (hw 39 (by decide)) (w40 (hw 40 (by decide)))
       (by omega) hcx
       (fun i hi => ⟨⟨stackArg s 11, (stackArg s 12).toNat⟩, List.mem_append_left _ (by rw [hrd, hp.hrd]; simp),
@@ -158,7 +158,7 @@ theorem signLen_ct (hc : SignChecks H.P H.D) :
   obtain ⟨V, W, R, hw, -⟩ := v.W
   have hp := S.ps
   have hsl := ssl_le hok hp.k2
-  exact WP.mono (WP.keepIn (by safe_by [signLen]) (Nat.zero_le 8)
+  exact WP.mono (WP.keepIn (by safe_by [signLen]) (by exact Nat.zero_le 8)
     (signLen_ok hH v.L R (sl := ssl s) (w40 (hw 40 (by decide))) (by omega))) fun u ⟨⟨L', k', R'⟩, f⟩ =>
     ⟨s, S, v.next L' k'.2.2 R' (fun k hk => by
       by_cases h27 : k = 27
@@ -225,7 +225,7 @@ theorem sclearEm_ct : RelCT isa (Two (SAt G (SE H KSM fun _ _ _ => True))) clear
   obtain ⟨V, W, R, hw, -⟩ := v.W
   have hp := S.ps
   have hk1 := hp.k1; have hk2 := hp.k2
-  exact WP.mono (WP.keepIn (by decide) (Nat.zero_le 8)
+  exact WP.mono (WP.keepIn (by decide) (by exact Nat.zero_le 8)
     (clearEm_ok v.L R (k := (s.gpr .rcx).toNat)
       (by rw [hw 17 (by decide)]; show s.gpr .rcx = _; rw [BitVec.ofNat_toNat, BitVec.setWidth_eq])
       (by omega) hk2)) fun u ⟨⟨L', k', R'⟩, f⟩ =>
@@ -243,7 +243,7 @@ theorem sputSalt_ct (hH : HashOK H) (lk : MgfLink H hH) :
   have hk2 := hp.k2
   have := slo_le s
   have hss : ssl s = (stackArg s 12).toNat := rfl
-  exact WP.mono (WP.keepIn (by safe_by [putSalt]) (Nat.zero_le 8)
+  exact WP.mono (WP.keepIn (by safe_by [putSalt]) (by exact Nat.zero_le 8)
     (putSalt_ok v.L R (e := oEm + slo s) (db := sdb H.D s) (q := stackArg s 11) (sl := ssl s) (hw 23 (by decide))
       (hw 24 (by decide)) (hw 39 (by decide)) (w40 (hw 40 (by decide))) (by unfold sdb; omega)
       (by unfold sdb seml oEm oRsa at *; omega)
@@ -310,7 +310,7 @@ theorem sputH_ct (hc : SignChecks H.P H.D) :
     obtain ⟨V, W, R, hw, -⟩ := v.W
     have hk2 := S.ps.k2
     have := slo_le s
-    exact WP.mono (WP.keepIn (by safe_by [putH]) (Nat.zero_le 8)
+    exact WP.mono (WP.keepIn (by safe_by [putH]) (by exact Nat.zero_le 8)
       (putH1_ok hH v.L R (e := oEm + slo s) (db := sdb H.D s) (hw 23 (by decide)) (hw 24 (by decide))
         (by unfold sdb seml oEm oRsa at *; omega) (by omega))) fun u ⟨⟨L', k', R'⟩, f⟩ =>
       ⟨s, S, v.next L' k'.2.2 R' hw trivial, k'.2.1.trans hrd, frame_keep S.ps v.wr v.L.rsp hM f, hok⟩
@@ -319,7 +319,7 @@ theorem sputH_ct (hc : SignChecks H.P H.D) :
   have hp := S.ps
   have hk2 := hp.k2
   have := slo_le s
-  exact WP.mono (WP.keepIn (by safe_by [putH]) (Nat.zero_le 8)
+  exact WP.mono (WP.keepIn (by safe_by [putH]) (by exact Nat.zero_le 8)
     (putH_ok hH v.L R (e := oEm + slo s) (db := sdb H.D s) (k := (s.gpr .rcx).toNat) (hw 23 (by decide))
       (hw 24 (by decide)) (by rw [hw 17 (by decide)]; show s.gpr .rcx = _; rw [BitVec.ofNat_toNat, BitVec.setWidth_eq])
       (by omega) (by unfold sdb seml at *; omega) hk2)) fun u ⟨⟨L', k', R'⟩, f⟩ =>
@@ -368,7 +368,7 @@ theorem sclearTop_ct : RelCT isa (Two (SAt G (SE H KSM fun _ _ _ => True))) (.bl
   obtain ⟨v, hrd, hM, hok⟩ := h
   obtain ⟨V, W, R, hw, -⟩ := v.W
   have := slo_le s
-  exact WP.mono (WP.keepIn (by safe_by [clearTop]) (Nat.zero_le 8)
+  exact WP.mono (WP.keepIn (by safe_by [clearTop]) (by exact Nat.zero_le 8)
     (clearTop_ok v.L R (e := oEm + slo s) (c := (maskV (sn0v s)).setWidth 8) (hw 23 (by decide))
       (by rw [hw 25 (by decide)]; exact maskV_byte (BitVec.isLt _)) (by unfold oEm oRsa; omega)))
     fun u ⟨⟨L', k', R'⟩, f⟩ => ⟨s, S, v.next L' k'.2.2 R' hw trivial, k'.2.1.trans hrd,

@@ -110,14 +110,17 @@ fn rsa_pss_test() {
         .into_iter()
         .filter(|n| n.starts_with("rsa_pss_") && !n.contains("_params_") && !n.contains("shake"))
         .collect();
-    assert_eq!(names.len(), 12);
+    assert_eq!(names.len(), 13);
     for name in &names {
         let file = harness::load::<VerifyGroup, SigCase>(name);
         let (mut accepted, mut rejected) = (0, 0);
         for group in &file.test_groups {
             let p = &group.params;
-            let key = PublicKey::new(trim(&p.public_key.modulus.0), &p.public_key.public_exponent.0)
-                .unwrap_or_else(|e| panic!("{name}: {e}"));
+            let key = PublicKey::new(
+                trim(&p.public_key.modulus.0),
+                &p.public_key.public_exponent.0,
+            )
+            .unwrap_or_else(|e| panic!("{name}: {e}"));
             let h = hash(&p.sha).expect("a supported hash function");
             let mgf = hash(&p.mgf_sha).expect("a supported hash function");
             for test in &group.tests {
@@ -129,11 +132,8 @@ fn rsa_pss_test() {
                     assert!(!ok && !any, "{name} tcId {id}");
                     continue;
                 }
-                match test.result {
-                    Expectation::Valid => assert!(ok, "{name} tcId {id}"),
-                    Expectation::Invalid => assert!(!ok, "{name} tcId {id}"),
-                    Expectation::Acceptable => {}
-                }
+                assert_ne!(test.result, Expectation::Acceptable, "{name} tcId {id}");
+                assert_eq!(ok, test.result == Expectation::Valid, "{name} tcId {id}");
                 // A signature with the expected salt length has some salt length.
                 assert!(!ok || any, "{name} tcId {id}");
                 if ok {
@@ -146,7 +146,11 @@ fn rsa_pss_test() {
         if name.contains("mgf1sha1") {
             assert_eq!(accepted + rejected, 0, "{name}");
         } else {
-            assert!(accepted > 0 && rejected > 0, "{name}");
+            // The miscellaneous vectors are all valid.
+            assert!(
+                accepted > 0 && (rejected > 0 || name.contains("misc")),
+                "{name}"
+            );
         }
     }
 }
@@ -186,7 +190,14 @@ fn rsa_pss_sign_test() {
                     assert_eq!(sig.len(), n.len(), "{name} tcId {id}");
                     assert!(verify(&public, &sig, &d, *h, *h, SaltLength::Len(s_len)));
                     assert!(verify(&public, &sig, &d, *h, *h, SaltLength::Any));
-                    assert!(!verify(&public, &sig, &d, *h, *h, SaltLength::Len(s_len + 1)));
+                    assert!(!verify(
+                        &public,
+                        &sig,
+                        &d,
+                        *h,
+                        *h,
+                        SaltLength::Len(s_len + 1)
+                    ));
                 }
                 let a = sign(&private, &d, *h, *h, 16).unwrap();
                 let b = sign(&private, &d, *h, *h, 16).unwrap();

@@ -53,7 +53,8 @@ pub fn bench(c: &mut Criterion) {
         ctx.set_rsa_padding(Padding::PKCS1_PSS).unwrap();
         ctx.set_signature_md(Md::sha256()).unwrap();
         ctx.set_rsa_mgf1_md(Md::sha256()).unwrap();
-        ctx.set_rsa_pss_saltlen(RsaPssSaltlen::DIGEST_LENGTH).unwrap();
+        ctx.set_rsa_pss_saltlen(RsaPssSaltlen::DIGEST_LENGTH)
+            .unwrap();
         ctx
     };
 

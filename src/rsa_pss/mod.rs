@@ -80,21 +80,6 @@ impl Hash {
             Hash::Sha512 => 64,
         }
     }
-
-    /// The verified functions for this hash function that this CPU runs best.
-    fn functions(self) -> (SignFn, VerifyFn) {
-        let f = detected();
-        match self {
-            Hash::Md5 => md5::functions(f),
-            Hash::Sha1 => sha1::functions(f),
-            Hash::Sha224 => sha224::functions(f),
-            Hash::Sha256 => sha256::functions(f),
-            Hash::Sha384 => sha384::functions(f),
-            Hash::Sha512 => sha512::functions(f),
-            Hash::Sha512_224 => sha512_224::functions(f),
-            Hash::Sha512_256 => sha512_256::functions(f),
-        }
-    }
 }
 
 /// The salt length a signature must have to verify.
@@ -139,8 +124,8 @@ impl fmt::Display for Error {
 
 impl core::error::Error for Error {}
 
-/// `vg_rsa_pss_<H>_mgf1_<H>_sign`'s signature.
-type SignFn = unsafe extern "sysv64" fn(
+/// `vg_rsa_pss_<H>_mgf1_<H>_sign`'s signature, for `N`-byte hash values.
+type SignFn<const N: usize> = unsafe extern "sysv64" fn(
     *mut u8,
     usize,
     *const u8,
@@ -157,20 +142,20 @@ type SignFn = unsafe extern "sysv64" fn(
     usize,
     *const u8,
     usize,
-    *const u8,
+    *const [u8; N],
     *const u8,
     usize,
     *mut u64,
     usize,
 ) -> u32;
 
-/// `vg_rsa_pss_<H>_mgf1_<H>_verify`'s signature.
-type VerifyFn = unsafe extern "sysv64" fn(
+/// `vg_rsa_pss_<H>_mgf1_<H>_verify`'s signature, for `N`-byte hash values.
+type VerifyFn<const N: usize> = unsafe extern "sysv64" fn(
     *const u8,
     usize,
     *const u8,
     usize,
-    *const u8,
+    *const [u8; N],
     *const u8,
     usize,
     usize,
@@ -178,6 +163,48 @@ type VerifyFn = unsafe extern "sysv64" fn(
     *mut u64,
     usize,
 ) -> u32;
+
+/// `$body` with `$fns` the verified functions of the hash function `$hash`
+/// (`(sign, verify)`) for the implementations this CPU runs best.
+macro_rules! with_functions {
+    ($hash:expr, |$fns:ident| $body:expr) => {{
+        let f = detected();
+        match $hash {
+            Hash::Md5 => {
+                let $fns = md5::functions(f);
+                $body
+            }
+            Hash::Sha1 => {
+                let $fns = sha1::functions(f);
+                $body
+            }
+            Hash::Sha224 => {
+                let $fns = sha224::functions(f);
+                $body
+            }
+            Hash::Sha256 => {
+                let $fns = sha256::functions(f);
+                $body
+            }
+            Hash::Sha384 => {
+                let $fns = sha384::functions(f);
+                $body
+            }
+            Hash::Sha512 => {
+                let $fns = sha512::functions(f);
+                $body
+            }
+            Hash::Sha512_224 => {
+                let $fns = sha512_224::functions(f);
+                $body
+            }
+            Hash::Sha512_256 => {
+                let $fns = sha512_256::functions(f);
+                $body
+            }
+        }
+    }};
+}
 
 /// The words of working space the functions need for an `n_len`-byte
 /// modulus (`VG.Spec.RsaPss.scratchWords`).
@@ -216,40 +243,14 @@ fn sign_with(key: &PrivateKey, digest: &[u8], hash: Hash, salt: &[u8]) -> Result
     let k = key.n.len();
     let mut out = vec![0; k];
     let mut scratch = vec![0u64; scratch_words(k)];
-    let (f, _) = hash.functions();
-    // SAFETY: each pointer is valid for its length (`out` for writes,
-    // `scratch` too, `digest` for the hash function's values), and none
-    // overlaps another or wraps around, as they are distinct Rust
-    // allocations; `PrivateKey::from_crt` gives `64 ≤ n_len ≤ 1024`,
-    // `1 ≤ e_len ≤ 5 ≤ n_len`, `1 ≤ p_len < n_len`, `1 ≤ q_len < n_len`,
-    // `dp_len = qinv_len = p_len` and `dq_len = q_len`; `out_len = n_len` and
-    // `scratch_len = 16 n_len + 1024`; and the CPU has the features of the
-    // function `functions` chose.
-    let r = unsafe {
-        f(
-            out.as_mut_ptr(),
-            k,
-            key.n.as_ptr(),
-            k,
-            key.e.as_ptr(),
-            key.e.len(),
-            key.p.as_ptr(),
-            key.p.len(),
-            key.q.as_ptr(),
-            key.q.len(),
-            key.dp.as_ptr(),
-            key.dp.len(),
-            key.dq.as_ptr(),
-            key.dq.len(),
-            key.qinv.as_ptr(),
-            key.qinv.len(),
-            digest.as_ptr(),
-            salt.as_ptr(),
-            salt.len(),
-            scratch.as_mut_ptr(),
-            scratch.len(),
-        )
-    };
+    let r = with_functions!(hash, |fns| call_sign(
+        fns.0,
+        &mut out,
+        key,
+        digest,
+        salt,
+        &mut scratch
+    ));
     // The working space holds the private key, the encoding and its powers.
     zeroize(&mut scratch);
     // `PrivateKey::from_crt` checked the key, so a refusal means the encoding
@@ -282,32 +283,105 @@ pub fn verify(
         SaltLength::Any => (0, 1),
     };
     let mut scratch = vec![0u64; scratch_words(k)];
-    let (_, f) = hash.functions();
+    let r = with_functions!(hash, |fns| call_verify(
+        fns.1,
+        key,
+        signature,
+        digest,
+        salt_len,
+        any,
+        &mut scratch
+    ));
+    // The working space holds the encoding, which is as secret as the
+    // signature's validity.
+    zeroize(&mut scratch);
+    r == 1
+}
+
+/// `f`, a `vg_rsa_pss_<H>_mgf1_<H>_sign` that this CPU can run, on the
+/// key, the hash value (as long as `H`'s values), the salt, the
+/// modulus-long `out` and the working space.
+fn call_sign<const N: usize>(
+    f: SignFn<N>,
+    out: &mut [u8],
+    key: &PrivateKey,
+    digest: &[u8],
+    salt: &[u8],
+    scratch: &mut [u64],
+) -> u32 {
+    let digest: &[u8; N] = digest.try_into().unwrap();
+    assert!(out.len() == key.n.len() && scratch.len() == scratch_words(key.n.len()));
+    // SAFETY: each pointer is valid for its length (`out` for writes,
+    // `scratch` too, `digest` for the hash function's values), and none
+    // overlaps another or wraps around, as they are distinct Rust
+    // allocations; `PrivateKey::from_crt` gives `64 ≤ n_len ≤ 1024`,
+    // `1 ≤ e_len ≤ 5 ≤ n_len`, `1 ≤ p_len < n_len`, `1 ≤ q_len < n_len`,
+    // `dp_len = qinv_len = p_len` and `dq_len = q_len`; `out_len = n_len` and
+    // `scratch_len = 16 n_len + 1024`; and the CPU has the features of the
+    // function `functions` chose.
+    unsafe {
+        f(
+            out.as_mut_ptr(),
+            out.len(),
+            key.n.as_ptr(),
+            key.n.len(),
+            key.e.as_ptr(),
+            key.e.len(),
+            key.p.as_ptr(),
+            key.p.len(),
+            key.q.as_ptr(),
+            key.q.len(),
+            key.dp.as_ptr(),
+            key.dp.len(),
+            key.dq.as_ptr(),
+            key.dq.len(),
+            key.qinv.as_ptr(),
+            key.qinv.len(),
+            digest,
+            salt.as_ptr(),
+            salt.len(),
+            scratch.as_mut_ptr(),
+            scratch.len(),
+        )
+    }
+}
+
+/// `f`, a `vg_rsa_pss_<H>_mgf1_<H>_verify` that this CPU can run, on the
+/// key, the modulus-long signature, the hash value (as long as `H`'s
+/// values), the salt length and whether any is allowed, and the working
+/// space.
+fn call_verify<const N: usize>(
+    f: VerifyFn<N>,
+    key: &PublicKey,
+    signature: &[u8],
+    digest: &[u8],
+    salt_len: usize,
+    any: u32,
+    scratch: &mut [u64],
+) -> u32 {
+    let digest: &[u8; N] = digest.try_into().unwrap();
+    assert!(signature.len() == key.n.len() && scratch.len() == scratch_words(key.n.len()));
     // SAFETY: each pointer is valid for its length (`scratch` for writes,
     // `digest` for the hash function's values), and none overlaps another or
     // wraps around, as they are distinct Rust allocations; `PublicKey::new`
     // gives `64 ≤ n_len ≤ 1024` and `1 ≤ e_len ≤ 5 ≤ n_len`; `sig_len = n_len`
     // and `scratch_len = 16 n_len + 1024`; and the CPU has the features of
     // the function `functions` chose.
-    let r = unsafe {
+    unsafe {
         f(
             key.n.as_ptr(),
-            k,
+            key.n.len(),
             key.e.as_ptr(),
             key.e.len(),
-            digest.as_ptr(),
+            digest,
             signature.as_ptr(),
-            k,
+            signature.len(),
             salt_len,
             any,
             scratch.as_mut_ptr(),
             scratch.len(),
         )
-    };
-    // The working space holds the encoding, which is as secret as the
-    // signature's validity.
-    zeroize(&mut scratch);
-    r == 1
+    }
 }
 
 /// The verified functions of one hash function: for each implementation of
@@ -316,7 +390,7 @@ pub fn verify(
 /// (`crate::rsa::Backend`), with the CPU features each needs.
 macro_rules! pss_hash {
     (
-        $backend:ident {
+        $n:literal, $backend:ident {
             $(
                 $(#[$attr:meta])* $variant:ident => {
                     verify: $verify:path [$($vreq:path),*],
@@ -327,9 +401,18 @@ macro_rules! pss_hash {
             ),* $(,)?
         }
     ) => {
+        /// The length of the hash function's values.
+        const N: usize = $n;
+
+        // The features are checked by the test below.
+        $(
+            $(#[$attr])*
+            const _: &[$crate::cpu::Features] = &[$($vreq,)* $($sreq,)* $($areq,)* $($ireq,)*];
+        )*
+
         /// The functions for the implementations that a CPU with the
         /// features `f` runs best.
-        pub(super) fn functions(f: $crate::cpu::Features) -> (super::SignFn, super::VerifyFn) {
+        pub(super) fn functions(f: $crate::cpu::Features) -> (super::SignFn<N>, super::VerifyFn<N>) {
             let crt = $crate::rsa::Backend::select(f);
             match $backend::select(f) {
                 $(
@@ -428,8 +511,14 @@ mod tests {
             s(&[0; 19], Hash::Sha1, Hash::Sha1, 0),
             Err(Error::InvalidDigestLength)
         );
-        assert_eq!(s(&[0; 20], Hash::Sha1, Hash::Sha1, 65), Err(Error::SaltTooLong));
-        assert_eq!(s(&[0; 20], Hash::Sha1, Hash::Sha1, 43), Err(Error::SaltTooLong));
+        assert_eq!(
+            s(&[0; 20], Hash::Sha1, Hash::Sha1, 65),
+            Err(Error::SaltTooLong)
+        );
+        assert_eq!(
+            s(&[0; 20], Hash::Sha1, Hash::Sha1, 43),
+            Err(Error::SaltTooLong)
+        );
         assert_eq!(s(&[0; 20], Hash::Sha1, Hash::Sha1, 0), Err(Error::Fault));
     }
 

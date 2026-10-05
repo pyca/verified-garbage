@@ -17,23 +17,19 @@ use crate::arch::rsa_pss_sha256_mgf1_sha256::{
     VG_RSA_PSS_SHA256_MGF1_SHA256_SIGN_SHA256_SHANI_CRT_IFMA_FEATURES,
     VG_RSA_PSS_SHA256_MGF1_SHA256_SIGN_SHA256_SHANI_FEATURES,
     VG_RSA_PSS_SHA256_MGF1_SHA256_VERIFY_AVX2_FEATURES,
-    VG_RSA_PSS_SHA256_MGF1_SHA256_VERIFY_SHANI_FEATURES,
-    vg_rsa_pss_sha256_mgf1_sha256_sign,
-    vg_rsa_pss_sha256_mgf1_sha256_sign_crt_adx,
-    vg_rsa_pss_sha256_mgf1_sha256_sign_crt_ifma,
+    VG_RSA_PSS_SHA256_MGF1_SHA256_VERIFY_SHANI_FEATURES, vg_rsa_pss_sha256_mgf1_sha256_sign,
+    vg_rsa_pss_sha256_mgf1_sha256_sign_crt_adx, vg_rsa_pss_sha256_mgf1_sha256_sign_crt_ifma,
     vg_rsa_pss_sha256_mgf1_sha256_sign_sha256_avx2,
     vg_rsa_pss_sha256_mgf1_sha256_sign_sha256_avx2_crt_adx,
     vg_rsa_pss_sha256_mgf1_sha256_sign_sha256_avx2_crt_ifma,
     vg_rsa_pss_sha256_mgf1_sha256_sign_sha256_shani,
     vg_rsa_pss_sha256_mgf1_sha256_sign_sha256_shani_crt_adx,
-    vg_rsa_pss_sha256_mgf1_sha256_sign_sha256_shani_crt_ifma,
-    vg_rsa_pss_sha256_mgf1_sha256_verify,
-    vg_rsa_pss_sha256_mgf1_sha256_verify_avx2,
-    vg_rsa_pss_sha256_mgf1_sha256_verify_shani,
+    vg_rsa_pss_sha256_mgf1_sha256_sign_sha256_shani_crt_ifma, vg_rsa_pss_sha256_mgf1_sha256_verify,
+    vg_rsa_pss_sha256_mgf1_sha256_verify_avx2, vg_rsa_pss_sha256_mgf1_sha256_verify_shani,
 };
 use crate::hashes::sha256::Sha256Backend;
 
-super::pss_hash!(Sha256Backend {
+super::pss_hash!(32, Sha256Backend {
     Scalar => {
         verify: vg_rsa_pss_sha256_mgf1_sha256_verify [],
         sign: vg_rsa_pss_sha256_mgf1_sha256_sign [],

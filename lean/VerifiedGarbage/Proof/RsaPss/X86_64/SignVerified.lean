@@ -38,7 +38,9 @@ include K in
 theorem sign_xd {privN : String} {privC : Prog isa} (hd : privC.x86_64Depth ≤ Rsa.X86_64.stackBytes) :
     (sign H privN privC).x86_64Depth ≤ signStack := by
   simp only [sign, signBody, seqs, signMain, Code.x86_64Depth, signEnc_xd K, signFail, emLen, byteLoop,
-    X86_64.Instr.frameBytes, Nat.max_le]
+    X86_64.Instr.frameBytes, Nat.zero_max, Nat.max_zero]
+  have h8 : max 8 (privC.x86_64Depth + 8) ≤ privC.x86_64Depth + 8 :=
+    Nat.max_le.mpr ⟨Nat.le_add_left 8 _, Nat.le_refl _⟩
   unfold signStack Rsa.X86_64.stackBytes frameBytes at *
   omega
 

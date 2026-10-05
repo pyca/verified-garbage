@@ -104,7 +104,7 @@ theorem emLen_ct (hc : VerifyChecks H.P H.D) (hH : HashOK H) :
   refine WP.seq (WP.mono (smear_ok t (x := n0v s) (BitVec.isLt _) h0 hax) fun t3 ⟨k3, hm3, hdx3, hz3⟩ => ?_)
   have L3 : Lay t3 (fb s) (stackArg s 3) := v.L.congr (k3.gpr (by decide)) k3.2.2 (by rw [hm3])
   have R3 : Rep t3.mem (fb s) (stackArg s 3) V W := hm3 ▸ R
-  refine WP.mono (WP.keepIn (by safe_by [emLen]) (Nat.zero_le 8)
+  refine WP.mono (WP.keepIn (by safe_by [emLen]) (by exact Nat.zero_le 8)
     (emLen_ok (H := H) (by omega) L3 R3 (x := n0v s) (k := (s.gpr .rsi).toNat)
       (by rw [hw 17 (by decide)]; show s.gpr .rsi = _; rw [BitVec.ofNat_toNat, BitVec.setWidth_eq])
       (by omega) (by omega) hdx3 hz3)) fun t4 ⟨⟨L4, k4, R4, hax4, hc4⟩, f4⟩ =>
@@ -167,7 +167,7 @@ theorem anyArgs_ct :
     rw [show isa.eval .b t = t.cf from rfl, hcf] at hb
     simp only [Option.some.injEq, decide_eq_false_iff_not] at hb; omega
   obtain ⟨V, W, R, hw, -⟩ := v.W
-  refine WP.mono (WP.keepIn (by safe_by [anyArgs]) (Nat.zero_le 8)
+  refine WP.mono (WP.keepIn (by safe_by [anyArgs]) (by exact Nat.zero_le 8)
     (anyArgs_ok hp v.L hrd hM R)) fun u ⟨⟨L', k', R', hdx⟩, f⟩ =>
     ⟨s, S, ⟨L', k'.2.2.trans v.wr, ⟨V, _, R', fun k hk => ?_, trivial⟩, fun _ hp => by cases hp⟩, k'.2.1.trans hrd,
       vframe_keep hp v.wr v.L.rsp hM f, hdx, hok⟩

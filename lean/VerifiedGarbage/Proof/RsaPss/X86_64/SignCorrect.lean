@@ -187,7 +187,7 @@ theorem main_done (lk : Pbkdf2.Md.X86_64.MgfLink H hH) {privN : String} {privC :
   have hw1 : u1.wr = frR s :: s.wr := wr1.trans hw
   have g : ∀ j, j < nW → j < 23 → W1 j = W j := fun j hj h => hW1 j hj (.inl h)
   -- The private-key operation's arguments.
-  refine WP.seq (WP.mono_mx (by decide) (WP.keepIn (by decide) (Nat.zero_le 8)
+  refine WP.seq (WP.mono_mx (by decide) (WP.keepIn (by decide) (by exact Nat.zero_le 8)
     (privArgs_ok hp L1 (rd1.trans hrd) (argsKept_of hp hM1) R1 ((g 16 (by decide) (by decide)).trans h16)
       ((g 17 (by decide) (by decide)).trans h17) ((g 18 (by decide) (by decide)).trans h18)
       ((g 19 (by decide) (by decide)).trans h19) ((g 20 (by decide) (by decide)).trans h20)
@@ -388,7 +388,7 @@ theorem sign_ok (lk : Pbkdf2.Md.X86_64.MgfLink H hH) {privN : String} {privC : P
   have L3 : Lay t3 (fb s) (stackArg s 13) := L2.congr (k3.gpr (by decide)) k3.2.2 (by rw [hm3])
   have R3 : Rep t3.mem (fb s) (stackArg s 13) _ (proW s) := hm3 ▸ R2
   -- `emLen`, the mask and `lo`.
-  refine WP.seq (WP.mono_mx (safe_mx (by safe_by [emLen])) (WP.keepIn (by safe_by [emLen]) (Nat.zero_le 8)
+  refine WP.seq (WP.mono_mx (safe_mx (by safe_by [emLen])) (WP.keepIn (by safe_by [emLen]) (by exact Nat.zero_le 8)
     (emLen_ok (H := H) (by omega) L3 R3 (x := n₀.toNat) (k := (s.gpr .rcx).toNat)
       (by simp [proW, upd]) (by omega) (by omega) hdx3 hz3)) fun t4 ⟨⟨L4, k4, R4, hax4, hc4⟩, f4⟩ hx4 => ?_)
   have hw4 : t4.wr = frR s :: s.wr := k4.2.2.trans (k3.2.2.trans hw2)

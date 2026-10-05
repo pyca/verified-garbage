@@ -64,12 +64,12 @@ theorem dbPub_ct : RelCT isa (Two fun a t => VAt G (J7 H) a t ∧ isa.eval .b t 
   have hp := S.ps
   have L := v.L
   have w : ∀ k ∈ K5, W k = vw H s k := hw
-  refine WP.seq (WP.mono (WP.keepIn (by safe_by [dbSlots]) (Nat.zero_le 8)
+  refine WP.seq (WP.mono (WP.keepIn (by safe_by [dbSlots]) (by exact Nat.zero_le 8)
     (dbSlots_ok L R (w 26 (by decide)) hax)) fun u1 ⟨⟨L1, k1, R1⟩, f1⟩ => ?_)
   have hM1 := vframe_keep hp v.wr L.rsp hM f1
   have g1 : ∀ j, j ≠ 23 → j ≠ 24 → upd (upd W 24 (BitVec.ofNat 64 (veml s - (H.D + 2) + 1))) 23
       (off (stackArg s 3) (oEm + vlo s)) j = W j := fun j h23 h24 => by simp [upd, h23, h24]
-  refine WP.mono (WP.keepIn (by decide) (Nat.zero_le 8)
+  refine WP.mono (WP.keepIn (by decide) (by exact Nat.zero_le 8)
     (pubArgs_ok L1 R1 (by rw [g1 17 (by decide) (by decide)]; exact w 17 (by decide))
       (by rw [g1 18 (by decide) (by decide)]; exact w 18 (by decide))
       (by rw [g1 19 (by decide) (by decide)]; exact w 19 (by decide))
