@@ -108,7 +108,7 @@ theorem chkBlk_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) {e1 : Bool
 /-- The start of the squarings from `y` in Montgomery form in `Y`. -/
 theorem candB_ok {u : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} {N el r t y : Nat}
     (hc : Cst u B Z w minv N el r t) (hY : wv u.mem B (slot w aY) w = y * 2 ^ (64 * w) % N) (hy : y < N) :
-    WP isa (seqs (eqA aY aO ++ ([.block (eqStore sC2)] ++ (eqA aY aNg ++ [.block chkBlk])))) u fun u' =>
+    WP isa (seqs (eqA aY aO ++ (([.block (eqStore sC2)] : List (Prog isa)) ++ (eqA aY aNg ++ ([.block chkBlk] : List (Prog isa)))))) u fun u' =>
       Frm B (rg w [] [sC1, sC2, sC3]) u.mem u'.mem ∧ Keep mmRegs u u' ∧
       word u'.mem B (8 * sC2) = mask (sqStart N y).2.1 ∧ word u'.mem B (8 * sC3) = mask (sqStart N y).2.2 ∧
       word u'.mem B (8 * sC1) = BitVec.ofNat 64 0 := by

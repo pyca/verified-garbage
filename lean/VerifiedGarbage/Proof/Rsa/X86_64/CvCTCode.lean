@@ -92,7 +92,7 @@ theorem zeroOut_ct {sPtr sLen : Nat} (hP : sPtr < 32) (hL : sLen < 32) (ptr : Cv
       exact ⟨I, rfl, hs.congr k.2.2, (k.gpr (by decide)).trans hdi, ha.congr fun i hi => fw i (by
         unfold argSlot at hi; omega), k.2.2.trans hW, L, O⟩
 
-theorem failExit_ct : RelCT isa (Two GF) (.block ([.mov32 .rax (.imm 0)] ++ Impl.Bignum.X86_64.Public.exit))
+theorem failExit_ct : RelCT isa (Two GF) (.block (([.mov32 .rax (.imm 0)] : List Instr) ++ Impl.Bignum.X86_64.Public.exit))
     fun _ _ => True :=
   two_taint [.rdi] pins_GF (by taint_decide)
 

@@ -22,7 +22,7 @@ theorem finA_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64}
     (hc : Cst s B Z w minv N el r t) {res : Option Nat} (hc3 : word s.mem B (8 * sC3) = mask res.isSome)
     (hy : ∀ y, res = some y → wv s.mem B (slot w aY) w = y * 2 ^ (64 * w) % N ∧ y < N ∧ 1 ≤ y) :
     WP isa (seqs [.block [.mov .rax (.mem (hdr sC3)), .store (hdr sMask) .rax], M.mm aY aY aOne, zeroA fU,
-      .block (ws ++ base aY .r8 ++ base aOne .r10 ++ base fU .rsi ++ [.mov32 .rbp (.imm 0)]),
+      .block (ws ++ base aY .r8 ++ base aOne .r10 ++ base fU .rsi ++ ([.mov32 .rbp (.imm 0)] : List Instr)),
       wordLoop 0 subBody]) s fun u =>
       Frm B (rg w [aAcc, aTmp, aY, fU] [sMask]) s.mem u.mem ∧ Keep mmRegs s u ∧
       word u.mem B (8 * sMask) = mask res.isSome ∧ word u.mem B (slot w fU + 8 * w) = 0 ∧
@@ -214,7 +214,7 @@ theorem finB_ok {s : State} {B : Addr} {Z w N : Nat} (h : Ws s B Z w) (hn : wv s
 
 /-- The bases of a comparison of `[a]` and `[b]`, `w` and no borrow. -/
 theorem ltSet_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) (a b : Nat) :
-    WP isa (.block (ws ++ base a .rbx ++ base b .r10 ++ [.mov32 .rbp (.imm 0)])) s fun t =>
+    WP isa (.block (ws ++ base a .rbx ++ base b .r10 ++ ([.mov32 .rbp (.imm 0)] : List Instr))) s fun t =>
       t.gpr .r12 = BitVec.ofNat 64 w ∧ t.gpr .rbx = off B (slot w a) ∧ t.gpr .r10 = off B (slot w b) ∧
       t.gpr .rbp = mask false ∧ t.mem = s.mem ∧ Keep [.r12, .r9, .rbx, .r10, .rbp] s t := by
   rw [List.append_assoc, List.append_assoc, WP.block_append_iff]
@@ -231,7 +231,7 @@ theorem ltSet_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) (a b : Nat)
 
 /-- The larger of `[fV]` and `[fQ]` into `fV`, the smaller into `fQ`. -/
 theorem finC_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) :
-    WP isa (seqs [.block (ws ++ base fV .rbx ++ base fQ .r10 ++ [.mov32 .rbp (.imm 0)]), wordLoop 0 ltBody,
+    WP isa (seqs [.block (ws ++ base fV .rbx ++ base fQ .r10 ++ ([.mov32 .rbp (.imm 0)] : List Instr)), wordLoop 0 ltBody,
       .block [.mov .r15 (.reg .rbp)], wordLoop 0 cswapBody]) s fun u =>
       Frm B (rg w [fV, fQ] []) s.mem u.mem ∧ Keep mmRegs s u ∧ Ws u B Z w ∧
       wv u.mem B (slot w fV) w = max (wv s.mem B (slot w fV) w) (wv s.mem B (slot w fQ) w) ∧

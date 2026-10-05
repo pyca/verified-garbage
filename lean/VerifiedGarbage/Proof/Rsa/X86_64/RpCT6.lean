@@ -179,8 +179,8 @@ theorem candA_ct (M : Mont) : RelCT isa (Two CA)
       by rw [hG]; exact hm, by rw [hv, hc.ho]⟩
 
 /-- The checks of `y = ±1` and the start of the squarings. -/
-theorem candB_ct : RelCT isa (Two CK) (seqs (eqA aY aO ++ ([.block (eqStore sC2)] ++ (eqA aY aNg ++
-    [.block chkBlk])))) fun _ _ => True := by
+theorem candB_ct : RelCT isa (Two CK) (seqs (eqA aY aO ++ (([.block (eqStore sC2)] : List (Prog isa)) ++ (eqA aY aNg ++
+    ([.block chkBlk] : List (Prog isa)))))) fun _ _ => True := by
   have hK : ∀ p s, CK p s → Ws s p.B p.Z (wk p.k) := fun _ _ h => h.ws
   have same : ∀ p s u, CK p s → u.mem = s.mem → ∀ {regs : List Reg}, Keep regs s u → .rdi ∉ regs → CK p u :=
     fun p s u ⟨minv, N, r, t, hc⟩ m _ k hr => ⟨minv, N, r, t, hc.congr (js := []) (hs := [])

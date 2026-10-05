@@ -178,7 +178,7 @@ theorem montO_ct : RelCT isa (Two MW) (copyA aO aY) (Two fun (q : R2Pub) s => Ws
 
 /-- `n - R mod n`. -/
 theorem montNg_ct : RelCT isa (Two fun (q : R2Pub) s => Ws s q.L.B q.L.Z q.L.w)
-    (.seq (.block (ws ++ base aN .r8 ++ base aO .r10 ++ base aNg .rsi ++ [.mov32 .rbp (.imm 0)]))
+    (.seq (.block (ws ++ base aN .r8 ++ base aO .r10 ++ base aNg .rsi ++ ([.mov32 .rbp (.imm 0)] : List Instr)))
       (wordLoop 0 subBody)) fun _ _ => True := by
   have e : (.seq (.block (ws ++ base aN .r8 ++ base aO .r10 ++ base aNg .rsi ++ [.mov32 .rbp (.imm 0)]))
       (wordLoop 0 subBody) : Prog isa) = .seq (.block (ws ++ (base aN .r8 ++ (base aO .r10 ++

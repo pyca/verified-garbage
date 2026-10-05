@@ -58,7 +58,7 @@ def XU (I : RpIn) (s : State) : Prop := wv s.mem I.B (slot (wk I.k) fU) (wk I.k 
 def XT (I : RpIn) (s : State) : Prop := word s.mem I.B (slot (wk I.k) fU + 8 * wk I.k) = 0
 
 theorem finA_ct (M : Mont) : RelCT isa (Two GR3) (seqs [.block [.mov .rax (.mem (hdr sC3)), .store (hdr sMask) .rax],
-    M.mm aY aY aOne, zeroA fU, .block (ws ++ base aY .r8 ++ base aOne .r10 ++ base fU .rsi ++ [.mov32 .rbp (.imm 0)]),
+    M.mm aY aY aOne, zeroA fU, .block (ws ++ base aY .r8 ++ base aOne .r10 ++ base fU .rsi ++ ([.mov32 .rbp (.imm 0)] : List Instr)),
     wordLoop 0 subBody]) (Two (FX XT)) := by
   simp only [seqs]
   refine RelCT.seq (R := Two (FX XC)) (blk_gct RpP.B RpP.Z (fun p => wk p.k)
@@ -142,8 +142,8 @@ theorem xv_keep {I : RpIn} {s t : State} (hZ16 : slot (wk I.k) 16 ≤ 2 ^ 64) {j
     exact hv
 
 theorem inverse_gct {hc : VG.Taint.Hint VG.X86_64.Taint.T}
-    (ht : (taint.check (Taint.ofRegs [.rdi, .r12, .r9]) (.seq (.block ([.mov .r11 (.reg .r12)] ++
-      (List.replicate 7 (.alu .add .r11 (.reg .r11)) ++ [.mov32 .r13 (.imm 0)])))
+    (ht : (taint.check (Taint.ofRegs [.rdi, .r12, .r9]) (.seq (.block (([.mov .r11 (.reg .r12)] : List Instr) ++
+      (List.replicate 7 (.alu .add .r11 (.reg .r11)) ++ ([.mov32 .r13 (.imm 0)] : List Instr))))
       (.loop (VG.Impl.Rsa.X86_64.Keys.invStep fU fV fX₁ fX₂ aN fT) .ne)) hc).isSome = true) :
     RelCT isa (Two (FX (XW true true))) (inverse fU fV fX₁ fX₂ aN fT) (Two (FX fun _ _ => True)) := by
   have e : inverse fU fV fX₁ fX₂ aN fT = .seq (.block (ws ++ ([.mov .r11 (.reg .r12)] ++
@@ -180,8 +180,8 @@ theorem inverse_gct {hc : VG.Taint.Hint VG.X86_64.Taint.T}
   exact h.step f (by decide) (by decide) (by decide) k (by decide) fun _ _ _ => trivial
 
 theorem divmod_gct {hc : VG.Taint.Hint VG.X86_64.Taint.T}
-    (ht : (taint.check (Taint.ofRegs [.rdi, .r12, .r9]) (.seq (.block (base fR .r8 ++ ([.mov .r11 (.reg .r12)] ++
-      (List.replicate 6 (.alu .add .r11 (.reg .r11)) ++ [.mov32 .r13 (.imm 0)]))))
+    (ht : (taint.check (Taint.ofRegs [.rdi, .r12, .r9]) (.seq (.block (base fR .r8 ++ (([.mov .r11 (.reg .r12)] : List Instr) ++
+      (List.replicate 6 (.alu .add .r11 (.reg .r11)) ++ ([.mov32 .r13 (.imm 0)] : List Instr)))))
       (.seq zeroAccLoop (.loop (VG.Impl.Rsa.X86_64.Keys.divStep fQ fR fV fT) .ne))) hc).isSome = true) :
     RelCT isa (Two (FX fun _ _ => True)) (divmod fQ fR fV fT) (Two (FX fun _ _ => True)) := by
   have e : divmod fQ fR fV fT = .seq (.block (ws ++ (base fR .r8 ++ ([.mov .r11 (.reg .r12)] ++
@@ -289,7 +289,7 @@ theorem finB_ct : RelCT isa (Two (FX XT)) (seqs [zeroA fV, copyA fV aN, zeroA fX
 /-! ## The larger first, and the stores -/
 
 theorem finC_ct : RelCT isa (Two (FX fun _ _ => True)) (seqs [.block (ws ++ base fV .rbx ++ base fQ .r10 ++
-    [.mov32 .rbp (.imm 0)]), wordLoop 0 ltBody, .block [.mov .r15 (.reg .rbp)], wordLoop 0 cswapBody])
+    ([.mov32 .rbp (.imm 0)] : List Instr)), wordLoop 0 ltBody, .block [.mov .r15 (.reg .rbp)], wordLoop 0 cswapBody])
     (Two (FX fun _ _ => True)) := by
   have e : seqs [.block (ws ++ base fV .rbx ++ base fQ .r10 ++ [.mov32 .rbp (.imm 0)]), wordLoop 0 ltBody,
       .block [.mov .r15 (.reg .rbp)], wordLoop 0 cswapBody] = .seq (.block (ws ++ (base fV .rbx ++ (base fQ .r10 ++

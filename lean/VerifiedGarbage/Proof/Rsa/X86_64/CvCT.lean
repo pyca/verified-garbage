@@ -122,8 +122,8 @@ theorem copyA_ct {o a : Nat} (ho : o < 16) (ha : a < 16) (hoa : o ≠ a) {hc : V
 theorem divmod_ct {iQ iR iD iT : Nat} (hQ : iQ < 16) (hR : iR < 16) (hD : iD < 16) (hT : iT < 16)
     (dQR : iQ ≠ iR) (dQD : iQ ≠ iD) (dQT : iQ ≠ iT) (dRD : iR ≠ iD) (dRT : iR ≠ iT) (dDT : iD ≠ iT)
     {hc : VG.Taint.Hint VG.X86_64.Taint.T}
-    (ht : (taint.check (Taint.ofRegs [.rdi, .r12, .r9]) (.seq (.block (base iR .r8 ++ ([.mov .r11 (.reg .r12)] ++
-      (List.replicate 6 (.alu .add .r11 (.reg .r11)) ++ [.mov32 .r13 (.imm 0)]))))
+    (ht : (taint.check (Taint.ofRegs [.rdi, .r12, .r9]) (.seq (.block (base iR .r8 ++ (([.mov .r11 (.reg .r12)] : List Instr) ++
+      (List.replicate 6 (.alu .add .r11 (.reg .r11)) ++ ([.mov32 .r13 (.imm 0)] : List Instr)))))
       (.seq zeroAccLoop (.loop (VG.Impl.Rsa.X86_64.Keys.divStep iQ iR iD iT) .ne))) hc).isSome = true) :
     RelCT isa (Two GA) (divmod iQ iR iD iT) (Two GA) := by
   have e : divmod iQ iR iD iT = .seq (.block (ws ++ (base iR .r8 ++ ([.mov .r11 (.reg .r12)] ++
@@ -234,8 +234,8 @@ def GI (p : CvP) (s : State) : Prop :=
     wv s.mem p.B (slot (wk p.k) aX₁) (wk p.k) = 1 ∧ wv s.mem p.B (slot (wk p.k) aX₂) (wk p.k) = 0
 
 theorem inverse_ct {hc : VG.Taint.Hint VG.X86_64.Taint.T}
-    (ht : (taint.check (Taint.ofRegs [.rdi, .r12, .r9]) (.seq (.block ([.mov .r11 (.reg .r12)] ++
-      (List.replicate 7 (.alu .add .r11 (.reg .r11)) ++ [.mov32 .r13 (.imm 0)])))
+    (ht : (taint.check (Taint.ofRegs [.rdi, .r12, .r9]) (.seq (.block (([.mov .r11 (.reg .r12)] : List Instr) ++
+      (List.replicate 7 (.alu .add .r11 (.reg .r11)) ++ ([.mov32 .r13 (.imm 0)] : List Instr))))
       (.loop (VG.Impl.Rsa.X86_64.Keys.invStep aU aV aX₁ aX₂ aP aT) .ne)) hc).isSome = true) :
     RelCT isa (Two GI) (inverse aU aV aX₁ aX₂ aP aT) (Two GA) := by
   have e : inverse aU aV aX₁ aX₂ aP aT = .seq (.block (ws ++ ([.mov .r11 (.reg .r12)] ++

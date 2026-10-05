@@ -47,13 +47,13 @@ structure RestPre (I : RpIn) (m₀ : Mem) (N m : Nat) (s : State) : Prop where
   a : Apart I.pP I.k I.pQ I.k
 
 theorem rest_eq (mul : Nat → Nat → Nat → Prog isa) : rest mul = seqs ([halving] ++ (mont mul ++ ([candLoop mul] ++
-    ([.block [.mov .rax (.mem (hdr sC3)), .store (hdr sMask) .rax], mul aY aY aOne, zeroA fU,
-      .block (ws ++ base aY .r8 ++ base aOne .r10 ++ base fU .rsi ++ [.mov32 .rbp (.imm 0)]),
-      wordLoop 0 subBody] ++
+    (([.block [.mov .rax (.mem (hdr sC3)), .store (hdr sMask) .rax], mul aY aY aOne, zeroA fU,
+      .block (ws ++ base aY .r8 ++ base aOne .r10 ++ base fU .rsi ++ ([.mov32 .rbp (.imm 0)] : List Instr)),
+      wordLoop 0 subBody] : List (Prog isa)) ++
     ([zeroA fV, copyA fV aN, zeroA fX₁, .block (setOneA fX₁), zeroA fX₂, inverse fU fV fX₁ fX₂ aN fT,
       zeroA fQ, copyA fQ aN, divmod fQ fR fV fT] ++
-    ([.block (ws ++ base fV .rbx ++ base fQ .r10 ++ [.mov32 .rbp (.imm 0)]), wordLoop 0 ltBody,
-      .block [.mov .r15 (.reg .rbp)], wordLoop 0 cswapBody] ++
+    (([.block (ws ++ base fV .rbx ++ base fQ .r10 ++ ([.mov32 .rbp (.imm 0)] : List Instr)), wordLoop 0 ltBody,
+      .block [.mov .r15 (.reg .rbp)], wordLoop 0 cswapBody] : List (Prog isa)) ++
     (storeA fV sP Impl.Bignum.X86_64.Public.sK Impl.Bignum.X86_64.Public.sMask ++
       (storeA fQ sQ Impl.Bignum.X86_64.Public.sK Impl.Bignum.X86_64.Public.sMask ++
         ([.block retMask] : List (Prog isa)))))))))) := by

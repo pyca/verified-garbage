@@ -51,7 +51,7 @@ theorem minvBlk_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w)
 
 /-- The bases of a subtraction `[c] := [a] - [b]`, `w` and no borrow. -/
 theorem subSet_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) (a b c : Nat) :
-    WP isa (.block (ws ++ base a .r8 ++ base b .r10 ++ base c .rsi ++ [.mov32 .rbp (.imm 0)])) s fun t =>
+    WP isa (.block (ws ++ base a .r8 ++ base b .r10 ++ base c .rsi ++ ([.mov32 .rbp (.imm 0)] : List Instr))) s fun t =>
       t.gpr .r12 = BitVec.ofNat 64 w ∧ t.gpr .r8 = off B (slot w a) ∧ t.gpr .r10 = off B (slot w b) ∧
       t.gpr .rsi = off B (slot w c) ∧ t.gpr .rbp = mask false ∧ t.mem = s.mem ∧
       Keep [.r12, .r9, .r8, .r10, .rsi, .rbp] s t := by
