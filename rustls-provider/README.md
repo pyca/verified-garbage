@@ -58,14 +58,24 @@ WYCHEPROOF_ROOT=/path/to/wycheproof cargo test --release
 
 ## Benchmarks
 
-The patched rustls-bench takes `--provider verified-garbage`, and its
-`provider-primitives` binary times both providers' primitives through the
-rustls traits (key exchange, signing, verification, records, HKDF,
-tickets). Results and analysis: [`bench/RESULTS.md`](bench/RESULTS.md).
+`bench/run.sh [rounds]` (Linux) runs everything
+[`bench/RESULTS.md`](bench/RESULTS.md) reports, verified-garbage against
+aws-lc-rs, each pinned to one CPU (`BENCH_CPU`, default 2), into
+`target/bench-results`, and summarizes it with `bench/summarize.py`:
+
+* rustls-bench's whole suite, `rounds` times (default 5) per provider, from
+  the rustls checkout `bench/setup-rustls.sh` makes in `target/rustls` (if
+  there is none yet), whose patch adds the `verified-garbage` provider;
+* `provider-primitives`, a binary the patch adds to rustls-bench, which
+  times both providers' primitives through the rustls traits (key exchange,
+  signing, verification, records, HKDF, tickets);
+* `bench/aws-lc-compare`, which times both libraries' primitives through
+  their own APIs (with RSA keys it generates with `openssl`), to tell the
+  library's costs from the provider's, and the AEADs at sizes up to 2 KiB.
+
+To compare the providers on one thing, e.g. a cipher suite's bulk throughput:
 
 ```sh
-(cd target/rustls && cargo build --profile=bench -p rustls-bench --features aws-lc-rs,verified-garbage)
-target/rustls/target/release/rustls-bench --provider verified-garbage --api buffered
-target/rustls/target/release/rustls-bench --provider aws-lc-rs --api buffered
-target/rustls/target/release/provider-primitives
+target/rustls/target/release/rustls-bench --provider verified-garbage bulk TLS13_AES_128_GCM_SHA256
+target/rustls/target/release/rustls-bench --provider aws-lc-rs bulk TLS13_AES_128_GCM_SHA256
 ```

@@ -4,6 +4,7 @@ Measured 2026-10-05 on one core (`taskset -c 2`) of an Intel Xeon at
 2.1 GHz with SHA-NI, AVX-512 (IFMA, VAES, VPCLMULQDQ), ADX; rustls
 91aebe5d, aws-lc-rs 1.18.1. Throughput is noisy on this VM (±10%):
 ratios are what to read, and differences under ~10% are not significant.
+`bench/run.sh` reruns all of it.
 
 ## rustls-bench (`--api buffered`, median of 5 runs)
 
@@ -54,7 +55,7 @@ a TLS 1.3 P-256 client does a key exchange and three ECDSA verifications
 (two certificates, one CertificateVerify), about 2.3 ms with
 verified-garbage against 0.26 ms with aws-lc-rs, plus ~70 µs of rustls.
 
-## Library-level (`aws-lc-rs` and `verified-garbage` APIs directly)
+## Library-level (`bench/aws-lc-compare`: each library's own API)
 
 | | aws-lc-rs | verified-garbage | ratio |
 |---|---:|---:|---:|
