@@ -15,7 +15,10 @@ each message:
 * `encrypt` with the vector's seed gives the vector's ciphertext;
 * `decode` of `c^d mod n` (as `k` octets) gives the message back, and
   fails with another label, with the first octet set, and with the first
-  or the last octet of the label's hash changed.
+  or the last octet of the label's hash changed;
+* `decrypt` with the vector's CRT key gives the message back, and the
+  single error for another label, for `n` itself and for a ciphertext one
+  octet longer.
 -/
 
 namespace VG.Test.RsaOaep
@@ -59,6 +62,11 @@ structure Key where
   n : List Byte := []
   e : List Byte := []
   d : List Byte := []
+  p : List Byte := []
+  q : List Byte := []
+  dP : List Byte := []
+  dQ : List Byte := []
+  qInv : List Byte := []
 
 /-- Checks one message. -/
 def check (key : Key) (msg seed c : List Byte) : Except String Unit := do
@@ -79,10 +87,19 @@ def check (key : Key) (msg seed c : List Byte) : Except String Unit := do
     let maskedDB' := xorBytes db (mgf1 sha1 seed (k - 21))
     let em' := 0 :: xorBytes seed (mgf1 sha1 maskedDB' 20) ++ maskedDB'
     unless decode sha1 sha1 [] em' == none do throw s!"decoded with lHash octet {i} changed"
+  -- Decryption with the CRT key, checked against `e`: the message, and the
+  -- single error for another label, a ciphertext not below `n` and one of
+  -- another length.
+  let dec := decrypt sha1 sha1 key.n key.e key.p key.q key.dP key.dQ key.qInv
+  unless dec [] c == .ok msg do throw "decrypt"
+  unless dec [0] c == .invalid do throw "decrypted with another label"
+  unless dec [] key.n == .invalid do throw "decrypted n"
+  unless dec [] (0 :: c) == .invalid do throw "decrypted a ciphertext of k + 1 octets"
 
 #assert_standard_axioms Spec.RsaOaep.encrypt
 #assert_standard_axioms Spec.RsaOaep.decode
-#assert_no_compiler_overrides Spec.RsaOaep.encrypt Spec.RsaOaep.decode
+#assert_standard_axioms Spec.RsaOaep.decrypt
+#assert_no_compiler_overrides Spec.RsaOaep.encrypt Spec.RsaOaep.decode Spec.RsaOaep.decrypt
 #assert_spec_origin
 
 run_cmd do
@@ -101,6 +118,11 @@ run_cmd do
       | "Modulus" => key := { key with n := bs }
       | "Exponent" => if inPrivate then key := { key with d := bs } else key := { key with e := bs }
       | "Public exponent" => inPrivate := true
+      | "Prime 1" => key := { key with p := bs }
+      | "Prime 2" => key := { key with q := bs }
+      | "Prime exponent 1" => key := { key with dP := bs }
+      | "Prime exponent 2" => key := { key with dQ := bs }
+      | "Coefficient" => key := { key with qInv := bs }
       | "Message" => msg := bs
       | "Seed" => seed := bs
       | "Encryption" =>

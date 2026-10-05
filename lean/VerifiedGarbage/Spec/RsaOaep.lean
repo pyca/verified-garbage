@@ -7,8 +7,11 @@ import VerifiedGarbage.Spec.Mgf1
 PKCS #1 v2.2 (RFC 8017): its encoding method EME-OAEP (§7.1.1 step 2,
 §7.1.2 step 3), with the hash function `H` (for the label) and the mask
 generation function MGF1 (Appendix B.2.1) with the hash function `G`, and its
-encryption operation (§7.1.1) with the public key `(n, e)`. Any of the
-library's hash functions (`Mgf1.hashes`) may be either.
+encryption operation (§7.1.1) with the public key `(n, e)`, within
+BoringSSL's limits (`Rsa.publicOpChecked`), and its decryption operation
+(§7.1.2) with the private key, checked against the public exponent as
+BoringSSL checks every private-key operation (`Rsa.privateChecked`). Any of
+the library's hash functions (`Mgf1.hashes`) may be either.
 
 The seed is an input to encryption: the caller generates it, `hLen` random
 octets (§7.1.1 step 2.d).
@@ -29,7 +32,7 @@ as an integer it is below `256^(k-1)`, hence below `n`.
 namespace VG.Spec.RsaOaep
 
 open Mgf1 (Hash xorBytes mgf1)
-open Rsa (publicOp)
+open Rsa (publicOpChecked privateChecked Outcome)
 
 /-- `n` zero octets. -/
 def zeros (n : Nat) : List Byte := List.replicate n 0
@@ -74,8 +77,28 @@ def decode (label em : List Byte) : Option (List Byte) :=
 /-- `RSAES-OAEP-ENCRYPT((n, e), M, L)` (§7.1.1) of the message `m` with the
 label `label` and the seed `seed`, with the public key `(nB, eB)`, the hash
 function `H` and MGF1 with `G`: the ciphertext (`k` octets), or `none` if
-encoding fails or the modulus is not valid. -/
+encoding fails or the public key is not within BoringSSL's limits
+(`publicOpChecked`). -/
 def encrypt (nB eB label m seed : List Byte) : Option (List Byte) :=
-  (encode H G label m seed nB.length).bind (publicOp nB eB)
+  (encode H G label m seed nB.length).bind (publicOpChecked nB eB)
+
+/-- `RSAES-OAEP-DECRYPT(K, C, L)` (§7.1.2) of the ciphertext `cB` with the
+label `label`, with the private key `(p, q, dP, dQ, qInv)` of the modulus
+`nB` and the public exponent `eB`, the hash function `H` and MGF1 with `G`:
+step 1.b (`cB` is `k` octets), step 2, RSADP checked against `e`
+(`privateChecked`), and step 3, `decode`. The outcome is `ok` with the
+message, or `fault` (the internal error) if RSADP's result fails its check
+against `e`; every other failure, of the length, the key, the ciphertext's
+range or the decoding, is the single error `invalid` (§7.1.2's "decryption
+error"). Step 1.c's check that `k ≥ 2 hLen + 2` is `decode`'s. -/
+def decrypt (nB eB pB qB dPB dQB qInvB label cB : List Byte) : Outcome :=
+  if cB.length ≠ nB.length then .invalid else
+    match privateChecked nB eB cB pB qB dPB dQB qInvB with
+    | .ok em =>
+      match decode H G label em with
+      | some m => .ok m
+      | none => .invalid
+    | .invalid => .invalid
+    | .fault => .fault
 
 end VG.Spec.RsaOaep
