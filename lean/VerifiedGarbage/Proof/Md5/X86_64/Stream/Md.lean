@@ -36,7 +36,8 @@ theorem shape : Shape (P := params) md where
 
 theorem taints : Taints params :=
   ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩,
-    ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩
+    ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩,
+    ⟨_, by taint_decide⟩, by decide, by decide⟩
 
 theorem callee : CalleeOk (P := params) md Impl.Md5.X86_64.compress :=
   .of_verified compress_verified.1 compress_verified.2.1 (by rw [← Code.allInstrs_eq]; lit_decide)

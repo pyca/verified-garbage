@@ -69,6 +69,40 @@ theorem inc_words (hi lo : BitVec 64) :
   · rw [decide_eq_false h, Bool.toNat_false]
     omega
 
+/-- `add k` on the low word and `adc 0` on the high word add `k` to the
+128-bit integer `hi ++ lo`. -/
+theorem add_words (hi lo : BitVec 64) {k : Nat} (hk : k < 2 ^ 64) :
+    ((hi + BitVec.signExtend 64 (0 : BitVec 32) +
+        (BitVec.ofBool (decide (2 ^ 64 ≤ lo.toNat + (BitVec.ofNat 64 k).toNat))).setWidth 64 :
+          BitVec 64) ++ (lo + BitVec.ofNat 64 k : BitVec 64) : BitVec 128) =
+      (hi ++ lo : BitVec 128) + BitVec.ofNat 128 k := by
+  have h0 : BitVec.signExtend 64 (0 : BitVec 32) = 0 := by decide
+  rw [h0]
+  apply BitVec.eq_of_toNat_eq
+  have hl := lo.isLt
+  have hh := hi.isLt
+  simp only [BitVec.toNat_append, BitVec.toNat_add, BitVec.toNat_setWidth, BitVec.toNat_ofBool,
+    BitVec.toNat_ofNat, show (0 : BitVec 64).toNat = 0 from rfl]
+  rw [Nat.mod_eq_of_lt hk, Nat.mod_eq_of_lt (show k < 2 ^ 128 by omega),
+    ← Nat.shiftLeft_add_eq_or_of_lt (Nat.mod_lt _ (by decide)),
+    ← Nat.shiftLeft_add_eq_or_of_lt hl, Nat.shiftLeft_eq, Nat.shiftLeft_eq]
+  by_cases h : 2 ^ 64 ≤ lo.toNat + k
+  · rw [decide_eq_true h, Bool.toNat_true]
+    omega
+  · rw [decide_eq_false h, Bool.toNat_false]
+    omega
+
+/-- Four doublings, as `add r, r` computes them. -/
+theorem dbl4 (x : Nat) (_h : 16 * x < 2 ^ 64) :
+    BitVec.ofNat 64 x + BitVec.ofNat 64 x + (BitVec.ofNat 64 x + BitVec.ofNat 64 x) +
+        (BitVec.ofNat 64 x + BitVec.ofNat 64 x + (BitVec.ofNat 64 x + BitVec.ofNat 64 x)) +
+      (BitVec.ofNat 64 x + BitVec.ofNat 64 x + (BitVec.ofNat 64 x + BitVec.ofNat 64 x) +
+        (BitVec.ofNat 64 x + BitVec.ofNat 64 x + (BitVec.ofNat 64 x + BitVec.ofNat 64 x))) =
+      BitVec.ofNat 64 (16 * x) := by
+  apply BitVec.eq_of_toNat_eq
+  simp only [BitVec.toNat_add, BitVec.toNat_ofNat]
+  omega
+
 /-! ## The counter `Q` -/
 
 /-- The mask of the IV's second word: bit 7 of its bytes 0 and 4 (the IV's

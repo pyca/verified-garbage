@@ -321,6 +321,15 @@ structure Taints (P : Params) : Prop where
     hc).isSome = true
   finEnd : ∃ hc, (taint.check (X86_64.Taint.ofRegs [.rbx, .rbp, .r15]) (.block (P.out ++ restore P)) hc).isSome
     = true
+  /-- The length field is constant time even for a secret byte count in
+  `r12`, and the digest for a public `rbx` and `rbp` (RSASSA-PSS's
+  verification hashes a message of secret length,
+  `Proof/RsaPss/X86_64/`). -/
+  lenSec : ∃ hc, (taint.check (X86_64.Taint.ofRegs [.rbx]) (.block P.len) hc).isSome = true
+  outPub : ∃ hc, (taint.check (X86_64.Taint.ofRegs [.rbx, .rbp]) (.block P.out) hc).isSome = true
+  /-- Neither writes `rsp` nor loads MXCSR. -/
+  lenSafe : P.len.all (fun i => !isa.writesSp i && !loadsMxcsr i) = true
+  outSafe : P.out.all (fun i => !isa.writesSp i && !loadsMxcsr i) = true
 
 /-! ## The compression function -/
 

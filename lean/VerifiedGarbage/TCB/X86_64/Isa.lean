@@ -55,6 +55,11 @@ Modelling choices:
 * Calls (`call`) and returns (`ret`) are near and direct (SDM Vol. 2, "CALL",
   "RET"). The return addresses are the next of the state's `unknowns`,
   which nothing constrains (see `TCB/Code.lean`).
+* A `static` the code reads (`Artifact.consts`) is at the address
+  `State.syms name`, where `name` is its name, which `leaSym` (`lea` of a
+  RIP-relative operand, resolved by the linker) puts in a register. No
+  instruction changes `syms`: a static's address is fixed for the run of
+  the program.
 * `push` and `pop` (of 64-bit registers other than `rsp`) only occur as the
   push and pop of a frame (see `push`), as a sequence of them. A caller
   passes arguments on the stack by pushing them, the last first, just
@@ -159,6 +164,9 @@ inductive Instr
   /-- `movabs r64, imm64`: `MOV r64, imm64` (REX.W + B8+rd io), a full 64-bit
   immediate. -/
   | movImm64 (dst : Reg) (v : BitVec 64)
+  /-- `lea r64, [rip + name]` (REX.W + 8D /r, with a RIP-relative memory
+  operand): the address of the `static` `name`, `State.syms name`. -/
+  | leaSym (dst : Reg) (name : String)
   /-- `movdqu xmm, XMMWORD PTR [src]` (`F3 0F 6F /r`) -/
   | movdquLoad (dst : XReg) (src : MemOp)
   /-- `movdqu XMMWORD PTR [dst], xmm` (`F3 0F 7F /r`) -/
@@ -367,6 +375,18 @@ def exec : Instr → State → Option State
   | .shift op d n, s => execShift op d n s
   -- SDM Vol. 2, "MOV": `DEST := SRC`; no flags are affected.
   | .movImm64 d v, s => some (s.setReg d v)
+  -- `leaSym`: SDM Vol. 2, "LEA—Load Effective Address", with a 64-bit operand
+  -- size and address size: `DEST := EffectiveAddress(SRC)`; "Flags Affected:
+  -- None"; it accesses no memory. Its source is RIP-relative (SDM Vol. 2
+  -- §2.2.1.6, "RIP-Relative Addressing": ModR/M `mod = 00`, `r/m = 101` in
+  -- 64-bit mode is `RIP + disp32`, Table 2-7: "An effective address is
+  -- formed by adding displacement to the 64-bit RIP of the next
+  -- instruction"), its `disp32` written by the linker so that the sum is the
+  -- static's address `S` (`S + A - P`, with the addend `A = -4`: System V
+  -- AMD64 psABI §4.4, "Relocation Types", `R_X86_64_PC32`; Mach-O's
+  -- `X86_64_RELOC_SIGNED`; COFF's `IMAGE_REL_AMD64_REL32`): `DEST := S`. A
+  -- static beyond `disp32`'s range (±2 GB) does not link.
+  | .leaSym d name, s => some (s.setReg d (s.syms name))
   -- SDM Vol. 2, "MOVDQU": `DEST[127:0] := SRC[127:0]`, with memory in
   -- little-endian byte order (SDM Vol. 1 §1.3.1); no alignment is required
   -- and no flags are affected.
@@ -453,6 +473,7 @@ def addrs : Instr → State → List Addr
   | .bswap _, _ => []
   | .shift .., _ => []
   | .movImm64 .., _ => []
+  | .leaSym .., _ => []
   | .movdquLoad _ m, s => [s.ea m]
   | .movdquStore m _, s => [s.ea m]
   | .xop _, _ => []
@@ -577,7 +598,7 @@ two, `rax` and `rdx`, and stores and SSE instructions none. -/
 def Instr.dst : Instr → Option Reg
   | .mov d _ | .alu _ d _ | .mov32 d _ | .alu32 _ d _ | .shift32 _ d _ | .bswap32 d
   | .rorx32 d .. | .andn32 d .. | .rorx d .. | .andn d .. | .movzx8 d _ | .bswap d | .shift _ d _
-  | .movImm64 d _ | .adcx d _ | .adox d _ | .pop d _ | .vpmovmskb _ d _ => some d
+  | .movImm64 d _ | .leaSym d _ | .adcx d _ | .adox d _ | .pop d _ | .vpmovmskb _ d _ => some d
   | .store .. | .store32 .. | .store8 .. | .movdquLoad .. | .movdquStore .. | .xop _
   | .vop _ | .vmovdquLoad .. | .vmovdquStore .. | .vbroadcasti128 .. | .zop _
   | .vmovdqu32Load .. | .vmovdqu32Store .. | .vbroadcasti32x4 .. | .zbcst .. | .vpmadd52Load ..
