@@ -1,5 +1,5 @@
 import VerifiedGarbage.Proof.Scrypt.X86_64.Whole.Steps
-import VerifiedGarbage.Proof.Scrypt.X86_64.RoMixCT
+import VerifiedGarbage.Proof.Scrypt.X86_64.DirectFill
 import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Contract
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Spec.Pbkdf2.Generic
@@ -321,13 +321,13 @@ theorem romix_pre (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) {i : Nat} (hi : 
     by rw [tb]; have := blk_le hL hi; have := hL.nb; omega, hL.nv,
     by have := hL.nc; have := hL.slen; omega, hL.rpos, hL.vmod, Whole.valid_pow hL.valid, trivial⟩
 
-theorem roMix_nosp : NoSp Impl.Scrypt.X86_64.roMix := by
-  have : ((instrs Impl.Scrypt.X86_64.roMix).all fun i => !Taint.clobbers i .rsp) = true := by
+theorem roMix_nosp : NoSp Impl.Scrypt.X86_64.roMixDirect := by
+  have : ((instrs Impl.Scrypt.X86_64.roMixDirect).all fun i => !Taint.clobbers i .rsp) = true := by
     rw [← Code.allInstrs_eq]; lit_decide
   intro i hi
   simpa using List.all_eq_true.mp this i hi
 
-theorem roMix_depth : Impl.Scrypt.X86_64.roMix.depth ≤ 3 := by lit_decide
+theorem roMix_depth : Impl.Scrypt.X86_64.roMixDirect.depth ≤ 3 := by lit_decide
 
 theorem romix_sub (hL : L.Ok) {i : Nat} (hi : i < L.pp) :
     ∀ r ∈ ([] : List Region) ++ romixWr L i, ∃ R ∈ L.regions, Within r R := by
@@ -346,12 +346,12 @@ theorem romix_wsub (hL : L.Ok) {i : Nat} (hi : i < L.pp) : ∀ r ∈ romixWr L i
 
 theorem romix_call (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) {i : Nat} (hi : i < L.pp)
     (ha : RomixArgs L (blkAt L i) t) :
-    WP isa (.call "vg_scrypt_romix" Impl.Scrypt.X86_64.roMix) t fun t' => Ctx L g m₀ t' ∧
+    WP isa (.call "vg_scrypt_romix" Impl.Scrypt.X86_64.roMixDirect) t fun t' => Ctx L g m₀ t' ∧
       Frame (romixWr L i ++ [⟨L.B, 32⟩]) t.mem t'.mem ∧
       bytesAt t'.mem (blkAt L i) (128 * L.r.toNat) =
         Spec.Scrypt.roMix L.r.toNat L.NN (bytesAt t.mem (blkAt L i) (128 * L.r.toNat)) := by
   have hb := blk_in hL hi
-  refine call_ok hL RoMix.roMix_correct roMix_nosp roMix_depth hc (romix_pre hL hc hi ha)
+  refine call_ok hL RoMix.DirectFill.roMix_correct roMix_nosp roMix_depth hc (romix_pre hL hc hi ha)
     (romix_sub hL hi) (romix_wsub hL hi) fun s' hc' hf _ ⟨s₂, hm, _, hpost⟩ => ⟨hc', hf, ?_⟩
   · have h := hpost
     simp only [Proof.Scrypt.roMixX86_64, State.withRegions_mem, hm,

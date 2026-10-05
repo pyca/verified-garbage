@@ -3,7 +3,7 @@ import VerifiedGarbage.Impl.Scrypt.X86_64.Salsa
 import VerifiedGarbage.Impl.Scrypt.X86_64.BlockMix
 import VerifiedGarbage.Impl.Scrypt.X86_64.RoMix
 import VerifiedGarbage.Proof.Scrypt.X86_64.BlockMixCT
-import VerifiedGarbage.Proof.Scrypt.X86_64.RoMixCT
+import VerifiedGarbage.Proof.Scrypt.X86_64.DirectFill
 import VerifiedGarbage.Proof.Scrypt.X86_64.Salsa
 import VerifiedGarbage.Proof.Scrypt.X86_64.Lit
 
@@ -35,10 +35,10 @@ def artifacts : List Artifact := [
     target := X86_64.target
     doc := Spec.Scrypt.roMixApi.doc
       (notes := ["Table addresses use a scalar multiply; BlockMix inlines the scalar Salsa20/8 core."])
-    code := Impl.Scrypt.X86_64.roMix
+    code := Impl.Scrypt.X86_64.roMixDirect
     contract := Spec.Scrypt.roMixContract X86_64.abi 16
     stack := 16
-    verified := Proof.Scrypt.X86_64.RoMix.roMix_verified
+    verified := Proof.Scrypt.X86_64.RoMix.DirectFill.roMix_verified
     spSafe := Code.all_of_allInstrs (by lit_decide) }]
 
 end VG.Artifacts.Scrypt.X86_64

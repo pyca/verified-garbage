@@ -195,7 +195,7 @@ theorem zf_eq (hL : L.Ok) {i : Nat} (hi : i < L.pp) :
 
 theorem call_step (hL : L.Ok) {i : Nat} (hi : i < L.pp) {t : State} (hc : Ctx L g m₀ t)
     (hb : InvB L m₀ i t) (ha : RomixArgs L (blkAt L i) t) :
-    WP isa (.call "vg_scrypt_romix" Impl.Scrypt.X86_64.roMix) t fun t' => Ctx L g m₀ t' ∧ Mid L m₀ i t' := by
+    WP isa (.call "vg_scrypt_romix" Impl.Scrypt.X86_64.roMixDirect) t fun t' => Ctx L g m₀ t' ∧ Mid L m₀ i t' := by
   refine WP.mono (romix_call hL hc hi ha) fun t₂ ⟨hc₂, hf₂, hr₂⟩ => ⟨hc₂, ?_, fun k hk => ?_⟩
   · rw [← hb.cur]
     refine hf₂.readW (Region.contains_self _ _) (fun r hr => ?_) (by decide)
@@ -241,7 +241,7 @@ theorem next_step (hL : L.Ok) {i : Nat} (hi : i < L.pp) {t : State} (hc : Ctx L 
       by rw [hz₃, next_eq, zf_eq hL hi]⟩
 
 theorem body_ok (hL : L.Ok) {i : Nat} (hi : i < L.pp) {t : State} (h : Inv L g m₀ i t) :
-    WP isa (.seq (.block romixArgs) (.seq (.call "vg_scrypt_romix" Impl.Scrypt.X86_64.roMix)
+    WP isa (.seq (.block romixArgs) (.seq (.call "vg_scrypt_romix" Impl.Scrypt.X86_64.roMixDirect)
       (.block nextBlock))) t fun t' => Inv L g m₀ (i + 1) t' ∧ t'.zf = some (decide (i + 1 = L.pp)) :=
   WP.seq (WP.mono (romixArgs_ok hL h.1 h.2.cur) fun t₁ ⟨hc₁, hm₁, ha₁⟩ =>
     WP.seq (WP.mono (call_step hL hi hc₁ ⟨by rw [hm₁]; exact h.2.cur, by rw [hm₁]; exact h.2.blks⟩ ha₁) fun t₂ ⟨hc₂, hm₂⟩ =>
@@ -515,7 +515,7 @@ abbrev LoopAt (n : Nat) (L : Lay) (m₀ : Mem) (t : State) : Prop :=
 
 theorem body_ct (n : Nat) :
     RelCT isa (Two (LoopAt n)) (.seq (.block romixArgs) (.seq (.call "vg_scrypt_romix"
-      Impl.Scrypt.X86_64.roMix) (.block nextBlock)))
+      Impl.Scrypt.X86_64.roMixDirect) (.block nextBlock)))
       (Two fun L m₀ t => 0 < n ∧ n ≤ L.pp ∧ InvB L m₀ (L.pp - n + 1) t ∧
         t.zf = some (decide (L.pp - n + 1 = L.pp))) := by
   have a : RelCT isa (Two (LoopAt n)) (.block romixArgs) (Two fun L m₀ t => 0 < n ∧ n ≤ L.pp ∧
@@ -524,9 +524,9 @@ theorem body_ct (n : Nat) :
       WP.mono (romixArgs_ok hL hc hb.cur) fun _ ⟨hc', hm, ha⟩ =>
         ⟨hc', h0, hn, ⟨by rw [hm]; exact hb.cur, by rw [hm]; exact hb.blks⟩, ha⟩
   have b : RelCT isa (Two fun L m₀ t => 0 < n ∧ n ≤ L.pp ∧ InvB L m₀ (L.pp - n) t ∧
-      RomixArgs L (blkAt L (L.pp - n)) t) (.call "vg_scrypt_romix" Impl.Scrypt.X86_64.roMix)
+      RomixArgs L (blkAt L (L.pp - n)) t) (.call "vg_scrypt_romix" Impl.Scrypt.X86_64.roMixDirect)
       (Two fun L m₀ t => 0 < n ∧ n ≤ L.pp ∧ Mid L m₀ (L.pp - n) t) :=
-    two_call RoMix.roMix_correct RoMix.roMix_ct (fun _ => []) (fun L => romixWr L (L.pp - n))
+    two_call RoMix.DirectFill.roMix_correct RoMix.DirectFill.roMix_ct (fun _ => []) (fun L => romixWr L (L.pp - n))
       (fun _ _ _ _ hL hc ⟨h0, hn, _, ha⟩ => romix_pre hL hc (by omega) ha)
       (fun _ _ _ _ _ _ _ hL hk c₁ c₂ ⟨h0, hn, b₁, a₁⟩ ⟨_, _, b₂, a₂⟩ =>
         romix_pub_two hL hk c₁ c₂ (by omega) b₁ b₂ a₁ a₂)
@@ -741,7 +741,7 @@ theorem pbk_mx : (pbkOf c).allInstrs (fun i => !loadsMxcsr i) = true :=
     Proof.Pbkdf2.Md.X86_64.Sha256.coreOK.pbkMx
 
 theorem scrypt_mx : (scrypt (pbkName c) (pbkOf c)).allInstrs (fun i => !loadsMxcsr i) = true := by
-  have hr : Impl.Scrypt.X86_64.roMix.allInstrs (fun i => !loadsMxcsr i) = true := by lit_decide
+  have hr : Impl.Scrypt.X86_64.roMixDirect.allInstrs (fun i => !loadsMxcsr i) = true := by lit_decide
   simp only [scrypt, scryptBody, pbkCall, romixLoop, Code.allInstrs, pbk_mx c, hr, Bool.and_true,
     Bool.true_and]
   decide
@@ -755,7 +755,7 @@ theorem scrypt_verified :
 theorem scrypt_spSafe : (scrypt (pbkName c) (pbkOf c)).all (fun i => !isa.writesSp i) = true := by
   have hp : (pbkOf c).all (fun i => !isa.writesSp i) = true :=
     (Proof.Pbkdf2.Md.X86_64.Sha256.variant c).pbkdf2Sp
-  have hr : Impl.Scrypt.X86_64.roMix.all (fun i => !isa.writesSp i) = true :=
+  have hr : Impl.Scrypt.X86_64.roMixDirect.all (fun i => !isa.writesSp i) = true :=
     Code.all_of_allInstrs (by lit_decide)
   simp only [scrypt, scryptBody, pbkCall, romixLoop, Code.all, hp, hr, Bool.and_true, Bool.true_and]
   decide
