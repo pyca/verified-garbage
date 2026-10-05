@@ -396,7 +396,7 @@ theorem points_eq (c : Cfg) : Impl.Ecdsa.Verify.X86_64.Cfg.points c =
 
 /-- The slots `[u]G`, `save` and the sum write (`vW` has `mulV`'s). -/
 abbrev ptsW : List Nat :=
-  [RX, RY, RZ, T0, T1, T2, T3, T4, T5, DX, DY, DZ, TX, TY, TZ, PT, TMP, UX, UY, UZ]
+  [RX, RY, RZ, T0, T1, T2, T3, T4, T5, DX, DY, DZ, TX, TY, TZ, PT, TMP, UX, UY, UZ, EM]
 
 /-- `[u]G + [v]Q`, into `R`. -/
 theorem points_ok (hc : CfgOk c) (hC : Law c.C) (hT : CombTbls c) {s₀ : State} {base : Addr}
@@ -448,7 +448,7 @@ theorem points_ok (hc : CfgOk c) (hC : Law c.C) (hT : CombTbls c) {s₀ : State}
   -- `U = [u]G`, `R = O`.
   refine WP.seq (WP.mono (save_ok hc hs₂) fun s₃ ⟨hs₃, k₃, U₃, ux₃, uy₃, uz₃, rx₃, ry₃, rz₃⟩ => ?_)
   have F₃ := F₂.unch h7 hn (fixedOk_slW (by decide)) U₃
-  have sub₂ : ∀ i ∈ [RX, RY, RZ, TX, TY, TZ, PT, T0, T1, T2, T3, T4, T5, DX, DY, DZ, TMP], i ∈ ptsW := by
+  have sub₂ : ∀ i ∈ [RX, RY, RZ, TX, TY, TZ, PT, T0, T1, T2, T3, T4, T5, DX, DY, DZ, TMP, EM], i ∈ ptsW := by
     decide
   have sub₃ : ∀ i ∈ saveW, i ∈ ptsW := by decide
   have W₃ : ∀ {i}, i < 45 → i ∉ ptsW → sv c base s₃ i = sv c base s i := fun hi hl =>
