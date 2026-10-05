@@ -132,16 +132,16 @@ theorem fop_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat → P
   | mul o a b =>
     simp only [FOp.out, FOp.ins, List.mem_cons, List.not_mem_nil, or_false,
       forall_eq_or_imp, forall_eq] at hS hR
-    refine WP.mono (mul_ok hI.scr hI.mod (hL.le o hS.1) (hL.le a hS.2.1) (hL.le b hS.2.2)
-      (hI.lt b hR.2)) fun s' ⟨hk, hlt, heq⟩ => ⟨hk, hI.update hL hS.1 hk hlt ?_⟩
+    refine WP.mono (mul_ok hI.scr hI.mod.toW (hL.le o hS.1) (hL.le a hS.2.1) (hL.le b hS.2.2)
+      (hL.tmp o hS.1) (hL.tmp a hS.2.1) (hL.tmp b hS.2.2) (hL.mo o hS.1) (hI.lt b hR.2)) fun s' ⟨hk, hlt, heq⟩ => ⟨hk, hI.update hL hS.1 hk hlt ?_⟩
     rw [toM_mul hm heq, hI.val a hR.1, hI.val b hR.2]
   | add o a b =>
     simp only [FOp.out, FOp.ins, List.mem_cons, List.not_mem_nil, or_false,
       forall_eq_or_imp, forall_eq] at hS hR
     have hA := hI.lt a hR.1
     have hB := hI.lt b hR.2
-    refine WP.mono (add_ok hI.scr hI.mod (hL.le o hS.1) (hL.le a hS.2.1) (hL.le b hS.2.2)
-      (by omega)) fun s' ⟨hk, heq⟩ => ⟨hk, hI.update hL hS.1 hk ?_ ?_⟩
+    refine WP.mono (add_ok hI.scr hI.mod.toW (hL.le o hS.1) (hL.le a hS.2.1) (hL.le b hS.2.2)
+      (hL.tmp o hS.1) (hL.tmp a hS.2.1) (hL.tmp b hS.2.2) (hL.mo o hS.1) (by omega)) fun s' ⟨hk, heq⟩ => ⟨hk, hI.update hL hS.1 hk ?_ ?_⟩
     · rw [heq]; exact Nat.mod_lt _ (by omega)
     · rw [heq, toM_add, hI.val a hR.1, hI.val b hR.2]
   | sub o a b =>
@@ -149,7 +149,8 @@ theorem fop_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat → P
       forall_eq_or_imp, forall_eq] at hS hR
     have hA := hI.lt a hR.1
     have hB := hI.lt b hR.2
-    refine WP.mono (sub_ok hI.scr hI.mod (hL.le o hS.1) (hL.le a hS.2.1) (hL.le b hS.2.2) hA hB)
+    refine WP.mono (sub_ok hI.scr hI.mod.toW (hL.le o hS.1) (hL.le a hS.2.1) (hL.le b hS.2.2)
+      (hL.tmp o hS.1) (hL.tmp a hS.2.1) (hL.tmp b hS.2.2) (hL.mo o hS.1) hA hB)
       fun s' ⟨hk, heq⟩ => ⟨hk, hI.update hL hS.1 hk ?_ ?_⟩
     · rw [heq]; exact Nat.mod_lt _ (by omega)
     · rw [heq, toM_sub (by omega), hI.val a hR.1, hI.val b hR.2]

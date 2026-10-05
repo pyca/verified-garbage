@@ -4,7 +4,7 @@ import VerifiedGarbage.Impl.Mont.Mod
 /-!
 # Montgomery arithmetic modulo an odd multiword modulus, on x86-64
 
-Arithmetic modulo an odd `m < 2^(64 n)`, `n` 64-bit words (`n ≤ 6`), on
+Arithmetic modulo an odd `m < 2^(64 n)`, `n` 64-bit words, on
 numbers below `m` held in the working space as `n` little-endian words at a
 constant offset from its base, which is in `rdi`. The modulus is in the
 working space too, at `M.mo`; `M.minv` is `-m⁻¹ mod 2⁶⁴`. With
@@ -24,10 +24,27 @@ working space too, at `M.mo`; `M.minv` is `-m⁻¹ mod 2⁶⁴`. With
   temporary area `[M.tmp]`, and then selected with a mask if it did not
   borrow.
 
-Every multiplication is `mul`, every selection a mask, and every address
-`rdi` plus a constant: nothing but `rdi` may affect timing. The operations
-use the registers `rax`, `rcx`, `rdx`, `rbp` and `acc n` (`r8`–`r13` for
-`n = 4`), and write only `[o]` and `[M.tmp]`.
+For `n ≤ 6` the accumulator is in registers (`mulR`, `addR`, `subR`). For
+more words (P-521's 9) it does not fit, and `mulW`, `addW` and `subW` keep
+its `n` low words in the temporary area `[M.tmp]` and its two top words in
+`r9` and `r10`:
+
+* `mulW o a b`: CIOS as above, each row adding into `[M.tmp]` word by word
+  through `r8` (`memRow`), and the division by `2⁶⁴` moving the words down
+  (`shiftDown`); then `csubW`.
+* `csubW`: the accumulator (below `2m`, its top word in `r9`) reduced below
+  `m`: the difference with `m` is computed into `[o]` (`chainW`, word by
+  word through `r8`), and the accumulator selected instead under a mask if
+  it borrowed.
+* `addW`, `subW`: the sum (and its carry in `r9`) or the difference into
+  `[M.tmp]`, then `csubW`, or `m` added under the mask of the borrow (through
+  `[o]`).
+
+`mul`, `add` and `sub` choose by `n`. Every multiplication is `mul`, every
+selection a mask, and every address `rdi` plus a constant: nothing but `rdi`
+may affect timing. The operations use the registers `rax`, `rcx`, `rdx`,
+`rbp` and `acc n` (`r8`–`r13` for `n = 4`; `r8`–`r15` from `n = 6`), and
+write only `[o]` and `[M.tmp]`.
 -/
 
 namespace VG.Impl.Mont.X86_64
@@ -109,8 +126,9 @@ def loads : List Reg → Nat → List Instr
 /-- `ts := 0`. -/
 def zeros (ts : List Reg) : List Instr := ts.map fun t => .mov32 t (.imm 0)
 
-/-- `[o] = [a] [b] R⁻¹ mod m` (`o` may be `a` or `b`). -/
-def mul (M : Mod) (o a b : Nat) : List Instr :=
+/-- `[o] = [a] [b] R⁻¹ mod m` (`o` may be `a` or `b`), the accumulator in
+registers. -/
+def mulR (M : Mod) (o a b : Nat) : List Instr :=
   let low := (List.range M.n).map (win M.n M.n)
   zeros (acc M.n) ++ (List.range M.n).flatMap (round M a b) ++
     csub M low (win M.n M.n M.n) ++ stores low o
@@ -125,8 +143,8 @@ def chain (op op' : AluOp) : List Reg → Nat → List Instr
 def low (n : Nat) : List Reg := (acc n).take n
 def top (n : Nat) : Reg := (acc n).getD n .r8
 
-/-- `[o] = [a] + [b] mod m`. -/
-def add (M : Mod) (o a b : Nat) : List Instr :=
+/-- `[o] = [a] + [b] mod m`, in registers. -/
+def addR (M : Mod) (o a b : Nat) : List Instr :=
   loads (low M.n) a ++ [.mov32 (top M.n) (.imm 0)] ++ chain .add .adc (low M.n) b ++
     [.alu .adc (top M.n) (.imm 0)] ++ csub M (low M.n) (top M.n) ++ stores (low M.n) o
 
@@ -137,9 +155,96 @@ def masked : Nat → Nat → Nat → List Instr
       .store (sc tmp) .rdx] ++ masked k (mo + 8) (tmp + 8)
 
 /-- `[o] = [a] - [b] mod m`: the difference, and `m` added under the mask
-`rax` of its borrow (through `[tmp]`). -/
-def sub (M : Mod) (o a b : Nat) : List Instr :=
+`rax` of its borrow (through `[tmp]`), in registers. -/
+def subR (M : Mod) (o a b : Nat) : List Instr :=
   loads (low M.n) a ++ chain .sub .sbb (low M.n) b ++ [.alu .sbb .rax (.reg .rax)] ++
     masked M.n M.mo M.tmp ++ chain .add .adc (low M.n) M.tmp ++ stores (low M.n) o
+
+/-! ## More than six words: the accumulator in the temporary area -/
+
+/-- `[t] = [t] + rcx · src + rbp` and its carry word in `rbp`, through `r8`. -/
+def memStep (t : Nat) (src : Src) : List Instr :=
+  .mov .r8 (.mem (sc t)) :: mulStep .r8 .rbp .rcx src ++ [.store (sc t) .r8]
+
+/-- `k` words at `t`, `t + 8`, … `+= rcx · [d]`, …, the carry word in `rbp`. -/
+def memSteps : Nat → Nat → Nat → List Instr
+  | 0, _, _ => []
+  | k + 1, t, d => memStep t (.mem (sc d)) ++ memSteps k (t + 8) (d + 8)
+
+/-- `[t] += rcx · [d]` (`k` words), its carry word in `rbp`. -/
+def memRow (k t d : Nat) : List Instr := .mov32 .rbp (.imm 0) :: memSteps k t d
+
+/-- `[t] = [t + 8]`, …: `k` words moved down by one word, through `r8`. -/
+def moveDown : Nat → Nat → List Instr
+  | 0, _ => []
+  | k + 1, t => [.mov .r8 (.mem (sc (t + 8))), .store (sc t) .r8] ++ moveDown k (t + 8)
+
+/-- The accumulator divided by `2⁶⁴` (its low word is zero): its words moved
+down, `r9` stored on top, and `r10` moved into `r9`. -/
+def shiftDown (M : Mod) : List Instr :=
+  moveDown (M.n - 1) M.tmp ++ [.store (sc (M.tmp + 8 * (M.n - 1))) .r9, .mov .r9 (.reg .r10),
+    .mov32 .r10 (.imm 0)]
+
+/-- Round `i` of `mulW o a b`: `T += a_i [b]`, then `T += u m` with
+`u = t₀ m' mod 2⁶⁴`, after which `t₀ = 0`, and `T /= 2⁶⁴`. -/
+def roundW (M : Mod) (a b i : Nat) : List Instr :=
+  [.mov .rcx (.mem (sc (a + 8 * i)))] ++ memRow M.n M.tmp b ++ carryUp .r9 .r10 ++
+  [.mov .r8 (.mem (sc M.tmp)), .mov .rax (.reg .r8), .movImm64 .rcx M.minv, .mul .rcx,
+    .mov .rcx (.reg .rax)] ++
+    memRow M.n M.tmp M.mo ++ carryUp .r9 .r10 ++ shiftDown M
+
+/-- `k` words of zeros at `t`, through `r8`. -/
+def zeroWords (k t : Nat) : List Instr :=
+  .mov32 .r8 (.imm 0) :: (List.range k).map fun j => .store (sc (t + 8 * j)) .r8
+
+/-- `[t] = [a] op [b]`, word by word, with `op` on the first word and `op'`
+on the others, through `r8`. -/
+def chainW (op op' : AluOp) : Nat → Nat → Nat → Nat → List Instr
+  | 0, _, _, _ => []
+  | k + 1, t, a, b => [.mov .r8 (.mem (sc a)), .alu op .r8 (.mem (sc b)), .store (sc t) .r8] ++
+    chainW op' op' k (t + 8) (a + 8) (b + 8)
+
+/-- `[o] = [x]` where the mask `rax` is all zeros (`[o]` kept where it is all
+ones), word by word. -/
+def selectsW : Nat → Nat → Nat → List Instr
+  | 0, _, _ => []
+  | k + 1, x, o => [.mov .rdx (.mem (sc o)), .mov .r8 (.mem (sc x)), .alu .xor .rdx (.reg .r8),
+      .alu .and .rdx (.reg .rax), .alu .xor .rdx (.reg .r8), .store (sc o) .rdx] ++
+      selectsW k (x + 8) (o + 8)
+
+/-- `[o] = T mod m` for `T = [tmp] + 2^(64 n) r9 < 2m`: the difference with
+`m` into `[o]`, and `[tmp]` selected instead if it borrowed. -/
+def csubW (M : Mod) (o : Nat) : List Instr :=
+  chainW .sub .sbb M.n o M.tmp M.mo ++
+  [.mov .rax (.reg .r9), .alu .sbb .rax (.imm 0), .alu .sbb .rax (.reg .rax),
+    .alu .xor .rax (.imm (-1))] ++
+  selectsW M.n M.tmp o
+
+/-- `[o] = [a] [b] R⁻¹ mod m` (`o` may be `a` or `b`), the accumulator in
+`[tmp]`, `r9` and `r10`. -/
+def mulW (M : Mod) (o a b : Nat) : List Instr :=
+  zeroWords M.n M.tmp ++ [.mov32 .r9 (.imm 0), .mov32 .r10 (.imm 0)] ++
+    (List.range M.n).flatMap (roundW M a b) ++ csubW M o
+
+/-- `[o] = [a] + [b] mod m`, the sum in `[tmp]` and `r9`. -/
+def addW (M : Mod) (o a b : Nat) : List Instr :=
+  [.mov32 .r9 (.imm 0)] ++ chainW .add .adc M.n M.tmp a b ++ [.alu .adc .r9 (.imm 0)] ++ csubW M o
+
+/-- `[o] = [a] - [b] mod m`: the difference in `[tmp]`, then `m` masked with
+the borrow into `[o]`, and their sum into `[o]`. -/
+def subW (M : Mod) (o a b : Nat) : List Instr :=
+  chainW .sub .sbb M.n M.tmp a b ++ [.alu .sbb .rax (.reg .rax)] ++ masked M.n M.mo o ++
+    chainW .add .adc M.n o M.tmp o
+
+/-! ## The operations -/
+
+/-- `[o] = [a] [b] R⁻¹ mod m` (`o` may be `a` or `b`). -/
+def mul (M : Mod) (o a b : Nat) : List Instr := if M.n < 7 then mulR M o a b else mulW M o a b
+
+/-- `[o] = [a] + [b] mod m`. -/
+def add (M : Mod) (o a b : Nat) : List Instr := if M.n < 7 then addR M o a b else addW M o a b
+
+/-- `[o] = [a] - [b] mod m`. -/
+def sub (M : Mod) (o a b : Nat) : List Instr := if M.n < 7 then subR M o a b else subW M o a b
 
 end VG.Impl.Mont.X86_64

@@ -88,7 +88,8 @@ theorem powBody_ok {P : PowCfg} {base : Addr} {size m e : Nat} [NeZero m] (hL : 
   refine WP.mono (decRbx_ok s hj (by omega) hI.rbx) fun s₁ ⟨b₁, k₁⟩ => ?_
   have hs₁ := hI.scr.of_keeps k₁ (by decide)
   have hm₁ : s₁.mem = s.mem := k₁.2.1
-  refine WP.mono (mul_ok hs₁ (hm₁ ▸ hM) hacc hacc hacc (by rw [hm₁]; exact hI.lt))
+  refine WP.mono (mul_ok hs₁ (hm₁ ▸ hM).toW hacc hacc hacc ham ham ham
+    (hmo (P.acc, _) (by simp [powW])).symm (by rw [hm₁]; exact hI.lt))
     fun s₂ ⟨k₂, lt₂, e₂⟩ => ?_
   have hs₂ := k₂.scr hs₁
   have hM₂ : ModOk P.M size m s₂.mem base :=
@@ -109,7 +110,8 @@ theorem powBody_ok {P : PowCfg} {base : Addr} {size m e : Nat} [NeZero m] (hL : 
       · exact hbw _ (by simp [powW])) (by omega), hm₁, hBs]
   -- `tmp = acc · base`.
   refine WP.seq ?_
-  refine WP.mono (mul_ok hs₂ hM₂ htmp hacc hL.base (by rw [hB₂]; exact hB))
+  refine WP.mono (mul_ok hs₂ hM₂.toW htmp hacc hL.base hL.tmp_mtmp ham (hbw (P.M.tmp, _) (by simp [powW]))
+    (hmo (P.tmp, _) (by simp [powW])).symm (by rw [hB₂]; exact hB))
     fun s₃ ⟨k₃, lt₃, e₃⟩ => ?_
   have hs₃ := k₃.scr hs₂
   have hA₃ : wordsVal s₃.mem base P.acc P.M.n = wordsVal s₂.mem base P.acc P.M.n :=
