@@ -20,8 +20,8 @@ theorem p256_nBits : Spec.Ecdsa.nBits Spec.P256.curve = 256 := by
   have h₂ : Spec.P256.curve.n.log2 < 256 := (Nat.log2_lt (by decide +kernel)).mpr (by decide +kernel)
   omega
 
-/-- P-256, with the group law `hL` and the comb's tables `hT`. -/
-def p256 (hL : Weierstrass.Law Spec.P256.curve)
+/-- P-256, with the group law `hL`, the inversions' last step `hI` and the comb's tables `hT`. -/
+def p256 (hL : Weierstrass.Law Spec.P256.curve) (hI : Weierstrass.InvToM)
     (hT : Weierstrass.CombOkW Spec.P256.curve 7 37 Impl.P256.p256Comb7 Impl.P256.p256Comb7Start) : RfcCurve where
   E := Impl.Ecdsa.AArch64.p256
   inst := Spec.Ecdsa.P256.inst
@@ -33,7 +33,7 @@ def p256 (hL : Weierstrass.Law Spec.P256.curve)
   lt_2n := by decide +kernel
   coreN := Spec.Ecdsa.P256.signApi.name
   coreC := Impl.Ecdsa.AArch64.signP256
-  coreX := Proof.Ecdsa.AArch64.sign_a64 hL hT
+  coreX := Proof.Ecdsa.AArch64.sign_a64 hL hI hT
   coreCT := Proof.Ecdsa.AArch64.sign_ct
   coreNoFrames := by lit_decide
   coreKeepsV := by lit_decide

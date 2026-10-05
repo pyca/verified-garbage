@@ -1,5 +1,5 @@
 import VerifiedGarbage.TCB.X86_64.Target
-import VerifiedGarbage.Proof.Weierstrass.Law
+import VerifiedGarbage.Proof.Weierstrass.HasLaw
 import VerifiedGarbage.Proof.P384.Comb7
 import VerifiedGarbage.Impl.EcKey.P384.X86_64
 import VerifiedGarbage.Proof.EcKey.X86_64.P384.Verified

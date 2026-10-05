@@ -6,8 +6,8 @@ import VerifiedGarbage.Proof.Ecdsa.AArch64.P384.Verified
 /-!
 # ECDSA verification over P-384 on AArch64: `Verified`
 
-P-384 is a curve the proof supports (`p384_ok`, and `Law` for its group law,
-which the registration file supplies: `Proof.P384.law`), so `verify_ok` gives
+P-384 is a curve the proof supports (`p384_ok`, given the inversions' last step `InvToM`, and `Law` for its group
+law, which the registration file supplies: `Proof.P384.law` and `Proof.Weierstrass.invToM`), so `verify_ok` gives
 the contract's postcondition; `x19` and `x20` are restored, and no instruction
 writes the other callee-saved registers, `sp` or a SIMD register
 (`abiPreserved_of`). Constant time by taint tracking: the only branches are on
@@ -31,12 +31,12 @@ theorem verify_untouched : KeepsUntouched verifyP384 := by lit_decide
 
 theorem verify_keepsV : verifyP384.allInstrs keepsV = true := by lit_decide
 
-theorem verify_a64 (hL : Weierstrass.Law Spec.P384.curve)
+theorem verify_a64 (hL : Weierstrass.Law Spec.P384.curve) (hI : Weierstrass.InvToM)
     (hT : Weierstrass.CombOkW Spec.P384.curve 7 55 Impl.P384.p384Comb7 Impl.P384.p384Comb7Start)
     (s : State)
     (hs : verifyAArch64.pre s) :
     ∃ t s', Exec isa verifyP384 s t s' ∧ abiPreserved s s' ∧ verifyAArch64.post s s' := by
-  obtain ⟨t, s', he, hsv, hpost⟩ := verify_ok p384_ok hL hT (pre_of hs)
+  obtain ⟨t, s', he, hsv, hpost⟩ := verify_ok (p384_ok hI) hL hT (pre_of hs)
   exact ⟨t, s', he, abiPreserved_of he verify_noCalls verify_untouched verify_keepsV hsv, hpost⟩
 
 theorem verify_ct : ConstantTime isa verifyAArch64.pre verifyAArch64.pub verifyP384 :=
@@ -50,10 +50,10 @@ theorem verify_ct : ConstantTime isa verifyAArch64.pre verifyAArch64.pub verifyP
       · exact h3⟩, fun n hn => by
       simp only [List.mem_singleton] at hn; subst hn; exact hsy⟩) (by taint_decide)
 
-theorem verify_verified (hL : Weierstrass.Law Spec.P384.curve)
+theorem verify_verified (hL : Weierstrass.Law Spec.P384.curve) (hI : Weierstrass.InvToM)
     (hT : Weierstrass.CombOkW Spec.P384.curve 7 55 Impl.P384.p384Comb7 Impl.P384.p384Comb7Start) :
     Verified AArch64.target verifyP384
       (Spec.Ecdsa.P384.inst.verifyContract (AArch64.abi.withConsts p384.combConsts)) :=
-  Verified.of_correct (verify_a64 hL hT) verify_ct implies
+  Verified.of_correct (verify_a64 hL hI hT) verify_ct implies
 
 end VG.Proof.Ecdsa.Verify.AArch64.P384

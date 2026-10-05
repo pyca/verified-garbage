@@ -6,8 +6,8 @@ import VerifiedGarbage.Proof.Ecdsa.AArch64.P384.Verified
 /-!
 # ECDH over P-384 on AArch64: `Verified`
 
-P-384 is a curve the proof supports (`p384_ok`, and `Law` for its group law,
-which the registration file supplies: `Proof.P384.law`), so `exchange_ok`
+P-384 is a curve the proof supports (`p384_ok`, given the inversions' last step `InvToM`, and `Law` for its group
+law, which the registration file supplies: `Proof.P384.law` and `Proof.Weierstrass.invToM`), so `exchange_ok`
 gives the contract's postcondition; `x19` and `x20` are restored, and no
 instruction writes the other callee-saved registers, `sp` or a SIMD register
 (`abiPreserved_of`). Constant time by taint tracking: the only branches are on
@@ -36,14 +36,14 @@ theorem post_of {s s' : State} (h : EPost p384 s s') : ecdhAArch64.post s s' := 
       (Spec.Ecdsa.bytesAt s.mem (s.gpr .x2) (1 + 16 * p384.n)) = ex s.mem (s.gpr .x1) (s.gpr .x2) from rfl, hq]
   rcases q with _ | z <;> exact id
 
-theorem ecdh_a64 (hL : Weierstrass.Law Spec.P384.curve) (s : State) (hs : ecdhAArch64.pre s) :
+theorem ecdh_a64 (hL : Weierstrass.Law Spec.P384.curve) (hI : Weierstrass.InvToM) (s : State) (hs : ecdhAArch64.pre s) :
     ∃ t s', Exec isa exchangeP384 s t s' ∧ abiPreserved s s' ∧ ecdhAArch64.post s s' := by
   -- In steps: elaborated in one term, the unifier would compare P-384's
   -- terms before the literals' facts are known.
   have hn : exchangeP384.noCalls = true := by lit_decide
   have hu : KeepsUntouched exchangeP384 := by lit_decide
   have hv : exchangeP384.allInstrs keepsV = true := by lit_decide
-  obtain ⟨t, s', he, hsv, hpost⟩ := exchange_ok p384_ok hL (pre_of hs)
+  obtain ⟨t, s', he, hsv, hpost⟩ := exchange_ok (p384_ok hI) hL (pre_of hs)
   exact ⟨t, s', he, abiPreserved_of he hn hu hv hsv, post_of hpost⟩
 
 theorem ecdh_ct : ConstantTime isa ecdhAArch64.pre ecdhAArch64.pub exchangeP384 :=
@@ -56,9 +56,9 @@ theorem ecdh_ct : ConstantTime isa ecdhAArch64.pre ecdhAArch64.pub exchangeP384 
       · exact h2
       · exact h3⟩) (by taint_decide)
 
-theorem ecdh_verified (hL : Weierstrass.Law Spec.P384.curve) :
+theorem ecdh_verified (hL : Weierstrass.Law Spec.P384.curve) (hI : Weierstrass.InvToM) :
     Verified AArch64.target exchangeP384
       (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P384.inst AArch64.abi) :=
-  Verified.of_correct (ecdh_a64 hL) ecdh_ct implies
+  Verified.of_correct (ecdh_a64 hL hI) ecdh_ct implies
 
 end VG.Proof.Ecdh.AArch64.P384
