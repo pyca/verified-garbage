@@ -56,7 +56,7 @@ macro "tcomb_mem" : tactic => `(tactic| (simp only [List.mem_cons, List.mem_appe
   List.nil_append, TCombCfg.toComb]))
 
 /-- The selection's registers are neither `x0` nor `x19`. -/
-theorem sel_regs {n : Nat} (hn : n ≤ 4) {r : Reg} (hr : r = .x0 ∨ r = .x19) :
+theorem sel_regs {n : Nat} (hn : n ≤ 8) {r : Reg} (hr : r = .x0 ∨ r = .x19) :
     r ∉ Reg.x1 :: Reg.x2 :: Reg.x3 :: Reg.x4 :: Reg.x5 :: Reg.x6 :: Reg.x7 :: Reg.x16 :: Reg.x17 ::
       entryRegs n := by
   intro h
@@ -65,7 +65,7 @@ theorem sel_regs {n : Nat} (hn : n ≤ 4) {r : Reg} (hr : r = .x0 ∨ r = .x19) 
   rcases h with h | h | h | h | h | h | h | h | h | h <;>
     first | exact absurd h (by decide) | exact entryRegs_regs n hn _ h (by simp)
 
-theorem tcombClob_sub : ∀ n ≤ 4, ∀ r ∈ [Reg.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x9, .x16, .x17] ++
+theorem tcombClob_sub : ∀ n ≤ 8, ∀ r ∈ [Reg.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x9, .x16, .x17] ++
     entryRegs n, r ∈ tcombClob n := by decide
 
 theorem magH_le {H v : Nat} (hv : v < 2 * H) : magH H v ≤ H := by unfold magH; split <;> omega
@@ -99,6 +99,8 @@ theorem tentry_ok {K : TCombCfg} {C : Curve} {base : Addr} {size k i : Nat} {T :
     (hbits : ∀ t < K.w * K.J, s.mem (off base (K.bits + t)) = if k.testBit t then 1 else 0)
     (hz : wordsVal s.mem base K.zero K.M.n = 0) (hT : s.syms K.tsym = T)
     (hTM : TblMem s T (tcombWords K.M.n (2 ^ (64 * K.M.n)) C.p tbl))
+    (hout : ∀ i < (tcombWords K.M.n (2 ^ (64 * K.M.n)) C.p tbl).length, ∀ b < 8,
+      size ≤ ofs base (T + BitVec.ofNat 64 (8 * i) + BitVec.ofNat 64 b))
     {rest : Prog isa} {Q : State → Prop}
     (h : ∀ s', TEntryPost K C base size k i s s' → WP isa rest s' Q) :
     WP isa (.block (K.digit ++ K.select)) s fun s₂ =>
@@ -107,7 +109,7 @@ theorem tentry_ok {K : TCombCfg} {C : Curve} {base : Addr} {size k i : Nat} {T :
   have hJ := hL.comb.J
   rw [TCombCfg.toComb_J] at hJ
   have hw := hL.w
-  have hn4 := hL.n4
+  have hn4 := hL.n8
   have hzw : K.w * K.J ≤ K.kbytes + 8 * K.zw := by unfold TCombCfg.zw; have := hL.kbytes; omega
   have hbits' := hL.bits
   have hbitsw := hL.bitsw
@@ -144,8 +146,20 @@ theorem tentry_ok {K : TCombCfg} {C : Curve} {base : Addr} {size k i : Nat} {T :
       have h2 := Nat.mul_le_mul_right (K.H * (2 * K.M.n)) (show i + 1 ≤ K.J from hi)
       rw [Nat.succ_mul] at h2
       omega
+  have hout' : ∀ e < K.H, ∀ i' < 2 * K.M.n, ∀ b < 8, size ≤ ofs base
+      (T + BitVec.ofNat 64 (i * K.tblBytes) + BitVec.ofNat 64 (16 * K.M.n * e + 8 * i') + BitVec.ofNat 64 b) :=
+    fun e he i' hi' b hb => by
+      rw [TCombCfg.tblBytes, tbl_addr]
+      refine hout _ ?_ b hb
+      rw [hlen]
+      have h1 : i * (K.H * (2 * K.M.n)) + e * (2 * K.M.n) + i' < i * (K.H * (2 * K.M.n)) + K.H * (2 * K.M.n) := by
+        have := Nat.mul_le_mul_right (2 * K.M.n) (show e + 1 ≤ K.H from he)
+        rw [Nat.succ_mul] at this; omega
+      have h2 := Nat.mul_le_mul_right (K.H * (2 * K.M.n)) (show i + 1 ≤ K.J from hi)
+      rw [Nat.succ_mul] at h2
+      omega
   refine WP.mono (tselect_ok K hn4 hs₁ hx₁ m₁ hmag hL.tbl.1 hL.tbl.2 (by omega)
-    (by rw [sy₁]; exact hT) hE hap (Nat.lt_trans hV.one_lt hpn) hreg) fun s₂ h₂ => ?_
+    (by rw [sy₁]; exact hT) hE hap (Nat.lt_trans hV.one_lt hpn) hreg hout') fun s₂ h₂ => ?_
   obtain ⟨ex₂, ey₂, ez₂, k₂, U₂⟩ := h₂
   rw [k₁.mem] at ex₂ ey₂ U₂
   generalize ha : magH K.H (combWin K.w k i) = a at ex₂ ey₂ ez₂ hmag
@@ -392,7 +406,7 @@ theorem tstep_ok {K : TCombCfg} {C : Curve} {base : Addr} {size k : Nat} {T : Ad
   have hn := hI.scr.nowrap
   have hJ := hL.comb.J
   rw [TCombCfg.toComb_J] at hJ
-  have hn4 := hL.n4
+  have hn4 := hL.n8
   have hle : ∀ x, x ∈ combSlots K.toComb → x + 8 * K.M.n ≤ size := fun x hx => hL.comb.lay.le x hx
   have hmoW := combW_mo hL.comb hI.mod
   have hEW := entryW_sub (K := K.toComb)
@@ -414,7 +428,7 @@ theorem tstep_ok {K : TCombCfg} {C : Curve} {base : Addr} {size k : Nat} {T : Ad
   have hT : s₁.syms K.tsym = T := by rw [sy₁]; exact hI.tsym
   have hTM : TblMem s₁ T (tcombWords K.M.n (2 ^ (64 * K.M.n)) C.p tbl) :=
     hI.tbl.unch (by rw [k₁.rd, k₁.wr]) fun _ _ _ _ => by rw [hm₁]
-  refine tentry_ok hL hA hC hV hpn hs₁ hM₁ (i := j - 1) (by omega) b₁ hbits₁ hz hT hTM
+  refine tentry_ok hL hA hC hV hpn hs₁ hM₁ (i := j - 1) (by omega) b₁ hbits₁ hz hT hTM hF.out
     fun s₃ E₃ => ?_
   have U₁₃ : Unch base (combW K.toComb) s.mem s₃.mem := by
     rw [← hm₁]

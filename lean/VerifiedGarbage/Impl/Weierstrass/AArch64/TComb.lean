@@ -19,8 +19,10 @@ negated if `d_j < 0`, by the complete addition for `a = -3`, for
 The digits are secret, so their entries are selected in constant time: every
 word of every entry of the table is loaded, at an address that depends only
 on `j` (public), and `csel` keeps it exactly when its entry's index equals the
-magnitude, as the carry says (`selEntry`: `eor` with the index, then `subs`
-of 1 sets the carry unless they are equal). The entry's `Z` is `1`
+magnitude, as the carry says (`selEntryW`: `eor` with the index, then `subs`
+of 1 sets the carry unless they are equal). The words are kept in at most
+eight registers: an entry's `2n` words in one pass over the table if
+`2n ≤ 8`, else `x`'s and then `y`'s `n` words in two. The entry's `Z` is `1`
 (Montgomery's, `R mod p`) unless the magnitude is zero, when the entry is
 `(0 : 1 : 0)`. The negation computes `0 - y` and selects it by the mask of the
 digit's sign.
@@ -84,8 +86,12 @@ def signMaskW (w bits : Nat) : List Instr :=
 def negYW (M : Mod) (w neg z y bits : Nat) : List Instr :=
   Mont.AArch64.sub M neg z y ++ signMaskW w bits ++ sel M.n y y neg
 
-/-- The registers of the selected entry's `x` and `y` (`2n ≤ 8` words). -/
-def entryRegs (n : Nat) : List Reg := [.x8, .x9, .x10, .x11, .x12, .x13, .x14, .x15].take (2 * n)
+/-- The registers of `c ≤ 8` words of the selected entry. -/
+def selRegs (c : Nat) : List Reg := [.x8, .x9, .x10, .x11, .x12, .x13, .x14, .x15].take c
+
+/-- The registers of the selected entry's `x` and `y` (`2n ≤ 8` words; else
+those of each coordinate in turn are among them). -/
+def entryRegs (n : Nat) : List Reg := selRegs (2 * n)
 
 namespace TCombCfg
 
@@ -98,13 +104,17 @@ def H : Nat := 2 ^ (K.w - 1)
 def tblBytes : Nat := 16 * K.M.n * K.H
 
 /-- Entry `m` (from 1) of the table at `x16`: `x1 = m`, the carry clear exactly
-if `m` is the magnitude in `x2`, and each word kept in its register unless
-it is (with `x5 = 1`), through `x3`, `x4` and `x6`. -/
-def selEntry (m : Nat) : List Instr :=
+if `m` is the magnitude in `x2`, and its `c` words from byte `o` each kept in
+its register of `selRegs c` unless it is (with `x5 = 1`), through `x3`, `x4`
+and `x6`. -/
+def selEntryW (o c m : Nat) : List Instr :=
   [.add .x .x1 .x1 .x5, .logic .eor .x .x3 .x2 .x1, .subs .x .x4 .x3 .x5] ++
-    (List.range (2 * K.M.n)).flatMap fun i =>
-      [.ldr .x .x6 .x16 (16 * K.M.n * (m - 1) + 8 * i),
-        .csel .x ((entryRegs K.M.n).getD i .x8) ((entryRegs K.M.n).getD i .x8) .x6]
+    (List.range c).flatMap fun i =>
+      [.ldr .x .x6 .x16 (16 * K.M.n * (m - 1) + o + 8 * i),
+        .csel .x ((selRegs c).getD i .x8) ((selRegs c).getD i .x8) .x6]
+
+/-- Every entry's `c` words from byte `o`, into `selRegs c`. -/
+def entriesW (o c : Nat) : List Instr := (List.range K.H).flatMap fun m => K.selEntryW o c (m + 1)
 
 /-- `x16` = table `x19`'s address, from the static `tsym`'s, with `x7 = 0`,
 `x5 = 1` and `x1 = 0`, through `x17`. -/
@@ -124,12 +134,18 @@ def selZ : List Instr :=
 
 /-- The entry of table `x19` for the magnitude in `x2` into `E`: the table's
 address into `x16`; `(0, R)` in the registers, then every entry, kept if its
-index is the magnitude; `Z = R` unless the magnitude is zero. -/
+index is the magnitude (if `2n ≤ 8`; else `0` and `x`'s words, then, with
+`x1` cleared again, `R` and `y`'s); `Z = R` unless the magnitude is zero. -/
 def select : List Instr :=
-  K.selSetup ++ zeros ((entryRegs K.M.n).take K.M.n) ++
-  setRegs ((entryRegs K.M.n).drop K.M.n) K.one ++
-  (List.range K.H).flatMap (fun m => selEntry K (m + 1)) ++
-  stores ((entryRegs K.M.n).take K.M.n) K.E.x ++ stores ((entryRegs K.M.n).drop K.M.n) K.E.y ++
+  K.selSetup ++
+  (if 2 * K.M.n ≤ 8 then
+    zeros ((entryRegs K.M.n).take K.M.n) ++ setRegs ((entryRegs K.M.n).drop K.M.n) K.one ++
+    K.entriesW 0 (2 * K.M.n) ++
+    stores ((entryRegs K.M.n).take K.M.n) K.E.x ++ stores ((entryRegs K.M.n).drop K.M.n) K.E.y
+  else
+    zeros (selRegs K.M.n) ++ K.entriesW 0 K.M.n ++ stores (selRegs K.M.n) K.E.x ++
+    .movz .x .x1 0 0 :: setRegs (selRegs K.M.n) K.one ++ K.entriesW (8 * K.M.n) K.M.n ++
+    stores (selRegs K.M.n) K.E.y) ++
   K.selZ
 
 /-- The digit's magnitude into `x2`: its window and `|k - H|`. -/

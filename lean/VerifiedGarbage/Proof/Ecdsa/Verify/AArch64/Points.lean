@@ -292,7 +292,7 @@ theorem points_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {g : Reg → BitVe
   have q₂ := hQ₁ _ _ _ R₂
   have F₂ := F₁.unch h7 hn fixedOk_tcombW U₂
   rw [tcombW_eq] at U₂
-  have hs₂ := hs₁.of_keepRegs K₂ (x0_not_tcombClob hc.n4)
+  have hs₂ := hs₁.of_keepRegs K₂ (x0_not_tcombClob hc.n7)
   -- `U = [u]G`, `R = O`.
   refine WP.seq (WP.mono (save_ok hc hs₂) fun s₃ ⟨hs₃, k₃, U₃, ux₃, uy₃, uz₃, rx₃, ry₃, rz₃⟩ => ?_)
   have F₃ := F₂.unch h7 hn (fixedOk_slW (by decide)) U₃
