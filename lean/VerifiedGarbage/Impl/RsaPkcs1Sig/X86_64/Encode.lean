@@ -99,4 +99,13 @@ def encode : Prog isa :=
         (.seq (.block [.mov .rax (.reg .r10), .alu .add .rax (.imm 11), .alu .cmp .rcx (.reg .rax)])
           (.ite .b fail write))))
 
+/-- `rdx := OR of [rdi + i] ^ [rsi + i]` for `i < rcx` (at least 1), through
+the index `r11`: zero exactly when the two buffers are equal. It writes
+`rax`, `rdx`, `r10` and `r11`. -/
+def compare : Prog isa :=
+  .seq (.block [.mov32 .r11 (.imm 0), .mov32 .rdx (.imm 0)])
+    (.loop (.block [.movzx8 .rax { base := .rdi, index := some .r11 },
+      .movzx8 .r10 { base := .rsi, index := some .r11 }, .alu .xor .rax (.reg .r10),
+      .alu .or .rdx (.reg .rax), .alu .add .r11 (.imm 1), .alu .cmp .r11 (.reg .rcx)]) .ne)
+
 end VG.Impl.RsaPkcs1Sig.X86_64
