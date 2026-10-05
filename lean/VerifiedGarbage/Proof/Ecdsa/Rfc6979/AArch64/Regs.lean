@@ -1,3 +1,4 @@
+import VerifiedGarbage.Proof.Framework.AArch64.Syms
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Layout
 import VerifiedGarbage.Proof.Framework.AArch64.Inline
 import VerifiedGarbage.Proof.Framework.AddrArith
@@ -45,7 +46,7 @@ theorem toNat_add_of {p : Addr} {d : Nat} (h : p.toNat + d < 2 ^ 64) :
 theorem add_ofNat_zero (p : Addr) : p + BitVec.ofNat 64 0 = p := BitVec.add_zero p
 
 /-- The stack below `sp` a call with at most one frame uses: the 16 bytes below the frame. -/
-theorem Ctx.below_eq {dn : Nat} {L : Lay dn} {g : Reg → BitVec 64} {m₀ : Mem} {u : State}
+theorem Ctx.below_eq {dn : Nat} {E : Impl.Ecdsa.AArch64.Cfg} {L : Lay dn E} {g : Reg → BitVec 64} {m₀ : Mem} {u : State}
     (hc : Ctx L g m₀ u) : below u.sp 16 = ⟨L.B, 16⟩ := by
   rw [hc.sp, below16]
 
@@ -61,44 +62,44 @@ theorem WP.keepCs {c : Prog isa} {s : State} {Q : State → Prop} (h : WP isa c 
 
 /-- Code that keeps the permissions and the callee-saved registers, and
 writes only safe regions, keeps `Ctx`. -/
-theorem Ctx.of_keep {dn : Nat} {L : Lay dn} {g : Reg → BitVec 64} {m₀ : Mem} (hL : L.Ok) {t : State}
+theorem Ctx.of_keep {dn : Nat} {E : Impl.Ecdsa.AArch64.Cfg} {L : Lay dn E} {g : Reg → BitVec 64} {m₀ : Mem} (hL : L.Ok) {t : State}
     (hc : Ctx L g m₀ t) {is : List Instr} {ws : List Region} {Q : State → Prop}
     (h : WP isa (.block is) t fun t' => t'.rd = t.rd ∧ t'.wr = t.wr ∧ Frame ws t.mem t'.mem ∧ Q t')
     (hk : (instrs (.block is : Prog isa)).all (fun i => preserved.all fun r => dstOf i != some r) = true)
     (hs : ∀ r ∈ ws, Safe L r) :
     WP isa (.block is) t fun t' => Ctx L g m₀ t' ∧ Frame ws t.mem t'.mem ∧ Q t' :=
-  WP.mono (WP.keepCs h hk rfl) fun _ ⟨⟨hrd, hwr, hf, hq⟩, hsp, hcs⟩ =>
-    ⟨hc.keep hL hrd hwr hsp (fun r hr _ => hcs r hr) hf hs, hf, hq⟩
+  WP.mono_syms (WP.keepCs h hk rfl) fun _ ⟨⟨hrd, hwr, hf, hq⟩, hsp, hcs⟩ hsy =>
+    ⟨hc.keep hL hrd hwr hsp (fun r hr _ => hcs r hr) hf hs hsy, hf, hq⟩
 
 /-! ## Code that sets one register -/
 
 /-- `u'` is `u` with only the register `d`, not callee-saved, (and the
 flags) changed, to `v`. -/
-structure Upd {dn : Nat} (L : Lay dn) (g : Reg → BitVec 64) (m₀ : Mem) (u : State) (d : Reg) (v : BitVec 64)
+structure Upd {dn : Nat} {E : Impl.Ecdsa.AArch64.Cfg} (L : Lay dn E) (g : Reg → BitVec 64) (m₀ : Mem) (u : State) (d : Reg) (v : BitVec 64)
     (u' : State) : Prop where
   ctx : Ctx L g m₀ u'
   mem : u'.mem = u.mem
   val : u'.gpr d = v
   keep : ∀ r, r ≠ d → u'.gpr r = u.gpr r
 
-variable {dn : Nat} {L : Lay dn} {g : Reg → BitVec 64} {m₀ : Mem}
+variable {dn : Nat} {E : Impl.Ecdsa.AArch64.Cfg} {L : Lay dn E} {g : Reg → BitVec 64} {m₀ : Mem}
 
 theorem Ctx.set (hL : L.Ok) {u u' : State} (hc : Ctx L g m₀ u) {d : Reg} (hd : d ∉ preserved)
     (hrd : u'.rd = u.rd) (hwr : u'.wr = u.wr) (hm : u'.mem = u.mem) (hsp : u'.sp = u.sp)
-    (hk : ∀ r, r ≠ d → u'.gpr r = u.gpr r) : Ctx L g m₀ u' :=
-  hc.regs hL hrd hwr hm hsp fun r hr _ => hk r (ne_cs hr hd)
+    (hk : ∀ r, r ≠ d → u'.gpr r = u.gpr r) (hsy : u'.syms = u.syms) : Ctx L g m₀ u' :=
+  hc.regs hL hrd hwr hm hsp (fun r hr _ => hk r (ne_cs hr hd)) hsy
 
 /-- `d ← scratch + a`. -/
 theorem scr_ok (hL : L.Ok) {u : State} (hc : Ctx L g m₀ u) {d : Reg} (hd : d ∉ preserved) {a : Nat}
     (ha : a < 4096) :
     WP isa (.block (Cfg.scr d a)) u (Upd L g m₀ u d (L.scr + BitVec.ofNat 64 a)) := by
-  have h184 := hc.inFr (d := 184) (by omega) (by omega)
+  have h200 := hc.inFr (d := 200) (by omega) (by omega)
   apply WP.of_runBlock
   simp only [Cfg.scr, fScratch, runBlock_cons, runStep_some, runBlock_nil, exec, State.load, State.read,
     Size.bits, BitVec.setWidth_eq, hc.sp, Offset.add_add, Nat.reduceAdd, Nat.reduceMod, Nat.reduceLT, and_self,
-    h184, ite_true, Option.map_some, read8, hc.pScr, RegUpd.gpr_write_self, ha, Option.some.injEq,
+    h200, ite_true, Option.map_some, read8, hc.pScr, RegUpd.gpr_write_self, ha, Option.some.injEq,
     exists_eq_left']
-  refine ⟨hc.set hL hd rfl rfl rfl rfl fun r hr => ?_, rfl, by rw [RegUpd.gpr_write_self]; exact BitVec.setWidth_eq _,
+  refine ⟨hc.set hL hd rfl rfl rfl rfl (fun r hr => ?_) rfl, rfl, by rw [RegUpd.gpr_write_self]; exact BitVec.setWidth_eq _,
     fun r hr => ?_⟩
   · rw [RegUpd.gpr_write_of_ne _ _ _ hr, RegUpd.gpr_write_of_ne _ _ _ hr]
   · rw [RegUpd.gpr_write_of_ne _ _ _ hr, RegUpd.gpr_write_of_ne _ _ _ hr]
@@ -110,7 +111,7 @@ theorem fr_ok (hL : L.Ok) {u : State} (hc : Ctx L g m₀ u) {d : Reg} (hd : d �
   apply WP.of_runBlock
   simp only [Cfg.fr, runBlock_cons, runStep_some, runBlock_nil, exec, ho, ite_true, hc.sp, Offset.add_add,
     Option.some.injEq, exists_eq_left']
-  exact ⟨hc.set hL hd rfl rfl rfl rfl fun r hr => RegUpd.gpr_write_of_ne _ _ _ hr, rfl,
+  exact ⟨hc.set hL hd rfl rfl rfl rfl (fun r hr => RegUpd.gpr_write_of_ne _ _ _ hr) rfl, rfl,
     by rw [RegUpd.gpr_write_self]; exact BitVec.setWidth_eq _,
     fun r hr => RegUpd.gpr_write_of_ne _ _ _ hr⟩
 
@@ -128,7 +129,7 @@ theorem movz_ok (hL : L.Ok) {u : State} (hc : Ctx L g m₀ u) {d : Reg} (hd : d 
   apply WP.of_runBlock
   simp only [runBlock_cons, runStep_some, runBlock_nil, exec, show 16 * 0 < Size.x.bits by decide, ite_true,
     movz_val hn, Option.some.injEq, exists_eq_left']
-  exact ⟨hc.set hL hd rfl rfl rfl rfl fun r hr => RegUpd.gpr_write_of_ne _ _ _ hr, rfl,
+  exact ⟨hc.set hL hd rfl rfl rfl rfl (fun r hr => RegUpd.gpr_write_of_ne _ _ _ hr) rfl, rfl,
     by rw [RegUpd.gpr_write_self]; exact BitVec.setWidth_eq _,
     fun r hr => RegUpd.gpr_write_of_ne _ _ _ hr⟩
 

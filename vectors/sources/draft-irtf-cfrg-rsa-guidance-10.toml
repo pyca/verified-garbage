@@ -1,0 +1,5 @@
+name = "draft-irtf-cfrg-rsa-guidance-10, Implementation Guidance for the PKCS #1 RSA Cryptography Specification, implicit rejection vectors in Appendix B (the whole document, unmodified, as IETF Trust Legal Provisions 5.0 §3.c.i allows)"
+directories = ["draft-irtf-cfrg-rsa-guidance-10"]
+url = "https://www.ietf.org/archive/id/draft-irtf-cfrg-rsa-guidance-10.txt"
+sha256 = "9e2af1e3e15744ef3b6575184d97dcc5ca22af427f6c93235e1bf23bca9952e6"
+retrieved = 2026-10-04

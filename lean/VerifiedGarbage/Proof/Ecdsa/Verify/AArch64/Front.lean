@@ -1,13 +1,14 @@
 import VerifiedGarbage.Proof.Ecdh.AArch64.Validate
 import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64
+import VerifiedGarbage.Proof.Framework.AArch64.Syms
 
 /-!
 # ECDSA verification on AArch64: the arguments and the key
 
-`front_ok`: `args`, the signature's setup and tables (`stage₁`, whose
+`front_ok`: `args`, the signature's setup and table (`stage₁`, whose
 `SetupPre` the arguments meet), the load of `s` (`loadS_ok`) and ECDH's
 checks of the key (`peer_ok`, `validate_ok`) leave `r`, the hash and `s` in
-their slots, `R = O`, the tables of `p - 2` and `n - 2`, the flag of the
+their slots, `R = O`, the flag of the
 key's validity as the code checks it (`KeyOk`), and the key's point, or `G`
 if it is not valid, for ECDH's window method (`Front`).
 -/
@@ -24,15 +25,18 @@ open VG.Impl.Ecdh.AArch64 (QY R2P BP QXM QYM W0 W1 W2 W3 PX PY)
 variable {c : Cfg}
 
 /-- The arguments: `public = x0` (`1 + 16 n` bytes), `digest = x1`
-(`8 n` bytes), `sig = x2` (`16 n` bytes) and `scratch = x3`, readable and
-writable as the contract says and apart from `scratch`. -/
+(`8 n` bytes), `sig = x2` (`16 n` bytes) and `scratch = x3`, and the comb's
+tables at the static `c.tsym` (`Artifact.consts`), readable and writable as
+the contract says and apart from `scratch`. -/
 structure VPre (c : Cfg) (s : State) : Prop where
-  rd : s.rd = [⟨s.gpr .x0, 1 + 16 * c.n⟩, ⟨s.gpr .x1, 8 * c.n⟩, ⟨s.gpr .x2, 16 * c.n⟩]
+  rd : s.rd = [⟨s.gpr .x0, 1 + 16 * c.n⟩, ⟨s.gpr .x1, 8 * c.n⟩, ⟨s.gpr .x2, 16 * c.n⟩,
+    ⟨s.syms c.tsym, 8 * c.combWords.length⟩]
   wr : s.wr = [⟨s.gpr .x3, size⟩]
   pk_sc : Region.Disjoint ⟨s.gpr .x0, 1 + 16 * c.n⟩ ⟨s.gpr .x3, size⟩
   dg_sc : Region.Disjoint ⟨s.gpr .x1, 8 * c.n⟩ ⟨s.gpr .x3, size⟩
   sig_sc : Region.Disjoint ⟨s.gpr .x2, 16 * c.n⟩ ⟨s.gpr .x3, size⟩
   sc_fit : (s.gpr .x3).toNat + size ≤ 2 ^ 64
+  tbl : TblPre c s (s.syms c.tsym) (s.gpr .x3)
 
 /-- The key's `x` and `y`, the hash, and the signature's `r` and `s`. -/
 abbrev keyX (c : Cfg) (s₀ : State) : Nat :=
@@ -62,8 +66,6 @@ structure Front (c : Cfg) (s₀ : State) (base : Addr) (g : Reg → BitVec 64) (
   rx : sv c base s RX = 0
   ry : sv c base s RY = c.mont 1
   rz : sv c base s RZ = 0
-  t₁ : ∀ t < 64 * c.n, s.mem (off base (bitsAt c.n 1 + t)) = if (c.C.p - 2).testBit t then 1 else 0
-  t₂ : ∀ t < 64 * c.n, s.mem (off base (bitsAt c.n 2 + t)) = if (c.C.n - 2).testBit t then 1 else 0
   flag : word s.mem base (c.sl FLAG) = mask (KeyOk c s₀)
   px_lt : sv c base s PX < c.C.p
   py_lt : sv c base s PY < c.C.p
@@ -73,6 +75,7 @@ structure Front (c : Cfg) (s₀ : State) (base : Addr) (g : Reg → BitVec 64) (
     if KeyOk c s₀ then Fin.ofNat c.C.p (keyY c s₀) else Fin.ofNat c.C.p c.C.gy
   /-- Memory outside the working space is unchanged. -/
   unch : Unch base [(0, size)] s₀.mem s.mem
+  syms : s.syms = s₀.syms
 
 theorem args_ok (c : Cfg) (s : State) (h7 : c.n < 7) :
     WP isa (.block (Impl.Ecdsa.Verify.AArch64.Cfg.args c)) s fun s' =>
@@ -90,8 +93,7 @@ theorem args_ok (c : Cfg) (s : State) (h7 : c.n < 7) :
 
 theorem verify_eq' (c : Cfg) : Impl.Ecdsa.Verify.AArch64.Cfg.verify c =
     .seq (.block (Impl.Ecdsa.Verify.AArch64.Cfg.args c)) (.seq (.seq (.block c.setup)
-      (.seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n)) (.seq (bits (c.sl EXPP) (bitsAt c.n 1) (8 * c.n))
-      (.seq (bits (c.sl EXPN) (bitsAt c.n 2) (8 * c.n)) (.block [])))))
+      (.seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n)) (.block [])))
     (.seq (.block (Impl.Ecdsa.Verify.AArch64.Cfg.loadS c)) (.seq (.block (Impl.Ecdh.AArch64.Cfg.peer c))
     (.seq (Impl.Ecdh.AArch64.Cfg.validate c) (Impl.Ecdsa.Verify.AArch64.Cfg.back c))))) := rfl
 
@@ -116,14 +118,13 @@ theorem front_ok (hc : CfgOk c) {s₀ : State} (hp : VPre c s₀) {rest : Prog i
     (h : ∀ g s, (∀ r ∈ Cfg.saved.map Prod.fst, g r = s₀.gpr r) → Front c s₀ (s₀.gpr .x3) g s →
       WP isa rest s Q) :
     WP isa (.seq (.block (Impl.Ecdsa.Verify.AArch64.Cfg.args c)) (.seq (.seq (.block c.setup)
-      (.seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n)) (.seq (bits (c.sl EXPP) (bitsAt c.n 1) (8 * c.n))
-      (.seq (bits (c.sl EXPN) (bitsAt c.n 2) (8 * c.n)) (.block [])))))
+      (.seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n)) (.block [])))
       (.seq (.block (Impl.Ecdsa.Verify.AArch64.Cfg.loadS c)) (.seq (.block (Impl.Ecdh.AArch64.Cfg.peer c))
       (.seq (Impl.Ecdh.AArch64.Cfg.validate c) rest))))) s₀ Q := by
   have h0 := hc.n0
   have h7 := hc.n7
   have hsz : size = 8192 := rfl
-  refine WP.seq (WP.mono (args_ok c s₀ h7) fun s₁ ⟨x4₁, x6₁, x3₁, x8₁, x2₁, k₁⟩ => ?_)
+  refine WP.seq (WP.mono_syms (args_ok c s₀ h7) fun s₁ ⟨x4₁, x6₁, x3₁, x8₁, x2₁, k₁⟩ sy₁ => ?_)
   have x1₁ : s₁.gpr .x1 = s₀.gpr .x1 := k₁.gpr _ (by decide)
   have hrd₁ : s₁.rd ++ s₁.wr = s₀.rd ++ s₀.wr := by rw [k₁.rd, k₁.wr]
   have hsp : SetupPre c s₁ := by
@@ -149,13 +150,13 @@ theorem front_ok (hc : CfgOk c) {s₀ : State} (hp : VPre c s₀) {rest : Prog i
   have hx8 : s₂.gpr .x8 = s₀.gpr .x2 + BitVec.ofNat 64 (8 * c.n) := by rw [S₂.gpr _ (by decide), x8₁]
   have hPT := sl_le c h7 (i := PT) (by decide)
   rw [Impl.Ecdsa.Verify.AArch64.Cfg.loadS]
-  refine WP.seq (WP.mono (loadBE_ok S₂.scr (src := .x8) (by decide) hPT (sl_mod8 c PT) (by omega) (fun d hd => by
+  refine WP.seq (WP.mono_syms (loadBE_ok S₂.scr (src := .x8) (by decide) hPT (sl_mod8 c PT) (by omega) (fun d hd => by
       rw [hrw₂, hp.rd, hx8, BitVec.add_assoc, BitVec.ofNat_add_ofNat]
       exact ⟨⟨s₀.gpr .x2, 16 * c.n⟩, by simp, Offset.contains_base _ (by omega) (by omega)⟩)
     (by
       rw [hx8]
       exact (hp.sig_sc.sub_left (Offset.sub_base _ (by omega))).sub_right
-        (Offset.sub_base _ hPT))) fun s₃ ⟨e₃, k₃, O₃⟩ => ?_)
+        (Offset.sub_base _ hPT))) fun s₃ ⟨e₃, k₃, O₃⟩ sy₃ => ?_)
   have hs₃ := S₂.scr.of_keepRegs k₃ (by decide)
   have U₃ : Unch (s₀.gpr .x3) (slW c [PT]) s₂.mem s₃.mem := O₃.unch
   have F₃ := S₂.fixed.unch h7 hn (fixedOk_slW (l := [PT]) (by decide)) U₃
@@ -167,8 +168,8 @@ theorem front_ok (hc : CfgOk c) {s₀ : State} (hp : VPre c s₀) {rest : Prog i
   -- The key.
   have hq₃ : s₃.gpr .x6 = s₀.gpr .x0 := by rw [k₃.gpr _ (by decide), S₂.gpr _ (by decide), x6₁]
   have hrw₃ : s₃.rd ++ s₃.wr = s₀.rd ++ s₀.wr := by rw [k₃.rd, k₃.wr, hrw₂]
-  refine WP.seq (WP.mono (peer_ok hc hs₃ hq₃ (by rw [hrw₃, hp.rd]; simp) hp.pk_sc F₃.mp)
-    fun s₄ ⟨hs₄, k₄, U₄, r2₄, bp₄, y₄, f₄⟩ => ?_)
+  refine WP.seq (WP.mono_syms (peer_ok hc hs₃ hq₃ (by rw [hrw₃, hp.rd]; simp) hp.pk_sc F₃.mp)
+    fun s₄ ⟨hs₄, k₄, U₄, r2₄, bp₄, y₄, f₄⟩ sy₄ => ?_)
   have F₄ := F₃.unch h7 hn ((fixedOk_slW (l := [R2P, BP, QY]) (by decide)).append fixedOk_flag) U₄
   have e₄ : ∀ {i}, i < 45 → i ∉ [R2P, BP, QY] → i ≠ FLAG →
       sv c (s₀.gpr .x3) s₄ i = sv c (s₀.gpr .x3) s₃ i := fun hi hl hf =>
@@ -189,8 +190,8 @@ theorem front_ok (hc : CfgOk c) {s₀ : State} (hp : VPre c s₀) {rest : Prog i
       sv c (s₀.gpr .x3) s₄ E < c.C.p) ∧ sv c (s₀.gpr .x3) s₄ QY < c.C.p)) := by
     rw [f₄, flag_unch U₃ h7 h0 hn (by decide), S₂.flag, BitVec.allOnes_and, mask_and, mask_and, hq0,
       e₄ (i := E) (by decide) (by decide) (by decide)]
-  refine WP.seq (WP.mono (validate_ok hc hs₄ F₄ r2₄ bp₄ hf₄)
-    fun s₅ ⟨hs₅, g₅, rd₅, wr₅, U₅, f₅, px_lt, py_lt, px, py⟩ => h s₁.gpr s₅
+  refine WP.seq (WP.mono_syms (validate_ok hc hs₄ F₄ r2₄ bp₄ hf₄)
+    fun s₅ ⟨hs₅, g₅, rd₅, wr₅, U₅, f₅, px_lt, py_lt, px, py⟩ sy₅ => h s₁.gpr s₅
       (fun r hr => k₁.gpr r (by revert r; decide)) ?_)
   have F₅ := F₄.unch h7 hn ((fixedOk_slW (l := [QXM, QYM, TMP, W0, W1, W2, W3, PY]) (by decide)).append
     fixedOk_flag) U₅
@@ -200,12 +201,6 @@ theorem front_ok (hc : CfgOk c) {s₀ : State} (hp : VPre c s₀) {rest : Prog i
   have a₅ : ∀ {i}, i < 45 → i ∉ [QXM, QYM, TMP, W0, W1, W2, W3, PY] → i ∉ [R2P, BP, QY] → i ≠ FLAG →
       i ≠ PT → sv c (s₀.gpr .x3) s₅ i = sv c (s₀.gpr .x3) s₂ i := fun hi h₁ h₂ hf hp =>
     ((e₅ hi h₁ hf).trans (e₄ hi h₂ hf)).trans (v₃ hi hp)
-  have t₅ : ∀ {j}, j < 3 → ∀ t < 64 * c.n,
-      s₅.mem (off (s₀.gpr .x3) (bitsAt c.n j + t)) = s₂.mem (off (s₀.gpr .x3) (bitsAt c.n j + t)) :=
-    fun hj t ht => by
-      rw [tbl_unch U₅ h7 hj ht (apart_append (tbl_apart_slW (by decide) _ t) (tbl_apart_flag h0 _ t)),
-        tbl_unch U₄ h7 hj ht (apart_append (tbl_apart_slW (by decide) _ t) (tbl_apart_flag h0 _ t)),
-        tbl_unch U₃ h7 hj ht (tbl_apart_slW (by decide) _ t)]
   have hok : PeerOk c (s₀.gpr .x3) s₄ ((s₀.mem (s₀.gpr .x0) = 4 ∧ sv c (s₀.gpr .x3) s₄ E < c.C.p) ∧
       sv c (s₀.gpr .x3) s₄ QY < c.C.p) = KeyOk c s₀ := by
     rw [PeerOk, e₄ (i := E) (by decide) (by decide) (by decide), x₄, y₄']
@@ -221,8 +216,7 @@ theorem front_ok (hc : CfgOk c) {s₀ : State} (hp : VPre c s₀) {rest : Prog i
     by rw [a₅ (i := RX) (by decide) (by decide) (by decide) (by decide) (by decide), S₂.rx],
     by rw [a₅ (i := RY) (by decide) (by decide) (by decide) (by decide) (by decide), S₂.ry],
     by rw [a₅ (i := RZ) (by decide) (by decide) (by decide) (by decide) (by decide), S₂.rz],
-    fun t ht => by rw [t₅ (j := 1) (by decide) t ht, S₂.t₁ t ht],
-    fun t ht => by rw [t₅ (j := 2) (by decide) t ht, S₂.t₂ t ht], f₅, px_lt, py_lt, px, py, ?_⟩
+    f₅, px_lt, py_lt, px, py, ?_, by rw [sy₅, sy₄, sy₃, S₂.syms, sy₁]⟩
   have U := ((S₂.unch.trans U₃).trans U₄).trans U₅
   rw [k₁.mem] at U
   refine unch_whole U fun w hw => ?_

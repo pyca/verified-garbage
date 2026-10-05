@@ -9,8 +9,7 @@ With `maskReg m` all ones exactly for `m = a` (`a ≤ 8`), `selectWord` builds
 every candidate word from immediates, ANDs it with its mask and ORs it into
 `x4`, so that word `w` of the candidate for `a` survives (`selectWord_ok`);
 `select` writes the entry's `X`, `Y` and `Z` (`select_ok`): `(0 : R : 0)`
-for `a = 0`, else `(x : y : R)` of the table's entry `a - 1`. `selectFrom`
-runs the selection of table `x19` (`selectFrom_ok`).
+for `a = 0`, else `(x : y : R)` of the table's entry `a - 1`.
 -/
 
 namespace VG.Proof.Weierstrass.AArch64
@@ -275,38 +274,5 @@ theorem select_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) 
     (O₁.unch.trans (O₂.unch.trans O₃.unch)).mono (by simp)⟩
   · rw [O₃.wordsVal (by omega) (by omega), O₂.wordsVal (by omega) (by omega), vx]
   · rw [O₃.wordsVal (by omega) (by omega), vy]
-
-/-- The selection from table `x19 = j`, for `j` in the tables listed. -/
-theorem selectFrom_ok (K : CombCfg) {j : Nat} (hj64 : j < 4096) {Q : State → Prop} :
-    ∀ (js : List Nat) {s : State}, s.gpr .x19 = BitVec.ofNat 64 j → j ∈ js →
-      (∀ j' ∈ js, j' < 4096) →
-      (∀ s', Keeps [.x9] s s' → WP isa (.block ((select K) (K.tbl.getD j []))) s' Q) →
-      WP isa ((selectFrom K) js) s Q
-  | [], _, _, h, _, _ => absurd h List.not_mem_nil
-  | k :: js, s, hc, hj, hks, hQ => by
-    have hk : k < 4096 := hks k (List.mem_cons_self ..)
-    have hz' : (BitVec.ofNat 64 j - BitVec.ofNat 64 k == 0) = decide (j = k) := by
-      apply Bool.eq_iff_iff.mpr
-      simp only [beq_iff_eq, decide_eq_true_eq]
-      bv_omega_using [hj64, hk]
-    rw [selectFrom]
-    refine WP.seq (WP.mono (show WP isa (.block [.subImm .x .x9 .x19 k]) s fun t =>
-        (t.gpr .x9 == 0) = decide (j = k) ∧ Keeps [.x9] s t by
-      apply WP.of_runBlock
-      simp only [runBlock_cons, runStep_some, runBlock_nil, exec_subImm_x hk,
-        read_x, RegUpd.gpr_write_self, BitVec.setWidth_eq, hc, hz', Option.some.injEq,
-        exists_eq_left']
-      exact ⟨True.intro, ⟨fun r hr => RegUpd.gpr_write_of_ne _ _ _ (by simpa using hr), rfl, rfl, rfl,
-        rfl⟩⟩) fun t ⟨tz, kt⟩ => ?_)
-    refine WP.ite (decide (j = k)) (by simp only [eval, read_x, tz]) (fun h => ?_) (fun h => ?_)
-    · obtain rfl : j = k := of_decide_eq_true h
-      exact hQ t kt
-    · have hne : j ≠ k := of_decide_eq_false h
-      have hj' : j ∈ js := by
-        rcases List.mem_cons.mp hj with h | h
-        · exact absurd h hne
-        · exact h
-      exact selectFrom_ok K hj64 js (by rw [kt.gpr _ (by decide)]; exact hc) hj'
-        (fun k hk => hks k (List.mem_cons_of_mem _ hk)) fun s' ks' => hQ s' (kt.trans ks')
 
 end VG.Proof.Weierstrass.AArch64

@@ -104,7 +104,7 @@ theorem setupConsts_ok {c : Cfg} (hc : CfgOk c) {base : Addr} : ∀ (l : List (N
     · exact e' ix h
 
 theorem consts_fst (c : Cfg) :
-    c.consts.map Prod.fst = [0, 1, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16] := rfl
+    c.consts.map Prod.fst = [0, 1, 3, 4, 5, 6, 7, 8, 9, 10, 11, 14, 15, 16] := rfl
 
 theorem consts_nodup (c : Cfg) : (c.consts.map Prod.fst).Nodup := by
   rw [consts_fst]; decide
@@ -123,11 +123,8 @@ theorem consts_bounds {c : Cfg} (hc : CfgOk c) :
     have hm : ∀ x, c.mont x < 2 ^ (64 * c.n) := fun x =>
       Nat.lt_trans (Nat.mod_lt (x * c.R) hp0) hc.p_lt
     have hn : ∀ x, x % c.C.n < 2 ^ (64 * c.n) := fun x => Nat.lt_trans (Nat.mod_lt x hn0) hc.n_lt
-    have hp2 : c.C.p - 2 < 2 ^ (64 * c.n) := by have := hc.p_lt; omega
-    have hn2 : c.C.n - 2 < 2 ^ (64 * c.n) := by have := hc.n_lt; omega
     simp only [Cfg.consts, List.mem_cons, List.not_mem_nil, or_false] at h
-    rcases h with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
-      rfl | rfl | rfl
+    rcases h with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
     · exact hc.p_lt
     · exact hc.n_lt
     · exact Nat.lt_trans Nat.one_pos hR
@@ -139,8 +136,6 @@ theorem consts_bounds {c : Cfg} (hc : CfgOk c) :
     · exact hm _
     · exact hn _
     · exact hn _
-    · exact hp2
-    · exact hn2
     · exact Nat.lt_trans Nat.one_pos hR
     · exact hm 1
     · exact Nat.lt_trans Nat.one_pos hR
