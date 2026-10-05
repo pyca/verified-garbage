@@ -385,4 +385,16 @@ theorem range_map_getD {xs : List Byte} {n : Nat} (h : n ≤ xs.length) :
   rw [List.getElem?_eq_getElem (by simp at h₁; omega)]
   rfl
 
+theorem slot_eq (d : Nat) (k : Nat) (h : d = 8 * k) (m : Mem) (F : Addr) : word m F d = word m F (8 * k) := by
+  rw [h]
+
+/-- `Lay` after a block that changed memory only as `Rep` says, keeping `W`. -/
+theorem Lay.of_rep {u u' : State} {F S : Addr} (L : Lay u F S) {V V' : Nat → Byte} {W : Nat → BitVec 64}
+    (R : Rep u.mem F S V W) (R' : Rep u'.mem F S V' W) (hsp : u'.gpr .rsp = u.gpr .rsp) (hwr : u'.wr = u.wr) :
+    Lay u' F S :=
+  L.congr hsp hwr (by rw [slot_eq sScr 21 rfl, slot_eq sScr 21 rfl, R'.fr 21 (by decide), R.fr 21 (by decide)])
+
+
+theorem trunc_zext (b : Byte) : BitVec.setWidth 8 (BitVec.setWidth 64 b) = b := by simp
+
 end VG.Proof.RsaPss.X86_64

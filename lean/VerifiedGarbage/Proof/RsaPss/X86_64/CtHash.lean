@@ -22,9 +22,6 @@ open VG.Impl.Pbkdf2.Md.X86_64 (Hash)
 
 variable {H : Hash} (hH : HashOK H) (K : Callees H)
 
-theorem slot_eq (d : Nat) (k : Nat) (h : d = 8 * k) (m : Mem) (F : Addr) : word m F d = word m F (8 * k) := by
-  rw [h]
-
 /-- `scratch + o` into `d`. -/
 theorem scr_ok {t : State} {F S : Addr} (L : Lay t F S) {d : Reg} (hd : d ≠ .rsp) {o : Nat} (ho : o < 2 ^ 31) :
     WP isa (.block (scr d o)) t fun t' => t'.gpr d = off S o ∧ t'.mem = t.mem ∧ Keep [d] t t' := by
@@ -104,12 +101,6 @@ theorem lgB_spec : 2 ^ lgB H = H.P.B ∧ 6 ≤ lgB H ∧ lgB H ≤ 7 := by
 theorem mask80 : ∀ (b : Byte) (c : Bool), (BitVec.setWidth 64 b ||| (0#64 - BitVec.setWidth 64 (BitVec.ofBool c) &&&
     BitVec.signExtend 64 (128 : BitVec 32))).setWidth 8 = b ||| (if c then 0x80 else 0) := by
   decide
-
-/-- `Lay` after a block that changed memory only as `Rep` says, keeping `W`. -/
-theorem Lay.of_rep {u u' : State} {F S : Addr} (L : Lay u F S) {V V' : Nat → Byte} {W : Nat → BitVec 64}
-    (R : Rep u.mem F S V W) (R' : Rep u'.mem F S V' W) (hsp : u'.gpr .rsp = u.gpr .rsp) (hwr : u'.wr = u.wr) :
-    Lay u' F S :=
-  L.congr hsp hwr (by rw [slot_eq sScr 21 rfl, slot_eq sScr 21 rfl, R'.fr 21 (by decide), R.fr 21 (by decide)])
 
 /-! ## `0x80` -/
 

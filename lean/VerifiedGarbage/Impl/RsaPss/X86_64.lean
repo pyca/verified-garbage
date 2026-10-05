@@ -40,8 +40,9 @@ never on `ℓ`, which verification computes from the signature:
 ## MGF1 (`mgfXor`)
 
 With `DB` at `scratch + oEm + lo` (`sEb`), `dbLen` bytes (`sDb`), and `H`
-after it: for each counter `c`, `Y` is cleared (a block), `H ‖ I2OSP(c, 4)`
-written to it and hashed (`ctHash`, one block), and the first
+after it: for each counter `c`, `Y` is cleared (`mgfNb` blocks: one for every
+hash function here), `H ‖ I2OSP(c, 4)` written to it and hashed (`ctHash`),
+and the first
 `min(hLen, dbLen - c hLen)` bytes of the digest XORed into `DB` at
 `c hLen`.
 
@@ -245,11 +246,15 @@ def ctHash : Prog isa :=
 
 /-! ## MGF1 -/
 
-/-- `Y`'s first block cleared, and `rcx` = `Y`. -/
+/-- The blocks MGF1 hashes `H ‖ C` in: `⌊(hLen + 4 + L) / B⌋ + 1`, one for
+every hash function here. -/
+def mgfNb : Nat := (H.D + 4 + H.P.L) / H.P.B + 1
+
+/-- `Y`'s first `mgfNb` blocks cleared, and `rcx` = `Y`. -/
 def clearBlock : Prog isa :=
   .seq (.block (scr .rcx oY ++ [.mov32 .rax (.imm 0), .mov32 .r8 (.imm 0)]))
     (.loop (.block [.store (ix .rcx .r8) .rax, .alu .add .r8 (.imm 8),
-      .alu .cmp .r8 (.imm (BitVec.ofNat 32 H.P.B))]) .ne)
+      .alu .cmp .r8 (.imm (BitVec.ofNat 32 (mgfNb H * H.P.B)))]) .ne)
 
 /-- `H` (at `DB + dbLen`) to `Y` (in `rcx`). -/
 def copyH : Prog isa :=
@@ -257,11 +262,11 @@ def copyH : Prog isa :=
     (byteLoop [.movzx8 .rax (ix .rsi .r8), .store8 (ix .rcx .r8) .rax] (.imm (BitVec.ofNat 32 H.D)))
 
 /-- The counter, big-endian, after `H` in `Y` (in `rcx`); the message's
-length, `hLen + 4`, and one block, for `ctHash`. -/
+length, `hLen + 4`, and its `mgfNb` blocks, for `ctHash`. -/
 def counter : List Instr :=
   [.mov .rax (.mem (sp sCtr)), .bswap32 .rax, .store32 (at_ .rcx H.D) .rax,
-    .mov32 .rax (.imm (BitVec.ofNat 32 (H.D + 4))), .store (sp sL) .rax, .mov32 .rax (.imm 1),
-    .store (sp sNb) .rax]
+    .mov32 .rax (.imm (BitVec.ofNat 32 (H.D + 4))), .store (sp sL) .rax,
+    .mov32 .rax (.imm (BitVec.ofNat 32 (mgfNb H))), .store (sp sNb) .rax]
 
 /-- The first `min(hLen, dbLen - done)` bytes of the digest XORed into `DB`
 at `done`. -/
