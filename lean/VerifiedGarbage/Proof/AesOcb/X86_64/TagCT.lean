@@ -21,7 +21,7 @@ open VG.Proof.AesCcm.X86_64 (runBlock_append)
 /-- A call of `vg_aes_encrypt_blocks` on the block at `W + tmpO` keeps the
 public arguments. -/
 theorem callTmp_one (v : BlocksImpl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} (hR : R = 10 ∨ R = 12 ∨ R = 14)
-    {N A D : Addr} {nl n tl : Nat} (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 2560⟩) {s : State}
+    {N A D : Addr} {nl n tl : Nat} (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 3584⟩) {s : State}
     (o : One K W SP R N A D nl n tl s) :
     WP isa (callBlocks (callees v).enc (oneBlock tmpO)) s (One K W SP R N A D nl n tl) :=
   WP.mono (callBlocks_ok (f := Spec.Aes.cipher) v.encOk v.encNosp v.encDepth L o.env hR o.sl.rounds
@@ -36,7 +36,7 @@ theorem callTmp_one (v : BlocksImpl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} 
 
 /-- The call on the block at `W + tmpO`, in two runs. -/
 theorem callTmp_rel (v : BlocksImpl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} (hR : R = 10 ∨ R = 12 ∨ R = 14)
-    {N A D : Addr} {nl n tl : Nat} (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 2560⟩) (hn : n ≤ 2 ^ 64)
+    {N A D : Addr} {nl n tl : Nat} (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 3584⟩) (hn : n ≤ 2 ^ 64)
     {P : State → State → Prop}
     (hP : ∀ s₁ s₂, P s₁ s₂ → One K W SP R N A D nl n tl s₁ ∧ One K W SP R N A D nl n tl s₂) :
     RelCT isa P (callBlocks (callees v).enc (oneBlock tmpO)) fun s₁ s₂ =>
@@ -52,7 +52,7 @@ theorem callTmp_rel (v : BlocksImpl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} 
 
 /-- The checksum, the offset and `L_$` at `W + tmpO`. -/
 theorem tagHead_one {K W SP : Addr} (L : Lay K W SP) {N A D : Addr} {R nl n tl : Nat}
-    (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 2560⟩) {s : State} (o : One K W SP R N A D nl n tl s) :
+    (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 3584⟩) {s : State} (o : One K W SP R N A D nl n tl s) :
     WP isa (.block (copy16 ckO tmpO ++ xor16 .r15 ofsO tmpO ++ xor16 .r15 ldO tmpO)) s
       (One K W SP R N A D nl n tl) := by
   have E := o.env
@@ -73,7 +73,7 @@ theorem tagHead_one {K W SP : Addr} (L : Lay K W SP) {N A D : Addr} {R nl n tl :
 
 /-- `tag d` in two runs. -/
 theorem tag_rel (v : BlocksImpl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} (hR : R = 10 ∨ R = 12 ∨ R = 14)
-    {N A D : Addr} {nl n tl : Nat} (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 2560⟩) (hn : n ≤ 2 ^ 64)
+    {N A D : Addr} {nl n tl : Nat} (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 3584⟩) (hn : n ≤ 2 ^ 64)
     {d : Nat} (hd : d = tagO ∨ d = t2O) {P : State → State → Prop}
     (hP : ∀ s₁ s₂, P s₁ s₂ → One K W SP R N A D nl n tl s₁ ∧ One K W SP R N A D nl n tl s₂) :
     RelCT isa P (tag (callees v) d) fun _ _ => True := by

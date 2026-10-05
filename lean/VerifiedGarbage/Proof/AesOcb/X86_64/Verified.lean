@@ -11,7 +11,8 @@ Correctness and constant time (for any implementations `v` of
 `vg_aes_encrypt_blocks`, `vg_aes_decrypt_blocks` and `vg_aes_expand_key_scratch`),
 a state satisfying each precondition, and the shared contracts of
 `Spec/Ocb/Contract.lean` with the working space as a last argument
-(`Proof/AesOcb/Scratch.lean`), with 8 bytes of stack: the return address of
+(`Proof/AesOcb/Scratch.lean`; 3584 bytes for `seal` and `open`, 2560 for
+`init`), with 8 bytes of stack: the return address of
 the calls, whose callees use no stack. `Frame.lean` allocates the working
 space.
 -/
@@ -24,13 +25,13 @@ open VG VG.X86_64 VG.Impl.AesOcb.X86_64
 open VG.Proof.Aes.X86_64 (BlocksImpl)
 
 theorem seal_mx (v : BlocksImpl) : («seal» (callees v)).allInstrs (fun i => !loadsMxcsr i) = true := by
-  simp only [«seal», front, tagOut, nonce, nonceBlock, copyLoop, Impl.AesOcb.X86_64.hash, hashChunk, hashFill, lNtz, hashSum, hashRest, padTo, body,
+  simp only [«seal», front, tagOut, nonce, nonceBlock, copyLoop, Impl.AesOcb.X86_64.hash, hashChunk, hashFill, hashSum, hashRest, padTo, body,
     whole, pass, nextOffset, rest, padCk, xorPad, tag, callBlocks, callees, Code.allInstrs, v.encMxcsr, v.decMxcsr,
     Bool.true_and, Bool.and_true, ↓reduceIte]
   decide +kernel
 
 theorem open_mx (v : BlocksImpl) : («open» (callees v)).allInstrs (fun i => !loadsMxcsr i) = true := by
-  simp only [«open», front, recv, nonce, nonceBlock, copyLoop, Impl.AesOcb.X86_64.hash, hashChunk, hashFill, lNtz, hashSum, hashRest, padTo, body,
+  simp only [«open», front, recv, nonce, nonceBlock, copyLoop, Impl.AesOcb.X86_64.hash, hashChunk, hashFill, hashSum, hashRest, padTo, body,
     whole, pass, nextOffset, rest, padCk, xorPad, tag, cmp, mask, callBlocks, callees, Code.allInstrs, v.encMxcsr,
     v.decMxcsr, Bool.true_and, Bool.and_true, Bool.false_eq_true, ↓reduceIte]
   decide +kernel
@@ -40,13 +41,13 @@ theorem init_mx (v : BlocksImpl) : (init (callees v)).allInstrs (fun i => !loads
   decide +kernel
 
 theorem seal_spSafe (v : BlocksImpl) : («seal» (callees v)).all (fun i => !X86_64.isa.writesSp i) = true := by
-  simp only [«seal», front, tagOut, nonce, nonceBlock, copyLoop, Impl.AesOcb.X86_64.hash, hashChunk, hashFill, lNtz, hashSum, hashRest, padTo, body,
+  simp only [«seal», front, tagOut, nonce, nonceBlock, copyLoop, Impl.AesOcb.X86_64.hash, hashChunk, hashFill, hashSum, hashRest, padTo, body,
     whole, pass, nextOffset, rest, padCk, xorPad, tag, callBlocks, callees, Code.all, v.encSpSafe, v.decSpSafe,
     Bool.true_and, Bool.and_true, ↓reduceIte]
   decide +kernel
 
 theorem open_spSafe (v : BlocksImpl) : («open» (callees v)).all (fun i => !X86_64.isa.writesSp i) = true := by
-  simp only [«open», front, recv, nonce, nonceBlock, copyLoop, Impl.AesOcb.X86_64.hash, hashChunk, hashFill, lNtz, hashSum, hashRest, padTo, body,
+  simp only [«open», front, recv, nonce, nonceBlock, copyLoop, Impl.AesOcb.X86_64.hash, hashChunk, hashFill, hashSum, hashRest, padTo, body,
     whole, pass, nextOffset, rest, padCk, xorPad, tag, cmp, mask, callBlocks, callees, Code.all, v.encSpSafe,
     v.decSpSafe, Bool.true_and, Bool.and_true, Bool.false_eq_true, ↓reduceIte]
   decide +kernel
@@ -81,7 +82,7 @@ def sealSat : State where
   of := none
   mem a := if a = 0x8020 then 4 else if a = 0x8019 then 0x30 else 0
   rd := [⟨0x1000, 256⟩, ⟨0x2000, 1⟩, ⟨0x2100, 0⟩, ⟨0x8008, 40⟩]
-  wr := [⟨0, 0⟩, ⟨0x3000, 4⟩, ⟨0, 2560⟩]
+  wr := [⟨0, 0⟩, ⟨0x3000, 4⟩, ⟨0, 3584⟩]
 
 /-- A state satisfying the precondition of `vg_aes_ocb_init`: a 16-byte key. -/
 def initSat : State where
@@ -96,9 +97,9 @@ def initSat : State where
   wr := [⟨0x2000, 256⟩, ⟨0x4000, 2560⟩]
 
 theorem seal_verified (v : BlocksImpl) :
-    Verified X86_64.target («seal» (callees v)) (Proof.AesOcb.sealScratchContract X86_64.abi 8) :=
+    Verified X86_64.target («seal» (callees v)) (Proof.AesOcb.sealWorkContract X86_64.abi 448 8) :=
   Verified.of_correct (seal_correct v) (seal_ct v) (by
-    sig_implies [Proof.AesOcb.sealScratchContract, Proof.AesOcb.sealScratchSig, Spec.Ocb.sealPre,
+    sig_implies [Proof.AesOcb.sealWorkContract, Proof.AesOcb.sealWorkSig, Spec.Ocb.sealPre,
       Spec.Ocb.sealPost, Proof.AesOcb.sealX86_64, Proof.AesOcb.sealPreX, Proof.AesOcb.oneFacts,
       Proof.AesOcb.aCtx, Proof.AesOcb.aNonce, Proof.AesOcb.aAad, Proof.AesOcb.aData, Proof.AesOcb.aTag,
       Proof.AesOcb.aWork, Proof.AesOcb.onePub, X86_64.abi, Proof.AesOcb.arg, Proof.AesOcb.args, Proof.AesOcb.stk8,
@@ -116,21 +117,21 @@ theorem init_verified (v : BlocksImpl) :
 with the tag read only. -/
 def openSat : State := { sealSat with
   rd := [⟨0x1000, 256⟩, ⟨0x2000, 1⟩, ⟨0x2100, 0⟩, ⟨0x3000, 4⟩, ⟨0x8008, 40⟩]
-  wr := [⟨0, 0⟩, ⟨0, 2560⟩] }
+  wr := [⟨0, 0⟩, ⟨0, 3584⟩] }
 
 /-- `open`'s public data include its leak, from which `pub` has whether it
 succeeds. -/
 theorem open_verified (v : BlocksImpl) :
-    Verified X86_64.target («open» (callees v)) (Proof.AesOcb.openScratchContract X86_64.abi 8) :=
+    Verified X86_64.target («open» (callees v)) (Proof.AesOcb.openWorkContract X86_64.abi 448 8) :=
   Verified.of_correct (open_correct v) (open_ct v)
-    { pre := by sig_implies_pre [Proof.AesOcb.openScratchContract, Proof.AesOcb.openScratchSig, Spec.Ocb.openPre,
+    { pre := by sig_implies_pre [Proof.AesOcb.openWorkContract, Proof.AesOcb.openWorkSig, Spec.Ocb.openPre,
         Spec.Ocb.openPost, Spec.Ocb.openLeak, Proof.AesOcb.openX86_64, Proof.AesOcb.openLeak,
         Proof.AesOcb.openPreX, Proof.AesOcb.oneFacts, Proof.AesOcb.aCtx, Proof.AesOcb.aNonce, Proof.AesOcb.aAad,
         Proof.AesOcb.aData, Proof.AesOcb.aTag, Proof.AesOcb.aWork, Proof.AesOcb.onePub, Proof.AesOcb.openOut,
         X86_64.abi, Proof.AesOcb.arg, Proof.AesOcb.args, Proof.AesOcb.stk8, Proof.AesOcb.ret, Proof.AesOcb.rounds,
         X86_64.stackArg, X86_64.stackArgAddr, List.getD, List.range, List.range.loop, VG.X86_64.below,
         X86_64.argRegs]
-      post := by sig_implies_post [Proof.AesOcb.openScratchContract, Proof.AesOcb.openScratchSig, Spec.Ocb.openPre,
+      post := by sig_implies_post [Proof.AesOcb.openWorkContract, Proof.AesOcb.openWorkSig, Spec.Ocb.openPre,
         Spec.Ocb.openPost, Spec.Ocb.openLeak, Proof.AesOcb.openX86_64, Proof.AesOcb.openLeak,
         Proof.AesOcb.openPreX, Proof.AesOcb.oneFacts, Proof.AesOcb.aCtx, Proof.AesOcb.aNonce, Proof.AesOcb.aAad,
         Proof.AesOcb.aData, Proof.AesOcb.aTag, Proof.AesOcb.aWork, Proof.AesOcb.onePub, Proof.AesOcb.openOut,
@@ -139,7 +140,7 @@ theorem open_verified (v : BlocksImpl) :
         X86_64.argRegs]
       pub := by
         intro s₁ s₂ _ _ h
-        sig_pub [Proof.AesOcb.openScratchContract, Proof.AesOcb.openScratchSig, Spec.Ocb.openPre,
+        sig_pub [Proof.AesOcb.openWorkContract, Proof.AesOcb.openWorkSig, Spec.Ocb.openPre,
         Spec.Ocb.openPost, Spec.Ocb.openLeak, Proof.AesOcb.openX86_64, Proof.AesOcb.openLeak,
         Proof.AesOcb.openPreX, Proof.AesOcb.oneFacts, Proof.AesOcb.aCtx, Proof.AesOcb.aNonce, Proof.AesOcb.aAad,
         Proof.AesOcb.aData, Proof.AesOcb.aTag, Proof.AesOcb.aWork, Proof.AesOcb.onePub, Proof.AesOcb.openOut,
@@ -147,14 +148,14 @@ theorem open_verified (v : BlocksImpl) :
         X86_64.stackArg, X86_64.stackArgAddr, List.getD, List.range, List.range.loop, VG.X86_64.below,
         X86_64.argRegs] at h
         sig_split h
-        sig_reduce [Proof.AesOcb.openScratchContract, Proof.AesOcb.openScratchSig, Spec.Ocb.openPre,
+        sig_reduce [Proof.AesOcb.openWorkContract, Proof.AesOcb.openWorkSig, Spec.Ocb.openPre,
         Spec.Ocb.openPost, Spec.Ocb.openLeak, Proof.AesOcb.openX86_64, Proof.AesOcb.openLeak,
         Proof.AesOcb.openPreX, Proof.AesOcb.oneFacts, Proof.AesOcb.aCtx, Proof.AesOcb.aNonce, Proof.AesOcb.aAad,
         Proof.AesOcb.aData, Proof.AesOcb.aTag, Proof.AesOcb.aWork, Proof.AesOcb.onePub, Proof.AesOcb.openOut,
         X86_64.abi, Proof.AesOcb.arg, Proof.AesOcb.args, Proof.AesOcb.stk8, Proof.AesOcb.ret, Proof.AesOcb.rounds,
         X86_64.stackArg, X86_64.stackArgAddr, List.getD, List.range, List.range.loop, VG.X86_64.below,
         X86_64.argRegs]
-        sig_simp [Proof.AesOcb.openScratchContract, Proof.AesOcb.openScratchSig, Spec.Ocb.openPre,
+        sig_simp [Proof.AesOcb.openWorkContract, Proof.AesOcb.openWorkSig, Spec.Ocb.openPre,
         Spec.Ocb.openPost, Spec.Ocb.openLeak, Proof.AesOcb.openX86_64, Proof.AesOcb.openLeak,
         Proof.AesOcb.openPreX, Proof.AesOcb.oneFacts, Proof.AesOcb.aCtx, Proof.AesOcb.aNonce, Proof.AesOcb.aAad,
         Proof.AesOcb.aData, Proof.AesOcb.aTag, Proof.AesOcb.aWork, Proof.AesOcb.onePub, Proof.AesOcb.openOut,
@@ -164,7 +165,7 @@ theorem open_verified (v : BlocksImpl) :
         sig_and_intros
         sig_close
         all_goals with_reducible assumption
-      sat := by sig_implies_sat [Proof.AesOcb.openScratchContract, Proof.AesOcb.openScratchSig, Spec.Ocb.openPre,
+      sat := by sig_implies_sat [Proof.AesOcb.openWorkContract, Proof.AesOcb.openWorkSig, Spec.Ocb.openPre,
         Spec.Ocb.openPost, Spec.Ocb.openLeak, Proof.AesOcb.openX86_64, Proof.AesOcb.openLeak,
         Proof.AesOcb.openPreX, Proof.AesOcb.oneFacts, Proof.AesOcb.aCtx, Proof.AesOcb.aNonce, Proof.AesOcb.aAad,
         Proof.AesOcb.aData, Proof.AesOcb.aTag, Proof.AesOcb.aWork, Proof.AesOcb.onePub, Proof.AesOcb.openOut,

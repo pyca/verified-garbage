@@ -5,9 +5,10 @@ import VerifiedGarbage.Proof.CmacAes.X86_64.Dbl
 # AES-OCB on x86-64: blocks of `W`, two words at a time
 
 Untrusted: everything here is checked by Lean. `zero16`, `copy16`, `xor16`
-and `dbl` write a block of `W` (`BlkStep`): zeros, a copy, the XOR with a
-block and `double` of a block (`zero16_ok`, `copy16_ok`, `xor16_ok`,
-`dbl_ok`), as blocks of memory (`blockAtMem`).
+and `dbl` write a block of `W` (`BlkStep`; `dbl`, at any address in a
+register): zeros, a copy, the XOR with a block and `double` of a block
+(`zero16_ok`, `copy16_ok`, `xor16_ok`, `dbl_ok`), as blocks of memory
+(`blockAtMem`).
 -/
 
 set_option linter.unusedSimpArgs false
@@ -119,15 +120,15 @@ theorem dbl_mem (m : Mem) (p : Addr) :
   show hi ++ lo = Spec.Gcm.blockAt m p
   rw [← Proof.Gcm.X86_64.blockAt_bswap, e0]
 
-/-- `dbl b a d`: `W + d ← double(B + a)`, `B` in `b`. -/
-theorem dbl_ok {W B : Addr} {s : State} {b : Reg} {a d : Nat} (h15 : s.gpr .r15 = W) (hb : s.gpr b = B)
-    (hba : b ≠ .rax)
+/-- `dbl b a o d`: `O + d ← double(B + a)`, `B` in `b` and `O` in `o`. -/
+theorem dbl_ok {W B : Addr} {s : State} {b o : Reg} {a d : Nat} (h15 : s.gpr o = W) (hb : s.gpr b = B)
+    (hba : b ≠ .rax) (hoa : o ≠ .rax) (hod : o ≠ .rdx) (hoc : o ≠ .rcx) (ho8 : o ≠ .r8)
     (r₀ : InRegions (s.rd ++ s.wr) (B + BitVec.ofNat 64 a) 8)
     (r₁ : InRegions (s.rd ++ s.wr) (B + BitVec.ofNat 64 (a + 8)) 8)
     (w₀ : InRegions s.wr (W + BitVec.ofNat 64 d) 8) (w₁ : InRegions s.wr (W + BitVec.ofNat 64 (d + 8)) 8) :
-    ∃ s', runBlock isa (dbl b a d) s = some s' ∧
+    ∃ s', runBlock isa (dbl b a o d) s = some s' ∧
       BlkStep W d (double (blockAtMem s.mem (B + BitVec.ofNat 64 a))) [.rax, .rdx, .rcx, .r8] s s' := by
-  refine ⟨_, by orun [dbl, h15, hb, hba, r₀, r₁, w₀, w₁], ?_⟩
+  refine ⟨_, by orun [dbl, h15, hb, hba, hoa, hod, hoc, ho8, r₀, r₁, w₀, w₁], ?_⟩
   refine ⟨?_, ?_, fun r hr => ?_, rfl, rfl⟩
   · simp only [mem_setReg, mem_arithFlags, mem_setFlags]; rw [← addr8 W d]; exact frame_store2 _ _ _ _
   · simp only [mem_setReg, mem_arithFlags, mem_setFlags, BitVec.xor_self]

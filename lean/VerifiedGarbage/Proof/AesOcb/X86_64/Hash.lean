@@ -147,8 +147,7 @@ theorem hashTail_ok (v : BlocksImpl) {K W SP D : Addr} {n R : Nat} {ciph : Ciphe
       rbx := by rw [g₁ _ (by decide), H.rbx]
       rbp := by rw [g₁ _ (by decide), H.rbp]
       alen := by rw [m₁, H.alen]
-      rest := by rw [m₁, H.rest]
-      l0 := by rw [m₁, H.l0] }
+      rest := by rw [m₁, H.rest] }
   refine WP.seq (WP.of_runBlock ⟨t₁, run₁, ?_⟩)
   refine WP.ite (decide (a.length % 16 = 0)) (eval_e zf₁) (fun hb => WP.block_nil ?_) (fun hb => ?_)
   · have h0 : a.length % 16 = 0 := of_decide_eq_true hb
@@ -162,8 +161,7 @@ theorem hashTail_ok (v : BlocksImpl) {K W SP D : Addr} {n R : Nat} {ciph : Ciphe
 theorem hashHead_ok {K W SP D : Addr} {n R : Nat} {ciph : Cipher} {l : Block} {A : Addr}
     {a : List Byte} {s₀ : State} (C : HCtx K W SP D n R ciph l A a s₀) (E : Env K W SP s₀)
     (haad : s₀.mem.readW (W + BitVec.ofNat 64 aadO) 64 = A)
-    (halen : s₀.mem.readW (W + BitVec.ofNat 64 alenO) 64 = BitVec.ofNat 64 a.length)
-    (hl0 : blockAtMem s₀.mem (W + BitVec.ofNat 64 l0O) = lAt l 0) :
+    (halen : s₀.mem.readW (W + BitVec.ofNat 64 alenO) 64 = BitVec.ofNat 64 a.length) :
     WP isa (.block (zero16 sumO ++ zero16 ohO ++
       [ld .rbx .r15 aadO, ld .rax .r15 alenO, mvr .rcx .rax, .alu .and .rcx (.imm 15),
        st .r15 tmpO .rcx, .shift .shr .rax 4, st .r15 alenO .rax, .mov .rbp (.imm 1),
@@ -177,7 +175,7 @@ theorem hashHead_ok {K W SP D : Addr} {n R : Nat} {ciph : Cipher} {l : Block} {A
   obtain ⟨s₂, run₂, B₂⟩ := zero16_ok (s := s₁) (d := ohO) h15₁ (by rw [B₁.wr]; exact E.perm.wW (by decide))
     (by rw [B₁.wr]; exact E.perm.wW (by decide))
   have h15₂ : s₂.gpr .r15 = W := by rw [B₂.gpr _ (by decide), h15₁]
-  have kA : ∀ {d : Nat}, (d + 8 ≤ 48 ∨ (64 ≤ d ∧ d + 8 ≤ 144) ∨ 160 ≤ d) → d + 8 ≤ 2560 →
+  have kA : ∀ {d : Nat}, (d + 8 ≤ 48 ∨ (64 ≤ d ∧ d + 8 ≤ 144) ∨ 160 ≤ d) → d + 8 ≤ 3584 →
       s₂.mem.readW (W + BitVec.ofNat 64 d) 64 = s₀.mem.readW (W + BitVec.ofNat 64 d) 64 := fun h₁ h₂ => by
     rw [B₂.frame.readW (r := ⟨W + BitVec.ofNat 64 _, 8⟩) (Region.contains_self _ _) (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
@@ -255,12 +253,7 @@ theorem hashHead_ok {K W SP D : Addr} {n R : Nat} {ciph : Cipher} {l : Block} {A
       rest := by
         rw [m₃]; simp only [tmpO]
         rw [Mem.readW_writeW_sep (Offset.sep W (by decide) (by decide) (by decide)) (by decide),
-          Mem.readW_writeW_self64]
-      l0 := by
-        rw [kB (by decide), blockAtMem_frame B₂.frame (fun r hr => by
-            simp only [List.mem_singleton] at hr; subst hr; exact L.w_w (.inl (by decide)) (by decide) (by decide)),
-          blockAtMem_frame B₁.frame (fun r hr => by
-            simp only [List.mem_singleton] at hr; subst hr; exact L.w_w (.inr (by decide)) (by decide) (by decide)), hl0] }
+          Mem.readW_writeW_self64] }
   exact WP.of_runBlock ⟨s₃, by rw [runBlock_append, runBlock_append, run₁, Option.bind_some, run₂,
     Option.bind_some, run₃], H₀, zf₃⟩
 
@@ -285,12 +278,11 @@ theorem hashLoop_ok (v : BlocksImpl) {K W SP D : Addr} {n R : Nat} {ciph : Ciphe
 theorem hash_ok (v : BlocksImpl) {K W SP D : Addr} {n R : Nat} {ciph : Cipher} {l : Block} {A : Addr}
     {a : List Byte} {s₀ : State} (C : HCtx K W SP D n R ciph l A a s₀) (E : Env K W SP s₀)
     (haad : s₀.mem.readW (W + BitVec.ofNat 64 aadO) 64 = A)
-    (halen : s₀.mem.readW (W + BitVec.ofNat 64 alenO) 64 = BitVec.ofNat 64 a.length)
-    (hl0 : blockAtMem s₀.mem (W + BitVec.ofNat 64 l0O) = lAt l 0) :
+    (halen : s₀.mem.readW (W + BitVec.ofNat 64 alenO) 64 = BitVec.ofNat 64 a.length) :
     WP isa (Impl.AesOcb.X86_64.hash (callees v)) s₀ fun t' => Env K W SP t' ∧ Frame (hashR W SP) s₀.mem t'.mem ∧
       blockAtMem t'.mem (W + BitVec.ofNat 64 sumO) = Spec.Ocb.hash ciph l a ∧ t'.rd = s₀.rd ∧ t'.wr = s₀.wr := by
   unfold Impl.AesOcb.X86_64.hash
-  refine WP.seq (WP.mono (hashHead_ok C E haad halen hl0) fun s₃ ⟨H₀, zf₃⟩ => ?_)
+  refine WP.seq (WP.mono (hashHead_ok C E haad halen) fun s₃ ⟨H₀, zf₃⟩ => ?_)
   refine WP.seq (WP.ite (decide (a.length / 16 = 0)) (eval_e zf₃) (fun hb => WP.block_nil ?_) (fun hb => ?_))
   · have h0 : a.length / 16 = 0 := of_decide_eq_true hb
     exact hashTail_ok v C (h0 ▸ H₀)

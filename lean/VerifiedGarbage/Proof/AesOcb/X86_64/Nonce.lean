@@ -45,14 +45,14 @@ theorem sub_wC {W : Addr} {d k : Nat} (h₁ : 384 ≤ d) (h : d + k ≤ 2560) :
     Region.Sub ⟨W + BitVec.ofNat 64 d, k⟩ (wC W) := Offset.sub W (by omega) (by omega)
 
 /-- A word of `W` that the pieces do not write. -/
-theorem kept_read {K W SP D : Addr} {n : Nat} (L : Lay K W SP) (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 2560⟩)
+theorem kept_read {K W SP D : Addr} {n : Nat} (L : Lay K W SP) (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 3584⟩)
     {m m' : Mem} (h : Frame (mutR W SP D n) m m') {d : Nat}
     (hd : 160 ≤ d ∧ d + 8 ≤ 248 ∨ 288 ≤ d ∧ d + 8 ≤ 384) :
     m'.readW (W + BitVec.ofNat 64 d) 64 = m.readW (W + BitVec.ofNat 64 d) 64 :=
   h.readW (r := ⟨W + BitVec.ofNat 64 d, 8⟩) (Region.contains_self _ _) (kept_mut L hDW hd) (by decide)
 
 /-- The slots, after a frame within the parts the pieces write. -/
-theorem Slots.of_mut {K W SP D : Addr} {n : Nat} (L : Lay K W SP) (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 2560⟩)
+theorem Slots.of_mut {K W SP D : Addr} {n : Nat} (L : Lay K W SP) (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 3584⟩)
     {m m' : Mem} (h : Frame (mutR W SP D n) m m') {R : Nat} {N A D' : Addr} {nl n' tl : Nat}
     (S : Slots W R N A D' nl n' tl m) : Slots W R N A D' nl n' tl m' where
   data := by rw [kept_read L hDW h (by decide), S.data]
@@ -90,7 +90,7 @@ theorem nonce_ok (v : BlocksImpl) {K W SP : Addr} (L : Lay K W SP) {s : State} (
     (hN : s.mem.readW (W + BitVec.ofNat 64 nO) 64 = N) (hnl : s.mem.readW (W + BitVec.ofNat 64 nlO) 64 = BitVec.ofNat 64 nl)
     (htl : s.mem.readW (W + BitVec.ofNat 64 tlO) 64 = BitVec.ofNat 64 t) (h1 : 1 ≤ nl) (h15 : nl ≤ 15) (ht : t < 2 ^ 64)
     (hB : Buf W SP s N nl) (hKD : (⟨K, 256⟩ : Region).Disjoint ⟨D, n⟩)
-    (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 2560⟩) :
+    (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 3584⟩) :
     WP isa (nonce (callees v)) s
       (NonceOk K W SP D n (Spec.Ocb.offset0 (ctxCiph s.mem K R) t (bytesAt s.mem N nl)) s) := by
   unfold nonce
