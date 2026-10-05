@@ -65,6 +65,8 @@ theorem p384_ok (hI : InvSounds) : CfgOk p384 where
     exact Proof.P384.prime_39402006196394479212279040100143613805079739270465446667948293404245721771496870329047266088258938001861606973112319),
     InvOk.ofMod (by decide +kernel) (by decide)⟩
   inv_n h := absurd h (by decide)
+  am3 := by unfold AM3; decide +kernel
+  even _ := by decide
 
 theorem p384_tbls (hT : CombOkW Spec.P384.curve 7 55 Impl.P384.p384Comb7 Impl.P384.p384Comb7Start) :
     CombTbls p384 := fun d h => by cases h; exact hT

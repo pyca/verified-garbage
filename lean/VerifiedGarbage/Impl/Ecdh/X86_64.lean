@@ -16,10 +16,13 @@ for a curve of `n` 64-bit words, from the code of ECDSA's signature
    `04`, `x < p` and `y < p`;
 3. `x` and `y` into Montgomery's form, and the mask of `y² = x³ + a x + b`
    into the flag;
-4. the peer's point, or `G` if the flag is clear (so the ladder always runs
-   on a point of the curve), to the slots the ladder takes its point from;
-5. `[d]P` by the signature's ladder, and `Z^(p-2)` by its inversion (or
-   power);
+4. the peer's point, or `G` if the flag is clear (so the scalar
+   multiplication always runs on a point of the curve), to the slots it takes
+   its point from;
+5. `[d]P` by signed 4-bit windows for up to six words (`WinCfg.window`, its
+   table of `[1 … 8]P` past the inversion's working area, with `b R mod p`
+   for the complete addition for `a = -3`), else by the signature's ladder,
+   and `Z^(p-2)` by its inversion (or power);
 6. `x = X Z^(p-2)`, out of Montgomery's form, and the masks of `d` in
    `[1, n-1]` and `Z ≠ 0` into the flag, which selects `x` or zeros for
    `out` (big-endian) and is returned as 0 or 1.
@@ -127,6 +130,11 @@ def validate : Prog isa :=
 /-- The ladder of the signature, from the point at `PX`, `PY`, `ONEP`. -/
 def ladderQ : LadderCfg := { c.ladderCfg with G := c.pt PX PY ONEP }
 
+/-- `[d]P` into `R`, for `d` at `K` and `P` at `PX`, `PY`, `ONEP`: by windows for
+up to six words, else by the ladder. -/
+def mulQ : Prog isa :=
+  if c.n ≤ 6 then .seq (c.winPrep (c.sl K)) (WinCfg.window (c.winCfg PX PY BP)) else ladder (ladderQ c)
+
 /-- `x` (or zeros) to `out`, the flag's low bit to `rax`, and the
 callee-saved registers restored. -/
 def finish : List Instr :=
@@ -144,7 +152,7 @@ def middle : Prog isa :=
 /-- `vg_ecdh_<curve>`. -/
 def exchange : Prog isa :=
   .seq (.block (args)) <| .seq (prefix' c none) <| .seq (.block (peer c)) <| .seq (validate c) <|
-  .seq (ladder (ladderQ c)) <| .seq c.pPow (middle c)
+  .seq (mulQ c) <| .seq c.pPow (middle c)
 
 end Cfg
 

@@ -1,4 +1,4 @@
-import VerifiedGarbage.Impl.Weierstrass.X86_64.TComb
+import VerifiedGarbage.Impl.Weierstrass.X86_64.Window
 import VerifiedGarbage.Impl.Weierstrass.X86_64.Inv
 import VerifiedGarbage.Spec.Weierstrass
 import VerifiedGarbage.Spec.Ecdsa
@@ -104,6 +104,14 @@ bytes each, and a word of zeros past them that the comb's last digit may
 read. -/
 def bitsAt (n j : Nat) : Nat := slot n nslots + (64 * n + 8) * j
 
+/-- The window method's slots, past the inversion's working area (for up to
+six words): `k + offset J` (`n + 1` words, two slots), the table of its bits
+(`64 (n + 1)` bytes, ten slots) and the table of points `[1 … 8]P` (24
+slots). -/
+def WK : Nat := 80
+def WB : Nat := 82
+def WT : Nat := 92
+
 /-- A fixed-base comb for `G`: its digits' width `w`, its tables
 (`tbl[j][m - 1]` is `[m 2^(w j)]G`, affine, for `j < combJ` and
 `m = 1 … 2^(w-1)`), its starting point `[2^(w-1) Σ_j 2^(wj)]G`, and the
@@ -199,6 +207,33 @@ def powN : PowCfg := ⟨c.MN', c.sl ACC, c.sl PT, c.sl KM, c.sl ONEN, bitsAt c.n
 /-- The inversions by divsteps, their working area past the tables of bits. -/
 def invP : InvCfg := .ofMod c.MP' (c.sl ACC) (c.sl RZ) (bitsAt c.n 3) c.C.p
 def invN : InvCfg := .ofMod c.MN' (c.sl ACC) (c.sl KM) (bitsAt c.n 3) c.C.n
+
+/-- The window method's areas. -/
+def winK : Nat := c.sl WK
+def winBits : Nat := c.sl WB
+def winTbl : Nat := c.sl WT
+
+/-- The window method for `[k]P`, `P` at `px`, `py`, `ONEP`, into `R`, from the
+scalar at `k`'s slot, with `b R mod p` at `bm` for the complete addition for
+`a = -3`. -/
+def winCfg (px py bm : Nat) : WinCfg where
+  M := c.MP'
+  S := { c.rcbSlots with b3 := c.sl bm }
+  P := c.pt px py ONEP
+  R := c.pt RX RY RZ
+  E := c.pt TX TY TZ
+  D := c.pt DX DY DZ
+  neg := c.sl PT
+  zero := c.sl ZERO
+  bits := c.winBits
+  tbl := c.winTbl
+  J := 16 * c.n + 1
+  one := c.mont 1
+
+/-- `k + offset J` and its bits, from the slot at `k`. -/
+def winPrep (k : Nat) : Prog isa :=
+  .seq (.block (WinCfg.addConst c.n k c.winK (WinCfg.offset (16 * c.n + 1))))
+    (bits c.winK c.winBits (8 * (c.n + 1)))
 
 /-- `Z^(p-2)` and `k^(n-2)` into `ACC`: by divsteps for up to six words
 (`k^(n-2)` only if `fastN`), else by the powers. -/
