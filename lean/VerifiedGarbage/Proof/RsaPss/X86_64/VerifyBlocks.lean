@@ -80,19 +80,22 @@ theorem acc0_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {W :
     (R : Rep u.mem F S V W) {k lo : Nat} {c : Byte} (hk : W 17 = BitVec.ofNat 64 k)
     (he : W 23 = off S (oEm + lo)) (hc : W 25 = BitVec.setWidth 64 c) (hlo : W 26 = BitVec.ofNat 64 lo)
     (hk1 : 1 ≤ k) (hk2 : k ≤ 1024) (hlo1 : lo < k) :
-    WP isa (.block acc0) u fun u' => Lay u' F S ∧ Keep [.rcx, .rdi, .rax, .r9, .r11] u u' ∧
+    WP isa (.block acc0) u fun u' => Lay u' F S ∧ Keep [.rcx, .rdi, .rax, .r9, .r11, .r10] u u' ∧
       Rep u'.mem F S V (upd W 33 (acc0V (V (oEm + k - 1)) (V oEm) (V (oEm + lo)) c lo)) := by
   have hs := L.slot
   simp only [Bignum.X86_64.word] at hs
   have c1 : oEm = 2560 := rfl
   have c5 : oRsa = 8192 := rfl
   have R1 := R.wf L.geo (k := 33) (by decide) (acc0V (V (oEm + k - 1)) (V oEm) (V (oEm + lo)) c lo)
-  refine WP.mono (WP.keep [.rcx, .rdi, .rax, .r9, .r11] (Q := fun u' => u'.mem = u.mem.writeW (off F sAcc)
+  refine WP.mono (WP.keep [.rcx, .rdi, .rax, .r9, .r11, .r10] (Q := fun u' => u'.mem = u.mem.writeW (off F sAcc)
     (acc0V (V (oEm + k - 1)) (V oEm) (V (oEm + lo)) c lo)) ?_ rfl) fun u' ⟨hm, k'⟩ =>
       ⟨L.of_rep' R (hm ▸ R1) (by simp [upd]) (k'.gpr (by decide)) k'.2.2, k', hm ▸ R1⟩
-  · xrun [acc0, scr, List.cons_append, List.nil_append, ea_sp, ea_at0, L.rsp, L.ld (d := sScr) (by decide), hs,
+  · have ea1 : BitVec.ofNat 64 k + (S + BitVec.ofNat 64 oEm) - 1 = off S (oEm + k - 1) := by
+      rw [BitVec.add_comm, show S + BitVec.ofNat 64 oEm = off S oEm from rfl, off_plus,
+        off_sub1 S (show 1 ≤ oEm + k by omega)]
+    xrun [acc0, scr, List.cons_append, List.nil_append, ea_sp, ea_at0, L.rsp, L.ld (d := sScr) (by decide), hs,
       VG.Proof.MlKem.X86_64.sx_ofNat (show oEm < 2 ^ 31 by decide), L.ld (d := sK) (by decide),
-      R.rd (d := sK) 17 rfl (by decide), hk, off_plus, off_sub1 S (show 1 ≤ oEm + k by omega),
+      R.rd (d := sK) 17 rfl (by decide), hk, ea1,
       L.sld8 (d := oEm + k - 1) (by omega), R.scr (oEm + k - 1) (by omega),
       L.sld8 (d := oEm) (by omega), R.scr oEm (by omega), L.ld (d := sLo) (by decide),
       R.rd (d := sLo) 26 rfl (by decide), hlo, L.ld (d := sEb) (by decide), R.rd (d := sEb) 23 rfl (by decide), he,
@@ -459,7 +462,9 @@ theorem shiftPass_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte}
       VG.Proof.MlKem.X86_64.sx_ofNat (show oY + 8 + H.D < 2 ^ 31 by omega), L.ld (d := sD) (by decide),
       L.ld (d := sA) (by decide), L.ld (d := sDb) (by decide), R.rd (d := sD) 46 rfl (by decide),
       R.rd (d := sA) 45 rfl (by decide), R.rd (d := sDb) 24 rfl (by decide), ha, hd, hdb, off_plus]
-    rw [and_one a ha']; rfl
+    rw [and_one a ha']
+    refine ⟨?_, rfl⟩
+    rw [BitVec.add_comm, show S + BitVec.ofNat 64 (oY + 8 + H.D) = off S (oY + 8 + H.D) from rfl, off_plus]
   set c := decide (a % 2 = 1)
   set base := oY + 8 + H.D
   have Lv : Lay v F S := L.congr (hk.gpr (by decide)) hk.2.2 (by rw [hm])

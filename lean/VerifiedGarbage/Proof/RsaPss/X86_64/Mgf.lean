@@ -189,7 +189,7 @@ theorem xorOut_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {W
   have hs := L.slot
   simp only [Bignum.X86_64.word] at hs
   unfold xorOut seqs seqs seqs
-  refine WP.seq (WP.mono (WP.keep [.rcx, .rdi, .rax, .r10] (Q := fun v => v.gpr .rcx = off S oDig ∧
+  refine WP.seq (WP.mono (WP.keep [.rcx, .rdi, .rax, .r10, .rdx] (Q := fun v => v.gpr .rcx = off S oDig ∧
       v.gpr .rdi = off S (e + done) ∧ v.gpr .rax = BitVec.ofNat 64 (db - done) ∧
       v.gpr .r10 = BitVec.ofNat 64 H.D ∧ v.cf = some (decide (db - done < H.D)) ∧ v.mem = u.mem) ?_ rfl)
     fun v ⟨⟨h₁, h₂, h₃, h₄, h₅, hm⟩, hk⟩ => ?_)
@@ -234,7 +234,7 @@ include hH in
 theorem nextCtr_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {W : Nat → BitVec 64}
     (R : Rep u.mem F S V W) {c done db : Nat} (hc : W 31 = BitVec.ofNat 64 c) (hdn : W 32 = BitVec.ofNat 64 done)
     (hdb : W 24 = BitVec.ofNat 64 db) (hd' : done + H.D < 2 ^ 32) (hdb' : db < 2 ^ 32) :
-    WP isa (.block (nextCtr H)) u fun u' => Lay u' F S ∧ Keep [.rax] u u' ∧
+    WP isa (.block (nextCtr H)) u fun u' => Lay u' F S ∧ Keep [.rax, .rdx] u u' ∧
       u'.cf = some (decide (done + H.D < db)) ∧
       Rep u'.mem F S V (upd (upd W 31 (BitVec.ofNat 64 (c + 1))) 32 (BitVec.ofNat 64 (done + H.D))) := by
   have hDN := hH.hDN
@@ -252,7 +252,7 @@ theorem nextCtr_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {
   have h24 : ((u.mem.writeW (off F sCtr) (BitVec.ofNat 64 (c + 1))).writeW (off F sDone)
       (BitVec.ofNat 64 (done + H.D))).readW (off F sDb) 64 = BitVec.ofNat 64 db := by
     have := R2.fr 24 (by decide); simp only [upd, Nat.reduceEqDiff, ite_false] at this; rw [← hdb, ← this]; rfl
-  refine WP.mono (WP.keep [.rax] (Q := fun u' => u'.cf = some (decide (done + H.D < db)) ∧ u'.mem =
+  refine WP.mono (WP.keep [.rax, .rdx] (Q := fun u' => u'.cf = some (decide (done + H.D < db)) ∧ u'.mem =
       (u.mem.writeW (off F sCtr) (BitVec.ofNat 64 (c + 1))).writeW (off F sDone) (BitVec.ofNat 64 (done + H.D)))
       ?_ rfl) fun u' ⟨⟨hcf, hm⟩, hk⟩ => ⟨?_, hk, hcf, hm ▸ R2⟩
   · xrun [nextCtr, ea_sp, L.rsp, L.ld (d := sCtr) (by decide), L.ld (d := sDone) (by decide),

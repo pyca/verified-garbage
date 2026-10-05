@@ -215,8 +215,8 @@ def lenLoop : Prog isa :=
 /-- The arguments of the compression function: the hash value at
 `scratch + oSt`, block `b` (`sB`) of `Y`, one block, the working space. -/
 def compArgs : List Instr :=
-  scr .rdi oSt ++ [.mov .rsi (.mem (sp sB)), .shift .ror .rsi (64 - lgB H), .alu .add .rsi (.mem (sp sScr)),
-    .alu .add .rsi (.imm (BitVec.ofNat 32 oY)), .mov32 .rdx (.imm 1), .mov .rcx (.mem (sp sScr))]
+  scr .rdi oSt ++ [.mov .rcx (.mem (sp sScr)), .mov .rsi (.mem (sp sB)), .shift .ror .rsi (64 - lgB H),
+    .alu .add .rsi (.reg .rcx), .alu .add .rsi (.imm (BitVec.ofNat 32 oY)), .mov32 .rdx (.imm 1)]
 
 /-- The hash value copied to `scratch + oSel` under the mask of
 `b = ⌊(ℓ + L) / B⌋`. -/
@@ -229,7 +229,8 @@ def select : Prog isa :=
 
 /-- The next block, and ZF set after the last. -/
 def nextBlock : List Instr :=
-  [.mov .rax (.mem (sp sB)), .alu .add .rax (.imm 1), .store (sp sB) .rax, .alu .cmp .rax (.mem (sp sNb))]
+  [.mov .rax (.mem (sp sB)), .alu .add .rax (.imm 1), .store (sp sB) .rax, .mov .rdx (.mem (sp sNb)),
+    .alu .cmp .rax (.reg .rdx)]
 
 /-- Every block compressed, the last one's hash value selected. -/
 def compLoop : Prog isa :=
@@ -258,7 +259,7 @@ def clearBlock : Prog isa :=
 
 /-- `H` (at `DB + dbLen`) to `Y` (in `rcx`). -/
 def copyH : Prog isa :=
-  .seq (.block [.mov .rsi (.mem (sp sEb)), .alu .add .rsi (.mem (sp sDb)), .mov32 .r8 (.imm 0)])
+  .seq (.block [.mov .rsi (.mem (sp sEb)), .mov .r8 (.mem (sp sDb)), .alu .add .rsi (.reg .r8), .mov32 .r8 (.imm 0)])
     (byteLoop [.movzx8 .rax (ix .rsi .r8), .store8 (ix .rcx .r8) .rax] (.imm (BitVec.ofNat 32 H.D)))
 
 /-- The counter, big-endian, after `H` in `Y` (in `rcx`); the message's
@@ -273,8 +274,8 @@ def counter : List Instr :=
 /-- The first `min(hLen, dbLen - done)` bytes of the digest XORed into `DB`
 at `done`. -/
 def xorOut : Prog isa :=
-  seqs [.block (scr .rcx oDig ++ [.mov .rdi (.mem (sp sEb)), .alu .add .rdi (.mem (sp sDone)),
-      .mov .rax (.mem (sp sDb)), .alu .sub .rax (.mem (sp sDone)), .mov32 .r10 (.imm (BitVec.ofNat 32 H.D)),
+  seqs [.block (scr .rcx oDig ++ [.mov .rdx (.mem (sp sDone)), .mov .rdi (.mem (sp sEb)), .alu .add .rdi (.reg .rdx),
+      .mov .rax (.mem (sp sDb)), .alu .sub .rax (.reg .rdx), .mov32 .r10 (.imm (BitVec.ofNat 32 H.D)),
       .alu .cmp .rax (.reg .r10)]),
     .ite .b (.block [.mov .r10 (.reg .rax)]) (.block []),
     .block [.mov32 .r8 (.imm 0)],
@@ -284,7 +285,8 @@ def xorOut : Prog isa :=
 /-- The next counter, and CF set while `done < dbLen`. -/
 def nextCtr : List Instr :=
   [.mov .rax (.mem (sp sCtr)), .alu .add .rax (.imm 1), .store (sp sCtr) .rax, .mov .rax (.mem (sp sDone)),
-    .alu .add .rax (.imm (BitVec.ofNat 32 H.D)), .store (sp sDone) .rax, .alu .cmp .rax (.mem (sp sDb))]
+    .alu .add .rax (.imm (BitVec.ofNat 32 H.D)), .store (sp sDone) .rax, .mov .rdx (.mem (sp sDb)),
+    .alu .cmp .rax (.reg .rdx)]
 
 /-- `DB ⊕= MGF1(H, dbLen)`. -/
 def mgfXor : Prog isa :=
@@ -322,7 +324,7 @@ def saltFits : List Instr :=
 `DB = scratch + oEm + lo` into their slots. -/
 def dbSlots : List Instr :=
   [.alu .add .rax (.imm 1), .store (sp sDb) .rax] ++ scr .rax oEm ++
-    [.alu .add .rax (.mem (sp sLo)), .store (sp sEb) .rax]
+    [.mov .rdx (.mem (sp sLo)), .alu .add .rax (.reg .rdx), .store (sp sEb) .rax]
 
 /-! ## Common pieces -/
 
@@ -380,18 +382,20 @@ def clearEm : Prog isa :=
 
 /-- `0x01` at `DB + dbLen - sLen - 1`, and the salt after it. -/
 def putSalt : Prog isa :=
-  .seq (.block [.mov .rdi (.mem (sp sEb)), .alu .add .rdi (.mem (sp sDb)), .alu .sub .rdi (.mem (sp sSaltLen)),
-      .alu .sub .rdi (.imm 1), .mov32 .rax (.imm 1), .store8 (at_ .rdi) .rax])
+  .seq (.block [.mov .rdi (.mem (sp sEb)), .mov .rax (.mem (sp sDb)), .alu .add .rdi (.reg .rax),
+      .mov .rax (.mem (sp sSaltLen)), .alu .sub .rdi (.reg .rax), .alu .sub .rdi (.imm 1), .mov32 .rax (.imm 1),
+      .store8 (at_ .rdi) .rax])
     (.seq (.block [.mov .rsi (.mem (sp sSalt)), .mov .r10 (.mem (sp sSaltLen)), .mov32 .r8 (.imm 0),
         .alu .test .r10 (.reg .r10)])
       (.ite .e (.block []) (byteLoop [.movzx8 .rax (ix .rsi .r8), .store8 (ix .rdi .r8 1) .rax] (.reg .r10))))
 
 /-- `H` (the digest) at `DB + dbLen`, and `0xbc` at `EM`'s last byte. -/
 def putH : Prog isa :=
-  .seq (.block ([.mov .rdi (.mem (sp sEb)), .alu .add .rdi (.mem (sp sDb))] ++ scr .rsi oDig ++
+  .seq (.block ([.mov .rdi (.mem (sp sEb)), .mov .rax (.mem (sp sDb)), .alu .add .rdi (.reg .rax)] ++ scr .rsi oDig ++
       [.mov32 .r8 (.imm 0)]))
     (.seq (byteLoop [.movzx8 .rax (ix .rsi .r8), .store8 (ix .rdi .r8) .rax] (.imm (BitVec.ofNat 32 H.D)))
-      (.block (scr .rdi oEm ++ [.alu .add .rdi (.mem (sp sK)), .alu .sub .rdi (.imm 1), .mov32 .rax (.imm 0xbc),
+      (.block (scr .rdi oEm ++ [.mov .rax (.mem (sp sK)), .alu .add .rdi (.reg .rax), .alu .sub .rdi (.imm 1),
+        .mov32 .rax (.imm 0xbc),
         .store8 (at_ .rdi) .rax])))
 
 /-- The arguments of `vg_rsa_private_checked`: `out`, `n` (`k` bytes), `e`,
@@ -459,9 +463,10 @@ def pubArgs : List Instr :=
 /-- `acc :=` the leading byte if `lo = 1`, `EM`'s last byte `⊕ 0xbc`, and the
 top bits of `maskedDB`'s first byte. -/
 def acc0 : List Instr :=
-  scr .rcx oEm ++ [.mov .rdi (.reg .rcx), .alu .add .rdi (.mem (sp sK)), .alu .sub .rdi (.imm 1),
+  scr .rcx oEm ++ [.mov .rdi (.mem (sp sK)), .alu .add .rdi (.reg .rcx), .alu .sub .rdi (.imm 1),
     .movzx8 .rax (at_ .rdi), .alu .xor .rax (.imm 0xbc),
-    .movzx8 .r9 (at_ .rcx), .mov32 .r11 (.imm 0), .alu .sub .r11 (.mem (sp sLo)), .alu .and .r9 (.reg .r11),
+    .movzx8 .r9 (at_ .rcx), .mov .r10 (.mem (sp sLo)), .mov32 .r11 (.imm 0), .alu .sub .r11 (.reg .r10),
+    .alu .and .r9 (.reg .r11),
     .alu .or .rax (.reg .r9),
     .mov .rdi (.mem (sp sEb)), .movzx8 .r9 (at_ .rdi), .mov .r11 (.mem (sp sC)), .alu .xor .r11 (.imm 0xFF),
     .alu .and .r9 (.reg .r11), .alu .or .rax (.reg .r9), .store (sp sAcc) .rax]
@@ -496,7 +501,7 @@ def copyDb : Prog isa :=
 /-- One pass of the shift: every byte of `DB`'s place in `Y` replaced by
 the one `d` (`sD`) bytes after it if bit 0 of `a` (`sA`) is set. -/
 def shiftPass : Prog isa :=
-  .seq (.block (scr .rcx (oY + 8 + H.D) ++ [.mov .rsi (.reg .rcx), .alu .add .rsi (.mem (sp sD)),
+  .seq (.block (scr .rcx (oY + 8 + H.D) ++ [.mov .rsi (.mem (sp sD)), .alu .add .rsi (.reg .rcx),
       .mov .r11 (.mem (sp sA)), .alu .and .r11 (.imm 1), .mov32 .r9 (.imm 0), .alu .sub .r9 (.reg .r11),
       .mov .r10 (.mem (sp sDb)), .mov32 .r8 (.imm 0)]))
     (byteLoop [.movzx8 .rax (ix .rcx .r8), .movzx8 .rdi (ix .rsi .r8), .alu .xor .rdi (.reg .rax),
@@ -522,7 +527,7 @@ def verifyNb : List Instr :=
 
 /-- `acc` ORed with the digest `⊕ H`, and the result: 1 if `acc = 0`. -/
 def cmpH : Prog isa :=
-  .seq (.block (scr .rcx oDig ++ [.mov .rdi (.mem (sp sEb)), .alu .add .rdi (.mem (sp sDb)),
+  .seq (.block (scr .rcx oDig ++ [.mov .rdi (.mem (sp sEb)), .mov .rdx (.mem (sp sDb)), .alu .add .rdi (.reg .rdx),
       .mov .rdx (.mem (sp sAcc)), .mov32 .r8 (.imm 0)]))
     (.seq (byteLoop [.movzx8 .rax (ix .rcx .r8), .movzx8 .r9 (ix .rdi .r8), .alu .xor .rax (.reg .r9),
         .alu .or .rdx (.reg .rax)] (.imm (BitVec.ofNat 32 H.D)))
@@ -538,7 +543,8 @@ def verifyMain : Prog isa :=
 def verifyBody : Prog isa :=
   seqs [.block (verifyPrologue ++ n0),
     .ite .e verifyFail (seqs [.block smear, emLen H,
-      .ite .b verifyFail (seqs [anyArgs, .block ([.mov .rax (.mem (sp sK)), .alu .sub .rax (.mem (sp sLo))] ++
+      .ite .b verifyFail (seqs [anyArgs, .block ([.mov .rax (.mem (sp sK)), .mov .r8 (.mem (sp sLo)),
+          .alu .sub .rax (.reg .r8)] ++
           saltFits H),
         .ite .b verifyFail (verifyMain H pubN pubC)])]),
     .block restoreRegs]

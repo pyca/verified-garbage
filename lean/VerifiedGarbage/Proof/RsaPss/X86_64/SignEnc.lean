@@ -208,7 +208,7 @@ theorem putH_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {W :
   have hs := L.slot
   simp only [Bignum.X86_64.word] at hs
   unfold putH
-  refine WP.seq (WP.mono (WP.keep [.rdi, .rsi, .r8] (Q := fun v => v.gpr .rdi = off S (e + db) ∧
+  refine WP.seq (WP.mono (WP.keep [.rdi, .rsi, .r8, .rax] (Q := fun v => v.gpr .rdi = off S (e + db) ∧
       v.gpr .rsi = off S oDig ∧ v.gpr .r8 = BitVec.ofNat 64 0 ∧ v.mem = u.mem) ?_ rfl)
     fun v ⟨⟨h₁, h₂, h₃, hm⟩, hkv⟩ => ?_)
   · xrun [scr, List.cons_append, List.nil_append, ea_sp, L.rsp, L.ld (d := sScr) (by decide), hs,

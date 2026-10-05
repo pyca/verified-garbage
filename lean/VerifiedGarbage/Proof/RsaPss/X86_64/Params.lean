@@ -123,7 +123,7 @@ theorem saltFits_ok {H : Impl.Pbkdf2.Md.X86_64.Hash} (hD : H.D + 2 < 2 ^ 31) (u 
 theorem dbSlots_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {W : Nat → BitVec 64}
     (R : Rep u.mem F S V W) {a lo : Nat} (hlo : W 26 = BitVec.ofNat 64 lo)
     (hax : u.gpr .rax = BitVec.ofNat 64 a) :
-    WP isa (.block dbSlots) u fun u' => Lay u' F S ∧ Keep [.rax] u u' ∧
+    WP isa (.block dbSlots) u fun u' => Lay u' F S ∧ Keep [.rax, .rdx] u u' ∧
       Rep u'.mem F S V (upd (upd W 24 (BitVec.ofNat 64 (a + 1))) 23 (off S (oEm + lo))) := by
   have G := L.geo
   have hs := L.slot
@@ -137,7 +137,7 @@ theorem dbSlots_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {
     rw [show (S : Addr) = W 21 from ((R.fr 21 (by decide)).symm.trans hs).symm, ← this]; rfl
   have h26 : (u.mem.writeW (off F sDb) (BitVec.ofNat 64 (a + 1))).readW (off F sLo) 64 = BitVec.ofNat 64 lo := by
     have := R1.fr 26 (by decide); simp only [upd, Nat.reduceEqDiff, ite_false] at this; rw [← hlo, ← this]; rfl
-  refine WP.mono (WP.keep [.rax] (Q := fun u' => u'.mem = (u.mem.writeW (off F sDb)
+  refine WP.mono (WP.keep [.rax, .rdx] (Q := fun u' => u'.mem = (u.mem.writeW (off F sDb)
       (BitVec.ofNat 64 (a + 1))).writeW (off F sEb) (off S (oEm + lo))) ?_ rfl) fun u' ⟨hm, k⟩ => ?_
   · xrun [dbSlots, scr, List.cons_append, List.nil_append, ea_sp, L.rsp, L.st (d := sDb) (by decide),
       L.ld (d := sScr) (by decide), L.ld (d := sLo) (by decide), L.st (d := sEb) (by decide), hax, h21, h26,

@@ -213,7 +213,7 @@ theorem stateAt_mv {m m' : Mem} {F S : Addr} {V V' : Nat → Byte} {W W' : Nat �
 theorem nextBlock_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {W : Nat → BitVec 64}
     (R : Rep u.mem F S V W) {b nbm : Nat} (hb : W 29 = BitVec.ofNat 64 b) (hn : W 28 = BitVec.ofNat 64 nbm)
     (hb' : b + 1 < 2 ^ 64) (hn' : nbm < 2 ^ 64) :
-    WP isa (.block nextBlock) u fun u' => u'.zf = some (decide (b + 1 = nbm)) ∧ Lay u' F S ∧ Keep [.rax] u u' ∧
+    WP isa (.block nextBlock) u fun u' => u'.zf = some (decide (b + 1 = nbm)) ∧ Lay u' F S ∧ Keep [.rax, .rdx] u u' ∧
       Rep u'.mem F S V (upd W 29 (BitVec.ofNat 64 (b + 1))) := by
   have e29 : u.mem.readW (off F sB) 64 = BitVec.ofNat 64 b := by rw [← hb, ← R.fr 29 (by decide)]; rfl
   have R' := R.wf L.geo (k := 29) (by decide) (BitVec.ofNat 64 (b + 1))
@@ -221,7 +221,7 @@ theorem nextBlock_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte}
   have e28 : (u.mem.writeW (off F sB) (BitVec.ofNat 64 (b + 1))).readW (off F sNb) 64 = BitVec.ofNat 64 nbm := by
     have : upd W 29 (BitVec.ofNat 64 (b + 1)) 28 = W 28 := by simp [upd]
     rw [← hn, ← this, ← R'.fr 28 (by decide)]; rfl
-  refine WP.mono (WP.keep [.rax] (Q := fun u' => u'.zf = some (decide (b + 1 = nbm)) ∧
+  refine WP.mono (WP.keep [.rax, .rdx] (Q := fun u' => u'.zf = some (decide (b + 1 = nbm)) ∧
       u'.mem = u.mem.writeW (off F sB) (BitVec.ofNat 64 (b + 1))) ?_ rfl) fun u' ⟨⟨hz, hm⟩, hk⟩ => ?_
   · xrun [nextBlock, ea_sp, L.rsp, L.ld (d := sB) (by decide), L.st (d := sB) (by decide), e29,
       L.ld (d := sNb) (by decide), ofNat_add_lit, e28, ofNat_sub_beq hb' hn']

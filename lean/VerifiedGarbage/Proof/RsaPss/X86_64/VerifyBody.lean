@@ -181,7 +181,7 @@ theorem verify_ok (lk : Pbkdf2.Md.X86_64.MgfLink H hH) {pubN : String} {pubC : P
   -- The salt fits.
   refine WP.seq ?_
   rw [WP.block_append_iff]
-  refine WP.mono (WP.keep [.rax] (Q := fun t => t.gpr .rax = BitVec.ofNat 64 ((s.gpr .rsi).toNat - loV n₀.toNat) ∧
+  refine WP.mono (WP.keep [.rax, .r8] (Q := fun t => t.gpr .rax = BitVec.ofNat 64 ((s.gpr .rsi).toNat - loV n₀.toNat) ∧
       t.mem = t5.mem) (by
     xrun [ea_sp, L5.rsp, L5.ld (d := sK) (by decide), L5.ld (d := sLo) (by decide), R5.rd (d := sK) 17 rfl (by decide),
       R5.rd (d := sLo) 26 rfl (by decide)]
