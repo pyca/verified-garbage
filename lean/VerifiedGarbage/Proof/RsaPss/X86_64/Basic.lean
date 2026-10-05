@@ -85,7 +85,7 @@ structure Lay (t : State) (F S : Addr) : Prop where
   rsp : t.gpr .rsp = F
   fr : (⟨F, frameBytes⟩ : Region) ∈ t.wr
   F8 : 8 ≤ F.toNat
-  Fw : F.toNat + frameBytes + 128 ≤ 2 ^ 64
+  Fw : F.toNat + frameBytes + 8 ≤ 2 ^ 64
   sc : Scr t S oRsa
   slot : word t.mem F sScr = S
   dFS : Region.Disjoint ⟨F, frameBytes⟩ ⟨S, oRsa⟩
@@ -183,7 +183,7 @@ theorem cS (S : Addr) {o n : Nat} (h : o + n ≤ oRsa) : Region.Contains ⟨S, o
 
 /-- Where the frame and the working space are. -/
 structure Geo (F S : Addr) : Prop where
-  Fw : F.toNat + frameBytes + 128 ≤ 2 ^ 64
+  Fw : F.toNat + frameBytes + 8 ≤ 2 ^ 64
   Sw : S.toNat + oRsa ≤ 2 ^ 64
   dFS : Region.Disjoint ⟨F, frameBytes⟩ ⟨S, oRsa⟩
   dRS : Region.Disjoint (retR F) ⟨S, oRsa⟩

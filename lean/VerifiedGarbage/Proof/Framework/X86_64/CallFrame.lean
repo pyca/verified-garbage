@@ -66,4 +66,24 @@ theorem WP.callF {n : String} {c : Prog isa} {k : Contract isa}
           exact ⟨_, List.mem_append_right _ (List.mem_singleton_self _), below_callee _ _⟩
     exact Frame.trans f₀ f₁
 
+/-- Code without calls or frames uses no stack below `rsp`. -/
+theorem x86_64Depth_zero : ∀ {c : Prog isa}, NoSp c → c.depth = 0 → c.x86_64Depth = 0
+  | .block _, _, _ => rfl
+  | .seq a b, h, hd => by
+    simp only [Code.depth, Nat.max_eq_zero_iff] at hd
+    simp only [Code.x86_64Depth, x86_64Depth_zero (fun i hi => h i (List.mem_append_left _ hi)) hd.1,
+      x86_64Depth_zero (fun i hi => h i (List.mem_append_right _ hi)) hd.2, Nat.max_self]
+  | .ite _ a b, h, hd => by
+    simp only [Code.depth, Nat.max_eq_zero_iff] at hd
+    simp only [Code.x86_64Depth, x86_64Depth_zero (fun i hi => h i (List.mem_append_left _ hi)) hd.1,
+      x86_64Depth_zero (fun i hi => h i (List.mem_append_right _ hi)) hd.2, Nat.max_self]
+  | .loop b _, h, hd => x86_64Depth_zero (c := b) h hd
+  | .call _ _, _, hd => by simp [Code.depth] at hd
+  | .frame i b _, h, hd => by
+    have hi := h i (List.mem_cons_self ..)
+    have hb : b.x86_64Depth = 0 :=
+      x86_64Depth_zero (fun j hj => h j (List.mem_cons_of_mem _ (List.mem_append_left _ hj))) hd
+    simp only [Code.x86_64Depth, hb, Nat.zero_add]
+    cases i <;> simp_all [X86_64.Instr.frameBytes, Taint.clobbers]
+
 end VG.X86_64
